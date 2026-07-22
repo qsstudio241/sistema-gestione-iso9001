@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import {
   DOC_REGISTRY_COMPANY_SCOPE_KEY,
+  STUDIO_REGISTRY_SCOPE,
   resolveInitialRegistryCompanyScope,
   readStoredRegistryCompanyScope,
   persistRegistryCompanyScope,
@@ -42,5 +43,14 @@ describe('documentRegistryCompanyScope', () => {
     persistRegistryCompanyScope('');
     expect(readStoredRegistryCompanyScope()).toBe('');
     expect(localStorage.getItem(DOC_REGISTRY_COMPANY_SCOPE_KEY)).toBeNull();
+  });
+
+  it('supporta l\'ambito speciale "studio" (Patrimonio Studio)', () => {
+    expect(STUDIO_REGISTRY_SCOPE).toBe('studio');
+    persistRegistryCompanyScope(STUDIO_REGISTRY_SCOPE);
+    expect(readStoredRegistryCompanyScope()).toBe('studio');
+    expect(resolveInitialRegistryCompanyScope(null)).toBe('studio');
+    // L'ambito studio passato via URL viene preservato
+    expect(resolveInitialRegistryCompanyScope('studio')).toBe('studio');
   });
 });

@@ -33,13 +33,18 @@ vi.mock("../components/CompanyPersonnelPanel", () => ({
   default: () => <div data-testid="personnel-panel">Personale mock</div>,
 }));
 
+vi.mock("../components/CompanyCounterpartiesPanel", () => ({
+  default: () => <div data-testid="counterparties-panel">Controparti mock</div>,
+}));
+
 const mockGetCompany = vi.fn();
+const mockUpdateCompany = vi.fn();
 
 vi.mock("../services/apiService", () => ({
   default: {
     getCompany: (...args) => mockGetCompany(...args),
     getCompanyLogoUrl: (id) => `https://api.test/companies/${id}/logo`,
-    updateCompany: vi.fn(),
+    updateCompany: (...args) => mockUpdateCompany(...args),
     uploadCompanyLogo: vi.fn(),
   },
 }));
@@ -55,6 +60,8 @@ describe("parseCompanyId", () => {
 describe("CompanyDetailPage", () => {
   beforeEach(() => {
     mockNavigate.mockReset();
+    mockUpdateCompany.mockReset();
+    mockUpdateCompany.mockResolvedValue({ data: { id: 42 } });
     mockGetCompany.mockResolvedValue({
       data: {
         id: 42,
@@ -66,8 +73,8 @@ describe("CompanyDetailPage", () => {
     });
   });
 
-  it("espone tab Anagrafica e Personale", () => {
-    expect(TABS.map((t) => t.id)).toEqual(["anagrafica", "personale"]);
+  it("espone tab Anagrafica, Personale e Controparti", () => {
+    expect(TABS.map((t) => t.id)).toEqual(["anagrafica", "personale", "controparti"]);
   });
 
   it("renderizza scheda con tab e passa al tab Personale", async () => {
@@ -79,12 +86,16 @@ describe("CompanyDetailPage", () => {
 
     expect(screen.getByRole("tab", { name: "Anagrafica" })).toBeInTheDocument();
     expect(screen.getByRole("tab", { name: "Personale" })).toBeInTheDocument();
+    expect(screen.getByRole("tab", { name: "Controparti" })).toBeInTheDocument();
     await waitFor(() => {
       expect(screen.getByDisplayValue("Acme Srl")).toBeInTheDocument();
     });
 
     await userEvent.click(screen.getByRole("tab", { name: "Personale" }));
     expect(screen.getByTestId("personnel-panel")).toBeInTheDocument();
+
+    await userEvent.click(screen.getByRole("tab", { name: "Controparti" }));
+    expect(screen.getByTestId("counterparties-panel")).toBeInTheDocument();
   });
 
   it('"Elenco aziende" naviga a /companies', async () => {
@@ -99,5 +110,23 @@ describe("CompanyDetailPage", () => {
 
     await userEvent.click(backLink);
     expect(mockNavigate).toHaveBeenCalledWith("/companies");
+  });
+
+  it("dopo Salva anagrafica torna all'elenco aziende", async () => {
+    render(<CompanyDetailPage />);
+
+    await waitFor(() => {
+      expect(screen.getByDisplayValue("Acme Srl")).toBeInTheDocument();
+    });
+
+    const nameInput = screen.getByDisplayValue("Acme Srl");
+    await userEvent.clear(nameInput);
+    await userEvent.type(nameInput, "Acme Aggiornata");
+    await userEvent.click(screen.getByRole("button", { name: "Salva anagrafica" }));
+
+    await waitFor(() => {
+      expect(mockUpdateCompany).toHaveBeenCalledWith(42, expect.objectContaining({ name: "Acme Aggiornata" }));
+      expect(mockNavigate).toHaveBeenCalledWith("/companies");
+    });
   });
 });

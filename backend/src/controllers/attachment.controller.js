@@ -15,16 +15,43 @@ const path = require('path');
 const fs = require('fs').promises;
 const fsSync = require('fs');
 
-/** Join audit effettivo (diretto o via NC) + predicato scope studio. */
-function attachmentAuditScope(reqUser) {
-    const scope = studioScopeClause(reqUser, 'a');
+/** Join contesto audit/NC o verbale CND + predicato scope studio. */
+function attachmentScope(reqUser) {
+    const auditScope = studioScopeClause(reqUser, 'a');
+    const ndtScope = studioScopeClause(reqUser, 'ndt_r');
+
+    let rbacClause = '';
+    if (auditScope.clause && ndtScope.clause) {
+        rbacClause = ` AND (
+            (att.ndt_report_item_id IS NULL AND (${auditScope.clause}))
+            OR (att.ndt_report_item_id IS NOT NULL AND (${ndtScope.clause}))
+        )`;
+    } else if (auditScope.clause) {
+        rbacClause = ` AND (att.ndt_report_item_id IS NULL OR (${auditScope.clause}))`;
+    } else if (ndtScope.clause) {
+        rbacClause = ` AND (att.ndt_report_item_id IS NOT NULL OR (${ndtScope.clause}))`;
+    }
+
     return {
         joinSql: `
       LEFT JOIN non_conformities nc ON att.nc_id = nc.nc_id
-      INNER JOIN audits a ON a.audit_id = COALESCE(att.audit_id, nc.audit_id)
+      LEFT JOIN audits a ON a.audit_id = COALESCE(att.audit_id, nc.audit_id)
+      LEFT JOIN ndt_report_items ndt_item ON att.ndt_report_item_id = ndt_item.id
+      LEFT JOIN ndt_reports ndt_r ON ndt_item.report_id = ndt_r.id AND ndt_r.is_deleted = 0
     `,
-        scopeSql: appendScopeSql(scope),
-        scopeParams: scope.params,
+        orgClause: 'COALESCE(a.organization_id, ndt_r.organization_id) = @organization_id',
+        rbacClause,
+        scopeParams: { ...auditScope.params, ...ndtScope.params },
+    };
+}
+
+/** @deprecated alias — usare attachmentScope */
+function attachmentAuditScope(reqUser) {
+    const scope = attachmentScope(reqUser);
+    return {
+        joinSql: scope.joinSql,
+        scopeSql: scope.rbacClause,
+        scopeParams: scope.scopeParams,
     };
 }
 
@@ -53,14 +80,10 @@ async function listAttachments(req, res) {
 
         const offset = (parseInt(page) - 1) * parseInt(limit);
 
-        const { joinSql, scopeSql, scopeParams } = attachmentAuditScope(req.user);
-        const scope = studioScopeClause(req.user, 'a');
+        const { joinSql, orgClause, rbacClause, scopeParams } = attachmentScope(req.user);
 
-        let whereConditions = ['a.organization_id = @organization_id'];
+        let whereConditions = [orgClause];
         let params = { organization_id, limit: parseInt(limit), offset, ...scopeParams };
-        if (scope.clause) {
-            whereConditions.push(scope.clause);
-        }
 
         if (audit_id) {
             const numericAuditId = parseInt(audit_id);
@@ -85,13 +108,17 @@ async function listAttachments(req, res) {
             whereConditions.push('att.custom_item_id = @custom_item_id');
             params.custom_item_id = parseInt(req.query.custom_item_id);
         }
+        if (req.query.ndt_report_item_id) {
+            whereConditions.push('att.ndt_report_item_id = @ndt_report_item_id');
+            params.ndt_report_item_id = parseInt(req.query.ndt_report_item_id);
+        }
 
         if (category) {
             whereConditions.push('att.category = @category');
             params.category = category;
         }
 
-        const whereClause = whereConditions.join(' AND ');
+        const whereClause = whereConditions.join(' AND ') + rbacClause;
 
         const result = await query(`
       SELECT 
@@ -152,9 +179,7 @@ async function getAttachmentById(req, res) {
         const { id } = req.params;
         const { organization_id } = req.user;
 
-        const { joinSql, scopeParams } = attachmentAuditScope(req.user);
-        const scope = studioScopeClause(req.user, 'a');
-        const scopeCond = scope.clause ? ` AND ${scope.clause}` : '';
+        const { joinSql, orgClause, rbacClause, scopeParams } = attachmentScope(req.user);
 
         const result = await query(`
       SELECT 
@@ -167,8 +192,8 @@ async function getAttachmentById(req, res) {
       ${joinSql}
       LEFT JOIN users u ON att.uploaded_by = u.user_id
       WHERE att.attachment_id = @id 
-        AND a.organization_id = @organization_id
-        ${scopeCond}
+        AND ${orgClause}
+        ${rbacClause}
     `, { id: parseInt(id), organization_id, ...scopeParams });
 
         if (result.recordset.length === 0) {
@@ -210,7 +235,7 @@ async function getAttachmentById(req, res) {
 async function uploadAttachment(req, res) {
     try {
         const { user_id, organization_id } = req.user;
-        const { audit_id, nc_id, question_id, custom_item_id, category = 'evidence', description } = req.body;
+        const { audit_id, nc_id, question_id, custom_item_id, ndt_report_item_id, category = 'evidence', description } = req.body;
 
         // Validazione: deve avere file
         if (!req.file) {
@@ -221,9 +246,20 @@ async function uploadAttachment(req, res) {
             });
         }
 
-        // Validazione: deve avere audit_id o nc_id (ma non entrambi)
-        if ((!audit_id && !nc_id) || (audit_id && nc_id)) {
-            // Cleanup file uploaded
+        // Allegato CND (ndt_report_item_id): non richiede audit_id
+        if (ndt_report_item_id) {
+            // Verifica che l'item esista e appartenga all'org tramite il report padre
+            const itemCheck = await query(`
+                SELECT i.id FROM ndt_report_items i
+                JOIN ndt_reports r ON r.id = i.report_id
+                WHERE i.id = @item_id AND r.organization_id = @organization_id AND r.is_deleted = 0
+            `, { item_id: parseInt(ndt_report_item_id), organization_id });
+            if (itemCheck.recordset.length === 0) {
+                await fs.unlink(req.file.path).catch(() => { });
+                return res.status(404).json({ error: 'Componente verbale CND non trovato', code: 'NDT_ITEM_NOT_FOUND' });
+            }
+        } else if ((!audit_id && !nc_id) || (audit_id && nc_id)) {
+            // Validazione standard: deve avere audit_id o nc_id (ma non entrambi)
             await fs.unlink(req.file.path).catch(() => { });
             logger.warn('Upload: audit_id/nc_id mancante o duplicato', { audit_id, nc_id, user_id, organization_id });
             return res.status(400).json({
@@ -349,6 +385,7 @@ async function uploadAttachment(req, res) {
         nc_id,
         question_id,
         custom_item_id,
+        ndt_report_item_id,
         file_name,
         file_type,
         file_size,
@@ -365,6 +402,7 @@ async function uploadAttachment(req, res) {
         @nc_id,
         @question_id,
         @custom_item_id,
+        @ndt_report_item_id,
         @file_name,
         @file_type,
         @file_size,
@@ -380,6 +418,7 @@ async function uploadAttachment(req, res) {
             nc_id: nc_id ? parseInt(nc_id) : null,
             question_id: question_id ? parseInt(question_id) : null,
             custom_item_id: custom_item_id ? parseInt(custom_item_id) : null,
+            ndt_report_item_id: ndt_report_item_id ? parseInt(ndt_report_item_id) : null,
             file_name: req.file.originalname,
             file_type: path.extname(req.file.originalname).toLowerCase(),
             file_size: req.file.size,
@@ -436,17 +475,15 @@ async function downloadAttachment(req, res) {
         const { organization_id } = req.user;
 
         // Recupera metadati con verifica ownership
-        const { joinSql, scopeParams } = attachmentAuditScope(req.user);
-        const scope = studioScopeClause(req.user, 'a');
-        const scopeCond = scope.clause ? ` AND ${scope.clause}` : '';
+        const { joinSql, orgClause, rbacClause, scopeParams } = attachmentScope(req.user);
 
         const result = await query(`
-      SELECT att.*, a.organization_id AS audit_org_id
+      SELECT att.*, COALESCE(a.organization_id, ndt_r.organization_id) AS audit_org_id
       FROM attachments att
       ${joinSql}
       WHERE att.attachment_id = @id 
-        AND a.organization_id = @organization_id
-        ${scopeCond}
+        AND ${orgClause}
+        ${rbacClause}
     `, { id: parseInt(id), organization_id, ...scopeParams });
 
         if (result.recordset.length === 0) {
@@ -500,17 +537,15 @@ async function deleteAttachment(req, res) {
         const { organization_id } = req.user;
 
         // Recupera metadati con verifica ownership
-        const { joinSql, scopeParams } = attachmentAuditScope(req.user);
-        const scope = studioScopeClause(req.user, 'a');
-        const scopeCond = scope.clause ? ` AND ${scope.clause}` : '';
+        const { joinSql, orgClause, rbacClause, scopeParams } = attachmentScope(req.user);
 
         const result = await query(`
-      SELECT att.*, a.organization_id AS audit_org_id
+      SELECT att.*, COALESCE(a.organization_id, ndt_r.organization_id) AS audit_org_id
       FROM attachments att
       ${joinSql}
       WHERE att.attachment_id = @id 
-        AND a.organization_id = @organization_id
-        ${scopeCond}
+        AND ${orgClause}
+        ${rbacClause}
     `, { id: parseInt(id), organization_id, ...scopeParams });
 
         if (result.recordset.length === 0) {
@@ -570,17 +605,15 @@ async function viewAttachment(req, res) {
         const { id } = req.params;
         const { organization_id } = req.user;
 
-        const { joinSql, scopeParams } = attachmentAuditScope(req.user);
-        const scope = studioScopeClause(req.user, 'a');
-        const scopeCond = scope.clause ? ` AND ${scope.clause}` : '';
+        const { joinSql, orgClause, rbacClause, scopeParams } = attachmentScope(req.user);
 
         const result = await query(`
-      SELECT att.*, a.organization_id AS audit_org_id
+      SELECT att.*, COALESCE(a.organization_id, ndt_r.organization_id) AS audit_org_id
       FROM attachments att
       ${joinSql}
       WHERE att.attachment_id = @id 
-        AND a.organization_id = @organization_id
-        ${scopeCond}
+        AND ${orgClause}
+        ${rbacClause}
     `, { id: parseInt(id), organization_id, ...scopeParams });
 
         if (result.recordset.length === 0) {
@@ -655,18 +688,16 @@ async function replaceAttachment(req, res) {
     }
 
     try {
-        // 1. Verifica ownership: allegato appartiene a un audit di questa org
-        const { joinSql, scopeParams } = attachmentAuditScope(req.user);
-        const scope = studioScopeClause(req.user, 'a');
-        const scopeCond = scope.clause ? ` AND ${scope.clause}` : '';
+        // 1. Verifica ownership: allegato appartiene all'org (audit, NC o verbale CND)
+        const { joinSql, orgClause, rbacClause, scopeParams } = attachmentScope(req.user);
 
         const existing = await query(`
             SELECT att.attachment_id, att.storage_path, att.file_name
             FROM attachments att
             ${joinSql}
             WHERE att.attachment_id = @attachment_id
-              AND a.organization_id = @organization_id
-              ${scopeCond}
+              AND ${orgClause}
+              ${rbacClause}
         `, { attachment_id: parseInt(attachment_id), organization_id, ...scopeParams });
 
         if (!existing.recordset?.length) {

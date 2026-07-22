@@ -15,6 +15,22 @@
   margin-bottom: 0.75rem;
 }
 
+.import-jobs-warning {
+  color: #92400e;
+  background: #fffbeb;
+  border: 1px solid #fde68a;
+  border-radius: 6px;
+  padding: 0.55rem 0.75rem;
+  font-size: 0.9rem;
+}
+
+.import-jobs-field-hint {
+  flex-basis: 100%;
+  margin: 0;
+  color: #92400e;
+  font-size: 0.82rem;
+}
+
 .import-jobs-denied {
   color: #666;
 }
@@ -99,9 +115,17 @@
   cursor: pointer;
 }
 
-.btn-ai {
+/* Azione primaria "Analisi AI": riempita per metterla in evidenza.
+   Doppia classe per battere la specificita' di .btn-small (sfondo bianco). */
+.btn-small.btn-ai {
+  background: #6b4fd6;
   border-color: #6b4fd6;
-  color: #4a2fa8;
+  color: #fff;
+}
+
+.btn-small.btn-ai:hover:not(:disabled) {
+  background: #5a3fc4;
+  border-color: #5a3fc4;
 }
 
 .ai-extraction-panel {
@@ -448,4 +472,59 @@ button:disabled {
 
 .ai-raw-toggle:hover {
   color: #374151;
+}
+
+/* Commit a Qualifica */
+.btn-small.btn-commit-qualif { background:#1a6b3c; color:#fff; border-color:#1a6b3c; }
+.btn-small.btn-commit-qualif:disabled { opacity:0.6; }
+.file-commit-err { font-size:11px; color:#b91c1c; margin-left:4px; align-self: center; }
+
+/* Menu "Altre azioni" (overflow azioni secondarie file) */
+.file-actions-menu {
+  position: relative;
+  display: inline-block;
+}
+
+.file-actions-more {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  color: #455a64;
+}
+
+.file-actions-dropdown {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  z-index: 50;
+  min-width: 200px;
+  background: #fff;
+  border: 1px solid #d0d7de;
+  border-radius: 6px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.14);
+  padding: 0.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.file-actions-item {
+  text-align: left;
+  width: 100%;
+  padding: 0.45rem 0.6rem;
+  font-size: 0.85rem;
+  border: none;
+  border-radius: 4px;
+  background: transparent;
+  color: #1f2937;
+  cursor: pointer;
+}
+
+.file-actions-item:hover:not(:disabled) {
+  background: #f1f5f9;
+}
+
+.file-actions-item:disabled {
+  color: #9ca3af;
+  cursor: not-allowed;
 }

@@ -1,5 +1,5 @@
 /**
- * documentTypes.js � Fonte unica di verit� per tipi e stati documento
+ * documentTypes.js  -  Fonte unica di verità  per tipi e stati documento
  *
  * Importare SEMPRE da qui. Non dichiarare DOC_TYPE_LABELS o DOC_STATUS_LABELS
  * localmente nei componenti (causa divergenze tra form, catalogo e pannello dettaglio).
@@ -7,7 +7,7 @@
  * Esteso da documentTypeSchemas.js (schemi per tipo con campi specifici, prompt AI, alert).
  */
 
-// ??? Tipi documento ???????????????????????????????????????????????????????????
+//  Tipi documento ??
 
 export const DOC_TYPE_OPTIONS = [
   { value: "procedura",          label: "Procedura" },
@@ -18,6 +18,8 @@ export const DOC_TYPE_OPTIONS = [
   { value: "qualifica",          label: "Qualifica personale" },
   { value: "patentino_saldatore",label: "Patentino saldatore (ISO 9606-1)" },
   { value: "qualifica_14732",    label: "Qualifica operatore (ISO 14732)" },
+  { value: "qualifica_14731",    label: "Coordinatore saldatura (ISO 14731)" },
+  { value: "pes_pav",            label: "Abilitazione PES/PAV (CEI 11-27)" },
   { value: "wps",                label: "WPS (Procedura saldatura)" },
   { value: "wpqr",               label: "WPQR (Qualifica procedura)" },
   { value: "cert_ndt",           label: "Certificato NDT (ISO 9712)" },
@@ -25,9 +27,9 @@ export const DOC_TYPE_OPTIONS = [
   { value: "certificato_materiale", label: "Certificato materiale (EN 10204)" },
   { value: "dichiarazione_ce",   label: "Dichiarazione CE" },
   { value: "report_ndt",         label: "Rapporto di prova NDT" },
-  { value: "piano_qualita",      label: "Piano qualit�" },
-  { value: "sal",                label: "SAL � Stato avanzamento lavori" },
-  { value: "rdp",                label: "RDP � Rapporto di prova" },
+  { value: "piano_qualita",      label: "Piano qualità " },
+  { value: "sal",                label: "SAL  -  Stato avanzamento lavori" },
+  { value: "rdp",                label: "RDP  -  Rapporto di prova" },
   { value: "altro",              label: "Altro" },
 ];
 
@@ -42,7 +44,7 @@ export const DOC_TYPE_LABELS = Object.fromEntries(
  */
 export const DOC_TYPE_GROUPS = [
   {
-    group: "SGQ � Sistema Gestione Qualit�",
+    group: "SGQ  -  Sistema Gestione qualità ",
     types: ["procedura", "istruzione", "modulo", "manuale", "norma", "piano_qualita", "sal", "altro"],
   },
   {
@@ -54,12 +56,12 @@ export const DOC_TYPE_GROUPS = [
     types: ["wps", "wpqr", "report_ndt", "rdp"],
   },
   {
-    group: "Attrezzature e conformit�",
+    group: "Attrezzature e conformità ",
     types: ["cert_taratura", "certificato_materiale", "dichiarazione_ce"],
   },
 ];
 
-// ??? Stati documento ??????????????????????????????????????????????????????????
+//  Stati documento ?
 
 export const DOC_STATUS_OPTIONS = [
   { value: "rilasciato",       label: "Rilasciato" },

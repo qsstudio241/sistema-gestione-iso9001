@@ -1,11 +1,5 @@
 /**
- * Test L1 � NormUploadButton: flusso upload norme (PDF)
- *
- * Copre:
- *   - Selezione file e stato UI
- *   - Chiamata API uploadNorms
- *   - Gestione errori (rete, tipo file, file troppo grande)
- *   - Stato di successo
+ * Test L1 — NormUploadButton: flusso upload norme (PDF) con staging IG-N
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import React from 'react';
@@ -15,6 +9,8 @@ import NormUploadButton from '../components/NormUploadButton';
 vi.mock('../services/apiService', () => ({
   default: {
     uploadNorms: vi.fn(),
+    confirmIngestStaging: vi.fn(),
+    rejectIngestStaging: vi.fn(),
   },
 }));
 
@@ -25,7 +21,7 @@ function createFile(name, size, type = 'application/pdf') {
   return new File([buffer], name, { type });
 }
 
-describe('NormUploadButton � flusso upload norme', () => {
+describe('NormUploadButton — flusso upload norme', () => {
   let onUploadComplete;
 
   beforeEach(() => {
@@ -50,7 +46,7 @@ describe('NormUploadButton � flusso upload norme', () => {
 
     expect(screen.getByText(/1 PDF selezionat/)).toBeTruthy();
     expect(screen.getByText('norma_9606.pdf')).toBeTruthy();
-    expect(screen.getByText(/Avvia Upload/)).toBeTruthy();
+    expect(screen.getByText(/Estrai e rivedi/)).toBeTruthy();
   });
 
   it('mostra la dimensione file in MB', async () => {
@@ -69,7 +65,7 @@ describe('NormUploadButton � flusso upload norme', () => {
   it('upload con successo chiama apiService e mostra risultato', async () => {
     apiService.uploadNorms.mockResolvedValue({
       results: [{
-        success: true,
+        status: 'confirmed',
         documentId: 501,
         norm_title: 'BS EN ISO 9606-1:2017 Qualification testing of welders',
         standard_code: 'BS EN ISO 9606-1:2017',
@@ -89,7 +85,7 @@ describe('NormUploadButton � flusso upload norme', () => {
     });
 
     await act(async () => {
-      fireEvent.click(screen.getByText('Avvia Upload'));
+      fireEvent.click(screen.getByText('Estrai e rivedi'));
     });
 
     expect(apiService.uploadNorms).toHaveBeenCalledTimes(1);
@@ -100,7 +96,7 @@ describe('NormUploadButton � flusso upload norme', () => {
     expect(calledFiles[0].name).toBe('BS_EN_ISO_9606-1_2017.pdf');
 
     await waitFor(() => {
-      expect(screen.getByText(/Risultati Upload/)).toBeTruthy();
+      expect(screen.getByText(/Risultati estrazione/)).toBeTruthy();
     });
     expect(onUploadComplete).toHaveBeenCalledTimes(1);
   });
@@ -118,7 +114,7 @@ describe('NormUploadButton � flusso upload norme', () => {
     });
 
     await act(async () => {
-      fireEvent.click(screen.getByText('Avvia Upload'));
+      fireEvent.click(screen.getByText('Estrai e rivedi'));
     });
 
     await waitFor(() => {
@@ -130,8 +126,8 @@ describe('NormUploadButton � flusso upload norme', () => {
   it('gestisce upload multiplo (batch di file)', async () => {
     apiService.uploadNorms.mockResolvedValue({
       results: [
-        { success: true, documentId: 1, norm_title: 'Norma 1', standard_code: 'ISO 1' },
-        { success: true, documentId: 2, norm_title: 'Norma 2', standard_code: 'ISO 2' },
+        { status: 'confirmed', documentId: 1, norm_title: 'Norma 1', standard_code: 'ISO 1' },
+        { status: 'confirmed', documentId: 2, norm_title: 'Norma 2', standard_code: 'ISO 2' },
       ],
     });
 
@@ -150,11 +146,11 @@ describe('NormUploadButton � flusso upload norme', () => {
     expect(screen.getByText(/2 PDF selezionati/)).toBeTruthy();
 
     await act(async () => {
-      fireEvent.click(screen.getByText('Avvia Upload'));
+      fireEvent.click(screen.getByText('Estrai e rivedi'));
     });
 
     await waitFor(() => {
-      expect(screen.getByText(/Risultati Upload/)).toBeTruthy();
+      expect(screen.getByText(/Risultati estrazione/)).toBeTruthy();
     });
     expect(apiService.uploadNorms).toHaveBeenCalledTimes(1);
     expect(apiService.uploadNorms.mock.calls[0][0]).toHaveLength(2);
@@ -179,9 +175,9 @@ describe('NormUploadButton � flusso upload norme', () => {
     expect(screen.queryByText(/1 PDF selezionat/)).toBeNull();
   });
 
-  it('il pulsante Chiudi dopo i risultati resetta tutto e aggiorna la cartella', async () => {
+  it('il pulsante Chiudi dopo i risultati resetta tutto (refresh già inviato a upload ok)', async () => {
     apiService.uploadNorms.mockResolvedValue({
-      results: [{ success: true, documentId: 77, norm_title: 'Norma Test' }],
+      results: [{ status: 'confirmed', documentId: 77, norm_title: 'Norma Test' }],
     });
 
     render(<NormUploadButton folderId={42} onUploadComplete={onUploadComplete} />);
@@ -194,11 +190,11 @@ describe('NormUploadButton � flusso upload norme', () => {
     });
 
     await act(async () => {
-      fireEvent.click(screen.getByText('Avvia Upload'));
+      fireEvent.click(screen.getByText('Estrai e rivedi'));
     });
 
     await waitFor(() => {
-      expect(screen.getByText(/Risultati Upload/)).toBeTruthy();
+      expect(screen.getByText(/Risultati estrazione/)).toBeTruthy();
     });
     expect(onUploadComplete).toHaveBeenCalledTimes(1);
 
@@ -206,14 +202,14 @@ describe('NormUploadButton � flusso upload norme', () => {
       fireEvent.click(screen.getByText('Chiudi'));
     });
 
-    expect(screen.queryByText(/Risultati Upload/)).toBeNull();
-    expect(onUploadComplete).toHaveBeenCalledTimes(2);
+    expect(screen.queryByText(/Risultati estrazione/)).toBeNull();
+    expect(onUploadComplete).toHaveBeenCalledTimes(1);
   });
 
-  it('l\'input accetta solo PDF (attributo accept)', () => {
+  it('l\'input accetta PDF (attributo accept)', () => {
     render(<NormUploadButton folderId={42} onUploadComplete={onUploadComplete} />);
     const input = document.querySelector('input[type="file"]');
-    expect(input.getAttribute('accept')).toBe('.pdf');
+    expect(input.getAttribute('accept')).toContain('.pdf');
   });
 
   it('l\'input supporta selezione multipla', () => {
@@ -225,7 +221,7 @@ describe('NormUploadButton � flusso upload norme', () => {
   it('disabilita il pulsante durante l\'upload', async () => {
     let resolveUpload;
     apiService.uploadNorms.mockImplementation(() =>
-      new Promise((resolve) => { resolveUpload = resolve; })
+      new Promise((resolve) => { resolveUpload = resolve; }),
     );
 
     render(<NormUploadButton folderId={42} onUploadComplete={onUploadComplete} />);
@@ -238,22 +234,22 @@ describe('NormUploadButton � flusso upload norme', () => {
     });
 
     await act(async () => {
-      fireEvent.click(screen.getByText('Avvia Upload'));
+      fireEvent.click(screen.getByText('Estrai e rivedi'));
     });
 
     const mainBtn = screen.getByText(/Carica norme/);
     expect(mainBtn.disabled).toBe(true);
 
     await act(async () => {
-      resolveUpload({ results: [{ success: true }] });
+      resolveUpload({ results: [{ status: 'confirmed', documentId: 1 }] });
     });
   });
 
   it('mostra errore parziale quando un file ha errore e altri no', async () => {
     apiService.uploadNorms.mockResolvedValue({
       results: [
-        { success: true, documentId: 10, norm_title: 'Norma OK', standard_code: 'ISO 1' },
-        { error: 'PDF danneggiato', fileName: 'broken.pdf' },
+        { status: 'confirmed', documentId: 10, norm_title: 'Norma OK', standard_code: 'ISO 1' },
+        { status: 'error', error: 'PDF danneggiato', fileName: 'broken.pdf' },
       ],
     });
 
@@ -270,13 +266,41 @@ describe('NormUploadButton � flusso upload norme', () => {
     });
 
     await act(async () => {
-      fireEvent.click(screen.getByText('Avvia Upload'));
+      fireEvent.click(screen.getByText('Estrai e rivedi'));
     });
 
     await waitFor(() => {
-      expect(screen.getByText(/Risultati Upload/)).toBeTruthy();
+      expect(screen.getByText(/Risultati estrazione/)).toBeTruthy();
       expect(screen.getByText('PDF danneggiato')).toBeTruthy();
       expect(screen.getByText(/Norma OK/)).toBeTruthy();
     });
+  });
+
+  it('mostra pending_review con pulsante Rivedi campi', async () => {
+    apiService.uploadNorms.mockResolvedValue({
+      results: [{
+        status: 'pending_review',
+        staging_id: 99,
+        fileName: 'ambiguo.pdf',
+        fields: { standard_code: 'ISO 9001:2015' },
+        warnings: ['Catalogo ambiguo'],
+      }],
+    });
+
+    render(<NormUploadButton folderId={42} onUploadComplete={onUploadComplete} />);
+
+    const input = document.querySelector('input[type="file"]');
+    await act(async () => {
+      fireEvent.change(input, { target: { files: [createFile('ambiguo.pdf', 1024)] } });
+    });
+    await act(async () => {
+      fireEvent.click(screen.getByText('Estrai e rivedi'));
+    });
+
+    await waitFor(() => {
+      expect(screen.getByText(/da rivedere/)).toBeTruthy();
+      expect(screen.getByText('Rivedi campi')).toBeTruthy();
+    });
+    expect(onUploadComplete).toHaveBeenCalledTimes(1);
   });
 });

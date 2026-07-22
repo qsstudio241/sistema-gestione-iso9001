@@ -22,6 +22,7 @@ router.get ('/documents/:docId/breadcrumb',          treeCtrl.getBreadcrumb);
 
 // Provisioning
 router.post('/documents/provision-tree',             treeCtrl.provisionTree);
+router.post('/documents/provision-studio-patrimony', treeCtrl.provisionStudioPatrimony);
 
 // Template
 router.get ('/document-tree-templates',              treeCtrl.listTemplates);

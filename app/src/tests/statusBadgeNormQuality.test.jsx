@@ -1,8 +1,8 @@
 /**
- * Test L1 — StatusBadge (type="norm_quality")
+ * Test L1 â€” StatusBadge (type="norm_quality")
  *
  * Verifica che il badge unificato renderizzi l'etichetta corretta
- * per ogni valore di qualità testo norma emesso dal backend
+ * per ogni valore di qualitÃ  testo norma emesso dal backend
  * (good / partial / ocr_poor), usato da NormUploadButton.
  */
 import { describe, it, expect } from 'vitest';
@@ -16,9 +16,9 @@ const QUALITY_STATES = [
   { status: 'ocr_poor', label: 'OCR scarso' },
 ];
 
-describe('StatusBadge — qualità testo norma', () => {
+describe('StatusBadge â€” qualitÃ  testo norma', () => {
   it.each(QUALITY_STATES)(
-    'renderizza "$label" per la qualità "$status"',
+    'renderizza "$label" per la qualitÃ  "$status"',
     ({ status, label }) => {
       const { container } = render(
         <StatusBadge type="norm_quality" status={status} size="small" />
@@ -31,7 +31,7 @@ describe('StatusBadge — qualità testo norma', () => {
     }
   );
 
-  it('mantiene la retrocompatibilità con il valore legacy "poor"', () => {
+  it('mantiene la retrocompatibilitÃ  con il valore legacy "poor"', () => {
     const { container } = render(
       <StatusBadge type="norm_quality" status="poor" />
     );

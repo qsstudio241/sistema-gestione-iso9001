@@ -1,92 +1,56 @@
 /**
- * NcActionsList - elenco azioni correttive/preventive per una NC (ISO 10.2)
+ * NcActionsList - blocco Azioni correttive/preventive (ISO 10.2.1 c)
+ *
+ * La Correzione immediata (ISO 10.2.1 a) vive ora nella sezione "Trattamento"
+ * del drawer (vedi NcCorrectionSection): entrambe condividono lo stesso stato
+ * tramite l'hook useNcActions per evitare doppie fetch e disallineamenti.
  */
 
-import React, { useState, useEffect, useCallback, useMemo } from "react";
-import apiService from "../services/apiService";
-import { useAuth } from "../contexts/AuthContext";
+import React, { useState } from "react";
+import NcActionItem from "./NcActionItem";
 import NcResponsibleSelect from "./NcResponsibleSelect";
 import RichTextField, {
   resolveNcFieldInitial,
   clearNcFieldDraftsForScope,
 } from "./RichTextField";
-import { formatDate } from "../utils/dateHelpers";
-import {
-  canVerifyAction,
-  filterActionsByDue,
-  getActionDueStatus,
-} from "../utils/ncWorkflow";
-import {
-  loadNcResponsibleContacts,
-  NC_SCOPE_ATTUAZIONE,
-} from "../utils/ncResponsibleContacts";
 import "./ChecklistModule.css";
 
-const ACTION_STATUS_CFG = {
-  open:        { label: "Aperta",     cls: "act-open" },
-  in_progress: { label: "In corso",   cls: "act-in-progress" },
-  completed:   { label: "Completata", cls: "act-completed" },
-  verified:    { label: "Verificata", cls: "act-verified" },
-};
-
-const ACTION_STEP_CFG = {
-  in_progress: { label: "Avvia", statusBtn: "partial" },
-  completed:   { label: "Completa", statusBtn: "compliant" },
-  verified:    { label: "Verifica", statusBtn: "compliant" },
-};
-
 /**
- * @param {{ ncId: number, ncStatus: string, companyId?: number|null, embedded?: boolean }} props
+ * @param {{ ncId: number, ncActions: ReturnType<typeof import('../hooks/useNcActions').useNcActions>, organizationId?: number|null }} props
  */
-export default function NcActionsList({ ncId, ncStatus, companyId = null, embedded = false }) {
-  const { user } = useAuth();
-  const organizationId = user?.organization_id ?? null;
-  const actionDraftScope = `nc:${ncId}:actions`;
+export default function NcActionsList({ ncId, ncActions, organizationId = null }) {
+  const draftScope = `nc:${ncId}:actions`;
+  const {
+    actions,
+    loading,
+    contacts,
+    dueFilter,
+    setDueFilter,
+    editDraft,
+    setEditDraft,
+    isClosed,
+    otherActions,
+    overdueActionsCount,
+    dueSoonActionsCount,
+    handleStatus,
+    handleStartEdit,
+    handleCancelEdit,
+    handleSaveEdit,
+    handleDelete,
+    createAction,
+  } = ncActions;
 
-  const [actions, setActions]   = useState([]);
-  const [loading, setLoading]   = useState(true);
   const [showForm, setShowForm] = useState(false);
-  const [form, setForm]         = useState(() => ({
+  const [form, setForm] = useState(() => ({
     action_type: "corrective",
-    description: resolveNcFieldInitial(
-      "",
-      organizationId,
-      actionDraftScope,
-      "new_action_description",
-    ),
+    description: resolveNcFieldInitial("", organizationId, draftScope, "new_action_description"),
     responsible: "",
     responsible_contact_id: null,
     useExternalResponsible: false,
     due_date: "",
   }));
-  const [saving, setSaving]     = useState(false);
-  const [error, setError]       = useState(null);
-  const [contacts, setContacts] = useState([]);
-  const [verifyDraft, setVerifyDraft] = useState({ actionId: null, note: "" });
-  const [verifyError, setVerifyError] = useState(null);
-  const [dueFilter, setDueFilter] = useState("all");
-
-  const load = useCallback(async () => {
-    setLoading(true);
-    try {
-      const res = await apiService.getNcActions(ncId);
-      setActions(res?.data || []);
-    } catch {
-      setActions([]);
-    } finally {
-      setLoading(false);
-    }
-  }, [ncId]);
-
-  useEffect(() => { load(); }, [load]);
-
-  useEffect(() => {
-    let cancelled = false;
-    loadNcResponsibleContacts(apiService, { companyId, scope: NC_SCOPE_ATTUAZIONE })
-      .then((rows) => { if (!cancelled) setContacts(rows); })
-      .catch(() => { if (!cancelled) setContacts([]); });
-    return () => { cancelled = true; };
-  }, [companyId, organizationId]);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState(null);
 
   async function handleSubmit(e) {
     e.preventDefault();
@@ -94,7 +58,7 @@ export default function NcActionsList({ ncId, ncStatus, companyId = null, embedd
     setSaving(true);
     setError(null);
     try {
-      await apiService.createNcAction(ncId, {
+      await createAction({
         action_type: form.action_type,
         description: form.description.trim(),
         responsible: form.useExternalResponsible
@@ -104,7 +68,7 @@ export default function NcActionsList({ ncId, ncStatus, companyId = null, embedd
         due_date: form.due_date || null,
       });
       if (organizationId) {
-        clearNcFieldDraftsForScope(organizationId, actionDraftScope, ["new_action_description"]);
+        clearNcFieldDraftsForScope(organizationId, draftScope, ["new_action_description"]);
       }
       setForm({
         action_type: "corrective",
@@ -115,7 +79,6 @@ export default function NcActionsList({ ncId, ncStatus, companyId = null, embedd
         due_date: "",
       });
       setShowForm(false);
-      await load();
     } catch (err) {
       setError(err?.message || "Errore durante il salvataggio dell'azione.");
     } finally {
@@ -123,100 +86,14 @@ export default function NcActionsList({ ncId, ncStatus, companyId = null, embedd
     }
   }
 
-  async function handleStatus(action, newStatus) {
-    if (newStatus === "verified") {
-      const verifyScope = `${actionDraftScope}:verify:${action.action_id}`;
-      setVerifyDraft({
-        actionId: action.action_id,
-        note: resolveNcFieldInitial(
-          action.verification_note,
-          organizationId,
-          verifyScope,
-          "verification_note",
-        ),
-      });
-      setVerifyError(null);
-      return;
-    }
-    try {
-      await apiService.updateNcAction(ncId, action.action_id, { status: newStatus });
-      await load();
-    } catch {
-      alert("Impossibile aggiornare lo stato dell'azione.");
-    }
-  }
-
-  async function handleConfirmVerify(action) {
-    const note = verifyDraft.note.trim();
-    if (!canVerifyAction(note)) {
-      setVerifyError("Inserire la nota verifica prima di segnare l'azione come verificata.");
-      return;
-    }
-    try {
-      await apiService.updateNcAction(ncId, action.action_id, {
-        status: "verified",
-        verification_note: note,
-      });
-      if (organizationId) {
-        clearNcFieldDraftsForScope(
-          organizationId,
-          `${actionDraftScope}:verify:${action.action_id}`,
-          ["verification_note"],
-        );
-      }
-      setVerifyDraft({ actionId: null, note: "" });
-      setVerifyError(null);
-      await load();
-    } catch {
-      alert("Impossibile verificare l'azione.");
-    }
-  }
-
-  function handleCancelVerify() {
-    if (verifyDraft.actionId && organizationId) {
-      clearNcFieldDraftsForScope(
-        organizationId,
-        `${actionDraftScope}:verify:${verifyDraft.actionId}`,
-        ["verification_note"],
-      );
-    }
-    setVerifyDraft({ actionId: null, note: "" });
-    setVerifyError(null);
-  }
-
-  async function handleDelete(action) {
-    if (!window.confirm(`Eliminare l'azione "${action.description.substring(0, 50)}..."?`)) return;
-    try {
-      await apiService.deleteNcAction(ncId, action.action_id);
-      await load();
-    } catch {
-      alert("Errore durante l'eliminazione.");
-    }
-  }
-
-  const isClosed = ["closed", "verified"].includes(ncStatus);
-  const filteredActions = useMemo(
-    () => filterActionsByDue(actions, dueFilter),
-    [actions, dueFilter]
-  );
-  const overdueActionsCount = useMemo(
-    () => actions.filter(a => getActionDueStatus(a) === "overdue").length,
-    [actions]
-  );
-  const dueSoonActionsCount = useMemo(
-    () => actions.filter(a => getActionDueStatus(a) === "due_soon").length,
-    [actions]
-  );
-
   if (loading) return <p className="nc-loading">Caricamento azioni...</p>;
 
   return (
-    <div className={`nc-actions-panel${embedded ? " nc-actions-panel--embedded" : ""}`}>
+    <div className="nc-actions-panel nc-actions-panel--embedded">
       <div className="nc-actions-header">
-        {!embedded && <h4>Azioni correttive ({actions.length})</h4>}
-        {embedded && <span className="nc-actions-count">{actions.length} azioni</span>}
+        <span className="nc-actions-count">{otherActions.length} azioni</span>
         {!isClosed && (
-          <button type="button" className="btn-secondary btn-add-action" onClick={() => setShowForm(v => !v)}>
+          <button type="button" className="btn-secondary btn-add-action" onClick={() => setShowForm((v) => !v)}>
             {showForm ? "\u2715 Annulla" : "+ Aggiungi azione"}
           </button>
         )}
@@ -256,8 +133,7 @@ export default function NcActionsList({ ncId, ncStatus, companyId = null, embedd
         <form className="nc-action-form" onSubmit={handleSubmit}>
           <div className="nc-form-row">
             <label>Tipo</label>
-            <select value={form.action_type} onChange={e => setForm(f => ({ ...f, action_type: e.target.value }))}>
-              <option value="immediate">Immediata</option>
+            <select value={form.action_type} onChange={(e) => setForm((f) => ({ ...f, action_type: e.target.value }))}>
               <option value="corrective">Correttiva</option>
               <option value="preventive">Preventiva</option>
             </select>
@@ -269,7 +145,7 @@ export default function NcActionsList({ ncId, ncStatus, companyId = null, embedd
               value={form.description}
               onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
               placeholder="Descrivi l'azione da intraprendere..."
-              draftScopeId={actionDraftScope}
+              draftScopeId={draftScope}
               draftFieldId="new_action_description"
               persistLocalDraft
               organizationId={organizationId}
@@ -298,7 +174,7 @@ export default function NcActionsList({ ncId, ncStatus, companyId = null, embedd
               <input
                 type="date"
                 value={form.due_date}
-                onChange={e => setForm(f => ({ ...f, due_date: e.target.value }))}
+                onChange={(e) => setForm((f) => ({ ...f, due_date: e.target.value }))}
               />
             </div>
           </div>
@@ -311,100 +187,25 @@ export default function NcActionsList({ ncId, ncStatus, companyId = null, embedd
         </form>
       )}
 
-      {actions.length === 0 ? (
-        <p className="nc-empty-actions">Nessuna azione correttiva registrata.</p>
-      ) : filteredActions.length === 0 ? (
-        <p className="nc-empty-actions">Nessuna azione con la scadenza selezionata.</p>
+      {otherActions.length === 0 ? (
+        <p className="nc-empty-actions">Nessuna azione correttiva/preventiva registrata.</p>
       ) : (
         <ul className="nc-actions-list">
-          {filteredActions.map(a => {
-            const cfg = ACTION_STATUS_CFG[a.status] || { label: a.status, cls: "" };
-            const dueStatus = getActionDueStatus(a);
-            const nextSteps = {
-              open:        ["in_progress"],
-              in_progress: ["completed"],
-              completed:   ["verified"],
-              verified:    [],
-            };
-            return (
-              <li
-                key={a.action_id}
-                className={`nc-action-item ${cfg.cls}${dueStatus === "overdue" ? " nc-action-overdue" : ""}${dueStatus === "due_soon" ? " nc-action-due-soon" : ""}`}
-              >
-                <div className="nc-action-top">
-                  <span className={`act-type-badge at-${a.action_type}`}>
-                    {a.action_type === "immediate" ? "Immediata" : a.action_type === "corrective" ? "Correttiva" : "Preventiva"}
-                  </span>
-                  <span className={`act-status ${cfg.cls}`}>{cfg.label}</span>
-                  {dueStatus === "overdue" && (
-                    <span className="nc-action-due-badge overdue">Scaduta</span>
-                  )}
-                  {dueStatus === "due_soon" && (
-                    <span className="nc-action-due-badge due-soon">In scadenza</span>
-                  )}
-                  <span className="nc-action-date">{formatDate(a.created_at)}</span>
-                </div>
-                <p className="nc-action-desc">{a.description}</p>
-                <div className="nc-action-meta">
-                  {a.responsible && <span>Attuazione: {a.responsible}</span>}
-                  {a.due_date && <span>Scadenza azione: {formatDate(a.due_date)}</span>}
-                  {a.completed_at && <span>Completata: {formatDate(a.completed_at)}</span>}
-                </div>
-                {a.verification_note && (
-                  <p className="nc-action-verify-note">
-                    <strong>Nota verifica:</strong> {a.verification_note}
-                  </p>
-                )}
-                {verifyDraft.actionId === a.action_id && (
-                  <div className="nc-action-verify-form">
-                    <label htmlFor={`act-verif-${a.action_id}`}>Nota verifica azione *</label>
-                    <RichTextField
-                      id={`act-verif-${a.action_id}`}
-                      rows={2}
-                      value={verifyDraft.note}
-                      onChange={(e) => setVerifyDraft((d) => ({ ...d, note: e.target.value }))}
-                      placeholder="Descrivi l'esito della verifica su questa azione..."
-                      draftScopeId={`${actionDraftScope}:verify:${a.action_id}`}
-                      draftFieldId="verification_note"
-                      persistLocalDraft
-                      organizationId={organizationId}
-                    />
-                    {verifyError && <p className="nc-error">{verifyError}</p>}
-                    <div className="nc-form-actions">
-                      <button type="button" className="btn-primary" onClick={() => handleConfirmVerify(a)}>
-                        Conferma verifica
-                      </button>
-                      <button type="button" className="btn-secondary" onClick={handleCancelVerify}>
-                        Annulla
-                      </button>
-                    </div>
-                  </div>
-                )}
-                {!isClosed && (
-                  <div className="nc-action-btns nc-workflow-btns">
-                    {(nextSteps[a.status] || []).map(ns => {
-                      const step = ACTION_STEP_CFG[ns] || { label: ns, statusBtn: "partial" };
-                      return (
-                        <button
-                          key={ns}
-                          type="button"
-                          className={`status-btn ${step.statusBtn}`}
-                          onClick={() => handleStatus(a, ns)}
-                        >
-                          {step.label}
-                        </button>
-                      );
-                    })}
-                    {a.status === "open" && (
-                      <button type="button" className="btn-secondary btn-action-del" onClick={() => handleDelete(a)}>
-                        Elimina
-                      </button>
-                    )}
-                  </div>
-                )}
-              </li>
-            );
-          })}
+          {otherActions.map((a) => (
+            <NcActionItem
+              key={a.action_id}
+              action={a}
+              isClosed={isClosed}
+              contacts={contacts}
+              editDraft={editDraft}
+              setEditDraft={setEditDraft}
+              onSaveEdit={handleSaveEdit}
+              onCancelEdit={handleCancelEdit}
+              onStartEdit={handleStartEdit}
+              onStatus={handleStatus}
+              onDelete={handleDelete}
+            />
+          ))}
         </ul>
       )}
     </div>

@@ -1,5 +1,5 @@
 /**
- * ProjectsPage � Gestione Commesse ISO 3834
+ * ProjectsPage  -  Gestione Commesse ISO 3834
  * Pattern CRUD identico a WeldingProceduresPage.
  */
 
@@ -18,9 +18,14 @@ const PROJECT_STATUSES = [
   { value: "sospesa", label: "Sospesa" },
 ];
 
-// ??? Form modale commessa ???????????????????????????????????????????????????
+//  Form modale commessa 
 
 function ProjectFormModal({ project, wpsList, qualifications, onSave, onClose }) {
+  // Prepopola welder_ids dai welders già assegnati al progetto
+  const existingWelderIds = Array.isArray(project?.welders)
+    ? project.welders.map(w => w.qualification_id)
+    : [];
+
   const [form, setForm] = useState({
     project_code: "",
     client_name: "",
@@ -32,6 +37,7 @@ function ProjectFormModal({ project, wpsList, qualifications, onSave, onClose })
     technical_review_date: "",
     notes: "",
     applicable_wps_ids: [],
+    welder_ids: existingWelderIds,
     ...(project || {}),
   });
   const [saving, setSaving] = useState(false);
@@ -66,11 +72,27 @@ function ProjectFormModal({ project, wpsList, qualifications, onSave, onClose })
         ...form,
         applicable_wps_ids: JSON.stringify(form.applicable_wps_ids || []),
       };
+      let savedProjectId;
       if (project?.id) {
         await apiService.updateProject(project.id, payload);
+        savedProjectId = project.id;
       } else {
-        await apiService.createProject(payload);
+        const res = await apiService.createProject(payload);
+        savedProjectId = res?.data?.id || res?.id;
       }
+
+      // Sincronizza welders: aggiungi i nuovi, rimuovi i vecchi
+      if (savedProjectId) {
+        const newIds = Array.isArray(form.welder_ids) ? form.welder_ids : [];
+        const oldIds = existingWelderIds;
+        const toAdd    = newIds.filter(id => !oldIds.includes(id));
+        const toRemove = oldIds.filter(id => !newIds.includes(id));
+        await Promise.all([
+          ...toAdd.map(qid => apiService.addProjectWelder(savedProjectId, { qualification_id: qid }).catch(() => {})),
+          ...toRemove.map(qid => apiService.removeProjectWelder(savedProjectId, qid).catch(() => {})),
+        ]);
+      }
+
       onSave();
     } catch (err) {
       setError(err.message);
@@ -156,16 +178,35 @@ function ProjectFormModal({ project, wpsList, qualifications, onSave, onClose })
             {/* Saldatori assegnati */}
             {qualifications.length > 0 && (
               <div className="pj-wps-section">
-                <h4 className="pj-section-label">Saldatori assegnati</h4>
+                <h4 className="pj-section-label">Saldatori qualificati</h4>
                 <div className="pj-checkbox-list">
-                  {qualifications.map((q) => (
-                    <label key={q.id} className="pj-checkbox-item">
-                      <input type="checkbox" disabled title="Funzionalità in sviluppo" />
-                      <span>{q.person_name}</span>
-                      <span className="pj-checkbox-sub">{q.qualification_type} - {q.certificate_number || "N/A"}</span>
-                    </label>
-                  ))}
+                  {qualifications.map((q) => {
+                    const isAssigned = Array.isArray(form.welder_ids) && form.welder_ids.includes(q.id);
+                    return (
+                      <label key={q.id} className="pj-checkbox-item">
+                        <input
+                          type="checkbox"
+                          checked={isAssigned}
+                          onChange={() => {
+                            setForm(f => {
+                              const ids = Array.isArray(f.welder_ids) ? [...f.welder_ids] : [];
+                              const idx = ids.indexOf(q.id);
+                              if (idx >= 0) ids.splice(idx, 1);
+                              else ids.push(q.id);
+                              return { ...f, welder_ids: ids };
+                            });
+                          }}
+                        />
+                        <span>{q.person_name}</span>
+                        <span className="pj-checkbox-sub">{q.qualification_type} &mdash; {q.certificate_number || "N/A"}</span>
+                        {q.approval_status !== "approvata" && (
+                          <span className="pj-badge-warn">non approvata</span>
+                        )}
+                      </label>
+                    );
+                  })}
                 </div>
+                <p className="pj-hint">L&apos;assegnazione viene salvata contestualmente alla commessa.</p>
               </div>
             )}
           </div>
@@ -179,7 +220,88 @@ function ProjectFormModal({ project, wpsList, qualifications, onSave, onClose })
   );
 }
 
-// ??? Pagina principale ??????????????????????????????????????????????????????
+// ── Widget Copertura Commessa ──────────────────────────────────────────────────
+
+function CoverageModal({ projectId, projectCode, onClose }) {
+  const [data, setData] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    setLoading(true);
+    apiService.getQualificationsCoverage(projectId)
+      .then(setData)
+      .catch(e => setError(e.message))
+      .finally(() => setLoading(false));
+  }, [projectId]);
+
+  const esito = { verde: "\u2705", rosso: "\u274C", giallo: "\u26A0\uFE0F" };
+
+  return (
+    <div className="pj-modal-overlay" onClick={onClose}>
+      <div className="pj-modal pj-modal-large" onClick={e => e.stopPropagation()}>
+        <div className="pj-modal-header">
+          <h3>Copertura Commessa &mdash; {projectCode}</h3>
+          <button className="pj-modal-close" onClick={onClose}>&times;</button>
+        </div>
+        <div className="pj-modal-body">
+          {loading && <div className="pj-loading"><div className="pj-spinner" /><span>Calcolo copertura...</span></div>}
+          {error && <div className="pj-error">{error}</div>}
+          {data && !data.has_wps && (
+            <div className="pj-hint">Nessuna WPS associata alla commessa. Assegna le WPS per verificare la copertura.</div>
+          )}
+          {data && data.has_wps && (
+            <>
+              <div className="pj-coverage-summary">
+                <span className="pj-cov-ok">{"\u2705"} Coperte: {data.summary.covered}</span>
+                <span className="pj-cov-ko">{"\u274C"} Non coperte: {data.summary.uncovered}</span>
+                <span className="pj-cov-tot">Totale WPS: {data.summary.total}</span>
+              </div>
+              <table className="pj-table" style={{ marginTop: 12 }}>
+                <thead>
+                  <tr>
+                    <th>WPS</th>
+                    <th>Processo</th>
+                    <th>Saldatori qualificati</th>
+                    <th>Esito</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {data.coverage.map(row => (
+                    <tr key={row.wps_id}>
+                      <td><strong>{row.wps_code}</strong></td>
+                      <td>{row.welding_process || "\u2014"}</td>
+                      <td>
+                        {row.qualifiers.length === 0
+                          ? <span style={{ color: "#dc2626" }}>Nessuno disponibile</span>
+                          : row.qualifiers.map(q => (
+                            <div key={q.id} className="pj-qual-chip">
+                              {q.person_name}
+                              {q.semaforo !== "verde" && (
+                                <span className={`pj-chip-warn pj-chip-${q.semaforo}`}>
+                                  {q.semaforo === "rosso" ? " (scaduta)" : " (in scadenza)"}
+                                </span>
+                              )}
+                            </div>
+                          ))}
+                      </td>
+                      <td>{esito[row.esito] || row.esito}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </>
+          )}
+        </div>
+        <div className="pj-modal-footer">
+          <button className="pj-btn-cancel" onClick={onClose}>Chiudi</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── Pagina principale ─────────────────────────────────────────────────────────
 
 function ProjectsPage() {
   const [projects, setProjects] = useState([]);
@@ -193,6 +315,7 @@ function ProjectsPage() {
   const [formOpen, setFormOpen] = useState(false);
   const [editingProject, setEditingProject] = useState(null);
   const [deleteId, setDeleteId] = useState(null);
+  const [coverageProject, setCoverageProject] = useState(null); // { id, project_code }
 
   const [wpsList, setWpsList] = useState([]);
   const [qualifications, setQualifications] = useState([]);
@@ -235,7 +358,15 @@ function ProjectsPage() {
   useEffect(() => { loadFormData(); }, [loadFormData]);
 
   function handleNew()       { setEditingProject(null); setFormOpen(true); }
-  function handleEdit(p)     { setEditingProject(p);    setFormOpen(true); }
+  async function handleEdit(p) {
+    try {
+      const full = await apiService.getProject(p.id);
+      setEditingProject(full?.data || full || p);
+    } catch {
+      setEditingProject(p);
+    }
+    setFormOpen(true);
+  }
   function handleSaved()     { setFormOpen(false); setEditingProject(null); loadData(); }
 
   async function handleConfirmDelete(id) {
@@ -265,7 +396,7 @@ function ProjectsPage() {
       <div className="pj-header">
         <div>
           <h2 className="pj-title">Gestione Commesse</h2>
-          <p className="pj-subtitle">Commesse di saldatura � ISO 3834</p>
+          <p className="pj-subtitle">Commesse di saldatura  -  ISO 3834</p>
         </div>
         <button className="pj-btn-new" onClick={handleNew}>+ Nuova commessa</button>
       </div>
@@ -333,7 +464,7 @@ function ProjectsPage() {
                     {deleteId === p.id ? (
                       <div className="pj-confirm">
                         <span>Eliminare?</span>
-                        <button className="pj-confirm-yes" type="button" onClick={() => handleConfirmDelete(p.id)}>S�</button>
+                        <button className="pj-confirm-yes" type="button" onClick={() => handleConfirmDelete(p.id)}>S - </button>
                         <button className="pj-confirm-no" onClick={() => setDeleteId(null)}>No</button>
                       </div>
                     ) : (
@@ -345,6 +476,13 @@ function ProjectsPage() {
                           onClick={() => handleEdit(p)}
                         >
                           <PencilIcon size={15} />
+                        </button>
+                        <button
+                          className="pj-btn-coverage"
+                          title="Verifica copertura saldatori"
+                          onClick={() => setCoverageProject({ id: p.id, project_code: p.project_code })}
+                        >
+                          {"\uD83D\uDD0D"}
                         </button>
                         <button
                           className="grid-icon-btn grid-icon-btn--danger"
@@ -381,6 +519,15 @@ function ProjectsPage() {
           qualifications={qualifications}
           onSave={handleSaved}
           onClose={() => { setFormOpen(false); setEditingProject(null); }}
+        />
+      )}
+
+      {/* Modal copertura */}
+      {coverageProject && (
+        <CoverageModal
+          projectId={coverageProject.id}
+          projectCode={coverageProject.project_code}
+          onClose={() => setCoverageProject(null)}
         />
       )}
     </div>

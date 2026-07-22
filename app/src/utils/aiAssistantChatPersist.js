@@ -1,6 +1,6 @@
 /**
  * Persistenza sessionStorage messaggi Assistente AI (per org/utente).
- * Solo testi UI e metadati citazioni — mai token o password.
+ * Solo testi UI e metadati citazioni â€” mai token o password.
  */
 
 export const AI_CHAT_MAX_MESSAGES = 50;

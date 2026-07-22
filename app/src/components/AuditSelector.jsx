@@ -269,8 +269,7 @@ const hasAnyClosedAudit = useMemo(
           <button
             onClick={handleCreateNewAudit}
             className="btn btn-icon btn-success"
-            title="Crea nuovo audit (nuova azienda)"
-            disabled={currentAudit !== null}
+            title="Crea nuovo audit"
           >
             ➕ Nuovo
           </button>
@@ -374,7 +373,7 @@ function CreateAuditModal({ audits, currentAudit, isReaudit, onClose, onCreate }
       : AVAILABLE_STANDARDS.filter((s) => user.allowed_standard_ids.includes(s.standardId));
   const nextNumber = getNextAuditNumber(audits, currentYear);
 
-  // Pre-popola clientName, companyId, tipologia e fornitore se re-audit
+  // Pre-popola clientName, companyId, tipologia, fornitore, norme e auditor se re-audit
   const initialClientName = isReaudit && currentAudit 
     ? currentAudit.metadata.clientName 
     : "";
@@ -387,8 +386,18 @@ function CreateAuditModal({ audits, currentAudit, isReaudit, onClose, onCreate }
   const initialFornitore = isReaudit && currentAudit?.metadata?.fornitoreName 
     ? currentAudit.metadata.fornitoreName 
     : "";
-  const initialFornitoreCompanyId = isReaudit && currentAudit?.metadata?.fornitoreCompanyId
-    ? currentAudit.metadata.fornitoreCompanyId
+  const initialFornitoreSupplierId = isReaudit && currentAudit?.metadata?.fornitoreSupplierId
+    ? currentAudit.metadata.fornitoreSupplierId
+    : null;
+  // Re-audit: riporta le stesse norme, auditor e checklist personalizzata
+  const initialNorms = isReaudit && currentAudit?.metadata?.selectedStandards?.length > 0
+    ? currentAudit.metadata.selectedStandards
+    : [];
+  const initialAuditorName = isReaudit && currentAudit?.metadata?.auditorName
+    ? currentAudit.metadata.auditorName
+    : "";
+  const initialCustomChecklistId = isReaudit
+    ? (currentAudit?.metadata?.customChecklistId ?? currentAudit?.custom_checklist_id ?? null)
     : null;
 
   const [formData, setFormData] = useState({
@@ -397,12 +406,12 @@ function CreateAuditModal({ audits, currentAudit, isReaudit, onClose, onCreate }
     companyId: initialCompanyId,
     auditPartyType: initialPartyType,
     fornitoreName: initialFornitore,
-    fornitoreCompanyId: initialFornitoreCompanyId,
+    fornitoreSupplierId: initialFornitoreSupplierId,
     auditDate: new Date().toISOString().split("T")[0],
     auditDateEnd: "",
-    auditorName: "",
-    norms: [],
-    customChecklistId: null,
+    auditorName: initialAuditorName,
+    norms: initialNorms,
+    customChecklistId: initialCustomChecklistId,
   });
 
   const [customChecklists, setCustomChecklists] = useState([]);
@@ -435,13 +444,51 @@ function CreateAuditModal({ audits, currentAudit, isReaudit, onClose, onCreate }
     loadCompanies();
   }, [loadCompanies]);
 
+  const [suppliers, setSuppliers] = useState([]);
+  const [suppliersLoading, setSuppliersLoading] = useState(false);
+
+  const loadSuppliers = useCallback(async (companyId) => {
+    if (!companyId) {
+      setSuppliers([]);
+      return;
+    }
+    setSuppliersLoading(true);
+    try {
+      const res = await apiService.getSuppliers({ company_id: companyId, is_active: 'true' });
+      setSuppliers(res?.data || []);
+    } catch (err) {
+      console.warn("Caricamento fornitori:", err.message);
+      setSuppliers([]);
+    } finally {
+      setSuppliersLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (formData.auditPartyType === 'second_party' && formData.companyId) {
+      loadSuppliers(formData.companyId);
+    } else {
+      setSuppliers([]);
+    }
+  }, [formData.auditPartyType, formData.companyId, loadSuppliers]);
+
+  const prevCompanyIdRef = React.useRef(formData.companyId);
+  useEffect(() => {
+    if (prevCompanyIdRef.current !== formData.companyId) {
+      prevCompanyIdRef.current = formData.companyId;
+      setFormData(p => ({ ...p, fornitoreSupplierId: null, fornitoreName: "" }));
+    }
+  }, [formData.companyId]);
+
   const [errors, setErrors] = useState({});
   const [pendingInfo, setPendingInfo] = useState(null); // { count, lastAuditId, issues }
+  const [auditHistory, setAuditHistory] = useState([]);  // storico audit completati GAP-13
 
   /**
    * Verifica se il cliente ha rilievi pendenti (NC/OSS/NV) da audit precedenti.
    * @param {string} clientName  - nome cliente da cercare
-   * @param {string|null} excludeUuid - UUID dell'audit corrente da escludere (re-audit)
+   * @param {string|null} excludeUuid - UUID dell'audit da escludere dalla ricerca
+   *   (null per "Nuovo audit" e re-audit: trova l'audit più recente del cliente)
    */
   const checkPendingIssues = async (clientName, excludeUuid = null) => {
     if (!clientName?.trim()) return;
@@ -471,14 +518,28 @@ function CreateAuditModal({ audits, currentAudit, isReaudit, onClose, onCreate }
     }
   };
 
-  // Re-audit: controlla pending all'apertura modal (cliente già noto dall'audit corrente)
+  // Re-audit: controlla pending all'apertura modal (cliente già noto dall'audit corrente).
+  // Si passa null come excludeUuid: vogliamo i rilievi aperti DELL'audit corrente (non del precedente).
   React.useEffect(() => {
     if (isReaudit && currentAudit) {
-      const cn   = currentAudit.metadata?.clientName;
-      const uuid = currentAudit.metadata?.id || null;
-      checkPendingIssues(cn, uuid);
+      const cn = currentAudit.metadata?.clientName;
+      checkPendingIssues(cn, null);
     }
   }, [isReaudit, currentAudit]);
+
+  // Re-audit: carica storico ultimi audit completati per il cliente (GAP-13).
+  React.useEffect(() => {
+    if (!isReaudit) return;
+    const companyId = formData.companyId;
+    const clientName = formData.clientName?.trim();
+    if (!companyId && !clientName) return;
+    const params = companyId
+      ? { company_id: companyId, limit: 5 }
+      : { client_name: clientName, limit: 5 };
+    apiService.getClientAuditHistory(params)
+      .then(res => setAuditHistory(res?.history || []))
+      .catch(() => setAuditHistory([]));
+  }, [isReaudit, formData.companyId, formData.clientName]);
 
   // Nuovo audit: controlla pending quando l'utente lascia il campo clientName (min 3 char)
   const handleClientNameBlur = () => {
@@ -577,7 +638,7 @@ function CreateAuditModal({ audits, currentAudit, isReaudit, onClose, onCreate }
     // Mappa norms → selectedStandards (atteso da createNewAudit in auditDataModel.js)
     submitData.selectedStandards = formData.norms;
     submitData.companyId = formData.companyId || null;
-    submitData.fornitoreCompanyId = formData.fornitoreCompanyId || null;
+    submitData.fornitoreSupplierId = formData.fornitoreSupplierId || null;
     submitData.customChecklistId = formData.customChecklistId || null;
     if (pendingInfo?.issues?.length > 0) {
       submitData.pendingIssues = pendingInfo.issues
@@ -612,6 +673,40 @@ function CreateAuditModal({ audits, currentAudit, isReaudit, onClose, onCreate }
             ✕
           </button>
         </div>
+
+        {/* Storico audit completati — solo in re-audit, mostra trend NC/OSS nel tempo (GAP-13) */}
+        {isReaudit && auditHistory.length > 0 && (
+          <div className="audit-history-section">
+            <div className="audit-history-header">
+              <span className="audit-history-icon">📊</span>
+              <strong>Storico audit ({auditHistory.length} completati)</strong>
+            </div>
+            <div className="audit-history-list">
+              {auditHistory.map((h) => (
+                <div key={h.audit_id} className="audit-history-item">
+                  <span className="audit-history-number">{h.audit_number}</span>
+                  <span className="audit-history-date">
+                    {new Date(h.audit_date).toLocaleDateString('it-IT', { month: 'short', year: 'numeric' })}
+                  </span>
+                  <span className="audit-history-badges">
+                    {h.nc_count > 0 && (
+                      <span className="audit-history-badge badge-nc">{h.nc_count} NC</span>
+                    )}
+                    {h.oss_count > 0 && (
+                      <span className="audit-history-badge badge-oss">{h.oss_count} OSS</span>
+                    )}
+                    {h.nc_count === 0 && h.oss_count === 0 && h.answered_count > 0 && (
+                      <span className="audit-history-badge badge-ok">✓ Conforme</span>
+                    )}
+                    {h.answered_count === 0 && (
+                      <span className="audit-history-badge badge-na">—</span>
+                    )}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Sezione rilievi pendenti - re-audit o nuovo audit con storico cliente */}
         {pendingInfo && pendingInfo.count > 0 && (
@@ -757,42 +852,57 @@ function CreateAuditModal({ audits, currentAudit, isReaudit, onClose, onCreate }
           {formData.auditPartyType === "second_party" && (
             <div className="form-group">
               <label htmlFor="fornitoreSelect">Azienda auditata</label>
-              {companies.length > 0 ? (
+              {!formData.companyId ? (
+                <>
+                  <p className="form-hint" style={{ marginBottom: '0.5rem' }}>
+                    Seleziona prima l&apos;azienda committente per elencare i fornitori collegati.
+                  </p>
+                  <input
+                    type="text"
+                    id="fornitoreName"
+                    name="fornitoreName"
+                    value={formData.fornitoreName || ""}
+                    onChange={handleChange}
+                    className="form-control"
+                    placeholder="es. Fornitore XYZ Srl (inserimento manuale)"
+                  />
+                </>
+              ) : suppliers.length > 0 || formData.fornitoreName ? (
                 <>
                   <select
                     id="fornitoreSelect"
                     value={
-                      formData.fornitoreCompanyId
-                        ? String(formData.fornitoreCompanyId)
-                        : (formData.fornitoreName && !formData.fornitoreCompanyId ? MANUAL_COMPANY_VALUE : "")
+                      formData.fornitoreSupplierId
+                        ? String(formData.fornitoreSupplierId)
+                        : (formData.fornitoreName && !formData.fornitoreSupplierId ? MANUAL_COMPANY_VALUE : "")
                     }
                     onChange={(e) => {
                       const val = e.target.value;
                       if (val === MANUAL_COMPANY_VALUE) {
-                        setFormData(p => ({ ...p, fornitoreCompanyId: null }));
+                        setFormData(p => ({ ...p, fornitoreSupplierId: null }));
                       } else if (val === "") {
-                        setFormData(p => ({ ...p, fornitoreCompanyId: null, fornitoreName: "" }));
+                        setFormData(p => ({ ...p, fornitoreSupplierId: null, fornitoreName: "" }));
                       } else {
-                        const found = companies.find(c => String(c.id) === val);
+                        const found = suppliers.find(s => String(s.id) === val);
                         setFormData(p => ({
                           ...p,
-                          fornitoreCompanyId: found ? found.id : null,
+                          fornitoreSupplierId: found ? found.id : null,
                           fornitoreName: found ? found.name : p.fornitoreName,
                         }));
                       }
                     }}
                     className="form-control"
-                    disabled={companiesLoading}
+                    disabled={suppliersLoading}
                   >
                     <option value="">- Seleziona fornitore -</option>
                     <option value={MANUAL_COMPANY_VALUE}>- Inserimento manuale -</option>
-                    {companies.map(c => (
-                      <option key={c.id} value={c.id}>
-                        {c.name}{c.vat_number ? ` (P.IVA ${c.vat_number})` : ""}
+                    {suppliers.map(s => (
+                      <option key={s.id} value={s.id}>
+                        {s.name}{s.vat_number ? ` (P.IVA ${s.vat_number})` : ""}
                       </option>
                     ))}
                   </select>
-                  {(!formData.fornitoreCompanyId) && (
+                  {(!formData.fornitoreSupplierId) && (
                     <input
                       type="text"
                       id="fornitoreName"
@@ -804,7 +914,7 @@ function CreateAuditModal({ audits, currentAudit, isReaudit, onClose, onCreate }
                       style={{ marginTop: "0.5rem" }}
                     />
                   )}
-                  <small className="form-hint">Scegli dall&apos;anagrafica o inserisci manualmente.</small>
+                  <small className="form-hint">Fornitori dell&apos;anagrafica collegati al committente, oppure inserimento manuale.</small>
                 </>
               ) : (
                 <>
@@ -817,7 +927,7 @@ function CreateAuditModal({ audits, currentAudit, isReaudit, onClose, onCreate }
                     className="form-control"
                     placeholder="es. Fornitore XYZ Srl"
                   />
-                  <small className="form-hint">Azienda fornitore oggetto dell&apos;audit (seconda parte).</small>
+                  <small className="form-hint">Nessun fornitore in anagrafica per questo committente: inserimento manuale.</small>
                 </>
               )}
             </div>

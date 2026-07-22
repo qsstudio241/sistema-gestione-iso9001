@@ -16,7 +16,9 @@ describe('NCPage drawer', () => {
     expect(src).toContain('handleCloseDetail');
     expect(src).toContain('DocumentDetailPanel.css');
     expect(src).toContain('onStatusChange');
-    expect(src).toContain('onApproveClosure');
+    expect(src).toContain('exportNcToWord');
+    expect(src).toContain('Scarica Word');
+    expect(src).toContain('nc-export-word-btn');
     expect(src).not.toMatch(/className="nc-detail-section"/);
   });
 
@@ -31,6 +33,8 @@ describe('NCPage drawer', () => {
     expect(css).toContain('.nc-detail-drawer');
     expect(css).toContain('.nc-detail-drawer-resizer');
     expect(css).toContain('.nc-drawer-section');
+    expect(css).toContain('.nc-action-due-filters .status-btn');
+    expect(css).toMatch(/\.nc-action-due-filters \.status-btn[\s\S]*width:\s*auto/);
     expect(css).not.toContain('.nc-detail-section');
   });
 

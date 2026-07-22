@@ -1,7 +1,7 @@
 /**
  * Mapping deterministico doc_type ? folder_code suggerito.
  * Usato dall'AI classification e dal wizard upload per suggerire la cartella.
- * folder_code corrisponde ai codici nel template provisioning (migrazione 059 � sgq_camellini_v1).
+ * folder_code corrisponde ai codici nel template provisioning (migrazione 059  -  sgq_camellini_v1).
  *
  * Codici template di riferimento:
  *   1.1 MANUALE | 1.2 PROCEDURE | 1.3 ISTRUZIONI | 1.4 MODULI
@@ -34,7 +34,7 @@ export const DOC_TYPE_FOLDER_MAP = {
 
 /**
  * Restituisce il folder_code suggerito per un tipo documento.
- * Ritorna null se non c'� mapping (l'utente dovr� scegliere manualmente).
+ * Ritorna null se non c' -  mapping (l'utente dovr -  scegliere manualmente).
  * @param {string|null|undefined} docType
  * @returns {string|null}
  */

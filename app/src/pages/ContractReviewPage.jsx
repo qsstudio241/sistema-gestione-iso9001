@@ -2,15 +2,14 @@
  * ContractReviewPage - Riesame requisiti contratto (commercial cases) + analisi AI capitolato
  */
 
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import apiService, { ApiError } from '../services/apiService';
 import { useAuth } from '../contexts/AuthContext';
 import { useStorage } from '../contexts/StorageContext';
-import { resolveAutoStandardFromAudit } from '../utils/aiAssistantContext';
 import { getSelectedStandardEntries } from '../data/standardsRegistry';
 import { useRouter, useNavigate } from '../contexts/RouterContext';
-import { useAiAssist } from '../hooks/useAiAssist';
 import AiSuggestionInline from '../components/AiSuggestionInline';
+import AiDisclaimer from '../components/AiDisclaimer';
 import {
   STATUS_LABELS,
   TERMINAL_STATUSES,
@@ -20,7 +19,150 @@ import {
   DIRECTION_LABELS,
   formatCommercialDocMetaBadge,
 } from '../utils/contractReviewLabels';
+import { hydrateDrawingRequirements } from '../utils/drawingExtractionHydrate';
 import './ContractReviewPage.css';
+
+// Ruoli documento di commessa (riusati dal form "Collega da registro" e da "Carica allegato caso").
+const DOC_ROLE_OPTIONS = [
+  { value: 'order', label: 'Ordine' },
+  { value: 'rfq', label: 'RFQ' },
+  { value: 'capitolato', label: 'Capitolato' },
+  { value: 'quote', label: 'Offerta' },
+  { value: 'drawing', label: 'Disegno' },
+  { value: 'other', label: 'Altro' },
+];
+
+/**
+ * CoveragePanel — verifica copertura saldatori per una commessa collegata al riesame.
+ * Mostra un selettore di progetto + tabella di copertura WPS/qualifiche.
+ */
+function CoveragePanel({ caseId }) {
+  const [expanded,   setExpanded]   = useState(false);
+  const [projects,   setProjects]   = useState(null);
+  const [projectId,  setProjectId]  = useState('');
+  const [coverage,   setCoverage]   = useState(null);
+  const [loading,    setLoading]    = useState(false);
+  const [error,      setError]      = useState(null);
+
+  function handleToggle() {
+    if (!expanded && !projects) {
+      apiService.getProjects({ limit: 200 })
+        .then(r => setProjects(r?.data || []))
+        .catch(() => setProjects([]));
+    }
+    setExpanded(e => !e);
+  }
+
+  async function handleCheck() {
+    if (!projectId) return;
+    setLoading(true); setError(null); setCoverage(null);
+    try {
+      const data = caseId
+        ? await apiService.getCaseExtractedCoverage(caseId, projectId)
+        : await apiService.getQualificationsCoverage(projectId);
+      setCoverage(data);
+    } catch (e) {
+      setError(e.message);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  function esitoIcon(esito) {
+    if (esito === 'verde') return '\u2705';
+    if (esito === 'giallo') return '\u26A0\uFE0F';
+    return '\u274C';
+  }
+
+  const profile = coverage?.extracted_profile;
+  const profileActive = coverage?.extracted_profile_active;
+
+  return (
+    <div style={{ marginBottom: 16, borderTop: '1px solid #e5e7eb', paddingTop: 14 }}>
+      <button
+        type="button"
+        onClick={handleToggle}
+        style={{ background: '#f0f4ff', border: '1px solid #c7d2fe', borderRadius: 8, padding: '7px 16px', cursor: 'pointer', fontWeight: 600, fontSize: 14, color: '#3730a3' }}
+      >
+        {expanded ? "\u25B2" : "\u25BC"} {"\uD83D\uDD0D"} Verifica Copertura Saldatori
+      </button>
+      {expanded && (
+        <div style={{ marginTop: 12 }}>
+          {projects === null
+            ? <span style={{ fontSize: 13, color: '#6b7280' }}>Caricamento commesse...</span>
+            : (
+              <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap', marginBottom: 12 }}>
+                <select
+                  value={projectId}
+                  onChange={e => { setProjectId(e.target.value); setCoverage(null); }}
+                  style={{ padding: '7px 10px', border: '1.5px solid #d1d5db', borderRadius: 8, fontSize: 14 }}
+                >
+                  <option value="">Seleziona commessa...</option>
+                  {projects.map(p => (
+                    <option key={p.id} value={p.id}>{p.project_code}{p.client_name ? ` \u2014 ${p.client_name}` : ''}</option>
+                  ))}
+                </select>
+                <button
+                  type="button"
+                  onClick={handleCheck}
+                  disabled={!projectId || loading}
+                  style={{ padding: '7px 16px', background: '#1e3a5f', color: '#fff', border: 'none', borderRadius: 8, cursor: 'pointer', fontSize: 14, fontWeight: 600, opacity: (!projectId || loading) ? 0.5 : 1 }}
+                >
+                  {loading ? 'Calcolo...' : 'Verifica'}
+                </button>
+              </div>
+            )
+          }
+          {profileActive && profile && (
+            <div style={{ fontSize: 12, color: '#374151', background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: 8, padding: '8px 10px', marginBottom: 10 }}>
+              <strong>Requisiti da documenti integrati:</strong>{' '}
+              {[
+                profile.base_material_group ? `materiale ${profile.base_material_group}` : null,
+                profile.thickness_range_min != null
+                  ? `spessore ${profile.thickness_range_min}${profile.thickness_range_max != null && profile.thickness_range_max !== profile.thickness_range_min ? `\u2013${profile.thickness_range_max}` : ''} mm`
+                  : null,
+                profile.welding_process ? `processo ${profile.welding_process}` : null,
+                profile.welding_positions ? `posizioni ${profile.welding_positions}` : null,
+              ].filter(Boolean).join(' \u00B7 ') || 'profilo tecnico parziale'}
+            </div>
+          )}
+          {error && <div style={{ color: '#dc2626', fontSize: 13, marginBottom: 8 }}>{error}</div>}
+          {coverage && !coverage.has_wps && (
+            <div style={{ fontSize: 13, color: '#9ca3af' }}>Nessuna WPS associata alla commessa selezionata.</div>
+          )}
+          {coverage && coverage.has_wps && (
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
+              <thead>
+                <tr style={{ background: '#f9fafb' }}>
+                  <th style={{ padding: '8px 10px', textAlign: 'left', borderBottom: '1px solid #e5e7eb' }}>WPS</th>
+                  <th style={{ padding: '8px 10px', textAlign: 'left', borderBottom: '1px solid #e5e7eb' }}>Processo</th>
+                  <th style={{ padding: '8px 10px', textAlign: 'left', borderBottom: '1px solid #e5e7eb' }}>Saldatori</th>
+                  <th style={{ padding: '8px 10px', textAlign: 'center', borderBottom: '1px solid #e5e7eb' }}>Esito</th>
+                </tr>
+              </thead>
+              <tbody>
+                {coverage.coverage.map(row => (
+                  <tr key={row.wps_id} style={{ borderBottom: '1px solid #f3f4f6' }}>
+                    <td style={{ padding: '8px 10px', fontWeight: 600 }}>{row.wps_code}</td>
+                    <td style={{ padding: '8px 10px' }}>{row.welding_process || '\u2014'}</td>
+                    <td style={{ padding: '8px 10px' }}>
+                      {row.qualifiers.length === 0
+                        ? <span style={{ color: '#dc2626' }}>Nessuno</span>
+                        : row.qualifiers.map(q => <div key={q.id}>{q.person_name}</div>)}
+                    </td>
+                    <td style={{ padding: '8px 10px', textAlign: 'center' }}>
+                      {esitoIcon(row.esito)}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
 
 function parseCaseIdFromPath(pathname) {
   const m = pathname.match(/^\/contract-reviews\/(\d+)$/);
@@ -39,6 +181,11 @@ function rowCase(row) {
     title: row.title,
     status: row.status,
     company_id: row.company_id ?? row.companyId,
+    commercial_customer_id: row.commercial_customer_id ?? row.commercialCustomerId ?? null,
+    commercial_customer_name:
+      row.commercial_customer_name ?? row.commercialCustomerName ?? null,
+    commercial_customer_ref:
+      row.commercial_customer_ref ?? row.commercialCustomerRef ?? null,
     external_ref: row.external_ref ?? row.externalRef,
     notes: row.notes,
     updated_at: row.updated_at ?? row.updatedAt,
@@ -47,6 +194,19 @@ function rowCase(row) {
     handoff_at: row.handoff_at ?? row.handoffAt ?? null,
     handoff_notes: row.handoff_notes ?? row.handoffNotes ?? null,
   };
+}
+
+function companyLabel(companyId, companiesById) {
+  if (companyId == null) return null;
+  return companiesById.get(companyId) || `#${companyId}`;
+}
+
+/** Ruoli controparte ammessi come committente commerciale nel riesame §8.2 */
+const COMMITTENTE_COUNTERPARTY_ROLES = new Set(['customer', 'end_customer']);
+
+function filterCommittenteCounterparties(rawList) {
+  const list = Array.isArray(rawList) ? rawList : [];
+  return list.filter((cp) => COMMITTENTE_COUNTERPARTY_ROLES.has(cp.role));
 }
 
 function rowCheck(row) {
@@ -149,21 +309,38 @@ export default function ContractReviewPage() {
   const [attachCounterparty, setAttachCounterparty] = useState('customer');
   const [attachDirection, setAttachDirection] = useState('in');
   const [attachSupplierId, setAttachSupplierId] = useState('');
+  const [attachAnalysisStarted, setAttachAnalysisStarted] = useState(false);
+  // Multi-file upload: progresso e errori parziali (SLICE C)
+  const [uploadProgress, setUploadProgress] = useState(null); // { current, total, fileName } | null
+  const [uploadPartialErrors, setUploadPartialErrors] = useState([]); // [{ fileName, error }]
+  // Polling auto-estrazione: { extractionId: number, attempts: number } | null
+  const [analysisPolling, setAnalysisPolling] = useState(null);
+  // Banner completamento polling: 'done' | 'error' | null
+  const [pollingBanner, setPollingBanner] = useState(null);
+  const pollingTimerRef = useRef(null);
   const [suppliers, setSuppliers] = useState([]);
   const [suppliersLoadFailed, setSuppliersLoadFailed] = useState(false);
-  const [serverAiResult, setServerAiResult] = useState(null);
-  const [serverAiLoading, setServerAiLoading] = useState(false);
-
   const [companies, setCompanies] = useState([]);
   const [createOpen, setCreateOpen] = useState(false);
   const [createForm, setCreateForm] = useState({
     title: '',
     company_id: '',
+    commercial_customer_id: '',
+    commercial_customer_name: '',
+    commercial_customer_ref: '',
     external_ref: '',
   });
+  const [createCounterparties, setCreateCounterparties] = useState([]);
+  const [createCounterpartiesLoading, setCreateCounterpartiesLoading] = useState(false);
 
   const [editTitle, setEditTitle] = useState('');
   const [editNotes, setEditNotes] = useState('');
+  const [editCompanyId, setEditCompanyId] = useState('');
+  const [editCommercialCustomerId, setEditCommercialCustomerId] = useState('');
+  const [editCommercialCustomerName, setEditCommercialCustomerName] = useState('');
+  const [editCommercialCustomerRef, setEditCommercialCustomerRef] = useState('');
+  const [editCounterparties, setEditCounterparties] = useState([]);
+  const [editCounterpartiesLoading, setEditCounterpartiesLoading] = useState(false);
   const [savingCase, setSavingCase] = useState(false);
 
   const [transitionModal, setTransitionModal] = useState(null);
@@ -176,13 +353,24 @@ export default function ContractReviewPage() {
   const [aiCompanyContextId, setAiCompanyContextId] = useState('');
   const [applyAiBusy, setApplyAiBusy] = useState(false);
 
-  const {
-    suggest,
-    suggestion: aiSuggestion,
-    loading: aiLoading,
-    error: aiHookError,
-    clear: clearAi,
-  } = useAiAssist();
+  // Stato pannello "Suggerimenti AI da documenti" (SLICE B — pre-popolazione checklist)
+  const [aiDocPanelExpanded, setAiDocPanelExpanded] = useState(false);
+  const [aiDocSummary, setAiDocSummary] = useState(null);
+  const [aiDocLoading, setAiDocLoading] = useState(false);
+  const [aiDocError, setAiDocError] = useState(null);
+  const [applyExtractedBusy, setApplyExtractedBusy] = useState(false);
+  const [analyzeDocsBusy, setAnalyzeDocsBusy] = useState(false);
+  const [analyzeDocsResult, setAnalyzeDocsResult] = useState(null);
+
+  // Stato locale AI analisi requisiti (percorso canonico POST /contract-reviews/:id/ai/analyze-requirements)
+  const [aiSuggestion, setAiSuggestion] = useState(null);
+  const [aiLoading, setAiLoading] = useState(false);
+  const [aiHookError, setAiHookError] = useState(null);
+
+  function clearAi() {
+    setAiSuggestion(null);
+    setAiHookError(null);
+  }
 
   const companiesById = useMemo(() => {
     const m = new Map();
@@ -246,9 +434,18 @@ export default function ContractReviewPage() {
         clarifications: data.clarifications || [],
         documents: data.documents || [],
         attachments: data.attachments || [],
+        textAnalysis: data.text_analysis || null,
       });
+      // Idrata l'analisi capitolato persistita (slice #2): al riapri il risultato è ancora lì.
+      if (data.text_analysis?.suggestion) {
+        setAiSuggestion(data.text_analysis.suggestion);
+      }
       setEditTitle(c.title || '');
       setEditNotes(c.notes || '');
+      setEditCompanyId(c.company_id != null ? String(c.company_id) : '');
+      setEditCommercialCustomerId(c.commercial_customer_id != null ? String(c.commercial_customer_id) : '');
+      setEditCommercialCustomerName(c.commercial_customer_name || '');
+      setEditCommercialCustomerRef(c.commercial_customer_ref || '');
       setHandoffRef(c.handoff_ref || '');
       setHandoffNotes(c.handoff_notes || '');
       const cid = c.company_id != null ? String(c.company_id) : '';
@@ -309,20 +506,97 @@ export default function ContractReviewPage() {
 
   useEffect(() => {
     if (!caseId) {
-      clearAi();
-      setServerAiResult(null);
+      setAiSuggestion(null);
+      setAiHookError(null);
     }
-  }, [caseId, clearAi]);
+  }, [caseId]);
+
+  // Carica controparti (cliente diretto + committente finale) per il form di modifica caso
+  useEffect(() => {
+    if (!editCompanyId) {
+      setEditCounterparties([]);
+      return;
+    }
+    setEditCounterpartiesLoading(true);
+    apiService.getCompanyCounterparties(editCompanyId, { is_active: 'true' })
+      .then((res) => {
+        const list = filterCommittenteCounterparties(Array.isArray(res) ? res : res?.data || []);
+        setEditCounterparties(list);
+      })
+      .catch(() => setEditCounterparties([]))
+      .finally(() => setEditCounterpartiesLoading(false));
+  }, [editCompanyId]);
+
+  // Carica controparti per il form di creazione, solo quando il modale è aperto
+  useEffect(() => {
+    if (!createOpen || !createForm.company_id) {
+      setCreateCounterparties([]);
+      return;
+    }
+    setCreateCounterpartiesLoading(true);
+    apiService.getCompanyCounterparties(createForm.company_id, { is_active: 'true' })
+      .then((res) => {
+        const list = filterCommittenteCounterparties(Array.isArray(res) ? res : res?.data || []);
+        setCreateCounterparties(list);
+      })
+      .catch(() => setCreateCounterparties([]))
+      .finally(() => setCreateCounterpartiesLoading(false));
+  }, [createOpen, createForm.company_id]);
+
+  // Polling auto-estrazione AI: si attiva quando upload restituisce analysis_job_id.
+  // Massimo 10 tentativi (30 secondi totali); si ferma appena status !== 'processing'.
+  useEffect(() => {
+    if (!analysisPolling || !caseId) return;
+    const { extractionId, attempts } = analysisPolling;
+    if (attempts >= 10) {
+      setAnalysisPolling(null);
+      return;
+    }
+    const timerId = setTimeout(async () => {
+      try {
+        const data = await apiService.getDrawingExtraction(caseId, extractionId);
+        if (data.status !== 'processing') {
+          setAnalysisPolling(null);
+          setPollingBanner(data.status === 'done' ? 'done' : 'error');
+          setTimeout(() => setPollingBanner(null), 8000);
+          await loadDetail(caseId);
+        } else {
+          setAnalysisPolling(prev => prev ? { ...prev, attempts: prev.attempts + 1 } : null);
+        }
+      } catch {
+        // In caso di errore di rete, continua a ritentare fino al limite
+        setAnalysisPolling(prev => prev ? { ...prev, attempts: prev.attempts + 1 } : null);
+      }
+    }, 3000);
+    pollingTimerRef.current = timerId;
+    return () => clearTimeout(timerId);
+  }, [analysisPolling, caseId, loadDetail]);
+
+  // Pulizia polling al cambio commessa o unmount
+  useEffect(() => {
+    return () => {
+      if (pollingTimerRef.current) clearTimeout(pollingTimerRef.current);
+    };
+  }, [caseId]);
 
   async function handleSaveCaseMeta() {
     if (!caseId || !detail?.case) return;
     setSavingCase(true);
     setError(null);
     try {
-      await apiService.updateContractReview(caseId, {
+      const updateBody = {
         title: editTitle.trim(),
         notes: editNotes,
-      });
+        company_id: editCompanyId ? parseInt(editCompanyId, 10) : null,
+      };
+      if (editCommercialCustomerId) {
+        updateBody.commercial_customer_id = parseInt(editCommercialCustomerId, 10);
+      } else {
+        updateBody.commercial_customer_id = null;
+        updateBody.commercial_customer_name = editCommercialCustomerName.trim() || null;
+        updateBody.commercial_customer_ref = editCommercialCustomerRef.trim() || null;
+      }
+      await apiService.updateContractReview(caseId, updateBody);
       await loadDetail(caseId);
       await loadList();
     } catch (err) {
@@ -343,10 +617,27 @@ export default function ContractReviewPage() {
       if (createForm.company_id) {
         body.company_id = parseInt(createForm.company_id, 10);
       }
+      if (createForm.commercial_customer_id) {
+        body.commercial_customer_id = parseInt(createForm.commercial_customer_id, 10);
+      } else {
+        if (createForm.commercial_customer_name.trim()) {
+          body.commercial_customer_name = createForm.commercial_customer_name.trim();
+        }
+        if (createForm.commercial_customer_ref.trim()) {
+          body.commercial_customer_ref = createForm.commercial_customer_ref.trim();
+        }
+      }
       const created = await apiService.createContractReview(body);
       const id = created?.id;
       setCreateOpen(false);
-      setCreateForm({ title: '', company_id: '', external_ref: '' });
+      setCreateForm({
+        title: '',
+        company_id: '',
+        commercial_customer_id: '',
+        commercial_customer_name: '',
+        commercial_customer_ref: '',
+        external_ref: '',
+      });
       await loadList();
       if (id) navigate(`/contract-reviews/${id}`);
     } catch (err) {
@@ -468,43 +759,59 @@ export default function ContractReviewPage() {
   }
 
   async function handleUploadAttachment(e) {
-    const file = e.target.files?.[0];
-    if (!caseId || !file) return;
+    const files = Array.from(e.target.files || []);
+    if (!caseId || !files.length) return;
     setError(null);
-    try {
-      await apiService.uploadContractReviewAttachment(caseId, file, {
-        doc_role: attachDocRole || 'other',
-        direction: attachDirection,
-        counterparty: attachCounterparty,
-      });
-      await loadDetail(caseId);
+    setAttachAnalysisStarted(false);
+    setUploadPartialErrors([]);
+    let anyAnalysis = false;
+    let lastAnalysisJobId = null;
+    const partialErrors = [];
+    for (let i = 0; i < files.length; i++) {
+      const file = files[i];
+      setUploadProgress({ current: i + 1, total: files.length, fileName: file.name });
       try {
-        const tr = await apiService.getContractReviewTransitionOptions(caseId);
-        setTransitionOptions(tr?.options || []);
-      } catch {
-        /* ignore */
+        const result = await apiService.uploadContractReviewAttachment(caseId, file, {
+          doc_role: attachDocRole || 'other',
+          direction: attachDirection,
+          counterparty: attachCounterparty,
+        });
+        if (result?.analysis_job_id != null) {
+          anyAnalysis = true;
+          lastAnalysisJobId = result.analysis_job_id;
+        }
+      } catch (err) {
+        partialErrors.push({
+          fileName: file.name,
+          error: err instanceof ApiError ? err.message : err.message || 'Upload fallito',
+        });
       }
-    } catch (err) {
-      setError(err instanceof ApiError ? err.message : err.message || 'Upload fallito');
+    }
+    setUploadProgress(null);
+    if (partialErrors.length) {
+      setUploadPartialErrors(partialErrors);
+      if (partialErrors.length === files.length) {
+        setError(`Upload fallito per ${files.length} file. Riprova.`);
+      }
+    }
+    if (anyAnalysis) {
+      setAttachAnalysisStarted(true);
+      setTimeout(() => setAttachAnalysisStarted(false), 6000);
+      setPollingBanner(null);
+      if (lastAnalysisJobId != null) {
+        setAnalysisPolling({ extractionId: lastAnalysisJobId, attempts: 0 });
+      }
+    }
+    await loadDetail(caseId);
+    try {
+      const tr = await apiService.getContractReviewTransitionOptions(caseId);
+      setTransitionOptions(tr?.options || []);
+    } catch {
+      /* ignore */
     }
     e.target.value = '';
   }
 
-  async function handleServerAiAnalysis() {
-    if (!caseId) return;
-    setServerAiLoading(true);
-    setError(null);
-    try {
-      const res = await apiService.analyzeContractRequirements(caseId, {
-        capitolatoText: capitolatoText.trim() || undefined,
-      });
-      setServerAiResult(res?.suggestion || res);
-    } catch (err) {
-      setError(err instanceof ApiError ? err.message : err.message || 'Analisi server fallita');
-    } finally {
-      setServerAiLoading(false);
-    }
-  }
 
   async function handleGenerateChecklist(phase) {
     if (!caseId) return;
@@ -531,31 +838,43 @@ export default function ContractReviewPage() {
   async function handleRunAiAnalysis() {
     const text = capitolatoText.trim();
     if (!text) {
-      setError('Incolla o carica il testo del capitolato prima di avviare l’analisi.');
+      setError("Incolla o carica il testo del capitolato prima di avviare l’analisi.");
       return;
     }
-    const companyIdRaw = aiCompanyContextId || (detail?.case?.company_id != null ? String(detail.case.company_id) : '');
-    const companyId = parseInt(companyIdRaw, 10);
-    if (!Number.isFinite(companyId) || companyId <= 0) {
-      setError('Seleziona un’azienda per il contesto AI (o associa un’azienda al caso).');
+    if (!caseId) return;
+    if (!detail?.case?.company_id) {
+      setError("Associa un’azienda SGQ (capacità) al caso prima di avviare l’analisi.");
       return;
     }
     setError(null);
-    const autoStd = resolveAutoStandardFromAudit(currentAudit?.metadata?.selectedStandards);
-    const standardEntries = getSelectedStandardEntries(
-      currentAudit?.metadata?.selectedStandards || []
-    );
-    const standardCodes = standardEntries.length
-      ? standardEntries.map((e) => e.key)
-      : undefined;
-    await suggest('review_requirements', {
-      capitolatoText: text,
-      companyId,
-      standardCodes,
-      standardId: autoStd?.standardId ?? null,
-    });
+    setAiLoading(true);
+    setAiHookError(null);
+    setAiSuggestion(null);
+    try {
+      const standardEntries = getSelectedStandardEntries(
+        currentAudit?.metadata?.selectedStandards || []
+      );
+      const standardCodes = standardEntries.length
+        ? standardEntries.map((e) => e.key)
+        : undefined;
+      const res = await apiService.analyzeContractRequirements(caseId, {
+        capitolatoText: text,
+        standardCodes,
+      });
+      setAiSuggestion(res?.suggestion || res);
+    } catch (err) {
+      let msg = (err instanceof ApiError && err.data?.error) || err.message || "Analisi AI fallita";
+      if (err instanceof ApiError && err.status === 429) {
+        const waitSec = err.data?.retryAfterMs ? Math.ceil(err.data.retryAfterMs / 1000) : null;
+        msg = waitSec
+          ? `Troppe richieste al server. Attendi circa ${waitSec} secondi e riprova.`
+          : "Troppe richieste al server. Attendi qualche minuto e riprova.";
+      }
+      setAiHookError(msg);
+    } finally {
+      setAiLoading(false);
+    }
   }
-
   async function handleApplyAiToPreliminary() {
     if (!caseId || !detail?.checklist?.length || !aiSuggestion) return;
     const prelim = detail.checklist.filter((c) => c.phase === 'preliminary');
@@ -595,6 +914,88 @@ export default function ContractReviewPage() {
       setError(err instanceof ApiError ? err.message : err.message || 'Applicazione AI fallita');
     } finally {
       setApplyAiBusy(false);
+    }
+  }
+
+  async function handleLoadAiDocSummary() {
+    if (!caseId) return;
+    setAiDocLoading(true);
+    setAiDocError(null);
+    try {
+      const data = await apiService.getExtractedRequirementsSummary(caseId);
+      setAiDocSummary(data);
+    } catch (err) {
+      setAiDocError(err instanceof ApiError ? err.message : err.message || 'Caricamento suggerimenti fallito');
+      setAiDocSummary(null);
+    } finally {
+      setAiDocLoading(false);
+    }
+  }
+
+  async function handleAnalyzeAllDocuments() {
+    if (!caseId) return;
+    setAnalyzeDocsBusy(true);
+    setError(null);
+    setAnalyzeDocsResult(null);
+    try {
+      const result = await apiService.analyzeCaseDocuments(caseId);
+      setAnalyzeDocsResult(result);
+      setAttachAnalysisStarted(true);
+      setTimeout(() => setAttachAnalysisStarted(false), 8000);
+      const firstJob = result?.jobs?.[0];
+      if (firstJob?.extraction_id != null) {
+        setPollingBanner(null);
+        setAnalysisPolling({ extractionId: firstJob.extraction_id, attempts: 0 });
+      }
+      if (aiDocPanelExpanded) {
+        await handleLoadAiDocSummary();
+      }
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : err.message || 'Analisi documenti fallita');
+    } finally {
+      setAnalyzeDocsBusy(false);
+    }
+  }
+
+  async function handleApplyExtractedToChecklist() {
+    if (!caseId || !detail?.checklist?.length || !aiDocSummary?.requirements?.length) return;
+    const targets = detail.checklist.filter(
+      (c) => (c.phase === 'preliminary' || c.phase === 'final')
+        && (!c.answer || c.answer === 'not_evaluated'),
+    );
+    if (!targets.length) {
+      setError('Genera prima la checklist preliminare o finale.');
+      return;
+    }
+    setApplyExtractedBusy(true);
+    setError(null);
+    const aiPrefix = '[AI doc] ';
+    try {
+      for (const item of targets) {
+        let best = null;
+        let bestScore = 0;
+        const haystack = `${item.item_text || ''} ${item.item_ref || ''}`;
+        for (const r of aiDocSummary.requirements) {
+          const blob = `${r.value_text || ''} ${r.field_key || ''} ${r.req_type || ''}`;
+          const sc = overlapScore(haystack, blob);
+          if (sc > bestScore) {
+            bestScore = sc;
+            best = r;
+          }
+        }
+        if (!best || bestScore < 1) continue;
+        const rawNotes = best.value_text || '';
+        if (!rawNotes) continue;
+        const notes = item.notes && String(item.notes).includes(aiPrefix)
+          ? item.notes
+          : `${aiPrefix}${rawNotes}`;
+        await apiService.saveChecklistAnswer(caseId, item.id, { notes });
+      }
+      await loadDetail(caseId);
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : err.message || 'Applicazione suggerimenti fallita');
+    } finally {
+      setApplyExtractedBusy(false);
     }
   }
 
@@ -700,7 +1101,14 @@ export default function ContractReviewPage() {
                         {STATUS_LABELS[item.status] || item.status}
                       </span>
                       <small>
-                        {item.company_name || (item.company_id ? `#${item.company_id}` : '-')}
+                        {[
+                          item.company_name || companyLabel(item.company_id, companiesById),
+                          item.commercial_customer_name
+                            ? `comm. ${item.commercial_customer_name}`
+                            : null,
+                        ]
+                          .filter(Boolean)
+                          .join(' · ') || '-'}
                       </small>
                     </button>
                   </li>
@@ -736,14 +1144,15 @@ export default function ContractReviewPage() {
                   <tr>
                     <th>Titolo</th>
                     <th>Stato</th>
-                    <th>Azienda</th>
+                    <th>Capacità (SGQ)</th>
+                    <th>Committente</th>
                     <th>Aggiornamento</th>
                   </tr>
                 </thead>
                 <tbody>
                   {cases.length === 0 ? (
                     <tr>
-                      <td colSpan={4}>Nessun caso. Crea un nuovo riesame.</td>
+                      <td colSpan={5}>Nessun caso. Crea un nuovo riesame.</td>
                     </tr>
                   ) : (
                     cases.map((c) => (
@@ -759,7 +1168,19 @@ export default function ContractReviewPage() {
                           </span>
                         </td>
                         <td>
-                          {c.company_id != null ? companiesById.get(c.company_id) || `#${c.company_id}` : '-'}
+                          {companyLabel(c.company_id, companiesById) || '-'}
+                        </td>
+                        <td>
+                          {c.commercial_customer_name
+                            ? (
+                              <>
+                                {c.commercial_customer_name}
+                                {!c.commercial_customer_id && (
+                                  <span className="cr-badge cr-badge-draft" style={{ marginLeft: 5, fontSize: '0.7rem' }} title="Committente salvato come testo — collega una controparte per maggiore precisione">legacy</span>
+                                )}
+                              </>
+                            )
+                            : '-'}
                         </td>
                         <td>
                           {c.updated_at
@@ -798,10 +1219,23 @@ export default function ContractReviewPage() {
                     {' · '}
                     Rif. esterno: {detail.case.external_ref || '-'}
                     {' · '}
-                    Azienda:{' '}
-                    {detail.case.company_id != null
-                      ? companiesById.get(detail.case.company_id) || `#${detail.case.company_id}`
+                    Capacità:{' '}
+                    {companyLabel(detail.case.company_id, companiesById) || '-'}
+                    {' · '}
+                    Committente:{' '}
+                    {detail.case.commercial_customer_name
+                      ? (
+                        <>
+                          {detail.case.commercial_customer_name}
+                          {!detail.case.commercial_customer_id && (
+                            <span className="cr-badge cr-badge-draft" style={{ marginLeft: 4, fontSize: '0.7rem' }} title="Committente salvato come testo — collega una controparte per maggiore precisione">legacy</span>
+                          )}
+                        </>
+                      )
                       : '-'}
+                    {detail.case.commercial_customer_ref ? (
+                      <> (rif. {detail.case.commercial_customer_ref})</>
+                    ) : null}
                     {detail.case.source_import_job_id != null && (
                       <>
                         {' · '}
@@ -847,6 +1281,85 @@ export default function ContractReviewPage() {
                     onChange={(e) => setEditTitle(e.target.value)}
                     disabled={TERMINAL_STATUSES.has(detail.case.status)}
                   />
+                </div>
+                <div className="cr-form-row">
+                  <label htmlFor="cr-edit-company">Azienda SGQ (capacità)</label>
+                  <select
+                    id="cr-edit-company"
+                    value={editCompanyId}
+                    onChange={(e) => setEditCompanyId(e.target.value)}
+                    disabled={TERMINAL_STATUSES.has(detail.case.status)}
+                  >
+                    <option value="">- Non indicata -</option>
+                    {companies.map((co) => (
+                      <option key={co.id} value={String(co.id)}>
+                        {co.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div className="cr-form-row">
+                  <label htmlFor="cr-edit-comm-select">Committente commerciale</label>
+                  {editCounterpartiesLoading ? (
+                    <span style={{ fontSize: 13, color: '#6b7280' }}>Caricamento controparti…</span>
+                  ) : editCounterparties.length > 0 ? (
+                    <select
+                      id="cr-edit-comm-select"
+                      value={editCommercialCustomerId}
+                      onChange={(e) => {
+                        setEditCommercialCustomerId(e.target.value);
+                        if (e.target.value) {
+                          const cp = editCounterparties.find((c) => String(c.id) === e.target.value);
+                          if (cp) {
+                            setEditCommercialCustomerName(cp.name || '');
+                            setEditCommercialCustomerRef(cp.external_ref || '');
+                          }
+                        }
+                      }}
+                      disabled={TERMINAL_STATUSES.has(detail.case.status)}
+                    >
+                      <option value="">— Altro (testo libero) —</option>
+                      {editCounterparties.map((cp) => (
+                        <option key={cp.id} value={String(cp.id)}>
+                          {cp.name}{cp.external_ref ? ` (${cp.external_ref})` : ''}
+                        </option>
+                      ))}
+                    </select>
+                  ) : null}
+                  {!editCommercialCustomerId && (
+                    <>
+                      <input
+                        id="cr-edit-comm-name"
+                        value={editCommercialCustomerName}
+                        onChange={(e) => setEditCommercialCustomerName(e.target.value)}
+                        placeholder="es. PT.MAIDO"
+                        disabled={TERMINAL_STATUSES.has(detail.case.status)}
+                        style={editCounterparties.length > 0 ? { marginTop: 6 } : undefined}
+                      />
+                      <div className="cr-form-row" style={{ marginTop: 6 }}>
+                        <label htmlFor="cr-edit-comm-ref" style={{ fontSize: '0.85rem' }}>Rif. committente</label>
+                        <input
+                          id="cr-edit-comm-ref"
+                          value={editCommercialCustomerRef}
+                          onChange={(e) => setEditCommercialCustomerRef(e.target.value)}
+                          placeholder="Codice cliente / ordine"
+                          disabled={TERMINAL_STATUSES.has(detail.case.status)}
+                        />
+                      </div>
+                    </>
+                  )}
+                  {editCommercialCustomerId && (
+                    <div className="cr-form-row" style={{ marginTop: 4 }}>
+                      <label htmlFor="cr-edit-comm-ref" style={{ fontSize: '0.85rem' }}>Rif. committente</label>
+                      <input
+                        id="cr-edit-comm-ref"
+                        value={editCommercialCustomerRef}
+                        readOnly
+                        disabled
+                        style={{ color: '#6b7280' }}
+                      />
+                    </div>
+                  )}
                 </div>
                 <div className="cr-form-row">
                   <label htmlFor="cr-edit-notes">Note</label>
@@ -937,6 +1450,7 @@ export default function ContractReviewPage() {
               {detail.case.status === 'APPROVED' && (
                 <div className="cr-panel">
                   <h2>Passaggio a esecuzione</h2>
+                  <CoveragePanel caseId={detail.case.id} />
                   {detail.case.handoff_ref ? (
                     <div className="cr-handoff-summary">
                       <p>
@@ -1012,6 +1526,22 @@ export default function ContractReviewPage() {
                     Genera finale
                   </button>
                 </div>
+
+                {/* Pannello "Suggerimenti AI da documenti" — pre-popolazione assistita SLICE B */}
+                <AiDocSuggestionsPanel
+                  expanded={aiDocPanelExpanded}
+                  loading={aiDocLoading}
+                  error={aiDocError}
+                  summary={aiDocSummary}
+                  applyBusy={applyExtractedBusy}
+                  hasChecklist={checklistPreliminary.length > 0 || checklistFinal.length > 0}
+                  onToggle={() => {
+                    const next = !aiDocPanelExpanded;
+                    setAiDocPanelExpanded(next);
+                    if (next && !aiDocSummary && !aiDocLoading) handleLoadAiDocSummary();
+                  }}
+                  onApply={handleApplyExtractedToChecklist}
+                />
 
                 <div className="cr-checklist-phase">
                   <h3 style={{ fontSize: '0.95rem', margin: '0 0 0.5rem' }}>Preliminare</h3>
@@ -1113,10 +1643,11 @@ export default function ContractReviewPage() {
                           onChange={(e) => setAttachDocRole(e.target.value)}
                           aria-label="Ruolo documento"
                         >
-                          <option value="order">Ordine</option>
-                          <option value="rfq">RFQ</option>
-                          <option value="quote">Offerta</option>
-                          <option value="other">Altro</option>
+                          {DOC_ROLE_OPTIONS.map((opt) => (
+                            <option key={opt.value} value={opt.value}>
+                              {opt.label}
+                            </option>
+                          ))}
                         </select>
                         <CommercialDocMetaFields
                           counterparty={attachCounterparty}
@@ -1139,6 +1670,17 @@ export default function ContractReviewPage() {
                     <div className="cr-form-row">
                       <label>Carica allegato caso</label>
                       <div className="cr-inline-fields">
+                        <select
+                          value={attachDocRole}
+                          onChange={(e) => setAttachDocRole(e.target.value)}
+                          aria-label="Ruolo documento allegato"
+                        >
+                          {DOC_ROLE_OPTIONS.map((opt) => (
+                            <option key={opt.value} value={opt.value}>
+                              {opt.label}
+                            </option>
+                          ))}
+                        </select>
                         <CommercialDocMetaFields
                           counterparty={attachCounterparty}
                           direction={attachDirection}
@@ -1152,8 +1694,53 @@ export default function ContractReviewPage() {
                           suppliers={suppliers}
                           suppliersLoadFailed={suppliersLoadFailed}
                         />
-                        <input type="file" onChange={handleUploadAttachment} />
+                        <input
+                          type="file"
+                          accept="*/*"
+                          multiple
+                          disabled={uploadProgress != null}
+                          onChange={handleUploadAttachment}
+                        />
                       </div>
+                      {uploadProgress && (
+                        <p className="contract-review-intro" style={{ color: '#2563eb', marginTop: '0.4rem' }}>
+                          Caricamento {uploadProgress.current}/{uploadProgress.total}&hellip; {uploadProgress.fileName}
+                        </p>
+                      )}
+                      {uploadPartialErrors.length > 0 && (
+                        <div style={{ marginTop: '0.4rem' }}>
+                          {uploadPartialErrors.map((pe) => (
+                            <p key={pe.fileName} className="contract-review-error" style={{ marginBottom: 2 }}>
+                              {pe.fileName}: {pe.error}
+                            </p>
+                          ))}
+                        </div>
+                      )}
+                      {attachAnalysisStarted && (
+                        <p className="contract-review-intro" style={{ color: '#2563eb', marginTop: '0.4rem' }}>
+                          Analisi AI avviata in background — i risultati appariranno nel pannello Disegni, Checklist o Analisi AI.
+                        </p>
+                      )}
+                      {(detail.attachments || []).length > 0 && !TERMINAL_STATUSES.has(detail.case.status) && (
+                        <div className="cr-form-row" style={{ marginTop: '0.75rem' }}>
+                          <button
+                            type="button"
+                            className="cr-btn cr-btn-primary"
+                            disabled={analyzeDocsBusy}
+                            onClick={() => handleAnalyzeAllDocuments()}
+                          >
+                            {analyzeDocsBusy ? 'Analisi in corso\u2026' : 'Analizza documenti commessa'}
+                          </button>
+                          {analyzeDocsResult && (
+                            <p className="contract-review-intro" style={{ marginTop: '0.4rem', marginBottom: 0 }}>
+                              Avviati {analyzeDocsResult.started} job
+                              {analyzeDocsResult.skipped > 0
+                                ? ` (${analyzeDocsResult.skipped} allegati saltati: ruolo/formato non analizzabile)`
+                                : ''}.
+                            </p>
+                          )}
+                        </div>
+                      )}
                     </div>
                   </>
                 )}
@@ -1195,28 +1782,59 @@ export default function ContractReviewPage() {
               </div>
               )}
 
+              {activeSlide === 'drawing' && (
+                <DrawingRequirementsPanel
+                  caseId={detail.case.id}
+                  attachments={detail.attachments}
+                  disabled={TERMINAL_STATUSES.has(detail.case.status)}
+                  pollingActive={analysisPolling != null}
+                  pollingBanner={pollingBanner}
+                  onStartPolling={(extractionId) => setAnalysisPolling({ extractionId, attempts: 0 })}
+                />
+              )}
+
               {activeSlide === 'ai' && (
               <div className="cr-panel">
                 <h2>Analisi AI del capitolato</h2>
                 <p className="contract-review-intro" style={{ marginTop: 0 }}>
-                  Incolla il testo del capitolato o carica un file .txt. L’analisi usa il profilo
-                  azienda selezionato come contesto normativo.
+                  Incolla il testo del capitolato o carica un file .txt. L&apos;analisi valuta le
+                  capacità dell&apos;azienda SGQ del caso rispetto ai requisiti del committente
+                  commerciale indicato.
                 </p>
-                <div className="cr-form-row">
-                  <label htmlFor="cr-ai-company">Azienda per contesto AI</label>
-                  <select
-                    id="cr-ai-company"
-                    value={aiCompanyContextId}
-                    onChange={(e) => setAiCompanyContextId(e.target.value)}
-                  >
-                    <option value="">- Seleziona -</option>
-                    {companies.map((co) => (
-                      <option key={co.id} value={String(co.id)}>
-                        {co.name}
-                      </option>
-                    ))}
-                  </select>
+                <div className="cr-ai-context-summary" style={{ marginBottom: '1rem', fontSize: '0.92rem' }}>
+                  <div>
+                    <strong>Capacità di:</strong>{' '}
+                    {companyLabel(detail.case.company_id, companiesById) || (
+                      <span style={{ color: '#b45309' }}>non indicata — seleziona sotto o in Dati caso</span>
+                    )}
+                  </div>
+                  <div>
+                    <strong>Committente:</strong>{' '}
+                    {detail.case.commercial_customer_name || (
+                      <span style={{ color: '#6b7280' }}>non indicato (opzionale)</span>
+                    )}
+                    {detail.case.commercial_customer_ref
+                      ? ` (rif. ${detail.case.commercial_customer_ref})`
+                      : ''}
+                  </div>
                 </div>
+                {detail.case.company_id == null && (
+                  <div className="cr-form-row">
+                    <label htmlFor="cr-ai-company">Azienda SGQ per contesto AI</label>
+                    <select
+                      id="cr-ai-company"
+                      value={aiCompanyContextId}
+                      onChange={(e) => setAiCompanyContextId(e.target.value)}
+                    >
+                      <option value="">- Seleziona -</option>
+                      {companies.map((co) => (
+                        <option key={co.id} value={String(co.id)}>
+                          {co.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                )}
                 <textarea
                   className="cr-ai-textarea"
                   placeholder="Testo capitolato / richiesta d’offerta…"
@@ -1234,15 +1852,7 @@ export default function ContractReviewPage() {
                     disabled={aiLoading}
                     onClick={() => handleRunAiAnalysis()}
                   >
-                    {aiLoading ? 'Analisi…' : 'Analisi AI (client)'}
-                  </button>
-                  <button
-                    type="button"
-                    className="cr-btn"
-                    disabled={serverAiLoading}
-                    onClick={() => handleServerAiAnalysis()}
-                  >
-                    {serverAiLoading ? 'Analisi server…' : 'Analisi AI (server)'}
+                    {aiLoading ? 'Analisi…' : 'Analisi AI'}
                   </button>
                   {aiSuggestion && (
                     <button type="button" className="cr-btn" onClick={() => clearAi()}>
@@ -1341,27 +1951,11 @@ export default function ContractReviewPage() {
                   </>
                 )}
 
-                {serverAiResult && (
-                  <div className="cr-server-ai-block" style={{ marginTop: '1rem' }}>
-                    <h3 style={{ fontSize: '0.95rem' }}>Risultato analisi server</h3>
-                    <pre className="cr-server-ai-json">
-                      {typeof serverAiResult === 'string'
-                        ? serverAiResult
-                        : JSON.stringify(serverAiResult, null, 2)}
-                    </pre>
-                    <button
-                      type="button"
-                      className="cr-btn"
-                      onClick={() => setServerAiResult(null)}
-                    >
-                      Chiudi risultato server
-                    </button>
-                  </div>
-                )}
               </div>
               )}
             </>
           )}
+          <AiDisclaimer style={{ marginTop: '1rem' }} />
         </>
       )}
 
@@ -1380,7 +1974,7 @@ export default function ContractReviewPage() {
                 />
               </div>
               <div className="cr-form-row">
-                <label htmlFor="cr-new-co">Azienda</label>
+                <label htmlFor="cr-new-co">Azienda SGQ (capacità)</label>
                 <select
                   id="cr-new-co"
                   value={createForm.company_id}
@@ -1393,6 +1987,68 @@ export default function ContractReviewPage() {
                     </option>
                   ))}
                 </select>
+              </div>
+              <div className="cr-form-row">
+                <label htmlFor="cr-new-comm">Committente commerciale</label>
+                {createCounterpartiesLoading ? (
+                  <span style={{ fontSize: 13, color: '#6b7280' }}>Caricamento controparti…</span>
+                ) : createCounterparties.length > 0 ? (
+                  <select
+                    id="cr-new-comm-select"
+                    value={createForm.commercial_customer_id}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      if (val) {
+                        const cp = createCounterparties.find((c) => String(c.id) === val);
+                        setCreateForm((f) => ({
+                          ...f,
+                          commercial_customer_id: val,
+                          commercial_customer_name: cp?.name || '',
+                          commercial_customer_ref: cp?.external_ref || '',
+                        }));
+                      } else {
+                        setCreateForm((f) => ({
+                          ...f,
+                          commercial_customer_id: '',
+                          commercial_customer_name: '',
+                          commercial_customer_ref: '',
+                        }));
+                      }
+                    }}
+                  >
+                    <option value="">— Altro (testo libero) —</option>
+                    {createCounterparties.map((cp) => (
+                      <option key={cp.id} value={String(cp.id)}>
+                        {cp.name}{cp.external_ref ? ` (${cp.external_ref})` : ''}
+                      </option>
+                    ))}
+                  </select>
+                ) : null}
+                {!createForm.commercial_customer_id && (
+                  <input
+                    id="cr-new-comm"
+                    value={createForm.commercial_customer_name}
+                    onChange={(e) =>
+                      setCreateForm((f) => ({ ...f, commercial_customer_name: e.target.value }))
+                    }
+                    placeholder="es. PT.MAIDO"
+                    style={createCounterparties.length > 0 ? { marginTop: 6 } : undefined}
+                  />
+                )}
+              </div>
+              <div className="cr-form-row">
+                <label htmlFor="cr-new-comm-ref">Rif. committente</label>
+                <input
+                  id="cr-new-comm-ref"
+                  value={createForm.commercial_customer_ref}
+                  onChange={(e) =>
+                    setCreateForm((f) => ({ ...f, commercial_customer_ref: e.target.value }))
+                  }
+                  placeholder="Codice cliente / ordine"
+                  readOnly={!!createForm.commercial_customer_id}
+                  disabled={!!createForm.commercial_customer_id}
+                  style={createForm.commercial_customer_id ? { color: '#6b7280' } : undefined}
+                />
               </div>
               <div className="cr-form-row">
                 <label htmlFor="cr-new-ext">Riferimento esterno</label>
@@ -1597,5 +2253,445 @@ function ChecklistItemRow({ item, disabled, onSave, highlightSubforniture }) {
         }}
       />
     </div>
+  );
+}
+
+const REQ_TYPE_LABELS = {
+  dimension: 'Quota',
+  tolerance: 'Tolleranza',
+  gdt: 'GD&T',
+  material: 'Materiale',
+  weld_symbol: 'Saldatura',
+  surface: 'Superficie',
+  note: 'Nota',
+  title_block: 'Cartiglio',
+};
+
+const REVIEW_STATUS_LABELS = {
+  extracted: 'Da rivedere',
+  confirmed: 'Confermato',
+  rejected: 'Rifiutato',
+  edited: 'Modificato',
+};
+
+function reviewBadgeClass(status) {
+  if (status === 'confirmed') return 'cr-badge cr-badge-final';
+  if (status === 'rejected') return 'cr-badge cr-badge-negative';
+  if (status === 'edited') return 'cr-badge cr-badge-progress';
+  return 'cr-badge cr-badge-draft';
+}
+
+function confidenceColor(c) {
+  if (c == null) return '#9ca3af';
+  if (c >= 0.75) return '#16a34a';
+  if (c >= 0.4) return '#d97706';
+  return '#dc2626';
+}
+
+const REQ_TYPE_SOURCE_LABELS = {
+  delivery: 'Consegna',
+  legal: 'Legale',
+  commercial: 'Commerciale',
+  spec: 'Specifiche',
+  note: 'Nota',
+};
+
+/**
+ * AiDocSuggestionsPanel — Pannello collassabile "Suggerimenti AI da documenti".
+ * Mostra i requisiti estratti (disegni + testi) raggruppati per tipo e offre
+ * un pulsante per pre-popolare le note della checklist preliminare (SLICE B).
+ */
+function AiDocSuggestionsPanel({ expanded, loading, error, summary, applyBusy, hasChecklist, onToggle, onApply }) {
+  const hasReqs = summary?.total > 0;
+
+  return (
+    <div style={{ marginBottom: 16, border: '1px solid #e0e7ef', borderRadius: 10, overflow: 'hidden' }}>
+      <button
+        type="button"
+        onClick={onToggle}
+        style={{
+          width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          padding: '10px 14px', background: '#f0f6ff', border: 'none', cursor: 'pointer',
+          fontWeight: 600, fontSize: 14, color: '#1e40af',
+        }}
+      >
+        <span>{expanded ? '\u25B2' : '\u25BC'} {'\uD83E\uDD16'} Suggerimenti AI da documenti</span>
+        {summary != null && (
+          <span style={{ fontWeight: 400, fontSize: 12, color: '#4b5563' }}>
+            {summary.total} requisito{summary.total !== 1 ? 'i' : ''} estratto{summary.total !== 1 ? 'i' : ''}
+          </span>
+        )}
+      </button>
+
+      {expanded && (
+        <div style={{ padding: '12px 14px', background: '#fff' }}>
+          {loading && (
+            <p style={{ fontSize: 13, color: '#6b7280' }}>Caricamento suggerimenti AI&hellip;</p>
+          )}
+          {error && (
+            <div className="contract-review-error" style={{ marginBottom: 8 }}>{error}</div>
+          )}
+          {!loading && !error && summary != null && !hasReqs && (
+            <p style={{ fontSize: 13, color: '#6b7280', margin: 0 }}>
+              Nessun requisito estratto disponibile. Carica un disegno, un capitolato o un ordine PDF
+              e attendi il completamento dell&apos;analisi AI.
+            </p>
+          )}
+          {!loading && hasReqs && summary.by_type && (
+            <>
+              {Object.entries(summary.by_type).map(([type, reqs]) => (
+                <div key={type} style={{ marginBottom: 12 }}>
+                  <div style={{ fontSize: 12, fontWeight: 700, color: '#374151', marginBottom: 4, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                    <span style={{ background: '#dbeafe', color: '#1d4ed8', borderRadius: 4, padding: '1px 6px', fontSize: 11 }}>
+                      {REQ_TYPE_LABELS[type] || REQ_TYPE_SOURCE_LABELS[type] || type}
+                    </span>
+                    <span style={{ color: '#6b7280', fontWeight: 400, marginLeft: 6 }}>{reqs.length} voci</span>
+                  </div>
+                  <ul style={{ margin: 0, paddingLeft: 18, listStyle: 'disc' }}>
+                    {reqs.slice(0, 6).map((r) => (
+                      <li key={r.id} style={{ fontSize: 13, color: '#1f2937', marginBottom: 2 }}>
+                        {r.value_text || '-'}
+                        {r.unit ? <small style={{ color: '#78909c' }}> {r.unit}</small> : null}
+                        {r.confidence != null && (
+                          <small style={{ color: r.confidence >= 0.75 ? '#16a34a' : r.confidence >= 0.4 ? '#d97706' : '#dc2626', marginLeft: 4 }}>
+                            {Math.round(r.confidence * 100)}%
+                          </small>
+                        )}
+                        {r.source && r.source !== 'drawing' && (
+                          <small style={{ color: '#9ca3af', marginLeft: 4 }}>({REQ_TYPE_SOURCE_LABELS[r.source] || r.source})</small>
+                        )}
+                      </li>
+                    ))}
+                    {reqs.length > 6 && (
+                      <li style={{ fontSize: 12, color: '#6b7280' }}>+{reqs.length - 6} altri&hellip;</li>
+                    )}
+                  </ul>
+                </div>
+              ))}
+
+              {hasChecklist && (
+                <button
+                  type="button"
+                  className="cr-btn cr-btn-primary"
+                  disabled={applyBusy}
+                  onClick={onApply}
+                  style={{ marginTop: 10 }}
+                >
+                  {applyBusy ? 'Applicazione\u2026' : 'Applica suggerimenti a checklist §8.2'}
+                </button>
+              )}
+            </>
+          )}
+          {!loading && !hasChecklist && (
+            <p style={{ fontSize: 12, color: '#9ca3af', marginTop: hasReqs ? 8 : 0, marginBottom: 0 }}>
+              Genera prima la checklist preliminare o finale con i pulsanti sopra.
+            </p>
+          )}
+          <AiDisclaimer style={{ marginTop: 10 }} />
+        </div>
+      )}
+    </div>
+  );
+}
+
+/**
+ * DrawingRequirementsPanel — Estrazione AI requisiti tecnici da un disegno di commessa.
+ * Riusa l'integrazione Gemini lato server (provider-agnostic). MVP demo investitori.
+ */
+function DrawingRequirementsPanel({ caseId, attachments, disabled, pollingActive, pollingBanner, onStartPolling }) {
+  const drawings = useMemo(
+    () => (attachments || []).filter((a) => a.commercial_doc_role === 'drawing'),
+    [attachments],
+  );
+  const [busyId, setBusyId] = useState(null);
+  const [hydrating, setHydrating] = useState(false);
+  const [error, setError] = useState(null);
+  const [extraction, setExtraction] = useState(null);
+  const [reqs, setReqs] = useState([]);
+  const [selectedDocId, setSelectedDocId] = useState(null);
+
+  useEffect(() => {
+    if (pollingActive || !caseId || drawings.length === 0) {
+      if (!caseId || drawings.length === 0) {
+        setExtraction(null);
+        setReqs([]);
+      }
+      return undefined;
+    }
+
+    let cancelled = false;
+    setHydrating(true);
+
+    (async () => {
+      try {
+        const result = await hydrateDrawingRequirements({
+          caseId,
+          drawings,
+          selectedDocId,
+          listDrawingExtractions: (id) => apiService.listDrawingExtractions(id),
+          getDrawingExtraction: (id, extId) => apiService.getDrawingExtraction(id, extId),
+          onStartPolling: (extractionId) => onStartPolling?.(extractionId),
+        });
+        if (cancelled) return;
+        if (result.targetDocId != null && selectedDocId == null) {
+          setSelectedDocId(result.targetDocId);
+        }
+        setExtraction(result.extraction);
+        setReqs(result.reqs);
+        setError(result.error);
+      } catch {
+        /* degrado gestito */
+      } finally {
+        if (!cancelled) setHydrating(false);
+      }
+    })();
+
+    return () => { cancelled = true; };
+  }, [caseId, drawings, selectedDocId, pollingActive, pollingBanner, onStartPolling]);
+
+  async function handleExtract(docId) {
+    setSelectedDocId(docId);
+    setBusyId(docId);
+    setError(null);
+    try {
+      const res = await apiService.extractDrawingRequirements(caseId, docId);
+      setExtraction(res);
+      setReqs(res.requirements || []);
+      if (res.status === 'error') {
+        setError(res.error_message || 'Estrazione non riuscita.');
+      }
+    } catch (e) {
+      setError(e instanceof ApiError ? e.message : e.message || 'Estrazione fallita');
+    } finally {
+      setBusyId(null);
+    }
+  }
+
+  function handleSelectDrawing(docId) {
+    setSelectedDocId(docId);
+    setError(null);
+  }
+
+  async function handleReview(reqId, patch) {
+    setError(null);
+    try {
+      const updated = await apiService.reviewExtractedRequirement(reqId, patch);
+      setReqs((rs) => rs.map((r) => (r.id === updated.id ? { ...r, ...updated } : r)));
+    } catch (e) {
+      setError(e instanceof ApiError ? e.message : e.message || 'Aggiornamento fallito');
+    }
+  }
+
+  return (
+    <div className="cr-panel">
+      <h2>Requisiti da disegno</h2>
+      <p className="contract-review-intro" style={{ marginTop: 0 }}>
+        Estrazione automatica dei requisiti tecnici (materiale, quote, tolleranze, saldature,
+        cartiglio) dai disegni caricati sulla commessa. Carica un allegato con ruolo{' '}
+        <strong>Disegno</strong> nella sezione Documenti, poi avvia l&apos;estrazione AI e rivedi i
+        risultati.
+      </p>
+
+      {error && <div className="contract-review-error">{error}</div>}
+
+      {pollingActive && (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 12px', background: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: 8, marginBottom: 12, fontSize: 13, color: '#1d4ed8' }}>
+          <span style={{ display: 'inline-block', width: 14, height: 14, border: '2px solid #93c5fd', borderTopColor: '#1d4ed8', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
+          Analisi AI in corso&hellip; i risultati appariranno automaticamente.
+        </div>
+      )}
+      {!pollingActive && pollingBanner === 'done' && (
+        <div style={{ padding: '8px 12px', background: '#f0fdf4', border: '1px solid #86efac', borderRadius: 8, marginBottom: 12, fontSize: 13, color: '#166534' }}>
+          Analisi AI completata. I requisiti estratti sono disponibili qui sotto.
+        </div>
+      )}
+      {!pollingActive && pollingBanner === 'error' && (
+        <div style={{ padding: '8px 12px', background: '#fef2f2', border: '1px solid #fca5a5', borderRadius: 8, marginBottom: 12, fontSize: 13, color: '#991b1b' }}>
+          Analisi AI non riuscita. Verifica il log o riprova manualmente con &quot;Estrai requisiti&quot;.
+        </div>
+      )}
+
+      {drawings.length === 0 ? (
+        <p className="contract-review-intro">
+          Nessun disegno collegato. Carica un allegato con ruolo &quot;Disegno&quot; dalla sezione
+          Documenti.
+        </p>
+      ) : (
+        <ul className="cr-doc-list">
+          {drawings.map((d) => (
+            <li
+              key={d.attachment_id}
+              style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}
+            >
+              <button
+                type="button"
+                className="cr-btn"
+                style={{
+                  fontWeight: 600,
+                  border: selectedDocId === d.attachment_id ? '2px solid #2563eb' : undefined,
+                }}
+                disabled={disabled || hydrating}
+                onClick={() => handleSelectDrawing(d.attachment_id)}
+              >
+                {d.file_name}
+              </button>
+              <button
+                type="button"
+                className="cr-btn cr-btn-primary"
+                disabled={disabled || busyId === d.attachment_id}
+                onClick={() => handleExtract(d.attachment_id)}
+              >
+                {busyId === d.attachment_id ? 'Estrazione…' : 'Estrai requisiti'}
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
+
+      {hydrating && !extraction && (
+        <p className="contract-review-intro" style={{ marginTop: 12 }}>
+          Caricamento estrazioni salvate&hellip;
+        </p>
+      )}
+
+      {extraction && (
+        <div style={{ marginTop: 16 }}>
+          <div style={{ fontSize: 13, color: '#6b7280', marginBottom: 8 }}>
+            Provider: <strong>{extraction.provider || '-'}</strong>
+            {' · '}Stato: <strong>{extraction.status || '-'}</strong>
+            {' · '}Requisiti: <strong>{reqs.length}</strong>
+          </div>
+
+          {reqs.length === 0 ? (
+            <p className="contract-review-intro">
+              Nessun requisito estratto da questo disegno.
+            </p>
+          ) : (
+            <div className="cr-table-wrap">
+              <table className="cr-table">
+                <thead>
+                  <tr>
+                    <th>Tipo</th>
+                    <th>Requisito</th>
+                    <th>Conf.</th>
+                    <th>Stato</th>
+                    <th>Azioni</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {reqs.map((r) => (
+                    <ExtractedRequirementRow
+                      key={r.id}
+                      req={r}
+                      disabled={disabled}
+                      onReview={handleReview}
+                    />
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function ExtractedRequirementRow({ req, disabled, onReview }) {
+  const [editing, setEditing] = useState(false);
+  const [value, setValue] = useState(req.value_text || '');
+
+  useEffect(() => {
+    setValue(req.value_text || '');
+  }, [req.id, req.value_text]);
+
+  const confPct = req.confidence != null ? Math.round(req.confidence * 100) : null;
+
+  return (
+    <tr>
+      <td>{REQ_TYPE_LABELS[req.req_type] || req.req_type}</td>
+      <td>
+        {editing ? (
+          <textarea
+            className="notes-textarea"
+            value={value}
+            onChange={(e) => setValue(e.target.value)}
+            rows={2}
+          />
+        ) : (
+          <>
+            {req.value_text || '-'}
+            {req.field_key ? (
+              <>
+                <br />
+                <small style={{ color: '#78909c' }}>{req.field_key}</small>
+              </>
+            ) : null}
+            {req.unit ? <small style={{ color: '#78909c' }}> · {req.unit}</small> : null}
+          </>
+        )}
+      </td>
+      <td style={{ color: confidenceColor(req.confidence), fontWeight: 600 }}>
+        {confPct != null ? `${confPct}%` : '-'}
+      </td>
+      <td>
+        <span className={reviewBadgeClass(req.review_status)}>
+          {REVIEW_STATUS_LABELS[req.review_status] || req.review_status}
+        </span>
+      </td>
+      <td>
+        {editing ? (
+          <div className="cr-transition-row">
+            <button
+              type="button"
+              className="cr-btn cr-btn-primary"
+              onClick={() => {
+                onReview(req.id, { review_status: 'edited', value_text: value });
+                setEditing(false);
+              }}
+            >
+              Salva
+            </button>
+            <button
+              type="button"
+              className="cr-btn"
+              onClick={() => {
+                setValue(req.value_text || '');
+                setEditing(false);
+              }}
+            >
+              Annulla
+            </button>
+          </div>
+        ) : (
+          <div className="cr-transition-row">
+            <button
+              type="button"
+              className="cr-btn cr-btn-primary"
+              disabled={disabled}
+              onClick={() => onReview(req.id, { review_status: 'confirmed' })}
+            >
+              Conferma
+            </button>
+            <button
+              type="button"
+              className="cr-btn"
+              disabled={disabled}
+              onClick={() => setEditing(true)}
+            >
+              Modifica
+            </button>
+            <button
+              type="button"
+              className="cr-btn cr-btn-danger"
+              disabled={disabled}
+              onClick={() => onReview(req.id, { review_status: 'rejected' })}
+            >
+              Rifiuta
+            </button>
+          </div>
+        )}
+      </td>
+    </tr>
   );
 }

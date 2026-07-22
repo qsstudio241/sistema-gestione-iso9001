@@ -25,16 +25,25 @@ function isNcClosureApprover(user) {
     return role === 'admin' || role === 'superadmin';
 }
 
-/** Verifica scope NC + permesso write (RBAC Fase 4.1). */
+/** Verifica scope NC + permesso write (RBAC Fase 4.1).
+ *  Supporta NC con audit_id NULL (source_category != 'audit').
+ */
 async function assertNcWriteAccess(req, res, ncId) {
     const { organization_id } = req.user;
     const scope = studioScopeClause(req.user, 'a');
-    const scopeSql = appendScopeSql(scope);
+    // Studio scope applicato solo quando l'audit esiste (LEFT JOIN può restituire NULL)
+    const scopeSql = scope.clause
+        ? ` AND (nc.audit_id IS NULL OR (${scope.clause}))`
+        : '';
     const result = await query(`
-      SELECT nc.nc_id, a.company_id, a.audit_id
-      FROM non_conformities nc
-      INNER JOIN audits a ON nc.audit_id = a.audit_id
-      WHERE nc.nc_id = @id AND a.organization_id = @organization_id
+      SELECT nc.nc_id, nc.audit_id, nc.source_category, a.company_id
+      FROM   non_conformities nc
+      LEFT JOIN audits a ON nc.audit_id = a.audit_id
+      WHERE  nc.nc_id = @id
+        AND  (
+               (nc.audit_id IS NOT NULL AND a.organization_id = @organization_id)
+               OR (nc.audit_id IS NULL AND nc.organization_id = @organization_id)
+             )
         ${scopeSql}
     `, { id: parseInt(ncId, 10), organization_id, ...scope.params });
 
@@ -42,15 +51,33 @@ async function assertNcWriteAccess(req, res, ncId) {
         return { notFound: true };
     }
 
+    const row = result.recordset[0];
+
+    // NC non legate ad audit: accesso consentito solo ad admin/superadmin
+    if (row.audit_id == null) {
+        const role = req.user?.role;
+        if (role !== 'admin' && role !== 'superadmin') {
+            sendAccessDenied(res, {
+                status: 403,
+                body: {
+                    error: 'Solo admin o responsabile qualit\u00e0 pu\u00f2 modificare azioni non collegate ad un audit.',
+                    code: 'AUTH_FORBIDDEN',
+                },
+            });
+            return { denied: true };
+        }
+        return { row };
+    }
+
     const writeDenied = await assertMutatingAllowed(req.user, {
-        companyId: result.recordset[0].company_id,
+        companyId: row.company_id,
     });
     if (writeDenied) {
         sendAccessDenied(res, writeDenied);
         return { denied: true };
     }
 
-    return { row: result.recordset[0] };
+    return { row };
 }
 
 /** Risolve contact_id rubrica → nome testo fallback (retrocompatibilità). */
@@ -142,14 +169,17 @@ async function listNonConformities(req, res) {
             severity,
             overdue,
             due_within_days,
+            source_category,
             page = 1,
             limit = 50
         } = req.query;
 
         const offset = (parseInt(page) - 1) * parseInt(limit);
 
-        // Build WHERE clause dinamicamente
-        let whereConditions = ['a.organization_id = @organization_id'];
+        // Org filter: supporta NC con audit_id NULL (organization_id diretto)
+        let whereConditions = [
+            '(COALESCE(a.organization_id, nc.organization_id) = @organization_id)',
+        ];
         let params = { organization_id, limit: parseInt(limit), offset };
 
         if (audit_id) {
@@ -172,9 +202,14 @@ async function listNonConformities(req, res) {
             params.severity = severity;
         }
 
+        if (source_category) {
+            whereConditions.push('nc.source_category = @source_category');
+            params.source_category = source_category;
+        }
+
         if (overdue === 'true') {
             whereConditions.push('nc.due_date < CAST(GETDATE() AS DATE)');
-            whereConditions.push('nc.status NOT IN (\'closed\', \'verified\')');
+            whereConditions.push("nc.status NOT IN ('closed', 'verified')");
         }
 
         const dueWithin = parseInt(due_within_days, 10);
@@ -182,20 +217,21 @@ async function listNonConformities(req, res) {
             whereConditions.push('nc.due_date IS NOT NULL');
             whereConditions.push('nc.due_date >= CAST(GETDATE() AS DATE)');
             whereConditions.push(`nc.due_date <= DATEADD(day, ${dueWithin}, CAST(GETDATE() AS DATE))`);
-            whereConditions.push('nc.status NOT IN (\'closed\', \'verified\')');
+            whereConditions.push("nc.status NOT IN ('closed', 'verified')");
         }
 
+        // Studio scope solo sugli audit associati (LEFT JOIN può restituire NULL per nc senza audit)
         const scope = studioScopeClause(req.user, 'a');
         if (scope.clause) {
-            whereConditions.push(scope.clause);
+            whereConditions.push(`(nc.audit_id IS NULL OR (${scope.clause}))`);
             Object.assign(params, scope.params);
         }
 
         const whereClause = whereConditions.join(' AND ');
 
-        // Query principale
+        // Query principale: LEFT JOIN per supportare NC senza audit
         const result = await query(`
-      SELECT 
+      SELECT
         nc.*,
         a.audit_number,
         a.audit_uuid,
@@ -205,26 +241,26 @@ async function listNonConformities(req, res) {
         c.complaint_number AS source_complaint_number,
         approver.full_name AS approved_by_name,
         (SELECT COUNT(*) FROM attachments WHERE nc_id = nc.nc_id) AS attachments_count,
-        CASE 
-          WHEN nc.due_date < CAST(GETDATE() AS DATE) AND nc.status NOT IN ('closed', 'verified') 
-          THEN 1 
-          ELSE 0 
+        (SELECT COUNT(*) FROM nc_actions WHERE nc_id = nc.nc_id AND action_type = 'immediate' AND status IN ('completed','verified')) AS correction_completed_count,
+        CASE
+          WHEN nc.due_date < CAST(GETDATE() AS DATE) AND nc.status NOT IN ('closed', 'verified')
+          THEN 1 ELSE 0
         END AS is_overdue,
-        CASE 
+        CASE
           WHEN nc.due_date IS NOT NULL
             AND nc.due_date >= CAST(GETDATE() AS DATE)
             AND nc.due_date <= DATEADD(day, 7, CAST(GETDATE() AS DATE))
             AND nc.status NOT IN ('closed', 'verified')
-          THEN 1
-          ELSE 0
+          THEN 1 ELSE 0
         END AS is_due_soon
       FROM non_conformities nc
-      INNER JOIN audits a ON nc.audit_id = a.audit_id
-      INNER JOIN checklist_sections cs ON nc.section_code = cs.section_code AND cs.standard_id = nc.standard_id
-      LEFT JOIN complaints c ON c.id = nc.source_complaint_id
-      LEFT JOIN users approver ON nc.approved_by = approver.user_id
+      LEFT JOIN audits a             ON nc.audit_id = a.audit_id
+      LEFT JOIN checklist_sections cs ON nc.section_code = cs.section_code
+                                      AND cs.standard_id = nc.standard_id
+      LEFT JOIN complaints c         ON c.id = nc.source_complaint_id
+      LEFT JOIN users approver       ON nc.approved_by = approver.user_id
       WHERE ${whereClause}
-      ORDER BY 
+      ORDER BY
         CASE nc.severity WHEN 'major' THEN 1 WHEN 'minor' THEN 2 ELSE 3 END,
         nc.created_at DESC
       OFFSET @offset ROWS
@@ -234,8 +270,8 @@ async function listNonConformities(req, res) {
         // Count totale
         const countResult = await query(`
       SELECT COUNT(*) AS total
-      FROM non_conformities nc
-      INNER JOIN audits a ON nc.audit_id = a.audit_id
+      FROM   non_conformities nc
+      LEFT JOIN audits a ON nc.audit_id = a.audit_id
       WHERE ${whereClause}
     `, params);
 
@@ -357,6 +393,7 @@ async function getNonConformityById(req, res) {
         cs.section_title,
         approver.full_name AS approved_by_name,
         (SELECT COUNT(*) FROM attachments WHERE nc_id = nc.nc_id) AS attachments_count,
+        (SELECT COUNT(*) FROM nc_actions WHERE nc_id = nc.nc_id AND action_type = 'immediate' AND status IN ('completed','verified')) AS correction_completed_count,
         CASE 
           WHEN nc.due_date < CAST(GETDATE() AS DATE) AND nc.status NOT IN ('closed', 'verified') 
           THEN 1 
@@ -429,6 +466,22 @@ async function getNonConformityById(req, res) {
  *   corrective_action?: string
  * }
  */
+const VALID_SOURCE_CATEGORIES = [
+    'audit', 'complaint', 'risk_action', 'management_review',
+    'improvement', 'operational', 'external_audit', 'sal_gap',
+];
+
+/** Sezione ISO di default per categorie non legate ad audit. */
+const CATEGORY_DEFAULT_SECTION = {
+    complaint:         'clause8',
+    risk_action:       'clause6',
+    management_review: 'clause9',
+    improvement:       'clause10',
+    operational:       'clause8',
+    external_audit:    'clause9',
+    sal_gap:           'clause10',
+};
+
 async function createNonConformity(req, res) {
     try {
         const { organization_id } = req.user;
@@ -441,78 +494,119 @@ async function createNonConformity(req, res) {
             responsible_person,
             responsible_contact_id,
             due_date,
-            corrective_action
+            corrective_action,
+            source_category: rawCategory,
+            source_origin_text,
+            management_review_id,
+            source_complaint_id: rawComplaintId,
+            source_risk_id,
         } = req.body;
 
-        // Validazione campi obbligatori
-        if (!audit_id || !nc_number || !section_code || !description || !severity) {
+        const source_complaint_id = (rawComplaintId != null && rawComplaintId !== '')
+            ? parseInt(rawComplaintId, 10)
+            : null;
+
+        const source_category = rawCategory || 'audit';
+        const managementReviewId = (management_review_id != null && management_review_id !== '')
+            ? parseInt(management_review_id, 10)
+            : null;
+        const isAuditBased = source_category === 'audit';
+
+        // Validazione campi obbligatori comuni
+        if (!nc_number || !description || !severity) {
             return res.status(400).json({
                 error: 'Campi obbligatori mancanti',
                 code: 'VALIDATION_ERROR',
-                required: ['audit_id', 'nc_number', 'section_code', 'description', 'severity']
+                required: ['nc_number', 'description', 'severity'],
+            });
+        }
+        if (isAuditBased && !audit_id) {
+            return res.status(400).json({
+                error: 'audit_id obbligatorio per NC di categoria \u2018audit\u2019',
+                code: 'VALIDATION_ERROR',
+                required: ['audit_id'],
+            });
+        }
+        if (!VALID_SOURCE_CATEGORIES.includes(source_category)) {
+            return res.status(400).json({
+                error: 'source_category non valida',
+                code: 'VALIDATION_ERROR',
+                allowed: VALID_SOURCE_CATEGORIES,
             });
         }
 
         // Verifica severity valida
         if (!['major', 'minor', 'observation'].includes(severity)) {
             return res.status(400).json({
-                error: 'Severità non valida',
+                error: 'Severit\u00e0 non valida',
                 code: 'VALIDATION_ERROR',
-                allowed: ['major', 'minor', 'observation']
+                allowed: ['major', 'minor', 'observation'],
             });
         }
 
-        // Verifica che audit appartenga all'organizzazione e al perimetro studio RBAC
-        const scope = studioScopeClause(req.user, 'a');
-        let auditWhere = 'audit_id = @audit_id AND organization_id = @organization_id AND is_deleted = 0';
-        const auditParams = { audit_id: parseInt(audit_id), organization_id };
-        if (scope.clause) {
-            auditWhere += ` AND ${scope.clause}`;
-            Object.assign(auditParams, scope.params);
+        let company_id = null;
+        let standard_id = 1; // ISO 9001 di default per NC non legate ad audit
+        let effective_section_code = section_code
+            || CATEGORY_DEFAULT_SECTION[source_category]
+            || 'clause10';
+
+        if (isAuditBased) {
+            // Verifica che l'audit appartenga all'organizzazione e al perimetro studio
+            const scope = studioScopeClause(req.user, 'a');
+            let auditWhere = 'audit_id = @audit_id AND organization_id = @organization_id AND is_deleted = 0';
+            const auditParams = { audit_id: parseInt(audit_id), organization_id };
+            if (scope.clause) {
+                auditWhere += ` AND ${scope.clause}`;
+                Object.assign(auditParams, scope.params);
+            }
+            const auditCheck = await query(`
+        SELECT audit_id, company_id FROM audits a
+        WHERE ${auditWhere}
+      `, auditParams);
+
+            if (auditCheck.recordset.length === 0) {
+                return res.status(404).json({ error: 'Audit non trovato', code: 'AUDIT_NOT_FOUND' });
+            }
+
+            company_id = auditCheck.recordset[0].company_id;
+            const writeDenied = await assertMutatingAllowed(req.user, { companyId: company_id });
+            if (writeDenied) return sendAccessDenied(res, writeDenied);
+
+            // Recupera standard_id dalla junction table audit_standards
+            const standardResult = await query(`
+        SELECT TOP 1 standard_id FROM audit_standards WHERE audit_id = @audit_id
+      `, { audit_id: parseInt(audit_id) });
+
+            if (standardResult.recordset.length === 0) {
+                return res.status(400).json({
+                    error: 'Audit non ha standard associati',
+                    code: 'NO_STANDARDS_FOUND',
+                });
+            }
+            standard_id = standardResult.recordset[0].standard_id;
+        } else {
+            // NC non legate ad audit: solo admin/superadmin
+            const role = req.user?.role;
+            if (role !== 'admin' && role !== 'superadmin') {
+                return res.status(403).json({
+                    error: 'Solo admin o responsabile qualit\u00e0 pu\u00f2 creare azioni non collegate ad un audit.',
+                    code: 'AUTH_FORBIDDEN',
+                });
+            }
         }
-        const auditCheck = await query(`
-      SELECT audit_id, company_id FROM audits a
-      WHERE ${auditWhere}
-    `, auditParams);
 
-        if (auditCheck.recordset.length === 0) {
-            return res.status(404).json({
-                error: 'Audit non trovato',
-                code: 'AUDIT_NOT_FOUND'
-            });
-        }
-
-        const writeDenied = await assertMutatingAllowed(req.user, {
-            companyId: auditCheck.recordset[0].company_id,
-        });
-        if (writeDenied) return sendAccessDenied(res, writeDenied);
-
-        // Recupera il primo standard_id dalla junction table audit_standards
-        const standardResult = await query(`
-      SELECT TOP 1 standard_id FROM audit_standards
-      WHERE audit_id = @audit_id
-    `, { audit_id: parseInt(audit_id) });
-
-        if (standardResult.recordset.length === 0) {
-            return res.status(400).json({
-                error: 'Audit non ha standard associati',
-                code: 'NO_STANDARDS_FOUND'
-            });
-        }
-
-        const standard_id = standardResult.recordset[0].standard_id;
-
-        // Verifica unicità nc_number nell'organizzazione (scoped per tenant)
+        // Verifica unicità nc_number nell'organizzazione
         const existingNC = await query(`
       SELECT nc.nc_id FROM non_conformities nc
-      INNER JOIN audits a ON nc.audit_id = a.audit_id
-      WHERE nc.nc_number = @nc_number AND a.organization_id = @organization_id
+      LEFT JOIN audits a ON nc.audit_id = a.audit_id
+      WHERE nc.nc_number = @nc_number
+        AND (COALESCE(a.organization_id, nc.organization_id) = @organization_id)
     `, { nc_number, organization_id });
 
         if (existingNC.recordset.length > 0) {
             return res.status(409).json({
-                error: 'Numero NC già esistente in questa organizzazione',
-                code: 'NC_NUMBER_DUPLICATE'
+                error: 'Numero NC gi\u00e0 esistente in questa organizzazione',
+                code: 'NC_NUMBER_DUPLICATE',
             });
         }
 
@@ -523,10 +617,13 @@ async function createNonConformity(req, res) {
             );
         }
 
-        // Crea NC (source_type manual: creazione diretta, non da push audit)
+        const safeSourceRiskId = source_risk_id ? parseInt(source_risk_id) || null : null;
+
+        // Crea NC con campi Action Plan
         const result = await query(`
       INSERT INTO non_conformities (
         audit_id,
+        organization_id,
         standard_id,
         nc_number,
         section_code,
@@ -538,12 +635,18 @@ async function createNonConformity(req, res) {
         corrective_action,
         status,
         source_type,
+        source_category,
+        source_origin_text,
+        source_complaint_id,
+        management_review_id,
+        source_risk_id,
         created_at,
         updated_at
       )
       OUTPUT INSERTED.nc_id, INSERTED.nc_uuid
       VALUES (
         @audit_id,
+        @organization_id,
         @standard_id,
         @nc_number,
         @section_code,
@@ -555,39 +658,53 @@ async function createNonConformity(req, res) {
         @corrective_action,
         'open',
         'manual',
+        @source_category,
+        @source_origin_text,
+        @source_complaint_id,
+        @management_review_id,
+        @source_risk_id,
         GETDATE(),
         GETDATE()
       )
     `, {
-            audit_id: parseInt(audit_id),
+            audit_id: isAuditBased ? parseInt(audit_id) : null,
+            organization_id,
             standard_id: parseInt(standard_id),
             nc_number,
-            section_code,
+            section_code: effective_section_code,
             description,
             severity,
             responsible_person: responsibleResolved.text,
             responsible_contact_id: responsibleResolved.contact_id,
+            source_category,
+            source_origin_text: source_origin_text || null,
+            source_complaint_id: source_category === 'complaint' ? source_complaint_id : null,
+            management_review_id: managementReviewId,
+            source_risk_id: safeSourceRiskId,
             due_date: due_date || null,
             corrective_action: corrective_action || null
         });
 
         const newNC = result.recordset[0];
 
-        // Aggiorna contatore NC nell'audit
-        await query(`
-      UPDATE audits
-      SET non_conformities_count = (
-        SELECT COUNT(*) FROM non_conformities WHERE audit_id = @audit_id
-      ),
-      updated_at = GETDATE()
-      WHERE audit_id = @audit_id
-    `, { audit_id: parseInt(audit_id) });
+        // Aggiorna contatore NC nell'audit (solo se NC legata ad audit)
+        if (isAuditBased && audit_id) {
+            await query(`
+        UPDATE audits
+        SET non_conformities_count = (
+          SELECT COUNT(*) FROM non_conformities WHERE audit_id = @audit_id
+        ),
+        updated_at = GETDATE()
+        WHERE audit_id = @audit_id
+      `, { audit_id: parseInt(audit_id) });
+        }
 
         logger.info('NC created', {
             nc_id: newNC.nc_id,
-            audit_id,
+            audit_id: isAuditBased ? audit_id : null,
+            source_category,
             organization_id,
-            severity
+            severity,
         });
 
         res.status(201).json({
@@ -638,35 +755,57 @@ async function updateNonConformity(req, res) {
             responsible_contact_id,
             verification_contact_id,
             root_cause,
-            reopen_reason
+            reopen_reason,
+            corrective_action_needed,
+            corrective_action_evaluation_notes,
         } = req.body;
 
         const scope = studioScopeClause(req.user, 'a');
-        const whereExtra = scope.clause ? ` AND ${scope.clause}` : '';
+        const scopeSqlUpdate = scope.clause
+            ? ` AND (nc.audit_id IS NULL OR (${scope.clause}))`
+            : '';
         const ownershipParams = { id: parseInt(id), organization_id, ...scope.params };
 
         // Verifica esistenza, ownership org e perimetro studio RBAC
         const existingNC = await query(`
-      SELECT nc.nc_id, nc.status AS current_status, nc.verification_notes, nc.approved_at, a.audit_id, a.company_id
+      SELECT nc.nc_id, nc.status AS current_status, nc.verification_notes, nc.approved_at,
+             nc.audit_id, nc.source_category, a.company_id
       FROM non_conformities nc
-      INNER JOIN audits a ON nc.audit_id = a.audit_id
-      WHERE nc.nc_id = @id AND a.organization_id = @organization_id${whereExtra}
+      LEFT JOIN audits a ON nc.audit_id = a.audit_id
+      WHERE nc.nc_id = @id
+        AND (
+              (nc.audit_id IS NOT NULL AND a.organization_id = @organization_id)
+              OR (nc.audit_id IS NULL AND nc.organization_id = @organization_id)
+            )
+        ${scopeSqlUpdate}
     `, ownershipParams);
 
         if (existingNC.recordset.length === 0) {
             return res.status(404).json({
-                error: 'Non conformità non trovata',
-                code: 'NC_NOT_FOUND'
+                error: 'Non conformit\u00e0 non trovata',
+                code: 'NC_NOT_FOUND',
             });
         }
 
-        const writeDenied = await assertMutatingAllowed(req.user, {
-            companyId: existingNC.recordset[0].company_id,
-        });
-        if (writeDenied) return sendAccessDenied(res, writeDenied);
+        const existingRow = existingNC.recordset[0];
+        // NC non-audit: solo admin/superadmin
+        if (existingRow.audit_id == null) {
+            const role = req.user?.role;
+            if (role !== 'admin' && role !== 'superadmin') {
+                return sendAccessDenied(res, {
+                    status: 403,
+                    body: { error: 'Solo admin pu\u00f2 modificare azioni non collegate ad audit.', code: 'AUTH_FORBIDDEN' },
+                });
+            }
+        } else {
+            const writeDenied = await assertMutatingAllowed(req.user, {
+                companyId: existingRow.company_id,
+            });
+            if (writeDenied) return sendAccessDenied(res, writeDenied);
+        }
 
-        const currentStatus = existingNC.recordset[0].current_status;
-        const audit_id = existingNC.recordset[0].audit_id;
+        const currentStatus = existingRow.current_status;
+        const audit_id = existingRow.audit_id;
 
         // Build UPDATE dinamicamente
         const updates = [];
@@ -732,6 +871,23 @@ async function updateNonConformity(req, res) {
             updates.push('root_cause = @root_cause');
             params.root_cause = root_cause;
         }
+        if (corrective_action_needed !== undefined) {
+            const val = corrective_action_needed
+                ? String(corrective_action_needed).trim().toLowerCase()
+                : null;
+            if (val && !['yes', 'no'].includes(val)) {
+                return res.status(400).json({
+                    error: 'Valore non valido per corrective_action_needed (yes/no)',
+                    code: 'VALIDATION_ERROR',
+                });
+            }
+            updates.push('corrective_action_needed = @corrective_action_needed');
+            params.corrective_action_needed = val;
+        }
+        if (corrective_action_evaluation_notes !== undefined) {
+            updates.push('corrective_action_evaluation_notes = @corrective_action_evaluation_notes');
+            params.corrective_action_evaluation_notes = corrective_action_evaluation_notes;
+        }
 
         // Gestione transizione stato (con validazione workflow)
         if (status !== undefined) {
@@ -761,6 +917,21 @@ async function updateNonConformity(req, res) {
                     currentStatus,
                     allowedTransitions
                 });
+            }
+
+            // Gate ISO 10.2.1 a): almeno una correzione (immediate) completata prima di risolta
+            if (status === 'resolved') {
+                const correctionCheck = await query(`
+                    SELECT COUNT(*) AS cnt FROM nc_actions
+                    WHERE nc_id = @id AND action_type = 'immediate'
+                      AND status IN ('completed', 'verified')
+                `, { id: parseInt(id) });
+                if ((correctionCheck.recordset[0]?.cnt || 0) === 0) {
+                    return res.status(400).json({
+                        error: 'Registrare almeno una Correzione (azione immediata) completata prima di segnare la NC come Risolta (ISO 10.2.1 a)',
+                        code: 'CORRECTION_REQUIRED'
+                    });
+                }
             }
 
             // Gate ISO 10.2: note verifica obbligatorie per verified/closed
@@ -834,26 +1005,28 @@ async function updateNonConformity(req, res) {
       WHERE nc_id = @id
     `, params);
 
-        // Aggiorna contatore NC nell'audit se necessario
-        await query(`
-      UPDATE audits
-      SET non_conformities_count = (
-        SELECT COUNT(*) FROM non_conformities WHERE audit_id = @audit_id
-      ),
-      updated_at = GETDATE()
-      WHERE audit_id = @audit_id
-    `, { audit_id });
+        // Aggiorna contatore NC nell'audit (solo se NC legata ad audit)
+        if (audit_id) {
+            await query(`
+        UPDATE audits
+        SET non_conformities_count = (
+          SELECT COUNT(*) FROM non_conformities WHERE audit_id = @audit_id
+        ),
+        updated_at = GETDATE()
+        WHERE audit_id = @audit_id
+      `, { audit_id });
+        }
 
         logger.info('NC updated', {
             nc_id: id,
             organization_id,
             updates: Object.keys(params),
-            statusTransition: status ? `${currentStatus} → ${status}` : null
+            statusTransition: status ? `${currentStatus} \u2192 ${status}` : null,
         });
 
         res.json({
             success: true,
-            message: 'Non conformità aggiornata con successo'
+            message: 'Non conformit\u00e0 aggiornata con successo',
         });
 
     } catch (error) {
@@ -874,50 +1047,34 @@ async function deleteNonConformity(req, res) {
         const { id } = req.params;
         const { organization_id } = req.user;
 
-        const scope = studioScopeClause(req.user, 'a');
-        const scopeSql = appendScopeSql(scope);
-
-        // Verifica esistenza, tenant e scope studio
-        const existingNC = await query(`
-      SELECT nc.nc_id, a.audit_id
-      FROM non_conformities nc
-      INNER JOIN audits a ON nc.audit_id = a.audit_id
-      WHERE nc.nc_id = @id AND a.organization_id = @organization_id
-        ${scopeSql}
-    `, { id: parseInt(id), organization_id, ...scope.params });
-
-        if (existingNC.recordset.length === 0) {
-            return res.status(404).json({
-                error: 'Non conformità non trovata',
-                code: 'NC_NOT_FOUND'
-            });
-        }
-
         const ncWrite = await assertNcWriteAccess(req, res, id);
+        if (ncWrite.notFound) {
+            return res.status(404).json({ error: 'Non conformit\u00e0 non trovata', code: 'NC_NOT_FOUND' });
+        }
         if (ncWrite.denied) return;
 
-        const audit_id = existingNC.recordset[0].audit_id;
+        const audit_id = ncWrite.row?.audit_id ?? null;
 
         // Delete NC (CASCADE elimina anche attachments)
-        await query(`
-      DELETE FROM non_conformities WHERE nc_id = @id
-    `, { id: parseInt(id) });
+        await query(`DELETE FROM non_conformities WHERE nc_id = @id`, { id: parseInt(id) });
 
-        // Aggiorna contatore NC nell'audit
-        await query(`
-      UPDATE audits
-      SET non_conformities_count = (
-        SELECT COUNT(*) FROM non_conformities WHERE audit_id = @audit_id
-      ),
-      updated_at = GETDATE()
-      WHERE audit_id = @audit_id
-    `, { audit_id });
+        // Aggiorna contatore NC nell'audit (solo se NC legata ad audit)
+        if (audit_id) {
+            await query(`
+        UPDATE audits
+        SET non_conformities_count = (
+          SELECT COUNT(*) FROM non_conformities WHERE audit_id = @audit_id
+        ),
+        updated_at = GETDATE()
+        WHERE audit_id = @audit_id
+      `, { audit_id });
+        }
 
         logger.info('NC deleted', { nc_id: id, organization_id });
 
         res.json({
             success: true,
-            message: 'Non conformità eliminata con successo'
+            message: 'Non conformit\u00e0 eliminata con successo',
         });
 
     } catch (error) {
@@ -938,7 +1095,7 @@ async function getNonConformitiesStatistics(req, res) {
         const { organization_id } = req.user;
         const { company_id } = req.query;
 
-        let whereConditions = ['a.organization_id = @organization_id'];
+        let whereConditions = ['(COALESCE(a.organization_id, nc.organization_id) = @organization_id)'];
         const params = { organization_id };
 
         if (company_id) {
@@ -948,15 +1105,15 @@ async function getNonConformitiesStatistics(req, res) {
 
         const scope = studioScopeClause(req.user, 'a');
         if (scope.clause) {
-            whereConditions.push(scope.clause);
+            whereConditions.push(`(nc.audit_id IS NULL OR (${scope.clause}))`);
             Object.assign(params, scope.params);
         }
 
         const whereClause = whereConditions.join(' AND ');
 
-        // Statistiche aggregate
+        // Statistiche aggregate — LEFT JOIN per includere NC senza audit
         const statsResult = await query(`
-      SELECT 
+      SELECT
         COUNT(*) AS total,
         SUM(CASE WHEN nc.status = 'open' THEN 1 ELSE 0 END) AS [open],
         SUM(CASE WHEN nc.status = 'in_progress' THEN 1 ELSE 0 END) AS in_progress,
@@ -966,28 +1123,45 @@ async function getNonConformitiesStatistics(req, res) {
         SUM(CASE WHEN nc.severity = 'major' THEN 1 ELSE 0 END) AS major,
         SUM(CASE WHEN nc.severity = 'minor' THEN 1 ELSE 0 END) AS minor,
         SUM(CASE WHEN nc.severity = 'observation' THEN 1 ELSE 0 END) AS observations,
-        SUM(CASE 
-          WHEN nc.due_date < CAST(GETDATE() AS DATE) 
-            AND nc.status NOT IN ('closed', 'verified') 
-          THEN 1 ELSE 0 
+        SUM(CASE
+          WHEN nc.due_date < CAST(GETDATE() AS DATE)
+            AND nc.status NOT IN ('closed', 'verified')
+          THEN 1 ELSE 0
         END) AS overdue,
-        SUM(CASE 
+        SUM(CASE
           WHEN nc.due_date IS NOT NULL
             AND nc.due_date >= CAST(GETDATE() AS DATE)
             AND nc.due_date <= DATEADD(day, 7, CAST(GETDATE() AS DATE))
             AND nc.status NOT IN ('closed', 'verified')
-          THEN 1 ELSE 0 
+          THEN 1 ELSE 0
         END) AS due_soon
       FROM non_conformities nc
-      INNER JOIN audits a ON nc.audit_id = a.audit_id
+      LEFT JOIN audits a ON nc.audit_id = a.audit_id
       WHERE ${whereClause}
+    `, params);
+
+        // Breakdown per categoria origine (additive — non breaking)
+        const categoryResult = await query(`
+      SELECT
+        COALESCE(nc.source_category, 'audit') AS source_category,
+        COUNT(*) AS total,
+        SUM(CASE WHEN nc.status IN ('open', 'in_progress') THEN 1 ELSE 0 END) AS open_count,
+        SUM(CASE WHEN nc.status = 'closed' THEN 1 ELSE 0 END) AS closed_count
+      FROM non_conformities nc
+      LEFT JOIN audits a ON nc.audit_id = a.audit_id
+      WHERE ${whereClause}
+      GROUP BY COALESCE(nc.source_category, 'audit')
+      ORDER BY COUNT(*) DESC
     `, params);
 
         logger.info('NC statistics retrieved', { organization_id, company_id });
 
         res.json({
             success: true,
-            data: statsResult.recordset[0]
+            data: {
+                ...statsResult.recordset[0],
+                by_category: categoryResult.recordset,
+            },
         });
 
     } catch (error) {
@@ -1179,10 +1353,13 @@ async function updateNcAction(req, res) {
         if (verification_note !== undefined) { updates.push('verification_note = @verification_note'); params.verification_note = verification_note; }
 
         if (status !== undefined) {
+            // Workflow semplificato: la verifica di efficacia è un giudizio complessivo
+            // sulla NC (sez. 6 drawer), non sulla singola azione. Lo stato 'verified'
+            // resta accettato solo per compatibilità con azioni storiche già verificate.
             const validTransitions = {
                 'open': ['in_progress', 'completed'],
                 'in_progress': ['completed', 'open'],
-                'completed': ['verified', 'in_progress'],
+                'completed': ['in_progress'],
                 'verified': []
             };
             const current = check.recordset[0].current_status;
@@ -1192,17 +1369,6 @@ async function updateNcAction(req, res) {
                     code: 'INVALID_STATE_TRANSITION',
                     allowedTransitions: validTransitions[current]
                 });
-            }
-            if (status === 'verified') {
-                const noteCandidate = verification_note !== undefined
-                    ? verification_note
-                    : check.recordset[0].verification_note;
-                if (!noteCandidate || !String(noteCandidate).trim()) {
-                    return res.status(400).json({
-                        error: 'Nota verifica obbligatoria per segnare l\'azione come verificata',
-                        code: 'ACTION_VERIFICATION_NOTE_REQUIRED'
-                    });
-                }
             }
             updates.push('status = @status');
             params.status = status;
@@ -1221,18 +1387,20 @@ async function updateNcAction(req, res) {
             WHERE action_id = @actionId
         `, params);
 
-        // Se tutte le azioni sono verified → auto-chiudi NC
-        if (status === 'verified') {
+        // Se tutte le azioni sono completate (o verificate, dati storici) → la NC passa
+        // a "Risolta": la verifica di efficacia complessiva (sez. 6 drawer) resta un
+        // passaggio manuale del RQ, gated dalle note obbligatorie (vedi updateNc).
+        if (status === 'completed') {
             const openActions = await query(`
                 SELECT COUNT(*) AS cnt FROM nc_actions
-                WHERE nc_id = @nc_id AND status NOT IN ('verified')
+                WHERE nc_id = @nc_id AND status NOT IN ('completed', 'verified')
             `, { nc_id: parseInt(id) });
 
             if (openActions.recordset[0].cnt === 0) {
                 await query(`
                     UPDATE non_conformities
-                    SET status = 'verified', updated_at = GETDATE()
-                    WHERE nc_id = @nc_id AND status NOT IN ('closed', 'verified')
+                    SET status = 'resolved', updated_at = GETDATE()
+                    WHERE nc_id = @nc_id AND status NOT IN ('resolved', 'verified', 'closed')
                 `, { nc_id: parseInt(id) });
             }
         }
@@ -1716,7 +1884,11 @@ async function listAggregateDueNcActions(req, res) {
         const { organization_id } = req.user;
         const { overdue, due_within_days, limit = 100 } = req.query;
 
-        let whereConditions = ['a.organization_id = @organization_id', "na.status NOT IN ('verified')"];
+        let whereConditions = [
+            'a.organization_id = @organization_id',
+            "na.status NOT IN ('completed', 'verified')",
+            "nc.status NOT IN ('resolved', 'verified', 'closed')",
+        ];
         const params = { organization_id, limit: parseInt(limit, 10) || 100 };
         const dueWithin = parseInt(due_within_days, 10);
 

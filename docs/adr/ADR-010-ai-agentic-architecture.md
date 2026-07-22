@@ -417,6 +417,23 @@ graph LR
 
 ---
 
+---
+
+## Stato implementazione 2026-06 (HK harness hardening)
+
+| Componente | Stato | Note |
+|---|---|---|
+| NormBroker v1 cascata | Implementato | local_db -> publicLaw connector (graceful); 
+orm_access_log |
+| Gap analysis MVP | Implementato | gapAnalysis.service, GET /gap-analysis (ai_norms), GapAnalysisPage.jsx |
+| Licenze AI | Implementato | i_import, i_assist, i_review, i_norms, i_chat — separate per feature |
+| Audit trail AI | Implementato | logAiInteraction su suggest, review, import, chat |
+| AiDisclaimer | Implementato | Footer non invasivo su 4 flussi: ContractReview, AiAssistant, AiConclusions, GapAnalysis |
+| Percorso canonico riesame | Implementato | POST /contract-reviews/:id/ai/analyze-requirements — unico path FE+BE |
+| UNI Store scraper (Task 1-E) | **Bloccato definitivamente — task abortito** (06/07/2026) | Login assistito (05/07/2026): **funziona**, sessione riutilizzabile (`uni-store-diagnostic.js`, PR #226). Sessione 06/07/2026 (approfondimento consultazione CNPI Studio Mason): attivazione/rilascio abbonamento (UTILIZZA/TERMINA via API dirette `subscription/session`) e download del PDF completo della norma (via `version/subscription/{id}/ViewDownload/...`) sono **completamente automatizzabili**. **Blocco insormontabile confermato**: il PDF resta cifrato con DRM proprietario **FileOpen (`FOPN_foweb`)** — pdfplumber, PyMuPDF, pypdf **e** pikepdf falliscono tutti; decifrarlo sarebbe elusione DRM illegale (L. 633/1941 art. 102-quater). La stampa da Acrobat Reader è disabilitata per questo tier di sola consultazione (diverso da acquisto definitivo, che secondo la policy generale UNI/FileOpen consente stampa illimitata). Tentativo residuo — screenshot automatico delle pagine via PowerShell (SendKeys + CopyFromScreen) mentre l'operatore ha il documento aperto in Acrobat: **fallito** per **isolamento sessione Windows** — il processo lanciato dall'agente gira in una window-station diversa dal desktop interattivo dell'utente, `MainWindowTitle` sempre vuoto, impossibile pilotare la GUI. **Conclusione condivisa col committente**: l'abbonamento CNPI resta utile solo per consultazione occasionale assistita da un umano, mai come motore di ingest automatico. Se in futuro servirà davvero il testo integrale di una norma per il RAG/SAL, l'unica via è l'**acquisto definitivo** (decisione commerciale caso per caso, non un meccanismo generale). Script riutilizzabili mantenuti: `uni-store-diagnostic.js`, `uni-store-download-and-ingest.js`, `uni-store-consult-and-ingest.js`. Lookup catalogo pubblico (`uniStoreConnector.service.js`, nessun login) **resta valido e funzionante**. |
+
+> Branch: cursor/harness-hardening-hk-6b60 — piano: docs/agent-tasks/PLAN_HARNESS_HARDENING_SLICES.md
+
 ## Riferimenti
 
 - [ADR-009](ADR-009-multi-standard-architettura-per-norma.md) — AI-readiness checklist, licenze, pattern componenti

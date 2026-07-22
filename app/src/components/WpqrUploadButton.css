@@ -1,0 +1,98 @@
+/* WpqrUploadButton.css — analogo a QualificationUploadButton.css */
+
+.wpqr-upload { position: relative; display: inline-block; }
+
+.wpqr-upload__no-company {
+  font-size: 13px; color: #92400e; background: #fef3c7;
+  border: 1px solid #fde68a; border-radius: 6px; padding: 7px 12px;
+}
+
+.wpqr-upload__company-context {
+  display: flex; align-items: center; gap: 6px;
+  padding: 8px 14px; background: #f0fdf4; border-bottom: 1px solid #bbf7d0;
+  font-size: 13px; border-radius: 8px 8px 0 0;
+}
+.wpqr-upload__company-label { color: #4b5563; font-weight: 500; }
+.wpqr-upload__company-name  { color: #14532d; font-weight: 700; }
+
+.wpqr-upload__btn {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 9px 16px; background: #166534; color: #fff;
+  border: none; border-radius: 8px; font-size: 14px; font-weight: 600;
+  cursor: pointer; transition: background 0.15s;
+}
+.wpqr-upload__btn:hover:not(:disabled) { background: #14532d; }
+.wpqr-upload__btn:disabled { opacity: 0.6; cursor: not-allowed; }
+.wpqr-upload__icon { font-size: 16px; }
+
+.wpqr-upload__input-hidden { display: none; }
+
+.wpqr-upload__panel {
+  position: absolute; top: calc(100% + 6px); right: 0;
+  background: #fff; border: 1px solid #d1d5db;
+  border-radius: 10px; box-shadow: 0 4px 18px rgba(0,0,0,0.13);
+  min-width: 340px; max-width: 480px; z-index: 300;
+  padding: 14px 16px;
+}
+
+.wpqr-upload__panel-header { margin-bottom: 10px; }
+.wpqr-upload__panel-title  { font-size: 13px; font-weight: 700; color: #374151; }
+
+.wpqr-upload__file-list { list-style: none; margin: 0 0 10px; padding: 0; max-height: 160px; overflow-y: auto; }
+.wpqr-upload__file-item {
+  display: flex; align-items: center; gap: 8px; padding: 5px 0;
+  border-bottom: 1px solid #f3f4f6; font-size: 13px;
+}
+.wpqr-upload__file-icon { font-size: 16px; }
+.wpqr-upload__file-name { flex: 1; color: #111827; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.wpqr-upload__file-size { color: #6b7280; font-size: 11px; white-space: nowrap; }
+
+.wpqr-upload__validation-error {
+  background: #fef2f2; border: 1px solid #fca5a5; border-radius: 6px;
+  padding: 6px 10px; font-size: 12px; color: #b91c1c; margin-bottom: 8px;
+}
+
+.wpqr-upload__actions { display: flex; gap: 8px; margin-top: 10px; }
+.wpqr-upload__action-btn {
+  padding: 7px 14px; border-radius: 6px; font-size: 13px; font-weight: 600;
+  cursor: pointer; border: none; display: inline-flex; align-items: center; gap: 6px;
+}
+.wpqr-upload__action-btn--primary  { background: #166534; color: #fff; }
+.wpqr-upload__action-btn--primary:hover:not(:disabled) { background: #14532d; }
+.wpqr-upload__action-btn--secondary { background: #f3f4f6; color: #374151; border: 1px solid #d1d5db; }
+.wpqr-upload__action-btn--secondary:hover { background: #e5e7eb; }
+.wpqr-upload__action-btn:disabled   { opacity: 0.55; cursor: not-allowed; }
+
+@keyframes wpqr-spin { to { transform: rotate(360deg); } }
+.wpqr-upload__spinner {
+  width: 14px; height: 14px; border: 2px solid rgba(255,255,255,0.3);
+  border-top-color: #fff; border-radius: 50%; animation: wpqr-spin 0.7s linear infinite;
+}
+
+.wpqr-upload__results { list-style: none; margin: 0 0 10px; padding: 0; max-height: 260px; overflow-y: auto; }
+.wpqr-upload__result-item { padding: 8px 0; border-bottom: 1px solid #f3f4f6; font-size: 13px; }
+.wpqr-upload__result-item:last-child { border-bottom: none; }
+
+.wpqr-upload__result-success,
+.wpqr-upload__result-duplicate,
+.wpqr-upload__result-error { display: flex; align-items: flex-start; gap: 8px; }
+
+.wpqr-upload__result-icon { font-size: 16px; flex-shrink: 0; margin-top: 2px; }
+
+.wpqr-upload__result-item--success   .wpqr-upload__result-icon { color: #16a34a; }
+.wpqr-upload__result-item--error     .wpqr-upload__result-icon { color: #dc2626; }
+.wpqr-upload__result-item--duplicate .wpqr-upload__result-icon { color: #d97706; }
+
+.wpqr-upload__result-meta { display: flex; flex-wrap: wrap; gap: 6px; font-size: 11px; color: #6b7280; margin-top: 2px; }
+
+.wpqr-upload__warnings { margin-top: 4px; }
+.wpqr-upload__warning  { font-size: 11px; color: #d97706; }
+
+.wpqr-upload__result-item--wrong-module .wpqr-upload__result-icon { color: #d97706; }
+.wpqr-upload__result-wrong-module { display: flex; align-items: flex-start; gap: 8px; }
+.wpqr-upload__wrong-module-msg  { font-size: 12px; color: #92400e; margin: 2px 0 4px; }
+.wpqr-upload__wrong-module-link {
+  display: inline-block; font-size: 12px; font-weight: 600;
+  color: #b45309; text-decoration: underline; cursor: pointer;
+}
+.wpqr-upload__wrong-module-link:hover { color: #92400e; }

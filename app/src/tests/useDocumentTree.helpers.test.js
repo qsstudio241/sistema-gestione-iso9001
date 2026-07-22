@@ -1,5 +1,5 @@
 /**
- * Test L1 — helper albero documentale
+ * Test L1 â€” helper albero documentale
  */
 import { describe, it, expect } from "vitest";
 import {

@@ -23,7 +23,10 @@ const ACT_PATTERNS = [
  * @returns {{ urnType: string, number: string, year: string } | null}
  */
 function parseItalianActReference(standardCode) {
-  const raw = (standardCode || '').trim();
+  // Normalizza il formato usato come standard_code nel DB (es. "DLgs_81_2008")
+  // sostituendo gli underscore con spazi, mantenendo il supporto ai formati
+  // testuali (es. "D.Lgs. 81/2008").
+  const raw = (standardCode || '').trim().replace(/_/g, ' ');
   if (!raw) return null;
 
   for (const { re, urnType } of ACT_PATTERNS) {
@@ -171,10 +174,129 @@ async function lookupNormStatus(standardCode) {
   }
 }
 
+/**
+ * Permalink URN Normattiva del singolo articolo (fonte verificabile).
+ * @param {{ urnType: string, number: string, year: string }} parsed
+ * @param {string|number} articleNumber
+ * @returns {string}
+ */
+function buildArticleUrl(parsed, articleNumber) {
+  const num = String(articleNumber).replace(/\D/g, '');
+  const urn = `urn:nir:stato:${parsed.urnType}:${parsed.year};${parsed.number}~art${num}!vig=`;
+  return `${BASE}?${encodeURIComponent(urn)}`;
+}
+
+/**
+ * Estrae il testo di un articolo dal frammento HTML Normattiva (contenitore
+ * ".bodyTesto"). Ritorna null se il testo non e' presente (es. shell JS della
+ * home): NON inventa mai il contenuto.
+ * @param {string} html
+ * @returns {string|null}
+ */
+function parseArticleText(html) {
+  if (!html || typeof html !== 'string') return null;
+
+  const m = html.match(/class=["'][^"']*bodyTesto[^"']*["'][^>]*>([\s\S]*?)<\/div>/i);
+  if (!m) return null;
+
+  const decoded = m[1]
+    .replace(/<br\s*\/?>/gi, '\n')
+    .replace(/<\/(p|div|li)>/gi, '\n')
+    .replace(/<[^>]+>/g, '')
+    .replace(/&nbsp;/gi, ' ')
+    .replace(/&amp;/gi, '&')
+    .replace(/&lt;/gi, '<')
+    .replace(/&gt;/gi, '>')
+    .replace(/&quot;/gi, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/&#(\d+);/g, (_, d) => String.fromCharCode(parseInt(d, 10)))
+    .replace(/\r/g, '')
+    .replace(/[ \t]+\n/g, '\n')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim();
+
+  // Guard anti-cruft: un articolo reale ha una lunghezza minima e cita "art".
+  if (decoded.length < 20 || !/art/i.test(decoded)) return null;
+  return decoded;
+}
+
+/**
+ * Recupera il testo di un articolo di legge italiana da Normattiva.
+ * Fallback del broker (step publicLaw): usato solo se la clausola non e' in
+ * cache locale (norm_requirements). Graceful degradation: ritorna null se
+ * l'estrazione non e' affidabile (es. pagina servita via JS senza testo).
+ *
+ * @param {string} standardCode - es. 'DLgs_81_2008'
+ * @param {string} clauseRef - es. 'art.28'
+ * @returns {Promise<{ text: string, title: string, fullRef: string, source: string, sourceUrl: string } | null>}
+ */
+async function getClauseText(standardCode, clauseRef) {
+  const parsed = parseItalianActReference(standardCode);
+  if (!parsed) return null;
+
+  const artMatch = String(clauseRef || '').match(/\d+/);
+  if (!artMatch) return null;
+  const artNum = artMatch[0];
+
+  const url = buildArticleUrl(parsed, artNum);
+
+  try {
+    const { statusCode, body } = await fetchPage(url);
+    if (statusCode < 200 || statusCode >= 400) {
+      logger.warn('[normativaConnector] getClauseText http error', { standardCode, clauseRef, statusCode });
+      return null;
+    }
+
+    const text = parseArticleText(body);
+    if (!text) {
+      logger.info('[normativaConnector] getClauseText: testo non estraibile (pagina JS?)', {
+        standardCode,
+        clauseRef,
+        url,
+      });
+      return null;
+    }
+
+    return {
+      text,
+      title: '',
+      fullRef: `${standardCode} ${clauseRef}`,
+      source: 'normattiva',
+      sourceUrl: url,
+    };
+  } catch (err) {
+    logger.warn('[normativaConnector] getClauseText failed', {
+      standardCode,
+      clauseRef,
+      error: err.message,
+    });
+    return null;
+  }
+}
+
+/**
+ * Elenco articoli di una legge. L'estrazione integrale live da Normattiva
+ * richiede rendering JS (non disponibile server-side): ritorna [] e demanda
+ * l'ingestione allo script dedicato (seed da Normattiva). Documentato in
+ * docs/GUIDA_CONSOLIDATA.md.
+ * @param {string} standardCode
+ * @returns {Promise<Array>}
+ */
+async function getFullNorm(standardCode) {
+  const parsed = parseItalianActReference(standardCode);
+  if (!parsed) return [];
+  logger.info('[normativaConnector] getFullNorm non disponibile live (richiede seed)', { standardCode });
+  return [];
+}
+
 module.exports = {
   parseItalianActReference,
   isItalianPublicLaw,
   buildVigenteUrl,
+  buildArticleUrl,
   parseNormattivaHtml,
+  parseArticleText,
   lookupNormStatus,
+  getClauseText,
+  getFullNorm,
 };

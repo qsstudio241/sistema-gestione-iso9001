@@ -235,7 +235,8 @@ async function createAuditFromSync(clientAudit, userId, organizationId) {
     // Persistenza tipologia audit e fornitore in audit_extra_data
     const extraData = {
         auditPartyType: clientAudit.auditPartyType ?? clientAudit.audit_party_type ?? 'first_party',
-        fornitoreName: clientAudit.fornitoreName ?? clientAudit.fornitore_name ?? ''
+        fornitoreName: clientAudit.fornitoreName ?? clientAudit.fornitore_name ?? '',
+        fornitoreSupplierId: clientAudit.fornitoreSupplierId ?? clientAudit.fornitore_supplier_id ?? null,
     };
     await query(`
         UPDATE audits SET audit_extra_data = @audit_extra_data, updated_at = GETDATE()
@@ -286,6 +287,9 @@ async function updateAuditFromSync(auditId, clientAudit) {
     }
     if (clientAudit.fornitoreName !== undefined || clientAudit.fornitore_name !== undefined) {
         extraData.fornitoreName = clientAudit.fornitoreName ?? clientAudit.fornitore_name ?? '';
+    }
+    if (clientAudit.fornitoreSupplierId !== undefined || clientAudit.fornitore_supplier_id !== undefined) {
+        extraData.fornitoreSupplierId = clientAudit.fornitoreSupplierId ?? clientAudit.fornitore_supplier_id ?? null;
     }
 
     const dateRange = validateAuditDateRange(

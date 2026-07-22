@@ -18,6 +18,35 @@ vi.mock('../components/NcActionsList', () => ({
   default: () => null,
 }));
 
+vi.mock('../components/NcCorrectionSection', () => ({
+  default: () => null,
+}));
+
+vi.mock('../hooks/useNcActions', () => ({
+  useNcActions: () => ({
+    actions: [],
+    loading: false,
+    contacts: [],
+    dueFilter: 'all',
+    setDueFilter: vi.fn(),
+    editDraft: null,
+    isClosed: false,
+    filteredActions: [],
+    immediateActions: [],
+    otherActions: [],
+    overdueActionsCount: 0,
+    dueSoonActionsCount: 0,
+    hasCompletedCorrection: false,
+    load: vi.fn(),
+    createAction: vi.fn(),
+    handleStatus: vi.fn(),
+    handleStartEdit: vi.fn(),
+    handleCancelEdit: vi.fn(),
+    handleSaveEdit: vi.fn(),
+    handleDelete: vi.fn(),
+  }),
+}));
+
 vi.mock('../services/apiService', () => ({
   default: {
     updateNcStatus: (...args) => mockUpdateNcStatus(...args),
@@ -36,6 +65,7 @@ vi.mock('../components/AutoTextarea.css', () => ({}));
 vi.mock('../components/RichTextField.css', () => ({}));
 vi.mock('../contexts/RouterContext', () => ({
   Link: ({ children, to, ...rest }) => React.createElement('a', { href: to, ...rest }, children),
+  useNavigate: () => () => {},
 }));
 vi.mock('../contexts/AuthContext', () => ({
   useAuth: () => ({ user: { organization_id: 1001, role: 'admin' } }),
@@ -68,10 +98,12 @@ describe('NcDetailPanel', () => {
     render(React.createElement(NcDetailPanel, { nc: baseNc, onSaved: vi.fn() }));
 
     expect(screen.getByText('1. Scheda NC')).toBeInTheDocument();
-    expect(screen.getByText('3. Cause')).toBeInTheDocument();
-    expect(screen.getByText('4. Azioni correttive')).toBeInTheDocument();
-    expect(screen.getByText('5. Evidenze')).toBeInTheDocument();
-    expect(screen.getByText('6. Verifica efficacia')).toBeInTheDocument();
+    expect(screen.getByText('2. Difetto/Problema')).toBeInTheDocument();
+    expect(screen.getByText('3. Trattamento')).toBeInTheDocument();
+    expect(screen.getByText('4. Cause e valutazione')).toBeInTheDocument();
+    expect(screen.getByText('6. Azioni correttive / preventive')).toBeInTheDocument();
+    expect(screen.getByText('7. Evidenze')).toBeInTheDocument();
+    expect(screen.getByText('8. Verifica efficacia')).toBeInTheDocument();
 
     expect(screen.getByLabelText(/Descrizione/i)).toHaveValue('Descrizione NC di test');
     expect(screen.getByLabelText(/Analisi causa radice/i)).toHaveValue('Causa radice di test');
@@ -83,7 +115,7 @@ describe('NcDetailPanel', () => {
     expect(screen.getByText('Azione legacy deprecata')).toBeInTheDocument();
   });
 
-  it('ordine DOM: scheda prima di cause, cause prima di verifica', () => {
+  it('ordine DOM: difetto prima di cause, cause prima di verifica', () => {
     render(React.createElement(NcDetailPanel, { nc: baseNc, onSaved: vi.fn() }));
 
     const desc = screen.getByLabelText(/Descrizione/i);
@@ -101,7 +133,7 @@ describe('NcDetailPanel', () => {
       onStatusChange: vi.fn(),
     }));
 
-    expect(screen.getByText('2. Stato workflow')).toBeInTheDocument();
+    expect(screen.getByText('5. Stato workflow')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /Avvia lavorazione/i })).toBeInTheDocument();
   });
 
@@ -146,6 +178,8 @@ describe('NcDetailPanel', () => {
         responsible_person: 'Mario Rossi',
         responsible_contact_id: null,
         due_date: '2026-06-15',
+        corrective_action_needed: null,
+        corrective_action_evaluation_notes: null,
       });
     });
 
@@ -172,7 +206,7 @@ describe('NcDetailPanel', () => {
       onStatusChange: vi.fn(),
     }));
 
-    expect(screen.getByText('7. Chiusura')).toBeInTheDocument();
+    expect(screen.getByText('9. Chiusura')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /Riapri NC/i })).toBeInTheDocument();
   });
 

@@ -1,7 +1,7 @@
 /**
  * @jest-environment node
  *
- * Test L1 — attachment.controller RBAC studio (Slice C)
+ * Test L1 â€” attachment.controller RBAC studio (Slice C)
  */
 
 jest.mock('../config/database', () => ({
@@ -47,7 +47,7 @@ function mockRes() {
 
 afterEach(() => jest.clearAllMocks());
 
-describe('listAttachments — RBAC studio', () => {
+describe('listAttachments â€” RBAC studio', () => {
     it('applica studioScopeClause via join audit effettivo', async () => {
         query
             .mockResolvedValueOnce({ recordset: [] })
@@ -60,6 +60,7 @@ describe('listAttachments — RBAC studio', () => {
         const listSql = query.mock.calls[0][0];
         const listParams = query.mock.calls[0][1];
         expect(listSql).toContain('COALESCE(att.audit_id, nc.audit_id)');
+        expect(listSql).toContain('ndt_report_items');
         expect(listSql).toContain('auditor_org_id = @auditor_org_id');
         expect(listParams).toMatchObject({
             organization_id: ORG_ID,
@@ -67,9 +68,24 @@ describe('listAttachments — RBAC studio', () => {
             user_id: USER_ID,
         });
     });
+
+    it('supporta filtro ndt_report_item_id con scope org via ndt_reports', async () => {
+        query
+            .mockResolvedValueOnce({ recordset: [{ attachment_id: 1 }] })
+            .mockResolvedValueOnce({ recordset: [{ total: 1 }] });
+
+        const req = mockReq({ query: { ndt_report_item_id: '42', page: 1, limit: 50 } });
+        const res = mockRes();
+        await ctrl.listAttachments(req, res);
+
+        const listSql = query.mock.calls[0][0];
+        expect(listSql).toContain('att.ndt_report_item_id = @ndt_report_item_id');
+        expect(listSql).toContain('COALESCE(a.organization_id, ndt_r.organization_id)');
+        expect(res.json).toHaveBeenCalledWith(expect.objectContaining({ success: true }));
+    });
 });
 
-describe('getAttachmentById — RBAC studio', () => {
+describe('getAttachmentById â€” RBAC studio', () => {
     it('404 se allegato fuori scope studio', async () => {
         query.mockResolvedValueOnce({ recordset: [] });
 
@@ -83,7 +99,27 @@ describe('getAttachmentById — RBAC studio', () => {
     });
 });
 
-describe('uploadAttachment — RBAC studio', () => {
+describe('uploadAttachment â€” NDT', () => {
+    it('accetta upload con ndt_report_item_id senza audit_id', async () => {
+        query
+            .mockResolvedValueOnce({ recordset: [{ id: 42 }] })
+            .mockResolvedValueOnce({
+                recordset: [{ attachment_id: 7, attachment_uuid: 'uuid-1' }],
+            });
+
+        const req = mockReq({
+            file: { path: '/tmp/x.jpg', originalname: 'x.jpg', size: 100, mimetype: 'image/jpeg' },
+            body: { ndt_report_item_id: '42', category: 'photo' },
+        });
+        const res = mockRes();
+        await ctrl.uploadAttachment(req, res);
+
+        expect(query.mock.calls[0][0]).toContain('ndt_report_items');
+        expect(res.status).toHaveBeenCalledWith(201);
+    });
+});
+
+describe('uploadAttachment â€” RBAC studio', () => {
     it('rifiuta upload su audit fuori scope', async () => {
         query.mockResolvedValueOnce({ recordset: [] });
 

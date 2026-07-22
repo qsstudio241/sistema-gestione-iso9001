@@ -24,11 +24,18 @@ async function getTree(req, res) {
         const { organization_id } = req.user;
         const depth      = Math.min(parseInt(req.query.depth) || 2, 10);
         const company_id = req.query.company_id ? parseInt(req.query.company_id) : null;
+        const studioScope = req.query.scope === 'studio';
 
         const conditions = ['dr.organization_id = @organization_id', 'dr.parent_id IS NULL'];
         const params = { organization_id };
 
-        appendCompanyScopeCondition(conditions, params, 'dr', company_id);
+        if (studioScope) {
+            // Vista dedicata "Patrimonio Studio": solo nodi dello studio.
+            conditions.push("dr.content_scope = 'studio'");
+            conditions.push('dr.company_id IS NULL');
+        } else {
+            appendCompanyScopeCondition(conditions, params, 'dr', company_id);
+        }
 
         conditions.push("ISNULL(dr.status, 'rilasciato') <> 'obsoleto'");
 
@@ -238,34 +245,53 @@ async function createFolder(req, res) {
         }
 
         const parentId   = parent_id  != null ? parseInt(parent_id)  : null;
-        const companyId  = company_id != null ? parseInt(company_id) : null;
+        let companyId    = company_id != null ? parseInt(company_id) : null;
+
+        // content_scope esplicito: ereditato dal parent se non fornito, altrimenti
+        // dedotto dall'azienda. Garantisce che le sottocartelle del Patrimonio Studio
+        // restino content_scope='studio' e fuori dalle viste azienda.
+        let contentScope = ['client', 'studio', 'reference'].includes(req.body.content_scope)
+            ? req.body.content_scope
+            : null;
 
         if (parentId != null) {
             const parent = await query(`
-                SELECT id FROM document_registry
+                SELECT id, company_id, content_scope FROM document_registry
                 WHERE id = @id AND organization_id = @organization_id
             `, { id: parentId, organization_id });
 
             if (!parent.recordset.length) {
                 return res.status(404).json({ error: 'Parent non trovato', code: 'PARENT_NOT_FOUND' });
             }
+            const parentRow = parent.recordset[0];
+            if (contentScope == null && parentRow.content_scope) {
+                contentScope = parentRow.content_scope;
+            }
+            // Per coerenza con il subtree studio: nessuna azienda sulle cartelle 'studio'.
+            if (contentScope === 'studio') companyId = null;
+            else if (companyId == null && parentRow.company_id != null) companyId = parentRow.company_id;
+        }
+
+        if (contentScope == null) {
+            contentScope = companyId != null ? 'client' : 'reference';
         }
 
         const result = await query(`
             INSERT INTO document_registry
                 (organization_id, company_id, doc_type, title, status,
                  parent_id, is_system_folder, display_order,
-                 created_by, created_at, updated_at)
+                 content_scope, created_by, created_at, updated_at)
             OUTPUT INSERTED.id
             VALUES
                 (@organization_id, @company_id, 'folder', @title, 'rilasciato',
                  @parent_id, 0, 0,
-                 @created_by, GETDATE(), GETDATE())
+                 @content_scope, @created_by, GETDATE(), GETDATE())
         `, {
             organization_id,
             company_id: companyId,
             title:      title.trim(),
             parent_id:  parentId,
+            content_scope: contentScope,
             created_by: user_id,
         });
 
@@ -368,6 +394,33 @@ async function provisionTree(req, res) {
     }
 }
 
+// POST /api/v1/documents/provision-studio-patrimony
+async function provisionStudioPatrimony(req, res) {
+    try {
+        const { organization_id, role } = req.user;
+
+        if (role !== 'admin' && role !== 'superadmin') {
+            return res.status(403).json({
+                error: 'Solo admin e superadmin possono provisionare il Patrimonio Studio',
+                code:  'FORBIDDEN',
+            });
+        }
+
+        const result = await provisioner.provisionStudioPatrimony(organization_id);
+
+        logger.info('Patrimonio Studio provisioned', { organization_id, rootId: result.rootId });
+
+        res.status(201).json({ success: true, data: result });
+
+    } catch (error) {
+        logger.error('Error provisioning studio patrimony', { error: error.message });
+        res.status(500).json({
+            error: error.message || 'Errore durante il provisioning del Patrimonio Studio',
+            code:  'DOC_STUDIO_PROVISION_ERROR',
+        });
+    }
+}
+
 // GET /api/v1/document-tree-templates
 async function listTemplates(req, res) {
     try {
@@ -396,5 +449,6 @@ module.exports = {
     createFolder,
     getBreadcrumb,
     provisionTree,
+    provisionStudioPatrimony,
     listTemplates,
 };

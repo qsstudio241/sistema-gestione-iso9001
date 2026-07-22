@@ -31,7 +31,7 @@ describe('ncFieldDraftStorage', () => {
     expect(loaded?.savedAt).toBeTypeOf('number');
   });
 
-  it('pickNcFieldValue preferisce bozza pi� ricca del server', () => {
+  it('pickNcFieldValue preferisce bozza più  ricca del server', () => {
     const draft = { value: 'Bozza lunga con dettagli aggiuntivi' };
     expect(pickNcFieldValue('Breve', draft)).toBe(draft.value);
   });

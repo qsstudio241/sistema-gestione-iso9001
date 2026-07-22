@@ -10,12 +10,14 @@ import { canEditCompany } from "../utils/companyAccess";
 import apiService from "../services/apiService";
 import { useCompanyLogoUrl } from "../hooks/useCompanyLogoUrl";
 import CompanyPersonnelPanel from "../components/CompanyPersonnelPanel";
+import CompanyCounterpartiesPanel from "../components/CompanyCounterpartiesPanel";
 import "./CompanyDetailPage.css";
 import "./StudioSettingsPage.css";
 
 const TABS = [
   { id: "anagrafica", label: "Anagrafica" },
   { id: "personale", label: "Personale" },
+  { id: "controparti", label: "Controparti" },
 ];
 
 function parseCompanyId(path) {
@@ -32,7 +34,6 @@ function TabAnagrafica({ company, onSaved, auditorOrgId, canEdit }) {
   });
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
-  const [saved, setSaved] = useState(false);
   const [logoFile, setLogoFile] = useState(null);
   const [logoPreview, setLogoPreview] = useState(null);
   const [logoTimestamp, setLogoTimestamp] = useState(Date.now());
@@ -70,7 +71,6 @@ function TabAnagrafica({ company, onSaved, auditorOrgId, canEdit }) {
     if (!form.name?.trim() || !company?.id) return;
     setSaving(true);
     setError(null);
-    setSaved(false);
     try {
       await apiService.updateCompany(company.id, form);
       if (logoFile) {
@@ -78,8 +78,6 @@ function TabAnagrafica({ company, onSaved, auditorOrgId, canEdit }) {
         setLogoTimestamp(Date.now());
         setLogoFile(null);
       }
-      setSaved(true);
-      setTimeout(() => setSaved(false), 3000);
       onSaved?.();
     } catch (err) {
       setError(err.message || "Errore salvataggio");
@@ -152,7 +150,6 @@ function TabAnagrafica({ company, onSaved, auditorOrgId, canEdit }) {
         )}
         {canEdit && (
           <div className="studio-actions">
-            {saved && <span className="studio-saved">&#10003; Salvato</span>}
             <button type="submit" className="btn-studio-primary" disabled={saving}>
               {saving ? "Salvataggio..." : "Salva anagrafica"}
             </button>
@@ -239,7 +236,7 @@ function CompanyDetailPage() {
         </Link>
         <h2 className="studio-title">{company.name}</h2>
         <p className="studio-subtitle">
-          Scheda azienda ? anagrafica e personale collegato alle NC.
+          Scheda azienda — anagrafica, personale e controparti commerciali.
         </p>
       </div>
 
@@ -262,13 +259,20 @@ function CompanyDetailPage() {
         {activeTab === "anagrafica" && (
           <TabAnagrafica
             company={company}
-            onSaved={loadCompany}
+            onSaved={() => navigate("/companies")}
             auditorOrgId={auditorOrgId}
             canEdit={canEdit}
           />
         )}
         {activeTab === "personale" && (
           <CompanyPersonnelPanel
+            companyId={company.id}
+            auditorOrgId={auditorOrgId}
+            canEdit={canEdit}
+          />
+        )}
+        {activeTab === "controparti" && (
+          <CompanyCounterpartiesPanel
             companyId={company.id}
             auditorOrgId={auditorOrgId}
             canEdit={canEdit}

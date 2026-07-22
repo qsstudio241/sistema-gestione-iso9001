@@ -1,5 +1,5 @@
 /**
- * deadlines.controller.js � Scadenzario da file (ADR-013)
+ * deadlines.controller.js  -  Scadenzario da file (ADR-013)
  *
  * S3: POST /documents/:id/detect-deadlines  ? analisi euristica del file
  * S4: POST /documents/:id/import-deadlines  ? import righe in deadline_items
@@ -18,8 +18,77 @@ const { getPool } = require('../config/database');
 const logger = require('../utils/logger');
 const { detectDeadlineFile } = require('../utils/excelDeadlineDetector');
 const XLSX = require('xlsx');
+const {
+  fetchQualificationsForDeadline,
+  mapQualificationDeadlineRows,
+} = require('../services/qualificationAlert.service');
 
-// ?? helpers ???????????????????????????????????????????????????????????????????
+// ─────────────────────────────────────────────────────────────────────────────
+// Tarature strumenti — righe virtuali per lo scadenziario
+// Stesso pattern delle qualifiche: fetch + map + merge in listDeadlineItems
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * Recupera gli asset attivi con taratura in scadenza/scaduta.
+ * @param {object} pool  - SQL Server pool
+ * @param {number} orgId - organization_id
+ * @returns {Array}
+ */
+async function fetchEquipmentForDeadline(pool, orgId) {
+    const r = await pool.request()
+        .input('orgId', orgId)
+        .query(`
+            SELECT ea.id, ea.name, ea.asset_subcategory, ea.serial_number,
+                   ea.company_id, ea.next_calibration_date, ea.last_calibration_date,
+                   ea.calibration_frequency_months, ea.status,
+                   c.name AS company_name
+            FROM equipment_assets ea
+            LEFT JOIN companies c ON c.id = ea.company_id
+            WHERE ea.organization_id = @orgId
+              AND ea.requires_calibration = 1
+              AND ea.is_deleted = 0
+              AND ea.status = 'active'
+              AND ea.next_calibration_date IS NOT NULL
+        `);
+    return r.recordset || [];
+}
+
+/**
+ * Mappa gli asset in formato compatibile con le righe deadline_items.
+ * @param {Array}  assets     - risultato di fetchEquipmentForDeadline
+ * @param {number} daysWindow - includi solo scadenze entro N giorni (0 = tutte)
+ * @returns {Array}
+ */
+function mapEquipmentDeadlineRows(assets, daysWindow) {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    return assets
+        .map((a) => {
+            const due = new Date(a.next_calibration_date);
+            due.setHours(0, 0, 0, 0);
+            const daysUntilDue = Math.round((due - today) / 86400000);
+            return {
+                id:                  `equipment_${a.id}`,
+                item_type:           'equipment',
+                source_label:        a.asset_subcategory
+                                       ? `${a.name} (${a.asset_subcategory})`
+                                       : a.name,
+                description:         a.serial_number ? `S/N: ${a.serial_number}` : null,
+                due_date:            a.next_calibration_date,
+                days_until_due:      daysUntilDue,
+                status:              daysUntilDue < 0 ? 'expired' : 'active',
+                company_id:          a.company_id,
+                company_name:        a.company_name || 'Studio',
+                assigned_to_name:    null,
+                source_document_title: null,
+            };
+        })
+        .filter((row) => daysWindow <= 0 || row.days_until_due <= daysWindow);
+}
+
+
+
+// ?? helpers ?
 
 /**
  * Legge il file fisico corrente associato a un documento.
@@ -90,7 +159,7 @@ function parseCellDate(v) {
     return null;
 }
 
-// ?? S3: POST /documents/:id/detect-deadlines ??????????????????????????????????
+// ?? S3: POST /documents/:id/detect-deadlines ?
 
 async function detectDeadlines(req, res) {
     try {
@@ -144,7 +213,7 @@ async function detectDeadlines(req, res) {
     }
 }
 
-// ?? S4a: POST /documents/:id/import-deadlines ?????????????????????????????????
+// ?? S4a: POST /documents/:id/import-deadlines 
 
 async function importDeadlines(req, res) {
     try {
@@ -290,7 +359,7 @@ async function importDeadlines(req, res) {
     }
 }
 
-// ?? S4b: GET /deadline-items ??????????????????????????????????????????????????
+// ?? S4b: GET /deadline-items ??
 
 async function listDeadlineItems(req, res) {
     try {
@@ -324,7 +393,8 @@ async function listDeadlineItems(req, res) {
                    c.name AS company_name,
                    dr.title AS source_document_title,
                    u.full_name AS assigned_to_name,
-                   DATEDIFF(day, CAST(GETDATE() AS DATE), di.due_date) AS days_until_due
+                   DATEDIFF(day, CAST(GETDATE() AS DATE), di.due_date) AS days_until_due,
+                   'deadline_item' AS item_type
             FROM deadline_items di
             LEFT JOIN companies c           ON c.id = di.company_id
             LEFT JOIN document_registry dr  ON dr.id = di.source_document_id
@@ -334,9 +404,46 @@ async function listDeadlineItems(req, res) {
             OFFSET @offset ROWS FETCH NEXT @limit ROWS ONLY
         `);
 
+        let qualRows = [];
+        try {
+            const qualData = await fetchQualificationsForDeadline(pool, orgId);
+            const daysWindow = priority_only === '1' ? parseInt(days) : 365;
+            qualRows = mapQualificationDeadlineRows(qualData, daysWindow);
+            if (company_id) {
+                qualRows = qualRows.filter((row) => row.company_id === parseInt(company_id));
+            }
+            if (status && status !== 'active') {
+                qualRows = [];
+            } else if (priority_only === '1') {
+                qualRows = qualRows.filter((row) => row.days_until_due <= parseInt(days));
+            }
+        } catch (qualErr) {
+            logger.warn('listDeadlineItems: qualifiche virtuali non disponibili', { error: qualErr.message });
+        }
+
+        let equipRows = [];
+        try {
+            const equipData = await fetchEquipmentForDeadline(pool, orgId);
+            const daysWindowEquip = priority_only === '1' ? parseInt(days) : 365;
+            equipRows = mapEquipmentDeadlineRows(equipData, daysWindowEquip);
+            if (company_id) { equipRows = equipRows.filter((r) => r.company_id === parseInt(company_id)); }
+            if (status && status !== 'active') { equipRows = equipRows.filter((r) => r.status === status); }
+            else if (priority_only === '1') { equipRows = equipRows.filter((r) => r.days_until_due <= parseInt(days)); }
+        } catch (equipErr) {
+            logger.warn('listDeadlineItems: tarature non disponibili', { error: equipErr.message });
+        }
+
+        const merged = [...(r.recordset || []), ...qualRows, ...equipRows]
+            .sort((a, b) => String(a.due_date).localeCompare(String(b.due_date)));
+
         res.json({
-            data: r.recordset,
-            pagination: { total, page: parseInt(page), limit: parseInt(limit), totalPages: Math.ceil(total / parseInt(limit)) },
+            data: merged,
+            pagination: {
+                total: total + qualRows.length + equipRows.length,
+                page: parseInt(page),
+                limit: parseInt(limit),
+                totalPages: Math.ceil((total + qualRows.length) / parseInt(limit)),
+            },
         });
     } catch (err) {
         logger.error('listDeadlineItems:', err.message);
@@ -344,7 +451,7 @@ async function listDeadlineItems(req, res) {
     }
 }
 
-// ?? GET /deadline-items/priority ?????????????????????????????????????????????
+// ?? GET /deadline-items/priority 
 
 async function getPriorityDeadlines(req, res) {
     try {
@@ -367,7 +474,8 @@ async function getPriorityDeadlines(req, res) {
                    c.name AS company_name,
                    dr.title AS source_document_title,
                    u.full_name AS assigned_to_name,
-                   DATEDIFF(day, CAST(GETDATE() AS DATE), di.due_date) AS days_until_due
+                   DATEDIFF(day, CAST(GETDATE() AS DATE), di.due_date) AS days_until_due,
+                   'deadline_item' AS item_type
             FROM deadline_items di
             LEFT JOIN companies c           ON c.id = di.company_id
             LEFT JOIN document_registry dr  ON dr.id = di.source_document_id
@@ -379,14 +487,35 @@ async function getPriorityDeadlines(req, res) {
             ORDER BY di.due_date ASC
         `);
 
-        res.json({ data: r.recordset });
+        let qualRows = [];
+        try {
+            const qualData = await fetchQualificationsForDeadline(pool, orgId);
+            qualRows = mapQualificationDeadlineRows(qualData, parseInt(days));
+            if (company_id) {
+                qualRows = qualRows.filter((row) => row.company_id === parseInt(company_id));
+            }
+        } catch (qualErr) {
+            logger.warn('getPriorityDeadlines: qualifiche virtuali non disponibili', { error: qualErr.message });
+        }
+
+        let equipRowsPrio = [];
+        try {
+            const equipDataPrio = await fetchEquipmentForDeadline(pool, orgId);
+            equipRowsPrio = mapEquipmentDeadlineRows(equipDataPrio, parseInt(days));
+            if (company_id) { equipRowsPrio = equipRowsPrio.filter((r) => r.company_id === parseInt(company_id)); }
+        } catch (e) { logger.warn('getPriorityDeadlines: tarature non disponibili', { error: e.message }); }
+
+        const merged = [...(r.recordset || []), ...qualRows, ...equipRowsPrio]
+            .sort((a, b) => String(a.due_date).localeCompare(String(b.due_date)));
+
+        res.json({ data: merged });
     } catch (err) {
         logger.error('getPriorityDeadlines:', err.message);
         res.status(500).json({ error: err.message });
     }
 }
 
-// ?? PATCH /deadline-items/:itemId ????????????????????????????????????????????
+// ?? PATCH /deadline-items/:itemId ??
 
 async function updateDeadlineItem(req, res) {
     try {
@@ -417,7 +546,7 @@ async function updateDeadlineItem(req, res) {
     }
 }
 
-// ?? POST /deadline-items/:itemId/complete ????????????????????????????????????
+// ?? POST /deadline-items/:itemId/complete 
 
 async function completeDeadlineItem(req, res) {
     try {
@@ -445,7 +574,7 @@ async function completeDeadlineItem(req, res) {
     }
 }
 
-// ?? DELETE /deadline-items/:itemId ???????????????????????????????????????????
+// ?? DELETE /deadline-items/:itemId ?
 
 async function deleteDeadlineItem(req, res) {
     try {
@@ -466,7 +595,7 @@ async function deleteDeadlineItem(req, res) {
     }
 }
 
-// ?? GET /documents/:id/deadline-config ??????????????????????????????????????
+// ?? GET /documents/:id/deadline-config ??
 
 async function getDeadlineConfig(req, res) {
     try {

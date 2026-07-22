@@ -4,8 +4,10 @@ const logger = require('../utils/logger');
  * Build context for contract review requirements analysis.
  * @param {object} params
  * @param {string} params.capitolatoText - Extracted text from the uploaded RFQ/spec document
- * @param {number} params.companyId - Company being reviewed
+ * @param {number} params.companyId - Azienda SGQ le cui capacità si valutano (es. LM&CO)
  * @param {number} params.organizationId - Tenant scope
+ * @param {string} [params.commercialCustomerName] - Committente commerciale del lavoro (es. PT.MAIDO)
+ * @param {string} [params.commercialCustomerRef] - Riferimento esterno del committente commerciale
  * @param {string[]} [params.standardCodes] - Specific standards to check against
  * @returns {Promise<{systemPrompt: string, userPrompt: string, contextSummary: string}>}
  */
@@ -13,6 +15,8 @@ async function buildReviewRequirementsContext({
   capitolatoText,
   companyId,
   organizationId,
+  commercialCustomerName,
+  commercialCustomerRef,
   standardCodes,
 }) {
   // 1. Load norm clauses for specified standards (or auto-detect from text)
@@ -54,20 +58,43 @@ async function buildReviewRequirementsContext({
     logger.debug('[AI_CONTEXT] Semantic search for review not available:', err.message);
   }
 
-  // 2. Load company profile (basic info from companies table)
-  let companyContext = '';
+  // 2. Profilo azienda SGQ (capacità da valutare — NON confondere con il committente commerciale)
+  let capabilityContext = '';
+  let capabilityLabel = companyId ? `azienda id ${companyId}` : 'N/D';
   try {
     const { query } = require('../config/database');
-    const result = await query(
-      'SELECT name, vat_number, sector, address FROM companies WHERE id = @id AND organization_id = @orgId',
-      { id: companyId, orgId: organizationId }
-    );
-    if (result.recordset.length > 0) {
-      const c = result.recordset[0];
-      companyContext = `\nAzienda: ${c.name} (P.IVA: ${c.vat_number || 'N/D'}, Settore: ${c.sector || 'N/D'}, Sede: ${c.address || 'N/D'})`;
+    if (companyId) {
+      const result = await query(
+        'SELECT name, vat_number, sector, address FROM companies WHERE id = @id AND organization_id = @orgId',
+        { id: companyId, orgId: organizationId }
+      );
+      if (result.recordset.length > 0) {
+        const c = result.recordset[0];
+        capabilityLabel = c.name || capabilityLabel;
+        capabilityContext =
+          `\nEnte che riesamina le capacità (azienda SGQ): ${c.name}` +
+          ` (P.IVA: ${c.vat_number || 'N/D'}, Settore: ${c.sector || 'N/D'}, Sede: ${c.address || 'N/D'})` +
+          '\nValuta se QUESTA azienda ha capacità, qualifiche, attrezzature e documentazione per eseguire il lavoro.';
+      }
     }
   } catch (err) {
     logger.warn('[AI_CONTEXT] Company lookup failed:', err.message);
+  }
+
+  const commercialName =
+    commercialCustomerName != null && String(commercialCustomerName).trim() !== ''
+      ? String(commercialCustomerName).trim()
+      : null;
+  const commercialRef =
+    commercialCustomerRef != null && String(commercialCustomerRef).trim() !== ''
+      ? String(commercialCustomerRef).trim()
+      : null;
+  let commercialCustomerContext = '';
+  if (commercialName) {
+    commercialCustomerContext =
+      `\nCommittente commerciale del lavoro (cliente del capitolato): ${commercialName}` +
+      (commercialRef ? ` (rif. ${commercialRef})` : '') +
+      '\nI requisiti nel capitolato provengono da questo committente; NON confonderlo con l\'ente che riesamina le capacità.';
   }
 
   // 3. Build prompts
@@ -75,13 +102,14 @@ async function buildReviewRequirementsContext({
 Il tuo compito è analizzare un capitolato/richiesta d'offerta e:
 1. Identificare tutti i requisiti tecnici espliciti
 2. Identificare le norme e standard citati o applicabili
-3. Per ogni requisito, valutare se l'azienda ha le capacità/documentazione necessaria
+3. Per ogni requisito, valutare se l'ente che riesamina le capacità ha le competenze/documentazione necessarie per soddisfare il committente commerciale
 4. Segnalare i GAP (requisiti non soddisfatti o da verificare)
 5. Suggerire azioni per colmare i gap
 
 Rispondi SEMPRE in italiano. Rispondi SOLO con JSON valido nel formato specificato.
 ${normContext ? '\nHai accesso ai seguenti requisiti normativi come riferimento:' + normContext : ''}
-${companyContext ? '\nProfilo azienda:' + companyContext : ''}`;
+${capabilityContext ? '\nContesto capacità:' + capabilityContext : ''}
+${commercialCustomerContext ? '\nContesto committente:' + commercialCustomerContext : ''}`;
 
   const userPrompt = `Analizza il seguente capitolato/richiesta d'offerta e produci un JSON con questa struttura:
 {
@@ -106,10 +134,14 @@ CAPITOLATO:
 ${capitolatoText}
 ---`;
 
+  const summaryParts = [`capacità: ${capabilityLabel}`];
+  if (commercialName) summaryParts.push(`committente: ${commercialName}`);
+  summaryParts.push(`standards: ${(standardCodes || ['auto']).join(',')}`);
+
   return {
     systemPrompt,
     userPrompt,
-    contextSummary: `Review requirements for company ${companyId}, standards: ${(standardCodes || ['auto']).join(',')}`,
+    contextSummary: `Review requirements — ${summaryParts.join('; ')}`,
   };
 }
 
@@ -327,7 +359,7 @@ Analizza il testo estratto da un documento PDF e identifica i metadati della nor
 Rispondi SOLO con JSON valido nel formato:
 {
   "norm_title": "titolo completo della norma (senza codice)",
-  "standard_code": "codice in formato ISO_XXXX_YYYY (es. ISO_19011_2018, UNI_EN_ISO_9001_2015)",
+  "standard_code": "codice catalogo (es. ISO/TR 15608:2013, UNI EN ISO 9001:2015, ISO 9606-1:2017)",
   "issuing_body": "ente emittente principale (ISO, UNI, CEN, IEC, ecc.)",
   "edition_year": 2018,
   "language": "it|en|de|fr",
@@ -335,7 +367,7 @@ Rispondi SOLO con JSON valido nel formato:
 }
 
 Regole:
-- standard_code: usa underscore come separatore, includi l'anno se presente (es. ISO_19011_2018)
+- standard_code: formato catalogo ufficiale con spazi, slash per TR/TS e anno dopo i due punti (es. ISO/TR 15608:2013). Non usare underscore.
 - Se il documento è una traduzione UNI di una norma ISO, includi il prefisso UNI_EN_ (es. UNI_EN_ISO_9001_2015)
 - edition_year: anno di pubblicazione dell'edizione (intero, es. 2018)
 - scope_summary: estrai preferibilmente dal campo "Scopo" / "Scope" / "Campo di applicazione" del documento; se non disponibile, sintetizza in 2-4 frasi di cosa tratta la norma
@@ -355,4 +387,50 @@ ${snippet}
   };
 }
 
-module.exports = { buildReviewRequirementsContext, buildAuditConclusionsContext, buildExtractNormMetadataContext };
+/**
+ * Build context for NC root-cause suggestion.
+ * @param {object} params
+ * @param {string} params.description      - Testo descrizione NC
+ * @param {string} [params.severity]       - major | minor | observation
+ * @param {string} [params.auditNumber]    - Numero audit di riferimento
+ * @param {string} [params.clientName]     - Nome azienda auditata
+ * @param {number} [params.organizationId] - Tenant scope (per future personalizzazioni)
+ * @returns {Promise<{systemPrompt: string, userPrompt: string, contextSummary: string}>}
+ */
+async function buildNcCauseContext({ description, severity, auditNumber, clientName }) {
+  const SEVERITY_IT = { major: 'Grave', minor: 'Lieve', observation: 'Osservazione' };
+  const contextParts = [];
+  if (auditNumber) contextParts.push(`Audit: ${auditNumber}`);
+  if (clientName)  contextParts.push(`Azienda: ${clientName}`);
+  if (severity)    contextParts.push(`Severita': ${SEVERITY_IT[severity] || severity}`);
+
+  const systemPrompt = `Sei un esperto di sistemi di gestione qualita' ISO 9001:2015 specializzato nell'analisi delle cause radice delle non conformita'.
+Applica metodologie strutturate (5 Perche', Ishikawa, 8D) per identificare le cause fondamentali.
+Rispondi SEMPRE in italiano. Sii conciso: la proposta deve essere pronta per la compilazione diretta del campo causa radice.
+Rispondi SOLO con JSON valido, senza testo aggiuntivo.`;
+
+  const userPrompt = `Analizza questa non conformita' e proponi le possibili cause radice.
+${contextParts.length > 0 ? '\nContesto: ' + contextParts.join(' | ') : ''}
+
+Descrizione NC: ${description}
+
+Rispondi con JSON:
+{
+  "suggestion": "Proposta causa radice (max 250 caratteri, linguaggio operativo, pronta per copia-incolla)",
+  "methodology": "Metodologia applicata: 5 Perche' / Ishikawa / 8D",
+  "key_factors": ["fattore principale", "fattore secondario"]
+}`;
+
+  return {
+    systemPrompt,
+    userPrompt,
+    contextSummary: `nc_cause — ${contextParts.join('; ') || 'no context'}`,
+  };
+}
+
+module.exports = {
+  buildReviewRequirementsContext,
+  buildAuditConclusionsContext,
+  buildExtractNormMetadataContext,
+  buildNcCauseContext,
+};

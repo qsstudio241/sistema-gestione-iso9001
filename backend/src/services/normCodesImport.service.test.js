@@ -1,7 +1,7 @@
 /**
  * @jest-environment node
  *
- * Test L1 � normCodesImport.service (Fase 3)
+ * Test L1  -  normCodesImport.service (Fase 3)
  */
 
 jest.mock('../config/database', () => ({ query: jest.fn() }));
@@ -147,7 +147,7 @@ describe('importNormCodes', () => {
     expect(result.summary.warnings).toBe(1);
   });
 
-  it('rifiuta pi� di MAX_CODES_PER_REQUEST codici', async () => {
+  it('rifiuta più  di MAX_CODES_PER_REQUEST codici', async () => {
     const codes = Array.from({ length: MAX_CODES_PER_REQUEST + 1 }, (_, i) => `ISO ${i}:2020`);
     await expect(importNormCodes(ORG_ID, USER_ID, codes)).rejects.toMatchObject({
       code: 'TOO_MANY_CODES',

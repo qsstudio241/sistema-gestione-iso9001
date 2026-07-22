@@ -14,6 +14,7 @@
 
 import React, { useState, useEffect, useCallback } from "react";
 import apiService from "../services/apiService";
+import { useAuth } from "../contexts/AuthContext";
 import { formatDate } from "../utils/dateHelpers";
 import PencilIcon from "../components/icons/PencilIcon";
 import TrashIcon from "../components/icons/TrashIcon";
@@ -138,6 +139,7 @@ function SuppliersTab() {
               <tr>
                 <th>Tipo</th>
                 <th>Ragione Sociale</th>
+                <th>Azienda committente</th>
                 <th>Codice</th>
                 <th>Categoria</th>
                 <th>Referente</th>
@@ -149,7 +151,7 @@ function SuppliersTab() {
             </thead>
             <tbody>
               {items.length === 0 ? (
-                <tr><td colSpan="9" className="empty-cell">Nessun fornitore registrato.</td></tr>
+                <tr><td colSpan="10" className="empty-cell">Nessun fornitore registrato.</td></tr>
               ) : items.map(s => (
                 <tr
                   key={s.id}
@@ -165,6 +167,7 @@ function SuppliersTab() {
                     <strong>{s.name}</strong>
                     {s.vat_number && <small className="vat-note"> · {s.vat_number}</small>}
                   </td>
+                  <td>{s.company_name || "-"}</td>
                   <td><code>{s.code || "-"}</code></td>
                   <td>{s.category || "-"}</td>
                   <td>{s.contact_person || "-"}</td>
@@ -275,6 +278,7 @@ function SupplierDetail({ supplier, onRefresh }) {
         </span>
       </div>
 
+      {supplier.company_name && <p className="detail-line">🏢 <strong>Committente:</strong> {supplier.company_name}</p>}
       {supplier.category     && <p className="detail-line">🏷️ <strong>Categoria:</strong> {supplier.category}</p>}
       {supplier.vat_number   && <p className="detail-line">📋 <strong>P.IVA:</strong> {supplier.vat_number}</p>}
       {supplier.contact_person && <p className="detail-line">👤 <strong>Referente:</strong> {supplier.contact_person}</p>}
@@ -347,9 +351,13 @@ function SupplierDetail({ supplier, onRefresh }) {
 // ─── Form Fornitore ───────────────────────────────────────────────────────────
 
 function SupplierForm({ item, onClose, onSaved }) {
+  const { user } = useAuth();
+  const [companies, setCompanies] = useState([]);
+  const [companiesLoading, setCompaniesLoading] = useState(false);
   const [form, setForm] = useState({
     name:           item?.name           || "",
     supplier_type:  item?.supplier_type  || "external",
+    company_id:     item?.company_id     || "",
     code:           item?.code           || "",
     vat_number:     item?.vat_number     || "",
     category:       item?.category       || "",
@@ -362,6 +370,30 @@ function SupplierForm({ item, onClose, onSaved }) {
   });
   const set = (k, v) => setForm(f => ({ ...f, [k]: v }));
 
+  const loadCompanies = useCallback(async () => {
+    setCompaniesLoading(true);
+    try {
+      const orgId = user?.auditor_org_id ?? null;
+      const params = orgId ? { auditor_org_id: orgId } : {};
+      const res = await apiService.getCompanies(params);
+      setCompanies(res?.data || []);
+    } catch {
+      setCompanies([]);
+    } finally {
+      setCompaniesLoading(false);
+    }
+  }, [user?.auditor_org_id]);
+
+  useEffect(() => { loadCompanies(); }, [loadCompanies]);
+
+  function handleSubmit(e) {
+    e.preventDefault();
+    onSaved({
+      ...form,
+      company_id: form.company_id ? parseInt(form.company_id, 10) : null,
+    });
+  }
+
   return (
     <div className="modal-overlay" onClick={onClose}>
       <div className="modal-box" onClick={e => e.stopPropagation()}>
@@ -369,7 +401,7 @@ function SupplierForm({ item, onClose, onSaved }) {
           <h2>{item ? "Modifica Fornitore" : "Nuovo Fornitore"}</h2>
           <button className="modal-close" onClick={onClose}>✕</button>
         </div>
-        <form onSubmit={e => { e.preventDefault(); onSaved(form); }} className="modal-form">
+        <form onSubmit={handleSubmit} className="modal-form">
           <div className="form-row-2">
             <div className="form-group">
               <label>Tipo *</label>
@@ -378,6 +410,24 @@ function SupplierForm({ item, onClose, onSaved }) {
                 <option value="internal">🏢 Interno</option>
               </select>
             </div>
+            <div className="form-group">
+              <label>Azienda committente collegata</label>
+              <select
+                value={form.company_id ? String(form.company_id) : ""}
+                onChange={e => set("company_id", e.target.value)}
+                disabled={companiesLoading}
+              >
+                <option value="">- Nessuna / non collegata -</option>
+                {companies.map(c => (
+                  <option key={c.id} value={c.id}>
+                    {c.name}{c.vat_number ? ` (P.IVA ${c.vat_number})` : ""}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          <div className="form-row-2">
             <div className="form-group">
               <label>Codice interno</label>
               <input

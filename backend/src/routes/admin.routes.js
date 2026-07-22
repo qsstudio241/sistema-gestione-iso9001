@@ -28,6 +28,8 @@ router.delete('/admin/users/:id/company-access/:companyId', adminOnly, adminCont
 router.get('/admin/licenses', adminOnly, adminController.getOrgLicenses);
 router.patch('/admin/licenses', superadminOnly, adminController.updateOrgLicenses);
 // Superadmin: gestione licenze per qualsiasi organizzazione (studi clienti)
+router.get('/admin/organizations', superadminOnly, adminController.listOrganizations);
+router.get('/admin/organizations/:organizationId/licenses', superadminOnly, adminController.getAnyOrgLicenses);
 router.patch('/admin/organizations/:organizationId/licenses', superadminOnly, adminController.updateAnyOrgLicenses);
 
 router.get('/admin/billing/overview', superadminOnly, billingController.getOverview);

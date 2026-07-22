@@ -14,9 +14,20 @@ const {
     ensureCompanyAccessLoaded,
     companyAccessSqlFilter,
 } = require('../services/companyAccess.service');
-
+const { effectiveAlertDue } = require('../services/qualificationAlert.service');
 // Giorni default per alert scadenza documenti
 const DEFAULT_ALERT_DAYS = 30;
+
+/** Espressione SQL: data guida qualifica (min tra expiry e conferma semestrale 9606/14732). */
+const SQL_QUAL_EFFECTIVE_DUE = `
+  CASE
+    WHEN (q.qualification_type LIKE '%9606%' OR q.qualification_type LIKE '%14732%')
+         AND q.next_confirmation_due IS NOT NULL
+         AND (q.expiry_date IS NULL OR q.next_confirmation_due < q.expiry_date)
+    THEN q.next_confirmation_due
+    ELSE q.expiry_date
+  END
+`;
 
 /**
  * GET /alerts/count
@@ -72,11 +83,12 @@ async function getAlertCount(req, res) {
       Object.entries(qualifFilter.params).forEach(([k, v]) => qualifReq.input(k, v));
       const qualifResult = await qualifReq.query(`
         SELECT COUNT(*) AS cnt
-        FROM qualifications
-        WHERE organization_id = @orgId
-          AND status NOT IN ('revocata','sospesa')
-          AND expiry_date IS NOT NULL
-          AND expiry_date <= DATEADD(day, 30, CAST(GETDATE() AS DATE))
+        FROM qualifications q
+        WHERE q.organization_id = @orgId
+          AND q.status NOT IN ('revocata','sospesa')
+          AND q.approval_status = 'approvata'
+          AND (${SQL_QUAL_EFFECTIVE_DUE}) IS NOT NULL
+          AND (${SQL_QUAL_EFFECTIVE_DUE}) <= DATEADD(day, 30, CAST(GETDATE() AS DATE))
           ${qualifFilter.clause ? `AND ${qualifFilter.clause}` : ''}
       `);
       qualifCount = qualifResult.recordset[0]?.cnt || 0;
@@ -126,7 +138,8 @@ async function getAlerts(req, res) {
             WHEN dr.expiry_date < CAST(GETDATE() AS DATE) THEN 'expired'
             ELSE 'expiring'
           END AS alert_type,
-          DATEDIFF(day, CAST(GETDATE() AS DATE), dr.expiry_date) AS days_remaining
+          DATEDIFF(day, CAST(GETDATE() AS DATE), dr.expiry_date) AS days_remaining,
+          'document' AS item_kind
         FROM document_registry dr
         LEFT JOIN companies c ON dr.company_id = c.id
         WHERE dr.organization_id = @orgId
@@ -137,8 +150,64 @@ async function getAlerts(req, res) {
         ORDER BY dr.expiry_date ASC
       `);
 
+    const qualFilter = companyAccessSqlFilter(accessList, 'q', 'company_id', 'uca_qal');
+    const qualReq = pool.request().input('orgId', orgId).input('days', days);
+    Object.entries(qualFilter.params).forEach(([k, v]) => qualReq.input(k, v));
+
+    let qualAlerts = [];
+    try {
+      const qualResult = await qualReq.query(`
+        SELECT
+          q.id,
+          q.person_name AS title,
+          q.certificate_number AS doc_code,
+          q.qualification_type AS doc_type,
+          q.status,
+          q.expiry_date,
+          q.next_confirmation_due,
+          c.name AS company_name,
+          (${SQL_QUAL_EFFECTIVE_DUE}) AS effective_due,
+          CASE
+            WHEN (${SQL_QUAL_EFFECTIVE_DUE}) < CAST(GETDATE() AS DATE) THEN 'expired'
+            ELSE 'expiring'
+          END AS alert_type,
+          DATEDIFF(day, CAST(GETDATE() AS DATE), (${SQL_QUAL_EFFECTIVE_DUE})) AS days_remaining
+        FROM qualifications q
+        LEFT JOIN companies c ON q.company_id = c.id
+        WHERE q.organization_id = @orgId
+          AND q.status NOT IN ('revocata','sospesa')
+          AND q.approval_status = 'approvata'
+          AND (${SQL_QUAL_EFFECTIVE_DUE}) IS NOT NULL
+          AND (${SQL_QUAL_EFFECTIVE_DUE}) <= DATEADD(day, @days, CAST(GETDATE() AS DATE))
+          ${qualFilter.clause ? `AND ${qualFilter.clause}` : ''}
+        ORDER BY (${SQL_QUAL_EFFECTIVE_DUE}) ASC
+      `);
+      qualAlerts = (qualResult.recordset || []).map((q) => ({
+        id: q.id,
+        title: `Qualifica: ${q.title}`,
+        doc_code: q.doc_code,
+        doc_type: q.doc_type,
+        status: q.status,
+        expiry_date: q.effective_due,
+        company_name: q.company_name,
+        alert_type: q.alert_type,
+        days_remaining: q.days_remaining,
+        item_kind: 'qualification',
+        next_confirmation_due: q.next_confirmation_due,
+      }));
+    } catch {
+      // Tabella/colonne assenti — non bloccante
+    }
+
+    const merged = [...(docResult.recordset || []), ...qualAlerts]
+      .sort((a, b) => {
+        const da = a.days_remaining ?? 9999;
+        const db = b.days_remaining ?? 9999;
+        return da - db;
+      });
+
     res.json({
-      alerts: docResult.recordset || [],
+      alerts: merged,
       generated_at: new Date().toISOString(),
     });
   } catch (err) {

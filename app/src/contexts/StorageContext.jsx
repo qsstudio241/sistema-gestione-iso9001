@@ -1435,6 +1435,7 @@ export function StorageProvider({ children, useMockData = false }) {
                 company_id: a.metadata?.companyId ?? null,
                 audit_party_type: a.metadata?.auditPartyType ?? 'first_party',
                 fornitore_name: a.metadata?.fornitoreName ?? '',
+                fornitore_supplier_id: a.metadata?.fornitoreSupplierId ?? null,
                 project_year: a.metadata?.projectYear,
                 audit_date: a.metadata?.auditDate,
                 audit_date_end: a.metadata?.auditDateEnd ?? null,
@@ -1628,15 +1629,19 @@ export function StorageProvider({ children, useMockData = false }) {
 
         // Itera su ogni domanda
         clauseData.questions.forEach((question) => {
-          // Includi solo domande con risposta (status diverso da NOT_ANSWERED)
-          if (question.status && question.status !== "NOT_ANSWERED") {
+          const hasStatus =
+            question.status && question.status !== "NOT_ANSWERED";
+          const hasNotes =
+            question.notes != null && String(question.notes).trim() !== "";
+          // Sync anche note senza esito (es. dettatura prima del click C/NC/OSS)
+          if (hasStatus || hasNotes) {
             responses.push({
               // question_id (intero) prioritario → lookup diretto sul server
               // clause_ref come fallback per lookup via section_code
               question_id: question.questionId || null,
               clause_ref: question.clauseRef || question.id,
-              conformity_status: question.status, // 'C', 'NC', 'OSS', 'OM', 'NA'
-              notes: question.notes || null,
+              conformity_status: hasStatus ? question.status : null,
+              notes: hasNotes ? question.notes : null,
               evidence: question.evidenceRef || null,
               client_updated_at: new Date().toISOString(),
             });
@@ -1732,10 +1737,12 @@ export function StorageProvider({ children, useMockData = false }) {
               };
             }
 
-            // Valida schema
-            const validation = validateAuditSchema(updated);
-            if (!validation.valid) {
-              console.warn("⚠️ Schema validation errors:", validation.errors);
+            // Valida schema (salta durante logout/reset sessione per evitare falsi positivi)
+            if (!sessionResetInProgressRef.current) {
+              const validation = validateAuditSchema(updated);
+              if (!validation.valid) {
+                console.warn("⚠️ Schema validation errors:", validation.errors);
+              }
             }
 
             // Calcola metriche da checklist per sync accurato.
@@ -1763,9 +1770,8 @@ export function StorageProvider({ children, useMockData = false }) {
             // Accoda save_responses se non è hydration/init e non è una chiamata di sistema.
             // La guardia navigator.onLine è RIMOSSA: i dati vengono accodati anche offline e
             // processati automaticamente al reconnect (ADR-008 / offline-first).
-            // Con VITE_SYNC_MODE=events gli eventi T3 (response_set) sono AGGIUNTIVI al bulk
-            // save_responses — non lo sostituiscono. save_responses è l'unico percorso che salva
-            // le note/evidenze digitate nelle textarea; T3 gestisce solo i click sui pulsanti stato.
+            // Con VITE_SYNC_MODE=events gli eventi T3 (response_set) coprono status e note;
+            // save_responses resta attivo in parallelo (incluso note senza esito).
             if (!skipSync && !isHydratingRef.current && !isSystemCall) {
               const responses = extractChecklistResponses(updated);
               if (responses.length > 0) {
@@ -1802,6 +1808,7 @@ export function StorageProvider({ children, useMockData = false }) {
                   company_id: updated.metadata?.companyId ?? null,
                   audit_party_type: updated.metadata?.auditPartyType ?? 'first_party',
                   fornitore_name: updated.metadata?.fornitoreName ?? '',
+                  fornitore_supplier_id: updated.metadata?.fornitoreSupplierId ?? null,
                   project_year: updated.metadata?.projectYear,
                   audit_date: updated.metadata?.auditDate,
                   audit_date_end: updated.metadata?.auditDateEnd ?? null,
@@ -1912,6 +1919,7 @@ export function StorageProvider({ children, useMockData = false }) {
           company_id:       m.companyId ?? null,
           audit_party_type: m.auditPartyType || 'first_party',
           fornitore_name:   m.fornitoreName || null,
+          fornitore_supplier_id: m.fornitoreSupplierId ?? null,
           project_year:     m.projectYear,
           audit_date:       m.auditDate,
           audit_date_end:   m.auditDateEnd ?? null,
