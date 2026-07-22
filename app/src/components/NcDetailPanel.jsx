@@ -1,7 +1,9 @@
 /**
  * NcDetailPanel - drawer dettaglio NC guidato per flusso operativo ISO 10.2
  *
- * Ordine sezioni: Scheda / Stato workflow / Cause / Azioni / Evidenze / Verifica / Chiusura
+ * Ordine sezioni (ISO 10.2.1 a->b->c->d): Scheda / Difetto-Problema / Trattamento
+ * (correzione immediata, 10.2.1a) / Cause (10.2.1b) / Stato workflow / Azioni
+ * correttive-preventive (10.2.1c) / Evidenze / Verifica efficacia (10.2.1d) / Chiusura
  * API: PUT /non-conformities/:id via apiService.updateNcStatus
  */
 
@@ -11,6 +13,8 @@ import { useAuth } from "../contexts/AuthContext";
 import apiService from "../services/apiService";
 import NcAttachmentsSection from "./NcAttachmentsSection";
 import NcActionsList from "./NcActionsList";
+import NcCorrectionSection from "./NcCorrectionSection";
+import { useNcActions } from "../hooks/useNcActions";
 import NcResponsibleSelect from "./NcResponsibleSelect";
 import RichTextField, {
   resolveNcFieldInitial,
@@ -179,6 +183,13 @@ export default function NcDetailPanel({
     setVerifExpanded(!isEarlyPhaseStatus(nc?.status));
   }, [nc?.nc_id, nc?.status, organizationId]);
 
+  const ncActions = useNcActions({
+    ncId: nc?.nc_id,
+    ncStatus: nc?.status,
+    companyId: nc?.company_id ?? null,
+    organizationId,
+  });
+
   const workflowTransitions = useMemo(
     () => getNcWorkflowTransitionButtons(nc),
     [nc?.status],
@@ -275,23 +286,6 @@ export default function NcDetailPanel({
             </Link>
           )}
         </div>
-        <div className="nc-form-row">
-          <label htmlFor={`nc-desc-${nc.nc_id}`}>Descrizione *</label>
-          <RichTextField
-            id={`nc-desc-${nc.nc_id}`}
-            rows={3}
-            value={form.description}
-            readOnly={readOnly}
-            onChange={(e) => setField("description", e.target.value)}
-            onBlur={() => { if (!readOnly) validateDescription(); }}
-            placeholder="Descrivi la non conformità riscontrata..."
-            draftScopeId={draftScope}
-            draftFieldId="description"
-            persistLocalDraft
-            organizationId={organizationId}
-          />
-          {descError && <p className="nc-error">{descError}</p>}
-        </div>
         <div className="nc-form-row nc-form-row-2col">
           <div>
             <label htmlFor={`nc-sev-${nc.nc_id}`}>Severit{"\u00E0"}</label>
@@ -335,38 +329,43 @@ export default function NcDetailPanel({
         />
       </section>
 
-      {/* 2. Stato workflow */}
-      {workflowTransitions.length > 0 && (
-        <section
-          className="nc-drawer-section nc-drawer-section--workflow nc-workflow-sticky"
-          aria-labelledby={`nc-sec-stato-${nc.nc_id}`}
-        >
-          <h3 className="nc-drawer-section-title" id={`nc-sec-stato-${nc.nc_id}`}>
-            {"2. Stato workflow"}
-          </h3>
-          <div className="nc-workflow-btns">
-            {workflowTransitions.map((ns) => {
-              const cfg = NC_WORKFLOW_CFG[ns] || { label: ns, statusBtn: "partial" };
-              return (
-                <button
-                  key={ns}
-                  type="button"
-                  className={`status-btn ${cfg.statusBtn}`}
-                  onClick={() => onStatusChange?.(ns)}
-                >
-                  {cfg.label}
-                </button>
-              );
-            })}
-          </div>
-        </section>
-      )}
+      {/* 2. Difetto/Problema */}
+      <section className="nc-drawer-section" aria-labelledby={`nc-sec-difetto-${nc.nc_id}`}>
+        <h3 className="nc-drawer-section-title" id={`nc-sec-difetto-${nc.nc_id}`}>
+          {"2. Difetto/Problema"}
+        </h3>
+        <div className="nc-form-row">
+          <label htmlFor={`nc-desc-${nc.nc_id}`}>Descrizione *</label>
+          <RichTextField
+            id={`nc-desc-${nc.nc_id}`}
+            rows={3}
+            value={form.description}
+            readOnly={readOnly}
+            onChange={(e) => setField("description", e.target.value)}
+            onBlur={() => { if (!readOnly) validateDescription(); }}
+            placeholder="Descrivi la non conformità riscontrata..."
+            draftScopeId={draftScope}
+            draftFieldId="description"
+            persistLocalDraft
+            organizationId={organizationId}
+          />
+          {descError && <p className="nc-error">{descError}</p>}
+        </div>
+      </section>
 
-      {/* 3. Cause e valutazione */}
+      {/* 3. Trattamento (Correzione immediata, ISO 10.2.1a) */}
+      <section className="nc-drawer-section" aria-labelledby={`nc-sec-trattamento-${nc.nc_id}`}>
+        <h3 className="nc-drawer-section-title" id={`nc-sec-trattamento-${nc.nc_id}`}>
+          {"3. Trattamento"}
+        </h3>
+        <NcCorrectionSection ncId={nc.nc_id} ncActions={ncActions} organizationId={organizationId} />
+      </section>
+
+      {/* 4. Cause e valutazione */}
       <section className="nc-drawer-section" aria-labelledby={`nc-sec-cause-${nc.nc_id}`}>
         <div className="nc-drawer-section-heading">
           <h3 className="nc-drawer-section-title" id={`nc-sec-cause-${nc.nc_id}`}>
-            {"3. Cause e valutazione"}
+            {"4. Cause e valutazione"}
           </h3>
           <AskAiButton label="Chiedi all\u2019AI" />
         </div>
@@ -469,30 +468,57 @@ export default function NcDetailPanel({
         )}
       </section>
 
-      {/* 4. Correzione e azioni */}
+      {/* 5. Stato workflow */}
+      {workflowTransitions.length > 0 && (
+        <section
+          className="nc-drawer-section nc-drawer-section--workflow"
+          aria-labelledby={`nc-sec-stato-${nc.nc_id}`}
+        >
+          <h3 className="nc-drawer-section-title" id={`nc-sec-stato-${nc.nc_id}`}>
+            {"5. Stato workflow"}
+          </h3>
+          <div className="nc-workflow-btns">
+            {workflowTransitions.map((ns) => {
+              const cfg = NC_WORKFLOW_CFG[ns] || { label: ns, statusBtn: "partial" };
+              return (
+                <button
+                  key={ns}
+                  type="button"
+                  className={`status-btn ${cfg.statusBtn}`}
+                  onClick={() => onStatusChange?.(ns)}
+                >
+                  {cfg.label}
+                </button>
+              );
+            })}
+          </div>
+        </section>
+      )}
+
+      {/* 6. Azioni correttive / preventive */}
       <section className="nc-drawer-section" aria-labelledby={`nc-sec-azioni-${nc.nc_id}`}>
         <h3 className="nc-drawer-section-title" id={`nc-sec-azioni-${nc.nc_id}`}>
-          {"4. Correzione e azioni"}
+          {"6. Azioni correttive / preventive"}
         </h3>
-        <NcActionsList ncId={nc.nc_id} ncStatus={nc.status} companyId={nc.company_id} embedded />
+        <NcActionsList ncId={nc.nc_id} ncActions={ncActions} organizationId={organizationId} />
       </section>
 
-      {/* 5. Evidenze */}
+      {/* 7. Evidenze */}
       <section className="nc-drawer-section" aria-labelledby={`nc-sec-evidenze-${nc.nc_id}`}>
         <h3 className="nc-drawer-section-title" id={`nc-sec-evidenze-${nc.nc_id}`}>
-          {"5. Evidenze"}
+          {"7. Evidenze"}
         </h3>
         <NcAttachmentsSection ncId={nc.nc_id} readOnly={readOnly} />
       </section>
 
-      {/* 6. Verifica efficacia */}
+      {/* 8. Verifica efficacia */}
       <section
         className={`nc-drawer-section${showVerifHighlight ? " nc-drawer-section--highlight" : ""}${!verifExpanded ? " nc-drawer-section--collapsed" : ""}`}
         aria-labelledby={`nc-sec-verifica-${nc.nc_id}`}
       >
         <div className="nc-drawer-section-heading">
           <h3 className="nc-drawer-section-title" id={`nc-sec-verifica-${nc.nc_id}`}>
-            {"6. Verifica efficacia"}
+            {"8. Verifica efficacia"}
           </h3>
           {earlyPhase && (
             <button
@@ -552,11 +578,11 @@ export default function NcDetailPanel({
         </div>
       </section>
 
-      {/* 7. Chiusura */}
+      {/* 9. Chiusura */}
       {showClosureSection && (
         <section className="nc-drawer-section" aria-labelledby={`nc-sec-chiusura-${nc.nc_id}`}>
           <h3 className="nc-drawer-section-title" id={`nc-sec-chiusura-${nc.nc_id}`}>
-            {"7. Chiusura"}
+            {"9. Chiusura"}
           </h3>
           <div className="nc-workflow-btns">
             {showApproveClosure && (
