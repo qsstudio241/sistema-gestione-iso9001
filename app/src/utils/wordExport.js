@@ -1358,3 +1358,54 @@ export async function exportAuditToWorkspace(audit, fsProvider, getViewUrl = nul
         throw new Error('Errore salvataggio report: ' + error.message);
     }
 }
+
+// ─── ADR-009 Fase 3: bundle ZIP multi-standard ────────────────────────────────
+
+function buildZipFileName(audit) {
+    const client = (audit.metadata?.clientName  || 'Cliente').replace(/[^a-z0-9]/gi, '_');
+    const number = (audit.metadata?.auditNumber || 'N-A').replace(/[^a-z0-9]/gi, '_');
+    return client + '_' + number + '_TUTTI.zip';
+}
+
+/**
+ * Genera UN file ZIP contenente un report Word per ciascuno standard richiesto.
+ * Usato per audit multi-standard NON "Sistema Integrato" (isIntegratedSystem=false):
+ * l'utente ottiene un unico download invece di N download separati con ritardo tra loro.
+ *
+ * @param {object}   audit         - audit pronto per export (stesso shape di exportAuditToWord)
+ * @param {Function} getViewUrl    - risolutore URL allegati (vedi exportAuditToWord)
+ * @param {string[]} standardKeys  - chiavi standard da includere (es. ['ISO_9001','ISO_14001'])
+ * @param {object}   options       - auditReportPrefix, getTemplateResolver,
+ *                                    photoModeResolver?: (stdKey) => 'preview'|undefined
+ * @returns {Promise<string>} nome del file ZIP generato
+ */
+export async function exportAuditToWordZip(audit, getViewUrl = null, standardKeys = [], options = {}) {
+    if (!audit?.metadata) throw new Error('Audit non valido: metadata mancante');
+    if (!Array.isArray(standardKeys) || standardKeys.length < 2) {
+        throw new Error('Il file ZIP richiede almeno 2 standard');
+    }
+
+    const zip = new PizZip();
+    for (const stdKey of standardKeys) {
+        const photoMode = typeof options.photoModeResolver === 'function'
+            ? options.photoModeResolver(stdKey)
+            : options.photoMode;
+        const blob = await generateDocxBlob(audit, getViewUrl, {
+            auditReportPrefix:  options.auditReportPrefix,
+            getTemplateResolver: options.getTemplateResolver,
+            ...(photoMode ? { photoMode } : {}),
+            standardKey: stdKey,
+        });
+        // blob.arrayBuffer() non è garantito in tutti gli ambienti (jsdom/test):
+        // riusa blobToBase64 (FileReader), già collaudato per l'embedding immagini.
+        const dataUrl = await blobToBase64(blob);
+        const base64Data = dataUrl.split(',')[1] || dataUrl;
+        const fileName = buildFileName(audit, stdKey, options.auditReportPrefix || null);
+        zip.file(fileName, base64Data, { base64: true });
+    }
+
+    const zipBlob = zip.generate({ type: 'blob', mimeType: 'application/zip' });
+    const zipFileName = buildZipFileName(audit);
+    saveAs(zipBlob, zipFileName);
+    return zipFileName;
+}
