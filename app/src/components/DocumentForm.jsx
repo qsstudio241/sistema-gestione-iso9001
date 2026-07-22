@@ -14,7 +14,7 @@
  * La submit ora è gestita esplicitamente tramite onClick.
  */
 
-import React, { useState, useEffect, useRef, useCallback } from "react";
+import React, { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import apiService from "../services/apiService";
 import { DOC_TYPE_OPTIONS, DOC_STATUS_OPTIONS } from "../data/documentTypes";
 import { getSchemaForDocType } from "../data/documentTypeSchemas";
@@ -22,7 +22,9 @@ import { getSuggestedFolderCode } from "../data/documentFolderMapping";
 import {
   normalizeRegistryDocStatusForApi,
   registryDocStatusForForm,
+  isDocumentFolder,
 } from "../utils/documentValidity";
+import { buildDocumentUpdateFromAiMetadata, isPdfFile } from "../utils/documentMetadataExtraction";
 import "./DocumentForm.css";
 
 const DOC_TYPES = DOC_TYPE_OPTIONS;
@@ -104,15 +106,34 @@ function StepIndicator({ step }) {
 
 // ─── Componente principale ────────────────────────────────────────────────────
 
-function DocumentForm({ doc, companies, standards, onSave, onClose, defaultFolderId, defaultCompanyId, defaultContentScope }) {
+function DocumentForm({
+  doc,
+  companies,
+  standards,
+  onSave,
+  onClose,
+  defaultFolderId,
+  defaultCompanyId,
+  defaultContentScope,
+  contextScope,
+}) {
   const isEdit = !!doc;
+  const isProtectedFolder = isEdit && isDocumentFolder(doc);
+  const isSystemFolder = isEdit && Boolean(doc?.is_system_folder);
+  const scopeLocked = Boolean(contextScope?.locked);
 
   // Etichetta esplicita di ambito ("explicit over implicit"): client | studio | reference.
-  // Niente piu' "azienda vuota = studio": l'ambito e' sempre dichiarato.
   const initialContentScope =
     doc?.content_scope
+    || (scopeLocked ? contextScope.content_scope : null)
     || defaultContentScope
-    || (doc?.company_id || defaultCompanyId ? 'client' : 'studio');
+    || (doc?.company_id || defaultCompanyId ? "client" : "studio");
+
+  const initialCompanyId =
+    doc?.company_id
+    || (scopeLocked && contextScope.company_id != null ? contextScope.company_id : null)
+    || defaultCompanyId
+    || "";
 
   const [step, setStep] = useState(1);
   const openTimeRef = useRef(Date.now());
@@ -129,7 +150,7 @@ function DocumentForm({ doc, companies, standards, onSave, onClose, defaultFolde
     retention_years: doc?.retention_years || '',
     standard_id:     doc?.standard_id     || '',
     clause_ref:      doc?.clause_ref      || '',
-    company_id:      doc?.company_id      || defaultCompanyId || '',
+    company_id:      initialCompanyId || '',
     content_scope:   initialContentScope,
     notes:           doc?.notes           || '',
   });
@@ -194,6 +215,34 @@ function DocumentForm({ doc, companies, standards, onSave, onClose, defaultFolde
   const [uploadProgress, setUploadProgress] = useState(0);
   const [error, setError] = useState(null);
   const [confirmClose, setConfirmClose] = useState(false);
+
+  const [docTypeConfig, setDocTypeConfig] = useState([]);
+  const [docTypeConfigLoaded, setDocTypeConfigLoaded] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    apiService.getDocTypeConfig()
+      .then((rows) => { if (!cancelled) setDocTypeConfig(rows || []); })
+      .catch(() => { if (!cancelled) setDocTypeConfig([]); })
+      .finally(() => { if (!cancelled) setDocTypeConfigLoaded(true); });
+    return () => { cancelled = true; };
+  }, []);
+
+  const defaultExpiryMonths = useMemo(() => {
+    const row = docTypeConfig.find((r) => r.doc_type === form.doc_type);
+    const m = row?.default_expiry_months;
+    return m != null && m !== "" ? parseInt(m, 10) : null;
+  }, [docTypeConfig, form.doc_type]);
+
+  const showExpiryConfigHint = docTypeConfigLoaded
+    && !isNormaType
+    && !form.expiry_date
+    && (defaultExpiryMonths == null || Number.isNaN(defaultExpiryMonths) || defaultExpiryMonths <= 0);
+
+  useEffect(() => {
+    if (isEdit || !defaultFolderId || userOverrodeFolder) return;
+    setSelectedFolderId(defaultFolderId);
+  }, [defaultFolderId, isEdit, userOverrodeFolder]);
 
   // Reset dati tipo-specifici quando il tipo cambia
   useEffect(() => {
@@ -293,8 +342,7 @@ function DocumentForm({ doc, companies, standards, onSave, onClose, defaultFolde
   const runAiExtraction = useCallback(async (file, docType) => {
     if (!file || !docType) return;
     // Solo PDF supportati
-    const ext = file.name.slice(file.name.lastIndexOf('.')).toLowerCase();
-    if (ext !== '.pdf') return;
+    if (!isPdfFile(file)) return;
 
     // Annulla eventuale estrazione precedente (flag di abort)
     const abortFlag = { cancelled: false };
@@ -506,6 +554,9 @@ function DocumentForm({ doc, companies, standards, onSave, onClose, defaultFolde
         isNormaType ? 'rilasciato' : form.status,
       );
 
+      const titleUnchanged = isEdit
+        && String(form.title ?? '').trim() === String(doc?.title ?? '').trim();
+
       const payload = {
         ...form,
         status: registryStatus,
@@ -533,6 +584,11 @@ function DocumentForm({ doc, companies, standards, onSave, onClose, defaultFolde
           : null,
         parent_id:       (!isEdit && selectedFolderId) ? selectedFolderId : undefined,
       };
+
+      // Cartelle di sistema: non inviare il titolo se invariato (evita 403 spurio)
+      if (isSystemFolder && titleUnchanged) {
+        delete payload.title;
+      }
 
       let newDocId;
       if (isEdit) {
@@ -572,7 +628,15 @@ function DocumentForm({ doc, companies, standards, onSave, onClose, defaultFolde
 
       onSave();
     } catch (err) {
-      setError(err.message || "Errore durante il salvataggio.");
+      const msg = err.message || "Errore durante il salvataggio.";
+      if (msg.includes("cartelle di sistema")) {
+        setError(
+          "Questa cartella di sistema è protetta: il nome non può essere modificato. " +
+          "Aggiorna gli altri campi oppure gestisci le cartelle dal pannello Albero."
+        );
+      } else {
+        setError(msg);
+      }
     } finally {
       setSaving(false);
       setUploading(false);
@@ -948,6 +1012,23 @@ function DocumentForm({ doc, companies, standards, onSave, onClose, defaultFolde
   // il selettore non viene mostrato.
   const renderScopeFields = () => {
     if (isNormaType) return null;
+
+    if (scopeLocked) {
+      const scopeText =
+        contextScope.content_scope === "client"
+          ? `Azienda cliente — ${contextScope.label}`
+          : contextScope.label;
+      return (
+        <div className="docform-context-scope" role="status">
+          <span className="docform-context-scope__label">Ambito documento</span>
+          <span className="docform-context-scope__value">{scopeText}</span>
+          <span className="docform-hint">
+            Impostato dal filtro Ambito del registro. Il documento verrà archiviato per questo contesto.
+          </span>
+        </div>
+      );
+    }
+
     return (
       <div className="docform-row">
         <div className="docform-field">
@@ -1086,6 +1167,13 @@ function DocumentForm({ doc, companies, standards, onSave, onClose, defaultFolde
                 ))}
               </select>
             </div>
+            {isProtectedFolder && (
+              <div className="docform-info-banner" role="status">
+                {isSystemFolder
+                  ? "Cartella di sistema: il nome è fisso. Puoi aggiornare gli altri metadati."
+                  : "Cartella personalizzata: per rinominarla usa il pulsante Rinomina nell'albero."}
+              </div>
+            )}
             <div className="docform-field">
               <label>Titolo <span className="required">*</span></label>
               <input
@@ -1093,6 +1181,8 @@ function DocumentForm({ doc, companies, standards, onSave, onClose, defaultFolde
                 value={form.title}
                 onChange={handleChange("title")}
                 autoFocus
+                disabled={isSystemFolder}
+                title={isSystemFolder ? "Le cartelle di sistema non possono essere rinominate" : undefined}
               />
             </div>
             {/* Codice norma (solo modifica norma) */}
@@ -1167,6 +1257,18 @@ function DocumentForm({ doc, companies, standards, onSave, onClose, defaultFolde
             <div className="docform-field">
               <label>Data scadenza</label>
               <input type="date" value={form.expiry_date} onChange={handleChange("expiry_date")} />
+              {showExpiryConfigHint && (
+                <span className="docform-hint docform-hint--link">
+                  {"Nessuna scadenza automatica per questo tipo. Configura i mesi in "}
+                  <a href="/settings/studio">Il mio Studio → Documenti</a>
+                  {" oppure inserisci la data manualmente al rilascio."}
+                </span>
+              )}
+              {!showExpiryConfigHint && defaultExpiryMonths > 0 && !form.expiry_date && (
+                <span className="docform-hint">
+                  {`Al rilascio, se lasci vuota, verrà calcolata +${defaultExpiryMonths} mesi dalla data emissione.`}
+                </span>
+              )}
             </div>
           )}
         </div>

@@ -1041,6 +1041,16 @@ body.sgq-doc-tree-resizing * {
   animation: inboxToastIn 0.25s ease;
 }
 
+.docregistry-toast {
+  padding: 10px 14px;
+  background: #fffbeb;
+  border: 1px solid #fcd34d;
+  border-radius: 8px;
+  color: #92400e;
+  font-size: 0.875rem;
+  animation: inboxToastIn 0.25s ease;
+}
+
 @keyframes inboxToastIn {
   from { opacity: 0; transform: translateX(-8px); }
   to   { opacity: 1; transform: translateX(0); }
