@@ -6,6 +6,8 @@ import React, { useState, useEffect, useCallback } from 'react';
 import apiService from '../services/apiService';
 import { useAuth } from '../contexts/AuthContext';
 import AiDisclaimer from '../components/AiDisclaimer';
+import { Link } from '../contexts/RouterContext';
+import { buildDocumentRegistryPath } from '../utils/documentRegistryUrl';
 
 const STANDARDS = [
   { code: 'ISO_9001_2015', label: 'ISO 9001:2015' },
@@ -163,7 +165,19 @@ export default function GapAnalysisPage() {
                   </td>
                   <td style={{ padding: '0.45rem 0.75rem', color: '#546e7a', fontSize: '0.82rem' }}>
                     {row.evidence.length > 0
-                      ? row.evidence.map((e) => e.title).join(', ')
+                      ? row.evidence.map((e, idx) => (
+                        <React.Fragment key={e.docId ?? `${row.clauseRef}-${idx}`}>
+                          {idx > 0 && ', '}
+                          {e.docId ? (
+                            <Link
+                              to={buildDocumentRegistryPath({ selectId: e.docId, companyId })}
+                              title="Apri nel registro documenti"
+                            >
+                              {e.title}
+                            </Link>
+                          ) : e.title}
+                        </React.Fragment>
+                      ))
                       : '\u2014'}
                   </td>
                 </tr>
