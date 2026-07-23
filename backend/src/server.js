@@ -43,6 +43,7 @@ const {
 // Import routes
 const authRoutes = require('./routes/auth.routes');
 const inviteRoutes = require('./routes/invite.routes');
+const passwordResetRoutes = require('./routes/passwordReset.routes');
 const auditRoutes = require('./routes/audit.routes');
 const responseRoutes = require('./routes/response.routes');
 const ncRoutes = require('./routes/nc.routes');
@@ -274,6 +275,7 @@ app.use(API_BASE, apiLimiter);              // Moderato su tutto il resto
 // Endpoint autenticati
 app.use(API_BASE, authRoutes);
 app.use(API_BASE, inviteRoutes); // /auth/accept-invite* — pubblico, isolato da authRoutes (UAL-3)
+app.use(API_BASE, passwordResetRoutes); // /auth/forgot-password, /auth/reset-password* — pubblico, isolato (UAL-4)
 app.use(API_BASE, attachmentRoutes); // Prima degli altri: authenticateDownload accetta ?token=, i router successivi hanno router.use(authenticate) globale che bloccherebbe le richieste senza Bearer
 app.use(API_BASE, auditRoutes);
 app.use(`${API_BASE}/audits`, auditEventsRoutes);

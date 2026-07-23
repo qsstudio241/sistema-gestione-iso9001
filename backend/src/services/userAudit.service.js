@@ -17,6 +17,8 @@ const VALID_ACTIONS = new Set([
     'company_access_granted', 'company_access_updated', 'company_access_revoked',
     // UAL-3 — flusso invito via email (migration 131 estende il CHECK di user_audit_log)
     'invite_sent', 'invite_accepted', 'invite_resent',
+    // UAL-4 — reset password self-service (migration 132 estende il CHECK di user_audit_log)
+    'password_reset_requested', 'password_reset_completed',
 ]);
 
 /**
