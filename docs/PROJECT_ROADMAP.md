@@ -81,6 +81,8 @@ Quando emerge un’urgenza (es. modulo **VT** o **MT**):
 | `Normative/...UNI EN ISO 3834-1_2021 Rev. 0.pdf` | ISO 3834-1 | Criteri scelta livello |
 | `Normative/...UNI EN ISO 3834-3_2021 Rev. 0.pdf` | ISO 3834-3 | Requisiti livello intermedio |
 | `Normative/...UNI EN ISO 3834-5_2021 Rev. 0.pdf` | ISO 3834-5 | Documenti e record |
+| `Normative/...UNI EN ISO 3834-2_2006 Rev. 0.pdf` | ISO 3834-2 | Requisiti livello completo — **ora disponibile** (edizione 2006, PDF 2021 non reperito) |
+| `Normative/...UNI EN ISO 3834-4_2006 Rev. 0.pdf` | ISO 3834-4 | Requisiti livello elementare — **ora disponibile** (edizione 2006, PDF 2021 non reperito) |
 
 ### Cosa differenzia i 4 scenari tecnicamente
 

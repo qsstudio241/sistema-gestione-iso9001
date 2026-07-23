@@ -59,6 +59,22 @@ const NORM_FILES = [
         norm_version: '2021',
         minMajor: 4,
     },
+    {
+        // Edizione 2006 (non 2021): PDF 2021 non reperito in archivio per questa
+        // parte al momento dell'import — vedi nota versione in testa al file .md.
+        file: 'Normative NORMA_00010_ UNI EN ISO 3834-2_2006 Rev. 0.md',
+        standard_code: 'ISO_3834_2_2006',
+        norm_version: '2006',
+        minMajor: 4,
+    },
+    {
+        // Edizione 2006 (non 2021): PDF 2021 non reperito in archivio per questa
+        // parte al momento dell'import — vedi nota versione in testa al file .md.
+        file: 'Normative NORMA_00011_ UNI EN ISO 3834-4_2006 Rev. 0.md',
+        standard_code: 'ISO_3834_4_2006',
+        norm_version: '2006',
+        minMajor: 4,
+    },
 ];
 
 function stripTrailingPageNumber(title) {
@@ -88,6 +104,11 @@ function shouldDropLine(raw) {
     if (/^www\.uni\.com/i.test(line)) return true;
     if (DOT_FILLER_RE.test(line)) return true;
     if (/^UNI\s+EN\s+ISO[\s\S]*Pagina\s+[IVXLCDM\d]+\s*$/i.test(line)) return true;
+    // Disclaimer ripetuto su ogni pagina delle edizioni UNI 2005/2006 (3834-2/-4)
+    if (/^E['’]\s+vietato\s+l['’]uso\s+in\s+rete/i.test(line)) return true;
+    if (/^Ente\s+Nazionale\s+Italiano\b/i.test(line)) return true;
+    if (/^di\s+Unificazione\s*$/i.test(line)) return true;
+    if (/^20137\s+Milano/i.test(line)) return true;
     return false;
 }
 
