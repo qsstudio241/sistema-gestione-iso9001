@@ -45,6 +45,41 @@ function clauseRefToSectionCode(clauseRef) {
   return `clause${major}`;
 }
 
+/**
+ * Estrae la macro-clausola SAL (formato "N.N", un solo punto — vedi MACRO_CLAUSE_SQL)
+ * da un clause_ref qualsiasi dell'euristica documenti. Es. "8.1.4.2" → "8.1" (macro-
+ * clausola genitrice); "4.1" → "4.1" (coincide); "10" → null (titolo di sezione, nessuna
+ * macro-clausola diretta tracciabile in SAL).
+ * @param {string} clauseRef
+ * @returns {string|null}
+ */
+function extractSalMacroClauseRef(clauseRef) {
+  const m = String(clauseRef || '').match(/^(\d+\.\d+)/);
+  return m ? m[1] : null;
+}
+
+/**
+ * Mappa lo stato SAL (motore tracciato, evidenze collegate/validate) sulla scala di
+ * copertura a 3 livelli usata dall'euristica documenti — il GAP "dialoga" con SAL:
+ * quando una macro-clausola ha uno stato SAL tracciato, quello stato è la fonte di
+ * verità e sovrascrive la stima lessicale (coverageSource: 'sal' vs 'heuristic').
+ * @param {string} salStatus uno di SAL_STATUS_VALUES
+ * @returns {'covered'|'partial'|'missing'}
+ */
+function mapSalStatusToGapCoverage(salStatus) {
+  switch (salStatus) {
+    case 'completed':
+    case 'to_validate':
+    case 'na':
+      return 'covered';
+    case 'in_progress':
+      return 'partial';
+    case 'discussed':
+    default:
+      return 'missing';
+  }
+}
+
 function pickWorstConformityHint(statuses) {
   if (!Array.isArray(statuses) || !statuses.length) return null;
   let best = null;
@@ -84,8 +119,20 @@ function matchScore(clauseTokens, haystack) {
 /**
  * Esegui gap analysis per un'azienda e uno standard.
  *
+ * "Dialogo" GAP↔SAL: per le macro-clausole (N.N) con uno stato SAL già tracciato,
+ * la copertura riportata è quella ufficiale SAL (coverageSource: 'sal'), non la
+ * stima lessicale — coerenza fra i due moduli. Per le clausole non tracciate in
+ * SAL (sub-clausole, o macro-clausole non ancora seedate) resta l'euristica
+ * documentale (coverageSource: 'heuristic'). Il campo `sal` (se non null) indica
+ * la macro-clausola SAL di riferimento per un eventuale deep-link/approfondimento.
+ *
  * @param {{ organizationId: number, companyId: number, standardCode: string }} params
- * @returns {Promise<Array<{ clauseRef: string, title: string, coverage: 'covered'|'partial'|'missing', evidence: Array<{docId:number,title:string}> }>>}
+ * @returns {Promise<Array<{
+ *   clauseRef: string, title: string,
+ *   coverage: 'covered'|'partial'|'missing', coverageSource: 'sal'|'heuristic',
+ *   evidence: Array<{docId:number,title:string}>,
+ *   sal: {macroClauseRef:string, exactMatch:boolean, status:string|null}|null
+ * }>>}
  */
 async function runGapAnalysis({ organizationId, companyId, standardCode }) {
   // 1. Carica clausole normative
@@ -112,7 +159,20 @@ async function runGapAnalysis({ organizationId, companyId, standardCode }) {
   );
   const docs = docRes.recordset;
 
-  // 3. Calcola copertura per clausola
+  // 3. Stato SAL tracciato per le macro-clausole di questo standard/azienda —
+  // fonte di verità quando disponibile (motore evidenze validate, non solo lessico).
+  // Fallback silenzioso all'euristica se SAL non è raggiungibile/azienda fuori scope.
+  let salByClauseRef = new Map();
+  try {
+    const salMatrix = await getGapMatrix(organizationId, companyId, { standardCode });
+    if (salMatrix && Array.isArray(salMatrix.rows)) {
+      salByClauseRef = new Map(salMatrix.rows.map((r) => [r.clauseRef, r]));
+    }
+  } catch (err) {
+    logger.warn(`[GapAnalysis] Lettura stato SAL fallita, fallback euristica: ${err.message}`);
+  }
+
+  // 4. Calcola copertura per clausola (SAL se tracciata, altrimenti euristica)
   return clauses.map((clause) => {
     const clauseTokens = [
       ...tokenize(clause.clause_title || ''),
@@ -137,20 +197,38 @@ async function runGapAnalysis({ organizationId, companyId, standardCode }) {
       return clauseTokens.some((t) => titleTokens.includes(t));
     }).length;
 
+    const macroClauseRef = extractSalMacroClauseRef(clause.clause_ref);
+    const salRow = macroClauseRef ? salByClauseRef.get(macroClauseRef) : null;
+    const exactSalMatch = macroClauseRef === clause.clause_ref;
+    const salTracked = exactSalMatch && !!(salRow && salRow.status);
+
     let coverage;
-    if (evidence.length >= 2 || titleMatchCount >= 1) {
-      coverage = 'covered';
-    } else if (evidence.length === 1) {
-      coverage = 'partial';
+    let coverageSource;
+    if (salTracked) {
+      coverage = mapSalStatusToGapCoverage(salRow.status);
+      coverageSource = 'sal';
     } else {
-      coverage = 'missing';
+      if (evidence.length >= 2 || titleMatchCount >= 1) {
+        coverage = 'covered';
+      } else if (evidence.length === 1) {
+        coverage = 'partial';
+      } else {
+        coverage = 'missing';
+      }
+      coverageSource = 'heuristic';
     }
 
     return {
       clauseRef: clause.clause_ref,
       title: clause.clause_title || clause.clause_ref,
       coverage,
+      coverageSource,
       evidence: evidence.slice(0, 5).map(({ docId, title }) => ({ docId, title })),
+      sal: macroClauseRef ? {
+        macroClauseRef,
+        exactMatch: exactSalMatch,
+        status: salRow ? (salRow.status || null) : null,
+      } : null,
     };
   });
 }
@@ -843,6 +921,8 @@ function buildSalSummary(rows) {
 
 module.exports = {
   runGapAnalysis,
+  extractSalMacroClauseRef,
+  mapSalStatusToGapCoverage,
   getGapMatrix,
   listStatuses,
   upsertStatus,

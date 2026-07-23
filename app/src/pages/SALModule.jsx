@@ -17,6 +17,7 @@ import {
   resolveInitialSalCompanyScope,
   persistSalCompanyScope,
 } from '../utils/salCompanyScope';
+import { parseSalDeepLinkSearch } from '../utils/salDeepLink';
 import {
   SAL_STATUS_OPTIONS,
   SAL_STATUS_LABEL,
@@ -214,9 +215,20 @@ export default function SALModule() {
     ? hasLicensedModule('ai_norms')
     : false;
 
+  // Deep link da un altro modulo (es. "Verifica in SAL" da Gap Analysis) — letto
+  // una sola volta all'ingresso: precompila azienda/standard e mette in evidenza
+  // la macro-clausola indicata. Nessuno stato condiviso: solo query string.
+  const [deepLink] = useState(() => parseSalDeepLinkSearch(
+    typeof window !== 'undefined' ? window.location.search : ''
+  ));
+  const deepLinkStandard = SAL_STANDARD_TABS.some((t) => t.code === deepLink.standardCode)
+    ? deepLink.standardCode
+    : '';
+  const [highlightClauseRef, setHighlightClauseRef] = useState(deepLink.clauseRef || null);
+
   const [companies, setCompanies] = useState([]);
-  const [companyScope, setCompanyScope] = useState(() => resolveInitialSalCompanyScope());
-  const [standardFilter, setStandardFilter] = useState('');
+  const [companyScope, setCompanyScope] = useState(() => resolveInitialSalCompanyScope(deepLink.companyId));
+  const [standardFilter, setStandardFilter] = useState(deepLinkStandard);
   const [rows, setRows] = useState([]);
   const [summary, setSummary] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -238,6 +250,15 @@ export default function SALModule() {
       const list = res?.data || res?.companies || res || [];
       setCompanies(Array.isArray(list) ? list : []);
     }).catch(() => {});
+  }, []);
+
+  // Persiste l'ambito azienda ricevuto da deep link, cosi' resta attivo anche
+  // tornando su /sal senza query string in una sessione successiva.
+  useEffect(() => {
+    if (deepLink.companyId) {
+      persistSalCompanyScope(deepLink.companyId);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
@@ -288,9 +309,19 @@ export default function SALModule() {
     loadMatrix();
   }, [loadMatrix]);
 
+  // Scorre fino alla clausola indicata dal deep link, una volta caricata la matrice.
+  useEffect(() => {
+    if (!highlightClauseRef || loading || !rows.some((r) => r.clauseRef === highlightClauseRef)) return;
+    const timer = setTimeout(() => {
+      document.querySelector('.sal-row-highlight')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }, 80);
+    return () => clearTimeout(timer);
+  }, [rows, loading, highlightClauseRef]);
+
   const handleCompanyScopeChange = useCallback((value) => {
     setCompanyScope(value);
     persistSalCompanyScope(value);
+    setHighlightClauseRef(null);
   }, []);
 
   const updateRowLocal = useCallback((normRequirementId, patch) => {
@@ -642,7 +673,7 @@ export default function SALModule() {
                 role="tab"
                 aria-selected={standardFilter === tab.code}
                 className={`sal-tab${standardFilter === tab.code ? ' sal-tab-active' : ''}`}
-                onClick={() => setStandardFilter(tab.code)}
+                onClick={() => { setStandardFilter(tab.code); setHighlightClauseRef(null); }}
               >
                 {tab.label}
               </button>
@@ -674,6 +705,12 @@ export default function SALModule() {
             </div>
           )}
 
+          {highlightClauseRef && (
+            <p className="sal-scope-hint">
+              Arrivi da Gap Analysis: clausola {highlightClauseRef} evidenziata sotto.
+            </p>
+          )}
+
           <SgqDataGrid
             rows={rows}
             columns={GRID_COLUMNS}
@@ -685,6 +722,7 @@ export default function SALModule() {
             }
             getRowKey={(row) => row.normRequirementId}
             renderCell={renderCell}
+            rowClassName={(row) => (row.clauseRef === highlightClauseRef ? 'sal-row-highlight' : '')}
           />
         </>
       )}
