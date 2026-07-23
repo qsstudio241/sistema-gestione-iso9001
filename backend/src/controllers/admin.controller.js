@@ -13,6 +13,7 @@ const {
 } = require('../services/moduleLicense.service');
 const documentTreeProvisioner = require('../services/documentTreeProvisioner.service');
 const billingService = require('../services/billing.service');
+const userAuditService = require('../services/userAudit.service');
 
 const ADMIN_ROLES = ['admin', 'superadmin'];
 
@@ -193,6 +194,14 @@ async function createUser(req, res) {
         const newId = result.recordset[0]?.user_id;
         logger.info('Admin create user', { new_user_id: newId, organization_id, actorId, role: normalizedRole });
 
+        await userAuditService.logUserAuditEvent({
+            organizationId: organization_id,
+            targetUserId: newId,
+            actorUserId: actorId,
+            action: 'user_created',
+            newValue: { email: String(email).trim(), role: normalizedRole, auditor_org_id: aoId },
+        });
+
         const { company_access: companyAccessInput } = req.body || {};
         if (Array.isArray(companyAccessInput) && companyAccessInput.length > 0 && newId) {
             for (const entry of companyAccessInput) {
@@ -216,6 +225,14 @@ async function createUser(req, res) {
                     company_id: companyId,
                     permission,
                     organization_id,
+                });
+                await userAuditService.logUserAuditEvent({
+                    organizationId: organization_id,
+                    targetUserId: newId,
+                    actorUserId: actorId,
+                    action: 'company_access_granted',
+                    fieldChanged: 'company_access',
+                    newValue: { company_id: companyId, permission },
                 });
             }
         }
@@ -282,11 +299,11 @@ async function updateUser(req, res) {
         // superadmin: cerca senza filtro org; admin: solo nella propria org
         const userCheck = isSuperadmin
             ? await query(
-                `SELECT user_id, role, is_active, organization_id FROM users WHERE user_id = @user_id`,
+                `SELECT user_id, role, is_active, organization_id, full_name, auditor_org_id FROM users WHERE user_id = @user_id`,
                 { user_id: targetUserId }
               )
             : await query(
-                `SELECT user_id, role, is_active, organization_id FROM users
+                `SELECT user_id, role, is_active, organization_id, full_name, auditor_org_id FROM users
                  WHERE user_id = @user_id AND organization_id = @organization_id`,
                 { user_id: targetUserId, organization_id: actorOrgId }
               );
@@ -304,9 +321,11 @@ async function updateUser(req, res) {
         const current = userCheck.recordset[0];
         const updates = [];
         const params = { user_id: targetUserId, organization_id };
+        const auditLogEntries = [];
 
         if (full_name !== undefined) {
-            if (!String(full_name).trim()) {
+            const trimmedName = String(full_name).trim();
+            if (!trimmedName) {
                 return res.status(400).json({
                     success: false,
                     error: 'full_name non può essere vuoto',
@@ -314,7 +333,13 @@ async function updateUser(req, res) {
                 });
             }
             updates.push('full_name = @full_name');
-            params.full_name = String(full_name).trim();
+            params.full_name = trimmedName;
+            if (trimmedName !== current.full_name) {
+                auditLogEntries.push({
+                    action: 'profile_updated', fieldChanged: 'full_name',
+                    oldValue: current.full_name, newValue: trimmedName,
+                });
+            }
         }
 
         if (role !== undefined) {
@@ -348,6 +373,12 @@ async function updateUser(req, res) {
             }
             updates.push('role = @role');
             params.role = normalizedRole;
+            if (normalizedRole !== current.role) {
+                auditLogEntries.push({
+                    action: 'role_changed', fieldChanged: 'role',
+                    oldValue: current.role, newValue: normalizedRole,
+                });
+            }
         }
 
         if (is_active !== undefined) {
@@ -371,6 +402,12 @@ async function updateUser(req, res) {
             }
             updates.push('is_active = @is_active');
             params.is_active = active ? 1 : 0;
+            if (Boolean(current.is_active) !== active) {
+                auditLogEntries.push({
+                    action: active ? 'activated' : 'deactivated', fieldChanged: 'is_active',
+                    oldValue: Boolean(current.is_active), newValue: active,
+                });
+            }
         }
 
         if (auditor_org_id !== undefined) {
@@ -391,6 +428,12 @@ async function updateUser(req, res) {
             }
             updates.push('auditor_org_id = @auditor_org_id');
             params.auditor_org_id = aoId;
+            if (aoId !== (current.auditor_org_id ?? null)) {
+                auditLogEntries.push({
+                    action: 'auditor_org_changed', fieldChanged: 'auditor_org_id',
+                    oldValue: current.auditor_org_id, newValue: aoId,
+                });
+            }
         }
 
         if (password !== undefined && password !== null && String(password).length > 0) {
@@ -404,6 +447,7 @@ async function updateUser(req, res) {
             const password_hash = await bcrypt.hash(String(password), 10);
             updates.push('password_hash = @password_hash');
             params.password_hash = password_hash;
+            auditLogEntries.push({ action: 'password_reset_by_admin', fieldChanged: 'password_hash' });
         }
 
         if (updates.length === 0) {
@@ -418,6 +462,15 @@ async function updateUser(req, res) {
             `UPDATE users SET ${updates.join(', ')} WHERE user_id = @user_id AND organization_id = @organization_id`,
             params
         );
+
+        for (const entry of auditLogEntries) {
+            await userAuditService.logUserAuditEvent({
+                organizationId: organization_id,
+                targetUserId,
+                actorUserId: actorId,
+                ...entry,
+            });
+        }
 
         logger.info('Admin update user', { target_user_id: targetUserId, organization_id, actorId, fields: updates });
 
@@ -499,6 +552,16 @@ async function deactivateUser(req, res) {
             { user_id: targetUserId }
         );
 
+        await userAuditService.logUserAuditEvent({
+            organizationId: organization_id,
+            targetUserId,
+            actorUserId: actorId,
+            action: 'deactivated',
+            fieldChanged: 'is_active',
+            oldValue: true,
+            newValue: false,
+        });
+
         logger.info('Admin deactivate user', { target_user_id: targetUserId, organization_id, actorId });
 
         res.json({ success: true, message: 'Utente disattivato' });
@@ -534,8 +597,8 @@ async function updateUserStandards(req, res) {
         // Verifica che l'utente target esista (superadmin: cross-org; admin: solo propria org)
         const isSuperadmin = req.user.role === 'superadmin';
         const userCheck = isSuperadmin
-            ? await query(`SELECT user_id, full_name, email FROM users WHERE user_id = @user_id`, { user_id: targetUserId })
-            : await query(`SELECT user_id, full_name, email FROM users WHERE user_id = @user_id AND organization_id = @organization_id`, { user_id: targetUserId, organization_id });
+            ? await query(`SELECT user_id, full_name, email, organization_id FROM users WHERE user_id = @user_id`, { user_id: targetUserId })
+            : await query(`SELECT user_id, full_name, email, organization_id FROM users WHERE user_id = @user_id AND organization_id = @organization_id`, { user_id: targetUserId, organization_id });
 
         if (userCheck.recordset.length === 0) {
             return res.status(404).json({
@@ -544,6 +607,7 @@ async function updateUserStandards(req, res) {
                 code: 'USER_NOT_FOUND'
             });
         }
+        const targetOrgId = userCheck.recordset[0].organization_id;
 
         const ids = Array.isArray(standard_ids)
             ? standard_ids.map(i => parseInt(i, 10)).filter(i => !isNaN(i) && i > 0)
@@ -569,6 +633,13 @@ async function updateUserStandards(req, res) {
             }
         }
 
+        // Snapshot valori precedenti per l'audit trail (letto prima della sostituzione)
+        const oldStdRes = await query(
+            `SELECT standard_id FROM user_standards WHERE user_id = @user_id ORDER BY standard_id`,
+            { user_id: targetUserId }
+        );
+        const oldIds = (oldStdRes.recordset || []).map((r) => r.standard_id);
+
         // Sostituisci user_standards: elimina esistenti e inserisci i nuovi
         await query(`DELETE FROM user_standards WHERE user_id = @user_id`, { user_id: targetUserId });
 
@@ -577,6 +648,16 @@ async function updateUserStandards(req, res) {
                 INSERT INTO user_standards (user_id, standard_id) VALUES (@user_id, @standard_id)
             `, { user_id: targetUserId, standard_id });
         }
+
+        await userAuditService.logUserAuditEvent({
+            organizationId: targetOrgId,
+            targetUserId,
+            actorUserId: req.user.user_id,
+            action: 'standards_updated',
+            fieldChanged: 'allowed_standard_ids',
+            oldValue: oldIds,
+            newValue: ids,
+        });
 
         logger.info('Admin update user standards', {
             target_user_id: targetUserId,
@@ -839,7 +920,7 @@ async function addUserCompanyAccess(req, res) {
             return res.status(400).json({ success: false, error: 'Azienda non valida per questa organizzazione', code: 'INVALID_COMPANY' });
         }
 
-        await query(`
+        const mergeResult = await query(`
             MERGE user_company_access AS target
             USING (SELECT @user_id AS user_id, @company_id AS company_id) AS source
             ON target.user_id = source.user_id AND target.company_id = source.company_id
@@ -847,12 +928,25 @@ async function addUserCompanyAccess(req, res) {
                 UPDATE SET permission = @permission, organization_id = @organization_id
             WHEN NOT MATCHED THEN
                 INSERT (user_id, company_id, permission, organization_id)
-                VALUES (@user_id, @company_id, @permission, @organization_id);
+                VALUES (@user_id, @company_id, @permission, @organization_id)
+            OUTPUT $action AS merge_action, deleted.permission AS old_permission;
         `, {
             user_id: target.user_id,
             company_id: companyId,
             permission,
             organization_id: target.organization_id,
+        });
+
+        const mergeRow = mergeResult?.recordset && mergeResult.recordset[0];
+        const wasUpdate = mergeRow?.merge_action === 'UPDATE';
+        await userAuditService.logUserAuditEvent({
+            organizationId: target.organization_id,
+            targetUserId: target.user_id,
+            actorUserId: req.user.user_id,
+            action: wasUpdate ? 'company_access_updated' : 'company_access_granted',
+            fieldChanged: 'company_access',
+            oldValue: wasUpdate ? { company_id: companyId, permission: mergeRow?.old_permission ?? null } : null,
+            newValue: { company_id: companyId, permission },
         });
 
         res.status(201).json({ success: true, data: { company_id: companyId, permission } });
@@ -877,15 +971,47 @@ async function removeUserCompanyAccess(req, res) {
             return res.status(400).json({ success: false, error: 'companyId non valido', code: 'VALIDATION_ERROR' });
         }
 
-        await query(`
+        const deleteResult = await query(`
             DELETE FROM user_company_access
+            OUTPUT deleted.permission
             WHERE user_id = @user_id AND company_id = @company_id
         `, { user_id: target.user_id, company_id: companyId });
+
+        const deletedRow = deleteResult?.recordset && deleteResult.recordset[0];
+        await userAuditService.logUserAuditEvent({
+            organizationId: target.organization_id,
+            targetUserId: target.user_id,
+            actorUserId: req.user.user_id,
+            action: 'company_access_revoked',
+            fieldChanged: 'company_access',
+            oldValue: { company_id: companyId, permission: deletedRow?.permission ?? null },
+        });
 
         res.json({ success: true });
     } catch (error) {
         logger.error('Admin removeUserCompanyAccess error', { error: error.message });
         res.status(500).json({ success: false, error: 'Errore rimozione accesso azienda' });
+    }
+}
+
+/**
+ * GET /api/v1/admin/users/:id/audit-log
+ * Storico modifiche (chi ha fatto cosa e quando) per un utente — solo admin/superadmin.
+ */
+async function getUserAuditLog(req, res) {
+    try {
+        const target = await resolveTargetUser(req, req.params.id);
+        if (!target) {
+            return res.status(404).json({ success: false, error: 'Utente non trovato', code: 'USER_NOT_FOUND' });
+        }
+
+        const limit = req.query.limit;
+        const events = await userAuditService.getUserAuditLog(target.user_id, target.organization_id, limit);
+
+        res.json({ success: true, data: events });
+    } catch (error) {
+        logger.error('Admin getUserAuditLog error', { error: error.message });
+        res.status(500).json({ success: false, error: 'Errore recupero storico modifiche', code: 'ADMIN_AUDIT_LOG_ERROR' });
     }
 }
 
@@ -903,4 +1029,5 @@ module.exports = {
     listUserCompanyAccess,
     addUserCompanyAccess,
     removeUserCompanyAccess,
+    getUserAuditLog,
 };

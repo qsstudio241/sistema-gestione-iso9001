@@ -9,6 +9,7 @@ const mockGetUserCompanyAccess = vi.fn();
 const mockGetCompanies = vi.fn();
 const mockAddUserCompanyAccess = vi.fn();
 const mockRemoveUserCompanyAccess = vi.fn();
+const mockGetUserAuditLog = vi.fn();
 
 let mockAuthUser = null;
 
@@ -24,6 +25,7 @@ vi.mock("../services/apiService", () => ({
     getCompanies: (...args) => mockGetCompanies(...args),
     addUserCompanyAccess: (...args) => mockAddUserCompanyAccess(...args),
     removeUserCompanyAccess: (...args) => mockRemoveUserCompanyAccess(...args),
+    getUserAuditLog: (...args) => mockGetUserAuditLog(...args),
     patchAdminUser: vi.fn(),
     createAdminUser: vi.fn(),
     deactivateAdminUser: vi.fn(),
@@ -78,6 +80,23 @@ beforeEach(() => {
   });
   mockAddUserCompanyAccess.mockResolvedValue({ success: true, data: { company_id: 8, permission: "read" } });
   mockRemoveUserCompanyAccess.mockResolvedValue({ success: true });
+  mockGetUserAuditLog.mockResolvedValue({
+    data: [
+      {
+        id: 2,
+        action_type: "deactivated",
+        field_changed: "is_active",
+        created_at: "2026-07-23T10:00:00Z",
+        actor_name: "Admin Uno",
+      },
+      {
+        id: 1,
+        action_type: "user_created",
+        created_at: "2026-07-01T09:00:00Z",
+        actor_name: "Admin Uno",
+      },
+    ],
+  });
 });
 
 describe("UsersAdminPage — G7/G8 vista piattaforma superadmin", () => {
@@ -159,6 +178,58 @@ describe("UsersAdminPage — sezione Accesso aziende clienti", () => {
 
     await waitFor(() => {
       expect(mockAddUserCompanyAccess).toHaveBeenCalledWith(1, { company_id: 8, permission: "read" });
+    });
+  });
+});
+
+describe("UsersAdminPage — sezione Storico modifiche (UAL-2)", () => {
+  beforeEach(() => {
+    mockAuthUser = { user_id: 5, role: "admin", organization_id: 1001, auditor_org_id: 10 };
+    mockGetAdminUsers.mockResolvedValue({ data: [USERS_CROSS_TENANT[0]] });
+  });
+
+  it("apre la sezione e mostra gli eventi in ordine cronologico inverso (data, autore, cosa)", async () => {
+    const user = userEvent.setup();
+    render(<UsersAdminPage />);
+
+    await waitFor(() => {
+      expect(screen.getByText("Mario Rossi")).toBeInTheDocument();
+    });
+
+    const toggle = screen.getByText("Storico modifiche (clic per aprire o chiudere)");
+    await user.click(toggle);
+
+    await waitFor(() => {
+      expect(mockGetUserAuditLog).toHaveBeenCalledWith(1);
+    });
+
+    await waitFor(() => {
+      expect(screen.getByText("Account disattivato")).toBeInTheDocument();
+    });
+    expect(screen.getByText("Utente creato")).toBeInTheDocument();
+
+    const details = toggle.closest("details");
+    const items = within(details).getAllByRole("listitem");
+    // Ordine cronologico inverso: l'evento più recente (deactivated) è il primo
+    expect(within(items[0]).getByText("Account disattivato")).toBeInTheDocument();
+    expect(within(items[1]).getByText("Utente creato")).toBeInTheDocument();
+    expect(within(details).getAllByText("Admin Uno").length).toBeGreaterThan(0);
+  });
+
+  it("mostra un messaggio quando non ci sono eventi registrati", async () => {
+    mockGetUserAuditLog.mockResolvedValueOnce({ data: [] });
+    const user = userEvent.setup();
+    render(<UsersAdminPage />);
+
+    await waitFor(() => {
+      expect(screen.getByText("Mario Rossi")).toBeInTheDocument();
+    });
+
+    const toggle = screen.getByText("Storico modifiche (clic per aprire o chiudere)");
+    await user.click(toggle);
+
+    await waitFor(() => {
+      expect(screen.getByText("Nessuna modifica registrata per questo utente.")).toBeInTheDocument();
     });
   });
 });
