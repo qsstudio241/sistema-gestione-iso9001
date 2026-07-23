@@ -131,7 +131,8 @@
                                      "src/services/caseTextAnalysis.service.js",
                                      "src/services/caseDocumentAnalysis.service.js",
                                      "src/services/caseExtractedCoverage.service.js",
-                                     "src/services/salAiSuggest.service.js"
+                                     "src/services/salAiSuggest.service.js",
+                                     "src/services/weldingAiSuggest.service.js"
                                  ]
                    },
                    {
@@ -186,7 +187,8 @@
                                      "src/controllers/equipment.controller.js",
                                      "src/controllers/ndtReports.controller.js",
                                      "src/controllers/weldingBooks.controller.js",
-                                     "src/controllers/rdp.controller.js"
+                                     "src/controllers/rdp.controller.js",
+                                     "src/controllers/weldingAiSuggest.controller.js"
                                  ]
                    },
                    {
