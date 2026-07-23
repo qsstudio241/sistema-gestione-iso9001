@@ -55,6 +55,8 @@ const ManagementReviewsPage = React.lazy(() => import("./pages/ManagementReviews
 const SALModule = React.lazy(() => import("./pages/SALModule"));
 const DevUiCatalog = import.meta.env.DEV ? React.lazy(() => import("./pages/DevUiCatalog")) : null;
 const AcceptInvitePage = React.lazy(() => import("./pages/AcceptInvitePage"));
+const ForgotPasswordPage = React.lazy(() => import("./pages/ForgotPasswordPage"));
+const ResetPasswordPage = React.lazy(() => import("./pages/ResetPasswordPage"));
 import ModuleLocked from "./components/ModuleLocked";
 import LicensedRoute from "./components/LicensedRoute";
 import Login from "./components/Login";
@@ -102,6 +104,25 @@ function AppContent() {
     return (
       <Suspense fallback={<RouteLoadingFallback />}>
         <AcceptInvitePage token={decodeURIComponent(acceptInviteMatch[1])} />
+      </Suspense>
+    );
+  }
+
+  // Rotte pubbliche pre-login del reset password self-service (UAL-4, piano
+  // Fase 2 / G10): stesso principio di /accept-invite qui sopra — raggiungibili
+  // indipendentemente dallo stato di autenticazione.
+  if (path === "/forgot-password") {
+    return (
+      <Suspense fallback={<RouteLoadingFallback />}>
+        <ForgotPasswordPage />
+      </Suspense>
+    );
+  }
+  const resetPasswordMatch = path.match(/^\/reset-password\/([^/]+)/);
+  if (resetPasswordMatch) {
+    return (
+      <Suspense fallback={<RouteLoadingFallback />}>
+        <ResetPasswordPage token={decodeURIComponent(resetPasswordMatch[1])} />
       </Suspense>
     );
   }

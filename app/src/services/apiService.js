@@ -790,6 +790,36 @@ class ApiService {
         return this.post('/auth/accept-invite', { token, password }, { includeAuth: false });
     }
 
+    /**
+     * Richiede il reset password ("password dimenticata") per un'email.
+     * Risponde sempre con lo stesso messaggio generico, esista o meno l'email
+     * (protezione anti user-enumeration — vedi piano UAL Fase 2). Non richiede
+     * autenticazione.
+     * @param {string} email
+     */
+    async forgotPassword(email) {
+        return this.post('/auth/forgot-password', { email }, { includeAuth: false });
+    }
+
+    /**
+     * Verifica un token di reset password prima di mostrare il form "imposta
+     * nuova password" (ResetPasswordPage). Non richiede autenticazione.
+     * @param {string} token
+     */
+    async checkResetToken(token) {
+        return this.get(`/auth/reset-password/${encodeURIComponent(token)}`, { includeAuth: false });
+    }
+
+    /**
+     * Completa il reset: imposta la nuova password scelta e consuma il token.
+     * Non richiede autenticazione e non effettua login automatico.
+     * @param {string} token
+     * @param {string} newPassword
+     */
+    async resetPassword(token, newPassword) {
+        return this.post('/auth/reset-password', { token, newPassword }, { includeAuth: false });
+    }
+
     // ==========================================
     // CHECKLIST ENDPOINTS
     // ==========================================

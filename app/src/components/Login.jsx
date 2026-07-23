@@ -5,10 +5,12 @@
 
 import React, { useState } from "react";
 import { useAuth } from "../contexts/AuthContext";
+import { useNavigate } from "../contexts/RouterContext";
 import "./Login.css";
 
 function Login() {
   const { login, error, isLoading } = useAuth();
+  const navigate = useNavigate();
 
   const [formData, setFormData] = useState({
     email: "",
@@ -111,6 +113,16 @@ function Login() {
               </button>
             </div>
           </div>
+
+          {/* Password dimenticata (UAL-4) */}
+          <button
+            type="button"
+            className="forgot-password-link"
+            onClick={() => navigate("/forgot-password")}
+            disabled={isLoading}
+          >
+            Password dimenticata?
+          </button>
 
           {/* Submit */}
           <button type="submit" className="btn-login" disabled={isLoading}>
