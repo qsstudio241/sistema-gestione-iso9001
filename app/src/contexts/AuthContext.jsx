@@ -20,6 +20,7 @@ import React, {
 import apiService, { ApiError, clearAllAuditLockTokens } from "../services/apiService";
 import { syncService } from "../services/syncService";
 import { canEditCompany as resolveCanEditCompany, hasCompanyAccess, isCompanyClient as resolveIsCompanyClient, canWriteModule as resolveCanWriteModule } from "../utils/companyAccess";
+import { hasLicensedModule as hasLicensedModuleUtil } from "../utils/licenseUtils";
 
 // Ruoli disponibili
 export const USER_ROLES = {
@@ -312,13 +313,13 @@ export function AuthProvider({ children }) {
     }
   }, []);
 
-  /** Sprint 8: moduli licenziati per organizzazione (assenza lista = tutti abilitati, retrocompatibilità) */
+  /**
+   * Sprint 8: moduli licenziati per organizzazione (assenza lista = tutti abilitati, retrocompatibilità).
+   * Delega a licenseUtils.hasLicensedModule — fonte unica che gestisce anche
+   * il bridge P0 ISO 3834 (saldatura implica cnd).
+   */
   const hasLicensedModule = useCallback(
-    (moduleKey) => {
-      const m = user?.licensed_modules;
-      if (!m || !Array.isArray(m) || m.length === 0) return true;
-      return m.includes(moduleKey);
-    },
+    (moduleKey) => hasLicensedModuleUtil(user, moduleKey),
     [user]
   );
 

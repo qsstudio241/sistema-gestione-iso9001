@@ -63,7 +63,7 @@ const DEFECT_CODES_SELECT = [
     { value: "10 altro",     label: "10 \u2014 Altro" },
 ];
 
-function MarkRow({ item, index, onChange, onRemove, reportId }) {
+function MarkRow({ item, index, onChange, onRemove, reportId, onRegisterNc }) {
     const set = (k, v) => onChange(index, { ...item, [k]: v });
     const hasDefect = item.evaluation === "R" || item.evaluation === "S";
     const attRef = useRef(null);
@@ -162,6 +162,14 @@ function MarkRow({ item, index, onChange, onRemove, reportId }) {
                                             draftScopeId={`ndt-item-${index}`}
                                             draftFieldId="defect-notes"
                                         />
+                                        <button
+                                            type="button"
+                                            className="ndt-defect-nc-link"
+                                            onClick={() => onRegisterNc(item, index)}
+                                            title="Registra questa marca come Non Conformit\u00e0 nel Piano Azioni"
+                                        >
+                                            {"\u2192 Registra NC"}
+                                        </button>
                                     </div>
                 </td>
             </tr>
@@ -280,6 +288,21 @@ function NdtReportForm({ report, companies, availableInstruments, onSave, onCanc
     const [savedAt, setSavedAt] = useState(null);
     const [ncModalOpen, setNcModalOpen]   = useState(false);
     const [ncInitialDesc, setNcInitialDesc] = useState("");
+
+    // Fix P0-2 (ISO 3834 §15) — bridge "Registra NC" da una singola marca R/S del verbale
+    const openNcModalForItem = useCallback((item, index) => {
+        const typeLabel = REPORT_TYPES.find(t => t.value === form.report_type)?.label || form.report_type;
+        const evalLabel = EVALUATION_OPTIONS.find(e => e.value === item.evaluation)?.label || item.evaluation;
+        const lines = [
+            `Verbale ${typeLabel}${report?.report_number ? " " + report.report_number : ""} \u2014 ${form.client || "cliente"}`,
+            `Marca: ${item.position_code || "riga " + (index + 1)}${item.description ? " \u2014 " + item.description : ""}`,
+            `Esito: ${evalLabel}`,
+            item.defects && item.defects !== "NESSUNO" ? `Codice difetto: ${item.defects}` : null,
+            item.notes ? `Note: ${item.notes}` : null,
+        ].filter(Boolean);
+        setNcInitialDesc(lines.join("\n"));
+        setNcModalOpen(true);
+    }, [form.report_type, form.client, report?.report_number]);
 
     // Fix 3 — auto-save bozza in localStorage mentre si compila in campo
     const { clearDraft } = useNdtAutoSave(report?.id || null, form, items);
@@ -675,7 +698,7 @@ function NdtReportForm({ report, companies, availableInstruments, onSave, onCanc
                                     </thead>
                                     <tbody>
                                         {items.map((item, idx) => (
-                                            <MarkRow key={item.id || idx} item={item} index={idx} onChange={updateMarkRow} onRemove={removeMarkRow} reportId={report?.id} />
+                                            <MarkRow key={item.id || idx} item={item} index={idx} onChange={updateMarkRow} onRemove={removeMarkRow} reportId={report?.id} onRegisterNc={openNcModalForItem} />
                                         ))}
                                     </tbody>
                                 </table>
