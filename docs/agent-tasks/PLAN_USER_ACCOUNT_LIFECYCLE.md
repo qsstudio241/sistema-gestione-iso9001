@@ -1,0 +1,228 @@
+# Piano — Ciclo di vita account utente (creazione, password, disattivazione)
+
+**Data**: 11 luglio 2026
+**Tipo documento**: Piano/analisi da approvare — **nessun codice modificato in questa sessione**
+**Perimetro**: SOLO flusso classico utenti — creazione, modifica, disattivazione, gestione password (invito, reset, self-service). **Fuori scope** (da valutare in un piano successivo se richiesto): 2FA, coerenza gerarchia/licenze, fatturazione/billing.
+
+---
+
+## 1. Sommario esecutivo
+
+Oggi la gestione utenti funziona ma è **grezza esattamente come temuto dal committente**, con un problema centrale: **è l'amministratore a scegliere e digitare la password di ogni nuovo utente** (e di ogni reset), la vede in chiaro nel form, e deve comunicarla a voce/messaggio all'utente. Non esiste **nessun invito via email**, **nessun recupero password autonomo** ("password dimenticata") e **nessuna traccia storica** di chi ha creato, modificato o disattivato un account. La buona notizia: le fondamenta sono solide (hashing bcrypt corretto, soft-delete già implementato, protezioni anti-errore su "ultimo admin" già presenti, rate-limiting sul login già attivo in produzione) e **un servizio email transazionale esiste già e funziona** (usato oggi per gli alert delle non conformità) — può essere riusato senza costi aggiuntivi per inviti e reset password. Il piano sotto propone 3 fasi incrementali, a basso rischio, per portare il flusso agli standard minimi di un prodotto SaaS B2B.
+
+---
+
+## 2. Stato attuale (verificato nel codice)
+
+| Flusso | Comportamento oggi | File / endpoint |
+|---|---|---|
+| **Creazione utente** | Admin apre form, **digita lui stesso email + password in chiaro** (min. 8 caratteri, nessun altro controllo) + nome + ruolo + studio. Nessuna email inviata all'utente, nessun invito. L'utente riceve le credenziali "a voce" dall'admin. | UI: `UsersAdminPage.jsx` (`submitCreate`) · API: `POST /admin/users` → `admin.controller.js: createUser` |
+| **Modifica utente** | Admin modifica nome, ruolo, studio, e opzionalmente **imposta una nuova password** (di nuovo, in chiaro, scelta da lui). Nessuna notifica all'utente che la password è cambiata. | UI: `UsersAdminPage.jsx` (`saveUserProfile`) · API: `PATCH /admin/users/:id` → `updateUser` |
+| **Cambio password da parte dell'utente stesso** | **Non esiste**. L'utente loggato non ha alcuna pagina "cambia la mia password"; deve chiedere all'admin di reimpostarla. | — (nessun endpoint trovato) |
+| **Password dimenticata (self-service)** | **Non esiste**. Nessun link "password dimenticata" in login, nessun endpoint `forgot-password`/`reset-password`, nessun invio email con token. | — (nessun endpoint trovato in `auth.routes.js` né altrove) |
+| **Disattivazione utente** | **Soft-delete** corretto: `UPDATE users SET is_active = 0` (mai cancellazione fisica). Vincoli già presenti: non ci si può disattivare da soli, non si può disattivare l'ultimo admin attivo dell'organizzazione. Riattivazione disponibile. | UI: `UsersAdminPage.jsx` (`deactivateUser`/`reactivateUser`) · API: `DELETE /admin/users/:id` → `deactivateUser` |
+| **Dati collegati a utente disattivato** | Audit, NC, allegati creati da un utente disattivato **restano visibili e intatti** (nessuna cancellazione a cascata, nessun orfano: `created_by`/`uploaded_by` restano popolati). Comportamento corretto per tracciabilità ISO. | Verificato su schema (`audit_history`, `attachments`, ecc.) |
+| **Utenti azienda cliente (viewer per azienda)** | Il backend supporta l'associazione utente↔azienda (`user_company_access`, tabella creata con migration 081), con permesso `read`/`write`. **Ma non esiste alcuna interfaccia** per gestirla: gli endpoint `GET/POST/DELETE /admin/users/:id/company-access` esistono e funzionano, ma **nessun componente frontend li chiama**. L'unico modo per collegare un utente a un'azienda cliente oggi è una chiamata API manuale (Postman/curl), non un'azione disponibile all'admin dello studio. | API: `admin.controller.js` (`listUserCompanyAccess`, `addUserCompanyAccess`, `removeUserCompanyAccess`) — **nessuna UI** |
+| **Password hashing** | **bcrypt, 10 round** — corretto e in linea con le pratiche standard. | `auth.controller.js`, `admin.controller.js` (`bcrypt.hash(password, 10)`) |
+| **Validazione robustezza password** | Solo lunghezza minima 8 caratteri. Nessun controllo di complessità (va bene, NIST non la richiede), ma anche **nessun controllo contro password compromesse/comuni** (es. "12345678" è accettata). | `admin.controller.js` (`createUser`, `updateUser`) |
+| **Rate limiting su login** | **Attivo in produzione**: `authLimiter` in `server.js` limita `/api/v1/auth/*` a 20 richieste/15 min per IP. (Esiste anche un modulo `rateLimit.middleware.js` con un limitatore più severo per il solo login, ma è **codice morto**: importato ma commentato in `auth.routes.js` — nessun problema reale perché `authLimiter` di `server.js` copre già la rotta, ma è codice da pulire per chiarezza). | `server.js` (righe ~170-270) |
+| **Audit trail modifiche utenti** | **Assente.** Esiste solo un log applicativo (Winston/`logger.info`) su creazione/modifica/disattivazione, utile per debug ma **non consultabile da UI, non strutturato per compliance, non persistito in una tabella interrogabile**. Per confronto, gli **audit** ISO hanno già una tabella dedicata (`audit_history`: chi, cosa, quando, valore prima/dopo) — lo stesso pattern manca per gli **utenti**. | Gap noto e già segnalato in `docs/ARCHITETTURA_UTENTI_RBAC.md` §8.3 |
+| **Servizio email/SMTP** | **Già esistente e attivo in produzione.** `alertMail.service.js` (nodemailer) invia oggi le email di scadenza NC/documenti tramite SMTP configurato sul VPS (`ALERT_ENABLED=true`, verificato con email di test il 10/05/2026). **Riusabile direttamente** per invito e reset password: nessun nuovo provider da scegliere né costo aggiuntivo. | `backend/src/services/alertMail.service.js`, uso in `alertScheduler.js`, `notifications.controller.js` |
+
+---
+
+## 3. Gap identificati
+
+| # | Gap | Rischio | Perché è un problema |
+|---|-----|---------|------------------------|
+| G1 | **L'admin sceglie/vede la password in chiaro per ogni nuovo utente e per ogni reset** | Sicurezza + UX | Anti-pattern classico: la password transita "a voce"/messaggio (canale non sicuro, spesso WhatsApp/email in chiaro), l'admin la conosce anche dopo, l'utente non è mai forzato a impostarne una propria al primo accesso. Rende impossibile garantire che solo il titolare conosca la propria password. |
+| G2 | **Nessun recupero password self-service ("password dimenticata")** | Dipendenza operativa | Se un utente si blocca fuori, **l'unica soluzione è contattare l'admin** che deve reimpostare lui la password (di nuovo in chiaro). Per aziende clienti con utenza viewer, questo significa dipendere dallo studio di consulenza per un problema quotidiano. Non scalabile e fonte di attrito. |
+| G3 | **Nessun audit trail persistito su creazione/modifica/disattivazione utenti** | Compliance ISO 9001 §7.5/§9.2 | In caso di verifica ISO o contestazione interna ("chi ha disattivato questo utente? chi gli ha cambiato il ruolo?"), oggi non c'è risposta se non nei log tecnici del server (non pensati per audit, non conservati a lungo termine, non consultabili da un admin). |
+| G4 | **Nessuna interfaccia per gestire `user_company_access`** (utenti azienda cliente) | Usabilità / adozione feature | Il backend supporta da giugno 2026 il ruolo "viewer per azienda" (migration 081), ma senza UI **la funzione è di fatto inutilizzabile** dall'admin dello studio nel lavoro quotidiano. La creazione di credenziali per un'azienda cliente segue oggi lo stesso identico flusso "password in chiaro" degli utenti interni (nessuna distinzione). |
+| G5 | **Nessuna notifica all'utente quando la sua password viene cambiata da un admin** | Sicurezza (rilevazione accessi non autorizzati) | Se un account viene compromesso o un admin cambia password per errore, l'utente non riceve alcun segnale. |
+| G6 | **Nessun controllo contro password comuni/deboli oltre alla lunghezza** | Sicurezza (basso, ma a costo quasi nullo da correggere) | Password come `"password1"` o `"12345678"` soddisfano il requisito attuale (≥8 caratteri) ma sono tra le più usate in attacchi a dizionario. |
+
+---
+
+## 4. Best practice raccomandate
+
+| Area | Raccomandazione | Perché conviene (in semplice) |
+|---|---|---|
+| **Creazione utente → invito, non password diretta** | L'admin inserisce solo **email + ruolo**; il sistema crea l'utente in stato "in attesa", genera un **link di invito con token a scadenza** (es. 48-72h) e lo invia per email. L'utente clicca il link e **imposta lui stesso** la password al primo accesso. | È lo standard di ogni prodotto SaaS B2B (Slack, Notion, Google Workspace, ecc.). Elimina il problema "l'admin conosce/trasmette la password" e verifica automaticamente che l'email sia reale e raggiungibile dal titolare dell'account. |
+| **Password dimenticata → reset self-service via email** | Link "Password dimenticata?" nel login → l'utente inserisce l'email → riceve un **link con token a scadenza** (es. 1h) per impostare una nuova password. **Mai** inviare la password (vecchia o nuova) in chiaro via email. | Riduce il carico sull'admin per un'operazione che càpita di routine (utenti che si scordano la password), senza intaccare la sicurezza — il token identifica solo "sì, hai accesso a quella email", non contiene la password. |
+| **Password policy** — **NIST SP 800-63B** | Lunghezza minima 8-12 caratteri (già presente: 8 ✅), **nessuna complessità forzata obbligatoria** (già assente ✅ — corretto, NIST la scoraggia perché spinge a pattern prevedibili come "Password1!"), **nessuna scadenza periodica forzata** (già assente ✅), ma **verifica contro liste di password compromesse/comuni note** (oggi assente ❌). | NIST 800-63B (linee guida federali USA, standard di riferimento per l'industria) ha *dismesso* la complessità forzata perché genera password peggiori (post-it, pattern ovvi); il vero miglioramento a basso sforzo è bloccare le password più comuni/compromesse. |
+| **Audit trail minimo** | Una tabella semplice (stesso pattern già usato per `audit_history` sugli audit ISO): chi ha fatto cosa, quando, su quale utente, valore prima/dopo. Basta loggare gli eventi chiave: creazione, cambio ruolo, attivazione/disattivazione, reset password (chi l'ha avviato: admin o utente stesso). | Costo di implementazione basso (una tabella + qualche riga di INSERT nei controller esistenti), beneficio alto per audit ISO 9001 e per rispondere a domande tipo "chi ha disattivato Mario Rossi e quando?". |
+| **Rate limiting su login e reset password** | Già presente sul login (`authLimiter`, 20 richieste/15min/IP). **Da estendere** agli eventuali nuovi endpoint `forgot-password`/`reset-password` (stesso principio: pochi tentativi, non enumerabile se un'email esiste o no). | Il login è già protetto; i nuovi endpoint di reset devono avere la stessa protezione per evitare abusi (spam di email di reset, enumerazione utenze). |
+| **Soft-delete / disattivazione** | Pattern già corretto e in uso — nessuna azione richiesta. | — |
+
+---
+
+## 5. Piano a fasi
+
+> Ogni fase è una **slice verticale indipendente**, chiudibile con un commit/PR separato secondo il metodo del progetto (diagnosi → fix minimo → test L1 → deploy → smoke → commit). Nessuna fase richiede di implementare le altre per funzionare autonomamente, ma Fase 2 riusa la stessa infrastruttura "token" creata in Fase 1.
+
+### Fase 1 — Invito via email + primo accesso (elimina G1)
+
+**Obiettivo**: l'admin non imposta più la password del nuovo utente; il sistema invia un invito via email con link a scadenza, l'utente imposta la propria password al primo accesso.
+
+**Modifiche previste**:
+
+| Componente | Modifica |
+|---|---|
+| DB | Nuova tabella `user_action_tokens` (id, user_id, token_hash, token_type IN ('invite','reset'), expires_at, used_at, created_by, created_at). Il token in chiaro **non va mai salvato** — solo il suo hash (stesso principio delle password). Nuova migrazione (prossimo numero libero in sequenza unica — verificare al momento dell'implementazione, alla data di stesura (11/07/2026) si era arrivati a `099`; al 23/07/2026 la sequenza è già a `126` - verificare sempre il numero libero al momento dell'implementazione). |
+| Backend | `admin.controller.js: createUser` — se non viene passata una password, crea l'utente con `is_active = 0` (o nuovo flag `pending_activation`), genera token invito, invia email (riuso `alertMail.service.js`). Nuovo endpoint `POST /auth/accept-invite` (token + nuova password → attiva l'account). |
+| Frontend | `UsersAdminPage.jsx` — form creazione: rimuovere il campo "Password", sostituire con messaggio "verrà inviato un invito via email". Nuova pagina pubblica `AcceptInvitePage.jsx` (form "Imposta la tua password", raggiunta dal link email). |
+| Email | Nuovo template semplice (riuso pattern HTML già usato per alert NC in `alertMail.service.js`/`docAlertEscalation.service.js`). |
+
+**Effort**: **L** (12-16h) — nuova tabella, 2 nuovi endpoint, 1 nuova pagina frontend, template email, test.
+**File coinvolti**: `backend/scripts/run-migration-1XX-*.js` (nuova), `backend/src/controllers/admin.controller.js`, `backend/src/controllers/auth.controller.js` (nuovo endpoint accept-invite), `backend/src/routes/auth.routes.js`, `backend/src/services/alertMail.service.js` (nuova funzione template invito), `app/src/components/UsersAdminPage.jsx`, nuovo `app/src/pages/AcceptInvitePage.jsx`, `app/src/services/apiService.js`, routing (`App.jsx` o equivalente per rotta pubblica `/accept-invite/:token`).
+**Dipendenze**: nessuna (SMTP già configurato).
+**Test di accettazione**: admin crea utente senza password → utente riceve email con link → clic sul link → form "imposta password" → dopo submit l'utente può fare login con la password scelta → il link **non è più utilizzabile una seconda volta** e **scade** dopo il periodo previsto.
+
+---
+
+### Fase 2 — Reset password self-service ("password dimenticata") (elimina G2, G5)
+
+**Obiettivo**: un utente che ha scordato la password può recuperarla da solo, senza intervento admin.
+
+**Modifiche previste**:
+
+| Componente | Modifica |
+|---|---|
+| DB | Riuso della tabella `user_action_tokens` creata in Fase 1 (`token_type = 'reset'`). Nessuna nuova tabella. |
+| Backend | Nuovi endpoint `POST /auth/forgot-password` (email → genera token, invia email, **risponde sempre "email inviata se l'account esiste"** per non far scoprire quali email sono registrate) e `POST /auth/reset-password` (token + nuova password → aggiorna hash, invalida token, notifica via email che la password è cambiata (G5)). Applicare rate limit dedicato (riuso pattern `authLimiter`). |
+| Frontend | Link "Password dimenticata?" nella pagina di login esistente. Nuova pagina `ForgotPasswordPage.jsx` (inserisci email) e riuso di `AcceptInvitePage.jsx` (stesso form "imposta nuova password", parametrizzato per reset). |
+| Self-service change password (utente loggato) | Piccola aggiunta in una pagina impostazioni esistente (es. profilo utente, se già presente, o nuova sezione minima): "Cambia password" (richiede password attuale + nuova). Endpoint `POST /auth/change-password` con `authenticate`. |
+
+**Effort**: **M** (6-8h) — riusa infrastruttura Fase 1, 3 nuovi endpoint semplici, 2 componenti UI (uno spesso riusabile da Fase 1).
+**File coinvolti**: `backend/src/controllers/auth.controller.js`, `backend/src/routes/auth.routes.js`, `backend/src/server.js` (rate limit dedicato se necessario), `app/src/pages/ForgotPasswordPage.jsx` (nuovo), componente login esistente (link), pagina profilo/impostazioni esistente per change-password.
+**Dipendenze**: **Fase 1** (tabella `user_action_tokens` e pagina "imposta password" riusata).
+**Test di accettazione**: utente clicca "password dimenticata" → inserisce email → riceve link → imposta nuova password → login con nuova password funziona; richiesta reset per email inesistente **non rivela** che l'account non esiste (stesso messaggio generico); utente loggato può cambiare la propria password inserendo quella attuale.
+
+---
+
+### Fase 3 — Audit trail minimo su utenti (elimina G3)
+
+**Obiettivo**: tracciare chi ha creato/modificato/disattivato/riattivato ogni utente e quando, consultabile (almeno da superadmin) per compliance ISO.
+
+**Modifiche previste**:
+
+| Componente | Modifica |
+|---|---|
+| DB | Nuova tabella `user_audit_log` (id, organization_id, target_user_id, actor_user_id NULL, action_type, field_changed NULL, old_value NULL, new_value NULL, created_at) — stesso schema concettuale di `audit_history` già in uso per gli audit ISO. |
+| Backend | In `admin.controller.js`: aggiungere un `INSERT` in `user_audit_log` dentro `createUser`, `updateUser` (per ogni campo che cambia: ruolo, stato attivo, auditor_org_id, reset password) e `deactivateUser`. Nuovo endpoint di sola lettura `GET /admin/users/:id/audit-log` (solo admin/superadmin). |
+| Frontend | In `UsersAdminPage.jsx`: piccola sezione collassabile per utente "Storico modifiche" (riuso pattern `<details>` già presente per standard/licenze nella stessa pagina). |
+
+**Effort**: **M** (6-8h) — 1 tabella, inserimenti mirati in 3 funzioni esistenti, 1 endpoint di lettura, 1 sezione UI minimale.
+**File coinvolti**: nuova migrazione, `backend/src/controllers/admin.controller.js`, `backend/src/routes/admin.routes.js`, `app/src/components/UsersAdminPage.jsx`, `app/src/services/apiService.js`.
+**Dipendenze**: nessuna (indipendente da Fase 1/2, può partire in qualsiasi momento).
+**Test di accettazione**: creare un utente, cambiargli ruolo, disattivarlo → la sezione "Storico modifiche" mostra le 3 azioni con data, autore (nome admin) e valori prima/dopo, in ordine cronologico.
+
+---
+
+### Fase 4 (opzionale, priorità più bassa) — Interfaccia per accessi azienda cliente (elimina G4)
+
+**Obiettivo**: rendere utilizzabile da UI la funzione già esistente lato backend (`user_company_access`), per collegare un utente viewer a una o più aziende clienti senza chiamate API manuali.
+
+**Modifiche previste**: sezione nella scheda utente di `UsersAdminPage.jsx` (o nella scheda azienda) che chiama gli endpoint già esistenti `GET/POST/DELETE /admin/users/:id/company-access` — **nessuna modifica backend necessaria**, sono già pronti e testati indirettamente (usati da `createUser` quando riceve `company_access` nel body).
+
+**Effort**: **S** (3-4h) — solo frontend, nessuna migrazione, nessun nuovo endpoint.
+**File coinvolti**: `app/src/components/UsersAdminPage.jsx`, `app/src/services/apiService.js` (aggiungere wrapper per gli endpoint già esistenti).
+**Dipendenze**: nessuna. Indipendente dalle Fasi 1-3; può essere fatta in qualsiasi ordine.
+**Test di accettazione**: da scheda utente con ruolo viewer, admin può aggiungere/rimuovere l'accesso a un'azienda cliente con permesso lettura/scrittura, senza uscire dall'app.
+
+---
+
+## 6. Rischi e decisioni che restano al committente
+
+| Decisione | Dettaglio | Chi decide |
+|---|---|---|
+| **Provider email**: nessuna nuova scelta necessaria | Il servizio SMTP usato oggi per gli alert NC/documenti (`alertMail.service.js`, configurato sul VPS) può essere riusato direttamente per inviti e reset password — **stesso account, stesso costo attuale, nessun nuovo servizio da attivare**. Se il volume di email cresce molto (es. centinaia di inviti in poco tempo), valutare in futuro un limite di invio del provider SMTP attuale — non è un problema oggi. | Nessuna decisione richiesta ora; solo da monitorare se il volume crescerà molto. |
+| **Durata di scadenza dei token** | Proposta: invito 48-72h, reset password 1h (valori standard di settore). Modificabile senza impatti architetturali. | Il committente può confermare questi valori o proporne altri — non blocca l'avvio della Fase 1. |
+| **Tono/contenuto delle email di invito e reset** | Il template email (oggetto, testo, logo) va scritto in italiano semplice e coerente con gli altri alert già inviati (NC/documenti). | Il committente può rivedere il testo prima del deploy in produzione (bozza da presentare in fase di implementazione). |
+| **Priorità tra le fasi** | Il piano propone Fase 1 → 2 → 3 → 4, ma sono **indipendenti**: si può iniziare da quella che il committente ritiene più urgente. | Il committente conferma l'ordine o lo cambia. |
+
+---
+
+## 7. Fuori scope in questa sessione
+
+Su richiesta esplicita del committente, i seguenti temi **non sono stati approfonditi** e restano da valutare in un piano successivo se richiesto:
+
+- **Autenticazione a due fattori (2FA)** — non presente oggi, nessuna analisi effettuata.
+- **Coerenza gerarchia utenti/licenze moduli** (`licensed_modules`, `auditor_orgs`, provisioning multi-tenant) — argomento già in parte tracciato in `docs/ARCHITETTURA_UTENTI_RBAC.md`, non ri-analizzato qui (ma vedi sezione 8 sotto, aggiornata il 23/07/2026 con la conferma del modello di business).
+- **Fatturazione/billing** (`billing.service.js`, endpoint `/admin/billing/*`) — solo notato di striscio durante l'esplorazione (usato per notificare cambi licenza), nessuna analisi del flusso commerciale.
+
+---
+
+## 8. Aspetti UI/UX login e gestione credenziali — superadmin vs studio
+
+**Nota di processo**: questa sezione è stata aggiunta in una sessione successiva (23/07/2026) su richiesta esplicita del committente, perché le sessioni precedenti avevano verificato solo controller/funzioni backend (`admin.controller.js`) e le funzioni JS di `UsersAdminPage.jsx` (`submitCreate`/`saveUserProfile`), **senza** una vera valutazione visiva/di flusso della schermata di login e delle due modalità di gestione utenti (superadmin cross-tenant vs admin di studio). Questa lacuna è confermata: nelle sezioni 1-7 sopra non c'era alcun riferimento a login, banner di contesto ruolo/organizzazione o incongruenze visive superadmin/studio.
+
+### 8.1 Stato attuale (verificato nel codice)
+
+| Area | Comportamento oggi | File / righe |
+|---|---|---|
+| **Schermata di login** | Un solo form, identico per qualsiasi ruolo (corretto: il ruolo è noto solo dopo l'autenticazione). Email + password, mostra/nascondi password, credenziali di esempio in chiaro solo come email (non password). **Nessun link "password dimenticata"** (coerente con G2: la funzione non esiste ancora). | `app/src/components/Login.jsx` righe 46-155 |
+| **Messaggi di errore login** | Il backend distingue già correttamente **credenziali errate** (401 `"Credenziali non valide"`) da **account/organizzazione disattivati** (403 `"Account o organizzazione non attivi"`), ed entrambi arrivano fino alla UI e vengono mostrati (`Login.jsx` usa `err.message` nel branch generico). Funziona, ma il testo del secondo messaggio è tecnico/impersonale, non pensato per un utente finale. | `backend/src/controllers/auth.controller.js` righe 205-239; `app/src/services/apiService.js` righe 370-380; `app/src/components/Login.jsx` righe 164-181 |
+| **Sessione scaduta** | Gestita: evento `auth:logout` globale forza logout e messaggio "Sessione scaduta. Effettua nuovamente il login." Funziona già bene, nessun gap. | `app/src/contexts/AuthContext.jsx` righe 126-136 |
+| **Indicazione "stai operando come superadmin su tutti i tenant"** | **Assente.** L'header applicativo mostra nome utente + badge ruolo (`role-superadmin`) e un banner con `user.organization_name` — ma quel banner mostra **sempre l'organizzazione di appartenenza del superadmin stesso** (es. "Al.project"), anche quando l'utente si trova dentro `UsersAdminPage` a operare su una lista **cross-tenant** (utenti di tutte le organizzazioni). Nessun indicatore tipo "Vista piattaforma - tutte le organizzazioni" quando il superadmin è in una schermata cross-tenant. | `app/src/layouts/AppLayout.jsx` righe 359-378 (banner org) vs `backend/src/controllers/admin.controller.js` righe 46-64 (query cross-org per superadmin) |
+| **Colonna/badge organizzazione per riga utente in `UsersAdminPage`** | **Assente.** L'API `GET /admin/users` restituisce già `organization_name` per ogni utente (e per superadmin ordina il risultato per organizzazione), ma il componente **non lo mostra mai**: nella card utente compare solo `Studio: {auditor_org_name}` (il sotto-livello "studio" dentro l'organizzazione), non l'organizzazione/tenant di primo livello. Per un superadmin che scorre una lista con utenti di N organizzazioni diverse, oggi non c'è modo visivo di capire a quale tenant appartiene ciascuna riga. | Dati disponibili: `admin.controller.js` righe 46-64 (`o.organization_name`) - non usati in `app/src/components/UsersAdminPage.jsx` righe 615-635 |
+| **Form "Nuovo utente" — coerenza superadmin vs admin studio** | Il form è **visivamente identico** per superadmin e admin di studio (stessa select "Studio (auditor org)"), ma il comportamento reale differisce in modo non segnalato: la select filtra le opzioni su `ao.organization_id === user.organization_id` (l'organizzazione di **chi è loggato**), quindi anche per il superadmin appaiono solo gli studi della **propria** organizzazione. Questo è **corretto e voluto**: il backend `createUser` crea sempre il nuovo utente dentro l'organizzazione dell'attore (`req.user.organization_id`) — coerente col modello di business confermato dal committente il 23/07/2026 (un admin di studio crea utenti solo per il proprio studio, mai per altri studi). **Verificato in sessione 23/07/2026**: la lista cross-tenant restituita da `GET /auditor-orgs` per il superadmin **non è affatto inutilizzata** — è la stessa lista (stato `auditorOrgs`) usata da due funzioni reali e già funzionanti nell'app: (1) la sezione "Licenze moduli per studio" più sotto nella stessa pagina (`UsersAdminPage.jsx` righe 516-590), dove il superadmin assegna i moduli attivi a ciascuno studio/organizzazione cliente; (2) il selettore di studio in `CompaniesPage.jsx` (righe 46-138, 277-289), che permette al superadmin di scegliere di quale studio vedere le aziende clienti. Il commento nel controller backend ("serve per assegnare correttamente gli auditor cross-tenant dalla UI") è quindi **impreciso/superato**: descrive un uso (assegnare un auditor nel form creazione utente) mai implementato in quel punto, mentre la lista serve realmente per licenze e navigazione aziende. **Nessuna funzione di "assegna auditor esterno a un audit di terze parti" risulta implementata** nel frontend (nessun riscontro cercando `assigned_auditor`/`auditor_id`/pattern simili in `app/src`) — quindi non è quello lo scopo reale della lista cross-tenant. | `app/src/components/UsersAdminPage.jsx` righe 480-489 (filtro select creazione) e 516-590 (licenze per studio) vs `app/src/components/CompaniesPage.jsx` righe 46-138 (selettore studio) vs `backend/src/controllers/auditorOrg.controller.js` righe 14-30 (query cross-tenant + commento) vs `backend/src/controllers/admin.controller.js` righe 113-191 (`createUser` sempre nell'org dell'attore) |
+| **Gestione licenze moduli per studio da parte del superadmin** | **Già implementata**, in due punti dell'app (piccola duplicazione, non un bug): (1) sezione "Licenze moduli per studio" dentro `UsersAdminPage.jsx` (righe 516-590, visibile solo a `isSuperadmin`); (2) pagina dedicata `LicensesSettingsPage.jsx`, dove il superadmin sceglie una qualsiasi organizzazione da un elenco completo (`GET /admin/organizations`) e ne modifica i moduli attivi. Entrambe chiamano lo stesso endpoint `PATCH /admin/organizations/:organizationId/licenses` (guard `superadminOnly`) — coerente al 100% con quanto descritto dal committente ("come super admin devo poter concedere le licenze sui moduli agli studi"). | `app/src/components/UsersAdminPage.jsx` righe 98-130, 516-590; `app/src/pages/LicensesSettingsPage.jsx`; `backend/src/controllers/admin.controller.js` righe 715-762 (`updateAnyOrgLicenses`); `backend/src/routes/admin.routes.js` righe 30-33 |
+| **Badge stato account (attivo/disattivato)** | Presente e funzionante: `StatusBadge type="user" status="inactive"` sulla card se `!active`. **Non esiste ancora** uno stato "in attesa di attivazione/invito" — coerente col fatto che l'invito email (Fase 1) non è ancora implementato; andrà aggiunto un nuovo stato quando si costruisce quella fase. | `app/src/components/StatusBadge.jsx` righe 51-55; uso in `UsersAdminPage.jsx` riga 622 |
+| **Routing per pagine pubbliche pre-login (future)** | `App.jsx` oggi **non ha alcun concetto di "rotta pubblica"**: `if (!isAuthenticated) return <Login />;` ignora completamente il path corrente dell'URL. Significa che le future pagine `AcceptInvitePage` (Fase 1), `ForgotPasswordPage` (Fase 2) e l'eventuale pagina di reset **non sarebbero raggiungibili** finché non si aggiunge un branch dedicato (controllo del path) **prima** di questo `return <Login />`, non dopo. Il piano (Fase 1/2 sezione 5) già cita `App.jsx` tra i file coinvolti per il routing, ma senza specificare questo dettaglio tecnico preciso — ora esplicitato qui. | `app/src/App.jsx` righe 104-107 |
+
+### 8.2 Gap UI/UX aggiuntivi trovati (numerazione in continuità con la sezione 3)
+
+| # | Gap | Rischio | Perché è un problema |
+|---|-----|---------|------------------------|
+| G7 | **Nessuna indicazione visiva "vista piattaforma - tutte le organizzazioni" per il superadmin** | UX / rischio operativo | Il banner organizzazione nell'header mostra sempre la org del superadmin stesso, anche dentro schermate cross-tenant (`UsersAdminPage`). Un superadmin distratto può pensare di stare operando solo sulla propria organizzazione mentre in realtà la lista/azione riguarda tutti i tenant. |
+| G8 | **Nessuna colonna/badge organizzazione nella lista utenti di `UsersAdminPage`** | UX / rischio operativo | Il dato (`organization_name`) è già restituito dall'API e la query è già ordinata per organizzazione, ma la UI non lo mostra: per il superadmin, righe di tenant diversi sono visivamente indistinguibili (solo "Studio: ..." interno alla stessa organizzazione è mostrato). |
+| ~~G9~~ | ~~Incongruenza tra intento backend (`listAuditorOrgs` cross-tenant per superadmin) e comportamento reale del form "Nuovo utente"~~ | — | **RISOLTO (chiarito) il 23/07/2026 — non è un bug.** Il committente ha confermato il modello di business: un admin di studio crea utenti *solo* per il proprio studio; il superadmin non deve creare utenti in altri studi da questo form. Il comportamento attuale di `createUser` (sempre nell'org dell'attore) è quindi **corretto così com'è, nessuna modifica di codice necessaria**. La lista cross-tenant di `GET /auditor-orgs` non è "dato inutilizzato": serve realmente alla sezione "Licenze moduli per studio" e al selettore studio di `CompaniesPage.jsx` (vedi riga corrispondente in 8.1). L'unico intervento residuo, **a bassissimo rischio e non urgente**, è correggere/aggiornare il commento fuorviante nel codice backend (`auditorOrg.controller.js` riga 22-23: "serve per assegnare correttamente gli auditor cross-tenant dalla UI") per riflettere l'uso reale (licenze + navigazione aziende), evitando che un futuro sviluppatore ripeta lo stesso equivoco. Non richiede una fase dedicata: può essere sistemato come commento insieme a qualunque altra modifica futura di quel file. |
+| G10 | **Nessun instradamento per rotte pubbliche pre-login in `App.jsx`** | Blocco tecnico per Fase 1/2 | Senza un branch dedicato per path pubblici prima di `if (!isAuthenticated) return <Login />`, le pagine "imposta password" (invito) e "password dimenticata" non sarebbero raggiungibili nemmeno se implementate correttamente altrove. |
+| G11 (minore) | **Messaggio "Account o organizzazione non attivi" tecnico/impersonale** | UX (basso) | Il meccanismo funziona già correttamente (distingue 401 da 403), ma il testo non è pensato per un utente finale non tecnico. Da rendere più amichevole (es. "Il tuo account è stato disattivato. Contatta l'amministratore del tuo studio.") quando si toccherà quest'area per Fase 1/2. |
+| G12 (minore) | **`StatusBadge` (`type="user"`) senza stato "in attesa di attivazione"** | Coerenza UI, blocco per Fase 1 | Necessario aggiungere una nuova entry (es. `pending: { label: "In attesa di attivazione", color: "yellow" }`) quando si implementa l'invito email, per mostrare lo stato coerentemente con gli altri badge già in uso. |
+
+### 8.3 Come si integrano con le fasi già pianificate
+
+Nessuna fase nuova è necessaria: questi gap sono **dettagli di implementazione** delle Fasi 1, 2 e 4 già descritte in sezione 5, non un perimetro nuovo. Integrazioni puntuali da riportare nelle fasi esistenti al momento dell'implementazione:
+
+- **Fase 1 (invito email)**: oltre a quanto già previsto, includere (a) il branch di routing pre-login in `App.jsx` per la rotta pubblica `/accept-invite/:token` (G10 — dettaglio tecnico preciso, non un file nuovo da aggiungere alla lista già presente), e (b) la nuova entry `pending` in `StatusBadge` (G12).
+- **Fase 2 (reset password self-service)**: stesso discorso per la rotta pubblica `/forgot-password` e `/reset-password/:token` (G10); il link "Password dimenticata?" nel login era già previsto in tabella — nessuna modifica necessaria lì, solo il dettaglio di routing pre-login.
+- **Fase 4 (UI accessi azienda cliente)**: essendo l'unica fase già focalizzata solo su `UsersAdminPage.jsx` a basso rischio, è il punto più naturale per aggiungere anche (a) la colonna/badge organizzazione per riga utente quando la vista è cross-tenant (G8), e (b) un banner "Vista piattaforma" quando `isSuperadmin` e si è dentro una schermata cross-tenant (G7). Effort aggiuntivo stimato: **S** (2-3h), stesso ordine di grandezza della fase originale, nessuna nuova migrazione o endpoint.
+- **G9 — chiuso**: confermato dal committente il 23/07/2026 che il comportamento attuale è quello desiderato (nessuna decisione di prodotto in sospeso). Non genera lavoro per nessuna fase, a parte l'eventuale pulizia del commento fuorviante nel backend descritta sopra (facoltativa, cosmetica).
+- **G11** (testo messaggio errore login) è una modifica testuale minima, da applicare insieme a qualsiasi fase tocchi `Login.jsx` (Fase 1 o 2) senza necessità di un intervento dedicato.
+
+### 8.4 Modello di business confermato dal committente (23/07/2026)
+
+Il committente ha descritto così il modello che ha in mente, chiedendo conferma:
+
+> "come super admin devo potere concedere le licenze sui moduli agli studi che pagano per ogni modulo che desiderano, l'admin dello studio deve creare nuovi utenti per i suoi dipendenti e concedere licenze in lettura o lettura/scrittura per le aziende che segue, ogni azienda paga lo studio che poi paga me come super admin"
+
+Verifica punto per punto sul codice reale (non solo sul piano):
+
+| Punto del modello | Stato nel codice | Dettaglio |
+|---|---|---|
+| Superadmin concede/gestisce le licenze sui moduli per ogni Studio | ✅ **Corretto, già implementato** | `PATCH /admin/organizations/:organizationId/licenses` (guard `superadminOnly`) — UI in `LicensesSettingsPage.jsx` e in `UsersAdminPage.jsx` (sezione "Licenze moduli per studio"). |
+| Admin di Studio crea nuovi utenti/dipendenti **solo per il proprio studio** | ✅ **Corretto, già implementato** | `createUser` inserisce sempre `organization_id = req.user.organization_id` (l'organizzazione di chi crea); non esiste ed è correttamente impedito qualsiasi modo di creare un utente in un'altra organizzazione da questo endpoint/form. |
+| Admin di Studio concede alle Aziende clienti un accesso lettura o lettura/scrittura | ⚠️ **Supportato dal database e dalle API, ma senza interfaccia utente** | Tabella `user_company_access` (migration 081) con vincolo `permission IN ('read','write')` — distingue esattamente lettura vs lettura/scrittura come descritto dal committente. Endpoint `GET/POST/DELETE /admin/users/:id/company-access` già funzionanti e già accessibili sia da `admin` che da `superadmin` (guard `adminOnly`). **Manca solo la schermata per usarli**: oggi va fatto con una chiamata API manuale. Gap già tracciato correttamente come **Fase 4** in questo piano e come gap G4 — nessuna sorpresa, solo conferma. |
+| "Studio" = livello a cui è associata la licenza / il pagamento | ℹ️ **Nota tecnica, non un problema** | Nel database esistono due concetti distinti: `organizations` (tenant, chi paga l'abbonamento SaaS) e `auditor_orgs` (studio/team operativo dentro il tenant). Oggi, per tutti e 4 i tenant esistenti, c'è **esattamente uno** studio per organizzazione (rapporto 1:1 — vedi §8.4 di `ARCHITETTURA_UTENTI_RBAC.md`). Le licenze sono salvate a livello di `organizations` (tenant), che coincide sempre con "lo Studio" nel senso inteso dal committente. Se in futuro un singolo tenant dovesse avere più studi indipendenti con pagamenti separati, andrebbe rivista questa scelta — non è un problema oggi. |
+
+**Conclusione**: il modello di business descritto dal committente **corrisponde già al comportamento del sistema**, tranne per un tassello di interfaccia mancante (Fase 4, già pianificato) — nessuna nuova decisione di prodotto necessaria, nessun bug da correggere in `createUser`/form "Nuovo utente".
+
+---
+
+## Appendice — Suggerimento testuale per `docs/ARCHITETTURA_UTENTI_RBAC.md` §8.3
+
+*(Solo un suggerimento di testo da valutare — non applicato in questa sessione, come richiesto)*
+
+Nella tabella "Cosa manca o è parziale (gap noti)" della sezione 8.3, si potrebbe aggiornare la riga:
+
+> | Flusso **invito email** invece di password condivise | Consigliato | §4 |
+> | **Audit trail** modifiche ruoli/utenti (chi ha promosso chi) | Compliance | Da definire |
+
+con un riferimento esplicito a questo piano, ad esempio:
+
+> | Flusso **invito email** invece di password condivise | Consigliato | §4 — piano dettagliato in [`PLAN_USER_ACCOUNT_LIFECYCLE.md`](../agent-tasks/PLAN_USER_ACCOUNT_LIFECYCLE.md) Fase 1 |
+> | **Audit trail** modifiche ruoli/utenti (chi ha promosso chi) | Compliance | Piano dettagliato in [`PLAN_USER_ACCOUNT_LIFECYCLE.md`](../agent-tasks/PLAN_USER_ACCOUNT_LIFECYCLE.md) Fase 3 |
+> | **UI accessi azienda cliente** (`user_company_access` senza interfaccia) | Media | Nuovo gap rilevato — piano Fase 4 |
