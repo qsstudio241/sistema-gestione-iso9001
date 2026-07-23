@@ -128,6 +128,30 @@
   opacity: 1;
 }
 
+/* Link "Password dimenticata?" (UAL-4) */
+.forgot-password-link {
+  display: block;
+  margin: -0.5rem 0 1rem;
+  background: none;
+  border: none;
+  padding: 0;
+  color: #1565c0;
+  font-size: 0.9rem;
+  text-align: right;
+  cursor: pointer;
+  text-decoration: underline;
+}
+
+.forgot-password-link:hover {
+  color: #0d47a1;
+}
+
+.forgot-password-link:disabled {
+  color: #999;
+  cursor: not-allowed;
+  text-decoration: none;
+}
+
 /* Error */
 .login-error {
   display: flex;
