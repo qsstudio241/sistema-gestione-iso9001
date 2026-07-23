@@ -127,7 +127,7 @@ Colonne **Tipo**: `Normativo` | `Funzionale` | `Documentale` (manca fonte in rep
 
 | Voce | Stato in repo | Dove trovare altro |
 |------|---------------|-------------------|
-| ISO 3834-2 | **Assente** in `docs/Normative/` | Solo 3834-1, -3, -5 |
+| ISO 3834-2 / 3834-4 | Presenti in `docs/Normative/` ma **edizione 2006** (non 2021 come -1/-3/-5) | PDF 2021 non reperito in archivio norme — sostituire quando disponibile |
 | Modulo SAL | Template Word, non norma | `Check List Audit/CLIENTE - SAL documentale iso 14001 - 9001 - 45001.docx` |
 | Modulo RDP | Template Word | `Check List Audit/RDP_MSN-260127-01_REV_0.docx` |
 | Norme committente (audit terza parte) | Per cliente | Non in Normative/ |
