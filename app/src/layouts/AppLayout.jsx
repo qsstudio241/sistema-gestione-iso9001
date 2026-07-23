@@ -71,6 +71,7 @@ function buildNavItems(user, alerts = {}) {
         { to: "/saldatura/commesse", icon: "\uD83D\uDCCB", label: "Commesse", licenseKey: "saldatura" },
         { to: "/saldatura/procedure", icon: "\uD83D\uDD27", label: "Procedure WPS/WPQR", licenseKey: "saldatura" },
         { to: "/saldatura/welding-book", icon: "\uD83D\uDCD6", label: "Welding Book", licenseKey: "saldatura" },
+        { to: "/saldatura/rdp", icon: "\uD83D\uDCCA", label: "RDP - Rapporto di Prova", licenseKey: "saldatura" },
       ]),
     },
     // Modulo CND (Controlli Non Distruttivi)

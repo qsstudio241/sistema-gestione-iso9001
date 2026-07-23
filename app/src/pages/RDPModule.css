@@ -1,0 +1,218 @@
+/* RDPModule.css — Rapporto di Prova (RDP, Scenario 4 — Mason) */
+
+/* ── Lista ─────────────────────────────────────────────────────────────────── */
+.rdp-page { padding: 24px; max-width: 1400px; margin: 0 auto; }
+.rdp-header { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 20px; gap: 16px; flex-wrap: wrap; }
+.rdp-title    { font-size: 1.5rem; font-weight: 700; color: var(--color-text-primary, #1a1a2e); margin: 0 0 4px; }
+.rdp-subtitle { font-size: 0.85rem; color: var(--color-text-secondary, #6b7280); margin: 0; }
+
+.rdp-stats-bar { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 20px; }
+.rdp-stat { background: #fff; border: 1px solid #e5e7eb; border-radius: 8px; padding: 10px 16px; text-align: center; min-width: 70px; }
+.rdp-stat span { display: block; }
+.rdp-stat-n { font-size: 1.4rem; font-weight: 700; color: #374151; }
+.rdp-stat > span:last-child { font-size: 0.75rem; color: #6b7280; margin-top: 2px; }
+.rdp-stat-ok .rdp-stat-n { color: #16a34a; }
+
+.rdp-filters { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-bottom: 16px; }
+.rdp-filters select { padding: 7px 10px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 0.875rem; background: #fff; min-width: 150px; }
+.rdp-search { flex: 1; min-width: 200px; padding: 7px 10px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 0.875rem; }
+
+.rdp-table-wrap { overflow-x: auto; border-radius: 8px; border: 1px solid #e5e7eb; }
+.rdp-table { width: 100%; border-collapse: collapse; font-size: 0.875rem; }
+.rdp-table thead { background: #f9fafb; }
+.rdp-table th { padding: 10px 12px; text-align: left; font-weight: 600; color: #374151; border-bottom: 1px solid #e5e7eb; white-space: nowrap; }
+.rdp-table td { padding: 10px 12px; border-bottom: 1px solid #f3f4f6; vertical-align: middle; }
+.rdp-row { cursor: pointer; }
+.rdp-row:hover { background: #f9fafb; }
+.rdp-row:last-child td { border-bottom: none; }
+.rdp-empty { text-align: center; color: #9ca3af; padding: 32px; font-style: italic; }
+.rdp-mono  { font-family: monospace; font-size: 0.8rem; }
+.rdp-center { text-align: center; }
+
+.rdp-status { display: inline-block; padding: 2px 8px; border-radius: 12px; font-size: 0.75rem; font-weight: 600; }
+.rdp-status-draft     { background: #f3f4f6; color: #6b7280; }
+.rdp-status-completed { background: #fef3c7; color: #d97706; }
+.rdp-status-approved  { background: #dcfce7; color: #15803d; }
+
+.rdp-loading { text-align: center; padding: 40px; color: #6b7280; }
+.rdp-error   { text-align: center; padding: 20px; color: #dc2626; background: #fee2e2; border-radius: 8px; margin: 16px 0; }
+
+/* ── Form Page ─────────────────────────────────────────────────────────────── */
+.rdp-form-page { padding: 24px; max-width: 1100px; margin: 0 auto; }
+
+.rdp-form-header {
+    display: flex; align-items: flex-start; justify-content: space-between;
+    margin-bottom: 20px; gap: 16px; flex-wrap: wrap;
+    padding-bottom: 16px; border-bottom: 1px solid #e5e7eb;
+}
+.rdp-form-title    { font-size: 1.3rem; font-weight: 700; color: #1f2937; margin: 0 0 4px; }
+.rdp-form-subtitle { font-size: 0.85rem; color: #6b7280; }
+.rdp-form-header-actions { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+
+.rdp-saved-at { font-size: 0.8rem; color: #16a34a; margin-bottom: 12px; }
+.rdp-form-error { color: #dc2626; background: #fee2e2; padding: 8px 12px; border-radius: 6px; font-size: 0.875rem; margin-bottom: 12px; }
+.rdp-hint-box { font-size: 0.8rem; color: #1e40af; background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 6px; padding: 8px 12px; margin-bottom: 12px; }
+
+.rdp-form-body { display: flex; flex-direction: column; gap: 12px; }
+
+/* Sezioni collassabili */
+.rdp-section { border: 1px solid #e5e7eb; border-radius: 10px; overflow: hidden; }
+.rdp-section-toggle {
+    width: 100%; display: flex; align-items: center; gap: 12px;
+    padding: 14px 16px; background: #f9fafb; border: none; cursor: pointer;
+    text-align: left; transition: background 0.1s;
+}
+.rdp-section-toggle:hover { background: #f3f4f6; }
+.rdp-section-num { width: 24px; height: 24px; border-radius: 50%; background: #3b82f6; color: #fff; display: flex; align-items: center; justify-content: center; font-size: 0.75rem; font-weight: 700; flex-shrink: 0; }
+.rdp-section-title { font-weight: 600; color: #1f2937; flex: 1; font-size: 0.9rem; display: flex; align-items: center; gap: 8px; }
+.rdp-section-chevron { color: #6b7280; font-size: 0.75rem; }
+.rdp-section-body { padding: 16px; display: flex; flex-direction: column; gap: 12px; }
+
+.rdp-avg-badge {
+    background: #eff6ff; color: #1d4ed8; border-radius: 10px;
+    padding: 1px 8px; font-size: 0.7rem; font-weight: 700; border: 1px solid #bfdbfe;
+}
+
+/* Form groups */
+.rdp-form-row { display: flex; gap: 12px; flex-wrap: wrap; }
+.rdp-form-group { display: flex; flex-direction: column; gap: 4px; flex: 1; min-width: 140px; }
+.rdp-grow { flex: 2; }
+.rdp-form-group label { font-size: 0.8rem; font-weight: 600; color: #374151; }
+.rdp-form-group input[type="text"],
+.rdp-form-group input[type="number"],
+.rdp-form-group input[type="date"],
+.rdp-form-group textarea,
+.rdp-form-group select {
+    padding: 7px 10px; border: 1px solid #d1d5db; border-radius: 6px;
+    font-size: 0.875rem; background: #fff; width: 100%;
+}
+.rdp-form-group input:focus, .rdp-form-group select:focus, .rdp-form-group textarea:focus {
+    outline: none; border-color: #3b82f6; box-shadow: 0 0 0 2px rgba(59,130,246,0.2);
+}
+
+/* ── Aree e prove tecniche ─────────────────────────────────────────────────── */
+.rdp-area { border: 1px dashed #d1d5db; border-radius: 8px; padding: 12px; background: #fafafa; }
+.rdp-area + .rdp-area { margin-top: 12px; }
+.rdp-area-header { display: flex; gap: 8px; align-items: center; margin-bottom: 10px; }
+.rdp-area-title-input {
+    flex: 1; padding: 8px 10px; border: 1px solid #d1d5db; border-radius: 6px;
+    font-size: 0.9rem; font-weight: 600; background: #fff;
+}
+.rdp-area-title-input:focus { outline: none; border-color: #3b82f6; }
+.rdp-area-remove {
+    background: none; border: 1px solid #fca5a5; color: #dc2626; border-radius: 6px;
+    padding: 6px 10px; font-size: 0.78rem; cursor: pointer; white-space: nowrap;
+}
+.rdp-area-remove:hover { background: #fee2e2; }
+
+.rdp-tests-list { display: flex; flex-direction: column; gap: 10px; }
+.rdp-add-test-btn { margin-top: 10px; }
+.rdp-add-area-btn { margin-top: 4px; }
+
+/* Card singola prova */
+.rdp-test-card {
+    border: 1px solid #e5e7eb; border-radius: 8px; padding: 12px;
+    background: #fff; display: flex; flex-direction: column; gap: 8px;
+}
+.rdp-test-missing-photo { border-color: #fca5a5; background: #fff8f8; }
+
+.rdp-test-card-header { display: flex; gap: 8px; align-items: center; }
+.rdp-test-ref-input {
+    flex: 0 0 auto; width: 220px; padding: 6px 8px; border: 1px solid #d1d5db;
+    border-radius: 4px; font-size: 0.8rem; color: #6b7280;
+}
+.rdp-test-remove {
+    margin-left: auto; background: none; border: none; color: #9ca3af;
+    cursor: pointer; font-size: 1.1rem; padding: 2px 6px; border-radius: 4px;
+}
+.rdp-test-remove:hover { background: #fee2e2; color: #dc2626; }
+
+.rdp-test-question { font-weight: 500; }
+.rdp-test-evidence { font-size: 0.85rem; }
+
+.rdp-test-row { display: flex; gap: 10px; flex-wrap: wrap; }
+.rdp-test-field { display: flex; flex-direction: column; gap: 3px; flex: 1; min-width: 130px; }
+.rdp-test-field label { font-size: 0.72rem; font-weight: 600; color: #6b7280; }
+.rdp-test-field input {
+    padding: 6px 8px; border: 1px solid #d1d5db; border-radius: 4px; font-size: 0.85rem;
+}
+.rdp-test-score-field { max-width: 110px; }
+
+.rdp-test-footer { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; padding-top: 4px; border-top: 1px dashed #e5e7eb; }
+.rdp-result-btns { display: flex; gap: 4px; flex-wrap: wrap; }
+.rdp-result-btns .status-btn {
+    width: 34px; height: 30px; font-size: 0.7rem; padding: 0;
+}
+
+.rdp-photo-btn {
+    display: inline-flex; align-items: center; gap: 4px;
+    background: #f9fafb; border: 1.5px solid #d1d5db; border-radius: 6px;
+    padding: 6px 10px; cursor: pointer; font-size: 0.8rem; font-weight: 600; color: #374151;
+    transition: background 0.15s, border-color 0.15s; position: relative;
+}
+.rdp-photo-btn:hover,
+.rdp-photo-btn-has-photos { background: #dbeafe; border-color: #3b82f6; color: #1d4ed8; }
+.rdp-photo-btn-disabled { opacity: 0.5; cursor: help; }
+.rdp-photo-btn-required { border-color: #fca5a5; background: #fff5f5; color: #b91c1c; }
+.rdp-photo-required-badge {
+    background: #dc2626; color: #fff; border-radius: 50%;
+    width: 16px; height: 16px; font-size: 0.7rem; font-weight: 700;
+    display: inline-flex; align-items: center; justify-content: center;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   RESPONSIVE MOBILE — uso in campo (tablet/smartphone)
+   ═══════════════════════════════════════════════════════════════════════════ */
+@media (max-width: 768px) {
+    .rdp-page { padding: 12px; }
+    .rdp-header { flex-direction: column; gap: 12px; }
+    .rdp-header .btn { width: 100%; text-align: center; }
+
+    .rdp-stats-bar { gap: 8px; }
+    .rdp-stat { min-width: 56px; padding: 8px 10px; }
+    .rdp-stat-n { font-size: 1.1rem; }
+
+    .rdp-filters { flex-direction: column; gap: 8px; }
+    .rdp-search, .rdp-filters select { width: 100%; min-width: unset; box-sizing: border-box; }
+
+    .rdp-table { min-width: 700px; font-size: 0.8rem; }
+    .rdp-table th, .rdp-table td { padding: 8px 8px; }
+
+    .rdp-form-page { padding: 12px; }
+    .rdp-form-header { flex-direction: column; gap: 10px; padding-bottom: 12px; }
+    .rdp-form-header-actions { display: flex; flex-wrap: wrap; gap: 8px; width: 100%; }
+    .rdp-form-header-actions .btn { flex: 1 1 auto; min-width: 110px; padding: 10px 12px; font-size: 0.875rem; min-height: 44px; }
+
+    .rdp-section-toggle { padding: 16px; }
+    .rdp-section-num { width: 28px; height: 28px; font-size: 0.8rem; }
+
+    .rdp-form-row { flex-direction: column; gap: 10px; }
+    .rdp-form-group { min-width: unset; width: 100%; }
+    .rdp-grow { flex: 1 1 auto; }
+
+    .rdp-form-group input[type="text"],
+    .rdp-form-group input[type="number"],
+    .rdp-form-group input[type="date"],
+    .rdp-form-group select { min-height: 44px; font-size: 16px; padding: 10px 12px; }
+    .rdp-form-group textarea { font-size: 16px; }
+
+    .rdp-test-row { flex-direction: column; gap: 8px; }
+    .rdp-test-field { min-width: unset; width: 100%; }
+    .rdp-test-score-field { max-width: 100%; }
+    .rdp-test-ref-input { width: 100%; }
+
+    .rdp-result-btns .status-btn { width: 38px; height: 36px; font-size: 0.75rem; }
+    .rdp-photo-btn { min-height: 40px; }
+
+    .rdp-add-test-btn, .rdp-add-area-btn { width: 100%; min-height: 44px; }
+
+    .rdp-saved-at { font-size: 0.875rem; padding: 6px 0; }
+}
+
+@media (max-width: 480px) {
+    .rdp-form-header-actions .btn { min-width: 100%; flex: 1 1 100%; }
+    .rdp-stat { min-width: 48px; padding: 6px 8px; }
+    .rdp-stat-n { font-size: 1rem; }
+    .rdp-stat > span:last-child { font-size: 0.7rem; }
+    .rdp-section-title { font-size: 0.85rem; }
+}
