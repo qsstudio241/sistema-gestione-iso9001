@@ -1,6 +1,6 @@
 # DEPUTYTASK2 — Action Plan P1: collegamento Reclami + statistiche per categoria
 
-**Stato:** APERTO  
+**Stato:** CHIUSO — TEST OK, mergiato PR #278 (22/07/2026). Backend deployato su VPS e verificato con smoke test (17/17 ✅).  
 **Priorità:** P1 backlog (PR #114 in produzione)  
 **Branch base:** `main`  
 **Creato da:** Lead 21/07/2026
