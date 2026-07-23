@@ -73,6 +73,43 @@ const ACCESS_PERMISSION_LABELS = {
   write: "Lettura/Scrittura",
 };
 
+const AUDIT_ACTION_LABELS = {
+  user_created: "Utente creato",
+  role_changed: "Ruolo modificato",
+  profile_updated: "Dati profilo modificati",
+  auditor_org_changed: "Studio modificato",
+  password_reset_by_admin: "Password reimpostata dall'amministratore",
+  activated: "Account riattivato",
+  deactivated: "Account disattivato",
+  standards_updated: "Standard consentiti aggiornati",
+  company_access_granted: "Accesso azienda concesso",
+  company_access_updated: "Accesso azienda modificato",
+  company_access_revoked: "Accesso azienda revocato",
+};
+
+/** Descrizione leggibile di una riga di storico modifiche (best-effort, tollerante a valori mancanti) */
+function describeAuditLogEntry(entry) {
+  const label = AUDIT_ACTION_LABELS[entry.action_type] || entry.action_type;
+  if (entry.field_changed === "company_access") {
+    try {
+      const parsed = JSON.parse(entry.new_value || entry.old_value || "{}");
+      if (parsed?.permission) {
+        return `${label} (${ACCESS_PERMISSION_LABELS[parsed.permission] || parsed.permission})`;
+      }
+    } catch {
+      // valore non parsabile: mostra solo l'etichetta
+    }
+    return label;
+  }
+  if (entry.field_changed === "role" && entry.new_value) {
+    return `${label}: ${entry.old_value || "-"} \u2192 ${entry.new_value}`;
+  }
+  if (entry.field_changed === "full_name" && entry.new_value) {
+    return `${label}: "${entry.new_value}"`;
+  }
+  return label;
+}
+
 export default function UsersAdminPage({ onBack }) {
   const { user } = useAuth();
   const [users, setUsers] = useState([]);
@@ -110,6 +147,9 @@ export default function UsersAdminPage({ onBack }) {
   const [companiesByOrg, setCompaniesByOrg] = useState({});
   const [newAccessForm, setNewAccessForm] = useState({});
   const [savingAccessId, setSavingAccessId] = useState(null);
+
+  // Storico modifiche (audit trail) per utente - caricato on-demand
+  const [auditLogByUser, setAuditLogByUser] = useState({});
 
   /** Ritorna i moduli effettivi per una org (dirty o da auditorOrg.licensed_modules) */
   const getEffectiveOrgModules = (ao) => {
@@ -239,6 +279,30 @@ export default function UsersAdminPage({ onBack }) {
       alert(err.message || "Errore assegnazione accesso azienda");
     } finally {
       setSavingAccessId(null);
+    }
+  };
+
+  const loadAuditLogForUser = useCallback(async (userId) => {
+    setAuditLogByUser((prev) => ({
+      ...prev,
+      [userId]: { ...(prev[userId] || {}), loading: true, error: null },
+    }));
+    try {
+      const res = await apiService.getUserAuditLog(userId);
+      const list = res?.data && Array.isArray(res.data) ? res.data : [];
+      setAuditLogByUser((prev) => ({ ...prev, [userId]: { loading: false, error: null, list } }));
+    } catch (err) {
+      setAuditLogByUser((prev) => ({
+        ...prev,
+        [userId]: { loading: false, error: err.message || "Errore caricamento storico modifiche", list: [] },
+      }));
+    }
+  }, []);
+
+  const onToggleAuditLogDetails = (u) => (e) => {
+    if (!e.target.open) return;
+    if (!auditLogByUser[u.user_id]) {
+      loadAuditLogForUser(u.user_id);
     }
   };
 
@@ -1025,6 +1089,52 @@ export default function UsersAdminPage({ onBack }) {
                                 </>
                               )}
                             </div>
+                          )}
+                        </>
+                      );
+                    })()}
+                  </div>
+                </details>
+
+                <details
+                  className="user-audit-log-details"
+                  onToggle={onToggleAuditLogDetails(u)}
+                >
+                  <summary className="standards-summary">
+                    Storico modifiche (clic per aprire o chiudere)
+                  </summary>
+                  <div className="user-standards-section-inner">
+                    {(() => {
+                      const logState = auditLogByUser[u.user_id];
+                      return (
+                        <>
+                          {logState?.loading && (
+                            <p className="loading-message">Caricamento storico...</p>
+                          )}
+                          {logState?.error && (
+                            <p className="error-message">{logState.error}</p>
+                          )}
+                          {!logState?.loading && (logState?.list?.length ?? 0) === 0 && !logState?.error && (
+                            <p className="no-data">
+                              Nessuna modifica registrata per questo utente.
+                            </p>
+                          )}
+                          {(logState?.list?.length ?? 0) > 0 && (
+                            <ul className="audit-log-list">
+                              {logState.list.map((entry) => (
+                                <li key={entry.id} className="audit-log-item">
+                                  <span className="audit-log-date">
+                                    {new Date(entry.created_at).toLocaleString("it-IT")}
+                                  </span>
+                                  <span className="audit-log-actor">
+                                    {entry.actor_name || entry.actor_email || "Sistema"}
+                                  </span>
+                                  <span className="audit-log-action">
+                                    {describeAuditLogEntry(entry)}
+                                  </span>
+                                </li>
+                              ))}
+                            </ul>
                           )}
                         </>
                       );

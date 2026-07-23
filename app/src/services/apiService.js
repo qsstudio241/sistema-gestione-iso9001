@@ -748,6 +748,17 @@ class ApiService {
         return this.delete(`/admin/users/${userId}/company-access/${companyId}`);
     }
 
+    /**
+     * Storico modifiche (audit trail) di un utente — solo admin/superadmin
+     * @param {number} userId
+     * @param {{ limit?: number }} [opts]
+     */
+    async getUserAuditLog(userId, opts = {}) {
+        const limit = opts?.limit;
+        const qs = limit ? `?limit=${encodeURIComponent(limit)}` : '';
+        return this.get(`/admin/users/${userId}/audit-log${qs}`);
+    }
+
     // ==========================================
     // CHECKLIST ENDPOINTS
     // ==========================================
