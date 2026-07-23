@@ -14,6 +14,7 @@ const {
 const documentTreeProvisioner = require('../services/documentTreeProvisioner.service');
 const billingService = require('../services/billing.service');
 const userAuditService = require('../services/userAudit.service');
+const userInviteService = require('../services/userInvite.service');
 
 const ADMIN_ROLES = ['admin', 'superadmin'];
 
@@ -55,7 +56,7 @@ async function listUsers(req, res) {
             ? await query(`
                 SELECT 
                     u.user_id, u.email, u.full_name, u.role, u.auditor_org_id, u.is_active,
-                    u.created_at, u.last_login, u.organization_id,
+                    u.created_at, u.last_login, u.organization_id, u.pending_activation,
                     o.organization_name,
                     ao.name AS auditor_org_name
                 FROM users u
@@ -66,7 +67,7 @@ async function listUsers(req, res) {
             : await query(`
                 SELECT 
                     u.user_id, u.email, u.full_name, u.role, u.auditor_org_id, u.is_active,
-                    u.created_at, u.last_login, u.organization_id,
+                    u.created_at, u.last_login, u.organization_id, u.pending_activation,
                     o.organization_name,
                     ao.name AS auditor_org_name
                 FROM users u
@@ -114,16 +115,25 @@ async function listUsers(req, res) {
 async function createUser(req, res) {
     try {
         const { organization_id, user_id: actorId } = req.user;
-        const { email, password, full_name, role = 'auditor', auditor_org_id } = req.body || {};
+        const { email, password, full_name, role = 'auditor', auditor_org_id, send_invite } = req.body || {};
 
-        if (!email || !password || !full_name) {
+        // Flusso invito (UAL-3): opzionale e aggiuntivo. Se send_invite === true,
+        // l'admin non imposta una password: il sistema genera un utente "in attesa"
+        // e invia un link di invito via email. Il flusso classico (password impostata
+        // subito dall'admin, comportamento invariato) resta il default se send_invite
+        // non è passato o è false — nessuna modifica del comportamento esistente.
+        const isInviteMode = send_invite === true;
+
+        if (!email || !full_name || (!isInviteMode && !password)) {
             return res.status(400).json({
                 success: false,
-                error: 'Campi obbligatori: email, password, full_name',
+                error: isInviteMode
+                    ? 'Campi obbligatori: email, full_name'
+                    : 'Campi obbligatori: email, password, full_name',
                 code: 'VALIDATION_ERROR',
             });
         }
-        if (String(password).length < 8) {
+        if (!isInviteMode && String(password).length < 8) {
             return res.status(400).json({
                 success: false,
                 error: 'Password: minimo 8 caratteri',
@@ -176,10 +186,16 @@ async function createUser(req, res) {
             });
         }
 
-        const password_hash = await bcrypt.hash(String(password), 10);
+        // Invito: password_hash placeholder (hash bcrypt di una stringa casuale) — nessuna
+        // password reale potrà mai corrispondere, quindi il login resta bloccato finché
+        // l'utente non accetta l'invito e imposta la propria password (accept-invite).
+        const password_hash = isInviteMode
+            ? await userInviteService.generatePlaceholderPasswordHash()
+            : await bcrypt.hash(String(password), 10);
+
         const result = await query(
-            `INSERT INTO users (email, password_hash, full_name, role, organization_id, auditor_org_id, is_active)
-             VALUES (@email, @password_hash, @full_name, @role, @organization_id, @auditor_org_id, 1);
+            `INSERT INTO users (email, password_hash, full_name, role, organization_id, auditor_org_id, is_active, pending_activation)
+             VALUES (@email, @password_hash, @full_name, @role, @organization_id, @auditor_org_id, 1, @pending_activation);
              SELECT SCOPE_IDENTITY() AS user_id;`,
             {
                 email: String(email).trim(),
@@ -188,19 +204,37 @@ async function createUser(req, res) {
                 role: normalizedRole,
                 organization_id,
                 auditor_org_id: aoId,
+                pending_activation: isInviteMode ? 1 : 0,
             }
         );
 
         const newId = result.recordset[0]?.user_id;
-        logger.info('Admin create user', { new_user_id: newId, organization_id, actorId, role: normalizedRole });
+        logger.info('Admin create user', { new_user_id: newId, organization_id, actorId, role: normalizedRole, isInviteMode });
 
         await userAuditService.logUserAuditEvent({
             organizationId: organization_id,
             targetUserId: newId,
             actorUserId: actorId,
             action: 'user_created',
-            newValue: { email: String(email).trim(), role: normalizedRole, auditor_org_id: aoId },
+            newValue: { email: String(email).trim(), role: normalizedRole, auditor_org_id: aoId, invited: isInviteMode },
         });
+
+        // Invio invito: MAI bloccante per la creazione utente (stesso pattern
+        // dell'auto-provisioning albero documentale qui sotto). Se l'email fallisce,
+        // l'utente resta "in attesa" e l'admin può reinviare l'invito in un secondo momento.
+        if (isInviteMode && newId) {
+            try {
+                await userInviteService.sendInviteEmail({
+                    userId: newId,
+                    email: String(email).trim(),
+                    fullName: String(full_name).trim(),
+                    organizationId: organization_id,
+                    actorUserId: actorId,
+                });
+            } catch (inviteErr) {
+                logger.warn('[Invite] Invio email invito fallito (non bloccante)', { error: inviteErr.message, newId });
+            }
+        }
 
         const { company_access: companyAccessInput } = req.body || {};
         if (Array.isArray(companyAccessInput) && companyAccessInput.length > 0 && newId) {
@@ -265,6 +299,7 @@ async function createUser(req, res) {
                 role: normalizedRole,
                 auditor_org_id: aoId,
                 is_active: true,
+                pending_activation: isInviteMode,
             },
         });
     } catch (error) {
@@ -1015,6 +1050,54 @@ async function getUserAuditLog(req, res) {
     }
 }
 
+/**
+ * POST /api/v1/admin/users/:id/resend-invite
+ * Rigenera e reinvia il link di invito (es. link scaduto) — solo utenti
+ * ancora "in attesa di attivazione" (pending_activation = 1).
+ */
+async function resendUserInvite(req, res) {
+    try {
+        const target = await resolveTargetUser(req, req.params.id);
+        if (!target) {
+            return res.status(404).json({ success: false, error: 'Utente non trovato', code: 'USER_NOT_FOUND' });
+        }
+
+        const userRes = await query(
+            `SELECT email, full_name, pending_activation, is_active FROM users WHERE user_id = @user_id`,
+            { user_id: target.user_id }
+        );
+        const u = userRes.recordset[0];
+        if (!u) {
+            return res.status(404).json({ success: false, error: 'Utente non trovato', code: 'USER_NOT_FOUND' });
+        }
+        if (!u.is_active) {
+            return res.status(400).json({ success: false, error: 'Utente disattivato', code: 'USER_INACTIVE' });
+        }
+        if (!u.pending_activation) {
+            return res.status(400).json({
+                success: false,
+                error: 'Questo utente ha già attivato il proprio account',
+                code: 'NOT_PENDING',
+            });
+        }
+
+        await userInviteService.sendInviteEmail({
+            userId: target.user_id,
+            email: u.email,
+            fullName: u.full_name,
+            organizationId: target.organization_id,
+            actorUserId: req.user.user_id,
+            isResend: true,
+        });
+
+        logger.info('Admin resend invite', { target_user_id: target.user_id, actor: req.user.user_id });
+        res.json({ success: true, message: 'Invito reinviato' });
+    } catch (error) {
+        logger.error('Admin resendUserInvite error', { error: error.message });
+        res.status(500).json({ success: false, error: 'Errore reinvio invito', code: 'ADMIN_RESEND_INVITE_ERROR' });
+    }
+}
+
 module.exports = {
     listUsers,
     createUser,
@@ -1030,4 +1113,5 @@ module.exports = {
     addUserCompanyAccess,
     removeUserCompanyAccess,
     getUserAuditLog,
+    resendUserInvite,
 };

@@ -15,6 +15,8 @@ const VALID_ACTIONS = new Set([
     'user_created', 'role_changed', 'profile_updated', 'auditor_org_changed',
     'password_reset_by_admin', 'activated', 'deactivated', 'standards_updated',
     'company_access_granted', 'company_access_updated', 'company_access_revoked',
+    // UAL-3 — flusso invito via email (migration 131 estende il CHECK di user_audit_log)
+    'invite_sent', 'invite_accepted', 'invite_resent',
 ]);
 
 /**
