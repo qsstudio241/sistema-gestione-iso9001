@@ -401,3 +401,84 @@
   font-size: 0.85rem;
   color: #155724;
 }
+
+/* ── G7: banner vista piattaforma (superadmin cross-tenant) ─────────────── */
+.platform-scope-banner {
+  margin: 0 0 1rem;
+  padding: 0.6rem 1rem;
+  background: #e7d6ff;
+  color: #4b1e8c;
+  border: 1px solid #c9a6ff;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  text-align: center;
+}
+
+/* ── G8: badge organizzazione (tenant) per riga utente, vista cross-tenant ─ */
+.user-org-badge {
+  font-size: 0.75rem;
+  padding: 0.2rem 0.5rem;
+  border-radius: 4px;
+  background: #e7d6ff;
+  color: #4b1e8c;
+  font-weight: 600;
+}
+
+/* ── Accesso aziende clienti (user_company_access) per riga utente ──────── */
+.user-company-access-details {
+  margin-top: 0.75rem;
+  border-top: 1px solid #e8e8e8;
+  padding-top: 0.5rem;
+}
+
+.company-access-list {
+  list-style: none;
+  margin: 0 0 0.75rem;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.company-access-item {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+  font-size: 0.9rem;
+}
+
+.company-access-name {
+  font-weight: 500;
+}
+
+.company-access-badge {
+  font-size: 0.72rem;
+  padding: 0.15rem 0.5rem;
+  border-radius: 4px;
+}
+
+.company-access-badge.read {
+  background: #d1ecf1;
+  color: #0c5460;
+}
+
+.company-access-badge.write {
+  background: #d4edda;
+  color: #155724;
+}
+
+.company-access-add-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.company-access-add-row select {
+  padding: 0.4rem 0.5rem;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  font-size: 0.9rem;
+}

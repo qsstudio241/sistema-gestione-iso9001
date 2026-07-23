@@ -722,6 +722,32 @@ class ApiService {
         return this.put(`/admin/users/${userId}/standards`, { standard_ids: standardIds });
     }
 
+    /**
+     * Lista accessi azienda cliente di un utente (studio) — solo admin/superadmin
+     * @param {number} userId
+     */
+    async getUserCompanyAccess(userId) {
+        return this.get(`/admin/users/${userId}/company-access`);
+    }
+
+    /**
+     * Concede/aggiorna l'accesso di un utente a un'azienda cliente
+     * @param {number} userId
+     * @param {{ company_id: number, permission: 'read'|'write' }} body
+     */
+    async addUserCompanyAccess(userId, body) {
+        return this.post(`/admin/users/${userId}/company-access`, body);
+    }
+
+    /**
+     * Revoca l'accesso di un utente a un'azienda cliente
+     * @param {number} userId
+     * @param {number} companyId
+     */
+    async removeUserCompanyAccess(userId, companyId) {
+        return this.delete(`/admin/users/${userId}/company-access/${companyId}`);
+    }
+
     // ==========================================
     // CHECKLIST ENDPOINTS
     // ==========================================
