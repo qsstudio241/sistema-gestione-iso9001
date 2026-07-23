@@ -164,7 +164,7 @@ Gli auditor lo ricevono solo quando stabile e collaudato — zero interruzioni o
 | **AuditSelector Q2+Q3** | Nascondi audit chiusi (default) + filtro azienda → audit; `auditsMenuKey` sul select audit | ✅ Completato (04/05/2026) |
 | **Sync/API con UUID** | create/delete audit e custom-checklist-responses accettano UUID; merge preserva customChecklistId | ✅ Completato (15/03) |
 | **Deploy backend VPS** | pscp/plink per controller, script deploy-controllers-to-vps.ps1 | ✅ Completato (15/03) |
-| Export Word ISO 3834 | Da testare su produzione | 🔲 Da testare |
+| Export Word ISO 3834 | Template `ISO3834-audit-report.docx` già presente e valido; pipeline `wordExport.js` verificata end-to-end (test `wordExport.iso3834FullExport.test.js`: OOXML valido, placeholder tutti sostituiti, tabelle checklist C/NC/OSS/OM/NA/NV, allegati) — nessun bug riscontrato | ✅ Testato e verificato (23/07/2026) |
 | **Foto embedded in Word** | pic:cNvPr id univoci per range separati (100+checklist ISO, 30000+custom, 88001+logo, 89001+logo org); fix già in produzione; checkbox UI "Incorpora foto" sempre visibile | ✅ Risolto (2026-04-23) |
 | **Admin utenti (CRUD + standard)** | `UsersAdminPage`, API admin users; abbonamenti / piani | ✅ Core mar/2026; abbonamenti 🔲 |
 | ISO 14001 checklist completa | 53 domande in 7 sezioni clausola (migration 049, prod 07/05/2026) | ✅ Completato |
