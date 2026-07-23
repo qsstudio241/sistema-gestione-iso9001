@@ -10,7 +10,14 @@ import StatusBadge from "../components/StatusBadge";
 import PencilIcon from "../components/icons/PencilIcon";
 import TrashIcon from "../components/icons/TrashIcon";
 import { getWelderQualificationWarning } from "../utils/welderQualificationExpiryWarnings";
+import AiDisclaimer from "../components/AiDisclaimer";
 import "./ProjectsPage.css";
+
+const AI_COVERAGE_LABELS = {
+  covered: { label: "Coperta", cls: "pj-ai-covered" },
+  partial: { label: "Parziale", cls: "pj-ai-partial" },
+  missing: { label: "Mancante", cls: "pj-ai-missing" },
+};
 
 const PROJECT_STATUSES = [
   { value: "offerta", label: "Offerta" },
@@ -99,6 +106,24 @@ function ProjectFormModal({ project, wpsList, qualifications, onSave, onClose })
   const technicalReviewComplete = isTechnicalReviewComplete(technicalReviewChecklist);
   const showTechnicalReviewWarning =
     STATUSES_REQUIRING_TECHNICAL_REVIEW.includes(form.status) && !technicalReviewComplete;
+
+  const [aiSuggestLoading, setAiSuggestLoading] = useState(false);
+  const [aiSuggestResult, setAiSuggestResult] = useState(null);
+  const [aiSuggestError, setAiSuggestError] = useState(null);
+
+  async function handleAiSuggest() {
+    if (!project?.id) return;
+    setAiSuggestLoading(true);
+    setAiSuggestError(null);
+    try {
+      const res = await apiService.post(`/projects/${project.id}/ai/suggest-compliance`, {});
+      setAiSuggestResult(res?.data || res);
+    } catch (err) {
+      setAiSuggestError(err.message);
+    } finally {
+      setAiSuggestLoading(false);
+    }
+  }
 
   useEffect(() => {
     if (project?.applicable_wps_ids && typeof project.applicable_wps_ids === "string") {
@@ -262,6 +287,50 @@ function ProjectFormModal({ project, wpsList, qualifications, onSave, onClose })
                 </div>
               )}
             </div>
+
+            {/* Suggeritore AI conformità 3834-3 (pattern SAL — proposta, mai scrittura automatica) */}
+            {project?.id && (
+              <div className="pj-wps-section">
+                <div className="pj-ai-suggest-header">
+                  <h4 className="pj-section-label" style={{ margin: 0 }}>Suggeritore conformità ISO 3834-3 (AI)</h4>
+                  <button
+                    type="button"
+                    className="pj-btn-ai-suggest"
+                    onClick={handleAiSuggest}
+                    disabled={aiSuggestLoading}
+                  >
+                    {aiSuggestLoading ? "Analisi in corso..." : "Suggerisci stato (AI)"}
+                  </button>
+                </div>
+
+                {aiSuggestError && <div className="pj-error" style={{ marginTop: 8 }}>{aiSuggestError}</div>}
+
+                {aiSuggestResult && !aiSuggestResult.aiAvailable && (
+                  <p className="pj-hint">{aiSuggestResult.message || "Suggeritore AI non disponibile."}</p>
+                )}
+
+                {aiSuggestResult?.aiAvailable && Array.isArray(aiSuggestResult.suggestions) && (
+                  <>
+                    <div className="pj-ai-suggest-list">
+                      {aiSuggestResult.suggestions.map((s) => {
+                        const cov = AI_COVERAGE_LABELS[s.coverage] || { label: "Non valutata", cls: "pj-ai-unknown" };
+                        return (
+                          <div key={s.clauseRef} className="pj-ai-suggest-item">
+                            <div className="pj-ai-suggest-item-head">
+                              <strong>{"\u00A7"}{s.clauseRef}</strong> {s.clauseTitle}
+                              <span className={`pj-ai-badge ${cov.cls}`}>{cov.label}</span>
+                              <span className="pj-ai-confidence">confidenza: {s.confidence}</span>
+                            </div>
+                            <p className="pj-ai-rationale">{s.rationale}</p>
+                          </div>
+                        );
+                      })}
+                    </div>
+                    <AiDisclaimer style={{ marginTop: 8, display: "block" }} />
+                  </>
+                )}
+              </div>
+            )}
 
             {/* WPS applicabili */}
             {wpsList.length > 0 && (
