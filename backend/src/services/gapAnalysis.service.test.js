@@ -30,9 +30,9 @@ const CLAUSES = [
 ];
 
 const DOCS = [
-  { id: 1, title: 'Analisi contesto organizzativo', document_type: 'procedura', type_specific_data: null },
-  { id: 2, title: 'Procedura acquisti fornitori', document_type: 'procedura', type_specific_data: JSON.stringify({ scope: 'fornitori esterni processi' }) },
-  { id: 3, title: 'Piano qualità', document_type: 'piano_qualita', type_specific_data: null },
+  { id: 1, title: 'Analisi contesto organizzativo', doc_type: 'procedura', type_specific_data: null },
+  { id: 2, title: 'Procedura acquisti fornitori', doc_type: 'procedura', type_specific_data: JSON.stringify({ scope: 'fornitori esterni processi' }) },
+  { id: 3, title: 'Piano qualità', doc_type: 'piano_qualita', type_specific_data: null },
 ];
 
 describe('gapAnalysis.service — runGapAnalysis', () => {
@@ -59,6 +59,16 @@ describe('gapAnalysis.service — runGapAnalysis', () => {
     expect(c84.coverage).not.toBe('missing');
   });
 
+  it('interroga document_registry con le colonne reali dello schema (doc_type, non document_type/is_current)', async () => {
+    await runGapAnalysis({ organizationId: 1, companyId: 10, standardCode: 'ISO_9001_2015' });
+
+    const docSql = mockQuery.mock.calls[1][0];
+    expect(docSql).toContain('doc_type');
+    expect(docSql).not.toContain('document_type');
+    expect(docSql).toContain("status <> 'obsoleto'");
+    expect(docSql).not.toContain('is_current');
+  });
+
   it('restituisce array vuoto se nessuna clausola trovata', async () => {
     mockQuery.mockReset();
     mockQuery.mockResolvedValueOnce({ recordset: [] }).mockResolvedValueOnce({ recordset: [] });
@@ -71,7 +81,7 @@ describe('gapAnalysis.service — runGapAnalysis', () => {
     mockQuery.mockReset();
     mockQuery
       .mockResolvedValueOnce({ recordset: [{ clause_ref: '10.2', clause_title: 'Non conformità azione correttiva', requirement_text: 'Reagire alle non conformità' }] })
-      .mockResolvedValueOnce({ recordset: [{ id: 99, title: 'Piano qualità', document_type: 'piano_qualita', type_specific_data: null }] });
+      .mockResolvedValueOnce({ recordset: [{ id: 99, title: 'Piano qualità', doc_type: 'piano_qualita', type_specific_data: null }] });
 
     const matrix = await runGapAnalysis({ organizationId: 1, companyId: 10, standardCode: 'ISO_9001_2015' });
     // "Piano qualità" non contiene token di "non conformità azione correttiva" → missing o partial
@@ -214,7 +224,7 @@ describe('gapAnalysis.service — SAL Fase 0', () => {
 
     expect(ids).toEqual([10, 99]);
     expect(mockQuery.mock.calls[0][0]).toContain('document_registry');
-    expect(mockQuery.mock.calls[0][0]).toContain('is_current = 1');
+    expect(mockQuery.mock.calls[0][0]).toContain("status <> 'obsoleto'");
   });
 
   it('getStatusHistory restituisce revisioni ordinate per status_id', async () => {

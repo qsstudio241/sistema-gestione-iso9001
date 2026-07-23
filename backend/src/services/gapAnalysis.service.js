@@ -105,9 +105,9 @@ async function runGapAnalysis({ organizationId, companyId, standardCode }) {
 
   // 2. Carica documenti dell'azienda (titolo + metadati JSON)
   const docRes = await query(
-    `SELECT id, title, document_type, type_specific_data
+    `SELECT id, title, doc_type, type_specific_data
      FROM document_registry
-     WHERE organization_id = @orgId AND company_id = @compId AND is_current = 1`,
+     WHERE organization_id = @orgId AND company_id = @compId AND status <> 'obsoleto'`,
     { orgId: organizationId, compId: companyId }
   );
   const docs = docRes.recordset;
@@ -124,7 +124,7 @@ async function runGapAnalysis({ organizationId, companyId, standardCode }) {
       const metaStr = doc.type_specific_data
         ? (typeof doc.type_specific_data === 'string' ? doc.type_specific_data : JSON.stringify(doc.type_specific_data))
         : '';
-      const haystack = `${doc.title || ''} ${doc.document_type || ''} ${metaStr}`;
+      const haystack = `${doc.title || ''} ${doc.doc_type || ''} ${metaStr}`;
       const score = matchScore(clauseTokens, haystack);
       if (score >= 1) {
         evidence.push({ docId: doc.id, title: doc.title || `Doc ${doc.id}`, score });
@@ -535,7 +535,7 @@ async function validateEvidenceDocumentIds(organizationId, companyId, rawIds) {
     FROM document_registry
     WHERE organization_id = @orgId
       AND company_id = @companyId
-      AND is_current = 1
+      AND status <> 'obsoleto'
       AND id IN (${placeholders})
   `, params);
 
@@ -558,11 +558,11 @@ async function enrichRowsWithEvidence(organizationId, companyId, rows) {
   idList.forEach((id, i) => { params[`id${i}`] = id; });
 
   const res = await query(`
-    SELECT id, title, document_type, status
+    SELECT id, title, doc_type, status
     FROM document_registry
     WHERE organization_id = @orgId
       AND company_id = @companyId
-      AND is_current = 1
+      AND status <> 'obsoleto'
       AND id IN (${placeholders})
   `, params);
 
@@ -570,7 +570,7 @@ async function enrichRowsWithEvidence(organizationId, companyId, rows) {
     (res.recordset || []).map((d) => [d.id, {
       id: d.id,
       title: d.title || `Documento #${d.id}`,
-      documentType: d.document_type || null,
+      documentType: d.doc_type || null,
       status: d.status || null,
     }]),
   );
