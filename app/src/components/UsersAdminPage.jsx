@@ -68,6 +68,11 @@ function isOrphanAuditor(role, auditor_org_id) {
   return role === "auditor" && (auditor_org_id == null || auditor_org_id === "");
 }
 
+const ACCESS_PERMISSION_LABELS = {
+  read: "Lettura",
+  write: "Lettura/Scrittura",
+};
+
 export default function UsersAdminPage({ onBack }) {
   const { user } = useAuth();
   const [users, setUsers] = useState([]);
@@ -99,6 +104,12 @@ export default function UsersAdminPage({ onBack }) {
   const [orgLicensesDirty, setOrgLicensesDirty] = useState({});
   const [savingOrgLicense, setSavingOrgLicense] = useState(null);
   const [orgLicenseMsg, setOrgLicenseMsg] = useState({});
+
+  // Accesso aziende clienti per utente (user_company_access) - caricato on-demand
+  const [companyAccessByUser, setCompanyAccessByUser] = useState({});
+  const [companiesByOrg, setCompaniesByOrg] = useState({});
+  const [newAccessForm, setNewAccessForm] = useState({});
+  const [savingAccessId, setSavingAccessId] = useState(null);
 
   /** Ritorna i moduli effettivi per una org (dirty o da auditorOrg.licensed_modules) */
   const getEffectiveOrgModules = (ao) => {
@@ -146,6 +157,101 @@ export default function UsersAdminPage({ onBack }) {
       setOrgLicenseMsg((prev) => ({ ...prev, [ao.organization_id]: `❌ ${err.message || "Errore"}` }));
     } finally {
       setSavingOrgLicense(null);
+    }
+  };
+
+  /** Risolve l'auditor_org_id da usare per elencare le aziende disponibili per l'utente target */
+  const resolveOrgIdForCompanyList = (u) => {
+    if (u.auditor_org_id != null && u.auditor_org_id !== "") return u.auditor_org_id;
+    const match = auditorOrgs.find((ao) => ao.organization_id === u.organization_id);
+    return match ? match.id : null;
+  };
+
+  const loadCompaniesForOrg = useCallback(async (orgId) => {
+    if (orgId == null) return;
+    setCompaniesByOrg((prev) => {
+      if (prev[orgId]) return prev; // già caricato o in caricamento
+      return { ...prev, [orgId]: { loading: true, error: null, list: [] } };
+    });
+    try {
+      const res = await apiService.getCompanies({ auditor_org_id: orgId, limit: 500 });
+      const list = res?.data && Array.isArray(res.data) ? res.data : [];
+      setCompaniesByOrg((prev) => ({ ...prev, [orgId]: { loading: false, error: null, list } }));
+    } catch (err) {
+      setCompaniesByOrg((prev) => ({
+        ...prev,
+        [orgId]: { loading: false, error: err.message || "Errore caricamento aziende", list: [] },
+      }));
+    }
+  }, []);
+
+  const loadCompanyAccessForUser = useCallback(async (userId) => {
+    setCompanyAccessByUser((prev) => ({
+      ...prev,
+      [userId]: { ...(prev[userId] || {}), loading: true, error: null },
+    }));
+    try {
+      const res = await apiService.getUserCompanyAccess(userId);
+      const list = res?.data && Array.isArray(res.data) ? res.data : [];
+      setCompanyAccessByUser((prev) => ({ ...prev, [userId]: { loading: false, error: null, list } }));
+    } catch (err) {
+      setCompanyAccessByUser((prev) => ({
+        ...prev,
+        [userId]: { loading: false, error: err.message || "Errore caricamento accessi azienda", list: [] },
+      }));
+    }
+  }, []);
+
+  const onToggleCompanyAccessDetails = (u) => (e) => {
+    if (!e.target.open) return;
+    if (!companyAccessByUser[u.user_id]) {
+      loadCompanyAccessForUser(u.user_id);
+    }
+    const orgId = resolveOrgIdForCompanyList(u);
+    if (orgId != null && !companiesByOrg[orgId]) {
+      loadCompaniesForOrg(orgId);
+    }
+  };
+
+  const updateNewAccessField = (userId, field, value) => {
+    setNewAccessForm((prev) => ({
+      ...prev,
+      [userId]: { company_id: "", permission: "read", ...(prev[userId] || {}), [field]: value },
+    }));
+  };
+
+  const addCompanyAccess = async (u) => {
+    const form = newAccessForm[u.user_id] || { company_id: "", permission: "read" };
+    const companyId = parseInt(form.company_id, 10);
+    if (!Number.isFinite(companyId)) {
+      alert("Seleziona un'azienda.");
+      return;
+    }
+    setSavingAccessId(u.user_id);
+    try {
+      await apiService.addUserCompanyAccess(u.user_id, {
+        company_id: companyId,
+        permission: form.permission === "write" ? "write" : "read",
+      });
+      setNewAccessForm((prev) => ({ ...prev, [u.user_id]: { company_id: "", permission: "read" } }));
+      await loadCompanyAccessForUser(u.user_id);
+    } catch (err) {
+      alert(err.message || "Errore assegnazione accesso azienda");
+    } finally {
+      setSavingAccessId(null);
+    }
+  };
+
+  const removeCompanyAccess = async (u, companyId, companyName) => {
+    if (!window.confirm(`Revocare l'accesso di ${u.full_name || u.email} a "${companyName}"?`)) return;
+    setSavingAccessId(u.user_id);
+    try {
+      await apiService.removeUserCompanyAccess(u.user_id, companyId);
+      await loadCompanyAccessForUser(u.user_id);
+    } catch (err) {
+      alert(err.message || "Errore rimozione accesso azienda");
+    } finally {
+      setSavingAccessId(null);
     }
   };
 
@@ -407,6 +513,12 @@ export default function UsersAdminPage({ onBack }) {
         </div>
       </div>
 
+      {isSuperadmin && (
+        <div className="platform-scope-banner" role="status">
+          Vista piattaforma — tutte le organizzazioni
+        </div>
+      )}
+
       {showCreate && (
         <form className="user-create-form" onSubmit={submitCreate}>
           <h2 className="user-create-title">Nuovo utente</h2>
@@ -618,6 +730,11 @@ export default function UsersAdminPage({ onBack }) {
                   <span className={`user-role-badge role-${u.role}`}>
                     {u.role}
                   </span>
+                  {isSuperadmin && u.organization_name && (
+                    <span className="user-org-badge" title="Organizzazione (tenant) di appartenenza">
+                      {u.organization_name}
+                    </span>
+                  )}
                   {!active && (
                     <StatusBadge type="user" status="inactive" size="small" />
                   )}
@@ -797,6 +914,121 @@ export default function UsersAdminPage({ onBack }) {
                         {savingId === u.user_id ? "Salvataggio..." : "Salva standard"}
                       </button>
                     )}
+                  </div>
+                </details>
+
+                <details
+                  className="user-company-access-details"
+                  onToggle={onToggleCompanyAccessDetails(u)}
+                >
+                  <summary className="standards-summary">
+                    Accesso aziende clienti (clic per aprire o chiudere)
+                  </summary>
+                  <div className="user-standards-section-inner">
+                    {(() => {
+                      const accessState = companyAccessByUser[u.user_id];
+                      const orgId = resolveOrgIdForCompanyList(u);
+                      const companiesState = orgId != null ? companiesByOrg[orgId] : null;
+                      const form = newAccessForm[u.user_id] || { company_id: "", permission: "read" };
+                      const assignedIds = new Set((accessState?.list || []).map((a) => a.company_id));
+                      const availableCompanies = (companiesState?.list || []).filter(
+                        (c) => !assignedIds.has(c.id)
+                      );
+
+                      return (
+                        <>
+                          {accessState?.loading && (
+                            <p className="loading-message">Caricamento accessi...</p>
+                          )}
+                          {accessState?.error && (
+                            <p className="error-message">{accessState.error}</p>
+                          )}
+                          {!accessState?.loading && (accessState?.list?.length ?? 0) === 0 && !accessState?.error && (
+                            <p className="no-data">
+                              Nessuna azienda cliente assegnata a questo utente.
+                            </p>
+                          )}
+                          {(accessState?.list?.length ?? 0) > 0 && (
+                            <ul className="company-access-list">
+                              {accessState.list.map((a) => (
+                                <li key={a.company_id} className="company-access-item">
+                                  <span className="company-access-name">{a.company_name}</span>
+                                  <span
+                                    className={`company-access-badge ${a.permission === "write" ? "write" : "read"}`}
+                                  >
+                                    {ACCESS_PERMISSION_LABELS[a.permission] || a.permission}
+                                  </span>
+                                  {active && (
+                                    <button
+                                      type="button"
+                                      className="btn btn-danger btn-sm"
+                                      disabled={savingAccessId === u.user_id}
+                                      onClick={() => removeCompanyAccess(u, a.company_id, a.company_name)}
+                                    >
+                                      Rimuovi
+                                    </button>
+                                  )}
+                                </li>
+                              ))}
+                            </ul>
+                          )}
+
+                          {active && (
+                            <div className="company-access-add-row">
+                              {orgId == null && (
+                                <p className="form-hint warn">
+                                  Assegna prima uno studio a questo utente per poter
+                                  concedere accessi ad aziende clienti.
+                                </p>
+                              )}
+                              {orgId != null && companiesState?.error && (
+                                <p className="error-message">{companiesState.error}</p>
+                              )}
+                              {orgId != null && !companiesState?.error && (
+                                <>
+                                  <select
+                                    value={form.company_id}
+                                    onChange={(e) =>
+                                      updateNewAccessField(u.user_id, "company_id", e.target.value)
+                                    }
+                                    disabled={savingAccessId === u.user_id || companiesState?.loading}
+                                  >
+                                    <option value="">
+                                      {companiesState?.loading
+                                        ? "Caricamento aziende..."
+                                        : "- Seleziona azienda -"}
+                                    </option>
+                                    {availableCompanies.map((c) => (
+                                      <option key={c.id} value={String(c.id)}>
+                                        {c.name}
+                                      </option>
+                                    ))}
+                                  </select>
+                                  <select
+                                    value={form.permission}
+                                    onChange={(e) =>
+                                      updateNewAccessField(u.user_id, "permission", e.target.value)
+                                    }
+                                    disabled={savingAccessId === u.user_id}
+                                  >
+                                    <option value="read">Lettura</option>
+                                    <option value="write">Lettura/Scrittura</option>
+                                  </select>
+                                  <button
+                                    type="button"
+                                    className="btn btn-primary btn-sm"
+                                    disabled={savingAccessId === u.user_id || !form.company_id}
+                                    onClick={() => addCompanyAccess(u)}
+                                  >
+                                    {savingAccessId === u.user_id ? "Salvataggio..." : "Aggiungi"}
+                                  </button>
+                                </>
+                              )}
+                            </div>
+                          )}
+                        </>
+                      );
+                    })()}
                   </div>
                 </details>
               </div>
