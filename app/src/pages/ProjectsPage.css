@@ -115,6 +115,22 @@
 .pj-technical-review-item span:first-of-type { flex:0 0 auto; min-width:220px; }
 .pj-technical-review-note { flex:1; margin-left:auto; max-width:220px; padding:4px 8px; font-size:12px; }
 
+/* Suggeritore AI conformità 3834-3 (TASK 4) */
+.pj-ai-suggest-header { display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap; margin-bottom:8px; }
+.pj-btn-ai-suggest { padding:7px 14px; background:#1e3a5f; color:#fff; border:none; border-radius:8px; font-size:12.5px; font-weight:600; cursor:pointer; }
+.pj-btn-ai-suggest:hover { background:#16304e; }
+.pj-btn-ai-suggest:disabled { opacity:.6; cursor:not-allowed; }
+.pj-ai-suggest-list { display:flex; flex-direction:column; gap:8px; max-height:280px; overflow-y:auto; }
+.pj-ai-suggest-item { border:1px solid #e5e7eb; border-radius:8px; padding:8px 10px; font-size:12.5px; }
+.pj-ai-suggest-item-head { display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+.pj-ai-rationale { margin:6px 0 0; color:#4b5563; font-size:12px; }
+.pj-ai-badge { display:inline-block; padding:1px 8px; border-radius:99px; font-size:10.5px; font-weight:600; }
+.pj-ai-covered { background:#dcfce7; color:#166534; }
+.pj-ai-partial { background:#fef3c7; color:#92400e; }
+.pj-ai-missing { background:#fee2e2; color:#b91c1c; }
+.pj-ai-unknown { background:#f3f4f6; color:#6b7280; }
+.pj-ai-confidence { font-size:11px; color:#9ca3af; margin-left:auto; }
+
 @media (max-width:700px) {
   .pj-page { padding:14px; }
   .pj-form-grid { grid-template-columns:1fr; }
