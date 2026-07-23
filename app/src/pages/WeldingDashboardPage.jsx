@@ -7,6 +7,7 @@ import React, { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "../contexts/RouterContext";
 import apiService from "../services/apiService";
 import { formatDate } from "../utils/dateHelpers";
+import { isExpiredSemaforo, isExpiringSemaforo } from "../utils/welderQualificationExpiryWarnings";
 import "./WeldingDashboardPage.css";
 
 const PROJECT_STATUS_LABELS = {
@@ -118,10 +119,8 @@ function WeldingDashboardPage() {
       const quals = results[4].value?.qualifications || [];
       const now = Date.now();
       const thirtyDays = 30 * 24 * 60 * 60 * 1000;
-      const scadute = quals.filter((q) => q.semaforo === "rosso").length;
-      const inScadenza = quals.filter((q) =>
-        q.semaforo === "giallo" || q.semaforo === "arancione"
-      ).length;
+      const scadute = quals.filter((q) => isExpiredSemaforo(q.semaforo)).length;
+      const inScadenza = quals.filter((q) => isExpiringSemaforo(q.semaforo)).length;
       setQualAlerts({ in_scadenza_30: inScadenza, scadute });
 
       if (scadute > 0) {
