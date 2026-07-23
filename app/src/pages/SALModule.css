@@ -202,6 +202,16 @@
   white-space: nowrap;
 }
 
+/* Riga evidenziata da deep link (es. "Verifica in SAL" da Gap Analysis) */
+.sal-row-highlight td {
+  animation: sal-row-highlight-fade 2.5s ease-out;
+}
+
+@keyframes sal-row-highlight-fade {
+  from { background-color: #fff3cd; }
+  to { background-color: transparent; }
+}
+
 .sal-clause-title {
   font-size: 13px;
   color: #374151;
