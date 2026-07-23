@@ -4,13 +4,15 @@
  */
 
 const logger = require('../utils/logger');
-const { getLicensedModuleKeysForOrg } = require('../services/moduleLicense.service');
+const { getLicensedModuleKeysForOrg, expandWithImpliedModuleKeys } = require('../services/moduleLicense.service');
 
 async function userHasAnyLicensedModule(req, moduleKeys) {
     const role = req.user?.role ? String(req.user.role).trim().toLowerCase() : '';
     if (role === 'superadmin' || role === 'admin') return true;
     const keys = await getLicensedModuleKeysForOrg(req.user.organization_id);
-    return moduleKeys.some((k) => keys.includes(k));
+    // Bridge ISO 3834 P0: 'saldatura' implica accesso a 'cnd' (vedi moduleLicense.service).
+    const effectiveKeys = expandWithImpliedModuleKeys(keys);
+    return moduleKeys.some((k) => effectiveKeys.includes(k));
 }
 
 function requireLicensedModule(moduleKey) {

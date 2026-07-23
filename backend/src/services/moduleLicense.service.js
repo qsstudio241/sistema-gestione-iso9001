@@ -28,6 +28,27 @@ const KNOWN_MODULE_KEYS = [
 
 const ALL_MODULES_DEFAULT = [...KNOWN_MODULE_KEYS];
 
+// --- Bridge P0 gap ISO 3834 (§8.2 personale NDT + §14 ispezioni/prove) ------
+// Chi acquista SOLO la licenza 'saldatura' deve poter accedere anche a 'cnd':
+// le ispezioni/prove non distruttive sono un requisito INTEGRALE del sistema
+// qualità saldatura 3834, non un modulo opzionale separato. 'cnd' resta
+// comunque vendibile come licenza autonoma standalone (aziende che fanno solo
+// CND senza saldatura strutturale). Questa mappa NON altera cosa viene salvato
+// in organizations.licensed_modules — agisce solo sull'insieme derivato di
+// accesso effettivo, calcolato a runtime da userHasAnyLicensedModule().
+const MODULE_ACCESS_IMPLICATIONS = {
+    saldatura: ['cnd'],
+};
+
+/** Espande un elenco di chiavi modulo con quelle implicite (vedi MODULE_ACCESS_IMPLICATIONS). */
+function expandWithImpliedModuleKeys(moduleKeys) {
+    const set = new Set(moduleKeys || []);
+    for (const [sourceKey, impliedKeys] of Object.entries(MODULE_ACCESS_IMPLICATIONS)) {
+        if (set.has(sourceKey)) impliedKeys.forEach((k) => set.add(k));
+    }
+    return [...set];
+}
+
 // --- Capability seam: SAL legal conformity (SAL Fase 5-B) -------------------
 // The AI legal-conformity axis is CURRENTLY sold inside the 'ai_norms' license
 // (layered above module 'sal'), so this capability maps to the exact module key
@@ -194,6 +215,8 @@ module.exports = {
     KNOWN_MODULE_KEYS,
     ALL_MODULES_DEFAULT,
     LABELS_IT,
+    MODULE_ACCESS_IMPLICATIONS,
+    expandWithImpliedModuleKeys,
     SAL_LEGAL_CONFORMITY_MODULE_KEY,
     parseLicensedModulesColumn,
     mergeModuleKeys,

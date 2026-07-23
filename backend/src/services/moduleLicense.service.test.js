@@ -60,6 +60,28 @@ describe('moduleLicense.service', () => {
     expect(query).toHaveBeenCalledTimes(1);
   });
 
+  describe('expandWithImpliedModuleKeys (bridge P0 ISO 3834 saldatura -> cnd)', () => {
+    it('aggiunge cnd se saldatura e presente', () => {
+      expect(svc.expandWithImpliedModuleKeys(['audit', 'saldatura'])).toEqual(
+        expect.arrayContaining(['audit', 'saldatura', 'cnd'])
+      );
+    });
+
+    it('non aggiunge nulla se saldatura non e presente', () => {
+      expect(svc.expandWithImpliedModuleKeys(['audit', 'nc'])).toEqual(['audit', 'nc']);
+    });
+
+    it('e idempotente se cnd e gia presente insieme a saldatura', () => {
+      const result = svc.expandWithImpliedModuleKeys(['saldatura', 'cnd']);
+      expect(result.filter((k) => k === 'cnd')).toHaveLength(1);
+    });
+
+    it('gestisce array vuoto/undefined senza errori', () => {
+      expect(svc.expandWithImpliedModuleKeys([])).toEqual([]);
+      expect(svc.expandWithImpliedModuleKeys(undefined)).toEqual([]);
+    });
+  });
+
   describe('hasSalLegalConformityCapability (seam SAL_LEGAL_CONFORMITY)', () => {
     it('oggi il seam mappa su ai_norms', () => {
       expect(svc.SAL_LEGAL_CONFORMITY_MODULE_KEY).toBe('ai_norms');
