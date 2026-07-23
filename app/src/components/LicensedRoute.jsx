@@ -5,12 +5,11 @@
 import React from "react";
 import { useAuth } from "../contexts/AuthContext";
 import ModuleLocked from "./ModuleLocked";
+import { hasLicensedModule } from "../utils/licenseUtils";
 
 export default function LicensedRoute({ moduleKey, children }) {
   const { user } = useAuth();
-  const list = user?.licensed_modules;
-  const allowed =
-    !list || !Array.isArray(list) || list.length === 0 || list.includes(moduleKey);
+  const allowed = hasLicensedModule(user, moduleKey);
 
   if (allowed) return children;
   return <ModuleLocked module={moduleKey} lockedByLicense />;
