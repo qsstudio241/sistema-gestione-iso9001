@@ -51,6 +51,13 @@ function userIsActive(u) {
   return v === true || v === 1 || v === "1" || v === "true";
 }
 
+/** Utente creato via invito email, non ha ancora impostato la propria password (UAL-3). */
+function userIsPending(u) {
+  if (!u) return false;
+  const v = u.pending_activation;
+  return v === true || v === 1 || v === "1" || v === "true";
+}
+
 function emptyEditForm(u) {
   return {
     full_name: u.full_name || "",
@@ -85,6 +92,9 @@ const AUDIT_ACTION_LABELS = {
   company_access_granted: "Accesso azienda concesso",
   company_access_updated: "Accesso azienda modificato",
   company_access_revoked: "Accesso azienda revocato",
+  invite_sent: "Invito inviato via email",
+  invite_accepted: "Invito accettato (password impostata)",
+  invite_resent: "Invito reinviato",
 };
 
 /** Descrizione leggibile di una riga di storico modifiche (best-effort, tollerante a valori mancanti) */
@@ -128,7 +138,11 @@ export default function UsersAdminPage({ onBack }) {
     role: "auditor",
     auditor_org_id: "",
   });
+  // Modalità creazione: "password" (comportamento attuale, default) oppure
+  // "invite" (nuovo, UAL-3 — l'utente riceve un'email e imposta lui la password).
+  const [createMode, setCreateMode] = useState("password");
   const [createSubmitting, setCreateSubmitting] = useState(false);
+  const [resendingInviteId, setResendingInviteId] = useState(null);
 
   /** Form di modifica per riga (sincronizzati al reload lista) */
   const [editForms, setEditForms] = useState({});
@@ -496,11 +510,11 @@ export default function UsersAdminPage({ onBack }) {
 
   const submitCreate = async (e) => {
     e.preventDefault();
+    const isInvite = createMode === "invite";
     setCreateSubmitting(true);
     try {
       const body = {
         email: createForm.email.trim(),
-        password: createForm.password,
         full_name: createForm.full_name.trim(),
         role: createForm.role,
         auditor_org_id:
@@ -508,13 +522,22 @@ export default function UsersAdminPage({ onBack }) {
             ? null
             : parseInt(createForm.auditor_org_id, 10),
       };
-      if (!body.email || !body.password || !body.full_name) {
-        alert("Compila email, password e nome.");
-        return;
-      }
-      if (body.password.length < 8) {
-        alert("Password: minimo 8 caratteri.");
-        return;
+      if (isInvite) {
+        body.send_invite = true;
+        if (!body.email || !body.full_name) {
+          alert("Compila email e nome.");
+          return;
+        }
+      } else {
+        body.password = createForm.password;
+        if (!body.email || !body.password || !body.full_name) {
+          alert("Compila email, password e nome.");
+          return;
+        }
+        if (body.password.length < 8) {
+          alert("Password: minimo 8 caratteri.");
+          return;
+        }
       }
       await apiService.createAdminUser(body);
       setCreateForm({
@@ -524,13 +547,26 @@ export default function UsersAdminPage({ onBack }) {
         role: "auditor",
         auditor_org_id: "",
       });
+      setCreateMode("password");
       setShowCreate(false);
       await reloadUsers();
-      alert("Utente creato.");
+      alert(isInvite ? "Utente creato. Invito inviato via email." : "Utente creato.");
     } catch (err) {
       alert(err.message || "Errore creazione utente");
     } finally {
       setCreateSubmitting(false);
+    }
+  };
+
+  const resendInvite = async (u) => {
+    setResendingInviteId(u.user_id);
+    try {
+      await apiService.resendUserInvite(u.user_id);
+      alert(`Invito reinviato a ${u.email}.`);
+    } catch (err) {
+      alert(err.message || "Errore reinvio invito");
+    } finally {
+      setResendingInviteId(null);
     }
   };
 
@@ -600,18 +636,51 @@ export default function UsersAdminPage({ onBack }) {
             />
           </div>
           <div className="form-row">
-            <label htmlFor="create-password">Password (min. 8)</label>
-            <input
-              id="create-password"
-              type="password"
-              autoComplete="new-password"
-              value={createForm.password}
-              onChange={(e) =>
-                setCreateForm((f) => ({ ...f, password: e.target.value }))
-              }
-              required
-            />
+            <label>Come impostare la password</label>
+            <div className="create-mode-choice">
+              <label className="radio-label">
+                <input
+                  type="radio"
+                  name="create-mode"
+                  value="password"
+                  checked={createMode === "password"}
+                  onChange={() => setCreateMode("password")}
+                />
+                <span>Imposta password ora</span>
+              </label>
+              <label className="radio-label">
+                <input
+                  type="radio"
+                  name="create-mode"
+                  value="invite"
+                  checked={createMode === "invite"}
+                  onChange={() => setCreateMode("invite")}
+                />
+                <span>Invia invito via email</span>
+              </label>
+            </div>
+            {createMode === "invite" && (
+              <p className="form-hint">
+                L&apos;utente riceverà un&apos;email con un link per impostare da solo la
+                propria password (valido 72 ore).
+              </p>
+            )}
           </div>
+          {createMode === "password" && (
+            <div className="form-row">
+              <label htmlFor="create-password">Password (min. 8)</label>
+              <input
+                id="create-password"
+                type="password"
+                autoComplete="new-password"
+                value={createForm.password}
+                onChange={(e) =>
+                  setCreateForm((f) => ({ ...f, password: e.target.value }))
+                }
+                required
+              />
+            </div>
+          )}
           <div className="form-row">
             <label htmlFor="create-name">Nome e cognome</label>
             <input
@@ -684,7 +753,11 @@ export default function UsersAdminPage({ onBack }) {
               isOrphanAuditor(createForm.role, createForm.auditor_org_id)
             }
           >
-            {createSubmitting ? "Creazione..." : "Crea utente"}
+            {createSubmitting
+              ? "Creazione..."
+              : createMode === "invite"
+                ? "Crea utente e invia invito"
+                : "Crea utente"}
           </button>
         </form>
       )}
@@ -802,6 +875,9 @@ export default function UsersAdminPage({ onBack }) {
                   {!active && (
                     <StatusBadge type="user" status="inactive" size="small" />
                   )}
+                  {active && userIsPending(u) && (
+                    <StatusBadge type="user" status="pending" size="small" />
+                  )}
                   {u.auditor_org_name ? (
                     <span className="user-studio">
                       Studio: {u.auditor_org_name}
@@ -918,6 +994,16 @@ export default function UsersAdminPage({ onBack }) {
                     >
                       {savingId === u.user_id ? "Salvataggio..." : "Salva dati utente"}
                     </button>
+                    {active && userIsPending(u) && (
+                      <button
+                        type="button"
+                        className="btn btn-secondary btn-sm"
+                        disabled={resendingInviteId === u.user_id}
+                        onClick={() => resendInvite(u)}
+                      >
+                        {resendingInviteId === u.user_id ? "Invio..." : "Reinvia invito"}
+                      </button>
+                    )}
                     {active && !isSelf && (
                       <button
                         type="button"
