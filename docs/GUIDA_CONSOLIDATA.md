@@ -1502,6 +1502,16 @@ Sul VPS gira un secondo processo Node.js **separato** dal servizio di produzione
 | **Servizio systemd** | `sgq-backend-test` |
 | **File env VPS** | `/var/www/sgq-backend/.env.test` |
 | **Config nginx** | `/etc/nginx/sites-available/sgq-backend-test` (blocco `listen 8444 ssl` — porta non esposta provider) |
+
+---
+
+### Sessione 23/07/2026 — Gap analysis 3834 P0: bridge licenza CND/SALDATURA + "Registra NC" da verbali CND
+
+**P0-1 (licenza CND implicita in SALDATURA)**: ISO 3834-3 §8.2/§14 (personale NDT, ispezioni/prove) sono requisiti integrali del SGQ saldatura, non un modulo a parte — chi acquista solo `saldatura` deve accedere anche a `cnd`. Fix minimo e centralizzato: mappa `MODULE_ACCESS_IMPLICATIONS = { saldatura: ['cnd'] }` in `moduleLicense.service.js` (`expandWithImpliedModuleKeys`, usata da `moduleLicense.middleware.js`) + logica speculare in `app/src/utils/licenseUtils.js` (`hasLicensedModule`, usata da `LicensedRoute`, `AppLayout`, `AuthContext`). **Non** tocca `organizations.licensed_modules` (moduli acquistati) — solo l'insieme derivato di accesso a runtime. `cnd` resta vendibile standalone (relazione a senso unico: saldatura→cnd, non l'inverso).
+
+**P0-2 (bridge NC da verbali CND)**: in `NdtReportsPage.jsx` esisteva già un link aggregato "Crea Non Conformità" (sezione Note, categoria `operational` — già in `CK_nc_source_category`, nessuna migrazione necessaria). Aggiunto anche un pulsante per-riga "→ Registra NC" su ogni marca con esito R/S, riusando lo stesso `NcCreateModal` (nessun componente parallelo) con descrizione precompilata (verbale, marca, esito, codice difetto, note).
+
+**Lezione**: prima di implementare un bridge "nuovo", verificare se esiste già un pattern parziale (qui l'aggregato NC e il bundle `cnd|strumenti|saldatura` in lettura su `equipment.routes.js`, ADR-016) — spesso il gap è solo di copertura (per-riga vs aggregato, lettura vs full-access), non di assenza totale.
 | `NODE_ENV` | `test`, `LOG_LEVEL=debug` |
 | `GEMINI_API_KEY` | ✅ presente in `.env.test`, allineata a produzione (`.env`) — abilita estrazione requisiti da disegni (adapter Gemini) anche su test/demo |
 
