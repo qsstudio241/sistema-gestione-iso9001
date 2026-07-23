@@ -2238,6 +2238,14 @@ class ApiService {
     async deleteNdtReport(id)            { return this.delete(`/ndt-reports/${id}`); }
     async getNdtReportStats(params = {}) { const qs = new URLSearchParams(params).toString(); return this.get(`/ndt-reports/stats${qs ? '?' + qs : ''}`); }
 
+    // ─── Saldatura — RDP (Rapporto di Prova, Scenario 4 — Mason) ────────────
+    async getRdpReportList(params = {})  { const qs = new URLSearchParams(params).toString(); return this.get(`/rdp-reports${qs ? '?' + qs : ''}`); }
+    async getRdpReport(id)               { return this.get(`/rdp-reports/${id}`); }
+    async createRdpReport(data)          { return this.post('/rdp-reports', data); }
+    async updateRdpReport(id, data)      { return this.put(`/rdp-reports/${id}`, data); }
+    async deleteRdpReport(id)            { return this.delete(`/rdp-reports/${id}`); }
+    async getRdpReportStats(params = {}) { const qs = new URLSearchParams(params).toString(); return this.get(`/rdp-reports/stats${qs ? '?' + qs : ''}`); }
+
     // ─── Saldatura — Welding Book (IOF ISO 3834) ─────────────────────────────
     async getWeldingBookList(params = {}) { const qs = new URLSearchParams(params).toString(); return this.get(`/welding-books${qs ? '?' + qs : ''}`); }
     async getWeldingBook(id)               { return this.get(`/welding-books/${id}`); }
