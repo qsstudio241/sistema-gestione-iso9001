@@ -20,7 +20,9 @@ async function listAuditorOrgs(req, res) {
         let result;
         if (isSuperadmin) {
             // Superadmin (piattaforma): vede tutti gli studi di tutti i tenant
-            // — serve per assegnare correttamente gli auditor cross-tenant dalla UI
+            // — usata da "Licenze moduli per studio" (UsersAdminPage) e dal selettore
+            // studio di CompaniesPage; la creazione utente resta sempre scoped
+            // all'organizzazione dell'attore (createUser), non usa questa lista.
             result = await query(`
                 SELECT ao.id, ao.organization_id, ao.name, ao.email, ao.subscription_plan, ao.is_active, ao.created_at, ao.updated_at,
                        o.organization_name, o.licensed_modules
