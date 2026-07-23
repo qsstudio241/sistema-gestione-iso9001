@@ -482,3 +482,43 @@
   border-radius: 4px;
   font-size: 0.9rem;
 }
+
+/* ── Storico modifiche (user_audit_log) per riga utente ──────────────────── */
+.user-audit-log-details {
+  margin-top: 0.75rem;
+  border-top: 1px solid #e8e8e8;
+  padding-top: 0.5rem;
+}
+
+.audit-log-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.audit-log-item {
+  display: flex;
+  align-items: baseline;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+  font-size: 0.88rem;
+  padding: 0.3rem 0;
+  border-bottom: 1px dashed #eee;
+}
+
+.audit-log-date {
+  color: #6c757d;
+  font-size: 0.8rem;
+  white-space: nowrap;
+}
+
+.audit-log-actor {
+  font-weight: 600;
+}
+
+.audit-log-action {
+  color: #333;
+}
