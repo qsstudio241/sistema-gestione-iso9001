@@ -47,6 +47,7 @@ const WeldingProceduresPage = React.lazy(() => import("./pages/WeldingProcedures
 const WeldingDashboardPage = React.lazy(() => import("./pages/WeldingDashboardPage"));
 const EquipmentPage  = React.lazy(() => import("./pages/EquipmentPage"));
 const NdtReportsPage = React.lazy(() => import("./pages/NdtReportsPage"));
+const RDPModule = React.lazy(() => import("./pages/RDPModule"));
 const WeldingBooksPage = React.lazy(() => import("./pages/WeldingBooksPage"));
 const ProjectsPage = React.lazy(() => import("./pages/ProjectsPage"));
 const DeadlinesPage = React.lazy(() => import("./pages/DeadlinesPage"));
@@ -161,6 +162,7 @@ function AppContent() {
         <Route path="/saldatura" element={<LicensedRoute moduleKey="saldatura"><WeldingDashboardPage /></LicensedRoute>} />
         <Route path="/cnd/strumenti" element={<LicensedRoute moduleKey="cnd"><EquipmentPage /></LicensedRoute>} />
         <Route path="/cnd/verbali"   element={<LicensedRoute moduleKey="cnd"><NdtReportsPage /></LicensedRoute>} />
+        <Route path="/saldatura/rdp" element={<LicensedRoute moduleKey="saldatura"><RDPModule /></LicensedRoute>} />
 
         {/* Gestione aziende — dettaglio prima della lista (prefix match router) */}
         <Route

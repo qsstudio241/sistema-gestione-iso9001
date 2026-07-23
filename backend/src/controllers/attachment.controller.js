@@ -15,21 +15,26 @@ const path = require('path');
 const fs = require('fs').promises;
 const fsSync = require('fs');
 
-/** Join contesto audit/NC o verbale CND + predicato scope studio. */
+/** Join contesto audit/NC, verbale CND o rapporto RDP + predicato scope studio. */
 function attachmentScope(reqUser) {
     const auditScope = studioScopeClause(reqUser, 'a');
     const ndtScope = studioScopeClause(reqUser, 'ndt_r');
+    const rdpScope = studioScopeClause(reqUser, 'rdp_r');
 
+    // Ogni allegato appartiene a UNA sola fonte (audit/NC, verbale CND, rapporto RDP).
+    // Il branch "audit" e' quello di default (nessuno degli id specialistici impostato).
+    const branches = [
+        { nullCheck: 'att.ndt_report_item_id IS NULL AND att.rdp_test_id IS NULL', scope: auditScope },
+        { nullCheck: 'att.ndt_report_item_id IS NOT NULL', scope: ndtScope },
+        { nullCheck: 'att.rdp_test_id IS NOT NULL', scope: rdpScope },
+    ];
+    const hasAnyScope = branches.some((b) => b.scope.clause);
     let rbacClause = '';
-    if (auditScope.clause && ndtScope.clause) {
-        rbacClause = ` AND (
-            (att.ndt_report_item_id IS NULL AND (${auditScope.clause}))
-            OR (att.ndt_report_item_id IS NOT NULL AND (${ndtScope.clause}))
-        )`;
-    } else if (auditScope.clause) {
-        rbacClause = ` AND (att.ndt_report_item_id IS NULL OR (${auditScope.clause}))`;
-    } else if (ndtScope.clause) {
-        rbacClause = ` AND (att.ndt_report_item_id IS NOT NULL OR (${ndtScope.clause}))`;
+    if (hasAnyScope) {
+        const orClauses = branches.map((b) => (
+            b.scope.clause ? `(${b.nullCheck} AND (${b.scope.clause}))` : `(${b.nullCheck})`
+        ));
+        rbacClause = ` AND (${orClauses.join(' OR ')})`;
     }
 
     return {
@@ -38,10 +43,13 @@ function attachmentScope(reqUser) {
       LEFT JOIN audits a ON a.audit_id = COALESCE(att.audit_id, nc.audit_id)
       LEFT JOIN ndt_report_items ndt_item ON att.ndt_report_item_id = ndt_item.id
       LEFT JOIN ndt_reports ndt_r ON ndt_item.report_id = ndt_r.id AND ndt_r.is_deleted = 0
+      LEFT JOIN rdp_tests rdp_t ON att.rdp_test_id = rdp_t.id
+      LEFT JOIN rdp_sections rdp_s ON rdp_t.section_id = rdp_s.id
+      LEFT JOIN rdp_reports rdp_r ON rdp_s.report_id = rdp_r.id AND rdp_r.is_deleted = 0
     `,
-        orgClause: 'COALESCE(a.organization_id, ndt_r.organization_id) = @organization_id',
+        orgClause: 'COALESCE(a.organization_id, ndt_r.organization_id, rdp_r.organization_id) = @organization_id',
         rbacClause,
-        scopeParams: { ...auditScope.params, ...ndtScope.params },
+        scopeParams: { ...auditScope.params, ...ndtScope.params, ...rdpScope.params },
     };
 }
 
@@ -111,6 +119,10 @@ async function listAttachments(req, res) {
         if (req.query.ndt_report_item_id) {
             whereConditions.push('att.ndt_report_item_id = @ndt_report_item_id');
             params.ndt_report_item_id = parseInt(req.query.ndt_report_item_id);
+        }
+        if (req.query.rdp_test_id) {
+            whereConditions.push('att.rdp_test_id = @rdp_test_id');
+            params.rdp_test_id = parseInt(req.query.rdp_test_id);
         }
 
         if (category) {
@@ -235,7 +247,7 @@ async function getAttachmentById(req, res) {
 async function uploadAttachment(req, res) {
     try {
         const { user_id, organization_id } = req.user;
-        const { audit_id, nc_id, question_id, custom_item_id, ndt_report_item_id, category = 'evidence', description } = req.body;
+        const { audit_id, nc_id, question_id, custom_item_id, ndt_report_item_id, rdp_test_id, category = 'evidence', description } = req.body;
 
         // Validazione: deve avere file
         if (!req.file) {
@@ -257,6 +269,18 @@ async function uploadAttachment(req, res) {
             if (itemCheck.recordset.length === 0) {
                 await fs.unlink(req.file.path).catch(() => { });
                 return res.status(404).json({ error: 'Componente verbale CND non trovato', code: 'NDT_ITEM_NOT_FOUND' });
+            }
+        } else if (rdp_test_id) {
+            // Allegato RDP (rdp_test_id): non richiede audit_id — verifica ownership tramite report padre
+            const testCheck = await query(`
+                SELECT t.id FROM rdp_tests t
+                JOIN rdp_sections s ON s.id = t.section_id
+                JOIN rdp_reports r ON r.id = s.report_id
+                WHERE t.id = @test_id AND r.organization_id = @organization_id AND r.is_deleted = 0
+            `, { test_id: parseInt(rdp_test_id), organization_id });
+            if (testCheck.recordset.length === 0) {
+                await fs.unlink(req.file.path).catch(() => { });
+                return res.status(404).json({ error: 'Prova RDP non trovata', code: 'RDP_TEST_NOT_FOUND' });
             }
         } else if ((!audit_id && !nc_id) || (audit_id && nc_id)) {
             // Validazione standard: deve avere audit_id o nc_id (ma non entrambi)
@@ -386,6 +410,7 @@ async function uploadAttachment(req, res) {
         question_id,
         custom_item_id,
         ndt_report_item_id,
+        rdp_test_id,
         file_name,
         file_type,
         file_size,
@@ -403,6 +428,7 @@ async function uploadAttachment(req, res) {
         @question_id,
         @custom_item_id,
         @ndt_report_item_id,
+        @rdp_test_id,
         @file_name,
         @file_type,
         @file_size,
@@ -419,6 +445,7 @@ async function uploadAttachment(req, res) {
             question_id: question_id ? parseInt(question_id) : null,
             custom_item_id: custom_item_id ? parseInt(custom_item_id) : null,
             ndt_report_item_id: ndt_report_item_id ? parseInt(ndt_report_item_id) : null,
+            rdp_test_id: rdp_test_id ? parseInt(rdp_test_id) : null,
             file_name: req.file.originalname,
             file_type: path.extname(req.file.originalname).toLowerCase(),
             file_size: req.file.size,
@@ -478,7 +505,7 @@ async function downloadAttachment(req, res) {
         const { joinSql, orgClause, rbacClause, scopeParams } = attachmentScope(req.user);
 
         const result = await query(`
-      SELECT att.*, COALESCE(a.organization_id, ndt_r.organization_id) AS audit_org_id
+      SELECT att.*, COALESCE(a.organization_id, ndt_r.organization_id, rdp_r.organization_id) AS audit_org_id
       FROM attachments att
       ${joinSql}
       WHERE att.attachment_id = @id 
@@ -540,7 +567,7 @@ async function deleteAttachment(req, res) {
         const { joinSql, orgClause, rbacClause, scopeParams } = attachmentScope(req.user);
 
         const result = await query(`
-      SELECT att.*, COALESCE(a.organization_id, ndt_r.organization_id) AS audit_org_id
+      SELECT att.*, COALESCE(a.organization_id, ndt_r.organization_id, rdp_r.organization_id) AS audit_org_id
       FROM attachments att
       ${joinSql}
       WHERE att.attachment_id = @id 
@@ -608,7 +635,7 @@ async function viewAttachment(req, res) {
         const { joinSql, orgClause, rbacClause, scopeParams } = attachmentScope(req.user);
 
         const result = await query(`
-      SELECT att.*, COALESCE(a.organization_id, ndt_r.organization_id) AS audit_org_id
+      SELECT att.*, COALESCE(a.organization_id, ndt_r.organization_id, rdp_r.organization_id) AS audit_org_id
       FROM attachments att
       ${joinSql}
       WHERE att.attachment_id = @id 

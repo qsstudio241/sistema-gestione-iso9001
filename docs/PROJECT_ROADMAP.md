@@ -172,7 +172,7 @@ Gli auditor lo ricevono solo quando stabile e collaudato — zero interruzioni o
 | ISO 14001 checklist completa | 53 domande in 7 sezioni clausola (migration 049, prod 07/05/2026) | ✅ Completato |
 | ISO 45001 checklist | Da norma PDF disponibile | 🔲 Backlog |
 | Modulo SAL (Scenario 3) | Tracker requisiti×stati + export Word + AI suggeritore (Fasi 0–5-B) — spec: [MODULO_SAL_SCOPO_E_ROADMAP.md](specs/MODULO_SAL_SCOPO_E_ROADMAP.md) | ✅ Live (smoke L3 consigliato) |
-| Modulo RDP (Scenario 4) | Nuovo tipo documento per Mason — richiede foto embedded | 🔲 Backlog |
+| Modulo RDP (Scenario 4) | MVP backend+frontend (branch `feat/rdp-mason-module-mvp`): tabelle `rdp_reports/rdp_sections/rdp_tests`, CRUD `rdp.controller.js`, `RDPModule.jsx` con foto obbligatorie per prova (`RdpTestAttachments.jsx`) | 🟡 MVP in PR — **Word export bloccato**: manca `app/public/templates/rdp-mason-report.docx` (richiede input/layout dal cliente Mason, vedi nota sotto) |
 | Campo norm_excerpt | Stralcio norma nel report Word | ✅ ISO 14001 (07/05/2026) · 🔲 ISO 9001 backlog |
 
 **Progress Overall**: ~85% funzionalità core Scenario 1 · **Macro piattaforma** (SaaS completo, registry documenti, sprint collegati): indicativo **~65%**
@@ -304,6 +304,8 @@ Word: template RDP con tabelle prove e galleria foto embedded
 ```
 
 > ✅ **Bug foto embedded risolto (2026-04-23)**: Il codice di embedding (`xmlImageOoxml`) usa ora `imgId` univoci per range separati (100+ per checklist ISO, 30000+ per custom, 88001+ per logo azienda, 89001+ per logo organizzazione). `usePreview` e `preloadImagesIntoAudit` sono attivi. Il prerequisito per RDP è soddisfatto.
+
+> ✅ **MVP implementato (branch `feat/rdp-mason-module-mvp`)**: migrazione `database/migrations/127_rdp_module.sql` (`audits.document_type` + tabelle dedicate `rdp_reports`/`rdp_sections`/`rdp_tests`), backend `rdp.controller.js` + `rdp.routes.js` (licenza `saldatura`), frontend `RDPModule.jsx` + `RdpTestAttachments.jsx` (foto obbligatorie, riuso pattern CND). **Decisione architetturale**: dati RDP su tabelle dedicate (pattern `ndt_reports`) invece che dentro `audits`/checklist — evita di replicare il motore offline-first (IndexedDB/sync/lock) per un modulo che non ne ha bisogno; `audits.document_type` resta comunque disponibile per il registro documentale futuro. **Blocco residuo**: Word export non implementato — manca `app/public/templates/rdp-mason-report.docx` (layout specifico cliente Mason, non deducibile dal solo nome file; richiede il template Word di riferimento o indicazioni dal committente prima di generare il file).
 
 #### Struttura `document_type` in `audits`
 ```sql
