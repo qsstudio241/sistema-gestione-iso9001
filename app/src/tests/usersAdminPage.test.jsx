@@ -17,6 +17,9 @@ vi.mock("../contexts/AuthContext", () => ({
   useAuth: () => ({ user: mockAuthUser }),
 }));
 
+const mockCreateAdminUser = vi.fn();
+const mockResendUserInvite = vi.fn();
+
 vi.mock("../services/apiService", () => ({
   default: {
     getAdminUsers: (...args) => mockGetAdminUsers(...args),
@@ -27,7 +30,8 @@ vi.mock("../services/apiService", () => ({
     removeUserCompanyAccess: (...args) => mockRemoveUserCompanyAccess(...args),
     getUserAuditLog: (...args) => mockGetUserAuditLog(...args),
     patchAdminUser: vi.fn(),
-    createAdminUser: vi.fn(),
+    createAdminUser: (...args) => mockCreateAdminUser(...args),
+    resendUserInvite: (...args) => mockResendUserInvite(...args),
     deactivateAdminUser: vi.fn(),
     updateUserStandards: vi.fn(),
     patchOrgLicenses: vi.fn(),
@@ -67,6 +71,9 @@ const AUDITOR_ORGS = [
 ];
 
 beforeEach(() => {
+  mockCreateAdminUser.mockReset().mockResolvedValue({ success: true, data: {} });
+  mockResendUserInvite.mockReset().mockResolvedValue({ success: true });
+  global.alert = vi.fn();
   mockGetAdminUsers.mockResolvedValue({ data: USERS_CROSS_TENANT });
   mockGetAuditorOrgs.mockResolvedValue({ data: AUDITOR_ORGS });
   mockGetUserCompanyAccess.mockResolvedValue({
@@ -231,5 +238,127 @@ describe("UsersAdminPage — sezione Storico modifiche (UAL-2)", () => {
     await waitFor(() => {
       expect(screen.getByText("Nessuna modifica registrata per questo utente.")).toBeInTheDocument();
     });
+  });
+});
+
+describe("UsersAdminPage — creazione utente: modalità password vs invito (UAL-3)", () => {
+  beforeEach(() => {
+    mockAuthUser = { user_id: 5, role: "admin", organization_id: 1001, auditor_org_id: 10 };
+    mockGetAdminUsers.mockResolvedValue({ data: [USERS_CROSS_TENANT[0]] });
+  });
+
+  it("di default è selezionata la modalità 'Imposta password ora' e il campo password è visibile", async () => {
+    const user = userEvent.setup();
+    render(<UsersAdminPage />);
+
+    await waitFor(() => {
+      expect(screen.getByText("Mario Rossi")).toBeInTheDocument();
+    });
+
+    await user.click(screen.getByText("+ Nuovo utente"));
+
+    const passwordRadio = screen.getByRole("radio", { name: "Imposta password ora" });
+    const inviteRadio = screen.getByRole("radio", { name: "Invia invito via email" });
+    expect(passwordRadio).toBeChecked();
+    expect(inviteRadio).not.toBeChecked();
+    expect(screen.getByLabelText("Password (min. 8)")).toBeInTheDocument();
+  });
+
+  it("crea l'utente con password quando la modalità classica è selezionata (comportamento invariato)", async () => {
+    const user = userEvent.setup();
+    render(<UsersAdminPage />);
+
+    await waitFor(() => {
+      expect(screen.getByText("Mario Rossi")).toBeInTheDocument();
+    });
+
+    await user.click(screen.getByText("+ Nuovo utente"));
+    await user.type(screen.getByLabelText("Email"), "nuovo@test.it");
+    await user.type(screen.getByLabelText("Password (min. 8)"), "password123");
+    await user.type(screen.getByLabelText("Nome e cognome"), "Nuovo Utente");
+    await user.selectOptions(screen.getByLabelText("Ruolo"), "viewer");
+    await user.click(screen.getByRole("button", { name: "Crea utente" }));
+
+    await waitFor(() => {
+      expect(mockCreateAdminUser).toHaveBeenCalledWith(
+        expect.objectContaining({
+          email: "nuovo@test.it",
+          password: "password123",
+          full_name: "Nuovo Utente",
+        })
+      );
+    });
+    expect(mockCreateAdminUser.mock.calls[0][0].send_invite).toBeUndefined();
+  });
+
+  it("selezionando 'Invia invito via email' nasconde il campo password e invia send_invite: true", async () => {
+    const user = userEvent.setup();
+    render(<UsersAdminPage />);
+
+    await waitFor(() => {
+      expect(screen.getByText("Mario Rossi")).toBeInTheDocument();
+    });
+
+    await user.click(screen.getByText("+ Nuovo utente"));
+    await user.click(screen.getByRole("radio", { name: "Invia invito via email" }));
+
+    expect(screen.queryByLabelText("Password (min. 8)")).not.toBeInTheDocument();
+
+    await user.type(screen.getByLabelText("Email"), "invitato@test.it");
+    await user.type(screen.getByLabelText("Nome e cognome"), "Invitato Test");
+    await user.selectOptions(screen.getByLabelText("Ruolo"), "viewer");
+    await user.click(screen.getByRole("button", { name: "Crea utente e invia invito" }));
+
+    await waitFor(() => {
+      expect(mockCreateAdminUser).toHaveBeenCalledWith(
+        expect.objectContaining({
+          email: "invitato@test.it",
+          full_name: "Invitato Test",
+          send_invite: true,
+        })
+      );
+    });
+    expect(mockCreateAdminUser.mock.calls[0][0].password).toBeUndefined();
+  });
+});
+
+describe("UsersAdminPage — badge 'In attesa di attivazione' e reinvio invito (UAL-3)", () => {
+  beforeEach(() => {
+    mockAuthUser = { user_id: 5, role: "admin", organization_id: 1001, auditor_org_id: 10 };
+    mockGetAdminUsers.mockResolvedValue({
+      data: [{ ...USERS_CROSS_TENANT[0], pending_activation: true }],
+    });
+  });
+
+  it("mostra il badge 'In attesa di attivazione' e il pulsante Reinvia invito per un utente pending", async () => {
+    const user = userEvent.setup();
+    render(<UsersAdminPage />);
+
+    await waitFor(() => {
+      expect(screen.getByText("Mario Rossi")).toBeInTheDocument();
+    });
+
+    expect(screen.getByText("In attesa di attivazione")).toBeInTheDocument();
+    const resendButton = screen.getByRole("button", { name: "Reinvia invito" });
+
+    await user.click(resendButton);
+
+    await waitFor(() => {
+      expect(mockResendUserInvite).toHaveBeenCalledWith(1);
+    });
+  });
+
+  it("non mostra il badge pending né il pulsante Reinvia invito per un utente già attivato", async () => {
+    mockGetAdminUsers.mockResolvedValue({
+      data: [{ ...USERS_CROSS_TENANT[0], pending_activation: false }],
+    });
+    render(<UsersAdminPage />);
+
+    await waitFor(() => {
+      expect(screen.getByText("Mario Rossi")).toBeInTheDocument();
+    });
+
+    expect(screen.queryByText("In attesa di attivazione")).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Reinvia invito" })).not.toBeInTheDocument();
   });
 });
