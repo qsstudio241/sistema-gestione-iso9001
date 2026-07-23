@@ -52,6 +52,7 @@ const STATUS_CONFIGS = {
     active:   { label: "Attivo",       color: "green"  },
     inactive: { label: "Disattivato",  color: "red"    },
     orphan:   { label: "Incompleto",   color: "yellow" },
+    pending:  { label: "In attesa di attivazione", color: "yellow" },
   },
   license: {
     active:   { label: "Attivo",      color: "green" },

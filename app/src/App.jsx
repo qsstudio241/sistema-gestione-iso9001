@@ -12,7 +12,7 @@
  */
 
 import React, { useEffect, Suspense } from "react";
-import { RouterProvider, Routes, Route, useNavigate } from "./contexts/RouterContext";
+import { RouterProvider, Routes, Route, useNavigate, useRouter } from "./contexts/RouterContext";
 import { StorageProvider } from "./contexts/StorageContext";
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
 import { ErrorBoundary } from "./components/SharedComponents";
@@ -54,6 +54,7 @@ const DeadlinesPage = React.lazy(() => import("./pages/DeadlinesPage"));
 const ManagementReviewsPage = React.lazy(() => import("./pages/ManagementReviewsPage"));
 const SALModule = React.lazy(() => import("./pages/SALModule"));
 const DevUiCatalog = import.meta.env.DEV ? React.lazy(() => import("./pages/DevUiCatalog")) : null;
+const AcceptInvitePage = React.lazy(() => import("./pages/AcceptInvitePage"));
 import ModuleLocked from "./components/ModuleLocked";
 import LicensedRoute from "./components/LicensedRoute";
 import Login from "./components/Login";
@@ -86,11 +87,24 @@ function BackWrapper({ children }) {
 // ─── Contenuto app autenticato ────────────────────────────────────────────────
 
 function AppContent() {
+  const { path } = useRouter();
   const { user, isAuthenticated, isLoading: authLoading } = useAuth();
   const { currentAudit, fsProvider } = useStorage();
 
   // Auto-save checkpoint ogni 30 secondi
   useCheckpointSaver(currentAudit, fsProvider, { intervalMs: 30000, enabled: true });
+
+  // Rotta pubblica pre-login (G10, piano UAL Fase 1/8.1): deve essere raggiungibile
+  // PRIMA del redirect a <Login/>, indipendentemente dallo stato di autenticazione
+  // (es. una sessione admin già attiva in un'altra tab non deve nascondere il link).
+  const acceptInviteMatch = path.match(/^\/accept-invite\/([^/]+)/);
+  if (acceptInviteMatch) {
+    return (
+      <Suspense fallback={<RouteLoadingFallback />}>
+        <AcceptInvitePage token={decodeURIComponent(acceptInviteMatch[1])} />
+      </Suspense>
+    );
+  }
 
   // Schermata di caricamento
   if (authLoading) {

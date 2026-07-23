@@ -759,6 +759,37 @@ class ApiService {
         return this.get(`/admin/users/${userId}/audit-log${qs}`);
     }
 
+    /**
+     * Reinvia il link di invito a un utente in attesa di attivazione (es. link scaduto).
+     * @param {number} userId
+     */
+    async resendUserInvite(userId) {
+        return this.post(`/admin/users/${userId}/resend-invite`, {});
+    }
+
+    // ==========================================
+    // INVITO UTENTE (UAL-3) — endpoint pubblici, nessun token JWT
+    // ==========================================
+
+    /**
+     * Verifica un token di invito prima di mostrare il form "imposta password"
+     * (AcceptInvitePage). Non richiede autenticazione.
+     * @param {string} token
+     */
+    async checkInviteToken(token) {
+        return this.get(`/auth/accept-invite/${encodeURIComponent(token)}`, { includeAuth: false });
+    }
+
+    /**
+     * Accetta l'invito: imposta la password scelta e attiva l'account.
+     * Non richiede autenticazione e non effettua login automatico.
+     * @param {string} token
+     * @param {string} password
+     */
+    async acceptInvite(token, password) {
+        return this.post('/auth/accept-invite', { token, password }, { includeAuth: false });
+    }
+
     // ==========================================
     // CHECKLIST ENDPOINTS
     // ==========================================
