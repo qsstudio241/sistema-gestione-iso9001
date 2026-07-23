@@ -25,6 +25,7 @@ router.post('/admin/users/:id/company-access', adminOnly, adminController.addUse
 router.delete('/admin/users/:id/company-access/:companyId', adminOnly, adminController.removeUserCompanyAccess);
 
 router.get('/admin/users/:id/audit-log', adminOnly, adminController.getUserAuditLog);
+router.post('/admin/users/:id/resend-invite', adminOnly, adminController.resendUserInvite);
 
 // Licenze: admin può LEGGERE le proprie licenze; solo superadmin può MODIFICARLE
 router.get('/admin/licenses', adminOnly, adminController.getOrgLicenses);
