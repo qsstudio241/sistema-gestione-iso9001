@@ -9,6 +9,7 @@ import { formatDate } from "../utils/dateHelpers";
 import StatusBadge from "../components/StatusBadge";
 import PencilIcon from "../components/icons/PencilIcon";
 import TrashIcon from "../components/icons/TrashIcon";
+import { getWelderQualificationWarning } from "../utils/welderQualificationExpiryWarnings";
 import "./ProjectsPage.css";
 
 const PROJECT_STATUSES = [
@@ -17,6 +18,47 @@ const PROJECT_STATUSES = [
   { value: "chiusa",  label: "Chiusa" },
   { value: "sospesa", label: "Sospesa" },
 ];
+
+// Stati di commessa che richiedono il riesame tecnico §5.3 completato (gate soft).
+const STATUSES_REQUIRING_TECHNICAL_REVIEW = ["aperta"];
+
+// Punti chiave del riesame tecnico ISO 3834-3 §5.3 (elenco sintetico, non la norma integrale).
+const TECHNICAL_REVIEW_ITEMS = [
+  { key: "materiale_base",        label: "Materiale base" },
+  { key: "requisiti_qualita",     label: "Requisiti di qualita\u2019 delle saldature" },
+  { key: "posizione_accessibilita", label: "Posizione e accessibilita\u2019 delle saldature" },
+  { key: "specifica_procedure",   label: "Specifica procedure saldatura / CND / trattamento termico" },
+  { key: "criterio_qualificazione_procedure", label: "Criterio di qualificazione delle procedure" },
+  { key: "qualificazione_personale", label: "Qualificazione del personale" },
+  { key: "identificazione_rintracciabilita", label: "Identificazione e rintracciabilita\u2019" },
+  { key: "controllo_qualita",     label: "Controllo qualita\u2019" },
+  { key: "ispezioni_prove",       label: "Ispezioni e prove" },
+  { key: "subfornitura",          label: "Subfornitura" },
+  { key: "trattamenti_termici",   label: "Trattamenti termici" },
+  { key: "altri_requisiti",       label: "Altri requisiti di saldatura" },
+  { key: "metodi_particolari",    label: "Metodi particolari" },
+  { key: "dimensioni_giunti",     label: "Dimensioni dei giunti" },
+  { key: "luogo_esecuzione",      label: "Luogo di esecuzione" },
+  { key: "condizioni_ambientali", label: "Condizioni ambientali" },
+  { key: "gestione_nc",           label: "Gestione delle non conformita\u2019" },
+];
+
+/** Parsea in modo defensivo la checklist di riesame tecnico (JSON string o oggetto). */
+function parseTechnicalReviewChecklist(raw) {
+  if (!raw) return {};
+  if (typeof raw === "object") return raw;
+  try {
+    const parsed = JSON.parse(raw);
+    return parsed && typeof parsed === "object" ? parsed : {};
+  } catch {
+    return {};
+  }
+}
+
+/** True se tutti i punti §5.3 risultano verificati (checkbox spuntata). */
+function isTechnicalReviewComplete(checklist) {
+  return TECHNICAL_REVIEW_ITEMS.every((item) => checklist?.[item.key]?.checked);
+}
 
 //  Form modale commessa 
 
@@ -42,6 +84,21 @@ function ProjectFormModal({ project, wpsList, qualifications, onSave, onClose })
   });
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
+  const [technicalReviewChecklist, setTechnicalReviewChecklist] = useState(() =>
+    parseTechnicalReviewChecklist(project?.technical_review_checklist)
+  );
+  const [technicalReviewOpen, setTechnicalReviewOpen] = useState(false);
+
+  function setTechnicalReviewItem(key, patch) {
+    setTechnicalReviewChecklist((prev) => ({
+      ...prev,
+      [key]: { ...(prev[key] || {}), ...patch },
+    }));
+  }
+
+  const technicalReviewComplete = isTechnicalReviewComplete(technicalReviewChecklist);
+  const showTechnicalReviewWarning =
+    STATUSES_REQUIRING_TECHNICAL_REVIEW.includes(form.status) && !technicalReviewComplete;
 
   useEffect(() => {
     if (project?.applicable_wps_ids && typeof project.applicable_wps_ids === "string") {
@@ -71,6 +128,7 @@ function ProjectFormModal({ project, wpsList, qualifications, onSave, onClose })
       const payload = {
         ...form,
         applicable_wps_ids: JSON.stringify(form.applicable_wps_ids || []),
+        technical_review_checklist: JSON.stringify(technicalReviewChecklist || {}),
       };
       let savedProjectId;
       if (project?.id) {
@@ -155,6 +213,56 @@ function ProjectFormModal({ project, wpsList, qualifications, onSave, onClose })
               </div>
             </div>
 
+            {/* Riesame tecnico ISO 3834-3 §5.3 (gate soft: non blocca il salvataggio) */}
+            <div className="pj-wps-section">
+              <button
+                type="button"
+                className="pj-section-toggle"
+                onClick={() => setTechnicalReviewOpen((v) => !v)}
+              >
+                <h4 className="pj-section-label" style={{ margin: 0 }}>
+                  Riesame tecnico (ISO 3834-3 {"\u00A7"}5.3)
+                  {technicalReviewComplete
+                    ? <span className="pj-badge-ok"> Completato</span>
+                    : <span className="pj-badge-warn"> Da completare</span>}
+                </h4>
+                <span>{technicalReviewOpen ? "\u25B2" : "\u25BC"}</span>
+              </button>
+
+              {showTechnicalReviewWarning && (
+                <div className="pj-warn-banner">
+                  {"\u26A0\uFE0F"} Il riesame tecnico non risulta completato per tutti i punti previsti dalla norma.
+                  La commessa puo\u2019 comunque essere salvata come &quot;Aperta&quot;, ma si consiglia di completare
+                  la verifica prima di avviare la produzione.
+                </div>
+              )}
+
+              {technicalReviewOpen && (
+                <div className="pj-checkbox-list pj-technical-review-list">
+                  {TECHNICAL_REVIEW_ITEMS.map((item) => {
+                    const itemState = technicalReviewChecklist[item.key] || {};
+                    return (
+                      <label key={item.key} className="pj-checkbox-item pj-technical-review-item">
+                        <input
+                          type="checkbox"
+                          checked={!!itemState.checked}
+                          onChange={(e) => setTechnicalReviewItem(item.key, { checked: e.target.checked })}
+                        />
+                        <span>{item.label}</span>
+                        <input
+                          className="pj-form-input pj-technical-review-note"
+                          type="text"
+                          placeholder="Nota breve (opzionale)"
+                          value={itemState.note || ""}
+                          onChange={(e) => setTechnicalReviewItem(item.key, { note: e.target.value })}
+                        />
+                      </label>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+
             {/* WPS applicabili */}
             {wpsList.length > 0 && (
               <div className="pj-wps-section">
@@ -182,6 +290,7 @@ function ProjectFormModal({ project, wpsList, qualifications, onSave, onClose })
                 <div className="pj-checkbox-list">
                   {qualifications.map((q) => {
                     const isAssigned = Array.isArray(form.welder_ids) && form.welder_ids.includes(q.id);
+                    const qualWarning = getWelderQualificationWarning(q);
                     return (
                       <label key={q.id} className="pj-checkbox-item">
                         <input
@@ -201,6 +310,14 @@ function ProjectFormModal({ project, wpsList, qualifications, onSave, onClose })
                         <span className="pj-checkbox-sub">{q.qualification_type} &mdash; {q.certificate_number || "N/A"}</span>
                         {q.approval_status !== "approvata" && (
                           <span className="pj-badge-warn">non approvata</span>
+                        )}
+                        {qualWarning && (
+                          <span
+                            className={`pj-badge-warn ${qualWarning.level === "danger" ? "pj-badge-danger" : ""}`}
+                            title={qualWarning.text}
+                          >
+                            {qualWarning.level === "danger" ? "scaduta" : "in scadenza"}
+                          </span>
                         )}
                       </label>
                     );

@@ -28,13 +28,16 @@
 }
 
 .company-detail-anagrafica input,
-.company-detail-anagrafica textarea {
+.company-detail-anagrafica textarea,
+.company-detail-anagrafica select {
   width: 100%;
   max-width: 480px;
   padding: 8px 10px;
   border: 1px solid #d1d5db;
   border-radius: 6px;
   font-size: 14px;
+  font-family: inherit;
+  background: #fff;
 }
 
 .company-detail-logo-preview {

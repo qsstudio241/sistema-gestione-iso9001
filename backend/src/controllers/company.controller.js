@@ -25,6 +25,16 @@ const fsSync = require('fs');
 const LOGO_DIR = path.join(process.env.UPLOAD_DIR || './uploads', 'logos');
 if (!fsSync.existsSync(LOGO_DIR)) fsSync.mkdirSync(LOGO_DIR, { recursive: true });
 
+/** Livelli ISO 3834-1 §5 ammessi (2 = requisiti standard, 3 = elementari, 4 = base). */
+const ISO3834_LEVELS = ['2', '3', '4'];
+
+/** Normalizza il livello ISO 3834 in input: valore ammesso oppure null (azzera/ignora se non valido). */
+function normalizeIso3834Level(raw) {
+    if (raw === null || raw === '') return null;
+    const val = String(raw).trim();
+    return ISO3834_LEVELS.includes(val) ? val : null;
+}
+
 /**
  * Risolve auditor_org_id da usare per il filtro
  * Superadmin (admin senza auditor_org_id): usa query param se fornito
@@ -92,7 +102,7 @@ async function listCompanies(req, res) {
         const whereClause = whereConditions.join(' AND ');
 
         const result = await query(`
-            SELECT id, auditor_org_id, name, vat_number, sector, address, logo_url, is_active, created_at, updated_at
+            SELECT id, auditor_org_id, name, vat_number, sector, address, logo_url, iso3834_level, is_active, created_at, updated_at
             FROM companies
             WHERE ${whereClause}
             ORDER BY name
@@ -132,7 +142,7 @@ async function getCompanyById(req, res) {
             if (denied) return sendAccessDenied(res, denied);
 
             const result = await query(`
-            SELECT id, auditor_org_id, name, vat_number, sector, address, logo_url, is_active, created_at, updated_at
+            SELECT id, auditor_org_id, name, vat_number, sector, address, logo_url, iso3834_level, is_active, created_at, updated_at
             FROM companies
             WHERE id = @id
         `, { id });
@@ -150,7 +160,7 @@ async function getCompanyById(req, res) {
         }
 
         const result = await query(`
-            SELECT id, auditor_org_id, name, vat_number, sector, address, logo_url, is_active, created_at, updated_at
+            SELECT id, auditor_org_id, name, vat_number, sector, address, logo_url, iso3834_level, is_active, created_at, updated_at
             FROM companies
             WHERE id = @id AND auditor_org_id = @auditor_org_id
         `, { id, auditor_org_id: auditorOrgId });
@@ -310,7 +320,7 @@ async function updateCompany(req, res) {
             }
 
             const previousIsActive = check.recordset[0].is_active;
-            const { name, vat_number, sector, address, is_active } = req.body;
+            const { name, vat_number, sector, address, iso3834_level, is_active } = req.body;
 
             const updates = [];
             const params = { id };
@@ -318,6 +328,7 @@ async function updateCompany(req, res) {
             if (vat_number !== undefined) { updates.push('vat_number = @vat_number'); params.vat_number = vat_number?.trim() || null; }
             if (sector !== undefined) { updates.push('sector = @sector'); params.sector = sector?.trim() || null; }
             if (address !== undefined) { updates.push('address = @address'); params.address = address?.trim() || null; }
+            if (iso3834_level !== undefined) { updates.push('iso3834_level = @iso3834_level'); params.iso3834_level = normalizeIso3834Level(iso3834_level); }
             if (is_active !== undefined) {
                 return res.status(403).json({
                     error: 'Non puoi modificare lo stato attivo dell\'azienda',
@@ -337,7 +348,7 @@ async function updateCompany(req, res) {
         `, params);
 
             const updated = await query(`
-            SELECT id, auditor_org_id, name, vat_number, sector, address, logo_url, is_active, created_at, updated_at
+            SELECT id, auditor_org_id, name, vat_number, sector, address, logo_url, iso3834_level, is_active, created_at, updated_at
             FROM companies WHERE id = @id
         `, { id });
 
@@ -349,7 +360,7 @@ async function updateCompany(req, res) {
             return res.status(403).json({ error: 'Auditor org richiesto', code: 'AUDITOR_ORG_REQUIRED' });
         }
 
-        const { name, vat_number, sector, address, is_active } = req.body;
+        const { name, vat_number, sector, address, iso3834_level, is_active } = req.body;
 
         const check = await query(`
             SELECT id, is_active FROM companies WHERE id = @id AND auditor_org_id = @auditor_org_id
@@ -367,6 +378,7 @@ async function updateCompany(req, res) {
         if (vat_number !== undefined) { updates.push('vat_number = @vat_number'); params.vat_number = vat_number?.trim() || null; }
         if (sector !== undefined) { updates.push('sector = @sector'); params.sector = sector?.trim() || null; }
         if (address !== undefined) { updates.push('address = @address'); params.address = address?.trim() || null; }
+        if (iso3834_level !== undefined) { updates.push('iso3834_level = @iso3834_level'); params.iso3834_level = normalizeIso3834Level(iso3834_level); }
         if (is_active !== undefined) { updates.push('is_active = @is_active'); params.is_active = is_active === true || is_active === 1; }
 
         if (updates.length === 0) {
@@ -381,7 +393,7 @@ async function updateCompany(req, res) {
         `, params);
 
         const updated = await query(`
-            SELECT id, auditor_org_id, name, vat_number, sector, address, logo_url, is_active, created_at, updated_at
+            SELECT id, auditor_org_id, name, vat_number, sector, address, logo_url, iso3834_level, is_active, created_at, updated_at
             FROM companies WHERE id = @id
         `, { id });
 

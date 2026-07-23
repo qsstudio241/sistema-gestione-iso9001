@@ -196,7 +196,7 @@ async function createProject(req, res) {
             company_id, project_code, client_name, client_company_id,
             description, start_date, end_date, applicable_wps_ids,
             status = 'offerta', requirements_review_date,
-            technical_review_date, notes,
+            technical_review_date, technical_review_checklist, notes,
         } = req.body;
 
         if (!project_code) {
@@ -206,20 +206,23 @@ async function createProject(req, res) {
         const wpsIdsJson = applicable_wps_ids
             ? JSON.stringify(Array.isArray(applicable_wps_ids) ? applicable_wps_ids : [applicable_wps_ids])
             : null;
+        const technicalReviewChecklistJson = technical_review_checklist
+            ? (typeof technical_review_checklist === 'string' ? technical_review_checklist : JSON.stringify(technical_review_checklist))
+            : null;
 
         const result = await query(`
             INSERT INTO projects (
                 organization_id, company_id, project_code, client_name,
                 client_company_id, description, start_date, end_date,
                 applicable_wps_ids, status, requirements_review_date,
-                technical_review_date, notes, created_by, created_at, updated_at
+                technical_review_date, technical_review_checklist, notes, created_by, created_at, updated_at
             )
             OUTPUT INSERTED.id
             VALUES (
                 @organization_id, @company_id, @project_code, @client_name,
                 @client_company_id, @description, @start_date, @end_date,
                 @applicable_wps_ids, @status, @requirements_review_date,
-                @technical_review_date, @notes, @created_by, GETDATE(), GETDATE()
+                @technical_review_date, @technical_review_checklist, @notes, @created_by, GETDATE(), GETDATE()
             )
         `, {
             organization_id,
@@ -234,6 +237,7 @@ async function createProject(req, res) {
             status,
             requirements_review_date: requirements_review_date || null,
             technical_review_date:   technical_review_date || null,
+            technical_review_checklist: technicalReviewChecklistJson,
             notes:                   notes || null,
             created_by:              user_id,
         });
@@ -266,7 +270,8 @@ async function updateProject(req, res) {
         const allowed = [
             'company_id', 'project_code', 'client_name', 'client_company_id',
             'description', 'start_date', 'end_date', 'applicable_wps_ids',
-            'status', 'requirements_review_date', 'technical_review_date', 'notes',
+            'status', 'requirements_review_date', 'technical_review_date',
+            'technical_review_checklist', 'notes',
         ];
 
         const updates = [];
@@ -278,6 +283,9 @@ async function updateProject(req, res) {
                 if (field === 'applicable_wps_ids') {
                     const val = req.body[field];
                     params[field] = val ? JSON.stringify(Array.isArray(val) ? val : [val]) : null;
+                } else if (field === 'technical_review_checklist') {
+                    const val = req.body[field];
+                    params[field] = val ? (typeof val === 'string' ? val : JSON.stringify(val)) : null;
                 } else if (['company_id', 'client_company_id'].includes(field)) {
                     params[field] = req.body[field] !== null ? parseInt(req.body[field]) : null;
                 } else {

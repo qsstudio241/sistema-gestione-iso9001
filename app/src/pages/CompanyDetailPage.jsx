@@ -20,6 +20,27 @@ const TABS = [
   { id: "controparti", label: "Controparti" },
 ];
 
+// Livelli ISO 3834-1 §5: criteri di scelta in base a dimensione/importanza dei
+// prodotti critici per la sicurezza, complessita' di fabbricazione, gamma di
+// prodotti/materiali, rischio di problemi metallurgici, impatto delle imperfezioni.
+const ISO3834_LEVELS = [
+  {
+    value: "2",
+    label: "Livello 2 \u2014 Requisiti di qualita\u2019 complessi (UNI EN ISO 3834-2)",
+    hint: "Prodotti critici per la sicurezza, fabbricazione complessa, gamma ampia di materiali/prodotti, rischio elevato di problemi metallurgici o imperfezioni ad alto impatto.",
+  },
+  {
+    value: "3",
+    label: "Livello 3 \u2014 Requisiti di qualita\u2019 normali (UNI EN ISO 3834-3)",
+    hint: "Caso piu\u2019 diffuso: complessita\u2019 di fabbricazione e gamma di prodotti/materiali intermedie, rischio e impatto delle imperfezioni moderati.",
+  },
+  {
+    value: "4",
+    label: "Livello 4 \u2014 Requisiti di qualita\u2019 elementari (UNI EN ISO 3834-4)",
+    hint: "Prodotti semplici, fabbricazione poco complessa, gamma ridotta di materiali, basso rischio di problemi metallurgici e basso impatto delle imperfezioni.",
+  },
+];
+
 function parseCompanyId(path) {
   const m = path.match(/^\/companies\/(\d+)(?:\/)?$/);
   return m ? parseInt(m[1], 10) : null;
@@ -31,6 +52,7 @@ function TabAnagrafica({ company, onSaved, auditorOrgId, canEdit }) {
     vat_number: "",
     sector: "",
     address: "",
+    iso3834_level: "",
   });
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
@@ -52,6 +74,7 @@ function TabAnagrafica({ company, onSaved, auditorOrgId, canEdit }) {
       vat_number: company.vat_number || "",
       sector: company.sector || "",
       address: company.address || "",
+      iso3834_level: company.iso3834_level || "",
     });
     setLogoFile(null);
     setLogoPreview(null);
@@ -128,6 +151,27 @@ function TabAnagrafica({ company, onSaved, auditorOrgId, canEdit }) {
             rows={2}
             disabled={!canEdit}
           />
+        </div>
+        <div className="form-group">
+          <label>Livello ISO 3834 dichiarato</label>
+          <select
+            value={form.iso3834_level}
+            onChange={(e) => setForm({ ...form, iso3834_level: e.target.value })}
+            disabled={!canEdit}
+          >
+            <option value="">{"\u2014 Non definito \u2014"}</option>
+            {ISO3834_LEVELS.map((lvl) => (
+              <option key={lvl.value} value={lvl.value}>{lvl.label}</option>
+            ))}
+          </select>
+          <p className="studio-hint">
+            Criteri di scelta (ISO 3834-1 {"\u00A7"}5): dimensione/importanza dei prodotti critici per la
+            sicurezza, complessita\u2019 di fabbricazione, gamma di prodotti/materiali, rischio di problemi
+            metallurgici, impatto delle imperfezioni.
+            {form.iso3834_level && (
+              <> {" "}{ISO3834_LEVELS.find((l) => l.value === form.iso3834_level)?.hint}</>
+            )}
+          </p>
         </div>
         {canEdit && (
           <div className="form-group">
