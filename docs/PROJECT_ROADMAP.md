@@ -794,8 +794,9 @@ Un auditor che gestisce 10 aziende → 10 licenze. Prezzo varia per modulo attiv
 | **PR #65** | Connettori Normattiva/EUR-Lex + email norme superate (job settimanale) | Lead (25/05/2026) | ✅ Merged `b0a5900`, deploy VPS 25/05 |
 | **REG-NORM-SOT** | Refactor: `document_registry` = SoT visibile norme/leggi; slice R1–R7 in [PLAN_REGISTRY_NORM_SOT_SLICES.md](agent-tasks/PLAN_REGISTRY_NORM_SOT_SLICES.md) | Deputy/Lead | ✅ Completato (25/05/2026) — commit `ef0d6f8`, PR #66/#67/#68, ADR-011 |
 | **LEGISL-INGEST** | Ingestione testo articoli legge (D.Lgs. 81/2008 → ISO 45001, D.Lgs. 152/2006 → ISO 14001) da Normattiva in `norm_requirements` + matrice `linked_legislation`; connettore `normativaConnector.getClauseText` (riattiva step publicLaw broker). 30 articoli verbatim, seed `backend/data/legislation_seed.json`, script `ingest-legislation-normattiva-vps.js` idempotente. ADR-010 Task 2-B/2-D. | Lead (18/07/2026) | ✅ Completato — branch `feat/legislation-ingest-normattiva` |
+| **COMPANY-PROFILE** | Profilo azienda 1:1 (`company_profile`) per conformità legislativa 14001/45001: campi A (visura/Excel) + B (SSL/ambiente, inserimento studio); gate `SAL_LEGAL_CONFORMITY`; import Excel tipo scadenziario. **S0 ✅** ADR-018 + catalogo. **S1–S3** in [DEPUTYTASK.md](agent-tasks/DEPUTYTASK.md). | Lead (23/07/2026) | 🔲 S0 doc — implementazione aperta |
 
-**Prossimo Step**: ADR-009 completato (Fasi 1-4; Fase 5 superata). Prossima priorità da definire — vedi Backlog parcheggiato.
+**Prossimo Step**: COMPANY-PROFILE S1–S3 (migration + API/UI + import Excel) dopo merge S0; poi eventuale S5 lookup Registro.
 
 > **Regola architetturale da ADR-008 (vincolante)**: ogni nuova feature che tocca la sincronizzazione dati deve essere progettata compatibile con il modello event-based. Nessun nuovo endpoint che accetti "stato corrente intero" senza event log parallelo.
 
