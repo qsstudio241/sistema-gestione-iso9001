@@ -2,9 +2,11 @@
 
 **Stato:** APERTO  
 **Priorità:** P1 — fondazione dati per conformità legislativa 14001/45001 (non breaking)  
-**Branch base:** `main` (allineare con `git pull origin main` prima di partire)  
+**Branch base:** `main`  
 **Creato da:** Lead 23/07/2026  
 **Spec:** [ADR-018](../adr/ADR-018-company-profile-conformita-legislativa.md) · [Catalogo campi/Excel](../specs/COMPANY_PROFILE_CAMPI_E_TEMPLATE_EXCEL.md)
+
+> **Allineamento Git (autonomo)**: prima di leggere questo brief eseguire `git fetch origin main` e `git pull origin main` (o partire da `origin/main` aggiornato). **Non** chiedere al committente di farlo.
 
 ---
 
@@ -139,4 +141,4 @@ Aggiornare riga esperienza in `docs/GUIDA_CONSOLIDATA.md` solo se emerge lezione
 Leggi docs/agent-tasks/DEPUTYTASK.md ed eseguilo. Chiudi con TEST OK o FIX NON APPLICABILI.
 ```
 
-Prima: `git pull origin main`.
+Il deputy allinea Git da solo all'avvio (`git fetch` / `git pull origin main`).
