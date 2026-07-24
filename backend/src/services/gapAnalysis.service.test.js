@@ -18,6 +18,8 @@ const {
   syncAuditConformityHints,
   getNormCoverageForReview,
   mapSalStatusToNormCoverage,
+  mapSalStatusToGapCoverage,
+  extractSalMacroClauseRef,
   clauseRefToSectionCode,
   pickWorstConformityHint,
   assertCompanyInOrganization,
@@ -86,6 +88,85 @@ describe('gapAnalysis.service — runGapAnalysis', () => {
     const matrix = await runGapAnalysis({ organizationId: 1, companyId: 10, standardCode: 'ISO_9001_2015' });
     // "Piano qualità" non contiene token di "non conformità azione correttiva" → missing o partial
     expect(['missing', 'partial']).toContain(matrix[0].coverage);
+  });
+
+  it('senza stato SAL tracciato (query SAL fallisce/azienda fuori scope) resta sull\'euristica (coverageSource: heuristic)', async () => {
+    // beforeEach ha già accodato solo 2 risposte (clausole, documenti): la successiva
+    // chiamata di getGapMatrix (assertCompanyInOrganization) trova la coda esaurita
+    // e fallisce — deve degradare in modo silenzioso, non rompere l'euristica.
+    const matrix = await runGapAnalysis({ organizationId: 1, companyId: 10, standardCode: 'ISO_9001_2015' });
+
+    for (const row of matrix) {
+      expect(row.coverageSource).toBe('heuristic');
+    }
+  });
+
+  it('sovrascrive la copertura con lo stato SAL quando la macro-clausola è tracciata (GAP↔SAL dialogano)', async () => {
+    mockQuery
+      // getGapMatrix → assertCompanyInOrganization
+      .mockResolvedValueOnce({ recordset: [{ id: 10 }] })
+      // getGapMatrix → query principale matrice SAL
+      .mockResolvedValueOnce({
+        recordset: [
+          {
+            norm_requirement_id: 5,
+            standard_code: 'ISO_9001_2015',
+            clause_ref: '4.1',
+            clause_title: 'Contesto organizzazione',
+            status_id: 1,
+            status: 'completed',
+            conformity_hint: null,
+            notes: null,
+            responsible: null,
+            due_date: null,
+            evidence_document_ids: null,
+            updated_at: new Date('2026-01-01'),
+            updated_by: 2,
+          },
+        ],
+      });
+
+    const matrix = await runGapAnalysis({ organizationId: 1, companyId: 10, standardCode: 'ISO_9001_2015' });
+
+    const c41 = matrix.find((r) => r.clauseRef === '4.1');
+    expect(c41.coverage).toBe('covered');
+    expect(c41.coverageSource).toBe('sal');
+    expect(c41.sal).toEqual({ macroClauseRef: '4.1', exactMatch: true, status: 'completed' });
+
+    // Le altre clausole non hanno riga SAL corrispondente → resta euristica
+    const c84 = matrix.find((r) => r.clauseRef === '8.4');
+    expect(c84.coverageSource).toBe('heuristic');
+  });
+
+  it('una sotto-clausola NON eredita lo stato della sua macro-clausola SAL (resta euristica, ma espone sal.macroClauseRef come suggerimento)', async () => {
+    mockQuery.mockReset();
+    mockQuery
+      .mockResolvedValueOnce({ recordset: [{ clause_ref: '4.1.2', clause_title: 'Sotto-punto contesto', requirement_text: 'Dettaglio operativo' }] })
+      .mockResolvedValueOnce({ recordset: [] })
+      .mockResolvedValueOnce({ recordset: [{ id: 10 }] })
+      .mockResolvedValueOnce({
+        recordset: [{
+          norm_requirement_id: 5,
+          standard_code: 'ISO_9001_2015',
+          clause_ref: '4.1',
+          clause_title: 'Contesto organizzazione',
+          status_id: 1,
+          status: 'discussed',
+          conformity_hint: null,
+          notes: null,
+          responsible: null,
+          due_date: null,
+          evidence_document_ids: null,
+          updated_at: null,
+          updated_by: null,
+        }],
+      });
+
+    const matrix = await runGapAnalysis({ organizationId: 1, companyId: 10, standardCode: 'ISO_9001_2015' });
+
+    expect(matrix[0].clauseRef).toBe('4.1.2');
+    expect(matrix[0].coverageSource).toBe('heuristic');
+    expect(matrix[0].sal).toEqual({ macroClauseRef: '4.1', exactMatch: false, status: 'discussed' });
   });
 });
 
@@ -290,6 +371,22 @@ describe('gapAnalysis.service — SAL Fase 0', () => {
     expect(clauseRefToSectionCode('8.4')).toBe('clause8');
     expect(clauseRefToSectionCode('4.1')).toBe('clause4');
     expect(clauseRefToSectionCode('')).toBeNull();
+  });
+
+  it('extractSalMacroClauseRef estrae la macro-clausola N.N o null per titoli di sezione', () => {
+    expect(extractSalMacroClauseRef('4.1')).toBe('4.1');
+    expect(extractSalMacroClauseRef('8.1.4.2')).toBe('8.1');
+    expect(extractSalMacroClauseRef('10')).toBeNull();
+    expect(extractSalMacroClauseRef('')).toBeNull();
+  });
+
+  it('mapSalStatusToGapCoverage mappa gli stati SAL sulla scala a 3 livelli del GAP', () => {
+    expect(mapSalStatusToGapCoverage('completed')).toBe('covered');
+    expect(mapSalStatusToGapCoverage('to_validate')).toBe('covered');
+    expect(mapSalStatusToGapCoverage('na')).toBe('covered');
+    expect(mapSalStatusToGapCoverage('in_progress')).toBe('partial');
+    expect(mapSalStatusToGapCoverage('discussed')).toBe('missing');
+    expect(mapSalStatusToGapCoverage(null)).toBe('missing');
   });
 
   it('pickWorstConformityHint preferisce NC su C', () => {
