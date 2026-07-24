@@ -25,8 +25,15 @@ function req(method, path, body, token) {
   });
 }
 
+const ADMIN_EMAIL = process.env.SGQ_APP_EMAIL || 'admin@sgq.local';
+const ADMIN_PASSWORD = process.env.SGQ_APP_PASSWORD;
+if (!ADMIN_PASSWORD) {
+  console.error('Imposta SGQ_APP_PASSWORD (vedi docs/how-to/ACCESSO_DEPLOY_AGENTS.md)');
+  process.exit(1);
+}
+
 (async () => {
-  const login = await req('POST', '/auth/login', { email: 'admin@sgq.local', password: 'Sistemi@2026' });
+  const login = await req('POST', '/auth/login', { email: ADMIN_EMAIL, password: ADMIN_PASSWORD });
   if (login.status !== 200 || !login.data?.token) {
     console.error('Login failed', login.status, login.data);
     process.exit(1);

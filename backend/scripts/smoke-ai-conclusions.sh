@@ -1,8 +1,10 @@
 #!/bin/bash
 # Smoke test per audit_conclusions AI
+SGQ_APP_EMAIL="${SGQ_APP_EMAIL:-admin@sgq.local}"
+: "${SGQ_APP_PASSWORD:?Imposta SGQ_APP_PASSWORD (vedi docs/how-to/ACCESSO_DEPLOY_AGENTS.md)}"
 TOKEN=$(curl -s -X POST http://localhost:3000/api/v1/auth/login \
   -H "Content-Type: application/json" \
-  -d '{"email":"admin@sgq.local","password":"Sistemi@2026"}' | grep -o '"token":"[^"]*"' | cut -d'"' -f4)
+  -d "{\"email\":\"$SGQ_APP_EMAIL\",\"password\":\"$SGQ_APP_PASSWORD\"}" | grep -o '"token":"[^"]*"' | cut -d'"' -f4)
 
 if [ -z "$TOKEN" ]; then
   echo "ERRORE: login fallito"

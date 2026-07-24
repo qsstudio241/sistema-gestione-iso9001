@@ -1,14 +1,14 @@
 const BASE = 'https://www.fr-busato.it:8443/api/v1';
-const ADMIN_EMAIL = 'admin@sgq.local';
-const ADMIN_PASS = 'Sistemi@2026';
+const ADMIN_EMAIL = process.env.SGQ_APP_EMAIL || 'admin@sgq.local';
+const ADMIN_PASS = process.env.SGQ_APP_PASSWORD;
 const CLIENT_EMAIL = process.env.SGQ_CLIENT_COMPANY_EMAIL || 'cliente.azienda11@alproject.sgq.local';
 const CLIENT_PASS = process.env.SGQ_CLIENT_COMPANY_PASSWORD;
 const VIEWER_EMAIL = process.env.SGQ_CLIENT_VIEWER_EMAIL || 'viewer.azienda11@alproject.sgq.local';
 const VIEWER_PASS = process.env.SGQ_CLIENT_VIEWER_PASSWORD;
 const AUDITOR_ORG_ID = 1;
 
-if (!CLIENT_PASS || !VIEWER_PASS) {
-  console.error('Imposta SGQ_CLIENT_COMPANY_PASSWORD e SGQ_CLIENT_VIEWER_PASSWORD in .cursor/mcp.env');
+if (!ADMIN_PASS || !CLIENT_PASS || !VIEWER_PASS) {
+  console.error('Imposta SGQ_APP_PASSWORD, SGQ_CLIENT_COMPANY_PASSWORD e SGQ_CLIENT_VIEWER_PASSWORD in .cursor/mcp.env');
   process.exit(1);
 }
 
