@@ -1943,6 +1943,19 @@ Il workflow `.github/workflows/smoke-test.yml` si attiva su:
 
 **Esito verificato 24/07/2026**: 24/24 controlli OK (vedi tabella dettagliata in `docs/agent-tasks/PLAN_USER_ACCOUNT_LIFECYCLE.md`). Bug corretto prima del deploy: `deploy-manifest.json` mancava `userAudit.service.js` (richiesto da `admin.controller.js`).
 
+### Deploy backend su PRODUZIONE — UAL-1..UAL-4 (24/07/2026)
+
+> Rilascio in produzione (`sgq-backend`, DB `SGQ_ISO9001`) dopo TEST OK. Migrazioni 130/131/132 **già presenti** sul DB produzione (stesso DB fisico di `development`, verificato in `backend/config/database.json`) — nessuna DDL eseguita, solo verifica read-only.
+
+| Script | Ruolo |
+|---|---|
+| `backend/scripts/verify-ual-schema-production.js` | Verifica read-only (`sys.objects`/`sys.columns`/`sys.check_constraints`) di `user_audit_log`, `user_action_tokens`, `users.pending_activation`, CHECK `CK_user_audit_log_action` — nessuna DDL. Riusabile per verifiche pre-deploy future. |
+| `backend/scripts/smoke-ual-production.js` | Smoke test read-only in produzione via `fetch` diretto alle API reali (login admin + `GET /admin/users`, `GET /admin/users/:id/company-access`, `GET /admin/users/:id/audit-log`, `POST /auth/forgot-password` con email inesistente). Nessun utente/token creato. |
+
+**Esito**: schema produzione già completo (nessuna migrazione necessaria) → deploy `deploy-controllers-to-vps.ps1` (176 file, solo `sgq-backend`, `sgq-backend-test` non toccato) → PID cambiato da `85528` a `116291`, health `healthy`, 5/5 smoke check OK (incluso messaggio anti-enumerazione identico per email inesistente).
+
+**Lezione appresa — crash transitorio durante il restart senza `SGQ_SUDO_PASSWORD`**: quando `SGQ_SUDO_PASSWORD` non è configurato, `deploy-controllers-to-vps.ps1` usa il fallback `fuser -k 3000/tcp` + `nohup node src/server.js`. Se il servizio systemd ha `Restart=on-failure`/`always`, la liberazione della porta fa scattare **in parallelo** anche il riavvio automatico di systemd (`ExecStartPre=fuser -k 3000/tcp`), generando una breve corsa critica: il processo di fallback nohup può leggere un file per una frazione di secondo prima che l'ultimo `pscp` lo finisca di scrivere (osservato: `SyntaxError` su `organization.routes.js`, poi il processo nohup viene killato da systemd e il **secondo** avvio — quello reale, gestito da systemd — parte pulito). **Non è un bug del codice deployato**: verificare sempre con `systemctl show sgq-backend --property=MainPID,NRestarts` + `journalctl -u sgq-backend` (il log del servizio reale, non lo stream diretto di `plink`) per distinguere un crash-loop persistente da questo singolo riavvio transitorio innocuo. Per evitarlo in futuro: configurare `SGQ_SUDO_PASSWORD` in `backend/config/.ssh-deploy.local.ps1` così il restart passa sempre dal percorso `systemctl restart` diretto, senza mai liberare la porta manualmente.
+
 ---
 
 ## D. Comandi di verifica rapida
