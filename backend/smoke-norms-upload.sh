@@ -2,8 +2,8 @@
 set -e
 
 BASE_URL="http://localhost:3000/api/v1"
-EMAIL="admin@sgq.local"
-PASSWORD="Sistemi@2026"
+EMAIL="${SGQ_APP_EMAIL:-admin@sgq.local}"
+PASSWORD="${SGQ_APP_PASSWORD:?Imposta SGQ_APP_PASSWORD (vedi docs/how-to/ACCESSO_DEPLOY_AGENTS.md)}"
 
 echo "=== 1. Login ==="
 LOGIN_RESP=$(curl -s -X POST "$BASE_URL/auth/login" \
