@@ -6,6 +6,10 @@
 
 ---
 
+> **Aggiornamento 24/07/2026 — TEST OK, produzione non ancora rilasciata**: le 4 PR (UAL-1..UAL-4, #296-#299) sono state mergiate su `main`. Deploy backend (manifest + 3 migrazioni 130/131/132) eseguito **solo sull'ambiente TEST** (`sgq-backend-test`, DB `2026-06-18_SGQ_ISO9001`) e verificato con uno smoke test end-to-end come admin (24 controlli, tutti passati) su tutti e 4 i flussi — vedi tabella dettagliata e script riusabili in `docs/GUIDA_CONSOLIDATA.md` (sezione "Smoke test remoti — UAL-1..UAL-4"). **Bug corretto prima del deploy**: `deploy-manifest.json` non includeva `userAudit.service.js` (richiesto da `admin.controller.js`, avrebbe causato crash al boot) — fix a basso rischio, committato direttamente su `main`. **Produzione (`sgq-backend`/DB `SGQ_ISO9001`) non toccata**: il rilascio in produzione resta una decisione del committente, da fare deployando manifest + migrazioni con gli script di produzione esistenti quando deciso.
+
+---
+
 ## 1. Sommario esecutivo
 
 Oggi la gestione utenti funziona ma è **grezza esattamente come temuto dal committente**, con un problema centrale: **è l'amministratore a scegliere e digitare la password di ogni nuovo utente** (e di ogni reset), la vede in chiaro nel form, e deve comunicarla a voce/messaggio all'utente. Non esiste **nessun invito via email**, **nessun recupero password autonomo** ("password dimenticata") e **nessuna traccia storica** di chi ha creato, modificato o disattivato un account. La buona notizia: le fondamenta sono solide (hashing bcrypt corretto, soft-delete già implementato, protezioni anti-errore su "ultimo admin" già presenti, rate-limiting sul login già attivo in produzione) e **un servizio email transazionale esiste già e funziona** (usato oggi per gli alert delle non conformità) — può essere riusato senza costi aggiuntivi per inviti e reset password. Il piano sotto propone 3 fasi incrementali, a basso rischio, per portare il flusso agli standard minimi di un prodotto SaaS B2B.

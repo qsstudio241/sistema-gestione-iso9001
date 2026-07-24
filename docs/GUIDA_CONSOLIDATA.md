@@ -1126,7 +1126,7 @@ Camellini: "nella sezione 1.4, quando aggiunge un rilievo si chiude continuament
 #### Lezioni apprese (13/05/2026)
 
 - **Gemini free tier 2026**: `gemini-1.5-flash` non è disponibile sulla v1beta API. `gemini-2.0-flash` ha quota 0 sul tier gratuito "Default Project". **Soluzione**: `gemini-2.5-flash` funziona correttamente. Default aggiornato in `geminiAdapter.js` e in `.env` VPS.
-- **Password admin@sgq.local**: era sconosciuta. Impostata a `Sistemi@2026` via script bcrypt sul VPS (stesso pattern SSH/sudo del progetto).
+- **Password admin@sgq.local**: era sconosciuta. Impostata via script bcrypt sul VPS (stesso pattern SSH/sudo del progetto) — valore in chiaro rimosso da questa guida il 24/07/2026 (era un segreto committato per errore); usare `$env:SGQ_APP_PASSWORD`.
 - **Conflitti numerazione migrazioni**: ADR-010 usava 052/053/054 ma `main` aveva già 052_departments, 053_enhance_suppliers, 054_enhance_complaints. Il file `run-migration-052-vps.js` era in conflitto. Tenuto la versione main (NC integration); le migrazioni ADR-010 sono `052_norm_requirements.sql`, `053_ai_interactions.sql`, `054_commercial_cases.sql` già applicate sul VPS prima del conflitto.
 - **Merge con rebase fallisce se ci sono N commit con conflitti docs**: usare `git pull --no-rebase` per merge standard quando si integrano branch con molti commit su file .md.
 - **Seed norme**: script `import-norms-from-markdown.js` genera `backend/data/norm_requirements_seed.json` (eseguire in locale). Script separato per INSERT nel DB va eseguito sul VPS tramite `scp + node`. Non eseguire mai il seed direttamente da Windows (MSSQL pool lento).
@@ -1552,17 +1552,17 @@ bash backend/scripts/deploy-to-vps-test.sh
 ```
 
 ```powershell
-# Restart istanza test (dopo deploy file backend)
-.\backend\scripts\run-on-vps.ps1 -Command "echo 'Sistemi@2026' | sudo -S systemctl restart sgq-backend-test"
+# Restart istanza test (dopo deploy file backend) - $env:SGQ_SUDO_PASSWORD da backend/config/.ssh-deploy.local.ps1
+.\backend\scripts\run-on-vps.ps1 -Command "echo '$env:SGQ_SUDO_PASSWORD' | sudo -S systemctl restart sgq-backend-test"
 
 # Health check test
 curl -sk https://www.fr-busato.it:8443/test-api/api/v1/health
 
 # Log istanza test (ultimi 50)
-.\backend\scripts\run-on-vps.ps1 -Command "echo 'Sistemi@2026' | sudo -S journalctl -u sgq-backend-test -n 50 --no-pager"
+.\backend\scripts\run-on-vps.ps1 -Command "echo '$env:SGQ_SUDO_PASSWORD' | sudo -S journalctl -u sgq-backend-test -n 50 --no-pager"
 
 # Stato servizio test
-.\backend\scripts\run-on-vps.ps1 -Command "echo 'Sistemi@2026' | sudo -S systemctl status sgq-backend-test --no-pager"
+.\backend\scripts\run-on-vps.ps1 -Command "echo '$env:SGQ_SUDO_PASSWORD' | sudo -S systemctl status sgq-backend-test --no-pager"
 
 # Smoke DB + VPS test opzionale
 cd backend && node scripts/smoke-testdb.js --check-vps
@@ -1928,6 +1928,20 @@ Il workflow `.github/workflows/smoke-test.yml` si attiva su:
 - Pull Request verso `main` con le stesse path
 - Esecuzione manuale (`workflow_dispatch`) da GitHub Actions UI
 
+### Deploy backend SOLO su TEST + smoke test UAL-1..UAL-4 (24/07/2026)
+
+> Pattern per verificare codice+migrazioni sull'istanza TEST (`sgq-backend-test`, DB `2026-06-18_SGQ_ISO9001`) **senza mai toccare produzione**, prima di decidere il rilascio.
+
+| Script | Ruolo |
+|---|---|
+| `backend/scripts/deploy-to-vps-test.ps1` | Deploy manifest + restart **solo** `sgq-backend-test.service` su `/var/www/sgq-backend-test` (mai `sgq-backend.service`/produzione). Stesso pattern robusto di restart (sudo -S → sudo -n → fallback fuser+nohup) e verifica PID prima/dopo di `deploy-controllers-to-vps.ps1`, con `$RemoteBase`/`$RemoteService` fissi sul test. |
+| `backend/scripts/_smoke-ual.ps1` | Smoke test end-to-end come admin sui 4 flussi UAL (company-access, audit-log, invito email, reset password) contro `https://www.fr-busato.it:8443/test-api/api/v1`. Crea utenti fixture con email uniche (timestamp), verifica ogni step via API reale, pulisce con soft-delete a fine esecuzione. Riavviabile in autonomia (non richiede SMTP reale). |
+| `backend/scripts/_smoke-token-helper.js` | Helper Node (`NODE_ENV=test`) usato da `_smoke-ual.ps1` per generare/interrogare token `user_action_tokens` direttamente sul DB test, bypassando l'invio email reale (SMTP test non configurato) mantenendo comunque un test end-to-end reale del consumo token via API. |
+
+**Lezione appresa — output Node misto a log Winston**: quando uno script Node stampa un JSON su `stdout` per essere letto da PowerShell, il logger applicativo (connessione DB, ecc.) inquina lo stesso stream. Soluzione: (a) `console.log(JSON.stringify(x))` **su una sola riga** (mai `null, 2`), (b) lato PowerShell filtrare le righe con un regex tipo `^\s*[\{\[]` e prendere l'ultima come JSON valido, prima di `ConvertFrom-Json`.
+
+**Esito verificato 24/07/2026**: 24/24 controlli OK (vedi tabella dettagliata in `docs/agent-tasks/PLAN_USER_ACCOUNT_LIFECYCLE.md`). Bug corretto prima del deploy: `deploy-manifest.json` mancava `userAudit.service.js` (richiesto da `admin.controller.js`).
+
 ---
 
 ## D. Comandi di verifica rapida
@@ -1968,7 +1982,9 @@ node scripts/repro-custom-export.mjs
 | Ingest E2E | `backend/scripts/smoke-ingest-e2e-test.js` | L3 |
 | VPS preflight | `backend/scripts/vps-preflight.ps1` | ops |
 | Netlify preflight | `backend/scripts/netlify-preflight.ps1` | ops |
-| Deploy backend VPS | `backend/scripts/deploy-controllers-to-vps.ps1` | ops |
+| Deploy backend VPS (produzione) | `backend/scripts/deploy-controllers-to-vps.ps1` | ops |
+| Deploy backend VPS (SOLO test) | `backend/scripts/deploy-to-vps-test.ps1` | ops |
+| Smoke UAL-1..UAL-4 (ambiente test) | `backend/scripts/_smoke-ual.ps1` | L3 |
 | Encoding check | `node backend/scripts/check-utf8-encoding.js [file]` | qualità |
 
 
