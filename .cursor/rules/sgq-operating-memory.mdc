@@ -7,29 +7,60 @@ alwaysApply: true
 # SGQ Operating Memory
 
 ## Avvio sessione obbligatorio
+- **Allinea Git subito** (vedi sezione sotto) se lavori su brief, roadmap, codice o deploy — **prima** di leggere i file di task.
 - Leggi `PROJECT_CONTEXT.md` (root), poi `docs/PROJECT_ROADMAP.md`, poi **`docs/GUIDA_CONSOLIDATA.md`**.
 - **Non** creare nuovi `docs/sessions/SESSION_NOTES_*.md`: aggiorna `GUIDA_CONSOLIDATA.md` + roadmap.
 - Rispondi sempre in italiano, con spiegazioni semplici e operative.
-- **Comandi**: se **hai accesso al terminale** del workspace (Cursor desktop sul progetto), esegui **tu** i comandi **meccanici** (`git pull`/`push`, `npm run build`/`test`, lint, commit) **senza** chiedere all'utente di copiarli. Chiedi all'utente **solo** per azioni **fuori** dall'agente (password, login terzi, scelte di business).
+- **Comandi**: se **hai accesso al terminale** del workspace (Cursor desktop o Cloud Agent), esegui **tu** i comandi **meccanici** (`git fetch`/`pull`/`push`, `npm run build`/`test`, lint, commit) **senza** chiedere all'utente di copiarli. Chiedi all'utente **solo** per azioni **fuori** dall'agente (password, login terzi, scelte di business).
 - **Dialogo**: privilegiare obiettivi e requisiti; evita di usare il turno utente per operazioni ripetitive che puoi completare da solo.
 
-## Convenzione DEPUTYTASK (workflow delegato)
-- Il task corrente risiede **sempre** in `docs/agent-tasks/DEPUTYTASK.md` — file unico, sovrascritto ad ogni nuovo task.
-- Quando prepari un task per il deputy, **sovrascrivi** `DEPUTYTASK.md` con **Stato: APERTO** (mai lasciare un task CHIUSO nel file se chiedi al committente di lanciare il deputy).
+## Allineamento Git autonomo (vincolante — anti-disallineamento)
+
+Ogni agente (Lead, Deputy, Cloud, desktop) con terminale **deve** allineare il repo da solo quando c'è rischio di ambienti divergenti. **Vietato** delegare al committente `git pull` / `git fetch` se il terminale è disponibile.
+
+### Quando è obbligatorio (eseguire subito, senza chiedere)
+1. **Avvio sessione** che userà codice o brief (`DEPUTYTASK*`, roadmap, implementazione).
+2. **Prima di leggere o eseguire** qualsiasi `docs/agent-tasks/DEPUTYTASK*.md` (anche numerati: `DEPUTYTASK.md`, `DEPUTYTASK1.md`, `DEPUTYTASK2.md`, …).
+3. **Prima di scrivere/sovrascrivere** un brief deputy o di dire «lancia il deputy».
+4. **Prima di creare un branch** da `main` / di aprire PR / di dichiarare lo stato di `main`.
+5. Dopo che **un altro agente** può aver pushato (lavoro parallelo, più deputy).
+
+### Comandi minimi (ripetibili)
+```bash
+git fetch origin main
+# Se sei su main e il working tree lo consente:
+git pull origin main
+# Prima di un nuovo branch feature:
+git checkout main && git pull origin main && git checkout -b cursor/<nome>-xxxx
+# Verifica brief su remoto (anti-stale):
+git show origin/main:docs/agent-tasks/DEPUTYTASK.md | head -20
+# (ripetere per DEPUTYTASK1.md / DEPUTYTASK2.md se usati)
+```
+Se il working tree ha modifiche locali non committate: **non** fare reset distruttivo; fare `fetch`, confrontare con `origin/main`, e allinearsi in modo sicuro (stash/commit/worktree). Mai force-push su `main`.
+
+### Cosa dire al committente
+- **Non** chiedere «fai `git pull`»: l'agente nel workspace che esegue il task lo fa da solo.
+- Per lanciare un **nuovo** Cloud Agent: basta il comando deputy (il nuovo agente allinea all'avvio). Opzionale: una riga «l'agente esegue `git fetch/pull` da solo».
+
+## Convenzione DEPUTYTASK (workflow delegato — anche paralleli)
+- Brief attivi in `docs/agent-tasks/DEPUTYTASK.md` e, per lavori **paralleli**, `DEPUTYTASK1.md`, `DEPUTYTASK2.md`, … (stesso protocollo).
+- Task singolo: sovrascrivi `DEPUTYTASK.md` con **Stato: APERTO**.
+- Task paralleli: un file numerato per deputy; branch e file di codice **disgiunti** (no stesso controller/migrazione senza coordinamento Lead).
+- Mai lasciare un task **CHIUSO** nel file se chiedi di lanciare quel deputy.
 
 ### Gate obbligatorio prima di chiedere «lancia il deputy»
-**Vietato** consegnare il comando deputy finché **tutti** i passi non sono veri (il deputy legge quasi sempre `main` o una copia non aggiornata):
+**Vietato** consegnare il comando deputy finché **tutti** i passi non sono veri:
 
-1. `DEPUTYTASK.md` committato e **pushato su `origin/main`** (merge PR se necessario — **non** lasciare il brief solo su branch feature).
-2. Verifica esplicita: `git fetch origin main` + conferma che `origin/main` contiene il titolo/obiettivo del nuovo task (es. prima riga H1 o riga `Stato: APERTO` coerente).
-3. Solo dopo: consegna all'utente il comando:
+1. Il/i file `DEPUTYTASK*.md` rilevanti sono committati e **pushati su `origin/main`** (merge PR se necessario — **non** lasciare il brief solo su branch feature).
+2. Verifica esplicita **autonoma**: `git fetch origin main` + `git show origin/main:docs/agent-tasks/<file>` conferma titolo/obiettivo e `Stato: APERTO`.
+3. Solo dopo: consegna all'utente il comando (adatta il path se numerato), es.:
    `Leggi docs/agent-tasks/DEPUTYTASK.md ed eseguilo. Chiudi con TEST OK o FIX NON APPLICABILI.`
-4. Nel messaggio al committente, indicare **sempre**: «fai `git pull origin main` prima di lanciare il deputy» (o conferma che il cloud/desktop è già allineato).
+4. **Non** chiedere al committente di fare `git pull`: il deputy (o Lead) lo esegue in autonomia all'avvio.
 
 **Errore da non ripetere (07/07/2026):** brief PR2 scritto su branch + PR draft aperta, comando deputy dato con `main` ancora su task ingest norme **CHIUSO** → deputy risponde correttamente FIX NON APPLICABILI.
 
 - L'utente incolla quel comando nella finestra **Agents** di Cursor per lanciare il deputy in autonomia.
-- **Delega Cursor web**: usare `docs/agent-tasks/DEPUTYTASK.md` come unico brief attivo; l'esito si ritrova su **Git** (commit/PR). Nessun canale diretto agente-agente.
+- **Delega Cursor web**: brief su Git (`DEPUTYTASK*.md`); l'esito si ritrova su **Git** (commit/PR). Nessun canale diretto agente-agente.
 
 ## Decisioni tecniche autonome — mai chiedere al committente
 Per qualsiasi scelta tecnica con una best practice consolidata, applicarla direttamente senza chiedere conferma. Esempi vincolanti:
