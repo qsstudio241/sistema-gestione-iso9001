@@ -4,10 +4,11 @@ Istruzioni operative per agenti Cursor (desktop e Cloud). Fonte di governance: [
 
 ## Avvio sessione (ordine obbligatorio)
 
+0. **Allinea Git in autonomia** (se c'è terminale): `git fetch origin main` e, se lavori su `main` o stai per leggere/eseguire un brief, `git pull origin main`. **Non** chiedere al committente di farlo. Obbligatorio prima di qualsiasi `DEPUTYTASK*.md`.
 1. `PROJECT_CONTEXT.md`
 2. `docs/PROJECT_ROADMAP.md`
 3. `docs/GUIDA_CONSOLIDATA.md`
-4. Brief attivo: `docs/agent-tasks/DEPUTYTASK.md` (se il task è delegato)
+4. Brief attivo: `docs/agent-tasks/DEPUTYTASK.md` e/o `DEPUTYTASK1.md` / `DEPUTYTASK2.md` (lavori paralleli)
 
 Rispondi in **italiano**, operativo e sintetico.
 
@@ -15,10 +16,10 @@ Rispondi in **italiano**, operativo e sintetico.
 
 | Ruolo | Cosa fa |
 |-------|---------|
-| **Lead** | Piano, architettura, brief in `DEPUTYTASK.md` |
-| **Deputy** | Slice verticali, commit atomici, test L1, PR |
+| **Lead** | Piano, architettura, brief in `DEPUTYTASK*.md` (anche più file in parallelo) |
+| **Deputy** | Allinea Git → slice verticali, commit atomici, test L1, PR |
 
-Non usare `.github/agents/` (legacy Copilot).
+Non usare `.github/agents/` (legacy Copilot). Policy anti-disallineamento: `.cursor/rules/sgq-operating-memory.mdc` (sezione *Allineamento Git autonomo*).
 
 ## Cursor Cloud specific instructions
 
