@@ -6,6 +6,9 @@ import React, { useState, useEffect, useCallback } from 'react';
 import apiService from '../services/apiService';
 import { useAuth } from '../contexts/AuthContext';
 import AiDisclaimer from '../components/AiDisclaimer';
+import { Link } from '../contexts/RouterContext';
+import { buildDocumentRegistryPath } from '../utils/documentRegistryUrl';
+import { buildSalDeepLink } from '../utils/salDeepLink';
 
 const STANDARDS = [
   { code: 'ISO_9001_2015', label: 'ISO 9001:2015' },
@@ -150,20 +153,63 @@ export default function GapAnalysisPage() {
                   <td style={{ padding: '0.45rem 0.75rem', fontWeight: 600 }}>{row.clauseRef}</td>
                   <td style={{ padding: '0.45rem 0.75rem' }}>{row.title}</td>
                   <td style={{ padding: '0.45rem 0.75rem' }}>
-                    <span style={{
-                      padding: '0.2rem 0.6rem',
-                      borderRadius: 12,
-                      fontSize: '0.8rem',
-                      fontWeight: 600,
-                      background: row.coverage === 'covered' ? '#e8f5e9' : row.coverage === 'partial' ? '#fff8e1' : '#fce4ec',
-                      color: row.coverage === 'covered' ? '#2e7d32' : row.coverage === 'partial' ? '#e65100' : '#c62828',
-                    }}>
-                      {COVERAGE_LABEL[row.coverage] || row.coverage}
-                    </span>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', flexWrap: 'wrap' }}>
+                      <span style={{
+                        padding: '0.2rem 0.6rem',
+                        borderRadius: 12,
+                        fontSize: '0.8rem',
+                        fontWeight: 600,
+                        background: row.coverage === 'covered' ? '#e8f5e9' : row.coverage === 'partial' ? '#fff8e1' : '#fce4ec',
+                        color: row.coverage === 'covered' ? '#2e7d32' : row.coverage === 'partial' ? '#e65100' : '#c62828',
+                      }}>
+                        {COVERAGE_LABEL[row.coverage] || row.coverage}
+                      </span>
+                      {row.coverageSource === 'sal' ? (
+                        <span
+                          title="Stato ufficiale tracciato nel modulo SAL (evidenze validate), non stima automatica"
+                          style={{
+                            fontSize: '0.65rem', fontWeight: 700, color: '#1565c0',
+                            border: '1px solid #90caf9', borderRadius: 4, padding: '0 4px',
+                          }}
+                        >
+                          SAL
+                        </span>
+                      ) : (
+                        <span
+                          title="Stima automatica per parole chiave, non verificata da un professionista"
+                          style={{ fontSize: '0.65rem', color: '#90a4ae' }}
+                        >
+                          (stima)
+                        </span>
+                      )}
+                    </div>
+                    {row.sal && (
+                      <Link
+                        to={buildSalDeepLink({ companyId, standardCode, clauseRef: row.sal.macroClauseRef })}
+                        style={{ fontSize: '0.72rem', display: 'inline-block', marginTop: '0.2rem' }}
+                        title={row.sal.exactMatch
+                          ? 'Apri questa clausola nel modulo SAL'
+                          : `Apri la macro-clausola ${row.sal.macroClauseRef} nel modulo SAL`}
+                      >
+                        {row.coverageSource === 'sal' ? 'Apri in SAL' : `Verifica in SAL (${row.sal.macroClauseRef})`}
+                      </Link>
+                    )}
                   </td>
                   <td style={{ padding: '0.45rem 0.75rem', color: '#546e7a', fontSize: '0.82rem' }}>
                     {row.evidence.length > 0
-                      ? row.evidence.map((e) => e.title).join(', ')
+                      ? row.evidence.map((e, idx) => (
+                        <React.Fragment key={e.docId ?? `${row.clauseRef}-${idx}`}>
+                          {idx > 0 && ', '}
+                          {e.docId ? (
+                            <Link
+                              to={buildDocumentRegistryPath({ selectId: e.docId, companyId })}
+                              title="Apri nel registro documenti"
+                            >
+                              {e.title}
+                            </Link>
+                          ) : e.title}
+                        </React.Fragment>
+                      ))
                       : '\u2014'}
                   </td>
                 </tr>
