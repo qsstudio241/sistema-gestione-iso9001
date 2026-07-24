@@ -123,6 +123,7 @@
                                      "src/services/documentTextExtractor.service.js",
                                      "src/services/knowledgeIndexer.service.js",
                                      "src/services/alertMail.service.js",
+                                     "src/services/userAudit.service.js",
                                      "src/services/userActionToken.service.js",
                                      "src/services/userInvite.service.js",
                                      "src/services/userPasswordReset.service.js",
