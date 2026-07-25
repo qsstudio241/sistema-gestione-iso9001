@@ -134,6 +134,8 @@ Per **ogni** endpoint (GET/POST/PUT/DELETE/sync/download), stesso criterio di vi
 | Gap | Priorità | Riferimento |
 |-----|----------|-------------|
 | **Stesso predicato RBAC** su *tutte* le risorse (NC, allegati, registry, checklist custom, statistiche) | Alta | §5–7, Fase 2 |
+| **`equipment.controller.js`, `rdp.controller.js`, `ndtReports.controller.js` non usano `companyAccess.service.js`** — `equipment.controller.js` filtra con un `buildScopeCondition()` proprio basato su `user.company_id`, colonna **inesistente** su `users` (il modello reale è `user_company_access`, mig. 081): un viewer scope-azienda vede **tutte** le attrezzature del tenant, non solo le proprie. RDP/NDT Reports non hanno alcun filtro `company_access` in lettura né guard in scrittura. | Alta | Verificato 25/07/2026 — analisi trasversale "Ambito" (vedi [GUIDA_CONSOLIDATA.md](GUIDA_CONSOLIDATA.md)) |
+| **Rischi e Reclami senza selettore azienda in UI** — backend pronto (`company_id`, `companyAccessSqlFilter`, `assertMutatingAllowed`) ma `RisksPage.jsx`/`ComplaintsPage.jsx` non espongono il campo: ogni record creato ha `company_id NULL`, invisibile a un viewer scope-azienda. Stesso pattern del bug NC pre-migration 134. | Media-alta | Verificato 25/07/2026 |
 | Tabella **`user_company_access`** + viewer **per azienda** (clienti finali in sola lettura) | Media-alta | ✅ Fase 4 — migration 081 |
 | **Servizio centralizzato** `accessScope` / middleware unico su tutte le route | Alta man mano che cresce il codice | §6 |
 | **Provisioning multi-tenant** (creazione nuova `organizations` da UI) | Dipende dal business | Fuori §7 fino a decisione |
