@@ -202,7 +202,7 @@ Configurazione **versionata nel repo** (priorità massima rispetto all'ambiente 
 | Lezione | Regola da applicare | Dettaglio |
 |---------|---------------------|-----------|
 | **`hardDeleteCompany` — FK su `qualification_confirmations.company_id`** | Il DELETE finale su `companies` fallisce se `qualification_confirmations` ha ancora righe con `company_id` valorizzato. Il service deve cancellare `qualification_confirmations` **prima** di `company_personnel` e `qualifications` nella sequenza `simpleDeletes`. Aggiungere sempre questa voce all'inizio della lista se si toccano le dipendenze delete. | PR #237 · 08/07/2026 |
-| **`CompaniesPage` — limite 50 nasconde nuove aziende** | L'API `GET /companies` usa default `limit=50` con `ORDER BY name`. Il frontend **deve** passare `limit: 500` (o superiore) altrimenti le aziende oltre la 50ª posizione alfabetica risultano invisibili pur essendo create correttamente nel DB. Non usare mai il default senza gestire la paginazione esplicita. | PR #237 · 08/07/2026 |
+| **`CompaniesPage` / menu Ambito — limite 50 nasconde aziende** | L'API `GET /companies` usa default backend `limit=50` con `ORDER BY name`. `apiService.getCompanies` applica **sempre** `limit: 500` di default (override esplicito ancora possibile). Senza questo, i menu Ambito (Registro, Qualifiche, SAL, Riesami, ecc.) mostrano solo le prime 50 aziende alfabetiche — tipico per studi con molte anagrafiche (es. Mason). | PR #237 · 08/07/2026; fix Ambito 25/07/2026 |
 
 ### Sync (vincolante)
 
