@@ -124,7 +124,7 @@ function EquipmentFormModal({ asset, companies, onSave, onClose }) {
             }
             onSave();
         } catch (err) {
-            setError(err?.response?.data?.error || "Errore salvataggio");
+            setError(err?.message || "Errore salvataggio");
         } finally {
             setSaving(false);
         }

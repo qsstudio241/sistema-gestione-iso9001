@@ -217,7 +217,6 @@ function DocumentTree({
     } catch (err) {
       const msg =
         err?.data?.error ||
-        err?.response?.data?.error ||
         err.message ||
         "Impossibile eliminare la cartella";
       setActionError(msg);

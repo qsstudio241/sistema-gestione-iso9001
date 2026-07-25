@@ -230,7 +230,7 @@ function RdpReportForm({ report, companies, onSave, onCancel }) {
             setSavedAt(new Date().toLocaleTimeString("it-IT", { hour: "2-digit", minute: "2-digit" }));
             onSave();
         } catch (err) {
-            setError(err?.message || err?.data?.error || err?.response?.data?.error || "Errore salvataggio rapporto RDP");
+            setError(err?.message || "Errore salvataggio rapporto RDP");
         } finally {
             setSaving(false);
         }

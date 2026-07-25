@@ -122,13 +122,13 @@ function CreateAuditPage({ onCancel, onSuccess }) {
         } catch (err) {
             console.error('❌ Errore creazione audit:', err);
             
-            // Gestisci errori specifici
-            if (err.response?.status === 409) {
+            // Gestisci errori specifici (apiService lancia ApiError con status/message diretti)
+            if (err?.status === 409) {
                 setError('Numero audit già esistente. Modifica il numero o lascia vuoto per auto-generarlo.');
-            } else if (err.response?.status === 400) {
-                setError(err.response?.data?.error || 'Dati non validi. Verifica i campi obbligatori.');
+            } else if (err?.status === 400) {
+                setError(err?.message || 'Dati non validi. Verifica i campi obbligatori.');
             } else {
-                setError('Impossibile creare audit. Verifica connessione o riprova più tardi.');
+                setError(err?.message || 'Impossibile creare audit. Verifica connessione o riprova più tardi.');
             }
         } finally {
             setLoading(false);

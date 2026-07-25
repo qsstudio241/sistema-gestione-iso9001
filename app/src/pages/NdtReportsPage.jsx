@@ -346,7 +346,7 @@ function NdtReportForm({ report, companies, availableInstruments, onSave, onCanc
             clearDraft(); // rimuove bozza locale dopo salvataggio riuscito
             onSave();
         } catch (err) {
-            setError(err?.message || err?.data?.error || err?.response?.data?.error || "Errore salvataggio verbale");
+            setError(err?.message || "Errore salvataggio verbale");
         } finally {
             setSaving(false);
         }
