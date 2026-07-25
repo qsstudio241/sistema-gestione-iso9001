@@ -301,7 +301,7 @@ async function loadLinkedEvidenceDocuments(organizationId, companyId, normRequir
             ON a.document_id = dr.id AND a.is_current_doc_version = 1
      WHERE dr.organization_id = @orgId
        AND dr.company_id = @companyId
-       AND dr.is_current = 1
+       AND dr.status <> 'obsoleto'
        AND dr.id IN (${placeholders})`,
     params,
   );
