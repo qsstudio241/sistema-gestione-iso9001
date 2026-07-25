@@ -37,7 +37,7 @@ Skill di progetto per confrontare **requisiti normativi** e **stato app** (codic
 2. **Norme** (`docs/Normative/` — markdown, testo ufficiale UNI):
    - Estrarre clausole nello scope (titolo + testo requisito)
    - Catalogo completo: [reference.md](reference.md)
-   - Per **3834 / saldatura**: includere anche le norme di **supporto** (cataloghi, non seed SGQ): ISO 14175 gas (`NORMA_00012` + `docs/reference/ISO-14175-gas-protezione.md`), ISO 4063, ISO 6947, ISO/TR 15608 — vedi PLAN_INGEST_REFERENCE_CATALOGS
+   - Per **3834 / saldatura**: includere anche le norme di **supporto** (cataloghi/misura/contenuto WPS, non seed SGQ): ISO 14175 gas (`NORMA_00012` + `docs/reference/ISO-14175-gas-protezione.md`), ISO 13916 temperature (`NORMA_00013` + `docs/reference/ISO-13916-temperature-saldatura.md`), ISO 15609-1/-2 contenuto WPS (`NORMA_00014`/`00015` + `docs/reference/ISO-15609-WPS-contenuto.md`), ISO 4063, ISO 6947, ISO/TR 15608 — vedi PLAN_INGEST_REFERENCE_CATALOGS
 
 3. **Guide operative** (`Quaderni/` — testo `.txt`, conversione da PDF; suffisso `_ocred` dove applicabile; PDF originali = archivio opzionale):
    - **9001 audit**: `Linea Guida Conforma 9001_2015.txt` (evidenze attese — gold standard ADR-002)
