@@ -1,246 +1,186 @@
-# DEPUTYTASK1 — Rischi §6.1: campo `nature` (rischio/opportunità) — Slice 1-3
+# DEPUTYTASK1 — Ingest WPQR: campi copertura (pag.1) + parametri prova (pag.2)
 
-**Stato:** CHIUSO — TEST OK, mergiato PR #279 (22/07/2026)  
-**Priorità:** P1 roadmap — §6.1 ISO 9001/14001/45001  
+**Stato:** APERTO  
+**Priorità:** P1 — copertura requisiti commessa / ISO 3834 (non breaking)  
 **Branch base:** `main`  
-**Prossima migrazione disponibile:** 121  
-**Creato da:** Lead 21/07/2026
+**Prossima migrazione disponibile:** **133** (verificare `ls database/migrations/ | sort | tail -5` prima di creare)  
+**Creato da:** Lead 25/07/2026  
+**PDF campione:** WPQR TEC Eurolab `24-03390-01` (UNI EN ISO 15614-1:2019 Level 2, processo 135)  
+**Riferimenti:** [ISO-15614-1-range-validita-WPQR.md](../reference/ISO-15614-1-range-validita-WPQR.md) · [PLAN_INGEST_REFERENCE_CATALOGS.md](PLAN_INGEST_REFERENCE_CATALOGS.md) RC-6 · [ISO-4063](../reference/ISO-4063-processi-saldatura.md) · [ISO-6947](../reference/ISO-6947-posizioni-saldatura.md) · [ISO-TR-15608](../reference/ISO-TR-15608-gruppi-materiali.md)
 
-> **Correzione post-merge (22/07/2026)**: il brief indicava erroneamente `backend/database/migrations/` come cartella destinazione — quella è una **reliquia storica non più attiva** (mai deployata sul VPS). La cartella canonica condivisa è **`database/migrations/`** (root repo). Le 3 migrazioni sono state rinumerate **123/124/125** (121/122 erano già occupati da un'altra sessione parallela: `121_nc_correction_gate.sql`, `122_qualifications_14732_fields.sql`) e spostate nella cartella corretta. Nessun impatto sul DB: gli script `run-migration-*-vps.js` avevano SQL inline, già eseguiti con successo. Vedi lezione in `GUIDA_CONSOLIDATA.md`.
-
----
-
-## Contesto
-
-La pagina `RisksPage.jsx` gestisce già rischi e obiettivi (§6.1/§6.2) ma tratta tutto come "rischio" senza distinguere rischi da opportunità. ISO 9001:2015 §6.1.1 richiede esplicitamente di "determinare i rischi e le opportunità". Le tre slice aggiungono questa distinzione in modo incrementale, retrocompatibile e senza breaking change.
-
-Prossima migrazione numerica: **121** (sequenza condivisa — verificare che la 120 sia già applicata sul VPS prima di procedere).
+> **Allineamento Git (autonomo)**: prima di leggere questo brief eseguire `git fetch origin main` e `git pull origin main`. **Non** chiedere al committente di farlo. Verificare che questo file su `origin/main` abbia `Stato: APERTO`.
 
 ---
 
-## Slice 1 — Campo `nature` su tabella `risks` (migrazione 121 + UI selector)
+## Contesto (leggere prima)
 
-### Backend — Migrazione 121
+L’ingest WPQR oggi estrae/mostra solo un sottoinsieme minimo (`wpqr_number`, `welding_process`, `material_group`, `thickness_test_mm`, `approval_date`, `standard_reference`). Su un WPQR reale firmato mancano i campi della **pagina 1 (RANGE OF QUALIFICATION)** — indispensabili per la copertura requisiti di commessa — e i **parametri di esecuzione del test** (pag.2, dati tipo WPS/qualifica).
 
-Creare `backend/database/migrations/121_risks_nature.sql`:
-```sql
--- Idempotente: verifica esistenza colonna prima di aggiungerla
-IF NOT EXISTS (
-  SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS
-  WHERE TABLE_NAME = 'risks' AND COLUMN_NAME = 'nature'
-)
-BEGIN
-  ALTER TABLE risks
-    ADD nature NVARCHAR(20) NOT NULL DEFAULT 'risk'
-    CONSTRAINT CK_risks_nature CHECK (nature IN ('risk', 'opportunity'));
-END
-```
+Evidenza Lead (25/07/2026) sul PDF campione con sole regole:
 
-Creare script VPS `backend/scripts/run-migration-121-vps.js`:
-```js
-require('/var/www/sgq-backend/node_modules/dotenv').config({ path: '/var/www/sgq-backend/.env' });
-const { query } = require('/var/www/sgq-backend/src/config/database');
-const fs = require('fs');
-const path = require('path');
+| Campo PDF | Valore reale | Estratto attuale |
+|---|---|---|
+| N. certificato / WPQR | `24-03390-01` | `24-03390` (troncato) |
+| Processo | **135** | **111** (falso positivo su parola «elettrodo») |
+| Gruppo | **1.2** | `1` |
+| Posizioni / giunto / Level / diametro / filler / gas | presenti | assenti |
+| Ente | TEC Eurolab | `null` |
 
-async function main() {
-  try {
-    const sql = fs.readFileSync(path.join(__dirname, '../database/migrations/121_risks_nature.sql'), 'utf8');
-    await query(sql);
-    console.log('Migration 121 OK — colonna nature aggiunta a risks');
-  } catch (e) {
-    console.error('Migration 121 ERRORE:', e.message);
-    process.exit(1);
-  } finally {
-    process.exit(0);
-  }
-}
-main();
-```
-
-Applicare sul VPS:
-```bash
-echo "$SGQ_SSH_KEY_B64" | base64 -d > /tmp/sgq_key && chmod 600 /tmp/sgq_key
-scp -i /tmp/sgq_key -P 1122 -o StrictHostKeyChecking=no \
-  backend/database/migrations/121_risks_nature.sql \
-  backend/scripts/run-migration-121-vps.js \
-  spascarella@www.fr-busato.it:/tmp/
-ssh -i /tmp/sgq_key -p 1122 -o StrictHostKeyChecking=no spascarella@www.fr-busato.it \
-  "node /tmp/run-migration-121-vps.js"
-```
-
-### Backend — Controller `risks.controller.js`
-
-Verificare (con `rg "nature"` nel file) se `nature` è già letto/scritto. Se no:
-- Aggiungere `nature` alla SELECT in `listRisks` e `getRiskById`
-- Aggiungere `nature` al body parsing in `createRisk` e `updateRisk` (default `'risk'` se mancante)
-- Validare: `['risk', 'opportunity'].includes(nature)` altrimenti 400
-
-### Frontend — `RisksPage.jsx`
-
-1. Aggiungere selettore "Tipo" nel form di creazione/modifica rischio:
-```jsx
-<div className="form-group">
-  <label>Tipo</label>
-  <select
-    value={formData.nature || 'risk'}
-    onChange={e => setFormData(p => ({ ...p, nature: e.target.value }))}
-    className="form-control"
-  >
-    <option value="risk">Rischio</option>
-    <option value="opportunity">Opportunità</option>
-  </select>
-</div>
-```
-
-2. Mostrare badge "Rischio" / "Opportunità" nella griglia (colonna o chip):
-```jsx
-<span className={`nature-badge nature-${row.nature || 'risk'}`}>
-  {row.nature === 'opportunity' ? '🟢 Opportunità' : '🔴 Rischio'}
-</span>
-```
-
-3. CSS in `RisksPage.css` o stile inline:
-```css
-.nature-badge { padding: 2px 8px; border-radius: 10px; font-size: 0.75rem; font-weight: 600; }
-.nature-risk        { background: #fee2e2; color: #991b1b; }
-.nature-opportunity { background: #d1fae5; color: #065f46; }
-```
-
-**DoD Slice 1:**
-- Migration 121 applicata sul VPS (verificare con `SELECT nature FROM risks LIMIT 1`)
-- Nuovo rischio crea-con-type, modifica tipo esistente, griglia mostra badge
-- `npm run test:run` verde
+**Obiettivo di questo deputy:** allargare schema AI + UI revisione + estrattori + persistenza DB ai campi di **copertura** (priorità) e ai parametri prova essenziali, senza riscrivere la pipeline ingest né toccare sync/auth.
 
 ---
 
-## Slice 2 — Tabelle `context_factors` (§4.1) e `interested_parties` (§4.2)
+## Cosa NON toccare
 
-> **Prerequisito:** Slice 1 completata e su `main`.
-
-### Backend — Migrazione 122
-
-Creare `backend/database/migrations/122_context_factors_interested_parties.sql`:
-```sql
--- §4.1 Fattori di contesto (interni/esterni)
-IF NOT EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME = 'context_factors')
-BEGIN
-  CREATE TABLE context_factors (
-    id             INT IDENTITY(1,1) PRIMARY KEY,
-    organization_id INT NOT NULL,
-    company_id     INT NULL,          -- scope azienda se applicabile
-    type           NVARCHAR(20) NOT NULL DEFAULT 'external'
-                   CONSTRAINT CK_cf_type CHECK (type IN ('internal', 'external')),
-    category       NVARCHAR(50) NULL, -- PESTLE tag: Political, Economic, Social, etc.
-    description    NVARCHAR(MAX) NOT NULL,
-    impact         NVARCHAR(20) NOT NULL DEFAULT 'neutral'
-                   CONSTRAINT CK_cf_impact CHECK (impact IN ('positive', 'negative', 'neutral')),
-    is_active      BIT NOT NULL DEFAULT 1,
-    created_at     DATETIME NOT NULL DEFAULT GETDATE(),
-    updated_at     DATETIME NOT NULL DEFAULT GETDATE()
-  );
-  CREATE INDEX IX_context_factors_org ON context_factors(organization_id);
-END
-
--- §4.2 Parti interessate
-IF NOT EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME = 'interested_parties')
-BEGIN
-  CREATE TABLE interested_parties (
-    id             INT IDENTITY(1,1) PRIMARY KEY,
-    organization_id INT NOT NULL,
-    company_id     INT NULL,
-    name           NVARCHAR(200) NOT NULL,
-    relationship   NVARCHAR(100) NULL,  -- es. "Cliente", "Fornitore", "Regolatore"
-    requirements   NVARCHAR(MAX) NULL,  -- requisiti/aspettative rilevanti §4.2b
-    is_active      BIT NOT NULL DEFAULT 1,
-    created_at     DATETIME NOT NULL DEFAULT GETDATE(),
-    updated_at     DATETIME NOT NULL DEFAULT GETDATE()
-  );
-  CREATE INDEX IX_interested_parties_org ON interested_parties(organization_id);
-END
-```
-
-### Backend — Nuovi controller/route
-
-- `contextFactors.controller.js` + `interestedParties.controller.js`
-- Route: `GET/POST/PUT/DELETE /context-factors` e `/interested-parties`
-- Scope: filtrare su `organization_id` + opz. `company_id` (pattern Ambito)
-- Aggiungere a `deploy-manifest.json`
-
-### Frontend — Tab "Contesto" in `RisksPage`
-
-Aggiungere tab "Contesto §4" con due sezioni: "Fattori di contesto" e "Parti interessate". Usare `SgqDataGrid` (componente esistente) per la visualizzazione.
-
-Seguire il pattern Ambito (`risksCompanyScope.js` se esiste, altrimenti `documentRegistryCompanyScope.js` come riferimento).
-
-**DoD Slice 2:**
-- Migration 122 applicata
-- CRUD context_factors e interested_parties funzionante
-- Tab "Contesto §4" visibile in RisksPage
-- `npm run test:run` verde
+- Sync audit / ADR-008, auth JWT, RBAC.
+- Pipeline generica `documentIngestPipeline` oltre al minimo per `docType=wpqr`.
+- Calcolo automatico range spessore da Tabella 7/8 ISO 15614 (valori ancora da verificare — vedi avviso in `ISO-15614-1-range-validita-WPQR.md`). **Estrarre i range dichiarati sul verbale**; non inventare formule nuove.
+- Matrice compatibilità gruppi materiale Tabella 5/6 (GAP documentale).
+- Form manuale completo prove NDT (VT/RT/…) oltre a popolare campi già esistenti se l’AI li restituisce.
+- `DEPUTYTASK.md` (profilo azienda ADR-018) — lavoro parallelo, file disgiunti.
 
 ---
 
-## Slice 3 — Collegamento Rischi/Opportunità → Piano Azioni
+## Campi target (ordine di priorità)
 
-> **Prerequisito:** Slice 1 completata e su `main`.
+### P0 — Copertura (pag.1 RANGE OF QUALIFICATION)
 
-### Obiettivo
+| Campo logico | Chiave suggerita | Note |
+|---|---|---|
+| Numero WPQR / Test Certificate | `wpqr_number` / `certificate_number` | Accettare suffisso `-NN` (`24-03390-01`) |
+| Norma + livello | `standard_reference`, `qualification_level` | Level `1`\|`2`\|null — **non** defaultare a 2 se assente |
+| Processo | `welding_process` | ISO 4063; preferire codice esplicito «135» al match alias |
+| Tipo giunto | `joint_type` | es. `BW`, `FW`, o testo `BW+FW` |
+| Gruppo materiale | `material_group` | preferire sottogruppo `1.2` se presente |
+| Spessore prova | `thickness_test_mm` | dal record di prova (pag.2) |
+| Range spessore dichiarato BW/FW | `thickness_min`, `thickness_max` (+ opz. testo `thickness_range_declared`) | **dal verbale**, non ricalcolare |
+| Diametro tubo | `diameter_min`, `diameter_max` o testo `diameter_range` | colonne DB già esistono |
+| Posizioni | `welding_positions` | ISO 6947 (es. `PA`) |
+| Filler | `filler_material` | designazione ISO 14341 |
+| PWHT | `pwht` | boolean |
+| WPS di riferimento | `wps_ref` (testo) | es. `002p_24 rev.0` — **non** obbligatorio risolvere FK `wps_id` in questa slice |
+| Ente / saldatore | `examiner_body` / `welder_name` | TEC Eurolab già in select issuing_body |
+| Date | `issue_date` / `approval_date` | preferire «Record issued» / data emissione verbale |
 
-Quando un rischio/opportunità passa a `status='in_treatment'`, l'utente può creare automaticamente un'azione nel Piano Azioni (`action_plan_items`) con `source_category='rischi'`. FK `source_risk_id` già esiste? Verificare con `rg "source_risk" backend/`.
+### P1 — Parametri prova (pag.2, essenziali)
 
-### Frontend — `RisksPage.jsx`
+| Campo | Chiave | Note |
+|---|---|---|
+| Specifica materiale base | `base_material_spec` | es. `S355J2+N` |
+| Gas protezione | `shielding_gas` | es. `M20` / `Ar 92% CO2 8%` |
+| Tipo corrente | `current_type` | es. `DC-EP` |
+| Trasferimento metallo | `metal_transfer` | Short/Spray/… |
+| Grado meccanizzazione | `mechanization` | manual / partly mechanized / mechanized / automatic |
+| Single/multi run | `single_multi_run` | `single`\|`multi` |
+| Heat input note | `heat_input_note` | testo breve (±25% …) — opzionale NVARCHAR |
 
-In visualizzazione dettaglio rischio con `status='in_treatment'`:
-```jsx
-{risk.status === 'in_treatment' && hasLicensedModule('nc') && (
-  <button
-    className="btn btn-secondary btn-sm"
-    onClick={() => handleCreateActionFromRisk(risk)}
-  >
-    ➕ Crea azione nel Piano Azioni
-  </button>
-)}
-```
-
-`handleCreateActionFromRisk` apre il modale NC con `source_category='rischi'` e `source_risk_id` pre-compilato.
-
-### Backend
-
-Se `source_risk_id` non esiste nella tabella `action_plan_items`, aggiungere con migrazione 123:
-```sql
-IF NOT EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME='action_plan_items' AND COLUMN_NAME='source_risk_id')
-  ALTER TABLE action_plan_items ADD source_risk_id INT NULL;
-```
-
-**DoD Slice 3:**
-- Pulsante "Crea azione" visibile su rischio in_treatment
-- Azione creata con source_category='rischi' e link al rischio di origine
-- `npm run test:run` verde
+**Fuori scope slice:** tabella passate completa (A/V/speed per run), allegati rapporti NDT singoli.
 
 ---
 
-## Sequenza di lavoro
+## Slice A — Schema UI revisione + prompt AI (FE+BE mirror)
+
+**File:**
+
+- `app/src/data/documentTypeSchemas.js` — blocco `wpqr`
+- `backend/src/data/documentTypeSchemas.js` — mirror `aiPrompt` + `aiExpectedSchema`
+- Sezione prompt posizioni/processo già gated per `wpqr` in `importAiExtraction.service.js` — verificare che resti attiva
+
+**Cosa fare:**
+
+1. Espandere `fields` della revisione WPQR con i campi P0 (+ P1 se spazio UI ok; raggruppare con `hint`).
+2. Aggiornare `aiPrompt` / `aiExpectedSchema` di conseguenza.
+3. `rangeFields` aggiornato: almeno processo, gruppo, spessore, posizioni, thickness_min/max.
+4. Encoding UTF-8, accenti italiani corretti.
+
+**DoD:** in revisione ingest compaiono i nuovi campi; build FE ok.
+
+---
+
+## Slice B — Estrattori euristici + bug fix processo 111
+
+**File:**
+
+- `backend/src/utils/ruleFieldExtractors.js` (+ test esistenti/nuovi)
+- Eventuale tweak `weldingProcesses4063.js` **solo se** necessario (attenzione regressioni patentini)
+
+**Cosa fare:**
+
+1. **Bug P0:** `inferWeldingProcessFromText` / ordine alias — la parola «elettrodo» (dimensione filo / electrode size) non deve vincere su un codice esplicito `135` nel testo. Preferire: (a) match codice numerico etichettato («Welding process: 135» / «Processo … 135»), poi (b) alias. Test con testo reale del PDF campione (almeno snippet pag.1–2).
+2. `extractWpqrReference`: accettare `NN-NNNNN-NN` (es. `24-03390-01`).
+3. `extractWpqrFields`: aggiungere posizioni (riuso `extractWeldingPositionsFromText`), filler (regex designazione / «Filler metal designation»), joint_type (BW/FW), qualification_level («Level 1|2»), diameter se possibile, welder_name, TEC Eurolab in `extractIssuingBody` (o riuso normalizzazione già presente).
+4. Non impostare `expiry_date` arbitraria sull’ultima data del PDF se non etichettata come scadenza (WPQR spesso senza expiry).
+
+**DoD:** test Jest/Node che sul testo campione processo=`135`, numero contiene `24-03390-01`, gruppo sensato (`1.2` o `1`).
+
+---
+
+## Slice C — Persistenza DB + map ingest
+
+**File:**
+
+- `database/migrations/133_wpqr_coverage_fields.sql` (idempotente, cartella **`database/migrations/`** root — mai `backend/database/migrations/`)
+- `backend/scripts/run-migration-133-vps.js` (SQL inline o lettura file; pattern VPS)
+- `backend/src/services/wpqrIngest.service.js` — `mapPipelineFieldsToReview` / `mapReviewFieldsToDb` / INSERT
+- `backend/src/controllers/welding.controller.js` — create/update WPQR: accettare nuove colonne in `allowed` se necessario
+- Test: `wpqrIngest.service.test.js`, eventuali test extractor
+
+**Colonne nuove (solo se mancanti — verificare schema attuale):**
+
+Suggerite (NVARCHAR/DECIMAL/BIT, tutte NULL):
+
+- `qualification_level` NVARCHAR(10)
+- `joint_type` NVARCHAR(50)
+- `standard_reference` NVARCHAR(100)
+- `wps_ref` NVARCHAR(100)
+- `base_material_spec` NVARCHAR(100)
+- `shielding_gas` NVARCHAR(100)
+- `current_type` NVARCHAR(40)
+- `metal_transfer` NVARCHAR(80)
+- `mechanization` NVARCHAR(40)
+- `single_multi_run` NVARCHAR(20)
+- `heat_input_note` NVARCHAR(200)
+- `thickness_range_declared` NVARCHAR(100) (opz.; altrimenti usare solo min/max già presenti)
+- `diameter_range` NVARCHAR(200) (opz. testo libero se min/max ambigui)
+
+Usare colonne già esistenti dove possibile: `diameter_min`/`diameter_max`, `filler_material`, `welding_positions`, `thickness_min`/`thickness_max`, `pwht`.
+
+**Regola range:** se il verbale dichiara BW 3–24, salvare quei valori in `thickness_min`/`thickness_max` e **non** sovrascriverli con `calcThicknessRange(thickness_tested)` salvo assenza del dichiarato.
+
+**DoD:** commit staging → riga `wpqr_records` con almeno processo, gruppo, posizioni, thickness_min/max, qualification_level, joint_type, standard_reference popolabili; migration idempotente; deploy-manifest se nuovi file JS.
+
+---
+
+## Slice D — Form manuale WPQR (allineamento minimo)
+
+**File:** `app/src/pages/WeldingProceduresPage.jsx` (`WPQRFormModal`)
+
+Aggiungere i campi P0 mancanti al form manuale (Level, joint_type, standard_reference, wps_ref, diametro, filler se assente) riusando class CSS `wp-form-*` esistenti. Niente redesign.
+
+**DoD:** create/update manuale salva i nuovi campi senza errore API.
+
+---
+
+## Test e chiusura
 
 ```bash
-git pull origin main
-git checkout -b cursor/rischi-opportunita-slices-3bea
+cd backend && npm test -- --testPathPattern='wpqrIngest|ruleFieldExtractors|weldingProcesses' 2>&1 | tail -40
+cd app && NODE_ENV=test npm run test:run 2>&1 | tail -30
+cd app && npm run build 2>&1 | tail -20
 ```
 
-Slice 1 → commit → Slice 2 → commit → Slice 3 → commit → push → PR
+Migrazione: pattern Cloud Agent SCP + `node /tmp/run-migration-133-vps.js` sul VPS (non SQL diretto dal cloud).
 
-**Commit message standard:**
-```
-feat: Rischi §6.1 Slice 1 — campo nature (rischio/opportunità), mig. 121
-feat: Rischi §6.1 Slice 2 — context_factors e interested_parties (§4.1/§4.2), mig. 122
-feat: Rischi §6.1 Slice 3 — collegamento rischio → Piano Azioni (source_category rischi)
-```
+Dopo TEST OK: aggiornare questo file `Stato: CHIUSO`, nota breve in `docs/GUIDA_CONSOLIDATA.md` (sezione Esperienza), PR ready + merge se solo FE/schema+test verdi; se tocca migration/controller chiedere conferma merge solo se CI rossa o conflitto — altrimenti merge ok dopo smoke migration.
 
 ---
 
-## DoD globale
+## Criterio «già fatto?» (anti-doppio lavoro)
 
-- Migrazione/i applicate sul VPS (prima TEST se disponibile, poi produzione)
-- `npm run test:run` verde dopo ogni slice
-- `npm run build` verde prima del push
-- PR draft aperta; chiudere con TEST OK o FIX NON APPLICABILI
+Prima di codificare: `rg "qualification_level" backend/src app/src database/migrations`. Se già presente su `main`, marcare CHIUSO senza riscrivere.
+
+---
+
+## Esito atteso in chat
+
+`TEST OK` oppure `FIX NON APPLICABILI` con motivo.
