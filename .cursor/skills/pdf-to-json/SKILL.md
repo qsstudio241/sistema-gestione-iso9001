@@ -154,6 +154,23 @@ di output dedicata al progetto/cliente, revisione `.md` prima di consegnare.
 generico sul nuovo PDF e valutare se il JSON prodotto puo' sostituire o
 affiancare l'import esistente per quel file.
 
+**Utente**: «Ho una norma complementare alla 3834 (es. ISO 14175 gas, ISO 4063 processi, ISO 13916 temperature, ISO 15609 WPS)»
+→ Schema `norm-clause` + `standard_code` dedicato (es. `ISO_14175_2008`, `ISO_13916_2025`, `ISO_15609_1_2019`),
+output in `docs/Normative/` con naming tipo
+`Normative NORMA_NNNNN_ UNI EN ISO … Rev. 0.md` (+ `.json` affiancato).
+**Attenzione**: se la norma e' un **catalogo di classificazione**, **norma di misura**
+o **checklist contenuto documento** (gas, processi, posizioni, temperature, contenuto WPS)
+e non un SGQ a clausole 4–10, **non** aggiungerla a `import-norms-from-markdown.js`. Creare invece:
+1. estratto operativo in `docs/reference/ISO-….md` (regole AI + simboli frequenti);
+2. catalogo JS mirror `app/src/data/` + `backend/src/data/` **solo se** ci sono
+   codici da normalizzare (pattern RC in `PLAN_INGEST_REFERENCE_CATALOGS.md`);
+   altrimenti modulo leggero solo-prompt (es. temperature) oppure solo schema campi (es. 15609);
+3. hook prompt in `importAiExtraction.service.js` / `documentTypeSchemas` se c'e' un campo ingest chiaro
+   (es. `shielding_gas` ← ISO 14175; `preheat_temp`/`interpass_temp` ← ISO 13916; variabili WPS ← ISO 15609).
+Esempi in repo: ISO 14175:2008 → `ISO-14175-gas-protezione.md` + `shieldingGases14175.js` (RC-3);
+ISO 13916:2025 → `ISO-13916-temperature-saldatura.md` + `weldingTemperatures13916.js` (RC-9);
+ISO 15609-1/-2:2019 → `ISO-15609-WPS-contenuto.md` + schema WPS arricchito (RC-10, no catalogo simboli).
+
 ## Encoding
 
 - Tutti gli output (`.md`, `.json`) sono scritti in **UTF-8 senza BOM** dal

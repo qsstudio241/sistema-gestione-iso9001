@@ -25,6 +25,7 @@ Riferimenti tecnici da consultare durante sviluppo o debug (non procedure passo-
 | [ISO-9606-1-range-validita-patentino.md](ISO-9606-1-range-validita-patentino.md) | Saldatori manuali — spessore/diametro/posizioni, validità 3/2 anni |
 | [ISO-15614-1-range-validita-WPQR.md](ISO-15614-1-range-validita-WPQR.md) | WPQR procedure — livelli, spessore/diametro, campi essenziali |
 | [ISO-14732-operatori-saldatura.md](ISO-14732-operatori-saldatura.md) | Operatori saldatura automatica/meccanizzata — validità 6/3 anni (diversa da 9606-1) |
+| [ISO-15609-WPS-contenuto.md](ISO-15609-WPS-contenuto.md) | Contenuto WPS arco (15609-1) e gas (15609-2) — variabili §4 per ingest |
 
 Piano slice: [PLAN_INGEST_REFERENCE_CATALOGS.md](../agent-tasks/PLAN_INGEST_REFERENCE_CATALOGS.md).
 

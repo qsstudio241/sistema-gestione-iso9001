@@ -12,10 +12,16 @@
 | `Normative NORMA_00008_ UNI EN ISO 3834-5_2021 Rev. 0.md` | ISO_3834_5_2021 | ISO 3834-5 | Documenti e record |
 | `Normative NORMA_00010_ UNI EN ISO 3834-2_2006 Rev. 0.md` | ISO_3834_2_2006 | ISO 3834-2 | Livello completo — **edizione 2006** (PDF 2021 non reperito in archivio, a differenza di -1/-3/-5) |
 | `Normative NORMA_00011_ UNI EN ISO 3834-4_2006 Rev. 0.md` | ISO_3834_4_2006 | ISO 3834-4 | Livello elementare — **edizione 2006** (PDF 2021 non reperito in archivio) |
+| `Normative NORMA_00012_ UNI EN ISO 14175_2008 Rev. 0.md` | ISO_14175_2008 | ISO 14175:2008 | **Supporto 3834** — classificazione gas di protezione. **Non** in `import-norms` (non è SGQ a clausole). Catalogo ingest: `docs/reference/ISO-14175-gas-protezione.md` + `shieldingGases14175.js` (RC-3) |
+| `Normative NORMA_00013_ UNI EN ISO 13916_2025 Rev. 0.md` | ISO_13916_2025 | ISO 13916:2025 | **Supporto 3834** — misura temperature preriscaldo/interpass/mantenimento (Tp/Ti/Tm). **Non** in `import-norms`. Estratto: `docs/reference/ISO-13916-temperature-saldatura.md` + `weldingTemperatures13916.js` (RC-9, solo prompt) |
+| `Normative NORMA_00014_ UNI EN ISO 15609-1_2019 Rev. 0.md` | ISO_15609_1_2019 | ISO 15609-1:2019 | **Supporto 3834** — contenuto WPS saldatura ad arco. **Non** in `import-norms`. Estratto: `docs/reference/ISO-15609-WPS-contenuto.md` (RC-10) |
+| `Normative NORMA_00015_ UNI EN ISO 15609-2_2019 Rev. 0.md` | ISO_15609_2_2019 | ISO 15609-2:2019 | **Supporto 3834** — contenuto WPS saldatura a gas. **Non** in `import-norms`. Stesso estratto RC-10 (sezione Parte 2) |
 
 **Nota versione 3834-2/-4**: a differenza delle Parti 1, 3 e 5 (edizione 2021), per queste due parti l'archivio norme fornito conteneva solo l'edizione UNI EN ISO 2006 (superata dalla revisione 2021 della serie, non ancora reperita per queste parti specifiche). Il contenuto è comunque utilizzabile per gap analysis/RDP, ma citare sempre l'edizione (2006) e sostituire con la 2021 non appena disponibile il PDF corrispondente.
 
-Script import: `backend/scripts/import-norms-from-markdown.js` (solo i file sopra).
+**Norme di supporto 3834 (cataloghi/misura/contenuto WPS, non seed `norm_requirements`)**: ISO 14175 (gas), ISO 13916 (temperature), ISO 15609-1/-2 (contenuto WPS), ISO 4063 (processi), ISO 6947 (posizioni), ISO/TR 15608 (gruppi materiale) — vedi `docs/agent-tasks/PLAN_INGEST_REFERENCE_CATALOGS.md`.
+
+Script import: `backend/scripts/import-norms-from-markdown.js` (solo i file SGQ 9001/14001/45001/3834-* sopra; **non** 14175, 13916 né 15609).
 
 ## Catalogo `Quaderni/`
 
@@ -105,6 +111,9 @@ Doc: `docs/how-to/MANUALE_UTENTE_NC.md`, sezione NC in `GUIDA_CONSOLIDATA.md`.
 | 3834-5 documenti | 3834-5 | Norma in repo (2021) |
 | 3834-2 completo | 3834-2 | Norma in repo (**edizione 2006** — 2021 non reperita) |
 | 3834-4 elementare | 3834-4 | Norma in repo (**edizione 2006** — 2021 non reperita) |
+| Gas protezione (supporto) | ISO 14175:2008 | MD+JSON in Normative (NORMA_00012); catalogo RC-3 `shielding_gas` |
+| Temperature saldatura (supporto) | ISO 13916:2025 | MD+JSON (NORMA_00013); estratto RC-9 `preheat_temp` / `interpass_temp` |
+| Contenuto WPS arco/gas (supporto) | ISO 15609-1/-2:2019 | MD+JSON (NORMA_00014/00015); estratto RC-10 `ISO-15609-WPS-contenuto.md` |
 | Modulo RDP + foto | Template cliente | ? backlog |
 
 ## Confronto quantitativo 9001 (ADR-002)

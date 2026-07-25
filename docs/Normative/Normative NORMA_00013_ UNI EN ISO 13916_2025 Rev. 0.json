@@ -1,0 +1,50 @@
+[
+  {
+    "standard_code": "ISO_13916_2025",
+    "clause_ref": "1",
+    "clause_title": "Scope",
+    "requirement_text": "This document specifies requirements for the measurement of preheating temperature, interpass temperature and preheat maintenance temperature for fusion welding. This document can also be applied as appropriate in the case of other welding processes. This document does not apply to the measurement of post weld heat treatment temperatures."
+  },
+  {
+    "standard_code": "ISO_13916_2025",
+    "clause_ref": "2",
+    "clause_title": "Normative references",
+    "requirement_text": "There are no normative references in this document."
+  },
+  {
+    "standard_code": "ISO_13916_2025",
+    "clause_ref": "3",
+    "clause_title": "Terms and definitions",
+    "requirement_text": "3.1 preheating temperature Tp — temperature of the workpiece in the weld zone immediately prior to any welding operation. Note: normally expressed as a minimum and is usually equal to the minimum interpass temperature. 3.2 interpass temperature Ti — temperature in a multi-run weld and adjacent parent metal immediately prior to the application of the next run. Note: normally expressed as a maximum temperature. 3.3 preheat maintenance temperature Tm — minimum temperature in the weld zone which is to be maintained if welding is interrupted."
+  },
+  {
+    "standard_code": "ISO_13916_2025",
+    "clause_ref": "4.1",
+    "clause_title": "Point of measurement",
+    "requirement_text": "For workpiece thickness t not exceeding 50 mm in the weld, temperature measurement shall normally be made on the surface facing the welder. If the heat source is centred on the groove, measurement distance A = 4 × t, but not more than 50 mm, from the longitudinal edge of the groove. If the heat source is localized outside the groove (e.g. fixed permanent heaters), measure on weld metal or exposed parent metal immediately adjacent to the weld preparation. When thickness exceeds 50 mm, the required temperature shall exist in the parent metal for a minimum of 75 mm (or as otherwise agreed) in any direction from the joint preparation; where practicable measure on the face opposite to that being heated. Equalization time of the order of 2 min for each 25 mm of parent metal thickness. Interpass temperature shall be measured on the weld metal or the immediately adjacent parent metal."
+  },
+  {
+    "standard_code": "ISO_13916_2025",
+    "clause_ref": "4.2",
+    "clause_title": "Time of measurement",
+    "requirement_text": "Interpass temperature shall be measured in the weld area immediately prior to the application of the next run. If the preheat maintenance temperature is specified, it shall be monitored during the period of welding interruption."
+  },
+  {
+    "standard_code": "ISO_13916_2025",
+    "clause_ref": "4.3",
+    "clause_title": "Equipment",
+    "requirement_text": "Equipment used for temperature measurement should be specified in the welding procedure specifications, for example: temperature sensitive materials such as crayons or paints (TS); contact thermometer (CT); thermocouple (TE); optical or electrical devices for contactless measurement (TB). NOTE: ISO 17662 provides requirements for calibration, verification and validation of such equipment."
+  },
+  {
+    "standard_code": "ISO_13916_2025",
+    "clause_ref": "5",
+    "clause_title": "Measurement records",
+    "requirement_text": "If records of measurements are required, reference to this document shall be made and the following minimum information shall be given in accordance with the welding procedure specification: measured preheating temperature in °C; measured interpass temperature in °C; measured preheat maintenance temperature in °C; any deviation from this document, if applicable."
+  },
+  {
+    "standard_code": "ISO_13916_2025",
+    "clause_ref": "6",
+    "clause_title": "Designation",
+    "requirement_text": "Example 1 (preheating once): Temperature ISO 13916:2025 Tp 155 — CT. Example 2 (interpass range from multiple readings): Temperature ISO 13916:2025 Ti 130/160 — TE."
+  }
+]
