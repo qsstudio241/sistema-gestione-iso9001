@@ -64,16 +64,63 @@ thickness_min_mm, thickness_max_mm, wpqr_ref. Usa null per i campi non trovati.`
 
   wpqr: {
     label: 'WPQR (Qualifica procedura)',
-    aiPrompt: `Stai analizzando un WPQR (Welding Procedure Qualification Record) ISO 15614.
-Estrai in type_specific_data: wpqr_number, welding_process, material_group, thickness_test_mm,
-approval_date (YYYY-MM-DD), standard_reference. Usa null se assente.`,
+    aiPrompt: `Stai analizzando un WPQR (Welding Procedure Qualification Record) secondo ISO 15614.
+Estrai TUTTI i seguenti campi in "type_specific_data". Se un campo non e presente, usa null.
+
+Campi di copertura (pag.1 RANGE OF QUALIFICATION, priorita alta):
+- wpqr_number: numero certificato/WPQR, accetta suffisso rivisione (es. "24-03390-01")
+- qualification_level: "1" o "2" solo se dichiarato esplicitamente (Level 1/2) - non dedurre
+- standard_reference: norma di riferimento (es. "UNI EN ISO 15614-1:2019")
+- welding_process: codice ISO 4063 - preferire un codice numerico esplicito nel testo (es. "Welding process: 135") a un alias generico
+- joint_type: "BW", "FW" o "BW+FW"
+- material_group: gruppo materiale ISO/TR 15608, preferire il sottogruppo (es. "1.2") se presente
+- thickness_test_mm: spessore del provino testato (numero)
+- thickness_min / thickness_max: range di spessore DICHIARATO sul verbale (non calcolarlo)
+- diameter_min / diameter_max: range diametro tubo se applicabile
+- welding_positions: array posizioni ISO 6947 (es. ["PA"])
+- filler_material: designazione materiale d'apporto
+- pwht: booleano, PWHT applicato
+- wps_ref: identificativo testuale della WPS di riferimento
+- examiner_body: ente/esaminatore (TUV, Bureau Veritas, DNV, RINA, IMQ, TEC Eurolab, Sideius, ecc.)
+- welder_name: saldatore che ha eseguito la prova
+- approval_date: data di emissione/approvazione del verbale (YYYY-MM-DD), preferire "Record issued"
+
+Parametri prova (pag.2, priorita media):
+- base_material_spec: specifica materiale base (es. "S355J2+N")
+- shielding_gas: gas di protezione (es. "M20", "Ar 92% CO2 8%")
+- current_type: tipo di corrente (es. "DC-EP")
+- metal_transfer: modalita di trasferimento metallo
+- mechanization: "manual"|"partly_mechanized"|"mechanized"|"automatic"
+- single_multi_run: "single" o "multi"
+- heat_input_note: nota breve sull'apporto termico, se presente
+
+IMPORTANTE: non ricalcolare i range con formule - estrarre solo i valori dichiarati sul verbale.`,
     aiExpectedSchema: {
       wpqr_number: 'string|null',
+      qualification_level: '1|2|null',
+      standard_reference: 'string|null',
       welding_process: 'string|null',
+      joint_type: 'BW|FW|BW+FW|null',
       material_group: 'string|null',
       thickness_test_mm: 'number|null',
+      thickness_min: 'number|null',
+      thickness_max: 'number|null',
+      diameter_min: 'number|null',
+      diameter_max: 'number|null',
+      welding_positions: 'string[]|null',
+      filler_material: 'string|null',
+      pwht: 'boolean|null',
+      wps_ref: 'string|null',
+      examiner_body: 'string|null',
+      welder_name: 'string|null',
       approval_date: 'YYYY-MM-DD|null',
-      standard_reference: 'string|null',
+      base_material_spec: 'string|null',
+      shielding_gas: 'string|null',
+      current_type: 'string|null',
+      metal_transfer: 'string|null',
+      mechanization: 'manual|partly_mechanized|mechanized|automatic|null',
+      single_multi_run: 'single|multi|null',
+      heat_input_note: 'string|null',
     },
   },
 
