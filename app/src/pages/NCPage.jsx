@@ -179,7 +179,7 @@ export default function NCPage() {
       await apiService.approveNcClosure(nc.nc_id);
       await loadNc();
     } catch (err) {
-      alert(err?.response?.data?.error || "Impossibile approvare la chiusura.");
+      alert(err?.message || "Impossibile approvare la chiusura.");
     } finally {
       setApproveLoading(false);
     }
@@ -253,7 +253,7 @@ export default function NCPage() {
       });
       await loadNc();
     } catch (err) {
-      alert(err?.response?.data?.error || "Impossibile aggiornare lo stato della NC.");
+      alert(err?.message || "Impossibile aggiornare lo stato della NC.");
     }
   }
 

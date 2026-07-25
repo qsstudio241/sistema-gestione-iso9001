@@ -188,7 +188,7 @@ async function listNonConformities(req, res) {
         }
 
         if (company_id) {
-            whereConditions.push('a.company_id = @company_id');
+            whereConditions.push('COALESCE(a.company_id, nc.company_id) = @company_id');
             params.company_id = parseInt(company_id);
         }
 
@@ -236,7 +236,7 @@ async function listNonConformities(req, res) {
         a.audit_number,
         a.audit_uuid,
         a.client_name,
-        a.company_id,
+        COALESCE(a.company_id, nc.company_id) AS company_id,
         cs.section_title,
         c.complaint_number AS source_complaint_number,
         approver.full_name AS approved_by_name,
@@ -379,7 +379,7 @@ async function getNonConformityById(req, res) {
         const { id } = req.params;
         const { organization_id } = req.user;
         const scope = studioScopeClause(req.user, 'a');
-        const whereExtra = scope.clause ? ` AND ${scope.clause}` : '';
+        const whereExtra = scope.clause ? ` AND (nc.audit_id IS NULL OR (${scope.clause}))` : '';
         const queryParams = { id: parseInt(id), organization_id, ...scope.params };
 
         const result = await query(`
@@ -388,7 +388,7 @@ async function getNonConformityById(req, res) {
         a.audit_number,
         a.audit_uuid,
         a.client_name,
-        a.company_id,
+        COALESCE(a.company_id, nc.company_id) AS company_id,
         a.audit_date,
         cs.section_title,
         approver.full_name AS approved_by_name,
@@ -400,10 +400,15 @@ async function getNonConformityById(req, res) {
           ELSE 0 
         END AS is_overdue
       FROM non_conformities nc
-      INNER JOIN audits a ON nc.audit_id = a.audit_id
-      INNER JOIN checklist_sections cs ON nc.section_code = cs.section_code AND cs.standard_id = nc.standard_id
+      LEFT JOIN audits a ON nc.audit_id = a.audit_id
+      LEFT JOIN checklist_sections cs ON nc.section_code = cs.section_code AND cs.standard_id = nc.standard_id
       LEFT JOIN users approver ON nc.approved_by = approver.user_id
-      WHERE nc.nc_id = @id AND a.organization_id = @organization_id${whereExtra}
+      WHERE nc.nc_id = @id
+        AND (
+              (nc.audit_id IS NOT NULL AND a.organization_id = @organization_id)
+              OR (nc.audit_id IS NULL AND nc.organization_id = @organization_id)
+            )
+        ${whereExtra}
     `, queryParams);
 
         if (result.recordset.length === 0) {
@@ -500,6 +505,7 @@ async function createNonConformity(req, res) {
             management_review_id,
             source_complaint_id: rawComplaintId,
             source_risk_id,
+            company_id: rawCompanyId,
         } = req.body;
 
         const source_complaint_id = (rawComplaintId != null && rawComplaintId !== '')
@@ -572,18 +578,11 @@ async function createNonConformity(req, res) {
             const writeDenied = await assertMutatingAllowed(req.user, { companyId: company_id });
             if (writeDenied) return sendAccessDenied(res, writeDenied);
 
-            // Recupera standard_id dalla junction table audit_standards
-            const standardResult = await query(`
-        SELECT TOP 1 standard_id FROM audit_standards WHERE audit_id = @audit_id
-      `, { audit_id: parseInt(audit_id) });
-
-            if (standardResult.recordset.length === 0) {
-                return res.status(400).json({
-                    error: 'Audit non ha standard associati',
-                    code: 'NO_STANDARDS_FOUND',
-                });
-            }
-            standard_id = standardResult.recordset[0].standard_id;
+            // Standard dell'audit: fallback ISO 9001 se l'audit non ha ancora standard
+            // associati (es. audit in bozza, non ancora configurato). Stesso comportamento
+            // robusto già usato da pushAuditToNcRegister — evita di bloccare la creazione
+            // con un 400 quando esiste già una sezione/severità valide da salvare.
+            standard_id = await resolveAuditStandardId(parseInt(audit_id));
         } else {
             // NC non legate ad audit: solo admin/superadmin
             const role = req.user?.role;
@@ -592,6 +591,41 @@ async function createNonConformity(req, res) {
                     error: 'Solo admin o responsabile qualit\u00e0 pu\u00f2 creare azioni non collegate ad un audit.',
                     code: 'AUTH_FORBIDDEN',
                 });
+            }
+
+            // Ambito azienda (opzionale): se indicato, verifica che l'azienda appartenga
+            // all'organizzazione dell'utente prima di imputare l'azione.
+            if (rawCompanyId != null && rawCompanyId !== '') {
+                const parsedCompanyId = parseInt(rawCompanyId, 10);
+                if (!Number.isFinite(parsedCompanyId)) {
+                    return res.status(400).json({ error: 'company_id non valido', code: 'INVALID_COMPANY_ID' });
+                }
+                const accessList = await ensureCompanyAccessLoaded(req.user);
+                if (hasCompanyAccessRows(accessList)) {
+                    const denied = await assertCompanyAccess(req.user, parsedCompanyId, 'write');
+                    if (denied) return sendAccessDenied(res, denied);
+                } else {
+                    const { auditor_org_id } = req.user;
+                    let check;
+                    if (isOrgWideAdmin(req.user)) {
+                        check = await query(`
+                            SELECT c.id FROM companies c
+                            INNER JOIN auditor_orgs ao ON ao.id = c.auditor_org_id
+                            WHERE c.id = @company_id AND ao.organization_id = @organization_id
+                        `, { company_id: parsedCompanyId, organization_id });
+                    } else if (auditor_org_id) {
+                        check = await query(`
+                            SELECT c.id FROM companies c
+                            WHERE c.id = @company_id AND c.auditor_org_id = @auditor_org_id
+                        `, { company_id: parsedCompanyId, auditor_org_id });
+                    } else {
+                        check = { recordset: [] };
+                    }
+                    if (check.recordset.length === 0) {
+                        return res.status(403).json({ error: 'Azienda non accessibile', code: 'FORBIDDEN' });
+                    }
+                }
+                company_id = parsedCompanyId;
             }
         }
 
@@ -624,6 +658,7 @@ async function createNonConformity(req, res) {
       INSERT INTO non_conformities (
         audit_id,
         organization_id,
+        company_id,
         standard_id,
         nc_number,
         section_code,
@@ -647,6 +682,7 @@ async function createNonConformity(req, res) {
       VALUES (
         @audit_id,
         @organization_id,
+        @company_id,
         @standard_id,
         @nc_number,
         @section_code,
@@ -669,6 +705,7 @@ async function createNonConformity(req, res) {
     `, {
             audit_id: isAuditBased ? parseInt(audit_id) : null,
             organization_id,
+            company_id: isAuditBased ? null : company_id,
             standard_id: parseInt(standard_id),
             nc_number,
             section_code: effective_section_code,
@@ -1099,7 +1136,7 @@ async function getNonConformitiesStatistics(req, res) {
         const params = { organization_id };
 
         if (company_id) {
-            whereConditions.push('a.company_id = @company_id');
+            whereConditions.push('COALESCE(a.company_id, nc.company_id) = @company_id');
             params.company_id = parseInt(company_id);
         }
 

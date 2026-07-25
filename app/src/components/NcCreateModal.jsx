@@ -44,6 +44,7 @@ const EMPTY_FORM = {
   responsible_contact_id: null,
   due_date:           "",
   source_complaint_id: null,
+  company_id:         "",
 };
 
 export default function NcCreateModal({
@@ -64,6 +65,7 @@ export default function NcCreateModal({
   const [contacts, setContacts]           = useState([]);
   const [selectedCompanyId, setSelectedCompanyId] = useState(null);
   const [complaints, setComplaints]       = useState([]);
+  const [companies, setCompanies]         = useState([]);
 
   const categoryConfig = NC_SOURCE_CATEGORIES[form.source_category] || NC_SOURCE_CATEGORIES.audit;
   const requiresAudit  = categoryConfig.requiresAudit;
@@ -80,6 +82,16 @@ export default function NcCreateModal({
       .catch(() => { if (!cancelled) setContacts([]); });
     return () => { cancelled = true; };
   }, [open, selectedCompanyId]);
+
+  /* ── Carica aziende per selettore ambito (categorie non legate ad audit) ── */
+  useEffect(() => {
+    if (!open) return;
+    let cancelled = false;
+    apiService.getCompanies({ limit: 500 })
+      .then(res => { if (!cancelled) setCompanies(res?.data || []); })
+      .catch(() => { if (!cancelled) setCompanies([]); });
+    return () => { cancelled = true; };
+  }, [open]);
 
   /* ── Carica reclami quando source_category = 'complaint' ─────── */
   useEffect(() => {
@@ -200,8 +212,10 @@ export default function NcCreateModal({
       onCreated?.(created);
       onClose?.();
     } catch (err) {
-      const code = err?.response?.data?.code;
-      const msg = err?.response?.data?.error
+      // apiService lancia ApiError con { message, code, data } diretti sull'oggetto
+      // (non è un errore stile axios con .response.data — vedi apiService.js ApiError).
+      const code = err?.code;
+      const msg = err?.message
         || (code === "INVALID_SECTION_FOR_STANDARD"
           ? "Sezione non valida per lo standard dell\u2019audit selezionato."
           : "Errore durante la creazione.");
@@ -291,6 +305,25 @@ export default function NcCreateModal({
                 disabled={saving}
                 onChange={e => setField("source_origin_text", e.target.value)}
               />
+            </div>
+          )}
+
+          {/* ── 2b-bis. Ambito azienda (opzionale, solo categorie non legate ad audit) ── */}
+          {!isAuditCat && companies.length > 0 && (
+            <div className="nc-form-row">
+              <label htmlFor="nc-create-company">Azienda / ambito (opzionale)</label>
+              <select
+                id="nc-create-company"
+                value={form.company_id}
+                disabled={saving}
+                onChange={e => setField("company_id", e.target.value)}
+              >
+                <option value="">{"\u2014"} Nessuna azienda specifica (organizzazione) {"\u2014"}</option>
+                {companies.map(c => (
+                  <option key={c.id} value={c.id}>{c.name}</option>
+                ))}
+              </select>
+              <small className="form-hint">Se questa azione riguarda un cliente specifico, selezionalo per ritrovarla nei filtri per azienda.</small>
             </div>
           )}
 

@@ -108,7 +108,7 @@ function SuppliersTab() {
       if (selected?.id === item.id) setSelected(null);
       await load();
     } catch (e) {
-      alert("Impossibile eliminare: " + (e?.response?.data?.error || e.message));
+      alert("Impossibile eliminare: " + (e?.message || "errore sconosciuto"));
     }
   }
 
@@ -548,7 +548,7 @@ function DepartmentsTab() {
       await apiService.deleteDepartment(item.id);
       await load();
     } catch (e) {
-      alert("Impossibile eliminare: " + (e?.response?.data?.error || e.message));
+      alert("Impossibile eliminare: " + (e?.message || "errore sconosciuto"));
     }
   }
 

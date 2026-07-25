@@ -122,7 +122,7 @@ export default function ComplaintsPage() {
       }
       await load();
     } catch (e) {
-      alert("Errore promozione a NC: " + (e?.response?.data?.error || e.message));
+      alert("Errore promozione a NC: " + (e?.message || "errore sconosciuto"));
     }
   }
 
@@ -371,7 +371,7 @@ function ComplaintForm({ item, onClose, onSaved }) {
       }
       onSaved();
     } catch (err) {
-      setError(err?.response?.data?.error || "Errore durante il salvataggio.");
+      setError(err?.message || "Errore durante il salvataggio.");
     } finally {
       setSaving(false);
     }

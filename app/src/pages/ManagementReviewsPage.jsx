@@ -94,7 +94,7 @@ export function InputSummaryWidget({ companyId, reviewId, onPrefill, onFillAll }
       const res = await apiService.get(`/management-reviews/input-summary?${params}`);
       setData(res.data);
     } catch (err) {
-      setError(err?.response?.data?.error || "Errore durante il caricamento dei dati.");
+      setError(err?.message || "Errore durante il caricamento dei dati.");
     } finally {
       setLoading(false);
     }
@@ -767,7 +767,7 @@ function ReviewForm({ initial, onSave, onClose, companies = [], companyScope = "
       await onSave(payload);
       onClose();
     } catch (err) {
-      setError(err?.response?.data?.error || "Errore durante il salvataggio.");
+      setError(err?.message || "Errore durante il salvataggio.");
     } finally {
       setSaving(false);
     }
@@ -1048,7 +1048,7 @@ export default function ManagementReviewsPage() {
       setReviews(res.data || []);
       if (res.pagination) setPagination((p) => ({ ...p, ...res.pagination }));
     } catch (err) {
-      setError(err?.response?.data?.error || "Errore caricamento riesami.");
+      setError(err?.message || "Errore caricamento riesami.");
     } finally {
       setLoading(false);
     }

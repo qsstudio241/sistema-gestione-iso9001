@@ -346,7 +346,7 @@ function AuditClosePanel({ currentAudit, onCompleted, onNavigateTo }) {
         phase: "error",
         countdown: 0,
         summary: null,
-        error: err?.response?.data?.error || err?.message || "Errore durante il trasferimento.",
+        error: err?.message || "Errore durante il trasferimento.",
       });
     }
   }
@@ -371,7 +371,7 @@ function AuditClosePanel({ currentAudit, onCompleted, onNavigateTo }) {
       setNcPushState((s) => ({
         ...s,
         phase: "error",
-        error: err?.response?.data?.error || err?.message || "Impossibile annullare il trasferimento.",
+        error: err?.message || "Impossibile annullare il trasferimento.",
       }));
     }
   }
