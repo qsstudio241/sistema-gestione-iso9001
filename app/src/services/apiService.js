@@ -529,7 +529,9 @@ class ApiService {
     // ==========================================
 
     async getCompanies(params = {}) {
-        const query = new URLSearchParams(params).toString();
+        // Default limit 500: i selettori Ambito/dropdown non paginano.
+        // Senza questo, GET /companies (backend default 50) nasconde aziende oltre la 50ª (ORDER BY name).
+        const query = new URLSearchParams({ limit: 500, ...params }).toString();
         return this.get(`/companies${query ? '?' + query : ''}`);
     }
 
