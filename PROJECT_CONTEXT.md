@@ -41,12 +41,14 @@ Su alcuni PC il repository è raggiungibile in più modi; **non** assumere che p
 
 | Percorso | Significato tipico |
 |---|---|
-| **`C:\ProgettoISO`** | Spesso è una **junction** (reparse point) verso la cartella reale sotto **Google Drive** — es. `G:\Il mio Drive\Sistema Gestione ISO 9001`. Comandi Git e file system operano su **quella** destinazione. |
-| **`...\OneDrive - ...\Sistema Gestione ISO 9001`** (o altre cartelle) | Possibile **secondo checkout**, copia o mirror: stesso nome ma **working tree separato**. Lo stato (`git log`, modifiche locali) può **divergere** da `C:\ProgettoISO`. |
+| **`C:\Dev\ProgettoISO`** | **Checkout locale reale su disco C:** su questa macchina (verificato 25/07/2026) — repo git a tutti gli effetti, `node_modules` già installati, veloce per test/build. **Preferire sempre questo percorso** per lavoro agente su questo PC. |
+| **`C:\ProgettoISO`** | Su alcune macchine è una **junction** (reparse point) verso la cartella reale sotto **Google Drive** — es. `G:\Il mio Drive\Sistema Gestione ISO 9001`. **Non presente/non usato** su questa macchina: non assumerlo senza verifica (`Test-Path`). |
+| **`G:\Il mio Drive\Sistema Gestione ISO 9001`** (default workspace Cursor desktop) | Cartella su **Google Drive streaming** — stesso `origin`, ma soggetta a **letture inconsistenti tra tool diversi** (Read/Grep IDE vs `git`/PowerShell) subito dopo una scrittura, per la sincronizzazione asincrona del client Drive. **Non usare per sessioni di lavoro con test/build**: preferire `C:\Dev\ProgettoISO` se presente. |
+| **`...\OneDrive - ...\Sistema Gestione ISO 9001`** (o altre cartelle) | Possibile **secondo checkout**, copia o mirror: stesso nome ma **working tree separato**. Lo stato (`git log`, modifiche locali) può **divergere**. |
 
 **Fonte di verità** per il codice condiviso: il remoto GitHub **`origin`**, branch tipicamente **`main`** — non il nome letterale della cartella sotto `C:` o `G:`.
 
-**Regola operativa** (agent / sviluppatore): nella cartella effettivamente aperta in Cursor eseguire `git fetch` e `git status` / `git pull` prima di affermare di essere allineati a `main`.
+**Regola operativa** (agent / sviluppatore): **prima di iniziare qualsiasi task**, verificare con l'utente o con `Test-Path` quale percorso locale è il checkout di lavoro reale su quel PC (può differire da quello aperto di default in Cursor). Nella cartella effettivamente scelta eseguire `git fetch` e `git status` / `git pull` prima di affermare di essere allineati a `main`. **Se si osservano letture di file incoerenti con l'output di `git diff`/`git show`** (es. contenuto "vecchio" nonostante un commit riuscito), sospettare subito un percorso su Google Drive streaming e passare a un checkout su disco locale reale.
 
 ---
 

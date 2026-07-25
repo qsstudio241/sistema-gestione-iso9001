@@ -1,6 +1,9 @@
 # DEPUTYTASK1 — Ingest WPQR: campi copertura (pag.1) + parametri prova (pag.2)
 
-**Stato:** APERTO  
+**Stato:** CHIUSO — TEST OK (25/07/2026, deputy)
+> Riepilogo chiusura: Slice A (schema UI+AI FE/BE) + B (estrattori, fix bug processo 111↔135) + C (migrazione 133 idempotente eseguita su VPS produzione, verificata; wpqrIngest.service + welding.controller estesi) + D (form manuale WPQR) tutte completate. Test: backend Jest 918/931 (13 falliti pre-esistenti su `main`, non correlati — verificato per confronto diretto), Vitest FE 881/881, build Vite OK. Deploy backend su VPS eseguito e verificato (health OK, PID rinnovato). Branch `cursor/deputytask1-wpqr-coverage-fields`, mergiato con `main` (conflitti risolti su `documentTypeSchemas.js` con lavoro parallelo ISO 13916/14175/15609). PR da confermare per merge (tocca backend + migrazione DB — richiede conferma committente per criterio "Merge PR automatico").
+
+**Stato storico:** APERTO  
 **Priorità:** P1 — copertura requisiti commessa / ISO 3834 (non breaking)  
 **Branch base:** `main`  
 **Prossima migrazione disponibile:** **133** (verificare `ls database/migrations/ | sort | tail -5` prima di creare)  
