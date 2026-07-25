@@ -151,7 +151,7 @@ const patentino_saldatore = {
       label: "Gas di protezione",
       type: "text",
       required: false,
-      hint: "Es. M21, I1, C1 secondo ISO 14175; lasciare vuoto se non applicabile",
+      hint: "Simbolo ISO 14175 (es. M21, I1, C1). Preferire il codice corto, non la designazione lunga. Vuoto se non applicabile (es. MMA/SAW). Catalogo: shieldingGases14175.js",
     },
     {
       key: "exam_date",
@@ -275,7 +275,14 @@ const wps = {
       label: "Materiale base",
       type: "text",
       required: false,
-      hint: "Es. S355J2, AISI 316L",
+      hint: "Designazione (es. S355J2, AISI 316L) — ISO 15609 §4.3.1",
+    },
+    {
+      key: "material_group",
+      label: "Gruppo materiale (ISO/TR 15608)",
+      type: "text",
+      required: false,
+      hint: "Es. 1.2, 8.1 — ISO 15609 §4.3.1",
     },
     {
       key: "thickness_min_mm",
@@ -290,25 +297,126 @@ const wps = {
       required: false,
     },
     {
+      key: "pipe_outside_diameter_mm",
+      label: "Diametro esterno tubo (mm)",
+      type: "text",
+      required: false,
+      hint: "Range OD se WPS per tubo — ISO 15609 §4.3.2",
+    },
+    {
+      key: "joint_type",
+      label: "Tipo giunto",
+      type: "text",
+      required: false,
+      hint: "BW/FW o descrizione da WPS — ISO 15609 §4.4.2",
+    },
+    {
+      key: "welding_positions",
+      label: "Posizioni di saldatura",
+      type: "text",
+      required: false,
+      hint: "ISO 6947 (es. PA, PF) — ISO 15609 §4.4.3",
+    },
+    {
+      key: "filler_material",
+      label: "Consumabile / apporto",
+      type: "text",
+      required: false,
+      hint: "Designazione e dimensione — ISO 15609 §4.4.8",
+    },
+    {
       key: "wpqr_ref",
       label: "WPQR di riferimento",
       type: "text",
       required: false,
       hint: "Numero del WPQR che qualifica questa WPS",
     },
+    {
+      key: "shielding_gas",
+      label: "Gas di protezione",
+      type: "text",
+      required: false,
+      hint: "Simbolo ISO 14175 (es. M21, I1); null se senza gas o WPS gas (15609-2)",
+    },
+    {
+      key: "preheat_temp",
+      label: "Temperatura preriscaldo (Tp)",
+      type: "text",
+      required: false,
+      hint: "ISO 13916 Tp — es. min 100 °C (ISO 15609 §4.4.11)",
+    },
+    {
+      key: "interpass_temp",
+      label: "Temperatura interpass (Ti)",
+      type: "text",
+      required: false,
+      hint: "ISO 13916 Ti — es. max 250 °C (ISO 15609 §4.4.12)",
+    },
+    {
+      key: "heat_input",
+      label: "Heat input / arc energy",
+      type: "text",
+      required: false,
+      hint: "Solo arco (15609-1 §4.4.17); null su WPS gas",
+    },
+    {
+      key: "current_range",
+      label: "Range corrente",
+      type: "text",
+      required: false,
+      hint: "Solo arco (15609-1 §4.4.9)",
+    },
+    {
+      key: "voltage_range",
+      label: "Range tensione",
+      type: "text",
+      required: false,
+      hint: "Solo arco (15609-1 §4.4.9)",
+    },
+    {
+      key: "flame_type",
+      label: "Tipo di fiamma",
+      type: "text",
+      required: false,
+      hint: "Solo WPS gas (15609-2 §4.4.9)",
+    },
+    {
+      key: "fuel_gas",
+      label: "Gas combustibile",
+      type: "text",
+      required: false,
+      hint: "Solo WPS gas (15609-2 §4.4.9)",
+    },
   ],
 
-  aiPrompt: `Stai analizzando una WPS (Welding Procedure Specification) secondo ISO 15614.
-Estrai nell'oggetto "type_specific_data": wps_number, welding_process, base_material,
-thickness_min_mm, thickness_max_mm, wpqr_ref. Usa null per i campi non trovati.`,
+  aiPrompt: `Stai analizzando una WPS secondo EN ISO 15609-1 (arco) o 15609-2 (gas), spesso con WPQR ISO 15614.
+Estrai in type_specific_data: wps_number, wpqr_ref, welding_process (ISO 4063),
+base_material, material_group (ISO/TR 15608), thickness_min_mm, thickness_max_mm,
+pipe_outside_diameter_mm, joint_type, welding_positions (array ISO 6947), filler_material,
+shielding_gas (ISO 14175 o null), preheat_temp (Tp), interpass_temp (Ti),
+heat_input, current_range, voltage_range (solo arco), flame_type, fuel_gas (solo gas).
+Usa null se assente. Non inventare range.`,
 
   aiExpectedSchema: {
     wps_number: "string|null",
     welding_process: "string|null",
     base_material: "string|null",
+    material_group: "string|null",
     thickness_min_mm: "number|null",
     thickness_max_mm: "number|null",
+    pipe_outside_diameter_mm: "string|number|null",
+    joint_type: "string|null",
+    welding_positions: "string[]|null",
+    filler_material: "string|null",
     wpqr_ref: "string|null",
+    shielding_gas: "string|null",
+    preheat_temp: "string|null",
+    interpass_temp: "string|null",
+    heat_input: "string|null",
+    current_range: "string|null",
+    voltage_range: "string|null",
+    flame_type: "string|null",
+    fuel_gas: "string|null",
   },
 };
 
@@ -915,6 +1023,20 @@ const wpqr = {
       required: false,
       hint: "Breve nota, es. \u201C\u00B125% rispetto al valore qualificato\u201D",
     },
+    {
+      key: "preheat_temp",
+      label: "Temperatura preriscaldo (Tp)",
+      type: "text",
+      required: false,
+      hint: "ISO 13916 Tp — es. min 100 °C",
+    },
+    {
+      key: "interpass_temp",
+      label: "Temperatura interpass (Ti)",
+      type: "text",
+      required: false,
+      hint: "ISO 13916 Ti — es. max 250 °C",
+    },
   ],
   aiPrompt: `Stai analizzando un WPQR (Welding Procedure Qualification Record) secondo ISO 15614.
 Estrai TUTTI i seguenti campi in "type_specific_data". Se un campo non è presente, usa null.
@@ -945,6 +1067,8 @@ Parametri prova (pag.2, priorità media):
 - mechanization: "manual"|"partly_mechanized"|"mechanized"|"automatic"
 - single_multi_run: "single" o "multi"
 - heat_input_note: nota breve sull'apporto termico, se presente
+- preheat_temp: temperatura di preriscaldo (Tp, ISO 13916), es. "min 100 °C"
+- interpass_temp: temperatura interpass (Ti, ISO 13916), es. "max 250 °C"
 
 IMPORTANTE: non ricalcolare i range con formule — estrarre solo i valori dichiarati sul verbale.`,
   aiExpectedSchema: {
@@ -973,6 +1097,8 @@ IMPORTANTE: non ricalcolare i range con formule — estrarre solo i valori dichi
     mechanization: "manual|partly_mechanized|mechanized|automatic|null",
     single_multi_run: "single|multi|null",
     heat_input_note: "string|null",
+    preheat_temp: "string|null",
+    interpass_temp: "string|null",
   },
 };
 

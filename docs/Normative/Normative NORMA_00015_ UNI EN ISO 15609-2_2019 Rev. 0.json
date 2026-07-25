@@ -1,0 +1,200 @@
+[
+  {
+    "standard_code": "ISO_15609_2_2019",
+    "clause_ref": "1",
+    "clause_title": "Scope 1",
+    "requirement_text": ".................................................................................................................................................................................................................................."
+  },
+  {
+    "standard_code": "ISO_15609_2_2019",
+    "clause_ref": "2",
+    "clause_title": "Normative references 1",
+    "requirement_text": "................................................................................................................................................................................................................................."
+  },
+  {
+    "standard_code": "ISO_15609_2_2019",
+    "clause_ref": "3",
+    "clause_title": "Terms and definitions 1",
+    "requirement_text": "......................................................................................................................................................................................"
+  },
+  {
+    "standard_code": "ISO_15609_2_2019",
+    "clause_ref": "4",
+    "clause_title": "Technical content of Welding Procedure Specification (WPS) 1",
+    "requirement_text": "..................................................................................................................................................................................... ............................................................................. 4.1 General ...........................................................................................................................................................................................................1 4.2 Information related to the manufacturer .........................................................................................................................2 4.3 Information related to the parent material ....................................................................................................................2 4.3.1 Parent material type .....................................................................................................................................................2 4.3.2 Material dimensions .....................................................................................................................................................2"
+  },
+  {
+    "standard_code": "ISO_15609_2_2019",
+    "clause_ref": "4.4",
+    "clause_title": "Information common to all welding procedures .......................................................................................................2",
+    "requirement_text": "4.4.1 Welding process ...............................................................................................................................................................2 4.4.2 Joint design ...........................................................................................................................................................................2 4.4.3 Welding position ..............................................................................................................................................................2 4.4.4 Joint preparation ..............................................................................................................................................................2 4.4.5 Welding technique ..........................................................................................................................................................2 4.4.6 Back gouging .......................................................................................................................................................................3 4.4.7 Backing .....................................................................................................................................................................................3 4.4.8 Welding consumables ..................................................................................................................................................3 4.4.9 Flame parameters ...........................................................................................................................................................3"
+  },
+  {
+    "standard_code": "ISO_15609_2_2019",
+    "clause_ref": "4.4.10",
+    "clause_title": "Mechanized and automatic welding ...............................................................................................................3",
+    "requirement_text": "4.4.11 Pre-heat temperature ..................................................................................................................................................3 4.4.12 Interpass temperature ................................................................................................................................................3"
+  },
+  {
+    "standard_code": "ISO_15609_2_2019",
+    "clause_ref": "4.4.13",
+    "clause_title": "Pre-heat maintenance temperature ................................................................................................................3",
+    "requirement_text": "Annex A Welding Procedure Specification (WPS) 5 4.4.14 Post-weld heat-treatment ........................................................................................................................................4 Bibliography 6 (informative) ............................................................................................. ................................................................................................................................................................................................................................ © ISO 2019 – All rights reserved iii"
+  },
+  {
+    "standard_code": "ISO_15609_2_2019",
+    "clause_ref": "1",
+    "clause_title": "Scope",
+    "requirement_text": "This document specifies requirements for the content of welding procedure specifications for gas welding processes. Details of the ISO 15609 series are given in ISO 15607. The variables listed in this document are those influencing the quality of the welded joint."
+  },
+  {
+    "standard_code": "ISO_15609_2_2019",
+    "clause_ref": "2",
+    "clause_title": "Normative references",
+    "requirement_text": "The following documents are referred to in the text in such a way that some or all of their content constitutes requirements of this document. For dated references, only the edition cited applies. For undated reWfeerldenincge sa,n tdh ea lllaietdes ptr eodcietsisoens o—f t Nheo mreefnecrleantcuerde odfo pcruomceesnste (si anncldu rdeifnegr eanncye anmumenbdemrsents) applies. ISO 4063, Welding and allied processes — Welding positions ISO 6947, Specification and qualification of welding procedures for metallic materials — General rules ISO 15607, Welding and allied processes — Vocabulary ISO/TR 25901 (all parts),"
+  },
+  {
+    "standard_code": "ISO_15609_2_2019",
+    "clause_ref": "3",
+    "clause_title": "Terms and definitions",
+    "requirement_text": "For the purposes of this document, the terms and definitions given in ISO 15607 and ISO/TR 25901 (all parts) apply. ISO and IEC maintain terminological databases for use in standardization at the following addresses: — ISO Online browsing platform: available at https://www.iso.org/obp — IEC Electropedia: available at http://www.electropedia.org/"
+  },
+  {
+    "standard_code": "ISO_15609_2_2019",
+    "clause_ref": "4",
+    "clause_title": "Technical content of Welding Procedure Specification (WPS)",
+    "requirement_text": ""
+  },
+  {
+    "standard_code": "ISO_15609_2_2019",
+    "clause_ref": "4.1",
+    "clause_title": "General",
+    "requirement_text": "A preliminary welding procedure specification/welding procedure specification (pWPS/WPS) shall provide all the necessary information required to make a weld. The information required in a pWPS/WPS is given in 4.2 to 4.4. For some applications, it can be necessary to supplement or reduce the list. Welding procedure specifications cover all certain range of the necessary information to make a weld. Some manufacturers prefer additionally to prepare work instructions for each specific job as part of detailed production planning. © ISO 2019 – All rights reserved"
+  },
+  {
+    "standard_code": "ISO_15609_2_2019",
+    "clause_ref": "4.2",
+    "clause_title": "Information related to the manufacturer",
+    "requirement_text": "— Identification of the manufacturer. — Identification of the WPS. — Reference to the welding procedure qualification record (WPQR) or other documents as required (see ISO 15607)."
+  },
+  {
+    "standard_code": "ISO_15609_2_2019",
+    "clause_ref": "4.3",
+    "clause_title": "Information related to the parent material",
+    "requirement_text": ""
+  },
+  {
+    "standard_code": "ISO_15609_2_2019",
+    "clause_ref": "4.3.1",
+    "clause_title": "Parent material type",
+    "requirement_text": "— Designation of the material(s), and reference standard(s). — Number(s) of the group(s) as given in ISO/TR 15608. A WPS may cover more than one group of materials."
+  },
+  {
+    "standard_code": "ISO_15609_2_2019",
+    "clause_ref": "4.3.2",
+    "clause_title": "Material dimensions",
+    "requirement_text": "— Thickness ranges of the materials. — Outside diameter ranges for pipes."
+  },
+  {
+    "standard_code": "ISO_15609_2_2019",
+    "clause_ref": "4.4",
+    "clause_title": "Information common to all welding procedures",
+    "requirement_text": ""
+  },
+  {
+    "standard_code": "ISO_15609_2_2019",
+    "clause_ref": "4.4.1",
+    "clause_title": "Welding process",
+    "requirement_text": "The welding process(es) in accordance with ISO 4063."
+  },
+  {
+    "standard_code": "ISO_15609_2_2019",
+    "clause_ref": "4.4.2",
+    "clause_title": "Joint design",
+    "requirement_text": "— A sketch of the joint design/configuration and dimensions or reference which provide such information. — Weld run sequence given on the sketch, if essential for the properties of the weld."
+  },
+  {
+    "standard_code": "ISO_15609_2_2019",
+    "clause_ref": "4.4.3",
+    "clause_title": "Welding position",
+    "requirement_text": "Applicable welding positions in accordance with ISO 6947."
+  },
+  {
+    "standard_code": "ISO_15609_2_2019",
+    "clause_ref": "4.4.4",
+    "clause_title": "Joint preparation",
+    "requirement_text": "— Surface condition, cleaning, degreasing, including methods to be used. — Jigging, fixtures and tack welding."
+  },
+  {
+    "standard_code": "ISO_15609_2_2019",
+    "clause_ref": "4.4.5",
+    "clause_title": "Welding technique",
+    "requirement_text": "— Leftward or rightward welding. — Blowpipe and/or wire/strip angle (if required). © ISO 2019 – All rights reserved"
+  },
+  {
+    "standard_code": "ISO_15609_2_2019",
+    "clause_ref": "4.4.6",
+    "clause_title": "Back gouging",
+    "requirement_text": "— The method to be used. — Depth and shape."
+  },
+  {
+    "standard_code": "ISO_15609_2_2019",
+    "clause_ref": "4.4.7",
+    "clause_title": "Backing",
+    "requirement_text": "The type of backing, backing material design/configuration and dimensions."
+  },
+  {
+    "standard_code": "ISO_15609_2_2019",
+    "clause_ref": "4.4.8",
+    "clause_title": "Welding consumables",
+    "requirement_text": "— Designation, make (manufacturer and trade name). — Dimensions (size). — Handling."
+  },
+  {
+    "standard_code": "ISO_15609_2_2019",
+    "clause_ref": "4.4.9",
+    "clause_title": "Flame parameters",
+    "requirement_text": "— Nozzle size. — Fuel gas type and pressure. — O2 pressure. — Type of flame."
+  },
+  {
+    "standard_code": "ISO_15609_2_2019",
+    "clause_ref": "4.4.10",
+    "clause_title": "Mechanized and automatic welding",
+    "requirement_text": "— Travel speed range. — Wire/strip feed speed range. If the equipment does not permit control of one of either variable, the machine settings shall be specified instead. The range of application for the WPS shall then be limited to equipment of that particular type. This applies to 4.4.9 and 4.4.10."
+  },
+  {
+    "standard_code": "ISO_15609_2_2019",
+    "clause_ref": "4.4.11",
+    "clause_title": "Pre‑heat temperature",
+    "requirement_text": ""
+  },
+  {
+    "standard_code": "ISO_15609_2_2019",
+    "clause_ref": "4.4.11.1",
+    "clause_title": "General",
+    "requirement_text": "The minimum temperature applied the start of welding and during welding."
+  },
+  {
+    "standard_code": "ISO_15609_2_2019",
+    "clause_ref": "4.4.11.2",
+    "clause_title": "Work piece temperature",
+    "requirement_text": "If pre-heating is not required, the lowest work piece temperature prior to welding."
+  },
+  {
+    "standard_code": "ISO_15609_2_2019",
+    "clause_ref": "4.4.12",
+    "clause_title": "Interpass temperature",
+    "requirement_text": "Maximum and, if necessary, minimum interpass temperature."
+  },
+  {
+    "standard_code": "ISO_15609_2_2019",
+    "clause_ref": "4.4.13",
+    "clause_title": "Pre‑heat maintenance temperature",
+    "requirement_text": "— The minimum temperature in the weld zone which shall be maintained if welding is interrupted. — See ISO 13916 for application of 4.4.11, 4.4.12 and 4.4.13. © ISO 2019 – All rights reserved"
+  },
+  {
+    "standard_code": "ISO_15609_2_2019",
+    "clause_ref": "4.4.14",
+    "clause_title": "Post‑weld heat‑treatment",
+    "requirement_text": "The minimum time and temperature range for post-weld heat treatment or ageing shall be specified or reference shall be made to other standards which specify this information. © ISO 2019 – All rights reserved"
+  }
+]

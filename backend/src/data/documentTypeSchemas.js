@@ -49,16 +49,38 @@ Istruzioni per le date di conferma semestrale (ISO 9606-1 §9.2):
 
   wps: {
     label: 'WPS (Procedura di saldatura)',
-    aiPrompt: `Stai analizzando una WPS (Welding Procedure Specification) secondo ISO 15614 o EN ISO 15609.
-Estrai nell'oggetto "type_specific_data": wps_number, welding_process, base_material,
-thickness_min_mm, thickness_max_mm, wpqr_ref. Usa null per i campi non trovati.`,
+    aiPrompt: `Stai analizzando una WPS (Welding Procedure Specification) secondo EN ISO 15609-1 (arco) o 15609-2 (gas), spesso qualificata via ISO 15614.
+Estrai nell'oggetto "type_specific_data":
+- wps_number, wpqr_ref, welding_process (codice ISO 4063),
+- base_material (designazione), material_group (ISO/TR 15608),
+- thickness_min_mm, thickness_max_mm, pipe_outside_diameter_mm (null se solo piastra),
+- joint_type (BW|FW o descrizione), welding_positions (array ISO 6947),
+- filler_material (designazione consumabile),
+- shielding_gas (codice ISO 14175 es. "M21"/"I1", o null se senza gas / WPS gas 15609-2),
+- preheat_temp (Tp ISO 13916), interpass_temp (Ti ISO 13916),
+- heat_input (range se presente, solo arco), current_range, voltage_range (solo arco; null su WPS gas),
+- flame_type, fuel_gas (solo WPS gas 15609-2; null su arco).
+Usa null per i campi non trovati. Non inventare range assenti dal testo.`,
     aiExpectedSchema: {
       wps_number: 'string|null',
       welding_process: 'string|null',
       base_material: 'string|null',
+      material_group: 'string|null',
       thickness_min_mm: 'number|null',
       thickness_max_mm: 'number|null',
+      pipe_outside_diameter_mm: 'string|number|null',
+      joint_type: 'string|null',
+      welding_positions: 'string[]|null',
+      filler_material: 'string|null',
       wpqr_ref: 'string|null',
+      shielding_gas: 'string|null',
+      preheat_temp: 'string|null',
+      interpass_temp: 'string|null',
+      heat_input: 'string|null',
+      current_range: 'string|null',
+      voltage_range: 'string|null',
+      flame_type: 'string|null',
+      fuel_gas: 'string|null',
     },
   },
 
@@ -93,6 +115,8 @@ Parametri prova (pag.2, priorita media):
 - mechanization: "manual"|"partly_mechanized"|"mechanized"|"automatic"
 - single_multi_run: "single" o "multi"
 - heat_input_note: nota breve sull'apporto termico, se presente
+- preheat_temp: temperatura preriscaldo (Tp, ISO 13916), es. "min 100 C"
+- interpass_temp: temperatura interpass (Ti, ISO 13916), es. "max 250 C"
 
 IMPORTANTE: non ricalcolare i range con formule - estrarre solo i valori dichiarati sul verbale.`,
     aiExpectedSchema: {
@@ -121,6 +145,8 @@ IMPORTANTE: non ricalcolare i range con formule - estrarre solo i valori dichiar
       mechanization: 'manual|partly_mechanized|mechanized|automatic|null',
       single_multi_run: 'single|multi|null',
       heat_input_note: 'string|null',
+      preheat_temp: 'string|null',
+      interpass_temp: 'string|null',
     },
   },
 

@@ -1,6 +1,6 @@
 # Piano slice — Cataloghi riferimento normativi per ingest saldatura
 
-> **Stato**: RC-0/RC-1/RC-2 ✅ mergiati (PR #213, #248). RC-5/RC-6 parziali (luglio 2026, vedi sotto) — GAP documentati, non risolti forzando dati. RC-8 ✅ (17/07/2026, ISO 14732 operatori).  
+> **Stato**: RC-0/RC-1/RC-2 ✅ mergiati (PR #213, #248). RC-3 gas ✅ · RC-5/RC-6 parziali (GAP documentati). RC-8 ✅ (17/07/2026, ISO 14732). RC-9 temperature ✅ (ISO 13916). RC-10 WPS contenuto ✅ (ISO 15609-1/-2, 25/07/2026).  
 > **Obiettivo**: estratti operativi da norme tecniche → `docs/reference/*.md` + cataloghi JS → prompt AI, regex, select UI.  
 > **Pattern di riferimento**: slice ISO/TR 15608 (chat `bc-a539`, PR catalogo 15608, `materialGroups15608.js`).  
 > **Complementa**: [PLAN_INGEST_LEARNING_SLICES.md](PLAN_INGEST_LEARNING_SLICES.md) (IG-1…IG-6 ✅), [ADR-017](../adr/ADR-017-ingest-reference-network.md) (Livello A).
@@ -26,12 +26,14 @@ L'ingest patentini/WPQR/WPS usa campi codificati (processo, posizione, gas, grup
 | RC-0 | ISO/TR 15608:2013 | `material_group` | `ISO-TR-15608-gruppi-materiali.md` | `materialGroups15608.js` | ✅ |
 | RC-1 | ISO 4063 | `welding_process` | `ISO-4063-processi-saldatura.md` | `weldingProcesses4063.js` | ✅ |
 | RC-2 | ISO 6947 | `welding_positions` | `ISO-6947-posizioni-saldatura.md` | `weldingPositions6947.js` | ✅ |
-| RC-3 | ISO 14175 | `shielding_gas` | `ISO-14175-gas-protezione.md` | `shieldingGases14175.js` | ⏳ |
+| RC-3 | ISO 14175 | `shielding_gas` | `ISO-14175-gas-protezione.md` | `shieldingGases14175.js` | ✅ (25/07/2026) |
 | RC-4 | ISO 14343 / 18274 | `filler_material_group` | `ISO-FM-gruppi-apporto.md` | `fillerMaterialGroups.js` | ⏳ |
 | RC-5 | ISO 9606-1 | designazione, range validità, date | `ISO-9606-1-range-validita-patentino.md` | `weldingQualificationRules9606.js` | 🔶 parziale (vedi nota) |
 | RC-6 | ISO 15614-1 | campi WPQR | `ISO-15614-1-range-validita-WPQR.md` | non codificato (solo doc, vedi nota) | 🔶 parziale (vedi nota) |
 | RC-7 | ISO 9712 | cert NDT (metodo/livello) | `ISO-9712-ndt.md` | `ndtMethods9712.js` | ⏳ backlog |
 | RC-8 | ISO 14732 | `qualifica_14732` (validità operatori) | `ISO-14732-operatori-saldatura.md` | schema arricchito in `documentTypeSchemas.js` (no catalogo dedicato) | ✅ |
+| RC-9 | ISO 13916 | `preheat_temp` / `interpass_temp` | `ISO-13916-temperature-saldatura.md` | `weldingTemperatures13916.js` (solo prompt/regole) | ✅ (25/07/2026) |
+| RC-10 | ISO 15609-1/-2 | contenuto WPS (variabili §4) | `ISO-15609-WPS-contenuto.md` | solo schema/prompt (no catalogo simboli) | ✅ (25/07/2026) |
 
 ### Nota RC-5/RC-6 (luglio 2026) — parziale per motivi di qualità fonte, non di tempo
 
@@ -81,9 +83,19 @@ Fonte: PDF reali (`UNI EN ISO 9606-1_2017.pdf`, `BS EN ISO 15614-1-2017...pdf`) 
 - [ ] Select/multiselect patentini da catalogo
 - [ ] Prompt ingest con regole posizione (maiuscolo, array)
 
-### RC-3 — Gas ISO 14175
+### RC-3 — Gas ISO 14175 — ✅ 25/07/2026
 
-Richiede fonte `.md` o PDF revisionato (M21, I1, C1, …).
+Fonte: PDF ISO 14175:2008 (PDF→MD→JSON locale). Digitalizzazione completa in
+`docs/Normative/Normative NORMA_00012_ UNI EN ISO 14175_2008 Rev. 0.md` (+ `.json`).
+**Non** aggiunta a `import-norms-from-markdown.js` (catalogo classificazione, non SGQ).
+
+**DoD**
+
+- [x] Estratto `docs/reference/ISO-14175-gas-protezione.md`
+- [x] `shieldingGases14175.js` (app + backend) + test L1
+- [x] Prompt ingest `buildShieldingGasPromptSection` in `importAiExtraction.service.js` (patentino/WPS/WPQR)
+- [x] Hint/schema `shielding_gas` in `documentTypeSchemas` (patentino + WPS)
+- [ ] Select UI dedicata su `QualificationForm` (opzionale: oggi text + placeholder)
 
 ### RC-4 — Gruppi apporto FM1–FM6
 
@@ -128,6 +140,41 @@ Risolve punto 4 del feedback Studio Mason: "operatori 6" = rivalidazione ISO 147
 
 **Non in scope (per decisione prodotto futura)**: integrazione `qualifica_14732` nella tabella `qualifications` con alert/conferma semestrale/scadenzario come già fatto per `patentino_saldatore` (ADR pattern "Anagrafica personale ↔ qualifiche") — oggi resta nel registro documentale generico. Da valutare se il cliente userà in volume questo tipo di certificato.
 
+### RC-9 — Temperature ISO 13916 — ✅ 25/07/2026
+
+Fonte: PDF BS EN ISO 13916:2025 (PDF→MD→JSON locale). Digitalizzazione in
+`docs/Normative/Normative NORMA_00013_ UNI EN ISO 13916_2025 Rev. 0.md` (+ `.json` revisionato).
+**Non** in `import-norms-from-markdown.js` (norma di misura, non SGQ a clausole).
+
+Complementa campi già presenti in WPS/libro saldatura (`preheat_temp` / `interpass_temp`).
+Non è un catalogo di simboli discreti come 14175: modulo JS = solo costanti Tp/Ti/Tm + codici attrezzatura + prompt AI.
+
+**DoD**
+
+- [x] Estratto `docs/reference/ISO-13916-temperature-saldatura.md`
+- [x] `weldingTemperatures13916.js` (app + backend) + test L1
+- [x] Prompt ingest `buildWeldingTemperaturePromptSection` in `importAiExtraction.service.js` (WPS/WPQR)
+- [x] Campi `preheat_temp` / `interpass_temp` in schema AI WPS (app + backend) e WPQR (backend)
+- [ ] Select UI dedicata (non necessaria: campi testo libero °C)
+
+### RC-10 — Contenuto WPS ISO 15609-1/-2 — ✅ 25/07/2026
+
+Fonte: PDF BS EN ISO 15609-1:2019 (arco) e 15609-2:2019 (gas), PDF→MD→JSON locale.
+Digitalizzazione: `docs/Normative/Normative NORMA_00014_ UNI EN ISO 15609-1_2019 Rev. 0.*`
+e `…NORMA_00015…15609-2…` (00013 riservato a ISO 13916).
+**Non** in `import-norms-from-markdown.js` (checklist contenuto WPS, non SGQ a clausole).
+
+Allinea lo schema ingest `wps` alle variabili §4 (processo, materiale/gruppo, spessore/OD,
+posizioni, consumabile, gas 14175, Tp/Ti, heat input / parametri fiamma). Nessun catalogo JS
+di simboli: riusa RC-1/2/3/9.
+
+**DoD**
+
+- [x] Estratto unico `docs/reference/ISO-15609-WPS-contenuto.md` (sezioni Parte 1 / Parte 2)
+- [x] Schema AI + campi form WPS arricchiti in `documentTypeSchemas.js` (app + backend)
+- [x] Mapping review `wpsIngest.service.js` per i nuovi campi estratti
+- [ ] Select UI dedicate (opzionale: text + cataloghi già esistenti per processo/posizione/gas)
+
 ---
 
 ## Feedback cliente reale — Studio Mason (16/07/2026)
@@ -155,6 +202,8 @@ Primo utilizzo in campo del modulo patentini saldatori (upload batch WQ). 6 punt
 | `UNI EN ISO 15614-1_2019.pdf` | RC-6 |
 | ISO 9606-1 (edizione in vigore) | RC-5 |
 | ISO 4063 / ISO 6947 / ISO 14175 | RC-1…RC-3 (estratti tabellari) |
+| ISO 13916:2025 (temperature) | RC-9 ✅ |
+| ISO 15609-1/-2:2019 (contenuto WPS) | RC-10 ✅ |
 
 ---
 
@@ -165,4 +214,4 @@ Leggi docs/agent-tasks/PLAN_INGEST_REFERENCE_CATALOGS.md — esegui la prima sli
 Chiudi con TEST OK o FIX NON APPLICABILI.
 ```
 
-**Prossima slice attiva**: RC-3 (gas ISO 14175) o completamento GAP RC-5/RC-6 (Tabelle numeriche 9606-1/15614-1) se si procura una fonte più leggibile.
+**Prossima slice attiva**: RC-4 (gruppi apporto FM) o completamento GAP RC-5/RC-6 (Tabelle numeriche 9606-1/15614-1) se si procura una fonte più leggibile. RC-3 gas ✅ · RC-9 temperature ✅ · RC-10 WPS 15609 ✅.
