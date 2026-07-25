@@ -154,6 +154,21 @@ di output dedicata al progetto/cliente, revisione `.md` prima di consegnare.
 generico sul nuovo PDF e valutare se il JSON prodotto puo' sostituire o
 affiancare l'import esistente per quel file.
 
+**Utente**: «Ho una norma complementare alla 3834 (es. ISO 14175 gas, ISO 4063 processi)»
+→ Schema `norm-clause` + `standard_code` dedicato (es. `ISO_14175_2008`),
+output in `docs/Normative/` con naming tipo
+`Normative NORMA_NNNNN_ UNI EN ISO … Rev. 0.md` (+ `.json` affiancato).
+**Attenzione**: se la norma e' un **catalogo di classificazione** (gas, processi,
+posizioni) e non un SGQ a clausole 4–10, **non** aggiungerla a
+`import-norms-from-markdown.js`. Creare invece:
+1. estratto operativo in `docs/reference/ISO-….md` (regole AI + simboli frequenti);
+2. catalogo JS mirror `app/src/data/` + `backend/src/data/` (pattern RC in
+   `PLAN_INGEST_REFERENCE_CATALOGS.md`);
+3. hook prompt in `importAiExtraction.service.js` se c'e' un campo ingest chiaro
+   (es. `shielding_gas` ← ISO 14175).
+Esempio gia' in repo: ISO 14175:2008 → `docs/reference/ISO-14175-gas-protezione.md`
++ `shieldingGases14175.js` (RC-3).
+
 ## Encoding
 
 - Tutti gli output (`.md`, `.json`) sono scritti in **UTF-8 senza BOM** dal

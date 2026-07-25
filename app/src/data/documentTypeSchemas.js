@@ -151,7 +151,7 @@ const patentino_saldatore = {
       label: "Gas di protezione",
       type: "text",
       required: false,
-      hint: "Es. M21, I1, C1 secondo ISO 14175; lasciare vuoto se non applicabile",
+      hint: "Simbolo ISO 14175 (es. M21, I1, C1). Preferire il codice corto, non la designazione lunga. Vuoto se non applicabile (es. MMA/SAW). Catalogo: shieldingGases14175.js",
     },
     {
       key: "exam_date",
@@ -296,11 +296,19 @@ const wps = {
       required: false,
       hint: "Numero del WPQR che qualifica questa WPS",
     },
+    {
+      key: "shielding_gas",
+      label: "Gas di protezione",
+      type: "text",
+      required: false,
+      hint: "Simbolo ISO 14175 (es. M21, I1); null se processo senza gas",
+    },
   ],
 
   aiPrompt: `Stai analizzando una WPS (Welding Procedure Specification) secondo ISO 15614.
 Estrai nell'oggetto "type_specific_data": wps_number, welding_process, base_material,
-thickness_min_mm, thickness_max_mm, wpqr_ref. Usa null per i campi non trovati.`,
+thickness_min_mm, thickness_max_mm, wpqr_ref, shielding_gas (codice ISO 14175 es. "M21"/"I1", o null).
+Usa null per i campi non trovati.`,
 
   aiExpectedSchema: {
     wps_number: "string|null",
@@ -309,6 +317,7 @@ thickness_min_mm, thickness_max_mm, wpqr_ref. Usa null per i campi non trovati.`
     thickness_min_mm: "number|null",
     thickness_max_mm: "number|null",
     wpqr_ref: "string|null",
+    shielding_gas: "string|null",
   },
 };
 

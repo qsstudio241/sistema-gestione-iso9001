@@ -10,6 +10,7 @@ const { buildIngestLearningPromptSection } = require('./ingestLearning.service')
 const { buildMaterialGroupPromptSection } = require('../data/materialGroups15608');
 const { buildWeldingProcessPromptSection } = require('../data/weldingProcesses4063');
 const { buildWeldingPositionPromptSection } = require('../data/weldingPositions6947');
+const { buildShieldingGasPromptSection } = require('../data/shieldingGases14175');
 const { buildWelderQualificationRulesPromptSection } = require('../data/weldingQualificationRules9606');
 
 const MAX_INPUT_CHARS = Number(process.env.OPENAI_IMPORT_MAX_CHARS) || 20000;
@@ -222,6 +223,13 @@ ${schema.aiPrompt}`;
         'wps',
         'qualifica_14732',
     ]);
+    // Gas ISO 14175: rilevante per patentini/WPS/WPQR (processi con shielding);
+    // 14732 spesso senza campo gas esplicito — escluso per non rumorizzare il prompt.
+    const SHIELDING_GAS_DOC_TYPES = new Set([
+        'patentino_saldatore',
+        'wpqr',
+        'wps',
+    ]);
     if (MATERIAL_GROUP_DOC_TYPES.has(docType)) {
         system += `\n\n${buildMaterialGroupPromptSection({ families: ['steel', 'aluminium'], maxLines: 45 })}`;
     }
@@ -230,6 +238,9 @@ ${schema.aiPrompt}`;
     }
     if (WELDING_POSITION_DOC_TYPES.has(docType)) {
         system += `\n\n${buildWeldingPositionPromptSection({ maxLines: 15 })}`;
+    }
+    if (SHIELDING_GAS_DOC_TYPES.has(docType)) {
+        system += `\n\n${buildShieldingGasPromptSection({ maxLines: 16 })}`;
     }
     if (docType === 'patentino_saldatore') {
         system += `\n\n${buildWelderQualificationRulesPromptSection()}`;

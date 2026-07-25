@@ -26,7 +26,7 @@ L'ingest patentini/WPQR/WPS usa campi codificati (processo, posizione, gas, grup
 | RC-0 | ISO/TR 15608:2013 | `material_group` | `ISO-TR-15608-gruppi-materiali.md` | `materialGroups15608.js` | ✅ |
 | RC-1 | ISO 4063 | `welding_process` | `ISO-4063-processi-saldatura.md` | `weldingProcesses4063.js` | ✅ |
 | RC-2 | ISO 6947 | `welding_positions` | `ISO-6947-posizioni-saldatura.md` | `weldingPositions6947.js` | ✅ |
-| RC-3 | ISO 14175 | `shielding_gas` | `ISO-14175-gas-protezione.md` | `shieldingGases14175.js` | ⏳ |
+| RC-3 | ISO 14175 | `shielding_gas` | `ISO-14175-gas-protezione.md` | `shieldingGases14175.js` | ✅ (25/07/2026) |
 | RC-4 | ISO 14343 / 18274 | `filler_material_group` | `ISO-FM-gruppi-apporto.md` | `fillerMaterialGroups.js` | ⏳ |
 | RC-5 | ISO 9606-1 | designazione, range validità, date | `ISO-9606-1-range-validita-patentino.md` | `weldingQualificationRules9606.js` | 🔶 parziale (vedi nota) |
 | RC-6 | ISO 15614-1 | campi WPQR | `ISO-15614-1-range-validita-WPQR.md` | non codificato (solo doc, vedi nota) | 🔶 parziale (vedi nota) |
@@ -81,9 +81,19 @@ Fonte: PDF reali (`UNI EN ISO 9606-1_2017.pdf`, `BS EN ISO 15614-1-2017...pdf`) 
 - [ ] Select/multiselect patentini da catalogo
 - [ ] Prompt ingest con regole posizione (maiuscolo, array)
 
-### RC-3 — Gas ISO 14175
+### RC-3 — Gas ISO 14175 — ✅ 25/07/2026
 
-Richiede fonte `.md` o PDF revisionato (M21, I1, C1, …).
+Fonte: PDF ISO 14175:2008 (PDF→MD→JSON locale). Digitalizzazione completa in
+`docs/Normative/Normative NORMA_00012_ UNI EN ISO 14175_2008 Rev. 0.md` (+ `.json`).
+**Non** aggiunta a `import-norms-from-markdown.js` (catalogo classificazione, non SGQ).
+
+**DoD**
+
+- [x] Estratto `docs/reference/ISO-14175-gas-protezione.md`
+- [x] `shieldingGases14175.js` (app + backend) + test L1
+- [x] Prompt ingest `buildShieldingGasPromptSection` in `importAiExtraction.service.js` (patentino/WPS/WPQR)
+- [x] Hint/schema `shielding_gas` in `documentTypeSchemas` (patentino + WPS)
+- [ ] Select UI dedicata su `QualificationForm` (opzionale: oggi text + placeholder)
 
 ### RC-4 — Gruppi apporto FM1–FM6
 
@@ -165,4 +175,4 @@ Leggi docs/agent-tasks/PLAN_INGEST_REFERENCE_CATALOGS.md — esegui la prima sli
 Chiudi con TEST OK o FIX NON APPLICABILI.
 ```
 
-**Prossima slice attiva**: RC-3 (gas ISO 14175) o completamento GAP RC-5/RC-6 (Tabelle numeriche 9606-1/15614-1) se si procura una fonte più leggibile.
+**Prossima slice attiva**: RC-4 (gruppi apporto FM) o completamento GAP RC-5/RC-6 (Tabelle numeriche 9606-1/15614-1) se si procura una fonte più leggibile. RC-3 gas ✅.
