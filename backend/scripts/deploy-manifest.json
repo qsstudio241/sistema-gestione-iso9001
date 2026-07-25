@@ -29,6 +29,7 @@
                                      "src/data/weldingProcesses4063.js",
                                      "src/data/weldingPositions6947.js",
                                      "src/data/shieldingGases14175.js",
+                                     "src/data/weldingTemperatures13916.js",
                                      "src/data/weldingQualificationRules9606.js",
                                      "src/data/weldingSymbols2553.js",
                                      "src/data/qtafiVis001Template.js"
