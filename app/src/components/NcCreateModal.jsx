@@ -83,6 +83,17 @@ export default function NcCreateModal({
     return () => { cancelled = true; };
   }, [open, selectedCompanyId]);
 
+  /* ── Sincronizza selectedCompanyId con la selezione manuale dell'azienda
+   *    (categorie non legate ad audit). Senza questo effetto, il selettore
+   *    "Azienda/ambito" scrive solo in form.company_id (usato per il payload)
+   *    ma i menu Responsabile attuazione/verifica restano agganciati al
+   *    vecchio companyId (mai aggiornato), mostrando la rubrica generica
+   *    invece del personale della azienda scelta. ────────────────────── */
+  useEffect(() => {
+    if (!open || requiresAudit) return;
+    setSelectedCompanyId(form.company_id || null);
+  }, [open, requiresAudit, form.company_id]);
+
   /* ── Carica aziende per selettore ambito (categorie non legate ad audit) ── */
   useEffect(() => {
     if (!open) return;
@@ -132,9 +143,12 @@ export default function NcCreateModal({
   useEffect(() => {
     if (!open || !requiresAudit || !form.audit_id) {
       if (!requiresAudit) {
-        // Categorie non-audit: usa sezioni ISO 9001 standard
+        // Categorie non-audit: usa sezioni ISO 9001 standard.
+        // selectedCompanyId per queste categorie è gestito dall'effetto
+        // dedicato di sincronizzazione con form.company_id (sopra) — non
+        // toccarlo qui per evitare di sovrascriverlo con null in una race
+        // con quell'effetto quando si cambia categoria.
         setSectionOptions(NC_MANUAL_SECTIONS);
-        setSelectedCompanyId(null);
       }
       return;
     }
@@ -188,7 +202,13 @@ export default function NcCreateModal({
       source_complaint_id: newCat === 'complaint' ? f.source_complaint_id : null,
     }));
     setSectionOptions(NC_MANUAL_SECTIONS);
-    setSelectedCompanyId(null);
+    // Per le categorie non-audit, selectedCompanyId resta sincronizzato con
+    // form.company_id tramite l'effetto dedicato (sopra) — non azzerarlo qui,
+    // altrimenti si crea una race che lo disallinea dal selettore "Azienda".
+    // Per l'audit va azzerato: sarà ridefinito non appena si sceglie l'audit.
+    if (cfg.requiresAudit) {
+      setSelectedCompanyId(null);
+    }
   }
 
   const selectedAudit = audits.find(a => String(a.audit_id) === String(form.audit_id));
