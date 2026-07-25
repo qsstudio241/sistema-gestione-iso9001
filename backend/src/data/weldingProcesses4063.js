@@ -37,19 +37,32 @@ function normalizeWeldingProcessCode(raw) {
   return inferWeldingProcessFromText(s);
 }
 
+/**
+ * Ricava il codice ISO 4063 dal testo, con priorità:
+ * 1. Codice numerico esplicitamente etichettato ("Welding process: 135", "Processo di saldatura 135",
+ *    "ISO 4063: 135") — massima confidenza.
+ * 2. Codice numerico "nudo" presente come token isolato nel testo (es. tabella senza etichetta diretta).
+ * 3. Alias testuale (es. "elettrodo", "TIG") — SOLO come ultima risorsa, perché parole come "elettrodo"
+ *    compaiono spesso anche in WPQR di processi diversi (es. diametro del filo/elettrodo d'apporto)
+ *    e non devono vincere su un codice esplicito presente altrove nel documento (bug DEPUTYTASK1 25/07/2026).
+ */
 function inferWeldingProcessFromText(text) {
-  const lower = String(text || '').toLowerCase();
+  const body = String(text || '');
+
+  const labeledRe = /\b(?:welding\s+process|process(?:o)?(?:\s+di)?(?:\s+saldatura)?|proc\.?)\s*[:.]?\s*(\d{2,3})\b/i;
+  const isoRe = /\bISO\s*4063\s*[:.]?\s*(\d{2,3})\b/i;
+  const labeled = body.match(labeledRe) || body.match(isoRe);
+  if (labeled && CODE_MAP.has(labeled[1])) return labeled[1];
+
+  for (const code of SORTED_CODES) {
+    const re = new RegExp(`\\b${code.replace('.', '\\.')}\\b`);
+    if (re.test(body)) return code;
+  }
+
+  const lower = body.toLowerCase();
   for (const proc of ISO_4063_PROCESSES) {
     if (proc.aliases.some((a) => lower.includes(a))) return proc.code;
   }
-  for (const code of SORTED_CODES) {
-    const re = new RegExp(`\\b${code.replace('.', '\\.')}\\b`);
-    if (re.test(text) || new RegExp(`ISO\\s*4063[:\\s]*${code}`, 'i').test(text)) {
-      return code;
-    }
-  }
-  const labeled = text.match(/\bprocess(?:o)?\s*(?:di\s*)?saldatura\s*[:.]?\s*(\d{2,3})\b/i);
-  if (labeled && CODE_MAP.has(labeled[1])) return labeled[1];
   return null;
 }
 

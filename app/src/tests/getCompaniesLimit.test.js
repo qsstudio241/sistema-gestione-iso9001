@@ -1,11 +1,11 @@
 /**
  * getCompanies deve applicare limit=500 di default (menu Ambito / dropdown anagrafiche).
- * Il backend GET /companies ha default 50: senza override le aziende oltre la 50ª spariscono.
+ * Il backend GET /companies ha default 50: senza override le aziende oltre la 50Âª spariscono.
  */
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import apiService from "../services/apiService";
 
-describe("apiService.getCompanies — default limit", () => {
+describe("apiService.getCompanies â€” default limit", () => {
   beforeEach(() => {
     vi.restoreAllMocks();
   });
@@ -24,7 +24,7 @@ describe("apiService.getCompanies — default limit", () => {
     expect(url).toContain("auditor_org_id=12");
   });
 
-  it("rispetta un limit esplicito più basso (paginazione)", async () => {
+  it("rispetta un limit esplicito piÃ¹ basso (paginazione)", async () => {
     const spy = vi.spyOn(apiService, "get").mockResolvedValue({ data: [] });
     await apiService.getCompanies({ limit: 50, page: 2 });
     const url = spy.mock.calls[0][0];
