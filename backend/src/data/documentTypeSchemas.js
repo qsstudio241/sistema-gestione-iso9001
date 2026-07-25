@@ -49,18 +49,38 @@ Istruzioni per le date di conferma semestrale (ISO 9606-1 §9.2):
 
   wps: {
     label: 'WPS (Procedura di saldatura)',
-    aiPrompt: `Stai analizzando una WPS (Welding Procedure Specification) secondo ISO 15614 o EN ISO 15609.
-Estrai nell'oggetto "type_specific_data": wps_number, welding_process, base_material,
-thickness_min_mm, thickness_max_mm, wpqr_ref, shielding_gas (codice ISO 14175 es. "M21"/"I1", o null).
-Usa null per i campi non trovati.`,
+    aiPrompt: `Stai analizzando una WPS (Welding Procedure Specification) secondo EN ISO 15609-1 (arco) o 15609-2 (gas), spesso qualificata via ISO 15614.
+Estrai nell'oggetto "type_specific_data":
+- wps_number, wpqr_ref, welding_process (codice ISO 4063),
+- base_material (designazione), material_group (ISO/TR 15608),
+- thickness_min_mm, thickness_max_mm, pipe_outside_diameter_mm (null se solo piastra),
+- joint_type (BW|FW o descrizione), welding_positions (array ISO 6947),
+- filler_material (designazione consumabile),
+- shielding_gas (codice ISO 14175 es. "M21"/"I1", o null se senza gas / WPS gas 15609-2),
+- preheat_temp (Tp ISO 13916), interpass_temp (Ti ISO 13916),
+- heat_input (range se presente, solo arco), current_range, voltage_range (solo arco; null su WPS gas),
+- flame_type, fuel_gas (solo WPS gas 15609-2; null su arco).
+Usa null per i campi non trovati. Non inventare range assenti dal testo.`,
     aiExpectedSchema: {
       wps_number: 'string|null',
       welding_process: 'string|null',
       base_material: 'string|null',
+      material_group: 'string|null',
       thickness_min_mm: 'number|null',
       thickness_max_mm: 'number|null',
+      pipe_outside_diameter_mm: 'string|number|null',
+      joint_type: 'string|null',
+      welding_positions: 'string[]|null',
+      filler_material: 'string|null',
       wpqr_ref: 'string|null',
       shielding_gas: 'string|null',
+      preheat_temp: 'string|null',
+      interpass_temp: 'string|null',
+      heat_input: 'string|null',
+      current_range: 'string|null',
+      voltage_range: 'string|null',
+      flame_type: 'string|null',
+      fuel_gas: 'string|null',
     },
   },
 
@@ -68,7 +88,8 @@ Usa null per i campi non trovati.`,
     label: 'WPQR (Qualifica procedura)',
     aiPrompt: `Stai analizzando un WPQR (Welding Procedure Qualification Record) ISO 15614.
 Estrai in type_specific_data: wpqr_number, welding_process, material_group, thickness_test_mm,
-approval_date (YYYY-MM-DD), standard_reference. Usa null se assente.`,
+approval_date (YYYY-MM-DD), standard_reference, preheat_temp (Tp ISO 13916), interpass_temp (Ti ISO 13916).
+Usa null se assente.`,
     aiExpectedSchema: {
       wpqr_number: 'string|null',
       welding_process: 'string|null',
@@ -76,6 +97,8 @@ approval_date (YYYY-MM-DD), standard_reference. Usa null se assente.`,
       thickness_test_mm: 'number|null',
       approval_date: 'YYYY-MM-DD|null',
       standard_reference: 'string|null',
+      preheat_temp: 'string|null',
+      interpass_temp: 'string|null',
     },
   },
 
