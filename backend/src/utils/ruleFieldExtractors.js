@@ -99,7 +99,7 @@ function extractThicknessMm(text) {
  * Estrae SOLO valori dichiarati sul verbale — nessun calcolo/formula.
  */
 function extractDeclaredRangeMm(text, labelRe) {
-    const re = new RegExp(`${labelRe.source}[^\\d]{0,25}(\\d{1,4}(?:[.,]\\d{1,2})?)\\s*(?:-|a|to|\u2013)\\s*(\\d{1,4}(?:[.,]\\d{1,2})?)\\s*mm?`, 'i');
+    const re = new RegExp(`${labelRe.source}[^\\d]{0,30}(\\d{1,4}(?:[.,]\\d{1,2})?)\\s*(?:-|a|to|\u2013)\\s*(\\d{1,4}(?:[.,]\\d{1,2})?)(?:\\s*mm)?`, 'i');
     const m = text.match(re);
     if (!m) return { min: null, max: null };
     return {
@@ -196,6 +196,12 @@ function extractPersonName(text) {
             // Rimuovi parole-etichetta in coda (es. "MARIO ROSSI Numero")
             while (parts.length > 2 && NON_NAME_WORDS.has(parts[parts.length - 1].toUpperCase().replace(/[.'']/g, ''))) {
                 parts.pop();
+            }
+            // Rimuovi il punto di fine frase sull'ultimo cognome (es. "Rossi." → "Rossi"),
+            // preservando le abbreviazioni brevi (es. "M." iniziale nome).
+            const lastIdx = parts.length - 1;
+            if (lastIdx >= 0 && parts[lastIdx].endsWith('.') && parts[lastIdx].length > 2) {
+                parts[lastIdx] = parts[lastIdx].slice(0, -1);
             }
             const candidate = parts.join(' ');
             const allStop = parts.every((w) => NON_NAME_WORDS.has(w.toUpperCase().replace(/[.'']/g, '')));
