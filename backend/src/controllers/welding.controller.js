@@ -392,10 +392,16 @@ async function createWPQR(req, res) {
     try {
         const { organization_id, user_id } = req.user;
         const {
-            wps_id, wpqr_code, test_date, testing_body, welder_name,
+            wps_id, wpqr_code, test_date, testing_body, examiner_body, welder_name,
+            welding_process, base_material_group, welding_positions, filler_material,
+            thickness_tested, thickness_min, thickness_max, diameter_min, diameter_max,
             vt_result, rt_result, ut_result, mt_result, pt_result,
             tensile_result, bend_result, impact_result, hardness_result,
-            macro_result, expiry_date, certificate_number, notes,
+            macro_result, issue_date, expiry_date, certificate_number, notes,
+            // Copertura pag.1 + parametri prova pag.2 (DEPUTYTASK1 25/07/2026)
+            qualification_level, joint_type, standard_reference, wps_ref,
+            base_material_spec, shielding_gas, current_type, metal_transfer,
+            mechanization, single_multi_run, heat_input_note, pwht,
         } = req.body;
 
         if (!wps_id) {
@@ -411,20 +417,35 @@ async function createWPQR(req, res) {
             return res.status(404).json({ error: 'WPS di riferimento non trovata', code: 'WPS_NOT_FOUND' });
         }
 
+        const toNum = (v) => (v !== undefined && v !== null && v !== '') ? parseFloat(v) : null;
+        const toBit = (v) => (v === true || v === 1 || v === '1') ? 1 : 0;
+
         const result = await query(`
             INSERT INTO wpqr_records (
-                organization_id, wps_id, wpqr_code, test_date, testing_body,
-                welder_name, vt_result, rt_result, ut_result, mt_result, pt_result,
+                organization_id, wps_id, wpqr_code, test_date, testing_body, examiner_body,
+                welder_name, welding_process, base_material_group, welding_positions, filler_material,
+                thickness_tested, thickness_min, thickness_max, diameter_min, diameter_max,
+                vt_result, rt_result, ut_result, mt_result, pt_result,
                 tensile_result, bend_result, impact_result, hardness_result,
-                macro_result, expiry_date, certificate_number, notes,
+                macro_result, issue_date, expiry_date, certificate_number, notes,
+                qualification_level, joint_type, standard_reference, wps_ref,
+                base_material_spec, shielding_gas, current_type, metal_transfer,
+                mechanization, single_multi_run, heat_input_note, pwht,
+                approval_status, status,
                 created_by, created_at, updated_at
             )
             OUTPUT INSERTED.id
             VALUES (
-                @organization_id, @wps_id, @wpqr_code, @test_date, @testing_body,
-                @welder_name, @vt_result, @rt_result, @ut_result, @mt_result, @pt_result,
+                @organization_id, @wps_id, @wpqr_code, @test_date, @testing_body, @examiner_body,
+                @welder_name, @welding_process, @base_material_group, @welding_positions, @filler_material,
+                @thickness_tested, @thickness_min, @thickness_max, @diameter_min, @diameter_max,
+                @vt_result, @rt_result, @ut_result, @mt_result, @pt_result,
                 @tensile_result, @bend_result, @impact_result, @hardness_result,
-                @macro_result, @expiry_date, @certificate_number, @notes,
+                @macro_result, @issue_date, @expiry_date, @certificate_number, @notes,
+                @qualification_level, @joint_type, @standard_reference, @wps_ref,
+                @base_material_spec, @shielding_gas, @current_type, @metal_transfer,
+                @mechanization, @single_multi_run, @heat_input_note, @pwht,
+                'bozza', 'attiva',
                 @created_by, GETDATE(), GETDATE()
             )
         `, {
@@ -433,7 +454,17 @@ async function createWPQR(req, res) {
             wpqr_code:          wpqr_code || null,
             test_date:          test_date || null,
             testing_body:       testing_body || null,
+            examiner_body:      examiner_body || testing_body || null,
             welder_name:        welder_name || null,
+            welding_process:    welding_process || null,
+            base_material_group: base_material_group || null,
+            welding_positions:  welding_positions || null,
+            filler_material:    filler_material || null,
+            thickness_tested:   toNum(thickness_tested),
+            thickness_min:      toNum(thickness_min),
+            thickness_max:      toNum(thickness_max),
+            diameter_min:       toNum(diameter_min),
+            diameter_max:       toNum(diameter_max),
             vt_result:          vt_result || null,
             rt_result:          rt_result || null,
             ut_result:          ut_result || null,
@@ -444,9 +475,22 @@ async function createWPQR(req, res) {
             impact_result:      impact_result || null,
             hardness_result:    hardness_result || null,
             macro_result:       macro_result || null,
+            issue_date:         issue_date || null,
             expiry_date:        expiry_date || null,
             certificate_number: certificate_number || null,
             notes:              notes || null,
+            qualification_level: qualification_level || null,
+            joint_type:          joint_type || null,
+            standard_reference:  standard_reference || null,
+            wps_ref:             wps_ref || null,
+            base_material_spec:  base_material_spec || null,
+            shielding_gas:       shielding_gas || null,
+            current_type:        current_type || null,
+            metal_transfer:      metal_transfer || null,
+            mechanization:       mechanization || null,
+            single_multi_run:    single_multi_run || null,
+            heat_input_note:     heat_input_note || null,
+            pwht:                toBit(pwht),
             created_by:         user_id,
         });
 
@@ -477,25 +521,34 @@ async function updateWPQR(req, res) {
 
         const allowed = [
             'wps_id', 'wpqr_code', 'test_date', 'testing_body', 'examiner_body', 'welder_name',
-            'welding_process', 'base_material_group', 'welding_positions',
-            'thickness_tested', 'thickness_min', 'thickness_max',
+            'welding_process', 'base_material_group', 'welding_positions', 'filler_material',
+            'thickness_tested', 'thickness_min', 'thickness_max', 'diameter_min', 'diameter_max',
             'vt_result', 'rt_result', 'ut_result', 'mt_result', 'pt_result',
             'tensile_result', 'bend_result', 'impact_result', 'hardness_result',
             'macro_result', 'issue_date', 'expiry_date', 'certificate_number', 'notes',
+            // Copertura pag.1 + parametri prova pag.2 (DEPUTYTASK1 25/07/2026)
+            'qualification_level', 'joint_type', 'standard_reference', 'wps_ref',
+            'base_material_spec', 'shielding_gas', 'current_type', 'metal_transfer',
+            'mechanization', 'single_multi_run', 'heat_input_note', 'pwht',
         ];
 
         const updates = [];
         const params  = { id: parseInt(id) };
 
-        const numericFields = new Set(['wps_id', 'thickness_tested', 'thickness_min', 'thickness_max']);
+        const numericFields = new Set([
+            'wps_id', 'thickness_tested', 'thickness_min', 'thickness_max', 'diameter_min', 'diameter_max',
+        ]);
+        const booleanFields = new Set(['pwht']);
         for (const field of allowed) {
             if (req.body[field] !== undefined) {
                 updates.push(`${field} = @${field}`);
+                const v = req.body[field];
                 if (numericFields.has(field)) {
-                    const v = req.body[field];
                     params[field] = (v !== null && v !== '') ? parseFloat(v) : null;
+                } else if (booleanFields.has(field)) {
+                    params[field] = (v === true || v === 1 || v === '1') ? 1 : 0;
                 } else {
-                    params[field] = req.body[field] || null;
+                    params[field] = v || null;
                 }
             }
         }

@@ -701,25 +701,278 @@ const wpqr = {
   id: "wpqr",
   label: "WPQR (Qualifica procedura)",
   expiryField: null,
-  rangeFields: ["welding_process", "material_group", "thickness_test_mm"],
-  fields: [
-    { key: "wpqr_number", label: "Numero WPQR", type: "text", required: true },
-    { key: "welding_process", label: "Processo ISO 4063", type: "text", required: true },
-    { key: "material_group", label: "Gruppo materiale", type: "text", required: false },
-    { key: "thickness_test_mm", label: "Spessore prova (mm)", type: "number", required: false },
-    { key: "approval_date", label: "Data approvazione", type: "date", required: false },
-    { key: "standard_reference", label: "Norma riferimento", type: "text", required: false },
+  rangeFields: [
+    "welding_process",
+    "material_group",
+    "thickness_test_mm",
+    "thickness_min",
+    "thickness_max",
+    "welding_positions",
+    "qualification_level",
   ],
-  aiPrompt: `Stai analizzando un WPQR (Welding Procedure Qualification Record) ISO 15614.
-Estrai in type_specific_data: wpqr_number, welding_process, material_group, thickness_test_mm,
-approval_date (YYYY-MM-DD), standard_reference. Usa null se assente.`,
+  fields: [
+    // --- Copertura (pag.1 RANGE OF QUALIFICATION) ---
+    {
+      key: "wpqr_number",
+      label: "Numero WPQR",
+      type: "text",
+      required: true,
+      hint: "Accetta suffisso rivisione, es. \u201C24-03390-01\u201D",
+    },
+    {
+      key: "qualification_level",
+      label: "Livello qualifica",
+      type: "select",
+      required: false,
+      options: [
+        { value: "1", label: "Level 1" },
+        { value: "2", label: "Level 2" },
+      ],
+      hint: "Solo se esplicitamente dichiarato sul verbale — non defaultare a 2 se assente",
+    },
+    {
+      key: "standard_reference",
+      label: "Norma riferimento",
+      type: "text",
+      required: false,
+      hint: "Es. UNI EN ISO 15614-1:2019",
+    },
+    {
+      key: "welding_process",
+      label: "Processo saldatura",
+      type: "select",
+      required: true,
+      options: WELDING_PROCESS_OPTIONS,
+      hint: "Codice ISO 4063 (preferire il codice esplicito nel testo, es. 135)",
+    },
+    {
+      key: "joint_type",
+      label: "Tipo di giunto",
+      type: "select",
+      required: false,
+      options: [
+        { value: "BW", label: "BW - Giunto testa a testa (Butt Weld)" },
+        { value: "FW", label: "FW - Giunto a T / angolare (Fillet Weld)" },
+        { value: "BW+FW", label: "BW+FW - Entrambi" },
+      ],
+    },
+    {
+      key: "material_group",
+      label: "Gruppo materiale base (ISO/TR 15608)",
+      type: "select",
+      required: false,
+      options: MATERIAL_GROUP_OPTIONS,
+      hint: "Preferire il sottogruppo (es. 1.2) se presente sul verbale",
+    },
+    {
+      key: "thickness_test_mm",
+      label: "Spessore prova (mm)",
+      type: "number",
+      required: false,
+      hint: "Spessore del provino usato per la prova (pag.2)",
+    },
+    {
+      key: "thickness_min",
+      label: "Range spessore dichiarato - minimo (mm)",
+      type: "number",
+      required: false,
+      hint: "Dal range of qualification dichiarato sul verbale — non ricalcolare",
+    },
+    {
+      key: "thickness_max",
+      label: "Range spessore dichiarato - massimo (mm)",
+      type: "number",
+      required: false,
+      hint: "Dal range of qualification dichiarato sul verbale — non ricalcolare",
+    },
+    {
+      key: "diameter_min",
+      label: "Diametro tubo - minimo (mm)",
+      type: "number",
+      required: false,
+    },
+    {
+      key: "diameter_max",
+      label: "Diametro tubo - massimo (mm)",
+      type: "number",
+      required: false,
+    },
+    {
+      key: "welding_positions",
+      label: "Posizioni qualificate",
+      type: "multiselect",
+      required: false,
+      options: WELDING_POSITION_OPTIONS,
+      hint: "Posizioni secondo ISO 6947 dichiarate sul verbale (es. PA)",
+    },
+    {
+      key: "filler_material",
+      label: "Materiale d'apporto",
+      type: "text",
+      required: false,
+      hint: "Designazione secondo ISO 14341/636/ecc.",
+    },
+    {
+      key: "pwht",
+      label: "PWHT (trattamento termico post-saldatura)",
+      type: "boolean",
+      required: false,
+    },
+    {
+      key: "wps_ref",
+      label: "WPS di riferimento",
+      type: "text",
+      required: false,
+      hint: "Es. \u201C002p_24 rev.0\u201D — solo testo, non collega automaticamente alla WPS registrata",
+    },
+    {
+      key: "examiner_body",
+      label: "Ente / esaminatore",
+      type: "select",
+      required: false,
+      options: [
+        { value: "tuv",         label: "TÜV" },
+        { value: "bv",          label: "Bureau Veritas (BV)" },
+        { value: "dnv",         label: "DNV GL" },
+        { value: "rina",        label: "RINA" },
+        { value: "imq",         label: "IMQ" },
+        { value: "iqn",         label: "IQNet" },
+        { value: "csq",         label: "CSQ / Certiquality" },
+        { value: "tec_eurolab", label: "TEC Eurolab" },
+        { value: "sideius",     label: "Sideius (Valor)" },
+        { value: "altro",       label: "Altro" },
+      ],
+    },
+    {
+      key: "welder_name",
+      label: "Saldatore",
+      type: "text",
+      required: false,
+    },
+    {
+      key: "approval_date",
+      label: "Data emissione / approvazione",
+      type: "date",
+      required: false,
+      hint: "Preferire la data di emissione (\u201CRecord issued\u201D) del verbale",
+    },
+
+    // --- Parametri prova (pag.2, essenziali) ---
+    {
+      key: "base_material_spec",
+      label: "Specifica materiale base",
+      type: "text",
+      required: false,
+      hint: "Es. S355J2+N",
+    },
+    {
+      key: "shielding_gas",
+      label: "Gas di protezione",
+      type: "text",
+      required: false,
+      hint: "Es. M20, Ar 92% CO2 8%",
+    },
+    {
+      key: "current_type",
+      label: "Tipo corrente",
+      type: "text",
+      required: false,
+      hint: "Es. DC-EP",
+    },
+    {
+      key: "metal_transfer",
+      label: "Trasferimento metallo",
+      type: "text",
+      required: false,
+      hint: "Es. Short arc, Spray arc",
+    },
+    {
+      key: "mechanization",
+      label: "Grado meccanizzazione",
+      type: "select",
+      required: false,
+      options: [
+        { value: "manual", label: "Manuale" },
+        { value: "partly_mechanized", label: "Parzialmente meccanizzata" },
+        { value: "mechanized", label: "Meccanizzata" },
+        { value: "automatic", label: "Automatica" },
+      ],
+    },
+    {
+      key: "single_multi_run",
+      label: "Tecnica passata",
+      type: "select",
+      required: false,
+      options: [
+        { value: "single", label: "Mono-passata" },
+        { value: "multi", label: "Multi-passata" },
+      ],
+    },
+    {
+      key: "heat_input_note",
+      label: "Note apporto termico",
+      type: "text",
+      required: false,
+      hint: "Breve nota, es. \u201C\u00B125% rispetto al valore qualificato\u201D",
+    },
+  ],
+  aiPrompt: `Stai analizzando un WPQR (Welding Procedure Qualification Record) secondo ISO 15614.
+Estrai TUTTI i seguenti campi in "type_specific_data". Se un campo non è presente, usa null.
+
+Campi di copertura (pag.1 RANGE OF QUALIFICATION, priorità alta):
+- wpqr_number: numero certificato/WPQR, accetta suffisso rivisione (es. "24-03390-01")
+- qualification_level: "1" o "2" solo se dichiarato esplicitamente (Level 1/2) — non dedurre
+- standard_reference: norma di riferimento (es. "UNI EN ISO 15614-1:2019")
+- welding_process: codice ISO 4063 — preferire un codice numerico esplicito nel testo (es. "Welding process: 135") a un alias generico
+- joint_type: "BW", "FW" o "BW+FW"
+- material_group: gruppo materiale ISO/TR 15608, preferire il sottogruppo (es. "1.2") se presente
+- thickness_test_mm: spessore del provino testato (numero)
+- thickness_min / thickness_max: range di spessore DICHIARATO sul verbale (non calcolarlo)
+- diameter_min / diameter_max: range diametro tubo se applicabile
+- welding_positions: array posizioni ISO 6947 (es. ["PA"])
+- filler_material: designazione materiale d'apporto
+- pwht: booleano, PWHT applicato
+- wps_ref: identificativo testuale della WPS di riferimento
+- examiner_body: ente/esaminatore (TÜV, Bureau Veritas, DNV, RINA, IMQ, TEC Eurolab, Sideius, ecc.)
+- welder_name: saldatore che ha eseguito la prova
+- approval_date: data di emissione/approvazione del verbale (YYYY-MM-DD), preferire "Record issued"
+
+Parametri prova (pag.2, priorità media):
+- base_material_spec: specifica materiale base (es. "S355J2+N")
+- shielding_gas: gas di protezione (es. "M20", "Ar 92% CO2 8%")
+- current_type: tipo di corrente (es. "DC-EP")
+- metal_transfer: modalità di trasferimento metallo
+- mechanization: "manual"|"partly_mechanized"|"mechanized"|"automatic"
+- single_multi_run: "single" o "multi"
+- heat_input_note: nota breve sull'apporto termico, se presente
+
+IMPORTANTE: non ricalcolare i range con formule — estrarre solo i valori dichiarati sul verbale.`,
   aiExpectedSchema: {
     wpqr_number: "string|null",
+    qualification_level: "1|2|null",
+    standard_reference: "string|null",
     welding_process: "string|null",
+    joint_type: "BW|FW|BW+FW|null",
     material_group: "string|null",
     thickness_test_mm: "number|null",
+    thickness_min: "number|null",
+    thickness_max: "number|null",
+    diameter_min: "number|null",
+    diameter_max: "number|null",
+    welding_positions: "string[]|null",
+    filler_material: "string|null",
+    pwht: "boolean|null",
+    wps_ref: "string|null",
+    examiner_body: "string|null",
+    welder_name: "string|null",
     approval_date: "YYYY-MM-DD|null",
-    standard_reference: "string|null",
+    base_material_spec: "string|null",
+    shielding_gas: "string|null",
+    current_type: "string|null",
+    metal_transfer: "string|null",
+    mechanization: "manual|partly_mechanized|mechanized|automatic|null",
+    single_multi_run: "single|multi|null",
+    heat_input_note: "string|null",
   },
 };
 
