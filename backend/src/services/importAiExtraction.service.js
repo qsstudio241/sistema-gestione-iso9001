@@ -11,6 +11,7 @@ const { buildMaterialGroupPromptSection } = require('../data/materialGroups15608
 const { buildWeldingProcessPromptSection } = require('../data/weldingProcesses4063');
 const { buildWeldingPositionPromptSection } = require('../data/weldingPositions6947');
 const { buildShieldingGasPromptSection } = require('../data/shieldingGases14175');
+const { buildWeldingTemperaturePromptSection } = require('../data/weldingTemperatures13916');
 const { buildWelderQualificationRulesPromptSection } = require('../data/weldingQualificationRules9606');
 
 const MAX_INPUT_CHARS = Number(process.env.OPENAI_IMPORT_MAX_CHARS) || 20000;
@@ -230,6 +231,8 @@ ${schema.aiPrompt}`;
         'wpqr',
         'wps',
     ]);
+    // Temperature ISO 13916: campi WPS/WPQR (preheat/interpass), non patentini.
+    const WELDING_TEMPERATURE_DOC_TYPES = new Set(['wps', 'wpqr']);
     if (MATERIAL_GROUP_DOC_TYPES.has(docType)) {
         system += `\n\n${buildMaterialGroupPromptSection({ families: ['steel', 'aluminium'], maxLines: 45 })}`;
     }
@@ -241,6 +244,9 @@ ${schema.aiPrompt}`;
     }
     if (SHIELDING_GAS_DOC_TYPES.has(docType)) {
         system += `\n\n${buildShieldingGasPromptSection({ maxLines: 16 })}`;
+    }
+    if (WELDING_TEMPERATURE_DOC_TYPES.has(docType)) {
+        system += `\n\n${buildWeldingTemperaturePromptSection()}`;
     }
     if (docType === 'patentino_saldatore') {
         system += `\n\n${buildWelderQualificationRulesPromptSection()}`;
