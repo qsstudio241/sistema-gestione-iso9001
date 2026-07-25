@@ -252,6 +252,8 @@ function WPQRFormModal({ wpqr, wpsList, defaultCompanyId, onSave, onClose }) {
     wps_id: "", wpqr_code: "", test_date: "", testing_body: "", examiner_body: "",
     welder_name: "", welding_process: "", base_material_group: "", welding_positions: "",
     thickness_tested: "", thickness_min: "", thickness_max: "",
+    diameter_min: "", diameter_max: "", filler_material: "",
+    qualification_level: "", joint_type: "", standard_reference: "", wps_ref: "",
     vt_result: "NA", rt_result: "NA", ut_result: "NA", mt_result: "NA", pt_result: "NA",
     tensile_result: "NA", bend_result: "NA", impact_result: "NA", hardness_result: "NA",
     macro_result: "NA", expiry_date: "", issue_date: "", certificate_number: "", notes: "",
@@ -355,10 +357,31 @@ function WPQRFormModal({ wpqr, wpsList, defaultCompanyId, onSave, onClose }) {
             <div className="wp-form-section-title">Parametri tecnici</div>
             <div className="wp-form-grid">
               <div className="wp-form-group">
+                <label className="wp-form-label">Norma riferimento</label>
+                <input className="wp-form-input" value={form.standard_reference || ""} onChange={(e) => set("standard_reference", e.target.value)} placeholder="es. UNI EN ISO 15614-1:2019" />
+              </div>
+              <div className="wp-form-group">
+                <label className="wp-form-label">Livello qualifica</label>
+                <select className="wp-form-select" value={form.qualification_level || ""} onChange={(e) => set("qualification_level", e.target.value)}>
+                  <option value="">-- Seleziona --</option>
+                  <option value="1">Level 1</option>
+                  <option value="2">Level 2</option>
+                </select>
+              </div>
+              <div className="wp-form-group">
                 <label className="wp-form-label">Processo saldatura (ISO 4063)</label>
                 <select className="wp-form-select" value={form.welding_process || ""} onChange={(e) => set("welding_process", e.target.value)}>
                   <option value="">-- Seleziona --</option>
                   {WELDING_PROCESSES.map((p) => <option key={p.value} value={p.value}>{p.label}</option>)}
+                </select>
+              </div>
+              <div className="wp-form-group">
+                <label className="wp-form-label">Tipo di giunto</label>
+                <select className="wp-form-select" value={form.joint_type || ""} onChange={(e) => set("joint_type", e.target.value)}>
+                  <option value="">-- Seleziona --</option>
+                  <option value="BW">BW - Testa a testa</option>
+                  <option value="FW">FW - Angolare</option>
+                  <option value="BW+FW">BW+FW - Entrambi</option>
                 </select>
               </div>
               <div className="wp-form-group">
@@ -368,6 +391,14 @@ function WPQRFormModal({ wpqr, wpsList, defaultCompanyId, onSave, onClose }) {
               <div className="wp-form-group">
                 <label className="wp-form-label">Posizioni saldatura (ISO 6947)</label>
                 <input className="wp-form-input" value={form.welding_positions || ""} onChange={(e) => set("welding_positions", e.target.value)} placeholder="es. PA, PB, PC, PF" />
+              </div>
+              <div className="wp-form-group">
+                <label className="wp-form-label">Materiale d'apporto</label>
+                <input className="wp-form-input" value={form.filler_material || ""} onChange={(e) => set("filler_material", e.target.value)} placeholder="es. G 42 4 M21 4Si1" />
+              </div>
+              <div className="wp-form-group">
+                <label className="wp-form-label">WPS di riferimento (testo)</label>
+                <input className="wp-form-input" value={form.wps_ref || ""} onChange={(e) => set("wps_ref", e.target.value)} placeholder="es. 002p_24 rev.0" />
               </div>
               <div className="wp-form-group">
                 <label className="wp-form-label">Spessore testato (mm)</label>
@@ -380,6 +411,14 @@ function WPQRFormModal({ wpqr, wpsList, defaultCompanyId, onSave, onClose }) {
               <div className="wp-form-group">
                 <label className="wp-form-label">Range max (mm) — ISO 15614</label>
                 <input className="wp-form-input" type="number" step="0.1" min="0" value={form.thickness_max || ""} onChange={(e) => set("thickness_max", e.target.value)} placeholder="calcolato automaticamente" />
+              </div>
+              <div className="wp-form-group">
+                <label className="wp-form-label">Diametro tubo - min (mm)</label>
+                <input className="wp-form-input" type="number" step="0.1" min="0" value={form.diameter_min || ""} onChange={(e) => set("diameter_min", e.target.value)} placeholder="lascia vuoto se solo piastre" />
+              </div>
+              <div className="wp-form-group">
+                <label className="wp-form-label">Diametro tubo - max (mm)</label>
+                <input className="wp-form-input" type="number" step="0.1" min="0" value={form.diameter_max || ""} onChange={(e) => set("diameter_max", e.target.value)} placeholder="lascia vuoto se solo piastre" />
               </div>
             </div>
 

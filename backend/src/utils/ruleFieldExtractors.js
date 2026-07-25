@@ -61,15 +61,19 @@ function extractMaterialGroup(text) {
 
 function extractReferenceFromFileName(fileName) {
     const base = String(fileName || '').replace(/\.[^/.]+$/, '').trim();
-    if (/^\d{2}-\d{4,6}$/.test(base)) return base;
+    if (/^\d{2}-\d{4,6}(?:-\d{1,2})?$/.test(base)) return base;
     if (/^WPQR[-_\s]?/i.test(base)) return base.replace(/^WPQR[-_\s]?/i, '').trim() || base;
     return base || null;
 }
 
+/**
+ * Numero WPQR/certificato. Accetta suffisso di rivisione (es. "24-03390-01"),
+ * frequente su verbali TEC Eurolab e simili (DEPUTYTASK1 25/07/2026).
+ */
 function extractWpqrReference(text, fileName) {
     const fromName = extractReferenceFromFileName(fileName);
-    const m = text.match(/\b(?:WPQR|WPS|rif\.?|ref\.?|n[°º.]?\s*)\s*[:.]?\s*(\d{2}-\d{4,6})\b/i)
-        || text.match(/\b(\d{2}-\d{4,6})\b/);
+    const m = text.match(/\b(?:WPQR|WPS|rif\.?|ref\.?|n[°º.]?\s*)\s*[:.]?\s*(\d{2}-\d{4,6}(?:-\d{1,2})?)\b/i)
+        || text.match(/\b(\d{2}-\d{4,6}(?:-\d{1,2})?)\b/);
     return m ? (m[1] || m[0]) : fromName;
 }
 
@@ -87,6 +91,74 @@ function extractThicknessMm(text) {
         || text.match(/\b(\d{1,3}(?:[.,]\d{1,2})?)\s*mm\b/i);
     if (!m) return null;
     return parseFloat(String(m[1]).replace(',', '.'));
+}
+
+/**
+ * Range dichiarato (min-max) accanto a un'etichetta spessore/diametro, es.
+ * "Range of qualification thickness (mm): 3 - 24" oppure "Diameter range: 141 - 500 mm".
+ * Estrae SOLO valori dichiarati sul verbale — nessun calcolo/formula.
+ */
+function extractDeclaredRangeMm(text, labelRe) {
+    const re = new RegExp(`${labelRe.source}[^\\d]{0,30}(\\d{1,4}(?:[.,]\\d{1,2})?)\\s*(?:-|a|to|\u2013)\\s*(\\d{1,4}(?:[.,]\\d{1,2})?)(?:\\s*mm)?`, 'i');
+    const m = text.match(re);
+    if (!m) return { min: null, max: null };
+    return {
+        min: parseFloat(String(m[1]).replace(',', '.')),
+        max: parseFloat(String(m[2]).replace(',', '.')),
+    };
+}
+
+function extractThicknessRangeMm(text) {
+    const { min, max } = extractDeclaredRangeMm(text, /\b(?:thickness|spessore)\b/);
+    return { thickness_min: min, thickness_max: max };
+}
+
+function extractDiameterRangeMm(text) {
+    const { min, max } = extractDeclaredRangeMm(text, /\b(?:diamet(?:er|ro)|pipe\s*diameter)\b/i);
+    return { diameter_min: min, diameter_max: max };
+}
+
+function extractJointType(text) {
+    const hasBW = /\bBW\b/.test(text) || /\bbutt\s*weld/i.test(text);
+    const hasFW = /\bFW\b/.test(text) || /\bfillet\s*weld/i.test(text);
+    if (hasBW && hasFW) return 'BW+FW';
+    if (hasBW) return 'BW';
+    if (hasFW) return 'FW';
+    return null;
+}
+
+function extractQualificationLevel(text) {
+    const m = text.match(/\blevel(?:lo)?\s*[:.]?\s*([12])\b/i);
+    return m ? m[1] : null;
+}
+
+function extractFillerMaterial(text) {
+    const m = text.match(/\bfiller\s*(?:metal)?\s*(?:designation|classification)?\s*[:.]?\s*([A-Z][A-Z0-9./\- ]{2,30})/i)
+        || text.match(/\bmateriale\s*(?:d['’]\s*)?apporto\s*[:.]?\s*([A-Z0-9][A-Z0-9./\- ]{2,30})/i);
+    if (!m) return null;
+    return m[1].trim().replace(/\s{2,}/g, ' ');
+}
+
+/**
+ * Data associata a un'etichetta specifica (es. "Record issued", "Expiry date"),
+ * scansionando solo una finestra di testo subito dopo l'etichetta — evita di
+ * assumere arbitrariamente l'ultima data del documento come scadenza (WPQR spesso
+ * senza expiry — vedi nota DEPUTYTASK1 25/07/2026).
+ */
+function extractLabeledDate(text, labelRe) {
+    const m = text.match(labelRe);
+    if (!m) return null;
+    const windowText = text.slice(m.index + m[0].length, m.index + m[0].length + 30);
+    const found = allDates(windowText);
+    return found[0] || null;
+}
+
+function extractIssueDateLabeled(text) {
+    return extractLabeledDate(text, /\b(?:record\s+issued|issued|data\s+di\s+emissione|emissione|approvazione|approval\s*date)\s*[:.]?\s*/i);
+}
+
+function extractExpiryDateLabeled(text) {
+    return extractLabeledDate(text, /\b(?:expiry(?:\s*date)?|scadenza|valid\s*until|valido\s+fino\s+al)\s*[:.]?\s*/i);
 }
 
 // Parole in MAIUSCOLO che NON sono nomi propri (etichette tipiche nei patentini/scansioni OCR)
@@ -125,6 +197,12 @@ function extractPersonName(text) {
             while (parts.length > 2 && NON_NAME_WORDS.has(parts[parts.length - 1].toUpperCase().replace(/[.'']/g, ''))) {
                 parts.pop();
             }
+            // Rimuovi il punto di fine frase sull'ultimo cognome (es. "Rossi." → "Rossi"),
+            // preservando le abbreviazioni brevi (es. "M." iniziale nome).
+            const lastIdx = parts.length - 1;
+            if (lastIdx >= 0 && parts[lastIdx].endsWith('.') && parts[lastIdx].length > 2) {
+                parts[lastIdx] = parts[lastIdx].slice(0, -1);
+            }
             const candidate = parts.join(' ');
             const allStop = parts.every((w) => NON_NAME_WORDS.has(w.toUpperCase().replace(/[.'']/g, '')));
             if (!allStop && parts.length >= 2) return candidate;
@@ -136,6 +214,7 @@ function extractPersonName(text) {
 function extractIssuingBody(text) {
     const bodies = [
         'Bureau Veritas', 'DNV', 'Lloyd', 'RINA', 'TÜV', 'TUV', 'IMQ', 'IIS', 'CICPND', 'SGS',
+        'TEC Eurolab', 'Sideius', 'BSI',
     ];
     const lower = text.toLowerCase();
     for (const b of bodies) {
@@ -152,17 +231,33 @@ function extractIssuingBody(text) {
 function extractWpqrFields(text, fileName) {
     const dates = allDates(text);
     const thickness = extractThicknessMm(text);
+    const positions = extractWeldingPositionsFromText(text);
+    const { thickness_min, thickness_max } = extractThicknessRangeMm(text);
+    const { diameter_min, diameter_max } = extractDiameterRangeMm(text);
+    const issuedLabeled = extractIssueDateLabeled(text);
+    const expiryLabeled = extractExpiryDateLabeled(text);
     return {
         wpqr_number: extractWpqrReference(text, fileName),
         reference_number: extractWpqrReference(text, fileName),
+        qualification_level: extractQualificationLevel(text),
         welding_process: extractWeldingProcess(text),
         material_group: extractMaterialGroup(text),
         base_material_group: extractMaterialGroup(text),
+        joint_type: extractJointType(text),
         thickness_tested: thickness,
         thickness_test_mm: thickness,
-        approval_date: dates[0] || null,
-        issue_date: dates[0] || null,
-        expiry_date: dates.length > 1 ? dates[dates.length - 1] : null,
+        thickness_min,
+        thickness_max,
+        diameter_min,
+        diameter_max,
+        welding_positions: positions.length ? positions : null,
+        filler_material: extractFillerMaterial(text),
+        welder_name: extractPersonName(text),
+        // Data emissione: preferire etichetta esplicita ("Record issued"), altrimenti prima data trovata.
+        approval_date: issuedLabeled || dates[0] || null,
+        issue_date: issuedLabeled || dates[0] || null,
+        // Scadenza: SOLO se etichettata esplicitamente — i WPQR spesso non hanno scadenza.
+        expiry_date: expiryLabeled || null,
         certificate_number: extractCertificateNumber(text),
         examiner_body: extractIssuingBody(text),
         issuing_body: extractIssuingBody(text),
@@ -280,5 +375,11 @@ module.exports = {
     extractQualifica14732Fields,
     extractWeldingProcess,
     extractMaterialGroup,
+    extractWpqrReference,
+    extractJointType,
+    extractQualificationLevel,
+    extractFillerMaterial,
+    extractThicknessRangeMm,
+    extractDiameterRangeMm,
     allDates,
 };
