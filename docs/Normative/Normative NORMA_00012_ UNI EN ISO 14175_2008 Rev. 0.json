@@ -1,0 +1,290 @@
+[
+  {
+    "standard_code": "ISO_14175_2008",
+    "clause_ref": "1",
+    "clause_title": "Scope",
+    "requirement_text": "This International Standard specifies requirements for the classification of gases and gas mixtures used in fusion welding and allied processes including, but not limited to: ⎯ tungsten arc welding (Process 141); ⎯ gas-shielded metal arc welding (Process 13); ⎯ plasma arc welding (Process 15); ⎯ plasma arc cutting (Process 83); ⎯ laser welding (Process 52); ⎯ laser cutting (Process 84); ⎯ arc braze welding (Process 972). NOTE Process numbers are in accordance with ISO 4063. The purpose of this International Standard is to classify and designate shielding, backing, process and assist gases in accordance with their chemical properties and metallurgical behaviour as the basis for correct selection by the user and to simplify the possible qualification procedures. Gas purities and mixing tolerances are specified as delivered by the supplier (manufacturer) and not at the point of use. Gases or gas mixtures may be supplied in either liquid or gaseous form, but when used for welding and allied processes, the gases are always used in the gaseous form. Fuel gases, such as acetylene, natural gas, propane, etc., and resonator gases, as used in gas lasers, are not covered by this International Standard. Transportation and handling of gases and containers shall be in accordance with local, national and regional standards and regulations as required."
+  },
+  {
+    "standard_code": "ISO_14175_2008",
+    "clause_ref": "2",
+    "clause_title": "Normative references",
+    "requirement_text": "The following referenced documents are indispensable for the application of this document. For dated references, only the edition cited applies. For undated references, the latest edition of the referenced document (including any amendments) applies. ISO 31-0:1992, Quantities and units — Part 0: General principles © ISO 2008 – All rights reserved 1"
+  },
+  {
+    "standard_code": "ISO_14175_2008",
+    "clause_ref": "3",
+    "clause_title": "Terms and definitions",
+    "requirement_text": "For the purposes of this document, the following terms and definitions apply. 3.1 base gas major or only component of a pure or mixed gas 3.2 classification number of this International Standard, followed by the symbol for the gas or gas mixture (main group and subgroup) 3.3 component gaseous substance that is essential to the performance of the gas mixture EXAMPLE In a mixture containing 11 % of CO in argon, CO is considered a component while argon is the base 2 2 gas. 3.4 container vessel used for the shipment and/or storage of pure or mixed gases in a gaseous or liquid state 3.5 designation classification plus the symbols for all chemical components plus the nominal composition in volume percent NOTE Symbols for chemical components are given in 5.2. EXAMPLE A mixture of argon containing 11 % CO is designated as ISO 14175-M20-ArC-11. 2 3.6 impurity gaseous substance with chemical composition different from the base gas, component or gas mixture 3.7 mixture gas consisting of two or more components 3.8 nominal value percentage value of a component, quoted by the manufacturer or supplier, which corresponds to the general composition given by the designation 3.9 symbol main-group and sub-group of a gas mixture NOTE Symbols are given in Table 2 (see also 5.1). EXAMPLE The symbol for a mixture of argon containing 11 % CO is M20."
+  },
+  {
+    "standard_code": "ISO_14175_2008",
+    "clause_ref": "2",
+    "clause_title": "© ISO 2008 – All rights reserved",
+    "requirement_text": ""
+  },
+  {
+    "standard_code": "ISO_14175_2008",
+    "clause_ref": "4",
+    "clause_title": "Properties of gases",
+    "requirement_text": ""
+  },
+  {
+    "standard_code": "ISO_14175_2008",
+    "clause_ref": "4.1",
+    "clause_title": "General",
+    "requirement_text": "Relevant physical and chemical properties of the gases considered in this International Standard are given in Table 1. Table 1 — Properties of gas components Relative Boiling point Chemical Density a density a at 0,101 MPa Reactivity Type of gas symbol (air = 1,293) to air during welding kg/m3 °C Argon Ar 1,784 1,380 − 185,9 Inert Helium He 0,178 0,138 − 268,9 Inert Carbon dioxide CO 2 1,977 1,529 − 78,5 b Oxidizing Oxygen O 2 1,429 1,105 − 183,0 Oxidizing Nitrogen N 2 1,251 0,968 − 195,8 Low reactive c Hydrogen H 2 0,090 0,070 − 252,8 Reducing a Specified at 0 °C and 0,101 MPa (1,013 bar). b Sublimation temperature (solid to gas transition temperature). c The behaviour of nitrogen varies with different materials and applications. Possible influences must be considered by the user."
+  },
+  {
+    "standard_code": "ISO_14175_2008",
+    "clause_ref": "4.2",
+    "clause_title": "Rounding-off procedure",
+    "requirement_text": "For purposes of determining compliance with the requirements of this International Standard, the actual test values obtained shall be subjected to the rounding-off rules of ISO 31-0:1992, Annex B, Rule A. If the measured values are obtained by equipment calibrated in units other than those of this International Standard, the measured values shall be converted to the units of this International Standard before rounding off. If an average value is to be compared to the requirements of this International Standard, rounding off shall be done only after calculating the average. In the case where the testing standard cited in the normative references of this International Standard contains instructions for rounding off that conflict with the instructions of this International Standard, the rounding-off requirements of the testing standard shall apply. The rounded-off results shall fulfill the requirements of the appropriate table for the classification under test."
+  },
+  {
+    "standard_code": "ISO_14175_2008",
+    "clause_ref": "5",
+    "clause_title": "Classification and designation",
+    "requirement_text": ""
+  },
+  {
+    "standard_code": "ISO_14175_2008",
+    "clause_ref": "5.1",
+    "clause_title": "Classification",
+    "requirement_text": ""
+  },
+  {
+    "standard_code": "ISO_14175_2008",
+    "clause_ref": "5.1.1",
+    "clause_title": "General",
+    "requirement_text": "Gases and gas mixtures shall be classified by the number of this International Standard, followed by the symbol for the gas in accordance with Table 2. NOTE The classification is based on the reactivity of the gas or gas mixture. © ISO 2008 – All rights reserved 3\n\n| Type of gas | Chemical symbol | Density a (air = 1,293) kg/m3 | Relative density a to air | Boiling point at 0,101 MPa °C | Reactivity during welding |\n| --- | --- | --- | --- | --- | --- |\n| Argon | Ar | 1,784 | 1,380 | − 185,9 | Inert |\n| Helium | He | 0,178 | 0,138 | − 268,9 | Inert |\n| Carbon dioxide | CO 2 | 1,977 | 1,529 | − 78,5 b | Oxidizing |\n| Oxygen | O 2 | 1,429 | 1,105 | − 183,0 | Oxidizing |\n| Nitrogen | N 2 | 1,251 | 0,968 | − 195,8 | Low reactive c |\n| Hydrogen | H 2 | 0,090 | 0,070 | − 252,8 | Reducing |\n| a Specified at 0 °C and 0,101 MPa (1,013 bar). b Sublimation temperature (solid to gas transition temperature). c The behaviour of nitrogen varies with different materials and applications. Possible influences must be considered by the user. |  |  |  |  |  |"
+  },
+  {
+    "standard_code": "ISO_14175_2008",
+    "clause_ref": "5.1.2",
+    "clause_title": "Main group",
+    "requirement_text": "The letter codes and numbers used for the main groups are: ⎯ I: inert gases and inert gas mixtures; ⎯ M1, M2 and M3: oxidising mixtures containing oxygen and/or carbon dioxide; ⎯ C: highly oxidising gas and highly oxidising mixtures; ⎯ R: reducing gas mixtures; ⎯ N: low reactive gas or reducing gas mixtures, containing nitrogen; ⎯ O: oxygen; ⎯ Z: gas mixtures containing components not listed or mixtures outside the composition ranges listed in Table 2."
+  },
+  {
+    "standard_code": "ISO_14175_2008",
+    "clause_ref": "5.1.3",
+    "clause_title": "Sub-group",
+    "requirement_text": "The main groups, except Z, are divided into sub-groups based on the presence and level of different components having an influence on the reactivity (see Table 2). The values indicated in Table 2 are nominal values."
+  },
+  {
+    "standard_code": "ISO_14175_2008",
+    "clause_ref": "5.1.4",
+    "clause_title": "Classification examples",
+    "requirement_text": "EXAMPLE 1 For a gas mixture containing 6 % carbon dioxide, 4 % oxygen in argon: Classification: ISO 14175 – M25 EXAMPLE 2 For a gas mixture containing 30 % helium in argon: Classification: ISO 14175 – I3 EXAMPLE 3 For a gas mixture containing 5 % hydrogen in argon: Classification: ISO 14175 – R1 EXAMPLE 4 For a gas mixture containing 0,05 % of oxygen in argon: Classification: ISO 14175 – Z"
+  },
+  {
+    "standard_code": "ISO_14175_2008",
+    "clause_ref": "5.2",
+    "clause_title": "Designation",
+    "requirement_text": ""
+  },
+  {
+    "standard_code": "ISO_14175_2008",
+    "clause_ref": "5.2.1",
+    "clause_title": "General",
+    "requirement_text": "Gases and gas mixtures are designated by the classification (see 5.1) and the symbols of their chemical components as below, followed by the corresponding nominal composition in volume percent: ⎯ Ar: argon ⎯ C: carbon dioxide ⎯ H: hydrogen ⎯ N: nitrogen"
+  },
+  {
+    "standard_code": "ISO_14175_2008",
+    "clause_ref": "4",
+    "clause_title": "© ISO 2008 – All rights reserved",
+    "requirement_text": "⎯ O: oxygen ⎯ He: helium The base gas symbol shall be followed by the symbols for the other components in decreasing order of percent, followed by the nominal composition values, in volume percent, which are separated by a dash."
+  },
+  {
+    "standard_code": "ISO_14175_2008",
+    "clause_ref": "5.2.2",
+    "clause_title": "Designation examples",
+    "requirement_text": "EXAMPLE 1 For a gas mixture containing 6 % carbon dioxide, 4 % oxygen in argon: Classification: ISO 14175 – M25 Designation: ISO 14175 – M25 – ArCO – 6/4 EXAMPLE 2 For a gas mixture containing 30 % helium in argon: Classification: ISO 14175 – I3 Designation: ISO 14175 – I3 – ArHe – 30 EXAMPLE 3 For a gas mixture containing 5 % hydrogen in argon: Classification: ISO 14175 – R1 Designation: ISO 14175 – R1 – ArH – 5 EXAMPLE 4 For a gas mixture containing 7,5 % argon, 2,5 % carbon dioxide in helium: Classification: ISO 14175 – M12 Designation: ISO 14175 – M12 – HeArC – 7,5/2,5 For gas mixtures containing components listed, but outside the ranges in Table 2, the letter Z prefixes the symbol for the base gas and symbols for components as above, followed by the nominal composition values, in volume percent, which are separated by a dash. EXAMPLE 5 For a gas mixture containing 0,05 % of oxygen in argon: Classification: ISO 14175 – Z Designation: ISO 14175 – Z – ArO – 0,05 For gas mixtures containing components not listed in Table 2, the letter Z prefixes the symbol for the base gas and symbols for components as above, but with a plus sign preceding the unlisted component, followed by the nominal composition values, in volume percent, which are separated by a dash. EXAMPLE 6 For a gas mixture containing 0,05 % of xenon, chemical symbol Xe, in argon: Classification: ISO 14175 – Z Designation: ISO 14175 – Z – Ar+Xe – 0,05 © ISO 2008 – All rights reserved 5\n\n\nTable 2 — Classification of process gases for fusion welding and allied processes Symbol Components in nominal percentage of volume Oxidizing Inert Reducing Low reactivity Main Subgroup group CO O Ar He H N"
+  },
+  {
+    "standard_code": "ISO_14175_2008",
+    "clause_ref": "2",
+    "clause_title": "2 2 2",
+    "requirement_text": "I 1 100"
+  },
+  {
+    "standard_code": "ISO_14175_2008",
+    "clause_ref": "2",
+    "clause_title": "100",
+    "requirement_text": ""
+  },
+  {
+    "standard_code": "ISO_14175_2008",
+    "clause_ref": "3",
+    "clause_title": "balance 0,5 u He u 95",
+    "requirement_text": "M1 1 0,5 u CO 2 u 5 balance a 0,5 u H 2 u 5"
+  },
+  {
+    "standard_code": "ISO_14175_2008",
+    "clause_ref": "2",
+    "clause_title": "0,5 u CO 2 u 5 balance a",
+    "requirement_text": ""
+  },
+  {
+    "standard_code": "ISO_14175_2008",
+    "clause_ref": "3",
+    "clause_title": "0,5 u O 2 u 3 balance a",
+    "requirement_text": ""
+  },
+  {
+    "standard_code": "ISO_14175_2008",
+    "clause_ref": "4",
+    "clause_title": "0,5 u CO 2 u 5 0,5 u O 2 u 3 balance a",
+    "requirement_text": "M2 0 5 < CO 2 u 15 balance a"
+  },
+  {
+    "standard_code": "ISO_14175_2008",
+    "clause_ref": "1",
+    "clause_title": "15 < CO 2 u 25 balance a",
+    "requirement_text": ""
+  },
+  {
+    "standard_code": "ISO_14175_2008",
+    "clause_ref": "2",
+    "clause_title": "3 < O 2 u 10 balance a",
+    "requirement_text": ""
+  },
+  {
+    "standard_code": "ISO_14175_2008",
+    "clause_ref": "3",
+    "clause_title": "0,5 u CO 2 u 5 3 < O 2 u 10 balance a",
+    "requirement_text": ""
+  },
+  {
+    "standard_code": "ISO_14175_2008",
+    "clause_ref": "4",
+    "clause_title": "5 < CO 2 u 15 0,5 u O 2 u 3 balance a",
+    "requirement_text": ""
+  },
+  {
+    "standard_code": "ISO_14175_2008",
+    "clause_ref": "5",
+    "clause_title": "5 < CO 2 u 15 3 < O 2 u 10 balance a",
+    "requirement_text": ""
+  },
+  {
+    "standard_code": "ISO_14175_2008",
+    "clause_ref": "6",
+    "clause_title": "15 < CO 2 u 25 0,5 u O 2 u 3 balance a",
+    "requirement_text": ""
+  },
+  {
+    "standard_code": "ISO_14175_2008",
+    "clause_ref": "7",
+    "clause_title": "15 < CO 2 u 25 3 < O 2 u 10 balance a",
+    "requirement_text": "M3 1 25 < CO 2 u 50 balance a"
+  },
+  {
+    "standard_code": "ISO_14175_2008",
+    "clause_ref": "2",
+    "clause_title": "10 < O 2 u 15 balance a",
+    "requirement_text": ""
+  },
+  {
+    "standard_code": "ISO_14175_2008",
+    "clause_ref": "3",
+    "clause_title": "25 < CO 2 u 50 2 < O 2 u 10 balance a",
+    "requirement_text": ""
+  },
+  {
+    "standard_code": "ISO_14175_2008",
+    "clause_ref": "4",
+    "clause_title": "5 < CO 2 u 25 10 < O 2 u 15 balance a",
+    "requirement_text": ""
+  },
+  {
+    "standard_code": "ISO_14175_2008",
+    "clause_ref": "5",
+    "clause_title": "25 < CO 2 u 50 10 < O 2 u 15 balance a",
+    "requirement_text": "C 1 100"
+  },
+  {
+    "standard_code": "ISO_14175_2008",
+    "clause_ref": "2",
+    "clause_title": "balance 0,5 u O 2 u 30",
+    "requirement_text": "R 1 balance a 0,5 u H 2 u 15"
+  },
+  {
+    "standard_code": "ISO_14175_2008",
+    "clause_ref": "2",
+    "clause_title": "balance a 15 < H 2 u 50",
+    "requirement_text": "N 1 100"
+  },
+  {
+    "standard_code": "ISO_14175_2008",
+    "clause_ref": "2",
+    "clause_title": "balance a 0,5 u N 2 u 5",
+    "requirement_text": ""
+  },
+  {
+    "standard_code": "ISO_14175_2008",
+    "clause_ref": "3",
+    "clause_title": "balance a 5 < N 2 u 50",
+    "requirement_text": ""
+  },
+  {
+    "standard_code": "ISO_14175_2008",
+    "clause_ref": "4",
+    "clause_title": "balance a 0,5 u H 2 u 10 0,5 u N 2 u 5",
+    "requirement_text": ""
+  },
+  {
+    "standard_code": "ISO_14175_2008",
+    "clause_ref": "5",
+    "clause_title": "0,5 u H 2 u 50 balance",
+    "requirement_text": "O 1 100 Z Gas mixtures containing components not listed, or mixtures outside the composition ranges listed.b a For the purpose of this classification, argon may be substituted partially or completely by helium. b Two gas mixtures with the same Z-classification may not be interchangeable."
+  },
+  {
+    "standard_code": "ISO_14175_2008",
+    "clause_ref": "6",
+    "clause_title": "© ISO 2008 – All rights reserved",
+    "requirement_text": "| Symbol Main Sub- group group |  | Components in nominal percentage of volume Oxidizing Inert Reducing Low reactivity |  |  |  |  |  |\n| --- | --- | --- | --- | --- | --- | --- | --- |\n|  |  | CO 2 | O 2 | Ar | He | H 2 | N 2 |\n| I | 1 |  |  | 100 |  |  |  |\n|  | 2 |  |  |  | 100 |  |  |\n|  | 3 |  |  | balance | 0,5 u He u 95 |  |  |\n| M1 | 1 | 0,5 u CO 2 u 5 |  | balance a |  | 0,5 u H 2 u 5 |  |\n|  | 2 | 0,5 u CO 2 u 5 |  | balance a |  |  |  |\n|  | 3 |  | 0,5 u O 2 u 3 | balance a |  |  |  |\n|  | 4 | 0,5 u CO 2 u 5 | 0,5 u O 2 u 3 | balance a |  |  |  |\n| M2 | 0 | 5 < CO 2 u 15 |  | balance a |  |  |  |\n|  | 1 | 15 < CO 2 u 25 |  | balance a |  |  |  |\n|  | 2 |  | 3 < O 2 u 10 | balance a |  |  |  |\n|  | 3 | 0,5 u CO 2 u 5 | 3 < O 2 u 10 | balance a |  |  |  |\n|  | 4 | 5 < CO 2 u 15 | 0,5 u O 2 u 3 | balance a |  |  |  |\n|  | 5 | 5 < CO 2 u 15 | 3 < O 2 u 10 | balance a |  |  |  |\n|  | 6 | 15 < CO 2 u 25 | 0,5 u O 2 u 3 | balance a |  |  |  |\n|  | 7 | 15 < CO 2 u 25 | 3 < O 2 u 10 | balance a |  |  |  |\n| M3 | 1 | 25 < CO 2 u 50 |  | balance a |  |  |  |\n|  | 2 |  | 10 < O 2 u 15 | balance a |  |  |  |\n|  | 3 | 25 < CO 2 u 50 | 2 < O 2 u 10 | balance a |  |  |  |\n|  | 4 | 5 < CO 2 u 25 | 10 < O 2 u 15 | balance a |  |  |  |\n|  | 5 | 25 < CO 2 u 50 | 10 < O 2 u 15 | balance a |  |  |  |\n| C | 1 | 100 |  |  |  |  |  |\n|  | 2 | balance | 0,5 u O 2 u 30 |  |  |  |  |\n| R | 1 |  |  | balance a |  | 0,5 u H 2 u 15 |  |\n|  | 2 |  |  | balance a |  | 15 < H 2 u 50 |  |\n| N | 1 |  |  |  |  |  | 100 |\n|  | 2 |  |  | balance a |  |  | 0,5 u N 2 u 5 |\n|  | 3 |  |  | balance a |  |  | 5 < N 2 u 50 |\n|  | 4 |  |  | balance a |  | 0,5 u H 2 u 10 | 0,5 u N 2 u 5 |\n|  | 5 |  |  |  |  | 0,5 u H 2 u 50 | balance |\n| O | 1 |  | 100 |  |  |  |  |\n| Z | Gas mixtures containing components not listed, or mixtures outside the composition ranges listed.b |  |  |  |  |  |  |\n| a For the purpose of this classification, argon may be substituted partially or completely by helium. b Two gas mixtures with the same Z-classification may not be interchangeable. |  |  |  |  |  |  |  |"
+  },
+  {
+    "standard_code": "ISO_14175_2008",
+    "clause_ref": "6",
+    "clause_title": "Tolerances of mixtures",
+    "requirement_text": "Mixture tolerances apply to the volumetric percentage of the components in accordance with Table 3. Table 3 — Mixture tolerances Component gas nominal concentration Allowable tolerance % > 5 ± 10 % of the nominal"
+  },
+  {
+    "standard_code": "ISO_14175_2008",
+    "clause_ref": "1",
+    "clause_title": "to 5 ± 0,5 % absolute",
+    "requirement_text": "< 1 Not specified in this International Standard EXAMPLE 1 An addition of 25 % carbon dioxide nominal value shall not vary by more than ± 2,5 % (from 22,5 % to 27,5 %). EXAMPLE 2 An addition of 2,5 % oxygen shall not vary by more than ± 0,5 % (from 2,0 % to 3,0 %)."
+  },
+  {
+    "standard_code": "ISO_14175_2008",
+    "clause_ref": "7",
+    "clause_title": "Purities and dew point",
+    "requirement_text": "The purity and dew point of gas components and gas mixtures shall meet the requirements of Table 4. Moisture can be expressed as concentration in ppm (parts per million) or as dew points at 0,101 MPa in °C. Purities and moisture contents for special gas mixtures are not specified in this International Standard."
+  },
+  {
+    "standard_code": "ISO_14175_2008",
+    "clause_ref": "8",
+    "clause_title": "Testing",
+    "requirement_text": "Testing of gases and gas mixtures for composition and impurity may be carried out by the manufacturer or supplier using established standards for testing and control (see also Bibliography). The results of the testing shall fulfil the requirements given in Tables 2 and 3. Any special or additional testing requirements should be agreed between the purchaser and the manufacturer or supplier. Table 4 — Minimum requirements on purities and moisture contents of gases and gas mixtures Purity Dew point at Moisture Main groups/gas % by volume 0,101 MPa ppm max. minimum °C volume I inert 99,99 − 50 40 M1 a gas mix 99,9 − 50 40 M2 a gas mix 99,9 − 44 80 M3 a gas mix 99,9 − 40 120 C a carbon dioxide 99,8 − 40 120 R reducing 99,95 − 50 40 N nitrogen 99,9 − 50 40 O oxygen 99,5 − 50 40 NOTE For certain applications a higher purity and/or lower dew point may be recommended to avoid possible oxidation and contamination a Nitrogen: 1 000 ppm maximum. © ISO 2008 – All rights reserved 7\n\n| Component gas nominal concentration % | Allowable tolerance |\n| --- | --- |\n| > 5 | ± 10 % of the nominal |\n| 1 to 5 | ± 0,5 % absolute |\n| < 1 | Not specified in this International Standard |\n\n| Main groups/gas |  | Purity % by volume minimum | Dew point at 0,101 MPa °C | Moisture ppm max. volume |\n| --- | --- | --- | --- | --- |\n| I | inert | 99,99 | − 50 | 40 |\n| M1 a | gas mix | 99,9 | − 50 | 40 |\n| M2 a | gas mix | 99,9 | − 44 | 80 |\n| M3 a | gas mix | 99,9 | − 40 | 120 |\n| C a | carbon dioxide | 99,8 | − 40 | 120 |\n| R | reducing | 99,95 | − 50 | 40 |\n| N | nitrogen | 99,9 | − 50 | 40 |\n| O | oxygen | 99,5 | − 50 | 40 |\n| NOTE For certain applications a higher purity and/or lower dew point may be recommended to avoid possible oxidation and contamination |  |  |  |  |\n| a Nitrogen: 1 000 ppm maximum. |  |  |  |  |"
+  },
+  {
+    "standard_code": "ISO_14175_2008",
+    "clause_ref": "9",
+    "clause_title": "Retesting",
+    "requirement_text": "If any test fails to meet the requirement, that test shall be repeated twice. The results of both retests shall meet the requirement. Samples for the retest may be taken from the original container or from a new container. Retests need only be for those specific elements that failed to meet their test requirement. If the results of one or both retests fail to meet the requirement, the gas under test shall be considered as not meeting the requirements of this specification for that classification and designation. In the event that, during preparation or after completion of any test, it is clearly determined that prescribed or proper procedures were not followed in preparing the sample(s) or in conducting the tests, the test shall be considered invalid, without regard to whether the test was actually completed, or whether the test results met, or failed to meet, the requirement. That test shall be repeated following proper prescribed procedures. In this case, the requirement for doubling the number of test samples does not apply."
+  },
+  {
+    "standard_code": "ISO_14175_2008",
+    "clause_ref": "10",
+    "clause_title": "Marking",
+    "requirement_text": "The outside of each container (see 3.4) shall be clearly marked with at least the following information:\n\na) name of manufacturer or supplier;\n\nb) trade name;\n\nc) designation in accordance with this International Standard (see 5.2);\n\nd) health and safety warnings in accordance with local, national and regional standards and regulations as\n\nrequired."
+  },
+  {
+    "standard_code": "ISO_14175_2008",
+    "clause_ref": "8",
+    "clause_title": "© ISO 2008 – All rights reserved",
+    "requirement_text": ""
+  }
+]

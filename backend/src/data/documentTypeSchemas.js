@@ -51,7 +51,8 @@ Istruzioni per le date di conferma semestrale (ISO 9606-1 §9.2):
     label: 'WPS (Procedura di saldatura)',
     aiPrompt: `Stai analizzando una WPS (Welding Procedure Specification) secondo ISO 15614 o EN ISO 15609.
 Estrai nell'oggetto "type_specific_data": wps_number, welding_process, base_material,
-thickness_min_mm, thickness_max_mm, wpqr_ref. Usa null per i campi non trovati.`,
+thickness_min_mm, thickness_max_mm, wpqr_ref, shielding_gas (codice ISO 14175 es. "M21"/"I1", o null).
+Usa null per i campi non trovati.`,
     aiExpectedSchema: {
       wps_number: 'string|null',
       welding_process: 'string|null',
@@ -59,6 +60,7 @@ thickness_min_mm, thickness_max_mm, wpqr_ref. Usa null per i campi non trovati.`
       thickness_min_mm: 'number|null',
       thickness_max_mm: 'number|null',
       wpqr_ref: 'string|null',
+      shielding_gas: 'string|null',
     },
   },
 
