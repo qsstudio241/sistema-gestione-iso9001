@@ -12,6 +12,36 @@ const {
     WRONG_MODULE_MESSAGES,
     SUGGESTED_MODULE,
 } = require('../utils/documentClassifier');
+const {
+    checkNumericRangeOrder,
+    checkFillerMaterial14341Plausibility,
+    checkShieldingGasKnown,
+} = require('../utils/ingestPlausibilityChecks');
+
+/**
+ * Controlli di plausibilità/coerenza normativa sui campi estratti (warning-only,
+ * mai bloccanti — vedi ingestPlausibilityChecks.js). Gap analysis WPS 26/07/2026:
+ * prima di questa funzione l'estrazione WPS non verificava mai coerenza spessore,
+ * pattern filler ISO 14341 o gas ISO 14175 col documento originale.
+ * @param {object} f - reviewFields (mapPipelineFieldsToReview)
+ * @returns {string[]}
+ */
+function checkWpsPlausibility(f) {
+    const warnings = [];
+
+    const thicknessWarn = checkNumericRangeOrder({
+        min: f.thickness_min_mm, max: f.thickness_max_mm, label: 'spessore',
+    });
+    if (thicknessWarn) warnings.push(thicknessWarn);
+
+    const fillerWarn = checkFillerMaterial14341Plausibility(f.filler_material);
+    if (fillerWarn) warnings.push(fillerWarn);
+
+    const gasWarn = checkShieldingGasKnown(f.shielding_gas);
+    if (gasWarn) warnings.push(gasWarn);
+
+    return warnings;
+}
 
 async function checkDuplicate(wpsCode, organizationId, companyId) {
     if (!wpsCode) return false;
@@ -101,6 +131,8 @@ async function extractWPSFromPdf(pdfBuffer, fileName, organizationId, companyId)
         warnings.push('Codice WPS non trovato — inserirlo manualmente in revisione');
     }
 
+    warnings.push(...checkWpsPlausibility(reviewFields));
+
     if (reviewFields.wps_code && await checkDuplicate(reviewFields.wps_code, organizationId, companyId)) {
         return {
             status: 'duplicate',
@@ -181,4 +213,5 @@ module.exports = {
     extractWPSFromPdf,
     commitWPSFromFields,
     mapPipelineFieldsToReview,
+    checkWpsPlausibility,
 };

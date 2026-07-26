@@ -38,6 +38,7 @@ const {
     mapPipelineFieldsToReview,
     classifyQualificationType,
     commitQualificationFromFields,
+    checkQualificationPlausibility,
 } = require('./qualificationIngest.service');
 
 describe('mapPipelineFieldsToReview — date conferma semestrale', () => {
@@ -132,6 +133,62 @@ describe('qualificationIngest.service — mapPipelineFieldsToReview (ISO 14732)'
         }, 'patentino saldatore 9606-1', 'file.pdf');
         expect(out.person_name).toBe('Mario Rossi');
     });
+
+    it('mappa shielding_gas (campo previsto dallo schema AI ma fino al 26/07/2026 mai propagato)', () => {
+        const out = mapPipelineFieldsToReview({
+            welder_name: 'Mario Rossi',
+            shielding_gas: 'M21',
+        }, 'patentino saldatore 9606-1', 'file.pdf');
+        expect(out.shielding_gas).toBe('M21');
+    });
+
+    it('mappa product_type e weld_details (variabile essenziale ISO 9606-1 §11 — gap 26/07/2026)', () => {
+        const out = mapPipelineFieldsToReview({
+            welder_name: 'Mario Rossi',
+            product_type: 'T',
+            weld_details: 'backing ceramico',
+        }, 'patentino saldatore 9606-1', 'file.pdf');
+        expect(out.product_type).toBe('T');
+        expect(out.weld_details).toBe('backing ceramico');
+    });
+});
+
+describe('checkQualificationPlausibility (gap analysis 26/07/2026 — warning-only)', () => {
+    it('nessun warning per campi coerenti', () => {
+        const warnings = checkQualificationPlausibility({
+            exam_date: '2024-04-17',
+            expiry_date: '2027-04-16',
+            last_confirmation_date: '2024-10-17',
+            next_confirmation_due: '2025-04-17',
+            thickness_min_mm: 3, thickness_max_mm: 12,
+            shielding_gas: 'M21',
+        });
+        expect(warnings).toEqual([]);
+    });
+
+    it('segnala scadenza anteriore alla data di esame', () => {
+        const warnings = checkQualificationPlausibility({
+            exam_date: '2024-04-17', expiry_date: '2020-01-01',
+        });
+        expect(warnings.some((w) => w.includes('scadenza'))).toBe(true);
+    });
+
+    it('segnala prossima conferma anteriore o uguale all\'ultima conferma', () => {
+        const warnings = checkQualificationPlausibility({
+            last_confirmation_date: '2024-10-17', next_confirmation_due: '2024-10-17',
+        });
+        expect(warnings.some((w) => w.includes('conferma'))).toBe(true);
+    });
+
+    it('segnala range spessore invertito', () => {
+        const warnings = checkQualificationPlausibility({ thickness_min_mm: 30, thickness_max_mm: 10 });
+        expect(warnings.some((w) => w.includes('invertito'))).toBe(true);
+    });
+
+    it('segnala gas fuori catalogo ISO 14175', () => {
+        const warnings = checkQualificationPlausibility({ shielding_gas: 'NON-ESISTE' });
+        expect(warnings.some((w) => w.includes('ISO 14175'))).toBe(true);
+    });
 });
 
 describe('qualificationIngest.service — commitQualificationFromFields (14732)', () => {
@@ -176,5 +233,69 @@ describe('qualificationIngest.service — commitQualificationFromFields (14732)'
         expect(insertReq.query).toHaveBeenCalledWith(expect.stringContaining('welding_type'));
         expect(insertReq.query).toHaveBeenCalledWith(expect.stringContaining('single_multi_run'));
         expect(insertReq.query).toHaveBeenCalledWith(expect.stringContaining('qualification_method'));
+    });
+
+    it('persiste shielding_gas nella query INSERT (gap analysis 26/07/2026)', async () => {
+        const dupCheckReq = makeRequestMock();
+        dupCheckReq.query = jest.fn().mockResolvedValue({ recordset: [{ cnt: 0 }] });
+
+        const insertReq = { input: jest.fn().mockReturnThis() };
+        insertReq.query = jest.fn().mockResolvedValue({ recordset: [{ id: 502 }] });
+
+        let callCount = 0;
+        const pool = {
+            request: jest.fn(() => {
+                callCount += 1;
+                return callCount === 1 ? dupCheckReq : insertReq;
+            }),
+        };
+        getPool.mockResolvedValue(pool);
+
+        await commitQualificationFromFields({
+            welder_name: 'Mario Rossi',
+            certificate_number: 'CERT-9606-01',
+            welding_process: '135',
+            shielding_gas: 'M21',
+        }, 10, 20, { qualificationType: 'Saldatore ISO 9606-1' });
+
+        expect(insertReq.input).toHaveBeenCalledWith('shieldGas', 'M21');
+        expect(insertReq.query).toHaveBeenCalledWith(expect.stringContaining('shielding_gas'));
+    });
+
+    it('persiste product_type/weld_details e calcola qualification_designation (gap analysis 26/07/2026)', async () => {
+        const dupCheckReq = makeRequestMock();
+        dupCheckReq.query = jest.fn().mockResolvedValue({ recordset: [{ cnt: 0 }] });
+
+        const insertReq = { input: jest.fn().mockReturnThis() };
+        insertReq.query = jest.fn().mockResolvedValue({ recordset: [{ id: 503 }] });
+
+        let callCount = 0;
+        const pool = {
+            request: jest.fn(() => {
+                callCount += 1;
+                return callCount === 1 ? dupCheckReq : insertReq;
+            }),
+        };
+        getPool.mockResolvedValue(pool);
+
+        await commitQualificationFromFields({
+            welder_name: 'Mario Rossi',
+            certificate_number: 'CERT-9606-02',
+            welding_process: '141',
+            joint_type: 'BW',
+            product_type: 'T',
+            weld_details: 'backing ceramico',
+            thickness_min_mm: 3,
+            thickness_max_mm: 12,
+            pipe_diameter_min_mm: 60,
+            pipe_diameter_max_mm: 120,
+            welding_positions: ['PA', 'PC'],
+        }, 10, 20, { qualificationType: 'Saldatore ISO 9606-1' });
+
+        expect(insertReq.input).toHaveBeenCalledWith('jointType', 'BW');
+        expect(insertReq.input).toHaveBeenCalledWith('productType', 'T');
+        expect(insertReq.input).toHaveBeenCalledWith('weldDetails', 'backing ceramico');
+        expect(insertReq.input).toHaveBeenCalledWith('designation', expect.stringContaining('141 T BW'));
+        expect(insertReq.query).toHaveBeenCalledWith(expect.stringContaining('qualification_designation'));
     });
 });
