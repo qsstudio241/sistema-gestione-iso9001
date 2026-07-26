@@ -169,7 +169,8 @@ e non un SGQ a clausole 4–10, **non** aggiungerla a `import-norms-from-markdow
    (es. `shielding_gas` ← ISO 14175; `preheat_temp`/`interpass_temp` ← ISO 13916; variabili WPS ← ISO 15609).
 Esempi in repo: ISO 14175:2008 → `ISO-14175-gas-protezione.md` + `shieldingGases14175.js` (RC-3);
 ISO 13916:2025 → `ISO-13916-temperature-saldatura.md` + `weldingTemperatures13916.js` (RC-9);
-ISO 15609-1/-2:2019 → `ISO-15609-WPS-contenuto.md` + schema WPS arricchito (RC-10, no catalogo simboli).
+ISO 15609-1/-2:2019 → `ISO-15609-WPS-contenuto.md` + schema WPS arricchito (RC-10, no catalogo simboli);
+ISO 14341:2020 → `ISO-14341-consumabili-filo.md` + `fillerWire14341.js` (RC-11, solo prompt: designazioni composite, non catalogo esaustivo).
 
 ## Encoding
 

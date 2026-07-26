@@ -1,0 +1,296 @@
+[
+  {
+    "standard_code": "ISO_14341_2020",
+    "clause_ref": "1",
+    "clause_title": "Scope 1",
+    "requirement_text": ".................................................................................................................................................................................................................................."
+  },
+  {
+    "standard_code": "ISO_14341_2020",
+    "clause_ref": "2",
+    "clause_title": "Normative references 1",
+    "requirement_text": "................................................................................................................................................................................................................................."
+  },
+  {
+    "standard_code": "ISO_14341_2020",
+    "clause_ref": "3",
+    "clause_title": "Terms and definitions 1",
+    "requirement_text": "......................................................................................................................................................................................"
+  },
+  {
+    "standard_code": "ISO_14341_2020",
+    "clause_ref": "4",
+    "clause_title": "Classification 2",
+    "requirement_text": "....................................................................................................................................................................................."
+  },
+  {
+    "standard_code": "ISO_14341_2020",
+    "clause_ref": "5",
+    "clause_title": "Symbols and requirements 2",
+    "requirement_text": "............................................................................................................................................................................................................ ........................................................................................................................................................................ 5.1 Symbol for product/process .......................................................................................................................................................2"
+  },
+  {
+    "standard_code": "ISO_14341_2020",
+    "clause_ref": "5.2",
+    "clause_title": "Symbol for strength and elongation of all-weld metal .........................................................................................3",
+    "requirement_text": "5.3 Symbol for impact properties of all-weld metal .........................................................................................................3 5.4 Symbol for shielding gas .................................................................................................................................................................4"
+  },
+  {
+    "standard_code": "ISO_14341_2020",
+    "clause_ref": "6",
+    "clause_title": "Mechanical tests 8",
+    "requirement_text": ""
+  },
+  {
+    "standard_code": "ISO_14341_2020",
+    "clause_ref": "5.5",
+    "clause_title": "Symbol for chemical composition of wire electrodes............................................................................................4",
+    "requirement_text": ".................................................................................................................................................................................................... 6.1 Preheating and interpass temperatures ...........................................................................................................................8 6.2 Welding conditions and pass sequence .............................................................................................................................9"
+  },
+  {
+    "standard_code": "ISO_14341_2020",
+    "clause_ref": "7",
+    "clause_title": "Chemical analysis 10",
+    "requirement_text": "6.3 Post-weld heat-treated (PWHT) condition ..................................................................................................................10"
+  },
+  {
+    "standard_code": "ISO_14341_2020",
+    "clause_ref": "8",
+    "clause_title": "Rounding procedure 11",
+    "requirement_text": ".............................................................................................................................................................................................."
+  },
+  {
+    "standard_code": "ISO_14341_2020",
+    "clause_ref": "9",
+    "clause_title": "Retests 11",
+    "requirement_text": "......................................................................................................................................................................................"
+  },
+  {
+    "standard_code": "ISO_14341_2020",
+    "clause_ref": "10",
+    "clause_title": "Technical delivery conditions 11",
+    "requirement_text": ".........................................................................................................................................................................................................................."
+  },
+  {
+    "standard_code": "ISO_14341_2020",
+    "clause_ref": "11",
+    "clause_title": "Examples of designation 11",
+    "requirement_text": ".............................................................................................................................................................. Bibliography 14 ............................................................................................................................................................................ ............................................................................................................................................................................................................................. © ISO 2020 – All rights reserved iii"
+  },
+  {
+    "standard_code": "ISO_14341_2020",
+    "clause_ref": "1",
+    "clause_title": "Scope",
+    "requirement_text": "This document specifies requirements for classification of wire electrodes and weld deposits in the as-welded condition and in the post-weld heat-treated condition for gas shielded metal arc welding of non alloy and fine grain steels with a minimum yield strength of up to 500 MPa or a minimum tensile strength of up to 570 MPa. One wire electrode can be tested and classified with different shielding gases. This document constitutes a combined specification providing classification utilizing a system based upon the yield strength and the average impact energy of 47 J of all-weld metal, or utilizing a system based upon the tensile strength and the average impact energy of 27 J of all-weld metal.\n\na) Clauses and tables which carry the suffix letter “A” are applicable only to wire electrodes classified\n\nto the system based on the yield strength and the average impact energy of 47 J of all-weld metal in accordance with this document.\n\nb) Clauses and tables which carry the suffix letter “B” are applicable only to wire electrodes classified\n\nto the system based on the tensile strength and the average impact energy of 27 J of all-weld metal in accordance with this document.\n\nc) Clauses and tables which have neither the suffix letter “A” nor the suffix letter “B” are applicable to\n\nall wire electrodes classified in accordance with this document."
+  },
+  {
+    "standard_code": "ISO_14341_2020",
+    "clause_ref": "2",
+    "clause_title": "Normative references",
+    "requirement_text": "The following documents are referred to in the text in such a way that some or all of their content constitutes requirements of this document. For dated references, only the edition cited applies. For undated rWefeelrdeinngc ecso, nthsuem laatbelsets e —dit Tioenc honf itchael dreeflievreernyc ceodn ddoitciuonmse fnotr ( fiinllcelru dminagte arniayl sa manedn dflmuxeenst s—) a Tpyppleie so.f product, dimensions, tolerances and markings ISO 544, Welding consumables — Gases and gas mixtures for fusion welding and allied processes ISO 14175:2W00el8d,i ng consumables — Procurement of filler materials and fluxes ISO 14344, Welding consumables — Test methods — Part 1: Test methods for all-weld metal test specimens in steel, nickel and nickel alloys ISO 15792-1:2020, Quantities and units — Part 1: General ISO 80000-1:2009, . Corrected by ISO 80000-1:2009/Cor 1:2011"
+  },
+  {
+    "standard_code": "ISO_14341_2020",
+    "clause_ref": "3",
+    "clause_title": "Terms and definitions",
+    "requirement_text": "No terms and definitions are listed in this document. ISO and IEC maintain terminological databases for use in standardization at the following addresses: — ISO Online browsing platform: available at https:// www .iso .org/ obp — IEC Electropedia: available at http:// www .electropedia .org/"
+  },
+  {
+    "standard_code": "ISO_14341_2020",
+    "clause_ref": "4",
+    "clause_title": "Classification",
+    "requirement_text": "Classification designations are based upon two approaches to indicate the tensile properties and the impact properties of the all-weld metal obtained with a given electrode. The two designation approaches include additional designators for some other classification requirements, but not all, as will be clear from the following subclauses. In most cases, a given commercial product can be classified in both systems. Then either or both classification designations can be used for the product. A wire electrode shall be classified according to its chemical composition as in Table 3A or Table 3B. A weld deposit shall be classified with additional symbols according to the mechanical properties of its a4lAl- wCellads msiefitcaal,t uiosnin bgy a ysiheiledld sitnrge gnagst hfr aomnd a 4 s7p eJ cific gro4uBp .Classification by tensile strength and 27 J impact energy impact energy The classification is divided into five parts: The classification is divided into five parts:\n\n1) the first part gives a symbol indicating the 1) the first part gives a symbol indicating the\n\nproduct/process to be identified; product/process to be identified;\n\n2) the second part gives a symbol indicating 2) the second part gives a symbol indicating\n\nthe strength and elongation of the all-weld the strength and elongation of the all-weld metal (see Table 1A); metal in either the as-welded or post-weld heat-treated condition (see Table 1B);\n\n3) the third part gives a symbol indicating the 3) the third part gives a symbol indicating\n\nimpact properties of the all-weld metal (see the impact properties of the all-weld metal Table 2); in the same condition as specified for the tensile strength (see Table 2). The letter U after this symbol indicates that the deposit meets an average optional requirement of 47 J at the designated impact test temperature;\n\n4) the fourth part gives a symbol indicating the 4) the fourth part gives a symbol indicating the\n\nshielding gas used (see 5.4); shielding gas used (see 5.4);\n\n5) the fifth part gives a symbol indicating the 5) the fifth part gives a symbol indicating the\n\nchemical composition of the wire electrode chemical composition of the wire electrode used (see Table 3A). used (see Table 3B)."
+  },
+  {
+    "standard_code": "ISO_14341_2020",
+    "clause_ref": "5",
+    "clause_title": "Symbols and requirements",
+    "requirement_text": ""
+  },
+  {
+    "standard_code": "ISO_14341_2020",
+    "clause_ref": "5.1",
+    "clause_title": "Symbol for product/process",
+    "requirement_text": "The symbol for a weld deposit produced by gas shielded metal arc welding shall be the letter G placed at the beginning of the designation. The symbol for a wire electrode for use in gas shielded metal arc welding shall be the letter G placed at the beginning of the wire electrode designation."
+  },
+  {
+    "standard_code": "ISO_14341_2020",
+    "clause_ref": "5.2",
+    "clause_title": "Symbol for strength and elongation of all-weld metal",
+    "requirement_text": "5.2A Classification by yield strength and 47 J 5.2B Classification by tensile strength and impact energy 27 J impact energy The symbols in Table 1A indicate the yield strength, The symbols in Table 1B indicate the yield strength, tensile strength, and elongation of the all-weld tensile strength, and elongation of the all-weld metal in the as-welded condition determined in metal in the as-welded condition or in the post-weld accordance with Clause 6. heat-treated condition determined in accordance with Clause 6. Table 1A — Symbols for strength Table 1B — Symbols for strength and and elongation of all-weld metal elongation of all-weld metal Minimum Minimum Tensile Minimum Tensile Minimum Symbol yield Symbol yield strength elongation strength elongation strength strength a b c a b MPa MPa % MPa MPa %"
+  },
+  {
+    "standard_code": "ISO_14341_2020",
+    "clause_ref": "35",
+    "clause_title": "355 440 to 570 22 43X 330 430 to 600 20",
+    "requirement_text": ""
+  },
+  {
+    "standard_code": "ISO_14341_2020",
+    "clause_ref": "38",
+    "clause_title": "380 470 to 600 20 49X 390 490 to 670 18",
+    "requirement_text": ""
+  },
+  {
+    "standard_code": "ISO_14341_2020",
+    "clause_ref": "42",
+    "clause_title": "420 500 to 640 20 55X 460 550 to 740 17",
+    "requirement_text": ""
+  },
+  {
+    "standard_code": "ISO_14341_2020",
+    "clause_ref": "46",
+    "clause_title": "460 530 to 680 20 57X 490 570 to 770 17",
+    "requirement_text": "a"
+  },
+  {
+    "standard_code": "ISO_14341_2020",
+    "clause_ref": "50",
+    "clause_title": "500 560 to 720 18 X is A or P, where A indicates testing in the",
+    "requirement_text": "as-welded condition and P indicates testing in R a the post-weld heat-treated condition. For yield strengthR, the lower yield strength R b ( eL) is used when yielding occurs. Otherwise the For yield strength, theR lower yield strength 0,2 % proof strength ( p0,2) is used. ( eL) is used when yielding occurs. Otherwise b the 0,2 % proof strength ( p0,2) is used. Gauge length is equal to five times the test c specimen diameter. Gauge length is equal to five times the test specimen diameter."
+  },
+  {
+    "standard_code": "ISO_14341_2020",
+    "clause_ref": "5.3",
+    "clause_title": "Symbol for impact properties of all-weld metal",
+    "requirement_text": "5.3A Classification by yield strength and 47 J 5.3B Classification by tensile strength and impact energy 27 J impact energy The symbols in Table 2 indicate the temperature at The symbols in Table 2 indicate the temperature at which an impact energy of 47 J is achieved under which an impact energy of 27 J is achieved under the conditions given in Clause 6. the conditions given in Clause 6. Three test specimens shall be tested. Only one Five test specimens shall be tested. The lowest and individual value may be lower than 47 J but not highest values obtained shall be disregarded. Two lower than 32 J. of the three remaining values shall be greater than the specified 27 J level, one of the three may be lower but shall not be less than 20 J. The average of the three remaining values shall be at least 27 J. The addition of the optional symbol U, immediately after the symbol for condition of heat treatment, indicates that the supplemental requirement of 47 J impact energy at the normal 27 J impact test temperature has also been satisfied. For the 47 J impact requirement, the number of specimens tested and values obtained shall meet the requirement of 5.3A.\n\n| Symbol | Minimum yield strength a | Tensile strength | Minimum elongation b |\n| --- | --- | --- | --- |\n|  |  |  |  |\n|  | MPa | MPa | % |\n| 35 | 355 | 440 to 570 | 22 |\n| 38 | 380 | 470 to 600 | 20 |\n| 42 | 420 | 500 to 640 | 20 |\n| 46 460 530 to 680 20 50 500 560 to 720 18 R a For yield strengthR, the lower yield strength ( eL) is used when yielding occurs. Otherwise the 0,2 % proof strength ( p0,2) is used. b Gauge length is equal to five times the test |  |  |  |\n\n| Symbol a | Minimum yield strength b | Tensile strength | Minimum elongation c |\n| --- | --- | --- | --- |\n|  |  |  |  |\n|  | MPa | MPa | % |\n| 43X | 330 | 430 to 600 | 20 |\n| 49X | 390 | 490 to 670 | 18 |\n| 55X 460 550 to 740 17 57X 490 570 to 770 17 a X is A or P, where A indicates testing in the as-welded condition and P indicates testing in the post-weld heat-treated condition. R b For yield strength, theR lower yield strength ( eL) is used when yielding occurs. Otherwise the 0,2 % proof strength ( p0,2) is used. c |  |  |  |\n\n\nWhen an all-weld metal has been classified for a certain temperature, it automatically covers any higher temperature listed in Table 2. Table 2 — Symbol for impact properties of all-weld metal Temperature for minimum average Symbol impact energy of 47 J or 27 J a,b b °C Z No requirement a b A or Y +20 0 0"
+  },
+  {
+    "standard_code": "ISO_14341_2020",
+    "clause_ref": "2",
+    "clause_title": "−20",
+    "requirement_text": ""
+  },
+  {
+    "standard_code": "ISO_14341_2020",
+    "clause_ref": "3",
+    "clause_title": "−30",
+    "requirement_text": ""
+  },
+  {
+    "standard_code": "ISO_14341_2020",
+    "clause_ref": "4",
+    "clause_title": "−40",
+    "requirement_text": ""
+  },
+  {
+    "standard_code": "ISO_14341_2020",
+    "clause_ref": "5",
+    "clause_title": "−50",
+    "requirement_text": ""
+  },
+  {
+    "standard_code": "ISO_14341_2020",
+    "clause_ref": "6",
+    "clause_title": "−60",
+    "requirement_text": ""
+  },
+  {
+    "standard_code": "ISO_14341_2020",
+    "clause_ref": "7",
+    "clause_title": "−70",
+    "requirement_text": ""
+  },
+  {
+    "standard_code": "ISO_14341_2020",
+    "clause_ref": "8",
+    "clause_title": "−80",
+    "requirement_text": ""
+  },
+  {
+    "standard_code": "ISO_14341_2020",
+    "clause_ref": "9",
+    "clause_title": "−90",
+    "requirement_text": ""
+  },
+  {
+    "standard_code": "ISO_14341_2020",
+    "clause_ref": "10",
+    "clause_title": "−100",
+    "requirement_text": "a See 5.3A. b See 5.3B."
+  },
+  {
+    "standard_code": "ISO_14341_2020",
+    "clause_ref": "5.4",
+    "clause_title": "Symbol for shielding gas",
+    "requirement_text": "The symbols for shielding gases shall be in accordance with ISO 14175:2008, for example: — the symbol M12, for mixed gases, shall be used when the classification has been performed with shielding gas ISO 14175-M12, but without helium; — the symbol M13 shall be used when the classification has been performed with shielding gas ISO 14175-M13; — the symbol M20, for mixed gases, shall be used when the classification has been performed with shielding gas ISO 14175-M20, but without helium; — the symbol M21, for mixed gases, shall be used when the classification has been performed with shielding gas ISO 14175-M21, but without helium; — the symbol C1 shall be used when the classification has been performed with shielding gas ISO 14175- C1, carbon dioxide; — the symbol Z is used for an unspecified shielding gas."
+  },
+  {
+    "standard_code": "ISO_14341_2020",
+    "clause_ref": "5.5",
+    "clause_title": "Symbol for chemical composition of wire electrodes",
+    "requirement_text": "The symbol in Table 3A or Table 3B indicates the chemical composition of the wire electrode and includes an indication of characteristic alloying elements.\n\n| Symbol | Temperature for minimum average impact energy of 47 J or 27 J a,b b |\n| --- | --- |\n|  |  |\n|  | °C |\n| Z a b | No requirement |\n| A or Y | +20 |\n| 0 | 0 |\n| 2 | −20 |\n| 3 | −30 |\n| 4 | −40 |\n| 5 | −50 |\n| 6 | −60 |\n| 7 | −70 |\n| 8 | −80 |\n| 9 −90 10 −100 a See 5.3A. |  |\n\n\nnoitisopmoc lacimehc rof lobmyS"
+  },
+  {
+    "standard_code": "ISO_14341_2020",
+    "clause_ref": "6",
+    "clause_title": "Mechanical tests",
+    "requirement_text": "6A Classification by yield strength and 47 J 6B Classification by tensile strength and 27 J impact energy impact energy Tensile and impact tests and any required Tensile and impact tests shall be carried out retests shall be carried out in the as-welded in the as-welded condition or in the post-weld condition using an all-weld metal test assembly heat-treated condition using an all-weld metal type 1.3 in accordance with ISO 15792-1:2020, test assembly type 1.3 in accordance with using a 1,2 mm diameter wire electrode under ISO 15792-1:2020, using a 1,2 mm diameter wire welding conditions specified in 6.1A and 6.2A. electrode under welding conditions specified in 6.1B and 6.2B. If 1,2 mm is not manufactured, the closest size at settings as recommended by the manufacturer shall be used."
+  },
+  {
+    "standard_code": "ISO_14341_2020",
+    "clause_ref": "6.1",
+    "clause_title": "Preheating and interpass temperatures",
+    "requirement_text": "6.1A Classification by yield strength and 47 J 6.1B Classification by tensile strength and impact energy 27 J impact energy Preheating is not required; welding may start from Preheating and interpass temperatures shall be room temperature. The interpass temperature selected for the appropriate weld metal type from shall be measured using temperature indicator Table 4B. The interpass temperature shall be meascrayons, surface thermometers or thermocouples ured using temperature indicator crayons, surface (for example, in accordance with ISO 13916). thermometers or thermocouples (for example, in accordance with ISO 13916). The interpass temperature shall not exceed 250 °C. If, after any pass, this interpass temperature is Welding shall continue until the assembly has exceeded, the test assembly shall be cooled in air reached a maximum interpass temperature (165 °C). to a temperature below that limit. If, after any pass, this interpass temperature is exceeded, the test assembly shall be cooled in air to a temperature within that range. If below the indicated interpass temperature, the test assembly shall be reheated into interpass range.\n\n\nTable 4B — Preheating and interpass temperatures (Classification by tensile strength and 27 J impact energy) Interpass Preheat Symbol temperatemperature ture °C °C S2, S3, S4, S6, S7, S8, Room S11, S12, S13, S14, temperature"
+  },
+  {
+    "standard_code": "ISO_14341_2020",
+    "clause_ref": "6.2",
+    "clause_title": "Welding conditions and pass sequence",
+    "requirement_text": "6.2A Classification by yield strength and 47 J 6.2B Classification by tensile strength and 27 J impact energy impact energy The welding conditions in Table 5A shall be used The welding conditions in Table 5B shall be used with the pass sequence in Table 6A. The direction with the pass sequence in Table 6B. The direction of welding used to complete a layer consisting of of welding for each pass shall not vary. However, two passes shall not vary. However, the direction the direction of the welding for different passes of the welding of layers shall be alternated. may be alternated.\n\n| and 27 J Symbol | impact energy Preheat temperature | ) Interpass tempera- ture |\n| --- | --- | --- |\n| S2, S3, S4, S6, S7, S8, S11, S12, S13, S14, | °C Room | °C 150 ± 15 |\n| S15, S16, S17, S18 S1M3, S2M3, S2M31, S3M3T, S3M1, S3M1T, | temperature Minimum 100 |  |\n| S4M31, S4M3T SN1, SN2, SN3, SN5, |  |  |\n| SN7, SN71, SN9 SNCC, SNCCT, |  |  |\n| SNCCT1, SNCCT2 SN1M2T, SN2M1T, SN2M2T, SN2M3T, |  |  |\n| SN2M4T |  |  |\n\n\nTable 5A — Welding conditions Table 5B — Welding conditions Contact Contact Welding Welding Welding Welding Diameter tube dis- Diameter tube discurrent voltage current voltage tance tance mm A V mm mm A V mm a a 1,2 280 ± 20 20 ± 3 1,2 290 ± 30 20 ± 3 a a The welding voltage depends on the choice of The welding voltage depends on the choice of shielding gas. shielding gas. Table 6A — Pass sequence Table 6B — Pass sequence Electrode Split weave Electrode Passes Number of Layer No. diameter diameter per layer layers Passes Number of Layer No. per layer layers mm mm a 1,2 1 to top 2 6 to 10 1,2 1 to top 2 or 3 6 to 10 a The top two layers may be completed with three passes per layer."
+  },
+  {
+    "standard_code": "ISO_14341_2020",
+    "clause_ref": "6.3",
+    "clause_title": "Post-weld heat-treated (PWHT) condition",
+    "requirement_text": "6.3A Classification by yield strength and 47 J 6.3B Classification by tensile strength and 27 J impact energy impact energy No PWHT condition is used in this document. Test assemblies mad6e0 w(+i1t5h) wire electrodes classi- 0 fied in the PWHT condition shall be heat treated at 620 °C ± 15 °C for min. The furnace shall be at a temperature not higher than 315 °C when the test assembly is placed in it. The heating rate, from that point to the 620 °C ± 15 °C holding temperature, shall not exceed 220 °C/h. When the holding time has been completed, the assembly shall be allowed to cool in the furnace to a temperature below 315 °C at a rate not exceeding 195 °C/h. The assembly may be removed from the furnace at any temperature below 315 °C and allowed to cool in still air to room temperature."
+  },
+  {
+    "standard_code": "ISO_14341_2020",
+    "clause_ref": "7",
+    "clause_title": "Chemical analysis",
+    "requirement_text": "Chemical analysis shall be performed on specimens of the wire. Any analytical technique may be used, but in case of dispute, reference shall be made to established published methods. In the case of chemical elements which do not change during production, chemical analysis of the wire may be substituted by an analysis of product in process or raw material or a report of the ladle chemical a7nAa l yCsliass osfi fai craawti omna bteyr iyaile.ld strength and 47 J 7B Classification by tensile strength and 27 J impact energy impact energy The results of the chemical analysis shall fulfil the The results of the chemical analysis shall fulfil the requirements given in Table 3A for the classifica- requirements given in Table 3B for the classification under test. tion under test.\n\n| Diameter | Welding current | Welding voltage | Contact tube dis- tance |\n| --- | --- | --- | --- |\n|  |  |  |  |\n| mm A V mm a 1,2 280 ± 20 20 ± 3 a |  |  |  |\n\n| Diameter | Welding current | Welding voltage | Contact tube dis- tance |\n| --- | --- | --- | --- |\n|  |  |  |  |\n| mm A V mm a 1,2 290 ± 30 20 ± 3 a |  |  |  |\n\n| Electrode diameter | Split weave Passes Number of Layer No. per layer layers |  |  |\n| --- | --- | --- | --- |\n| mm |  |  |  |\n| a 1,2 1 to top 2 6 to 10 a |  |  |  |\n\n| Electrode diameter | Layer No. | Passes per layer | Number of layers |\n| --- | --- | --- | --- |\n| mm |  |  |  |"
+  },
+  {
+    "standard_code": "ISO_14341_2020",
+    "clause_ref": "8",
+    "clause_title": "Rounding procedure",
+    "requirement_text": "Actual test values obtained shall be subject to ISO 80000-1:2009, B.3, Rule A. If the measured values are obtained by equipment calibrated in units other than those of this document, the measured values shall be converted to the units of this document before rounding. If an average value is to be compared to the requirements of this document, rounding shall be done only after calculating the average. The rounded results shall fulfil the requirements of the appropriate table for the classification under test."
+  },
+  {
+    "standard_code": "ISO_14341_2020",
+    "clause_ref": "9",
+    "clause_title": "Retests",
+    "requirement_text": "If any test fails to meet the requirement(s), that test shall be repeated twice. The results of both retests shall meet the requirement. Specimens for the retest may be taken from the original test assembly or sample or from one or two new test assemblies. For chemical analysis, retests need only be for those specific elements that failed to meet the requirement. If the results of one or both retests fail to meet the requirement, the material under test shall be considered as not meeting the requirements of this document for that classification. In the event that during preparation, or after completion of any test, it is clearly determined that prescribed or proper procedures were not followed in preparing the weld test assembly or sample(s) or test specimen(s), or in conducting the tests, the test shall be considered invalid. This determination is made without regard to whether the test was actually completed, or whether the test results met, or failed to meet, the requirements. That test shall be repeated, following proper prescribed procedures. In this case, the requirement for doubling the number of test specimens does not apply."
+  },
+  {
+    "standard_code": "ISO_14341_2020",
+    "clause_ref": "10",
+    "clause_title": "Technical delivery conditions",
+    "requirement_text": "Technical delivery conditions shall meet the requirements in ISO 544 and ISO 14344."
+  },
+  {
+    "standard_code": "ISO_14341_2020",
+    "clause_ref": "11",
+    "clause_title": "Examples of designation",
+    "requirement_text": "11A Classification by yield strength and 47 J 11B Classification by tensile strength and 27 J impact energy impact energy The designation of the wire electrode shall follow The designation of the wire electrode shall follow the principle given in the example below. the principle given in the examples below."
+  },
+  {
+    "standard_code": "ISO_14341_2020",
+    "clause_ref": "46",
+    "clause_title": "is the strength and 49A is the strength and elongaelongation (see Table 1A); tion in the as-welded condition",
+    "requirement_text": "(see Table 1B);"
+  },
+  {
+    "standard_code": "ISO_14341_2020",
+    "clause_ref": "5",
+    "clause_title": "is the impact properties (see 6 is the impact properties in",
+    "requirement_text": "Table 2); the as-welded condition (see Table 2); M21 is the shielding gas (see 5.4); M21 is the shielding gas (see 5.4); 3Si1 is the chemical composition S3 is the chemical composition of the wire electrode (see of the wire electrode (see Table 3A). Table 3B)."
+  },
+  {
+    "standard_code": "ISO_14341_2020",
+    "clause_ref": "2",
+    "clause_title": "% Mn, 1 % Mo not listed in Table 3A is arc welding having a minimum tensile strength",
+    "requirement_text": "ISO 14341-A-G Z4Mo1 designated as follows: of 490 MPa (49) and a minimum average impact energy of 47 J at 0 °C (0) in the as-welded condition under carbon dioxide (C1) using the wire S11 is designated as follows: where"
+  }
+]

@@ -55,7 +55,7 @@ Estrai nell'oggetto "type_specific_data":
 - base_material (designazione), material_group (ISO/TR 15608),
 - thickness_min_mm, thickness_max_mm, pipe_outside_diameter_mm (null se solo piastra),
 - joint_type (BW|FW o descrizione), welding_positions (array ISO 6947),
-- filler_material (designazione consumabile),
+- filler_material (designazione consumabile ISO 14341 se filo MAG/MIG acciaio, es. "G 42 4 M21 3Si1"),
 - shielding_gas (codice ISO 14175 es. "M21"/"I1", o null se senza gas / WPS gas 15609-2),
 - preheat_temp (Tp ISO 13916), interpass_temp (Ti ISO 13916),
 - heat_input (range se presente, solo arco), current_range, voltage_range (solo arco; null su WPS gas),
@@ -100,7 +100,7 @@ Campi di copertura (pag.1 RANGE OF QUALIFICATION, priorita alta):
 - thickness_min / thickness_max: range di spessore DICHIARATO sul verbale (non calcolarlo)
 - diameter_min / diameter_max: range diametro tubo se applicabile
 - welding_positions: array posizioni ISO 6947 (es. ["PA"])
-- filler_material: designazione materiale d'apporto
+- filler_material: designazione materiale d'apporto (ISO 14341 se filo GMAW acciaio, es. "G 42 4 M21 3Si1")
 - pwht: booleano, PWHT applicato
 - wps_ref: identificativo testuale della WPS di riferimento
 - examiner_body: ente/esaminatore (TUV, Bureau Veritas, DNV, RINA, IMQ, TEC Eurolab, Sideius, ecc.)
@@ -109,7 +109,7 @@ Campi di copertura (pag.1 RANGE OF QUALIFICATION, priorita alta):
 
 Parametri prova (pag.2, priorita media):
 - base_material_spec: specifica materiale base (es. "S355J2+N")
-- shielding_gas: gas di protezione (es. "M20", "Ar 92% CO2 8%")
+- shielding_gas: gas di protezione ISO 14175 (es. "M20", "M21"); se solo in designazione 14341, estrarre il simbolo gas
 - current_type: tipo di corrente (es. "DC-EP")
 - metal_transfer: modalita di trasferimento metallo
 - mechanization: "manual"|"partly_mechanized"|"mechanized"|"automatic"

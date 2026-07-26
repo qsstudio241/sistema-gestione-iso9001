@@ -1,6 +1,6 @@
 # Piano slice — Cataloghi riferimento normativi per ingest saldatura
 
-> **Stato**: RC-0/RC-1/RC-2 ✅ mergiati (PR #213, #248). RC-3 gas ✅ · RC-5/RC-6 parziali (GAP documentati). RC-8 ✅ (17/07/2026, ISO 14732). RC-9 temperature ✅ (ISO 13916). RC-10 WPS contenuto ✅ (ISO 15609-1/-2, 25/07/2026).  
+> **Stato**: RC-0/RC-1/RC-2 ✅ mergiati (PR #213, #248). RC-3 gas ✅ · RC-5/RC-6 parziali (GAP documentati). RC-8 ✅ (17/07/2026, ISO 14732). RC-9 temperature ✅ (ISO 13916). RC-10 WPS contenuto ✅ (ISO 15609-1/-2, 25/07/2026). RC-11 fili ISO 14341 ✅ (26/07/2026).  
 > **Obiettivo**: estratti operativi da norme tecniche → `docs/reference/*.md` + cataloghi JS → prompt AI, regex, select UI.  
 > **Pattern di riferimento**: slice ISO/TR 15608 (chat `bc-a539`, PR catalogo 15608, `materialGroups15608.js`).  
 > **Complementa**: [PLAN_INGEST_LEARNING_SLICES.md](PLAN_INGEST_LEARNING_SLICES.md) (IG-1…IG-6 ✅), [ADR-017](../adr/ADR-017-ingest-reference-network.md) (Livello A).
@@ -34,6 +34,7 @@ L'ingest patentini/WPQR/WPS usa campi codificati (processo, posizione, gas, grup
 | RC-8 | ISO 14732 | `qualifica_14732` (validità operatori) | `ISO-14732-operatori-saldatura.md` | schema arricchito in `documentTypeSchemas.js` (no catalogo dedicato) | ✅ |
 | RC-9 | ISO 13916 | `preheat_temp` / `interpass_temp` | `ISO-13916-temperature-saldatura.md` | `weldingTemperatures13916.js` (solo prompt/regole) | ✅ (25/07/2026) |
 | RC-10 | ISO 15609-1/-2 | contenuto WPS (variabili §4) | `ISO-15609-WPS-contenuto.md` | solo schema/prompt (no catalogo simboli) | ✅ (25/07/2026) |
+| RC-11 | ISO 14341 | `filler_material` (designazione filo GMAW) | `ISO-14341-consumabili-filo.md` | `fillerWire14341.js` (solo prompt/regole) | ✅ (26/07/2026) |
 
 ### Nota RC-5/RC-6 (luglio 2026) — parziale per motivi di qualità fonte, non di tempo
 
@@ -175,6 +176,27 @@ di simboli: riusa RC-1/2/3/9.
 - [x] Mapping review `wpsIngest.service.js` per i nuovi campi estratti
 - [ ] Select UI dedicate (opzionale: text + cataloghi già esistenti per processo/posizione/gas)
 
+### RC-11 — Consumabili filo ISO 14341 — ✅ 26/07/2026
+
+Fonte: PDF ISO 14341:2020 (PDF→MD→JSON locale). Digitalizzazione in
+`docs/Normative/Normative NORMA_00016_ UNI EN ISO 14341_2020 Rev. 0.md` (+ `.json`).
+**Non** in `import-norms-from-markdown.js` (catalogo classificazione, non SGQ).
+
+Campo ingest: `filler_material` (designazione tipo `G 42 4 M21 3Si1`).
+**Non** è un catalogo di simboli discreti chiusi come 14175: le combinazioni resistenza×impatto×gas×chimica sono troppe.
+Modulo JS = struttura designazione + esempi §11 + prompt AI (pattern RC-9).
+Distinto da RC-4 (`filler_material_group` FM1–FM6).
+
+**DoD**
+
+- [x] Estratto `docs/reference/ISO-14341-consumabili-filo.md`
+- [x] `fillerWire14341.js` (app + backend) + test L1
+- [x] Prompt ingest `buildFillerWire14341PromptSection` in `importAiExtraction.service.js` (WPS/WPQR)
+- [x] Hint/schema `filler_material` in `documentTypeSchemas` (WPS/WPQR)
+- [ ] Select UI dedicata (non necessaria: text libero + designazione)
+
+**GAP**: Tabella 3A/3B composizione chimica parzialmente illeggibile nell’estrazione PDF — non inventare simboli oltre esempi §11.
+
 ---
 
 ## Feedback cliente reale — Studio Mason (16/07/2026)
@@ -204,6 +226,7 @@ Primo utilizzo in campo del modulo patentini saldatori (upload batch WQ). 6 punt
 | ISO 4063 / ISO 6947 / ISO 14175 | RC-1…RC-3 (estratti tabellari) |
 | ISO 13916:2025 (temperature) | RC-9 ✅ |
 | ISO 15609-1/-2:2019 (contenuto WPS) | RC-10 ✅ |
+| ISO 14341:2020 (fili GMAW / filler_material) | RC-11 ✅ |
 
 ---
 
@@ -214,4 +237,4 @@ Leggi docs/agent-tasks/PLAN_INGEST_REFERENCE_CATALOGS.md — esegui la prima sli
 Chiudi con TEST OK o FIX NON APPLICABILI.
 ```
 
-**Prossima slice attiva**: RC-4 (gruppi apporto FM) o completamento GAP RC-5/RC-6 (Tabelle numeriche 9606-1/15614-1) se si procura una fonte più leggibile. RC-3 gas ✅ · RC-9 temperature ✅ · RC-10 WPS 15609 ✅.
+**Prossima slice attiva**: RC-4 (gruppi apporto FM) o completamento GAP RC-5/RC-6 (Tabelle numeriche 9606-1/15614-1) se si procura una fonte più leggibile. RC-3 gas ✅ · RC-9 temperature ✅ · RC-10 WPS 15609 ✅ · RC-11 fili 14341 ✅.

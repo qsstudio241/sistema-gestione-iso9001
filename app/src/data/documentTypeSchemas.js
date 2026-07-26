@@ -322,7 +322,7 @@ const wps = {
       label: "Consumabile / apporto",
       type: "text",
       required: false,
-      hint: "Designazione e dimensione — ISO 15609 §4.4.8",
+      hint: "Designazione ISO 14341 se filo MAG/MIG acciaio (es. G 42 4 M21 3Si1) + dimensione; ISO 15609 §4.4.8. Non confondere con gruppo FM (RC-4)",
     },
     {
       key: "wpqr_ref",
@@ -392,7 +392,8 @@ const wps = {
   aiPrompt: `Stai analizzando una WPS secondo EN ISO 15609-1 (arco) o 15609-2 (gas), spesso con WPQR ISO 15614.
 Estrai in type_specific_data: wps_number, wpqr_ref, welding_process (ISO 4063),
 base_material, material_group (ISO/TR 15608), thickness_min_mm, thickness_max_mm,
-pipe_outside_diameter_mm, joint_type, welding_positions (array ISO 6947), filler_material,
+pipe_outside_diameter_mm, joint_type, welding_positions (array ISO 6947),
+filler_material (ISO 14341 se filo GMAW acciaio, es. "G 42 4 M21 3Si1"),
 shielding_gas (ISO 14175 o null), preheat_temp (Tp), interpass_temp (Ti),
 heat_input, current_range, voltage_range (solo arco), flame_type, fuel_gas (solo gas).
 Usa null se assente. Non inventare range.`,
@@ -918,7 +919,7 @@ const wpqr = {
       label: "Materiale d'apporto",
       type: "text",
       required: false,
-      hint: "Designazione secondo ISO 14341/636/ecc.",
+      hint: "Designazione ISO 14341 se filo MAG/MIG acciaio (es. G 42 4 M21 3Si1 / 4Si1); altre norme se diverso consumabile",
     },
     {
       key: "pwht",
@@ -1052,7 +1053,7 @@ Campi di copertura (pag.1 RANGE OF QUALIFICATION, priorità alta):
 - thickness_min / thickness_max: range di spessore DICHIARATO sul verbale (non calcolarlo)
 - diameter_min / diameter_max: range diametro tubo se applicabile
 - welding_positions: array posizioni ISO 6947 (es. ["PA"])
-- filler_material: designazione materiale d'apporto
+- filler_material: designazione materiale d'apporto (ISO 14341 se filo GMAW acciaio, es. "G 42 4 M21 3Si1")
 - pwht: booleano, PWHT applicato
 - wps_ref: identificativo testuale della WPS di riferimento
 - examiner_body: ente/esaminatore (TÜV, Bureau Veritas, DNV, RINA, IMQ, TEC Eurolab, Sideius, ecc.)
