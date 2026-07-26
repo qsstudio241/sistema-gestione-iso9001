@@ -8,12 +8,62 @@ const logger = require('../utils/logger');
 const { getPool } = require('../config/database');
 const { resolvePersonnelForQualification } = require('./personnelQualificationLink.service');
 const { runDocumentIngest } = require('./documentIngestPipeline.service');
+const { buildWelderQualificationDesignation } = require('../utils/weldingDesignation');
 const {
     classifyDocument,
     WRONG_MODULE_FOR_QUALIFICATIONS,
     WRONG_MODULE_MESSAGES,
     SUGGESTED_MODULE,
 } = require('../utils/documentClassifier');
+const {
+    checkDateOrder,
+    checkNumericRangeOrder,
+    checkShieldingGasKnown,
+} = require('../utils/ingestPlausibilityChecks');
+
+/**
+ * Controlli di plausibilità/coerenza normativa sui campi estratti (warning-only,
+ * mai bloccanti — vedi ingestPlausibilityChecks.js). Gap analysis qualifiche
+ * saldatori 26/07/2026: prima di questa funzione nessuna verifica intercettava
+ * date incoerenti (es. scadenza anteriore all'esame) o range spessore/diametro
+ * invertiti provenienti da errori del documento originale o dell'OCR.
+ * @param {object} f - reviewFields (mapPipelineFieldsToReview)
+ * @returns {string[]}
+ */
+function checkQualificationPlausibility(f) {
+    const warnings = [];
+
+    const expiryWarn = checkDateOrder({
+        laterDate: f.expiry_date,
+        earlierDate: f.exam_date,
+        laterLabel: 'Data di scadenza',
+        earlierLabel: 'Data esame',
+    });
+    if (expiryWarn) warnings.push(expiryWarn);
+
+    const nextConfWarn = checkDateOrder({
+        laterDate: f.next_confirmation_due,
+        earlierDate: f.last_confirmation_date || f.exam_date,
+        laterLabel: 'Prossima conferma',
+        earlierLabel: f.last_confirmation_date ? 'Ultima conferma' : 'Data esame',
+    });
+    if (nextConfWarn) warnings.push(nextConfWarn);
+
+    const thicknessWarn = checkNumericRangeOrder({
+        min: f.thickness_min_mm, max: f.thickness_max_mm, label: 'spessore',
+    });
+    if (thicknessWarn) warnings.push(thicknessWarn);
+
+    const diameterWarn = checkNumericRangeOrder({
+        min: f.pipe_diameter_min_mm, max: f.pipe_diameter_max_mm, label: 'diametro tubo',
+    });
+    if (diameterWarn) warnings.push(diameterWarn);
+
+    const gasWarn = checkShieldingGasKnown(f.shielding_gas);
+    if (gasWarn) warnings.push(gasWarn);
+
+    return warnings;
+}
 
 const TYPE_RULES = [
     { pattern: /9606[\s-]?1/i,   type: 'Saldatore ISO 9606-1' },
@@ -119,7 +169,16 @@ function mapPipelineFieldsToReview(f, pipelineText, fileName) {
         coordinator_title: f.coordinator_title || null,
         patent_type: f.patent_type || null,
         joint_type: f.joint_type || null,
+        // Variabile essenziale ISO 9606-1 §11 (P=piastra, T=tubo) e dettagli di giunto —
+        // gap analysis 26/07/2026: presenti da tempo su form manuale/DB (product_type,
+        // weld_details in qualifications.controller.js), ma mai estratti/mappati in ingest AI.
+        product_type: f.product_type || null,
+        weld_details: f.weld_details || null,
         pipe_diameter_mm: f.pipe_diameter_mm ?? null,
+        // Gas di protezione ISO 14175 (campo previsto dallo schema AI patentino_saldatore
+        // — documentTypeSchemas.js — ma fino al 26/07/2026 mai mappato qui: veniva estratto
+        // dall'AI e poi silenziosamente scartato prima di arrivare in staging/commit).
+        shielding_gas: f.shielding_gas || null,
         // Operatori ISO 14732 (saldatura automatica/meccanizzata)
         equipment_type: f.equipment_type || null,
         welding_type: f.welding_type || null,
@@ -183,6 +242,8 @@ async function extractQualificationFromPdf(pdfBuffer, fileName, organizationId, 
     if (!reviewFields.person_name) {
         warnings.push('Nome titolare non trovato — inserirlo manualmente in revisione');
     }
+
+    warnings.push(...checkQualificationPlausibility(reviewFields));
 
     if (reviewFields.certificate_number && companyId
         && await checkQualificationDuplicate(
@@ -266,8 +327,27 @@ async function commitQualificationFromFields(fields, organizationId, companyId, 
     const welding_type = f.welding_type || null;
     const single_multi_run = f.single_multi_run || null;
     const qualification_method = f.qualification_method || null;
+    const shielding_gas = f.shielding_gas || null;
+    const joint_type = f.joint_type || null;
+    const product_type = f.product_type || null;
+    const weld_details = f.weld_details || null;
     const certificate_file_url = buildCertificateFileUrl(filePath);
     const warnings = [];
+
+    // Designazione sintetica ISO 9606-1 §11 (stesso calcolo del form manuale —
+    // qualifications.controller.js — vedi backend/src/utils/weldingDesignation.js).
+    const qualification_designation = buildWelderQualificationDesignation({
+        welding_process,
+        product_type,
+        joint_type,
+        filler_material_group: material_group,
+        thickness_min_mm,
+        thickness_max_mm,
+        pipe_diameter_min_mm,
+        pipe_diameter_max_mm,
+        welding_positions: position_range,
+        weld_details,
+    });
 
     if (certificate_number && companyId
         && await checkQualificationDuplicate(certificate_number, organizationId, companyId, qualificationType)) {
@@ -323,6 +403,11 @@ async function commitQualificationFromFields(fields, organizationId, companyId, 
         .input('weldingType', welding_type || null)
         .input('singleMultiRun', single_multi_run || null)
         .input('qualMethod', qualification_method || null)
+        .input('shieldGas', shielding_gas || null)
+        .input('jointType', joint_type || null)
+        .input('productType', product_type || null)
+        .input('weldDetails', weld_details || null)
+        .input('designation', qualification_designation || null)
         .input('certFileUrl', certificate_file_url || null)
         .query(`
             INSERT INTO qualifications
@@ -334,6 +419,7 @@ async function commitQualificationFromFields(fields, organizationId, companyId, 
                  thickness_min_mm, thickness_max_mm, pipe_diameter_min_mm, pipe_diameter_max_mm,
                  ndt_method, ndt_level, coordinator_title, cpd_valid_until,
                  patent_type, equipment_type, welding_type, single_multi_run, qualification_method,
+                 shielding_gas, joint_type, product_type, weld_details, qualification_designation,
                  certificate_file_url)
             OUTPUT INSERTED.id
             VALUES
@@ -345,6 +431,7 @@ async function commitQualificationFromFields(fields, organizationId, companyId, 
                  @thickMin, @thickMax, @pipeMin, @pipeMax,
                  @ndtMethod, @ndtLevel, @coordTitle, @cpdUntil,
                  @patentType, @equipType, @weldingType, @singleMultiRun, @qualMethod,
+                 @shieldGas, @jointType, @productType, @weldDetails, @designation,
                  @certFileUrl)
         `);
 
@@ -395,4 +482,5 @@ module.exports = {
     commitQualificationFromFields,
     classifyQualificationType,
     mapPipelineFieldsToReview,
+    checkQualificationPlausibility,
 };

@@ -13,6 +13,49 @@ const {
     WRONG_MODULE_MESSAGES,
     SUGGESTED_MODULE,
 } = require('../utils/documentClassifier');
+const {
+    checkDateOrder,
+    checkNumericRangeOrder,
+    checkFillerMaterial14341Plausibility,
+    checkShieldingGasKnown,
+} = require('../utils/ingestPlausibilityChecks');
+
+/**
+ * Controlli di plausibilità/coerenza normativa sui campi estratti (warning-only,
+ * mai bloccanti — vedi ingestPlausibilityChecks.js). Gap analysis WPQR 26/07/2026:
+ * prima di questa funzione l'estrazione non verificava mai la coerenza dei dati
+ * col documento originale (solo duplicato/campo obbligatorio mancante).
+ * @param {object} f - reviewFields (mapPipelineFieldsToReview)
+ * @returns {string[]}
+ */
+function checkWpqrPlausibility(f) {
+    const warnings = [];
+    const dateWarn = checkDateOrder({
+        laterDate: f.expiry_date,
+        earlierDate: f.approval_date,
+        laterLabel: 'Data di scadenza',
+        earlierLabel: 'Data di emissione',
+    });
+    if (dateWarn) warnings.push(dateWarn);
+
+    const thicknessWarn = checkNumericRangeOrder({
+        min: f.thickness_min, max: f.thickness_max, label: 'spessore',
+    });
+    if (thicknessWarn) warnings.push(thicknessWarn);
+
+    const diameterWarn = checkNumericRangeOrder({
+        min: f.diameter_min, max: f.diameter_max, label: 'diametro',
+    });
+    if (diameterWarn) warnings.push(diameterWarn);
+
+    const fillerWarn = checkFillerMaterial14341Plausibility(f.filler_material);
+    if (fillerWarn) warnings.push(fillerWarn);
+
+    const gasWarn = checkShieldingGasKnown(f.shielding_gas);
+    if (gasWarn) warnings.push(gasWarn);
+
+    return warnings;
+}
 
 function calcThicknessRange(t) {
     if (!t || t <= 0) return { thickness_min: null, thickness_max: null };
@@ -187,6 +230,8 @@ async function extractWPQRFromPdf(pdfBuffer, fileName, organizationId, companyId
         warnings.push('Spessore testato non riconoscibile — range non calcolato');
     }
 
+    warnings.push(...checkWpqrPlausibility(reviewFields));
+
     if (reviewFields.reference_number && await checkDuplicate(reviewFields.reference_number, organizationId, companyId)) {
         return {
             status: 'duplicate',
@@ -339,4 +384,5 @@ module.exports = {
     commitWPQRFromFields,
     calcThicknessRange,
     mapPipelineFieldsToReview,
+    checkWpqrPlausibility,
 };

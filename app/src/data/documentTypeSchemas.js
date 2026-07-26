@@ -94,6 +94,17 @@ const patentino_saldatore = {
       hint: "BW = full penetration, FW = angolare",
     },
     {
+      key: "product_type",
+      label: "Tipo prodotto",
+      type: "select",
+      required: false,
+      options: [
+        { value: "P", label: "P - Piastra" },
+        { value: "T", label: "T - Tubo" },
+      ],
+      hint: "Variabile essenziale ISO 9606-1 §11: BW/FW su piastra non qualifica automaticamente il tubo (e viceversa, salvo eccezioni norma)",
+    },
+    {
       key: "material_group",
       label: "Gruppo materiale base (ISO/TR 15608)",
       type: "select",
@@ -195,6 +206,13 @@ const patentino_saldatore = {
       hint: "Norma tecnica di riferimento della qualifica",
     },
     {
+      key: "weld_details",
+      label: "Dettagli di giunto",
+      type: "text",
+      required: false,
+      hint: "Backing, mono/multistrato, saldatura sx/dx, se dichiarati sul certificato (ISO 9606-1 §11)",
+    },
+    {
       key: "notes",
       label: "Note",
       type: "textarea",
@@ -213,6 +231,8 @@ Campi da estrarre:
 - issuing_body: ente certificatore (TÜV, Bureau Veritas, DNV, RINA, IMQ, TEC Eurolab, Sideius, ecc.)
 - welding_process: codice processo ISO 4063 (111, 135, 141, ecc.)
 - joint_type: tipo giunto: "BW" (testa a testa) o "FW" (angolare)
+- product_type: variabile essenziale ISO 9606-1 §11: "P" (piastra/plate) o "T" (tubo/pipe); null se non specificato
+- weld_details: dettagli di giunto se dichiarati (backing, mono/multistrato, saldatura sx/dx) o null
 - material_group: gruppo materiale base ISO/TR 15608 (codice sottogruppo es. "1.1", "1.2", "8.1", "21"; mappa da S355→1.2, S235→1.1 se non esplicitato)
 - filler_material_group: gruppo materiale d'apporto (FM1-FM6 o null)
 - welding_positions: array di posizioni ISO 6947 (es. ["PA","PF","PC"])
@@ -232,6 +252,8 @@ Campi da estrarre:
     issuing_body: "string|null",
     welding_process: "string|null",
     joint_type: "BW|FW|null",
+    product_type: "P|T|null",
+    weld_details: "string|null",
     material_group: "string|null",
     filler_material_group: "string|null",
     welding_positions: "string[]|null",
