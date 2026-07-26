@@ -5,7 +5,15 @@ Estrazione testo e tabelle da PDF - pdf_to_json toolkit (ProgettoISO).
 Strategia a livelli (dal piu' preciso al piu' tollerante):
 1. **pdfplumber** (motore primario): testo, tabelle e metadata font per
    pagina. E' il motore piu' affidabile per individuare tabelle e
-   dimensione carattere (utile per riconoscere i titoli).
+   dimensione carattere (utile per riconoscere i titoli). Su alcune
+   pagine con tabelle multi-colonna, pero', pdfplumber puo' ricostruire
+   l'ordine dei caratteri in modo sbagliato (testo "presente" e apparen-
+   temente pulito, ma con i caratteri scambiati dentro le celle, es.
+   "Table" -> "elbaT"): dopo l'estrazione, ogni pagina viene passata al
+   controllo di leggibilita' di `quality.py`; se il punteggio e' basso,
+   la stessa pagina viene ri-estratta con PyMuPDF e si tiene il testo
+   con punteggio migliore (vedi `_fix_reordered_pages` piu' sotto).
+   Attivo di default, nessun flag richiesto.
 2. **PyMuPDF / fitz** (fallback 1): usato per le pagine dove pdfplumber
    non produce testo utile (impaginazioni particolari). E' generalmente
    piu' tollerante di pypdf su PDF "difficili" e viene anche usato per
@@ -37,6 +45,8 @@ import re
 import shutil
 import statistics
 import unicodedata
+
+from .quality import is_probably_corrupted, text_readability_score
 
 logger = logging.getLogger("pdf_to_json.extract")
 
@@ -390,6 +400,70 @@ def _ocr_page(pdf_path, page_number, verbose=False):
         return ""
 
 
+def _fix_reordered_pages(pdf_path, pages_data, verbose=False):
+    """
+    Individua le pagine il cui testo e' "presente" (supera `_text_has_content`)
+    ma probabilmente illeggibile perche' pdfplumber ne ha riordinato/scambiato
+    i caratteri (frequente su tabelle multi-colonna, es. "Table" -> "elbaT",
+    vedi `quality.py`). Per ciascuna pagina candidata, ri-estrae la stessa
+    pagina con PyMuPDF e tiene il testo con punteggio di leggibilita'
+    migliore fra i due.
+
+    Modifica `pages_data` in place (aggiorna "text", "engine", "heading_hints"
+    e imposta "readability_fixed" = True sulle pagine corrette). Ritorna la
+    lista dei numeri di pagina corretti (lista vuota se nessuna correzione).
+
+    Nessun errore e' bloccante: se PyMuPDF non e' disponibile o fallisce,
+    la pagina resta invariata (il tool non deve mai fallire per questo
+    controllo aggiuntivo, solo migliorare il risultato quando possibile).
+    """
+    candidates = [
+        page for page in pages_data
+        if _text_has_content(page["text"]) and is_probably_corrupted(page["text"])
+    ]
+    if not candidates:
+        return []
+
+    try:
+        alt_pages = _extract_with_pymupdf(pdf_path, verbose=verbose)
+    except Exception as exc:
+        logger.debug("Controllo leggibilita': fallback pymupdf non disponibile/fallito: %s", exc)
+        alt_pages = None
+
+    alt_by_number = {p["page_number"]: p for p in (alt_pages or [])}
+    if not alt_by_number:
+        return []
+
+    fixed_pages = []
+    for page in candidates:
+        alt = alt_by_number.get(page["page_number"])
+        if not alt or not _text_has_content(alt["text"]):
+            continue
+
+        original_score = text_readability_score(page["text"])
+        alt_score = text_readability_score(alt["text"])
+        if alt_score is None:
+            continue
+        if original_score is not None and alt_score <= original_score:
+            continue
+
+        logger.info(
+            "Pagina %s: testo pdfplumber probabilmente con caratteri riordinati "
+            "(punteggio %.2f), sostituito con testo pymupdf (punteggio %.2f)",
+            page["page_number"],
+            original_score if original_score is not None else -1.0,
+            alt_score,
+        )
+        page["text"] = alt["text"]
+        page["engine"] = "pymupdf"
+        page["readability_fixed"] = True
+        if alt["heading_hints"]:
+            page["heading_hints"] = alt["heading_hints"]
+        fixed_pages.append(page["page_number"])
+
+    return fixed_pages
+
+
 def extract_pdf(pdf_path, verbose=False, allow_ocr=True):
     """
     Estrae testo, tabelle e indizi di formattazione da un file PDF.
@@ -418,6 +492,8 @@ def extract_pdf(pdf_path, verbose=False, allow_ocr=True):
     """
     pdf_path = str(pdf_path)
     logger.info("Estrazione PDF: %s", pdf_path)
+
+    reordering_fixed_pages = []
 
     try:
         pages_data = _extract_with_pdfplumber(pdf_path, verbose=verbose)
@@ -478,6 +554,8 @@ def extract_pdf(pdf_path, verbose=False, allow_ocr=True):
                         logger.info("Pagina %s: uso testo pypdf (ultimo fallback)", page["page_number"])
                         page["text"] = fallback["text"]
                         page["engine"] = "pypdf"
+
+        reordering_fixed_pages = _fix_reordered_pages(pdf_path, pages_data, verbose=verbose)
 
     ocr_used = False
     ocr_was_available = allow_ocr and is_ocr_available()
@@ -563,10 +641,18 @@ def extract_pdf(pdf_path, verbose=False, allow_ocr=True):
             ", ".join(str(n) for n in low_quality_pages),
         )
 
+    if reordering_fixed_pages:
+        logger.info(
+            "%s pagina/e con caratteri riordinati (pdfplumber) corrette automaticamente con pymupdf: %s",
+            len(reordering_fixed_pages),
+            ", ".join(str(n) for n in reordering_fixed_pages),
+        )
+
     return {
         "source": pdf_path,
         "page_count": len(pages_data),
         "low_quality_pages": low_quality_pages,
+        "reordering_fixed_pages": reordering_fixed_pages,
         "pages": pages_data,
         "engines_used": engines_used,
         "ocr_used": ocr_used,

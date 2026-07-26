@@ -12,6 +12,12 @@ in ordine di affidabilita':
 
 Le tabelle estratte da `extract.py` (liste di righe di celle) vengono
 convertite in tabelle Markdown standard.
+
+Se `extract.py` ha corretto una pagina il cui testo pdfplumber risultava
+con caratteri riordinati (vedi `quality.py`), viene aggiunta una riga
+visibile **Nota tecnica:** subito dopo il marcatore di pagina, sullo
+stesso principio della segnalazione "ATTENZIONE" gia' usata per le pagine
+con font a codifica rotta (placeholder cid).
 """
 
 import re
@@ -185,6 +191,12 @@ def convert_page_to_markdown(page, include_page_marker=True):
         if page.get("text_quality_ok") is False:
             quality_note = " -- ATTENZIONE: testo di bassa qualita' (probabile font non standard), revisionare"
         parts.append(f"<!-- Pagina {page.get('page_number', '?')} (motore: {page.get('engine', '?')}){quality_note} -->")
+
+    if page.get("readability_fixed"):
+        parts.append(
+            "**Nota tecnica:** testo di questa pagina ricostruito con motore alternativo "
+            "per problema di ordinamento caratteri."
+        )
 
     body = convert_page_text_to_markdown(page.get("text", ""), page.get("heading_hints"))
     if body:

@@ -15,6 +15,8 @@ generico e riutilizzabile (nuove norme, nuovi Quaderni, checklist, capitolati...
 
 ```
 extract.py          -> testo + tabelle + indizi di formattazione, per pagina
+                        (usa quality.py per correggere pagine con caratteri riordinati)
+quality.py           -> punteggio di leggibilita' del testo (bigram/dizionario)
 clean.py             -> pulizia/normalizzazione testo
 markdown_convert.py  -> conversione in Markdown (heading, liste, tabelle)
 structure.py         -> Markdown -> JSON strutturato (albero o lista piatta)
@@ -85,6 +87,9 @@ nella cartella di output.
   **apritelo e leggetelo prima di fidarvi del JSON**. Contiene commenti
   `<!-- Pagina N (motore: ...) -->` che indicano da quale pagina/motore
   proviene ogni sezione, utili per capire dove rivedere l'estrazione.
+  Cercare `ATTENZIONE` per le pagine con font a codifica rotta e `**Nota
+  tecnica:**` per le pagine corrette automaticamente per caratteri
+  riordinati (vedi sezioni dedicate sotto).
 - Il file **`.json`** e' generato dal Markdown (non direttamente dal PDF):
   se una sezione nel `.md` e' malformata (heading non riconosciuto, tabella
   spezzata), il problema si vede prima li' e va corretto lì o rilanciando
@@ -194,6 +199,46 @@ separatamente, es. su Windows
 ne' per l'OCR, ne' per la strutturazione JSON (parsing deterministico basato
 su heading Markdown, non un modello linguistico).
 
+## Rilevamento automatico testo con caratteri riordinati (pdfplumber, tabelle multi-colonna)
+
+Scoperto testando il tool su un PDF reale (ISO 14341, tabelle 3A/3B a pag.
+11-13): su alcune pagine con **tabelle multi-colonna**, pdfplumber apre il
+PDF e produce testo che supera il controllo cid/qualita' di base (nessun
+placeholder `(cid:NNN)`, nessun carattere di controllo), ma con i
+**caratteri riordinati/scambiati dentro le parole** — es. `"Table"` diventa
+`"elbaT"`, `"3Si1"` diventa `"1iS3"`. E' un problema diverso e piu' subdolo
+di quello dei font a codifica rotta (vedi sotto): il testo "sembra" pulito
+ma e' comunque illeggibile.
+
+Per gestirlo, **attivo di default senza bisogno di flag**:
+
+1. Dopo l'estrazione primaria con pdfplumber, ogni pagina viene valutata da
+   `quality.py` (`text_readability_score`): un punteggio di leggibilita'
+   0.0-1.0 basato su due euristiche locali (nessun download, nessuna
+   chiamata cloud/AI) — confronto con un piccolo dizionario di parole
+   comuni italiane/inglesi/tecniche incorporato nel codice, e frequenza dei
+   bigrammi di caratteri tipici delle due lingue.
+2. Se il punteggio scende sotto la soglia (`quality.DEFAULT_CORRUPTION_THRESHOLD`,
+   0.40), la stessa pagina viene ri-estratta con PyMuPDF e i due punteggi
+   vengono confrontati: si tiene il testo con punteggio migliore.
+3. Se il testo scelto e' quello di PyMuPDF (cioe' pdfplumber aveva il
+   problema), nel `.md` generato compare una riga visibile subito dopo il
+   marcatore di pagina:
+
+   ```
+   **Nota tecnica:** testo di questa pagina ricostruito con motore alternativo per problema di ordinamento caratteri.
+   ```
+
+   sullo stesso principio della segnalazione `ATTENZIONE` gia' usata per le
+   pagine con font a codifica rotta (vedi sotto), ma come testo visibile
+   nel Markdown renderizzato (non un commento HTML), come richiesto per
+   questo tipo di anomalia.
+
+Pagine legittimamente povere di testo alfabetico (es. tabelle di soli
+codici/numeri) non vengono penalizzate: se non c'e' abbastanza materiale
+testuale per un giudizio affidabile, `text_readability_score` ritorna
+`None` e la pagina resta invariata (nessun falso positivo).
+
 ## Limiti noti
 
 - **Tabelle**: vengono estratte da pdfplumber e convertite in Markdown, ma
@@ -234,11 +279,12 @@ su heading Markdown, non un modello linguistico).
 C:\Users\AI.Project\AppData\Local\Python\bin\python.exe -m unittest discover -s backend/scripts/pdf_to_json/tests -v
 ```
 
-Include test unitari su `clean`/`markdown_convert`/`structure` (fixture
-testuali, nessuna dipendenza da PDF reali) e test di integrazione end-to-end
-che generano PDF sintetici al volo con `reportlab` (nessun file binario
-committato nel repository) per validare l'intera pipeline CLI, incluso il
-caso di PDF "scansionato" senza testo.
+Include test unitari su `clean`/`markdown_convert`/`structure`/`quality`
+(fixture testuali, nessuna dipendenza da PDF reali) e test di integrazione
+end-to-end che generano PDF sintetici al volo con `reportlab` (nessun file
+binario committato nel repository) per validare l'intera pipeline CLI,
+incluso il caso di PDF "scansionato" senza testo e il caso di testo con
+caratteri riordinati (simulato via mock dei motori di estrazione).
 
 ### Test manuale con un PDF reale (consigliato prima di usare il tool su un documento importante)
 
