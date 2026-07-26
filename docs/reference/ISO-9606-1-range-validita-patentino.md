@@ -7,7 +7,9 @@
 
 ## Nota sulla fonte di questo estratto (qualità estrazione)
 
-Questo documento nasce dalla conversione PDF→Markdown del tool `backend/scripts/pdf_to_json/` sul file `UNI EN ISO 9606-1_2017.pdf` (50 pagine). Il PDF usa un **font "anti-copia"** che genera errori sistematici di estrazione testo (es. `buii`→`butt`, `materia1`→`material`, `docurnent`→`document` — vedi lezione in `docs/GUIDA_CONSOLIDATA.md` e utility `backend/src/utils/textEncodingRepair.js::repairFontSubstitutionArtifacts`). Le tabelle numeriche a griglia (Tabelle 6, 9, 10 — spessore/posizioni) sono risultate **troppo destrutturate** per essere trascritte con certezza e sono quindi **marcate come GAP** più sotto: non sono state inventate.
+Questo documento nasce dalla conversione PDF→Markdown del tool `backend/scripts/pdf_to_json/` sul file `BS EN ISO 9606-1-2017.pdf` (46 pagine, digitalizzato in `docs/Normative/Normative NORMA_00018_ UNI EN ISO 9606-1_2017 Rev. 0.md/.json` il 26/07/2026). Il PDF usa un **font "anti-copia"** che genera errori sistematici di estrazione testo (es. `buii`→`butt`, `materia1`→`material`, `docurnent`→`document` — vedi lezione in `docs/GUIDA_CONSOLIDATA.md` e utility `backend/src/utils/textEncodingRepair.js::repairFontSubstitutionArtifacts`).
+
+**Aggiornamento 26/07/2026 — GAP Tabelle 6/9/10 risolto.** Il problema NON era testo interfogliato/invertito (il fix `quality.py` del 26/07/2026 per colonne interfogliate non era infatti la causa): il PDF usa il font **`SymbolMT`** per i simboli matematici (`<`, `\u2264` = "minore o uguale", `\u2265` = "maggiore o uguale") e per il segno `\u00d7` usato dalla norma nelle Tabelle 9/10 per indicare "posizione per cui il saldatore è qualificato". Questi glifi sono mappati su codepoint Private Use Area (U+F020–U+F0FF secondo la convenzione legacy dei font Symbol su Windows) che `pdfplumber`/`pymupdf` non traducono in Unicode standard: il testo estratto li mostra come **spazi vuoti**, facendo sembrare le tabelle "distrutte" mentre in realtà tutto il resto (numeri, parole, il segno "—" per "non qualificato") era già corretto. Risolto rileggendo i caratteri delle pagine 21, 22 e 24 a livello di glifo (PyMuPDF `rawdict`, char code + font name) e verificando visivamente il render di ogni codepoint speciale trovato: confermato che ogni spazio vuoto nelle celle numeriche corrisponde in modo univoco a uno di questi simboli, permettendo la trascrizione completa e certa delle Tabelle 6, 8 (riga mancante) e 9/10 riportate sotto.
 
 ## Scopo e principio generale
 
@@ -66,17 +68,67 @@ Codificato in `weldingQualificationRules9606.js::computeQualifiedPipeDiameterRan
 > "posizione rotante": va chiesto al committente se serve introdurlo per automatizzare
 > completamente questo calcolo (vedi domande aperte).
 
-## Range di qualificazione spessore per giunti d'angolo (ISO 9606-1 Tabella 8 — parziale, verificato)
+## Range di qualificazione spessore per giunti d'angolo (ISO 9606-1 Tabella 8 — verificata, entrambe le righe)
 
 | Spessore provino t | Campo di validità |
 |---|---|
 | t < 3 mm | da t a 2t, o 3 mm, il maggiore dei due |
+| t ≥ 3 mm | da 3 mm, nessun limite superiore |
 
-**GAP**: le righe successive della Tabella 8 (t ≥ 3 mm) e l'intera Tabella 6 (spessore depositato per giunti testa a testa, la più usata in pratica) non sono risultate leggibili nell'estrazione automatica — la griglia numerica è risultata destrutturata dal layout PDF. Non sono stati inventati valori: **verifica manuale su copia integrale necessaria** prima di codificare la regola generale spessore↔range per giunti BW.
+Codificato in `weldingQualificationRules9606.js::computeQualifiedFilletThicknessRange` (la riga t≥3 era GAP nelle sessioni precedenti, risolta il 26/07/2026 — vedi nota sulla fonte in cima al documento).
 
-## Posizioni di saldatura (ISO 6947)
+## Range di qualificazione spessore depositato per giunti testa a testa (ISO 9606-1 Tabella 6 — §5.7, verificata)
 
-Le posizioni valide/qualificate per BW e FW sono elencate nelle Tabelle 9 e 10 della norma, come matrice posizione-provino × posizione-qualificata. **GAP**: la matrice (righe/colonne con "x") non è risultata ricostruibile dall'estrazione automatica. Regola generale non ambigua confermata nel testo: una prova su tubo in **PH o PJ** (rotazione parziale, D ≥ 150 mm) può coprire più posizioni con un solo provino — dettaglio da verificare a mano se serve calcolare automaticamente le posizioni coperte.
+La tabella più usata in pratica (giunti BW, la maggioranza dei casi reali). Spessore provino `s`:
+
+| Spessore depositato del provino s | Campo di validità |
+|---|---|
+| s < 3 mm | da s a 3 mm, oppure da s a 2s, il maggiore dei due |
+| 3 ≤ s < 12 mm | da 3 mm a 2s |
+| s ≥ 12 mm | da 3 mm, nessun limite superiore (nota e: provino saldato in almeno 3 passate) |
+
+**Note della norma (§5.7, footnote):**
+- Per saldatura ossiacetilenica (processo ISO 4063 **311**): il moltiplicatore "2s" è sostituito da "1,5s" in entrambe le prime due righe (note c/d).
+- Per giunti su diramazione (branch): il criterio di spessore si applica al ramo (set-on) oppure al tubo/corpo principale (set-through/set-in) — vedi Figura 1 della norma.
+- Per processo singolo e stesso tipo di materiale d'apporto, `s` coincide con lo spessore del materiale base `t` del provino.
+
+Codificato in `weldingQualificationRules9606.js::computeQualifiedThicknessRangeButtWeld` (GAP totale nelle sessioni precedenti, risolta il 26/07/2026 — vedi nota sulla fonte in cima al documento).
+
+## Posizioni di saldatura (ISO 6947) — matrice Tabelle 9/10 (§5.8, verificata)
+
+Le posizioni valide/qualificate per BW e FW sono elencate nelle Tabelle 9 e 10 della norma, come matrice posizione-provino × posizione-qualificata (simbolo `×` = qualificato, `—` = non qualificato). Ricostruita il 26/07/2026 (era GAP nelle sessioni precedenti — vedi nota sulla fonte in cima al documento).
+
+**Tabella 9 — giunti testa a testa (BW):**
+
+| Posizione provino | Posizioni qualificate |
+|---|---|
+| PA | PA |
+| PC | PA, PC |
+| PE (piastra) | PA, PC, PE |
+| PF (piastra) | PA, PF |
+| PH (tubo) | PA, PE, PF |
+| PG (piastra) | PG |
+| PJ (tubo) | PA, PE, PG |
+| H-L045 | PA, PC, PE, PF |
+| J-L045 | PA, PC, PE, PG |
+
+**Tabella 10 — giunti d'angolo (FW):**
+
+| Posizione provino | Posizioni qualificate |
+|---|---|
+| PA | PA |
+| PB | PA, PB |
+| PC | PA, PB, PC |
+| PD | PA, PB, PC, PD, PE |
+| PE (piastra) | PA, PB, PC, PD, PE |
+| PF (piastra) | PA, PB, PF |
+| PH (tubo) | PA, PB, PC, PD, PE, PF |
+| PG (piastra) | PG |
+| PJ (tubo) | PA, PB, PD, PE, PG |
+
+Codificato in `weldingQualificationRules9606.js::computeQualifiedWeldingPositions` / `isWeldingPositionQualified`.
+
+Regola generale confermata nel testo (§5.8): una prova su tubo in **PH o PJ** (rotazione parziale, D ≥ 150 mm, 2/3 di circonferenza) più una in **PC** (1/3 di circonferenza) con un solo provino coprono anche, rispettivamente, H-L045 (avanzamento verso l'alto) e J-L045 (avanzamento verso il basso) — dettaglio non ancora modellato come calcolo automatico (i due provini vanno registrati separatamente).
 
 ## Designazione qualifica (§11 — ordine confermato)
 
@@ -110,5 +162,6 @@ Implementato in `backend/src/utils/weldingDesignation.js::buildWelderQualificati
 |---|---|
 | `confirmation_interval_months` | Sempre 6 (fisso da norma, non da certificato) |
 | Range diametro tubo | Se il certificato riporta un diametro provino, applicare Tabella 7 sopra per calcolare il campo coperto — **solo** se il documento non riporta già il range esplicito |
-| Range spessore | **Non calcolare automaticamente** (gap Tabella 6/8) — estrarre solo il valore/range se esplicitamente scritto sul certificato |
+| Range spessore | Se il certificato riporta lo spessore del provino (`s` per BW Tabella 6, `t` per FW Tabella 8) applicare le formule sopra — **solo** se il documento non riporta già il range esplicito; se i due valori non coincidono, preferire quello esplicito e segnalare la discrepanza come warning, non sovrascrivere |
+| Posizioni qualificate | Se il certificato riporta la sola posizione del provino testato, `computeQualifiedWeldingPositions` può derivare l'elenco posizioni coperte (Tabelle 9/10) — usare come suggerimento/cross-check, non per sostituire un elenco posizioni già esplicito sul certificato |
 | Validità (2/3 anni) | Non assumere un valore fisso: dipende dall'opzione di rivalidazione scelta (a/b/c) — se il certificato non lo specifica, lasciare `null` + warning |

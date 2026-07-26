@@ -1,6 +1,6 @@
 # Piano slice — Cataloghi riferimento normativi per ingest saldatura
 
-> **Stato**: RC-0/RC-1/RC-2 ✅ mergiati (PR #213, #248). RC-3 gas ✅ · RC-5/RC-6 parziali (GAP documentati). RC-8 ✅ (17/07/2026, ISO 14732). RC-9 temperature ✅ (ISO 13916). RC-10 WPS contenuto ✅ (ISO 15609-1/-2, 25/07/2026). RC-11 fili ISO 14341 ✅ (26/07/2026).  
+> **Stato**: RC-0/RC-1/RC-2 ✅ mergiati (PR #213, #248). RC-3 gas ✅ · RC-5 ✅ (26/07/2026, GAP Tabelle 6/9/10 risolto) · RC-6 ✅ parziale-codificato (26/07/2026, interfogliamento Tabelle 7/8/9 risolto, GAP residuo solo Level 1 Tabella 7 + matrici 5/6). RC-8 ✅ (17/07/2026, ISO 14732). RC-9 temperature ✅ (ISO 13916). RC-10 WPS contenuto ✅ (ISO 15609-1/-2, 25/07/2026). RC-11 fili ISO 14341 ✅ (26/07/2026).  
 > **Obiettivo**: estratti operativi da norme tecniche → `docs/reference/*.md` + cataloghi JS → prompt AI, regex, select UI.  
 > **Pattern di riferimento**: slice ISO/TR 15608 (chat `bc-a539`, PR catalogo 15608, `materialGroups15608.js`).  
 > **Complementa**: [PLAN_INGEST_LEARNING_SLICES.md](PLAN_INGEST_LEARNING_SLICES.md) (IG-1…IG-6 ✅), [ADR-017](../adr/ADR-017-ingest-reference-network.md) (Livello A).
@@ -28,21 +28,30 @@ L'ingest patentini/WPQR/WPS usa campi codificati (processo, posizione, gas, grup
 | RC-2 | ISO 6947 | `welding_positions` | `ISO-6947-posizioni-saldatura.md` | `weldingPositions6947.js` | ✅ |
 | RC-3 | ISO 14175 | `shielding_gas` | `ISO-14175-gas-protezione.md` | `shieldingGases14175.js` | ✅ (25/07/2026) |
 | RC-4 | ISO 14343 / 18274 | `filler_material_group` | `ISO-FM-gruppi-apporto.md` | `fillerMaterialGroups.js` | ⏳ |
-| RC-5 | ISO 9606-1 | designazione, range validità, date | `ISO-9606-1-range-validita-patentino.md` | `weldingQualificationRules9606.js` | 🔶 parziale (vedi nota) |
-| RC-6 | ISO 15614-1 | campi WPQR | `ISO-15614-1-range-validita-WPQR.md` | non codificato (solo doc, vedi nota) | 🔶 parziale (vedi nota) |
+| RC-5 | ISO 9606-1 | designazione, range validità, date, posizioni | `ISO-9606-1-range-validita-patentino.md` | `weldingQualificationRules9606.js` | ✅ (26/07/2026) |
+| RC-6 | ISO 15614-1 | campi WPQR | `ISO-15614-1-range-validita-WPQR.md` | `weldingQualificationRules15614.js` (parziale, vedi nota) | ✅ parziale-codificato (26/07/2026, vedi nota) |
 | RC-7 | ISO 9712 | cert NDT (metodo/livello) | `ISO-9712-ndt.md` | `ndtMethods9712.js` | ⏳ backlog |
 | RC-8 | ISO 14732 | `qualifica_14732` (validità operatori) | `ISO-14732-operatori-saldatura.md` | schema arricchito in `documentTypeSchemas.js` (no catalogo dedicato) | ✅ |
 | RC-9 | ISO 13916 | `preheat_temp` / `interpass_temp` | `ISO-13916-temperature-saldatura.md` | `weldingTemperatures13916.js` (solo prompt/regole) | ✅ (25/07/2026) |
 | RC-10 | ISO 15609-1/-2 | contenuto WPS (variabili §4) | `ISO-15609-WPS-contenuto.md` | solo schema/prompt (no catalogo simboli) | ✅ (25/07/2026) |
 | RC-11 | ISO 14341 | `filler_material` (designazione filo GMAW) | `ISO-14341-consumabili-filo.md` | `fillerWire14341.js` (solo prompt/regole) | ✅ (26/07/2026) |
 
-### Nota RC-5/RC-6 (luglio 2026) — parziale per motivi di qualità fonte, non di tempo
+### Nota RC-5 (26/07/2026) — GAP Tabelle 6/9/10 risolto, causa reale = glifi Symbol in PUA
 
-Fonte: PDF reali (`UNI EN ISO 9606-1_2017.pdf`, `BS EN ISO 15614-1-2017...pdf`) convertiti con `pdf_to_json`. **9606-1** ha un font "anti-copia" che corrompe sistematicamente il testo (lezione + fix riutilizzabile in `GUIDA_CONSOLIDATA.md` → `repairFontSubstitutionArtifacts`); **15614-1** ha testo pulito ma layout a due colonne che l'estrazione a volte interfoglia. Risultato:
+Fonte: nuova copia PDF (`BS EN ISO 9606-1-2017.pdf`, 46 pag., digitalizzata in `docs/Normative/Normative NORMA_00018_ UNI EN ISO 9606-1_2017 Rev. 0.md/.json` — numero scelto per evitare collisione con l'agente parallelo ISO 15614-1, che nella stessa sessione ha assegnato `NORMA_00017` a quella norma). Il GAP delle sessioni precedenti (Tabella 6, riga t≥3 Tabella 8, Tabelle 9/10) **non era causato** da testo interfogliato/destrutturato (il fix `quality.py` per colonne interfogliate, aggiunto lo stesso giorno per un problema diverso, non era la causa): il PDF usa il font `SymbolMT` per i simboli `<`/`≤`/`≥` e per il segno "qualificato" (`×`) delle Tabelle 9/10, mappati su codepoint Private Use Area non tradotti da pdfplumber/pymupdf in Unicode standard (spazi vuoti nell'estrazione). Risolto rileggendo i caratteri a livello di glifo (PyMuPDF `rawdict`, font+codepoint) e verificando visivamente il render di ogni codepoint speciale — dettaglio metodo riusabile in `GUIDA_CONSOLIDATA.md` (lezione 26/07/2026).
 
-- **Fatto e verificato**: designazione qualifica (già in `weldingDesignation.js`), conferma semestrale + opzioni rivalidazione (§9), range diametro tubo ISO 9606-1 Tabella 7 (**codificato** in `weldingQualificationRules9606.js::computeQualifiedPipeDiameterRange`), riga t<3 Tabella 8 giunti d'angolo, livelli 1/2 ISO 15614-1 e regola "Level 2 qualifica anche Level 1".
-- **GAP volontario (non inventato)**: Tabella 6 ISO 9606-1 (spessore giunti testa a testa — la più usata), matrice posizioni Tabelle 9/10, matrici compatibilità gruppi materiale ISO 15614-1 Tabella 5/6. Documentati come "verifica manuale su copia integrale" nei due estratti `docs/reference/ISO-9606-1-range-validita-patentino.md` e `ISO-15614-1-range-validita-WPQR.md`.
-- **Prossimo passo se si vuole chiudere il gap**: procurarsi una copia leggibile (no font anti-copia) o eseguire OCR sulle pagine tabellari specifiche (poche pagine, non l'intero documento) e trascrivere a mano le 2-3 tabelle numeriche mancanti.
+- **Fatto e verificato (26/07/2026)**: Tabella 6 completa (spessore giunti testa a testa, `computeQualifiedThicknessRangeButtWeld`), Tabella 8 completa entrambe le righe (`computeQualifiedFilletThicknessRange`, riga t≥3 ex-GAP), Tabelle 9/10 matrice posizioni complete (`computeQualifiedWeldingPositions`, `isWeldingPositionQualified`).
+- **Non implementato**: hook automatico in `qualificationIngest.service.js` (schema attuale non ha un campo "spessore/posizione del provino testato" distinto dal range qualificato già estratto dal certificato — servirebbe un nuovo campo AI prima di poter fare un cross-check automatico; proposto come follow-up, non un fix da 1-2 file).
+
+### Nota RC-6 (26/07/2026) — interfogliamento Tabelle 7/8/9 risolto, GAP residuo solo Level 1 Tabella 7 + matrici 5/6
+
+Fonte: nuova copia PDF (`BS EN ISO 15614-1-2017.pdf`, 50 pag.), digitalizzata in `docs/Normative/Normative NORMA_00019_ UNI EN ISO 15614-1_2017 Rev. 0.md/.json` (numero scelto per evitare doppia collisione live con l'agente parallelo ISO 9606-1, che nella stessa sessione ha occupato in sequenza `NORMA_00017` e poi `NORMA_00018`). A differenza di ISO 9606-1, qui il font **non è corrotto/anti-copia**: il fix `quality.py` (caratteri riordinati) non era il meccanismo risolutivo. Il miglioramento reale viene dal rilevamento tabellare nativo di `pdfplumber`, che ora estrae le Tabelle 5, 6, 7, 8, 9 come vere tabelle Markdown pulite invece del testo a flusso libero "interfogliato" della digitalizzazione precedente.
+
+- **Risolto**: Tabelle 5/6 (matrice compatibilità gruppi materiale, prima GAP totale "troppo interfogliate") ora **leggibili** come matrici pulite — non ancora codificate in JS per il rischio di un errore riga/colonna su una matrice 11×11 con footnote (a/b/c), non per problema di estrazione. Tabelle 8 (gola giunti d'angolo) e 9 (diametro tubo Level 2) **confermate e codificate**. Tabella 7 colonna "Level 2" (bande 3–40mm) confermata e codificata.
+- **GAP residuo** (non interfogliamento, ma **troncamento cifra**): Tabella 7 colonna "Level 1" per t>3mm perde la cifra iniziale "0," in 5 righe su 7 (es. estratto "5 to 2t" invece di "0,5 to 2t") — non codificata per evitare un range 10× più ampio del reale in caso di errore.
+- **Implementato** (`weldingQualificationRules15614.js`, app+backend mirror, Jest+Vitest verdi): `computeQualifiedFilletThroatThicknessRange` (Tabella 8), `computeQualifiedMaterialThicknessRangeLevel2` (Tabella 7 Level 2, bande 3–40mm), `computeMinimumQualifiedThicknessWithImpactTest` (regola prova d'urto §8.3.2.2), `isDiameterEssentialVariable` + `describeQualifiedPipeDiameterRangeLevel2` (Tabella 9) + `describePlateCoversPipeDiameterLevel2` (regola piastra→tubo).
+- **Hook minimo aggiunto**: `checkThicknessRangeAgainstIso15614Level2` in `ingestPlausibilityChecks.js`, agganciato a `wpqrIngest.service.js` — warning non bloccante se il range spessore dichiarato su un WPQR Level 2 (banda 3–40mm) è palesemente fuori dal range atteso Tabella 7. Stesso pattern non invasivo già usato per gas/filler/date.
+- **Non implementato**: codifica Tabelle 5/6 (matrice gruppi materiale) — proposto come follow-up con verifica visiva riga-per-riga sul PDF originale prima di trasformarla in lookup table, per il rischio di certificazione errata su una matrice di compatibilità.
 
 ---
 
@@ -102,27 +111,30 @@ Fonte: PDF ISO 14175:2008 (PDF→MD→JSON locale). Digitalizzazione completa in
 
 Collegamento a ISO 14343 (acciaio) / 18274 (alluminio).
 
-### RC-5 — ISO 9606-1 (regole qualifica) — 🔶 parziale
+### RC-5 — ISO 9606-1 (regole qualifica) — ✅ 26/07/2026
 
 Range spessore/diametro da prova, validità, conferma semestrale, parsing designazione `141 P BW FM1 t10`.
 
 **DoD**
 
-- [x] Estratto `docs/reference/ISO-9606-1-range-validita-patentino.md` (validità §9, designazione §11, continuità processi, range diametro tubo)
-- [x] `weldingQualificationRules9606.js` (app+backend): `computeQualifiedPipeDiameterRange`, `computeQualifiedFilletThicknessRange` (solo riga t<3 verificata)
-- [x] Prompt AI patentino (`importAiExtraction.service.js`) — sezione regole 9606
-- [ ] Range spessore giunti testa a testa (Tabella 6) — **GAP**, richiede fonte più leggibile
-- [ ] Matrice posizioni qualificate (Tabelle 9/10) — **GAP**
+- [x] Estratto `docs/reference/ISO-9606-1-range-validita-patentino.md` (validità §9, designazione §11, continuità processi, range diametro tubo, spessore BW/FW, matrice posizioni)
+- [x] `weldingQualificationRules9606.js` (app+backend): `computeQualifiedPipeDiameterRange`, `computeQualifiedFilletThicknessRange` (entrambe le righe), `computeQualifiedThicknessRangeButtWeld` (Tabella 6), `computeQualifiedWeldingPositions`/`isWeldingPositionQualified` (Tabelle 9/10)
+- [x] Prompt AI patentino (`importAiExtraction.service.js`) — sezione regole 9606 estesa
+- [x] Range spessore giunti testa a testa (Tabella 6) — risolto (glifi Symbol in PUA, non griglia destrutturata)
+- [x] Matrice posizioni qualificate (Tabelle 9/10) — risolta
+- [ ] Hook cross-check automatico in `qualificationIngest.service.js` — non implementato, richiede nuovo campo "spessore/posizione provino testato" (proposta, non fix minimo)
 
-### RC-6 — WPQR ISO 15614-1 — 🔶 parziale
+### RC-6 — WPQR ISO 15614-1 — ✅ parziale-codificato 26/07/2026
 
 Allineare schema AI ai campi `wpqr_records`.
 
 **DoD**
 
-- [x] Estratto `docs/reference/ISO-15614-1-range-validita-WPQR.md` (Level 1/2, range spessore Tabella 7/8 con avviso di verifica, campi essenziali WPQR)
-- [ ] Codifica JS delle regole (non fatta: valori Tabella 7/8 hanno confidenza media, serve verifica umana prima di trasformarli in logica automatica — vedi avviso nell'estratto)
-- [ ] Matrice compatibilità gruppi materiale (Tabella 5/6) — **GAP**
+- [x] Estratto `docs/reference/ISO-15614-1-range-validita-WPQR.md` aggiornato (Level 1/2, range spessore Tabella 7 Level 2 + Tabella 8 codificati con confidenza alta, Tabella 9 diametro, campi essenziali WPQR)
+- [x] `weldingQualificationRules15614.js` (app+backend mirror, Jest+Vitest): Tabella 7 Level 2 (bande 3–40mm), Tabella 8 completa, Tabella 9 diametro Level 2, regola prova d'urto, regola piastra→tubo
+- [x] Hook cross-check non bloccante in `ingestPlausibilityChecks.js`/`wpqrIngest.service.js` (`checkThicknessRangeAgainstIso15614Level2`)
+- [ ] Tabella 7 colonna Level 1 (t>3mm) — **GAP** troncamento cifra iniziale, non codificata
+- [ ] Matrice compatibilità gruppi materiale (Tabella 5/6) — ora leggibile ma **non codificata** (rischio errore su matrice 11×11 con footnote, richiede verifica visiva pagina PDF)
 
 ### RC-8 — ISO 14732 (operatori/preparatori saldatura automatica/meccanizzata) — ✅ 17/07/2026
 
@@ -221,8 +233,8 @@ Primo utilizzo in campo del modulo patentini saldatori (upload batch WQ). 6 punt
 | File | Uso slice |
 |------|-----------|
 | `ISO-TR-15608-2013-Testo Inglese.md` | RC-0 ✅ |
-| `UNI EN ISO 15614-1_2019.pdf` | RC-6 |
-| ISO 9606-1 (edizione in vigore) | RC-5 |
+| `BS EN ISO 15614-1-2017.pdf` (→ `NORMA_00019`) | RC-6 ✅ parziale-codificato |
+| `BS EN ISO 9606-1-2017.pdf` (→ `NORMA_00018`) | RC-5 ✅ |
 | ISO 4063 / ISO 6947 / ISO 14175 | RC-1…RC-3 (estratti tabellari) |
 | ISO 13916:2025 (temperature) | RC-9 ✅ |
 | ISO 15609-1/-2:2019 (contenuto WPS) | RC-10 ✅ |
@@ -237,4 +249,4 @@ Leggi docs/agent-tasks/PLAN_INGEST_REFERENCE_CATALOGS.md — esegui la prima sli
 Chiudi con TEST OK o FIX NON APPLICABILI.
 ```
 
-**Prossima slice attiva**: RC-4 (gruppi apporto FM) o completamento GAP RC-5/RC-6 (Tabelle numeriche 9606-1/15614-1) se si procura una fonte più leggibile. RC-3 gas ✅ · RC-9 temperature ✅ · RC-10 WPS 15609 ✅ · RC-11 fili 14341 ✅.
+**Prossima slice attiva**: RC-4 (gruppi apporto FM) o completamento GAP residuo RC-6 (Tabella 7 Level 1, matrici gruppi materiale 5/6 — verifica visiva pagina PDF prima di codificare). RC-3 gas ✅ · RC-5 ISO 9606-1 ✅ (26/07/2026) · RC-6 ISO 15614-1 ✅ parziale-codificato (26/07/2026) · RC-9 temperature ✅ · RC-10 WPS 15609 ✅ · RC-11 fili 14341 ✅.

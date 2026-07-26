@@ -1,0 +1,764 @@
+[
+  {
+    "standard_code": "ISO_9606_1_2017",
+    "clause_ref": "3",
+    "clause_title": "Terms and definitions ........................................................................................................................... 2",
+    "requirement_text": "means of conforming to essential requirements of Directive 2014/29/EU (SPVD) on the harmonisation"
+  },
+  {
+    "standard_code": "ISO_9606_1_2017",
+    "clause_ref": "4",
+    "clause_title": "Reference numbers, symbols and abbreviated terms ....................................................................... 4",
+    "requirement_text": "of the laws of the Member States relating to the making available on the market of simple pressure 4.1 General ................................................................................................................................................... 4 vessels [2014 OJ L96]."
+  },
+  {
+    "standard_code": "ISO_9606_1_2017",
+    "clause_ref": "4.2",
+    "clause_title": "Reference numbers of welding processes ......................................................................................... 4",
+    "requirement_text": "Once this standard is cited in the Official Journal of the European Union under that Directive, 4.3 Symbols and abbreviated terms .......................................................................................................... 4 compliance with the normative clauses of this standard given in Table ZB.1 confers, within the limits of"
+  },
+  {
+    "standard_code": "ISO_9606_1_2017",
+    "clause_ref": "5",
+    "clause_title": "Essential variables and range of qualification ................................................................................... 6",
+    "requirement_text": "the scope of this standard, a presumption of conformity with the corresponding essential requirements 5.1 General ................................................................................................................................................... 6 Table ZB.1 — Correspondence between this European Standard and Directive 2014/29/EU of that Directive, and associated EFTA regulations. 5.2 Welding processes ................................................................................................................................ 7"
+  },
+  {
+    "standard_code": "ISO_9606_1_2017",
+    "clause_ref": "5.5",
+    "clause_title": "Filler material grouping ......................................................................................................................... 9",
+    "requirement_text": "Directive 2014/29/EU of this EN"
+  },
+  {
+    "standard_code": "ISO_9606_1_2017",
+    "clause_ref": "5.6",
+    "clause_title": "Filler material type ............................................................................................................................... 10",
+    "requirement_text": "(SPVD) 5.7 Dimensions .......................................................................................................................................... 11"
+  },
+  {
+    "standard_code": "ISO_9606_1_2017",
+    "clause_ref": "5.8",
+    "clause_title": "Welding positions ................................................................................................................................ 13",
+    "requirement_text": "5.9 Weld details .......................................................................................................................................... 15 For welds on pressurised parts of 6 Examination and testing ..................................................................................................................... 15 simple pressure vessels the 6.1 Examination ......................................................................................................................................... 15 Clauses 5, 6, 7, 8, 9.1, 9.3 a), 6.2 Test pieces ........................................................................................................................................... 16 Annex I, 3.2 examiner/examining body 9.3 b), 10, 11 6.3 Welding conditions ............................................................................................................................. 18 (according to 3.3 and 3.4) is a"
+  },
+  {
+    "standard_code": "ISO_9606_1_2017",
+    "clause_ref": "6.4",
+    "clause_title": "Test methods ....................................................................................................................................... 18",
+    "requirement_text": "WARNING 1 — notified body."
+  },
+  {
+    "standard_code": "ISO_9606_1_2017",
+    "clause_ref": "6.5",
+    "clause_title": "Test piece and test specimen ............................................................................................................ 19",
+    "requirement_text": "6.6 Test report ............................................................................................................................................ 23 Presumption of conformity stays valid only as long as a reference to this European Standard is maintained in the list published in the Official Journal of the European Union. Users of this 7 Acceptance requirements for test pieces ......................................................................................... 23 standard should consult frequently the latest list published in the Official Journal of the European 8 Re-tests................................................................................................................................................. 24"
+  },
+  {
+    "standard_code": "ISO_9606_1_2017",
+    "clause_ref": "9.3",
+    "clause_title": "Revalidation of welder qualification .................................................................................................. 24",
+    "requirement_text": ""
+  },
+  {
+    "standard_code": "ISO_9606_1_2017",
+    "clause_ref": "9.4",
+    "clause_title": "Revocation of qualification ................................................................................................................ 24",
+    "requirement_text": ""
+  },
+  {
+    "standard_code": "ISO_9606_1_2017",
+    "clause_ref": "10",
+    "clause_title": "Welder's qualification test certificate ................................................................................................ 25",
+    "requirement_text": "11 Designation .......................................................................................................................................... 25 Annex A (informative) Welder's qualification test certificate ....................................................................... 27 Annex B (informative) Job knowledge ............................................................................................................ 28 Annex C (informative) FW/BW test assembly option .................................................................................... 31 Bibliography ...................................................................................................................................................... 32 © ISO 2012 – All rights reserved iii\n\n| Essential Requirements of Directive 2014/29/EU (SPVD) | Clause(s)/sub-clause(s) of this EN | Remarks/Notes |\n| --- | --- | --- |\n| Annex I, 3.2 | Clauses 5, 6, 7, 8, 9.1, 9.3 a), 9.3 b), 10, 11 | For welds on pressurised parts of simple pressure vessels the examiner/examining body |\n\n\nContents Page Foreword ............................................................................................................................................................ iv Introduction ......................................................................................................................................................... v 1 Scope ...................................................................................................................................................... 1"
+  },
+  {
+    "standard_code": "ISO_9606_1_2017",
+    "clause_ref": "2",
+    "clause_title": "Normative references ............................................................................................................................ 1",
+    "requirement_text": ""
+  },
+  {
+    "standard_code": "ISO_9606_1_2017",
+    "clause_ref": "3",
+    "clause_title": "Terms and definitions ........................................................................................................................... 2",
+    "requirement_text": ""
+  },
+  {
+    "standard_code": "ISO_9606_1_2017",
+    "clause_ref": "4",
+    "clause_title": "Reference numbers, symbols and abbreviated terms ....................................................................... 4",
+    "requirement_text": "4.1 General ................................................................................................................................................... 4"
+  },
+  {
+    "standard_code": "ISO_9606_1_2017",
+    "clause_ref": "4.2",
+    "clause_title": "Reference numbers of welding processes ......................................................................................... 4",
+    "requirement_text": ""
+  },
+  {
+    "standard_code": "ISO_9606_1_2017",
+    "clause_ref": "4.3",
+    "clause_title": "Symbols and abbreviated terms .......................................................................................................... 4",
+    "requirement_text": ""
+  },
+  {
+    "standard_code": "ISO_9606_1_2017",
+    "clause_ref": "5",
+    "clause_title": "Essential variables and range of qualification ................................................................................... 6",
+    "requirement_text": "5.1 General ................................................................................................................................................... 6"
+  },
+  {
+    "standard_code": "ISO_9606_1_2017",
+    "clause_ref": "5.2",
+    "clause_title": "Welding processes ................................................................................................................................ 7",
+    "requirement_text": "5.3 Product type ........................................................................................................................................... 8 5.4 Type of weld ........................................................................................................................................... 9"
+  },
+  {
+    "standard_code": "ISO_9606_1_2017",
+    "clause_ref": "5.5",
+    "clause_title": "Filler material grouping ......................................................................................................................... 9",
+    "requirement_text": ""
+  },
+  {
+    "standard_code": "ISO_9606_1_2017",
+    "clause_ref": "5.6",
+    "clause_title": "Filler material type ............................................................................................................................... 10",
+    "requirement_text": "5.7 Dimensions .......................................................................................................................................... 11"
+  },
+  {
+    "standard_code": "ISO_9606_1_2017",
+    "clause_ref": "5.8",
+    "clause_title": "Welding positions ................................................................................................................................ 13",
+    "requirement_text": "5.9 Weld details .......................................................................................................................................... 15"
+  },
+  {
+    "standard_code": "ISO_9606_1_2017",
+    "clause_ref": "6",
+    "clause_title": "Examination and testing ..................................................................................................................... 15",
+    "requirement_text": "6.1 Examination ......................................................................................................................................... 15 6.2 Test pieces ........................................................................................................................................... 16"
+  },
+  {
+    "standard_code": "ISO_9606_1_2017",
+    "clause_ref": "6.3",
+    "clause_title": "Welding conditions ............................................................................................................................. 18",
+    "requirement_text": ""
+  },
+  {
+    "standard_code": "ISO_9606_1_2017",
+    "clause_ref": "6.4",
+    "clause_title": "Test methods ....................................................................................................................................... 18",
+    "requirement_text": ""
+  },
+  {
+    "standard_code": "ISO_9606_1_2017",
+    "clause_ref": "6.5",
+    "clause_title": "Test piece and test specimen ............................................................................................................ 19",
+    "requirement_text": "6.6 Test report ............................................................................................................................................ 23"
+  },
+  {
+    "standard_code": "ISO_9606_1_2017",
+    "clause_ref": "7",
+    "clause_title": "Acceptance requirements for test pieces ......................................................................................... 23",
+    "requirement_text": "8 Re-tests................................................................................................................................................. 24 9 Period of validity .................................................................................................................................. 24 9.1 Initial qualification ............................................................................................................................... 24"
+  },
+  {
+    "standard_code": "ISO_9606_1_2017",
+    "clause_ref": "9.2",
+    "clause_title": "Confirmation of the validity ................................................................................................................ 24",
+    "requirement_text": ""
+  },
+  {
+    "standard_code": "ISO_9606_1_2017",
+    "clause_ref": "9.3",
+    "clause_title": "Revalidation of welder qualification .................................................................................................. 24",
+    "requirement_text": ""
+  },
+  {
+    "standard_code": "ISO_9606_1_2017",
+    "clause_ref": "9.4",
+    "clause_title": "Revocation of qualification ................................................................................................................ 24",
+    "requirement_text": ""
+  },
+  {
+    "standard_code": "ISO_9606_1_2017",
+    "clause_ref": "10",
+    "clause_title": "Welder's qualification test certificate ................................................................................................ 25",
+    "requirement_text": "11 Designation .......................................................................................................................................... 25 Annex A (informative) Welder's qualification test certificate ....................................................................... 27 Annex B (informative) Job knowledge ............................................................................................................ 28 Annex C (informative) FW/BW test assembly option .................................................................................... 31 Bibliography ...................................................................................................................................................... 32 © ISO 2012 – All rights reserved iii"
+  },
+  {
+    "standard_code": "ISO_9606_1_2017",
+    "clause_ref": "1",
+    "clause_title": "Scope",
+    "requirement_text": "This part of ISO 9606 specifies the requirements for qualification testing of welders for fusion welding of steels. It provides a set of technical rules for a systematic qualification test of the welder, and enables such qualifications to be uniformly accepted independently of the type of product, location and examiner or examining body. When qualifying welders, the emphasis is placed on the welder's ability manually to manipulate the electrode, welding torch or welding blowpipe, thereby producing a weld of acceptable quality. The welding processes referred to in this part of ISO 9606 include those fusion-welding processes which are designated as manual or partly mechanized welding. It does not cover fully mechanized and automated welding processes. NOTE For such processes, see ISO 14732[10]."
+  },
+  {
+    "standard_code": "ISO_9606_1_2017",
+    "clause_ref": "2",
+    "clause_title": "Normative references",
+    "requirement_text": "The following referenced documents are indispensable for the application of this document. For dated references, only the edition cited applies. For undated references, the latest edition of the referenced document (including any amendments) applies. ISO 857-1, Welding and allied processes — Vocabulary — Part 1: Metal welding processes ISO 3834-2, Quality requirements for fusion welding of metallic materials — Part 2: Comprehensive quality requirements ISO 3834-3, Quality requirements for fusion welding of metallic materials — Part 3: Standard quality requirements ISO 4063, Welding and allied processes — Nomenclature of processes and reference numbers ISO 5173, Destructive tests on welds in metallic materials — Bend tests ISO 5817, Welding — Fusion-welded joints in steel, nickel, titanium and their alloys (beam welding excluded) — Quality levels for imperfections ISO 6947, Welding and allied processes — Welding positions ISO 9017, Destructive tests on welds in metallic materials — Fracture test ISO/TR 15608, Welding — Guidelines for a metallic material grouping system ISO 15609-1, Specification and qualification of welding procedures for metallic materials — Welding procedure specification — Part 1: Arc welding © ISO 2012 – All rights reserved 1\n\n\nISO 15609-2, Specification and qualification of welding procedures for metallic materials — Welding procedure specification — Part 2: Gas welding ISO 17636 (all parts), Non-destructive testing of welds — Radiographic testing ISO 17637, Non-destructive testing of welds — Visual testing of fusion-welded joints ISO/TR 25901:2007, Welding and related processes — Vocabulary"
+  },
+  {
+    "standard_code": "ISO_9606_1_2017",
+    "clause_ref": "3",
+    "clause_title": "Terms and definitions",
+    "requirement_text": "For the purposes of this part of ISO 9606, the following terms and definitions apply. 3.1 welder person who holds and manipulates the electrode holder, welding torch or blowpipe by hand"
+  },
+  {
+    "standard_code": "ISO_9606_1_2017",
+    "clause_ref": "2",
+    "clause_title": "© ISO 2012 – All rights reserved",
+    "requirement_text": "3.9 layer stratum of weld metal consisting of one or more runs"
+  },
+  {
+    "standard_code": "ISO_9606_1_2017",
+    "clause_ref": "4",
+    "clause_title": "Reference numbers, symbols and abbreviated terms",
+    "requirement_text": ""
+  },
+  {
+    "standard_code": "ISO_9606_1_2017",
+    "clause_ref": "4.1",
+    "clause_title": "General",
+    "requirement_text": "The following abbreviations and reference numbers shall be used when completing the welder's qualification test certificate (see Annex A)."
+  },
+  {
+    "standard_code": "ISO_9606_1_2017",
+    "clause_ref": "4.2",
+    "clause_title": "Reference numbers of welding processes",
+    "requirement_text": "This part of ISO 9606 covers the following manual or partly mechanized welding processes (reference numbers of welding processes for symbolic representations are listed in ISO 4063): 111 manual metal arc welding 114 self-shielded tubular cored arc welding 121 submerged arc welding with solid wire electrode (partly mechanized) 125 submerged arc welding with tubular cored electrode (partly mechanized) 131 MIG welding with solid wire electrode 135 MAG welding with solid wire electrode 136 MAG welding with flux cored electrode 138 MAG welding with metal cored electrode 141 TIG welding with solid filler material (wire/rod) 142 autogenous TIG welding 143 TIG welding with tubular cored filler material (wire/rod) 145 TIG welding using reducing gas and solid filler material (wire/rod)"
+  },
+  {
+    "standard_code": "ISO_9606_1_2017",
+    "clause_ref": "15",
+    "clause_title": "plasma arc welding",
+    "requirement_text": "311 oxyacetylene welding See ISO/TR 25901 and ISO 857-1 for the definition of manual and partly mechanized welding. NOTE The principles of this part of ISO 9606 can be applied to other fusion welding processes."
+  },
+  {
+    "standard_code": "ISO_9606_1_2017",
+    "clause_ref": "4.3",
+    "clause_title": "Symbols and abbreviated terms",
+    "requirement_text": ""
+  },
+  {
+    "standard_code": "ISO_9606_1_2017",
+    "clause_ref": "4.3.1",
+    "clause_title": "For test pieces",
+    "requirement_text": "a design throat thickness BW butt weld D outside pipe diameter FW fillet weld l length of test piece 1 l half-width of test piece 2 l examination length f P plate s deposited thickness or fused metal thickness in butt welds t material thickness of test piece (plate or wall thickness)"
+  },
+  {
+    "standard_code": "ISO_9606_1_2017",
+    "clause_ref": "4",
+    "clause_title": "© ISO 2012 – All rights reserved",
+    "requirement_text": "s deposited thickness of test piece for welding process 1 s deposited thickness of test piece for welding process 2 2 T pipe1) z leg length of fillet weld"
+  },
+  {
+    "standard_code": "ISO_9606_1_2017",
+    "clause_ref": "4.3.2",
+    "clause_title": "For filler materials",
+    "requirement_text": "nm no filler material The symbol for type of covering or core is based on those given in various International Standards on filler materials."
+  },
+  {
+    "standard_code": "ISO_9606_1_2017",
+    "clause_ref": "03",
+    "clause_title": "rutile basic covering",
+    "requirement_text": ""
+  },
+  {
+    "standard_code": "ISO_9606_1_2017",
+    "clause_ref": "10",
+    "clause_title": "cellulosic covering",
+    "requirement_text": ""
+  },
+  {
+    "standard_code": "ISO_9606_1_2017",
+    "clause_ref": "11",
+    "clause_title": "cellulosic covering",
+    "requirement_text": ""
+  },
+  {
+    "standard_code": "ISO_9606_1_2017",
+    "clause_ref": "12",
+    "clause_title": "rutile covering",
+    "requirement_text": ""
+  },
+  {
+    "standard_code": "ISO_9606_1_2017",
+    "clause_ref": "13",
+    "clause_title": "rutile covering",
+    "requirement_text": ""
+  },
+  {
+    "standard_code": "ISO_9606_1_2017",
+    "clause_ref": "14",
+    "clause_title": "rutile + iron powder covering",
+    "requirement_text": ""
+  },
+  {
+    "standard_code": "ISO_9606_1_2017",
+    "clause_ref": "15",
+    "clause_title": "basic covering",
+    "requirement_text": ""
+  },
+  {
+    "standard_code": "ISO_9606_1_2017",
+    "clause_ref": "16",
+    "clause_title": "basic covering",
+    "requirement_text": ""
+  },
+  {
+    "standard_code": "ISO_9606_1_2017",
+    "clause_ref": "18",
+    "clause_title": "basic + iron powder covering",
+    "requirement_text": ""
+  },
+  {
+    "standard_code": "ISO_9606_1_2017",
+    "clause_ref": "19",
+    "clause_title": "limenite covering",
+    "requirement_text": ""
+  },
+  {
+    "standard_code": "ISO_9606_1_2017",
+    "clause_ref": "20",
+    "clause_title": "iron oxide covering",
+    "requirement_text": ""
+  },
+  {
+    "standard_code": "ISO_9606_1_2017",
+    "clause_ref": "24",
+    "clause_title": "rutile + iron powder covering",
+    "requirement_text": ""
+  },
+  {
+    "standard_code": "ISO_9606_1_2017",
+    "clause_ref": "27",
+    "clause_title": "iron oxide + iron powder covering",
+    "requirement_text": ""
+  },
+  {
+    "standard_code": "ISO_9606_1_2017",
+    "clause_ref": "28",
+    "clause_title": "basic + iron powder covering",
+    "requirement_text": ""
+  },
+  {
+    "standard_code": "ISO_9606_1_2017",
+    "clause_ref": "45",
+    "clause_title": "basic covering",
+    "requirement_text": ""
+  },
+  {
+    "standard_code": "ISO_9606_1_2017",
+    "clause_ref": "48",
+    "clause_title": "basic covering",
+    "requirement_text": "A acid covering B basic covering or electrode core — basic C cellulosic covering R rutile covering or electrode core — rutile, slow-freezing slag RA rutile — acid covering RB rutile — basic covering RC rutile — cellulosic covering RR rutile — thick covering\n\n1) The word “pipe”, alone or in combination, is used to mean “pipe”, “tube” or “hollow section”.\n\n© ISO 2012 – All rights reserved 5\n\n\nM metal cored electrode or metal powder P electrode core — rutile, fast-freezing slag S solid wire electrode — solid rod V electrode core — rutile or basic/fluoride W electrode core — basic/fluoride, slow-freezing slag Y electrode core — basic/fluoride, fast-freezing slag Z electrode core — other types"
+  },
+  {
+    "standard_code": "ISO_9606_1_2017",
+    "clause_ref": "4.3.3",
+    "clause_title": "For other weld details",
+    "requirement_text": "fb flux backing bs welding from both sides ci consumable insert lw leftward welding mb material backing gb gas backing ml multi-layer nb welding with no material backing rw rightward welding sl single layer ss single side welding"
+  },
+  {
+    "standard_code": "ISO_9606_1_2017",
+    "clause_ref": "4.3.4",
+    "clause_title": "For bend tests",
+    "requirement_text": "A minimum tensile elongation after fracture required by the material specification d diameter of the former or the inner roller t thickness of the bend test specimen s"
+  },
+  {
+    "standard_code": "ISO_9606_1_2017",
+    "clause_ref": "4.3.5",
+    "clause_title": "Types of arc welding",
+    "requirement_text": "MAG metal active gas MIG metal inert gas TIG tungsten inert gas"
+  },
+  {
+    "standard_code": "ISO_9606_1_2017",
+    "clause_ref": "5",
+    "clause_title": "Essential variables and range of qualification",
+    "requirement_text": ""
+  },
+  {
+    "standard_code": "ISO_9606_1_2017",
+    "clause_ref": "5.1",
+    "clause_title": "General",
+    "requirement_text": "The qualification of welders is based on essential variables. For each essential variable, a range of qualification is defined. If the welder has to weld outside the range of welder qualification, a new qualification test is required. The essential variables are:  welding process(es);  product type (plate or pipe);"
+  },
+  {
+    "standard_code": "ISO_9606_1_2017",
+    "clause_ref": "6",
+    "clause_title": "© ISO 2012 – All rights reserved",
+    "requirement_text": " type of weld (butt or fillet);  filler material group;  filler material type;  dimension (material thickness and outside pipe diameter);  welding position;  weld detail(s) (material backing, gas backing, flux backing, consumable insert, single side welding, both side welding, single layer, multi-layer, leftward welding, rightward welding). The parent material group(s) and subgroup(s), in accordance with ISO/TR 15608, that are used in the test shall be recorded on the welder's qualification test certificate."
+  },
+  {
+    "standard_code": "ISO_9606_1_2017",
+    "clause_ref": "5.2",
+    "clause_title": "Welding processes",
+    "requirement_text": "Welding processes are defined in ISO 857-1 and listed in 4.2. Each test normally qualifies only one welding process. A change of welding process requires a new qualification test. Exceptions are as follows:  a change from solid wire electrode 135 to a metal cored electrode 138, or vice versa, does not require requalification (see Table 5);  a change from solid wire electrode 121 to a tubular cored electrode 125, or vice versa, does not require requalification (see Table 5);  welding with 141, 143 or 145 qualifies for 141, 142, 143 and 145, but 142 only qualifies for 142;  qualifying the welder for dip (short-circuit) transfer mode (131, 135 and 138) shall qualify him for other transfer modes, but not vice versa. However, it is permitted for a welder to be qualified for two or more welding processes by welding a single test piece (multi-process joint) or by two or more separate qualification tests. The ranges of qualification concerning the deposited thickness for each welding process used and for the multi-process joint for butt welds are given in Tables 1 and 6. © ISO 2012 – All rights reserved 7\n\n\nTable 1 — Deposited thickness range of weld metal for single and multi-process joints for butt welds Deposited thickness range qualified according to Table 6 Welding process used for test piece Single process joint Multi-process joint for welding process 1: s = s 1 s = s 1 + s 2 for welding process 2: s = s 2"
+  },
+  {
+    "standard_code": "ISO_9606_1_2017",
+    "clause_ref": "1",
+    "clause_title": "welding process 1 (ss nb)",
+    "requirement_text": ""
+  },
+  {
+    "standard_code": "ISO_9606_1_2017",
+    "clause_ref": "2",
+    "clause_title": "welding process 2 (ss mb)",
+    "requirement_text": "for welding process 1: for s = s 1 + s 2 s"
+  },
+  {
+    "standard_code": "ISO_9606_1_2017",
+    "clause_ref": "1",
+    "clause_title": "welding process 1",
+    "requirement_text": "for welding process 2: only for welding of s the root area 2"
+  },
+  {
+    "standard_code": "ISO_9606_1_2017",
+    "clause_ref": "1",
+    "clause_title": "welding process 1",
+    "requirement_text": ""
+  },
+  {
+    "standard_code": "ISO_9606_1_2017",
+    "clause_ref": "2",
+    "clause_title": "welding process 2",
+    "requirement_text": ""
+  },
+  {
+    "standard_code": "ISO_9606_1_2017",
+    "clause_ref": "3",
+    "clause_title": "welding with backing (ss mb)",
+    "requirement_text": ""
+  },
+  {
+    "standard_code": "ISO_9606_1_2017",
+    "clause_ref": "4",
+    "clause_title": "welding without backing (ss nb)",
+    "requirement_text": "NOTE See 4.3.1 for definitions of the variables."
+  },
+  {
+    "standard_code": "ISO_9606_1_2017",
+    "clause_ref": "5.3",
+    "clause_title": "Product type",
+    "requirement_text": "The qualification test shall be carried out on plate, pipe or other suitable product form. The following criteria are applicable:\n\na) test piece welds with outside pipe diameter D  25 mm cover welds in plates;\n\nb) test piece welds in plates cover welds in fixed pipe of outside pipe diameter D  500 mm; in accordance\n\nwith Tables 9 and 10.\n\nc) test piece welds in plates cover welds in rotating pipes of outside pipe diameter D  75 mm for welding\n\npositions PA, PB, PC, and PD; in accordance with Tables 9 and 10."
+  },
+  {
+    "standard_code": "ISO_9606_1_2017",
+    "clause_ref": "8",
+    "clause_title": "© ISO 2012 – All rights reserved",
+    "requirement_text": "| Welding process used for test piece | Deposited thickness range qualified according to Table 6 Single process joint Multi-process joint |  |\n| --- | --- | --- |\n| 1 welding process 1 (ss nb) 2 welding process 2 (ss mb) | for welding process 1: s = s 1 for welding process 2: s = s 2 | s = s + s 1 2 |\n| 1 welding process 1 2 welding process 2 3 welding with backing (ss mb) 4 welding without backing (ss nb) | for welding process 1: s 1 for welding process 2: s 2 | for s = s + s 1 2 welding process 1 only for welding of the root area |\n| NOTE See 4.3.1 for definitions of the variables. |  |  |\n\n|  |\n| --- |\n|  |\n\n|  |  |\n| --- | --- |\n\n|  |  |\n| --- | --- |\n\n|  |  |  |  |  |  |\n| --- | --- | --- | --- | --- | --- |"
+  },
+  {
+    "standard_code": "ISO_9606_1_2017",
+    "clause_ref": "5.4",
+    "clause_title": "Type of weld",
+    "requirement_text": "The qualification test shall be carried out as butt or fillet welding. The following criteria are applicable.\n\na) Butt welds cover butt welds in any type of joint except branch connections [see also c)].\n\nb) Butt welds do not qualify fillet welds or vice versa. It is, however, permissible to qualify a fillet weld in\n\ncombination with a butt weld, e.g. single bevel joint preparation with permanent material backing (a minimum test piece thickness of 10 mm shall be used). See Annex C. For this combination test, all testing requirements specified in this part of ISO 9606 shall be fulfilled and associated ranges of qualification shall be given based on the test conditions.\n\nc) Butt welds in pipes qualify branch joints with an angle 60° and the same range of qualification as in\n\nTables 1 to 12. For a branch weld, the range of qualification is based on the outside diameter of the branch.\n\nd) For applications where the type of weld cannot be qualified by means of either a butt or fillet or for branch\n\nconnections of less than 60°, a specific test piece should be used to qualify the welder, when specified (e.g. by the product standard).\n\ne) Butt welds may qualify fillet welds if a supplementary fillet weld test piece (see Figure 3) is welded with\n\neach process, filler material (FM) group and electrode covering/core, in accordance with Tables 3, 4, and 5. The test piece shall be at least 10 mm thick, or the thickness of the butt weld test piece if the thickness is less, and completed using a single layer in the PB position. For this supplementary test, the welder shall be qualified for all fillet welds as given for the butt weld qualification variables related to the range of qualification for fillet welds (e.g. Tables 7, 8, 9, 10 and 12). Fillet weld positions PA and PB are qualified by this test."
+  },
+  {
+    "standard_code": "ISO_9606_1_2017",
+    "clause_ref": "5.5",
+    "clause_title": "Filler material grouping",
+    "requirement_text": ""
+  },
+  {
+    "standard_code": "ISO_9606_1_2017",
+    "clause_ref": "5.5.1",
+    "clause_title": "General",
+    "requirement_text": "The qualification test shall be carried out with filler material from one of the groups listed in Table 2. When welding with filler materials outside the filler material grouping in Table 2, a separate test is required. The parent material used in a qualification test should be from any suitable material from ISO/TR 15608, material groups 1 to 11."
+  },
+  {
+    "standard_code": "ISO_9606_1_2017",
+    "clause_ref": "5.5.2",
+    "clause_title": "Range of qualification",
+    "requirement_text": "Filler material groups are defined in Table 2. Table 2 — Filler material grouping Group Filler material for welding of Examples of applicable standards FM1 Non-alloy and fine grain steels ISO 2560,[2] ISO 14341,[8] ISO 636,[1] ISO 14171,[6]"
+  },
+  {
+    "standard_code": "ISO_9606_1_2017",
+    "clause_ref": "5.6",
+    "clause_title": "Filler material type",
+    "requirement_text": "Welding with filler material qualifies for welding without filler material, but not vice versa. NOTE For processes 142 and 311 (without filler material), the parent material group used in the test is the material group that the welder is qualified for. The ranges of qualification for filler material type are given in Tables 4 and 5. Table 4 — Range of qualification for covered electrodesa Range of qualification Welding Type of covering"
+  },
+  {
+    "standard_code": "ISO_9606_1_2017",
+    "clause_ref": "10",
+    "clause_title": "© ISO 2012 – All rights reserved",
+    "requirement_text": "| Filler material | Range of qualification FM1 FM2 FM3 FM4 FM5 FM6 |  |  |  |  |  |\n| --- | --- | --- | --- | --- | --- | --- |\n| FM1 |  |  | — | — | — | — |\n| FM2 |  |  | — | — | — | — |\n| FM3 |  |  |  | — | — | — |\n| FM4 |  |  |  |  | — | — |\n| FM5 | — | — | — | — |  | — |\n| FM6 | — | — | — | — |  |  |\n|  indicates those filler materials for which the welder is qualified. — indicates those filler materials for which the welder is not qualified. |  |  |  |  |  |  |\n\n| Welding process | Type of covering used in the testb | Range of qualification |  |  |\n| --- | --- | --- | --- | --- |\n|  |  | A, RA, RB, RC, RR, R 03, 13, 14, 19, 20, 24, 27 | B 15, 16, 18, 28, 45, 48 | C 10, 11 |\n| 111 | A, RA, RB, RC, RR, R 03, 13, 14, 19, 20, 24, 27 |  | — | — |\n|  | B 15, 16, 18, 28, 45, 48 |  |  | — |\n|  | C 10, 11 | — | — |  |\n|  indicates those filler material types for which the welder is qualified. — indicates those filler material types for which the welder is not qualified. |  |  |  |  |\n| a For abbreviations, see 4.3.2. b The type of covering used in the qualification test of welders for root run welding without backing (ss nb) is the type of covering qualified for root run welding in production with no backing (ss nb). |  |  |  |  |\n\n\na,b Table 5 — Range of qualification for filler material types Range of qualification Filler material types used in test piece"
+  },
+  {
+    "standard_code": "ISO_9606_1_2017",
+    "clause_ref": "5.7",
+    "clause_title": "Dimensions",
+    "requirement_text": "The welder qualification test of butt welds is based on the deposited thickness and outside pipe diameters. The ranges of qualification are specified in Tables 6 and 7. It is not intended that deposited thickness or outside pipe diameters should be measured precisely, but rather the general philosophy behind the values given in Tables 6 and 7 should be applied. For fillet welds, the range of qualification for material thicknesses is specified in Table 8. For test pieces of different outside pipe diameters and deposited thicknesses, the welder is qualified for:  the thinnest through to the thickest deposited and/or parent metal thickness qualified; and  the smallest through to the largest diameter qualified (refer to Tables 6 and 7). Table 6 — Range of qualification of deposited thickness for butt welds Dimensions in millimetres Deposited thickness of test piece Range of qualificationa,b s s to 3c or s  3 s to 2sc whichever is greater"
+  },
+  {
+    "standard_code": "ISO_9606_1_2017",
+    "clause_ref": "3",
+    "clause_title": " s < 12 3 to 2sd",
+    "requirement_text": "s  12e,f 3f a For single process and the same type of filler material, s, is equal to parent material t. b For branch joints, the range of qualification for deposited thickness is: — for set-on branch, see, for example, Figure 1 a), the deposited thickness of the branch; — for set-through and set-in branches, see, for example, Figure1 b) and c), the deposited thickness of the main pipe or shell. c For oxyacetylene welding (311): s to 1,5s d For oxyacetylene welding (311): 3 to 1,5s e The test piece has to be welded in at least 3 layers f For multi-processes, s is the deposited thickness for each process. © ISO 2012 – All rights reserved 11\n\n| Filler material types used in test piece | Range of qualification S M B R, P, V, W, Y, Z |  |  |  |\n| --- | --- | --- | --- | --- |\n| Solid wire electrode, rod (S) |  |  | — | — |\n| Metal cored electrode, rod (M) |  |  | — | — |\n| Flux cored electrode, rod (B) | — | — |  |  |\n| Flux cored electrode, rod (R, P, V, W, Y, Z) | — | — | — |  |\n|  indicates those filler material types for which the welder is qualified. — indicates those filler material types for which the welder is not qualified. |  |  |  |  |\n| a For abbreviations, see 4.3.2. b The type of flux cored wire used in the qualification test of welders for root run welding without backing (ss, nb) is the type of flux cored wire qualified for root run welding in production with no backing (ss, nb). |  |  |  |  |\n\n| Deposited thickness of test piece s | Range of qualificationa,b |\n| --- | --- |\n| s  3 | s to 3c or s to 2sc whichever is greater |\n| 3  s < 12 | 3 to 2sd |\n| s  12e,f | 3f |\n| a For single process and the same type of filler material, s, is equal to parent material t. b For branch joints, the range of qualification for deposited thickness is: — for set-on branch, see, for example, Figure 1 a), the deposited thickness of the branch; — for set-through and set-in branches, see, for example, Figure1 b) and c), the deposited thickness of the main pipe or shell. c For oxyacetylene welding (311): s to 1,5s d For oxyacetylene welding (311): 3 to 1,5s e The test piece has to be welded in at least 3 layers f For multi-processes, s is the deposited thickness for each process. |  |\n\n\na) Set-on b) Set-through\n\nc) Set-in\n\nKey D outside pipe diameter s deposited thickness or fused metal thickness in butt welds t material thickness of test piece (plate or wall thickness)"
+  },
+  {
+    "standard_code": "ISO_9606_1_2017",
+    "clause_ref": "1",
+    "clause_title": "branch",
+    "requirement_text": ""
+  },
+  {
+    "standard_code": "ISO_9606_1_2017",
+    "clause_ref": "2",
+    "clause_title": "main pipe or shell",
+    "requirement_text": "Figure 1 — Branch types Table 7 — Range of qualification for outside pipe diameter Dimensions in millimetres Outside pipe diameter of test piecea Range of qualification D D  25 D to 2D D  25  0,5D (25 mm min.) a For non-circular hollow sections, D is the dimension of the smaller side. Table 8 — Range of qualification of material thickness for fillet welds Dimensions in millimetres Material thickness of test piece Range of qualification t t  3 t to 2t, or 3, whichever is greater t  3  3"
+  },
+  {
+    "standard_code": "ISO_9606_1_2017",
+    "clause_ref": "12",
+    "clause_title": "© ISO 2012 – All rights reserved",
+    "requirement_text": "|  |  |  |\n| --- | --- | --- |\n|  |  |  |\n\n|  |  |  |\n| --- | --- | --- |\n\n|  |  |\n| --- | --- |\n\n| Outside pipe diameter of test piecea D | Range of qualification |\n| --- | --- |\n| D  25 | D to 2D |\n| D  25 |  0,5D (25 mm min.) |\n| a For non-circular hollow sections, D is the dimension of the smaller side. |  |\n\n| Material thickness of test piece t | Range of qualification |\n| --- | --- |\n| t  3 | t to 2t, or 3, whichever is greater |\n| t  3 |  3 |\n\n\nIn the case of branch welding, the deposited thickness criteria to which Table 6 applies and the outside pipe diameter criteria to which Table 7 applies are as follows:  set-on: the deposited thickness and outside pipe diameter of the branch [see Figure 1 a)];  set-in or set-through: the deposited thickness of the main pipe or shell and the outside pipe diameter of the branch [see Figure 1 b) and c)]."
+  },
+  {
+    "standard_code": "ISO_9606_1_2017",
+    "clause_ref": "5.8",
+    "clause_title": "Welding positions",
+    "requirement_text": "The range of qualification for each welding position is given in Tables 9 and 10. The welding positions and symbols refer to ISO 6947. The test pieces shall be welded in accordance with the testing positions specified in ISO 6947. Welding two pipes with the same outside pipe diameter, one in welding position PH and one in welding position PC, also covers the range of qualification of a pipe welded in welding position H-L045 using upward welding. Welding two pipes with the same outside pipe diameter, one in welding position PJ and one in welding position PC, also covers the range of qualification of a pipe welded in welding position J-L045 using downward welding. Outside pipe diameters D  150 mm can be welded in two welding positions (PH or PJ 2/3 of circumference, PC 1/3 of circumference) using only one test piece. This test covers all positions for the direction of welding used in the test. NOTE For welding position symbols, refer to ISO 6947. Figure 2 — Outside pipe diameter D  150 mm, positions © ISO 2012 – All rights reserved 13\n\n\nTable 9 — Range of qualification for welding positions for butt welds Range of qualification Testing position PA PC PE PF PG Flat Horizontal Overhead Vertical up Vertical down PA  — — — — PC   — — — PE (plate)    — — PF (plate)  — —  — PH (pipe)  —   — PG (plate) — — — —  PJ (pipe)  —  —  H-L045     — J-L045    —  NOTE See also 5.3.  indicates those welding positions for which the welder is qualified. — indicates those welding positions for which the welder is not qualified. Table 10 — Range of qualification for welding positions for fillet welds Range of qualification Testing position"
+  },
+  {
+    "standard_code": "ISO_9606_1_2017",
+    "clause_ref": "14",
+    "clause_title": "© ISO 2012 – All rights reserved",
+    "requirement_text": "| Testing position | Range of qualification PA PC PE PF PG Flat Horizontal Overhead Vertical up Vertical down |  |  |  |  |\n| --- | --- | --- | --- | --- | --- |\n| PA |  | — | — | — | — |\n| PC |  |  | — | — | — |\n| PE (plate) |  |  |  | — | — |\n| PF (plate) |  | — | — |  | — |\n| PH (pipe) |  | — |  |  | — |\n| PG (plate) | — | — | — | — |  |\n| PJ (pipe) |  | — |  | — |  |\n| H-L045 |  |  |  |  | — |\n| J-L045 |  |  |  | — |  |\n| NOTE See also 5.3. |  |  |  |  |  |\n|  indicates those welding positions for which the welder is qualified. — indicates those welding positions for which the welder is not qualified. |  |  |  |  |  |\n\n| Testing position | Range of qualification PA PB PC PD PE PF PG Flat Horizontal Horizontal Overhead Overhead Vertical up Vertical down |  |  |  |  |  |  |\n| --- | --- | --- | --- | --- | --- | --- | --- |\n| PA |  | — | — | — | — | — | — |\n| PB |  |  | — | — | — | — | — |\n| PC |  |  |  | — | — | — | — |\n| PD |  |  |  |  |  | — | — |\n| PE (plate) |  |  |  |  |  | — | — |\n| PF (plate) |  |  | — | — | — |  | — |\n| PH (pipe) |  |  |  |  |  |  | — |\n| PG (plate) | — | — | — | — | — | — |  |\n| PJ (pipe) |  |  | — |  |  | — |  |\n| NOTE See also 5.3. |  |  |  |  |  |  |  |\n|  indicates those welding positions for which the welder is qualified. — indicates those welding positions for which the welder is not qualified. |  |  |  |  |  |  |  |"
+  },
+  {
+    "standard_code": "ISO_9606_1_2017",
+    "clause_ref": "5.9",
+    "clause_title": "Weld details",
+    "requirement_text": "Depending on the weld details, the ranges of qualification are shown in Tables 11 and 12. When welding with process 311, a change from rightward welding to leftward welding, and vice versa, requires a new qualification test. Table 11 — Range of qualification for backings and consumable inserts Range for qualification for backing and consumable inserts Test condition No Material Welding from Gas Consumable Flux backing backing both sides backing insert backing (ss,nb) (ss,mb) (bs) (ss,gb) (ci) (ss,fb) No backing (ss,nb)     —  Material backing (ss,mb) —   — — — Welding from both sides (bs) —   — — — Gas backing (ss,gb) —    — — Consumable insert (ci) —   —  — Flux backing (ss,fb) —   — —   indicates those conditions for which the welder is qualified. — indicates those conditions for which the welder is not qualified. Table 12 — Range of qualification of layer technique for fillet welds Range of qualificationb Test piece Single layer Multi-layer (sl) (ml) Single layer (sl)  — Multi-layer (ml)a    indicates the layer technique for which the welder is qualified. — indicates the layer technique for which the welder is not qualified. a During the welding of the test piece, the examiner shall perform visual examination of the first layer in accordance with Clause 7. b When a welder has been qualified using a multi-layer butt weld and he or she makes the supplementary fillet weld test described in"
+  },
+  {
+    "standard_code": "ISO_9606_1_2017",
+    "clause_ref": "5.4",
+    "clause_title": "e), he or she is qualified for both multi- and single layer fillet welds.",
+    "requirement_text": ""
+  },
+  {
+    "standard_code": "ISO_9606_1_2017",
+    "clause_ref": "6",
+    "clause_title": "Examination and testing",
+    "requirement_text": ""
+  },
+  {
+    "standard_code": "ISO_9606_1_2017",
+    "clause_ref": "6.1",
+    "clause_title": "Examination",
+    "requirement_text": "The welding of test pieces shall be witnessed by the examiner or examining body. The testing shall be verified by the examiner or examining body. The test pieces shall be marked with the identification of the examiner and the welder. Additionally, welding positions for all test pieces shall be marked on the test piece and, for fixed pipe welds, the 12 o'clock welding position shall also be marked. © ISO 2012 – All rights reserved 15\n\n| Test condition | Range for qualification for backing and consumable inserts |  |  |  |  |  |\n| --- | --- | --- | --- | --- | --- | --- |\n|  | No backing (ss,nb) | Material backing (ss,mb) | Welding from both sides (bs) | Gas backing (ss,gb) | Consumable insert (ci) | Flux backing (ss,fb) |\n| No backing (ss,nb) |  |  |  |  | — |  |\n| Material backing (ss,mb) | — |  |  | — | — | — |\n| Welding from both sides (bs) | — |  |  | — | — | — |\n| Gas backing (ss,gb) | — |  |  |  | — | — |\n| Consumable insert (ci) | — |  |  | — |  | — |\n| Flux backing (ss,fb) | — |  |  | — | — |  |\n|  indicates those conditions for which the welder is qualified. — indicates those conditions for which the welder is not qualified. |  |  |  |  |  |  |\n\n| Test piece | Range of qualificationb Single layer Multi-layer (sl) (ml) |  |\n| --- | --- | --- |\n| Single layer (sl) |  | — |\n| Multi-layer (ml)a |  |  |\n|  indicates the layer technique for which the welder is qualified. — indicates the layer technique for which the welder is not qualified. |  |  |\n| a During the welding of the test piece, the examiner shall perform visual examination of the first layer in accordance with Clause 7. b When a welder has been qualified using a multi-layer butt weld and he or she makes the supplementary fillet weld test described in 5.4 e), he or she is qualified for both multi- and single layer fillet welds. |  |  |\n\n\nThe examiner or examining body may stop the test if the welding conditions are not correct or if it appears that the welder does not have the skill to fulfil the requirements, e.g. where there are excessive and/or systematic repairs."
+  },
+  {
+    "standard_code": "ISO_9606_1_2017",
+    "clause_ref": "6.2",
+    "clause_title": "Test pieces",
+    "requirement_text": "The shape and dimension of test pieces required are shown in Figures 3 to 6. A minimum test piece length for plates of 200 mm is required; the examination length is 150 mm. For pipe circumferences of less than 150 mm, additional test pieces will be required with a maximum of three test pieces. Dimensions in millimetres Key t material thickness of test piece Figure 3 — Dimensions of test piece for a butt weld in plate"
+  },
+  {
+    "standard_code": "ISO_9606_1_2017",
+    "clause_ref": "16",
+    "clause_title": "© ISO 2012 – All rights reserved",
+    "requirement_text": "|  |  |\n| --- | --- |\n|  |  |\n\n\nDimensions in millimetres Key t material thickness of test piece NOTE The parent material can be of dissimilar thickness. Figure 4 — Dimensions of test piece for a fillet weld on plate Dimensions in millimetres Key D outside pipe diameter t material thickness of test piece (wall thickness) Figure 5 — Dimensions of test piece for a butt weld in pipe © ISO 2012 – All rights reserved 17\n\n|  |\n| --- |\n|  |\n\n|  |  |\n| --- | --- |\n|  |  |\n\n\nDimensions in millimetres Key D outside pipe diameter l length of test piece 1 t material thickness of test piece (plate or wall thickness) NOTE The parent material can be of dissimilar thickness for the pipe and plate. Figure 6 — Dimensions of test piece for a fillet weld on pipe"
+  },
+  {
+    "standard_code": "ISO_9606_1_2017",
+    "clause_ref": "6.3",
+    "clause_title": "Welding conditions",
+    "requirement_text": "The qualification test of welders shall follow a pWPS or WPS prepared in accordance with ISO 15609-1 or ISO 15609-2. The required throat thickness of the fillet weld test piece shall be defined in the pWPS or WPS used for the test. The following welding conditions shall apply.  The test piece shall have at least one stop and restart in the root run and in the capping run. When more than one process is used, then at least one stop and restart shall be carried out for each process, this includes the root run and final run. The stop and restart areas shall be marked.  The welder shall be allowed to remove minor imperfections by grinding, except for the capping run for which only the stop and restart may be ground. The permission of the examiner or examining body shall be obtained.  Any post-weld heat treatment required in the pWPS or WPS may be omitted at the discretion of the manufacturer."
+  },
+  {
+    "standard_code": "ISO_9606_1_2017",
+    "clause_ref": "6.4",
+    "clause_title": "Test methods",
+    "requirement_text": "After welding the test piece shall be tested in accordance with Table 13. If the weld is accepted by visual testing, the remaining test(s) according to Table 13 shall be carried out. When material backing is used in the qualification test, it shall be removed prior to destructive testing (except for macroscopic examination) and need not be removed before non-destructive testing (NDT). The test specimen for macroscopic examination shall be prepared and etched on one side to clearly reveal the weld. Polishing is not required."
+  },
+  {
+    "standard_code": "ISO_9606_1_2017",
+    "clause_ref": "18",
+    "clause_title": "© ISO 2012 – All rights reserved",
+    "requirement_text": "Table 13 — Test methods Butt weld Test method Fillet weld and branch joint (in plate or pipe) Visual testing according to ISO 17637 mandatory mandatory Radiographic testing according to ISO 17636 mandatorya,b,c not mandatory Bend test according to ISO 5173 mandatorya,b,d not applicable Fracture test according to ISO 9017 mandatorya,b,d mandatorye,f a Either radiographic testing or bend or fracture tests shall be used. b When radiographic testing is used, then additional bend or fracture tests are mandatory for welding processes 131, 135, 138 and 311. c The radiographic testing may be replaced by ultrasonic testing according to ISO 17640[19] for thicknesses 8 mm on ferritic steels only. In this case, the additional tests mentioned in footnote b are not required. d For outside pipe diameters D  25 mm, the bend or fracture tests may be replaced by a notched tensile test of the complete test piece (an example is given in Figure 9). e The fracture tests may be replaced by a macroscopic examination, performed according to ISO 17639[18], of at least two sections,at least one of which shall be taken from the stop/start location. f The fracture tests on pipes may be replaced by radiographic testing."
+  },
+  {
+    "standard_code": "ISO_9606_1_2017",
+    "clause_ref": "6.5",
+    "clause_title": "Test piece and test specimen",
+    "requirement_text": ""
+  },
+  {
+    "standard_code": "ISO_9606_1_2017",
+    "clause_ref": "6.5.1",
+    "clause_title": "General",
+    "requirement_text": "In 6.5.2 and 6.5.3, details of the type, dimensions, and preparation of the test pieces and test specimens are given. In addition, the requirements for destructive tests are indicated. For root, face or side bend, or fracture tests, one specimen shall be taken from the start and stop area in the examination length."
+  },
+  {
+    "standard_code": "ISO_9606_1_2017",
+    "clause_ref": "6.5.2",
+    "clause_title": "Butt weld in plate and pipe",
+    "requirement_text": ""
+  },
+  {
+    "standard_code": "ISO_9606_1_2017",
+    "clause_ref": "6.5.2.1",
+    "clause_title": "General",
+    "requirement_text": "When radiographic testing is used, the examination length of the weld (see Figures 7 and 8) in the test piece shall be radiographed. When fracture testing is used, test specimens may be longitudinally notched in the centre of the weld of the side in tension in order to achieve a fracture in the weld. All notch preparations according to ISO 9017 are permitted. All test specimens shall be tested in such a manner that fracture is reached and the specimen examined after fracture."
+  },
+  {
+    "standard_code": "ISO_9606_1_2017",
+    "clause_ref": "6.5.2.2",
+    "clause_title": "Fracture testing only",
+    "requirement_text": "For butt welds in plate, the test piece examination length (Figure 7) shall be cut into four test specimens of equal width in accordance with the dimensions given in Table 14. For butt welds in pipe, the test piece examination length (Figure 8) shall be cut into four test specimens of equal width in accordance with the dimensions given in Table 14. © ISO 2012 – All rights reserved 19\n\n| Test method | Butt weld (in plate or pipe) | Fillet weld and branch joint |\n| --- | --- | --- |\n| Visual testing according to ISO 17637 | mandatory | mandatory |\n| Radiographic testing according to ISO 17636 | mandatorya,b,c | not mandatory |\n| Bend test according to ISO 5173 | mandatorya,b,d | not applicable |\n| Fracture test according to ISO 9017 | mandatorya,b,d | mandatorye,f |\n| a Either radiographic testing or bend or fracture tests shall be used. b When radiographic testing is used, then additional bend or fracture tests are mandatory for welding processes 131, 135, 138 and 311. c The radiographic testing may be replaced by ultrasonic testing according to ISO 17640[19] for thicknesses 8 mm on ferritic steels only. In this case, the additional tests mentioned in footnote b are not required. d For outside pipe diameters D  25 mm, the bend or fracture tests may be replaced by a notched tensile test of the complete test piece (an example is given in Figure 9). e The fracture tests may be replaced by a macroscopic examination, performed according to ISO 17639[18], of at least two sections,at least one of which shall be taken from the stop/start location. f The fracture tests on pipes may be replaced by radiographic testing. |  |  |\n\n\nDimensions in millimetres Key l length of test piece 1 l half-width of test piece 2 l examination length f Figure 7 — Examination length for fracture test specimens for a butt weld in plate Key l examination length f"
+  },
+  {
+    "standard_code": "ISO_9606_1_2017",
+    "clause_ref": "1",
+    "clause_title": "one root fracture or one root transverse bend or one side-bend test specimen",
+    "requirement_text": ""
+  },
+  {
+    "standard_code": "ISO_9606_1_2017",
+    "clause_ref": "2",
+    "clause_title": "one face fracture or one face transverse bend or one side-bend test specimen",
+    "requirement_text": ""
+  },
+  {
+    "standard_code": "ISO_9606_1_2017",
+    "clause_ref": "3",
+    "clause_title": "one root fracture or one root transverse bend or one side-bend test specimen",
+    "requirement_text": ""
+  },
+  {
+    "standard_code": "ISO_9606_1_2017",
+    "clause_ref": "4",
+    "clause_title": "one face fracture or one face transverse bend or one side-bend test specimen",
+    "requirement_text": "Figure 8 — Examination length and locations for fracture or bend test specimens for a butt weld in pipe"
+  },
+  {
+    "standard_code": "ISO_9606_1_2017",
+    "clause_ref": "20",
+    "clause_title": "© ISO 2012 – All rights reserved",
+    "requirement_text": "Table 14 — Width of fracture test specimens Dimensions in millimetres Product type Width of fracture test specimens Plates (P) Outside diameter, D, of pipes (T)a  100 35 — 50  D  100 20 — 25  D  50 10 a For pipes with outside diameter D  25 mm, the notch tensile test piece according to Figure 9 is recommended. Dimensions in millimetres Key d diameter of the former or the inner roller Holes are not allowed in start and stop areas. For t  1,8 mm: d  4,5 mm For t  1,8 mm: d  3,5 mm NOTE Notch profiles s and q are also permitted in circumferential direction according to ISO 9017. Figure 9 — Example for notch tensile test for pipe test piece outside diameter 25 mm"
+  },
+  {
+    "standard_code": "ISO_9606_1_2017",
+    "clause_ref": "6.5.2.3",
+    "clause_title": "Bend testing only",
+    "requirement_text": "Bend tests shall be performed in accordance with ISO 5173. When only bend testing is carried out, the following conditions shall apply. For thicknesses t  12 mm, a minimum of two root and two face bend test specimens shall be used, and the complete examination length shall be tested. For thicknesses t  12 mm, four side-bend test specimens shall be used approximately equally spaced along the examination length. For pipe butt welds, the four specimens shall be equally spaced in accordance with Figure 8. In all cases, at least one specimen shall be taken from a stop/start location. For this purpose, it is possible that a side-bend specimen can be substituted by a root-bend specimen. © ISO 2012 – All rights reserved 21\n\n| Product type Plates (P) Outside diameter, D, of pipes (T)a |  | Width of fracture test specimens |\n| --- | --- | --- |\n|  | 100 | 35 |\n| — | 50  D  100 | 20 |\n| — | 25  D  50 | 10 |\n| a For pipes with outside diameter D  25 mm, the notch tensile test piece according to Figure 9 is recommended. |  |  |\n\n\nWhen transverse bend testing or side-bend testing is used, the diameter of the former or the inner roller shall be 4t and the bending angle 180° for parent metal with elongation A  20 %. For parent metal with elongation A  20 %, the following equation shall apply: 100t d  s t s A where d is the diameter of the former or the inner roller, in millimetres; t is the thickness of the bend-test specimen, in millimetres; s A is the minimum percentage elongation required by the material standard."
+  },
+  {
+    "standard_code": "ISO_9606_1_2017",
+    "clause_ref": "6.5.2.4",
+    "clause_title": "Additional bend or fracture test",
+    "requirement_text": "When additional bend or fracture tests are required (see Table 13, footnote b), in all cases, at least one specimen shall be taken from a stop/start location. For this purpose, it is possible that a side-bend specimen can be substituted by a root-bend specimen.  For all plate butt welds, one root and one face test specimen shall be tested or two side-bend test specimens if applicable.  For butt welds in pipe in PA or PC positions, one root and one face test specimen shall be tested or two side-bend test specimens, if applicable.  For butt welds in pipe welded in all other welding positions, one root-test specimen shall be taken from the PE (overhead) welding position and one face test specimen shall be taken from the PF (vertical up) position or the PG (vertical down) position, or two side-bend test specimens if applicable."
+  },
+  {
+    "standard_code": "ISO_9606_1_2017",
+    "clause_ref": "6.5.3",
+    "clause_title": "Fillet weld on plate and pipe",
+    "requirement_text": "For fillet welds on plate, the test piece examination length (Figure 10) shall be fractured as one complete specimen. If necessary, the test piece can be cut into several test specimens of equal width. For fillet welds on pipe, the test piece shall be cut into four or more test specimens and fractured. Fillet weld fracture tests on plate and pipe may be replaced by macroscopic examination. When macroscopic examination is used, at least two specimens shall be taken. One macroscopic specimen shall be taken at the stop/start location. Fillet weld test specimens shall be positioned for breaking in accordance with ISO 9017."
+  },
+  {
+    "standard_code": "ISO_9606_1_2017",
+    "clause_ref": "22",
+    "clause_title": "© ISO 2012 – All rights reserved",
+    "requirement_text": "Dimensions in millimetres Key l examination length f Figure 10 — Examination length for fracture testing for a fillet weld in plate"
+  },
+  {
+    "standard_code": "ISO_9606_1_2017",
+    "clause_ref": "6.6",
+    "clause_title": "Test report",
+    "requirement_text": "The results of all testing shall be documented in accordance with the relevant test standard."
+  },
+  {
+    "standard_code": "ISO_9606_1_2017",
+    "clause_ref": "7",
+    "clause_title": "Acceptance requirements for test pieces",
+    "requirement_text": "Test pieces shall be evaluated according to the acceptance requirements specified for relevant types of imperfections. Prior to any testing, the following shall be checked:  all slag and spatters are removed;  no grinding on the root and the face side of the weld (according to 6.3);  stop and restart in the root run and in the capping run are identified (according to 6.3);  profile and dimensions. The acceptance requirements for imperfections found by test methods performed according to this part of ISO 9606 shall, unless otherwise specified, be assessed in accordance with ISO 5817. A welder is qualified if the imperfections are within ISO 5817, quality level B, except for the following imperfection types for which level C shall apply: excess weld metal (502); excessive convexity (503); excessive throat thickness (5214); excessive penetration (504); and undercut (501). Bend-test specimens shall not reveal any discrete discontinuity 3 mm in any direction. Discontinuities appearing at the edges of a test specimen during testing shall be ignored in the evaluation unless there is evidence that cracking is due to incomplete penetration, slag or other discontinuity. The sum of the greatest discontinuities exceeding 1 mm but less than 3 mm in any one bend specimen shall not exceed 10 mm. If the imperfections in the welder's test piece exceed the permitted maximum specified, then the welder fails the test. Reference should also be made to the corresponding acceptance criteria for non-destructive testing. Specified procedures shall be used for all destructive and non-destructive testing. © ISO 2012 – All rights reserved 23"
+  },
+  {
+    "standard_code": "ISO_9606_1_2017",
+    "clause_ref": "8",
+    "clause_title": "Re-tests",
+    "requirement_text": "If any test fails to comply with the requirements of this part of ISO 9606, the welder may be given the opportunity to repeat the qualification test once without further training."
+  },
+  {
+    "standard_code": "ISO_9606_1_2017",
+    "clause_ref": "9",
+    "clause_title": "Period of validity",
+    "requirement_text": ""
+  },
+  {
+    "standard_code": "ISO_9606_1_2017",
+    "clause_ref": "9.1",
+    "clause_title": "Initial qualification",
+    "requirement_text": "The welder's qualification begins from the date of welding of the test piece(s), provided that the required testing has been carried out and the test results obtained were acceptable. The certificate needs to be confirmed every 6 months otherwise the certificate(s) become(s) invalid. The validity of the certificate may be extended as specified in 9.3. The chosen method of the extension of qualification in accordance with 9.3, a) or b) or c), shall be stated on the certificate at the time of issue."
+  },
+  {
+    "standard_code": "ISO_9606_1_2017",
+    "clause_ref": "9.2",
+    "clause_title": "Confirmation of the validity",
+    "requirement_text": "The qualifications of a welder for a process shall be confirmed every 6 months by the person responsible for welding activities or examiner/examining body. This is confirming that the welder has worked within the range of qualification and extends the validity of the qualification for a further 6 month period. This subclause is applicable to all options of revalidation specified in 9.3."
+  },
+  {
+    "standard_code": "ISO_9606_1_2017",
+    "clause_ref": "9.3",
+    "clause_title": "Revalidation of welder qualification",
+    "requirement_text": "Revalidation shall be carried out by an examiner/examining body. The skill of the welder shall be periodically verified by one of the following methods.\n\na) The welder shall be retested every 3 years.\n\nb) Every 2 years, two welds made during the last 6 months of the validity period shall be tested by\n\nradiographic or ultrasonic testing or destructive testing and shall be recorded. The acceptance levels for imperfections shall be as specified in Clause 7. The weld tested shall reproduce the original test conditions except for thickness and outside diameter. These tests revalidate the welder's qualifications for an additional 2 years.\n\nc) A welder's qualifications for any certificate shall be valid as long as it is confirmed according to 9.2 and\n\nprovided all the following conditions are fulfilled:  the welder is working for the same manufacturer for whom he or she qualified, and who is responsible for the manufacture of the product;  the manufacturer's quality programme has been verified in accordance with ISO 3834-2 or ISO 3834-3;  the manufacturer has documented that the welder has produced welds of acceptable quality based on application standards; the welds examined shall confirm the following conditions: welding position(s), weld type (FW, BW), material backing (mb) or no material backing (nb)."
+  },
+  {
+    "standard_code": "ISO_9606_1_2017",
+    "clause_ref": "9.4",
+    "clause_title": "Revocation of qualification",
+    "requirement_text": "When there is a specific reason to question a welder's ability to make welds that meet the product standard quality requirements, the qualifications that support the welding he or she is doing shall be revoked. All other qualifications not questioned remain valid."
+  },
+  {
+    "standard_code": "ISO_9606_1_2017",
+    "clause_ref": "24",
+    "clause_title": "© ISO 2012 – All rights reserved",
+    "requirement_text": ""
+  },
+  {
+    "standard_code": "ISO_9606_1_2017",
+    "clause_ref": "10",
+    "clause_title": "Welder's qualification test certificate",
+    "requirement_text": "It shall be verified that the welder has successfully passed the qualification test. All essential variables shall be recorded on the certificate. If the test piece(s) fail(s) any of the required tests, no certificate shall be issued. The certificate shall be issued under the sole responsibility of the examiner or examining body. A recommended format is detailed in Annex A. If any other form of welder's qualification test certificate is used, it shall contain the information required in Annex A. The examiner or examining body is responsible for verifying that all essential variables are addressed in this certificate. The following non-essential variables shall be recorded on the certificate:  type of current and polarity;  parent material group/subgroup;  shielding gas. In general, for each test piece, a separate welder's qualification test certificate shall be issued. If more than one test piece is welded, a single welder's qualification test certificate can be issued that combines the ranges of qualification of the individual test pieces. All essential variables for all tests shall be recorded on the combined certificate. In this case, only one of the following essential variables is permitted to differ, except those given in 5.7.  type of weld,  welding position,  deposited thickness. It is not permissible to change other essential variables. It is recommended that the welder's qualification test certificates be issued in the local language plus at least one of the following languages: English, French or German. The examination of job knowledge (see Annex B) shall be designated by “Accepted” or “Not tested”. In accordance with 5.4 e) the supplementary fillet weld test shall be recorded on the certificate for the associated butt weld qualification."
+  },
+  {
+    "standard_code": "ISO_9606_1_2017",
+    "clause_ref": "11",
+    "clause_title": "Designation",
+    "requirement_text": "The designation of a welder qualification shall comprise the following items in the order given (the system is arranged so that it can be used for computerization):\n\na) the number of this part of ISO 9606 (ISO 9606-1);\n\nb) the essential variables:\n\n1) welding processes: refer to 4.2, 5.2, and ISO 4063,\n\n2) product type: plate (P), pipe (T), refer to 4.3.1 and 5.3,\n\n3) type of weld: butt weld (BW), fillet weld (FW), refer to 5.4,\n\n4) filler material group or parent material group (autogenous welding): refer to 5.5,\n\n© ISO 2012 – All rights reserved 25\n\n\n5) filler material types: refer to 5.6,\n\n6) dimensions of test piece: deposited thickness, s, or material thickness, t, and outside pipe diameter,\n\nD, refer to 5.7,\n\n7) welding positions: refer to 5.8 and ISO 6947,\n\n8) weld details: refer to 5.9.\n\nThe type of shielding and backing gas shall not be incorporated in the designation, but shall be included in the welder's qualification test certificate (see Annex A)."
+  },
+  {
+    "standard_code": "ISO_9606_1_2017",
+    "clause_ref": "26",
+    "clause_title": "© ISO 2012 – All rights reserved",
+    "requirement_text": ""
+  },
+  {
+    "standard_code": "ISO_9606_1_2017",
+    "clause_ref": "9.3",
+    "clause_title": "a) 2010-01-20 9.3 b) 2009-01-20 9.3 c) 2007-07-20",
+    "requirement_text": "Revalidation for qualification by examiner or examining body for the following 2 years [refer to 9.3 b)] Date Signature Position or title Confirmation of the validity by employer/welding coordinator/examiner or examining body for the following 6 months [refer to 9.2)] Date Signature Position or title © ISO 2012 – All rights reserved 27\n\n|  | Test piece | Range of qualification |\n| --- | --- | --- |\n| Welding process(es); Transfer mode Product type (plate or pipe) Type of weld Parent material group(s)/subgroups Filler material group(s) Filler material (Designation) Shielding gas Auxiliaries Type of current and polarity Material thickness (mm) Deposited thickness (mm) Outside pipe diameter (mm) Welding position Weld details Multi-layer/single layer |  | ------------------------ ------------------------ |\n\n| Type of test | Performed and accepted | Not tested |\n| --- | --- | --- |\n| Visual testing Radiographic testing Fracture test Bend test Notch tensile test Macroscopic examination |  |  |\n\n| Revalidation 9.3 a) |  | Valid until 2010-01-20 |\n| --- | --- | --- |\n\n| Revalidation 9.3 b) |  |\n| --- | --- |\n\n| Revalidation 9.3 c) |  | Valid until 2007-07-20 |\n| --- | --- | --- |\n\n| Date | Signature | Position or title |\n| --- | --- | --- |\n|  |  |  |\n\n| Date | Signature | Position or title |\n| --- | --- | --- |\n|  |  |  |"
+  },
+  {
+    "standard_code": "ISO_9606_1_2017",
+    "clause_ref": "28",
+    "clause_title": "© ISO 2012 – All rights reserved",
+    "requirement_text": "B.2.2 Welding process2) B.2.2.1 Oxyacetylene welding (311)\n\na) Gas pressure.\n\nb) Selection of nozzle type.\n\nc) Type of gas flame.\n\nd) Effect of overheating.\n\nB.2.2.2 Manual metal-arc welding with covered electrode (111)\n\na) Classification of electrodes.\n\nB.2.2.3 Gas and self-shielded metal-arc welding (114, 13, 14, 15)\n\na) Type and size of electrodes.\n\nb) Identification of shielding gas and flow rate (without 114).\n\nc) Type, size and maintenance of nozzles/contact tip.\n\nd) Selection and limitations of transfer mode.\n\ne) Protection of the welding arc from draughts.\n\nB.2.2.4 Submerged arc welding (121, 125)\n\na) Drying, feeding and correct recovery of flux.\n\nb) Correct alignment and travel of welding head.\n\nB.2.3 Parent metals\n\na) Identification of material.\n\nb) Methods and control of pre-heating.\n\nc) Control of interpass temperature.\n\nB.2.4 Filler metal types\n\na) Identification of filler metal types.\n\nb) Storage, handling and conditions of filler metal types.\n\nc) Selection of correct size.\n\nd) Cleanliness of electrodes and filler wires.\n\ne) Control of wire spooling.\n\nf) Control and monitoring of gas flow rates.\n\n2) The numbers refer to ISO 4063.\n\n© ISO 2012 – All rights reserved 29\n\n\nB.2.5 Safety precautions B.2.5.1 General\n\na) Safe assembly, set-up and turn-off procedures.\n\nb) Safe control of welding fumes and gases.\n\nc) Personal protection.\n\nd) Fire hazards.\n\ne) Welding in confined spaces.\n\nf) Awareness of welding environment.\n\nB.2.5.2 Oxyacetylene welding\n\na) Safe storage, handling and use of compressed gases.\n\nb) Leak detection on gas hoses and fittings.\n\nc) Procedure to be taken in the event of a flashback.\n\nB.2.5.3 All arc welding processes\n\na) Environment of increased hazard electric shock.\n\nb) Radiation from the arc.\n\nc) Effects of stray arcing.\n\nB.2.5.4 Gas-shielded metal-arc welding\n\na) Safe storage, handling and use of compressed gases.\n\nb) Leak detection on gas hoses and fittings.\n\nB.2.6 Welding sequences/procedures Appreciation of welding procedure requirements and the influence of welding parameters. B.2.7 Joint preparation and weld representation\n\na) Conformity of joint preparation to the welding procedure specification (WPS).\n\nb) Cleanliness of fusion faces.\n\nB.2.8 Weld imperfections\n\na) Identification of imperfections.\n\nb) Causes.\n\nc) Prevention and remedial action.\n\nB.2.9 Welder qualification The welder shall be aware of the range of the qualification."
+  },
+  {
+    "standard_code": "ISO_9606_1_2017",
+    "clause_ref": "30",
+    "clause_title": "© ISO 2012 – All rights reserved",
+    "requirement_text": ""
+  },
+  {
+    "standard_code": "ISO_9606_1_2017",
+    "clause_ref": "32",
+    "clause_title": "© ISO 2012 – All rights reserved",
+    "requirement_text": "[20] ISO 18274, Welding consumables — Solid wire electrodes, solid strip electrodes, solid wires and solid rods for fusion welding of nickel and nickel alloys — Classification [21] ISO 18275, Welding consumables — Covered electrodes for manual metal arc welding of highstrength steels — Classification [22] ISO 18276, Welding consumables — Tubular cored electrodes for gas-shielded and non-gas-shielded metal arc welding of high-strength steels — Classification [23] ISO 21952, Welding consumables — Wire electrodes, wires, rods and deposits for gas shielded arc welding of creep-resisting steels — Classification [24] ISO 24598, Welding consumables — Solid wire electrodes, tubular cored electrodes and electrode-flux combinations for submerged arc welding of creep-resisting steels — Classification [25] ISO 26304, Welding consumables — Solid wire electrodes, tubular cored electrodes and electrode-flux combinations for submerged arc welding of high strength steels — Classification © ISO 2012 – All rights reserved 33\n\n\nThis page deliberately left blank\n\n\nThis page deliberately left blank"
+  }
+]
