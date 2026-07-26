@@ -88,6 +88,7 @@ router.get ('/qualifications/:id',                 ctrl.getOne);
 router.post('/qualifications',                     ctrl.createQualification);
 router.put ('/qualifications/:id',                 ctrl.updateQualification);
 router.delete('/qualifications/:id',               ctrl.deleteQualification);
+router.delete('/qualifications/:id/permanent',     ctrl.hardDeleteQualification);
 
 // Workflow approvazione
 router.post('/qualifications/:id/approve',         ctrl.approveQualification);
