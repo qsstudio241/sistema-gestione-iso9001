@@ -12,6 +12,7 @@ const { buildWeldingProcessPromptSection } = require('../data/weldingProcesses40
 const { buildWeldingPositionPromptSection } = require('../data/weldingPositions6947');
 const { buildShieldingGasPromptSection } = require('../data/shieldingGases14175');
 const { buildWeldingTemperaturePromptSection } = require('../data/weldingTemperatures13916');
+const { buildFillerWire14341PromptSection } = require('../data/fillerWire14341');
 const { buildWelderQualificationRulesPromptSection } = require('../data/weldingQualificationRules9606');
 
 const MAX_INPUT_CHARS = Number(process.env.OPENAI_IMPORT_MAX_CHARS) || 20000;
@@ -233,6 +234,8 @@ ${schema.aiPrompt}`;
     ]);
     // Temperature ISO 13916: campi WPS/WPQR (preheat/interpass), non patentini.
     const WELDING_TEMPERATURE_DOC_TYPES = new Set(['wps', 'wpqr']);
+    // Consumabili filo ISO 14341: designazione filler_material su WPS/WPQR.
+    const FILLER_WIRE_14341_DOC_TYPES = new Set(['wps', 'wpqr']);
     if (MATERIAL_GROUP_DOC_TYPES.has(docType)) {
         system += `\n\n${buildMaterialGroupPromptSection({ families: ['steel', 'aluminium'], maxLines: 45 })}`;
     }
@@ -247,6 +250,9 @@ ${schema.aiPrompt}`;
     }
     if (WELDING_TEMPERATURE_DOC_TYPES.has(docType)) {
         system += `\n\n${buildWeldingTemperaturePromptSection()}`;
+    }
+    if (FILLER_WIRE_14341_DOC_TYPES.has(docType)) {
+        system += `\n\n${buildFillerWire14341PromptSection()}`;
     }
     if (docType === 'patentino_saldatore') {
         system += `\n\n${buildWelderQualificationRulesPromptSection()}`;
