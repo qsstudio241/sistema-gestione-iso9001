@@ -21,6 +21,7 @@ import {
     toggleSituazione,
     situazioneLabel,
 } from "../utils/qualificationsSituazione";
+import { canHardDeleteQualification } from "../utils/qualificationHardDelete";
 import "./QualificationsPage.css";
 
 // ── Tab config ────────────────────────────────────────────────────────────────
@@ -127,7 +128,7 @@ function StatsBar({ stats, activeSituazione, onStatClick }) {
 
 // ── Riga tabella (rendering dinamico per tab) ─────────────────────────────────
 
-function QualRow({ q, tabKey, onEdit, onDelete, onApprove, onReject, onRenew, onHistory, deleteId, setDeleteId, canApprove }) {
+function QualRow({ q, tabKey, onEdit, onDelete, onHardDelete, onApprove, onReject, onRenew, onHistory, deleteId, setDeleteId, hardDeleteId, setHardDeleteId, canApprove }) {
     const sem = SEMAFORO[q.semaforo] || SEMAFORO.grigio;
 
     const actionBtns = (
@@ -137,6 +138,12 @@ function QualRow({ q, tabKey, onEdit, onDelete, onApprove, onReject, onRenew, on
                     <span>Revocare?</span>
                     <button className="sq-confirm-yes" onClick={() => onDelete(q.id)}>S\xec</button>
                     <button className="sq-confirm-no" onClick={() => setDeleteId(null)}>No</button>
+                </div>
+            ) : hardDeleteId === q.id ? (
+                <div className="sq-confirm">
+                    <span>Eliminare definitivamente?</span>
+                    <button className="sq-confirm-yes" onClick={() => onHardDelete(q.id)}>S\xec</button>
+                    <button className="sq-confirm-no" onClick={() => setHardDeleteId(null)}>No</button>
                 </div>
             ) : (
                 <div className="sq-action-group">
@@ -151,6 +158,9 @@ function QualRow({ q, tabKey, onEdit, onDelete, onApprove, onReject, onRenew, on
                     )}
                     {q.status !== "revocata" && (
                         <button className="sq-btn-icon sq-btn-del" title="Revoca" onClick={() => setDeleteId(q.id)}>{"\uD83D\uDEAB"}</button>
+                    )}
+                    {canHardDeleteQualification(q) && (
+                        <button className="sq-btn-icon sq-btn-hard-del" title="Elimina definitivamente (solo bozze mai approvate)" onClick={() => setHardDeleteId(q.id)}>{"\uD83D\uDDD1\uFE0F"}</button>
                     )}
                 </div>
             )}
@@ -321,6 +331,7 @@ function QualificationsPage() {
     const [formOpen,    setFormOpen]    = useState(false);
     const [editingQual, setEditingQual] = useState(null);
     const [deleteId,    setDeleteId]    = useState(null);
+    const [hardDeleteId, setHardDeleteId] = useState(null);
     const [rejectModal, setRejectModal] = useState(null); // { id, person_name }
     const [rejectReason, setRejectReason] = useState("");
 
@@ -413,6 +424,17 @@ function QualificationsPage() {
             setDeleteId(null);
             loadData();
         } catch (err) { setError(err.message); }
+    }
+
+    async function handleConfirmHardDelete(id) {
+        try {
+            await apiService.hardDeleteQualification(id);
+            setHardDeleteId(null);
+            loadData();
+        } catch (err) {
+            setHardDeleteId(null);
+            setError(err.message);
+        }
     }
 
     async function handleApprove(id) {
@@ -609,12 +631,15 @@ function QualificationsPage() {
                                     tabKey={activeTab}
                                     onEdit={handleEdit}
                                     onDelete={handleConfirmDelete}
+                                    onHardDelete={handleConfirmHardDelete}
                                     onApprove={handleApprove}
                                     onReject={handleRejectOpen}
                                     onRenew={handleRenew}
                                     onHistory={handleOpenHistory}
                                     deleteId={deleteId}
                                     setDeleteId={setDeleteId}
+                                    hardDeleteId={hardDeleteId}
+                                    setHardDeleteId={setHardDeleteId}
                                     canApprove={canApprove}
                                 />
                             ))}

@@ -1697,6 +1697,11 @@ class ApiService {
         return this.delete(`/qualifications/${id}`);
     }
 
+    /** Cancellazione fisica reale (solo bozze mai approvate, senza legami) — distinta dalla Revoca. */
+    async hardDeleteQualification(id) {
+        return this.delete(`/qualifications/${id}/permanent`);
+    }
+
     async approveQualification(id) {
         return this.post(`/qualifications/${id}/approve`, {});
     }

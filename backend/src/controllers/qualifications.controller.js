@@ -9,6 +9,7 @@
  *   POST   /qualifications              → crea (approval_status=bozza)
  *   PUT    /qualifications/:id          → aggiorna
  *   DELETE /qualifications/:id          → soft delete (status=revocata)
+ *   DELETE /qualifications/:id/permanent → cancellazione fisica (solo bozze mai approvate, senza legami)
  *   POST   /qualifications/:id/approve  → approva (coordinatore/admin)
  *   POST   /qualifications/:id/reject   → rifiuta con rejection_reason
  *   POST   /qualifications/:id/renew    → rinnovo → nuovo record con previous_qualification_id
@@ -876,6 +877,110 @@ async function deleteQualification(req, res) {
     }
 }
 
+/**
+ * DELETE /qualifications/:id/permanent — cancellazione fisica reale.
+ *
+ * Distinta dalla DELETE /qualifications/:id (soft-delete/Revoca, sempre mantenuta
+ * per lo storico). Consentita SOLO se la qualifica:
+ *  - non è mai stata approvata (approval_status != 'approvata' E approved_at IS NULL —
+ *    doppio controllo perché un record può tornare 'rifiutata' dopo essere stato
+ *    approvato in passato: in quel caso approved_at resta valorizzato e va bloccato);
+ *  - non ha conferme semestrali registrate (qualification_confirmations);
+ *  - non è collegata a un file di import (import_job_files.qualification_id);
+ *  - non è la versione "precedente" di un rinnovo (nessun'altra qualifica la referenzia
+ *    tramite previous_qualification_id);
+ *  - non è assegnata a un WPS (wps_welders), se la tabella esiste.
+ */
+async function hardDeleteQualification(req, res) {
+    try {
+        const pool  = await getPool();
+        const orgId = req.user.organization_id;
+        const id    = parseInt(req.params.id);
+
+        const check = await pool.request().input('id', id).input('orgId', orgId)
+            .query(`
+                SELECT id, company_id, approval_status, approved_at, certificate_file_url
+                FROM qualifications WHERE id=@id AND organization_id=@orgId
+            `);
+        if (!check.recordset.length) return res.status(404).json({ error: 'Non trovata.' });
+
+        const row = check.recordset[0];
+        const writeDenied = await assertMutatingAllowed(req.user, { companyId: row.company_id });
+        if (writeDenied) return sendAccessDenied(res, writeDenied);
+
+        if (row.approval_status === 'approvata' || row.approved_at) {
+            return res.status(409).json({
+                error: 'Impossibile eliminare: la qualifica \u00e8 stata approvata. Usa "Revoca" per disattivarla mantenendo lo storico.',
+                code: 'CANNOT_DELETE_APPROVED',
+            });
+        }
+
+        const [confirmations, importLinks, renewalRefs] = await Promise.all([
+            pool.request().input('id', id)
+                .query('SELECT COUNT(*) AS cnt FROM qualification_confirmations WHERE qualification_id=@id'),
+            pool.request().input('id', id)
+                .query('SELECT COUNT(*) AS cnt FROM import_job_files WHERE qualification_id=@id'),
+            pool.request().input('id', id)
+                .query('SELECT COUNT(*) AS cnt FROM qualifications WHERE previous_qualification_id=@id'),
+        ]);
+
+        if (confirmations.recordset[0].cnt > 0) {
+            return res.status(409).json({
+                error: 'Impossibile eliminare: esistono conferme semestrali registrate su questa qualifica.',
+                code: 'HAS_CONFIRMATIONS',
+            });
+        }
+        if (importLinks.recordset[0].cnt > 0) {
+            return res.status(409).json({
+                error: 'Impossibile eliminare: la qualifica \u00e8 collegata a un documento importato.',
+                code: 'HAS_IMPORT_LINK',
+            });
+        }
+        if (renewalRefs.recordset[0].cnt > 0) {
+            return res.status(409).json({
+                error: 'Impossibile eliminare: la qualifica \u00e8 collegata a un rinnovo successivo.',
+                code: 'HAS_RENEWAL_LINK',
+            });
+        }
+
+        try {
+            const wpsLink = await pool.request().input('id', id)
+                .query('SELECT COUNT(*) AS cnt FROM wps_welders WHERE qualification_id=@id');
+            if (wpsLink.recordset[0].cnt > 0) {
+                return res.status(409).json({
+                    error: 'Impossibile eliminare: la qualifica \u00e8 assegnata a una procedura di saldatura (WPS).',
+                    code: 'HAS_WPS_LINK',
+                });
+            }
+        } catch (wpsErr) {
+            // Tabella wps_welders assente in alcuni ambienti storici: non blocca l'eliminazione.
+            logger.warn('[Qualif] Verifica wps_welders non eseguita:', wpsErr.message);
+        }
+
+        await pool.request().input('id', id).input('orgId', orgId)
+            .query('DELETE FROM qualifications WHERE id=@id AND organization_id=@orgId');
+
+        if (row.certificate_file_url) {
+            try {
+                const uploadBase = process.env.UPLOAD_DIR
+                    ? path.resolve(process.env.UPLOAD_DIR)
+                    : path.resolve(__dirname, '../../uploads');
+                const relPart = row.certificate_file_url.replace(/^\//, '').replace(/^uploads\//, '');
+                const filePath = path.join(uploadBase, relPart);
+                if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
+            } catch (_) {
+                /* best-effort: la cancellazione del record non deve fallire per questo */
+            }
+        }
+
+        logger.info(`[Qualif] Eliminata definitivamente id=${id} da user ${req.user.user_id} org ${orgId}`);
+        res.json({ success: true });
+    } catch (err) {
+        logger.error('hardDeleteQualification:', err.message);
+        res.status(500).json({ error: err.message });
+    }
+}
+
 /** POST /qualifications/:id/approve */
 async function approveQualification(req, res) {
     try {
@@ -1572,6 +1677,7 @@ module.exports = {
     createQualification,
     updateQualification,
     deleteQualification,
+    hardDeleteQualification,
     approveQualification,
     rejectQualification,
     renewQualification,
