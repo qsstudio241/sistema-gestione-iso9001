@@ -1,53 +1,56 @@
 /**
- * Regole workflow NC ISO 10.2 - gate verifica efficacia e scadenze azioni
+ * Regole workflow NC ISO 10.2 — semplificato: Aperta | Chiusa
+ *
+ * Percorso A (azione correttiva non necessaria): correzione + verifica trattamento
+ * Percorso B (azione correttiva necessaria): correzione + cause + azioni + verifica
+ * Chiudi solo se responsabile verifica selezionato (verification_contact_id) — nessun automatismo.
  */
 
-const NC_VALID_NEXT = {
-  open:        ['in_progress'],
-  in_progress: ['resolved'],
-  resolved:    ['verified'],
-  verified:    [],
-  closed:      [],
-};
+/** Stati legacy ancora presenti a DB; in UI si mostrano come Aperta */
+export const NC_LEGACY_OPEN_STATUSES = ['open', 'in_progress', 'resolved', 'verified'];
 
-/** Transizioni workflow principali (sez. 2 drawer), esclusa chiusura formale */
-export function getNcWorkflowTransitionButtons(nc) {
-  return [...(NC_VALID_NEXT[nc?.status] || [])];
+export function isNcClosedStatus(status) {
+  return status === 'closed';
 }
 
-/** Pulsante Chiudi NC (sez. 7) - solo dopo approvazione RQ */
-export function getNcClosureButton(nc) {
-  if (nc?.status === 'verified' && nc?.approved_at) {
-    return 'closed';
-  }
-  return null;
+/** Etichetta UI: solo Aperta / Chiusa */
+export function getNcDisplayStatus(status) {
+  return isNcClosedStatus(status) ? 'closed' : 'open';
 }
 
-export function needsVerificationNotesForStatus(status) {
-  return status === 'verified' || status === 'closed';
+export function isNcOpenLike(status) {
+  return !isNcClosedStatus(status);
 }
 
 /**
- * @param {{ role?: string }} user
- * @returns {boolean}
+ * Percorso operativo dalla valutazione ISO 10.2.1 b)
+ * @returns {'simple'|'full'|'unset'}
  */
-export function canApproveNcClosure(user) {
+export function getNcWorkflowProfile(nc) {
+  const v = String(nc?.corrective_action_needed || '').trim().toLowerCase();
+  if (v === 'no') return 'simple';
+  if (v === 'yes') return 'full';
+  return 'unset';
+}
+
+/** Admin/RQ possono riaprire una NC chiusa */
+export function canReopenNc(user) {
   const role = user?.role;
   return role === 'admin' || role === 'superadmin';
 }
 
-/** RQ/admin possono riaprire una NC chiusa (ISO: nuova evidenza, correzione errore). */
-export function canReopenNc(user) {
-  return canApproveNcClosure(user);
+/** @deprecated Preferire canReopenNc — approvazione RQ rimossa dal flusso */
+export function canApproveNcClosure(user) {
+  return canReopenNc(user);
 }
 
-/** Target stato dopo riapertura (workflow riparte da lavorazione). */
-export const NC_REOPEN_TARGET_STATUS = 'in_progress';
+/** Target stato dopo riapertura */
+export const NC_REOPEN_TARGET_STATUS = 'open';
 
 /**
  * @param {object} nc
  * @param {{ role?: string }} user
- * @returns {string|null} Stato destinazione se il pulsante Riapri va mostrato
+ * @returns {string|null}
  */
 export function getNcReopenButton(nc, user) {
   if (nc?.status === 'closed' && canReopenNc(user)) {
@@ -57,41 +60,141 @@ export function getNcReopenButton(nc, user) {
 }
 
 /**
+ * @deprecated Transizioni intermedie rimosse — usare canCloseNc / getNcClosureButton
+ */
+export function getNcWorkflowTransitionButtons() {
+  return [];
+}
+
+function hasText(val) {
+  return (val || '').toString().trim().length > 0;
+}
+
+function correctionDone(nc) {
+  return Number(nc?.correction_completed_count || 0) > 0;
+}
+
+function correctiveActionsDone(nc) {
+  return Number(nc?.corrective_completed_count || 0) > 0;
+}
+
+/** Responsabile verifica selezionato dal menu (nessun autocompletamento) */
+export function hasVerificationResponsibleSelected(nc) {
+  const id = nc?.verification_contact_id;
+  return id != null && id !== '' && Number(id) > 0;
+}
+
+/**
+ * Gate chiusura NC (UI + allineato al backend).
+ * @param {object} nc
+ * @returns {{ ok: boolean, message?: string, profile?: string }}
+ */
+export function canCloseNc(nc) {
+  if (!nc || isNcClosedStatus(nc.status)) {
+    return { ok: false, message: 'La NC è già chiusa.' };
+  }
+
+  const profile = getNcWorkflowProfile(nc);
+  if (profile === 'unset') {
+    return {
+      ok: false,
+      message:
+        'Indicare se è necessaria un\'azione correttiva (Sì/No), salvare, poi completare i campi richiesti.',
+      profile,
+    };
+  }
+
+  if (!correctionDone(nc)) {
+    return {
+      ok: false,
+      message:
+        'Registrare e completare almeno una Correzione (trattamento immediato) prima di chiudere (ISO 10.2.1 a).',
+      profile,
+    };
+  }
+
+  if (!hasVerificationResponsibleSelected(nc)) {
+    return {
+      ok: false,
+      message:
+        'Selezionare il Responsabile verifica dal menu a tendina e salvare prima di chiudere.',
+      profile,
+    };
+  }
+
+  if (!hasText(nc?.verification_notes)) {
+    return {
+      ok: false,
+      message:
+        profile === 'simple'
+          ? 'Compilare le note di verifica del trattamento e salvare prima di chiudere.'
+          : 'Compilare le note di verifica efficacia e salvare prima di chiudere.',
+      profile,
+    };
+  }
+
+  if (profile === 'simple') {
+    if (!hasText(nc?.corrective_action_evaluation_notes)) {
+      return {
+        ok: false,
+        message:
+          'Motivare perché l\'azione correttiva non è necessaria e salvare prima di chiudere.',
+        profile,
+      };
+    }
+    return { ok: true, profile };
+  }
+
+  // Percorso completo (azione correttiva necessaria)
+  if (!hasText(nc?.root_cause)) {
+    return {
+      ok: false,
+      message: 'Compilare l\'analisi causa radice e salvare prima di chiudere.',
+      profile,
+    };
+  }
+  if (!correctiveActionsDone(nc)) {
+    return {
+      ok: false,
+      message:
+        'Completare almeno un\'azione correttiva prima di chiudere (ISO 10.2.1 c).',
+      profile,
+    };
+  }
+  return { ok: true, profile };
+}
+
+/** Pulsante Chiudi — solo se i gate sono soddisfatti */
+export function getNcClosureButton(nc) {
+  return canCloseNc(nc).ok ? 'closed' : null;
+}
+
+/**
  * @param {object} nc
  * @param {string} newStatus
  * @returns {{ ok: boolean, message?: string }}
  */
 export function canTransitionNcStatus(nc, newStatus) {
   if (newStatus === 'closed') {
-    if (!nc?.approved_at) {
-      return {
-        ok: false,
-        message:
-          'La chiusura richiede l\'approvazione del Responsabile Qualit\u00E0. Usare \u00ABApprova chiusura\u00BB prima di chiudere.',
-      };
-    }
+    return canCloseNc(nc);
   }
-  if (newStatus === 'resolved') {
-    if ((nc?.correction_completed_count || 0) === 0) {
-      return {
-        ok: false,
-        message:
-          'Registrare almeno una Correzione (azione immediata) completata prima di segnare la NC come Risolta (ISO 10.2.1 a).',
-      };
-    }
-  }
-  if (!needsVerificationNotesForStatus(newStatus)) {
+  if (newStatus === 'open') {
+    // Riapertura (admin) o normalizzazione legacy → Aperta
     return { ok: true };
   }
-  const notes = (nc?.verification_notes || '').trim();
-  if (!notes) {
+  // Transizioni intermedie non più usate nel flusso UI
+  if (['resolved', 'verified', 'in_progress'].includes(newStatus)) {
     return {
       ok: false,
-      message:
-        'Compilare le note verifica nel pannello dettaglio e salvarle prima di passare a Verificata o Chiusa.',
+      message: 'Flusso semplificato: usare solo Aperta e Chiusa.',
     };
   }
   return { ok: true };
+}
+
+/** @deprecated Gate note ora in canCloseNc */
+export function needsVerificationNotesForStatus(status) {
+  return status === 'closed' || status === 'verified';
 }
 
 /**
@@ -102,7 +205,7 @@ export function canVerifyAction(verificationNote) {
   return (verificationNote || '').trim().length > 0;
 }
 
-/** Stati azione per cui la scadenza non conta pi\u00F9 */
+/** Stati azione per cui la scadenza non conta più */
 const ACTION_TERMINAL_STATUSES = new Set(['completed', 'verified']);
 
 /**
@@ -160,16 +263,16 @@ export function getActionDueStatus(action, withinDays = 7) {
 }
 
 /**
- * Filtra azioni per scadenza (solo UI, dati gi\u00E0 caricati per NC).
+ * Filtra azioni per scadenza (solo UI, dati già caricati per NC).
  * @param {'all'|'overdue'|'due_soon'} mode
  */
 export function filterActionsByDue(actions, mode, withinDays = 7) {
   if (!mode || mode === 'all') return actions;
   if (mode === 'overdue') {
-    return actions.filter(a => isItemOverdue(a));
+    return actions.filter((a) => isItemOverdue(a));
   }
   if (mode === 'due_soon') {
-    return actions.filter(a => isItemDueSoon(a, withinDays));
+    return actions.filter((a) => isItemDueSoon(a, withinDays));
   }
   return actions;
 }

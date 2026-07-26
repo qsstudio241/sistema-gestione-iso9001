@@ -88,26 +88,26 @@ Richiede licenza modulo **`nc`** (voce menu «Non Conformità», icona sirena ro
 **Passi**
 
 1. Aprire `/nc`.
-2. Osservare le **card riepilogo** cliccabili: **Aperte**, **In corso**, **Scadute**, **In scadenza** (se presenti), **Totale**. Un clic applica il filtro corrispondente; un secondo clic lo rimuove.
+2. Osservare le **card riepilogo** cliccabili: **Aperte**, **Scadute**, **In scadenza** (se presenti), **Totale**. Un clic applica il filtro corrispondente; un secondo clic lo rimuove.
 3. Usare il menu **Tutti i clienti** per restringere a un'azienda (es. *Azienda Test Fase 1*).
 4. Cercare per testo nel campo **Cerca per numero NC o descrizione...**.
 5. Affinare con **Tutti gli stati**, **Tutte le severità**, **Tutte le scadenze** (Solo scadute / In scadenza 7 gg).
 6. Cliccare una riga della griglia per aprire il **pannello laterale** (drawer a destra). La griglia resta visibile; chiudere con **✕** o clic fuori dal pannello. L'URL diventa `/nc?select=<id>`. Su schermo desktop potete **allargare il pannello** trascinando la maniglia sul bordo sinistro (larghezza minima 520 px, massima 900 px o 90% finestra; la preferenza viene ricordata).
 
-**Ordine sezioni nel drawer** (flusso ISO 10.2.1 a→b→c→d, dall'alto verso il basso — aggiornato per seguire l'ordine letterale della norma: reazione/correzione prima dell'analisi causa):
+**Ordine sezioni nel drawer** (flusso semplificato Aperta/Chiusa; biforcazione su necessità azione correttiva):
 
 | # | Sezione | Contenuto |
 |---|---------|-----------|
 | 1 | **Scheda NC** | Severità, responsabile NC, scadenza; badge origine (audit/reclamo/manuale) |
 | 2 | **Difetto/Problema** | Descrizione della non conformità riscontrata |
-| 3 | **Trattamento** | Correzione immediata (ISO §10.2.1a) — obbligatoria per risolvere la NC |
-| 4 | **Cause e valutazione** | Analisi causa radice + valutazione necessità azione correttiva (ISO §10.2.1b) |
-| 5 | **Stato workflow** | Pulsanti Avvia lavorazione / Segna risolta / Verifica |
-| 6 | **Azioni correttive / preventive** | Elenco azioni con attuazione (Aperta → In corso → Completata), ISO §10.2.1c |
-| 7 | **Evidenze** | Allegati facoltativi |
-| 8 | **Verifica efficacia** | Note e responsabile verifica NC; collassata con hint se NC ancora aperta/in corso |
-| 9 | **Chiusura** | Approva chiusura (RQ), Chiudi NC (dopo approvazione), **Riapri NC** (solo RQ, se già chiusa) |
-| — | **Salva modifiche** | In fondo al drawer, dopo le sezioni editabili |
+| 3 | **Valutazione azione correttiva** | Sì/No + motivazione (ISO §10.2.1b) — decide il percorso |
+| 4 | **Trattamento** | Correzione immediata (ISO §10.2.1a) — sempre obbligatoria |
+| 5 | **Cause** | Solo se AC necessaria — analisi causa radice |
+| 6 | **Azioni correttive / preventive** | Solo se AC necessaria (ISO §10.2.1c) |
+| 5/7 | **Evidenze** | Allegati facoltativi |
+| 6/8 | **Verifica** | Note + **Responsabile verifica** selezionato dal menu (funzione RQ) |
+| 7/9 | **Chiusura** | **Chiudi NC** (solo se gate OK); **Riapri NC** (solo admin, se chiusa) |
+| — | **Salva modifiche** | In fondo al drawer — necessario per abilitare Chiudi |
 
 **Domande che mi pongo (FAQ interne)**
 
@@ -233,54 +233,53 @@ Richiede licenza modulo **`nc`** (voce menu «Non Conformità», icona sirena ro
 
 ---
 
-### 3.6 Workflow stati completo e gate note verifica
+### 3.6 Workflow semplificato (Aperta / Chiusa)
 
-**Chi:** Auditor (lavorazione), RQ (verifica, approvazione e chiusura).
+**Chi:** Auditor (eleva e lavora la NC); **Responsabile verifica** (menu a tendina — funzione RQ) attesta la risoluzione e consente la chiusura.
 
 **Quando:** Dalla apertura alla chiusura formale della NC secondo ISO 10.2.
 
-**Stati NC (in ordine)**
+**Stati NC**
 
-`Aperta` → `In corso` → `Risolta` → `Verificata` → *(approvazione RQ)* → `Chiusa`
+`Aperta` → `Chiusa`
+
+(Gli stati storici In corso / Risolta / Verificata restano a DB ma in elenco si mostrano come **Aperta**.)
+
+**Biforcazione (obbligatoria)**
+
+In sezione **3. Valutazione azione correttiva** scegliere:
+
+| Scelta | Percorso | Sezioni aggiuntive | Gate per **Chiudi NC** |
+|--------|----------|--------------------|------------------------|
+| **No, non necessaria** | Semplice | Nascoste: Cause, Azioni correttive | Motivazione + trattamento completato + note verifica trattamento + **responsabile verifica selezionato** |
+| **Sì, necessaria** | Completo | Cause + Azioni correttive/preventive | Causa radice + almeno 1 azione correttiva completata + trattamento + note verifica + **responsabile verifica selezionato** |
 
 **Passi**
 
 1. Selezionare la NC in griglia.
-2. Nel drawer, seguire le sezioni numerate **1 → 9** (vedi tabella in §3.1):
-   - **1. Scheda NC**: severità, responsabile, scadenza (+ link audit/reclamo se presenti).
-   - **2. Difetto/Problema**: descrizione della non conformità riscontrata.
-   - **3. Trattamento**: correzione obbligatoria (Immediata, ISO §10.2.1a) — reazione subito dopo aver identificato il problema.
-   - **4. Cause e valutazione**: analisi causa radice (ISO §10.2.1b).
-   - **5. Stato workflow**: pulsanti di avanzamento stato.
-   - **6. Azioni correttive / preventive**: azioni per eliminare la causa (ISO §10.2.1c).
-   - **7. Evidenze**: allegati facoltativi.
-   - **8. Verifica efficacia**: note e responsabile verifica NC (evidenziata da NC risolta in poi; collassata con hint se ancora aperta/in corso).
-   - **9. Chiusura**: approvazione RQ e chiusura formale.
-3. Nei campi testo lunghi: **Dettatura vocale**, **Storico testo**, **Bozza locale** (come in audit).
-4. Cliccare **Salva modifiche** in fondo al drawer dopo ogni modifica sostanziale (validazione descrizione su blur o al salvataggio).
-5. Usare i pulsanti in **5. Stato workflow** (stile checklist — verde/giallo/grigio):
-   - **Avvia lavorazione** (Aperta → In corso)
-   - **Segna come risolta** (In corso → Risolta)
-   - **Verifica** (Risolta → Verificata) — **solo se** le note verifica (sez. 8) sono compilate e salvate
-6. In stato **Verificata**, l'**admin/superadmin** (RQ) usa **9. Chiusura** → **Approva chiusura (RQ)** (H3). Compare badge «Approvata RQ» con data e nome approvatore.
-7. Solo dopo l'approvazione: **Chiudi NC** in sez. 9 (Verificata → Chiusa).
-8. Dopo stati **Verificata** (con approvazione) o **Chiusa**, i campi diventano in sola lettura.
-9. **Riapertura (solo admin/superadmin):** su una NC **Chiusa**, in sez. **9. Chiusura** compare **Riapri NC**. Confermare il dialogo; opzionalmente indicare il motivo (viene aggiunto alle note verifica con data e utente). La NC torna **In corso**, l’approvazione RQ viene revocata: per chiuderla di nuovo servono verifica, **Approva chiusura (RQ)** e **Chiudi NC**.
+2. Compilare Scheda, Difetto/Problema, Valutazione AC, Trattamento (correzione immediata).
+3. Se AC necessaria: Cause e Azioni correttive.
+4. Evidenze (facoltative).
+5. **Verifica**: note + **selezionare** il Responsabile verifica dal menu (nessuna assegnazione automatica).
+6. **Salva modifiche** dopo ogni compilazione sostanziale.
+7. Quando i gate sono soddisfatti compare **Chiudi NC** — un solo click (conferma). Non esiste più «Approva chiusura (RQ)» separata: la verifica con responsabile indicato è l'atto formale.
+8. NC **Chiusa**: campi in sola lettura.
+9. **Riapertura (solo admin/superadmin):** **Riapri NC** → torna **Aperta**; per richiudere servono di nuovo i gate sopra.
 
 **Domande che mi pongo**
 
-- *Il pulsante Verifica non fa nulla?*  
-- *Posso chiudere senza approvazione RQ?*
+- *Perché non vedo Chiudi NC?*
+- *Devo essere RQ per chiudere?*
 
 **Risposte**
 
-- Se mancano le **Note verifica efficacia**, compare un alert: compilare, **Salva modifiche**, poi riprovare.
-- No: senza **Approva chiusura (RQ)** il passaggio a **Chiusa** è bloccato (messaggio API `NC_APPROVAL_REQUIRED`).
+- Il pulsante compare solo se tutti i gate del percorso (semplice o completo) sono soddisfatti **e salvati**, incluso il responsabile verifica selezionato dal menu.
+- Chi chiude può essere l'auditor che ha elevato la NC, **purché** sia (o abbia selezionato) il responsabile verifica indicato nel menu.
 
 **Screenshot note**
 
-- Pulsanti workflow sotto il form, allineati a sinistra, classi colorate come in checklist audit.
-- NC chiusa: intestazione «NC-… — Chiusa», campi grigio/readonly, eventuale badge approvazione RQ.
+- Pulsante **Chiudi NC** in sezione Chiusura solo quando i gate sono verdi.
+- NC chiusa: intestazione «NC-… — Chiusa», campi grigio/readonly.
 
 ---
 
@@ -701,12 +700,8 @@ Verificare in app: tab **Notifiche** in Il mio Studio, selezione referente su un
 ```mermaid
 stateDiagram-v2
     [*] --> Aperta: Push audit / Manuale / Reclamo
-    Aperta --> InCorso: Avvia lavorazione
-    InCorso --> Risolta: Segna come risolta
-    Risolta --> Verificata: Verifica\n(note verifica obbligatorie)
-    Verificata --> ApprovataRQ: Approva chiusura RQ
-    ApprovataRQ --> Chiusa: Chiudi NC
-    Chiusa --> InCorso: Riapri NC\n(solo RQ)
+    Aperta --> Chiusa: Chiudi NC\n(gate percorso semplice o completo)
+    Chiusa --> Aperta: Riapri NC\n(solo admin)
     Chiusa --> [*]
 ```
 
@@ -723,4 +718,4 @@ stateDiagram-v2
 
 ---
 
-*Ultimo aggiornamento: 22/07/2026 — riordino drawer secondo l'ordine letterale ISO 10.2.1 a→b→c→d: nuove sezioni «Difetto/Problema» e «Trattamento» (Correzione immediata anticipata prima delle Cause), «Stato workflow» spostato dopo Trattamento/Cause. Riapertura NC chiusa (RQ/admin), rubrica referenti NC (073/074).*
+*Ultimo aggiornamento: 26/07/2026 — flusso semplificato Aperta/Chiusa; biforcazione AC sì/no; Chiudi solo con responsabile verifica selezionato; rimossa approvazione RQ separata.*

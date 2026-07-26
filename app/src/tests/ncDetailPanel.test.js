@@ -1,5 +1,5 @@
 /**
- * Test L1 - NcDetailPanel (NC Fase 1 Slice 5)
+ * Test L1 - NcDetailPanel (flusso Aperta / Chiusa)
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import React from 'react';
@@ -85,6 +85,7 @@ const baseNc = {
   responsible_person: 'Mario Rossi',
   due_date: '2026-06-15T00:00:00.000Z',
   corrective_action: 'Azione legacy deprecata',
+  corrective_action_needed: null,
 };
 
 describe('NcDetailPanel', () => {
@@ -94,59 +95,79 @@ describe('NcDetailPanel', () => {
     mockGetNotificationContacts.mockResolvedValue({ data: [] });
   });
 
-  it('renderizza i campi popolati dalla NC', () => {
+  it('renderizza sezioni base e valutazione AC', () => {
     render(React.createElement(NcDetailPanel, { nc: baseNc, onSaved: vi.fn() }));
 
     expect(screen.getByText('1. Scheda NC')).toBeInTheDocument();
     expect(screen.getByText('2. Difetto/Problema')).toBeInTheDocument();
-    expect(screen.getByText('3. Trattamento')).toBeInTheDocument();
-    expect(screen.getByText('4. Cause e valutazione')).toBeInTheDocument();
-    expect(screen.getByText('6. Azioni correttive / preventive')).toBeInTheDocument();
-    expect(screen.getByText('7. Evidenze')).toBeInTheDocument();
-    expect(screen.getByText('8. Verifica efficacia')).toBeInTheDocument();
+    expect(screen.getByText('3. Valutazione azione correttiva')).toBeInTheDocument();
+    expect(screen.getByText('4. Trattamento')).toBeInTheDocument();
+    expect(screen.queryByText('6. Azioni correttive / preventive')).not.toBeInTheDocument();
+    expect(screen.getByText('5. Evidenze')).toBeInTheDocument();
+    expect(screen.getByText('6. Verifica trattamento')).toBeInTheDocument();
 
     expect(screen.getByLabelText(/Descrizione/i)).toHaveValue('Descrizione NC di test');
-    expect(screen.getByLabelText(/Analisi causa radice/i)).toHaveValue('Causa radice di test');
-    expect(screen.getByLabelText(/Note verifica efficacia/i)).toHaveValue('Note verifica di test');
-    expect(screen.getByLabelText(/Responsabile verifica/i)).toHaveValue('Luigi Verdi');
+    expect(screen.getByLabelText(/Note verifica trattamento/i)).toHaveValue('Note verifica di test');
     expect(screen.getByLabelText(/Responsabile NC/i)).toHaveValue('');
     expect(screen.getByText(/Valore attuale: Mario Rossi/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/Scadenza NC/i)).toHaveValue('2026-06-15');
     expect(screen.getByText('Azione legacy deprecata')).toBeInTheDocument();
   });
 
-  it('ordine DOM: difetto prima di cause, cause prima di verifica', () => {
-    render(React.createElement(NcDetailPanel, { nc: baseNc, onSaved: vi.fn() }));
+  it('con AC necessaria mostra cause e azioni', () => {
+    render(React.createElement(NcDetailPanel, {
+      nc: { ...baseNc, corrective_action_needed: 'yes' },
+      onSaved: vi.fn(),
+    }));
 
-    const desc = screen.getByLabelText(/Descrizione/i);
-    const root = screen.getByLabelText(/Analisi causa radice/i);
-    const verif = screen.getByLabelText(/Note verifica efficacia/i);
-
-    expect(desc.compareDocumentPosition(root) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
-    expect(root.compareDocumentPosition(verif) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(screen.getByText('5. Cause')).toBeInTheDocument();
+    expect(screen.getByText('6. Azioni correttive / preventive')).toBeInTheDocument();
+    expect(screen.getByLabelText(/Analisi causa radice/i)).toHaveValue('Causa radice di test');
+    expect(screen.getByText('8. Verifica efficacia')).toBeInTheDocument();
   });
 
-  it('sezione 2 workflow visibile con callback onStatusChange', () => {
+  it('con AC non necessaria nasconde cause e azioni', () => {
+    render(React.createElement(NcDetailPanel, {
+      nc: { ...baseNc, corrective_action_needed: 'no' },
+      onSaved: vi.fn(),
+    }));
+
+    expect(screen.queryByText(/Analisi causa radice/i)).not.toBeInTheDocument();
+    expect(screen.queryByText('6. Azioni correttive / preventive')).not.toBeInTheDocument();
+    expect(screen.getByText('6. Verifica trattamento')).toBeInTheDocument();
+  });
+
+  it('non mostra Avvia lavorazione; mostra hint chiusura se gate incompleti', () => {
     render(React.createElement(NcDetailPanel, {
       nc: baseNc,
       onSaved: vi.fn(),
       onStatusChange: vi.fn(),
     }));
 
-    expect(screen.getByText('5. Stato workflow')).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /Avvia lavorazione/i })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /Avvia lavorazione/i })).not.toBeInTheDocument();
+    expect(screen.getByText('7. Chiusura')).toBeInTheDocument();
+    expect(screen.getByText(/Indicare se \u00E8 necessaria un'azione correttiva/i)).toBeInTheDocument();
   });
 
-  it('NC open: sezione verifica collassata con hint', () => {
-    render(React.createElement(NcDetailPanel, { nc: baseNc, onSaved: vi.fn() }));
+  it('mostra Chiudi NC quando i gate sono soddisfatti (percorso semplice)', () => {
+    render(React.createElement(NcDetailPanel, {
+      nc: {
+        ...baseNc,
+        corrective_action_needed: 'no',
+        corrective_action_evaluation_notes: 'Non ricorre',
+        correction_completed_count: 1,
+        verification_contact_id: 9,
+      },
+      onSaved: vi.fn(),
+      onStatusChange: vi.fn(),
+    }));
 
-    expect(screen.getByText(/Compilare a fine lavori/i)).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /Mostra/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Chiudi NC/i })).toBeInTheDocument();
   });
 
   it('usa la classe notes-textarea sulle textarea principali', () => {
     render(React.createElement(NcDetailPanel, {
-      nc: { ...baseNc, status: 'resolved' },
+      nc: { ...baseNc, corrective_action_needed: 'yes' },
       onSaved: vi.fn(),
     }));
 
@@ -158,7 +179,7 @@ describe('NcDetailPanel', () => {
   it('submit chiama updateNcStatus con payload atteso', async () => {
     const onSaved = vi.fn();
     render(React.createElement(NcDetailPanel, {
-      nc: { ...baseNc, status: 'resolved' },
+      nc: baseNc,
       onSaved,
     }));
 
@@ -188,7 +209,7 @@ describe('NcDetailPanel', () => {
 
   it('NC closed: campi read-only e senza pulsante Salva', () => {
     render(React.createElement(NcDetailPanel, {
-      nc: { ...baseNc, status: 'closed', approved_at: '2026-05-30' },
+      nc: { ...baseNc, status: 'closed' },
       onSaved: vi.fn(),
       readOnly: true,
     }));
@@ -199,25 +220,25 @@ describe('NcDetailPanel', () => {
 
   it('NC closed + isRq: pulsante Riapri NC in sezione Chiusura', () => {
     render(React.createElement(NcDetailPanel, {
-      nc: { ...baseNc, status: 'closed', approved_at: '2026-05-30' },
+      nc: { ...baseNc, status: 'closed' },
       onSaved: vi.fn(),
       readOnly: true,
       isRq: true,
       onStatusChange: vi.fn(),
     }));
 
-    expect(screen.getByText('9. Chiusura')).toBeInTheDocument();
+    expect(screen.getByText(/Chiusura/)).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /Riapri NC/i })).toBeInTheDocument();
   });
 
-  it('NC verified: campi read-only e senza pulsante Salva', () => {
+  it('stati legacy non chiusi restano modificabili', () => {
     render(React.createElement(NcDetailPanel, {
       nc: { ...baseNc, status: 'verified' },
       onSaved: vi.fn(),
     }));
 
-    expect(document.getElementById('nc-sev-42')).toBeDisabled();
-    expect(screen.queryByRole('button', { name: /Salva modifiche/i })).not.toBeInTheDocument();
+    expect(document.getElementById('nc-sev-42')).not.toBeDisabled();
+    expect(screen.getByRole('button', { name: /Salva modifiche/i })).toBeInTheDocument();
   });
 
   it('errore API: mostra messaggio senza crash', async () => {

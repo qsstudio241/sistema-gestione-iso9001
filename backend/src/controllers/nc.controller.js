@@ -2,7 +2,7 @@
  * Non-Conformities Controller
  * Gestisce il workflow completo delle non conformità (NC)
  * 
- * Stati NC: open → in_progress → resolved → verified → closed
+ * Stati NC (flusso UI): open ↔ closed (legacy in_progress/resolved/verified ancora accettati in lettura)
  * Severità: major (grave), minor (lieve), observation (osservazione)
  */
 
@@ -152,7 +152,7 @@ function extractCustomFindingDescription(evidence_blocks, item_text, status) {
  * 
  * Query params:
  * - audit_id: filter by audit
- * - status: filter by status (open, in_progress, resolved, verified, closed)
+ * - status: filter by status (open = tutte le non chiuse; closed; legacy: in_progress/resolved/verified)
  * - severity: filter by severity (major, minor, observation)
  * - overdue: true/false (scadute)
  * - due_within_days: NC non terminali con scadenza entro N giorni (non ancora scadute)
@@ -192,7 +192,10 @@ async function listNonConformities(req, res) {
             params.company_id = parseInt(company_id);
         }
 
-        if (status) {
+        if (status === 'open') {
+            // Flusso semplificato: "Aperte" = tutte le non chiuse (include stati legacy)
+            whereConditions.push("nc.status <> 'closed'");
+        } else if (status) {
             whereConditions.push('nc.status = @status');
             params.status = status;
         }
@@ -209,7 +212,7 @@ async function listNonConformities(req, res) {
 
         if (overdue === 'true') {
             whereConditions.push('nc.due_date < CAST(GETDATE() AS DATE)');
-            whereConditions.push("nc.status NOT IN ('closed', 'verified')");
+            whereConditions.push("nc.status <> 'closed'");
         }
 
         const dueWithin = parseInt(due_within_days, 10);
@@ -217,7 +220,7 @@ async function listNonConformities(req, res) {
             whereConditions.push('nc.due_date IS NOT NULL');
             whereConditions.push('nc.due_date >= CAST(GETDATE() AS DATE)');
             whereConditions.push(`nc.due_date <= DATEADD(day, ${dueWithin}, CAST(GETDATE() AS DATE))`);
-            whereConditions.push("nc.status NOT IN ('closed', 'verified')");
+            whereConditions.push("nc.status <> 'closed'");
         }
 
         // Studio scope solo sugli audit associati (LEFT JOIN può restituire NULL per nc senza audit)
@@ -242,15 +245,16 @@ async function listNonConformities(req, res) {
         approver.full_name AS approved_by_name,
         (SELECT COUNT(*) FROM attachments WHERE nc_id = nc.nc_id) AS attachments_count,
         (SELECT COUNT(*) FROM nc_actions WHERE nc_id = nc.nc_id AND action_type = 'immediate' AND status IN ('completed','verified')) AS correction_completed_count,
+        (SELECT COUNT(*) FROM nc_actions WHERE nc_id = nc.nc_id AND action_type = 'corrective' AND status IN ('completed','verified')) AS corrective_completed_count,
         CASE
-          WHEN nc.due_date < CAST(GETDATE() AS DATE) AND nc.status NOT IN ('closed', 'verified')
+          WHEN nc.due_date < CAST(GETDATE() AS DATE) AND nc.status <> 'closed'
           THEN 1 ELSE 0
         END AS is_overdue,
         CASE
           WHEN nc.due_date IS NOT NULL
             AND nc.due_date >= CAST(GETDATE() AS DATE)
             AND nc.due_date <= DATEADD(day, 7, CAST(GETDATE() AS DATE))
-            AND nc.status NOT IN ('closed', 'verified')
+            AND nc.status <> 'closed'
           THEN 1 ELSE 0
         END AS is_due_soon
       FROM non_conformities nc
@@ -394,8 +398,9 @@ async function getNonConformityById(req, res) {
         approver.full_name AS approved_by_name,
         (SELECT COUNT(*) FROM attachments WHERE nc_id = nc.nc_id) AS attachments_count,
         (SELECT COUNT(*) FROM nc_actions WHERE nc_id = nc.nc_id AND action_type = 'immediate' AND status IN ('completed','verified')) AS correction_completed_count,
+        (SELECT COUNT(*) FROM nc_actions WHERE nc_id = nc.nc_id AND action_type = 'corrective' AND status IN ('completed','verified')) AS corrective_completed_count,
         CASE 
-          WHEN nc.due_date < CAST(GETDATE() AS DATE) AND nc.status NOT IN ('closed', 'verified') 
+          WHEN nc.due_date < CAST(GETDATE() AS DATE) AND nc.status <> 'closed'
           THEN 1 
           ELSE 0 
         END AS is_overdue
@@ -806,7 +811,9 @@ async function updateNonConformity(req, res) {
         // Verifica esistenza, ownership org e perimetro studio RBAC
         const existingNC = await query(`
       SELECT nc.nc_id, nc.status AS current_status, nc.verification_notes, nc.approved_at,
-             nc.audit_id, nc.source_category, a.company_id
+             nc.audit_id, nc.source_category, a.company_id,
+             nc.corrective_action_needed, nc.corrective_action_evaluation_notes,
+             nc.root_cause, nc.verification_contact_id
       FROM non_conformities nc
       LEFT JOIN audits a ON nc.audit_id = a.audit_id
       WHERE nc.nc_id = @id
@@ -928,17 +935,19 @@ async function updateNonConformity(req, res) {
 
         // Gestione transizione stato (con validazione workflow)
         if (status !== undefined) {
+            // Flusso semplificato: Aperta ↔ Chiusa (legacy accettati come partenza verso closed/open)
             const validTransitions = {
-                'open': ['in_progress', 'closed'],
-                'in_progress': ['resolved', 'open'],
-                'resolved': ['verified', 'in_progress'],
-                'verified': ['closed', 'in_progress'],
-                'closed': ['in_progress'],
+                'open': ['closed'],
+                'in_progress': ['closed', 'open'],
+                'resolved': ['closed', 'open'],
+                'verified': ['closed', 'open'],
+                'closed': ['open'],
             };
 
-            if (currentStatus === 'closed' && status === 'in_progress' && !isNcClosureApprover(req.user)) {
+            const isReopen = currentStatus === 'closed' && status === 'open';
+            if (isReopen && !isNcClosureApprover(req.user)) {
                 return res.status(403).json({
-                    error: 'Solo admin o responsabile qualità possono riaprire una NC chiusa',
+                    error: 'Solo admin o responsabile qualit\u00e0 possono riaprire una NC chiusa',
                     code: 'NC_REOPEN_FORBIDDEN',
                 });
             }
@@ -956,8 +965,22 @@ async function updateNonConformity(req, res) {
                 });
             }
 
-            // Gate ISO 10.2.1 a): almeno una correzione (immediate) completata prima di risolta
-            if (status === 'resolved') {
+            // Gate chiusura ISO 10.2 (percorso semplice / completo)
+            if (status === 'closed') {
+                const row = existingNC.recordset[0];
+                const caNeeded = String(
+                    corrective_action_needed !== undefined
+                        ? corrective_action_needed
+                        : (row.corrective_action_needed || '')
+                ).trim().toLowerCase();
+
+                if (caNeeded !== 'yes' && caNeeded !== 'no') {
+                    return res.status(400).json({
+                        error: 'Indicare se \u00e8 necessaria un\'azione correttiva (S\u00ec/No) prima di chiudere',
+                        code: 'CORRECTIVE_ACTION_EVALUATION_REQUIRED',
+                    });
+                }
+
                 const correctionCheck = await query(`
                     SELECT COUNT(*) AS cnt FROM nc_actions
                     WHERE nc_id = @id AND action_type = 'immediate'
@@ -965,55 +988,83 @@ async function updateNonConformity(req, res) {
                 `, { id: parseInt(id) });
                 if ((correctionCheck.recordset[0]?.cnt || 0) === 0) {
                     return res.status(400).json({
-                        error: 'Registrare almeno una Correzione (azione immediata) completata prima di segnare la NC come Risolta (ISO 10.2.1 a)',
-                        code: 'CORRECTION_REQUIRED'
+                        error: 'Registrare almeno una Correzione (trattamento) completata prima di chiudere (ISO 10.2.1 a)',
+                        code: 'CORRECTION_REQUIRED',
                     });
                 }
-            }
 
-            // Gate ISO 10.2: note verifica obbligatorie per verified/closed
-            if (status === 'verified' || status === 'closed') {
+                const verifContactId = verification_contact_id !== undefined
+                    ? verification_contact_id
+                    : row.verification_contact_id;
+                if (verifContactId == null || verifContactId === '' || Number(verifContactId) <= 0) {
+                    return res.status(400).json({
+                        error: 'Selezionare il Responsabile verifica dal menu a tendina prima di chiudere',
+                        code: 'VERIFICATION_RESPONSIBLE_REQUIRED',
+                    });
+                }
+
                 const notesCandidate = verification_notes !== undefined
                     ? verification_notes
-                    : existingNC.recordset[0].verification_notes;
+                    : row.verification_notes;
                 if (!notesCandidate || !String(notesCandidate).trim()) {
                     return res.status(400).json({
-                        error: 'Note verifica obbligatorie prima di passare a Verificata o Chiusa',
-                        code: 'VERIFICATION_NOTES_REQUIRED'
+                        error: 'Note verifica obbligatorie prima di chiudere',
+                        code: 'VERIFICATION_NOTES_REQUIRED',
                     });
                 }
-            }
 
-            // Gate RQ: chiusura solo dopo approvazione esplicita
-            if (status === 'closed') {
-                const approvedAt = existingNC.recordset[0].approved_at;
-                if (!approvedAt) {
-                    return res.status(400).json({
-                        error: 'Approvazione del Responsabile Qualità richiesta prima della chiusura',
-                        code: 'NC_APPROVAL_REQUIRED'
-                    });
+                if (caNeeded === 'no') {
+                    const evalNotes = corrective_action_evaluation_notes !== undefined
+                        ? corrective_action_evaluation_notes
+                        : row.corrective_action_evaluation_notes;
+                    if (!evalNotes || !String(evalNotes).trim()) {
+                        return res.status(400).json({
+                            error: 'Motivare perch\u00e9 l\'azione correttiva non \u00e8 necessaria prima di chiudere',
+                            code: 'CORRECTIVE_EVALUATION_NOTES_REQUIRED',
+                        });
+                    }
+                }
+
+                if (caNeeded === 'yes') {
+                    const rootCandidate = root_cause !== undefined ? root_cause : row.root_cause;
+                    if (!rootCandidate || !String(rootCandidate).trim()) {
+                        return res.status(400).json({
+                            error: 'Analisi causa radice obbligatoria quando l\'azione correttiva \u00e8 necessaria',
+                            code: 'ROOT_CAUSE_REQUIRED',
+                        });
+                    }
+                    const correctiveCheck = await query(`
+                        SELECT COUNT(*) AS cnt FROM nc_actions
+                        WHERE nc_id = @id AND action_type = 'corrective'
+                          AND status IN ('completed', 'verified')
+                    `, { id: parseInt(id) });
+                    if ((correctiveCheck.recordset[0]?.cnt || 0) === 0) {
+                        return res.status(400).json({
+                            error: 'Completare almeno un\'azione correttiva prima di chiudere (ISO 10.2.1 c)',
+                            code: 'CORRECTIVE_ACTION_REQUIRED',
+                        });
+                    }
+                }
+
+                if (resolution_date === undefined) {
+                    updates.push('resolution_date = CAST(GETDATE() AS DATE)');
                 }
             }
 
             updates.push('status = @status');
             params.status = status;
 
-            // Riapertura: revoca approvazione RQ e traccia in note verifica
-            if (currentStatus === 'closed' && status === 'in_progress') {
+            // Riapertura: revoca eventuali approved_* legacy e traccia in note verifica
+            if (isReopen) {
                 updates.push('approved_at = NULL');
                 updates.push('approved_by = NULL');
                 const existingNotes = existingNC.recordset[0].verification_notes || '';
                 const stamp = new Date().toISOString().slice(0, 16).replace('T', ' ');
                 const reason = reopen_reason != null ? String(reopen_reason).trim() : '';
-                const auditLine = `\n\n[Riapertura RQ ${stamp} - utente ${req.user.user_id}]${reason ? ` ${reason}` : ''}`;
+                const auditLine = `\n\n[Riapertura ${stamp} - utente ${req.user.user_id}]${reason ? ` ${reason}` : ''}`;
                 const mergedNotes = `${String(existingNotes).trimEnd()}${auditLine}`;
                 updates.push('verification_notes = @reopen_verification_notes');
                 params.reopen_verification_notes = mergedNotes;
-            }
-
-            // Auto-set resolution_date quando si passa a 'resolved'
-            if (status === 'resolved' && resolution_date === undefined) {
-                updates.push('resolution_date = CAST(GETDATE() AS DATE)');
             }
 
             logger.info('NC status transition', {
@@ -1022,7 +1073,7 @@ async function updateNonConformity(req, res) {
                 user_id: req.user.user_id,
                 from: currentStatus,
                 to: status,
-                reopened: currentStatus === 'closed' && status === 'in_progress',
+                reopened: isReopen,
             });
         }
 
@@ -1156,20 +1207,21 @@ async function getNonConformitiesStatistics(req, res) {
         SUM(CASE WHEN nc.status = 'in_progress' THEN 1 ELSE 0 END) AS in_progress,
         SUM(CASE WHEN nc.status = 'resolved' THEN 1 ELSE 0 END) AS resolved,
         SUM(CASE WHEN nc.status = 'verified' THEN 1 ELSE 0 END) AS verified,
+        SUM(CASE WHEN nc.status <> 'closed' THEN 1 ELSE 0 END) AS open_like,
         SUM(CASE WHEN nc.status = 'closed' THEN 1 ELSE 0 END) AS [closed],
         SUM(CASE WHEN nc.severity = 'major' THEN 1 ELSE 0 END) AS major,
         SUM(CASE WHEN nc.severity = 'minor' THEN 1 ELSE 0 END) AS minor,
         SUM(CASE WHEN nc.severity = 'observation' THEN 1 ELSE 0 END) AS observations,
         SUM(CASE
           WHEN nc.due_date < CAST(GETDATE() AS DATE)
-            AND nc.status NOT IN ('closed', 'verified')
+            AND nc.status <> 'closed'
           THEN 1 ELSE 0
         END) AS overdue,
         SUM(CASE
           WHEN nc.due_date IS NOT NULL
             AND nc.due_date >= CAST(GETDATE() AS DATE)
             AND nc.due_date <= DATEADD(day, 7, CAST(GETDATE() AS DATE))
-            AND nc.status NOT IN ('closed', 'verified')
+            AND nc.status <> 'closed'
           THEN 1 ELSE 0
         END) AS due_soon
       FROM non_conformities nc
@@ -1182,7 +1234,7 @@ async function getNonConformitiesStatistics(req, res) {
       SELECT
         COALESCE(nc.source_category, 'audit') AS source_category,
         COUNT(*) AS total,
-        SUM(CASE WHEN nc.status IN ('open', 'in_progress') THEN 1 ELSE 0 END) AS open_count,
+        SUM(CASE WHEN nc.status <> 'closed' THEN 1 ELSE 0 END) AS open_count,
         SUM(CASE WHEN nc.status = 'closed' THEN 1 ELSE 0 END) AS closed_count
       FROM non_conformities nc
       LEFT JOIN audits a ON nc.audit_id = a.audit_id
@@ -1424,22 +1476,14 @@ async function updateNcAction(req, res) {
             WHERE action_id = @actionId
         `, params);
 
-        // Se tutte le azioni sono completate (o verificate, dati storici) → la NC passa
-        // a "Risolta": la verifica di efficacia complessiva (sez. 6 drawer) resta un
-        // passaggio manuale del RQ, gated dalle note obbligatorie (vedi updateNc).
+        // Flusso semplificato Aperta/Chiusa: il completamento azioni NON cambia lo stato NC.
+        // La chiusura resta un atto esplicito con gate (verifica + responsabile selezionato).
         if (status === 'completed') {
-            const openActions = await query(`
-                SELECT COUNT(*) AS cnt FROM nc_actions
-                WHERE nc_id = @nc_id AND status NOT IN ('completed', 'verified')
-            `, { nc_id: parseInt(id) });
-
-            if (openActions.recordset[0].cnt === 0) {
-                await query(`
-                    UPDATE non_conformities
-                    SET status = 'resolved', updated_at = GETDATE()
-                    WHERE nc_id = @nc_id AND status NOT IN ('resolved', 'verified', 'closed')
-                `, { nc_id: parseInt(id) });
-            }
+            logger.info('NC action completed (no auto status change)', {
+                nc_id: id,
+                action_id: actionId,
+                organization_id,
+            });
         }
 
         logger.info('NC action updated', { action_id: actionId, status, organization_id });
