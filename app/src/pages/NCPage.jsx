@@ -17,7 +17,8 @@ import { downloadNcCsv } from "../utils/ncExportHelpers";
 import { exportNcToWord } from "../utils/ncWordExport";
 import {
   canTransitionNcStatus,
-  canApproveNcClosure,
+  canReopenNc,
+  getNcDisplayStatus,
 } from "../utils/ncWorkflow";
 import useNcDrawerWidth, {
   NC_DRAWER_WIDTH_MIN,
@@ -28,11 +29,8 @@ import "../components/DocumentDetailPanel.css";
 import "./NCPage.css";
 
 const NC_STATUS_CFG = {
-  open:        { label: "Aperta",     cls: "nc-open",        icon: "\uD83D\uDD34" },
-  in_progress: { label: "In corso",   cls: "nc-in-progress", icon: "\uD83D\uDFE1" },
-  resolved:    { label: "Risolta",    cls: "nc-resolved",    icon: "\uD83D\uDFE2" },
-  verified:    { label: "Verificata", cls: "nc-verified",    icon: "\u2705" },
-  closed:      { label: "Chiusa",     cls: "nc-closed",      icon: "\u26AB" },
+  open:   { label: "Aperta", cls: "nc-open",   icon: "\uD83D\uDD34" },
+  closed: { label: "Chiusa", cls: "nc-closed", icon: "\u26AB" },
 };
 
 const SEVERITY_CFG = {
@@ -52,7 +50,8 @@ const NC_GRID_COLUMNS = [
 ];
 
 function NcStatusTag({ status }) {
-  const c = NC_STATUS_CFG[status] || { label: status, cls: "", icon: "" };
+  const display = getNcDisplayStatus(status);
+  const c = NC_STATUS_CFG[display] || { label: display, cls: "", icon: "" };
   return <span className={`nc-tag ${c.cls}`}>{c.icon} {c.label}</span>;
 }
 
@@ -73,7 +72,6 @@ export default function NCPage() {
   const [viewMode, setViewMode] = useState("nc");
   const [dueActions, setDueActions] = useState([]);
   const [dueActionsLoading, setDueActionsLoading] = useState(false);
-  const [approveLoading, setApproveLoading] = useState(false);
   const [showBreakdown, setShowBreakdown] = useState(false);
   const [exportingWord, setExportingWord] = useState(false);
   const [exportWordError, setExportWordError] = useState(null);
@@ -148,7 +146,7 @@ export default function NCPage() {
     if (viewMode === "actions_due") loadDueActions();
   }, [viewMode, loadDueActions]);
 
-  const isRq = canApproveNcClosure(user);
+  const isRq = canReopenNc(user);
 
   function handleExportCsv() {
     const stamp = new Date().toISOString().slice(0, 10);
@@ -165,23 +163,6 @@ export default function NCPage() {
       setExportWordError("Impossibile generare il documento Word. Riprovare.");
     } finally {
       setExportingWord(false);
-    }
-  }
-
-  async function handleApproveClosure(nc) {
-    if (!isRq) {
-      alert("Solo admin o responsabile qualità possono approvare la chiusura.");
-      return;
-    }
-    if (!window.confirm(`Confermi l'approvazione chiusura per ${nc.nc_number}?`)) return;
-    setApproveLoading(true);
-    try {
-      await apiService.approveNcClosure(nc.nc_id);
-      await loadNc();
-    } catch (err) {
-      alert(err?.message || "Impossibile approvare la chiusura.");
-    } finally {
-      setApproveLoading(false);
     }
   }
 
@@ -238,13 +219,18 @@ export default function NCPage() {
       return;
     }
     let reopenReason;
-    if (nc.status === "closed" && newStatus === "in_progress") {
-      if (!window.confirm(`Riaprire ${nc.nc_number}? La NC tornerà in lavorazione e andrà ri-approvata prima di una nuova chiusura.`)) {
+    if (nc.status === "closed" && newStatus === "open") {
+      if (!window.confirm(`Riaprire ${nc.nc_number}? La NC torner\u00E0 Aperta e andr\u00E0 ricompilata/verificata prima di una nuova chiusura.`)) {
         return;
       }
       const prompted = window.prompt("Motivo riapertura (opzionale, tracciato in note verifica):", "");
       if (prompted === null) return;
       reopenReason = prompted.trim() || undefined;
+    }
+    if (newStatus === "closed") {
+      if (!window.confirm(`Chiudere ${nc.nc_number}? La verifica con il responsabile indicato sar\u00E0 l'atto formale di chiusura.`)) {
+        return;
+      }
     }
     try {
       await apiService.updateNcStatus(nc.nc_id, {
@@ -267,16 +253,21 @@ export default function NCPage() {
     loadNc();
   }
 
-  const openCount    = stats?.open     ?? 0;
-  const inProgCount  = stats?.in_progress ?? 0;
+  // "Aperte" = tutte le non chiuse (include stati legacy in_progress/resolved/verified)
+  const openCount = Number(stats?.open_like ?? (
+    (Number(stats?.open) || 0)
+    + (Number(stats?.in_progress) || 0)
+    + (Number(stats?.resolved) || 0)
+    + (Number(stats?.verified) || 0)
+  ));
   const overdueCount = stats?.overdue  ?? 0;
   const dueSoonCount = stats?.due_soon ?? 0;
 
   function getActiveCard() {
     if (filters.overdue === "true") return "overdue";
     if (filters.due_within_days === "7") return "due_soon";
-    if (filters.status === "open")        return "open";
-    if (filters.status === "in_progress") return "in_progress";
+    if (filters.status === "open") return "open";
+    if (filters.status === "closed") return "closed";
     if (!filters.status && !filters.overdue && !filters.due_within_days) return "total";
     return null;
   }
@@ -288,11 +279,11 @@ export default function NCPage() {
       setPage(1);
       return;
     }
-    if (card === "open")        setFilters(f => ({ ...f, status: "open",        overdue: "", due_within_days: "" }));
-    if (card === "in_progress") setFilters(f => ({ ...f, status: "in_progress", overdue: "", due_within_days: "" }));
-    if (card === "overdue")     setFilters(f => ({ ...f, status: "",             overdue: "true", due_within_days: "" }));
-    if (card === "due_soon")    setFilters(f => ({ ...f, status: "",             overdue: "", due_within_days: "7" }));
-    if (card === "total")       setFilters(f => ({ ...f, status: "",             overdue: "", due_within_days: "" }));
+    if (card === "open")     setFilters(f => ({ ...f, status: "open",   overdue: "", due_within_days: "" }));
+    if (card === "closed")   setFilters(f => ({ ...f, status: "closed", overdue: "", due_within_days: "" }));
+    if (card === "overdue")  setFilters(f => ({ ...f, status: "",       overdue: "true", due_within_days: "" }));
+    if (card === "due_soon") setFilters(f => ({ ...f, status: "",       overdue: "", due_within_days: "7" }));
+    if (card === "total")    setFilters(f => ({ ...f, status: "",       overdue: "", due_within_days: "" }));
     setPage(1);
     setSelectedNcId(null);
   }
@@ -414,19 +405,10 @@ export default function NCPage() {
             type="button"
             className={`nc-stat nc-stat-open${activeCard === "open" ? " nc-stat-active" : ""}`}
             onClick={() => handleCardFilter("open")}
-            title="Filtra: solo NC aperte"
+            title="Filtra: solo NC aperte (non chiuse)"
           >
             <span className="nc-stat-num">{openCount}</span>
             <span className="nc-stat-label">Aperte</span>
-          </button>
-          <button
-            type="button"
-            className={`nc-stat nc-stat-prog${activeCard === "in_progress" ? " nc-stat-active" : ""}`}
-            onClick={() => handleCardFilter("in_progress")}
-            title="Filtra: solo NC in corso"
-          >
-            <span className="nc-stat-num">{inProgCount}</span>
-            <span className="nc-stat-label">In corso</span>
           </button>
           <button
             type="button"
@@ -511,9 +493,6 @@ export default function NCPage() {
         <select value={filters.status} onChange={e => handleFilter("status", e.target.value)}>
           <option value="">Tutti gli stati</option>
           <option value="open">Aperte</option>
-          <option value="in_progress">In corso</option>
-          <option value="resolved">Risolte</option>
-          <option value="verified">Verificate</option>
           <option value="closed">Chiuse</option>
         </select>
 
@@ -598,7 +577,10 @@ export default function NCPage() {
           getRowKey={row => row.nc_id}
           getSortValue={(row, colId) => {
             if (colId === "due_date") return row.due_date || "";
-            if (colId === "status") return NC_STATUS_CFG[row.status]?.label || row.status;
+            if (colId === "status") {
+              const d = getNcDisplayStatus(row.status);
+              return NC_STATUS_CFG[d]?.label || d;
+            }
             if (colId === "severity") return SEVERITY_CFG[row.severity]?.label || row.severity;
             if (colId === "source_type") return NC_SOURCE_TYPE_LABELS[row.source_type] || row.source_type;
             return row[colId] ?? "";
@@ -636,11 +618,6 @@ export default function NCPage() {
                   {selectedNc.nc_number}
                   {" "}
                   <NcStatusTag status={selectedNc.status} />
-                  {selectedNc.approved_at && (
-                    <span className="nc-approved-badge" title={selectedNc.approved_by_name || ""}>
-                      {" "}· Approvata RQ {formatDate(selectedNc.approved_at)}
-                    </span>
-                  )}
                 </h2>
                 <div className="nc-detail-header-actions">
                   <button
@@ -671,11 +648,9 @@ export default function NCPage() {
               <NcDetailPanel
                 nc={selectedNc}
                 onSaved={loadNc}
-                readOnly={["closed", "verified"].includes(selectedNc.status) && !!selectedNc.approved_at}
+                readOnly={selectedNc.status === "closed"}
                 onStatusChange={(newStatus) => handleStatusChange(selectedNc, newStatus)}
-                onApproveClosure={() => handleApproveClosure(selectedNc)}
                 isRq={isRq}
-                approveLoading={approveLoading}
               />
             </div>
           </aside>

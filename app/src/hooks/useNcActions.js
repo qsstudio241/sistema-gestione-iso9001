@@ -49,7 +49,7 @@ export function useNcActions({ ncId, ncStatus, companyId = null, organizationId 
     return () => { cancelled = true; };
   }, [companyId, organizationId]);
 
-  const isClosed = ["closed", "verified"].includes(ncStatus);
+  const isClosed = ncStatus === "closed";
 
   const filteredActions = useMemo(
     () => filterActionsByDue(actions, dueFilter),
