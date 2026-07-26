@@ -1,6 +1,6 @@
 > **Ruolo SGQ**: norma di **supporto** a ISO 3834 (classificazione fili-elettrodo / depositi MAG-MIG per acciai non legati e a grano fine). Non è una norma di sistema a clausole 4–10: **non** va in import-norms-from-markdown.js / seed norm_requirements. Uso primario: campo `filler_material` su WPS/WPQR (designazione tipo `G 42 4 M21 3Si1`), estratto RC-11.
 > **Edizione**: ISO 14341:2020 (terza edizione; supersede 2010). **Estratto operativo**: docs/reference/ISO-14341-consumabili-filo.md + fillerWire14341.js (solo regole/prompt; non catalogo esaustivo di tutte le combinazioni).
-> **Qualità estrazione**: 22 pagine, 20 con testo utile (pdfplumber). Pagine 6 e 21 ATTENZIONE (bassa qualità/vuote). Tabella 3A/3B composizione chimica (pag. ~11) parzialmente illeggibile (font/layout a due colonne) — **GAP**: non inventare simboli chimici oltre gli esempi §11 e i simboli già leggibili. Gas di classificazione rinvia a ISO 14175 (RC-3).
+> **Qualità estrazione**: 22 pagine, 20 con testo utile (pdfplumber). Pagine 6 e 21 ATTENZIONE (bassa qualità/vuote). Tabelle 3A/3B composizione chimica (pag. 11-13) corrette automaticamente il 26/07/2026 dal controllo di leggibilità del tool (problema di ordinamento caratteri pdfplumber, risolto usando pymupdf come motore alternativo, vedi backend/scripts/pdf_to_json/quality.py): simboli e valori (2Si, 3Si1, S2, S3, ecc.) ora leggibili nel testo estratto. Gas di classificazione rinvia a ISO 14175 (RC-3).
 
 <!-- Pagina 1 (motore: pdfplumber) -->
 
@@ -261,21 +261,11 @@ The symbol in Table 3A or Table 3B indicates the chemical composition of the wir
 | 8 | −80 |
 | 9 −90 10 −100 a See 5.3A. |  |
 
-<!-- Pagina 11 (motore: pdfplumber) -->
+<!-- Pagina 11 (motore: pymupdf) -->
 
-noitisopmoc lacimehc rof lobmyS
+**Nota tecnica:** testo di questa pagina ricostruito con motore alternativo per problema di ordinamento caratteri.
 
-## —
-
-A3 elbaT )ygrene tcapmi J 74 dna htgnerts dleiy yb nonitoaictiisfoispsmaloCc( lacimehC lobmyS a )ssam yb( % ,
-
-## b
-
-rZ + iT lA uC V oM rC iN S P nM iS C 51,0 20,0 53,0 30,0 51,0 51,0 51,0 520,0 520,0 03,1 ot 09,0 08,0 ot 05,0 41,0 ot 60,0 iS2 51,0 20,0 53,0 30,0 51,0 51,0 51,0 520,0 520,0 06,1 ot 03,1 00,1 ot 07,0 41,0 ot 60,0 1iS3 51,0 20,0 53,0 30,0 51,0 51,0 51,0 520,0 520,0 06,1 ot 03,1 03,1 ot 00,1 41,0 ot 60,0 2iS3 51,0 20,0 53,0 30,0 51,0 51,0 51,0 520,0 520,0 09,1 ot 06,1 02,1 ot 08,0 41,0 ot 60,0 1iS4 52,0 ot 50,0 02,0 ot 50,0 53,0 30,0 51,0 51,0 51,0 520,0 520,0 04,1 ot 09,0 08,0 ot 04,0 41,0 ot 40,0 iT2 51,0 57,0 ot 53,0 53,0 30,0 51,0 51,0 51,0 520,0 520,0 03,1 ot 09,0 05,0 ot 03,0 41,0 ot 80,0 lA2 51,0 20,0 53,0 30,0 51,0 51,0 05,1 ot 08,0 020,0 020,0 06,1 ot 00,1 09,0 ot 05,0 41,0 ot 60,0 1iN3 51,0 20,0 53,0 30,0 51,0 51,0 07,2 ot 01,2 020,0 020,0 04,1 ot 08,0 08,0 ot 04,0 41,0 ot 60,0 2iN2 51,0 20,0 53,0 30,0 06,0 ot 04,0 51,0 51,0 020,0 020,0 03,1 ot 09,0 07,0 ot 03,0 21,0 ot 80,0 oM2 51,0 20,0 53,0 30,0 06,0 ot 04,0 51,0 51,0 520,0 520,0 01,2 ot 07,1 08,0 ot 05,0 41,0 ot 60,0 oM4 c noitisopmoc deerga rehto ynA Z a .seulav mumixam era elbat eht ni nwohs seulav elgniS
-
-## b
-
-.ssam yb % 53,0 deecxe ton llahs gnitaoc yna sulp leets eht ni tnetnoc reppoc laudiseR c ton era segnar noitisopmoc lacimehc ehT .Z rettel eht yb dexiferp dna ylralimis dezilobmys eb llahs elbat siht ni detsil ton si noitisopmoc lacimehc eht hcihw rof selbamusnoC .elbaegnahcretni eb ton yam noitacifissalc Z emas eht htiw sedortcele owt erofereht dna deificeps
+Table 3A — Symbol for chemical composition (Classification by yield strength and 47 J impact energy) Symbol Chemical composition, % (by mass)a C Si Mn P S Ni Cr Mo V Cub Al Ti + Zr 2Si 0,06 to 0,14 0,50 to 0,80 0,90 to 1,30 0,025 0,025 0,15 0,15 0,15 0,03 0,35 0,02 0,15 3Si1 0,06 to 0,14 0,70 to 1,00 1,30 to 1,60 0,025 0,025 0,15 0,15 0,15 0,03 0,35 0,02 0,15 3Si2 0,06 to 0,14 1,00 to 1,30 1,30 to 1,60 0,025 0,025 0,15 0,15 0,15 0,03 0,35 0,02 0,15 4Si1 0,06 to 0,14 0,80 to 1,20 1,60 to 1,90 0,025 0,025 0,15 0,15 0,15 0,03 0,35 0,02 0,15 2Ti 0,04 to 0,14 0,40 to 0,80 0,90 to 1,40 0,025 0,025 0,15 0,15 0,15 0,03 0,35 0,05 to 0,20 0,05 to 0,25 2Al 0,08 to 0,14 0,30 to 0,50 0,90 to 1,30 0,025 0,025 0,15 0,15 0,15 0,03 0,35 0,35 to 0,75 0,15 3Ni1 0,06 to 0,14 0,50 to 0,90 1,00 to 1,60 0,020 0,020 0,80 to 1,50 0,15 0,15 0,03 0,35 0,02 0,15 2Ni2 0,06 to 0,14 0,40 to 0,80 0,80 to 1,40 0,020 0,020 2,10 to 2,70 0,15 0,15 0,03 0,35 0,02 0,15 2Mo 0,08 to 0,12 0,30 to 0,70 0,90 to 1,30 0,020 0,020 0,15 0,15 0,40 to 0,60 0,03 0,35 0,02 0,15 4Mo 0,06 to 0,14 0,50 to 0,80 1,70 to 2,10 0,025 0,025 0,15 0,15 0,40 to 0,60 0,03 0,35 0,02 0,15 Zc Any other agreed composition a Single values shown in the table are maximum values. b Residual copper content in the steel plus any coating shall not exceed 0,35 % by mass. c Consumables for which the chemical composition is not listed in this table shall be symbolized similarly and prefixed by the letter Z. The chemical composition ranges are not specified and therefore two electrodes with the same Z classification may not be interchangeable. © ISO 2020 – All rights reserved
 
 | )ygrene tcapmi J 74 dna htgnerts a dleiy yb nonitoaictiisfoispsmaloCc( lacimehC |  | rZ + iT | 51,0 | 51,0 | 51,0 | 51,0 | 52,0 ot 50,0 | 51,0 | 51,0 | 51,0 | 51,0 20,0 53,0 30,0 06,0 ot 04,0 51,0 51,0 020,0 020,0 03,1 ot 09,0 07,0 ot 03,0 21,0 ot 80,0 | 51,0 20,0 53,0 30,0 06,0 ot 04,0 noitisopmoc 51,0 deerga 51,0 .ssam rehto yb ynA % 53,0 520,0 deecxe ton 520,0 llahs .seulav gnitaoc 01,2 mumixam ot yna 07,1 sulp era leets 08,0 elbat eht ot 05,0 eht ni tnetnoc ni 41,0 nwohs reppoc ot seulav 60,0 laudiseR elgniS oM4 c Z a b c |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
@@ -292,25 +282,27 @@ rZ + iT lA uC V oM rC iN S P nM iS C 51,0 20,0 53,0 30,0 51,0 51,0 51,0 520,0 52
 |  |  | C | 41,0 ot 60,0 | 41,0 ot 60,0 | 41,0 ot 60,0 | 41,0 ot 60,0 | 41,0 ot 40,0 | 41,0 ot 80,0 | 41,0 ot 60,0 | 41,0 ot 60,0 |  |  |
 | lobmyS |  |  | iS2 | 1iS3 | 2iS3 | 1iS4 | iT2 | lA2 | 1iN3 | 2iN2 | oM2 |  |
 
-<!-- Pagina 12 (motore: pdfplumber) -->
+<!-- Pagina 12 (motore: pymupdf) -->
 
-noitisopmoc lacimehc rof lobmyS — B3 elbaT )ygrene tcapmi J 72 dna htgnerts elisnet yb nnooitiaticsiofipsmsaolCc (l acimehC lobmyS b,a )ssam yb( % , c rZ + iT lA uC V oM rC iN S P nM iS C 51,0 ot 50,0 : iT 51,0 ot 50,0 05,0 30,0 51,0 51,0 51,0 030,0 520,0 04,1 ot 09,0 07,0 ot 04,0 70,0 2S 21,0 ot 20,0 : rZ — — 05,0 30,0 51,0 51,0 51,0 530,0 520,0 04,1 ot 09,0 57,0 ot 54,0 51,0 ot 60,0 3S — — 05,0 30,0 51,0 51,0 51,0 530,0 520,0 05,1 ot 00,1 58,0 ot 56,0 51,0 ot 60,0 4S — — 05,0 30,0 51,0 51,0 51,0 530,0 520,0 58,1 ot 04,1 51,1 ot 08,0 51,0 ot 60,0 6S — — 05,0 30,0 51,0 51,0 51,0 530,0 520,0 00,2 ot 05,1 08,0 ot 05,0 51,0 ot 70,0 7S 03,0 ot 01,0 05,0 30,0 51,0 51,0 51,0 530,0 520,0 09,1 ot 04,1 01,1 ot 55,0 01,0 ot 20,0 8S 03,0 ot 20,0 — 05,0 — — — — 030,0 030,0 09,1 ot 04,1 01,1 ot 55,0 51,0 ot 20,0 11S — — 05,0 — — — — 030,0 030,0 09,1 ot 52,1 00,1 ot 55,0 51,0 ot 20,0 21S 03,0 ot 20,0 05,0 ot 01,0 05,0 — — — — 030,0 030,0 09,1 ot 53,1 01,1 ot 55,0 51,0 ot 20,0 31S — — 05,0 — — — — 030,0 030,0 06,1 ot 03,1 53,1 ot 00,1 51,0 ot 20,0 41S 51,0 ot 20,0 — 05,0 — — — — 030,0 030,0 06,1 ot 00,1 00,1 ot 04,0 51,0 ot 20,0 51S — — 05,0 — — — — 030,0 030,0 06,1 ot 09,0 00,1 ot 04,0 51,0 ot 20,0 61S 03,0 ot 20,0 — 05,0 — — — — 030,0 030,0 01,2 ot 05,1 55,0 ot 02,0 51,0 ot 20,0 71S 03,0 ot 20,0 — 05,0 — — — — 030,0 030,0 04,2 ot 06,1 01,1 ot 05,0 51,0 ot 20,0 81S 53,0 — 56,0 ot 04,0 — 02,0 520,0 520,0 03,1 07,0 ot 03,0 21,0 3M1S — — 05,0 — 56,0 ot 04,0 — — 520,0 520,0 04,1 ot 06,0 07,0 ot 03,0 21,0 3M2S — — 05,0 — 56,0 ot 04,0 — — 520,0 520,0 05,1 ot 08,0 09,0 ot 03,0 21,0 13M2S 03,0 ot 20,0 :iT — 05,0 — 56,0 ot 04,0 — — 520,0 520,0 08,1 ot 00,1 00,1 ot 04,0 21,0
+**Nota tecnica:** testo di questa pagina ricostruito con motore alternativo per problema di ordinamento caratteri.
 
-## T3M3S
+Table 3B — Symbol for chemical composition (Classification by tensile strength and 27 J impact energy) Symbol Chemical composition, % (by mass)a,b C Si Mn P S Ni Cr Mo V Cuc Al Ti + Zr S2 0,07 0,40 to 0,70 0,90 to 1,40 0,025 0,030 0,15 0,15 0,15 0,03 0,50 0,05 to 0,15 Ti : 0,05 to 0,15 Zr : 0,02 to 0,12 S3 0,06 to 0,15 0,45 to 0,75 0,90 to 1,40 0,025 0,035 0,15 0,15 0,15 0,03 0,50 — — S4 0,06 to 0,15 0,65 to 0,85 1,00 to 1,50 0,025 0,035 0,15 0,15 0,15 0,03 0,50 — — S6 0,06 to 0,15 0,80 to 1,15 1,40 to 1,85 0,025 0,035 0,15 0,15 0,15 0,03 0,50 — — S7 0,07 to 0,15 0,50 to 0,80 1,50 to 2,00 0,025 0,035 0,15 0,15 0,15 0,03 0,50 — — S8 0,02 to 0,10 0,55 to 1,10 1,40 to 1,90 0,025 0,035 0,15 0,15 0,15 0,03 0,50
 
-— — 05,0 — 54,0 ot 01,0 — — 520,0 520,0 01,2 ot 04,1 00,1 ot 04,0 51,0 ot 50,0 1M3S 03,0 ot 20,0 :iT — 05,0 — 54,0 ot 01,0 — — 520,0 520,0 01,2 ot 04,1 00,1 ot 04,0 21,0
+0,10 to 0,30 S11 0,02 to 0,15 0,55 to 1,10 1,40 to 1,90 0,030 0,030 — — — — 0,50 — 0,02 to 0,30 S12 0,02 to 0,15 0,55 to 1,00 1,25 to 1,90 0,030 0,030 — — — — 0,50 — — S13 0,02 to 0,15 0,55 to 1,10 1,35 to 1,90 0,030 0,030 — — — — 0,50 0,10 to 0,50 0,02 to 0,30 S14 0,02 to 0,15 1,00 to 1,35 1,30 to 1,60 0,030 0,030 — — — — 0,50 — — S15 0,02 to 0,15 0,40 to 1,00 1,00 to 1,60 0,030 0,030 — — — — 0,50 — 0,02 to 0,15 S16 0,02 to 0,15 0,40 to 1,00 0,90 to 1,60 0,030 0,030 — — — — 0,50 — — S17 0,02 to 0,15 0,20 to 0,55 1,50 to 2,10 0,030 0,030 — — — — 0,50 — 0,02 to 0,30 S18 0,02 to 0,15 0,50 to 1,10 1,60 to 2,40 0,030 0,030 — — — — 0,50 — 0,02 to 0,30 S1M3 0,12 0,30 to 0,70 1,30 0,025 0,025 0,20 — 0,40 to 0,65 — 0,35
 
-## T1M3S
+S2M3 0,12 0,30 to 0,70 0,60 to 1,40 0,025 0,025 — — 0,40 to 0,65 — 0,50 — — S2M31 0,12 0,30 to 0,90 0,80 to 1,50 0,025 0,025 — — 0,40 to 0,65 — 0,50 — —
 
-— — 05,0 — 06,0 ot 04,0 — — 520,0 520,0 01,2 ot 06,1 08,0 ot 05,0 21,0 ot 70,0 13M4S 03,0 ot 20,0 :iT — 05,0 — 56,0 ot 04,0 — — 520,0 520,0 02,2 ot 06,1 08,0 ot 05,0 21,0
+## S3M3T
 
-## T3M4S
+0,12 0,40 to 1,00 1,00 to 1,80 0,025 0,025 — — 0,40 to 0,65 — 0,50 — Ti: 0,02 to 0,30 S3M1 0,05 to 0,15 0,40 to 1,00 1,40 to 2,10 0,025 0,025 — — 0,10 to 0,45 — 0,50 — —
 
-— — 53,0 — 53,0 — 00,1 ot 06,0 520,0 520,0 52,1 05,0 ot 02,0 21,0 1NS
+## S3M1T
 
-## a
+0,12 0,40 to 1,00 1,40 to 2,10 0,025 0,025 — — 0,10 to 0,45 — 0,50 — Ti: 0,02 to 0,30 S4M31 0,07 to 0,12 0,50 to 0,80 1,60 to 2,10 0,025 0,025 — — 0,40 to 0,60 — 0,50 — —
 
-eht ,krow siht fo esruoc eht ni ,detacidni si stnemele rehto fo ecneserp eht fI .elbat siht ni nwohs era seulav hcihw rof stnemele cificeps eht rof desylana eb llahs edortcele ehT .)ssam yb( % 05,0 deecxe ton seod tnetnoc )nori gnidulcxe( latot rieht taht erusne ot denimreted eb llahs stnemele eseht fo tnuoma b .seulav mumixam era elbat eht ni nwohs seulav elgniS c .gnitaoc yna sulp leets eht ni reppoc laudiser yna gnidulcnI d .stekcarb ni dedda eb yam rerutcafunam eht yb dehsilbatse lobmys lacimehc ehT .ZS dezilobmys eb nac elbat siht ni detsil ton selbamusnoC
+## S4M3T
+
+0,12 0,50 to 0,80 1,60 to 2,20 0,025 0,025 — — 0,40 to 0,65 — 0,50 — Ti: 0,02 to 0,30 SN1 0,12 0,20 to 0,50 1,25 0,025 0,025 0,60 to 1,00 — 0,35 — 0,35 — — a The electrode shall be analysed for the specific elements for which values are shown in this table. If the presence of other elements is indicated, in the course of this work, the amount of these elements shall be determined to ensure that their total (excluding iron) content does not exceed 0,50 % (by mass). b Single values shown in the table are maximum values. c Including any residual copper in the steel plus any coating. d Consumables not listed in this table can be symbolized SZ. The chemical symbol established by the manufacturer may be added in brackets.
 
 | )ygrene tcapmi J 72 dna htgnerts b,a elisnet yb nnooitiaticsiofipsmsaolCc (l acimehC | rZ + iT | 51,0 ot 50,0 : iT | 21,0 ot 20,0 : rZ | — | — | — | — | 03,0 ot 01,0 | 03,0 ot 20,0 | — | 03,0 ot 20,0 | — | 51,0 ot 20,0 | — | 03,0 ot 20,0 | 03,0 ot 20,0 |  | — | — | 03,0 ot 20,0 :iT | — | 03,0 ot 20,0 :iT | 03,0 ot — 20,0 :iT | eht ,krow — siht fo esruoc eht — ni ,detacidni 53,0 si stnemele .)ssam — rehto yb( fo % ecneserp 05,0 53,0 deecxe eht ton fI .elbat seod — siht tnetnoc 00,1 ni nwohs )nori ot 06,0 era gnidulcxe( seulav 520,0 hcihw latot rieht 520,0 rof .gnitaoc stnemele taht .seulav erusne yna 52,1 cificeps mumixam sulp ot denimreted leets eht 05,0 rof era eht ot desylana elbat ni eb reppoc 02,0 llahs eht eb ni laudiser stnemele nwohs llahs 21,0 edortcele seulav yna eseht gnidulcnI fo elgniS 1NS ehT tnuoma a b c |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
@@ -327,49 +319,47 @@ eht ,krow siht fo esruoc eht ni ,detacidni si stnemele rehto fo ecneserp eht fI 
 |  | C | 70,0 |  | 51,0 ot 60,0 | 51,0 ot 60,0 | 51,0 ot 60,0 | 51,0 ot 70,0 | 01,0 ot 20,0 | 51,0 ot 20,0 | 51,0 ot 20,0 | 51,0 ot 20,0 | 51,0 ot 20,0 | 51,0 ot 20,0 | 51,0 ot 20,0 | 51,0 ot 20,0 | 51,0 ot 20,0 | 21,0 | 21,0 | 21,0 | 21,0 | 51,0 ot 50,0 | 21,0 | 21,0 21,0 ot 70,0 |  |
 | lobmyS |  | 2S |  | 3S | 4S | 6S | 7S | 8S | 11S | 21S | 31S | 41S | 51S | 61S | 71S | 81S | 3M1S | 3M2S | 13M2S | T3M3S | 1M3S | T1M3S | 13M4S T3M4S |  |
 
-<!-- Pagina 13 (motore: pdfplumber) -->
+<!-- Pagina 13 (motore: pymupdf) -->
 
-)deunitnoc( B3 elbaT noitisopmoc lacimehC lobmyS b,a )ssam yb( % , c rZ + iT lA uC V oM rC iN S
+**Nota tecnica:** testo di questa pagina ricostruito con motore alternativo per problema di ordinamento caratteri.
 
-## P
+Symbol Chemical composition, % (by mass)a,b C Si Mn P S Ni Cr Mo V Cuc Al Ti + Zr SN2 0,12 0,40 to 0,80 1,25 0,025 0,025 0,80 to 1,10 0,15 0,35 0,05 0,35 — — SN3 0,12 0,30 to 0,80 1,20 to 1,60 0,025 0,025 1,50 to 1,90 — 0,35 — 0,35 — — SN5 0,12 0,40 to 0,80 1,25 0,025 0,025 2,00 to 2,75 — — — 0,35 — — SN7 0,12 0,20 to 0,50 1,25 0,025 0,025 3,00 to 3,75 — 0,35 — 0,35 — — SN71 0,12 0,40 to 0,80 1,25 0,025 0,025 3,00 to 3,75 — — — 0,35 — — SN9 0,10 0,50 1,40 0,025 0,025 4,00 to 4,75 — 0,35 — 0,35 — —
 
-nM iS C — — 53,0 50,0 53,0 51,0 01,1 ot 08,0 520,0 520,0 52,1 08,0 ot 04,0 21,0 2NS — — 53,0 — 53,0 — 09,1 ot 05,1 520,0 520,0 06,1 ot 02,1 08,0 ot 03,0 21,0 3NS — — 53,0 — — — 57,2 ot 00,2 520,0 520,0 52,1 08,0 ot 04,0 21,0 5NS — — 53,0 — 53,0 — 57,3 ot 00,3 520,0 520,0 52,1 05,0 ot 02,0 21,0 7NS — — 53,0 — — — 57,3 ot 00,3 520,0 520,0 52,1 08,0 ot 04,0 21,0 17NS — — 53,0 — 53,0 — 57,4 ot 00,4 520,0 520,0 04,1 05,0 01,0 9NS ot 02,0 ot 05,0 — — — — 03,0 ot 01,0 030,0 030,0 56,1 ot 00,1 09,0 ot 06,0 21,0
+## SNCC
 
-## CCNS
+0,12 0,60 to 0,90 1,00 to 1,65 0,030 0,030 0,10 to 0,30 0,50 to 0,80 — — 0,20 to 0,60 — —
 
-06,0 08,0 ot 02,0 ot 05,0 03,0 ot 20,0 :iT — — — 03,0 ot 01,0 030,0 030,0 56,1 ot 01,1 09,0 ot 06,0 21,0
+## SNCCT
 
-## TCCNS
+0,12 0,60 to 0,90 1,10 to 1,65 0,030 0,030 0,10 to 0,30 0,50 to 0,80 — — 0,20 to 0,60 — Ti: 0,02 to 0,30
 
-06,0 08,0 ot 02,0 ot 05,0 03,0 ot 20,0 :iT — — 03,0 ot 20,0 04,0 ot 01,0 030,0 030,0 08,1 ot 02,1 08,0 ot 05,0 21,0
+## SNCCT1
 
-## 1TCCNS
+0,12 0,50 to 0,80 1,20 to 1,80 0,030 0,030 0,10 to 0,40 0,50 to 0,80 0,02 to 0,30 — 0,20 to 0,60 — Ti: 0,02 to 0,30
 
-06,0 08,0 ot 02,0 ot 05,0 03,0 ot 20,0 :iT — — — 08,0 ot 04,0 030,0 030,0 07,1 ot 01,1 09,0 ot 05,0 21,0
+## SNCCT2
 
-## 2TCCNS
+0,12 0,50 to 0,90 1,10 to 1,70 0,030 0,030 0,40 to 0,80 0,50 to 0,80 — — 0,20 to 0,60 — Ti: 0,02 to 0,30
 
-06,0 08,0 03,0 ot 20,0 :iT — 05,0 — 06,0 ot 02,0 — 08,0 ot 04,0 520,0 520,0 03,2 ot 07,1 00,1 ot 06,0 21,0
+## SN1M2T
 
-## T2M1NS
+0,12 0,60 to 1,00 1,70 to 2,30 0,025 0,025 0,40 to 0,80 — 0,20 to 0,60 — 0,50 — Ti: 0,02 to 0,30
 
-03,0 ot 20,0 :iT — 05,0 — 54,0 ot 01,0 — 06,1 ot 08,0 520,0 520,0 09,1 ot 01,1 08,0 ot 03,0 21,0
+## SN2M1T
 
-## T1M2NS
+0,12 0,30 to 0,80 1,10 to 1,90 0,025 0,025 0,80 to 1,60 — 0,10 to 0,45 — 0,50 — Ti: 0,02 to 0,30
 
-03,0 ot 20,0 :iT — 05,0 — 06,0 ot 02,0 — 02,1 ot 07,0 520,0 520,0 08,1 ot 00,1 09,0 ot 03,0 51,0 ot 50,0
+## SN2M2T
 
-## T2M2NS
+0,05 to 0,15 0,30 to 0,90 1,00 to 1,80 0,025 0,025 0,70 to 1,20 — 0,20 to 0,60 — 0,50 — Ti: 0,02 to 0,30
 
-03,0 ot 20,0 :iT — 05,0 — 56,0 ot 04,0 — 02,1 ot 07,0 520,0 520,0 01,2 ot 04,1 09,0 ot 03,0 51,0 ot 50,0
+## SN2M3T
 
-## T3M2NS
+0,05 to 0,15 0,30 to 0,90 1,40 to 2,10 0,025 0,025 0,70 to 1,20 — 0,40 to 0,65 — 0,50 — Ti: 0,02 to 0,30
 
-03,0 ot 20,0 :iT — 05,0 — 58,0 ot 55,0 — 03,1 ot 08,0 520,0 520,0 03,2 ot 07,1 00,1 ot 05,0 21,0
+## SN2M4T
 
-## T4M2NS
-
-d noitisopmoc deerga ynA ZS a eht ,krow siht fo esruoc eht ni ,detacidni si stnemele rehto fo ecneserp eht fI .elbat siht ni nwohs era seulav hcihw rof stnemele cificeps eht rof desylana eb llahs edortcele ehT .)ssam yb( % 05,0 deecxe ton seod tnetnoc )nori gnidulcxe( latot rieht taht erusne ot denimreted eb llahs stnemele eseht fo tnuoma b .seulav mumixam era elbat eht ni nwohs seulav elgniS c .gnitaoc yna sulp leets eht ni reppoc laudiser yna gnidulcnI d .stekcarb ni dedda eb yam rerutcafunam eht yb dehsilbatse lobmys lacimehc ehT .ZS dezilobmys eb nac elbat siht ni detsil ton selbamusnoC
+0,12 0,50 to 1,00 1,70 to 2,30 0,025 0,025 0,80 to 1,30 — 0,55 to 0,85 — 0,50 — Ti: 0,02 to 0,30 SZd Any agreed composition a The electrode shall be analysed for the specific elements for which values are shown in this table. If the presence of other elements is indicated, in the course of this work, the amount of these elements shall be determined to ensure that their total (excluding iron) content does not exceed 0,50 % (by mass). b Single values shown in the table are maximum values. c Including any residual copper in the steel plus any coating. d Consumables not listed in this table can be symbolized SZ. The chemical symbol established by the manufacturer may be added in brackets. Table 3B (continued) © ISO 2020 – All rights reserved
 
 | b,a noitisopmoc lacimehC | rZ + iT |  | — | — | — | — | — — | — | 03,0 ot 20,0 :iT | 03,0 ot 20,0 :iT | 03,0 ot 20,0 :iT |  | 03,0 ot 20,0 :iT | 03,0 ot 20,0 :iT | 03,0 ot 20,0 :iT | 03,0 ot 20,0 :iT — 05,0 — 56,0 ot 04,0 — 02,1 ot 07,0 520,0 520,0 01,2 ot 04,1 09,0 ot 03,0 51,0 ot 50,0 | eht 03,0 ,krow ot 20,0 siht :iT fo esruoc eht — ni ,detacidni 05,0 si stnemele .)ssam — rehto yb( 58,0 fo % ecneserp 05,0 ot deecxe 55,0 noitisopmoc eht ton fI .elbat seod — siht tnetnoc deerga 03,1 ni nwohs )nori ot ynA 08,0 era gnidulcxe( seulav 520,0 hcihw latot rieht 520,0 rof .gnitaoc stnemele taht .seulav 03,2 erusne yna ot cificeps mumixam sulp 07,1 ot denimreted leets eht 00,1 rof era eht ot desylana elbat ni eb reppoc 05,0 llahs eht eb ni laudiser stnemele nwohs llahs 21,0 edortcele seulav yna eseht gnidulcnI T4M2NS fo elgniS d ehT tnuoma ZS a b c |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
