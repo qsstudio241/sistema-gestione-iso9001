@@ -24,17 +24,21 @@ const USER_ID = 42;
 const AUDITOR_ORG_ID = 10;
 
 function mockReq(overrides = {}) {
+    const baseUser = {
+        organization_id: ORG_ID,
+        user_id: USER_ID,
+        role: 'auditor',
+        auditor_org_id: AUDITOR_ORG_ID,
+        // Evita query extra company_access nei test (assertMutatingAllowed)
+        company_access: [],
+    };
+    const { user: userOverride, ...rest } = overrides;
     return {
-        user: {
-            organization_id: ORG_ID,
-            user_id: USER_ID,
-            role: 'auditor',
-            auditor_org_id: AUDITOR_ORG_ID,
-        },
+        user: { ...baseUser, ...(userOverride || {}) },
         params: {},
         query: {},
         body: {},
-        ...overrides,
+        ...rest,
     };
 }
 
@@ -247,15 +251,19 @@ describe('deleteNonConformity  -  RBAC studio', () => {
     });
 });
 
-describe('updateNonConformity  -  gate approvazione RQ', () => {
-    it('closed senza approved_at ritorna 400 NC_APPROVAL_REQUIRED', async () => {
+describe('updateNonConformity  -  gate chiusura semplificata', () => {
+    it('closed senza valutazione AC ritorna 400 CORRECTIVE_ACTION_EVALUATION_REQUIRED', async () => {
         query.mockResolvedValueOnce({
             recordset: [{
                 nc_id: 5,
-                current_status: 'verified',
+                current_status: 'open',
                 verification_notes: 'OK',
                 approved_at: null,
                 audit_id: 99,
+                corrective_action_needed: null,
+                corrective_action_evaluation_notes: null,
+                root_cause: null,
+                verification_contact_id: 3,
             }],
         });
 
@@ -268,13 +276,43 @@ describe('updateNonConformity  -  gate approvazione RQ', () => {
 
         expect(res.status).toHaveBeenCalledWith(400);
         expect(res.json).toHaveBeenCalledWith(
-            expect.objectContaining({ code: 'NC_APPROVAL_REQUIRED' }),
+            expect.objectContaining({ code: 'CORRECTIVE_ACTION_EVALUATION_REQUIRED' }),
+        );
+    });
+
+    it('closed senza responsabile verifica ritorna 400 VERIFICATION_RESPONSIBLE_REQUIRED', async () => {
+        query
+            .mockResolvedValueOnce({
+                recordset: [{
+                    nc_id: 5,
+                    current_status: 'open',
+                    verification_notes: 'OK',
+                    approved_at: null,
+                    audit_id: 99,
+                    corrective_action_needed: 'no',
+                    corrective_action_evaluation_notes: 'Isolata',
+                    root_cause: null,
+                    verification_contact_id: null,
+                }],
+            })
+            .mockResolvedValueOnce({ recordset: [{ cnt: 1 }] });
+
+        const req = mockReq({
+            params: { id: '5' },
+            body: { status: 'closed' },
+        });
+        const res = mockRes();
+        await ctrl.updateNonConformity(req, res);
+
+        expect(res.status).toHaveBeenCalledWith(400);
+        expect(res.json).toHaveBeenCalledWith(
+            expect.objectContaining({ code: 'VERIFICATION_RESPONSIBLE_REQUIRED' }),
         );
     });
 });
 
 describe('updateNonConformity  -  riapertura NC chiusa', () => {
-    it('admin può  riaprire closed ? in_progress e revoca approvazione', async () => {
+    it('admin pu\u00f2 riaprire closed \u2192 open e revoca approvazione legacy', async () => {
         query
             .mockResolvedValueOnce({
                 recordset: [{
@@ -283,6 +321,10 @@ describe('updateNonConformity  -  riapertura NC chiusa', () => {
                     verification_notes: 'Verifica OK',
                     approved_at: '2026-05-01',
                     audit_id: 99,
+                    corrective_action_needed: 'no',
+                    corrective_action_evaluation_notes: 'x',
+                    root_cause: null,
+                    verification_contact_id: 1,
                 }],
             })
             .mockResolvedValueOnce({ recordset: [] })
@@ -291,7 +333,7 @@ describe('updateNonConformity  -  riapertura NC chiusa', () => {
         const req = mockReq({
             params: { id: '5' },
             user: { role: 'admin', organization_id: ORG_ID, user_id: USER_ID, auditor_org_id: null },
-            body: { status: 'in_progress', reopen_reason: 'Nuova evidenza' },
+            body: { status: 'open', reopen_reason: 'Nuova evidenza' },
         });
         const res = mockRes();
         await ctrl.updateNonConformity(req, res);
@@ -302,11 +344,11 @@ describe('updateNonConformity  -  riapertura NC chiusa', () => {
         const updateSql = query.mock.calls[1][0];
         expect(updateSql).toContain('approved_at = NULL');
         expect(updateSql).toContain('verification_notes = @reopen_verification_notes');
-        expect(query.mock.calls[1][1].reopen_verification_notes).toMatch(/Riapertura RQ/);
+        expect(query.mock.calls[1][1].reopen_verification_notes).toMatch(/Riapertura/);
         expect(query.mock.calls[1][1].reopen_verification_notes).toMatch(/Nuova evidenza/);
     });
 
-    it('auditor non può  riaprire NC chiusa', async () => {
+    it('auditor non pu\u00f2 riaprire NC chiusa', async () => {
         query.mockResolvedValueOnce({
             recordset: [{
                 nc_id: 5,
@@ -314,12 +356,16 @@ describe('updateNonConformity  -  riapertura NC chiusa', () => {
                 verification_notes: 'Verifica OK',
                 approved_at: '2026-05-01',
                 audit_id: 99,
+                corrective_action_needed: 'no',
+                corrective_action_evaluation_notes: 'x',
+                root_cause: null,
+                verification_contact_id: 1,
             }],
         });
 
         const req = mockReq({
             params: { id: '5' },
-            body: { status: 'in_progress' },
+            body: { status: 'open' },
         });
         const res = mockRes();
         await ctrl.updateNonConformity(req, res);
@@ -331,15 +377,15 @@ describe('updateNonConformity  -  riapertura NC chiusa', () => {
     });
 });
 
-describe('approveNcClosure', () => {
-    it('auditor non può  approvare', async () => {
-        const req = mockReq({ params: { id: '5' }, user: { role: 'auditor', organization_id: ORG_ID, user_id: USER_ID } });
+describe('approveNcClosure (endpoint legacy, flusso UI usa Chiudi diretto)', () => {
+    it('auditor non pu\u00f2 approvare', async () => {
+        const req = mockReq({ params: { id: '5' }, user: { role: 'auditor' } });
         const res = mockRes();
         await ctrl.approveNcClosure(req, res);
         expect(res.status).toHaveBeenCalledWith(403);
     });
 
-    it('admin approva NC verified', async () => {
+    it('admin pu\u00f2 ancora approvare NC verified (compat)', async () => {
         query
             .mockResolvedValueOnce({
                 recordset: [{ nc_id: 5, status: 'verified', approved_at: null }],
@@ -348,7 +394,7 @@ describe('approveNcClosure', () => {
 
         const req = mockReq({
             params: { id: '5' },
-            user: { role: 'admin', organization_id: ORG_ID, user_id: USER_ID, auditor_org_id: null },
+            user: { role: 'admin', auditor_org_id: null },
         });
         const res = mockRes();
         await ctrl.approveNcClosure(req, res);
