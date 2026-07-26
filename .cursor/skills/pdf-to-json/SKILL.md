@@ -91,7 +91,10 @@ e leggerlo prima di fidarsi del JSON**. Contiene commenti
 sezione. Se una pagina riporta `ATTENZIONE: testo di bassa qualita'`, il
 font del PDF ha una codifica non standard (o e' stato usato l'OCR): il testo
 di quella sezione va verificato/corretto a mano prima di considerarlo
-attendibile.
+attendibile. Se compare invece `**Nota tecnica:** ... ordinamento
+caratteri`, la pagina e' stata corretta automaticamente (pdfplumber →
+pymupdf): rivederla comunque, ma non richiede correzione manuale nella
+maggior parte dei casi.
 
 ### Step 5-6 — JSON e uso a valle
 
@@ -117,6 +120,16 @@ tipo di seed usato per `norm_requirements`.
   pagine segnalate come `ATTENZIONE`.
 - **Header/footer ripetuti** (nome azienda, watermark, numeri pagina): rimossi
   automaticamente in fase di pulizia se identici su piu' pagine.
+- **Caratteri riordinati su tabelle multi-colonna** (scoperto su ISO 14341,
+  tabelle 3A/3B): pdfplumber puo' produrre testo che supera il controllo cid
+  ma con i caratteri scambiati dentro le parole (`"Table"` → `"elbaT"`). Il
+  tool lo rileva **automaticamente e di default** (nessun flag) tramite
+  `quality.py` (punteggio di leggibilita' bigram/dizionario): se una pagina
+  scende sotto soglia, viene ri-estratta con pymupdf e si tiene il testo
+  migliore. Se il testo scelto e' quello di pymupdf, nel `.md` compare la
+  riga visibile `**Nota tecnica:** testo di questa pagina ricostruito con
+  motore alternativo per problema di ordinamento caratteri.` — cercarla per
+  individuare rapidamente le pagine corrette automaticamente.
 - **Font "anti-copia" con testo presente ma corrotto** (diverso dal caso
   precedente: qui il testo estratto NON e' spazzatura, ma alcune lettere sono
   sistematicamente sbagliate, es. `buii`→`butt`, `materia1`→`material`,

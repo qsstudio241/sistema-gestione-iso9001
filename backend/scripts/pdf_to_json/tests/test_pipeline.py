@@ -16,6 +16,7 @@ import sys
 import tempfile
 import unittest
 from pathlib import Path
+from unittest import mock
 
 # Rende importabile il pacchetto `pdf_to_json` indipendentemente da come
 # viene lanciato il discovery di unittest (che non lo tratta come parte
@@ -282,6 +283,90 @@ class ExtractDefensiveTests(unittest.TestCase):
         # Non asseriamo un valore fisso: dipende dal binario tesseract
         # eventualmente installato sulla macchina che esegue i test.
         self.assertIn(extract.is_ocr_available(), (True, False))
+
+
+class ExtractReorderedTextTests(unittest.TestCase):
+    """
+    Copre il caso reale scoperto su ISO 14341 (luglio 2026): pdfplumber apre
+    correttamente il PDF e produce testo che supera il controllo cid/qualita'
+    di base, ma su alcune pagine con tabelle multi-colonna i caratteri
+    risultano riordinati/scambiati dentro le parole (es. "Table" -> "elbaT").
+    pymupdf sulla stessa pagina produce testo corretto: `extract_pdf` deve
+    rilevare l'anomalia (vedi `quality.py`) e sostituire automaticamente il
+    testo con quello di pymupdf, senza bisogno di flag aggiuntivi.
+    """
+
+    _GARBLED_TEXT = "A3 elbaT wohs eht lacimehc noitisopmoc stnemeriuqer rof eht gnidlew eriw dna edortcele"
+    _CLEAN_TEXT = "Table 3A shows the chemical composition requirements for the welding wire and electrode"
+
+    def test_extract_pdf_swaps_to_pymupdf_when_pdfplumber_text_reordered(self):
+        pdfplumber_pages = [
+            {
+                "page_number": 1,
+                "text": self._GARBLED_TEXT,
+                "tables": [],
+                "heading_hints": set(),
+                "engine": "pdfplumber",
+            }
+        ]
+        pymupdf_pages = [
+            {
+                "page_number": 1,
+                "text": self._CLEAN_TEXT,
+                "tables": [],
+                "heading_hints": set(),
+                "engine": "pymupdf",
+            }
+        ]
+
+        with mock.patch.object(extract, "_extract_with_pdfplumber", return_value=pdfplumber_pages), \
+             mock.patch.object(extract, "_extract_with_pymupdf", return_value=pymupdf_pages), \
+             mock.patch.object(extract, "is_ocr_available", return_value=False):
+            result = extract.extract_pdf("documento_finto.pdf", allow_ocr=False)
+
+        page = result["pages"][0]
+        self.assertEqual(page["text"], self._CLEAN_TEXT)
+        self.assertEqual(page["engine"], "pymupdf")
+        self.assertTrue(page.get("readability_fixed"))
+        self.assertIn(1, result.get("reordering_fixed_pages", []))
+
+    def test_extract_pdf_leaves_normal_text_untouched(self):
+        pdfplumber_pages = [
+            {
+                "page_number": 1,
+                "text": self._CLEAN_TEXT,
+                "tables": [],
+                "heading_hints": set(),
+                "engine": "pdfplumber",
+            }
+        ]
+
+        with mock.patch.object(extract, "_extract_with_pdfplumber", return_value=pdfplumber_pages), \
+             mock.patch.object(extract, "_extract_with_pymupdf") as mocked_pymupdf, \
+             mock.patch.object(extract, "is_ocr_available", return_value=False):
+            result = extract.extract_pdf("documento_finto.pdf", allow_ocr=False)
+
+        page = result["pages"][0]
+        self.assertEqual(page["text"], self._CLEAN_TEXT)
+        self.assertEqual(page["engine"], "pdfplumber")
+        self.assertFalse(page.get("readability_fixed", False))
+        self.assertEqual(result.get("reordering_fixed_pages"), [])
+        mocked_pymupdf.assert_not_called()
+
+    def test_build_markdown_shows_technical_note_for_readability_fixed_page(self):
+        pages = [
+            {
+                "page_number": 1,
+                "text": self._CLEAN_TEXT,
+                "tables": [],
+                "heading_hints": set(),
+                "engine": "pymupdf",
+                "readability_fixed": True,
+            }
+        ]
+        md = markdown_convert.build_markdown(pages)
+        self.assertIn("**Nota tecnica:**", md)
+        self.assertIn("ordinamento caratteri", md)
 
 
 class EndToEndCliTests(unittest.TestCase):

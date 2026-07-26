@@ -97,6 +97,13 @@ def process_pdf(pdf_path, output_dir, schema="generic", standard_code=None,
             f"Pagine con testo di bassa qualita' (probabile font non standard, non scansione): {pages_list}. "
             "Cercare 'ATTENZIONE' nel markdown intermedio e revisionare quelle sezioni prima di fidarsi del JSON."
         )
+    reordering_fixed_pages = extraction.get("reordering_fixed_pages") or []
+    if reordering_fixed_pages:
+        pages_list = ", ".join(str(n) for n in reordering_fixed_pages)
+        warnings.append(
+            f"Pagine con caratteri riordinati da pdfplumber (tabelle multi-colonna) corrette automaticamente "
+            f"con pymupdf: {pages_list}. Cercare 'Nota tecnica' nel markdown intermedio e verificare il risultato."
+        )
 
     return {"markdown_path": markdown_path, "json_path": json_path, "warnings": warnings}
 
