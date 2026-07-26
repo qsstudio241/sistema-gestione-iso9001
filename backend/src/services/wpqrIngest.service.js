@@ -18,6 +18,7 @@ const {
     checkNumericRangeOrder,
     checkFillerMaterial14341Plausibility,
     checkShieldingGasKnown,
+    checkThicknessRangeAgainstIso15614Level2,
 } = require('../utils/ingestPlausibilityChecks');
 
 /**
@@ -53,6 +54,12 @@ function checkWpqrPlausibility(f) {
 
     const gasWarn = checkShieldingGasKnown(f.shielding_gas);
     if (gasWarn) warnings.push(gasWarn);
+
+    const thicknessVsNormWarn = checkThicknessRangeAgainstIso15614Level2({
+        thicknessTestMm: f.thickness_test_mm, thicknessMin: f.thickness_min, thicknessMax: f.thickness_max,
+        qualificationLevel: f.qualification_level,
+    });
+    if (thicknessVsNormWarn) warnings.push(thicknessVsNormWarn);
 
     return warnings;
 }

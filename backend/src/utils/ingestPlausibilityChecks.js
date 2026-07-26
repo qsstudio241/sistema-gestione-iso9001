@@ -19,6 +19,7 @@
  */
 
 const { normalizeShieldingGasCode } = require('../data/shieldingGases14175');
+const { computeQualifiedMaterialThicknessRangeLevel2 } = require('../data/weldingQualificationRules15614');
 
 /**
  * @param {string|null|undefined} value - atteso YYYY-MM-DD
@@ -114,10 +115,40 @@ function checkShieldingGasKnown(value) {
     return null;
 }
 
+/**
+ * Cross-check (solo warning, mai bloccante) tra il range spessore DICHIARATO
+ * sul WPQR e quello atteso da ISO 15614-1 Tabella 7 colonna Level 2 — SOLO
+ * per Level 2 e SOLO nelle bande 3-40mm coperte con certezza (vedi GAP
+ * dichiarato in docs/reference/ISO-15614-1-range-validita-WPQR.md e
+ * weldingQualificationRules15614.js). Fuori da questi limiti ritorna null:
+ * non è un errore, è semplicemente fuori dallo scope verificato di questo check.
+ * @param {object} params
+ * @param {number|string|null} params.thicknessTestMm
+ * @param {number|string|null} params.thicknessMin
+ * @param {number|string|null} params.thicknessMax
+ * @param {string|number|null} params.qualificationLevel
+ * @returns {string|null}
+ */
+function checkThicknessRangeAgainstIso15614Level2({ thicknessTestMm, thicknessMin, thicknessMax, qualificationLevel }) {
+    if (String(qualificationLevel) !== '2') return null;
+    if (thicknessMin == null || thicknessMax == null || thicknessMin === '' || thicknessMax === '') return null;
+    const expected = computeQualifiedMaterialThicknessRangeLevel2({ testThicknessMm: thicknessTestMm });
+    if (!expected) return null;
+    const min = Number(thicknessMin);
+    const max = Number(thicknessMax);
+    if (!Number.isFinite(min) || !Number.isFinite(max)) return null;
+    const tolerance = 0.5; // margine arrotondamenti/varianti processo, non un valore normativo
+    if (min < expected.minMm - tolerance || max > expected.maxMm + tolerance) {
+        return `Range spessore dichiarato [${min}, ${max}] fuori dal range atteso ISO 15614-1 Tabella 7 Level 2 per spessore provino ${thicknessTestMm}mm (atteso [${expected.minMm.toFixed(1)}, ${expected.maxMm.toFixed(1)}]) — verificare`;
+    }
+    return null;
+}
+
 module.exports = {
     parseIsoDate,
     checkDateOrder,
     checkNumericRangeOrder,
     checkFillerMaterial14341Plausibility,
     checkShieldingGasKnown,
+    checkThicknessRangeAgainstIso15614Level2,
 };
