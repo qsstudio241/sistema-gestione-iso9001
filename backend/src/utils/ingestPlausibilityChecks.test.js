@@ -12,6 +12,7 @@ const {
     checkNumericRangeOrder,
     checkFillerMaterial14341Plausibility,
     checkShieldingGasKnown,
+    checkThicknessRangeAgainstIso15614Level2,
 } = require('./ingestPlausibilityChecks');
 
 describe('checkDateOrder', () => {
@@ -117,5 +118,41 @@ describe('checkShieldingGasKnown', () => {
     it('nessun warning se il campo è vuoto/assente', () => {
         expect(checkShieldingGasKnown(null)).toBeNull();
         expect(checkShieldingGasKnown('')).toBeNull();
+    });
+});
+
+describe('checkThicknessRangeAgainstIso15614Level2', () => {
+    it('nessun warning se il range dichiarato rientra nell\'atteso (Level 2, banda 3-40mm)', () => {
+        expect(checkThicknessRangeAgainstIso15614Level2({
+            thicknessTestMm: 20, thicknessMin: 10, thicknessMax: 22, qualificationLevel: '2',
+        })).toBeNull();
+    });
+
+    it('warning se il range dichiarato è palesemente fuori dall\'atteso', () => {
+        const w = checkThicknessRangeAgainstIso15614Level2({
+            thicknessTestMm: 20, thicknessMin: 1, thicknessMax: 100, qualificationLevel: '2',
+        });
+        expect(w).toContain('ISO 15614-1 Tabella 7 Level 2');
+    });
+
+    it('nessun warning per Level 1 (colonna non codificata, GAP)', () => {
+        expect(checkThicknessRangeAgainstIso15614Level2({
+            thicknessTestMm: 20, thicknessMin: 1, thicknessMax: 100, qualificationLevel: '1',
+        })).toBeNull();
+    });
+
+    it('nessun warning se lo spessore è fuori dalle bande coperte (es. 50mm)', () => {
+        expect(checkThicknessRangeAgainstIso15614Level2({
+            thicknessTestMm: 50, thicknessMin: 1, thicknessMax: 100, qualificationLevel: '2',
+        })).toBeNull();
+    });
+
+    it('nessun warning se livello o range non sono valorizzati', () => {
+        expect(checkThicknessRangeAgainstIso15614Level2({
+            thicknessTestMm: 20, thicknessMin: null, thicknessMax: null, qualificationLevel: '2',
+        })).toBeNull();
+        expect(checkThicknessRangeAgainstIso15614Level2({
+            thicknessTestMm: null, thicknessMin: 10, thicknessMax: 22, qualificationLevel: '2',
+        })).toBeNull();
     });
 });
