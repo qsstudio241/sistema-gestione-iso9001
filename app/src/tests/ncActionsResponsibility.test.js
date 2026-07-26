@@ -1,64 +1,110 @@
 /**
- * Test L1  -  ncWorkflow gate ISO 10.2
+ * Test L1 — ncWorkflow gate ISO 10.2 (Aperta / Chiusa)
  */
 import { describe, it, expect } from 'vitest';
 import {
   canTransitionNcStatus,
+  canCloseNc,
   canVerifyAction,
   needsVerificationNotesForStatus,
   isItemOverdue,
   isItemDueSoon,
   filterActionsByDue,
   getActionDueStatus,
+  getNcDisplayStatus,
+  getNcWorkflowProfile,
+  hasVerificationResponsibleSelected,
 } from '../utils/ncWorkflow';
 
 describe('ncWorkflow', () => {
-  describe('needsVerificationNotesForStatus', () => {
-    it('richiede note per verified e closed', () => {
-      expect(needsVerificationNotesForStatus('verified')).toBe(true);
-      expect(needsVerificationNotesForStatus('closed')).toBe(true);
+  describe('display / profile', () => {
+    it('mostra solo Aperta o Chiusa', () => {
+      expect(getNcDisplayStatus('open')).toBe('open');
+      expect(getNcDisplayStatus('in_progress')).toBe('open');
+      expect(getNcDisplayStatus('resolved')).toBe('open');
+      expect(getNcDisplayStatus('verified')).toBe('open');
+      expect(getNcDisplayStatus('closed')).toBe('closed');
     });
 
-    it('non richiede note per altri stati', () => {
-      expect(needsVerificationNotesForStatus('resolved')).toBe(false);
-      expect(needsVerificationNotesForStatus('in_progress')).toBe(false);
+    it('profilo da corrective_action_needed', () => {
+      expect(getNcWorkflowProfile({})).toBe('unset');
+      expect(getNcWorkflowProfile({ corrective_action_needed: 'no' })).toBe('simple');
+      expect(getNcWorkflowProfile({ corrective_action_needed: 'yes' })).toBe('full');
     });
   });
 
-  describe('canTransitionNcStatus', () => {
-    const ncWithNotes = { verification_notes: 'Verifica OK', correction_completed_count: 1 };
-    const ncEmpty = { verification_notes: '' };
-    const ncWithCorrection = { verification_notes: '', correction_completed_count: 1 };
-    const ncNoCorrection = { verification_notes: '', correction_completed_count: 0 };
+  describe('needsVerificationNotesForStatus', () => {
+    it('richiede note per closed (e verified legacy)', () => {
+      expect(needsVerificationNotesForStatus('closed')).toBe(true);
+      expect(needsVerificationNotesForStatus('verified')).toBe(true);
+      expect(needsVerificationNotesForStatus('open')).toBe(false);
+    });
+  });
 
-    it('blocca resolved senza correzione completata', () => {
-      const result = canTransitionNcStatus(ncNoCorrection, 'resolved');
-      expect(result.ok).toBe(false);
-      expect(result.message).toMatch(/Correzione/i);
+  describe('canCloseNc / canTransitionNcStatus', () => {
+    const baseSimple = {
+      status: 'open',
+      corrective_action_needed: 'no',
+      corrective_action_evaluation_notes: 'Problema isolato, non ricorre',
+      correction_completed_count: 1,
+      verification_notes: 'Trattamento efficace',
+      verification_contact_id: 12,
+    };
+
+    const baseFull = {
+      status: 'open',
+      corrective_action_needed: 'yes',
+      root_cause: 'Mancata formazione',
+      correction_completed_count: 1,
+      corrective_completed_count: 1,
+      verification_notes: 'Azioni efficaci',
+      verification_contact_id: 12,
+    };
+
+    it('blocca chiusura senza valutazione AC', () => {
+      const r = canCloseNc({ status: 'open', correction_completed_count: 1 });
+      expect(r.ok).toBe(false);
+      expect(r.message).toMatch(/azione correttiva/i);
     });
 
-    it('blocca resolved quando correction_completed_count mancante (legacy)', () => {
-      const result = canTransitionNcStatus(ncEmpty, 'resolved');
-      expect(result.ok).toBe(false);
-      expect(result.message).toMatch(/Correzione/i);
+    it('blocca chiusura senza correzione completata', () => {
+      const r = canCloseNc({ ...baseSimple, correction_completed_count: 0 });
+      expect(r.ok).toBe(false);
+      expect(r.message).toMatch(/Correzione/i);
     });
 
-    it('consente resolved con almeno una correzione completata', () => {
-      expect(canTransitionNcStatus(ncWithCorrection, 'resolved').ok).toBe(true);
+    it('blocca chiusura senza responsabile verifica selezionato', () => {
+      expect(hasVerificationResponsibleSelected({ verification_contact_id: null })).toBe(false);
+      const r = canCloseNc({ ...baseSimple, verification_contact_id: null });
+      expect(r.ok).toBe(false);
+      expect(r.message).toMatch(/Responsabile verifica/i);
     });
 
-    it('blocca verified senza note verifica', () => {
-      const result = canTransitionNcStatus(ncEmpty, 'verified');
-      expect(result.ok).toBe(false);
-      expect(result.message).toMatch(/note verifica/i);
+    it('percorso semplice: chiusura OK con gate minimi', () => {
+      expect(canCloseNc(baseSimple).ok).toBe(true);
+      expect(canTransitionNcStatus(baseSimple, 'closed').ok).toBe(true);
     });
 
-    it('consente verified con note verifica', () => {
-      expect(canTransitionNcStatus(ncWithNotes, 'verified').ok).toBe(true);
+    it('percorso semplice: richiede motivazione No', () => {
+      const r = canCloseNc({ ...baseSimple, corrective_action_evaluation_notes: '' });
+      expect(r.ok).toBe(false);
+      expect(r.message).toMatch(/Motivare/i);
     });
 
-    it('blocca closed senza note verifica', () => {
-      expect(canTransitionNcStatus(ncEmpty, 'closed').ok).toBe(false);
+    it('percorso completo: richiede causa e azione correttiva', () => {
+      expect(canCloseNc(baseFull).ok).toBe(true);
+      expect(canCloseNc({ ...baseFull, root_cause: '' }).ok).toBe(false);
+      expect(canCloseNc({ ...baseFull, corrective_completed_count: 0 }).ok).toBe(false);
+    });
+
+    it('non richiede più approved_at per chiudere', () => {
+      expect(canTransitionNcStatus(baseSimple, 'closed').ok).toBe(true);
+      expect(baseSimple.approved_at).toBeUndefined();
+    });
+
+    it('blocca transizioni intermedie legacy', () => {
+      const r = canTransitionNcStatus({ status: 'open' }, 'in_progress');
+      expect(r.ok).toBe(false);
     });
   });
 
