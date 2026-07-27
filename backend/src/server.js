@@ -398,11 +398,16 @@ process.on('SIGINT', async () => {
     process.exit(0);
 });
 
-// Start
-startServer();
+// Start — saltato in test: i test di integrazione usano supertest(app), che
+// gestisce da solo un socket TCP effimero. Un vero app.listen() su PORT fisso
+// qui andrebbe in conflitto (EADDRINUSE) quando più file di test integration
+// richiedono questo modulo nello stesso worker Jest.
+if (process.env.NODE_ENV !== 'test') {
+    startServer();
 
-// Avvia cron job alert scadenze (dopo startup server)
-const { startAlertScheduler } = require('./services/alertScheduler');
-startAlertScheduler();
+    // Avvia cron job alert scadenze (dopo startup server)
+    const { startAlertScheduler } = require('./services/alertScheduler');
+    startAlertScheduler();
+}
 
 module.exports = app;

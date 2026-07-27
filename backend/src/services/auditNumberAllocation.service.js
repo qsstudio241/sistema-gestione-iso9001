@@ -67,7 +67,7 @@ function formatAuditNumber(prefix, seq, rome) {
 }
 
 /**
- * Legge prefisso organizzazione (fallback MSN).
+ * Legge prefisso organizzazione (fallback AUD generico).
  * @param {import('mssql').Transaction|null} transaction
  */
 async function loadOrgPrefix(organizationId, transaction) {

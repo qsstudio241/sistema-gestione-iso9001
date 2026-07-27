@@ -6,8 +6,10 @@ const {
 
 describe('auditNumberAllocation helpers', () => {
   test('sanitizePrefix default e pulizia', () => {
-    expect(sanitizePrefix(null)).toBe('MSN');
-    expect(sanitizePrefix('')).toBe('MSN');
+    // Default 'AUD' (generico): 'MSN' era il prefisso di un tenant specifico,
+    // rimosso come fallback globale in 7c42b6dd (10/05/2026).
+    expect(sanitizePrefix(null)).toBe('AUD');
+    expect(sanitizePrefix('')).toBe('AUD');
     expect(sanitizePrefix('  msn  ')).toBe('MSN');
     expect(sanitizePrefix('AB-12')).toBe('AB12');
     expect(sanitizePrefix('x'.repeat(20))).toBe('XXXXXXXXXXXXXXXX');
