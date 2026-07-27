@@ -105,6 +105,9 @@ describe('NcDetailPanel', () => {
     expect(screen.queryByText('6. Azioni correttive / preventive')).not.toBeInTheDocument();
     expect(screen.getByText('5. Evidenze')).toBeInTheDocument();
     expect(screen.getByText('6. Verifica trattamento')).toBeInTheDocument();
+    // Escape Unicode devono essere in stringa JS: niente "\u00E8" letterale in UI
+    expect(screen.getByText(/Il responsabile verifica \(menu\) è chi attesta/i)).toBeInTheDocument();
+    expect(screen.queryByText(/\\u00E8/)).not.toBeInTheDocument();
 
     expect(screen.getByLabelText(/Descrizione/i)).toHaveValue('Descrizione NC di test');
     expect(screen.getByLabelText(/Note verifica trattamento/i)).toHaveValue('Note verifica di test');

@@ -492,7 +492,7 @@ export default function NcDetailPanel({
           {needsCorrective ? "8. Verifica efficacia" : "6. Verifica trattamento"}
         </h3>
         <p className="nc-drawer-section-hint">
-          Il responsabile verifica (menu) \u00E8 chi attesta formalmente la risoluzione. Nessuna selezione automatica.
+          {"Il responsabile verifica (menu) \u00E8 chi attesta formalmente la risoluzione. Nessuna selezione automatica."}
         </p>
         <div className="nc-drawer-section-body">
           <div className="nc-form-row">
