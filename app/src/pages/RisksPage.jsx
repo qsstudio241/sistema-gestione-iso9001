@@ -258,13 +258,12 @@ function ObjectiveForm({ initial, onSave, onClose, companies = [] }) {
 
 // ── Tab Rischi ────────────────────────────────────────────────────────────────
 
-function RisksTab({ companies = [] }) {
+function RisksTab({ companies = [], filterCompany = "" }) {
   const [list, setList]           = useState([]);
   const [stats, setStats]         = useState(null);
   const [loading, setLoading]     = useState(true);
   const [modal, setModal]         = useState(null); // null | { mode:'new'|'edit', data }
   const [filterStatus, setFS]     = useState("");
-  const [filterCompany, setFC]    = useState("");
   const [actionRisk, setActionRisk] = useState(null);
 
   const load = useCallback(async () => {
@@ -317,12 +316,6 @@ function RisksTab({ companies = [] }) {
           <option value="">Tutti gli stati</option>
           {Object.entries(RISK_STATUS_CFG).map(([k,v]) => <option key={k} value={k}>{v.label}</option>)}
         </select>
-        {companies.length > 0 && (
-          <select value={filterCompany} onChange={e => setFC(e.target.value)}>
-            <option value="">Tutte le aziende</option>
-            {companies.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-          </select>
-        )}
         <button className="btn-primary" onClick={() => setModal({ mode: "new", data: null })}>+ Nuovo rischio</button>
       </div>
 
@@ -403,13 +396,12 @@ function RisksTab({ companies = [] }) {
 
 // ── Tab Obiettivi ─────────────────────────────────────────────────────────────
 
-function ObjectivesTab({ companies = [] }) {
-  const [list, setList]        = useState([]);
-  const [stats, setStats]      = useState(null);
-  const [loading, setLoading]  = useState(true);
-  const [modal, setModal]      = useState(null);
-  const [filterStatus, setFS]  = useState("");
-  const [filterCompany, setFC] = useState("");
+function ObjectivesTab({ companies = [], filterCompany = "" }) {
+  const [list, setList]       = useState([]);
+  const [stats, setStats]     = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [modal, setModal]     = useState(null);
+  const [filterStatus, setFS] = useState("");
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -467,12 +459,6 @@ function ObjectivesTab({ companies = [] }) {
           <option value="">Tutti gli stati</option>
           {Object.entries(OBJ_STATUS_CFG).map(([k,v]) => <option key={k} value={k}>{v.label}</option>)}
         </select>
-        {companies.length > 0 && (
-          <select value={filterCompany} onChange={e => setFC(e.target.value)}>
-            <option value="">Tutte le aziende</option>
-            {companies.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-          </select>
-        )}
         <button className="btn-primary" onClick={() => setModal({ mode: "new", data: null })}>+ Nuovo obiettivo</button>
       </div>
 
@@ -671,14 +657,13 @@ function InterestedPartyForm({ initial, onSave, onClose, companies = [] }) {
   );
 }
 
-function ContestoTab({ companies = [] }) {
-  const [factors, setFactors]      = useState([]);
-  const [parties, setParties]      = useState([]);
-  const [loading, setLoading]      = useState(true);
-  const [cfModal, setCfModal]      = useState(null);
-  const [ipModal, setIpModal]      = useState(null);
-  const [section, setSection]      = useState("factors");
-  const [filterCompany, setFC]     = useState("");
+function ContestoTab({ companies = [], filterCompany = "" }) {
+  const [factors, setFactors] = useState([]);
+  const [parties, setParties] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [cfModal, setCfModal] = useState(null);
+  const [ipModal, setIpModal] = useState(null);
+  const [section, setSection] = useState("factors");
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -729,16 +714,6 @@ function ContestoTab({ companies = [] }) {
           {"\uD83E\uDD1D Parti interessate (\u00A74.2)"}
         </button>
       </div>
-
-      {/* Filtro azienda comune a entrambe le sezioni */}
-      {companies.length > 0 && (
-        <div className="tab-toolbar">
-          <select value={filterCompany} onChange={e => setFC(e.target.value)}>
-            <option value="">Tutte le aziende</option>
-            {companies.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-          </select>
-        </div>
-      )}
 
       {loading ? <p className="loading-msg">Caricamento...</p> : (
         <>
@@ -813,12 +788,15 @@ function ContestoTab({ companies = [] }) {
 // ── Pagina principale ─────────────────────────────────────────────────────────
 
 export default function RisksPage() {
-  const [activeTab, setActiveTab] = useState("risks");
-  const [companies, setCompanies] = useState([]);
+  const [activeTab, setActiveTab]   = useState("risks");
+  const [companies, setCompanies]   = useState([]);
+  const [filterCompany, setFC]      = useState("");
 
   useEffect(() => {
     apiService.getCompanies().then(r => setCompanies(r?.data || [])).catch(() => {});
   }, []);
+
+  const selectedCompanyName = companies.find(c => String(c.id) === String(filterCompany))?.name;
 
   return (
     <div className="risks-page">
@@ -826,6 +804,24 @@ export default function RisksPage() {
         <h1>{"\u26A0\uFE0F Rischi, Opportunit\u00e0 e Obiettivi"}</h1>
         <p className="risks-page-sub">{"ISO 9001:2015 \u00A7 4.1/4.2 Contesto \u2014 \u00A7 6.1 Rischi e opportunit\u00e0 \u2014 \u00A7 6.2 Obiettivi per la qualit\u00e0"}</p>
       </div>
+
+      {/* Selettore ambito (azienda) — livello modulo, vale per tutti i tab */}
+      {companies.length > 0 && (
+        <div className="risks-scope-bar">
+          <label className="scope-label">{"Ambito (azienda):"}</label>
+          <select
+            className="scope-select"
+            value={filterCompany}
+            onChange={e => setFC(e.target.value)}
+          >
+            <option value="">Tutte le aziende</option>
+            {companies.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+          </select>
+          {selectedCompanyName && (
+            <span className="scope-active-badge">{selectedCompanyName}</span>
+          )}
+        </div>
+      )}
 
       <div className="risks-tabs">
         <button type="button" className={`risks-tab-btn${activeTab === "risks" ? " active" : ""}`} onClick={() => setActiveTab("risks")}>
@@ -840,9 +836,9 @@ export default function RisksPage() {
       </div>
 
       <div className="risks-tab-content">
-        {activeTab === "risks"      && <RisksTab companies={companies} />}
-        {activeTab === "objectives" && <ObjectivesTab companies={companies} />}
-        {activeTab === "contesto"   && <ContestoTab companies={companies} />}
+        {activeTab === "risks"      && <RisksTab companies={companies} filterCompany={filterCompany} />}
+        {activeTab === "objectives" && <ObjectivesTab companies={companies} filterCompany={filterCompany} />}
+        {activeTab === "contesto"   && <ContestoTab companies={companies} filterCompany={filterCompany} />}
       </div>
     </div>
   );
