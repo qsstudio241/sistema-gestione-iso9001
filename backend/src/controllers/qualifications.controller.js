@@ -36,13 +36,25 @@ const {
     addMonthsIso,
     canUserConfirmSemiannual,
 } = require('../services/weldingCoordinatorAuth.service');
+const { toNumericOrNull } = require('../utils/numericSanitizer');
 const XLSX = require('xlsx');
 
-/** Converte un valore in numero finito o null (per colonne DECIMAL). */
+/**
+ * Converte un valore in numero finito o null (per colonne DECIMAL).
+ * Alias locale su numericSanitizer.js — stessa policy usata dall'ingest AI
+ * (bug produzione 27/07/2026: valori come "N.A." o range testuali su colonne
+ * DECIMAL rompevano la INSERT/UPDATE con "Error converting data type nvarchar
+ * to numeric"). Mantenuto come funzione locale per non toccare le ~15 chiamate
+ * esistenti in questo file.
+ */
 function toNum(v) {
-    if (v == null || v === '') return null;
-    const n = Number(v);
-    return Number.isFinite(n) ? n : null;
+    return toNumericOrNull(v);
+}
+
+/** Converte in intero finito o null (per colonne INT: ndt_level, training_hours). */
+function toIntOrNull(v) {
+    const n = toNumericOrNull(v);
+    return n != null ? Math.trunc(n) : null;
 }
 
 /**
@@ -633,7 +645,7 @@ async function createQualification(req, res) {
             .input('matGroup',  material_group  || null)
             .input('posRange',  position_range  || null)
             .input('ndtMethod', ndt_method      || null)
-            .input('ndtLevel',  ndt_level != null ? parseInt(ndt_level) : null)
+            .input('ndtLevel',  toIntOrNull(ndt_level))
             // v2
             .input('approvalStatus', approval_status || 'bozza')
             .input('jointType',   joint_type        || null)
@@ -650,7 +662,7 @@ async function createQualification(req, res) {
             .input('patentType',  patent_type       || null)
             .input('trainBody',   training_body     || null)
             .input('courseName',  course_name       || null)
-            .input('trainHours',  training_hours != null ? parseInt(training_hours) : null)
+            .input('trainHours',  toIntOrNull(training_hours))
             .input('examBody',    examiner_body     || null)
             .input('certFileUrl', certificate_file_url || null)
             // saldatore 9606-1 enrichment
@@ -786,7 +798,7 @@ async function updateQualification(req, res) {
             .input('matGroup',  material_group  || null)
             .input('posRange',  position_range  || null)
             .input('ndtMethod', ndt_method      || null)
-            .input('ndtLevel',  ndt_level != null ? parseInt(ndt_level) : null)
+            .input('ndtLevel',  toIntOrNull(ndt_level))
             .input('jointType',   joint_type        || null)
             .input('thickRange',  thickness_range   || null)
             .input('pipeDiam',    pipe_diameter     || null)
@@ -801,7 +813,7 @@ async function updateQualification(req, res) {
             .input('patentType',  patent_type       || null)
             .input('trainBody',   training_body     || null)
             .input('courseName',  course_name       || null)
-            .input('trainHours',  training_hours != null ? parseInt(training_hours) : null)
+            .input('trainHours',  toIntOrNull(training_hours))
             .input('examBody',    examiner_body     || null)
             .input('certFileUrl', certificate_file_url || null)
             // saldatore 9606-1 enrichment

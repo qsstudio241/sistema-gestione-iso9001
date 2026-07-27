@@ -20,6 +20,7 @@ const {
     checkNumericRangeOrder,
     checkShieldingGasKnown,
 } = require('../utils/ingestPlausibilityChecks');
+const { toNumericOrNull } = require('../utils/numericSanitizer');
 
 /**
  * Controlli di plausibilità/coerenza normativa sui campi estratti (warning-only,
@@ -139,6 +140,15 @@ function mapPipelineFieldsToReview(f, pipelineText, fileName) {
         ? addMonths(last_confirmation_date, 6)
         : addMonths(exam_date, 6));
 
+    // Sanitizzazione numerica (bug produzione 27/07/2026): il PDF originale o il
+    // form di revisione possono restituire "N.A.", stringa vuota o range testuali
+    // per campi non applicabili al tipo di giunto/prodotto — mai testo grezzo su
+    // colonne DECIMAL (vedi numericSanitizer.js per la policy completa).
+    const thicknessMinNum = toNumericOrNull(f.thickness_min_mm);
+    const thicknessMaxNum = toNumericOrNull(f.thickness_max_mm);
+    const pipeDiameterMinNum = toNumericOrNull(f.pipe_diameter_min_mm);
+    const pipeDiameterMaxNum = toNumericOrNull(f.pipe_diameter_max_mm);
+
     return {
         welder_name: person_name,
         operator_name: person_name,
@@ -150,13 +160,13 @@ function mapPipelineFieldsToReview(f, pipelineText, fileName) {
         filler_material_group: f.filler_material_group || f.material_group || null,
         welding_positions: f.welding_positions || position_range,
         welding_position: position_range,
-        thickness_min_mm: f.thickness_min_mm ?? null,
-        thickness_max_mm: f.thickness_max_mm ?? null,
-        thickness_range: f.thickness_min_mm != null && f.thickness_max_mm != null
-            ? `${f.thickness_min_mm}-${f.thickness_max_mm} mm`
+        thickness_min_mm: thicknessMinNum,
+        thickness_max_mm: thicknessMaxNum,
+        thickness_range: thicknessMinNum != null && thicknessMaxNum != null
+            ? `${thicknessMinNum}-${thicknessMaxNum} mm`
             : (f.thickness_range || null),
-        pipe_diameter_min_mm: f.pipe_diameter_min_mm ?? null,
-        pipe_diameter_max_mm: f.pipe_diameter_max_mm ?? null,
+        pipe_diameter_min_mm: pipeDiameterMinNum,
+        pipe_diameter_max_mm: pipeDiameterMaxNum,
         exam_date,
         issue_date: exam_date,
         expiry_date,
@@ -308,18 +318,23 @@ async function commitQualificationFromFields(fields, organizationId, companyId, 
     const position_range = Array.isArray(f.welding_positions)
         ? f.welding_positions.join(', ')
         : (f.welding_positions || f.welding_position || null);
-    const thickness_min_mm = f.thickness_min_mm ?? null;
-    const thickness_max_mm = f.thickness_max_mm ?? null;
-    const pipe_diameter_min_mm = f.pipe_diameter_min_mm ?? null;
-    const pipe_diameter_max_mm = f.pipe_diameter_max_mm ?? null;
+    // Sanitizzazione numerica (bug produzione 27/07/2026, cliente Mason): campi
+    // spessore/diametro non applicabili (es. FW su tubo con "N.A." nel PDF, o
+    // campo lasciato vuoto in revisione) non devono mai arrivare come stringa
+    // grezza alla query SQL su colonne DECIMAL — vedi numericSanitizer.js.
+    const thickness_min_mm = toNumericOrNull(f.thickness_min_mm);
+    const thickness_max_mm = toNumericOrNull(f.thickness_max_mm);
+    const pipe_diameter_min_mm = toNumericOrNull(f.pipe_diameter_min_mm);
+    const pipe_diameter_max_mm = toNumericOrNull(f.pipe_diameter_max_mm);
     const thickness_range = f.thickness_range
-        || (f.thickness_min_mm != null && f.thickness_max_mm != null
-            ? `${f.thickness_min_mm}-${f.thickness_max_mm} mm`
+        || (thickness_min_mm != null && thickness_max_mm != null
+            ? `${thickness_min_mm}-${thickness_max_mm} mm`
             : null);
     const last_confirmation_date = normalizeDate(f.last_confirmation_date);
     const next_confirmation_due = normalizeDate(f.next_confirmation_due);
     const ndt_method = f.ndt_method || null;
-    const ndt_level = f.ndt_level ? parseInt(f.ndt_level, 10) : null;
+    const ndtLevelNum = toNumericOrNull(f.ndt_level);
+    const ndt_level = ndtLevelNum != null ? Math.trunc(ndtLevelNum) : null;
     const coordinator_title = f.coordinator_title || null;
     const cpd_valid_until = normalizeDate(f.cpd_valid_until || f.next_confirmation_due);
     const patent_type = f.patent_type || null;

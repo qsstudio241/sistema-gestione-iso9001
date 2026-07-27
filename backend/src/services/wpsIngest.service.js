@@ -17,6 +17,7 @@ const {
     checkFillerMaterial14341Plausibility,
     checkShieldingGasKnown,
 } = require('../utils/ingestPlausibilityChecks');
+const { toNumericOrNull } = require('../utils/numericSanitizer');
 
 /**
  * Controlli di plausibilità/coerenza normativa sui campi estratti (warning-only,
@@ -70,8 +71,8 @@ function mapPipelineFieldsToReview(f, fileName) {
         welding_process: f.welding_process || null,
         base_material: f.base_material || f.material_group || null,
         material_group: f.material_group || f.base_material || null,
-        thickness_min_mm: f.thickness_min_mm ?? null,
-        thickness_max_mm: f.thickness_max_mm ?? null,
+        thickness_min_mm: toNumericOrNull(f.thickness_min_mm),
+        thickness_max_mm: toNumericOrNull(f.thickness_max_mm),
         pipe_outside_diameter_mm: f.pipe_outside_diameter_mm ?? null,
         joint_type: f.joint_type || null,
         welding_positions: f.welding_positions || null,
@@ -91,8 +92,11 @@ function mapReviewFieldsToDb(f, fileName) {
         wps_code: wpsCode,
         welding_process: f.welding_process || null,
         material_group: f.material_group || f.base_material || null,
-        thickness_range_min: f.thickness_min_mm != null ? parseFloat(f.thickness_min_mm) : null,
-        thickness_range_max: f.thickness_max_mm != null ? parseFloat(f.thickness_max_mm) : null,
+        // Bug produzione 27/07/2026 (stesso pattern qualifiche saldatori): "N.A." o
+        // stringa vuota su spessore non applicabile rompevano l'INSERT su colonna
+        // DECIMAL — vedi numericSanitizer.js.
+        thickness_range_min: toNumericOrNull(f.thickness_min_mm),
+        thickness_range_max: toNumericOrNull(f.thickness_max_mm),
         qualification_standard: f.qualification_standard || f.wpqr_ref || null,
     };
 }
