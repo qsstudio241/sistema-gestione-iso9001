@@ -20,25 +20,29 @@ async function listContextFactors(req, res) {
         const orgId      = req.user.organization_id;
         const accessList = await ensureCompanyAccessLoaded(req.user);
         const cf         = companyAccessSqlFilter(accessList, 'f');
-        const { type, is_active, page = 1, limit = 50 } = req.query;
+        const { type, is_active, company_id, page = 1, limit = 50 } = req.query;
         const offset = (parseInt(page) - 1) * parseInt(limit);
 
         const where = ['f.organization_id = @orgId'];
         if (cf.clause) where.push(cf.clause);
-        if (type)      { where.push('f.type = @type');           }
+        if (type)      { where.push('f.type = @type'); }
         if (is_active !== undefined) { where.push('f.is_active = @is_active'); }
+        if (company_id) { where.push('f.company_id = @companyId'); }
 
         const req2 = pool.request()
             .input('orgId', orgId)
             .input('limit', parseInt(limit))
             .input('offset', offset);
         Object.entries(cf.params).forEach(([k, v]) => req2.input(k, v));
-        if (type)      req2.input('type', type);
+        if (type)       req2.input('type', type);
         if (is_active !== undefined) req2.input('is_active', is_active === 'false' ? 0 : 1);
+        if (company_id) req2.input('companyId', parseInt(company_id));
 
         const [dataRes, countRes] = await Promise.all([
             req2.query(`
-                SELECT * FROM context_factors f
+                SELECT f.*, c.name AS company_name
+                FROM context_factors f
+                LEFT JOIN companies c ON c.id = f.company_id
                 WHERE ${where.join(' AND ')}
                 ORDER BY f.type, f.created_at DESC
                 OFFSET @offset ROWS FETCH NEXT @limit ROWS ONLY
@@ -48,7 +52,8 @@ async function listContextFactors(req, res) {
                 Object.entries(cf.params).forEach(([k, v]) => cr.input(k, v));
                 const cw = ['f.organization_id = @orgId2'];
                 if (cf.clause) cw.push(cf.clause);
-                if (type) { cr.input('cntType', type); cw.push('f.type = @cntType'); }
+                if (type)       { cr.input('cntType', type); cw.push('f.type = @cntType'); }
+                if (company_id) { cr.input('cntCompanyId', parseInt(company_id)); cw.push('f.company_id = @cntCompanyId'); }
                 return cr.query(`SELECT COUNT(*) AS total FROM context_factors f WHERE ${cw.join(' AND ')}`);
             })(),
         ]);

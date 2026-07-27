@@ -17,12 +17,13 @@ async function listInterestedParties(req, res) {
         const orgId      = req.user.organization_id;
         const accessList = await ensureCompanyAccessLoaded(req.user);
         const cf         = companyAccessSqlFilter(accessList, 'p');
-        const { is_active, page = 1, limit = 50 } = req.query;
+        const { is_active, company_id, page = 1, limit = 50 } = req.query;
         const offset = (parseInt(page) - 1) * parseInt(limit);
 
         const where = ['p.organization_id = @orgId'];
         if (cf.clause) where.push(cf.clause);
         if (is_active !== undefined) where.push('p.is_active = @is_active');
+        if (company_id) where.push('p.company_id = @companyId');
 
         const req2 = pool.request()
             .input('orgId', orgId)
@@ -30,10 +31,13 @@ async function listInterestedParties(req, res) {
             .input('offset', offset);
         Object.entries(cf.params).forEach(([k, v]) => req2.input(k, v));
         if (is_active !== undefined) req2.input('is_active', is_active === 'false' ? 0 : 1);
+        if (company_id) req2.input('companyId', parseInt(company_id));
 
         const [dataRes, countRes] = await Promise.all([
             req2.query(`
-                SELECT * FROM interested_parties p
+                SELECT p.*, c.name AS company_name
+                FROM interested_parties p
+                LEFT JOIN companies c ON c.id = p.company_id
                 WHERE ${where.join(' AND ')}
                 ORDER BY p.name ASC
                 OFFSET @offset ROWS FETCH NEXT @limit ROWS ONLY
@@ -43,6 +47,7 @@ async function listInterestedParties(req, res) {
                 Object.entries(cf.params).forEach(([k, v]) => cr.input(k, v));
                 const cw = ['p.organization_id = @orgId2'];
                 if (cf.clause) cw.push(cf.clause);
+                if (company_id) { cr.input('cntCompanyId', parseInt(company_id)); cw.push('p.company_id = @cntCompanyId'); }
                 return cr.query(`SELECT COUNT(*) AS total FROM interested_parties p WHERE ${cw.join(' AND ')}`);
             })(),
         ]);
