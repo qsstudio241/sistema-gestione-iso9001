@@ -363,6 +363,22 @@
 }
 .nc-form-row textarea { resize: vertical; }
 .nc-form-row-2col { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+/* Riga Responsabile + Scadenza: data compatta, più spazio al flag "Referente esterno" */
+.nc-form-row-2col--date {
+  grid-template-columns: minmax(0, 1fr) 10.5rem;
+  align-items: start;
+}
+.nc-form-row-2col--date > :last-child {
+  min-width: 0;
+}
+.nc-inline-check {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.8rem;
+  margin: 6px 0 8px;
+  white-space: nowrap;
+}
 .nc-form-actions { display: flex; justify-content: flex-end; margin-top: 8px; }
 .btn-primary {
   padding: 8px 18px;
@@ -856,7 +872,9 @@ body.sgq-nc-drawer-resizing * {
   .nc-stats-bar { gap: 8px; }
   .nc-filters { flex-direction: column; }
   .nc-filters select { width: 100%; }
-  .nc-form-row-2col { grid-template-columns: 1fr; }
+  .nc-form-row-2col,
+  .nc-form-row-2col--date { grid-template-columns: 1fr; }
+  .nc-inline-check { white-space: normal; }
   .nc-card-meta { display: none; }
 }
 
