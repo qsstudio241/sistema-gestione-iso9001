@@ -20,6 +20,7 @@ const {
     checkShieldingGasKnown,
     checkThicknessRangeAgainstIso15614Level2,
 } = require('../utils/ingestPlausibilityChecks');
+const { toNumericOrNull } = require('../utils/numericSanitizer');
 
 /**
  * Controlli di plausibilità/coerenza normativa sui campi estratti (warning-only,
@@ -118,8 +119,14 @@ function mapPipelineFieldsToReview(f, fileName) {
     ).trim();
 
     const thicknessRaw = f.thickness_test_mm ?? f.thickness_tested;
-    const thickness_tested = thicknessRaw != null && thicknessRaw !== '' ? parseFloat(thicknessRaw) : null;
+    // Sanitizzazione numerica (stesso pattern del bug produzione 27/07/2026 su
+    // qualificationIngest.service.js/wpsIngest.service.js): "N.A.", stringa vuota,
+    // virgola decimale o simboli soglia non devono mai arrivare come stringa
+    // grezza a una colonna DECIMAL — vedi numericSanitizer.js.
+    const thickness_tested = toNumericOrNull(thicknessRaw);
     const { thickness_min: calcMin, thickness_max: calcMax } = calcThicknessRange(thickness_tested);
+    const thicknessMinSan = toNumericOrNull(f.thickness_min);
+    const thicknessMaxSan = toNumericOrNull(f.thickness_max);
 
     return {
         wpqr_number: referenceNumber,
@@ -139,11 +146,11 @@ function mapPipelineFieldsToReview(f, fileName) {
         certificate_number: f.certificate_number || null,
         pwht: f.pwht === true || f.pwht === 1 || f.pwht === '1',
         wps_ref: f.wps_ref || null,
-        // Range: preferire quello DICHIARATO sul verbale; calcolare solo se assente (mostrato in revisione).
-        thickness_min: (f.thickness_min ?? null) !== null ? f.thickness_min : calcMin,
-        thickness_max: (f.thickness_max ?? null) !== null ? f.thickness_max : calcMax,
-        diameter_min: f.diameter_min ?? null,
-        diameter_max: f.diameter_max ?? null,
+        // Range: preferire quello DICHIARATO sul verbale (se numerico valido); calcolare solo se assente/non numerico.
+        thickness_min: thicknessMinSan != null ? thicknessMinSan : calcMin,
+        thickness_max: thicknessMaxSan != null ? thicknessMaxSan : calcMax,
+        diameter_min: toNumericOrNull(f.diameter_min),
+        diameter_max: toNumericOrNull(f.diameter_max),
         base_material_spec: f.base_material_spec || null,
         shielding_gas: f.shielding_gas || null,
         current_type: f.current_type || null,
@@ -160,8 +167,14 @@ function mapReviewFieldsToDb(f, fileName) {
     ).trim();
 
     const thicknessRaw = f.thickness_test_mm ?? f.thickness_tested;
-    const thickness_tested = thicknessRaw != null && thicknessRaw !== '' ? parseFloat(thicknessRaw) : null;
+    // Sanitizzazione numerica (stesso pattern del bug produzione 27/07/2026 su
+    // qualificationIngest.service.js/wpsIngest.service.js): "N.A.", stringa vuota,
+    // virgola decimale o simboli soglia non devono mai arrivare come stringa
+    // grezza a una colonna DECIMAL — vedi numericSanitizer.js.
+    const thickness_tested = toNumericOrNull(thicknessRaw);
     const { thickness_min: calcMin, thickness_max: calcMax } = calcThicknessRange(thickness_tested);
+    const thicknessMinSan = toNumericOrNull(f.thickness_min);
+    const thicknessMaxSan = toNumericOrNull(f.thickness_max);
 
     return {
         reference_number: referenceNumber,
@@ -172,11 +185,11 @@ function mapReviewFieldsToDb(f, fileName) {
         standard_reference: f.standard_reference || null,
         filler_material: f.filler_material || null,
         thickness_tested,
-        // Preferire il range DICHIARATO sul verbale (revisione umana); calcolare solo se assente.
-        thickness_min: (f.thickness_min ?? null) !== null ? f.thickness_min : calcMin,
-        thickness_max: (f.thickness_max ?? null) !== null ? f.thickness_max : calcMax,
-        diameter_min: f.diameter_min ?? null,
-        diameter_max: f.diameter_max ?? null,
+        // Preferire il range DICHIARATO sul verbale (se numerico valido); calcolare solo se assente/non numerico.
+        thickness_min: thicknessMinSan != null ? thicknessMinSan : calcMin,
+        thickness_max: thicknessMaxSan != null ? thicknessMaxSan : calcMax,
+        diameter_min: toNumericOrNull(f.diameter_min),
+        diameter_max: toNumericOrNull(f.diameter_max),
         welding_positions: normalizePositions(f.welding_positions),
         examiner_body: f.examiner_body || f.issuing_body || f.testing_body || null,
         welder_name: f.welder_name || null,
