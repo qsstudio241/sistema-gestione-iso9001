@@ -115,6 +115,14 @@ describe('weldingQualificationRules9606', () => {
     expect(section).toContain('135');
   });
 
+  it('prompt section istruisce a non perdere l\u2019informazione "derivazione/branch/tubo-piastra" (segnalazione Mason, 27/07/2026)', () => {
+    const section = buildWelderQualificationRulesPromptSection();
+    expect(section).toContain('derivazione');
+    expect(section).toContain('branch');
+    expect(section).toContain('weld_details');
+    expect(section).toMatch(/NON esiste una terza categoria/);
+  });
+
   describe('getApplicableWelderFields (UX campi condizionati, 27/07/2026)', () => {
     it('diametro tubo non applicabile se prodotto = piastra (P)', () => {
       expect(getApplicableWelderFields({ productType: 'P' })).toEqual({ pipeDiameterApplicable: false });
@@ -132,7 +140,7 @@ describe('weldingQualificationRules9606', () => {
     });
   });
 
-  describe('describePlateOnlyRotatingPositionDiameterNote (feedback cliente Studio Mason, da confermare)', () => {
+  describe('describePlateOnlyRotatingPositionDiameterNote (feedback cliente Studio Mason, verificato §5.3 il 27/07/2026)', () => {
     it('nessuna nota se il tubo e\u2019 stato testato direttamente', () => {
       expect(describePlateOnlyRotatingPositionDiameterNote({
         hasPipeDiameter: true,
@@ -154,7 +162,7 @@ describe('weldingQualificationRules9606', () => {
         rotatingPosition: false,
       });
       expect(note).toContain('\u2265500 mm');
-      expect(note).toContain('da confermare');
+      expect(note).toContain('\u00a75.3');
     });
 
     it('\u226575 mm quando la posizione di prova e\u2019 rotante', () => {

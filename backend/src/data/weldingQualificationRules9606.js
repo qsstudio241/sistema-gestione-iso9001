@@ -165,13 +165,14 @@ function isWeldingPositionQualified({ testPosition, targetPosition, jointType = 
  * Nota aggiuntiva diametro tubo per provini SOLO piastra (nessun tubo testato), saldati
  * in posizione con rotazione del pezzo (es. PA/PB/PC/PD "in posizione rotante").
  *
- * ATTENZIONE — fonte non verificata in questo catalogo: la Tabella 7 completa (incl. note
- * su piastra/posizione rotante) e' risultata GAP nell'estrazione automatica del PDF (vedi
- * docs/reference/ISO-9606-1-range-validita-patentino.md). Questa regola e' stata comunicata
- * come feedback operativo dal cliente reale Studio Mason (16/07/2026, riscontro su patentini
- * saldatori in campo) e NON da verifica diretta del testo normativo integrale. Va trattata
- * come proposta da confermare, non come dato normativo certo — non usarla per popolare
- * automaticamente record del registro senza revisione umana.
+ * Verificata testualmente il 27/07/2026 (ISO 9606-1 §5.3 "Product type", criteri b/c):
+ * "test piece welds in plates cover welds in fixed pipe of outside pipe diameter D >= 500 mm"
+ * (criterio b) e "... rotating pipes of outside pipe diameter D >= 75 mm for welding positions
+ * PA, PB, PC and PD" (criterio c). Coincide con il feedback operativo del cliente reale Studio
+ * Mason (16/07/2026, riscontro su patentini saldatori in campo) — non era un dato inventato,
+ * solo mancante nell'estratto sintetico di questo catalogo. Resta comunque un suggerimento/hint
+ * per la revisione umana in fase di ingest, non usata per popolare automaticamente record del
+ * registro qualifiche senza revisione umana.
  *
  * @param {{ hasPipeDiameter?: boolean, weldingPositions?: string[]|string|null, rotatingPosition?: boolean }} params
  * @returns {string|null}
@@ -190,8 +191,8 @@ function describePlateOnlyRotatingPositionDiameterNote({
     if (!hasRelevantPosition) return null;
 
     return rotatingPosition
-        ? 'Diametro tubo coperto: \u226575 mm (posizione di prova rotante su piastra — nota non verificata su copia integrale norma, da confermare; fonte: feedback cliente Studio Mason)'
-        : 'Diametro tubo coperto: \u2265500 mm (saldatura su piastra, posizioni PA/PB/PC/PD — nota non verificata su copia integrale norma, da confermare; fonte: feedback cliente Studio Mason)';
+        ? 'Diametro tubo coperto: \u226575 mm (posizione di prova rotante su piastra — ISO 9606-1 §5.3 criterio c, verificato 27/07/2026)'
+        : 'Diametro tubo coperto: \u2265500 mm (saldatura su piastra, posizioni PA/PB/PC/PD — ISO 9606-1 §5.3 criterio b, verificato 27/07/2026)';
 }
 
 /**
@@ -199,6 +200,13 @@ function describePlateOnlyRotatingPositionDiameterNote({
  * base al tipo di prodotto testato (variabile essenziale §11: piastra/tubo).
  * Vedi commento gemello in app/src/data/weldingQualificationRules9606.js —
  * mantenere sincronizzato.
+ *
+ * Nota "tubo-piastra"/branch (verificata 27/07/2026, §3.16/§5.4c): un giunto di
+ * derivazione (bocchello tubo che si inserisce in un tubo o in una piastra) e' un
+ * TIPO DI GIUNTO (branch joint, variante del giunto d'angolo FW), non una terza
+ * categoria di product_type — la norma definisce solo "plate (P), pipe (T)" (§11).
+ * Per una derivazione il diametro tubo resta applicabile (il ramo qualificato e'
+ * sempre tubolare) — non serve e non e' corretto introdurre un terzo valore.
  *
  * @param {{ productType?: 'P'|'T'|string|null }} [params]
  * @returns {{ pipeDiameterApplicable: boolean }}
@@ -219,6 +227,7 @@ function buildWelderQualificationRulesPromptSection() {
 - Spessore giunti d'angolo (Tabella 8): con spessore provino t, il campo e' [t, max(3,2t)] se t<3 mm, [3, nessun limite] se t>=3 mm.
 - Estrai comunque il valore/range esplicito riportato sul certificato quando presente: non sovrascriverlo con il calcolo se i due dati non coincidono, segnala solo la discrepanza.
 - Un cambio di processo di saldatura richiede nuova qualifica, salvo equivalenze note: 135<->138, 121<->125, 141/143/145 tra loro (142 solo 142).
+- Giunto di derivazione/branch/bocchello (es. "tubo-piastra", tubo che si inserisce in una piastra o in un altro tubo): il "tipo prodotto" ufficiale ISO 9606-1 ha solo due valori, "P" (piastra) o "T" (tubo) - NON esiste una terza categoria "tubo-piastra" (norma §11: product type plate(P)/pipe(T)). Se il certificato indica esplicitamente una derivazione/branch/bocchello, mantieni product_type="T" ma NON perdere l'informazione originale: riportala testualmente in weld_details (es. "derivazione/branch tubo-piastra") cosi' l'operatore in revisione la vede e puo' correggere consapevolmente.
 --- FINE REGOLE ISO 9606-1 ---`.trim();
 }
 
