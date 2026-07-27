@@ -271,7 +271,7 @@ export default function NcDetailPanel({
             </Link>
           )}
         </div>
-        <div className="nc-form-row nc-form-row-2col">
+        <div className="nc-form-row nc-form-row-2col nc-form-row-2col--date">
           <div>
             <label htmlFor={`nc-sev-${nc.nc_id}`}>Severit{"\u00E0"}</label>
             <select

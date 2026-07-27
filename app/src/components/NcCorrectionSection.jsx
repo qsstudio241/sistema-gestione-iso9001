@@ -116,7 +116,7 @@ export default function NcCorrectionSection({ ncId, ncActions, organizationId = 
               organizationId={organizationId}
             />
           </div>
-          <div className="nc-form-row nc-form-row-2col">
+          <div className="nc-form-row nc-form-row-2col nc-form-row-2col--date">
             <NcResponsibleSelect
               contacts={contacts}
               roleFilter={["attuazione", "generico"]}
