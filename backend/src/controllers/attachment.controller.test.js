@@ -80,7 +80,7 @@ describe('listAttachments — RBAC studio', () => {
 
         const listSql = query.mock.calls[0][0];
         expect(listSql).toContain('att.ndt_report_item_id = @ndt_report_item_id');
-        expect(listSql).toContain('COALESCE(a.organization_id, ndt_r.organization_id)');
+        expect(listSql).toContain('COALESCE(a.organization_id, ndt_r.organization_id, rdp_r.organization_id)');
         expect(res.json).toHaveBeenCalledWith(expect.objectContaining({ success: true }));
     });
 });
