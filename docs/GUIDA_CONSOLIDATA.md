@@ -723,7 +723,9 @@ Funzionano solo le **espressioni JS**: `placeholder={"…\u00E8…"}` oppure UTF
 
 **Fix:** `NCPage.jsx`, `NcDetailPanel.jsx` (hint + placeholder causa + label Ask AI), `NcCorrectionSection.jsx` (placeholder correzione). Bonus: `AutoTextarea.jsx` titolo errore microfono (U+0097 → em dash).
 
-**Test L1:** `ncPage.drawer.test.js` + `ncDetailPanel.test.js` + assert attributi `placeholder={` / `label={` senza `\u` in `"…"`.
+**Export Word NC (27/07/2026):** Word non apriva il `.docx` se la sezione allegati veniva sostituita: `replaceNcAttachmentsMarker` usava `lastIndexOf('<w:p')` che matchava anche `<w:pPr>` → XML con paragrafo non chiuso. Fix: `findWordParagraphStartBefore` (solo `<w:p>` / `<w:p …>`). Test integrazione bilanciamento `<w:p>`.
+
+**Test L1:** `ncPage.drawer.test.js` + `ncDetailPanel.test.js` + `ncWordExport.integration.test.js`.
 
 ---
 
