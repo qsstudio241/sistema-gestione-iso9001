@@ -345,7 +345,7 @@ export default function NCPage() {
       <div className="nc-page-header">
         <div>
           <h1>{"\uD83D\uDEA8 Piano Azioni & Non Conformit\u00E0"}</h1>
-          <p className="nc-page-sub">ISO 9001:2015 \u00A76.1 + \u00A79.3 + \u00A710.2 + \u00A710.3 \u2014 Registro cross-fonte</p>
+          <p className="nc-page-sub">{"ISO 9001:2015 \u00A76.1 + \u00A79.3 + \u00A710.2 + \u00A710.3 \u2014 Registro cross-fonte"}</p>
         </div>
         <div className="nc-page-header-actions">
           <button

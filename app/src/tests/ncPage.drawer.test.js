@@ -44,4 +44,13 @@ describe('NCPage drawer', () => {
     expect(src).toContain('nc-detail-drawer-resizer');
     expect(src).toContain('startDrawerResize');
   });
+
+  it('sottotitolo ISO usa escape Unicode in stringa JS (non testo JSX grezzo)', () => {
+    const src = readFileSync(ncPagePath, 'utf8');
+    expect(src).toMatch(
+      /nc-page-sub">\{"ISO 9001:2015 \\u00A76\.1 \+ \\u00A79\.3 \+ \\u00A710\.2 \+ \\u00A710\.3 \\u2014 Registro cross-fonte"\}/
+    );
+    // Vietato: \u fuori da stringa JS (comparirebbe letterale in UI)
+    expect(src).not.toMatch(/nc-page-sub">ISO 9001:2015 \\u00A7/);
+  });
 });
