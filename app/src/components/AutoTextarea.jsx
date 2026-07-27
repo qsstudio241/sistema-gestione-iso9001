@@ -139,7 +139,7 @@ function AutoTextarea({
           return;
         }
       } catch {
-        // permissions API non disponibile  prosegui
+        // permissions API non disponibile — prosegui
       }
     }
 
@@ -214,7 +214,7 @@ function AutoTextarea({
             type="button"
             className={`voice-btn${isListening ? " voice-btn--active" : ""}${voiceError ? " voice-btn--error" : ""}`}
             onClick={toggleListening}
-            title={voiceError ? "Errore microfono  tocca per riprovare" : isListening ? "Ferma dettatura" : "Dettatura vocale (it-IT)"}
+            title={voiceError ? "Errore microfono \u2014 tocca per riprovare" : isListening ? "Ferma dettatura" : "Dettatura vocale (it-IT)"}
             aria-label={voiceError ? "Errore microfono" : isListening ? "Ferma dettatura" : "Avvia dettatura vocale"}
           />
           {errorMessage && <p className="voice-perm-error">{errorMessage}</p>}
