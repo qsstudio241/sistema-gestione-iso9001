@@ -48,4 +48,37 @@ describe('ncWordExport integration', () => {
     expect(xml).not.toContain('NC_ATTACHMENTS_MARKER');
     expect(/wp:inline|a:blip/.test(xml)).toBe(true);
   });
+
+  it('mantiene paragrafi bilanciati dopo sostituzione marker (w:pPr non confonde <w:p)', async () => {
+    const bytes = await generateNcDocxBlob(
+      {
+        nc_number: 'NC-M-SIM-35190-1780155854017',
+        client_name: 'Azienda Test Fase 1',
+        description: 'Simulazione workflow Fase 1',
+        severity: 'minor',
+        status: 'closed',
+        source_type: 'manual',
+        corrective_action_needed: 'no',
+        corrective_action_evaluation_notes: 'perché siamo bravi',
+      },
+      [{
+        action_type: 'immediate',
+        status: 'completed',
+        description: 'Correzione test',
+        responsible: 'Mario',
+        due_date: '2026-07-18',
+      }],
+      [],
+      { templateUrl: 'https://example.com/templates/NC-scheda.docx', outputType: 'uint8array' },
+    );
+
+    const zip = new PizZip(bytes);
+    const xml = zip.files['word/document.xml'].asText();
+    const openP = (xml.match(/<w:p[\s>]/g) || []).length;
+    const closeP = (xml.match(/<\/w:p>/g) || []).length;
+    expect(openP).toBe(closeP);
+    expect(xml).not.toContain('NC_ATTACHMENTS_MARKER');
+    expect(xml).toContain('Simulazione workflow Fase 1');
+    expect(xml).toContain('Correzione test');
+  });
 });
