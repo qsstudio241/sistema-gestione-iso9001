@@ -54,3 +54,23 @@ describe('NCPage drawer', () => {
     expect(src).not.toMatch(/nc-page-sub">ISO 9001:2015 \\u00A7/);
   });
 });
+
+describe('NC module JSX attributes — escape Unicode', () => {
+  const paths = [
+    resolve(process.cwd(), 'src/components/NcCorrectionSection.jsx'),
+    resolve(process.cwd(), 'src/components/NcDetailPanel.jsx'),
+  ];
+
+  it('placeholder/label con \\u usano espressione JS {\"...\"}, non attributo quotato', () => {
+    // Vite/esbuild non decodifica \\uXXXX in attr JSX "..." → bundle con \\\\u letterale
+    const badAttr = /\b(placeholder|label|title|aria-label)="[^"]*\\u[0-9A-Fa-f]{4}/;
+    for (const p of paths) {
+      const src = readFileSync(p, 'utf8');
+      expect(src, p).not.toMatch(badAttr);
+    }
+    const correction = readFileSync(paths[0], 'utf8');
+    expect(correction).toContain(
+      'placeholder={"Cosa \\u00E8 stato fatto subito per contenere/correggere il problema..."}'
+    );
+  });
+});
