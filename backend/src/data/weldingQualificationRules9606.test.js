@@ -8,6 +8,7 @@ const {
     computeQualifiedWeldingPositions,
     isWeldingPositionQualified,
     describePlateOnlyRotatingPositionDiameterNote,
+    getApplicableWelderFields,
     buildWelderQualificationRulesPromptSection,
 } = require('./weldingQualificationRules9606');
 
@@ -111,6 +112,18 @@ describe('weldingQualificationRules9606', () => {
         const section = buildWelderQualificationRulesPromptSection();
         expect(section).toContain('ISO 9606-1');
         expect(section).toContain('6 mesi');
+    });
+
+    describe('getApplicableWelderFields (UX campi condizionati, 27/07/2026)', () => {
+        test('diametro tubo non applicabile se prodotto = piastra (P)', () => {
+            expect(getApplicableWelderFields({ productType: 'P' })).toEqual({ pipeDiameterApplicable: false });
+        });
+
+        test('diametro tubo applicabile se prodotto = tubo (T) o non ancora scelto', () => {
+            expect(getApplicableWelderFields({ productType: 'T' })).toEqual({ pipeDiameterApplicable: true });
+            expect(getApplicableWelderFields({ productType: '' })).toEqual({ pipeDiameterApplicable: true });
+            expect(getApplicableWelderFields()).toEqual({ pipeDiameterApplicable: true });
+        });
     });
 
     describe('describePlateOnlyRotatingPositionDiameterNote (feedback cliente Studio Mason, da confermare)', () => {

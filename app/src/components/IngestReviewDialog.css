@@ -247,6 +247,21 @@ body.sgq-ingest-review-resizing * {
   box-shadow: 0 0 0 1px #fecaca;
 }
 
+.ingest-review__field--not-applicable .ingest-review__field-label {
+  color: #94a3b8;
+}
+
+.ingest-review__readonly--na {
+  background: #f8fafc;
+  border: 1px dashed #cbd5e1;
+}
+
+.ingest-review__readonly--na .ingest-review__readonly-value {
+  color: #64748b;
+  font-weight: 400;
+  font-style: italic;
+}
+
 .ingest-review__readonly {
   display: flex;
   align-items: center;

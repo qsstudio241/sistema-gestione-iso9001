@@ -194,6 +194,22 @@ function describePlateOnlyRotatingPositionDiameterNote({
         : 'Diametro tubo coperto: \u2265500 mm (saldatura su piastra, posizioni PA/PB/PC/PD — nota non verificata su copia integrale norma, da confermare; fonte: feedback cliente Studio Mason)';
 }
 
+/**
+ * Determina quali campi opzionali del patentino ISO 9606-1 sono pertinenti in
+ * base al tipo di prodotto testato (variabile essenziale §11: piastra/tubo).
+ * Vedi commento gemello in app/src/data/weldingQualificationRules9606.js —
+ * mantenere sincronizzato.
+ *
+ * @param {{ productType?: 'P'|'T'|string|null }} [params]
+ * @returns {{ pipeDiameterApplicable: boolean }}
+ */
+function getApplicableWelderFields({ productType } = {}) {
+    const pt = String(productType || '').toUpperCase().trim();
+    return {
+        pipeDiameterApplicable: pt !== 'P',
+    };
+}
+
 function buildWelderQualificationRulesPromptSection() {
     return `
 --- REGOLE QUALIFICA SALDATORE ISO 9606-1 ---
@@ -216,5 +232,6 @@ module.exports = {
     BUTT_WELD_POSITION_QUALIFICATION_MATRIX,
     FILLET_WELD_POSITION_QUALIFICATION_MATRIX,
     describePlateOnlyRotatingPositionDiameterNote,
+    getApplicableWelderFields,
     buildWelderQualificationRulesPromptSection,
 };

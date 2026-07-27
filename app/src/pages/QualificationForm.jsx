@@ -6,6 +6,7 @@ import React, { useState, useEffect, useRef } from "react";
 import apiService from "../services/apiService";
 import { OCCUPATIONAL_QUALIFICATION_TYPES } from "../data/occupationalQualificationTypes";
 import { buildWelderDesignation } from "../utils/weldingDesignation";
+import { getApplicableWelderFields } from "../data/weldingQualificationRules9606";
 import SemiannualConfirmationSection from "../components/SemiannualConfirmationSection";
 import "./QualificationForm.css";
 
@@ -95,6 +96,19 @@ function QualificationForm({ qualification, onSave, onClose, defaultCompanyId, o
     : isOperator14732
     ? "Revalidazione (6 anni)"
     : "Revalidazione";
+  // Diametro tubo (Tabella 7 ISO 9606-1): pertinente solo se il prodotto testato
+  // e' un tubo — vedi getApplicableWelderFields per la motivazione normativa.
+  // Vale anche per 14732/15614: stesso concetto di variabile essenziale piastra/tubo.
+  const applicableFields = getApplicableWelderFields({ productType: form.product_type });
+
+  useEffect(() => {
+    if (applicableFields.pipeDiameterApplicable) return;
+    setForm((f) => {
+      if ((f.pipe_diameter_min_mm == null || f.pipe_diameter_min_mm === "")
+        && (f.pipe_diameter_max_mm == null || f.pipe_diameter_max_mm === "")) return f;
+      return { ...f, pipe_diameter_min_mm: "", pipe_diameter_max_mm: "" };
+    });
+  }, [applicableFields.pipeDiameterApplicable]);
 
   function validateWelderField(field, value) {
     if (!isWelder9606 || !WELDER_REQUIRED[field]) return null;
@@ -425,14 +439,25 @@ function QualificationForm({ qualification, onSave, onClose, defaultCompanyId, o
                   <label>Spessore max (mm)</label>
                   <input type="number" step="0.1" min="0" value={form.thickness_max_mm} onChange={handle("thickness_max_mm")} placeholder="es. 20" />
                 </div>
-                <div className="qf-field">
-                  <label>Diametro tubo min (mm)</label>
-                  <input type="number" step="0.1" min="0" value={form.pipe_diameter_min_mm} onChange={handle("pipe_diameter_min_mm")} placeholder="vuoto = solo lamiera" />
-                </div>
-                <div className="qf-field">
-                  <label>Diametro tubo max (mm)</label>
-                  <input type="number" step="0.1" min="0" value={form.pipe_diameter_max_mm} onChange={handle("pipe_diameter_max_mm")} placeholder="vuoto = solo lamiera" />
-                </div>
+                {applicableFields.pipeDiameterApplicable ? (
+                  <>
+                    <div className="qf-field">
+                      <label>Diametro tubo min (mm)</label>
+                      <input type="number" step="0.1" min="0" value={form.pipe_diameter_min_mm} onChange={handle("pipe_diameter_min_mm")} placeholder="vuoto = solo lamiera" />
+                    </div>
+                    <div className="qf-field">
+                      <label>Diametro tubo max (mm)</label>
+                      <input type="number" step="0.1" min="0" value={form.pipe_diameter_max_mm} onChange={handle("pipe_diameter_max_mm")} placeholder="vuoto = solo lamiera" />
+                    </div>
+                  </>
+                ) : (
+                  <div className="qf-field qf-flex2">
+                    <label style={{color:"#94a3b8"}}>Diametro tubo</label>
+                    <span style={{fontSize:13, color:"#64748b", fontStyle:"italic", padding:"0.5rem 0"}}>
+                      Non applicabile — prodotto: Piastra
+                    </span>
+                  </div>
+                )}
               </div>
               <div className="qf-row">
                 <div className="qf-field">
