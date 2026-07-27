@@ -1,4 +1,4 @@
-# Normative Norma 00002  Uni Iso 45001 2018 Rev. 0
+# Normative Norma 00002 Uni Iso 45001 2018 Rev. 0
 
 > Fonte: `Normative NORMA_00002_ UNI ISO 45001_2018 Rev. 0.pdf` — 48 pagine
 
@@ -285,7 +285,7 @@ agli obiettivi per la SSL e riportare i risultati;
 d) Act (Agire): intraprendere azioni per migliorare in modo continuo le prestazioni in
 termini di SSL per raggiungere i risultati attesi.
 Il presente documento incorpora il concetto PDCA in un nuovo quadro di riferimento,
-come mostrato nella figura(cid:124)1.
+come mostrato nella figura 1.
 figura 1 Relazione tra PDCA e il quadro di riferimento nel presente documento
 Nota I numeri indicati tra parentesi si riferiscono ai numeri dei punti del presente documento.
 UNI ISO 45001:2018 © UNI Pagina 2
@@ -316,8 +316,8 @@ da parte di un organismo esterno.
 I punti da 1 a 3 nel presente documento definiscono lo scopo e campo di applicazione, i
 riferimenti normativi e i termini e le definizioni che si applicano all'uso del presente
 documento, mentre i punti da 4 a 10 contengono i requisiti da utilizzare per valutare la
-conformità al presente documento. L'appendice(cid:124)A fornisce le spiegazioni informative su
-questi requisiti. I termini e le definizioni nel punto(cid:124)3 sono disposti in ordine concettuale,
+conformità al presente documento. L'appendice A fornisce le spiegazioni informative su
+questi requisiti. I termini e le definizioni nel punto 3 sono disposti in ordine concettuale,
 con un indice alfabetico riportato alla fine del documento.
 Nel presente documento sono utilizzate le seguenti forme verbali:
 a) "deve" indica un requisito;
@@ -325,7 +325,7 @@ b) "dovrebbe" indica una raccomandazione;
 c) "può" *)(may) indica un permesso;
 d) “può” (can) indica una possibilità o una capacità.
 Le informazioni riportate come "Nota" sono una guida per comprendere o per chiarire il
-requisito correlato. Le “Note” utilizzate nel punto(cid:124)3 forniscono informazioni aggiuntive che
+requisito correlato. Le “Note” utilizzate nel punto 3 forniscono informazioni aggiuntive che
 integrano i dati terminologici e possono contenere disposizioni relative all'utilizzo di un
 termine.
 *) Nota Nazionale - Nella presente norma è utilizzato lo stesso verbo per la traduzione in italiano di "may" e "can". La
@@ -554,7 +554,7 @@ Nota 1 Il presente termine fa parte dei termini comuni e delle definizioni di ba
 gestione riportati nell’Appendice SL del Supplemento consolidato alla Parte 1 delle Direttive ISO/IEC.
 3.26 procedura: Modo specificato per svolgere un'attività o un processo (3.25).
 Nota 1 Le procedure possono essere documentate o meno.
-[FONTE: ISO(cid:124)9000:2015, 3.4.5, modificato - È stata modificata la nota 1]
+[FONTE: ISO 9000:2015, 3.4.5, modificato - È stata modificata la nota 1]
 3.27 prestazioni: Risultati misurabili.
 Nota 1 Le prestazioni possono riguardare risultanze sia quantitative sia qualitative. I risultati possono essere
 determinati e valutati con metodi qualitativi o quantitativi.
@@ -1241,7 +1241,7 @@ d) assicurare che i risultati degli audit siano riportati ai manager pertinenti;
 che i risultati pertinenti degli audit siano riportati ai lavoratori e, ove istituiti, ai
 rappresentanti dei lavoratori e ad altre parti interessate pertinenti;
 e) intraprendere azioni per affrontare le non conformità e migliorare in modo continuo le
-prestazioni in termini di SSL (vedere punto(cid:124)10);
+prestazioni in termini di SSL (vedere punto 10);
 f) conservare informazioni documentate quale evidenza dei risultati di audit e
 dell'attuazione del programma di audit.
 Nota Per ulteriori informazioni sul controllo e la competenza degli auditor, vedere ISO 19011.
@@ -1392,7 +1392,7 @@ documentate quale evidenza di ..." per indicare le registrazioni e l'espressione
 essere mantenuta come informazione documentata" per indicare i documenti,
 incluse le procedure. L'espressione "conservare le informazioni documentate quale
 evidenza di ..." non significa che le informazioni conservate potranno soddisfare le
-esigenze previste dai requisiti legali.(cid:124)È intesa invece a definire il tipo di registrazioni
+esigenze previste dai requisiti legali. È intesa invece a definire il tipo di registrazioni
 che è necessario conservare.
 g) Le attività che sono "sotto il controllo condiviso dell'organizzazione" sono attività per
 le quali l'organizzazione condivide il controllo sui mezzi o sui metodi o condivide la
@@ -1715,7 +1715,7 @@ a) I requisiti legali possono includere:
 1) legislazione (nazionale, regionale o internazionale), compresi statuti e regolamenti;
 2) decreti e direttive;
 3) ordinanze emesse da enti regolatori;
-4) (cid:124)permessi, licenze o altre forme di autorizzazione;
+4) permessi, licenze o altre forme di autorizzazione;
 5) sentenze di corti o tribunali amministrativi;
 6) trattati, convenzioni, protocolli;
 7) accordi collettivi di contrattazione.
@@ -1742,7 +1742,7 @@ umane. Si prevede che l'attuazione delle azioni intraprese raggiunga i risultati
 sistema di gestione per la SSL.
 Quando la valutazione dei rischi per la SSL e di altri rischi ha identificato la necessità di
 controlli, l'attività di pianificazione determina come questi sono implementati in attività
-operative (vedere punto(cid:124)8); per esempio, la determinazione se incorporare questi controlli
+operative (vedere punto 8); per esempio, la determinazione se incorporare questi controlli
 nelle istruzioni di lavoro o in azioni per migliorare la competenza. Altri controlli possono
 assumere la forma di misurazione o monitoraggio (vedere punto 9).
 Le azioni per affrontare i rischi e le opportunità sono considerate anche in merito alla
@@ -2146,32 +2146,32 @@ UNI ISO 45001:2018 © UNI Pagina 38
 Tecnove Spa
 UNIstore - 2023 - 2023/316641
 BIBLIOGRAFIA
-[1] ISO(cid:124)9000:2015 Quality management systems(cid:124)- Fundamentals and vocabulary
-[2] ISO(cid:124)9001 Quality management systems(cid:124)- Requirements
-[3] ISO(cid:124)14001 Environmental management systems(cid:124)- Requirements with
+[1] ISO 9000:2015 Quality management systems - Fundamentals and vocabulary
+[2] ISO 9001 Quality management systems - Requirements
+[3] ISO 14001 Environmental management systems - Requirements with
 guidance for use
-[4] ISO(cid:124)19011 Guidelines for auditing management systems
-[5] ISO(cid:124)20400 Sustainable procurement(cid:124)- Guidance
-[6] ISO(cid:124)26000 Guidance on social responsibility
-[7] ISO(cid:124)31000 Risk management - Principles and guidelines
-[8] ISO(cid:124)37500 Guidance on outsourcing
-[9] ISO(cid:124)39001 Road traffic safety (RTS) management systems - Requirements
+[4] ISO 19011 Guidelines for auditing management systems
+[5] ISO 20400 Sustainable procurement - Guidance
+[6] ISO 26000 Guidance on social responsibility
+[7] ISO 31000 Risk management - Principles and guidelines
+[8] ISO 37500 Guidance on outsourcing
+[9] ISO 39001 Road traffic safety (RTS) management systems - Requirements
 with guidance for use
-[10] ISO(cid:124)Guide(cid:124)73:2009 Risk management(cid:124)- Vocabulary
-[11] IEC(cid:124)31010 Risk management(cid:124)- Risk assessment techniques
+[10] ISO Guide 73:2009 Risk management - Vocabulary
+[11] IEC 31010 Risk management - Risk assessment techniques
 [12] ILO. Guidelines on occupational safety and health management systems,
-ILO-OSH(cid:124)2001. 2nd(cid:124)ed. International Labour Office, Geneva, 2009. Available at:
+ILO-OSH 2001. 2nd ed. International Labour Office, Geneva, 2009. Available at:
 http://www.ilo.org/safework/info/standards-and-instruments/WCMS_107727/lang--
 en/index.htm
 [13] ILO. International Labour Standards (including those on occupational safety and
 health). International Labour Office, Geneva. Available at:
 http://www.ilo.org/normlex (click on “instruments”, then “Conventions and
 Recommendations by subject”)
-[14] OHSAS(cid:124)18001. Occupational health and safety management systems - Requirements.
-2nd(cid:124)ed. OHSAS Project Group, London, July 2007, ISBN(cid:124)978 0 580 50802 8
-[15] OHSAS(cid:124)18002. Occupational health and safety management systems - Guidelines
-for the implementation of OHSAS(cid:124)18001:2007. 2nd ed. OHSAS Project Group,
-London, Nov 2008, ISBN(cid:124)978 0 580 61674 7
+[14] OHSAS 18001. Occupational health and safety management systems - Requirements.
+2nd ed. OHSAS Project Group, London, July 2007, ISBN 978 0 580 50802 8
+[15] OHSAS 18002. Occupational health and safety management systems - Guidelines
+for the implementation of OHSAS 18001:2007. 2nd ed. OHSAS Project Group,
+London, Nov 2008, ISBN 978 0 580 61674 7
 UNI ISO 45001:2018 © UNI Pagina 39
 
 ## Pagina 44
