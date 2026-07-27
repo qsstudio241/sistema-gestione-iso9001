@@ -726,6 +726,27 @@ Funzionano solo le **espressioni JS**: `placeholder={"…\u00E8…"}` oppure UTF
 
 ---
 
+### Sessione 27/07/2026 — Fix default norma patentino saldatore (proponeva 9606-1:2012 invece di 2017)
+
+**Segnalazione utente:** nel modulo Qualifiche/Patentini, il sistema continuava a proporre/scrivere "ISO 9606-1:2012" per il campo "Norma di riferimento" invece dell'edizione corrente "ISO 9606-1:2017".
+
+**Causa reale (`app/src/data/documentTypeSchemas.js`, schema `patentino_saldatore`):**
+1. Il `<select>` del campo `standard_reference` elencava **solo** `"ISO 9606-1:2012"` come opzione per la norma saldatori — l'edizione 2017 non era proprio presente nella lista, quindi non poteva essere scelta né proposta.
+2. Il prompt di estrazione AI (`aiPrompt`) usava `ISO 9606-1:2012` come esempio illustrativo per `standard_reference` — quando il certificato non riportava chiaramente l'anno, l'AI tendeva a ricalcare l'esempio dato nelle istruzioni.
+
+**Conferma edizione vigente:** ISO 9606-1:2017 è l'edizione attualmente in vigore (ha sostituito ISO 9606-1:2012 + Cor 1:2012 + Cor 2:2013) — confermato sia da `docs/reference/ISO-9606-1-range-validita-patentino.md` (fonte nel repo, digitalizzata dal PDF ufficiale BS EN ISO 9606-1:2017) sia da conoscenza generale ISO/CEN.
+
+**Fix:**
+- Aggiunta l'opzione `"ISO 9606-1:2017"` come prima voce (nuovo default per certificati recenti) nel `<select>`; **mantenuta** `"ISO 9606-1:2012"` più sotto per registrare correttamente certificati storici legittimi che la riportano esplicitamente (nessuna opzione rimossa).
+- Aggiornato l'hint del campo e l'esempio nel prompt AI (frontend e backend `documentTypeSchemas.js`) per indicare esplicitamente: usare l'anno scritto sul certificato se presente, altrimenti default a 2017 (non più 2012).
+- Nessun `DEFAULT` SQL sulla colonna `standard_ref` (tabella `qualifications`, migrazione 032) — è `NULL` di default, nessuna migrazione necessaria.
+
+**Test:** nuovi test in `app/src/tests/documentTypesAlignment.test.js` (prima opzione = 2017, 2012 resta selezionabile, prompt AI menziona il default 2017). Suite completa frontend (938 test) e backend ingest/qualifiche (75 test) verdi + build Vite OK.
+
+**Nota di processo:** fix eseguito in sessione con lavoro parallelo concorrente sugli stessi file (`documentTypeSchemas.js`, `weldingQualificationRules9606.js`, `QualificationForm.jsx`) — un'altra sessione ha applicato **la stessa identica correzione** su `app/src/data/documentTypeSchemas.js` (commit `f64a98f7`) mentre questa sessione la stava preparando. Verificato con `git diff` prima del commit per non duplicare/sovrascrivere: mantenuti solo gli interventi non già presenti (hardening prompt backend + test).
+
+---
+
 ### Sessione 22/05/2026 — Fix allegati ISO 45001
 
 **Problema**: pulsante "+ Aggiungi Allegati" visibile ma non funzionante sulla checklist 45001 (errore silenzioso "ID domanda non disponibile"). Su 9001 e 14001 funzionava regolarmente.
