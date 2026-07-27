@@ -136,28 +136,6 @@ export default function NcResponsibleSelect({
 
       )}
 
-      {allowExternal && (
-
-        <label className="nc-inline-check">
-
-          <input
-
-            type="checkbox"
-
-            checked={!!useExternal}
-
-            disabled={readOnly}
-
-            onChange={(e) => onUseExternalChange?.(e.target.checked)}
-
-          />
-
-          Referente esterno (testo libero)
-
-        </label>
-
-      )}
-
       {showExternal ? (
 
         <input
@@ -219,6 +197,28 @@ export default function NcResponsibleSelect({
           ))}
 
         </select>
+
+      )}
+
+      {allowExternal && (
+
+        <label className="nc-inline-check">
+
+          <input
+
+            type="checkbox"
+
+            checked={!!useExternal}
+
+            disabled={readOnly}
+
+            onChange={(e) => onUseExternalChange?.(e.target.checked)}
+
+          />
+
+          Referente esterno (testo libero)
+
+        </label>
 
       )}
 
