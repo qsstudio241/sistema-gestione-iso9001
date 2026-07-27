@@ -12,7 +12,7 @@ jest.mock('../config/database', () => ({
 
 const { runDocumentIngest } = require('./documentIngestPipeline.service');
 const { query } = require('../config/database');
-const { ingestWPQRFromPdf, extractWPQRFromPdf, checkWpqrPlausibility } = require('./wpqrIngest.service');
+const { ingestWPQRFromPdf, extractWPQRFromPdf, checkWpqrPlausibility, commitWPQRFromFields } = require('./wpqrIngest.service');
 
 describe('ingestWPQRFromPdf (IG-2)', () => {
     afterEach(() => jest.clearAllMocks());
@@ -107,6 +107,58 @@ describe('checkWpqrPlausibility (gap analysis 26/07/2026 — warning-only)', () 
     it('segnala gas di protezione fuori catalogo ISO 14175', () => {
         const warnings = checkWpqrPlausibility({ shielding_gas: 'GAS-INESISTENTE' });
         expect(warnings.some((w) => w.includes('ISO 14175'))).toBe(true);
+    });
+});
+
+/**
+ * Test L1 — commitWPQRFromFields, sanitizzazione numerica (gap hardening
+ * 27/07/2026, stesso pattern del bug produzione su qualificationIngest.service.js
+ * e wpsIngest.service.js): thickness_tested/thickness_min/thickness_max/
+ * diameter_min/diameter_max su `wpqr_records` sono colonne DECIMAL —
+ * "N.A."/stringa vuota/range testuale non deve mai rompere l'INSERT.
+ */
+describe('commitWPQRFromFields — sanitizzazione numerica', () => {
+    afterEach(() => jest.clearAllMocks());
+
+    it('salva null invece di crashare quando i campi spessore/diametro sono "N.A." o vuoti', async () => {
+        query.mockResolvedValueOnce({ recordset: [] }); // checkDuplicate
+        query.mockResolvedValueOnce({ recordset: [{ id: 88 }] }); // INSERT
+
+        const result = await commitWPQRFromFields({
+            wpqr_number: 'WPQR-99',
+            welding_process: '111',
+            thickness_test_mm: 'N.A.',
+            thickness_min: '',
+            thickness_max: 'N.A.',
+            diameter_min: '',
+            diameter_max: 'N.A.',
+        }, 1001, 2001, { fileName: 'wpqr99.pdf' });
+
+        expect(result.wpqr_id).toBe(88);
+        const insertCall = query.mock.calls[1];
+        expect(insertCall[1].thickness_tested).toBeNull();
+        expect(insertCall[1].thickness_min).toBeNull();
+        expect(insertCall[1].thickness_max).toBeNull();
+        expect(insertCall[1].diameter_min).toBeNull();
+        expect(insertCall[1].diameter_max).toBeNull();
+    });
+
+    it('converte la virgola decimale italiana su thickness_test_mm senza crashare', async () => {
+        query.mockResolvedValueOnce({ recordset: [] }); // checkDuplicate
+        query.mockResolvedValueOnce({ recordset: [{ id: 89 }] }); // INSERT
+
+        const result = await commitWPQRFromFields({
+            wpqr_number: 'WPQR-100',
+            welding_process: '111',
+            thickness_test_mm: '12,5',
+        }, 1001, 2001, { fileName: 'wpqr100.pdf' });
+
+        expect(result.wpqr_id).toBe(89);
+        const insertCall = query.mock.calls[1];
+        expect(insertCall[1].thickness_tested).toBe(12.5);
+        // Range non dichiarato → calcolato dal fallback esistente (calcThicknessRange).
+        expect(insertCall[1].thickness_min).not.toBeNull();
+        expect(insertCall[1].thickness_max).not.toBeNull();
     });
 });
 
