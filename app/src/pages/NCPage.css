@@ -382,14 +382,26 @@
   max-width: 100%;
 }
 .nc-inline-check {
-  display: inline-flex;
+  display: flex;
+  justify-content: flex-start;
   align-items: center;
   gap: 8px;
+  width: 100%;
+  box-sizing: border-box;
   font-size: 0.8rem;
   font-weight: 500;
   margin: 8px 0 0;
+  text-align: left;
   white-space: nowrap;
-  max-width: 100%;
+}
+/* Evita width:100% ereditato da .nc-form-row input (spinge via il testo) */
+.nc-inline-check input[type="checkbox"] {
+  width: auto;
+  min-width: 1rem;
+  margin: 0;
+  padding: 0;
+  flex: 0 0 auto;
+  accent-color: #3182ce;
 }
 .nc-form-actions { display: flex; justify-content: flex-end; margin-top: 8px; }
 .btn-primary {
