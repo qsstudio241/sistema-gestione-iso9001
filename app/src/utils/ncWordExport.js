@@ -199,17 +199,37 @@ async function preloadNcAttachmentImages(attachments, fetchAttachmentBlob) {
     );
 }
 
+function findWordParagraphStartBefore(xml, beforeIndex) {
+    if (!xml || beforeIndex < 0) return -1;
+    let pos = beforeIndex;
+    while (pos >= 0) {
+        const idx = xml.lastIndexOf('<w:p', pos);
+        if (idx === -1) return -1;
+        const next = xml.charAt(idx + 4);
+        // Solo <w:p> o <w:p ...> — esclude <w:pPr>, <w:pStyle>, ecc.
+        if (next === '>' || next === ' ') {
+            return idx;
+        }
+        pos = idx - 1;
+    }
+    return -1;
+}
+
 function replaceNcAttachmentsMarker(xml, attachOoxml) {
     if (!xml || typeof xml !== 'string') return xml;
     const marker = 'NC_ATTACHMENTS_MARKER';
     if (!xml.includes(marker)) return xml;
 
-    // Sostituisce solo il paragrafo che contiene il marker (evita regex che
-    // dal primo <w:p> al </w:p> del marker cancellerebbe tutto il documento).
     const idx = xml.indexOf(marker);
-    const pStart = xml.lastIndexOf('<w:p', idx);
     const pEnd = xml.indexOf('</w:p>', idx);
-    if (pStart === -1 || pEnd === -1) return xml;
+    if (pEnd === -1) return xml;
+
+    const pStart = findWordParagraphStartBefore(xml, idx);
+    if (pStart === -1 || pStart >= pEnd) return xml;
+
+    const segment = xml.slice(pStart, pEnd + 6);
+    if (!segment.includes(marker)) return xml;
+
     return xml.slice(0, pStart) + attachOoxml + xml.slice(pEnd + 6);
 }
 
