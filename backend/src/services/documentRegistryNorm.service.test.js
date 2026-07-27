@@ -86,9 +86,21 @@ describe('buildNormTypeSpecificData  -  allineamento form manuale', () => {
       superseded_by: null,
     });
 
+    expect(result.standard_code).toBe('D.Lgs. 81/2008');
     expect(result.last_validity_check).toBe('2026-05-25T10:00:00.000Z');
     expect(result.validity_check_url).toBe('https://www.normattiva.it/...');
     expect(result).not.toHaveProperty('superseded_by');
+  });
+
+  it('preserva D.Lgs. 81/2008 anche con edition_year esplicito (bug "81-2008:2008")', () => {
+    const result = buildNormTypeSpecificData({
+      standard_code: 'D.Lgs. 81/2008',
+      issuing_body: 'IT',
+      edition_year: 2008,
+    });
+
+    expect(result.standard_code).toBe('D.Lgs. 81/2008');
+    expect(result.edition_year).toBe(2008);
   });
 
   it('tronca scope_summary oltre 500 caratteri', () => {

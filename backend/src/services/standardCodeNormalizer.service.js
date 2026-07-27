@@ -13,6 +13,46 @@ const ORG_TOKENS = new Set([
 const DOC_TYPE_TOKENS = new Set(['TR', 'TS', 'PAS', 'GUIDE']);
 
 /**
+ * Riferimenti legislativi italiani (D.Lgs., D.P.R., D.M., D.L., Legge, Circolare, Regolamento)
+ * nel formato "numero/anno" (es. "D.Lgs. 81/2008"). Riconosciuti come branch separato e
+ * ADDITIVO rispetto al parsing dei codici norma tecnici (ISO/UNI/EN): non attraversano mai
+ * la tokenizzazione ORG_TOKENS/DOC_TYPE_TOKENS, che li spezzerebbe (vedi bug "81-2008:2008").
+ * Etichette allineate a normConnectors/normativaConnector.js (ACT_PATTERNS), estese con
+ * D.M./Decreto Ministeriale e Circolare (non presenti nel connettore, rilevanti per il
+ * contesto ISO 45001/sicurezza sul lavoro anche se non ancora usate nei dati seed).
+ */
+const ITALIAN_LAW_RE = /^\s*(D\.?\s*Lgs\.?|Decreto\s+Legislativo|D\.?\s*P\.?\s*R\.?|Decreto\s+del\s+Presidente(?:\s+della\s+Repubblica)?|D\.?\s*M\.?|Decreto\s+Ministeriale|D\.?\s*L\.?|Decreto[\s-]*Legge|Legge|L\.|Circolare|Circ\.|Regolamento|Reg\.)\s*\.?\s*(\d+)\s*[/\s-]+\s*(\d{4})\b/i;
+
+/**
+ * Riconosce e normalizza un riferimento di legge italiano. La label (es. "D.Lgs.")
+ * è mantenuta ESATTAMENTE come scritta dall'utente (nessuna riscrittura di punti/maiuscole);
+ * solo il separatore fra numero e anno viene normalizzato a "/" (accetta anche spazio o "-"
+ * in ingresso, es. da nomi file "DLgs_81_2008.pdf" -> "DLgs 81 2008"). Così "D.Lgs. 81/2008"
+ * resta identico, senza troncamenti né anno duplicato con ":" (bug "81-2008:2008").
+ * @param {string} input - già trim()ato dal chiamante
+ * @returns {ParsedStandardCode|null}
+ */
+function parseItalianLawCode(input) {
+  const normalizedSpaces = input.replace(/\s+/g, ' ').trim();
+  const m = normalizedSpaces.match(ITALIAN_LAW_RE);
+  if (!m) return null;
+
+  const label = m[1].trim();
+  const number = m[2];
+  const year = parseInt(m[3], 10);
+  const canonical = `${label} ${number}/${year}`;
+
+  return {
+    prefixes: [],
+    docType: null,
+    number: `${number}/${year}`,
+    year,
+    canonical,
+    isItalianLaw: true,
+  };
+}
+
+/**
  * @typedef {object} ParsedStandardCode
  * @property {string[]} prefixes - es. ['UNI','EN','ISO'] o ['ISO']
  * @property {string|null} docType - TR, TS, ...
@@ -47,6 +87,9 @@ function extractYear(raw) {
 function parseStandardCode(raw, editionYear = null) {
   const input = String(raw || '').trim();
   if (!input) return null;
+
+  const italianLaw = parseItalianLawCode(input);
+  if (italianLaw) return italianLaw;
 
   let s = input
     .replace(/_/g, ' ')
