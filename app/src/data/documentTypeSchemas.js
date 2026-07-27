@@ -198,12 +198,13 @@ const patentino_saldatore = {
       type: "select",
       required: false,
       options: [
-        { value: "ISO 9606-1:2012", label: "ISO 9606-1:2012 - Saldatura per fusione, acciai" },
+        { value: "ISO 9606-1:2017", label: "ISO 9606-1:2017 - Saldatura per fusione, acciai (edizione corrente)" },
+        { value: "ISO 9606-1:2012", label: "ISO 9606-1:2012 - Saldatura per fusione, acciai (edizione storica, superata)" },
         { value: "ISO 9606-2",      label: "ISO 9606-2 - Alluminio e leghe di alluminio" },
         { value: "ISO 14732",       label: "ISO 14732 - Qualifica operatori saldatura automatica" },
         { value: "EN 287-1",        label: "EN 287-1 (sostituita da ISO 9606-1)" },
       ],
-      hint: "Norma tecnica di riferimento della qualifica",
+      hint: "Norma tecnica di riferimento della qualifica. Per i certificati nuovi usare l'edizione 2017 (corrente); l'edizione 2012 resta selezionabile solo per registrare certificati storici che la riportano esplicitamente.",
     },
     {
       key: "weld_details",
@@ -244,7 +245,7 @@ Campi da estrarre:
 - expiry_date: data scadenza in formato ISO 8601 (YYYY-MM-DD) o null
 - last_confirmation_date: data ultima conferma datore di lavoro in formato ISO 8601 o null
 - next_confirmation_due: data prossima conferma in formato ISO 8601 o null
-- standard_reference: norma (es. "ISO 9606-1:2012") o null`,
+- standard_reference: norma con edizione, es. "ISO 9606-1:2017". Riporta ESATTAMENTE l'anno scritto sul certificato. Se il certificato NON specifica alcun anno, usa "ISO 9606-1:2017" (edizione corrente in vigore) come default, non "ISO 9606-1:2012" (edizione superata, valida solo se il certificato la cita esplicitamente). Se nessuna norma è indicata, usa null`,
 
   aiExpectedSchema: {
     welder_name: "string|null",
