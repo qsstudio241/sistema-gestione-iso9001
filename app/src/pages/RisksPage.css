@@ -324,3 +324,17 @@
   .form-row-2col, .form-row-3col { grid-template-columns: 1fr; }
   .risk-card-top { flex-direction: column; }
 }
+
+/* Badge azienda (ambito) nelle card */
+.risk-company-badge {
+  display: inline-block;
+  padding: 2px 8px;
+  background: #e8f4fd;
+  color: #2471a3;
+  border: 1px solid #aed6f1;
+  border-radius: 10px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  margin-left: 4px;
+  white-space: nowrap;
+}

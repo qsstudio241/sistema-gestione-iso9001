@@ -1,6 +1,7 @@
 /**
  * RisksPage - Registro Rischi & Obiettivi ISO 9001 §6.1 + §6.2
  * Sprint 6: matrice rischio (prob×impatto), CRUD rischi, CRUD obiettivi con progress bar
+ * Filtro per ambito (azienda): ogni tab mostra e filtra per company_id
  */
 
 import React, { useState, useEffect, useCallback } from "react";
@@ -41,10 +42,10 @@ const IMP_LABELS  = { 1: "Basso", 2: "Medio", 3: "Alto" };
 
 // ── Modali form ──────────────────────────────────────────────────────────────
 
-const EMPTY_RISK = { title: "", description: "", context: "internal", category: "", probability: 2, impact: 2, treatment: "mitigate", treatment_desc: "", responsible: "", review_date: "", status: "open", nature: "risk" };
-const EMPTY_OBJ  = { title: "", description: "", iso_clause: "", kpi_description: "", target_value: "", current_value: "", progress_pct: 0, responsible: "", due_date: "", status: "active" };
+const EMPTY_RISK = { title: "", description: "", context: "internal", category: "", probability: 2, impact: 2, treatment: "mitigate", treatment_desc: "", responsible: "", review_date: "", status: "open", nature: "risk", company_id: "" };
+const EMPTY_OBJ  = { title: "", description: "", iso_clause: "", kpi_description: "", target_value: "", current_value: "", progress_pct: 0, responsible: "", due_date: "", status: "active", company_id: "" };
 
-function RiskForm({ initial, onSave, onClose }) {
+function RiskForm({ initial, onSave, onClose, companies = [] }) {
   const [form, setForm] = useState({ ...EMPTY_RISK, ...initial });
   const [saving, setSaving] = useState(false);
   const [error, setError]   = useState(null);
@@ -69,6 +70,15 @@ function RiskForm({ initial, onSave, onClose }) {
           <button type="button" className="modal-close" onClick={onClose} aria-label="Chiudi">{"\u2715"}</button>
         </div>
         <form className="risk-form" onSubmit={submit}>
+          {companies.length > 0 && (
+            <div className="form-row">
+              <label>Azienda (ambito)</label>
+              <select value={form.company_id || ""} onChange={e => upd("company_id", e.target.value || null)}>
+                <option value="">-- Nessuna azienda --</option>
+                {companies.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+              </select>
+            </div>
+          )}
           <div className="form-row">
             <label>Titolo *</label>
             <input required value={form.title} onChange={e => upd("title", e.target.value)} placeholder="Titolo del rischio" />
@@ -158,7 +168,7 @@ function RiskForm({ initial, onSave, onClose }) {
   );
 }
 
-function ObjectiveForm({ initial, onSave, onClose }) {
+function ObjectiveForm({ initial, onSave, onClose, companies = [] }) {
   const [form, setForm] = useState({ ...EMPTY_OBJ, ...initial });
   const [saving, setSaving] = useState(false);
   const [error, setError]   = useState(null);
@@ -182,6 +192,15 @@ function ObjectiveForm({ initial, onSave, onClose }) {
           <button type="button" className="modal-close" onClick={onClose} aria-label="Chiudi">{"\u2715"}</button>
         </div>
         <form className="risk-form" onSubmit={submit}>
+          {companies.length > 0 && (
+            <div className="form-row">
+              <label>Azienda (ambito)</label>
+              <select value={form.company_id || ""} onChange={e => upd("company_id", e.target.value || null)}>
+                <option value="">-- Nessuna azienda --</option>
+                {companies.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+              </select>
+            </div>
+          )}
           <div className="form-row">
             <label>Titolo *</label>
             <input required value={form.title} onChange={e => upd("title", e.target.value)} placeholder="Titolo obiettivo" />
@@ -239,19 +258,21 @@ function ObjectiveForm({ initial, onSave, onClose }) {
 
 // ── Tab Rischi ────────────────────────────────────────────────────────────────
 
-function RisksTab() {
+function RisksTab({ companies = [] }) {
   const [list, setList]           = useState([]);
   const [stats, setStats]         = useState(null);
   const [loading, setLoading]     = useState(true);
   const [modal, setModal]         = useState(null); // null | { mode:'new'|'edit', data }
   const [filterStatus, setFS]     = useState("");
-  const [actionRisk, setActionRisk] = useState(null); // risk for which to open NC modal
+  const [filterCompany, setFC]    = useState("");
+  const [actionRisk, setActionRisk] = useState(null);
 
   const load = useCallback(async () => {
     setLoading(true);
     try {
       const params = {};
-      if (filterStatus) params.status = filterStatus;
+      if (filterStatus)  params.status     = filterStatus;
+      if (filterCompany) params.company_id = filterCompany;
       const [listRes, statsRes] = await Promise.all([
         apiService.getRisks(params),
         apiService.getRisksStats(),
@@ -259,7 +280,7 @@ function RisksTab() {
       setList(listRes?.data || []);
       setStats(statsRes?.data || null);
     } finally { setLoading(false); }
-  }, [filterStatus]);
+  }, [filterStatus, filterCompany]);
 
   useEffect(() => { load(); }, [load]);
 
@@ -292,10 +313,16 @@ function RisksTab() {
 
       {/* Toolbar */}
       <div className="tab-toolbar">
-        <select value={filterStatus} onChange={e => { setFS(e.target.value); }}>
+        <select value={filterStatus} onChange={e => setFS(e.target.value)}>
           <option value="">Tutti gli stati</option>
           {Object.entries(RISK_STATUS_CFG).map(([k,v]) => <option key={k} value={k}>{v.label}</option>)}
         </select>
+        {companies.length > 0 && (
+          <select value={filterCompany} onChange={e => setFC(e.target.value)}>
+            <option value="">Tutte le aziende</option>
+            {companies.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+          </select>
+        )}
         <button className="btn-primary" onClick={() => setModal({ mode: "new", data: null })}>+ Nuovo rischio</button>
       </div>
 
@@ -317,6 +344,7 @@ function RisksTab() {
                     </span>
                     <strong>{r.title}</strong>
                     {r.category && <span className="risk-cat">{r.category}</span>}
+                    {r.company_name && <span className="risk-company-badge">{r.company_name}</span>}
                   </div>
                   <div className="risk-card-actions">
                     <span className={`status-tag ${statusCfg.cls}`}>{statusCfg.label}</span>
@@ -354,6 +382,7 @@ function RisksTab() {
           initial={modal.data}
           onSave={handleSave}
           onClose={() => setModal(null)}
+          companies={companies}
         />
       )}
 
@@ -374,18 +403,20 @@ function RisksTab() {
 
 // ── Tab Obiettivi ─────────────────────────────────────────────────────────────
 
-function ObjectivesTab() {
-  const [list, setList]       = useState([]);
-  const [stats, setStats]     = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [modal, setModal]     = useState(null);
-  const [filterStatus, setFS] = useState("");
+function ObjectivesTab({ companies = [] }) {
+  const [list, setList]        = useState([]);
+  const [stats, setStats]      = useState(null);
+  const [loading, setLoading]  = useState(true);
+  const [modal, setModal]      = useState(null);
+  const [filterStatus, setFS]  = useState("");
+  const [filterCompany, setFC] = useState("");
 
   const load = useCallback(async () => {
     setLoading(true);
     try {
       const params = {};
-      if (filterStatus) params.status = filterStatus;
+      if (filterStatus)  params.status     = filterStatus;
+      if (filterCompany) params.company_id = filterCompany;
       const [listRes, statsRes] = await Promise.all([
         apiService.getObjectives(params),
         apiService.getObjectivesStats(),
@@ -393,7 +424,7 @@ function ObjectivesTab() {
       setList(listRes?.data || []);
       setStats(statsRes?.data || null);
     } finally { setLoading(false); }
-  }, [filterStatus]);
+  }, [filterStatus, filterCompany]);
 
   useEffect(() => { load(); }, [load]);
 
@@ -436,6 +467,12 @@ function ObjectivesTab() {
           <option value="">Tutti gli stati</option>
           {Object.entries(OBJ_STATUS_CFG).map(([k,v]) => <option key={k} value={k}>{v.label}</option>)}
         </select>
+        {companies.length > 0 && (
+          <select value={filterCompany} onChange={e => setFC(e.target.value)}>
+            <option value="">Tutte le aziende</option>
+            {companies.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+          </select>
+        )}
         <button className="btn-primary" onClick={() => setModal({ mode: "new", data: null })}>+ Nuovo obiettivo</button>
       </div>
 
@@ -454,6 +491,7 @@ function ObjectivesTab() {
                   <div className="obj-card-title">
                     {o.iso_clause && <span className="obj-clause">{"\u00A7"}{o.iso_clause}</span>}
                     <strong>{o.title}</strong>
+                    {o.company_name && <span className="risk-company-badge">{o.company_name}</span>}
                   </div>
                   <div className="risk-card-actions">
                     <span className={`status-tag ${statusCfg.cls}`}>{statusCfg.label}</span>
@@ -490,6 +528,7 @@ function ObjectivesTab() {
           initial={modal.data}
           onSave={handleSave}
           onClose={() => setModal(null)}
+          companies={companies}
         />
       )}
     </div>
@@ -498,14 +537,14 @@ function ObjectivesTab() {
 
 // ── Tab Contesto §4 ───────────────────────────────────────────────────────────
 
-const EMPTY_CF = { description: "", type: "external", category: "", impact: "neutral" };
-const EMPTY_IP = { name: "", relationship: "", requirements: "" };
+const EMPTY_CF = { description: "", type: "external", category: "", impact: "neutral", company_id: "" };
+const EMPTY_IP = { name: "", relationship: "", requirements: "", company_id: "" };
 
 const CF_TYPE_LABEL   = { internal: "Interno", external: "Esterno" };
 const CF_IMPACT_LABEL = { positive: "Positivo", negative: "Negativo", neutral: "Neutro" };
 const CF_IMPACT_CLS   = { positive: "cf-positive", negative: "cf-negative", neutral: "cf-neutral" };
 
-function ContextFactorForm({ initial, onSave, onClose }) {
+function ContextFactorForm({ initial, onSave, onClose, companies = [] }) {
   const [form, setForm] = useState({ ...EMPTY_CF, ...initial });
   const [saving, setSaving] = useState(false);
   const [error, setError]   = useState(null);
@@ -529,6 +568,15 @@ function ContextFactorForm({ initial, onSave, onClose }) {
           <button type="button" className="modal-close" onClick={onClose} aria-label="Chiudi">{"\u2715"}</button>
         </div>
         <form className="risk-form" onSubmit={submit}>
+          {companies.length > 0 && (
+            <div className="form-row">
+              <label>Azienda (ambito)</label>
+              <select value={form.company_id || ""} onChange={e => upd("company_id", e.target.value || null)}>
+                <option value="">-- Nessuna azienda --</option>
+                {companies.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+              </select>
+            </div>
+          )}
           <div className="form-row-3col">
             <div>
               <label>Tipo</label>
@@ -565,7 +613,7 @@ function ContextFactorForm({ initial, onSave, onClose }) {
   );
 }
 
-function InterestedPartyForm({ initial, onSave, onClose }) {
+function InterestedPartyForm({ initial, onSave, onClose, companies = [] }) {
   const [form, setForm] = useState({ ...EMPTY_IP, ...initial });
   const [saving, setSaving] = useState(false);
   const [error, setError]   = useState(null);
@@ -589,6 +637,15 @@ function InterestedPartyForm({ initial, onSave, onClose }) {
           <button type="button" className="modal-close" onClick={onClose} aria-label="Chiudi">{"\u2715"}</button>
         </div>
         <form className="risk-form" onSubmit={submit}>
+          {companies.length > 0 && (
+            <div className="form-row">
+              <label>Azienda (ambito)</label>
+              <select value={form.company_id || ""} onChange={e => upd("company_id", e.target.value || null)}>
+                <option value="">-- Nessuna azienda --</option>
+                {companies.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+              </select>
+            </div>
+          )}
           <div className="form-row-2col">
             <div>
               <label>Nome *</label>
@@ -614,25 +671,27 @@ function InterestedPartyForm({ initial, onSave, onClose }) {
   );
 }
 
-function ContestoTab() {
-  const [factors, setFactors]   = useState([]);
-  const [parties, setParties]   = useState([]);
-  const [loading, setLoading]   = useState(true);
-  const [cfModal, setCfModal]   = useState(null);
-  const [ipModal, setIpModal]   = useState(null);
-  const [section, setSection]   = useState("factors");
+function ContestoTab({ companies = [] }) {
+  const [factors, setFactors]      = useState([]);
+  const [parties, setParties]      = useState([]);
+  const [loading, setLoading]      = useState(true);
+  const [cfModal, setCfModal]      = useState(null);
+  const [ipModal, setIpModal]      = useState(null);
+  const [section, setSection]      = useState("factors");
+  const [filterCompany, setFC]     = useState("");
 
   const load = useCallback(async () => {
     setLoading(true);
     try {
+      const params = filterCompany ? { company_id: filterCompany } : {};
       const [cfRes, ipRes] = await Promise.all([
-        apiService.getContextFactors(),
-        apiService.getInterestedParties(),
+        apiService.getContextFactors(params),
+        apiService.getInterestedParties(params),
       ]);
       setFactors(cfRes?.data || []);
       setParties(ipRes?.data || []);
     } finally { setLoading(false); }
-  }, []);
+  }, [filterCompany]);
 
   useEffect(() => { load(); }, [load]);
 
@@ -671,6 +730,16 @@ function ContestoTab() {
         </button>
       </div>
 
+      {/* Filtro azienda comune a entrambe le sezioni */}
+      {companies.length > 0 && (
+        <div className="tab-toolbar">
+          <select value={filterCompany} onChange={e => setFC(e.target.value)}>
+            <option value="">Tutte le aziende</option>
+            {companies.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+          </select>
+        </div>
+      )}
+
       {loading ? <p className="loading-msg">Caricamento...</p> : (
         <>
           {section === "factors" && (
@@ -689,6 +758,7 @@ function ContestoTab() {
                           <span className={`nature-badge cf-type-${f.type}`}>{CF_TYPE_LABEL[f.type] || f.type}</span>
                           {f.category && <span className="risk-cat">{f.category}</span>}
                           <span className={`nature-badge ${CF_IMPACT_CLS[f.impact] || ""}`}>{CF_IMPACT_LABEL[f.impact] || f.impact}</span>
+                          {f.company_name && <span className="risk-company-badge">{f.company_name}</span>}
                         </div>
                         <div className="risk-card-actions">
                           <button type="button" className="btn-icon" onClick={() => setCfModal({ data: f })} title="Modifica">{"\u270F\uFE0F"}</button>
@@ -700,7 +770,7 @@ function ContestoTab() {
                   ))}
                 </div>
               )}
-              {cfModal && <ContextFactorForm initial={cfModal.data} onSave={handleSaveCf} onClose={() => setCfModal(null)} />}
+              {cfModal && <ContextFactorForm initial={cfModal.data} onSave={handleSaveCf} onClose={() => setCfModal(null)} companies={companies} />}
             </>
           )}
 
@@ -719,6 +789,7 @@ function ContestoTab() {
                         <div className="risk-card-title">
                           <strong>{p.name}</strong>
                           {p.relationship && <span className="risk-cat">{p.relationship}</span>}
+                          {p.company_name && <span className="risk-company-badge">{p.company_name}</span>}
                         </div>
                         <div className="risk-card-actions">
                           <button type="button" className="btn-icon" onClick={() => setIpModal({ data: p })} title="Modifica">{"\u270F\uFE0F"}</button>
@@ -730,7 +801,7 @@ function ContestoTab() {
                   ))}
                 </div>
               )}
-              {ipModal && <InterestedPartyForm initial={ipModal.data} onSave={handleSaveIp} onClose={() => setIpModal(null)} />}
+              {ipModal && <InterestedPartyForm initial={ipModal.data} onSave={handleSaveIp} onClose={() => setIpModal(null)} companies={companies} />}
             </>
           )}
         </>
@@ -743,6 +814,11 @@ function ContestoTab() {
 
 export default function RisksPage() {
   const [activeTab, setActiveTab] = useState("risks");
+  const [companies, setCompanies] = useState([]);
+
+  useEffect(() => {
+    apiService.getCompanies().then(r => setCompanies(r?.data || [])).catch(() => {});
+  }, []);
 
   return (
     <div className="risks-page">
@@ -764,9 +840,9 @@ export default function RisksPage() {
       </div>
 
       <div className="risks-tab-content">
-        {activeTab === "risks"      && <RisksTab />}
-        {activeTab === "objectives" && <ObjectivesTab />}
-        {activeTab === "contesto"   && <ContestoTab />}
+        {activeTab === "risks"      && <RisksTab companies={companies} />}
+        {activeTab === "objectives" && <ObjectivesTab companies={companies} />}
+        {activeTab === "contesto"   && <ContestoTab companies={companies} />}
       </div>
     </div>
   );
