@@ -712,13 +712,17 @@ CSS: `SgqDataGrid.css` (tema plain) + `DocumentDataGrid.css` (tema catalog + bad
 
 ### Aggiornamento 27/07/2026 — JSX `\u` letterali nel modulo Piano Azioni / NC
 
-**Sintomo:** sottotitolo pagina NC mostrava `\u00A76.1 … \u2014 Registro cross-fonte` invece di § / em dash; hint drawer Verifica mostrava `\u00E8` al posto di «è».
+**Sintomo:** sottotitolo pagina NC mostrava `\u00A76.1 … \u2014 Registro cross-fonte` invece di § / em dash; hint drawer Verifica mostrava `\u00E8` al posto di «è». Poi, dopo il primo fix, restava `\u00E8` nel **placeholder** «Trattamento» (`Cosa \u00E8 stato fatto…`).
 
-**Causa:** stesso pattern del 22/05 — escape Unicode in **testo JSX grezzo** (tra `>` e `<`), non in stringa JS.
+**Causa:** con Vite/esbuild le escape `\uXXXX` **non** vengono decodificate in:
+1. **testo JSX grezzo** tra `>` e `<`;
+2. **attributi JSX quotati** (`placeholder="…\u00E8…"`) — finiscono nel bundle come `\\u00E8` e a runtime restano letterali.
 
-**Fix:** `NCPage.jsx` (sottotitolo) e `NcDetailPanel.jsx` (hint Verifica) wrappati in `{"…"}`. Scan su tutti i componenti UI del modulo NC (page, drawer, create modal, azioni, correzione, allegati, select responsabili): nessun altro `\u` fuori da stringhe JS.
+Funzionano solo le **espressioni JS**: `placeholder={"…\u00E8…"}` oppure UTF-8 reale nel sorgente.
 
-**Test L1:** `ncPage.drawer.test.js` + `ncDetailPanel.test.js` (asserzione testo decodificato / assenza `\u00E8` letterale).
+**Fix:** `NCPage.jsx`, `NcDetailPanel.jsx` (hint + placeholder causa + label Ask AI), `NcCorrectionSection.jsx` (placeholder correzione). Bonus: `AutoTextarea.jsx` titolo errore microfono (U+0097 → em dash).
+
+**Test L1:** `ncPage.drawer.test.js` + `ncDetailPanel.test.js` + assert attributi `placeholder={` / `label={` senza `\u` in `"…"`.
 
 ---
 

@@ -401,7 +401,7 @@ export default function NcDetailPanel({
             <h3 className="nc-drawer-section-title" id={`nc-sec-cause-${nc.nc_id}`}>
               {"5. Cause"}
             </h3>
-            <AskAiButton label="Chiedi all\u2019AI" />
+            <AskAiButton label={"Chiedi all\u2019AI"} />
           </div>
           <div className="nc-form-row">
             <label htmlFor={`nc-root-${nc.nc_id}`}>
@@ -413,7 +413,7 @@ export default function NcDetailPanel({
               value={form.root_cause}
               readOnly={readOnly}
               onChange={(e) => setField("root_cause", e.target.value)}
-              placeholder="5W, Ishikawa, 8D... Qual \u00E8 la causa fondamentale del problema?"
+              placeholder={"5W, Ishikawa, 8D... Qual \u00E8 la causa fondamentale del problema?"}
               draftScopeId={draftScope}
               draftFieldId="root_cause"
               persistLocalDraft
