@@ -381,12 +381,15 @@
   width: 100%;
   max-width: 100%;
 }
-.nc-inline-check {
-  display: flex;
-  justify-content: flex-start;
+/* Checkbox + testo: inline a sinistra sotto il select (non full-width block label) */
+.nc-responsible-select label.nc-inline-check {
+  display: inline-flex;
   align-items: center;
+  justify-content: flex-start;
+  align-self: flex-start;
   gap: 8px;
-  width: 100%;
+  width: auto;
+  max-width: 100%;
   box-sizing: border-box;
   font-size: 0.8rem;
   font-weight: 500;
@@ -394,8 +397,7 @@
   text-align: left;
   white-space: nowrap;
 }
-/* Evita width:100% ereditato da .nc-form-row input (spinge via il testo) */
-.nc-inline-check input[type="checkbox"] {
+.nc-responsible-select label.nc-inline-check input[type="checkbox"] {
   width: auto;
   min-width: 1rem;
   margin: 0;
@@ -898,7 +900,7 @@ body.sgq-nc-drawer-resizing * {
   .nc-filters select { width: 100%; }
   .nc-form-row-2col,
   .nc-form-row-2col--date { grid-template-columns: 1fr; }
-  .nc-inline-check { white-space: normal; }
+  .nc-responsible-select label.nc-inline-check { white-space: normal; }
   .nc-card-meta { display: none; }
 }
 
