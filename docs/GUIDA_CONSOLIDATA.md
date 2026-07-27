@@ -710,6 +710,16 @@ CSS: `SgqDataGrid.css` (tema plain) + `DocumentDataGrid.css` (tema catalog + bad
 
 **Regola ripetibile:** prima di `\u`/emoji in JSX, preferire **`{expr}`** dove `expr` è stringa/template **JavaScript**, oppure scrivere il carattere Unicode diretto in UTF-8.
 
+### Aggiornamento 27/07/2026 — JSX `\u` letterali nel modulo Piano Azioni / NC
+
+**Sintomo:** sottotitolo pagina NC mostrava `\u00A76.1 … \u2014 Registro cross-fonte` invece di § / em dash; hint drawer Verifica mostrava `\u00E8` al posto di «è».
+
+**Causa:** stesso pattern del 22/05 — escape Unicode in **testo JSX grezzo** (tra `>` e `<`), non in stringa JS.
+
+**Fix:** `NCPage.jsx` (sottotitolo) e `NcDetailPanel.jsx` (hint Verifica) wrappati in `{"…"}`. Scan su tutti i componenti UI del modulo NC (page, drawer, create modal, azioni, correzione, allegati, select responsabili): nessun altro `\u` fuori da stringhe JS.
+
+**Test L1:** `ncPage.drawer.test.js` + `ncDetailPanel.test.js` (asserzione testo decodificato / assenza `\u00E8` letterale).
+
 ---
 
 ### Sessione 22/05/2026 — Fix allegati ISO 45001
