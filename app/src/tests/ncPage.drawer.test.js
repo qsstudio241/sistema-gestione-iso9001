@@ -36,9 +36,9 @@ describe('NCPage drawer', () => {
     expect(css).toContain('.nc-action-due-filters .status-btn');
     expect(css).toMatch(/\.nc-action-due-filters \.status-btn[\s\S]*width:\s*auto/);
     expect(css).not.toContain('.nc-detail-section');
-    // Scadenza compatta: più spazio a "Referente esterno" su una riga
+    // Scadenza compatta; flag Referente esterno sotto il select
     expect(css).toContain('.nc-form-row-2col--date');
-    expect(css).toMatch(/\.nc-form-row-2col--date[\s\S]*?10\.5rem/);
+    expect(css).toMatch(/\.nc-form-row-2col--date[\s\S]*?9\.75rem/);
     expect(css).toMatch(/\.nc-inline-check[\s\S]*?white-space:\s*nowrap/);
   });
 

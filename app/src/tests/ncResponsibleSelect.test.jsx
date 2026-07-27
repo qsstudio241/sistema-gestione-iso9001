@@ -142,5 +142,29 @@ describe("NcResponsibleSelect", () => {
 
   });
 
+  it("checkbox Referente esterno è dopo il select (evita overlap con Scadenza)", () => {
+    const { container } = render(
+      <NcResponsibleSelect
+        contacts={CONTACTS}
+        contactId={null}
+        textValue=""
+        useExternal={false}
+        allowExternal
+        onContactIdChange={() => {}}
+        onTextChange={() => {}}
+        onUseExternalChange={() => {}}
+      />,
+    );
+    const root = container.querySelector(".nc-responsible-select");
+    const select = root.querySelector("select");
+    const check = root.querySelector(".nc-inline-check");
+    expect(select).toBeTruthy();
+    expect(check).toBeTruthy();
+    // Nel DOM: select prima del flag (sotto il campo, non a lato della data)
+    expect(
+      Boolean(select.compareDocumentPosition(check) & Node.DOCUMENT_POSITION_FOLLOWING),
+    ).toBe(true);
+  });
+
 });
 
