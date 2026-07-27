@@ -36,11 +36,12 @@ describe('NCPage drawer', () => {
     expect(css).toContain('.nc-action-due-filters .status-btn');
     expect(css).toMatch(/\.nc-action-due-filters \.status-btn[\s\S]*width:\s*auto/);
     expect(css).not.toContain('.nc-detail-section');
-    // Scadenza compatta; flag Referente esterno a sinistra sotto il select
+    // Flag Referente esterno: inline-flex a sinistra (non block full-width)
     expect(css).toContain('.nc-form-row-2col--date');
     expect(css).toMatch(/\.nc-form-row-2col--date[\s\S]*?9\.75rem/);
-    expect(css).toMatch(/\.nc-inline-check[\s\S]*?justify-content:\s*flex-start/);
-    expect(css).toMatch(/\.nc-inline-check input\[type="checkbox"\][\s\S]*?width:\s*auto/);
+    expect(css).toMatch(/\.nc-responsible-select label\.nc-inline-check[\s\S]*?display:\s*inline-flex/);
+    expect(css).toMatch(/\.nc-responsible-select label\.nc-inline-check[\s\S]*?width:\s*auto/);
+    expect(css).toMatch(/\.nc-responsible-select label\.nc-inline-check input\[type="checkbox"\][\s\S]*?width:\s*auto/);
   });
 
   it('integra hook resize drawer con persistenza localStorage', () => {
