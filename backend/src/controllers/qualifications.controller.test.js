@@ -36,6 +36,7 @@ const {
   effectiveExpiryDate,
   semaforoForRow,
   hardDeleteQualification,
+  createQualification,
 } = require('./qualifications.controller');
 
 describe('qualifications.controller — effectiveExpiryDate', () => {
@@ -240,5 +241,103 @@ describe('qualifications.controller — hardDeleteQualification', () => {
 
     expect(res.statusCode).toBe(200);
     expect(res.body).toEqual({ success: true });
+  });
+});
+
+/**
+ * Test L1 — createQualification, sanitizzazione numerica (bug produzione
+ * 27/07/2026, cliente Mason). Path manuale (form React QualificationForm),
+ * seconda linea di difesa oltre all'ingest AI: valori non numerici su
+ * thickness_min_mm/max_mm, pipe_diameter_min_mm/max_mm o ndt_level/training_hours
+ * non devono mai arrivare come stringa grezza a `.input()` (mssql), altrimenti
+ * SQL Server fallisce con "Error converting data type nvarchar to numeric"
+ * sulle colonne DECIMAL/INT di `qualifications`.
+ */
+describe('qualifications.controller — createQualification sanitizzazione numerica', () => {
+  function makeInsertPool() {
+    const insertReq = { input: jest.fn().mockReturnThis() };
+    insertReq.query = jest.fn().mockResolvedValue({ recordset: [{ id: 900 }] });
+    const pool = { request: jest.fn(() => insertReq) };
+    return { pool, insertReq };
+  }
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+    assertMutatingAllowed.mockResolvedValue(null);
+  });
+
+  it('salva null per thickness/pipe_diameter "N.A." o vuoti invece di rompere la query', async () => {
+    const { pool, insertReq } = makeInsertPool();
+    getPool.mockResolvedValue(pool);
+
+    const req = {
+      body: {
+        person_name: 'Blago Lukic',
+        qualification_type: 'Saldatore ISO 9606-1',
+        joint_type: 'FW',
+        product_type: 'T',
+        thickness_min_mm: 'N.A.',
+        thickness_max_mm: '',
+        pipe_diameter_min_mm: 'N.A.',
+        pipe_diameter_max_mm: '3-6',
+      },
+      user: { organization_id: 10, user_id: 20 },
+    };
+    const res = { status: jest.fn().mockReturnThis(), json: jest.fn() };
+
+    await createQualification(req, res);
+
+    expect(insertReq.input).toHaveBeenCalledWith('thickMin', null);
+    expect(insertReq.input).toHaveBeenCalledWith('thickMax', null);
+    expect(insertReq.input).toHaveBeenCalledWith('pipeMin', null);
+    expect(insertReq.input).toHaveBeenCalledWith('pipeMax', 3);
+    expect(res.status).not.toHaveBeenCalledWith(500);
+  });
+
+  it('sanitizza ndt_level/training_hours testuali non numerici', async () => {
+    const { pool, insertReq } = makeInsertPool();
+    getPool.mockResolvedValue(pool);
+
+    const req = {
+      body: {
+        person_name: 'Anna Bianchi',
+        qualification_type: 'Operatore NDT',
+        ndt_level: 'N/D',
+        training_hours: 'n.a.',
+      },
+      user: { organization_id: 10, user_id: 20 },
+    };
+    const res = { status: jest.fn().mockReturnThis(), json: jest.fn() };
+
+    await createQualification(req, res);
+
+    expect(insertReq.input).toHaveBeenCalledWith('ndtLevel', null);
+    expect(insertReq.input).toHaveBeenCalledWith('trainHours', null);
+    expect(res.status).not.toHaveBeenCalledWith(500);
+  });
+
+  it('preserva valori numerici validi (nessuna regressione)', async () => {
+    const { pool, insertReq } = makeInsertPool();
+    getPool.mockResolvedValue(pool);
+
+    const req = {
+      body: {
+        person_name: 'Mario Rossi',
+        qualification_type: 'Saldatore ISO 9606-1',
+        thickness_min_mm: 4,
+        thickness_max_mm: '12,5',
+        pipe_diameter_min_mm: 60,
+        pipe_diameter_max_mm: '≥120',
+      },
+      user: { organization_id: 10, user_id: 20 },
+    };
+    const res = { status: jest.fn().mockReturnThis(), json: jest.fn() };
+
+    await createQualification(req, res);
+
+    expect(insertReq.input).toHaveBeenCalledWith('thickMin', 4);
+    expect(insertReq.input).toHaveBeenCalledWith('thickMax', 12.5);
+    expect(insertReq.input).toHaveBeenCalledWith('pipeMin', 60);
+    expect(insertReq.input).toHaveBeenCalledWith('pipeMax', 120);
   });
 });

@@ -299,3 +299,128 @@ describe('qualificationIngest.service — commitQualificationFromFields (14732)'
         expect(insertReq.query).toHaveBeenCalledWith(expect.stringContaining('qualification_designation'));
     });
 });
+
+describe('qualificationIngest.service — sanitizzazione numerica (bug produzione 27/07/2026, cliente Mason)', () => {
+    function makeRequestMock() {
+        const req = { input: jest.fn().mockReturnThis() };
+        req.query = jest.fn().mockResolvedValue({ recordset: [{ cnt: 0 }] });
+        return req;
+    }
+
+    /**
+     * Riproduce esattamente lo scenario segnalato: certificato ISO 9606-1 (giunto
+     * FW su tubo) con "N.A." sui campi spessore/diametro non applicabili al tipo
+     * di giunto/prodotto — come nel PDF "24-00824-01-003_LUKIC BLAGO..." — e/o
+     * campo lasciato vuoto in revisione (stringa ""). Prima del fix, mssql
+     * bind-ava questi valori come NVarChar su colonne DECIMAL causando
+     * "Error converting data type nvarchar to numeric" e il salvataggio falliva.
+     */
+    it('salva null (non crasha) quando thickness/pipe_diameter arrivano come "N.A." o stringa vuota', async () => {
+        const dupCheckReq = makeRequestMock();
+        const insertReq = { input: jest.fn().mockReturnThis() };
+        insertReq.query = jest.fn().mockResolvedValue({ recordset: [{ id: 504 }] });
+
+        let callCount = 0;
+        const pool = {
+            request: jest.fn(() => {
+                callCount += 1;
+                return callCount === 1 ? dupCheckReq : insertReq;
+            }),
+        };
+        getPool.mockResolvedValue(pool);
+
+        const result = await commitQualificationFromFields({
+            welder_name: 'Blago Lukic',
+            certificate_number: '24-00824-01-003',
+            welding_process: '111',
+            joint_type: 'FW',
+            product_type: 'T',
+            material_group: '1',
+            filler_material_group: 'FM1',
+            welding_positions: ['PA', 'PB', 'PC', 'PD', 'PE', 'PF', 'PH'],
+            thickness_min_mm: 'N.A.',
+            thickness_max_mm: '',
+            pipe_diameter_min_mm: 'N.A.',
+            pipe_diameter_max_mm: '3-6',
+        }, 10, 20, { qualificationType: 'Saldatore ISO 9606-1' });
+
+        expect(result.qualification_id).toBe(504);
+        expect(insertReq.input).toHaveBeenCalledWith('thickMin', null);
+        expect(insertReq.input).toHaveBeenCalledWith('thickMax', null);
+        expect(insertReq.input).toHaveBeenCalledWith('pipeMin', null);
+        // Range ambiguo su campo singolo "3-6" -> policy: primo numero (documentata in numericSanitizer.js)
+        expect(insertReq.input).toHaveBeenCalledWith('pipeMax', 3);
+    });
+
+    it('preserva valori numerici validi (nessuna regressione)', async () => {
+        const dupCheckReq = makeRequestMock();
+        const insertReq = { input: jest.fn().mockReturnThis() };
+        insertReq.query = jest.fn().mockResolvedValue({ recordset: [{ id: 505 }] });
+
+        let callCount = 0;
+        const pool = {
+            request: jest.fn(() => {
+                callCount += 1;
+                return callCount === 1 ? dupCheckReq : insertReq;
+            }),
+        };
+        getPool.mockResolvedValue(pool);
+
+        await commitQualificationFromFields({
+            welder_name: 'Mario Rossi',
+            certificate_number: 'CERT-9606-03',
+            welding_process: '111',
+            thickness_min_mm: 4,
+            thickness_max_mm: '12,5',
+            pipe_diameter_min_mm: 60,
+            pipe_diameter_max_mm: '≥120',
+        }, 10, 20, { qualificationType: 'Saldatore ISO 9606-1' });
+
+        expect(insertReq.input).toHaveBeenCalledWith('thickMin', 4);
+        expect(insertReq.input).toHaveBeenCalledWith('thickMax', 12.5);
+        expect(insertReq.input).toHaveBeenCalledWith('pipeMin', 60);
+        expect(insertReq.input).toHaveBeenCalledWith('pipeMax', 120);
+    });
+
+    it('sanitizza anche ndt_level testuale non numerico senza crashare', async () => {
+        const dupCheckReq = makeRequestMock();
+        const insertReq = { input: jest.fn().mockReturnThis() };
+        insertReq.query = jest.fn().mockResolvedValue({ recordset: [{ id: 506 }] });
+
+        let callCount = 0;
+        const pool = {
+            request: jest.fn(() => {
+                callCount += 1;
+                return callCount === 1 ? dupCheckReq : insertReq;
+            }),
+        };
+        getPool.mockResolvedValue(pool);
+
+        await commitQualificationFromFields({
+            operator_name: 'Anna Bianchi',
+            certificate_number: 'NDT-01',
+            ndt_method: 'UT',
+            ndt_level: 'N/D',
+        }, 10, 20, { qualificationType: 'Operatore NDT' });
+
+        expect(insertReq.input).toHaveBeenCalledWith('ndtLevel', null);
+    });
+});
+
+describe('mapPipelineFieldsToReview — sanitizzazione numerica in revisione', () => {
+    it('mostra null in revisione per thickness/pipe_diameter non numerici (mai la stringa grezza)', () => {
+        const out = mapPipelineFieldsToReview({
+            welder_name: 'Mario Rossi',
+            thickness_min_mm: 'N.A.',
+            thickness_max_mm: '',
+            pipe_diameter_min_mm: 'n.a.',
+            pipe_diameter_max_mm: undefined,
+        }, 'patentino saldatore 9606-1', 'file.pdf');
+
+        expect(out.thickness_min_mm).toBeNull();
+        expect(out.thickness_max_mm).toBeNull();
+        expect(out.pipe_diameter_min_mm).toBeNull();
+        expect(out.pipe_diameter_max_mm).toBeNull();
+        expect(out.thickness_range).toBeNull();
+    });
+});
