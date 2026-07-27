@@ -109,7 +109,7 @@ export default function NcCorrectionSection({ ncId, ncActions, organizationId = 
               rows={2}
               value={form.description}
               onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
-              placeholder="Cosa \u00E8 stato fatto subito per contenere/correggere il problema..."
+              placeholder={"Cosa \u00E8 stato fatto subito per contenere/correggere il problema..."}
               draftScopeId={draftScope}
               draftFieldId="new_correction_description"
               persistLocalDraft
