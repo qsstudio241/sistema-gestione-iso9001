@@ -363,21 +363,33 @@
 }
 .nc-form-row textarea { resize: vertical; }
 .nc-form-row-2col { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-/* Riga Responsabile + Scadenza: data compatta, più spazio al flag "Referente esterno" */
+/* Riga Responsabile + Scadenza: data compatta; flag sotto il select (non a lato della data) */
 .nc-form-row-2col--date {
-  grid-template-columns: minmax(0, 1fr) 10.5rem;
+  grid-template-columns: minmax(0, 1fr) 9.75rem;
   align-items: start;
+  column-gap: 16px;
+}
+.nc-form-row-2col--date > .nc-responsible-select {
+  min-width: 0;
+  margin-bottom: 0;
 }
 .nc-form-row-2col--date > :last-child {
   min-width: 0;
+  max-width: 9.75rem;
+}
+.nc-form-row-2col--date > :last-child input[type="date"] {
+  width: 100%;
+  max-width: 100%;
 }
 .nc-inline-check {
-  display: flex;
+  display: inline-flex;
   align-items: center;
   gap: 8px;
   font-size: 0.8rem;
-  margin: 6px 0 8px;
+  font-weight: 500;
+  margin: 8px 0 0;
   white-space: nowrap;
+  max-width: 100%;
 }
 .nc-form-actions { display: flex; justify-content: flex-end; margin-top: 8px; }
 .btn-primary {
