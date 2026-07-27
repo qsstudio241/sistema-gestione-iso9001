@@ -69,7 +69,7 @@ export default function NcActionItem({
       </div>
       {isEditing && (
         <div className="nc-action-edit-form">
-          <div className="nc-form-row nc-form-row-2col">
+          <div className="nc-form-row nc-form-row-2col nc-form-row-2col--date">
             <NcResponsibleSelect
               contacts={contacts}
               roleFilter={["attuazione", "generico"]}
