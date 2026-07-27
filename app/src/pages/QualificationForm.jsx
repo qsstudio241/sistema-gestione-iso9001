@@ -466,7 +466,7 @@ function QualificationForm({ qualification, onSave, onClose, defaultCompanyId, o
                 </div>
                 <div className="qf-field">
                   <label>Dettagli giunto</label>
-                  <input type="text" value={form.weld_details} onChange={handle("weld_details")} placeholder="es. ss nb, bs, sl, ml" />
+                  <input type="text" value={form.weld_details} onChange={handle("weld_details")} placeholder="es. ss nb, bs, sl, ml, derivazione/branch tubo-piastra" />
                 </div>
                 <div className="qf-field">
                   <label>Organismo esaminatore</label>

@@ -84,6 +84,17 @@ describe("IngestReviewDialog — campo diametro tubo condizionato al tipo prodot
     expect(screen.queryByText(/Non applicabile/)).not.toBeInTheDocument();
   });
 
+  it("il campo 'Tipo prodotto' mostra la nota su derivazione/branch tubo-piastra (segnalazione Mason, 27/07/2026)", () => {
+    render(
+      <IngestReviewDialog
+        {...baseProps}
+        fields={{ product_type: "T", pipe_diameter_mm: 60 }}
+      />,
+    );
+
+    expect(screen.getByText(/tubo che si inserisce in una piastra/)).toBeInTheDocument();
+  });
+
   it("cambiando prodotto da Tubo a Piastra il campo diametro si nasconde e il valore residuo viene azzerato", () => {
     render(
       <IngestReviewDialog
