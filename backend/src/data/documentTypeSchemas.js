@@ -15,12 +15,19 @@ Se un campo non � presente nel documento, usa null.
 
 Campi da estrarre:
 - welder_name, certificate_number, issuing_body, welding_process, joint_type (BW|FW),
-- product_type (variabile essenziale ISO 9606-1 §11: "P" se saldatura su piastra, "T" se su tubo/pipe;
-  dedurre da "plate/piastra" vs "pipe/tube/tubo" nel testo, null se non specificato),
-- weld_details (dettagli di giunto se presenti: backing, mono/multistrato, saldatura sx/dx; testo libero breve, null se assenti),
+- product_type (variabile essenziale ISO 9606-1 §11: SOLO "P" piastra o "T" tubo/pipe, nessuna terza
+  categoria "tubo-piastra" - un giunto di derivazione/branch/bocchello resta "T" (è un tipo di giunto,
+  §3.16, non un tipo prodotto); dedurre da "plate/piastra" vs "pipe/tube/tubo" nel testo, null se non specificato),
+- weld_details (dettagli di giunto se presenti: backing, mono/multistrato, saldatura sx/dx, oppure
+  derivazione/branch/bocchello tubo-piastra - riportalo qui testualmente per non perdere l'informazione
+  anche quando product_type resta "T"; testo libero breve, null se assenti),
 - material_group, filler_material_group, welding_positions (array), thickness_min_mm, thickness_max_mm,
 - pipe_diameter_mm, shielding_gas, exam_date, expiry_date, last_confirmation_date,
 - next_confirmation_due, standard_reference (YYYY-MM-DD per le date)
+
+Per standard_reference: riporta ESATTAMENTE l'edizione/anno scritto sul certificato (es. "ISO 9606-1:2012"
+se il documento la cita esplicitamente). Se il certificato NON specifica alcun anno, usa "ISO 9606-1:2017"
+(edizione corrente in vigore, ha sostituito la 2012/2013) come default, non 2012.
 
 Istruzioni per le date di conferma semestrale (ISO 9606-1 §9.2):
 - I certificati ISO 9606-1 hanno una tabella in seconda pagina intitolata

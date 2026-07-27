@@ -45,3 +45,24 @@ describe('documentTypeSchemas AI', () => {
     expect(schema?.aiExpectedSchema?.certificate_type).toContain('3.1');
   });
 });
+
+describe('patentino_saldatore - norma di riferimento (fix default 9606-1:2017)', () => {
+  it('propone come prima opzione/default la norma vigente ISO 9606-1:2017, non la 2012 superata', () => {
+    const schema = getSchemaForDocType('patentino_saldatore');
+    const field = schema.fields.find((f) => f.key === 'standard_reference');
+    expect(field).toBeTruthy();
+    expect(field.options[0].value).toBe('ISO 9606-1:2017');
+  });
+
+  it('mantiene selezionabile la 2012 per registrare certificati storici legittimi', () => {
+    const schema = getSchemaForDocType('patentino_saldatore');
+    const field = schema.fields.find((f) => f.key === 'standard_reference');
+    const values = field.options.map((o) => o.value);
+    expect(values).toContain('ISO 9606-1:2012');
+  });
+
+  it('il prompt AI indica 2017 come default quando il certificato non specifica l\'anno', () => {
+    const schema = getSchemaForDocType('patentino_saldatore');
+    expect(schema.aiPrompt).toMatch(/ISO 9606-1:2017.*default/);
+  });
+});
