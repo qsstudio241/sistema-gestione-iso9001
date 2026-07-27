@@ -7,6 +7,7 @@ import {
   computeQualifiedWeldingPositions,
   isWeldingPositionQualified,
   describePlateOnlyRotatingPositionDiameterNote,
+  getApplicableWelderFields,
   buildWelderQualificationRulesPromptSection,
 } from '../data/weldingQualificationRules9606.js';
 
@@ -112,6 +113,23 @@ describe('weldingQualificationRules9606', () => {
     expect(section).toContain('ISO 9606-1');
     expect(section).toContain('6 mesi');
     expect(section).toContain('135');
+  });
+
+  describe('getApplicableWelderFields (UX campi condizionati, 27/07/2026)', () => {
+    it('diametro tubo non applicabile se prodotto = piastra (P)', () => {
+      expect(getApplicableWelderFields({ productType: 'P' })).toEqual({ pipeDiameterApplicable: false });
+      expect(getApplicableWelderFields({ productType: 'p' })).toEqual({ pipeDiameterApplicable: false });
+    });
+
+    it('diametro tubo applicabile se prodotto = tubo (T)', () => {
+      expect(getApplicableWelderFields({ productType: 'T' })).toEqual({ pipeDiameterApplicable: true });
+    });
+
+    it('diametro tubo applicabile (permissivo) se prodotto non ancora scelto', () => {
+      expect(getApplicableWelderFields({ productType: '' })).toEqual({ pipeDiameterApplicable: true });
+      expect(getApplicableWelderFields({ productType: null })).toEqual({ pipeDiameterApplicable: true });
+      expect(getApplicableWelderFields()).toEqual({ pipeDiameterApplicable: true });
+    });
   });
 
   describe('describePlateOnlyRotatingPositionDiameterNote (feedback cliente Studio Mason, da confermare)', () => {

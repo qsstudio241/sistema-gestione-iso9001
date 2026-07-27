@@ -197,6 +197,33 @@ function describePlateOnlyRotatingPositionDiameterNote({
 }
 
 /**
+ * Determina quali campi opzionali del patentino ISO 9606-1 sono pertinenti in
+ * base al tipo di prodotto testato (variabile essenziale §11: piastra/tubo).
+ *
+ * Regola certa (Tabella 7): il diametro tubo ha senso solo se il provino
+ * testato e' un TUBO. Il tipo di giunto (BW/FW) non lo esclude di per se':
+ * sia i giunti testa a testa che quelli d'angolo si eseguono anche su tubo
+ * (es. derivazioni/T-branch) — l'unica variabile che rende il campo non
+ * pertinente e' "solo piastra testata" (product_type === 'P'). Se il tipo
+ * prodotto non e' ancora stato scelto, il campo resta visibile (nessuna
+ * esclusione senza una scelta esplicita dell'operatore).
+ *
+ * Nota: non esiste, ad oggi, una regola normativa altrettanto certa che
+ * escluda altri campi (es. spessore) in base al solo tipo di giunto — Tabella
+ * 6 (BW) e Tabella 8 (FW) definiscono entrambe un range di spessore valido.
+ * Estendere qui, non duplicare altrove, se emergono nuovi casi verificati.
+ *
+ * @param {{ productType?: 'P'|'T'|string|null }} [params]
+ * @returns {{ pipeDiameterApplicable: boolean }}
+ */
+function getApplicableWelderFields({ productType } = {}) {
+  const pt = String(productType || '').toUpperCase().trim();
+  return {
+    pipeDiameterApplicable: pt !== 'P',
+  };
+}
+
+/**
  * @param {{ maxLines?: number }} [opts]
  * @returns {string}
  */
@@ -222,6 +249,7 @@ export {
   BUTT_WELD_POSITION_QUALIFICATION_MATRIX,
   FILLET_WELD_POSITION_QUALIFICATION_MATRIX,
   describePlateOnlyRotatingPositionDiameterNote,
+  getApplicableWelderFields,
   buildWelderQualificationRulesPromptSection,
 };
 
@@ -235,5 +263,6 @@ export default {
   BUTT_WELD_POSITION_QUALIFICATION_MATRIX,
   FILLET_WELD_POSITION_QUALIFICATION_MATRIX,
   describePlateOnlyRotatingPositionDiameterNote,
+  getApplicableWelderFields,
   buildWelderQualificationRulesPromptSection,
 };

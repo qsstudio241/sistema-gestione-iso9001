@@ -3,6 +3,7 @@
  */
 import React, { useState, useEffect, useMemo, useRef } from "react";
 import { getSchemaForDocType } from "../data/documentTypeSchemas";
+import { getApplicableWelderFields } from "../data/weldingQualificationRules9606";
 import { repairTextEncoding } from "../utils/textEncodingRepair";
 import useIngestReviewSplit from "../hooks/useIngestReviewSplit";
 import IngestSourcePreview from "./IngestSourcePreview";
@@ -130,10 +131,29 @@ export default function IngestReviewDialog({
     return () => window.removeEventListener("keydown", onKey);
   }, [open, expanded]);
 
+  const isWelderQualification = (schema?.id || docType) === "patentino_saldatore";
+  // Diametro tubo (Tabella 7 ISO 9606-1): pertinente solo se il prodotto testato
+  // e' un tubo — vedi getApplicableWelderFields per la motivazione normativa.
+  const applicableFields = isWelderQualification
+    ? getApplicableWelderFields({ productType: form.product_type })
+    : null;
+
+  useEffect(() => {
+    if (!applicableFields || applicableFields.pipeDiameterApplicable) return;
+    setForm((prev) => {
+      if (prev.pipe_diameter_mm == null || prev.pipe_diameter_mm === "") return prev;
+      return { ...prev, pipe_diameter_mm: "" };
+    });
+  }, [applicableFields, fields]);
+
   if (!open) return null;
 
   const schemaFields = schema?.fields || [];
   const title = schema?.label || docType;
+
+  function isFieldNotApplicable(field) {
+    return field.key === "pipe_diameter_mm" && applicableFields != null && !applicableFields.pipeDiameterApplicable;
+  }
 
   function handleChange(key, value) {
     setForm((prev) => ({ ...prev, [key]: value }));
@@ -157,6 +177,12 @@ export default function IngestReviewDialog({
       if (field.type === "boolean") {
         payload[field.key] = payload[field.key] === true || payload[field.key] === "true" || payload[field.key] === "1";
       }
+    }
+    // Difesa in profondità (client-side): un campo non applicabile non deve mai
+    // essere inviato, anche se residuo da un'estrazione AI precedente — il
+    // sanitizer backend (numericSanitizer.js) resta comunque la seconda linea.
+    if (applicableFields && !applicableFields.pipeDiameterApplicable) {
+      payload.pipe_diameter_mm = null;
     }
     await onConfirm(payload);
   }
@@ -228,11 +254,12 @@ export default function IngestReviewDialog({
 
             <div className="ingest-review__fields">
               {schemaFields.map((field) => {
+                const notApplicable = isFieldNotApplicable(field);
                 const confidence = fieldConfidence[field.key];
                 const confirmedByAi = isFieldConfirmedByAi(confidence, form[field.key]);
                 const manuallyEditing = editingFields.has(field.key);
-                const showEditable = !confirmedByAi || manuallyEditing;
-                const attentionLevel = confirmedByAi ? "confirmed" : (confidence || "low");
+                const showEditable = !notApplicable && (!confirmedByAi || manuallyEditing);
+                const attentionLevel = notApplicable ? "not-applicable" : confirmedByAi ? "confirmed" : (confidence || "low");
 
                 return (
                   <div
@@ -242,10 +269,16 @@ export default function IngestReviewDialog({
                     <label className="ingest-review__field-label" htmlFor={`ingest-field-${field.key}`}>
                       {field.label}
                       {field.required && <span className="ingest-review__required">*</span>}
-                      <ConfidenceBadge level={confidence} />
+                      {!notApplicable && <ConfidenceBadge level={confidence} />}
                     </label>
 
-                    {showEditable ? (
+                    {notApplicable ? (
+                      <div className="ingest-review__readonly ingest-review__readonly--na">
+                        <span className="ingest-review__readonly-value">
+                          Non applicabile — prodotto: Piastra
+                        </span>
+                      </div>
+                    ) : showEditable ? (
                       <>
                         <FieldInput field={field} value={form[field.key]} onChange={handleChange} />
                         {confirmedByAi && manuallyEditing && (
@@ -273,7 +306,7 @@ export default function IngestReviewDialog({
                       </div>
                     )}
 
-                    {field.hint && <span className="ingest-review__hint">{repairTextEncoding(field.hint)}</span>}
+                    {!notApplicable && field.hint && <span className="ingest-review__hint">{repairTextEncoding(field.hint)}</span>}
                   </div>
                 );
               })}

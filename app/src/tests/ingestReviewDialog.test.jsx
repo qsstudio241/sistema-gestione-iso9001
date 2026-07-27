@@ -50,6 +50,57 @@ describe("formatReadonlyDisplay", () => {
   });
 });
 
+describe("IngestReviewDialog — campo diametro tubo condizionato al tipo prodotto (27/07/2026)", () => {
+  const baseProps = {
+    open: true,
+    docType: "patentino_saldatore",
+    fileName: "certificato.pdf",
+    onConfirm: vi.fn(),
+    onReject: vi.fn(),
+    onClose: vi.fn(),
+  };
+
+  it("prodotto = Piastra (P): diametro tubo non è editabile, mostra 'Non applicabile'", () => {
+    render(
+      <IngestReviewDialog
+        {...baseProps}
+        fields={{ product_type: "P", pipe_diameter_mm: 60 }}
+      />,
+    );
+
+    expect(document.getElementById("ingest-field-pipe_diameter_mm")).toBeNull();
+    expect(screen.getByText(/Non applicabile — prodotto: Piastra/)).toBeInTheDocument();
+  });
+
+  it("prodotto = Tubo (T): diametro tubo resta editabile", () => {
+    render(
+      <IngestReviewDialog
+        {...baseProps}
+        fields={{ product_type: "T", pipe_diameter_mm: 60 }}
+      />,
+    );
+
+    expect(document.getElementById("ingest-field-pipe_diameter_mm")).not.toBeNull();
+    expect(screen.queryByText(/Non applicabile/)).not.toBeInTheDocument();
+  });
+
+  it("cambiando prodotto da Tubo a Piastra il campo diametro si nasconde e il valore residuo viene azzerato", () => {
+    render(
+      <IngestReviewDialog
+        {...baseProps}
+        fields={{ product_type: "T", pipe_diameter_mm: 60 }}
+      />,
+    );
+
+    expect(document.getElementById("ingest-field-pipe_diameter_mm").value).toBe("60");
+
+    fireEvent.change(document.getElementById("ingest-field-product_type"), { target: { value: "P" } });
+
+    expect(document.getElementById("ingest-field-pipe_diameter_mm")).toBeNull();
+    expect(screen.getByText(/Non applicabile — prodotto: Piastra/)).toBeInTheDocument();
+  });
+});
+
 describe("IngestReviewDialog — revisione adattiva per confidenza", () => {
   const baseProps = {
     open: true,
