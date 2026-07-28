@@ -16,6 +16,12 @@
                                  ]
                    },
                    {
+                       "name":  "config",
+                       "files":  [
+                                     "src/config/multer.js"
+                                 ]
+                   },
+                   {
                        "name":  "constants",
                        "files":  [
                                      "src/constants/documentStatus.js"

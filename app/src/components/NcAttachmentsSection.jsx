@@ -61,8 +61,12 @@ export default function NcAttachmentsSection({ ncId, readOnly = false }) {
         });
       }
       await load();
-    } catch {
-      setError("Errore durante il caricamento. Riprovare.");
+    } catch (err) {
+      // Il messaggio del backend distingue i casi reali (formato non supportato,
+      // file troppo grande, permessi): mostrarlo evita diagnosi cieche.
+      setError(err?.message
+        ? `Caricamento non riuscito: ${err.message}`
+        : "Errore durante il caricamento. Riprovare.");
     } finally {
       setUploading(false);
     }

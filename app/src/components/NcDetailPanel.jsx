@@ -1,9 +1,12 @@
 /**
  * NcDetailPanel - drawer dettaglio NC (flusso semplificato Aperta / Chiusa)
  *
- * Biforcazione ISO 10.2.1 b):
- * - Azione correttiva NON necessaria: Scheda → Difetto → Valutazione → Trattamento → Verifica → Chiudi
- * - Azione correttiva necessaria: + Cause + Azioni correttive
+ * L'ordine delle sezioni segue la sequenza operativa ISO 10.2: prima si reagisce
+ * (trattamento) e si verifica che il trattamento sia stato attuato, solo dopo si
+ * valuta se serve un'azione correttiva (10.2.1 b) e si percorre il suo ramo.
+ * - Azione correttiva NON necessaria: Scheda → Difetto → Trattamento → Evidenze →
+ *   Verifica attuazione → Valutazione → Chiudi
+ * - Azione correttiva necessaria: + Cause + Azioni correttive + Verifica efficacia
  * Chiudi visibile solo se gate soddisfatti (responsabile verifica selezionato dal menu).
  */
 
@@ -50,7 +53,28 @@ const NC_TEXT_FIELDS = [
   "verification_notes",
   "verification_responsible",
   "corrective_action_evaluation_notes",
+  "effectiveness_verification_notes",
 ];
+
+/**
+ * Numerazione sezioni del drawer. Le prime sei sono stabili in entrambi i
+ * percorsi; il ramo azione correttiva aggiunge cause, azioni e verifica efficacia.
+ * @param {boolean} needsCorrective
+ */
+function ncSectionNumbers(needsCorrective) {
+  return {
+    scheda: 1,
+    difetto: 2,
+    trattamento: 3,
+    evidenze: 4,
+    verificaTrattamento: 5,
+    valutazione: 6,
+    cause: 7,
+    azioni: 8,
+    verificaEfficacia: 9,
+    chiusura: needsCorrective ? 10 : 7,
+  };
+}
 
 function normalizeDate(val) {
   if (!val) return "";
@@ -91,6 +115,12 @@ function initForm(nc, organizationId) {
       scope,
       "corrective_action_evaluation_notes",
     ),
+    effectiveness_verification_notes: resolveNcFieldInitial(
+      nc?.effectiveness_verification_notes,
+      organizationId,
+      scope,
+      "effectiveness_verification_notes",
+    ),
   };
 }
 
@@ -118,6 +148,7 @@ export default function NcDetailPanel({
   const profile = getNcWorkflowProfile(nc);
   const needsCorrective = profile === "full";
   const simplePath = profile === "simple";
+  const secNo = ncSectionNumbers(needsCorrective);
 
   const [form, setForm] = useState(() => initForm(nc, organizationId));
   const [saving, setSaving] = useState(false);
@@ -215,6 +246,7 @@ export default function NcDetailPanel({
         due_date: form.due_date || null,
         corrective_action_needed: form.corrective_action_needed || null,
         corrective_action_evaluation_notes: form.corrective_action_evaluation_notes.trim() || null,
+        effectiveness_verification_notes: form.effectiveness_verification_notes.trim() || null,
       });
       if (organizationId && draftScope) {
         clearNcFieldDraftsForScope(organizationId, draftScope, NC_TEXT_FIELDS);
@@ -230,19 +262,13 @@ export default function NcDetailPanel({
   if (!nc) return null;
 
   const sourceLabel = NC_SOURCE_TYPE_LABELS[nc.source_type] || nc.source_type;
-  const verifLabel = needsCorrective
-    ? "Note verifica efficacia"
-    : "Note verifica trattamento";
-  const verifPlaceholder = needsCorrective
-    ? "Esito della verifica dell'efficacia delle azioni correttive..."
-    : "Esito della verifica: la correzione/trattamento ha risolto il problema?";
 
   return (
     <div className="nc-detail-form nc-action-form">
       {/* 1. Scheda NC */}
       <section className="nc-drawer-section" aria-labelledby={`nc-sec-scheda-${nc.nc_id}`}>
         <h3 className="nc-drawer-section-title" id={`nc-sec-scheda-${nc.nc_id}`}>
-          {"1. Scheda NC"}
+          {`${secNo.scheda}. Scheda NC`}
         </h3>
         <div className="nc-detail-meta-badges">
           {nc.source_type && (
@@ -317,7 +343,7 @@ export default function NcDetailPanel({
       {/* 2. Difetto/Problema */}
       <section className="nc-drawer-section" aria-labelledby={`nc-sec-difetto-${nc.nc_id}`}>
         <h3 className="nc-drawer-section-title" id={`nc-sec-difetto-${nc.nc_id}`}>
-          {"2. Difetto/Problema"}
+          {`${secNo.difetto}. Difetto/Problema`}
         </h3>
         <div className="nc-form-row">
           <label htmlFor={`nc-desc-${nc.nc_id}`}>Descrizione *</label>
@@ -338,10 +364,77 @@ export default function NcDetailPanel({
         </div>
       </section>
 
-      {/* 3. Valutazione azione correttiva (biforcazione) */}
+      {/* 3. Trattamento (Correzione immediata, ISO 10.2.1a) */}
+      <section className="nc-drawer-section" aria-labelledby={`nc-sec-trattamento-${nc.nc_id}`}>
+        <h3 className="nc-drawer-section-title" id={`nc-sec-trattamento-${nc.nc_id}`}>
+          {`${secNo.trattamento}. Trattamento`}
+        </h3>
+        <NcCorrectionSection ncId={nc.nc_id} ncActions={ncActions} organizationId={organizationId} />
+      </section>
+
+      {/* 4. Evidenze */}
+      <section className="nc-drawer-section" aria-labelledby={`nc-sec-evidenze-${nc.nc_id}`}>
+        <h3 className="nc-drawer-section-title" id={`nc-sec-evidenze-${nc.nc_id}`}>
+          {`${secNo.evidenze}. Evidenze`}
+        </h3>
+        <NcAttachmentsSection ncId={nc.nc_id} readOnly={readOnly} />
+      </section>
+
+      {/* 5. Verifica attuazione trattamento */}
+      <section
+        className="nc-drawer-section nc-drawer-section--highlight"
+        aria-labelledby={`nc-sec-verifica-${nc.nc_id}`}
+      >
+        <h3 className="nc-drawer-section-title" id={`nc-sec-verifica-${nc.nc_id}`}>
+          {`${secNo.verificaTrattamento}. Verifica attuazione trattamento`}
+        </h3>
+        <p className="nc-drawer-section-hint">
+          {"Il responsabile verifica (menu) \u00E8 chi attesta formalmente la risoluzione. Nessuna selezione automatica."}
+        </p>
+        <div className="nc-drawer-section-body">
+          <div className="nc-form-row">
+            <label htmlFor={`nc-verif-${nc.nc_id}`}>Note verifica trattamento *</label>
+            <RichTextField
+              id={`nc-verif-${nc.nc_id}`}
+              rows={3}
+              value={form.verification_notes}
+              readOnly={readOnly}
+              onChange={(e) => setField("verification_notes", e.target.value)}
+              placeholder={"Esito della verifica: la correzione/trattamento \u00E8 stata attuata e ha risolto il problema?"}
+              draftScopeId={draftScope}
+              draftFieldId="verification_notes"
+              persistLocalDraft
+              organizationId={organizationId}
+            />
+          </div>
+          <NcResponsibleSelect
+            contacts={contactsVerifica}
+            roleFilter={["verifica", "generico"]}
+            contactId={form.verification_contact_id}
+            legacyText={
+              !form.verification_contact_id && form.verification_responsible
+                ? form.verification_responsible
+                : null
+            }
+            useExternal={false}
+            allowExternal={false}
+            readOnly={readOnly}
+            fieldId={`nc-verif-resp-${nc.nc_id}`}
+            onContactIdChange={(id) => {
+              setField("verification_contact_id", id);
+              setField("useExternalVerification", false);
+            }}
+            onTextChange={(v) => setField("verification_responsible", v)}
+            label="Responsabile verifica *"
+            placeholder="Selezionare dal menu"
+          />
+        </div>
+      </section>
+
+      {/* 6. Valutazione azione correttiva (biforcazione ISO 10.2.1b) */}
       <section className="nc-drawer-section" aria-labelledby={`nc-sec-valutazione-${nc.nc_id}`}>
         <h3 className="nc-drawer-section-title" id={`nc-sec-valutazione-${nc.nc_id}`}>
-          {"3. Valutazione azione correttiva"}
+          {`${secNo.valutazione}. Valutazione azione correttiva`}
         </h3>
         <div className="nc-form-row">
           <label htmlFor={`nc-ca-needed-${nc.nc_id}`}>
@@ -386,20 +479,12 @@ export default function NcDetailPanel({
         )}
       </section>
 
-      {/* 4. Trattamento (Correzione immediata, ISO 10.2.1a) */}
-      <section className="nc-drawer-section" aria-labelledby={`nc-sec-trattamento-${nc.nc_id}`}>
-        <h3 className="nc-drawer-section-title" id={`nc-sec-trattamento-${nc.nc_id}`}>
-          {"4. Trattamento"}
-        </h3>
-        <NcCorrectionSection ncId={nc.nc_id} ncActions={ncActions} organizationId={organizationId} />
-      </section>
-
-      {/* 5. Cause — solo se azione correttiva necessaria */}
+      {/* 7. Cause — solo se azione correttiva necessaria */}
       {needsCorrective && (
         <section className="nc-drawer-section" aria-labelledby={`nc-sec-cause-${nc.nc_id}`}>
           <div className="nc-drawer-section-heading">
             <h3 className="nc-drawer-section-title" id={`nc-sec-cause-${nc.nc_id}`}>
-              {"5. Cause"}
+              {`${secNo.cause}. Cause`}
             </h3>
             <AskAiButton label={"Chiedi all\u2019AI"} />
           </div>
@@ -465,80 +550,52 @@ export default function NcDetailPanel({
         </section>
       )}
 
-      {/* 6. Azioni correttive — solo se necessarie */}
+      {/* 8. Azioni correttive — solo se necessarie */}
       {needsCorrective && (
         <section className="nc-drawer-section" aria-labelledby={`nc-sec-azioni-${nc.nc_id}`}>
           <h3 className="nc-drawer-section-title" id={`nc-sec-azioni-${nc.nc_id}`}>
-            {"6. Azioni correttive / preventive"}
+            {`${secNo.azioni}. Azioni correttive / preventive`}
           </h3>
           <NcActionsList ncId={nc.nc_id} ncActions={ncActions} organizationId={organizationId} />
         </section>
       )}
 
-      {/* Evidenze */}
-      <section className="nc-drawer-section" aria-labelledby={`nc-sec-evidenze-${nc.nc_id}`}>
-        <h3 className="nc-drawer-section-title" id={`nc-sec-evidenze-${nc.nc_id}`}>
-          {needsCorrective ? "7. Evidenze" : "5. Evidenze"}
-        </h3>
-        <NcAttachmentsSection ncId={nc.nc_id} readOnly={readOnly} />
-      </section>
-
-      {/* Verifica */}
-      <section
-        className="nc-drawer-section nc-drawer-section--highlight"
-        aria-labelledby={`nc-sec-verifica-${nc.nc_id}`}
-      >
-        <h3 className="nc-drawer-section-title" id={`nc-sec-verifica-${nc.nc_id}`}>
-          {needsCorrective ? "8. Verifica efficacia" : "6. Verifica trattamento"}
-        </h3>
-        <p className="nc-drawer-section-hint">
-          {"Il responsabile verifica (menu) \u00E8 chi attesta formalmente la risoluzione. Nessuna selezione automatica."}
-        </p>
-        <div className="nc-drawer-section-body">
-          <div className="nc-form-row">
-            <label htmlFor={`nc-verif-${nc.nc_id}`}>{verifLabel} *</label>
-            <RichTextField
-              id={`nc-verif-${nc.nc_id}`}
-              rows={3}
-              value={form.verification_notes}
-              readOnly={readOnly}
-              onChange={(e) => setField("verification_notes", e.target.value)}
-              placeholder={verifPlaceholder}
-              draftScopeId={draftScope}
-              draftFieldId="verification_notes"
-              persistLocalDraft
-              organizationId={organizationId}
-            />
+      {/* 9. Verifica efficacia azione correttiva — solo se necessaria (ISO 10.2.1e) */}
+      {needsCorrective && (
+        <section
+          className="nc-drawer-section nc-drawer-section--highlight"
+          aria-labelledby={`nc-sec-efficacia-${nc.nc_id}`}
+        >
+          <h3 className="nc-drawer-section-title" id={`nc-sec-efficacia-${nc.nc_id}`}>
+            {`${secNo.verificaEfficacia}. Verifica efficacia azione correttiva`}
+          </h3>
+          <div className="nc-drawer-section-body">
+            <div className="nc-form-row">
+              <label htmlFor={`nc-efficacia-${nc.nc_id}`}>
+                Note verifica efficacia * <small>(ISO {"\u00A7"}10.2.1e)</small>
+              </label>
+              <RichTextField
+                id={`nc-efficacia-${nc.nc_id}`}
+                rows={3}
+                value={form.effectiveness_verification_notes}
+                readOnly={readOnly}
+                onChange={(e) => setField("effectiveness_verification_notes", e.target.value)}
+                placeholder={"Esito del riesame: l'azione correttiva ha eliminato la causa ed evitato il ripetersi del problema?"}
+                draftScopeId={draftScope}
+                draftFieldId="effectiveness_verification_notes"
+                persistLocalDraft
+                organizationId={organizationId}
+              />
+            </div>
           </div>
-          <NcResponsibleSelect
-            contacts={contactsVerifica}
-            roleFilter={["verifica", "generico"]}
-            contactId={form.verification_contact_id}
-            legacyText={
-              !form.verification_contact_id && form.verification_responsible
-                ? form.verification_responsible
-                : null
-            }
-            useExternal={false}
-            allowExternal={false}
-            readOnly={readOnly}
-            fieldId={`nc-verif-resp-${nc.nc_id}`}
-            onContactIdChange={(id) => {
-              setField("verification_contact_id", id);
-              setField("useExternalVerification", false);
-            }}
-            onTextChange={(v) => setField("verification_responsible", v)}
-            label="Responsabile verifica *"
-            placeholder="Selezionare dal menu"
-          />
-        </div>
-      </section>
+        </section>
+      )}
 
       {/* Chiusura */}
       {showClosureSection && (
         <section className="nc-drawer-section" aria-labelledby={`nc-sec-chiusura-${nc.nc_id}`}>
           <h3 className="nc-drawer-section-title" id={`nc-sec-chiusura-${nc.nc_id}`}>
-            {needsCorrective ? "9. Chiusura" : "7. Chiusura"}
+            {`${secNo.chiusura}. Chiusura`}
           </h3>
           {!isClosed && !closeGate.ok && (
             <p className="nc-drawer-section-hint" role="status">
