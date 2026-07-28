@@ -4,6 +4,13 @@
   gap: 0.25rem;
 }
 
+/* Altezza riservata al toggle "Storico testo", che appare solo dal primo blur:
+   senza questo spazio la sua comparsa spingerebbe in basso i pulsanti che
+   seguono e il primo click di salvataggio andrebbe perso. */
+.rich-text-field-history {
+  min-height: 1.45rem;
+}
+
 .rich-text-field-history-toggle {
   align-self: flex-start;
   margin: 0;
