@@ -8,6 +8,7 @@ import apiService from "../services/apiService";
 import { useAuth } from "../contexts/AuthContext";
 import QualificationForm from "./QualificationForm";
 import QualificationUploadButton from "../components/QualificationUploadButton";
+import ReprocessQueueBanner from "../components/ReprocessQueueBanner";
 import { formatDate } from "../utils/dateHelpers";
 import {
     resolveInitialQualificationsCompanyScope,
@@ -443,6 +444,8 @@ function QualificationsPage() {
             {companyScope && (
                 <p className="sq-scope-hint">{"Ambito attivo: "}{scopeCompanyName}</p>
             )}
+
+            <ReprocessQueueBanner />
 
             {/* Stats */}
             <StatsBar

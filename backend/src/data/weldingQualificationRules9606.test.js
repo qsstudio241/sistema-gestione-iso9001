@@ -125,13 +125,20 @@ describe('weldingQualificationRules9606', () => {
 
     describe('getApplicableWelderFields (UX campi condizionati, 27/07/2026)', () => {
         test('diametro tubo non applicabile se prodotto = piastra (P)', () => {
-            expect(getApplicableWelderFields({ productType: 'P' })).toEqual({ pipeDiameterApplicable: false });
+            expect(getApplicableWelderFields({ productType: 'P' })).toEqual({ pipeDiameterApplicable: false, transferModeApplicable: false });
         });
 
         test('diametro tubo applicabile se prodotto = tubo (T) o non ancora scelto', () => {
-            expect(getApplicableWelderFields({ productType: 'T' })).toEqual({ pipeDiameterApplicable: true });
-            expect(getApplicableWelderFields({ productType: '' })).toEqual({ pipeDiameterApplicable: true });
-            expect(getApplicableWelderFields()).toEqual({ pipeDiameterApplicable: true });
+            expect(getApplicableWelderFields({ productType: 'T' })).toEqual({ pipeDiameterApplicable: true, transferModeApplicable: false });
+            expect(getApplicableWelderFields({ productType: '' })).toEqual({ pipeDiameterApplicable: true, transferModeApplicable: false });
+            expect(getApplicableWelderFields()).toEqual({ pipeDiameterApplicable: true, transferModeApplicable: false });
+        });
+
+        test('metodo di trasferimento applicabile solo per processi ad arco a filo continuo (131/135/136/138)', () => {
+            expect(getApplicableWelderFields({ weldingProcessCode: '135' }).transferModeApplicable).toBe(true);
+            expect(getApplicableWelderFields({ weldingProcessCode: '131' }).transferModeApplicable).toBe(true);
+            expect(getApplicableWelderFields({ weldingProcessCode: '111' }).transferModeApplicable).toBe(false);
+            expect(getApplicableWelderFields({ weldingProcessCode: null }).transferModeApplicable).toBe(false);
         });
     });
 

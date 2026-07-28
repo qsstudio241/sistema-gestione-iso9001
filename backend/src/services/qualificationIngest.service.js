@@ -497,6 +497,85 @@ async function ingestQualificationFromPdf(pdfBuffer, fileName, organizationId, c
     };
 }
 
+/**
+ * Campi ammessi per la "rielaborazione" (backfill) di qualifiche già presenti in
+ * DB — vedi backend/scripts/reprocess-qualifications.js e migrazione 137.
+ * Whitelist esplicita: un nuovo campo va aggiunto qui solo dopo aver verificato
+ * che la colonna esiste ed è sicura da scrivere via UPDATE mirato (mai colonne
+ * che richiedono side-effect come qualification_designation).
+ */
+const REPROCESSABLE_FIELDS = {
+    transfer_mode: { column: 'transfer_mode' },
+    shielding_gas: { column: 'shielding_gas' },
+    joint_type: { column: 'joint_type' },
+    weld_details: { column: 'weld_details' },
+};
+
+/**
+ * Applica un aggiornamento mirato a UNA qualifica già esistente, limitato ai
+ * campi in `fieldScope` (whitelist REPROCESSABLE_FIELDS). Usato dal percorso di
+ * conferma staging in "modalità rielaborazione" (ingestStaging.service.js) —
+ * MAI una INSERT: aggiorna solo se il valore attuale in DB è ancora NULL, per
+ * non sovrascrivere mai una correzione manuale già presente (belt & suspenders,
+ * oltre al filtro "WHERE campo IS NULL" già applicato dallo script di selezione).
+ * @returns {Promise<{qualification_id:number, updated_fields:string[]}>}
+ */
+async function applyFieldReprocessUpdate(targetQualificationId, organizationId, fieldScope, fields) {
+    const scopeFields = String(fieldScope || '').split(',').map((s) => s.trim()).filter(Boolean);
+    if (!scopeFields.length) {
+        const err = new Error('field_scope mancante o vuoto');
+        err.code = 'VALIDATION_ERROR';
+        throw err;
+    }
+
+    const pool = await getPool();
+    const check = await pool.request()
+        .input('id', targetQualificationId)
+        .input('orgId', organizationId)
+        .query('SELECT id FROM qualifications WHERE id=@id AND organization_id=@orgId');
+    if (!check.recordset.length) {
+        const err = new Error('Qualifica destinataria non trovata');
+        err.code = 'NOT_FOUND';
+        throw err;
+    }
+
+    const updatable = [];
+    for (const key of scopeFields) {
+        const def = REPROCESSABLE_FIELDS[key];
+        if (!def) continue;
+        const value = fields ? fields[key] : undefined;
+        if (value === undefined || value === null || value === '') continue;
+        updatable.push({ key, column: def.column, value });
+    }
+
+    if (!updatable.length) {
+        return { qualification_id: targetQualificationId, updated_fields: [] };
+    }
+
+    const request = pool.request().input('id', targetQualificationId).input('orgId', organizationId);
+    const setClauses = [];
+    const updatedFields = [];
+    for (const { key, column, value } of updatable) {
+        const paramName = `val_${column}`;
+        request.input(paramName, value);
+        setClauses.push(`${column} = @${paramName}`);
+        updatedFields.push(key);
+    }
+
+    // "WHERE campo IS NULL" per ciascuna colonna toccata: non sovrascrive mai un
+    // valore già presente (anche se lo script di selezione dovrebbe già escluderlo).
+    const guardClauses = updatable.map(({ column }) => `${column} IS NULL`).join(' AND ');
+
+    await request.query(`
+        UPDATE qualifications
+        SET ${setClauses.join(', ')}, updated_at = GETDATE()
+        WHERE id = @id AND organization_id = @orgId AND (${guardClauses})
+    `);
+
+    logger.info(`[QualifIngest] Rielaborazione applicata id=${targetQualificationId} campi=${updatedFields.join(',')}`);
+    return { qualification_id: targetQualificationId, updated_fields: updatedFields };
+}
+
 module.exports = {
     ingestQualificationFromPdf,
     extractQualificationFromPdf,
@@ -504,4 +583,6 @@ module.exports = {
     classifyQualificationType,
     mapPipelineFieldsToReview,
     checkQualificationPlausibility,
+    applyFieldReprocessUpdate,
+    REPROCESSABLE_FIELDS,
 };

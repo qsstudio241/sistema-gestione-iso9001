@@ -1755,6 +1755,16 @@ class ApiService {
         return this.get(`/ingest-staging/${stagingId}`);
     }
 
+    /** Coda revisione (upload pending + proposte di rielaborazione, migrazione 137). */
+    async listIngestStaging({ module: moduleKey, docType, reviewStatus = 'pending', reprocessOnly = false } = {}) {
+        const params = new URLSearchParams();
+        if (moduleKey) params.set('module', moduleKey);
+        if (docType) params.set('doc_type', docType);
+        if (reviewStatus) params.set('review_status', reviewStatus);
+        if (reprocessOnly) params.set('reprocess_only', 'true');
+        return this.get(`/ingest-staging?${params.toString()}`);
+    }
+
     async getIngestStagingFileBlob(stagingId) {
         const url = `${this.baseUrl}/ingest-staging/${stagingId}/file`;
         const response = await fetch(url, {
