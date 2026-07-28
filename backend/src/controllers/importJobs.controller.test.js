@@ -144,7 +144,7 @@ describe('importJobs.controller commitToQualification', () => {
             .mockImplementationOnce(async (_sql, params) => {
                 expect(params.company_id).toBe(44);
                 expect(params.person_name).toBe('Mario Rossi');
-                expect(params.approval_status).toBe('bozza');
+                expect(params.approval_status).toBe('approvata');
                 return { recordset: [{ id: 123 }] };
             })
             .mockResolvedValueOnce({ recordset: [] });
@@ -156,7 +156,7 @@ describe('importJobs.controller commitToQualification', () => {
         const payload = res.json.mock.calls[0][0];
         expect(payload.success).toBe(true);
         expect(payload.data.qualification_id).toBe(123);
-        expect(payload.data.approval_status).toBe('bozza');
+        expect(payload.data.approval_status).toBe('approvata');
         expect(Array.isArray(payload.data.warnings)).toBe(true);
     });
 
@@ -279,7 +279,7 @@ describe('importJobs.controller commitToQualification', () => {
         expect(insertParams.qualification_designation).toBe('141 BW t\u22653 D\u226560 PA');
     });
 
-    it('non blocca la bozza se mancano campi obbligatori saldatore, ma li elenca nei warning', async () => {
+    it('non blocca la creazione se mancano campi obbligatori saldatore, ma li elenca nei warning', async () => {
         let insertParams = null;
         query
             .mockResolvedValueOnce({ recordset: [{ id: 55, company_id: 44 }] })
@@ -299,9 +299,9 @@ describe('importJobs.controller commitToQualification', () => {
         const res = makeRes();
         await commitToQualification(makeReq(), res);
 
-        // Crea comunque la bozza (201) nonostante i campi obbligatori mancanti.
+        // Crea comunque la qualifica, subito attiva (201), nonostante i campi obbligatori mancanti.
         expect(res.status).toHaveBeenCalledWith(201);
-        expect(insertParams.approval_status).toBe('bozza');
+        expect(insertParams.approval_status).toBe('approvata');
         const payload = res.json.mock.calls[0][0];
         expect(payload.data.qualification_id).toBe(999);
         expect(payload.data.warnings.length).toBeGreaterThan(0);

@@ -87,12 +87,13 @@ router.get ('/qualifications',                     ctrl.listQualifications);
 router.get ('/qualifications/:id',                 ctrl.getOne);
 router.post('/qualifications',                     ctrl.createQualification);
 router.put ('/qualifications/:id',                 ctrl.updateQualification);
+// DELETE soft-delete (status=revocata): endpoint mantenuto per compatibilità/uso interno,
+// non più esposto come pulsante "Revoca" in UI (decisione di prodotto 28/07/2026 — v.
+// qualifications.controller.js header). L'esclusione da copertura/alert su qualifiche non
+// più operativamente valide è ora automatica su date (v. weldingCoordinatorAuth.service.js).
 router.delete('/qualifications/:id',               ctrl.deleteQualification);
 router.delete('/qualifications/:id/permanent',     ctrl.hardDeleteQualification);
 
-// Workflow approvazione
-router.post('/qualifications/:id/approve',         ctrl.approveQualification);
-router.post('/qualifications/:id/reject',          ctrl.rejectQualification);
 router.post('/qualifications/:id/renew',           ctrl.renewQualification);
 
 // Upload certificato e storico

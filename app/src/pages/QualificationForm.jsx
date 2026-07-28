@@ -163,8 +163,6 @@ function QualificationForm({ qualification, onSave, onClose, defaultCompanyId, o
       .catch(() => setPersonnelList([]));
   }, [form.company_id]);
 
-  const companyLocked = isEdit && qualification?.approval_status === "approvata";
-
   function handle(field) {
     return (e) => {
       const value = e.target.type === "checkbox" ? e.target.checked : e.target.value;
@@ -315,8 +313,6 @@ function QualificationForm({ qualification, onSave, onClose, defaultCompanyId, o
               <select
                 value={form.company_id}
                 onChange={handle("company_id")}
-                disabled={companyLocked}
-                title={companyLocked ? "Azienda bloccata su qualifica approvata" : ""}
               >
                 <option value="">-- seleziona azienda --</option>
                 {companies.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}

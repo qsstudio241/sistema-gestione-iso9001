@@ -11,7 +11,7 @@ jest.mock('../utils/logger', () => ({
   debug: jest.fn(),
 }));
 
-const { effectiveAlertDue } = require('./qualificationAlert.service');
+const { effectiveAlertDue, matchQualAlertRule } = require('./qualificationAlert.service');
 
 describe('qualificationAlert.service — effectiveAlertDue', () => {
   it('ISO 9606-1: conferma semestrale più imminente → kind confirmation', () => {
@@ -48,5 +48,26 @@ describe('qualificationAlert.service — effectiveAlertDue', () => {
       next_confirmation_due: '2026-01-01',
     });
     expect(r).toEqual({ date: '2030-01-01', kind: 'expiry' });
+  });
+});
+
+/**
+ * Decisione di prodotto 28/07/2026: nessun gate su approval_status per gli alert
+ * (rimosso Approva/Rifiuta interno). Gli alert scattano su qualsiasi qualifica
+ * attiva (status non revocata/sospesa), a prescindere da approval_status.
+ */
+describe('qualificationAlert.service — matchQualAlertRule (nessun gate su approval_status)', () => {
+  it('scatta l\'alert anche senza approvalStatus nei parametri', () => {
+    const r = matchQualAlertRule({
+      effectiveDate: '2026-07-20',
+      status: 'valida',
+      thresholds: [30, 60],
+    });
+    expect(r).toEqual({ kind: 'overdue', thresholdDays: null });
+  });
+
+  it('esclude comunque status revocata/sospesa', () => {
+    expect(matchQualAlertRule({ effectiveDate: '2026-07-20', status: 'revocata', thresholds: [30, 60] })).toBeNull();
+    expect(matchQualAlertRule({ effectiveDate: '2026-07-20', status: 'sospesa', thresholds: [30, 60] })).toBeNull();
   });
 });

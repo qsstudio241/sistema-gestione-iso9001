@@ -93,6 +93,41 @@ async function canUserConfirmSemiannual(user, companyId) {
   return { allowed: false, reason: 'not_primary', primary };
 }
 
+/**
+ * Determina se una qualifica e' operativamente valida OGGI per le risposte di
+ * copertura ("ho un saldatore qualificato per...?") e per gli alert di scadenza.
+ *
+ * Decisione di prodotto 28/07/2026: i patentini caricati sono certificati gia'
+ * emessi da un ente terzo accreditato — il gate interno di approvazione manuale
+ * (Approva/Rifiuta) e il pulsante "Revoca" manuale sono stati rimossi dal
+ * workflow. Questa funzione e' il controllo automatico basato su date che li
+ * sostituisce: una qualifica ISO 9606-1 / ISO 14732 con conferma semestrale
+ * scaduta (next_confirmation_due nel passato) NON deve piu' contare come
+ * "coperta", anche se il certificato in se' non e' scaduto — senza bisogno di
+ * un click manuale. Le uniche leve manuali rimaste sono i campi diretti della
+ * scheda (Stato = 'sospesa'/'revocata', editabili dal form).
+ *
+ * @param {object} q - riga qualifiche (status, expiry_date, next_confirmation_due, qualification_type)
+ * @param {string} [todayIso] - data di riferimento YYYY-MM-DD (default: oggi, iniettabile nei test)
+ * @returns {boolean}
+ */
+function isQualificationOperationallyActive(q, todayIso) {
+  if (!q) return false;
+  if (['revocata', 'sospesa'].includes(q.status)) return false;
+
+  const today = todayIso || new Date().toISOString().slice(0, 10);
+
+  const expiry = q.expiry_date ? String(q.expiry_date).slice(0, 10) : null;
+  if (expiry && expiry < today) return false;
+
+  if (requiresSemiannualConfirmation(q.qualification_type)) {
+    const nextConf = q.next_confirmation_due ? String(q.next_confirmation_due).slice(0, 10) : null;
+    if (nextConf && nextConf < today) return false;
+  }
+
+  return true;
+}
+
 module.exports = {
   STUDIO_ADMIN_ROLES,
   normalizeEmail,
@@ -102,4 +137,5 @@ module.exports = {
   addMonthsIso,
   getPrimaryCoordinatorForCompany,
   canUserConfirmSemiannual,
+  isQualificationOperationallyActive,
 };

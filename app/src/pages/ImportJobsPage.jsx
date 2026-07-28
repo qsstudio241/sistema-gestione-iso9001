@@ -712,8 +712,8 @@ export default function ImportJobsPage() {
     <div className="import-jobs-page">
       <h1>Import batch PDF</h1>
       <p className="import-jobs-intro">
-        Flusso operativo: <strong>Azienda → tipo documento → PDF → estrazione → revisione → AI → bozza qualifica</strong>.
-        Per i documenti di qualifica l&apos;azienda è obbligatoria prima del caricamento, così la bozza nasce già nel fascicolo corretto.
+        Flusso operativo: <strong>Azienda → tipo documento → PDF → estrazione → revisione → AI → qualifica nel registro</strong>.
+        Per i documenti di qualifica l&apos;azienda è obbligatoria prima del caricamento, così la qualifica nasce già nel fascicolo corretto e da subito consultabile per le risposte di copertura.
         Norme e altri documenti possono restare senza azienda quando sono condivisi a livello studio.
       </p>
       {error && <p className="import-jobs-error">{error}</p>}
@@ -877,7 +877,7 @@ export default function ImportJobsPage() {
                           : "Commit a Qualifica",
                         className: "btn-small btn-commit-qualif",
                         title: detail.job.company_id
-                          ? "Crea una qualifica personale da questo file (approval_status=bozza)"
+                          ? "Crea una qualifica personale da questo file, subito attiva nel registro"
                           : "Seleziona l'azienda creando un nuovo job prima del commit qualifica",
                         disabled: busy || !!qualifResult?.qualification_id || !detail.job.company_id,
                         onClick: () => handleCommitToQualification(f),

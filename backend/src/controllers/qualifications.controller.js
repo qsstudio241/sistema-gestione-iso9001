@@ -1,17 +1,26 @@
 /**
  * qualifications.controller.js — Registro Qualifiche v2
  *
+ * Decisione di prodotto (28/07/2026): i patentini caricati sono certificati
+ * già emessi e validi rilasciati da un ente terzo accreditato (es. TEC
+ * Eurolab/Accredia) — il modulo serve a ESTRARRE e INTERROGARE i dati (chi è
+ * qualificato per quale processo/giunto/spessore/posizione), non a gestire un
+ * workflow di approvazione interna. Il gate manuale Approva/Rifiuta/Revoca è
+ * stato rimosso: ogni qualifica è utilizzabile per le query di copertura non
+ * appena creata. L'unico controllo automatico rimasto è basato su date
+ * (expiry_date + conferma semestrale ISO 9606-1/ISO 14732, vedi
+ * weldingCoordinatorAuth.service.js → isQualificationOperationallyActive).
+ * Dettaglio: docs/GUIDA_CONSOLIDATA.md.
+ *
  * Endpoints:
- *   GET    /qualifications              → lista con semaforo + filtri tipo/approvazione
+ *   GET    /qualifications              → lista con semaforo + filtri tipo
  *   GET    /qualifications/stats        → conteggi stato
  *   GET    /qualifications/coverage     → copertura commessa (?project_id=X)
  *   GET    /qualifications/:id          → dettaglio
- *   POST   /qualifications              → crea (approval_status=bozza)
+ *   POST   /qualifications              → crea (sempre attiva, approval_status=approvata)
  *   PUT    /qualifications/:id          → aggiorna
- *   DELETE /qualifications/:id          → soft delete (status=revocata)
- *   DELETE /qualifications/:id/permanent → cancellazione fisica (solo bozze mai approvate, senza legami)
- *   POST   /qualifications/:id/approve  → approva (coordinatore/admin)
- *   POST   /qualifications/:id/reject   → rifiuta con rejection_reason
+ *   DELETE /qualifications/:id          → soft delete (status=revocata) — non più esposto in UI
+ *   DELETE /qualifications/:id/permanent → cancellazione fisica (nessun legame residuo)
  *   POST   /qualifications/:id/renew    → rinnovo → nuovo record con previous_qualification_id
  */
 
@@ -35,6 +44,7 @@ const {
     requiresSemiannualConfirmation,
     addMonthsIso,
     canUserConfirmSemiannual,
+    isQualificationOperationallyActive,
 } = require('../services/weldingCoordinatorAuth.service');
 const { toNumericOrNull } = require('../utils/numericSanitizer');
 const XLSX = require('xlsx');
@@ -70,111 +80,6 @@ function deriveRangeString(min, max, suffix = 'mm') {
     if (a != null && b != null) return a === b ? `${a}${suffix}` : `${a}-${b}${suffix}`;
     if (a != null) return `\u2265${a}${suffix}`;
     return `${b}${suffix}`;
-}
-
-/**
- * Applica il timbro visivo SGQ su ogni pagina del PDF allegato.
- * Restituisce il path del nuovo file timbrato, o null in caso di errore (best-effort).
- *
- * @param {string} certFileUrl  - URL relativo tipo /uploads/2026/06/file.pdf
- * @param {object} stampData    - { approverName, approverTitle, orgName, approvedAt, certNumber }
- * @returns {Promise<string|null>} path relativo del file timbrato, o null
- */
-async function stampApprovalOnPdf(certFileUrl, stampData) {
-    try {
-        const { PDFDocument, rgb, StandardFonts } = require('pdf-lib');
-
-        const uploadBase = process.env.UPLOAD_DIR
-            ? path.resolve(process.env.UPLOAD_DIR)
-            : path.resolve(__dirname, '../../uploads');
-
-        // Converti URL relativo in path filesystem
-        // certFileUrl può essere "/uploads/2026/06/file.pdf" o "uploads/2026/06/file.pdf"
-        const relPart = certFileUrl.replace(/^\//, '').replace(/^uploads\//, '');
-        const origPath = path.join(uploadBase, relPart);
-
-        if (!fs.existsSync(origPath)) {
-            logger.warn(`[Qualif/stamp] File non trovato: ${origPath}`);
-            return null;
-        }
-
-        const ext = path.extname(origPath).toLowerCase();
-        if (ext !== '.pdf') {
-            logger.info(`[Qualif/stamp] File non PDF (${ext}), skip timbro.`);
-            return null;
-        }
-
-        const pdfBytes = fs.readFileSync(origPath);
-        const pdfDoc   = await PDFDocument.load(pdfBytes);
-        const font     = await pdfDoc.embedFont(StandardFonts.Helvetica);
-        const pages    = pdfDoc.getPages();
-
-        const { approverName, approverTitle, orgName, approvedAt, certNumber } = stampData;
-        const dateStr = approvedAt
-            ? new Date(approvedAt).toLocaleDateString('it-IT', { day: '2-digit', month: '2-digit', year: 'numeric' })
-            : new Date().toLocaleDateString('it-IT', { day: '2-digit', month: '2-digit', year: 'numeric' });
-
-        const lines = [
-            `\u2713 Verificato da: ${approverName}${approverTitle ? ' (' + approverTitle + ')' : ''}`,
-            `Studio: ${orgName || ''}`,
-            `Data: ${dateStr}`,
-            `Approvazione SGQ${certNumber ? ' \u2014 ' + certNumber : ''}`,
-        ];
-
-        const fontSize   = 9;
-        const lineHeight = fontSize + 3;
-        const padding    = 6;
-        const boxWidth   = 230;
-        const boxHeight  = lines.length * lineHeight + padding * 2;
-        const color      = rgb(0.2, 0.2, 0.2); // #333333
-        const borderClr  = rgb(0.55, 0.55, 0.55);
-
-        for (const page of pages) {
-            const { width, height } = page.getSize();
-            const x = width  - boxWidth  - 20;
-            const y = 20;
-
-            // Bordo rettangolare
-            page.drawRectangle({
-                x, y,
-                width:  boxWidth,
-                height: boxHeight,
-                borderColor: borderClr,
-                borderWidth: 0.8,
-                color:  rgb(1, 1, 1),
-                opacity: 0.85,
-                borderOpacity: 1,
-            });
-
-            // Testo riga per riga (bottom-up)
-            lines.forEach((line, i) => {
-                const textY = y + padding + (lines.length - 1 - i) * lineHeight + 2;
-                page.drawText(line, {
-                    x:    x + padding,
-                    y:    textY,
-                    size: fontSize,
-                    font,
-                    color,
-                    maxWidth: boxWidth - padding * 2,
-                });
-            });
-        }
-
-        const stamped   = await pdfDoc.save();
-        const dir       = path.dirname(origPath);
-        const base      = path.basename(origPath, ext);
-        const newName   = `${base}_approved${ext}`;
-        const newPath   = path.join(dir, newName);
-        fs.writeFileSync(newPath, stamped);
-
-        // Restituisce URL relativo con /uploads/ prefisso
-        const newRelUrl = '/uploads/' + path.relative(uploadBase, newPath).replace(/\\/g, '/');
-        logger.info(`[Qualif/stamp] PDF timbrato: ${newPath}`);
-        return newRelUrl;
-    } catch (err) {
-        logger.error(`[Qualif/stamp] Errore timbro PDF: ${err.message}`);
-        return null;
-    }
 }
 
 // Soglie semaforo (giorni)
@@ -348,8 +253,7 @@ async function getStats(req, res) {
                 SUM(CASE WHEN q.expiry_date IS NOT NULL AND q.expiry_date BETWEEN DATEADD(day, 31, CAST(GETDATE() AS DATE)) AND DATEADD(day, 60, CAST(GETDATE() AS DATE)) AND q.status NOT IN ('revocata','sospesa') THEN 1 ELSE 0 END) AS in_scadenza_60,
                 SUM(CASE WHEN q.expiry_date IS NOT NULL AND q.expiry_date BETWEEN CAST(GETDATE() AS DATE) AND DATEADD(day, 30, CAST(GETDATE() AS DATE)) AND q.status NOT IN ('revocata','sospesa') THEN 1 ELSE 0 END) AS in_scadenza_30,
                 SUM(CASE WHEN q.expiry_date IS NOT NULL AND q.expiry_date < CAST(GETDATE() AS DATE) AND q.status NOT IN ('revocata','sospesa') THEN 1 ELSE 0 END) AS scadute,
-                SUM(CASE WHEN q.status IN ('sospesa','revocata') THEN 1 ELSE 0 END) AS non_attive,
-                SUM(CASE WHEN q.approval_status = 'bozza' THEN 1 ELSE 0 END) AS da_approvare
+                SUM(CASE WHEN q.status IN ('sospesa','revocata') THEN 1 ELSE 0 END) AS non_attive
             FROM qualifications q
             WHERE q.organization_id = @orgId${whereExtra}
         `);
@@ -362,7 +266,6 @@ async function getStats(req, res) {
             in_scadenza_30: s.in_scadenza_30,
             scadute:        s.scadute,
             non_attive:     s.non_attive,
-            da_approvare:   s.da_approvare,
             urgent:         (s.in_scadenza_30 || 0) + (s.scadute || 0),
         });
     } catch (err) {
@@ -422,13 +325,14 @@ async function getCoverage(req, res) {
             });
         }
 
-        // Carica qualifiche attive e approvate — filtrate per company_id commessa se disponibile
+        // Carica qualifiche del tipo pertinente — filtrate per company_id commessa se disponibile.
+        // Nessun filtro su approval_status (rimosso il gate manuale, v. header file): l'esclusione
+        // di qualifiche non più operativamente valide (certificato scaduto o conferma semestrale
+        // scaduta) è automatica, via isQualificationOperationallyActive, subito sotto.
         const qReq = pool.request().input('orgId', orgId);
         let qWhere = `
             q.organization_id = @orgId
-            AND q.approval_status = 'approvata'
             AND q.status NOT IN ('revocata','sospesa')
-            AND (q.expiry_date IS NULL OR q.expiry_date >= CAST(GETDATE() AS DATE))
             AND (q.qualification_type LIKE '%9606%' OR q.qualification_type LIKE '%14732%')
         `;
         if (projectCompanyId) {
@@ -439,14 +343,14 @@ async function getCoverage(req, res) {
             SELECT q.id, q.person_name, q.person_code, q.qualification_type,
                    q.welding_process, q.material_group, q.position_range,
                    q.thickness_min_mm, q.thickness_max_mm, q.thickness_range, q.joint_type,
-                   q.expiry_date, q.status, q.approval_status,
+                   q.expiry_date, q.status, q.approval_status, q.next_confirmation_due,
                    c.name AS company_name
             FROM qualifications q
             LEFT JOIN companies c ON c.id = q.company_id
             WHERE ${qWhere}
             ORDER BY q.person_name
         `);
-        const qualRows = qRes.recordset;
+        const qualRows = qRes.recordset.filter((q) => isQualificationOperationallyActive(q));
 
         const {
             computeQualificationCoverage,
@@ -559,7 +463,6 @@ async function createQualification(req, res) {
             // v1 fields
             welding_process, material_group, position_range, ndt_method, ndt_level,
             // v2 fields
-            approval_status = 'bozza',
             joint_type, thickness_range, pipe_diameter, filler_material, shielding_gas, equipment_type,
             ndt_sector, certification_scheme,
             coordinator_title, diploma_number, cpd_valid_until,
@@ -646,8 +549,8 @@ async function createQualification(req, res) {
             .input('posRange',  position_range  || null)
             .input('ndtMethod', ndt_method      || null)
             .input('ndtLevel',  toIntOrNull(ndt_level))
-            // v2
-            .input('approvalStatus', approval_status || 'bozza')
+            // v2 — sempre attiva alla creazione, nessun gate di approvazione interna (v. header file)
+            .input('approvalStatus', 'approvata')
             .input('jointType',   joint_type        || null)
             .input('thickRange',  thickness_range   || null)
             .input('pipeDiam',    pipe_diameter     || null)
@@ -892,11 +795,11 @@ async function deleteQualification(req, res) {
 /**
  * DELETE /qualifications/:id/permanent — cancellazione fisica reale.
  *
- * Distinta dalla DELETE /qualifications/:id (soft-delete/Revoca, sempre mantenuta
- * per lo storico). Consentita SOLO se la qualifica:
- *  - non è mai stata approvata (approval_status != 'approvata' E approved_at IS NULL —
- *    doppio controllo perché un record può tornare 'rifiutata' dopo essere stato
- *    approvato in passato: in quel caso approved_at resta valorizzato e va bloccato);
+ * Decisione di prodotto 28/07/2026: rimosso il concetto di "bozza mai approvata"
+ * (non esiste più un gate di approvazione interna — v. header file). L'Elimina
+ * definitiva è ora l'unica azione di rimozione esposta in UI (oltre alla modifica
+ * diretta dello Stato) ed è consentita per QUALSIASI qualifica, purché non abbia
+ * legami reali che ne renderebbero pericolosa la cancellazione:
  *  - non ha conferme semestrali registrate (qualification_confirmations);
  *  - non è collegata a un file di import (import_job_files.qualification_id);
  *  - non è la versione "precedente" di un rinnovo (nessun'altra qualifica la referenzia
@@ -919,13 +822,6 @@ async function hardDeleteQualification(req, res) {
         const row = check.recordset[0];
         const writeDenied = await assertMutatingAllowed(req.user, { companyId: row.company_id });
         if (writeDenied) return sendAccessDenied(res, writeDenied);
-
-        if (row.approval_status === 'approvata' || row.approved_at) {
-            return res.status(409).json({
-                error: 'Impossibile eliminare: la qualifica \u00e8 stata approvata. Usa "Revoca" per disattivarla mantenendo lo storico.',
-                code: 'CANNOT_DELETE_APPROVED',
-            });
-        }
 
         const [confirmations, importLinks, renewalRefs] = await Promise.all([
             pool.request().input('id', id)
@@ -993,141 +889,10 @@ async function hardDeleteQualification(req, res) {
     }
 }
 
-/** POST /qualifications/:id/approve */
-async function approveQualification(req, res) {
-    try {
-        const pool  = await getPool();
-        const orgId = req.user.organization_id;
-        const id    = parseInt(req.params.id);
-        const userId = req.user.user_id;
-        const role  = req.user.role || '';
-
-        if (!['admin', 'superadmin', 'coordinatore'].includes(role)) {
-            return res.status(403).json({ error: 'Solo coordinatori o admin possono approvare qualifiche.', code: 'FORBIDDEN' });
-        }
-
-        // Carica qualifica + dati coordinatore + org per il timbro PDF
-        // coordinator_title: prende il valore dalla qualifica ISO 14731 più recente approvata del coordinatore
-        const check = await pool.request()
-            .input('id', id).input('orgId', orgId).input('userId', userId)
-            .query(`
-                SELECT q.id, q.approval_status, q.certificate_file_url,
-                       q.certificate_number, q.certificate_original_url,
-                       u.full_name AS approver_name,
-                       (SELECT TOP 1 qc.coordinator_title
-                        FROM qualifications qc
-                        WHERE qc.created_by = @userId
-                          AND qc.coordinator_title IS NOT NULL
-                          AND qc.approval_status = 'approvata'
-                        ORDER BY qc.approved_at DESC) AS approver_title,
-                       o.organization_name AS org_name
-                FROM qualifications q
-                LEFT JOIN users u ON u.user_id = @userId
-                LEFT JOIN organizations o ON o.organization_id = q.organization_id
-                WHERE q.id = @id AND q.organization_id = @orgId
-            `);
-        if (!check.recordset.length) return res.status(404).json({ error: 'Non trovata.' });
-
-        const row = check.recordset[0];
-        if (row.approval_status === 'approvata') {
-            return res.status(409).json({ error: 'Qualifica gi\u00e0 approvata.' });
-        }
-
-        // Approvazione DB — mai bloccata dal timbro
-        await pool.request()
-            .input('id',      id)
-            .input('orgId',   orgId)
-            .input('userId',  userId)
-            .query(`
-                UPDATE qualifications
-                SET approval_status='approvata', approved_by=@userId, approved_at=GETDATE(),
-                    rejection_reason=NULL, updated_at=GETDATE()
-                WHERE id=@id AND organization_id=@orgId
-            `);
-
-        // Timbro PDF — best-effort, non blocca la risposta se fallisce
-        let stampedUrl = null;
-        if (row.certificate_file_url && !row.certificate_original_url) {
-            const stampData = {
-                approverName:  row.approver_name  || req.user.name || 'Coordinatore',
-                approverTitle: row.approver_title || '',
-                orgName:       row.org_name       || '',
-                approvedAt:    new Date(),
-                certNumber:    row.certificate_number || '',
-            };
-            stampedUrl = await stampApprovalOnPdf(row.certificate_file_url, stampData);
-
-            if (stampedUrl) {
-                await pool.request()
-                    .input('id',         id)
-                    .input('orgId',      orgId)
-                    .input('stampedUrl', stampedUrl)
-                    .input('origUrl',    row.certificate_file_url)
-                    .query(`
-                        UPDATE qualifications
-                        SET certificate_file_url     = @stampedUrl,
-                            certificate_original_url = @origUrl,
-                            updated_at               = GETDATE()
-                        WHERE id=@id AND organization_id=@orgId
-                    `);
-                logger.info(`[Qualif] Timbro PDF applicato id=${id}: ${stampedUrl}`);
-            }
-        }
-
-        logger.info(`[Qualif] Approvata id=${id} da user ${userId}`);
-        res.json({
-            success:         true,
-            approval_status: 'approvata',
-            pdf_stamped:     stampedUrl !== null,
-        });
-    } catch (err) {
-        logger.error('approveQualif:', err.message);
-        res.status(500).json({ error: err.message });
-    }
-}
-
-/** POST /qualifications/:id/reject */
-async function rejectQualification(req, res) {
-    try {
-        const pool  = await getPool();
-        const orgId = req.user.organization_id;
-        const id    = parseInt(req.params.id);
-        const userId = req.user.user_id;
-        const role  = req.user.role || '';
-        const { rejection_reason } = req.body || {};
-
-        if (!['admin', 'superadmin', 'coordinatore'].includes(role)) {
-            return res.status(403).json({ error: 'Solo coordinatori o admin possono rifiutare qualifiche.', code: 'FORBIDDEN' });
-        }
-        if (!rejection_reason?.trim()) {
-            return res.status(400).json({ error: 'Il motivo di rifiuto \u00e8 obbligatorio.' });
-        }
-
-        const check = await pool.request().input('id', id).input('orgId', orgId)
-            .query('SELECT id FROM qualifications WHERE id=@id AND organization_id=@orgId');
-        if (!check.recordset.length) return res.status(404).json({ error: 'Non trovata.' });
-
-        await pool.request()
-            .input('id',      id)
-            .input('orgId',   orgId)
-            .input('reason',  rejection_reason.trim().substring(0, 500))
-            .query(`
-                UPDATE qualifications
-                SET approval_status='rifiutata', rejection_reason=@reason, updated_at=GETDATE()
-                WHERE id=@id AND organization_id=@orgId
-            `);
-
-        logger.info(`[Qualif] Rifiutata id=${id} da user ${userId}`);
-        res.json({ success: true, approval_status: 'rifiutata' });
-    } catch (err) {
-        logger.error('rejectQualif:', err.message);
-        res.status(500).json({ error: err.message });
-    }
-}
-
 /** POST /qualifications/:id/renew
  *  Crea un nuovo record con previous_qualification_id puntato al record corrente.
- *  Copia tutti i campi e resetta approval_status = 'bozza'.
+ *  Copia tutti i campi; il nuovo record è immediatamente attivo (nessun gate di
+ *  approvazione interna, v. header file).
  */
 async function renewQualification(req, res) {
     try {
@@ -1206,7 +971,7 @@ async function renewQualification(req, res) {
                     (@orgId, @compId, @personName, @personCode, @dept,
                      @qualType, @stdRef, @scope, @certNum, @issuer,
                      @issueDate, @expiryDate, @renewalDate, 'valida', @notes, @userId,
-                     @prevId, 'bozza', @personnelId,
+                     @prevId, 'approvata', @personnelId,
                      @weldProc, @matGroup, @posRange, @ndtMethod, @ndtLevel,
                      @jointType, @thickRange, @pipeDiam, @filler, @shieldGas, @equipType,
                      @ndtSector, @certScheme, @coordTitle, @diplomaNum,
@@ -1415,7 +1180,7 @@ async function getConfirmations(req, res) {
 
         const check = await pool.request().input('id', id).input('orgId', orgId)
             .query(`
-                SELECT id, company_id, qualification_type, approval_status,
+                SELECT id, company_id, qualification_type, approval_status, status,
                        last_confirmation_date, next_confirmation_due
                 FROM qualifications
                 WHERE id=@id AND organization_id=@orgId
@@ -1441,8 +1206,10 @@ async function getConfirmations(req, res) {
 
         res.json({
             confirmations: rows.recordset || [],
+            // Nessun gate su approval_status (rimosso — v. header file): la conferma è
+            // consentita su qualsiasi qualifica attiva (status non revocata/sospesa).
             can_confirm: auth.allowed
-                && qual.approval_status === 'approvata'
+                && !['revocata', 'sospesa'].includes(qual.status)
                 && requiresSemiannualConfirmation(qual.qualification_type),
             last_confirmation_date: qual.last_confirmation_date,
             next_confirmation_due: qual.next_confirmation_due,
@@ -1470,7 +1237,7 @@ async function confirmSemiannual(req, res) {
             .input('orgId', orgId)
             .input('userId', userId)
             .query(`
-                SELECT q.id, q.company_id, q.qualification_type, q.approval_status,
+                SELECT q.id, q.company_id, q.qualification_type, q.approval_status, q.status,
                        q.last_confirmation_date, q.next_confirmation_due,
                        u.full_name AS user_name
                 FROM qualifications q
@@ -1481,10 +1248,12 @@ async function confirmSemiannual(req, res) {
 
         const qual = check.recordset[0];
 
-        if (qual.approval_status !== 'approvata') {
+        // Nessun gate su approval_status (rimosso — v. header file): la conferma è
+        // consentita su qualsiasi qualifica attiva (status non revocata/sospesa).
+        if (['revocata', 'sospesa'].includes(qual.status)) {
             return res.status(400).json({
-                error: 'Conferma semestrale consentita solo su qualifiche approvate.',
-                code: 'NOT_APPROVED',
+                error: 'Conferma semestrale non consentita: qualifica non attiva (revocata/sospesa).',
+                code: 'NOT_ACTIVE',
             });
         }
         if (!requiresSemiannualConfirmation(qual.qualification_type)) {
@@ -1527,8 +1296,8 @@ async function confirmSemiannual(req, res) {
                     FROM qualifications
                     WHERE created_by = @userId
                       AND coordinator_title IS NOT NULL
-                      AND approval_status = 'approvata'
-                    ORDER BY approved_at DESC
+                      AND status NOT IN ('revocata','sospesa')
+                    ORDER BY updated_at DESC
                 `);
             confirmerTitle = titleRow.recordset[0]?.coordinator_title || null;
         }
@@ -1690,8 +1459,6 @@ module.exports = {
     updateQualification,
     deleteQualification,
     hardDeleteQualification,
-    approveQualification,
-    rejectQualification,
     renewQualification,
     uploadBatch,
     uploadCertificate,
