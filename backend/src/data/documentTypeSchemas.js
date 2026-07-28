@@ -24,6 +24,13 @@ Campi da estrarre:
 - material_group, filler_material_group, welding_positions (array), thickness_min_mm, thickness_max_mm,
 - pipe_diameter_mm, shielding_gas, exam_date, expiry_date, last_confirmation_date,
 - next_confirmation_due, standard_reference (YYYY-MM-DD per le date)
+- transfer_mode (metodo di trasferimento del metallo d'apporto - variabile essenziale ISO 9606-1 §5.2,
+  presente come colonna dedicata "Transfer mode" nel modulo certificato ufficiale §9.3): valorizzalo
+  SOLO se il processo di saldatura e' ad arco con filo continuo (131 MIG, 135 MAG, 136 filo animato,
+  138 filo animato metallico) e il certificato riporta esplicitamente la modalita'. Valori ammessi:
+  "spray_arc" (spray/getto), "pulsed_arc" (pulsato), "short_arc" (arco corto/short-circuit/dip),
+  "globular" (globulare). Per altri processi (111, 121, 141, 145, 311, ecc.) lascia null: il
+  parametro non si applica (non esiste "transfer mode" per elettrodo rivestito, TIG o arco sommerso).
 
 Per standard_reference: riporta ESATTAMENTE l'edizione/anno scritto sul certificato (es. "ISO 9606-1:2012"
 se il documento la cita esplicitamente). Se il certificato NON specifica alcun anno, usa "ISO 9606-1:2017"
@@ -56,6 +63,7 @@ Istruzioni per le date di conferma semestrale (ISO 9606-1 §9.2):
       last_confirmation_date: 'YYYY-MM-DD|null',
       next_confirmation_due: 'YYYY-MM-DD|null',
       standard_reference: 'string|null',
+      transfer_mode: 'spray_arc|pulsed_arc|short_arc|globular|null',
     },
   },
 

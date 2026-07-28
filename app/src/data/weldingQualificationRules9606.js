@@ -198,8 +198,24 @@ function describePlateOnlyRotatingPositionDiameterNote({
 }
 
 /**
+ * Codici ISO 4063 dei processi ad arco con filo continuo (elettrodo consumabile
+ * a filo, alimentazione continua) per cui ha senso parlare di "metodo di
+ * trasferimento" del metallo d'apporto (spray/pulsato/arco corto/globulare).
+ * Fonte: ISO 9606-1 §5.2 (testo verificato) — l'eccezione di continuita' tra
+ * processi cita esplicitamente "131, 135 and 138" per il transfer mode "dip
+ * (short-circuit)"; 136 (filo animato attivo, stessa famiglia GMAW/FCAW) e'
+ * incluso per coerenza tecnica (stesso principio fisico di trasferimento del
+ * filo continuo). Non applicabile a 111 (elettrodo rivestito), 121 (arco
+ * sommerso, sotto flusso), 141/145 (TIG, filo freddo non nell'arco), 311
+ * (ossiacetilenica, nessun arco) — nessuno di questi processi ha un
+ * "transfer mode" nel senso della norma.
+ */
+const CONTINUOUS_WIRE_ARC_PROCESSES = ['131', '135', '136', '138'];
+
+/**
  * Determina quali campi opzionali del patentino ISO 9606-1 sono pertinenti in
- * base al tipo di prodotto testato (variabile essenziale §11: piastra/tubo).
+ * base al tipo di prodotto testato (variabile essenziale §11: piastra/tubo) e
+ * al processo di saldatura scelto.
  *
  * Regola certa (Tabella 7): il diametro tubo ha senso solo se il provino
  * testato e' un TUBO. Il tipo di giunto (BW/FW) non lo esclude di per se':
@@ -222,13 +238,22 @@ function describePlateOnlyRotatingPositionDiameterNote({
  * 6 (BW) e Tabella 8 (FW) definiscono entrambe un range di spessore valido.
  * Estendere qui, non duplicare altrove, se emergono nuovi casi verificati.
  *
- * @param {{ productType?: 'P'|'T'|string|null }} [params]
- * @returns {{ pipeDiameterApplicable: boolean }}
+ * Metodo di trasferimento (28/07/2026, richiesta committente): variabile
+ * essenziale solo per i processi ad arco con filo continuo — vedi
+ * CONTINUOUS_WIRE_ARC_PROCESSES sopra e §5.2 (norma verificata: "qualifying
+ * the welder for dip (short-circuit) transfer mode (131, 135 and 138) shall
+ * qualify him for other transfer modes, but not vice versa"). Il campo non ha
+ * senso per 111/121/141/145/311 (nessun "transfer mode" in quei processi).
+ *
+ * @param {{ productType?: 'P'|'T'|string|null, weldingProcessCode?: string|number|null }} [params]
+ * @returns {{ pipeDiameterApplicable: boolean, transferModeApplicable: boolean }}
  */
-function getApplicableWelderFields({ productType } = {}) {
+function getApplicableWelderFields({ productType, weldingProcessCode } = {}) {
   const pt = String(productType || '').toUpperCase().trim();
+  const proc = String(weldingProcessCode || '').trim();
   return {
     pipeDiameterApplicable: pt !== 'P',
+    transferModeApplicable: CONTINUOUS_WIRE_ARC_PROCESSES.includes(proc),
   };
 }
 
@@ -246,6 +271,7 @@ function buildWelderQualificationRulesPromptSection(opts = {}) {
 - Estrai comunque il valore/range esplicito riportato sul certificato quando presente: non sovrascriverlo con il calcolo se i due dati non coincidono, segnala solo la discrepanza.
 - Un cambio di processo di saldatura richiede nuova qualifica, salvo equivalenze note: 135<->138, 121<->125, 141/143/145 tra loro (142 solo 142).
 - Giunto di derivazione/branch/bocchello (es. "tubo-piastra", tubo che si inserisce in una piastra o in un altro tubo): il "tipo prodotto" ufficiale ISO 9606-1 ha solo due valori, "P" (piastra) o "T" (tubo) - NON esiste una terza categoria "tubo-piastra" (norma §11: product type plate(P)/pipe(T)). Se il certificato indica esplicitamente una derivazione/branch/bocchello, mantieni product_type="T" ma NON perdere l'informazione originale: riportala testualmente in weld_details (es. "derivazione/branch tubo-piastra") cosi' l'operatore in revisione la vede e puo' correggere consapevolmente.
+- Metodo di trasferimento (transfer mode, §5.2/§9.3): estrai solo per processi ad arco con filo continuo (131, 135, 136, 138) - valori: spray_arc, pulsed_arc, short_arc, globular. Per altri processi (111, 121, 141, 145, 311) non esiste, lascia null. Nota normativa: qualificare con transfer mode "dip"/short-circuit (131/135/138) qualifica anche gli altri transfer mode dello stesso processo, non viceversa.
 --- FINE REGOLE ISO 9606-1 ---`.trim();
 }
 
@@ -258,6 +284,7 @@ export {
   isWeldingPositionQualified,
   BUTT_WELD_POSITION_QUALIFICATION_MATRIX,
   FILLET_WELD_POSITION_QUALIFICATION_MATRIX,
+  CONTINUOUS_WIRE_ARC_PROCESSES,
   describePlateOnlyRotatingPositionDiameterNote,
   getApplicableWelderFields,
   buildWelderQualificationRulesPromptSection,
@@ -272,6 +299,7 @@ export default {
   isWeldingPositionQualified,
   BUTT_WELD_POSITION_QUALIFICATION_MATRIX,
   FILLET_WELD_POSITION_QUALIFICATION_MATRIX,
+  CONTINUOUS_WIRE_ARC_PROCESSES,
   describePlateOnlyRotatingPositionDiameterNote,
   getApplicableWelderFields,
   buildWelderQualificationRulesPromptSection,

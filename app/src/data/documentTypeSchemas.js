@@ -214,6 +214,19 @@ const patentino_saldatore = {
       hint: "Backing, mono/multistrato, saldatura sx/dx, oppure derivazione/branch/bocchello (giunto tubo-piastra) se dichiarati sul certificato (ISO 9606-1 §11/§3.16)",
     },
     {
+      key: "transfer_mode",
+      label: "Metodo di trasferimento",
+      type: "select",
+      required: false,
+      options: [
+        { value: "spray_arc",  label: "Spray arc (arco spray)" },
+        { value: "pulsed_arc", label: "Pulsed arc (arco pulsato)" },
+        { value: "short_arc",  label: "Short arc (arco corto / short-circuit)" },
+        { value: "globular",   label: "Globular (transfer globulare)" },
+      ],
+      hint: "Solo per processi ad arco con filo continuo (131 MIG, 135 MAG, 136/138 filo animato) — ISO 9606-1 §5.2/§9.3 (colonna \u201CTransfer mode\u201D del certificato ufficiale). Non applicabile a MMA/TIG/SAW: lasciare vuoto.",
+    },
+    {
       key: "notes",
       label: "Note",
       type: "textarea",
@@ -245,7 +258,8 @@ Campi da estrarre:
 - expiry_date: data scadenza in formato ISO 8601 (YYYY-MM-DD) o null
 - last_confirmation_date: data ultima conferma datore di lavoro in formato ISO 8601 o null
 - next_confirmation_due: data prossima conferma in formato ISO 8601 o null
-- standard_reference: norma con edizione, es. "ISO 9606-1:2017". Riporta ESATTAMENTE l'anno scritto sul certificato. Se il certificato NON specifica alcun anno, usa "ISO 9606-1:2017" (edizione corrente in vigore) come default, non "ISO 9606-1:2012" (edizione superata, valida solo se il certificato la cita esplicitamente). Se nessuna norma è indicata, usa null`,
+- standard_reference: norma con edizione, es. "ISO 9606-1:2017". Riporta ESATTAMENTE l'anno scritto sul certificato. Se il certificato NON specifica alcun anno, usa "ISO 9606-1:2017" (edizione corrente in vigore) come default, non "ISO 9606-1:2012" (edizione superata, valida solo se il certificato la cita esplicitamente). Se nessuna norma è indicata, usa null
+- transfer_mode: metodo di trasferimento del metallo d'apporto (variabile essenziale ISO 9606-1 §5.2, colonna dedicata "Transfer mode" nel modulo certificato ufficiale §9.3). Valorizzalo SOLO se il processo è ad arco con filo continuo (131 MIG, 135 MAG, 136 filo animato, 138 filo animato metallico) e il certificato lo riporta esplicitamente: "spray_arc" (spray/getto), "pulsed_arc" (pulsato), "short_arc" (arco corto/short-circuit/dip), "globular" (globulare). Per altri processi (111, 121, 141, 145, 311) usa null: il parametro non si applica.`,
 
   aiExpectedSchema: {
     welder_name: "string|null",
@@ -267,6 +281,7 @@ Campi da estrarre:
     last_confirmation_date: "YYYY-MM-DD|null",
     next_confirmation_due: "YYYY-MM-DD|null",
     standard_reference: "string|null",
+    transfer_mode: "spray_arc|pulsed_arc|short_arc|globular|null",
   },
 };
 

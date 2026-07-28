@@ -471,7 +471,7 @@ async function createQualification(req, res) {
             certificate_file_url,
             // saldatore 9606-1 enrichment
             exam_date, last_confirmation_date, next_confirmation_due, revalidation_date,
-            product_type, weld_details,
+            product_type, weld_details, transfer_mode,
             thickness_min_mm, thickness_max_mm, pipe_diameter_min_mm, pipe_diameter_max_mm,
             // operatore 14732 (saldatura automatica/meccanizzata)
             welding_type, single_multi_run, qualification_method,
@@ -575,6 +575,7 @@ async function createQualification(req, res) {
             .input('revalDate',   revalidation_date || null)
             .input('productType', product_type      || null)
             .input('weldDetails', weld_details      || null)
+            .input('transferMode', transfer_mode    || null)
             .input('designation', designation       || null)
             .input('thickMin',    thickMin)
             .input('thickMax',    thickMax)
@@ -593,7 +594,7 @@ async function createQualification(req, res) {
                      last_confirmation_date, next_confirmation_due, revalidation_date,
                      status, notes, created_by,
                      welding_process, material_group, position_range, ndt_method, ndt_level,
-                     approval_status, joint_type, product_type, weld_details, qualification_designation,
+                     approval_status, joint_type, product_type, weld_details, transfer_mode, qualification_designation,
                      thickness_min_mm, thickness_max_mm, pipe_diameter_min_mm, pipe_diameter_max_mm,
                      thickness_range, pipe_diameter,
                      filler_material, shielding_gas, equipment_type,
@@ -610,7 +611,7 @@ async function createQualification(req, res) {
                      @lastConfDate, @nextConfDue, @revalDate,
                      @status, @notes, @userId,
                      @weldProc, @matGroup, @posRange, @ndtMethod, @ndtLevel,
-                     @approvalStatus, @jointType, @productType, @weldDetails, @designation,
+                     @approvalStatus, @jointType, @productType, @weldDetails, @transferMode, @designation,
                      @thickMin, @thickMax, @pipeMin, @pipeMax,
                      @thickRangeFinal, @pipeDiamFinal,
                      @filler, @shieldGas, @equipType,
@@ -660,7 +661,7 @@ async function updateQualification(req, res) {
             certificate_file_url,
             // saldatore 9606-1 enrichment
             exam_date, last_confirmation_date, next_confirmation_due, revalidation_date,
-            product_type, weld_details,
+            product_type, weld_details, transfer_mode,
             thickness_min_mm, thickness_max_mm, pipe_diameter_min_mm, pipe_diameter_max_mm,
             // operatore 14732 (saldatura automatica/meccanizzata)
             welding_type, single_multi_run, qualification_method,
@@ -726,6 +727,7 @@ async function updateQualification(req, res) {
             .input('revalDate',   revalidation_date || null)
             .input('productType', product_type      || null)
             .input('weldDetails', weld_details      || null)
+            .input('transferMode', transfer_mode    || null)
             .input('designation', designation       || null)
             .input('thickMin',    thickMin)
             .input('thickMax',    thickMax)
@@ -747,6 +749,7 @@ async function updateQualification(req, res) {
                     welding_process=@weldProc, material_group=@matGroup, position_range=@posRange,
                     ndt_method=@ndtMethod, ndt_level=@ndtLevel,
                     joint_type=@jointType, product_type=@productType, weld_details=@weldDetails,
+                    transfer_mode=@transferMode,
                     qualification_designation=@designation,
                     thickness_min_mm=@thickMin, thickness_max_mm=@thickMax,
                     pipe_diameter_min_mm=@pipeMin, pipe_diameter_max_mm=@pipeMax,

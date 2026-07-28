@@ -117,3 +117,59 @@ describe("QualificationForm — diametro tubo condizionato al tipo prodotto", ()
     expect(inputsAfter[0].value).toBe("");
   });
 });
+
+describe("QualificationForm — metodo di trasferimento condizionato al processo (28/07/2026, richiesta committente)", () => {
+  it("processo MAG (135): il campo metodo di trasferimento è visibile", async () => {
+    await renderForm({
+      id: 10,
+      qualification_type: "Saldatore ISO 9606-1",
+      person_name: "Mario Rossi",
+      company_id: 1,
+      welding_process: "135",
+      approval_status: "bozza",
+    });
+
+    expect(screen.getByText("Metodo di trasferimento")).toBeInTheDocument();
+    expect(findSelectByOptionText("Spray arc (arco spray)")).toBeTruthy();
+  });
+
+  it("processo TIG (141): il campo metodo di trasferimento non è presente", async () => {
+    await renderForm({
+      id: 11,
+      qualification_type: "Saldatore ISO 9606-1",
+      person_name: "Mario Rossi",
+      company_id: 1,
+      welding_process: "141",
+      approval_status: "bozza",
+    });
+
+    expect(screen.queryByText("Metodo di trasferimento")).not.toBeInTheDocument();
+  });
+
+  it("cambiando processo da MAG a TIG il campo si nasconde e il valore residuo viene azzerato", async () => {
+    await renderForm({
+      id: 12,
+      qualification_type: "Saldatore ISO 9606-1",
+      person_name: "Mario Rossi",
+      company_id: 1,
+      welding_process: "135",
+      transfer_mode: "spray_arc",
+      approval_status: "bozza",
+    });
+
+    expect(screen.getByText("Metodo di trasferimento")).toBeInTheDocument();
+
+    const processSelect = findSelectByOptionText("141 — TIG");
+    await act(async () => {
+      fireEvent.change(processSelect, { target: { value: "141" } });
+    });
+
+    expect(screen.queryByText("Metodo di trasferimento")).not.toBeInTheDocument();
+
+    await act(async () => {
+      fireEvent.change(processSelect, { target: { value: "135" } });
+    });
+    const select = findSelectByOptionText("Spray arc (arco spray)");
+    expect(select.value).toBe("");
+  });
+});
