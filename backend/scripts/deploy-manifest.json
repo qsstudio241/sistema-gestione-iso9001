@@ -34,7 +34,8 @@
                                      "src/data/weldingQualificationRules9606.js",
                                      "src/data/weldingQualificationRules15614.js",
                                      "src/data/weldingSymbols2553.js",
-                                     "src/data/qtafiVis001Template.js"
+                                     "src/data/qtafiVis001Template.js",
+                                     "src/data/legislativoSicurezzaTemplate.js"
                                  ]
                    },
                    {
