@@ -1,175 +1,100 @@
-# DEPUTYTASK2 — Action Plan P1: collegamento Reclami + statistiche per categoria
+# DEPUTYTASK2 — Registro obblighi legali: rendering FE (riferimento legislativo + risposta SI/NO/NA)
 
-**Stato:** CHIUSO — TEST OK, mergiato PR #278 (22/07/2026). Backend deployato su VPS e verificato con smoke test (17/17 ✅).  
-**Priorità:** P1 backlog (PR #114 in produzione)  
-**Branch base:** `main`  
-**Creato da:** Lead 21/07/2026
+**Stato:** APERTO
+**Priorità:** P0 — necessario perché DEPUTYTASK3 sia utilizzabile in audit reale
+**Branch base:** `main`
+**Creato da:** Lead 28/07/2026
+**Spec:** [ADR-019](../adr/ADR-019-registro-obblighi-legali-ambiente-sicurezza.md) — leggere §2 (D2), §3 (D3) prima di iniziare
 
----
-
-## Contesto
-
-Il modulo Piano Azioni (tabella `action_plan_items`, pagina NC) ha già 7 categorie origine (`source_category`). Due gap P1 da chiudere:
-
-1. **Collegamento Reclami**: quando `source_category='complaint'`, mostrare un picker per selezionare il reclamo collegato e visualizzare il numero reclamo nel dettaglio.
-2. **Statistiche per categoria**: i contatori della stats bar mostrano solo totale NC/OSS — aggiungere un breakdown per `source_category` (es. quante azioni da audit, da riesame, da rischi...).
-
-La FK `source_complaint_id` esiste già nel DB (migration 055). È solo UI da collegare.
+> **Allineamento Git (autonomo)**: prima di leggere questo brief eseguire `git fetch origin main` e `git pull origin main`. **Non** chiedere al committente di farlo.
 
 ---
 
-## Slice 1 — Picker reclamo in form NC (quando source_category='complaint')
+## Contesto (leggere prima)
 
-### Dove intervenire
+**Può partire in parallelo a DEPUTYTASK1** (il contratto è congelato in questo brief e nell'ADR: due nuove proprietà opzionali `reference_text`/`linked_legislation` su ogni sezione restituita da `GET` checklist). Se DEPUTYTASK1 non è ancora mergiato, sviluppare e testare con un fixture/mock locale che simula la risposta API con questi due campi popolati su una sezione.
 
-File principale: `app/src/components/NonConformitiesManager.jsx` (o il form NC equivalente — verificare con `rg "source_category" app/src/`).
+**Non stiamo creando un nuovo componente.** Riuso obbligatorio: `QuestionCard.jsx` (blocco unico, regola *Riuso UI*), `notes-textarea`, classi `status-btn`.
 
-### Cosa fare
+## Cosa NON toccare
 
-1. Quando l'utente seleziona `source_category = 'complaint'` nel form, mostrare un campo aggiuntivo "Reclamo collegato":
-```jsx
-{formData.source_category === 'complaint' && (
-  <div className="form-group">
-    <label>Reclamo collegato</label>
-    <select
-      value={formData.source_complaint_id || ''}
-      onChange={e => setFormData(p => ({ ...p, source_complaint_id: e.target.value || null }))}
-      className="form-control"
-    >
-      <option value="">— Seleziona reclamo (opzionale) —</option>
-      {complaints.map(c => (
-        <option key={c.id} value={c.id}>
-          {c.complaint_number} — {c.description?.substring(0, 60) || ''}
-        </option>
-      ))}
-    </select>
-    <small className="form-hint">Collega questa azione al reclamo di origine.</small>
-  </div>
-)}
-```
+- `ChecklistModule.jsx` (checklist standard ISO — `QuestionCard` è condiviso, ma questo slice aggiunge solo una prop **opzionale con default retrocompatibile**, non deve cambiare nulla per chi non la passa).
+- `backend/` (nessuna modifica BE in questo slice — se serve un campo diverso da quello previsto, aggiornare prima l'ADR/DEPUTYTASK1, non improvvisare un contratto diverso lato FE).
 
-2. Caricare la lista reclami da API quando `source_category` cambia a `'complaint'`:
+---
+
+## Slice A — `QuestionCard.jsx`: prop opzionale `statusOptions`
+
+**File:** `app/src/components/QuestionCard.jsx`
+
+**Cosa fare:**
+
+1. Estrarre l'array `STATUS_BUTTONS` (righe ~25-32) come **default** di una nuova prop `statusOptions` (default = `STATUS_BUTTONS` stesso, quindi **zero cambio di comportamento** per tutti i chiamanti esistenti che non passano la prop).
+2. Nel render (riga ~81), sostituire `STATUS_BUTTONS.map(...)` con `statusOptions.map(...)`.
+3. Aggiornare il commento JSDoc in testa al file con la nuova prop.
+
+**Esempio sottoinsieme per registro legale** (da passare da `CustomChecklistAuditView.jsx`, Slice B):
 ```js
-useEffect(() => {
-  if (formData.source_category !== 'complaint') { setComplaints([]); return; }
-  apiService.get('/complaints?limit=50')
-    .then(res => setComplaints(res?.data || []))
-    .catch(() => setComplaints([]));
-}, [formData.source_category]);
+const LEGAL_STATUS_OPTIONS = [
+  { code: "C",  className: "compliant",     label: "Sì" },
+  { code: "NC", className: "non-compliant", label: "No" },
+  { code: "NA", className: "not-applicable", label: "Non applicabile" },
+];
 ```
-(Verificare il path API reclami nel codebase con `rg "complaints" backend/src/routes/`.)
+Nota: si riusano i **codici** `C`/`NC`/`NA` già esistenti (compatibili con lo storage `audit_custom_checklist_responses` / stati salvati) — cambia solo la **label visibile** (Sì/No invece di Conforme/Non Conforme), coerente con i due documenti di riferimento (SI/NO/NA).
 
-3. Nella **vista dettaglio** NC con `source_category='complaint'` e `source_complaint_id` valorizzato, mostrare link:
-```jsx
-{item.source_category === 'complaint' && item.source_complaint_id && (
-  <div className="nc-source-link">
-    <span>Reclamo collegato:</span>
-    <button
-      className="nc-source-link-btn"
-      onClick={() => navigate(`/complaints/${item.source_complaint_id}`)}
-      type="button"
-    >
-      {item.source_complaint_number || `#${item.source_complaint_id}`}
-    </button>
-  </div>
-)}
+**DoD:** Vitest — `QuestionCard` senza `statusOptions` renderizza gli stessi 6 pulsanti di oggi (test di non-regressione); con `statusOptions` custom renderizza solo quelli passati.
+
+**Test L1 mirato:**
+```bash
+cd app && NODE_ENV=test npx vitest run src/tests/questionCard* 2>&1 | tail -30
 ```
-
-4. Verificare che il backend (`nonConformities.controller.js` o `actionPlan.controller.js`) salvi `source_complaint_id` nella INSERT/UPDATE. Se manca, aggiungere al body parsing.
-
-**DoD Slice 1:**
-- Form mostra picker reclami solo quando `source_category='complaint'`
-- `source_complaint_id` salvato nel DB e mostrato nel dettaglio
-- `npm run test:run` verde
+(se non esiste un file di test dedicato a `QuestionCard`, crearne uno minimo: è un componente condiviso da audit standard + custom, merita un test diretto anche solo per questo slice).
 
 ---
 
-## Slice 2 — Statistiche per categoria nella stats bar
+## Slice B — `CustomChecklistAuditView.jsx`: mostrare `reference_text` di sezione + item con `response_type: legal_check`
 
-### Dove intervenire
+**File:** `app/src/components/CustomChecklistAuditView.jsx`
 
-Cercare con `rg "getNonConformitiesStatistics\|nc-statistics\|stats.*bar" app/src/` per trovare dove si renderizzano i contatori.
+**Cosa fare:**
 
-### Cosa fare
+1. Nel render delle sezioni (riga ~358-362, `<h4 className="custom-checklist-section-title">{sec.code} - {sec.title}</h4>`): se `sec.reference_text` è presente, renderizzare subito sotto un blocco leggibile (riuso pattern esistente — no nuovo componente decorativo, es. `<div className="custom-checklist-section-reference">{sec.reference_text}</div>` con CSS minimale coerente allo stile esistente di `CustomChecklistsPage.jsx`/`ChecklistModule.css`). **Collassabile** se il testo è lungo (pattern "sezioni numerate collassabili" già in uso altrove — regola *UI guida flusso*): `<details>`/`<summary>` nativi sono accettabili e a basso rischio (nessuna dipendenza nuova).
+2. Nel `sec.items.map((item) => ...)` (riga ~364): quando `item.response_type === "legal_check"`, passare a `<QuestionCard>` la prop `statusOptions={LEGAL_STATUS_OPTIONS}` (definita in Slice A). Per tutti gli altri `response_type` (es. `"verbale"`), **non passare la prop** → comportamento identico a oggi.
+3. **Non modificare** la logica di salvataggio (`handleStatusChange`, `saveResponses`, `updateBlock`) — è già generica su `item.id`, non serve alcuna modifica per il nuovo `response_type`.
 
-1. **Backend**: Aggiungere breakdown per `source_category` all'endpoint statistiche esistente (es. `GET /non-conformities/statistics` o `/action-plan/statistics`):
-```sql
-SELECT
-  source_category,
-  COUNT(*) AS total,
-  SUM(CASE WHEN status IN ('open', 'in_progress') THEN 1 ELSE 0 END) AS open_count,
-  SUM(CASE WHEN status = 'closed' THEN 1 ELSE 0 END) AS closed_count
-FROM action_plan_items
-WHERE organization_id = @orgId
-  AND (company_id = @companyId OR @companyId IS NULL)
-GROUP BY source_category
+**DoD:** Vitest su `CustomChecklistAuditView` (file esistente probabilmente `salModule.test.jsx`-style o dedicato — verificare `app/src/tests/` per un test già presente su questo componente prima di crearne uno nuovo) — copre: (a) sezione senza `reference_text` renderizza come oggi; (b) sezione con `reference_text` mostra il blocco; (c) item `legal_check` mostra 3 pulsanti invece di 6; (d) item `verbale` non cambia.
+
+**Test L1 mirato:**
+```bash
+cd app && NODE_ENV=test npx vitest run src/tests/customChecklist* 2>&1 | tail -40
 ```
-Aggiungere `by_category` all'oggetto risposta (additive, non breaking).
-
-2. **Frontend**: Nella stats bar, aggiungere una sezione espandibile/collassabile "Per origine":
-```jsx
-<div className="stats-breakdown">
-  <button
-    className="stats-breakdown-toggle"
-    onClick={() => setShowBreakdown(p => !p)}
-    type="button"
-  >
-    {showBreakdown ? '▲' : '▼'} Per origine
-  </button>
-  {showBreakdown && (
-    <div className="stats-breakdown-list">
-      {byCategory.map(({ source_category, open_count, total }) => (
-        <div key={source_category} className="stats-breakdown-item">
-          <span>{SOURCE_CATEGORY_LABELS[source_category] || source_category}</span>
-          <span>{open_count} aperte / {total} totali</span>
-        </div>
-      ))}
-    </div>
-  )}
-</div>
-```
-
-3. `SOURCE_CATEGORY_LABELS` deve già esistere nel codebase — verificare con `rg "SOURCE_CATEGORY_LABELS\|source_category.*label" app/src/`. Se non esiste, creare:
-```js
-export const SOURCE_CATEGORY_LABELS = {
-  audit:             'Da audit',
-  complaint:         'Da reclamo',
-  risk:              'Da rischio/opportunità',
-  management_review: 'Da riesame direzione',
-  improvement:       'Miglioramento continuo',
-  operational:       'Operativa',
-  external:          'Esterna',
-};
-```
-
-**DoD Slice 2:**
-- Stats bar mostra breakdown per categoria (collassato di default)
-- Endpoint statistiche ritorna `by_category` (backward compatible)
-- `npm run test:run` verde
 
 ---
 
-## Sequenza di lavoro
+## Slice C — CSS minima
+
+**File:** `app/src/components/ChecklistModule.css` (o CSS module già usato da `CustomChecklistAuditView` — verificare import in testa al file prima di crearne uno nuovo)
+
+**Cosa fare:** classe `.custom-checklist-section-reference` — sfondo leggermente distinto (es. `background:#f8fafc`, `border-left:3px solid #94a3b8`, `padding:12px`, `font-size:13px`, `white-space:pre-wrap`) per distinguere visivamente il testo normativo (informativo, non interattivo) dalle domande sottostanti (interattive). Nessuna nuova palette colore da inventare — riusare variabili/valori già presenti nel file.
+
+---
+
+## Verifica di chiusura (gate)
 
 ```bash
-git pull origin main
-git checkout -b cursor/action-plan-p1-3bea
+cd app && NODE_ENV=test npm run test:run   # gate pieno, non solo mirato, prima di TEST OK
+cd app && npm run build
 ```
 
-Slice 1 → commit → Slice 2 → commit → push → PR
+Se possibile, smoke manuale rapido (computerUse) su una checklist custom esistente (es. `LEG_AMBIENTE_152` seedata) per controllare che **nulla sia cambiato visivamente** (nessuna sezione ha ancora `reference_text` finché DEPUTYTASK1/3 non sono mergiati) — è il test di non-regressione più diretto.
 
-**Commit message standard:**
-```
-feat: Action Plan P1 Slice1 — picker reclamo in form NC (source_complaint_id)
-feat: Action Plan P1 Slice2 — statistiche per categoria nella stats bar
-```
+Chiudere con **TEST OK** o **FIX NON APPLICABILI** con motivo.
 
 ---
 
-## DoD globale
+## Comando deputy
 
-- `npm run test:run` verde dopo ogni slice
-- `npm run build` verde prima del push
-- Nessuna migrazione DB necessaria (FK `source_complaint_id` già presente da mig. 055)
-- Se il controller backend non salva `source_complaint_id`: aggiornare e **deployare il controller sul VPS** + restart
-- PR draft aperta; chiudere con TEST OK o FIX NON APPLICABILI
+```
+Leggi docs/agent-tasks/DEPUTYTASK2.md ed eseguilo. Chiudi con TEST OK o FIX NON APPLICABILI.
+```
