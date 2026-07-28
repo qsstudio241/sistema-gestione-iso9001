@@ -11,6 +11,11 @@ const {
   isLegislativoAmbientaleDescription,
 } = require('../data/legislativoAmbientaleTemplate');
 const {
+  TEMPLATE_MARKER: LEG_SICUREZZA_TEMPLATE_MARKER,
+  LEGISLATIVO_SICUREZZA_TEMPLATE,
+  isLegislativoSicurezzaDescription,
+} = require('../data/legislativoSicurezzaTemplate');
+const {
   TEMPLATE_MARKER: QTAFI_VIS001_TEMPLATE_MARKER,
   QTAFI_VIS001_TEMPLATE,
   isQtafiVis001Description,
@@ -474,6 +479,60 @@ async function seedLegislativoAmbientaleChecklist(reqUser) {
   return { created: true, data };
 }
 
+async function findSeededLegislativoSicurezza(organizationId) {
+  const result = await query(
+    `SELECT id FROM custom_checklists
+     WHERE organization_id = @organization_id
+       AND CHARINDEX(@marker, description) > 0`,
+    {
+      organization_id: organizationId,
+      marker: LEG_SICUREZZA_TEMPLATE_MARKER,
+    }
+  );
+  return result.recordset[0] || null;
+}
+
+/**
+ * Crea (idempotente) la checklist custom «Conformità legislativa sicurezza».
+ */
+async function seedLegislativoSicurezzaChecklist(reqUser) {
+  const existing = await findSeededLegislativoSicurezza(reqUser.organization_id);
+  if (existing) {
+    const data = await getChecklistWithStructure(existing.id, reqUser);
+    return { created: false, data };
+  }
+
+  const tpl = LEGISLATIVO_SICUREZZA_TEMPLATE;
+  const checklist = await createChecklist(reqUser, {
+    name: tpl.name,
+    description: tpl.description,
+    is_active: true,
+    has_outcome_buttons: tpl.hasOutcomeButtons,
+  });
+
+  for (const section of tpl.sections) {
+    const createdSection = await createSection(checklist.id, reqUser, {
+      code: section.code,
+      title: section.title,
+      display_order: section.displayOrder,
+      reference_text: section.referenceText,
+      linked_legislation: section.linkedLegislation,
+    });
+    for (const item of section.items) {
+      await createItem(checklist.id, reqUser, {
+        section_id: createdSection.id,
+        code: item.code,
+        title: item.title,
+        response_type: item.responseType,
+        display_order: item.displayOrder,
+      });
+    }
+  }
+
+  const data = await getChecklistWithStructure(checklist.id, reqUser);
+  return { created: true, data };
+}
+
 async function findSeededQtafiVis001(organizationId) {
   const result = await query(
     `SELECT id FROM custom_checklists
@@ -573,6 +632,10 @@ module.exports = {
   LEG_AMBIENTE_TEMPLATE_MARKER,
   isLegislativoAmbientaleDescription,
   seedLegislativoAmbientaleChecklist,
+  LEG_SICUREZZA_TEMPLATE_MARKER,
+  isLegislativoSicurezzaDescription,
+  findSeededLegislativoSicurezza,
+  seedLegislativoSicurezzaChecklist,
   QTAFI_VIS001_TEMPLATE_MARKER,
   isQtafiVis001Description,
   seedQtafiVis001Checklist,

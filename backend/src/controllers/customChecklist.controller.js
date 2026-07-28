@@ -73,6 +73,27 @@ async function seedLegislativoAmbientale(req, res) {
 }
 
 /**
+ * POST /api/v1/custom-checklists/seed/legislativo-sicurezza
+ * Import idempotente registro obblighi legali salute e sicurezza (D.Lgs. 81/08)
+ */
+async function seedLegislativoSicurezza(req, res) {
+  try {
+    const result = await customChecklistService.seedLegislativoSicurezzaChecklist(req.user);
+    res.status(result.created ? 201 : 200).json({
+      success: true,
+      created: result.created,
+      data: result.data,
+    });
+  } catch (err) {
+    logger.error('seedLegislativoSicurezza error', { error: err.message });
+    res.status(500).json({
+      error: 'Errore import registro legislativo sicurezza',
+      code: 'CUSTOM_CHECKLIST_SEED_LEG_SICUREZZA_ERROR',
+    });
+  }
+}
+
+/**
  * POST /api/v1/custom-checklists/seed/qtafi-vis001
  * Import idempotente verbale visita QTAFI_VIS001 (cantiere OFF.MA)
  */
@@ -555,6 +576,7 @@ module.exports = {
   listChecklists,
   createChecklist,
   seedLegislativoAmbientale,
+  seedLegislativoSicurezza,
   seedQtafiVis001,
   getChecklist,
   updateChecklist,
