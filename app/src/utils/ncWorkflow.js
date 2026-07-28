@@ -1,8 +1,8 @@
 /**
  * Regole workflow NC ISO 10.2 — semplificato: Aperta | Chiusa
  *
- * Percorso A (azione correttiva non necessaria): correzione + verifica trattamento
- * Percorso B (azione correttiva necessaria): correzione + cause + azioni + verifica
+ * Percorso A (azione correttiva non necessaria): correzione + verifica attuazione trattamento
+ * Percorso B (azione correttiva necessaria): + cause + azioni + verifica efficacia
  * Chiudi solo se responsabile verifica selezionato (verification_contact_id) — nessun automatismo.
  */
 
@@ -125,10 +125,7 @@ export function canCloseNc(nc) {
   if (!hasText(nc?.verification_notes)) {
     return {
       ok: false,
-      message:
-        profile === 'simple'
-          ? 'Compilare le note di verifica del trattamento e salvare prima di chiudere.'
-          : 'Compilare le note di verifica efficacia e salvare prima di chiudere.',
+      message: 'Compilare le note di verifica attuazione del trattamento e salvare prima di chiudere.',
       profile,
     };
   }
@@ -158,6 +155,14 @@ export function canCloseNc(nc) {
       ok: false,
       message:
         'Completare almeno un\'azione correttiva prima di chiudere (ISO 10.2.1 c).',
+      profile,
+    };
+  }
+  if (!hasText(nc?.effectiveness_verification_notes)) {
+    return {
+      ok: false,
+      message:
+        'Compilare le note di verifica efficacia dell\'azione correttiva e salvare prima di chiudere (ISO 10.2.1 e).',
       profile,
     };
   }

@@ -8,7 +8,12 @@
 
 const { query } = require('../config/database');
 const logger = require('../utils/logger');
-const { studioScopeClause, appendScopeSql, isOrgWideAdmin } = require('../services/auditListRbac.service');
+const {
+    studioScopeClause,
+    appendScopeSql,
+    ncOwnershipScope,
+    isOrgWideAdmin,
+} = require('../services/auditListRbac.service');
 const {
     assertMutatingAllowed,
     sendAccessDenied,
@@ -30,22 +35,15 @@ function isNcClosureApprover(user) {
  */
 async function assertNcWriteAccess(req, res, ncId) {
     const { organization_id } = req.user;
-    const scope = studioScopeClause(req.user, 'a');
-    // Studio scope applicato solo quando l'audit esiste (LEFT JOIN può restituire NULL)
-    const scopeSql = scope.clause
-        ? ` AND (nc.audit_id IS NULL OR (${scope.clause}))`
-        : '';
+    const ncScope = ncOwnershipScope(req.user);
     const result = await query(`
       SELECT nc.nc_id, nc.audit_id, nc.source_category, a.company_id
       FROM   non_conformities nc
-      LEFT JOIN audits a ON nc.audit_id = a.audit_id
+      ${ncScope.joinSql}
       WHERE  nc.nc_id = @id
-        AND  (
-               (nc.audit_id IS NOT NULL AND a.organization_id = @organization_id)
-               OR (nc.audit_id IS NULL AND nc.organization_id = @organization_id)
-             )
-        ${scopeSql}
-    `, { id: parseInt(ncId, 10), organization_id, ...scope.params });
+        AND  ${ncScope.orgSql}
+        ${ncScope.scopeSql}
+    `, { id: parseInt(ncId, 10), organization_id, ...ncScope.params });
 
     if (result.recordset.length === 0) {
         return { notFound: true };
@@ -800,6 +798,7 @@ async function updateNonConformity(req, res) {
             reopen_reason,
             corrective_action_needed,
             corrective_action_evaluation_notes,
+            effectiveness_verification_notes,
         } = req.body;
 
         const scope = studioScopeClause(req.user, 'a');
@@ -813,6 +812,7 @@ async function updateNonConformity(req, res) {
       SELECT nc.nc_id, nc.status AS current_status, nc.verification_notes, nc.approved_at,
              nc.audit_id, nc.source_category, a.company_id,
              nc.corrective_action_needed, nc.corrective_action_evaluation_notes,
+             nc.effectiveness_verification_notes,
              nc.root_cause, nc.verification_contact_id
       FROM non_conformities nc
       LEFT JOIN audits a ON nc.audit_id = a.audit_id
@@ -932,6 +932,10 @@ async function updateNonConformity(req, res) {
             updates.push('corrective_action_evaluation_notes = @corrective_action_evaluation_notes');
             params.corrective_action_evaluation_notes = corrective_action_evaluation_notes;
         }
+        if (effectiveness_verification_notes !== undefined) {
+            updates.push('effectiveness_verification_notes = @effectiveness_verification_notes');
+            params.effectiveness_verification_notes = effectiveness_verification_notes;
+        }
 
         // Gestione transizione stato (con validazione workflow)
         if (status !== undefined) {
@@ -1042,6 +1046,15 @@ async function updateNonConformity(req, res) {
                         return res.status(400).json({
                             error: 'Completare almeno un\'azione correttiva prima di chiudere (ISO 10.2.1 c)',
                             code: 'CORRECTIVE_ACTION_REQUIRED',
+                        });
+                    }
+                    const effectivenessCandidate = effectiveness_verification_notes !== undefined
+                        ? effectiveness_verification_notes
+                        : row.effectiveness_verification_notes;
+                    if (!effectivenessCandidate || !String(effectivenessCandidate).trim()) {
+                        return res.status(400).json({
+                            error: 'Compilare le note di verifica efficacia dell\'azione correttiva prima di chiudere (ISO 10.2.1 e)',
+                            code: 'EFFECTIVENESS_VERIFICATION_NOTES_REQUIRED',
                         });
                     }
                 }
@@ -1273,17 +1286,15 @@ async function listNcActions(req, res) {
         const { id } = req.params;
         const { organization_id } = req.user;
 
-        const scope = studioScopeClause(req.user, 'a');
-        const scopeSql = appendScopeSql(scope);
-
-        // Verifica ownership NC + scope studio
+        // Ownership tollerante alle NC non-audit (audit_id NULL)
+        const ncScope = ncOwnershipScope(req.user);
         const ncCheck = await query(`
             SELECT nc.nc_id, nc.description, nc.source_type
             FROM non_conformities nc
-            INNER JOIN audits a ON nc.audit_id = a.audit_id
-            WHERE nc.nc_id = @id AND a.organization_id = @organization_id
-              ${scopeSql}
-        `, { id: parseInt(id), organization_id, ...scope.params });
+            ${ncScope.joinSql}
+            WHERE nc.nc_id = @id AND ${ncScope.orgSql}
+              ${ncScope.scopeSql}
+        `, { id: parseInt(id), organization_id, ...ncScope.params });
 
         if (ncCheck.recordset.length === 0) {
             return res.status(404).json({ error: 'Non conformità non trovata', code: 'NC_NOT_FOUND' });
@@ -1342,16 +1353,14 @@ async function createNcAction(req, res) {
             });
         }
 
-        const scope = studioScopeClause(req.user, 'a');
-        const scopeSql = appendScopeSql(scope);
-
-        // Verifica ownership NC + scope studio
+        // Ownership tollerante alle NC non-audit (audit_id NULL)
+        const ncScope = ncOwnershipScope(req.user);
         const ncCheck = await query(`
             SELECT nc.nc_id FROM non_conformities nc
-            INNER JOIN audits a ON nc.audit_id = a.audit_id
-            WHERE nc.nc_id = @id AND a.organization_id = @organization_id
-              ${scopeSql}
-        `, { id: parseInt(id), organization_id, ...scope.params });
+            ${ncScope.joinSql}
+            WHERE nc.nc_id = @id AND ${ncScope.orgSql}
+              ${ncScope.scopeSql}
+        `, { id: parseInt(id), organization_id, ...ncScope.params });
 
         if (ncCheck.recordset.length === 0) {
             return res.status(404).json({ error: 'Non conformità non trovata', code: 'NC_NOT_FOUND' });
@@ -1404,19 +1413,17 @@ async function updateNcAction(req, res) {
         const { organization_id } = req.user;
         const { status, description, responsible, responsible_contact_id, due_date, verification_note } = req.body;
 
-        const scope = studioScopeClause(req.user, 'au');
-        const scopeSql = appendScopeSql(scope);
-
-        // Verifica ownership + scope studio
+        // Ownership tollerante alle NC non-audit (audit_id NULL)
+        const ncScope = ncOwnershipScope(req.user, { auditAlias: 'au' });
         const check = await query(`
             SELECT a.action_id, a.status AS current_status, a.verification_note
             FROM nc_actions a
             INNER JOIN non_conformities nc ON a.nc_id = nc.nc_id
-            INNER JOIN audits au ON nc.audit_id = au.audit_id
+            ${ncScope.joinSql}
             WHERE a.action_id = @actionId AND nc.nc_id = @nc_id
-              AND au.organization_id = @organization_id
-              ${scopeSql}
-        `, { actionId: parseInt(actionId), nc_id: parseInt(id), organization_id, ...scope.params });
+              AND ${ncScope.orgSql}
+              ${ncScope.scopeSql}
+        `, { actionId: parseInt(actionId), nc_id: parseInt(id), organization_id, ...ncScope.params });
 
         if (check.recordset.length === 0) {
             return res.status(404).json({ error: 'Azione non trovata', code: 'NC_ACTION_NOT_FOUND' });
@@ -1503,17 +1510,16 @@ async function deleteNcAction(req, res) {
         const { id, actionId } = req.params;
         const { organization_id } = req.user;
 
-        const scope = studioScopeClause(req.user, 'au');
-        const scopeSql = appendScopeSql(scope);
-
+        // Ownership tollerante alle NC non-audit (audit_id NULL)
+        const ncScope = ncOwnershipScope(req.user, { auditAlias: 'au' });
         const check = await query(`
             SELECT a.action_id FROM nc_actions a
             INNER JOIN non_conformities nc ON a.nc_id = nc.nc_id
-            INNER JOIN audits au ON nc.audit_id = au.audit_id
+            ${ncScope.joinSql}
             WHERE a.action_id = @actionId AND nc.nc_id = @nc_id
-              AND au.organization_id = @organization_id
-              ${scopeSql}
-        `, { actionId: parseInt(actionId), nc_id: parseInt(id), organization_id, ...scope.params });
+              AND ${ncScope.orgSql}
+              ${ncScope.scopeSql}
+        `, { actionId: parseInt(actionId), nc_id: parseInt(id), organization_id, ...ncScope.params });
 
         if (check.recordset.length === 0) {
             return res.status(404).json({ error: 'Azione non trovata', code: 'NC_ACTION_NOT_FOUND' });
@@ -1906,15 +1912,15 @@ async function approveNcClosure(req, res) {
             });
         }
 
-        const scope = studioScopeClause(req.user, 'a');
-        const whereExtra = scope.clause ? ` AND ${scope.clause}` : '';
-        const params = { id: parseInt(id), organization_id, ...scope.params };
+        // Ownership tollerante alle NC non-audit (audit_id NULL)
+        const ncScope = ncOwnershipScope(req.user);
+        const params = { id: parseInt(id), organization_id, ...ncScope.params };
 
         const existing = await query(`
             SELECT nc.nc_id, nc.status, nc.approved_at
             FROM non_conformities nc
-            INNER JOIN audits a ON nc.audit_id = a.audit_id
-            WHERE nc.nc_id = @id AND a.organization_id = @organization_id${whereExtra}
+            ${ncScope.joinSql}
+            WHERE nc.nc_id = @id AND ${ncScope.orgSql}${ncScope.scopeSql}
         `, params);
 
         if (!existing.recordset.length) {
@@ -1965,8 +1971,10 @@ async function listAggregateDueNcActions(req, res) {
         const { organization_id } = req.user;
         const { overdue, due_within_days, limit = 100 } = req.query;
 
+        // Ownership tollerante alle NC non-audit (audit_id NULL)
+        const ncScope = ncOwnershipScope(req.user);
         let whereConditions = [
-            'a.organization_id = @organization_id',
+            ncScope.orgSql,
             "na.status NOT IN ('completed', 'verified')",
             "nc.status NOT IN ('resolved', 'verified', 'closed')",
         ];
@@ -1992,11 +2000,11 @@ async function listAggregateDueNcActions(req, res) {
             whereConditions.push(`na.due_date <= DATEADD(day, ${dueWithin}, CAST(GETDATE() AS DATE))`);
         }
 
-        const scope = studioScopeClause(req.user, 'a');
-        if (scope.clause) {
-            whereConditions.push(scope.clause);
-            Object.assign(params, scope.params);
+        if (ncScope.scopeSql) {
+            // scopeSql arriva già come ' AND (...)': qui serve solo il predicato
+            whereConditions.push(ncScope.scopeSql.replace(/^\s*AND\s*/, ''));
         }
+        Object.assign(params, ncScope.params);
 
         const whereClause = whereConditions.join(' AND ');
 
@@ -2009,7 +2017,7 @@ async function listAggregateDueNcActions(req, res) {
                 CASE WHEN na.due_date < CAST(GETDATE() AS DATE) THEN 1 ELSE 0 END AS is_overdue
             FROM nc_actions na
             INNER JOIN non_conformities nc ON na.nc_id = nc.nc_id
-            INNER JOIN audits a ON nc.audit_id = a.audit_id
+            ${ncScope.joinSql}
             WHERE ${whereClause}
             ORDER BY na.due_date ASC, nc.nc_number ASC
         `, params);
