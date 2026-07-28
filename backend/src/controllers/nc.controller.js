@@ -24,6 +24,22 @@ const {
 const { listNcResponsibleOptions, VALID_SCOPES } = require('../services/ncResponsibleOptions.service');
 const { materializeNcActionsFromDescription } = require('../services/ncDescriptionActions.service');
 
+/**
+ * `nc.*` include già `non_conformities.company_id` (migration 134): un alias
+ * `COALESCE(a.company_id, nc.company_id) AS company_id` creerebbe una seconda
+ * colonna con lo stesso nome e il driver mssql restituirebbe un array invece di
+ * un valore (la UI finiva per chiamare `?company_id=,` → 400).
+ * Le query usano quindi l'alias `effective_company_id` e qui viene riportato
+ * sul nome atteso dal client.
+ * @template {{ effective_company_id?: number|null }} T
+ * @param {T} row
+ */
+function withEffectiveCompanyId(row) {
+    if (!row) return row;
+    const { effective_company_id, ...rest } = row;
+    return { ...rest, company_id: effective_company_id ?? null };
+}
+
 /** Ruoli che possono approvare la chiusura NC (RQ / admin org). */
 function isNcClosureApprover(user) {
     const role = user?.role;
@@ -237,7 +253,7 @@ async function listNonConformities(req, res) {
         a.audit_number,
         a.audit_uuid,
         a.client_name,
-        COALESCE(a.company_id, nc.company_id) AS company_id,
+        COALESCE(a.company_id, nc.company_id) AS effective_company_id,
         cs.section_title,
         c.complaint_number AS source_complaint_number,
         approver.full_name AS approved_by_name,
@@ -287,7 +303,7 @@ async function listNonConformities(req, res) {
 
         res.json({
             success: true,
-            data: result.recordset,
+            data: (result.recordset || []).map(withEffectiveCompanyId),
             pagination: {
                 page: parseInt(page),
                 limit: parseInt(limit),
@@ -390,7 +406,7 @@ async function getNonConformityById(req, res) {
         a.audit_number,
         a.audit_uuid,
         a.client_name,
-        COALESCE(a.company_id, nc.company_id) AS company_id,
+        COALESCE(a.company_id, nc.company_id) AS effective_company_id,
         a.audit_date,
         cs.section_title,
         approver.full_name AS approved_by_name,
@@ -421,7 +437,7 @@ async function getNonConformityById(req, res) {
             });
         }
 
-        const nc = result.recordset[0];
+        const nc = withEffectiveCompanyId(result.recordset[0]);
 
         // Recupera allegati
         const attachmentsResult = await query(`
