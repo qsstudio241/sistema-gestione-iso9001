@@ -29,8 +29,10 @@ Stiamo estendendo il modulo "checklist custom" (`custom_checklists` → `custom_
 
 **File previsti:**
 
-- `database/migrations/135_custom_checklist_sections_legal_reference.sql` (idempotente — verificare prima `ls database/migrations/ | sort -t_ -k1 -n | tail -5`: se qualcuno ha già usato 135, prendere il numero libero successivo)
-- `backend/scripts/run-migration-135-vps.js` (pattern standard: `require('/var/www/sgq-backend/src/config/database')`)
+- `database/migrations/138_custom_checklist_sections_legal_reference.sql` (idempotente — verificare prima `ls database/migrations/ | sort -t_ -k1 -n | tail -5`: se qualcuno ha già usato 138, prendere il numero libero successivo)
+- `backend/scripts/run-migration-138-vps.js` (pattern standard: `require('/var/www/sgq-backend/src/config/database')`)
+
+> **Nota storica (29/07/2026)**: assegnata inizialmente come migrazione 135, poi rinumerata **138** in fase di merge con `main` — collisione con `135_nc_effectiveness_verification.sql` mergiato su `main` nel frattempo. Vedi [ADR-019 §7ter](../adr/ADR-019-registro-obblighi-legali-ambiente-sicurezza.md#7ter-merge-con-main-29072026--conflitti-e-classificazione).
 
 **Cosa fare:**
 

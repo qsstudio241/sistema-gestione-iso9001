@@ -52,6 +52,7 @@ const EMPTY = {
   certificate_file_url: "",
   // Saldatore ISO 9606-1 — dettagli e validità
   examiner_body: "", joint_type: "", product_type: "", weld_details: "",
+  transfer_mode: "",
   filler_material: "", shielding_gas: "", equipment_type: "",
   thickness_min_mm: "", thickness_max_mm: "",
   pipe_diameter_min_mm: "", pipe_diameter_max_mm: "",
@@ -99,7 +100,12 @@ function QualificationForm({ qualification, onSave, onClose, defaultCompanyId, o
   // Diametro tubo (Tabella 7 ISO 9606-1): pertinente solo se il prodotto testato
   // e' un tubo — vedi getApplicableWelderFields per la motivazione normativa.
   // Vale anche per 14732/15614: stesso concetto di variabile essenziale piastra/tubo.
-  const applicableFields = getApplicableWelderFields({ productType: form.product_type });
+  // Metodo di trasferimento (§5.2/§9.3): pertinente solo per processi ad arco con
+  // filo continuo (131/135/136/138) — vedi getApplicableWelderFields.
+  const applicableFields = getApplicableWelderFields({
+    productType: form.product_type,
+    weldingProcessCode: form.welding_process,
+  });
 
   useEffect(() => {
     if (applicableFields.pipeDiameterApplicable) return;
@@ -109,6 +115,11 @@ function QualificationForm({ qualification, onSave, onClose, defaultCompanyId, o
       return { ...f, pipe_diameter_min_mm: "", pipe_diameter_max_mm: "" };
     });
   }, [applicableFields.pipeDiameterApplicable]);
+
+  useEffect(() => {
+    if (applicableFields.transferModeApplicable) return;
+    setForm((f) => (f.transfer_mode ? { ...f, transfer_mode: "" } : f));
+  }, [applicableFields.transferModeApplicable]);
 
   function validateWelderField(field, value) {
     if (!isWelder9606 || !WELDER_REQUIRED[field]) return null;
@@ -162,8 +173,6 @@ function QualificationForm({ qualification, onSave, onClose, defaultCompanyId, o
       .then((res) => setPersonnelList(res?.data || []))
       .catch(() => setPersonnelList([]));
   }, [form.company_id]);
-
-  const companyLocked = isEdit && qualification?.approval_status === "approvata";
 
   function handle(field) {
     return (e) => {
@@ -315,8 +324,6 @@ function QualificationForm({ qualification, onSave, onClose, defaultCompanyId, o
               <select
                 value={form.company_id}
                 onChange={handle("company_id")}
-                disabled={companyLocked}
-                title={companyLocked ? "Azienda bloccata su qualifica approvata" : ""}
               >
                 <option value="">-- seleziona azienda --</option>
                 {companies.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
@@ -466,12 +473,24 @@ function QualificationForm({ qualification, onSave, onClose, defaultCompanyId, o
                 </div>
                 <div className="qf-field">
                   <label>Dettagli giunto</label>
-                  <input type="text" value={form.weld_details} onChange={handle("weld_details")} placeholder="es. ss nb, bs, sl, ml" />
+                  <input type="text" value={form.weld_details} onChange={handle("weld_details")} placeholder="es. ss nb, bs, sl, ml, derivazione/branch tubo-piastra" />
                 </div>
                 <div className="qf-field">
                   <label>Organismo esaminatore</label>
                   <input type="text" value={form.examiner_body} onChange={handle("examiner_body")} placeholder="se diverso dall'ente" />
                 </div>
+                {applicableFields.transferModeApplicable && (
+                  <div className="qf-field">
+                    <label>Metodo di trasferimento</label>
+                    <select value={form.transfer_mode} onChange={handle("transfer_mode")}>
+                      <option value="">-- seleziona --</option>
+                      <option value="spray_arc">Spray arc (arco spray)</option>
+                      <option value="pulsed_arc">Pulsed arc (arco pulsato)</option>
+                      <option value="short_arc">Short arc (arco corto / short-circuit)</option>
+                      <option value="globular">Globular (transfer globulare)</option>
+                    </select>
+                  </div>
+                )}
               </div>
               {isOperator14732 && (
                 <>

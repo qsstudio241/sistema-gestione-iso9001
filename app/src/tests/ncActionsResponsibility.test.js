@@ -57,7 +57,8 @@ describe('ncWorkflow', () => {
       root_cause: 'Mancata formazione',
       correction_completed_count: 1,
       corrective_completed_count: 1,
-      verification_notes: 'Azioni efficaci',
+      verification_notes: 'Trattamento attuato',
+      effectiveness_verification_notes: 'Azioni efficaci',
       verification_contact_id: 12,
     };
 
@@ -95,6 +96,12 @@ describe('ncWorkflow', () => {
       expect(canCloseNc(baseFull).ok).toBe(true);
       expect(canCloseNc({ ...baseFull, root_cause: '' }).ok).toBe(false);
       expect(canCloseNc({ ...baseFull, corrective_completed_count: 0 }).ok).toBe(false);
+    });
+
+    it('percorso completo: richiede verifica efficacia azione correttiva', () => {
+      const r = canCloseNc({ ...baseFull, effectiveness_verification_notes: '' });
+      expect(r.ok).toBe(false);
+      expect(r.message).toMatch(/verifica efficacia/i);
     });
 
     it('non richiede più approved_at per chiudere', () => {

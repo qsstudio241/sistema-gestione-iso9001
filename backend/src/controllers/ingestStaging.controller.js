@@ -7,6 +7,7 @@ const {
     confirmStaging,
     rejectStaging,
     getStagingById,
+    listStaging,
     getModuleForDocType,
     resolveStagingFilePath,
     parseJson,
@@ -56,10 +57,48 @@ async function getStaging(req, res) {
             qualification_type: row.qualification_type,
             committed_wpqr_id: row.committed_wpqr_id,
             committed_qualification_id: row.committed_qualification_id,
+            target_qualification_id: row.target_qualification_id,
+            field_scope: row.field_scope,
         });
     } catch (error) {
         logger.error('getStaging', { error: error.message });
         res.status(error.status || 500).json({ error: error.message, code: error.code || 'STAGING_GET_ERROR' });
+    }
+}
+
+// doc_type -> modulo licenza, usato per validare l'accesso quando si filtra per modulo.
+const MODULE_DOC_TYPES = { qualifiche: ['patentino_saldatore', 'qualifica_14732'] };
+
+/**
+ * GET /ingest-staging — coda di revisione: upload pending "classici" e, dalla
+ * migrazione 137, anche le proposte di rielaborazione (target_qualification_id
+ * valorizzato) generate da backend/scripts/reprocess-qualifications.js.
+ * Query: ?module=qualifiche (o ?doc_type=...) — obbligatorio uno dei due, per
+ * poter verificare la licenza modulo prima di esporre i dati.
+ */
+async function listStagingHandler(req, res) {
+    try {
+        const { module: moduleKey, doc_type: docType, review_status: reviewStatus, reprocess_only: reprocessOnly } = req.query;
+        const docTypes = moduleKey ? MODULE_DOC_TYPES[moduleKey] : null;
+
+        if (!docType && !docTypes) {
+            return res.status(400).json({ error: 'Specificare module o doc_type', code: 'MISSING_FILTER' });
+        }
+        await assertModuleAccess(req, docType || docTypes[0]);
+
+        const items = await listStaging({
+            organizationId: req.user.organization_id,
+            reviewStatus: reviewStatus || 'pending',
+            docType: docType || null,
+            docTypes,
+            reprocessOnly: reprocessOnly === 'true' || reprocessOnly === '1',
+            limit: 200,
+        });
+
+        res.json({ items, total: items.length });
+    } catch (error) {
+        logger.error('listStaging', { error: error.message });
+        res.status(error.status || 500).json({ error: error.message, code: error.code || 'STAGING_LIST_ERROR' });
     }
 }
 
@@ -160,6 +199,7 @@ async function getLearningStatsHandler(req, res) {
 
 module.exports = {
     getStaging,
+    listStaging: listStagingHandler,
     getStagingFile,
     confirmStaging: confirmStagingHandler,
     rejectStaging: rejectStagingHandler,

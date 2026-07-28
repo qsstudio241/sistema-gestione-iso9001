@@ -9,7 +9,6 @@ export const QUALIFICATION_SITUAZIONI = [
     { value: "scadute", label: "Scadute" },
     { value: "sospesa", label: "Sospese" },
     { value: "revocata", label: "Revocate" },
-    { value: "da_approvare", label: "Da approvare" },
 ];
 
 /** Mappa chiavi stats bar → valore filtro situazione */
@@ -19,7 +18,6 @@ export const STATS_TO_SITUAZIONE = {
     in_scadenza_60: "in_scadenza_60",
     in_scadenza_30: "urgenti_30",
     scadute: "scadute",
-    da_approvare: "da_approvare",
 };
 
 export function toggleSituazione(current, next) {

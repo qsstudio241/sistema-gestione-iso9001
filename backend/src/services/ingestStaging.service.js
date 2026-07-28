@@ -7,7 +7,7 @@ const path = require('path');
 const logger = require('../utils/logger');
 const { query } = require('../config/database');
 const { commitWPQRFromFields } = require('./wpqrIngest.service');
-const { commitQualificationFromFields } = require('./qualificationIngest.service');
+const { commitQualificationFromFields, applyFieldReprocessUpdate } = require('./qualificationIngest.service');
 const { commitWPSFromFields } = require('./wpsIngest.service');
 const { commitNormFromFields } = require('./normIngest.service');
 const { recordFeedback } = require('./ingestFeedback.service');
@@ -57,6 +57,11 @@ async function createStagingRecord(params) {
         qualificationType,
         userId,
         aiModel = null,
+        // Modalità rielaborazione (backfill, migrazione 137): quando valorizzati,
+        // la conferma di questo staging NON crea un nuovo record ma aggiorna
+        // solo i campi in fieldScope sulla qualifica esistente targetQualificationId.
+        targetQualificationId = null,
+        fieldScope = null,
     } = params;
 
     const insertResult = await query(`
@@ -64,14 +69,16 @@ async function createStagingRecord(params) {
             organization_id, company_id, doc_type,
             original_name, storage_path, mime_type, file_size,
             staged_fields_json, field_confidence_json, warnings_json,
-            qualification_type, review_status, created_by, ai_model
+            qualification_type, review_status, created_by, ai_model,
+            target_qualification_id, field_scope
         )
         OUTPUT INSERTED.id
         VALUES (
             @organizationId, @companyId, @docType,
             @originalName, @storagePath, @mimeType, @fileSize,
             @stagedFieldsJson, @fieldConfidenceJson, @warningsJson,
-            @qualificationType, 'pending', @userId, @aiModel
+            @qualificationType, 'pending', @userId, @aiModel,
+            @targetQualificationId, @fieldScope
         )
     `, {
         organizationId,
@@ -87,6 +94,8 @@ async function createStagingRecord(params) {
         qualificationType: qualificationType || null,
         userId: userId || null,
         aiModel: aiModel || null,
+        targetQualificationId: targetQualificationId || null,
+        fieldScope: fieldScope || null,
     });
 
     return insertResult.recordset[0].id;
@@ -112,7 +121,21 @@ async function confirmStaging(stagingId, organizationId, userId, fieldsOverride 
 
     let commitResult;
     try {
-        if (row.doc_type === 'wpqr') {
+        if (row.target_qualification_id) {
+            // Modalità rielaborazione (backfill campo su qualifica esistente,
+            // migrazione 137): MAI una nuova INSERT, solo UPDATE mirato ai campi
+            // in field_scope — vedi backend/scripts/reprocess-qualifications.js.
+            const updateResult = await applyFieldReprocessUpdate(
+                row.target_qualification_id,
+                organizationId,
+                row.field_scope,
+                fields,
+            );
+            commitResult = {
+                qualification_id: updateResult.qualification_id,
+                updated_fields: updateResult.updated_fields,
+            };
+        } else if (row.doc_type === 'wpqr') {
             commitResult = await commitWPQRFromFields(
                 fields,
                 organizationId,
@@ -264,7 +287,12 @@ async function rejectStaging(stagingId, organizationId, userId, deleteFile = tru
         logger.warn('[IngestStaging] Feedback scarto non salvato', { error: fbErr.message, stagingId });
     }
 
-    if (deleteFile && row.storage_path) {
+    // In modalità rielaborazione (target_qualification_id valorizzato) lo
+    // storage_path NON è un file temporaneo di upload: è il certificato già
+    // collegato a una qualifica esistente (certificate_file_url). Cancellarlo
+    // romperebbe il record definitivo — va preservato sempre, a prescindere
+    // dal flag deleteFile richiesto dal chiamante.
+    if (deleteFile && row.storage_path && !row.target_qualification_id) {
         try {
             fs.unlinkSync(row.storage_path);
         } catch (_) {
@@ -274,6 +302,56 @@ async function rejectStaging(stagingId, organizationId, userId, deleteFile = tru
 
     logger.info('[IngestStaging] Scartato', { stagingId, organizationId });
     return { status: 'rejected', staging_id: stagingId };
+}
+
+/**
+ * Lista voci di ingest_staging per organizzazione — usata dalla coda di
+ * revisione (sia upload normali pending sia proposte di rielaborazione,
+ * migrazione 137). `reprocessOnly` filtra solo le proposte di aggiornamento
+ * su qualifiche esistenti (target_qualification_id valorizzato).
+ */
+async function listStaging({ organizationId, reviewStatus = 'pending', docType = null, docTypes = null, reprocessOnly = false, limit = 100 }) {
+    const conditions = ['organization_id = @organizationId'];
+    const params = { organizationId, limit };
+    if (reviewStatus) {
+        conditions.push('review_status = @reviewStatus');
+        params.reviewStatus = reviewStatus;
+    }
+    if (docType) {
+        conditions.push('doc_type = @docType');
+        params.docType = docType;
+    } else if (Array.isArray(docTypes) && docTypes.length) {
+        const placeholders = docTypes.map((_, i) => `@docType${i}`).join(',');
+        docTypes.forEach((dt, i) => { params[`docType${i}`] = dt; });
+        conditions.push(`doc_type IN (${placeholders})`);
+    }
+    if (reprocessOnly) {
+        conditions.push('target_qualification_id IS NOT NULL');
+    }
+
+    const result = await query(`
+        SELECT TOP (@limit)
+            id, doc_type, original_name, review_status, qualification_type,
+            target_qualification_id, field_scope, staged_fields_json,
+            warnings_json, created_at
+        FROM ingest_staging
+        WHERE ${conditions.join(' AND ')}
+        ORDER BY created_at DESC
+    `, params);
+
+    return (result.recordset || []).map((row) => ({
+        id: row.id,
+        doc_type: row.doc_type,
+        original_name: row.original_name,
+        review_status: row.review_status,
+        qualification_type: row.qualification_type,
+        target_qualification_id: row.target_qualification_id,
+        field_scope: row.field_scope,
+        fields: parseJson(row.staged_fields_json, {}),
+        warnings: parseJson(row.warnings_json, []),
+        created_at: row.created_at,
+        is_reprocess: !!row.target_qualification_id,
+    }));
 }
 
 function getModuleForDocType(docType) {
@@ -308,6 +386,7 @@ function resolveStagingFilePath(storagePath) {
 module.exports = {
     createStagingRecord,
     getStagingById,
+    listStaging,
     confirmStaging,
     rejectStaging,
     getModuleForDocType,

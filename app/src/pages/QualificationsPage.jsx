@@ -8,6 +8,7 @@ import apiService from "../services/apiService";
 import { useAuth } from "../contexts/AuthContext";
 import QualificationForm from "./QualificationForm";
 import QualificationUploadButton from "../components/QualificationUploadButton";
+import ReprocessQueueBanner from "../components/ReprocessQueueBanner";
 import { formatDate } from "../utils/dateHelpers";
 import {
     resolveInitialQualificationsCompanyScope,
@@ -21,7 +22,6 @@ import {
     toggleSituazione,
     situazioneLabel,
 } from "../utils/qualificationsSituazione";
-import { canHardDeleteQualification } from "../utils/qualificationHardDelete";
 import "./QualificationsPage.css";
 
 // ── Tab config ────────────────────────────────────────────────────────────────
@@ -40,15 +40,15 @@ const TABS = [
 
 // Colonne dinamiche per tab
 const TAB_COLUMNS = {
-    iso9606_1: ["Persona", "Certificato", "Processo", "Spessore", "Posizioni", "Scadenza", "Approvazione", "Azioni"],
-    iso9606_2: ["Persona", "Certificato", "Processo", "Materiale", "Scadenza", "Approvazione", "Azioni"],
-    iso14732:  ["Persona", "Certificato", "Processo", "Attrezzatura", "Scadenza", "Approvazione", "Azioni"],
-    ndt:       ["Persona", "Certificato", "Metodo", "Livello", "Schema", "Scadenza", "Approvazione", "Azioni"],
-    iso14731:  ["Persona", "Certificato", "Titolo (IWE/IWT/IWS)", "CPD fino a", "Approvazione", "Azioni"],
-    pes_pav:   ["Persona", "Certificato", "Tipo", "Ente", "Scadenza", "Approvazione", "Azioni"],
-    salute_mansione: ["Persona", "Documento", "Tipo", "Ente", "Scadenza", "Approvazione", "Azioni"],
-    generico:  ["Persona", "Certificato", "Tipo qualifica", "Ore", "Ente esame", "Scadenza", "Approvazione", "Azioni"],
-    tutti:     ["Stato", "Persona", "Tipo qualifica", "Certificato", "Scadenza", "Approvazione", "Azioni"],
+    iso9606_1: ["Persona", "Certificato", "Processo", "Spessore", "Posizioni", "Scadenza", "Azioni"],
+    iso9606_2: ["Persona", "Certificato", "Processo", "Materiale", "Scadenza", "Azioni"],
+    iso14732:  ["Persona", "Certificato", "Processo", "Attrezzatura", "Scadenza", "Azioni"],
+    ndt:       ["Persona", "Certificato", "Metodo", "Livello", "Schema", "Scadenza", "Azioni"],
+    iso14731:  ["Persona", "Certificato", "Titolo (IWE/IWT/IWS)", "CPD fino a", "Azioni"],
+    pes_pav:   ["Persona", "Certificato", "Tipo", "Ente", "Scadenza", "Azioni"],
+    salute_mansione: ["Persona", "Documento", "Tipo", "Ente", "Scadenza", "Azioni"],
+    generico:  ["Persona", "Certificato", "Tipo qualifica", "Ore", "Ente esame", "Scadenza", "Azioni"],
+    tutti:     ["Stato", "Persona", "Tipo qualifica", "Certificato", "Scadenza", "Azioni"],
 };
 
 // ── Semaforo ─────────────────────────────────────────────────────────────────
@@ -61,21 +61,9 @@ const SEMAFORO = {
     grigio:   { label: "Non attiva",   cls: "sq-grigio",    icon: "\u26AA" },
 };
 
-const APPROVAL_BADGE = {
-    bozza:       { label: "Bozza",        cls: "sq-appr-bozza" },
-    in_revisione:{ label: "In revisione", cls: "sq-appr-revisione" },
-    approvata:   { label: "Approvata",    cls: "sq-appr-approvata" },
-    rifiutata:   { label: "Rifiutata",    cls: "sq-appr-rifiutata" },
-};
-
 function SemaforoTag({ value }) {
     const s = SEMAFORO[value] || SEMAFORO.grigio;
     return <span className={`sq-tag ${s.cls}`}>{s.icon} {s.label}</span>;
-}
-
-function ApprovalBadge({ value }) {
-    const b = APPROVAL_BADGE[value] || APPROVAL_BADGE.bozza;
-    return <span className={`sq-appr-badge ${b.cls}`}>{b.label}</span>;
 }
 
 // ── Stats bar ─────────────────────────────────────────────────────────────────
@@ -110,36 +98,18 @@ function StatsBar({ stats, activeSituazione, onStatClick }) {
                     </button>
                 );
             })}
-            {stats.da_approvare > 0 && (
-                <button
-                    type="button"
-                    className={`sq-stat sq-stat-clickable sq-stat-warning${activeSituazione === "da_approvare" ? " sq-stat-active" : ""}`}
-                    onClick={() => onStatClick("da_approvare")}
-                    title="Filtra: Da approvare"
-                    aria-pressed={activeSituazione === "da_approvare"}
-                >
-                    <span className="sq-stat-num">{stats.da_approvare}</span>
-                    <span className="sq-stat-lbl">Da approvare</span>
-                </button>
-            )}
         </div>
     );
 }
 
 // ── Riga tabella (rendering dinamico per tab) ─────────────────────────────────
 
-function QualRow({ q, tabKey, onEdit, onDelete, onHardDelete, onApprove, onReject, onRenew, onHistory, deleteId, setDeleteId, hardDeleteId, setHardDeleteId, canApprove }) {
+function QualRow({ q, tabKey, onEdit, onHardDelete, onRenew, onHistory, hardDeleteId, setHardDeleteId }) {
     const sem = SEMAFORO[q.semaforo] || SEMAFORO.grigio;
 
     const actionBtns = (
         <td className="sq-col-actions">
-            {deleteId === q.id ? (
-                <div className="sq-confirm">
-                    <span>Revocare?</span>
-                    <button className="sq-confirm-yes" onClick={() => onDelete(q.id)}>S\xec</button>
-                    <button className="sq-confirm-no" onClick={() => setDeleteId(null)}>No</button>
-                </div>
-            ) : hardDeleteId === q.id ? (
+            {hardDeleteId === q.id ? (
                 <div className="sq-confirm">
                     <span>Eliminare definitivamente?</span>
                     <button className="sq-confirm-yes" onClick={() => onHardDelete(q.id)}>S\xec</button>
@@ -150,18 +120,7 @@ function QualRow({ q, tabKey, onEdit, onDelete, onHardDelete, onApprove, onRejec
                     <button className="sq-btn-icon" title="Modifica" onClick={() => onEdit(q)}>{"\u270F\uFE0F"}</button>
                     <button className="sq-btn-icon sq-btn-renew" title="Rinnova" onClick={() => onRenew(q)}>{"\u267B\uFE0F"}</button>
                     <button className="sq-btn-icon sq-btn-history" title="Storico rinnovi" onClick={() => onHistory(q)}>{"\uD83D\uDCC5"}</button>
-                    {canApprove && q.approval_status !== "approvata" && (
-                        <button className="sq-btn-icon sq-btn-approve" title="Approva" onClick={() => onApprove(q.id)}>{"\u2705"}</button>
-                    )}
-                    {canApprove && q.approval_status !== "rifiutata" && (
-                        <button className="sq-btn-icon sq-btn-reject" title="Rifiuta" onClick={() => onReject(q)}>{"\u274C"}</button>
-                    )}
-                    {q.status !== "revocata" && (
-                        <button className="sq-btn-icon sq-btn-del" title="Revoca" onClick={() => setDeleteId(q.id)}>{"\uD83D\uDEAB"}</button>
-                    )}
-                    {canHardDeleteQualification(q) && (
-                        <button className="sq-btn-icon sq-btn-hard-del" title="Elimina definitivamente (solo bozze mai approvate)" onClick={() => setHardDeleteId(q.id)}>{"\uD83D\uDDD1\uFE0F"}</button>
-                    )}
+                    <button className="sq-btn-icon sq-btn-hard-del" title="Elimina (dato inserito per errore)" onClick={() => setHardDeleteId(q.id)}>{"\uD83D\uDDD1\uFE0F"}</button>
                 </div>
             )}
         </td>
@@ -194,12 +153,6 @@ function QualRow({ q, tabKey, onEdit, onDelete, onHardDelete, onApprove, onRejec
         </td>
     );
 
-    const apprCell = (
-        <td className="sq-col-approval">
-            <ApprovalBadge value={q.approval_status || "bozza"} />
-        </td>
-    );
-
     if (tabKey === "iso9606_1" || tabKey === "iso9606_2") {
         return (
             <tr className={`sq-row sq-row-${q.semaforo}`}>
@@ -210,7 +163,6 @@ function QualRow({ q, tabKey, onEdit, onDelete, onHardDelete, onApprove, onRejec
                 {tabKey === "iso9606_2" && <td>{q.material_group || "\u2014"}</td>}
                 <td>{q.position_range || "\u2014"}</td>
                 {expiryCell}
-                {apprCell}
                 {actionBtns}
             </tr>
         );
@@ -224,7 +176,6 @@ function QualRow({ q, tabKey, onEdit, onDelete, onHardDelete, onApprove, onRejec
                 <td>{q.welding_process || "\u2014"}</td>
                 <td>{q.equipment_type || "\u2014"}</td>
                 {expiryCell}
-                {apprCell}
                 {actionBtns}
             </tr>
         );
@@ -239,7 +190,6 @@ function QualRow({ q, tabKey, onEdit, onDelete, onHardDelete, onApprove, onRejec
                 <td>{q.ndt_level != null ? `Livello ${q.ndt_level}` : "\u2014"}</td>
                 <td>{q.certification_scheme || "\u2014"}</td>
                 {expiryCell}
-                {apprCell}
                 {actionBtns}
             </tr>
         );
@@ -252,7 +202,6 @@ function QualRow({ q, tabKey, onEdit, onDelete, onHardDelete, onApprove, onRejec
                 {certCell}
                 <td>{q.coordinator_title || "\u2014"}</td>
                 <td>{q.cpd_valid_until ? formatDate(q.cpd_valid_until) : "\u2014"}</td>
-                {apprCell}
                 {actionBtns}
             </tr>
         );
@@ -266,7 +215,6 @@ function QualRow({ q, tabKey, onEdit, onDelete, onHardDelete, onApprove, onRejec
                 <td>{q.patent_type || "\u2014"}</td>
                 <td>{q.training_body || "\u2014"}</td>
                 {expiryCell}
-                {apprCell}
                 {actionBtns}
             </tr>
         );
@@ -281,7 +229,6 @@ function QualRow({ q, tabKey, onEdit, onDelete, onHardDelete, onApprove, onRejec
                 <td>{tabKey === "generico" && q.training_hours != null ? `${q.training_hours}h` : (q.issuing_body || "\u2014")}</td>
                 <td>{tabKey === "generico" ? (q.examiner_body || "\u2014") : (q.standard_ref || "\u2014")}</td>
                 {expiryCell}
-                {apprCell}
                 {actionBtns}
             </tr>
         );
@@ -300,7 +247,6 @@ function QualRow({ q, tabKey, onEdit, onDelete, onHardDelete, onApprove, onRejec
             </td>
             {certCell}
             {expiryCell}
-            {apprCell}
             {actionBtns}
         </tr>
     );
@@ -310,7 +256,6 @@ function QualRow({ q, tabKey, onEdit, onDelete, onHardDelete, onApprove, onRejec
 
 function QualificationsPage() {
     const { user } = useAuth() || {};
-    const canApprove = ["admin", "superadmin", "coordinatore"].includes(user?.role);
 
     const [activeTab,  setActiveTab]  = useState("tutti");
     const [quals,      setQuals]      = useState([]);
@@ -330,10 +275,7 @@ function QualificationsPage() {
 
     const [formOpen,    setFormOpen]    = useState(false);
     const [editingQual, setEditingQual] = useState(null);
-    const [deleteId,    setDeleteId]    = useState(null);
     const [hardDeleteId, setHardDeleteId] = useState(null);
-    const [rejectModal, setRejectModal] = useState(null); // { id, person_name }
-    const [rejectReason, setRejectReason] = useState("");
 
     const setFilter = useCallback((key, val) => {
         setFiltersState(f => ({ ...f, [key]: val }));
@@ -418,14 +360,6 @@ function QualificationsPage() {
     function handleEdit(q) { setEditingQual(q);    setFormOpen(true); }
     function handleSaved() { setFormOpen(false); setEditingQual(null); loadData(); }
 
-    async function handleConfirmDelete(id) {
-        try {
-            await apiService.deleteQualification(id);
-            setDeleteId(null);
-            loadData();
-        } catch (err) { setError(err.message); }
-    }
-
     async function handleConfirmHardDelete(id) {
         try {
             await apiService.hardDeleteQualification(id);
@@ -435,27 +369,6 @@ function QualificationsPage() {
             setHardDeleteId(null);
             setError(err.message);
         }
-    }
-
-    async function handleApprove(id) {
-        try {
-            await apiService.approveQualification(id);
-            loadData();
-        } catch (err) { setError(err.message); }
-    }
-
-    function handleRejectOpen(q) {
-        setRejectModal({ id: q.id, person_name: q.person_name });
-        setRejectReason("");
-    }
-
-    async function handleRejectConfirm() {
-        if (!rejectReason.trim()) return;
-        try {
-            await apiService.rejectQualification(rejectModal.id, rejectReason);
-            setRejectModal(null);
-            loadData();
-        } catch (err) { setError(err.message); }
     }
 
     function handleRenew(q) {
@@ -531,6 +444,8 @@ function QualificationsPage() {
             {companyScope && (
                 <p className="sq-scope-hint">{"Ambito attivo: "}{scopeCompanyName}</p>
             )}
+
+            <ReprocessQueueBanner />
 
             {/* Stats */}
             <StatsBar
@@ -630,17 +545,11 @@ function QualificationsPage() {
                                     q={q}
                                     tabKey={activeTab}
                                     onEdit={handleEdit}
-                                    onDelete={handleConfirmDelete}
                                     onHardDelete={handleConfirmHardDelete}
-                                    onApprove={handleApprove}
-                                    onReject={handleRejectOpen}
                                     onRenew={handleRenew}
                                     onHistory={handleOpenHistory}
-                                    deleteId={deleteId}
-                                    setDeleteId={setDeleteId}
                                     hardDeleteId={hardDeleteId}
                                     setHardDeleteId={setHardDeleteId}
-                                    canApprove={canApprove}
                                 />
                             ))}
                         </tbody>
@@ -696,7 +605,7 @@ function QualificationsPage() {
                                             <td style={{padding:"4px 8px"}}>{h.issue_date ? formatDate(h.issue_date) : "\u2014"}</td>
                                             <td style={{padding:"4px 8px"}}>{h.expiry_date ? formatDate(h.expiry_date) : "\u2014"}</td>
                                             <td style={{padding:"4px 8px"}}>{h.certificate_number || "\u2014"}</td>
-                                            <td style={{padding:"4px 8px"}}><ApprovalBadge value={h.approval_status || "bozza"} /></td>
+                                            <td style={{padding:"4px 8px"}}><SemaforoTag value={h.semaforo} /></td>
                                         </tr>
                                     ))}
                                 </tbody>
@@ -704,29 +613,6 @@ function QualificationsPage() {
                         )}
                         <div className="sq-modal-actions">
                             <button className="sq-btn-secondary" onClick={() => setHistoryModal(null)}>Chiudi</button>
-                        </div>
-                    </div>
-                </div>
-            )}
-
-            {/* Modal rifiuto */}
-            {rejectModal && (
-                <div className="sq-modal-overlay">
-                    <div className="sq-modal">
-                        <h3>Rifiuta qualifica</h3>
-                        <p>Qualifica di <strong>{rejectModal.person_name}</strong></p>
-                        <textarea
-                            className="sq-reject-reason"
-                            placeholder="Motivo del rifiuto (obbligatorio)..."
-                            value={rejectReason}
-                            onChange={e => setRejectReason(e.target.value)}
-                            rows={3}
-                        />
-                        <div className="sq-modal-actions">
-                            <button className="sq-btn-danger" onClick={handleRejectConfirm} disabled={!rejectReason.trim()}>
-                                Conferma rifiuto
-                            </button>
-                            <button className="sq-btn-secondary" onClick={() => setRejectModal(null)}>Annulla</button>
                         </div>
                     </div>
                 </div>

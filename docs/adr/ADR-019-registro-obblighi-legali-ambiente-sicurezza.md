@@ -108,10 +108,10 @@ Il committente dovrà rendere disponibili i due file di origine al Deputy che es
 
 | Stream | Brief | Scrive | Non tocca |
 |---|---|---|---|
-| **1 — BE Schema** | [DEPUTYTASK1.md](../agent-tasks/DEPUTYTASK1.md) | `database/migrations/135_*.sql`, script VPS, `customChecklist.controller.js`/`.service.js` (esposizione campi in risposta API) | FE, `salAiSuggest.service.js` |
+| **1 — BE Schema** | [DEPUTYTASK1.md](../agent-tasks/DEPUTYTASK1.md) | `database/migrations/138_*.sql` (rinumerata da 135 in fase di merge con main — vedi §7ter), script VPS, `customChecklist.controller.js`/`.service.js` (esposizione campi in risposta API) | FE, `salAiSuggest.service.js` |
 | **2 — FE Render** | [DEPUTYTASK2.md](../agent-tasks/DEPUTYTASK2.md) | `QuestionCard.jsx` (prop opzionale), `CustomChecklistAuditView.jsx`, CSS | migrazioni, controller/service BE |
 | **3 — Contenuto sicurezza (P0)** | [DEPUTYTASK3.md](../agent-tasks/DEPUTYTASK3.md) | Nuovo dato `backend/src/data/legislativoSicurezzaTemplate.js` + script build analogo a `buildLegislativoAmbientaleTemplate.js` + nuovo template FE in `checklistTemplates.js` (`LEG_SICUREZZA_81`) | schema, FE render generico, agente validità |
-| **4 — Agente validità (P1)** | [DEPUTYTASK4.md](../agent-tasks/DEPUTYTASK4.md) | `backend/src/utils/linkedLegislationParser.js` (nuovo, estratto), `normValidityChecker.service.js`, `alertScheduler.js` | FE, migrazione 135 (usa le colonne dopo che Stream 1 le ha create) |
+| **4 — Agente validità (P1)** | [DEPUTYTASK4.md](../agent-tasks/DEPUTYTASK4.md) | `backend/src/utils/linkedLegislationParser.js` (nuovo, estratto), `normValidityChecker.service.js`, `alertScheduler.js` | FE, migrazione 138 (usa le colonne dopo che Stream 1 le ha create) |
 
 Sequenza: **1 e 2 partono insieme** (contratto già congelato in questo ADR). **3 parte in parallelo** appena disponibile il contenuto sorgente (non dipende dal codice di 1/2 per iniziare la trascrizione, dipende solo per il test end-to-end finale). **4 dipende da 1** (le colonne devono esistere) ma è indipendente da 2/3 nel codice.
 
@@ -120,7 +120,7 @@ Sequenza: **1 e 2 partono insieme** (contratto già congelato in questo ADR). **
 ## 5. Schema dati (riferimento per DEPUTYTASK1)
 
 ```sql
--- Migration 135 (idempotente)
+-- Migration 138 (idempotente — rinumerata da 135, vedi §7ter)
 ALTER TABLE dbo.custom_checklist_sections ADD reference_text NVARCHAR(MAX) NULL;
 ALTER TABLE dbo.custom_checklist_sections ADD linked_legislation NVARCHAR(MAX) NULL;
 ```
@@ -164,6 +164,24 @@ Nessuna nuova tabella. Nessun `ALTER` su `custom_checklist_items`, `audit_custom
 | N5 | Revisione umana completa (consulente) di tutte le 29 sezioni del registro sicurezza prima dell'uso con un cliente reale | D6 (vincolo permanente, non specifico di questa sessione) | 🔲 **Aperto per natura** — non chiudibile da un agente | Il Lead ha fatto QA a campione (spot-check su ~10 dei 29 capitoli, citazioni verificate verbatim contro la fonte) e una revisione a lettura piena delle sezioni 1-9, 14-16, 21, 23, 26-29. Copertura non esaustiva sulle rimanenti (17-20, 22, 24-25): consigliata lettura finale del consulente prima di un audit reale, come da D6 |
 
 **Nota su N5**: non è un'"area incompleta lasciata a metà" nel senso di lavoro non fatto — è un vincolo strutturale del processo (D6): nessun contenuto normativo va considerato definitivo senza revisione umana finale, indipendentemente da quanta QA automatica/Lead si fa. Le prime 4 note sono invece pienamente chiuse.
+
+---
+
+## 7ter. Merge con `main` (29/07/2026) — conflitti e classificazione
+
+`main` è avanzato di 17 commit dopo la creazione di questo branch (moduli NC, Qualifiche, Ingest — non correlati a questa iniziativa). Fetch + merge eseguiti; **un solo conflitto** rilevato su 70+ file toccati da `main` nel frattempo.
+
+| File | Tipo di conflitto | Causa | Classificazione | Risoluzione |
+|---|---|---|---|---|
+| `backend/scripts/run-migration-135-vps.js` | `add/add` (stesso path, contenuto diverso) | **Collisione di numerazione migrazione**: sia questo branch (`reference_text`/`linked_legislation`) sia `main` (`effectiveness_verification_notes` su `non_conformities`, migrazione NC) hanno assegnato indipendentemente il numero **135** — nessuno dei due sapeva dell'altro (sviluppo parallelo, sequenza condivisa non sincronizzata in tempo reale) | **Non è un conflitto di intenti**: le due migrazioni toccano tabelle completamente diverse (`custom_checklist_sections` vs `non_conformities`), nessuna sovrapposizione logica. È un conflitto **strutturale/di numerazione** — richiede rinumerare, non solo scegliere un lato del `diff` | ✅ **Risolto**: mantenuto `run-migration-135-vps.js` di `main` (gli appartiene legittimamente, essendo mergiato per primo su `main`). Migrazione di questo branch **rinumerata 135→138** (primo numero libero dopo 135-137 già occupati da `main`): `database/migrations/138_custom_checklist_sections_legal_reference.sql` + nuovo `run-migration-138-vps.js`, contenuto identico solo con numero aggiornato nei commenti/log. Aggiornati i riferimenti in questo ADR (§4, §5) |
+
+**Tutti gli altri file** (`customChecklist.service.js`/`.controller.js`, `checklistTemplates.js`, `deploy-manifest.json`, `GUIDA_CONSOLIDATA.md`, `PROJECT_ROADMAP.md`, ecc.) si sono uniti automaticamente senza conflitti: `main` ha toccato moduli disgiunti (NC, Qualifiche, Ingest) rispetto a questa iniziativa (registro obblighi legali).
+
+**Nessun conflitto di intenti trovato**: nessuna delle modifiche di `main` ridefinisce, rimuove o contraddice una decisione presa in questo ADR.
+
+**Lezione per la sequenza migrazioni condivisa**: la verifica "ultimo numero libero" (`ls database/migrations/ | sort -t_ -k1 -n | tail -5`) va rifatta **al momento del merge finale**, non solo all'inizio dello slice — su un repo con più stream/agenti paralleli il numero può essere preso da un altro branch nel frattempo. Il controllo puntuale nel brief (DEPUTYTASK1, §Slice 1) ha funzionato per l'assegnazione iniziale, ma non copre la finestra tra "scrittura branch" e "merge in main".
+
+**Nota tecnica (per chi ripete questa operazione)**: durante la prima esecuzione di questo merge, un `git stash` intermedio a metà risoluzione conflitto ha rimosso silenziosamente lo stato di merge in corso (`MERGE_HEAD`), producendo un indice incoerente. **Mai usare `git stash` durante un merge con conflitti irrisolti**: se serve un'ispezione parallela, usare `git worktree add` con un checkout separato, oppure completare/abortire il merge prima di cambiare contesto. Recuperato con `git reset --hard HEAD` (il merge non era ancora committato) e rieseguito da capo senza interruzioni.
 
 ---
 

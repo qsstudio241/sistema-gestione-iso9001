@@ -1,0 +1,88 @@
+/* ReprocessQueueBanner.css — coda revisione rielaborazioni (migrazione 137) */
+
+.reprocess-banner {
+  background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 10px;
+  margin-bottom: 14px; overflow: hidden;
+}
+
+.reprocess-banner__row {
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px 14px; cursor: pointer;
+}
+.reprocess-banner__icon { font-size: 18px; }
+.reprocess-banner__text { flex: 1; font-size: 13px; color: #1e3a5f; }
+.reprocess-banner__toggle {
+  background: #fff; border: 1px solid #93c5fd; color: #1d4ed8;
+  border-radius: 6px; padding: 5px 12px; font-size: 12px; font-weight: 600; cursor: pointer;
+}
+.reprocess-banner__toggle:hover { background: #dbeafe; }
+
+.reprocess-banner__list {
+  list-style: none; margin: 0; padding: 0 14px 12px;
+  max-height: 260px; overflow-y: auto;
+}
+.reprocess-banner__item {
+  display: flex; align-items: center; gap: 10px; padding: 7px 0;
+  border-top: 1px solid #dbeafe; font-size: 13px;
+}
+.reprocess-banner__item-name { font-weight: 600; color: #111827; min-width: 160px; }
+.reprocess-banner__item-field { flex: 1; color: #374151; }
+.reprocess-banner__review-btn {
+  background: #1e3a5f; color: #fff; border: none; border-radius: 6px;
+  padding: 5px 12px; font-size: 12px; font-weight: 600; cursor: pointer;
+}
+.reprocess-banner__review-btn:hover { background: #16304e; }
+
+/* Dialog leggero (riusa IngestSourcePreview per l'anteprima PDF) */
+.reprocess-dialog__overlay {
+  position: fixed; inset: 0; background: rgba(15, 23, 42, 0.55);
+  display: flex; align-items: center; justify-content: center; z-index: 1000;
+}
+.reprocess-dialog {
+  background: #fff; border-radius: 12px; width: min(920px, 94vw);
+  max-height: 90vh; display: flex; flex-direction: column; overflow: hidden;
+  box-shadow: 0 12px 40px rgba(0,0,0,0.25);
+}
+.reprocess-dialog__header { padding: 16px 20px 8px; border-bottom: 1px solid #e5e7eb; }
+.reprocess-dialog__header h3 { margin: 0 0 4px; font-size: 16px; color: #111827; }
+.reprocess-dialog__header p { margin: 0; font-size: 13px; color: #6b7280; }
+
+.reprocess-dialog__body {
+  display: grid; grid-template-columns: 1.2fr 1fr; gap: 16px;
+  padding: 16px 20px; overflow-y: auto; flex: 1;
+}
+.reprocess-dialog__preview { min-height: 360px; }
+
+.reprocess-dialog__hint { font-size: 12px; color: #6b7280; margin: 0 0 10px; }
+.reprocess-dialog__field {
+  display: flex; flex-direction: column; gap: 4px;
+  background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 8px;
+  padding: 10px 12px; margin-bottom: 10px;
+}
+.reprocess-dialog__field-label { font-size: 12px; font-weight: 600; color: #4b5563; }
+.reprocess-dialog__field-value { font-size: 15px; font-weight: 700; color: #1e3a5f; }
+
+.reprocess-dialog__warnings { font-size: 12px; color: #d97706; margin-top: 6px; }
+.reprocess-dialog__error {
+  font-size: 12px; color: #b91c1c; background: #fef2f2;
+  border: 1px solid #fca5a5; border-radius: 6px; padding: 6px 10px; margin-top: 8px;
+}
+
+.reprocess-dialog__actions {
+  display: flex; gap: 8px; padding: 12px 20px; border-top: 1px solid #e5e7eb;
+}
+.reprocess-dialog__btn {
+  padding: 8px 16px; border-radius: 6px; font-size: 13px; font-weight: 600;
+  cursor: pointer; border: none;
+}
+.reprocess-dialog__btn--primary { background: #1e3a5f; color: #fff; }
+.reprocess-dialog__btn--primary:hover:not(:disabled) { background: #16304e; }
+.reprocess-dialog__btn--danger { background: #fef2f2; color: #b91c1c; border: 1px solid #fca5a5; }
+.reprocess-dialog__btn--danger:hover:not(:disabled) { background: #fee2e2; }
+.reprocess-dialog__btn--secondary { background: #f3f4f6; color: #374151; border: 1px solid #d1d5db; }
+.reprocess-dialog__btn:disabled { opacity: 0.6; cursor: not-allowed; }
+
+@media (max-width: 720px) {
+  .reprocess-dialog__body { grid-template-columns: 1fr; }
+  .reprocess-dialog__preview { min-height: 220px; }
+}

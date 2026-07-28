@@ -104,6 +104,35 @@ function appendScopeSql(scope) {
 }
 
 /**
+ * Scope ownership NC valido sia per NC da audit sia per NC non-audit
+ * (reclamo, rischi, riesame, operativa: `audit_id IS NULL`, tenant su `nc.organization_id`).
+ *
+ * Un `INNER JOIN audits` scarta le NC senza audit e produce 404 su azioni e allegati:
+ * usare sempre questo helper nelle query che verificano la proprietà di una NC.
+ *
+ * @param {object} reqUser - req.user (JWT)
+ * @param {{ ncAlias?: string, auditAlias?: string }} [aliases]
+ * @returns {{ joinSql: string, orgSql: string, scopeSql: string, params: Record<string, unknown> }}
+ */
+function ncOwnershipScope(reqUser, { ncAlias = 'nc', auditAlias = 'a' } = {}) {
+    const scope = studioScopeClause(reqUser, auditAlias);
+    // Lo scope studio vive sulla tabella audits: applicarlo solo quando l'audit esiste,
+    // altrimenti il LEFT JOIN (colonne NULL) escluderebbe ogni NC non-audit.
+    const scopeSql = scope.clause
+        ? ` AND (${ncAlias}.audit_id IS NULL OR (${scope.clause}))`
+        : '';
+    return {
+        joinSql: `LEFT JOIN audits ${auditAlias} ON ${ncAlias}.audit_id = ${auditAlias}.audit_id`,
+        orgSql: `(
+              (${ncAlias}.audit_id IS NOT NULL AND ${auditAlias}.organization_id = @organization_id)
+              OR (${ncAlias}.audit_id IS NULL AND ${ncAlias}.organization_id = @organization_id)
+            )`,
+        scopeSql,
+        params: scope.params,
+    };
+}
+
+/**
  * Scope document registry: org-wide per admin/superadmin senza studio;
  * per auditor con studio → auditor_org_id diretto, company dello studio, o bozze proprie.
  * Documenti senza company né auditor_org_id: visibili solo al creatore (auditor) o org-wide (admin).
@@ -153,5 +182,6 @@ module.exports = {
     normalizeRole,
     studioScopeClause,
     appendScopeSql,
+    ncOwnershipScope,
     documentRegistryScopeClause,
 };

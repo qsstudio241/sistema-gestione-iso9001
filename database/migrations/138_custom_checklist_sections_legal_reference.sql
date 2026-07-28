@@ -1,8 +1,10 @@
 -- =============================================================================
--- Migration 135 — Riferimenti legislativi su sezioni checklist custom (ADR-019 D2)
+-- Migration 138 — Riferimenti legislativi su sezioni checklist custom (ADR-019 D2)
 -- Aggiunge reference_text (testo narrativo) e linked_legislation (stringa parsabile
 -- per agente validità normativa) su custom_checklist_sections.
 -- Nessuna nuova tabella. Idempotente.
+-- Rinumerata da 135 a 138 in fase di merge con main (collisione: main aveva già
+-- occupato 135-137 con migrazioni NC/qualifiche/ingest nel frattempo).
 -- =============================================================================
 
 USE SGQ_ISO9001;
@@ -10,7 +12,7 @@ GO
 
 SET NOCOUNT ON;
 PRINT '';
-PRINT 'Migration 135: custom_checklist_sections reference_text + linked_legislation';
+PRINT 'Migration 138: custom_checklist_sections reference_text + linked_legislation';
 PRINT '';
 
 IF NOT EXISTS (
@@ -33,5 +35,5 @@ BEGIN
 END
 GO
 
-PRINT 'Migration 135 completata.';
+PRINT 'Migration 138 completata.';
 GO

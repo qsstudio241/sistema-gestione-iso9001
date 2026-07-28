@@ -185,6 +185,10 @@ function mapPipelineFieldsToReview(f, pipelineText, fileName) {
         product_type: f.product_type || null,
         weld_details: f.weld_details || null,
         pipe_diameter_mm: f.pipe_diameter_mm ?? null,
+        // Metodo di trasferimento (ISO 9606-1 §5.2/§9.3, variabile essenziale solo
+        // per processi ad arco con filo continuo 131/135/136/138) — richiesta
+        // committente 28/07/2026, prima assente da schema/ingest/form.
+        transfer_mode: f.transfer_mode || null,
         // Gas di protezione ISO 14175 (campo previsto dallo schema AI patentino_saldatore
         // — documentTypeSchemas.js — ma fino al 26/07/2026 mai mappato qui: veniva estratto
         // dall'AI e poi silenziosamente scartato prima di arrivare in staging/commit).
@@ -346,6 +350,7 @@ async function commitQualificationFromFields(fields, organizationId, companyId, 
     const joint_type = f.joint_type || null;
     const product_type = f.product_type || null;
     const weld_details = f.weld_details || null;
+    const transfer_mode = f.transfer_mode || null;
     const certificate_file_url = buildCertificateFileUrl(filePath);
     const warnings = [];
 
@@ -422,6 +427,7 @@ async function commitQualificationFromFields(fields, organizationId, companyId, 
         .input('jointType', joint_type || null)
         .input('productType', product_type || null)
         .input('weldDetails', weld_details || null)
+        .input('transferMode', transfer_mode || null)
         .input('designation', qualification_designation || null)
         .input('certFileUrl', certificate_file_url || null)
         .query(`
@@ -434,19 +440,19 @@ async function commitQualificationFromFields(fields, organizationId, companyId, 
                  thickness_min_mm, thickness_max_mm, pipe_diameter_min_mm, pipe_diameter_max_mm,
                  ndt_method, ndt_level, coordinator_title, cpd_valid_until,
                  patent_type, equipment_type, welding_type, single_multi_run, qualification_method,
-                 shielding_gas, joint_type, product_type, weld_details, qualification_designation,
+                 shielding_gas, joint_type, product_type, weld_details, transfer_mode, qualification_designation,
                  certificate_file_url)
             OUTPUT INSERTED.id
             VALUES
                 (@orgId, @compId, @personName, @personnelId,
                  @qualType, @stdRef, @certNum, @issuer,
                  @issueDate, @examDate, @expiryDate, @lastConfDate, @nextConfDue,
-                 @status, NULL, @userId, 'bozza',
+                 @status, NULL, @userId, 'approvata',
                  @weldProc, @matGroup, @posRange, @thickRange,
                  @thickMin, @thickMax, @pipeMin, @pipeMax,
                  @ndtMethod, @ndtLevel, @coordTitle, @cpdUntil,
                  @patentType, @equipType, @weldingType, @singleMultiRun, @qualMethod,
-                 @shieldGas, @jointType, @productType, @weldDetails, @designation,
+                 @shieldGas, @jointType, @productType, @weldDetails, @transferMode, @designation,
                  @certFileUrl)
         `);
 
@@ -491,6 +497,85 @@ async function ingestQualificationFromPdf(pdfBuffer, fileName, organizationId, c
     };
 }
 
+/**
+ * Campi ammessi per la "rielaborazione" (backfill) di qualifiche già presenti in
+ * DB — vedi backend/scripts/reprocess-qualifications.js e migrazione 137.
+ * Whitelist esplicita: un nuovo campo va aggiunto qui solo dopo aver verificato
+ * che la colonna esiste ed è sicura da scrivere via UPDATE mirato (mai colonne
+ * che richiedono side-effect come qualification_designation).
+ */
+const REPROCESSABLE_FIELDS = {
+    transfer_mode: { column: 'transfer_mode' },
+    shielding_gas: { column: 'shielding_gas' },
+    joint_type: { column: 'joint_type' },
+    weld_details: { column: 'weld_details' },
+};
+
+/**
+ * Applica un aggiornamento mirato a UNA qualifica già esistente, limitato ai
+ * campi in `fieldScope` (whitelist REPROCESSABLE_FIELDS). Usato dal percorso di
+ * conferma staging in "modalità rielaborazione" (ingestStaging.service.js) —
+ * MAI una INSERT: aggiorna solo se il valore attuale in DB è ancora NULL, per
+ * non sovrascrivere mai una correzione manuale già presente (belt & suspenders,
+ * oltre al filtro "WHERE campo IS NULL" già applicato dallo script di selezione).
+ * @returns {Promise<{qualification_id:number, updated_fields:string[]}>}
+ */
+async function applyFieldReprocessUpdate(targetQualificationId, organizationId, fieldScope, fields) {
+    const scopeFields = String(fieldScope || '').split(',').map((s) => s.trim()).filter(Boolean);
+    if (!scopeFields.length) {
+        const err = new Error('field_scope mancante o vuoto');
+        err.code = 'VALIDATION_ERROR';
+        throw err;
+    }
+
+    const pool = await getPool();
+    const check = await pool.request()
+        .input('id', targetQualificationId)
+        .input('orgId', organizationId)
+        .query('SELECT id FROM qualifications WHERE id=@id AND organization_id=@orgId');
+    if (!check.recordset.length) {
+        const err = new Error('Qualifica destinataria non trovata');
+        err.code = 'NOT_FOUND';
+        throw err;
+    }
+
+    const updatable = [];
+    for (const key of scopeFields) {
+        const def = REPROCESSABLE_FIELDS[key];
+        if (!def) continue;
+        const value = fields ? fields[key] : undefined;
+        if (value === undefined || value === null || value === '') continue;
+        updatable.push({ key, column: def.column, value });
+    }
+
+    if (!updatable.length) {
+        return { qualification_id: targetQualificationId, updated_fields: [] };
+    }
+
+    const request = pool.request().input('id', targetQualificationId).input('orgId', organizationId);
+    const setClauses = [];
+    const updatedFields = [];
+    for (const { key, column, value } of updatable) {
+        const paramName = `val_${column}`;
+        request.input(paramName, value);
+        setClauses.push(`${column} = @${paramName}`);
+        updatedFields.push(key);
+    }
+
+    // "WHERE campo IS NULL" per ciascuna colonna toccata: non sovrascrive mai un
+    // valore già presente (anche se lo script di selezione dovrebbe già escluderlo).
+    const guardClauses = updatable.map(({ column }) => `${column} IS NULL`).join(' AND ');
+
+    await request.query(`
+        UPDATE qualifications
+        SET ${setClauses.join(', ')}, updated_at = GETDATE()
+        WHERE id = @id AND organization_id = @orgId AND (${guardClauses})
+    `);
+
+    logger.info(`[QualifIngest] Rielaborazione applicata id=${targetQualificationId} campi=${updatedFields.join(',')}`);
+    return { qualification_id: targetQualificationId, updated_fields: updatedFields };
+}
+
 module.exports = {
     ingestQualificationFromPdf,
     extractQualificationFromPdf,
@@ -498,4 +583,6 @@ module.exports = {
     classifyQualificationType,
     mapPipelineFieldsToReview,
     checkQualificationPlausibility,
+    applyFieldReprocessUpdate,
+    REPROCESSABLE_FIELDS,
 };

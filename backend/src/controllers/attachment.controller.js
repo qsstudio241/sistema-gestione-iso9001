@@ -9,7 +9,7 @@
 
 const { query } = require('../config/database');
 const logger = require('../utils/logger');
-const { studioScopeClause, appendScopeSql } = require('../services/auditListRbac.service');
+const { studioScopeClause, appendScopeSql, ncOwnershipScope } = require('../services/auditListRbac.service');
 // assertWriteAllowed rimosso in T5 (lock solo UX)
 const path = require('path');
 const fs = require('fs').promises;
@@ -23,17 +23,27 @@ function attachmentScope(reqUser) {
 
     // Ogni allegato appartiene a UNA sola fonte (audit/NC, verbale CND, rapporto RDP).
     // Il branch "audit" e' quello di default (nessuno degli id specialistici impostato).
+    // Sul branch audit lo scope studio si applica solo se esiste un audit collegato:
+    // le NC non-audit (audit_id NULL) non hanno riga in `audits` e verrebbero escluse.
     const branches = [
-        { nullCheck: 'att.ndt_report_item_id IS NULL AND att.rdp_test_id IS NULL', scope: auditScope },
+        {
+            nullCheck: 'att.ndt_report_item_id IS NULL AND att.rdp_test_id IS NULL',
+            scope: auditScope,
+            scopeGuard: 'COALESCE(att.audit_id, nc.audit_id) IS NULL',
+        },
         { nullCheck: 'att.ndt_report_item_id IS NOT NULL', scope: ndtScope },
         { nullCheck: 'att.rdp_test_id IS NOT NULL', scope: rdpScope },
     ];
     const hasAnyScope = branches.some((b) => b.scope.clause);
     let rbacClause = '';
     if (hasAnyScope) {
-        const orClauses = branches.map((b) => (
-            b.scope.clause ? `(${b.nullCheck} AND (${b.scope.clause}))` : `(${b.nullCheck})`
-        ));
+        const orClauses = branches.map((b) => {
+            if (!b.scope.clause) return `(${b.nullCheck})`;
+            const predicate = b.scopeGuard
+                ? `(${b.scopeGuard} OR (${b.scope.clause}))`
+                : `(${b.scope.clause})`;
+            return `(${b.nullCheck} AND ${predicate})`;
+        });
         rbacClause = ` AND (${orClauses.join(' OR ')})`;
     }
 
@@ -47,7 +57,8 @@ function attachmentScope(reqUser) {
       LEFT JOIN rdp_sections rdp_s ON rdp_t.section_id = rdp_s.id
       LEFT JOIN rdp_reports rdp_r ON rdp_s.report_id = rdp_r.id AND rdp_r.is_deleted = 0
     `,
-        orgClause: 'COALESCE(a.organization_id, ndt_r.organization_id, rdp_r.organization_id) = @organization_id',
+        // nc.organization_id copre le NC non-audit (nessuna riga in `audits`)
+        orgClause: 'COALESCE(a.organization_id, nc.organization_id, ndt_r.organization_id, rdp_r.organization_id) = @organization_id',
         rbacClause,
         scopeParams: { ...auditScope.params, ...ndtScope.params, ...rdpScope.params },
     };
@@ -383,13 +394,16 @@ async function uploadAttachment(req, res) {
         }
 
         if (nc_id) {
+            // Ownership tollerante alle NC non-audit (audit_id NULL): un INNER JOIN
+            // su audits rifiuterebbe con 404 gli allegati di NC manuali/reclamo/rischi.
+            const ncScope = ncOwnershipScope(req.user);
             const ncCheck = await query(`
         SELECT nc.nc_id
         FROM non_conformities nc
-        INNER JOIN audits a ON nc.audit_id = a.audit_id
-        WHERE nc.nc_id = @nc_id AND a.organization_id = @organization_id
-          ${uploadScopeSql}
-      `, { nc_id: parseInt(nc_id), organization_id, ...uploadScopeParams });
+        ${ncScope.joinSql}
+        WHERE nc.nc_id = @nc_id AND ${ncScope.orgSql}
+          ${ncScope.scopeSql}
+      `, { nc_id: parseInt(nc_id), organization_id, ...ncScope.params });
 
             if (ncCheck.recordset.length === 0) {
                 // Cleanup file uploaded

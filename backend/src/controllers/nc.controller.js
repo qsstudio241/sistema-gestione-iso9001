@@ -8,7 +8,12 @@
 
 const { query } = require('../config/database');
 const logger = require('../utils/logger');
-const { studioScopeClause, appendScopeSql, isOrgWideAdmin } = require('../services/auditListRbac.service');
+const {
+    studioScopeClause,
+    appendScopeSql,
+    ncOwnershipScope,
+    isOrgWideAdmin,
+} = require('../services/auditListRbac.service');
 const {
     assertMutatingAllowed,
     sendAccessDenied,
@@ -18,6 +23,22 @@ const {
 } = require('../services/companyAccess.service');
 const { listNcResponsibleOptions, VALID_SCOPES } = require('../services/ncResponsibleOptions.service');
 const { materializeNcActionsFromDescription } = require('../services/ncDescriptionActions.service');
+
+/**
+ * `nc.*` include già `non_conformities.company_id` (migration 134): un alias
+ * `COALESCE(a.company_id, nc.company_id) AS company_id` creerebbe una seconda
+ * colonna con lo stesso nome e il driver mssql restituirebbe un array invece di
+ * un valore (la UI finiva per chiamare `?company_id=,` → 400).
+ * Le query usano quindi l'alias `effective_company_id` e qui viene riportato
+ * sul nome atteso dal client.
+ * @template {{ effective_company_id?: number|null }} T
+ * @param {T} row
+ */
+function withEffectiveCompanyId(row) {
+    if (!row) return row;
+    const { effective_company_id, ...rest } = row;
+    return { ...rest, company_id: effective_company_id ?? null };
+}
 
 /** Ruoli che possono approvare la chiusura NC (RQ / admin org). */
 function isNcClosureApprover(user) {
@@ -30,22 +51,15 @@ function isNcClosureApprover(user) {
  */
 async function assertNcWriteAccess(req, res, ncId) {
     const { organization_id } = req.user;
-    const scope = studioScopeClause(req.user, 'a');
-    // Studio scope applicato solo quando l'audit esiste (LEFT JOIN può restituire NULL)
-    const scopeSql = scope.clause
-        ? ` AND (nc.audit_id IS NULL OR (${scope.clause}))`
-        : '';
+    const ncScope = ncOwnershipScope(req.user);
     const result = await query(`
       SELECT nc.nc_id, nc.audit_id, nc.source_category, a.company_id
       FROM   non_conformities nc
-      LEFT JOIN audits a ON nc.audit_id = a.audit_id
+      ${ncScope.joinSql}
       WHERE  nc.nc_id = @id
-        AND  (
-               (nc.audit_id IS NOT NULL AND a.organization_id = @organization_id)
-               OR (nc.audit_id IS NULL AND nc.organization_id = @organization_id)
-             )
-        ${scopeSql}
-    `, { id: parseInt(ncId, 10), organization_id, ...scope.params });
+        AND  ${ncScope.orgSql}
+        ${ncScope.scopeSql}
+    `, { id: parseInt(ncId, 10), organization_id, ...ncScope.params });
 
     if (result.recordset.length === 0) {
         return { notFound: true };
@@ -239,7 +253,7 @@ async function listNonConformities(req, res) {
         a.audit_number,
         a.audit_uuid,
         a.client_name,
-        COALESCE(a.company_id, nc.company_id) AS company_id,
+        COALESCE(a.company_id, nc.company_id) AS effective_company_id,
         cs.section_title,
         c.complaint_number AS source_complaint_number,
         approver.full_name AS approved_by_name,
@@ -289,7 +303,7 @@ async function listNonConformities(req, res) {
 
         res.json({
             success: true,
-            data: result.recordset,
+            data: (result.recordset || []).map(withEffectiveCompanyId),
             pagination: {
                 page: parseInt(page),
                 limit: parseInt(limit),
@@ -392,7 +406,7 @@ async function getNonConformityById(req, res) {
         a.audit_number,
         a.audit_uuid,
         a.client_name,
-        COALESCE(a.company_id, nc.company_id) AS company_id,
+        COALESCE(a.company_id, nc.company_id) AS effective_company_id,
         a.audit_date,
         cs.section_title,
         approver.full_name AS approved_by_name,
@@ -423,7 +437,7 @@ async function getNonConformityById(req, res) {
             });
         }
 
-        const nc = result.recordset[0];
+        const nc = withEffectiveCompanyId(result.recordset[0]);
 
         // Recupera allegati
         const attachmentsResult = await query(`
@@ -800,6 +814,7 @@ async function updateNonConformity(req, res) {
             reopen_reason,
             corrective_action_needed,
             corrective_action_evaluation_notes,
+            effectiveness_verification_notes,
         } = req.body;
 
         const scope = studioScopeClause(req.user, 'a');
@@ -932,6 +947,10 @@ async function updateNonConformity(req, res) {
             updates.push('corrective_action_evaluation_notes = @corrective_action_evaluation_notes');
             params.corrective_action_evaluation_notes = corrective_action_evaluation_notes;
         }
+        if (effectiveness_verification_notes !== undefined) {
+            updates.push('effectiveness_verification_notes = @effectiveness_verification_notes');
+            params.effectiveness_verification_notes = effectiveness_verification_notes;
+        }
 
         // Gestione transizione stato (con validazione workflow)
         if (status !== undefined) {
@@ -1044,6 +1063,11 @@ async function updateNonConformity(req, res) {
                             code: 'CORRECTIVE_ACTION_REQUIRED',
                         });
                     }
+                    // Le note di verifica efficacia (ISO 10.2.1 e) sono richieste dal gate
+                    // UI (canCloseNc), non qui: la chiusura dalla griglia invia solo
+                    // { status: 'closed' } e un client non ancora aggiornato non ha il campo,
+                    // quindi un controllo sul valore memorizzato bloccherebbe la chiusura
+                    // senza dare all'utente un modo per sbloccarla.
                 }
 
                 if (resolution_date === undefined) {
@@ -1273,17 +1297,15 @@ async function listNcActions(req, res) {
         const { id } = req.params;
         const { organization_id } = req.user;
 
-        const scope = studioScopeClause(req.user, 'a');
-        const scopeSql = appendScopeSql(scope);
-
-        // Verifica ownership NC + scope studio
+        // Ownership tollerante alle NC non-audit (audit_id NULL)
+        const ncScope = ncOwnershipScope(req.user);
         const ncCheck = await query(`
             SELECT nc.nc_id, nc.description, nc.source_type
             FROM non_conformities nc
-            INNER JOIN audits a ON nc.audit_id = a.audit_id
-            WHERE nc.nc_id = @id AND a.organization_id = @organization_id
-              ${scopeSql}
-        `, { id: parseInt(id), organization_id, ...scope.params });
+            ${ncScope.joinSql}
+            WHERE nc.nc_id = @id AND ${ncScope.orgSql}
+              ${ncScope.scopeSql}
+        `, { id: parseInt(id), organization_id, ...ncScope.params });
 
         if (ncCheck.recordset.length === 0) {
             return res.status(404).json({ error: 'Non conformità non trovata', code: 'NC_NOT_FOUND' });
@@ -1342,16 +1364,14 @@ async function createNcAction(req, res) {
             });
         }
 
-        const scope = studioScopeClause(req.user, 'a');
-        const scopeSql = appendScopeSql(scope);
-
-        // Verifica ownership NC + scope studio
+        // Ownership tollerante alle NC non-audit (audit_id NULL)
+        const ncScope = ncOwnershipScope(req.user);
         const ncCheck = await query(`
             SELECT nc.nc_id FROM non_conformities nc
-            INNER JOIN audits a ON nc.audit_id = a.audit_id
-            WHERE nc.nc_id = @id AND a.organization_id = @organization_id
-              ${scopeSql}
-        `, { id: parseInt(id), organization_id, ...scope.params });
+            ${ncScope.joinSql}
+            WHERE nc.nc_id = @id AND ${ncScope.orgSql}
+              ${ncScope.scopeSql}
+        `, { id: parseInt(id), organization_id, ...ncScope.params });
 
         if (ncCheck.recordset.length === 0) {
             return res.status(404).json({ error: 'Non conformità non trovata', code: 'NC_NOT_FOUND' });
@@ -1404,19 +1424,17 @@ async function updateNcAction(req, res) {
         const { organization_id } = req.user;
         const { status, description, responsible, responsible_contact_id, due_date, verification_note } = req.body;
 
-        const scope = studioScopeClause(req.user, 'au');
-        const scopeSql = appendScopeSql(scope);
-
-        // Verifica ownership + scope studio
+        // Ownership tollerante alle NC non-audit (audit_id NULL)
+        const ncScope = ncOwnershipScope(req.user, { auditAlias: 'au' });
         const check = await query(`
             SELECT a.action_id, a.status AS current_status, a.verification_note
             FROM nc_actions a
             INNER JOIN non_conformities nc ON a.nc_id = nc.nc_id
-            INNER JOIN audits au ON nc.audit_id = au.audit_id
+            ${ncScope.joinSql}
             WHERE a.action_id = @actionId AND nc.nc_id = @nc_id
-              AND au.organization_id = @organization_id
-              ${scopeSql}
-        `, { actionId: parseInt(actionId), nc_id: parseInt(id), organization_id, ...scope.params });
+              AND ${ncScope.orgSql}
+              ${ncScope.scopeSql}
+        `, { actionId: parseInt(actionId), nc_id: parseInt(id), organization_id, ...ncScope.params });
 
         if (check.recordset.length === 0) {
             return res.status(404).json({ error: 'Azione non trovata', code: 'NC_ACTION_NOT_FOUND' });
@@ -1503,17 +1521,16 @@ async function deleteNcAction(req, res) {
         const { id, actionId } = req.params;
         const { organization_id } = req.user;
 
-        const scope = studioScopeClause(req.user, 'au');
-        const scopeSql = appendScopeSql(scope);
-
+        // Ownership tollerante alle NC non-audit (audit_id NULL)
+        const ncScope = ncOwnershipScope(req.user, { auditAlias: 'au' });
         const check = await query(`
             SELECT a.action_id FROM nc_actions a
             INNER JOIN non_conformities nc ON a.nc_id = nc.nc_id
-            INNER JOIN audits au ON nc.audit_id = au.audit_id
+            ${ncScope.joinSql}
             WHERE a.action_id = @actionId AND nc.nc_id = @nc_id
-              AND au.organization_id = @organization_id
-              ${scopeSql}
-        `, { actionId: parseInt(actionId), nc_id: parseInt(id), organization_id, ...scope.params });
+              AND ${ncScope.orgSql}
+              ${ncScope.scopeSql}
+        `, { actionId: parseInt(actionId), nc_id: parseInt(id), organization_id, ...ncScope.params });
 
         if (check.recordset.length === 0) {
             return res.status(404).json({ error: 'Azione non trovata', code: 'NC_ACTION_NOT_FOUND' });
@@ -1906,15 +1923,15 @@ async function approveNcClosure(req, res) {
             });
         }
 
-        const scope = studioScopeClause(req.user, 'a');
-        const whereExtra = scope.clause ? ` AND ${scope.clause}` : '';
-        const params = { id: parseInt(id), organization_id, ...scope.params };
+        // Ownership tollerante alle NC non-audit (audit_id NULL)
+        const ncScope = ncOwnershipScope(req.user);
+        const params = { id: parseInt(id), organization_id, ...ncScope.params };
 
         const existing = await query(`
             SELECT nc.nc_id, nc.status, nc.approved_at
             FROM non_conformities nc
-            INNER JOIN audits a ON nc.audit_id = a.audit_id
-            WHERE nc.nc_id = @id AND a.organization_id = @organization_id${whereExtra}
+            ${ncScope.joinSql}
+            WHERE nc.nc_id = @id AND ${ncScope.orgSql}${ncScope.scopeSql}
         `, params);
 
         if (!existing.recordset.length) {
@@ -1965,8 +1982,10 @@ async function listAggregateDueNcActions(req, res) {
         const { organization_id } = req.user;
         const { overdue, due_within_days, limit = 100 } = req.query;
 
+        // Ownership tollerante alle NC non-audit (audit_id NULL)
+        const ncScope = ncOwnershipScope(req.user);
         let whereConditions = [
-            'a.organization_id = @organization_id',
+            ncScope.orgSql,
             "na.status NOT IN ('completed', 'verified')",
             "nc.status NOT IN ('resolved', 'verified', 'closed')",
         ];
@@ -1992,11 +2011,11 @@ async function listAggregateDueNcActions(req, res) {
             whereConditions.push(`na.due_date <= DATEADD(day, ${dueWithin}, CAST(GETDATE() AS DATE))`);
         }
 
-        const scope = studioScopeClause(req.user, 'a');
-        if (scope.clause) {
-            whereConditions.push(scope.clause);
-            Object.assign(params, scope.params);
+        if (ncScope.scopeSql) {
+            // scopeSql arriva già come ' AND (...)': qui serve solo il predicato
+            whereConditions.push(ncScope.scopeSql.replace(/^\s*AND\s*/, ''));
         }
+        Object.assign(params, ncScope.params);
 
         const whereClause = whereConditions.join(' AND ');
 
@@ -2009,7 +2028,7 @@ async function listAggregateDueNcActions(req, res) {
                 CASE WHEN na.due_date < CAST(GETDATE() AS DATE) THEN 1 ELSE 0 END AS is_overdue
             FROM nc_actions na
             INNER JOIN non_conformities nc ON na.nc_id = nc.nc_id
-            INNER JOIN audits a ON nc.audit_id = a.audit_id
+            ${ncScope.joinSql}
             WHERE ${whereClause}
             ORDER BY na.due_date ASC, nc.nc_number ASC
         `, params);

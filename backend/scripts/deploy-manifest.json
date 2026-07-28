@@ -16,6 +16,12 @@
                                  ]
                    },
                    {
+                       "name":  "config",
+                       "files":  [
+                                     "src/config/multer.js"
+                                 ]
+                   },
+                   {
                        "name":  "constants",
                        "files":  [
                                      "src/constants/documentStatus.js"
@@ -250,6 +256,12 @@
                                      "src/middleware/moduleLicense.middleware.js",
                                      "src/config/corsOrigins.js",
                                      "src/server.js"
+                                 ]
+                   },
+                   {
+                       "name":  "scripts",
+                       "files":  [
+                                     "scripts/reprocess-qualifications.js"
                                  ]
                    }
                ]

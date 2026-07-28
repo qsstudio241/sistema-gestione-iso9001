@@ -23,12 +23,16 @@ describe('qualificationSituazione.service', () => {
         const where = ['q.organization_id = @orgId'];
         applySituazioneFilter(where, 'foo');
         expect(where).toHaveLength(1);
-        applySituazioneFilter(where, 'da_approvare');
+        applySituazioneFilter(where, 'revocata');
         expect(where).toHaveLength(2);
-        expect(where[1]).toContain('approval_status');
+        expect(where[1]).toContain("q.status = 'revocata'");
     });
 
-    it('VALID_SITUAZIONI include valide e da_approvare', () => {
-        expect(VALID_SITUAZIONI).toEqual(expect.arrayContaining(['valide', 'da_approvare']));
+    // Decisione di prodotto 28/07/2026: rimosso il gate di approvazione interna
+    // (Approva/Rifiuta) — "da_approvare" non esiste più come situazione filtrabile,
+    // v. header qualifications.controller.js.
+    it('VALID_SITUAZIONI non include più da_approvare (nessun gate di approvazione interna)', () => {
+        expect(VALID_SITUAZIONI).toEqual(expect.arrayContaining(['valide', 'revocata', 'sospesa']));
+        expect(VALID_SITUAZIONI).not.toContain('da_approvare');
     });
 });

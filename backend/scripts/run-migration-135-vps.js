@@ -1,5 +1,8 @@
 /**
- * Migration 135 — reference_text + linked_legislation su custom_checklist_sections (ADR-019)
+ * Migration 135 — effectiveness_verification_notes su non_conformities
+ * Verifica efficacia azione correttiva (ISO 9001 §10.2.1 e), distinta dalla
+ * verifica di attuazione del trattamento (`verification_notes`).
+ *
  * Uso (solo su VPS, via SSH — vedi backend/scripts/run-on-vps.ps1):
  *   node /tmp/run-migration-135-vps.js
  */
@@ -10,35 +13,35 @@ const { getPool } = require('/var/www/sgq-backend/src/config/database');
 async function run() {
     const pool = await getPool();
     try {
-        const refTextCheck = await pool.request().query(`
+        const colCheck = await pool.request().query(`
             SELECT 1 AS x FROM INFORMATION_SCHEMA.COLUMNS
-            WHERE TABLE_NAME = 'custom_checklist_sections' AND COLUMN_NAME = 'reference_text'
+            WHERE TABLE_NAME = 'non_conformities'
+              AND COLUMN_NAME = 'effectiveness_verification_notes'
         `);
-        if (refTextCheck.recordset.length === 0) {
-            await pool.request().query(`ALTER TABLE dbo.custom_checklist_sections ADD reference_text NVARCHAR(MAX) NULL`);
-            console.log('[135] Colonna reference_text aggiunta');
+        if (colCheck.recordset.length === 0) {
+            await pool.request().query(`
+                ALTER TABLE dbo.non_conformities
+                ADD effectiveness_verification_notes NVARCHAR(MAX) NULL
+            `);
+            console.log('[135] Colonna effectiveness_verification_notes aggiunta');
         } else {
-            console.log('[135] Colonna reference_text gia esistente — skip');
+            console.log('[135] Colonna effectiveness_verification_notes gia esistente — skip');
         }
 
-        const linkedLegCheck = await pool.request().query(`
-            SELECT 1 AS x FROM INFORMATION_SCHEMA.COLUMNS
-            WHERE TABLE_NAME = 'custom_checklist_sections' AND COLUMN_NAME = 'linked_legislation'
+        const verify = await pool.request().query(`
+            SELECT COLUMN_NAME, DATA_TYPE, IS_NULLABLE
+            FROM INFORMATION_SCHEMA.COLUMNS
+            WHERE TABLE_NAME = 'non_conformities'
+              AND COLUMN_NAME = 'effectiveness_verification_notes'
         `);
-        if (linkedLegCheck.recordset.length === 0) {
-            await pool.request().query(`ALTER TABLE dbo.custom_checklist_sections ADD linked_legislation NVARCHAR(MAX) NULL`);
-            console.log('[135] Colonna linked_legislation aggiunta');
-        } else {
-            console.log('[135] Colonna linked_legislation gia esistente — skip');
-        }
-
-        console.log('[135] Migration completata.');
-    } catch (e) {
-        console.error('[135] ERRORE:', e.message);
+        console.log('[135] Verifica:', JSON.stringify(verify.recordset));
+        console.log('[135] Migrazione completata.');
+    } catch (err) {
+        console.error('[135] ERRORE:', err.message);
         process.exitCode = 1;
     } finally {
-        await pool.close().catch(() => {});
-        process.exit();
+        process.exit(process.exitCode || 0);
     }
 }
+
 run();

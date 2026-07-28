@@ -15,6 +15,7 @@ const {
     mergeWpsWithExtractedProfile,
     profileHasTechnicalData,
 } = require('../utils/extractedRequirementsProfile');
+const { isQualificationOperationallyActive } = require('./weldingCoordinatorAuth.service');
 
 function semaforoExpiry(expiryDate, status) {
     if (status === 'revocata' || status === 'sospesa') return 'rosso';
@@ -114,12 +115,14 @@ async function computeCaseProjectCoverage({ caseId, projectId, organizationId })
     );
     const wpsRows = wpsRes.recordset || [];
 
+    // Nessun filtro su approval_status (rimosso — v. qualifications.controller.js header):
+    // le qualifiche sono attive alla creazione. L'esclusione per scadenza certificato o
+    // conferma semestrale non superata resta obbligatoria per la copertura ISO 3834 ed è
+    // applicata qui via isQualificationOperationallyActive (expiry_date + next_confirmation_due).
     const qParams = { organizationId };
     let qWhere = `
         q.organization_id = @organizationId
-        AND q.approval_status = 'approvata'
         AND q.status NOT IN ('revocata','sospesa')
-        AND (q.expiry_date IS NULL OR q.expiry_date >= CAST(GETDATE() AS DATE))
         AND q.qualification_type LIKE '%9606%'
     `;
     if (project.company_id) {
@@ -132,7 +135,7 @@ async function computeCaseProjectCoverage({ caseId, projectId, organizationId })
         SELECT q.id, q.person_name, q.person_code, q.qualification_type,
                q.welding_process, q.material_group, q.position_range,
                q.thickness_min_mm, q.thickness_max_mm, q.thickness_range, q.joint_type,
-               q.expiry_date, q.status, q.approval_status,
+               q.expiry_date, q.status, q.approval_status, q.next_confirmation_due,
                c.name AS company_name
         FROM qualifications q
         LEFT JOIN companies c ON c.id = q.company_id
@@ -141,7 +144,7 @@ async function computeCaseProjectCoverage({ caseId, projectId, organizationId })
         `,
         qParams,
     );
-    const qualRows = qualRes.recordset || [];
+    const qualRows = (qualRes.recordset || []).filter((q) => isQualificationOperationallyActive(q));
 
     const normalizeWps = (wps) => mergeWpsWithExtractedProfile(
         {

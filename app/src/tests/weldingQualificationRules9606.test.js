@@ -115,24 +115,61 @@ describe('weldingQualificationRules9606', () => {
     expect(section).toContain('135');
   });
 
+  it('prompt section istruisce sul metodo di trasferimento (28/07/2026, richiesta committente)', () => {
+    const section = buildWelderQualificationRulesPromptSection();
+    expect(section).toMatch(/[Mm]etodo di trasferimento/);
+    expect(section).toContain('spray_arc');
+    expect(section).toContain('131, 135, 136, 138');
+  });
+
+  it('prompt section istruisce a non perdere l\u2019informazione "derivazione/branch/tubo-piastra" (segnalazione Mason, 27/07/2026)', () => {
+    const section = buildWelderQualificationRulesPromptSection();
+    expect(section).toContain('derivazione');
+    expect(section).toContain('branch');
+    expect(section).toContain('weld_details');
+    expect(section).toMatch(/NON esiste una terza categoria/);
+  });
+
   describe('getApplicableWelderFields (UX campi condizionati, 27/07/2026)', () => {
     it('diametro tubo non applicabile se prodotto = piastra (P)', () => {
-      expect(getApplicableWelderFields({ productType: 'P' })).toEqual({ pipeDiameterApplicable: false });
-      expect(getApplicableWelderFields({ productType: 'p' })).toEqual({ pipeDiameterApplicable: false });
+      expect(getApplicableWelderFields({ productType: 'P' })).toEqual({ pipeDiameterApplicable: false, transferModeApplicable: false });
+      expect(getApplicableWelderFields({ productType: 'p' })).toEqual({ pipeDiameterApplicable: false, transferModeApplicable: false });
     });
 
     it('diametro tubo applicabile se prodotto = tubo (T)', () => {
-      expect(getApplicableWelderFields({ productType: 'T' })).toEqual({ pipeDiameterApplicable: true });
+      expect(getApplicableWelderFields({ productType: 'T' })).toEqual({ pipeDiameterApplicable: true, transferModeApplicable: false });
     });
 
     it('diametro tubo applicabile (permissivo) se prodotto non ancora scelto', () => {
-      expect(getApplicableWelderFields({ productType: '' })).toEqual({ pipeDiameterApplicable: true });
-      expect(getApplicableWelderFields({ productType: null })).toEqual({ pipeDiameterApplicable: true });
-      expect(getApplicableWelderFields()).toEqual({ pipeDiameterApplicable: true });
+      expect(getApplicableWelderFields({ productType: '' })).toEqual({ pipeDiameterApplicable: true, transferModeApplicable: false });
+      expect(getApplicableWelderFields({ productType: null })).toEqual({ pipeDiameterApplicable: true, transferModeApplicable: false });
+      expect(getApplicableWelderFields()).toEqual({ pipeDiameterApplicable: true, transferModeApplicable: false });
     });
   });
 
-  describe('describePlateOnlyRotatingPositionDiameterNote (feedback cliente Studio Mason, da confermare)', () => {
+  describe('getApplicableWelderFields — metodo di trasferimento (28/07/2026, richiesta committente)', () => {
+    it('applicabile per processi ad arco con filo continuo (131/135/136/138)', () => {
+      expect(getApplicableWelderFields({ weldingProcessCode: '131' }).transferModeApplicable).toBe(true);
+      expect(getApplicableWelderFields({ weldingProcessCode: '135' }).transferModeApplicable).toBe(true);
+      expect(getApplicableWelderFields({ weldingProcessCode: '136' }).transferModeApplicable).toBe(true);
+      expect(getApplicableWelderFields({ weldingProcessCode: '138' }).transferModeApplicable).toBe(true);
+    });
+
+    it('non applicabile per processi senza transfer mode (111 MMA, 121 SAW, 141 TIG, 311 ossiacetilenica)', () => {
+      expect(getApplicableWelderFields({ weldingProcessCode: '111' }).transferModeApplicable).toBe(false);
+      expect(getApplicableWelderFields({ weldingProcessCode: '121' }).transferModeApplicable).toBe(false);
+      expect(getApplicableWelderFields({ weldingProcessCode: '141' }).transferModeApplicable).toBe(false);
+      expect(getApplicableWelderFields({ weldingProcessCode: '311' }).transferModeApplicable).toBe(false);
+    });
+
+    it('non applicabile se il processo non e\u2019 ancora scelto', () => {
+      expect(getApplicableWelderFields({}).transferModeApplicable).toBe(false);
+      expect(getApplicableWelderFields({ weldingProcessCode: '' }).transferModeApplicable).toBe(false);
+      expect(getApplicableWelderFields({ weldingProcessCode: null }).transferModeApplicable).toBe(false);
+    });
+  });
+
+  describe('describePlateOnlyRotatingPositionDiameterNote (feedback cliente Studio Mason, verificato §5.3 il 27/07/2026)', () => {
     it('nessuna nota se il tubo e\u2019 stato testato direttamente', () => {
       expect(describePlateOnlyRotatingPositionDiameterNote({
         hasPipeDiameter: true,
@@ -154,7 +191,7 @@ describe('weldingQualificationRules9606', () => {
         rotatingPosition: false,
       });
       expect(note).toContain('\u2265500 mm');
-      expect(note).toContain('da confermare');
+      expect(note).toContain('\u00a75.3');
     });
 
     it('\u226575 mm quando la posizione di prova e\u2019 rotante', () => {
