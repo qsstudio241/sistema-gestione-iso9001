@@ -14,16 +14,24 @@ import apiService from "../services/apiService";
 import { syncService } from "../services/syncService";
 import { useStorage } from "../contexts/StorageContext";
 import { useAttachmentManager } from "../hooks/useAttachmentManager";
-import { QuestionCard } from "./QuestionCard";
+import { QuestionCard, STATUS_BUTTONS } from "./QuestionCard";
 import AskAiButton from "./AskAiButton";
 import { saveChecklistFocus } from "../utils/aiAssistantContext";
 import "./CustomChecklistAuditView.css";
 
-/** Sottoinsieme SI/NO/NA per item registro obblighi legali (ADR-019 D3) */
+/**
+ * Sottoinsieme SI/NO/NA/NV per item registro obblighi legali (ADR-019 D3).
+ * "NV" (Non Verificato) riusa esattamente il pulsante standard esistente
+ * (stesso code/className di STATUS_BUTTONS) — nessun nuovo stato inventato:
+ * copre i capitoli non ancora esaminati durante l'audit (diverso da "NA",
+ * che significa "non applicabile all'azienda").
+ */
+const NOT_VERIFIED_OPTION = STATUS_BUTTONS.find((opt) => opt.code === "NV");
 const LEGAL_STATUS_OPTIONS = [
   { code: "C", className: "compliant", label: "Sì" },
   { code: "NC", className: "non-compliant", label: "No" },
   { code: "NA", className: "not-applicable", label: "Non applicabile" },
+  ...(NOT_VERIFIED_OPTION ? [NOT_VERIFIED_OPTION] : []),
 ];
 
 function CustomChecklistAuditView({ audit, onUpdate, readOnly = false }) {

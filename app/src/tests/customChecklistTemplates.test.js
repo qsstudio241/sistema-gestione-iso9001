@@ -18,7 +18,7 @@ describe('customChecklistTemplates', () => {
 
   it('mantiene univoci capitoli e sotto-domande del registro sicurezza', () => {
     expect(ISO_45001_LEGISLATIVO_TEMPLATE.standardCode).toBe('LEG_SICUREZZA_81');
-    expect(ISO_45001_LEGISLATIVO_TEMPLATE.sections).toHaveLength(28);
+    expect(ISO_45001_LEGISLATIVO_TEMPLATE.sections).toHaveLength(29);
 
     const sectionCodes = ISO_45001_LEGISLATIVO_TEMPLATE.sections.map(
       (section) => section.sectionCode

@@ -520,15 +520,10 @@ export const ISO_45001_LEGISLATIVO_TEMPLATE = {
       displayOrder: 16,
       referenceText: [
         "D.Lgs. 81/2008 e s.m.i. - Titolo III, Capo III",
-        "Legge 5 marzo 1990, n. 46",
+        "Legge 46/90",
         "D.M. 37/2008",
-        "CEI 11-27",
-        "D.P.R. 22 ottobre 2001, n. 462",
-        "D.Lgs. 81/2008 e s.m.i. - Articoli 84 e 86",
-        "Legge 1 marzo 1968, n. 186",
-        "CEI 64-8:2024 e CEI 64-14:2022",
+        "EN CEI 11-27",
       ].join("\n"),
-      linkedLegislation: "D.Lgs. 81/2008 art.84; art.86",
       questions: [],
     },
     {
@@ -673,6 +668,29 @@ export const ISO_45001_LEGISLATIVO_TEMPLATE = {
         "D.P.R. 20 marzo 1956, n. 321 - Cassoni ad aria compressa",
         "D.P.R. 20 marzo 1956, n. 323 - Impianti telefonici",
       ].join("\n"),
+      questions: [],
+    },
+    {
+      // Capitolo distinto dal 16 (RISCHIO ELETTRICO), individuato in revisione
+      // Lead: nel PDF di riferimento compare come sezione autonoma "IMPIANTI ED
+      // APPARECCHIATURE ELETTRICHE / ALTRE RETI TECNOLOGICHE" (verifiche
+      // periodiche impianti, non il rischio generico) — inizialmente assente
+      // dall'elenco capitoli attesi in DEPUTYTASK3 (scaffold incompleto).
+      sectionCode: "leg_sic_29",
+      sectionTitle: "29. IMPIANTI ED APPARECCHIATURE ELETTRICHE / ALTRE RETI TECNOLOGICHE (VERIFICHE PERIODICHE)",
+      displayOrder: 29,
+      referenceText: [
+        "D.Lgs. 81/2008 e s.m.i. - Capo III (Impianti e apparecchiature elettriche) e Allegato V (ex art. 374, D.P.R. n. 547/1955)",
+        "D.M. 37/2008 (ex Legge 5 marzo 1990, n. 46) - Dichiarazione di conformità dell'impianto alla regola d'arte",
+        "D.Lgs. 81/2008 e s.m.i. - Allegato IV, punto 5 (installazioni elettriche in luoghi con pericolo di esplosione o incendio)",
+        "D.P.R. 22 ottobre 2001, n. 462 - Denuncia impianto di messa a terra e impianti di protezione dalle scariche atmosferiche; CEI 0-14:2005",
+        "D.Lgs. 81/2008 e s.m.i. - Articolo 84 (Protezione dai fulmini)",
+        "Legge 1 marzo 1968, n. 186 (regola d'arte) - CEI 64-8:2024 (impianti elettrici utilizzatori)",
+        "D.Lgs. 81/2008 e s.m.i. - Articolo 86 (Verifiche) - CEI 64-14:2022 (guida alle verifiche impianti elettrici utilizzatori)",
+        "CEI 64-8/VI - verifica mensile interruttori differenziali",
+        "CEI 17-13-1 (Direttiva BT/EMC) - certificazioni CE quadri elettrici BT",
+      ].join("\n"),
+      linkedLegislation: "D.Lgs. 81/2008 art.84; art.86",
       questions: [],
     },
   ],

@@ -106,17 +106,18 @@ describe("CustomChecklistAuditView — registro legale (ADR-019)", () => {
     expect(screen.getByText("D.Lgs. 152/2006 art. 29; art. 30")).toBeInTheDocument();
   });
 
-  it("item legal_check: mostra 3 pulsanti esito (C/NC/NA)", async () => {
+  it("item legal_check: mostra 4 pulsanti esito (C/NC/NA/NV)", async () => {
     render(<CustomChecklistAuditView audit={audit} />);
     await waitFor(() => {
       expect(screen.getByText(/b - Domanda legale/)).toBeInTheDocument();
     });
     const legalCard = screen.getByText(/b - Domanda legale/).closest(".question-card");
     const buttonsInCard = legalCard.querySelectorAll(".status-btn");
-    expect(buttonsInCard).toHaveLength(3);
+    expect(buttonsInCard).toHaveLength(4);
     expect(legalCard.querySelector(".status-btn.compliant")).toBeTruthy();
     expect(legalCard.querySelector(".status-btn.non-compliant")).toBeTruthy();
     expect(legalCard.querySelector(".status-btn.not-applicable")).toBeTruthy();
+    expect(legalCard.querySelector(".status-btn.not-verified")).toBeTruthy();
   });
 
   it("item verbale: mantiene 6 pulsanti esito standard", async () => {

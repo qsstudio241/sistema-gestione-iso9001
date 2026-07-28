@@ -151,6 +151,22 @@ Nessuna nuova tabella. Nessun `ALTER` su `custom_checklist_items`, `audit_custom
 
 ---
 
+## 7bis. Registro note aperte (chiusura obbligatoria entro fine Stream 4)
+
+> Tracciamento vincolante richiesto dal committente 28/07/2026: nessuna area emersa durante l'esecuzione degli stream può restare non tracciata o non chiusa entro la fine dello Stream 4.
+
+| # | Nota | Origine | Stato | Chiusura |
+|---|------|---------|-------|----------|
+| N1 | Capitolo "IMPIANTI ED APPARECCHIATURE ELETTRICHE / ALTRE RETI TECNOLOGICHE" assente dallo scaffold capitoli di DEPUTYTASK3 (scoperto durante QA Lead) | Scaffold Lead incompleto (regex di estrazione titoli con limite lunghezza riga troppo corto) | ✅ **Risolto** | Aggiunto come `leg_sic_29` in `checklistTemplates.js`, contenuto verificato riga per riga contro `/tmp/analisi_matrici/grantini_extract.txt` (righe 3990-4057) |
+| N2 | Capitolo 16 "RISCHIO ELETTRICO" conteneva citazioni (D.P.R. 462/2001, art. 84/86, Legge 186/1968, CEI 64-8) reali ma **mal attribuite** — appartenenti al capitolo N1, non al 16 | Estrazione lineare da PDF multi-colonna (rischio noto, vedi skill `pdf-to-json`) | ✅ **Risolto** | Capitolo 16 ripulito alle sole 4 fonti genuinamente presenti nel suo blocco testuale (righe 3908-3921); le altre spostate su N1 |
+| N3 | Template sicurezza senza sotto-domande a)/b)/c) (fonte Grantini non le contiene per i capitoli sicurezza — solo Certiquality le ha, ed è ambiente-only) | Limite documentale della fonte, non bug | ✅ **Documentato come limite accettato** | `LEG_SICUREZZA_81` resta a granularità di capitolo (`questions: []`), pari a `LEG_AMBIENTE_152` prima di questa iniziativa. Backlog: applicare la granularità SI/NO/NA quando sarà disponibile una fonte sicurezza con sotto-domande, o estendendo prima l'ambiente via Certiquality docx (P2) |
+| N4 | Mancava l'opzione "Non Verificato" (NV) nelle risposte SI/NO/NA dei capitoli `legal_check` | Richiesta esplicita del committente 28/07/2026 | ✅ **Risolto** | `LEGAL_STATUS_OPTIONS` in `CustomChecklistAuditView.jsx` riusa l'opzione `NV`/`not-verified` già esistente in `STATUS_BUTTONS` (nessun nuovo stato inventato) — ora 4 pulsanti: Sì/No/Non applicabile/Non Verificato |
+| N5 | Revisione umana completa (consulente) di tutte le 29 sezioni del registro sicurezza prima dell'uso con un cliente reale | D6 (vincolo permanente, non specifico di questa sessione) | 🔲 **Aperto per natura** — non chiudibile da un agente | Il Lead ha fatto QA a campione (spot-check su ~10 dei 29 capitoli, citazioni verificate verbatim contro la fonte) e una revisione a lettura piena delle sezioni 1-9, 14-16, 21, 23, 26-29. Copertura non esaustiva sulle rimanenti (17-20, 22, 24-25): consigliata lettura finale del consulente prima di un audit reale, come da D6 |
+
+**Nota su N5**: non è un'"area incompleta lasciata a metà" nel senso di lavoro non fatto — è un vincolo strutturale del processo (D6): nessun contenuto normativo va considerato definitivo senza revisione umana finale, indipendentemente da quanta QA automatica/Lead si fa. Le prime 4 note sono invece pienamente chiuse.
+
+---
+
 ## 8. Esito atteso
 
 Camellini ha due moduli di conformità legislativa (ambiente, sicurezza) capitolo-per-capitolo con sotto-domande SI/NO/NA e riferimenti di legge visibili, export Word per modulo (+ combinato in seconda battuta), e un agente già esistente ora esteso per segnalare quando l'atto normativo citato in un capitolo non è più vigente — senza toccare il motore di audit standard usato da tutti gli altri moduli.

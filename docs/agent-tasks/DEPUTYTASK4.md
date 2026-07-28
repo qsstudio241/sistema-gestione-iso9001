@@ -84,7 +84,17 @@ Mock delle chiamate di rete (`normCatalogLookup.lookupNormStatus`) nei test — 
 cd backend && npx jest --silent   # gate pieno backend
 ```
 
-Chiudere con **TEST OK** (specificare se Slice C è stata fatta o lasciata backlog) o **FIX NON APPLICABILI**.
+### Checklist di chiusura iniziativa (obbligatoria — richiesta esplicita del committente 28/07/2026)
+
+Prima di dichiarare **TEST OK** finale, verificare esplicitamente lo stato di **ADR-019 §7bis "Registro note aperte"** (N1-N5) e riportarlo nel messaggio di chiusura:
+
+- N1 (capitolo mancante nello scaffold) — già risolto dal Lead prima del lancio di questo stream; verificare solo che `leg_sic_29` sia ancora presente e coerente in `checklistTemplates.js`.
+- N2 (citazioni mal attribuite capitolo 16) — già risolto dal Lead; nessuna azione richiesta in questo stream salvo notare eventuali NUOVE mal-attribuzioni scoperte durante l'estensione dell'agente di validità (se il parser incontra decreti/articoli anomali durante il test manuale di Slice B, segnalarlo come N6 in ADR-019, non ignorarlo).
+- N3 (granularità sicurezza assente) — limite documentale accettato, nessuna azione in questo stream.
+- N4 (opzione NV) — già risolto dal Lead; nessuna azione richiesta.
+- N5 (revisione umana finale) — resta aperto per natura (vincolo permanente D6); questo stream **non lo chiude** — segnalarlo esplicitamente nel messaggio finale come "in attesa di revisione umana del committente", non come task del deputy.
+
+Chiudere con **TEST OK** (specificare se Slice C è stata fatta o lasciata backlog, e lo stato N1-N5 sopra) o **FIX NON APPLICABILI**.
 
 ---
 
