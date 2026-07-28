@@ -86,7 +86,6 @@ async function getAlertCount(req, res) {
         FROM qualifications q
         WHERE q.organization_id = @orgId
           AND q.status NOT IN ('revocata','sospesa')
-          AND q.approval_status = 'approvata'
           AND (${SQL_QUAL_EFFECTIVE_DUE}) IS NOT NULL
           AND (${SQL_QUAL_EFFECTIVE_DUE}) <= DATEADD(day, 30, CAST(GETDATE() AS DATE))
           ${qualifFilter.clause ? `AND ${qualifFilter.clause}` : ''}
@@ -176,7 +175,6 @@ async function getAlerts(req, res) {
         LEFT JOIN companies c ON q.company_id = c.id
         WHERE q.organization_id = @orgId
           AND q.status NOT IN ('revocata','sospesa')
-          AND q.approval_status = 'approvata'
           AND (${SQL_QUAL_EFFECTIVE_DUE}) IS NOT NULL
           AND (${SQL_QUAL_EFFECTIVE_DUE}) <= DATEADD(day, @days, CAST(GETDATE() AS DATE))
           ${qualFilter.clause ? `AND ${qualFilter.clause}` : ''}

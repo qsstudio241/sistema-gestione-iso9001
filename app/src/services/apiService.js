@@ -1693,21 +1693,14 @@ class ApiService {
         return this.put(`/qualifications/${id}`, data);
     }
 
+    /** Soft-delete (status=revocata): non più esposto come pulsante in UI, mantenuto per uso interno. */
     async deleteQualification(id) {
         return this.delete(`/qualifications/${id}`);
     }
 
-    /** Cancellazione fisica reale (solo bozze mai approvate, senza legami) — distinta dalla Revoca. */
+    /** Cancellazione fisica reale (nessun legame residuo: conferme, import, rinnovi, WPS). */
     async hardDeleteQualification(id) {
         return this.delete(`/qualifications/${id}/permanent`);
-    }
-
-    async approveQualification(id) {
-        return this.post(`/qualifications/${id}/approve`, {});
-    }
-
-    async rejectQualification(id, rejection_reason) {
-        return this.post(`/qualifications/${id}/reject`, { rejection_reason });
     }
 
     async renewQualification(id, data = {}) {

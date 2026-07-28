@@ -99,11 +99,11 @@ describe('qualifications.controller — semaforoForRow', () => {
 });
 
 /**
- * Test L1 — hardDeleteQualification (Elimina reale, distinta dalla Revoca).
- * Verifica i gate di sicurezza: solo bozze mai approvate, senza conferme
- * semestrali, senza legami import/rinnovo/WPS. Gap analysis 26/07/2026:
- * funzione nuova aggiunta per rispondere alla domanda "Approva/Rifiuta sono
- * ridondanti con la revisione staging?" — vedi verdetto in GUIDA_CONSOLIDATA.md.
+ * Test L1 — hardDeleteQualification (Elimina reale, unica azione di rimozione
+ * esposta in UI dal 28/07/2026 — rimossi Approva/Rifiuta/Revoca manuali, v.
+ * header qualifications.controller.js). Verifica i gate di sicurezza rimasti:
+ * nessuna dipendenza da approval_status, solo assenza di legami reali (conferme
+ * semestrali, import, rinnovo, WPS).
  */
 describe('qualifications.controller — hardDeleteQualification', () => {
   function makePool(responses) {
@@ -148,33 +148,9 @@ describe('qualifications.controller — hardDeleteQualification', () => {
     expect(res.statusCode).toBe(404);
   });
 
-  it('409 se la qualifica è già approvata (approval_status=approvata)', async () => {
-    getPool.mockResolvedValue(makePool([
-      { recordset: [{ id: 1, company_id: 5, approval_status: 'approvata', approved_at: null, certificate_file_url: null }] },
-    ]));
-    const { req, res } = makeReqRes();
-
-    await hardDeleteQualification(req, res);
-
-    expect(res.statusCode).toBe(409);
-    expect(res.body.code).toBe('CANNOT_DELETE_APPROVED');
-  });
-
-  it('409 se rifiutata ma già approvata in passato (approved_at valorizzato)', async () => {
-    getPool.mockResolvedValue(makePool([
-      { recordset: [{ id: 1, company_id: 5, approval_status: 'rifiutata', approved_at: '2026-01-01', certificate_file_url: null }] },
-    ]));
-    const { req, res } = makeReqRes();
-
-    await hardDeleteQualification(req, res);
-
-    expect(res.statusCode).toBe(409);
-    expect(res.body.code).toBe('CANNOT_DELETE_APPROVED');
-  });
-
   it('409 se esistono conferme semestrali registrate', async () => {
     getPool.mockResolvedValue(makePool([
-      { recordset: [{ id: 1, company_id: 5, approval_status: 'bozza', approved_at: null, certificate_file_url: null }] },
+      { recordset: [{ id: 1, company_id: 5, approval_status: 'approvata', approved_at: '2026-01-01', certificate_file_url: null }] },
       { recordset: [{ cnt: 1 }] }, // confirmations
     ]));
     const { req, res } = makeReqRes();
@@ -187,7 +163,7 @@ describe('qualifications.controller — hardDeleteQualification', () => {
 
   it('409 se collegata a un documento importato', async () => {
     getPool.mockResolvedValue(makePool([
-      { recordset: [{ id: 1, company_id: 5, approval_status: 'bozza', approved_at: null, certificate_file_url: null }] },
+      { recordset: [{ id: 1, company_id: 5, approval_status: 'approvata', approved_at: '2026-01-01', certificate_file_url: null }] },
       { recordset: [{ cnt: 0 }] }, // confirmations
       { recordset: [{ cnt: 1 }] }, // import links
     ]));
@@ -201,7 +177,7 @@ describe('qualifications.controller — hardDeleteQualification', () => {
 
   it('409 se è la versione precedente di un rinnovo', async () => {
     getPool.mockResolvedValue(makePool([
-      { recordset: [{ id: 1, company_id: 5, approval_status: 'bozza', approved_at: null, certificate_file_url: null }] },
+      { recordset: [{ id: 1, company_id: 5, approval_status: 'approvata', approved_at: '2026-01-01', certificate_file_url: null }] },
       { recordset: [{ cnt: 0 }] }, // confirmations
       { recordset: [{ cnt: 0 }] }, // import links
       { recordset: [{ cnt: 1 }] }, // renewal refs
@@ -216,7 +192,7 @@ describe('qualifications.controller — hardDeleteQualification', () => {
 
   it('403 se l\'utente non ha permesso di scrittura sull\'azienda', async () => {
     getPool.mockResolvedValue(makePool([
-      { recordset: [{ id: 1, company_id: 5, approval_status: 'bozza', approved_at: null, certificate_file_url: null }] },
+      { recordset: [{ id: 1, company_id: 5, approval_status: 'approvata', approved_at: '2026-01-01', certificate_file_url: null }] },
     ]));
     assertMutatingAllowed.mockResolvedValue({ status: 403, body: { error: 'Permesso negato', code: 'AUTH_FORBIDDEN' } });
     const { req, res } = makeReqRes();
@@ -226,9 +202,9 @@ describe('qualifications.controller — hardDeleteQualification', () => {
     expect(res.statusCode).toBe(403);
   });
 
-  it('elimina con successo una bozza mai approvata e senza legami', async () => {
+  it('elimina con successo una qualifica attiva (approvata) senza legami — nessun gate su approval_status', async () => {
     getPool.mockResolvedValue(makePool([
-      { recordset: [{ id: 1, company_id: 5, approval_status: 'bozza', approved_at: null, certificate_file_url: null }] },
+      { recordset: [{ id: 1, company_id: 5, approval_status: 'approvata', approved_at: '2026-01-01', certificate_file_url: null }] },
       { recordset: [{ cnt: 0 }] }, // confirmations
       { recordset: [{ cnt: 0 }] }, // import links
       { recordset: [{ cnt: 0 }] }, // renewal refs
@@ -339,5 +315,54 @@ describe('qualifications.controller — createQualification sanitizzazione numer
     expect(insertReq.input).toHaveBeenCalledWith('thickMax', 12.5);
     expect(insertReq.input).toHaveBeenCalledWith('pipeMin', 60);
     expect(insertReq.input).toHaveBeenCalledWith('pipeMax', 120);
+  });
+});
+
+/**
+ * Test L1 — createQualification, decisione di prodotto 28/07/2026: nessun gate
+ * di approvazione interna. Ogni qualifica creata è immediatamente attiva
+ * (approval_status='approvata'), sia inviando il campo nel body sia omettendolo.
+ */
+describe('qualifications.controller — createQualification sempre attiva (no gate approvazione)', () => {
+  function makeInsertPool() {
+    const insertReq = { input: jest.fn().mockReturnThis() };
+    insertReq.query = jest.fn().mockResolvedValue({ recordset: [{ id: 901 }] });
+    const pool = { request: jest.fn(() => insertReq) };
+    return { pool, insertReq };
+  }
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+    assertMutatingAllowed.mockResolvedValue(null);
+  });
+
+  it('forza approval_status=approvata anche se il body non lo specifica', async () => {
+    const { pool, insertReq } = makeInsertPool();
+    getPool.mockResolvedValue(pool);
+
+    const req = {
+      body: { person_name: 'Luca Verdi', qualification_type: 'Saldatore ISO 9606-1' },
+      user: { organization_id: 10, user_id: 20 },
+    };
+    const res = { status: jest.fn().mockReturnThis(), json: jest.fn() };
+
+    await createQualification(req, res);
+
+    expect(insertReq.input).toHaveBeenCalledWith('approvalStatus', 'approvata');
+  });
+
+  it('ignora un approval_status=bozza inviato dal client: resta sempre approvata', async () => {
+    const { pool, insertReq } = makeInsertPool();
+    getPool.mockResolvedValue(pool);
+
+    const req = {
+      body: { person_name: 'Luca Verdi', qualification_type: 'Saldatore ISO 9606-1', approval_status: 'bozza' },
+      user: { organization_id: 10, user_id: 20 },
+    };
+    const res = { status: jest.fn().mockReturnThis(), json: jest.fn() };
+
+    await createQualification(req, res);
+
+    expect(insertReq.input).toHaveBeenCalledWith('approvalStatus', 'approvata');
   });
 });

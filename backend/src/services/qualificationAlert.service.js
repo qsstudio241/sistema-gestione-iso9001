@@ -40,9 +40,8 @@ function effectiveAlertDue(q) {
     : { date: expiry, kind: 'expiry' };
 }
 
-function matchQualAlertRule({ effectiveDate, status, approvalStatus, thresholds }) {
+function matchQualAlertRule({ effectiveDate, status, thresholds }) {
   if (['revocata', 'sospesa'].includes(status)) return null;
-  if (approvalStatus && approvalStatus !== 'approvata') return null;
   const daysLeft = daysUntilDue(effectiveDate);
   if (daysLeft === null) return null;
   if (daysLeft < 0) return { kind: 'overdue', thresholdDays: null };
@@ -256,8 +255,10 @@ async function fetchQualificationsForDeadline(pool, orgId) {
 }
 
 async function fetchQualificationsForAlert(pool, orgId) {
-  const rows = await fetchQualificationsForDeadline(pool, orgId);
-  return rows.filter((q) => q.approval_status === 'approvata');
+  // Nessun gate su approval_status (rimosso — v. qualifications.controller.js header):
+  // le qualifiche sono attive alla creazione, l'esclusione avviene solo su status/date
+  // in fetchQualificationsForDeadline (revocata/sospesa) e in matchQualAlertRule.
+  return fetchQualificationsForDeadline(pool, orgId);
 }
 
 async function runQualifEscalationForOrg(pool, org) {
@@ -272,7 +273,6 @@ async function runQualifEscalationForOrg(pool, org) {
     const rule = matchQualAlertRule({
       effectiveDate: date,
       status: row.status,
-      approvalStatus: row.approval_status,
       thresholds,
     });
     if (!rule) continue;

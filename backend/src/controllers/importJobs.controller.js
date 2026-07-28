@@ -745,8 +745,9 @@ async function commitToRegistry(req, res) {
 
 /**
  * POST /import-jobs/:id/files/:fileId/commit-to-qualification
- * Crea un record qualifications da un file AI-estratto con approval_status = 'bozza'.
- * Il corpo può sovrascrivere i campi estratti dall'AI.
+ * Crea un record qualifications da un file AI-estratto, immediatamente attivo
+ * (approval_status = 'approvata' — nessun gate di approvazione interna, v.
+ * qualifications.controller.js header). Il corpo può sovrascrivere i campi estratti dall'AI.
  */
 async function commitToQualification(req, res) {
     try {
@@ -874,7 +875,7 @@ async function commitToQualification(req, res) {
             revalidation_date:    body.revalidation_date || tsd.revalidation_date || null,
             status:               'valida',
             notes:                body.notes || null,
-            approval_status:      'bozza',
+            approval_status:      'approvata',
             created_by:           user_id,
             // Saldatori
             welding_process:      welding_process,
@@ -1013,7 +1014,7 @@ async function commitToQualification(req, res) {
             success: true,
             data: {
                 qualification_id: qualId,
-                approval_status: 'bozza',
+                approval_status: 'approvata',
                 certificate_file_url,
                 warnings,
             },

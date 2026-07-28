@@ -10,7 +10,6 @@ const VALID_SITUAZIONI = [
     'scadute',
     'sospesa',
     'revocata',
-    'da_approvare',
 ];
 
 /** Clausole SQL per alias tabella `q` */
@@ -21,7 +20,6 @@ const SITUAZIONE_SQL = {
     scadute: "q.expiry_date IS NOT NULL AND q.expiry_date < CAST(GETDATE() AS DATE) AND q.status NOT IN ('revocata','sospesa')",
     sospesa: "q.status = 'sospesa'",
     revocata: "q.status = 'revocata'",
-    da_approvare: "q.approval_status = 'bozza'",
 };
 
 function isValidSituazione(value) {
