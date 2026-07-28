@@ -828,7 +828,6 @@ async function updateNonConformity(req, res) {
       SELECT nc.nc_id, nc.status AS current_status, nc.verification_notes, nc.approved_at,
              nc.audit_id, nc.source_category, a.company_id,
              nc.corrective_action_needed, nc.corrective_action_evaluation_notes,
-             nc.effectiveness_verification_notes,
              nc.root_cause, nc.verification_contact_id
       FROM non_conformities nc
       LEFT JOIN audits a ON nc.audit_id = a.audit_id
@@ -1064,15 +1063,11 @@ async function updateNonConformity(req, res) {
                             code: 'CORRECTIVE_ACTION_REQUIRED',
                         });
                     }
-                    const effectivenessCandidate = effectiveness_verification_notes !== undefined
-                        ? effectiveness_verification_notes
-                        : row.effectiveness_verification_notes;
-                    if (!effectivenessCandidate || !String(effectivenessCandidate).trim()) {
-                        return res.status(400).json({
-                            error: 'Compilare le note di verifica efficacia dell\'azione correttiva prima di chiudere (ISO 10.2.1 e)',
-                            code: 'EFFECTIVENESS_VERIFICATION_NOTES_REQUIRED',
-                        });
-                    }
+                    // Le note di verifica efficacia (ISO 10.2.1 e) sono richieste dal gate
+                    // UI (canCloseNc), non qui: la chiusura dalla griglia invia solo
+                    // { status: 'closed' } e un client non ancora aggiornato non ha il campo,
+                    // quindi un controllo sul valore memorizzato bloccherebbe la chiusura
+                    // senza dare all'utente un modo per sbloccarla.
                 }
 
                 if (resolution_date === undefined) {
