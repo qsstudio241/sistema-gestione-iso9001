@@ -95,16 +95,16 @@ describe('NcDetailPanel', () => {
     mockGetNotificationContacts.mockResolvedValue({ data: [] });
   });
 
-  it('renderizza sezioni base e valutazione AC', () => {
+  it('renderizza sezioni base con valutazione AC dopo trattamento e verifica', () => {
     render(React.createElement(NcDetailPanel, { nc: baseNc, onSaved: vi.fn() }));
 
     expect(screen.getByText('1. Scheda NC')).toBeInTheDocument();
     expect(screen.getByText('2. Difetto/Problema')).toBeInTheDocument();
-    expect(screen.getByText('3. Valutazione azione correttiva')).toBeInTheDocument();
-    expect(screen.getByText('4. Trattamento')).toBeInTheDocument();
-    expect(screen.queryByText('6. Azioni correttive / preventive')).not.toBeInTheDocument();
-    expect(screen.getByText('5. Evidenze')).toBeInTheDocument();
-    expect(screen.getByText('6. Verifica trattamento')).toBeInTheDocument();
+    expect(screen.getByText('3. Trattamento')).toBeInTheDocument();
+    expect(screen.getByText('4. Evidenze')).toBeInTheDocument();
+    expect(screen.getByText('5. Verifica attuazione trattamento')).toBeInTheDocument();
+    expect(screen.getByText('6. Valutazione azione correttiva')).toBeInTheDocument();
+    expect(screen.queryByText('8. Azioni correttive / preventive')).not.toBeInTheDocument();
     // Escape Unicode devono essere in stringa JS: niente "\u00E8" letterale in UI
     expect(screen.getByText(/Il responsabile verifica \(menu\) è chi attesta/i)).toBeInTheDocument();
     expect(screen.queryByText(/\\u00E8/)).not.toBeInTheDocument();
@@ -117,27 +117,52 @@ describe('NcDetailPanel', () => {
     expect(screen.getByText('Azione legacy deprecata')).toBeInTheDocument();
   });
 
-  it('con AC necessaria mostra cause e azioni', () => {
+  it('ordina le sezioni: trattamento e verifica prima della valutazione AC', () => {
     render(React.createElement(NcDetailPanel, {
       nc: { ...baseNc, corrective_action_needed: 'yes' },
       onSaved: vi.fn(),
     }));
 
-    expect(screen.getByText('5. Cause')).toBeInTheDocument();
-    expect(screen.getByText('6. Azioni correttive / preventive')).toBeInTheDocument();
-    expect(screen.getByLabelText(/Analisi causa radice/i)).toHaveValue('Causa radice di test');
-    expect(screen.getByText('8. Verifica efficacia')).toBeInTheDocument();
+    const titles = Array.from(document.querySelectorAll('.nc-drawer-section-title'))
+      .map((el) => el.textContent);
+
+    expect(titles).toEqual([
+      '1. Scheda NC',
+      '2. Difetto/Problema',
+      '3. Trattamento',
+      '4. Evidenze',
+      '5. Verifica attuazione trattamento',
+      '6. Valutazione azione correttiva',
+      '7. Cause',
+      '8. Azioni correttive / preventive',
+      '9. Verifica efficacia azione correttiva',
+      '10. Chiusura',
+    ]);
   });
 
-  it('con AC non necessaria nasconde cause e azioni', () => {
+  it('con AC necessaria mostra cause, azioni e verifica efficacia', () => {
+    render(React.createElement(NcDetailPanel, {
+      nc: { ...baseNc, corrective_action_needed: 'yes' },
+      onSaved: vi.fn(),
+    }));
+
+    expect(screen.getByText('7. Cause')).toBeInTheDocument();
+    expect(screen.getByText('8. Azioni correttive / preventive')).toBeInTheDocument();
+    expect(screen.getByLabelText(/Analisi causa radice/i)).toHaveValue('Causa radice di test');
+    expect(screen.getByText('9. Verifica efficacia azione correttiva')).toBeInTheDocument();
+    expect(screen.getByLabelText(/Note verifica efficacia/i)).toBeInTheDocument();
+  });
+
+  it('con AC non necessaria nasconde cause, azioni e verifica efficacia', () => {
     render(React.createElement(NcDetailPanel, {
       nc: { ...baseNc, corrective_action_needed: 'no' },
       onSaved: vi.fn(),
     }));
 
     expect(screen.queryByText(/Analisi causa radice/i)).not.toBeInTheDocument();
-    expect(screen.queryByText('6. Azioni correttive / preventive')).not.toBeInTheDocument();
-    expect(screen.getByText('6. Verifica trattamento')).toBeInTheDocument();
+    expect(screen.queryByText('8. Azioni correttive / preventive')).not.toBeInTheDocument();
+    expect(screen.queryByLabelText(/Note verifica efficacia/i)).not.toBeInTheDocument();
+    expect(screen.getByText('5. Verifica attuazione trattamento')).toBeInTheDocument();
   });
 
   it('non mostra Avvia lavorazione; mostra hint chiusura se gate incompleti', () => {
@@ -204,6 +229,7 @@ describe('NcDetailPanel', () => {
         due_date: '2026-06-15',
         corrective_action_needed: null,
         corrective_action_evaluation_notes: null,
+        effectiveness_verification_notes: null,
       });
     });
 

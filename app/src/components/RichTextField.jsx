@@ -111,6 +111,11 @@ function RichTextField({
   };
 
   const hasHistory = showHistory && historyEntries.length > 0;
+  // Il blocco storico compare al primo blur: se non fosse renderizzato da subito,
+  // la sua comparsa sposterebbe verso il basso i controlli che seguono e il
+  // mouseup del click che ha causato il blur cadrebbe fuori dal pulsante
+  // (primo "Salva" ignorato). Lo spazio viene quindi riservato sempre.
+  const historySlotVisible = showHistory && !!scopeId && !!draftFieldId && !isDisabled;
 
   return (
     <div className="rich-text-field">
@@ -128,17 +133,19 @@ function RichTextField({
         draftScopeId={scopeId}
         draftFieldId={draftFieldId}
       />
-      {hasHistory && !isDisabled && (
+      {historySlotVisible && (
         <div className="rich-text-field-history">
-          <button
-            type="button"
-            className="rich-text-field-history-toggle"
-            onClick={() => setHistoryOpen((o) => !o)}
-            aria-expanded={historyOpen}
-          >
-            {historyOpen ? "\u25B2" : "\u25BC"} Storico testo ({historyEntries.length})
-          </button>
-          {historyOpen && (
+          {hasHistory && (
+            <button
+              type="button"
+              className="rich-text-field-history-toggle"
+              onClick={() => setHistoryOpen((o) => !o)}
+              aria-expanded={historyOpen}
+            >
+              {historyOpen ? "\u25B2" : "\u25BC"} Storico testo ({historyEntries.length})
+            </button>
+          )}
+          {hasHistory && historyOpen && (
             <ul className="rich-text-field-history-list">
               {historyEntries.map((entry) => (
                 <li key={entry.savedAt}>

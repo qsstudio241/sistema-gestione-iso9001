@@ -48,12 +48,18 @@ const storage = multer.diskStorage({
 const fileFilter = function (req, file, cb) {
     // Tipi MIME ammessi
     const allowedMimeTypes = [
-        // Immagini
+        // Immagini (inclusi formati tipici di scanner e fotocamere mobili)
         'image/jpeg',
         'image/jpg',
         'image/png',
         'image/gif',
         'image/webp',
+        'image/bmp',
+        'image/tiff',
+        'image/tif',
+        'image/heic',
+        'image/heif',
+        'image/avif',
         // Audio
         'audio/mpeg',
         'audio/mp3',
@@ -77,11 +83,25 @@ const fileFilter = function (req, file, cb) {
         'text/csv'
     ];
 
+    // Alcuni browser/OS inviano un MIME generico (o vuoto) per formati meno comuni
+    // come .tif o .heic: in quel caso si valida l'estensione.
+    const genericMimeTypes = ['', 'application/octet-stream', 'binary/octet-stream'];
+    const allowedFallbackExtensions = [
+        '.jpg', '.jpeg', '.png', '.gif', '.webp', '.bmp', '.tif', '.tiff',
+        '.heic', '.heif', '.avif', '.pdf', '.doc', '.docx', '.xls', '.xlsx',
+        '.ppt', '.pptx', '.txt', '.csv', '.mp3', '.wav', '.ogg', '.mp4', '.webm', '.mov',
+    ];
+
     if (allowedMimeTypes.includes(file.mimetype)) {
-        cb(null, true);
-    } else {
-        cb(new Error(`Tipo file non supportato: ${file.mimetype}`), false);
+        return cb(null, true);
     }
+
+    const ext = path.extname(file.originalname || '').toLowerCase();
+    if (genericMimeTypes.includes(file.mimetype || '') && allowedFallbackExtensions.includes(ext)) {
+        return cb(null, true);
+    }
+
+    cb(new Error(`Tipo file non supportato: ${file.mimetype || ext || 'sconosciuto'}`), false);
 };
 
 // Multer instance
