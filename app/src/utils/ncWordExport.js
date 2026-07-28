@@ -146,6 +146,7 @@ export function buildNcTemplateData(nc, actions = [], attachments = []) {
         correctiveActionNeeded: CA_NEEDED_LABELS[nc?.corrective_action_needed] || 'Non valutato',
         correctiveActionEvalNotes: displayOrNd(nc?.corrective_action_evaluation_notes),
         verificationNotes: displayOrNd(nc?.verification_notes),
+        effectivenessVerificationNotes: displayOrNd(nc?.effectiveness_verification_notes),
         verificationResponsible: displayOrNd(nc?.verification_responsible),
         approvedByName: displayOrNd(nc?.approved_by_name),
         approvedAt: formatDateTime(nc?.approved_at),
