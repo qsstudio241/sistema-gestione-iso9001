@@ -270,6 +270,28 @@ describe('qualifications.controller — createQualification sanitizzazione numer
     expect(res.status).not.toHaveBeenCalledWith(500);
   });
 
+  it('passa transfer_mode alla query INSERT (variabile essenziale ISO 9606-1 §5.2/§9.3, richiesta committente 28/07/2026)', async () => {
+    const { pool, insertReq } = makeInsertPool();
+    getPool.mockResolvedValue(pool);
+
+    const req = {
+      body: {
+        person_name: 'Mario Rossi',
+        qualification_type: 'Saldatore ISO 9606-1',
+        welding_process: '135',
+        transfer_mode: 'pulsed_arc',
+      },
+      user: { organization_id: 10, user_id: 20 },
+    };
+    const res = { status: jest.fn().mockReturnThis(), json: jest.fn() };
+
+    await createQualification(req, res);
+
+    expect(insertReq.input).toHaveBeenCalledWith('transferMode', 'pulsed_arc');
+    expect(insertReq.query).toHaveBeenCalledWith(expect.stringContaining('transfer_mode'));
+    expect(res.status).not.toHaveBeenCalledWith(500);
+  });
+
   it('sanitizza ndt_level/training_hours testuali non numerici', async () => {
     const { pool, insertReq } = makeInsertPool();
     getPool.mockResolvedValue(pool);

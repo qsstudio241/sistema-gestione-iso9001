@@ -20,6 +20,7 @@ La qualifica di un saldatore attesta la sua **capacità manuale** (non la proced
 | Variabile | Dettaglio |
 |---|---|
 | Processo di saldatura | Codice ISO 4063 (catalogo `weldingProcesses4063.js`) — un cambio di processo richiede nuova qualifica, salvo eccezioni (v. sotto) |
+| Metodo di trasferimento (transfer mode) | **Solo per processi ad arco con filo continuo** (131 MIG, 135 MAG, 136/138 filo animato): spray arc, pulsed arc, short arc (short-circuit/dip), globular. Non esiste per 111 (MMA), 121 (SAW), 141/145 (TIG), 311 (ossiacetilenica). Il modulo certificato ufficiale (§9.3, Annex) elenca "Welding process(es); **Transfer mode**" come voce combinata nella tabella "Range of qualification" |
 | Tipo prodotto | Piastra (P) o tubo (T) — **solo queste due categorie**, verificato testualmente (v. nota "Tipo prodotto: solo due categorie" sotto) |
 | Tipo giunto | Testa a testa (BW) o angolare (FW) — BW non qualifica FW e viceversa, salvo prova supplementare d'angolo |
 | Gruppo materiale d'apporto | FM1–FM6 (ISO 9606-1 Tabella 2, mappato su ISO 14343/18274) |
@@ -38,6 +39,18 @@ Il/i gruppo/i materiale base (ISO/TR 15608) usato/i nella prova va **sempre regi
 | 121 (SAW filo solido) ↔ 125 (SAW filo animato) | Intercambiabili senza nuova prova |
 | 141/143/145 (TIG varianti) | Qualificano reciprocamente 141, 143, 145 — **142 (TIG autogeno) qualifica solo 142** |
 | Transfer mode "dip"/corto circuito (131, 135, 138) | Qualifica anche altri transfer mode dello stesso processo, **non viceversa** |
+
+## Metodo di trasferimento (transfer mode) — implementato 28/07/2026 (richiesta committente)
+
+**Cos'è**: per i processi ad arco con filo continuo (MIG/MAG e filo animato — ISO 4063 131/135/136/138) il metallo d'apporto passa dal filo al bagno di saldatura in modi fisicamente diversi: **spray arc** (getto continuo di gocce fini), **pulsed arc** (arco pulsato, variante controllata dello spray), **short arc/short-circuit** (arco corto, il filo tocca il pezzo periodicamente — detto anche "dip"), **globular** (gocce grandi e irregolari). Non è un parametro applicabile a processi senza filo continuo in arco (111 elettrodo rivestito, 121 arco sommerso, 141/145 TIG, 311 ossiacetilenica).
+
+**Base normativa trovata (testo originale, non dedotta)**:
+- §5.2 (variabili essenziali, eccezioni di processo): *"qualifying the welder for dip (short-circuit) transfer mode (131, 135 and 138) shall qualify him for other transfer modes, but not vice versa."* — il transfer mode è quindi trattato dalla norma come parte delle condizioni verificate dalla prova, con una regola di continuità esplicita.
+- §9.3 (modulo certificato ufficiale, Annex): la tabella "Range of qualification" del certificato elenca **"Welding process(es); Transfer mode"** come riga combinata — conferma che il transfer mode è un dato da registrare sul certificato del saldatore, non solo sul WPS/WPQR.
+
+**Decisione presa**: il campo è normativamente pertinente al patentino saldatore (non solo al WPS) e mancava nel modulo Qualifiche pur essendo già gestito come testo libero nel WPQR (`welding.controller.js`, colonna `metal_transfer`). Aggiunto come campo **selezionabile** (enum: spray_arc/pulsed_arc/short_arc/globular, più controllato del testo libero WPQR data la lista chiusa di valori standard) su `qualifications.transfer_mode` (migrazione 136), visibile **solo** quando il processo di saldatura scelto è 131/135/136/138 (`getApplicableWelderFields` in `weldingQualificationRules9606.js`, stesso pattern già usato per il diametro tubo condizionato al tipo prodotto).
+
+**Scelta di non estendere il calcolo del range di validità**: la regola di continuità del §5.2 (dip qualifica anche gli altri transfer mode) non è stata codificata come logica automatica di copertura (es. in `qualificationCoverage.js`/`getCoverage`) — l'intervento resta limitato a registrazione/estrazione del dato, come richiesto per evitare di introdurre logica di matching non esplicitamente richiesta. La nota resta descrittiva in questo documento per un'eventuale implementazione futura, se necessaria.
 
 ## Tipo di giunto (BW/FW)
 
@@ -183,3 +196,4 @@ Implementato in `backend/src/utils/weldingDesignation.js::buildWelderQualificati
 | Range spessore | Se il certificato riporta lo spessore del provino (`s` per BW Tabella 6, `t` per FW Tabella 8) applicare le formule sopra — **solo** se il documento non riporta già il range esplicito; se i due valori non coincidono, preferire quello esplicito e segnalare la discrepanza come warning, non sovrascrivere |
 | Posizioni qualificate | Se il certificato riporta la sola posizione del provino testato, `computeQualifiedWeldingPositions` può derivare l'elenco posizioni coperte (Tabelle 9/10) — usare come suggerimento/cross-check, non per sostituire un elenco posizioni già esplicito sul certificato |
 | Validità (2/3 anni) | Non assumere un valore fisso: dipende dall'opzione di rivalidazione scelta (a/b/c) — se il certificato non lo specifica, lasciare `null` + warning |
+| `transfer_mode` | Estrarre **solo** se `welding_process` è 131/135/136/138 e il certificato lo riporta esplicitamente (spray_arc/pulsed_arc/short_arc/globular) — per altri processi lasciare `null`, il parametro non esiste |

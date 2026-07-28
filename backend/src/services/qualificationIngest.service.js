@@ -185,6 +185,10 @@ function mapPipelineFieldsToReview(f, pipelineText, fileName) {
         product_type: f.product_type || null,
         weld_details: f.weld_details || null,
         pipe_diameter_mm: f.pipe_diameter_mm ?? null,
+        // Metodo di trasferimento (ISO 9606-1 §5.2/§9.3, variabile essenziale solo
+        // per processi ad arco con filo continuo 131/135/136/138) — richiesta
+        // committente 28/07/2026, prima assente da schema/ingest/form.
+        transfer_mode: f.transfer_mode || null,
         // Gas di protezione ISO 14175 (campo previsto dallo schema AI patentino_saldatore
         // — documentTypeSchemas.js — ma fino al 26/07/2026 mai mappato qui: veniva estratto
         // dall'AI e poi silenziosamente scartato prima di arrivare in staging/commit).
@@ -346,6 +350,7 @@ async function commitQualificationFromFields(fields, organizationId, companyId, 
     const joint_type = f.joint_type || null;
     const product_type = f.product_type || null;
     const weld_details = f.weld_details || null;
+    const transfer_mode = f.transfer_mode || null;
     const certificate_file_url = buildCertificateFileUrl(filePath);
     const warnings = [];
 
@@ -422,6 +427,7 @@ async function commitQualificationFromFields(fields, organizationId, companyId, 
         .input('jointType', joint_type || null)
         .input('productType', product_type || null)
         .input('weldDetails', weld_details || null)
+        .input('transferMode', transfer_mode || null)
         .input('designation', qualification_designation || null)
         .input('certFileUrl', certificate_file_url || null)
         .query(`
@@ -434,7 +440,7 @@ async function commitQualificationFromFields(fields, organizationId, companyId, 
                  thickness_min_mm, thickness_max_mm, pipe_diameter_min_mm, pipe_diameter_max_mm,
                  ndt_method, ndt_level, coordinator_title, cpd_valid_until,
                  patent_type, equipment_type, welding_type, single_multi_run, qualification_method,
-                 shielding_gas, joint_type, product_type, weld_details, qualification_designation,
+                 shielding_gas, joint_type, product_type, weld_details, transfer_mode, qualification_designation,
                  certificate_file_url)
             OUTPUT INSERTED.id
             VALUES
@@ -446,7 +452,7 @@ async function commitQualificationFromFields(fields, organizationId, companyId, 
                  @thickMin, @thickMax, @pipeMin, @pipeMax,
                  @ndtMethod, @ndtLevel, @coordTitle, @cpdUntil,
                  @patentType, @equipType, @weldingType, @singleMultiRun, @qualMethod,
-                 @shieldGas, @jointType, @productType, @weldDetails, @designation,
+                 @shieldGas, @jointType, @productType, @weldDetails, @transferMode, @designation,
                  @certFileUrl)
         `);
 

@@ -151,6 +151,23 @@ describe('qualificationIngest.service — mapPipelineFieldsToReview (ISO 14732)'
         expect(out.product_type).toBe('T');
         expect(out.weld_details).toBe('backing ceramico');
     });
+
+    it('mappa transfer_mode (variabile essenziale ISO 9606-1 §5.2/§9.3 — richiesta committente 28/07/2026)', () => {
+        const out = mapPipelineFieldsToReview({
+            welder_name: 'Mario Rossi',
+            welding_process: '135',
+            transfer_mode: 'spray_arc',
+        }, 'patentino saldatore 9606-1', 'file.pdf');
+        expect(out.transfer_mode).toBe('spray_arc');
+    });
+
+    it('transfer_mode assente sul certificato resta null (non inventare un valore)', () => {
+        const out = mapPipelineFieldsToReview({
+            welder_name: 'Mario Rossi',
+            welding_process: '141',
+        }, 'patentino saldatore 9606-1', 'file.pdf');
+        expect(out.transfer_mode).toBeNull();
+    });
 });
 
 describe('checkQualificationPlausibility (gap analysis 26/07/2026 — warning-only)', () => {
@@ -297,6 +314,33 @@ describe('qualificationIngest.service — commitQualificationFromFields (14732)'
         expect(insertReq.input).toHaveBeenCalledWith('weldDetails', 'backing ceramico');
         expect(insertReq.input).toHaveBeenCalledWith('designation', expect.stringContaining('141 T BW'));
         expect(insertReq.query).toHaveBeenCalledWith(expect.stringContaining('qualification_designation'));
+    });
+
+    it('persiste transfer_mode nella query INSERT (richiesta committente 28/07/2026)', async () => {
+        const dupCheckReq = makeRequestMock();
+        dupCheckReq.query = jest.fn().mockResolvedValue({ recordset: [{ cnt: 0 }] });
+
+        const insertReq = { input: jest.fn().mockReturnThis() };
+        insertReq.query = jest.fn().mockResolvedValue({ recordset: [{ id: 507 }] });
+
+        let callCount = 0;
+        const pool = {
+            request: jest.fn(() => {
+                callCount += 1;
+                return callCount === 1 ? dupCheckReq : insertReq;
+            }),
+        };
+        getPool.mockResolvedValue(pool);
+
+        await commitQualificationFromFields({
+            welder_name: 'Mario Rossi',
+            certificate_number: 'CERT-9606-04',
+            welding_process: '135',
+            transfer_mode: 'short_arc',
+        }, 10, 20, { qualificationType: 'Saldatore ISO 9606-1' });
+
+        expect(insertReq.input).toHaveBeenCalledWith('transferMode', 'short_arc');
+        expect(insertReq.query).toHaveBeenCalledWith(expect.stringContaining('transfer_mode'));
     });
 });
 
