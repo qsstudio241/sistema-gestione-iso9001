@@ -81,7 +81,11 @@ describe("IngestReviewDialog — campo diametro tubo condizionato al tipo prodot
     );
 
     expect(document.getElementById("ingest-field-pipe_diameter_mm")).not.toBeNull();
-    expect(screen.queryByText(/Non applicabile/)).not.toBeInTheDocument();
+    // Regex specifica sulla dicitura "N.A." del campo diametro tubo (non un match
+    // generico su "Non applicabile", che dal 28/07/2026 compare anche nell'hint
+    // testuale del campo transfer_mode — "Non applicabile a MMA/TIG/SAW" — senza
+    // relazione con la logica piastra/tubo qui testata).
+    expect(screen.queryByText(/Non applicabile — prodotto: Piastra/)).not.toBeInTheDocument();
   });
 
   it("il campo 'Tipo prodotto' mostra la nota su derivazione/branch tubo-piastra (segnalazione Mason, 27/07/2026)", () => {

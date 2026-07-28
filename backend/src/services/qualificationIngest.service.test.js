@@ -39,6 +39,8 @@ const {
     classifyQualificationType,
     commitQualificationFromFields,
     checkQualificationPlausibility,
+    applyFieldReprocessUpdate,
+    REPROCESSABLE_FIELDS,
 } = require('./qualificationIngest.service');
 
 describe('mapPipelineFieldsToReview — date conferma semestrale', () => {
@@ -466,5 +468,61 @@ describe('mapPipelineFieldsToReview — sanitizzazione numerica in revisione', (
         expect(out.pipe_diameter_min_mm).toBeNull();
         expect(out.pipe_diameter_max_mm).toBeNull();
         expect(out.thickness_range).toBeNull();
+    });
+});
+
+describe('applyFieldReprocessUpdate — backfill campo su qualifica esistente (migrazione 137)', () => {
+    afterEach(() => jest.clearAllMocks());
+
+    it('espone transfer_mode nella whitelist REPROCESSABLE_FIELDS', () => {
+        expect(REPROCESSABLE_FIELDS.transfer_mode).toEqual({ column: 'transfer_mode' });
+    });
+
+    it('esegue un UPDATE mirato (mai una INSERT) solo sul campo in field_scope', async () => {
+        const checkReq = { input: jest.fn().mockReturnThis(), query: jest.fn().mockResolvedValue({ recordset: [{ id: 8 }] }) };
+        const updateReq = { input: jest.fn().mockReturnThis(), query: jest.fn().mockResolvedValue({ recordset: [] }) };
+        let callCount = 0;
+        const pool = { request: jest.fn(() => (++callCount === 1 ? checkReq : updateReq)) };
+        getPool.mockResolvedValue(pool);
+
+        const result = await applyFieldReprocessUpdate(8, 1001, 'transfer_mode', { transfer_mode: 'spray_arc' });
+
+        expect(result).toEqual({ qualification_id: 8, updated_fields: ['transfer_mode'] });
+        expect(updateReq.input).toHaveBeenCalledWith('val_transfer_mode', 'spray_arc');
+        const sql = updateReq.query.mock.calls[0][0];
+        expect(sql).toMatch(/UPDATE qualifications/);
+        expect(sql).toMatch(/transfer_mode = @val_transfer_mode/);
+        expect(sql).toMatch(/transfer_mode IS NULL/); // guardia anti-sovrascrittura
+        expect(sql).not.toMatch(/INSERT INTO/);
+    });
+
+    it('non scrive nulla se il valore proposto è vuoto/null', async () => {
+        const checkReq = { input: jest.fn().mockReturnThis(), query: jest.fn().mockResolvedValue({ recordset: [{ id: 9 }] }) };
+        const pool = { request: jest.fn(() => checkReq) };
+        getPool.mockResolvedValue(pool);
+
+        const result = await applyFieldReprocessUpdate(9, 1001, 'transfer_mode', { transfer_mode: null });
+
+        expect(result).toEqual({ qualification_id: 9, updated_fields: [] });
+        // Nessuna seconda request (UPDATE) è stata aperta: solo la verifica di esistenza.
+        expect(pool.request).toHaveBeenCalledTimes(1);
+    });
+
+    it('rifiuta un field_scope fuori whitelist ignorandolo silenziosamente (nessuna colonna arbitraria scrivibile)', async () => {
+        const checkReq = { input: jest.fn().mockReturnThis(), query: jest.fn().mockResolvedValue({ recordset: [{ id: 10 }] }) };
+        const pool = { request: jest.fn(() => checkReq) };
+        getPool.mockResolvedValue(pool);
+
+        const result = await applyFieldReprocessUpdate(10, 1001, 'password_hash', { password_hash: 'hacked' });
+
+        expect(result.updated_fields).toEqual([]);
+    });
+
+    it('lancia NOT_FOUND se la qualifica destinataria non esiste nell\'organizzazione', async () => {
+        const checkReq = { input: jest.fn().mockReturnThis(), query: jest.fn().mockResolvedValue({ recordset: [] }) };
+        getPool.mockResolvedValue({ request: jest.fn(() => checkReq) });
+
+        await expect(applyFieldReprocessUpdate(999, 1001, 'transfer_mode', { transfer_mode: 'spray_arc' }))
+            .rejects.toMatchObject({ code: 'NOT_FOUND' });
     });
 });

@@ -256,6 +256,12 @@
                                      "src/config/corsOrigins.js",
                                      "src/server.js"
                                  ]
+                   },
+                   {
+                       "name":  "scripts",
+                       "files":  [
+                                     "scripts/reprocess-qualifications.js"
+                                 ]
                    }
                ]
 }
