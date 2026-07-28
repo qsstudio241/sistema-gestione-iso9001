@@ -1,6 +1,6 @@
 # DEPUTYTASK4 — Estensione agente validità normativa al registro obblighi legali
 
-**Stato:** APERTO
+**Stato:** CHIUSO — TEST OK (28/07/2026, deputy Stream 4)
 **Priorità:** P1 — non bloccante per il rilascio del template sicurezza (DEPUTYTASK3), ma richiesto esplicitamente dal committente in questa iniziativa
 **Branch base:** `main`
 **Creato da:** Lead 28/07/2026

@@ -10,6 +10,7 @@
 const logger = require('../utils/logger');
 const { query } = require('../config/database');
 const normCatalog = require('./normCatalogLookup.service');
+const { getUniqueDecreesFromLinkedLegislation } = require('../utils/linkedLegislationParser');
 
 const CATALOG_BASE = 'https://store.uni.com/catalogo';
 const FETCH_TIMEOUT_MS = 10000;
@@ -279,9 +280,88 @@ async function runScheduledValidityCheck(organizationId) {
   return { checked: norms.length, updated };
 }
 
+/**
+ * Verifica periodica degli atti citati in custom_checklist_sections.linked_legislation
+ * (registro obblighi legali — Tier 1 ADR-019 D5).
+ * Non persiste lo stato: log + email tramite alertScheduler.
+ *
+ * @param {number} organizationId
+ * @returns {Promise<{ checked: number, updated: Array<object> }>}
+ */
+async function runScheduledLegalRegisterCheck(organizationId) {
+  logger.info(`[NormValidityChecker] Avvio verifica registro obblighi legali per org ${organizationId}...`);
+
+  let sections;
+  try {
+    const result = await query(
+      `       SELECT
+         ccs.id              AS section_id,
+         ccs.title           AS section_name,
+         ccs.linked_legislation
+       FROM custom_checklist_sections ccs
+       INNER JOIN custom_checklists cc ON cc.id = ccs.custom_checklist_id
+       WHERE cc.organization_id = @orgId
+         AND ccs.linked_legislation IS NOT NULL
+         AND LTRIM(RTRIM(ccs.linked_legislation)) <> ''`,
+      { orgId: organizationId }
+    );
+    sections = result.recordset || [];
+  } catch (err) {
+    logger.error('[NormValidityChecker] Errore query sezioni registro legale:', err.message);
+    return { checked: 0, updated: [] };
+  }
+
+  if (sections.length === 0) {
+    logger.info(`[NormValidityChecker] Nessuna sezione con linked_legislation per org ${organizationId}`);
+    return { checked: 0, updated: [] };
+  }
+
+  const updated = [];
+  let lookupCount = 0;
+  const checkedDecrees = new Set();
+
+  for (const section of sections) {
+    const decrees = getUniqueDecreesFromLinkedLegislation(section.linked_legislation);
+    if (decrees.length === 0) continue;
+
+    for (const decree of decrees) {
+      const lookupKey = `${section.section_id}|${decree.standardCode}`;
+      if (checkedDecrees.has(lookupKey)) continue;
+      checkedDecrees.add(lookupKey);
+      lookupCount += 1;
+
+      const lookup = await normCatalog.lookupNormStatus(decree.decreeLabel, 'normattiva');
+
+      if (lookup.status === 'withdrawn' || lookup.status === 'superseded') {
+        updated.push({
+          sectionId: section.section_id,
+          sectionName: section.section_name || null,
+          standardCode: decree.standardCode,
+          decreeLabel: decree.decreeLabel,
+          reason: lookup.status,
+          supersededBy: lookup.supersededBy || null,
+          catalogUrl: lookup.catalogUrl || null,
+        });
+        logger.info(
+          `[NormValidityChecker] Registro legale sezione ${section.section_id}: ` +
+          `${decree.decreeLabel} SUPERATO (${lookup.status})`
+        );
+      }
+    }
+  }
+
+  logger.info(
+    `[NormValidityChecker] Verifica registro legale org ${organizationId} completata: ` +
+    `${sections.length} sezioni, ${lookupCount} atti controllati, ${updated.length} segnalati`
+  );
+
+  return { checked: sections.length, updated };
+}
+
 module.exports = {
   checkNormValidity,
   checkUniEditionYear,
   parseNormFieldsFromRegistry,
   runScheduledValidityCheck,
+  runScheduledLegalRegisterCheck,
 };

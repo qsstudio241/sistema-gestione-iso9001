@@ -131,17 +131,52 @@ async function fetchUrgentDocs(pool, orgId, days) {
 
 // ─── Email norme superate ─────────────────────────────────────────────────────
 
-function buildNormValidityEmailHtml(orgName, supersededNorms) {
+function buildNormValidityEmailHtml(orgName, supersededNorms, legalRegisterItems = []) {
   const thStyle = 'padding:8px 12px;background:#1e3a5f;color:#fff;text-align:left;font-size:12px';
   const tableStyle = 'width:100%;border-collapse:collapse;font-size:14px;margin-bottom:24px';
 
-  const rows = supersededNorms.map((n) => `
+  const normRows = (supersededNorms || []).map((n) => `
     <tr>
-      <td style="padding:8px 12px;border-bottom:1px solid #e5e7eb">${n.norm_title || n.standard_code}</td>
+      <td style="padding:8px 12px;border-bottom:1px solid #e5e7eb">${n.norm_title || n.title || n.standard_code}</td>
       <td style="padding:8px 12px;border-bottom:1px solid #e5e7eb;font-family:monospace">${n.standard_code}</td>
       <td style="padding:8px 12px;border-bottom:1px solid #e5e7eb">${n.reason === 'superseded' ? 'Sostituita' : 'Non vigente'}</td>
       <td style="padding:8px 12px;border-bottom:1px solid #e5e7eb">${n.supersededBy || '—'}</td>
     </tr>`).join('');
+
+  const legalRows = (legalRegisterItems || []).map((item) => `
+    <tr>
+      <td style="padding:8px 12px;border-bottom:1px solid #e5e7eb">${item.sectionName || `Sezione #${item.sectionId}`}</td>
+      <td style="padding:8px 12px;border-bottom:1px solid #e5e7eb;font-family:monospace">${item.decreeLabel || item.standardCode}</td>
+      <td style="padding:8px 12px;border-bottom:1px solid #e5e7eb">${item.reason === 'superseded' ? 'Sostituito' : 'Non vigente'}</td>
+      <td style="padding:8px 12px;border-bottom:1px solid #e5e7eb">${item.supersededBy || '—'}</td>
+    </tr>`).join('');
+
+  const normSection = supersededNorms.length > 0 ? `
+        <h3 style="color:#b45309;margin:0 0 12px">${supersededNorms.length} norma/e nel registro documenti segnalata/e come superata o non vigente</h3>
+        <table style="${tableStyle}">
+          <thead><tr>
+            <th style="${thStyle}">Titolo</th>
+            <th style="${thStyle}">Codice</th>
+            <th style="${thStyle}">Esito</th>
+            <th style="${thStyle}">Note</th>
+          </tr></thead>
+          <tbody>${normRows}</tbody>
+        </table>` : '';
+
+  const legalSection = legalRegisterItems.length > 0 ? `
+        <h3 style="color:#b45309;margin:${normSection ? '24px' : '0'} 0 12px">${legalRegisterItems.length} atto/i nel registro obblighi legali segnalato/i come superato o non vigente</h3>
+        <p style="font-size:14px;color:#4b5563;margin:0 0 12px">Verifica Tier 1 su atti citati in <code>linked_legislation</code> delle checklist custom (es. conformità legislativa ambiente/sicurezza).</p>
+        <table style="${tableStyle}">
+          <thead><tr>
+            <th style="${thStyle}">Capitolo checklist</th>
+            <th style="${thStyle}">Atto</th>
+            <th style="${thStyle}">Esito</th>
+            <th style="${thStyle}">Note</th>
+          </tr></thead>
+          <tbody>${legalRows}</tbody>
+        </table>` : '';
+
+  const totalCount = supersededNorms.length + legalRegisterItems.length;
 
   return `
     <div style="font-family:Arial,sans-serif;max-width:700px;margin:0 auto;color:#111827">
@@ -150,17 +185,9 @@ function buildNormValidityEmailHtml(orgName, supersededNorms) {
         <p style="margin:4px 0 0;color:#93c5fd;font-size:13px">${orgName} · ${new Date().toLocaleDateString('it-IT')}</p>
       </div>
       <div style="background:#fff;padding:24px;border:1px solid #e5e7eb;border-top:none;border-radius:0 0 8px 8px">
-        <h3 style="color:#b45309;margin:0 0 12px">${supersededNorms.length} norma/e segnalata/e come superata o non vigente</h3>
-        <p style="font-size:14px;color:#4b5563">Verifica automatica su cataloghi pubblici (UNI/ISO/BSI, Normattiva, EUR-Lex).</p>
-        <table style="${tableStyle}">
-          <thead><tr>
-            <th style="${thStyle}">Titolo</th>
-            <th style="${thStyle}">Codice</th>
-            <th style="${thStyle}">Esito</th>
-            <th style="${thStyle}">Note</th>
-          </tr></thead>
-          <tbody>${rows}</tbody>
-        </table>
+        <p style="font-size:14px;color:#4b5563;margin:0 0 16px">Verifica automatica su cataloghi pubblici (UNI/ISO/BSI, Normattiva, EUR-Lex). Totale segnalazioni: <strong>${totalCount}</strong>.</p>
+        ${normSection}
+        ${legalSection}
         <p style="font-size:12px;color:#9ca3af;border-top:1px solid #e5e7eb;padding-top:16px;margin:0">
           Messaggio generato dal controllo settimanale del lunedì alle 03:00.
         </p>
@@ -334,7 +361,7 @@ async function runNormValidityJob() {
   }
 
   try {
-    const { runScheduledValidityCheck } = require('./normValidityChecker.service');
+    const { runScheduledValidityCheck, runScheduledLegalRegisterCheck } = require('./normValidityChecker.service');
     const pool = await getPool();
     const orgsResult = await pool.request().query(`
       SELECT o.organization_id, o.organization_name, nc.recipients_email, nc.enabled
@@ -344,19 +371,27 @@ async function runNormValidityJob() {
     const orgs = orgsResult.recordset || [];
 
     for (const org of orgs) {
-      const { updated } = await runScheduledValidityCheck(org.organization_id);
+      const { updated: normUpdated } = await runScheduledValidityCheck(org.organization_id);
+      const { updated: legalUpdated } = await runScheduledLegalRegisterCheck(org.organization_id);
+      const totalUpdated = normUpdated.length + legalUpdated.length;
 
       if (
-        updated.length > 0
+        totalUpdated > 0
         && process.env.ALERT_ENABLED === 'true'
         && org.enabled === 1
         && org.recipients_email
       ) {
-        const subject = `[SGQ] ${updated.length} norma/e superata/e — ${org.organization_name}`;
-        const html = buildNormValidityEmailHtml(org.organization_name, updated);
+        const parts = [];
+        if (normUpdated.length > 0) parts.push(`${normUpdated.length} norma/e registro documenti`);
+        if (legalUpdated.length > 0) parts.push(`${legalUpdated.length} atto/i registro obblighi legali`);
+        const subject = `[SGQ] ${parts.join(' · ')} — ${org.organization_name}`;
+        const html = buildNormValidityEmailHtml(org.organization_name, normUpdated, legalUpdated);
         const sent = await sendAlertEmail(org.recipients_email, subject, html);
         if (sent) {
-          logger.info(`[AlertScheduler] Email norme superate inviata a ${org.recipients_email} (org ${org.organization_id})`);
+          logger.info(
+            `[AlertScheduler] Email norme/registro legale inviata a ${org.recipients_email} ` +
+            `(org ${org.organization_id}: ${normUpdated.length} norme, ${legalUpdated.length} atti legali)`
+          );
         }
       }
     }
