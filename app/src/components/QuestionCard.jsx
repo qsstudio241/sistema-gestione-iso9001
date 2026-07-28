@@ -14,6 +14,7 @@
  *   attachmentManager  opzionale — da useAttachmentManager (standard ISO)
  *   auditId          number | null — audit_id numerico per AttachmentPreview
  *   children         React.ReactNode — slot per blocchi evidenza custom (custom checklist)
+ *   statusOptions    Array<{code, className, label}> — pulsanti esito (default: 6 standard C/NC/OSS/OM/NA/NV)
  */
 
 import React, { useState } from "react";
@@ -22,7 +23,7 @@ import AttachmentPreview from "./AttachmentPreview";
 import AutoTextarea from "./AutoTextarea";
 import "./ChecklistModule.css";
 
-const STATUS_BUTTONS = [
+export const STATUS_BUTTONS = [
   { code: "C",   className: "compliant",       label: "Conforme" },
   { code: "NC",  className: "non-compliant",    label: "Non Conforme" },
   { code: "OSS", className: "partial",          label: "Osservazione" },
@@ -47,6 +48,7 @@ export function QuestionCard({
   showSatButton = false,
   satisfiedBy = null,
   onSatisfiedByChange = null,
+  statusOptions = STATUS_BUTTONS,
   children,
 }) {
   const [attachmentRefreshKey, setAttachmentRefreshKey] = useState(0);
@@ -78,7 +80,7 @@ export function QuestionCard({
       {showStatusButtons && (
         <div className="question-controls">
           <div className="status-buttons">
-            {STATUS_BUTTONS.map(({ code, className, label }) => (
+            {statusOptions.map(({ code, className, label }) => (
               <button
                 key={code}
                 type="button"

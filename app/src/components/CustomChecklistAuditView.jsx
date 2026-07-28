@@ -19,6 +19,12 @@ import AskAiButton from "./AskAiButton";
 import { saveChecklistFocus } from "../utils/aiAssistantContext";
 import "./CustomChecklistAuditView.css";
 
+/** Sottoinsieme SI/NO/NA per item registro obblighi legali (ADR-019 D3) */
+const LEGAL_STATUS_OPTIONS = [
+  { code: "C", className: "compliant", label: "Sì" },
+  { code: "NC", className: "non-compliant", label: "No" },
+  { code: "NA", className: "not-applicable", label: "Non applicabile" },
+];
 
 function CustomChecklistAuditView({ audit, onUpdate, readOnly = false }) {
   const customChecklistId = audit?.metadata?.customChecklistId ?? audit?.custom_checklist_id;
@@ -361,6 +367,13 @@ function CustomChecklistAuditView({ audit, onUpdate, readOnly = false }) {
             {sec.code} - {sec.title}
           </h4>
 
+          {sec.reference_text && (
+            <details className="custom-checklist-section-reference">
+              <summary>Riferimenti normativi</summary>
+              <div className="custom-checklist-section-reference-text">{sec.reference_text}</div>
+            </details>
+          )}
+
           {(sec.items || []).map((item) => {
             // Adatta item custom → forma question attesa da QuestionCard
             const question = {
@@ -379,6 +392,9 @@ function CustomChecklistAuditView({ audit, onUpdate, readOnly = false }) {
                 displayRef=""
                 checklistKey="custom"
                 showStatusButtons={!!checklist?.has_outcome_buttons}
+                {...(item.response_type === "legal_check"
+                  ? { statusOptions: LEGAL_STATUS_OPTIONS }
+                  : {})}
                 readOnly={readOnly}
                 onStatusChange={(code) => handleStatusChange(item.id, code)}
                 onNotesChange={(text) => {
