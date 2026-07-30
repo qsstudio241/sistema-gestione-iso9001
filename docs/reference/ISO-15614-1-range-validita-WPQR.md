@@ -82,9 +82,9 @@ Provino con angolo α tra 60° e 90° qualifica 60°≤α<90°; angolo <60° ric
 
 (Matrice completa 11×11 nel Markdown digitalizzato, righe 5–11 su pagina successiva; Tabella 6 nichel/acciaio 8×8 + combinazioni con gruppi 1/2/3/5/6/8/11 anch'essa leggibile.)
 
-**Perché NON è ancora codificata in JS** (nonostante ora leggibile): è una matrice 11×11 (+ Tabella 6) con footnote di eccezione (a/b/c: sottogruppi, gruppo padre, leghe a soluzione solida/precipitazione) che modificano la lettura di singole celle. Un errore di trascrizione riga/colonna in una matrice di compatibilità materiali avrebbe impatto diretto su una decisione di conformità/certificazione — rischio più alto rispetto a una formula aritmetica su un solo parametro (spessore/diametro). **Prossimo passo se si vuole chiudere il gap**: verifica visiva riga-per-riga sulla pagina PDF originale (27-29) prima di trasformare la matrice in lookup table JS.
+**Stato codifica (30/07/2026)**: Tabella 5 (acciai) entra in **P0 generatore WPS** — brief [DEPUTYTASK1.md](../agent-tasks/DEPUTYTASK1.md), spec [MODULO_WPS_GENERAZIONE_SCOPO_E_ROADMAP.md](../specs/MODULO_WPS_GENERAZIONE_SCOPO_E_ROADMAP.md). Fonte preferita: tabelle Markdown nel digitalizzato `NORMA_00019` (celle pulite), più footnote (a)/(b)/(c). Tabella 6 (nichel) resta fuori P0.
 
-**Regola generale non ambigua e sicura da applicare oggi**: il campo `material_group` estratto/inserito va sempre riportato **come singolo gruppo/sottogruppo testato**, senza inferire automaticamente altri gruppi coperti (finché la matrice non è codificata e verificata).
+**Finché P0 non è mergiato**: il campo `material_group` estratto/inserito va riportato **come singolo gruppo/sottogruppo testato**, senza inferire coperture (ingest). Dopo P0: solo le funzioni `isParentMaterialCombinationCovered` / equivalente possono inferire; l’ingest WPQR continua a non sovrascrivere il gruppo dichiarato.
 
 ## Numero di passate (single run / multi-run)
 

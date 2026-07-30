@@ -7,6 +7,8 @@
 > **Riferimenti**: [MODULO_INGEST_AI_COMMESSE_SCOPO_E_ROADMAP.md](MODULO_INGEST_AI_COMMESSE_SCOPO_E_ROADMAP.md), [MINI_SPEC_RIESAME_REQUISITI_CONTRATTO.md](MINI_SPEC_RIESAME_REQUISITI_CONTRATTO.md), [adr/ADR-009](../adr/ADR-009-multi-standard-architettura-per-norma.md), [adr/ADR-010](../adr/ADR-010-ai-agentic-architecture.md), [adr/ADR-011](../adr/ADR-011-registry-norm-sot.md), `docs/PROJECT_ROADMAP.md`, `docs/GUIDA_CONSOLIDATA.md`
 > **Norma**: ISO 9001:2015 §4–10 (implementazione SGQ), ISO 14001:2015, ISO 45001:2018 — HLS Annex SL condivisa
 
+> **Nota moduli collegati (30/07/2026)**: la **generazione WPS da WPQR** (pivot Mason) **non** fa parte del SAL. È un prodotto del modulo saldatura ISO 3834 — vedi [MODULO_WPS_GENERAZIONE_SCOPO_E_ROADMAP.md](MODULO_WPS_GENERAZIONE_SCOPO_E_ROADMAP.md). Il SAL resta tracker di implementazione SGQ (Camellini).
+
 ---
 
 ## Sintesi in 60 secondi (per il committente)
