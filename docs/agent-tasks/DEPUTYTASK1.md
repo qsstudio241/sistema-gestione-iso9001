@@ -17,7 +17,7 @@
 | P1-B UI Genera WPS → anteprima → Salva bozza | ✅ Vitest + build |
 | P1-C Chip AskAi → form Mason precompilato | ✅ `saveWpsGenerateIntent` / navigate |
 | Controesempio `not_possible` | ✅ UI + test |
-| Deploy VPS | (dopo merge / in chiusura) |
+| Deploy VPS | ✅ PID 284052→296586, health 200 |
 
 **Merge:** tocca backend controller/routes → **conferma committente** prima di `gh pr merge` (policy).
 
