@@ -65,7 +65,7 @@ wpsGenerator.service.js
 
 | Slice | Obiettivo | Stato |
 |-------|-----------|--------|
-| **P0** | Codifica **Tabella 5** (acciai) + `wpsGenerator` + caso Mason FW S355/S235 + test L1 | Brief in `DEPUTYTASK1.md` |
+| **P0** | Codifica **Tabella 5** (acciai) + `wpsGenerator` + caso Mason FW S355/S235 + test L1 | ✅ Implementato (DEPUTYTASK1, 30/07/2026) |
 | **P1** | Endpoint `POST /welding/wps/generate` + UI anteprima / salva bozza + chip AskAi | Dopo P0 |
 | **P1b** | Completare Tabella 7 Level 1 (GAP estrazione) se verificata su PDF ufficiale | Opzionale |
 | **P2** | Deprecare/nascondere upload batch WPS come flusso primario; export Word WPS | Dopo P1 |

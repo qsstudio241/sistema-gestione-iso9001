@@ -69,7 +69,7 @@ Regola aggiuntiva confermata: se un giunto d'angolo è qualificato tramite prova
 
 Provino con angolo α tra 60° e 90° qualifica 60°≤α<90°; angolo <60° richiede prova dedicata e qualifica da α fino a 90°. Level 1: l'angolo non è variabile essenziale.
 
-## Gruppi materiale coperti da qualifica (Tabella 5 acciai, Tabella 6 nichel/acciaio — ORA LEGGIBILI, non ancora codificate in JS)
+## Gruppi materiale coperti da qualifica (Tabella 5 acciai — codificata in JS P0; Tabella 6 nichel — stub)
 
 **Aggiornamento 26/07/2026**: a differenza della digitalizzazione precedente (GAP totale, "troppo interfogliate"), la nuova estrazione produce matrici pulite e leggibili. Esempio Tabella 5 (gruppi acciaio, righe 1-4 di 11, materiale provino → materiali coperti):
 
@@ -82,9 +82,15 @@ Provino con angolo α tra 60° e 90° qualifica 60°≤α<90°; angolo <60° ric
 
 (Matrice completa 11×11 nel Markdown digitalizzato, righe 5–11 su pagina successiva; Tabella 6 nichel/acciaio 8×8 + combinazioni con gruppi 1/2/3/5/6/8/11 anch'essa leggibile.)
 
-**Stato codifica (30/07/2026)**: Tabella 5 (acciai) entra in **P0 generatore WPS** — brief [DEPUTYTASK1.md](../agent-tasks/DEPUTYTASK1.md), spec [MODULO_WPS_GENERAZIONE_SCOPO_E_ROADMAP.md](../specs/MODULO_WPS_GENERAZIONE_SCOPO_E_ROADMAP.md). Fonte preferita: tabelle Markdown nel digitalizzato `NORMA_00019` (celle pulite), più footnote (a)/(b)/(c). Tabella 6 (nichel) resta fuori P0.
+**Stato codifica (30/07/2026 — P0)**: Tabella 5 (acciai) **codificata in JS** in `weldingQualificationRules15614.js` (app + backend mirror):
 
-**Finché P0 non è mergiato**: il campo `material_group` estratto/inserito va riportato **come singolo gruppo/sottogruppo testato**, senza inferire coperture (ingest). Dopo P0: solo le funzioni `isParentMaterialCombinationCovered` / equivalente possono inferire; l’ingest WPQR continua a non sovrascrivere il gruppo dichiarato.
+| Funzione | Ruolo |
+|---|---|
+| `normalizeMaterialGroupCode` | `'1.2'` / `'1'` / `'group 1.2'` → `{ group, subgroup }` |
+| `isParentMaterialCombinationCovered` | matrice diagonale + footnote (a)/(b)/(c) |
+| `resolveSteelGradeToGroup` | gradi comuni (S235→1.1, S355→1.2, …) |
+
+Consumatore: `wpsGenerator.service.js` (matching WPQR → bozza WPS). Tabella 6 (nichel) resta `not_implemented`. L’ingest WPQR continua a salvare solo il gruppo/sottogruppo **dichiarato**, senza inferire coperture.
 
 ## Numero di passate (single run / multi-run)
 
