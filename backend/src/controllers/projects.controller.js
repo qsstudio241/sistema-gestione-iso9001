@@ -13,6 +13,9 @@ const {
     assertMutatingAllowed,
     sendAccessDenied,
 } = require('../services/companyAccess.service');
+const {
+    resolveCommercialCustomerFields,
+} = require('../services/commercialCustomerCounterparty.service');
 
 // GET /projects
 async function listProjects(req, res) {
@@ -36,7 +39,14 @@ async function listProjects(req, res) {
 
         if (companyFilter.clause) conditions.push(companyFilter.clause);
         if (search) {
-            conditions.push('(p.project_code LIKE @search OR p.client_name LIKE @search OR p.description LIKE @search)');
+            conditions.push(`(
+                p.project_code LIKE @search OR p.client_name LIKE @search
+                OR p.description LIKE @search
+                OR EXISTS (
+                    SELECT 1 FROM company_counterparties cps
+                    WHERE cps.id = p.end_customer_id AND cps.name LIKE @search
+                )
+            )`);
             params.search = `%${search}%`;
         }
         if (status) {
@@ -54,11 +64,14 @@ async function listProjects(req, res) {
             SELECT
                 p.*,
                 c.name AS company_name,
+                cp.name AS end_customer_name,
+                cp.external_ref AS end_customer_ref,
                 (SELECT COUNT(*) FROM project_welders pw
                  WHERE pw.project_id = p.id AND pw.organization_id = @organization_id
                 ) AS welders_count
             FROM projects p
             LEFT JOIN companies c ON p.company_id = c.id
+            LEFT JOIN company_counterparties cp ON cp.id = p.end_customer_id
             WHERE ${where}
             ORDER BY p.updated_at DESC
             OFFSET @offset ROWS
@@ -134,9 +147,10 @@ async function getProject(req, res) {
         const { organization_id } = req.user;
 
         const result = await query(`
-            SELECT p.*, c.name AS company_name
+            SELECT p.*, c.name AS company_name, cp.name AS end_customer_name, cp.external_ref AS end_customer_ref
             FROM projects p
             LEFT JOIN companies c ON p.company_id = c.id
+            LEFT JOIN company_counterparties cp ON cp.id = p.end_customer_id
             WHERE p.id = @id AND p.organization_id = @organization_id
         `, { id: parseInt(id), organization_id });
 
@@ -193,7 +207,7 @@ async function createProject(req, res) {
     try {
         const { organization_id, user_id } = req.user;
         const {
-            company_id, project_code, client_name, client_company_id,
+            company_id, project_code, client_name, end_customer_id,
             description, start_date, end_date, applicable_wps_ids,
             status = 'offerta', requirements_review_date,
             technical_review_date, technical_review_checklist, notes,
@@ -201,6 +215,20 @@ async function createProject(req, res) {
 
         if (!project_code) {
             return res.status(400).json({ error: 'Codice progetto obbligatorio', code: 'VALIDATION_ERROR' });
+        }
+
+        const companyIdVal = company_id ? parseInt(company_id) : null;
+
+        // Cliente: se end_customer_id è impostato, sincronizza il nome dall'anagrafica
+        // aziende (company_counterparties); altrimenti resta testo libero (client_name).
+        const customerFields = await resolveCommercialCustomerFields({
+            organizationId: organization_id,
+            companyId: companyIdVal,
+            commercialCustomerIdRaw: end_customer_id,
+            commercialCustomerNameRaw: client_name,
+        });
+        if (!customerFields.ok) {
+            return res.status(customerFields.status).json({ error: customerFields.error, code: customerFields.code });
         }
 
         const wpsIdsJson = applicable_wps_ids
@@ -213,23 +241,23 @@ async function createProject(req, res) {
         const result = await query(`
             INSERT INTO projects (
                 organization_id, company_id, project_code, client_name,
-                client_company_id, description, start_date, end_date,
+                end_customer_id, description, start_date, end_date,
                 applicable_wps_ids, status, requirements_review_date,
                 technical_review_date, technical_review_checklist, notes, created_by, created_at, updated_at
             )
             OUTPUT INSERTED.id
             VALUES (
                 @organization_id, @company_id, @project_code, @client_name,
-                @client_company_id, @description, @start_date, @end_date,
+                @end_customer_id, @description, @start_date, @end_date,
                 @applicable_wps_ids, @status, @requirements_review_date,
                 @technical_review_date, @technical_review_checklist, @notes, @created_by, GETDATE(), GETDATE()
             )
         `, {
             organization_id,
-            company_id:              company_id ? parseInt(company_id) : null,
+            company_id:              companyIdVal,
             project_code,
-            client_name:             client_name || null,
-            client_company_id:       client_company_id ? parseInt(client_company_id) : null,
+            client_name:             customerFields.commercialCustomerName,
+            end_customer_id:         customerFields.commercialCustomerId,
             description:             description || null,
             start_date:              start_date || null,
             end_date:                end_date || null,
@@ -259,16 +287,23 @@ async function updateProject(req, res) {
         const { organization_id } = req.user;
 
         const existing = await query(`
-            SELECT id FROM projects
+            SELECT id, company_id, end_customer_id, client_name FROM projects
             WHERE id = @id AND organization_id = @organization_id
         `, { id: parseInt(id), organization_id });
 
         if (existing.recordset.length === 0) {
             return res.status(404).json({ error: 'Progetto non trovato', code: 'PROJECT_NOT_FOUND' });
         }
+        const existingProject = existing.recordset[0];
+
+        // company_id va risolto prima del cliente: se cambia l'azienda (ambito),
+        // il collegamento end_customer_id precedente potrebbe non appartenerle più.
+        const companyIdNext = req.body.company_id !== undefined
+            ? (req.body.company_id !== null ? parseInt(req.body.company_id) : null)
+            : existingProject.company_id;
 
         const allowed = [
-            'company_id', 'project_code', 'client_name', 'client_company_id',
+            'company_id', 'project_code',
             'description', 'start_date', 'end_date', 'applicable_wps_ids',
             'status', 'requirements_review_date', 'technical_review_date',
             'technical_review_checklist', 'notes',
@@ -286,12 +321,33 @@ async function updateProject(req, res) {
                 } else if (field === 'technical_review_checklist') {
                     const val = req.body[field];
                     params[field] = val ? (typeof val === 'string' ? val : JSON.stringify(val)) : null;
-                } else if (['company_id', 'client_company_id'].includes(field)) {
-                    params[field] = req.body[field] !== null ? parseInt(req.body[field]) : null;
+                } else if (field === 'company_id') {
+                    params[field] = companyIdNext;
                 } else {
                     params[field] = req.body[field] || null;
                 }
             }
+        }
+
+        // Cliente: se end_customer_id o client_name sono presenti nel body, risincronizza
+        // il nome dall'anagrafica aziende (company_counterparties) quando è impostata la FK.
+        if (req.body.end_customer_id !== undefined || req.body.client_name !== undefined) {
+            const customerFields = await resolveCommercialCustomerFields({
+                organizationId: organization_id,
+                companyId: companyIdNext,
+                commercialCustomerIdRaw: req.body.end_customer_id,
+                commercialCustomerNameRaw: req.body.client_name,
+                existing: {
+                    commercial_customer_id: existingProject.end_customer_id,
+                    commercial_customer_name: existingProject.client_name,
+                },
+            });
+            if (!customerFields.ok) {
+                return res.status(customerFields.status).json({ error: customerFields.error, code: customerFields.code });
+            }
+            updates.push('end_customer_id = @end_customer_id', 'client_name = @client_name');
+            params.end_customer_id = customerFields.commercialCustomerId;
+            params.client_name = customerFields.commercialCustomerName;
         }
 
         if (updates.length === 0) {

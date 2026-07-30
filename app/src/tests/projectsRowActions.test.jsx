@@ -13,6 +13,12 @@ const mockGetProjects     = vi.fn();
 const mockGetWPSList      = vi.fn();
 const mockGetQualifications = vi.fn();
 const mockDeleteProject   = vi.fn();
+const mockGetCompanies    = vi.fn();
+const mockGetCompanyCounterparties = vi.fn();
+
+vi.mock("../contexts/AuthContext", () => ({
+  useAuth: () => ({ user: { role: "admin", company_access: [] } }),
+}));
 
 vi.mock("../services/apiService", () => ({
   default: {
@@ -20,6 +26,8 @@ vi.mock("../services/apiService", () => ({
     getWPSList:       (...args) => mockGetWPSList(...args),
     getQualifications:(...args) => mockGetQualifications(...args),
     deleteProject:    (...args) => mockDeleteProject(...args),
+    getCompanies:     (...args) => mockGetCompanies(...args),
+    getCompanyCounterparties: (...args) => mockGetCompanyCounterparties(...args),
   },
 }));
 
@@ -39,6 +47,8 @@ describe("ProjectsPage — azioni di riga a icone", () => {
     mockGetWPSList.mockReset().mockResolvedValue({ data: [] });
     mockGetQualifications.mockReset().mockResolvedValue({ qualifications: [] });
     mockDeleteProject.mockReset().mockResolvedValue({});
+    mockGetCompanies.mockReset().mockResolvedValue({ data: [] });
+    mockGetCompanyCounterparties.mockReset().mockResolvedValue({ data: [] });
   });
 
   it("mostra il pulsante matita con aria-label e SVG", async () => {
