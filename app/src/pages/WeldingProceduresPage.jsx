@@ -22,6 +22,7 @@ import {
   resolveInitialQualificationsCompanyScope,
   persistQualificationsCompanyScope,
 } from "../utils/qualificationsCompanyScope";
+import { exportWpsAnnexADocx } from "../utils/wordExportWps";
 import "./WeldingProceduresPage.css";
 
 const WELDING_PROCESSES = [
@@ -800,6 +801,7 @@ function WeldingProceduresPage() {
   // Delete confirm
   const [deleteWpsId, setDeleteWpsId] = useState(null);
   const [deleteWpqrId, setDeleteWpqrId] = useState(null);
+  const [exportingWpsId, setExportingWpsId] = useState(null);
 
   // Approval
   const [approvingId, setApprovingId] = useState(null);
@@ -926,6 +928,21 @@ function WeldingProceduresPage() {
     setGenerateInitial(null);
     loadWPS();
     loadAllWps();
+  }
+
+  async function handleExportWps(w) {
+    if (!w?.wps_code) return;
+    setExportingWpsId(w.id);
+    setError(null);
+    try {
+      await exportWpsAnnexADocx(w, {
+        companyName: w.company_name || companyScopeName || "",
+      });
+    } catch (err) {
+      setError(err?.message || "Errore export Word WPS");
+    } finally {
+      setExportingWpsId(null);
+    }
   }
 
   async function handleDeleteWps(id) {
@@ -1187,6 +1204,15 @@ function WeldingProceduresPage() {
                           </div>
                         ) : (
                           <>
+                            <button
+                              type="button"
+                              className="wp-btn-icon"
+                              title="Esporta Word"
+                              disabled={exportingWpsId === w.id}
+                              onClick={() => handleExportWps(w)}
+                            >
+                              {exportingWpsId === w.id ? "…" : "Word"}
+                            </button>
                             <button className="wp-btn-icon" title="Modifica" onClick={() => handleEditWps(w)}>&#x270F;&#xFE0F;</button>
                             <button className="wp-btn-icon" title="Elimina" onClick={() => setDeleteWpsId(w.id)}>&#x1F5D1;&#xFE0F;</button>
                           </>
