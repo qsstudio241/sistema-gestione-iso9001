@@ -66,9 +66,57 @@ wpsGenerator.service.js
 | Slice | Obiettivo | Stato |
 |-------|-----------|--------|
 | **P0** | Codifica **Tabella 5** (acciai) + `wpsGenerator` + caso Mason FW S355/S235 + test L1 | ✅ Implementato (DEPUTYTASK1, 30/07/2026) |
-| **P1** | Endpoint `POST /welding/wps/generate` + UI anteprima / salva bozza + chip AskAi | Dopo P0 |
+| **P1** | Endpoint + UI anteprima/salva bozza + suggerimento AskAi (caso Mason in linguaggio naturale) | Prossimo — dettaglio sotto |
 | **P1b** | Completare Tabella 7 Level 1 (GAP estrazione) se verificata su PDF ufficiale | Opzionale |
 | **P2** | Deprecare/nascondere upload batch WPS come flusso primario; export Word WPS | Dopo P1 |
+
+---
+
+## Dettaglio P1 (brief su `DEPUTYTASK1` dopo merge P0)
+
+> Prerequisito: `wpsGenerator.service.js` + Tabella 5 + test Mason verdi su `main`.  
+> File brief: sovrascrivere `DEPUTYTASK1.md` con **Stato: APERTO** solo a P0 mergiato.
+
+### P1-A — API
+
+| Elemento | Spec |
+|----------|------|
+| Route | `POST /api/v1/welding/wps/generate` |
+| Licenza | già `requireLicensedModule('saldatura')` sul router; se si usa AI per parse testo → anche gate `ai_norms` solo su quel ramo |
+| Body | `{ company_id?, joint_type, welding_process?, parent_material_a, parent_material_b, thickness_a_mm, thickness_b_mm, free_text? }` |
+| Comportamento | Chiama `generateWpsFromWpqr` (P0). **Nessuna scrittura DB** in generate. |
+| Response | Stesso shape P0: `status`, `wpqr_used`, `candidates`, `wps_draft`, `extensions_needed`, `warnings` |
+| Persistenza | Salvataggio bozza = `POST /welding/wps` esistente con payload da `wps_draft` (status `bozza`) — human-in-the-loop |
+| Test | Jest controller/route: ok / not_possible / org scope; non chiamare AI se body già strutturato |
+
+### P1-B — UI su `WeldingProceduresPage`
+
+| Elemento | Spec |
+|----------|------|
+| Entry | Pulsante **«Genera WPS»** nell’header tab WPS (vicino a «+ Nuova WPS»), pattern Ambito già presente |
+| Form | Campi: tipo giunto (FW/BW), materiale A/B (testo grado o gruppo), spessore A/B mm, processo opzionale |
+| Esito ok/partial | Pannello anteprima campi bozza + lista warning; azioni **Salva bozza** / Annulla |
+| Esito not_possible | Messaggio chiaro + elenco `extensions_needed` (niente form vuoto da salvare) |
+| Riuso | Stili `WeldingProceduresPage.css` / form esistenti; niente card decorative parallele |
+| Upload PDF | Lasciare `WpsUploadButton` visibile in P1 (rimozione/deprecazione = P2) |
+
+### P1-C — AskAi (linguaggio naturale)
+
+| Elemento | Spec |
+|----------|------|
+| Contesto | Estendere `saveQualContext` / chip in `AiAssistantPage` `buildContextualSuggestions` con suggerimento tipo: «Genera WPS FW S355 10 mm + S235 5 mm dalle WPQR» |
+| Flusso preferito | Chip → utente conferma → FE chiama `POST .../wps/generate` con parametri estratti **o** form precompilato; matching resta nel service P0 |
+| Vietato | Far decidere all’LLM se il range 15614 è coperto |
+| Disclaimer | `AiDisclaimer` se c’è testo generato dall’AI |
+
+### DoD P1
+
+- [ ] Endpoint + test Jest
+- [ ] UI genera → anteprima → salva bozza (caso Mason manuale)
+- [ ] Chip/suggerimento AskAi collegato al form o all’API
+- [ ] `deploy-manifest.json` + deploy VPS se nuovi file backend
+- [ ] Vitest FE mirati + build
+- [ ] Aggiornare questa spec (P1 ✅) + `DEPUTYTASK1` CHIUSO
 
 ---
 
