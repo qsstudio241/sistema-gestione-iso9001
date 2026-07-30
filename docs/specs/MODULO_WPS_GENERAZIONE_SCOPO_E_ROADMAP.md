@@ -68,11 +68,21 @@ wpsGenerator.service.js
 | **P0** | Codifica **Tabella 5** (acciai) + `wpsGenerator` + caso Mason FW S355/S235 + test L1 | ✅ Implementato (DEPUTYTASK1, 30/07/2026) |
 | **P1** | Endpoint + UI anteprima/salva bozza + suggerimento AskAi (caso Mason in linguaggio naturale) | ✅ Implementato (DEPUTYTASK1, 30/07/2026) |
 | **P1b** | Completare Tabella 7 Level 1 (GAP estrazione) se verificata su PDF ufficiale | Opzionale |
-| **P2** | Deprecare/nascondere upload batch WPS come flusso primario; export Word WPS | Dopo P1 |
+| **P2** | Export Word WPS (modulo ISO 15609-1 Annex A) + opz. deprecare upload batch | Brief `DEPUTYTASK1` **APERTO** (export v1) |
 
 ---
 
-## Dettaglio P1 (brief su `DEPUTYTASK1` dopo merge P0)
+## Dettaglio P2 — Export Word (Annex A)
+
+> Prerequisito: WPS generabile/salvabile (P0+P1).  
+> Norma: ISO 15609-1 Annex A (form copiabile). Layout ricostruito da §4: Annex A nel PDF digitalizzato è poco leggibile.
+
+**v1**: documento `.docx` con etichette Annex A; campi noti da `welding_procedures` compilati; resto vuoto; pulsante «Esporta Word» in UI.  
+**v1 non include**: deprecazione upload (P2b), 15609-2 dedicato, sketch obbligatorio, migrazione DB.
+
+---
+
+## Dettaglio P1 (storico — implementato)
 
 > Prerequisito: `wpsGenerator.service.js` + Tabella 5 + test Mason verdi su `main`.  
 > File brief: sovrascrivere `DEPUTYTASK1.md` con **Stato: APERTO** solo a P0 mergiato.
