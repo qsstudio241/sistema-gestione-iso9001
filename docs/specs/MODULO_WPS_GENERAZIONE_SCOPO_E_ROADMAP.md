@@ -68,7 +68,8 @@ wpsGenerator.service.js
 | **P0** | Codifica **Tabella 5** (acciai) + `wpsGenerator` + caso Mason FW S355/S235 + test L1 | ✅ Implementato (DEPUTYTASK1, 30/07/2026) |
 | **P1** | Endpoint + UI anteprima/salva bozza + suggerimento AskAi (caso Mason in linguaggio naturale) | ✅ Implementato (DEPUTYTASK1, 30/07/2026) |
 | **P1b** | Completare Tabella 7 Level 1 (GAP estrazione) se verificata su PDF ufficiale | Opzionale |
-| **P2** | Export Word WPS (modulo ISO 15609-1 Annex A) + opz. deprecare upload batch | Brief `DEPUTYTASK1` **APERTO** (export v1) |
+| **P2** | Export Word WPS (modulo ISO 15609-1 Annex A) | ✅ v1 (30/07/2026) — `wordExportWps.js` + pulsante Word in tab WPS |
+| **P2b** | Deprecare/nascondere upload batch WPS come flusso primario | Backlog |
 
 ---
 
@@ -77,7 +78,7 @@ wpsGenerator.service.js
 > Prerequisito: WPS generabile/salvabile (P0+P1).  
 > Norma: ISO 15609-1 Annex A (form copiabile). Layout ricostruito da §4: Annex A nel PDF digitalizzato è poco leggibile.
 
-**v1**: documento `.docx` con etichette Annex A; campi noti da `welding_procedures` compilati; resto vuoto; pulsante «Esporta Word» in UI.  
+**v1 ✅**: documento `.docx` programmatico (`docx`, come SAL); etichette Annex A; campi noti da `welding_procedures` (+ `company_name` Ambito); resto vuoto; pulsante **Word** su ogni riga tab WPS; test `wordExportWps.test.js`.  
 **v1 non include**: deprecazione upload (P2b), 15609-2 dedicato, sketch obbligatorio, migrazione DB.
 
 ---
