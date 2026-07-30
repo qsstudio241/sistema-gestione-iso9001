@@ -95,6 +95,7 @@
                                      "src/services/ingestLearning.service.js",
                                      "src/services/ingestReferencePattern.service.js",
                                      "src/services/wpsIngest.service.js",
+                                     "src/services/wpsGenerator.service.js",
                                      "src/services/normBroker.service.js",
                                      "src/services/gapAnalysis.service.js"
                                  ]

@@ -65,17 +65,17 @@ wpsGenerator.service.js
 
 | Slice | Obiettivo | Stato |
 |-------|-----------|--------|
-| **P0** | Codifica **Tabella 5** (acciai) + `wpsGenerator` + caso Mason FW S355/S235 + test L1 | Brief `DEPUTYTASK1` — in corso (deputy) |
-| **P1** | Endpoint + UI anteprima/salva bozza + suggerimento AskAi (caso Mason in linguaggio naturale) | **Dopo merge P0** — dettaglio sotto |
+| **P0** | Codifica **Tabella 5** (acciai) + `wpsGenerator` + caso Mason FW S355/S235 + test L1 | ✅ Implementato (DEPUTYTASK1, 30/07/2026) |
+| **P1** | Endpoint + UI anteprima/salva bozza + suggerimento AskAi (caso Mason in linguaggio naturale) | Prossimo — dettaglio sotto |
 | **P1b** | Completare Tabella 7 Level 1 (GAP estrazione) se verificata su PDF ufficiale | Opzionale |
 | **P2** | Deprecare/nascondere upload batch WPS come flusso primario; export Word WPS | Dopo P1 |
 
 ---
 
-## Dettaglio P1 (brief da aprire dopo P0 CHIUSO)
+## Dettaglio P1 (brief su `DEPUTYTASK1` dopo merge P0)
 
 > Prerequisito: `wpsGenerator.service.js` + Tabella 5 + test Mason verdi su `main`.  
-> File brief: sovrascrivere `DEPUTYTASK1.md` con **Stato: APERTO** solo dopo chiusura P0 (mai in parallelo sullo stesso brief).
+> File brief: sovrascrivere `DEPUTYTASK1.md` con **Stato: APERTO** solo a P0 mergiato.
 
 ### P1-A — API
 

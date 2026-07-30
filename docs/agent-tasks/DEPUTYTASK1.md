@@ -1,9 +1,12 @@
 # DEPUTYTASK1 — P0 Generatore WPS da WPQR (Tabella 5 + caso Mason FW)
 
-**Stato:** APERTO  
+**Stato:** CHIUSO — TEST OK (30/07/2026, deputy)
+> Riepilogo chiusura: Slice A (Tabella 5 + footnote a/b/c in `weldingQualificationRules15614.js` FE/BE mirror + test) + B (`wpsGenerator.service.js` matching deterministico, deploy-manifest) + C (caso Mason FW S355/S235 + controesempi) completate. Nessun endpoint/UI (P1). Nessuna scrittura DB. Merge PR: tocca backend service — conferma committente se richiesto da policy.
+
+**Stato storico:** APERTO  
 **Priorità:** P0 — pivot prodotto modulo WPS (Mason)  
 **Branch base:** `main`  
-**Branch consigliato:** `cursor/wps-generator-p0-tab5-<suffix>`  
+**Branch:** `cursor/wps-generator-p0-tab5-1f74`  
 **Creato da:** Lead 30/07/2026  
 **Spec:** [MODULO_WPS_GENERAZIONE_SCOPO_E_ROADMAP.md](../specs/MODULO_WPS_GENERAZIONE_SCOPO_E_ROADMAP.md)  
 **Norma:** [ISO-15614-1-range-validita-WPQR.md](../reference/ISO-15614-1-range-validita-WPQR.md) · digitalizzato `docs/Normative/Normative NORMA_00019_ UNI EN ISO 15614-1_2017 Rev. 0.md` (Table 5, pag. ~27–28)  
@@ -173,12 +176,12 @@ async function generateWpsFromWpqr(params)
 
 **DoD:**
 
-- [ ] Jest backend verdi sui nuovi test
-- [ ] Mirror FE `weldingQualificationRules15614.js` sincronizzato; test FE se già presenti per quel file
-- [ ] `deploy-manifest.json` aggiornato
-- [ ] Spec `MODULO_WPS_GENERAZIONE…` → slice P0 marcata in PR description
-- [ ] `DEPUTYTASK1.md` → `Stato: CHIUSO — TEST OK` + commit/PR
-- [ ] Aggiornare una riga in `docs/GUIDA_CONSOLIDATA.md` (lezione: pivot WPS = generazione da WPQR)
+- [x] Jest backend verdi sui nuovi test
+- [x] Mirror FE `weldingQualificationRules15614.js` sincronizzato; test FE se già presenti per quel file
+- [x] `deploy-manifest.json` aggiornato
+- [x] Spec `MODULO_WPS_GENERAZIONE…` → slice P0 marcata
+- [x] `DEPUTYTASK1.md` → `Stato: CHIUSO — TEST OK` + commit/PR
+- [x] Aggiornare una riga in `docs/GUIDA_CONSOLIDATA.md` (lezione: pivot WPS = generazione da WPQR)
 
 **Fuori DoD P0:** endpoint REST, UI, merge automatico se si tocca solo backend service (chiedere conferma merge se PR tocca backend — criterio operating memory).
 
@@ -194,6 +197,7 @@ async function generateWpsFromWpqr(params)
 | Campi copertura WPQR | mig. **133**, `DEPUTYTASK1` storico CHIUSO |
 | Pattern AI HITL (P1) | `weldingAiSuggest.service.js` |
 | Ingest WPS (legacy) | `wpsIngest.service.js` — non estendere in P0 |
+| Generatore P0 | `wpsGenerator.service.js` |
 
 ---
 

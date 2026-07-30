@@ -7,6 +7,9 @@ const {
     isDiameterEssentialVariable,
     describeQualifiedPipeDiameterRangeLevel2,
     describePlateCoversPipeDiameterLevel2,
+    normalizeMaterialGroupCode,
+    isParentMaterialCombinationCovered,
+    resolveSteelGradeToGroup,
     buildWpqrQualificationRulesPromptSection,
 } = require('./weldingQualificationRules15614');
 
@@ -102,5 +105,82 @@ describe('weldingQualificationRules15614', () => {
         const section = buildWpqrQualificationRulesPromptSection();
         expect(section).toContain('ISO 15614-1');
         expect(section).toContain('Level 2 qualifica anche Level 1');
+        expect(section).toContain('isParentMaterialCombinationCovered');
+    });
+
+    describe('normalizeMaterialGroupCode', () => {
+        test('accetta 1.2, 1, group 1.2', () => {
+            expect(normalizeMaterialGroupCode('1.2')).toEqual({ group: 1, subgroup: '1.2' });
+            expect(normalizeMaterialGroupCode('1')).toEqual({ group: 1, subgroup: null });
+            expect(normalizeMaterialGroupCode('group 1.2')).toEqual({ group: 1, subgroup: '1.2' });
+            expect(normalizeMaterialGroupCode('Gruppo 8.1')).toEqual({ group: 8, subgroup: '8.1' });
+        });
+
+        test('garbage -> null', () => {
+            expect(normalizeMaterialGroupCode(null)).toBeNull();
+            expect(normalizeMaterialGroupCode('acciaio')).toBeNull();
+        });
+    });
+
+    describe('resolveSteelGradeToGroup', () => {
+        test('S235 → 1.1, S355 → 1.2', () => {
+            expect(resolveSteelGradeToGroup('S235').group).toBe('1.1');
+            expect(resolveSteelGradeToGroup('S355').group).toBe('1.2');
+            expect(resolveSteelGradeToGroup('S355J2+N').group).toBe('1.2');
+        });
+
+        test('codice gruppo passato attraverso', () => {
+            expect(resolveSteelGradeToGroup('1.2').group).toBe('1.2');
+        });
+
+        test('sconosciuto → null + warning', () => {
+            const r = resolveSteelGradeToGroup('InconelXYZ');
+            expect(r.group).toBeNull();
+            expect(r.warning).toMatch(/sconosciuto/i);
+        });
+    });
+
+    describe('isParentMaterialCombinationCovered (Tabella 5)', () => {
+        test('testato 1 o 1.2, genitori 1.2+1.1 (Mason) → covered', () => {
+            expect(isParentMaterialCombinationCovered({
+                materialGroupTested: '1.2',
+                parentGroupA: '1.2',
+                parentGroupB: '1.1',
+            }).covered).toBe(true);
+
+            expect(isParentMaterialCombinationCovered({
+                materialGroupTested: '1',
+                parentGroupA: '1.2',
+                parentGroupB: '1.1',
+            }).covered).toBe(true);
+        });
+
+        test('testato 8.1, genitori 1.2+1.1 → non coperto', () => {
+            const r = isParentMaterialCombinationCovered({
+                materialGroupTested: '8.1',
+                parentGroupA: '1.2',
+                parentGroupB: '1.1',
+            });
+            expect(r.covered).toBe(false);
+        });
+
+        test('testato 1.1, genitore omogeneo 1.2 → non coperto (footnote a)', () => {
+            const r = isParentMaterialCombinationCovered({
+                materialGroupTested: '1.1',
+                parentGroupA: '1.2',
+                parentGroupB: '1.2',
+            });
+            expect(r.covered).toBe(false);
+            expect(r.reason).toMatch(/Footnote \(a\)|snervamento/i);
+        });
+
+        test('input null/garbage → covered false, no throw', () => {
+            expect(isParentMaterialCombinationCovered({}).covered).toBe(false);
+            expect(isParentMaterialCombinationCovered({
+                materialGroupTested: 'xx',
+                parentGroupA: '1.2',
+                parentGroupB: '1.1',
+            }).covered).toBe(false);
+        });
     });
 });
