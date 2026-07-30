@@ -66,7 +66,7 @@ wpsGenerator.service.js
 | Slice | Obiettivo | Stato |
 |-------|-----------|--------|
 | **P0** | Codifica **Tabella 5** (acciai) + `wpsGenerator` + caso Mason FW S355/S235 + test L1 | ✅ Implementato (DEPUTYTASK1, 30/07/2026) |
-| **P1** | Endpoint + UI anteprima/salva bozza + suggerimento AskAi (caso Mason in linguaggio naturale) | Brief `DEPUTYTASK1` APERTO — dettaglio sotto |
+| **P1** | Endpoint + UI anteprima/salva bozza + suggerimento AskAi (caso Mason in linguaggio naturale) | ✅ Implementato (DEPUTYTASK1, 30/07/2026) |
 | **P1b** | Completare Tabella 7 Level 1 (GAP estrazione) se verificata su PDF ufficiale | Opzionale |
 | **P2** | Deprecare/nascondere upload batch WPS come flusso primario; export Word WPS | Dopo P1 |
 
@@ -111,12 +111,12 @@ wpsGenerator.service.js
 
 ### DoD P1
 
-- [ ] Endpoint + test Jest
-- [ ] UI genera → anteprima → salva bozza (caso Mason manuale)
-- [ ] Chip/suggerimento AskAi collegato al form o all’API
-- [ ] `deploy-manifest.json` + deploy VPS se nuovi file backend
-- [ ] Vitest FE mirati + build
-- [ ] Aggiornare questa spec (P1 ✅) + `DEPUTYTASK1` CHIUSO
+- [x] Endpoint + test Jest
+- [x] UI genera → anteprima → salva bozza (caso Mason manuale)
+- [x] Chip/suggerimento AskAi collegato al form o all’API
+- [x] `deploy-manifest.json` + deploy VPS se nuovi file backend
+- [x] Vitest FE mirati + build
+- [x] Aggiornare questa spec (P1 ✅) + `DEPUTYTASK1` CHIUSO
 
 ---
 

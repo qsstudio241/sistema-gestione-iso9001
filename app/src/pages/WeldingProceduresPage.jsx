@@ -13,7 +13,11 @@ import { formatDate } from "../utils/dateHelpers";
 import WpqrUploadButton from "../components/WpqrUploadButton";
 import WpsUploadButton from "../components/WpsUploadButton";
 import AskAiButton from "../components/AskAiButton";
-import { saveQualContext } from "../utils/aiAssistantContext";
+import {
+  saveQualContext,
+  consumeWpsGenerateIntent,
+  MASON_WPS_GENERATE_DEFAULTS,
+} from "../utils/aiAssistantContext";
 import {
   resolveInitialQualificationsCompanyScope,
   persistQualificationsCompanyScope,
@@ -216,6 +220,301 @@ function WPSFormModal({ wps, defaultCompanyId, onSave, onClose }) {
           <div className="wp-modal-footer">
             <button type="button" className="wp-btn-cancel" onClick={onClose}>Annulla</button>
             <button type="submit" className="wp-btn-save" disabled={saving}>{saving ? "Salvataggio..." : "Salva"}</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
+
+// ── Genera WPS da WPQR (P1) ───────────────────────────────────────────────────
+
+function draftToCreatePayload(draft, companyId, wpsCode) {
+  return {
+    company_id: companyId || null,
+    wps_code: wpsCode,
+    revision: "0",
+    welding_process: draft.welding_process || null,
+    material_group: draft.material_group || null,
+    filler_material: draft.filler_material || null,
+    shielding_gas: draft.shielding_gas || null,
+    joint_type: draft.joint_type || null,
+    position: draft.welding_positions || null,
+    thickness_range_min: draft.thickness_range_min != null ? draft.thickness_range_min : null,
+    thickness_range_max: draft.thickness_range_max != null ? draft.thickness_range_max : null,
+    qualification_standard: draft.qualification_standard || "ISO 15614-1",
+    status: "bozza",
+    notes: draft.wpqr_ref
+      ? `Generata da WPQR ${draft.wpqr_ref}`
+      : "Bozza generata da WPQR (ISO 15614-1)",
+  };
+}
+
+/**
+ * Modal generazione WPS da WPQR (caso Mason precompilabile).
+ * Esportato per test Vitest.
+ */
+export function GenerateWpsModal({
+  defaultCompanyId,
+  initialValues,
+  onSaved,
+  onClose,
+}) {
+  const defaults = { ...MASON_WPS_GENERATE_DEFAULTS, ...(initialValues || {}) };
+  const [form, setForm] = useState({
+    joint_type: defaults.joint_type || "FW",
+    parent_material_a: defaults.parent_material_a || "",
+    parent_material_b: defaults.parent_material_b || "",
+    thickness_a_mm: defaults.thickness_a_mm != null ? String(defaults.thickness_a_mm) : "",
+    thickness_b_mm: defaults.thickness_b_mm != null ? String(defaults.thickness_b_mm) : "",
+    welding_process: defaults.welding_process || "",
+  });
+  const [loading, setLoading] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState(null);
+  const [result, setResult] = useState(null);
+  const [wpsCode, setWpsCode] = useState("");
+
+  const set = (key, val) => setForm((f) => ({ ...f, [key]: val }));
+
+  async function handleGenerate(e) {
+    e.preventDefault();
+    setLoading(true);
+    setError(null);
+    setResult(null);
+    try {
+      const payload = {
+        joint_type: form.joint_type,
+        parent_material_a: form.parent_material_a.trim(),
+        parent_material_b: form.parent_material_b.trim(),
+        thickness_a_mm: Number(form.thickness_a_mm),
+        thickness_b_mm: Number(form.thickness_b_mm),
+      };
+      if (form.welding_process) payload.welding_process = form.welding_process;
+      if (defaultCompanyId) payload.company_id = defaultCompanyId;
+
+      const res = await apiService.generateWPS(payload);
+      setResult(res);
+      if (res.wps_draft) {
+        const jt = res.wps_draft.joint_type || form.joint_type || "GEN";
+        const ma = form.parent_material_a.trim() || "A";
+        const mb = form.parent_material_b.trim() || "B";
+        setWpsCode(`WPS-${jt}-${ma}-${mb}`);
+      }
+    } catch (err) {
+      setError(err?.data?.error || err.message || "Errore generazione WPS");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function handleSaveDraft() {
+    if (!result?.wps_draft) return;
+    if (!wpsCode.trim()) {
+      setError("Inserire un codice WPS per salvare la bozza");
+      return;
+    }
+    setSaving(true);
+    setError(null);
+    try {
+      await apiService.createWPS(
+        draftToCreatePayload(result.wps_draft, defaultCompanyId, wpsCode.trim())
+      );
+      onSaved();
+    } catch (err) {
+      setError(err?.data?.error || err.message || "Errore salvataggio bozza");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  const canSave = result && (result.status === "ok" || result.status === "partial") && result.wps_draft;
+  const notPossible = result?.status === "not_possible";
+
+  return (
+    <div className="wp-modal-overlay" onClick={onClose} data-testid="generate-wps-modal">
+      <div className="wp-modal" onClick={(e) => e.stopPropagation()}>
+        <div className="wp-modal-header">
+          <h3>Genera WPS da WPQR</h3>
+          <button type="button" className="wp-modal-close" onClick={onClose}>&times;</button>
+        </div>
+        <form onSubmit={handleGenerate}>
+          <div className="wp-modal-body">
+            {error && <div className="wp-error">{error}</div>}
+            {!defaultCompanyId && (
+              <div className="wp-warn-no-company">
+                {"\u26A0\uFE0F Seleziona un\u2019azienda nell\u2019Ambito in cima alla pagina per filtrare le WPQR."}
+              </div>
+            )}
+            <div className="wp-form-grid">
+              <div className="wp-form-group">
+                <label className="wp-form-label">Tipo giunto *</label>
+                <select
+                  className="wp-form-select"
+                  value={form.joint_type}
+                  onChange={(e) => set("joint_type", e.target.value)}
+                  required
+                  data-testid="gen-joint-type"
+                >
+                  <option value="FW">FW - A filetto</option>
+                  <option value="BW">BW - Testa a testa</option>
+                </select>
+              </div>
+              <div className="wp-form-group">
+                <label className="wp-form-label">Processo (opzionale)</label>
+                <select
+                  className="wp-form-select"
+                  value={form.welding_process}
+                  onChange={(e) => set("welding_process", e.target.value)}
+                >
+                  <option value="">-- Qualsiasi --</option>
+                  {WELDING_PROCESSES.map((p) => (
+                    <option key={p.value} value={p.value}>{p.label}</option>
+                  ))}
+                </select>
+              </div>
+              <div className="wp-form-group">
+                <label className="wp-form-label">Materiale A *</label>
+                <input
+                  className="wp-form-input"
+                  value={form.parent_material_a}
+                  onChange={(e) => set("parent_material_a", e.target.value)}
+                  placeholder="es. S355"
+                  required
+                  data-testid="gen-mat-a"
+                />
+              </div>
+              <div className="wp-form-group">
+                <label className="wp-form-label">Materiale B *</label>
+                <input
+                  className="wp-form-input"
+                  value={form.parent_material_b}
+                  onChange={(e) => set("parent_material_b", e.target.value)}
+                  placeholder="es. S235"
+                  required
+                  data-testid="gen-mat-b"
+                />
+              </div>
+              <div className="wp-form-group">
+                <label className="wp-form-label">Spessore A (mm) *</label>
+                <input
+                  className="wp-form-input"
+                  type="number"
+                  step="0.1"
+                  min="0"
+                  value={form.thickness_a_mm}
+                  onChange={(e) => set("thickness_a_mm", e.target.value)}
+                  required
+                  data-testid="gen-thick-a"
+                />
+              </div>
+              <div className="wp-form-group">
+                <label className="wp-form-label">Spessore B (mm) *</label>
+                <input
+                  className="wp-form-input"
+                  type="number"
+                  step="0.1"
+                  min="0"
+                  value={form.thickness_b_mm}
+                  onChange={(e) => set("thickness_b_mm", e.target.value)}
+                  required
+                  data-testid="gen-thick-b"
+                />
+              </div>
+            </div>
+
+            {result && canSave && (
+              <div className="wp-gen-preview" data-testid="gen-preview-ok">
+                <p className="wp-gen-status">
+                  Esito: <strong>{result.status === "ok" ? "Copertura OK" : "Copertura parziale"}</strong>
+                  {result.wpqr_used?.wpqr_code
+                    ? ` — WPQR ${result.wpqr_used.wpqr_code}`
+                    : ""}
+                </p>
+                {Array.isArray(result.warnings) && result.warnings.length > 0 && (
+                  <ul className="wp-gen-warnings">
+                    {result.warnings.map((w, i) => <li key={i}>{w}</li>)}
+                  </ul>
+                )}
+                <div className="wp-form-grid" style={{ marginTop: 12 }}>
+                  <div className="wp-form-group">
+                    <label className="wp-form-label">Codice WPS bozza *</label>
+                    <input
+                      className="wp-form-input"
+                      value={wpsCode}
+                      onChange={(e) => setWpsCode(e.target.value)}
+                      data-testid="gen-wps-code"
+                    />
+                  </div>
+                  <div className="wp-form-group">
+                    <label className="wp-form-label">Processo</label>
+                    <input className="wp-form-input" readOnly value={result.wps_draft.welding_process || "-"} />
+                  </div>
+                  <div className="wp-form-group">
+                    <label className="wp-form-label">Gruppo materiale</label>
+                    <input className="wp-form-input" readOnly value={result.wps_draft.material_group || "-"} />
+                  </div>
+                  <div className="wp-form-group">
+                    <label className="wp-form-label">Giunto</label>
+                    <input className="wp-form-input" readOnly value={result.wps_draft.joint_type || "-"} />
+                  </div>
+                  <div className="wp-form-group">
+                    <label className="wp-form-label">Spessore min–max</label>
+                    <input
+                      className="wp-form-input"
+                      readOnly
+                      value={`${result.wps_draft.thickness_range_min ?? "?"} – ${result.wps_draft.thickness_range_max ?? "?"} mm`}
+                    />
+                  </div>
+                  <div className="wp-form-group">
+                    <label className="wp-form-label">Norma</label>
+                    <input className="wp-form-input" readOnly value={result.wps_draft.qualification_standard || "-"} />
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {notPossible && (
+              <div className="wp-gen-not-possible" data-testid="gen-preview-not-possible">
+                <p className="wp-gen-status">
+                  <strong>WPS non realizzabile</strong> con le WPQR disponibili nell&apos;ambito.
+                </p>
+                <p>Estensioni necessarie:</p>
+                <ul>
+                  {(result.extensions_needed || []).map((ext, i) => (
+                    <li key={i}>{ext}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </div>
+          <div className="wp-modal-footer">
+            <button type="button" className="wp-btn-cancel" onClick={onClose}>Annulla</button>
+            {!canSave && (
+              <button type="submit" className="wp-btn-save" disabled={loading}>
+                {loading ? "Calcolo..." : "Genera"}
+              </button>
+            )}
+            {canSave && (
+              <>
+                <button
+                  type="button"
+                  className="wp-btn-cancel"
+                  onClick={() => { setResult(null); setError(null); }}
+                >
+                  Modifica parametri
+                </button>
+                <button
+                  type="button"
+                  className="wp-btn-save"
+                  disabled={saving}
+                  onClick={handleSaveDraft}
+                  data-testid="gen-save-draft"
+                >
+                  {saving ? "Salvataggio..." : "Salva bozza"}
+                </button>
+              </>
+            )}
           </div>
         </form>
       </div>
@@ -493,6 +792,8 @@ function WeldingProceduresPage() {
   // Modals
   const [wpsFormOpen, setWpsFormOpen] = useState(false);
   const [editingWps, setEditingWps] = useState(null);
+  const [generateOpen, setGenerateOpen] = useState(false);
+  const [generateInitial, setGenerateInitial] = useState(null);
   const [wpqrFormOpen, setWpqrFormOpen] = useState(false);
   const [editingWpqr, setEditingWpqr] = useState(null);
 
@@ -602,11 +903,30 @@ function WeldingProceduresPage() {
     if (activeTab === "wpqr") loadWPQR();
   }, [activeTab, loadWPQR]);
 
+  // Chip AskAi / deep-link: apri Genera WPS precompilato (caso Mason)
+  useEffect(() => {
+    const intent = consumeWpsGenerateIntent();
+    if (!intent) return;
+    setActiveTab("wps");
+    setGenerateInitial(intent);
+    setGenerateOpen(true);
+  }, []);
+
   // ?? WPS handlers ?
 
   function handleNewWps()       { setEditingWps(null); setWpsFormOpen(true); }
+  function handleGenerateWps()  {
+    setGenerateInitial({ ...MASON_WPS_GENERATE_DEFAULTS });
+    setGenerateOpen(true);
+  }
   function handleEditWps(w)     { setEditingWps(w);    setWpsFormOpen(true); }
   function handleWpsSaved()     { setWpsFormOpen(false); setEditingWps(null); loadWPS(); loadAllWps(); }
+  function handleGenerateSaved() {
+    setGenerateOpen(false);
+    setGenerateInitial(null);
+    loadWPS();
+    loadAllWps();
+  }
 
   async function handleDeleteWps(id) {
     try {
@@ -711,6 +1031,11 @@ function WeldingProceduresPage() {
               companyName={companyScopeName}
               onUploadComplete={() => { loadWPQR(); loadWPQRStats(); }}
             />
+          )}
+          {activeTab === "wps" && (
+            <button type="button" className="wp-btn-generate" onClick={handleGenerateWps}>
+              Genera WPS
+            </button>
           )}
           <button className="wp-btn-new" onClick={activeTab === "wps" ? handleNewWps : handleNewWpqr}>
             + {activeTab === "wps" ? "Nuova WPS" : "Nuovo WPQR"}
@@ -1029,6 +1354,14 @@ function WeldingProceduresPage() {
           defaultCompanyId={companyScopeId || null}
           onSave={handleWpsSaved}
           onClose={() => { setWpsFormOpen(false); setEditingWps(null); }}
+        />
+      )}
+      {generateOpen && (
+        <GenerateWpsModal
+          defaultCompanyId={companyScopeId || null}
+          initialValues={generateInitial}
+          onSaved={handleGenerateSaved}
+          onClose={() => { setGenerateOpen(false); setGenerateInitial(null); }}
         />
       )}
       {wpqrFormOpen && (
