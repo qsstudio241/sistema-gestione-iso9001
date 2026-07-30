@@ -11,6 +11,9 @@ import {
   buildAuditContextSeparatorLabel,
   buildAiChatContextPayload,
   loadQualContext,
+  saveWpsGenerateIntent,
+  WPS_GENERATE_MASON_CHIP,
+  MASON_WPS_GENERATE_DEFAULTS,
 } from "../utils/aiAssistantContext";
 import AiAssistantCitations from "../components/AiAssistantCitations";
 import {
@@ -19,6 +22,7 @@ import {
   saveChatMessages,
   clearChatMessages,
 } from "../utils/aiAssistantChatPersist";
+import { useNavigate } from "../contexts/RouterContext";
 import "./AiAssistantPage.css";
 
 const SUGGESTIONS_GENERIC = [
@@ -57,6 +61,9 @@ function buildContextualSuggestions({ checklistFocus, companyContext, standardCo
     const qCompany = qualCtx.companyName || company;
     const qLabel   = qualCtx.qualTypeLabel || qualCtx.qualType;
     const qSuffix  = qCompany ? ` di ${qCompany}` : "";
+    if (qualCtx.qualType === "wps") {
+      suggestions.push(WPS_GENERATE_MASON_CHIP);
+    }
     suggestions.push(`Quali ${qLabel} in scadenza nei prossimi 30 giorni${qSuffix}?`);
     suggestions.push(`Elenca le ${qLabel} non ancora approvate${qSuffix}`);
     if (qCompany) suggestions.push(`Riassumi lo stato di tutte le qualifiche di ${qCompany}`);
@@ -131,6 +138,7 @@ function formatAiText(text) {
 
 function AiAssistantPage() {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const { currentAudit, currentAuditId } = useStorage();
   const chatStorageKey = useMemo(
     () => buildChatStorageKey(user?.organization_id, user?.id ?? user?.user_id),
@@ -488,6 +496,16 @@ function AiAssistantPage() {
     }
   }, [input, loading, companyContext.companyId, standardContext.standardId, currentAudit, companies]);
 
+  /** Chip P1-C: naviga al form Genera WPS precompilato (matching resta sul backend P0). */
+  const handleSuggestionClick = useCallback((s) => {
+    if (s === WPS_GENERATE_MASON_CHIP) {
+      saveWpsGenerateIntent({ ...MASON_WPS_GENERATE_DEFAULTS });
+      navigate("/saldatura/procedure");
+      return;
+    }
+    handleSend(s);
+  }, [navigate, handleSend]);
+
   const handleKeyDown = useCallback(
     (e) => {
       if (e.key === "Enter" && !e.shiftKey) {
@@ -701,7 +719,7 @@ function AiAssistantPage() {
                 <button
                   key={s}
                   className="ai-assistant-suggestion-chip"
-                  onClick={() => handleSend(s)}
+                  onClick={() => handleSuggestionClick(s)}
                 >
                   {s}
                 </button>
