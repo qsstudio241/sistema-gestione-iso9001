@@ -324,3 +324,52 @@
   .form-row-2col, .form-row-3col { grid-template-columns: 1fr; }
   .risk-card-top { flex-direction: column; }
 }
+
+/* Badge azienda (ambito) nelle card */
+.risk-company-badge {
+  display: inline-block;
+  padding: 2px 8px;
+  background: #e8f4fd;
+  color: #2471a3;
+  border: 1px solid #aed6f1;
+  border-radius: 10px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  margin-left: 4px;
+  white-space: nowrap;
+}
+
+/* Barra selettore ambito (livello modulo) */
+.risks-scope-bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  background: #f0f7ff;
+  border: 1px solid #bee3f8;
+  border-radius: 8px;
+  margin-bottom: 12px;
+  flex-wrap: wrap;
+}
+.scope-label {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #2c5282;
+  white-space: nowrap;
+}
+.scope-select {
+  padding: 5px 10px;
+  border: 1px solid #90cdf4;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  background: #fff;
+  min-width: 180px;
+}
+.scope-active-badge {
+  padding: 3px 10px;
+  background: #2b6cb0;
+  color: #fff;
+  border-radius: 12px;
+  font-size: 0.78rem;
+  font-weight: 600;
+}
