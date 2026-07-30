@@ -10,6 +10,7 @@ const router = require('express').Router();
 const { authenticate, authorize } = require('../middleware/auth.middleware');
 const adminController = require('../controllers/admin.controller');
 const billingController = require('../controllers/billing.controller');
+const reprocessTasksController = require('../controllers/reprocessTasks.controller');
 
 const adminOnly      = [authenticate, authorize('admin', 'superadmin')];
 const superadminOnly = [authenticate, authorize('superadmin')];
@@ -39,5 +40,9 @@ router.get('/admin/billing/overview', superadminOnly, billingController.getOverv
 router.get('/admin/billing/companies', superadminOnly, billingController.getCompanies);
 router.get('/admin/billing/events', superadminOnly, billingController.getEvents);
 router.get('/admin/billing/export', superadminOnly, billingController.exportCsv);
+
+// Rielaborazioni disponibili (backfill campi ingest su record esistenti — 28/07/2026)
+router.get('/admin/reprocess-tasks', superadminOnly, reprocessTasksController.listReprocessTasks);
+router.post('/admin/reprocess-tasks/:key/run', superadminOnly, reprocessTasksController.runReprocessTask);
 
 module.exports = router;

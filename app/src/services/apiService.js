@@ -1930,6 +1930,16 @@ class ApiService {
         return this.get(`/admin/billing/events${qs ? '?' + qs : ''}`);
     }
 
+    // ─── Rielaborazioni disponibili (registro backfill, solo superadmin) ────
+    async getReprocessTasks(params = {}) {
+        const qs = new URLSearchParams(params).toString();
+        return this.get(`/admin/reprocess-tasks${qs ? '?' + qs : ''}`);
+    }
+
+    async runReprocessTask(key, body = {}) {
+        return this.post(`/admin/reprocess-tasks/${key}/run`, body);
+    }
+
     async downloadBillingExport(period) {
         const token = this.getToken();
         const qs = period ? `?period=${encodeURIComponent(period)}` : '';

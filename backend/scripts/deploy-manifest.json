@@ -40,7 +40,8 @@
                                      "src/data/weldingQualificationRules9606.js",
                                      "src/data/weldingQualificationRules15614.js",
                                      "src/data/weldingSymbols2553.js",
-                                     "src/data/qtafiVis001Template.js"
+                                     "src/data/qtafiVis001Template.js",
+                                     "src/data/reprocessableFields.js"
                                  ]
                    },
                    {
@@ -89,6 +90,7 @@
                                      "src/services/normIngest.service.js",
                                      "src/services/documentIngestPipeline.service.js",
                                      "src/services/ingestStaging.service.js",
+                                     "src/services/qualificationReprocess.service.js",
                                      "src/services/ingestFeedback.service.js",
                                      "src/services/ingestLearning.service.js",
                                      "src/services/ingestReferencePattern.service.js",
@@ -197,6 +199,7 @@
                                      "src/controllers/deadlines.controller.js",
                                      "src/controllers/welding.controller.js",
                                      "src/controllers/ingestStaging.controller.js",
+                                     "src/controllers/reprocessTasks.controller.js",
                                      "src/controllers/reportTemplate.controller.js",
                                      "src/controllers/alert.controller.js",
                                      "src/controllers/notifications.controller.js",

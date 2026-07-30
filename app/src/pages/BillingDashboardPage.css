@@ -236,3 +236,51 @@
   color: #888;
   font-size: 0.85rem;
 }
+
+.billing-reprocess-alert {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  background: #fef3c7;
+  color: #92400e;
+  border: 1px solid #fcd34d;
+  border-radius: 8px;
+  padding: 0.7rem 1rem;
+  margin-bottom: 1.25rem;
+  font-size: 0.92rem;
+}
+
+.billing-reprocess-alert-icon {
+  font-size: 1.1rem;
+}
+
+.billing-reprocess-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 0.75rem;
+}
+
+.billing-reprocess-header h2 {
+  margin: 0 0 0.35rem;
+}
+
+.billing-reprocess-intro {
+  font-size: 0.88rem;
+  color: #555;
+  line-height: 1.45;
+  margin: 0;
+  max-width: 640px;
+}
+
+.billing-reprocess-run-btn {
+  width: auto;
+  white-space: nowrap;
+}
+
+.billing-reprocess-result {
+  font-size: 0.85rem;
+  max-width: 320px;
+}
