@@ -63,6 +63,8 @@ export default function BillingDashboardPage() {
     if (isSuperadmin) load();
   }, [isSuperadmin, load]);
 
+  const reprocess = useReprocessTasks(isSuperadmin);
+
   async function handleExport() {
     setExporting(true);
     setExportMsg(null);
@@ -115,6 +117,18 @@ export default function BillingDashboardPage() {
 
       {error && <p className="billing-error">{error}</p>}
       {exportMsg && <p className="billing-ok">{exportMsg}</p>}
+
+      {reprocess.totalCandidates > 0 && (
+        <div className="billing-reprocess-alert" role="alert">
+          <span className="billing-reprocess-alert-icon">{"\u26A0\uFE0F"}</span>
+          <span>
+            <strong>{reprocess.totalCandidates}</strong> record possono essere aggiornati con dati AI mancanti —
+            vedi sezione "Rielaborazioni disponibili" più sotto.
+          </span>
+        </div>
+      )}
+
+      <ReprocessTasksSection reprocess={reprocess} />
 
       <section className="billing-summary" aria-label="Riepilogo mese">
         <div className="billing-card">
@@ -292,5 +306,136 @@ export default function BillingDashboardPage() {
         </aside>
       </section>
     </div>
+  );
+}
+
+/**
+ * useReprocessTasks — dati + azioni per la sezione "Rielaborazioni disponibili"
+ * (28/07/2026). Registro backend in reprocessableFields.js: ogni voce è un
+ * campo AI-estraibile che può necessitare backfill su record già presenti in
+ * DB (stesso pattern del backfill transfer_mode). Nessuno scheduler
+ * automatico (decisione committente): solo conteggio + lancio manuale.
+ */
+function useReprocessTasks(enabled) {
+  const [tasks, setTasks] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [runningKey, setRunningKey] = useState(null);
+  const [results, setResults] = useState({});
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await apiService.getReprocessTasks();
+      if (!res.success) throw new Error(res.error || "Errore caricamento task di rielaborazione");
+      setTasks(res.tasks || []);
+    } catch (e) {
+      setError(e.message || "Errore caricamento task di rielaborazione");
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (enabled) load();
+  }, [enabled, load]);
+
+  const run = useCallback(async (key) => {
+    setRunningKey(key);
+    setResults((prev) => ({ ...prev, [key]: null }));
+    try {
+      const res = await apiService.runReprocessTask(key);
+      if (!res.success) throw new Error(res.error || "Rielaborazione non riuscita");
+      setResults((prev) => ({ ...prev, [key]: { ok: true, ...res } }));
+      await load();
+    } catch (e) {
+      setResults((prev) => ({ ...prev, [key]: { ok: false, error: e.message || "Rielaborazione non riuscita" } }));
+    } finally {
+      setRunningKey(null);
+    }
+  }, [load]);
+
+  const totalCandidates = tasks.reduce((sum, t) => sum + (t.candidate_count || 0), 0);
+
+  return { tasks, loading, error, runningKey, results, run, reload: load, totalCandidates };
+}
+
+function ReprocessTasksSection({ reprocess }) {
+  const { tasks, loading, error, runningKey, results, run, reload, totalCandidates } = reprocess;
+
+  return (
+    <section className="billing-section" aria-labelledby="billing-reprocess-heading">
+      <header className="billing-reprocess-header">
+        <div>
+          <h2 id="billing-reprocess-heading">Rielaborazioni disponibili</h2>
+          <p className="billing-reprocess-intro">
+            Backfill di campi AI-estraibili su qualifiche già caricate, rilanciando l'estrazione sul documento
+            originale già presente. Nessun automatismo: ogni rielaborazione va lanciata manualmente qui e genera
+            proposte da confermare in Qualifiche → "Rielaborazioni in coda".
+          </p>
+        </div>
+        <button type="button" className="btn-secondary" onClick={reload} disabled={loading}>
+          Aggiorna
+        </button>
+      </header>
+
+      {error && <p className="billing-error">{error}</p>}
+
+      {loading ? (
+        <p>Caricamento task di rielaborazione…</p>
+      ) : tasks.length === 0 ? (
+        <p className="billing-muted">Nessun campo rielaborabile registrato.</p>
+      ) : (
+        <div className="billing-table-wrap">
+          <table className="billing-table">
+            <thead>
+              <tr>
+                <th>Campo</th>
+                <th>Candidati</th>
+                <th>Azione</th>
+                <th>Esito ultimo lancio</th>
+              </tr>
+            </thead>
+            <tbody>
+              {tasks.map((task) => {
+                const result = results[task.key];
+                const isRunning = runningKey === task.key;
+                return (
+                  <tr key={task.key}>
+                    <td>{task.label}</td>
+                    <td>
+                      <span className={`billing-badge ${task.candidate_count > 0 ? "billing-badge-active" : ""}`}>
+                        {task.candidate_count}
+                      </span>
+                    </td>
+                    <td>
+                      <button
+                        type="button"
+                        className="btn-primary billing-reprocess-run-btn"
+                        onClick={() => run(task.key)}
+                        disabled={task.candidate_count === 0 || isRunning}
+                      >
+                        {isRunning ? "Rielaborazione in corso…" : "Lancia rielaborazione"}
+                      </button>
+                    </td>
+                    <td className="billing-reprocess-result">
+                      {result?.ok && (
+                        <span className="billing-ok">
+                          {result.proposalsCreated} proposte create, disponibili in Qualifiche → Rielaborazioni in coda
+                          {result.hasMore ? " (altri candidati restanti, rilancia per continuare)" : ""}.
+                        </span>
+                      )}
+                      {result && !result.ok && <span className="billing-error">{result.error}</span>}
+                      {!result && task.error && <span className="billing-error">Conteggio non disponibile: {task.error}</span>}
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </section>
   );
 }

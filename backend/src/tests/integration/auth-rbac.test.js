@@ -135,6 +135,40 @@ describe('RBAC — autorizzazione per ruolo', () => {
         // Admin non deve ricevere 403
         expect(res.status).not.toBe(403);
     });
+
+    // Pannello superadmin "Rielaborazioni disponibili" (28/07/2026): a differenza
+    // di /admin/users (admin+superadmin), qui solo il superadmin è autorizzato —
+    // admin di un'organizzazione cliente non deve poter lanciare rielaborazioni AI.
+    it('403 se admin (non superadmin) tenta GET /admin/reprocess-tasks', async () => {
+        const token = makeToken({ role: 'admin' });
+        const res = await request(app)
+            .get(`${API}/admin/reprocess-tasks`)
+            .set('Authorization', `Bearer ${token}`);
+        expect(res.status).toBe(403);
+    });
+
+    it('403 se admin (non superadmin) tenta POST /admin/reprocess-tasks/:key/run', async () => {
+        const token = makeToken({ role: 'admin' });
+        const res = await request(app)
+            .post(`${API}/admin/reprocess-tasks/transfer_mode/run`)
+            .set('Authorization', `Bearer ${token}`)
+            .send({});
+        expect(res.status).toBe(403);
+    });
+
+    it('200 per superadmin su GET /admin/reprocess-tasks (nessun candidato, DB mockato vuoto)', async () => {
+        query.mockResolvedValue({ recordset: [], rowsAffected: [0] });
+        const token = makeToken({ role: 'superadmin' });
+        const res = await request(app)
+            .get(`${API}/admin/reprocess-tasks`)
+            .set('Authorization', `Bearer ${token}`);
+        expect(res.status).toBe(200);
+        expect(res.body.success).toBe(true);
+        expect(res.body.total_candidates).toBe(0);
+        expect(res.body.tasks.map((t) => t.key)).toEqual(
+            expect.arrayContaining(['transfer_mode', 'shielding_gas', 'joint_type', 'weld_details']),
+        );
+    });
 });
 
 // ── SUITE: isolamento tenant ──────────────────────────────────────────────────
