@@ -2,11 +2,11 @@
 # Dot-source: . (Join-Path $PSScriptRoot 'lib\vps-ssh.ps1')
 # Non eseguire direttamente.
 
-$script:SgqVpsHost = 'spascarella@www.fr-busato.it'
+$script:SgqVpsHost = 'spascarella@busato.selfip.com'
 $script:SgqVpsPort = '1122'
 $script:SgqVpsHostKey = 'ssh-ed25519 255 SHA256:X7V82/1Ugdd7QmCJqaAXTn8Pazqv8bRA3mshLlwbsoc'
 $script:SgqVpsRemoteBase = '/var/www/sgq-backend'
-$script:SgqVpsHealthUrl = 'https://www.fr-busato.it:8443/api/v1/health'
+$script:SgqVpsHealthUrl = 'https://busato.selfip.com:8443/api/v1/health'
 
 function Get-SgqProjectRoots {
     $scriptsRoot = if ($PSScriptRoot -match 'scripts\\lib$') {

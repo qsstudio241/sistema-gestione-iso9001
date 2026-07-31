@@ -4,8 +4,8 @@
  * per righe pre-R3 con JSON vuoto o incompleto. Idempotente: non sovrascrive campi già presenti.
  *
  * Uso VPS:
- *   scp -P 1122 backend/scripts/backfill-norm-type-specific-data-vps.js spascarella@www.fr-busato.it:/tmp/
- *   ssh -p 1122 spascarella@www.fr-busato.it "node /tmp/backfill-norm-type-specific-data-vps.js"
+ *   scp -P 1122 backend/scripts/backfill-norm-type-specific-data-vps.js spascarella@busato.selfip.com:/tmp/
+ *   ssh -p 1122 spascarella@busato.selfip.com "node /tmp/backfill-norm-type-specific-data-vps.js"
  */
 process.chdir('/var/www/sgq-backend');
 require('/var/www/sgq-backend/node_modules/dotenv').config({ path: '/var/www/sgq-backend/.env' });

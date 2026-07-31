@@ -1,6 +1,6 @@
 /**
  * seed-system-tags-vps.js — Wrapper per eseguire il seed sul VPS
- * Usa localhost:11043 invece di www.fr-busato.it (non raggiungibile internamente)
+ * Usa localhost:11043 invece di busato.selfip.com (non raggiungibile internamente)
  */
 const sql = require('/var/www/sgq-backend/node_modules/mssql');
 const fs = require('fs');

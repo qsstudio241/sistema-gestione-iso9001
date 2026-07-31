@@ -45,7 +45,7 @@ async function testDatabaseWriteRead() {
         // ========================================================================
         console.log('1️⃣ CONNESSIONE AL DATABASE...');
         pool = await sql.connect(config);
-        console.log('✅ Connesso a SQL Server: www.fr-busato.it:11043');
+        console.log('✅ Connesso a SQL Server: busato.selfip.com:11043');
         console.log('');
 
         // ========================================================================

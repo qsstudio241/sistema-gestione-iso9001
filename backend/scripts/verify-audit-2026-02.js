@@ -5,7 +5,7 @@
 
 const https = require('https');
 
-const API_BASE = 'https://www.fr-busato.it:8443/api/v1';
+const API_BASE = 'https://busato.selfip.com:8443/api/v1';
 const LOGIN_EMAIL = 'admin@sgq.local';
 const LOGIN_PASSWORD = process.env.SGQ_TEST_ADMIN_PASSWORD;
 if (!LOGIN_PASSWORD) {

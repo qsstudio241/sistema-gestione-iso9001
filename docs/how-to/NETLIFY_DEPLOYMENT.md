@@ -117,7 +117,7 @@ local-ssl-proxy --source 3443 --target 3000
 
 ## 🔧 Configurazione Backend
 
-**IMPORTANTE**: App richiede backend API su `https://www.fr-busato.it:10443/api/v1`.
+**IMPORTANTE**: App richiede backend API su `https://busato.selfip.com:10443/api/v1`.
 
 ### Variabili Ambiente Netlify
 
@@ -200,7 +200,7 @@ npm run build
 
 **Fix**:
 
-1. Verifica backend online: `curl https://www.fr-busato.it:10443/health`
+1. Verifica backend online: `curl https://busato.selfip.com:10443/health`
 2. Controlla CORS headers backend
 3. Verifica `apiService.js` usa URL corretto
 

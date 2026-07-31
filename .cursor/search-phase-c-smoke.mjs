@@ -5,7 +5,7 @@
 const fs = await import('fs');
 const path = await import('path');
 
-const API = 'https://www.fr-busato.it:8443/api/v1';
+const API = 'https://busato.selfip.com:8443/api/v1';
 let EMAIL = process.env.SGQ_APP_EMAIL || 'admin@sgq.local';
 let PASSWORD = process.env.SGQ_APP_PASSWORD;
 

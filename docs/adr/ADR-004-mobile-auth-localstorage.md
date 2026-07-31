@@ -12,7 +12,7 @@
 Il sistema usa JWT in cookie `httpOnly` come meccanismo di autenticazione principale (soluzione sicura per browser desktop). Su Android, quando l'app è installata come PWA in modalità **standalone** (aggiunta alla home screen), il comportamento dei cookie è diverso:
 
 - Chrome Android in modalità standalone usa un cookie store separato dal browser
-- `SameSite=None; Secure` richiede HTTPS (ok), ma il cross-origin cookie sharing tra Netlify (`systemgest.netlify.app`) e il backend (`www.fr-busato.it:8443`) è soggetto a restrizioni crescenti
+- `SameSite=None; Secure` richiede HTTPS (ok), ma il cross-origin cookie sharing tra Netlify (`systemgest.netlify.app`) e il backend (`busato.selfip.com:8443`) è soggetto a restrizioni crescenti
 - L'effetto pratico osservato: dopo il login, il redirect ricarica e AuthContext non trova la sessione → **loop login infinito su Android PWA standalone**
 - Ticket di riferimento: `open_points.md` issue #008
 

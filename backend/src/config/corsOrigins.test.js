@@ -5,7 +5,7 @@ const {
 
 const STATIC = [
     'https://systemgest.netlify.app',
-    'https://www.fr-busato.it',
+    'https://busato.selfip.com',
 ];
 
 describe('corsOrigins', () => {
@@ -20,7 +20,7 @@ describe('corsOrigins', () => {
     describe('isAllowedCorsOrigin', () => {
         it('accetta origini statiche da env', () => {
             expect(isAllowedCorsOrigin('https://systemgest.netlify.app', STATIC)).toBe(true);
-            expect(isAllowedCorsOrigin('https://www.fr-busato.it', STATIC)).toBe(true);
+            expect(isAllowedCorsOrigin('https://busato.selfip.com', STATIC)).toBe(true);
         });
 
         it('accetta Deploy Preview Netlify systemgest', () => {

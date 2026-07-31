@@ -3,7 +3,7 @@
  *
  * IMPORTANTE (vedi docs/DATABASE.md + backend/config/database.json):
  * - `NODE_ENV=test` → SQL su localhost:1433 (spesso assente in locale → errore ESOCKET).
- * - `NODE_ENV=development` → stesso host/porta del DB di lavoro documentato (es. fr-busato.it:11043).
+ * - `NODE_ENV=development` → stesso host/porta del DB di lavoro documentato (es. busato.selfip.com:11043).
  * Cursor/terminal possono avere NODE_ENV=test: qui lo normalizziamo a development prima di caricare il pool.
  */
 import fs from 'node:fs';

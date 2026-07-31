@@ -8,7 +8,7 @@
 set -euo pipefail
 
 VPS_USER="spascarella"
-VPS_HOST="www.fr-busato.it"
+VPS_HOST="busato.selfip.com"
 VPS_PORT="1122"
 VPS="${VPS_USER}@${VPS_HOST}"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"

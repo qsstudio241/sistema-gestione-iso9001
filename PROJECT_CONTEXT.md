@@ -59,7 +59,7 @@ Su alcuni PC il repository è raggiungibile in più modi; **non** assumere che p
 | **Frontend** | React 18, Vite 5.4.21, PWA | Deploy Netlify automatico da `main` |
 | **Offline** | IndexedDB | Audit e risposte cachati localmente |
 | **Backend** | Node.js 20, Express 4 | VPS Ubuntu, porta 3000 → HTTPS 8443 via Nginx |
-| **Database** | SQL Server (`mssql`) | `www.fr-busato.it,11043` / `SGQ_ISO9001` |
+| **Database** | SQL Server (`mssql`) | `busato.selfip.com,11043` / `SGQ_ISO9001` |
 | **Auth** | JWT in cookie httpOnly (desktop) | `SameSite=None; Secure`, Axios `withCredentials` — mobile: localStorage ([ADR-004](docs/adr/ADR-004-mobile-auth-localstorage.md)) |
 | **Export** | `docxtemplater` + `pizzip` + OOXML injection | Template `.docx` editabile in Word |
 | **HTTP client** | Axios v1.7 con interceptor | Vietato `fetch` diretto |
@@ -70,10 +70,10 @@ Su alcuni PC il repository è raggiungibile in più modi; **non** assumere che p
 
 | Risorsa | Dettaglio |
 |---|---|
-| **API** | `https://www.fr-busato.it:8443/api/v1` |
+| **API** | `https://busato.selfip.com:8443/api/v1` |
 | **Frontend** | Netlify (auto-deploy da `main`) |
-| **VPS** | `www.fr-busato.it` — Ubuntu |
-| **SSH** | `ssh -p 1122 spascarella@www.fr-busato.it` — autenticazione: **chiave SSH**, sessione **PuTTY**, oppure file locale gitignored **`backend/config/.ssh-deploy.local.ps1`** (vedi `.ssh-deploy.local.ps1.example`). **Non** versionare password SSH. |
+| **VPS** | `busato.selfip.com` — Ubuntu |
+| **SSH** | `ssh -p 1122 spascarella@busato.selfip.com` — autenticazione: **chiave SSH**, sessione **PuTTY**, oppure file locale gitignored **`backend/config/.ssh-deploy.local.ps1`** (vedi `.ssh-deploy.local.ps1.example`). **Non** versionare password SSH. |
 | **Backend sul VPS** | Path **`/var/www/sgq-backend`**: **copia deploy**, non `git clone`. Dopo ogni `git push`: eseguire **`backend/scripts/deploy-controllers-to-vps.ps1`** (o equivalente `scp`) + **`sudo systemctl restart sgq-backend`**. Dettaglio: [docs/how-to/deploy.md](docs/how-to/deploy.md), [docs/REFERENCE.md](docs/REFERENCE.md). |
 | **Assistente AI (Cursor)** | Esegue comandi **solo sul PC del workspace**. Può lanciare deploy (`deploy-controllers-to-vps.ps1`) e migrazioni se esistono file locali gitignored (`database.json`, `.ssh-deploy.local.ps1`, Pageant/sessione PuTTY). Dettaglio: [docs/how-to/ACCESSO_DEPLOY_AGENTS.md](docs/how-to/ACCESSO_DEPLOY_AGENTS.md) e [docs/REFERENCE.md](docs/REFERENCE.md) (*Assistente AI e accesso remoto*). |
 | **Backend path** | `/var/www/sgq-backend/` |
@@ -266,10 +266,10 @@ Da PowerShell, dalla root del repo: `backend/scripts/deploy-controllers-to-vps.p
 ```bash
 # 1. Copia i file (es. audit + customChecklist controller)
 scp -P 1122 backend/src/controllers/audit.controller.js backend/src/controllers/customChecklist.controller.js \
-  spascarella@www.fr-busato.it:/var/www/sgq-backend/src/controllers/
+  spascarella@busato.selfip.com:/var/www/sgq-backend/src/controllers/
 
 # 2. SSH sul server e restart
-ssh -p 1122 spascarella@www.fr-busato.it
+ssh -p 1122 spascarella@busato.selfip.com
 # Sul server: fuser -k 3000/tcp; sleep 2; cd /var/www/sgq-backend && nohup node src/server.js > app.log 2>&1 &
 ```
 

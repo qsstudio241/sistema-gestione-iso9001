@@ -3,7 +3,7 @@
  * Uso: node scripts/smoke-ual-production.js
  * Richiede env SGQ_APP_EMAIL / SGQ_APP_PASSWORD.
  */
-const BASE = 'https://www.fr-busato.it:8443/api/v1';
+const BASE = 'https://busato.selfip.com:8443/api/v1';
 
 async function main() {
     const email = process.env.SGQ_APP_EMAIL;

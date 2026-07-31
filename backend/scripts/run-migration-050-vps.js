@@ -3,7 +3,7 @@
  * ISO 14001:2015 — Popolamento norm_excerpt per 53 domande (question_id 223–275, standard_id=2)
  *
  * Eseguire sul VPS:
- *   scp -P 1122 -i $KEY run-migration-050-vps.js spascarella@www.fr-busato.it:/tmp/
+ *   scp -P 1122 -i $KEY run-migration-050-vps.js spascarella@busato.selfip.com:/tmp/
  *   cd /var/www/sgq-backend && DB_SERVER=localhost DB_PORT=11043 DB_DATABASE=SGQ_ISO9001 \
  *     DB_USER=pascarella DB_PASSWORD='#Gestione2025@' NODE_ENV=production node /tmp/run-migration-050-vps.js
  */
