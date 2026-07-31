@@ -230,7 +230,7 @@ ORDER BY created_at DESC;
 
 ### Database (SQL Server)
 
-- ✅ Connessione: busato.selfip.com,11043
+- ✅ Connessione: sistemi.fr-busato.it,11043
 - ✅ Database: SGQ_ISO9001
 - ✅ Tabelle aggiornate: response_options (6 righe), audit_responses (0 righe - pulito)
 - ✅ Constraint: CK_audit_responses_conformity_status_v2 (C, NC, OSS, OM, NA, NV)

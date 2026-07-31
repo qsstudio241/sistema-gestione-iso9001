@@ -6,7 +6,7 @@
 const https = require('https');
 const http = require('http');
 
-const HEALTH_URL = process.env.SGQ_HEALTH_URL || 'https://busato.selfip.com:8443/api/v1/health';
+const HEALTH_URL = process.env.SGQ_HEALTH_URL || 'https://sistemi.fr-busato.it:8443/api/v1/health';
 const TIMEOUT_MS = 15000;
 
 function fetchJson(url) {

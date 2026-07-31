@@ -57,6 +57,6 @@
 | Risorsa | Valore |
 |--------|--------|
 | Frontend produzione | https://systemgest.netlify.app |
-| API / health | https://busato.selfip.com:8443/api/v1 (health: `/api/v1/health`) |
+| API / health | https://sistemi.fr-busato.it:8443/api/v1 (health: `/api/v1/health`) |
 | Deploy checklist | docs/DEPLOY_CHECKLIST_RELEASE.md |
 | Assegnazione report | docs/ASSEGNAZIONE_REPORT_E_CHECKLIST.md |

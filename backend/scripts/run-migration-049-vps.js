@@ -3,7 +3,7 @@
  * ISO 14001:2015 — Checklist COMPLETA da norma (53 domande, clausole 4→10)
  *
  * Eseguire sul VPS:
- *   scp -P 1122 -i $KEY run-migration-049-vps.js spascarella@busato.selfip.com:/tmp/
+ *   scp -P 1122 -i $KEY run-migration-049-vps.js spascarella@sistemi.fr-busato.it:/tmp/
  *   cd /var/www/sgq-backend && DB_SERVER=localhost DB_PORT=11043 DB_DATABASE=SGQ_ISO9001 \
  *     DB_USER=pascarella DB_PASSWORD='#Gestione2025@' NODE_ENV=production node /tmp/run-migration-049-vps.js
  */

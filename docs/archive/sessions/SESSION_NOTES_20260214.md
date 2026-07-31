@@ -77,7 +77,7 @@ FROM audits ORDER BY audit_id;
 
 **Configurazione Server (da documentare permanentemente):**
 ```bash
-Host: busato.selfip.com
+Host: sistemi.fr-busato.it
 SSH Port: 1122 (NON 22!)
 Username: spascarella
 Password SSH: solo da vault (valore storico rimosso dal repository)
@@ -87,7 +87,7 @@ Backend Path: /var/www/sgq-backend/
 **Procedura Riavvio:**
 ```bash
 # 1. Connessione SSH
-ssh spascarella@busato.selfip.com -p 1122
+ssh spascarella@sistemi.fr-busato.it -p 1122
 
 # 2. Trova processo Node.js
 ps aux | grep "node src/server.js" | grep -v grep
@@ -161,7 +161,7 @@ if (BLACKLISTED_UUIDS.includes(audit_uuid)) {
 ```bash
 # Windows → Server (SCP)
 scp -P 1122 "C:\...\audit.controller.js" \
-    spascarella@busato.selfip.com:/var/www/sgq-backend/src/controllers/
+    spascarella@sistemi.fr-busato.it:/var/www/sgq-backend/src/controllers/
 
 # SSH → Riavvio backend
 kill 153250
@@ -255,7 +255,7 @@ audit_id | audit_number | client_name              | status
 
 ### **Backend Produzione (ACTIVE)**
 ```
-Server: busato.selfip.com:8443
+Server: sistemi.fr-busato.it:8443
 Process: node src/server.js (PID 155198)
 Path: /var/www/sgq-backend/
 Uptime: Avviato 14/02/2026 18:45
@@ -309,7 +309,7 @@ Dropdown: ✅ 3 audit corretti
 ### **SSH Access**
 ```bash
 # Connessione
-ssh spascarella@busato.selfip.com -p 1122
+ssh spascarella@sistemi.fr-busato.it -p 1122
 
 # Password
 [SSH password — solo vault, non in repo]
@@ -321,19 +321,19 @@ Logs: /var/www/sgq-backend/logs/ (se esistente)
 
 ### **Backend Ports**
 ```
-Production API: https://busato.selfip.com:8443/api/v1
-Health Check: https://busato.selfip.com:8443/api/v1/health
-Database: busato.selfip.com:11043 (SQL Server Express)
+Production API: https://sistemi.fr-busato.it:8443/api/v1
+Health Check: https://sistemi.fr-busato.it:8443/api/v1/health
+Database: sistemi.fr-busato.it:11043 (SQL Server Express)
 ```
 
 ### **File Transfer (SCP)**
 ```bash
 # Windows → Server (upload)
 scp -P 1122 "C:\local\file.js" \
-    spascarella@busato.selfip.com:/var/www/sgq-backend/path/
+    spascarella@sistemi.fr-busato.it:/var/www/sgq-backend/path/
 
 # Server → Windows (download)
-scp -P 1122 spascarella@busato.selfip.com:/var/www/file.js \
+scp -P 1122 spascarella@sistemi.fr-busato.it:/var/www/file.js \
     "C:\local\destination\"
 ```
 
@@ -394,7 +394,7 @@ Files changed: 1
   - backend/src/controllers/audit.controller.js (blacklist validation)
 
 Lines: +16 / -0
-Deployed: SCP → busato.selfip.com:8443 (PID 155198)
+Deployed: SCP → sistemi.fr-busato.it:8443 (PID 155198)
 ```
 
 ---
@@ -522,7 +522,7 @@ Database: UQ_audits_uuid_org constraint (already active)
 | 16:00 | **PROBLEMA**: Dropdown Netlify mostra duplicati vecchi  | -      |
 | 16:15 | Root cause: Backend produzione non riavviato             | 15m    |
 | 16:30 | SSH setup: PuTTY install + configurazione                | 30m    |
-| 17:00 | Connessione SSH: spascarella@busato.selfip.com:1122      | 15m    |
+| 17:00 | Connessione SSH: spascarella@sistemi.fr-busato.it:1122      | 15m    |
 | 17:15 | Riavvio backend: kill 2959 → PID 153727                  | 15m    |
 | 17:30 | Verifica desktop: dropdown corretto ✅                   | 15m    |
 | 17:45 | **PROBLEMA**: Mobile re-upload duplicati 3906, 3907     | -      |
@@ -551,7 +551,7 @@ Database: UQ_audits_uuid_org constraint (already active)
 4. Ogni ~7 giorni per refresh generale (best practice)
 
 # Procedura safe restart:
-ssh spascarella@busato.selfip.com -p 1122
+ssh spascarella@sistemi.fr-busato.it -p 1122
 ps aux | grep "node src/server.js" | grep -v grep  # PID attuale
 kill <PID>                                          # Graceful shutdown
 cd /var/www/sgq-backend
@@ -628,7 +628,7 @@ FROM attachments WHERE audit_id = @audit_id;
 **Repository & Deploy:**
 - GitHub: https://github.com/qsstudio241/sistema-gestione-iso9001
 - Netlify: https://systemgest.netlify.app
-- Backend API: https://busato.selfip.com:8443/api/v1
+- Backend API: https://sistemi.fr-busato.it:8443/api/v1
 
 **Commit rilevanti:**
 - `4ea62c0`: Sync bidirezionale feature (14/02/2026)

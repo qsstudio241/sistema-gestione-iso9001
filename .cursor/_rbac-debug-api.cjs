@@ -2,7 +2,7 @@
 const path = require('path');
 const bcrypt = require('../backend/node_modules/bcrypt');
 const { query } = require('../backend/src/config/database');
-const BASE = 'https://busato.selfip.com:8443/api/v1';
+const BASE = 'https://sistemi.fr-busato.it:8443/api/v1';
 const tempPw = 'Rb4cTempSmokeOnly!2026';
 
 async function login(email, pw) {

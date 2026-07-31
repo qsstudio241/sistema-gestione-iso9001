@@ -5,7 +5,7 @@ function req(method, path, body, token) {
   return new Promise((resolve, reject) => {
     const data = body ? JSON.stringify(body) : null;
     const opts = {
-      hostname: 'busato.selfip.com', port: 8443, path: '/api/v1' + path, method,
+      hostname: 'sistemi.fr-busato.it', port: 8443, path: '/api/v1' + path, method,
       headers: { 'Content-Type': 'application/json' },
       rejectUnauthorized: false,
     };

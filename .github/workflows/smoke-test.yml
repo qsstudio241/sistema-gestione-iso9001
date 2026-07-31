@@ -4,7 +4,7 @@
 #
 # Segreti GitHub richiesti (Settings → Secrets and variables → Actions):
 #   SMOKE_TOKEN     — token segreto da impostare anche nel .env del VPS
-# Endpoint host hardcoded (non è un segreto): busato.selfip.com:8443
+# Endpoint host hardcoded (non è un segreto): sistemi.fr-busato.it:8443
 # Aggiornato: 31/07/2026 — host VPS rinominato; endpoint non più da secret stale
 
 name: Smoke test DB test
@@ -47,13 +47,13 @@ jobs:
         run: node backend/scripts/smoke-remote.js
         env:
           # Host non è un segreto: evita CI rossa se secrets.SMOKE_ENDPOINT è stale
-          SMOKE_ENDPOINT: busato.selfip.com:8443
+          SMOKE_ENDPOINT: sistemi.fr-busato.it:8443
           SMOKE_TOKEN: ${{ secrets.SMOKE_TOKEN }}
         timeout-minutes: 2
 
       - name: Health check backend test (test-api)
         run: |
           curl -sf --insecure \
-            https://busato.selfip.com:8443/test-api/api/v1/health \
+            https://sistemi.fr-busato.it:8443/test-api/api/v1/health \
             || (echo "HEALTH CHECK FAIL: backend test non raggiungibile" && exit 1)
         timeout-minutes: 1

@@ -13,7 +13,7 @@ const e=loadEnvFile();
 const email=process.env.SGQ_APP_EMAIL||e.SGQ_APP_EMAIL;
 const password=process.env.SGQ_APP_PASSWORD||e.SGQ_APP_PASSWORD;
 (async()=>{
-  const r=await fetch("https://busato.selfip.com:8443/api/v1/auth/login",{
+  const r=await fetch("https://sistemi.fr-busato.it:8443/api/v1/auth/login",{
     method:"POST",
     headers:{"Content-Type":"application/json"},
     body:JSON.stringify({email,password})

@@ -1,4 +1,4 @@
-const BASE = 'https://busato.selfip.com:8443/api/v1';
+const BASE = 'https://sistemi.fr-busato.it:8443/api/v1';
 const ADMIN_EMAIL = process.env.SGQ_APP_EMAIL || 'admin@sgq.local';
 const ADMIN_PASS = process.env.SGQ_APP_PASSWORD;
 const CLIENT_EMAIL = process.env.SGQ_CLIENT_COMPANY_EMAIL || 'cliente.azienda11@alproject.sgq.local';

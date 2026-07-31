@@ -17,7 +17,7 @@ dal fatto che l'estrazione in sé sia locale.
 
 ## Cosa significa "server nell'ambiente superadmin"
 
-Il VPS di produzione (`busato.selfip.com`, accesso SSH via
+Il VPS di produzione (`sistemi.fr-busato.it`, accesso SSH via
 `backend/scripts/run-on-vps.ps1`, vedi `docs/how-to/ACCESSO_DEPLOY_AGENTS.md`) ospita
 già il backend Node.js e un meccanismo di storage documentale (`document_registry` +
 `attachments`, cartelle `uploads/norms/{organization_id}/` — vedi

@@ -4,8 +4,8 @@
  * Recupera l'organization_id dall'audit padre (audit_id=35201).
  *
  * Eseguire sul VPS:
- *   scp -i /tmp/sgq_key -P 1122 ... spascarella@busato.selfip.com:/tmp/
- *   ssh -i /tmp/sgq_key -p 1122 ... spascarella@busato.selfip.com "node /tmp/fix-nc-organization-id-vps.js"
+ *   scp -i /tmp/sgq_key -P 1122 ... spascarella@sistemi.fr-busato.it:/tmp/
+ *   ssh -i /tmp/sgq_key -p 1122 ... spascarella@sistemi.fr-busato.it "node /tmp/fix-nc-organization-id-vps.js"
  *
  * Ref: docs/reference/DB_ORPHAN_REPORT_20260629.md — CAT-3
  */

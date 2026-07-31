@@ -43,7 +43,7 @@ Organizzazione (es. QS Studio)
 
 ```bash
 # Esempio: crea un auditor per organization_id=1
-curl -X POST https://busato.selfip.com:8443/api/v1/auth/register \
+curl -X POST https://sistemi.fr-busato.it:8443/api/v1/auth/register \
   -H "Content-Type: application/json" \
   -d '{
     "email": "auditor@studio-rossi.it",

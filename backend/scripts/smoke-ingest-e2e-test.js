@@ -6,7 +6,7 @@
 const fs = require('fs');
 const path = require('path');
 
-const BASE = process.env.SGQ_TEST_API_BASE || 'https://busato.selfip.com:8443/test-api/api/v1';
+const BASE = process.env.SGQ_TEST_API_BASE || 'https://sistemi.fr-busato.it:8443/test-api/api/v1';
 const EMAIL = process.env.SGQ_APP_EMAIL;
 const PASS = process.env.SGQ_APP_PASSWORD;
 
