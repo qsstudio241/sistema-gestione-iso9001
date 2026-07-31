@@ -5,11 +5,11 @@
  * X-Smoke-Token e stampa il risultato.
  *
  * Variabili d'ambiente (o argomenti CLI):
- *   SMOKE_ENDPOINT  — es. "www.fr-busato.it:8443"  (schema https aggiunto automaticamente)
+ *   SMOKE_ENDPOINT  — es. "busato.selfip.com:8443"  (schema https aggiunto automaticamente)
  *   SMOKE_TOKEN     — token segreto da GitHub Secret / variabile locale
  *
  * Uso locale:
- *   SMOKE_ENDPOINT=www.fr-busato.it:8443 SMOKE_TOKEN=xxx node backend/scripts/smoke-remote.js
+ *   SMOKE_ENDPOINT=busato.selfip.com:8443 SMOKE_TOKEN=xxx node backend/scripts/smoke-remote.js
  *
  * Uso CI (GitHub Actions):
  *   - secrets.SMOKE_ENDPOINT + secrets.SMOKE_TOKEN → env vars del job

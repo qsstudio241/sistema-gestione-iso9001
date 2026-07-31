@@ -1,6 +1,6 @@
 # BACKEND API — SGQ ISO 9001
 
-> **Base URL produzione**: `https://www.fr-busato.it:8443/api/v1`  
+> **Base URL produzione**: `https://busato.selfip.com:8443/api/v1`  
 > **Base URL locale**: `http://localhost:3000/api/v1`  
 > **Autenticazione**: JWT in cookie `httpOnly` (`SameSite=None; Secure`) — Axios con `withCredentials: true`
 
@@ -211,8 +211,8 @@ MAX_FILE_SIZE_MB=50
 
 # SSL
 SSL_ENABLED=true
-SSL_KEY_PATH=/etc/letsencrypt/live/fr-busato.it/privkey.pem
-SSL_CERT_PATH=/etc/letsencrypt/live/fr-busato.it/fullchain.pem
+SSL_KEY_PATH=/etc/letsencrypt/live/busato.selfip.com/privkey.pem
+SSL_CERT_PATH=/etc/letsencrypt/live/busato.selfip.com/fullchain.pem
 
 # Rate limit
 RATE_LIMIT_WINDOW_MS=900000
@@ -226,7 +226,7 @@ RATE_LIMIT_MAX_REQUESTS=10000
 ```bash
 # Copia file modificato sul VPS
 scp -P 1122 backend/src/controllers/audit.controller.js \
-  spascarella@www.fr-busato.it:/var/www/sgq-backend/src/controllers/
+  spascarella@busato.selfip.com:/var/www/sgq-backend/src/controllers/
 
 # Restart server (3 comandi separati — NON usare && dopo fuser)
 fuser -k 3000/tcp

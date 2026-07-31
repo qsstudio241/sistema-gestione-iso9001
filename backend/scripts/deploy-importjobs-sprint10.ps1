@@ -7,7 +7,7 @@ if (Test-Path -LiteralPath $DeployLocalPs1) { . $DeployLocalPs1 }
 
 $Pscp = "C:\Program Files\PuTTY\pscp.exe"
 $Port = "1122"
-$VPS = "spascarella@www.fr-busato.it"
+$VPS = "spascarella@busato.selfip.com"
 $RemoteBase = "/var/www/sgq-backend"
 $HostKey = "ssh-ed25519 255 SHA256:X7V82/1Ugdd7QmCJqaAXTn8Pazqv8bRA3mshLlwbsoc"
 $SshPassword = $env:SGQ_SSH_PASSWORD

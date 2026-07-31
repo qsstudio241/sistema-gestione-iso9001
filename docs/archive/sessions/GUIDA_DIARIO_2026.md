@@ -330,18 +330,18 @@ La route `POST /audits/:auditId/promote-nc` era stata aggiunta manualmente al fi
 
 **Lezione**: `auditConverter.backendToFrontend` è il punto di reset di tutti i campi non presenti nell'API `GET /audits`. Ogni campo puramente locale che deve sopravvivere al reconcile richiede un'eccezione esplicita nel blocco `mergedAudits.map(...)` di `reconcileAuditsFromServer`. Il pattern "Eccezione N" è già consolidato e scalabile.
 
-#### Ops/Sysadmin — Rinnovo SSL Let's Encrypt `www.fr-busato.it` (diagnosi HTTP-01)
+#### Ops/Sysadmin — Rinnovo SSL Let's Encrypt `busato.selfip.com` (diagnosi HTTP-01)
 
 Recuperato dalla PR #28 (chiusa, contenuto consolidato qui).
 
 | Evidenza | Dettaglio |
 |----------|-----------|
-| Scadenza cert | `notAfter=May 5 11:32:22 2026 GMT` su `https://www.fr-busato.it:8443` |
-| Sintomo `certbot renew` | Let's Encrypt risponde **HTTP-01 unauthorized**: **404** su `http://www.fr-busato.it/.well-known/acme-challenge/...` |
+| Scadenza cert | `notAfter=May 5 11:32:22 2026 GMT` su `https://busato.selfip.com:8443` |
+| Sintomo `certbot renew` | Let's Encrypt risponde **HTTP-01 unauthorized**: **404** su `http://busato.selfip.com/.well-known/acme-challenge/...` |
 | Causa radice | La porta **80 pubblica** (e la redirect HTTPS) arriva ad **Apache su Raspbian** (`Server: Apache/2.4.66`), non all'**Nginx** del VPS Ubuntu dove gira Certbot. Il backend API (8443, Nginx verso Node) è corretto, ma il validatore ACME non colpisce quel Nginx. |
-| Trappola `/etc/hosts` | Rimuovere eventuale `127.0.0.1 www.fr-busato.it` sul VPS (fa risolvere il dominio in loopback; backup `/etc/hosts.bak`). Da solo **non** risolve il 404 esterno. |
-| **Porta 10880 (Nginx VPS)** | Virtual host dedicato `acme-challenge-10880.conf` (`sites-available` + symlink `sites-enabled`): **listen 10880**, serve solo `/.well-known/acme-challenge/` da `root /var/www/html`, resto **404**. Verifica da Internet: `curl -s http://www.fr-busato.it:10880/.well-known/acme-challenge/probe-10880` deve dare `probe-10880`. |
-| **Renewal config** | In `/etc/letsencrypt/renewal/www.fr-busato.it.conf`: `authenticator = webroot`, `webroot_path = /var/www/html` (niente plugin nginx al renew; backup `.bak.<timestamp>`). |
+| Trappola `/etc/hosts` | Rimuovere eventuale `127.0.0.1 busato.selfip.com` sul VPS (fa risolvere il dominio in loopback; backup `/etc/hosts.bak`). Da solo **non** risolve il 404 esterno. |
+| **Porta 10880 (Nginx VPS)** | Virtual host dedicato `acme-challenge-10880.conf` (`sites-available` + symlink `sites-enabled`): **listen 10880**, serve solo `/.well-known/acme-challenge/` da `root /var/www/html`, resto **404**. Verifica da Internet: `curl -s http://busato.selfip.com:10880/.well-known/acme-challenge/probe-10880` deve dare `probe-10880`. |
+| **Renewal config** | In `/etc/letsencrypt/renewal/busato.selfip.com.conf`: `authenticator = webroot`, `webroot_path = /var/www/html` (niente plugin nginx al renew; backup `.bak.<timestamp>`). |
 
 **Per sbloccare il rinnovo** (azione su router / Raspberry — Let's Encrypt contatta *sempre* la 80 pubblica):
 
@@ -349,7 +349,7 @@ Recuperato dalla PR #28 (chiusa, contenuto consolidato qui).
 2. **Alternativa:** **WAN:80 verso VPS:80** (se Nginx ascolta sulla 80 standard).
 3. **Oppure** completare HTTP-01 **su Apache** (host che oggi risponde sulla 80): webroot/proxy verso `/var/www/html` del VPS.
 
-Quando da rete esterna `curl -s http://www.fr-busato.it/.well-known/acme-challenge/probe-10880` restituisce `probe-10880` (non un **301** Apache verso HTTPS): sul VPS `sudo certbot renew --force-renewal` poi `sudo systemctl reload nginx`. Verifica date: `echo | openssl s_client -connect 127.0.0.1:8443 -servername www.fr-busato.it 2>/dev/null | openssl x509 -noout -dates`.
+Quando da rete esterna `curl -s http://busato.selfip.com/.well-known/acme-challenge/probe-10880` restituisce `probe-10880` (non un **301** Apache verso HTTPS): sul VPS `sudo certbot renew --force-renewal` poi `sudo systemctl reload nginx`. Verifica date: `echo | openssl s_client -connect 127.0.0.1:8443 -servername busato.selfip.com 2>/dev/null | openssl x509 -noout -dates`.
 
 ---
 
@@ -732,7 +732,7 @@ Spuntare dopo deploy o prima di demo cliente. Adattare profondità al rischio de
 
 #### Smoke L3 RBAC Fase 2 (`.cursor/rbac-smoke-l3-phase2.mjs`)
 
-Verifica REST cross-studio su API produzione (`fr-busato.it:8443`). Login da `.cursor/mcp.env` (`SGQ_APP_EMAIL` / `SGQ_APP_PASSWORD`) — **non** modifica hash password admin.
+Verifica REST cross-studio su API produzione (`busato.selfip.com:8443`). Login da `.cursor/mcp.env` (`SGQ_APP_EMAIL` / `SGQ_APP_PASSWORD`) — **non** modifica hash password admin.
 
 | Flag | Default | Uso |
 |------|---------|-----|
@@ -767,7 +767,7 @@ Seguire **in ordine**; se un passo fallisce, **fermarsi** e correggere prima del
 | 2 | Aprire **lista audit** e scegliere un audit di prova | Lista coerente con ciò che ti aspetti dal server | Se dubbi: confronto con altra sessione o admin DB (solo chi autorizzato). |
 | 3 | **Selezionare** l’audit e aprirlo | Si vede il modulo audit; nessun loop di errori | Hard refresh una volta dopo deploy Netlify (`Ctrl+Shift+R`). |
 | 4 | Attendere 2–5 s (lock server) | Nessun messaggio permanente «lock non attivo» mentre lavori solo | Se compare spesso: verificare deploy **frontend + backend** allineati (guida sez. A). |
-| 5 | Modificare **una** voce (esito + nota/evidenza se richiesta) e attendere autosalvataggio | Indicatore salvataggio ok o assenza errori bloccanti | **DevTools → Rete**: una richiesta verso API `fr-busato` con **2xx** (non 401/423/404 ripetuti). |
+| 5 | Modificare **una** voce (esito + nota/evidenza se richiesta) e attendere autosalvataggio | Indicatore salvataggio ok o assenza errori bloccanti | **DevTools → Rete**: una richiesta verso API `busato.selfip.com` con **2xx** (non 401/423/404 ripetuti). |
 | 6 | **Ricaricare la pagina** (F5) con lo stesso audit | Le modifiche del passo 5 sono ancora lì | Se spariscono: problema sync/server o coda — non passare al passo 7. |
 | 7 | (Opz.) Secondo browser **stesso utente** su **altro** audit | Stesso comportamento | Copre «più utenti in lavoro» senza richiedere due persone sullo stesso file. |
 | 8 | Dopo **modifica al codice** in quest’area | Regressione assente | Su PC sviluppo: `cd app` → `NODE_ENV=test` → `npm run test:run` + `npm run build` (L1). |
@@ -859,7 +859,7 @@ Test L1: `ncCreate.test.js`, `ncPushIso.regression.test.js`, `ncDetailPanel.test
 
 **Lezioni (delta):** (1) `SgqDataGrid.onRowSelect` passa `(rowKey, row)` — non il solo oggetto riga. (2) `NcCreateModal` con `status: active` lasciava dropdown audit vuoto (nessun audit `active` in org test). (3) Sezioni HLS `clause10` falliscono FK su audit ISO 14001/3834 — serve audit ISO 9001 o sezione compatibile col `standard_id`. (4) Test E2E griglia: righe `<tr>` non sempre in snapshot a11y — usare CDP click o deep-link `/nc?select=<id>`.
 
-**URL app:** https://systemgest.netlify.app/nc | **API:** https://www.fr-busato.it:8443/api/v1
+**URL app:** https://systemgest.netlify.app/nc | **API:** https://busato.selfip.com:8443/api/v1
 
 
 ### Bonifica dati test NC (org Al.project) — 02/06/2026
@@ -1457,7 +1457,7 @@ PDF certificato → Import Job → AI estrae campi → commit-to-qualification �
 **Migration**: `086_qualifications_original_url.sql` — aggiunge colonna `certificate_original_url NVARCHAR(500) NULL`. Eseguita dal PC locale con `run-migration-086-local.cjs` (usa `database.json` gitignored).
 
 ### Pattern VPS per migrazioni Node.js da Windows
-Usare **sempre** `127.0.0.1:11043` invece di `www.fr-busato.it:11043` nei runner VPS — l'IP pubblico è bloccato da hairpin NAT. Il servizio systemd usa invece il nome host perché ha route diverse.
+Usare **sempre** `127.0.0.1:11043` invece di `busato.selfip.com:11043` nei runner VPS — l'IP pubblico è bloccato da hairpin NAT. Il servizio systemd usa invece il nome host perché ha route diverse.
 
 ### File non nel deploy manifest (fix aggiunto)
 `projects.controller.js`, `qualifications.routes.js`, `projects.routes.js`, `documentTypeSchemas.js` — aggiunti al `deploy-manifest.json` nella stessa sessione.
@@ -1523,7 +1523,7 @@ Usare **sempre** `127.0.0.1:11043` invece di `www.fr-busato.it:11043` nei runner
 - NC senza `audit_id`: `organization_id` diretto sulla tabella garantisce RBAC; solo admin/superadmin possono creare/modificare
 - Studio scope nelle query: `(nc.audit_id IS NULL OR (studio_scope_on_a))` — pattern riusabile per ogni query futura
 
-**Lezione chiave — SQL Server + VPS SSH:** il server SQL non è raggiungibile via hostname pubblico (`www.fr-busato.it:11043`) dal VPS stesso — usare sempre `localhost:11043` negli script di migrazione eseguiti via SSH sul nodo.
+**Lezione chiave — SQL Server + VPS SSH:** il server SQL non è raggiungibile via hostname pubblico (`busato.selfip.com:11043`) dal VPS stesso — usare sempre `localhost:11043` negli script di migrazione eseguiti via SSH sul nodo.
 
 **Backlog Action Plan (prossima sessione):** vedi `docs/PROJECT_ROADMAP.md` sezione *Action Plan — Evoluzione futura*.
 

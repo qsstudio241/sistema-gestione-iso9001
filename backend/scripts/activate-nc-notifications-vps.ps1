@@ -9,7 +9,7 @@ $ErrorActionPreference = "Stop"
 $ProjectRoot = Split-Path (Split-Path $PSScriptRoot -Parent) -Parent
 $BackendRoot = Join-Path $ProjectRoot "backend"
 $RepoDbMigrations = Join-Path $ProjectRoot "database\migrations"
-$VPS = "spascarella@www.fr-busato.it"
+$VPS = "spascarella@busato.selfip.com"
 $Port = "1122"
 $RemoteBase = "/var/www/sgq-backend"
 $HostKey = "ssh-ed25519 255 SHA256:X7V82/1Ugdd7QmCJqaAXTn8Pazqv8bRA3mshLlwbsoc"
@@ -82,5 +82,5 @@ Start-Sleep -Seconds 4
 Invoke-Vps "curl -s -o /dev/null -w 'health_http=%{http_code}\n' http://127.0.0.1:3000/api/v1/health || true"
 
 Write-Host "`n=== COMPLETATO ===" -ForegroundColor Green
-Write-Host "Verifica: GET https://www.fr-busato.it:8443/api/v1/health"
+Write-Host "Verifica: GET https://busato.selfip.com:8443/api/v1/health"
 Write-Host "In app: Il mio Studio -> Notifiche (rubrica referenti)"

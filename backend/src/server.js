@@ -375,7 +375,7 @@ function startServer() {
 
         const httpsServer = https.createServer(credentials, app);
         httpsServer.listen(PORT, () => {
-            logger.info(`🔒 HTTPS Server running on https://www.fr-busato.it:${PORT}`);
+            logger.info(`🔒 HTTPS Server running on https://busato.selfip.com:${PORT}`);
         });
     } else {
         // HTTP Server (development)

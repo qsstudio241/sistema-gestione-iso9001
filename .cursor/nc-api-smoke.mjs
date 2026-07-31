@@ -1,6 +1,6 @@
 const EMAIL = process.env.SGQ_APP_EMAIL || 'admin@sgq.local';
 const PASSWORD = process.env.SGQ_APP_PASSWORD;
-const API = 'https://www.fr-busato.it:8443/api/v1';
+const API = 'https://busato.selfip.com:8443/api/v1';
 
 async function main() {
   if (!PASSWORD) throw new Error('SGQ_APP_PASSWORD missing');

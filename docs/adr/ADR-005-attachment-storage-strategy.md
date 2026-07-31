@@ -60,7 +60,7 @@ async function openAttachment(attachmentId) {
   setTimeout(() => URL.revokeObjectURL(url), 10000);
 }
 
-// ❌ PATTERN VIETATO — CORS blocca richieste da Netlify a www.fr-busato.it:8443
+// ❌ PATTERN VIETATO — CORS blocca richieste da Netlify a busato.selfip.com:8443
 <img src={`${API_BASE}/attachments/${id}/view?token=${token}`} />
 ```
 

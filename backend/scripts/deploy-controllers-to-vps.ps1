@@ -24,11 +24,11 @@ $ErrorActionPreference = "Stop"
 $ProjectRoot = Split-Path (Split-Path $PSScriptRoot -Parent) -Parent
 $BackendRoot = Join-Path $ProjectRoot "backend"
 $ManifestPath = Join-Path $PSScriptRoot "deploy-manifest.json"
-$VPS = "spascarella@www.fr-busato.it"
+$VPS = "spascarella@busato.selfip.com"
 $Port = "1122"
 $RemoteBase = "/var/www/sgq-backend"
 $HostKey = "ssh-ed25519 255 SHA256:X7V82/1Ugdd7QmCJqaAXTn8Pazqv8bRA3mshLlwbsoc"
-$HealthUrl = if ($env:SGQ_HEALTH_URL) { $env:SGQ_HEALTH_URL } else { "https://www.fr-busato.it:8443/api/v1/health" }
+$HealthUrl = if ($env:SGQ_HEALTH_URL) { $env:SGQ_HEALTH_URL } else { "https://busato.selfip.com:8443/api/v1/health" }
 
 if (-not (Test-Path -LiteralPath $ManifestPath)) {
     throw "Manifest non trovato: $ManifestPath"
@@ -197,7 +197,7 @@ if [ "$RESTARTED" != "1" ]; then
   nohup node src/server.js >> __REMOTE_BASE__/app.log 2>&1 &
   sleep 4
 fi
-OLD_UPTIME=$(curl -sk https://www.fr-busato.it:8443/api/v1/health 2>/dev/null | grep -o "\"uptime\":[0-9.]*" | head -1 || true)
+OLD_UPTIME=$(curl -sk https://busato.selfip.com:8443/api/v1/health 2>/dev/null | grep -o "\"uptime\":[0-9.]*" | head -1 || true)
 echo deploy_health_uptime $OLD_UPTIME
 systemctl --no-pager --full status sgq-backend.service 2>/dev/null | tail -n 15 || true
 grep -q normUpload.routes __REMOTE_BASE__/src/server.js && echo deploy_norm_upload_route_ok || echo deploy_norm_upload_route_MISSING
@@ -232,7 +232,7 @@ Write-Host "Smoke opzionale: npm run smoke:deploy (da backend/)" -ForegroundColo
 if ($AlsoRestartTest) {
     Write-Host "`nRiavvio istanza TEST (sgq-backend-test)..." -ForegroundColor Cyan
 
-    $testHealthUrl = "https://www.fr-busato.it:8443/test-api/api/v1/health"
+    $testHealthUrl = "https://busato.selfip.com:8443/test-api/api/v1/health"
 
     if ($env:SGQ_SUDO_PASSWORD) {
         $b64 = [Convert]::ToBase64String([Text.Encoding]::UTF8.GetBytes($env:SGQ_SUDO_PASSWORD))

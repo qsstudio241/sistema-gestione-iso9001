@@ -153,7 +153,7 @@ END CATCH;
 SELECT storage_path FROM attachments WHERE audit_id = @AUDIT_ID;
 --
 -- Poi via SSH:
---   ssh spascarella@www.fr-busato.it -p 1122
+--   ssh spascarella@busato.selfip.com -p 1122
 --   rm /var/www/sgq-backend/<storage_path>   (per ogni file listato sopra)
 --   Oppure in bulk se tutti nella stessa cartella:
 --   find /var/www/sgq-backend/uploads/ -name "*" -newer <data> -delete
