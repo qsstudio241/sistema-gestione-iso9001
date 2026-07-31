@@ -2,7 +2,7 @@
  * run-migration-049.js
  * ISO 14001:2015 — Checklist COMPLETA (53 domande, clausole 4→10)
  * Cloud Agent: eseguire sul VPS tramite SSH (DB non raggiungibile direttamente)
- *   scp -P 1122 -i $KEY run-migration-049.js spascarella@www.fr-busato.it:/tmp/
+ *   scp -P 1122 -i $KEY run-migration-049.js spascarella@sistemi.fr-busato.it:/tmp/
  *   ssh -p 1122 -i $KEY spascarella@... "node /tmp/run-migration-049.js"
  */
 

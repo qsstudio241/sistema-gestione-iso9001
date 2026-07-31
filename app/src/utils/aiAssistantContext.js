@@ -202,6 +202,53 @@ export function loadQualContext() {
   } catch { return null; }
 }
 
+// ── Intent generazione WPS (chip AskAi → form precompilato) ───────────────────
+
+const WPS_GENERATE_INTENT_KEY = "sgq:wps_generate_intent";
+
+/** Caso demo Mason (FW S355 10 mm + S235 5 mm). */
+export const MASON_WPS_GENERATE_DEFAULTS = {
+  joint_type: "FW",
+  parent_material_a: "S355",
+  parent_material_b: "S235",
+  thickness_a_mm: "10",
+  thickness_b_mm: "5",
+  welding_process: "",
+};
+
+/**
+ * Salva intent per aprire «Genera WPS» precompilato (consumato da WeldingProceduresPage).
+ * @param {Partial<typeof MASON_WPS_GENERATE_DEFAULTS>} [params]
+ */
+export function saveWpsGenerateIntent(params = {}) {
+  try {
+    sessionStorage.setItem(WPS_GENERATE_INTENT_KEY, JSON.stringify({
+      ...MASON_WPS_GENERATE_DEFAULTS,
+      ...params,
+      savedAt: Date.now(),
+    }));
+  } catch { /* sessionStorage non disponibile */ }
+}
+
+/**
+ * Legge e rimuove l'intent generazione WPS. Scade dopo 10 minuti.
+ * @returns {object|null}
+ */
+export function consumeWpsGenerateIntent() {
+  try {
+    const raw = sessionStorage.getItem(WPS_GENERATE_INTENT_KEY);
+    if (!raw) return null;
+    sessionStorage.removeItem(WPS_GENERATE_INTENT_KEY);
+    const parsed = JSON.parse(raw);
+    if (Date.now() - (parsed.savedAt || 0) > 10 * 60 * 1000) return null;
+    return parsed;
+  } catch { return null; }
+}
+
+/** Testo chip AskAi per caso Mason (P1-C). */
+export const WPS_GENERATE_MASON_CHIP =
+  "Genera una WPS FW per S355 10 mm + S235 5 mm usando le WPQR disponibili";
+
 // ─────────────────────────────────────────────────────────────────────────────
 
 /**

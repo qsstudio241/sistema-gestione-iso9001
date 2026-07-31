@@ -3,14 +3,19 @@
  * Pattern CRUD identico a WeldingProceduresPage.
  */
 
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 import apiService from "../services/apiService";
+import { useAuth } from "../contexts/AuthContext";
 import { formatDate } from "../utils/dateHelpers";
 import StatusBadge from "../components/StatusBadge";
 import PencilIcon from "../components/icons/PencilIcon";
 import TrashIcon from "../components/icons/TrashIcon";
 import { getWelderQualificationWarning } from "../utils/welderQualificationExpiryWarnings";
 import AiDisclaimer from "../components/AiDisclaimer";
+import {
+  resolveInitialProjectsCompanyScope,
+  persistProjectsCompanyScope,
+} from "../utils/projectsCompanyScope";
 import "./ProjectsPage.css";
 
 const AI_COVERAGE_LABELS = {
@@ -69,15 +74,17 @@ function isTechnicalReviewComplete(checklist) {
 
 //  Form modale commessa 
 
-function ProjectFormModal({ project, wpsList, qualifications, onSave, onClose }) {
+function ProjectFormModal({ project, companies, defaultCompanyId, wpsList, qualifications, onSave, onClose }) {
   // Prepopola welder_ids dai welders già assegnati al progetto
   const existingWelderIds = Array.isArray(project?.welders)
     ? project.welders.map(w => w.qualification_id)
     : [];
 
   const [form, setForm] = useState({
+    company_id: defaultCompanyId || "",
     project_code: "",
     client_name: "",
+    end_customer_id: "",
     description: "",
     start_date: "",
     end_date: "",
@@ -91,6 +98,26 @@ function ProjectFormModal({ project, wpsList, qualifications, onSave, onClose })
   });
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
+
+  // Cliente: elenco controparti (anagrafica aziende) per l'azienda selezionata,
+  // stesso pattern usato dal Riesame Contratti (company_counterparties, ruolo end_customer).
+  const [customers, setCustomers] = useState([]);
+  const [customersLoading, setCustomersLoading] = useState(false);
+
+  useEffect(() => {
+    if (!form.company_id) { setCustomers([]); return; }
+    let cancelled = false;
+    setCustomersLoading(true);
+    apiService.getCompanyCounterparties(form.company_id, { role: "end_customer", is_active: "true" })
+      .then((res) => {
+        if (cancelled) return;
+        const list = Array.isArray(res) ? res : (res?.data || []);
+        setCustomers(list);
+      })
+      .catch(() => { if (!cancelled) setCustomers([]); })
+      .finally(() => { if (!cancelled) setCustomersLoading(false); });
+    return () => { cancelled = true; };
+  }, [form.company_id]);
   const [technicalReviewChecklist, setTechnicalReviewChecklist] = useState(() =>
     parseTechnicalReviewChecklist(project?.technical_review_checklist)
   );
@@ -203,8 +230,63 @@ function ProjectFormModal({ project, wpsList, qualifications, onSave, onClose })
                 <input className="pj-form-input" value={form.project_code} onChange={(e) => set("project_code", e.target.value)} required />
               </div>
               <div className="pj-form-group">
+                <label className="pj-form-label">Azienda (ambito)</label>
+                <select
+                  className="pj-form-select"
+                  value={form.company_id || ""}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    // Cambiando azienda la controparte selezionata potrebbe non appartenerle più.
+                    setForm((f) => ({ ...f, company_id: val, end_customer_id: "" }));
+                  }}
+                >
+                  <option value="">- Nessuna -</option>
+                  {(companies || []).map((c) => (
+                    <option key={c.id} value={c.id}>{c.name}</option>
+                  ))}
+                </select>
+              </div>
+              <div className="pj-form-group">
                 <label className="pj-form-label">Cliente</label>
-                <input className="pj-form-input" value={form.client_name || ""} onChange={(e) => set("client_name", e.target.value)} />
+                {form.company_id ? (
+                  customersLoading ? (
+                    <span className="pj-hint">Caricamento anagrafica...</span>
+                  ) : customers.length > 0 ? (
+                    <select
+                      className="pj-form-select"
+                      value={form.end_customer_id || ""}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        if (val) {
+                          const cust = customers.find((c) => String(c.id) === val);
+                          setForm((f) => ({ ...f, end_customer_id: val, client_name: cust?.name || "" }));
+                        } else {
+                          setForm((f) => ({ ...f, end_customer_id: "" }));
+                        }
+                      }}
+                    >
+                      <option value="">{"\u2014"} Altro (testo libero) {"\u2014"}</option>
+                      {customers.map((c) => (
+                        <option key={c.id} value={c.id}>{c.name}</option>
+                      ))}
+                    </select>
+                  ) : (
+                    <p className="pj-hint" style={{ margin: "4px 0" }}>
+                      Nessun cliente in anagrafica per questa azienda. Aggiungilo da Aziende {"\u2192"} Controparti, oppure inserisci il nome qui sotto.
+                    </p>
+                  )
+                ) : (
+                  <p className="pj-hint" style={{ margin: "4px 0" }}>Seleziona un&apos;azienda per usare l&apos;anagrafica clienti.</p>
+                )}
+                {!form.end_customer_id && (
+                  <input
+                    className="pj-form-input"
+                    value={form.client_name || ""}
+                    onChange={(e) => set("client_name", e.target.value)}
+                    placeholder="Nome cliente"
+                    style={form.company_id && customers.length > 0 ? { marginTop: 6 } : undefined}
+                  />
+                )}
               </div>
               <div className="pj-form-group">
                 <label className="pj-form-label">Data inizio</label>
@@ -490,6 +572,7 @@ function CoverageModal({ projectId, projectCode, onClose }) {
 // ─── Pagina principale ─────────────────────────────────────────────────────────
 
 function ProjectsPage() {
+  const { user } = useAuth();
   const [projects, setProjects] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -506,8 +589,41 @@ function ProjectsPage() {
   const [wpsList, setWpsList] = useState([]);
   const [qualifications, setQualifications] = useState([]);
 
+  // Ambito azienda (pattern condiviso con Qualifiche, SAL, Riesame Direzione):
+  // determina quali controparti dell'anagrafica aziende sono proposte come "Cliente".
+  const [companies, setCompanies] = useState([]);
+  const [companyScope, setCompanyScope] = useState(() => resolveInitialProjectsCompanyScope());
+
   const setFilter = useCallback((key, val) => {
     setFiltersState((f) => ({ ...f, [key]: val }));
+    setPage(1);
+  }, []);
+
+  useEffect(() => {
+    apiService.getCompanies?.().then((res) => {
+      const list = res?.data || res?.companies || res || [];
+      setCompanies(Array.isArray(list) ? list : []);
+    }).catch(() => {});
+  }, []);
+
+  useEffect(() => {
+    const access = user?.company_access;
+    if (Array.isArray(access) && access.length === 1 && !companyScope) {
+      const onlyId = String(access[0].company_id);
+      setCompanyScope(onlyId);
+      persistProjectsCompanyScope(onlyId);
+    }
+  }, [user, companyScope]);
+
+  const scopeCompanyName = useMemo(() => {
+    if (!companyScope) return "Tutto lo studio";
+    const match = companies.find((c) => String(c.id) === String(companyScope));
+    return match?.name || `Azienda #${companyScope}`;
+  }, [companyScope, companies]);
+
+  const handleCompanyScopeChange = useCallback((value) => {
+    setCompanyScope(value);
+    persistProjectsCompanyScope(value);
     setPage(1);
   }, []);
 
@@ -518,6 +634,7 @@ function ProjectsPage() {
       const params = { page, limit: LIMIT };
       if (filters.search) params.search = filters.search;
       if (filters.status) params.status = filters.status;
+      if (companyScope) params.company_id = companyScope;
 
       const res = await apiService.getProjects(params);
       setProjects(res.data || []);
@@ -527,7 +644,7 @@ function ProjectsPage() {
     } finally {
       setLoading(false);
     }
-  }, [page, filters]);
+  }, [page, filters, companyScope]);
 
   const loadFormData = useCallback(async () => {
     try {
@@ -584,8 +701,29 @@ function ProjectsPage() {
           <h2 className="pj-title">Gestione Commesse</h2>
           <p className="pj-subtitle">Commesse di saldatura  -  ISO 3834</p>
         </div>
-        <button className="pj-btn-new" onClick={handleNew}>+ Nuova commessa</button>
+        <div className="pj-header-actions">
+          {companies.length > 0 && (
+            <label className="pj-scope-label">
+              Ambito:
+              <select
+                className="pj-select"
+                value={companyScope}
+                onChange={(e) => handleCompanyScopeChange(e.target.value)}
+                aria-label="Ambito commesse per azienda"
+              >
+                <option value="">{"Tutto lo studio"}</option>
+                {companies.map((c) => (
+                  <option key={c.id} value={c.id}>{c.name}</option>
+                ))}
+              </select>
+            </label>
+          )}
+          <button className="pj-btn-new" onClick={handleNew}>+ Nuova commessa</button>
+        </div>
       </div>
+      {companyScope && (
+        <p className="pj-hint" style={{ marginTop: -8 }}>{"Ambito attivo: "}{scopeCompanyName}</p>
+      )}
 
       {/* Filtri */}
       <div className="pj-toolbar">
@@ -641,7 +779,7 @@ function ProjectsPage() {
               {projects.map((p) => (
                 <tr key={p.id}>
                   <td><strong>{p.project_code}</strong></td>
-                  <td>{p.client_name || "-"}</td>
+                  <td>{p.end_customer_name || p.client_name || "-"}</td>
                   <td><StatusBadge type="project" status={p.status || "offerta"} /></td>
                   <td>{formatDate(p.start_date)}</td>
                   <td>{formatDate(p.end_date)}</td>
@@ -701,6 +839,8 @@ function ProjectsPage() {
       {formOpen && (
         <ProjectFormModal
           project={editingProject}
+          companies={companies}
+          defaultCompanyId={!editingProject && companyScope ? companyScope : ""}
           wpsList={wpsList}
           qualifications={qualifications}
           onSave={handleSaved}

@@ -1,6 +1,6 @@
 # =========================================
 # Script Deploy Backend SGQ ISO 9001 - Produzione
-# Server: www.fr-busato.it
+# Server: sistemi.fr-busato.it
 # Porta: 10443 (HTTPS)
 # =========================================
 
@@ -94,7 +94,7 @@ PORT=10443
 API_BASE_PATH=/api/v1
 
 # Database SQL Server
-DB_SERVER=www.fr-busato.it
+DB_SERVER=sistemi.fr-busato.it
 DB_PORT=11043
 DB_DATABASE=SGQ_ISO9001
 DB_USER=your_sql_user
@@ -108,7 +108,7 @@ JWT_EXPIRES_IN=24h
 JWT_REFRESH_EXPIRES_IN=7d
 
 # CORS
-CORS_ORIGIN=https://systemgest.netlify.app,https://www.fr-busato.it
+CORS_ORIGIN=https://systemgest.netlify.app,https://sistemi.fr-busato.it
 CORS_CREDENTIALS=true
 
 # File Upload
@@ -126,8 +126,8 @@ LOG_DIR=./logs
 
 # SSL/TLS
 SSL_ENABLED=true
-SSL_KEY_PATH=C:\Certbot\live\www.fr-busato.it\privkey.pem
-SSL_CERT_PATH=C:\Certbot\live\www.fr-busato.it\fullchain.pem
+SSL_KEY_PATH=C:\Certbot\live\sistemi.fr-busato.it\privkey.pem
+SSL_CERT_PATH=C:\Certbot\live\sistemi.fr-busato.it\fullchain.pem
 
 # Backup automatico
 BACKUP_ENABLED=true
@@ -236,7 +236,7 @@ Write-Host ""
 Write-Host "PROSSIMI STEP:" -ForegroundColor Yellow
 Write-Host "1. Configura backend come servizio Windows (pm2 o NSSM)" -ForegroundColor White
 Write-Host "2. Avvia backend: cd $backendDir; npm start" -ForegroundColor White
-Write-Host "3. Testa: Invoke-WebRequest https://www.fr-busato.it:10443/health" -ForegroundColor White
+Write-Host "3. Testa: Invoke-WebRequest https://sistemi.fr-busato.it:10443/health" -ForegroundColor White
 Write-Host ""
 Write-Host "Per avviare manualmente ora:" -ForegroundColor Cyan
 Write-Host "  cd $backendDir" -ForegroundColor Gray

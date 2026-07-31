@@ -1,5 +1,5 @@
 $ErrorActionPreference = "Stop"
-$BaseUrl = "https://www.fr-busato.it:8443/test-api/api/v1"
+$BaseUrl = "https://sistemi.fr-busato.it:8443/test-api/api/v1"
 $Email = $env:SGQ_APP_EMAIL
 $Password = $env:SGQ_APP_PASSWORD
 if (-not $Email -or -not $Password) { throw "SGQ_APP_EMAIL / SGQ_APP_PASSWORD non impostate" }

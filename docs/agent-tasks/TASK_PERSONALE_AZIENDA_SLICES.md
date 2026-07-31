@@ -70,4 +70,4 @@ Chiudi ogni slice con TEST OK o elenco FIX residui.
 
 - Migration **078** applicata (`run-migration-078-vps.js`); tabella `company_personnel` verificata
 - Migration **081** RBAC (`run-migration-081-vps.js`) � sessione deploy RBAC
-- Deploy `companyPersonnel.controller.js`, `company.routes.js`; health `https://www.fr-busato.it:8443/api/v1/health` OK
+- Deploy `companyPersonnel.controller.js`, `company.routes.js`; health `https://sistemi.fr-busato.it:8443/api/v1/health` OK

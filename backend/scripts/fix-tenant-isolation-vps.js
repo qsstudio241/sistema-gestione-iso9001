@@ -11,7 +11,7 @@
  *   node /tmp/fix-tenant-isolation-vps.js --apply
  *
  * Eseguire sul VPS:
- *   scp -i /tmp/sgq_key -P 1122 ... fix-tenant-isolation-vps.js spascarella@www.fr-busato.it:/tmp/
+ *   scp -i /tmp/sgq_key -P 1122 ... fix-tenant-isolation-vps.js spascarella@sistemi.fr-busato.it:/tmp/
  *   ssh ... "node /tmp/fix-tenant-isolation-vps.js --dry-run"   # prima
  *   ssh ... "node /tmp/fix-tenant-isolation-vps.js --apply"     # poi (con conferma)
  */

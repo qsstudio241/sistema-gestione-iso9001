@@ -517,8 +517,8 @@ updated_at: DATETIME2
 **Developer:** AI Agent  
 **Project:** Sistema Gestione ISO 9001  
 **Cliente:** QS Studio  
-**Database:** www.fr-busato.it:11043 (SGQ_ISO9001)  
-**Backend:** localhost:10443 (dev) | fr-busato.it:8443 (prod)  
+**Database:** sistemi.fr-busato.it:11043 (SGQ_ISO9001)  
+**Backend:** localhost:10443 (dev) | sistemi.fr-busato.it:8443 (prod)  
 **Frontend:** localhost:3000 (dev) | Netlify (prod)
 
 **Document References:**

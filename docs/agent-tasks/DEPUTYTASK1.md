@@ -1,6 +1,6 @@
 # DEPUTYTASK1 — Registro obblighi legali: schema BE (sezioni con riferimento legislativo)
 
-**Stato:** APERTO
+**Stato:** CHIUSO — TEST OK (integrato in PR #317; migrazione 138, API sezioni)
 **Priorità:** P0 — fondazione bloccante per DEPUTYTASK2/3
 **Branch base:** `main`
 **Creato da:** Lead 28/07/2026

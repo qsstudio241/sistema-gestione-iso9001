@@ -1,6 +1,7 @@
 # DEPUTYTASK3 — Registro obblighi legali SICUREZZA (D.Lgs. 81/08) — contenuto P0
 
-**Stato:** APERTO
+**Stato:** CHIUSO — TEST OK (integrato in PR #317; template LEG_SICUREZZA_81, 29 capitoli)
+**Nota N5:** revisione umana contenuto resta aperta (ADR-019 D6) — non bloccante per chiusura brief tecnico.
 **Priorità:** **P0** — deliverable principale richiesto dal committente in questa iniziativa
 **Branch base:** `main`
 **Creato da:** Lead 28/07/2026

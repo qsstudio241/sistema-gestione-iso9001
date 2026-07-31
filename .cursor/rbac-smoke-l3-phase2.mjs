@@ -12,7 +12,7 @@ import { execFileSync } from 'child_process';
 const require = createRequire(import.meta.url);
 const { query } = require('../backend/src/config/database');
 
-const BASE = 'https://www.fr-busato.it:8443/api/v1';
+const BASE = 'https://sistemi.fr-busato.it:8443/api/v1';
 const RESULT_PATH = path.join(process.cwd(), '.cursor', 'rbac-smoke-l3-result.json');
 const SLICES = ['gate', 'audit', 'nc', 'attach', 'registry', 'admin'];
 

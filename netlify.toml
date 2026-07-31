@@ -9,11 +9,11 @@
 
 # Produzione (branch main): backend produzione
 [context.production.environment]
-  VITE_API_URL = "https://www.fr-busato.it:8443/api/v1"
+  VITE_API_URL = "https://sistemi.fr-busato.it:8443/api/v1"
 
 # Deploy Preview (ogni PR): backend di test isolato
 [context.deploy-preview.environment]
-  VITE_API_URL = "https://www.fr-busato.it:8443/test-api/api/v1"
+  VITE_API_URL = "https://sistemi.fr-busato.it:8443/test-api/api/v1"
 
 # SPA redirect (React Router)
 [[redirects]]

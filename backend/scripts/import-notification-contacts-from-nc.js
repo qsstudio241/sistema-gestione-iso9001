@@ -14,9 +14,9 @@
  *   node backend/scripts/import-notification-contacts-from-nc.js --dry-run
  *
  * Uso VPS (dopo migration 073/074):
- *   scp -P 1122 backend/scripts/import-notification-contacts-from-nc.js spascarella@www.fr-busato.it:/tmp/
- *   ssh -p 1122 spascarella@www.fr-busato.it "node /tmp/import-notification-contacts-from-nc.js --dry-run"
- *   ssh -p 1122 spascarella@www.fr-busato.it "node /tmp/import-notification-contacts-from-nc.js"
+ *   scp -P 1122 backend/scripts/import-notification-contacts-from-nc.js spascarella@sistemi.fr-busato.it:/tmp/
+ *   ssh -p 1122 spascarella@sistemi.fr-busato.it "node /tmp/import-notification-contacts-from-nc.js --dry-run"
+ *   ssh -p 1122 spascarella@sistemi.fr-busato.it "node /tmp/import-notification-contacts-from-nc.js"
  *
  * Richiede database.json oppure variabili d'ambiente DB_* (.env).
  */

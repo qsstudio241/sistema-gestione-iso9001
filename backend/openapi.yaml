@@ -26,7 +26,7 @@ servers:
     description: Production
     variables:
       host:
-        default: www.fr-busato.it
+        default: sistemi.fr-busato.it
 
 tags:
   - name: auth

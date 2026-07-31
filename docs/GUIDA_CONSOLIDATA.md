@@ -32,6 +32,29 @@ Sessioni archiviate (consultazione): [GUIDA_DIARIO_2026.md](archive/sessions/GUI
 
 ---
 
+## Hostname VPS (31/07/2026)
+
+Dominio backend/SSH: **`sistemi.fr-busato.it`** (percorso: `www.fr-busato.it` → `busato.selfip.com` → `sistemi.fr-busato.it`).  
+**Sessione chiusa** — PR [#337](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/337) MERGED su `main`.
+
+| Cosa | Stato |
+|------|--------|
+| Certificato TLS Let's Encrypt | ✅ Emesso `CN=sistemi.fr-busato.it` (scade 2026-10-29); nginx punta a `/etc/letsencrypt/live/sistemi.fr-busato.it/` |
+| Health HTTPS trusted | ✅ `curl https://sistemi.fr-busato.it:8443/api/v1/health` (senza `-k`) |
+| Repo (codice/doc) | ✅ PR #337 |
+| Netlify `VITE_API_URL` | ✅ prod / preview / branch / dev → `sistemi.fr-busato.it` |
+| GitHub secret `SMOKE_ENDPOINT` | ✅ `sistemi.fr-busato.it:8443` |
+| Locali gitignored (PC) | ✅ tipici: `backend/config/database.json`, `backend/.env`, `backend/config/.ssh-deploy.local.ps1`, `app/.env.production` — **mai in Git** |
+| VPS `.env` | ✅ WEBDAV già `sistemi`; commenti SSL aggiornati; `DB_SERVER=localhost` invariato; no restart per solo hostname |
+| PuTTY SSH `:1122` | ✅ sessione OK; al primo collegamento **Accept host key** se fingerprint nuovo |
+| Cursor Cloud Secrets | tipicamente niente (host non nei secret) |
+| Rinnovo automatico LE | DNS-01 manuale: renew unattended richiede di nuovo TXT (o HTTP-01 se WAN:80 → VPS). Hook: `/usr/local/sbin/acme-dns-auth.sh` |
+| Alias `busato.selfip.com` | Opzionale; certificato **non** lo include (name mismatch in browser) |
+
+**Lezione:** un cambio hostname non è solo repo — aggiornare in parallelo locali gitignored, Netlify, GitHub smoke secret, URL pubblici sul VPS, e host key PuTTY. Non committare secret.
+
+---
+
 ## Cosa leggere a inizio sessione (ordine)
 
 1. **[../PROJECT_CONTEXT.md](../PROJECT_CONTEXT.md)** — stack, infra, workflow.  
@@ -59,13 +82,19 @@ Sessioni archiviate (consultazione): [GUIDA_DIARIO_2026.md](archive/sessions/GUI
 | Lezione | Regola da applicare | Dettaglio |
 |---------|--------------------|-----------|
 | **Form HTML annidati** — «Salva azione» nel drawer NC non persisteva (nessun POST nei log VPS, drawer si chiudeva senza errore). HTML vieta `<form>` dentro `<form>`: il browser ignora il form interno e il submit va a quello esterno. | **Mai annidare `<form>`.** Un componente contenitore che usa `<form onSubmit>` va convertito in `<div>` se contiene figli con propri form di salvataggio; i pulsanti interni devono essere `type="button"` con `onClick`. | [Sessione 07/06/2026 — NC notifiche + form annidati](archive/sessions/GUIDA_DIARIO_2026.md#sessione-07062026---nc-notifiche--form-annidati-chiusura-sessione) |
-| **Pattern "Ambito" azienda — standard per tutti i moduli multi-azienda** | Quando un modulo mostra dati filtrabili per azienda, usare **sempre** il pattern Ambito: (1) utility `xxxCompanyScope.js` con `resolveInitial…`, `readStored…`, `persist…` su localStorage; (2) selettore `"Ambito:"` nell'**header** della pagina (non nella toolbar); (3) il `companyScope` alimenta lista, form e widget; (4) nel form il campo azienda è testo fisso "(da ambito)" se scope attivo, select libero altrimenti; (5) auto-selezione se l'org ha una sola azienda. **Non** usare dropdown azienda in toolbar né nel form come campo indipendente. Moduli già conformi: Qualifiche (`qualificationsCompanyScope.js`, `company_id` **NOT NULL** a DB — pattern più robusto del progetto), WPS/Saldatura, Registro documenti (`documentRegistryCompanyScope.js`), Riesame di Direzione (`managementReviewsCompanyScope.js`). Moduli con `filterCompany` in toolbar ancora da aggiornare: NC, NDT Reports, Attrezzature, Scadenzari. **Moduli senza alcun campo azienda in UI (gap più grave — creazione sempre `company_id NULL`, verificato 25/07/2026)**: Rischi (`RisksPage.jsx`), Reclami (`ComplaintsPage.jsx`) — il backend supporta già `company_id` e il filtro RBAC (`companyAccessSqlFilter`), manca solo il selettore in UI. **Nota**: anche Audit (il modulo preso a riferimento) accetta `company_id` nullo — in `AuditSelector.jsx` la select azienda ha un'opzione "inserimento manuale" che lascia `companyId=null`; solo `client_name` è obbligatorio. Lo standard "ambito sempre obbligatorio" oggi è rispettato solo da **Qualifiche**. | PR #154 · sessione 22/06/2026; analisi trasversale 25/07/2026 |
+| **Pattern "Ambito" azienda — standard per tutti i moduli multi-azienda** | Quando un modulo mostra dati filtrabili per azienda, usare **sempre** il pattern Ambito: (1) utility `xxxCompanyScope.js` con `resolveInitial…`, `readStored…`, `persist…` su localStorage; (2) selettore `"Ambito:"` nell'**header** della pagina (non nella toolbar); (3) il `companyScope` alimenta lista, form e widget; (4) nel form il campo azienda è testo fisso "(da ambito)" se scope attivo, select libero altrimenti; (5) auto-selezione se l'org ha una sola azienda. **Non** usare dropdown azienda in toolbar né nel form come campo indipendente. Moduli già conformi: Qualifiche (`qualificationsCompanyScope.js`, `company_id` **NOT NULL** a DB — pattern più robusto del progetto), WPS/Saldatura, Registro documenti (`documentRegistryCompanyScope.js`), Riesame di Direzione (`managementReviewsCompanyScope.js`), SAL (`salCompanyScope.js`), Commesse ISO 3834 (`projectsCompanyScope.js`). Moduli con `filterCompany` in toolbar ancora da aggiornare: NC, NDT Reports, Attrezzature, Scadenzari. **Moduli senza alcun campo azienda in UI (gap più grave — creazione sempre `company_id NULL`, verificato 25/07/2026)**: Rischi (`RisksPage.jsx`), Reclami (`ComplaintsPage.jsx`) — il backend supporta già `company_id` e il filtro RBAC (`companyAccessSqlFilter`), manca solo il selettore in UI. **Nota**: anche Audit (il modulo preso a riferimento) accetta `company_id` nullo — in `AuditSelector.jsx` la select azienda ha un'opzione "inserimento manuale" che lascia `companyId=null`; solo `client_name` è obbligatorio. Lo standard "ambito sempre obbligatorio" oggi è rispettato solo da **Qualifiche**. | PR #154 · sessione 22/06/2026; analisi trasversale 25/07/2026 · Commesse: PR #303 |
 | **RBAC `company_access` non applicato uniformemente al backend (gap trasversale verificato 25/07/2026)** | Il servizio centralizzato `companyAccess.service.js` (`assertMutatingAllowed`, `companyAccessSqlFilter`, tabella `user_company_access` — mig. 081) è usato da NC, Audit, Rischi, Reclami, Fornitori, Qualifiche, Riesami, Documenti, Saldatura — ma **non** da `equipment.controller.js`, `rdp.controller.js`, `ndtReports.controller.js`. Più grave: `equipment.controller.js` ha un proprio `buildScopeCondition()` basato su `user.company_id` — colonna che **non esiste** sulla tabella `users` (il modello reale multi-azienda è la tabella `user_company_access`, N:N). La condizione risulta quindi sempre vera per "vede tutto il tenant" anche per un viewer con permesso su una sola azienda: **Attrezzature non è segregato per azienda per nessun ruolo**. Fix raccomandato: migrare i 3 controller al pattern `companyAccess.service.js` già maturo, eliminando la condizione legacy in `equipment.controller.js`. | [ARCHITETTURA_UTENTI_RBAC.md §8.3](ARCHITETTURA_UTENTI_RBAC.md#83-cosa-manca-o-è-parziale-gap-noti) · analisi trasversale 25/07/2026 |
+| **Colonna FK "morta" (nessuna FK, 0 righe) vs colonna già collegata — verificare sempre lo schema reale prima di fidarsi del controller (25/07/2026)** — `projects.controller.js` scriveva su `client_company_id` (nessuna migrazione la crea, nessun vincolo FK, 0 righe popolate in produzione — verificato con query diretta su `sys.foreign_keys`/`COUNT(*)`), mentre `projects.end_customer_id` (FK reale verso `company_counterparties`, aggiunta e già backfillata dalla migrazione 097) non era mai usato né da controller né da frontend. Il campo "Cliente" della commessa restava quindi testo libero, disconnesso dall'anagrafica aziende, nonostante l'infrastruttura DB fosse già pronta. | **Prima di estendere un modulo con un nuovo campo relazionale, verificare lo schema reale** (`sys.columns`/`sys.foreign_keys` via script diagnostico VPS), non solo il codice del controller: un campo referenziato nel codice può essere orfano (mai migrato, nessuna FK) mentre un altro campo già pronto in DB resta inutilizzato. Riusare sempre un servizio condiviso già testato (qui `commercialCustomerCounterparty.service.js`, già usato da Riesame Contratti) invece di reinventare la logica FK+snapshot testo. | PR #303 |
 | **Riuso UI «blocco unico»** | Prima di creare un elemento UI, verificare se esiste già un componente/classe nel repo (tabella in `sgq-operating-memory.mdc`). Usare sempre l'esistente. | [Libreria UI SGQ](reference/LIBRERIA_UI_SGQ.md) |
 | **JSX: sequenze `\u` literal** | Gli escape `\uXXXX` tra tag JSX finiscono a schermo come testo. Metterli **dentro una stringa JS** (`{"\u26A0\uFE0F …"}`). | [Aggiornamento 22/05/2026 — JSX `\u`](archive/sessions/GUIDA_DIARIO_2026.md#aggiornamento-22052026--jsx-sequenze-literal-u-in-ui-rischi--progetti--qualifiche) |
 | **Primo click su «Salva» perso per spostamento di layout al blur (28/07/2026)** — sintomo identico ai form annidati (riga sopra): il pulsante sembra morto, nessuna richiesta di rete, nessun messaggio d'errore. Causa diversa: il blocco «Storico testo» di `RichTextField` veniva montato **solo al primo blur** del campo; il `mousedown` sul pulsante causa il blur, il blocco appare, i controlli sottostanti scendono di ~27px e il `mouseup` cade fuori dal pulsante → il browser **non emette `click`**, il form non invia nulla. Nei log nginx si vedono più POST ravvicinati (l'utente clicca ripetutamente). | **Nessun elemento deve comparire al blur sopra o prima di un pulsante d'azione.** Se un blocco condizionale (storico, hint, contatore, badge di validazione) si monta su `blur`/`focusout`, **riservare lo spazio da subito** (contenitore sempre renderizzato + `min-height`) oppure posizionarlo fuori dal flusso. **Diagnosi**: se un pulsante non risponde, verificare quali eventi arrivano davvero — `pointerdown`/`mousedown` presenti ma `mouseup`/`click` assenti = l'elemento si è spostato durante il click; misurare `boundingBox()` prima e dopo il blur. | PR #315 · test `richTextFieldHistorySlot.test.jsx` |
 | **Qualifiche saldatori — "metodo di trasferimento" mancante, richiesta committente (28/07/2026)** — il committente ha chiesto spiegazione del concetto e segnalato che il form di compilazione qualifiche non permetteva di sceglierlo. Verifica normativa (non dedotta): ISO 9606-1 §5.2 tratta esplicitamente il transfer mode nell'eccezione di continuità processi ("qualifying the welder for dip (short-circuit) transfer mode (131, 135 and 138) shall qualify him for other transfer modes, but not vice versa") e §9.3 lo elenca come riga "Welding process(es); **Transfer mode**" nella tabella "Range of qualification" del modulo certificato ufficiale — quindi è un dato del patentino saldatore, non solo del WPS. Era già gestito come testo libero in WPQR (`welding.controller.js`, colonna `metal_transfer`) ma assente da schema/DB/form/ingest del modulo Qualifiche. | **Fix implementato**: nuova colonna `qualifications.transfer_mode` (NVARCHAR(20) nullable, migrazione **136**), select con 4 valori standard (spray_arc/pulsed_arc/short_arc/globular — più controllato del testo libero WPQR) in `QualificationForm.jsx`, visibile **solo** se il processo scelto è 131/135/136/138 (arco con filo continuo). Estesa `getApplicableWelderFields` (`weldingQualificationRules9606.js`, FE+BE) con `transferModeApplicable`, stesso pattern già usato per il diametro tubo condizionato al prodotto. Aggiornati schema AI (`documentTypeSchemas.js`), mapping ingest (`qualificationIngest.service.js`), controller create/update. **Scelta consapevole di non estendere**: la regola di continuità §5.2 (dip qualifica anche gli altri transfer mode) resta solo documentata in `ISO-9606-1-range-validita-patentino.md`, non implementata come logica di copertura automatica (`qualificationCoverage.js`) — l'intervento richiesto era la sola registrazione/estrazione del dato, non una modifica al calcolo del range di validità. | Migrazione 136 · `weldingQualificationRules9606.test.js`, `qualificationFormConditionalFields.test.jsx`, `qualificationIngest.service.test.js`, `qualifications.controller.test.js` |
 | **Qualifiche — rimozione gate Approva/Rifiuta/Revoca, certificati già validi da ente terzo (28/07/2026)** — il committente ha chiarito che i patentini caricati sono attestati **già emessi e validi** da un ente accreditato (TEC Eurolab/Accredia): il modulo serve solo a estrarre/interrogare i dati, non a gestire un workflow di certificazione interno. Prima di rimuovere «Revoca» andava verificato **se esisteva già** un controllo automatico basato su date equivalente, perché "Revoca" non era solo un gate sui dati inseriti ma l'unico modo per escludere dalla copertura ISO 3834 un saldatore con **conferma semestrale scaduta** (obbligo ISO 9606-1/14732) anche a certificato non scaduto. Verifica: `getCoverage` e `caseExtractedCoverage.service.js` filtravano solo `expiry_date`, **non** `next_confirmation_due` → senza intervento, rimuovere "Revoca" avrebbe fatto rispondere "sì, saldatore qualificato" anche con conferma scaduta (rischio compliance reale). | **Fix implementato**: nuova funzione centralizzata `isQualificationOperationallyActive(q, todayIso)` in `weldingCoordinatorAuth.service.js` — esclude `status` revocata/sospesa, `expiry_date` scaduta, e per tipi 9606/14732 anche `next_confirmation_due` scaduta. Applicata come filtro JS dopo la query SQL in `getCoverage` (qualifications.controller.js) e `caseExtractedCoverage.service.js`; usata anche per rimuovere il gate `approval_status='approvata'` da `qualificationAlert.service.js` e `alert.controller.js` (gli alert ora scattano su qualsiasi qualifica attiva, non solo "approvata"). Rimossi endpoint/route/UI Approva-Rifiuta; "Revoca" (soft-delete → `status='revocata'`) resta come endpoint interno non più esposto come pulsante (l'operatore può ottenere lo stesso effetto impostando Stato=`sospesa`/`revocata` dal form). `createQualification`/`renewQualification`/ingest AI ora forzano sempre `approval_status='approvata'`; normalizzati anche i 4 record legacy `bozza` in produzione (update dati, non schema). `hardDeleteQualification` (Elimina reale) non dipende più da `approval_status`: resta bloccata solo da legami reali (conferme semestrali, import, rinnovo, WPS). **Pattern generale**: quando si rimuove un controllo manuale, verificare sempre se sostituisce un controllo di sicurezza/compliance silenzioso — se sì, il controllo deve diventare automatico/data-driven, non sparire. | Sessione 28/07/2026 · test `weldingCoordinatorAuth.service.test.js`, `qualifications.controller.test.js`, `qualificationAlert.service.test.js` |
+| **Pivot WPS — generazione da WPQR, non ingest (30/07/2026, Mason)** — valutando il modulo con il cliente è emerso che caricare PDF di WPS già scritte non risponde al caso d’uso reale del coordinatore: «genera una WPS per FW S355 10 mm + S235 5 mm dalle WPQR disponibili; se mancano estensioni, segnalalo». L’ingest WPS resta solo import legacy; l’ingest **WPQR** e le regole 15614 restano il carburante. | **Prodotto**: matcher deterministico (Tabella 5 gruppi + range spessore/gola) → bozza WPS 15609 o elenco estensioni. L’AI orchestra la richiesta in linguaggio naturale ma **non** decide la copertura del range (ADR-010). Spec [MODULO_WPS_GENERAZIONE_SCOPO_E_ROADMAP.md](specs/MODULO_WPS_GENERAZIONE_SCOPO_E_ROADMAP.md); brief P0 [DEPUTYTASK1.md](agent-tasks/DEPUTYTASK1.md). Non confondere con il modulo **SAL** (tracker SGQ Camellini). | Lead 30/07/2026 |
+| **P0 generatore WPS — Tabella 5 + `wpsGenerator` (30/07/2026)** — fondazione deterministica senza UI/endpoint: matrice Tabella 5 + footnote (a)/(b)/(c) in `weldingQualificationRules15614.js` (mirror FE), servizio `wpsGenerator.service.js` che fa matching WPQR→bozza o `extensions_needed` in italiano. Caso Mason (FW S355 10 + S235 5) coperto da WPQR gruppo 1.2 con range spessore dichiarato; controesempi gruppo 8 / spessore fuori range / registro vuoto → `not_possible`. | **Regola**: range spessore = valori **dichiarati** sul WPQR (`thickness_min`/`max`); calcolo Level 2 solo come `partial`+warning. Nessuna scrittura DB in P0. Deploy: aggiungere `wpsGenerator.service.js` al `deploy-manifest.json`. P1 = endpoint + UI. | DEPUTYTASK1 · test `weldingQualificationRules15614` + `wpsGenerator.service` |
+| **P1 generatore WPS — API + UI + AskAi (30/07/2026)** — `POST /welding/wps/generate` **prima** di `/:id` (altrimenti Express cattura `generate` come id); nessuna scrittura in generate; salvataggio solo via `POST /welding/wps` status `bozza`. Chip AskAi non chiama LLM per i range 15614: `saveWpsGenerateIntent` + navigate al form precompilato Mason. | **Regola**: path statici welding (`generate`, `coverage`, `upload-batch`) sempre **sopra** `/:id`. Matching resta in `wpsGenerator.service.js`. | DEPUTYTASK1 · `wpsGenerate.controller.test` · `GenerateWpsModal.test` |
+| **P2b upload WPS non piu' primario (31/07/2026)** — il batch «Carica WPS» competava con Genera WPS. | Header: **Genera WPS** / Nuova WPS in primo piano; import PDF solo dietro **Import PDF (legacy)**. WPQR upload invariato. | Lead · `weldingProceduresP2bLegacyUpload.test.jsx` |
+| **P2 export Word WPS Annex A (30/07/2026)** — giro Mason chiuso: da bozza scaricabile `.docx` ispirato a ISO 15609-1 Annex A (etichette form, footer SystemGest). Solo FE, niente migrazione. | **Pattern**: `wordExportWps.js` programmatico (`docx`, come SAL); campi assenti → vuoti; pulsante Word su riga tab WPS. P2b = deprecare upload batch. | DEPUTYTASK1 · `wordExportWps.test.js` |
 
 ### Harness agentico e AI runtime
 
@@ -195,6 +224,7 @@ Configurazione **versionata nel repo** (priorità massima rispetto all'ambiente 
 | **`contractReview.controller.js` NON è nel deploy-manifest** | `backend/scripts/deploy-manifest.json` non include `contractReview.controller.js`/`.routes.js`: quando un commit li modifica vanno copiati a mano con `pscp` **prima** del restart, poi lanciare `deploy-controllers-to-vps.ps1` per il resto. Deploy fix segregazione `company_id` Import PDF 13/06/2026 (commit `9fda958`): push `main`, copia manuale `contractReview.controller.js`, deploy manifest, MainPID 646321→652768, health `healthy`, `/import-jobs` → 401 coerente. | Sessione 13/06/2026 — commit `9fda958` |
 | **Deploy sicuro con working tree "sporco"** | `deploy-controllers-to-vps.ps1` copia il **working tree dal disco** (manifest di ~118 file), **non** lo stato committato: se il tree contiene WIP non pertinente al rilascio, il WIP finisce in produzione (incidente 23/06/2026: una versione WIP di `knowledgeIndexer.service.js` importava un file nuovo non tracciato → crash `MODULE_NOT_FOUND`, API offline 503). **Regola**: (1) prima di ogni deploy backend verificare `git status --short`; se il tree NON è pulito e il WIP non riguarda il rilascio, **non** usare lo script completo; (2) fare un **deploy mirato dei soli file committati** (`pscp` del singolo file, oppure `git show HEAD:percorso` per forzare la versione di `HEAD`) + restart con verifica `MainPID`; (3) se il rilascio introduce un **nuovo pacchetto npm** (es. `mammoth`), eseguire `npm install`/`npm ci` sul VPS, altrimenti `MODULE_NOT_FOUND`. Funzioni riutilizzabili in `backend/scripts/lib/vps-ssh.ps1` (`Initialize-SgqVpsSsh`, `Test-SgqVpsSession`, `Copy-SgqVpsFile`, `Invoke-SgqVps`, `Get-SgqVpsHealth`); password sudo a `plink` **solo via stdin**, mai nella stringa del comando. | [Sessione 23/06/2026 — incident deploy WIP](archive/sessions/GUIDA_DIARIO_2026.md#sessione-23062026-incident--deploy-sicuro-con-working-tree-sporco) |
 | **Token Netlify CLI (Windows)** | Credenziali locali: `backend/config/.netlify.local.ps1` (copia da `.netlify.local.ps1.example`, gitignored). Preflight: `.\backend\scripts\netlify-preflight.ps1` → deve stampare `NETLIFY_ACCESS_OK`. **Mai** token Netlify in chat o su Git. | [NETLIFY_DEPLOYMENT.md](how-to/NETLIFY_DEPLOYMENT.md) |
+| **Cambio hostname VPS — locali + secret (31/07/2026)** | Dopo rename DNS/TLS: aggiornare i file gitignored tipici (`database.json`, `backend/.env`, `.ssh-deploy.local.ps1`, `app/.env.production`), Netlify `VITE_API_URL` (tutti gli ambienti), GitHub `SMOKE_ENDPOINT`, URL pubblici in VPS `.env`; al primo SSH PuTTY accettare la nuova host key. **Mai** committare secret. Cursor Cloud Secrets di solito invariati. | [Hostname VPS](#hostname-vps-31072026) · PR #337 |
 | **Deploy massivo (168 file) — pscp può troncare un singolo file** | Merge di 2 PR parallele (RDP + AI 3834-3, 23/07/2026) → `deploy-controllers-to-vps.ps1` ha copiato 168 file; `organization.controller.js` (non toccato dalle PR, invariato da settimane) è arrivato sul VPS **troncato a 380/395 righe** → `SyntaxError: Missing catch or finally` al restart → backend **503** per ~3 minuti. Causa probabile: glitch di rete/buffer su `pscp` durante un trasferimento lungo, non un bug di codice (sintassi locale OK, hash locale ≠ remoto). **Fix**: diff riga-count/hash locale vs remoto (`wc -l` + `sha256sum` via SSH) per isolare il file, poi `Copy-SgqVpsFile` mirato del solo file + restart con verifica `MainPID`. **Azione preventiva aggiunta**: dopo ogni deploy con **>50 file**, oltre all'health check generico, lanciare un check di sintassi su **tutti** i `.js` remoti: `find src -name '*.js' -exec node --check {} \;` (pochi secondi, individua troncamenti che l'health check da solo non rileva se il file rotto non è nel path critico di boot... qui invece bloccava l'intero `require` chain). | Sessione 23/07/2026 — merge [PR #290](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/290) + [PR #291](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/291) |
 | **PDF → Markdown → JSON (tool generico)** | Per digitalizzare una nuova norma/Quaderno/checklist/capitolato: usare **sempre** `backend/scripts/pdf_to_json/` (pdfplumber + fallback pymupdf/pypdf, OCR locale opzionale via tesseract, nessuna chiamata cloud) invece di scrivere parsing ad-hoc. Rileva anche i PDF con font a codifica rotta/offuscata (testo "presente" ma illeggibile, es. placeholder `(cid:NNN)`) e li segnala come pagine a bassa qualità invece di produrre JSON silenziosamente sbagliato. Salva sempre il `.md` intermedio da revisionare prima di fidarsi del `.json`. | [`.cursor/skills/pdf-to-json/`](../.cursor/skills/pdf-to-json/SKILL.md) · [`backend/scripts/pdf_to_json/README.md`](../backend/scripts/pdf_to_json/README.md) |
 | **ISO 14175:2008 — supporto 3834 (gas)** | Norma di **classificazione gas** (non SGQ): utile per WPS/WPQR/patentini (`shielding_gas` = M21, I1, C1…). MD/JSON in `docs/Normative/Normative NORMA_00012_ UNI EN ISO 14175_2008 Rev. 0.*`; estratto operativo `docs/reference/ISO-14175-gas-protezione.md`; catalogo `shieldingGases14175.js` + prompt ingest. **Non** in `import-norms-from-markdown.js`. Pattern per altre norme complementari 3834: digitalizza → estratto `docs/reference/` → catalogo JS → hook AI (vedi RC in PLAN_INGEST_REFERENCE_CATALOGS). | RC-3 · skill `pdf-to-json` / `gap-analysis-normativa` |
@@ -810,7 +840,7 @@ che NON inoltra i query parameter del browser.
    via `docId`, il nome nell'URL è solo cosmético.
 2. **URL senza porta 8443** — Nginx usa `proxy_set_header Host $host` (senza porta) →
    backend generava URL su porta 443 (default HTTPS, non aperta). Fix: variabile
-   `WEBDAV_BASE_URL=https://www.fr-busato.it:8443` nel `.env` del VPS.
+   `WEBDAV_BASE_URL=https://sistemi.fr-busato.it:8443` nel `.env` del VPS.
 3. **CORS middleware Express intercetta OPTIONS WebDAV** — il middleware `cors()` con
    `preflightContinue: false` rispondeva 204 a TUTTE le OPTIONS, anche quelle WebDAV
    di Office, senza header `DAV: 1, 2`. Office non riconosceva il server come WebDAV
@@ -1157,7 +1187,7 @@ Camellini: "nella sezione 1.4, quando aggiunge un rilievo si chiude continuament
 | Migration **078** | Tabella `company_personnel` + bridge `notification_contacts`; script `backend/scripts/run-migration-078-vps.js` |
 | API | `GET/POST/PUT/DELETE /api/v1/companies/:companyId/personnel` |
 | UI | Route frontend `/companies/:id` — tab Anagrafica + Personale (`CompanyDetailPage`, `CompanyPersonnelPanel`) |
-| Deploy VPS | Migration 078 OK; deploy controller/routes personale; health `https://www.fr-busato.it:8443/api/v1/health` OK (MainPID rinnovato post-restart) |
+| Deploy VPS | Migration 078 OK; deploy controller/routes personale; health `https://sistemi.fr-busato.it:8443/api/v1/health` OK (MainPID rinnovato post-restart) |
 | Test | Vitest `companyDetailPage.test.jsx` — 3/3 |
 
 ### Hotfix viewer + RBAC Fase 4 company_access (02/06/2026)
@@ -1556,13 +1586,13 @@ gh api repos/qsstudio241/sistema-gestione-iso9001/branches/main/protection
 |---|----------|------|
 | 1 | Deploy Preview Netlify **Success** (verde) | Tab Checks sulla PR GitHub |
 | 2 | App preview carica (login / home) | URL preview nel commento Netlify |
-| 3 | Flusso modificato funziona end-to-end | Preview + API **test** `https://www.fr-busato.it:8443/test-api/api/v1` (automatico da `netlify.toml`) |
+| 3 | Flusso modificato funziona end-to-end | Preview + API **test** `https://sistemi.fr-busato.it:8443/test-api/api/v1` (automatico da `netlify.toml`) |
 | 4 | CI app verde (se tocca `app/`) | Check **CI app (Pull Request)** |
 | 5 | Dichiarare **TEST OK** in chat o commento PR | — |
 
 **Abilitazione preview** (una tantum): vedi sezione [Netlify — Deploy Preview (guida passo-passo)](archive/sessions/GUIDA_DIARIO_2026.md#netlify--deploy-preview-guida-passo-passo) — Passo 2 *Deploy Previews → Any pull request*.
 
-**CORS preview**: nginx (`conf.d/sgq-cors-map.conf` + `sites-available/sgq-backend`) e Express (`backend/src/config/corsOrigins.js`) accettano origini `https://deploy-preview-*--systemgest.netlify.app` e `https://*--systemgest.netlify.app` oltre a `systemgest.netlify.app`, `sistema-gestione-iso9001.netlify.app` e `fr-busato.it`. Deploy nginx: `.\backend\scripts\deploy-nginx-cors-vps.ps1`.
+**CORS preview**: nginx (`conf.d/sgq-cors-map.conf` + `sites-available/sgq-backend`) e Express (`backend/src/config/corsOrigins.js`) accettano origini `https://deploy-preview-*--systemgest.netlify.app` e `https://*--systemgest.netlify.app` oltre a `systemgest.netlify.app`, `sistema-gestione-iso9001.netlify.app` e `sistemi.fr-busato.it`. Deploy nginx: `.\backend\scripts\deploy-nginx-cors-vps.ps1`.
 
 ---
 
@@ -1572,8 +1602,8 @@ Sul VPS gira un secondo processo Node.js **separato** dal servizio di produzione
 
 | Parametro | Valore |
 |-----------|--------|
-| **URL pubblico** | `https://www.fr-busato.it:8443/test-api/` |
-| **Health check** | `curl -sk https://www.fr-busato.it:8443/test-api/api/v1/health` |
+| **URL pubblico** | `https://sistemi.fr-busato.it:8443/test-api/` |
+| **Health check** | `curl -sk https://sistemi.fr-busato.it:8443/test-api/api/v1/health` |
 | **Porta interna Node.js** | `3001` (produzione usa `3000`) |
 | **DB** | `2026-06-18_SGQ_ISO9001` (non tocca produzione `SGQ_ISO9001`) |
 | **Servizio systemd** | `sgq-backend-test` |
@@ -1601,8 +1631,8 @@ Sul VPS gira un secondo processo Node.js **separato** dal servizio di produzione
 
 | Ambiente | URL frontend | URL backend | DB |
 |---|---|---|---|
-| **Produzione** (`main`) | `https://systemgest.netlify.app` | `https://www.fr-busato.it:8443/api/v1` | `SGQ_ISO9001` |
-| **Test** (Deploy Preview PR) | `https://deploy-preview-NNN--systemgest.netlify.app` | `https://www.fr-busato.it:8443/test-api/api/v1` | `2026-06-18_SGQ_ISO9001` |
+| **Produzione** (`main`) | `https://systemgest.netlify.app` | `https://sistemi.fr-busato.it:8443/api/v1` | `SGQ_ISO9001` |
+| **Test** (Deploy Preview PR) | `https://deploy-preview-NNN--systemgest.netlify.app` | `https://sistemi.fr-busato.it:8443/test-api/api/v1` | `2026-06-18_SGQ_ISO9001` |
 
 La variabile `VITE_API_URL` viene iniettata automaticamente da `netlify.toml` (`[context.deploy-preview.environment]`) — nessuna azione manuale necessaria.
 
@@ -1629,7 +1659,7 @@ bash backend/scripts/deploy-to-vps-test.sh
 .\backend\scripts\run-on-vps.ps1 -Command "echo '$env:SGQ_SUDO_PASSWORD' | sudo -S systemctl restart sgq-backend-test"
 
 # Health check test
-curl -sk https://www.fr-busato.it:8443/test-api/api/v1/health
+curl -sk https://sistemi.fr-busato.it:8443/test-api/api/v1/health
 
 # Log istanza test (ultimi 50)
 .\backend\scripts\run-on-vps.ps1 -Command "echo '$env:SGQ_SUDO_PASSWORD' | sudo -S journalctl -u sgq-backend-test -n 50 --no-pager"
@@ -1652,7 +1682,7 @@ Copia tutti i file del manifest, riavvia `sgq-backend` (prod) + `sgq-backend-tes
 **Metodo B — Deploy singolo file (hotfix rapido):**
 1. Copia file: `run-on-vps.ps1 -LocalFile ... -RemotePath /tmp/... -RemoteCommand "sudo cp /tmp/... /var/www/sgq-backend/..."`
 2. Restart test: `.\.\backend\scripts\run-on-vps.ps1 -Command "echo '[REDACTED]' | sudo -S systemctl restart sgq-backend-test"`
-3. Verifica: `curl -sk https://www.fr-busato.it:8443/test-api/api/v1/health`
+3. Verifica: `curl -sk https://sistemi.fr-busato.it:8443/test-api/api/v1/health`
 4. Test funzionali su Deploy Preview Netlify (VITE_API_URL automatico da `netlify.toml`)
 5. Se OK → merge → `.\\backend\\scripts\\deploy-controllers-to-vps.ps1` per produzione
 
@@ -1972,14 +2002,14 @@ In **Settings → Secrets and variables → Actions** del repository, aggiungere
 
 | Secret | Valore |
 |--------|--------|
-| `SMOKE_ENDPOINT` | `www.fr-busato.it:8443` |
+| `SMOKE_ENDPOINT` | `sistemi.fr-busato.it:8443` |
 | `SMOKE_TOKEN` | stesso valore impostato nel `.env` del VPS |
 
 ### Esecuzione manuale con curl
 
 ```bash
 # Verifica rapida da terminale (Linux/macOS/WSL)
-curl -sk -H "X-Smoke-Token: XXX" https://www.fr-busato.it:8443/api/v1/smoke/testdb | python3 -m json.tool
+curl -sk -H "X-Smoke-Token: XXX" https://sistemi.fr-busato.it:8443/api/v1/smoke/testdb | python3 -m json.tool
 
 # Atteso se OK:
 # { "ok": true, "db": "2026-06-18_SGQ_ISO9001", "checks": { ... }, "errors": [] }
@@ -1989,7 +2019,7 @@ curl -sk -H "X-Smoke-Token: XXX" https://www.fr-busato.it:8443/api/v1/smoke/test
 
 ```powershell
 # Windows PowerShell (dal root del progetto)
-$env:SMOKE_ENDPOINT = "www.fr-busato.it:8443"
+$env:SMOKE_ENDPOINT = "sistemi.fr-busato.it:8443"
 $env:SMOKE_TOKEN    = "XXX"
 node backend/scripts/smoke-remote.js
 ```
@@ -2008,7 +2038,7 @@ Il workflow `.github/workflows/smoke-test.yml` si attiva su:
 | Script | Ruolo |
 |---|---|
 | `backend/scripts/deploy-to-vps-test.ps1` | Deploy manifest + restart **solo** `sgq-backend-test.service` su `/var/www/sgq-backend-test` (mai `sgq-backend.service`/produzione). Stesso pattern robusto di restart (sudo -S → sudo -n → fallback fuser+nohup) e verifica PID prima/dopo di `deploy-controllers-to-vps.ps1`, con `$RemoteBase`/`$RemoteService` fissi sul test. |
-| `backend/scripts/_smoke-ual.ps1` | Smoke test end-to-end come admin sui 4 flussi UAL (company-access, audit-log, invito email, reset password) contro `https://www.fr-busato.it:8443/test-api/api/v1`. Crea utenti fixture con email uniche (timestamp), verifica ogni step via API reale, pulisce con soft-delete a fine esecuzione. Riavviabile in autonomia (non richiede SMTP reale). |
+| `backend/scripts/_smoke-ual.ps1` | Smoke test end-to-end come admin sui 4 flussi UAL (company-access, audit-log, invito email, reset password) contro `https://sistemi.fr-busato.it:8443/test-api/api/v1`. Crea utenti fixture con email uniche (timestamp), verifica ogni step via API reale, pulisce con soft-delete a fine esecuzione. Riavviabile in autonomia (non richiede SMTP reale). |
 | `backend/scripts/_smoke-token-helper.js` | Helper Node (`NODE_ENV=test`) usato da `_smoke-ual.ps1` per generare/interrogare token `user_action_tokens` direttamente sul DB test, bypassando l'invio email reale (SMTP test non configurato) mantenendo comunque un test end-to-end reale del consumo token via API. |
 
 **Lezione appresa — output Node misto a log Winston**: quando uno script Node stampa un JSON su `stdout` per essere letto da PowerShell, il logger applicativo (connessione DB, ecc.) inquina lo stesso stream. Soluzione: (a) `console.log(JSON.stringify(x))` **su una sola riga** (mai `null, 2`), (b) lato PowerShell filtrare le righe con un regex tipo `^\s*[\{\[]` e prendere l'ultima come JSON valido, prima di `ConvertFrom-Json`.

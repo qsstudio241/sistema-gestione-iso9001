@@ -8,6 +8,9 @@
 .pj-subtitle { font-size:14px; color:#6b7280; margin:0; }
 .pj-btn-new { padding:9px 20px; background:#1e3a5f; color:#fff; border:none; border-radius:8px; font-size:14px; font-weight:600; cursor:pointer; }
 .pj-btn-new:hover { background:#16304e; }
+.pj-header-actions { display:flex; align-items:center; gap:12px; flex-wrap:wrap; }
+.pj-scope-label { display:flex; align-items:center; gap:8px; font-size:13px; color:#374151; font-weight:600; }
+.pj-scope-label .pj-select { min-width:200px; }
 
 /* Toolbar */
 .pj-toolbar { display:flex; gap:10px; margin-bottom:14px; flex-wrap:wrap; align-items:center; }

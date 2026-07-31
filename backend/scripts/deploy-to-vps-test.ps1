@@ -20,12 +20,12 @@ $ErrorActionPreference = "Stop"
 $ProjectRoot = Split-Path (Split-Path $PSScriptRoot -Parent) -Parent
 $BackendRoot = Join-Path $ProjectRoot "backend"
 $ManifestPath = Join-Path $PSScriptRoot "deploy-manifest.json"
-$VPS = "spascarella@www.fr-busato.it"
+$VPS = "spascarella@sistemi.fr-busato.it"
 $Port = "1122"
 $RemoteBase = "/var/www/sgq-backend-test"
 $RemoteService = "sgq-backend-test.service"
 $HostKey = "ssh-ed25519 255 SHA256:X7V82/1Ugdd7QmCJqaAXTn8Pazqv8bRA3mshLlwbsoc"
-$HealthUrl = "https://www.fr-busato.it:8443/test-api/api/v1/health"
+$HealthUrl = "https://sistemi.fr-busato.it:8443/test-api/api/v1/health"
 
 if (-not (Test-Path -LiteralPath $ManifestPath)) {
     throw "Manifest non trovato: $ManifestPath"

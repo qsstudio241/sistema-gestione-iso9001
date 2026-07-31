@@ -61,8 +61,9 @@ const uploadWps = multer({
 router.use(authenticate);
 router.use(requireLicensedModule('saldatura'));
 
-// WPS — coverage PRIMA di /:id per evitare conflitti di routing
+// WPS — path statici (generate/coverage/upload) PRIMA di /:id
 router.post  ('/welding/wps/upload-batch',   uploadWps.array('files', 20), ctrl.uploadWPSBatch);
+router.post  ('/welding/wps/generate',  ctrl.generateWPS);
 router.get   ('/welding/wps/coverage',  ctrl.getWpsCoverage);
 router.get   ('/welding/wps',           ctrl.listWPS);
 router.get   ('/welding/wps/:id',       ctrl.getWPS);

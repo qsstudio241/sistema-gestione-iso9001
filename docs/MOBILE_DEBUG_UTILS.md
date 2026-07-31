@@ -272,7 +272,7 @@ const testAudit = {
     standard_id: 1
 };
 
-fetch('https://www.fr-busato.it:8443/api/v1/audits/sync', {
+fetch('https://sistemi.fr-busato.it:8443/api/v1/audits/sync', {
     method: 'POST',
     headers: {
         'Content-Type': 'application/json',

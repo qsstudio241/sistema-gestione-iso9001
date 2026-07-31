@@ -1,4 +1,4 @@
-const BASE = 'https://www.fr-busato.it:8443/api/v1';
+const BASE = 'https://sistemi.fr-busato.it:8443/api/v1';
 const EMAIL = process.env.SGQ_APP_EMAIL || 'admin@sgq.local';
 const PASSWORD = process.env.SGQ_APP_PASSWORD;
 if (!PASSWORD) {

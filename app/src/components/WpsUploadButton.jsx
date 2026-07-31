@@ -121,7 +121,7 @@ export default function WpsUploadButton({ companyId, companyName, onUploadComple
     <div className="wps-upload">
       <button className="wps-upload__btn" onClick={handleClick} disabled={uploading}>
         <span className="wps-upload__icon" role="img" aria-label="upload">{"\u2795"}</span>
-        Carica WPS (batch)
+        Seleziona PDF WPS
       </button>
 
       <input

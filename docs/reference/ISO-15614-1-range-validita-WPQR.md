@@ -69,7 +69,7 @@ Regola aggiuntiva confermata: se un giunto d'angolo è qualificato tramite prova
 
 Provino con angolo α tra 60° e 90° qualifica 60°≤α<90°; angolo <60° richiede prova dedicata e qualifica da α fino a 90°. Level 1: l'angolo non è variabile essenziale.
 
-## Gruppi materiale coperti da qualifica (Tabella 5 acciai, Tabella 6 nichel/acciaio — ORA LEGGIBILI, non ancora codificate in JS)
+## Gruppi materiale coperti da qualifica (Tabella 5 acciai — codificata in JS P0; Tabella 6 nichel — stub)
 
 **Aggiornamento 26/07/2026**: a differenza della digitalizzazione precedente (GAP totale, "troppo interfogliate"), la nuova estrazione produce matrici pulite e leggibili. Esempio Tabella 5 (gruppi acciaio, righe 1-4 di 11, materiale provino → materiali coperti):
 
@@ -82,9 +82,15 @@ Provino con angolo α tra 60° e 90° qualifica 60°≤α<90°; angolo <60° ric
 
 (Matrice completa 11×11 nel Markdown digitalizzato, righe 5–11 su pagina successiva; Tabella 6 nichel/acciaio 8×8 + combinazioni con gruppi 1/2/3/5/6/8/11 anch'essa leggibile.)
 
-**Perché NON è ancora codificata in JS** (nonostante ora leggibile): è una matrice 11×11 (+ Tabella 6) con footnote di eccezione (a/b/c: sottogruppi, gruppo padre, leghe a soluzione solida/precipitazione) che modificano la lettura di singole celle. Un errore di trascrizione riga/colonna in una matrice di compatibilità materiali avrebbe impatto diretto su una decisione di conformità/certificazione — rischio più alto rispetto a una formula aritmetica su un solo parametro (spessore/diametro). **Prossimo passo se si vuole chiudere il gap**: verifica visiva riga-per-riga sulla pagina PDF originale (27-29) prima di trasformare la matrice in lookup table JS.
+**Stato codifica (30/07/2026 — P0)**: Tabella 5 (acciai) **codificata in JS** in `weldingQualificationRules15614.js` (app + backend mirror):
 
-**Regola generale non ambigua e sicura da applicare oggi**: il campo `material_group` estratto/inserito va sempre riportato **come singolo gruppo/sottogruppo testato**, senza inferire automaticamente altri gruppi coperti (finché la matrice non è codificata e verificata).
+| Funzione | Ruolo |
+|---|---|
+| `normalizeMaterialGroupCode` | `'1.2'` / `'1'` / `'group 1.2'` → `{ group, subgroup }` |
+| `isParentMaterialCombinationCovered` | matrice diagonale + footnote (a)/(b)/(c) |
+| `resolveSteelGradeToGroup` | gradi comuni (S235→1.1, S355→1.2, …) |
+
+Consumatore: `wpsGenerator.service.js` (matching WPQR → bozza WPS). Tabella 6 (nichel) resta `not_implemented`. L’ingest WPQR continua a salvare solo il gruppo/sottogruppo **dichiarato**, senza inferire coperture.
 
 ## Numero di passate (single run / multi-run)
 

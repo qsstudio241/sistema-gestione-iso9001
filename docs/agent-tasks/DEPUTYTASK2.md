@@ -1,6 +1,6 @@
 # DEPUTYTASK2 — Registro obblighi legali: rendering FE (riferimento legislativo + risposta SI/NO/NA)
 
-**Stato:** APERTO
+**Stato:** CHIUSO — TEST OK (integrato in PR #317; statusOptions + reference_text UI)
 **Priorità:** P0 — necessario perché DEPUTYTASK3 sia utilizzabile in audit reale
 **Branch base:** `main`
 **Creato da:** Lead 28/07/2026

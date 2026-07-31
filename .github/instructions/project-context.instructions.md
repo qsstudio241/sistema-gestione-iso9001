@@ -19,14 +19,14 @@ Sostituisce fogli Excel e documenti Word con un sistema centralizzato, tracciabi
 
 | Risorsa | Dettaglio |
 |---|---|
-| **VPS Backend** | `www.fr-busato.it` – Ubuntu, porta 3000 → HTTPS 8443 via Nginx |
-| **SSH** | `ssh -p 1122 spascarella@www.fr-busato.it` — chiave SSH o PuTTY (`SGQ_PUTTY_SESSION`); non versionare password |
+| **VPS Backend** | `sistemi.fr-busato.it` – Ubuntu, porta 3000 → HTTPS 8443 via Nginx |
+| **SSH** | `ssh -p 1122 spascarella@sistemi.fr-busato.it` — chiave SSH o PuTTY (`SGQ_PUTTY_SESSION`); non versionare password |
 | **Backend path** | `/var/www/sgq-backend/` |
 | **Log** | `/var/www/sgq-backend/app.log` (NON `/var/log/`) |
-| **DB** | SQL Server `www.fr-busato.it,11043` / DB: `SGQ_ISO9001` |
-| **API Base URL** | `https://www.fr-busato.it:8443/api/v1` |
+| **DB** | SQL Server `sistemi.fr-busato.it,11043` / DB: `SGQ_ISO9001` |
+| **API Base URL** | `https://sistemi.fr-busato.it:8443/api/v1` |
 | **Frontend (Netlify)** | Deploy automatico da `main` branch |
-| **Deploy backend** | `scp -P 1122 <file> spascarella@www.fr-busato.it:/var/www/sgq-backend/<path>/` |
+| **Deploy backend** | `scp -P 1122 <file> spascarella@sistemi.fr-busato.it:/var/www/sgq-backend/<path>/` |
 
 ### Restart Server (comandi separati — NON concatenare con `;` il tail)
 ```bash

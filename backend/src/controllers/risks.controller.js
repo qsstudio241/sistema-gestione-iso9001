@@ -23,7 +23,7 @@ async function listRisks(req, res) {
         const orgId = req.user.organization_id;
         const accessList = await ensureCompanyAccessLoaded(req.user);
         const companyFilter = companyAccessSqlFilter(accessList, 'r');
-        const { status, context, page = 1, limit = 50 } = req.query;
+        const { status, context, company_id, page = 1, limit = 50 } = req.query;
         const offset = (parseInt(page) - 1) * parseInt(limit);
 
         let where = ['r.organization_id = @orgId', 'r.is_deleted = 0'];
@@ -31,8 +31,9 @@ async function listRisks(req, res) {
         const req2 = pool.request().input('orgId', orgId).input('limit', parseInt(limit)).input('offset', offset);
         Object.entries(companyFilter.params).forEach(([k, v]) => req2.input(k, v));
 
-        if (status)  { where.push('r.status = @status');   req2.input('status', status); }
-        if (context) { where.push('r.context = @context'); req2.input('context', context); }
+        if (status)     { where.push('r.status = @status');       req2.input('status', status); }
+        if (context)    { where.push('r.context = @context');     req2.input('context', context); }
+        if (company_id) { where.push('r.company_id = @companyId'); req2.input('companyId', parseInt(company_id)); }
 
         const whereClause = where.join(' AND ');
 
@@ -42,9 +43,11 @@ async function listRisks(req, res) {
                        r.context, r.category, r.probability, r.impact, r.treatment,
                        r.treatment_desc, r.responsible, r.review_date, r.status,
                        r.nature, r.created_by, r.created_at, r.updated_at,
-                       u.full_name AS created_by_name
+                       u.full_name AS created_by_name,
+                       c.name AS company_name
                 FROM risks r
                 LEFT JOIN users u ON u.user_id = r.created_by
+                LEFT JOIN companies c ON c.id = r.company_id
                 WHERE ${whereClause}
                 ORDER BY (r.probability * r.impact) DESC, r.created_at DESC
                 OFFSET @offset ROWS FETCH NEXT @limit ROWS ONLY
@@ -52,12 +55,14 @@ async function listRisks(req, res) {
             (() => {
                 const cntReq = pool.request().input('orgId2', orgId);
                 Object.entries(companyFilter.params).forEach(([k, v]) => cntReq.input(k, v));
-                if (status)  cntReq.input('cntStatus', status);
-                if (context) cntReq.input('cntContext', context);
+                if (status)     cntReq.input('cntStatus', status);
+                if (context)    cntReq.input('cntContext', context);
+                if (company_id) cntReq.input('cntCompanyId', parseInt(company_id));
                 const cntWhere = ['r.organization_id = @orgId2', 'r.is_deleted = 0'];
                 if (companyFilter.clause) cntWhere.push(companyFilter.clause);
-                if (status)  cntWhere.push('r.status = @cntStatus');
-                if (context) cntWhere.push('r.context = @cntContext');
+                if (status)     cntWhere.push('r.status = @cntStatus');
+                if (context)    cntWhere.push('r.context = @cntContext');
+                if (company_id) cntWhere.push('r.company_id = @cntCompanyId');
                 return cntReq.query(`SELECT COUNT(*) AS total FROM risks r WHERE ${cntWhere.join(' AND ')}`);
             })(),
         ]);
@@ -220,24 +225,39 @@ async function listObjectives(req, res) {
     try {
         const pool  = await getPool();
         const orgId = req.user.organization_id;
-        const { status, page = 1, limit = 50 } = req.query;
+        const accessList = await ensureCompanyAccessLoaded(req.user);
+        const companyFilter = companyAccessSqlFilter(accessList, 'o');
+        const { status, company_id, page = 1, limit = 50 } = req.query;
         const offset = (parseInt(page) - 1) * parseInt(limit);
 
         let where = ['o.organization_id = @orgId', 'o.is_deleted = 0'];
+        if (companyFilter.clause) where.push(companyFilter.clause);
         const req2 = pool.request().input('orgId', orgId).input('limit', parseInt(limit)).input('offset', offset);
-        if (status) { where.push('o.status = @status'); req2.input('status', status); }
+        Object.entries(companyFilter.params).forEach(([k, v]) => req2.input(k, v));
+        if (status)     { where.push('o.status = @status');       req2.input('status', status); }
+        if (company_id) { where.push('o.company_id = @companyId'); req2.input('companyId', parseInt(company_id)); }
 
         const [dataRes, countRes] = await Promise.all([
             req2.query(`
-                SELECT o.*, u.full_name AS created_by_name
+                SELECT o.*, u.full_name AS created_by_name, c.name AS company_name
                 FROM objectives o
                 LEFT JOIN users u ON u.user_id = o.created_by
+                LEFT JOIN companies c ON c.id = o.company_id
                 WHERE ${where.join(' AND ')}
                 ORDER BY o.due_date ASC, o.created_at DESC
                 OFFSET @offset ROWS FETCH NEXT @limit ROWS ONLY
             `),
-            pool.request().input('orgId2', orgId)
-                .query('SELECT COUNT(*) AS total FROM objectives WHERE organization_id = @orgId2 AND is_deleted = 0')
+            (() => {
+                const cntReq = pool.request().input('orgId2', orgId);
+                Object.entries(companyFilter.params).forEach(([k, v]) => cntReq.input(k, v));
+                if (status)     cntReq.input('cntStatus', status);
+                if (company_id) cntReq.input('cntCompanyId', parseInt(company_id));
+                const cntWhere = ['o.organization_id = @orgId2', 'o.is_deleted = 0'];
+                if (companyFilter.clause) cntWhere.push(companyFilter.clause);
+                if (status)     cntWhere.push('o.status = @cntStatus');
+                if (company_id) cntWhere.push('o.company_id = @cntCompanyId');
+                return cntReq.query(`SELECT COUNT(*) AS total FROM objectives o WHERE ${cntWhere.join(' AND ')}`);
+            })(),
         ]);
 
         res.json({ success: true, data: dataRes.recordset, pagination: { page: parseInt(page), limit: parseInt(limit), total: countRes.recordset[0].total } });

@@ -16,7 +16,7 @@ const API_CONFIG = {
         timeout: 10000
     },
     production: {
-        baseUrl: import.meta.env.VITE_API_URL || 'https://www.fr-busato.it:8443/api/v1',
+        baseUrl: import.meta.env.VITE_API_URL || 'https://sistemi.fr-busato.it:8443/api/v1',
         timeout: 15000
     }
 };
@@ -2262,6 +2262,7 @@ class ApiService {
     async getWPSList(params = {})    { const qs = new URLSearchParams(params).toString(); return this.get(`/welding/wps${qs ? '?' + qs : ''}`); }
     async getWPS(id)                 { return this.get(`/welding/wps/${id}`); }
     async createWPS(data)            { return this.post('/welding/wps', data); }
+    async generateWPS(data)          { return this.post('/welding/wps/generate', data); }
     async updateWPS(id, data)        { return this.put(`/welding/wps/${id}`, data); }
     async deleteWPS(id)              { return this.delete(`/welding/wps/${id}`); }
 
