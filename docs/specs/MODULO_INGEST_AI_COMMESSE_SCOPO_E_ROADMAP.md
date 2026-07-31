@@ -199,7 +199,7 @@ Questa sezione formalizza **come** sviluppare e rilasciare il modulo (processo) 
 | Anello della catena | Dettaglio operativo |
 |---|---|
 | **DB di test** | `2026-06-18_SGQ_ISO9001` (istanza separata dalla produzione): tutte le migrazioni e gli smoke vengono provati qui **prima** del DB prod. |
-| **Backend di test (VPS)** | `https://busato.selfip.com:8443/test-api`: ambiente isolato per smoke con dati realistici e `GEMINI_API_KEY` già configurata. |
+| **Backend di test (VPS)** | `https://sistemi.fr-busato.it:8443/test-api`: ambiente isolato per smoke con dati realistici e `GEMINI_API_KEY` già configurata. |
 | **CI smoke automatica** | GitHub Actions esegue lo smoke su ogni PR che tocca `backend/**` (vedi `.github/workflows/smoke-test.yml`); blocca la PR se rosso. |
 | **Branch protection** | `main` protetto: niente push diretto, merge solo via PR con check verdi. |
 | **Deploy con verifica PID** | `backend/scripts/deploy-to-vps.sh` riavvia il servizio e **verifica il cambio di `MainPID`** (se invariato, il processo non si è riavviato → forza il restart). |

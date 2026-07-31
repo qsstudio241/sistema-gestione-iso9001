@@ -4,7 +4,7 @@
  */
 const https = require('https');
 
-const BASE = 'https://busato.selfip.com:8443';
+const BASE = 'https://sistemi.fr-busato.it:8443';
 const TEST_QUESTION_ID = 122;
 const TEST_EXCERPT = '[TEST] Stralcio di verifica — può essere eliminato';
 

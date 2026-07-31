@@ -123,7 +123,7 @@ async function main() {
 
 async function checkVpsTestHealth() {
   const https = require('https');
-  const url = 'https://busato.selfip.com:8443/test-api/api/v1/health';
+  const url = 'https://sistemi.fr-busato.it:8443/test-api/api/v1/health';
   return new Promise((resolve) => {
     const req = https.get(url, { timeout: 8000 }, (res) => {
       let body = '';

@@ -6,7 +6,7 @@
 #   bash backend/scripts/run-migration-agent.sh 040 production
 #
 # SEGRETI CURSOR necessari (Dashboard → Cloud Agents → Secrets):
-#   DB_SERVER   = busato.selfip.com,11043
+#   DB_SERVER   = sistemi.fr-busato.it,11043
 #   DB_PORT     = 11043
 #   DB_DATABASE = SGQ_ISO9001
 #   DB_USER     = <utente SQL>
@@ -53,7 +53,7 @@ if [[ ${#MISSING[@]} -gt 0 ]]; then
     echo "❌ Variabili d'ambiente DB mancanti: ${MISSING[*]}"
     echo ""
     echo "   Aggiungile in Cursor Dashboard → Cloud Agents → Secrets:"
-    echo "     DB_SERVER   = busato.selfip.com,11043"
+    echo "     DB_SERVER   = sistemi.fr-busato.it,11043"
     echo "     DB_PORT     = 11043"
     echo "     DB_DATABASE = SGQ_ISO9001"
     echo "     DB_USER     = <utente SQL>"
