@@ -38,11 +38,14 @@ Dominio backend/SSH aggiornato: **`busato.selfip.com`** (ex `www.fr-busato.it`).
 
 | Cosa | Stato |
 |------|--------|
-| Repo (script, `netlify.toml`, doc, regole agente) | Sostituito |
-| Certificato TLS sul VPS | Ancora emesso per `www.fr-busato.it` → **rinnovare** con Certbot per `busato.selfip.com` (altrimenti warning browser) |
-| Netlify Site env `VITE_API_URL` | Se impostata a livello sito (oltre `netlify.toml`), aggiornarla al nuovo host |
-| GitHub Actions `SMOKE_ENDPOINT` | Opzionale: il workflow ora hardcoda `busato.selfip.com:8443` (il secret stale non blocca più la CI) |
-| Config locali gitignored (`database.json`, `.ssh-deploy.local.ps1`, `.env`) | Aggiornare l’host sul PC desktop |
+| Repo (script, `netlify.toml`, doc, regole agente) | ✅ Sostituito (PR #335) |
+| Netlify produzione | ✅ Bundle già con `https://busato.selfip.com:8443/api/v1` (da `netlify.toml`, nessun override sito bloccante) |
+| Nginx VPS (`server_name`, CORS map, ACME vhost) + `WEBDAV_BASE_URL` in `.env`/`.env.test` | ✅ Aggiornati; backend prod/test riavviati |
+| Certificato TLS sul VPS | ⛔ **Bloccato**: Let's Encrypt HTTP-01 timeout su WAN `:80`. La `:10880` (ACME nginx) funziona da Internet; la `:443` pubblica è Apache sul Raspberry (`192.168.99.253`), non il VPS. Su **OPNsense** (`192.168.99.1:10443`) serve NAT **WAN TCP/80 → `192.168.99.7:80`** (oppure `:10880`). Poi sul VPS: `sudo /usr/local/sbin/sgq-issue-cert-selfip.sh` |
+| Config locali gitignored sul PC desktop | ⛔ Non disponibili al Cloud Agent — aggiornare host in `database.json` / `.ssh-deploy.local.ps1` / `.env` |
+
+**Nota browser**: finché il cert resta `CN=www.fr-busato.it`, le chiamate HTTPS da Netlify a `busato.selfip.com:8443` possono fallire per name mismatch. Priorità: sistemare il NAT OPNsense e lanciare lo script cert.
+
 
 ---
 
