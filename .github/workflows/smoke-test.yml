@@ -3,9 +3,9 @@
 # che esegue le verifiche internamente con una connessione isolata al profilo "test".
 #
 # Segreti GitHub richiesti (Settings → Secrets and variables → Actions):
-#   SMOKE_ENDPOINT  — es. "busato.selfip.com:8443"
 #   SMOKE_TOKEN     — token segreto da impostare anche nel .env del VPS
-# Aggiornato: 27/06/2026 — trigger smoke su PR docs-only (chiusura sessione #172)
+# Endpoint host hardcoded (non è un segreto): busato.selfip.com:8443
+# Aggiornato: 31/07/2026 — host VPS rinominato; endpoint non più da secret stale
 
 name: Smoke test DB test
 
@@ -46,7 +46,8 @@ jobs:
       - name: Esegui smoke-remote
         run: node backend/scripts/smoke-remote.js
         env:
-          SMOKE_ENDPOINT: ${{ secrets.SMOKE_ENDPOINT }}
+          # Host non è un segreto: evita CI rossa se secrets.SMOKE_ENDPOINT è stale
+          SMOKE_ENDPOINT: busato.selfip.com:8443
           SMOKE_TOKEN: ${{ secrets.SMOKE_TOKEN }}
         timeout-minutes: 2
 

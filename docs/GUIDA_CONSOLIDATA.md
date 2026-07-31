@@ -41,6 +41,7 @@ Dominio backend/SSH aggiornato: **`busato.selfip.com`** (ex `www.fr-busato.it`).
 | Repo (script, `netlify.toml`, doc, regole agente) | Sostituito |
 | Certificato TLS sul VPS | Ancora emesso per `www.fr-busato.it` → **rinnovare** con Certbot per `busato.selfip.com` (altrimenti warning browser) |
 | Netlify Site env `VITE_API_URL` | Se impostata a livello sito (oltre `netlify.toml`), aggiornarla al nuovo host |
+| GitHub Actions `SMOKE_ENDPOINT` | Opzionale: il workflow ora hardcoda `busato.selfip.com:8443` (il secret stale non blocca più la CI) |
 | Config locali gitignored (`database.json`, `.ssh-deploy.local.ps1`, `.env`) | Aggiornare l’host sul PC desktop |
 
 ---
