@@ -35,13 +35,14 @@ Sessioni archiviate (consultazione): [GUIDA_DIARIO_2026.md](archive/sessions/GUI
 ## Hostname VPS (31/07/2026)
 
 Dominio backend/SSH: **`sistemi.fr-busato.it`** (percorso: `www.fr-busato.it` → `busato.selfip.com` → `sistemi.fr-busato.it`).
-Health OK su `https://sistemi.fr-busato.it:8443/api/v1/health`.
 
 | Cosa | Stato |
 |------|--------|
-| Repo / Netlify `VITE_API_URL` / script deploy | Aggiornati a `sistemi.fr-busato.it` |
-| Certificato TLS | In emissione via DNS-01 (TXT `_acme-challenge.sistemi.fr-busato.it`) |
-| Alias `busato.selfip.com` | Può restare come DNS di comodo; hostname canonico = `sistemi.fr-busato.it` |
+| Certificato TLS Let's Encrypt | ✅ Emesso `CN=sistemi.fr-busato.it` (scade 2026-10-29); nginx punta a `/etc/letsencrypt/live/sistemi.fr-busato.it/` |
+| Health HTTPS trusted | ✅ `curl https://sistemi.fr-busato.it:8443/api/v1/health` (senza `-k`) |
+| Repo / Netlify `VITE_API_URL` | Aggiornati a `sistemi.fr-busato.it` |
+| Rinnovo automatico | DNS-01 manuale: il renew unattended richiede di nuovo un TXT (o HTTP-01 se WAN:80 → VPS). Hook: `/usr/local/sbin/acme-dns-auth.sh` |
+| Alias `busato.selfip.com` | Opzionale; certificato **non** lo include (name mismatch se usato in browser) |
 
 ---
 
