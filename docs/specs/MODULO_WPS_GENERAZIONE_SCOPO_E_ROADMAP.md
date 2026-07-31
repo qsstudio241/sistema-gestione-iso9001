@@ -69,7 +69,7 @@ wpsGenerator.service.js
 | **P1** | Endpoint + UI anteprima/salva bozza + suggerimento AskAi (caso Mason in linguaggio naturale) | ✅ Implementato (DEPUTYTASK1, 30/07/2026) |
 | **P1b** | Completare Tabella 7 Level 1 (GAP estrazione) se verificata su PDF ufficiale | Opzionale |
 | **P2** | Export Word WPS (modulo ISO 15609-1 Annex A) | ✅ v1 (30/07/2026) — `wordExportWps.js` + pulsante Word in tab WPS |
-| **P2b** | Deprecare/nascondere upload batch WPS come flusso primario | Backlog |
+| **P2b** | Deprecare/nascondere upload batch WPS come flusso primario | ✅ (31/07/2026) — «Import PDF (legacy)» a richiesta |
 
 ---
 
@@ -109,7 +109,7 @@ wpsGenerator.service.js
 | Esito ok/partial | Pannello anteprima campi bozza + lista warning; azioni **Salva bozza** / Annulla |
 | Esito not_possible | Messaggio chiaro + elenco `extensions_needed` (niente form vuoto da salvare) |
 | Riuso | Stili `WeldingProceduresPage.css` / form esistenti; niente card decorative parallele |
-| Upload PDF | Lasciare `WpsUploadButton` visibile in P1 (rimozione/deprecazione = P2) |
+| Upload PDF | Secondario: **Import PDF (legacy)** a richiesta (P2b ✅) — flusso primario = Genera WPS |
 
 ### P1-C — AskAi (linguaggio naturale)
 
