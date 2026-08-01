@@ -577,6 +577,11 @@ const REPROCESSABLE_FIELDS = {
     shielding_gas: { column: 'shielding_gas' },
     joint_type: { column: 'joint_type' },
     weld_details: { column: 'weld_details' },
+    // Backfill post-bug 01/08/2026: campi estratti in revisione ma non scritti
+    // dal commit ingest (filler_material_group → colonna filler_material;
+    // pipe_diameter_mm → pipe_diameter_min_mm).
+    filler_material: { column: 'filler_material' },
+    pipe_diameter_min_mm: { column: 'pipe_diameter_min_mm' },
 };
 
 /**

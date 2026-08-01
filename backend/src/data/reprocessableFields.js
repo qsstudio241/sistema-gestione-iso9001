@@ -59,6 +59,27 @@ const REPROCESSABLE_FIELD_REGISTRY = {
         qualTypeLike: '%9606%',
         processWhitelist: null,
     },
+    // Campi persi al commit ingest (01/08/2026) — vedi GUIDA lezione LOVETERE / PR #340.
+    // Alias AI → colonna: filler_material_group → filler_material;
+    // pipe_diameter_mm → pipe_diameter_min_mm (risolti in qualificationReprocess.service).
+    filler_material: {
+        key: 'filler_material',
+        label: 'Gruppo materiale d\'apporto (FM)',
+        module: 'qualifiche',
+        table: 'qualifications',
+        qualTypeLike: '%9606%',
+        processWhitelist: null,
+    },
+    pipe_diameter_min_mm: {
+        key: 'pipe_diameter_min_mm',
+        label: 'Diametro tubo min (mm)',
+        module: 'qualifiche',
+        table: 'qualifications',
+        qualTypeLike: '%9606%',
+        // Solo tubo (ISO 9606-1 Tabella 7) — evita chiamate AI inutili su piastre.
+        productTypeWhitelist: ['T'],
+        processWhitelist: null,
+    },
 };
 
 function listReprocessableFields() {
