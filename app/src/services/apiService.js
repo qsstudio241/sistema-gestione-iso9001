@@ -16,7 +16,7 @@ const API_CONFIG = {
         timeout: 10000
     },
     production: {
-        baseUrl: import.meta.env.VITE_API_URL || 'https://www.fr-busato.it:8443/api/v1',
+        baseUrl: import.meta.env.VITE_API_URL || 'https://sistemi.fr-busato.it:8443/api/v1',
         timeout: 15000
     }
 };

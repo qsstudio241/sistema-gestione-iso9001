@@ -5,7 +5,7 @@
  *   /var/www/sgq-backend/database/migrations/054_commercial_cases.sql
  *
  * Esecuzione sul VPS:
- *   scp -P 1122 -i $KEY backend/scripts/run-migration-054-vps.js spascarella@www.fr-busato.it:/tmp/
+ *   scp -P 1122 -i $KEY backend/scripts/run-migration-054-vps.js spascarella@sistemi.fr-busato.it:/tmp/
  *   ssh ... "cd /var/www/sgq-backend && node /tmp/run-migration-054-vps.js"
  */
 'use strict';

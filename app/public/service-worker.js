@@ -59,8 +59,8 @@ self.addEventListener('fetch', (event) => {
 
     const url = new URL(request.url);
 
-    // BYPASS: Richieste API verso backend esterno (fr-busato.it)
-    if (url.hostname.includes('fr-busato.it') || url.port === '8443') {
+    // BYPASS: Richieste API verso backend esterno (sistemi.fr-busato.it)
+    if (url.hostname.includes('sistemi.fr-busato.it') || url.port === '8443') {
         return;
     }
 

@@ -14,7 +14,7 @@ const sql = require('mssql');
 const config = {
     user: process.env.DB_USER || 'busaborl_admin',
     password: process.env.DB_PASSWORD || 'Ag63.busato',
-    server: process.env.DB_SERVER || 'www.fr-busato.it',
+    server: process.env.DB_SERVER || 'sistemi.fr-busato.it',
     port: parseInt(process.env.DB_PORT || '11043'),
     database: process.env.DB_NAME || 'SGQ_ISO9001',
     options: {

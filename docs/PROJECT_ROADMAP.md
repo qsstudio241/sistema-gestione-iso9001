@@ -862,7 +862,7 @@ La pagina NC \u00e8 diventata un Piano Azioni multi-fonte con 7 categorie origin
 
 **Gap analysis** (skill `gap-analysis-normativa`): il modulo `RisksPage` coprisse gi\u00e0 bene il \u00a76.2 (Obiettivi con KPI), ma tratta \u00a76.1 come solo "rischi" (manca distinzione rischio/opportunit\u00e0) e non ha nessun registro per \u00a74.1 (contesto) e \u00a74.2 (parti interessate), da cui la norma richiede che rischi/opportunit\u00e0 derivino esplicitamente.
 
-**Ambiente TEST dedicato disponibile** (attivo dal 19/06/2026): DB `2026-06-18_SGQ_ISO9001` separato da produzione (`SGQ_ISO9001`), servizio `sgq-backend-test` (porta 3001), API `https://www.fr-busato.it:8443/test-api/api/v1`, Netlify Deploy Preview per-PR punta gi\u00e0 in automatico al test-api. Regola agente: ogni migrazione/deploy backend va fatto **prima su TEST senza chiedere conferma** (pattern `run-migration-NNN-test-vps.js` + `deploy-to-vps-test.sh`), poi verificato via Deploy Preview + smoke, **poi** produzione solo dopo TEST OK o merge su `main`.
+**Ambiente TEST dedicato disponibile** (attivo dal 19/06/2026): DB `2026-06-18_SGQ_ISO9001` separato da produzione (`SGQ_ISO9001`), servizio `sgq-backend-test` (porta 3001), API `https://sistemi.fr-busato.it:8443/test-api/api/v1`, Netlify Deploy Preview per-PR punta gi\u00e0 in automatico al test-api. Regola agente: ogni migrazione/deploy backend va fatto **prima su TEST senza chiedere conferma** (pattern `run-migration-NNN-test-vps.js` + `deploy-to-vps-test.sh`), poi verificato via Deploy Preview + smoke, **poi** produzione solo dopo TEST OK o merge su `main`.
 
 | Slice | Voce | ISO ref | Rischio tecnico | Stato |
 |-------|------|---------|------------------|-------|

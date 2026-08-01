@@ -8,7 +8,7 @@ Usa questa lista per mettere in produzione la nuova versione in modo ordinato e 
 
 - **`/var/www/sgq-backend` sul server non è un clone Git**: `git pull` lì **non** aggiorna il codice. La fonte di verità è **GitHub**; sul VPS arriva solo ciò che **copi** (script `backend/scripts/deploy-controllers-to-vps.ps1` con PuTTY/pscp, oppure `scp` manuale).
 - **Ordine consigliato**: `git push` su `main` → Netlify build (frontend) → **subito dopo** deploy file backend + **`sudo systemctl restart sgq-backend`** (il servizio systemd è il modo supportato di riavvio; evitare `nohup` parallelo se systemd è attivo).
-- **Verifica post-deploy**: `GET https://www.fr-busato.it:8443/api/v1/health` e, per feature nuove, l’endpoint specifico (es. `GET /api/v1/organizations/me` con Bearer → 401 senza token è normale; 404 = route/file non deployati).
+- **Verifica post-deploy**: `GET https://sistemi.fr-busato.it:8443/api/v1/health` e, per feature nuove, l’endpoint specifico (es. `GET /api/v1/organizations/me` con Bearer → 401 senza token è normale; 404 = route/file non deployati).
 
 ---
 
@@ -53,7 +53,7 @@ Il frontend su Netlify chiama le API del backend su VPS. **Il backend va aggiorn
   Sul server: **`sudo systemctl restart sgq-backend`**. Evitare `nohup node ...` in parallelo a systemd (porta 3000 già occupata → `EADDRINUSE`).
 
 - [ ] **Verifica rapida API**  
-  `GET https://www.fr-busato.it:8443/api/v1/health` → 200. Per smoke mirati usare anche l’endpoint della feature (con token se serve).
+  `GET https://sistemi.fr-busato.it:8443/api/v1/health` → 200. Per smoke mirati usare anche l’endpoint della feature (con token se serve).
 
 ---
 
@@ -83,7 +83,7 @@ Il frontend su Netlify chiama le API del backend su VPS. **Il backend va aggiorn
 ## 4. Netlify (frontend)
 
 - [ ] **Variabile d’ambiente produzione**  
-  In Netlify: Site → Settings → Environment variables → verifica che **VITE_API_URL** sia impostata con l’URL del backend di produzione (es. `https://www.fr-busato.it:8443/api/v1`). Senza questa variabile il frontend in produzione non troverà le API.
+  In Netlify: Site → Settings → Environment variables → verifica che **VITE_API_URL** sia impostata con l’URL del backend di produzione (es. `https://sistemi.fr-busato.it:8443/api/v1`). Senza questa variabile il frontend in produzione non troverà le API.
 
 - [ ] **Attendere il build**  
   Dopo il push, in Netlify: Deploys → ultimo deploy. Attendere che lo stato passi da “Building” a “Published” (di solito 2–3 minuti).

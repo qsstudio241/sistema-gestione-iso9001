@@ -32,6 +32,29 @@ Sessioni archiviate (consultazione): [GUIDA_DIARIO_2026.md](archive/sessions/GUI
 
 ---
 
+## Hostname VPS (31/07/2026)
+
+Dominio backend/SSH: **`sistemi.fr-busato.it`** (percorso: `www.fr-busato.it` → `busato.selfip.com` → `sistemi.fr-busato.it`).  
+**Sessione chiusa** — PR [#337](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/337) MERGED su `main`.
+
+| Cosa | Stato |
+|------|--------|
+| Certificato TLS Let's Encrypt | ✅ Emesso `CN=sistemi.fr-busato.it` (scade 2026-10-29); nginx punta a `/etc/letsencrypt/live/sistemi.fr-busato.it/` |
+| Health HTTPS trusted | ✅ `curl https://sistemi.fr-busato.it:8443/api/v1/health` (senza `-k`) |
+| Repo (codice/doc) | ✅ PR #337 |
+| Netlify `VITE_API_URL` | ✅ prod / preview / branch / dev → `sistemi.fr-busato.it` |
+| GitHub secret `SMOKE_ENDPOINT` | ✅ `sistemi.fr-busato.it:8443` |
+| Locali gitignored (PC) | ✅ tipici: `backend/config/database.json`, `backend/.env`, `backend/config/.ssh-deploy.local.ps1`, `app/.env.production` — **mai in Git** |
+| VPS `.env` | ✅ WEBDAV già `sistemi`; commenti SSL aggiornati; `DB_SERVER=localhost` invariato; no restart per solo hostname |
+| PuTTY SSH `:1122` | ✅ sessione OK; al primo collegamento **Accept host key** se fingerprint nuovo |
+| Cursor Cloud Secrets | tipicamente niente (host non nei secret) |
+| Rinnovo automatico LE | DNS-01 manuale: renew unattended richiede di nuovo TXT (o HTTP-01 se WAN:80 → VPS). Hook: `/usr/local/sbin/acme-dns-auth.sh` |
+| Alias `busato.selfip.com` | Opzionale; certificato **non** lo include (name mismatch in browser) |
+
+**Lezione:** un cambio hostname non è solo repo — aggiornare in parallelo locali gitignored, Netlify, GitHub smoke secret, URL pubblici sul VPS, e host key PuTTY. Non committare secret.
+
+---
+
 ## Cosa leggere a inizio sessione (ordine)
 
 1. **[../PROJECT_CONTEXT.md](../PROJECT_CONTEXT.md)** — stack, infra, workflow.  
@@ -200,6 +223,7 @@ Configurazione **versionata nel repo** (priorità massima rispetto all'ambiente 
 | **`contractReview.controller.js` NON è nel deploy-manifest** | `backend/scripts/deploy-manifest.json` non include `contractReview.controller.js`/`.routes.js`: quando un commit li modifica vanno copiati a mano con `pscp` **prima** del restart, poi lanciare `deploy-controllers-to-vps.ps1` per il resto. Deploy fix segregazione `company_id` Import PDF 13/06/2026 (commit `9fda958`): push `main`, copia manuale `contractReview.controller.js`, deploy manifest, MainPID 646321→652768, health `healthy`, `/import-jobs` → 401 coerente. | Sessione 13/06/2026 — commit `9fda958` |
 | **Deploy sicuro con working tree "sporco"** | `deploy-controllers-to-vps.ps1` copia il **working tree dal disco** (manifest di ~118 file), **non** lo stato committato: se il tree contiene WIP non pertinente al rilascio, il WIP finisce in produzione (incidente 23/06/2026: una versione WIP di `knowledgeIndexer.service.js` importava un file nuovo non tracciato → crash `MODULE_NOT_FOUND`, API offline 503). **Regola**: (1) prima di ogni deploy backend verificare `git status --short`; se il tree NON è pulito e il WIP non riguarda il rilascio, **non** usare lo script completo; (2) fare un **deploy mirato dei soli file committati** (`pscp` del singolo file, oppure `git show HEAD:percorso` per forzare la versione di `HEAD`) + restart con verifica `MainPID`; (3) se il rilascio introduce un **nuovo pacchetto npm** (es. `mammoth`), eseguire `npm install`/`npm ci` sul VPS, altrimenti `MODULE_NOT_FOUND`. Funzioni riutilizzabili in `backend/scripts/lib/vps-ssh.ps1` (`Initialize-SgqVpsSsh`, `Test-SgqVpsSession`, `Copy-SgqVpsFile`, `Invoke-SgqVps`, `Get-SgqVpsHealth`); password sudo a `plink` **solo via stdin**, mai nella stringa del comando. | [Sessione 23/06/2026 — incident deploy WIP](archive/sessions/GUIDA_DIARIO_2026.md#sessione-23062026-incident--deploy-sicuro-con-working-tree-sporco) |
 | **Token Netlify CLI (Windows)** | Credenziali locali: `backend/config/.netlify.local.ps1` (copia da `.netlify.local.ps1.example`, gitignored). Preflight: `.\backend\scripts\netlify-preflight.ps1` → deve stampare `NETLIFY_ACCESS_OK`. **Mai** token Netlify in chat o su Git. | [NETLIFY_DEPLOYMENT.md](how-to/NETLIFY_DEPLOYMENT.md) |
+| **Cambio hostname VPS — locali + secret (31/07/2026)** | Dopo rename DNS/TLS: aggiornare i file gitignored tipici (`database.json`, `backend/.env`, `.ssh-deploy.local.ps1`, `app/.env.production`), Netlify `VITE_API_URL` (tutti gli ambienti), GitHub `SMOKE_ENDPOINT`, URL pubblici in VPS `.env`; al primo SSH PuTTY accettare la nuova host key. **Mai** committare secret. Cursor Cloud Secrets di solito invariati. | [Hostname VPS](#hostname-vps-31072026) · PR #337 |
 | **Deploy massivo (168 file) — pscp può troncare un singolo file** | Merge di 2 PR parallele (RDP + AI 3834-3, 23/07/2026) → `deploy-controllers-to-vps.ps1` ha copiato 168 file; `organization.controller.js` (non toccato dalle PR, invariato da settimane) è arrivato sul VPS **troncato a 380/395 righe** → `SyntaxError: Missing catch or finally` al restart → backend **503** per ~3 minuti. Causa probabile: glitch di rete/buffer su `pscp` durante un trasferimento lungo, non un bug di codice (sintassi locale OK, hash locale ≠ remoto). **Fix**: diff riga-count/hash locale vs remoto (`wc -l` + `sha256sum` via SSH) per isolare il file, poi `Copy-SgqVpsFile` mirato del solo file + restart con verifica `MainPID`. **Azione preventiva aggiunta**: dopo ogni deploy con **>50 file**, oltre all'health check generico, lanciare un check di sintassi su **tutti** i `.js` remoti: `find src -name '*.js' -exec node --check {} \;` (pochi secondi, individua troncamenti che l'health check da solo non rileva se il file rotto non è nel path critico di boot... qui invece bloccava l'intero `require` chain). | Sessione 23/07/2026 — merge [PR #290](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/290) + [PR #291](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/291) |
 | **PDF → Markdown → JSON (tool generico)** | Per digitalizzare una nuova norma/Quaderno/checklist/capitolato: usare **sempre** `backend/scripts/pdf_to_json/` (pdfplumber + fallback pymupdf/pypdf, OCR locale opzionale via tesseract, nessuna chiamata cloud) invece di scrivere parsing ad-hoc. Rileva anche i PDF con font a codifica rotta/offuscata (testo "presente" ma illeggibile, es. placeholder `(cid:NNN)`) e li segnala come pagine a bassa qualità invece di produrre JSON silenziosamente sbagliato. Salva sempre il `.md` intermedio da revisionare prima di fidarsi del `.json`. | [`.cursor/skills/pdf-to-json/`](../.cursor/skills/pdf-to-json/SKILL.md) · [`backend/scripts/pdf_to_json/README.md`](../backend/scripts/pdf_to_json/README.md) |
 | **ISO 14175:2008 — supporto 3834 (gas)** | Norma di **classificazione gas** (non SGQ): utile per WPS/WPQR/patentini (`shielding_gas` = M21, I1, C1…). MD/JSON in `docs/Normative/Normative NORMA_00012_ UNI EN ISO 14175_2008 Rev. 0.*`; estratto operativo `docs/reference/ISO-14175-gas-protezione.md`; catalogo `shieldingGases14175.js` + prompt ingest. **Non** in `import-norms-from-markdown.js`. Pattern per altre norme complementari 3834: digitalizza → estratto `docs/reference/` → catalogo JS → hook AI (vedi RC in PLAN_INGEST_REFERENCE_CATALOGS). | RC-3 · skill `pdf-to-json` / `gap-analysis-normativa` |
@@ -815,7 +839,7 @@ che NON inoltra i query parameter del browser.
    via `docId`, il nome nell'URL è solo cosmético.
 2. **URL senza porta 8443** — Nginx usa `proxy_set_header Host $host` (senza porta) →
    backend generava URL su porta 443 (default HTTPS, non aperta). Fix: variabile
-   `WEBDAV_BASE_URL=https://www.fr-busato.it:8443` nel `.env` del VPS.
+   `WEBDAV_BASE_URL=https://sistemi.fr-busato.it:8443` nel `.env` del VPS.
 3. **CORS middleware Express intercetta OPTIONS WebDAV** — il middleware `cors()` con
    `preflightContinue: false` rispondeva 204 a TUTTE le OPTIONS, anche quelle WebDAV
    di Office, senza header `DAV: 1, 2`. Office non riconosceva il server come WebDAV
@@ -1162,7 +1186,7 @@ Camellini: "nella sezione 1.4, quando aggiunge un rilievo si chiude continuament
 | Migration **078** | Tabella `company_personnel` + bridge `notification_contacts`; script `backend/scripts/run-migration-078-vps.js` |
 | API | `GET/POST/PUT/DELETE /api/v1/companies/:companyId/personnel` |
 | UI | Route frontend `/companies/:id` — tab Anagrafica + Personale (`CompanyDetailPage`, `CompanyPersonnelPanel`) |
-| Deploy VPS | Migration 078 OK; deploy controller/routes personale; health `https://www.fr-busato.it:8443/api/v1/health` OK (MainPID rinnovato post-restart) |
+| Deploy VPS | Migration 078 OK; deploy controller/routes personale; health `https://sistemi.fr-busato.it:8443/api/v1/health` OK (MainPID rinnovato post-restart) |
 | Test | Vitest `companyDetailPage.test.jsx` — 3/3 |
 
 ### Hotfix viewer + RBAC Fase 4 company_access (02/06/2026)
@@ -1561,13 +1585,13 @@ gh api repos/qsstudio241/sistema-gestione-iso9001/branches/main/protection
 |---|----------|------|
 | 1 | Deploy Preview Netlify **Success** (verde) | Tab Checks sulla PR GitHub |
 | 2 | App preview carica (login / home) | URL preview nel commento Netlify |
-| 3 | Flusso modificato funziona end-to-end | Preview + API **test** `https://www.fr-busato.it:8443/test-api/api/v1` (automatico da `netlify.toml`) |
+| 3 | Flusso modificato funziona end-to-end | Preview + API **test** `https://sistemi.fr-busato.it:8443/test-api/api/v1` (automatico da `netlify.toml`) |
 | 4 | CI app verde (se tocca `app/`) | Check **CI app (Pull Request)** |
 | 5 | Dichiarare **TEST OK** in chat o commento PR | — |
 
 **Abilitazione preview** (una tantum): vedi sezione [Netlify — Deploy Preview (guida passo-passo)](archive/sessions/GUIDA_DIARIO_2026.md#netlify--deploy-preview-guida-passo-passo) — Passo 2 *Deploy Previews → Any pull request*.
 
-**CORS preview**: nginx (`conf.d/sgq-cors-map.conf` + `sites-available/sgq-backend`) e Express (`backend/src/config/corsOrigins.js`) accettano origini `https://deploy-preview-*--systemgest.netlify.app` e `https://*--systemgest.netlify.app` oltre a `systemgest.netlify.app`, `sistema-gestione-iso9001.netlify.app` e `fr-busato.it`. Deploy nginx: `.\backend\scripts\deploy-nginx-cors-vps.ps1`.
+**CORS preview**: nginx (`conf.d/sgq-cors-map.conf` + `sites-available/sgq-backend`) e Express (`backend/src/config/corsOrigins.js`) accettano origini `https://deploy-preview-*--systemgest.netlify.app` e `https://*--systemgest.netlify.app` oltre a `systemgest.netlify.app`, `sistema-gestione-iso9001.netlify.app` e `sistemi.fr-busato.it`. Deploy nginx: `.\backend\scripts\deploy-nginx-cors-vps.ps1`.
 
 ---
 
@@ -1577,8 +1601,8 @@ Sul VPS gira un secondo processo Node.js **separato** dal servizio di produzione
 
 | Parametro | Valore |
 |-----------|--------|
-| **URL pubblico** | `https://www.fr-busato.it:8443/test-api/` |
-| **Health check** | `curl -sk https://www.fr-busato.it:8443/test-api/api/v1/health` |
+| **URL pubblico** | `https://sistemi.fr-busato.it:8443/test-api/` |
+| **Health check** | `curl -sk https://sistemi.fr-busato.it:8443/test-api/api/v1/health` |
 | **Porta interna Node.js** | `3001` (produzione usa `3000`) |
 | **DB** | `2026-06-18_SGQ_ISO9001` (non tocca produzione `SGQ_ISO9001`) |
 | **Servizio systemd** | `sgq-backend-test` |
@@ -1606,8 +1630,8 @@ Sul VPS gira un secondo processo Node.js **separato** dal servizio di produzione
 
 | Ambiente | URL frontend | URL backend | DB |
 |---|---|---|---|
-| **Produzione** (`main`) | `https://systemgest.netlify.app` | `https://www.fr-busato.it:8443/api/v1` | `SGQ_ISO9001` |
-| **Test** (Deploy Preview PR) | `https://deploy-preview-NNN--systemgest.netlify.app` | `https://www.fr-busato.it:8443/test-api/api/v1` | `2026-06-18_SGQ_ISO9001` |
+| **Produzione** (`main`) | `https://systemgest.netlify.app` | `https://sistemi.fr-busato.it:8443/api/v1` | `SGQ_ISO9001` |
+| **Test** (Deploy Preview PR) | `https://deploy-preview-NNN--systemgest.netlify.app` | `https://sistemi.fr-busato.it:8443/test-api/api/v1` | `2026-06-18_SGQ_ISO9001` |
 
 La variabile `VITE_API_URL` viene iniettata automaticamente da `netlify.toml` (`[context.deploy-preview.environment]`) — nessuna azione manuale necessaria.
 
@@ -1634,7 +1658,7 @@ bash backend/scripts/deploy-to-vps-test.sh
 .\backend\scripts\run-on-vps.ps1 -Command "echo '$env:SGQ_SUDO_PASSWORD' | sudo -S systemctl restart sgq-backend-test"
 
 # Health check test
-curl -sk https://www.fr-busato.it:8443/test-api/api/v1/health
+curl -sk https://sistemi.fr-busato.it:8443/test-api/api/v1/health
 
 # Log istanza test (ultimi 50)
 .\backend\scripts\run-on-vps.ps1 -Command "echo '$env:SGQ_SUDO_PASSWORD' | sudo -S journalctl -u sgq-backend-test -n 50 --no-pager"
@@ -1657,7 +1681,7 @@ Copia tutti i file del manifest, riavvia `sgq-backend` (prod) + `sgq-backend-tes
 **Metodo B — Deploy singolo file (hotfix rapido):**
 1. Copia file: `run-on-vps.ps1 -LocalFile ... -RemotePath /tmp/... -RemoteCommand "sudo cp /tmp/... /var/www/sgq-backend/..."`
 2. Restart test: `.\.\backend\scripts\run-on-vps.ps1 -Command "echo '[REDACTED]' | sudo -S systemctl restart sgq-backend-test"`
-3. Verifica: `curl -sk https://www.fr-busato.it:8443/test-api/api/v1/health`
+3. Verifica: `curl -sk https://sistemi.fr-busato.it:8443/test-api/api/v1/health`
 4. Test funzionali su Deploy Preview Netlify (VITE_API_URL automatico da `netlify.toml`)
 5. Se OK → merge → `.\\backend\\scripts\\deploy-controllers-to-vps.ps1` per produzione
 
@@ -1977,14 +2001,14 @@ In **Settings → Secrets and variables → Actions** del repository, aggiungere
 
 | Secret | Valore |
 |--------|--------|
-| `SMOKE_ENDPOINT` | `www.fr-busato.it:8443` |
+| `SMOKE_ENDPOINT` | `sistemi.fr-busato.it:8443` |
 | `SMOKE_TOKEN` | stesso valore impostato nel `.env` del VPS |
 
 ### Esecuzione manuale con curl
 
 ```bash
 # Verifica rapida da terminale (Linux/macOS/WSL)
-curl -sk -H "X-Smoke-Token: XXX" https://www.fr-busato.it:8443/api/v1/smoke/testdb | python3 -m json.tool
+curl -sk -H "X-Smoke-Token: XXX" https://sistemi.fr-busato.it:8443/api/v1/smoke/testdb | python3 -m json.tool
 
 # Atteso se OK:
 # { "ok": true, "db": "2026-06-18_SGQ_ISO9001", "checks": { ... }, "errors": [] }
@@ -1994,7 +2018,7 @@ curl -sk -H "X-Smoke-Token: XXX" https://www.fr-busato.it:8443/api/v1/smoke/test
 
 ```powershell
 # Windows PowerShell (dal root del progetto)
-$env:SMOKE_ENDPOINT = "www.fr-busato.it:8443"
+$env:SMOKE_ENDPOINT = "sistemi.fr-busato.it:8443"
 $env:SMOKE_TOKEN    = "XXX"
 node backend/scripts/smoke-remote.js
 ```
@@ -2013,7 +2037,7 @@ Il workflow `.github/workflows/smoke-test.yml` si attiva su:
 | Script | Ruolo |
 |---|---|
 | `backend/scripts/deploy-to-vps-test.ps1` | Deploy manifest + restart **solo** `sgq-backend-test.service` su `/var/www/sgq-backend-test` (mai `sgq-backend.service`/produzione). Stesso pattern robusto di restart (sudo -S → sudo -n → fallback fuser+nohup) e verifica PID prima/dopo di `deploy-controllers-to-vps.ps1`, con `$RemoteBase`/`$RemoteService` fissi sul test. |
-| `backend/scripts/_smoke-ual.ps1` | Smoke test end-to-end come admin sui 4 flussi UAL (company-access, audit-log, invito email, reset password) contro `https://www.fr-busato.it:8443/test-api/api/v1`. Crea utenti fixture con email uniche (timestamp), verifica ogni step via API reale, pulisce con soft-delete a fine esecuzione. Riavviabile in autonomia (non richiede SMTP reale). |
+| `backend/scripts/_smoke-ual.ps1` | Smoke test end-to-end come admin sui 4 flussi UAL (company-access, audit-log, invito email, reset password) contro `https://sistemi.fr-busato.it:8443/test-api/api/v1`. Crea utenti fixture con email uniche (timestamp), verifica ogni step via API reale, pulisce con soft-delete a fine esecuzione. Riavviabile in autonomia (non richiede SMTP reale). |
 | `backend/scripts/_smoke-token-helper.js` | Helper Node (`NODE_ENV=test`) usato da `_smoke-ual.ps1` per generare/interrogare token `user_action_tokens` direttamente sul DB test, bypassando l'invio email reale (SMTP test non configurato) mantenendo comunque un test end-to-end reale del consumo token via API. |
 
 **Lezione appresa — output Node misto a log Winston**: quando uno script Node stampa un JSON su `stdout` per essere letto da PowerShell, il logger applicativo (connessione DB, ecc.) inquina lo stesso stream. Soluzione: (a) `console.log(JSON.stringify(x))` **su una sola riga** (mai `null, 2`), (b) lato PowerShell filtrare le righe con un regex tipo `^\s*[\{\[]` e prendere l'ultima come JSON valido, prima di `ConvertFrom-Json`.

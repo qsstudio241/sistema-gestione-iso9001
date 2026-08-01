@@ -336,7 +336,7 @@ http://localhost:3000
 F12 → Console per log
 
 # SSMS
-Server: www.fr-busato.it:11043
+Server: sistemi.fr-busato.it:11043
 Database: SGQ_ISO9001
 Auth: pascarella
 ```

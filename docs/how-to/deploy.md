@@ -43,7 +43,7 @@ npm run smoke:deploy
 Oppure curl manuale:
 
 ```bash
-curl -sk https://www.fr-busato.it:8443/api/v1/health
+curl -sk https://sistemi.fr-busato.it:8443/api/v1/health
 ```
 
 Risposta attesa: JSON con stato OK. Se 502/404 → [DEPLOY_TROUBLESHOOTING.md](DEPLOY_TROUBLESHOOTING.md).

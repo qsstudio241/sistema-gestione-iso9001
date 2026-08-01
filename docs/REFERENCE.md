@@ -9,15 +9,15 @@
 
 ### Backend Server
 ```
-Host: www.fr-busato.it
+Host: sistemi.fr-busato.it
 Port HTTPS: 8443
-API Base: https://www.fr-busato.it:8443/api/v1
-Health Check: https://www.fr-busato.it:8443/api/v1/health
+API Base: https://sistemi.fr-busato.it:8443/api/v1
+Health Check: https://sistemi.fr-busato.it:8443/api/v1/health
 ```
 
 ### SSH Access
 ```bash
-Host: www.fr-busato.it
+Host: sistemi.fr-busato.it
 Port: 1122
 User: spascarella
 Backend Path: /var/www/sgq-backend/
@@ -29,7 +29,7 @@ Deploy / API / SSH in un solo punto per gli agenti: [how-to/deploy.md](how-to/de
 
 **Quick Connect:**
 ```bash
-ssh spascarella@www.fr-busato.it -p 1122
+ssh spascarella@sistemi.fr-busato.it -p 1122
 ```
 
 ### Backend applicativo sul VPS (`/var/www/sgq-backend`)
@@ -41,7 +41,7 @@ ssh spascarella@www.fr-busato.it -p 1122
 
 ### Database (SQL Server Express)
 ```
-Server: www.fr-busato.it,11043
+Server: sistemi.fr-busato.it,11043
 Database: SGQ_ISO9001
 Autenticazione: SQL Server (login + password — solo file locale / env, mai in repository)
 ```
@@ -50,7 +50,7 @@ Autenticazione: SQL Server (login + password — solo file locale / env, mai in 
 
 **SSMS (schema tipico):**
 ```
-Server=www.fr-busato.it,11043;Database=SGQ_ISO9001;Integrated Security=False;User Id=<LOGIN_SQL>;Password=<SEGRETO>;
+Server=sistemi.fr-busato.it,11043;Database=SGQ_ISO9001;Integrated Security=False;User Id=<LOGIN_SQL>;Password=<SEGRETO>;
 ```
 
 ### Assistente AI (Cursor) e accesso remoto
@@ -82,7 +82,7 @@ NPM Version: 10
 
 **Check Process Status:**
 ```bash
-ssh spascarella@www.fr-busato.it -p 1122
+ssh spascarella@sistemi.fr-busato.it -p 1122
 ps aux | grep "node src/server.js" | grep -v grep
 # Output: spascarella 155198 ... node src/server.js
 ```
@@ -107,7 +107,7 @@ exit
 
 **Alternative - One-Liner Restart:**
 ```bash
-ssh spascarella@www.fr-busato.it -p 1122 "cd /var/www/sgq-backend && pkill -f 'node src/server.js' && nohup node src/server.js > /dev/null 2>&1 &"
+ssh spascarella@sistemi.fr-busato.it -p 1122 "cd /var/www/sgq-backend && pkill -f 'node src/server.js' && nohup node src/server.js > /dev/null 2>&1 &"
 ```
 
 ---
@@ -116,17 +116,17 @@ ssh spascarella@www.fr-busato.it -p 1122 "cd /var/www/sgq-backend && pkill -f 'n
 
 **Transfer Single File:**
 ```bash
-scp -P 1122 backend/src/controllers/audit.controller.js spascarella@www.fr-busato.it:/var/www/sgq-backend/src/controllers/
+scp -P 1122 backend/src/controllers/audit.controller.js spascarella@sistemi.fr-busato.it:/var/www/sgq-backend/src/controllers/
 ```
 
 **Transfer Multiple Files:**
 ```bash
-scp -P 1122 -r backend/src/services/* spascarella@www.fr-busato.it:/var/www/sgq-backend/src/services/
+scp -P 1122 -r backend/src/services/* spascarella@sistemi.fr-busato.it:/var/www/sgq-backend/src/services/
 ```
 
 **Verify Transfer + Restart:**
 ```bash
-ssh spascarella@www.fr-busato.it -p 1122
+ssh spascarella@sistemi.fr-busato.it -p 1122
 cd /var/www/sgq-backend
 ls -lah src/controllers/audit.controller.js  # Verify timestamp updated
 pkill -f 'node src/server.js'
@@ -330,7 +330,7 @@ Error: Troppi tentativi di login. Riprova tra 15 minuti.
 
 **Fix Option B - Backend Restart (RECOMMENDED):**
 ```bash
-ssh spascarella@www.fr-busato.it -p 1122
+ssh spascarella@sistemi.fr-busato.it -p 1122
 pkill -f 'node src/server.js'
 cd /var/www/sgq-backend
 nohup node src/server.js > /dev/null 2>&1 &
@@ -417,7 +417,7 @@ audit_uuid: audit-002-acme-2025
 **Fix - Remove from Blacklist (after all clients cleared cache):**
 ```bash
 # SSH to server
-ssh spascarella@www.fr-busato.it -p 1122
+ssh spascarella@sistemi.fr-busato.it -p 1122
 
 # Edit controller
 nano /var/www/sgq-backend/src/controllers/audit.controller.js

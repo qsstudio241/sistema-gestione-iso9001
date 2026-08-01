@@ -9,7 +9,7 @@ try {
   }
 } catch { /* optional */ }
 
-const base = 'https://www.fr-busato.it:8443/api/v1';
+const base = 'https://sistemi.fr-busato.it:8443/api/v1';
 
 async function probe(label, email, password) {
   if (!email || !password) {

@@ -9,8 +9,8 @@
 
 | Voce | Valore |
 |------|--------|
-| **Base API** | `https://www.fr-busato.it:8443/api/v1` |
-| **Health** | `https://www.fr-busato.it:8443/api/v1/health` |
+| **Base API** | `https://sistemi.fr-busato.it:8443/api/v1` |
+| **Health** | `https://sistemi.fr-busato.it:8443/api/v1/health` |
 | **Frontend Netlify** | `https://systemgest.netlify.app` (vedi anche [NETLIFY_DEPLOYMENT.md](NETLIFY_DEPLOYMENT.md)) |
 
 Il frontend in produzione usa la stessa base API salvo override `VITE_API_URL` su Netlify (vedi `app/src/services/apiService.js`).
@@ -21,7 +21,7 @@ Il frontend in produzione usa la stessa base API salvo override `VITE_API_URL` s
 
 | Voce | Valore |
 |------|--------|
-| **Host** | `www.fr-busato.it` |
+| **Host** | `sistemi.fr-busato.it` |
 | **Porta SSH** | `1122` (non la 22 standard) |
 | **Utente Linux tipico** | `spascarella` |
 | **Path backend deploy** | `/var/www/sgq-backend` (**copia file**, non `git clone`) |
@@ -31,7 +31,7 @@ Il frontend in produzione usa la stessa base API salvo override `VITE_API_URL` s
 Comando SSH manuale:
 
 ```bash
-ssh -p 1122 spascarella@www.fr-busato.it
+ssh -p 1122 spascarella@sistemi.fr-busato.it
 ```
 
 ---
@@ -106,7 +106,7 @@ base64 -w0 ~/.ssh/id_ed25519   # o id_rsa, id_ed25519_sgq, ecc.
 # Se vuoi creare una chiave dedicata (consigliato):
 ssh-keygen -t ed25519 -f ~/.ssh/id_ed25519_sgq -C "cursor-cloud-agent" -N ""
 # Autorizza la chiave sul VPS (una sola volta):
-ssh-copy-id -i ~/.ssh/id_ed25519_sgq.pub -p 1122 spascarella@www.fr-busato.it
+ssh-copy-id -i ~/.ssh/id_ed25519_sgq.pub -p 1122 spascarella@sistemi.fr-busato.it
 # Converti in base64 e copia il risultato nel secret Cursor:
 base64 -w0 ~/.ssh/id_ed25519_sgq
 ```

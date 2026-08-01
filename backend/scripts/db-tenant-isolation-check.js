@@ -9,8 +9,8 @@
  *                 └─ audits / non_conformities / attachments / ...
  *
  * Eseguire sul VPS:
- *   scp -i /tmp/sgq_key -P 1122 ... spascarella@www.fr-busato.it:/tmp/
- *   ssh -i /tmp/sgq_key -p 1122 ... spascarella@www.fr-busato.it "node /tmp/db-tenant-isolation-check.js"
+ *   scp -i /tmp/sgq_key -P 1122 ... spascarella@sistemi.fr-busato.it:/tmp/
+ *   ssh -i /tmp/sgq_key -p 1122 ... spascarella@sistemi.fr-busato.it "node /tmp/db-tenant-isolation-check.js"
  */
 'use strict';
 

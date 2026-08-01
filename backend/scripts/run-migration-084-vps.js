@@ -5,7 +5,7 @@
  */
 'use strict';
 
-// Sul VPS la connessione a www.fr-busato.it dall'interno passa per l'IP pubblico e può
+// Sul VPS la connessione a sistemi.fr-busato.it dall'interno passa per l'IP pubblico e può
 // essere bloccata da hairpin NAT. Usa 127.0.0.1 con le stesse credenziali.
 const mssql = require('/var/www/sgq-backend/node_modules/mssql');
 

@@ -66,7 +66,7 @@ Questo file raccoglie i problemi che incontriamo piu' spesso durante deploy e te
 **Se il batch fallisce con** `FATAL ERROR: Cannot answer interactive prompts in batch mode`
 - Significa che **c'e' ancora un prompt** (di solito host key non in cache, oppure password).
 - Passo 1 (una sola volta): eseguire manualmente e rispondere ai prompt:
-  - `C:\Program Files\PuTTY\plink.exe -P 1122 spascarella@www.fr-busato.it exit`
+  - `C:\Program Files\PuTTY\plink.exe -P 1122 spascarella@sistemi.fr-busato.it exit`
   - Se chiede `Store key in cache? (y/n)`: rispondere `y`
   - Se chiede password: o la inserisci (una volta) oppure meglio configurare **autenticazione a chiave** (consigliato).
 - Poi rieseguire lo script di deploy (che usa `-batch`).
@@ -77,7 +77,7 @@ Se il VPS richiede password, gli script `-batch` non possono funzionare.
 
 **Soluzione consigliata (robusta): PuTTY sessione salvata con chiave**
 - Apri **PuTTY** → Session:
-  - Host: `www.fr-busato.it`
+  - Host: `sistemi.fr-busato.it`
   - Port: `1122`
 - Connection → Data:
   - Auto-login username: `spascarella`

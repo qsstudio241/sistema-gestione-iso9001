@@ -3,8 +3,8 @@
  * Analisi orfani e anomalie nel database SGQ_ISO9001.
  *
  * Eseguire sul VPS (Cloud Agent):
- *   scp -i /tmp/sgq_key -P 1122 ... spascarella@www.fr-busato.it:/tmp/
- *   ssh -i /tmp/sgq_key -p 1122 ... spascarella@www.fr-busato.it "node /tmp/db-orphan-analysis.js"
+ *   scp -i /tmp/sgq_key -P 1122 ... spascarella@sistemi.fr-busato.it:/tmp/
+ *   ssh -i /tmp/sgq_key -p 1122 ... spascarella@sistemi.fr-busato.it "node /tmp/db-orphan-analysis.js"
  *
  * Eseguire in locale:
  *   cd backend && node scripts/db-orphan-analysis.js

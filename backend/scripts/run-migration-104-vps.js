@@ -4,8 +4,8 @@
  *   node /tmp/run-migration-101-vps.js
  *
  * Da Cloud Agent:
- *   scp -i /tmp/sgq_key -P 1122 backend/scripts/run-migration-101-vps.js spascarella@www.fr-busato.it:/tmp/
- *   ssh -i /tmp/sgq_key -p 1122 spascarella@www.fr-busato.it "node /tmp/run-migration-101-vps.js"
+ *   scp -i /tmp/sgq_key -P 1122 backend/scripts/run-migration-101-vps.js spascarella@sistemi.fr-busato.it:/tmp/
+ *   ssh -i /tmp/sgq_key -p 1122 spascarella@sistemi.fr-busato.it "node /tmp/run-migration-101-vps.js"
  */
 
 require('/var/www/sgq-backend/node_modules/dotenv').config({ path: '/var/www/sgq-backend/.env' });

@@ -10,7 +10,7 @@ Da **PowerShell** o **Prompt** nella root del progetto:
 
 ```powershell
 cd "C:\ProgettoISO"
-scp -P 1122 backend/src/controllers/audit.controller.js backend/src/controllers/sync.controller.js spascarella@www.fr-busato.it:/var/www/sgq-backend/src/controllers/
+scp -P 1122 backend/src/controllers/audit.controller.js backend/src/controllers/sync.controller.js spascarella@sistemi.fr-busato.it:/var/www/sgq-backend/src/controllers/
 ```
 
 Inserisci la password quando richiesta.
@@ -22,7 +22,7 @@ Inserisci la password quando richiesta.
 Connettiti in SSH:
 
 ```powershell
-ssh -p 1122 spascarella@www.fr-busato.it
+ssh -p 1122 spascarella@sistemi.fr-busato.it
 ```
 
 Sul server esegui **un comando alla volta** (non concatenare con `;` dopo `fuser`):

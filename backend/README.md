@@ -14,7 +14,7 @@ Backend REST API Node.js/Express + SQL Server per gestione audit ISO 9001:2015.
                 │
 ┌───────────────▼──────────────────────────────────┐
 │  BACKEND API (Ubuntu Server)                     │
-│  https://www.fr-busato.it:10443/api/v1          │
+│  https://sistemi.fr-busato.it:10443/api/v1          │
 │  Node.js 18 + Express + JWT Auth                │
 └───────────────┬──────────────────────────────────┘
                 │
@@ -36,7 +36,7 @@ Backend REST API Node.js/Express + SQL Server per gestione audit ISO 9001:2015.
 - 2 GB RAM minimo (4 GB consigliato)
 - 20 GB spazio disco
 - IP pubblico statico
-- Dominio: `www.fr-busato.it` puntato al server
+- Dominio: `sistemi.fr-busato.it` puntato al server
 
 ### Software
 
@@ -165,8 +165,8 @@ ALLOWED_FILE_TYPES=image/jpeg,image/png,audio/mpeg,video/mp4,application/pdf
 
 # SSL
 SSL_ENABLED=true
-SSL_KEY_PATH=/etc/letsencrypt/live/www.fr-busato.it/privkey.pem
-SSL_CERT_PATH=/etc/letsencrypt/live/www.fr-busato.it/fullchain.pem
+SSL_KEY_PATH=/etc/letsencrypt/live/sistemi.fr-busato.it/privkey.pem
+SSL_CERT_PATH=/etc/letsencrypt/live/sistemi.fr-busato.it/fullchain.pem
 ```
 
 #### 2.3 Installa Dipendenze
@@ -206,13 +206,13 @@ sudo systemctl stop nginx  # se presente
 
 # Richiedi certificato
 sudo certbot certonly --standalone \
-  -d www.fr-busato.it \
+  -d sistemi.fr-busato.it \
   --email tua-email@dominio.it \
   --agree-tos \
   --no-eff-email
 
 # Verifica certificati creati
-sudo ls -la /etc/letsencrypt/live/www.fr-busato.it/
+sudo ls -la /etc/letsencrypt/live/sistemi.fr-busato.it/
 ```
 
 #### 3.3 Rinnovo Automatico
@@ -252,11 +252,11 @@ upstream sgq_backend {
 
 server {
     listen 10443 ssl http2;
-    server_name www.fr-busato.it;
+    server_name sistemi.fr-busato.it;
 
     # SSL Certificates
-    ssl_certificate /etc/letsencrypt/live/www.fr-busato.it/fullchain.pem;
-    ssl_certificate_key /etc/letsencrypt/live/www.fr-busato.it/privkey.pem;
+    ssl_certificate /etc/letsencrypt/live/sistemi.fr-busato.it/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/sistemi.fr-busato.it/privkey.pem;
     ssl_protocols TLSv1.2 TLSv1.3;
     ssl_prefer_server_ciphers on;
     ssl_ciphers 'ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256';
@@ -370,7 +370,7 @@ sudo journalctl -u sgq-backend -f
 #### 6.1 Health Check
 
 ```bash
-curl -k https://www.fr-busato.it:10443/health
+curl -k https://sistemi.fr-busato.it:10443/health
 ```
 
 **Output atteso:**
@@ -390,7 +390,7 @@ curl -k https://www.fr-busato.it:10443/health
 #### 6.2 Test Registrazione Utente
 
 ```bash
-curl -k -X POST https://www.fr-busato.it:8443/api/v1/auth/register \
+curl -k -X POST https://sistemi.fr-busato.it:8443/api/v1/auth/register \
   -H "Content-Type: application/json" \
   -d '{
     "email": "test@qsstudio.it",
@@ -403,7 +403,7 @@ curl -k -X POST https://www.fr-busato.it:8443/api/v1/auth/register \
 #### 6.3 Test Login
 
 ```bash
-curl -k -X POST https://www.fr-busato.it:8443/api/v1/auth/login \
+curl -k -X POST https://sistemi.fr-busato.it:8443/api/v1/auth/login \
   -H "Content-Type: application/json" \
   -d '{
     "email": "test@qsstudio.it",
@@ -541,7 +541,7 @@ sudo tail -f /var/opt/mssql/log/errorlog
 
 ```bash
 # Verifica certificati
-sudo ls -la /etc/letsencrypt/live/www.fr-busato.it/
+sudo ls -la /etc/letsencrypt/live/sistemi.fr-busato.it/
 
 # Rigenera certificati
 sudo certbot renew --force-renewal
@@ -564,7 +564,7 @@ sudo systemctl restart sgq-backend
 
 ## 📞 Supporto
 
-- **Documentazione API**: https://www.fr-busato.it:8443/api-docs (da implementare con Swagger)
+- **Documentazione API**: https://sistemi.fr-busato.it:8443/api-docs (da implementare con Swagger)
 - **GitHub Issues**: [Repository Link]
 - **Email**: support@qsstudio.it
 

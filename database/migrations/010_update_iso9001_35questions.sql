@@ -1,4 +1,4 @@
-node --versionssh spascarella@www.fr-busato.it -p 1122-- Migration 010: Aggiorna checklist ISO 9001 da 78 a 35 domande (da cliente)
+node --versionssh spascarella@sistemi.fr-busato.it -p 1122-- Migration 010: Aggiorna checklist ISO 9001 da 78 a 35 domande (da cliente)
 -- Data: 2026-01-17
 -- Source: CheckList\ChekList9001.txt
 

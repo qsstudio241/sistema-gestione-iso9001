@@ -5,7 +5,7 @@
 # =============================================
 
 param(
-    [string]$ServerInstance = "www.fr-busato.it,11043",
+    [string]$ServerInstance = "sistemi.fr-busato.it,11043",
     [string]$Database = "SGQ_ISO9001",
     [string]$Username = "pascarella",
     [string]$Password = "",

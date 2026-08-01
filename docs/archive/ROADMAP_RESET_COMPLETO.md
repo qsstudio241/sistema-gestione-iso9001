@@ -32,14 +32,14 @@
 
 ### Pre-requisiti
 - **Attendi 15+ minuti** dall'ultimo login fallito (rate limiter)
-- Backend in esecuzione (verifica https://www.fr-busato.it:8443/api/v1/health)
+- Backend in esecuzione (verifica https://sistemi.fr-busato.it:8443/api/v1/health)
 - Database production: 0 audits (già verificato)
 
 ### Step 1.1: Verifica Backend Attivo
 
 **SSH al server:**
 ```bash
-ssh spascarella@www.fr-busato.it -p 1122
+ssh spascarella@sistemi.fr-busato.it -p 1122
 # Password SSH: solo da vault (rimossa da repo — non versionare segreti)
 ```
 
@@ -791,7 +791,7 @@ WHERE ar.audit_id = (SELECT audit_id FROM audits WHERE audit_number = '2026-03')
 - **Opzione A:** Attendi 15 minuti senza login
 - **Opzione B:** Riavvia backend (reset rate limiter):
   ```bash
-  ssh spascarella@www.fr-busato.it -p 1122
+  ssh spascarella@sistemi.fr-busato.it -p 1122
   ps aux | grep "node src/server.js" | grep -v grep
   kill <PID>
   cd /var/www/sgq-backend
@@ -836,7 +836,7 @@ WHERE ar.audit_id = (SELECT audit_id FROM audits WHERE audit_number = '2026-03')
 
 1. **Check backend blacklist attivo:**
    ```bash
-   ssh spascarella@www.fr-busato.it -p 1122
+   ssh spascarella@sistemi.fr-busato.it -p 1122
    grep -n "BLACKLISTED_UUIDS" /var/www/sgq-backend/src/controllers/audit.controller.js
    # Expected: lines 628-642 con audit-002, audit-003
    ```
@@ -1002,7 +1002,7 @@ Prima di chiudere sessione, verifica **TUTTI** questi punti:
 
 ### Backend Production
 - [ ] Process running: `ps aux | grep node` → PID attivo
-- [ ] Health check: `curl https://www.fr-busato.it:8443/api/v1/health` → 200 OK
+- [ ] Health check: `curl https://sistemi.fr-busato.it:8443/api/v1/health` → 200 OK
 - [ ] Blacklist attivo: UUID audit-002, audit-003 rifiutati (403)
 - [ ] Rate limiter: < 5 login tentativi recenti
 
@@ -1056,14 +1056,14 @@ Prima di chiudere sessione, verifica **TUTTI** questi punti:
 
 ### SSH Backend
 ```bash
-ssh spascarella@www.fr-busato.it -p 1122
+ssh spascarella@sistemi.fr-busato.it -p 1122
 Password SSH: solo da vault (non in repository)
 Path: /var/www/sgq-backend/
 ```
 
 ### Database
 ```
-Server: www.fr-busato.it,11043
+Server: sistemi.fr-busato.it,11043
 Database: SGQ_ISO9001
 Auth: Windows Authentication
 ```

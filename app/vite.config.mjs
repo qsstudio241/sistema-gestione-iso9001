@@ -34,7 +34,7 @@ return {
         open: true,
         proxy: {
             '/api/v1': {
-                target: 'https://www.fr-busato.it:8443',
+                target: 'https://sistemi.fr-busato.it:8443',
                 changeOrigin: true,
                 secure: false
             }
