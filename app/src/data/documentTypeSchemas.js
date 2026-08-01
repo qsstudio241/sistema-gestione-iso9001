@@ -631,7 +631,34 @@ supplier_name, issue_date (YYYY-MM-DD). Usa null se assente.`,
   },
 };
 
-// --- cert_ndt (ISO 9712) ---
+// --- cert_ndt (ISO 9712:2022) ---
+// Campi orientati a: scadenziario qualifiche NDT + copertura personale per commessa
+// (domanda riesame requisiti ISO 3834: "ho il personale NDT qualificato per questa commessa?")
+
+const NDT_METHOD_OPTIONS = [
+  { value: "VT",  label: "VT — Esame visivo" },
+  { value: "MT",  label: "MT — Magnetoscopia" },
+  { value: "PT",  label: "PT — Liquidi penetranti" },
+  { value: "UT",  label: "UT — Ultrasuoni" },
+  { value: "RT",  label: "RT — Radiografia" },
+  { value: "ET",  label: "ET — Correnti indotte" },
+  { value: "AE",  label: "AE — Emissione acustica" },
+  { value: "TT",  label: "TT — Test tenuta" },
+  { value: "ST",  label: "ST — Strain/Stress" },
+  { value: "LT",  label: "LT — Leak testing" },
+];
+
+// Settori industriali ISO 9712 Annex A (usati per copertura commessa ISO 3834 §8.2)
+const NDT_SECTOR_OPTIONS = [
+  { value: "w",  label: "w — Prodotti saldati" },
+  { value: "p",  label: "p — Prodotti forgiati/laminati" },
+  { value: "t",  label: "t — Tubi e raccordi" },
+  { value: "s",  label: "s — Getti (castings)" },
+  { value: "c",  label: "c — Compositi" },
+  { value: "r",  label: "r — Rotaie ferroviarie" },
+  { value: "a",  label: "a — Aerospaziale" },
+  { value: "m",  label: "m — Forgiati (manufacture)" },
+];
 
 const cert_ndt = {
   id: "cert_ndt",
@@ -639,37 +666,66 @@ const cert_ndt = {
   expiryField: "expiry_date",
   rangeFields: ["ndt_method", "certification_level"],
   fields: [
-    { key: "operator_name", label: "Nome operatore", type: "text", required: true },
-    { key: "certificate_number", label: "Numero certificato", type: "text", required: true },
-    { key: "ndt_method", label: "Metodo NDT", type: "select", required: true,
-      options: [
-        { value: "UT", label: "UT - Ultrasoni" },
-        { value: "RT", label: "RT - Raggi X" },
-        { value: "MT", label: "MT - Magnetoscopia" },
-        { value: "PT", label: "PT - Liquidi penetranti" },
-        { value: "VT", label: "VT - Visivo" },
-      ] },
-    { key: "certification_level", label: "Livello", type: "select", required: false,
+    // — PERSONA —
+    { key: "operator_name",       label: "Nome operatore",       type: "text",   required: true,  hint: "Cognome e nome come sul certificato" },
+    { key: "certificate_number",  label: "Numero certificato",   type: "text",   required: true,  hint: "Es. 1234/VT/2/CICPND/2022" },
+    // — QUALIFICA —
+    { key: "ndt_method",  label: "Metodo NDT",  type: "select", required: true,
+      options: NDT_METHOD_OPTIONS,
+      hint: "Metodo di controllo non distruttivo (ISO 9712 §3.20). Usato per rispondere: il personale ha il metodo richiesto dalla commessa?" },
+    { key: "certification_level", label: "Livello", type: "select", required: true,
       options: [
         { value: "1", label: "Livello 1" },
         { value: "2", label: "Livello 2" },
         { value: "3", label: "Livello 3" },
-      ] },
-    { key: "issuing_body", label: "Ente certificatore", type: "text", required: false },
-    { key: "exam_date", label: "Data esame", type: "date", required: false },
-    { key: "expiry_date", label: "Data scadenza", type: "date", required: true },
+      ],
+      hint: "Livello ISO 9712 §5: 1=esecuzione guidata, 2=autonomia operativa, 3=responsabilità tecnica" },
+    { key: "ndt_sector",  label: "Settore industriale", type: "select", required: false,
+      options: NDT_SECTOR_OPTIONS,
+      hint: "Settore ISO 9712 Annex A. Critico per copertura commessa ISO 3834 §8.2: un operatore qualificato su settore w (saldature) copre ispezioni su giunti saldati" },
+    { key: "certification_scheme", label: "Schema certificazione", type: "text", required: false,
+      hint: "Es. CICPND, PCN, SNT-TC-1A, ASNT, COFREND. Indica l'organismo che gestisce lo schema nazionale/internazionale" },
+    { key: "scope_detail", label: "Tecnica / ambito specifico", type: "text", required: false,
+      hint: "Es. PA (phased array), TOFD, DR (digital radiography). Lascia vuoto se non indicato" },
+    { key: "issuing_body", label: "Ente certificatore", type: "text", required: false,
+      hint: "Es. CICPND, Bureau Veritas, TÜV, RINA, APAVE, Accredia-accreditato" },
+    // — DATE (scadenziario) —
+    { key: "exam_date",        label: "Data esame",         type: "date", required: false,
+      hint: "Data dell'esame di qualifica (ISO 9712 §9.1)" },
+    { key: "expiry_date",      label: "Data scadenza",      type: "date", required: true,
+      hint: "ISO 9712 §9.2: validità 5 anni; rinnovabile se condizioni §9.3 soddisfatte" },
+    { key: "revalidation_date", label: "Revalidazione",     type: "date", required: false,
+      hint: "Data di rivalidazione/rinnovo se già avvenuto (ISO 9712 §9.3)" },
   ],
-  aiPrompt: `Stai analizzando un certificato di qualifica operatore NDT secondo ISO 9712.
-Estrai in type_specific_data: operator_name, certificate_number, ndt_method (UT|RT|MT|PT|VT),
-certification_level (1|2|3), issuing_body, exam_date, expiry_date (YYYY-MM-DD). Usa null se assente.`,
+  aiPrompt: `Stai analizzando un certificato di qualifica operatore NDT secondo ISO 9712 (o versione precedente).
+Estrai TUTTI i seguenti campi nell'oggetto "type_specific_data". Usa null se il campo non è presente.
+
+Campi da estrarre:
+- operator_name: cognome e nome del titolare (testo)
+- certificate_number: numero certificato esatto come scritto (es. "1234/VT/2/CICPND/2022")
+- ndt_method: SOLO uno tra VT | MT | PT | UT | RT | ET | AE | TT | ST | LT. Deduci dal titolo del certificato o dal testo (es. "magnetic particle" → MT, "ultrasonic" → UT, "radiographic" → RT, "penetrant" → PT, "visual" → VT, "eddy current" → ET)
+- certification_level: SOLO "1", "2" o "3" (non testo come "secondo" o "II")
+- ndt_sector: codice settore ISO 9712 Annex A (lettera minuscola): w=welded products/saldature, p=wrought products/laminati, t=tubes/tubi, s=castings/getti, c=composites, r=rail/rotaie, a=aerospace/aerospaziale, m=manufacture/forgiati. Ricerca nel testo frasi come "welding", "welds", "saldature", "tubi", ecc. Restituisci la lettera senza ulteriore testo; null se non specificato.
+- certification_scheme: nome dello schema (es. "CICPND", "PCN", "SNT-TC-1A", "ASNT", "COFREND", "NORDTEST"). Cerca nel numero certificato, nell'intestazione o nel logo dell'ente.
+- scope_detail: tecnica specifica se presente (es. "PA" per phased array, "TOFD", "DR" per digital radiography, "MPI" per magnetic particle inspection). Null se non specificato o se è solo il metodo base.
+- issuing_body: ente che ha emesso/firmato il certificato (es. "CICPND", "Bureau Veritas", "TÜV Rheinland", "RINA", "APAVE", "Accredia")
+- exam_date: data esame qualifica (YYYY-MM-DD)
+- expiry_date: data di scadenza validità certificato (YYYY-MM-DD). ISO 9712 §9.2: normalmente 5 anni dall'esame
+- revalidation_date: data di rivalidazione/rinnovo se riportata (YYYY-MM-DD); null se non presente
+
+Nota su expiry_date: ISO 9712:2022 §9.2 — il certificato è valido 5 anni; può essere rinnovato per altri 5 se §9.3 soddisfatto (continuità impiego + visita medica). Se il documento riporta una "date of expiry" o "valid until" usala direttamente.`,
   aiExpectedSchema: {
-    operator_name: "string|null",
-    certificate_number: "string|null",
-    ndt_method: "UT|RT|MT|PT|VT|null",
-    certification_level: "1|2|3|null",
-    issuing_body: "string|null",
-    exam_date: "YYYY-MM-DD|null",
-    expiry_date: "YYYY-MM-DD|null",
+    operator_name:        "string|null",
+    certificate_number:   "string|null",
+    ndt_method:           "VT|MT|PT|UT|RT|ET|AE|TT|ST|LT|null",
+    certification_level:  "1|2|3|null",
+    ndt_sector:           "w|p|t|s|c|r|a|m|null",
+    certification_scheme: "string|null",
+    scope_detail:         "string|null",
+    issuing_body:         "string|null",
+    exam_date:            "YYYY-MM-DD|null",
+    expiry_date:          "YYYY-MM-DD|null",
+    revalidation_date:    "YYYY-MM-DD|null",
   },
 };
 

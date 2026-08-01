@@ -203,18 +203,37 @@ material_grade, heat_number, supplier_name, issue_date (YYYY-MM-DD). Usa null se
     },
   },
 
+  // cert_ndt (ISO 9712:2022) — schema allineato a FE (documentTypeSchemas.js app/)
+  // Campi per scadenziario + copertura personale NDT su commessa (ISO 3834 §8.2)
   cert_ndt: {
     label: 'Certificato NDT (ISO 9712)',
-    aiPrompt: `Certificato qualifica operatore NDT ISO 9712. Estrai: operator_name, certificate_number,
-ndt_method (UT|RT|MT|PT|VT), certification_level (1|2|3), issuing_body, exam_date, expiry_date.`,
+    aiPrompt: `Stai analizzando un certificato di qualifica operatore NDT secondo ISO 9712 (o versione precedente).
+Estrai TUTTI i seguenti campi nell'oggetto "type_specific_data". Usa null se il campo non è presente.
+
+Campi da estrarre:
+- operator_name: cognome e nome del titolare (testo)
+- certificate_number: numero certificato esatto come scritto (es. "1234/VT/2/CICPND/2022")
+- ndt_method: SOLO uno tra VT | MT | PT | UT | RT | ET | AE | TT | ST | LT. Deduci dal titolo del certificato o dal testo (es. "magnetic particle" → MT, "ultrasonic" → UT, "radiographic" → RT, "penetrant" → PT, "visual" → VT, "eddy current" → ET)
+- certification_level: SOLO "1", "2" o "3" (non testo come "secondo" o "II")
+- ndt_sector: codice settore ISO 9712 Annex A (lettera minuscola): w=welded products/saldature, p=wrought products/laminati, t=tubes/tubi, s=castings/getti, c=composites, r=rail/rotaie, a=aerospace, m=manufacture/forgiati. Restituisci la lettera senza ulteriore testo; null se non specificato.
+- certification_scheme: nome dello schema (es. "CICPND", "PCN", "SNT-TC-1A", "ASNT", "COFREND"). Cerca nel numero certificato, nell'intestazione o nel logo dell'ente.
+- scope_detail: tecnica specifica se presente (es. "PA" per phased array, "TOFD", "DR" per digital radiography). Null se non specificato.
+- issuing_body: ente che ha emesso/firmato il certificato (es. "CICPND", "Bureau Veritas", "TÜV Rheinland", "RINA", "APAVE")
+- exam_date: data esame qualifica (YYYY-MM-DD)
+- expiry_date: data di scadenza validità certificato (YYYY-MM-DD). ISO 9712 §9.2: normalmente 5 anni dall'esame
+- revalidation_date: data di rivalidazione/rinnovo se riportata (YYYY-MM-DD); null se non presente`,
     aiExpectedSchema: {
-      operator_name: 'string|null',
-      certificate_number: 'string|null',
-      ndt_method: 'UT|RT|MT|PT|VT|null',
-      certification_level: '1|2|3|null',
-      issuing_body: 'string|null',
-      exam_date: 'YYYY-MM-DD|null',
-      expiry_date: 'YYYY-MM-DD|null',
+      operator_name:        'string|null',
+      certificate_number:   'string|null',
+      ndt_method:           'VT|MT|PT|UT|RT|ET|AE|TT|ST|LT|null',
+      certification_level:  '1|2|3|null',
+      ndt_sector:           'w|p|t|s|c|r|a|m|null',
+      certification_scheme: 'string|null',
+      scope_detail:         'string|null',
+      issuing_body:         'string|null',
+      exam_date:            'YYYY-MM-DD|null',
+      expiry_date:          'YYYY-MM-DD|null',
+      revalidation_date:    'YYYY-MM-DD|null',
     },
   },
 

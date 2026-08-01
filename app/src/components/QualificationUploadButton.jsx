@@ -153,7 +153,8 @@ export default function QualificationUploadButton({ companyId, companyName, onUp
                   disabled={uploading}
                 >
                   <option value="patentino_saldatore">Patentino saldatore (ISO 9606-1)</option>
-                  <option value="qualifica_14732">Qualifica operatore (ISO 14732)</option>
+                  <option value="qualifica_14732">Qualifica operatore saldatura (ISO 14732)</option>
+                  <option value="cert_ndt">Certificato NDT (ISO 9712)</option>
                 </select>
               </div>
               <div className="qual-upload__panel-header">

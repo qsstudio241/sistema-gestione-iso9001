@@ -72,6 +72,14 @@ const TYPE_RULES = [
     { pattern: /14732/i,          type: 'Operatore ISO 14732' },
     { pattern: /14731/i,          type: 'Coordinatore ISO 14731' },
     { pattern: /IWE|IWT|IWS|IWIP|EWE|EWT|EWS/i, type: 'Coordinatore ISO 14731' },
+    // ISO 9712 NDT — metodo specifico per risposta copertura commessa
+    { pattern: /9712/i,                                         type: 'Operatore NDT' },
+    { pattern: /\bultrasonic.{0,30}(level|livello)/i,           type: 'Operatore NDT UT' },
+    { pattern: /\bradio.{0,30}(level|livello)/i,                type: 'Operatore NDT RT' },
+    { pattern: /\bmagnetic.{0,30}(level|livello)/i,             type: 'Operatore NDT MT' },
+    { pattern: /\bpenetrant.{0,30}(level|livello)/i,            type: 'Operatore NDT PT' },
+    { pattern: /\bvisual.{0,30}(level|livello)/i,               type: 'Operatore NDT VT' },
+    { pattern: /\beddy.{0,30}(level|livello)/i,                 type: 'Operatore NDT ET' },
     { pattern: /\bNDT\b/i,        type: 'Operatore NDT' },
     { pattern: /\b(VT|MT|PT|UT|RT)\b.*livello|livello.*(VT|MT|PT|UT|RT)/i, type: 'Operatore NDT' },
     { pattern: /PES[\s/]*PAV|PAV[\s/]*PES/i, type: 'Abilitazione PES/PAV (CEI 11-27)' },
@@ -79,10 +87,20 @@ const TYPE_RULES = [
     { pattern: /\bPAV\b/i,        type: 'Patentino PAV (CEI 11-27)' },
 ];
 
-function classifyQualificationType(text) {
+/**
+ * Classifica il tipo qualifica dal testo del certificato.
+ * Per cert_ndt: arricchisce con il metodo se estratto dai campi.
+ */
+function classifyQualificationType(text, extractedFields = {}) {
     const t = String(text || '').substring(0, 3000);
     for (const rule of TYPE_RULES) {
-        if (rule.pattern.test(t)) return rule.type;
+        if (rule.pattern.test(t)) {
+            // Se abbiamo il metodo NDT estratto dall'AI, specifica la denominazione
+            if (rule.type === 'Operatore NDT' && extractedFields.ndt_method) {
+                return `Operatore NDT ${extractedFields.ndt_method} Livello ${extractedFields.certification_level || extractedFields.ndt_level || ''}`.trim();
+            }
+            return rule.type;
+        }
     }
     return 'Altra qualifica';
 }
@@ -240,12 +258,21 @@ function mapPipelineFieldsToReview(f, pipelineText, fileName) {
         shielding_gas: f.shielding_gas || null,
         examiner_body: f.examiner_body || null,
         scope_detail: f.scope_detail || null,
+        // NDT ISO 9712
+        ndt_sector: f.ndt_sector || null,
+        certification_scheme: f.certification_scheme || null,
+        // certification_level (alias AI) → ndt_level: la conversione avviene in commitQualificationFromFields
+        certification_level: f.certification_level || null,
         // Operatori ISO 14732 (saldatura automatica/meccanizzata)
         equipment_type: f.equipment_type || null,
         welding_type: f.welding_type || null,
         single_multi_run: f.single_multi_run || null,
         qualification_method: f.qualification_method || null,
-        qualification_type: classifyQualificationType(pipelineText || fileName),
+        qualification_type: classifyQualificationType(pipelineText || fileName, {
+            ndt_method: f.ndt_method || null,
+            certification_level: f.certification_level || null,
+            ndt_level: f.ndt_level || null,
+        }),
     };
 }
 
@@ -393,8 +420,12 @@ async function commitQualificationFromFields(fields, organizationId, companyId, 
     // (tipicamente exam+3 anni su ISO 9606-1) così il form modifica non resta vuoto.
     const revalidation_date = normalizeDate(f.revalidation_date) || expiry_date || null;
     const ndt_method = f.ndt_method || null;
-    const ndtLevelNum = toNumericOrNull(f.ndt_level);
+    const ndtLevelNum = toNumericOrNull(f.ndt_level || f.certification_level);
     const ndt_level = ndtLevelNum != null ? Math.trunc(ndtLevelNum) : null;
+    // NDT-specific (ISO 9712): settore e schema certificazione.
+    // L'AI usa `certification_level` (schema FE), il DB usa ndt_level (INT).
+    const ndt_sector = f.ndt_sector || null;
+    const certification_scheme = f.certification_scheme || null;
     const coordinator_title = f.coordinator_title || null;
     const cpd_valid_until = normalizeDate(f.cpd_valid_until || f.next_confirmation_due);
     const patent_type = f.patent_type || null;
@@ -479,6 +510,8 @@ async function commitQualificationFromFields(fields, organizationId, companyId, 
         .input('filler', filler_material || null)
         .input('ndtMethod', ndt_method || null)
         .input('ndtLevel', ndt_level || null)
+        .input('ndtSector', ndt_sector || null)
+        .input('certScheme', certification_scheme || null)
         .input('coordTitle', coordinator_title || null)
         .input('cpdUntil', cpd_valid_until || null)
         .input('patentType', patent_type || null)
@@ -504,7 +537,7 @@ async function commitQualificationFromFields(fields, organizationId, companyId, 
                  welding_process, material_group, position_range, thickness_range, pipe_diameter,
                  thickness_min_mm, thickness_max_mm, pipe_diameter_min_mm, pipe_diameter_max_mm,
                  filler_material,
-                 ndt_method, ndt_level, coordinator_title, cpd_valid_until,
+                 ndt_method, ndt_level, ndt_sector, certification_scheme, coordinator_title, cpd_valid_until,
                  patent_type, equipment_type, welding_type, single_multi_run, qualification_method,
                  shielding_gas, joint_type, product_type, weld_details, transfer_mode, examiner_body,
                  qualification_designation, certificate_file_url)
@@ -518,7 +551,7 @@ async function commitQualificationFromFields(fields, organizationId, companyId, 
                  @weldProc, @matGroup, @posRange, @thickRange, @pipeDiam,
                  @thickMin, @thickMax, @pipeMin, @pipeMax,
                  @filler,
-                 @ndtMethod, @ndtLevel, @coordTitle, @cpdUntil,
+                 @ndtMethod, @ndtLevel, @ndtSector, @certScheme, @coordTitle, @cpdUntil,
                  @patentType, @equipType, @weldingType, @singleMultiRun, @qualMethod,
                  @shieldGas, @jointType, @productType, @weldDetails, @transferMode, @examBody,
                  @designation, @certFileUrl)
