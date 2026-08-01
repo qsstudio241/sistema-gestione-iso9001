@@ -7,6 +7,7 @@ import apiService from "../services/apiService";
 import { OCCUPATIONAL_QUALIFICATION_TYPES } from "../data/occupationalQualificationTypes";
 import { buildWelderDesignation } from "../utils/weldingDesignation";
 import { getApplicableWelderFields } from "../data/weldingQualificationRules9606";
+import { resolveBackendUploadUrl } from "../utils/resolveBackendUploadUrl";
 import SemiannualConfirmationSection from "../components/SemiannualConfirmationSection";
 import "./QualificationForm.css";
 
@@ -154,6 +155,15 @@ function QualificationForm({ qualification, onSave, onClose, defaultCompanyId, o
       });
       d.company_id = d.company_id || "";
       d.personnel_id = d.personnel_id ? String(d.personnel_id) : "";
+      // Alias ingest/review → colonna DB usata dal select del form.
+      if (!d.filler_material && d.filler_material_group) {
+        d.filler_material = d.filler_material_group;
+      }
+      // Diametro singolo da revisione AI (pipe_diameter_mm) → min del form.
+      if ((d.pipe_diameter_min_mm == null || d.pipe_diameter_min_mm === "")
+        && d.pipe_diameter_mm != null && d.pipe_diameter_mm !== "") {
+        d.pipe_diameter_min_mm = d.pipe_diameter_mm;
+      }
       setForm(d);
       if (d.qualification_type && !QUAL_TYPES.includes(d.qualification_type)) {
         setCustomType(true);
@@ -684,7 +694,11 @@ function QualificationForm({ qualification, onSave, onClose, defaultCompanyId, o
               <div className="qf-section-title">Certificato PDF</div>
               {form.certificate_file_url && (
                 <div style={{marginBottom: 6, fontSize: 13}}>
-                  <a href={form.certificate_file_url} target="_blank" rel="noopener noreferrer">
+                  <a
+                    href={resolveBackendUploadUrl(form.certificate_file_url, apiService.baseUrl)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
                     {"\uD83D\uDCC4"} Visualizza certificato allegato
                   </a>
                 </div>

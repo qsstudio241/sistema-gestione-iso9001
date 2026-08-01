@@ -23,6 +23,7 @@ import {
   persistQualificationsCompanyScope,
 } from "../utils/qualificationsCompanyScope";
 import { exportWpsAnnexADocx } from "../utils/wordExportWps";
+import { resolveBackendUploadUrl } from "../utils/resolveBackendUploadUrl";
 import "./WeldingProceduresPage.css";
 
 const WELDING_PROCESSES = [
@@ -1348,7 +1349,7 @@ function WeldingProceduresPage() {
                       <td><ApprovalBadge approvalStatus={wq.approval_status} /></td>
                       <td>
                         {wq.certificate_file_url
-                          ? <a href={wq.certificate_file_url} target="_blank" rel="noopener noreferrer" title="Apri certificato PDF">{"\uD83D\uDCC4"}</a>
+                          ? <a href={resolveBackendUploadUrl(wq.certificate_file_url, apiService.baseUrl)} target="_blank" rel="noopener noreferrer" title="Apri certificato PDF">{"\uD83D\uDCC4"}</a>
                           : <span style={{ color: "#9ca3af" }}>-</span>}
                       </td>
                       <td>
