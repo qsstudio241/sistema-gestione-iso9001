@@ -135,8 +135,8 @@ const LEGISLATIVO_SICUREZZA_TEMPLATE = {
       "code": "leg_sic_16",
       "title": "16. RISCHIO ELETTRICO, ELETTROSTATICO, FULMINAZIONE",
       "displayOrder": 16,
-      "referenceText": "D.Lgs. 81/2008 e s.m.i. - Titolo III, Capo III\nLegge 5 marzo 1990, n. 46\nD.M. 37/2008\nCEI 11-27\nD.P.R. 22 ottobre 2001, n. 462\nD.Lgs. 81/2008 e s.m.i. - Articoli 84 e 86\nLegge 1 marzo 1968, n. 186\nCEI 64-8:2024 e CEI 64-14:2022",
-      "linkedLegislation": "D.Lgs. 81/2008 art.84; art.86",
+      "referenceText": "D.Lgs. 81/2008 e s.m.i. - Titolo III, Capo III\nLegge 46/90\nD.M. 37/2008\nEN CEI 11-27",
+      "linkedLegislation": null,
       "items": []
     },
     {
@@ -233,6 +233,14 @@ const LEGISLATIVO_SICUREZZA_TEMPLATE = {
       "displayOrder": 28,
       "referenceText": "D.Lgs. 14 maggio 2019, n. 50 - Sicurezza delle ferrovie\nD.Lgs. 27 luglio 1999, n. 271 - Lavoratori marittimi a bordo delle navi\nD.Lgs. 17 agosto 1999, n. 298 - Lavoro a bordo delle navi da pesca\nD.Lgs. 27 luglio 1999, n. 272 - Operazioni e servizi portuali\nDecreto 16 dicembre 2004 - Operazioni di carico e scarico delle navi portarinfuse\nCodice di buona pratica ILO sulla salute e sicurezza nei porti (2003)\nD.Lgs. 25 novembre 1996, n. 624 - Industrie estrattive\nLegge 26 aprile 1974, n. 191 - Settore ferroviario\nDecreto 6 febbraio 2001, n. 110 - Corpo Forestale dello Stato\nD.P.R. 19 marzo 1956, n. 302 - Produzione e impiego degli esplosivi\nD.P.R. 20 marzo 1956, n. 320 - Lavoro in sotterraneo\nD.P.R. 20 marzo 1956, n. 321 - Cassoni ad aria compressa\nD.P.R. 20 marzo 1956, n. 323 - Impianti telefonici",
       "linkedLegislation": null,
+      "items": []
+    },
+    {
+      "code": "leg_sic_29",
+      "title": "29. IMPIANTI ED APPARECCHIATURE ELETTRICHE / ALTRE RETI TECNOLOGICHE (VERIFICHE PERIODICHE)",
+      "displayOrder": 29,
+      "referenceText": "D.Lgs. 81/2008 e s.m.i. - Capo III (Impianti e apparecchiature elettriche) e Allegato V (ex art. 374, D.P.R. n. 547/1955)\nD.M. 37/2008 (ex Legge 5 marzo 1990, n. 46) - Dichiarazione di conformità dell'impianto alla regola d'arte\nD.Lgs. 81/2008 e s.m.i. - Allegato IV, punto 5 (installazioni elettriche in luoghi con pericolo di esplosione o incendio)\nD.P.R. 22 ottobre 2001, n. 462 - Denuncia impianto di messa a terra e impianti di protezione dalle scariche atmosferiche; CEI 0-14:2005\nD.Lgs. 81/2008 e s.m.i. - Articolo 84 (Protezione dai fulmini)\nLegge 1 marzo 1968, n. 186 (regola d'arte) - CEI 64-8:2024 (impianti elettrici utilizzatori)\nD.Lgs. 81/2008 e s.m.i. - Articolo 86 (Verifiche) - CEI 64-14:2022 (guida alle verifiche impianti elettrici utilizzatori)\nCEI 64-8/VI - verifica mensile interruttori differenziali\nCEI 17-13-1 (Direttiva BT/EMC) - certificazioni CE quadri elettrici BT",
+      "linkedLegislation": "D.Lgs. 81/2008 art.84; art.86",
       "items": []
     }
   ]
