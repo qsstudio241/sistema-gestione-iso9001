@@ -154,6 +154,15 @@ function QualificationForm({ qualification, onSave, onClose, defaultCompanyId, o
       });
       d.company_id = d.company_id || "";
       d.personnel_id = d.personnel_id ? String(d.personnel_id) : "";
+      // Alias ingest/review → colonna DB usata dal select del form.
+      if (!d.filler_material && d.filler_material_group) {
+        d.filler_material = d.filler_material_group;
+      }
+      // Diametro singolo da revisione AI (pipe_diameter_mm) → min del form.
+      if ((d.pipe_diameter_min_mm == null || d.pipe_diameter_min_mm === "")
+        && d.pipe_diameter_mm != null && d.pipe_diameter_mm !== "") {
+        d.pipe_diameter_min_mm = d.pipe_diameter_mm;
+      }
       setForm(d);
       if (d.qualification_type && !QUAL_TYPES.includes(d.qualification_type)) {
         setCustomType(true);

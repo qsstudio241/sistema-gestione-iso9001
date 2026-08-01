@@ -53,4 +53,18 @@ describe('buildWelderDesignation', () => {
     });
     expect(out).toBe('141 D\u226560');
   });
+
+  it('accetta filler_material (colonna form/DB) oltre a filler_material_group', () => {
+    const out = buildWelderDesignation({
+      welding_process: '135',
+      product_type: 'T',
+      joint_type: 'BW',
+      filler_material: 'FM1',
+      thickness_min_mm: 3,
+      thickness_max_mm: 14.22,
+      position_range: 'PA, PC',
+      weld_details: 'ss nb',
+    });
+    expect(out).toBe('135 T BW FM1 t3-14.22 PA/PC ss nb');
+  });
 });

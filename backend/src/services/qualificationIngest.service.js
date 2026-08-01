@@ -119,6 +119,44 @@ function buildCertificateFileUrl(filePath) {
     return '/uploads/' + path.relative(uploadBase, filePath).replace(/\\/g, '/');
 }
 
+/**
+ * Normalizza il gruppo materiale d'apporto (FM1–FM6 / nessuno).
+ * NON confondere con material_group (ISO/TR 15608, es. "11.1"): un fallback
+ * incrociato contaminava la designazione e il select del form (bug produzione
+ * 01/08/2026 — patentino LOVETERE: filler vuoto in modifica, designazione con "11.1").
+ * @param {unknown} raw
+ * @returns {string|null}
+ */
+function normalizeFillerMaterialGroup(raw) {
+    if (raw == null || raw === '') return null;
+    const s = String(raw).trim();
+    if (!s) return null;
+    if (/^nessuno$/i.test(s)) return 'nessuno';
+    const fm = s.toUpperCase().replace(/\s+/g, '');
+    if (/^FM[1-6]$/.test(fm)) return fm;
+    // Accetta anche "FM 1" / "fm1" già normalizzati sopra; altri valori (es. designazione
+    // filo ISO 14341) non vanno nel select FM — scarta per non sporcare il form.
+    return null;
+}
+
+/**
+ * Risolve diametro tubo: lo schema AI patentino espone `pipe_diameter_mm` (singolo),
+ * mentre DB/form usano min/max. Senza questo bridge il valore confermato in revisione
+ * veniva perso al commit (bug produzione 01/08/2026).
+ * Policy: diametro prova singolo → min = D, max = null (designazione "D≥D", tipico
+ * ISO 9606-1 Tabella 7 quando il certificato riporta un solo Ø esterno di prova).
+ * @returns {{ min: number|null, max: number|null }}
+ */
+function resolvePipeDiameterRange(f = {}) {
+    let min = toNumericOrNull(f.pipe_diameter_min_mm);
+    let max = toNumericOrNull(f.pipe_diameter_max_mm);
+    if (min == null && max == null) {
+        const single = toNumericOrNull(f.pipe_diameter_mm);
+        if (single != null) min = single;
+    }
+    return { min, max };
+}
+
 function mapPipelineFieldsToReview(f, pipelineText, fileName) {
     const person_name = String(f.welder_name || f.operator_name || f.person_name || '').trim();
     const position_range = Array.isArray(f.welding_positions)
@@ -146,8 +184,13 @@ function mapPipelineFieldsToReview(f, pipelineText, fileName) {
     // colonne DECIMAL (vedi numericSanitizer.js per la policy completa).
     const thicknessMinNum = toNumericOrNull(f.thickness_min_mm);
     const thicknessMaxNum = toNumericOrNull(f.thickness_max_mm);
-    const pipeDiameterMinNum = toNumericOrNull(f.pipe_diameter_min_mm);
-    const pipeDiameterMaxNum = toNumericOrNull(f.pipe_diameter_max_mm);
+    const { min: pipeDiameterMinNum, max: pipeDiameterMaxNum } = resolvePipeDiameterRange(f);
+    const fillerGroup = normalizeFillerMaterialGroup(
+        f.filler_material_group || f.filler_material
+    );
+    // pipe_diameter_mm in revisione: preferisci il valore AI originale se presente,
+    // altrimenti il min risolto (così il campo schema review resta allineato al DB).
+    const pipeDiameterSingle = toNumericOrNull(f.pipe_diameter_mm) ?? pipeDiameterMinNum;
 
     return {
         welder_name: person_name,
@@ -156,8 +199,9 @@ function mapPipelineFieldsToReview(f, pipelineText, fileName) {
         certificate_number: f.certificate_number || null,
         issuing_body: f.issuing_body || null,
         welding_process: f.welding_process || null,
-        material_group: f.material_group || f.filler_material_group || null,
-        filler_material_group: f.filler_material_group || f.material_group || null,
+        // material_group (base ISO/TR 15608) e filler (FM1–FM6) restano SEPARATI.
+        material_group: f.material_group || null,
+        filler_material_group: fillerGroup,
         welding_positions: f.welding_positions || position_range,
         welding_position: position_range,
         thickness_min_mm: thicknessMinNum,
@@ -173,6 +217,7 @@ function mapPipelineFieldsToReview(f, pipelineText, fileName) {
         last_confirmation_date,
         next_confirmation_due,
         cpd_valid_until: next_confirmation_due,
+        revalidation_date: normalizeDate(f.revalidation_date) || expiry_date || null,
         standard_reference: f.standard_reference || f.standard_ref || null,
         ndt_method: f.ndt_method || null,
         ndt_level: f.ndt_level || null,
@@ -184,7 +229,7 @@ function mapPipelineFieldsToReview(f, pipelineText, fileName) {
         // weld_details in qualifications.controller.js), ma mai estratti/mappati in ingest AI.
         product_type: f.product_type || null,
         weld_details: f.weld_details || null,
-        pipe_diameter_mm: f.pipe_diameter_mm ?? null,
+        pipe_diameter_mm: pipeDiameterSingle,
         // Metodo di trasferimento (ISO 9606-1 §5.2/§9.3, variabile essenziale solo
         // per processi ad arco con filo continuo 131/135/136/138) — richiesta
         // committente 28/07/2026, prima assente da schema/ingest/form.
@@ -193,6 +238,8 @@ function mapPipelineFieldsToReview(f, pipelineText, fileName) {
         // — documentTypeSchemas.js — ma fino al 26/07/2026 mai mappato qui: veniva estratto
         // dall'AI e poi silenziosamente scartato prima di arrivare in staging/commit).
         shielding_gas: f.shielding_gas || null,
+        examiner_body: f.examiner_body || null,
+        scope_detail: f.scope_detail || null,
         // Operatori ISO 14732 (saldatura automatica/meccanizzata)
         equipment_type: f.equipment_type || null,
         welding_type: f.welding_type || null,
@@ -318,7 +365,11 @@ async function commitQualificationFromFields(fields, organizationId, companyId, 
     const issuing_body = f.issuing_body || null;
     const standard_ref = f.standard_reference || f.standard_ref || null;
     const welding_process = f.welding_process || null;
-    const material_group = f.material_group || f.filler_material_group || null;
+    // material_group (base) e filler FM restano separati — vedi normalizeFillerMaterialGroup.
+    const material_group = f.material_group || null;
+    const filler_material = normalizeFillerMaterialGroup(
+        f.filler_material_group || f.filler_material
+    );
     const position_range = Array.isArray(f.welding_positions)
         ? f.welding_positions.join(', ')
         : (f.welding_positions || f.welding_position || null);
@@ -328,14 +379,19 @@ async function commitQualificationFromFields(fields, organizationId, companyId, 
     // grezza alla query SQL su colonne DECIMAL — vedi numericSanitizer.js.
     const thickness_min_mm = toNumericOrNull(f.thickness_min_mm);
     const thickness_max_mm = toNumericOrNull(f.thickness_max_mm);
-    const pipe_diameter_min_mm = toNumericOrNull(f.pipe_diameter_min_mm);
-    const pipe_diameter_max_mm = toNumericOrNull(f.pipe_diameter_max_mm);
+    const { min: pipe_diameter_min_mm, max: pipe_diameter_max_mm } = resolvePipeDiameterRange(f);
     const thickness_range = f.thickness_range
         || (thickness_min_mm != null && thickness_max_mm != null
             ? `${thickness_min_mm}-${thickness_max_mm} mm`
             : null);
+    const pipe_diameter = (pipe_diameter_min_mm != null && pipe_diameter_max_mm != null)
+        ? `${pipe_diameter_min_mm}-${pipe_diameter_max_mm} mm`
+        : (pipe_diameter_min_mm != null ? `≥${pipe_diameter_min_mm} mm` : null);
     const last_confirmation_date = normalizeDate(f.last_confirmation_date);
     const next_confirmation_due = normalizeDate(f.next_confirmation_due);
+    // Revalidazione: se assente in estrazione/revisione, allinea a expiry_date
+    // (tipicamente exam+3 anni su ISO 9606-1) così il form modifica non resta vuoto.
+    const revalidation_date = normalizeDate(f.revalidation_date) || expiry_date || null;
     const ndt_method = f.ndt_method || null;
     const ndtLevelNum = toNumericOrNull(f.ndt_level);
     const ndt_level = ndtLevelNum != null ? Math.trunc(ndtLevelNum) : null;
@@ -351,16 +407,19 @@ async function commitQualificationFromFields(fields, organizationId, companyId, 
     const product_type = f.product_type || null;
     const weld_details = f.weld_details || null;
     const transfer_mode = f.transfer_mode || null;
+    const examiner_body = f.examiner_body || null;
+    const scope_detail = f.scope_detail || null;
     const certificate_file_url = buildCertificateFileUrl(filePath);
     const warnings = [];
 
     // Designazione sintetica ISO 9606-1 §11 (stesso calcolo del form manuale —
     // qualifications.controller.js — vedi backend/src/utils/weldingDesignation.js).
+    // Usa SOLO il gruppo apporto FM*, mai material_group (bug 01/08/2026).
     const qualification_designation = buildWelderQualificationDesignation({
         welding_process,
         product_type,
         joint_type,
-        filler_material_group: material_group,
+        filler_material_group: filler_material,
         thickness_min_mm,
         thickness_max_mm,
         pipe_diameter_min_mm,
@@ -397,6 +456,7 @@ async function commitQualificationFromFields(fields, organizationId, companyId, 
         .input('personnelId', personnel_id)
         .input('qualType', qualificationType)
         .input('stdRef', standard_ref || null)
+        .input('scopeDetail', scope_detail || null)
         .input('certNum', certificate_number || null)
         .input('issuer', issuing_body || null)
         .input('issueDate', issue_date || null)
@@ -404,6 +464,7 @@ async function commitQualificationFromFields(fields, organizationId, companyId, 
         .input('expiryDate', expiry_date || null)
         .input('lastConfDate', last_confirmation_date || null)
         .input('nextConfDue', next_confirmation_due || null)
+        .input('revalDate', revalidation_date || null)
         .input('status', 'valida')
         .input('userId', userId || null)
         .input('weldProc', welding_process || null)
@@ -414,6 +475,8 @@ async function commitQualificationFromFields(fields, organizationId, companyId, 
         .input('thickMax', thickness_max_mm)
         .input('pipeMin', pipe_diameter_min_mm)
         .input('pipeMax', pipe_diameter_max_mm)
+        .input('pipeDiam', pipe_diameter || null)
+        .input('filler', filler_material || null)
         .input('ndtMethod', ndt_method || null)
         .input('ndtLevel', ndt_level || null)
         .input('coordTitle', coordinator_title || null)
@@ -428,32 +491,37 @@ async function commitQualificationFromFields(fields, organizationId, companyId, 
         .input('productType', product_type || null)
         .input('weldDetails', weld_details || null)
         .input('transferMode', transfer_mode || null)
+        .input('examBody', examiner_body || null)
         .input('designation', qualification_designation || null)
         .input('certFileUrl', certificate_file_url || null)
         .query(`
             INSERT INTO qualifications
                 (organization_id, company_id, person_name, personnel_id,
-                 qualification_type, standard_ref, certificate_number, issuing_body,
+                 qualification_type, standard_ref, scope_detail, certificate_number, issuing_body,
                  issue_date, exam_date, expiry_date, last_confirmation_date, next_confirmation_due,
+                 revalidation_date,
                  status, notes, created_by, approval_status,
-                 welding_process, material_group, position_range, thickness_range,
+                 welding_process, material_group, position_range, thickness_range, pipe_diameter,
                  thickness_min_mm, thickness_max_mm, pipe_diameter_min_mm, pipe_diameter_max_mm,
+                 filler_material,
                  ndt_method, ndt_level, coordinator_title, cpd_valid_until,
                  patent_type, equipment_type, welding_type, single_multi_run, qualification_method,
-                 shielding_gas, joint_type, product_type, weld_details, transfer_mode, qualification_designation,
-                 certificate_file_url)
+                 shielding_gas, joint_type, product_type, weld_details, transfer_mode, examiner_body,
+                 qualification_designation, certificate_file_url)
             OUTPUT INSERTED.id
             VALUES
                 (@orgId, @compId, @personName, @personnelId,
-                 @qualType, @stdRef, @certNum, @issuer,
+                 @qualType, @stdRef, @scopeDetail, @certNum, @issuer,
                  @issueDate, @examDate, @expiryDate, @lastConfDate, @nextConfDue,
+                 @revalDate,
                  @status, NULL, @userId, 'approvata',
-                 @weldProc, @matGroup, @posRange, @thickRange,
+                 @weldProc, @matGroup, @posRange, @thickRange, @pipeDiam,
                  @thickMin, @thickMax, @pipeMin, @pipeMax,
+                 @filler,
                  @ndtMethod, @ndtLevel, @coordTitle, @cpdUntil,
                  @patentType, @equipType, @weldingType, @singleMultiRun, @qualMethod,
-                 @shieldGas, @jointType, @productType, @weldDetails, @transferMode, @designation,
-                 @certFileUrl)
+                 @shieldGas, @jointType, @productType, @weldDetails, @transferMode, @examBody,
+                 @designation, @certFileUrl)
         `);
 
     const qualification_id = ins.recordset[0].id;
@@ -584,5 +652,7 @@ module.exports = {
     mapPipelineFieldsToReview,
     checkQualificationPlausibility,
     applyFieldReprocessUpdate,
+    normalizeFillerMaterialGroup,
+    resolvePipeDiameterRange,
     REPROCESSABLE_FIELDS,
 };

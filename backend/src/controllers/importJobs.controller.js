@@ -836,6 +836,7 @@ async function commitToQualification(req, res) {
         const joint_type      = body.joint_type || tsd.joint_type || null;
         const weld_details    = body.weld_details || tsd.weld_details || null;
         const filler_material = body.filler_material || tsd.filler_material_group || null;
+        const transfer_mode   = body.transfer_mode || tsd.transfer_mode || null;
         const position_range  = body.position_range
             || (Array.isArray(tsd.welding_positions) ? tsd.welding_positions.join(',') : tsd.welding_positions)
             || null;
@@ -895,6 +896,7 @@ async function commitToQualification(req, res) {
             thickness_range:      body.thickness_range || deriveRangeString(thickness_min_mm, thickness_max_mm),
             pipe_diameter:        body.pipe_diameter || deriveRangeString(pipe_diameter_min_mm, pipe_diameter_max_mm),
             filler_material:      filler_material,
+            transfer_mode:        transfer_mode,
             shielding_gas:        body.shielding_gas || tsd.shielding_gas || null,
             equipment_type:       body.equipment_type || tsd.equipment_type || null,
             // Operatori ISO 14732 (saldatura automatica/meccanizzata)
@@ -957,7 +959,7 @@ async function commitToQualification(req, res) {
               status, notes, created_by,
               approval_status, personnel_id,
               welding_process, material_group, position_range, ndt_method, ndt_level,
-              joint_type, product_type, weld_details, qualification_designation,
+              joint_type, product_type, weld_details, transfer_mode, qualification_designation,
               thickness_min_mm, thickness_max_mm, pipe_diameter_min_mm, pipe_diameter_max_mm,
               thickness_range, pipe_diameter, filler_material, shielding_gas, equipment_type,
               welding_type, single_multi_run, qualification_method,
@@ -972,7 +974,7 @@ async function commitToQualification(req, res) {
               @status, @notes, @created_by,
               @approval_status, @personnel_id,
               @welding_process, @material_group, @position_range, @ndt_method, @ndt_level,
-              @joint_type, @product_type, @weld_details, @qualification_designation,
+              @joint_type, @product_type, @weld_details, @transfer_mode, @qualification_designation,
               @thickness_min_mm, @thickness_max_mm, @pipe_diameter_min_mm, @pipe_diameter_max_mm,
               @thickness_range, @pipe_diameter, @filler_material, @shielding_gas, @equipment_type,
               @welding_type, @single_multi_run, @qualification_method,
