@@ -10,6 +10,7 @@ import QualificationForm from "./QualificationForm";
 import QualificationUploadButton from "../components/QualificationUploadButton";
 import ReprocessQueueBanner from "../components/ReprocessQueueBanner";
 import { formatDate } from "../utils/dateHelpers";
+import { resolveBackendUploadUrl } from "../utils/resolveBackendUploadUrl";
 import {
     resolveInitialQualificationsCompanyScope,
     persistQualificationsCompanyScope,
@@ -137,7 +138,13 @@ function QualRow({ q, tabKey, onEdit, onHardDelete, onRenew, onHistory, hardDele
     const certCell = (
         <td className="sq-col-cert">
             {q.certificate_file_url
-                ? <a href={q.certificate_file_url} target="_blank" rel="noopener noreferrer" className="sq-cert-link" title="Apri certificato">
+                ? <a
+                    href={resolveBackendUploadUrl(q.certificate_file_url, apiService.baseUrl)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="sq-cert-link"
+                    title="Apri certificato"
+                  >
                     {"\uD83D\uDCC4"} {q.certificate_number || "Certificato"}
                   </a>
                 : (q.certificate_number || "\u2014")}
