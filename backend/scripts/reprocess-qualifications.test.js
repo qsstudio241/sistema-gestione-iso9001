@@ -22,6 +22,8 @@ jest.mock('../src/services/qualificationIngest.service', () => ({
         shielding_gas: { column: 'shielding_gas' },
         joint_type: { column: 'joint_type' },
         weld_details: { column: 'weld_details' },
+        filler_material: { column: 'filler_material' },
+        pipe_diameter_min_mm: { column: 'pipe_diameter_min_mm' },
     },
 }));
 
@@ -37,6 +39,7 @@ const {
     resolveCertificateFilePath,
     FIELD_CONFIGS,
 } = require('./reprocess-qualifications');
+const { resolveExtractedReprocessValue } = require('../src/services/qualificationReprocess.service');
 
 describe('reprocess-qualifications — selezione candidati', () => {
     afterEach(() => jest.clearAllMocks());
@@ -100,6 +103,42 @@ describe('reprocess-qualifications — selezione candidati', () => {
         query.mockResolvedValueOnce({ recordset: [] });
         await selectReprocessCandidates('transfer_mode', FIELD_CONFIGS.transfer_mode);
         expect(runDocumentIngest).not.toHaveBeenCalled();
+    });
+
+    it('filtra pipe_diameter_min_mm solo su product_type = T (ISO 9606-1 Tabella 7)', async () => {
+        query.mockResolvedValueOnce({
+            recordset: [
+                { id: 1, product_type: 'T', welding_process: '135' },
+                { id: 2, product_type: 'P', welding_process: '135' },
+                { id: 3, product_type: null, welding_process: '135' },
+            ],
+        });
+
+        const candidates = await selectReprocessCandidates(
+            'pipe_diameter_min_mm',
+            FIELD_CONFIGS.pipe_diameter_min_mm,
+        );
+        expect(candidates.map((c) => c.id)).toEqual([1]);
+    });
+
+    it('espone filler_material e pipe_diameter_min_mm nel registro FIELD_CONFIGS', () => {
+        expect(FIELD_CONFIGS.filler_material).toBeDefined();
+        expect(FIELD_CONFIGS.pipe_diameter_min_mm).toBeDefined();
+        expect(FIELD_CONFIGS.pipe_diameter_min_mm.productTypeWhitelist).toEqual(['T']);
+    });
+});
+
+describe('resolveExtractedReprocessValue — alias AI → colonna DB', () => {
+    it('mappa filler_material_group → filler_material e pipe_diameter_mm → min', () => {
+        expect(resolveExtractedReprocessValue('filler_material', {
+            filler_material_group: 'FM1',
+        })).toBe('FM1');
+        expect(resolveExtractedReprocessValue('pipe_diameter_min_mm', {
+            pipe_diameter_mm: 88.9,
+        })).toBe(88.9);
+        expect(resolveExtractedReprocessValue('transfer_mode', {
+            transfer_mode: 'pulsed_arc',
+        })).toBe('pulsed_arc');
     });
 });
 
