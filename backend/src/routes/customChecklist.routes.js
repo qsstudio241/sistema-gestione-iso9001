@@ -19,6 +19,11 @@ router.post(
   customChecklistController.seedLegislativoAmbientale
 );
 router.post(
+  '/custom-checklists/seed/legislativo-sicurezza',
+  authorize('admin', 'auditor'),
+  customChecklistController.seedLegislativoSicurezza
+);
+router.post(
   '/custom-checklists/seed/qtafi-vis001',
   authorize('admin', 'auditor'),
   customChecklistController.seedQtafiVis001
