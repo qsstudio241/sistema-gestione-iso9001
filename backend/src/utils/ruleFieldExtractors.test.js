@@ -128,6 +128,34 @@ Data di scadenza / Expiration date: 25/05/2026
         const out = extractCertNdtFields(sample, 'UT - Level II.pdf');
         expect(out.certificate_number).not.toMatch(/IFICATION/i);
     });
+
+    it('mappa industriale pre-servizio/in servizio → s (ISO 9712 A.3), non prodotto', () => {
+        const mt = `
+CERTIFICATO N° D-00330-MT-RC
+LUIGI LA FORGIA
+Metodo / Test Method Magnetoscopia
+Livello / Level 2
+x di prodotto (Plurisettoriale)
+x industriale (Prova pre-servizio e in servizio di attrezzature, impianti e strutture)
+Data di emissione / Issued on the : 13-10-2020
+Data di scadenza / Expiration date : 12-10-2025
+TEC Eurolab
+`;
+        const out = extractCertNdtFields(mt, 'MT - Level II.pdf');
+        expect(out.ndt_method).toBe('MT');
+        expect(out.ndt_sector).toBe('s');
+    });
+
+    it('mappa fabbricazione metalli (senza pre-servizio) → m', () => {
+        const ut = `
+Metodo /Test Method: UT
+Livello / Level: 2
+x di prodotto: plurisettoriale
+x industriale: fabbricazione metalli
+TEC Eurolab
+`;
+        expect(extractCertNdtFields(ut, 'UT.pdf').ndt_sector).toBe('m');
+    });
 });
 
 describe('extractFieldsByRules — dispatch per docType', () => {

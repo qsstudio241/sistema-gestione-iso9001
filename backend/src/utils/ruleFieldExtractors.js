@@ -336,14 +336,64 @@ function extractQualifica14732Fields(text, fileName) {
 }
 
 /**
+ * Settore ISO 9712 Annex A da testo certificato.
+ * Preferisce settore industriale (A.3) se presente insieme al prodotto (A.2),
+ * come sui certificati TEC-Eurolab (plurisettoriale + pre-servizio/in servizio).
+ * @param {string} text
+ * @returns {string|null}
+ */
+function extractNdtSector(text) {
+    const t = String(text || '');
+    // Industriali A.3 — priorità alta
+    if (/(?:pre[-\s]?servizio|pre[-\s]?and\s+in[-\s]?service|in\s+servizio|in[-\s]?service\s+testing)/i.test(t)) {
+        return 's';
+    }
+    if (/\b(?:manutenzione\s+ferroviaria|railway\s+maintenance)\b/i.test(t)) return 'r';
+    if (/\b(?:aerospaziale|aerospace)\b/i.test(t)) return 'a';
+    // "fabbricazione metalli" / manufacturing senza pre-servizio → m
+    if (/\b(?:fabbricazione(?:\s+metalli)?|manufacturing)\b/i.test(t)
+        && !/(?:pre[-\s]?servizio|in\s+servizio|in[-\s]?service)/i.test(t)) {
+        return 'm';
+    }
+    // Prodotto A.2 — solo se codice/etichetta espliciti (non "plurisettoriale")
+    const explicit = firstMatch(
+        /\b(?:settore|sector)\s*[:.]?\s*(wp|[cfwtprm]|s|a)\b/i,
+        t,
+    );
+    if (explicit) {
+        const code = String(explicit).toLowerCase();
+        if (/^(c|f|w|t|wp|p|m|s|r|a)$/.test(code)) return code;
+    }
+    if (/\b(?:saldature|welded\s+products|\bwelds\b)\b/i.test(t) && /\b(?:settore|sector|prodotto)\b/i.test(t)) {
+        return 'w';
+    }
+    if (/\b(?:getti|castings)\b/i.test(t)) return 'c';
+    if (/\b(?:forgiati|forgings)\b/i.test(t) && !/\bfabbricazione\b/i.test(t)) return 'f';
+    if (/\b(?:tubi|tubes?\s+and\s+pipes?)\b/i.test(t) && /\b(?:settore|sector|prodotto)\b/i.test(t)) {
+        return 't';
+    }
+    if (/\b(?:compositi|composite\s+materials?)\b/i.test(t)) return 'p';
+    if (/\b(?:wrought\s+products?|prodotti\s+laminati)\b/i.test(t)) return 'wp';
+    // "plurisettoriale" da solo non è un codice Annex A
+    return null;
+}
+
+/**
  * Campi euristici per certificati NDT ISO 9712 (cert_ndt).
  * Complementa l'AI: metodo/livello/date spesso leggibili anche con OCR mediocre.
  */
 function extractCertNdtFields(text, fileName) {
-    const method = firstMatch(
+    let method = firstMatch(
         /\b(?:metodo|test\s*method)\s*[:.]?\s*(VT|MT|PT|UT|RT|ET|AE|TT|ST|LT)\b/i,
         text,
     ) || firstMatch(/\b(VT|MT|PT|UT|RT|ET)\b/, text);
+    if (!method) {
+        if (/\bmagnetoscop/i.test(text) || /\bmagnetic\s+particle/i.test(text)) method = 'MT';
+        else if (/\b(?:liquidi\s+penetranti|penetrant)/i.test(text)) method = 'PT';
+        else if (/\b(?:radiografic|radiograph)/i.test(text)) method = 'RT';
+        else if (/\b(?:ultrasuon|ultrasonic)/i.test(text)) method = 'UT';
+        else if (/\b(?:esame\s+visivo|visual\s+test)/i.test(text)) method = 'VT';
+    }
 
     const level = firstMatch(/\b(?:livello|level)\s*[:.]?\s*([123]|I{1,3})\b/i, text);
     let certification_level = level;
@@ -360,18 +410,12 @@ function extractCertNdtFields(text, fileName) {
         /\b(?:data\s+di\s+rinnovo|renewal\s+date|revalidat(?:ion|e)|rivalidazione)\s*[:.]?\s*/i,
     );
 
-    // Settore: lettera Annex A solo se esplicita; altrimenti null (revisione umana)
-    const sectorLetter = firstMatch(
-        /\b(?:settore|sector)\s*[:.]?\s*([wptscram])\b/i,
-        text,
-    );
-
     return {
         operator_name: extractPersonName(text),
         certificate_number: extractCertificateNumber(text) || extractReferenceFromFileName(fileName),
         ndt_method: method ? String(method).toUpperCase() : null,
         certification_level: certification_level || null,
-        ndt_sector: sectorLetter ? String(sectorLetter).toLowerCase() : null,
+        ndt_sector: extractNdtSector(text),
         issuing_body: extractIssuingBody(text),
         exam_date: issued,
         expiry_date: expiry,
@@ -449,6 +493,7 @@ module.exports = {
     extractPatentinoFields,
     extractQualifica14732Fields,
     extractCertNdtFields,
+    extractNdtSector,
     extractWeldingProcess,
     extractMaterialGroup,
     extractWpqrReference,
