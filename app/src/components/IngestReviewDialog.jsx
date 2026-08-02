@@ -69,7 +69,13 @@ function FieldInput({ field, value, onChange }) {
       <select {...common}>
         <option value="">— Seleziona —</option>
         {field.options.map((opt) => (
-          <option key={opt.value} value={opt.value}>{opt.label}</option>
+          <option
+            key={opt.value || opt.label}
+            value={opt.disabled ? "" : opt.value}
+            disabled={Boolean(opt.disabled)}
+          >
+            {opt.label}
+          </option>
         ))}
       </select>
     );

@@ -53,23 +53,36 @@
 
 ---
 
-## 4. Settori industriali — Annex A ISO 9712
+## 4. Settori — Annex A ISO 9712:2012
 
-Usati per rispondere a **"ho la copertura NDT per questa commessa?"** durante il riesame ISO 3834.
+Fonte: **UNI EN ISO 9712:2012 Annex A** (normativa). Usati per **"ho la copertura NDT per questa commessa?"** (ISO 3834 §8.2).
 
-| Codice | Settore | Rilevante per |
+### A.2 Settori di prodotto
+
+| Codice | Settore norma | Note |
 |---|---|---|
-| `w` | Welded products — Prodotti saldati | **ISO 3834 §8.2** — ispezione giunti saldati |
-| `p` | Wrought products — Laminati/forgiati | Materiali base semi-lavorati |
-| `t` | Tubular products — Tubi | Manifold, scambiatori |
-| `s` | Castings — Getti | Valvole, pompe |
-| `c` | Composites | Materiali compositi |
-| `r` | Rail — Ferroviario | Infrastrutture rotaia |
-| `a` | Aerospace — Aerospaziale | Strutture aeree |
-| `m` | Manufacture — Forgiati | Componenti meccanici |
+| `c` | castings — Getti | Ferrosi e non ferrosi |
+| `f` | forgings — Forgiati | Tutti i tipi |
+| `w` | welds — Saldature | Inclusa brasatura; **ISO 3834 §8.2** |
+| `t` | tubes and pipes — Tubi | Inclusi piani per tubi saldati |
+| `wp` | wrought products — Laminati | Esclusi i forgiati (piastre, barre,…) |
+| `p` | composite materials — Compositi | |
+
+### A.3 Settori industriali
+
+La norma elenca i settori per nome (senza lettera). Codici app (convenzione operativa):
+
+| Codice app | Settore norma | Note |
+|---|---|---|
+| `m` | manufacturing — Fabbricazione | |
+| `s` | pre-and in-service testing — Pre-servizio e in servizio | **Include la fabbricazione**; tipico su certificati TEC-Eurolab (*attrezzature, impianti e strutture*) |
+| `r` | railway maintenance — Manutenzione ferroviaria | |
+| `a` | aerospace — Aerospaziale | |
+
+**Regola ingest**: se il certificato riporta prodotto (*plurisettoriale*) **e** industriale, salvare il codice **industriale** (`s`/`m`/`r`/`a`). Chi è certificato in un settore industriale è considerato qualificato anche nei settori di prodotto che lo compongono (ISO 9712 A.3).
 
 **Regola di copertura** (implementata in `caseExtractedCoverage.service.js`):  
-Personale con qualifica NDT `ndt_sector='w'` copre le ispezioni richieste su commesse con `process_type` saldatura. Livello 2 richiesto per interpretazione autonoma dei risultati (ISO 9712 §5.3.2).
+Personale con `ndt_sector='w'` **oppure** industriale `s`/`m` (che include saldature nel perimetro pre/in-service) può coprire ispezioni su commesse di saldatura. Livello 2 richiesto per interpretazione autonoma (ISO 9712 §5.3.2).
 
 ---
 
@@ -107,7 +120,7 @@ ORDER BY q.ndt_method, q.ndt_level DESC;
 ```
 
 Logica di match commessa → personale:
-1. `ndt_sector = 'w'` oppure settore pertinente al tipo lavorazione
+1. `ndt_sector` in (`w`, `s`, `m`) oppure altro settore pertinente al tipo lavorazione
 2. `ndt_level >= 2` (interpretazione autonoma risultati)
 3. `expiry_date > data commessa`
 4. Metodo richiesto dalla norma/contratto (es. UT obbligatorio per giunti BW §1.0 EN 13480)

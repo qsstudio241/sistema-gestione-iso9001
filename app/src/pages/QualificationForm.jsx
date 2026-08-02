@@ -7,6 +7,7 @@ import apiService from "../services/apiService";
 import { OCCUPATIONAL_QUALIFICATION_TYPES } from "../data/occupationalQualificationTypes";
 import { buildWelderDesignation } from "../utils/weldingDesignation";
 import { getApplicableWelderFields } from "../data/weldingQualificationRules9606";
+import { NDT_SECTOR_OPTIONS } from "../data/documentTypeSchemas";
 import { resolveBackendUploadUrl } from "../utils/resolveBackendUploadUrl";
 import SemiannualConfirmationSection from "../components/SemiannualConfirmationSection";
 import "./QualificationForm.css";
@@ -47,7 +48,7 @@ const EMPTY = {
   issue_date: "", expiry_date: "", last_renewal_date: "",
   status: "valida", notes: "",
   welding_process: "", material_group: "", position_range: "",
-  ndt_method: "", ndt_level: "",
+  ndt_method: "", ndt_level: "", ndt_sector: "",
   coordinator_title: "", cpd_valid_until: "",
   patent_type: "", certification_scheme: "",
   certificate_file_url: "",
@@ -609,6 +610,23 @@ function QualificationForm({ qualification, onSave, onClose, defaultCompanyId, o
                 <div className="qf-field">
                   <label>Schema certificazione</label>
                   <input type="text" value={form.certification_scheme} onChange={handle("certification_scheme")} placeholder="CICPND, PCN, SNT-TC-1A..." />
+                </div>
+              </div>
+              <div className="qf-row">
+                <div className="qf-field">
+                  <label>Settore (ISO 9712 Annex A)</label>
+                  <select value={form.ndt_sector} onChange={handle("ndt_sector")}>
+                    <option value="">-- seleziona --</option>
+                    {NDT_SECTOR_OPTIONS.map((opt) => (
+                      <option
+                        key={opt.value || opt.label}
+                        value={opt.disabled ? "" : opt.value}
+                        disabled={Boolean(opt.disabled)}
+                      >
+                        {opt.label}
+                      </option>
+                    ))}
+                  </select>
                 </div>
               </div>
             </>

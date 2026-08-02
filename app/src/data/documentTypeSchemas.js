@@ -648,17 +648,26 @@ const NDT_METHOD_OPTIONS = [
   { value: "LT",  label: "LT — Leak testing" },
 ];
 
-// Settori industriali ISO 9712 Annex A (usati per copertura commessa ISO 3834 §8.2)
+// Settori ISO 9712:2012 Annex A — prodotto (A.2) + industriale (A.3).
+// Codici industriali m/s/r/a: convenzione operativa (la norma A.3 non assegna lettere).
+// Preferire il settore industriale se il certificato riporta entrambi
+// (es. TEC-Eurolab: prodotto plurisettoriale + industriale pre-servizio/in servizio → "s").
 const NDT_SECTOR_OPTIONS = [
-  { value: "w",  label: "w — Prodotti saldati" },
-  { value: "p",  label: "p — Prodotti forgiati/laminati" },
-  { value: "t",  label: "t — Tubi e raccordi" },
-  { value: "s",  label: "s — Getti (castings)" },
-  { value: "c",  label: "c — Compositi" },
-  { value: "r",  label: "r — Rotaie ferroviarie" },
+  { value: "_sep_product", label: "── Settore di prodotto (Annex A.2) ──", disabled: true },
+  { value: "c",  label: "c — Getti (castings)" },
+  { value: "f",  label: "f — Forgiati (forgings)" },
+  { value: "w",  label: "w — Saldature (welds)" },
+  { value: "t",  label: "t — Tubi e tubazioni (tubes/pipes)" },
+  { value: "wp", label: "wp — Prodotti laminati (wrought, esclusi forgiati)" },
+  { value: "p",  label: "p — Materiali compositi" },
+  { value: "_sep_industrial", label: "── Settore industriale (Annex A.3) ──", disabled: true },
+  { value: "m",  label: "m — Fabbricazione (manufacturing)" },
+  { value: "s",  label: "s — Pre-servizio e in servizio (include fabbricazione)" },
+  { value: "r",  label: "r — Manutenzione ferroviaria" },
   { value: "a",  label: "a — Aerospaziale" },
-  { value: "m",  label: "m — Forgiati (manufacture)" },
 ];
+
+const NDT_SECTOR_CODES = "c|f|w|t|wp|p|m|s|r|a";
 
 const cert_ndt = {
   id: "cert_ndt",
@@ -680,9 +689,9 @@ const cert_ndt = {
         { value: "3", label: "Livello 3" },
       ],
       hint: "Livello ISO 9712 §5: 1=esecuzione guidata, 2=autonomia operativa, 3=responsabilità tecnica" },
-    { key: "ndt_sector",  label: "Settore industriale", type: "select", required: false,
+    { key: "ndt_sector",  label: "Settore (ISO 9712 Annex A)", type: "select", required: false,
       options: NDT_SECTOR_OPTIONS,
-      hint: "Settore ISO 9712 Annex A. Critico per copertura commessa ISO 3834 §8.2: un operatore qualificato su settore w (saldature) copre ispezioni su giunti saldati" },
+      hint: "ISO 9712 Annex A: settori di prodotto (c/f/w/t/wp/p) o industriali (m/s/r/a). Se il certificato riporta entrambi, scegli l'industriale (es. pre-servizio e in servizio = s). Critico per copertura ISO 3834 §8.2." },
     { key: "certification_scheme", label: "Schema certificazione", type: "text", required: false,
       hint: "Es. CICPND, PCN, SNT-TC-1A, ASNT, COFREND. Indica l'organismo che gestisce lo schema nazionale/internazionale" },
     { key: "scope_detail", label: "Tecnica / ambito specifico", type: "text", required: false,
@@ -703,15 +712,15 @@ Estrai TUTTI i seguenti campi nell'oggetto "type_specific_data". Usa null se il 
 Campi da estrarre:
 - operator_name: cognome e nome del titolare (testo)
 - certificate_number: numero certificato esatto come scritto (es. "1234/VT/2/CICPND/2022")
-- ndt_method: SOLO uno tra VT | MT | PT | UT | RT | ET | AE | TT | ST | LT. Deduci dal titolo del certificato o dal testo (es. "magnetic particle" → MT, "ultrasonic" → UT, "radiographic" → RT, "penetrant" → PT, "visual" → VT, "eddy current" → ET)
+- ndt_method: SOLO uno tra VT | MT | PT | UT | RT | ET | AE | TT | ST | LT. Deduci dal titolo o dal testo italiano/inglese (es. "magnetoscopia"/"magnetic particle" → MT, "ultrasuoni"/"ultrasonic" → UT, "radiografico"/"radiographic" → RT, "liquidi penetranti"/"penetrant" → PT, "visivo"/"visual" → VT, "eddy current" → ET)
 - certification_level: SOLO "1", "2" o "3" (non testo come "secondo" o "II")
-- ndt_sector: codice settore ISO 9712 Annex A (lettera minuscola): w=welded products/saldature, p=wrought products/laminati, t=tubes/tubi, s=castings/getti, c=composites, r=rail/rotaie, a=aerospace/aerospaziale, m=manufacture/forgiati. Ricerca nel testo frasi come "welding", "welds", "saldature", "tubi", ecc. Restituisci la lettera senza ulteriore testo; null se non specificato.
+- ndt_sector: codice ISO 9712 Annex A. Settori di PRODOTTO (A.2): c=castings/getti, f=forgings/forgiati, w=welds/saldature, t=tubes/tubi, wp=wrought products/laminati (esclusi forgiati), p=composites/compositi. Settori INDUSTRIALI (A.3): m=manufacturing/fabbricazione, s=pre-and in-service testing (prova pre-servizio e in servizio, include fabbricazione), r=railway maintenance/manutenzione ferroviaria, a=aerospace/aerospaziale. REGOLA: se il certificato indica sia settore di prodotto (anche "plurisettoriale") sia settore industriale, restituisci il codice INDUSTRIALE. Esempi: "Prova pre-servizio e in servizio di attrezzature, impianti e strutture" → s; "fabbricazione metalli" / manufacturing → m. "Plurisettoriale" da solo (senza industriale) → null. Restituisci solo il codice; null se assente.
 - certification_scheme: nome dello schema (es. "CICPND", "PCN", "SNT-TC-1A", "ASNT", "COFREND", "NORDTEST"). Cerca nel numero certificato, nell'intestazione o nel logo dell'ente.
 - scope_detail: tecnica specifica se presente (es. "PA" per phased array, "TOFD", "DR" per digital radiography, "MPI" per magnetic particle inspection). Null se non specificato o se è solo il metodo base.
 - issuing_body: ente che ha emesso/firmato il certificato (es. "CICPND", "Bureau Veritas", "TÜV Rheinland", "RINA", "APAVE", "Accredia")
 - exam_date: data esame qualifica (YYYY-MM-DD)
 - expiry_date: data di scadenza validità certificato (YYYY-MM-DD). ISO 9712 §9.2: normalmente 5 anni dall'esame
-- revalidation_date: data di rivalidazione/rinnovo se riportata (YYYY-MM-DD); null se non presente
+- revalidation_date: data di rivalidazione/rinnovo se riportata (YYYY-MM-DD); null se non presente. NON copiare expiry_date qui se il documento non ha una data di rinnovo esplicita.
 
 Nota su expiry_date: ISO 9712:2022 §9.2 — il certificato è valido 5 anni; può essere rinnovato per altri 5 se §9.3 soddisfatto (continuità impiego + visita medica). Se il documento riporta una "date of expiry" o "valid until" usala direttamente.`,
   aiExpectedSchema: {
@@ -719,7 +728,7 @@ Nota su expiry_date: ISO 9712:2022 §9.2 — il certificato è valido 5 anni; pu
     certificate_number:   "string|null",
     ndt_method:           "VT|MT|PT|UT|RT|ET|AE|TT|ST|LT|null",
     certification_level:  "1|2|3|null",
-    ndt_sector:           "w|p|t|s|c|r|a|m|null",
+    ndt_sector:           `${NDT_SECTOR_CODES}|null`,
     certification_scheme: "string|null",
     scope_detail:         "string|null",
     issuing_body:         "string|null",
@@ -1267,5 +1276,7 @@ const DOCUMENT_TYPE_SCHEMAS = {
 export function getSchemaForDocType(docType) {
   return DOCUMENT_TYPE_SCHEMAS[docType] || null;
 }
+
+export { NDT_SECTOR_OPTIONS, NDT_METHOD_OPTIONS };
 
 export default DOCUMENT_TYPE_SCHEMAS;
