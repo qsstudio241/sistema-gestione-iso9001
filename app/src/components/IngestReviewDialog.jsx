@@ -22,9 +22,21 @@ function formatFieldValue(value) {
   return repairTextEncoding(String(value));
 }
 
+const CONFIDENCE_TITLES = {
+  high: "Confidenza alta: valore estratto con buona affidabilità — verifica comunque sul PDF",
+  medium: "Confidenza media: controlla sul PDF prima di confermare",
+  low: "Confidenza bassa: il dato è incerto o assente nell'estrazione — compila tu se presente sul PDF",
+};
+
 function ConfidenceBadge({ level }) {
   const meta = CONFIDENCE_LABELS[level] || { label: "N/D", className: "ingest-review__confidence--unknown" };
-  return <span className={`ingest-review__confidence ${meta.className}`}>{meta.label}</span>;
+  const title = CONFIDENCE_TITLES[level]
+    || "N/D = confidenza non calcolata (non significa obbligo di compilare). Se la didascalia del campo dice che il vuoto è OK e sul PDF non c'è, lascia vuoto.";
+  return (
+    <span className={`ingest-review__confidence ${meta.className}`} title={title}>
+      {meta.label}
+    </span>
+  );
 }
 
 /**
