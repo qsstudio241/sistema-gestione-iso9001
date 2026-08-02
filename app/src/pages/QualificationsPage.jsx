@@ -431,6 +431,7 @@ function QualificationsPage() {
                         <QualificationUploadButton
                             companyId={companyScope}
                             companyName={scopeCompanyName}
+                            activeTab={activeTab}
                             onUploadComplete={loadData}
                         />
                     ) : companies.length > 0 && (
