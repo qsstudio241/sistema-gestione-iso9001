@@ -23,6 +23,7 @@ const {
     runDocumentIngest,
     mergeExtractions,
     extractFieldsByAi,
+    SUPPORTED_DOC_TYPES,
 } = require('./documentIngestPipeline.service');
 const { parseJsonWithRepair } = require('../utils/jsonRepair');
 const { extractFieldsByRules } = require('../utils/ruleFieldExtractors');
@@ -267,5 +268,9 @@ describe('runDocumentIngest', () => {
                 fileName: 'x.pdf',
             })
         ).rejects.toMatchObject({ code: 'UNSUPPORTED_DOC_TYPE' });
+    });
+
+    it('accetta cert_ndt in whitelist (bug produzione 02/08/2026)', () => {
+        expect(SUPPORTED_DOC_TYPES.has('cert_ndt')).toBe(true);
     });
 });
