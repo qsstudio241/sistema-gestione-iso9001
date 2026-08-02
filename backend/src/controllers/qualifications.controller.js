@@ -992,7 +992,7 @@ async function renewQualification(req, res) {
 }
 
 // Tipi documento ammessi per il batch upload qualifiche (IG-3 staging).
-const UPLOAD_BATCH_DOC_TYPES = new Set(['patentino_saldatore', 'qualifica_14732']);
+const UPLOAD_BATCH_DOC_TYPES = new Set(['patentino_saldatore', 'qualifica_14732', 'cert_ndt']);
 
 /** POST /qualifications/upload-batch — estrazione + staging IG-3 (revisione pre-commit) */
 async function uploadBatch(req, res) {
