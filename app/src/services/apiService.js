@@ -1711,6 +1711,12 @@ class ApiService {
         return this.get(`/qualifications/coverage?project_id=${project_id}`);
     }
 
+    /** Gap idoneità visiva (NDT/VT senza certificato oculistico valido). */
+    async getVisionFitnessGaps(params = {}) {
+        const qs = new URLSearchParams(params).toString();
+        return this.get(`/qualifications/vision-fitness-gaps${qs ? '?' + qs : ''}`);
+    }
+
     async uploadQualificationCertificate(id, file) {
         const fd = new FormData();
         fd.append('certificate', file);

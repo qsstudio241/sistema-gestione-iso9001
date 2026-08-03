@@ -43,6 +43,34 @@
 .sq-error { margin-bottom:12px; padding:10px 14px; background:#fef2f2; border:1px solid #fecaca; border-radius:8px; color:#dc2626; font-size:13px; display:flex; justify-content:space-between; }
 .sq-error button { background:none; border:none; cursor:pointer; color:#dc2626; font-size:16px; }
 
+/* ── Idoneità visiva gaps ─── */
+.sq-vision-banner {
+  margin: 0 0 14px;
+  padding: 12px 14px;
+  background: #fff7ed;
+  border: 1px solid #fed7aa;
+  border-radius: 8px;
+  color: #9a3412;
+  font-size: 13px;
+}
+.sq-vision-banner__title { font-weight: 700; margin-bottom: 4px; color: #c2410c; }
+.sq-vision-banner__counts { font-weight: 500; }
+.sq-vision-banner__hint { margin: 0 0 8px; color: #9a3412; }
+.sq-vision-banner__list { margin: 0 0 8px; padding-left: 18px; }
+.sq-vision-banner__list li { margin-bottom: 2px; }
+.sq-vision-banner__more { margin: 0 0 8px; font-style: italic; }
+.sq-vision-banner__cta {
+  padding: 6px 12px;
+  background: #ea580c;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.sq-vision-banner__cta:hover { background: #c2410c; }
+
 /* ── Loading/Empty ────────── */
 .sq-loading { display:flex; align-items:center; gap:12px; padding:40px; color:#6b7280; }
 .sq-spinner { width:20px; height:20px; border:3px solid #e5e7eb; border-top-color:#1e3a5f; border-radius:50%; animation:sq-spin .7s linear infinite; }
