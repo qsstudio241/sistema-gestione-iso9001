@@ -727,6 +727,14 @@ CSS: `SgqDataGrid.css` (tema plain) + `DocumentDataGrid.css` (tema catalog + bad
 
 ---
 
+### Aggiornamento 04/08/2026 — Copertura giunto: need_input prima del check WPQR
+
+**Accordo:** l’assistente non inventa i dati mancanti (es. spessore sì, gruppo no). Prima `assessJointCoverageInputs` → se incompleto `status: need_input` + `questions[]`; solo con input completi gira il matcher 15614 (`ok`/`partial`/`not_possible`). Endpoint `POST /welding/wps/generate` restituisce 200 anche se incompleto (niente 400 bloccante per l’AI).
+
+**Prossimi:** P4 AI chat che pone le domande; P5 riesame multi-giunto + idoneità visiva advisory nel report copertura.
+
+---
+
 ### Sessione 14/06/2026 — Import qualifiche ERAM + workflow preview (chiusura)
 
 **Stato:** **CHIUSO — TEST OK** (preview committente su PR [#109](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/109), merge `20db3ff` / doc `b258837`).
