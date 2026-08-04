@@ -743,6 +743,16 @@ In `AiAssistantPage`, richieste tipo «Genera WPS…» / chip Mason non vanno pi
 
 ---
 
+### Aggiornamento 04/08/2026 — P5 riesame advisory WPQR + visione
+
+`GET /cases/:id/extracted-coverage` include `advisory` (blocking:false):
+- `wpqr_joints`: valutazione giunti da documenti o WPS via `generateWpsFromWpqr`
+- `vision_fitness`: gap idoneità visiva NDT/VT per azienda commessa
+
+UI `CoveragePanel`: due box informativi sotto la tabella saldatori; il semaforo saldatori **non** cambia.
+
+---
+
 ### Sessione 14/06/2026 — Import qualifiche ERAM + workflow preview (chiusura)
 
 **Stato:** **CHIUSO — TEST OK** (preview committente su PR [#109](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/109), merge `20db3ff` / doc `b258837`).

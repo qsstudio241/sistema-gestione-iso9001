@@ -153,6 +153,7 @@
                                      "src/services/caseTextAnalysis.service.js",
                                      "src/services/caseDocumentAnalysis.service.js",
                                      "src/services/caseExtractedCoverage.service.js",
+                                     "src/services/caseCoverageAdvisory.service.js",
                                      "src/services/salAiSuggest.service.js",
                                      "src/services/weldingAiSuggest.service.js"
                                  ]
