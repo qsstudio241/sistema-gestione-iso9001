@@ -44,18 +44,40 @@ const masonBody = {
 describe('generateWPS controller (P1-A)', () => {
     beforeEach(() => jest.clearAllMocks());
 
-    test('400 se mancano joint_type / materiali / spessori', async () => {
+    test('200 need_input se mancano joint_type / materiali / spessori', async () => {
+        generateWpsFromWpqr.mockResolvedValue({
+            status: 'need_input',
+            wpqr_used: null,
+            candidates: [],
+            wps_draft: null,
+            extensions_needed: [],
+            questions: [
+                { field: 'parent_material_a', question: 'Qual è il materiale A?' },
+                { field: 'parent_material_b', question: 'Qual è il materiale B?' },
+            ],
+            warnings: [],
+        });
         const res = createRes();
         await generateWPS(
-            { user: { organization_id: 1001 }, body: { joint_type: 'FW' } },
+            { user: { organization_id: 1001 }, body: { joint_type: 'FW', thickness_a_mm: 10, thickness_b_mm: 5 } },
             res
         );
-        expect(res.status).toHaveBeenCalledWith(400);
-        expect(res.body.code).toBe('VALIDATION_ERROR');
-        expect(generateWpsFromWpqr).not.toHaveBeenCalled();
+        expect(res.statusCode).toBe(200);
+        expect(res.body.status).toBe('need_input');
+        expect(res.body.questions.length).toBeGreaterThan(0);
+        expect(generateWpsFromWpqr).toHaveBeenCalled();
     });
 
-    test('400 se spessori non numerici', async () => {
+    test('200 con spessori non numerici → service riceve null e può rispondere need_input', async () => {
+        generateWpsFromWpqr.mockResolvedValue({
+            status: 'need_input',
+            wpqr_used: null,
+            candidates: [],
+            wps_draft: null,
+            extensions_needed: [],
+            questions: [{ field: 'thickness_a_mm', question: 'Qual è lo spessore A?' }],
+            warnings: [],
+        });
         const res = createRes();
         await generateWPS(
             {
@@ -64,8 +86,9 @@ describe('generateWPS controller (P1-A)', () => {
             },
             res
         );
-        expect(res.status).toHaveBeenCalledWith(400);
-        expect(generateWpsFromWpqr).not.toHaveBeenCalled();
+        expect(res.statusCode).toBe(200);
+        expect(res.body.status).toBe('need_input');
+        expect(generateWpsFromWpqr).toHaveBeenCalled();
     });
 
     test('200 ok — passa organization_id e company_id al service', async () => {

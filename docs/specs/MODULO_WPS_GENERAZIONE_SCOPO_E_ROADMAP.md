@@ -70,6 +70,18 @@ wpsGenerator.service.js
 | **P1b** | Completare Tabella 7 Level 1 (GAP estrazione) se verificata su PDF ufficiale | Opzionale |
 | **P2** | Export Word WPS (modulo ISO 15609-1 Annex A) | ✅ v1 (30/07/2026) — `wordExportWps.js` + pulsante Word in tab WPS |
 | **P2b** | Deprecare/nascondere upload batch WPS come flusso primario | ✅ (31/07/2026) — «Import PDF (legacy)» a richiesta |
+| **P3** | Status `need_input` + domande se dati giunto incompleti (AI orchestra, check 15614 solo con input completi) | ✅ 04/08/2026 |
+| **P4** | Assistente: se `need_input` → porre le `questions[]` all’utente; poi richiamare generate | Backlog |
+| **P5** | Riesame: rassegna multi-giunto da requisiti/documenti + copertura WPQR (advisory) + visione NDT advisory | Backlog |
+
+---
+
+## Orchestrazione AI (accordo prodotto 04/08/2026)
+
+1. L’AI valuta se la richiesta sul giunto è **completa** (tipo, materiali/gruppi, spessori…).
+2. Se manca qualcosa → **domande pertinenti** (`status: need_input`, campo `questions[]`) — non indovina.
+3. Con input completi → chiama il **check deterministico** WPQR/15614 (`ok` / `partial` / `not_possible` + estensioni).
+4. L’AI **non** decide da sola se un range è coperto; spiega il risultato del motore.
 
 ---
 

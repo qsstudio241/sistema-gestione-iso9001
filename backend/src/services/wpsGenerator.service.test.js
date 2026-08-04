@@ -2,6 +2,7 @@
 
 const {
     generateWpsFromWpqr,
+    assessJointCoverageInputs,
     checkThicknessCoverage,
 } = require('./wpsGenerator.service');
 
@@ -95,5 +96,46 @@ describe('wpsGenerator.service (P0)', () => {
             wpqrRecords: [WPQR_MASON_DEMO],
         });
         expect(['ok', 'partial']).toContain(result.status);
+    });
+});
+
+describe('assessJointCoverageInputs / need_input', () => {
+    test('spessori sì ma materiali mancanti → need_input con domande gruppo', async () => {
+        const result = await generateWpsFromWpqr({
+            organizationId: 1,
+            request: {
+                joint_type: 'FW',
+                thickness_a_mm: 10,
+                thickness_b_mm: 5,
+            },
+            wpqrRecords: [WPQR_MASON_DEMO],
+        });
+        expect(result.status).toBe('need_input');
+        expect(result.wps_draft).toBeNull();
+        expect(result.extensions_needed).toEqual([]);
+        const fields = result.questions.map((q) => q.field);
+        expect(fields).toContain('parent_material_a');
+        expect(fields).toContain('parent_material_b');
+    });
+
+    test('materiale non riconosciuto → need_input (chiarimento), non not_possible', async () => {
+        const result = await generateWpsFromWpqr({
+            organizationId: 1,
+            request: {
+                ...MASON_REQUEST,
+                parent_material_a: 'LEGA-SCONOSCIUTA-XYZ',
+            },
+            wpqrRecords: [WPQR_MASON_DEMO],
+        });
+        expect(result.status).toBe('need_input');
+        expect(result.questions.some((q) => q.field === 'parent_material_a')).toBe(true);
+        expect(result.questions[0].question).toMatch(/Non riconosco|15608|gruppo/i);
+    });
+
+    test('assessJointCoverageInputs completo su caso Mason', () => {
+        const a = assessJointCoverageInputs(MASON_REQUEST);
+        expect(a.complete).toBe(true);
+        expect(a.resolved.groupA).toBe('1.2');
+        expect(a.resolved.groupB).toBe('1.1');
     });
 });

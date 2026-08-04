@@ -182,23 +182,131 @@ function buildWpsDraft(wpqr, request, groupA, groupB) {
 }
 
 /**
+ * Campi minimi per confrontare un giunto con le WPQR (ISO 15614).
+ * Se incompleti → status need_input + domande all'utente (AI orchestra, non indovina).
+ *
+ * @param {object} request
+ * @returns {{
+ *   complete: boolean,
+ *   questions: Array<{ field: string, question: string }>,
+ *   resolved?: { jointType: string, groupA: string, groupB: string, thicknessA: number, thicknessB: number },
+ *   warnings: string[]
+ * }}
+ */
+function assessJointCoverageInputs(request = {}) {
+    const warnings = [];
+    const questions = [];
+
+    const jointRaw = String(request.joint_type || '').trim();
+    const jointType = jointRaw.toUpperCase();
+    if (!jointType) {
+        questions.push({
+            field: 'joint_type',
+            question: 'Qual è il tipo di giunto? (es. FW angolo o BW testa)',
+        });
+    }
+
+    const matA = String(request.parent_material_a || '').trim();
+    const matB = String(request.parent_material_b || '').trim();
+    if (!matA) {
+        questions.push({
+            field: 'parent_material_a',
+            question: 'Qual è il materiale / grado del primo pezzo (A)? (es. S355 oppure gruppo 1.2)',
+        });
+    }
+    if (!matB) {
+        questions.push({
+            field: 'parent_material_b',
+            question: 'Qual è il materiale / grado del secondo pezzo (B)? (es. S235 oppure gruppo 1.1)',
+        });
+    }
+
+    const tAraw = request.thickness_a_mm;
+    const tBraw = request.thickness_b_mm;
+    const tA = tAraw === '' || tAraw == null ? NaN : Number(tAraw);
+    const tB = tBraw === '' || tBraw == null ? NaN : Number(tBraw);
+    if (!Number.isFinite(tA) || tA <= 0) {
+        questions.push({
+            field: 'thickness_a_mm',
+            question: 'Qual è lo spessore del pezzo A in mm?',
+        });
+    }
+    if (!Number.isFinite(tB) || tB <= 0) {
+        questions.push({
+            field: 'thickness_b_mm',
+            question: 'Qual è lo spessore del pezzo B in mm?',
+        });
+    }
+
+    // Materiali presenti ma non mappabili → chiedere chiarimento (non chiudere come "estensione mancante")
+    let groupA = null;
+    let groupB = null;
+    if (matA) {
+        groupA = resolveParentGroup(matA, warnings);
+        if (!groupA) {
+            questions.push({
+                field: 'parent_material_a',
+                question: `Non riconosco il materiale A «${matA}»: indica un grado noto (es. S355) o il gruppo ISO/TR 15608 (es. 1.2)`,
+            });
+        }
+    }
+    if (matB) {
+        groupB = resolveParentGroup(matB, warnings);
+        if (!groupB) {
+            questions.push({
+                field: 'parent_material_b',
+                question: `Non riconosco il materiale B «${matB}»: indica un grado noto (es. S235) o il gruppo ISO/TR 15608 (es. 1.1)`,
+            });
+        }
+    }
+
+    if (questions.length > 0) {
+        return { complete: false, questions, warnings };
+    }
+
+    return {
+        complete: true,
+        questions: [],
+        warnings,
+        resolved: {
+            jointType,
+            groupA,
+            groupB,
+            thicknessA: tA,
+            thicknessB: tB,
+        },
+    };
+}
+
+function needInputResult(questions, warnings = []) {
+    return {
+        status: 'need_input',
+        wpqr_used: null,
+        candidates: [],
+        wps_draft: null,
+        extensions_needed: [],
+        questions,
+        warnings,
+    };
+}
+
+/**
  * @param {object} params
  * @param {number} params.organizationId
  * @param {number|null} [params.companyId]
  * @param {object} params.request
  * @param {object[]} [params.wpqrRecords]
  * @returns {Promise<{
- *   status: 'ok'|'partial'|'not_possible',
+ *   status: 'ok'|'partial'|'not_possible'|'need_input',
  *   wpqr_used: object|null,
  *   candidates: object[],
  *   wps_draft: object|null,
  *   extensions_needed: string[],
+ *   questions?: Array<{ field: string, question: string }>,
  *   warnings: string[]
  * }>}
  */
 async function generateWpsFromWpqr(params = {}) {
-    const warnings = [];
-    const extensionsNeeded = [];
     const {
         organizationId,
         companyId = null,
@@ -206,33 +314,21 @@ async function generateWpsFromWpqr(params = {}) {
         wpqrRecords: injectedRecords,
     } = params;
 
-    const jointType = String(request.joint_type || '').trim().toUpperCase();
-    if (!jointType) {
-        return {
-            status: 'not_possible',
-            wpqr_used: null,
-            candidates: [],
-            wps_draft: null,
-            extensions_needed: ['Specificare il tipo di giunto (es. FW o BW)'],
-            warnings,
-        };
+    const assessed = assessJointCoverageInputs(request);
+    if (!assessed.complete) {
+        return needInputResult(assessed.questions, assessed.warnings);
     }
 
-    const groupA = resolveParentGroup(request.parent_material_a, warnings);
-    const groupB = resolveParentGroup(request.parent_material_b, warnings);
-    if (!groupA || !groupB) {
-        return {
-            status: 'not_possible',
-            wpqr_used: null,
-            candidates: [],
-            wps_draft: null,
-            extensions_needed: [
-                !groupA ? `Materiale A non risolvibile: ${request.parent_material_a || '(vuoto)'}` : null,
-                !groupB ? `Materiale B non risolvibile: ${request.parent_material_b || '(vuoto)'}` : null,
-            ].filter(Boolean),
-            warnings,
-        };
-    }
+    const warnings = [...assessed.warnings];
+    const extensionsNeeded = [];
+    const { jointType, groupA, groupB } = assessed.resolved;
+    // Normalizza request spessori numerici per buildWpsDraft / thickness check
+    const normalizedRequest = {
+        ...request,
+        joint_type: jointType,
+        thickness_a_mm: assessed.resolved.thicknessA,
+        thickness_b_mm: assessed.resolved.thicknessB,
+    };
 
     let records = injectedRecords;
     if (records == null) {
@@ -243,6 +339,7 @@ async function generateWpsFromWpqr(params = {}) {
                 candidates: [],
                 wps_draft: null,
                 extensions_needed: ['organizationId obbligatorio se non si passano wpqrRecords'],
+                questions: [],
                 warnings,
             };
         }
@@ -256,6 +353,7 @@ async function generateWpsFromWpqr(params = {}) {
             candidates: [],
             wps_draft: null,
             extensions_needed: ['Registro WPQR vuoto: nessuna procedura qualificata disponibile per l\'ambito'],
+            questions: [],
             warnings,
         };
     }
@@ -310,8 +408,8 @@ async function generateWpsFromWpqr(params = {}) {
 
         const th = checkThicknessCoverage(
             wpqr,
-            request.thickness_a_mm,
-            request.thickness_b_mm
+            normalizedRequest.thickness_a_mm,
+            normalizedRequest.thickness_b_mm
         );
         if (!th.ok) {
             thicknessFailures.push(th.reason || 'Spessore fuori range');
@@ -350,7 +448,6 @@ async function generateWpsFromWpqr(params = {}) {
         if (extensionsNeeded.length === 0) {
             extensionsNeeded.push('Nessuna WPQR compatibile con i parametri richiesti');
         }
-        // Dedup
         const unique = [...new Set(extensionsNeeded)];
         return {
             status: 'not_possible',
@@ -358,13 +455,14 @@ async function generateWpsFromWpqr(params = {}) {
             candidates: [],
             wps_draft: null,
             extensions_needed: unique,
+            questions: [],
             warnings,
         };
     }
 
     candidates.sort((a, b) => b.score - a.score);
     const best = candidates[0];
-    const draft = buildWpsDraft(best.wpqr, request, groupA, groupB);
+    const draft = buildWpsDraft(best.wpqr, normalizedRequest, groupA, groupB);
     const status = best.thickness.partial || best.warnings.length > 0 ? 'partial' : 'ok';
     if (best.thickness.partial) {
         warnings.push(
@@ -387,12 +485,14 @@ async function generateWpsFromWpqr(params = {}) {
         })),
         wps_draft: draft,
         extensions_needed: [],
+        questions: [],
         warnings,
     };
 }
 
 module.exports = {
     generateWpsFromWpqr,
+    assessJointCoverageInputs,
     loadWpqrRecords,
     checkThicknessCoverage,
     jointTypeCompatible,
