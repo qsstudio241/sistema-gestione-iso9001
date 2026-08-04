@@ -2151,7 +2151,7 @@ node scripts/repro-custom-export.mjs
 | Checklist stampabile smoke copertura | `docs/testing/SMOKE_COPERTURA_WPQR_VISIONE_CHECKLIST.md` + `.docx` (`node backend/scripts/generate-smoke-checklist-docx.mjs`) | L3/ops |
 | Encoding check | `node backend/scripts/check-utf8-encoding.js [file]` | qualità |
 
-**Nota ERAM (04/08/2026):** `SGQ_APP_*` è admin org 1001 (senza NDT) → per smoke UI tenant ERAM mintare JWT di `mauro.franciosi@eram-technologies.com` sul VPS. Il pannello **Verifica Copertura Saldatori** (advisory WPQR/visione) è sul **dettaglio riesame in ogni stato**, non solo `APPROVED`.
+**Nota ERAM (04/08/2026):** `SGQ_APP_*` è admin org 1001 (senza NDT) → per smoke UI tenant ERAM mintare JWT di `mauro.franciosi@eram-technologies.com` sul VPS. Il pannello **Verifica Copertura Saldatori** (advisory WPQR/visione) è sul **dettaglio riesame in ogni stato**, non solo `APPROVED`. Eseguire lo smoke su **produzione** (`systemgest.netlify.app` → API prod): il Deploy Preview punta a `test-api` dove mancano NDT La Forgia e l’endpoint `vision-fitness-gaps`. Smoke OK 04/08/2026: 9/9 su prod (`node backend/scripts/smoke-eram-coverage-ui.js`).
 
 
 ## E. Flusso 2 — SAL / Sopralluoghi + Evidenze documentali + Import + RAG (retrieval)
