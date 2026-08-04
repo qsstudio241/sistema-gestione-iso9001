@@ -140,32 +140,51 @@ async function main() {
   const context = await browser.newContext({ viewport: { width: 1400, height: 900 } });
   const page = await context.newPage();
 
-  // Inject token prima del bootstrap React
+  // Inject token + reset scope qualifiche (evita Ambito stale da sessioni precedenti)
   await page.addInitScript((t) => {
     localStorage.setItem('sgq_auth_token', t);
+    try {
+      localStorage.removeItem('sgq-qualifications-company-scope');
+    } catch (_) { /* ignore */ }
   }, token);
 
   try {
     // ── 1 Qualifiche NDT / visione ──────────────────────────────────────────
     await page.goto(`${BASE}/qualifiche`, { waitUntil: 'networkidle', timeout: 60000 });
-    await page.waitForTimeout(2500);
+    await page.waitForTimeout(2000);
+
+    // Scope su ERAM-Technologies (ha NDT La Forgia). Evitare LM&CO o auto-scope a 1 sola azienda.
+    const scopeSelect = page.locator('select[aria-label="Ambito qualifiche per azienda"]');
+    if (await scopeSelect.count()) {
+      const opted = await scopeSelect.locator('option').evaluateAll((opts) => {
+        const hit = opts.find((o) => /ERAM/i.test(o.textContent || ''));
+        return hit ? hit.value : '';
+      });
+      if (opted) await scopeSelect.selectOption(opted);
+      else await scopeSelect.selectOption('');
+      await page.waitForTimeout(2000);
+    }
     await page.screenshot({ path: `${ART}/smoke_eram_qualifications.png`, fullPage: true });
 
     const ndtTab = page.getByRole('button', { name: /^NDT$/i }).or(page.locator('button.sq-tab', { hasText: 'NDT' }));
     if (await ndtTab.count()) {
       await ndtTab.first().click();
-      await page.waitForTimeout(2000);
+      await page.waitForTimeout(2500);
     }
+    // Banner o almeno la persona NDT in gap
+    try {
+      await page.locator('.sq-vision-banner, body').filter({ hasText: /idoneit/i }).first()
+        .waitFor({ timeout: 8000 });
+    } catch (_) { /* assert sotto */ }
     await page.screenshot({ path: `${ART}/smoke_eram_ndt.png`, fullPage: true });
 
     const bodyText = await page.locator('body').innerText();
     if (/idoneit/i.test(bodyText) && /visiv/i.test(bodyText)) {
       pass('1.3 Banner/testo idoneità visiva su NDT');
     } else if (/LA FORGIA|FORGIA/i.test(bodyText)) {
-      // persona presente ma banner forse non visibile se filtrato — soft
       pass('1.3 NDT: persona NDT presente (banner da verificare a occhio)', 'La Forgia in pagina');
     } else {
-      fail('1.3 Banner idoneità visiva / NDT', 'testo non trovato');
+      fail('1.3 Banner idoneità visiva / NDT', 'testo non trovato (controllare Ambito azienda)');
     }
 
     const salute = page.getByRole('button', { name: /Salute mansione/i });
@@ -214,7 +233,6 @@ async function main() {
     if (await rows.count()) {
       await rows.first().click();
       await page.waitForTimeout(3000);
-      // Dettaglio: URL /contract-reviews/:id oppure pannello copertura in pagina
       const urlOk = /\/contract-reviews\/\d+/.test(page.url());
       const detailHint = await page.locator('body').innerText();
       if (urlOk || /Copertura saldatori|Cronologia stati|Passaggio a esecuzione/i.test(detailHint)) {
@@ -231,35 +249,43 @@ async function main() {
       if (await coverBtn.count()) {
         pass('3.2 Pulsante Verifica Copertura Saldatori');
         await coverBtn.first().click();
-        await page.waitForTimeout(1500);
-        const select = page.locator('select').filter({ has: page.locator('option') }).first();
-        if (await select.count()) {
-          const opts = await select.locator('option').allTextContents();
-          if (opts.length > 1) {
-            await select.selectOption({ index: 1 });
-            const verify = page.locator('button', { hasText: /^Verifica$/i });
-            if (await verify.count()) {
-              await verify.click();
-              await page.waitForTimeout(6000);
-            }
+        // Aspetta select commesse (non il primo <select> generico della pagina)
+        const coverSelect = page.locator('select').filter({
+          has: page.locator('option', { hasText: /Seleziona commessa/i }),
+        }).first();
+        try {
+          await coverSelect.waitFor({ state: 'visible', timeout: 15000 });
+        } catch (_) {
+          fail('3.2b Select commessa copertura non apparso');
+        }
+        const optCount = await coverSelect.locator('option').count();
+        if (optCount < 2) {
+          fail('3.2b Nessuna commessa in elenco', `options=${optCount}`);
+        } else {
+          await coverSelect.selectOption({ index: 1 });
+          const verify = page.locator('button', { hasText: /^Verifica$/i });
+          await verify.first().click();
+          try {
+            await page.locator('text=Copertura procedure (WPQR)').waitFor({ timeout: 15000 });
+          } catch (_) { /* assert sotto */ }
+          await page.waitForTimeout(1000);
+          await page.screenshot({ path: `${ART}/smoke_eram_coverage_advisory.png`, fullPage: true });
+          const t = await page.locator('body').innerText();
+          if (/Copertura procedure \(WPQR\)/.test(t)) {
+            pass('3.3 Box WPQR advisory presente');
+          } else {
+            fail('3.3 Box WPQR advisory', 'titolo box non trovato dopo Verifica');
           }
-        }
-        await page.screenshot({ path: `${ART}/smoke_eram_coverage_advisory.png`, fullPage: true });
-        const t = await page.locator('body').innerText();
-        if (/Copertura procedure \(WPQR\)|solo informativo|WPQR/i.test(t)) {
-          pass('3.3 Box WPQR advisory presente');
-        } else {
-          fail('3.3 Box WPQR advisory', 'testo non trovato dopo Verifica');
-        }
-        if (/Idoneit/i.test(t) && /visiv/i.test(t)) {
-          pass('3.4 Box idoneità visiva advisory presente');
-        } else {
-          fail('3.4 Box idoneità visiva advisory');
-        }
-        if (/non cambia il semaforo|Non blocca|solo informativo|non blocca/i.test(t)) {
-          pass('3.5 Messaggio non bloccante presente');
-        } else {
-          fail('3.5 Messaggio non bloccante');
+          if (/Idoneit[àa] visiva \(NDT\/VT\)/.test(t) || (/Idoneit/i.test(t) && /NDT\/VT/.test(t))) {
+            pass('3.4 Box idoneità visiva advisory presente');
+          } else {
+            fail('3.4 Box idoneità visiva advisory');
+          }
+          if (/non cambia il semaforo|Non blocca la copertura|solo informativo/i.test(t)) {
+            pass('3.5 Messaggio non bloccante presente');
+          } else {
+            fail('3.5 Messaggio non bloccante');
+          }
         }
       } else {
         fail(
