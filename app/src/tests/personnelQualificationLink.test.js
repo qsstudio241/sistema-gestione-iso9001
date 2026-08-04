@@ -1,6 +1,11 @@
 import { describe, it, expect } from "vitest";
 import { normalizePersonKey } from "../utils/personnelQualificationLink";
-import { isOccupationalQualificationType, OCCUPATIONAL_QUALIFICATION_TYPES } from "../data/occupationalQualificationTypes";
+import {
+  isOccupationalQualificationType,
+  isVisionFitnessType,
+  OCCUPATIONAL_QUALIFICATION_TYPES,
+  VISION_FITNESS_TYPE,
+} from "../data/occupationalQualificationTypes";
 
 describe("normalizePersonKey", () => {
   it("preferisce il codice matricola se presente", () => {
@@ -19,8 +24,10 @@ describe("normalizePersonKey", () => {
 });
 
 describe("occupationalQualificationTypes", () => {
-  it("include i quattro documenti salute mansione ISO 3834", () => {
-    expect(OCCUPATIONAL_QUALIFICATION_TYPES).toHaveLength(4);
+  it("unifica acuit\u00e0+Ishihara in un solo tipo form (3 tipi salute mansione)", () => {
+    expect(OCCUPATIONAL_QUALIFICATION_TYPES).toHaveLength(3);
+    expect(OCCUPATIONAL_QUALIFICATION_TYPES[0]).toBe(VISION_FITNESS_TYPE);
+    expect(isVisionFitnessType(VISION_FITNESS_TYPE)).toBe(true);
     expect(isOccupationalQualificationType("Certificato acuit\u00e0 visiva")).toBe(true);
     expect(isOccupationalQualificationType("Certificato visione cromatica (Ishihara)")).toBe(true);
     expect(isOccupationalQualificationType("Idoneit\u00e0 medica alla mansione")).toBe(true);
