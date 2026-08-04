@@ -1533,10 +1533,18 @@ export default function ContractReviewPage() {
                 </ul>
               </div>
 
+              {/* P5 — advisory WPQR/visione disponibile in ogni stato (non solo APPROVED) */}
+              <div className="cr-panel">
+                <h2>Copertura saldatori e idoneità</h2>
+                <p className="cr-muted" style={{ marginTop: 0 }}>
+                  Verifica informativa (non blocca il riesame). Utile già in bozza per anticipare gap WPQR e visione.
+                </p>
+                <CoveragePanel caseId={detail.case.id} />
+              </div>
+
               {detail.case.status === 'APPROVED' && (
                 <div className="cr-panel">
                   <h2>Passaggio a esecuzione</h2>
-                  <CoveragePanel caseId={detail.case.id} />
                   {detail.case.handoff_ref ? (
                     <div className="cr-handoff-summary">
                       <p>
