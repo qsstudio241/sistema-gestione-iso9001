@@ -2147,7 +2147,11 @@ node scripts/repro-custom-export.mjs
 | Deploy backend VPS (produzione) | `backend/scripts/deploy-controllers-to-vps.ps1` | ops |
 | Deploy backend VPS (SOLO test) | `backend/scripts/deploy-to-vps-test.ps1` | ops |
 | Smoke UAL-1..UAL-4 (ambiente test) | `backend/scripts/_smoke-ual.ps1` | L3 |
+| Smoke UI ERAM (WPQR + visione P3/P4/P5) | `backend/scripts/smoke-eram-coverage-ui.js` (JWT mint VPS org 1004; Playwright) | L3 |
+| Checklist stampabile smoke copertura | `docs/testing/SMOKE_COPERTURA_WPQR_VISIONE_CHECKLIST.md` + `.docx` (`node backend/scripts/generate-smoke-checklist-docx.mjs`) | L3/ops |
 | Encoding check | `node backend/scripts/check-utf8-encoding.js [file]` | qualità |
+
+**Nota ERAM (04/08/2026):** `SGQ_APP_*` è admin org 1001 (senza NDT) → per smoke UI tenant ERAM mintare JWT di `mauro.franciosi@eram-technologies.com` sul VPS. Il pannello **Verifica Copertura Saldatori** (advisory WPQR/visione) è sul **dettaglio riesame in ogni stato**, non solo `APPROVED`.
 
 
 ## E. Flusso 2 — SAL / Sopralluoghi + Evidenze documentali + Import + RAG (retrieval)
