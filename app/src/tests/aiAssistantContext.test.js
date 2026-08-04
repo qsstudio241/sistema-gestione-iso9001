@@ -8,6 +8,13 @@ import {
   resolveActiveChecklistFocus,
   buildAuditContextSeparatorLabel,
   buildAiChatContextPayload,
+  isWpsCoverageRequest,
+  extractWpsRequestFromText,
+  applyWpsAnswersToRequest,
+  formatWpsNeedInputMessage,
+  formatWpsGenerateResultMessage,
+  toGenerateWpsApiPayload,
+  WPS_GENERATE_MASON_CHIP,
 } from "../utils/aiAssistantContext";
 
 describe("aiAssistantContext", () => {
@@ -109,5 +116,70 @@ describe("aiAssistantContext", () => {
     expect(payload.standardId).toBe(1);
     expect(payload.companyId).toBe(10);
     expect(payload.auditId).toBe("uuid-99");
+  });
+});
+
+describe("P4 WPS coverage orchestration helpers", () => {
+  it("isWpsCoverageRequest riconosce chip Mason e richieste copertura", () => {
+    expect(isWpsCoverageRequest(WPS_GENERATE_MASON_CHIP)).toBe(true);
+    expect(isWpsCoverageRequest("Verifica copertura WPQR per questo giunto")).toBe(true);
+    expect(isWpsCoverageRequest("Quante NC aperte?")).toBe(false);
+  });
+
+  it("extractWpsRequestFromText sul caso Mason", () => {
+    const r = extractWpsRequestFromText(WPS_GENERATE_MASON_CHIP);
+    expect(r.joint_type).toBe("FW");
+    expect(r.parent_material_a).toMatch(/S355/i);
+    expect(r.parent_material_b).toMatch(/S235/i);
+    expect(r.thickness_a_mm).toBe("10");
+    expect(r.thickness_b_mm).toBe("5");
+  });
+
+  it("applyWpsAnswersToRequest completa materiali mancanti", () => {
+    const next = applyWpsAnswersToRequest(
+      { joint_type: "FW", thickness_a_mm: "10", thickness_b_mm: "5" },
+      "materiali S355 e S235",
+      [
+        { field: "parent_material_a", question: "A?" },
+        { field: "parent_material_b", question: "B?" },
+      ]
+    );
+    expect(next.parent_material_a).toMatch(/S355/i);
+    expect(next.parent_material_b).toMatch(/S235/i);
+  });
+
+  it("formatWpsNeedInputMessage elenca le domande", () => {
+    const msg = formatWpsNeedInputMessage([
+      { field: "parent_material_a", question: "Qual \u00e8 il materiale A?" },
+    ]);
+    expect(msg).toMatch(/non li invento/i);
+    expect(msg).toMatch(/materiale A/i);
+  });
+
+  it("formatWpsGenerateResultMessage per not_possible", () => {
+    const msg = formatWpsGenerateResultMessage({
+      status: "not_possible",
+      extensions_needed: ["Nessuna WPQR copre il gruppo"],
+      warnings: [],
+    });
+    expect(msg).toMatch(/Non risulta realizzabile/i);
+    expect(msg).toMatch(/Nessuna WPQR/);
+  });
+
+  it("toGenerateWpsApiPayload converte spessori in numeri", () => {
+    expect(toGenerateWpsApiPayload({
+      joint_type: "FW",
+      parent_material_a: "S355",
+      parent_material_b: "S235",
+      thickness_a_mm: "10",
+      thickness_b_mm: "5",
+    }, 42)).toEqual({
+      joint_type: "FW",
+      parent_material_a: "S355",
+      parent_material_b: "S235",
+      thickness_a_mm: 10,
+      thickness_b_mm: 5,
+      company_id: 42,
+    });
   });
 });

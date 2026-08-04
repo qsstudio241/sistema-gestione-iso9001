@@ -71,7 +71,7 @@ wpsGenerator.service.js
 | **P2** | Export Word WPS (modulo ISO 15609-1 Annex A) | ✅ v1 (30/07/2026) — `wordExportWps.js` + pulsante Word in tab WPS |
 | **P2b** | Deprecare/nascondere upload batch WPS come flusso primario | ✅ (31/07/2026) — «Import PDF (legacy)» a richiesta |
 | **P3** | Status `need_input` + domande se dati giunto incompleti (AI orchestra, check 15614 solo con input completi) | ✅ 04/08/2026 |
-| **P4** | Assistente: se `need_input` → porre le `questions[]` all’utente; poi richiamare generate | Backlog |
+| **P4** | Assistente: se `need_input` → porre le `questions[]` all’utente; poi richiamare generate | ✅ 04/08/2026 — orchestrazione FE in `AiAssistantPage` |
 | **P5** | Riesame: rassegna multi-giunto da requisiti/documenti + copertura WPQR (advisory) + visione NDT advisory | Backlog |
 
 ---

@@ -14,6 +14,13 @@ import {
   saveWpsGenerateIntent,
   WPS_GENERATE_MASON_CHIP,
   MASON_WPS_GENERATE_DEFAULTS,
+  isWpsCoverageRequest,
+  extractWpsRequestFromText,
+  mergeWpsRequest,
+  applyWpsAnswersToRequest,
+  formatWpsNeedInputMessage,
+  formatWpsGenerateResultMessage,
+  toGenerateWpsApiPayload,
 } from "../utils/aiAssistantContext";
 import AiAssistantCitations from "../components/AiAssistantCitations";
 import {
@@ -22,7 +29,6 @@ import {
   saveChatMessages,
   clearChatMessages,
 } from "../utils/aiAssistantChatPersist";
-import { useNavigate } from "../contexts/RouterContext";
 import "./AiAssistantPage.css";
 
 const SUGGESTIONS_GENERIC = [
@@ -138,7 +144,6 @@ function formatAiText(text) {
 
 function AiAssistantPage() {
   const { user } = useAuth();
-  const navigate = useNavigate();
   const { currentAudit, currentAuditId } = useStorage();
   const chatStorageKey = useMemo(
     () => buildChatStorageKey(user?.organization_id, user?.id ?? user?.user_id),
@@ -148,6 +153,8 @@ function AiAssistantPage() {
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [reindexing, setReindexing] = useState(false);
+  /** P4: bozza request WPS in attesa di risposte need_input. */
+  const [wpsPending, setWpsPending] = useState(null);
   const messagesEndRef = useRef(null);
   const textareaRef = useRef(null);
   const prevAuditIdRef = useRef(null);
@@ -433,6 +440,7 @@ function AiAssistantPage() {
     clearChatMessages(chatStorageKey);
     setMessages([]);
     setContextSeparatorIndex(-1);
+    setWpsPending(null);
     if (!isCompanyClient) {
       setCompanyContext({
         companyId: autoCompanyId,
@@ -446,6 +454,36 @@ function AiAssistantPage() {
       source: "auto",
     });
   }, [chatStorageKey, autoCompanyId, autoCompanyName, autoStandard, isCompanyClient]);
+
+  /**
+   * P4 — orchestrazione FE: generateWPS → need_input (domande) oppure esito 15614.
+   * L'AI chat LLM non decide la copertura; solo dialogo + spiegazione esito.
+   */
+  const runWpsCoverageFlow = useCallback(async (requestDraft) => {
+    const payload = toGenerateWpsApiPayload(requestDraft, companyContext.companyId);
+    const res = await apiService.generateWPS(payload);
+    const data = res?.data || res || {};
+    if (data.status === "need_input") {
+      setWpsPending({ request: { ...requestDraft }, questions: data.questions || [] });
+      return {
+        role: "assistant",
+        text: formatWpsNeedInputMessage(data.questions || []),
+        time: new Date(),
+        wpsStatus: "need_input",
+      };
+    }
+    setWpsPending(null);
+    // Intent form aggiornato per deep-link opzionale
+    if (data.status === "ok" || data.status === "partial") {
+      saveWpsGenerateIntent(requestDraft);
+    }
+    return {
+      role: "assistant",
+      text: formatWpsGenerateResultMessage(data),
+      time: new Date(),
+      wpsStatus: data.status,
+    };
+  }, [companyContext.companyId]);
 
   const handleSend = useCallback(async (text) => {
     const msg = (text || input).trim();
@@ -461,6 +499,27 @@ function AiAssistantPage() {
     }
 
     try {
+      // P4: risposta a domande need_input in corso
+      if (wpsPending) {
+        const merged = applyWpsAnswersToRequest(
+          wpsPending.request,
+          msg,
+          wpsPending.questions
+        );
+        const assistantMsg = await runWpsCoverageFlow(merged);
+        setMessages((prev) => [...prev, assistantMsg]);
+        return;
+      }
+
+      // P4: nuova richiesta copertura/generazione WPS
+      if (isWpsCoverageRequest(msg)) {
+        const extracted = extractWpsRequestFromText(msg);
+        const draft = mergeWpsRequest({}, extracted);
+        const assistantMsg = await runWpsCoverageFlow(draft);
+        setMessages((prev) => [...prev, assistantMsg]);
+        return;
+      }
+
       const chatCtx = buildAiChatContextPayload(currentAudit, companies);
       const res = await apiService.aiChat(msg, {
         companyId: companyContext.companyId,
@@ -494,17 +553,26 @@ function AiAssistantPage() {
     } finally {
       setLoading(false);
     }
-  }, [input, loading, companyContext.companyId, standardContext.standardId, currentAudit, companies]);
+  }, [
+    input,
+    loading,
+    companyContext.companyId,
+    standardContext.standardId,
+    currentAudit,
+    companies,
+    wpsPending,
+    runWpsCoverageFlow,
+  ]);
 
-  /** Chip P1-C: naviga al form Genera WPS precompilato (matching resta sul backend P0). */
+  /** Chip Mason: esegue il check in chat (P4); form resta raggiungibile via intent salvato. */
   const handleSuggestionClick = useCallback((s) => {
     if (s === WPS_GENERATE_MASON_CHIP) {
       saveWpsGenerateIntent({ ...MASON_WPS_GENERATE_DEFAULTS });
-      navigate("/saldatura/procedure");
+      handleSend(s);
       return;
     }
     handleSend(s);
-  }, [navigate, handleSend]);
+  }, [handleSend]);
 
   const handleKeyDown = useCallback(
     (e) => {

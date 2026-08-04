@@ -249,6 +249,199 @@ export function consumeWpsGenerateIntent() {
 export const WPS_GENERATE_MASON_CHIP =
   "Genera una WPS FW per S355 10 mm + S235 5 mm usando le WPQR disponibili";
 
+/**
+ * Rileva richieste di copertura/generazione WPS da WPQR (P4 — orchestrazione FE).
+ * @param {string} text
+ * @returns {boolean}
+ */
+export function isWpsCoverageRequest(text) {
+  const t = String(text || "").toLowerCase();
+  if (!t.trim()) return false;
+  if (/genera\s+(una\s+)?wps/.test(t)) return true;
+  if (/wps/.test(t) && /(wpqr|estension|copertur)/.test(t)) return true;
+  if (/copertura/.test(t) && /(wpqr|giunto|saldat)/.test(t)) return true;
+  return false;
+}
+
+/**
+ * Estrae parametri giunto da testo libero (euristica leggera — il check resta sul backend).
+ * @param {string} text
+ * @returns {Partial<typeof MASON_WPS_GENERATE_DEFAULTS>}
+ */
+export function extractWpsRequestFromText(text) {
+  const t = String(text || "");
+  const out = {};
+  const jt = t.match(/\b(FW|BW)\b/i);
+  if (jt) out.joint_type = jt[1].toUpperCase();
+
+  const process = t.match(/\b(?:processo\s*)?(111|131|135|136|138|141)\b/);
+  if (process) out.welding_process = process[1];
+
+  // Spessori: "10 mm + 5 mm", "10 mm + S235 5 mm", "10mm e 5mm"
+  const thickPair = t.match(
+    /(\d+(?:[.,]\d+)?)\s*mm\b[\s\S]{0,40}?(\d+(?:[.,]\d+)?)\s*mm\b/i
+  );
+  if (thickPair) {
+    out.thickness_a_mm = String(thickPair[1]).replace(",", ".");
+    out.thickness_b_mm = String(thickPair[2]).replace(",", ".");
+  } else {
+    const thicks = [...t.matchAll(/(\d+(?:[.,]\d+)?)\s*mm\b/gi)].map((m) =>
+      String(m[1]).replace(",", ".")
+    );
+    if (thicks[0]) out.thickness_a_mm = thicks[0];
+    if (thicks[1]) out.thickness_b_mm = thicks[1];
+  }
+
+  // Materiali: gradi comuni (S355, S235) o gruppi 1.2 / 8.1
+  const grades = [...t.matchAll(/\b(S\d{3}[A-Z0-9]*|P\d{3}[A-Z0-9]*|1\.\d{1,2}|8\.\d)\b/gi)]
+    .map((m) => m[1]);
+  if (grades[0] && !out.parent_material_a) out.parent_material_a = grades[0];
+  if (grades[1] && !out.parent_material_b) out.parent_material_b = grades[1];
+
+  // "per S355 ... + S235"
+  const matPair = t.match(/(?:per|di)\s+(S\d{3}\w*)\s+[^\n]{0,40}?\+\s*(S\d{3}\w*)/i);
+  if (matPair) {
+    out.parent_material_a = matPair[1].toUpperCase();
+    out.parent_material_b = matPair[2].toUpperCase();
+  }
+
+  return out;
+}
+
+/**
+ * Unisce bozza request WPS (stringhe per form/API).
+ * @param {object} base
+ * @param {object} patch
+ */
+export function mergeWpsRequest(base = {}, patch = {}) {
+  const next = { ...base };
+  for (const [k, v] of Object.entries(patch || {})) {
+    if (v == null || v === "") continue;
+    next[k] = String(v).trim();
+  }
+  return next;
+}
+
+/**
+ * Applica la risposta utente alle domande need_input ancora aperte.
+ * @param {object} request
+ * @param {string} userText
+ * @param {Array<{ field: string, question: string }>} questions
+ * @returns {object} request aggiornato
+ */
+export function applyWpsAnswersToRequest(request = {}, userText = "", questions = []) {
+  const extracted = extractWpsRequestFromText(userText);
+  let next = mergeWpsRequest(request, extracted);
+  const t = String(userText || "");
+
+  // Risposte etichettate: "materiale A: S355"
+  const labeled = [
+    [/materiale\s*a\s*[:=]\s*([^\n,;]+)/i, "parent_material_a"],
+    [/materiale\s*b\s*[:=]\s*([^\n,;]+)/i, "parent_material_b"],
+    [/giunto\s*[:=]\s*(FW|BW)/i, "joint_type"],
+    [/spessore\s*a\s*[:=]\s*(\d+(?:[.,]\d+)?)/i, "thickness_a_mm"],
+    [/spessore\s*b\s*[:=]\s*(\d+(?:[.,]\d+)?)/i, "thickness_b_mm"],
+    [/processo\s*[:=]\s*(\d{3})/i, "welding_process"],
+  ];
+  for (const [re, field] of labeled) {
+    const m = t.match(re);
+    if (m) next = mergeWpsRequest(next, { [field]: m[1].replace(",", ".") });
+  }
+
+  // Se resta un solo campo materiale mancante e c'è un solo token plausibile
+  const missing = (questions || []).map((q) => q.field);
+  if (missing.includes("parent_material_a") && !next.parent_material_a && extracted.parent_material_a) {
+    next.parent_material_a = extracted.parent_material_a;
+  }
+  if (missing.includes("parent_material_b") && !next.parent_material_b && extracted.parent_material_b) {
+    next.parent_material_b = extracted.parent_material_b;
+  }
+
+  return next;
+}
+
+/**
+ * Messaggio assistant per need_input.
+ * @param {Array<{ field: string, question: string }>} questions
+ */
+export function formatWpsNeedInputMessage(questions = []) {
+  const lines = (questions || []).map((q, i) => `${i + 1}. ${q.question}`);
+  return [
+    "Per verificare la copertura sulle WPQR mi servono ancora questi dati (non li invento):",
+    "",
+    ...lines,
+    "",
+    "Rispondi pure in linguaggio naturale (es. «materiali S355 e S235» oppure «gruppo 1.2 e 1.1»).",
+  ].join("\n");
+}
+
+/**
+ * Messaggio assistant per esito generateWPS.
+ * @param {object} result
+ */
+export function formatWpsGenerateResultMessage(result = {}) {
+  const status = result.status;
+  const warnings = Array.isArray(result.warnings) ? result.warnings : [];
+  const extensions = Array.isArray(result.extensions_needed) ? result.extensions_needed : [];
+  const wpqr = result.wpqr_used;
+  const draft = result.wps_draft;
+
+  if (status === "ok" || status === "partial") {
+    const head = status === "ok"
+      ? "Copertura OK: almeno una WPQR copre il giunto richiesto."
+      : "Copertura parziale: c'\u00e8 una WPQR candidata, ma verifica i warning.";
+    const lines = [
+      head,
+      wpqr ? `WPQR usata: ${wpqr.wpqr_code || wpqr.id}` : null,
+      draft?.welding_process ? `Processo bozza: ${draft.welding_process}` : null,
+      draft?.joint_type ? `Giunto: ${draft.joint_type}` : null,
+      "",
+      "Puoi aprire «Genera WPS» nel modulo Saldatura per rivedere e salvare la bozza.",
+    ].filter((x) => x != null);
+    if (warnings.length) {
+      lines.push("", "Avvisi:", ...warnings.map((w) => `\u2022 ${w}`));
+    }
+    return lines.join("\n");
+  }
+
+  if (status === "not_possible") {
+    const lines = [
+      "Non risulta realizzabile con le WPQR disponibili nell'ambito.",
+      "",
+      "Estensioni / motivi:",
+      ...(extensions.length ? extensions.map((e) => `\u2022 ${e}`) : ["\u2022 Nessun dettaglio"]),
+    ];
+    if (warnings.length) {
+      lines.push("", "Avvisi:", ...warnings.map((w) => `\u2022 ${w}`));
+    }
+    return lines.join("\n");
+  }
+
+  return "Esito copertura WPS non interpretabile. Riprova o usa il form Genera WPS.";
+}
+
+/**
+ * Payload numerico per POST /welding/wps/generate.
+ * @param {object} request
+ * @param {number|null} companyId
+ */
+export function toGenerateWpsApiPayload(request = {}, companyId = null) {
+  const payload = {
+    joint_type: request.joint_type || "",
+    parent_material_a: request.parent_material_a || "",
+    parent_material_b: request.parent_material_b || "",
+    thickness_a_mm: request.thickness_a_mm !== "" && request.thickness_a_mm != null
+      ? Number(request.thickness_a_mm)
+      : null,
+    thickness_b_mm: request.thickness_b_mm !== "" && request.thickness_b_mm != null
+      ? Number(request.thickness_b_mm)
+      : null,
+  };
+  if (request.welding_process) payload.welding_process = request.welding_process;
+  if (companyId != null && companyId !== "") payload.company_id = Number(companyId);
+  return payload;
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 
 /**

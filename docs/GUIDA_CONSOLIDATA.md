@@ -735,6 +735,14 @@ CSS: `SgqDataGrid.css` (tema plain) + `DocumentDataGrid.css` (tema catalog + bad
 
 ---
 
+### Aggiornamento 04/08/2026 — P4 AskAi orchestra generateWPS
+
+In `AiAssistantPage`, richieste tipo «Genera WPS…» / chip Mason non vanno più solo al form: chiamano `POST /welding/wps/generate`. Se `need_input`, l’assistente elenca le `questions[]` e tiene stato `wpsPending` fino alle risposte; poi richiama il check e spiega `ok`/`partial`/`not_possible`. Il matching 15614 resta deterministico (ADR-010).
+
+**Prossimo:** P5 riesame multi-giunto + visione advisory.
+
+---
+
 ### Sessione 14/06/2026 — Import qualifiche ERAM + workflow preview (chiusura)
 
 **Stato:** **CHIUSO — TEST OK** (preview committente su PR [#109](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/109), merge `20db3ff` / doc `b258837`).
