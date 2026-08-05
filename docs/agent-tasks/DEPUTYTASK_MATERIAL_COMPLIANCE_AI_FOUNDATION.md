@@ -1,212 +1,82 @@
-# MATERIAL COMPLIANCE AI - LEAD DEVELOPER PROMPT
+# DEPUTYTASK — Material Compliance AI — Fondazione MC-0 (solo documentazione)
 
-## Contesto
+**Stato:** APERTO  
+**Priorità:** P1 — fondazione modulo (nessun codice applicativo)  
+**Branch base:** `main`  
+**Slice:** MC-0  
+**Creato da:** Lead 05/08/2026  
+**Spec:** [MODULO_MATERIAL_COMPLIANCE_AI.md](../specs/MODULO_MATERIAL_COMPLIANCE_AI.md)  
+**Piano:** [PLAN_MATERIAL_COMPLIANCE_SLICES.md](PLAN_MATERIAL_COMPLIANCE_SLICES.md)  
+**ADR:** [020](../adr/ADR-020-material-compliance-ai-module.md) · [021](../adr/ADR-021-material-requirements-hierarchy.md) · [022](../adr/ADR-022-ai-extraction-rule-engine.md) · [023](../adr/ADR-023-material-knowledge-base.md) · [024](../adr/ADR-024-material-certificate-workflow.md)
 
-Stai lavorando sul repository:
-
-sistema-gestione-iso9001
-
-NON stai sviluppando una nuova applicazione.
-
-Stai sviluppando un nuovo modulo integrato nella piattaforma SGQ esistente.
-
-Prima di qualsiasi attività devi leggere:
-
-1. docs/GUIDA_CONSOLIDATA.md
-2. docs/PROJECT_ROADMAP.md
-3. docs/ARCHITETTURA_UTENTI_RBAC.md
-4. docs/adr/ADR-020-material-compliance-ai-module.md
-5. docs/adr/ADR-021-material-requirements-hierarchy.md
-6. docs/adr/ADR-022-ai-extraction-rule-engine.md
-7. docs/adr/ADR-023-material-knowledge-base.md
-8. docs/adr/ADR-024-material-certificate-workflow.md
-9. docs/specs/MODULO_MATERIAL_COMPLIANCE_AI.md
+> **Allineamento Git (autonomo)**: prima di leggere questo brief eseguire `git fetch origin main` e `git pull origin main` (o partire da `origin/main` aggiornato). **Non** chiedere al committente di farlo.
 
 ---
 
-# Obiettivo
+## Contesto (leggere prima)
 
-Realizzare il modulo:
+1. `PROJECT_CONTEXT.md`
+2. `docs/PROJECT_ROADMAP.md` (riga open point Material Compliance)
+3. `docs/GUIDA_CONSOLIDATA.md` (principi doc + riuso AI/ingest)
+4. Spec + ADR sopra + `docs/ARCHITETTURA_UTENTI_RBAC.md`
 
-Material Compliance AI
-
-per la gestione della conformità dei certificati materiale.
-
----
-
-# Regole fondamentali
-
-## Regola 1
-
-NON creare una nuova architettura.
-
-Riutilizzare tutte le componenti SGQ già esistenti.
-
-In particolare:
-
-- RBAC
-- Company Scope
-- Ingest Pipeline
-- AI Provider Adapter
-- Document Registry
-- Audit Trail
-- Sidebar
-- Dashboard patterns
+Il modulo **non** è un’app nuova. Riusa ingest, AI adapter, Document Registry, RBAC, company scope.  
+**ADR-022 vincolante**: AI estrae; Rule Engine valuta; operatore approva.
 
 ---
 
-## Regola 2
+## Cosa NON toccare
 
-NON introdurre duplicazione.
-
-Ogni volta che serve una funzionalità:
-
-prima cercare nel repository.
-
-Se esiste una soluzione già utilizzata:
-
-riutilizzarla.
+- Codice `app/` / `backend/src/` (questa slice è **solo** `docs/specs/` + eventuale link in MODULO/PLAN)
+- Sync audit / ADR-008
+- Numerazione migrazioni (solo **proporre** nomi tabelle in DATA_MODEL; niente `.sql` in MC-0)
+- Nuove dipendenze npm
 
 ---
 
-## Regola 3
+## Slice MC-0 — Tre spec tecniche
 
-AI non approva conformità.
+### File da creare
 
-ADR-022 è vincolante.
+| File | Contenuto minimo |
+|------|------------------|
+| `docs/specs/MATERIAL_COMPLIANCE_DATA_MODEL.md` | Entità, colonne, FK, indici, stati ADR-024, relazione a `import_jobs` / document registry, snapshot hash KB |
+| `docs/specs/MATERIAL_COMPLIANCE_UI.md` | Route, voci menu **MVP slim** (lista+dettaglio), componenti riusati, gate `ModuleLocked`, desktop-first |
+| `docs/specs/MATERIAL_COMPLIANCE_API.md` | Endpoint, payload, errori, seam licenza, riuso `importAiExtraction` / `aiProviderAdapter` |
 
-L'AI può:
+### Vincoli di contenuto
 
-- estrarre
-- classificare
-- normalizzare
+- Menu MVP: **non** includere Dashboard/Statistiche/editor KB come obbligatori
+- OCR: sezione «fuori MVP-A / slice MC-B»
+- Path KB: `knowledge/material-compliance/` con `companies/<slug>/` (non cartella fissa `tecnove/`)
+- Nessun `if (cliente === …)` nel design API/motore
+- Formato ADR/spec progetto: header con stato/link, tabelle, «Cosa NON fare»
 
-Il Rule Engine deve:
+### Dopo le tre spec
 
-- verificare
-- confrontare
-- decidere
-
----
-
-## Regola 4
-
-Human In The Loop obbligatorio.
-
-Nessun certificato può essere approvato automaticamente.
+Aggiornare in `MODULO_MATERIAL_COMPLIANCE_AI.md` e `PLAN_MATERIAL_COMPLIANCE_SLICES.md` i link alle tre spec e spuntare DoD MC-0.
 
 ---
 
-## Regola 5
+## Definition of Done
 
-I requisiti non devono essere hardcoded.
+- [ ] Tre file spec committati, UTF-8 senza BOM, accenti italiani corretti
+- [ ] Nessun `U+FFFD`
+- [ ] Link da MODULO + PLAN funzionanti
+- [ ] Nessuna modifica codice runtime
+- [ ] PR aperta su branch `cursor/…-c6d4` (o branch assegnato)
 
-Norme e clienti devono vivere nella Knowledge Base.
+## Test L1
 
-Mai scrivere:
-
-if(cliente == "FASSI")
-
-nel codice.
-
----
-
-# Attività iniziale
-
-NON scrivere ancora codice.
-
-Creare prima:
-
-docs/specs/MATERIAL_COMPLIANCE_DATA_MODEL.md
-
-contenente:
-
-- schema DB
-- relazioni
-- entità
-- workflow
-- mapping documenti
+```bash
+node backend/scripts/check-utf8-encoding.js docs/specs/MATERIAL_COMPLIANCE_DATA_MODEL.md
+node backend/scripts/check-utf8-encoding.js docs/specs/MATERIAL_COMPLIANCE_UI.md
+node backend/scripts/check-utf8-encoding.js docs/specs/MATERIAL_COMPLIANCE_API.md
+```
 
 ---
 
-# Dopo il Data Model
+## Chiusura
 
-Creare:
-
-docs/specs/MATERIAL_COMPLIANCE_UI.md
-
-contenente:
-
-- route
-- pagine
-- componenti
-- menu
-
----
-
-# Dopo la UI
-
-Creare:
-
-docs/specs/MATERIAL_COMPLIANCE_API.md
-
-contenente:
-
-- endpoint
-- payload
-- servizi
-
----
-
-# Dopo le SPEC
-
-Preparare un piano di implementazione a slice.
-
-Ogni slice deve essere:
-
-- piccola
-- testabile
-- deployabile
-
-Seguire il metodo SGQ Lead/Deputy.
-
----
-
-# Stack MVP
-
-Frontend
-
-React
-
-Backend
-
-Node / Express esistente
-
-Database
-
-SQL Server esistente
-
-AI
-
-Provider Adapter esistente
-
-OCR
-
-Provider dedicato configurabile
-
-Knowledge Base
-
-Markdown versionato
-
----
-
-# Output richiesto
-
-Prima di scrivere codice produrre:
-
-1. MATERIAL_COMPLIANCE_DATA_MODEL.md
-2. MATERIAL_COMPLIANCE_UI.md
-3. MATERIAL_COMPLIANCE_API.md
-4. Piano slice MVP
-
-Solo dopo iniziare lo sviluppo.
+Esito: **TEST OK** (spec complete) oppure **FIX NON APPLICABILI** solo se su `origin/main` le tre spec esistono già e coincidenti.  
+Dopo merge MC-0: Lead apre brief MC-1 (migration) su `DEPUTYTASK.md` o file numerato dedicato — **non** mescolare DB e UI nella stessa PR.

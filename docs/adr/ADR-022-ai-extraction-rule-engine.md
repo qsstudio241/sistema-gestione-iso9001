@@ -1,72 +1,58 @@
-# ADR-022 - AI Extraction And Rule Engine Separation
+# ADR-022 — Separazione estrazione AI e Rule Engine
 
-## Stato
+> **Stato**: Proposto — 05/08/2026  
+> **Spec**: [MODULO_MATERIAL_COMPLIANCE_AI.md](../specs/MODULO_MATERIAL_COMPLIANCE_AI.md)  
+> **Correlati**: ADR-010 (AI propone, motori deterministici decidono), ADR-020, ADR-021
 
-PROPOSTO
+---
 
-## Data
+## Contesto e problema
 
-2026-08-05
+I modelli AI non sono deterministici. Per ISO 9001 / ISO 3834 l’esito di conformità di un certificato materiale deve essere **ripetibile, spiegabile e verificabile**. Non può dipendere dal “giudizio” del modello.
 
-## Contesto
+Stesso principio già applicato a WPS (matcher 15614 deterministico) e SAL (AI suggerisce, operatore scrive).
 
-I modelli AI non sono deterministici.
-
-La piattaforma deve garantire:
-
-- auditabilità
-- riproducibilità
-- conformità ISO 9001
-- conformità ISO 3834
+---
 
 ## Decisione
 
-L'AI non prende decisioni di conformità.
+### Ripartizione responsabilità
 
-Le decisioni vengono delegate esclusivamente al Rule Engine.
+| Ruolo | Fa | Non fa |
+|-------|----|--------|
+| **AI** (via `aiProviderAdapter` / `importAiExtraction`) | Classificare documento, estrarre campi, sinonimi → chiavi canoniche, normalizzare unità | Dichiarare conforme/non conforme; approvare; scegliere quale requisito applicare |
+| **Rule Engine** (servizio dedicato, codice puro) | Applicare limiti da KB/DB, confrontare valori, produrre esito + explanation | Chiamare LLM; interpretare PDF grezzo |
+| **Operatore qualità** | Correggere estrazione, approvare/respingere, riesame | Essere bypassato da auto-approve |
 
-## Responsabilità AI
+### Principio (vincolante)
 
-- OCR assistito
-- classificazione documenti
-- estrazione campi
-- riconoscimento sinonimi
-- normalizzazione dati
+> **AI estrae → Rule Engine valuta → Operatore approva.**
 
-## Responsabilità Rule Engine
+### Contratto dati minimo
 
-- applicazione regole
-- confronto limiti
-- verifica conformità
-- generazione esito
+1. AI → JSON estratto validato contro schema (campi noti del data dictionary).  
+2. Rule Engine → JSON esito (`status`, `checks[]` come da ADR-021).  
+3. Persistenza di **entrambi** + snapshot regole usate (version/hash KB).
 
-## Principio
+### Esempio
 
-AI propone.
+- AI: `ReH = 395` (MPa)  
+- Rule Engine: requisito interno ≥ 400 → `NON_CONFORME`  
+- Operatore: conferma o corregge il valore estratto e ri-lancia il motore
 
-Rule Engine valuta.
+---
 
-Operatore approva.
+## Cosa NON fare
 
-## Esempio
+- Prompt del tipo «dimmi se il certificato è conforme».
+- Scrivere esito finale in DB solo dalla risposta LLM.
+- Disabilitare HITL “per velocità” in produzione.
 
-AI:
-
-ReH = 395 MPa
-
-Rule Engine:
-
-requisito >= 400 MPa
-
-Esito:
-
-NON CONFORME
+---
 
 ## Conseguenze
 
-Ogni esito deve risultare:
-
-- spiegabile
-- ripetibile
-- verificabile
-`
+| + | − |
+|---|---|
+| Esiti auditabili e ripetibili | Due componenti da mantenere (estrattore + motore) |
+| Allineamento ADR-010 | OCR/errori estrazione restano gestiti in revisione umana |

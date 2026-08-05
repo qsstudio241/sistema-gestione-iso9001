@@ -28,6 +28,7 @@
 | **Controparti azienda (PR1 ✅ · PR2 ✅)** | Tab **Controparti** in scheda azienda; `company_counterparties` (mig. **096**); backfill + `projects.end_customer_id` (mig. **097**); API nested; select committente in Riesame Requisiti con sync FK↔snapshot (`ContractReviewPage`, PR #230/#233). | Mig. 096–097; `companyCounterparties.controller.js`; `commercialCustomerCounterparty.service.js`; `CompanyCounterpartiesPanel.jsx`; `ContractReviewPage.jsx` |
 | **"Ambito" azienda non ancora standard su tutti i moduli (analisi trasversale 25/07/2026)** | Solo **Qualifiche** ha `company_id` obbligatorio end-to-end (DB NOT NULL + UI + RBAC). Rischi/Reclami: nessun campo azienda in UI → `company_id` sempre NULL. `equipment.controller.js`/RDP/NDT Reports: filtro RBAC `company_access` non applicato (equipment usa una colonna `user.company_id` inesistente). Backlog: uniformare al pattern `companyAccess.service.js` + selettore "Ambito" header. | [ARCHITETTURA_UTENTI_RBAC.md §8.3](ARCHITETTURA_UTENTI_RBAC.md#83-cosa-manca-o-è-parziale-gap-noti); [GUIDA_CONSOLIDATA.md](GUIDA_CONSOLIDATA.md#lezioni-apprese-consolidate-fonte-unica) |
 | **Pivot WPS — generazione da WPQR (non ingest)** | Feedback Mason 30/07/2026: matcher 15614 + bozza 15609 + Word Annex A. **P0–P5 ✅** (P5: advisory WPQR + visione nel riesame, non bloccante). | [MODULO_WPS_GENERAZIONE_SCOPO_E_ROADMAP.md](specs/MODULO_WPS_GENERAZIONE_SCOPO_E_ROADMAP.md) |
+| **Material Compliance AI (certificati EN 10204 3.1)** | Modulo proposto 05/08/2026: PDF → estrazione AI → Rule Engine deterministico → HITL. Riuso ingest/AI/RBAC. **Prossimo:** slice **MC-0** (spec DATA_MODEL/UI/API). OCR e dashboard KPI fuori MVP-A. | [MODULO](specs/MODULO_MATERIAL_COMPLIANCE_AI.md) · [PLAN](agent-tasks/PLAN_MATERIAL_COMPLIANCE_SLICES.md) · [brief MC-0](agent-tasks/DEPUTYTASK_MATERIAL_COMPLIANCE_AI_FOUNDATION.md) · ADR-020…024 |
 
 ---
 
@@ -673,6 +674,7 @@ Un auditor che gestisce 10 aziende → 10 licenze. Prezzo varia per modulo attiv
 | **SGQ** | Aziende / Consulenti | Documenti, Qualifiche, Rischi, Obiettivi, Azioni, SAL |
 | **RECLAMI** | Aziende | Reclami clienti (inserimento da azienda), NC interne, follow-up |
 | **SALDATURA** | Coordinatori / Aziende | WPS/WPQR, qualifiche saldatori, NDT, commesse ISO 3834 |
+| **Material Compliance AI** (proposto) | Ufficio qualità / metalmeccanico | Certificati EN 10204 3.1: estrazione + Rule Engine + approvazione umana. Gate MVP: seam su `saldatura` + `ai_import`. Spec: [MODULO_MATERIAL_COMPLIANCE_AI.md](specs/MODULO_MATERIAL_COMPLIANCE_AI.md) |
 | **ALERT** | Incluso in tutti | Email automatiche scadenze, dashboard semaforo |
 | **AI** | Add-on | Import batch PDF (v1 testo locale), staging tipizzato (Sprint 10), ricerca semantica (backlog) |
 | **Commesse / Riesame contratto** | Add-on futuro | Workflow riesame requisiti §8.2 (pilota “ordine diretto”): stati, checklist, allegati — vedi [MINI_SPEC_RIESAME_REQUISITI_CONTRATTO.md](specs/MINI_SPEC_RIESAME_REQUISITI_CONTRATTO.md) |

@@ -1,89 +1,71 @@
-# ADR-024 - Material Certificate Workflow
+# ADR-024 — Workflow certificato materiale e Human-in-the-Loop
 
-## Stato
+> **Stato**: Proposto — 05/08/2026  
+> **Spec**: [MODULO_MATERIAL_COMPLIANCE_AI.md](../specs/MODULO_MATERIAL_COMPLIANCE_AI.md)  
+> **Correlati**: ADR-020, ADR-022, ADR-010 § human oversight
 
-PROPOSTO
+---
 
-## Data
+## Contesto e problema
 
-2026-08-05
+La verifica certificati deve essere un flusso **controllato e ricostruibile** in audit. Senza stati espliciti e HITL, si rischiano auto-approvazioni o perdita della catena PDF → estrazione → regole → decisione.
 
-## Contesto
+---
 
-La verifica della materia prima deve seguire un flusso controllato e tracciabile.
+## Decisione
 
-## Workflow
+### Stati (MVP)
 
-Ricezione Documento
+| Stato | Significato |
+|-------|-------------|
+| `received` | PDF acquisito / job creato |
+| `text_ready` | Testo (o Markdown) disponibile |
+| `extracted` | JSON estratto dall’AI (bozza) |
+| `pending_review` | Rule Engine eseguito; in attesa operatore |
+| `compliant` | Operatore ha approvato come conforme |
+| `non_compliant` | Operatore ha confermato non conformità (o respinge) |
+| `archived` | Chiuso; collegato a Document Registry se previsto |
 
-↓
+> Stati tecnici intermedi OCR (`ocr_running`) solo se/quando esiste adapter OCR (slice MC-B).
 
-Acquisizione PDF
+### Human-in-the-Loop (vincolante)
 
-↓
+**Nessun certificato passa a `compliant` / `non_compliant` senza azione operatore autenticato.**
 
-OCR
+Azioni consentite in revisione:
 
-↓
+- correggere campo estratto e ri-eseguire Rule Engine;
+- approvare esito;
+- respingere / richiedere riesame;
+- archiviare.
 
-Markdown
+### Audit trail minimo per certificato
 
-↓
+| Artefatto | Persistenza |
+|-----------|-------------|
+| PDF originale | Storage + link registry / job file |
+| Testo / Markdown | DB o blob referenziato |
+| JSON estratto (+ correzioni) | DB |
+| Snapshot regole (hash KB) | DB |
+| Esito Rule Engine | DB |
+| Utente + timestamp decisione | DB |
+| Interazione AI | `ai_interactions` (ADR-010) |
 
-Estrazione AI
+### Lessons learned (post-MVP)
 
-↓
+Le correzioni operatore alimentano `lessons/` / feedback ingest (pattern ADR-017), **senza** fine-tuning automatico in produzione.
 
-Normalizzazione Dati
+---
 
-↓
+## Cosa NON fare
 
-Rule Engine
+- Transizione automatica `pending_review` → `compliant`.
+- Cancellare PDF o JSON dopo approvazione.
+- Bypassare RBAC sulle azioni di approvazione.
 
-↓
-
-Revisione Operatore
-
-↓
-
-Conforme
-
-oppure
-
-Non Conforme
-
-## Human In The Loop
-
-Nessun certificato viene approvato automaticamente.
-
-L'operatore qualità deve sempre poter:
-
-- verificare i dati
-- correggere i dati
-- approvare
-- respingere
-
-## Audit Trail
-
-Per ogni certificato devono essere conservati:
-
-- PDF originale
-- Output OCR
-- Markdown generato
-- JSON estratto
-- Regole applicate
-- Esito
-- Utente approvatore
-- Timestamp
-
-## Lessons Learned
-
-Le correzioni dell'operatore saranno archiviate per:
-
-- miglioramento dei prompt
-- miglioramento dell'estrazione
-- eventuali future attività di fine-tuning
+---
 
 ## Conseguenze
 
-Ogni decisione deve poter essere ricostruita integralmente durante audit.
+Ogni decisione è ricostruibile in audit.  
+Il costo operativo è una revisione umana per certificato — accettato per conformità ISO.
