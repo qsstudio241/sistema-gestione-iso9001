@@ -73,6 +73,27 @@ async function seedLegislativoAmbientale(req, res) {
 }
 
 /**
+ * POST /api/v1/custom-checklists/seed/legislativo-sicurezza
+ * Import idempotente registro obblighi legali salute e sicurezza (D.Lgs. 81/08)
+ */
+async function seedLegislativoSicurezza(req, res) {
+  try {
+    const result = await customChecklistService.seedLegislativoSicurezzaChecklist(req.user);
+    res.status(result.created ? 201 : 200).json({
+      success: true,
+      created: result.created,
+      data: result.data,
+    });
+  } catch (err) {
+    logger.error('seedLegislativoSicurezza error', { error: err.message });
+    res.status(500).json({
+      error: 'Errore import registro legislativo sicurezza',
+      code: 'CUSTOM_CHECKLIST_SEED_LEG_SICUREZZA_ERROR',
+    });
+  }
+}
+
+/**
  * POST /api/v1/custom-checklists/seed/qtafi-vis001
  * Import idempotente verbale visita QTAFI_VIS001 (cantiere OFF.MA)
  */
@@ -185,12 +206,12 @@ async function listSections(req, res) {
 /**
  * POST /api/v1/custom-checklists/:id/sections
  * Crea sezione
- * Body: { code, title, display_order? }
+ * Body: { code, title, display_order?, reference_text?, linked_legislation? }
  */
 async function createSection(req, res) {
   try {
     const { id } = req.params;
-    const { code, title, display_order } = req.body;
+    const { code, title, display_order, reference_text, linked_legislation } = req.body;
 
     if (!code || !title) {
       return res.status(400).json({ error: 'code e title obbligatori', code: 'VALIDATION_ERROR' });
@@ -200,6 +221,8 @@ async function createSection(req, res) {
       code: String(code).trim(),
       title: String(title).trim(),
       display_order,
+      reference_text,
+      linked_legislation,
     });
 
     if (!data) {
@@ -215,18 +238,18 @@ async function createSection(req, res) {
 
 /**
  * PUT /api/v1/custom-checklists/:id/sections/:sectionId
- * Aggiorna sezione (code, title, display_order?)
+ * Aggiorna sezione (code, title, display_order?, reference_text?, linked_legislation?)
  */
 async function updateSection(req, res) {
   try {
     const { id, sectionId } = req.params;
-    const { code, title, display_order } = req.body;
+    const { code, title, display_order, reference_text, linked_legislation } = req.body;
 
     const data = await customChecklistService.updateSection(
       parseInt(sectionId, 10),
       parseInt(id, 10),
       req.user,
-      { code, title, display_order }
+      { code, title, display_order, reference_text, linked_legislation }
     );
 
     if (!data) {
@@ -553,6 +576,7 @@ module.exports = {
   listChecklists,
   createChecklist,
   seedLegislativoAmbientale,
+  seedLegislativoSicurezza,
   seedQtafiVis001,
   getChecklist,
   updateChecklist,

@@ -74,8 +74,19 @@ function CoveragePanel({ caseId }) {
     return '\u274C';
   }
 
+  function wpqrStatusLabel(status) {
+    if (status === 'ok') return 'Coperto';
+    if (status === 'partial') return 'Parziale';
+    if (status === 'not_possible') return 'Non coperto';
+    if (status === 'need_input') return 'Dati incompleti';
+    return 'Non valutato';
+  }
+
   const profile = coverage?.extracted_profile;
   const profileActive = coverage?.extracted_profile_active;
+  const advisory = coverage?.advisory;
+  const wpqrJoints = advisory?.wpqr_joints;
+  const visionFit = advisory?.vision_fitness;
 
   return (
     <div style={{ marginBottom: 16, borderTop: '1px solid #e5e7eb', paddingTop: 14 }}>
@@ -128,10 +139,10 @@ function CoveragePanel({ caseId }) {
           )}
           {error && <div style={{ color: '#dc2626', fontSize: 13, marginBottom: 8 }}>{error}</div>}
           {coverage && !coverage.has_wps && (
-            <div style={{ fontSize: 13, color: '#9ca3af' }}>Nessuna WPS associata alla commessa selezionata.</div>
+            <div style={{ fontSize: 13, color: '#9ca3af', marginBottom: 10 }}>Nessuna WPS associata alla commessa selezionata.</div>
           )}
           {coverage && coverage.has_wps && (
-            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13, marginBottom: 12 }}>
               <thead>
                 <tr style={{ background: '#f9fafb' }}>
                   <th style={{ padding: '8px 10px', textAlign: 'left', borderBottom: '1px solid #e5e7eb' }}>WPS</th>
@@ -157,6 +168,81 @@ function CoveragePanel({ caseId }) {
                 ))}
               </tbody>
             </table>
+          )}
+
+          {/* P5 — advisory WPQR + visione (non bloccante) */}
+          {coverage && advisory && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+              <div style={{ fontSize: 12, color: '#92400e', background: '#fffbeb', border: '1px solid #fde68a', borderRadius: 8, padding: '10px 12px' }}>
+                <div style={{ fontWeight: 700, marginBottom: 6 }}>
+                  Copertura procedure (WPQR) — solo informativo
+                </div>
+                {(!wpqrJoints?.joints || wpqrJoints.joints.length === 0) ? (
+                  <p style={{ margin: 0 }}>
+                    Non ci sono abbastanza dati da documenti o WPS per valutare i giunti.
+                  </p>
+                ) : (
+                  <ul style={{ margin: '0 0 6px', paddingLeft: 18 }}>
+                    {wpqrJoints.joints.map((j) => (
+                      <li key={j.joint_key} style={{ marginBottom: 6 }}>
+                        <strong>{j.label}</strong>
+                        {' — '}
+                        {wpqrStatusLabel(j.status)}
+                        {j.wpqr_code ? ` (WPQR ${j.wpqr_code})` : ''}
+                        {j.status === 'need_input' && j.questions?.length > 0 && (
+                          <div style={{ marginTop: 2 }}>
+                            Dati incompleti:{' '}
+                            {j.questions.map((q) => q.question).join(' · ')}
+                          </div>
+                        )}
+                        {j.status === 'not_possible' && j.extensions_needed?.length > 0 && (
+                          <div style={{ marginTop: 2 }}>
+                            Estensioni segnalate: {j.extensions_needed.join('; ')}
+                          </div>
+                        )}
+                      </li>
+                    ))}
+                  </ul>
+                )}
+                <p style={{ margin: 0, fontStyle: 'italic' }}>
+                  Questo controllo non cambia il semaforo saldatori.
+                </p>
+              </div>
+
+              <div style={{ fontSize: 12, color: '#9a3412', background: '#fff7ed', border: '1px solid #fed7aa', borderRadius: 8, padding: '10px 12px' }}>
+                <div style={{ fontWeight: 700, marginBottom: 6 }}>
+                  Idoneit{"\u00e0"} visiva (NDT/VT) — solo informativo
+                </div>
+                {(!visionFit?.gaps || visionFit.gaps.length === 0) ? (
+                  <p style={{ margin: 0 }}>
+                    {visionFit?.summary?.persons_requiring > 0
+                      ? 'Nessun gap: personale NDT/VT con visione in corso di validit\u00e0 (ambito azienda commessa).'
+                      : 'Nessun personale NDT/VT che richieda idoneit\u00e0 visiva nell\u2019ambito della commessa.'}
+                  </p>
+                ) : (
+                  <>
+                    <p style={{ margin: '0 0 6px' }}>
+                      Manca o {"\u00e8"} scaduto il certificato oculistico (acuit{"\u00e0"} + Ishihara) per:
+                    </p>
+                    <ul style={{ margin: '0 0 6px', paddingLeft: 18 }}>
+                      {visionFit.gaps.map((g) => (
+                        <li key={`${g.personnel_id || g.person_name}-${g.company_id || 0}`}>
+                          <strong>{g.person_name || '—'}</strong>
+                          {' — '}
+                          {g.vision_state === 'expired' ? 'certificato scaduto' : 'certificato mancante'}
+                          {g.requiring_quals?.length
+                            ? ` (${g.requiring_quals.length} qualifica/e NDT/VT)`
+                            : ''}
+                        </li>
+                      ))}
+                    </ul>
+                    <p style={{ margin: 0 }}>
+                      Carica il certificato in Qualifiche → Salute mansione. Non blocca la copertura saldatori.
+                    </p>
+                  </>
+                )}
+              </div>
+            </div>
           )}
         </div>
       )}
@@ -1447,10 +1533,18 @@ export default function ContractReviewPage() {
                 </ul>
               </div>
 
+              {/* P5 — advisory WPQR/visione disponibile in ogni stato (non solo APPROVED) */}
+              <div className="cr-panel">
+                <h2>Copertura saldatori e idoneità</h2>
+                <p className="cr-muted" style={{ marginTop: 0 }}>
+                  Verifica informativa (non blocca il riesame). Utile già in bozza per anticipare gap WPQR e visione.
+                </p>
+                <CoveragePanel caseId={detail.case.id} />
+              </div>
+
               {detail.case.status === 'APPROVED' && (
                 <div className="cr-panel">
                   <h2>Passaggio a esecuzione</h2>
-                  <CoveragePanel caseId={detail.case.id} />
                   {detail.case.handoff_ref ? (
                     <div className="cr-handoff-summary">
                       <p>

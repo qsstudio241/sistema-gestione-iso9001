@@ -21,7 +21,8 @@ const DOC_TYPE_MODULES = {
 };
 
 // Tipi documento che confluiscono nella tabella qualifications (stesso commit di patentino_saldatore).
-const QUALIFICATION_DOC_TYPES = new Set(['patentino_saldatore', 'qualifica_14732']);
+// cert_ndt (ISO 9712) confluisce in qualifications con i campi ndt_method/level/sector
+const QUALIFICATION_DOC_TYPES = new Set(['patentino_saldatore', 'qualifica_14732', 'cert_ndt']);
 
 function parseJson(val, fallback = null) {
     if (val == null) return fallback;

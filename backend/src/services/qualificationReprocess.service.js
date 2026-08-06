@@ -48,6 +48,23 @@ function guessDocType(qualificationType) {
  * Esportata per test unitari sulla logica di selezione (senza I/O reale) e per
  * il conteggio esposto dall'endpoint superadmin.
  */
+/**
+ * Risolve il valore estratto dalla review AI verso la chiave colonna DB.
+ * Necessario quando lo schema AI usa un nome diverso dalla colonna
+ * (filler_material_group → filler_material, pipe_diameter_mm → pipe_diameter_min_mm).
+ */
+function resolveExtractedReprocessValue(fieldKey, reviewFields = {}) {
+    if (fieldKey === 'filler_material') {
+        return reviewFields.filler_material || reviewFields.filler_material_group || null;
+    }
+    if (fieldKey === 'pipe_diameter_min_mm') {
+        const v = reviewFields.pipe_diameter_min_mm ?? reviewFields.pipe_diameter_mm;
+        return v == null || v === '' ? null : v;
+    }
+    const v = reviewFields[fieldKey];
+    return v == null || v === '' ? null : v;
+}
+
 async function selectReprocessCandidates(field, config, { orgId = null } = {}) {
     if (!REPROCESSABLE_FIELDS[field]) {
         throw new Error(`Campo non rielaborabile: ${field} (aggiungilo a REPROCESSABLE_FIELDS)`);
@@ -70,20 +87,24 @@ async function selectReprocessCandidates(field, config, { orgId = null } = {}) {
 
     const result = await query(`
         SELECT id, organization_id, company_id, person_name, welding_process,
-               qualification_type, certificate_file_url
+               product_type, qualification_type, certificate_file_url
         FROM qualifications
         WHERE ${conditions.join(' AND ')}
         ORDER BY id
     `, params);
 
-    const rows = result.recordset || [];
-    if (!Array.isArray(config.processWhitelist) || !config.processWhitelist.length) {
-        return rows;
+    let rows = result.recordset || [];
+    if (Array.isArray(config.processWhitelist) && config.processWhitelist.length) {
+        rows = rows.filter((r) => {
+            const proc = String(r.welding_process || '');
+            return config.processWhitelist.some((code) => proc.includes(code));
+        });
     }
-    return rows.filter((r) => {
-        const proc = String(r.welding_process || '');
-        return config.processWhitelist.some((code) => proc.includes(code));
-    });
+    if (Array.isArray(config.productTypeWhitelist) && config.productTypeWhitelist.length) {
+        const allowed = new Set(config.productTypeWhitelist.map((p) => String(p).toUpperCase()));
+        rows = rows.filter((r) => allowed.has(String(r.product_type || '').toUpperCase()));
+    }
+    return rows;
 }
 
 async function hasPendingProposal(qualificationId, field) {
@@ -184,7 +205,7 @@ async function runReprocessForField(fieldKey, { orgId = null, limit = DEFAULT_RU
                 organizationId: row.organization_id,
             });
             const reviewFields = mapPipelineFieldsToReview(pipeline.fields || {}, pipeline.text, fileName);
-            const extractedValue = reviewFields[fieldKey];
+            const extractedValue = resolveExtractedReprocessValue(fieldKey, reviewFields);
 
             if (extractedValue == null || extractedValue === '') {
                 summary.skippedNoValueExtracted++;
@@ -229,6 +250,7 @@ module.exports = {
     selectReprocessCandidates,
     countReprocessCandidates,
     runReprocessForField,
+    resolveExtractedReprocessValue,
     guessDocType,
     resolveCertificateFilePath,
     hasPendingProposal,

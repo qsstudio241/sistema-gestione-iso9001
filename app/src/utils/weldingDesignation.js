@@ -30,7 +30,10 @@ export function buildWelderDesignation(f = {}) {
   if (f.welding_process) tokens.push(String(f.welding_process).trim());
   if (f.product_type) tokens.push(String(f.product_type).trim().toUpperCase());
   if (f.joint_type) tokens.push(String(f.joint_type).trim().toUpperCase());
-  if (f.filler_material_group) tokens.push(String(f.filler_material_group).trim());
+  // Form modifica usa `filler_material` (colonna DB); revisione ingest usa
+  // `filler_material_group`. Accetta entrambi per l'anteprima (bug 01/08/2026).
+  const fillerGroup = f.filler_material_group || f.filler_material;
+  if (fillerGroup) tokens.push(String(fillerGroup).trim());
 
   // Spessore: min+max noti -> range; solo max noto -> valore singolo (prova puntuale);
   // solo min noto (max vuoto/null) -> "senza limite superiore" (es. t>=3, tipico ISO 9606-1

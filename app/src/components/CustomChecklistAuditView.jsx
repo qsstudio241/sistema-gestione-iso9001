@@ -14,11 +14,25 @@ import apiService from "../services/apiService";
 import { syncService } from "../services/syncService";
 import { useStorage } from "../contexts/StorageContext";
 import { useAttachmentManager } from "../hooks/useAttachmentManager";
-import { QuestionCard } from "./QuestionCard";
+import { QuestionCard, STATUS_BUTTONS } from "./QuestionCard";
 import AskAiButton from "./AskAiButton";
 import { saveChecklistFocus } from "../utils/aiAssistantContext";
 import "./CustomChecklistAuditView.css";
 
+/**
+ * Sottoinsieme SI/NO/NA/NV per item registro obblighi legali (ADR-019 D3).
+ * "NV" (Non Verificato) riusa esattamente il pulsante standard esistente
+ * (stesso code/className di STATUS_BUTTONS) — nessun nuovo stato inventato:
+ * copre i capitoli non ancora esaminati durante l'audit (diverso da "NA",
+ * che significa "non applicabile all'azienda").
+ */
+const NOT_VERIFIED_OPTION = STATUS_BUTTONS.find((opt) => opt.code === "NV");
+const LEGAL_STATUS_OPTIONS = [
+  { code: "C", className: "compliant", label: "Sì" },
+  { code: "NC", className: "non-compliant", label: "No" },
+  { code: "NA", className: "not-applicable", label: "Non applicabile" },
+  ...(NOT_VERIFIED_OPTION ? [NOT_VERIFIED_OPTION] : []),
+];
 
 function CustomChecklistAuditView({ audit, onUpdate, readOnly = false }) {
   const customChecklistId = audit?.metadata?.customChecklistId ?? audit?.custom_checklist_id;
@@ -361,6 +375,13 @@ function CustomChecklistAuditView({ audit, onUpdate, readOnly = false }) {
             {sec.code} - {sec.title}
           </h4>
 
+          {sec.reference_text && (
+            <details className="custom-checklist-section-reference">
+              <summary>Riferimenti normativi</summary>
+              <div className="custom-checklist-section-reference-text">{sec.reference_text}</div>
+            </details>
+          )}
+
           {(sec.items || []).map((item) => {
             // Adatta item custom → forma question attesa da QuestionCard
             const question = {
@@ -379,6 +400,9 @@ function CustomChecklistAuditView({ audit, onUpdate, readOnly = false }) {
                 displayRef=""
                 checklistKey="custom"
                 showStatusButtons={!!checklist?.has_outcome_buttons}
+                {...(item.response_type === "legal_check"
+                  ? { statusOptions: LEGAL_STATUS_OPTIONS }
+                  : {})}
                 readOnly={readOnly}
                 onStatusChange={(code) => handleStatusChange(item.id, code)}
                 onNotesChange={(text) => {

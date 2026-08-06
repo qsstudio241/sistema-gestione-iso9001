@@ -23,6 +23,7 @@ import {
   persistQualificationsCompanyScope,
 } from "../utils/qualificationsCompanyScope";
 import { exportWpsAnnexADocx } from "../utils/wordExportWps";
+import { resolveBackendUploadUrl } from "../utils/resolveBackendUploadUrl";
 import "./WeldingProceduresPage.css";
 
 const WELDING_PROCESSES = [
@@ -755,6 +756,8 @@ function WPQRFormModal({ wpqr, wpsList, defaultCompanyId, onSave, onClose }) {
 
 function WeldingProceduresPage() {
   const [activeTab, setActiveTab] = useState("wps");
+  /** P2b: upload PDF WPS non e' piu' il flusso primario — visibile solo su richiesta. */
+  const [showLegacyWpsUpload, setShowLegacyWpsUpload] = useState(false);
 
   // Company scope (persistito in localStorage, chiave condivisa con qualifiche)
   const [companyScopeId, setCompanyScopeId] = useState(() =>
@@ -1036,12 +1039,13 @@ function WeldingProceduresPage() {
         </div>
         <div className="wp-header-actions">
           {activeTab === "wps" && (
-            <WpsUploadButton
-              companyId={companyScopeId}
-              companyName={companyScopeName}
-              onUploadComplete={() => { loadWPS(); }}
-            />
+            <button type="button" className="wp-btn-generate" onClick={handleGenerateWps}>
+              Genera WPS
+            </button>
           )}
+          <button className="wp-btn-new" onClick={activeTab === "wps" ? handleNewWps : handleNewWpqr}>
+            + {activeTab === "wps" ? "Nuova WPS" : "Nuovo WPQR"}
+          </button>
           {activeTab === "wpqr" && (
             <WpqrUploadButton
               companyId={companyScopeId}
@@ -1050,15 +1054,30 @@ function WeldingProceduresPage() {
             />
           )}
           {activeTab === "wps" && (
-            <button type="button" className="wp-btn-generate" onClick={handleGenerateWps}>
-              Genera WPS
+            <button
+              type="button"
+              className="wp-btn-legacy"
+              onClick={() => setShowLegacyWpsUpload((v) => !v)}
+              title="Import PDF WPS gia' esistenti (flusso secondario)"
+              aria-expanded={showLegacyWpsUpload}
+            >
+              {showLegacyWpsUpload ? "Nascondi import PDF" : "Import PDF (legacy)"}
             </button>
           )}
-          <button className="wp-btn-new" onClick={activeTab === "wps" ? handleNewWps : handleNewWpqr}>
-            + {activeTab === "wps" ? "Nuova WPS" : "Nuovo WPQR"}
-          </button>
         </div>
       </div>
+      {activeTab === "wps" && showLegacyWpsUpload && (
+        <div className="wp-legacy-upload" data-testid="wps-legacy-upload">
+          <p className="wp-legacy-upload-hint">
+            Preferisci <strong>Genera WPS</strong> dalle WPQR. L&apos;import PDF serve solo per WPS gia&apos; scritte altrove.
+          </p>
+          <WpsUploadButton
+            companyId={companyScopeId}
+            companyName={companyScopeName}
+            onUploadComplete={() => { loadWPS(); }}
+          />
+        </div>
+      )}
 
       {/* Company scope */}
       <div className="wp-company-scope">
@@ -1157,7 +1176,13 @@ function WeldingProceduresPage() {
               <div className="wp-empty">
                 <span className="wp-empty-icon">&#x1F527;</span>
                 <p>Nessuna WPS trovata.</p>
-                <button className="wp-btn-new" onClick={handleNewWps} style={{ marginTop: 12 }}>Crea la prima WPS</button>
+                <p className="wp-empty-hint">Parti dalle WPQR: usa <strong>Genera WPS</strong> in alto.</p>
+                <button type="button" className="wp-btn-generate" onClick={handleGenerateWps} style={{ marginTop: 12 }}>
+                  Genera WPS
+                </button>
+                <button type="button" className="wp-btn-new" onClick={handleNewWps} style={{ marginTop: 8 }}>
+                  Oppure nuova WPS manuale
+                </button>
               </div>
             ) : (
               <table className="wp-table">
@@ -1324,7 +1349,7 @@ function WeldingProceduresPage() {
                       <td><ApprovalBadge approvalStatus={wq.approval_status} /></td>
                       <td>
                         {wq.certificate_file_url
-                          ? <a href={wq.certificate_file_url} target="_blank" rel="noopener noreferrer" title="Apri certificato PDF">{"\uD83D\uDCC4"}</a>
+                          ? <a href={resolveBackendUploadUrl(wq.certificate_file_url, apiService.baseUrl)} target="_blank" rel="noopener noreferrer" title="Apri certificato PDF">{"\uD83D\uDCC4"}</a>
                           : <span style={{ color: "#9ca3af" }}>-</span>}
                       </td>
                       <td>

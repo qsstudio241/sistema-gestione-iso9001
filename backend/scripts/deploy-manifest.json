@@ -41,6 +41,7 @@
                                      "src/data/weldingQualificationRules15614.js",
                                      "src/data/weldingSymbols2553.js",
                                      "src/data/qtafiVis001Template.js",
+                                     "src/data/legislativoSicurezzaTemplate.js",
                                      "src/data/reprocessableFields.js"
                                  ]
                    },
@@ -63,7 +64,8 @@
                                      "src/utils/ocrExtractor.js",
                                      "src/utils/ingestErrorMessage.js",
                                      "src/utils/ingestPlausibilityChecks.js",
-                                     "src/utils/numericSanitizer.js"
+                                     "src/utils/numericSanitizer.js",
+                                     "src/utils/linkedLegislationParser.js"
                                  ]
                    },
                    {
@@ -85,6 +87,7 @@
                                      "src/services/qualificationCompany.service.js",
                                      "src/services/qualificationSituazione.service.js",
                                      "src/services/personnelQualificationLink.service.js",
+                                     "src/services/visionFitness.service.js",
                                      "src/services/wpqrIngest.service.js",
                                      "src/services/qualificationIngest.service.js",
                                      "src/services/normIngest.service.js",
@@ -150,6 +153,7 @@
                                      "src/services/caseTextAnalysis.service.js",
                                      "src/services/caseDocumentAnalysis.service.js",
                                      "src/services/caseExtractedCoverage.service.js",
+                                     "src/services/caseCoverageAdvisory.service.js",
                                      "src/services/salAiSuggest.service.js",
                                      "src/services/weldingAiSuggest.service.js"
                                  ]

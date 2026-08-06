@@ -78,11 +78,23 @@ function extractWpqrReference(text, fileName) {
 }
 
 function extractCertificateNumber(text) {
+    // Preferisci etichette esplicite "CERTIFICATO N° …" / "CERTIFICATE N° …"
+    // (formati NDT tipo E-00951-UT-2 R — evita il falso positivo su "CERTIFICATION BODY"
+    // che produceva "IFICATION", visto su TEC-Eurolab 02/08/2026).
+    const labeled = text.match(
+        /\b(?:CERTIFICATO|CERTIFICATE)\s*N[°º.]?\s*([A-Z0-9][A-Z0-9./\- ]{3,}?)\s*$/im,
+    ) || text.match(
+        /\b(?:CERTIFICATO|CERTIFICATE)\s*N[°º.]?\s*([A-Z0-9][A-Z0-9./\-]+(?:\s+[A-Z])?)\b/i,
+    );
+    if (labeled) {
+        const val = labeled[1].trim().replace(/\s{2,}/g, ' ');
+        if (!/^(ificato|ification|ication|body)$/i.test(val)) return val;
+    }
     const m = text.match(/\b(?:cert(?:[\s\r\n]*ificato)?|certificate|n[°º.])\s*[:.]?\s*([A-Z0-9][A-Z0-9./\-]{4,})\b/i);
     if (!m) return null;
     const val = m[1].trim();
-    // Scarta frammenti della parola "certificato" (artefatto split PDF)
-    if (/^ificato$/i.test(val)) return null;
+    // Scarta frammenti di "certificato"/"certification" (artefatto split PDF / OCR)
+    if (/^(ificato|ification|ication|body)$/i.test(val)) return null;
     return val;
 }
 
@@ -183,6 +195,7 @@ function extractPersonName(text) {
     const labelGroups = [
         /(?:nome\s+e\s+cognome|cognome\s+e\s+nome|nominativo|nome|cognome|titolare|name)\s*[:.\-]*\s*/i,
         /(?:saldatore|welder)\s*[:.\-]*\s*/i,
+        /(?:si\s+certifica\s+che|this\s+is\s+to\s+certify\s+that)\s*[:.\-]*\s*/i,
     ];
 
     for (const labelRe of labelGroups) {
@@ -208,17 +221,34 @@ function extractPersonName(text) {
             if (!allStop && parts.length >= 2) return candidate;
         }
     }
+
+    // Fallback NDT/patentini: riga MAIUSCOLA 2–4 parole tra numero certificato e "Nato a"/"born in"
+    // (es. TEC-Eurolab: "LUIGI LA FORGIA" senza etichetta Nome).
+    const between = text.match(
+        /(?:CERTIFICATO|CERTIFICATE)[^\n]{0,80}\n+([A-ZÀ-ÖØ-Þ][A-ZÀ-ÖØ-Þ' \-]{3,60})\n+(?:Nato\s+a|born\s+in)/i,
+    );
+    if (between) {
+        const parts = between[1].trim().split(/\s+/).filter(Boolean);
+        const allStop = parts.every((w) => NON_NAME_WORDS.has(w.toUpperCase().replace(/[.'\-]/g, '')));
+        if (!allStop && parts.length >= 2 && parts.length <= 4) {
+            return parts.join(' ');
+        }
+    }
     return null;
 }
 
 function extractIssuingBody(text) {
     const bodies = [
         'Bureau Veritas', 'DNV', 'Lloyd', 'RINA', 'TÜV', 'TUV', 'IMQ', 'IIS', 'CICPND', 'SGS',
-        'TEC Eurolab', 'Sideius', 'BSI',
+        'TEC Eurolab', 'TEC-Eurolab', 'Sideius', 'BSI',
     ];
     const lower = text.toLowerCase();
     for (const b of bodies) {
-        if (lower.includes(b.toLowerCase())) return b.replace('TUV', 'TÜV');
+        if (lower.includes(b.toLowerCase())) {
+            // Normalizza varianti tipografiche verso l'etichetta canonica UI
+            if (/^tec[- ]?eurolab$/i.test(b)) return 'TEC Eurolab';
+            return b.replace('TUV', 'TÜV');
+        }
     }
     return null;
 }
@@ -305,6 +335,94 @@ function extractQualifica14732Fields(text, fileName) {
     };
 }
 
+/**
+ * Settore ISO 9712 Annex A da testo certificato.
+ * Preferisce settore industriale (A.3) se presente insieme al prodotto (A.2),
+ * come sui certificati TEC-Eurolab (plurisettoriale + pre-servizio/in servizio).
+ * @param {string} text
+ * @returns {string|null}
+ */
+function extractNdtSector(text) {
+    const t = String(text || '');
+    // Industriali A.3 — priorità alta
+    if (/(?:pre[-\s]?servizio|pre[-\s]?and\s+in[-\s]?service|in\s+servizio|in[-\s]?service\s+testing)/i.test(t)) {
+        return 's';
+    }
+    if (/\b(?:manutenzione\s+ferroviaria|railway\s+maintenance)\b/i.test(t)) return 'r';
+    if (/\b(?:aerospaziale|aerospace)\b/i.test(t)) return 'a';
+    // "fabbricazione metalli" / manufacturing senza pre-servizio → m
+    if (/\b(?:fabbricazione(?:\s+metalli)?|manufacturing)\b/i.test(t)
+        && !/(?:pre[-\s]?servizio|in\s+servizio|in[-\s]?service)/i.test(t)) {
+        return 'm';
+    }
+    // Prodotto A.2 — solo se codice/etichetta espliciti (non "plurisettoriale")
+    const explicit = firstMatch(
+        /\b(?:settore|sector)\s*[:.]?\s*(wp|[cfwtprm]|s|a)\b/i,
+        t,
+    );
+    if (explicit) {
+        const code = String(explicit).toLowerCase();
+        if (/^(c|f|w|t|wp|p|m|s|r|a)$/.test(code)) return code;
+    }
+    if (/\b(?:saldature|welded\s+products|\bwelds\b)\b/i.test(t) && /\b(?:settore|sector|prodotto)\b/i.test(t)) {
+        return 'w';
+    }
+    if (/\b(?:getti|castings)\b/i.test(t)) return 'c';
+    if (/\b(?:forgiati|forgings)\b/i.test(t) && !/\bfabbricazione\b/i.test(t)) return 'f';
+    if (/\b(?:tubi|tubes?\s+and\s+pipes?)\b/i.test(t) && /\b(?:settore|sector|prodotto)\b/i.test(t)) {
+        return 't';
+    }
+    if (/\b(?:compositi|composite\s+materials?)\b/i.test(t)) return 'p';
+    if (/\b(?:wrought\s+products?|prodotti\s+laminati)\b/i.test(t)) return 'wp';
+    // "plurisettoriale" da solo non è un codice Annex A
+    return null;
+}
+
+/**
+ * Campi euristici per certificati NDT ISO 9712 (cert_ndt).
+ * Complementa l'AI: metodo/livello/date spesso leggibili anche con OCR mediocre.
+ */
+function extractCertNdtFields(text, fileName) {
+    let method = firstMatch(
+        /\b(?:metodo|test\s*method)\s*[:.]?\s*(VT|MT|PT|UT|RT|ET|AE|TT|ST|LT)\b/i,
+        text,
+    ) || firstMatch(/\b(VT|MT|PT|UT|RT|ET)\b/, text);
+    if (!method) {
+        if (/\bmagnetoscop/i.test(text) || /\bmagnetic\s+particle/i.test(text)) method = 'MT';
+        else if (/\b(?:liquidi\s+penetranti|penetrant)/i.test(text)) method = 'PT';
+        else if (/\b(?:radiografic|radiograph)/i.test(text)) method = 'RT';
+        else if (/\b(?:ultrasuon|ultrasonic)/i.test(text)) method = 'UT';
+        else if (/\b(?:esame\s+visivo|visual\s+test)/i.test(text)) method = 'VT';
+    }
+
+    const level = firstMatch(/\b(?:livello|level)\s*[:.]?\s*([123]|I{1,3})\b/i, text);
+    let certification_level = level;
+    if (level && /^I+$/i.test(level)) {
+        certification_level = String(level.length); // I→1, II→2, III→3
+    }
+
+    const issued = extractIssueDateLabeled(text)
+        || extractLabeledDate(text, /\b(?:data\s+di\s+emissione|issued\s+on(?:\s+the)?)\s*[:.]?\s*/i);
+    const expiry = extractExpiryDateLabeled(text)
+        || extractLabeledDate(text, /\b(?:data\s+di\s+scadenza|expiration\s+date)\s*[:.]?\s*/i);
+    const revalidation = extractLabeledDate(
+        text,
+        /\b(?:data\s+di\s+rinnovo|renewal\s+date|revalidat(?:ion|e)|rivalidazione)\s*[:.]?\s*/i,
+    );
+
+    return {
+        operator_name: extractPersonName(text),
+        certificate_number: extractCertificateNumber(text) || extractReferenceFromFileName(fileName),
+        ndt_method: method ? String(method).toUpperCase() : null,
+        certification_level: certification_level || null,
+        ndt_sector: extractNdtSector(text),
+        issuing_body: extractIssuingBody(text),
+        exam_date: issued,
+        expiry_date: expiry,
+        revalidation_date: revalidation,
+    };
+}
+
 const { guessStandardCodeFromFilename } = require('../services/documentRegistryNorm.service');
 
 function extractNormFields(text, fileName) {
@@ -342,6 +460,7 @@ const EXTRACTORS_BY_DOC_TYPE = {
     wpqr: extractWpqrFields,
     patentino_saldatore: extractPatentinoFields,
     qualifica_14732: extractQualifica14732Fields,
+    cert_ndt: extractCertNdtFields,
     wps: (text, fileName) => ({
         wps_number: extractWpqrReference(text, fileName),
         welding_process: extractWeldingProcess(text),
@@ -373,6 +492,8 @@ module.exports = {
     extractWpqrFields,
     extractPatentinoFields,
     extractQualifica14732Fields,
+    extractCertNdtFields,
+    extractNdtSector,
     extractWeldingProcess,
     extractMaterialGroup,
     extractWpqrReference,

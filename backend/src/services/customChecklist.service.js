@@ -11,6 +11,11 @@ const {
   isLegislativoAmbientaleDescription,
 } = require('../data/legislativoAmbientaleTemplate');
 const {
+  TEMPLATE_MARKER: LEG_SICUREZZA_TEMPLATE_MARKER,
+  LEGISLATIVO_SICUREZZA_TEMPLATE,
+  isLegislativoSicurezzaDescription,
+} = require('../data/legislativoSicurezzaTemplate');
+const {
   TEMPLATE_MARKER: QTAFI_VIS001_TEMPLATE_MARKER,
   QTAFI_VIS001_TEMPLATE,
   isQtafiVis001Description,
@@ -151,7 +156,7 @@ async function listSections(customChecklistId, reqUser) {
   if (!check) return null;
 
   const result = await query(
-    `SELECT id, code, title, display_order
+    `SELECT id, code, title, display_order, reference_text, linked_legislation
      FROM custom_checklist_sections
      WHERE custom_checklist_id = @custom_checklist_id
      ORDER BY display_order, code`,
@@ -167,16 +172,24 @@ async function createSection(customChecklistId, reqUser, data) {
   const check = await getChecklistById(customChecklistId, reqUser);
   if (!check) return null;
 
-  const { code, title, display_order = 0 } = data;
+  const {
+    code,
+    title,
+    display_order = 0,
+    reference_text = null,
+    linked_legislation = null,
+  } = data;
   const result = await query(
-    `INSERT INTO custom_checklist_sections (custom_checklist_id, code, title, display_order)
-     OUTPUT INSERTED.id, INSERTED.code, INSERTED.title, INSERTED.display_order
-     VALUES (@custom_checklist_id, @code, @title, @display_order)`,
+    `INSERT INTO custom_checklist_sections (custom_checklist_id, code, title, display_order, reference_text, linked_legislation)
+     OUTPUT INSERTED.id, INSERTED.code, INSERTED.title, INSERTED.display_order, INSERTED.reference_text, INSERTED.linked_legislation
+     VALUES (@custom_checklist_id, @code, @title, @display_order, @reference_text, @linked_legislation)`,
     {
       custom_checklist_id: parseInt(customChecklistId, 10),
       code,
       title,
       display_order: parseInt(display_order, 10) || 0,
+      reference_text: reference_text ?? null,
+      linked_legislation: linked_legislation ?? null,
     }
   );
   return result.recordset[0];
@@ -190,7 +203,8 @@ async function updateSection(sectionId, customChecklistId, reqUser, data) {
   if (!check) return null;
 
   const existing = await query(
-    `SELECT id, code, title, display_order FROM custom_checklist_sections
+    `SELECT id, code, title, display_order, reference_text, linked_legislation
+     FROM custom_checklist_sections
      WHERE id = @id AND custom_checklist_id = @custom_checklist_id`,
     { id: parseInt(sectionId, 10), custom_checklist_id: parseInt(customChecklistId, 10) }
   );
@@ -200,6 +214,8 @@ async function updateSection(sectionId, customChecklistId, reqUser, data) {
   const code = data.code !== undefined ? String(data.code).trim() : row.code;
   const title = data.title !== undefined ? String(data.title).trim() : row.title;
   const display_order = data.display_order !== undefined ? parseInt(data.display_order, 10) : row.display_order;
+  const reference_text = data.reference_text !== undefined ? data.reference_text : row.reference_text;
+  const linked_legislation = data.linked_legislation !== undefined ? data.linked_legislation : row.linked_legislation;
 
   if (!code || !title) {
     throw new Error('code e title non possono essere vuoti');
@@ -207,7 +223,8 @@ async function updateSection(sectionId, customChecklistId, reqUser, data) {
 
   await query(
     `UPDATE custom_checklist_sections
-     SET code = @code, title = @title, display_order = @display_order
+     SET code = @code, title = @title, display_order = @display_order,
+         reference_text = @reference_text, linked_legislation = @linked_legislation
      WHERE id = @id AND custom_checklist_id = @custom_checklist_id`,
     {
       id: parseInt(sectionId, 10),
@@ -215,11 +232,14 @@ async function updateSection(sectionId, customChecklistId, reqUser, data) {
       code,
       title,
       display_order: Number.isNaN(display_order) ? row.display_order : display_order,
+      reference_text: reference_text ?? null,
+      linked_legislation: linked_legislation ?? null,
     }
   );
 
   const out = await query(
-    `SELECT id, code, title, display_order FROM custom_checklist_sections WHERE id = @id`,
+    `SELECT id, code, title, display_order, reference_text, linked_legislation
+     FROM custom_checklist_sections WHERE id = @id`,
     { id: parseInt(sectionId, 10) }
   );
   return out.recordset[0] || null;
@@ -432,10 +452,71 @@ async function seedLegislativoAmbientaleChecklist(reqUser) {
   });
 
   for (const section of tpl.sections) {
+    const sectionPayload = {
+      code: section.code,
+      title: section.title,
+      display_order: section.displayOrder,
+    };
+    if (section.referenceText !== undefined) {
+      sectionPayload.reference_text = section.referenceText;
+    }
+    if (section.linkedLegislation !== undefined) {
+      sectionPayload.linked_legislation = section.linkedLegislation;
+    }
+    const createdSection = await createSection(checklist.id, reqUser, sectionPayload);
+    for (const item of section.items) {
+      await createItem(checklist.id, reqUser, {
+        section_id: createdSection.id,
+        code: item.code,
+        title: item.title,
+        response_type: item.responseType,
+        display_order: item.displayOrder,
+      });
+    }
+  }
+
+  const data = await getChecklistWithStructure(checklist.id, reqUser);
+  return { created: true, data };
+}
+
+async function findSeededLegislativoSicurezza(organizationId) {
+  const result = await query(
+    `SELECT id FROM custom_checklists
+     WHERE organization_id = @organization_id
+       AND CHARINDEX(@marker, description) > 0`,
+    {
+      organization_id: organizationId,
+      marker: LEG_SICUREZZA_TEMPLATE_MARKER,
+    }
+  );
+  return result.recordset[0] || null;
+}
+
+/**
+ * Crea (idempotente) la checklist custom «Conformità legislativa sicurezza».
+ */
+async function seedLegislativoSicurezzaChecklist(reqUser) {
+  const existing = await findSeededLegislativoSicurezza(reqUser.organization_id);
+  if (existing) {
+    const data = await getChecklistWithStructure(existing.id, reqUser);
+    return { created: false, data };
+  }
+
+  const tpl = LEGISLATIVO_SICUREZZA_TEMPLATE;
+  const checklist = await createChecklist(reqUser, {
+    name: tpl.name,
+    description: tpl.description,
+    is_active: true,
+    has_outcome_buttons: tpl.hasOutcomeButtons,
+  });
+
+  for (const section of tpl.sections) {
     const createdSection = await createSection(checklist.id, reqUser, {
       code: section.code,
       title: section.title,
       display_order: section.displayOrder,
+      reference_text: section.referenceText,
+      linked_legislation: section.linkedLegislation,
     });
     for (const item of section.items) {
       await createItem(checklist.id, reqUser, {
@@ -551,6 +632,10 @@ module.exports = {
   LEG_AMBIENTE_TEMPLATE_MARKER,
   isLegislativoAmbientaleDescription,
   seedLegislativoAmbientaleChecklist,
+  LEG_SICUREZZA_TEMPLATE_MARKER,
+  isLegislativoSicurezzaDescription,
+  findSeededLegislativoSicurezza,
+  seedLegislativoSicurezzaChecklist,
   QTAFI_VIS001_TEMPLATE_MARKER,
   isQtafiVis001Description,
   seedQtafiVis001Checklist,

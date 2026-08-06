@@ -16,6 +16,7 @@
  *   GET    /qualifications              → lista con semaforo + filtri tipo
  *   GET    /qualifications/stats        → conteggi stato
  *   GET    /qualifications/coverage     → copertura commessa (?project_id=X)
+ *   GET    /qualifications/vision-fitness-gaps → gap idoneità visiva NDT/VT
  *   GET    /qualifications/:id          → dettaglio
  *   POST   /qualifications              → crea (sempre attiva, approval_status=approvata)
  *   PUT    /qualifications/:id          → aggiorna
@@ -47,6 +48,8 @@ const {
     isQualificationOperationallyActive,
 } = require('../services/weldingCoordinatorAuth.service');
 const { toNumericOrNull } = require('../utils/numericSanitizer');
+const { occupationalQualificationSqlInList } = require('../constants/occupationalQualificationTypes');
+const { findVisionFitnessGaps } = require('../services/visionFitness.service');
 const XLSX = require('xlsx');
 
 /**
@@ -165,12 +168,15 @@ async function listQualifications(req, res) {
         if (approval_status) where.push('q.approval_status = @approvalStatus');
 
         let qualTypeLike = null;
-        if (qualification_type && qualification_type !== 'generico') {
+        if (qualification_type === 'salute_mansione') {
+            // Tipi salute mansione: IN esplicito (canonici + alias legacy), non LIKE '%salute_mansione%'
+            where.push(`q.qualification_type IN (${occupationalQualificationSqlInList()})`);
+        } else if (qualification_type === 'generico') {
+            // generico = non rientra negli altri tipi noti (esclude anche salute mansione)
+            where.push(`q.qualification_type NOT LIKE '%9606%' AND q.qualification_type NOT LIKE '%14732%' AND q.qualification_type NOT LIKE '%14731%' AND q.qualification_type NOT LIKE '%NDT%' AND q.qualification_type NOT LIKE '%VT%' AND q.qualification_type NOT LIKE '%PT%' AND q.qualification_type NOT LIKE '%MT%' AND q.qualification_type NOT LIKE '%UT%' AND q.qualification_type NOT LIKE '%RT%' AND q.qualification_type NOT LIKE '%ET%' AND q.qualification_type NOT LIKE '%PES%' AND q.qualification_type NOT LIKE '%PAV%' AND q.qualification_type NOT IN (${occupationalQualificationSqlInList()})`);
+        } else if (qualification_type) {
             qualTypeLike = QUAL_TYPE_MAP[qualification_type] || `%${qualification_type}%`;
             where.push('q.qualification_type LIKE @qualType');
-        } else if (qualification_type === 'generico') {
-            // generico = non rientra negli altri tipi noti
-            where.push("q.qualification_type NOT LIKE '%9606%' AND q.qualification_type NOT LIKE '%14732%' AND q.qualification_type NOT LIKE '%14731%' AND q.qualification_type NOT LIKE '%NDT%' AND q.qualification_type NOT LIKE '%VT%' AND q.qualification_type NOT LIKE '%PT%' AND q.qualification_type NOT LIKE '%MT%' AND q.qualification_type NOT LIKE '%UT%' AND q.qualification_type NOT LIKE '%RT%' AND q.qualification_type NOT LIKE '%ET%' AND q.qualification_type NOT LIKE '%PES%' AND q.qualification_type NOT LIKE '%PAV%'");
         }
 
         if (expiring_days) {
@@ -270,6 +276,33 @@ async function getStats(req, res) {
         });
     } catch (err) {
         logger.error('getQualifStats:', err.message);
+        res.status(500).json({ error: err.message });
+    }
+}
+
+/**
+ * GET /qualifications/vision-fitness-gaps?company_id=
+ * Persone con NDT/VT attive senza certificato idoneità visiva valido (acuità+Ishihara).
+ */
+async function getVisionFitnessGaps(req, res) {
+    try {
+        const orgId = req.user.organization_id;
+        const companyIdRaw = req.query.company_id;
+        const companyId = companyIdRaw != null && companyIdRaw !== ''
+            ? parseInt(companyIdRaw, 10)
+            : null;
+
+        if (companyId != null && !Number.isNaN(companyId)) {
+            const denied = await assertCompanyRead(req.user, companyId);
+            if (denied) return sendAccessDenied(res, denied);
+        }
+
+        const result = await findVisionFitnessGaps(orgId, {
+            companyId: companyId != null && !Number.isNaN(companyId) ? companyId : null,
+        });
+        res.json(result);
+    } catch (err) {
+        logger.error('getVisionFitnessGaps:', err.message);
         res.status(500).json({ error: err.message });
     }
 }
@@ -992,7 +1025,7 @@ async function renewQualification(req, res) {
 }
 
 // Tipi documento ammessi per il batch upload qualifiche (IG-3 staging).
-const UPLOAD_BATCH_DOC_TYPES = new Set(['patentino_saldatore', 'qualifica_14732']);
+const UPLOAD_BATCH_DOC_TYPES = new Set(['patentino_saldatore', 'qualifica_14732', 'cert_ndt']);
 
 /** POST /qualifications/upload-batch — estrazione + staging IG-3 (revisione pre-commit) */
 async function uploadBatch(req, res) {
@@ -1457,6 +1490,7 @@ module.exports = {
     listQualifications,
     getStats,
     getCoverage,
+    getVisionFitnessGaps,
     getOne,
     createQualification,
     updateQualification,

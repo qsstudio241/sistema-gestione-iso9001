@@ -40,6 +40,8 @@ const {
     commitQualificationFromFields,
     checkQualificationPlausibility,
     applyFieldReprocessUpdate,
+    normalizeFillerMaterialGroup,
+    resolvePipeDiameterRange,
     REPROCESSABLE_FIELDS,
 } = require('./qualificationIngest.service');
 
@@ -468,6 +470,112 @@ describe('mapPipelineFieldsToReview — sanitizzazione numerica in revisione', (
         expect(out.pipe_diameter_min_mm).toBeNull();
         expect(out.pipe_diameter_max_mm).toBeNull();
         expect(out.thickness_range).toBeNull();
+    });
+});
+
+describe('persistenza campi review → DB (bug produzione 01/08/2026, patentino LOVETERE)', () => {
+    function makeRequestMock() {
+        const req = { input: jest.fn().mockReturnThis() };
+        req.query = jest.fn().mockResolvedValue({ recordset: [{ cnt: 0 }] });
+        return req;
+    }
+
+    it('normalizeFillerMaterialGroup accetta solo FM1–FM6/nessuno (mai material_group 11.1)', () => {
+        expect(normalizeFillerMaterialGroup('FM1')).toBe('FM1');
+        expect(normalizeFillerMaterialGroup('fm 2')).toBe('FM2');
+        expect(normalizeFillerMaterialGroup('nessuno')).toBe('nessuno');
+        expect(normalizeFillerMaterialGroup('11.1')).toBeNull();
+        expect(normalizeFillerMaterialGroup('G 42 4 M21 3Si1')).toBeNull();
+        expect(normalizeFillerMaterialGroup('')).toBeNull();
+    });
+
+    it('resolvePipeDiameterRange mappa pipe_diameter_mm (schema AI) → min', () => {
+        expect(resolvePipeDiameterRange({ pipe_diameter_mm: 88.9 })).toEqual({ min: 88.9, max: null });
+        expect(resolvePipeDiameterRange({
+            pipe_diameter_min_mm: 60, pipe_diameter_max_mm: 120, pipe_diameter_mm: 88.9,
+        })).toEqual({ min: 60, max: 120 });
+        expect(resolvePipeDiameterRange({ pipe_diameter_mm: 'N.A.' })).toEqual({ min: null, max: null });
+    });
+
+    it('mapPipelineFieldsToReview non mescola material_group con filler e propaga pipe_diameter_mm', () => {
+        const out = mapPipelineFieldsToReview({
+            welder_name: 'MICHELE LOVETERE',
+            material_group: '11.1',
+            filler_material_group: 'FM1',
+            pipe_diameter_mm: 88.9,
+            product_type: 'T',
+            expiry_date: '2028-06-05',
+        }, 'ISO 9606-1', 'cert.pdf');
+
+        expect(out.material_group).toBe('11.1');
+        expect(out.filler_material_group).toBe('FM1');
+        expect(out.pipe_diameter_min_mm).toBe(88.9);
+        expect(out.pipe_diameter_max_mm).toBeNull();
+        expect(out.pipe_diameter_mm).toBe(88.9);
+        expect(out.revalidation_date).toBe('2028-06-05');
+    });
+
+    it('mapPipelineFieldsToReview non copia material_group in filler se filler assente', () => {
+        const out = mapPipelineFieldsToReview({
+            welder_name: 'MICHELE LOVETERE',
+            material_group: '11.1',
+        }, 'ISO 9606-1', 'cert.pdf');
+        expect(out.material_group).toBe('11.1');
+        expect(out.filler_material_group).toBeNull();
+    });
+
+    it('commitQualificationFromFields persiste filler_material, pipe da pipe_diameter_mm, revalidation e non usa 11.1 in designazione', async () => {
+        const dupCheckReq = makeRequestMock();
+        const insertReq = { input: jest.fn().mockReturnThis() };
+        insertReq.query = jest.fn().mockResolvedValue({ recordset: [{ id: 1049 }] });
+
+        let callCount = 0;
+        getPool.mockResolvedValue({
+            request: jest.fn(() => {
+                callCount += 1;
+                return callCount === 1 ? dupCheckReq : insertReq;
+            }),
+        });
+
+        const result = await commitQualificationFromFields({
+            welder_name: 'MICHELE LOVETERE',
+            certificate_number: 'PRS-2136-25-ITA-DNV',
+            welding_process: '135',
+            material_group: '11.1',
+            filler_material_group: 'FM1',
+            product_type: 'T',
+            joint_type: 'BW',
+            weld_details: 'ss nb',
+            thickness_min_mm: 3,
+            thickness_max_mm: 14.22,
+            pipe_diameter_mm: 88.9,
+            welding_positions: ['PA', 'PC'],
+            exam_date: '2025-06-05',
+            expiry_date: '2028-06-05',
+            transfer_mode: 'pulsed_arc',
+            shielding_gas: 'M20',
+            examiner_body: 'DNV',
+        }, 10, 20, { qualificationType: 'Saldatore ISO 9606-1' });
+
+        expect(result.qualification_id).toBe(1049);
+        expect(insertReq.input).toHaveBeenCalledWith('filler', 'FM1');
+        expect(insertReq.input).toHaveBeenCalledWith('matGroup', '11.1');
+        expect(insertReq.input).toHaveBeenCalledWith('pipeMin', 88.9);
+        expect(insertReq.input).toHaveBeenCalledWith('pipeMax', null);
+        expect(insertReq.input).toHaveBeenCalledWith('revalDate', '2028-06-05');
+        expect(insertReq.input).toHaveBeenCalledWith('examBody', 'DNV');
+        expect(insertReq.input).toHaveBeenCalledWith(
+            'designation',
+            expect.stringMatching(/^135 T BW FM1 t3-14\.22 D≥88\.9 PA\/PC ss nb$/)
+        );
+        // Designazione NON deve contenere il gruppo materiale base al posto del FM
+        expect(insertReq.input).not.toHaveBeenCalledWith(
+            'designation',
+            expect.stringContaining('11.1')
+        );
+        expect(insertReq.query).toHaveBeenCalledWith(expect.stringContaining('filler_material'));
+        expect(insertReq.query).toHaveBeenCalledWith(expect.stringContaining('revalidation_date'));
+        expect(insertReq.query).toHaveBeenCalledWith(expect.stringContaining('examiner_body'));
     });
 });
 

@@ -138,33 +138,14 @@ async function generateWPS(req, res) {
             thickness_b_mm,
         } = req.body || {};
 
-        if (!joint_type || !String(joint_type).trim()) {
-            return res.status(400).json({
-                error: 'Tipo giunto obbligatorio (es. FW o BW)',
-                code: 'VALIDATION_ERROR',
-            });
-        }
-        if (!parent_material_a || !String(parent_material_a).trim()) {
-            return res.status(400).json({
-                error: 'Materiale A obbligatorio',
-                code: 'VALIDATION_ERROR',
-            });
-        }
-        if (!parent_material_b || !String(parent_material_b).trim()) {
-            return res.status(400).json({
-                error: 'Materiale B obbligatorio',
-                code: 'VALIDATION_ERROR',
-            });
-        }
-
-        const tA = Number(thickness_a_mm);
-        const tB = Number(thickness_b_mm);
-        if (!Number.isFinite(tA) || !Number.isFinite(tB)) {
-            return res.status(400).json({
-                error: 'Spessori A e B obbligatori e numerici (mm)',
-                code: 'VALIDATION_ERROR',
-            });
-        }
+        // Validazione soft: campi incompleti → status need_input (domande), non 400.
+        // Così l'assistente può chiedere i dati mancanti invece di ricevere errore HTTP.
+        const tA = thickness_a_mm === '' || thickness_a_mm == null
+            ? null
+            : Number(thickness_a_mm);
+        const tB = thickness_b_mm === '' || thickness_b_mm == null
+            ? null
+            : Number(thickness_b_mm);
 
         const { generateWpsFromWpqr } = require('../services/wpsGenerator.service');
         const result = await generateWpsFromWpqr({
@@ -173,10 +154,10 @@ async function generateWPS(req, res) {
                 ? parseInt(company_id, 10)
                 : null,
             request: {
-                joint_type: String(joint_type).trim(),
+                joint_type: joint_type != null ? String(joint_type).trim() : '',
                 welding_process: welding_process ? String(welding_process).trim() : undefined,
-                parent_material_a: String(parent_material_a).trim(),
-                parent_material_b: String(parent_material_b).trim(),
+                parent_material_a: parent_material_a != null ? String(parent_material_a).trim() : '',
+                parent_material_b: parent_material_b != null ? String(parent_material_b).trim() : '',
                 thickness_a_mm: tA,
                 thickness_b_mm: tB,
             },
@@ -189,6 +170,7 @@ async function generateWPS(req, res) {
             candidates: result.candidates,
             wps_draft: result.wps_draft,
             extensions_needed: result.extensions_needed,
+            questions: result.questions || [],
             warnings: result.warnings,
         });
     } catch (error) {

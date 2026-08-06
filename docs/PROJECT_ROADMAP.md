@@ -27,7 +27,7 @@
 | **Hardening harness doppio (HK-1…HK-10)** | Audit giugno 2026: allineare governance Cursor (ADR-015), alleggerire GUIDA, collare AI runtime (NormBroker v1, licenze, audit trail, gap analysis MVP). **Brief attivo:** [DEPUTYTASK.md](agent-tasks/DEPUTYTASK.md) + [PLAN_HARNESS_HARDENING_SLICES.md](agent-tasks/PLAN_HARNESS_HARDENING_SLICES.md). | `.cursor/rules/`, ADR-010/015, `normBroker.service.js`, `gapAnalysis.service.js` |
 | **Controparti azienda (PR1 ✅ · PR2 ✅)** | Tab **Controparti** in scheda azienda; `company_counterparties` (mig. **096**); backfill + `projects.end_customer_id` (mig. **097**); API nested; select committente in Riesame Requisiti con sync FK↔snapshot (`ContractReviewPage`, PR #230/#233). | Mig. 096–097; `companyCounterparties.controller.js`; `commercialCustomerCounterparty.service.js`; `CompanyCounterpartiesPanel.jsx`; `ContractReviewPage.jsx` |
 | **"Ambito" azienda non ancora standard su tutti i moduli (analisi trasversale 25/07/2026)** | Solo **Qualifiche** ha `company_id` obbligatorio end-to-end (DB NOT NULL + UI + RBAC). Rischi/Reclami: nessun campo azienda in UI → `company_id` sempre NULL. `equipment.controller.js`/RDP/NDT Reports: filtro RBAC `company_access` non applicato (equipment usa una colonna `user.company_id` inesistente). Backlog: uniformare al pattern `companyAccess.service.js` + selettore "Ambito" header. | [ARCHITETTURA_UTENTI_RBAC.md §8.3](ARCHITETTURA_UTENTI_RBAC.md#83-cosa-manca-o-è-parziale-gap-noti); [GUIDA_CONSOLIDATA.md](GUIDA_CONSOLIDATA.md#lezioni-apprese-consolidate-fonte-unica) |
-| **Pivot WPS — generazione da WPQR (non ingest)** | Feedback Mason 30/07/2026: matcher 15614 + bozza 15609 + Word Annex A. **P0+P1+P2 ✅** (#326/#328/#332). Upload WPS → legacy (**P2b** backlog). | [MODULO_WPS_GENERAZIONE_SCOPO_E_ROADMAP.md](specs/MODULO_WPS_GENERAZIONE_SCOPO_E_ROADMAP.md) |
+| **Pivot WPS — generazione da WPQR (non ingest)** | Feedback Mason 30/07/2026: matcher 15614 + bozza 15609 + Word Annex A. **P0–P5 ✅** (P5: advisory WPQR + visione nel riesame, non bloccante). | [MODULO_WPS_GENERAZIONE_SCOPO_E_ROADMAP.md](specs/MODULO_WPS_GENERAZIONE_SCOPO_E_ROADMAP.md) |
 
 ---
 
@@ -77,7 +77,7 @@ Quando emerge un’urgenza (es. modulo **VT** o **MT**):
 **Mason** — Coordinatore di saldatura
 - Scenario 4: Rapporti di Prova ISO 3834-2 con evidenze fotografiche
 - Template di riferimento: `Check List Audit/RDP_MSN-260127-01_REV_0.docx`
-- **Pivot WPS (30/07/2026)**: generazione WPS da WPQR + Word Annex A. **P0+P1+P2 ✅** (#326/#328/#332). Spec: [MODULO_WPS_GENERAZIONE_SCOPO_E_ROADMAP.md](specs/MODULO_WPS_GENERAZIONE_SCOPO_E_ROADMAP.md). Residuo: **P2b** (deprecare upload WPS come flusso primario).
+- **Pivot WPS (30/07/2026)**: generazione WPS da WPQR + Word Annex A + upload legacy secondario. **P0–P2b ✅**. Spec: [MODULO_WPS_GENERAZIONE_SCOPO_E_ROADMAP.md](specs/MODULO_WPS_GENERAZIONE_SCOPO_E_ROADMAP.md). **In attesa feedback Mason.**
 
 ### Risorse normative disponibili (leggibili dal tool)
 | File | Norma | Uso previsto |
@@ -179,7 +179,7 @@ Gli auditor lo ricevono solo quando stabile e collaudato — zero interruzioni o
 | ISO 14001 checklist completa | 53 domande in 7 sezioni clausola (migration 049, prod 07/05/2026) | ✅ Completato |
 | ISO 45001 checklist | Da norma PDF disponibile | 🔲 Backlog |
 | Modulo SAL (Scenario 3) | Tracker requisiti×stati + export Word + AI suggeritore (Fasi 0–5-B) — spec: [MODULO_SAL_SCOPO_E_ROADMAP.md](specs/MODULO_SAL_SCOPO_E_ROADMAP.md) | ✅ Live (smoke L3 consigliato) |
-| **Generatore WPS da WPQR (Mason)** | Pivot 30/07/2026: Tabella 5 + `wpsGenerator` (**P0 ✅** #326) → API/UI/AskAi (**P1 ✅** #328) → Word Annex A (**P2 ✅** #332, Netlify). Spec: [MODULO_WPS_GENERAZIONE_SCOPO_E_ROADMAP.md](specs/MODULO_WPS_GENERAZIONE_SCOPO_E_ROADMAP.md) | ✅ P0–P2; P2b backlog |
+| **Generatore WPS da WPQR (Mason)** | Pivot 30/07/2026: Tabella 5 + generator (**P0**) → API/UI/AskAi (**P1**) → Word Annex A (**P2**) → upload PDF solo legacy (**P2b**). Spec: [MODULO_WPS_GENERAZIONE_SCOPO_E_ROADMAP.md](specs/MODULO_WPS_GENERAZIONE_SCOPO_E_ROADMAP.md) | ✅ P0–P2b; attesa feedback Mason |
 | Modulo RDP (Scenario 4) | MVP backend+frontend (branch `feat/rdp-mason-module-mvp`): tabelle `rdp_reports/rdp_sections/rdp_tests`, CRUD `rdp.controller.js`, `RDPModule.jsx` con foto obbligatorie per prova (`RdpTestAttachments.jsx`) | 🟡 Mergiato [PR #290](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/290) (23/07/2026), migrazione 127 eseguita in produzione, backend VPS deployato e verificato — **Word export ancora bloccato**: manca `app/public/templates/rdp-mason-report.docx` (richiede input/layout dal cliente Mason, vedi nota sotto) |
 | Campo norm_excerpt | Stralcio norma nel report Word | ✅ ISO 14001 (07/05/2026) · 🔲 ISO 9001 backlog |
 
@@ -803,8 +803,9 @@ Un auditor che gestisce 10 aziende → 10 licenze. Prezzo varia per modulo attiv
 | **REG-NORM-SOT** | Refactor: `document_registry` = SoT visibile norme/leggi; slice R1–R7 in [PLAN_REGISTRY_NORM_SOT_SLICES.md](agent-tasks/PLAN_REGISTRY_NORM_SOT_SLICES.md) | Deputy/Lead | ✅ Completato (25/05/2026) — commit `ef0d6f8`, PR #66/#67/#68, ADR-011 |
 | **LEGISL-INGEST** | Ingestione testo articoli legge (D.Lgs. 81/2008 → ISO 45001, D.Lgs. 152/2006 → ISO 14001) da Normattiva in `norm_requirements` + matrice `linked_legislation`; connettore `normativaConnector.getClauseText` (riattiva step publicLaw broker). 30 articoli verbatim, seed `backend/data/legislation_seed.json`, script `ingest-legislation-normattiva-vps.js` idempotente. ADR-010 Task 2-B/2-D. | Lead (18/07/2026) | ✅ Completato — branch `feat/legislation-ingest-normattiva` |
 | **COMPANY-PROFILE** | Profilo azienda 1:1 (`company_profile`) per conformità legislativa 14001/45001: campi A (visura/Excel) + B (SSL/ambiente, inserimento studio); gate `SAL_LEGAL_CONFORMITY`; import Excel tipo scadenziario. **S0 ✅** ADR-018 + catalogo. **S1–S3** in [DEPUTYTASK.md](agent-tasks/DEPUTYTASK.md). | Lead (23/07/2026) | 🔲 S0 doc — implementazione aperta |
+| **REGISTRO-LEGALE** | Registro obblighi legali capitolo-per-capitolo, **ambiente e sicurezza separati**. **Ambiente** `LEG_AMBIENTE_152` (già esistente, 46 voci a granularità capitolo). **Sicurezza** `LEG_SICUREZZA_81` (nuovo, 29 capitoli da Grantini + citazioni, SI/NO/NA/NV). Schema sezioni: mig. **138** (`reference_text`/`linked_legislation`). Agente validità esteso (PR #65). | Lead (28/07–01/08/2026) | ✅ PR #317 MERGED · mig. 138 VPS OK · residuo **N5** (revisione umana contenuto prima di audit cliente) + P2 granularità a/b/c ambiente (Certiquality) |
 
-**Prossimo Step**: COMPANY-PROFILE S1–S3 (migration + API/UI + import Excel) dopo merge S0; poi eventuale S5 lookup Registro.
+**Prossimo Step**: COMPANY-PROFILE S1–S3 (migration + API/UI + import Excel) dopo merge S0; poi eventuale S5 lookup Registro. REGISTRO-LEGALE: solo N5 (lettura consulente) e backlog P2 ambiente a/b/c.
 
 > **Regola architetturale da ADR-008 (vincolante)**: ogni nuova feature che tocca la sincronizzazione dati deve essere progettata compatibile con il modello event-based. Nessun nuovo endpoint che accetti "stato corrente intero" senza event log parallelo.
 

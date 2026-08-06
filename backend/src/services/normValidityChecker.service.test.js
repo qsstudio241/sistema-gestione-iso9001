@@ -21,6 +21,7 @@ const { query } = require('../config/database');
 const normCatalog = require('./normCatalogLookup.service');
 const {
   runScheduledValidityCheck,
+  runScheduledLegalRegisterCheck,
   parseNormFieldsFromRegistry,
 } = require('./normValidityChecker.service');
 
@@ -292,5 +293,75 @@ describe('parseNormFieldsFromRegistry', () => {
       type_specific_data: JSON.stringify({ standard_code: 'ISO 9001', edition_year: '2015' }),
     };
     expect(parseNormFieldsFromRegistry(row).edition_year).toBe(2015);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Registro obblighi legali — runScheduledLegalRegisterCheck
+// ---------------------------------------------------------------------------
+describe('runScheduledLegalRegisterCheck', () => {
+  const sectionRow = {
+    section_id: 101,
+    section_name: '5. IMPIANTI TERMICI',
+    linked_legislation: 'D.Lgs. 81/2008 art.28; art.29',
+  };
+
+  beforeEach(() => {
+    query.mockResolvedValueOnce({ recordset: [sectionRow] });
+  });
+
+  it('chiama lookupNormStatus con etichetta Normattiva per ogni atto univoco', async () => {
+    normCatalog.lookupNormStatus.mockResolvedValue(ACTIVE_LOOKUP);
+    await runScheduledLegalRegisterCheck(ORG_ID);
+    expect(normCatalog.lookupNormStatus).toHaveBeenCalledWith('D.Lgs. 81/2008', 'normattiva');
+    expect(normCatalog.lookupNormStatus).toHaveBeenCalledTimes(1);
+  });
+
+  it('include sezione in updated se atto withdrawn/superseded', async () => {
+    normCatalog.lookupNormStatus.mockResolvedValue({
+      ...OUTDATED_LOOKUP,
+      supersededBy: 'D.Lgs. 99/2099',
+    });
+    const result = await runScheduledLegalRegisterCheck(ORG_ID);
+    expect(result.checked).toBe(1);
+    expect(result.updated).toHaveLength(1);
+    expect(result.updated[0]).toMatchObject({
+      sectionId: 101,
+      sectionName: '5. IMPIANTI TERMICI',
+      standardCode: 'DLgs_81_2008',
+      decreeLabel: 'D.Lgs. 81/2008',
+      reason: 'withdrawn',
+      supersededBy: 'D.Lgs. 99/2099',
+    });
+  });
+
+  it('non persiste su DB (solo SELECT)', async () => {
+    normCatalog.lookupNormStatus.mockResolvedValue(ACTIVE_LOOKUP);
+    await runScheduledLegalRegisterCheck(ORG_ID);
+    expect(query).toHaveBeenCalledTimes(1);
+    expect(query.mock.calls[0][0]).toMatch(/custom_checklist_sections/);
+    expect(query.mock.calls[0][0]).not.toMatch(/UPDATE/);
+  });
+
+  it('gestisce decreto senza articoli (solo atto)', async () => {
+    query.mockReset();
+    query.mockResolvedValueOnce({
+      recordset: [{
+        section_id: 102,
+        section_name: 'Capitolo ambiente',
+        linked_legislation: 'D.Lgs. 152/2006',
+      }],
+    });
+    normCatalog.lookupNormStatus.mockResolvedValue(ACTIVE_LOOKUP);
+    await runScheduledLegalRegisterCheck(ORG_ID);
+    expect(normCatalog.lookupNormStatus).toHaveBeenCalledWith('D.Lgs. 152/2006', 'normattiva');
+  });
+
+  it('early return se nessuna sezione con linked_legislation', async () => {
+    query.mockReset();
+    query.mockResolvedValueOnce({ recordset: [] });
+    const result = await runScheduledLegalRegisterCheck(ORG_ID);
+    expect(result).toEqual({ checked: 0, updated: [] });
+    expect(normCatalog.lookupNormStatus).not.toHaveBeenCalled();
   });
 });
