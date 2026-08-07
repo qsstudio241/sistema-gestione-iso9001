@@ -49,18 +49,34 @@ reale scelto, es. `C:\NormeISO_PDF\` oppure una cartella dentro OneDrive):
 | ISO 9712:2012 | *(nessun `.md` ancora — backlog RC-7)* | `ISO-96xx-patentini\UNI EN ISO 9712_2012.pdf` | **PDF era committato per errore in Git — vedi nota sotto** |
 | ISO 19011:2018 | *(nessun `.md` ancora)* | `ISO-96xx-patentini\UNI EN ISO 19011_2018_ITA.pdf` | **PDF era committato per errore in Git — vedi nota sotto** |
 
-## Nota — 2 PDF rimossi dal tracking Git (30/07/2026)
+## Nota — 3 PDF rimossi dal tracking Git (30/07/2026, fix reale applicato 07/08/2026)
 
 `UNI EN ISO 9712 (2012).pdf` e `UNI EN ISO 19011 ITA (2018).pdf` erano committati per
 errore in questa cartella dal 15/05/2026 (repo **pubblico** su GitHub — esposizione
-copyright reale, non solo teorica). Sono stati rimossi dal tracking Git (`git rm
---cached`, restano fisicamente su disco come file non versionati). **Azione richiesta
-al committente**: spostare questi 2 file dalla cartella locale del repo alla cartella
-`<NORME_PDF_ROOT>` scelta (vedi sopra), poi eventualmente cancellarli da
-`docs/Normative/` in locale (Git non li traccia più, quindi non serve nessun comando
-Git per questo). La **storia Git** del repo contiene ancora questi 2 file nei commit
-precedenti al 30/07/2026: una pulizia completa della storia (`git filter-repo` +
-force-push) è un'operazione invasiva separata, proposta ma non eseguita in questa
+copyright reale, non solo teorica).
+
+**Errore di processo scoperto il 07/08/2026**: il commit del 30/07/2026 (`466ce9c`)
+dichiarava nel messaggio "rimossi dal tracking Git (`git rm --cached`)" ma il diff
+reale del commit **non conteneva nessuna rimozione file** (solo documentazione
+aggiunta) — i 2 PDF erano rimasti tracciati in `main` per oltre una settimana. Causa
+radice: `.gitignore` alla radice del repo **non conteneva mai** una regola `*.pdf`
+(solo `docs/Normative/.cursorignore` la conteneva, ma quel file blocca solo
+l'indicizzazione di Cursor, **non** il tracking Git — i due meccanismi erano stati
+confusi). Trovato in questa stessa sessione anche un **terzo PDF copyright** tracciato
+per errore dal 19/05/2026: `app/src/tests/fixtures/BS EN ISO 9606-1 (2017).pdf`
+(fixture di test mai effettivamente letta a runtime da nessun test — solo il codice
+norma compare come stringa di metadati attesi in `importNormCommit.test.js`,
+`normUploadButton.test.jsx`, `uploadNormaE2E.test.js`).
+
+**Fix reale applicato il 07/08/2026**: `git rm --cached` sui 3 file (restano
+fisicamente su disco come non versionati) + nuova regola in `.gitignore` root
+(`docs/Normative/*.pdf` e `app/src/tests/fixtures/*.pdf`) per bloccare davvero
+futuri commit accidentali. **Azione richiesta al committente**: spostare questi 3
+file dalla cartella locale del repo alla cartella `<NORME_PDF_ROOT>` scelta (vedi
+sopra), poi eventualmente cancellarli in locale (Git non li traccia più, nessun
+comando Git necessario). La **storia Git** del repo contiene ancora questi 3 file nei
+commit precedenti al 07/08/2026: una pulizia completa della storia (`git filter-repo`
++ force-push) è un'operazione invasiva separata, proposta ma non eseguita in questa
 sessione — vedi `docs/reference/PROPOSTA_STORAGE_NORME_VPS.md`.
 
 ## Come aggiornare questo indice
