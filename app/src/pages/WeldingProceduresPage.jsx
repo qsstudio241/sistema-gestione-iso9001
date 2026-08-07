@@ -1159,7 +1159,7 @@ function WeldingProceduresPage() {
             </select>
             <button className="wp-btn-reload" onClick={loadWPS} title="Aggiorna">&#x21bb;</button>
             <AskAiButton
-              label="Chiedi all\u2019AI"
+              label="Chiedi all'AI"
               onBeforeNavigate={() => saveQualContext({
                 qualType: "wps",
                 qualTypeLabel: "procedure WPS",

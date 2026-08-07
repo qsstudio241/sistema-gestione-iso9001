@@ -685,7 +685,7 @@ function QuestionCard({ clauseId, question, checklistKey, onUpdate, attachmentMa
     : null;
 
   const clauseRef = question.clauseRef || clauseId;
-  const aiLabel = clauseRef ? `Chiedi all\u2019AI \u2014 \u00A7${clauseRef}` : "Chiedi all\u2019AI";
+  const aiLabel = clauseRef ? `Chiedi all'AI \u2014 \u00A7${clauseRef}` : "Chiedi all'AI";
 
   return (
     <UniversalQuestionCard
