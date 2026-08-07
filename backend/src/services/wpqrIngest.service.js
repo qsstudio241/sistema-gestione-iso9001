@@ -230,6 +230,10 @@ function mapPipelineFieldsToReview(f, fileName) {
         thickness_max_unlimited,
         diameter_min: toNumericOrNull(f.diameter_min),
         diameter_max: toNumericOrNull(f.diameter_max),
+        // Gola/throat provino (Tabella 8, giunti FW) — gap analysis 07/08/2026: prima
+        // non estratta affatto (solo hint calcolato da thickness_tested, impreciso
+        // perché la gola è una variabile distinta dallo spessore materiale base).
+        throat_test_mm: toNumericOrNull(f.throat_test_mm),
         base_material_spec: f.base_material_spec || null,
         shielding_gas: f.shielding_gas || null,
         current_type: f.current_type || null,
@@ -237,6 +241,11 @@ function mapPipelineFieldsToReview(f, fileName) {
         mechanization: f.mechanization || null,
         single_multi_run: f.single_multi_run || null,
         heat_input_note: f.heat_input_note || null,
+        // Gap strutturale 07/08/2026: presenti in fields/aiPrompt/aiExpectedSchema e
+        // quindi compilabili in UI, ma mai mappati qui né in mapReviewFieldsToDb —
+        // il valore estratto dall'AI veniva scartato prima della revisione umana.
+        preheat_temp: f.preheat_temp || null,
+        interpass_temp: f.interpass_temp || null,
     };
 }
 
@@ -269,6 +278,7 @@ function mapReviewFieldsToDb(f, fileName) {
         thickness_max_unlimited,
         diameter_min: toNumericOrNull(f.diameter_min),
         diameter_max: toNumericOrNull(f.diameter_max),
+        throat_test_mm: toNumericOrNull(f.throat_test_mm),
         welding_positions: normalizePositions(f.welding_positions),
         examiner_body: f.examiner_body || f.issuing_body || f.testing_body || null,
         welder_name: f.welder_name || null,
@@ -284,6 +294,8 @@ function mapReviewFieldsToDb(f, fileName) {
         mechanization: f.mechanization || null,
         single_multi_run: f.single_multi_run || null,
         heat_input_note: f.heat_input_note || null,
+        preheat_temp: f.preheat_temp || null,
+        interpass_temp: f.interpass_temp || null,
     };
 }
 
@@ -383,7 +395,7 @@ async function commitWPQRFromFields(fields, organizationId, companyId, options =
             reference_number, wpqr_code,
             welding_process, base_material_group, filler_material,
             thickness_tested, thickness_min, thickness_max, thickness_max_unlimited,
-            diameter_min, diameter_max,
+            diameter_min, diameter_max, throat_test_mm,
             welding_positions, examiner_body, testing_body,
             welder_name, issue_date, expiry_date,
             certificate_number, certificate_file_url,
@@ -391,6 +403,7 @@ async function commitWPQRFromFields(fields, organizationId, companyId, options =
             qualification_level, joint_type, standard_reference, wps_ref,
             base_material_spec, shielding_gas, current_type, metal_transfer,
             mechanization, single_multi_run, heat_input_note,
+            preheat_temp, interpass_temp,
             created_by, created_at, updated_at
         )
         OUTPUT INSERTED.id
@@ -399,7 +412,7 @@ async function commitWPQRFromFields(fields, organizationId, companyId, options =
             @reference_number, @reference_number,
             @welding_process, @base_material_group, @filler_material,
             @thickness_tested, @thickness_min, @thickness_max, @thickness_max_unlimited,
-            @diameter_min, @diameter_max,
+            @diameter_min, @diameter_max, @throat_test_mm,
             @welding_positions, @examiner_body, @examiner_body,
             @welder_name, @issue_date, @expiry_date,
             @certificate_number, @certificate_file_url,
@@ -407,6 +420,7 @@ async function commitWPQRFromFields(fields, organizationId, companyId, options =
             @qualification_level, @joint_type, @standard_reference, @wps_ref,
             @base_material_spec, @shielding_gas, @current_type, @metal_transfer,
             @mechanization, @single_multi_run, @heat_input_note,
+            @preheat_temp, @interpass_temp,
             @created_by, GETDATE(), GETDATE()
         )
     `, {
@@ -422,6 +436,7 @@ async function commitWPQRFromFields(fields, organizationId, companyId, options =
         thickness_max_unlimited: mapped.thickness_max_unlimited ? 1 : 0,
         diameter_min: mapped.diameter_min,
         diameter_max: mapped.diameter_max,
+        throat_test_mm: mapped.throat_test_mm,
         welding_positions: mapped.welding_positions,
         examiner_body: mapped.examiner_body,
         welder_name: mapped.welder_name,
@@ -441,6 +456,8 @@ async function commitWPQRFromFields(fields, organizationId, companyId, options =
         mechanization: mapped.mechanization,
         single_multi_run: mapped.single_multi_run,
         heat_input_note: mapped.heat_input_note,
+        preheat_temp: mapped.preheat_temp,
+        interpass_temp: mapped.interpass_temp,
         created_by: userId,
     });
 

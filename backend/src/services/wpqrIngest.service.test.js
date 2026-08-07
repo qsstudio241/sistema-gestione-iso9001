@@ -302,3 +302,54 @@ describe('extractWPQRFromPdf — warning di plausibilità propagati', () => {
         expect(out.warnings.some((w) => w.includes('scadenza'))).toBe(true);
     });
 });
+
+/**
+ * Round-trip a sentinella (rete di sicurezza strutturale — audit ingest
+ * saldatura/3834 07/08/2026, docs/gap-reports/GAP_WPQR_ESTENSIONI_ANNEX_B_2026-08-07.md §4).
+ * Per ogni chiave di `aiExpectedSchema` (lo schema realmente usato dal prompt AI in
+ * produzione, backend/src/data/documentTypeSchemas.js) genera un valore-sentinella
+ * univoco e verifica che sopravviva fino ai parametri della INSERT su wpqr_records.
+ * Avrebbe intercettato preheat_temp/interpass_temp (persi tra pipeline e DB) e,
+ * prima del fix 07/08/2026, anche thickness_max_unlimited.
+ */
+describe('round-trip a sentinella — ogni campo aiExpectedSchema sopravvive fino a wpqr_records', () => {
+    afterEach(() => jest.clearAllMocks());
+
+    it('nessun campo dello schema AI WPQR viene perso tra pipeline e INSERT', async () => {
+        const { DOCUMENT_TYPE_SCHEMAS } = require('../data/documentTypeSchemas');
+        const wpqrSchema = DOCUMENT_TYPE_SCHEMAS.wpqr;
+        const { buildSentinelFields, findMissingSentinels } = require('../utils/ingestRoundTripSentinel');
+
+        // thickness_max_unlimited=true azzererebbe thickness_max per design (vedi
+        // resolveThicknessRange) — non è un bug, va escluso da QUESTA generazione
+        // per non produrre un falso positivo (c'è già copertura dedicata sopra).
+        const { fields, tokens } = buildSentinelFields(wpqrSchema.aiExpectedSchema, {
+            thickness_max_unlimited: false,
+        });
+
+        runDocumentIngest.mockResolvedValue({
+            text: 'WPQR round-trip sentinel test',
+            fields,
+            fieldConfidence: {},
+            extractionConfidence: 80,
+            aiModel: 'test',
+            warnings: [],
+        });
+        query.mockResolvedValueOnce({ recordset: [] }); // checkDuplicate (extract)
+        query.mockResolvedValueOnce({ recordset: [] }); // checkDuplicate (commit)
+        query.mockResolvedValueOnce({ recordset: [{ id: 777 }] }); // INSERT
+
+        await ingestWPQRFromPdf(Buffer.from('%PDF'), 'sentinel.pdf', 1001, 2001, {});
+
+        const insertCall = query.mock.calls.find(([sql]) => sql.includes('INSERT INTO wpqr_records'));
+        expect(insertCall).toBeTruthy();
+        const capturedValues = Object.values(insertCall[1]);
+
+        // GAP noti e già documentati come non ancora chiusi (vedi gap report §1) —
+        // svuotare via via che vengono corretti, mai aggiungere qui senza una riga
+        // nel gap report che lo motivi.
+        const knownGaps = [];
+        const missing = findMissingSentinels(tokens, capturedValues, knownGaps);
+        expect(missing).toEqual([]);
+    });
+});

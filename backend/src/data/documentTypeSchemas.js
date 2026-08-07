@@ -131,6 +131,8 @@ Campi di copertura (pag.1 RANGE OF QUALIFICATION, priorita alta):
   assente dal documento (non un range aperto dichiarato), lascia entrambi null/false — NON confondere
   le due situazioni
 - diameter_min / diameter_max: range diametro tubo se applicabile
+- throat_test_mm: spessore gola (throat) del provino testato, SOLO per giunti d'angolo/FW,
+  se dichiarato esplicitamente sul verbale (Tabella 8) - numero, null se non applicabile o assente
 - welding_positions: array posizioni ISO 6947 (es. ["PA"])
 - filler_material: designazione materiale d'apporto (ISO 14341 se filo GMAW acciaio, es. "G 42 4 M21 3Si1")
 - pwht: booleano, PWHT applicato
@@ -164,6 +166,7 @@ IMPORTANTE: non ricalcolare i range con formule - estrarre solo i valori dichiar
       thickness_max_unlimited: 'boolean|null',
       diameter_min: 'number|null',
       diameter_max: 'number|null',
+      throat_test_mm: 'number|null',
       welding_positions: 'string[]|null',
       filler_material: 'string|null',
       pwht: 'boolean|null',

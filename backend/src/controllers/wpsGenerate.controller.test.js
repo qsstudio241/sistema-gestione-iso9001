@@ -122,8 +122,34 @@ describe('generateWPS controller (P1-A)', () => {
                 parent_material_b: 'S235',
                 thickness_a_mm: 10,
                 thickness_b_mm: 5,
+                pipe_diameter_mm: null,
             },
         });
+    });
+
+    test('200 ok — passa pipe_diameter_mm al service quando richiesto (giunto su tubo)', async () => {
+        generateWpsFromWpqr.mockResolvedValue({
+            status: 'ok',
+            wpqr_used: { id: 7, wpqr_code: 'WPQR-TUBE' },
+            candidates: [{ id: 7 }],
+            wps_draft: { joint_type: 'BW', status: 'bozza' },
+            extensions_needed: [],
+            warnings: [],
+        });
+        const res = createRes();
+        await generateWPS(
+            {
+                user: { organization_id: 1001 },
+                body: { ...masonBody, pipe_diameter_mm: 168.3 },
+            },
+            res
+        );
+        expect(res.statusCode).toBe(200);
+        expect(generateWpsFromWpqr).toHaveBeenCalledWith(
+            expect.objectContaining({
+                request: expect.objectContaining({ pipe_diameter_mm: 168.3 }),
+            })
+        );
     });
 
     test('200 not_possible — extensions_needed senza scrittura', async () => {
