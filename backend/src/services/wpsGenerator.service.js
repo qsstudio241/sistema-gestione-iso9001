@@ -236,6 +236,81 @@ function checkDiameterCoverage(wpqr, requiredDiameterMm) {
 }
 
 /**
+ * Copertura gola (throat) per giunti d'angolo (ISO 15614-1 Tabella 8, §8.3.2.2 —
+ * vedi docs/reference/ISO-15614-1-range-validita-WPQR.md). Chiude la seconda metà
+ * del gap analysis 07/08/2026 (GAP_WPQR_ESTENSIONI_ANNEX_B, item 1): la WPQR ora
+ * estrae `throat_test_mm` (valore dichiarato del provino), ma la Tabella 8 nella
+ * norma ha in realtà DUE formule in direzioni opposte:
+ *   (a) spessore materiale provino t -> range gola qualificato (questa funzione,
+ *       usa `wpqr.thickness_tested`, stessa formula già usata come hint in
+ *       checkThicknessCoverage);
+ *   (b) gola nominale provino "a" -> range spessore materiale qualificato
+ *       (0,75a-1,5a per mono-passata, nessuna restrizione per multi-passata) —
+ *       userebbe `throat_test_mm`, NON ancora implementata qui: è un affinamento
+ *       del controllo spessore materiale, non del controllo gola, e viene
+ *       lasciata come backlog per non mescolare due controlli diversi nello
+ *       stesso fix (vedi nota in fondo al gap report).
+ *
+ * Applicata SOLO se il chiamante richiede esplicitamente una gola (giunto FW —
+ * per giunti BW il concetto di gola non si applica) E il WPQR è di tipo FW.
+ *
+ * @returns {{ ok: boolean, applicable: boolean, reason?: string, range?: {min:number|null,max:number|null} }}
+ */
+function checkThroatCoverage(wpqr, requiredThroatMm) {
+    if (requiredThroatMm == null || requiredThroatMm === '') {
+        return { ok: true, applicable: false };
+    }
+    const a = Number(requiredThroatMm);
+    if (!Number.isFinite(a) || a <= 0) {
+        return { ok: false, applicable: true, reason: 'Gola richiesta non valida' };
+    }
+
+    const isFillet = String(wpqr.joint_type || '').trim().toUpperCase().includes('FW');
+    if (!isFillet) {
+        return {
+            ok: false,
+            applicable: true,
+            reason: `WPQR ${wpqr.wpqr_code || wpqr.id}: non è un giunto FW — la gola non è una variabile qualificata su questo tipo di giunto`,
+        };
+    }
+
+    const tested = wpqr.thickness_tested != null ? Number(wpqr.thickness_tested) : null;
+    if (!Number.isFinite(tested)) {
+        return {
+            ok: false,
+            applicable: true,
+            reason: `WPQR ${wpqr.wpqr_code || wpqr.id}: spessore provino testato non dichiarato — range gola (Tabella 8) non calcolabile`,
+        };
+    }
+
+    const range = computeQualifiedFilletThroatThicknessRange({ testThicknessMm: tested });
+    if (!range) {
+        return {
+            ok: false,
+            applicable: true,
+            reason: `WPQR ${wpqr.wpqr_code || wpqr.id}: spessore provino non valido per il calcolo del range gola`,
+        };
+    }
+
+    const inRange = a >= range.minMm && (range.maxMm == null || a <= range.maxMm);
+    const rangeLabel = `${range.minMm}-${range.maxMm == null ? '∞' : range.maxMm} mm`;
+    if (inRange) {
+        return {
+            ok: true,
+            applicable: true,
+            reason: `Gola ${a} mm entro ${rangeLabel} qualificati (Tabella 8, da spessore provino ${tested} mm)`,
+            range: { min: range.minMm, max: range.maxMm },
+        };
+    }
+    return {
+        ok: false,
+        applicable: true,
+        reason: `Gola fuori range WPQR ${wpqr.wpqr_code || wpqr.id}: richiesta ${a} mm, range qualificato ${rangeLabel} (Tabella 8, da spessore provino ${tested} mm)`,
+        range: { min: range.minMm, max: range.maxMm },
+    };
+}
+
+/**
  * Bozza WPS minima allineata a welding_procedures / 15609.
  */
 function buildWpsDraft(wpqr, request, groupA, groupB) {
@@ -259,6 +334,7 @@ function buildWpsDraft(wpqr, request, groupA, groupB) {
         thickness_a_mm: request.thickness_a_mm != null ? Number(request.thickness_a_mm) : null,
         thickness_b_mm: request.thickness_b_mm != null ? Number(request.thickness_b_mm) : null,
         pipe_diameter_mm: request.pipe_diameter_mm != null ? Number(request.pipe_diameter_mm) : null,
+        throat_mm: request.throat_mm != null ? Number(request.throat_mm) : null,
         qualification_standard: wpqr.standard_reference || 'ISO 15614-1',
         wpqr_ref: wpqr.wpqr_code || null,
         wpqr_id: wpqr.id != null ? wpqr.id : null,
@@ -454,6 +530,7 @@ async function generateWpsFromWpqr(params = {}) {
     const materialFailures = [];
     const thicknessFailures = [];
     const diameterFailures = [];
+    const throatFailures = [];
     const processFailures = [];
     const jointFailures = [];
 
@@ -516,11 +593,18 @@ async function generateWpsFromWpqr(params = {}) {
             localWarnings.push(dia.reason);
         }
 
+        const throat = checkThroatCoverage(wpqr, normalizedRequest.throat_mm);
+        if (!throat.ok) {
+            throatFailures.push(throat.reason || 'Gola fuori range');
+            continue;
+        }
+
         candidates.push({
             wpqr,
             material: mat,
             thickness: th,
             diameter: dia,
+            throat,
             warnings: localWarnings,
             score: (th.partial ? 1 : 2) + (localWarnings.length ? 0 : 1),
         });
@@ -538,6 +622,9 @@ async function generateWpsFromWpqr(params = {}) {
         }
         if (diameterFailures.length > 0) {
             extensionsNeeded.push(...diameterFailures.slice(0, 3));
+        }
+        if (throatFailures.length > 0) {
+            extensionsNeeded.push(...throatFailures.slice(0, 3));
         }
         if (processFailures.length > 0 && candidates.length === 0) {
             extensionsNeeded.push(
@@ -590,6 +677,7 @@ async function generateWpsFromWpqr(params = {}) {
             material_reason: c.material.reason,
             thickness_reason: c.thickness.reason,
             diameter_reason: c.diameter && c.diameter.applicable ? c.diameter.reason : null,
+            throat_reason: c.throat && c.throat.applicable ? c.throat.reason : null,
         })),
         wps_draft: draft,
         extensions_needed: [],
@@ -604,6 +692,7 @@ module.exports = {
     loadWpqrRecords,
     checkThicknessCoverage,
     checkDiameterCoverage,
+    checkThroatCoverage,
     jointTypeCompatible,
     buildWpsDraft,
 };

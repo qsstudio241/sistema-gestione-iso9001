@@ -137,6 +137,7 @@ async function generateWPS(req, res) {
             thickness_a_mm,
             thickness_b_mm,
             pipe_diameter_mm,
+            throat_mm,
         } = req.body || {};
 
         // Validazione soft: campi incompleti → status need_input (domande), non 400.
@@ -153,6 +154,13 @@ async function generateWPS(req, res) {
         const pipeDiameterMm = pipe_diameter_mm === '' || pipe_diameter_mm == null
             ? null
             : Number(pipe_diameter_mm);
+        // Gola richiesta (mm) — opzionale, SOLO per giunti FW (gap analysis
+        // 07/08/2026, GAP_WPQR_ESTENSIONI_ANNEX_B item 1: la gola dichiarata sulla
+        // WPQR ora viene estratta, ma senza questo parametro non veniva mai
+        // verificata quando si genera una WPS per un giunto d'angolo).
+        const throatMm = throat_mm === '' || throat_mm == null
+            ? null
+            : Number(throat_mm);
 
         const { generateWpsFromWpqr } = require('../services/wpsGenerator.service');
         const result = await generateWpsFromWpqr({
@@ -168,6 +176,7 @@ async function generateWPS(req, res) {
                 thickness_a_mm: tA,
                 thickness_b_mm: tB,
                 pipe_diameter_mm: pipeDiameterMm,
+                throat_mm: throatMm,
             },
         });
 

@@ -271,6 +271,7 @@ export function GenerateWpsModal({
     thickness_b_mm: defaults.thickness_b_mm != null ? String(defaults.thickness_b_mm) : "",
     welding_process: defaults.welding_process || "",
     pipe_diameter_mm: defaults.pipe_diameter_mm != null ? String(defaults.pipe_diameter_mm) : "",
+    throat_mm: defaults.throat_mm != null ? String(defaults.throat_mm) : "",
   });
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -295,6 +296,7 @@ export function GenerateWpsModal({
       };
       if (form.welding_process) payload.welding_process = form.welding_process;
       if (form.pipe_diameter_mm !== "") payload.pipe_diameter_mm = Number(form.pipe_diameter_mm);
+      if (form.joint_type === "FW" && form.throat_mm !== "") payload.throat_mm = Number(form.throat_mm);
       if (defaultCompanyId) payload.company_id = defaultCompanyId;
 
       const res = await apiService.generateWPS(payload);
@@ -438,6 +440,21 @@ export function GenerateWpsModal({
                   data-testid="gen-pipe-diameter"
                 />
               </div>
+              {form.joint_type === "FW" && (
+                <div className="wp-form-group">
+                  <label className="wp-form-label">Gola richiesta (mm)</label>
+                  <input
+                    className="wp-form-input"
+                    type="number"
+                    step="0.1"
+                    min="0"
+                    value={form.throat_mm}
+                    onChange={(e) => set("throat_mm", e.target.value)}
+                    placeholder="Solo giunti FW — Tabella 8 ISO 15614-1"
+                    data-testid="gen-throat"
+                  />
+                </div>
+              )}
             </div>
 
             {result && canSave && (
@@ -491,6 +508,12 @@ export function GenerateWpsModal({
                     <div className="wp-form-group">
                       <label className="wp-form-label">Diametro tubo richiesto</label>
                       <input className="wp-form-input" readOnly value={`${result.wps_draft.pipe_diameter_mm} mm`} />
+                    </div>
+                  )}
+                  {result.wps_draft.throat_mm != null && (
+                    <div className="wp-form-group">
+                      <label className="wp-form-label">Gola richiesta</label>
+                      <input className="wp-form-input" readOnly value={`${result.wps_draft.throat_mm} mm`} />
                     </div>
                   )}
                 </div>

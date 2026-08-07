@@ -123,8 +123,34 @@ describe('generateWPS controller (P1-A)', () => {
                 thickness_a_mm: 10,
                 thickness_b_mm: 5,
                 pipe_diameter_mm: null,
+                throat_mm: null,
             },
         });
+    });
+
+    test('200 ok — passa throat_mm al service quando richiesto (giunto FW)', async () => {
+        generateWpsFromWpqr.mockResolvedValue({
+            status: 'ok',
+            wpqr_used: { id: 8, wpqr_code: 'WPQR-FW' },
+            candidates: [{ id: 8 }],
+            wps_draft: { joint_type: 'FW', status: 'bozza' },
+            extensions_needed: [],
+            warnings: [],
+        });
+        const res = createRes();
+        await generateWPS(
+            {
+                user: { organization_id: 1001 },
+                body: { ...masonBody, throat_mm: 6 },
+            },
+            res
+        );
+        expect(res.statusCode).toBe(200);
+        expect(generateWpsFromWpqr).toHaveBeenCalledWith(
+            expect.objectContaining({
+                request: expect.objectContaining({ throat_mm: 6 }),
+            })
+        );
     });
 
     test('200 ok — passa pipe_diameter_mm al service quando richiesto (giunto su tubo)', async () => {

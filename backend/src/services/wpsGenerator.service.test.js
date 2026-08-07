@@ -5,6 +5,7 @@ const {
     assessJointCoverageInputs,
     checkThicknessCoverage,
     checkDiameterCoverage,
+    checkThroatCoverage,
 } = require('./wpsGenerator.service');
 
 /** Fixture WPQR caso Mason (in-memory). */
@@ -240,6 +241,81 @@ describe('checkDiameterCoverage — Tabella 9 (Level 2 variabile essenziale)', (
         });
         expect(['ok', 'partial']).toContain(result.status);
         expect(result.wpqr_used).toBeTruthy();
+    });
+});
+
+/**
+ * Gap analysis 07/08/2026 (GAP_WPQR_ESTENSIONI_ANNEX_B, item 1 — chiusura
+ * completa): la gola richiesta per generare una WPS su giunto FW ora viene
+ * verificata contro il range qualificato Tabella 8 (calcolato da
+ * thickness_tested, come già usato in checkThicknessCoverage come hint).
+ */
+describe('checkThroatCoverage — Tabella 8 (giunti FW)', () => {
+    const WPQR_FW_T10 = {
+        id: 4,
+        wpqr_code: 'WPQR-FW-T10',
+        joint_type: 'FW',
+        thickness_tested: 10,
+    };
+
+    test('nessuna gola richiesta (giunto BW o non specificata) → non applicabile, sempre ok', () => {
+        const r = checkThroatCoverage(WPQR_FW_T10, null);
+        expect(r.ok).toBe(true);
+        expect(r.applicable).toBe(false);
+    });
+
+    test('WPQR non FW → non applicabile la verifica gola, esclusa', () => {
+        const r = checkThroatCoverage({ ...WPQR_FW_T10, joint_type: 'BW' }, 5);
+        expect(r.ok).toBe(false);
+        expect(r.reason).toMatch(/non è un giunto FW/);
+    });
+
+    test('gola entro il range Tabella 8 (t=10 → 3-20mm per 3<t<30) → ok', () => {
+        const r = checkThroatCoverage(WPQR_FW_T10, 10);
+        expect(r.ok).toBe(true);
+        expect(r.range).toEqual({ min: 3, max: 20 });
+    });
+
+    test('gola sotto il minimo Tabella 8 → non ok', () => {
+        const r = checkThroatCoverage(WPQR_FW_T10, 1);
+        expect(r.ok).toBe(false);
+    });
+
+    test('gola sopra il massimo Tabella 8 → non ok', () => {
+        const r = checkThroatCoverage(WPQR_FW_T10, 25);
+        expect(r.ok).toBe(false);
+    });
+
+    test('t>=30mm → solo minimo 5mm, nessun massimo (range aperto)', () => {
+        const r = checkThroatCoverage({ ...WPQR_FW_T10, thickness_tested: 30 }, 500);
+        expect(r.ok).toBe(true);
+        expect(r.range.max).toBeNull();
+    });
+
+    test('spessore provino non dichiarato → fail-closed (non verificabile)', () => {
+        const r = checkThroatCoverage({ ...WPQR_FW_T10, thickness_tested: null }, 10);
+        expect(r.ok).toBe(false);
+        expect(r.reason).toMatch(/non dichiarato/);
+    });
+
+    test('generateWpsFromWpqr end-to-end: gola fuori range esclude il candidato', async () => {
+        const result = await generateWpsFromWpqr({
+            organizationId: 1,
+            request: { ...MASON_REQUEST, throat_mm: 25 },
+            wpqrRecords: [{ ...WPQR_MASON_DEMO, thickness_tested: 10 }],
+        });
+        expect(result.status).toBe('not_possible');
+        expect(result.extensions_needed.join(' ')).toMatch(/[Gg]ola/);
+    });
+
+    test('generateWpsFromWpqr end-to-end: gola entro range accetta il candidato', async () => {
+        const result = await generateWpsFromWpqr({
+            organizationId: 1,
+            request: { ...MASON_REQUEST, throat_mm: 10 },
+            wpqrRecords: [{ ...WPQR_MASON_DEMO, thickness_tested: 10 }],
+        });
+        expect(['ok', 'partial']).toContain(result.status);
+        expect(result.wps_draft.throat_mm).toBe(10);
     });
 });
 
