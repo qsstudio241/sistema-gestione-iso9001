@@ -99,6 +99,73 @@ describe('wpsGenerator.service (P0)', () => {
     });
 });
 
+/**
+ * Gap analysis 07/08/2026 (WPQR reale VB0377/23 "ADA", cliente Mason): giunto
+ * FW (angolo) con range spessore materiale base dichiarato aperto "t1 = >=5 ;
+ * t2 => 5" (nessun limite superiore). Prima del fix, thickness_max=null veniva
+ * sempre ricalcolato con la formula Tabella 7 (BW), rifiutando come "fuori
+ * range" spessori di produzione realmente coperti (es. 80mm).
+ */
+const WPQR_FW_UNLIMITED = {
+    id: 2,
+    wpqr_code: 'VB0377/23',
+    welding_process: '138',
+    base_material_group: '1.2',
+    joint_type: 'FW',
+    thickness_tested: 30,
+    thickness_min: 5,
+    thickness_max: null,
+    thickness_max_unlimited: true,
+    filler_material: 'T42 6 MM 1 H5',
+    welding_positions: 'PB',
+    standard_reference: 'ISO 15614-1',
+};
+
+describe('checkThicknessCoverage — range aperto FW senza limite superiore (WPQR VB0377/23)', () => {
+    test('spessori elevati (80mm) risultano coperti, non più rifiutati', () => {
+        const r = checkThicknessCoverage(WPQR_FW_UNLIMITED, 80, 80);
+        expect(r.ok).toBe(true);
+        expect(r.partial).toBe(false);
+        expect(r.range.max).toBeNull();
+    });
+
+    test('spessore sotto il minimo dichiarato (3mm < 5mm) resta correttamente fuori range', () => {
+        const r = checkThicknessCoverage(WPQR_FW_UNLIMITED, 3, 80);
+        expect(r.ok).toBe(false);
+    });
+
+    test('flag come numero 1 (compatibilità DB BIT) equivale a true', () => {
+        const r = checkThicknessCoverage({ ...WPQR_FW_UNLIMITED, thickness_max_unlimited: 1 }, 80, 80);
+        expect(r.ok).toBe(true);
+        expect(r.range.max).toBeNull();
+    });
+
+    test('senza il flag (thickness_max realmente assente, non illimitato) il fallback calcolato resta attivo', () => {
+        const r = checkThicknessCoverage({ ...WPQR_FW_UNLIMITED, thickness_max_unlimited: false }, 80, 80);
+        // thickness_tested=30 → Tabella 7 Level 2 darebbe max 33mm: 80mm risulta fuori range.
+        expect(r.ok).toBe(false);
+    });
+
+    test('generateWpsFromWpqr end-to-end: bozza WPS con thickness_range_max=null (illimitato)', async () => {
+        const result = await generateWpsFromWpqr({
+            organizationId: 1,
+            request: {
+                joint_type: 'FW',
+                welding_process: '138',
+                parent_material_a: 'S355',
+                parent_material_b: 'S355',
+                thickness_a_mm: 80,
+                thickness_b_mm: 80,
+            },
+            wpqrRecords: [WPQR_FW_UNLIMITED],
+        });
+        expect(['ok', 'partial']).toContain(result.status);
+        expect(result.wps_draft).toBeTruthy();
+        expect(result.wps_draft.thickness_range_max).toBeNull();
+        expect(result.candidates[0].thickness_max_unlimited).toBe(true);
+    });
+});
+
 describe('assessJointCoverageInputs / need_input', () => {
     test('spessori sì ma materiali mancanti → need_input con domande gruppo', async () => {
         const result = await generateWpsFromWpqr({

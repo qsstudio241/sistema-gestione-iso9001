@@ -998,6 +998,13 @@ const wpqr = {
       hint: "Dal range of qualification dichiarato sul verbale — non ricalcolare",
     },
     {
+      key: "thickness_max_unlimited",
+      label: "Spessore massimo — nessun limite superiore",
+      type: "boolean",
+      required: false,
+      hint: "true SOLO se il verbale dichiara esplicitamente un range aperto (es. \u201C\u2265 5\u201D, \u201C=> 5\u201D, \u201Cno restriction\u201D, \u201Csenza limite superiore\u201D) — frequente su giunti FW/angolo. Se il campo è semplicemente assente dal documento, lasciare null/false",
+    },
+    {
       key: "diameter_min",
       label: "Diametro tubo - minimo (mm)",
       type: "number",
@@ -1154,6 +1161,7 @@ Campi di copertura (pag.1 RANGE OF QUALIFICATION, priorità alta):
 - material_group: gruppo materiale ISO/TR 15608, preferire il sottogruppo (es. "1.2") se presente
 - thickness_test_mm: spessore del provino testato (numero)
 - thickness_min / thickness_max: range di spessore DICHIARATO sul verbale (non calcolarlo)
+- thickness_max_unlimited: booleano — true SOLO se il verbale dichiara esplicitamente un range aperto senza limite superiore (simboli "\u2265", "=>", "\u2a7e", oppure testo "no restriction"/"senza limite superiore"), tipico dei giunti ad angolo (Fillet Weld: es. "t1 = => 5 ; t2 => 5"). In questo caso lascia thickness_max: null e imposta thickness_max_unlimited: true. Se il campo è semplicemente assente dal documento (non un range aperto dichiarato), lascia entrambi null/false — NON confondere le due situazioni
 - diameter_min / diameter_max: range diametro tubo se applicabile
 - welding_positions: array posizioni ISO 6947 (es. ["PA"])
 - filler_material: designazione materiale d'apporto (ISO 14341 se filo GMAW acciaio, es. "G 42 4 M21 3Si1")
@@ -1185,6 +1193,7 @@ IMPORTANTE: non ricalcolare i range con formule — estrarre solo i valori dichi
     thickness_test_mm: "number|null",
     thickness_min: "number|null",
     thickness_max: "number|null",
+    thickness_max_unlimited: "boolean|null",
     diameter_min: "number|null",
     diameter_max: "number|null",
     welding_positions: "string[]|null",

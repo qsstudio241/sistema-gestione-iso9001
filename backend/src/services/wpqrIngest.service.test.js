@@ -12,7 +12,13 @@ jest.mock('../config/database', () => ({
 
 const { runDocumentIngest } = require('./documentIngestPipeline.service');
 const { query } = require('../config/database');
-const { ingestWPQRFromPdf, extractWPQRFromPdf, checkWpqrPlausibility, commitWPQRFromFields } = require('./wpqrIngest.service');
+const {
+    ingestWPQRFromPdf,
+    extractWPQRFromPdf,
+    checkWpqrPlausibility,
+    commitWPQRFromFields,
+    resolveThicknessRange,
+} = require('./wpqrIngest.service');
 
 describe('ingestWPQRFromPdf (IG-2)', () => {
     afterEach(() => jest.clearAllMocks());
@@ -111,6 +117,94 @@ describe('checkWpqrPlausibility (gap analysis 26/07/2026 — warning-only)', () 
 });
 
 /**
+ * Test L1 — resolveThicknessRange / gap analysis 07/08/2026 (WPQR reale
+ * VB0377/23 "ADA", cliente Mason): giunto FW (angolo) con range aperto
+ * dichiarato "Fillet Weld: t1 = >=5 ; t2 => 5" (nessun limite superiore),
+ * spessore provino testato 30mm. Prima del fix, thickness_max=null veniva
+ * sempre sostituito da calcThicknessRange (formula Tabella 7 BW), dando
+ * [15, 60] invece del range reale [5, illimitato].
+ */
+describe('resolveThicknessRange — gap FW range aperto (WPQR VB0377/23)', () => {
+    it('preserva "illimitato" quando thickness_max_unlimited=true (non lo sovrascrive con un calcolo)', () => {
+        const out = resolveThicknessRange({
+            joint_type: 'FW',
+            thickness_test_mm: 30,
+            thickness_min: 5,
+            thickness_max: null,
+            thickness_max_unlimited: true,
+        });
+        expect(out.thickness_min).toBe(5);
+        expect(out.thickness_max).toBeNull();
+        expect(out.thickness_max_unlimited).toBe(true);
+        // Non deve MAI comparire il valore errato calcolato dalla formula BW (60 per t=30).
+        expect(out.thickness_max).not.toBe(60);
+    });
+
+    it('non applica il fallback calcolato Tabella 7 (BW) per giunti FW anche senza flag illimitato', () => {
+        const out = resolveThicknessRange({
+            joint_type: 'FW',
+            thickness_test_mm: 30,
+            thickness_min: null,
+            thickness_max: null,
+            thickness_max_unlimited: false,
+        });
+        expect(out.thickness_min).toBeNull();
+        expect(out.thickness_max).toBeNull();
+        expect(out.thickness_max).not.toBe(60);
+    });
+
+    it('applica ancora il fallback calcolato Tabella 7 per giunti BW (comportamento invariato)', () => {
+        const out = resolveThicknessRange({
+            joint_type: 'BW',
+            thickness_test_mm: 30,
+            thickness_min: null,
+            thickness_max: null,
+        });
+        expect(out.thickness_min).toBe(15);
+        expect(out.thickness_max).toBe(60);
+        expect(out.thickness_max_unlimited).toBe(false);
+    });
+
+    it('accetta thickness_max_unlimited come stringa "true"/"1" (compatibilità form di revisione)', () => {
+        const out1 = resolveThicknessRange({ joint_type: 'FW', thickness_min: 5, thickness_max_unlimited: 'true' });
+        const out2 = resolveThicknessRange({ joint_type: 'FW', thickness_min: 5, thickness_max_unlimited: '1' });
+        expect(out1.thickness_max_unlimited).toBe(true);
+        expect(out2.thickness_max_unlimited).toBe(true);
+    });
+});
+
+describe('checkWpqrPlausibility — warning FW range non calcolabile (gap 07/08/2026)', () => {
+    it('segnala verifica manuale per giunto FW senza range dichiarato e senza flag illimitato', () => {
+        const warnings = checkWpqrPlausibility({
+            joint_type: 'FW',
+            thickness_min: null,
+            thickness_max: null,
+            thickness_max_unlimited: false,
+        });
+        expect(warnings.some((w) => w.includes('FW') && w.includes('verificare manualmente'))).toBe(true);
+    });
+
+    it('nessun warning FW quando il range è correttamente marcato come illimitato', () => {
+        const warnings = checkWpqrPlausibility({
+            joint_type: 'FW',
+            thickness_min: 5,
+            thickness_max: null,
+            thickness_max_unlimited: true,
+        });
+        expect(warnings.some((w) => w.includes('non calcolabile automaticamente'))).toBe(false);
+    });
+
+    it('nessun warning FW per giunti BW (non pertinente)', () => {
+        const warnings = checkWpqrPlausibility({
+            joint_type: 'BW',
+            thickness_min: null,
+            thickness_max: null,
+        });
+        expect(warnings.some((w) => w.includes('FW'))).toBe(false);
+    });
+});
+
+/**
  * Test L1 — commitWPQRFromFields, sanitizzazione numerica (gap hardening
  * 27/07/2026, stesso pattern del bug produzione su qualificationIngest.service.js
  * e wpsIngest.service.js): thickness_tested/thickness_min/thickness_max/
@@ -141,6 +235,29 @@ describe('commitWPQRFromFields — sanitizzazione numerica', () => {
         expect(insertCall[1].thickness_max).toBeNull();
         expect(insertCall[1].diameter_min).toBeNull();
         expect(insertCall[1].diameter_max).toBeNull();
+    });
+
+    it('GIUNTO FW range aperto (WPQR reale VB0377/23): salva thickness_max=null + thickness_max_unlimited=1, NON 60', async () => {
+        query.mockResolvedValueOnce({ recordset: [] }); // checkDuplicate
+        query.mockResolvedValueOnce({ recordset: [{ id: 200 }] }); // INSERT
+
+        const result = await commitWPQRFromFields({
+            wpqr_number: 'VB0377/23',
+            welding_process: '138',
+            joint_type: 'FW',
+            thickness_test_mm: 30,
+            // Come dichiarato sul verbale reale: "Fillet Weld: t1 = >=5 ; t2 => 5"
+            thickness_min: 5,
+            thickness_max: null,
+            thickness_max_unlimited: true,
+        }, 1001, 2001, { fileName: 'VB0377-23.pdf' });
+
+        expect(result.wpqr_id).toBe(200);
+        const insertCall = query.mock.calls[1];
+        expect(insertCall[1].thickness_min).toBe(5);
+        expect(insertCall[1].thickness_max).toBeNull();
+        expect(insertCall[1].thickness_max).not.toBe(60);
+        expect(insertCall[1].thickness_max_unlimited).toBe(1);
     });
 
     it('converte la virgola decimale italiana su thickness_test_mm senza crashare', async () => {

@@ -144,6 +144,29 @@ function checkThicknessRangeAgainstIso15614Level2({ thicknessTestMm, thicknessMi
     return null;
 }
 
+/**
+ * Per giunti FW (fillet/angolo), il range spessore materiale base (t1/t2)
+ * NON segue la Tabella 7 (BW) — l'ingest (wpqrIngest.service.js,
+ * resolveThicknessRange) non applica un fallback calcolato in questo caso.
+ * Se il range non è dichiarato sul verbale (né marcato come "senza limite
+ * superiore" tramite thickness_max_unlimited), segnala che serve verifica
+ * manuale invece di lasciare intendere un calcolo automatico affidabile.
+ *
+ * Gap analysis 07/08/2026 (WPQR reale VB0377/23, cliente Mason): "Fillet
+ * Weld: t1 = >=5 ; t2 => 5" — range aperto, nessun limite superiore.
+ *
+ * @param {{ jointType: string|null, thicknessMin: number|null,
+ *   thicknessMax: number|null, thicknessMaxUnlimited: boolean|null }} params
+ * @returns {string|null}
+ */
+function checkFilletThicknessRangeNeedsManualVerification({ jointType, thicknessMin, thicknessMax, thicknessMaxUnlimited }) {
+    const isFillet = String(jointType || '').trim().toUpperCase().includes('FW');
+    if (!isFillet) return null;
+    if (thicknessMaxUnlimited) return null;
+    if (thicknessMin != null && thicknessMax != null) return null;
+    return 'Range spessore materiale base (t1/t2) per giunto FW (angolo) non calcolabile automaticamente dalla formula generica Tabella 7 (BW) — verificare manualmente sul WPQR i valori dichiarati, oppure l\'eventuale range aperto "senza limite superiore"';
+}
+
 module.exports = {
     parseIsoDate,
     checkDateOrder,
@@ -151,4 +174,5 @@ module.exports = {
     checkFillerMaterial14341Plausibility,
     checkShieldingGasKnown,
     checkThicknessRangeAgainstIso15614Level2,
+    checkFilletThicknessRangeNeedsManualVerification,
 };

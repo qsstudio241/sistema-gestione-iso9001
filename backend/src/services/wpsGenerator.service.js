@@ -83,6 +83,12 @@ function jointTypeCompatible(wpqr, requested, warnings) {
  * Preferisce thickness_min/max dichiarati sul WPQR; altrimenti suggerisce da Tabella 7 Level 2
  * (o gola Tabella 8 solo come hint) con status partial.
  *
+ * Gap analysis 07/08/2026 (WPQR reale VB0377/23 "ADA", cliente Mason, giunto FW):
+ * `thickness_max_unlimited` (migrazione 139) dichiara un range aperto SENZA limite
+ * superiore (es. "t1/t2 ≥5") — va rispettato e NON sovrascritto da un massimo
+ * calcolato con la formula Tabella 7 (pensata per giunti BW), altrimenti spessori
+ * di produzione realmente coperti (es. 80mm) verrebbero rifiutati come "fuori range".
+ *
  * @returns {{ ok: boolean, partial: boolean, reason?: string, range?: { min: number|null, max: number|null } }}
  */
 function checkThicknessCoverage(wpqr, thicknessA, thicknessB) {
@@ -96,10 +102,13 @@ function checkThicknessCoverage(wpqr, thicknessA, thicknessB) {
         ? Number(wpqr.thickness_min) : null;
     let max = wpqr.thickness_max != null && wpqr.thickness_max !== ''
         ? Number(wpqr.thickness_max) : null;
+    const maxUnlimited = wpqr.thickness_max_unlimited === true
+        || wpqr.thickness_max_unlimited === 1
+        || wpqr.thickness_max_unlimited === '1';
     let partial = false;
-    let source = 'dichiarato';
+    let source = maxUnlimited ? 'dichiarato (range aperto, senza limite superiore)' : 'dichiarato';
 
-    if (!Number.isFinite(min) || !Number.isFinite(max)) {
+    if (!Number.isFinite(min) || (!Number.isFinite(max) && !maxUnlimited)) {
         const tested = wpqr.thickness_tested != null
             ? Number(wpqr.thickness_tested)
             : null;
@@ -107,10 +116,16 @@ function checkThicknessCoverage(wpqr, thicknessA, thicknessB) {
             ? computeQualifiedMaterialThicknessRangeLevel2({ testThicknessMm: tested })
             : null;
         if (level2) {
-            min = level2.minMm;
-            max = level2.maxMm;
+            min = Number.isFinite(min) ? min : level2.minMm;
+            // Il massimo calcolato (Tabella 7 BW) non sostituisce MAI un range aperto dichiarato.
+            max = maxUnlimited ? null : level2.maxMm;
             partial = true;
-            source = 'calcolato Level 2 (Tabella 7) da thickness_tested';
+            source = maxUnlimited
+                ? 'min calcolato Level 2 (Tabella 7) da thickness_tested, max dichiarato illimitato'
+                : 'calcolato Level 2 (Tabella 7) da thickness_tested';
+        } else if (maxUnlimited && Number.isFinite(min)) {
+            // min già dichiarato, max illimitato dichiarato: nessun calcolo necessario.
+            source = 'dichiarato (range aperto, senza limite superiore)';
         } else {
             // Fallback informativo gola FW — non usarlo come range materiale base vincente
             const fillet = Number.isFinite(tested)
@@ -139,7 +154,7 @@ function checkThicknessCoverage(wpqr, thicknessA, thicknessB) {
             partial,
             reason: partial
                 ? `Spessori ok su range ${source}`
-                : `Spessori ${tA}/${tB} mm entro ${min}-${max} mm (${source})`,
+                : `Spessori ${tA}/${tB} mm entro ${min}-${max == null ? '∞' : max} mm (${source})`,
             range: { min, max },
         };
     }
@@ -168,7 +183,11 @@ function buildWpsDraft(wpqr, request, groupA, groupB) {
         parent_material_b: request.parent_material_b || null,
         joint_type: request.joint_type || wpqr.joint_type || null,
         thickness_range_min: wpqr.thickness_min != null ? Number(wpqr.thickness_min) : tMin,
-        thickness_range_max: wpqr.thickness_max != null ? Number(wpqr.thickness_max) : tMax,
+        // null = nessun limite superiore dichiarato sul WPQR (gap analysis 07/08/2026) —
+        // non sostituire con tMax quando il range è esplicitamente aperto.
+        thickness_range_max: (wpqr.thickness_max_unlimited === true || wpqr.thickness_max_unlimited === 1 || wpqr.thickness_max_unlimited === '1')
+            ? null
+            : (wpqr.thickness_max != null ? Number(wpqr.thickness_max) : tMax),
         thickness_a_mm: request.thickness_a_mm != null ? Number(request.thickness_a_mm) : null,
         thickness_b_mm: request.thickness_b_mm != null ? Number(request.thickness_b_mm) : null,
         qualification_standard: wpqr.standard_reference || 'ISO 15614-1',
@@ -480,6 +499,7 @@ async function generateWpsFromWpqr(params = {}) {
             joint_type: c.wpqr.joint_type,
             thickness_min: c.wpqr.thickness_min,
             thickness_max: c.wpqr.thickness_max,
+            thickness_max_unlimited: c.wpqr.thickness_max_unlimited === true || c.wpqr.thickness_max_unlimited === 1 || c.wpqr.thickness_max_unlimited === '1',
             material_reason: c.material.reason,
             thickness_reason: c.thickness.reason,
         })),
