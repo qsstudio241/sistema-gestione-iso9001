@@ -22,6 +22,11 @@ Campi da estrarre:
   derivazione/branch/bocchello tubo-piastra - riportalo qui testualmente per non perdere l'informazione
   anche quando product_type resta "T"; testo libero breve, null se assenti),
 - material_group, filler_material_group, welding_positions (array), thickness_min_mm, thickness_max_mm,
+- thickness_max_unlimited (booleano — true SOLO se il certificato dichiara esplicitamente un range
+  aperto senza limite superiore, es. simboli "≥"/"=>"/"⩾" o testo "no restriction"/"senza limite
+  superiore" sullo spessore massimo qualificato; in tal caso lascia thickness_max_mm: null e imposta
+  thickness_max_unlimited: true. Se il campo è semplicemente assente dal documento — non un range
+  aperto dichiarato — lascia entrambi null/false: NON confondere le due situazioni),
 - pipe_diameter_mm, shielding_gas, exam_date, expiry_date, last_confirmation_date,
 - next_confirmation_due, standard_reference (YYYY-MM-DD per le date)
 - transfer_mode (metodo di trasferimento del metallo d'apporto - variabile essenziale ISO 9606-1 §5.2,
@@ -56,6 +61,7 @@ Istruzioni per le date di conferma semestrale (ISO 9606-1 §9.2):
       welding_positions: 'string[]|null',
       thickness_min_mm: 'number|null',
       thickness_max_mm: 'number|null',
+      thickness_max_unlimited: 'boolean|null',
       pipe_diameter_mm: 'number|null',
       shielding_gas: 'string|null',
       exam_date: 'YYYY-MM-DD|null',
@@ -118,6 +124,12 @@ Campi di copertura (pag.1 RANGE OF QUALIFICATION, priorita alta):
 - material_group: gruppo materiale ISO/TR 15608, preferire il sottogruppo (es. "1.2") se presente
 - thickness_test_mm: spessore del provino testato (numero)
 - thickness_min / thickness_max: range di spessore DICHIARATO sul verbale (non calcolarlo)
+- thickness_max_unlimited: booleano — true SOLO se il verbale dichiara esplicitamente un range aperto
+  senza limite superiore (simboli "≥", "=>", "⩾", oppure testo "no restriction"/"senza limite
+  superiore"), tipico dei giunti ad angolo (Fillet Weld: es. "t1 = => 5 ; t2 => 5"). In questo caso
+  lascia thickness_max: null e imposta thickness_max_unlimited: true. Se il campo è semplicemente
+  assente dal documento (non un range aperto dichiarato), lascia entrambi null/false — NON confondere
+  le due situazioni
 - diameter_min / diameter_max: range diametro tubo se applicabile
 - welding_positions: array posizioni ISO 6947 (es. ["PA"])
 - filler_material: designazione materiale d'apporto (ISO 14341 se filo GMAW acciaio, es. "G 42 4 M21 3Si1")
@@ -149,6 +161,7 @@ IMPORTANTE: non ricalcolare i range con formule - estrarre solo i valori dichiar
       thickness_test_mm: 'number|null',
       thickness_min: 'number|null',
       thickness_max: 'number|null',
+      thickness_max_unlimited: 'boolean|null',
       diameter_min: 'number|null',
       diameter_max: 'number|null',
       welding_positions: 'string[]|null',

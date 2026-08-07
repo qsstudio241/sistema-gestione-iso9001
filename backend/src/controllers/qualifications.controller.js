@@ -375,7 +375,7 @@ async function getCoverage(req, res) {
         const qRes = await qReq.query(`
             SELECT q.id, q.person_name, q.person_code, q.qualification_type,
                    q.welding_process, q.material_group, q.position_range,
-                   q.thickness_min_mm, q.thickness_max_mm, q.thickness_range, q.joint_type,
+                   q.thickness_min_mm, q.thickness_max_mm, q.thickness_max_unlimited, q.thickness_range, q.joint_type,
                    q.expiry_date, q.status, q.approval_status, q.next_confirmation_due,
                    c.name AS company_name
             FROM qualifications q
@@ -505,7 +505,7 @@ async function createQualification(req, res) {
             // saldatore 9606-1 enrichment
             exam_date, last_confirmation_date, next_confirmation_due, revalidation_date,
             product_type, weld_details, transfer_mode,
-            thickness_min_mm, thickness_max_mm, pipe_diameter_min_mm, pipe_diameter_max_mm,
+            thickness_min_mm, thickness_max_mm, thickness_max_unlimited, pipe_diameter_min_mm, pipe_diameter_max_mm,
             // operatore 14732 (saldatura automatica/meccanizzata)
             welding_type, single_multi_run, qualification_method,
         } = body;
@@ -612,6 +612,7 @@ async function createQualification(req, res) {
             .input('designation', designation       || null)
             .input('thickMin',    thickMin)
             .input('thickMax',    thickMax)
+            .input('thickMaxUnlimited', !!thickness_max_unlimited)
             .input('pipeMin',     pipeMin)
             .input('pipeMax',     pipeMax)
             .input('thickRangeFinal', thicknessRangeFinal || null)
@@ -628,7 +629,7 @@ async function createQualification(req, res) {
                      status, notes, created_by,
                      welding_process, material_group, position_range, ndt_method, ndt_level,
                      approval_status, joint_type, product_type, weld_details, transfer_mode, qualification_designation,
-                     thickness_min_mm, thickness_max_mm, pipe_diameter_min_mm, pipe_diameter_max_mm,
+                     thickness_min_mm, thickness_max_mm, thickness_max_unlimited, pipe_diameter_min_mm, pipe_diameter_max_mm,
                      thickness_range, pipe_diameter,
                      filler_material, shielding_gas, equipment_type,
                      welding_type, single_multi_run, qualification_method,
@@ -645,7 +646,7 @@ async function createQualification(req, res) {
                      @status, @notes, @userId,
                      @weldProc, @matGroup, @posRange, @ndtMethod, @ndtLevel,
                      @approvalStatus, @jointType, @productType, @weldDetails, @transferMode, @designation,
-                     @thickMin, @thickMax, @pipeMin, @pipeMax,
+                     @thickMin, @thickMax, @thickMaxUnlimited, @pipeMin, @pipeMax,
                      @thickRangeFinal, @pipeDiamFinal,
                      @filler, @shieldGas, @equipType,
                      @weldingType, @singleMultiRun, @qualMethod,
@@ -695,7 +696,7 @@ async function updateQualification(req, res) {
             // saldatore 9606-1 enrichment
             exam_date, last_confirmation_date, next_confirmation_due, revalidation_date,
             product_type, weld_details, transfer_mode,
-            thickness_min_mm, thickness_max_mm, pipe_diameter_min_mm, pipe_diameter_max_mm,
+            thickness_min_mm, thickness_max_mm, thickness_max_unlimited, pipe_diameter_min_mm, pipe_diameter_max_mm,
             // operatore 14732 (saldatura automatica/meccanizzata)
             welding_type, single_multi_run, qualification_method,
         } = body;
@@ -764,6 +765,7 @@ async function updateQualification(req, res) {
             .input('designation', designation       || null)
             .input('thickMin',    thickMin)
             .input('thickMax',    thickMax)
+            .input('thickMaxUnlimited', !!thickness_max_unlimited)
             .input('pipeMin',     pipeMin)
             .input('pipeMax',     pipeMax)
             .input('thickRangeFinal', thicknessRangeFinal || null)
@@ -784,7 +786,7 @@ async function updateQualification(req, res) {
                     joint_type=@jointType, product_type=@productType, weld_details=@weldDetails,
                     transfer_mode=@transferMode,
                     qualification_designation=@designation,
-                    thickness_min_mm=@thickMin, thickness_max_mm=@thickMax,
+                    thickness_min_mm=@thickMin, thickness_max_mm=@thickMax, thickness_max_unlimited=@thickMaxUnlimited,
                     pipe_diameter_min_mm=@pipeMin, pipe_diameter_max_mm=@pipeMax,
                     thickness_range=@thickRangeFinal, pipe_diameter=@pipeDiamFinal,
                     filler_material=@filler, shielding_gas=@shieldGas, equipment_type=@equipType,

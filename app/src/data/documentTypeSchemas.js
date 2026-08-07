@@ -151,6 +151,13 @@ const patentino_saldatore = {
       hint: "Spessore massimo del range qualificato (es. 2t per piastre). Lascia vuoto se non c'è limite superiore: verrà mostrato come \u201C\u2265 spessore minimo\u201D.",
     },
     {
+      key: "thickness_max_unlimited",
+      label: "Spessore massimo — nessun limite superiore",
+      type: "boolean",
+      required: false,
+      hint: "true SOLO se il certificato dichiara esplicitamente un range aperto (es. \u201C\u2265 5\u201D, \u201C=> 5\u201D, \u201Csenza limite superiore\u201D) — NON selezionare solo perché il dato è assente dal documento: in quel caso lasciare vuoto/false, il campo resterà segnalato come da verificare manualmente.",
+    },
+    {
       key: "pipe_diameter_mm",
       label: "Diametro tubi qualificato (mm)",
       type: "number",
@@ -252,6 +259,7 @@ Campi da estrarre:
 - welding_positions: array di posizioni ISO 6947 (es. ["PA","PF","PC"])
 - thickness_min_mm: numero: spessore minimo qualificato in mm
 - thickness_max_mm: numero: spessore massimo qualificato in mm
+- thickness_max_unlimited: booleano — true SOLO se il certificato dichiara esplicitamente un range aperto senza limite superiore (simboli "≥", "=>", "⩾", oppure testo "no restriction"/"senza limite superiore"). In questo caso lascia thickness_max_mm: null e imposta thickness_max_unlimited: true. Se il campo è semplicemente assente dal documento (non un range aperto dichiarato), lascia entrambi null/false — NON confondere le due situazioni
 - pipe_diameter_mm: numero: diametro esterno tubi qualificato in mm (null se solo piastre)
 - shielding_gas: codice gas ISO 14175 (es. "M21", "I1") o null
 - exam_date: data esame in formato ISO 8601 (YYYY-MM-DD) o null
@@ -274,6 +282,7 @@ Campi da estrarre:
     welding_positions: "string[]|null",
     thickness_min_mm: "number|null",
     thickness_max_mm: "number|null",
+    thickness_max_unlimited: "boolean|null",
     pipe_diameter_mm: "number|null",
     shielding_gas: "string|null",
     exam_date: "YYYY-MM-DD|null",
