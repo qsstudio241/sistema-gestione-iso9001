@@ -214,6 +214,11 @@ function mapPipelineFieldsToReview(f, fileName) {
         welding_process: f.welding_process || null,
         material_group: f.material_group || f.base_material_group || null,
         joint_type: f.joint_type || null,
+        // Tipo prodotto testato (piastra/tubo) — gap analysis 08/08/2026: serve a
+        // sapere se applicare la regola "piastra copre tubo >500mm (o >150mm in
+        // posizione ruotata)" ISO 15614-1 §8.3.3 in wpsGenerator.service.js.
+        product_type: f.product_type || null,
+        rotated_position: f.rotated_position === true || f.rotated_position === 1 || f.rotated_position === '1',
         thickness_test_mm: thickness_tested,
         approval_date: f.approval_date || f.issue_date || null,
         standard_reference: f.standard_reference || null,
@@ -270,6 +275,8 @@ function mapReviewFieldsToDb(f, fileName) {
         welding_process: f.welding_process || null,
         base_material_group: f.material_group || f.base_material_group || null,
         joint_type: f.joint_type || null,
+        product_type: f.product_type || null,
+        rotated_position: f.rotated_position === true || f.rotated_position === 1 || f.rotated_position === '1',
         standard_reference: f.standard_reference || null,
         filler_material: f.filler_material || null,
         thickness_tested,
@@ -403,7 +410,7 @@ async function commitWPQRFromFields(fields, organizationId, companyId, options =
             qualification_level, joint_type, standard_reference, wps_ref,
             base_material_spec, shielding_gas, current_type, metal_transfer,
             mechanization, single_multi_run, heat_input_note,
-            preheat_temp, interpass_temp,
+            preheat_temp, interpass_temp, product_type, rotated_position,
             created_by, created_at, updated_at
         )
         OUTPUT INSERTED.id
@@ -420,7 +427,7 @@ async function commitWPQRFromFields(fields, organizationId, companyId, options =
             @qualification_level, @joint_type, @standard_reference, @wps_ref,
             @base_material_spec, @shielding_gas, @current_type, @metal_transfer,
             @mechanization, @single_multi_run, @heat_input_note,
-            @preheat_temp, @interpass_temp,
+            @preheat_temp, @interpass_temp, @product_type, @rotated_position,
             @created_by, GETDATE(), GETDATE()
         )
     `, {
@@ -458,6 +465,8 @@ async function commitWPQRFromFields(fields, organizationId, companyId, options =
         heat_input_note: mapped.heat_input_note,
         preheat_temp: mapped.preheat_temp,
         interpass_temp: mapped.interpass_temp,
+        product_type: mapped.product_type,
+        rotated_position: mapped.rotated_position ? 1 : 0,
         created_by: userId,
     });
 

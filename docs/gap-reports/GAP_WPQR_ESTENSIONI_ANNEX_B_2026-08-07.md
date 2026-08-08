@@ -51,6 +51,20 @@ Vedi risposta chat 07/08/2026 (worker WPQR estensioni) per il confronto E2E brow
 - `impact_test_required` (booleano, ISO 15614-1 §8.4) per abilitare in modo normativamente corretto i filtri posizione/mono-multipassata quando pertinenti — senza questo campo, aggiungerli produrrebbe falsi negativi (fail-closed scorretto), quindi non vanno implementati come filtro hard finché il dato non è disponibile.
 - Formula inversa Tabella 8 (gola dichiarata "a" → range spessore materiale qualificato 0,75a-1,5a mono-passata / nessuna restrizione multi-passata): userebbe `throat_test_mm` + `single_multi_run`, per affinare `checkThicknessCoverage` quando `thickness_min`/`thickness_max` non sono dichiarati ma la gola sì. Non implementata: è un affinamento del controllo spessore, non del controllo gola (già chiuso sopra).
 
+## Aggiornamento 08/08/2026 — chiusura anomalie UI/UX segnalate dal committente
+
+Segnalazione: campi con nomenclatura ambigua (spessore materiale base vs prova vs gola), campo diametro tubo privo di indicazioni su come gestire il caso "testata su piastra" (il verbale reale riporta lì una regola testuale ISO 15614-1 §8.3.3 — "Outside diameter: > 500; > 150 for position PC, PF/PA rotated" — non un numero), ente/esaminatore vincolato a un menu chiuso senza "IIS - ISSCERT" e senza possibilità di specificare un ente non catalogato.
+
+| Anomalia | Fix |
+|---|---|
+| Etichette ambigue `thickness_min`/`thickness_max` | Rinominate "Spessore materiale base — minimo/massimo (mm)" + hint che distingue da spessore prova e gola |
+| Campo diametro senza indicazioni sul caso "testata su piastra" | Hint esplicito: non trascrivere la regola testuale, usare invece il nuovo campo "Tipo prodotto testato" |
+| **Regola piastra→tubo mai collegata** (funzione già scritta ma orfana) | Nuovi campi WPQR `product_type` (P/T) e `rotated_position` (booleano) — schema FE+BE, colonne DB (migrazione **142**), mapping ingest completo, `checkDiameterCoverage()` ora applica automaticamente `describePlateCoversPipeDiameterLevel2()` quando `product_type='P'` e nessun diametro numerico dichiarato |
+| **Bug scoperto nella funzione stessa** (preesistente, non di questa sessione): richiedeva il flag "ruotato" anche per la posizione PC, quando la norma prevede che PC da sola già qualifichi la soglia ridotta (>150mm) — solo PF/PA richiedono la conferma "ruotata" | Corretta `describePlateCoversPipeDiameterLevel2()` in `weldingQualificationRules15614.js` (FE+BE), nuovi test di regressione |
+| Menu "Ente/esaminatore" e "Ente certificatore" (WPQR, patentino saldatore, ISO 14732) chiuso, valori fuori elenco scartati silenziosamente dalla UI (non solo "IIS" mancante — QUALSIASI ente futuro non catalogato) | Aggiunto "IIS - ISSCERT (Istituto Italiano di Saldatura)" alle 3 liste. **Fix strutturale**: `IngestReviewDialog.jsx` ora rileva quando un valore estratto dall'AI non corrisponde a nessuna opzione e lo mostra in un campo di testo libero (mai più scartato silenziosamente), generico per qualsiasi campo con opzione "Altro" |
+
+Test: nuovi test `weldingQualificationRules15614.test.js` (regola piastra→tubo, bug PC), `wpsGenerator.service.test.js` (6 scenari piastra→tubo), `ingestReviewDialog.test.jsx` (4 scenari select+Altro). Round-trip a sentinella WPQR verificato con i 2 nuovi campi senza modifiche al test (rilevazione automatica via `aiExpectedSchema`).
+
 ## Testo normativo di riferimento — Tabella 8 (ISO 15614-1:2017, §8.3.2.2, pag. 31 del documento digitalizzato)
 
 > "Table 8 — For level 2: Range of qualification for material thickness and throat thickness of fillet welds [...] Thickness of test piece t | Throat thickness | Material thickness (single run / multi-run) [...] t ≤ 3: 0,7 t to 2 t | 0,75 a to 1,5 a | No restriction [...] 3 < t < 30: 3 to 2 t [...] t ≥ 30: ≥5 [...] NOTE a is the nominal throat thickness as specified in pWPS for the test piece."

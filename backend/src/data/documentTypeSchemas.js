@@ -121,19 +121,27 @@ Campi di copertura (pag.1 RANGE OF QUALIFICATION, priorita alta):
 - standard_reference: norma di riferimento (es. "UNI EN ISO 15614-1:2019")
 - welding_process: codice ISO 4063 - preferire un codice numerico esplicito nel testo (es. "Welding process: 135") a un alias generico
 - joint_type: "BW", "FW" o "BW+FW"
+- product_type: "P" (piastra) o "T" (tubo) - variabile essenziale ISO 15614-1 par.8.3.3 per il diametro.
+  Se il documento non lo specifica esplicitamente ma il "Range of qualification" per il diametro contiene
+  una regola testuale tipo "> 500; > 150 for position PC, PF/PA rotated" (invece di un numero), significa
+  che il provino e' stato testato su PIASTRA: imposta product_type: "P" e lascia diameter_min/diameter_max:
+  null (NON trascrivere quella regola testuale come numero)
 - material_group: gruppo materiale ISO/TR 15608, preferire il sottogruppo (es. "1.2") se presente
 - thickness_test_mm: spessore del provino testato (numero)
-- thickness_min / thickness_max: range di spessore DICHIARATO sul verbale (non calcolarlo)
+- thickness_min / thickness_max: range di spessore MATERIALE BASE DICHIARATO sul verbale (non calcolarlo)
 - thickness_max_unlimited: booleano — true SOLO se il verbale dichiara esplicitamente un range aperto
   senza limite superiore (simboli "≥", "=>", "⩾", oppure testo "no restriction"/"senza limite
   superiore"), tipico dei giunti ad angolo (Fillet Weld: es. "t1 = => 5 ; t2 => 5"). In questo caso
   lascia thickness_max: null e imposta thickness_max_unlimited: true. Se il campo è semplicemente
   assente dal documento (non un range aperto dichiarato), lascia entrambi null/false — NON confondere
   le due situazioni
-- diameter_min / diameter_max: range diametro tubo se applicabile
+- diameter_min / diameter_max: range diametro tubo se applicabile (SOLO se un numero e' dichiarato -
+  vedi nota su product_type sopra per il caso testo/piastra)
 - throat_test_mm: spessore gola (throat) del provino testato, SOLO per giunti d'angolo/FW,
   se dichiarato esplicitamente sul verbale (Tabella 8) - numero, null se non applicabile o assente
 - welding_positions: array posizioni ISO 6947 (es. ["PA"])
+- rotated_position: booleano — true SOLO se il verbale dichiara esplicitamente che la posizione PF o PA
+  e' stata eseguita con il tubo ruotato ("rotated"/"ruotata"). Se non menzionato, lascia null/false
 - filler_material: designazione materiale d'apporto (ISO 14341 se filo GMAW acciaio, es. "G 42 4 M21 3Si1")
 - pwht: booleano, PWHT applicato
 - wps_ref: identificativo testuale della WPS di riferimento
@@ -159,6 +167,7 @@ IMPORTANTE: non ricalcolare i range con formule - estrarre solo i valori dichiar
       standard_reference: 'string|null',
       welding_process: 'string|null',
       joint_type: 'BW|FW|BW+FW|null',
+      product_type: 'P|T|null',
       material_group: 'string|null',
       thickness_test_mm: 'number|null',
       thickness_min: 'number|null',
@@ -168,6 +177,7 @@ IMPORTANTE: non ricalcolare i range con formule - estrarre solo i valori dichiar
       diameter_max: 'number|null',
       throat_test_mm: 'number|null',
       welding_positions: 'string[]|null',
+      rotated_position: 'boolean|null',
       filler_material: 'string|null',
       pwht: 'boolean|null',
       wps_ref: 'string|null',
