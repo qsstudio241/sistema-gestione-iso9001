@@ -30,13 +30,14 @@ jest.mock('../services/companyAccess.service', () => ({
   sendAccessDenied: jest.fn((res, denied) => res.status(denied.status).json(denied.body)),
 }));
 
-const { getPool } = require('../config/database');
+const { getPool, query } = require('../config/database');
 const { assertMutatingAllowed } = require('../services/companyAccess.service');
 const {
   effectiveExpiryDate,
   semaforoForRow,
   hardDeleteQualification,
   createQualification,
+  updateQualification,
 } = require('./qualifications.controller');
 
 describe('qualifications.controller — effectiveExpiryDate', () => {
@@ -337,6 +338,137 @@ describe('qualifications.controller — createQualification sanitizzazione numer
     expect(insertReq.input).toHaveBeenCalledWith('thickMax', 12.5);
     expect(insertReq.input).toHaveBeenCalledWith('pipeMin', 60);
     expect(insertReq.input).toHaveBeenCalledWith('pipeMax', 120);
+  });
+});
+
+/**
+ * Test L1 — collegamento anagrafica personnel_id (gap analysis 08/08/2026).
+ * Il form manuale (QualificationForm.jsx, selettore "Da anagrafica azienda")
+ * invia personnel_id, ma create/updateQualification non lo salvavano mai —
+ * solo l'ingest AI e il rinnovo lo persistevano. resolvePersonnelForQualification
+ * era importata ma mai chiamata da questi due percorsi.
+ */
+describe('qualifications.controller — collegamento personnel_id (createQualification)', () => {
+  function makeInsertPool() {
+    const insertReq = { input: jest.fn().mockReturnThis() };
+    insertReq.query = jest.fn().mockResolvedValue({ recordset: [{ id: 901 }] });
+    const pool = { request: jest.fn(() => insertReq) };
+    return { pool, insertReq };
+  }
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+    assertMutatingAllowed.mockResolvedValue(null);
+  });
+
+  it('personnel_id valido: risolve e salva il collegamento anagrafica', async () => {
+    const { pool, insertReq } = makeInsertPool();
+    getPool.mockResolvedValue(pool);
+    query.mockResolvedValueOnce({ recordset: [{ id: 55, name: 'Luigi Verdi', person_code: 'MAT-055' }] });
+
+    const req = {
+      body: {
+        person_name: 'Luigi Verdi', personnel_id: '55', company_id: 20,
+        qualification_type: 'Saldatore ISO 9606-1',
+      },
+      user: { organization_id: 10, user_id: 20 },
+    };
+    const res = { status: jest.fn().mockReturnThis(), json: jest.fn() };
+
+    await createQualification(req, res);
+
+    expect(insertReq.input).toHaveBeenCalledWith('personnelId', 55);
+    expect(insertReq.input).toHaveBeenCalledWith('personName', 'Luigi Verdi');
+    expect(res.status).not.toHaveBeenCalledWith(400);
+    expect(res.status).not.toHaveBeenCalledWith(500);
+  });
+
+  it('personnel_id non trovato per l\'azienda: rifiuta con 400, nessun INSERT eseguito', async () => {
+    const { pool, insertReq } = makeInsertPool();
+    getPool.mockResolvedValue(pool);
+    query.mockResolvedValueOnce({ recordset: [] });
+
+    const req = {
+      body: {
+        person_name: 'Fantasma', personnel_id: '999', company_id: 20,
+        qualification_type: 'Saldatore ISO 9606-1',
+      },
+      user: { organization_id: 10, user_id: 20 },
+    };
+    const res = { status: jest.fn().mockReturnThis(), json: jest.fn() };
+
+    await createQualification(req, res);
+
+    expect(res.status).toHaveBeenCalledWith(400);
+    expect(insertReq.query).not.toHaveBeenCalled();
+  });
+
+  it('senza personnel_id (solo nome libero): nessuna query di risoluzione, personnelId salvato come null', async () => {
+    const { pool, insertReq } = makeInsertPool();
+    getPool.mockResolvedValue(pool);
+
+    const req = {
+      body: { person_name: 'Testo Libero', qualification_type: 'Saldatore ISO 9606-1' },
+      user: { organization_id: 10, user_id: 20 },
+    };
+    const res = { status: jest.fn().mockReturnThis(), json: jest.fn() };
+
+    await createQualification(req, res);
+
+    expect(query).not.toHaveBeenCalled();
+    expect(insertReq.input).toHaveBeenCalledWith('personnelId', null);
+    expect(res.status).not.toHaveBeenCalledWith(400);
+  });
+});
+
+describe('qualifications.controller — collegamento personnel_id (updateQualification)', () => {
+  function makeUpdatePool(existingRow = { id: 30, company_id: 20 }) {
+    const checkReq = { input: jest.fn().mockReturnThis(), query: jest.fn().mockResolvedValue({ recordset: [existingRow] }) };
+    const updateReq = { input: jest.fn().mockReturnThis(), query: jest.fn().mockResolvedValue({ recordset: [] }) };
+    let callCount = 0;
+    const pool = { request: jest.fn(() => { callCount += 1; return callCount === 1 ? checkReq : updateReq; }) };
+    return { pool, checkReq, updateReq };
+  }
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+    assertMutatingAllowed.mockResolvedValue(null);
+  });
+
+  it('personnel_id valido: aggiorna il collegamento anagrafica', async () => {
+    const { pool, updateReq } = makeUpdatePool();
+    getPool.mockResolvedValue(pool);
+    query.mockResolvedValueOnce({ recordset: [{ id: 55, name: 'Luigi Verdi', person_code: 'MAT-055' }] });
+
+    const req = {
+      params: { id: '30' },
+      body: { person_name: 'Luigi Verdi', personnel_id: '55', company_id: 20 },
+      user: { organization_id: 10 },
+    };
+    const res = { status: jest.fn().mockReturnThis(), json: jest.fn() };
+
+    await updateQualification(req, res);
+
+    expect(updateReq.input).toHaveBeenCalledWith('personnelId', 55);
+    expect(res.status).not.toHaveBeenCalledWith(400);
+  });
+
+  it('personnel_id non trovato: rifiuta con 400, nessun UPDATE eseguito', async () => {
+    const { pool, updateReq } = makeUpdatePool();
+    getPool.mockResolvedValue(pool);
+    query.mockResolvedValueOnce({ recordset: [] });
+
+    const req = {
+      params: { id: '30' },
+      body: { person_name: 'Fantasma', personnel_id: '999', company_id: 20 },
+      user: { organization_id: 10 },
+    };
+    const res = { status: jest.fn().mockReturnThis(), json: jest.fn() };
+
+    await updateQualification(req, res);
+
+    expect(res.status).toHaveBeenCalledWith(400);
+    expect(updateReq.query).not.toHaveBeenCalled();
   });
 });
 

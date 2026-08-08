@@ -633,6 +633,25 @@ describe('applyFieldReprocessUpdate — backfill campo su qualifica esistente (m
         await expect(applyFieldReprocessUpdate(999, 1001, 'transfer_mode', { transfer_mode: 'spray_arc' }))
             .rejects.toMatchObject({ code: 'NOT_FOUND' });
     });
+
+    // Gap analysis 08/08/2026: thickness_max_unlimited è BIT NOT NULL DEFAULT 0
+    // (migrazione 140) — la guardia standard "colonna IS NULL" non si applicherebbe
+    // mai. Verifica che usi invece il writeGuard esplicito "colonna = 0".
+    it('thickness_max_unlimited usa il writeGuard esplicito "= 0", non "IS NULL" (colonna NOT NULL)', async () => {
+        const checkReq = { input: jest.fn().mockReturnThis(), query: jest.fn().mockResolvedValue({ recordset: [{ id: 11 }] }) };
+        const updateReq = { input: jest.fn().mockReturnThis(), query: jest.fn().mockResolvedValue({ recordset: [] }) };
+        let callCount = 0;
+        const pool = { request: jest.fn(() => (++callCount === 1 ? checkReq : updateReq)) };
+        getPool.mockResolvedValue(pool);
+
+        const result = await applyFieldReprocessUpdate(11, 1001, 'thickness_max_unlimited', { thickness_max_unlimited: true });
+
+        expect(result).toEqual({ qualification_id: 11, updated_fields: ['thickness_max_unlimited'] });
+        expect(updateReq.input).toHaveBeenCalledWith('val_thickness_max_unlimited', true);
+        const sql = updateReq.query.mock.calls[0][0];
+        expect(sql).toMatch(/thickness_max_unlimited = 0/);
+        expect(sql).not.toMatch(/thickness_max_unlimited IS NULL/);
+    });
 });
 
 /**
