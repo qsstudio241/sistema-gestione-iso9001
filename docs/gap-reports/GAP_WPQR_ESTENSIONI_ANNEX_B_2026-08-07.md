@@ -88,6 +88,20 @@ Su richiesta del committente, la stessa verifica "modifica manuale vs ingest" è
 
 Test: `qualifications.controller.test.js` (+5 test collegamento anagrafica), `welding.controller.manualFieldsCompleteness.test.js`, `qualifications.controller.manualFieldsCompleteness.test.js` (5 test totali, 4 schemi). Nessuna migrazione (colonna `personnel_id` già esistente).
 
+## Aggiornamento 08/08/2026 (quater) — verifica procedura superadmin "Rielaborazioni disponibili"
+
+Su richiesta del committente, verificata l'esistenza e il funzionamento del pannello superadmin che permette di recuperare, sui documenti già ingeriti PRIMA di un fix, i campi aggiunti successivamente all'estrazione AI (senza richiedere il ricaricamento del PDF). Confermato: esiste (`GET/POST /admin/reprocess-tasks`, protetto `superadminOnly`, UI in `BillingDashboardPage.jsx`), architettura solida (mai scrittura diretta — sempre una proposta in coda di revisione).
+
+**Gap trovati:**
+
+| Gap | Stato |
+|---|---|
+| Registro copriva solo 6 campi delle Qualifiche (26/07-01/08), non `thickness_max_unlimited` (fix precedente) | **Chiuso**: nuova voce nel registro, con `candidateWhere`/`writeGuard` dedicati (la colonna è `BIT NOT NULL DEFAULT 0`, diversa dagli altri campi nullable — la condizione standard "colonna IS NULL" non si applicherebbe mai) |
+| Nessun equivalente per la WPQR — l'intero meccanismo è scritto solo per `qualifications` | **Aperto, non chiuso in autonomia**: è una capacità nuova (generalizzare il registro a più tabelle), non un fix — richiede una decisione di prodotto (stesso pannello o separato) prima di essere costruita. Significa che nessuno dei campi WPQR corretti in questa sessione (`preheat_temp`, `interpass_temp`, `throat_test_mm`, `product_type`, `rotated_position`, `thickness_max_unlimited`) è recuperabile sulle WPQR già caricate senza ricaricare il PDF |
+| Due registri duplicati a mano (`reprocessableFields.js` + `REPROCESSABLE_FIELDS` in `qualificationIngest.service.js`) senza controllo di sincronia automatico | **Chiuso**: nuovo test `reprocessableFields.test.js` verifica che le due liste abbiano sempre le stesse chiavi |
+| `personnel_id`: nessun'azione necessaria — esiste già un percorso di recupero separato e funzionante (pulsante "Collega anagrafica" in `CompanyPersonnelPanel.jsx`, basato su corrispondenza nome) | Nessun gap |
+| Logica core del servizio di rielaborazione (`qualificationReprocess.service.js`) priva di test diretti (solo test del controller con servizio mockato) | **Chiuso**: nuovo `qualificationReprocess.service.test.js` |
+
 ## Testo normativo di riferimento — Tabella 8 (ISO 15614-1:2017, §8.3.2.2, pag. 31 del documento digitalizzato)
 
 > "Table 8 — For level 2: Range of qualification for material thickness and throat thickness of fillet welds [...] Thickness of test piece t | Throat thickness | Material thickness (single run / multi-run) [...] t ≤ 3: 0,7 t to 2 t | 0,75 a to 1,5 a | No restriction [...] 3 < t < 30: 3 to 2 t [...] t ≥ 30: ≥5 [...] NOTE a is the nominal throat thickness as specified in pWPS for the test piece."

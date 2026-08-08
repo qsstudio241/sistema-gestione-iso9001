@@ -23,6 +23,10 @@
  * - `processWhitelist`: se valorizzato, il welding_process (ISO 4063) deve
  *   contenere uno dei codici elencati, altrimenti il campo non è
  *   normativamente applicabile (evita proposte inutili). `null` = nessun filtro.
+ * - `candidateWhere`: condizione SQL di selezione candidati, se diversa dal
+ *   default `${key} IS NULL` — necessaria per colonne NOT NULL con default
+ *   (es. flag booleani come `thickness_max_unlimited`, dove "manca il dato"
+ *   non coincide con "colonna NULL"). Opzionale, default `${key} IS NULL`.
  */
 const { CONTINUOUS_WIRE_ARC_PROCESSES } = require('./weldingQualificationRules9606');
 
@@ -79,6 +83,21 @@ const REPROCESSABLE_FIELD_REGISTRY = {
         // Solo tubo (ISO 9606-1 Tabella 7) — evita chiamate AI inutili su piastre.
         productTypeWhitelist: ['T'],
         processWhitelist: null,
+    },
+    // Gap analysis 08/08/2026 (fix thickness_max_unlimited esteso alle qualifiche,
+    // migrazione 140): patentini ingeriti PRIMA di quel fix hanno la colonna al
+    // default (0) anche quando il certificato dichiarava un range aperto — la
+    // rielaborazione permette di recuperarlo senza richiedere all'utente di
+    // ricaricare il PDF. candidateWhere dedicato: la colonna è NOT NULL, "manca
+    // il dato" qui significa "ancora al default E spessore massimo non dichiarato".
+    thickness_max_unlimited: {
+        key: 'thickness_max_unlimited',
+        label: 'Spessore massimo — nessun limite superiore',
+        module: 'qualifiche',
+        table: 'qualifications',
+        qualTypeLike: '%9606%',
+        processWhitelist: null,
+        candidateWhere: 'thickness_max_unlimited = 0 AND thickness_max_mm IS NULL',
     },
 };
 

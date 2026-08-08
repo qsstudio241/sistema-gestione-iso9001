@@ -623,6 +623,12 @@ const REPROCESSABLE_FIELDS = {
     // pipe_diameter_mm → pipe_diameter_min_mm).
     filler_material: { column: 'filler_material' },
     pipe_diameter_min_mm: { column: 'pipe_diameter_min_mm' },
+    // Gap analysis 08/08/2026: thickness_max_unlimited è BIT NOT NULL DEFAULT 0
+    // (migrazione 140), non NULLABLE come gli altri campi qui — la guardia
+    // anti-sovrascrittura standard "colonna IS NULL" non si applica mai a una
+    // colonna NOT NULL. writeGuard esplicito: aggiorna solo se è ancora al
+    // valore di default (0), mai se già confermato true da un'altra fonte.
+    thickness_max_unlimited: { column: 'thickness_max_unlimited', writeGuard: 'thickness_max_unlimited = 0' },
 };
 
 /**
@@ -659,7 +665,7 @@ async function applyFieldReprocessUpdate(targetQualificationId, organizationId, 
         if (!def) continue;
         const value = fields ? fields[key] : undefined;
         if (value === undefined || value === null || value === '') continue;
-        updatable.push({ key, column: def.column, value });
+        updatable.push({ key, column: def.column, value, writeGuard: def.writeGuard || `${def.column} IS NULL` });
     }
 
     if (!updatable.length) {
@@ -676,9 +682,12 @@ async function applyFieldReprocessUpdate(targetQualificationId, organizationId, 
         updatedFields.push(key);
     }
 
-    // "WHERE campo IS NULL" per ciascuna colonna toccata: non sovrascrive mai un
-    // valore già presente (anche se lo script di selezione dovrebbe già escluderlo).
-    const guardClauses = updatable.map(({ column }) => `${column} IS NULL`).join(' AND ');
+    // Guardia anti-sovrascrittura per ciascuna colonna toccata: di norma
+    // "colonna IS NULL" (non sovrascrive mai un valore già presente), ma
+    // personalizzabile per colonne NOT NULL con default (vedi writeGuard su
+    // thickness_max_unlimited) — sempre "non sovrascrivere se già valorizzato
+    // in modo significativo", solo la condizione cambia.
+    const guardClauses = updatable.map(({ writeGuard }) => writeGuard).join(' AND ');
 
     await request.query(`
         UPDATE qualifications
