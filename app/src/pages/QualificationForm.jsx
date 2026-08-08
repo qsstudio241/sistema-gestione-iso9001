@@ -56,7 +56,7 @@ const EMPTY = {
   examiner_body: "", joint_type: "", product_type: "", weld_details: "",
   transfer_mode: "",
   filler_material: "", shielding_gas: "", equipment_type: "",
-  thickness_min_mm: "", thickness_max_mm: "",
+  thickness_min_mm: "", thickness_max_mm: "", thickness_max_unlimited: false,
   pipe_diameter_min_mm: "", pipe_diameter_max_mm: "",
   exam_date: "", last_confirmation_date: "", next_confirmation_due: "",
   revalidation_date: "", qualification_designation: "",
@@ -154,6 +154,10 @@ function QualificationForm({ qualification, onSave, onClose, defaultCompanyId, o
        "exam_date","last_confirmation_date","next_confirmation_due","revalidation_date"].forEach(k => {
         if (d[k]) d[k] = String(d[k]).slice(0, 10);
       });
+      // Normalizza il flag "range aperto" (BIT da SQL Server: true/false/1/0/'1'/'0').
+      d.thickness_max_unlimited = d.thickness_max_unlimited === true
+        || d.thickness_max_unlimited === 1
+        || d.thickness_max_unlimited === '1';
       d.company_id = d.company_id || "";
       d.personnel_id = d.personnel_id ? String(d.personnel_id) : "";
       // Alias ingest/review → colonna DB usata dal select del form.
@@ -455,7 +459,31 @@ function QualificationForm({ qualification, onSave, onClose, defaultCompanyId, o
                 </div>
                 <div className="qf-field">
                   <label>Spessore max (mm)</label>
-                  <input type="number" step="0.1" min="0" value={form.thickness_max_mm} onChange={handle("thickness_max_mm")} placeholder="es. 20" />
+                  <input
+                    type="number" step="0.1" min="0"
+                    value={form.thickness_max_mm}
+                    onChange={handle("thickness_max_mm")}
+                    placeholder={form.thickness_max_unlimited ? "senza limite superiore" : "es. 20"}
+                    disabled={!!form.thickness_max_unlimited}
+                  />
+                  <label style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 4, fontSize: 12, fontWeight: 400, color: "#475569" }}>
+                    <input
+                      type="checkbox"
+                      checked={!!form.thickness_max_unlimited}
+                      onChange={(e) => {
+                        const checked = e.target.checked;
+                        setForm((f) => ({
+                          ...f,
+                          thickness_max_unlimited: checked,
+                          thickness_max_mm: checked ? "" : f.thickness_max_mm,
+                        }));
+                      }}
+                    />
+                    Nessun limite superiore dichiarato
+                  </label>
+                  <span style={{ fontSize: 11, color: "#94a3b8" }}>
+                    {"Seleziona solo se il certificato dichiara esplicitamente un range aperto (es. \u2265 5mm)"}
+                  </span>
                 </div>
                 {applicableFields.pipeDiameterApplicable ? (
                   <>

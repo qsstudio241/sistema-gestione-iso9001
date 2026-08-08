@@ -583,7 +583,7 @@ function QualificationsPage() {
                 )}
                 <button className="sq-btn-reload" onClick={loadData} title="Aggiorna">{"\u21BB"}</button>
                 <AskAiButton
-                    label="Chiedi all\u2019AI"
+                    label="Chiedi all'AI"
                     onBeforeNavigate={() => saveQualContext({
                         qualType:      activeTab !== "tutti" ? activeTab : null,
                         qualTypeLabel: TABS.find(t => t.key === activeTab)?.label || null,

@@ -633,4 +633,77 @@ describe('applyFieldReprocessUpdate — backfill campo su qualifica esistente (m
         await expect(applyFieldReprocessUpdate(999, 1001, 'transfer_mode', { transfer_mode: 'spray_arc' }))
             .rejects.toMatchObject({ code: 'NOT_FOUND' });
     });
+
+    // Gap analysis 08/08/2026: thickness_max_unlimited è BIT NOT NULL DEFAULT 0
+    // (migrazione 140) — la guardia standard "colonna IS NULL" non si applicherebbe
+    // mai. Verifica che usi invece il writeGuard esplicito "colonna = 0".
+    it('thickness_max_unlimited usa il writeGuard esplicito "= 0", non "IS NULL" (colonna NOT NULL)', async () => {
+        const checkReq = { input: jest.fn().mockReturnThis(), query: jest.fn().mockResolvedValue({ recordset: [{ id: 11 }] }) };
+        const updateReq = { input: jest.fn().mockReturnThis(), query: jest.fn().mockResolvedValue({ recordset: [] }) };
+        let callCount = 0;
+        const pool = { request: jest.fn(() => (++callCount === 1 ? checkReq : updateReq)) };
+        getPool.mockResolvedValue(pool);
+
+        const result = await applyFieldReprocessUpdate(11, 1001, 'thickness_max_unlimited', { thickness_max_unlimited: true });
+
+        expect(result).toEqual({ qualification_id: 11, updated_fields: ['thickness_max_unlimited'] });
+        expect(updateReq.input).toHaveBeenCalledWith('val_thickness_max_unlimited', true);
+        const sql = updateReq.query.mock.calls[0][0];
+        expect(sql).toMatch(/thickness_max_unlimited = 0/);
+        expect(sql).not.toMatch(/thickness_max_unlimited IS NULL/);
+    });
+});
+
+/**
+ * Round-trip a sentinella (rete di sicurezza strutturale — audit ingest
+ * saldatura/3834 07/08/2026). Per ogni chiave di `aiExpectedSchema` dello schema
+ * `patentino_saldatore` (quello realmente usato dal prompt AI, backend/src/data/
+ * documentTypeSchemas.js) genera un valore-sentinella univoco e verifica che
+ * sopravviva da mapPipelineFieldsToReview fino ai parametri della INSERT su
+ * `qualifications`. Avrebbe intercettato bug analoghi già trovati in passato
+ * su questo modulo (shielding_gas, pipe_diameter_mm, filler_material_group).
+ */
+describe('round-trip a sentinella — ogni campo aiExpectedSchema (patentino_saldatore) sopravvive fino a qualifications', () => {
+    afterEach(() => jest.clearAllMocks());
+
+    it('nessun campo dello schema AI patentino_saldatore viene perso tra pipeline e INSERT', async () => {
+        const { DOCUMENT_TYPE_SCHEMAS } = require('../data/documentTypeSchemas');
+        const { buildSentinelFields, findMissingSentinels } = require('../utils/ingestRoundTripSentinel');
+        const { resolvePersonnelForQualification } = require('./personnelQualificationLink.service');
+
+        // Override per campi con normalizzazione/validazione legittima (non un bug
+        // se un token generico verrebbe scartato da queste funzioni):
+        // - filler_material_group: normalizeFillerMaterialGroup accetta solo FM1-FM6/nessuno
+        // - date: normalizeDate scarta stringhe non parsabili come data
+        const { fields, tokens } = buildSentinelFields(DOCUMENT_TYPE_SCHEMAS.patentino_saldatore.aiExpectedSchema, {
+            filler_material_group: 'FM1',
+            exam_date: '2030-01-05',
+            expiry_date: '2030-06-05',
+            last_confirmation_date: '2030-01-06',
+            next_confirmation_due: '2030-07-06',
+        });
+
+        // resolvePersonnelForQualification canonicalizza il nome su un match anagrafico
+        // reale (comportamento corretto in produzione) — per isolare SOLO il round-trip
+        // ingest→DB, verifichiamo qui che il nome grezzo passi quando non c'è match.
+        resolvePersonnelForQualification.mockResolvedValueOnce({ ok: true, personnelId: 999, personName: null });
+
+        const reviewFields = mapPipelineFieldsToReview(fields, 'ISO 9606-1 sentinel test', 'sentinel.pdf');
+
+        const dupCheckReq = { input: jest.fn().mockReturnThis(), query: jest.fn().mockResolvedValue({ recordset: [{ cnt: 0 }] }) };
+        const insertReq = { input: jest.fn().mockReturnThis(), query: jest.fn().mockResolvedValue({ recordset: [{ id: 888 }] }) };
+        let callCount = 0;
+        const pool = { request: jest.fn(() => { callCount += 1; return callCount === 1 ? dupCheckReq : insertReq; }) };
+        getPool.mockResolvedValue(pool);
+
+        await commitQualificationFromFields(reviewFields, 10, 20, { qualificationType: 'Saldatore ISO 9606-1' });
+
+        const capturedValues = insertReq.input.mock.calls.map(([, value]) => value);
+
+        // GAP noti e già documentati come non ancora chiusi — svuotare via via che
+        // vengono corretti, mai aggiungere qui senza motivazione tracciata.
+        const knownGaps = [];
+        const missing = findMissingSentinels(tokens, capturedValues, knownGaps);
+        expect(missing).toEqual([]);
+    });
 });

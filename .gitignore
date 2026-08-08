@@ -34,6 +34,13 @@ backend/scripts/uni-store-artifacts/
 # protetto da copyright — mai committare, solo scratch locale per revisione manuale)
 out/
 
+# PDF di norme UNI/ISO protette da copyright — mai committare (vedi docs/Normative/SOURCE_PDF_INDEX.md).
+# Nota: .cursorignore in docs/Normative/ blocca solo l'indicizzazione Cursor, NON il tracking Git —
+# serve questa regola qui per bloccare davvero i commit (lezione 07/08/2026: 3 PDF erano rimasti
+# tracciati nonostante un commit precedente dichiarasse "rimossi", perché mancava questa riga).
+docs/Normative/*.pdf
+app/src/tests/fixtures/*.pdf
+
 # IDE
 .vscode/
 .idea/

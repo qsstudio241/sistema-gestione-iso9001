@@ -270,6 +270,8 @@ export function GenerateWpsModal({
     thickness_a_mm: defaults.thickness_a_mm != null ? String(defaults.thickness_a_mm) : "",
     thickness_b_mm: defaults.thickness_b_mm != null ? String(defaults.thickness_b_mm) : "",
     welding_process: defaults.welding_process || "",
+    pipe_diameter_mm: defaults.pipe_diameter_mm != null ? String(defaults.pipe_diameter_mm) : "",
+    throat_mm: defaults.throat_mm != null ? String(defaults.throat_mm) : "",
   });
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -293,6 +295,8 @@ export function GenerateWpsModal({
         thickness_b_mm: Number(form.thickness_b_mm),
       };
       if (form.welding_process) payload.welding_process = form.welding_process;
+      if (form.pipe_diameter_mm !== "") payload.pipe_diameter_mm = Number(form.pipe_diameter_mm);
+      if (form.joint_type === "FW" && form.throat_mm !== "") payload.throat_mm = Number(form.throat_mm);
       if (defaultCompanyId) payload.company_id = defaultCompanyId;
 
       const res = await apiService.generateWPS(payload);
@@ -423,6 +427,34 @@ export function GenerateWpsModal({
                   data-testid="gen-thick-b"
                 />
               </div>
+              <div className="wp-form-group">
+                <label className="wp-form-label">Diametro tubo (mm)</label>
+                <input
+                  className="wp-form-input"
+                  type="number"
+                  step="0.1"
+                  min="0"
+                  value={form.pipe_diameter_mm}
+                  onChange={(e) => set("pipe_diameter_mm", e.target.value)}
+                  placeholder="Solo per giunti su tubo"
+                  data-testid="gen-pipe-diameter"
+                />
+              </div>
+              {form.joint_type === "FW" && (
+                <div className="wp-form-group">
+                  <label className="wp-form-label">Gola richiesta (mm)</label>
+                  <input
+                    className="wp-form-input"
+                    type="number"
+                    step="0.1"
+                    min="0"
+                    value={form.throat_mm}
+                    onChange={(e) => set("throat_mm", e.target.value)}
+                    placeholder="Solo giunti FW — Tabella 8 ISO 15614-1"
+                    data-testid="gen-throat"
+                  />
+                </div>
+              )}
             </div>
 
             {result && canSave && (
@@ -472,6 +504,18 @@ export function GenerateWpsModal({
                     <label className="wp-form-label">Norma</label>
                     <input className="wp-form-input" readOnly value={result.wps_draft.qualification_standard || "-"} />
                   </div>
+                  {result.wps_draft.pipe_diameter_mm != null && (
+                    <div className="wp-form-group">
+                      <label className="wp-form-label">Diametro tubo richiesto</label>
+                      <input className="wp-form-input" readOnly value={`${result.wps_draft.pipe_diameter_mm} mm`} />
+                    </div>
+                  )}
+                  {result.wps_draft.throat_mm != null && (
+                    <div className="wp-form-group">
+                      <label className="wp-form-label">Gola richiesta</label>
+                      <input className="wp-form-input" readOnly value={`${result.wps_draft.throat_mm} mm`} />
+                    </div>
+                  )}
                 </div>
               </div>
             )}
@@ -552,13 +596,20 @@ function WPQRFormModal({ wpqr, wpsList, defaultCompanyId, onSave, onClose }) {
   const [form, setForm] = useState({
     wps_id: "", wpqr_code: "", test_date: "", testing_body: "", examiner_body: "",
     welder_name: "", welding_process: "", base_material_group: "", welding_positions: "",
-    thickness_tested: "", thickness_min: "", thickness_max: "",
+    thickness_tested: "", thickness_min: "", thickness_max: "", thickness_max_unlimited: false,
     diameter_min: "", diameter_max: "", filler_material: "",
     qualification_level: "", joint_type: "", standard_reference: "", wps_ref: "",
     vt_result: "NA", rt_result: "NA", ut_result: "NA", mt_result: "NA", pt_result: "NA",
     tensile_result: "NA", bend_result: "NA", impact_result: "NA", hardness_result: "NA",
     macro_result: "NA", expiry_date: "", issue_date: "", certificate_number: "", notes: "",
     company_id: defaultCompanyId || null,
+    // Parametri prova avanzati (pag.2 del verbale) — prima estratti solo dall'AI,
+    // invisibili/non correggibili qui (gap segnalato dal committente 08/08/2026).
+    base_material_spec: "", shielding_gas: "", current_type: "", metal_transfer: "",
+    mechanization: "", single_multi_run: "", heat_input_note: "",
+    preheat_temp: "", interpass_temp: "", pwht: false,
+    // Estensioni copertura ISO 15614-1 (throat/piastra-tubo) — stesso motivo.
+    throat_test_mm: "", product_type: "", rotated_position: false,
     ...(wpqr || {}),
   });
   const [saving, setSaving] = useState(false);
@@ -634,8 +685,8 @@ function WPQRFormModal({ wpqr, wpsList, defaultCompanyId, onSave, onClose }) {
                 <input className="wp-form-input" type="date" value={form.test_date ? form.test_date.substring(0, 10) : ""} onChange={(e) => set("test_date", e.target.value)} />
               </div>
               <div className="wp-form-group">
-                <label className="wp-form-label">Ente certificatore</label>
-                <input className="wp-form-input" value={form.testing_body || ""} onChange={(e) => set("testing_body", e.target.value)} />
+                <label className="wp-form-label">Ente / esaminatore</label>
+                <input className="wp-form-input" value={form.testing_body || ""} onChange={(e) => set("testing_body", e.target.value)} placeholder="es. TÜV, IIS - ISSCERT, Bureau Veritas" />
               </div>
               <div className="wp-form-group">
                 <label className="wp-form-label">Saldatore</label>
@@ -711,15 +762,95 @@ function WPQRFormModal({ wpqr, wpsList, defaultCompanyId, onSave, onClose }) {
               </div>
               <div className="wp-form-group">
                 <label className="wp-form-label">Range max (mm) — ISO 15614</label>
-                <input className="wp-form-input" type="number" step="0.1" min="0" value={form.thickness_max || ""} onChange={(e) => set("thickness_max", e.target.value)} placeholder="calcolato automaticamente" />
+                <input className="wp-form-input" type="number" step="0.1" min="0" value={form.thickness_max || ""} onChange={(e) => set("thickness_max", e.target.value)} placeholder="calcolato automaticamente" disabled={!!form.thickness_max_unlimited} />
+              </div>
+              <div className="wp-form-group wp-form-checkbox">
+                <label className="wp-form-label">
+                  <input type="checkbox" checked={!!form.thickness_max_unlimited} onChange={(e) => set("thickness_max_unlimited", e.target.checked)} />
+                  {" "}Nessun limite superiore dichiarato
+                </label>
+              </div>
+              <div className="wp-form-group">
+                <label className="wp-form-label">Tipo prodotto testato</label>
+                <select className="wp-form-select" value={form.product_type || ""} onChange={(e) => set("product_type", e.target.value)}>
+                  <option value="">-- Seleziona --</option>
+                  <option value="P">P - Piastra</option>
+                  <option value="T">T - Tubo</option>
+                </select>
               </div>
               <div className="wp-form-group">
                 <label className="wp-form-label">Diametro tubo - min (mm)</label>
-                <input className="wp-form-input" type="number" step="0.1" min="0" value={form.diameter_min || ""} onChange={(e) => set("diameter_min", e.target.value)} placeholder="lascia vuoto se solo piastre" />
+                <input className="wp-form-input" type="number" step="0.1" min="0" value={form.diameter_min || ""} onChange={(e) => set("diameter_min", e.target.value)} placeholder="lascia vuoto se testata su piastra" />
               </div>
               <div className="wp-form-group">
                 <label className="wp-form-label">Diametro tubo - max (mm)</label>
-                <input className="wp-form-input" type="number" step="0.1" min="0" value={form.diameter_max || ""} onChange={(e) => set("diameter_max", e.target.value)} placeholder="lascia vuoto se solo piastre" />
+                <input className="wp-form-input" type="number" step="0.1" min="0" value={form.diameter_max || ""} onChange={(e) => set("diameter_max", e.target.value)} placeholder="lascia vuoto se testata su piastra" />
+              </div>
+              <div className="wp-form-group wp-form-checkbox">
+                <label className="wp-form-label">
+                  <input type="checkbox" checked={!!form.rotated_position} onChange={(e) => set("rotated_position", e.target.checked)} />
+                  {" "}Posizione tubo ruotato (PF/PA ruotata)
+                </label>
+              </div>
+              <div className="wp-form-group">
+                <label className="wp-form-label">Spessore gola provino (mm) — solo giunti FW</label>
+                <input className="wp-form-input" type="number" step="0.1" min="0" value={form.throat_test_mm || ""} onChange={(e) => set("throat_test_mm", e.target.value)} placeholder="Tabella 8 ISO 15614-1" />
+              </div>
+            </div>
+
+            <div className="wp-form-section-title">Parametri prova avanzati (pag.2 verbale)</div>
+            <div className="wp-form-grid">
+              <div className="wp-form-group">
+                <label className="wp-form-label">Specifica materiale base</label>
+                <input className="wp-form-input" value={form.base_material_spec || ""} onChange={(e) => set("base_material_spec", e.target.value)} placeholder="es. S355J2+N" />
+              </div>
+              <div className="wp-form-group">
+                <label className="wp-form-label">Gas di protezione</label>
+                <input className="wp-form-input" value={form.shielding_gas || ""} onChange={(e) => set("shielding_gas", e.target.value)} placeholder="es. M20, Ar 92% CO2 8%" />
+              </div>
+              <div className="wp-form-group">
+                <label className="wp-form-label">Tipo corrente</label>
+                <input className="wp-form-input" value={form.current_type || ""} onChange={(e) => set("current_type", e.target.value)} placeholder="es. DC-EP" />
+              </div>
+              <div className="wp-form-group">
+                <label className="wp-form-label">Trasferimento metallo</label>
+                <input className="wp-form-input" value={form.metal_transfer || ""} onChange={(e) => set("metal_transfer", e.target.value)} placeholder="es. Short arc, Spray arc" />
+              </div>
+              <div className="wp-form-group">
+                <label className="wp-form-label">Grado meccanizzazione</label>
+                <select className="wp-form-select" value={form.mechanization || ""} onChange={(e) => set("mechanization", e.target.value)}>
+                  <option value="">-- Seleziona --</option>
+                  <option value="manual">Manuale</option>
+                  <option value="partly_mechanized">Parzialmente meccanizzata</option>
+                  <option value="mechanized">Meccanizzata</option>
+                  <option value="automatic">Automatica</option>
+                </select>
+              </div>
+              <div className="wp-form-group">
+                <label className="wp-form-label">Tecnica passata</label>
+                <select className="wp-form-select" value={form.single_multi_run || ""} onChange={(e) => set("single_multi_run", e.target.value)}>
+                  <option value="">-- Seleziona --</option>
+                  <option value="single">Mono-passata</option>
+                  <option value="multi">Multi-passata</option>
+                </select>
+              </div>
+              <div className="wp-form-group">
+                <label className="wp-form-label">Temperatura preriscaldo (Tp)</label>
+                <input className="wp-form-input" value={form.preheat_temp || ""} onChange={(e) => set("preheat_temp", e.target.value)} placeholder="es. min 100 °C" />
+              </div>
+              <div className="wp-form-group">
+                <label className="wp-form-label">Temperatura interpass (Ti)</label>
+                <input className="wp-form-input" value={form.interpass_temp || ""} onChange={(e) => set("interpass_temp", e.target.value)} placeholder="es. max 250 °C" />
+              </div>
+              <div className="wp-form-group full">
+                <label className="wp-form-label">Note apporto termico</label>
+                <input className="wp-form-input" value={form.heat_input_note || ""} onChange={(e) => set("heat_input_note", e.target.value)} placeholder="es. ±25% rispetto al valore qualificato" />
+              </div>
+              <div className="wp-form-group wp-form-checkbox">
+                <label className="wp-form-label">
+                  <input type="checkbox" checked={!!form.pwht} onChange={(e) => set("pwht", e.target.checked)} />
+                  {" "}PWHT (trattamento termico post-saldatura)
+                </label>
               </div>
             </div>
 
@@ -1159,7 +1290,7 @@ function WeldingProceduresPage() {
             </select>
             <button className="wp-btn-reload" onClick={loadWPS} title="Aggiorna">&#x21bb;</button>
             <AskAiButton
-              label="Chiedi all\u2019AI"
+              label="Chiedi all'AI"
               onBeforeNavigate={() => saveQualContext({
                 qualType: "wps",
                 qualTypeLabel: "procedure WPS",

@@ -24,28 +24,44 @@
 /**
  * Verifica se un range richiesto [reqMin, reqMax] è contenuto nel range qualificato [qualMin, qualMax].
  *
+ * Bug corretto (audit strutturale 07/08/2026 — ISO 3834-2 §8.2): prima di questo fix, un
+ * `qualMax` NULL veniva SEMPRE trattato come "nessun limite superiore" (Infinity), anche
+ * quando il dato era semplicemente assente/non estratto dal certificato (non un range aperto
+ * dichiarato) — falso positivo che poteva dichiarare idoneo un saldatore oltre il suo range
+ * reale. Ora un `qualMax` NULL senza il flag esplicito `qualMaxUnlimited` produce 'unverifiable'
+ * (da controllare manualmente), MAI più 'ok' automatico. Stesso pattern già introdotto per la
+ * WPQR (`thickness_max_unlimited`, migrazione 139) — vedi GUIDA_CONSOLIDATA.md.
+ *
  * @param {number|null} qualMin  - thickness_min_mm dalla qualifica
  * @param {number|null} qualMax  - thickness_max_mm dalla qualifica
  * @param {number|null} reqMin   - thickness_range_min dalla WPS
  * @param {number|null} reqMax   - thickness_range_max dalla WPS
+ * @param {boolean} [qualMaxUnlimited=false] - thickness_max_unlimited dalla qualifica: true SOLO
+ *   se il certificato dichiara esplicitamente un range aperto (es. "≥5mm"), non se il dato è solo assente
  * @returns {'ok'|'out_of_range'|'unverifiable'}
  */
-function checkThickness(qualMin, qualMax, reqMin, reqMax) {
+function checkThickness(qualMin, qualMax, reqMin, reqMax, qualMaxUnlimited = false) {
     // WPS non specifica spessore → non vincolante
     if (reqMin == null && reqMax == null) return 'ok';
 
-    // Qualifica senza dati spessore → non verificabile
-    if (qualMin == null && qualMax == null) return 'unverifiable';
+    // Qualifica senza alcun dato spessore (e nessun range aperto dichiarato) → non verificabile
+    if (qualMin == null && qualMax == null && !qualMaxUnlimited) return 'unverifiable';
 
-    // Confronto: il range WPS deve essere contenuto nel range qualificato
-    // Se uno solo dei bound è null nella qualifica, usiamo un default estremo
     const qMin = qualMin != null ? Number(qualMin) : 0;
-    const qMax = qualMax != null ? Number(qualMax) : Infinity;
-    const rMin = reqMin  != null ? Number(reqMin)  : 0;
-    const rMax = reqMax  != null ? Number(reqMax)  : 0;
+    let qMax;
+    if (qualMaxUnlimited) {
+        qMax = Infinity; // range aperto dichiarato esplicitamente (es. "≥5mm") — caso legittimo
+    } else if (qualMax != null) {
+        qMax = Number(qualMax);
+    } else {
+        qMax = null; // massimo non dichiarato e non marcato come illimitato: non verificabile
+    }
+    const rMin = reqMin != null ? Number(reqMin) : 0;
+    const rMax = reqMax != null ? Number(reqMax) : 0;
 
-    if (rMin >= qMin && rMax <= qMax) return 'ok';
-    return 'out_of_range';
+    if (rMin < qMin) return 'out_of_range';
+    if (qMax == null) return 'unverifiable';
+    return rMax <= qMax ? 'ok' : 'out_of_range';
 }
 
 /**
@@ -163,8 +179,12 @@ function computeQualificationCoverage(qual, wps) {
         };
     }
 
+    const qualMaxUnlimited = qual.thickness_max_unlimited === true
+        || qual.thickness_max_unlimited === 1
+        || qual.thickness_max_unlimited === '1';
     const thickResult  = checkThickness(qual.thickness_min_mm, qual.thickness_max_mm,
-                                        wps.thickness_range_min, wps.thickness_range_max);
+                                        wps.thickness_range_min, wps.thickness_range_max,
+                                        qualMaxUnlimited);
     const matResult    = checkMaterialGroup(qual.material_group, wps.base_material_group);
     const posResult    = checkPositions(qual.position_range, wps.welding_positions);
 

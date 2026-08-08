@@ -427,7 +427,7 @@ function CustomChecklistAuditView({ audit, onUpdate, readOnly = false }) {
               >
                 {!readOnly && (
                   <AskAiButton
-                    label={`Chiedi all\u2019AI \u2014 ${item.code}`}
+                    label={`Chiedi all'AI \u2014 ${item.code}`}
                     onBeforeNavigate={() =>
                       saveChecklistFocus(auditUuid, {
                         standardKey: null,

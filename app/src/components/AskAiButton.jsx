@@ -20,7 +20,7 @@ import "./AskAiButton.css";
 
 export default function AskAiButton({
   onBeforeNavigate,
-  label = "Chiedi all\u2019AI",
+  label = "Chiedi all'AI",
   className = "",
 }) {
   const { user } = useAuth();
