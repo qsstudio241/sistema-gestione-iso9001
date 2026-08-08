@@ -9,6 +9,29 @@ const { query } = require('../config/database');
 const logger = require('../utils/logger');
 const { describeIngestFileError } = require('../utils/ingestErrorMessage');
 
+/**
+ * Campi WPQR modificabili da form/API manuale (updateWPQR) — fonte unica,
+ * riusata anche dal test strutturale `welding.controller.manualFieldsCompleteness.test.js`
+ * (verifica che ogni campo dello schema ingest WPQR sia qui, gap analysis 08/08/2026).
+ * Esclusi di proposito: colonne di sistema (id, created_*), workflow di approvazione
+ * (approval_status, rejection_reason, status — gestiti da endpoint dedicati),
+ * link a file caricati (certificate_file_url, certificate_original_url),
+ * reference_number (duplicato tecnico di wpqr_code, solo per controllo duplicati ingest).
+ */
+const WPQR_MANUAL_EDITABLE_FIELDS = [
+    'wps_id', 'wpqr_code', 'test_date', 'testing_body', 'examiner_body', 'welder_name',
+    'welding_process', 'base_material_group', 'welding_positions', 'filler_material',
+    'thickness_tested', 'thickness_min', 'thickness_max', 'diameter_min', 'diameter_max',
+    'vt_result', 'rt_result', 'ut_result', 'mt_result', 'pt_result',
+    'tensile_result', 'bend_result', 'impact_result', 'hardness_result',
+    'macro_result', 'issue_date', 'expiry_date', 'certificate_number', 'notes',
+    'qualification_level', 'joint_type', 'standard_reference', 'wps_ref',
+    'base_material_spec', 'shielding_gas', 'current_type', 'metal_transfer',
+    'mechanization', 'single_multi_run', 'heat_input_note', 'pwht',
+    'thickness_max_unlimited', 'preheat_temp', 'interpass_temp', 'throat_test_mm',
+    'product_type', 'rotated_position',
+];
+
 // ?
 // WPS ? Welding Procedure Specifications
 // ?
@@ -609,23 +632,7 @@ async function updateWPQR(req, res) {
             return res.status(404).json({ error: 'WPQR non trovato', code: 'WPQR_NOT_FOUND' });
         }
 
-        const allowed = [
-            'wps_id', 'wpqr_code', 'test_date', 'testing_body', 'examiner_body', 'welder_name',
-            'welding_process', 'base_material_group', 'welding_positions', 'filler_material',
-            'thickness_tested', 'thickness_min', 'thickness_max', 'diameter_min', 'diameter_max',
-            'vt_result', 'rt_result', 'ut_result', 'mt_result', 'pt_result',
-            'tensile_result', 'bend_result', 'impact_result', 'hardness_result',
-            'macro_result', 'issue_date', 'expiry_date', 'certificate_number', 'notes',
-            // Copertura pag.1 + parametri prova pag.2 (DEPUTYTASK1 25/07/2026)
-            'qualification_level', 'joint_type', 'standard_reference', 'wps_ref',
-            'base_material_spec', 'shielding_gas', 'current_type', 'metal_transfer',
-            'mechanization', 'single_multi_run', 'heat_input_note', 'pwht',
-            // Estensioni ISO 15614-1 aggiunte via ingest (08/08/2026) — prima
-            // modificabili SOLO dall'AI, mai da form manuale (gap segnalato dal
-            // committente, GAP_WPQR_ESTENSIONI_ANNEX_B).
-            'thickness_max_unlimited', 'preheat_temp', 'interpass_temp', 'throat_test_mm',
-            'product_type', 'rotated_position',
-        ];
+        const allowed = WPQR_MANUAL_EDITABLE_FIELDS;
 
         const updates = [];
         const params  = { id: parseInt(id) };
@@ -1310,4 +1317,5 @@ module.exports = {
     uploadWPQRBatch,
     uploadWPSBatch,
     getWpsCoverage,
+    WPQR_MANUAL_EDITABLE_FIELDS,
 };

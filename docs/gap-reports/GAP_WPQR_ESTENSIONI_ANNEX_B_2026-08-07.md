@@ -77,6 +77,17 @@ Segnalazione committente: aprendo "Modifica" su una WPQR già esistente, molti c
 
 Test: nuovo `welding.controller.wpqrFields.test.js` (5 test — create/update campi estensione + mirroring). Nessuna migrazione aggiuntiva (le colonne esistono già dalle migrazioni 133/139/141/142).
 
+## Aggiornamento 08/08/2026 (tris) — stessa verifica estesa alle Qualifiche saldatori + sistematizzazione
+
+Su richiesta del committente, la stessa verifica "modifica manuale vs ingest" è stata ripetuta sul modulo Qualifiche saldatori. Esito:
+
+- **`QualificationForm.jsx` era già quasi completo** (grazie al lavoro delle sessioni precedenti — 26-28/07, 01/08): tutti i campi dei 4 schemi ingest collegati (`patentino_saldatore`, `qualifica_14732`, `cert_ndt`, `qualifica_14731`) risultano editabili a mano, verificato ora con un test automatico dedicato.
+- **Trovato un bug diverso ma della stessa famiglia**: il selettore "Da anagrafica azienda" (`personnel_id`) nel form era **puramente visivo** — `createQualification`/`updateQualification` non lo salvavano mai. La funzione `resolvePersonnelForQualification` (già usata correttamente dall'ingest e dal rinnovo) era importata nel controller ma **mai chiamata** dai due percorsi manuali. Un backfill periodico (`personnelQualificationLink.service.js`) compensava il sintomo senza chiudere la causa.
+- **Fix**: `resolvePersonnelForQualification` collegata a entrambi i percorsi manuali, con validazione (rifiuta con 400 se `personnel_id` non appartiene all'azienda) e normalizzazione nome/codice coerente con l'ingest.
+- **Sistematizzazione** (richiesta esplicita del committente): l'audit manuale è stato reso un test automatico permanente — vedi `docs/GUIDA_CONSOLIDATA.md` sezione dedicata. Il nuovo test ha **già trovato 2 falsi positivi** nell'audit WPQR di ieri (`thickness_test_mm`, `approval_date` — stesso concetto, nome colonna diverso), risolti con alias documentati: prova concreta che il controllo automatico è più affidabile di quello a occhio.
+
+Test: `qualifications.controller.test.js` (+5 test collegamento anagrafica), `welding.controller.manualFieldsCompleteness.test.js`, `qualifications.controller.manualFieldsCompleteness.test.js` (5 test totali, 4 schemi). Nessuna migrazione (colonna `personnel_id` già esistente).
+
 ## Testo normativo di riferimento — Tabella 8 (ISO 15614-1:2017, §8.3.2.2, pag. 31 del documento digitalizzato)
 
 > "Table 8 — For level 2: Range of qualification for material thickness and throat thickness of fillet welds [...] Thickness of test piece t | Throat thickness | Material thickness (single run / multi-run) [...] t ≤ 3: 0,7 t to 2 t | 0,75 a to 1,5 a | No restriction [...] 3 < t < 30: 3 to 2 t [...] t ≥ 30: ≥5 [...] NOTE a is the nominal throat thickness as specified in pWPS for the test piece."

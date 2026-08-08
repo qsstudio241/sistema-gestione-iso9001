@@ -53,6 +53,39 @@ const { findVisionFitnessGaps } = require('../services/visionFitness.service');
 const XLSX = require('xlsx');
 
 /**
+ * Campi qualifiche modificabili da form/API manuale (create/updateQualification)
+ * — fonte unica, riusata anche dal test strutturale
+ * `qualifications.controller.manualFieldsCompleteness.test.js` (verifica che ogni
+ * campo degli schemi ingest patentino_saldatore/qualifica_14732/cert_ndt/
+ * qualifica_14731 sia qui, stesso pattern del gap analysis WPQR 08/08/2026).
+ * Esclusi di proposito: colonne di sistema, workflow di approvazione
+ * (approval_status/approved_by/approved_at/rejection_reason — rimosso come gate
+ * manuale, vedi header file), previous_qualification_id (gestito solo dal rinnovo),
+ * certificate_original_url (link file, non testo).
+ * NOTA: questa lista deve restare sincronizzata a mano con la query UPDATE in
+ * updateQualification (non generata dinamicamente, a differenza di WPQR) — il
+ * test strutturale segnala solo i campi ingest mancanti qui, non un disallineamento
+ * con la query stessa.
+ */
+const QUALIFICATION_MANUAL_EDITABLE_FIELDS = [
+    'company_id', 'person_name', 'person_code', 'personnel_id', 'department',
+    'qualification_type', 'standard_ref', 'scope_detail', 'certificate_number', 'issuing_body',
+    'issue_date', 'exam_date', 'expiry_date', 'last_renewal_date',
+    'last_confirmation_date', 'next_confirmation_due', 'revalidation_date',
+    'status', 'notes',
+    'welding_process', 'material_group', 'position_range', 'ndt_method', 'ndt_level',
+    'joint_type', 'product_type', 'weld_details', 'transfer_mode',
+    'thickness_min_mm', 'thickness_max_mm', 'thickness_max_unlimited',
+    'pipe_diameter_min_mm', 'pipe_diameter_max_mm', 'thickness_range', 'pipe_diameter',
+    'filler_material', 'shielding_gas', 'equipment_type',
+    'welding_type', 'single_multi_run', 'qualification_method',
+    'ndt_sector', 'certification_scheme',
+    'coordinator_title', 'diploma_number', 'cpd_valid_until',
+    'patent_type', 'training_body', 'course_name', 'training_hours',
+    'examiner_body', 'certificate_file_url',
+];
+
+/**
  * Converte un valore in numero finito o null (per colonne DECIMAL).
  * Alias locale su numericSanitizer.js — stessa policy usata dall'ingest AI
  * (bug produzione 27/07/2026: valori come "N.A." o range testuali su colonne
@@ -488,7 +521,7 @@ async function createQualification(req, res) {
     try {
         const body = req.body;
         const {
-            company_id, person_name, person_code, department,
+            company_id, person_name, person_code, department, personnel_id,
             qualification_type, standard_ref, scope_detail,
             certificate_number, issuing_body,
             issue_date, expiry_date, last_renewal_date,
@@ -512,6 +545,21 @@ async function createQualification(req, res) {
 
         if (!person_name?.trim()) return res.status(400).json({ error: 'Il nome della persona \u00e8 obbligatorio.' });
         if (!qualification_type?.trim()) return res.status(400).json({ error: 'Il tipo di qualifica \u00e8 obbligatorio.' });
+
+        // Collegamento anagrafica (company_personnel) — gap analysis 08/08/2026:
+        // il form manuale offre il selettore "Da anagrafica azienda" (personnel_id)
+        // ma la creazione/modifica non lo salvava mai (solo l'ingest AI e il rinnovo
+        // lo persistevano), lasciando il collegamento silenziosamente perso.
+        const personnelResult = await resolvePersonnelForQualification({
+            organizationId: req.user.organization_id,
+            companyId: company_id || null,
+            personnelId: personnel_id,
+            personName: person_name,
+            personCode: person_code,
+        });
+        if (!personnelResult.ok) {
+            return res.status(personnelResult.status || 400).json({ error: personnelResult.error, code: personnelResult.code });
+        }
 
         // Range numerici (fonte primaria) + stringhe legacy derivate.
         const thickMin = toNum(thickness_min_mm);
@@ -562,8 +610,9 @@ async function createQualification(req, res) {
         const r = await pool.request()
             .input('orgId',     orgId)
             .input('compId',    company_id   || null)
-            .input('personName',person_name.trim())
-            .input('personCode',person_code  || null)
+            .input('personName',personnelResult.personName || person_name.trim())
+            .input('personCode',personnelResult.personCode || person_code || null)
+            .input('personnelId', personnelResult.personnelId)
             .input('dept',      department   || null)
             .input('qualType',  qualification_type.trim())
             .input('stdRef',    standard_ref || null)
@@ -622,7 +671,7 @@ async function createQualification(req, res) {
             .input('qualMethod',      qualification_method || null)
             .query(`
                 INSERT INTO qualifications
-                    (organization_id, company_id, person_name, person_code, department,
+                    (organization_id, company_id, person_name, person_code, personnel_id, department,
                      qualification_type, standard_ref, scope_detail, certificate_number, issuing_body,
                      issue_date, exam_date, expiry_date, last_renewal_date,
                      last_confirmation_date, next_confirmation_due, revalidation_date,
@@ -639,7 +688,7 @@ async function createQualification(req, res) {
                      course_name, training_hours, examiner_body, certificate_file_url)
                 OUTPUT INSERTED.id
                 VALUES
-                    (@orgId, @compId, @personName, @personCode, @dept,
+                    (@orgId, @compId, @personName, @personCode, @personnelId, @dept,
                      @qualType, @stdRef, @scope, @certNum, @issuer,
                      @issueDate, @examDate, @expiryDate, @renewalDate,
                      @lastConfDate, @nextConfDue, @revalDate,
@@ -681,7 +730,7 @@ async function updateQualification(req, res) {
         if (writeDenied) return sendAccessDenied(res, writeDenied);
 
         const {
-            company_id, person_name, person_code, department,
+            company_id, person_name, person_code, department, personnel_id,
             qualification_type, standard_ref, scope_detail,
             certificate_number, issuing_body,
             issue_date, expiry_date, last_renewal_date,
@@ -715,12 +764,26 @@ async function updateQualification(req, res) {
             welding_positions: position_range, weld_details,
         });
 
+        // Collegamento anagrafica (company_personnel) — gap analysis 08/08/2026:
+        // stessa correzione di createQualification, vedi commento lì.
+        const personnelResult = await resolvePersonnelForQualification({
+            organizationId: orgId,
+            companyId: company_id ?? targetCompanyId,
+            personnelId: personnel_id,
+            personName: person_name,
+            personCode: person_code,
+        });
+        if (!personnelResult.ok) {
+            return res.status(personnelResult.status || 400).json({ error: personnelResult.error, code: personnelResult.code });
+        }
+
         await pool.request()
             .input('id',        id)
             .input('orgId',     orgId)
             .input('compId',    company_id   || null)
-            .input('personName',person_name?.trim())
-            .input('personCode',person_code  || null)
+            .input('personName',personnelResult.personName || person_name?.trim())
+            .input('personCode',personnelResult.personCode || person_code || null)
+            .input('personnelId', personnelResult.personnelId)
             .input('dept',      department   || null)
             .input('qualType',  qualification_type?.trim())
             .input('stdRef',    standard_ref || null)
@@ -776,6 +839,7 @@ async function updateQualification(req, res) {
             .query(`
                 UPDATE qualifications SET
                     company_id=@compId, person_name=@personName, person_code=@personCode,
+                    personnel_id=@personnelId,
                     department=@dept, qualification_type=@qualType, standard_ref=@stdRef,
                     scope_detail=@scope, certificate_number=@certNum, issuing_body=@issuer,
                     issue_date=@issueDate, exam_date=@examDate, expiry_date=@expiryDate, last_renewal_date=@renewalDate,
@@ -1498,6 +1562,7 @@ module.exports = {
     updateQualification,
     deleteQualification,
     hardDeleteQualification,
+    QUALIFICATION_MANUAL_EDITABLE_FIELDS,
     renewQualification,
     uploadBatch,
     uploadCertificate,
