@@ -1,25 +1,55 @@
 ---
-description: Policy commit/push autonomi ProgettoISO — quando procedere senza chiedere e quando fermarsi.
+description: Policy commit/push/merge autonomi ProgettoISO — 3 livelli di rischio, quando procedere senza chiedere e quando fermarsi. Gate Bugbot obbligatorio prima di ogni merge PR autonomo.
 alwaysApply: true
 ---
 
 # Policy git autonomia (ProgettoISO)
 
-## Commit + push SENZA chiedere conferma
+## Livelli di rischio (fonte unica — usati sia per commit diretto sia per merge PR)
+
+| Livello | Esempio | Politica |
+|---|---|---|
+| **Basso** | `docs/**/*.md`, `.cursor/rules/**`, typo/fix 1-2 file frontend non sync/auth/DB | Commit + push diretto su `main`, **senza chiedere** |
+| **Medio** | Backend additivo/non-breaking, migrazioni **nullable/additive**, nuovo campo/endpoint senza toccare auth/sync/schema critico, test L1 verdi | PR + **merge autonomo consentito SOLO dopo gate Bugbot positivo** (vedi sotto) |
+| **Alto** | Breaking change API/schema DB, migrazioni distruttive, `auth.middleware`, `syncService`, JWT, logica di compliance con impatto legale/qualità non ancora validata | **Sempre** conferma esplicita del committente — mai autonomo, né commit diretto né merge |
+
+**Regola di declassamento**: se un task tocca anche un solo file/aspetto di livello Alto, l'intero task è Alto — non spezzare artificialmente per far rientrare la parte rischiosa nel Medio.
+
+## Gate Bugbot obbligatorio prima del merge autonomo (livello Medio)
+
+Lezione 07-08/08/2026 (sessione fix ingest WPQR/3834): lo stesso agente che scrive codice e test può riflettere lo stesso errore di interpretazione in entrambi — "test verde" non equivale a "corretto", soprattutto su logica normativa (ISO 3834/15614). Prima di mergiare autonomamente una PR di livello Medio:
+
+1. Lanciare il subagente **`bugbot`** (Diff: "branch changes") sulla PR.
+2. Mergiare in autonomia **solo se** il Bugbot non segnala problemi critici/bloccanti.
+3. Se il Bugbot segnala anche un solo problema non banale: **non mergiare**, riportare il rilievo al committente e attendere decisione.
+4. Registrare nel messaggio di merge/commento PR l'esito del gate (es. "Bugbot: nessun rilievo critico — merge autonomo").
+
+Questo gate **non sostituisce** il livello di rischio: un task di livello Alto resta sempre bloccato, indipendentemente dall'esito Bugbot.
+
+## Prerequisiti tecnici per il merge autonomo (da verificare prima di eseguirlo)
+
+Il merge di una PR richiede permessi che potrebbero non essere ancora attivi in questo ambiente:
+
+- Lo strumento di gestione PR deve esporre un'azione di merge (in alcuni ambienti cloud agent è disponibile in sola lettura/creazione — verificare prima di assumere che il merge sia eseguibile).
+- Il branch `main` non deve avere una regola di protezione che blocchi il merge automatico senza review umana (verificabile con un tentativo di `git push` in fast-forward: se GitHub rifiuta con "Changes must be made through a pull request", il merge autonomo via git diretto non è praticabile e serve l'azione di merge lato piattaforma).
+- **Se questi prerequisiti non sono attivi**: procedere come da versione precedente di questa regola — aprire/aggiornare la PR, eseguire il gate Bugbot comunque (per dare al committente un verdetto pronto), e chiedere al committente di eseguire il merge dall'interfaccia GitHub.
+
+## Commit + push diretto SENZA chiedere conferma (livello Basso)
 
 Quando **tutti** i criteri sono veri:
 
 - Task completato (doc allineata, fix verificato, test L1 verdi se applicabile)
-- Scope a basso rischio: solo `docs/**/*.md`, `.cursor/rules/**`, typo/fix 1-2 file frontend non sync/auth/DB
+- Scope a basso rischio (vedi tabella sopra)
 - Nessun segreto in staging; working tree coerente
 - Messaggio commit chiaro (stile repo, focus sul perché)
 - Dopo commit: `git pull origin main` se necessario, poi `git push origin main` — **mai** force push
 
-## Chiedere conferma PRIMA di commit/push
+## Chiedere conferma PRIMA di commit/push o merge (livello Alto)
 
 - Backend controller/routes/middleware, sync, auth, JWT
-- Migrazioni SQL o script `run-migration-*`
+- Migrazioni SQL distruttive o script `run-migration-*` che alterano/eliminano dati esistenti
 - Breaking change API/schema DB
+- Logica di compliance/normativa non ancora validata da un secondo giro di verifica
 - Branch feature con PR draft intenzionale (non push diretto su main se il workflow era PR)
 
 ## Protocollo commit
@@ -29,3 +59,11 @@ Quando **tutti** i criteri sono veri:
 3. Commit con messaggio heredoc-style (focus sul perché)
 4. `git status` post-commit
 5. `git pull origin main` se necessario, poi `git push origin main`
+
+## Protocollo merge PR (livello Medio, dopo gate Bugbot positivo)
+
+1. Verificare CI verde (`get_ci_status`).
+2. Eseguire il gate Bugbot (vedi sopra) — procedere solo se esito positivo.
+3. Verificare i prerequisiti tecnici (sezione sopra) — se assenti, delegare il click "Merge" al committente e fermarsi qui.
+4. Se i prerequisiti sono attivi: eseguire il merge, poi `git pull origin main` in locale per allinearsi.
+5. Aggiornare `docs/GUIDA_CONSOLIDATA.md` con l'esito (PR mergiata, gate Bugbot superato) e chiudere eventuale `DEPUTYTASK.md`.
