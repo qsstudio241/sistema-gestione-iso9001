@@ -834,7 +834,8 @@ Un auditor che gestisce 10 aziende → 10 licenze. Prezzo varia per modulo attiv
 
 | Priorità | Voce | Stato | Note |
 |----------|------|-------|------|
-| **P0** | Committente commerciale su `commercial_cases` + UI + contesto AI | 🔄 Slice 1 locale | Migrazione 095; `company_id` = capacità SGQ |
+| **P0** | Committente commerciale su `commercial_cases` + UI + contesto AI | ✅ | Migrazione 095; select controparti PR #230/#233 |
+| **P0b** | **Checklist riesame personalizzabili per studio** (template prelim/finale) | 📋 Gap map | Hardcoded P1–P10/F1–F6 oggi → catalogo template org/studio; vedi [GAP_MAP_RIESAME_REQUISITI_CHECKLIST.md](specs/GAP_MAP_RIESAME_REQUISITI_CHECKLIST.md) |
 | **P1** | RAG documenti/qualifiche per `company_id` in analisi capitolato | ⏳ Slice 2 | DEPUTYTASK R2.1–R2.2 |
 | **P2** | Committente come record `companies` (FK opzionale) + audit 2° livello | ⏳ Slice 2–3 | ADR prima di schema |
 | **P3** | Modellazione PT.MAIDO (cliente del cliente) multi-livello | ⏳ Backlog | Oltre pilota ordine diretto |
