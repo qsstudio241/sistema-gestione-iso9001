@@ -90,13 +90,35 @@ describe('weldingQualificationRules15614', () => {
     });
 
     describe('describePlateCoversPipeDiameterLevel2', () => {
-        test('posizione non ruotata -> soglia 500mm', () => {
+        test('posizione PA non ruotata -> soglia 500mm (default generale)', () => {
             const note = describePlateCoversPipeDiameterLevel2({ weldingPositions: ['PA'], rotatedPosition: false });
             expect(note.minMm).toBe(500);
         });
 
-        test('posizione PC/PF/PA ruotata -> soglia 150mm', () => {
+        // Fix bug 08/08/2026: la norma raggruppa "PC, PF ruotata o PA ruotata" —
+        // SOLO PF/PA richiedono la conferma "ruotata", PC da sola già qualifica.
+        test('posizione PC da sola (senza flag ruotato) -> soglia 150mm', () => {
+            const note = describePlateCoversPipeDiameterLevel2({ weldingPositions: ['PC'], rotatedPosition: false });
+            expect(note.minMm).toBe(150);
+        });
+
+        test('posizione PC con flag ruotato (ridondante ma non deve rompere) -> soglia 150mm', () => {
             const note = describePlateCoversPipeDiameterLevel2({ weldingPositions: ['PC'], rotatedPosition: true });
+            expect(note.minMm).toBe(150);
+        });
+
+        test('posizione PF senza flag ruotato -> resta soglia 500mm (non basta il codice posizione)', () => {
+            const note = describePlateCoversPipeDiameterLevel2({ weldingPositions: ['PF'], rotatedPosition: false });
+            expect(note.minMm).toBe(500);
+        });
+
+        test('posizione PF con flag ruotato -> soglia 150mm', () => {
+            const note = describePlateCoversPipeDiameterLevel2({ weldingPositions: ['PF'], rotatedPosition: true });
+            expect(note.minMm).toBe(150);
+        });
+
+        test('posizione PA con flag ruotato -> soglia 150mm', () => {
+            const note = describePlateCoversPipeDiameterLevel2({ weldingPositions: ['PA'], rotatedPosition: true });
             expect(note.minMm).toBe(150);
         });
     });

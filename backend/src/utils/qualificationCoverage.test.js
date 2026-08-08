@@ -40,6 +40,25 @@ describe('checkThickness', () => {
         // qualMin=null → default 0; qualMax=30; reqMin=5; reqMax=20 → ok
         expect(checkThickness(null, 30, 5, 20)).toBe('ok');
     });
+
+    // ─── Fix bug attivo 07/08/2026 (ISO 3834-2 §8.2) — qualMax NULL non è più
+    // automaticamente "illimitato": senza il flag esplicito qualMaxUnlimited,
+    // un massimo non dichiarato deve restare 'unverifiable', mai 'ok' automatico.
+    it('BUG CORRETTO: qualMax NULL senza flag unlimited → unverifiable (prima del fix sarebbe stato "ok", falso positivo)', () => {
+        expect(checkThickness(5, null, 5, 80)).toBe('unverifiable');
+    });
+
+    it('con qualMaxUnlimited=true (range dichiarato esplicitamente aperto, es. "≥5mm") → resta ok', () => {
+        expect(checkThickness(5, null, 5, 80, true)).toBe('ok');
+    });
+
+    it('con qualMaxUnlimited=true ma reqMin sotto il minimo qualificato → out_of_range', () => {
+        expect(checkThickness(5, null, 3, 80, true)).toBe('out_of_range');
+    });
+
+    it('qualMaxUnlimited=false esplicito (non solo default) si comporta come assenza di flag → unverifiable', () => {
+        expect(checkThickness(5, null, 5, 80, false)).toBe('unverifiable');
+    });
 });
 
 // ─── checkMaterialGroup ───────────────────────────────────────────────────────
@@ -208,6 +227,24 @@ describe('computeQualificationCoverage', () => {
         );
         expect(result.overall).toBe('partial');
         expect(result.position).toBe('unverifiable');
+    });
+
+    it('overall=ok con thickness_max_unlimited=true anche per spessore WPS elevato (range dichiarato aperto)', () => {
+        const result = computeQualificationCoverage(
+            { ...baseQual, thickness_min_mm: 5, thickness_max_mm: null, thickness_max_unlimited: true },
+            { ...baseWps, thickness_range_min: 5, thickness_range_max: 80 },
+        );
+        expect(result.overall).toBe('ok');
+        expect(result.thickness).toBe('ok');
+    });
+
+    it('overall=partial (unverifiable) per lo stesso spessore WPS elevato SENZA il flag unlimited', () => {
+        const result = computeQualificationCoverage(
+            { ...baseQual, thickness_min_mm: 5, thickness_max_mm: null, thickness_max_unlimited: false },
+            { ...baseWps, thickness_range_min: 5, thickness_range_max: 80 },
+        );
+        expect(result.overall).toBe('partial');
+        expect(result.thickness).toBe('unverifiable');
     });
 
     it('overall=ok quando WPS non specifica range (tutti i campi NULL nella WPS)', () => {

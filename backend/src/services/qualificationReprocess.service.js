@@ -61,6 +61,12 @@ function resolveExtractedReprocessValue(fieldKey, reviewFields = {}) {
         const v = reviewFields.pipe_diameter_min_mm ?? reviewFields.pipe_diameter_mm;
         return v == null || v === '' ? null : v;
     }
+    if (fieldKey === 'thickness_max_unlimited') {
+        // Colonna NOT NULL con default false — riproporre "false" non avrebbe
+        // senso (è già il valore attuale): una proposta ha valore solo quando
+        // la rilettura del PDF conferma esplicitamente il range aperto.
+        return reviewFields.thickness_max_unlimited === true ? true : null;
+    }
     const v = reviewFields[fieldKey];
     return v == null || v === '' ? null : v;
 }
@@ -71,7 +77,7 @@ async function selectReprocessCandidates(field, config, { orgId = null } = {}) {
     }
 
     const conditions = [
-        `${field} IS NULL`,
+        config.candidateWhere || `${field} IS NULL`,
         "status != 'revocata'",
         'certificate_file_url IS NOT NULL',
     ];

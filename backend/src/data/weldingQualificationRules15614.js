@@ -474,6 +474,13 @@ function describeQualifiedPipeDiameterRangeLevel2({ testDiameterMm } = {}) {
  * una qualifica su piastra copre anche tubo con diametro esterno >500mm,
  * oppure >150mm se saldato in posizione PC, PF ruotata o PA ruotata.
  *
+ * Nota bug fix 08/08/2026 (gap analysis GAP_WPQR_ESTENSIONI_ANNEX_B): la norma
+ * raggruppa "PC, PF ruotata o PA ruotata" — SOLO PF e PA richiedono la
+ * conferma esplicita "ruotata" (`rotatedPosition`); PC da sola qualifica
+ * gia' per la soglia ridotta, senza bisogno di quel flag. La versione
+ * precedente di questa funzione richiedeva erroneamente `rotatedPosition`
+ * anche per PC.
+ *
  * @param {{ weldingPositions?: string[]|string|null, rotatedPosition?: boolean }} params
  * @returns {{ minMm: number, note: string } }
  */
@@ -481,12 +488,14 @@ function describePlateCoversPipeDiameterLevel2({ weldingPositions = null, rotate
     const positions = Array.isArray(weldingPositions)
         ? weldingPositions
         : String(weldingPositions || '').split(/[,;/\s]+/).filter(Boolean);
-    const hasRelevantPosition = rotatedPosition && positions.some((p) => ['PC', 'PF', 'PA'].includes(String(p).toUpperCase()));
+    const upperPositions = positions.map((p) => String(p).toUpperCase());
+    const hasPC = upperPositions.includes('PC');
+    const hasRotatedPfOrPa = rotatedPosition && upperPositions.some((p) => p === 'PF' || p === 'PA');
 
-    if (hasRelevantPosition) {
+    if (hasPC || hasRotatedPfOrPa) {
         return {
             minMm: 150,
-            note: 'Qualifica su piastra copre tubo con diametro esterno >150 mm (posizione PC/PF/PA ruotata) — ISO 15614-1 §8.3.3',
+            note: 'Qualifica su piastra copre tubo con diametro esterno >150 mm (posizione PC, o PF/PA ruotata) — ISO 15614-1 §8.3.3',
         };
     }
     return {

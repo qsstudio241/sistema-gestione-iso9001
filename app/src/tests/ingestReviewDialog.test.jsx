@@ -116,6 +116,74 @@ describe("IngestReviewDialog — campo diametro tubo condizionato al tipo prodot
   });
 });
 
+describe("IngestReviewDialog — select con fallback 'Altro' non perde valori fuori elenco (08/08/2026)", () => {
+  const baseProps = {
+    open: true,
+    docType: "patentino_saldatore",
+    fileName: "certificato.pdf",
+    onConfirm: vi.fn(),
+    onReject: vi.fn(),
+    onClose: vi.fn(),
+  };
+
+  it("valore che corrisponde a un'opzione nota: mostra solo il select, nessun campo testo extra", () => {
+    render(
+      <IngestReviewDialog
+        {...baseProps}
+        fields={{ issuing_body: "tuv" }}
+        fieldConfidence={{ issuing_body: "low" }}
+      />,
+    );
+
+    expect(document.getElementById("ingest-field-issuing_body").value).toBe("tuv");
+    expect(document.querySelector(".ingest-review__input--other")).toBeNull();
+  });
+
+  it("valore estratto dall'AI non presente in elenco (es. ente non ancora catalogato): non viene scartato, resta visibile in un campo testo", () => {
+    render(
+      <IngestReviewDialog
+        {...baseProps}
+        fields={{ issuing_body: "Istituto Italiano di Saldatura" }}
+        fieldConfidence={{ issuing_body: "low" }}
+      />,
+    );
+
+    expect(document.getElementById("ingest-field-issuing_body").value).toBe("altro");
+    const otherInput = document.querySelector(".ingest-review__input--other");
+    expect(otherInput).not.toBeNull();
+    expect(otherInput.value).toBe("Istituto Italiano di Saldatura");
+  });
+
+  it("selezionando 'Altro' manualmente compare un campo testo vuoto, e digitando si aggiorna il valore del campo", () => {
+    render(
+      <IngestReviewDialog
+        {...baseProps}
+        fields={{ issuing_body: "tuv" }}
+        fieldConfidence={{ issuing_body: "low" }}
+      />,
+    );
+
+    fireEvent.change(document.getElementById("ingest-field-issuing_body"), { target: { value: "altro" } });
+    const otherInput = document.querySelector(".ingest-review__input--other");
+    expect(otherInput.value).toBe("");
+
+    fireEvent.change(otherInput, { target: { value: "Ente XYZ" } });
+    expect(document.querySelector(".ingest-review__input--other").value).toBe("Ente XYZ");
+  });
+
+  it("IIS - ISSCERT è ora tra le opzioni dell'elenco enti (gap segnalato dal committente 08/08/2026)", () => {
+    render(
+      <IngestReviewDialog
+        {...baseProps}
+        fields={{ issuing_body: "" }}
+        fieldConfidence={{ issuing_body: "low" }}
+      />,
+    );
+
+    expect(screen.getByText(/IIS - ISSCERT/)).toBeInTheDocument();
+  });
+});
+
 describe("IngestReviewDialog — revisione adattiva per confidenza", () => {
   const baseProps = {
     open: true,

@@ -4,6 +4,8 @@ const {
     generateWpsFromWpqr,
     assessJointCoverageInputs,
     checkThicknessCoverage,
+    checkDiameterCoverage,
+    checkThroatCoverage,
 } = require('./wpsGenerator.service');
 
 /** Fixture WPQR caso Mason (in-memory). */
@@ -163,6 +165,201 @@ describe('checkThicknessCoverage — range aperto FW senza limite superiore (WPQ
         expect(result.wps_draft).toBeTruthy();
         expect(result.wps_draft.thickness_range_max).toBeNull();
         expect(result.candidates[0].thickness_max_unlimited).toBe(true);
+    });
+});
+
+/**
+ * Gap analysis 07/08/2026 (gap report GAP_WPQR_ESTENSIONI_ANNEX_B): diametro
+ * tubo acquisito dall'ingest ma mai usato nel calcolo copertura. Fix: filtro
+ * diametro Tabella 9 (ISO 15614-1 §8.3.3), applicato SOLO se il chiamante
+ * richiede esplicitamente un diametro (giunto su tubo).
+ */
+describe('checkDiameterCoverage — Tabella 9 (Level 2 variabile essenziale)', () => {
+    const WPQR_TUBE_LEVEL2 = {
+        id: 3,
+        wpqr_code: 'WPQR-TUBE-L2',
+        qualification_level: '2',
+        diameter_min: 50,
+        diameter_max: 200,
+    };
+
+    test('nessun diametro richiesto (giunto su piastra) → non applicabile, sempre ok', () => {
+        const r = checkDiameterCoverage(WPQR_TUBE_LEVEL2, null);
+        expect(r.ok).toBe(true);
+        expect(r.applicable).toBe(false);
+    });
+
+    test('diametro richiesto entro il range dichiarato → ok', () => {
+        const r = checkDiameterCoverage(WPQR_TUBE_LEVEL2, 100);
+        expect(r.ok).toBe(true);
+        expect(r.applicable).toBe(true);
+    });
+
+    test('diametro richiesto fuori dal range dichiarato → non ok', () => {
+        const r = checkDiameterCoverage(WPQR_TUBE_LEVEL2, 500);
+        expect(r.ok).toBe(false);
+    });
+
+    test('Level 1 → diametro non variabile essenziale, sempre ok anche fuori range dichiarato', () => {
+        const r = checkDiameterCoverage({ ...WPQR_TUBE_LEVEL2, qualification_level: '1', diameter_min: 50, diameter_max: 60 }, 500);
+        expect(r.ok).toBe(true);
+        expect(r.reason).toMatch(/Level 1/);
+    });
+
+    test('Level 2 senza diametro dichiarato → fail-closed (non fail-open), richiede verifica manuale', () => {
+        const r = checkDiameterCoverage({ ...WPQR_TUBE_LEVEL2, diameter_min: null, diameter_max: null }, 100);
+        expect(r.ok).toBe(false);
+        expect(r.reason).toMatch(/non dichiarato/);
+    });
+
+    test('WPQR testata su piastra, nessun diametro dichiarato, diametro richiesto >500mm → coperta (regola piastra→tubo generale)', () => {
+        const r = checkDiameterCoverage(
+            { ...WPQR_TUBE_LEVEL2, diameter_min: null, diameter_max: null, product_type: 'P', welding_positions: 'PA' },
+            600
+        );
+        expect(r.ok).toBe(true);
+        expect(r.range.min).toBe(500);
+    });
+
+    test('WPQR testata su piastra, diametro richiesto 500mm esatto (non >500) → NON coperta', () => {
+        const r = checkDiameterCoverage(
+            { ...WPQR_TUBE_LEVEL2, diameter_min: null, diameter_max: null, product_type: 'P', welding_positions: 'PA' },
+            500
+        );
+        expect(r.ok).toBe(false);
+    });
+
+    test('WPQR testata su piastra, posizione PC dichiarata → soglia ridotta a >150mm senza bisogno del flag ruotato', () => {
+        const r = checkDiameterCoverage(
+            { ...WPQR_TUBE_LEVEL2, diameter_min: null, diameter_max: null, product_type: 'P', welding_positions: 'PC' },
+            200
+        );
+        expect(r.ok).toBe(true);
+        expect(r.range.min).toBe(150);
+    });
+
+    test('WPQR testata su piastra, posizione PF ma SENZA flag ruotato → resta la soglia generale >500mm (fail-closed prudente)', () => {
+        const r = checkDiameterCoverage(
+            { ...WPQR_TUBE_LEVEL2, diameter_min: null, diameter_max: null, product_type: 'P', welding_positions: 'PF', rotated_position: false },
+            200
+        );
+        expect(r.ok).toBe(false);
+        expect(r.range.min).toBe(500);
+    });
+
+    test('WPQR testata su piastra, posizione PF con flag ruotato dichiarato → soglia ridotta a >150mm', () => {
+        const r = checkDiameterCoverage(
+            { ...WPQR_TUBE_LEVEL2, diameter_min: null, diameter_max: null, product_type: 'P', welding_positions: 'PF', rotated_position: true },
+            200
+        );
+        expect(r.ok).toBe(true);
+        expect(r.range.min).toBe(150);
+    });
+
+    test('qualification_level assente → default Level 2 (norma, requisiti più severi) — fail-closed senza dichiarazione', () => {
+        const r = checkDiameterCoverage({ ...WPQR_TUBE_LEVEL2, qualification_level: null, diameter_min: null, diameter_max: null }, 100);
+        expect(r.ok).toBe(false);
+    });
+
+    test('generateWpsFromWpqr end-to-end: candidato con diametro fuori range viene escluso', async () => {
+        const result = await generateWpsFromWpqr({
+            organizationId: 1,
+            request: {
+                ...MASON_REQUEST,
+                pipe_diameter_mm: 500,
+            },
+            wpqrRecords: [{ ...WPQR_MASON_DEMO, qualification_level: '2', diameter_min: 50, diameter_max: 200 }],
+        });
+        expect(result.status).toBe('not_possible');
+        expect(result.extensions_needed.join(' ')).toMatch(/[Dd]iametro/);
+    });
+
+    test('generateWpsFromWpqr end-to-end: candidato con diametro nel range viene accettato', async () => {
+        const result = await generateWpsFromWpqr({
+            organizationId: 1,
+            request: {
+                ...MASON_REQUEST,
+                pipe_diameter_mm: 100,
+            },
+            wpqrRecords: [{ ...WPQR_MASON_DEMO, qualification_level: '2', diameter_min: 50, diameter_max: 200 }],
+        });
+        expect(['ok', 'partial']).toContain(result.status);
+        expect(result.wpqr_used).toBeTruthy();
+    });
+});
+
+/**
+ * Gap analysis 07/08/2026 (GAP_WPQR_ESTENSIONI_ANNEX_B, item 1 — chiusura
+ * completa): la gola richiesta per generare una WPS su giunto FW ora viene
+ * verificata contro il range qualificato Tabella 8 (calcolato da
+ * thickness_tested, come già usato in checkThicknessCoverage come hint).
+ */
+describe('checkThroatCoverage — Tabella 8 (giunti FW)', () => {
+    const WPQR_FW_T10 = {
+        id: 4,
+        wpqr_code: 'WPQR-FW-T10',
+        joint_type: 'FW',
+        thickness_tested: 10,
+    };
+
+    test('nessuna gola richiesta (giunto BW o non specificata) → non applicabile, sempre ok', () => {
+        const r = checkThroatCoverage(WPQR_FW_T10, null);
+        expect(r.ok).toBe(true);
+        expect(r.applicable).toBe(false);
+    });
+
+    test('WPQR non FW → non applicabile la verifica gola, esclusa', () => {
+        const r = checkThroatCoverage({ ...WPQR_FW_T10, joint_type: 'BW' }, 5);
+        expect(r.ok).toBe(false);
+        expect(r.reason).toMatch(/non è un giunto FW/);
+    });
+
+    test('gola entro il range Tabella 8 (t=10 → 3-20mm per 3<t<30) → ok', () => {
+        const r = checkThroatCoverage(WPQR_FW_T10, 10);
+        expect(r.ok).toBe(true);
+        expect(r.range).toEqual({ min: 3, max: 20 });
+    });
+
+    test('gola sotto il minimo Tabella 8 → non ok', () => {
+        const r = checkThroatCoverage(WPQR_FW_T10, 1);
+        expect(r.ok).toBe(false);
+    });
+
+    test('gola sopra il massimo Tabella 8 → non ok', () => {
+        const r = checkThroatCoverage(WPQR_FW_T10, 25);
+        expect(r.ok).toBe(false);
+    });
+
+    test('t>=30mm → solo minimo 5mm, nessun massimo (range aperto)', () => {
+        const r = checkThroatCoverage({ ...WPQR_FW_T10, thickness_tested: 30 }, 500);
+        expect(r.ok).toBe(true);
+        expect(r.range.max).toBeNull();
+    });
+
+    test('spessore provino non dichiarato → fail-closed (non verificabile)', () => {
+        const r = checkThroatCoverage({ ...WPQR_FW_T10, thickness_tested: null }, 10);
+        expect(r.ok).toBe(false);
+        expect(r.reason).toMatch(/non dichiarato/);
+    });
+
+    test('generateWpsFromWpqr end-to-end: gola fuori range esclude il candidato', async () => {
+        const result = await generateWpsFromWpqr({
+            organizationId: 1,
+            request: { ...MASON_REQUEST, throat_mm: 25 },
+            wpqrRecords: [{ ...WPQR_MASON_DEMO, thickness_tested: 10 }],
+        });
+        expect(result.status).toBe('not_possible');
+        expect(result.extensions_needed.join(' ')).toMatch(/[Gg]ola/);
+    });
+
+    test('generateWpsFromWpqr end-to-end: gola entro range accetta il candidato', async () => {
+        const result = await generateWpsFromWpqr({
+            organizationId: 1,
+            request: { ...MASON_REQUEST, throat_mm: 10 },
+            wpqrRecords: [{ ...WPQR_MASON_DEMO, thickness_tested: 10 }],
+        });
+        expect(['ok', 'partial']).toContain(result.status);
+        expect(result.wps_draft.throat_mm).toBe(10);
     });
 });
 

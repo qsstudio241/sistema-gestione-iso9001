@@ -224,6 +224,11 @@ function mapPipelineFieldsToReview(f, pipelineText, fileName) {
         welding_position: position_range,
         thickness_min_mm: thicknessMinNum,
         thickness_max_mm: thicknessMaxNum,
+        // Range aperto senza limite superiore (audit strutturale 07/08/2026 — bug
+        // qualificationCoverage.js: un thickness_max_mm NULL veniva sempre trattato
+        // come "nessun limite" anche quando il dato era solo assente/non estratto).
+        // Stesso pattern del flag già introdotto per la WPQR (thickness_max_unlimited).
+        thickness_max_unlimited: !!f.thickness_max_unlimited,
         thickness_range: thicknessMinNum != null && thicknessMaxNum != null
             ? `${thicknessMinNum}-${thicknessMaxNum} mm`
             : (f.thickness_range || null),
@@ -406,6 +411,8 @@ async function commitQualificationFromFields(fields, organizationId, companyId, 
     // grezza alla query SQL su colonne DECIMAL — vedi numericSanitizer.js.
     const thickness_min_mm = toNumericOrNull(f.thickness_min_mm);
     const thickness_max_mm = toNumericOrNull(f.thickness_max_mm);
+    // Range aperto dichiarato senza limite superiore — vedi nota in mapPipelineFieldsToReview.
+    const thickness_max_unlimited = !!f.thickness_max_unlimited;
     const { min: pipe_diameter_min_mm, max: pipe_diameter_max_mm } = resolvePipeDiameterRange(f);
     const thickness_range = f.thickness_range
         || (thickness_min_mm != null && thickness_max_mm != null
@@ -504,6 +511,7 @@ async function commitQualificationFromFields(fields, organizationId, companyId, 
         .input('thickRange', thickness_range || null)
         .input('thickMin', thickness_min_mm)
         .input('thickMax', thickness_max_mm)
+        .input('thickMaxUnlimited', thickness_max_unlimited)
         .input('pipeMin', pipe_diameter_min_mm)
         .input('pipeMax', pipe_diameter_max_mm)
         .input('pipeDiam', pipe_diameter || null)
@@ -535,7 +543,7 @@ async function commitQualificationFromFields(fields, organizationId, companyId, 
                  revalidation_date,
                  status, notes, created_by, approval_status,
                  welding_process, material_group, position_range, thickness_range, pipe_diameter,
-                 thickness_min_mm, thickness_max_mm, pipe_diameter_min_mm, pipe_diameter_max_mm,
+                 thickness_min_mm, thickness_max_mm, thickness_max_unlimited, pipe_diameter_min_mm, pipe_diameter_max_mm,
                  filler_material,
                  ndt_method, ndt_level, ndt_sector, certification_scheme, coordinator_title, cpd_valid_until,
                  patent_type, equipment_type, welding_type, single_multi_run, qualification_method,
@@ -549,7 +557,7 @@ async function commitQualificationFromFields(fields, organizationId, companyId, 
                  @revalDate,
                  @status, NULL, @userId, 'approvata',
                  @weldProc, @matGroup, @posRange, @thickRange, @pipeDiam,
-                 @thickMin, @thickMax, @pipeMin, @pipeMax,
+                 @thickMin, @thickMax, @thickMaxUnlimited, @pipeMin, @pipeMax,
                  @filler,
                  @ndtMethod, @ndtLevel, @ndtSector, @certScheme, @coordTitle, @cpdUntil,
                  @patentType, @equipType, @weldingType, @singleMultiRun, @qualMethod,
@@ -615,6 +623,12 @@ const REPROCESSABLE_FIELDS = {
     // pipe_diameter_mm → pipe_diameter_min_mm).
     filler_material: { column: 'filler_material' },
     pipe_diameter_min_mm: { column: 'pipe_diameter_min_mm' },
+    // Gap analysis 08/08/2026: thickness_max_unlimited è BIT NOT NULL DEFAULT 0
+    // (migrazione 140), non NULLABLE come gli altri campi qui — la guardia
+    // anti-sovrascrittura standard "colonna IS NULL" non si applica mai a una
+    // colonna NOT NULL. writeGuard esplicito: aggiorna solo se è ancora al
+    // valore di default (0), mai se già confermato true da un'altra fonte.
+    thickness_max_unlimited: { column: 'thickness_max_unlimited', writeGuard: 'thickness_max_unlimited = 0' },
 };
 
 /**
@@ -651,7 +665,7 @@ async function applyFieldReprocessUpdate(targetQualificationId, organizationId, 
         if (!def) continue;
         const value = fields ? fields[key] : undefined;
         if (value === undefined || value === null || value === '') continue;
-        updatable.push({ key, column: def.column, value });
+        updatable.push({ key, column: def.column, value, writeGuard: def.writeGuard || `${def.column} IS NULL` });
     }
 
     if (!updatable.length) {
@@ -668,9 +682,12 @@ async function applyFieldReprocessUpdate(targetQualificationId, organizationId, 
         updatedFields.push(key);
     }
 
-    // "WHERE campo IS NULL" per ciascuna colonna toccata: non sovrascrive mai un
-    // valore già presente (anche se lo script di selezione dovrebbe già escluderlo).
-    const guardClauses = updatable.map(({ column }) => `${column} IS NULL`).join(' AND ');
+    // Guardia anti-sovrascrittura per ciascuna colonna toccata: di norma
+    // "colonna IS NULL" (non sovrascrive mai un valore già presente), ma
+    // personalizzabile per colonne NOT NULL con default (vedi writeGuard su
+    // thickness_max_unlimited) — sempre "non sovrascrivere se già valorizzato
+    // in modo significativo", solo la condizione cambia.
+    const guardClauses = updatable.map(({ writeGuard }) => writeGuard).join(' AND ');
 
     await request.query(`
         UPDATE qualifications
