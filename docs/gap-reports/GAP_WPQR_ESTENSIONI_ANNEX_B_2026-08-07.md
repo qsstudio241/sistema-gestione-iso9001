@@ -65,6 +65,18 @@ Segnalazione: campi con nomenclatura ambigua (spessore materiale base vs prova v
 
 Test: nuovi test `weldingQualificationRules15614.test.js` (regola piastra→tubo, bug PC), `wpsGenerator.service.test.js` (6 scenari piastra→tubo), `ingestReviewDialog.test.jsx` (4 scenari select+Altro). Round-trip a sentinella WPQR verificato con i 2 nuovi campi senza modifiche al test (rilevazione automatica via `aiExpectedSchema`).
 
+## Aggiornamento 08/08/2026 (bis) — form "Modifica WPQR" disallineato dall'ingest
+
+Segnalazione committente: aprendo "Modifica" su una WPQR già esistente, molti campi estratti correttamente dall'AI non comparivano nel form manuale. Verifica riga per riga (colonna DB vs form vs whitelist API di `updateWPQR`/`createWPQR`):
+
+- **6 campi completamente bloccati** (aggiunti nelle sessioni precedenti — `thickness_max_unlimited`, `preheat_temp`, `interpass_temp`, `throat_test_mm`, `product_type`, `rotated_position`): visibili in lettura ma **non scrivibili né da form né da API manuale**, solo l'ingest AI poteva impostarli.
+- **7 campi accettati dall'API ma invisibili in UI** (`base_material_spec`, `shielding_gas`, `current_type`, `metal_transfer`, `mechanization`, `single_multi_run`, `heat_input_note`) + checkbox `pwht` mancante.
+- **Duplicazione `testing_body`/`examiner_body`**: stesso concetto reale ("Examiner or examining body" nel modulo WPQR ufficiale), ma solo `testing_body` esposto in UI — una correzione manuale lasciava `examiner_body` congelato al valore dell'ingest.
+
+**Fix**: tutti e 6 i campi bloccati aggiunti a `createWPQR`/`updateWPQR` (whitelist + INSERT); i 7 campi invisibili + `pwht` aggiunti al form in una nuova sezione "Parametri prova avanzati (pag.2 verbale)"; mirroring automatico `testing_body → examiner_body` in `updateWPQR` quando solo il primo viene inviato (mai sovrascrive se `examiner_body` è inviato esplicitamente). Nessuna modifica a `reference_number` (duplicato tecnico di `wpqr_code` usato solo per il controllo duplicati interno — già coperto su entrambe le colonne).
+
+Test: nuovo `welding.controller.wpqrFields.test.js` (5 test — create/update campi estensione + mirroring). Nessuna migrazione aggiuntiva (le colonne esistono già dalle migrazioni 133/139/141/142).
+
 ## Testo normativo di riferimento — Tabella 8 (ISO 15614-1:2017, §8.3.2.2, pag. 31 del documento digitalizzato)
 
 > "Table 8 — For level 2: Range of qualification for material thickness and throat thickness of fillet welds [...] Thickness of test piece t | Throat thickness | Material thickness (single run / multi-run) [...] t ≤ 3: 0,7 t to 2 t | 0,75 a to 1,5 a | No restriction [...] 3 < t < 30: 3 to 2 t [...] t ≥ 30: ≥5 [...] NOTE a is the nominal throat thickness as specified in pWPS for the test piece."
