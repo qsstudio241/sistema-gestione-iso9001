@@ -1026,6 +1026,13 @@ const wpqr = {
       required: false,
     },
     {
+      key: "throat_test_mm",
+      label: "Spessore gola provino (mm) — solo giunti FW",
+      type: "number",
+      required: false,
+      hint: "Tabella 8 ISO 15614-1 — spessore gola (throat) del provino testato, solo se dichiarato esplicitamente sul verbale per giunti d'angolo/FW. Lascia vuoto se non applicabile o non dichiarato.",
+    },
+    {
       key: "welding_positions",
       label: "Posizioni qualificate",
       type: "multiselect",
@@ -1172,6 +1179,8 @@ Campi di copertura (pag.1 RANGE OF QUALIFICATION, priorità alta):
 - thickness_min / thickness_max: range di spessore DICHIARATO sul verbale (non calcolarlo)
 - thickness_max_unlimited: booleano — true SOLO se il verbale dichiara esplicitamente un range aperto senza limite superiore (simboli "\u2265", "=>", "\u2a7e", oppure testo "no restriction"/"senza limite superiore"), tipico dei giunti ad angolo (Fillet Weld: es. "t1 = => 5 ; t2 => 5"). In questo caso lascia thickness_max: null e imposta thickness_max_unlimited: true. Se il campo è semplicemente assente dal documento (non un range aperto dichiarato), lascia entrambi null/false — NON confondere le due situazioni
 - diameter_min / diameter_max: range diametro tubo se applicabile
+- throat_test_mm: spessore gola (throat) del provino testato, SOLO per giunti d'angolo/FW,
+  se dichiarato esplicitamente sul verbale (Tabella 8) — numero, null se non applicabile o assente
 - welding_positions: array posizioni ISO 6947 (es. ["PA"])
 - filler_material: designazione materiale d'apporto (ISO 14341 se filo GMAW acciaio, es. "G 42 4 M21 3Si1")
 - pwht: booleano, PWHT applicato
@@ -1205,6 +1214,7 @@ IMPORTANTE: non ricalcolare i range con formule — estrarre solo i valori dichi
     thickness_max_unlimited: "boolean|null",
     diameter_min: "number|null",
     diameter_max: "number|null",
+    throat_test_mm: "number|null",
     welding_positions: "string[]|null",
     filler_material: "string|null",
     pwht: "boolean|null",
