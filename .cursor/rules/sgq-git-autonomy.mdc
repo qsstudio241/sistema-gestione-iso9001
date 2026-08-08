@@ -1,25 +1,58 @@
 ---
-description: Policy commit/push autonomi ProgettoISO — quando procedere senza chiedere e quando fermarsi.
+description: Policy commit/push/merge autonomi ProgettoISO — 3 livelli di rischio, quando procedere senza chiedere e quando fermarsi. Gate Bugbot obbligatorio prima di ogni merge PR autonomo.
 alwaysApply: true
 ---
 
 # Policy git autonomia (ProgettoISO)
 
-## Commit + push SENZA chiedere conferma
+## Livelli di rischio (fonte unica — usati sia per commit diretto sia per merge PR)
+
+| Livello | Esempio | Politica |
+|---|---|---|
+| **Basso** | `docs/**/*.md`, `.cursor/rules/**`, typo/fix 1-2 file frontend non sync/auth/DB | Commit + push diretto su `main`, **senza chiedere** |
+| **Medio** | Backend additivo/non-breaking, migrazioni **nullable/additive**, nuovo campo/endpoint senza toccare auth/sync/schema critico, test L1 verdi | PR + **merge autonomo consentito SOLO dopo gate Bugbot positivo** (vedi sotto) |
+| **Alto** | Breaking change API/schema DB, migrazioni distruttive, `auth.middleware`, `syncService`, JWT, logica di compliance con impatto legale/qualità non ancora validata | **Sempre** conferma esplicita del committente — mai autonomo, né commit diretto né merge |
+
+**Regola di declassamento**: se un task tocca anche un solo file/aspetto di livello Alto, l'intero task è Alto — non spezzare artificialmente per far rientrare la parte rischiosa nel Medio.
+
+## Gate Bugbot obbligatorio prima del merge autonomo (livello Medio)
+
+Lezione 07-08/08/2026 (sessione fix ingest WPQR/3834): lo stesso agente che scrive codice e test può riflettere lo stesso errore di interpretazione in entrambi — "test verde" non equivale a "corretto", soprattutto su logica normativa (ISO 3834/15614). Prima di mergiare autonomamente una PR di livello Medio:
+
+1. Lanciare il subagente **`bugbot`** (Diff: "branch changes") sulla PR.
+2. Mergiare in autonomia **solo se** il Bugbot non segnala problemi critici/bloccanti.
+3. Se il Bugbot segnala anche un solo problema non banale: **non mergiare**, riportare il rilievo al committente e attendere decisione.
+4. Registrare nel messaggio di merge/commento PR l'esito del gate (es. "Bugbot: nessun rilievo critico — merge autonomo").
+
+Questo gate **non sostituisce** il livello di rischio: un task di livello Alto resta sempre bloccato, indipendentemente dall'esito Bugbot.
+
+## Vincolo verificato (08/08/2026): il merge autonomo NON è un'azione disponibile per i Cloud Agent, per design Cursor
+
+Verificato con `cursor-guide` (documentazione ufficiale, non ipotesi): Cursor dichiara esplicitamente **"Agents open draft pull requests. Nothing merges until a person reviews the change."** ([`cursor.com/docs/cloud-agent/security`](https://cursor.com/docs/cloud-agent/security)). Non esiste un permesso/toggle Cursor per abilitare il merge autonomo dei Cloud Agent — non è un permesso mancante da configurare, è una scelta di sicurezza del prodotto. La GitHub App di Cursor richiede solo "Pull requests: create PR e commenti di review", non l'azione di merge; il permesso "Administration" è di sola lettura (serve solo a leggere le regole di branch protection per capire se una PR è mergeable). Anche con una diversa configurazione dei permessi, resta comunque bloccante la Branch Protection Rule su `main` ("Changes must be made through a pull request").
+
+**Quindi il "gate Bugbot" descritto sopra non sfocia in un merge automatico eseguito dall'agente**: il suo output pratico è preparare la PR **pronta per un click umano**, con verdetto Bugbot già incluso nella descrizione — l'agente non deve più fermarsi in attesa di analisi, solo del click "Merge" su GitHub (o dell'assenso esplicito per abilitare l'auto-merge nativo di GitHub sulla PR, se disponibile e attivato dal committente).
+
+**Percorsi alternativi per ridurre l'attesa** (da valutare con il committente, non eseguibili di default):
+- GitHub **auto-merge nativo** sulla PR (il committente click "Enable auto-merge" una volta; GitHub completa da solo il merge quando CI è verde) — richiede comunque un'azione umana iniziale per PR, ma elimina il secondo click a fine CI.
+- Automation Cursor dedicata **"PR Routing & Approval"** (approva PR a basso rischio, non mergia) combinata con auto-merge nativo GitHub — infrastruttura da configurare separatamente, non disponibile in una sessione chat standard.
+- Un Personal Access Token del committente inserito come Secret, usato esplicitamente su richiesta puntuale per bypassare la GitHub App di Cursor — **flusso non ufficialmente supportato da Cursor per il merge**, da usare solo se il committente lo richiede esplicitamente conoscendone il rischio.
+
+## Commit + push diretto SENZA chiedere conferma (livello Basso)
 
 Quando **tutti** i criteri sono veri:
 
 - Task completato (doc allineata, fix verificato, test L1 verdi se applicabile)
-- Scope a basso rischio: solo `docs/**/*.md`, `.cursor/rules/**`, typo/fix 1-2 file frontend non sync/auth/DB
+- Scope a basso rischio (vedi tabella sopra)
 - Nessun segreto in staging; working tree coerente
 - Messaggio commit chiaro (stile repo, focus sul perché)
 - Dopo commit: `git pull origin main` se necessario, poi `git push origin main` — **mai** force push
 
-## Chiedere conferma PRIMA di commit/push
+## Chiedere conferma PRIMA di commit/push o merge (livello Alto)
 
 - Backend controller/routes/middleware, sync, auth, JWT
-- Migrazioni SQL o script `run-migration-*`
+- Migrazioni SQL distruttive o script `run-migration-*` che alterano/eliminano dati esistenti
 - Breaking change API/schema DB
+- Logica di compliance/normativa non ancora validata da un secondo giro di verifica
 - Branch feature con PR draft intenzionale (non push diretto su main se il workflow era PR)
 
 ## Protocollo commit
@@ -29,3 +62,13 @@ Quando **tutti** i criteri sono veri:
 3. Commit con messaggio heredoc-style (focus sul perché)
 4. `git status` post-commit
 5. `git pull origin main` se necessario, poi `git push origin main`
+
+## Protocollo "pronto al click" PR (livello Medio, dopo gate Bugbot positivo)
+
+Il merge resta sempre un'azione del committente (vedi vincolo sopra) — l'obiettivo di questo protocollo è arrivarci senza altre soste intermedie:
+
+1. Verificare CI verde (`get_ci_status`).
+2. Eseguire il gate Bugbot (vedi sopra).
+3. Aggiornare la PR con l'esito Bugbot nella descrizione (nessun rilievo critico → segnalarlo esplicitamente come "pronta per il merge"; rilievo non banale → NON proporre il merge, riportarlo al committente).
+4. Comunicare al committente che la PR è pronta, con link diretto — **senza tentare azioni di merge/auto-merge non richieste esplicitamente**.
+5. Dopo che il committente mergia (via GitHub): `git pull origin main` in locale per allinearsi, aggiornare `docs/GUIDA_CONSOLIDATA.md` con l'esito e chiudere eventuale `DEPUTYTASK.md`.
