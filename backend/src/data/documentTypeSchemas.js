@@ -22,6 +22,11 @@ Campi da estrarre:
   derivazione/branch/bocchello tubo-piastra - riportalo qui testualmente per non perdere l'informazione
   anche quando product_type resta "T"; testo libero breve, null se assenti),
 - material_group, filler_material_group, welding_positions (array), thickness_min_mm, thickness_max_mm,
+- thickness_max_unlimited (booleano — true SOLO se il certificato dichiara esplicitamente un range
+  aperto senza limite superiore, es. simboli "≥"/"=>"/"⩾" o testo "no restriction"/"senza limite
+  superiore" sullo spessore massimo qualificato; in tal caso lascia thickness_max_mm: null e imposta
+  thickness_max_unlimited: true. Se il campo è semplicemente assente dal documento — non un range
+  aperto dichiarato — lascia entrambi null/false: NON confondere le due situazioni),
 - pipe_diameter_mm, shielding_gas, exam_date, expiry_date, last_confirmation_date,
 - next_confirmation_due, standard_reference (YYYY-MM-DD per le date)
 - transfer_mode (metodo di trasferimento del metallo d'apporto - variabile essenziale ISO 9606-1 §5.2,
@@ -56,6 +61,7 @@ Istruzioni per le date di conferma semestrale (ISO 9606-1 §9.2):
       welding_positions: 'string[]|null',
       thickness_min_mm: 'number|null',
       thickness_max_mm: 'number|null',
+      thickness_max_unlimited: 'boolean|null',
       pipe_diameter_mm: 'number|null',
       shielding_gas: 'string|null',
       exam_date: 'YYYY-MM-DD|null',
@@ -115,11 +121,27 @@ Campi di copertura (pag.1 RANGE OF QUALIFICATION, priorita alta):
 - standard_reference: norma di riferimento (es. "UNI EN ISO 15614-1:2019")
 - welding_process: codice ISO 4063 - preferire un codice numerico esplicito nel testo (es. "Welding process: 135") a un alias generico
 - joint_type: "BW", "FW" o "BW+FW"
+- product_type: "P" (piastra) o "T" (tubo) - variabile essenziale ISO 15614-1 par.8.3.3 per il diametro.
+  Se il documento non lo specifica esplicitamente ma il "Range of qualification" per il diametro contiene
+  una regola testuale tipo "> 500; > 150 for position PC, PF/PA rotated" (invece di un numero), significa
+  che il provino e' stato testato su PIASTRA: imposta product_type: "P" e lascia diameter_min/diameter_max:
+  null (NON trascrivere quella regola testuale come numero)
 - material_group: gruppo materiale ISO/TR 15608, preferire il sottogruppo (es. "1.2") se presente
 - thickness_test_mm: spessore del provino testato (numero)
-- thickness_min / thickness_max: range di spessore DICHIARATO sul verbale (non calcolarlo)
-- diameter_min / diameter_max: range diametro tubo se applicabile
+- thickness_min / thickness_max: range di spessore MATERIALE BASE DICHIARATO sul verbale (non calcolarlo)
+- thickness_max_unlimited: booleano — true SOLO se il verbale dichiara esplicitamente un range aperto
+  senza limite superiore (simboli "≥", "=>", "⩾", oppure testo "no restriction"/"senza limite
+  superiore"), tipico dei giunti ad angolo (Fillet Weld: es. "t1 = => 5 ; t2 => 5"). In questo caso
+  lascia thickness_max: null e imposta thickness_max_unlimited: true. Se il campo è semplicemente
+  assente dal documento (non un range aperto dichiarato), lascia entrambi null/false — NON confondere
+  le due situazioni
+- diameter_min / diameter_max: range diametro tubo se applicabile (SOLO se un numero e' dichiarato -
+  vedi nota su product_type sopra per il caso testo/piastra)
+- throat_test_mm: spessore gola (throat) del provino testato, SOLO per giunti d'angolo/FW,
+  se dichiarato esplicitamente sul verbale (Tabella 8) - numero, null se non applicabile o assente
 - welding_positions: array posizioni ISO 6947 (es. ["PA"])
+- rotated_position: booleano — true SOLO se il verbale dichiara esplicitamente che la posizione PF o PA
+  e' stata eseguita con il tubo ruotato ("rotated"/"ruotata"). Se non menzionato, lascia null/false
 - filler_material: designazione materiale d'apporto (ISO 14341 se filo GMAW acciaio, es. "G 42 4 M21 3Si1")
 - pwht: booleano, PWHT applicato
 - wps_ref: identificativo testuale della WPS di riferimento
@@ -145,13 +167,17 @@ IMPORTANTE: non ricalcolare i range con formule - estrarre solo i valori dichiar
       standard_reference: 'string|null',
       welding_process: 'string|null',
       joint_type: 'BW|FW|BW+FW|null',
+      product_type: 'P|T|null',
       material_group: 'string|null',
       thickness_test_mm: 'number|null',
       thickness_min: 'number|null',
       thickness_max: 'number|null',
+      thickness_max_unlimited: 'boolean|null',
       diameter_min: 'number|null',
       diameter_max: 'number|null',
+      throat_test_mm: 'number|null',
       welding_positions: 'string[]|null',
+      rotated_position: 'boolean|null',
       filler_material: 'string|null',
       pwht: 'boolean|null',
       wps_ref: 'string|null',
@@ -203,18 +229,37 @@ material_grade, heat_number, supplier_name, issue_date (YYYY-MM-DD). Usa null se
     },
   },
 
+  // cert_ndt (ISO 9712:2022) — schema allineato a FE (documentTypeSchemas.js app/)
+  // Campi per scadenziario + copertura personale NDT su commessa (ISO 3834 §8.2)
   cert_ndt: {
     label: 'Certificato NDT (ISO 9712)',
-    aiPrompt: `Certificato qualifica operatore NDT ISO 9712. Estrai: operator_name, certificate_number,
-ndt_method (UT|RT|MT|PT|VT), certification_level (1|2|3), issuing_body, exam_date, expiry_date.`,
+    aiPrompt: `Stai analizzando un certificato di qualifica operatore NDT secondo ISO 9712 (o versione precedente).
+Estrai TUTTI i seguenti campi nell'oggetto "type_specific_data". Usa null se il campo non è presente.
+
+Campi da estrarre:
+- operator_name: cognome e nome del titolare (testo)
+- certificate_number: numero certificato esatto come scritto (es. "1234/VT/2/CICPND/2022")
+- ndt_method: SOLO uno tra VT | MT | PT | UT | RT | ET | AE | TT | ST | LT. Deduci dal titolo o dal testo italiano/inglese (es. "magnetoscopia"/"magnetic particle" → MT, "ultrasuoni"/"ultrasonic" → UT, "radiografico"/"radiographic" → RT, "liquidi penetranti"/"penetrant" → PT, "visivo"/"visual" → VT, "eddy current" → ET)
+- certification_level: SOLO "1", "2" o "3" (non testo come "secondo" o "II")
+- ndt_sector: codice ISO 9712 Annex A. Settori di PRODOTTO (A.2): c=castings/getti, f=forgings/forgiati, w=welds/saldature, t=tubes/tubi, wp=wrought products/laminati (esclusi forgiati), p=composites/compositi. Settori INDUSTRIALI (A.3): m=manufacturing/fabbricazione, s=pre-and in-service testing (prova pre-servizio e in servizio, include fabbricazione), r=railway maintenance/manutenzione ferroviaria, a=aerospace/aerospaziale. REGOLA: se il certificato indica sia settore di prodotto (anche "plurisettoriale") sia settore industriale, restituisci il codice INDUSTRIALE. Esempi: "Prova pre-servizio e in servizio di attrezzature, impianti e strutture" → s; "fabbricazione metalli" / manufacturing → m. "Plurisettoriale" da solo (senza industriale) → null. Restituisci solo il codice; null se assente.
+- certification_scheme: nome dello schema (es. "CICPND", "PCN", "SNT-TC-1A", "ASNT", "COFREND"). Cerca nel numero certificato, nell'intestazione o nel logo dell'ente.
+- scope_detail: tecnica specifica se presente (es. "PA" per phased array, "TOFD", "DR" per digital radiography). Null se non specificato.
+- issuing_body: ente che ha emesso/firmato il certificato (es. "CICPND", "Bureau Veritas", "TÜV Rheinland", "RINA", "APAVE")
+- exam_date: data esame qualifica (YYYY-MM-DD)
+- expiry_date: data di scadenza validità certificato (YYYY-MM-DD). ISO 9712 §9.2: normalmente 5 anni dall'esame
+- revalidation_date: data di rivalidazione/rinnovo se riportata (YYYY-MM-DD); null se non presente. NON copiare expiry_date qui se il documento non ha una data di rinnovo esplicita.`,
     aiExpectedSchema: {
-      operator_name: 'string|null',
-      certificate_number: 'string|null',
-      ndt_method: 'UT|RT|MT|PT|VT|null',
-      certification_level: '1|2|3|null',
-      issuing_body: 'string|null',
-      exam_date: 'YYYY-MM-DD|null',
-      expiry_date: 'YYYY-MM-DD|null',
+      operator_name:        'string|null',
+      certificate_number:   'string|null',
+      ndt_method:           'VT|MT|PT|UT|RT|ET|AE|TT|ST|LT|null',
+      certification_level:  '1|2|3|null',
+      ndt_sector:           'c|f|w|t|wp|p|m|s|r|a|null',
+      certification_scheme: 'string|null',
+      scope_detail:         'string|null',
+      issuing_body:         'string|null',
+      exam_date:            'YYYY-MM-DD|null',
+      expiry_date:          'YYYY-MM-DD|null',
+      revalidation_date:    'YYYY-MM-DD|null',
     },
   },
 

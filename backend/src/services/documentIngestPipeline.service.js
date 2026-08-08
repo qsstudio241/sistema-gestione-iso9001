@@ -26,7 +26,16 @@ try {
     extractTextWithOCR = require('../utils/ocrExtractor').extractTextWithOCR;
 } catch (_) {}
 
-const SUPPORTED_DOC_TYPES = new Set(['wpqr', 'patentino_saldatore', 'wps', 'norma', 'qualifica_14732']);
+// cert_ndt (ISO 9712) aggiunto 02/08/2026 — prima era in menu upload ma bloccato qui
+// con UNSUPPORTED_DOC_TYPE (simulazione UT Level II TEC-Eurolab).
+const SUPPORTED_DOC_TYPES = new Set([
+    'wpqr',
+    'patentino_saldatore',
+    'wps',
+    'norma',
+    'qualifica_14732',
+    'cert_ndt',
+]);
 
 /** Alias campi AI/schema → campi piatti pipeline */
 const FIELD_ALIASES = {

@@ -44,18 +44,40 @@ const masonBody = {
 describe('generateWPS controller (P1-A)', () => {
     beforeEach(() => jest.clearAllMocks());
 
-    test('400 se mancano joint_type / materiali / spessori', async () => {
+    test('200 need_input se mancano joint_type / materiali / spessori', async () => {
+        generateWpsFromWpqr.mockResolvedValue({
+            status: 'need_input',
+            wpqr_used: null,
+            candidates: [],
+            wps_draft: null,
+            extensions_needed: [],
+            questions: [
+                { field: 'parent_material_a', question: 'Qual è il materiale A?' },
+                { field: 'parent_material_b', question: 'Qual è il materiale B?' },
+            ],
+            warnings: [],
+        });
         const res = createRes();
         await generateWPS(
-            { user: { organization_id: 1001 }, body: { joint_type: 'FW' } },
+            { user: { organization_id: 1001 }, body: { joint_type: 'FW', thickness_a_mm: 10, thickness_b_mm: 5 } },
             res
         );
-        expect(res.status).toHaveBeenCalledWith(400);
-        expect(res.body.code).toBe('VALIDATION_ERROR');
-        expect(generateWpsFromWpqr).not.toHaveBeenCalled();
+        expect(res.statusCode).toBe(200);
+        expect(res.body.status).toBe('need_input');
+        expect(res.body.questions.length).toBeGreaterThan(0);
+        expect(generateWpsFromWpqr).toHaveBeenCalled();
     });
 
-    test('400 se spessori non numerici', async () => {
+    test('200 con spessori non numerici → service riceve null e può rispondere need_input', async () => {
+        generateWpsFromWpqr.mockResolvedValue({
+            status: 'need_input',
+            wpqr_used: null,
+            candidates: [],
+            wps_draft: null,
+            extensions_needed: [],
+            questions: [{ field: 'thickness_a_mm', question: 'Qual è lo spessore A?' }],
+            warnings: [],
+        });
         const res = createRes();
         await generateWPS(
             {
@@ -64,8 +86,9 @@ describe('generateWPS controller (P1-A)', () => {
             },
             res
         );
-        expect(res.status).toHaveBeenCalledWith(400);
-        expect(generateWpsFromWpqr).not.toHaveBeenCalled();
+        expect(res.statusCode).toBe(200);
+        expect(res.body.status).toBe('need_input');
+        expect(generateWpsFromWpqr).toHaveBeenCalled();
     });
 
     test('200 ok — passa organization_id e company_id al service', async () => {
@@ -99,8 +122,60 @@ describe('generateWPS controller (P1-A)', () => {
                 parent_material_b: 'S235',
                 thickness_a_mm: 10,
                 thickness_b_mm: 5,
+                pipe_diameter_mm: null,
+                throat_mm: null,
             },
         });
+    });
+
+    test('200 ok — passa throat_mm al service quando richiesto (giunto FW)', async () => {
+        generateWpsFromWpqr.mockResolvedValue({
+            status: 'ok',
+            wpqr_used: { id: 8, wpqr_code: 'WPQR-FW' },
+            candidates: [{ id: 8 }],
+            wps_draft: { joint_type: 'FW', status: 'bozza' },
+            extensions_needed: [],
+            warnings: [],
+        });
+        const res = createRes();
+        await generateWPS(
+            {
+                user: { organization_id: 1001 },
+                body: { ...masonBody, throat_mm: 6 },
+            },
+            res
+        );
+        expect(res.statusCode).toBe(200);
+        expect(generateWpsFromWpqr).toHaveBeenCalledWith(
+            expect.objectContaining({
+                request: expect.objectContaining({ throat_mm: 6 }),
+            })
+        );
+    });
+
+    test('200 ok — passa pipe_diameter_mm al service quando richiesto (giunto su tubo)', async () => {
+        generateWpsFromWpqr.mockResolvedValue({
+            status: 'ok',
+            wpqr_used: { id: 7, wpqr_code: 'WPQR-TUBE' },
+            candidates: [{ id: 7 }],
+            wps_draft: { joint_type: 'BW', status: 'bozza' },
+            extensions_needed: [],
+            warnings: [],
+        });
+        const res = createRes();
+        await generateWPS(
+            {
+                user: { organization_id: 1001 },
+                body: { ...masonBody, pipe_diameter_mm: 168.3 },
+            },
+            res
+        );
+        expect(res.statusCode).toBe(200);
+        expect(generateWpsFromWpqr).toHaveBeenCalledWith(
+            expect.objectContaining({
+                request: expect.objectContaining({ pipe_diameter_mm: 168.3 }),
+            })
+        );
     });
 
     test('200 not_possible — extensions_needed senza scrittura', async () => {

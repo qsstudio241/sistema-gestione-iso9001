@@ -68,6 +68,7 @@ const patentino_saldatore = {
         { value: "imq",         label: "IMQ" },
         { value: "iqn",         label: "IQNet" },
         { value: "csq",         label: "CSQ / Certiquality" },
+        { value: "iis_isscert", label: "IIS - ISSCERT (Istituto Italiano di Saldatura)" },
         { value: "tec_eurolab", label: "TEC Eurolab" },
         { value: "sideius",     label: "Sideius (Valor)" },
         { value: "altro",       label: "Altro" },
@@ -149,6 +150,13 @@ const patentino_saldatore = {
       type: "number",
       required: false,
       hint: "Spessore massimo del range qualificato (es. 2t per piastre). Lascia vuoto se non c'è limite superiore: verrà mostrato come \u201C\u2265 spessore minimo\u201D.",
+    },
+    {
+      key: "thickness_max_unlimited",
+      label: "Spessore massimo — nessun limite superiore",
+      type: "boolean",
+      required: false,
+      hint: "true SOLO se il certificato dichiara esplicitamente un range aperto (es. \u201C\u2265 5\u201D, \u201C=> 5\u201D, \u201Csenza limite superiore\u201D) — NON selezionare solo perché il dato è assente dal documento: in quel caso lasciare vuoto/false, il campo resterà segnalato come da verificare manualmente.",
     },
     {
       key: "pipe_diameter_mm",
@@ -252,6 +260,7 @@ Campi da estrarre:
 - welding_positions: array di posizioni ISO 6947 (es. ["PA","PF","PC"])
 - thickness_min_mm: numero: spessore minimo qualificato in mm
 - thickness_max_mm: numero: spessore massimo qualificato in mm
+- thickness_max_unlimited: booleano — true SOLO se il certificato dichiara esplicitamente un range aperto senza limite superiore (simboli "≥", "=>", "⩾", oppure testo "no restriction"/"senza limite superiore"). In questo caso lascia thickness_max_mm: null e imposta thickness_max_unlimited: true. Se il campo è semplicemente assente dal documento (non un range aperto dichiarato), lascia entrambi null/false — NON confondere le due situazioni
 - pipe_diameter_mm: numero: diametro esterno tubi qualificato in mm (null se solo piastre)
 - shielding_gas: codice gas ISO 14175 (es. "M21", "I1") o null
 - exam_date: data esame in formato ISO 8601 (YYYY-MM-DD) o null
@@ -274,6 +283,7 @@ Campi da estrarre:
     welding_positions: "string[]|null",
     thickness_min_mm: "number|null",
     thickness_max_mm: "number|null",
+    thickness_max_unlimited: "boolean|null",
     pipe_diameter_mm: "number|null",
     shielding_gas: "string|null",
     exam_date: "YYYY-MM-DD|null",
@@ -631,7 +641,43 @@ supplier_name, issue_date (YYYY-MM-DD). Usa null se assente.`,
   },
 };
 
-// --- cert_ndt (ISO 9712) ---
+// --- cert_ndt (ISO 9712:2022) ---
+// Campi orientati a: scadenziario qualifiche NDT + copertura personale per commessa
+// (domanda riesame requisiti ISO 3834: "ho il personale NDT qualificato per questa commessa?")
+
+const NDT_METHOD_OPTIONS = [
+  { value: "VT",  label: "VT — Esame visivo" },
+  { value: "MT",  label: "MT — Magnetoscopia" },
+  { value: "PT",  label: "PT — Liquidi penetranti" },
+  { value: "UT",  label: "UT — Ultrasuoni" },
+  { value: "RT",  label: "RT — Radiografia" },
+  { value: "ET",  label: "ET — Correnti indotte" },
+  { value: "AE",  label: "AE — Emissione acustica" },
+  { value: "TT",  label: "TT — Test tenuta" },
+  { value: "ST",  label: "ST — Strain/Stress" },
+  { value: "LT",  label: "LT — Leak testing" },
+];
+
+// Settori ISO 9712:2012 Annex A — prodotto (A.2) + industriale (A.3).
+// Codici industriali m/s/r/a: convenzione operativa (la norma A.3 non assegna lettere).
+// Preferire il settore industriale se il certificato riporta entrambi
+// (es. TEC-Eurolab: prodotto plurisettoriale + industriale pre-servizio/in servizio → "s").
+const NDT_SECTOR_OPTIONS = [
+  { value: "_sep_product", label: "── Settore di prodotto (Annex A.2) ──", disabled: true },
+  { value: "c",  label: "c — Getti (castings)" },
+  { value: "f",  label: "f — Forgiati (forgings)" },
+  { value: "w",  label: "w — Saldature (welds)" },
+  { value: "t",  label: "t — Tubi e tubazioni (tubes/pipes)" },
+  { value: "wp", label: "wp — Prodotti laminati (wrought, esclusi forgiati)" },
+  { value: "p",  label: "p — Materiali compositi" },
+  { value: "_sep_industrial", label: "── Settore industriale (Annex A.3) ──", disabled: true },
+  { value: "m",  label: "m — Fabbricazione (manufacturing)" },
+  { value: "s",  label: "s — Pre-servizio e in servizio (include fabbricazione)" },
+  { value: "r",  label: "r — Manutenzione ferroviaria" },
+  { value: "a",  label: "a — Aerospaziale" },
+];
+
+const NDT_SECTOR_CODES = "c|f|w|t|wp|p|m|s|r|a";
 
 const cert_ndt = {
   id: "cert_ndt",
@@ -639,37 +685,66 @@ const cert_ndt = {
   expiryField: "expiry_date",
   rangeFields: ["ndt_method", "certification_level"],
   fields: [
-    { key: "operator_name", label: "Nome operatore", type: "text", required: true },
-    { key: "certificate_number", label: "Numero certificato", type: "text", required: true },
-    { key: "ndt_method", label: "Metodo NDT", type: "select", required: true,
-      options: [
-        { value: "UT", label: "UT - Ultrasoni" },
-        { value: "RT", label: "RT - Raggi X" },
-        { value: "MT", label: "MT - Magnetoscopia" },
-        { value: "PT", label: "PT - Liquidi penetranti" },
-        { value: "VT", label: "VT - Visivo" },
-      ] },
-    { key: "certification_level", label: "Livello", type: "select", required: false,
+    // — PERSONA —
+    { key: "operator_name",       label: "Nome operatore",       type: "text",   required: true,  hint: "Cognome e nome come sul certificato" },
+    { key: "certificate_number",  label: "Numero certificato",   type: "text",   required: true,  hint: "Es. 1234/VT/2/CICPND/2022" },
+    // — QUALIFICA —
+    { key: "ndt_method",  label: "Metodo NDT",  type: "select", required: true,
+      options: NDT_METHOD_OPTIONS,
+      hint: "Obbligatorio per il riesame: «abbiamo il metodo NDT richiesto dalla commessa?» (ISO 9712 / ISO 3834 §8.2). Es. UT, MT, PT, RT." },
+    { key: "certification_level", label: "Livello", type: "select", required: true,
       options: [
         { value: "1", label: "Livello 1" },
         { value: "2", label: "Livello 2" },
         { value: "3", label: "Livello 3" },
-      ] },
-    { key: "issuing_body", label: "Ente certificatore", type: "text", required: false },
-    { key: "exam_date", label: "Data esame", type: "date", required: false },
-    { key: "expiry_date", label: "Data scadenza", type: "date", required: true },
+      ],
+      hint: "Obbligatorio. ISO 9712 §5: 1=esecuzione guidata, 2=autonomia operativa (tipico per interpretare risultati in commessa), 3=responsabilità tecnica. Badge N/D = controlla sul PDF, non lasciare vuoto." },
+    { key: "ndt_sector",  label: "Settore (ISO 9712 Annex A)", type: "select", required: false,
+      options: NDT_SECTOR_OPTIONS,
+      hint: "Per copertura commessa scegli il settore INDUSTRIALE se presente (A.3): «fabbricazione metalli» → m; «pre-servizio e in servizio…» → s. «Plurisettoriale» da solo non è un codice: non selezionarlo. Se sul PDF c'è l'industriale, non lasciare vuoto." },
+    { key: "certification_scheme", label: "Schema certificazione", type: "text", required: false,
+      hint: "Opzionale. Scrivi lo schema dell'ente (es. TEC Eurolab, CICPND, PCN), non inventare CICPND se non c'è. Se sul PDF non compare uno schema nazionale tipico, puoi mettere il nome dell'ente (es. «TEC Eurolab») oppure lasciare vuoto: vuoto = OK, non è un errore. Badge N/D non obbliga a compilare." },
+    { key: "scope_detail", label: "Tecnica / ambito specifico", type: "text", required: false,
+      hint: "Opzionale. Solo se il certificato indica una tecnica avanzata oltre al metodo base (es. PA phased array, TOFD, DR). Per UT/MT/PT/RT «standard» Livello 2 senza altre diciture: lascia vuoto — è corretto. Serve al riesame solo se la commessa richiede quella tecnica specifica." },
+    { key: "issuing_body", label: "Ente certificatore", type: "text", required: false,
+      hint: "Chi ha emesso il certificato (es. TEC Eurolab, Bureau Veritas, RINA). Diverso dallo «schema» (CICPND/PCN…): qui va l'organismo firmatario." },
+    // — DATE (scadenziario) —
+    { key: "exam_date",        label: "Data esame",         type: "date", required: false,
+      hint: "Data esame o, se manca, data di emissione sul certificato. Opzionale se c'è già la scadenza." },
+    { key: "expiry_date",      label: "Data scadenza",      type: "date", required: true,
+      hint: "Obbligatoria per lo scadenziario e per il riesame («la qualifica è ancora valida alla data commessa?»). ISO 9712 §9.2: di norma 5 anni." },
+    { key: "revalidation_date", label: "Revalidazione",     type: "date", required: false,
+      hint: "Solo se il PDF riporta una data di rinnovo/rivalidazione esplicita. Se c'è solo la scadenza: lascia vuoto (non copiare la scadenza qui). Vuoto = OK." },
   ],
-  aiPrompt: `Stai analizzando un certificato di qualifica operatore NDT secondo ISO 9712.
-Estrai in type_specific_data: operator_name, certificate_number, ndt_method (UT|RT|MT|PT|VT),
-certification_level (1|2|3), issuing_body, exam_date, expiry_date (YYYY-MM-DD). Usa null se assente.`,
+  aiPrompt: `Stai analizzando un certificato di qualifica operatore NDT secondo ISO 9712 (o versione precedente).
+Estrai TUTTI i seguenti campi nell'oggetto "type_specific_data". Usa null se il campo non è presente.
+
+Campi da estrarre:
+- operator_name: cognome e nome del titolare (testo)
+- certificate_number: numero certificato esatto come scritto (es. "1234/VT/2/CICPND/2022")
+- ndt_method: SOLO uno tra VT | MT | PT | UT | RT | ET | AE | TT | ST | LT. Deduci dal titolo o dal testo italiano/inglese (es. "magnetoscopia"/"magnetic particle" → MT, "ultrasuoni"/"ultrasonic" → UT, "radiografico"/"radiographic" → RT, "liquidi penetranti"/"penetrant" → PT, "visivo"/"visual" → VT, "eddy current" → ET)
+- certification_level: SOLO "1", "2" o "3" (non testo come "secondo" o "II")
+- ndt_sector: codice ISO 9712 Annex A. Settori di PRODOTTO (A.2): c=castings/getti, f=forgings/forgiati, w=welds/saldature, t=tubes/tubi, wp=wrought products/laminati (esclusi forgiati), p=composites/compositi. Settori INDUSTRIALI (A.3): m=manufacturing/fabbricazione, s=pre-and in-service testing (prova pre-servizio e in servizio, include fabbricazione), r=railway maintenance/manutenzione ferroviaria, a=aerospace/aerospaziale. REGOLA: se il certificato indica sia settore di prodotto (anche "plurisettoriale") sia settore industriale, restituisci il codice INDUSTRIALE. Esempi: "Prova pre-servizio e in servizio di attrezzature, impianti e strutture" → s; "fabbricazione metalli" / manufacturing → m. "Plurisettoriale" da solo (senza industriale) → null. Restituisci solo il codice; null se assente.
+- certification_scheme: nome dello schema (es. "CICPND", "PCN", "SNT-TC-1A", "ASNT", "COFREND", "NORDTEST"). Cerca nel numero certificato, nell'intestazione o nel logo dell'ente.
+- scope_detail: tecnica specifica se presente (es. "PA" per phased array, "TOFD", "DR" per digital radiography, "MPI" per magnetic particle inspection). Null se non specificato o se è solo il metodo base.
+- issuing_body: ente che ha emesso/firmato il certificato (es. "CICPND", "Bureau Veritas", "TÜV Rheinland", "RINA", "APAVE", "Accredia")
+- exam_date: data esame qualifica (YYYY-MM-DD)
+- expiry_date: data di scadenza validità certificato (YYYY-MM-DD). ISO 9712 §9.2: normalmente 5 anni dall'esame
+- revalidation_date: data di rivalidazione/rinnovo se riportata (YYYY-MM-DD); null se non presente. NON copiare expiry_date qui se il documento non ha una data di rinnovo esplicita.
+
+Nota su expiry_date: ISO 9712:2022 §9.2 — il certificato è valido 5 anni; può essere rinnovato per altri 5 se §9.3 soddisfatto (continuità impiego + visita medica). Se il documento riporta una "date of expiry" o "valid until" usala direttamente.`,
   aiExpectedSchema: {
-    operator_name: "string|null",
-    certificate_number: "string|null",
-    ndt_method: "UT|RT|MT|PT|VT|null",
-    certification_level: "1|2|3|null",
-    issuing_body: "string|null",
-    exam_date: "YYYY-MM-DD|null",
-    expiry_date: "YYYY-MM-DD|null",
+    operator_name:        "string|null",
+    certificate_number:   "string|null",
+    ndt_method:           "VT|MT|PT|UT|RT|ET|AE|TT|ST|LT|null",
+    certification_level:  "1|2|3|null",
+    ndt_sector:           `${NDT_SECTOR_CODES}|null`,
+    certification_scheme: "string|null",
+    scope_detail:         "string|null",
+    issuing_body:         "string|null",
+    exam_date:            "YYYY-MM-DD|null",
+    expiry_date:          "YYYY-MM-DD|null",
+    revalidation_date:    "YYYY-MM-DD|null",
   },
 };
 
@@ -722,6 +797,7 @@ const qualifica_14732 = {
         { value: "dnv",         label: "DNV GL" },
         { value: "rina",        label: "RINA" },
         { value: "imq",         label: "IMQ" },
+        { value: "iis_isscert", label: "IIS - ISSCERT (Istituto Italiano di Saldatura)" },
         { value: "tec_eurolab", label: "TEC Eurolab" },
         { value: "sideius",     label: "Sideius (Valor)" },
         { value: "altro",       label: "Altro" },
@@ -904,6 +980,17 @@ const wpqr = {
       ],
     },
     {
+      key: "product_type",
+      label: "Tipo prodotto testato",
+      type: "select",
+      required: false,
+      options: [
+        { value: "P", label: "P - Piastra" },
+        { value: "T", label: "T - Tubo" },
+      ],
+      hint: "Piastra o tubo — variabile essenziale ISO 15614-1 §8.3.3 per il diametro. Se testato su PIASTRA, non serve compilare il diametro tubo sotto: il sistema applica automaticamente la regola \u201Cpiastra copre tubo >500mm (o >150mm in posizione ruotata)\u201D quando pertinente, usando le posizioni qualificate dichiarate sotto.",
+    },
+    {
       key: "material_group",
       label: "Gruppo materiale base (ISO/TR 15608)",
       type: "select",
@@ -920,29 +1007,45 @@ const wpqr = {
     },
     {
       key: "thickness_min",
-      label: "Range spessore dichiarato - minimo (mm)",
+      label: "Spessore materiale base — minimo (mm)",
       type: "number",
       required: false,
-      hint: "Dal range of qualification dichiarato sul verbale — non ricalcolare",
+      hint: "Range spessore MATERIALE BASE (parent material) dal range of qualification dichiarato sul verbale — non ricalcolare. Diverso dallo spessore prova (sopra) e dalla gola (sotto, solo giunti FW).",
     },
     {
       key: "thickness_max",
-      label: "Range spessore dichiarato - massimo (mm)",
+      label: "Spessore materiale base — massimo (mm)",
       type: "number",
       required: false,
-      hint: "Dal range of qualification dichiarato sul verbale — non ricalcolare",
+      hint: "Range spessore MATERIALE BASE (parent material) dal range of qualification dichiarato sul verbale — non ricalcolare. Diverso dallo spessore prova (sopra) e dalla gola (sotto, solo giunti FW).",
+    },
+    {
+      key: "thickness_max_unlimited",
+      label: "Spessore massimo — nessun limite superiore",
+      type: "boolean",
+      required: false,
+      hint: "true SOLO se il verbale dichiara esplicitamente un range aperto (es. \u201C\u2265 5\u201D, \u201C=> 5\u201D, \u201Cno restriction\u201D, \u201Csenza limite superiore\u201D) — frequente su giunti FW/angolo. Se il campo è semplicemente assente dal documento, lasciare null/false",
     },
     {
       key: "diameter_min",
       label: "Diametro tubo - minimo (mm)",
       type: "number",
       required: false,
+      hint: "Solo se il verbale dichiara un NUMERO per il range di diametro tubo qualificato. Se invece il verbale riporta qui una regola testuale tipo \u201C> 500; > 150 for position PC, PF/PA rotated\u201D (tipico quando la prova è su PIASTRA, non tubo), NON trascriverla qui: lascia questi due campi vuoti e imposta \u201CTipo prodotto testato\u201D = Piastra — il sistema applica automaticamente quella regola (ISO 15614-1 §8.3.3) quando genera/verifica una WPS su tubo.",
     },
     {
       key: "diameter_max",
       label: "Diametro tubo - massimo (mm)",
       type: "number",
       required: false,
+      hint: "Vedi nota sul campo minimo — non trascrivere qui la regola testuale piastra→tubo del verbale.",
+    },
+    {
+      key: "throat_test_mm",
+      label: "Spessore gola provino (mm) — solo giunti FW",
+      type: "number",
+      required: false,
+      hint: "Tabella 8 ISO 15614-1 — spessore gola (throat) del provino testato, solo se dichiarato esplicitamente sul verbale per giunti d'angolo/FW. Lascia vuoto se non applicabile o non dichiarato.",
     },
     {
       key: "welding_positions",
@@ -951,6 +1054,13 @@ const wpqr = {
       required: false,
       options: WELDING_POSITION_OPTIONS,
       hint: "Posizioni secondo ISO 6947 dichiarate sul verbale (es. PA)",
+    },
+    {
+      key: "rotated_position",
+      label: "Posizione tubo ruotato (PF/PA ruotata)",
+      type: "boolean",
+      required: false,
+      hint: "Spunta SOLO se il verbale dichiara esplicitamente che la posizione PF o PA è stata eseguita con il tubo ruotato durante la saldatura (es. \u201CPF rotated\u201D). Rilevante solo per Tipo prodotto = Piastra + posizione PF o PA: alza a >150mm (invece di >500mm) il diametro tubo automaticamente coperto (ISO 15614-1 §8.3.3). Non serve per la posizione PC, già coperta a >150mm senza bisogno di questo flag.",
     },
     {
       key: "filler_material",
@@ -985,6 +1095,7 @@ const wpqr = {
         { value: "imq",         label: "IMQ" },
         { value: "iqn",         label: "IQNet" },
         { value: "csq",         label: "CSQ / Certiquality" },
+        { value: "iis_isscert", label: "IIS - ISSCERT (Istituto Italiano di Saldatura)" },
         { value: "tec_eurolab", label: "TEC Eurolab" },
         { value: "sideius",     label: "Sideius (Valor)" },
         { value: "altro",       label: "Altro" },
@@ -1086,11 +1197,17 @@ Campi di copertura (pag.1 RANGE OF QUALIFICATION, priorità alta):
 - standard_reference: norma di riferimento (es. "UNI EN ISO 15614-1:2019")
 - welding_process: codice ISO 4063 — preferire un codice numerico esplicito nel testo (es. "Welding process: 135") a un alias generico
 - joint_type: "BW", "FW" o "BW+FW"
+- product_type: "P" (piastra) o "T" (tubo) — variabile essenziale ISO 15614-1 §8.3.3 per il diametro. Se il documento non lo specifica esplicitamente ma il "Range of qualification" per il diametro contiene una regola testuale tipo "> 500; > 150 for position PC, PF/PA rotated" (invece di un numero), significa che il provino è stato testato su PIASTRA: imposta product_type: "P" e lascia diameter_min/diameter_max: null (NON trascrivere quella regola testuale come numero)
 - material_group: gruppo materiale ISO/TR 15608, preferire il sottogruppo (es. "1.2") se presente
 - thickness_test_mm: spessore del provino testato (numero)
 - thickness_min / thickness_max: range di spessore DICHIARATO sul verbale (non calcolarlo)
-- diameter_min / diameter_max: range diametro tubo se applicabile
+- thickness_max_unlimited: booleano — true SOLO se il verbale dichiara esplicitamente un range aperto senza limite superiore (simboli "\u2265", "=>", "\u2a7e", oppure testo "no restriction"/"senza limite superiore"), tipico dei giunti ad angolo (Fillet Weld: es. "t1 = => 5 ; t2 => 5"). In questo caso lascia thickness_max: null e imposta thickness_max_unlimited: true. Se il campo è semplicemente assente dal documento (non un range aperto dichiarato), lascia entrambi null/false — NON confondere le due situazioni
+- diameter_min / diameter_max: range diametro tubo se applicabile (SOLO se un numero è dichiarato — vedi nota su product_type sopra per il caso testo/piastra)
+- throat_test_mm: spessore gola (throat) del provino testato, SOLO per giunti d'angolo/FW,
+  se dichiarato esplicitamente sul verbale (Tabella 8) — numero, null se non applicabile o assente
 - welding_positions: array posizioni ISO 6947 (es. ["PA"])
+- rotated_position: booleano — true SOLO se il verbale dichiara esplicitamente che la posizione PF o PA
+  è stata eseguita con il tubo ruotato ("rotated"/"ruotata"). Se non menzionato, lascia null/false
 - filler_material: designazione materiale d'apporto (ISO 14341 se filo GMAW acciaio, es. "G 42 4 M21 3Si1")
 - pwht: booleano, PWHT applicato
 - wps_ref: identificativo testuale della WPS di riferimento
@@ -1116,13 +1233,17 @@ IMPORTANTE: non ricalcolare i range con formule — estrarre solo i valori dichi
     standard_reference: "string|null",
     welding_process: "string|null",
     joint_type: "BW|FW|BW+FW|null",
+    product_type: "P|T|null",
     material_group: "string|null",
     thickness_test_mm: "number|null",
     thickness_min: "number|null",
     thickness_max: "number|null",
+    thickness_max_unlimited: "boolean|null",
     diameter_min: "number|null",
     diameter_max: "number|null",
+    throat_test_mm: "number|null",
     welding_positions: "string[]|null",
+    rotated_position: "boolean|null",
     filler_material: "string|null",
     pwht: "boolean|null",
     wps_ref: "string|null",
@@ -1211,5 +1332,7 @@ const DOCUMENT_TYPE_SCHEMAS = {
 export function getSchemaForDocType(docType) {
   return DOCUMENT_TYPE_SCHEMAS[docType] || null;
 }
+
+export { NDT_SECTOR_OPTIONS, NDT_METHOD_OPTIONS };
 
 export default DOCUMENT_TYPE_SCHEMAS;

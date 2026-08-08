@@ -40,6 +40,8 @@ const {
     commitQualificationFromFields,
     checkQualificationPlausibility,
     applyFieldReprocessUpdate,
+    normalizeFillerMaterialGroup,
+    resolvePipeDiameterRange,
     REPROCESSABLE_FIELDS,
 } = require('./qualificationIngest.service');
 
@@ -471,6 +473,112 @@ describe('mapPipelineFieldsToReview — sanitizzazione numerica in revisione', (
     });
 });
 
+describe('persistenza campi review → DB (bug produzione 01/08/2026, patentino LOVETERE)', () => {
+    function makeRequestMock() {
+        const req = { input: jest.fn().mockReturnThis() };
+        req.query = jest.fn().mockResolvedValue({ recordset: [{ cnt: 0 }] });
+        return req;
+    }
+
+    it('normalizeFillerMaterialGroup accetta solo FM1–FM6/nessuno (mai material_group 11.1)', () => {
+        expect(normalizeFillerMaterialGroup('FM1')).toBe('FM1');
+        expect(normalizeFillerMaterialGroup('fm 2')).toBe('FM2');
+        expect(normalizeFillerMaterialGroup('nessuno')).toBe('nessuno');
+        expect(normalizeFillerMaterialGroup('11.1')).toBeNull();
+        expect(normalizeFillerMaterialGroup('G 42 4 M21 3Si1')).toBeNull();
+        expect(normalizeFillerMaterialGroup('')).toBeNull();
+    });
+
+    it('resolvePipeDiameterRange mappa pipe_diameter_mm (schema AI) → min', () => {
+        expect(resolvePipeDiameterRange({ pipe_diameter_mm: 88.9 })).toEqual({ min: 88.9, max: null });
+        expect(resolvePipeDiameterRange({
+            pipe_diameter_min_mm: 60, pipe_diameter_max_mm: 120, pipe_diameter_mm: 88.9,
+        })).toEqual({ min: 60, max: 120 });
+        expect(resolvePipeDiameterRange({ pipe_diameter_mm: 'N.A.' })).toEqual({ min: null, max: null });
+    });
+
+    it('mapPipelineFieldsToReview non mescola material_group con filler e propaga pipe_diameter_mm', () => {
+        const out = mapPipelineFieldsToReview({
+            welder_name: 'MICHELE LOVETERE',
+            material_group: '11.1',
+            filler_material_group: 'FM1',
+            pipe_diameter_mm: 88.9,
+            product_type: 'T',
+            expiry_date: '2028-06-05',
+        }, 'ISO 9606-1', 'cert.pdf');
+
+        expect(out.material_group).toBe('11.1');
+        expect(out.filler_material_group).toBe('FM1');
+        expect(out.pipe_diameter_min_mm).toBe(88.9);
+        expect(out.pipe_diameter_max_mm).toBeNull();
+        expect(out.pipe_diameter_mm).toBe(88.9);
+        expect(out.revalidation_date).toBe('2028-06-05');
+    });
+
+    it('mapPipelineFieldsToReview non copia material_group in filler se filler assente', () => {
+        const out = mapPipelineFieldsToReview({
+            welder_name: 'MICHELE LOVETERE',
+            material_group: '11.1',
+        }, 'ISO 9606-1', 'cert.pdf');
+        expect(out.material_group).toBe('11.1');
+        expect(out.filler_material_group).toBeNull();
+    });
+
+    it('commitQualificationFromFields persiste filler_material, pipe da pipe_diameter_mm, revalidation e non usa 11.1 in designazione', async () => {
+        const dupCheckReq = makeRequestMock();
+        const insertReq = { input: jest.fn().mockReturnThis() };
+        insertReq.query = jest.fn().mockResolvedValue({ recordset: [{ id: 1049 }] });
+
+        let callCount = 0;
+        getPool.mockResolvedValue({
+            request: jest.fn(() => {
+                callCount += 1;
+                return callCount === 1 ? dupCheckReq : insertReq;
+            }),
+        });
+
+        const result = await commitQualificationFromFields({
+            welder_name: 'MICHELE LOVETERE',
+            certificate_number: 'PRS-2136-25-ITA-DNV',
+            welding_process: '135',
+            material_group: '11.1',
+            filler_material_group: 'FM1',
+            product_type: 'T',
+            joint_type: 'BW',
+            weld_details: 'ss nb',
+            thickness_min_mm: 3,
+            thickness_max_mm: 14.22,
+            pipe_diameter_mm: 88.9,
+            welding_positions: ['PA', 'PC'],
+            exam_date: '2025-06-05',
+            expiry_date: '2028-06-05',
+            transfer_mode: 'pulsed_arc',
+            shielding_gas: 'M20',
+            examiner_body: 'DNV',
+        }, 10, 20, { qualificationType: 'Saldatore ISO 9606-1' });
+
+        expect(result.qualification_id).toBe(1049);
+        expect(insertReq.input).toHaveBeenCalledWith('filler', 'FM1');
+        expect(insertReq.input).toHaveBeenCalledWith('matGroup', '11.1');
+        expect(insertReq.input).toHaveBeenCalledWith('pipeMin', 88.9);
+        expect(insertReq.input).toHaveBeenCalledWith('pipeMax', null);
+        expect(insertReq.input).toHaveBeenCalledWith('revalDate', '2028-06-05');
+        expect(insertReq.input).toHaveBeenCalledWith('examBody', 'DNV');
+        expect(insertReq.input).toHaveBeenCalledWith(
+            'designation',
+            expect.stringMatching(/^135 T BW FM1 t3-14\.22 D≥88\.9 PA\/PC ss nb$/)
+        );
+        // Designazione NON deve contenere il gruppo materiale base al posto del FM
+        expect(insertReq.input).not.toHaveBeenCalledWith(
+            'designation',
+            expect.stringContaining('11.1')
+        );
+        expect(insertReq.query).toHaveBeenCalledWith(expect.stringContaining('filler_material'));
+        expect(insertReq.query).toHaveBeenCalledWith(expect.stringContaining('revalidation_date'));
+        expect(insertReq.query).toHaveBeenCalledWith(expect.stringContaining('examiner_body'));
+    });
+});
+
 describe('applyFieldReprocessUpdate — backfill campo su qualifica esistente (migrazione 137)', () => {
     afterEach(() => jest.clearAllMocks());
 
@@ -524,5 +632,78 @@ describe('applyFieldReprocessUpdate — backfill campo su qualifica esistente (m
 
         await expect(applyFieldReprocessUpdate(999, 1001, 'transfer_mode', { transfer_mode: 'spray_arc' }))
             .rejects.toMatchObject({ code: 'NOT_FOUND' });
+    });
+
+    // Gap analysis 08/08/2026: thickness_max_unlimited è BIT NOT NULL DEFAULT 0
+    // (migrazione 140) — la guardia standard "colonna IS NULL" non si applicherebbe
+    // mai. Verifica che usi invece il writeGuard esplicito "colonna = 0".
+    it('thickness_max_unlimited usa il writeGuard esplicito "= 0", non "IS NULL" (colonna NOT NULL)', async () => {
+        const checkReq = { input: jest.fn().mockReturnThis(), query: jest.fn().mockResolvedValue({ recordset: [{ id: 11 }] }) };
+        const updateReq = { input: jest.fn().mockReturnThis(), query: jest.fn().mockResolvedValue({ recordset: [] }) };
+        let callCount = 0;
+        const pool = { request: jest.fn(() => (++callCount === 1 ? checkReq : updateReq)) };
+        getPool.mockResolvedValue(pool);
+
+        const result = await applyFieldReprocessUpdate(11, 1001, 'thickness_max_unlimited', { thickness_max_unlimited: true });
+
+        expect(result).toEqual({ qualification_id: 11, updated_fields: ['thickness_max_unlimited'] });
+        expect(updateReq.input).toHaveBeenCalledWith('val_thickness_max_unlimited', true);
+        const sql = updateReq.query.mock.calls[0][0];
+        expect(sql).toMatch(/thickness_max_unlimited = 0/);
+        expect(sql).not.toMatch(/thickness_max_unlimited IS NULL/);
+    });
+});
+
+/**
+ * Round-trip a sentinella (rete di sicurezza strutturale — audit ingest
+ * saldatura/3834 07/08/2026). Per ogni chiave di `aiExpectedSchema` dello schema
+ * `patentino_saldatore` (quello realmente usato dal prompt AI, backend/src/data/
+ * documentTypeSchemas.js) genera un valore-sentinella univoco e verifica che
+ * sopravviva da mapPipelineFieldsToReview fino ai parametri della INSERT su
+ * `qualifications`. Avrebbe intercettato bug analoghi già trovati in passato
+ * su questo modulo (shielding_gas, pipe_diameter_mm, filler_material_group).
+ */
+describe('round-trip a sentinella — ogni campo aiExpectedSchema (patentino_saldatore) sopravvive fino a qualifications', () => {
+    afterEach(() => jest.clearAllMocks());
+
+    it('nessun campo dello schema AI patentino_saldatore viene perso tra pipeline e INSERT', async () => {
+        const { DOCUMENT_TYPE_SCHEMAS } = require('../data/documentTypeSchemas');
+        const { buildSentinelFields, findMissingSentinels } = require('../utils/ingestRoundTripSentinel');
+        const { resolvePersonnelForQualification } = require('./personnelQualificationLink.service');
+
+        // Override per campi con normalizzazione/validazione legittima (non un bug
+        // se un token generico verrebbe scartato da queste funzioni):
+        // - filler_material_group: normalizeFillerMaterialGroup accetta solo FM1-FM6/nessuno
+        // - date: normalizeDate scarta stringhe non parsabili come data
+        const { fields, tokens } = buildSentinelFields(DOCUMENT_TYPE_SCHEMAS.patentino_saldatore.aiExpectedSchema, {
+            filler_material_group: 'FM1',
+            exam_date: '2030-01-05',
+            expiry_date: '2030-06-05',
+            last_confirmation_date: '2030-01-06',
+            next_confirmation_due: '2030-07-06',
+        });
+
+        // resolvePersonnelForQualification canonicalizza il nome su un match anagrafico
+        // reale (comportamento corretto in produzione) — per isolare SOLO il round-trip
+        // ingest→DB, verifichiamo qui che il nome grezzo passi quando non c'è match.
+        resolvePersonnelForQualification.mockResolvedValueOnce({ ok: true, personnelId: 999, personName: null });
+
+        const reviewFields = mapPipelineFieldsToReview(fields, 'ISO 9606-1 sentinel test', 'sentinel.pdf');
+
+        const dupCheckReq = { input: jest.fn().mockReturnThis(), query: jest.fn().mockResolvedValue({ recordset: [{ cnt: 0 }] }) };
+        const insertReq = { input: jest.fn().mockReturnThis(), query: jest.fn().mockResolvedValue({ recordset: [{ id: 888 }] }) };
+        let callCount = 0;
+        const pool = { request: jest.fn(() => { callCount += 1; return callCount === 1 ? dupCheckReq : insertReq; }) };
+        getPool.mockResolvedValue(pool);
+
+        await commitQualificationFromFields(reviewFields, 10, 20, { qualificationType: 'Saldatore ISO 9606-1' });
+
+        const capturedValues = insertReq.input.mock.calls.map(([, value]) => value);
+
+        // GAP noti e già documentati come non ancora chiusi — svuotare via via che
+        // vengono corretti, mai aggiungere qui senza motivazione tracciata.
+        const knownGaps = [];
+        const missing = findMissingSentinels(tokens, capturedValues, knownGaps);
+        expect(missing).toEqual([]);
     });
 });

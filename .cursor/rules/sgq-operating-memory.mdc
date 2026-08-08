@@ -225,6 +225,14 @@ Blocchi principali:
 
 **Motivazione**: riuso garantisce consistenza visiva, comportamento gia' testato, scalabilita' senza debito tecnico. Ogni nuova implementazione parallela va considerata un difetto da correggere, non una soluzione.
 
+## Completezza ingest AI vs modifica manuale (regola vincolante, 08/08/2026)
+
+Ogni volta che si aggiunge o modifica un campo in un `aiExpectedSchema` (`documentTypeSchemas.js`, FE o BE), **aggiungere lo stesso campo anche alla whitelist `*_MANUAL_EDITABLE_FIELDS` del controller corrispondente** (`WPQR_MANUAL_EDITABLE_FIELDS` in `welding.controller.js`, `QUALIFICATION_MANUAL_EDITABLE_FIELDS` in `qualifications.controller.js` — o l'alias se il nome colonna DB differisce), **e** al form React di creazione/modifica manuale (`WPQRFormModal`, `QualificationForm.jsx`).
+
+**Perché**: un campo che solo l'AI può popolare, senza via manuale di correzione, diventa irrecuperabile se l'estrazione sbaglia o il PDF non lo riporta chiaramente — gap trovato due volte l'08/08/2026 (form WPQR disallineato; `personnel_id` selezionato nel form Qualifiche ma mai salvato, funzione di collegamento importata e mai chiamata).
+
+**Verifica automatica**: `backend/src/utils/manualEditCompletenessCheck.js` + test `welding.controller.manualFieldsCompleteness.test.js` / `qualifications.controller.manualFieldsCompleteness.test.js` — bloccano in CI un campo ingest privo di corrispondenza manuale. Eseguirli sempre dopo aver esteso uno schema ingest. Complementare al "round-trip a sentinella" (`ingestRoundTripSentinel.js`, 07/08/2026 — copre ingest→DB, non ingest→form manuale).
+
 ## UI guida flusso operativo (golden rule committente)
 - **UI guida flusso**: il layout dei moduli deve seguire l'ordine operativo reale (ISO/process), non un form unico alfabetico o per tipo campo. Usare sezioni numerate collassabili o gate per fasi non ancora rilevanti (es. drawer NC: Scheda → Stato → Cause → Azioni → Evidenze → Verifica → Chiusura).
 

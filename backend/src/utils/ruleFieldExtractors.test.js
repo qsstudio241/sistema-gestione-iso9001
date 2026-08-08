@@ -2,7 +2,12 @@
  * @jest-environment node
  */
 
-const { extractFieldsByRules, extractQualifica14732Fields, extractWpqrFields } = require('./ruleFieldExtractors');
+const {
+    extractFieldsByRules,
+    extractQualifica14732Fields,
+    extractCertNdtFields,
+    extractWpqrFields,
+} = require('./ruleFieldExtractors');
 
 describe('extractQualifica14732Fields (RC-8)', () => {
     it('estrae nome operatore, ente, processo e posizioni da testo qualifica', () => {
@@ -89,10 +94,84 @@ describe('extractWpqrFields (DEPUTYTASK1 25/07/2026 — campi copertura pag.1/pa
     });
 });
 
+describe('extractCertNdtFields (ISO 9712 — TEC-Eurolab 02/08/2026)', () => {
+    const sample = `
+TEC-Eurolab
+CERTIFICATION BODY
+CERTIFICATO N° E-00951-UT-2 R
+CERTIFICATE N° E-00951-UT-2 R
+LUIGI LA FORGIA
+Nato a / born in MANFREDONIA (FG) il /on the 25/09/1983
+Metodo /Test Method: UT
+Livello / Level: 2
+x di prodotto: plurisettoriale
+x industriale: fabbricazione metalli
+UNI EN ISO 9712:2012
+Data di emissione / Issued on the: 26/05/2016
+Data di rinnovo / Renewal date: 25/08/2021
+Data di scadenza / Expiration date: 25/05/2026
+`;
+
+    it('estrae nome, numero, metodo UT, livello 2 e date etichettate', () => {
+        const out = extractCertNdtFields(sample, 'UT - Level II.pdf');
+        expect(out.operator_name).toBe('LUIGI LA FORGIA');
+        expect(out.certificate_number).toMatch(/E-00951-UT-2/);
+        expect(out.ndt_method).toBe('UT');
+        expect(out.certification_level).toBe('2');
+        expect(out.issuing_body).toBe('TEC Eurolab');
+        expect(out.exam_date).toBe('2016-05-26');
+        expect(out.expiry_date).toBe('2026-05-25');
+        expect(out.revalidation_date).toBe('2021-08-25');
+    });
+
+    it('non confonde CERTIFICATION BODY con numero certificato (IFICATION)', () => {
+        const out = extractCertNdtFields(sample, 'UT - Level II.pdf');
+        expect(out.certificate_number).not.toMatch(/IFICATION/i);
+    });
+
+    it('mappa industriale pre-servizio/in servizio → s (ISO 9712 A.3), non prodotto', () => {
+        const mt = `
+CERTIFICATO N° D-00330-MT-RC
+LUIGI LA FORGIA
+Metodo / Test Method Magnetoscopia
+Livello / Level 2
+x di prodotto (Plurisettoriale)
+x industriale (Prova pre-servizio e in servizio di attrezzature, impianti e strutture)
+Data di emissione / Issued on the : 13-10-2020
+Data di scadenza / Expiration date : 12-10-2025
+TEC Eurolab
+`;
+        const out = extractCertNdtFields(mt, 'MT - Level II.pdf');
+        expect(out.ndt_method).toBe('MT');
+        expect(out.ndt_sector).toBe('s');
+    });
+
+    it('mappa fabbricazione metalli (senza pre-servizio) → m', () => {
+        const ut = `
+Metodo /Test Method: UT
+Livello / Level: 2
+x di prodotto: plurisettoriale
+x industriale: fabbricazione metalli
+TEC Eurolab
+`;
+        expect(extractCertNdtFields(ut, 'UT.pdf').ndt_sector).toBe('m');
+    });
+});
+
 describe('extractFieldsByRules — dispatch per docType', () => {
     it('qualifica_14732 usa extractQualifica14732Fields registrato', () => {
         const out = extractFieldsByRules('nome: Anna Bianchi.\nCertificato: QO-1', 'qualifica_14732', 'x.pdf');
         expect(out.operator_name).toBe('Anna Bianchi');
+    });
+
+    it('cert_ndt usa extractCertNdtFields registrato', () => {
+        const out = extractFieldsByRules(
+            'CERTIFICATO N° E-1\nMARIO ROSSI\nNato a / born in ROMA\nMetodo /Test Method: MT\nLivello / Level: 2',
+            'cert_ndt',
+            'x.pdf',
+        );
+        expect(out.ndt_method).toBe('MT');
+        expect(out.operator_name).toBe('MARIO ROSSI');
     });
 
     it('docType non supportato restituisce oggetto vuoto', () => {

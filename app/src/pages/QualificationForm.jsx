@@ -7,6 +7,8 @@ import apiService from "../services/apiService";
 import { OCCUPATIONAL_QUALIFICATION_TYPES } from "../data/occupationalQualificationTypes";
 import { buildWelderDesignation } from "../utils/weldingDesignation";
 import { getApplicableWelderFields } from "../data/weldingQualificationRules9606";
+import { NDT_SECTOR_OPTIONS } from "../data/documentTypeSchemas";
+import { resolveBackendUploadUrl } from "../utils/resolveBackendUploadUrl";
 import SemiannualConfirmationSection from "../components/SemiannualConfirmationSection";
 import "./QualificationForm.css";
 
@@ -46,7 +48,7 @@ const EMPTY = {
   issue_date: "", expiry_date: "", last_renewal_date: "",
   status: "valida", notes: "",
   welding_process: "", material_group: "", position_range: "",
-  ndt_method: "", ndt_level: "",
+  ndt_method: "", ndt_level: "", ndt_sector: "",
   coordinator_title: "", cpd_valid_until: "",
   patent_type: "", certification_scheme: "",
   certificate_file_url: "",
@@ -54,7 +56,7 @@ const EMPTY = {
   examiner_body: "", joint_type: "", product_type: "", weld_details: "",
   transfer_mode: "",
   filler_material: "", shielding_gas: "", equipment_type: "",
-  thickness_min_mm: "", thickness_max_mm: "",
+  thickness_min_mm: "", thickness_max_mm: "", thickness_max_unlimited: false,
   pipe_diameter_min_mm: "", pipe_diameter_max_mm: "",
   exam_date: "", last_confirmation_date: "", next_confirmation_due: "",
   revalidation_date: "", qualification_designation: "",
@@ -152,8 +154,21 @@ function QualificationForm({ qualification, onSave, onClose, defaultCompanyId, o
        "exam_date","last_confirmation_date","next_confirmation_due","revalidation_date"].forEach(k => {
         if (d[k]) d[k] = String(d[k]).slice(0, 10);
       });
+      // Normalizza il flag "range aperto" (BIT da SQL Server: true/false/1/0/'1'/'0').
+      d.thickness_max_unlimited = d.thickness_max_unlimited === true
+        || d.thickness_max_unlimited === 1
+        || d.thickness_max_unlimited === '1';
       d.company_id = d.company_id || "";
       d.personnel_id = d.personnel_id ? String(d.personnel_id) : "";
+      // Alias ingest/review → colonna DB usata dal select del form.
+      if (!d.filler_material && d.filler_material_group) {
+        d.filler_material = d.filler_material_group;
+      }
+      // Diametro singolo da revisione AI (pipe_diameter_mm) → min del form.
+      if ((d.pipe_diameter_min_mm == null || d.pipe_diameter_min_mm === "")
+        && d.pipe_diameter_mm != null && d.pipe_diameter_mm !== "") {
+        d.pipe_diameter_min_mm = d.pipe_diameter_mm;
+      }
       setForm(d);
       if (d.qualification_type && !QUAL_TYPES.includes(d.qualification_type)) {
         setCustomType(true);
@@ -444,7 +459,31 @@ function QualificationForm({ qualification, onSave, onClose, defaultCompanyId, o
                 </div>
                 <div className="qf-field">
                   <label>Spessore max (mm)</label>
-                  <input type="number" step="0.1" min="0" value={form.thickness_max_mm} onChange={handle("thickness_max_mm")} placeholder="es. 20" />
+                  <input
+                    type="number" step="0.1" min="0"
+                    value={form.thickness_max_mm}
+                    onChange={handle("thickness_max_mm")}
+                    placeholder={form.thickness_max_unlimited ? "senza limite superiore" : "es. 20"}
+                    disabled={!!form.thickness_max_unlimited}
+                  />
+                  <label style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 4, fontSize: 12, fontWeight: 400, color: "#475569" }}>
+                    <input
+                      type="checkbox"
+                      checked={!!form.thickness_max_unlimited}
+                      onChange={(e) => {
+                        const checked = e.target.checked;
+                        setForm((f) => ({
+                          ...f,
+                          thickness_max_unlimited: checked,
+                          thickness_max_mm: checked ? "" : f.thickness_max_mm,
+                        }));
+                      }}
+                    />
+                    Nessun limite superiore dichiarato
+                  </label>
+                  <span style={{ fontSize: 11, color: "#94a3b8" }}>
+                    {"Seleziona solo se il certificato dichiara esplicitamente un range aperto (es. \u2265 5mm)"}
+                  </span>
                 </div>
                 {applicableFields.pipeDiameterApplicable ? (
                   <>
@@ -601,6 +640,23 @@ function QualificationForm({ qualification, onSave, onClose, defaultCompanyId, o
                   <input type="text" value={form.certification_scheme} onChange={handle("certification_scheme")} placeholder="CICPND, PCN, SNT-TC-1A..." />
                 </div>
               </div>
+              <div className="qf-row">
+                <div className="qf-field">
+                  <label>Settore (ISO 9712 Annex A)</label>
+                  <select value={form.ndt_sector} onChange={handle("ndt_sector")}>
+                    <option value="">-- seleziona --</option>
+                    {NDT_SECTOR_OPTIONS.map((opt) => (
+                      <option
+                        key={opt.value || opt.label}
+                        value={opt.disabled ? "" : opt.value}
+                        disabled={Boolean(opt.disabled)}
+                      >
+                        {opt.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
             </>
           )}
 
@@ -684,7 +740,11 @@ function QualificationForm({ qualification, onSave, onClose, defaultCompanyId, o
               <div className="qf-section-title">Certificato PDF</div>
               {form.certificate_file_url && (
                 <div style={{marginBottom: 6, fontSize: 13}}>
-                  <a href={form.certificate_file_url} target="_blank" rel="noopener noreferrer">
+                  <a
+                    href={resolveBackendUploadUrl(form.certificate_file_url, apiService.baseUrl)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
                     {"\uD83D\uDCC4"} Visualizza certificato allegato
                   </a>
                 </div>

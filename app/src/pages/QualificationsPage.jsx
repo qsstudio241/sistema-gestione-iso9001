@@ -10,6 +10,7 @@ import QualificationForm from "./QualificationForm";
 import QualificationUploadButton from "../components/QualificationUploadButton";
 import ReprocessQueueBanner from "../components/ReprocessQueueBanner";
 import { formatDate } from "../utils/dateHelpers";
+import { resolveBackendUploadUrl } from "../utils/resolveBackendUploadUrl";
 import {
     resolveInitialQualificationsCompanyScope,
     persistQualificationsCompanyScope,
@@ -67,6 +68,58 @@ function SemaforoTag({ value }) {
 }
 
 // ── Stats bar ─────────────────────────────────────────────────────────────────
+
+/** Banner gap idoneità visiva (NDT/VT senza certificato oculistico unico). */
+function VisionFitnessGapsBanner({ gapsData, onGoSalute }) {
+    if (!gapsData?.gaps?.length) return null;
+    const { gaps, summary } = gapsData;
+    const preview = gaps.slice(0, 5);
+    const more = gaps.length - preview.length;
+    return (
+        <div className="sq-vision-banner" role="status">
+            <div className="sq-vision-banner__title">
+                Idoneit{"\u00e0"} visiva mancante o scaduta
+                {summary ? (
+                    <span className="sq-vision-banner__counts">
+                        {" — "}
+                        {summary.missing || 0} senza certificato
+                        {", "}
+                        {summary.expired || 0} scaduti
+                        {" su "}
+                        {summary.persons_requiring || 0} persone NDT/VT
+                    </span>
+                ) : null}
+            </div>
+            <p className="sq-vision-banner__hint">
+                Per ISO 9712 serve un unico certificato oculistico (acuit{"\u00e0"} + Ishihara) in corso di validit{"\u00e0"}.
+                Caricalo nella tab Salute mansione collegato alla stessa persona.
+            </p>
+            <ul className="sq-vision-banner__list">
+                {preview.map((g) => (
+                    <li key={`${g.personnel_id || g.person_name}-${g.company_id || 0}`}>
+                        <strong>{g.person_name || "—"}</strong>
+                        {g.company_name ? ` (${g.company_name})` : ""}
+                        {" — "}
+                        {g.vision_state === "expired"
+                            ? `certificato scaduto${g.vision_expiry_date ? ` il ${formatDate(g.vision_expiry_date)}` : ""}`
+                            : "nessun certificato idoneit\u00e0 visiva"}
+                        {g.requiring_quals?.length
+                            ? ` · ${g.requiring_quals.length} qualifica/e NDT/VT`
+                            : ""}
+                    </li>
+                ))}
+            </ul>
+            {more > 0 && (
+                <p className="sq-vision-banner__more">… e altre {more} persone</p>
+            )}
+            {typeof onGoSalute === "function" && (
+                <button type="button" className="sq-vision-banner__cta" onClick={onGoSalute}>
+                    Vai a Salute mansione
+                </button>
+            )}
+        </div>
+    );
+}
 
 function StatsBar({ stats, activeSituazione, onStatClick }) {
     if (!stats) return null;
@@ -137,7 +190,13 @@ function QualRow({ q, tabKey, onEdit, onHardDelete, onRenew, onHistory, hardDele
     const certCell = (
         <td className="sq-col-cert">
             {q.certificate_file_url
-                ? <a href={q.certificate_file_url} target="_blank" rel="noopener noreferrer" className="sq-cert-link" title="Apri certificato">
+                ? <a
+                    href={resolveBackendUploadUrl(q.certificate_file_url, apiService.baseUrl)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="sq-cert-link"
+                    title="Apri certificato"
+                  >
                     {"\uD83D\uDCC4"} {q.certificate_number || "Certificato"}
                   </a>
                 : (q.certificate_number || "\u2014")}
@@ -378,6 +437,24 @@ function QualificationsPage() {
 
     const [historyModal, setHistoryModal] = useState(null);
     const [historyLoading, setHistoryLoading] = useState(false);
+    const [visionGaps, setVisionGaps] = useState(null);
+
+    useEffect(() => {
+        if (activeTab !== "ndt" && activeTab !== "salute_mansione") {
+            setVisionGaps(null);
+            return undefined;
+        }
+        let cancelled = false;
+        const params = companyScope ? { company_id: companyScope } : {};
+        apiService.getVisionFitnessGaps(params)
+            .then((res) => {
+                if (!cancelled) setVisionGaps(res || null);
+            })
+            .catch(() => {
+                if (!cancelled) setVisionGaps(null);
+            });
+        return () => { cancelled = true; };
+    }, [activeTab, companyScope, quals]);
 
     async function handleOpenHistory(q) {
         setHistoryModal({ id: q.id, person_name: q.person_name, history: [] });
@@ -424,6 +501,7 @@ function QualificationsPage() {
                         <QualificationUploadButton
                             companyId={companyScope}
                             companyName={scopeCompanyName}
+                            activeTab={activeTab}
                             onUploadComplete={loadData}
                         />
                     ) : companies.length > 0 && (
@@ -467,6 +545,13 @@ function QualificationsPage() {
                 ))}
             </div>
 
+            {(activeTab === "ndt" || activeTab === "salute_mansione") && (
+                <VisionFitnessGapsBanner
+                    gapsData={visionGaps}
+                    onGoSalute={() => { setActiveTab("salute_mansione"); setPage(1); }}
+                />
+            )}
+
             {/* Filtri */}
             <div className="sq-toolbar">
                 <input
@@ -498,7 +583,7 @@ function QualificationsPage() {
                 )}
                 <button className="sq-btn-reload" onClick={loadData} title="Aggiorna">{"\u21BB"}</button>
                 <AskAiButton
-                    label="Chiedi all\u2019AI"
+                    label="Chiedi all'AI"
                     onBeforeNavigate={() => saveQualContext({
                         qualType:      activeTab !== "tutti" ? activeTab : null,
                         qualTypeLabel: TABS.find(t => t.key === activeTab)?.label || null,

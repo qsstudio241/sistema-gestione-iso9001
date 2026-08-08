@@ -19,6 +19,7 @@ const {
     checkFillerMaterial14341Plausibility,
     checkShieldingGasKnown,
     checkThicknessRangeAgainstIso15614Level2,
+    checkFilletThicknessRangeNeedsManualVerification,
 } = require('../utils/ingestPlausibilityChecks');
 const { toNumericOrNull } = require('../utils/numericSanitizer');
 
@@ -62,9 +63,26 @@ function checkWpqrPlausibility(f) {
     });
     if (thicknessVsNormWarn) warnings.push(thicknessVsNormWarn);
 
+    const filletThicknessWarn = checkFilletThicknessRangeNeedsManualVerification({
+        jointType: f.joint_type,
+        thicknessMin: f.thickness_min,
+        thicknessMax: f.thickness_max,
+        thicknessMaxUnlimited: f.thickness_max_unlimited,
+    });
+    if (filletThicknessWarn) warnings.push(filletThicknessWarn);
+
     return warnings;
 }
 
+// NOTA (TODO consolidamento — non forzato in questo giro, gap analysis 07/08/2026):
+// questa formula è duplicata e DISALLINEATA rispetto alla funzione "canonica"
+// computeQualifiedMaterialThicknessRangeLevel2 (weldingQualificationRules15614.js,
+// Tabella 7 Level 2, bande 3-40mm confermate da doppia estrazione PDF). Esempio
+// concreto: per t=30mm questa formula dà [15, 60], la canonica dà [15, 33]. La
+// canonica però ritorna null fuori dalle bande 3-40mm (GAP dichiarato), quindi
+// sostituirla qui cambierebbe il comportamento anche per WPQR BW già in
+// produzione fuori da quelle bande — consolidamento rimandato a una slice
+// dedicata con verifica di regressione, non incluso nel fix minimo t1/t2 FW.
 function calcThicknessRange(t) {
     if (!t || t <= 0) return { thickness_min: null, thickness_max: null };
     const tNum = parseFloat(t);
@@ -83,6 +101,67 @@ function calcThicknessRange(t) {
     return {
         thickness_min: parseFloat(minT.toFixed(2)),
         thickness_max: parseFloat(maxT.toFixed(2)),
+    };
+}
+
+/**
+ * Risolve il range spessore materiale base (min/max) per un WPQR, gestendo
+ * correttamente i range aperti "senza limite superiore" e i giunti FW.
+ *
+ * Gap analysis 07/08/2026 (WPQR reale VB0377/23 "ADA", cliente Mason, giunto
+ * ad angolo/fillet S355J2): il verbale dichiara "Fillet Weld: t1 = >=5 ; t2 =>
+ * 5" — range aperto, nessun limite superiore. Prima di questo fix, un
+ * `thickness_max` nullo (sia perché non estratto, sia perché dichiarato come
+ * illimitato) veniva SEMPRE sostituito da `calcThicknessRange` (formula
+ * generica calibrata sulla Tabella 7 BW), producendo per questo caso un
+ * massimo errato di 60mm invece del reale "illimitato" — rischio di rifiutare
+ * come "fuori range" giunti FW di produzione oltre i 60mm, in realtà coperti.
+ *
+ * Regole:
+ * - `thickness_max_unlimited === true` (dichiarato esplicitamente sul
+ *   verbale) → `thickness_max` resta `null` (= illimitato) e NON viene mai
+ *   sostituito dal calcolo.
+ * - `joint_type` contiene "FW" (fillet/angolo) → il fallback calcolato non
+ *   viene MAI applicato (la Tabella 7 riguarda solo giunti BW; per FW il
+ *   range materiale t1/t2 segue una regola diversa, non riproducibile con la
+ *   stessa formula) — se il valore non è dichiarato resta `null` (verrà
+ *   segnalato con un warning, vedi `checkFilletThicknessRangeNeedsManualVerification`).
+ * - Altrimenti (giunto BW, nessun flag illimitato): comportamento invariato,
+ *   fallback calcolato da `calcThicknessRange` solo per i valori assenti.
+ *
+ * @param {object} f - oggetto con thickness_test_mm/thickness_tested, thickness_min,
+ *   thickness_max, thickness_max_unlimited, joint_type
+ * @returns {{ thickness_min: number|null, thickness_max: number|null, thickness_max_unlimited: boolean }}
+ */
+function resolveThicknessRange(f) {
+    const thicknessRaw = f.thickness_test_mm ?? f.thickness_tested;
+    const thickness_tested = toNumericOrNull(thicknessRaw);
+    const thicknessMinSan = toNumericOrNull(f.thickness_min);
+    const thicknessMaxSan = toNumericOrNull(f.thickness_max);
+    const thicknessMaxUnlimited = f.thickness_max_unlimited === true
+        || f.thickness_max_unlimited === 1
+        || f.thickness_max_unlimited === '1'
+        || f.thickness_max_unlimited === 'true';
+    const isFillet = String(f.joint_type || '').trim().toUpperCase().includes('FW');
+
+    if (thicknessMaxUnlimited) {
+        return { thickness_min: thicknessMinSan, thickness_max: null, thickness_max_unlimited: true };
+    }
+
+    if (thicknessMinSan != null && thicknessMaxSan != null) {
+        return { thickness_min: thicknessMinSan, thickness_max: thicknessMaxSan, thickness_max_unlimited: false };
+    }
+
+    if (isFillet) {
+        // Nessun fallback calcolato per FW — meglio null + warning che un numero probabilmente sbagliato.
+        return { thickness_min: thicknessMinSan, thickness_max: thicknessMaxSan, thickness_max_unlimited: false };
+    }
+
+    const { thickness_min: calcMin, thickness_max: calcMax } = calcThicknessRange(thickness_tested);
+    return {
+        thickness_min: thicknessMinSan != null ? thicknessMinSan : calcMin,
+        thickness_max: thicknessMaxSan != null ? thicknessMaxSan : calcMax,
+        thickness_max_unlimited: false,
     };
 }
 
@@ -124,9 +203,9 @@ function mapPipelineFieldsToReview(f, fileName) {
     // virgola decimale o simboli soglia non devono mai arrivare come stringa
     // grezza a una colonna DECIMAL — vedi numericSanitizer.js.
     const thickness_tested = toNumericOrNull(thicknessRaw);
-    const { thickness_min: calcMin, thickness_max: calcMax } = calcThicknessRange(thickness_tested);
-    const thicknessMinSan = toNumericOrNull(f.thickness_min);
-    const thicknessMaxSan = toNumericOrNull(f.thickness_max);
+    // Range spessore: vedi resolveThicknessRange per la gestione di range aperti
+    // ("senza limite superiore") e giunti FW (gap analysis 07/08/2026).
+    const { thickness_min, thickness_max, thickness_max_unlimited } = resolveThicknessRange(f);
 
     return {
         wpqr_number: referenceNumber,
@@ -135,6 +214,11 @@ function mapPipelineFieldsToReview(f, fileName) {
         welding_process: f.welding_process || null,
         material_group: f.material_group || f.base_material_group || null,
         joint_type: f.joint_type || null,
+        // Tipo prodotto testato (piastra/tubo) — gap analysis 08/08/2026: serve a
+        // sapere se applicare la regola "piastra copre tubo >500mm (o >150mm in
+        // posizione ruotata)" ISO 15614-1 §8.3.3 in wpsGenerator.service.js.
+        product_type: f.product_type || null,
+        rotated_position: f.rotated_position === true || f.rotated_position === 1 || f.rotated_position === '1',
         thickness_test_mm: thickness_tested,
         approval_date: f.approval_date || f.issue_date || null,
         standard_reference: f.standard_reference || null,
@@ -146,11 +230,15 @@ function mapPipelineFieldsToReview(f, fileName) {
         certificate_number: f.certificate_number || null,
         pwht: f.pwht === true || f.pwht === 1 || f.pwht === '1',
         wps_ref: f.wps_ref || null,
-        // Range: preferire quello DICHIARATO sul verbale (se numerico valido); calcolare solo se assente/non numerico.
-        thickness_min: thicknessMinSan != null ? thicknessMinSan : calcMin,
-        thickness_max: thicknessMaxSan != null ? thicknessMaxSan : calcMax,
+        thickness_min,
+        thickness_max,
+        thickness_max_unlimited,
         diameter_min: toNumericOrNull(f.diameter_min),
         diameter_max: toNumericOrNull(f.diameter_max),
+        // Gola/throat provino (Tabella 8, giunti FW) — gap analysis 07/08/2026: prima
+        // non estratta affatto (solo hint calcolato da thickness_tested, impreciso
+        // perché la gola è una variabile distinta dallo spessore materiale base).
+        throat_test_mm: toNumericOrNull(f.throat_test_mm),
         base_material_spec: f.base_material_spec || null,
         shielding_gas: f.shielding_gas || null,
         current_type: f.current_type || null,
@@ -158,6 +246,11 @@ function mapPipelineFieldsToReview(f, fileName) {
         mechanization: f.mechanization || null,
         single_multi_run: f.single_multi_run || null,
         heat_input_note: f.heat_input_note || null,
+        // Gap strutturale 07/08/2026: presenti in fields/aiPrompt/aiExpectedSchema e
+        // quindi compilabili in UI, ma mai mappati qui né in mapReviewFieldsToDb —
+        // il valore estratto dall'AI veniva scartato prima della revisione umana.
+        preheat_temp: f.preheat_temp || null,
+        interpass_temp: f.interpass_temp || null,
     };
 }
 
@@ -172,9 +265,9 @@ function mapReviewFieldsToDb(f, fileName) {
     // virgola decimale o simboli soglia non devono mai arrivare come stringa
     // grezza a una colonna DECIMAL — vedi numericSanitizer.js.
     const thickness_tested = toNumericOrNull(thicknessRaw);
-    const { thickness_min: calcMin, thickness_max: calcMax } = calcThicknessRange(thickness_tested);
-    const thicknessMinSan = toNumericOrNull(f.thickness_min);
-    const thicknessMaxSan = toNumericOrNull(f.thickness_max);
+    // Range spessore: vedi resolveThicknessRange per la gestione di range aperti
+    // ("senza limite superiore") e giunti FW (gap analysis 07/08/2026).
+    const { thickness_min, thickness_max, thickness_max_unlimited } = resolveThicknessRange(f);
 
     return {
         reference_number: referenceNumber,
@@ -182,14 +275,17 @@ function mapReviewFieldsToDb(f, fileName) {
         welding_process: f.welding_process || null,
         base_material_group: f.material_group || f.base_material_group || null,
         joint_type: f.joint_type || null,
+        product_type: f.product_type || null,
+        rotated_position: f.rotated_position === true || f.rotated_position === 1 || f.rotated_position === '1',
         standard_reference: f.standard_reference || null,
         filler_material: f.filler_material || null,
         thickness_tested,
-        // Preferire il range DICHIARATO sul verbale (se numerico valido); calcolare solo se assente/non numerico.
-        thickness_min: thicknessMinSan != null ? thicknessMinSan : calcMin,
-        thickness_max: thicknessMaxSan != null ? thicknessMaxSan : calcMax,
+        thickness_min,
+        thickness_max,
+        thickness_max_unlimited,
         diameter_min: toNumericOrNull(f.diameter_min),
         diameter_max: toNumericOrNull(f.diameter_max),
+        throat_test_mm: toNumericOrNull(f.throat_test_mm),
         welding_positions: normalizePositions(f.welding_positions),
         examiner_body: f.examiner_body || f.issuing_body || f.testing_body || null,
         welder_name: f.welder_name || null,
@@ -205,6 +301,8 @@ function mapReviewFieldsToDb(f, fileName) {
         mechanization: f.mechanization || null,
         single_multi_run: f.single_multi_run || null,
         heat_input_note: f.heat_input_note || null,
+        preheat_temp: f.preheat_temp || null,
+        interpass_temp: f.interpass_temp || null,
     };
 }
 
@@ -246,7 +344,10 @@ async function extractWPQRFromPdf(pdfBuffer, fileName, organizationId, companyId
         warnings.push('Numero WPQR non trovato — inserirlo manualmente in revisione');
     }
 
-    if (reviewFields.thickness_test_mm && !reviewFields.thickness_min) {
+    const reviewIsFillet = String(reviewFields.joint_type || '').trim().toUpperCase().includes('FW');
+    if (reviewFields.thickness_test_mm && !reviewFields.thickness_min && !reviewIsFillet) {
+        // Per giunti FW il range non viene calcolato per design (vedi resolveThicknessRange) —
+        // il warning dedicato checkFilletThicknessRangeNeedsManualVerification è già più preciso.
         warnings.push('Spessore testato non riconoscibile — range non calcolato');
     }
 
@@ -300,8 +401,8 @@ async function commitWPQRFromFields(fields, organizationId, companyId, options =
             organization_id, company_id,
             reference_number, wpqr_code,
             welding_process, base_material_group, filler_material,
-            thickness_tested, thickness_min, thickness_max,
-            diameter_min, diameter_max,
+            thickness_tested, thickness_min, thickness_max, thickness_max_unlimited,
+            diameter_min, diameter_max, throat_test_mm,
             welding_positions, examiner_body, testing_body,
             welder_name, issue_date, expiry_date,
             certificate_number, certificate_file_url,
@@ -309,6 +410,7 @@ async function commitWPQRFromFields(fields, organizationId, companyId, options =
             qualification_level, joint_type, standard_reference, wps_ref,
             base_material_spec, shielding_gas, current_type, metal_transfer,
             mechanization, single_multi_run, heat_input_note,
+            preheat_temp, interpass_temp, product_type, rotated_position,
             created_by, created_at, updated_at
         )
         OUTPUT INSERTED.id
@@ -316,8 +418,8 @@ async function commitWPQRFromFields(fields, organizationId, companyId, options =
             @organization_id, @company_id,
             @reference_number, @reference_number,
             @welding_process, @base_material_group, @filler_material,
-            @thickness_tested, @thickness_min, @thickness_max,
-            @diameter_min, @diameter_max,
+            @thickness_tested, @thickness_min, @thickness_max, @thickness_max_unlimited,
+            @diameter_min, @diameter_max, @throat_test_mm,
             @welding_positions, @examiner_body, @examiner_body,
             @welder_name, @issue_date, @expiry_date,
             @certificate_number, @certificate_file_url,
@@ -325,6 +427,7 @@ async function commitWPQRFromFields(fields, organizationId, companyId, options =
             @qualification_level, @joint_type, @standard_reference, @wps_ref,
             @base_material_spec, @shielding_gas, @current_type, @metal_transfer,
             @mechanization, @single_multi_run, @heat_input_note,
+            @preheat_temp, @interpass_temp, @product_type, @rotated_position,
             @created_by, GETDATE(), GETDATE()
         )
     `, {
@@ -337,8 +440,10 @@ async function commitWPQRFromFields(fields, organizationId, companyId, options =
         thickness_tested: mapped.thickness_tested,
         thickness_min: mapped.thickness_min,
         thickness_max: mapped.thickness_max,
+        thickness_max_unlimited: mapped.thickness_max_unlimited ? 1 : 0,
         diameter_min: mapped.diameter_min,
         diameter_max: mapped.diameter_max,
+        throat_test_mm: mapped.throat_test_mm,
         welding_positions: mapped.welding_positions,
         examiner_body: mapped.examiner_body,
         welder_name: mapped.welder_name,
@@ -358,6 +463,10 @@ async function commitWPQRFromFields(fields, organizationId, companyId, options =
         mechanization: mapped.mechanization,
         single_multi_run: mapped.single_multi_run,
         heat_input_note: mapped.heat_input_note,
+        preheat_temp: mapped.preheat_temp,
+        interpass_temp: mapped.interpass_temp,
+        product_type: mapped.product_type,
+        rotated_position: mapped.rotated_position ? 1 : 0,
         created_by: userId,
     });
 
@@ -403,6 +512,7 @@ module.exports = {
     extractWPQRFromPdf,
     commitWPQRFromFields,
     calcThicknessRange,
+    resolveThicknessRange,
     mapPipelineFieldsToReview,
     checkWpqrPlausibility,
 };

@@ -16,6 +16,7 @@ const {
     profileHasTechnicalData,
 } = require('../utils/extractedRequirementsProfile');
 const { isQualificationOperationallyActive } = require('./weldingCoordinatorAuth.service');
+const { buildCaseCoverageAdvisory } = require('./caseCoverageAdvisory.service');
 
 function semaforoExpiry(expiryDate, status) {
     if (status === 'revocata' || status === 'sospesa') return 'rosso';
@@ -84,6 +85,12 @@ async function computeCaseProjectCoverage({ caseId, projectId, organizationId })
     }
 
     if (!wpsIds.length) {
+        const advisory = await buildCaseCoverageAdvisory({
+            organizationId,
+            companyId: project.company_id || null,
+            extractedProfile,
+            wpsRows: [],
+        });
         return {
             case_id: caseId,
             project_id: projectId,
@@ -93,6 +100,7 @@ async function computeCaseProjectCoverage({ caseId, projectId, organizationId })
             extracted_profile_active: profileHasTechnicalData(extractedProfile),
             coverage: [],
             summary: { total: 0, covered: 0, partial: 0, uncovered: 0 },
+            advisory,
         };
     }
 
@@ -192,6 +200,13 @@ async function computeCaseProjectCoverage({ caseId, projectId, organizationId })
     const partial = rows.filter((r) => r.esito === 'giallo').length;
     const uncovered = rows.filter((r) => r.esito === 'rosso').length;
 
+    const advisory = await buildCaseCoverageAdvisory({
+        organizationId,
+        companyId: project.company_id || null,
+        extractedProfile,
+        wpsRows,
+    });
+
     return {
         case_id: caseId,
         project_id: projectId,
@@ -207,6 +222,7 @@ async function computeCaseProjectCoverage({ caseId, projectId, organizationId })
             partial,
             uncovered,
         },
+        advisory,
     };
 }
 

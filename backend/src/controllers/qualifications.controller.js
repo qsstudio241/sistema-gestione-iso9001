@@ -16,6 +16,7 @@
  *   GET    /qualifications              → lista con semaforo + filtri tipo
  *   GET    /qualifications/stats        → conteggi stato
  *   GET    /qualifications/coverage     → copertura commessa (?project_id=X)
+ *   GET    /qualifications/vision-fitness-gaps → gap idoneità visiva NDT/VT
  *   GET    /qualifications/:id          → dettaglio
  *   POST   /qualifications              → crea (sempre attiva, approval_status=approvata)
  *   PUT    /qualifications/:id          → aggiorna
@@ -47,7 +48,42 @@ const {
     isQualificationOperationallyActive,
 } = require('../services/weldingCoordinatorAuth.service');
 const { toNumericOrNull } = require('../utils/numericSanitizer');
+const { occupationalQualificationSqlInList } = require('../constants/occupationalQualificationTypes');
+const { findVisionFitnessGaps } = require('../services/visionFitness.service');
 const XLSX = require('xlsx');
+
+/**
+ * Campi qualifiche modificabili da form/API manuale (create/updateQualification)
+ * — fonte unica, riusata anche dal test strutturale
+ * `qualifications.controller.manualFieldsCompleteness.test.js` (verifica che ogni
+ * campo degli schemi ingest patentino_saldatore/qualifica_14732/cert_ndt/
+ * qualifica_14731 sia qui, stesso pattern del gap analysis WPQR 08/08/2026).
+ * Esclusi di proposito: colonne di sistema, workflow di approvazione
+ * (approval_status/approved_by/approved_at/rejection_reason — rimosso come gate
+ * manuale, vedi header file), previous_qualification_id (gestito solo dal rinnovo),
+ * certificate_original_url (link file, non testo).
+ * NOTA: questa lista deve restare sincronizzata a mano con la query UPDATE in
+ * updateQualification (non generata dinamicamente, a differenza di WPQR) — il
+ * test strutturale segnala solo i campi ingest mancanti qui, non un disallineamento
+ * con la query stessa.
+ */
+const QUALIFICATION_MANUAL_EDITABLE_FIELDS = [
+    'company_id', 'person_name', 'person_code', 'personnel_id', 'department',
+    'qualification_type', 'standard_ref', 'scope_detail', 'certificate_number', 'issuing_body',
+    'issue_date', 'exam_date', 'expiry_date', 'last_renewal_date',
+    'last_confirmation_date', 'next_confirmation_due', 'revalidation_date',
+    'status', 'notes',
+    'welding_process', 'material_group', 'position_range', 'ndt_method', 'ndt_level',
+    'joint_type', 'product_type', 'weld_details', 'transfer_mode',
+    'thickness_min_mm', 'thickness_max_mm', 'thickness_max_unlimited',
+    'pipe_diameter_min_mm', 'pipe_diameter_max_mm', 'thickness_range', 'pipe_diameter',
+    'filler_material', 'shielding_gas', 'equipment_type',
+    'welding_type', 'single_multi_run', 'qualification_method',
+    'ndt_sector', 'certification_scheme',
+    'coordinator_title', 'diploma_number', 'cpd_valid_until',
+    'patent_type', 'training_body', 'course_name', 'training_hours',
+    'examiner_body', 'certificate_file_url',
+];
 
 /**
  * Converte un valore in numero finito o null (per colonne DECIMAL).
@@ -165,12 +201,15 @@ async function listQualifications(req, res) {
         if (approval_status) where.push('q.approval_status = @approvalStatus');
 
         let qualTypeLike = null;
-        if (qualification_type && qualification_type !== 'generico') {
+        if (qualification_type === 'salute_mansione') {
+            // Tipi salute mansione: IN esplicito (canonici + alias legacy), non LIKE '%salute_mansione%'
+            where.push(`q.qualification_type IN (${occupationalQualificationSqlInList()})`);
+        } else if (qualification_type === 'generico') {
+            // generico = non rientra negli altri tipi noti (esclude anche salute mansione)
+            where.push(`q.qualification_type NOT LIKE '%9606%' AND q.qualification_type NOT LIKE '%14732%' AND q.qualification_type NOT LIKE '%14731%' AND q.qualification_type NOT LIKE '%NDT%' AND q.qualification_type NOT LIKE '%VT%' AND q.qualification_type NOT LIKE '%PT%' AND q.qualification_type NOT LIKE '%MT%' AND q.qualification_type NOT LIKE '%UT%' AND q.qualification_type NOT LIKE '%RT%' AND q.qualification_type NOT LIKE '%ET%' AND q.qualification_type NOT LIKE '%PES%' AND q.qualification_type NOT LIKE '%PAV%' AND q.qualification_type NOT IN (${occupationalQualificationSqlInList()})`);
+        } else if (qualification_type) {
             qualTypeLike = QUAL_TYPE_MAP[qualification_type] || `%${qualification_type}%`;
             where.push('q.qualification_type LIKE @qualType');
-        } else if (qualification_type === 'generico') {
-            // generico = non rientra negli altri tipi noti
-            where.push("q.qualification_type NOT LIKE '%9606%' AND q.qualification_type NOT LIKE '%14732%' AND q.qualification_type NOT LIKE '%14731%' AND q.qualification_type NOT LIKE '%NDT%' AND q.qualification_type NOT LIKE '%VT%' AND q.qualification_type NOT LIKE '%PT%' AND q.qualification_type NOT LIKE '%MT%' AND q.qualification_type NOT LIKE '%UT%' AND q.qualification_type NOT LIKE '%RT%' AND q.qualification_type NOT LIKE '%ET%' AND q.qualification_type NOT LIKE '%PES%' AND q.qualification_type NOT LIKE '%PAV%'");
         }
 
         if (expiring_days) {
@@ -274,6 +313,33 @@ async function getStats(req, res) {
     }
 }
 
+/**
+ * GET /qualifications/vision-fitness-gaps?company_id=
+ * Persone con NDT/VT attive senza certificato idoneità visiva valido (acuità+Ishihara).
+ */
+async function getVisionFitnessGaps(req, res) {
+    try {
+        const orgId = req.user.organization_id;
+        const companyIdRaw = req.query.company_id;
+        const companyId = companyIdRaw != null && companyIdRaw !== ''
+            ? parseInt(companyIdRaw, 10)
+            : null;
+
+        if (companyId != null && !Number.isNaN(companyId)) {
+            const denied = await assertCompanyRead(req.user, companyId);
+            if (denied) return sendAccessDenied(res, denied);
+        }
+
+        const result = await findVisionFitnessGaps(orgId, {
+            companyId: companyId != null && !Number.isNaN(companyId) ? companyId : null,
+        });
+        res.json(result);
+    } catch (err) {
+        logger.error('getVisionFitnessGaps:', err.message);
+        res.status(500).json({ error: err.message });
+    }
+}
+
 /** GET /qualifications/coverage?project_id=X
  *  Query incrociata: qualifiche attive + WPS disponibili vs requisiti commessa.
  *  Il match è range-aware: processo + spessore + gruppo materiale + posizione.
@@ -342,7 +408,7 @@ async function getCoverage(req, res) {
         const qRes = await qReq.query(`
             SELECT q.id, q.person_name, q.person_code, q.qualification_type,
                    q.welding_process, q.material_group, q.position_range,
-                   q.thickness_min_mm, q.thickness_max_mm, q.thickness_range, q.joint_type,
+                   q.thickness_min_mm, q.thickness_max_mm, q.thickness_max_unlimited, q.thickness_range, q.joint_type,
                    q.expiry_date, q.status, q.approval_status, q.next_confirmation_due,
                    c.name AS company_name
             FROM qualifications q
@@ -455,7 +521,7 @@ async function createQualification(req, res) {
     try {
         const body = req.body;
         const {
-            company_id, person_name, person_code, department,
+            company_id, person_name, person_code, department, personnel_id,
             qualification_type, standard_ref, scope_detail,
             certificate_number, issuing_body,
             issue_date, expiry_date, last_renewal_date,
@@ -472,13 +538,28 @@ async function createQualification(req, res) {
             // saldatore 9606-1 enrichment
             exam_date, last_confirmation_date, next_confirmation_due, revalidation_date,
             product_type, weld_details, transfer_mode,
-            thickness_min_mm, thickness_max_mm, pipe_diameter_min_mm, pipe_diameter_max_mm,
+            thickness_min_mm, thickness_max_mm, thickness_max_unlimited, pipe_diameter_min_mm, pipe_diameter_max_mm,
             // operatore 14732 (saldatura automatica/meccanizzata)
             welding_type, single_multi_run, qualification_method,
         } = body;
 
         if (!person_name?.trim()) return res.status(400).json({ error: 'Il nome della persona \u00e8 obbligatorio.' });
         if (!qualification_type?.trim()) return res.status(400).json({ error: 'Il tipo di qualifica \u00e8 obbligatorio.' });
+
+        // Collegamento anagrafica (company_personnel) — gap analysis 08/08/2026:
+        // il form manuale offre il selettore "Da anagrafica azienda" (personnel_id)
+        // ma la creazione/modifica non lo salvava mai (solo l'ingest AI e il rinnovo
+        // lo persistevano), lasciando il collegamento silenziosamente perso.
+        const personnelResult = await resolvePersonnelForQualification({
+            organizationId: req.user.organization_id,
+            companyId: company_id || null,
+            personnelId: personnel_id,
+            personName: person_name,
+            personCode: person_code,
+        });
+        if (!personnelResult.ok) {
+            return res.status(personnelResult.status || 400).json({ error: personnelResult.error, code: personnelResult.code });
+        }
 
         // Range numerici (fonte primaria) + stringhe legacy derivate.
         const thickMin = toNum(thickness_min_mm);
@@ -529,8 +610,9 @@ async function createQualification(req, res) {
         const r = await pool.request()
             .input('orgId',     orgId)
             .input('compId',    company_id   || null)
-            .input('personName',person_name.trim())
-            .input('personCode',person_code  || null)
+            .input('personName',personnelResult.personName || person_name.trim())
+            .input('personCode',personnelResult.personCode || person_code || null)
+            .input('personnelId', personnelResult.personnelId)
             .input('dept',      department   || null)
             .input('qualType',  qualification_type.trim())
             .input('stdRef',    standard_ref || null)
@@ -579,6 +661,7 @@ async function createQualification(req, res) {
             .input('designation', designation       || null)
             .input('thickMin',    thickMin)
             .input('thickMax',    thickMax)
+            .input('thickMaxUnlimited', !!thickness_max_unlimited)
             .input('pipeMin',     pipeMin)
             .input('pipeMax',     pipeMax)
             .input('thickRangeFinal', thicknessRangeFinal || null)
@@ -588,14 +671,14 @@ async function createQualification(req, res) {
             .input('qualMethod',      qualification_method || null)
             .query(`
                 INSERT INTO qualifications
-                    (organization_id, company_id, person_name, person_code, department,
+                    (organization_id, company_id, person_name, person_code, personnel_id, department,
                      qualification_type, standard_ref, scope_detail, certificate_number, issuing_body,
                      issue_date, exam_date, expiry_date, last_renewal_date,
                      last_confirmation_date, next_confirmation_due, revalidation_date,
                      status, notes, created_by,
                      welding_process, material_group, position_range, ndt_method, ndt_level,
                      approval_status, joint_type, product_type, weld_details, transfer_mode, qualification_designation,
-                     thickness_min_mm, thickness_max_mm, pipe_diameter_min_mm, pipe_diameter_max_mm,
+                     thickness_min_mm, thickness_max_mm, thickness_max_unlimited, pipe_diameter_min_mm, pipe_diameter_max_mm,
                      thickness_range, pipe_diameter,
                      filler_material, shielding_gas, equipment_type,
                      welding_type, single_multi_run, qualification_method,
@@ -605,14 +688,14 @@ async function createQualification(req, res) {
                      course_name, training_hours, examiner_body, certificate_file_url)
                 OUTPUT INSERTED.id
                 VALUES
-                    (@orgId, @compId, @personName, @personCode, @dept,
+                    (@orgId, @compId, @personName, @personCode, @personnelId, @dept,
                      @qualType, @stdRef, @scope, @certNum, @issuer,
                      @issueDate, @examDate, @expiryDate, @renewalDate,
                      @lastConfDate, @nextConfDue, @revalDate,
                      @status, @notes, @userId,
                      @weldProc, @matGroup, @posRange, @ndtMethod, @ndtLevel,
                      @approvalStatus, @jointType, @productType, @weldDetails, @transferMode, @designation,
-                     @thickMin, @thickMax, @pipeMin, @pipeMax,
+                     @thickMin, @thickMax, @thickMaxUnlimited, @pipeMin, @pipeMax,
                      @thickRangeFinal, @pipeDiamFinal,
                      @filler, @shieldGas, @equipType,
                      @weldingType, @singleMultiRun, @qualMethod,
@@ -647,7 +730,7 @@ async function updateQualification(req, res) {
         if (writeDenied) return sendAccessDenied(res, writeDenied);
 
         const {
-            company_id, person_name, person_code, department,
+            company_id, person_name, person_code, department, personnel_id,
             qualification_type, standard_ref, scope_detail,
             certificate_number, issuing_body,
             issue_date, expiry_date, last_renewal_date,
@@ -662,7 +745,7 @@ async function updateQualification(req, res) {
             // saldatore 9606-1 enrichment
             exam_date, last_confirmation_date, next_confirmation_due, revalidation_date,
             product_type, weld_details, transfer_mode,
-            thickness_min_mm, thickness_max_mm, pipe_diameter_min_mm, pipe_diameter_max_mm,
+            thickness_min_mm, thickness_max_mm, thickness_max_unlimited, pipe_diameter_min_mm, pipe_diameter_max_mm,
             // operatore 14732 (saldatura automatica/meccanizzata)
             welding_type, single_multi_run, qualification_method,
         } = body;
@@ -681,12 +764,26 @@ async function updateQualification(req, res) {
             welding_positions: position_range, weld_details,
         });
 
+        // Collegamento anagrafica (company_personnel) — gap analysis 08/08/2026:
+        // stessa correzione di createQualification, vedi commento lì.
+        const personnelResult = await resolvePersonnelForQualification({
+            organizationId: orgId,
+            companyId: company_id ?? targetCompanyId,
+            personnelId: personnel_id,
+            personName: person_name,
+            personCode: person_code,
+        });
+        if (!personnelResult.ok) {
+            return res.status(personnelResult.status || 400).json({ error: personnelResult.error, code: personnelResult.code });
+        }
+
         await pool.request()
             .input('id',        id)
             .input('orgId',     orgId)
             .input('compId',    company_id   || null)
-            .input('personName',person_name?.trim())
-            .input('personCode',person_code  || null)
+            .input('personName',personnelResult.personName || person_name?.trim())
+            .input('personCode',personnelResult.personCode || person_code || null)
+            .input('personnelId', personnelResult.personnelId)
             .input('dept',      department   || null)
             .input('qualType',  qualification_type?.trim())
             .input('stdRef',    standard_ref || null)
@@ -731,6 +828,7 @@ async function updateQualification(req, res) {
             .input('designation', designation       || null)
             .input('thickMin',    thickMin)
             .input('thickMax',    thickMax)
+            .input('thickMaxUnlimited', !!thickness_max_unlimited)
             .input('pipeMin',     pipeMin)
             .input('pipeMax',     pipeMax)
             .input('thickRangeFinal', thicknessRangeFinal || null)
@@ -741,6 +839,7 @@ async function updateQualification(req, res) {
             .query(`
                 UPDATE qualifications SET
                     company_id=@compId, person_name=@personName, person_code=@personCode,
+                    personnel_id=@personnelId,
                     department=@dept, qualification_type=@qualType, standard_ref=@stdRef,
                     scope_detail=@scope, certificate_number=@certNum, issuing_body=@issuer,
                     issue_date=@issueDate, exam_date=@examDate, expiry_date=@expiryDate, last_renewal_date=@renewalDate,
@@ -751,7 +850,7 @@ async function updateQualification(req, res) {
                     joint_type=@jointType, product_type=@productType, weld_details=@weldDetails,
                     transfer_mode=@transferMode,
                     qualification_designation=@designation,
-                    thickness_min_mm=@thickMin, thickness_max_mm=@thickMax,
+                    thickness_min_mm=@thickMin, thickness_max_mm=@thickMax, thickness_max_unlimited=@thickMaxUnlimited,
                     pipe_diameter_min_mm=@pipeMin, pipe_diameter_max_mm=@pipeMax,
                     thickness_range=@thickRangeFinal, pipe_diameter=@pipeDiamFinal,
                     filler_material=@filler, shielding_gas=@shieldGas, equipment_type=@equipType,
@@ -992,7 +1091,7 @@ async function renewQualification(req, res) {
 }
 
 // Tipi documento ammessi per il batch upload qualifiche (IG-3 staging).
-const UPLOAD_BATCH_DOC_TYPES = new Set(['patentino_saldatore', 'qualifica_14732']);
+const UPLOAD_BATCH_DOC_TYPES = new Set(['patentino_saldatore', 'qualifica_14732', 'cert_ndt']);
 
 /** POST /qualifications/upload-batch — estrazione + staging IG-3 (revisione pre-commit) */
 async function uploadBatch(req, res) {
@@ -1457,11 +1556,13 @@ module.exports = {
     listQualifications,
     getStats,
     getCoverage,
+    getVisionFitnessGaps,
     getOne,
     createQualification,
     updateQualification,
     deleteQualification,
     hardDeleteQualification,
+    QUALIFICATION_MANUAL_EDITABLE_FIELDS,
     renewQualification,
     uploadBatch,
     uploadCertificate,

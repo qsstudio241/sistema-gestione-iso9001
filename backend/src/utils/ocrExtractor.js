@@ -98,6 +98,16 @@ async function extractTextWithOCR(pdfBuffer, options = {}) {
         errorHandler: () => {},
     });
 
+    // PSM 3 = Fully automatic page segmentation (no OSD).
+    // Il default di tesseract.js su questi PDF scansionati si comporta come
+    // PSM 6 (blocco uniforme) e salta titoli/nomi grandi centrati — visto su
+    // certificato TEC-Eurolab UT Level II: "LUIGI LA FORGIA" assente con default,
+    // presente con PSM 3/4 (02/08/2026).
+    const pageSegMode = String(process.env.OCR_PSM || '3');
+    try {
+        await worker.setParameters({ tessedit_pageseg_mode: pageSegMode });
+    } catch (_) { /* parametri non critici: prosegui con default worker */ }
+
     const textParts = [];
     let lastRecErr = null;
     try {
