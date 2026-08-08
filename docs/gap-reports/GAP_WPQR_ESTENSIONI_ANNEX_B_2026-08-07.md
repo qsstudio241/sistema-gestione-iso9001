@@ -102,6 +102,30 @@ Su richiesta del committente, verificata l'esistenza e il funzionamento del pann
 | `personnel_id`: nessun'azione necessaria — esiste già un percorso di recupero separato e funzionante (pulsante "Collega anagrafica" in `CompanyPersonnelPanel.jsx`, basato su corrispondenza nome) | Nessun gap |
 | Logica core del servizio di rielaborazione (`qualificationReprocess.service.js`) priva di test diretti (solo test del controller con servizio mockato) | **Chiuso**: nuovo `qualificationReprocess.service.test.js` |
 
+## Aggiornamento 08/08/2026 (quinquies) — meccanismo di rielaborazione generalizzato alla WPQR
+
+Su richiesta esplicita del committente, il meccanismo "Rielaborazioni disponibili" (prima solo `qualifications`) è stato generalizzato per supportare anche `wpqr_records`, chiudendo il gap segnalato in precedenza in questo stesso documento.
+
+**Architettura** (nessuna duplicazione di logica, stesso principio "mai scrittura diretta" già esistente):
+
+| Componente | Ruolo |
+|---|---|
+| Migrazione **143** | Colonna `ingest_staging.target_wpqr_id` + FK a `wpqr_records(id)` — stesso pattern esatto di `target_qualification_id` (migrazione 137), non una FK polimorfica |
+| `wpqrIngest.service.js` — `WPQR_REPROCESSABLE_FIELDS` + `applyFieldReprocessUpdate` | Whitelist di scrittura + funzione di UPDATE mirato per WPQR, mirror esatto del pattern già usato per le Qualifiche |
+| `reprocessTableAdapters.js` (nuovo) | Specificità per tabella: colonne da selezionare, come determinare il `docType`, quale mapper AI→reviewFields riusare (mai duplicato) |
+| `reprocessableFields.js` | 6 nuove voci (`preheat_temp`, `interpass_temp`, `throat_test_mm`, `product_type`, `rotated_position`, `wpqr_thickness_max_unlimited` — quest'ultima prefissata per non collidere con l'omonima voce delle Qualifiche nel registro condiviso) |
+| `qualificationReprocess.service.js` | Generalizzato per essere table-aware (nome file invariato per non rompere gli import esistenti) |
+| `ingestStaging.service.js`/`.controller.js` | Dispatch su `target_wpqr_id`, preservazione file, filtro `?module=saldatura` |
+| `ReprocessQueueBanner.jsx` | Parametrizzato con prop `module`, montato anche in `WeldingProceduresPage.jsx` |
+| `BillingDashboardPage.jsx` | Nessuna modifica strutturale necessaria — il pannello "Rielaborazioni disponibili" è già generico, elenca qualsiasi voce del registro indipendentemente dalla tabella |
+
+**Decisioni normative applicate ai filtri candidati** (criteri di sviluppo robusto, non solo tecnici):
+- `throat_test_mm`: `jointTypeWhitelist: ['FW']` — la gola è una variabile qualificata solo sui giunti d'angolo (Tabella 8), evita chiamate AI inutili sui giunti BW.
+- `rotated_position`: `candidateWhere` dedicato — proposto SOLO se testata su piastra E posizione PF/PA dichiarata (ISO 15614-1 §8.3.3), altrove il flag `false` è già corretto, non va rielaborato.
+- `wpqr_thickness_max_unlimited`/`rotated_position`: come le Qualifiche, propongono SOLO `true` in fase di estrazione (mai `false`, già il valore di default — riproporlo sarebbe rumore).
+
+Test: 15 test `qualificationReprocess.service.test.js` (7 nuovi WPQR), 4 test sincronia registro (estesi a 2 tabelle), 2 nuovi test `ingestStaging.service.test.js`, nuovo `ingestStaging.controller.test.js` (7 test, prima assente), 3 test frontend `reprocessQueueBanner.test.jsx` (prima assente). Suite completa invariata rispetto al baseline (backend: 2 falliti pre-esistenti noti; frontend: 1003/1003 verdi, build OK).
+
 ## Testo normativo di riferimento — Tabella 8 (ISO 15614-1:2017, §8.3.2.2, pag. 31 del documento digitalizzato)
 
 > "Table 8 — For level 2: Range of qualification for material thickness and throat thickness of fillet welds [...] Thickness of test piece t | Throat thickness | Material thickness (single run / multi-run) [...] t ≤ 3: 0,7 t to 2 t | 0,75 a to 1,5 a | No restriction [...] 3 < t < 30: 3 to 2 t [...] t ≥ 30: ≥5 [...] NOTE a is the nominal throat thickness as specified in pWPS for the test piece."

@@ -1,6 +1,6 @@
 /**
  * qualificationReprocess.service.js — logica condivisa di "rielaborazione"
- * (backfill) di campi AI-estraibili su qualifiche già presenti in DB.
+ * (backfill) di campi AI-estraibili su record già presenti in DB.
  *
  * Estratta da backend/scripts/reprocess-qualifications.js (28/07/2026, primo
  * campo: transfer_mode) per essere richiamabile sia dallo script CLI sia
@@ -8,20 +8,37 @@
  * implementazione, mai duplicata. Il registro dei campi rielaborabili vive in
  * `../data/reprocessableFields.js`.
  *
+ * Generalizzata 08/08/2026 (prima copriva solo `qualifications`) per
+ * supportare anche `wpqr_records` — le specificità per tabella (colonne da
+ * selezionare, come determinare il docType, quale mapper AI→reviewFields
+ * usare) vivono in `../data/reprocessTableAdapters.js`. Il nome del file
+ * resta invariato per non rompere gli import esistenti (script CLI,
+ * controller, test), anche se il contenuto non è più specifico alle
+ * qualifiche.
+ *
  * Integrità dati (non negoziabile): questo servizio NON scrive mai
- * direttamente sul record qualifications. Crea solo proposte in
- * ingest_staging (migrazione 137) — un utente autorizzato deve confermarle in
- * revisione (stessa coda di IngestReviewDialog / ReprocessQueueBanner) prima
- * che il valore venga scritto sul record definitivo.
+ * direttamente sul record definitivo. Crea solo proposte in
+ * ingest_staging (migrazioni 137/143) — un utente autorizzato deve
+ * confermarle in revisione (stessa coda di IngestReviewDialog /
+ * ReprocessQueueBanner) prima che il valore venga scritto sul record
+ * definitivo.
  */
 const fs = require('fs');
 const path = require('path');
 const logger = require('../utils/logger');
 const { query } = require('../config/database');
 const { runDocumentIngest } = require('./documentIngestPipeline.service');
-const { mapPipelineFieldsToReview, REPROCESSABLE_FIELDS } = require('./qualificationIngest.service');
+const { REPROCESSABLE_FIELDS: QUALIFICATION_WRITE_FIELDS } = require('./qualificationIngest.service');
+const { WPQR_REPROCESSABLE_FIELDS } = require('./wpqrIngest.service');
 const { createStagingRecord } = require('./ingestStaging.service');
 const { getReprocessableField } = require('../data/reprocessableFields');
+const { getTableAdapter } = require('../data/reprocessTableAdapters');
+
+/** Whitelist di scrittura finale, una per tabella — mai un'unica lista condivisa (vedi header). */
+const WRITE_WHITELISTS = {
+    qualifications: QUALIFICATION_WRITE_FIELDS,
+    wpqr_records: WPQR_REPROCESSABLE_FIELDS,
+};
 
 /** Limite di sicurezza per un singolo lancio sincrono via API (evita richieste troppo lunghe). */
 const DEFAULT_RUN_LIMIT = 100;
@@ -38,22 +55,31 @@ function resolveCertificateFilePath(certificateFileUrl) {
     return path.join(uploadBase, relPart);
 }
 
+/** Solo per la tabella `qualifications` — vedi reprocessTableAdapters.js per il resolveDocType generico. */
 function guessDocType(qualificationType) {
     return /14732/.test(qualificationType || '') ? 'qualifica_14732' : 'patentino_saldatore';
 }
 
 /**
- * Selezione candidati: qualifiche con `field` NULL, non revocate, con un file
- * certificato ancora presente su disco, filtrate per pertinenza normativa.
- * Esportata per test unitari sulla logica di selezione (senza I/O reale) e per
- * il conteggio esposto dall'endpoint superadmin.
- */
-/**
  * Risolve il valore estratto dalla review AI verso la chiave colonna DB.
- * Necessario quando lo schema AI usa un nome diverso dalla colonna
- * (filler_material_group → filler_material, pipe_diameter_mm → pipe_diameter_min_mm).
+ * Comportamento per `qualifications` invariato (retrocompatibile con i test
+ * esistenti, usa `fieldKey` direttamente). Per `wpqr_records` usa sempre
+ * `config.column` (può differere dalla chiave di registro, es.
+ * `wpqr_thickness_max_unlimited` → colonna `thickness_max_unlimited`) e
+ * gestisce i flag booleani NOT NULL con default (propone solo `true`: un
+ * "false" riproposto sarebbe rumore, è già il valore di default).
  */
-function resolveExtractedReprocessValue(fieldKey, reviewFields = {}) {
+function resolveExtractedReprocessValue(fieldKey, reviewFields = {}, config = {}) {
+    if (config.table === 'wpqr_records') {
+        const column = config.column || fieldKey;
+        if (column === 'thickness_max_unlimited' || column === 'rotated_position') {
+            return reviewFields[column] === true ? true : null;
+        }
+        const v = reviewFields[column];
+        return v == null || v === '' ? null : v;
+    }
+
+    // --- Comportamento storico per `qualifications` (invariato) ---
     if (fieldKey === 'filler_material') {
         return reviewFields.filler_material || reviewFields.filler_material_group || null;
     }
@@ -72,15 +98,20 @@ function resolveExtractedReprocessValue(fieldKey, reviewFields = {}) {
 }
 
 async function selectReprocessCandidates(field, config, { orgId = null } = {}) {
-    if (!REPROCESSABLE_FIELDS[field]) {
-        throw new Error(`Campo non rielaborabile: ${field} (aggiungilo a REPROCESSABLE_FIELDS)`);
+    const table = config.table || 'qualifications';
+    const writeWhitelist = WRITE_WHITELISTS[table];
+    if (!writeWhitelist || !writeWhitelist[field]) {
+        throw new Error(`Campo non rielaborabile: ${field} (aggiungilo alla whitelist di scrittura di "${table}")`);
     }
+    const adapter = getTableAdapter(table);
+    const column = config.column || field;
 
     const conditions = [
-        config.candidateWhere || `${field} IS NULL`,
-        "status != 'revocata'",
+        config.candidateWhere || `${column} IS NULL`,
         'certificate_file_url IS NOT NULL',
     ];
+    if (adapter.excludeCondition) conditions.push(adapter.excludeCondition);
+
     const params = {};
     if (config.qualTypeLike) {
         conditions.push('qualification_type LIKE @qualTypeLike');
@@ -92,9 +123,8 @@ async function selectReprocessCandidates(field, config, { orgId = null } = {}) {
     }
 
     const result = await query(`
-        SELECT id, organization_id, company_id, person_name, welding_process,
-               product_type, qualification_type, certificate_file_url
-        FROM qualifications
+        SELECT ${adapter.candidateSelectColumns}
+        FROM ${table}
         WHERE ${conditions.join(' AND ')}
         ORDER BY id
     `, params);
@@ -110,16 +140,22 @@ async function selectReprocessCandidates(field, config, { orgId = null } = {}) {
         const allowed = new Set(config.productTypeWhitelist.map((p) => String(p).toUpperCase()));
         rows = rows.filter((r) => allowed.has(String(r.product_type || '').toUpperCase()));
     }
+    if (Array.isArray(config.jointTypeWhitelist) && config.jointTypeWhitelist.length) {
+        rows = rows.filter((r) => {
+            const jt = String(r.joint_type || '').toUpperCase();
+            return config.jointTypeWhitelist.some((code) => jt.includes(String(code).toUpperCase()));
+        });
+    }
     return rows;
 }
 
-async function hasPendingProposal(qualificationId, field) {
+async function hasPendingProposal(recordId, field, targetIdColumn) {
     const r = await query(`
         SELECT TOP 1 id FROM ingest_staging
-        WHERE target_qualification_id = @qualificationId
+        WHERE ${targetIdColumn} = @recordId
           AND field_scope = @field
           AND review_status = 'pending'
-    `, { qualificationId, field });
+    `, { recordId, field });
     return r.recordset.length > 0;
 }
 
@@ -166,6 +202,8 @@ async function runReprocessForField(fieldKey, { orgId = null, limit = DEFAULT_RU
     if (!fieldDef) {
         throw new Error(`Campo non registrato: ${fieldKey}`);
     }
+    const table = fieldDef.table || 'qualifications';
+    const adapter = getTableAdapter(table);
 
     const allCandidates = await selectReprocessCandidates(fieldKey, fieldDef, { orgId });
     const effectiveLimit = limit && limit > 0 ? limit : DEFAULT_RUN_LIMIT;
@@ -193,14 +231,14 @@ async function runReprocessForField(fieldKey, { orgId = null, limit = DEFAULT_RU
                 continue;
             }
 
-            if (await hasPendingProposal(row.id, fieldKey)) {
+            if (await hasPendingProposal(row.id, fieldKey, adapter.targetIdColumn)) {
                 summary.skippedAlreadyProposed++;
                 continue;
             }
 
             if (dryRun) continue;
 
-            const docType = guessDocType(row.qualification_type);
+            const docType = adapter.resolveDocType(row);
             const fileName = path.basename(filePath);
             const pdfBuffer = fs.readFileSync(filePath);
 
@@ -210,8 +248,8 @@ async function runReprocessForField(fieldKey, { orgId = null, limit = DEFAULT_RU
                 fileName,
                 organizationId: row.organization_id,
             });
-            const reviewFields = mapPipelineFieldsToReview(pipeline.fields || {}, pipeline.text, fileName);
-            const extractedValue = resolveExtractedReprocessValue(fieldKey, reviewFields);
+            const reviewFields = adapter.mapPipelineFieldsToReview(pipeline.fields || {}, pipeline.text, fileName);
+            const extractedValue = resolveExtractedReprocessValue(fieldKey, reviewFields, fieldDef);
 
             if (extractedValue == null || extractedValue === '') {
                 summary.skippedNoValueExtracted++;
@@ -228,27 +266,28 @@ async function runReprocessForField(fieldKey, { orgId = null, limit = DEFAULT_RU
                 fileSize: pdfBuffer.length,
                 fields: {
                     [fieldKey]: extractedValue,
-                    person_name: reviewFields.person_name,
-                    certificate_number: reviewFields.certificate_number,
+                    ...adapter.buildStagingDisplayFields(reviewFields),
                 },
                 fieldConfidence: { [fieldKey]: pipeline.fieldConfidence?.[fieldKey] || (pipeline.aiModel ? 'ai' : 'rule_based') },
-                warnings: [`Rielaborazione automatica campo "${fieldKey}" su qualifica esistente #${row.id} — verificare valore prima di confermare.`],
-                qualificationType: row.qualification_type,
+                warnings: [`Rielaborazione automatica campo "${fieldKey}" su record esistente #${row.id} — verificare valore prima di confermare.`],
+                qualificationType: row.qualification_type || null,
                 userId: null,
                 aiModel: pipeline.aiModel || null,
-                targetQualificationId: row.id,
+                // Solo UNA delle due colonne target è valorizzata, secondo la tabella.
+                targetQualificationId: table === 'qualifications' ? row.id : null,
+                targetWpqrId: table === 'wpqr_records' ? row.id : null,
                 fieldScope: fieldKey,
             });
 
             summary.proposalsCreated++;
         } catch (err) {
             summary.errors++;
-            summary.errorDetails.push(`id=${row.id} ${row.person_name || ''}: ${err.message}`);
-            logger.error(`[QualifReprocess] Errore rielaborazione id=${row.id} campo=${fieldKey}: ${err.message}`);
+            summary.errorDetails.push(`id=${row.id}: ${err.message}`);
+            logger.error(`[Reprocess] Errore rielaborazione id=${row.id} campo=${fieldKey} tabella=${table}: ${err.message}`);
         }
     }
 
-    logger.info(`[QualifReprocess] Rielaborazione campo="${fieldKey}" candidati=${summary.candidatesFound} elaborati=${summary.candidatesProcessed} proposte=${summary.proposalsCreated} errori=${summary.errors}`);
+    logger.info(`[Reprocess] Rielaborazione campo="${fieldKey}" tabella="${table}" candidati=${summary.candidatesFound} elaborati=${summary.candidatesProcessed} proposte=${summary.proposalsCreated} errori=${summary.errors}`);
     return summary;
 }
 

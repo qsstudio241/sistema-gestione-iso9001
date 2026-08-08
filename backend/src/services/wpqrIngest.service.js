@@ -507,6 +507,93 @@ async function ingestWPQRFromPdf(pdfBuffer, fileName, organizationId, companyId,
     };
 }
 
+/**
+ * Campi WPQR ammessi per la "rielaborazione" (backfill) su record già
+ * presenti in DB — generalizzazione 08/08/2026 del pattern già usato per le
+ * Qualifiche (REPROCESSABLE_FIELDS in qualificationIngest.service.js, vedi
+ * commento lì per la motivazione completa). Whitelist esplicita e separata
+ * (non condivisa con quella delle Qualifiche): un nuovo campo va aggiunto
+ * qui solo dopo aver verificato che la colonna esiste su wpqr_records ed è
+ * sicura da scrivere via UPDATE mirato.
+ *
+ * `writeGuard` esplicito per le colonne NOT NULL con default (BIT) — la
+ * guardia standard "colonna IS NULL" non si applicherebbe mai, vedi
+ * GAP_WPQR_ESTENSIONI_ANNEX_B_2026-08-07.md.
+ */
+const WPQR_REPROCESSABLE_FIELDS = {
+    preheat_temp: { column: 'preheat_temp' },
+    interpass_temp: { column: 'interpass_temp' },
+    throat_test_mm: { column: 'throat_test_mm' },
+    product_type: { column: 'product_type' },
+    rotated_position: { column: 'rotated_position', writeGuard: 'rotated_position = 0' },
+    // Chiave prefissata "wpqr_" per non collidere con l'omonima voce delle
+    // Qualifiche nel registro condiviso reprocessableFields.js (un unico
+    // spazio dei nomi a livello di pannello superadmin).
+    wpqr_thickness_max_unlimited: { column: 'thickness_max_unlimited', writeGuard: 'thickness_max_unlimited = 0' },
+};
+
+/**
+ * Applica un aggiornamento mirato a UNA WPQR già esistente, limitato ai
+ * campi in `fieldScope` (whitelist WPQR_REPROCESSABLE_FIELDS). Usato dal
+ * percorso di conferma staging in "modalità rielaborazione"
+ * (ingestStaging.service.js) — MAI una INSERT: aggiorna solo se il valore
+ * attuale in DB è ancora al default, per non sovrascrivere mai una
+ * correzione manuale già presente.
+ * @returns {Promise<{wpqr_id:number, updated_fields:string[]}>}
+ */
+async function applyFieldReprocessUpdate(targetWpqrId, organizationId, fieldScope, fields) {
+    const scopeFields = String(fieldScope || '').split(',').map((s) => s.trim()).filter(Boolean);
+    if (!scopeFields.length) {
+        const err = new Error('field_scope mancante o vuoto');
+        err.code = 'VALIDATION_ERROR';
+        throw err;
+    }
+
+    const check = await query(
+        'SELECT id FROM wpqr_records WHERE id=@id AND organization_id=@orgId',
+        { id: targetWpqrId, orgId: organizationId },
+    );
+    if (!check.recordset.length) {
+        const err = new Error('WPQR destinataria non trovata');
+        err.code = 'NOT_FOUND';
+        throw err;
+    }
+
+    const updatable = [];
+    for (const key of scopeFields) {
+        const def = WPQR_REPROCESSABLE_FIELDS[key];
+        if (!def) continue;
+        const value = fields ? fields[key] : undefined;
+        if (value === undefined || value === null || value === '') continue;
+        updatable.push({ key, column: def.column, value, writeGuard: def.writeGuard || `${def.column} IS NULL` });
+    }
+
+    if (!updatable.length) {
+        return { wpqr_id: targetWpqrId, updated_fields: [] };
+    }
+
+    const setClauses = [];
+    const params = { id: targetWpqrId, orgId: organizationId };
+    const updatedFields = [];
+    for (const { key, column, value } of updatable) {
+        const paramName = `val_${column}`;
+        params[paramName] = value;
+        setClauses.push(`${column} = @${paramName}`);
+        updatedFields.push(key);
+    }
+
+    const guardClauses = updatable.map(({ writeGuard }) => writeGuard).join(' AND ');
+
+    await query(`
+        UPDATE wpqr_records
+        SET ${setClauses.join(', ')}, updated_at = GETDATE()
+        WHERE id = @id AND organization_id = @orgId AND (${guardClauses})
+    `, params);
+
+    logger.info(`[WpqrReprocess] Rielaborazione applicata id=${targetWpqrId} campi=${updatedFields.join(',')}`);
+    return { wpqr_id: targetWpqrId, updated_fields: updatedFields };
+}
+
 module.exports = {
     ingestWPQRFromPdf,
     extractWPQRFromPdf,
@@ -515,4 +602,6 @@ module.exports = {
     resolveThicknessRange,
     mapPipelineFieldsToReview,
     checkWpqrPlausibility,
+    applyFieldReprocessUpdate,
+    WPQR_REPROCESSABLE_FIELDS,
 };

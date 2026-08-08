@@ -13,20 +13,34 @@
  * (`GET/POST /admin/reprocess-tasks`, `reprocessTasks.controller.js`).
  *
  * Campi di ogni voce:
- * - `key`: nome colonna/campo (deve esistere anche in REPROCESSABLE_FIELDS di
- *   qualificationIngest.service.js — whitelist separata usata per l'UPDATE
- *   finale, per non introdurre un secondo punto di verità sulla scrittura).
+ * - `key`: identificatore univoco nel registro (usato come URL param
+ *   `/admin/reprocess-tasks/:key/run` e come `field_scope` in ingest_staging).
+ *   Di norma coincide col nome colonna; se un'altra tabella ha già una voce
+ *   con lo stesso nome colonna (es. `thickness_max_unlimited` su
+ *   `qualifications` e su `wpqr_records`), la seconda va prefissata (es.
+ *   `wpqr_thickness_max_unlimited`) e deve valorizzare `column` esplicitamente.
+ * - `column`: nome colonna DB reale, se diverso da `key` (vedi sopra).
+ *   Opzionale, default = `key`. Deve esistere anche nella whitelist di
+ *   scrittura della tabella corrispondente (REPROCESSABLE_FIELDS in
+ *   qualificationIngest.service.js per `qualifications`,
+ *   WPQR_REPROCESSABLE_FIELDS in wpqrIngest.service.js per `wpqr_records`)
+ *   — whitelist separate per non introdurre un secondo punto di verità
+ *   sulla scrittura.
  * - `label`: etichetta leggibile per l'alert e il pannello superadmin.
- * - `module`: modulo licenza/UI di riferimento (per ora solo 'qualifiche').
- * - `table`: tabella DB coinvolta (per ora solo 'qualifications').
- * - `qualTypeLike`: filtro SQL LIKE su qualification_type per i candidati.
+ * - `module`: modulo licenza/UI di riferimento (`qualifiche` o `saldatura`).
+ * - `table`: tabella DB coinvolta (`qualifications` o `wpqr_records`) — vedi
+ *   `reprocessTableAdapters.js` per la logica specifica di ciascuna tabella.
+ * - `qualTypeLike`: filtro SQL LIKE su qualification_type per i candidati
+ *   (solo tabella `qualifications` — `wpqr_records` non ha questa colonna).
  * - `processWhitelist`: se valorizzato, il welding_process (ISO 4063) deve
  *   contenere uno dei codici elencati, altrimenti il campo non è
  *   normativamente applicabile (evita proposte inutili). `null` = nessun filtro.
+ * - `jointTypeWhitelist`: come `processWhitelist`, ma su `joint_type` (es.
+ *   gola/throat rilevante solo per giunti FW). `null` = nessun filtro.
  * - `candidateWhere`: condizione SQL di selezione candidati, se diversa dal
- *   default `${key} IS NULL` — necessaria per colonne NOT NULL con default
+ *   default `${column} IS NULL` — necessaria per colonne NOT NULL con default
  *   (es. flag booleani come `thickness_max_unlimited`, dove "manca il dato"
- *   non coincide con "colonna NULL"). Opzionale, default `${key} IS NULL`.
+ *   non coincide con "colonna NULL"). Opzionale, default `${column} IS NULL`.
  */
 const { CONTINUOUS_WIRE_ARC_PROCESSES } = require('./weldingQualificationRules9606');
 
@@ -98,6 +112,64 @@ const REPROCESSABLE_FIELD_REGISTRY = {
         qualTypeLike: '%9606%',
         processWhitelist: null,
         candidateWhere: 'thickness_max_unlimited = 0 AND thickness_max_mm IS NULL',
+    },
+
+    // ============================================================
+    // WPQR (wpqr_records) — generalizzazione 08/08/2026, gap analysis
+    // GAP_WPQR_ESTENSIONI_ANNEX_B_2026-08-07.md: 7 WPQR in produzione (4 con
+    // PDF ancora disponibile) ingerite prima dei fix 07-08/08/2026 restano
+    // con questi campi vuoti/di default finché non rielaborate.
+    // ============================================================
+    preheat_temp: {
+        key: 'preheat_temp',
+        label: 'Temperatura preriscaldo (Tp) — WPQR',
+        module: 'saldatura',
+        table: 'wpqr_records',
+        processWhitelist: null,
+    },
+    interpass_temp: {
+        key: 'interpass_temp',
+        label: 'Temperatura interpass (Ti) — WPQR',
+        module: 'saldatura',
+        table: 'wpqr_records',
+        processWhitelist: null,
+    },
+    throat_test_mm: {
+        key: 'throat_test_mm',
+        label: 'Spessore gola provino — WPQR',
+        module: 'saldatura',
+        table: 'wpqr_records',
+        processWhitelist: null,
+        // Tabella 8 ISO 15614-1: la gola è una variabile qualificata solo sui
+        // giunti d'angolo — evita chiamate AI inutili sui giunti BW.
+        jointTypeWhitelist: ['FW'],
+    },
+    product_type: {
+        key: 'product_type',
+        label: 'Tipo prodotto testato (piastra/tubo) — WPQR',
+        module: 'saldatura',
+        table: 'wpqr_records',
+        processWhitelist: null,
+    },
+    rotated_position: {
+        key: 'rotated_position',
+        label: 'Posizione tubo ruotato (PF/PA) — WPQR',
+        module: 'saldatura',
+        table: 'wpqr_records',
+        processWhitelist: null,
+        // Rilevante SOLO se testata su piastra e posizione PF/PA dichiarata
+        // (ISO 15614-1 §8.3.3 — regola piastra→tubo): fuori da questo caso
+        // il flag resta correttamente false, non serve rielaborarlo.
+        candidateWhere: "rotated_position = 0 AND product_type = 'P' AND (welding_positions LIKE '%PF%' OR welding_positions LIKE '%PA%')",
+    },
+    wpqr_thickness_max_unlimited: {
+        key: 'wpqr_thickness_max_unlimited',
+        column: 'thickness_max_unlimited',
+        label: 'Spessore massimo — nessun limite superiore (WPQR)',
+        module: 'saldatura',
+        table: 'wpqr_records',
+        processWhitelist: null,
+        candidateWhere: 'thickness_max_unlimited = 0 AND thickness_max IS NULL',
     },
 };
 

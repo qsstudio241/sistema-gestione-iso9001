@@ -370,9 +370,10 @@ function ReprocessTasksSection({ reprocess }) {
         <div>
           <h2 id="billing-reprocess-heading">Rielaborazioni disponibili</h2>
           <p className="billing-reprocess-intro">
-            Backfill di campi AI-estraibili su qualifiche già caricate, rilanciando l'estrazione sul documento
-            originale già presente. Nessun automatismo: ogni rielaborazione va lanciata manualmente qui e genera
-            proposte da confermare in Qualifiche → "Rielaborazioni in coda".
+            Backfill di campi AI-estraibili su documenti già caricati (Qualifiche saldatori e WPQR), rilanciando
+            l'estrazione sul documento originale già presente. Nessun automatismo: ogni rielaborazione va lanciata
+            manualmente qui e genera proposte da confermare nella pagina del modulo corrispondente
+            ("Rielaborazioni in coda").
           </p>
         </div>
         <button type="button" className="btn-secondary" onClick={reload} disabled={loading}>

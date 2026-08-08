@@ -1,13 +1,18 @@
 /**
  * ReprocessQueueBanner — coda di revisione per le proposte di "rielaborazione"
- * generate da backend/scripts/reprocess-qualifications.js (migrazione 137).
+ * generate dal pannello superadmin "Rielaborazioni disponibili"
+ * (backend/scripts/reprocess-qualifications.js, migrazione 137).
  *
- * Quando aggiungiamo un campo nuovo all'estrazione AI (es. transfer_mode), le
- * qualifiche già presenti in DB possono essere rielaborate dal PDF originale
+ * Quando aggiungiamo un campo nuovo all'estrazione AI (es. transfer_mode), i
+ * documenti già presenti in DB possono essere rielaborati dal PDF originale
  * già conservato — senza richiedere un nuovo upload. Ogni proposta resta in
  * coda finché un utente autorizzato non la conferma o scarta esplicitamente:
  * nessuna scrittura automatica sul record definitivo (principio di
  * non-invenzione AI / integrità dati, vedi GUIDA_CONSOLIDATA.md).
+ *
+ * Generalizzato 08/08/2026 (migrazione 143) dalle sole Qualifiche anche alla
+ * WPQR — componente parametrizzato con `module` ("qualifiche" | "saldatura"),
+ * mai duplicato: ogni pagina monta la stessa banner con il proprio modulo.
  */
 import React, { useState, useEffect, useCallback } from "react";
 import apiService from "../services/apiService";
@@ -18,7 +23,12 @@ import "./ReprocessQueueBanner.css";
 function fieldLabel(docType, fieldKey) {
   const schema = getSchemaForDocType(docType);
   const field = schema?.fields?.find((f) => f.key === fieldKey);
-  return field?.label || fieldKey;
+  if (field?.label) return field.label;
+  // Fallback per chiavi di registro rielaborazione che non coincidono col
+  // nome campo ingest (es. "wpqr_thickness_max_unlimited" -> colonna reale
+  // "thickness_max_unlimited" — prefisso usato solo per evitare collisioni
+  // nel registro condiviso tra tabelle, vedi reprocessableFields.js backend).
+  return fieldKey.replace(/^wpqr_/, "").replace(/_/g, " ");
 }
 
 function fieldValueLabel(docType, fieldKey, value) {
@@ -71,7 +81,7 @@ function ReprocessProposalDialog({ item, onClose, onConfirmed, onRejected }) {
         <header className="reprocess-dialog__header">
           <h3>Rielaborazione: {fieldLabel(item.doc_type, field)}</h3>
           <p>
-            <strong>{item.fields?.person_name || "—"}</strong>
+            <strong>{item.fields?.person_name || item.fields?.wpqr_code || "—"}</strong>
             {item.fields?.certificate_number && <> — cert. {item.fields.certificate_number}</>}
           </p>
         </header>
@@ -113,7 +123,7 @@ function ReprocessProposalDialog({ item, onClose, onConfirmed, onRejected }) {
   );
 }
 
-export default function ReprocessQueueBanner() {
+export default function ReprocessQueueBanner({ module = "qualifiche" }) {
   const [items, setItems] = useState([]);
   const [expanded, setExpanded] = useState(false);
   const [reviewItem, setReviewItem] = useState(null);
@@ -122,14 +132,14 @@ export default function ReprocessQueueBanner() {
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await apiService.listIngestStaging({ module: "qualifiche", reprocessOnly: true, reviewStatus: "pending" });
+      const res = await apiService.listIngestStaging({ module, reprocessOnly: true, reviewStatus: "pending" });
       setItems(res?.items || []);
     } catch {
       setItems([]);
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [module]);
 
   useEffect(() => { load(); }, [load]);
 
@@ -142,7 +152,7 @@ export default function ReprocessQueueBanner() {
       <div className="reprocess-banner__row" onClick={() => setExpanded((v) => !v)}>
         <span className="reprocess-banner__icon">{"\uD83D\uDD04"}</span>
         <span className="reprocess-banner__text">
-          <strong>{items.length}</strong> patentin{items.length === 1 ? "o" : "i"} con dati aggiornati da rivedere
+          <strong>{items.length}</strong> document{items.length === 1 ? "o" : "i"} con dati aggiornati da rivedere
           {" "}(rielaborazione automatica dal documento già caricato)
         </span>
         <button type="button" className="reprocess-banner__toggle">{expanded ? "Nascondi" : "Vedi elenco"}</button>
@@ -152,7 +162,7 @@ export default function ReprocessQueueBanner() {
         <ul className="reprocess-banner__list">
           {items.map((item) => (
             <li key={item.id} className="reprocess-banner__item">
-              <span className="reprocess-banner__item-name">{item.fields?.person_name || item.original_name}</span>
+              <span className="reprocess-banner__item-name">{item.fields?.person_name || item.fields?.wpqr_code || item.original_name}</span>
               <span className="reprocess-banner__item-field">{fieldLabel(item.doc_type, item.field_scope)}: <strong>{fieldValueLabel(item.doc_type, item.field_scope, item.fields?.[item.field_scope])}</strong></span>
               <button type="button" className="reprocess-banner__review-btn" onClick={() => setReviewItem(item)}>
                 Rivedi
