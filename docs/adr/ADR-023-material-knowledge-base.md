@@ -1,78 +1,65 @@
-# ADR-023 - Material Knowledge Base
+# ADR-023 — Knowledge Base requisiti materiali (Markdown versionato)
 
-## Stato
+> **Stato**: Proposto — 05/08/2026  
+> **Spec**: [MODULO_MATERIAL_COMPLIANCE_AI.md](../specs/MODULO_MATERIAL_COMPLIANCE_AI.md)  
+> **Correlati**: ADR-020, ADR-021, ADR-022
 
-PROPOSTO
+---
 
-## Data
+## Contesto e problema
 
-2026-08-05
+Norme, requisiti cliente e criteri interni cambiano nel tempo. Se le soglie vivono nel codice (`if (cliente === 'FASSI')`), ogni aggiornamento richiede deploy e rischia regressioni. Serve una **fonte di conoscenza** aggiornabile e versionata, separata dalla logica del Rule Engine.
 
-## Contesto
-
-Norme, requisiti clienti e regole aziendali cambiano nel tempo.
-
-Tale conoscenza non deve essere codificata all'interno del software.
+---
 
 ## Decisione
 
-La conoscenza sarà mantenuta mediante documenti Markdown versionati.
+### Path canonico (repo)
 
-## Struttura
-
+```text
 knowledge/material-compliance/
+├── standards/          # EN 10204, EN 10025-2, …
+├── customers/          # FASSI, CLAAS, CNH, VOLVO, …
+├── companies/          # requisiti interni per slug azienda (es. companies/tecnove/)
+├── dictionary/         # chiavi canoniche + sinonimi (ReH, Rm, KV, CEV, …)
+└── lessons/            # pattern da correzioni operatore (post-MVP)
+```
 
-├── standards/
+> **Nota**: niente cartella fissa `tecnove/` in root KB — Tecnove (o altra azienda) va sotto `companies/<slug>/`, multi-tenant-friendly.
 
-├── customers/
+### Formato
 
-├── tecnove/
+- Markdown (+ frontmatter YAML opzionale) **versionato in Git**.
+- Il Rule Engine carica un **snapshot** (path + commit/hash o versione file) al momento della verifica e lo persiste sull’esito (riproducibilità).
 
-├── dictionary/
+### Contenuti iniziali (MVP contenuti)
 
-└── lessons/
+| Area | Priorità MVP |
+|------|----------------|
+| `dictionary/` chiavi + sinonimi base | Obbligatorio prima del Rule Engine |
+| `standards/EN10204`, `EN10025-2` | Obbligatorio |
+| Altre EN 10025-4 / 10149 / 10210 / 10219 | Appena disponibili |
+| 1–2 `customers/` di pilota | Consigliato |
+| `companies/<slug>/` pilota | Consigliato |
+| `lessons/` | Dopo feedback loop (post-MVP) |
 
-## Standards
+### Principio
 
-- EN10204
-- EN10025-2
-- EN10025-4
-- EN10149-2
-- EN10210
-- EN10219
+Aggiornare una soglia o un sinonimo = **PR sul Markdown**, non modifica al sorgente del motore (salvo nuovi tipi di regola non previsti).
 
-## Customers
+---
 
-- FASSI
-- CLAAS
-- CNH
-- VOLVO
-- altri clienti
+## Cosa NON fare
 
-## Tecnove
+- Hardcodare clienti o soglie nel service Rule Engine.
+- Caricare la KB da storage non versionato senza hash salvato sull’esito.
+- Esporre editing KB multi-tenant in UI prima del pilota (MVP: file in repo / path server controllato).
 
-- criteri accettazione
-- deroghe
-- requisiti speciali
-
-## Data Dictionary
-
-Definizione univoca dei campi:
-
-- colata
-- materiale
-- certificato
-- ReH
-- Rm
-- KV
-- composizione chimica
-
-## Principio fondamentale
-
-Le regole devono essere aggiornabili senza modificare il codice sorgente.
+---
 
 ## Conseguenze
 
-Aggiornamento norma:
-
-nessun deploy software richiesto
+| + | − |
+|---|---|
+| Aggiornamento requisiti senza deploy app | Serve disciplina PR/review sui file KB |
+| Audit: si sa quale versione regole ha deciso | Parser KB da testare (L1) |

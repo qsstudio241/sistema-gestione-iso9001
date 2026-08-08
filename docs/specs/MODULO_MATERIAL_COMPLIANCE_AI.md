@@ -1,511 +1,147 @@
-# MODULO_MATERIAL_COMPLIANCE_AI
+# Modulo Material Compliance AI — Scopo e Roadmap
 
-## Stato
-
-PROPOSTO
-
-## Data
-
-2026-08-05
-
-## Collegamenti
-
-ADR-020 - Material Compliance AI Module
-
-ADR-021 - Material Requirements Hierarchy
-
-ADR-022 - AI Extraction And Rule Engine Separation
-
-ADR-023 - Material Knowledge Base
-
-ADR-024 - Material Certificate Workflow
+> **Tipo**: spec di prodotto + architettura + roadmap a slice  
+> **Versione**: 1.1 — 05/08/2026 (allineata allo standard doc SGQ)  
+> **Stato**: Proposto — fondazione documentale  
+> **Cliente / contesto tipico**: ufficio qualità metalmeccanico (certificati EN 10204 3.1; requisiti cliente tipo FASSI/CLAAS; criteri interni azienda)  
+> **Norme di riferimento**: EN 10204, famiglie EN 10025 / 10149 / 10210 / 10219; supporto audit ISO 9001, ISO 3834, EN 1090  
+> **ADR**: [020](../adr/ADR-020-material-compliance-ai-module.md) · [021](../adr/ADR-021-material-requirements-hierarchy.md) · [022](../adr/ADR-022-ai-extraction-rule-engine.md) · [023](../adr/ADR-023-material-knowledge-base.md) · [024](../adr/ADR-024-material-certificate-workflow.md)  
+> **Piano slice**: [PLAN_MATERIAL_COMPLIANCE_SLICES.md](../agent-tasks/PLAN_MATERIAL_COMPLIANCE_SLICES.md)  
+> **Brief fondazione**: [DEPUTYTASK_MATERIAL_COMPLIANCE_AI_FOUNDATION.md](../agent-tasks/DEPUTYTASK_MATERIAL_COMPLIANCE_AI_FOUNDATION.md)
 
 ---
 
-# 1. Scopo
+## Sintesi (per il committente)
 
-Realizzare un modulo della piattaforma SGQ in grado di:
+L’ufficio qualità carica un **certificato 3.1 in PDF**. Il sistema estrae i dati tecnici (con AI), li confronta in modo **automatico e ripetibile** con norma + ordine + requisiti cliente + criteri interni, e propone un esito. **Solo una persona autorizzata** può approvare o respingere. Tutto resta tracciato per l’audit.
 
-- acquisire certificati materia prima
-- analizzare certificati EN 10204 3.1
-- estrarre automaticamente i dati tecnici
-- verificare la conformità della fornitura
-- fornire supporto alle decisioni dell'ufficio qualità
-
-Il modulo dovrà integrarsi con l'infrastruttura esistente della piattaforma SGQ.
+Non è un’app nuova: è un modulo della piattaforma SGQ, che riusa ingest documenti, AI già presente e permessi per azienda.
 
 ---
 
-# 2. Obiettivi
+## Distinzione moduli (non confondere)
 
-## Obiettivi principali
-
-Ridurre il tempo di verifica certificati.
-
-Aumentare la tracciabilità.
-
-Ridurre errori manuali.
-
-Capitalizzare il know-how aziendale.
-
-Supportare audit:
-
-- ISO 9001
-- ISO 3834
-- EN 1090
+| Modulo | Domanda | Overlap |
+|--------|---------|---------|
+| **Material Compliance** (questo) | «Questo certificato 3.1 è conforme ai requisiti applicabili?» | Cuore |
+| **Ingest / Import jobs** (Sprint 9–10) | «Carico e classifico PDF generici» | Pipeline riusata |
+| **Document Registry** | «Dove archivio il documento ufficiale?» | Destinazione post-approvazione |
+| **WPS da WPQR** | «Posso saldare questo giunto?» | Nessun overlap funzionale |
+| **SAL** | «A che punto è l’implementazione SGQ?» | Nessun overlap |
+| **Fornitori** | «Valuto il fornitore» | Collegamento futuro (fuori MVP) |
 
 ---
 
-# 3. Ambito
+## Ambito
 
-## Incluso
+### Incluso MVP
 
-- Certificati EN 10204 3.1
-- Laminati
-- Tubi
-- Profilati
-- Piastre
-- Lamiere
+- Certificati **EN 10204 3.1**
+- Prodotti: laminati, tubi, profilati, piastre, lamiere
+- PDF con **strato testo** (estrazione attuale)
+- Estrazione AI → Rule Engine → revisione umana
+- KB Markdown versionata (dizionario + 1–2 norme + pilota cliente/azienda)
 
-## Escluso MVP
+### Escluso MVP (evoluzione)
 
-- Certificati trattamenti termici
-- Certificati verniciatura
-- PPAP
-- Dossier fornitore
-
-Saranno gestiti in future estensioni.
+- Certificati trattamenti termici / verniciatura  
+- PPAP, ISIR, dossier fornitore, supplier scorecard  
+- OCR obbligatorio su scansioni (slice dedicata MC-B)  
+- Menu completo “Norme / Statistiche / KB editor” in UI  
 
 ---
 
-# 4. Architettura funzionale
+## Architettura target
 
 ```text
-PDF
-
-↓
-
-OCR
-
-↓
-
-Markdown
-
-↓
-
-AI Extraction
-
-↓
-
-JSON
-
-↓
-
-Rule Engine
-
-↓
-
-Workflow Qualità
-
-↓
-
-Archivio
+PDF (upload / import_jobs)
+        │
+        ▼
+documentTextExtractor / importPdfText   ← MVP-A (no OCR)
+        │  (+ OCR adapter opzionale — MC-B)
+        ▼
+Markdown / testo normalizzato
+        │
+        ▼
+importAiExtraction + aiProviderAdapter  ← JSON bozza (schema dictionary)
+        │
+        ▼
+materialComplianceRuleEngine            ← deterministico (ADR-022)
+        │
+        ▼
+pending_review → operatore → compliant | non_compliant → archive (+ registry)
 ```
 
----
-
-# 5. Integrazione piattaforma SGQ
-
-## Riuso componenti esistenti
-
-### Ingest Pipeline
-
-Riuso obbligatorio.
-
-### Document Registry
-
-Riuso obbligatorio.
-
-### RBAC
-
-Riuso obbligatorio.
-
-### Company Scope
-
-Riuso obbligatorio.
-
-### AI Provider Adapter
-
-Riuso obbligatorio.
-
-### Audit Trail
-
-Riuso obbligatorio.
+**Vincolo ADR-022**: l’AI non dichiara conformità; il Rule Engine valuta; l’operatore approva.
 
 ---
 
-# 6. Menu Applicazione
+## Riuso componenti esistenti (path)
 
-Nuova voce sidebar.
-
-```text
-Material Compliance
-```
-
-Sotto-menu:
-
-```text
-Dashboard
-
-Certificati
-
-Verifiche
-
-Norme
-
-Requisiti Cliente
-
-Knowledge Base
-
-Statistiche
-```
+| Capacità | Path / pattern |
+|----------|----------------|
+| Ingest | `backend/src/services/documentIngestPipeline.service.js` |
+| Testo PDF | `documentTextExtractor.service.js`, `utils/importPdfText` |
+| AI extract | `importAiExtraction.service.js`, `aiProviderAdapter` |
+| Audit AI | `logAiInteraction` / tabella `ai_interactions` |
+| Licenze | `moduleLicense.service.js` — seam `MATERIAL_COMPLIANCE` → `saldatura` + `ai_import` |
+| RBAC azienda | `companyAccess.service.js` / Ambito |
+| UI | Sidebar + pattern lista/dettaglio esistenti; `AiDisclaimer`; niente card parallele |
 
 ---
 
-# 7. Dashboard
+## UI MVP (slim)
 
-Mostrare:
+Voce sidebar: **Material Compliance** (gate licenza).
 
-## KPI
+| Schermata | MVP | Post-MVP |
+|-----------|-----|----------|
+| Elenco certificati | Sì | — |
+| Dettaglio (PDF \| testo \| esito check) | Sì | — |
+| Azioni approva / correggi / respingi | Sì | — |
+| Dashboard KPI | No | Sì |
+| Editor KB / Norme / Requisiti cliente in UI | No (file Git) | Valutare |
+| Statistiche avanzate | No | Sì |
 
-Certificati ricevuti
-
-Certificati conformi
-
-Certificati non conformi
-
-Verifiche in attesa
-
-Fornitori principali
-
-Materiali più frequenti
+Campi lista: data, materiale, colata, norma, cliente, stato, esito.
 
 ---
 
-# 8. Modulo Certificati
+## Gerarchia requisiti e KB
 
-Elenco certificati importati.
-
-Campi:
-
-- provider
-- data
-- materiale
-- colata
-- norma
-- cliente
-- esito
-
-Azioni:
-
-- visualizza
-- riesamina
-- scarica
-- archivia
+Vedi ADR-021 e ADR-023. Path: `knowledge/material-compliance/` (`standards/`, `customers/`, `companies/<slug>/`, `dictionary/`, `lessons/`).
 
 ---
 
-# 9. Pagina dettaglio certificato
+## Roadmap slice (todo implementazione)
 
-Tre pannelli.
+Fonte operativa dettagliata: [PLAN_MATERIAL_COMPLIANCE_SLICES.md](../agent-tasks/PLAN_MATERIAL_COMPLIANCE_SLICES.md).
 
-## Pannello 1
-
-PDF originale.
-
-## Pannello 2
-
-Markdown generato.
-
-## Pannello 3
-
-Valutazione conformità.
-
----
-
-# 10. Workflow
-
-Stati:
-
-```text
-Ricevuto
-
-OCR
-
-Estratto
-
-Da Verificare
-
-Conforme
-
-Non Conforme
-
-Archiviato
-```
+| Slice | Obiettivo | Stato |
+|-------|-----------|--------|
+| **MC-0** | Spec tecniche: DATA_MODEL + UI + API; piano chiuso | ⬜ Aperto (brief foundation) |
+| **MC-1** | Migration DB + script VPS (entità certificato / check / audit) | ⬜ |
+| **MC-2** | KB seed (dictionary + EN10204 + EN10025-2) + loader | ⬜ |
+| **MC-3** | Rule Engine puro + test L1 (casi ReH/CEV) | ⬜ |
+| **MC-4** | API: upload/lista/dettaglio + extract (riuso AI) + evaluate | ⬜ |
+| **MC-5** | UI elenco + dettaglio + HITL approve/reject | ⬜ |
+| **MC-6** | Gate licenza + `AiDisclaimer` + audit trail AI | ⬜ |
+| **MC-B** | Adapter OCR configurabile (solo PDF senza testo) | ⬜ Post-MVP-A |
+| **MC-7** | Commit Document Registry + lessons/feedback | ⬜ Post-MVP-A |
 
 ---
 
-# 11. Human In The Loop
+## Verifiche di qualità (per slice)
 
-L'AI non approva mai automaticamente.
-
-Operazioni consentite:
-
-- correggi valore
-- approva
-- respingi
-- richiedi riesame
+| Livello | Cosa |
+|---------|------|
+| **L1** | Vitest/Jest mirati Rule Engine + build `app/` se FE |
+| **L2** | API con auth + company scope (smoke) |
+| **L3** | Smoke UI: carica PDF prova → pending_review → approve |
+| **Doc** | Aggiornare questa tabella Stato + riga in `PROJECT_ROADMAP` / GUIDA a chiusura |
 
 ---
 
-# 12. Gerarchia requisiti
+## Future evolution
 
-Applicare sempre:
-
-```text
-EN10204
-
-↓
-
-Norma Materiale
-
-↓
-
-Ordine Acquisto
-
-↓
-
-Requisito Cliente
-
-↓
-
-Requisito Interno
-```
-
-Vince sempre il requisito più restrittivo.
-
----
-
-# 13. Knowledge Base
-
-Percorso:
-
-```text
-knowledge/material-compliance/
-```
-
-Struttura:
-
-```text
-standards/
-
-customers/
-
-tecnove/
-
-dictionary/
-
-lessons/
-```
-
----
-
-# 14. Norme iniziali
-
-## EN10204
-
-Certificati.
-
-## EN10025-2
-
-Acciai strutturali.
-
-## EN10025-4
-
-Acciai TMCP.
-
-## EN10149-2
-
-Acciai altoresistenziali.
-
-## EN10210
-
-Profili cavi laminati.
-
-## EN10219
-
-Profili cavi formati a freddo.
-
----
-
-# 15. Requisiti Cliente
-
-Gestiti esternamente al codice.
-
-Esempio:
-
-## FASSI
-
-Carbon Equivalent
-
-Resilienza
-
-Composizione chimica
-
-## CLAAS
-
-Requisiti dedicati
-
-## CNH
-
-Requisiti dedicati
-
----
-
-# 16. Data Dictionary
-
-Definire:
-
-- colata
-- materiale
-- certificato
-- norma
-- ReH
-- Rm
-- A
-- KV
-- CEV
-
-con relativi sinonimi.
-
----
-
-# 17. Rule Engine
-
-Funzioni:
-
-- applicazione limiti
-- confronto valori
-- gestione tolleranze
-- spiegazione esito
-
-Output:
-
-```json
-{
-  "status":"NON_CONFORME",
-  "reason":"Carbon Equivalent",
-  "actual":0.45,
-  "required":0.43
-}
-```
-
----
-
-# 18. Audit Trail
-
-Conservare sempre:
-
-- PDF originale
-- OCR
-- Markdown
-- JSON
-- Verifica
-- Utente
-- Timestamp
-
----
-
-# 19. Sicurezza
-
-Applicare:
-
-- RBAC esistente
-- Company Scope esistente
-- Segregazione multi-tenant esistente
-
-Nessuna deroga.
-
----
-
-# 20. AI
-
-Modelli previsti:
-
-## MVP
-
-Ollama
-
-Qwen
-
-PaddleOCR
-
-## Futuro
-
-Azure OpenAI
-
-Copilot Integration
-
-Provider alternativi
-
-tramite AI Provider Adapter.
-
----
-
-# 21. MVP
-
-## Fase 1
-
-Import PDF.
-
-## Fase 2
-
-OCR.
-
-## Fase 3
-
-Markdown.
-
-## Fase 4
-
-JSON.
-
-## Fase 5
-
-Rule Engine.
-
-## Fase 6
-
-Dashboard.
-
-## Fase 7
-
-Workflow qualità.
-
----
-
-# 22. Future Evolution
-
-Certificati trattamenti termici.
-
-Certificati verniciatura.
-
-PPAP.
-
-ISIR.
-
-Dossier fornitore.
-
-Supplier Scorecard.
-
-Material Compliance Assistant.
+Trattamenti termici, verniciatura, PPAP/ISIR, dossier fornitore, scorecard, assistente conversazionale dedicato — solo dopo MVP stabile e feedback campo.
