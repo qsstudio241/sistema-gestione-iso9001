@@ -230,6 +230,16 @@ body.sgq-ingest-review-resizing * {
   font-size: 0.95rem;
 }
 
+.ingest-review__select-with-other {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.ingest-review__input--other {
+  border-color: #94a3b8;
+}
+
 .ingest-review__hint {
   font-size: 0.8rem;
   color: #64748b;

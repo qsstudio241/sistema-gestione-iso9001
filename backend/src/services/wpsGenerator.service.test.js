@@ -212,6 +212,50 @@ describe('checkDiameterCoverage — Tabella 9 (Level 2 variabile essenziale)', (
         expect(r.reason).toMatch(/non dichiarato/);
     });
 
+    test('WPQR testata su piastra, nessun diametro dichiarato, diametro richiesto >500mm → coperta (regola piastra→tubo generale)', () => {
+        const r = checkDiameterCoverage(
+            { ...WPQR_TUBE_LEVEL2, diameter_min: null, diameter_max: null, product_type: 'P', welding_positions: 'PA' },
+            600
+        );
+        expect(r.ok).toBe(true);
+        expect(r.range.min).toBe(500);
+    });
+
+    test('WPQR testata su piastra, diametro richiesto 500mm esatto (non >500) → NON coperta', () => {
+        const r = checkDiameterCoverage(
+            { ...WPQR_TUBE_LEVEL2, diameter_min: null, diameter_max: null, product_type: 'P', welding_positions: 'PA' },
+            500
+        );
+        expect(r.ok).toBe(false);
+    });
+
+    test('WPQR testata su piastra, posizione PC dichiarata → soglia ridotta a >150mm senza bisogno del flag ruotato', () => {
+        const r = checkDiameterCoverage(
+            { ...WPQR_TUBE_LEVEL2, diameter_min: null, diameter_max: null, product_type: 'P', welding_positions: 'PC' },
+            200
+        );
+        expect(r.ok).toBe(true);
+        expect(r.range.min).toBe(150);
+    });
+
+    test('WPQR testata su piastra, posizione PF ma SENZA flag ruotato → resta la soglia generale >500mm (fail-closed prudente)', () => {
+        const r = checkDiameterCoverage(
+            { ...WPQR_TUBE_LEVEL2, diameter_min: null, diameter_max: null, product_type: 'P', welding_positions: 'PF', rotated_position: false },
+            200
+        );
+        expect(r.ok).toBe(false);
+        expect(r.range.min).toBe(500);
+    });
+
+    test('WPQR testata su piastra, posizione PF con flag ruotato dichiarato → soglia ridotta a >150mm', () => {
+        const r = checkDiameterCoverage(
+            { ...WPQR_TUBE_LEVEL2, diameter_min: null, diameter_max: null, product_type: 'P', welding_positions: 'PF', rotated_position: true },
+            200
+        );
+        expect(r.ok).toBe(true);
+        expect(r.range.min).toBe(150);
+    });
+
     test('qualification_level assente → default Level 2 (norma, requisiti più severi) — fail-closed senza dichiarazione', () => {
         const r = checkDiameterCoverage({ ...WPQR_TUBE_LEVEL2, qualification_level: null, diameter_min: null, diameter_max: null }, 100);
         expect(r.ok).toBe(false);

@@ -12,6 +12,7 @@ const {
     computeQualifiedMaterialThicknessRangeLevel2,
     computeQualifiedFilletThroatThicknessRange,
     isDiameterEssentialVariable,
+    describePlateCoversPipeDiameterLevel2,
 } = require('../data/weldingQualificationRules15614');
 
 /** Lazy require: evita process.exit in unit test senza database.json. */
@@ -211,6 +212,33 @@ function checkDiameterCoverage(wpqr, requiredDiameterMm) {
     const max = wpqr.diameter_max != null && wpqr.diameter_max !== '' ? Number(wpqr.diameter_max) : null;
 
     if (min == null && max == null) {
+        // Regola "piastra copre tubo" (ISO 15614-1 §8.3.3, testo integrale — gap
+        // analysis 08/08/2026): se il provino è stato testato su PIASTRA, non c'è
+        // (e non deve esserci) un diametro dichiarato — ma la norma qualifica
+        // automaticamente tubi di diametro >500mm, o >150mm se saldato in
+        // posizione PC, oppure PF/PA con tubo esplicitamente dichiarato ruotato.
+        const isPlate = String(wpqr.product_type || '').trim().toUpperCase() === 'P';
+        if (isPlate) {
+            const rotated = wpqr.rotated_position === true || wpqr.rotated_position === 1 || wpqr.rotated_position === '1';
+            const plateRule = describePlateCoversPipeDiameterLevel2({
+                weldingPositions: wpqr.welding_positions,
+                rotatedPosition: rotated,
+            });
+            if (d > plateRule.minMm) {
+                return {
+                    ok: true,
+                    applicable: true,
+                    reason: `Diametro ${d} mm coperto dalla regola piastra→tubo (>${plateRule.minMm} mm — ${plateRule.note})`,
+                    range: { min: plateRule.minMm, max: null },
+                };
+            }
+            return {
+                ok: false,
+                applicable: true,
+                reason: `WPQR ${wpqr.wpqr_code || wpqr.id}: testata su piastra, copre tubo solo >${plateRule.minMm} mm (${plateRule.note}) — richiesti ${d} mm`,
+                range: { min: plateRule.minMm, max: null },
+            };
+        }
         return {
             ok: false,
             applicable: true,

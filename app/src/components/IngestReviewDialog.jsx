@@ -68,6 +68,20 @@ function formatReadonlyDisplay(field, value) {
   return repairTextEncoding(String(value));
 }
 
+/**
+ * Un menu a tendina con opzione "altro" ha per definizione un elenco non
+ * esaustivo (enti di certificazione, organismi emittenti, ecc. — nuovi ne
+ * compaiono nel tempo). Senza questo fallback, un valore estratto dall'AI
+ * che non corrisponde a nessuna opzione veniva scartato silenziosamente dal
+ * <select> nativo (mostrato vuoto, nessun avviso) — bug reale segnalato dal
+ * committente 08/08/2026 (mancava "IIS - ISSCERT" nell'elenco enti WPQR).
+ * @param {object} field
+ * @returns {boolean}
+ */
+function hasAltroFallback(field) {
+  return Array.isArray(field?.options) && field.options.some((o) => o.value === "altro");
+}
+
 function FieldInput({ field, value, onChange }) {
   const common = {
     id: `ingest-field-${field.key}`,
@@ -77,6 +91,50 @@ function FieldInput({ field, value, onChange }) {
   };
 
   if (field.type === "select" && Array.isArray(field.options)) {
+    if (hasAltroFallback(field)) {
+      const v = value ?? "";
+      const matchesKnownOption = field.options.some(
+        (o) => o.value !== "altro" && String(o.value) === String(v)
+      );
+      // Due casi che devono mostrare il campo testo: (a) l'operatore ha scelto
+      // esplicitamente "Altro" dal menu (valore letteralmente "altro", ancora
+      // senza testo digitato), (b) il valore arriva da un'estrazione AI che non
+      // corrisponde a nessuna opzione nota (es. un ente non ancora catalogato) —
+      // in questo caso il valore reale va mostrato, non scartato.
+      const isCustomOrphanValue = v !== "" && v !== "altro" && !matchesKnownOption;
+      const showOtherInput = v === "altro" || isCustomOrphanValue;
+      const selectValue = showOtherInput ? "altro" : v;
+      return (
+        <div className="ingest-review__select-with-other">
+          <select
+            id={common.id}
+            className="ingest-review__input"
+            value={selectValue}
+            onChange={(e) => onChange(field.key, e.target.value)}
+          >
+            <option value="">— Seleziona —</option>
+            {field.options.map((opt) => (
+              <option
+                key={opt.value || opt.label}
+                value={opt.disabled ? "" : opt.value}
+                disabled={Boolean(opt.disabled)}
+              >
+                {opt.label}
+              </option>
+            ))}
+          </select>
+          {showOtherInput && (
+            <input
+              type="text"
+              className="ingest-review__input ingest-review__input--other"
+              placeholder="Specifica (es. IIS - ISSCERT)"
+              value={isCustomOrphanValue ? v : ""}
+              onChange={(e) => onChange(field.key, e.target.value)}
+            />
+          )}
+        </div>
+      );
+    }
     return (
       <select {...common}>
         <option value="">— Seleziona —</option>
