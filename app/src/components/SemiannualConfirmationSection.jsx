@@ -7,20 +7,7 @@
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import apiService from "../services/apiService";
 import { formatDate } from "../utils/dateHelpers";
-
-function isWelder9606Type(type) {
-  const t = String(type || "").toLowerCase();
-  return t.includes("9606") || t.includes("patentino_saldatore") || t === "9606_1";
-}
-
-function isOperator14732Type(type) {
-  const t = String(type || "").toLowerCase();
-  return t.includes("14732");
-}
-
-function requiresSemiannualConfirmation(type) {
-  return isWelder9606Type(type) || isOperator14732Type(type);
-}
+import { isOperator14732Type, requiresSemiannualConfirmation } from "../utils/weldingConfirmationRules";
 
 function SemiannualConfirmationSection({
   qualificationId,

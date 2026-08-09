@@ -17,6 +17,7 @@ import {
 } from "../utils/qualificationsCompanyScope";
 import AskAiButton from "../components/AskAiButton";
 import { saveQualContext } from "../utils/aiAssistantContext";
+import { requiresSemiannualConfirmation } from "../utils/weldingConfirmationRules";
 import {
     QUALIFICATION_SITUAZIONI,
     STATS_TO_SITUAZIONE,
@@ -157,7 +158,7 @@ function StatsBar({ stats, activeSituazione, onStatClick }) {
 
 // ── Riga tabella (rendering dinamico per tab) ─────────────────────────────────
 
-function QualRow({ q, tabKey, onEdit, onHardDelete, onRenew, onHistory, hardDeleteId, setHardDeleteId }) {
+export function QualRow({ q, tabKey, onEdit, onHardDelete, onRenew, onHistory, hardDeleteId, setHardDeleteId }) {
     const sem = SEMAFORO[q.semaforo] || SEMAFORO.grigio;
 
     const actionBtns = (
@@ -204,7 +205,33 @@ function QualRow({ q, tabKey, onEdit, onHardDelete, onRenew, onHistory, hardDele
         </td>
     );
 
-    const expiryCell = (
+    // Saldatori ISO 9606-1 / operatori ISO 14732: lo stato (semaforo) segue la
+    // data più imminente tra scadenza del certificato e prossima conferma
+    // semestrale obbligatoria (vedi effectiveExpiryDate lato backend). Senza
+    // mostrare entrambe le date, uno stato "Scaduta"/"In scadenza" con
+    // certificato ancora lontano nel tempo risulta incomprensibile: rendiamo
+    // sempre visibile quale delle due date sta determinando il colore.
+    const hasDualExpiry = requiresSemiannualConfirmation(q.qualification_type) && q.next_confirmation_due;
+    const confirmationIsBinding = hasDualExpiry && q.effective_expiry_date
+        ? String(q.effective_expiry_date).slice(0, 10) === String(q.next_confirmation_due).slice(0, 10)
+        : false;
+
+    const expiryCell = hasDualExpiry ? (
+        <td className="sq-col-expiry sq-col-expiry--dual">
+            <span
+                className={`sq-expiry-date sq-expiry-line${confirmationIsBinding ? "" : ` sq-expiry-${q.semaforo}`}`}
+                title="Scadenza del certificato di qualificazione (base)"
+            >
+                {"\uD83D\uDCC4"} Certificato: {q.expiry_date ? formatDate(q.expiry_date) : "nessuna"}
+            </span>
+            <span
+                className={`sq-expiry-date sq-expiry-line${confirmationIsBinding ? ` sq-expiry-${q.semaforo}` : ""}`}
+                title="Prossima conferma semestrale obbligatoria (ISO 9606-1 / ISO 14732): se scade, la qualifica non è più operativa anche se il certificato di base è ancora valido"
+            >
+                {"\uD83D\uDD01"} Conferma 6 mesi: {formatDate(q.next_confirmation_due)}
+            </span>
+        </td>
+    ) : (
         <td className="sq-col-expiry">
             {q.expiry_date
                 ? <span className={`sq-expiry-date sq-expiry-${q.semaforo}`}>{formatDate(q.expiry_date)}</span>

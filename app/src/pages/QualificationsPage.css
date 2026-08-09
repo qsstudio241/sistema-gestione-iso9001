@@ -117,6 +117,16 @@
 .sq-expiry-giallo   { color:#d97706; }
 .sq-expiry-verde    { color:#16a34a; }
 .sq-expiry-none { color:#9ca3af; font-style:italic; }
+
+/* Doppia data (saldatori 9606-1 / operatori 14732): certificato + conferma
+   semestrale. La riga non "vincolante" per lo stato resta grigia e senza
+   grassetto, quella che determina il semaforo prende il colore dello stato. */
+.sq-col-expiry--dual { display:flex; flex-direction:column; gap:2px; }
+.sq-col-expiry--dual .sq-expiry-line { font-weight:400; color:#6b7280; font-size:12px; white-space:nowrap; }
+.sq-col-expiry--dual .sq-expiry-line.sq-expiry-rosso,
+.sq-col-expiry--dual .sq-expiry-line.sq-expiry-arancione,
+.sq-col-expiry--dual .sq-expiry-line.sq-expiry-giallo,
+.sq-col-expiry--dual .sq-expiry-line.sq-expiry-verde { font-weight:700; font-size:13px; }
 .sq-issue-date { font-size:12px; color:#9ca3af; }
 
 /* ── Azioni ───────────────── */
