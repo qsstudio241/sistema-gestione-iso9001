@@ -1,6 +1,10 @@
 /**
- * reprocess-qualifications.js — CLI di rielaborazione/backfill su qualifiche
- * già presenti in DB.
+ * reprocess-qualifications.js — CLI di rielaborazione/backfill su record
+ * già presenti in DB (qualifiche saldatori E, dal 08/08/2026, anche WPQR —
+ * il nome file resta invariato per compatibilità con i comandi SSH/doc
+ * esistenti, ma il registro `REPROCESSABLE_FIELD_REGISTRY` copre entrambe le
+ * tabelle: nessuna modifica necessaria qui, il servizio condiviso
+ * `qualificationReprocess.service.js` è già table-aware).
  *
  * Motivazione (richiesta committente 28/07/2026): ogni volta che aggiungiamo un
  * nuovo campo all'estrazione AI (es. transfer_mode) i patentini già ingestiti

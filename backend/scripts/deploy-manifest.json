@@ -42,7 +42,8 @@
                                      "src/data/weldingSymbols2553.js",
                                      "src/data/qtafiVis001Template.js",
                                      "src/data/legislativoSicurezzaTemplate.js",
-                                     "src/data/reprocessableFields.js"
+                                     "src/data/reprocessableFields.js",
+                                     "src/data/reprocessTableAdapters.js"
                                  ]
                    },
                    {

@@ -6,8 +6,8 @@ const fs = require('fs');
 const path = require('path');
 const logger = require('../utils/logger');
 const { query } = require('../config/database');
-const { commitWPQRFromFields } = require('./wpqrIngest.service');
-const { commitQualificationFromFields, applyFieldReprocessUpdate } = require('./qualificationIngest.service');
+const { commitWPQRFromFields, applyFieldReprocessUpdate: applyWpqrFieldReprocessUpdate } = require('./wpqrIngest.service');
+const { commitQualificationFromFields, applyFieldReprocessUpdate: applyQualificationFieldReprocessUpdate } = require('./qualificationIngest.service');
 const { commitWPSFromFields } = require('./wpsIngest.service');
 const { commitNormFromFields } = require('./normIngest.service');
 const { recordFeedback } = require('./ingestFeedback.service');
@@ -58,10 +58,12 @@ async function createStagingRecord(params) {
         qualificationType,
         userId,
         aiModel = null,
-        // Modalità rielaborazione (backfill, migrazione 137): quando valorizzati,
-        // la conferma di questo staging NON crea un nuovo record ma aggiorna
-        // solo i campi in fieldScope sulla qualifica esistente targetQualificationId.
+        // Modalità rielaborazione (backfill, migrazioni 137/143): quando
+        // valorizzati, la conferma di questo staging NON crea un nuovo record
+        // ma aggiorna solo i campi in fieldScope sul record esistente
+        // (qualifica o WPQR — SOLO uno dei due è valorizzato per riga).
         targetQualificationId = null,
+        targetWpqrId = null,
         fieldScope = null,
     } = params;
 
@@ -71,7 +73,7 @@ async function createStagingRecord(params) {
             original_name, storage_path, mime_type, file_size,
             staged_fields_json, field_confidence_json, warnings_json,
             qualification_type, review_status, created_by, ai_model,
-            target_qualification_id, field_scope
+            target_qualification_id, target_wpqr_id, field_scope
         )
         OUTPUT INSERTED.id
         VALUES (
@@ -79,7 +81,7 @@ async function createStagingRecord(params) {
             @originalName, @storagePath, @mimeType, @fileSize,
             @stagedFieldsJson, @fieldConfidenceJson, @warningsJson,
             @qualificationType, 'pending', @userId, @aiModel,
-            @targetQualificationId, @fieldScope
+            @targetQualificationId, @targetWpqrId, @fieldScope
         )
     `, {
         organizationId,
@@ -96,6 +98,7 @@ async function createStagingRecord(params) {
         userId: userId || null,
         aiModel: aiModel || null,
         targetQualificationId: targetQualificationId || null,
+        targetWpqrId: targetWpqrId || null,
         fieldScope: fieldScope || null,
     });
 
@@ -126,7 +129,7 @@ async function confirmStaging(stagingId, organizationId, userId, fieldsOverride 
             // Modalità rielaborazione (backfill campo su qualifica esistente,
             // migrazione 137): MAI una nuova INSERT, solo UPDATE mirato ai campi
             // in field_scope — vedi backend/scripts/reprocess-qualifications.js.
-            const updateResult = await applyFieldReprocessUpdate(
+            const updateResult = await applyQualificationFieldReprocessUpdate(
                 row.target_qualification_id,
                 organizationId,
                 row.field_scope,
@@ -134,6 +137,20 @@ async function confirmStaging(stagingId, organizationId, userId, fieldsOverride 
             );
             commitResult = {
                 qualification_id: updateResult.qualification_id,
+                updated_fields: updateResult.updated_fields,
+            };
+        } else if (row.target_wpqr_id) {
+            // Modalità rielaborazione su WPQR esistente (migrazione 143,
+            // generalizzazione 08/08/2026 dello stesso pattern) — MAI una
+            // nuova INSERT, solo UPDATE mirato ai campi in field_scope.
+            const updateResult = await applyWpqrFieldReprocessUpdate(
+                row.target_wpqr_id,
+                organizationId,
+                row.field_scope,
+                fields,
+            );
+            commitResult = {
+                wpqr_id: updateResult.wpqr_id,
                 updated_fields: updateResult.updated_fields,
             };
         } else if (row.doc_type === 'wpqr') {
@@ -288,12 +305,12 @@ async function rejectStaging(stagingId, organizationId, userId, deleteFile = tru
         logger.warn('[IngestStaging] Feedback scarto non salvato', { error: fbErr.message, stagingId });
     }
 
-    // In modalità rielaborazione (target_qualification_id valorizzato) lo
-    // storage_path NON è un file temporaneo di upload: è il certificato già
-    // collegato a una qualifica esistente (certificate_file_url). Cancellarlo
-    // romperebbe il record definitivo — va preservato sempre, a prescindere
-    // dal flag deleteFile richiesto dal chiamante.
-    if (deleteFile && row.storage_path && !row.target_qualification_id) {
+    // In modalità rielaborazione (target_qualification_id o target_wpqr_id
+    // valorizzato) lo storage_path NON è un file temporaneo di upload: è il
+    // certificato già collegato a un record esistente (certificate_file_url).
+    // Cancellarlo romperebbe il record definitivo — va preservato sempre, a
+    // prescindere dal flag deleteFile richiesto dal chiamante.
+    if (deleteFile && row.storage_path && !row.target_qualification_id && !row.target_wpqr_id) {
         try {
             fs.unlinkSync(row.storage_path);
         } catch (_) {
@@ -327,13 +344,13 @@ async function listStaging({ organizationId, reviewStatus = 'pending', docType =
         conditions.push(`doc_type IN (${placeholders})`);
     }
     if (reprocessOnly) {
-        conditions.push('target_qualification_id IS NOT NULL');
+        conditions.push('(target_qualification_id IS NOT NULL OR target_wpqr_id IS NOT NULL)');
     }
 
     const result = await query(`
         SELECT TOP (@limit)
             id, doc_type, original_name, review_status, qualification_type,
-            target_qualification_id, field_scope, staged_fields_json,
+            target_qualification_id, target_wpqr_id, field_scope, staged_fields_json,
             warnings_json, created_at
         FROM ingest_staging
         WHERE ${conditions.join(' AND ')}
@@ -347,11 +364,12 @@ async function listStaging({ organizationId, reviewStatus = 'pending', docType =
         review_status: row.review_status,
         qualification_type: row.qualification_type,
         target_qualification_id: row.target_qualification_id,
+        target_wpqr_id: row.target_wpqr_id,
         field_scope: row.field_scope,
         fields: parseJson(row.staged_fields_json, {}),
         warnings: parseJson(row.warnings_json, []),
         created_at: row.created_at,
-        is_reprocess: !!row.target_qualification_id,
+        is_reprocess: !!(row.target_qualification_id || row.target_wpqr_id),
     }));
 }
 

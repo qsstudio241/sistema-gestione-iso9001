@@ -13,6 +13,7 @@ import { formatDate } from "../utils/dateHelpers";
 import WpqrUploadButton from "../components/WpqrUploadButton";
 import WpsUploadButton from "../components/WpsUploadButton";
 import AskAiButton from "../components/AskAiButton";
+import ReprocessQueueBanner from "../components/ReprocessQueueBanner";
 import {
   saveQualContext,
   consumeWpsGenerateIntent,
@@ -1197,6 +1198,9 @@ function WeldingProceduresPage() {
           )}
         </div>
       </div>
+
+      <ReprocessQueueBanner module="saldatura" />
+
       {activeTab === "wps" && showLegacyWpsUpload && (
         <div className="wp-legacy-upload" data-testid="wps-legacy-upload">
           <p className="wp-legacy-upload-hint">

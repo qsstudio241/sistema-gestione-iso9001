@@ -58,6 +58,7 @@ async function getStaging(req, res) {
             committed_wpqr_id: row.committed_wpqr_id,
             committed_qualification_id: row.committed_qualification_id,
             target_qualification_id: row.target_qualification_id,
+            target_wpqr_id: row.target_wpqr_id,
             field_scope: row.field_scope,
         });
     } catch (error) {
@@ -67,7 +68,12 @@ async function getStaging(req, res) {
 }
 
 // doc_type -> modulo licenza, usato per validare l'accesso quando si filtra per modulo.
-const MODULE_DOC_TYPES = { qualifiche: ['patentino_saldatore', 'qualifica_14732'] };
+const MODULE_DOC_TYPES = {
+    qualifiche: ['patentino_saldatore', 'qualifica_14732'],
+    // Generalizzazione 08/08/2026 (migrazione 143): la coda di rielaborazione
+    // WPQR usa lo stesso meccanismo, filtrata per modulo "saldatura".
+    saldatura: ['wpqr'],
+};
 
 /**
  * GET /ingest-staging — coda di revisione: upload pending "classici" e, dalla

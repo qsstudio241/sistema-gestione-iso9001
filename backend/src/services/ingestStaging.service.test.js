@@ -4,6 +4,7 @@
 
 jest.mock('./wpqrIngest.service', () => ({
     commitWPQRFromFields: jest.fn(),
+    applyFieldReprocessUpdate: jest.fn(),
 }));
 
 jest.mock('./qualificationIngest.service', () => ({
@@ -21,7 +22,7 @@ jest.mock('../config/database', () => ({
 
 const fs = require('fs');
 const { query } = require('../config/database');
-const { commitWPQRFromFields } = require('./wpqrIngest.service');
+const { commitWPQRFromFields, applyFieldReprocessUpdate: applyWpqrFieldReprocessUpdate } = require('./wpqrIngest.service');
 const { commitQualificationFromFields, applyFieldReprocessUpdate } = require('./qualificationIngest.service');
 const {
     createStagingRecord,
@@ -208,5 +209,53 @@ describe('ingestStaging.service — modalità rielaborazione (migrazione 137)', 
         await rejectStaging(52, 1001, 9, true);
 
         expect(fs.unlinkSync).toHaveBeenCalledWith('/uploads/qualifications/qual_new.pdf');
+    });
+
+    // Generalizzazione 08/08/2026 (migrazione 143): stesso pattern esatto di
+    // target_qualification_id, ma per la WPQR (colonna target_wpqr_id).
+    it('confirmStaging con target_wpqr_id esegue UPDATE mirato su wpqr_records (mai commitWPQRFromFields)', async () => {
+        query.mockResolvedValueOnce({
+            recordset: [{
+                id: 60,
+                organization_id: 1001,
+                company_id: 2,
+                doc_type: 'wpqr',
+                storage_path: '/uploads/wpqr/wpqr_123.pdf',
+                original_name: 'wpqr_123.pdf',
+                staged_fields_json: '{"preheat_temp":"min 100 C","wpqr_code":"WPQR-01"}',
+                warnings_json: '[]',
+                review_status: 'pending',
+                target_qualification_id: null,
+                target_wpqr_id: 7,
+                field_scope: 'preheat_temp',
+            }],
+        });
+        applyWpqrFieldReprocessUpdate.mockResolvedValueOnce({ wpqr_id: 7, updated_fields: ['preheat_temp'] });
+        query.mockResolvedValueOnce({ recordset: [] }); // UPDATE ingest_staging
+
+        const out = await confirmStaging(60, 1001, 9);
+
+        expect(applyWpqrFieldReprocessUpdate).toHaveBeenCalledWith(7, 1001, 'preheat_temp', expect.objectContaining({ preheat_temp: 'min 100 C' }));
+        expect(commitWPQRFromFields).not.toHaveBeenCalled();
+        expect(out.status).toBe('confirmed');
+        expect(out.wpqr_id).toBe(7);
+    });
+
+    it('rejectStaging NON cancella mai il file quando target_wpqr_id è valorizzato (è il certificato della WPQR esistente)', async () => {
+        query.mockResolvedValueOnce({
+            recordset: [{
+                id: 61,
+                review_status: 'pending',
+                storage_path: '/uploads/wpqr/wpqr_123.pdf',
+                target_qualification_id: null,
+                target_wpqr_id: 7,
+            }],
+        });
+        query.mockResolvedValueOnce({ recordset: [] });
+
+        const out = await rejectStaging(61, 1001, 9, true);
+
+        expect(out.status).toBe('rejected');
+        expect(fs.unlinkSync).not.toHaveBeenCalled();
     });
 });

@@ -126,6 +126,14 @@ describe('reprocess-qualifications — selezione candidati', () => {
         expect(FIELD_CONFIGS.pipe_diameter_min_mm).toBeDefined();
         expect(FIELD_CONFIGS.pipe_diameter_min_mm.productTypeWhitelist).toEqual(['T']);
     });
+
+    // Generalizzazione 08/08/2026: lo stesso script CLI, senza modifiche di
+    // codice, funziona anche per la WPQR grazie al registro condiviso.
+    it('espone i campi WPQR nel registro FIELD_CONFIGS (generalizzazione 08/08/2026)', () => {
+        expect(FIELD_CONFIGS.preheat_temp).toMatchObject({ table: 'wpqr_records' });
+        expect(FIELD_CONFIGS.throat_test_mm).toMatchObject({ table: 'wpqr_records', jointTypeWhitelist: ['FW'] });
+        expect(FIELD_CONFIGS.wpqr_thickness_max_unlimited).toMatchObject({ table: 'wpqr_records', column: 'thickness_max_unlimited' });
+    });
 });
 
 describe('resolveExtractedReprocessValue — alias AI → colonna DB', () => {
