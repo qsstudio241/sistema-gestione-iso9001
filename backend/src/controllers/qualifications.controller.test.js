@@ -38,6 +38,7 @@ const {
   hardDeleteQualification,
   createQualification,
   updateQualification,
+  listQualifications,
 } = require('./qualifications.controller');
 
 describe('qualifications.controller — effectiveExpiryDate', () => {
@@ -96,6 +97,97 @@ describe('qualifications.controller — semaforoForRow', () => {
       next_confirmation_due: '2020-01-01',
     };
     expect(semaforoForRow(q)).toBe('rosso');
+  });
+});
+
+/**
+ * Test L1 — listQualifications, filtro ?situazione= (fix incongruenza dashboard
+ * segnalata dal committente 09/08/2026: la card statistica "Valide" veniva
+ * mostrata come "Filtro attivo" ma l'elenco continuava a mostrare anche righe
+ * "Scaduta"/"Non attiva", perché il parametro non era mai letto dal controller).
+ * Verifica che il filtro usi la stessa data "effettiva" (certificato o conferma
+ * semestrale 9606-1/14732) del semaforo per-riga, non solo expiry_date.
+ */
+describe('qualifications.controller — listQualifications filtro situazione', () => {
+  function makeSharedPool() {
+    const queryMock = jest.fn().mockImplementation((sql) => {
+      if (/COUNT\(\*\)/.test(sql)) return Promise.resolve({ recordset: [{ total: 0 }] });
+      return Promise.resolve({ recordset: [] });
+    });
+    const reqObj = { input: jest.fn().mockReturnThis(), query: queryMock };
+    const pool = { request: jest.fn(() => reqObj) };
+    return { pool, queryMock };
+  }
+
+  function makeReqRes(query = {}) {
+    const req = { query, user: { organization_id: 10 } };
+    const res = { status: jest.fn().mockReturnThis(), json: jest.fn() };
+    return { req, res };
+  }
+
+  function selectSqlFrom(queryMock) {
+    const call = queryMock.mock.calls.find(([sql]) => sql.includes('FROM qualifications q'));
+    return call ? call[0] : '';
+  }
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
+  it('senza situazione non applica alcun filtro extra su stato/scadenza', async () => {
+    const { pool, queryMock } = makeSharedPool();
+    getPool.mockResolvedValue(pool);
+    const { req, res } = makeReqRes({});
+
+    await listQualifications(req, res);
+
+    expect(selectSqlFrom(queryMock)).not.toContain("q.status = 'valida'");
+    expect(res.status).not.toHaveBeenCalledWith(500);
+  });
+
+  it('situazione=valide filtra su status=valida E sulla data effettiva (non solo expiry_date)', async () => {
+    const { pool, queryMock } = makeSharedPool();
+    getPool.mockResolvedValue(pool);
+    const { req, res } = makeReqRes({ situazione: 'valide' });
+
+    await listQualifications(req, res);
+
+    const sql = selectSqlFrom(queryMock);
+    expect(sql).toContain("q.status = 'valida'");
+    expect(sql).toContain('next_confirmation_due');
+    expect(res.status).not.toHaveBeenCalledWith(500);
+  });
+
+  it('situazione=scadute esclude sospese/revocate e usa la data effettiva nel passato', async () => {
+    const { pool, queryMock } = makeSharedPool();
+    getPool.mockResolvedValue(pool);
+    const { req, res } = makeReqRes({ situazione: 'scadute' });
+
+    await listQualifications(req, res);
+
+    const sql = selectSqlFrom(queryMock);
+    expect(sql).toContain("q.status NOT IN ('revocata','sospesa')");
+    expect(sql).toContain('next_confirmation_due');
+  });
+
+  it('situazione=sospesa filtra solo sullo stato', async () => {
+    const { pool, queryMock } = makeSharedPool();
+    getPool.mockResolvedValue(pool);
+    const { req, res } = makeReqRes({ situazione: 'sospesa' });
+
+    await listQualifications(req, res);
+
+    expect(selectSqlFrom(queryMock)).toContain("q.status = 'sospesa'");
+  });
+
+  it('un valore situazione non riconosciuto viene ignorato in modo difensivo (nessun 500)', async () => {
+    const { pool } = makeSharedPool();
+    getPool.mockResolvedValue(pool);
+    const { req, res } = makeReqRes({ situazione: 'valore_a_caso' });
+
+    await listQualifications(req, res);
+
+    expect(res.status).not.toHaveBeenCalledWith(500);
   });
 });
 

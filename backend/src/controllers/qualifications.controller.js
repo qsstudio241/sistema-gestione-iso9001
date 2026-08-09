@@ -122,6 +122,42 @@ function deriveRangeString(min, max, suffix = 'mm') {
 const DAYS_WARNING = 60;
 const DAYS_URGENT  = 30;
 
+/**
+ * Match SQL dei tipi che richiedono conferma periodica semestrale (ISO 9606-1
+ * saldatori manuali, ISO 14732 operatori automatica/meccanizzata). Deve restare
+ * sincronizzato con isWelder9606Type/isOperator14732Type in
+ * weldingCoordinatorAuth.service.js — qui serve la versione SQL per WHERE/CASE
+ * (non si può richiamare la funzione JS dentro una query T-SQL).
+ */
+const SEMIANNUAL_TYPE_SQL_MATCH = `(
+    LOWER(q.qualification_type) LIKE '%9606%'
+    OR LOWER(q.qualification_type) LIKE '%patentino_saldatore%'
+    OR LOWER(q.qualification_type) = '9606_1'
+    OR LOWER(q.qualification_type) LIKE '%14732%'
+    OR LOWER(q.qualification_type) LIKE '%qualifica_14732%'
+)`;
+
+/**
+ * Data di scadenza "effettiva" calcolata in SQL — stessa regola di
+ * effectiveExpiryDate() più sotto (usata per il semaforo per-riga): per i tipi
+ * a conferma semestrale vale la data più imminente tra expiry_date e
+ * next_confirmation_due. Usata sia nelle statistiche (getStats) sia nel filtro
+ * ?situazione= di listQualifications, così i conteggi delle card e il colore
+ * mostrato riga per riga restano sempre coerenti tra loro.
+ */
+const EFFECTIVE_EXPIRY_SQL = `
+    CASE
+        WHEN ${SEMIANNUAL_TYPE_SQL_MATCH} THEN
+            CASE
+                WHEN q.expiry_date IS NULL THEN q.next_confirmation_due
+                WHEN q.next_confirmation_due IS NULL THEN q.expiry_date
+                WHEN q.next_confirmation_due < q.expiry_date THEN q.next_confirmation_due
+                ELSE q.expiry_date
+            END
+        ELSE q.expiry_date
+    END
+`;
+
 function semaforo(expiryDate, status) {
     if (status === 'sospesa' || status === 'revocata') return 'grigio';
     if (!expiryDate) return 'verde';
@@ -188,7 +224,7 @@ async function listQualifications(req, res) {
             search = '', company_id = '', status = '',
             approval_status = '',
             person_name = '', expiring_days = '',
-            qualification_type = '',
+            qualification_type = '', situazione = '',
             page = 1, limit = 50,
         } = req.query;
 
@@ -221,6 +257,25 @@ async function listQualifications(req, res) {
                 where.push("q.expiry_date IS NOT NULL AND q.expiry_date <= DATEADD(day, @expDays, CAST(GETDATE() AS DATE)) AND q.expiry_date >= CAST(GETDATE() AS DATE) AND q.status NOT IN ('revocata','sospesa')");
             }
         }
+
+        // Filtro "situazione" (card statistiche / dropdown) — allineato a
+        // QUALIFICATION_SITUAZIONI nel frontend e agli stessi bucket di getStats.
+        // Usa EFFECTIVE_EXPIRY_SQL così un saldatore 9606-1/14732 con conferma
+        // semestrale scaduta finisce nel bucket corretto anche se il certificato
+        // di base non è ancora arrivato a naturale scadenza.
+        const today = 'CAST(GETDATE() AS DATE)';
+        const SITUAZIONE_WHERE = {
+            valide:         `q.status = 'valida' AND ((${EFFECTIVE_EXPIRY_SQL}) IS NULL OR (${EFFECTIVE_EXPIRY_SQL}) > DATEADD(day, ${DAYS_WARNING}, ${today}))`,
+            in_scadenza_60: `q.status NOT IN ('revocata','sospesa') AND (${EFFECTIVE_EXPIRY_SQL}) IS NOT NULL AND (${EFFECTIVE_EXPIRY_SQL}) BETWEEN DATEADD(day, ${DAYS_URGENT + 1}, ${today}) AND DATEADD(day, ${DAYS_WARNING}, ${today})`,
+            urgenti_30:     `q.status NOT IN ('revocata','sospesa') AND (${EFFECTIVE_EXPIRY_SQL}) IS NOT NULL AND (${EFFECTIVE_EXPIRY_SQL}) BETWEEN ${today} AND DATEADD(day, ${DAYS_URGENT}, ${today})`,
+            scadute:        `q.status NOT IN ('revocata','sospesa') AND (${EFFECTIVE_EXPIRY_SQL}) IS NOT NULL AND (${EFFECTIVE_EXPIRY_SQL}) < ${today}`,
+            sospesa:        `q.status = 'sospesa'`,
+            revocata:       `q.status = 'revocata'`,
+        };
+        if (situazione && SITUAZIONE_WHERE[situazione]) {
+            where.push(SITUAZIONE_WHERE[situazione]);
+        }
+
         const whereClause = where.join(' AND ');
 
         const bindListFilters = (request) => {
@@ -288,10 +343,10 @@ async function getStats(req, res) {
         const statsResult = await r.query(`
             SELECT
                 COUNT(*) AS total,
-                SUM(CASE WHEN q.status = 'valida' AND (q.expiry_date IS NULL OR q.expiry_date > DATEADD(day, 60, CAST(GETDATE() AS DATE))) THEN 1 ELSE 0 END) AS valide,
-                SUM(CASE WHEN q.expiry_date IS NOT NULL AND q.expiry_date BETWEEN DATEADD(day, 31, CAST(GETDATE() AS DATE)) AND DATEADD(day, 60, CAST(GETDATE() AS DATE)) AND q.status NOT IN ('revocata','sospesa') THEN 1 ELSE 0 END) AS in_scadenza_60,
-                SUM(CASE WHEN q.expiry_date IS NOT NULL AND q.expiry_date BETWEEN CAST(GETDATE() AS DATE) AND DATEADD(day, 30, CAST(GETDATE() AS DATE)) AND q.status NOT IN ('revocata','sospesa') THEN 1 ELSE 0 END) AS in_scadenza_30,
-                SUM(CASE WHEN q.expiry_date IS NOT NULL AND q.expiry_date < CAST(GETDATE() AS DATE) AND q.status NOT IN ('revocata','sospesa') THEN 1 ELSE 0 END) AS scadute,
+                SUM(CASE WHEN q.status = 'valida' AND ((${EFFECTIVE_EXPIRY_SQL}) IS NULL OR (${EFFECTIVE_EXPIRY_SQL}) > DATEADD(day, 60, CAST(GETDATE() AS DATE))) THEN 1 ELSE 0 END) AS valide,
+                SUM(CASE WHEN (${EFFECTIVE_EXPIRY_SQL}) IS NOT NULL AND (${EFFECTIVE_EXPIRY_SQL}) BETWEEN DATEADD(day, 31, CAST(GETDATE() AS DATE)) AND DATEADD(day, 60, CAST(GETDATE() AS DATE)) AND q.status NOT IN ('revocata','sospesa') THEN 1 ELSE 0 END) AS in_scadenza_60,
+                SUM(CASE WHEN (${EFFECTIVE_EXPIRY_SQL}) IS NOT NULL AND (${EFFECTIVE_EXPIRY_SQL}) BETWEEN CAST(GETDATE() AS DATE) AND DATEADD(day, 30, CAST(GETDATE() AS DATE)) AND q.status NOT IN ('revocata','sospesa') THEN 1 ELSE 0 END) AS in_scadenza_30,
+                SUM(CASE WHEN (${EFFECTIVE_EXPIRY_SQL}) IS NOT NULL AND (${EFFECTIVE_EXPIRY_SQL}) < CAST(GETDATE() AS DATE) AND q.status NOT IN ('revocata','sospesa') THEN 1 ELSE 0 END) AS scadute,
                 SUM(CASE WHEN q.status IN ('sospesa','revocata') THEN 1 ELSE 0 END) AS non_attive
             FROM qualifications q
             WHERE q.organization_id = @orgId${whereExtra}
