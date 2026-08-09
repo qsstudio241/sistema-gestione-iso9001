@@ -91,13 +91,25 @@ body.sgq-ingest-review-resizing .reprocess-dialog__resizer::after { background: 
 .reprocess-dialog--expanded .reprocess-dialog__proposal { max-height: none; }
 
 .reprocess-dialog__hint { font-size: 12px; color: #6b7280; margin: 0 0 10px; }
-.reprocess-dialog__field {
-  display: flex; flex-direction: column; gap: 4px;
+
+/* Una riga = un campo/proposta editabile (correzione 09/08/2026 — riusa
+   .ingest-review__input via FieldInput, già caricato globalmente insieme a
+   IngestReviewDialog.css nelle stesse pagine che montano questo banner). */
+.reprocess-dialog__field-row {
+  display: flex; flex-direction: column; gap: 6px;
   background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 8px;
-  padding: 10px 12px; margin-bottom: 10px;
+  padding: 12px 14px; margin-bottom: 12px;
 }
-.reprocess-dialog__field-label { font-size: 12px; font-weight: 600; color: #4b5563; }
-.reprocess-dialog__field-value { font-size: 15px; font-weight: 700; color: #1e3a5f; }
+.reprocess-dialog__field-label {
+  font-size: 12px; font-weight: 600; color: #4b5563;
+  display: flex; align-items: center; gap: 8px;
+}
+.reprocess-dialog__field-edited-badge {
+  font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.02em;
+  background: #dbeafe; color: #1d4ed8; border-radius: 4px; padding: 1px 6px;
+}
+.reprocess-dialog__field-original { font-size: 12px; color: #6b7280; margin: 0; }
+.reprocess-dialog__field-row-actions { display: flex; gap: 8px; margin-top: 4px; }
 
 .reprocess-dialog__warnings { font-size: 12px; color: #d97706; margin-top: 6px; }
 .reprocess-dialog__error {
@@ -118,6 +130,7 @@ body.sgq-ingest-review-resizing .reprocess-dialog__resizer::after { background: 
 .reprocess-dialog__btn--danger:hover:not(:disabled) { background: #fee2e2; }
 .reprocess-dialog__btn--secondary { background: #f3f4f6; color: #374151; border: 1px solid #d1d5db; }
 .reprocess-dialog__btn:disabled { opacity: 0.6; cursor: not-allowed; }
+.reprocess-dialog__field-row .reprocess-dialog__btn { padding: 6px 12px; font-size: 12px; }
 
 @media (max-width: 720px) {
   .reprocess-dialog__layout { grid-template-columns: 1fr !important; overflow: auto; gap: 0.75rem; }

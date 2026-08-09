@@ -100,3 +100,83 @@ describe("ReprocessProposalDialog — Ingrandisci affiancato (rilievo committent
     expect(overlay).not.toHaveClass("reprocess-dialog__overlay--expanded");
   });
 });
+
+describe("ReprocessQueueBanner — correzione manuale e raggruppamento per documento (rilievo committente 09/08/2026)", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    apiService.getIngestStagingFileBlob.mockRejectedValue(new Error("no preview in test"));
+    window.matchMedia = vi.fn(() => ({
+      matches: false,
+      media: "",
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
+    }));
+  });
+
+  it("il valore è editabile e la conferma invia la correzione dell'utente, non il valore AI originale", async () => {
+    apiService.listIngestStaging.mockResolvedValue({
+      items: [{
+        id: 55, doc_type: "wpqr", original_name: "wpqr.pdf", field_scope: "product_type",
+        target_wpqr_id: 20,
+        fields: { wpqr_code: "WPQR-20", product_type: "P" },
+      }],
+    });
+    apiService.confirmIngestStaging.mockResolvedValue({ success: true });
+
+    render(<ReprocessQueueBanner module="saldatura" />);
+    fireEvent.click(await screen.findByText(/Vedi elenco/i));
+    fireEvent.click(await screen.findByText("Rivedi"));
+
+    const input = await screen.findByLabelText(/Tipo prodotto testato/i);
+    fireEvent.change(input, { target: { value: "T" } });
+
+    expect(screen.getByText("Conferma valore corretto")).toBeInTheDocument();
+    fireEvent.click(screen.getByText("Conferma valore corretto"));
+
+    await waitFor(() => {
+      expect(apiService.confirmIngestStaging).toHaveBeenCalledWith(55, { product_type: "T" });
+    });
+  });
+
+  it("due campi sullo stesso documento (stesso target_wpqr_id) compaiono in un'unica riga e in un'unica sessione", async () => {
+    apiService.listIngestStaging.mockResolvedValue({
+      items: [
+        {
+          id: 61, doc_type: "wpqr", original_name: "wpqr.pdf", field_scope: "preheat_temp",
+          target_wpqr_id: 30, fields: { wpqr_code: "WPQR-30", preheat_temp: "min 100 C" },
+        },
+        {
+          id: 62, doc_type: "wpqr", original_name: "wpqr.pdf", field_scope: "interpass_temp",
+          target_wpqr_id: 30, fields: { wpqr_code: "WPQR-30", interpass_temp: "max 250 C" },
+        },
+      ],
+    });
+    apiService.confirmIngestStaging.mockResolvedValue({ success: true });
+
+    render(<ReprocessQueueBanner module="saldatura" />);
+    fireEvent.click(await screen.findByText(/Vedi elenco/i));
+
+    // Una sola riga "Rivedi" per il documento, non due
+    expect(screen.getAllByText("Rivedi")).toHaveLength(1);
+    expect(screen.getByText(/2 campi da rivedere/)).toBeInTheDocument();
+
+    fireEvent.click(screen.getByText("Rivedi"));
+
+    expect(await screen.findByText(/2 campi da rivedere su questo documento/)).toBeInTheDocument();
+    expect(screen.getAllByText("Conferma e salva")).toHaveLength(2);
+
+    // Confermo solo il primo campo: la finestra resta aperta con l'altro campo residuo
+    fireEvent.click(screen.getAllByText("Conferma e salva")[0]);
+    await waitFor(() => {
+      expect(apiService.confirmIngestStaging).toHaveBeenCalledWith(61, { preheat_temp: "min 100 C" });
+    });
+    await waitFor(() => expect(screen.getAllByText("Conferma e salva")).toHaveLength(1));
+
+    // Confermo anche il secondo campo: nessun campo residuo, la finestra si chiude da sola
+    fireEvent.click(screen.getByText("Conferma e salva"));
+    await waitFor(() => {
+      expect(apiService.confirmIngestStaging).toHaveBeenCalledWith(62, { interpass_temp: "max 250 C" });
+    });
+    await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
+  });
+});

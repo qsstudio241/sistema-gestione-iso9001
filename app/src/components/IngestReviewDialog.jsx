@@ -90,6 +90,26 @@ function FieldInput({ field, value, onChange }) {
     onChange: (e) => onChange(field.key, e.target.value),
   };
 
+  if (field.type === "boolean") {
+    // Prima di questo fix il campo booleano ricadeva sull'input di testo
+    // generico in fondo alla funzione (l'operatore doveva scrivere "true"/
+    // "false" a mano) — un menu Sì/No è coerente con l'esito booleano reale
+    // e con la coercizione già applicata in handleConfirm().
+    const v = value === true || value === "true" ? "true" : value === false || value === "false" ? "false" : "";
+    return (
+      <select
+        id={common.id}
+        className="ingest-review__input"
+        value={v}
+        onChange={(e) => onChange(field.key, e.target.value === "true")}
+      >
+        <option value="">— Seleziona —</option>
+        <option value="true">Sì</option>
+        <option value="false">No</option>
+      </select>
+    );
+  }
+
   if (field.type === "select" && Array.isArray(field.options)) {
     if (hasAltroFallback(field)) {
       const v = value ?? "";
@@ -421,4 +441,4 @@ export default function IngestReviewDialog({
   );
 }
 
-export { ConfidenceBadge, formatFieldValue, isFieldConfirmedByAi, formatReadonlyDisplay };
+export { ConfidenceBadge, formatFieldValue, isFieldConfirmedByAi, formatReadonlyDisplay, FieldInput };
