@@ -1943,7 +1943,13 @@ class ApiService {
     }
 
     async runReprocessTask(key, body = {}) {
-        return this.post(`/admin/reprocess-tasks/${key}/run`, body);
+        // Timeout esteso (stesso valore degli upload batch WPQR/WPS/qualifiche): la
+        // rielaborazione richiama l'estrazione AI in sequenza per ogni candidato
+        // (osservato ~15s/candidato su campi WPQR) e con il timeout globale (15s in
+        // produzione) il client mostrava "Richiesta timeout" anche quando il backend
+        // completava correttamente pochi secondi dopo, creando comunque le proposte
+        // (log VPS 09/08/2026: 4 candidati completati in ~60s, proposte create).
+        return this.post(`/admin/reprocess-tasks/${key}/run`, body, { timeout: 180000 });
     }
 
     async downloadBillingExport(period) {
