@@ -8,6 +8,11 @@
  * `?module=qualifiche`.
  */
 
+const fs = require('fs');
+const os = require('os');
+const path = require('path');
+const { PassThrough } = require('stream');
+
 jest.mock('../services/ingestStaging.service', () => ({
     confirmStaging: jest.fn(),
     rejectStaging: jest.fn(),
@@ -21,9 +26,9 @@ jest.mock('../services/moduleLicense.service', () => ({ getLicensedModuleKeysFor
 jest.mock('../services/ingestFeedback.service', () => ({ getLearningStats: jest.fn() }));
 jest.mock('../utils/logger', () => ({ info: jest.fn(), error: jest.fn(), warn: jest.fn() }));
 
-const { listStaging, getModuleForDocType } = require('../services/ingestStaging.service');
+const { listStaging, getModuleForDocType, getStagingById, resolveStagingFilePath } = require('../services/ingestStaging.service');
 const { getLicensedModuleKeysForOrg } = require('../services/moduleLicense.service');
-const { listStaging: listStagingHandler, getStaging } = require('./ingestStaging.controller');
+const { listStaging: listStagingHandler, getStaging, getStagingFile } = require('./ingestStaging.controller');
 
 function mockRes() {
     const res = {};
@@ -130,5 +135,63 @@ describe('getStaging — espone target_wpqr_id oltre a target_qualification_id',
         await getStaging(req, res);
 
         expect(res.json).toHaveBeenCalledWith(expect.objectContaining({ target_wpqr_id: 7 }));
+    });
+});
+
+describe('getStagingFile — anteprima documento sorgente (bug "fs" mancante, 09/08/2026)', () => {
+    afterEach(() => jest.clearAllMocks());
+
+    /**
+     * Regressione: prima del fix del 09/08/2026 questo controller usava
+     * `fs.createReadStream` senza `require('fs')` in testa al file —
+     * ReferenceError a runtime mai coperto da test (nessun test precedente
+     * chiamava getStagingFile), scoperto in produzione perché l'anteprima
+     * mostrava sempre "Anteprima non disponibile" (sia per Qualifiche sia
+     * per WPQR, qualunque tenant).
+     */
+    it('esegue lo streaming del file quando il record e il percorso sono validi', async () => {
+        const tmpFile = path.join(os.tmpdir(), `staging-test-${Date.now()}.pdf`);
+        fs.writeFileSync(tmpFile, 'PDF-CONTENT');
+        try {
+            getStagingById.mockResolvedValue({
+                id: 1166,
+                doc_type: 'wpqr',
+                organization_id: 1003,
+                storage_path: tmpFile,
+                mime_type: 'application/pdf',
+                original_name: 'test.pdf',
+            });
+            resolveStagingFilePath.mockReturnValue(tmpFile);
+
+            const req = { params: { id: '1166' }, user: { organization_id: 1003, role: 'utente' } };
+            const res = new PassThrough();
+            res.setHeader = jest.fn();
+            res.status = jest.fn().mockReturnValue(res);
+            res.json = jest.fn().mockReturnValue(res);
+
+            const chunks = [];
+            res.on('data', (c) => chunks.push(c));
+
+            await new Promise((resolve, reject) => {
+                res.on('end', resolve);
+                res.on('error', reject);
+                getStagingFile(req, res).catch(reject);
+            });
+
+            expect(Buffer.concat(chunks).toString()).toBe('PDF-CONTENT');
+            expect(res.setHeader).toHaveBeenCalledWith('Content-Type', 'application/pdf');
+            expect(res.status).not.toHaveBeenCalled();
+        } finally {
+            fs.unlinkSync(tmpFile);
+        }
+    });
+
+    it('record non trovato -> 404 (nessuna eccezione fs)', async () => {
+        getStagingById.mockResolvedValue(null);
+        const req = { params: { id: '999' }, user: { organization_id: 1003, role: 'utente' } };
+        const res = mockRes();
+        await getStagingFile(req, res);
+
+        expect(res.status).toHaveBeenCalledWith(404);
     });
 });
