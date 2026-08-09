@@ -14,10 +14,11 @@
  * WPQR — componente parametrizzato con `module` ("qualifiche" | "saldatura"),
  * mai duplicato: ogni pagina monta la stessa banner con il proprio modulo.
  */
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import apiService from "../services/apiService";
 import { getSchemaForDocType } from "../data/documentTypeSchemas";
 import IngestSourcePreview from "./IngestSourcePreview";
+import useIngestReviewSplit from "../hooks/useIngestReviewSplit";
 import "./ReprocessQueueBanner.css";
 
 function fieldLabel(docType, fieldKey) {
@@ -44,6 +45,27 @@ function fieldValueLabel(docType, fieldKey, value) {
 function ReprocessProposalDialog({ item, onClose, onConfirmed, onRejected }) {
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState(null);
+  // "Ingrandisci affiancato" — stesso pattern (e stesso hook) della finestra
+  // di revisione ingest (IngestReviewDialog.jsx): il documento sorgente qui
+  // era troppo piccolo per essere navigabile comodamente (rilievo committente
+  // 09/08/2026). Riuso diretto di useIngestReviewSplit, non una copia.
+  const [expanded, setExpanded] = useState(false);
+  const layoutRef = useRef(null);
+  const { gridTemplateColumns, startResize } = useIngestReviewSplit(layoutRef);
+
+  useEffect(() => {
+    if (!item) setExpanded(false);
+  }, [item]);
+
+  useEffect(() => {
+    if (!item || !expanded) return undefined;
+    const onKey = (e) => {
+      if (e.key === "Escape") setExpanded(false);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [item, expanded]);
+
   if (!item) return null;
 
   const field = item.field_scope;
@@ -76,20 +98,47 @@ function ReprocessProposalDialog({ item, onClose, onConfirmed, onRejected }) {
   };
 
   return (
-    <div className="reprocess-dialog__overlay" role="dialog" aria-modal="true">
-      <div className="reprocess-dialog">
+    <div
+      className={`reprocess-dialog__overlay ${expanded ? "reprocess-dialog__overlay--expanded" : ""}`}
+      role="dialog"
+      aria-modal="true"
+    >
+      <div className={`reprocess-dialog ${expanded ? "reprocess-dialog--expanded" : ""}`}>
         <header className="reprocess-dialog__header">
-          <h3>Rielaborazione: {fieldLabel(item.doc_type, field)}</h3>
+          <div className="reprocess-dialog__header-top">
+            <h3>Rielaborazione: {fieldLabel(item.doc_type, field)}</h3>
+            <button
+              type="button"
+              className="reprocess-dialog__expand-btn"
+              onClick={() => setExpanded((v) => !v)}
+            >
+              {expanded ? "Riduci" : "Ingrandisci affiancato"}
+            </button>
+          </div>
           <p>
             <strong>{item.fields?.person_name || item.fields?.wpqr_code || "—"}</strong>
             {item.fields?.certificate_number && <> — cert. {item.fields.certificate_number}</>}
           </p>
         </header>
 
-        <div className="reprocess-dialog__body">
+        <div ref={layoutRef} className="reprocess-dialog__layout" style={{ gridTemplateColumns }}>
           <div className="reprocess-dialog__preview">
-            <IngestSourcePreview stagingId={item.id} fileName={item.original_name} mimeType="application/pdf" />
+            <IngestSourcePreview
+              stagingId={item.id}
+              fileName={item.original_name}
+              mimeType="application/pdf"
+              tall={expanded}
+            />
           </div>
+
+          <div
+            className="reprocess-dialog__resizer"
+            role="separator"
+            aria-orientation="vertical"
+            aria-label="Ridimensiona anteprima e proposta"
+            onMouseDown={startResize}
+          />
+
           <div className="reprocess-dialog__proposal">
             <p className="reprocess-dialog__hint">
               Valore estratto ora dal documento originale già caricato — verificalo prima di confermare.
