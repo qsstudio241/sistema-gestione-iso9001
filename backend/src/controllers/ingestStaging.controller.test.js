@@ -162,29 +162,44 @@ describe('getStagingFile — anteprima documento sorgente (bug "fs" mancante, 09
                 original_name: 'test.pdf',
             });
             resolveStagingFilePath.mockReturnValue(tmpFile);
+            // Mock espliciti (non ereditati da altri describe): il ruolo 'utente'
+            // passa comunque per assertModuleAccess, quindi va soddisfatto anche
+            // il controllo licenza modulo, non solo la risoluzione del file.
+            getModuleForDocType.mockReturnValue('saldatura');
+            getLicensedModuleKeysForOrg.mockResolvedValue(['saldatura']);
 
             const req = { params: { id: '1166' }, user: { organization_id: 1003, role: 'utente' } };
             const res = new PassThrough();
             res.setHeader = jest.fn();
+            let jsonBody = null;
             res.status = jest.fn().mockReturnValue(res);
-            res.json = jest.fn().mockReturnValue(res);
+            res.json = jest.fn((body) => { jsonBody = body; return res; });
 
             const chunks = [];
             res.on('data', (c) => chunks.push(c));
 
+            // Il completamento può arrivare per due strade: lo stream emette
+            // 'end' (percorso riuscito, pipe()) oppure il controller risponde
+            // con res.json() su un ramo di errore (nessun 'end' in arrivo) —
+            // senza questo doppio esito, un fallimento imprevisto di
+            // assertModuleAccess lascerebbe il test in attesa fino al timeout
+            // Jest, con il file temporaneo mai rimosso (rilievo Bugbot).
             await new Promise((resolve, reject) => {
                 res.on('end', resolve);
                 res.on('error', reject);
-                getStagingFile(req, res).catch(reject);
+                getStagingFile(req, res)
+                    .then(() => { if (jsonBody !== null) resolve(); })
+                    .catch(reject);
             });
 
+            expect(jsonBody).toBeNull();
             expect(Buffer.concat(chunks).toString()).toBe('PDF-CONTENT');
             expect(res.setHeader).toHaveBeenCalledWith('Content-Type', 'application/pdf');
             expect(res.status).not.toHaveBeenCalled();
         } finally {
             fs.unlinkSync(tmpFile);
         }
-    });
+    }, 10000);
 
     it('record non trovato -> 404 (nessuna eccezione fs)', async () => {
         getStagingById.mockResolvedValue(null);
