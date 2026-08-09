@@ -180,3 +180,87 @@ describe("ReprocessQueueBanner — correzione manuale e raggruppamento per docum
     await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
   });
 });
+
+describe("ReprocessQueueBanner — fix rilievi Bugbot 09/08/2026 (campo vuoto, alias wpqr_, coercizione tipi)", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    apiService.getIngestStagingFileBlob.mockRejectedValue(new Error("no preview in test"));
+    window.matchMedia = vi.fn(() => ({
+      matches: false,
+      media: "",
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
+    }));
+  });
+
+  it("svuotare il campo disabilita 'Conferma' (nessuna chiusura silenziosa della proposta senza scrivere nulla)", async () => {
+    apiService.listIngestStaging.mockResolvedValue({
+      items: [{
+        id: 70, doc_type: "wpqr", original_name: "wpqr.pdf", field_scope: "preheat_temp",
+        target_wpqr_id: 40, fields: { wpqr_code: "WPQR-40", preheat_temp: "min 100 C" },
+      }],
+    });
+
+    render(<ReprocessQueueBanner module="saldatura" />);
+    fireEvent.click(await screen.findByText(/Vedi elenco/i));
+    fireEvent.click(await screen.findByText("Rivedi"));
+
+    const input = await screen.findByLabelText(/Temperatura preriscaldo/i);
+    fireEvent.change(input, { target: { value: "" } });
+
+    const confirmBtn = screen.getByRole("button", { name: /Conferma/ });
+    expect(confirmBtn).toBeDisabled();
+    expect(screen.getByText(/Il campo è vuoto/)).toBeInTheDocument();
+
+    fireEvent.click(confirmBtn);
+    expect(apiService.confirmIngestStaging).not.toHaveBeenCalled();
+  });
+
+  it("un campo booleano con alias di registro 'wpqr_' usa il select Sì/No, non un input di testo libero", async () => {
+    apiService.listIngestStaging.mockResolvedValue({
+      items: [{
+        id: 71, doc_type: "wpqr", original_name: "wpqr.pdf", field_scope: "wpqr_thickness_max_unlimited",
+        target_wpqr_id: 41, fields: { wpqr_code: "WPQR-41", wpqr_thickness_max_unlimited: true },
+      }],
+    });
+    apiService.confirmIngestStaging.mockResolvedValue({ success: true });
+
+    render(<ReprocessQueueBanner module="saldatura" />);
+    fireEvent.click(await screen.findByText(/Vedi elenco/i));
+    fireEvent.click(await screen.findByText("Rivedi"));
+
+    const select = await screen.findByLabelText(/Spessore massimo/i);
+    expect(select.tagName).toBe("SELECT");
+    expect(select.value).toBe("true");
+
+    fireEvent.change(select, { target: { value: "false" } });
+    fireEvent.click(screen.getByText("Conferma valore corretto"));
+
+    await waitFor(() => {
+      // Coercizione a booleano reale, non la stringa "false"
+      expect(apiService.confirmIngestStaging).toHaveBeenCalledWith(71, { wpqr_thickness_max_unlimited: false });
+    });
+  });
+
+  it("un campo numerico invia un Number alla conferma, non la stringa dell'input", async () => {
+    apiService.listIngestStaging.mockResolvedValue({
+      items: [{
+        id: 72, doc_type: "wpqr", original_name: "wpqr.pdf", field_scope: "throat_test_mm",
+        target_wpqr_id: 42, fields: { wpqr_code: "WPQR-42", throat_test_mm: 5 },
+      }],
+    });
+    apiService.confirmIngestStaging.mockResolvedValue({ success: true });
+
+    render(<ReprocessQueueBanner module="saldatura" />);
+    fireEvent.click(await screen.findByText(/Vedi elenco/i));
+    fireEvent.click(await screen.findByText("Rivedi"));
+
+    const input = await screen.findByLabelText(/Spessore gola provino/i);
+    fireEvent.change(input, { target: { value: "7.5" } });
+    fireEvent.click(screen.getByText("Conferma valore corretto"));
+
+    await waitFor(() => {
+      expect(apiService.confirmIngestStaging).toHaveBeenCalledWith(72, { throat_test_mm: 7.5 });
+    });
+  });
+});

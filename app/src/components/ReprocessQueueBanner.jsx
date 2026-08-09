@@ -38,20 +38,31 @@ import { FieldInput } from "./IngestReviewDialog";
 import useIngestReviewSplit from "../hooks/useIngestReviewSplit";
 import "./ReprocessQueueBanner.css";
 
-function fieldLabel(docType, fieldKey) {
+/**
+ * Cerca il campo nello schema del documento provando sia la chiave esatta
+ * sia quella spogliata del prefisso "wpqr_" — prefisso usato solo per
+ * evitare collisioni nel registro di rielaborazione condiviso tra tabelle
+ * (es. "wpqr_thickness_max_unlimited" -> colonna/campo reale
+ * "thickness_max_unlimited", vedi reprocessableFields.js backend). Unica
+ * fonte usata da label, valore leggibile e input editabile: prima del
+ * rilievo Bugbot 09/08/2026 solo la chiave esatta veniva provata, quindi
+ * questi campi con alias mostravano una label grezza e un input di testo
+ * libero invece del select Sì/No.
+ */
+function resolveSchemaField(docType, fieldKey) {
   const schema = getSchemaForDocType(docType);
-  const field = schema?.fields?.find((f) => f.key === fieldKey);
+  const strippedKey = fieldKey.replace(/^wpqr_/, "");
+  return schema?.fields?.find((f) => f.key === fieldKey || f.key === strippedKey) || null;
+}
+
+function fieldLabel(docType, fieldKey) {
+  const field = resolveSchemaField(docType, fieldKey);
   if (field?.label) return field.label;
-  // Fallback per chiavi di registro rielaborazione che non coincidono col
-  // nome campo ingest (es. "wpqr_thickness_max_unlimited" -> colonna reale
-  // "thickness_max_unlimited" — prefisso usato solo per evitare collisioni
-  // nel registro condiviso tra tabelle, vedi reprocessableFields.js backend).
   return fieldKey.replace(/^wpqr_/, "").replace(/_/g, " ");
 }
 
 function fieldValueLabel(docType, fieldKey, value) {
-  const schema = getSchemaForDocType(docType);
-  const field = schema?.fields?.find((f) => f.key === fieldKey);
+  const field = resolveSchemaField(docType, fieldKey);
   if (field?.type === "select" && Array.isArray(field.options)) {
     const opt = field.options.find((o) => String(o.value) === String(value));
     if (opt) return opt.label;
@@ -61,16 +72,38 @@ function fieldValueLabel(docType, fieldKey, value) {
 }
 
 /**
- * Definizione campo per l'input editabile: usa lo schema quando la chiave
- * coincide, altrimenti un fallback testo semplice — una label mancante o un
- * alias di registro diverso dalla chiave AI non deve mai bloccare la
- * correzione (vedi nota fieldLabel sopra sugli alias "wpqr_*").
+ * Definizione campo per l'input editabile: usa lo schema quando trovato
+ * (chiave esatta o spogliata, vedi resolveSchemaField), altrimenti un
+ * fallback che deduce il tipo dal valore già proposto (booleano/numero/
+ * testo) — una label o un tipo mancante non deve mai bloccare la
+ * correzione, ma nemmeno degradare un booleano/numero a semplice testo
+ * libero.
  */
-function resolveFieldDef(docType, fieldKey) {
-  const schema = getSchemaForDocType(docType);
-  const match = schema?.fields?.find((f) => f.key === fieldKey);
+function resolveFieldDef(docType, fieldKey, originalValue) {
+  const match = resolveSchemaField(docType, fieldKey);
   if (match) return match;
-  return { key: fieldKey, label: fieldLabel(docType, fieldKey), type: "text" };
+  const inferredType = typeof originalValue === "boolean" ? "boolean" : typeof originalValue === "number" ? "number" : "text";
+  return { key: fieldKey, label: fieldLabel(docType, fieldKey), type: inferredType };
+}
+
+/**
+ * Coercizione allo stesso contratto di IngestReviewDialog.handleConfirm:
+ * i valori arrivano da input HTML (sempre stringhe, tranne il select
+ * booleano che passa "true"/"false"/"") e vanno convertiti al tipo reale
+ * della colonna prima di inviarli alla conferma (rilievo Bugbot 09/08/2026).
+ */
+function coerceFieldValueForSubmit(fieldDef, value) {
+  if (fieldDef.type === "number") {
+    return value === "" || value == null ? null : Number(value);
+  }
+  if (fieldDef.type === "boolean") {
+    return value === true || value === "true" || value === "1";
+  }
+  return value;
+}
+
+function isEmptyFieldValue(value) {
+  return value == null || String(value).trim() === "";
 }
 
 /** Una proposta appartiene a un documento tramite l'una o l'altra colonna target (mai entrambe). */
@@ -98,19 +131,22 @@ function groupDisplayName(group) {
 /** Una riga = una proposta (un campo). Conferma/scarto restano per-campo — solo la finestra è condivisa. */
 function ReprocessFieldRow({ item, docType, onDone }) {
   const field = item.field_scope;
-  const fieldDef = useMemo(() => resolveFieldDef(docType, field), [docType, field]);
   const originalValue = item.fields?.[field];
+  const fieldDef = useMemo(() => resolveFieldDef(docType, field, originalValue), [docType, field, originalValue]);
   const [value, setValue] = useState(originalValue);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState(null);
 
   const edited = String(value ?? "") !== String(originalValue ?? "");
+  const isEmpty = isEmptyFieldValue(value);
 
   const handleConfirm = async () => {
+    if (isEmpty) return;
     setBusy(true);
     setErr(null);
     try {
-      await apiService.confirmIngestStaging(item.id, { [field]: value });
+      const coercedValue = coerceFieldValueForSubmit(fieldDef, value);
+      await apiService.confirmIngestStaging(item.id, { [field]: coercedValue });
       onDone(item.id);
     } catch (e) {
       setErr(e?.data?.error || e.message || "Conferma fallita");
@@ -144,6 +180,11 @@ function ReprocessFieldRow({ item, docType, onDone }) {
       <p className="reprocess-dialog__field-original">
         Valore proposto dal documento: <strong>{fieldValueLabel(docType, field, originalValue)}</strong>
       </p>
+      {isEmpty && (
+        <p className="reprocess-dialog__field-empty-hint">
+          {"\u26A0\uFE0F"} Il campo è vuoto: inserisci un valore per confermarlo, oppure scarta la proposta.
+        </p>
+      )}
       {item.warnings?.length > 0 && (
         <div className="reprocess-dialog__warnings">
           {item.warnings.map((w, i) => <div key={i}>{"\u26A0\uFE0F"} {w}</div>)}
@@ -151,7 +192,13 @@ function ReprocessFieldRow({ item, docType, onDone }) {
       )}
       {err && <div className="reprocess-dialog__error">{err}</div>}
       <div className="reprocess-dialog__field-row-actions">
-        <button type="button" className="reprocess-dialog__btn reprocess-dialog__btn--primary" onClick={handleConfirm} disabled={busy}>
+        <button
+          type="button"
+          className="reprocess-dialog__btn reprocess-dialog__btn--primary"
+          onClick={handleConfirm}
+          disabled={busy || isEmpty}
+          title={isEmpty ? "Inserisci un valore prima di confermare" : undefined}
+        >
           {busy ? "Salvataggio..." : edited ? "Conferma valore corretto" : "Conferma e salva"}
         </button>
         <button type="button" className="reprocess-dialog__btn reprocess-dialog__btn--danger" onClick={handleReject} disabled={busy}>

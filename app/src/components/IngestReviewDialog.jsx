@@ -101,7 +101,7 @@ function FieldInput({ field, value, onChange }) {
         id={common.id}
         className="ingest-review__input"
         value={v}
-        onChange={(e) => onChange(field.key, e.target.value === "true")}
+        onChange={(e) => onChange(field.key, e.target.value)}
       >
         <option value="">— Seleziona —</option>
         <option value="true">Sì</option>
