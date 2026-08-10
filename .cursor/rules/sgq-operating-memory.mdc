@@ -225,6 +225,19 @@ Blocchi principali:
 
 **Motivazione**: riuso garantisce consistenza visiva, comportamento gia' testato, scalabilita' senza debito tecnico. Ogni nuova implementazione parallela va considerata un difetto da correggere, non una soluzione.
 
+## Filtri: singola fonte di verita' (niente doppio controllo per la stessa dimensione)
+
+**Regola generale (committente 10/08/2026, generalizzata dal fix Qualifiche — PR #368)**: quando una pagina mostra **card statistiche cliccabili** (filtro rapido) E un **menu a tendina** che filtra sulla stessa dimensione concettuale (es. "situazione"/"stato"), verificare se sono davvero due controlli per la stessa cosa. Se sì, e' una **ridondanza da eliminare**, non una scelta di design accettabile — confonde l'utente (due modi di ottenere lo stesso risultato, a volte con esito diverso se i due controlli non sono sincronizzati) e aumenta la superficie di bug (due punti che possono disallinearsi, come e' successo in Qualifiche: la card "0 Scadute" contraddiceva righe realmente "Scaduta" a video).
+
+**Prima di rimuovere un controllo ridondante**, verificare sempre che **nessuna funzionalita' venga persa**:
+1. Elencare tutti i valori/stati distinti gestiti da ciascuno dei due controlli.
+2. Se il menu a tendina ha opzioni **non** rappresentate da nessuna card (es. "Sospese"/"Revocate" in Qualifiche, "Archiviati"/"Presi in carico" in Scadenzari), **non limitarsi a cancellare la tendina** — consolidare quei valori in una card mancante (una per valore, o una card unica se i valori sono concettualmente equivalenti, es. "Non attiva" per sospesa+revocata) prima di rimuovere il secondo controllo.
+3. Un solo punto di controllo per ogni dimensione di filtro (le card) e' il pattern standard del progetto — non reintrodurre una tendina "di riserva" per pigrizia quando basta una card in piu'.
+
+**Verificare sempre anche l'algoritmo di conteggio dietro le card**: se il colore/stato mostrato per riga usa una regola (es. `effectiveExpiryDate` per i 9606-1/14732) diversa da quella usata per contare le card (es. solo `expiry_date`), le card e la lista si contraddicono anche senza alcuna tendina di mezzo — allineare sempre le due regole alla stessa funzione condivisa.
+
+**Stato di applicazione (10/08/2026)**: Qualifiche — **corretto** (PR #368, card "Non attiva" + tendina rimossa). Scadenzari da file — **corretto** (card "Archiviate"/"Presi in carico" aggiunte, tendina "Stato" rimossa; fix collegato: le tarature strumenti scadute avevano `status:'expired'` invece di `active`+`days_until_due<0`, invisibili sia nella card "Scadute" sia nel filtro default "Attive"). **Ancora da fare (backlog, non toccare senza motivo esplicito)**: modulo **NC** — card (Aperte/Scadute/In scadenza/Totale) duplicate da due select separati ("Stato" + "Tutte le scadenze"), pattern piu' grave di Scadenzari. Prima di aggiungere un nuovo filtro a tendina in **qualsiasi** modulo, controllare se esistono già card statistiche sulla stessa pagina che coprono (in tutto o in parte) la stessa dimensione.
+
 ## Completezza ingest AI vs modifica manuale (regola vincolante, 08/08/2026)
 
 Ogni volta che si aggiunge o modifica un campo in un `aiExpectedSchema` (`documentTypeSchemas.js`, FE o BE), **aggiungere lo stesso campo anche alla whitelist `*_MANUAL_EDITABLE_FIELDS` del controller corrispondente** (`WPQR_MANUAL_EDITABLE_FIELDS` in `welding.controller.js`, `QUALIFICATION_MANUAL_EDITABLE_FIELDS` in `qualifications.controller.js` — o l'alias se il nome colonna DB differisce), **e** al form React di creazione/modifica manuale (`WPQRFormModal`, `QualificationForm.jsx`).
