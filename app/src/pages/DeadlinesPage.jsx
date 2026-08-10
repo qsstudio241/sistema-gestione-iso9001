@@ -131,19 +131,20 @@ function DeadlinesPage() {
     navigate(buildDocumentRegistryPath({ selectId: sourceId, companyId: item?.company_id || null }));
   }, [navigate]);
 
-  const handleStatusFilter = useCallback((value) => {
-    setFilterStatus(value);
-    if (value !== 'active') setFilterDue('');
-  }, []);
-
   const getActiveCard = useCallback(() => {
     if (filterStatus === 'active' && filterDue === 'expired') return 'expired';
     if (filterStatus === 'active' && filterDue === 'soon') return 'soon';
     if (filterStatus === 'active' && !filterDue) return 'active';
     if (filterStatus === 'completed' && !filterDue) return 'completed';
+    if (filterStatus === 'dismissed' && !filterDue) return 'dismissed';
+    if (filterStatus === 'expired_acknowledged' && !filterDue) return 'acknowledged';
     return null;
   }, [filterStatus, filterDue]);
 
+  // Un solo punto di controllo per il filtro "situazione": ogni valore lifecycle
+  // reale (active/completed/dismissed/expired_acknowledged) ha la sua card — non
+  // reintrodurre una tendina "Stato" parallela (v. sgq-operating-memory.mdc §
+  // Filtri: singola fonte di verità).
   const handleCardFilter = useCallback((card) => {
     if (getActiveCard() === card) {
       setFilterStatus('');
@@ -161,6 +162,12 @@ function DeadlinesPage() {
       setFilterDue('soon');
     } else if (card === 'completed') {
       setFilterStatus('completed');
+      setFilterDue('');
+    } else if (card === 'dismissed') {
+      setFilterStatus('dismissed');
+      setFilterDue('');
+    } else if (card === 'acknowledged') {
+      setFilterStatus('expired_acknowledged');
       setFilterDue('');
     }
   }, [getActiveCard]);
@@ -243,6 +250,11 @@ function DeadlinesPage() {
             </button>
           );
         }
+        // Le righe virtuali tarature (item_type='equipment') non sono record
+        // di deadline_items: completeDeadlineItem(item.id) fallirebbe (l'id è
+        // "equipment_N", non un id numerico reale). La taratura si aggiorna
+        // dal modulo Strumenti e Attrezzature, non da qui.
+        if (row.item_type === 'equipment') return null;
         if (row.status !== 'active') return null;
         return (
           <button
@@ -271,21 +283,10 @@ function DeadlinesPage() {
     return row[col.id];
   }, []);
 
-  // Filtri per DataGridExportable
+  // Filtri per DataGridExportable — niente più tendina "Stato": ogni valore
+  // lifecycle ha ora la sua card statistica cliccabile (v. sotto), unico punto
+  // di controllo per questa dimensione di filtro.
   const filters = [
-    {
-      id: 'status',
-      label: 'Stato',
-      value: filterStatus,
-      onChange: handleStatusFilter,
-      options: [
-        { value: '',               label: 'Tutti gli stati' },
-        { value: 'active',         label: 'Attivi' },
-        { value: 'completed',      label: 'Completati' },
-        { value: 'dismissed',      label: 'Archiviati' },
-        { value: 'expired_acknowledged', label: 'Presi in carico' },
-      ],
-    },
     {
       id: 'company',
       label: 'Azienda',
@@ -314,6 +315,8 @@ function DeadlinesPage() {
   const statsExpired   = statsBase.filter(i => i.status === 'active' && i.days_until_due < 0).length;
   const statsSoon      = statsBase.filter(i => i.status === 'active' && i.days_until_due >= 0 && i.days_until_due <= 30).length;
   const statsCompleted = statsBase.filter(i => i.status === 'completed').length;
+  const statsDismissed = statsBase.filter(i => i.status === 'dismissed').length;
+  const statsAcknowledged = statsBase.filter(i => i.status === 'expired_acknowledged').length;
   const activeCard     = getActiveCard();
 
   return (
@@ -362,6 +365,24 @@ function DeadlinesPage() {
         >
           <span className="dl-stat-num">{statsCompleted}</span>
           <span className="dl-stat-lbl">Completate</span>
+        </button>
+        <button
+          type="button"
+          className={`dl-stat dl-stat--gray${activeCard === 'dismissed' ? ' dl-stat-active' : ''}`}
+          onClick={() => handleCardFilter('dismissed')}
+          title="Filtra: scadenze archiviate"
+        >
+          <span className="dl-stat-num">{statsDismissed}</span>
+          <span className="dl-stat-lbl">Archiviate</span>
+        </button>
+        <button
+          type="button"
+          className={`dl-stat dl-stat--amber${activeCard === 'acknowledged' ? ' dl-stat-active' : ''}`}
+          onClick={() => handleCardFilter('acknowledged')}
+          title="Filtra: scadenze scadute prese in carico"
+        >
+          <span className="dl-stat-num">{statsAcknowledged}</span>
+          <span className="dl-stat-lbl">Prese in carico</span>
         </button>
       </div>
 

@@ -66,12 +66,19 @@
   box-shadow: 0 0 0 2px rgba(107, 114, 128, 0.18);
 }
 
+.dl-stat--amber.dl-stat-active {
+  border-color: #854d0e;
+  background: #fef9c3;
+  box-shadow: 0 0 0 2px rgba(133, 77, 14, 0.18);
+}
+
 .dl-stat-num { font-size: 1.6rem; font-weight: 700; color: #1f2937; line-height: 1; }
 .dl-stat-lbl { font-size: 0.72rem; color: #9ca3af; text-transform: uppercase; letter-spacing: 0.04em; }
 
 .dl-stat--red    .dl-stat-num { color: #dc2626; }
 .dl-stat--orange .dl-stat-num { color: #d97706; }
 .dl-stat--gray   .dl-stat-num { color: #9ca3af; }
+.dl-stat--amber  .dl-stat-num { color: #854d0e; }
 
 /* Semaforo */
 .dl-semaforo { font-size: 1rem; display: inline-block; }
