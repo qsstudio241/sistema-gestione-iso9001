@@ -288,7 +288,7 @@ Configurazione **versionata nel repo** (priorità massima rispetto all'ambiente 
 - La colonna **Stato** di `DeadlinesPage.jsx` usa una badge CSS locale (`dl-status-badge`/`dl-status--*` + mappa `STATUS_LABEL` propria) invece del componente condiviso `StatusBadge.jsx`. Funziona ed è visivamente coerente, ma è un'implementazione parallela — candidato a refactor futuro (aggiungere un tipo `deadline` a `StatusBadge.STATUS_CONFIGS`) se si tocca di nuovo questo file, non prioritario da solo.
 - `qualificationAlert.service.js` (righe virtuali qualifiche) e `mapEquipmentDeadlineRows` (tarature) sono già coerenti tra loro (entrambe sempre `status:'active'`, mai un quinto valore) — nessuna azione necessaria.
 
-**Test:** backend 5/5 (`deadlines.controller.test.js`, jest) + suite completa 1263/1266 (2 fallimenti pre-esistenti non correlati in `customChecklist.legislativoSicurezza.test.js`/`attachment.controller.test.js`, non toccati da questa PR). Frontend 1021/1021 (vitest, 144 file) + `npm run build` OK. PR: [#373](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/373) (da verificare al momento dell'apertura).
+**Test:** backend 5/5 (`deadlines.controller.test.js`, jest) + suite completa 1263/1266 (2 fallimenti pre-esistenti non correlati in `customChecklist.legislativoSicurezza.test.js`/`attachment.controller.test.js`, non toccati da questa PR). Frontend 1021/1021 (vitest, 144 file) + `npm run build` OK. PR: [#375](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/375).
 
 ### Anagrafica aziende — pattern critici
 
