@@ -61,6 +61,28 @@ describe("DeadlinesPage — card statistiche sostituiscono la tendina Stato", ()
     expect(ackCard.textContent).toContain("Prese in carico");
   });
 
+  // Regressione (rilievo Bugbot 10/08/2026): le righe virtuali tarature
+  // (item_type='equipment', id tipo "equipment_N") non sono record reali di
+  // deadline_items — il pulsante "Segna completato" chiamerebbe
+  // completeDeadlineItem con un id non numerico e fallirebbe. Prima del fix
+  // mapEquipmentDeadlineRows usava status:'expired' per le tarature scadute,
+  // che nascondeva il bug per coincidenza (row.status !== 'active' → null);
+  // portando lo status sempre a 'active' il pulsante sarebbe tornato visibile
+  // senza l'esclusione esplicita per item_type.
+  it("non mostra 'Segna completato' per le righe virtuali tarature (item_type='equipment')", async () => {
+    apiService.getDeadlineItems.mockResolvedValueOnce({
+      data: [
+        { id: "equipment_1", item_type: "equipment", title: "Termometro", status: "active", days_until_due: -3, company_id: 1, company_name: "ACME" },
+      ],
+    });
+
+    render(<DeadlinesPage />);
+    await waitFor(() => expect(apiService.getDeadlineItems).toHaveBeenCalled());
+
+    expect(screen.getByText("Termometro")).toBeTruthy();
+    expect(screen.queryByTitle("Segna completato")).toBeNull();
+  });
+
   it("cliccando la card 'Archiviate' filtra la lista alla sola riga dismissed", async () => {
     const user = userEvent.setup();
     render(<DeadlinesPage />);

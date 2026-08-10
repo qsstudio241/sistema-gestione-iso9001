@@ -250,6 +250,11 @@ function DeadlinesPage() {
             </button>
           );
         }
+        // Le righe virtuali tarature (item_type='equipment') non sono record
+        // di deadline_items: completeDeadlineItem(item.id) fallirebbe (l'id è
+        // "equipment_N", non un id numerico reale). La taratura si aggiorna
+        // dal modulo Strumenti e Attrezzature, non da qui.
+        if (row.item_type === 'equipment') return null;
         if (row.status !== 'active') return null;
         return (
           <button
