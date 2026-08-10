@@ -1,6 +1,7 @@
 # PROJECT CONTEXT — SGQ ISO 9001
 
 > Documento di orientamento rapido per l'AI agent. Da leggere all'inizio di ogni sessione.  
+> **Stato di avanzamento e priorità aperte ORA** (fonte unica per «a che punto siamo»): → [docs/PROJECT_ROADMAP.md § Stato attuale e priorità](docs/PROJECT_ROADMAP.md#stato-attuale-e-priorità-fonte-unica)  
 > **Esperienza consolidata** (deploy, Word, sync): → [docs/GUIDA_CONSOLIDATA.md](docs/GUIDA_CONSOLIDATA.md)  
 > **Fasi di sviluppo, DoD e test di robustezza** (piramide test, smoke, licenze): → stessa guida, sezione **«Piano qualità: fasi di sviluppo e test di robustezza»**.  
 > **Come scrivere/aggiornare la doc** (chiarezza, fonte unica, review): → stessa guida, sezione **«Principi di documentazione»**.  
@@ -144,7 +145,9 @@ Esclude `<w:pPr>` — errore storico che corrompeva il file (commit `975ed3e`).
 
 ---
 
-## Stato funzionalità (2026-03-01)
+## Stato funzionalità (2026-03-01) — ⚠️ STORICO, SUPERATO
+
+> **Non usare questa sezione per rispondere a «stato di avanzamento del progetto e priorità da affrontare»** — è ferma a marzo 2026 e non riflette i moduli aggiunti da allora (Saldatura/WPQR/WPS, Qualifiche v2, SAL, Notifiche/Alert, Registro obblighi legali, Material Compliance, ecc.). Fonte corrente: [docs/PROJECT_ROADMAP.md § Stato attuale e priorità](docs/PROJECT_ROADMAP.md#stato-attuale-e-priorità-fonte-unica). Tenuta solo come traccia storica di come è partito il progetto.
 
 ### ✅ Completate (2026-03-02)
 
