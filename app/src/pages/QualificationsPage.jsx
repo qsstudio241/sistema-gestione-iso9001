@@ -19,7 +19,6 @@ import AskAiButton from "../components/AskAiButton";
 import { saveQualContext } from "../utils/aiAssistantContext";
 import { requiresSemiannualConfirmation } from "../utils/weldingConfirmationRules";
 import {
-    QUALIFICATION_SITUAZIONI,
     STATS_TO_SITUAZIONE,
     toggleSituazione,
     situazioneLabel,
@@ -131,6 +130,7 @@ function StatsBar({ stats, activeSituazione, onStatClick }) {
         { key: "in_scadenza_60", cls: "sq-stat-giallo", lbl: "In scad. 60gg" },
         { key: "in_scadenza_30", cls: "sq-stat-arancione", lbl: "Urgenti 30gg" },
         { key: "scadute", cls: "sq-stat-rosso", lbl: "Scadute" },
+        { key: "non_attive", cls: "sq-stat-grigio", lbl: "Non attiva" },
     ];
 
     return (
@@ -588,17 +588,6 @@ function QualificationsPage() {
                     value={filters.search}
                     onChange={e => setFilter("search", e.target.value)}
                 />
-                <select
-                    className="sq-select sq-situazione-select"
-                    value={filters.situazione}
-                    onChange={e => setFilter("situazione", e.target.value)}
-                    aria-label="Filtra per situazione"
-                >
-                    <option value="">Tutte le situazioni</option>
-                    {QUALIFICATION_SITUAZIONI.map((opt) => (
-                        <option key={opt.value} value={opt.value}>{opt.label}</option>
-                    ))}
-                </select>
                 {(filters.search || filters.situazione) && (
                     <button
                         className="sq-btn-secondary"
