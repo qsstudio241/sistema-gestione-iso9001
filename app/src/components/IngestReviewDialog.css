@@ -1,132 +1,32 @@
-.ingest-review__overlay {
-  position: fixed;
-  inset: 0;
-  background: rgba(15, 23, 42, 0.55);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 1200;
-  padding: 1rem;
-}
-
-.ingest-review__overlay--expanded {
-  padding: 0;
-  background: #0f172a;
-  align-items: stretch;
-}
-
+/*
+ * Guscio (overlay/dialog/header-top/expand-btn/layout/resizer) condiviso con
+ * ReprocessQueueBanner.css tramite IngestDialogShell — vedi IngestDialogShell.css
+ * per le regole strutturali comuni. Qui restano solo le dimensioni e gli
+ * spazi specifici di questo dialog (più ampio: gestisce un intero documento),
+ * applicati sulle classi condivise con selettori discendenti.
+ */
 .ingest-review__dialog {
-  background: #fff;
-  border-radius: 12px;
   width: min(1180px, 100%);
   max-height: 92vh;
-  overflow: hidden;
-  display: flex;
-  flex-direction: column;
   box-shadow: 0 20px 50px rgba(0, 0, 0, 0.2);
   padding: 1.25rem 1.5rem 1.5rem;
 }
 
 .ingest-review__dialog--expanded {
-  width: 100%;
-  max-width: none;
-  max-height: none;
-  height: 100%;
-  border-radius: 0;
-  box-shadow: none;
   padding: 0.75rem 1rem 1rem;
 }
 
-.ingest-review__header-top {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 1rem;
-}
-
-.ingest-review__expand-btn {
-  flex-shrink: 0;
-  border: 1px solid #2563eb;
-  background: #eff6ff;
-  color: #1d4ed8;
-  border-radius: 8px;
-  padding: 0.45rem 0.85rem;
-  font-size: 0.85rem;
-  font-weight: 600;
-  cursor: pointer;
-  white-space: nowrap;
-}
-
-.ingest-review__expand-btn:hover {
-  background: #dbeafe;
-}
-
-.ingest-review__dialog--expanded .ingest-review__expand-btn {
-  background: #2563eb;
-  color: #fff;
-}
-
-.ingest-review__dialog--expanded .ingest-review__expand-btn:hover {
-  background: #1d4ed8;
-}
-
-.ingest-review__layout {
-  display: grid;
-  gap: 0;
+.ingest-review__dialog .ingest-dialog-shell__layout {
   margin-top: 0.75rem;
-  min-height: 0;
-  flex: 1;
-  overflow: hidden;
 }
 
-.ingest-review__dialog--expanded .ingest-review__layout {
+.ingest-review__dialog--expanded .ingest-dialog-shell__layout {
   margin-top: 0.5rem;
 }
 
-.ingest-review__resizer {
-  flex-shrink: 0;
-  width: 6px;
-  margin: 0 -2px;
-  cursor: col-resize;
-  background: transparent;
-  position: relative;
-  z-index: 2;
-  touch-action: none;
-}
-
-.ingest-review__resizer::after {
-  content: "";
-  position: absolute;
-  top: 0;
-  bottom: 0;
-  left: 2px;
-  width: 2px;
-  background: #e2e8f0;
-  transition: background 0.15s ease;
-}
-
-.ingest-review__resizer:hover::after,
-body.sgq-ingest-review-resizing .ingest-review__resizer::after {
-  background: #2563eb;
-}
-
-body.sgq-ingest-review-resizing,
-body.sgq-ingest-review-resizing * {
-  cursor: col-resize !important;
-  user-select: none !important;
-}
-
-.ingest-review__preview-pane {
+.ingest-review__dialog .ingest-dialog-shell__preview-pane {
   min-height: 440px;
   max-height: calc(92vh - 200px);
-  display: flex;
-  flex-direction: column;
-}
-
-.ingest-review__dialog--expanded .ingest-review__preview-pane {
-  min-height: 0;
-  max-height: none;
-  height: 100%;
 }
 
 .ingest-review__form-pane {
@@ -140,7 +40,7 @@ body.sgq-ingest-review-resizing * {
   min-height: 0;
 }
 
-.ingest-review__dialog--expanded .ingest-review__actions {
+.ingest-review__dialog--expanded .ingest-dialog-shell__actions {
   flex-shrink: 0;
   margin-top: 0.75rem;
   padding-top: 0.75rem;
@@ -153,17 +53,17 @@ body.sgq-ingest-review-resizing * {
 }
 
 @media (max-width: 900px) {
-  .ingest-review__layout {
+  .ingest-review__dialog .ingest-dialog-shell__layout {
     grid-template-columns: 1fr !important;
     overflow: auto;
     gap: 0.75rem;
   }
 
-  .ingest-review__resizer {
+  .ingest-review__dialog .ingest-dialog-shell__resizer {
     display: none;
   }
 
-  .ingest-review__preview-pane {
+  .ingest-review__dialog .ingest-dialog-shell__preview-pane {
     max-height: 45vh;
     min-height: 220px;
   }
@@ -173,7 +73,7 @@ body.sgq-ingest-review-resizing * {
   }
 }
 
-.ingest-review__header h2 {
+.ingest-review__title {
   margin: 0 0 0.35rem;
   font-size: 1.2rem;
 }
@@ -343,7 +243,7 @@ body.sgq-ingest-review-resizing * {
   color: #991b1b;
 }
 
-.ingest-review__actions {
+.ingest-review__dialog .ingest-dialog-shell__actions {
   display: flex;
   flex-wrap: wrap;
   gap: 0.5rem;
