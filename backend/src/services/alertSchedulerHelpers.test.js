@@ -80,16 +80,63 @@ describe('matchDocAlertRule', () => {
   it('ignora obsoleti', () => {
     expect(matchDocAlertRule({ expiryDate: '2020-01-01', status: 'obsoleto', thresholds })).toBeNull();
   });
+
+  // Regressione 10/08/2026: con expiry_date come oggetto Date nativo (formato
+  // reale mssql per document_registry.expiry_date), la soglia deve continuare
+  // a scattare — prima del fix daysUntilDue tornava sempre null qui.
+  it('match soglia pre-scadenza con expiry_date come oggetto Date nativo (mssql)', () => {
+    const today = new Date();
+    today.setUTCHours(0, 0, 0, 0);
+    const due = new Date(today);
+    due.setUTCDate(due.getUTCDate() + 7);
+    expect(matchDocAlertRule({ expiryDate: due, status: 'rilasciato', thresholds }))
+      .toEqual({ kind: 'threshold', thresholdDays: 7 });
+  });
 });
 
 describe('daysUntilDue', () => {
-  it('calcola giorni futuri', () => {
+  it('calcola giorni futuri (stringa ISO)', () => {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     const future = new Date(today);
     future.setDate(future.getDate() + 7);
     const iso = `${future.getFullYear()}-${String(future.getMonth() + 1).padStart(2, '0')}-${String(future.getDate()).padStart(2, '0')}`;
     expect(daysUntilDue(iso)).toBe(7);
+  });
+
+  /**
+   * Regressione bug critico 10/08/2026: mssql/tedious restituisce le colonne
+   * DATE come oggetti `Date` nativi a mezzanotte UTC, non come stringhe
+   * "YYYY-MM-DD". La versione precedente faceva `String(dueDate)` e testava
+   * la regex ISO — su un Date nativo produce "Thu Aug 31 2028 00:00:00
+   * GMT+0000 (...)" che non combacia mai, quindi restituiva sempre `null`.
+   * Verificato in produzione: qual_notification_log e doc_notification_log
+   * erano a 0 righe nonostante qualifiche/documenti realmente scaduti — né un
+   * alert email né una riga virtuale in Scadenzario sono mai scattati.
+   */
+  it('calcola giorni futuri da un oggetto Date nativo (formato reale restituito da mssql)', () => {
+    const today = new Date();
+    today.setUTCHours(0, 0, 0, 0);
+    const future = new Date(today);
+    future.setUTCDate(future.getUTCDate() + 10);
+    expect(daysUntilDue(future)).toBe(10);
+  });
+
+  it('calcola giorni passati da un oggetto Date nativo (scaduta)', () => {
+    const today = new Date();
+    today.setUTCHours(0, 0, 0, 0);
+    const past = new Date(today);
+    past.setUTCDate(past.getUTCDate() - 5);
+    expect(daysUntilDue(past)).toBe(-5);
+  });
+
+  it('ignora un oggetto Date non valido', () => {
+    expect(daysUntilDue(new Date('not-a-date'))).toBeNull();
+  });
+
+  it('ignora valori senza formato riconoscibile', () => {
+    expect(daysUntilDue('non una data')).toBeNull();
+    expect(daysUntilDue(undefined)).toBeNull();
   });
 });
 
@@ -132,6 +179,24 @@ describe('matchNcAlertRule', () => {
       alertDays1: 30,
       thresholds,
     })).toBeNull();
+  });
+
+  // Regressione 10/08/2026: con due_date come oggetto Date nativo (formato
+  // reale mssql per non_conformities.due_date), la soglia deve continuare a
+  // scattare — prima del fix daysUntilDue tornava sempre null qui.
+  it('match soglia due_date come oggetto Date nativo (mssql)', () => {
+    const today = new Date();
+    today.setUTCHours(0, 0, 0, 0);
+    const due = new Date(today);
+    due.setUTCDate(due.getUTCDate() + 7);
+    const rule = matchNcAlertRule({
+      dueDate: due,
+      createdAt: today.toISOString(),
+      status: 'open',
+      alertDays1: 30,
+      thresholds,
+    });
+    expect(rule).toEqual({ kind: 'threshold', thresholdDays: 7 });
   });
 });
 

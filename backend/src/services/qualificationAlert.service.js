@@ -379,7 +379,10 @@ function mapQualificationDeadlineRows(rows, daysWindow = 365) {
     });
   }
 
-  return out.sort((a, b) => String(a.due_date).localeCompare(String(b.due_date)));
+  // Confronto per data reale, non per stringa: Date.toString() inizia col nome
+  // del giorno della settimana ("Mon", "Tue", ...) — un confronto testuale
+  // (localeCompare) ordinerebbe per iniziale del giorno, non cronologicamente.
+  return out.sort((a, b) => new Date(a.due_date) - new Date(b.due_date));
 }
 
 module.exports = {
