@@ -8,6 +8,7 @@
  */
 
 import React from "react";
+import { reloadIfChunkError } from "../utils/chunkReloadGuard";
 
 class ErrorBoundary extends React.Component {
   constructor(props) {
@@ -17,6 +18,7 @@ class ErrorBoundary extends React.Component {
       error: null,
       errorInfo: null,
       errorHistory: [],
+      chunkReloadTriggered: false,
     };
   }
 
@@ -27,6 +29,12 @@ class ErrorBoundary extends React.Component {
   componentDidCatch(error, errorInfo) {
     // Log errore in console
     console.error("❌ [ErrorBoundary] Crash catturato:", error, errorInfo);
+
+    // Chunk obsoleto dopo un nuovo deploy Netlify (tab aperta durante il rilascio):
+    // ricarica automaticamente una volta invece di mostrare un errore tecnico.
+    if (reloadIfChunkError(error)) {
+      this.setState({ chunkReloadTriggered: true });
+    }
 
     // Salva errore in stato
     this.setState({
@@ -88,6 +96,28 @@ class ErrorBoundary extends React.Component {
 
   render() {
     if (this.state.hasError) {
+      if (this.state.chunkReloadTriggered) {
+        return (
+          <div
+            style={{
+              padding: "20px",
+              maxWidth: "600px",
+              margin: "50px auto",
+              fontFamily: "Arial, sans-serif",
+              backgroundColor: "#fff3cd",
+              border: "2px solid #ffc107",
+              borderRadius: "8px",
+            }}
+          >
+            <h1 style={{ color: "#856404", marginTop: 0 }}>
+              🔄 Aggiornamento disponibile
+            </h1>
+            <p style={{ fontSize: "16px", lineHeight: "1.6" }}>
+              È stata pubblicata una nuova versione dell'app. La pagina si ricarica automaticamente...
+            </p>
+          </div>
+        );
+      }
       return (
         <div
           style={{

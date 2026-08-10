@@ -6,12 +6,13 @@
 
 import React from "react";
 import "./SharedComponents.css";
+import { reloadIfChunkError } from "../utils/chunkReloadGuard";
 
 // === ERROR BOUNDARY ===
 export class ErrorBoundary extends React.Component {
   constructor(props) {
     super(props);
-    this.state = { hasError: false, error: null };
+    this.state = { hasError: false, error: null, chunkReloadTriggered: false };
   }
 
   static getDerivedStateFromError(error) {
@@ -20,10 +21,25 @@ export class ErrorBoundary extends React.Component {
 
   componentDidCatch(error, errorInfo) {
     console.error("ErrorBoundary caught error:", error, errorInfo);
+    // Chunk obsoleto dopo un nuovo deploy Netlify (tab aperta durante il rilascio):
+    // ricarica automaticamente una volta invece di mostrare un errore tecnico.
+    if (reloadIfChunkError(error)) {
+      this.setState({ chunkReloadTriggered: true });
+    }
   }
 
   render() {
     if (this.state.hasError) {
+      if (this.state.chunkReloadTriggered) {
+        return (
+          <div className="error-boundary">
+            <div className="error-boundary-content">
+              <h2>🔄 Aggiornamento disponibile</h2>
+              <p>È stata pubblicata una nuova versione dell'app. La pagina si ricarica automaticamente...</p>
+            </div>
+          </div>
+        );
+      }
       return (
         <div className="error-boundary">
           <div className="error-boundary-content">
