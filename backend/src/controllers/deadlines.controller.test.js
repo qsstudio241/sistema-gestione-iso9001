@@ -23,7 +23,8 @@ jest.mock('../utils/logger', () => ({
   debug: jest.fn(),
 }));
 
-const { mapEquipmentDeadlineRows } = require('./deadlines.controller');
+const { mapEquipmentDeadlineRows, updateDeadlineItem } = require('./deadlines.controller');
+const { getPool } = require('../config/database');
 
 describe('deadlines.controller — mapEquipmentDeadlineRows', () => {
   it('assegna sempre status "active" anche per tarature scadute (mai un quarto valore "expired")', () => {
@@ -66,5 +67,66 @@ describe('deadlines.controller — mapEquipmentDeadlineRows', () => {
     ], 365);
 
     expect(rows).toHaveLength(0);
+  });
+});
+
+/**
+ * Test L1 — deadlines.controller: updateDeadlineItem (validazione status)
+ *
+ * Audit di follow-up alla PR #371 (10/08/2026): le card "Archiviate"/"Prese in
+ * carico" avevano introdotto due nuovi valori di status raggiungibili solo
+ * lato UI, ma l'endpoint PATCH /deadline-items/:id scriveva il campo `status`
+ * ricevuto dal body senza validarlo contro il CHECK constraint DB (ADR-013
+ * §4.1: 'active'|'completed'|'dismissed'|'expired_acknowledged'). Un valore
+ * non ammesso avrebbe generato un errore SQL 500 invece di un 400 chiaro.
+ */
+describe('deadlines.controller — updateDeadlineItem (validazione status)', () => {
+  const buildReq = (body) => ({
+    params: { itemId: '1' },
+    user: { organization_id: 1, user_id: 1 },
+    body,
+  });
+  const buildRes = () => {
+    const res = {};
+    res.status = jest.fn(() => res);
+    res.json = jest.fn(() => res);
+    return res;
+  };
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
+  it('risponde 400 con messaggio chiaro se status non è tra i 4 valori ammessi', async () => {
+    getPool.mockResolvedValue({ request: jest.fn() });
+    const res = buildRes();
+
+    await updateDeadlineItem(buildReq({ status: 'foo_invalid' }), res);
+
+    expect(res.status).toHaveBeenCalledWith(400);
+    expect(res.json).toHaveBeenCalledWith(
+      expect.objectContaining({ error: expect.stringContaining('Stato non valido') })
+    );
+  });
+
+  it('accetta e applica uno status valido (es. "dismissed", introdotto da PR #371)', async () => {
+    const checkRequest  = { input: jest.fn().mockReturnThis(), query: jest.fn().mockResolvedValue({ recordset: [{ id: 1 }] }) };
+    const updateRequest = { input: jest.fn().mockReturnThis(), query: jest.fn().mockResolvedValue({}) };
+    const selectRequest = { input: jest.fn().mockReturnThis(), query: jest.fn().mockResolvedValue({ recordset: [{ id: 1, status: 'dismissed' }] }) };
+
+    const pool = { request: jest.fn() };
+    pool.request
+      .mockReturnValueOnce(checkRequest)
+      .mockReturnValueOnce(updateRequest)
+      .mockReturnValueOnce(selectRequest);
+    getPool.mockResolvedValue(pool);
+
+    const res = buildRes();
+    await updateDeadlineItem(buildReq({ status: 'dismissed' }), res);
+
+    expect(res.status).not.toHaveBeenCalledWith(400);
+    expect(res.json).toHaveBeenCalledWith(
+      expect.objectContaining({ success: true, item: expect.objectContaining({ status: 'dismissed' }) })
+    );
   });
 });

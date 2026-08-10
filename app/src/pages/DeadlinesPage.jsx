@@ -50,7 +50,7 @@ const COLUMNS = [
   { id: 'source_document_title',label: 'File origine',width: '160px', sortable: true  },
   { id: 'company_name',         label: 'Azienda',     width: '130px', sortable: true  },
   { id: 'status',               label: 'Stato',       width: '100px', sortable: true  },
-  { id: 'azioni',               label: '',            width: '80px',  sortable: false, exportSkip: true },
+  { id: 'azioni',               label: '',            width: '220px', sortable: false, exportSkip: true },
 ];
 
 const STATUS_LABEL = {
@@ -59,6 +59,12 @@ const STATUS_LABEL = {
   dismissed:            'Archiviato',
   expired_acknowledged: 'Preso in carico',
 };
+
+// Limite di pagina iniziale e tetto di sicurezza per il refetch completo
+// (v. commento in load()) — evita richieste illimitate in caso di dataset
+// anomali.
+const DEADLINES_PAGE_LIMIT = 500;
+const DEADLINES_SAFETY_MAX_LIMIT = 5000;
 
 // Componente principale
 
@@ -84,10 +90,28 @@ function DeadlinesPage() {
     setError(null);
     try {
       const [itemsRes, companiesRes] = await Promise.all([
-        apiService.getDeadlineItems({ limit: 500 }),
+        apiService.getDeadlineItems({ limit: DEADLINES_PAGE_LIMIT }),
         apiService.getCompanies(),
       ]);
-      const all = itemsRes.data || [];
+      let all = itemsRes.data || [];
+
+      // Le card statistiche e i filtri lavorano sull'intero dataset ricevuto
+      // (client-side by design — v. commento sotto ai filtri). Se l'org supera
+      // il limite di pagina, pagination.total lo rivela: un solo refetch con
+      // limit = total evita conteggi/filtri silenziosamente incompleti, senza
+      // introdurre paginazione multi-pagina (che duplicherebbe le righe
+      // virtuali qualifiche/tarature, ricalcolate per intero ad ogni pagina).
+      const total = itemsRes.pagination?.total;
+      if (typeof total === 'number' && total > all.length) {
+        const safeLimit = Math.min(total, DEADLINES_SAFETY_MAX_LIMIT);
+        try {
+          const fullRes = await apiService.getDeadlineItems({ limit: safeLimit });
+          all = fullRes.data || all;
+        } catch (refetchErr) {
+          console.warn('[DeadlinesPage] refetch completo fallito, dataset potrebbe essere parziale:', refetchErr.message);
+        }
+      }
+
       setItems(all);
       setCompanies(companiesRes.data || []);
 
@@ -184,6 +208,22 @@ function DeadlinesPage() {
     }
   }, []);
 
+  // Generalizza il pattern di handleComplete per gli altri due stati lifecycle
+  // (dismissed/expired_acknowledged): senza questa azione le card "Archiviate"/
+  // "Prese in carico" filtrano correttamente ma nessuna riga può mai arrivarci
+  // (bug di completezza post PR #371 — v. GUIDA_CONSOLIDATA.md).
+  const handleSetStatus = useCallback(async (item, newStatus) => {
+    setCompleting(item.id);
+    try {
+      await apiService.updateDeadlineItem(item.id, { status: newStatus });
+      setItems(prev => prev.map(i => i.id === item.id ? { ...i, status: newStatus } : i));
+    } catch (err) {
+      alert('Errore: ' + err.message);
+    } finally {
+      setCompleting(null);
+    }
+  }, []);
+
   // Renderer celle
   const renderCell = useCallback((row, col) => {
     switch (col.id) {
@@ -257,23 +297,54 @@ function DeadlinesPage() {
         if (row.item_type === 'equipment') return null;
         if (row.status !== 'active') return null;
         return (
-          <button
-            type="button"
-            className="dl-complete-btn"
-            onClick={(event) => {
-              event.stopPropagation();
-              handleComplete(row);
-            }}
-            disabled={completing === row.id}
-            title="Segna completato"
-          >
-            {completing === row.id ? '...' : '\u2713 OK'}
-          </button>
+          <div className="dl-actions-group">
+            <button
+              type="button"
+              className="dl-complete-btn"
+              onClick={(event) => {
+                event.stopPropagation();
+                handleComplete(row);
+              }}
+              disabled={completing === row.id}
+              title="Segna completato"
+            >
+              {completing === row.id ? '...' : '\u2713 OK'}
+            </button>
+            {/* "Prendi in carico" ha senso solo su scadenze già scadute: su una
+                scadenza futura non ancora superata non esiste nulla "da prendere
+                in carico" (si userebbe direttamente OK quando risolta). */}
+            {row.days_until_due < 0 && (
+              <button
+                type="button"
+                className="dl-complete-btn dl-ack-btn"
+                onClick={(event) => {
+                  event.stopPropagation();
+                  handleSetStatus(row, 'expired_acknowledged');
+                }}
+                disabled={completing === row.id}
+                title="Prendi in carico (scadenza in gestione, non ancora risolta)"
+              >
+                Prendi in carico
+              </button>
+            )}
+            <button
+              type="button"
+              className="dl-complete-btn dl-dismiss-btn"
+              onClick={(event) => {
+                event.stopPropagation();
+                handleSetStatus(row, 'dismissed');
+              }}
+              disabled={completing === row.id}
+              title="Archivia (non più rilevante)"
+            >
+              Archivia
+            </button>
+          </div>
         );
       default:
         return row[col.id] ?? '-';
     }
-  }, [handleComplete, completing, openSourceDocument, navigate]);
+  }, [handleComplete, handleSetStatus, completing, openSourceDocument, navigate]);
 
   // Export: valore grezzo per colonne speciali
   const getExportValue = useCallback((row, col) => {
