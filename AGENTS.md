@@ -12,6 +12,8 @@ Istruzioni operative per agenti Cursor (desktop e Cloud). Fonte di governance: [
 
 Rispondi in **italiano**, operativo e sintetico.
 
+**Domanda tipo «stato di avanzamento del progetto e priorità da affrontare»**: rispondi sintetizzando da [`docs/PROJECT_ROADMAP.md` § Stato attuale e priorità](docs/PROJECT_ROADMAP.md#stato-attuale-e-priorità-fonte-unica) (moduli maturi + sessione più recente + tabella priorità) — è la fonte unica pensata apposta per questa domanda, non il banner storico più sotto nello stesso file né la sezione "Stato funzionalità" di `PROJECT_CONTEXT.md` (entrambi marcati superati). Non serve un comando speciale: la domanda in linguaggio naturale funziona perché questo file (letto automaticamente a inizio sessione) indica dove guardare. **Aggiorna quella sezione a fine sessione** se emergono nuove priorità o se una priorità elencata viene chiusa — stesso principio di sintesi-con-link già usato per le "Lezioni apprese" di `GUIDA_CONSOLIDATA.md`.
+
 ## Workflow Lead / Deputy
 
 | Ruolo | Cosa fa |

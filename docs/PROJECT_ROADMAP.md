@@ -1,12 +1,48 @@
 # Roadmap — Sistema Gestione ISO 9001 / SaaS Multi-Tenant
 
 > **Data Inizio**: 13 gennaio 2026
+
+## Stato attuale e priorità (fonte unica)
+
+> Leggere questa sezione **prima** di tutto il resto del file.
+
+> **Risposta standard a «stato di avanzamento del progetto e priorità da affrontare»**: sintetizzare da questa sezione (moduli maturi + sessione più recente + tabella priorità sotto), **non** dal banner storico più sotto (superato, tenuto solo per traccia) né dalla sezione "Stato funzionalità" di [`PROJECT_CONTEXT.md`](../PROJECT_CONTEXT.md) (marcata storica/superata). **Aggiornare questa sezione a fine sessione** se emergono nuove priorità o se una priorità elencata viene chiusa (stesso principio delle "Lezioni apprese" in [GUIDA_CONSOLIDATA.md](GUIDA_CONSOLIDATA.md) — sintesi qui, dettaglio linkato).
+
+**Ultimo aggiornamento di questa sezione**: 10/08/2026.
+
+### Moduli maturi (in produzione, uso quotidiano dai clienti Camellini/Mason)
+
+Audit multi-standard (9001/14001/45001) · Non Conformità (workflow ISO 10.2 completo) · Qualifiche Personale saldatori/NDT/coordinatori (ISO 9606-1/14732/14731/9712) · Saldatura (WPQR, generazione WPS da WPQR, Welding Book, Commesse ISO 3834, Dashboard 3834) · SAL (gap analysis requisiti con AI) · Registro Documenti + Scadenzari · Notifiche/Alert (documenti/NC/qualifiche) · Riesame di Direzione · RBAC multi-tenant (`company_access`) · Registro obblighi legali (ambiente + sicurezza) · Assistente AI / Gap Analysis euristica.
+
+### Sessione più recente (10/08/2026)
+
+Fix trasversale filtri dashboard duplicati (card statistiche + tendina ridondante sulla stessa dimensione) — nuova regola sistematica in [`sgq-operating-memory.mdc` § Filtri: singola fonte di verità](../.cursor/rules/sgq-operating-memory.mdc); applicata a **Qualifiche** (PR #368) e **Scadenzari** (PR #371, + fix collegato tarature scadute invisibili). Trovato e corretto un **bug critico trasversale**: `daysUntilDue` non riconosceva le date come oggetti `Date` nativi mssql — nessun alert email (documenti/qualifiche) era mai partito da quando la funzionalità esiste (PR #369). Dettaglio completo: [GUIDA_CONSOLIDATA.md § Notifiche NC e alert](GUIDA_CONSOLIDATA.md#lezioni-apprese-consolidate-fonte-unica).
+
+### Priorità aperte ORA (ordine indicativo, non rigido — verificare col committente prima di iniziare una sessione dedicata)
+
+| # | Priorità | Perché | Dove riprendere |
+|---|---|---|---|
+| 1 | **Modulo NC — card statistiche duplicate da due tendine** | Stesso anti-pattern appena risolto in Qualifiche/Scadenzari, più marcato qui (due select, non una) | `app/src/pages/NCPage.jsx`; regola in `sgq-operating-memory.mdc` § Filtri |
+| 2 | **Modulo Notifiche/Alert — destinatario allerte qualifiche non è una scelta esplicita in anagrafica** | Oggi risolto da un algoritmo a cascata, non da una scelta visibile in UI | `qualificationAlert.service.js` (`resolveWeldingCoordinatorRecipients`) |
+| 3 | **Shell dialog di revisione ingest — markup/CSS duplicato** (non urgente, basso rischio) | `IngestReviewDialog.jsx` vs dialog interno `ReprocessQueueBanner.jsx`: guscio overlay duplicato (~60-80 righe); pattern sistemico su molti altri modal nel progetto | Vedi backlog sotto per dettaglio |
+| 4 | **Pagina Impostazioni → Organizzazione (P.IVA + logo tenant)** | PR #10 aperta da aprile 2026, 180 file in conflitto — richiede ricostruzione, non merge | Vedi riga dedicata nel backlog sotto |
+| 5 | **Material Compliance AI (certificati EN 10204 3.1)** | Modulo proposto 05/08/2026, slice MC-0 (spec) non ancora avviata | [MODULO_MATERIAL_COMPLIANCE_AI.md](specs/MODULO_MATERIAL_COMPLIANCE_AI.md) |
+
+Elenco completo (voci meno urgenti, decisioni di prodotto in attesa, task parcheggiati con motivo): tabella [Backlog parcheggiato](#backlog-parcheggiato-task-futuri--fonte-unica) più sotto.
+
+---
+
+<details>
+<summary>Banner storico pre-10/08/2026 (superato — non usarlo per "a che punto siamo", tenuto solo come traccia cronologica)</summary>
+
 > **Ultimo Aggiornamento**: 16 giugno 2026
 > **Prossimo Step**: ADR-009 completato (Fasi 1-4, 22/07/2026); Fase 5 superata da decisione 07/06/2026 (PR #52). Vedi sezione "VISION VINCOLANTE" più sotto per lo stato aggiornato e il prossimo passo.
 > **Backlog**: 🔴 ADR-009 Fase 2-5 (multi-standard/document_type/AI-ready) | ✅ **Modulo NC completo** — Fase 1 + Hardening H1–H6 + drawer ISO 10.2 + RichTextField; **attesa feedback utenti** 30/05/2026 ([GUIDA](GUIDA_CONSOLIDATA.md#modulo-nc-organizzativo--fase-1--hardening--ux-drawer-route-nc-30052026), [PROMPT_RIPRESA_NC](agent-tasks/PROMPT_RIPRESA_NC.md), [MANUALE_UTENTE_NC](how-to/MANUALE_UTENTE_NC.md)) | P2 NC: AI CAPA, export PDF, LIBRERIA_UI Fase B/C | ✅ **REG-NORM-SOT R1–R7** — registro documentale SoT norme/leggi, ADR-011, deploy VPS (25/05/2026; [GUIDA](GUIDA_CONSOLIDATA.md#sessione-25052026--registro-norme-sot-r1r7-completato-e-chiusura-pr)) | ✅ **PR #60/#62** merge template Word audit + fix seed legislativo | ✅ **Fix JSX Unicode Rischi / Qualifiche / Progetti** — escape `\u` solo in espressioni stringa JS (`RisksPage`, `QualificationForm`, `ProjectsPage`; playbook in [GUIDA_CONSOLIDATA.md](GUIDA_CONSOLIDATA.md), 22/05/2026) | ✅ **Playbook encoding / caratteri non riconoscibili** — [GUIDA_CONSOLIDATA.md](GUIDA_CONSOLIDATA.md) + script `backend/scripts/check-utf8-encoding.js` (16/05/2026) | ✅ **ADR-009 Fase 1** — PendingIssuesCascade UI/UX + badge standard + navigazione accordion (12/05/2026) | ✅ Fix pending-issues filtro NC/OSS/NV + CHECK constraint DB (12/05/2026) | ✅ Fix NC statistics alias SQL riservati (12/05/2026) | ✅ Fix pending-issues lazy-init nc_id post-MERGE (12/05/2026) | ✅ Fix validazione guided close collapse button (09-10/05/2026) | ✅ Fix CORS nginx fallback backend down (08/05/2026) | ✅ Fix licenze admin/superadmin bypass requireLicensedModule (08/05/2026) | ✅ Fix Exception 1 campi testo si svuotano (08/05/2026) | ✅ Fix Exception 4 multi-standard (08/05/2026) | ✅ Fix race rendering checklist multi-device (PR #39, 08/05/2026) | ✅ GAP-B1/B2/B3 custom checklist (PR #37, 08/05/2026) | Tabella "Rilievi Emersi" Word: aggiungere C e N.A. (da decidere con cliente) | norm_excerpt ISO 9001 (standard_id=1, backlog) | ✅ SYNC-5 allegati offline | ✅ migration 048-049-050 applicate
-> **Riferimenti**: [GUIDA_CONSOLIDATA.md](GUIDA_CONSOLIDATA.md) (esperienza operativa) | [adr/ADR-009](adr/ADR-009-multi-standard-architettura-per-norma.md) | [adr/ADR-008](adr/ADR-008-event-sourcing-sync.md) | [adr/ADR-006](adr/ADR-006-auto-reconcile-cache-sync.md) | [DATABASE_SCHEMA.md](reference/DATABASE_SCHEMA.md) (schema DB)
-
 > **Decisione prossima traccia documenti (aprile 2026)**: dopo chiusura smoke **0–3**, scegliere **una** traccia prioritaria — **Sprint 10** (ingest → staging → registry) se il valore commerciale immediato è il registro documenti; **`norm_excerpt`** (colonna + Word) se serve un miglioramento rapido sui report senza attendere lo staging completo. Le due tracce possono convivere solo se il product owner definisce ordine e capacità; altrimenti evitare doppio carico in parallelo sulla stessa sessione.
+
+</details>
+
+> **Riferimenti**: [GUIDA_CONSOLIDATA.md](GUIDA_CONSOLIDATA.md) (esperienza operativa) | [adr/ADR-009](adr/ADR-009-multi-standard-architettura-per-norma.md) | [adr/ADR-008](adr/ADR-008-event-sourcing-sync.md) | [adr/ADR-006](adr/ADR-006-auto-reconcile-cache-sync.md) | [DATABASE_SCHEMA.md](reference/DATABASE_SCHEMA.md) (schema DB)
 
 ---
 
