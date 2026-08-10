@@ -8,7 +8,7 @@
 
 > **Risposta standard a «stato di avanzamento del progetto e priorità da affrontare»**: sintetizzare da questa sezione (moduli maturi + sessione più recente + tabella priorità sotto), **non** dal banner storico più sotto (superato, tenuto solo per traccia) né dalla sezione "Stato funzionalità" di [`PROJECT_CONTEXT.md`](../PROJECT_CONTEXT.md) (marcata storica/superata). **Aggiornare questa sezione a fine sessione** se emergono nuove priorità o se una priorità elencata viene chiusa (stesso principio delle "Lezioni apprese" in [GUIDA_CONSOLIDATA.md](GUIDA_CONSOLIDATA.md) — sintesi qui, dettaglio linkato).
 
-**Ultimo aggiornamento di questa sezione**: 10/08/2026.
+**Ultimo aggiornamento di questa sezione**: 10/08/2026 (DEPUTYTASK4 — filtri Saldatura WPS/WPQR).
 
 ### Moduli maturi (in produzione, uso quotidiano dai clienti Camellini/Mason)
 
@@ -16,17 +16,18 @@ Audit multi-standard (9001/14001/45001) · Non Conformità (workflow ISO 10.2 co
 
 ### Sessione più recente (10/08/2026)
 
-Fix trasversale filtri dashboard duplicati (card statistiche + tendina ridondante sulla stessa dimensione) — nuova regola sistematica in [`sgq-operating-memory.mdc` § Filtri: singola fonte di verità](../.cursor/rules/sgq-operating-memory.mdc); applicata a **Qualifiche** (PR #368) e **Scadenzari** (PR #371, + fix collegato tarature scadute invisibili). Trovato e corretto un **bug critico trasversale**: `daysUntilDue` non riconosceva le date come oggetti `Date` nativi mssql — nessun alert email (documenti/qualifiche) era mai partito da quando la funzionalità esiste (PR #369). Dettaglio completo: [GUIDA_CONSOLIDATA.md § Notifiche NC e alert](GUIDA_CONSOLIDATA.md#lezioni-apprese-consolidate-fonte-unica).
+Fix trasversale filtri dashboard duplicati (card statistiche + tendina ridondante sulla stessa dimensione) — nuova regola sistematica in [`sgq-operating-memory.mdc` § Filtri: singola fonte di verità](../.cursor/rules/sgq-operating-memory.mdc); applicata a **Qualifiche** (PR #368), **Scadenzari** (PR #371, + fix collegato tarature scadute invisibili), **NC** (PR #374) e **Saldatura WPS/WPQR** (DEPUTYTASK4 — caso più complesso: card WPQR-only mostrate anche nel tab WPS, bug bucket "scadute" non filtrato per `approval_status`, dettaglio in [GUIDA_CONSOLIDATA.md](GUIDA_CONSOLIDATA.md#lezioni-apprese-consolidate-fonte-unica)). Trovato e corretto un **bug critico trasversale**: `daysUntilDue` non riconosceva le date come oggetti `Date` nativi mssql — nessun alert email (documenti/qualifiche) era mai partito da quando la funzionalità esiste (PR #369). Dettaglio completo: [GUIDA_CONSOLIDATA.md § Notifiche NC e alert](GUIDA_CONSOLIDATA.md#lezioni-apprese-consolidate-fonte-unica).
 
 ### Priorità aperte ORA (ordine indicativo, non rigido — verificare col committente prima di iniziare una sessione dedicata)
 
 | # | Priorità | Perché | Dove riprendere |
 |---|---|---|---|
-| 1 | **Modulo NC — card statistiche duplicate da due tendine** | Stesso anti-pattern appena risolto in Qualifiche/Scadenzari, più marcato qui (due select, non una) | `app/src/pages/NCPage.jsx`; regola in `sgq-operating-memory.mdc` § Filtri |
-| 2 | **Modulo Notifiche/Alert — destinatario allerte qualifiche non è una scelta esplicita in anagrafica** | Oggi risolto da un algoritmo a cascata, non da una scelta visibile in UI | `qualificationAlert.service.js` (`resolveWeldingCoordinatorRecipients`) |
-| 3 | **Shell dialog di revisione ingest — markup/CSS duplicato** (non urgente, basso rischio) | `IngestReviewDialog.jsx` vs dialog interno `ReprocessQueueBanner.jsx`: guscio overlay duplicato (~60-80 righe); pattern sistemico su molti altri modal nel progetto | Vedi backlog sotto per dettaglio |
-| 4 | **Pagina Impostazioni → Organizzazione (P.IVA + logo tenant)** | PR #10 aperta da aprile 2026, 180 file in conflitto — richiede ricostruzione, non merge | Vedi riga dedicata nel backlog sotto |
-| 5 | **Material Compliance AI (certificati EN 10204 3.1)** | Modulo proposto 05/08/2026, slice MC-0 (spec) non ancora avviata | [MODULO_MATERIAL_COMPLIANCE_AI.md](specs/MODULO_MATERIAL_COMPLIANCE_AI.md) |
+| 1 | **Modulo Notifiche/Alert — destinatario allerte qualifiche non è una scelta esplicita in anagrafica** | Oggi risolto da un algoritmo a cascata, non da una scelta visibile in UI | `qualificationAlert.service.js` (`resolveWeldingCoordinatorRecipients`) |
+| 2 | **Shell dialog di revisione ingest — markup/CSS duplicato** (non urgente, basso rischio) | `IngestReviewDialog.jsx` vs dialog interno `ReprocessQueueBanner.jsx`: guscio overlay duplicato (~60-80 righe); pattern sistemico su molti altri modal nel progetto | Vedi backlog sotto per dettaglio |
+| 3 | **Pagina Impostazioni → Organizzazione (P.IVA + logo tenant)** | PR #10 aperta da aprile 2026, 180 file in conflitto — richiede ricostruzione, non merge | Vedi riga dedicata nel backlog sotto |
+| 4 | **Material Compliance AI (certificati EN 10204 3.1)** | Modulo proposto 05/08/2026, slice MC-0 (spec) non ancora avviata | [MODULO_MATERIAL_COMPLIANCE_AI.md](specs/MODULO_MATERIAL_COMPLIANCE_AI.md) |
+
+> Nota: **Modulo NC — card statistiche duplicate da due tendine** (era riga 1) è stato chiuso da PR #374 (10/08/2026) — riga rimossa da questa tabella, non ancora aggiornata al momento in cui è stata scritta DEPUTYTASK4.
 
 Elenco completo (voci meno urgenti, decisioni di prodotto in attesa, task parcheggiati con motivo): tabella [Backlog parcheggiato](#backlog-parcheggiato-task-futuri--fonte-unica) più sotto.
 

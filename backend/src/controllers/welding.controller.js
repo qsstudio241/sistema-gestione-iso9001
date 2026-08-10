@@ -864,6 +864,8 @@ async function getWPQRStats(req, res) {
             SELECT
                 COUNT(*) AS totale,
                 SUM(CASE WHEN wq.approval_status = 'bozza'      THEN 1 ELSE 0 END) AS da_approvare,
+                SUM(CASE WHEN wq.approval_status = 'rifiutata'  THEN 1 ELSE 0 END) AS rifiutate,
+                SUM(CASE WHEN wq.approval_status = 'approvata'  THEN 1 ELSE 0 END) AS approvate,
                 SUM(CASE WHEN wq.approval_status = 'approvata'
                          AND (wq.expiry_date IS NULL OR wq.expiry_date >= DATEADD(day, 60, CAST(GETDATE() AS DATE)))
                          THEN 1 ELSE 0 END) AS valide,
@@ -878,7 +880,8 @@ async function getWPQRStats(req, res) {
                          AND wq.expiry_date >= DATEADD(day, 30, CAST(GETDATE() AS DATE))
                          AND wq.expiry_date < DATEADD(day, 60, CAST(GETDATE() AS DATE))
                          THEN 1 ELSE 0 END) AS in_scadenza_60,
-                SUM(CASE WHEN wq.expiry_date IS NOT NULL
+                SUM(CASE WHEN wq.approval_status = 'approvata'
+                         AND wq.expiry_date IS NOT NULL
                          AND wq.expiry_date < CAST(GETDATE() AS DATE)
                          THEN 1 ELSE 0 END) AS scadute
             FROM wpqr_records wq
