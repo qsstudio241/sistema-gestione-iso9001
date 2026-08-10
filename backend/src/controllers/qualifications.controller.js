@@ -269,8 +269,11 @@ async function listQualifications(req, res) {
             in_scadenza_60: `q.status NOT IN ('revocata','sospesa') AND (${EFFECTIVE_EXPIRY_SQL}) IS NOT NULL AND (${EFFECTIVE_EXPIRY_SQL}) BETWEEN DATEADD(day, ${DAYS_URGENT + 1}, ${today}) AND DATEADD(day, ${DAYS_WARNING}, ${today})`,
             urgenti_30:     `q.status NOT IN ('revocata','sospesa') AND (${EFFECTIVE_EXPIRY_SQL}) IS NOT NULL AND (${EFFECTIVE_EXPIRY_SQL}) BETWEEN ${today} AND DATEADD(day, ${DAYS_URGENT}, ${today})`,
             scadute:        `q.status NOT IN ('revocata','sospesa') AND (${EFFECTIVE_EXPIRY_SQL}) IS NOT NULL AND (${EFFECTIVE_EXPIRY_SQL}) < ${today}`,
-            sospesa:        `q.status = 'sospesa'`,
-            revocata:       `q.status = 'revocata'`,
+            // Bucket unico "Non attiva" (sospese + revocate) — allineato alla card
+            // statistica non_attive di getStats e alla colonna "Stato" in tabella,
+            // che già mostra entrambe con la stessa etichetta/colore (non le
+            // distingue): non serviva un filtro separato per le due sotto-categorie.
+            non_attive:     `q.status IN ('sospesa','revocata')`,
         };
         if (situazione && SITUAZIONE_WHERE[situazione]) {
             where.push(SITUAZIONE_WHERE[situazione]);
