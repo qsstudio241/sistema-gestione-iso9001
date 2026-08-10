@@ -76,7 +76,14 @@ function mapEquipmentDeadlineRows(assets, daysWindow) {
                 description:         a.serial_number ? `S/N: ${a.serial_number}` : null,
                 due_date:            a.next_calibration_date,
                 days_until_due:      daysUntilDue,
-                status:              daysUntilDue < 0 ? 'expired' : 'active',
+                // 'active' sempre: l'urgenza si legge da days_until_due (stessa
+                // convenzione dei deadline_items reali), mai un quarto valore di
+                // status. Prima di questo fix 'expired' non combaciava con nessun
+                // valore noto al frontend (active/completed/dismissed/
+                // expired_acknowledged): una taratura scaduta restava esclusa sia
+                // dal filtro default "Attive" sia dalla card "Scadute" (che filtra
+                // su status==='active' && days_until_due<0) — invisibile.
+                status:              'active',
                 company_id:          a.company_id,
                 company_name:        a.company_name || 'Studio',
                 assigned_to_name:    null,
@@ -627,4 +634,6 @@ module.exports = {
     completeDeadlineItem,
     deleteDeadlineItem,
     getDeadlineConfig,
+    // Esportata per test unitari (nessuna dipendenza da DB — funzione pura)
+    mapEquipmentDeadlineRows,
 };
