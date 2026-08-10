@@ -33,59 +33,33 @@
 }
 .reprocess-banner__review-btn:hover { background: #16304e; }
 
-/* Dialog leggero (riusa IngestSourcePreview per l'anteprima PDF) */
-.reprocess-dialog__overlay {
-  position: fixed; inset: 0; background: rgba(15, 23, 42, 0.55);
-  display: flex; align-items: center; justify-content: center; z-index: 1000;
-  padding: 1rem;
-}
-.reprocess-dialog__overlay--expanded {
-  padding: 0; background: #0f172a; align-items: stretch;
-}
+/*
+ * Dialog leggero (riusa IngestSourcePreview per l'anteprima PDF). Guscio
+ * (overlay/dialog/header-top/expand-btn/layout/resizer) condiviso con
+ * IngestReviewDialog.css tramite IngestDialogShell — vedi IngestDialogShell.css
+ * per le regole strutturali comuni. Qui restano solo le dimensioni proprie di
+ * questo dialog (più stretto: N campi in rielaborazione, non un intero
+ * documento), applicate sulle classi condivise con selettori discendenti.
+ */
+.reprocess-dialog__overlay { z-index: 1000; }
+
 .reprocess-dialog {
-  background: #fff; border-radius: 12px; width: min(920px, 94vw);
-  max-height: 90vh; display: flex; flex-direction: column; overflow: hidden;
+  width: min(920px, 94vw);
+  max-height: 90vh;
   box-shadow: 0 12px 40px rgba(0,0,0,0.25);
 }
-.reprocess-dialog--expanded {
-  width: 100%; max-width: none; max-height: none; height: 100%;
-  border-radius: 0; box-shadow: none;
-}
-.reprocess-dialog__header { padding: 16px 20px 8px; border-bottom: 1px solid #e5e7eb; }
-.reprocess-dialog__header-top {
-  display: flex; align-items: center; justify-content: space-between; gap: 12px;
-}
-.reprocess-dialog__header h3 { margin: 0 0 4px; font-size: 16px; color: #111827; }
-.reprocess-dialog__header p { margin: 0; font-size: 13px; color: #6b7280; }
-.reprocess-dialog__expand-btn {
-  flex-shrink: 0; border: 1px solid #2563eb; background: #eff6ff; color: #1d4ed8;
-  border-radius: 8px; padding: 0.4rem 0.8rem; font-size: 0.8rem; font-weight: 600;
-  cursor: pointer;
-}
-.reprocess-dialog__expand-btn:hover { background: #dbeafe; }
-.reprocess-dialog--expanded .reprocess-dialog__expand-btn { background: #2563eb; color: #fff; }
-.reprocess-dialog--expanded .reprocess-dialog__expand-btn:hover { background: #1d4ed8; }
 
-.reprocess-dialog__layout {
-  display: grid; gap: 0; padding: 16px 20px; overflow: hidden; flex: 1; min-height: 0;
-}
-.reprocess-dialog--expanded .reprocess-dialog__layout { padding: 10px 12px; }
+.reprocess-dialog .ingest-dialog-shell__header-top { align-items: center; gap: 12px; }
+.reprocess-dialog .ingest-dialog-shell__header { padding: 16px 20px 8px; border-bottom: 1px solid #e5e7eb; }
+.reprocess-dialog__title { margin: 0 0 4px; font-size: 16px; color: #111827; }
+.reprocess-dialog__subtitle { margin: 0; font-size: 13px; color: #6b7280; }
 
-.reprocess-dialog__resizer {
-  flex-shrink: 0; width: 6px; margin: 0 -2px; cursor: col-resize;
-  background: transparent; position: relative; z-index: 2; touch-action: none;
-}
-.reprocess-dialog__resizer::after {
-  content: ""; position: absolute; top: 0; bottom: 0; left: 2px; width: 2px;
-  background: #e2e8f0; transition: background 0.15s ease;
-}
-.reprocess-dialog__resizer:hover::after,
-body.sgq-ingest-review-resizing .reprocess-dialog__resizer::after { background: #2563eb; }
+.reprocess-dialog .ingest-dialog-shell__layout { padding: 16px 20px; }
+.reprocess-dialog--expanded .ingest-dialog-shell__layout { padding: 10px 12px; }
 
-.reprocess-dialog__preview {
-  min-height: 360px; max-height: calc(90vh - 220px); overflow: hidden; display: flex; flex-direction: column;
+.reprocess-dialog .ingest-dialog-shell__preview-pane {
+  min-height: 360px; max-height: calc(90vh - 220px); overflow: hidden;
 }
-.reprocess-dialog--expanded .reprocess-dialog__preview { min-height: 0; max-height: none; height: 100%; }
 
 .reprocess-dialog__proposal { overflow-y: auto; max-height: calc(90vh - 220px); }
 .reprocess-dialog--expanded .reprocess-dialog__proposal { max-height: none; }
@@ -118,7 +92,7 @@ body.sgq-ingest-review-resizing .reprocess-dialog__resizer::after { background: 
   border: 1px solid #fca5a5; border-radius: 6px; padding: 6px 10px; margin-top: 8px;
 }
 
-.reprocess-dialog__actions {
+.reprocess-dialog .ingest-dialog-shell__actions {
   display: flex; gap: 8px; padding: 12px 20px; border-top: 1px solid #e5e7eb;
 }
 .reprocess-dialog__btn {
@@ -134,8 +108,8 @@ body.sgq-ingest-review-resizing .reprocess-dialog__resizer::after { background: 
 .reprocess-dialog__field-row .reprocess-dialog__btn { padding: 6px 12px; font-size: 12px; }
 
 @media (max-width: 720px) {
-  .reprocess-dialog__layout { grid-template-columns: 1fr !important; overflow: auto; gap: 0.75rem; }
-  .reprocess-dialog__resizer { display: none; }
-  .reprocess-dialog__preview { min-height: 220px; max-height: 45vh; }
+  .reprocess-dialog .ingest-dialog-shell__layout { grid-template-columns: 1fr !important; overflow: auto; gap: 0.75rem; }
+  .reprocess-dialog .ingest-dialog-shell__resizer { display: none; }
+  .reprocess-dialog .ingest-dialog-shell__preview-pane { min-height: 220px; max-height: 45vh; }
   .reprocess-dialog__proposal { max-height: none; }
 }

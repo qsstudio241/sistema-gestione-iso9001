@@ -1,6 +1,6 @@
 # DEPUTYTASK3 — Shell dialog di revisione ingest: consolidare il guscio duplicato
 
-**Stato:** APERTO
+**Stato:** CHIUSO — TEST OK (10/08/2026, PR [#377](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/377) — Bugbot: nessun rilievo critico, pronta per il merge umano)
 **Priorità:** P2 — debito tecnico, nessun bug funzionale, basso rischio
 **Branch base:** `main`
 **Creato da:** Lead 10/08/2026
