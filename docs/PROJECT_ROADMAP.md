@@ -8,7 +8,7 @@
 
 > **Risposta standard a «stato di avanzamento del progetto e priorità da affrontare»**: sintetizzare da questa sezione (moduli maturi + sessione più recente + tabella priorità sotto), **non** dal banner storico più sotto (superato, tenuto solo per traccia) né dalla sezione "Stato funzionalità" di [`PROJECT_CONTEXT.md`](../PROJECT_CONTEXT.md) (marcata storica/superata). **Aggiornare questa sezione a fine sessione** se emergono nuove priorità o se una priorità elencata viene chiusa (stesso principio delle "Lezioni apprese" in [GUIDA_CONSOLIDATA.md](GUIDA_CONSOLIDATA.md) — sintesi qui, dettaglio linkato).
 
-**Ultimo aggiornamento di questa sezione**: 10/08/2026 (DEPUTYTASK4 — filtri Saldatura WPS/WPQR).
+**Ultimo aggiornamento di questa sezione**: 10/08/2026 (chiusura DEPUTYTASK3 + DEPUTYTASK4 — verifica post-merge).
 
 ### Moduli maturi (in produzione, uso quotidiano dai clienti Camellini/Mason)
 
@@ -23,11 +23,10 @@ Fix trasversale filtri dashboard duplicati (card statistiche + tendina ridondant
 | # | Priorità | Perché | Dove riprendere |
 |---|---|---|---|
 | 1 | **Modulo Notifiche/Alert — destinatario allerte qualifiche non è una scelta esplicita in anagrafica** | Oggi risolto da un algoritmo a cascata, non da una scelta visibile in UI | `qualificationAlert.service.js` (`resolveWeldingCoordinatorRecipients`) |
-| 2 | **Shell dialog di revisione ingest — markup/CSS duplicato** (non urgente, basso rischio) | `IngestReviewDialog.jsx` vs dialog interno `ReprocessQueueBanner.jsx`: guscio overlay duplicato (~60-80 righe); pattern sistemico su molti altri modal nel progetto | Vedi backlog sotto per dettaglio |
-| 3 | **Pagina Impostazioni → Organizzazione (P.IVA + logo tenant)** | PR #10 aperta da aprile 2026, 180 file in conflitto — richiede ricostruzione, non merge | Vedi riga dedicata nel backlog sotto |
-| 4 | **Material Compliance AI (certificati EN 10204 3.1)** | Modulo proposto 05/08/2026, slice MC-0 (spec) non ancora avviata | [MODULO_MATERIAL_COMPLIANCE_AI.md](specs/MODULO_MATERIAL_COMPLIANCE_AI.md) |
+| 2 | **Pagina Impostazioni → Organizzazione (P.IVA + logo tenant)** | PR #10 aperta da aprile 2026, 180 file in conflitto — richiede ricostruzione, non merge | Vedi riga dedicata nel backlog sotto |
+| 3 | **Material Compliance AI (certificati EN 10204 3.1)** | Modulo proposto 05/08/2026, slice MC-0 (spec) non ancora avviata | [MODULO_MATERIAL_COMPLIANCE_AI.md](specs/MODULO_MATERIAL_COMPLIANCE_AI.md) |
 
-> Nota: **Modulo NC — card statistiche duplicate da due tendine** (era riga 1) è stato chiuso da PR #374 (10/08/2026) — riga rimossa da questa tabella, non ancora aggiornata al momento in cui è stata scritta DEPUTYTASK4.
+> **Chiuse dal 10/08/2026** (rimosse da questa tabella, dettaglio in [GUIDA_CONSOLIDATA.md](GUIDA_CONSOLIDATA.md#lezioni-apprese-consolidate-fonte-unica)): Modulo NC — card duplicate da due tendine (PR #374) · Shell dialog di revisione ingest — markup/CSS duplicato (PR #377, DEPUTYTASK3) · Filtri modulo Saldatura WPQR (PR #378, DEPUTYTASK4).
 
 Elenco completo (voci meno urgenti, decisioni di prodotto in attesa, task parcheggiati con motivo): tabella [Backlog parcheggiato](#backlog-parcheggiato-task-futuri--fonte-unica) più sotto.
 
