@@ -2,6 +2,7 @@
  * ingestStaging.controller.js — conferma/scarto staging IG-3
  */
 
+const fs = require('fs');
 const logger = require('../utils/logger');
 const {
     confirmStaging,
