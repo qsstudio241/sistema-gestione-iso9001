@@ -27,6 +27,7 @@ const ALL_MODULE_KEYS = [
   { key: "notifications", label: "Notifiche" },
   { key: "sal",         label: "SAL" },
   { key: "saldatura",   label: "Saldatura ISO 3834" },
+  { key: "cnd",         label: "CND - Controlli Non Distruttivi" },
   { key: "ai_import",   label: "AI Import PDF" },
   { key: "ai_assist",   label: "AI Suggerimenti (audit)" },
   { key: "ai_review",   label: "AI Riesame Requisiti" },
@@ -769,6 +770,7 @@ export default function UsersAdminPage({ onBack }) {
           <p className="org-licenses-desc">
             Assegna i moduli funzionali attivi per ogni studio cliente. Il modulo <strong>Audit</strong> è sempre abilitato.
             Nessuna selezione esplicita = tutti i moduli attivi (impostazione predefinita).
+            La licenza <strong>Saldatura ISO 3834</strong> include sempre l&apos;accesso a <strong>CND</strong>, anche se non spuntata separatamente.
           </p>
           {auditorOrgs.map((ao) => {
             const effectiveMods = getEffectiveOrgModules(ao);
