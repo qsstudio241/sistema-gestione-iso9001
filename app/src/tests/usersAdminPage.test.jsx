@@ -19,6 +19,7 @@ vi.mock("../contexts/AuthContext", () => ({
 
 const mockCreateAdminUser = vi.fn();
 const mockResendUserInvite = vi.fn();
+const mockCreateAuditorOrg = vi.fn();
 
 vi.mock("../services/apiService", () => ({
   default: {
@@ -35,6 +36,7 @@ vi.mock("../services/apiService", () => ({
     deactivateAdminUser: vi.fn(),
     updateUserStandards: vi.fn(),
     patchOrgLicenses: vi.fn(),
+    createAuditorOrg: (...args) => mockCreateAuditorOrg(...args),
   },
 }));
 
@@ -73,6 +75,7 @@ const AUDITOR_ORGS = [
 beforeEach(() => {
   mockCreateAdminUser.mockReset().mockResolvedValue({ success: true, data: {} });
   mockResendUserInvite.mockReset().mockResolvedValue({ success: true });
+  mockCreateAuditorOrg.mockReset();
   global.alert = vi.fn();
   mockGetAdminUsers.mockResolvedValue({ data: USERS_CROSS_TENANT });
   mockGetAuditorOrgs.mockResolvedValue({ data: AUDITOR_ORGS });
@@ -360,5 +363,181 @@ describe("UsersAdminPage — badge 'In attesa di attivazione' e reinvio invito (
 
     expect(screen.queryByText("In attesa di attivazione")).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Reinvia invito" })).not.toBeInTheDocument();
+  });
+});
+
+describe("UsersAdminPage — provisioning nuovo studio (DEPUTYTASK1 S2/S3)", () => {
+  beforeEach(() => {
+    mockAuthUser = { user_id: 99, role: "superadmin", organization_id: 1001 };
+  });
+
+  it("mostra il pulsante '+ Nuovo studio' solo per superadmin", async () => {
+    render(<UsersAdminPage />);
+
+    await waitFor(() => {
+      expect(screen.getByText("Licenze moduli per studio")).toBeInTheDocument();
+    });
+
+    expect(screen.getByRole("button", { name: "+ Nuovo studio" })).toBeInTheDocument();
+  });
+
+  it("non mostra il pulsante '+ Nuovo studio' per admin di studio (non superadmin)", async () => {
+    mockAuthUser = { user_id: 5, role: "admin", organization_id: 1001, auditor_org_id: 10 };
+    mockGetAdminUsers.mockResolvedValue({ data: [USERS_CROSS_TENANT[0]] });
+    render(<UsersAdminPage />);
+
+    await waitFor(() => {
+      expect(screen.getByText("Mario Rossi")).toBeInTheDocument();
+    });
+
+    expect(screen.queryByText("Licenze moduli per studio")).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "+ Nuovo studio" })).not.toBeInTheDocument();
+  });
+
+  it("validazione client-side: blocca il submit se un campo obbligatorio è vuoto", async () => {
+    const user = userEvent.setup();
+    render(<UsersAdminPage />);
+
+    await waitFor(() => {
+      expect(screen.getByText("Licenze moduli per studio")).toBeInTheDocument();
+    });
+
+    await user.click(screen.getByRole("button", { name: "+ Nuovo studio" }));
+    await user.type(screen.getByLabelText("Nome cliente/organizzazione"), "Nuovo Cliente Srl");
+    // Nome studio ed email referente restano vuoti
+    await user.click(screen.getByRole("button", { name: "Crea studio" }));
+
+    await waitFor(() => {
+      expect(
+        screen.getByText("Compila nome cliente, nome studio ed email referente.")
+      ).toBeInTheDocument();
+    });
+    expect(mockCreateAuditorOrg).not.toHaveBeenCalled();
+  });
+
+  it("submit valido: crea lo studio, lo aggiunge subito alla lista e mostra il messaggio di successo", async () => {
+    const newAo = {
+      id: 30,
+      organization_id: 1003,
+      name: "Studio Tre",
+      email: "referente@studiotre.it",
+      subscription_plan: "standard",
+      is_active: true,
+      organization_name: "Cliente Tre Srl",
+      licensed_modules: null,
+    };
+    mockCreateAuditorOrg.mockResolvedValue({ success: true, data: newAo });
+
+    const user = userEvent.setup();
+    render(<UsersAdminPage />);
+
+    await waitFor(() => {
+      expect(screen.getByText("Licenze moduli per studio")).toBeInTheDocument();
+    });
+
+    await user.click(screen.getByRole("button", { name: "+ Nuovo studio" }));
+    await user.type(screen.getByLabelText("Nome cliente/organizzazione"), "Cliente Tre Srl");
+    await user.type(screen.getByLabelText("Nome studio"), "Studio Tre");
+    await user.type(screen.getByLabelText("Email referente"), "referente@studiotre.it");
+    await user.click(screen.getByRole("button", { name: "Crea studio" }));
+
+    await waitFor(() => {
+      expect(mockCreateAuditorOrg).toHaveBeenCalledWith({
+        organization_name: "Cliente Tre Srl",
+        studio_name: "Studio Tre",
+        studio_email: "referente@studiotre.it",
+        subscription_plan: "standard",
+      });
+    });
+
+    // La nuova entry appare immediatamente in lista (S2), senza refetch
+    await waitFor(() => {
+      expect(screen.getByText("Studio Tre")).toBeInTheDocument();
+    });
+    expect(screen.getByText("Cliente Tre Srl")).toBeInTheDocument();
+    expect(screen.getByText(/Studio creato/)).toBeInTheDocument();
+
+    // Il form si chiude dopo il successo
+    expect(screen.queryByLabelText("Nome studio")).not.toBeInTheDocument();
+  });
+
+  // S3 (verifica — gap architetturale documentato, non un fix applicato qui):
+  // il selettore studio del form "Nuovo utente" filtra su
+  // `ao.organization_id === user.organization_id` (riga ~727), quindi anche per
+  // superadmin mostra solo gli studi della PROPRIA organizzazione. Un nuovo studio
+  // creato da questo brief ha sempre un organization_id NUOVO e diverso da quello
+  // del superadmin che lo crea: non compare in questo selettore, e anche se
+  // comparisse il backend (admin.controller.js createUser) forza
+  // organization_id = req.user.organization_id e valida auditor_org_id sulla
+  // stessa organizzazione, quindi il submit fallirebbe con 400
+  // INVALID_AUDITOR_ORG. Risolverlo richiede toccare POST /admin/users
+  // (esplicitamente "Cosa NON toccare" in questo brief, ed è comunque un cambio
+  // Alto rischio su creazione utenti/auth cross-tenant) — FIX NON APPLICABILE
+  // in questo slice, da riportare come backlog al committente/Lead.
+  it("S3: il selettore studio di 'Nuovo utente' NON mostra ancora un nuovo studio cross-tenant (gap noto, backend createUser fuori scope)", async () => {
+    const newAo = {
+      id: 30,
+      organization_id: 1003,
+      name: "Studio Tre",
+      email: "referente@studiotre.it",
+      subscription_plan: "standard",
+      is_active: true,
+      organization_name: "Cliente Tre Srl",
+      licensed_modules: null,
+    };
+    mockCreateAuditorOrg.mockResolvedValue({ success: true, data: newAo });
+
+    const user = userEvent.setup();
+    render(<UsersAdminPage />);
+
+    await waitFor(() => {
+      expect(screen.getByText("Licenze moduli per studio")).toBeInTheDocument();
+    });
+
+    await user.click(screen.getByRole("button", { name: "+ Nuovo studio" }));
+    await user.type(screen.getByLabelText("Nome cliente/organizzazione"), "Cliente Tre Srl");
+    await user.type(screen.getByLabelText("Nome studio"), "Studio Tre");
+    await user.type(screen.getByLabelText("Email referente"), "referente@studiotre.it");
+    await user.click(screen.getByRole("button", { name: "Crea studio" }));
+
+    await waitFor(() => {
+      expect(screen.getByText("Studio Tre")).toBeInTheDocument();
+    });
+
+    await user.click(screen.getByText("+ Nuovo utente"));
+    const studioSelect = screen.getByLabelText(/Studio \(auditor org\)/);
+    // Documenta il gap: lo studio appena creato (org 1003, diversa da quella del
+    // superadmin loggato, 1001) non è selezionabile da questo form.
+    expect(within(studioSelect).queryByText("Studio Tre")).not.toBeInTheDocument();
+  });
+
+  it("mostra un messaggio di errore inline se il backend risponde 409 (nome/email duplicati)", async () => {
+    mockCreateAuditorOrg.mockRejectedValue(
+      Object.assign(new Error("Esiste già un'organizzazione con questo nome"), {
+        code: "DUPLICATE_ORGANIZATION_NAME",
+      })
+    );
+
+    const user = userEvent.setup();
+    render(<UsersAdminPage />);
+
+    await waitFor(() => {
+      expect(screen.getByText("Licenze moduli per studio")).toBeInTheDocument();
+    });
+
+    await user.click(screen.getByRole("button", { name: "+ Nuovo studio" }));
+    await user.type(screen.getByLabelText("Nome cliente/organizzazione"), "Studio Uno Org");
+    await user.type(screen.getByLabelText("Nome studio"), "Studio Duplicato");
+    await user.type(screen.getByLabelText("Email referente"), "dup@studio.it");
+    await user.click(screen.getByRole("button", { name: "Crea studio" }));
+
+    await waitFor(() => {
+      expect(
+        screen.getByText("Esiste già un'organizzazione con questo nome")
+      ).toBeInTheDocument();
+    });
+    // Il form resta aperto e la lista non cambia (nessuna entry aggiunta)
+    expect(screen.getByLabelText("Nome studio")).toBeInTheDocument();
+    expect(screen.queryByText("Studio Duplicato")).not.toBeInTheDocument();
   });
 });

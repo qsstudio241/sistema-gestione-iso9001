@@ -349,6 +349,27 @@
   color: #1d3557;
 }
 
+.org-licenses-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.org-licenses-header .org-licenses-title {
+  margin: 0;
+}
+
+.new-studio-form {
+  margin-bottom: 1.25rem;
+}
+
+.new-studio-success {
+  color: #2b8a3e;
+  font-weight: 500;
+}
+
 .org-licenses-desc {
   font-size: 0.875rem;
   color: #495057;
