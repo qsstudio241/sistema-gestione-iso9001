@@ -1,6 +1,6 @@
 # DEPUTYTASK4 — Modulo Saldatura (Procedure WPS/WPQR): regola "Filtri, singola fonte di verità"
 
-**Stato:** APERTO
+**Stato:** CHIUSO — TEST OK (10/08/2026)
 **Priorità:** P2 — stessa classe di bug UX già corretta in Qualifiche (PR #368), Scadenzari (PR #371/#375), NC (PR #374) — non urgente, nessun dato invisibile noto finché non verificato
 **Branch base:** `main`
 **Creato da:** Lead 10/08/2026
@@ -57,6 +57,25 @@ cd backend && npx jest welding.controller --silent
 Suite Vitest completa (`NODE_ENV=test npm run test:run`) + suite Jest backend + `npm run build` verdi prima di aprire la PR. Se si tocca il backend: deploy VPS (`bash backend/scripts/deploy-to-vps.sh`) dopo il merge, con verifica PID/health — o segnalare al committente/Lead che serve.
 
 Chiudere con **TEST OK** o **FIX NON APPLICABILI** (motivare con la mappatura fatta al punto 1-3 sopra).
+
+---
+
+## Esito (10/08/2026) — TEST OK
+
+**Mappatura (punti 1-3)**:
+- Le 5 card (Valide/Scad.60/Scad.30/Scadute/Da approvare) sono calcolate **solo** su `wpqr_records` (`getWPQRStats`) — nessun legame con il tab WPS. Erano però mostrate sempre, anche fuori contesto (fix: gate `activeTab === "wpqr"`).
+- Tab WPS: `status` (`WPS_STATUSES`: attiva/bozza/sospesa/revocata) e `welding_process` sono due dimensioni distinte tra loro e **non correlate** alle card WPQR — nessuna card le duplica, nessuna azione necessaria. Confermato: non è una regressione, è un caso realmente diverso dai 3 precedenti.
+- Tab WPQR: tendina `approval_status` (bozza/approvata/rifiutata) duplicava **esattamente** la card "Da approvare" (bozza); "rifiutata" era un valore **orfano** invisibile in ogni card (stesso gap di "Sospesa"/"Revocata" in Qualifiche); "approvata" non aveva una card 1:1 (unione di Valide+Scad.60+Scad.30+Scadute).
+- Bug trovato in aggiunta (punto 4 del brief): il bucket SQL "scadute" non filtrava per `approval_status='approvata'` a differenza degli altri 3 bucket — un WPQR bozza/rifiutata scaduto finiva contato in "Scadute" (rosso) mentre a riga il semaforo lo mostra grigio "Non approvata".
+
+**Fix applicati**:
+1. Backend (`welding.controller.js`, `getWPQRStats`): bucket "scadute" ora richiede `approval_status='approvata'`; aggiunti bucket "rifiutate" e "approvate".
+2. Frontend (`WeldingProceduresPage.jsx`): barra statistiche mostrata solo su `activeTab==="wpqr"`; tendina `approval_status` rimossa, sostituita da 3 card cliccabili con toggle (Da approvare/Approvate/Rifiutate); le 4 card semaforo scadenza restano informative (nessuna tendina le duplicava — introdurre filtri backend per bucket di scadenza è fuori scope minimo di questa slice, non c'è perdita di funzionalità rispetto a oggi).
+3. Nessuna funzionalità di filtro persa: tutti i valori prima raggiungibili solo dalla tendina (bozza/approvata/rifiutata) restano raggiungibili dalle nuove card.
+
+**Test**: `welding.controller.wpqrStats.test.js` (4 test, backend) + `weldingProceduresPage.filterCards.test.jsx` (5 test, frontend) + suite Vitest completa (1044 test) + suite Jest `welding.controller*` (10 test) + `npm run build` verdi. Suite Jest backend completa: 8 suite falliscono per cause **preesistenti su `main`, non correlate** (config `database.json` assente nel Cloud Agent + bug preesistente in `customChecklist.legislativoSicurezza.test.js`, verificato con `git stash` sul commit base).
+
+**Doc aggiornata**: `GUIDA_CONSOLIDATA.md` (nuova riga lezioni apprese) + `PROJECT_ROADMAP.md` § Stato attuale e priorità (chiusa anche la riga NC, già risolta da PR #374 ma non ancora rimossa dalla tabella).
 
 ---
 

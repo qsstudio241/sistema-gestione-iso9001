@@ -1149,15 +1149,27 @@ function WeldingProceduresPage() {
   const wpsTotalPages  = Math.max(1, Math.ceil(wpsTotal  / LIMIT));
   const wpqrTotalPages = Math.max(1, Math.ceil(wpqrTotal / LIMIT));
 
-  // ?? Stats semaphore helpers ??
+  // Stats semaphore helpers — solo WPQR (vedi getWPQRStats): card informative
+  // (Valide/Scad.60/Scad.30/Scadute, sotto-partizione dei soli WPQR "approvata")
+  // + card cliccabili che sostituiscono la tendina "approval_status" (rimossa,
+  // ridondante — regola "Filtri: singola fonte di verità", DEPUTYTASK4).
   const stats = wpqrStats || {};
   const statsItems = [
     { label: "Valide",         value: stats.valide        || 0, color: "#16a34a" },
     { label: "Scad. 60 gg",    value: stats.in_scadenza_60 || 0, color: "#d97706" },
     { label: "Scad. 30 gg",    value: stats.in_scadenza_30 || 0, color: "#ea580c" },
     { label: "Scadute",        value: stats.scadute        || 0, color: "#dc2626" },
-    { label: "Da approvare",   value: stats.da_approvare   || 0, color: "#6b7280" },
   ];
+  const approvalStatCards = [
+    { label: "Da approvare", value: stats.da_approvare || 0, color: "#6b7280", statusValue: "bozza" },
+    { label: "Approvate",    value: stats.approvate     || 0, color: "#16a34a", statusValue: "approvata" },
+    { label: "Rifiutate",    value: stats.rifiutate     || 0, color: "#dc2626", statusValue: "rifiutata" },
+  ];
+
+  function handleWpqrApprovalCardClick(statusValue) {
+    setWpqrFilters((f) => ({ ...f, approval_status: f.approval_status === statusValue ? "" : statusValue }));
+    setWpqrPage(1);
+  }
 
   // ?? Render ?
 
@@ -1235,8 +1247,10 @@ function WeldingProceduresPage() {
         )}
       </div>
 
-      {/* Stats semaphore WPQR */}
-      {!statsLoading && wpqrStats && (
+      {/* Stats semaphore WPQR — solo nel tab WPQR: sono calcolate esclusivamente
+          su wpqr_records (vedi getWPQRStats) e non hanno alcun significato
+          per l'elenco WPS del tab adiacente. */}
+      {activeTab === "wpqr" && !statsLoading && wpqrStats && (
         <div className="wp-stats-bar">
           {statsItems.map((s) => (
             <div key={s.label} className="wp-stat-item">
@@ -1244,6 +1258,19 @@ function WeldingProceduresPage() {
               <span className="wp-stat-value" style={{ color: s.color }}>{s.value}</span>
               <span className="wp-stat-label">{s.label}</span>
             </div>
+          ))}
+          {approvalStatCards.map((s) => (
+            <button
+              key={s.label}
+              type="button"
+              className={`wp-stat-item wp-stat-clickable${wpqrFilters.approval_status === s.statusValue ? " wp-stat-active" : ""}`}
+              onClick={() => handleWpqrApprovalCardClick(s.statusValue)}
+              title={`Filtra: WPQR ${s.label.toLowerCase()}`}
+            >
+              <span className="wp-stat-dot" style={{ background: s.color }} />
+              <span className="wp-stat-value" style={{ color: s.color }}>{s.value}</span>
+              <span className="wp-stat-label">{s.label}</span>
+            </button>
           ))}
         </div>
       )}
@@ -1415,16 +1442,6 @@ function WeldingProceduresPage() {
               {allWps.map((w) => (
                 <option key={w.id} value={w.id}>{w.wps_code}{w.revision ? ` (Rev. ${w.revision})` : ""}</option>
               ))}
-            </select>
-            <select
-              className="wp-select"
-              value={wpqrFilters.approval_status}
-              onChange={(e) => { setWpqrFilters((f) => ({ ...f, approval_status: e.target.value })); setWpqrPage(1); }}
-            >
-              <option value="">Tutti gli stati</option>
-              <option value="bozza">Bozza</option>
-              <option value="approvata">Approvata</option>
-              <option value="rifiutata">Rifiutata</option>
             </select>
             {(wpqrFilterWpsId || wpqrFilters.approval_status || wpqrFilters.search) && (
               <button className="wp-link" onClick={() => { setWpqrFilterWpsId(""); setWpqrFilters({ approval_status: "", search: "", wps_id: "" }); setWpqrPage(1); }}>
