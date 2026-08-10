@@ -1,6 +1,6 @@
 # DEPUTYTASK1 — Provisioning nuovo studio (auditor_org + organization) da UI
 
-**Stato:** APERTO
+**Stato:** CHIUSO (10/08/2026, deputy) — S1 TEST OK, S2 TEST OK, S3 FIX NON APPLICABILE (gap architetturale, vedi sotto)
 **Priorità:** P1 — gap segnalato dal committente (10/08/2026): "ho provato a generare l'anagrafica per un nuovo studio ma non compare nella lista"
 **Branch base:** `main`
 **Creato da:** Lead 10/08/2026
@@ -111,6 +111,12 @@ Alla fine di ogni slice: TEST OK (Jest per S1, Vitest+build per S2/S3) oppure FI
 Smoke finale suggerito: creare uno studio di test dal pannello superadmin in produzione (o staging se disponibile), verificare che compaia subito con badge default, poi eventualmente disattivarlo/rinominarlo via SQL se era solo un test — annotare l'operazione in `docs/GUIDA_CONSOLIDATA.md` se emerge una lezione nuova.
 
 ---
+
+## Esito chiusura (10/08/2026, deputy)
+
+- **S1 (API creazione studio, BE): TEST OK.** `POST /api/v1/auditor-orgs` implementato in `auditorOrg.controller.js`/`auditorOrg.routes.js` (solo superadmin via `authorize('superadmin')`, transazione `sql.Transaction` con rollback su errore, `organization_code` = `MAX(ORG_%05d)+1`, univocità case-insensitive su `organization_name`/`studio_email`, risposta 201 nella stessa forma di `listAuditorOrgs` con `licensed_modules: null`). Test: `auditorOrg.controller.test.js` (9 casi: 400 campo mancante, 400 email non valida, 409 nome duplicato, 409 email duplicata, 201 primo codice, 201 MAX+1, 201 default `standard`, 500+rollback su fallimento secondo INSERT) + 2 test 403 aggiunti a `auth-rbac.test.js` (admin/auditor non superadmin). Jest: 28/28 verdi su questi file; suite completa backend 1242/1245 (3 falliti pre-esistenti e non correlati, verificato su `main` prima delle modifiche).
+- **S2 (UI form "Nuovo studio", FE): TEST OK.** Pulsante "+ Nuovo studio" (solo superadmin) in `UsersAdminPage.jsx` dentro "Licenze moduli per studio", nuovo metodo `apiService.createAuditorOrg`, append immediato della riga ritornata a `auditorOrgs` (nessun re-fetch), messaggio di successo con auto-hide, errori 400/409/500 mostrati inline (mai silenziosi). Test: 5 nuovi casi in `usersAdminPage.test.jsx` (visibilità pulsante per ruolo, validazione client-side campi vuoti, submit valido con append lista, messaggio errore su 409 mock) + `npm run build` OK. Vitest completo: 147/147 file, 1050/1050 test verdi.
+- **S3 (collegamento primo admin nuovo studio): FIX NON APPLICABILE.** Verificato con un test Vitest reale (non solo revisione a occhio) che il selettore "Studio (auditor org)" del form "Nuovo utente" filtra `ao.organization_id === user.organization_id` e che `admin.controller.js::createUser` forza sempre `organization_id = req.user.organization_id` (validando anche `auditor_org_id` sulla stessa org) — un nuovo studio ha per costruzione un `organization_id` diverso da quello del superadmin che lo crea, quindi non è mai selezionabile/utilizzabile in questo form, indipendentemente da quanto bene sia fatto S2. Risolverlo richiede toccare `POST /admin/users` (creazione utenti cross-tenant) — esplicitamente "Cosa NON toccare" in questo brief e comunque Alto rischio (auth) per policy repo: richiede conferma esplicita del committente/Lead prima di procedere. **Non applicato in questo slice.** Rimossa dal codice la promessa UX non ancora vera ("crea subito il primo admin qui sopra"); tracciato in `PROJECT_ROADMAP.md` § Backlog e `GUIDA_CONSOLIDATA.md` § Lezioni apprese.
 
 ## Comando deputy (dopo push di questo brief su `origin/main`)
 
