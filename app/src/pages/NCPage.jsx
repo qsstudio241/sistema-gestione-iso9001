@@ -412,6 +412,15 @@ export default function NCPage() {
           </button>
           <button
             type="button"
+            className={`nc-stat nc-stat-closed${activeCard === "closed" ? " nc-stat-active" : ""}`}
+            onClick={() => handleCardFilter("closed")}
+            title="Filtra: solo NC chiuse"
+          >
+            <span className="nc-stat-num">{stats.closed || 0}</span>
+            <span className="nc-stat-label">Chiuse</span>
+          </button>
+          <button
+            type="button"
             className={`nc-stat nc-stat-over${activeCard === "overdue" ? " nc-stat-active" : ""}`}
             onClick={() => handleCardFilter("overdue")}
             title="Filtra: solo NC scadute"
@@ -419,17 +428,15 @@ export default function NCPage() {
             <span className="nc-stat-num">{overdueCount}</span>
             <span className="nc-stat-label">Scadute</span>
           </button>
-          {dueSoonCount > 0 && (
-            <button
-              type="button"
-              className={`nc-stat nc-stat-soon${activeCard === "due_soon" ? " nc-stat-active" : ""}`}
-              onClick={() => handleCardFilter("due_soon")}
-              title="Filtra: NC in scadenza entro 7 giorni"
-            >
-              <span className="nc-stat-num">{dueSoonCount}</span>
-              <span className="nc-stat-label">In scadenza</span>
-            </button>
-          )}
+          <button
+            type="button"
+            className={`nc-stat nc-stat-soon${activeCard === "due_soon" ? " nc-stat-active" : ""}`}
+            onClick={() => handleCardFilter("due_soon")}
+            title="Filtra: NC in scadenza entro 7 giorni"
+          >
+            <span className="nc-stat-num">{dueSoonCount}</span>
+            <span className="nc-stat-label">In scadenza</span>
+          </button>
           <button
             type="button"
             className={`nc-stat nc-stat-tot${activeCard === "total" ? " nc-stat-active" : ""}`}
@@ -490,12 +497,6 @@ export default function NCPage() {
           onChange={e => setSearchNc(e.target.value)}
         />
 
-        <select value={filters.status} onChange={e => handleFilter("status", e.target.value)}>
-          <option value="">Tutti gli stati</option>
-          <option value="open">Aperte</option>
-          <option value="closed">Chiuse</option>
-        </select>
-
         <select value={filters.severity} onChange={e => handleFilter("severity", e.target.value)}>
           <option value="">Tutte le severit{"\u00E0"}</option>
           <option value="major">Grave</option>
@@ -512,23 +513,6 @@ export default function NCPage() {
           {Object.entries(NC_SOURCE_CATEGORIES).map(([val, cfg]) => (
             <option key={val} value={val}>{cfg.icon} {cfg.label}</option>
           ))}
-        </select>
-
-        <select
-          value={filters.overdue ? "overdue" : filters.due_within_days ? "due_soon" : ""}
-          onChange={e => {
-            const v = e.target.value;
-            if (v === "overdue") handleFilter("overdue", "true");
-            else if (v === "due_soon") handleFilter("due_within_days", "7");
-            else {
-              setFilters(f => ({ ...f, overdue: "", due_within_days: "" }));
-              setPage(1);
-            }
-          }}
-        >
-          <option value="">Tutte le scadenze</option>
-          <option value="overdue">Solo scadute</option>
-          <option value="due_soon">In scadenza (7 gg)</option>
         </select>
 
         {hasActiveFilter && (
