@@ -21,6 +21,7 @@ vi.mock("../services/apiService", () => ({
     getDeadlineItems: vi.fn(),
     getCompanies: vi.fn(),
     completeDeadlineItem: vi.fn(),
+    updateDeadlineItem: vi.fn(),
   },
 }));
 
@@ -40,6 +41,7 @@ describe("DeadlinesPage — card statistiche sostituiscono la tendina Stato", ()
     vi.clearAllMocks();
     apiService.getDeadlineItems.mockResolvedValue({ data: ITEMS });
     apiService.getCompanies.mockResolvedValue({ data: [{ id: 1, name: "ACME" }] });
+    apiService.updateDeadlineItem.mockResolvedValue({ success: true });
   });
 
   it("non mostra più la tendina 'Filtra per Stato' (rimossa, ridondante con le card)", async () => {
@@ -95,5 +97,81 @@ describe("DeadlinesPage — card statistiche sostituiscono la tendina Stato", ()
     expect(screen.getByText("Doc archiviato")).toBeTruthy();
     expect(screen.queryByText("Doc attivo")).toBeNull();
     expect(screen.queryByText("Doc completato")).toBeNull();
+  });
+});
+
+/**
+ * Test L1 — DeadlinesPage, azioni "Archivia"/"Prendi in carico" (audit
+ * follow-up PR #371, 10/08/2026): le card "Archiviate"/"Prese in carico"
+ * filtravano correttamente ma nessuna azione UI permetteva di portare un item
+ * in quegli stati — l'unica azione era "OK" (→ completed). Aggiunte due
+ * azioni per generalizzare handleComplete su tutti gli stati lifecycle.
+ */
+describe("DeadlinesPage — azioni Archivia / Prendi in carico", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    apiService.getCompanies.mockResolvedValue({ data: [{ id: 1, name: "ACME" }] });
+    apiService.updateDeadlineItem.mockResolvedValue({ success: true });
+  });
+
+  it("mostra 'Prendi in carico' solo per righe attive già scadute (days_until_due < 0)", async () => {
+    apiService.getDeadlineItems.mockResolvedValue({ data: ITEMS });
+    render(<DeadlinesPage />);
+    await waitFor(() => expect(apiService.getDeadlineItems).toHaveBeenCalled());
+
+    // Filtro default 'active': solo "Doc attivo" (+10gg) e "Doc scaduto" (-5gg) visibili.
+    expect(screen.getByText("Doc attivo")).toBeTruthy();
+    expect(screen.getByText("Doc scaduto")).toBeTruthy();
+
+    const ackButtons = screen.getAllByRole("button", { name: "Prendi in carico" });
+    expect(ackButtons).toHaveLength(1);
+
+    const dismissButtons = screen.getAllByRole("button", { name: "Archivia" });
+    expect(dismissButtons).toHaveLength(2);
+  });
+
+  it("cliccando 'Archivia' chiama updateDeadlineItem con status 'dismissed' e rimuove la riga dal filtro attivo", async () => {
+    const user = userEvent.setup();
+    apiService.getDeadlineItems.mockResolvedValue({
+      data: [{ id: 10, title: "Riga da archiviare", status: "active", days_until_due: 5, company_id: 1, company_name: "ACME" }],
+    });
+    render(<DeadlinesPage />);
+    await waitFor(() => expect(screen.getByText("Riga da archiviare")).toBeTruthy());
+
+    await user.click(screen.getByRole("button", { name: "Archivia" }));
+
+    await waitFor(() => expect(apiService.updateDeadlineItem).toHaveBeenCalledWith(10, { status: "dismissed" }));
+    // Il filtro default resta 'active': la riga ora 'dismissed' sparisce dalla vista.
+    await waitFor(() => expect(screen.queryByText("Riga da archiviare")).toBeNull());
+  });
+
+  it("cliccando 'Prendi in carico' chiama updateDeadlineItem con status 'expired_acknowledged'", async () => {
+    const user = userEvent.setup();
+    apiService.getDeadlineItems.mockResolvedValue({
+      data: [{ id: 11, title: "Riga scaduta da gestire", status: "active", days_until_due: -3, company_id: 1, company_name: "ACME" }],
+    });
+    render(<DeadlinesPage />);
+    await waitFor(() => expect(screen.getByText("Riga scaduta da gestire")).toBeTruthy());
+
+    await user.click(screen.getByRole("button", { name: "Prendi in carico" }));
+
+    await waitFor(() => expect(apiService.updateDeadlineItem).toHaveBeenCalledWith(11, { status: "expired_acknowledged" }));
+    await waitFor(() => expect(screen.queryByText("Riga scaduta da gestire")).toBeNull());
+  });
+
+  it("non mostra 'Archivia'/'Prendi in carico' per le righe già non-attive (es. completed)", async () => {
+    apiService.getDeadlineItems.mockResolvedValue({
+      data: [{ id: 12, title: "Riga completata", status: "completed", days_until_due: -3, company_id: 1, company_name: "ACME" }],
+    });
+    render(<DeadlinesPage />);
+    await waitFor(() => expect(apiService.getDeadlineItems).toHaveBeenCalled());
+
+    // Filtro default 'active' non mostra la riga completata; forziamo la card "Completate".
+    const user = userEvent.setup();
+    await user.click(screen.getByRole("button", { name: /Completate/i }));
+    await waitFor(() => expect(screen.getByText("Riga completata")).toBeTruthy());
+
+    expect(screen.queryByRole("button", { name: "Archivia" })).toBeNull();
+    expect(screen.queryByRole("button", { name: "Prendi in carico" })).toBeNull();
   });
 });
