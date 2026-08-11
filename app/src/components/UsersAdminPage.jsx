@@ -637,6 +637,10 @@ export default function UsersAdminPage({ onBack }) {
       });
       setInviteAdminForm((prev) => ({ ...prev, [ao.id]: { full_name: "", email: "" } }));
       setShowInviteAdminForm((prev) => ({ ...prev, [ao.id]: false }));
+      // Il nuovo admin è cross-tenant (organizzazione del nuovo studio, non quella
+      // dell'attore): superadmin vede tutti gli utenti di tutte le org, quindi
+      // ricaricare la lista lo mostra subito (pending) senza refresh manuale.
+      await reloadUsers();
       setInviteAdminMsg((prev) => ({ ...prev, [ao.id]: "✅ Invito inviato." }));
       setTimeout(() => setInviteAdminMsg((prev) => ({ ...prev, [ao.id]: null })), 8000);
     } catch (err) {

@@ -581,13 +581,15 @@ describe("UsersAdminPage — invito primo admin di uno studio (gap S3, endpoint 
     expect(mockInviteStudioAdmin).not.toHaveBeenCalled();
   });
 
-  it("submit valido: invia l'invito per l'id dell'auditor_org corretto e mostra il messaggio di successo", async () => {
+  it("submit valido: invia l'invito per l'id dell'auditor_org corretto, ricarica la lista utenti e mostra il messaggio di successo", async () => {
     const user = userEvent.setup();
     render(<UsersAdminPage />);
 
     await waitFor(() => {
       expect(screen.getByText("Licenze moduli per studio")).toBeInTheDocument();
     });
+
+    const callsBeforeSubmit = mockGetAdminUsers.mock.calls.length;
 
     await user.click(screen.getAllByRole("button", { name: "+ Invita admin" })[0]);
     await user.type(screen.getByLabelText("Nome e cognome"), "Mario Rossi");
@@ -604,6 +606,9 @@ describe("UsersAdminPage — invito primo admin di uno studio (gap S3, endpoint 
     });
     // Il form si chiude dopo il successo
     expect(screen.queryByLabelText("Nome e cognome")).not.toBeInTheDocument();
+    // Fix Bugbot: la lista utenti va ricaricata (il nuovo admin è cross-tenant,
+    // altrimenti resta invisibile finché non si ricarica manualmente la pagina)
+    expect(mockGetAdminUsers.mock.calls.length).toBeGreaterThan(callsBeforeSubmit);
   });
 
   it("mostra un messaggio di errore inline se il backend risponde con errore (es. 409 email duplicata)", async () => {

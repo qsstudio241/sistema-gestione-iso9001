@@ -130,13 +130,17 @@ describe('inviteFirstStudioAdmin', () => {
       email: 'referente@nuovostudio.it',
       full_name: 'Mario Rossi',
       organization_id: NEW_ORG_ID,
-      auditor_org_id: AUDITOR_ORG_ID,
       password_hash: '$2a$10$placeholderHash',
     }));
+    // Nessun auditor_org_id nel binding parametri: l'INSERT lo fissa a NULL via SQL
+    // letterale (org-wide admin, non "Admin Studio" scoped — fix Bugbot PR #384).
+    expect(insertCall[1]).not.toHaveProperty('auditor_org_id');
     expect(insertCall[0]).toMatch(/'admin'/);
+    expect(insertCall[0]).toMatch(/NULL/);
 
     expect(userAuditService.logUserAuditEvent).toHaveBeenCalledWith(expect.objectContaining({
       organizationId: NEW_ORG_ID, targetUserId: 777, actorUserId: ACTOR_ID, action: 'user_created',
+      newValue: expect.objectContaining({ auditor_org_id: null }),
     }));
     expect(userInviteService.sendInviteEmail).toHaveBeenCalledWith(expect.objectContaining({
       userId: 777, email: 'referente@nuovostudio.it', fullName: 'Mario Rossi',
@@ -147,7 +151,7 @@ describe('inviteFirstStudioAdmin', () => {
     expect(res.json).toHaveBeenCalledWith(expect.objectContaining({
       success: true,
       data: expect.objectContaining({
-        user_id: 777, role: 'admin', organization_id: NEW_ORG_ID, pending_activation: true,
+        user_id: 777, role: 'admin', organization_id: NEW_ORG_ID, auditor_org_id: null, pending_activation: true,
       }),
     }));
   });

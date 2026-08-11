@@ -215,7 +215,9 @@ async function createAuditorOrg(req, res) {
 }
 
 /**
- * POST /api/v1/auditor-orgs/:id/invite-admin — invita il primo admin di uno studio
+ * POST /api/v1/auditor-orgs/:id/invite-admin — invita il primo admin (org-wide, senza
+ * auditor_org_id — "amministratore principale", stesso pattern isOrgWideAdmin usato in
+ * tutto il codice) del tenant a cui appartiene lo studio indicato.
  * Solo superadmin. Colma il gap architetturale: POST /admin/users (createUser) crea
  * sempre utenti nell'organizzazione dell'attore, quindi non può mai assegnare un utente
  * a un nuovo studio (organization_id diverso per costruzione) — vedi DEPUTYTASK1 S3.
@@ -269,22 +271,27 @@ async function inviteFirstStudioAdmin(req, res) {
             });
         }
 
+        // auditor_org_id = NULL (non l'id dello studio target): l'invitato deve essere
+        // "amministratore principale" del nuovo tenant (org-wide, come da pattern
+        // isOrgWideAdmin usato in tutto il codice), non un semplice "Admin Studio"
+        // scoped a un singolo studio — altrimenti perderebbe visibilità org-wide su
+        // audit/registro documenti/checklist e non potrebbe gestire eventuali futuri
+        // studi aggiuntivi nello stesso tenant (rilievo Bugbot, PR #384).
         const password_hash = await userInviteService.generatePlaceholderPasswordHash();
         const insertRes = await query(
             `INSERT INTO users (email, password_hash, full_name, role, organization_id, auditor_org_id, is_active, pending_activation)
-             VALUES (@email, @password_hash, @full_name, 'admin', @organization_id, @auditor_org_id, 1, 1);
+             VALUES (@email, @password_hash, @full_name, 'admin', @organization_id, NULL, 1, 1);
              SELECT SCOPE_IDENTITY() AS user_id;`,
             {
                 email,
                 password_hash,
                 full_name: fullName,
                 organization_id: organizationId,
-                auditor_org_id: auditorOrgId,
             }
         );
         const newUserId = insertRes.recordset[0]?.user_id;
 
-        logger.info('[AUDITOR_ORGS] Primo admin invitato per nuovo studio', {
+        logger.info('[AUDITOR_ORGS] Primo admin (org-wide) invitato per nuovo studio', {
             newUserId, auditorOrgId, organizationId, actorId: req.user.user_id
         });
 
@@ -293,7 +300,7 @@ async function inviteFirstStudioAdmin(req, res) {
             targetUserId: newUserId,
             actorUserId: req.user.user_id,
             action: 'user_created',
-            newValue: { email, role: 'admin', auditor_org_id: auditorOrgId, invited: true },
+            newValue: { email, role: 'admin', auditor_org_id: null, invited: true },
         });
 
         // Invio invito: MAI bloccante (stesso pattern di admin.controller.js::createUser).
@@ -336,7 +343,7 @@ async function inviteFirstStudioAdmin(req, res) {
                 full_name: fullName,
                 role: 'admin',
                 organization_id: organizationId,
-                auditor_org_id: auditorOrgId,
+                auditor_org_id: null,
                 is_active: true,
                 pending_activation: true,
             }
