@@ -687,6 +687,11 @@ class ApiService {
         return this.post('/auditor-orgs', payload);
     }
 
+    /** Superadmin: invita un admin (invito via email, nessuna password provvisoria) per uno studio */
+    async inviteStudioAdmin(auditorOrgId, payload) {
+        return this.post(`/auditor-orgs/${auditorOrgId}/invite-admin`, payload);
+    }
+
     /**
      * Lista utenti organizzazione (solo admin)
      * @returns {Promise<{ success: boolean, data: Array }>}

@@ -20,6 +20,7 @@ vi.mock("../contexts/AuthContext", () => ({
 const mockCreateAdminUser = vi.fn();
 const mockResendUserInvite = vi.fn();
 const mockCreateAuditorOrg = vi.fn();
+const mockInviteStudioAdmin = vi.fn();
 
 vi.mock("../services/apiService", () => ({
   default: {
@@ -37,6 +38,7 @@ vi.mock("../services/apiService", () => ({
     updateUserStandards: vi.fn(),
     patchOrgLicenses: vi.fn(),
     createAuditorOrg: (...args) => mockCreateAuditorOrg(...args),
+    inviteStudioAdmin: (...args) => mockInviteStudioAdmin(...args),
   },
 }));
 
@@ -76,6 +78,7 @@ beforeEach(() => {
   mockCreateAdminUser.mockReset().mockResolvedValue({ success: true, data: {} });
   mockResendUserInvite.mockReset().mockResolvedValue({ success: true });
   mockCreateAuditorOrg.mockReset();
+  mockInviteStudioAdmin.mockReset().mockResolvedValue({ success: true, data: {} });
   global.alert = vi.fn();
   mockGetAdminUsers.mockResolvedValue({ data: USERS_CROSS_TENANT });
   mockGetAuditorOrgs.mockResolvedValue({ data: AUDITOR_ORGS });
@@ -539,5 +542,95 @@ describe("UsersAdminPage — provisioning nuovo studio (DEPUTYTASK1 S2/S3)", () 
     // Il form resta aperto e la lista non cambia (nessuna entry aggiunta)
     expect(screen.getByLabelText("Nome studio")).toBeInTheDocument();
     expect(screen.queryByText("Studio Duplicato")).not.toBeInTheDocument();
+  });
+});
+
+// Colma il gap S3 sopra (createUser non può assegnare un utente a un nuovo
+// studio cross-tenant): endpoint/UI dedicati per invitare un admin per
+// qualunque studio, senza toccare il form "Nuovo utente" esistente.
+describe("UsersAdminPage — invito primo admin di uno studio (gap S3, endpoint dedicato)", () => {
+  beforeEach(() => {
+    mockAuthUser = { user_id: 99, role: "superadmin", organization_id: 1001 };
+  });
+
+  it("mostra il pulsante '+ Invita admin' per ogni studio (solo superadmin)", async () => {
+    render(<UsersAdminPage />);
+
+    await waitFor(() => {
+      expect(screen.getByText("Licenze moduli per studio")).toBeInTheDocument();
+    });
+
+    const inviteButtons = screen.getAllByRole("button", { name: "+ Invita admin" });
+    expect(inviteButtons).toHaveLength(AUDITOR_ORGS.length);
+  });
+
+  it("validazione client-side: blocca il submit se il nome è vuoto", async () => {
+    const user = userEvent.setup();
+    render(<UsersAdminPage />);
+
+    await waitFor(() => {
+      expect(screen.getByText("Licenze moduli per studio")).toBeInTheDocument();
+    });
+
+    await user.click(screen.getAllByRole("button", { name: "+ Invita admin" })[0]);
+    await user.click(screen.getByRole("button", { name: "Invia invito" }));
+
+    await waitFor(() => {
+      expect(screen.getByText("❌ Nome e cognome obbligatorio.")).toBeInTheDocument();
+    });
+    expect(mockInviteStudioAdmin).not.toHaveBeenCalled();
+  });
+
+  it("submit valido: invia l'invito per l'id dell'auditor_org corretto, ricarica la lista utenti e mostra il messaggio di successo", async () => {
+    const user = userEvent.setup();
+    render(<UsersAdminPage />);
+
+    await waitFor(() => {
+      expect(screen.getByText("Licenze moduli per studio")).toBeInTheDocument();
+    });
+
+    const callsBeforeSubmit = mockGetAdminUsers.mock.calls.length;
+
+    await user.click(screen.getAllByRole("button", { name: "+ Invita admin" })[0]);
+    await user.type(screen.getByLabelText("Nome e cognome"), "Mario Rossi");
+    await user.click(screen.getByRole("button", { name: "Invia invito" }));
+
+    await waitFor(() => {
+      expect(mockInviteStudioAdmin).toHaveBeenCalledWith(10, {
+        full_name: "Mario Rossi",
+        email: undefined,
+      });
+    });
+    await waitFor(() => {
+      expect(screen.getByText("✅ Invito inviato.")).toBeInTheDocument();
+    });
+    // Il form si chiude dopo il successo
+    expect(screen.queryByLabelText("Nome e cognome")).not.toBeInTheDocument();
+    // Fix Bugbot: la lista utenti va ricaricata (il nuovo admin è cross-tenant,
+    // altrimenti resta invisibile finché non si ricarica manualmente la pagina)
+    expect(mockGetAdminUsers.mock.calls.length).toBeGreaterThan(callsBeforeSubmit);
+  });
+
+  it("mostra un messaggio di errore inline se il backend risponde con errore (es. 409 email duplicata)", async () => {
+    mockInviteStudioAdmin.mockRejectedValue(new Error("Esiste già un utente con questa email in questo studio"));
+
+    const user = userEvent.setup();
+    render(<UsersAdminPage />);
+
+    await waitFor(() => {
+      expect(screen.getByText("Licenze moduli per studio")).toBeInTheDocument();
+    });
+
+    await user.click(screen.getAllByRole("button", { name: "+ Invita admin" })[0]);
+    await user.type(screen.getByLabelText("Nome e cognome"), "Mario Rossi");
+    await user.click(screen.getByRole("button", { name: "Invia invito" }));
+
+    await waitFor(() => {
+      expect(
+        screen.getByText("❌ Esiste già un utente con questa email in questo studio")
+      ).toBeInTheDocument();
+    });
+    // Il form resta aperto per correggere/riprovare
+    expect(screen.getByLabelText("Nome e cognome")).toBeInTheDocument();
   });
 });

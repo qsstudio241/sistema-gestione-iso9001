@@ -365,6 +365,11 @@
   margin-bottom: 1.25rem;
 }
 
+.invite-admin-form {
+  margin-top: 0.75rem;
+  margin-bottom: 0;
+}
+
 .new-studio-success {
   color: #2b8a3e;
   font-weight: 500;

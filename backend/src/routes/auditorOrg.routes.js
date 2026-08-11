@@ -12,5 +12,6 @@ router.use(authenticate);
 router.get('/auditor-orgs', auditorOrgController.listAuditorOrgs);
 router.get('/auditor-orgs/:id', auditorOrgController.getAuditorOrgById);
 router.post('/auditor-orgs', authorize('superadmin'), auditorOrgController.createAuditorOrg);
+router.post('/auditor-orgs/:id/invite-admin', authorize('superadmin'), auditorOrgController.inviteFirstStudioAdmin);
 
 module.exports = router;
