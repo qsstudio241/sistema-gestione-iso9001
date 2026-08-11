@@ -682,6 +682,11 @@ class ApiService {
         return this.get(`/auditor-orgs/${id}`);
     }
 
+    /** Superadmin: crea un nuovo studio (nuova coppia organizations + auditor_orgs) */
+    async createAuditorOrg(payload) {
+        return this.post('/auditor-orgs', payload);
+    }
+
     /**
      * Lista utenti organizzazione (solo admin)
      * @returns {Promise<{ success: boolean, data: Array }>}

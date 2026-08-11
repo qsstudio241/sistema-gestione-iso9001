@@ -157,6 +157,18 @@ export default function UsersAdminPage({ onBack }) {
   const [savingOrgLicense, setSavingOrgLicense] = useState(null);
   const [orgLicenseMsg, setOrgLicenseMsg] = useState({});
 
+  // Creazione nuovo studio (provisioning tenant, solo superadmin)
+  const [showNewStudioForm, setShowNewStudioForm] = useState(false);
+  const [newStudioForm, setNewStudioForm] = useState({
+    organization_name: "",
+    studio_name: "",
+    studio_email: "",
+    subscription_plan: "standard",
+  });
+  const [newStudioSubmitting, setNewStudioSubmitting] = useState(false);
+  const [newStudioError, setNewStudioError] = useState(null);
+  const [newStudioMsg, setNewStudioMsg] = useState(null);
+
   // Accesso aziende clienti per utente (user_company_access) - caricato on-demand
   const [companyAccessByUser, setCompanyAccessByUser] = useState({});
   const [companiesByOrg, setCompaniesByOrg] = useState({});
@@ -559,6 +571,46 @@ export default function UsersAdminPage({ onBack }) {
     }
   };
 
+  const submitNewStudio = async (e) => {
+    e.preventDefault();
+    const organizationName = newStudioForm.organization_name.trim();
+    const studioName = newStudioForm.studio_name.trim();
+    const studioEmail = newStudioForm.studio_email.trim();
+    setNewStudioError(null);
+
+    if (!organizationName || !studioName || !studioEmail) {
+      setNewStudioError("Compila nome cliente, nome studio ed email referente.");
+      return;
+    }
+
+    setNewStudioSubmitting(true);
+    try {
+      const res = await apiService.createAuditorOrg({
+        organization_name: organizationName,
+        studio_name: studioName,
+        studio_email: studioEmail,
+        subscription_plan: newStudioForm.subscription_plan.trim() || "standard",
+      });
+      const created = res?.data;
+      if (created) {
+        setAuditorOrgs((prev) => [...prev, created]);
+      }
+      setNewStudioForm({
+        organization_name: "",
+        studio_name: "",
+        studio_email: "",
+        subscription_plan: "standard",
+      });
+      setShowNewStudioForm(false);
+      setNewStudioMsg("✅ Studio creato.");
+      setTimeout(() => setNewStudioMsg(null), 8000);
+    } catch (err) {
+      setNewStudioError(err.message || "Errore creazione studio");
+    } finally {
+      setNewStudioSubmitting(false);
+    }
+  };
+
   const resendInvite = async (u) => {
     setResendingInviteId(u.user_id);
     try {
@@ -764,14 +816,97 @@ export default function UsersAdminPage({ onBack }) {
       )}
 
       {/* ── Licenze moduli per studio (solo superadmin) ─────────────────── */}
-      {isSuperadmin && !loading && auditorOrgs.length > 0 && (
+      {isSuperadmin && !loading && (
         <section className="org-licenses-section">
-          <h2 className="org-licenses-title">Licenze moduli per studio</h2>
+          <div className="org-licenses-header">
+            <h2 className="org-licenses-title">Licenze moduli per studio</h2>
+            <button
+              type="button"
+              className="btn btn-primary btn-sm"
+              onClick={() => {
+                setShowNewStudioForm((s) => !s);
+                setNewStudioError(null);
+              }}
+            >
+              {showNewStudioForm ? "Chiudi form" : "+ Nuovo studio"}
+            </button>
+          </div>
           <p className="org-licenses-desc">
             Assegna i moduli funzionali attivi per ogni studio cliente. Il modulo <strong>Audit</strong> è sempre abilitato.
             Nessuna selezione esplicita = tutti i moduli attivi (impostazione predefinita).
             La licenza <strong>Saldatura ISO 3834</strong> include sempre l&apos;accesso a <strong>CND</strong>, anche se non spuntata separatamente.
           </p>
+
+          {showNewStudioForm && (
+            <form className="user-create-form new-studio-form" onSubmit={submitNewStudio}>
+              <h3 className="user-create-title">Nuovo studio</h3>
+              <div className="form-row">
+                <label htmlFor="new-studio-org-name">Nome cliente/organizzazione</label>
+                <input
+                  id="new-studio-org-name"
+                  type="text"
+                  value={newStudioForm.organization_name}
+                  onChange={(e) =>
+                    setNewStudioForm((f) => ({ ...f, organization_name: e.target.value }))
+                  }
+                />
+              </div>
+              <div className="form-row">
+                <label htmlFor="new-studio-name">Nome studio</label>
+                <input
+                  id="new-studio-name"
+                  type="text"
+                  value={newStudioForm.studio_name}
+                  onChange={(e) =>
+                    setNewStudioForm((f) => ({ ...f, studio_name: e.target.value }))
+                  }
+                />
+              </div>
+              <div className="form-row">
+                <label htmlFor="new-studio-email">Email referente</label>
+                <input
+                  id="new-studio-email"
+                  type="email"
+                  value={newStudioForm.studio_email}
+                  onChange={(e) =>
+                    setNewStudioForm((f) => ({ ...f, studio_email: e.target.value }))
+                  }
+                />
+              </div>
+              <div className="form-row">
+                <label htmlFor="new-studio-plan">Piano abbonamento</label>
+                <select
+                  id="new-studio-plan"
+                  value={newStudioForm.subscription_plan}
+                  onChange={(e) =>
+                    setNewStudioForm((f) => ({ ...f, subscription_plan: e.target.value }))
+                  }
+                >
+                  <option value="standard">Standard</option>
+                  <option value="premium">Premium</option>
+                  <option value="trial">Trial</option>
+                </select>
+                <p className="form-hint">
+                  Il nuovo studio nasce con tutti i moduli abilitati (badge &quot;Tutti i moduli
+                  (default)&quot;); potrai personalizzare le licenze subito dopo, qui sotto.
+                </p>
+              </div>
+              {newStudioError && (
+                <p className="form-hint warn" role="alert">
+                  {newStudioError}
+                </p>
+              )}
+              <button type="submit" className="btn btn-primary" disabled={newStudioSubmitting}>
+                {newStudioSubmitting ? "Creazione..." : "Crea studio"}
+              </button>
+            </form>
+          )}
+          {newStudioMsg && <p className="org-license-msg new-studio-success">{newStudioMsg}</p>}
+
+          {auditorOrgs.length === 0 && (
+            <p className="form-hint">Nessuno studio presente. Usa &quot;+ Nuovo studio&quot; per crearne uno.</p>
+          )}
+
           {auditorOrgs.map((ao) => {
             const effectiveMods = getEffectiveOrgModules(ao);
             const isDirty = orgLicensesDirty[ao.organization_id] !== undefined;
