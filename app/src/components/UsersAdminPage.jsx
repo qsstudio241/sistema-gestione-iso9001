@@ -965,11 +965,8 @@ export default function UsersAdminPage({ onBack }) {
                 <summary className="org-license-summary">
                   <span className="org-license-name">{ao.name}</span>
                   <span className="org-license-orgname">{ao.organization_name}</span>
-                  {useDefault && !isDirty && (
-                    <span className="org-license-badge default">Tutti i moduli (default)</span>
-                  )}
-                  {isFullExplicit && !isDirty && (
-                    <span className="org-license-badge full">Tutti i moduli</span>
+                  {(useDefault || isFullExplicit) && !isDirty && (
+                    <span className="org-license-badge default">Tutti i moduli</span>
                   )}
                   {isDirty && <span className="org-license-badge dirty">● Modifiche non salvate</span>}
                 </summary>
