@@ -285,6 +285,50 @@
   padding: 0.5rem 0;
 }
 
+/* Moduli raggruppati per sistema di gestione (stesso raggruppamento del menu
+ * laterale: SGQ/Saldatura/CND/Gestione) — colonna unica allineata a sinistra
+ * per ogni gruppo, invece della griglia "auto-fill" che cambiava numero di
+ * colonne in base alla larghezza dello schermo. */
+.module-groups {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.25rem 2rem;
+  padding: 0.5rem 0;
+}
+
+.module-group {
+  min-width: 220px;
+}
+
+.module-group-title {
+  margin: 0 0 0.4rem;
+  font-size: 0.78rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: #6b7280;
+}
+
+.module-group-checkboxes {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.4rem;
+}
+
+.module-group-checkboxes .checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.9rem;
+  cursor: pointer;
+  text-align: left;
+}
+
+.module-group-checkboxes .checkbox-label span {
+  line-height: 1.35;
+}
+
 .standards-checkboxes .checkbox-label {
   display: flex;
   align-items: center;

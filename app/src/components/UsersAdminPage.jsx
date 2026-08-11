@@ -17,23 +17,48 @@ const STANDARDS_LIST = [
   { standard_id: 7, label: "RDP Mason - Audit di Sistema Saldatura" },
 ];
 
-const ALL_MODULE_KEYS = [
-  { key: "audit",       label: "Audit" },
-  { key: "documents",   label: "Registro documenti" },
-  { key: "qualifiche",  label: "Qualifiche personale" },
-  { key: "nc",          label: "Non conformità" },
-  { key: "rischi",      label: "Rischi, opportunità e obiettivi" },
-  { key: "reclami",     label: "Reclami e fornitori" },
-  { key: "notifications", label: "Notifiche" },
-  { key: "sal",         label: "SAL" },
-  { key: "saldatura",   label: "Saldatura ISO 3834" },
-  { key: "cnd",         label: "CND - Controlli Non Distruttivi" },
-  { key: "ai_import",   label: "AI Import PDF" },
-  { key: "ai_assist",   label: "AI Suggerimenti (audit)" },
-  { key: "ai_review",   label: "AI Riesame Requisiti" },
-  { key: "ai_norms",    label: "AI Norme on-demand" },
-  { key: "ai_chat",     label: "AI Chat Assistente" },
+/** Stesso raggruppamento già usato nel menu laterale (AppLayout.jsx: gruppi
+ * SGQ/Saldatura/CND/Gestione) — qui unificato in 4 famiglie per la matrice
+ * licenze: "un solo modo di raggruppare i moduli in tutta l'app". */
+const MODULE_GROUPS = [
+  {
+    label: "Qualità (ISO 9001)",
+    keys: [
+      { key: "documents",  label: "Registro documenti" },
+      { key: "qualifiche", label: "Qualifiche personale" },
+      { key: "nc",         label: "Non conformità" },
+      { key: "rischi",     label: "Rischi, opportunità e obiettivi" },
+      { key: "reclami",    label: "Reclami e fornitori" },
+      { key: "sal",        label: "SAL" },
+    ],
+  },
+  {
+    label: "Saldatura (ISO 3834)",
+    keys: [
+      { key: "saldatura", label: "Saldatura ISO 3834" },
+      { key: "cnd",       label: "CND - Controlli Non Distruttivi" },
+    ],
+  },
+  {
+    label: "Intelligenza Artificiale",
+    keys: [
+      { key: "ai_import", label: "AI Import PDF" },
+      { key: "ai_assist", label: "AI Suggerimenti (audit)" },
+      { key: "ai_review", label: "AI Riesame Requisiti" },
+      { key: "ai_norms",  label: "AI Norme on-demand" },
+      { key: "ai_chat",   label: "AI Chat Assistente" },
+    ],
+  },
+  {
+    label: "Trasversali",
+    keys: [
+      { key: "audit",         label: "Audit" },
+      { key: "notifications", label: "Notifiche" },
+    ],
+  },
 ];
+
+const ALL_MODULE_KEYS = MODULE_GROUPS.flatMap((g) => g.keys);
 
 /** Legge licensed_modules da una riga auditorOrg (può essere null = tutti) */
 function parseOrgModules(rawJson) {
@@ -952,21 +977,28 @@ export default function UsersAdminPage({ onBack }) {
                   {isDirty && <span className="org-license-badge dirty">● Modifiche non salvate</span>}
                 </summary>
                 <div className="org-license-body">
-                  <div className="standards-checkboxes">
-                    {ALL_MODULE_KEYS.map(({ key, label }) => {
-                      const checked = useDefault && !isDirty ? true : (effectiveMods ?? []).includes(key);
-                      return (
-                        <label key={key} className="checkbox-label">
-                          <input
-                            type="checkbox"
-                            checked={checked}
-                            disabled={key === "audit" || savingOrgLicense === ao.organization_id}
-                            onChange={() => toggleOrgModule(ao.organization_id, key)}
-                          />
-                          <span>{label}</span>
-                        </label>
-                      );
-                    })}
+                  <div className="module-groups">
+                    {MODULE_GROUPS.map((group) => (
+                      <div key={group.label} className="module-group">
+                        <h4 className="module-group-title">{group.label}</h4>
+                        <div className="module-group-checkboxes">
+                          {group.keys.map(({ key, label }) => {
+                            const checked = useDefault && !isDirty ? true : (effectiveMods ?? []).includes(key);
+                            return (
+                              <label key={key} className="checkbox-label">
+                                <input
+                                  type="checkbox"
+                                  checked={checked}
+                                  disabled={key === "audit" || savingOrgLicense === ao.organization_id}
+                                  onChange={() => toggleOrgModule(ao.organization_id, key)}
+                                />
+                                <span>{label}</span>
+                              </label>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    ))}
                   </div>
                   <div className="org-license-actions">
                     {isDirty && (
