@@ -163,7 +163,6 @@ export default function UsersAdminPage({ onBack }) {
     organization_name: "",
     studio_name: "",
     studio_email: "",
-    subscription_plan: "standard",
   });
   const [newStudioSubmitting, setNewStudioSubmitting] = useState(false);
   const [newStudioError, setNewStudioError] = useState(null);
@@ -597,7 +596,6 @@ export default function UsersAdminPage({ onBack }) {
         organization_name: organizationName,
         studio_name: studioName,
         studio_email: studioEmail,
-        subscription_plan: newStudioForm.subscription_plan.trim() || "standard",
       });
       const created = res?.data;
       if (created) {
@@ -607,7 +605,6 @@ export default function UsersAdminPage({ onBack }) {
         organization_name: "",
         studio_name: "",
         studio_email: "",
-        subscription_plan: "standard",
       });
       setShowNewStudioForm(false);
       setNewStudioMsg("✅ Studio creato.");
@@ -911,25 +908,9 @@ export default function UsersAdminPage({ onBack }) {
                     setNewStudioForm((f) => ({ ...f, studio_email: e.target.value }))
                   }
                 />
-              </div>
-              <div className="form-row">
-                <label htmlFor="new-studio-plan">Piano abbonamento</label>
-                <select
-                  id="new-studio-plan"
-                  value={newStudioForm.subscription_plan}
-                  onChange={(e) =>
-                    setNewStudioForm((f) => ({ ...f, subscription_plan: e.target.value }))
-                  }
-                >
-                  <option value="standard">Standard</option>
-                  <option value="premium">Premium</option>
-                  <option value="trial">Trial</option>
-                </select>
                 <p className="form-hint">
-                  Il nuovo studio nasce con tutti i moduli abilitati (badge &quot;Tutti i moduli
-                  (default)&quot;); potrai personalizzare le licenze subito dopo, qui sotto. Il
-                  piano abbonamento è solo un&apos;etichetta informativa (es. per fatturazione
-                  futura): oggi non modifica quali moduli sono attivi.
+                  Il nuovo studio nasce con tutti i moduli abilitati (badge &quot;Tutti i
+                  moduli&quot;); potrai personalizzare le licenze subito dopo, qui sotto.
                 </p>
               </div>
               {newStudioError && (

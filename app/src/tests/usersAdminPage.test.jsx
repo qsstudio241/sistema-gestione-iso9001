@@ -445,11 +445,13 @@ describe("UsersAdminPage — provisioning nuovo studio (DEPUTYTASK1 S2/S3)", () 
     await user.click(screen.getByRole("button", { name: "Crea studio" }));
 
     await waitFor(() => {
+      // Nessun campo "Piano abbonamento" inviato (rimosso 11/08/2026: era solo
+      // un'etichetta senza alcun effetto visibile né funzionale — vedi GUIDA_CONSOLIDATA.md).
+      // Il backend continua a default 'standard' internamente se il campo non è presente.
       expect(mockCreateAuditorOrg).toHaveBeenCalledWith({
         organization_name: "Cliente Tre Srl",
         studio_name: "Studio Tre",
         studio_email: "referente@studiotre.it",
-        subscription_plan: "standard",
       });
     });
 
@@ -612,7 +614,13 @@ describe("UsersAdminPage — DEPUTYTASK2: chiarezza licenze studio (badge + pian
     expect(within(summary).queryByText("Tutti i moduli (default)")).not.toBeInTheDocument();
   });
 
-  it("S2: mostra la nota informativa sul piano abbonamento nel form '+ Nuovo studio'", async () => {
+  // S2 originale (11/08/2026): il campo "Piano abbonamento" nel form "+ Nuovo
+  // studio" non era collegato a nessuna logica di gating moduli né mostrato in
+  // alcun punto dell'interfaccia dopo la creazione — una scelta senza alcun
+  // effetto visibile o funzionale. Il committente ha chiesto di rimuoverlo
+  // (opzione A) invece di limitarsi a spiegarlo meglio con una nota. Il campo
+  // e il relativo `<select>` sono stati eliminati dal form (vedi sotto).
+  it("S2 (rivisto): il form '+ Nuovo studio' NON ha più il campo 'Piano abbonamento' (rimosso, nessun effetto visibile/funzionale)", async () => {
     const user = userEvent.setup();
     render(<UsersAdminPage />);
 
@@ -622,9 +630,10 @@ describe("UsersAdminPage — DEPUTYTASK2: chiarezza licenze studio (badge + pian
 
     await user.click(screen.getByRole("button", { name: "+ Nuovo studio" }));
 
+    expect(screen.queryByLabelText("Piano abbonamento")).not.toBeInTheDocument();
     expect(
-      screen.getByText(/il piano abbonamento è solo un'etichetta informativa/i)
-    ).toBeInTheDocument();
+      screen.queryByText(/piano abbonamento è solo un'etichetta informativa/i)
+    ).not.toBeInTheDocument();
   });
 });
 
