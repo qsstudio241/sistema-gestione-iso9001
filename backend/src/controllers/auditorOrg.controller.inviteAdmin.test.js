@@ -102,9 +102,53 @@ describe('inviteFirstStudioAdmin', () => {
     expect(res.json).toHaveBeenCalledWith(expect.objectContaining({ code: 'VALIDATION_ERROR' }));
   });
 
-  it('409 se esiste già un utente con questa email in questa organizzazione', async () => {
+  it('409 se esiste già un utente con questa email in questa stessa organizzazione', async () => {
     query.mockResolvedValueOnce({ recordset: [AO_ROW] });
-    query.mockResolvedValueOnce({ recordset: [{ user_id: 99 }] }); // duplicate check
+    query.mockResolvedValueOnce({ recordset: [{ user_id: 99, organization_id: NEW_ORG_ID }] }); // duplicate check
+    const req = mockReq({ body: { full_name: 'Mario Rossi' } });
+    const res = mockRes();
+    await ctrl.inviteFirstStudioAdmin(req, res);
+
+    expect(res.status).toHaveBeenCalledWith(409);
+    expect(res.json).toHaveBeenCalledWith(expect.objectContaining({
+      code: 'EMAIL_DUPLICATE',
+      error: expect.stringContaining('in questo studio'),
+    }));
+  });
+
+  // Bug reale riprodotto in produzione (11/08/2026): il vincolo UQ_users_email è
+  // GLOBALE su tutta la piattaforma, non per organizzazione. Un pre-check scoped
+  // a organization_id (come in admin.controller.js::createUser) non trova nulla
+  // per un nuovo studio (organization_id sempre diverso), l'INSERT poi falliva
+  // con un errore SQL grezzo mostrato come 500 generico all'utente.
+  it('409 con messaggio esplicito "altra organizzazione" se l\'email esiste in un\'organizzazione DIVERSA (bug reale 11/08/2026)', async () => {
+    query.mockResolvedValueOnce({ recordset: [AO_ROW] });
+    query.mockResolvedValueOnce({ recordset: [{ user_id: 2023, organization_id: 1001 }] }); // duplicate check, altra org
+    const req = mockReq({ body: { full_name: 'Fausto Busato', email: 'fausto@fr-busato.it' } });
+    const res = mockRes();
+    await ctrl.inviteFirstStudioAdmin(req, res);
+
+    expect(res.status).toHaveBeenCalledWith(409);
+    expect(res.json).toHaveBeenCalledWith(expect.objectContaining({
+      code: 'EMAIL_DUPLICATE',
+      error: expect.stringContaining('altra organizzazione'),
+    }));
+    // Verifica che il pre-check sia GLOBALE: la WHERE filtra solo su email, non su
+    // organization_id (che compare nel SELECT solo per determinare il messaggio).
+    const dupCheckSql = query.mock.calls[1][0];
+    expect(dupCheckSql).toMatch(/WHERE email = @email\s*$/);
+    // Nessun INSERT tentato dopo il rilievo del duplicato
+    expect(query.mock.calls.find(([sql]) => sql.includes('INSERT INTO users'))).toBeUndefined();
+  });
+
+  it('409 (non 500) se il DB rifiuta l\'INSERT per violazione UQ_users_email — race condition sul pre-check', async () => {
+    query.mockResolvedValueOnce({ recordset: [AO_ROW] });
+    query.mockResolvedValueOnce({ recordset: [] }); // pre-check: nessun duplicato trovato
+    userInviteService.generatePlaceholderPasswordHash.mockResolvedValueOnce('$2a$10$hash');
+    const uniqueViolation = new Error("Violation of UNIQUE KEY constraint 'UQ_users_email'");
+    uniqueViolation.number = 2627;
+    query.mockRejectedValueOnce(uniqueViolation); // INSERT fallisce
+
     const req = mockReq({ body: { full_name: 'Mario Rossi' } });
     const res = mockRes();
     await ctrl.inviteFirstStudioAdmin(req, res);
