@@ -174,14 +174,24 @@ async function createUser(req, res) {
             }
         }
 
+        // Univocità GLOBALE (non scoped a organization_id): il vincolo reale nel
+        // database (UQ_users_email) è un'email = un account su tutta la
+        // piattaforma, non per organizzazione. Un pre-check scoped alla sola
+        // organizzazione dell'attore poteva non trovare nulla per un'email già
+        // usata in un ALTRO tenant, facendo poi fallire l'INSERT con un errore SQL
+        // grezzo mostrato come 500 generico (bug reale riprodotto su un endpoint
+        // gemello, auditorOrg.controller.js::inviteFirstStudioAdmin, 11/08/2026).
         const existing = await query(
-            `SELECT user_id FROM users WHERE email = @email AND organization_id = @organization_id`,
-            { email: String(email).trim(), organization_id }
+            `SELECT user_id, organization_id FROM users WHERE email = @email`,
+            { email: String(email).trim() }
         );
         if (existing.recordset.length > 0) {
+            const sameOrg = existing.recordset[0].organization_id === organization_id;
             return res.status(409).json({
                 success: false,
-                error: 'Email già registrata in questa organizzazione',
+                error: sameOrg
+                    ? 'Email già registrata in questa organizzazione'
+                    : 'Questa email è già associata a un utente esistente in un\'altra organizzazione. Le email sono univoche su tutta la piattaforma: usa un indirizzo diverso.',
                 code: 'EMAIL_DUPLICATE',
             });
         }
@@ -193,20 +203,38 @@ async function createUser(req, res) {
             ? await userInviteService.generatePlaceholderPasswordHash()
             : await bcrypt.hash(String(password), 10);
 
-        const result = await query(
-            `INSERT INTO users (email, password_hash, full_name, role, organization_id, auditor_org_id, is_active, pending_activation)
-             VALUES (@email, @password_hash, @full_name, @role, @organization_id, @auditor_org_id, 1, @pending_activation);
-             SELECT SCOPE_IDENTITY() AS user_id;`,
-            {
-                email: String(email).trim(),
-                password_hash,
-                full_name: String(full_name).trim(),
-                role: normalizedRole,
-                organization_id,
-                auditor_org_id: aoId,
-                pending_activation: isInviteMode ? 1 : 0,
+        let result;
+        try {
+            result = await query(
+                `INSERT INTO users (email, password_hash, full_name, role, organization_id, auditor_org_id, is_active, pending_activation)
+                 VALUES (@email, @password_hash, @full_name, @role, @organization_id, @auditor_org_id, 1, @pending_activation);
+                 SELECT SCOPE_IDENTITY() AS user_id;`,
+                {
+                    email: String(email).trim(),
+                    password_hash,
+                    full_name: String(full_name).trim(),
+                    role: normalizedRole,
+                    organization_id,
+                    auditor_org_id: aoId,
+                    pending_activation: isInviteMode ? 1 : 0,
+                }
+            );
+        } catch (insertErr) {
+            // Rete di sicurezza per race condition sul pre-check email (stesso principio
+            // difensivo di auditorOrg.controller.js) — scoped al SOLO INSERT utente, non
+            // all'intera funzione: passaggi successivi (company_access, document tree)
+            // hanno vincoli UNIQUE propri e non vanno mai mappati a EMAIL_DUPLICATE
+            // (rilievo Bugbot, PR #390).
+            if (insertErr.number === 2627 || insertErr.number === 2601 || /UNIQUE|duplicate/i.test(insertErr.message || '')) {
+                logger.warn('Admin createUser: violazione univocità email a livello DB (race condition sul pre-check)', { error: insertErr.message });
+                return res.status(409).json({
+                    success: false,
+                    error: 'Questa email è già associata a un utente esistente. Le email sono univoche su tutta la piattaforma: usa un indirizzo diverso.',
+                    code: 'EMAIL_DUPLICATE',
+                });
             }
-        );
+            throw insertErr;
+        }
 
         const newId = result.recordset[0]?.user_id;
         logger.info('Admin create user', { new_user_id: newId, organization_id, actorId, role: normalizedRole, isInviteMode });

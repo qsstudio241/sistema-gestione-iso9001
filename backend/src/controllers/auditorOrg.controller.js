@@ -258,15 +258,27 @@ async function inviteFirstStudioAdmin(req, res) {
             return res.status(400).json({ error: 'Email non valida', code: 'VALIDATION_ERROR' });
         }
 
-        // Univocità scoped alla organizzazione del NUOVO studio (non a quella dell'attore
-        // superadmin) — stesso principio di isolamento usato in admin.controller.js::createUser.
+        // Univocità GLOBALE (non scoped a organization_id): a differenza di
+        // admin.controller.js::createUser — che scopa il controllo alla org
+        // dell'attore perché l'attore può creare utenti solo nella propria org,
+        // quindi un duplicato cross-org è comunque intercettato dal vincolo DB al
+        // primo utilizzo reale — qui l'attore (superadmin) crea utenti in una org
+        // DIVERSA dalla propria: uno scoped-check può non trovare nulla (nessun
+        // utente con quella email nel NUOVO studio) mentre il DB ha comunque un
+        // vincolo UNIQUE globale su users.email (UQ_users_email, un'email = un
+        // account su tutta la piattaforma) — senza questo controllo l'INSERT
+        // fallisce con un errore SQL grezzo mostrato come 500 generico (bug reale
+        // riprodotto in produzione 11/08/2026: email già in uso su un'altra org).
         const existing = await query(
-            `SELECT user_id FROM users WHERE email = @email AND organization_id = @organization_id`,
-            { email, organization_id: organizationId }
+            `SELECT user_id, organization_id FROM users WHERE email = @email`,
+            { email }
         );
         if (existing.recordset.length > 0) {
+            const sameOrg = existing.recordset[0].organization_id === organizationId;
             return res.status(409).json({
-                error: 'Esiste già un utente con questa email in questo studio',
+                error: sameOrg
+                    ? 'Esiste già un utente con questa email in questo studio'
+                    : 'Questa email è già associata a un utente esistente in un\'altra organizzazione. Le email sono univoche su tutta la piattaforma: usa un indirizzo diverso per il primo admin di questo studio.',
                 code: 'EMAIL_DUPLICATE'
             });
         }
@@ -349,6 +361,16 @@ async function inviteFirstStudioAdmin(req, res) {
             }
         });
     } catch (error) {
+        // Rete di sicurezza per race condition sul pre-check email (stesso principio
+        // difensivo di createAuditorOrg, migration 144): il vincolo reale è
+        // UQ_users_email (globale su tutta la piattaforma, non per organizzazione).
+        if (error.number === 2627 || error.number === 2601 || /UNIQUE|duplicate/i.test(error.message || '')) {
+            logger.warn('[AUDITOR_ORGS] inviteFirstStudioAdmin: violazione univocità email a livello DB', error.message);
+            return res.status(409).json({
+                error: 'Questa email è già associata a un utente esistente. Le email sono univoche su tutta la piattaforma: usa un indirizzo diverso.',
+                code: 'EMAIL_DUPLICATE'
+            });
+        }
         logger.error('[AUDITOR_ORGS] inviteFirstStudioAdmin error:', error);
         return res.status(500).json({ error: 'Errore invito primo admin studio', code: 'SERVER_ERROR' });
     }
