@@ -196,6 +196,16 @@ async function createAuditorOrg(req, res) {
                 /* ignore: transazione già chiusa o non avviata */
             }
         }
+        // Race condition: due richieste concorrenti possono superare entrambe i controlli
+        // di univocità pre-transazione (SELECT non atomiche) — l'indice UNIQUE filtrato
+        // UX_auditor_orgs_email (migration 144) è la garanzia reale a livello DB.
+        if (error.number === 2627 || error.number === 2601 || /UNIQUE|duplicate/i.test(error.message || '')) {
+            logger.warn('[AUDITOR_ORGS] create: violazione univocità a livello DB (race condition sul pre-check)', error.message);
+            return res.status(409).json({
+                error: 'Esiste già uno studio con questa email o organizzazione',
+                code: 'DUPLICATE_STUDIO'
+            });
+        }
         logger.error('[AUDITOR_ORGS] create error:', error);
         return res.status(500).json({ error: 'Errore creazione studio', code: 'SERVER_ERROR' });
     }

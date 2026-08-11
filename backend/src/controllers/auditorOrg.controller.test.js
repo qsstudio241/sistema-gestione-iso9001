@@ -219,7 +219,7 @@ describe('createAuditorOrg', () => {
       .fn()
       .mockResolvedValueOnce({ recordset: [{ max_num: null }] })
       .mockResolvedValueOnce({ recordset: [{ organization_id: 5001 }] })
-      .mockRejectedValueOnce(new Error('Duplicate key su auditor_orgs.email'));
+      .mockRejectedValueOnce(new Error('ETIMEOUT: connessione al DB persa'));
 
     sql.Request.mockImplementation(() => ({
       input: jest.fn().mockReturnThis(),
@@ -233,5 +233,39 @@ describe('createAuditorOrg', () => {
     expect(rollbackMock).toHaveBeenCalledTimes(1);
     expect(res.status).toHaveBeenCalledWith(500);
     expect(res.json).toHaveBeenCalledWith(expect.objectContaining({ code: 'SERVER_ERROR' }));
+  });
+
+  it('409 (non 500) se il DB rifiuta il secondo INSERT per violazione dell\'indice UNIQUE email — race condition sul pre-check (fix Bugbot)', async () => {
+    query.mockResolvedValueOnce({ recordset: [] }); // pre-check org: nessun duplicato
+    query.mockResolvedValueOnce({ recordset: [] }); // pre-check email: nessun duplicato (altra richiesta concorrente lo crea nel frattempo)
+
+    const rollbackMock = jest.fn().mockResolvedValue();
+    sql.Transaction.mockImplementation(() => ({
+      begin: jest.fn().mockResolvedValue(),
+      commit: jest.fn().mockResolvedValue(),
+      rollback: rollbackMock,
+    }));
+
+    const uniqueViolation = new Error('Violation of UNIQUE KEY constraint');
+    uniqueViolation.number = 2627;
+
+    const requestQueryMock = jest
+      .fn()
+      .mockResolvedValueOnce({ recordset: [{ max_num: null }] })
+      .mockResolvedValueOnce({ recordset: [{ organization_id: 5001 }] })
+      .mockRejectedValueOnce(uniqueViolation);
+
+    sql.Request.mockImplementation(() => ({
+      input: jest.fn().mockReturnThis(),
+      query: requestQueryMock,
+    }));
+
+    const req = mockReq({ body: VALID_BODY });
+    const res = mockRes();
+    await ctrl.createAuditorOrg(req, res);
+
+    expect(rollbackMock).toHaveBeenCalledTimes(1);
+    expect(res.status).toHaveBeenCalledWith(409);
+    expect(res.json).toHaveBeenCalledWith(expect.objectContaining({ code: 'DUPLICATE_STUDIO' }));
   });
 });
