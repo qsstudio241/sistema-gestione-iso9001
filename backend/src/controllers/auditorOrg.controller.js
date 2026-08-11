@@ -6,6 +6,9 @@
 
 const { query, getPool, sql } = require('../config/database');
 const logger = require('../utils/logger');
+const documentTreeProvisioner = require('../services/documentTreeProvisioner.service');
+const userAuditService = require('../services/userAudit.service');
+const userInviteService = require('../services/userInvite.service');
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -211,8 +214,142 @@ async function createAuditorOrg(req, res) {
     }
 }
 
+/**
+ * POST /api/v1/auditor-orgs/:id/invite-admin — invita il primo admin di uno studio
+ * Solo superadmin. Colma il gap architetturale: POST /admin/users (createUser) crea
+ * sempre utenti nell'organizzazione dell'attore, quindi non può mai assegnare un utente
+ * a un nuovo studio (organization_id diverso per costruzione) — vedi DEPUTYTASK1 S3.
+ * Riusa lo stesso flusso invito via email di createUser (nessuna password provvisoria:
+ * link "Imposta la tua password" → AcceptInvitePage), MAI la logica di createUser stessa.
+ */
+async function inviteFirstStudioAdmin(req, res) {
+    try {
+        const auditorOrgId = parseInt(req.params.id, 10);
+        if (Number.isNaN(auditorOrgId)) {
+            return res.status(400).json({ error: 'ID studio non valido', code: 'VALIDATION_ERROR' });
+        }
+
+        const body = req.body || {};
+        const fullName = typeof body.full_name === 'string' ? body.full_name.trim() : '';
+        if (!fullName) {
+            return res.status(400).json({ error: 'Nome e cognome obbligatorio', code: 'VALIDATION_ERROR' });
+        }
+
+        const aoRes = await query(
+            `SELECT id, organization_id, name, email FROM auditor_orgs WHERE id = @id`,
+            { id: auditorOrgId }
+        );
+        if (aoRes.recordset.length === 0) {
+            return res.status(404).json({ error: 'Studio non trovato', code: 'NOT_FOUND' });
+        }
+        const auditorOrg = aoRes.recordset[0];
+        const organizationId = auditorOrg.organization_id;
+
+        const email = (typeof body.email === 'string' && body.email.trim()) || auditorOrg.email || '';
+        if (!email) {
+            return res.status(400).json({
+                error: 'Email obbligatoria (nessuna email referente salvata per questo studio)',
+                code: 'VALIDATION_ERROR'
+            });
+        }
+        if (!EMAIL_REGEX.test(email)) {
+            return res.status(400).json({ error: 'Email non valida', code: 'VALIDATION_ERROR' });
+        }
+
+        // Univocità scoped alla organizzazione del NUOVO studio (non a quella dell'attore
+        // superadmin) — stesso principio di isolamento usato in admin.controller.js::createUser.
+        const existing = await query(
+            `SELECT user_id FROM users WHERE email = @email AND organization_id = @organization_id`,
+            { email, organization_id: organizationId }
+        );
+        if (existing.recordset.length > 0) {
+            return res.status(409).json({
+                error: 'Esiste già un utente con questa email in questo studio',
+                code: 'EMAIL_DUPLICATE'
+            });
+        }
+
+        const password_hash = await userInviteService.generatePlaceholderPasswordHash();
+        const insertRes = await query(
+            `INSERT INTO users (email, password_hash, full_name, role, organization_id, auditor_org_id, is_active, pending_activation)
+             VALUES (@email, @password_hash, @full_name, 'admin', @organization_id, @auditor_org_id, 1, 1);
+             SELECT SCOPE_IDENTITY() AS user_id;`,
+            {
+                email,
+                password_hash,
+                full_name: fullName,
+                organization_id: organizationId,
+                auditor_org_id: auditorOrgId,
+            }
+        );
+        const newUserId = insertRes.recordset[0]?.user_id;
+
+        logger.info('[AUDITOR_ORGS] Primo admin invitato per nuovo studio', {
+            newUserId, auditorOrgId, organizationId, actorId: req.user.user_id
+        });
+
+        await userAuditService.logUserAuditEvent({
+            organizationId,
+            targetUserId: newUserId,
+            actorUserId: req.user.user_id,
+            action: 'user_created',
+            newValue: { email, role: 'admin', auditor_org_id: auditorOrgId, invited: true },
+        });
+
+        // Invio invito: MAI bloccante (stesso pattern di admin.controller.js::createUser).
+        try {
+            await userInviteService.sendInviteEmail({
+                userId: newUserId,
+                email,
+                fullName,
+                organizationId,
+                actorUserId: req.user.user_id,
+            });
+        } catch (inviteErr) {
+            logger.warn('[AUDITOR_ORGS] Invio email invito fallito (non bloccante)', { error: inviteErr.message, newUserId });
+        }
+
+        // Auto-provisioning albero documentale (stesso pattern di createUser): un nuovo
+        // studio/organizzazione parte senza alcun documento, serve la radice del registro.
+        try {
+            const rootCheck = await query(
+                `SELECT TOP 1 id FROM document_registry WHERE organization_id = @organization_id AND parent_id IS NULL`,
+                { organization_id: organizationId }
+            );
+            if (rootCheck.recordset.length === 0) {
+                const stdRes = await query(`SELECT standard_code FROM standards WHERE is_active = 1`);
+                const standardCodes = (stdRes.recordset || []).map(r => r.standard_code);
+                await documentTreeProvisioner.provisionTree(organizationId, null, null, standardCodes);
+                logger.info('[AUDITOR_ORGS] Document tree creato per nuovo studio', { organizationId });
+            }
+        } catch (provErr) {
+            logger.warn('[AUDITOR_ORGS] Auto-provisioning document tree fallito (non bloccante)', {
+                organizationId, error: provErr.message
+            });
+        }
+
+        return res.status(201).json({
+            success: true,
+            data: {
+                user_id: newUserId,
+                email,
+                full_name: fullName,
+                role: 'admin',
+                organization_id: organizationId,
+                auditor_org_id: auditorOrgId,
+                is_active: true,
+                pending_activation: true,
+            }
+        });
+    } catch (error) {
+        logger.error('[AUDITOR_ORGS] inviteFirstStudioAdmin error:', error);
+        return res.status(500).json({ error: 'Errore invito primo admin studio', code: 'SERVER_ERROR' });
+    }
+}
+
 module.exports = {
     listAuditorOrgs,
     getAuditorOrgById,
-    createAuditorOrg
+    createAuditorOrg,
+    inviteFirstStudioAdmin
 };

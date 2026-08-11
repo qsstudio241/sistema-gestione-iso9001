@@ -193,6 +193,26 @@ describe('RBAC — autorizzazione per ruolo', () => {
             .send({});
         expect(res.status).toBe(403);
     });
+
+    // Gap segnalato dal committente (11/08/2026): invito del primo admin di un nuovo
+    // studio, stesso vincolo superadmin-only del provisioning stesso.
+    it('403 se admin (non superadmin) tenta POST /auditor-orgs/:id/invite-admin', async () => {
+        const token = makeToken({ role: 'admin' });
+        const res = await request(app)
+            .post(`${API}/auditor-orgs/5/invite-admin`)
+            .set('Authorization', `Bearer ${token}`)
+            .send({ full_name: 'Mario Rossi' });
+        expect(res.status).toBe(403);
+    });
+
+    it('403 se auditor tenta POST /auditor-orgs/:id/invite-admin', async () => {
+        const token = makeToken({ role: 'auditor' });
+        const res = await request(app)
+            .post(`${API}/auditor-orgs/5/invite-admin`)
+            .set('Authorization', `Bearer ${token}`)
+            .send({});
+        expect(res.status).toBe(403);
+    });
 });
 
 // ── SUITE: isolamento tenant ──────────────────────────────────────────────────

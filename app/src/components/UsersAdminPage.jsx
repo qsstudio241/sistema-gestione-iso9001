@@ -169,6 +169,14 @@ export default function UsersAdminPage({ onBack }) {
   const [newStudioError, setNewStudioError] = useState(null);
   const [newStudioMsg, setNewStudioMsg] = useState(null);
 
+  // Invito primo admin di uno studio (per id auditor_org — colma il gap: createUser
+  // non può mai assegnare un utente a un nuovo studio, organization_id diverso per
+  // costruzione dall'attore superadmin — vedi DEPUTYTASK1 S3)
+  const [showInviteAdminForm, setShowInviteAdminForm] = useState({});
+  const [inviteAdminForm, setInviteAdminForm] = useState({});
+  const [inviteAdminSubmitting, setInviteAdminSubmitting] = useState(null);
+  const [inviteAdminMsg, setInviteAdminMsg] = useState({});
+
   // Accesso aziende clienti per utente (user_company_access) - caricato on-demand
   const [companyAccessByUser, setCompanyAccessByUser] = useState({});
   const [companiesByOrg, setCompaniesByOrg] = useState({});
@@ -611,6 +619,33 @@ export default function UsersAdminPage({ onBack }) {
     }
   };
 
+  const submitInviteAdmin = async (ao) => {
+    const form = inviteAdminForm[ao.id] || {};
+    const fullName = (form.full_name || "").trim();
+    setInviteAdminMsg((prev) => ({ ...prev, [ao.id]: null }));
+
+    if (!fullName) {
+      setInviteAdminMsg((prev) => ({ ...prev, [ao.id]: "❌ Nome e cognome obbligatorio." }));
+      return;
+    }
+
+    setInviteAdminSubmitting(ao.id);
+    try {
+      await apiService.inviteStudioAdmin(ao.id, {
+        full_name: fullName,
+        email: (form.email || "").trim() || undefined,
+      });
+      setInviteAdminForm((prev) => ({ ...prev, [ao.id]: { full_name: "", email: "" } }));
+      setShowInviteAdminForm((prev) => ({ ...prev, [ao.id]: false }));
+      setInviteAdminMsg((prev) => ({ ...prev, [ao.id]: "✅ Invito inviato." }));
+      setTimeout(() => setInviteAdminMsg((prev) => ({ ...prev, [ao.id]: null })), 8000);
+    } catch (err) {
+      setInviteAdminMsg((prev) => ({ ...prev, [ao.id]: `❌ ${err.message || "Errore invio invito"}` }));
+    } finally {
+      setInviteAdminSubmitting(null);
+    }
+  };
+
   const resendInvite = async (u) => {
     setResendingInviteId(u.user_id);
     try {
@@ -966,8 +1001,68 @@ export default function UsersAdminPage({ onBack }) {
                         Annulla
                       </button>
                     )}
+                    <button
+                      type="button"
+                      className="btn btn-secondary btn-sm"
+                      onClick={() =>
+                        setShowInviteAdminForm((prev) => ({ ...prev, [ao.id]: !prev[ao.id] }))
+                      }
+                    >
+                      {showInviteAdminForm[ao.id] ? "Chiudi" : "+ Invita admin"}
+                    </button>
                     {msg && <span className="org-license-msg">{msg}</span>}
                   </div>
+
+                  {showInviteAdminForm[ao.id] && (
+                    <div className="user-create-form invite-admin-form">
+                      <p className="form-hint">
+                        Invia un invito via email (nessuna password provvisoria): il destinatario
+                        imposta la propria password dal link ricevuto.
+                      </p>
+                      <div className="form-row">
+                        <label htmlFor={`invite-admin-name-${ao.id}`}>Nome e cognome</label>
+                        <input
+                          id={`invite-admin-name-${ao.id}`}
+                          type="text"
+                          value={inviteAdminForm[ao.id]?.full_name || ""}
+                          onChange={(e) =>
+                            setInviteAdminForm((prev) => ({
+                              ...prev,
+                              [ao.id]: { ...prev[ao.id], full_name: e.target.value },
+                            }))
+                          }
+                        />
+                      </div>
+                      <div className="form-row">
+                        <label htmlFor={`invite-admin-email-${ao.id}`}>
+                          Email (vuoto = usa &quot;{ao.email}&quot;)
+                        </label>
+                        <input
+                          id={`invite-admin-email-${ao.id}`}
+                          type="email"
+                          placeholder={ao.email || ""}
+                          value={inviteAdminForm[ao.id]?.email || ""}
+                          onChange={(e) =>
+                            setInviteAdminForm((prev) => ({
+                              ...prev,
+                              [ao.id]: { ...prev[ao.id], email: e.target.value },
+                            }))
+                          }
+                        />
+                      </div>
+                      <button
+                        type="button"
+                        className="btn btn-primary btn-sm"
+                        disabled={inviteAdminSubmitting === ao.id}
+                        onClick={() => submitInviteAdmin(ao)}
+                      >
+                        {inviteAdminSubmitting === ao.id ? "Invio…" : "Invia invito"}
+                      </button>
+                    </div>
+                  )}
+                  {inviteAdminMsg[ao.id] && (
+                    <p className="org-license-msg">{inviteAdminMsg[ao.id]}</p>
+                  )}
                 </div>
               </details>
             );
