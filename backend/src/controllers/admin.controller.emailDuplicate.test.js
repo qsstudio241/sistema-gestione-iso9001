@@ -102,4 +102,31 @@ describe('createUser — univocità email GLOBALE (non scoped a organization_id)
 
         expect(res.status).toHaveBeenCalledWith(201);
     });
+
+    // Rilievo Bugbot (PR #390): la rete di sicurezza per race condition deve avvolgere
+    // SOLO l'INSERT dell'utente, non l'intera funzione — un vincolo UNIQUE violato in
+    // un passaggio successivo (qui: user_company_access, che ha un proprio vincolo
+    // UNIQUE indipendente) non deve mai essere mappato a EMAIL_DUPLICATE: l'utente
+    // esiste già a quel punto, non è un duplicato email.
+    it('NON mappa a EMAIL_DUPLICATE una violazione UNIQUE che avviene DOPO l\'INSERT utente riuscito (es. user_company_access)', async () => {
+        query.mockResolvedValueOnce({ recordset: [] }); // duplicate check email
+        query.mockResolvedValueOnce({ recordset: [{ user_id: 51 }] }); // INSERT users riuscito
+        query.mockResolvedValueOnce({ recordset: [{ id: 1 }] }); // validateCompanyInOrg: azienda valida
+        const otherUniqueViolation = new Error("Violation of UNIQUE KEY constraint 'UQ_user_company_access'");
+        otherUniqueViolation.number = 2627;
+        query.mockRejectedValueOnce(otherUniqueViolation); // MERGE user_company_access fallisce
+
+        const req = mockReq({
+            body: {
+                email: 'nuovo@b.it', password: 'password123', full_name: 'Mario Rossi',
+                company_access: [{ company_id: 1, permission: 'read' }],
+            },
+        });
+        const res = mockRes();
+
+        // Non deve essere confuso con un duplicato email (409 EMAIL_DUPLICATE):
+        // l'utente e' gia' stato creato con successo a questo punto.
+        await expect(ctrl.createUser(req, res)).resolves.not.toThrow();
+        expect(res.status).not.toHaveBeenCalledWith(409);
+    });
 });

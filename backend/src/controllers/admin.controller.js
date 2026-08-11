@@ -203,20 +203,38 @@ async function createUser(req, res) {
             ? await userInviteService.generatePlaceholderPasswordHash()
             : await bcrypt.hash(String(password), 10);
 
-        const result = await query(
-            `INSERT INTO users (email, password_hash, full_name, role, organization_id, auditor_org_id, is_active, pending_activation)
-             VALUES (@email, @password_hash, @full_name, @role, @organization_id, @auditor_org_id, 1, @pending_activation);
-             SELECT SCOPE_IDENTITY() AS user_id;`,
-            {
-                email: String(email).trim(),
-                password_hash,
-                full_name: String(full_name).trim(),
-                role: normalizedRole,
-                organization_id,
-                auditor_org_id: aoId,
-                pending_activation: isInviteMode ? 1 : 0,
+        let result;
+        try {
+            result = await query(
+                `INSERT INTO users (email, password_hash, full_name, role, organization_id, auditor_org_id, is_active, pending_activation)
+                 VALUES (@email, @password_hash, @full_name, @role, @organization_id, @auditor_org_id, 1, @pending_activation);
+                 SELECT SCOPE_IDENTITY() AS user_id;`,
+                {
+                    email: String(email).trim(),
+                    password_hash,
+                    full_name: String(full_name).trim(),
+                    role: normalizedRole,
+                    organization_id,
+                    auditor_org_id: aoId,
+                    pending_activation: isInviteMode ? 1 : 0,
+                }
+            );
+        } catch (insertErr) {
+            // Rete di sicurezza per race condition sul pre-check email (stesso principio
+            // difensivo di auditorOrg.controller.js) — scoped al SOLO INSERT utente, non
+            // all'intera funzione: passaggi successivi (company_access, document tree)
+            // hanno vincoli UNIQUE propri e non vanno mai mappati a EMAIL_DUPLICATE
+            // (rilievo Bugbot, PR #390).
+            if (insertErr.number === 2627 || insertErr.number === 2601 || /UNIQUE|duplicate/i.test(insertErr.message || '')) {
+                logger.warn('Admin createUser: violazione univocità email a livello DB (race condition sul pre-check)', { error: insertErr.message });
+                return res.status(409).json({
+                    success: false,
+                    error: 'Questa email è già associata a un utente esistente. Le email sono univoche su tutta la piattaforma: usa un indirizzo diverso.',
+                    code: 'EMAIL_DUPLICATE',
+                });
             }
-        );
+            throw insertErr;
+        }
 
         const newId = result.recordset[0]?.user_id;
         logger.info('Admin create user', { new_user_id: newId, organization_id, actorId, role: normalizedRole, isInviteMode });
@@ -313,16 +331,6 @@ async function createUser(req, res) {
             },
         });
     } catch (error) {
-        // Rete di sicurezza per race condition sul pre-check email (stesso principio
-        // difensivo di auditorOrg.controller.js::createAuditorOrg/inviteFirstStudioAdmin).
-        if (error.number === 2627 || error.number === 2601 || /UNIQUE|duplicate/i.test(error.message || '')) {
-            logger.warn('Admin createUser: violazione univocità email a livello DB (race condition sul pre-check)', { error: error.message });
-            return res.status(409).json({
-                success: false,
-                error: 'Questa email è già associata a un utente esistente. Le email sono univoche su tutta la piattaforma: usa un indirizzo diverso.',
-                code: 'EMAIL_DUPLICATE',
-            });
-        }
         logger.error('Admin createUser error', { error: error.message });
         res.status(500).json({
             success: false,
