@@ -254,7 +254,8 @@
                                      "src/routes/gapAnalysis.routes.js",
                                      "src/routes/aiAssist.routes.js",
                                      "src/routes/aiChat.routes.js",
-                                     "src/routes/risks.routes.js"
+                                     "src/routes/risks.routes.js",
+                                     "src/routes/auditorOrg.routes.js"
                                  ]
                    },
                    {
