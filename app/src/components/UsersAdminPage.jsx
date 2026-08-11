@@ -927,7 +927,9 @@ export default function UsersAdminPage({ onBack }) {
                 </select>
                 <p className="form-hint">
                   Il nuovo studio nasce con tutti i moduli abilitati (badge &quot;Tutti i moduli
-                  (default)&quot;); potrai personalizzare le licenze subito dopo, qui sotto.
+                  (default)&quot;); potrai personalizzare le licenze subito dopo, qui sotto. Il
+                  piano abbonamento è solo un&apos;etichetta informativa (es. per fatturazione
+                  futura): oggi non modifica quali moduli sono attivi.
                 </p>
               </div>
               {newStudioError && (
@@ -950,6 +952,13 @@ export default function UsersAdminPage({ onBack }) {
             const effectiveMods = getEffectiveOrgModules(ao);
             const isDirty = orgLicensesDirty[ao.organization_id] !== undefined;
             const useDefault = effectiveMods === null;
+            // Elenco esplicito che contiene comunque tutti i moduli attuali: stesso accesso
+            // effettivo di "default", ma salvato come array (non NULL) — mostra lo stesso badge
+            // per non far apparire diversi due studi con licenze identiche (DEPUTYTASK2 S1).
+            const isFullExplicit =
+              !useDefault &&
+              effectiveMods.length === ALL_MODULE_KEYS.length &&
+              ALL_MODULE_KEYS.every(({ key }) => effectiveMods.includes(key));
             const msg = orgLicenseMsg[ao.organization_id];
             return (
               <details key={ao.organization_id} className="org-license-details">
@@ -958,6 +967,9 @@ export default function UsersAdminPage({ onBack }) {
                   <span className="org-license-orgname">{ao.organization_name}</span>
                   {useDefault && !isDirty && (
                     <span className="org-license-badge default">Tutti i moduli (default)</span>
+                  )}
+                  {isFullExplicit && !isDirty && (
+                    <span className="org-license-badge full">Tutti i moduli</span>
                   )}
                   {isDirty && <span className="org-license-badge dirty">● Modifiche non salvate</span>}
                 </summary>

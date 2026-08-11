@@ -1,9 +1,10 @@
 # DEPUTYTASK2 — Chiarezza "Licenze moduli per studio" (badge + campo piano abbonamento)
 
-**Stato:** APERTO
+**Stato:** CHIUSO — TEST OK (S1 + S2 implementati)
 **Priorità:** P2 — chiarezza UI segnalata dal committente (11/08/2026), nessun bug funzionale bloccante
 **Branch base:** `main`
 **Creato da:** Lead 11/08/2026
+**Chiuso da:** Deputy 11/08/2026 — vedi esito sotto
 
 > **Allineamento Git (autonomo)**: prima di leggere questo brief eseguire `git fetch origin main` e `git pull origin main` (o partire da `origin/main` aggiornato). **Non** chiedere al committente di farlo.
 
@@ -59,6 +60,18 @@ Il committente, guardando la pagina "Gestione utenti" → sezione "Licenze modul
 ## Verifica chiusura
 
 Alla fine di ogni slice: TEST OK (Vitest mirati + build `app`) oppure FIX NON APPLICABILI con motivo.
+
+---
+
+## Esito (Deputy, 11/08/2026) — TEST OK
+
+**S1** — Aggiunto un secondo controllo `isFullExplicit` (confronto per insieme con `Set`/`every`, non solo lunghezza) accanto a `useDefault` esistente (non toccato). Quando l'elenco esplicito contiene tutti i 15 `ALL_MODULE_KEYS`, compare un badge equivalente con classe `org-license-badge full` (nuova, CSS analogo a `.default` ma colore verde per distinguerla in futuro se utile) e testo `"Tutti i moduli"` (senza `"(default)"`, perché è una scelta esplicita salvata, non il valore NULL non toccato). Un elenco esplicito parziale continua a non mostrare alcun badge (verificato con nuovo test di non-regressione).
+
+**S2** — Integrato il paragrafo `form-hint` già esistente sotto il `<select>` "Piano abbonamento" con una frase aggiuntiva: *"Il piano abbonamento è solo un'etichetta informativa (es. per fatturazione futura): oggi non modifica quali moduli sono attivi."* Nessun nuovo stile, riuso della classe esistente.
+
+**Test**: 3 nuovi casi in `app/src/tests/usersAdminPage.test.jsx` (describe `DEPUTYTASK2: chiarezza licenze studio`) — badge su elenco esplicito completo, nessun badge su elenco esplicito parziale, nota informativa visibile nel form. Suite completa `NODE_ENV=test npm run test:run`: 147 file / 1057 test verdi (nessuna regressione). `npm run build`: OK.
+
+**File toccati**: `app/src/components/UsersAdminPage.jsx`, `app/src/components/UsersAdminPage.css`, `app/src/tests/usersAdminPage.test.jsx`, questo brief.
 
 ---
 
