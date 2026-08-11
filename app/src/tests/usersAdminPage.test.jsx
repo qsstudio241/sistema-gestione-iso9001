@@ -550,7 +550,7 @@ describe("UsersAdminPage — DEPUTYTASK2: chiarezza licenze studio (badge + pian
     mockAuthUser = { user_id: 99, role: "superadmin", organization_id: 1001 };
   });
 
-  it("S1: mostra il badge \"Tutti i moduli\" (senza \"(default)\") per uno studio con licensed_modules esplicito ma completo", async () => {
+  it("S1: mostra lo STESSO badge \"Tutti i moduli\" sia per licensed_modules NULL sia per un elenco esplicito completo (nessuna distinzione visiva tra i due — fix follow-up 11/08/2026: due colori diversi per lo stesso stato erano di nuovo un'incoerenza)", async () => {
     mockGetAuditorOrgs.mockResolvedValue({
       data: [
         { id: 10, organization_id: 1001, name: "Studio Uno", licensed_modules: null },
@@ -571,9 +571,22 @@ describe("UsersAdminPage — DEPUTYTASK2: chiarezza licenze studio (badge + pian
       expect(screen.getByText("Licenze moduli per studio")).toBeInTheDocument();
     });
 
-    const summary = screen.getByText("Studio Completo").closest("summary");
-    expect(within(summary).getByText("Tutti i moduli")).toBeInTheDocument();
-    expect(within(summary).queryByText("Tutti i moduli (default)")).not.toBeInTheDocument();
+    // "Studio Uno" compare anche altrove in pagina (es. auditor_org_name di un utente
+    // nel mock condiviso USERS_CROSS_TENANT) — prendere solo l'occorrenza dentro un <summary>.
+    const summaryDefault = screen
+      .getAllByText("Studio Uno")
+      .map((el) => el.closest("summary"))
+      .find(Boolean);
+    const summaryFull = screen.getByText("Studio Completo").closest("summary");
+
+    // Stesso testo, nessun "(default)" residuo, nessuna classe/colore diverso tra i due casi.
+    expect(within(summaryDefault).getByText("Tutti i moduli")).toBeInTheDocument();
+    expect(within(summaryFull).getByText("Tutti i moduli")).toBeInTheDocument();
+    expect(within(summaryDefault).queryByText("Tutti i moduli (default)")).not.toBeInTheDocument();
+    expect(within(summaryFull).queryByText("Tutti i moduli (default)")).not.toBeInTheDocument();
+    expect(within(summaryDefault).getByText("Tutti i moduli").className).toBe(
+      within(summaryFull).getByText("Tutti i moduli").className
+    );
   });
 
   it("S1: non mostra alcun badge per uno studio con licensed_modules esplicito parziale (nessuna regressione)", async () => {
