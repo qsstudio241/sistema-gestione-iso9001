@@ -424,6 +424,11 @@
   color: #0c5460;
 }
 
+.org-license-badge.full {
+  background: #d4edda;
+  color: #155724;
+}
+
 .org-license-badge.dirty {
   background: #fff3cd;
   color: #856404;

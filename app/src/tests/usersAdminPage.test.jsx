@@ -545,6 +545,76 @@ describe("UsersAdminPage — provisioning nuovo studio (DEPUTYTASK1 S2/S3)", () 
   });
 });
 
+describe("UsersAdminPage — DEPUTYTASK2: chiarezza licenze studio (badge + piano abbonamento)", () => {
+  beforeEach(() => {
+    mockAuthUser = { user_id: 99, role: "superadmin", organization_id: 1001 };
+  });
+
+  it("S1: mostra il badge \"Tutti i moduli\" (senza \"(default)\") per uno studio con licensed_modules esplicito ma completo", async () => {
+    mockGetAuditorOrgs.mockResolvedValue({
+      data: [
+        { id: 10, organization_id: 1001, name: "Studio Uno", licensed_modules: null },
+        {
+          id: 30,
+          organization_id: 1003,
+          name: "Studio Completo",
+          licensed_modules: JSON.stringify([
+            "audit", "documents", "qualifiche", "nc", "rischi", "reclami", "notifications",
+            "sal", "saldatura", "cnd", "ai_import", "ai_assist", "ai_review", "ai_norms", "ai_chat",
+          ]),
+        },
+      ],
+    });
+    render(<UsersAdminPage />);
+
+    await waitFor(() => {
+      expect(screen.getByText("Licenze moduli per studio")).toBeInTheDocument();
+    });
+
+    const summary = screen.getByText("Studio Completo").closest("summary");
+    expect(within(summary).getByText("Tutti i moduli")).toBeInTheDocument();
+    expect(within(summary).queryByText("Tutti i moduli (default)")).not.toBeInTheDocument();
+  });
+
+  it("S1: non mostra alcun badge per uno studio con licensed_modules esplicito parziale (nessuna regressione)", async () => {
+    mockGetAuditorOrgs.mockResolvedValue({
+      data: [
+        { id: 10, organization_id: 1001, name: "Studio Uno", licensed_modules: null },
+        {
+          id: 40,
+          organization_id: 1004,
+          name: "Studio Parziale",
+          licensed_modules: JSON.stringify(["audit", "documents"]),
+        },
+      ],
+    });
+    render(<UsersAdminPage />);
+
+    await waitFor(() => {
+      expect(screen.getByText("Licenze moduli per studio")).toBeInTheDocument();
+    });
+
+    const summary = screen.getByText("Studio Parziale").closest("summary");
+    expect(within(summary).queryByText("Tutti i moduli")).not.toBeInTheDocument();
+    expect(within(summary).queryByText("Tutti i moduli (default)")).not.toBeInTheDocument();
+  });
+
+  it("S2: mostra la nota informativa sul piano abbonamento nel form '+ Nuovo studio'", async () => {
+    const user = userEvent.setup();
+    render(<UsersAdminPage />);
+
+    await waitFor(() => {
+      expect(screen.getByText("Licenze moduli per studio")).toBeInTheDocument();
+    });
+
+    await user.click(screen.getByRole("button", { name: "+ Nuovo studio" }));
+
+    expect(
+      screen.getByText(/il piano abbonamento è solo un'etichetta informativa/i)
+    ).toBeInTheDocument();
+  });
+});
+
 // Colma il gap S3 sopra (createUser non può assegnare un utente a un nuovo
 // studio cross-tenant): endpoint/UI dedicati per invitare un admin per
 // qualunque studio, senza toccare il form "Nuovo utente" esistente.
