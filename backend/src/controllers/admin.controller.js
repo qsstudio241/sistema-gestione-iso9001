@@ -36,11 +36,6 @@ async function userIsAdminRole(userId, organizationId) {
     return ADMIN_ROLES.includes(role);
 }
 
-/** Superadmin o admin possono promuovere altri admin org. */
-function isElevatedAdmin(reqUser) {
-    return reqUser.role === 'admin' || reqUser.role === 'superadmin';
-}
-
 /**
  * GET /api/v1/admin/users
  * Lista utenti dell'organizzazione (solo admin)
@@ -150,10 +145,16 @@ async function createUser(req, res) {
                 code: 'VALIDATION_ERROR',
             });
         }
-        if (normalizedRole === 'admin' && !isElevatedAdmin(req.user)) {
+        // Il ruolo 'admin' non si crea più da qui (singola fonte di verità, richiesta
+        // committente 12/08/2026): solo da auditorOrg.controller.js::inviteFirstStudioAdmin
+        // ("Licenze moduli per studio" → "+ Invita admin"), a prescindere dal ruolo
+        // dell'attore — prima bastava essere un admin qualsiasi (isElevatedAdmin non
+        // controllava affatto auditor_org_id, nonostante il testo mostrato in UI
+        // suggerisse il contrario).
+        if (normalizedRole === 'admin') {
             return res.status(403).json({
                 success: false,
-                error: 'Solo l\'amministratore principale (senza studio associato) può creare utenti con ruolo admin',
+                error: 'Il ruolo Admin si crea solo dalla sezione "Licenze moduli per studio" (pulsante "+ Invita admin"), non da qui',
                 code: 'AUTH_FORBIDDEN',
             });
         }
@@ -417,10 +418,20 @@ async function updateUser(req, res) {
                     code: 'VALIDATION_ERROR',
                 });
             }
-            if (normalizedRole === 'admin' && !isElevatedAdmin(req.user)) {
+            // Promozione a 'admin' (da auditor/viewer) non consentita a un admin
+            // qualsiasi da qui (singola fonte di verità): solo "Licenze moduli per
+            // studio" → "+ Invita admin", oppure il superadmin da questo stesso
+            // endpoint — serve altrimenti come unico modo per RI-promuovere un
+            // utente demozionato in precedenza, dato che inviteFirstStudioAdmin crea
+            // sempre un utente NUOVO (fallirebbe con EMAIL_DUPLICATE su un'email già
+            // esistente) — rilievo Bugbot, PR #392.
+            // - superadmin → admin resta sempre permesso perché è una DEMOZIONE
+            //   (riduzione di privilegio), non una promozione — rilievo Bugbot, PR #392.
+            const isPromotionToAdmin = normalizedRole === 'admin' && !['admin', 'superadmin'].includes(current.role);
+            if (isPromotionToAdmin && !isSuperadmin) {
                 return res.status(403).json({
                     success: false,
-                    error: 'Solo l\'amministratore principale può assegnare il ruolo admin',
+                    error: 'Il ruolo Admin si assegna solo dalla sezione "Licenze moduli per studio" (pulsante "+ Invita admin"), non da qui',
                     code: 'AUTH_FORBIDDEN',
                 });
             }

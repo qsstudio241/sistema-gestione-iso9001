@@ -1,6 +1,9 @@
 /**
  * Pagina Admin: Gestione utenti (CRUD soft), studio consulenza, standard consentiti.
- * Solo admin / superadmin. Creazione/promozione "admin" org: solo senza auditor_org_id (backend).
+ * Solo admin / superadmin. Il ruolo "admin" NON si può creare né promuovere da questa
+ * pagina (form Nuovo utente / Modifica utente): solo dalla sezione "Licenze moduli per
+ * studio" più sotto (pulsante "+ Invita admin") — singola fonte di verità, applicata
+ * anche lato backend in admin.controller.js (createUser/updateUser rifiutano role=admin).
  */
 
 import React, { useState, useEffect, useCallback } from "react";
@@ -175,7 +178,6 @@ export default function UsersAdminPage({ onBack }) {
 
   const isAdmin = user?.role === "admin" || user?.role === "superadmin";
   const isSuperadmin = user?.role === "superadmin";
-  const elevatedAdmin = isAdmin;
 
   // Stato licenze moduli per org (superadmin only) - dirty map: orgId → string[]|null
   const [orgLicensesDirty, setOrgLicensesDirty] = useState({});
@@ -817,9 +819,13 @@ export default function UsersAdminPage({ onBack }) {
               }
             >
               <option value="auditor">Auditor</option>
-              {elevatedAdmin && <option value="admin">Admin Studio</option>}
               <option value="viewer">Viewer (sola lettura)</option>
             </select>
+            <p className="form-hint">
+              Il ruolo Admin si assegna solo dalla sezione &quot;Licenze moduli per
+              studio&quot; qui sotto (pulsante &quot;+ Invita admin&quot; su ogni studio) —
+              non da qui.
+            </p>
           </div>
           <div className="form-row">
             <label htmlFor="create-ao">
@@ -852,18 +858,11 @@ export default function UsersAdminPage({ onBack }) {
               </p>
             )}
           </div>
-          {!elevatedAdmin && createForm.role === "admin" && (
-            <p className="form-hint warn">
-              Solo l&apos;amministratore principale (senza studio) può creare altri
-              admin: scegli Auditor o Viewer.
-            </p>
-          )}
           <button
             type="submit"
             className="btn btn-primary"
             disabled={
               createSubmitting ||
-              (!elevatedAdmin && createForm.role === "admin") ||
               isOrphanAuditor(createForm.role, createForm.auditor_org_id)
             }
           >
@@ -1180,9 +1179,12 @@ export default function UsersAdminPage({ onBack }) {
                       ) : (
                         <>
                           <option value="auditor">Auditor</option>
-                          {(elevatedAdmin ||
-                            u.role === "admin" ||
-                            u.role === "superadmin") && (
+                          {/* "Admin Studio" selezionabile per chi lo è già (demozione da
+                              qui) o dal superadmin (unico modo di RI-promuovere un utente
+                              demozionato in precedenza — "Licenze moduli per studio" →
+                              "+ Invita admin" crea sempre un utente nuovo, non promuove un
+                              esistente). Un admin regolare non può promuovere nessuno da qui. */}
+                          {(u.role === "admin" || u.role === "superadmin" || isSuperadmin) && (
                             <option value="admin">Admin Studio</option>
                           )}
                           <option value="viewer">Viewer</option>

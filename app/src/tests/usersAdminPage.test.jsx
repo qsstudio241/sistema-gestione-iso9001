@@ -328,6 +328,44 @@ describe("UsersAdminPage — creazione utente: modalità password vs invito (UAL
   });
 });
 
+// Richiesta committente (12/08/2026): il ruolo Admin non si assegna più dal
+// form "Nuovo utente" — solo dalla sezione "Licenze moduli per studio"
+// ("+ Invita admin"). Prima l'opzione compariva per qualsiasi admin.
+describe("UsersAdminPage — ruolo Admin non assegnabile da 'Nuovo utente' (12/08/2026)", () => {
+  it("il menu 'Ruolo' NON offre 'Admin Studio' per un admin di studio", async () => {
+    mockAuthUser = { user_id: 5, role: "admin", organization_id: 1001, auditor_org_id: 10 };
+    mockGetAdminUsers.mockResolvedValue({ data: [USERS_CROSS_TENANT[0]] });
+    const user = userEvent.setup();
+    render(<UsersAdminPage />);
+
+    await waitFor(() => {
+      expect(screen.getByText("Mario Rossi")).toBeInTheDocument();
+    });
+
+    await user.click(screen.getByText("+ Nuovo utente"));
+
+    const roleSelect = screen.getByLabelText("Ruolo");
+    expect(within(roleSelect).queryByText("Admin Studio")).not.toBeInTheDocument();
+    expect(within(roleSelect).getByText("Auditor")).toBeInTheDocument();
+    expect(within(roleSelect).getByText("Viewer (sola lettura)")).toBeInTheDocument();
+  });
+
+  it("il menu 'Ruolo' NON offre 'Admin Studio' nemmeno per superadmin", async () => {
+    mockAuthUser = { user_id: 99, role: "superadmin", organization_id: 1001 };
+    const user = userEvent.setup();
+    render(<UsersAdminPage />);
+
+    await waitFor(() => {
+      expect(screen.getByText("Licenze moduli per studio")).toBeInTheDocument();
+    });
+
+    await user.click(screen.getByText("+ Nuovo utente"));
+
+    const roleSelect = screen.getByLabelText("Ruolo");
+    expect(within(roleSelect).queryByText("Admin Studio")).not.toBeInTheDocument();
+  });
+});
+
 describe("UsersAdminPage — badge 'In attesa di attivazione' e reinvio invito (UAL-3)", () => {
   beforeEach(() => {
     mockAuthUser = { user_id: 5, role: "admin", organization_id: 1001, auditor_org_id: 10 };

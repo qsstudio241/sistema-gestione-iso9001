@@ -211,6 +211,20 @@
   cursor: pointer;
 }
 
+/* Reset dello stesso leak globale "input, textarea, select { width:100% }"
+ * (index.css, pensato per i campi di testo) che allargava il radio a piena
+ * larghezza della colonna, spingendo il testo lontano e mandandolo a capo
+ * su più righe — stesso bug gia' corretto per le checkbox l'11/08/2026. */
+.create-mode-choice .radio-label input[type="radio"] {
+  width: 16px;
+  height: 16px;
+  min-width: 16px;
+  padding: 0;
+  margin: 0;
+  border: 1px solid #ccc;
+  flex-shrink: 0;
+}
+
 .user-profile-section {
   margin: 0.75rem 0 1rem 0;
   padding-top: 0.75rem;
