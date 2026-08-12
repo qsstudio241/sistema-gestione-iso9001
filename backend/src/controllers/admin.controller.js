@@ -418,12 +418,17 @@ async function updateUser(req, res) {
                     code: 'VALIDATION_ERROR',
                 });
             }
-            // Promozione a 'admin' non consentita da qui (singola fonte di verità):
-            // solo "Licenze moduli per studio" → "+ Invita admin". La demozione
-            // (admin → auditor/viewer) resta permessa, così come mantenere il ruolo
-            // admin invariato per chi lo ha già (nessuna regressione sugli account
-            // esistenti creati prima di questa regola).
-            if (normalizedRole === 'admin' && current.role !== 'admin') {
+            // Promozione a 'admin' (da auditor/viewer) non consentita a un admin
+            // qualsiasi da qui (singola fonte di verità): solo "Licenze moduli per
+            // studio" → "+ Invita admin", oppure il superadmin da questo stesso
+            // endpoint — serve altrimenti come unico modo per RI-promuovere un
+            // utente demozionato in precedenza, dato che inviteFirstStudioAdmin crea
+            // sempre un utente NUOVO (fallirebbe con EMAIL_DUPLICATE su un'email già
+            // esistente) — rilievo Bugbot, PR #392.
+            // - superadmin → admin resta sempre permesso perché è una DEMOZIONE
+            //   (riduzione di privilegio), non una promozione — rilievo Bugbot, PR #392.
+            const isPromotionToAdmin = normalizedRole === 'admin' && !['admin', 'superadmin'].includes(current.role);
+            if (isPromotionToAdmin && !isSuperadmin) {
                 return res.status(403).json({
                     success: false,
                     error: 'Il ruolo Admin si assegna solo dalla sezione "Licenze moduli per studio" (pulsante "+ Invita admin"), non da qui',

@@ -41,7 +41,10 @@ function mockRes() {
     return res;
 }
 
-afterEach(() => jest.clearAllMocks());
+// resetAllMocks (non solo clearAllMocks): pulisce anche eventuali
+// mockResolvedValueOnce accodati e non consumati da un test precedente,
+// che altrimenti "sfogherebbero" nel test successivo.
+afterEach(() => jest.resetAllMocks());
 
 describe('createUser — role=admin sempre rifiutato (solo via invite-admin dedicato)', () => {
     it('403 se un admin (org-wide, elevatedAdmin di prima) tenta di creare un utente con role=admin', async () => {
@@ -100,10 +103,11 @@ describe('updateUser — promozione a role=admin sempre rifiutata (solo via invi
         expect(res.json).toHaveBeenCalledWith(expect.objectContaining({ code: 'AUTH_FORBIDDEN' }));
     });
 
-    it('403 anche se l\'attore è superadmin (nessuna eccezione)', async () => {
+    it('200 se l\'attore è superadmin: unico modo per RI-promuovere un utente demozionato in precedenza (inviteFirstStudioAdmin crea sempre un utente NUOVO, non può farlo — rilievo Bugbot, PR #392)', async () => {
         query.mockResolvedValueOnce({ recordset: [{
             user_id: 60, role: 'viewer', is_active: true, organization_id: ORG_ID, full_name: 'Mario Rossi', auditor_org_id: null,
         }] });
+        query.mockResolvedValueOnce({ recordset: [] }); // UPDATE
 
         const req = mockReq({
             params: { id: '60' },
@@ -113,7 +117,30 @@ describe('updateUser — promozione a role=admin sempre rifiutata (solo via invi
         const res = mockRes();
         await ctrl.updateUser(req, res);
 
-        expect(res.status).toHaveBeenCalledWith(403);
+        expect(res.status).not.toHaveBeenCalledWith(403);
+        expect(res.json).toHaveBeenCalledWith(expect.objectContaining({ success: true }));
+    });
+
+    it('200 se si passa da superadmin ad admin: è una DEMOZIONE (riduzione di privilegio), non una promozione — rilievo Bugbot, PR #392', async () => {
+        query.mockResolvedValueOnce({ recordset: [{
+            user_id: 63, role: 'superadmin', is_active: true, organization_id: ORG_ID, full_name: 'Ex Superadmin', auditor_org_id: null,
+        }] });
+        // Nota: 'admin' è incluso in ADMIN_ROLES tanto quanto 'superadmin', quindi
+        // ADMIN_ROLES.includes(current.role) && !ADMIN_ROLES.includes(normalizedRole)
+        // è falso qui — countActiveAdminsInOrg NON viene chiamato, si passa
+        // direttamente all'UPDATE.
+        query.mockResolvedValueOnce({ recordset: [] }); // UPDATE
+
+        const req = mockReq({
+            params: { id: '63' },
+            user: { role: 'superadmin', organization_id: ORG_ID, user_id: ACTOR_ID },
+            body: { role: 'admin' },
+        });
+        const res = mockRes();
+        await ctrl.updateUser(req, res);
+
+        expect(res.status).not.toHaveBeenCalledWith(403);
+        expect(res.json).toHaveBeenCalledWith(expect.objectContaining({ success: true }));
     });
 
     it('200 se si demota un admin esistente ad auditor (direzione permessa)', async () => {

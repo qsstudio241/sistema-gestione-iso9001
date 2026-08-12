@@ -1179,10 +1179,12 @@ export default function UsersAdminPage({ onBack }) {
                       ) : (
                         <>
                           <option value="auditor">Auditor</option>
-                          {/* "Admin Studio" selezionabile solo per chi lo è già (demozione
-                              possibile da qui) — la promozione ad admin si fa solo da
-                              "Licenze moduli per studio" → "+ Invita admin". */}
-                          {(u.role === "admin" || u.role === "superadmin") && (
+                          {/* "Admin Studio" selezionabile per chi lo è già (demozione da
+                              qui) o dal superadmin (unico modo di RI-promuovere un utente
+                              demozionato in precedenza — "Licenze moduli per studio" →
+                              "+ Invita admin" crea sempre un utente nuovo, non promuove un
+                              esistente). Un admin regolare non può promuovere nessuno da qui. */}
+                          {(u.role === "admin" || u.role === "superadmin" || isSuperadmin) && (
                             <option value="admin">Admin Studio</option>
                           )}
                           <option value="viewer">Viewer</option>
