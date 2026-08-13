@@ -9,7 +9,7 @@ alwaysApply: true
 ## Avvio sessione (dieta — allineato ad AGENTS.md)
 
 - **Allinea Git subito** (sezione sotto) prima di brief/codice/deploy.
-- Leggi `PROJECT_CONTEXT.md` (bussola moduli) e **solo** `docs/PROJECT_ROADMAP.md` § Stato attuale. **Non** leggere `docs/GUIDA_CONSOLIDATA.md` per intero.
+- Leggi `PROJECT_CONTEXT.md` (bussola moduli). `docs/PROJECT_ROADMAP.md` (>900 righe): **Read con `limit: 45`**, mai il file intero — è § Stato attuale. **Non** leggere `docs/GUIDA_CONSOLIDATA.md` per intero.
 - Brief: `docs/agent-tasks/DEPUTYTASK*.md`. Poi i 2–4 file della bussola.
 - GUIDA **solo se** deploy / Word / sync / encoding / lezione citata nel brief — una sezione, non il file.
 - **Non** creare `docs/sessions/SESSION_NOTES_*.md`: aggiorna GUIDA (sezione) + roadmap.

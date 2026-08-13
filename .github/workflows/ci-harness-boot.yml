@@ -13,6 +13,7 @@ on:
       - 'docs/agent-tasks/DEPUTYTASK.md'
       - '.cursor/rules/**'
       - 'backend/scripts/check-harness-boot.js'
+      - 'backend/scripts/check-harness-boot.test.js'
       - '.github/workflows/ci-harness-boot.yml'
 
 jobs:
@@ -25,5 +26,13 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '20'
-      - name: Peso avvio + bussola + scenario company_profile
+          cache: npm
+          cache-dependency-path: backend/package-lock.json
+      - name: Peso avvio + bussola + scenario company_profile (repo reale)
         run: node backend/scripts/check-harness-boot.js --human
+      - name: Install dipendenze backend (solo per jest)
+        working-directory: backend
+        run: npm ci
+      - name: Test di mutazione checker (verifica che intercetti le rotture)
+        working-directory: backend
+        run: npx jest scripts/check-harness-boot.test.js --coverage=false

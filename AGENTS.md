@@ -8,7 +8,7 @@ Istruzioni operative per agenti Cursor (desktop e Cloud). Fonte di governance: [
 
 0. **Allinea Git in autonomia** (se c'è terminale): `git fetch origin main` e, se lavori su `main` o stai per leggere/eseguire un brief, `git pull origin main`. **Non** chiedere al committente di farlo. Obbligatorio prima di qualsiasi `DEPUTYTASK*.md`.
 1. `PROJECT_CONTEXT.md` — stack + **bussola moduli** (tabella «Se lavori su…»).
-2. `docs/PROJECT_ROADMAP.md` **solo** la sezione [Stato attuale e priorità](docs/PROJECT_ROADMAP.md#stato-attuale-e-priorità-fonte-unica) (prime ~40 righe). Banner storico e backlog lungo: solo se serve quella voce.
+2. `docs/PROJECT_ROADMAP.md`: **non invocare Read senza `limit`** — il file supera 900 righe. Usa `limit: 45` (sezione [Stato attuale e priorità](docs/PROJECT_ROADMAP.md#stato-attuale-e-priorità-fonte-unica)). Banner storico e backlog lungo: solo se il brief cita esplicitamente quella voce, e solo con `offset`/`limit` mirato — mai il file intero.
 3. Brief attivo: `docs/agent-tasks/DEPUTYTASK.md` e/o `DEPUTYTASK1.md` / `DEPUTYTASK2.md` (lavori paralleli). Se il brief ha una sezione **Handoff**, parti da quella (contesto pulito).
 4. Dalla bussola: apri i 2–4 file del modulo. Nei primi file aperti devono comparire quelli del brief, non GUIDA.
 5. `docs/GUIDA_CONSOLIDATA.md` **solo se** il task è deploy, Word, sync, encoding, o una lezione già citata nel brief — e **solo la sezione indicata**, non il file intero.
