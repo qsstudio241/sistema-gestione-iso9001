@@ -19,6 +19,10 @@ import { render, screen, fireEvent, waitFor, act, within } from '@testing-librar
 
 import { withCompanyScope } from './helpers/withCompanyScope';
 
+vi.mock('../contexts/AuthContext', () => ({
+  useAuth: () => ({ user: { role: 'admin', company_access: [] } }),
+}));
+
 vi.mock('../services/apiService', () => ({
   default: {
     getCompanies: vi.fn(),

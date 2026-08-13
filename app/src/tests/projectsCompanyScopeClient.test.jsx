@@ -81,7 +81,7 @@ function getFieldByLabel(container, labelPrefix) {
 
 describe("ProjectsPage — Cliente dall'anagrafica aziende", () => {
   it("propone i clienti (company_counterparties) dell'azienda selezionata nel form", async () => {
-    const { container } = render(<ProjectsPage />);
+    const { container } = render(withCompanyScope(<ProjectsPage />));
 
     fireEvent.click(await screen.findByText("+ Nuova commessa"));
     await screen.findByText("Nuova commessa");
@@ -95,7 +95,7 @@ describe("ProjectsPage — Cliente dall'anagrafica aziende", () => {
   });
 
   it("collega il cliente selezionato (end_customer_id) e lo sincronizza nel payload di creazione", async () => {
-    const { container } = render(<ProjectsPage />);
+    const { container } = render(withCompanyScope(<ProjectsPage />));
 
     fireEvent.click(await screen.findByText("+ Nuova commessa"));
     await screen.findByText("Nuova commessa");
