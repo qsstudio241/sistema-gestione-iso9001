@@ -475,19 +475,14 @@ function QualificationsPage() {
                     <p className="sq-subtitle">Registro qualifiche con controllo automatico scadenze</p>
                 </div>
                 <div className="sq-header-actions">
-                    {companyScope ? (
-                        <QualificationUploadButton
-                            companyId={companyScope}
-                            companyName={scopeCompanyName}
-                            activeTab={activeTab}
-                            onUploadComplete={loadData}
-                        />
-                    ) : companies.length > 0 && (
-                        <span className="sq-upload-no-scope">
-                            Seleziona un&apos;azienda nell&apos;Ambito in alto per caricare i patentini
-                        </span>
-                    )}
+                    <QualificationUploadButton
+                        companyId={companyScope}
+                        companyName={scopeCompanyName}
+                        activeTab={activeTab}
+                        onUploadComplete={loadData}
+                    />
                     <button
+                        type="button"
                         className="sq-btn-new"
                         onClick={handleNew}
                         disabled={!companyScope}
