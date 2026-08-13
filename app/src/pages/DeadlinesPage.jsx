@@ -9,6 +9,7 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import DataGridExportable from '../components/DataGridExportable';
 import apiService from '../services/apiService';
+import { useCompanyScope } from '../contexts/CompanyScopeContext';
 import { useRouter } from '../contexts/RouterContext';
 import { formatDate } from '../utils/dateHelpers';
 import { buildDocumentRegistryPath } from '../utils/documentRegistryUrl';
@@ -70,14 +71,12 @@ const DEADLINES_SAFETY_MAX_LIMIT = 5000;
 
 function DeadlinesPage() {
   const { navigate } = useRouter();
+  const { companyId: filterCompany } = useCompanyScope();
   const [items,     setItems]     = useState([]);
-  const [companies, setCompanies] = useState([]);
   const [sources,   setSources]   = useState([]);
   const [loading,   setLoading]   = useState(true);
   const [error,     setError]     = useState(null);
 
-  // Filtri locali
-  const [filterCompany, setFilterCompany] = useState('');
   const [filterStatus,  setFilterStatus]  = useState('active');
   const [filterDue,     setFilterDue]     = useState('');
   const [filterSource,  setFilterSource]  = useState('');
@@ -89,9 +88,8 @@ function DeadlinesPage() {
     setLoading(true);
     setError(null);
     try {
-      const [itemsRes, companiesRes] = await Promise.all([
+      const [itemsRes] = await Promise.all([
         apiService.getDeadlineItems({ limit: DEADLINES_PAGE_LIMIT }),
-        apiService.getCompanies(),
       ]);
       let all = itemsRes.data || [];
 
@@ -113,7 +111,6 @@ function DeadlinesPage() {
       }
 
       setItems(all);
-      setCompanies(companiesRes.data || []);
 
       // Ricava elenco file sorgente unici
       const srcMap = new Map();
@@ -358,16 +355,6 @@ function DeadlinesPage() {
   // lifecycle ha ora la sua card statistica cliccabile (v. sotto), unico punto
   // di controllo per questa dimensione di filtro.
   const filters = [
-    {
-      id: 'company',
-      label: 'Azienda',
-      value: filterCompany,
-      onChange: setFilterCompany,
-      options: [
-        { value: '', label: 'Tutte le aziende' },
-        ...companies.map(c => ({ value: String(c.id), label: c.name })),
-      ],
-    },
     ...(sources.length > 1 ? [{
       id: 'source',
       label: 'File origine',

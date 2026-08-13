@@ -1853,7 +1853,7 @@ class ApiService {
     }
 
     // ─── Risks (Sprint 6) ────────────────────────────────────────────────────
-    async getRisksStats()           { return this.get('/risks/stats'); }
+    async getRisksStats(params = {}) { const qs = new URLSearchParams(params).toString(); return this.get(`/risks/stats${qs ? '?' + qs : ''}`); }
     async getRisks(params = {})     { const qs = new URLSearchParams(params).toString(); return this.get(`/risks${qs ? '?' + qs : ''}`); }
     async getRisk(id)               { return this.get(`/risks/${id}`); }
     async createRisk(data)          { return this.post('/risks', data); }
@@ -1883,7 +1883,7 @@ class ApiService {
     async deleteInterestedParty(id)         { return this.delete(`/interested-parties/${id}`); }
 
     // ─── Complaints (Sprint 7) ───────────────────────────────────────────────
-    async getComplaintsStats()      { return this.get('/complaints/stats'); }
+    async getComplaintsStats(params = {}) { const qs = new URLSearchParams(params).toString(); return this.get(`/complaints/stats${qs ? '?' + qs : ''}`); }
     async getComplaints(params = {}){ const qs = new URLSearchParams(params).toString(); return this.get(`/complaints${qs ? '?' + qs : ''}`); }
     async getComplaint(id)          { return this.get(`/complaints/${id}`); }
     async createComplaint(data)     { return this.post('/complaints', data); }

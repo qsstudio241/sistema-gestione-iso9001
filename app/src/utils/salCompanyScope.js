@@ -1,10 +1,6 @@
 /**
- * Ambito azienda condiviso nel modulo SAL (Stato Avanzamento Lavori).
- * Persistenza in localStorage — pattern identico a qualificationsCompanyScope
- * e managementReviewsCompanyScope.
- *
- * Il SAL opera sempre su una singola azienda cliente: l'ambito è obbligatorio
- * per caricare la matrice gap.
+ * DEPRECATED: usare appCompanyScope.js + CompanyScopeContext.
+ * Tenuto per i test L1 storici del modulo; le pagine non lo chiamano piu'.
  */
 
 export const SAL_COMPANY_SCOPE_KEY = 'sgq-sal-company-scope';

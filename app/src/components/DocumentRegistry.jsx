@@ -15,16 +15,14 @@ import useDocTreeSidebarWidth, {
 } from "../hooks/useDocTreeSidebarWidth";
 import apiService from "../services/apiService";
 import { useAuth } from "../contexts/AuthContext";
+import { useCompanyScope } from "../contexts/CompanyScopeContext";
 import { useRouter } from "../contexts/RouterContext";
 import {
   parseDocumentRegistrySearch,
   buildDocumentRegistryPath,
 } from "../utils/documentRegistryUrl";
 import { resolveRegistryFormContextScope } from "../utils/documentFormContextScope";
-import {
-  resolveInitialRegistryCompanyScope,
-  persistRegistryCompanyScope,
-} from "../utils/documentRegistryCompanyScope";
+import { STUDIO_REGISTRY_SCOPE } from "../utils/documentRegistryCompanyScope";
 import DocumentForm from "./DocumentForm";
 import DocFileDialog from "./DocFileDialog";
 import DocumentTree from "./DocumentTree";
@@ -615,6 +613,9 @@ function CatalogView({
   filters, setFilter, onExport,
   companies, standards, onFileDialog,
   canWrite = true,
+  studioOnly = false,
+  onStudioOnlyChange,
+  showStudioOnly = false,
 }) {
   const [filtersOpen, setFiltersOpen] = useState(false);
 
@@ -669,6 +670,16 @@ function CatalogView({
               {"Ambito: "}
               {filters.scopeCompanyName}
             </span>
+          )}
+          {showStudioOnly && (
+            <label className="filter-check">
+              <input
+                type="checkbox"
+                checked={Boolean(studioOnly)}
+                onChange={(e) => onStudioOnlyChange?.(e.target.checked)}
+              />
+              Solo patrimonio studio
+            </label>
           )}
           <label className="filter-check">
             <input
@@ -941,13 +952,15 @@ function DocumentRegistry() {
   const deepLinkHandledRef = useRef(false);
 
   const { user, canWriteModule } = useAuth();
+  const { companyId, setCompanyId, companies } = useCompanyScope();
   const isAdmin = user?.role === 'admin' || user?.role === 'superadmin';
 
-  // Ambito azienda condiviso (Priorità / Catalogo / Albero)
-  // Valori possibili: "" (tutto lo studio), id azienda, oppure "studio" (Patrimonio Studio).
-  const [registryCompanyScope, setRegistryCompanyScope] = useState(() =>
-    resolveInitialRegistryCompanyScope(initialUrl.companyId)
-  );
+  const [studioOnly, setStudioOnly] = useState(initialUrl.companyId === STUDIO_REGISTRY_SCOPE);
+  const registryCompanyScope = studioOnly && !companyId ? STUDIO_REGISTRY_SCOPE : (companyId || "");
+
+  useEffect(() => {
+    if (companyId) setStudioOnly(false);
+  }, [companyId]);
 
   // Etichetta esplicita di ambito: distingue il Patrimonio Studio dalle aziende clienti.
   const isStudioScope = registryCompanyScope === "studio";
@@ -963,7 +976,6 @@ function DocumentRegistry() {
 
   // Dati
   const [stats, setStats]         = useState(null);
-  const [companies, setCompanies] = useState([]);
   const [standards, setStandards] = useState([]);
 
   // Albero documentale (filtrato per ambito: azienda, oppure vista Patrimonio Studio)
@@ -1098,9 +1110,12 @@ function DocumentRegistry() {
       const { tab, selectId, companyId } = parseDocumentRegistrySearch(window.location.search);
       if (tab) setActiveTab(tab);
       if (companyId != null) {
-        const scope = String(companyId);
-        setRegistryCompanyScope(scope);
-        persistRegistryCompanyScope(scope);
+        if (String(companyId) === STUDIO_REGISTRY_SCOPE) {
+          setStudioOnly(true);
+        } else {
+          setStudioOnly(false);
+          setCompanyId(String(companyId));
+        }
       }
       if (selectId != null) {
         deepLinkSelectRef.current = selectId;
@@ -1210,11 +1225,9 @@ function DocumentRegistry() {
 
   const loadAuxiliary = useCallback(async () => {
     try {
-      const [cRes, sRes] = await Promise.all([
-        apiService.getCompanies(),
+      const [sRes] = await Promise.all([
         apiService.getStandards(),
       ]);
-      setCompanies(cRes.data || []);
       setStandards(sRes.data || sRes || []);
     } catch { /* non bloccante */ }
   }, []);
@@ -1244,19 +1257,18 @@ function DocumentRegistry() {
     if (activeTab === "tree") tree.loadTree();
   }, [activeTab, registryCompanyScope]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const handleRegistryCompanyChange = useCallback(
-    (value) => {
-      setRegistryCompanyScope(value);
-      persistRegistryCompanyScope(value);
+  const handleStudioOnlyToggle = useCallback(
+    (checked) => {
+      setStudioOnly(Boolean(checked));
       setCatalogPage(1);
       tree.resetSelection();
       setTreeListDocs([]);
       setShowDetail(false);
       setSelectedDoc(null);
       setDocHistory([]);
-      syncRegistryUrl(activeTab, null, value);
+      syncRegistryUrl(activeTab, null, checked ? STUDIO_REGISTRY_SCOPE : companyId || "");
     },
-    [tree, syncRegistryUrl, activeTab]
+    [tree, syncRegistryUrl, activeTab, companyId]
   );
 
   // Quando si seleziona un nodo nell'albero, carica i documenti figli
@@ -1547,31 +1559,6 @@ function DocumentRegistry() {
           )}
         </div>
         <div className="docregistry-header-actions">
-          {companies.length > 0 && (
-            <div className="docregistry-scope-wrap">
-              <label className="docregistry-scope-label" htmlFor="docregistry-company-scope">
-                {"Ambito:"}
-              </label>
-              <select
-                id="docregistry-company-scope"
-                className="docregistry-scope-select"
-                value={registryCompanyScope}
-                onChange={(e) => handleRegistryCompanyChange(e.target.value)}
-                aria-label="Ambito registro documenti"
-              >
-                <option value="">{"Tutto lo studio"}</option>
-                <option value="studio">{"Patrimonio Studio"}</option>
-                {companies.map((c) => {
-                  const id = c.id || c.company_id;
-                  return (
-                    <option key={id} value={String(id)}>
-                      {c.name}
-                    </option>
-                  );
-                })}
-              </select>
-            </div>
-          )}
           {canWriteDocs && (
             <button className="btn-primary" onClick={handleNew}>+ Nuovo documento</button>
           )}
@@ -1687,6 +1674,9 @@ function DocumentRegistry() {
           standards={standards}
           onFileDialog={setFileDialogDoc}
           canWrite={canWriteDocs}
+          studioOnly={studioOnly}
+          onStudioOnlyChange={handleStudioOnlyToggle}
+          showStudioOnly={!companyId}
         />
       )}
 

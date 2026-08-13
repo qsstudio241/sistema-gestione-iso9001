@@ -5,7 +5,7 @@
  *   - parsing partecipanti: JSON serializzato + fallback testo legacy
  *   - serializzazione array partecipanti in salvataggio (JSON string)
  *   - EMPTY_FORM: nuovo riesame parte con campi vuoti / stato "draft"
- *   - pre-popolamento company_id dall'Ambito attivo (localStorage)
+ *   - pre-popolamento company_id dall'Ambito globale
  *   - widget "Dati disponibili §9.3.2": rendering tile + pulsanti pre-compila
  *
  * NOTA: parseParticipants ed EMPTY_FORM non sono esportati dal modulo di
@@ -17,7 +17,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import React from 'react';
 import { render, screen, fireEvent, waitFor, act, within } from '@testing-library/react';
 
-import { MGMT_REVIEW_COMPANY_SCOPE_KEY } from '../utils/managementReviewsCompanyScope';
+import { withCompanyScope } from './helpers/withCompanyScope';
 
 vi.mock('../services/apiService', () => ({
   default: {
@@ -182,10 +182,12 @@ describe('ManagementReviewsPage — EMPTY_FORM e ambito', () => {
     expect(screen.getByText(/Nessun partecipante aggiunto/)).toBeInTheDocument();
   });
 
-  it('pre-popola company_id dall Ambito attivo (localStorage)', async () => {
-    window.localStorage.setItem(MGMT_REVIEW_COMPANY_SCOPE_KEY, '1');
-
-    await renderPageWithReviews([], [{ id: 1, name: 'Acme Srl' }]);
+  it('pre-popola company_id dall Ambito globale', async () => {
+    await act(async () => {
+      apiService.getCompanies.mockResolvedValue({ data: [{ id: 1, name: 'Acme Srl' }] });
+      configureGet([]);
+      render(withCompanyScope(<ManagementReviewsPage />, '1'));
+    });
 
     await waitFor(() => expect(screen.getByText(/Ambito attivo/)).toBeInTheDocument());
 

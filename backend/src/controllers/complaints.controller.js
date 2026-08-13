@@ -34,7 +34,7 @@ async function generateComplaintNumber(organization_id) {
 async function listComplaints(req, res) {
     try {
         const { organization_id } = req.user;
-        const { complaint_type, status, severity } = req.query;
+        const { complaint_type, status, severity, company_id } = req.query;
 
         const accessList = await ensureCompanyAccessLoaded(req.user);
         const companyFilter = companyAccessSqlFilter(accessList, 'c');
@@ -47,6 +47,7 @@ async function listComplaints(req, res) {
         if (complaint_type) { where.push('c.complaint_type = @ct'); params.ct = complaint_type; }
         if (status)         { where.push('c.status = @st');         params.st = status; }
         if (severity)       { where.push('c.severity = @sev');      params.sev = severity; }
+        if (company_id)     { where.push('c.company_id = @company_id'); params.company_id = parseInt(company_id, 10); }
 
         const result = await query(`
             SELECT 
@@ -260,6 +261,13 @@ async function deleteComplaint(req, res) {
 async function getComplaintsStats(req, res) {
     try {
         const { organization_id } = req.user;
+        const { company_id } = req.query;
+        const where = ['organization_id = @org'];
+        const params = { org: organization_id };
+        if (company_id) {
+            where.push('company_id = @company_id');
+            params.company_id = parseInt(company_id, 10);
+        }
 
         const result = await query(`
             SELECT 
@@ -277,8 +285,8 @@ async function getComplaintsStats(req, res) {
                     THEN 1 ELSE 0
                 END) AS overdue
             FROM complaints
-            WHERE organization_id = @org
-        `, { org: organization_id });
+            WHERE ${where.join(' AND ')}
+        `, params);
 
         res.json({ success: true, data: result.recordset[0] || {} });
     } catch (error) {

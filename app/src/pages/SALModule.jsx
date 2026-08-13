@@ -7,16 +7,13 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import apiService from '../services/apiService';
 import { useAuth } from '../contexts/AuthContext';
+import { useCompanyScope } from '../contexts/CompanyScopeContext';
 import SgqDataGrid from '../components/SgqDataGrid';
 import SalEvidenceSection from '../components/SalEvidenceSection';
 import SalAiSuggestDialog from '../components/SalAiSuggestDialog';
 import NcCreateModal from '../components/NcCreateModal';
 import { formatDate } from '../utils/dateHelpers';
 import { exportSalTrackerDocx } from '../utils/wordExportSal';
-import {
-  resolveInitialSalCompanyScope,
-  persistSalCompanyScope,
-} from '../utils/salCompanyScope';
 import { parseSalDeepLinkSearch } from '../utils/salDeepLink';
 import {
   SAL_STATUS_OPTIONS,
@@ -211,6 +208,7 @@ function SalEditModal({ row, companyId, saving, onClose, onSave, onCreateAction 
 
 export default function SALModule() {
   const { user, hasLicensedModule } = useAuth() || {};
+  const { companyId: companyScope, setCompanyId, scopeCompanyName } = useCompanyScope();
   const aiEnabled = typeof hasLicensedModule === 'function'
     ? hasLicensedModule('ai_norms')
     : false;
@@ -226,8 +224,6 @@ export default function SALModule() {
     : '';
   const [highlightClauseRef, setHighlightClauseRef] = useState(deepLink.clauseRef || null);
 
-  const [companies, setCompanies] = useState([]);
-  const [companyScope, setCompanyScope] = useState(() => resolveInitialSalCompanyScope(deepLink.companyId));
   const [standardFilter, setStandardFilter] = useState(deepLinkStandard);
   const [rows, setRows] = useState([]);
   const [summary, setSummary] = useState(null);
@@ -246,35 +242,8 @@ export default function SALModule() {
   const [aiLoading, setAiLoading] = useState(false);
 
   useEffect(() => {
-    apiService.getCompanies?.().then((res) => {
-      const list = res?.data || res?.companies || res || [];
-      setCompanies(Array.isArray(list) ? list : []);
-    }).catch(() => {});
-  }, []);
-
-  // Persiste l'ambito azienda ricevuto da deep link, cosi' resta attivo anche
-  // tornando su /sal senza query string in una sessione successiva.
-  useEffect(() => {
-    if (deepLink.companyId) {
-      persistSalCompanyScope(deepLink.companyId);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  useEffect(() => {
-    const access = user?.company_access;
-    if (Array.isArray(access) && access.length === 1 && !companyScope) {
-      const onlyId = String(access[0].company_id);
-      setCompanyScope(onlyId);
-      persistSalCompanyScope(onlyId);
-    }
-  }, [user, companyScope]);
-
-  const scopeCompanyName = useMemo(() => {
-    if (!companyScope) return '';
-    const match = companies.find((c) => String(c.id) === String(companyScope));
-    return match?.name || `Azienda #${companyScope}`;
-  }, [companyScope, companies]);
+    if (deepLink.companyId) setCompanyId(String(deepLink.companyId));
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const needsSeed = useMemo(() => {
     if (!summary) return false;
@@ -317,12 +286,6 @@ export default function SALModule() {
     }, 80);
     return () => clearTimeout(timer);
   }, [rows, loading, highlightClauseRef]);
-
-  const handleCompanyScopeChange = useCallback((value) => {
-    setCompanyScope(value);
-    persistSalCompanyScope(value);
-    setHighlightClauseRef(null);
-  }, []);
 
   const updateRowLocal = useCallback((normRequirementId, patch) => {
     setRows((prev) => prev.map((r) => (
@@ -584,22 +547,6 @@ export default function SALModule() {
           </p>
         </div>
         <div className="sal-header-actions">
-          {companies.length > 0 && (
-            <label className="sal-scope-label">
-              Ambito:
-              <select
-                className="sal-scope-select"
-                value={companyScope}
-                onChange={(e) => handleCompanyScopeChange(e.target.value)}
-                aria-label="Ambito SAL per azienda"
-              >
-                <option value="">— Seleziona azienda —</option>
-                {companies.map((c) => (
-                  <option key={c.id} value={c.id}>{c.name}</option>
-                ))}
-              </select>
-            </label>
-          )}
           {needsSeed && companyScope && (
             <button
               type="button"
@@ -661,7 +608,7 @@ export default function SALModule() {
       {!companyScope ? (
         <div className="sal-empty-scope">
           <span className="sal-empty-scope-icon" aria-hidden="true">🏢</span>
-          <p>Seleziona un&apos;azienda nell&apos;ambito per visualizzare la matrice requisiti.</p>
+          <p>Seleziona un&apos;azienda nell&apos;Ambito in alto per visualizzare la matrice requisiti.</p>
         </div>
       ) : (
         <>

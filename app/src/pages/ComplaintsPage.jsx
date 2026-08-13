@@ -12,6 +12,7 @@
 
 import React, { useState, useEffect, useCallback } from "react";
 import apiService from "../services/apiService";
+import { useCompanyScope } from "../contexts/CompanyScopeContext";
 import { formatDate } from "../utils/dateHelpers";
 import "./ComplaintsPage.css";
 
@@ -66,6 +67,7 @@ function StatusTag({ status }) {
 // ─── Pagina principale ────────────────────────────────────────────────────────
 
 export default function ComplaintsPage() {
+  const { companyId } = useCompanyScope();
   const [items, setItems]           = useState([]);
   const [stats, setStats]           = useState(null);
   const [loading, setLoading]       = useState(true);
@@ -81,9 +83,10 @@ export default function ComplaintsPage() {
       const params = {};
       if (filterType)   params.complaint_type = filterType;
       if (filterStatus) params.status         = filterStatus;
+      if (companyId)    params.company_id     = companyId;
       const [listRes, statsRes] = await Promise.all([
         apiService.getComplaints(params),
-        apiService.getComplaintsStats(),
+        apiService.getComplaintsStats(companyId ? { company_id: companyId } : {}),
       ]);
       setItems(listRes?.data || []);
       setStats(statsRes?.data || null);
@@ -92,7 +95,7 @@ export default function ComplaintsPage() {
     } finally {
       setLoading(false);
     }
-  }, [filterType, filterStatus]);
+  }, [filterType, filterStatus, companyId]);
 
   useEffect(() => { load(); }, [load]);
 
