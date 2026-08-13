@@ -65,6 +65,8 @@ I file nella root di `docs/` con titolo *Documento spostato* sono **redirect** p
 | attivo | Quick-ref DB | [reference/DATABASE.md](reference/DATABASE.md) |
 | attivo | Quick-ref API | [reference/BACKEND_API.md](reference/BACKEND_API.md) |
 | attivo | Mapping tabelle | [reference/DATABASE_MAPPING.md](reference/DATABASE_MAPPING.md) |
+| attivo | Libreria componenti UI | [reference/LIBRERIA_UI_SGQ.md](reference/LIBRERIA_UI_SGQ.md) |
+| attivo | DNA visivo UI (token, anti-pattern, 3 schermate) | [`app/src/design-system/README.md`](../app/src/design-system/README.md) |
 
 ---
 

@@ -10,11 +10,12 @@ alwaysApply: false
 1. Leggi in ordine: `PROJECT_CONTEXT.md` → `docs/PROJECT_ROADMAP.md` → `docs/GUIDA_CONSOLIDATA.md`.
 2. Per deploy/migrazioni VPS: verifica `docs/ACCESSO_DEPLOY_AGENTS.md`.
 3. Per task delegati: la fonte di verità è il file in `docs/agent-tasks/` indicato nel prompt.
+4. Se il task tocca JSX/CSS/pagine: leggi **prima di scrivere markup** `app/src/design-system/README.md` (DNA visivo + 3 schermate da copiare) e `docs/reference/LIBRERIA_UI_SGQ.md`.
 
 ## Robustezza e Qualità (L1-L5)
 - **Piramide Test**: Dopo modifiche a `app/`, esegui **L1** (`NODE_ENV=test` → `npm run test:run`) e `npm run build`.
 - **Multi-tenant**: Ogni query deve includere lo scope `organization_id`.
-- **Riuso UI (Blocco Unico)**: Usa sempre `.status-btn`, `.notes-textarea`, `QuestionCard.jsx`, `AttachmentSection.jsx`.
+- **Riuso UI (Blocco Unico)**: Usa sempre `.status-btn`, `.notes-textarea`, `QuestionCard.jsx`, `AttachmentSection.jsx`. DNA visivo e schermate di riferimento: `app/src/design-system/README.md`.
 
 ## Gestione Git e PR
 - **Branching**: Crea sempre un branch dedicato (es. `feat/nome-task`).

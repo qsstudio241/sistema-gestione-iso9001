@@ -9,6 +9,7 @@ Istruzioni operative per agenti Cursor (desktop e Cloud). Fonte di governance: [
 2. `docs/PROJECT_ROADMAP.md`
 3. `docs/GUIDA_CONSOLIDATA.md`
 4. Brief attivo: `docs/agent-tasks/DEPUTYTASK.md` e/o `DEPUTYTASK1.md` / `DEPUTYTASK2.md` (lavori paralleli)
+5. **Se il task tocca UI** (JSX, CSS, pagine, modal, drawer, filtri, form visibili): leggi **prima di scrivere markup** [`app/src/design-system/README.md`](app/src/design-system/README.md) (DNA visivo + anti-pattern + 3 schermate di riferimento) e [`docs/reference/LIBRERIA_UI_SGQ.md`](docs/reference/LIBRERIA_UI_SGQ.md). Copia una delle 3 schermate; non inventare un look nuovo.
 
 Rispondi in **italiano**, operativo e sintetico.
 
@@ -62,7 +63,7 @@ Pattern Playwright in `/tmp` con `SGQ_APP_EMAIL` / `SGQ_APP_PASSWORD` (Secrets).
 ## Regole repo da rispettare
 
 - Multi-tenant: scope `organization_id` / pattern RBAC esistenti.
-- Riuso UI: `QuestionCard`, `status-btn`, `notes-textarea`, `AttachmentSection`, `AiDisclaimer` — vedi `docs/reference/LIBRERIA_UI_SGQ.md`.
+- Riuso UI: `QuestionCard`, `status-btn`, `notes-textarea`, `AttachmentSection`, `AiDisclaimer` — vedi `docs/reference/LIBRERIA_UI_SGQ.md`. DNA visivo e schermate da copiare: `app/src/design-system/README.md`.
 - Encoding UTF-8, accenti italiani corretti (regola `sgq-encoding-quality`).
 - Zero segreti in file versionati o chat.
 - Doc operativa: aggiorna `docs/GUIDA_CONSOLIDATA.md` (non creare `SESSION_NOTES_*`).
@@ -74,6 +75,7 @@ Pattern Playwright in `/tmp` con `SGQ_APP_EMAIL` / `SGQ_APP_PASSWORD` (Secrets).
 | Deploy / SSH / Secrets | `docs/how-to/ACCESSO_DEPLOY_AGENTS.md` |
 | Esperienza operativa | `docs/GUIDA_CONSOLIDATA.md` |
 | Libreria UI | `docs/reference/LIBRERIA_UI_SGQ.md` |
+| DNA visivo UI | [`app/src/design-system/README.md`](app/src/design-system/README.md) |
 | Memoria operativa | `.cursor/rules/sgq-operating-memory.mdc` |
 | Metodo slice | `.cursor/rules/sgq-workflow-method.mdc` |
 | Policy Cloud / context | `.cursor/rules/sgq-cloud-agent-env.mdc` |
