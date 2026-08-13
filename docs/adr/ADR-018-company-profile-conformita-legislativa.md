@@ -37,7 +37,7 @@ Non si modifica il contratto minimo di `companies`. Si aggiunge una tabella **op
 | `created_at` / `updated_at` | DATETIME2 | |
 | `updated_by_user_id` | INT NULL | Audit trail |
 
-**Migration prevista**: `130_company_profile.sql` (+ script `run-migration-130-vps.js`).
+**Migration prevista**: `145_company_profile.sql` (+ script `run-migration-145-vps.js`). Numero 130 era già occupato (`130_user_audit_log.sql`); sequenza verificata il 13/08/2026.
 
 **Regola**: assenza di riga profilo = comportamento attuale (nessun breaking change).
 
@@ -111,7 +111,7 @@ Segreti solo in Cloud Secrets / file gitignored — mai in repo.
 | Slice | Contenuto | Parallelizzabile |
 |-------|-----------|------------------|
 | **S0** | Questo ADR + catalogo campi/Excel + DEPUTYTASK | — (doc) |
-| **S1** | Migration `130` + script VPS | dopo S0 |
+| **S1** | Migration `145` + script VPS | dopo S0 |
 | **S2a** | API GET/PUT profile + test Jest + gate capability | parallelo a S2b |
 | **S2b** | Tab UI Profilo in `CompanyDetailPage` (form A/B, read-only se no write) | parallelo a S2a |
 | **S3a** | Detector + endpoint detect/import | parallelo a S3b |
