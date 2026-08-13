@@ -30,6 +30,7 @@ nel repo.
 | Grilling di 40–80 domande tecniche al committente | Scelte tecniche autonome; HITL solo prodotto / commerciale / legale / livello Alto |
 | Implementare l’intera epic nella stessa sessione che disegna la mappa | La sessione di charting **non** esegue le slice |
 | Usare context 1M «perché il lavoro è grosso» | Il grosso si spezza; 1M resta eccezione Lead |
+| Leggere GUIDA + roadmap **intere** all'avvio di ogni slice | Saturano la smart zone prima del codice. Protocollo: `AGENTS.md` (dieta) + bussola in `PROJECT_CONTEXT.md` |
 
 ## Mapping Matt Pocock → artefatti già nostri
 

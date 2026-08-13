@@ -4,16 +4,21 @@ Istruzioni operative per agenti Cursor (desktop e Cloud). Fonte di governance: [
 
 ## Avvio sessione (ordine obbligatorio)
 
+**Dieta di contesto:** non leggere GUIDA né la roadmap per intero «per orientarsi». Obiettivo: avvio obbligatorio sotto ~50 KB di Markdown (misura: `node backend/scripts/check-harness-boot.js`).
+
 0. **Allinea Git in autonomia** (se c'è terminale): `git fetch origin main` e, se lavori su `main` o stai per leggere/eseguire un brief, `git pull origin main`. **Non** chiedere al committente di farlo. Obbligatorio prima di qualsiasi `DEPUTYTASK*.md`.
-1. `PROJECT_CONTEXT.md`
-2. `docs/PROJECT_ROADMAP.md`
-3. `docs/GUIDA_CONSOLIDATA.md`
-4. Brief attivo: `docs/agent-tasks/DEPUTYTASK.md` e/o `DEPUTYTASK1.md` / `DEPUTYTASK2.md` (lavori paralleli)
-5. **Se il task tocca UI** (JSX, CSS, pagine, modal, drawer, filtri, form visibili): leggi **prima di scrivere markup** [`app/src/design-system/README.md`](app/src/design-system/README.md) (DNA visivo + anti-pattern + 3 schermate di riferimento) e [`docs/reference/LIBRERIA_UI_SGQ.md`](docs/reference/LIBRERIA_UI_SGQ.md). Copia una delle 3 schermate; non inventare un look nuovo.
+1. `PROJECT_CONTEXT.md` — stack + **bussola moduli** (tabella «Se lavori su…»).
+2. `docs/PROJECT_ROADMAP.md` **solo** la sezione [Stato attuale e priorità](docs/PROJECT_ROADMAP.md#stato-attuale-e-priorità-fonte-unica) (prime ~40 righe). Banner storico e backlog lungo: solo se serve quella voce.
+3. Brief attivo: `docs/agent-tasks/DEPUTYTASK.md` e/o `DEPUTYTASK1.md` / `DEPUTYTASK2.md` (lavori paralleli).
+4. Dalla bussola: apri i 2–4 file del modulo. Nei primi file aperti devono comparire quelli del brief, non GUIDA.
+5. `docs/GUIDA_CONSOLIDATA.md` **solo se** il task è deploy, Word, sync, encoding, o una lezione già citata nel brief — e **solo la sezione indicata**, non il file intero.
+6. **Se il task tocca UI** (JSX, CSS, pagine, modal, drawer, filtri, form visibili): leggi **prima di scrivere markup** [`app/src/design-system/README.md`](app/src/design-system/README.md) e [`docs/reference/LIBRERIA_UI_SGQ.md`](docs/reference/LIBRERIA_UI_SGQ.md). Copia una delle 3 schermate; non inventare un look nuovo.
+
+**Bussola moduli — quando aggiornarla:** se aggiungi, rinomini o sposti un modulo (nuova pagina, nuovo controller, nuova spec), aggiorna la tabella in `PROJECT_CONTEXT.md` **nella stessa PR**. Non toccarla per un bugfix su file già elencati. I path in backtick devono esistere (`node backend/scripts/check-harness-boot.js`).
 
 Rispondi in **italiano**, operativo e sintetico.
 
-**Domanda tipo «stato di avanzamento del progetto e priorità da affrontare»**: rispondi sintetizzando da [`docs/PROJECT_ROADMAP.md` § Stato attuale e priorità](docs/PROJECT_ROADMAP.md#stato-attuale-e-priorità-fonte-unica) (moduli maturi + sessione più recente + tabella priorità) — è la fonte unica pensata apposta per questa domanda, non il banner storico più sotto nello stesso file né la sezione "Stato funzionalità" di `PROJECT_CONTEXT.md` (entrambi marcati superati). Non serve un comando speciale: la domanda in linguaggio naturale funziona perché questo file (letto automaticamente a inizio sessione) indica dove guardare. **Aggiorna quella sezione a fine sessione** se emergono nuove priorità o se una priorità elencata viene chiusa — stesso principio di sintesi-con-link già usato per le "Lezioni apprese" di `GUIDA_CONSOLIDATA.md`.
+**Domanda tipo «stato di avanzamento del progetto e priorità da affrontare»**: rispondi sintetizzando da [`docs/PROJECT_ROADMAP.md` § Stato attuale e priorità](docs/PROJECT_ROADMAP.md#stato-attuale-e-priorità-fonte-unica) (moduli maturi + sessione più recente + tabella priorità) — è la fonte unica pensata apposta per questa domanda, non il banner storico più sotto nello stesso file né l'archivio marzo 2026 in [`docs/archive/PROJECT_CONTEXT_STATO_FUNZIONALITA_2026-03.md`](docs/archive/PROJECT_CONTEXT_STATO_FUNZIONALITA_2026-03.md). **Aggiorna quella sezione a fine sessione** se emergono nuove priorità o se una priorità elencata viene chiusa.
 
 ## Workflow Lead / Deputy
 
@@ -43,7 +48,7 @@ Su [cursor.com/agents](https://cursor.com/agents) usa **Edit** accanto al modell
 | **Lead** (audit ampio, sync, RBAC, multi-modulo) | **Alto / 1M solo se serve** | high |
 | Esplorazione lunga con rischio compaction | Alto | high |
 
-**Non** usare 1M di default: era il comportamento costoso precedente. Preferire brief mirati + regole repo + ricerca file mirata.
+**Non** usare 1M di default: era il comportamento costoso precedente. Preferire brief mirati + regole repo + ricerca file mirata. L'avvio non deve saturare la smart zone (~100k) con GUIDA+roadmap intere.
 
 Lavoro più grande di una sessione: skill **wayfinder-sgq** (mappa `PLAN_*_SLICES.md` + un `DEPUTYTASK` per run). Non installare il pacchetto intero `mattpocock/skills` (conflitto con ADR-015).
 
@@ -63,7 +68,7 @@ Pattern Playwright in `/tmp` con `SGQ_APP_EMAIL` / `SGQ_APP_PASSWORD` (Secrets).
 ## Regole repo da rispettare
 
 - Multi-tenant: scope `organization_id` / pattern RBAC esistenti.
-- Riuso UI: `QuestionCard`, `status-btn`, `notes-textarea`, `AttachmentSection`, `AiDisclaimer` — vedi `docs/reference/LIBRERIA_UI_SGQ.md`. DNA visivo e schermate da copiare: `app/src/design-system/README.md`.
+- Riuso UI: `QuestionCard`, `status-btn`, `notes-textarea`, `AttachmentSection`, `AiDisclaimer` — vedi `docs/reference/LIBRERIA_UI_SGQ.md`. DNA visivo: `app/src/design-system/README.md`.
 - Encoding UTF-8, accenti italiani corretti (regola `sgq-encoding-quality`).
 - Zero segreti in file versionati o chat.
 - Doc operativa: aggiorna `docs/GUIDA_CONSOLIDATA.md` (non creare `SESSION_NOTES_*`).
@@ -72,8 +77,9 @@ Pattern Playwright in `/tmp` con `SGQ_APP_EMAIL` / `SGQ_APP_PASSWORD` (Secrets).
 
 | Tema | Path |
 |------|------|
+| Bussola moduli | `PROJECT_CONTEXT.md` (tabella «Se lavori su…») |
 | Deploy / SSH / Secrets | `docs/how-to/ACCESSO_DEPLOY_AGENTS.md` |
-| Esperienza operativa | `docs/GUIDA_CONSOLIDATA.md` |
+| Esperienza operativa | `docs/GUIDA_CONSOLIDATA.md` (a sezioni, non intera) |
 | Libreria UI | `docs/reference/LIBRERIA_UI_SGQ.md` |
 | DNA visivo UI | [`app/src/design-system/README.md`](app/src/design-system/README.md) |
 | Memoria operativa | `.cursor/rules/sgq-operating-memory.mdc` |

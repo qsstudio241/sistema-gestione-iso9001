@@ -21,7 +21,7 @@
 
 | Tag | File | Note |
 |-----|------|------|
-| attivo | [PROJECT_CONTEXT.md](../PROJECT_CONTEXT.md) | Stack, infra, workflow |
+| attivo | [PROJECT_CONTEXT.md](../PROJECT_CONTEXT.md) | Stack, bussola moduli, regole critiche |
 | attivo | [AGENTS.md](../AGENTS.md) | Istruzioni Cloud Agent + policy context/costi |
 | attivo | [PROJECT_ROADMAP.md](PROJECT_ROADMAP.md) | Fasi, backlog, open points |
 | attivo | [GUIDA_CONSOLIDATA.md](GUIDA_CONSOLIDATA.md) | Esperienza operativa, deploy, Word, DB, DoD test, **[Lezioni apprese (fonte unica)](GUIDA_CONSOLIDATA.md#lezioni-apprese-consolidate-fonte-unica)** |
@@ -156,7 +156,7 @@ Elenco storico ADR-001…007: tabella in [adr/README.md](adr/README.md).
 
 | Tag | File | Note |
 |-----|------|------|
-| attivo | [../PROJECT_CONTEXT.md](../PROJECT_CONTEXT.md) | Ingresso AI |
+| attivo | [../PROJECT_CONTEXT.md](../PROJECT_CONTEXT.md) | Ingresso AI + bussola moduli |
 | attivo | [../AGENTS.md](../AGENTS.md) | Cloud Agent / context window |
 | attivo | [../.cursor/environment.json](../.cursor/environment.json) | Install dipendenze VM Cloud |
 | **legacy** | [../.github/copilot-instructions.md](../.github/copilot-instructions.md) | Istruzioni Copilot — **non usare** (superato da ADR-015) |
