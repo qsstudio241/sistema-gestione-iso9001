@@ -7,6 +7,7 @@ import React, { createContext, useCallback, useContext, useEffect, useMemo, useS
 import { useAuth } from "./AuthContext";
 import apiService from "../services/apiService";
 import {
+  getAllowedCompanyIds,
   isCompanyScopeLocked,
   isCompanyScopedUser,
   persistAppCompanyScope,
@@ -81,10 +82,14 @@ export function CompanyScopeProvider({ children, initialCompanyId }) {
       if (locked) return;
       let next = value == null ? STUDIO_WIDE_SCOPE : String(value);
       if (companyScoped && !next) return;
+      if (companyScoped) {
+        const allowed = getAllowedCompanyIds(user) || [];
+        if (next && !allowed.includes(next)) return;
+      }
       setCompanyIdState(next);
       persistAppCompanyScope(user?.organization_id, next);
     },
-    [locked, companyScoped, user?.organization_id]
+    [locked, companyScoped, user]
   );
 
   const scopeCompanyName = useMemo(() => {

@@ -91,6 +91,10 @@ describe("appCompanyScope", () => {
     expect(sanitizeScopeAgainstCompanies(lockedClient, "47", [])).toBe("47");
   });
 
+  it("sanitize: cliente con id non permesso torna alla primaria", () => {
+    expect(sanitizeScopeAgainstCompanies(multiClient, "99", [{ id: 99 }])).toBe("11");
+  });
+
   it("persist vuoto salva company_id vuoto", () => {
     persistAppCompanyScope(1001, "");
     const raw = JSON.parse(localStorage.getItem(APP_COMPANY_SCOPE_KEY));

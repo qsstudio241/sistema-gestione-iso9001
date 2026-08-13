@@ -115,9 +115,15 @@ export function resolveAppCompanyScope(user, storedOverride) {
  */
 export function sanitizeScopeAgainstCompanies(user, companyId, companies) {
   if (!companyId) return STUDIO_WIDE_SCOPE;
-  if (isCompanyScopedUser(user)) return companyId;
+  const id = String(companyId);
+  if (isCompanyScopedUser(user)) {
+    const allowed = getAllowedCompanyIds(user) || [];
+    if (allowed.includes(id)) return id;
+    const primary = getPrimaryCompanyId(user);
+    return primary != null ? String(primary) : STUDIO_WIDE_SCOPE;
+  }
   const list = Array.isArray(companies) ? companies : [];
-  if (list.length === 0) return String(companyId);
-  const ok = list.some((c) => String(c.id || c.company_id) === String(companyId));
-  return ok ? String(companyId) : STUDIO_WIDE_SCOPE;
+  if (list.length === 0) return id;
+  const ok = list.some((c) => String(c.id || c.company_id) === id);
+  return ok ? id : STUDIO_WIDE_SCOPE;
 }

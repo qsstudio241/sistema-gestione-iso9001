@@ -1112,6 +1112,7 @@ function DocumentRegistry() {
       if (companyId != null) {
         if (String(companyId) === STUDIO_REGISTRY_SCOPE) {
           setStudioOnly(true);
+          setCompanyId("");
         } else {
           setStudioOnly(false);
           setCompanyId(String(companyId));

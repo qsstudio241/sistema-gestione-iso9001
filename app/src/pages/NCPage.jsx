@@ -77,7 +77,14 @@ export default function NCPage() {
   const [showBreakdown, setShowBreakdown] = useState(false);
   const [exportingWord, setExportingWord] = useState(false);
   const [exportWordError, setExportWordError] = useState(null);
-  const [filters, setFilters] = useState({ status: "", severity: "", overdue: "", due_within_days: "", company_id: "", source_category: "" });
+  const [filters, setFilters] = useState({
+    status: "",
+    severity: "",
+    overdue: "",
+    due_within_days: "",
+    company_id: companyId || "",
+    source_category: "",
+  });
   const [page, setPage]       = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [searchNc, setSearchNc] = useState("");
