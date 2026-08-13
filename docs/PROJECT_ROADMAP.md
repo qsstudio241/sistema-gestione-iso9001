@@ -16,7 +16,7 @@ Audit multi-standard (9001/14001/45001) · Non Conformità (workflow ISO 10.2 co
 
 ### Sessione più recente (13/08/2026)
 
-**Regressione chiusa**: dopo Ambito unico il pulsante **Carica qualifiche (batch)** spariva su «Tutto lo studio» (era montato solo con azienda selezionata). I pulsanti batch restano visibili, disabilitati se manca l'azienda; l'azienda salvata sulla vecchia chiave Qualifiche viene migrata nella chiave globale. Stesso trattamento WPQR/WPS. Dettaglio: [GUIDA lezione Azioni gated](GUIDA_CONSOLIDATA.md#lezioni-apprese-consolidate-fonte-unica).
+**Regressione chiusa** ([PR #408](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/408) mergiata): dopo Ambito unico il pulsante **Carica qualifiche (batch)** spariva su «Tutto lo studio» (era montato solo con azienda selezionata). I pulsanti batch restano visibili, disabilitati se manca l'azienda; l'azienda salvata sulla vecchia chiave Qualifiche viene migrata nella chiave globale. Stesso trattamento WPQR/WPS. Dettaglio: [GUIDA lezione Azioni gated](GUIDA_CONSOLIDATA.md#lezioni-apprese-consolidate-fonte-unica).
 
 Ambito azienda **unico** in alto mergiato ([PR #401](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/401)): `CompanyScopeSelect` nell'header, vale su tutta l'app finché l'utente non lo cambia. I selettori di pagina sono **eliminati** (non spostati); le **azioni** di pagina si conservano. Default: admin/personale studio → Tutto lo studio; utente di un'azienda → quella azienda, non modificabile.
 
