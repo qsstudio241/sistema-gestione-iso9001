@@ -1,37 +1,48 @@
-# Policy di approvazione PR — ProgettoISO (default)
+# Policy di approvazione PR — ProgettoISO (default, fallback finale)
 
-> Letta da **PR Routing & Approval** (Cursor Automations) per decidere se assegnare reviewer e/o
-> approvare automaticamente una PR. Non sostituisce mai la review umana e non mergia mai (vincolo di
-> prodotto Cursor — vedi [`sgq-git-autonomy.mdc`](.cursor/rules/sgq-git-autonomy.mdc) § Vincolo verificato).
+> Letta da **PR Routing & Approval** (Cursor Automations) solo quando nessuna `APPROVAL_POLICY.md` più
+> specifica in una directory ancestrale copre il file modificato. Il criterio di rischio (Basso/Medio/
+> Alto) è definito in [`sgq-git-autonomy.mdc`](.cursor/rules/sgq-git-autonomy.mdc) § Livelli di rischio.
 
-Si applica quando nessuna `APPROVAL_POLICY.md` più specifica in una sottodirectory copre i file
-modificati. Il criterio di rischio (Basso/Medio/Alto) è definito in
-[`sgq-git-autonomy.mdc`](.cursor/rules/sgq-git-autonomy.mdc) § Livelli di rischio — questo file applica
-quella tabella, non ne definisce una nuova.
+> **Corretto 13/08/2026** dopo un rilievo reale di Bugbot sulla versione precedente di questo file
+> (High Severity, vedi [PR #402](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/402)):
+> la vecchia regola "approva se ≤2 file e non nella denylist" lasciava passare senza controllo path
+> senza policy dedicata come `backend/scripts/**`, `.github/workflows/**`, `database/scripts/**` —
+> proprio i path che toccano produzione/CI. Sostituita con un default **deny-by-default**: nessuna
+> lista di eccezioni da mantenere aggiornata, zero buchi per path futuri non ancora previsti.
 
-## Regola di declassamento (vale sempre)
+## Regola (unica)
 
-Se la PR tocca anche un solo file di livello Alto, tratta l'intera PR come Alto — non spezzare
-artificialmente per farla rientrare nel Medio.
+**Mai approvazione automatica su questo fallback.** Sempre `Request Reviewers`.
 
-## Approvazione automatica
+Questo file si applica esattamente a: qualunque path che non ha una `APPROVAL_POLICY.md` più vicina.
+Oggi questo significa, tra gli altri: `backend/scripts/**`, `.github/workflows/**`,
+`database/scripts/**`, file di configurazione a livello repo (`netlify.toml`, `package.json`, ecc.).
+Tutti questi toccano produzione, CI/CD o configurazione condivisa — **sempre** review umana, senza
+eccezioni codificate qui.
 
-Consentita **solo se tutte** le condizioni sono vere:
+Le uniche aree con una regola di approvazione automatica **più permissiva** sono quelle con una
+propria `APPROVAL_POLICY.md` dedicata, oggi:
 
-- Nessun file in `backend/src/controllers/**`, `backend/src/services/**` (eccetto costanti/barrel
-  puri), `backend/src/middleware/**`, `database/migrations/**`.
-- Bugbot Review Context: nessun rilievo critico o bloccante.
-- CI pertinente verde (`ci-app-pr`, `smoke-test`, `ci-harness-boot`).
-- Diff ≤ 2 file, oppure interamente dentro `docs/**` o `.cursor/rules/**`.
+| Area | Policy |
+|---|---|
+| `docs/**` | [`docs/APPROVAL_POLICY.md`](docs/APPROVAL_POLICY.md) |
+| `.cursor/rules/**` | [`.cursor/rules/APPROVAL_POLICY.md`](.cursor/rules/APPROVAL_POLICY.md) |
+| `app/src/**` | [`app/src/APPROVAL_POLICY.md`](app/src/APPROVAL_POLICY.md) |
+| `backend/src/**` | [`backend/src/APPROVAL_POLICY.md`](backend/src/APPROVAL_POLICY.md) (mai approvazione, comunque) |
+| `database/migrations/**` | [`database/migrations/APPROVAL_POLICY.md`](database/migrations/APPROVAL_POLICY.md) (mai approvazione, comunque) |
 
-In tutti gli altri casi: solo **Request Reviewers**, mai **Approve**.
+## Regola di declassamento (vale sempre, anche nelle policy specifiche)
 
-## Mai approvazione automatica (a prescindere dalla dimensione del diff)
+Se la PR tocca anche un solo file di livello Alto (qualunque directory), tratta l'intera PR come Alto
+— non spezzare artificialmente per farla rientrare nel Medio o nel Basso.
+
+## Mai approvazione automatica (a prescindere dalla directory)
 
 - Autenticazione/JWT, `syncService` (ADR-008/ADR-002), RBAC/`company_access`.
 - Logica normativa AI: `weldingAiSuggest.service.js`, `salAiSuggest.service.js`,
   `wpsGenerator.service.js`, `gapAnalysis*`, `moduleLicense.service.js`.
-- Migrazioni SQL (vedi [`database/migrations/APPROVAL_POLICY.md`](database/migrations/APPROVAL_POLICY.md)).
+- Migrazioni SQL, script deploy/VPS, workflow CI/CD.
 
 ## Se Bugbot non è disponibile
 

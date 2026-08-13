@@ -72,20 +72,30 @@ tua revisione — un passo in più ma ancora molto meno lavoro del gate manuale 
 - **Non sostituisce mai una code review completa** ("It does not replace a full code review" — doc
   ufficiale) e **non mergia mai**: il merge resta sempre un click umano.
 
-## Cosa è già pronto nel repo (questa PR)
+## Cosa è già pronto nel repo
 
 | File | Scopo |
 |---|---|
-| `APPROVAL_POLICY.md` (root) | Policy di default — mai approvazione se tocca backend/migrazioni/auth/sync/normativa AI |
+| `APPROVAL_POLICY.md` (root) | Fallback finale — **deny-by-default**, mai approvazione automatica |
 | `docs/APPROVAL_POLICY.md` | Basso rischio — approvazione consentita se Bugbot pulito e diff solo `docs/**` |
 | `.cursor/rules/APPROVAL_POLICY.md` | Basso ma governance — mai approvare se la modifica allenta un vincolo di sicurezza |
+| `app/src/APPROVAL_POLICY.md` | Basso rischio ristretto — mai fuori da componenti/hook condivisi |
 | `backend/src/APPROVAL_POLICY.md` | Mai approvazione automatica, sempre review umana |
 | `database/migrations/APPROVAL_POLICY.md` | Mai approvazione automatica, sempre review umana |
-| `.cursor/approval-policies/ROUTING.md` | Routing per area |
+| `.cursor/approval-policies/ROUTING.md` | Routing per area — **YAML** (`product`/`boundary`/`policies`) |
 | `.cursor/BUGBOT.md` | Regole custom Bugbot allineate a `sgq-operating-memory.mdc`/`sgq-git-autonomy.mdc` (multi-tenant, human-in-the-loop AI, encoding, migrazioni idempotenti) |
 
 Questi file sono **inerti** finché Bugbot e l'automation non vengono attivati da dashboard: mergiare
 questa PR non comporta nessun rischio operativo né costo.
+
+## Validazione reale (13/08/2026) — il meccanismo ha già trovato 2 problemi veri
+
+La PR che ha introdotto la prima versione di questi file ([#402](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/402)) è stata rivista **automaticamente** da Bugbot, Security Reviewer e PR Routing & Approval non appena il committente ha attivato Bugbot da dashboard — senza invocare nulla a mano. Bugbot ha trovato 2 problemi reali nei file appena scritti:
+
+1. **High Severity**: la policy di default (root) approvava automaticamente qualunque diff ≤2 file fuori da una denylist — path come `backend/scripts/**` o `.github/workflows/**`, senza policy dedicata, ci sarebbero passati senza controllo. **Corretto**: il fallback root è ora deny-by-default (mai approvazione), con `app/src/APPROVAL_POLICY.md` dedicato per isolare la regola Basso del frontend.
+2. **Medium Severity**: `ROUTING.md` era scritto come tabella Markdown, ma lo schema documentato ufficialmente è **YAML** (`product`/`boundary`/`policies`) — verificato indipendentemente sulla doc ufficiale prima di correggere, non solo sulla parola di Bugbot. **Corretto**: convertito in YAML.
+
+Questo conferma due cose insieme: (a) il meccanismo automatico funziona ed è già intervenuto utilmente al primo giro reale; (b) la revisione resta necessaria anche su contenuti "solo policy" — un buco logico o un errore di schema non si vede leggendo il Markdown, si vede solo con uno strumento che lo confronta con lo schema reale.
 
 ## Cosa devi fare tu — ordine consigliato (Bugbot prima, poi il routing)
 
