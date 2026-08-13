@@ -9,6 +9,7 @@
 
 import React, { useState, useEffect, useCallback } from "react";
 import apiService from "../services/apiService";
+import { useCompanyScope } from "../contexts/CompanyScopeContext";
 import { formatDate } from "../utils/dateHelpers";
 import WpqrUploadButton from "../components/WpqrUploadButton";
 import WpsUploadButton from "../components/WpsUploadButton";
@@ -19,10 +20,6 @@ import {
   consumeWpsGenerateIntent,
   MASON_WPS_GENERATE_DEFAULTS,
 } from "../utils/aiAssistantContext";
-import {
-  resolveInitialQualificationsCompanyScope,
-  persistQualificationsCompanyScope,
-} from "../utils/qualificationsCompanyScope";
 import { exportWpsAnnexADocx } from "../utils/wordExportWps";
 import { resolveBackendUploadUrl } from "../utils/resolveBackendUploadUrl";
 import "./WeldingProceduresPage.css";
@@ -350,7 +347,7 @@ export function GenerateWpsModal({
             {error && <div className="wp-error">{error}</div>}
             {!defaultCompanyId && (
               <div className="wp-warn-no-company">
-                {"\u26A0\uFE0F Seleziona un\u2019azienda nell\u2019Ambito in cima alla pagina per filtrare le WPQR."}
+                {"\u26A0\uFE0F Seleziona un\u2019azienda nell\u2019Ambito in alto per filtrare le WPQR."}
               </div>
             )}
             <div className="wp-form-grid">
@@ -887,16 +884,10 @@ function WPQRFormModal({ wpqr, wpsList, defaultCompanyId, onSave, onClose }) {
 // ?
 
 function WeldingProceduresPage() {
+  const { companyId: companyScopeId, scopeCompanyName: companyScopeName } = useCompanyScope();
   const [activeTab, setActiveTab] = useState("wps");
   /** P2b: upload PDF WPS non e' piu' il flusso primario — visibile solo su richiesta. */
   const [showLegacyWpsUpload, setShowLegacyWpsUpload] = useState(false);
-
-  // Company scope (persistito in localStorage, chiave condivisa con qualifiche)
-  const [companyScopeId, setCompanyScopeId] = useState(() =>
-    resolveInitialQualificationsCompanyScope(null)
-  );
-  const [companies, setCompanies] = useState([]);
-  const companyScopeName = companies.find(c => String(c.id) === String(companyScopeId))?.name || "";
 
   // WPQR stats
   const [wpqrStats, setWpqrStats] = useState(null);
@@ -943,23 +934,10 @@ function WeldingProceduresPage() {
   const [rejectModal, setRejectModal] = useState(null); // { id }
   const [rejectReason, setRejectReason] = useState("");
 
-  // ?? Load companies ??
-
-  const loadCompanies = useCallback(async () => {
-    try {
-      const res = await apiService.getCompanies({ limit: 500 });
-      setCompanies(res.companies || res.data || []);
-    } catch {
-      // non bloccante
-    }
-  }, []);
-
-  const handleCompanyScopeChange = useCallback((newId) => {
-    setCompanyScopeId(newId);
-    persistQualificationsCompanyScope(newId);
+  useEffect(() => {
     setWpsPage(1);
     setWpqrPage(1);
-  }, []);
+  }, [companyScopeId]);
 
   // ?? Load WPQR stats 
 
@@ -1032,7 +1010,6 @@ function WeldingProceduresPage() {
     }
   }, [wpqrPage, wpqrFilterWpsId, wpqrFilters, companyScopeId]);
 
-  useEffect(() => { loadCompanies(); }, [loadCompanies]);
   useEffect(() => { loadWPQRStats(); }, [loadWPQRStats]);
   useEffect(() => { loadWPS(); }, [loadWPS]);
   useEffect(() => { loadAllWps(); }, [loadAllWps]);
@@ -1149,15 +1126,27 @@ function WeldingProceduresPage() {
   const wpsTotalPages  = Math.max(1, Math.ceil(wpsTotal  / LIMIT));
   const wpqrTotalPages = Math.max(1, Math.ceil(wpqrTotal / LIMIT));
 
-  // ?? Stats semaphore helpers ??
+  // Stats semaphore helpers — solo WPQR (vedi getWPQRStats): card informative
+  // (Valide/Scad.60/Scad.30/Scadute, sotto-partizione dei soli WPQR "approvata")
+  // + card cliccabili che sostituiscono la tendina "approval_status" (rimossa,
+  // ridondante — regola "Filtri: singola fonte di verità", DEPUTYTASK4).
   const stats = wpqrStats || {};
   const statsItems = [
     { label: "Valide",         value: stats.valide        || 0, color: "#16a34a" },
     { label: "Scad. 60 gg",    value: stats.in_scadenza_60 || 0, color: "#d97706" },
     { label: "Scad. 30 gg",    value: stats.in_scadenza_30 || 0, color: "#ea580c" },
     { label: "Scadute",        value: stats.scadute        || 0, color: "#dc2626" },
-    { label: "Da approvare",   value: stats.da_approvare   || 0, color: "#6b7280" },
   ];
+  const approvalStatCards = [
+    { label: "Da approvare", value: stats.da_approvare || 0, color: "#6b7280", statusValue: "bozza" },
+    { label: "Approvate",    value: stats.approvate     || 0, color: "#16a34a", statusValue: "approvata" },
+    { label: "Rifiutate",    value: stats.rifiutate     || 0, color: "#dc2626", statusValue: "rifiutata" },
+  ];
+
+  function handleWpqrApprovalCardClick(statusValue) {
+    setWpqrFilters((f) => ({ ...f, approval_status: f.approval_status === statusValue ? "" : statusValue }));
+    setWpqrPage(1);
+  }
 
   // ?? Render ?
 
@@ -1214,29 +1203,10 @@ function WeldingProceduresPage() {
         </div>
       )}
 
-      {/* Company scope */}
-      <div className="wp-company-scope">
-        <label className="wp-company-scope-label">Azienda:</label>
-        <select
-          className="wp-select"
-          value={companyScopeId}
-          onChange={(e) => handleCompanyScopeChange(e.target.value)}
-          style={{ minWidth: 200 }}
-        >
-          <option value="">Tutte le aziende</option>
-          {companies.map((c) => (
-            <option key={c.id} value={c.id}>{c.name}</option>
-          ))}
-        </select>
-        {companyScopeId && (
-          <button className="wp-link" onClick={() => handleCompanyScopeChange("")}>
-            Mostra tutte
-          </button>
-        )}
-      </div>
-
-      {/* Stats semaphore WPQR */}
-      {!statsLoading && wpqrStats && (
+      {/* Stats semaphore WPQR — solo nel tab WPQR: sono calcolate esclusivamente
+          su wpqr_records (vedi getWPQRStats) e non hanno alcun significato
+          per l'elenco WPS del tab adiacente. */}
+      {activeTab === "wpqr" && !statsLoading && wpqrStats && (
         <div className="wp-stats-bar">
           {statsItems.map((s) => (
             <div key={s.label} className="wp-stat-item">
@@ -1244,6 +1214,19 @@ function WeldingProceduresPage() {
               <span className="wp-stat-value" style={{ color: s.color }}>{s.value}</span>
               <span className="wp-stat-label">{s.label}</span>
             </div>
+          ))}
+          {approvalStatCards.map((s) => (
+            <button
+              key={s.label}
+              type="button"
+              className={`wp-stat-item wp-stat-clickable${wpqrFilters.approval_status === s.statusValue ? " wp-stat-active" : ""}`}
+              onClick={() => handleWpqrApprovalCardClick(s.statusValue)}
+              title={`Filtra: WPQR ${s.label.toLowerCase()}`}
+            >
+              <span className="wp-stat-dot" style={{ background: s.color }} />
+              <span className="wp-stat-value" style={{ color: s.color }}>{s.value}</span>
+              <span className="wp-stat-label">{s.label}</span>
+            </button>
           ))}
         </div>
       )}
@@ -1415,16 +1398,6 @@ function WeldingProceduresPage() {
               {allWps.map((w) => (
                 <option key={w.id} value={w.id}>{w.wps_code}{w.revision ? ` (Rev. ${w.revision})` : ""}</option>
               ))}
-            </select>
-            <select
-              className="wp-select"
-              value={wpqrFilters.approval_status}
-              onChange={(e) => { setWpqrFilters((f) => ({ ...f, approval_status: e.target.value })); setWpqrPage(1); }}
-            >
-              <option value="">Tutti gli stati</option>
-              <option value="bozza">Bozza</option>
-              <option value="approvata">Approvata</option>
-              <option value="rifiutata">Rifiutata</option>
             </select>
             {(wpqrFilterWpsId || wpqrFilters.approval_status || wpqrFilters.search) && (
               <button className="wp-link" onClick={() => { setWpqrFilterWpsId(""); setWpqrFilters({ approval_status: "", search: "", wps_id: "" }); setWpqrPage(1); }}>

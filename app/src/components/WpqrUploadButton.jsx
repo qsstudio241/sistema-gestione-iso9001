@@ -1,7 +1,7 @@
 /**
  * WpqrUploadButton - Upload batch WPQR con revisione pre-commit (IG-3)
  */
-import React, { useState, useRef, useCallback } from "react";
+import React, { useState, useRef, useCallback, useEffect } from "react";
 import apiService from "../services/apiService";
 import IngestReviewDialog from "./IngestReviewDialog";
 import "./WpqrUploadButton.css";
@@ -11,16 +11,8 @@ const MAX_FILE_SIZE = 50 * 1024 * 1024;
 export default function WpqrUploadButton({ companyId, companyName, onUploadComplete }) {
   const companyIdInt = companyId != null ? parseInt(String(companyId), 10) : NaN;
   const isValidCompany = !isNaN(companyIdInt) && companyIdInt > 0;
+  const displayName = isValidCompany ? (companyName || `Azienda #${companyIdInt}`) : "";
 
-  if (!isValidCompany) {
-    return (
-      <div className="wpqr-upload__no-company">
-        {"\u26A0\uFE0F"} Seleziona un&apos;azienda specifica per caricare i WPQR
-      </div>
-    );
-  }
-
-  const displayName = companyName || `Azienda #${companyIdInt}`;
   const [selectedFiles, setSelectedFiles] = useState([]);
   const [uploading, setUploading] = useState(false);
   const [results, setResults] = useState(null);
@@ -28,6 +20,17 @@ export default function WpqrUploadButton({ companyId, companyName, onUploadCompl
   const [reviewItem, setReviewItem] = useState(null);
   const [reviewBusy, setReviewBusy] = useState(false);
   const inputRef = useRef(null);
+  const scopeKey = isValidCompany ? String(companyIdInt) : "";
+
+  useEffect(() => {
+    setSelectedFiles([]);
+    setUploading(false);
+    setResults(null);
+    setValidationErr(null);
+    setReviewItem(null);
+    setReviewBusy(false);
+    if (inputRef.current) inputRef.current.value = "";
+  }, [scopeKey]);
 
   const handleClick = () => inputRef.current?.click();
 
@@ -112,6 +115,23 @@ export default function WpqrUploadButton({ companyId, companyName, onUploadCompl
     setReviewItem(null);
     if (inputRef.current) inputRef.current.value = "";
   }, []);
+
+  if (!isValidCompany) {
+    return (
+      <div className="wpqr-upload">
+        <button
+          type="button"
+          className="wpqr-upload__btn"
+          disabled
+          title="Seleziona un'azienda nell'Ambito in alto per caricare i WPQR"
+          aria-label="Carica WPQR (batch). Seleziona un'azienda nell'Ambito in alto."
+        >
+          <span className="wpqr-upload__icon" role="img" aria-label="upload">{"\u2795"}</span>
+          Carica WPQR (batch)
+        </button>
+      </div>
+    );
+  }
 
   const hasResults = results && results.length > 0;
   const showPanel  = selectedFiles.length > 0 || hasResults;

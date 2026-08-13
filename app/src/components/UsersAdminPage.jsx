@@ -1,6 +1,9 @@
 /**
  * Pagina Admin: Gestione utenti (CRUD soft), studio consulenza, standard consentiti.
- * Solo admin / superadmin. Creazione/promozione "admin" org: solo senza auditor_org_id (backend).
+ * Solo admin / superadmin. Il ruolo "admin" NON si può creare né promuovere da questa
+ * pagina (form Nuovo utente / Modifica utente): solo dalla sezione "Licenze moduli per
+ * studio" più sotto (pulsante "+ Invita admin") — singola fonte di verità, applicata
+ * anche lato backend in admin.controller.js (createUser/updateUser rifiutano role=admin).
  */
 
 import React, { useState, useEffect, useCallback } from "react";
@@ -17,22 +20,48 @@ const STANDARDS_LIST = [
   { standard_id: 7, label: "RDP Mason - Audit di Sistema Saldatura" },
 ];
 
-const ALL_MODULE_KEYS = [
-  { key: "audit",       label: "Audit" },
-  { key: "documents",   label: "Registro documenti" },
-  { key: "qualifiche",  label: "Qualifiche personale" },
-  { key: "nc",          label: "Non conformità" },
-  { key: "rischi",      label: "Rischi, opportunità e obiettivi" },
-  { key: "reclami",     label: "Reclami e fornitori" },
-  { key: "notifications", label: "Notifiche" },
-  { key: "sal",         label: "SAL" },
-  { key: "saldatura",   label: "Saldatura ISO 3834" },
-  { key: "ai_import",   label: "AI Import PDF" },
-  { key: "ai_assist",   label: "AI Suggerimenti (audit)" },
-  { key: "ai_review",   label: "AI Riesame Requisiti" },
-  { key: "ai_norms",    label: "AI Norme on-demand" },
-  { key: "ai_chat",     label: "AI Chat Assistente" },
+/** Stesso raggruppamento già usato nel menu laterale (AppLayout.jsx: gruppi
+ * SGQ/Saldatura/CND/Gestione) — qui unificato in 4 famiglie per la matrice
+ * licenze: "un solo modo di raggruppare i moduli in tutta l'app". */
+const MODULE_GROUPS = [
+  {
+    label: "Qualità (ISO 9001)",
+    keys: [
+      { key: "documents",  label: "Registro documenti" },
+      { key: "qualifiche", label: "Qualifiche personale" },
+      { key: "nc",         label: "Non conformità" },
+      { key: "rischi",     label: "Rischi, opportunità e obiettivi" },
+      { key: "reclami",    label: "Reclami e fornitori" },
+      { key: "sal",        label: "SAL" },
+    ],
+  },
+  {
+    label: "Saldatura (ISO 3834)",
+    keys: [
+      { key: "saldatura", label: "Saldatura ISO 3834" },
+      { key: "cnd",       label: "CND - Controlli Non Distruttivi" },
+    ],
+  },
+  {
+    label: "Intelligenza Artificiale",
+    keys: [
+      { key: "ai_import", label: "AI Import PDF" },
+      { key: "ai_assist", label: "AI Suggerimenti (audit)" },
+      { key: "ai_review", label: "AI Riesame Requisiti" },
+      { key: "ai_norms",  label: "AI Norme on-demand" },
+      { key: "ai_chat",   label: "AI Chat Assistente" },
+    ],
+  },
+  {
+    label: "Trasversali",
+    keys: [
+      { key: "audit",         label: "Audit" },
+      { key: "notifications", label: "Notifiche" },
+    ],
+  },
 ];
+
+const ALL_MODULE_KEYS = MODULE_GROUPS.flatMap((g) => g.keys);
 
 /** Legge licensed_modules da una riga auditorOrg (può essere null = tutti) */
 function parseOrgModules(rawJson) {
@@ -149,12 +178,30 @@ export default function UsersAdminPage({ onBack }) {
 
   const isAdmin = user?.role === "admin" || user?.role === "superadmin";
   const isSuperadmin = user?.role === "superadmin";
-  const elevatedAdmin = isAdmin;
 
   // Stato licenze moduli per org (superadmin only) - dirty map: orgId → string[]|null
   const [orgLicensesDirty, setOrgLicensesDirty] = useState({});
   const [savingOrgLicense, setSavingOrgLicense] = useState(null);
   const [orgLicenseMsg, setOrgLicenseMsg] = useState({});
+
+  // Creazione nuovo studio (provisioning tenant, solo superadmin)
+  const [showNewStudioForm, setShowNewStudioForm] = useState(false);
+  const [newStudioForm, setNewStudioForm] = useState({
+    organization_name: "",
+    studio_name: "",
+    studio_email: "",
+  });
+  const [newStudioSubmitting, setNewStudioSubmitting] = useState(false);
+  const [newStudioError, setNewStudioError] = useState(null);
+  const [newStudioMsg, setNewStudioMsg] = useState(null);
+
+  // Invito primo admin di uno studio (per id auditor_org — colma il gap: createUser
+  // non può mai assegnare un utente a un nuovo studio, organization_id diverso per
+  // costruzione dall'attore superadmin — vedi DEPUTYTASK1 S3)
+  const [showInviteAdminForm, setShowInviteAdminForm] = useState({});
+  const [inviteAdminForm, setInviteAdminForm] = useState({});
+  const [inviteAdminSubmitting, setInviteAdminSubmitting] = useState(null);
+  const [inviteAdminMsg, setInviteAdminMsg] = useState({});
 
   // Accesso aziende clienti per utente (user_company_access) - caricato on-demand
   const [companyAccessByUser, setCompanyAccessByUser] = useState({});
@@ -558,6 +605,75 @@ export default function UsersAdminPage({ onBack }) {
     }
   };
 
+  const submitNewStudio = async (e) => {
+    e.preventDefault();
+    const organizationName = newStudioForm.organization_name.trim();
+    const studioName = newStudioForm.studio_name.trim();
+    const studioEmail = newStudioForm.studio_email.trim();
+    setNewStudioError(null);
+
+    if (!organizationName || !studioName || !studioEmail) {
+      setNewStudioError("Compila nome cliente, nome studio ed email referente.");
+      return;
+    }
+
+    setNewStudioSubmitting(true);
+    try {
+      const res = await apiService.createAuditorOrg({
+        organization_name: organizationName,
+        studio_name: studioName,
+        studio_email: studioEmail,
+      });
+      const created = res?.data;
+      if (created) {
+        setAuditorOrgs((prev) => [...prev, created]);
+      }
+      setNewStudioForm({
+        organization_name: "",
+        studio_name: "",
+        studio_email: "",
+      });
+      setShowNewStudioForm(false);
+      setNewStudioMsg("✅ Studio creato.");
+      setTimeout(() => setNewStudioMsg(null), 8000);
+    } catch (err) {
+      setNewStudioError(err.message || "Errore creazione studio");
+    } finally {
+      setNewStudioSubmitting(false);
+    }
+  };
+
+  const submitInviteAdmin = async (ao) => {
+    const form = inviteAdminForm[ao.id] || {};
+    const fullName = (form.full_name || "").trim();
+    setInviteAdminMsg((prev) => ({ ...prev, [ao.id]: null }));
+
+    if (!fullName) {
+      setInviteAdminMsg((prev) => ({ ...prev, [ao.id]: "❌ Nome e cognome obbligatorio." }));
+      return;
+    }
+
+    setInviteAdminSubmitting(ao.id);
+    try {
+      await apiService.inviteStudioAdmin(ao.id, {
+        full_name: fullName,
+        email: (form.email || "").trim() || undefined,
+      });
+      setInviteAdminForm((prev) => ({ ...prev, [ao.id]: { full_name: "", email: "" } }));
+      setShowInviteAdminForm((prev) => ({ ...prev, [ao.id]: false }));
+      // Il nuovo admin è cross-tenant (organizzazione del nuovo studio, non quella
+      // dell'attore): superadmin vede tutti gli utenti di tutte le org, quindi
+      // ricaricare la lista lo mostra subito (pending) senza refresh manuale.
+      await reloadUsers();
+      setInviteAdminMsg((prev) => ({ ...prev, [ao.id]: "✅ Invito inviato." }));
+      setTimeout(() => setInviteAdminMsg((prev) => ({ ...prev, [ao.id]: null })), 8000);
+    } catch (err) {
+      setInviteAdminMsg((prev) => ({ ...prev, [ao.id]: `❌ ${err.message || "Errore invio invito"}` }));
+    } finally {
+      setInviteAdminSubmitting(null);
+    }
+  };
+
   const resendInvite = async (u) => {
     setResendingInviteId(u.user_id);
     try {
@@ -703,9 +819,13 @@ export default function UsersAdminPage({ onBack }) {
               }
             >
               <option value="auditor">Auditor</option>
-              {elevatedAdmin && <option value="admin">Admin Studio</option>}
               <option value="viewer">Viewer (sola lettura)</option>
             </select>
+            <p className="form-hint">
+              Il ruolo Admin si assegna solo dalla sezione &quot;Licenze moduli per
+              studio&quot; qui sotto (pulsante &quot;+ Invita admin&quot; su ogni studio) —
+              non da qui.
+            </p>
           </div>
           <div className="form-row">
             <label htmlFor="create-ao">
@@ -738,18 +858,11 @@ export default function UsersAdminPage({ onBack }) {
               </p>
             )}
           </div>
-          {!elevatedAdmin && createForm.role === "admin" && (
-            <p className="form-hint warn">
-              Solo l&apos;amministratore principale (senza studio) può creare altri
-              admin: scegli Auditor o Viewer.
-            </p>
-          )}
           <button
             type="submit"
             className="btn btn-primary"
             disabled={
               createSubmitting ||
-              (!elevatedAdmin && createForm.role === "admin") ||
               isOrphanAuditor(createForm.role, createForm.auditor_org_id)
             }
           >
@@ -763,44 +876,128 @@ export default function UsersAdminPage({ onBack }) {
       )}
 
       {/* ── Licenze moduli per studio (solo superadmin) ─────────────────── */}
-      {isSuperadmin && !loading && auditorOrgs.length > 0 && (
+      {isSuperadmin && !loading && (
         <section className="org-licenses-section">
-          <h2 className="org-licenses-title">Licenze moduli per studio</h2>
+          <div className="org-licenses-header">
+            <h2 className="org-licenses-title">Licenze moduli per studio</h2>
+            <button
+              type="button"
+              className="btn btn-primary btn-sm"
+              onClick={() => {
+                setShowNewStudioForm((s) => !s);
+                setNewStudioError(null);
+              }}
+            >
+              {showNewStudioForm ? "Chiudi form" : "+ Nuovo studio"}
+            </button>
+          </div>
           <p className="org-licenses-desc">
             Assegna i moduli funzionali attivi per ogni studio cliente. Il modulo <strong>Audit</strong> è sempre abilitato.
             Nessuna selezione esplicita = tutti i moduli attivi (impostazione predefinita).
+            La licenza <strong>Saldatura ISO 3834</strong> include sempre l&apos;accesso a <strong>CND</strong>, anche se non spuntata separatamente.
           </p>
+
+          {showNewStudioForm && (
+            <form className="user-create-form new-studio-form" onSubmit={submitNewStudio}>
+              <h3 className="user-create-title">Nuovo studio</h3>
+              <div className="form-row">
+                <label htmlFor="new-studio-org-name">Nome cliente/organizzazione</label>
+                <input
+                  id="new-studio-org-name"
+                  type="text"
+                  value={newStudioForm.organization_name}
+                  onChange={(e) =>
+                    setNewStudioForm((f) => ({ ...f, organization_name: e.target.value }))
+                  }
+                />
+              </div>
+              <div className="form-row">
+                <label htmlFor="new-studio-name">Nome studio</label>
+                <input
+                  id="new-studio-name"
+                  type="text"
+                  value={newStudioForm.studio_name}
+                  onChange={(e) =>
+                    setNewStudioForm((f) => ({ ...f, studio_name: e.target.value }))
+                  }
+                />
+              </div>
+              <div className="form-row">
+                <label htmlFor="new-studio-email">Email referente</label>
+                <input
+                  id="new-studio-email"
+                  type="email"
+                  value={newStudioForm.studio_email}
+                  onChange={(e) =>
+                    setNewStudioForm((f) => ({ ...f, studio_email: e.target.value }))
+                  }
+                />
+                <p className="form-hint">
+                  Il nuovo studio nasce con tutti i moduli abilitati (badge &quot;Tutti i
+                  moduli&quot;); potrai personalizzare le licenze subito dopo, qui sotto.
+                </p>
+              </div>
+              {newStudioError && (
+                <p className="form-hint warn" role="alert">
+                  {newStudioError}
+                </p>
+              )}
+              <button type="submit" className="btn btn-primary" disabled={newStudioSubmitting}>
+                {newStudioSubmitting ? "Creazione..." : "Crea studio"}
+              </button>
+            </form>
+          )}
+          {newStudioMsg && <p className="org-license-msg new-studio-success">{newStudioMsg}</p>}
+
+          {auditorOrgs.length === 0 && (
+            <p className="form-hint">Nessuno studio presente. Usa &quot;+ Nuovo studio&quot; per crearne uno.</p>
+          )}
+
           {auditorOrgs.map((ao) => {
             const effectiveMods = getEffectiveOrgModules(ao);
             const isDirty = orgLicensesDirty[ao.organization_id] !== undefined;
             const useDefault = effectiveMods === null;
+            // Elenco esplicito che contiene comunque tutti i moduli attuali: stesso accesso
+            // effettivo di "default", ma salvato come array (non NULL) — mostra lo stesso badge
+            // per non far apparire diversi due studi con licenze identiche (DEPUTYTASK2 S1).
+            const isFullExplicit =
+              !useDefault &&
+              effectiveMods.length === ALL_MODULE_KEYS.length &&
+              ALL_MODULE_KEYS.every(({ key }) => effectiveMods.includes(key));
             const msg = orgLicenseMsg[ao.organization_id];
             return (
               <details key={ao.organization_id} className="org-license-details">
                 <summary className="org-license-summary">
                   <span className="org-license-name">{ao.name}</span>
                   <span className="org-license-orgname">{ao.organization_name}</span>
-                  {useDefault && !isDirty && (
-                    <span className="org-license-badge default">Tutti i moduli (default)</span>
+                  {(useDefault || isFullExplicit) && !isDirty && (
+                    <span className="org-license-badge default">Tutti i moduli</span>
                   )}
                   {isDirty && <span className="org-license-badge dirty">● Modifiche non salvate</span>}
                 </summary>
                 <div className="org-license-body">
-                  <div className="standards-checkboxes">
-                    {ALL_MODULE_KEYS.map(({ key, label }) => {
-                      const checked = useDefault && !isDirty ? true : (effectiveMods ?? []).includes(key);
-                      return (
-                        <label key={key} className="checkbox-label">
-                          <input
-                            type="checkbox"
-                            checked={checked}
-                            disabled={key === "audit" || savingOrgLicense === ao.organization_id}
-                            onChange={() => toggleOrgModule(ao.organization_id, key)}
-                          />
-                          <span>{label}</span>
-                        </label>
-                      );
-                    })}
+                  <div className="module-groups">
+                    {MODULE_GROUPS.map((group) => (
+                      <div key={group.label} className="module-group">
+                        <h4 className="module-group-title">{group.label}</h4>
+                        <div className="module-group-checkboxes">
+                          {group.keys.map(({ key, label }) => {
+                            const checked = useDefault && !isDirty ? true : (effectiveMods ?? []).includes(key);
+                            return (
+                              <label key={key} className="checkbox-label">
+                                <input
+                                  type="checkbox"
+                                  checked={checked}
+                                  disabled={key === "audit" || savingOrgLicense === ao.organization_id}
+                                  onChange={() => toggleOrgModule(ao.organization_id, key)}
+                                />
+                                <span>{label}</span>
+                              </label>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    ))}
                   </div>
                   <div className="org-license-actions">
                     {isDirty && (
@@ -829,8 +1026,68 @@ export default function UsersAdminPage({ onBack }) {
                         Annulla
                       </button>
                     )}
+                    <button
+                      type="button"
+                      className="btn btn-secondary btn-sm"
+                      onClick={() =>
+                        setShowInviteAdminForm((prev) => ({ ...prev, [ao.id]: !prev[ao.id] }))
+                      }
+                    >
+                      {showInviteAdminForm[ao.id] ? "Chiudi" : "+ Invita admin"}
+                    </button>
                     {msg && <span className="org-license-msg">{msg}</span>}
                   </div>
+
+                  {showInviteAdminForm[ao.id] && (
+                    <div className="user-create-form invite-admin-form">
+                      <p className="form-hint">
+                        Invia un invito via email (nessuna password provvisoria): il destinatario
+                        imposta la propria password dal link ricevuto.
+                      </p>
+                      <div className="form-row">
+                        <label htmlFor={`invite-admin-name-${ao.id}`}>Nome e cognome</label>
+                        <input
+                          id={`invite-admin-name-${ao.id}`}
+                          type="text"
+                          value={inviteAdminForm[ao.id]?.full_name || ""}
+                          onChange={(e) =>
+                            setInviteAdminForm((prev) => ({
+                              ...prev,
+                              [ao.id]: { ...prev[ao.id], full_name: e.target.value },
+                            }))
+                          }
+                        />
+                      </div>
+                      <div className="form-row">
+                        <label htmlFor={`invite-admin-email-${ao.id}`}>
+                          Email (vuoto = usa &quot;{ao.email}&quot;)
+                        </label>
+                        <input
+                          id={`invite-admin-email-${ao.id}`}
+                          type="email"
+                          placeholder={ao.email || ""}
+                          value={inviteAdminForm[ao.id]?.email || ""}
+                          onChange={(e) =>
+                            setInviteAdminForm((prev) => ({
+                              ...prev,
+                              [ao.id]: { ...prev[ao.id], email: e.target.value },
+                            }))
+                          }
+                        />
+                      </div>
+                      <button
+                        type="button"
+                        className="btn btn-primary btn-sm"
+                        disabled={inviteAdminSubmitting === ao.id}
+                        onClick={() => submitInviteAdmin(ao)}
+                      >
+                        {inviteAdminSubmitting === ao.id ? "Invio…" : "Invia invito"}
+                      </button>
+                    </div>
+                  )}
+                  {inviteAdminMsg[ao.id] && (
+                    <p className="org-license-msg">{inviteAdminMsg[ao.id]}</p>
+                  )}
                 </div>
               </details>
             );
@@ -922,9 +1179,12 @@ export default function UsersAdminPage({ onBack }) {
                       ) : (
                         <>
                           <option value="auditor">Auditor</option>
-                          {(elevatedAdmin ||
-                            u.role === "admin" ||
-                            u.role === "superadmin") && (
+                          {/* "Admin Studio" selezionabile per chi lo è già (demozione da
+                              qui) o dal superadmin (unico modo di RI-promuovere un utente
+                              demozionato in precedenza — "Licenze moduli per studio" →
+                              "+ Invita admin" crea sempre un utente nuovo, non promuove un
+                              esistente). Un admin regolare non può promuovere nessuno da qui. */}
+                          {(u.role === "admin" || u.role === "superadmin" || isSuperadmin) && (
                             <option value="admin">Admin Studio</option>
                           )}
                           <option value="viewer">Viewer</option>

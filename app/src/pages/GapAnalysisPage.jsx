@@ -2,9 +2,9 @@
  * GapAnalysisPage — Gap analysis MVP (HK-8)
  * Visualizza la copertura documentale per clausole normative di un'azienda.
  */
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState } from 'react';
 import apiService from '../services/apiService';
-import { useAuth } from '../contexts/AuthContext';
+import { useCompanyScope } from '../contexts/CompanyScopeContext';
 import AiDisclaimer from '../components/AiDisclaimer';
 import { Link } from '../contexts/RouterContext';
 import { buildDocumentRegistryPath } from '../utils/documentRegistryUrl';
@@ -20,28 +20,17 @@ const COVERAGE_LABEL = { covered: 'Coperta', partial: 'Parziale', missing: 'Manc
 const COVERAGE_CLASS = { covered: 'gap-covered', partial: 'gap-partial', missing: 'gap-missing' };
 
 export default function GapAnalysisPage() {
-  const { user } = useAuth();
-  const [companies, setCompanies] = useState([]);
-  const [companyId, setCompanyId] = useState('');
+  const { companyId, scopeCompanyName, isStudioWide } = useCompanyScope();
   const [standardCode, setStandardCode] = useState('ISO_9001_2015');
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState(null);
   const [error, setError] = useState(null);
 
-  const loadCompanies = useCallback(async () => {
-    try {
-      const params = user?.auditor_org_id ? { auditor_org_id: user.auditor_org_id } : {};
-      const res = await apiService.getCompanies(params);
-      setCompanies(Array.isArray(res) ? res : res?.data || []);
-    } catch {
-      setCompanies([]);
-    }
-  }, [user?.auditor_org_id]);
-
-  useEffect(() => { loadCompanies(); }, [loadCompanies]);
-
   async function handleRun() {
-    if (!companyId) { setError('Seleziona un\u2019azienda.'); return; }
+    if (!companyId) {
+      setError("Seleziona un'azienda nell'Ambito in alto.");
+      return;
+    }
     setLoading(true);
     setError(null);
     setResult(null);
@@ -80,18 +69,12 @@ export default function GapAnalysisPage() {
         </div>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem', minWidth: 220 }}>
-          <label htmlFor="gap-company" style={{ fontSize: '0.85rem', fontWeight: 600 }}>Azienda</label>
-          <select
-            id="gap-company"
-            value={companyId}
-            onChange={(e) => setCompanyId(e.target.value)}
-            style={{ padding: '0.45rem 0.7rem', borderRadius: 4, border: '1px solid #b0bec5' }}
-          >
-            <option value="">- Seleziona -</option>
-            {companies.map((c) => (
-              <option key={c.id} value={String(c.id)}>{c.name || `ID ${c.id}`}</option>
-            ))}
-          </select>
+          <span style={{ fontSize: '0.85rem', fontWeight: 600 }}>Azienda</span>
+          <p style={{ margin: 0, fontSize: '0.9rem' }}>
+            {isStudioWide
+              ? "Seleziona un'azienda nell'Ambito in alto."
+              : scopeCompanyName}
+          </p>
         </div>
 
         <div style={{ display: 'flex', alignItems: 'flex-end' }}>

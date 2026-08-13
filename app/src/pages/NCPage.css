@@ -97,6 +97,7 @@
 .nc-stat-prog.nc-stat-active  { border-color: #d69e2e; background: #fffff0; box-shadow: 0 0 0 2px rgba(214,158,46,.2); }
 .nc-stat-over.nc-stat-active  { border-color: #c05621; background: #fffaf0; box-shadow: 0 0 0 2px rgba(192,86,33,.2); }
 .nc-stat-tot.nc-stat-active   { border-color: #4a5568; background: #f7fafc; box-shadow: 0 0 0 2px rgba(74,85,104,.2); }
+.nc-stat-closed.nc-stat-active { border-color: #4a5568; background: #f7fafc; box-shadow: 0 0 0 2px rgba(74,85,104,.2); }
 
 .nc-stat-num { display: block; font-size: 1.75rem; font-weight: 700; line-height: 1; }
 .nc-stat-label { font-size: 0.75rem; color: #718096; text-transform: uppercase; letter-spacing: .05em; }
@@ -105,6 +106,7 @@
 .nc-stat-over  .nc-stat-num { color: #c05621; }
 .nc-stat-soon  .nc-stat-num { color: #d69e2e; }
 .nc-stat-tot   .nc-stat-num { color: #2d3748; }
+.nc-stat-closed .nc-stat-num { color: #4a5568; }
 .nc-stat-soon.nc-stat-active { border-color: #d69e2e; background: #fffff0; box-shadow: 0 0 0 2px rgba(214,158,46,.2); }
 
 /* Breakdown per categoria */

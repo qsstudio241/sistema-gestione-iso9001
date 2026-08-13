@@ -36,11 +36,6 @@ async function userIsAdminRole(userId, organizationId) {
     return ADMIN_ROLES.includes(role);
 }
 
-/** Superadmin o admin possono promuovere altri admin org. */
-function isElevatedAdmin(reqUser) {
-    return reqUser.role === 'admin' || reqUser.role === 'superadmin';
-}
-
 /**
  * GET /api/v1/admin/users
  * Lista utenti dell'organizzazione (solo admin)
@@ -150,10 +145,16 @@ async function createUser(req, res) {
                 code: 'VALIDATION_ERROR',
             });
         }
-        if (normalizedRole === 'admin' && !isElevatedAdmin(req.user)) {
+        // Il ruolo 'admin' non si crea più da qui (singola fonte di verità, richiesta
+        // committente 12/08/2026): solo da auditorOrg.controller.js::inviteFirstStudioAdmin
+        // ("Licenze moduli per studio" → "+ Invita admin"), a prescindere dal ruolo
+        // dell'attore — prima bastava essere un admin qualsiasi (isElevatedAdmin non
+        // controllava affatto auditor_org_id, nonostante il testo mostrato in UI
+        // suggerisse il contrario).
+        if (normalizedRole === 'admin') {
             return res.status(403).json({
                 success: false,
-                error: 'Solo l\'amministratore principale (senza studio associato) può creare utenti con ruolo admin',
+                error: 'Il ruolo Admin si crea solo dalla sezione "Licenze moduli per studio" (pulsante "+ Invita admin"), non da qui',
                 code: 'AUTH_FORBIDDEN',
             });
         }
@@ -174,14 +175,24 @@ async function createUser(req, res) {
             }
         }
 
+        // Univocità GLOBALE (non scoped a organization_id): il vincolo reale nel
+        // database (UQ_users_email) è un'email = un account su tutta la
+        // piattaforma, non per organizzazione. Un pre-check scoped alla sola
+        // organizzazione dell'attore poteva non trovare nulla per un'email già
+        // usata in un ALTRO tenant, facendo poi fallire l'INSERT con un errore SQL
+        // grezzo mostrato come 500 generico (bug reale riprodotto su un endpoint
+        // gemello, auditorOrg.controller.js::inviteFirstStudioAdmin, 11/08/2026).
         const existing = await query(
-            `SELECT user_id FROM users WHERE email = @email AND organization_id = @organization_id`,
-            { email: String(email).trim(), organization_id }
+            `SELECT user_id, organization_id FROM users WHERE email = @email`,
+            { email: String(email).trim() }
         );
         if (existing.recordset.length > 0) {
+            const sameOrg = existing.recordset[0].organization_id === organization_id;
             return res.status(409).json({
                 success: false,
-                error: 'Email già registrata in questa organizzazione',
+                error: sameOrg
+                    ? 'Email già registrata in questa organizzazione'
+                    : 'Questa email è già associata a un utente esistente in un\'altra organizzazione. Le email sono univoche su tutta la piattaforma: usa un indirizzo diverso.',
                 code: 'EMAIL_DUPLICATE',
             });
         }
@@ -193,20 +204,38 @@ async function createUser(req, res) {
             ? await userInviteService.generatePlaceholderPasswordHash()
             : await bcrypt.hash(String(password), 10);
 
-        const result = await query(
-            `INSERT INTO users (email, password_hash, full_name, role, organization_id, auditor_org_id, is_active, pending_activation)
-             VALUES (@email, @password_hash, @full_name, @role, @organization_id, @auditor_org_id, 1, @pending_activation);
-             SELECT SCOPE_IDENTITY() AS user_id;`,
-            {
-                email: String(email).trim(),
-                password_hash,
-                full_name: String(full_name).trim(),
-                role: normalizedRole,
-                organization_id,
-                auditor_org_id: aoId,
-                pending_activation: isInviteMode ? 1 : 0,
+        let result;
+        try {
+            result = await query(
+                `INSERT INTO users (email, password_hash, full_name, role, organization_id, auditor_org_id, is_active, pending_activation)
+                 VALUES (@email, @password_hash, @full_name, @role, @organization_id, @auditor_org_id, 1, @pending_activation);
+                 SELECT SCOPE_IDENTITY() AS user_id;`,
+                {
+                    email: String(email).trim(),
+                    password_hash,
+                    full_name: String(full_name).trim(),
+                    role: normalizedRole,
+                    organization_id,
+                    auditor_org_id: aoId,
+                    pending_activation: isInviteMode ? 1 : 0,
+                }
+            );
+        } catch (insertErr) {
+            // Rete di sicurezza per race condition sul pre-check email (stesso principio
+            // difensivo di auditorOrg.controller.js) — scoped al SOLO INSERT utente, non
+            // all'intera funzione: passaggi successivi (company_access, document tree)
+            // hanno vincoli UNIQUE propri e non vanno mai mappati a EMAIL_DUPLICATE
+            // (rilievo Bugbot, PR #390).
+            if (insertErr.number === 2627 || insertErr.number === 2601 || /UNIQUE|duplicate/i.test(insertErr.message || '')) {
+                logger.warn('Admin createUser: violazione univocità email a livello DB (race condition sul pre-check)', { error: insertErr.message });
+                return res.status(409).json({
+                    success: false,
+                    error: 'Questa email è già associata a un utente esistente. Le email sono univoche su tutta la piattaforma: usa un indirizzo diverso.',
+                    code: 'EMAIL_DUPLICATE',
+                });
             }
-        );
+            throw insertErr;
+        }
 
         const newId = result.recordset[0]?.user_id;
         logger.info('Admin create user', { new_user_id: newId, organization_id, actorId, role: normalizedRole, isInviteMode });
@@ -389,10 +418,20 @@ async function updateUser(req, res) {
                     code: 'VALIDATION_ERROR',
                 });
             }
-            if (normalizedRole === 'admin' && !isElevatedAdmin(req.user)) {
+            // Promozione a 'admin' (da auditor/viewer) non consentita a un admin
+            // qualsiasi da qui (singola fonte di verità): solo "Licenze moduli per
+            // studio" → "+ Invita admin", oppure il superadmin da questo stesso
+            // endpoint — serve altrimenti come unico modo per RI-promuovere un
+            // utente demozionato in precedenza, dato che inviteFirstStudioAdmin crea
+            // sempre un utente NUOVO (fallirebbe con EMAIL_DUPLICATE su un'email già
+            // esistente) — rilievo Bugbot, PR #392.
+            // - superadmin → admin resta sempre permesso perché è una DEMOZIONE
+            //   (riduzione di privilegio), non una promozione — rilievo Bugbot, PR #392.
+            const isPromotionToAdmin = normalizedRole === 'admin' && !['admin', 'superadmin'].includes(current.role);
+            if (isPromotionToAdmin && !isSuperadmin) {
                 return res.status(403).json({
                     success: false,
-                    error: 'Solo l\'amministratore principale può assegnare il ruolo admin',
+                    error: 'Il ruolo Admin si assegna solo dalla sezione "Licenze moduli per studio" (pulsante "+ Invita admin"), non da qui',
                     code: 'AUTH_FORBIDDEN',
                 });
             }

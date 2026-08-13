@@ -548,6 +548,65 @@ class ApiService {
         return this.put(`/companies/${id}`, data);
     }
 
+    async getCompanyProfile(id, params = {}) {
+        const query = new URLSearchParams(params).toString();
+        return this.get(`/companies/${id}/profile${query ? '?' + query : ''}`);
+    }
+
+    async updateCompanyProfile(id, data, params = {}) {
+        const query = new URLSearchParams(params).toString();
+        return this.put(`/companies/${id}/profile${query ? '?' + query : ''}`, data);
+    }
+
+    async detectCompanyProfileImport(id, file, params = {}) {
+        const formData = new FormData();
+        formData.append('file', file);
+        const query = new URLSearchParams(params).toString();
+        const token = this.getToken();
+        const headers = token ? { Authorization: `Bearer ${token}` } : {};
+        const response = await fetch(
+            `${this.baseUrl}/companies/${id}/profile/detect-import${query ? '?' + query : ''}`,
+            { method: 'POST', headers, body: formData }
+        );
+        if (!response.ok) {
+            const errBody = await response.json().catch(() => ({ error: 'Errore analisi Excel' }));
+            const err = new Error(errBody.error || `HTTP ${response.status}`);
+            err.status = response.status;
+            throw err;
+        }
+        return response.json();
+    }
+
+    async importCompanyProfile(id, data, params = {}) {
+        const query = new URLSearchParams(params).toString();
+        return this.post(`/companies/${id}/profile/import${query ? '?' + query : ''}`, data);
+    }
+
+    async downloadCompanyProfileTemplate() {
+        const response = await fetch(`${this.baseUrl}/companies/profile/import-template`, {
+            method: 'GET',
+            headers: this.getHeaders(true),
+        });
+        if (!response.ok) {
+            const errBody = await response.json().catch(() => ({ error: 'Errore download modello' }));
+            const err = new Error(errBody.error || `HTTP ${response.status}`);
+            err.status = response.status;
+            throw err;
+        }
+        const blob = await response.blob();
+        const url = URL.createObjectURL(blob);
+        try {
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = 'modello_profilo_azienda.xlsx';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        } finally {
+            URL.revokeObjectURL(url);
+        }
+    }
+
     async deleteCompany(id) {
         return this.delete(`/companies/${id}`);
     }
@@ -680,6 +739,16 @@ class ApiService {
 
     async getAuditorOrg(id) {
         return this.get(`/auditor-orgs/${id}`);
+    }
+
+    /** Superadmin: crea un nuovo studio (nuova coppia organizations + auditor_orgs) */
+    async createAuditorOrg(payload) {
+        return this.post('/auditor-orgs', payload);
+    }
+
+    /** Superadmin: invita un admin (invito via email, nessuna password provvisoria) per uno studio */
+    async inviteStudioAdmin(auditorOrgId, payload) {
+        return this.post(`/auditor-orgs/${auditorOrgId}/invite-admin`, payload);
     }
 
     /**
@@ -1843,7 +1912,7 @@ class ApiService {
     }
 
     // ─── Risks (Sprint 6) ────────────────────────────────────────────────────
-    async getRisksStats()           { return this.get('/risks/stats'); }
+    async getRisksStats(params = {}) { const qs = new URLSearchParams(params).toString(); return this.get(`/risks/stats${qs ? '?' + qs : ''}`); }
     async getRisks(params = {})     { const qs = new URLSearchParams(params).toString(); return this.get(`/risks${qs ? '?' + qs : ''}`); }
     async getRisk(id)               { return this.get(`/risks/${id}`); }
     async createRisk(data)          { return this.post('/risks', data); }
@@ -1873,7 +1942,7 @@ class ApiService {
     async deleteInterestedParty(id)         { return this.delete(`/interested-parties/${id}`); }
 
     // ─── Complaints (Sprint 7) ───────────────────────────────────────────────
-    async getComplaintsStats()      { return this.get('/complaints/stats'); }
+    async getComplaintsStats(params = {}) { const qs = new URLSearchParams(params).toString(); return this.get(`/complaints/stats${qs ? '?' + qs : ''}`); }
     async getComplaints(params = {}){ const qs = new URLSearchParams(params).toString(); return this.get(`/complaints${qs ? '?' + qs : ''}`); }
     async getComplaint(id)          { return this.get(`/complaints/${id}`); }
     async createComplaint(data)     { return this.post('/complaints', data); }

@@ -6,16 +6,13 @@
 import React, { useState, useEffect, useCallback, useMemo } from "react";
 import apiService from "../services/apiService";
 import { useAuth } from "../contexts/AuthContext";
+import { useCompanyScope } from "../contexts/CompanyScopeContext";
 import { formatDate } from "../utils/dateHelpers";
 import StatusBadge from "../components/StatusBadge";
 import PencilIcon from "../components/icons/PencilIcon";
 import TrashIcon from "../components/icons/TrashIcon";
 import { getWelderQualificationWarning } from "../utils/welderQualificationExpiryWarnings";
 import AiDisclaimer from "../components/AiDisclaimer";
-import {
-  resolveInitialProjectsCompanyScope,
-  persistProjectsCompanyScope,
-} from "../utils/projectsCompanyScope";
 import "./ProjectsPage.css";
 
 const AI_COVERAGE_LABELS = {
@@ -573,6 +570,7 @@ function CoverageModal({ projectId, projectCode, onClose }) {
 
 function ProjectsPage() {
   const { user } = useAuth();
+  const { companyId: companyScope, companies, scopeCompanyName } = useCompanyScope();
   const [projects, setProjects] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -589,43 +587,12 @@ function ProjectsPage() {
   const [wpsList, setWpsList] = useState([]);
   const [qualifications, setQualifications] = useState([]);
 
-  // Ambito azienda (pattern condiviso con Qualifiche, SAL, Riesame Direzione):
-  // determina quali controparti dell'anagrafica aziende sono proposte come "Cliente".
-  const [companies, setCompanies] = useState([]);
-  const [companyScope, setCompanyScope] = useState(() => resolveInitialProjectsCompanyScope());
-
   const setFilter = useCallback((key, val) => {
     setFiltersState((f) => ({ ...f, [key]: val }));
     setPage(1);
   }, []);
 
-  useEffect(() => {
-    apiService.getCompanies?.().then((res) => {
-      const list = res?.data || res?.companies || res || [];
-      setCompanies(Array.isArray(list) ? list : []);
-    }).catch(() => {});
-  }, []);
-
-  useEffect(() => {
-    const access = user?.company_access;
-    if (Array.isArray(access) && access.length === 1 && !companyScope) {
-      const onlyId = String(access[0].company_id);
-      setCompanyScope(onlyId);
-      persistProjectsCompanyScope(onlyId);
-    }
-  }, [user, companyScope]);
-
-  const scopeCompanyName = useMemo(() => {
-    if (!companyScope) return "Tutto lo studio";
-    const match = companies.find((c) => String(c.id) === String(companyScope));
-    return match?.name || `Azienda #${companyScope}`;
-  }, [companyScope, companies]);
-
-  const handleCompanyScopeChange = useCallback((value) => {
-    setCompanyScope(value);
-    persistProjectsCompanyScope(value);
-    setPage(1);
-  }, []);
+  useEffect(() => { setPage(1); }, [companyScope]);
 
   const loadData = useCallback(async () => {
     setLoading(true);
@@ -702,22 +669,6 @@ function ProjectsPage() {
           <p className="pj-subtitle">Commesse di saldatura  -  ISO 3834</p>
         </div>
         <div className="pj-header-actions">
-          {companies.length > 0 && (
-            <label className="pj-scope-label">
-              Ambito:
-              <select
-                className="pj-select"
-                value={companyScope}
-                onChange={(e) => handleCompanyScopeChange(e.target.value)}
-                aria-label="Ambito commesse per azienda"
-              >
-                <option value="">{"Tutto lo studio"}</option>
-                {companies.map((c) => (
-                  <option key={c.id} value={c.id}>{c.name}</option>
-                ))}
-              </select>
-            </label>
-          )}
           <button className="pj-btn-new" onClick={handleNew}>+ Nuova commessa</button>
         </div>
       </div>

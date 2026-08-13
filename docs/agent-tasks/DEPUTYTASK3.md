@@ -1,11 +1,10 @@
-# DEPUTYTASK3 — Registro obblighi legali SICUREZZA (D.Lgs. 81/08) — contenuto P0
+# DEPUTYTASK3 — Shell dialog di revisione ingest: consolidare il guscio duplicato
 
-**Stato:** CHIUSO — TEST OK (integrato in PR #317; template LEG_SICUREZZA_81, 29 capitoli)
-**Nota N5:** revisione umana contenuto resta aperta (ADR-019 D6) — non bloccante per chiusura brief tecnico.
-**Priorità:** **P0** — deliverable principale richiesto dal committente in questa iniziativa
+**Stato:** CHIUSO — TEST OK (10/08/2026, PR [#377](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/377) — Bugbot: nessun rilievo critico, pronta per il merge umano)
+**Priorità:** P2 — debito tecnico, nessun bug funzionale, basso rischio
 **Branch base:** `main`
-**Creato da:** Lead 28/07/2026
-**Spec:** [ADR-019](../adr/ADR-019-registro-obblighi-legali-ambiente-sicurezza.md) — leggere §1, §2 (D1, D2), §6 (D6, vincolante) prima di iniziare
+**Creato da:** Lead 10/08/2026
+**Spec:** nessun ADR dedicato — contesto completo in [`docs/PROJECT_ROADMAP.md` § Backlog parcheggiato](../PROJECT_ROADMAP.md#backlog-parcheggiato-task-futuri--fonte-unica) (riga "Shell dialog di revisione ingest") e [`docs/GUIDA_CONSOLIDATA.md` § Lezioni apprese](../GUIDA_CONSOLIDATA.md#lezioni-apprese-consolidate-fonte-unica)
 
 > **Allineamento Git (autonomo)**: prima di leggere questo brief eseguire `git fetch origin main` e `git pull origin main`. **Non** chiedere al committente di farlo.
 
@@ -13,90 +12,44 @@
 
 ## Contesto (leggere prima)
 
-Questo slice **non dipende dal codice** di DEPUTYTASK1/2 per essere iniziato (è autoria di contenuto/dati), ma il template finale è **utilizzabile in audit reale** solo dopo che DEPUTYTASK1 (colonne DB) e DEPUTYTASK2 (rendering FE) sono mergiati. Lavorare in parallelo è corretto; il test end-to-end finale va fatto dopo l'integrazione.
+Il committente ha segnalato (10/08/2026) di ricordare una duplicazione tra il dialog di revisione ingest iniziale e quello della coda di rielaborazione. Verificato nel codice — la sostanza:
 
-Esiste già un modulo analogo per l'**ambiente** (D.Lgs. 152/06) da usare come riferimento di stile/struttura:
+- `app/src/components/IngestReviewDialog.jsx` e il dialog interno `ReprocessGroupDialog` (dentro `app/src/components/ReprocessQueueBanner.jsx`) **condividono già** `IngestSourcePreview`, `FieldInput` (importato da `IngestReviewDialog.jsx`) e l'hook `useIngestReviewSplit` — riuso reale, fatto in una sessione precedente (09/08/2026, vedi header di `ReprocessQueueBanner.jsx`).
+- Resta duplicato solo il **guscio visivo**: overlay fullscreen (`role="dialog"`, `aria-modal`), header con pulsante "Ingrandisci affiancato"/"Riduci", grid preview+resizer+contenuto, gestione Escape. CSS quasi clone: `.ingest-review__*` (`IngestReviewDialog.css`) vs `.reprocess-dialog__*` (`ReprocessQueueBanner.css`) — circa 60-80 righe di markup/CSS ripetute.
+- **Non è lo stesso componente riducibile a uno**: `IngestReviewDialog` gestisce un intero documento con logica di confidenza adattiva (readonly/editable, "Modifica"/"Annulla modifica") e azioni batch (Conferma tutto/Scarta); `ReprocessGroupDialog` gestisce N campi in rielaborazione sullo stesso documento con conferma/scarto **per campo**, via API staging diversa. Il dominio resta distinto — **non fondere i due flussi**.
+- **Nota di scala**: il pattern "ogni dialog reinventa il proprio overlay CSS" è sistemico su molti altri modal del progetto (`NcCreateModal.jsx`, `RisksPage.jsx`, `QualificationForm.jsx`, `DeadlineImportDialog.jsx`, …) — **questo slice NON affronta quel problema più ampio**, tocca solo il guscio dei due dialog ingest. Se in futuro si vuole un `Modal.jsx`/`Dialog.jsx` di base condiviso da tutto il progetto, serve una sessione dedicata separata (stima più ampia, non uno slice).
 
-| Ambiente (esistente, da copiare come pattern) | Sicurezza (da creare in questo slice) |
-|---|---|
-| `app/src/data/checklistTemplates.js` → `ISO_14001_LEGISLATIVO_TEMPLATE` (`standardCode: LEG_AMBIENTE_152`) | Nuovo export `ISO_45001_LEGISLATIVO_TEMPLATE` (`standardCode: LEG_SICUREZZA_81`) — **stesso file**, nuovo blocco |
-| `backend/src/data/legislativoAmbientaleTemplate.js` (`LEGISLATIVO_AMBIENTALE_TEMPLATE`, marker `[SGQ_TEMPLATE:LEG_AMBIENTE_152]`) | Nuovo file `backend/src/data/legislativoSicurezzaTemplate.js` (`LEGISLATIVO_SICUREZZA_TEMPLATE`, marker `[SGQ_TEMPLATE:LEG_SICUREZZA_81]`) |
-| `backend/scripts/buildLegislativoAmbientaleTemplate.js` (rigenera il file sopra da `checklistTemplates.js`) | Nuovo script `backend/scripts/buildLegislativoSicurezzaTemplate.js`, stesso pattern |
-| `customChecklist.service.js` → `findSeededLegislativoAmbientale` / `seedLegislativoAmbientaleChecklist` | Nuove funzioni gemelle `findSeededLegislativoSicurezza` / `seedLegislativoSicurezzaChecklist` (stesso file, stesso pattern — **copiare, non generalizzare con parametri in questo slice**: la generalizzazione è un refactor successivo, non bloccante) |
+## Obiettivo dello slice
 
-**Novità rispetto al pattern ambiente**: ogni **capitolo** diventa una **sezione** con `reference_text`/`linked_legislation` popolati (vedi ADR-019 §2, §5) e le **sotto-domande a/b/c** diventano **item** con `response_type: "legal_check"` (vedi DEPUTYTASK2 Slice A/B) — il template ambiente esistente resta a livello di solo-capitolo (granularità sotto-domanda per l'ambiente è **P2**, fuori da questo slice).
+Estrarre il guscio comune (overlay + header con expand + layout preview/resizer/contenuto + gestione Escape) in un componente condiviso, usato da **entrambi** `IngestReviewDialog.jsx` e `ReprocessQueueBanner.jsx`, senza cambiare il comportamento visibile né la logica di business di nessuno dei due.
 
-## Vincolo non negoziabile (ADR-019 D6)
+**Approccio consigliato** (non prescrittivo — il deputy può proporre un'alternativa se più pulita):
+1. Leggere per intero entrambi i file (`IngestReviewDialog.jsx`, `ReprocessQueueBanner.jsx`) e i rispettivi CSS, elencando riga per riga cosa è identico e cosa differisce (props necessarie: titolo, contenuto preview, contenuto centrale, footer/azioni — quelli restano specifici di ciascun dialog, passati come children/props).
+2. Creare `app/src/components/IngestDialogShell.jsx` (nome indicativo) che accetta: `title`, `onClose`, `previewSlot` (o props per `IngestSourcePreview`), `contentSlot`, `footerSlot`, e gestisce internamente overlay/expand/resizer/Escape (riusando `useIngestReviewSplit`).
+3. Un solo file CSS condiviso (es. `IngestDialogShell.css`) con le classi base (`.ingest-dialog-shell__*`), sostituendo `.ingest-review__*`/`.reprocess-dialog__*` dove sono puro guscio (le classi specifiche di contenuto restano nei rispettivi file).
+4. Riscrivere `IngestReviewDialog.jsx` e `ReprocessGroupDialog` (in `ReprocessQueueBanner.jsx`) per usare la shell condivisa, mantenendo intatta la logica di campi/conferma/scarto di ciascuno.
 
-- **Fonte**: i due documenti fomiti dal committente (`Matrice 14001-45001 Grantini [compilata].pdf`, pag. 28-46 — capitoli sicurezza; eventualmente `Matrice Certiquality [vuota].docx` se esteso a sicurezza in una revisione futura del template). **Se questi file non sono disponibili in questa sessione**, richiederli esplicitamente al committente prima di scrivere contenuto — non improvvisare.
-- **Non trascrivere**: nome/indirizzo del cliente terzo (SAVECO Italia Srl), "Evidenze Raccolte" specifiche di quell'azienda, "Risultanze" del loro audit. Trascrivere **solo**: titolo capitolo, elenco leggi/decreti/regolamenti (colonna "Rif. Legislativi principali"), sotto-domande a)/b)/c)… con il loro testo.
-- **Se una sotto-domanda o un riferimento normativo non è verificabile con certezza dalla fonte**, ometterlo e segnalarlo come nota nel PR/commit ("gap documentale: capitolo N, verificare fonte") — non inventare un articolo di legge plausibile.
+**Se durante l'analisi risulta che l'estrazione forza un'API scomoda o rischia di introdurre regressioni sottili** (es. il resizer o l'expand hanno comportamenti leggermente diversi tra i due dialog che non è ovvio unificare), fermarsi e chiudere con **FIX NON APPLICABILI**, motivando con dettaglio — non forzare un'astrazione se il costo supera il beneficio (debito basso, non c'è un bug da risolvere).
 
-## Elenco capitoli sicurezza attesi (scaffold — titoli verificati, struttura non client-specific)
+## DoD
 
-Questi titoli sono già stati estratti e verificati (non contengono dati del cliente terzo). Il **contenuto** di ciascuno (riferimenti di legge + sotto-domande) va invece preso dalla fonte come da vincolo sopra.
-
-```
-1.  DATORE DI LAVORO, DELEGA DI FUNZIONI, DIRIGENTI E PREPOSTI
-2.  SERVIZIO PREVENZIONE E PROTEZIONE (RSPP, ASPP) E RLS
-3.  LAVORATORI
-4.  MEDICO COMPETENTE E SORVEGLIANZA SANITARIA
-5.  FORMAZIONE, INFORMAZIONE E ADDESTRAMENTO DEI LAVORATORI
-6.  GESTIONE DEGLI INFORTUNI
-7.  RIUNIONE PERIODICA
-8.  VALUTAZIONE GENERALE DEI RISCHI LAVORATIVI
-9.  RISCHI AGENTI BIOLOGICI
-10. RISCHI MOVIMENTAZIONE MANUALE DEI CARICHI
-11. RISCHI TRAINO/SPINTA, TRASPORTO IN PIANO
-12. POSTURE INCONGRUE
-13. RISCHI MOVIMENTI RIPETITIVI CON SOVRACCARICO ARTI SUPERIORI
-14. ATTREZZATURE MUNITE DI VIDEOTERMINALI
-15. RISCHIO ATMOSFERE ESPLOSIVE
-16. RISCHIO ELETTRICO, ELETTROSTATICO, FULMINAZIONE
-17. RISCHIO STRESS LAVORO CORRELATO
-18. RISCHIO LAVORATRICI IN STATO DI GRAVIDANZA
-19. RISCHIO LAVORO NOTTURNO
-20. RISCHIO LUOGHI ELEVATI CON PERICOLO DI CADUTA
-21. LUOGHI DI LAVORO
-22. APPROVVIGIONAMENTO ACQUA CONSUMO UMANO
-23. MACCHINE / ATTREZZATURE DI LAVORO
-24. MEZZI DI SOLLEVAMENTO
-25. APPARECCHI A PRESSIONE
-26. CANTIERI TEMPORANEI E MOBILI
-27. DPI E RELATIVA GESTIONE
-28. AMBITI NORMATI DIVERSAMENTE (settori speciali: portuale, estrattivo, ferroviario, forestale, esplosivi, lavoro in sotterraneo, cassoni ad aria compressa, impianti telefonici — valutare se singolo capitolo "non applicabile" per la maggior parte delle aziende, o da omettere in v1 se nessun cliente attuale rientra in questi settori: **decisione di prodotto, chiedere al committente se dubbio**)
-```
-
-Non includere "GESTIONE DEI RILIEVI" come capitolo — è la sezione di chiusura/riepilogo del report Grantini, non un capitolo di merito (equivalente concettuale già gestito dal modulo NC/registro rilievi esistente — non duplicare).
-
-## Slice — Costruzione template + seed
-
-**File previsti:**
-
-1. `app/src/data/checklistTemplates.js` — nuovo export `ISO_45001_LEGISLATIVO_TEMPLATE` (`standardId: 3`, `standardCode: "LEG_SICUREZZA_81"`), sezioni = capitoli sopra, ciascuna con `referenceText` (nuovo campo sul modello sezione FE, stringa lunga) e `linkedLegislation` (stringa formato SAL, es. `"D.Lgs. 81/2008 art.18; art.19"` — solo se l'articolo è identificabile con certezza dalla fonte, altrimenti omettere il campo), items = sotto-domande con `responseType: "legal_check"`.
-2. `backend/src/data/legislativoSicurezzaTemplate.js` — generato (non scritto a mano) da:
-3. `backend/scripts/buildLegislativoSicurezzaTemplate.js` — copiare `buildLegislativoAmbientaleTemplate.js`, adattare marker e import.
-4. `backend/src/services/customChecklist.service.js` — aggiungere `LEG_SICUREZZA_TEMPLATE_MARKER`, `findSeededLegislativoSicurezza`, `seedLegislativoSicurezzaChecklist` (copia di `findSeededLegislativoAmbientale`/`seedLegislativoAmbientaleChecklist`, import di `LEGISLATIVO_SICUREZZA_TEMPLATE`, passando anche `reference_text`/`linked_legislation` a `createSection` — **richiede che DEPUTYTASK1 sia già mergiato**; se non lo è ancora, sviluppare fino al punto 3 e fermarsi, segnalando la dipendenza).
-5. Endpoint/route per seedare (stesso pattern di quello ambientale — verificare nome esatto endpoint esistente con `grep -rn "seedLegislativoAmbientale" backend/src/controllers backend/src/routes` prima di duplicare).
-
-**DoD:**
-- Jest: seed idempotente (secondo run non duplica), sezioni con `reference_text` popolato per almeno l'80% dei capitoli (il resto può essere gap documentale segnalato).
-- Vitest: nuovo template presente in `checklistTemplates.js`, struttura valida (ogni sezione ha `code` univoco, ogni item ha `code` univoco nella sezione).
-- Smoke manuale (computerUse) **dopo** che DEPUTYTASK1+2 sono mergiati: seedare il template su un'organizzazione di test, apriree un audit, verificare che compaia il blocco `reference_text` e che le sotto-domande rispondano con SI/NO/NA.
+- Nessuna regressione visiva o funzionale su entrambi i dialog (screenshot prima/dopo se possibile via `computerUse`, o quantomeno verifica manuale che espandi/riduci, resizer, conferma/scarto funzionino identici a prima).
+- Test esistenti che coprono `IngestReviewDialog`/`ReprocessQueueBanner` continuano a passare senza modifiche forzate al loro comportamento osservabile.
+- Diff CSS: eliminazione delle righe duplicate identificate, non semplice aggiunta di ulteriore codice sopra l'esistente.
 
 **Test L1 mirato:**
 ```bash
-cd app && NODE_ENV=test npx vitest run src/tests/customChecklistTemplates.test.js
-cd backend && npx jest customChecklist --silent
+cd app && NODE_ENV=test npx vitest run src/tests/reprocessQueueBanner.test.jsx src/tests/ingestReviewDialog.test.jsx src/tests/useIngestReviewSplit.test.js
+cd app && npm run build
 ```
 
 ---
 
 ## Verifica di chiusura (gate)
 
-Full Vitest + `npm run build` solo se questo è l'ultimo slice del gate "P0 completo" (dopo 1+2+3). Se DEPUTYTASK1/2 non sono ancora mergiati, chiudere questo slice con **TEST OK (parziale)** indicando esplicitamente cosa resta da integrare.
+Suite Vitest completa (`NODE_ENV=test npm run test:run`) + `npm run build` verdi prima di apire la PR. Nessuna migrazione, nessun backend coinvolto in questo slice.
 
-Chiudere con **TEST OK** o **FIX NON APPLICABILI** (es. "fonte pag. 28-46 non disponibile in questa sessione — richiedere al committente").
+Chiudere con **TEST OK** o **FIX NON APPLICABILI** (motivare in dettaglio se l'estrazione non risulta pulita — vedi nota sopra).
 
 ---
 

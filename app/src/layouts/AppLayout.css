@@ -334,6 +334,38 @@
   font-variant-numeric: tabular-nums;
 }
 
+.layout-scope {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.layout-scope-label {
+  font-weight: 600;
+  color: var(--color-primary);
+  white-space: nowrap;
+}
+
+.layout-scope-select {
+  min-width: 160px;
+  max-width: 240px;
+  padding: 4px 8px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  background: var(--color-surface);
+  color: var(--color-text);
+  font-size: 0.82rem;
+}
+
+.layout-scope-locked {
+  font-weight: 600;
+  color: var(--color-text);
+  padding: 4px 8px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+}
+
 @media (max-width: 640px) {
   .layout-org-banner-vat {
     margin-left: 0;

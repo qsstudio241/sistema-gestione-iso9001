@@ -1,7 +1,6 @@
 /**
- * Ambito azienda condiviso nel modulo Commesse (ISO 3834).
- * Persistenza in localStorage — pattern identico a salCompanyScope
- * e qualificationsCompanyScope.
+ * DEPRECATED: usare appCompanyScope.js + CompanyScopeContext.
+ * Tenuto per i test L1 storici del modulo; le pagine non lo chiamano piu'.
  */
 
 export const PROJECTS_COMPANY_SCOPE_KEY = 'sgq-projects-company-scope';

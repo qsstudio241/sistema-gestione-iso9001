@@ -170,14 +170,14 @@ describe('qualifications.controller — listQualifications filtro situazione', (
     expect(sql).toContain('next_confirmation_due');
   });
 
-  it('situazione=sospesa filtra solo sullo stato', async () => {
+  it('situazione=non_attive filtra su status sospesa/revocata (bucket unico, coerente con getStats e con la colonna Stato che non le distingue)', async () => {
     const { pool, queryMock } = makeSharedPool();
     getPool.mockResolvedValue(pool);
-    const { req, res } = makeReqRes({ situazione: 'sospesa' });
+    const { req, res } = makeReqRes({ situazione: 'non_attive' });
 
     await listQualifications(req, res);
 
-    expect(selectSqlFrom(queryMock)).toContain("q.status = 'sospesa'");
+    expect(selectSqlFrom(queryMock)).toContain("q.status IN ('sospesa','revocata')");
   });
 
   it('un valore situazione non riconosciuto viene ignorato in modo difensivo (nessun 500)', async () => {

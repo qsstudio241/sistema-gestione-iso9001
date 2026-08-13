@@ -1,7 +1,18 @@
-# Libreria componenti UI SGQ — riferimento rapido
+# Libreria componenti UI SGQ â€” riferimento rapido
 
-> Fonte unica per il riuso componenti/classi CSS nel progetto.  
+> Fonte unica per il **riuso** componenti/classi CSS nel progetto.
+> **DNA visivo** (token, anti-pattern, 3 schermate da copiare prima di scrivere markup): [`app/src/design-system/README.md`](../../app/src/design-system/README.md).
+> Catalogo live (solo DEV): `/dev/ui-catalog`.
+>
 > Aggiornare qui quando si aggiunge un nuovo blocco riutilizzabile.
+
+## Schermate di riferimento (pagina intera)
+
+| Tipo | Copia da | Note |
+|------|----------|------|
+| Shell (sidebar, token `:root`) | `AppLayout.jsx` + `AppLayout.css` | Unica fonte colori/raggi/ombre |
+| Elenco + filtri KPI | `QualificationsPage.jsx` (anche `DeadlinesPage.jsx`) | Card cliccabili = unico filtro per dimensione; `SgqDataGrid` |
+| Scheda a fasi | Drawer NC (`NCPage.jsx`, `.nc-drawer-section`) | Ordine operativo, sezioni collassabili |
 
 ## Componenti collaudati
 
@@ -9,22 +20,26 @@
 |----------|-------------------|------|
 | Pulsanti esito C/NC/OSS/OM/NA/NV | `status-btn compliant/non-compliant/partial/om/not-applicable/not-verified` + `.active` | `ChecklistModule.css` |
 | Textarea note/evidenze | `className="notes-textarea"` | `ChecklistModule.css` |
-| **Domanda checklist (qualsiasi tipo)** | **`QuestionCard.jsx`** | Props: `question`, `onStatusChange`, `onNotesChange`, `attachmentManager`, `auditId`, `customItemId`, `statusOptions` (opzionale — sottoinsieme pulsanti, default 6 standard); slot `children` per contenuto extra. Usare per ISO, custom e qualsiasi futuro tipo di domanda. |
+| **Domanda checklist (qualsiasi tipo)** | **`QuestionCard.jsx`** | Props: `question`, `onStatusChange`, `onNotesChange`, `attachmentManager`, `auditId`, `customItemId`, `statusOptions` (opzionale â€” sottoinsieme pulsanti, default 6 standard); slot `children` per contenuto extra. Usare per ISO, custom e qualsiasi futuro tipo di domanda. |
 | Caricamento allegati | `AttachmentSection.jsx` + `useAttachmentManager` hook | Supporta `customItemId` (migration 047) |
 | Preview allegati server | `AttachmentPreview.jsx` | Supporta `questionId` (ISO) e `customItemId` (custom) |
-| Conteggio NC/OSS/OM (Sezione 11) | `calculateFindingsMetrics` + `calculateCustomFindingsMetrics` (`metricsCalculator.js`) via `AuditOutcomeSection.jsx` | — |
+| Badge di stato (documenti, NC, audit, â€¦) | `StatusBadge.jsx` | Non creare un badge CSS locale |
+| Card contenitore | `Card` da `SharedComponents.jsx` | Per KPI cliccabili: `.sq-stat` / `.dl-stat`, non `Card` |
+| Griglia dati | `SgqDataGrid.jsx` | Liste modulo (Qualifiche, Scadenzari, SAL, â€¦) |
+| Overlay dialog ingest / split-view | `IngestDialogShell.jsx` | Guscio unico (PR #377); CSS specifico nel dialog figlio |
+| Conteggio NC/OSS/OM (Sezione 11) | `calculateFindingsMetrics` + `calculateCustomFindingsMetrics` (`metricsCalculator.js`) via `AuditOutcomeSection.jsx` | â€” |
 | Stato salvato/errore form | `custom-checklist-form-error`, `custom-checklist-saving` | `CustomChecklistAuditView.css` |
 | Route protetta da licenza | `LicensedRoute` (wrapper `App.jsx`) | Prop `licenseKey` |
-| Selezione ambito azienda | Pattern Ambito (`CompanySelector`) | Usare pattern esistente nelle pagine AI |
-| Disclaimer AI | `AiDisclaimer.jsx` | Footer non invasivo; testo da ADR-010 §9 |
+| Selezione ambito azienda | `CompanyScopeSelect` in `AppLayout` (`CompanyScopeContext`) | Unico selettore in alto; le pagine **non** hanno un secondo Ambito |
+| Disclaimer AI | `AiDisclaimer.jsx` | Footer non invasivo; testo da ADR-010 Â§9 |
 | Card/tabella azione admin (dashboard superadmin) | `.billing-card`, `.billing-table`, `.btn-primary`/`.btn-secondary` (`BillingDashboardPage.css`) | Riusato per la sezione "Rielaborazioni disponibili" (28/07/2026); pattern per qualsiasi nuovo pannello cross-tenant nella dashboard superadmin |
 
 ## Motivazione
 
-Riuso garantisce consistenza visiva, comportamento già testato, scalabilità senza debito tecnico.  
+Riuso garantisce consistenza visiva, comportamento giÃ  testato, scalabilitÃ  senza debito tecnico.
 Ogni nuova implementazione parallela va considerata un difetto da correggere.
 
 ## Aggiornamento
 
-Aggiungere righe quando si crea un nuovo componente riutilizzabile durante una slice.  
-Non duplicare questa tabella in `.cursor/rules/` — linkare da lì.
+Aggiungere righe quando si crea un nuovo componente riutilizzabile durante una slice.
+Non duplicare questa tabella in `.cursor/rules/` â€” linkare da lÃ¬.

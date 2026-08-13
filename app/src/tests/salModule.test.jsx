@@ -6,7 +6,7 @@ import React from 'react';
 import { render, screen, fireEvent, waitFor, act } from '@testing-library/react';
 import { RouterProvider } from '../contexts/RouterContext';
 
-import { SAL_COMPANY_SCOPE_KEY } from '../utils/salCompanyScope';
+import { withCompanyScope } from './helpers/withCompanyScope';
 
 vi.mock('../contexts/AuthContext', () => ({
   useAuth: () => ({ user: { role: 'admin', company_access: [] } }),
@@ -67,7 +67,6 @@ function renderSal(ui) {
 }
 
 async function renderSalWithCompany(companyId = '1') {
-  window.localStorage.setItem(SAL_COMPANY_SCOPE_KEY, companyId);
   apiService.getCompanies.mockResolvedValue({
     data: [{ id: 1, name: 'Acme Srl' }],
   });
@@ -78,7 +77,7 @@ async function renderSalWithCompany(companyId = '1') {
   apiService.syncSalAuditHints.mockResolvedValue({ data: { updated: 2 } });
 
   await act(async () => {
-    renderSal(<SALModule />);
+    renderSal(withCompanyScope(<SALModule />, companyId));
   });
 }
 
@@ -123,7 +122,7 @@ describe('SALModule — griglia e cambio stato', () => {
       renderSal(<SALModule />);
     });
 
-    expect(screen.getByText(/Seleziona un'azienda nell'ambito/)).toBeInTheDocument();
+    expect(screen.getByText(/Seleziona un'azienda nell'Ambito in alto/)).toBeInTheDocument();
   });
 
   it('export Word chiama exportSalTrackerDocx con righe matrice', async () => {

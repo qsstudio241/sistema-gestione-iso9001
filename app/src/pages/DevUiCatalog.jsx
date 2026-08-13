@@ -46,7 +46,7 @@ export default function DevUiCatalog() {
     <div className="uic-page">
       <header className="uic-header">
         <h1>Catalogo UI  -  Design System SGQ</h1>
-        <p>Componenti disponibili con tutte le varianti e stati.</p>
+        <p>Componenti disponibili con varianti e stati. Prima di aggiungerne di nuovi: leggere app/src/design-system/README.md (DNA visivo e 3 schermate da copiare).</p>
       </header>
 
       <Tabs tabs={tabs} activeTab={activeTab} onChange={setActiveTab} />

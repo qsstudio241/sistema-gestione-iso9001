@@ -66,12 +66,19 @@
   box-shadow: 0 0 0 2px rgba(107, 114, 128, 0.18);
 }
 
+.dl-stat--amber.dl-stat-active {
+  border-color: #854d0e;
+  background: #fef9c3;
+  box-shadow: 0 0 0 2px rgba(133, 77, 14, 0.18);
+}
+
 .dl-stat-num { font-size: 1.6rem; font-weight: 700; color: #1f2937; line-height: 1; }
 .dl-stat-lbl { font-size: 0.72rem; color: #9ca3af; text-transform: uppercase; letter-spacing: 0.04em; }
 
 .dl-stat--red    .dl-stat-num { color: #dc2626; }
 .dl-stat--orange .dl-stat-num { color: #d97706; }
 .dl-stat--gray   .dl-stat-num { color: #9ca3af; }
+.dl-stat--amber  .dl-stat-num { color: #854d0e; }
 
 /* Semaforo */
 .dl-semaforo { font-size: 1rem; display: inline-block; }
@@ -123,6 +130,19 @@
 }
 .dl-complete-btn:hover:not(:disabled) { background: #f0fdf4; border-color: #86efac; color: #166534; }
 .dl-complete-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* Gruppo azioni riga (OK / Prendi in carico / Archivia) */
+.dl-actions-group {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+/* "Prendi in carico" — stessa palette della card dl-stat--amber */
+.dl-ack-btn:hover:not(:disabled) { background: #fef9c3; border-color: #eab308; color: #854d0e; }
+
+/* "Archivia" — stessa palette della card dl-stat--gray */
+.dl-dismiss-btn:hover:not(:disabled) { background: #f9fafb; border-color: #9ca3af; color: #4b5563; }
 
 /* Riga urgente */
 .sgq-datagrid-row.dl-row--urgent { background: #fff5f5; }

@@ -76,7 +76,14 @@ function mapEquipmentDeadlineRows(assets, daysWindow) {
                 description:         a.serial_number ? `S/N: ${a.serial_number}` : null,
                 due_date:            a.next_calibration_date,
                 days_until_due:      daysUntilDue,
-                status:              daysUntilDue < 0 ? 'expired' : 'active',
+                // 'active' sempre: l'urgenza si legge da days_until_due (stessa
+                // convenzione dei deadline_items reali), mai un quarto valore di
+                // status. Prima di questo fix 'expired' non combaciava con nessun
+                // valore noto al frontend (active/completed/dismissed/
+                // expired_acknowledged): una taratura scaduta restava esclusa sia
+                // dal filtro default "Attive" sia dalla card "Scadute" (che filtra
+                // su status==='active' && days_until_due<0) — invisibile.
+                status:              'active',
                 company_id:          a.company_id,
                 company_name:        a.company_name || 'Studio',
                 assigned_to_name:    null,
@@ -88,7 +95,7 @@ function mapEquipmentDeadlineRows(assets, daysWindow) {
 
 
 
-// ?? helpers ?
+// ── Helpers ──
 
 /**
  * Legge il file fisico corrente associato a un documento.
@@ -159,7 +166,7 @@ function parseCellDate(v) {
     return null;
 }
 
-// ?? S3: POST /documents/:id/detect-deadlines ?
+// ── S3: POST /documents/:id/detect-deadlines ──
 
 async function detectDeadlines(req, res) {
     try {
@@ -213,7 +220,7 @@ async function detectDeadlines(req, res) {
     }
 }
 
-// ?? S4a: POST /documents/:id/import-deadlines 
+// ── S4a: POST /documents/:id/import-deadlines ──
 
 async function importDeadlines(req, res) {
     try {
@@ -359,7 +366,7 @@ async function importDeadlines(req, res) {
     }
 }
 
-// ?? S4b: GET /deadline-items ??
+// ── S4b: GET /deadline-items ──
 
 async function listDeadlineItems(req, res) {
     try {
@@ -436,13 +443,16 @@ async function listDeadlineItems(req, res) {
         const merged = [...(r.recordset || []), ...qualRows, ...equipRows]
             .sort((a, b) => String(a.due_date).localeCompare(String(b.due_date)));
 
+        const totalWithVirtualRows = total + qualRows.length + equipRows.length;
         res.json({
             data: merged,
             pagination: {
-                total: total + qualRows.length + equipRows.length,
+                total: totalWithVirtualRows,
                 page: parseInt(page),
                 limit: parseInt(limit),
-                totalPages: Math.ceil((total + qualRows.length) / parseInt(limit)),
+                // Bug minore corretto in audit (10/08/2026): mancava equipRows.length
+                // qui, disallineato rispetto a "total" sopra che le include già.
+                totalPages: Math.ceil(totalWithVirtualRows / parseInt(limit)),
             },
         });
     } catch (err) {
@@ -451,7 +461,7 @@ async function listDeadlineItems(req, res) {
     }
 }
 
-// ?? GET /deadline-items/priority 
+// ── GET /deadline-items/priority ──
 
 async function getPriorityDeadlines(req, res) {
     try {
@@ -515,7 +525,9 @@ async function getPriorityDeadlines(req, res) {
     }
 }
 
-// ?? PATCH /deadline-items/:itemId ??
+// ── PATCH /deadline-items/:itemId ──
+
+const DEADLINE_ITEM_VALID_STATUSES = ['active', 'completed', 'dismissed', 'expired_acknowledged'];
 
 async function updateDeadlineItem(req, res) {
     try {
@@ -523,6 +535,12 @@ async function updateDeadlineItem(req, res) {
         const orgId  = req.user.organization_id;
         const itemId = parseInt(req.params.itemId);
         const { status, notes, assigned_to, assigned_email } = req.body;
+
+        if (status !== undefined && !DEADLINE_ITEM_VALID_STATUSES.includes(status)) {
+            return res.status(400).json({
+                error: `Stato non valido: "${status}". Valori ammessi: ${DEADLINE_ITEM_VALID_STATUSES.join(', ')}.`,
+            });
+        }
 
         const check = await pool.request()
             .input('id', itemId).input('orgId', orgId)
@@ -546,7 +564,7 @@ async function updateDeadlineItem(req, res) {
     }
 }
 
-// ?? POST /deadline-items/:itemId/complete 
+// ── POST /deadline-items/:itemId/complete ──
 
 async function completeDeadlineItem(req, res) {
     try {
@@ -574,7 +592,7 @@ async function completeDeadlineItem(req, res) {
     }
 }
 
-// ?? DELETE /deadline-items/:itemId ?
+// ── DELETE /deadline-items/:itemId ──
 
 async function deleteDeadlineItem(req, res) {
     try {
@@ -595,7 +613,7 @@ async function deleteDeadlineItem(req, res) {
     }
 }
 
-// ?? GET /documents/:id/deadline-config ??
+// ── GET /documents/:id/deadline-config ──
 
 async function getDeadlineConfig(req, res) {
     try {
@@ -627,4 +645,6 @@ module.exports = {
     completeDeadlineItem,
     deleteDeadlineItem,
     getDeadlineConfig,
+    // Esportata per test unitari (nessuna dipendenza da DB — funzione pura)
+    mapEquipmentDeadlineRows,
 };

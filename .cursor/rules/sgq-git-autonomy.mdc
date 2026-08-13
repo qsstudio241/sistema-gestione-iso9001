@@ -26,6 +26,10 @@ Lezione 07-08/08/2026 (sessione fix ingest WPQR/3834): lo stesso agente che scri
 
 Questo gate **non sostituisce** il livello di rischio: un task di livello Alto resta sempre bloccato, indipendentemente dall'esito Bugbot.
 
+**Logica normativa (ISO 3834/15614/9606 e simili):** L1 verde dello stesso deputy non basta. Bugbot obbligatorio; se il Bugbot non è lanciabile, non dichiarare la PR «pronta» — segnalarlo al committente. Lo stesso agente che ha scritto codice e test non è verificatore di se stesso.
+
+Dopo deploy su flussi critici (login, NC, Qualifiche, SAL, WPS/WPQR, ingest): smoke del **percorso toccato** — `backend/scripts/smoke-percorsi-critici.mjs` o gli script in `AGENTS.md` § Smoke. Non un plugin Playwright nuovo.
+
 ## Vincolo verificato (08/08/2026): il merge autonomo NON è un'azione disponibile per i Cloud Agent, per design Cursor
 
 Verificato con `cursor-guide` (documentazione ufficiale, non ipotesi): Cursor dichiara esplicitamente **"Agents open draft pull requests. Nothing merges until a person reviews the change."** ([`cursor.com/docs/cloud-agent/security`](https://cursor.com/docs/cloud-agent/security)). Non esiste un permesso/toggle Cursor per abilitare il merge autonomo dei Cloud Agent — non è un permesso mancante da configurare, è una scelta di sicurezza del prodotto. La GitHub App di Cursor richiede solo "Pull requests: create PR e commenti di review", non l'azione di merge; il permesso "Administration" è di sola lettura (serve solo a leggere le regole di branch protection per capire se una PR è mergeable). Anche con una diversa configurazione dei permessi, resta comunque bloccante la Branch Protection Rule su `main` ("Changes must be made through a pull request").
@@ -34,7 +38,7 @@ Verificato con `cursor-guide` (documentazione ufficiale, non ipotesi): Cursor di
 
 **Percorsi alternativi per ridurre l'attesa** (da valutare con il committente, non eseguibili di default):
 - GitHub **auto-merge nativo** sulla PR (il committente click "Enable auto-merge" una volta; GitHub completa da solo il merge quando CI è verde) — richiede comunque un'azione umana iniziale per PR, ma elimina il secondo click a fine CI.
-- Automation Cursor dedicata **"PR Routing & Approval"** (approva PR a basso rischio, non mergia) combinata con auto-merge nativo GitHub — infrastruttura da configurare separatamente, non disponibile in una sessione chat standard.
+- Automation Cursor dedicata **"PR Routing & Approval"** (approva PR a basso rischio, non mergia) combinata con auto-merge nativo GitHub — **verificata 13/08/2026** su documentazione ufficiale ([`cursor.com/docs/approval-agents`](https://cursor.com/docs/approval-agents)): esiste con questo nome esatto, legge segnali Bugbot + `APPROVAL_POLICY.md`/`.cursor/approval-policies/ROUTING.md` dal repo (regole custom Bugbot in [`.cursor/BUGBOT.md`](../BUGBOT.md)). Policy e guida di attivazione pronte in [`docs/how-to/SETUP_PR_ROUTING_APPROVAL.md`](../../docs/how-to/SETUP_PR_ROUTING_APPROVAL.md) — attivazione finale richiede Dashboard Cursor (solo il committente può farlo). **Nota piano Ultra individuale (confermato)**: Bugbot "runs only on PRs you author" — da verificare se le PR aperte da Cloud Agent contano come "tue"; Security Review Context non disponibile (richiede Team/Enterprise); scope automation solo Private.
 - Un Personal Access Token del committente inserito come Secret, usato esplicitamente su richiesta puntuale per bypassare la GitHub App di Cursor — **flusso non ufficialmente supportato da Cursor per il merge**, da usare solo se il committente lo richiede esplicitamente conoscendone il rischio.
 
 ## Commit + push diretto SENZA chiedere conferma (livello Basso)
@@ -67,7 +71,7 @@ Quando **tutti** i criteri sono veri:
 
 Il merge resta sempre un'azione del committente (vedi vincolo sopra) — l'obiettivo di questo protocollo è arrivarci senza altre soste intermedie:
 
-1. Verificare CI verde (`get_ci_status`).
+1. Verificare CI verde (`get_ci_status` = **SUCCESS** su tutti i check del job app). **Vietato** dire «pronta per il merge» dopo i soli test locali: in CI possono fallire flake che in locale non si vedono (13/08/2026, PR #401: `ncPage.filterCards` verde in locale, rosso su GitHub).
 2. Eseguire il gate Bugbot (vedi sopra).
 3. Aggiornare la PR con l'esito Bugbot nella descrizione (nessun rilievo critico → segnalarlo esplicitamente come "pronta per il merge"; rilievo non banale → NON proporre il merge, riportarlo al committente).
 4. Comunicare al committente che la PR è pronta, con link diretto — **senza tentare azioni di merge/auto-merge non richieste esplicitamente**.

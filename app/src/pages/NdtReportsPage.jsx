@@ -6,6 +6,7 @@
 
 import React, { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import apiService from "../services/apiService";
+import { useCompanyScope } from "../contexts/CompanyScopeContext";
 import { exportVtToWord } from "../utils/vtWordExport.js";
 import { formatDate } from "../utils/dateHelpers";
 import AutoTextarea from "../components/AutoTextarea.jsx";
@@ -870,16 +871,15 @@ function NdtReportForm({ report, companies, availableInstruments, onSave, onCanc
 
 // ── Componente principale ─────────────────────────────────────────────────────
 export default function NdtReportsPage() {
+    const { companyId: filterCompany, companies } = useCompanyScope();
     const [reports, setReports] = useState([]);
     const [stats, setStats] = useState(null);
-    const [companies, setCompanies] = useState([]);
     const [availableInstruments, setAvailableInstruments] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
 
     const [filterType, setFilterType] = useState("");
     const [filterStatus, setFilterStatus] = useState("");
-    const [filterCompany, setFilterCompany] = useState("");
     const [searchText, setSearchText] = useState("");
 
     const [view, setView] = useState("list"); // "list" | "form"
@@ -895,16 +895,13 @@ export default function NdtReportsPage() {
             if (filterCompany) params.company_id = filterCompany;
             if (searchText)    params.search = searchText;
 
-            const [listResp, statsResp, companiesResp] = await Promise.all([
+            const [listResp, statsResp] = await Promise.all([
                 apiService.getNdtReportList(params),
-                apiService.getNdtReportStats(),
-                apiService.getCompanies ? apiService.getCompanies() : Promise.resolve({ data: [] }),
+                apiService.getNdtReportStats(filterCompany ? { company_id: filterCompany } : {}),
             ]);
 
             setReports(listResp.data || []);
             setStats(statsResp.data || null);
-            setCompanies(companiesResp.data || []);
-            // Fornitori non caricati globalmente — si caricano nel form quando si seleziona il cliente
         } catch (err) {
             setError("Errore caricamento verbali CND");
         } finally {
@@ -995,10 +992,6 @@ export default function NdtReportsPage() {
                 <select value={filterStatus} onChange={e => setFilterStatus(e.target.value)}>
                     <option value="">Tutti gli stati</option>
                     {REPORT_STATUSES.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
-                </select>
-                <select value={filterCompany} onChange={e => setFilterCompany(e.target.value)}>
-                    <option value="">Tutte le aziende</option>
-                    {companies.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
                 </select>
             </div>
 

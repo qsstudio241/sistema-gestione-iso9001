@@ -12,6 +12,7 @@ const crypto = require('crypto');
 const companyController = require('../controllers/company.controller');
 const companyPersonnelController = require('../controllers/companyPersonnel.controller');
 const companyCounterpartiesController = require('../controllers/companyCounterparties.controller');
+const companyProfileController = require('../controllers/companyProfile.controller');
 const { authenticate } = require('../middleware/auth.middleware');
 
 // Multer per upload logo (solo immagini, max 2MB, storage temporaneo)
@@ -33,6 +34,17 @@ const logoFilter = (req, file, cb) => {
 };
 const uploadLogo = multer({ storage: logoStorage, fileFilter: logoFilter, limits: { fileSize: 2 * 1024 * 1024 } });
 
+const uploadProfileXlsx = multer({
+    storage: multer.memoryStorage(),
+    fileFilter: (req, file, cb) => {
+        const name = String(file.originalname || '');
+        const ok = /\.xlsx?$/i.test(name)
+            || /spreadsheet|excel/.test(String(file.mimetype || ''));
+        ok ? cb(null, true) : cb(new Error('Solo file Excel (.xlsx)'), false);
+    },
+    limits: { fileSize: 5 * 1024 * 1024 },
+});
+
 // Pubblica: il logo aziendale non è un dato sensibile e getLogo non usa req.user.
 // Accessibile senza token (utenti desktop con cookie httpOnly, link diretti, ecc.).
 router.get('/companies/:id/logo', companyController.getLogo);
@@ -43,6 +55,11 @@ router.use(authenticate);
 router.get('/personnel', companyPersonnelController.listPersonnelStudio);
 
 router.get('/companies', companyController.listCompanies);
+router.get('/companies/profile/import-template', companyProfileController.downloadImportTemplate);
+router.get('/companies/:id/profile', companyProfileController.getProfile);
+router.put('/companies/:id/profile', companyProfileController.putProfile);
+router.post('/companies/:id/profile/detect-import', uploadProfileXlsx.single('file'), companyProfileController.detectProfileImport);
+router.post('/companies/:id/profile/import', companyProfileController.importProfile);
 router.get('/companies/:id', companyController.getCompanyById);
 router.post('/companies', companyController.createCompany);
 router.put('/companies/:id', companyController.updateCompany);

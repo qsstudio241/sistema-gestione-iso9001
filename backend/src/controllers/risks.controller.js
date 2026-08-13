@@ -79,11 +79,16 @@ async function getRiskStats(req, res) {
     try {
         const pool       = await getPool();
         const orgId      = req.user.organization_id;
+        const { company_id } = req.query;
         const accessList = await ensureCompanyAccessLoaded(req.user);
         const companyFilter = companyAccessSqlFilter(accessList, 'r');
-        const whereExtra = companyFilter.clause ? ` AND ${companyFilter.clause}` : '';
+        let whereExtra = companyFilter.clause ? ` AND ${companyFilter.clause}` : '';
         const req2 = pool.request().input('orgId', orgId);
         Object.entries(companyFilter.params).forEach(([k, v]) => req2.input(k, v));
+        if (company_id) {
+            whereExtra += ' AND r.company_id = @scopeCompanyId';
+            req2.input('scopeCompanyId', parseInt(company_id, 10));
+        }
         const r = await req2.query(`
             SELECT
                 COUNT(*) AS total,

@@ -25,7 +25,7 @@ vi.mock("../contexts/RouterContext", () => ({
 
 vi.mock("../contexts/AuthContext", () => ({
   useAuth: () => ({
-    user: { role: "auditor", auditor_org_id: 1 },
+    user: { role: "auditor", auditor_org_id: 1, licensed_modules: ["audit"] },
   }),
 }));
 
@@ -46,6 +46,11 @@ vi.mock("../services/apiService", () => ({
     getCompanyLogoUrl: (id) => `https://api.test/companies/${id}/logo`,
     updateCompany: (...args) => mockUpdateCompany(...args),
     uploadCompanyLogo: vi.fn(),
+    getCompanyProfile: vi.fn(),
+    updateCompanyProfile: vi.fn(),
+    detectCompanyProfileImport: vi.fn(),
+    importCompanyProfile: vi.fn(),
+    downloadCompanyProfileTemplate: vi.fn(),
   },
 }));
 

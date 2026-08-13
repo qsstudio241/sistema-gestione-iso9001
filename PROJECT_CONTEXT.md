@@ -1,286 +1,86 @@
 # PROJECT CONTEXT — SGQ ISO 9001
 
-> Documento di orientamento rapido per l'AI agent. Da leggere all'inizio di ogni sessione.  
-> **Esperienza consolidata** (deploy, Word, sync): → [docs/GUIDA_CONSOLIDATA.md](docs/GUIDA_CONSOLIDATA.md)  
-> **Fasi di sviluppo, DoD e test di robustezza** (piramide test, smoke, licenze): → stessa guida, sezione **«Piano qualità: fasi di sviluppo e test di robustezza»**.  
-> **Come scrivere/aggiornare la doc** (chiarezza, fonte unica, review): → stessa guida, sezione **«Principi di documentazione»**.  
-> **Utenti, gerarchia e RBAC** (tenant, studio, scope API): → [docs/ARCHITETTURA_UTENTI_RBAC.md](docs/ARCHITETTURA_UTENTI_RBAC.md).  
-> **Scadenze documenti, alert email, tipologie doc** (3 livelli, tabelle DB, scheduler): → [docs/AGENT_ALERTS_AND_DOC_TYPES.md](docs/AGENT_ALERTS_AND_DOC_TYPES.md).  
-> **Open points trasversali** (logout vs bozze locali, mirror PC, coerenza cache menu audit): → [docs/PROJECT_ROADMAP.md](docs/PROJECT_ROADMAP.md) sezione *Open points e memoria trasversale* + [docs/adr/ADR-007-logout-offline-backup-e-mirror-cartella-pc.md](docs/adr/ADR-007-logout-offline-backup-e-mirror-cartella-pc.md).  
-> Dettagli tecnici: → [docs/README.md](docs/README.md) | [DATABASE](docs/reference/DATABASE.md) | [API](docs/reference/BACKEND_API.md) | [Deploy hub](docs/how-to/deploy.md) | [INDICE](docs/INDICE_DOCUMENTAZIONE.md) | [WebDAV spec](docs/specs/MINI_SPEC_OFFICE_ROUNDTRIP_WEBDAV.md)
+> Orientamento rapido per l'agente. **Non** è un inventario di tutti i file.
+> **Stato e priorità ORA**: [docs/PROJECT_ROADMAP.md § Stato attuale e priorità](docs/PROJECT_ROADMAP.md#stato-attuale-e-priorità-fonte-unica)
+> **Esperienza** (deploy, Word, sync): [docs/GUIDA_CONSOLIDATA.md](docs/GUIDA_CONSOLIDATA.md) — aprire **solo la sezione** del task.
+> **RBAC**: [docs/ARCHITETTURA_UTENTI_RBAC.md](docs/ARCHITETTURA_UTENTI_RBAC.md) · **Alert/tipi doc**: [docs/AGENT_ALERTS_AND_DOC_TYPES.md](docs/AGENT_ALERTS_AND_DOC_TYPES.md)
+> Dettaglio: [docs/README.md](docs/README.md) · [DB](docs/reference/DATABASE.md) · [API](docs/reference/BACKEND_API.md) · [Deploy](docs/how-to/deploy.md)
 
 ---
 
+## Harness (Cursor Lead / Deputy)
 
-## Harness agentico (workflow Cursor)
-
-Il progetto usa **Cursor** come IDE con modello Lead/Deputy ([ADR-015](docs/adr/ADR-015-cursor-lead-deputy-workflow.md)):
-- **Lead**: pianifica, decide architettura, prepara brief in `docs/agent-tasks/DEPUTYTASK.md`
-- **Deputy**: esegue task circoscritti, commit atomici, test L1, apre PR
-
-Regole operative: [`.cursor/rules/sgq-operating-memory.mdc`](.cursor/rules/sgq-operating-memory.mdc) | Metodo slice: [`.cursor/rules/sgq-workflow-method.mdc`](.cursor/rules/sgq-workflow-method.mdc) | Cloud/context: [`.cursor/rules/sgq-cloud-agent-env.mdc`](.cursor/rules/sgq-cloud-agent-env.mdc)
-
-**Ambiente Cloud Agent (repo):** [`.cursor/environment.json`](.cursor/environment.json) + [`AGENTS.md`](AGENTS.md) — install dipendenze all'avvio; policy context window (default per Deputy, 1M solo se Lead/audit ampio). Dettaglio in [GUIDA_CONSOLIDATA](docs/GUIDA_CONSOLIDATA.md#cloud-agent-cursor--ambiente-e-context-window).
-
-Architettura AI runtime: [ADR-010](docs/adr/ADR-010-ai-agentic-architecture.md) (NormBroker, RAG, licenze, audit trail)
+[ADR-015](docs/adr/ADR-015-cursor-lead-deputy-workflow.md): Lead pianifica (`DEPUTYTASK*.md`); Deputy esegue slice + test L1 + PR.
+Epic > 1 sessione: [`.cursor/skills/wayfinder-sgq/SKILL.md`](.cursor/skills/wayfinder-sgq/SKILL.md). Slice non chiusa: [`HANDOFF_TEMPLATE.md`](docs/agent-tasks/HANDOFF_TEMPLATE.md).
+AI runtime prodotto: [ADR-010](docs/adr/ADR-010-ai-agentic-architecture.md). UI: [`app/src/design-system/README.md`](app/src/design-system/README.md).
 
 ---
 
 ## Cos'è il progetto
 
-**Sistema Gestione Qualità ISO 9001** — PWA offline-first per la gestione degli audit interni ISO 9001:2015.  
-Sostituisce fogli Excel/Word con un sistema centralizzato, tracciabile e conforme ISO 9001:2015 (§7.5, §9.2, §10.2).
+PWA offline-first per audit e SGQ ISO 9001:2015 (PMI italiane, multi-tenant su `organization_id`). Standard attivi: 9001 / 14001 / 45001; saldatura ISO 3834 in produzione.
 
-- **Target**: PMI italiane con SGQ certificato
-- **Modello**: Multi-tenant SaaS — isolamento su `organization_id`
-- **Standard**: ISO 9001:2015 (attivo) → ISO 14001:2015 e ISO 45001:2018 (backlog)
+**Checkout locale:** preferire disco reale (`C:\Dev\ProgettoISO` se c'è). Evitare Google Drive streaming (letture tool vs git disallineate). Fonte Git: `origin/main`. Dettaglio percorsi in [GUIDA](docs/GUIDA_CONSOLIDATA.md).
 
-### Percorsi di lavoro locale (Windows) — evitare confusione tra drive
+---
 
-Su alcuni PC il repository è raggiungibile in più modi; **non** assumere che percorsi diversi siano automaticamente la stessa cartella o lo stesso stato Git.
+## Stack e produzione (minimo)
 
-| Percorso | Significato tipico |
+| Layer | Tecnologia |
 |---|---|
-| **`C:\Dev\ProgettoISO`** | **Checkout locale reale su disco C:** su questa macchina (verificato 25/07/2026) — repo git a tutti gli effetti, `node_modules` già installati, veloce per test/build. **Preferire sempre questo percorso** per lavoro agente su questo PC. |
-| **`C:\ProgettoISO`** | Su alcune macchine è una **junction** (reparse point) verso la cartella reale sotto **Google Drive** — es. `G:\Il mio Drive\Sistema Gestione ISO 9001`. **Non presente/non usato** su questa macchina: non assumerlo senza verifica (`Test-Path`). |
-| **`G:\Il mio Drive\Sistema Gestione ISO 9001`** (default workspace Cursor desktop) | Cartella su **Google Drive streaming** — stesso `origin`, ma soggetta a **letture inconsistenti tra tool diversi** (Read/Grep IDE vs `git`/PowerShell) subito dopo una scrittura, per la sincronizzazione asincrona del client Drive. **Non usare per sessioni di lavoro con test/build**: preferire `C:\Dev\ProgettoISO` se presente. |
-| **`...\OneDrive - ...\Sistema Gestione ISO 9001`** (o altre cartelle) | Possibile **secondo checkout**, copia o mirror: stesso nome ma **working tree separato**. Lo stato (`git log`, modifiche locali) può **divergere**. |
+| Frontend | React 18, Vite, PWA → Netlify da `main` |
+| Offline | IndexedDB; sync `server-wins` su campi critici ([ADR-008](docs/adr/ADR-008-event-sourcing-sync.md)) |
+| Backend | Node 20, Express; VPS `sistemi.fr-busato.it` porta 3000 → HTTPS 8443 |
+| DB | SQL Server `SGQ_ISO9001` |
+| Auth | JWT cookie httpOnly; mobile localStorage ([ADR-004](docs/adr/ADR-004-mobile-auth-localstorage.md)) |
+| HTTP | solo Axios `withCredentials` — vietato `fetch` diretto |
+| GitHub | `qsstudio241/sistema-gestione-iso9001` |
 
-**Fonte di verità** per il codice condiviso: il remoto GitHub **`origin`**, branch tipicamente **`main`** — non il nome letterale della cartella sotto `C:` o `G:`.
-
-**Regola operativa** (agent / sviluppatore): **prima di iniziare qualsiasi task**, verificare con l'utente o con `Test-Path` quale percorso locale è il checkout di lavoro reale su quel PC (può differire da quello aperto di default in Cursor). Nella cartella effettivamente scelta eseguire `git fetch` e `git status` / `git pull` prima di affermare di essere allineati a `main`. **Se si osservano letture di file incoerenti con l'output di `git diff`/`git show`** (es. contenuto "vecchio" nonostante un commit riuscito), sospettare subito un percorso su Google Drive streaming e passare a un checkout su disco locale reale.
-
----
-
-## Stack
-
-| Layer | Tecnologia | Note |
-|---|---|---|
-| **Frontend** | React 18, Vite 5.4.21, PWA | Deploy Netlify automatico da `main` |
-| **Offline** | IndexedDB | Audit e risposte cachati localmente |
-| **Backend** | Node.js 20, Express 4 | VPS Ubuntu, porta 3000 → HTTPS 8443 via Nginx |
-| **Database** | SQL Server (`mssql`) | `sistemi.fr-busato.it,11043` / `SGQ_ISO9001` |
-| **Auth** | JWT in cookie httpOnly (desktop) | `SameSite=None; Secure`, Axios `withCredentials` — mobile: localStorage ([ADR-004](docs/adr/ADR-004-mobile-auth-localstorage.md)) |
-| **Export** | `docxtemplater` + `pizzip` + OOXML injection | Template `.docx` editabile in Word |
-| **HTTP client** | Axios v1.7 con interceptor | Vietato `fetch` diretto |
+Deploy/SSH: [how-to/deploy.md](docs/how-to/deploy.md) + [ACCESSO_DEPLOY_AGENTS.md](docs/how-to/ACCESSO_DEPLOY_AGENTS.md). Backend sul VPS: `/var/www/sgq-backend` (copia, non clone). Restart: script `deploy-to-vps.sh` / `deploy-controllers-to-vps.ps1` + verifica PID.
 
 ---
 
-## Infrastruttura produzione
+## Bussola moduli
 
-| Risorsa | Dettaglio |
+> Indice telefonico, non albero del repo. **Aggiornare solo** se nasce/si rinomina/sposta un modulo (stessa PR). Bugfix su file già in tabella: non toccare. Path in backtick = devono esistere (`node backend/scripts/check-harness-boot.js`).
+
+<!-- MODULE_COMPASS_BEGIN -->
+
+| Se lavori su… | Apri prima |
 |---|---|
-| **API** | `https://sistemi.fr-busato.it:8443/api/v1` |
-| **Frontend** | Netlify (auto-deploy da `main`) |
-| **VPS** | `sistemi.fr-busato.it` — Ubuntu |
-| **SSH** | `ssh -p 1122 spascarella@sistemi.fr-busato.it` — autenticazione: **chiave SSH**, sessione **PuTTY**, oppure file locale gitignored **`backend/config/.ssh-deploy.local.ps1`** (vedi `.ssh-deploy.local.ps1.example`). **Non** versionare password SSH. |
-| **Backend sul VPS** | Path **`/var/www/sgq-backend`**: **copia deploy**, non `git clone`. Dopo ogni `git push`: eseguire **`backend/scripts/deploy-controllers-to-vps.ps1`** (o equivalente `scp`) + **`sudo systemctl restart sgq-backend`**. Dettaglio: [docs/how-to/deploy.md](docs/how-to/deploy.md), [docs/REFERENCE.md](docs/REFERENCE.md). |
-| **Assistente AI (Cursor)** | Esegue comandi **solo sul PC del workspace**. Può lanciare deploy (`deploy-controllers-to-vps.ps1`) e migrazioni se esistono file locali gitignored (`database.json`, `.ssh-deploy.local.ps1`, Pageant/sessione PuTTY). Dettaglio: [docs/how-to/ACCESSO_DEPLOY_AGENTS.md](docs/how-to/ACCESSO_DEPLOY_AGENTS.md) e [docs/REFERENCE.md](docs/REFERENCE.md) (*Assistente AI e accesso remoto*). |
-| **Backend path** | `/var/www/sgq-backend/` |
-| **App log** | `/var/www/sgq-backend/app.log` |
-| **GitHub** | `qsstudio241/sistema-gestione-iso9001` |
-| **Credenziali test** | Utente `admin@sgq.local` — password ambiente di test solo in vault / amministratore (non in repository). |
+| Audit / checklist / sync | `backend/src/controllers/audit.controller.js`, `app/src/services/syncService.js`, `app/src/contexts/StorageContext.jsx`, `docs/adr/ADR-008-event-sourcing-sync.md` |
+| Non conformità | `backend/src/controllers/nc.controller.js`, `app/src/pages/NCPage.jsx`, `app/src/components/NcDetailPanel.jsx` |
+| Qualifiche / alert patentini | `backend/src/controllers/qualifications.controller.js`, `backend/src/services/qualificationAlert.service.js`, `app/src/pages/QualificationsPage.jsx`, `app/src/pages/QualificationForm.jsx` |
+| Saldatura WPQR / WPS | `backend/src/controllers/welding.controller.js`, `backend/src/services/wpsGenerator.service.js`, `app/src/pages/WeldingProceduresPage.jsx` |
+| Welding Book | `backend/src/controllers/weldingBooks.controller.js`, `app/src/pages/WeldingBooksPage.jsx` |
+| Commesse ISO 3834 | `backend/src/controllers/projects.controller.js`, `app/src/pages/ProjectsPage.jsx` |
+| SAL / gap requisiti | `backend/src/services/gapAnalysis.service.js`, `app/src/pages/SALModule.jsx`, `docs/specs/MODULO_SAL_SCOPO_E_ROADMAP.md` |
+| Profilo azienda / company_profile | `docs/adr/ADR-018-company-profile-conformita-legislativa.md`, `docs/specs/COMPANY_PROFILE_CAMPI_E_TEMPLATE_EXCEL.md`, `backend/src/controllers/company.controller.js`, `backend/src/services/moduleLicense.service.js`, `app/src/pages/CompanyDetailPage.jsx` |
+| Anagrafiche aziende | `backend/src/controllers/company.controller.js`, `app/src/pages/AnagrafichePage.jsx`, `app/src/pages/CompanyDetailPage.jsx` |
+| Personale azienda | `backend/src/controllers/companyPersonnel.controller.js`, `docs/adr/ADR-012-company-personnel-anagrafica.md` |
+| Registro documenti / scadenze | `backend/src/controllers/document.controller.js`, `app/src/components/DocumentRegistry.jsx`, `app/src/pages/DeadlinesPage.jsx` |
+| Riesame di direzione | `backend/src/controllers/managementReviews.controller.js`, `app/src/pages/ManagementReviewsPage.jsx` |
+| Riesame requisiti / contratto | `backend/src/controllers/contractReview.controller.js`, `app/src/pages/ContractReviewPage.jsx` |
+| Ingest AI / import PDF | `backend/src/controllers/ingestStaging.controller.js`, `backend/src/data/documentTypeSchemas.js`, `app/src/data/documentTypeSchemas.js` |
+| Auth / RBAC | `backend/src/middleware/auth.middleware.js`, `backend/src/controllers/auth.controller.js`, `app/src/contexts/AuthContext.jsx` |
+| Alert / notifiche | `backend/src/controllers/alert.controller.js`, `backend/src/controllers/notifications.controller.js`, `app/src/pages/NotificationsSettingsPage.jsx` |
+| Export Word verbale audit | `app/src/utils/wordExport.js`, `app/src/utils/wordExportHelpers.js` |
+| UI / design system | `app/src/design-system/README.md`, `docs/reference/LIBRERIA_UI_SGQ.md` |
+| Deploy VPS | `docs/how-to/deploy.md`, `backend/scripts/deploy-to-vps.sh`, `docs/how-to/ACCESSO_DEPLOY_AGENTS.md` |
+| Material Compliance (epic) | `docs/specs/MODULO_MATERIAL_COMPLIANCE_AI.md`, `docs/agent-tasks/PLAN_MATERIAL_COMPLIANCE_SLICES.md` |
 
-### Restart server (comandi separati — NON concatenare con `;` il tail)
-
-```bash
-fuser -k 3000/tcp
-sleep 2 && cd /var/www/sgq-backend && nohup node src/server.js > /var/www/sgq-backend/app.log 2>&1 &
-sleep 4 && cat /var/www/sgq-backend/app.log
-```
-
----
-
-## Architettura offline-first
-
-- **Sync strategy**: `server-wins` su campi critici (stato audit, firme, esiti); **merge** su note/evidenze
-- **Conflict**: notifica utente + log persistente (tracciabilità ISO 9001:2015 §7.5/9.2/10.2)
-- **SyncService**: batch con retry + backoff esponenziale
-- **IndexedDB**: tutti gli audit/risposte cachati; sincronizzati in background al recupero connessione
-- **Logout**: pulizia cache locale + coda sync per multi-tenant — **open point** su bozze non ancora sul server e backup PC: vedi **ADR-007** e roadmap (non duplicare qui il dettaglio).
-
----
-
-## Architettura Word Export (`app/src/utils/wordExport.js`)
-
-### Flusso
-
-```
-1. Carica template .docx   →  app/public/templates/ISO9001-audit-report.docx
-2. docxtemplater            →  sostituisce {segnaposto} con dati audit
-3. OOXML injection          →  replaceMarker() inserisce tabelle colorate
-4. Salva blob               →  file-saver → download .docx
-```
-
-### Segnaposto template
-
-`{clientName}` `{auditDate}` `{auditDateEnd}` `{auditPeriod}` `{auditNumber}` `{procedureCode}` `{auditObject}` `{scope}`  
-`{referenceDocuments}` `{processes}` `{programCommunicatedDate}` `{auditor}`  
-`{objectiveDescription}` `{#participants}{role}{name}{/participants}` `{conclusions}`  
-`{ncCount}` `{ossCount}` `{omCount}` `{nvCount}` `{summaryText}`
-
-### Marker OOXML
-
-| Marker | Contenuto generato |
-|---|---|
-| `CHECKLIST_MARKER` | Tabella checklist colorata per clausola (NC=rosso, C=verde, OSS=giallo, OM=blu, NA=grigio, NV=viola) |
-| `RILIEVI_MARKER` | Tabella sintesi CONF\|NC\|OSS\|OM\|N.A. |
-
-### File chiave export
-
-| File | Ruolo |
-|---|---|
-| `app/src/utils/wordExport.js` | Entry point: carica template, chiama docxtemplater, injection OOXML |
-| `app/src/utils/wordExportHelpers.js` | Genera stringhe OOXML raw (tabelle, colori) |
-| `app/public/templates/ISO9001-audit-report.docx` | Template con logo e header/footer — **modificabile in Word** |
-| `app/scripts/generateTemplate.js` | Rigenera template da zero (⚠️ sovrascrive personalizzazioni manuali) |
-
-> **Regola**: ogni modifica al template `.docx` in Word va committata e pushata per apparire su Netlify.
-
-### `replaceMarker()` — nota importante
-
-La funzione cerca `<w:p ` o `<w:p>` (con spazio o `>`) camminando a ritroso dal marker.  
-Esclude `<w:pPr>` — errore storico che corrompeva il file (commit `975ed3e`).
-
----
-
-## Stato funzionalità (2026-03-01)
-
-### ✅ Completate (2026-03-02)
-
-| Funzionalità | Commit | Note |
-|---|---|---|
-| Auth JWT cookie (login/register/refresh) | — | httpOnly, SameSite=None |
-| Gestione audit CRUD multi-tenant | — | |
-| Checklist ISO 9001:2015 (35 domande, id 87-121) | migration-010 | standard_id=1 |
-| Checklist ISO 14001:2015 (46 domande, id 122-167) | migration-012 | standard_id=2, sezioni `14001_s4`/`14001_s5` |
-| Risposte conformità (C/NC/OSS/OM/NA/NV) | — | CHECK constraint fisso in DB |
-| Non conformità CRUD | — | |
-| Allegati upload/download/preview/replace/delete | `0520182` | fetch blob + URL.createObjectURL (NON img src) |
-| Export Word (template-based) ISO 9001 | `975ed3e` | Template editabile in Word |
-| Logo nel report Word | `57aabcf` | File template committato |
-| Rilievi pendenti tra audit | migration-018 | tabella `pending_issues`, FK NO ACTION |
-| `check-reaudit` API + UI selector | — | deployato su VPS |
-| Sync offline-first (IndexedDB → server) | — | standard_id intero (fix `9894ed5`) |
-| Fix 4 bug selezione standard | `9894ed5` | norms→selectedStandards, accordion _2015, standard_id |
-| Manuale Utente v1.1 | `5fec508` | `docs/MANUALE_UTENTE.md` |
-
-### Multi-standard State
-
-| Standard | DB | Frontend | Sync | Export Word |
-|---|---|---|---|---|
-| ISO 9001:2015 | ✅ 35 domande | ✅ | ✅ | ✅ |
-| ISO 14001:2015 | ✅ 46 domande | ✅ | ✅ fix `9894ed5` | ❌ Backlog |
-| ISO 45001:2018 | ✅ 53 domande (id 276-328) | ✅ allegati fix | ❌ | ❌ |
-
-### 🔲 Backlog (Fase 2) — con file coinvolti
-
-| Priorità | Funzionalità | File coinvolti |
-|---|---|---|
-| 🔴 | Test E2E fix standard su Netlify | — |
-| 🔴 | **Export Word ISO 14001** | `wordExport.js`, `wordExportHelpers.js`, template .docx |
-| 🔴 | **Rilievi Pendenti reali in Word** | `wordExport.js` — `RILIEVI_MARKER` → dati da `GET /audits/:id/pending-issues` |
-| 🔴 | **Modal Re-Audit con lista pending** | `AuditSelector.jsx`, nuovo `ReauditModal.jsx` |
-| 🟡 | **Fix Auth Mobile (ADR-004)** | `auth.controller.js`, `apiService.js`, `AuthContext.jsx`, `auth.middleware.js` |
-| 🟡 | **SyncService offline allegati** | `syncService.js`, `IndexedDBProvider.js` (v3), `useAttachmentManager.js` |
-| ✅ | **Seed ISO 45001** | domande in DB (id 276-328); template frontend allineato (fix allegati) |
-| 🟢 | Refresh token automatico | `apiService.js` interceptor 401, `POST /auth/refresh` |
-| 🟢 | Auto-logout inattività 4h | `AuthContext.jsx` |
-| 🟢 | Allineamento `/audits` vs `/audits/sync` | debito tecnico — standard_ids[] vs standard_id scalare |
-
----
-
-## Workspace locale (consigliato)
-
-**Cursor / terminale:** aprire il repo come **`C:\ProgettoISO`** (percorso stabile). I file possono risiedere su **Google Drive** dietro **symlink o junction**: se l’unità cloud cambia lettera, si aggiorna solo il collegamento — le sessioni Cursor restano coerenti. Dettaglio: [docs/GUIDA_CONSOLIDATA.md](docs/GUIDA_CONSOLIDATA.md) (sezione *Workspace consigliato — ponte C:\\ProgettoISO*).
-
----
-
-## Struttura repository (cartelle chiave)
-
-```
-/
-├── app/                        # Frontend React + Vite
-│   ├── src/
-│   │   ├── components/         # Componenti React
-│   │   ├── services/           # apiService.js, syncService.js
-│   │   ├── utils/              # wordExport.js, wordExportHelpers.js
-│   │   └── hooks/              # Custom hooks
-│   ├── public/
-│   │   └── templates/          # ISO9001-audit-report.docx ← editare in Word
-│   └── scripts/
-│       └── generateTemplate.js # Rigenera template (⚠️ sovrascrive)
-│
-├── backend/
-│   └── src/
-│       ├── controllers/        # Logica business
-│       ├── routes/             # Express router
-│       ├── middleware/         # auth.middleware.js (authenticate, authenticateDownload)
-│       ├── config/
-│       │   └── database.js     # Pool mssql, healthCheck(), closePool()
-│       └── utils/
-│           └── logger.js       # Winston logger
-│
-├── docs/                       # Documentazione dettagliata
-│   ├── DATABASE.md             # ← Quick-ref DB (questo progetto)
-│   ├── BACKEND_API.md          # ← Tutti gli endpoint API
-│   ├── DATABASE_SCHEMA.md      # Schema completo DB — LEGGERE PRIMA DI TOCCARE IL DB
-│   ├── DATABASE_MAPPING.md     # Mapping frontend ↔ backend ↔ DB
-│   ├── PROJECT_ROADMAP.md      # Roadmap versioni
-│   ├── sessions/               # Session notes e commit messages
-│   ├── archive/                # Roadmap e doc storici
-│   └── adr/                    # Architecture Decision Records
-└── PROJECT_CONTEXT.md          # ← Questo file
-```
+<!-- MODULE_COMPASS_END -->
 
 ---
 
 ## Regole operative critiche
 
-1. **Golden rule — flusso end-to-end**: ogni modifica che introduce nuovi campi o comportamenti **deve** coprire sia frontend sia backend (persistenza, API, sync, converter) in modo che il flusso di lavoro resti sempre funzionante. Robustezza e affidabilità di ogni modifica sono obbligatorie.
-2. **Prima di modificare backend**: leggere il controller/route esistente
-3. **`tail -N file`** NON funziona dopo `fuser` su questa shell → usare `cat`
-4. **NON concatenare** restart server con `;` dopo `fuser -k` → comandi separati
-5. **`conformity_status`** valori: `'C', 'NC', 'OSS', 'OM', 'NA', 'NV', NULL`
-6. **`question_type`** valori DB: `'TEXT'`, `'YES_NO'`, `'MULTIPLE_CHOICE'` (MAIUSCOLO)
-7. **`audit.status`** valori DB: `'draft'`, `'in_progress'`, `'completed'`, `'approved'` (minuscolo)
-8. **Credenziali mai in repo** — `.env` + secrets CI/CD
-9. **HTTP client**: solo Axios v1.7 con interceptor, vietato `fetch` diretto
+1. Flusso end-to-end: nuovi campi su frontend **e** backend (persistenza, API, sync).
+2. Prima di modificare backend: leggere il controller/route esistente.
+3. `conformity_status`: `'C', 'NC', 'OSS', 'OM', 'NA', 'NV', NULL`.
+4. `question_type` DB: `'TEXT'`, `'YES_NO'`, `'MULTIPLE_CHOICE'` (MAIUSCOLO).
+5. `audit.status` DB: `'draft'`, `'in_progress'`, `'completed'`, `'approved'` (minuscolo).
+6. Credenziali mai in repo. HTTP solo Axios.
+7. Word: marker `CHECKLIST_MARKER` / `RILIEVI_MARKER`; `replaceMarker()` non deve matchare `<w:pPr>`. Dettaglio in GUIDA se il task è Word.
 
----
-
-## Workflow deploy
-
-**Regola**: quando si chiede un commit per Netlify (o per il deploy), eseguire sempre **commit e push** insieme, così il deploy parte subito.
-
-### Frontend (automatico)
-```bash
-git add .
-git commit -m "feat: ..."
-git push origin main
-# Netlify deploy automatico — ~2 minuti
-```
-
-### Backend (manuale SCP / script)
-Da PowerShell, dalla root del repo: `backend/scripts/deploy-controllers-to-vps.ps1` (usa pscp; richiede PuTTY). Copia controller, route, `server.js`, servizi correlati e **`src/middleware/auth.middleware.js`** (RBAC / JWT). In alternativa, copia manualmente gli stessi file e riavvia Node sul VPS. Dettaglio: [docs/how-to/deploy.md](docs/how-to/deploy.md).
-```bash
-# 1. Copia i file (es. audit + customChecklist controller)
-scp -P 1122 backend/src/controllers/audit.controller.js backend/src/controllers/customChecklist.controller.js \
-  spascarella@sistemi.fr-busato.it:/var/www/sgq-backend/src/controllers/
-
-# 2. SSH sul server e restart
-ssh -p 1122 spascarella@sistemi.fr-busato.it
-# Sul server: fuser -k 3000/tcp; sleep 2; cd /var/www/sgq-backend && nohup node src/server.js > app.log 2>&1 &
-```
-
-### Template Word (richiede commit)
-```bash
-# Dopo aver modificato app/public/templates/ISO9001-audit-report.docx in Word:
-git add app/public/templates/ISO9001-audit-report.docx
-git commit -m "chore: aggiorna template Word"
-git push origin main
-```
-
----
-
-*Aggiornato: 2026-04-19 — RBAC lista audit (API): `auditListRbac` + `auth.middleware` + `audit.controller`; deploy VPS solo con script/scp + restart (vedi guida sezione E 19 aprile 2026).*
+Storico marzo 2026 (non per lo stato attuale): [archive](docs/archive/PROJECT_CONTEXT_STATO_FUNZIONALITA_2026-03.md).

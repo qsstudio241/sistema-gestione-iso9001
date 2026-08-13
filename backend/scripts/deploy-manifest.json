@@ -43,7 +43,8 @@
                                      "src/data/qtafiVis001Template.js",
                                      "src/data/legislativoSicurezzaTemplate.js",
                                      "src/data/reprocessableFields.js",
-                                     "src/data/reprocessTableAdapters.js"
+                                     "src/data/reprocessTableAdapters.js",
+                                     "src/data/companyProfileFields.js"
                                  ]
                    },
                    {
@@ -55,6 +56,7 @@
                                      "src/utils/documentTreeCompanyScope.js",
                                      "src/utils/documentRegistryFile.js",
                                      "src/utils/excelDeadlineDetector.js",
+                                     "src/utils/excelCompanyProfileDetector.js",
                                      "src/utils/documentClassifier.js",
                                      "src/utils/weldingDesignation.js",
                                      "src/utils/qualificationCoverage.js",
@@ -189,6 +191,7 @@
                                      "src/controllers/contractReview.controller.js",
                                      "src/controllers/drawingExtraction.controller.js",
                                      "src/controllers/company.controller.js",
+                                     "src/controllers/companyProfile.controller.js",
                                      "src/controllers/qualifications.controller.js",
                                      "src/controllers/projects.controller.js",
                                      "src/controllers/risks.controller.js",
@@ -254,7 +257,8 @@
                                      "src/routes/gapAnalysis.routes.js",
                                      "src/routes/aiAssist.routes.js",
                                      "src/routes/aiChat.routes.js",
-                                     "src/routes/risks.routes.js"
+                                     "src/routes/risks.routes.js",
+                                     "src/routes/auditorOrg.routes.js"
                                  ]
                    },
                    {

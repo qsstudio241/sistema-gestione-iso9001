@@ -1,6 +1,6 @@
 # DEPUTYTASK — Profilo azienda conformità legislativa (ADR-018) — S1→S3
 
-**Stato:** APERTO  
+**Stato:** CHIUSO (13/08/2026) — S1–S3 TEST OK. PR #409.  
 **Priorità:** P1 — fondazione dati per conformità legislativa 14001/45001 (non breaking)  
 **Branch base:** `main`  
 **Creato da:** Lead 23/07/2026  
@@ -29,10 +29,12 @@
 
 ## Slice S1 — Migration DB
 
+**Stato S1:** FATTO (13/08/2026) — `145_company_profile.sql` + `run-migration-145-vps.js`.
+
 **File previsti:**
 
-- `database/migrations/130_company_profile.sql` (idempotente)
-- `backend/scripts/run-migration-130-vps.js`
+- `database/migrations/145_company_profile.sql` (idempotente — **verificare `ls database/migrations/ | sort | tail -5` prima di eseguire**: `130` era già occupato da `130_user_audit_log.sql` al 23/07/2026, sequenza condivisa arrivata a `144` il 13/08/2026; il numero libero cambia ad ogni PR che tocca migrazioni, non fidarsi del valore scritto qui)
+- `backend/scripts/run-migration-145-vps.js` (stesso numero della migrazione)
 
 **Cosa fare:**
 
@@ -47,6 +49,8 @@
 ---
 
 ## Slice S2a — API profilo (BE)
+
+**Stato S2a:** FATTO (13/08/2026) — GET/PUT `/companies/:id/profile`.
 
 **File previsti:**
 
@@ -67,6 +71,8 @@
 
 ## Slice S2b — UI tab Profilo (FE)
 
+**Stato S2b:** FATTO (13/08/2026) — tab «Profilo conformità» in `CompanyDetailPage`.
+
 **File previsti:**
 
 - Estendere `app/src/pages/CompanyDetailPage.jsx` (nuova tab «Profilo conformità» o sezione sotto Anagrafica)
@@ -86,6 +92,8 @@
 
 ## Slice S3a — Detector + import Excel (BE)
 
+**Stato S3a:** FATTO (13/08/2026) — detect dry-run + import JSON + template xlsx.
+
 **File previsti:**
 
 - `backend/src/utils/excelCompanyProfileDetector.js` (+ `.test.js`)
@@ -100,6 +108,8 @@
 ---
 
 ## Slice S3b — Dialog import + template (FE)
+
+**Stato S3b:** FATTO (13/08/2026) — pulsanti «Scarica modello» / «Importa Excel» + dialog preview.
 
 **File previsti:**
 

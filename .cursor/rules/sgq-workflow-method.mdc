@@ -20,9 +20,12 @@ diagnosi (causa reale) -> fix minimo -> test L1 -> deploy (se serve) -> smoke ->
 
 Regole:
 - **Una slice = un obiettivo verificabile** (un bug, una feature minima, un blocco doc). Niente refactor paralleli non richiesti.
-- **Fix minimo e difensivo**: riusa componenti/pattern esistenti (tabella *Riuso UI* in `sgq-operating-memory.mdc`). Diff piccolo.
+- **Fix minimo e difensivo**: riusa componenti/pattern esistenti (tabella *Riuso UI* in `sgq-operating-memory.mdc`). Diff piccolo. Se la slice tocca UI: copia una delle 3 schermate in [`app/src/design-system/README.md`](../../app/src/design-system/README.md); non inventare un look nuovo.
 - **Test L1 = build Vite + Vitest mirato** (`app/`). La suite completa **si impalla su Google Drive**: lavorare su disco locale `C:` e usare *build + test mirati* come L1 (vedi lezione *Worktree su C:*).
 - **Chiudere o documentare**: niente "fix a meta'". Se emergono sotto-problemi, chiuderli o annotare il rischio residuo in `GUIDA_CONSOLIDATA.md`.
+- **Epic > 1 sessione**: skill [`wayfinder-sgq`](../skills/wayfinder-sgq/SKILL.md) — mappa in `PLAN_*_SLICES.md`, un `DEPUTYTASK` per run, restare nella smart zone (~100k). Non alzare il context 1M al posto di spezzare.
+- **Una sessione = una slice.** Se non chiudi: handoff in `DEPUTYTASK*.md` ([template](../../docs/agent-tasks/HANDOFF_TEMPLATE.md)), nuova sessione. Non aprire la slice successiva con il contesto già gonfio.
+- **Prima di codice nuovo**: gate Ponytail in `sgq-operating-memory.mdc` (esiste già? riusa; altrimenti il minimo).
 
 ## 2. Multitasking sicuro (parallelizzazione)
 

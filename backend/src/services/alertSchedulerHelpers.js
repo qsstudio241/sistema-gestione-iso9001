@@ -79,12 +79,36 @@ function matchDocAlertRule({ expiryDate, status, thresholds }) {
   return null;
 }
 
-/** Giorni interi fino a due_date (positivo = futuro, negativo = scaduto). */
+/**
+ * Giorni interi fino a due_date (positivo = futuro, negativo = scaduto).
+ *
+ * FIX 10/08/2026 (bug critico, presente da sempre): mssql/tedious restituisce
+ * le colonne DATE come oggetti `Date` nativi (mezzanotte UTC), non come
+ * stringhe "YYYY-MM-DD" — String(dueDate) su un Date nativo produce
+ * "Thu Aug 31 2028 00:00:00 GMT+0000 (...)", che NON combacia con la regex e
+ * fa restituire sempre null. Risultato verificato in produzione: nessun alert
+ * email per documenti/qualifiche è mai partito (qual_notification_log e
+ * doc_notification_log a 0 righe), e le righe virtuali qualifiche/tarature
+ * nello Scadenzario risultavano sempre scartate. Ora si gestiscono entrambi i
+ * formati: oggetto Date (letto in UTC, come lo normalizza mssql) e stringa
+ * ISO (usata nei test e in eventuali chiamate con dato già stringificato).
+ */
 function daysUntilDue(dueDate) {
   if (!dueDate) return null;
-  const m = String(dueDate).match(/^(\d{4})-(\d{2})-(\d{2})/);
-  if (!m) return null;
-  const due = new Date(parseInt(m[1], 10), parseInt(m[2], 10) - 1, parseInt(m[3], 10));
+  let year, month, day;
+  if (dueDate instanceof Date) {
+    if (Number.isNaN(dueDate.getTime())) return null;
+    year = dueDate.getUTCFullYear();
+    month = dueDate.getUTCMonth();
+    day = dueDate.getUTCDate();
+  } else {
+    const m = String(dueDate).match(/^(\d{4})-(\d{2})-(\d{2})/);
+    if (!m) return null;
+    year = parseInt(m[1], 10);
+    month = parseInt(m[2], 10) - 1;
+    day = parseInt(m[3], 10);
+  }
+  const due = new Date(year, month, day);
   const today = new Date();
   today.setHours(0, 0, 0, 0);
   due.setHours(0, 0, 0, 0);

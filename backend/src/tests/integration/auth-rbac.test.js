@@ -169,6 +169,50 @@ describe('RBAC — autorizzazione per ruolo', () => {
             expect.arrayContaining(['transfer_mode', 'shielding_gas', 'joint_type', 'weld_details']),
         );
     });
+
+    // DEPUTYTASK1 (10/08/2026) — provisioning nuovo studio: solo superadmin può creare
+    // una nuova coppia organizations + auditor_orgs (GET resta accessibile a più ruoli).
+    it('403 se admin (non superadmin) tenta POST /auditor-orgs', async () => {
+        const token = makeToken({ role: 'admin' });
+        const res = await request(app)
+            .post(`${API}/auditor-orgs`)
+            .set('Authorization', `Bearer ${token}`)
+            .send({
+                organization_name: 'Cliente Test Srl',
+                studio_name: 'Studio Test',
+                studio_email: 'test@studio.it',
+            });
+        expect(res.status).toBe(403);
+    });
+
+    it('403 se auditor tenta POST /auditor-orgs', async () => {
+        const token = makeToken({ role: 'auditor' });
+        const res = await request(app)
+            .post(`${API}/auditor-orgs`)
+            .set('Authorization', `Bearer ${token}`)
+            .send({});
+        expect(res.status).toBe(403);
+    });
+
+    // Gap segnalato dal committente (11/08/2026): invito del primo admin di un nuovo
+    // studio, stesso vincolo superadmin-only del provisioning stesso.
+    it('403 se admin (non superadmin) tenta POST /auditor-orgs/:id/invite-admin', async () => {
+        const token = makeToken({ role: 'admin' });
+        const res = await request(app)
+            .post(`${API}/auditor-orgs/5/invite-admin`)
+            .set('Authorization', `Bearer ${token}`)
+            .send({ full_name: 'Mario Rossi' });
+        expect(res.status).toBe(403);
+    });
+
+    it('403 se auditor tenta POST /auditor-orgs/:id/invite-admin', async () => {
+        const token = makeToken({ role: 'auditor' });
+        const res = await request(app)
+            .post(`${API}/auditor-orgs/5/invite-admin`)
+            .set('Authorization', `Bearer ${token}`)
+            .send({});
+        expect(res.status).toBe(403);
+    });
 });
 
 // ── SUITE: isolamento tenant ──────────────────────────────────────────────────

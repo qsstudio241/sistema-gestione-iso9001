@@ -1,100 +1,81 @@
-# DEPUTYTASK4 — Estensione agente validità normativa al registro obblighi legali
+# DEPUTYTASK4 — Modulo Saldatura (Procedure WPS/WPQR): regola "Filtri, singola fonte di verità"
 
-**Stato:** CHIUSO — TEST OK (28/07/2026, deputy Stream 4)
-**Priorità:** P1 — non bloccante per il rilascio del template sicurezza (DEPUTYTASK3), ma richiesto esplicitamente dal committente in questa iniziativa
+**Stato:** CHIUSO — TEST OK (10/08/2026)
+**Priorità:** P2 — stessa classe di bug UX già corretta in Qualifiche (PR #368), Scadenzari (PR #371/#375), NC (PR #374) — non urgente, nessun dato invisibile noto finché non verificato
 **Branch base:** `main`
-**Creato da:** Lead 28/07/2026
-**Spec:** [ADR-019](../adr/ADR-019-registro-obblighi-legali-ambiente-sicurezza.md) — leggere §1 (correzione importante), §2 (D5), §6 (rischi) prima di iniziare
+**Creato da:** Lead 10/08/2026
+**Spec:** [`.cursor/rules/sgq-operating-memory.mdc` § Filtri: singola fonte di verità](../../.cursor/rules/sgq-operating-memory.mdc) — leggere per intero la regola e i 3 precedenti già risolti prima di iniziare
 
 > **Allineamento Git (autonomo)**: prima di leggere questo brief eseguire `git fetch origin main` e `git pull origin main`. **Non** chiedere al committente di farlo.
 
 ---
 
-## Contesto (leggere prima — importante)
+## Contesto (leggere prima)
 
-**Un agente di verifica periodica della validità normativa esiste già in produzione**: `backend/src/services/normValidityChecker.service.js` + `backend/src/services/alertScheduler.js` (`runNormValidityJob`, cron `0 3 * * 1` = lunedì 03:00), con connettori già funzionanti per Normattiva (`normConnectors/normativaConnector.js`) ed EUR-Lex (`normConnectors/eurLexConnector.js`) tramite `normCatalogLookup.service.js`. Email "norme superate" già implementata (`buildNormValidityEmailHtml` in `alertScheduler.js`). **PR #65, 25/05/2026, in produzione.**
+Il committente ha segnalato (10/08/2026, screenshot pagina "Procedure di Saldatura") lo stesso pattern di card statistiche duplicate da tendine di filtro, già risolto in tre moduli in questa stessa sessione:
 
-**Questo slice NON crea un secondo agente.** Estende quello esistente per coprire anche `custom_checklist_sections.linked_legislation` (colonna nuova da DEPUTYTASK1 — **dipendenza: attendere che sia mergiato**), non solo `document_registry` (doc_type='norma').
+- **Qualifiche** (PR #368): card "Non attiva" aggiunta, tendina "Filtra per situazione" rimossa.
+- **Scadenzari** (PR #371 + #375): card "Archiviate"/"Prese in carico" aggiunte, tendina "Stato" rimossa, azioni mancanti per raggiungere quegli stati aggiunte in un secondo giro di audit.
+- **Non Conformità** (PR #374): card "Chiuse" aggiunta, due tendine ridondanti rimosse.
 
-**Perimetro dichiarato (Tier 1, vedi ADR-019 §2 D5)**: verifichiamo se l'**atto** citato (es. "D.Lgs. 81/2008") è ancora vigente o è stato abrogato/sostituito — **non** se il testo del singolo articolo è cambiato (quello è Tier 2, backlog, fuori da questo slice — non tentare di implementarlo qui).
+**Questo modulo NON è mai stato toccato** in nessuna delle sessioni precedenti — è un caso nuovo, non una regressione.
 
-## Cosa NON toccare
+## Cosa verificare (file: `app/src/pages/WeldingProceduresPage.jsx`)
 
-- `app/` (nessuna modifica FE in questo slice — l'eventuale banner in-app è previsto ma minimale, vedi Slice C).
-- `database/migrations/135_*` (creata da DEPUTYTASK1 — questo slice **usa** le colonne, non le crea).
-- La logica di business di `salAiSuggest.service.js` — solo l'estrazione meccanica del parser (Slice A).
+Il modulo ha **due sotto-tab distinti** (WPS e WPQR), ognuno con i propri filtri — la card statistica in alto (`Valide`/`Scad. 60 gg`/`Scad. 30 gg`/`Scadute`/`Da approvare`, righe ~1155-1159) sembra condivisa/adiacente a entrambi i tab. **Prima cosa da fare**: capire a quale tab (o a entrambi) si applicano davvero quelle 5 card, leggendo dove viene popolato l'oggetto `stats` e da quale chiamata API.
 
----
+Punti già individuati (verificarli, non assumerli):
 
-## Slice A — Estrarre `parseLinkedLegislation` in util condiviso
+1. **Tab WPS** (righe ~1281-1294): dropdown `wpsFilters.status` con opzioni da `WPS_STATUSES` (riga ~41) + dropdown `wpsFilters.welding_process` ("Tutti i processi"). Il secondo filtro (processo) è una **dimensione diversa** dallo stato — non è ridondante, non toccarlo. Verificare se le opzioni di `WPS_STATUSES` coincidono con le 5 card o hanno valori extra (come "sospesa"/"revocata" lo erano per Qualifiche prima del fix).
+2. **Tab WPQR** (righe ~1421-1427): dropdown `wpqrFilters.approval_status` con opzioni hardcoded `bozza`/`approvata`/`rifiutata` — verificare se questi 3 valori corrispondono (in tutto o in parte) alla card "Da approvare", o se rappresentano una dimensione a sé (workflow di approvazione) distinta dal semaforo scadenza (`Valide`/`Scad. 60/30`/`Scadute`).
+3. Verificare se le card sono già cliccabili/filtranti (come negli altri 3 moduli corretti) o sono solo contatori statici — se sono solo contatori, valutare se renderle cliccabili fa parte di questo slice o è fuori scope (decidere in base a quanto trovato, documentare la scelta).
 
-**File:**
-- Nuovo: `backend/src/utils/linkedLegislationParser.js`
-- Modificato: `backend/src/services/salAiSuggest.service.js` (rimuovere la funzione locale, importarla dall'util)
+## Come procedere (stesso metodo degli slice precedenti — non copiare la soluzione alla cieca)
 
-**Cosa fare:**
+1. Elencare ESATTAMENTE tutti i valori distinti gestiti da ciascuna card e da ciascuna tendina (per entrambi i tab WPS e WPQR separatamente).
+2. Se una tendina ha opzioni **non** coperte da nessuna card, **non limitarsi a rimuoverla** — valutare se aggiungere la card mancante (pattern "Non attiva"/"Archiviate"+"Prese in carico"/"Chiuse" già usato) o se lasciare quella tendina perché rappresenta davvero una dimensione distinta (come "processo" per WPS).
+3. Solo dopo questa mappatura completa, decidere cosa consolidare. Se il risultato dell'analisi è "qui le tendine non sono ridondanti, sono dimensioni diverse" — è un esito legittimo: chiudere con **FIX NON APPLICABILI** e documentare perché (non forzare una rimozione se l'analisi non la giustifica).
+4. Se si interviene sul backend (`backend/src/controllers/welding.controller.js`), verificare se esistono già bug analoghi a quelli trovati negli altri moduli (es. calcolo card basato su una data diversa da quella del semaforo per-riga, valori di stato "orfani" non riconosciuti in UI) — stesso tipo di verifica incrociata fatta per Scadenzari/Qualifiche.
 
-1. Spostare `parseLinkedLegislation`, `decreeLabelToStandardCode`, `normalizeDecreeLabel` (oggi in `salAiSuggest.service.js`, righe ~140-207) in `backend/src/utils/linkedLegislationParser.js`, `module.exports` invariato nei nomi.
-2. In `salAiSuggest.service.js`: `const { parseLinkedLegislation } = require('../utils/linkedLegislationParser');` — **nessun'altra modifica** alla logica del service.
-3. **Refactor meccanico**: non modificare il comportamento della funzione (stesso regex, stesso formato atteso `"D.Lgs. 81/2008 art.28; art.29"`).
+## DoD
 
-**DoD — gate obbligatorio prima di proseguire alla Slice B:**
+- Nessuna funzionalità di filtro persa rispetto a oggi.
+- Se si tocca il backend: nuovi test L1 di regressione (pattern già usato: `qualifications.controller.test.js`, `deadlines.controller.test.js`).
+- Se si tocca il frontend: nuovo test per il comportamento delle card (pattern già usato: `ncPage.filterCards.test.jsx`, `deadlinesPage.filterCards.test.jsx`).
+- Aggiornare `docs/GUIDA_CONSOLIDATA.md` (sintesi) e la tabella priorità in `docs/PROJECT_ROADMAP.md § Stato attuale e priorità` (rimuovere o chiudere la riga corrispondente).
+
+**Test L1 mirato (adattare al modulo reale trovato):**
 ```bash
-cd backend && npx jest salAiSuggest --silent
-cd app && NODE_ENV=test npx vitest run src/tests/salAiSuggest.test.jsx
+cd app && NODE_ENV=test npx vitest run src/tests/weldingProcesses4063.test.js src/tests/weldingProceduresP2bLegacyUpload.test.jsx
+cd backend && npx jest welding.controller --silent
 ```
-Se una sola di queste due suite fallisce, **fermarsi e non toccare altro** — la Fase 5-B di SAL (già in produzione) non deve regredire.
-
----
-
-## Slice B — Estendere `normValidityChecker.service.js`
-
-**File:** `backend/src/services/normValidityChecker.service.js`
-
-**Cosa fare:**
-
-1. Nuova funzione `runScheduledLegalRegisterCheck(organizationId)` (pattern gemello di `runScheduledValidityCheck`, non sostituirla):
-   - Query: sezioni di `custom_checklist_sections` con `linked_legislation IS NOT NULL`, filtrate per `organization_id` tramite `custom_checklist_id` → `custom_checklists.organization_id`.
-   - Per ciascuna sezione: `parseLinkedLegislation(sezione.linked_legislation)` (util Slice A) → per ogni decreto univoco citato, `normCatalogLookup.lookupNormStatus(standardCode_o_label, 'normattiva')` (riusare `resolveTarget`/`isPublicLawLookup`, già gestiscono `normattivaConnector.isItalianPublicLaw` — **verificare che la label `"D.Lgs. 81/2008"` sia riconosciuta dal connettore esistente**; se il formato richiesto differisse, adattare la label prima della chiamata, non il connettore).
-   - Se `status` è `withdrawn`/`superseded`: aggiungere a un array `updated` (stessa forma usata da `runScheduledValidityCheck`: `{ sectionId, standardCode, reason, supersededBy, catalogUrl }`).
-   - **Non modificare** `type_specific_data` di `document_registry` (quello resta per le norme "documento"; qui il target è la sezione checklist — decidere se serve una colonna leggera `legal_validity_status`/`legal_last_check` su `custom_checklist_sections`, **valutare con il Lead prima di aggiungere colonne non previste nell'ADR** — di default, per questo slice, limitarsi a loggare + email, senza persistere lo stato se non strettamente necessario).
-2. In `alertScheduler.js`: aggiungere la chiamata a `runScheduledLegalRegisterCheck` **dentro** `runNormValidityJob` (stesso job settimanale, stesso orario — non un nuovo `schedule.scheduleJob`), con una sezione email aggiuntiva (o digest separato se il volume è alto — decidere in base al test reale).
-
-**DoD:**
-```bash
-cd backend && npx jest normValidityChecker --silent
-```
-Mock delle chiamate di rete (`normCatalogLookup.lookupNormStatus`) nei test — **non** fare chiamate HTTP reali a Normattiva/EUR-Lex nei test automatici (pattern già seguito da `normValidityChecker.service.test.js` se esiste, altrimenti crearlo).
-
-**Verifica manuale (senza aspettare lunedì)** — pattern Fase 4c di `sgq-bug-fix-methodology.mdc`: script diagnostico che chiama direttamente `runScheduledLegalRegisterCheck(organizationId)` per un'org di test con almeno una sezione con `linked_legislation` popolato, e verifica il log/risultato.
-
----
-
-## Slice C (opzionale, solo se Slice A+B chiuse con margine) — Banner in-app
-
-**File:** `app/src/components/CustomChecklistAuditView.jsx` (stesso file toccato da DEPUTYTASK2 — **verificare che DEPUTYTASK2 sia mergiato prima di iniziare questo slice, per evitare conflitti**)
-
-**Cosa fare:** se l'API di lettura sezione restituisce un flag "possibile obsolescenza" (da definire in Slice B), mostrare un piccolo banner non invasivo sopra la sezione interessata (pattern `AiDisclaimer.jsx` — footer non invasivo, non un blocco modale). **Facoltativo**: se manca tempo, lasciare backlog e chiudere Slice A+B come deliverable di questo DEPUTYTASK.
 
 ---
 
 ## Verifica di chiusura (gate)
 
-```bash
-cd backend && npx jest --silent   # gate pieno backend
-```
+Suite Vitest completa (`NODE_ENV=test npm run test:run`) + suite Jest backend + `npm run build` verdi prima di aprire la PR. Se si tocca il backend: deploy VPS (`bash backend/scripts/deploy-to-vps.sh`) dopo il merge, con verifica PID/health — o segnalare al committente/Lead che serve.
 
-### Checklist di chiusura iniziativa (obbligatoria — richiesta esplicita del committente 28/07/2026)
+Chiudere con **TEST OK** o **FIX NON APPLICABILI** (motivare con la mappatura fatta al punto 1-3 sopra).
 
-Prima di dichiarare **TEST OK** finale, verificare esplicitamente lo stato di **ADR-019 §7bis "Registro note aperte"** (N1-N5) e riportarlo nel messaggio di chiusura:
+---
 
-- N1 (capitolo mancante nello scaffold) — già risolto dal Lead prima del lancio di questo stream; verificare solo che `leg_sic_29` sia ancora presente e coerente in `checklistTemplates.js`.
-- N2 (citazioni mal attribuite capitolo 16) — già risolto dal Lead; nessuna azione richiesta in questo stream salvo notare eventuali NUOVE mal-attribuzioni scoperte durante l'estensione dell'agente di validità (se il parser incontra decreti/articoli anomali durante il test manuale di Slice B, segnalarlo come N6 in ADR-019, non ignorarlo).
-- N3 (granularità sicurezza assente) — limite documentale accettato, nessuna azione in questo stream.
-- N4 (opzione NV) — già risolto dal Lead; nessuna azione richiesta.
-- N5 (revisione umana finale) — resta aperto per natura (vincolo permanente D6); questo stream **non lo chiude** — segnalarlo esplicitamente nel messaggio finale come "in attesa di revisione umana del committente", non come task del deputy.
+## Esito (10/08/2026) — TEST OK
 
-Chiudere con **TEST OK** (specificare se Slice C è stata fatta o lasciata backlog, e lo stato N1-N5 sopra) o **FIX NON APPLICABILI**.
+**Mappatura (punti 1-3)**:
+- Le 5 card (Valide/Scad.60/Scad.30/Scadute/Da approvare) sono calcolate **solo** su `wpqr_records` (`getWPQRStats`) — nessun legame con il tab WPS. Erano però mostrate sempre, anche fuori contesto (fix: gate `activeTab === "wpqr"`).
+- Tab WPS: `status` (`WPS_STATUSES`: attiva/bozza/sospesa/revocata) e `welding_process` sono due dimensioni distinte tra loro e **non correlate** alle card WPQR — nessuna card le duplica, nessuna azione necessaria. Confermato: non è una regressione, è un caso realmente diverso dai 3 precedenti.
+- Tab WPQR: tendina `approval_status` (bozza/approvata/rifiutata) duplicava **esattamente** la card "Da approvare" (bozza); "rifiutata" era un valore **orfano** invisibile in ogni card (stesso gap di "Sospesa"/"Revocata" in Qualifiche); "approvata" non aveva una card 1:1 (unione di Valide+Scad.60+Scad.30+Scadute).
+- Bug trovato in aggiunta (punto 4 del brief): il bucket SQL "scadute" non filtrava per `approval_status='approvata'` a differenza degli altri 3 bucket — un WPQR bozza/rifiutata scaduto finiva contato in "Scadute" (rosso) mentre a riga il semaforo lo mostra grigio "Non approvata".
+
+**Fix applicati**:
+1. Backend (`welding.controller.js`, `getWPQRStats`): bucket "scadute" ora richiede `approval_status='approvata'`; aggiunti bucket "rifiutate" e "approvate".
+2. Frontend (`WeldingProceduresPage.jsx`): barra statistiche mostrata solo su `activeTab==="wpqr"`; tendina `approval_status` rimossa, sostituita da 3 card cliccabili con toggle (Da approvare/Approvate/Rifiutate); le 4 card semaforo scadenza restano informative (nessuna tendina le duplicava — introdurre filtri backend per bucket di scadenza è fuori scope minimo di questa slice, non c'è perdita di funzionalità rispetto a oggi).
+3. Nessuna funzionalità di filtro persa: tutti i valori prima raggiungibili solo dalla tendina (bozza/approvata/rifiutata) restano raggiungibili dalle nuove card.
+
+**Test**: `welding.controller.wpqrStats.test.js` (4 test, backend) + `weldingProceduresPage.filterCards.test.jsx` (5 test, frontend) + suite Vitest completa (1044 test) + suite Jest `welding.controller*` (10 test) + `npm run build` verdi. Suite Jest backend completa: 8 suite falliscono per cause **preesistenti su `main`, non correlate** (config `database.json` assente nel Cloud Agent + bug preesistente in `customChecklist.legislativoSicurezza.test.js`, verificato con `git stash` sul commit base).
+
+**Doc aggiornata**: `GUIDA_CONSOLIDATA.md` (nuova riga lezioni apprese) + `PROJECT_ROADMAP.md` § Stato attuale e priorità (chiusa anche la riga NC, già risolta da PR #374 ma non ancora rimossa dalla tabella).
 
 ---
 

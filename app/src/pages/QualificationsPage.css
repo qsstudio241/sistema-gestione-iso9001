@@ -29,12 +29,12 @@
 .sq-stat-giallo   { border-color:#fde68a; background:#fffbeb; } .sq-stat-giallo   .sq-stat-num { color:#d97706; }
 .sq-stat-arancione{ border-color:#fed7aa; background:#fff7ed; } .sq-stat-arancione .sq-stat-num { color:#ea580c; }
 .sq-stat-rosso    { border-color:#fecaca; background:#fef2f2; } .sq-stat-rosso    .sq-stat-num { color:#dc2626; }
+.sq-stat-grigio   { border-color:#e5e7eb; background:#f9fafb; } .sq-stat-grigio   .sq-stat-num { color:#6b7280; }
 
 /* ── Toolbar ──────────────── */
 .sq-toolbar { display:flex; gap:10px; margin-bottom:14px; flex-wrap:wrap; align-items:center; }
 .sq-search { flex:1; min-width:180px; padding:8px 12px; border:1.5px solid #d1d5db; border-radius:8px; font-size:14px; }
 .sq-select { padding:8px 10px; border:1.5px solid #d1d5db; border-radius:8px; font-size:13px; background:#fff; }
-.sq-situazione-select { min-width:200px; }
 .sq-filter-hint { font-size:13px; color:#6b7280; margin:-6px 0 12px; }
 .sq-btn-reload { padding:8px 12px; border:1.5px solid #d1d5db; border-radius:8px; background:#fff; cursor:pointer; font-size:16px; }
 .sq-btn-reload:hover { background:#f3f4f6; }

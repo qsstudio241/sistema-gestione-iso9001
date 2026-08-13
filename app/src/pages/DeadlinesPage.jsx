@@ -9,6 +9,7 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import DataGridExportable from '../components/DataGridExportable';
 import apiService from '../services/apiService';
+import { useCompanyScope } from '../contexts/CompanyScopeContext';
 import { useRouter } from '../contexts/RouterContext';
 import { formatDate } from '../utils/dateHelpers';
 import { buildDocumentRegistryPath } from '../utils/documentRegistryUrl';
@@ -50,7 +51,7 @@ const COLUMNS = [
   { id: 'source_document_title',label: 'File origine',width: '160px', sortable: true  },
   { id: 'company_name',         label: 'Azienda',     width: '130px', sortable: true  },
   { id: 'status',               label: 'Stato',       width: '100px', sortable: true  },
-  { id: 'azioni',               label: '',            width: '80px',  sortable: false, exportSkip: true },
+  { id: 'azioni',               label: '',            width: '220px', sortable: false, exportSkip: true },
 ];
 
 const STATUS_LABEL = {
@@ -60,18 +61,22 @@ const STATUS_LABEL = {
   expired_acknowledged: 'Preso in carico',
 };
 
+// Limite di pagina iniziale e tetto di sicurezza per il refetch completo
+// (v. commento in load()) — evita richieste illimitate in caso di dataset
+// anomali.
+const DEADLINES_PAGE_LIMIT = 500;
+const DEADLINES_SAFETY_MAX_LIMIT = 5000;
+
 // Componente principale
 
 function DeadlinesPage() {
   const { navigate } = useRouter();
+  const { companyId: filterCompany } = useCompanyScope();
   const [items,     setItems]     = useState([]);
-  const [companies, setCompanies] = useState([]);
   const [sources,   setSources]   = useState([]);
   const [loading,   setLoading]   = useState(true);
   const [error,     setError]     = useState(null);
 
-  // Filtri locali
-  const [filterCompany, setFilterCompany] = useState('');
   const [filterStatus,  setFilterStatus]  = useState('active');
   const [filterDue,     setFilterDue]     = useState('');
   const [filterSource,  setFilterSource]  = useState('');
@@ -83,13 +88,29 @@ function DeadlinesPage() {
     setLoading(true);
     setError(null);
     try {
-      const [itemsRes, companiesRes] = await Promise.all([
-        apiService.getDeadlineItems({ limit: 500 }),
-        apiService.getCompanies(),
+      const [itemsRes] = await Promise.all([
+        apiService.getDeadlineItems({ limit: DEADLINES_PAGE_LIMIT }),
       ]);
-      const all = itemsRes.data || [];
+      let all = itemsRes.data || [];
+
+      // Le card statistiche e i filtri lavorano sull'intero dataset ricevuto
+      // (client-side by design — v. commento sotto ai filtri). Se l'org supera
+      // il limite di pagina, pagination.total lo rivela: un solo refetch con
+      // limit = total evita conteggi/filtri silenziosamente incompleti, senza
+      // introdurre paginazione multi-pagina (che duplicherebbe le righe
+      // virtuali qualifiche/tarature, ricalcolate per intero ad ogni pagina).
+      const total = itemsRes.pagination?.total;
+      if (typeof total === 'number' && total > all.length) {
+        const safeLimit = Math.min(total, DEADLINES_SAFETY_MAX_LIMIT);
+        try {
+          const fullRes = await apiService.getDeadlineItems({ limit: safeLimit });
+          all = fullRes.data || all;
+        } catch (refetchErr) {
+          console.warn('[DeadlinesPage] refetch completo fallito, dataset potrebbe essere parziale:', refetchErr.message);
+        }
+      }
+
       setItems(all);
-      setCompanies(companiesRes.data || []);
 
       // Ricava elenco file sorgente unici
       const srcMap = new Map();
@@ -131,19 +152,20 @@ function DeadlinesPage() {
     navigate(buildDocumentRegistryPath({ selectId: sourceId, companyId: item?.company_id || null }));
   }, [navigate]);
 
-  const handleStatusFilter = useCallback((value) => {
-    setFilterStatus(value);
-    if (value !== 'active') setFilterDue('');
-  }, []);
-
   const getActiveCard = useCallback(() => {
     if (filterStatus === 'active' && filterDue === 'expired') return 'expired';
     if (filterStatus === 'active' && filterDue === 'soon') return 'soon';
     if (filterStatus === 'active' && !filterDue) return 'active';
     if (filterStatus === 'completed' && !filterDue) return 'completed';
+    if (filterStatus === 'dismissed' && !filterDue) return 'dismissed';
+    if (filterStatus === 'expired_acknowledged' && !filterDue) return 'acknowledged';
     return null;
   }, [filterStatus, filterDue]);
 
+  // Un solo punto di controllo per il filtro "situazione": ogni valore lifecycle
+  // reale (active/completed/dismissed/expired_acknowledged) ha la sua card — non
+  // reintrodurre una tendina "Stato" parallela (v. sgq-operating-memory.mdc §
+  // Filtri: singola fonte di verità).
   const handleCardFilter = useCallback((card) => {
     if (getActiveCard() === card) {
       setFilterStatus('');
@@ -162,6 +184,12 @@ function DeadlinesPage() {
     } else if (card === 'completed') {
       setFilterStatus('completed');
       setFilterDue('');
+    } else if (card === 'dismissed') {
+      setFilterStatus('dismissed');
+      setFilterDue('');
+    } else if (card === 'acknowledged') {
+      setFilterStatus('expired_acknowledged');
+      setFilterDue('');
     }
   }, [getActiveCard]);
 
@@ -170,6 +198,22 @@ function DeadlinesPage() {
     try {
       await apiService.completeDeadlineItem(item.id);
       setItems(prev => prev.map(i => i.id === item.id ? { ...i, status: 'completed' } : i));
+    } catch (err) {
+      alert('Errore: ' + err.message);
+    } finally {
+      setCompleting(null);
+    }
+  }, []);
+
+  // Generalizza il pattern di handleComplete per gli altri due stati lifecycle
+  // (dismissed/expired_acknowledged): senza questa azione le card "Archiviate"/
+  // "Prese in carico" filtrano correttamente ma nessuna riga può mai arrivarci
+  // (bug di completezza post PR #371 — v. GUIDA_CONSOLIDATA.md).
+  const handleSetStatus = useCallback(async (item, newStatus) => {
+    setCompleting(item.id);
+    try {
+      await apiService.updateDeadlineItem(item.id, { status: newStatus });
+      setItems(prev => prev.map(i => i.id === item.id ? { ...i, status: newStatus } : i));
     } catch (err) {
       alert('Errore: ' + err.message);
     } finally {
@@ -243,25 +287,61 @@ function DeadlinesPage() {
             </button>
           );
         }
+        // Le righe virtuali tarature (item_type='equipment') non sono record
+        // di deadline_items: completeDeadlineItem(item.id) fallirebbe (l'id è
+        // "equipment_N", non un id numerico reale). La taratura si aggiorna
+        // dal modulo Strumenti e Attrezzature, non da qui.
+        if (row.item_type === 'equipment') return null;
         if (row.status !== 'active') return null;
         return (
-          <button
-            type="button"
-            className="dl-complete-btn"
-            onClick={(event) => {
-              event.stopPropagation();
-              handleComplete(row);
-            }}
-            disabled={completing === row.id}
-            title="Segna completato"
-          >
-            {completing === row.id ? '...' : '\u2713 OK'}
-          </button>
+          <div className="dl-actions-group">
+            <button
+              type="button"
+              className="dl-complete-btn"
+              onClick={(event) => {
+                event.stopPropagation();
+                handleComplete(row);
+              }}
+              disabled={completing === row.id}
+              title="Segna completato"
+            >
+              {completing === row.id ? '...' : '\u2713 OK'}
+            </button>
+            {/* "Prendi in carico" ha senso solo su scadenze già scadute: su una
+                scadenza futura non ancora superata non esiste nulla "da prendere
+                in carico" (si userebbe direttamente OK quando risolta). */}
+            {row.days_until_due < 0 && (
+              <button
+                type="button"
+                className="dl-complete-btn dl-ack-btn"
+                onClick={(event) => {
+                  event.stopPropagation();
+                  handleSetStatus(row, 'expired_acknowledged');
+                }}
+                disabled={completing === row.id}
+                title="Prendi in carico (scadenza in gestione, non ancora risolta)"
+              >
+                Prendi in carico
+              </button>
+            )}
+            <button
+              type="button"
+              className="dl-complete-btn dl-dismiss-btn"
+              onClick={(event) => {
+                event.stopPropagation();
+                handleSetStatus(row, 'dismissed');
+              }}
+              disabled={completing === row.id}
+              title="Archivia (non più rilevante)"
+            >
+              Archivia
+            </button>
+          </div>
         );
       default:
         return row[col.id] ?? '-';
     }
-  }, [handleComplete, completing, openSourceDocument, navigate]);
+  }, [handleComplete, handleSetStatus, completing, openSourceDocument, navigate]);
 
   // Export: valore grezzo per colonne speciali
   const getExportValue = useCallback((row, col) => {
@@ -271,31 +351,10 @@ function DeadlinesPage() {
     return row[col.id];
   }, []);
 
-  // Filtri per DataGridExportable
+  // Filtri per DataGridExportable — niente più tendina "Stato": ogni valore
+  // lifecycle ha ora la sua card statistica cliccabile (v. sotto), unico punto
+  // di controllo per questa dimensione di filtro.
   const filters = [
-    {
-      id: 'status',
-      label: 'Stato',
-      value: filterStatus,
-      onChange: handleStatusFilter,
-      options: [
-        { value: '',               label: 'Tutti gli stati' },
-        { value: 'active',         label: 'Attivi' },
-        { value: 'completed',      label: 'Completati' },
-        { value: 'dismissed',      label: 'Archiviati' },
-        { value: 'expired_acknowledged', label: 'Presi in carico' },
-      ],
-    },
-    {
-      id: 'company',
-      label: 'Azienda',
-      value: filterCompany,
-      onChange: setFilterCompany,
-      options: [
-        { value: '', label: 'Tutte le aziende' },
-        ...companies.map(c => ({ value: String(c.id), label: c.name })),
-      ],
-    },
     ...(sources.length > 1 ? [{
       id: 'source',
       label: 'File origine',
@@ -314,6 +373,8 @@ function DeadlinesPage() {
   const statsExpired   = statsBase.filter(i => i.status === 'active' && i.days_until_due < 0).length;
   const statsSoon      = statsBase.filter(i => i.status === 'active' && i.days_until_due >= 0 && i.days_until_due <= 30).length;
   const statsCompleted = statsBase.filter(i => i.status === 'completed').length;
+  const statsDismissed = statsBase.filter(i => i.status === 'dismissed').length;
+  const statsAcknowledged = statsBase.filter(i => i.status === 'expired_acknowledged').length;
   const activeCard     = getActiveCard();
 
   return (
@@ -362,6 +423,24 @@ function DeadlinesPage() {
         >
           <span className="dl-stat-num">{statsCompleted}</span>
           <span className="dl-stat-lbl">Completate</span>
+        </button>
+        <button
+          type="button"
+          className={`dl-stat dl-stat--gray${activeCard === 'dismissed' ? ' dl-stat-active' : ''}`}
+          onClick={() => handleCardFilter('dismissed')}
+          title="Filtra: scadenze archiviate"
+        >
+          <span className="dl-stat-num">{statsDismissed}</span>
+          <span className="dl-stat-lbl">Archiviate</span>
+        </button>
+        <button
+          type="button"
+          className={`dl-stat dl-stat--amber${activeCard === 'acknowledged' ? ' dl-stat-active' : ''}`}
+          onClick={() => handleCardFilter('acknowledged')}
+          title="Filtra: scadenze scadute prese in carico"
+        >
+          <span className="dl-stat-num">{statsAcknowledged}</span>
+          <span className="dl-stat-lbl">Prese in carico</span>
         </button>
       </div>
 

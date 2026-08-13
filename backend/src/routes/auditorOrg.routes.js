@@ -5,11 +5,13 @@
 const express = require('express');
 const router = express.Router();
 const auditorOrgController = require('../controllers/auditorOrg.controller');
-const { authenticate } = require('../middleware/auth.middleware');
+const { authenticate, authorize } = require('../middleware/auth.middleware');
 
 router.use(authenticate);
 
 router.get('/auditor-orgs', auditorOrgController.listAuditorOrgs);
 router.get('/auditor-orgs/:id', auditorOrgController.getAuditorOrgById);
+router.post('/auditor-orgs', authorize('superadmin'), auditorOrgController.createAuditorOrg);
+router.post('/auditor-orgs/:id/invite-admin', authorize('superadmin'), auditorOrgController.inviteFirstStudioAdmin);
 
 module.exports = router;

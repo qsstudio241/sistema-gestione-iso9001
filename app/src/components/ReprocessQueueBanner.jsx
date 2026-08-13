@@ -30,12 +30,12 @@
  *    ciascuno confermabile/scartabile singolarmente (endpoint invariati,
  *    nessuna scrittura batch — resta un aggiornamento mirato per campo).
  */
-import React, { useState, useEffect, useCallback, useRef, useMemo } from "react";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 import apiService from "../services/apiService";
 import { getSchemaForDocType } from "../data/documentTypeSchemas";
+import IngestDialogShell from "./IngestDialogShell";
 import IngestSourcePreview from "./IngestSourcePreview";
 import { FieldInput } from "./IngestReviewDialog";
-import useIngestReviewSplit from "../hooks/useIngestReviewSplit";
 import "./ReprocessQueueBanner.css";
 
 /**
@@ -211,88 +211,48 @@ function ReprocessFieldRow({ item, docType, onDone }) {
 
 /** Una finestra per documento: tutti i campi pendenti di quel documento, un'unica anteprima condivisa. */
 function ReprocessGroupDialog({ group, onClose, onFieldDone }) {
-  const [expanded, setExpanded] = useState(false);
-  const layoutRef = useRef(null);
-  const { gridTemplateColumns, startResize } = useIngestReviewSplit(layoutRef);
-
-  useEffect(() => {
-    if (!group) setExpanded(false);
-  }, [group]);
-
-  useEffect(() => {
-    if (!group || !expanded) return undefined;
-    const onKey = (e) => {
-      if (e.key === "Escape") setExpanded(false);
-    };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [group, expanded]);
-
   if (!group) return null;
 
   const firstItem = group.items[0];
   const count = group.items.length;
 
   return (
-    <div
-      className={`reprocess-dialog__overlay ${expanded ? "reprocess-dialog__overlay--expanded" : ""}`}
-      role="dialog"
-      aria-modal="true"
-    >
-      <div className={`reprocess-dialog ${expanded ? "reprocess-dialog--expanded" : ""}`}>
-        <header className="reprocess-dialog__header">
-          <div className="reprocess-dialog__header-top">
-            <h3>Rielaborazione: {groupDisplayName(group)}</h3>
-            <button
-              type="button"
-              className="reprocess-dialog__expand-btn"
-              onClick={() => setExpanded((v) => !v)}
-            >
-              {expanded ? "Riduci" : "Ingrandisci affiancato"}
-            </button>
-          </div>
-          <p>
-            {count} camp{count === 1 ? "o" : "i"} da rivedere su questo documento — puoi correggere il valore
-            prima di confermare.
+    <IngestDialogShell
+      overlayClassName="reprocess-dialog__overlay"
+      dialogClassName="reprocess-dialog"
+      titleSlot={<h3 className="reprocess-dialog__title">Rielaborazione: {groupDisplayName(group)}</h3>}
+      headerExtra={(
+        <p className="reprocess-dialog__subtitle">
+          {count} camp{count === 1 ? "o" : "i"} da rivedere su questo documento — puoi correggere il valore
+          prima di confermare.
+        </p>
+      )}
+      renderPreview={(expanded) => (
+        <IngestSourcePreview
+          stagingId={firstItem.id}
+          fileName={firstItem.original_name}
+          mimeType="application/pdf"
+          tall={expanded}
+        />
+      )}
+      contentClassName="reprocess-dialog__proposal"
+      renderContent={() => (
+        <>
+          <p className="reprocess-dialog__hint">
+            Valori estratti ora dal documento originale già caricato — verificali e correggili se serve, poi
+            confermali (o scartali) uno per uno.
           </p>
-        </header>
-
-        <div ref={layoutRef} className="reprocess-dialog__layout" style={{ gridTemplateColumns }}>
-          <div className="reprocess-dialog__preview">
-            <IngestSourcePreview
-              stagingId={firstItem.id}
-              fileName={firstItem.original_name}
-              mimeType="application/pdf"
-              tall={expanded}
-            />
-          </div>
-
-          <div
-            className="reprocess-dialog__resizer"
-            role="separator"
-            aria-orientation="vertical"
-            aria-label="Ridimensiona anteprima e campi"
-            onMouseDown={startResize}
-          />
-
-          <div className="reprocess-dialog__proposal">
-            <p className="reprocess-dialog__hint">
-              Valori estratti ora dal documento originale già caricato — verificali e correggili se serve, poi
-              confermali (o scartali) uno per uno.
-            </p>
-            {group.items.map((item) => (
-              <ReprocessFieldRow key={item.id} item={item} docType={group.docType} onDone={onFieldDone} />
-            ))}
-          </div>
-        </div>
-
-        <footer className="reprocess-dialog__actions">
-          <button type="button" className="reprocess-dialog__btn reprocess-dialog__btn--secondary" onClick={onClose}>
-            Chiudi
-          </button>
-        </footer>
-      </div>
-    </div>
+          {group.items.map((item) => (
+            <ReprocessFieldRow key={item.id} item={item} docType={group.docType} onDone={onFieldDone} />
+          ))}
+        </>
+      )}
+      footer={(
+        <button type="button" className="reprocess-dialog__btn reprocess-dialog__btn--secondary" onClick={onClose}>
+          Chiudi
+        </button>
+      )}
+    />
   );
 }
 

@@ -1,100 +1,84 @@
-# DEPUTYTASK2 — Registro obblighi legali: rendering FE (riferimento legislativo + risposta SI/NO/NA)
+# DEPUTYTASK2 — Chiarezza "Licenze moduli per studio" (badge + campo piano abbonamento)
 
-**Stato:** CHIUSO — TEST OK (integrato in PR #317; statusOptions + reference_text UI)
-**Priorità:** P0 — necessario perché DEPUTYTASK3 sia utilizzabile in audit reale
+**Stato:** CHIUSO — TEST OK (S1 + S2 implementati)
+**Priorità:** P2 — chiarezza UI segnalata dal committente (11/08/2026), nessun bug funzionale bloccante
 **Branch base:** `main`
-**Creato da:** Lead 28/07/2026
-**Spec:** [ADR-019](../adr/ADR-019-registro-obblighi-legali-ambiente-sicurezza.md) — leggere §2 (D2), §3 (D3) prima di iniziare
+**Creato da:** Lead 11/08/2026
+**Chiuso da:** Deputy 11/08/2026 — vedi esito sotto
 
-> **Allineamento Git (autonomo)**: prima di leggere questo brief eseguire `git fetch origin main` e `git pull origin main`. **Non** chiedere al committente di farlo.
+> **Allineamento Git (autonomo)**: prima di leggere questo brief eseguire `git fetch origin main` e `git pull origin main` (o partire da `origin/main` aggiornato). **Non** chiedere al committente di farlo.
 
 ---
 
 ## Contesto (leggere prima)
 
-**Può partire in parallelo a DEPUTYTASK1** (il contratto è congelato in questo brief e nell'ADR: due nuove proprietà opzionali `reference_text`/`linked_legislation` su ogni sezione restituita da `GET` checklist). Se DEPUTYTASK1 non è ancora mergiato, sviluppare e testare con un fixture/mock locale che simula la risposta API con questi due campi popolati su una sezione.
+Il committente, guardando la pagina "Gestione utenti" → sezione "Licenze moduli per studio" (`app/src/components/UsersAdminPage.jsx`), ha notato due incoerenze visive. Non sono bug bloccanti (nessun dato è a rischio), ma generano confusione — vanno chiarite con fix minimi, senza toccare la logica di licensing esistente né il provisioning nuovo studio (PR #382/#384, già mergiate o in review separata).
 
-**Non stiamo creando un nuovo componente.** Riuso obbligatorio: `QuestionCard.jsx` (blocco unico, regola *Riuso UI*), `notes-textarea`, classi `status-btn`.
+**File coinvolto**: solo `app/src/components/UsersAdminPage.jsx` (+ eventualmente `.css` per lo stile del badge/hint) e il relativo test `app/src/tests/usersAdminPage.test.jsx`. Nessun file backend, nessuna migrazione.
 
 ## Cosa NON toccare
 
-- `ChecklistModule.jsx` (checklist standard ISO — `QuestionCard` è condiviso, ma questo slice aggiunge solo una prop **opzionale con default retrocompatibile**, non deve cambiare nulla per chi non la passa).
-- `backend/` (nessuna modifica BE in questo slice — se serve un campo diverso da quello previsto, aggiornare prima l'ADR/DEPUTYTASK1, non improvvisare un contratto diverso lato FE).
+- `backend/src/services/moduleLicense.service.js` / `app/src/utils/licenseUtils.js` (logica di licensing runtime — invariata).
+- `createAuditorOrg` / `inviteFirstStudioAdmin` (PR #382/#384) — non fanno parte di questo brief.
+- Il campo `subscription_plan` resta **non collegato** a nessuna logica di gating moduli — questo brief lo rende solo più chiaro all'utente, non lo attiva.
 
 ---
 
-## Slice A — `QuestionCard.jsx`: prop opzionale `statusOptions`
+## Slice S1 — Badge "Tutti i moduli" coerente anche per elenchi espliciti equivalenti
 
-**File:** `app/src/components/QuestionCard.jsx`
+**Comportamento attuale (bug di chiarezza)**: il badge "Tutti i moduli (default)" (riga ~920-923 di `UsersAdminPage.jsx`) compare **solo** quando `licensed_modules` è `NULL` nel DB. Gli studi **Mason** ed **ERAM** hanno invece un array esplicito che, verificato in produzione (11/08/2026), contiene già tutti i 15 moduli attuali (incluso `cnd`, aggiunto in PR #380) — quindi hanno **lo stesso accesso effettivo** di uno studio "default", ma non mostrano alcun badge. Al.project e QS_Studio (licensed_modules `NULL`) mostrano il badge. Risultato: due studi con accesso identico appaiono diversi in UI, confondendo il committente/futuri admin.
 
 **Cosa fare:**
+1. Calcolare se l'elenco esplicito (`effectiveMods` quando non è `null`) contiene **tutti** i key di `ALL_MODULE_KEYS` (confronto per uguaglianza di insieme, non solo lunghezza — usare `Set`).
+2. Se sì: mostrare comunque un badge equivalente, ma **senza** la parola "(default)" (perché non è il valore NULL non toccato, è una scelta esplicita salvata) — es. testo `"Tutti i moduli"` con classe CSS leggermente diversa (es. `org-license-badge full` invece di `default`) per permettere in futuro una distinzione visiva se utile, oppure riusare la stessa classe `default` se si preferisce trattarli come visivamente identici (decisione a discrezione del deputy, purché documentata nel commit — nessuna preferenza forte dal Lead, l'importante è che il badge compaia in entrambi i casi).
+3. Non toccare la logica di `useDefault` esistente (continua a controllare se i checkbox partono tutti spuntati) — questo è solo un secondo controllo per la visualizzazione del badge.
 
-1. Estrarre l'array `STATUS_BUTTONS` (righe ~25-32) come **default** di una nuova prop `statusOptions` (default = `STATUS_BUTTONS` stesso, quindi **zero cambio di comportamento** per tutti i chiamanti esistenti che non passano la prop).
-2. Nel render (riga ~81), sostituire `STATUS_BUTTONS.map(...)` con `statusOptions.map(...)`.
-3. Aggiornare il commento JSDoc in testa al file con la nuova prop.
-
-**Esempio sottoinsieme per registro legale** (da passare da `CustomChecklistAuditView.jsx`, Slice B):
-```js
-const LEGAL_STATUS_OPTIONS = [
-  { code: "C",  className: "compliant",     label: "Sì" },
-  { code: "NC", className: "non-compliant", label: "No" },
-  { code: "NA", className: "not-applicable", label: "Non applicabile" },
-];
-```
-Nota: si riusano i **codici** `C`/`NC`/`NA` già esistenti (compatibili con lo storage `audit_custom_checklist_responses` / stati salvati) — cambia solo la **label visibile** (Sì/No invece di Conforme/Non Conforme), coerente con i due documenti di riferimento (SI/NO/NA).
-
-**DoD:** Vitest — `QuestionCard` senza `statusOptions` renderizza gli stessi 6 pulsanti di oggi (test di non-regressione); con `statusOptions` custom renderizza solo quelli passati.
-
-**Test L1 mirato:**
-```bash
-cd app && NODE_ENV=test npx vitest run src/tests/questionCard* 2>&1 | tail -30
-```
-(se non esiste un file di test dedicato a `QuestionCard`, crearne uno minimo: è un componente condiviso da audit standard + custom, merita un test diretto anche solo per questo slice).
+**DoD:** Vitest — nuovo caso che monta la pagina con un `auditorOrgs` mock dove uno studio ha `licensed_modules` esplicito ma completo (tutti i 15 key) e verifica che il badge compaia comunque; un test esistente con elenco esplicito **parziale** deve continuare a NON mostrare alcun badge (nessuna regressione). `npm run build` OK.
 
 ---
 
-## Slice B — `CustomChecklistAuditView.jsx`: mostrare `reference_text` di sezione + item con `response_type: legal_check`
+## Slice S2 — Nota di chiarezza sotto "Piano abbonamento" nel form "Nuovo studio"
 
-**File:** `app/src/components/CustomChecklistAuditView.jsx`
+**Comportamento attuale (bug di chiarezza)**: nel form "+ Nuovo studio" (righe ~875-895), il menu a tendina "Piano abbonamento" (Standard/Premium/Trial) è l'unico altro campo oltre ai dati anagrafici. Il committente si aspetta ragionevolmente che scegliere un piano determini i moduli abilitati — verificato nel codice (backend e frontend): **non è così**, `subscription_plan` è salvato in `auditor_orgs.subscription_plan` ma **nessuna** logica lo legge per decidere quali moduli attivare. Ogni nuovo studio nasce sempre con tutti i moduli attivi, indipendentemente dal piano scelto; i moduli si personalizzano solo con le checkbox nella riga dello studio, dopo la creazione.
 
 **Cosa fare:**
+1. Aggiungere una riga di testo esplicativo subito sotto il `<select>` "Piano abbonamento" (stesso punto dove già esiste il paragrafo `form-hint` con "Il nuovo studio nasce con tutti i moduli abilitati...", righe ~888-891) — o integrare in quel paragrafo esistente — che chiarisca: *"Il piano abbonamento è un'etichetta informativa (es. per fatturazione futura): oggi non modifica quali moduli sono attivi."*
+2. Testo esatto a discrezione del deputy, purché il messaggio sia chiaro, breve, e non tecnico (il committente ha competenze tecniche limitate — vedi tono richiesto in `AGENTS.md`).
+3. Riuso della classe `form-hint` già presente, nessun nuovo stile.
 
-1. Nel render delle sezioni (riga ~358-362, `<h4 className="custom-checklist-section-title">{sec.code} - {sec.title}</h4>`): se `sec.reference_text` è presente, renderizzare subito sotto un blocco leggibile (riuso pattern esistente — no nuovo componente decorativo, es. `<div className="custom-checklist-section-reference">{sec.reference_text}</div>` con CSS minimale coerente allo stile esistente di `CustomChecklistsPage.jsx`/`ChecklistModule.css`). **Collassabile** se il testo è lungo (pattern "sezioni numerate collassabili" già in uso altrove — regola *UI guida flusso*): `<details>`/`<summary>` nativi sono accettabili e a basso rischio (nessuna dipendenza nuova).
-2. Nel `sec.items.map((item) => ...)` (riga ~364): quando `item.response_type === "legal_check"`, passare a `<QuestionCard>` la prop `statusOptions={LEGAL_STATUS_OPTIONS}` (definita in Slice A). Per tutti gli altri `response_type` (es. `"verbale"`), **non passare la prop** → comportamento identico a oggi.
-3. **Non modificare** la logica di salvataggio (`handleStatusChange`, `saveResponses`, `updateBlock`) — è già generica su `item.id`, non serve alcuna modifica per il nuovo `response_type`.
-
-**DoD:** Vitest su `CustomChecklistAuditView` (file esistente probabilmente `salModule.test.jsx`-style o dedicato — verificare `app/src/tests/` per un test già presente su questo componente prima di crearne uno nuovo) — copre: (a) sezione senza `reference_text` renderizza come oggi; (b) sezione con `reference_text` mostra il blocco; (c) item `legal_check` mostra 3 pulsanti invece di 6; (d) item `verbale` non cambia.
-
-**Test L1 mirato:**
-```bash
-cd app && NODE_ENV=test npx vitest run src/tests/customChecklist* 2>&1 | tail -40
-```
+**DoD:** Vitest — verificare che il testo (o una sua sottostringa stabile) sia presente quando il form "Nuovo studio" è aperto. `npm run build` OK.
 
 ---
 
-## Slice C — CSS minima
+## Fuori scope di questo brief
 
-**File:** `app/src/components/ChecklistModule.css` (o CSS module già usato da `CustomChecklistAuditView` — verificare import in testa al file prima di crearne uno nuovo)
-
-**Cosa fare:** classe `.custom-checklist-section-reference` — sfondo leggermente distinto (es. `background:#f8fafc`, `border-left:3px solid #94a3b8`, `padding:12px`, `font-size:13px`, `white-space:pre-wrap`) per distinguere visivamente il testo normativo (informativo, non interattivo) dalle domande sottostanti (interattive). Nessuna nuova palette colore da inventare — riusare variabili/valori già presenti nel file.
-
----
-
-## Verifica di chiusura (gate)
-
-```bash
-cd app && NODE_ENV=test npm run test:run   # gate pieno, non solo mirato, prima di TEST OK
-cd app && npm run build
-```
-
-Se possibile, smoke manuale rapido (computerUse) su una checklist custom esistente (es. `LEG_AMBIENTE_152` seedata) per controllare che **nulla sia cambiato visivamente** (nessuna sezione ha ancora `reference_text` finché DEPUTYTASK1/3 non sono mergiati) — è il test di non-regressione più diretto.
-
-Chiudere con **TEST OK** o **FIX NON APPLICABILI** con motivo.
+- Collegare realmente `subscription_plan` a un set di moduli predefiniti (decisione di prodotto, non richiesta ora).
+- Qualsiasi modifica al provisioning nuovo studio o all'invito primo admin (PR #382/#384).
 
 ---
 
-## Comando deputy
+## Verifica chiusura
+
+Alla fine di ogni slice: TEST OK (Vitest mirati + build `app`) oppure FIX NON APPLICABILI con motivo.
+
+---
+
+## Esito (Deputy, 11/08/2026) — TEST OK
+
+**S1** — Aggiunto un secondo controllo `isFullExplicit` (confronto per insieme con `Set`/`every`, non solo lunghezza) accanto a `useDefault` esistente (non toccato). Quando l'elenco esplicito contiene tutti i 15 `ALL_MODULE_KEYS`, compare un badge equivalente con classe `org-license-badge full` (nuova, CSS analogo a `.default` ma colore verde per distinguerla in futuro se utile) e testo `"Tutti i moduli"` (senza `"(default)"`, perché è una scelta esplicita salvata, non il valore NULL non toccato). Un elenco esplicito parziale continua a non mostrare alcun badge (verificato con nuovo test di non-regressione).
+
+**S2** — Integrato il paragrafo `form-hint` già esistente sotto il `<select>` "Piano abbonamento" con una frase aggiuntiva: *"Il piano abbonamento è solo un'etichetta informativa (es. per fatturazione futura): oggi non modifica quali moduli sono attivi."* Nessun nuovo stile, riuso della classe esistente.
+
+**Test**: 3 nuovi casi in `app/src/tests/usersAdminPage.test.jsx` (describe `DEPUTYTASK2: chiarezza licenze studio`) — badge su elenco esplicito completo, nessun badge su elenco esplicito parziale, nota informativa visibile nel form. Suite completa `NODE_ENV=test npm run test:run`: 147 file / 1057 test verdi (nessuna regressione). `npm run build`: OK.
+
+**File toccati**: `app/src/components/UsersAdminPage.jsx`, `app/src/components/UsersAdminPage.css`, `app/src/tests/usersAdminPage.test.jsx`, questo brief.
+
+---
+
+## Comando deputy (dopo push di questo brief su `origin/main`)
 
 ```
 Leggi docs/agent-tasks/DEPUTYTASK2.md ed eseguilo. Chiudi con TEST OK o FIX NON APPLICABILI.
 ```
+
+Il deputy allinea Git da solo all'avvio (`git fetch` / `git pull origin main`).
