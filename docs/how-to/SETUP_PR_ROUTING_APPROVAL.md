@@ -152,21 +152,50 @@ Comportamento richiesto:
    domanda 2 più sotto.
 9. Salva e attiva.
 
-## Domande residue (dopo la tua risposta "Ultra")
+## Domande residue — tutte risposte, setup attivo (13/08/2026)
 
-1. ~~Piano Cursor~~ → **Risposto: Ultra.** Compatibile, con i vincoli sopra.
-2. **Rollout**: partire prudente (solo Request Reviewers) o attivare da subito l'approvazione
-   automatica sulle aree Basso (docs/rules)?
-3. **Auto-merge nativo GitHub** in combinazione: lo valutiamo ora o resta fuori scope per ora?
-4. **Costo**: vuoi Bugbot sempre-attivo (~$1–1.5/PR, consuma usage Ultra) o preferisci "Run only when
-   mentioned" per tenere il controllo manuale del costo, accettando un passo in più per PR?
+1. ~~Piano Cursor~~ → **Ultra.** Compatibile.
+2. ~~Rollout~~ → **Approve PR attivato** (13/08/2026), dopo una scoperta pratica che ha cambiato il
+   piano: vedi sotto § "Request Reviewers non utilizzabile".
+3. **Auto-merge nativo GitHub**: resta fuori scope, non richiesto.
+4. **Costo Bugbot**: lasciato always-on (default), nessun problema di costo osservato nella prima
+   giornata di uso (11 run).
 
-## Dopo l'attivazione
+## Scoperta pratica: "Request Reviewers" non è utilizzabile su questo repo
 
-- Fai la verifica pratica sul primo punto (Bugbot gira da solo su PR Cloud Agent?) e riportamela: se il
-  meccanismo non gira in automatico, aggiorno il workflow dei deputy per far commentare `bugbot run`
-  come ultimo passo prima di segnalare la PR pronta.
-- Monitora per 1–2 settimane: se PR Routing & Approval assegna reviewer in modo scorretto o approva
-  qualcosa che non doveva, correggere prima il `APPROVAL_POLICY.md` più vicino ai file coinvolti, non
-  disattivare l'intera automation.
-- Controlla `cursor.com/dashboard/spending` dopo la prima settimana per il costo reale Bugbot.
+Verificato nei log reali di esecuzione (PR #404): GitHub rifiuta di assegnare un reviewer quando
+l'unico candidato è l'autore stesso della PR — su un repo con un solo operatore umano (autore di ogni
+PR, anche quelle aperte da Cloud Agent), quell'azione non ha mai un destinatario valido. Di
+conseguenza **"Approve PR" è la sola azione che può produrre un effetto visibile su GitHub** in questa
+configurazione — non un'alternativa più aggressiva, ma l'unica che funziona davvero qui.
+
+## Configurazione finale attiva
+
+- Repo scope: solo `sistema-gestione-iso9001` (rimosso `esrs-pwa-frontend`, fuori contesto).
+- Segnali: **Bugbot Review Context** acceso; **Security Review Context** e **Risk Score** spenti
+  (il secondo perché la classificazione di rischio è già affidata ai file `APPROVAL_POLICY.md`
+  per-directory, più granulare di uno score generico — **se in futuro si accende "Use Risk Score"**,
+  cambiare prima "Maximum Risk for Approval" da `Medium` a un valore più conservativo, altrimenti si
+  permetterebbe l'auto-approvazione su rischio Medio contro `sgq-git-autonomy.mdc`).
+- Tools: **Approve Pull Request** acceso, **Request Reviewers** lasciato acceso (inerte per il motivo
+  sopra, nessun danno a lasciarlo).
+- Custom Prompt: testo di questa guida incollato (rinforzo esplicito sulla regola di declassamento e
+  sull'elenco dei servizi di logica normativa AI, in aggiunta ai file di policy nel repo).
+
+## Validazione già avvenuta prima dell'attivazione di Approve
+
+Nelle 11 run osservate prima di accendere "Approve PR", l'agente non ha mai approvato nulla (comportamento
+corretto: Bugbot Review Context spesso in stato incerto, o PR che toccava le stesse policy). Bugbot ha
+trovato **3 problemi reali** nei file scritti in questa sessione (2 su [PR #402](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/402)/[#404](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/404), 1 su
+[#405](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/405)) — tutti verificati e corretti prima di essere accettati per buoni.
+
+## Prossimi passi di osservazione (non richiedono azione immediata)
+
+- Alla prossima PR reale (non solo file di policy) di rischio Basso: verificare se "Approve PR" scatta
+  davvero e lascia un'approvazione visibile su GitHub.
+- Alla prossima PR di rischio Medio/Alto: commentare `bugbot run verbose=true` per avere la tabella
+  delle regole usate (conferma definitiva che `.cursor/BUGBOT.md` viene incluso — oggi confermato solo
+  dalla documentazione, non da un test empirico diretto).
+- Monitorare `cursor.com/dashboard/spending` dopo la prima settimana per il costo reale Bugbot.
+- Se "Approve PR" approva qualcosa che non doveva: correggere il `APPROVAL_POLICY.md` più vicino ai
+  file coinvolti, non disattivare l'intera automation.
