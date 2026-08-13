@@ -256,6 +256,18 @@ function CompanyDetailPage() {
     }
   }, [companyId, isSuperadmin, auditorOrgId]);
 
+  const refreshCompanyQuiet = useCallback(async () => {
+    if (!companyId) return;
+    try {
+      const params = isSuperadmin && auditorOrgId ? { auditor_org_id: auditorOrgId } : {};
+      const res = await apiService.getCompany(companyId, params);
+      const data = res?.data ?? res;
+      if (data?.id) setCompany(data);
+    } catch {
+      /* titolo resta quello già in pagina */
+    }
+  }, [companyId, isSuperadmin, auditorOrgId]);
+
   useEffect(() => {
     loadCompany();
   }, [loadCompany]);
@@ -330,6 +342,7 @@ function CompanyDetailPage() {
             auditorOrgId={auditorOrgId}
             canEdit={canEdit}
             onUnavailable={hideProfileTab}
+            onAnagraficaSynced={refreshCompanyQuiet}
           />
         )}
         {activeTab === "personale" && (

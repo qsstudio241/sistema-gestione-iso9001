@@ -236,6 +236,84 @@ function fieldFromExcelHeader(header) {
     return EXCEL_HEADER_LOOKUP.get(normalizeExcelHeader(header)) || null;
 }
 
+function isProfileFilled(value) {
+    if (value === 0 || value === false) return true;
+    return value !== null && value !== undefined && String(value).trim() !== '';
+}
+
+function composeRegisteredAddress(profile) {
+    const src = profile && typeof profile === 'object' ? profile : {};
+    const parts = [];
+    if (isProfileFilled(src.registered_street)) parts.push(String(src.registered_street).trim());
+    const cityBits = [src.registered_cap, src.registered_city]
+        .filter(isProfileFilled)
+        .map((v) => String(v).trim());
+    if (cityBits.length) {
+        const prov = isProfileFilled(src.registered_province)
+            ? ` (${String(src.registered_province).trim()})`
+            : '';
+        parts.push(cityBits.join(' ') + prov);
+    }
+    return parts.length ? parts.join(', ') : null;
+}
+
+/**
+ * Pesi catalogo §6: Identità 30 · Sede 15 · Dimensione 20 · SSL 15 · Ambiente 20.
+ * BIT/INT: 0 conta come compilato; null/vuoto no.
+ */
+function computeProfileCompleteness(profile, extras = {}) {
+    const src = profile && typeof profile === 'object' ? profile : {};
+    let score = 0;
+
+    const identKeys = ['vat_number', 'legal_name', 'ateco_primary'];
+    const identFilled = identKeys.filter((k) => isProfileFilled(src[k])).length;
+    score += Math.round((30 * identFilled) / identKeys.length);
+
+    const hasCity = isProfileFilled(src.registered_city);
+    const hasStreet = isProfileFilled(src.registered_street)
+        || isProfileFilled(extras.addressFallback);
+    if (hasCity && hasStreet) score += 15;
+    else if (hasCity || hasStreet) score += 8;
+
+    const dimKeys = ['employees_count', 'sites_count'];
+    const dimFilled = dimKeys.filter((k) => isProfileFilled(src[k])).length;
+    score += Math.round((20 * dimFilled) / dimKeys.length);
+
+    const hasDvr = src.has_dvr === 0 || src.has_dvr === 1;
+    const hasRole = isProfileFilled(src.rspp_name)
+        || isProfileFilled(src.rls_name)
+        || isProfileFilled(src.competent_doctor);
+    if (hasDvr && hasRole) score += 15;
+    else if (hasDvr || hasRole) score += 8;
+
+    const envKeys = ['produces_waste', 'has_water_discharge', 'has_air_emissions', 'has_aua_or_aia'];
+    const envFilled = envKeys.filter((k) => src[k] === 0 || src[k] === 1).length;
+    if (envFilled >= 2) score += 20;
+    else if (envFilled === 1) score += 10;
+
+    return Math.min(100, Math.max(0, score));
+}
+
+function completenessLevel(score) {
+    const n = Number(score);
+    if (!Number.isFinite(n)) return 'incompleto';
+    if (n >= 80) return 'pronto';
+    if (n >= 50) return 'parziale';
+    return 'incompleto';
+}
+
+function parseSyncAnagrafica(body) {
+    const raw = body && typeof body === 'object' ? body.sync_anagrafica : null;
+    if (!raw || typeof raw !== 'object') {
+        return { name: false, vat_number: false, address: false };
+    }
+    return {
+        name: !!raw.name,
+        vat_number: !!raw.vat_number,
+        address: !!raw.address,
+    };
+}
+
 function rowToProfile(row) {
     const profile = emptyProfile();
     if (!row) return profile;
@@ -264,4 +342,9 @@ module.exports = {
     EXCEL_SYNONYMS,
     normalizeExcelHeader,
     fieldFromExcelHeader,
+    isProfileFilled,
+    composeRegisteredAddress,
+    computeProfileCompleteness,
+    completenessLevel,
+    parseSyncAnagrafica,
 };
