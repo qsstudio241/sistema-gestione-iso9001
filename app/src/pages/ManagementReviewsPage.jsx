@@ -7,13 +7,10 @@
 
 import React, { useState, useEffect, useCallback, useMemo } from "react";
 import apiService from "../services/apiService";
+import { useCompanyScope } from "../contexts/CompanyScopeContext";
 import ParticipantsList from "../components/ParticipantsList";
 import NcCreateModal from "../components/NcCreateModal";
 import { formatDate } from "../utils/dateHelpers";
-import {
-  resolveInitialMgmtReviewCompanyScope,
-  persistMgmtReviewCompanyScope,
-} from "../utils/managementReviewsCompanyScope";
 import { exportManagementReviewDocx } from "../utils/wordExportReview";
 import "./ManagementReviewsPage.css";
 
@@ -992,6 +989,7 @@ function buildYearOptions() {
 // ─── Pagina principale ────────────────────────────────────────────────────────
 
 export default function ManagementReviewsPage() {
+  const { companyId: companyScope, companies, scopeCompanyName } = useCompanyScope();
   const [reviews, setReviews]       = useState([]);
   const [loading, setLoading]       = useState(true);
   const [error, setError]           = useState(null);
@@ -999,42 +997,13 @@ export default function ManagementReviewsPage() {
   const [editItem, setEditItem]     = useState(null);
   const [filterStatus, setFilter]   = useState("");
   const [filterYear, setFilterYear] = useState("");
-  const [companies, setCompanies]   = useState([]);
   const [delConfirm, setDelConfirm] = useState(null);
   const [pagination, setPagination] = useState({ page: 1, limit: 50, total: 0 });
   const [exportingId, setExportingId] = useState(null);
 
-  // ── Ambito azienda (pattern condiviso con Qualifiche, Registro documenti) ──
-  const [companyScope, setCompanyScope] = useState(
-    () => resolveInitialMgmtReviewCompanyScope()
-  );
-
-  const handleCompanyScopeChange = useCallback((value) => {
-    setCompanyScope(value);
-    persistMgmtReviewCompanyScope(value);
-    setPagination((p) => ({ ...p, page: 1 }));
-  }, []);
-
-  const scopeCompanyName = useMemo(() => {
-    if (!companyScope) return "Tutto lo studio";
-    const match = companies.find((c) => String(c.id) === String(companyScope));
-    return match?.name || `Azienda #${companyScope}`;
-  }, [companyScope, companies]);
-
   useEffect(() => {
-    apiService.getCompanies()
-      .then((res) => {
-        const list = res?.data || [];
-        setCompanies(list);
-        // Auto-selezione se l'utente ha accesso ad una sola azienda
-        if (list.length === 1 && !companyScope) {
-          const onlyId = String(list[0].id);
-          setCompanyScope(onlyId);
-          persistMgmtReviewCompanyScope(onlyId);
-        }
-      })
-      .catch(() => setCompanies([]));
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+    setPagination((p) => ({ ...p, page: 1 }));
+  }, [companyScope]);
 
   const fetchReviews = useCallback(async () => {
     setLoading(true);
@@ -1099,22 +1068,6 @@ export default function ManagementReviewsPage() {
           <p className="mr-page-sub">{"ISO 9001:2015 \u00A79.3 \u2014 Verbali e output del riesame annuale"}</p>
         </div>
         <div className="mr-header-actions">
-          {companies.length > 0 && (
-            <label className="mr-scope-label">
-              {"Ambito:"}
-              <select
-                className="mr-scope-select"
-                value={companyScope}
-                onChange={(e) => handleCompanyScopeChange(e.target.value)}
-                aria-label="Ambito riesame per azienda"
-              >
-                <option value="">{"Tutto lo studio"}</option>
-                {companies.map((c) => (
-                  <option key={c.id} value={String(c.id)}>{c.name}</option>
-                ))}
-              </select>
-            </label>
-          )}
           <button className="btn-primary" onClick={openCreate}>
             {"+ Nuovo riesame"}
           </button>

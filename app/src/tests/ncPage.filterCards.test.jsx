@@ -46,6 +46,12 @@ const STATS = {
   overdue: 2, due_soon: 0,
 };
 
+async function renderNcWithStats() {
+  render(<NCPage />);
+  // waitFor(apiCalled) non equivale a "la UI ha i dati" (lezione GUIDA 13/08/2026).
+  return screen.findByRole("button", { name: /Chiuse/i });
+}
+
 describe("NCPage — card statistiche sostituiscono le tendine Stato/Scadenze", () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -56,16 +62,14 @@ describe("NCPage — card statistiche sostituiscono le tendine Stato/Scadenze", 
   });
 
   it("non mostra più la tendina 'Tutti gli stati' (rimossa, ridondante con le card Aperte/Chiuse)", async () => {
-    render(<NCPage />);
-    await waitFor(() => expect(apiService.getNcStats).toHaveBeenCalled());
+    await renderNcWithStats();
 
     expect(screen.queryByText("Tutti gli stati")).toBeNull();
     expect(screen.queryByRole("option", { name: "Chiuse" })).toBeNull();
   });
 
   it("non mostra più la tendina 'Tutte le scadenze' (rimossa, ridondante con le card Scadute/In scadenza)", async () => {
-    render(<NCPage />);
-    await waitFor(() => expect(apiService.getNcStats).toHaveBeenCalled());
+    await renderNcWithStats();
 
     expect(screen.queryByText("Tutte le scadenze")).toBeNull();
     expect(screen.queryByText("Solo scadute")).toBeNull();
@@ -73,33 +77,28 @@ describe("NCPage — card statistiche sostituiscono le tendine Stato/Scadenze", 
   });
 
   it("mostra la card 'Chiuse' con il conteggio da stats.closed", async () => {
-    render(<NCPage />);
-    await waitFor(() => expect(apiService.getNcStats).toHaveBeenCalled());
-
-    const closedCard = screen.getByRole("button", { name: /Chiuse/i });
+    const closedCard = await renderNcWithStats();
     expect(closedCard.textContent).toContain("3");
     expect(closedCard.textContent).toContain("Chiuse");
   });
 
   it("cliccando la card 'Chiuse' filtra con status=closed", async () => {
     const user = userEvent.setup();
-    render(<NCPage />);
-    await waitFor(() => expect(apiService.getNcStats).toHaveBeenCalled());
+    const closedCard = await renderNcWithStats();
 
     apiService.getAllNonConformities.mockClear();
-    await user.click(screen.getByRole("button", { name: /Chiuse/i }));
+    await user.click(closedCard);
 
     await waitFor(() => {
       expect(apiService.getAllNonConformities).toHaveBeenCalledWith(
         expect.objectContaining({ status: "closed" })
       );
     });
-    expect(screen.getByRole("button", { name: /Chiuse/i })).toHaveClass("nc-stat-active");
+    expect(closedCard).toHaveClass("nc-stat-active");
   });
 
   it("la card 'In scadenza' è visibile anche quando il conteggio due_soon è 0 (nessuna gating condizionale)", async () => {
-    render(<NCPage />);
-    await waitFor(() => expect(apiService.getNcStats).toHaveBeenCalled());
+    await renderNcWithStats();
 
     // getByTitle (non getByRole name): il pulsante header "Azioni in scadenza"
     // collide con la regex /In scadenza/i sul nome accessibile.
@@ -110,8 +109,7 @@ describe("NCPage — card statistiche sostituiscono le tendine Stato/Scadenze", 
 
   it("cliccando la card 'In scadenza' filtra con due_within_days=7 (valore prima raggiungibile solo dalla tendina)", async () => {
     const user = userEvent.setup();
-    render(<NCPage />);
-    await waitFor(() => expect(apiService.getNcStats).toHaveBeenCalled());
+    await renderNcWithStats();
 
     apiService.getAllNonConformities.mockClear();
     await user.click(screen.getByTitle("Filtra: NC in scadenza entro 7 giorni"));
@@ -125,8 +123,7 @@ describe("NCPage — card statistiche sostituiscono le tendine Stato/Scadenze", 
 
   it("la card 'Aperte' continua a funzionare con toggle attivo/disattivo (clic di nuovo per deselezionare)", async () => {
     const user = userEvent.setup();
-    render(<NCPage />);
-    await waitFor(() => expect(apiService.getNcStats).toHaveBeenCalled());
+    await renderNcWithStats();
 
     const openCard = screen.getByRole("button", { name: /Aperte/i });
     await user.click(openCard);
@@ -138,8 +135,7 @@ describe("NCPage — card statistiche sostituiscono le tendine Stato/Scadenze", 
 
   it("la card 'Scadute' continua a filtrare con overdue=true", async () => {
     const user = userEvent.setup();
-    render(<NCPage />);
-    await waitFor(() => expect(apiService.getNcStats).toHaveBeenCalled());
+    await renderNcWithStats();
 
     apiService.getAllNonConformities.mockClear();
     await user.click(screen.getByRole("button", { name: /Scadute/i }));
@@ -153,8 +149,7 @@ describe("NCPage — card statistiche sostituiscono le tendine Stato/Scadenze", 
 
   it("la card 'Totale' continua a resettare i filtri di stato/scadenza", async () => {
     const user = userEvent.setup();
-    render(<NCPage />);
-    await waitFor(() => expect(apiService.getNcStats).toHaveBeenCalled());
+    await renderNcWithStats();
 
     await user.click(screen.getByRole("button", { name: /Scadute/i }));
     await waitFor(() => expect(screen.getByRole("button", { name: /Scadute/i })).toHaveClass("nc-stat-active"));

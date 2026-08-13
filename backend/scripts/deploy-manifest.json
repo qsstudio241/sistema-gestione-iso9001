@@ -43,7 +43,8 @@
                                      "src/data/qtafiVis001Template.js",
                                      "src/data/legislativoSicurezzaTemplate.js",
                                      "src/data/reprocessableFields.js",
-                                     "src/data/reprocessTableAdapters.js"
+                                     "src/data/reprocessTableAdapters.js",
+                                     "src/data/companyProfileFields.js"
                                  ]
                    },
                    {
@@ -189,6 +190,7 @@
                                      "src/controllers/contractReview.controller.js",
                                      "src/controllers/drawingExtraction.controller.js",
                                      "src/controllers/company.controller.js",
+                                     "src/controllers/companyProfile.controller.js",
                                      "src/controllers/qualifications.controller.js",
                                      "src/controllers/projects.controller.js",
                                      "src/controllers/risks.controller.js",

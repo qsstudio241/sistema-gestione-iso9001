@@ -29,6 +29,8 @@
 
 ## Slice S1 — Migration DB
 
+**Stato S1:** FATTO (13/08/2026) — `145_company_profile.sql` + `run-migration-145-vps.js`.
+
 **File previsti:**
 
 - `database/migrations/145_company_profile.sql` (idempotente — **verificare `ls database/migrations/ | sort | tail -5` prima di eseguire**: `130` era già occupato da `130_user_audit_log.sql` al 23/07/2026, sequenza condivisa arrivata a `144` il 13/08/2026; il numero libero cambia ad ogni PR che tocca migrazioni, non fidarsi del valore scritto qui)
@@ -48,6 +50,8 @@
 
 ## Slice S2a — API profilo (BE)
 
+**Stato S2a:** FATTO (13/08/2026) — GET/PUT `/companies/:id/profile`.
+
 **File previsti:**
 
 - `backend/src/controllers/companyProfile.controller.js` (+ test Jest)
@@ -66,6 +70,8 @@
 ---
 
 ## Slice S2b — UI tab Profilo (FE)
+
+**Stato S2b:** FATTO (13/08/2026) — tab «Profilo conformità» in `CompanyDetailPage`.
 
 **File previsti:**
 

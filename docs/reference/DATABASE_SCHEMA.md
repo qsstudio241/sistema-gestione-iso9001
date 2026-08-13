@@ -322,6 +322,20 @@ Aziende auditate (clienti degli auditor).
 | created_at     | DATETIME2     | NO       |                    |
 | updated_at     | DATETIME2     | NO       |                    |
 
+#### company_profile
+
+Profilo 1:1 opzionale per conformità legislativa (ADR-018). Assenza di riga = nessun breaking change su lista/audit. PK = `company_id`. Migrazione **145**.
+
+| Colonna | Tipo | Nullable | Note |
+| ------- | ---- | -------- | ---- |
+| company_id | INT | NO | PK, FK → companies(id) |
+| organization_id | INT | NO | FK → organizations, indice |
+| campi livello A/B | NVARCHAR / INT / BIT | YES | Catalogo in `docs/specs/COMPANY_PROFILE_CAMPI_E_TEMPLATE_EXCEL.md` |
+| source_meta | NVARCHAR(MAX) | YES | JSON provenance per campo |
+| profile_completeness | TINYINT | YES | 0–100, calcolato in S4 |
+| created_at / updated_at | DATETIME2 | NO | UTC |
+| updated_by_user_id | INT | YES | FK → users(user_id) |
+
 #### user_org_roles
 
 Ruoli per utente per organizzazione (RBAC).

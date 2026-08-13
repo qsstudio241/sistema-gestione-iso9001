@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import { Link, useRouter } from "../contexts/RouterContext";
 import { useAuth } from "../contexts/AuthContext";
+import { useCompanyScope } from "../contexts/CompanyScopeContext";
 import apiService from "../services/apiService";
 import AiAssistantCitations from "../components/AiAssistantCitations";
 import {
@@ -20,26 +21,15 @@ function readInitialQuery() {
 
 export default function SearchPage() {
   const { user } = useAuth();
+  const { companyId } = useCompanyScope();
   const { replace } = useRouter();
   const [query, setQuery] = useState(readInitialQuery);
   const [mode, setMode] = useState("exact");
-  const [companyId, setCompanyId] = useState("");
-  const [companies, setCompanies] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [exactResult, setExactResult] = useState(null);
   const [semanticResult, setSemanticResult] = useState(null);
   const debounceRef = useRef(null);
-
-  useEffect(() => {
-    let cancelled = false;
-    apiService.getCompanies().then((res) => {
-      if (cancelled) return;
-      const list = res?.data || res?.companies || res || [];
-      setCompanies(Array.isArray(list) ? list : []);
-    }).catch(() => {});
-    return () => { cancelled = true; };
-  }, []);
 
   const syncUrl = useCallback((term) => {
     const trimmed = term.trim();
@@ -157,23 +147,6 @@ export default function SearchPage() {
             autoFocus
           />
         </div>
-
-        <select
-          className="search-scope-select"
-          value={companyId}
-          onChange={(e) => setCompanyId(e.target.value)}
-          aria-label="Ambito ricerca"
-        >
-          <option value="">Tutto lo studio</option>
-          {companies.map((c) => {
-            const id = c.id || c.company_id;
-            return (
-              <option key={id} value={String(id)}>
-                {c.name}
-              </option>
-            );
-          })}
-        </select>
 
         <div className="search-mode-tabs" role="tablist" aria-label="Modalit -  ricerca">
           <button

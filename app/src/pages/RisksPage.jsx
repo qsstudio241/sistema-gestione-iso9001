@@ -6,6 +6,7 @@
 
 import React, { useState, useEffect, useCallback } from "react";
 import apiService from "../services/apiService";
+import { useCompanyScope } from "../contexts/CompanyScopeContext";
 import { formatDate } from "../utils/dateHelpers";
 import NcCreateModal from "../components/NcCreateModal";
 import "./RisksPage.css";
@@ -274,7 +275,7 @@ function RisksTab({ companies = [], filterCompany = "" }) {
       if (filterCompany) params.company_id = filterCompany;
       const [listRes, statsRes] = await Promise.all([
         apiService.getRisks(params),
-        apiService.getRisksStats(),
+        apiService.getRisksStats(filterCompany ? { company_id: filterCompany } : {}),
       ]);
       setList(listRes?.data || []);
       setStats(statsRes?.data || null);
@@ -788,15 +789,8 @@ function ContestoTab({ companies = [], filterCompany = "" }) {
 // ── Pagina principale ─────────────────────────────────────────────────────────
 
 export default function RisksPage() {
+  const { companyId: filterCompany, companies } = useCompanyScope();
   const [activeTab, setActiveTab]   = useState("risks");
-  const [companies, setCompanies]   = useState([]);
-  const [filterCompany, setFC]      = useState("");
-
-  useEffect(() => {
-    apiService.getCompanies().then(r => setCompanies(r?.data || [])).catch(() => {});
-  }, []);
-
-  const selectedCompanyName = companies.find(c => String(c.id) === String(filterCompany))?.name;
 
   return (
     <div className="risks-page">
@@ -804,24 +798,6 @@ export default function RisksPage() {
         <h1>{"\u26A0\uFE0F Rischi, Opportunit\u00e0 e Obiettivi"}</h1>
         <p className="risks-page-sub">{"ISO 9001:2015 \u00A7 4.1/4.2 Contesto \u2014 \u00A7 6.1 Rischi e opportunit\u00e0 \u2014 \u00A7 6.2 Obiettivi per la qualit\u00e0"}</p>
       </div>
-
-      {/* Selettore ambito (azienda) — livello modulo, vale per tutti i tab */}
-      {companies.length > 0 && (
-        <div className="risks-scope-bar">
-          <label className="scope-label">{"Ambito (azienda):"}</label>
-          <select
-            className="scope-select"
-            value={filterCompany}
-            onChange={e => setFC(e.target.value)}
-          >
-            <option value="">Tutte le aziende</option>
-            {companies.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-          </select>
-          {selectedCompanyName && (
-            <span className="scope-active-badge">{selectedCompanyName}</span>
-          )}
-        </div>
-      )}
 
       <div className="risks-tabs">
         <button type="button" className={`risks-tab-btn${activeTab === "risks" ? " active" : ""}`} onClick={() => setActiveTab("risks")}>

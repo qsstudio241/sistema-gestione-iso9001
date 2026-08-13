@@ -6,6 +6,7 @@
 
 import React, { useState, useEffect, useCallback } from "react";
 import apiService from "../services/apiService";
+import { useCompanyScope } from "../contexts/CompanyScopeContext";
 import { formatDate } from "../utils/dateHelpers";
 import "./EquipmentPage.css";
 
@@ -273,20 +274,17 @@ function EquipmentFormModal({ asset, companies, onSave, onClose }) {
 
 // ── Componente principale ─────────────────────────────────────────────────────
 export default function EquipmentPage() {
+    const { companyId: filterCompany } = useCompanyScope();
     const [assets, setAssets] = useState([]);
     const [stats, setStats] = useState(null);
-    const [companies, setCompanies] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
 
-    // Filtri
     const [filterCategory, setFilterCategory] = useState("");
     const [filterStatus, setFilterStatus] = useState("");
     const [filterExpiring, setFilterExpiring] = useState(false);
-    const [filterCompany, setFilterCompany] = useState("");
     const [searchText, setSearchText] = useState("");
 
-    // UI
     const [showModal, setShowModal] = useState(false);
     const [editingAsset, setEditingAsset] = useState(null);
 
@@ -301,15 +299,13 @@ export default function EquipmentPage() {
             if (filterExpiring) params.expiring_days = 30;
             if (searchText)     params.search = searchText;
 
-            const [listResp, statsResp, companiesResp] = await Promise.all([
+            const [listResp, statsResp] = await Promise.all([
                 apiService.getEquipmentList(params),
-                apiService.getEquipmentStats(),
-                apiService.getCompanies ? apiService.getCompanies() : Promise.resolve({ data: [] }),
+                apiService.getEquipmentStats(filterCompany ? { company_id: filterCompany } : {}),
             ]);
 
             setAssets(listResp.data || []);
             setStats(statsResp.data || null);
-            setCompanies(companiesResp.data || []);
         } catch (err) {
             setError("Errore caricamento strumenti");
         } finally {
@@ -364,11 +360,6 @@ export default function EquipmentPage() {
                 <select value={filterStatus} onChange={e => setFilterStatus(e.target.value)}>
                     <option value="">Tutti gli stati</option>
                     {ASSET_STATUSES.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
-                </select>
-                <select value={filterCompany} onChange={e => setFilterCompany(e.target.value)}>
-                    <option value="">Studio + tutte le aziende</option>
-                    <option value="null">Solo studio</option>
-                    {companies.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
                 </select>
                 <label className="eq-filter-check">
                     <input type="checkbox" checked={filterExpiring} onChange={e => setFilterExpiring(e.target.checked)} />

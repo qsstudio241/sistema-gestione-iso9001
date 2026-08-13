@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import SearchPage from "../pages/SearchPage";
+import { withCompanyScope } from "./helpers/withCompanyScope";
 
 const mockReplace = vi.fn();
 const mockNavigate = vi.fn();
@@ -121,17 +122,8 @@ describe("SearchPage", () => {
     expect(screen.getByText(/Basato su 1 record del SGQ/)).toBeTruthy();
   });
 
-  it("passes companyId filter when scope is selected", async () => {
-    render(<SearchPage />);
-
-    await waitFor(() => {
-      expect(mockGetCompanies).toHaveBeenCalled();
-    });
-
-    await userEvent.selectOptions(
-      screen.getByLabelText("Ambito ricerca"),
-      "10",
-    );
+  it("passes companyId filter from global Ambito", async () => {
+    render(withCompanyScope(<SearchPage />, "10"));
 
     const input = screen.getByLabelText("Testo ricerca");
     await userEvent.type(input, "procedura");
