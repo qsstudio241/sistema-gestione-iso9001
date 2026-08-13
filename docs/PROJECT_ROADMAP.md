@@ -6,17 +6,19 @@
 
 > Leggere questa sezione **prima** di tutto il resto del file.
 
-> **Risposta standard a «stato di avanzamento del progetto e priorità da affrontare»**: sintetizzare da questa sezione (moduli maturi + sessione più recente + tabella priorità sotto), **non** dal banner storico più sotto (superato, tenuto solo per traccia) né dalla sezione "Stato funzionalità" di [`PROJECT_CONTEXT.md`](../PROJECT_CONTEXT.md) (marcata storica/superata). **Aggiornare questa sezione a fine sessione** se emergono nuove priorità o se una priorità elencata viene chiusa (stesso principio delle "Lezioni apprese" in [GUIDA_CONSOLIDATA.md](GUIDA_CONSOLIDATA.md) — sintesi qui, dettaglio linkato).
+> **Risposta standard a «stato di avanzamento del progetto e priorità da affrontare»**: sintetizzare da questa sezione (moduli maturi + sessione più recente + tabella priorità sotto), **non** dal banner storico più sotto (superato, tenuto solo per traccia) né dall'archivio marzo 2026 [`docs/archive/PROJECT_CONTEXT_STATO_FUNZIONALITA_2026-03.md`](archive/PROJECT_CONTEXT_STATO_FUNZIONALITA_2026-03.md). **Aggiornare questa sezione a fine sessione** se emergono nuove priorità o se una priorità elencata viene chiusa (stesso principio delle "Lezioni apprese" in [GUIDA_CONSOLIDATA.md](GUIDA_CONSOLIDATA.md) — sintesi qui, dettaglio linkato).
 
-**Ultimo aggiornamento di questa sezione**: 10/08/2026 (DEPUTYTASK4 — filtri Saldatura WPS/WPQR).
+**Ultimo aggiornamento di questa sezione**: 13/08/2026 (dieta harness avvio + bussola moduli).
 
 ### Moduli maturi (in produzione, uso quotidiano dai clienti Camellini/Mason)
 
 Audit multi-standard (9001/14001/45001) · Non Conformità (workflow ISO 10.2 completo) · Qualifiche Personale saldatori/NDT/coordinatori (ISO 9606-1/14732/14731/9712) · Saldatura (WPQR, generazione WPS da WPQR, Welding Book, Commesse ISO 3834, Dashboard 3834) · SAL (gap analysis requisiti con AI) · Registro Documenti + Scadenzari · Notifiche/Alert (documenti/NC/qualifiche) · Riesame di Direzione · RBAC multi-tenant (`company_access`) · Registro obblighi legali (ambiente + sicurezza) · Assistente AI / Gap Analysis euristica.
 
-### Sessione più recente (10/08/2026)
+### Sessione più recente (13/08/2026)
 
-Fix trasversale filtri dashboard duplicati (card statistiche + tendina ridondante sulla stessa dimensione) — nuova regola sistematica in [`sgq-operating-memory.mdc` § Filtri: singola fonte di verità](../.cursor/rules/sgq-operating-memory.mdc); applicata a **Qualifiche** (PR #368), **Scadenzari** (PR #371, + fix collegato tarature scadute invisibili), **NC** (PR #374) e **Saldatura WPS/WPQR** (DEPUTYTASK4 — caso più complesso: card WPQR-only mostrate anche nel tab WPS, bug bucket "scadute" non filtrato per `approval_status`, dettaglio in [GUIDA_CONSOLIDATA.md](GUIDA_CONSOLIDATA.md#lezioni-apprese-consolidate-fonte-unica)). Trovato e corretto un **bug critico trasversale**: `daysUntilDue` non riconosceva le date come oggetti `Date` nativi mssql — nessun alert email (documenti/qualifiche) era mai partito da quando la funzionalità esiste (PR #369). Dettaglio completo: [GUIDA_CONSOLIDATA.md § Notifiche NC e alert](GUIDA_CONSOLIDATA.md#lezioni-apprese-consolidate-fonte-unica).
+Dieta contesto agenti: avvio obbligatorio = `PROJECT_CONTEXT.md` (bussola «Se lavori su…») + roadmap **solo** § Stato attuale; GUIDA a sezioni e solo se serve. Misura `check-harness-boot.js` (scenario Deputy `company_profile` / ADR-018). Non è un cambio prodotto — le priorità sotto restano valide. Dettaglio: [GUIDA § Harness](GUIDA_CONSOLIDATA.md#lezioni-apprese-consolidate-fonte-unica).
+
+Sessione prodotto precedente (10/08/2026): fix filtri dashboard duplicati (Qualifiche PR #368, Scadenzari #371, NC #374, Saldatura DEPUTYTASK4) + bug `daysUntilDue` / alert email (PR #369).
 
 ### Priorità aperte ORA (ordine indicativo, non rigido — verificare col committente prima di iniziare una sessione dedicata)
 

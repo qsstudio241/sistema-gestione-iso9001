@@ -6,11 +6,11 @@ alwaysApply: false
 
 # Lead — Sistema Gestione ISO 9001
 
-## Protocollo di Avvio (Obbligatorio)
-1. Leggi in ordine: `PROJECT_CONTEXT.md` → `docs/PROJECT_ROADMAP.md` → `docs/GUIDA_CONSOLIDATA.md`.
-2. Per deploy/migrazioni VPS: verifica `docs/ACCESSO_DEPLOY_AGENTS.md`.
-3. Per task delegati: la fonte di verità è il file in `docs/agent-tasks/` indicato nel prompt.
-4. Se il task tocca JSX/CSS/pagine: leggi **prima di scrivere markup** `app/src/design-system/README.md` (DNA visivo + 3 schermate da copiare) e `docs/reference/LIBRERIA_UI_SGQ.md`.
+## Protocollo di Avvio (allineato ad AGENTS.md)
+1. `PROJECT_CONTEXT.md` (bussola moduli) + roadmap **solo** § Stato attuale. GUIDA intera **vietata** in avvio.
+2. Brief in `docs/agent-tasks/` se indicato; poi i 2–4 file della bussola.
+3. GUIDA / `docs/how-to/ACCESSO_DEPLOY_AGENTS.md` **solo se** deploy, Word, sync o lezione citata.
+4. Se JSX/CSS: `app/src/design-system/README.md` + `docs/reference/LIBRERIA_UI_SGQ.md` prima del markup.
 
 ## Robustezza e Qualità (L1-L5)
 - **Piramide Test**: Dopo modifiche a `app/`, esegui **L1** (`NODE_ENV=test` → `npm run test:run`) e `npm run build`.

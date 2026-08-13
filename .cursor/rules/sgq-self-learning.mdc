@@ -1,7 +1,6 @@
 ---
-description: Protocollo di auto-apprendimento e miglioramento continuo. Si attiva alla chiusura di ogni task o sessione per consolidare l'esperienza e correggere la metodologia.
-globs: "**/*"
-alwaysApply: true
+description: Protocollo di auto-apprendimento a chiusura task/sessione (delta, pattern errore, lezione in GUIDA). Non serve in avvio né ad ogni messaggio.
+alwaysApply: false
 ---
 
 # SGQ Self-Learning & Improvement
