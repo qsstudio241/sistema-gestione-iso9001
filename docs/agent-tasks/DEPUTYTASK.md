@@ -1,6 +1,6 @@
 # DEPUTYTASK — Profilo azienda conformità legislativa (ADR-018) — S1→S3
 
-**Stato:** APERTO (S1–S3 implementati; chiusura dopo TEST OK + PR)  
+**Stato:** CHIUSO (13/08/2026) — S1–S3 TEST OK. PR #409.  
 **Priorità:** P1 — fondazione dati per conformità legislativa 14001/45001 (non breaking)  
 **Branch base:** `main`  
 **Creato da:** Lead 23/07/2026  
