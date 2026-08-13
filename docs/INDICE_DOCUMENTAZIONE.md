@@ -21,10 +21,11 @@
 
 | Tag | File | Note |
 |-----|------|------|
-| attivo | [PROJECT_CONTEXT.md](../PROJECT_CONTEXT.md) | Stack, infra, workflow |
-| attivo | [AGENTS.md](../AGENTS.md) | Istruzioni Cloud Agent + policy context/costi |
-| attivo | [PROJECT_ROADMAP.md](PROJECT_ROADMAP.md) | Fasi, backlog, open points |
-| attivo | [GUIDA_CONSOLIDATA.md](GUIDA_CONSOLIDATA.md) | Esperienza operativa, deploy, Word, DB, DoD test, **[Lezioni apprese (fonte unica)](GUIDA_CONSOLIDATA.md#lezioni-apprese-consolidate-fonte-unica)** |
+| attivo | [AGENTS.md](../AGENTS.md) | Avvio dieta: CONTEXT + roadmap **solo** § Stato; GUIDA a sezioni |
+| attivo | [PROJECT_CONTEXT.md](../PROJECT_CONTEXT.md) | Stack, bussola moduli, regole critiche |
+| attivo | [PROJECT_ROADMAP.md](PROJECT_ROADMAP.md) | In avvio: **solo** § Stato attuale e priorità |
+| attivo | [GUIDA_CONSOLIDATA.md](GUIDA_CONSOLIDATA.md) | Esperienza operativa **a sezioni** (non intera in avvio) |
+| attivo | [HANDOFF_TEMPLATE.md](agent-tasks/HANDOFF_TEMPLATE.md) | Slice non chiusa: copiare nel DEPUTYTASK attivo |
 | attivo | [INDICE_DOCUMENTAZIONE.md](INDICE_DOCUMENTAZIONE.md) | Questo file |
 | attivo | [README.md](README.md) | Mappa cartelle how-to / reference / specs |
 
@@ -65,6 +66,8 @@ I file nella root di `docs/` con titolo *Documento spostato* sono **redirect** p
 | attivo | Quick-ref DB | [reference/DATABASE.md](reference/DATABASE.md) |
 | attivo | Quick-ref API | [reference/BACKEND_API.md](reference/BACKEND_API.md) |
 | attivo | Mapping tabelle | [reference/DATABASE_MAPPING.md](reference/DATABASE_MAPPING.md) |
+| attivo | Libreria componenti UI | [reference/LIBRERIA_UI_SGQ.md](reference/LIBRERIA_UI_SGQ.md) |
+| attivo | DNA visivo UI (token, anti-pattern, 3 schermate) | [`app/src/design-system/README.md`](../app/src/design-system/README.md) |
 
 ---
 
@@ -123,6 +126,7 @@ Elenco storico ADR-001…007: tabella in [adr/README.md](adr/README.md).
 | Tag | File | Note |
 |-----|------|------|
 | agente | [agent-tasks/DEPUTYTASK.md](agent-tasks/DEPUTYTASK.md) | **Unico brief attivo** — sovrascritto a ogni task |
+| agente | [agent-tasks/HANDOFF_TEMPLATE.md](agent-tasks/HANDOFF_TEMPLATE.md) | Slice non chiusa: copiare nel brief, nuova sessione |
 | agente | [agent-tasks/README.md](agent-tasks/README.md) | Convenzione deputy |
 | agente | `TASK_AI_*.md`, `TASK_SPRINT*.md`, … | Backlog/spec — **non** aggiornare come fonte operativa |
 | agente | [agent-tasks/MINI_CHECKLIST_VALIDAZIONE_DEPUTY.md](agent-tasks/MINI_CHECKLIST_VALIDAZIONE_DEPUTY.md) | Chiusura deputy |
@@ -154,7 +158,7 @@ Elenco storico ADR-001…007: tabella in [adr/README.md](adr/README.md).
 
 | Tag | File | Note |
 |-----|------|------|
-| attivo | [../PROJECT_CONTEXT.md](../PROJECT_CONTEXT.md) | Ingresso AI |
+| attivo | [../PROJECT_CONTEXT.md](../PROJECT_CONTEXT.md) | Ingresso AI + bussola moduli |
 | attivo | [../AGENTS.md](../AGENTS.md) | Cloud Agent / context window |
 | attivo | [../.cursor/environment.json](../.cursor/environment.json) | Install dipendenze VM Cloud |
 | **legacy** | [../.github/copilot-instructions.md](../.github/copilot-instructions.md) | Istruzioni Copilot — **non usare** (superato da ADR-015) |

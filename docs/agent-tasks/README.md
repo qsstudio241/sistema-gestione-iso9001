@@ -11,7 +11,8 @@ Allineare **due sessioni** (es. desktop e web) **senza** un canale diretto tra g
 3. **Restituzione risultati**: commit sul branch indicato + **PR verso `main`** (mai push forzato su `main` senza review consapevole).
 4. **Brief attivi**: **`DEPUTYTASK.md`** (task principale) e, per lavori **paralleli**, **`DEPUTYTASK1.md`**, **`DEPUTYTASK2.md`**, … Task completati (es. `TASK_AI_*` Fase 0) → [archive/agent-tasks/](../archive/agent-tasks/) con stub redirect qui.
 5. **Allineamento Git (obbligatorio, autonomo)**: ogni agente che legge/esegue un `DEPUTYTASK*` fa subito `git fetch origin main` + `git pull origin main` (o parte da `origin/main` aggiornato). **Non** chiedere al committente di fare pull. Dettaglio in `.cursor/rules/sgq-operating-memory.mdc`.
-6. **Verifica**: tab **Checks** sulla PR — workflow `.github/workflows/ci-app-pr.yml` (test + build `app/`). Netlify Deploy Preview è complementare.
+6. **Slice non chiusa**: copiare [`HANDOFF_TEMPLATE.md`](HANDOFF_TEMPLATE.md) nel brief attivo. La sessione successiva parte da lì.
+7. **Verifica**: tab **Checks** sulla PR — workflow `.github/workflows/ci-app-pr.yml` (test + build `app/`). Netlify Deploy Preview è complementare. PR Medio: Bugbot. Smoke UI: `backend/scripts/smoke-percorsi-critici.mjs`.
 
 ## Stabilità del progetto
 

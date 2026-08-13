@@ -73,4 +73,5 @@ I vecchi percorsi `.github/agents/` e le istruzioni Copilot (`copilot-instructio
 - [ADR-010-ai-agentic-architecture.md](ADR-010-ai-agentic-architecture.md) — Architettura AI agentica
 - [`.cursor/rules/sgq-operating-memory.mdc`](../../.cursor/rules/sgq-operating-memory.mdc) — Golden rules operativi
 - [`.cursor/rules/sgq-workflow-method.mdc`](../../.cursor/rules/sgq-workflow-method.mdc) — Metodo slice/multitasking
+- [`.cursor/skills/wayfinder-sgq/SKILL.md`](../../.cursor/skills/wayfinder-sgq/SKILL.md) — Piano epic > 1 sessione (smart zone; non il pacchetto `mattpocock/skills`)
 - [docs/agent-tasks/DEPUTYTASK.md](../agent-tasks/DEPUTYTASK.md) — Brief attivo

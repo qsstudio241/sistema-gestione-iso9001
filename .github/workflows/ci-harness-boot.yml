@@ -1,0 +1,38 @@
+# Verifica dieta harness (peso avvio + bussola moduli).
+# Non installa dipendenze app: solo Node sullo script.
+name: CI harness boot
+
+on:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'AGENTS.md'
+      - 'PROJECT_CONTEXT.md'
+      - 'docs/PROJECT_ROADMAP.md'
+      - 'docs/agent-tasks/DEPUTYTASK.md'
+      - '.cursor/rules/**'
+      - 'backend/scripts/check-harness-boot.js'
+      - 'backend/scripts/check-harness-boot.test.js'
+      - '.github/workflows/ci-harness-boot.yml'
+
+jobs:
+  harness-boot:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+          cache-dependency-path: backend/package-lock.json
+      - name: Peso avvio + bussola + scenario company_profile (repo reale)
+        run: node backend/scripts/check-harness-boot.js --human
+      - name: Install dipendenze backend (solo per jest)
+        working-directory: backend
+        run: npm ci
+      - name: Test di mutazione checker (verifica che intercetti le rotture)
+        working-directory: backend
+        run: npx jest scripts/check-harness-boot.test.js --coverage=false
