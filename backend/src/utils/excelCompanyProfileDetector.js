@@ -124,7 +124,11 @@ function detectCompanyProfileFile(buffer) {
     }
     const preview = pickEditableFields(rawPreview);
     const mappedCount = Object.keys(mapping).length;
+    const filledCount = Object.values(preview).filter((v) => v != null && v !== '').length;
     const confidence = matchCount === 0 ? 'bassa' : confidenceForPreview(preview);
+    let error;
+    if (mappedCount === 0) error = 'Nessun campo profilo riconosciuto';
+    else if (filledCount === 0) error = 'Nessun valore da importare nella prima riga dati';
 
     return {
         sheetName: preferred,
@@ -133,8 +137,8 @@ function detectCompanyProfileFile(buffer) {
         preview,
         mappedCount,
         confidence,
-        canImport: mappedCount >= 1,
-        error: mappedCount === 0 ? 'Nessun campo profilo riconosciuto' : undefined,
+        canImport: filledCount >= 1,
+        error,
     };
 }
 

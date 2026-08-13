@@ -79,6 +79,14 @@ describe('excelCompanyProfileDetector', () => {
         expect(r.error).toBeTruthy();
     });
 
+    it('template vuoto: header ok ma canImport false', () => {
+        const buf = buildImportTemplateBuffer();
+        const r = detectCompanyProfileFile(buf);
+        expect(r.mappedCount).toBeGreaterThan(0);
+        expect(r.canImport).toBe(false);
+        expect(r.error).toMatch(/prima riga/i);
+    });
+
     it('template ha header canonici', () => {
         const buf = buildImportTemplateBuffer();
         const wb = XLSX.read(buf, { type: 'buffer' });
