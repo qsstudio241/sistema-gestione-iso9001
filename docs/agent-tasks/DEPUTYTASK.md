@@ -1,6 +1,6 @@
 # DEPUTYTASK — Profilo azienda conformità legislativa (ADR-018) — S1→S3
 
-**Stato:** APERTO  
+**Stato:** APERTO (S1–S3 implementati; chiusura dopo TEST OK + PR)  
 **Priorità:** P1 — fondazione dati per conformità legislativa 14001/45001 (non breaking)  
 **Branch base:** `main`  
 **Creato da:** Lead 23/07/2026  
@@ -92,6 +92,8 @@
 
 ## Slice S3a — Detector + import Excel (BE)
 
+**Stato S3a:** FATTO (13/08/2026) — detect dry-run + import JSON + template xlsx.
+
 **File previsti:**
 
 - `backend/src/utils/excelCompanyProfileDetector.js` (+ `.test.js`)
@@ -106,6 +108,8 @@
 ---
 
 ## Slice S3b — Dialog import + template (FE)
+
+**Stato S3b:** FATTO (13/08/2026) — pulsanti «Scarica modello» / «Importa Excel» + dialog preview.
 
 **File previsti:**
 

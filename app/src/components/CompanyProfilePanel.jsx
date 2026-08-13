@@ -3,9 +3,11 @@
  * Sezioni operative: Identità A · Sede A · Dimensione B · SSL B · Ambiente B.
  */
 
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import apiService from "../services/apiService";
+import CompanyProfileImportDialog from "./CompanyProfileImportDialog";
 import "../pages/CompanyDetailPage.css";
+import "../pages/StudioSettingsPage.css";
 import "../components/ChecklistModule.css";
 
 const SECTIONS = [
@@ -104,6 +106,9 @@ const SECTIONS = [
 ];
 
 const ALL_KEYS = SECTIONS.flatMap((s) => s.fields.map((f) => f.key));
+const FIELD_LABELS = Object.fromEntries(
+  SECTIONS.flatMap((s) => s.fields.map((f) => [f.key, f.label]))
+);
 
 function emptyForm() {
   const form = {};
@@ -187,6 +192,10 @@ function FieldInput({ field, value, onChange, disabled }) {
 }
 
 function CompanyProfilePanel({ companyId, auditorOrgId, canEdit, onUnavailable }) {
+  const fileInputRef = useRef(null);
+  const [detecting, setDetecting] = useState(false);
+  const [importing, setImporting] = useState(false);
+  const [detection, setDetection] = useState(null);
   const [form, setForm] = useState(emptyForm);
   const [savedSnapshot, setSavedSnapshot] = useState("");
   const [meta, setMeta] = useState({ seededFromAnagrafica: [], address_anagrafica: null, exists: false });
@@ -240,6 +249,70 @@ function CompanyProfilePanel({ companyId, auditorOrgId, canEdit, onUnavailable }
     setSaved(false);
   };
 
+  const handleDownloadTemplate = async () => {
+    setError(null);
+    try {
+      await apiService.downloadCompanyProfileTemplate();
+    } catch (err) {
+      if (err.status === 403) {
+        onUnavailable?.(err);
+        return;
+      }
+      setError(err.message || "Errore download modello");
+    }
+  };
+
+  const handlePickExcel = async (e) => {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file || !companyId) return;
+    setDetecting(true);
+    setError(null);
+    try {
+      const params = auditorOrgId ? { auditor_org_id: auditorOrgId } : {};
+      const res = await apiService.detectCompanyProfileImport(companyId, file, params);
+      const data = res?.data ?? res;
+      if (!data?.canImport) {
+        setError(data?.error || "Nessun campo profilo riconosciuto nel file");
+        return;
+      }
+      setDetection({ ...data, fileName: data.fileName || file.name });
+    } catch (err) {
+      if (err.status === 403) {
+        onUnavailable?.(err);
+        return;
+      }
+      setError(err.message || "Errore analisi Excel");
+    } finally {
+      setDetecting(false);
+    }
+  };
+
+  const handleConfirmImport = async (fields) => {
+    if (!canEdit || !companyId) return;
+    setImporting(true);
+    setError(null);
+    try {
+      const params = auditorOrgId ? { auditor_org_id: auditorOrgId } : {};
+      const res = await apiService.importCompanyProfile(
+        companyId,
+        { fields, fileName: detection?.fileName || "import.xlsx" },
+        params
+      );
+      applyData(res?.data ?? res);
+      setDetection(null);
+      setSaved(true);
+    } catch (err) {
+      if (err.status === 403) {
+        onUnavailable?.(err);
+        return;
+      }
+      setError(err.message || "Errore import profilo");
+    } finally {
+      setImporting(false);
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!canEdit || !companyId) return;
@@ -279,6 +352,43 @@ function CompanyProfilePanel({ companyId, auditorOrgId, canEdit, onUnavailable }
           Nome e P.IVA sono stati copiati dall&apos;anagrafica esistente. Non sono ancora salvati nel profilo: premi Salva per confermare.
         </p>
       )}
+      {canEdit && (
+        <div className="studio-actions company-profile-import-actions">
+          <button
+            type="button"
+            className="btn-studio-secondary"
+            onClick={handleDownloadTemplate}
+            disabled={detecting || importing}
+          >
+            Scarica modello
+          </button>
+          <button
+            type="button"
+            className="btn-studio-secondary"
+            onClick={() => fileInputRef.current?.click()}
+            disabled={detecting || importing}
+          >
+            {detecting ? "Analisi file..." : "Importa Excel"}
+          </button>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept=".xlsx,.xls,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+            hidden
+            onChange={handlePickExcel}
+            data-testid="company-profile-excel-input"
+          />
+        </div>
+      )}
+      {detection && (
+        <CompanyProfileImportDialog
+          detection={detection}
+          fieldLabels={FIELD_LABELS}
+          onConfirm={handleConfirmImport}
+          onClose={() => setDetection(null)}
+          loading={importing}
+        />
+      )}
       <form onSubmit={handleSubmit}>
         {SECTIONS.map((section) => (
           <details key={section.id} className="studio-card company-profile-section" open={section.defaultOpen}>
@@ -316,4 +426,4 @@ function CompanyProfilePanel({ companyId, auditorOrgId, canEdit, onUnavailable }
 }
 
 export default CompanyProfilePanel;
-export { SECTIONS, profileToForm, formToPayload };
+export { SECTIONS, FIELD_LABELS, profileToForm, formToPayload };

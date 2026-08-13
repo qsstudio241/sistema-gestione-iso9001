@@ -558,6 +558,55 @@ class ApiService {
         return this.put(`/companies/${id}/profile${query ? '?' + query : ''}`, data);
     }
 
+    async detectCompanyProfileImport(id, file, params = {}) {
+        const formData = new FormData();
+        formData.append('file', file);
+        const query = new URLSearchParams(params).toString();
+        const token = this.getToken();
+        const headers = token ? { Authorization: `Bearer ${token}` } : {};
+        const response = await fetch(
+            `${this.baseUrl}/companies/${id}/profile/detect-import${query ? '?' + query : ''}`,
+            { method: 'POST', headers, body: formData }
+        );
+        if (!response.ok) {
+            const errBody = await response.json().catch(() => ({ error: 'Errore analisi Excel' }));
+            const err = new Error(errBody.error || `HTTP ${response.status}`);
+            err.status = response.status;
+            throw err;
+        }
+        return response.json();
+    }
+
+    async importCompanyProfile(id, data, params = {}) {
+        const query = new URLSearchParams(params).toString();
+        return this.post(`/companies/${id}/profile/import${query ? '?' + query : ''}`, data);
+    }
+
+    async downloadCompanyProfileTemplate() {
+        const response = await fetch(`${this.baseUrl}/companies/profile/import-template`, {
+            method: 'GET',
+            headers: this.getHeaders(true),
+        });
+        if (!response.ok) {
+            const errBody = await response.json().catch(() => ({ error: 'Errore download modello' }));
+            const err = new Error(errBody.error || `HTTP ${response.status}`);
+            err.status = response.status;
+            throw err;
+        }
+        const blob = await response.blob();
+        const url = URL.createObjectURL(blob);
+        try {
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = 'modello_profilo_azienda.xlsx';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        } finally {
+            URL.revokeObjectURL(url);
+        }
+    }
+
     async deleteCompany(id) {
         return this.delete(`/companies/${id}`);
     }

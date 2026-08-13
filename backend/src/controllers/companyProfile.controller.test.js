@@ -212,3 +212,75 @@ describe('companyProfile PUT', () => {
         );
     });
 });
+
+describe('companyProfile detect-import', () => {
+    it('403 se capability OFF', async () => {
+        hasSalLegalConformityCapability.mockResolvedValue(false);
+        const req = mockReq({ file: { buffer: Buffer.from('x'), originalname: 'a.xlsx' } });
+        const res = mockRes();
+        await ctrl.detectProfileImport(req, res);
+        expect(res.status).toHaveBeenCalledWith(403);
+    });
+
+    it('400 se file mancante', async () => {
+        mockScope();
+        const req = mockReq();
+        const res = mockRes();
+        await ctrl.detectProfileImport(req, res);
+        expect(res.status).toHaveBeenCalledWith(400);
+        expect(res.json).toHaveBeenCalledWith(
+            expect.objectContaining({ code: 'MISSING_FILE' })
+        );
+    });
+});
+
+describe('companyProfile import Excel', () => {
+    it('403 se capability OFF', async () => {
+        hasSalLegalConformityCapability.mockResolvedValue(false);
+        const req = mockReq({ body: { fields: { ateco_primary: '25.11.00' }, fileName: 'a.xlsx' } });
+        const res = mockRes();
+        await ctrl.importProfile(req, res);
+        expect(res.status).toHaveBeenCalledWith(403);
+    });
+
+    it('re-import idempotente (secondo import fa UPDATE)', async () => {
+        const savedRow = {
+            company_id: COMPANY_ID,
+            organization_id: ORG_ID,
+            ateco_primary: '25.11.00',
+            has_dvr: 1,
+        };
+        mockScope();
+        query.mockResolvedValueOnce({ recordset: [] });
+        query.mockResolvedValueOnce({ recordset: [] });
+        query.mockResolvedValueOnce({ recordset: [savedRow] });
+
+        const req1 = mockReq({
+            body: { fields: { ateco_primary: '25.11.00', has_dvr: 'si' }, fileName: 'visura.xlsx' },
+        });
+        const res1 = mockRes();
+        await ctrl.importProfile(req1, res1);
+        expect(res1.json).toHaveBeenCalledWith(
+            expect.objectContaining({
+                success: true,
+                data: expect.objectContaining({ ateco_primary: '25.11.00' }),
+            })
+        );
+
+        jest.clearAllMocks();
+        hasSalLegalConformityCapability.mockResolvedValue(true);
+        mockScope();
+        query.mockResolvedValueOnce({ recordset: [savedRow] });
+        query.mockResolvedValueOnce({ recordset: [], rowsAffected: [1] });
+        query.mockResolvedValueOnce({ recordset: [savedRow] });
+
+        const req2 = mockReq({
+            body: { fields: { ateco_primary: '25.11.00', has_dvr: 'si' }, fileName: 'visura.xlsx' },
+        });
+        const res2 = mockRes();
+        await ctrl.importProfile(req2, res2);
+        expect(query.mock.calls.some((c) => String(c[0]).includes('UPDATE company_profile'))).toBe(true);
+        const metaArg = query.mock.calls.find((c) => String(c[0]).includes('UPDATE'))[1];
+        expect(String(metaArg.source_meta)).toContain('"excel"');
+    });
+});
