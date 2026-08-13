@@ -8,7 +8,7 @@
 
 > **Risposta standard a «stato di avanzamento del progetto e priorità da affrontare»**: sintetizzare da questa sezione (moduli maturi + sessione più recente + tabella priorità sotto), **non** dal banner storico più sotto (superato, tenuto solo per traccia) né dall'archivio marzo 2026 [`docs/archive/PROJECT_CONTEXT_STATO_FUNZIONALITA_2026-03.md`](archive/PROJECT_CONTEXT_STATO_FUNZIONALITA_2026-03.md). **Aggiornare questa sezione a fine sessione** se emergono nuove priorità o se una priorità elencata viene chiusa (stesso principio delle "Lezioni apprese" in [GUIDA_CONSOLIDATA.md](GUIDA_CONSOLIDATA.md) — sintesi qui, dettaglio linkato).
 
-**Ultimo aggiornamento di questa sezione**: 13/08/2026 (dieta harness avvio + bussola moduli).
+**Ultimo aggiornamento di questa sezione**: 13/08/2026 (handoff + Ponytail + smoke critici, dopo dieta harness).
 
 ### Moduli maturi (in produzione, uso quotidiano dai clienti Camellini/Mason)
 
@@ -16,7 +16,7 @@ Audit multi-standard (9001/14001/45001) · Non Conformità (workflow ISO 10.2 co
 
 ### Sessione più recente (13/08/2026)
 
-Dieta contesto agenti: avvio obbligatorio = `PROJECT_CONTEXT.md` (bussola «Se lavori su…») + roadmap **solo** § Stato attuale; GUIDA a sezioni e solo se serve. Misura `check-harness-boot.js` (scenario Deputy `company_profile` / ADR-018). Non è un cambio prodotto — le priorità sotto restano valide. Dettaglio: [GUIDA § Harness](GUIDA_CONSOLIDATA.md#lezioni-apprese-consolidate-fonte-unica).
+Harness: handoff se la slice non chiude ([`HANDOFF_TEMPLATE.md`](agent-tasks/HANDOFF_TEMPLATE.md)); gate 5 domande prima di codice nuovo (Ponytail in `sgq-operating-memory.mdc`); smoke UI percorsi critici (`smoke-percorsi-critici.mjs`); una sessione = una slice. Non è un cambio prodotto — le priorità sotto restano valide. Dieta avvio (stesso giorno): bussola in `PROJECT_CONTEXT.md` + roadmap **solo** § Stato. Dettaglio: [GUIDA § Harness](GUIDA_CONSOLIDATA.md#lezioni-apprese-consolidate-fonte-unica).
 
 Sessione prodotto precedente (10/08/2026): fix filtri dashboard duplicati (Qualifiche PR #368, Scadenzari #371, NC #374, Saldatura DEPUTYTASK4) + bug `daysUntilDue` / alert email (PR #369).
 

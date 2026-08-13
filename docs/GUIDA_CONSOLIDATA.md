@@ -57,13 +57,13 @@ Dominio backend/SSH: **`sistemi.fr-busato.it`** (percorso: `www.fr-busato.it` �
 
 ## Cosa leggere a inizio sessione (ordine)
 
-1. **[../PROJECT_CONTEXT.md](../PROJECT_CONTEXT.md)** — stack, infra, workflow.  
-2. **[PROJECT_ROADMAP.md](PROJECT_ROADMAP.md)** — fasi e backlog.  
-3. **[ARCHITETTURA_UTENTI_RBAC.md](ARCHITETTURA_UTENTI_RBAC.md)** — gerarchia utenti, segregazione dati, ruoli e piano migrazione RBAC (aspetto portante; aggiornare quando si toccano auth o scope query).  
-4. **Questo file** — lezioni apprese, procedure ripetibili e **piano qualità / test di robustezza** (sezione omonima sotto).  
-5. **[DATABASE.md](reference/DATABASE.md)** — connessione DB, script repro, ambienti `development` / `test`.  
-6. Per deploy: **[how-to/deploy.md](how-to/deploy.md)** (hub) → checklist, VPS, troubleshooting, accesso agenti.
-7. Se il task tocca editing documentale desktop: **[MINI_SPEC_OFFICE_ROUNDTRIP_WEBDAV.md](specs/MINI_SPEC_OFFICE_ROUNDTRIP_WEBDAV.md)**.
+**Fonte vincolante:** [`AGENTS.md`](../AGENTS.md) (dieta). Non usare l'elenco sotto come avvio obbligatorio.
+
+1. **[`PROJECT_CONTEXT.md`](../PROJECT_CONTEXT.md)** — bussola moduli.  
+2. **[`PROJECT_ROADMAP.md`](PROJECT_ROADMAP.md) solo § Stato attuale** — non banner storico né backlog lungo.  
+3. Brief `DEPUTYTASK*.md` + 2–4 file della bussola.  
+4. **Questo file** — **solo la sezione** del task (deploy, Word, sync, encoding, lezione citata). Vietato leggerlo per intero «per orientarsi».  
+5. Deploy: **[how-to/deploy.md](how-to/deploy.md)**. Slice non chiusa: **[HANDOFF_TEMPLATE.md](agent-tasks/HANDOFF_TEMPLATE.md)** nel brief attivo.
 
 **Percorsi workspace (Windows)** — `C:\ProgettoISO` non è “un progetto diverso” dal repo su disco: sui PC configurati così è di solito una **junction verso Google Drive** (`G:\Il mio Drive\...`). Una cartella omonima sotto **OneDrive** può invece essere un **checkout separato**. Dettaglio e regole operative: sezione *Percorsi di lavoro locale* in **[../PROJECT_CONTEXT.md](../PROJECT_CONTEXT.md)**.
 
@@ -121,6 +121,7 @@ Dominio backend/SSH: **`sistemi.fr-busato.it`** (percorso: `www.fr-busato.it` �
 | **Allineamento Git autonomo con DEPUTYTASK multipli (24/07/2026)** — con più ambienti (Lead/Deputy/Cloud) e brief `DEPUTYTASK.md` / `DEPUTYTASK1.md` / `DEPUTYTASK2.md`, chiedere al committente «fai `git pull`» crea disallineamenti e ritardi. | **Regola**: ogni agente con terminale esegue **sempre** `git fetch origin main` (+ `git pull` quando lavora su `main` o prima di leggere/eseguire un `DEPUTYTASK*`) **da solo**. Vietato delegare il pull al committente. Verificare il brief su `origin/main` con `git show` prima di dichiararlo attivo. | `.cursor/rules/sgq-operating-memory.mdc` · `AGENTS.md` |
 | **DNA visivo nel boot agente (13/08/2026)** — stesso principio di `AGENTS.md`: le regole di gusto stanno in un file sempre letto quando si tocca UI, non in una skill esterna. | Passo 6 di `AGENTS.md` (solo se il task tocca JSX/CSS). Fonte: [`app/src/design-system/README.md`](../app/src/design-system/README.md). | Harness · nessuna dipendenza GitHub |
 | **Dieta avvio + bussola moduli (13/08/2026)** — `AGENTS.md` obbligava GUIDA (~337 KB) + roadmap intera (~88 KB) prima di ogni Deputy: la smart zone (~100k token) si saturava prima del codice. | Avvio = `PROJECT_CONTEXT.md` (tabella «Se lavori su…») + roadmap **solo** § Stato attuale. GUIDA **solo se** deploy/Word/sync/lezione citata. Bussola: aggiornare nella stessa PR se nasce/si rinomina un modulo; path in backtick devono esistere. Misura: `node backend/scripts/check-harness-boot.js` (tetto 50 KB avvio obbligatorio + scenario `company_profile`). Non copiare second brain/RAG sul codice (Cursor cerca già nel repo). | `AGENTS.md` · `PROJECT_CONTEXT.md` · `check-harness-boot.js` |
+| **Handoff + Ponytail + smoke critici (13/08/2026)** — catalogo plugin Claude Code (wiki Obsidian, grilling, Impeccable, Supabase) duplicava la governance. Principi utili: contesto pulito tra sessioni, minimo codice, verifica indipendente. | (1) Slice non chiusa → blocco [`HANDOFF_TEMPLATE.md`](agent-tasks/HANDOFF_TEMPLATE.md) nel `DEPUTYTASK` attivo, nuova sessione. (2) Gate 5 domande prima di codice nuovo (`sgq-operating-memory.mdc` § Ponytail). (3) Bugbot su PR Medio; smoke percorso toccato: `backend/scripts/smoke-percorsi-critici.mjs`. Non installare skill GitHub. | `AGENTS.md` · `sgq-git-autonomy.mdc` |
 | **SAL Fase 0 — motore dati gap operativo (luglio 2026)** | Tabella `requirement_implementation_status` + storico `requirement_implementation_history` (mig. **117**). Servizio canonico `gapAnalysis.service.js`: `getGapMatrix`, `upsertStatus`, `seedForCompany` (macro-clausole N.N da `norm_requirements`). API licenza **`sal`**: `GET/POST /companies/:id/gap-matrix`, `GET/PUT /companies/:id/gap-statuses`. Distinto da `GET /gap-analysis` (euristica documenti, licenza `ai_norms`). Decisione ADR-009: stato persistito in tabella dedicata, non overlay su registro documenti. | [`MODULO_SAL_SCOPO_E_ROADMAP.md`](specs/MODULO_SAL_SCOPO_E_ROADMAP.md) §D/H Fase 0 |
 | **SAL Fase 1 — UI griglia `/sal` (luglio 2026)** | Pagina `SALModule.jsx`: ambito azienda (`salCompanyScope.js`), tab filtro standard 9001/14001/45001, griglia `SgqDataGrid` con cambio stato inline + modal note/responsabile/scadenza, pulsante seed se matrice non seedata. Metodi `apiService.getGapMatrix` / `updateGapStatus` / `seedGapMatrix`. Menu sidebar senza lucchetto (licenza `sal`). Test L1: `salModule.test.jsx`, `salCompanyScope.test.js`. | [`MODULO_SAL_SCOPO_E_ROADMAP.md`](specs/MODULO_SAL_SCOPO_E_ROADMAP.md) §H Fase 1 |
 | **SAL Fase 2 — export Word + storico + evidenze registro (luglio 2026)** | Export Word programmatico (`wordExportSal.js`, distinto da verbale Riesame §9.3). Modal ampliato: `SalEvidenceSection` collega `evidence_document_ids` → `document_registry` (picker documenti rilasciati, link `buildDocumentRegistryPath` / `RouterContext`). Backend: `validateEvidenceDocumentIds`, `enrichRowsWithEvidence`, `GET .../gap-statuses/:id/history`; UPDATE con `COALESCE` per non azzerare evidenze su cambio stato inline. Test L1: `salModule.test.jsx` (5), `gapAnalysis.service.test.js` (13). | [`MODULO_SAL_SCOPO_E_ROADMAP.md`](specs/MODULO_SAL_SCOPO_E_ROADMAP.md) §H Fase 2 |
@@ -187,7 +188,9 @@ Configurazione **versionata nel repo** (priorità massima rispetto all'ambiente 
 
 **Dieta avvio (13/08/2026):** non leggere GUIDA né la roadmap per intero all'avvio — saturano la smart zone. Protocollo in `AGENTS.md`; bussola in `PROJECT_CONTEXT.md`; misura `node backend/scripts/check-harness-boot.js`.
 
-**Smart zone (Matt Pocock, adattato 13/08/2026):** oltre ~100–150k token la qualità cala anche se la finestra è 1M. Un lavoro enorme si spezza con [`.cursor/skills/wayfinder-sgq/SKILL.md`](../.cursor/skills/wayfinder-sgq/SKILL.md) (mappa `PLAN_*` + una slice per sessione). Non alzare il context «perché l’epic è grosso»; non installare il pacchetto intero `mattpocock/skills`.
+**Una sessione = una slice.** Se non chiudi: handoff in [`HANDOFF_TEMPLATE.md`](agent-tasks/HANDOFF_TEMPLATE.md) nel brief attivo. Gate codice nuovo: Ponytail in `sgq-operating-memory.mdc`. Smoke UI: `backend/scripts/smoke-percorsi-critici.mjs`.
+
+**Smart zone (Matt Pocock, adattato 13/08/2026):** oltre ~100–150k token la qualità cala anche se la finestra è 1M. Un lavoro enorme si spezza con [`.cursor/skills/wayfinder-sgq/SKILL.md`](../.cursor/skills/wayfinder-sgq/SKILL.md) (mappa `PLAN_*` + una slice per sessione). Non alzare il context «perché l'epic è grosso»; non installare il pacchetto intero `mattpocock/skills`.
 
 ### Multi-tenant, RBAC e dati
 
@@ -2193,6 +2196,7 @@ node scripts/repro-custom-export.mjs
 | Build Vite | `node node_modules/vite/bin/vite.js build` in `app/` | L1 |
 | Vitest frontend | `node node_modules/vitest/vitest.mjs run` in `app/` | L1 |
 | Smoke workflow | `.github/workflows/smoke-test.yml` | L2 |
+| Smoke UI percorsi critici (login, NC, Qualifiche, SAL, WPS/WPQR) | `backend/scripts/smoke-percorsi-critici.mjs` (`SGQ_APP_*`; `SGQ_SMOKE_PATHS` per filtrare) | L3 |
 | Ingest E2E | `backend/scripts/smoke-ingest-e2e-test.js` | L3 |
 | VPS preflight | `backend/scripts/vps-preflight.ps1` | ops |
 | Netlify preflight | `backend/scripts/netlify-preflight.ps1` | ops |

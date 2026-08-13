@@ -14,7 +14,8 @@ Prima di considerare un task concluso o aggiornare la `GUIDA_CONSOLIDATA.md`, l'
 1. **Analisi del Delta**: Qual era la soluzione ipotizzata inizialmente e quale si è rivelata corretta? Perché la prima era sbagliata?
 2. **Error Pattern Recognition**: Abbiamo girato a vuoto su un bug? È stato un problema di persistenza, di cache (Netlify/Service Worker) o di mancata lettura dei log?
 3. **Ottimizzazione Best Practice**: Esiste un nuovo componente UI riutilizzabile o un pattern SQL che abbiamo scoperto e che deve essere aggiunto alle regole `sgq-iso9001-lead` o `sgq-sysadmin`?
-4. **Merge PR aperta**: se la sessione ha prodotto una PR verificata (TEST OK), **mergiarla su `main` prima di chiudere** — `gh pr ready <n>` se draft, poi `gh pr merge <n>`. Aggiornare `GUIDA_CONSOLIDATA.md` e `DEPUTYTASK.md` con commit/PR di merge. Non lasciare PR aperte alla chiusura salvo eccezioni (breaking change, review umana richiesta).
+4. **Merge PR aperta**: se la sessione ha prodotto una PR verificata (TEST OK), prepararla **pronta al click** (Bugbot + CI) secondo `sgq-git-autonomy.mdc`. Cloud Agent **non** mergia. Aggiornare GUIDA (sezione) + `DEPUTYTASK.md`.
+5. **Slice non chiusa**: compilare l'handoff nel brief attivo ([`HANDOFF_TEMPLATE.md`](../../docs/agent-tasks/HANDOFF_TEMPLATE.md)) — non `SESSION_NOTES_*`.
 
 ## Azioni Correttive
 Se l'agente identifica un errore metodologico ripetuto:

@@ -83,7 +83,19 @@ Dettaglio comandi: [`sgq-sysadmin.mdc`](sgq-sysadmin.mdc) + [ACCESSO_DEPLOY_AGEN
 
 ## Slice e qualità
 
-Una slice = un obiettivo verificabile. L1 = Vitest mirato + build in `app/`. Epic: wayfinder, non context 1M. Dettaglio: [`sgq-workflow-method.mdc`](sgq-workflow-method.mdc).
+Una slice = un obiettivo verificabile. **Una sessione = una slice.** L1 = Vitest mirato + build in `app/`. Epic: wayfinder, non context 1M. Dettaglio: [`sgq-workflow-method.mdc`](sgq-workflow-method.mdc).
+
+## Gate prima di codice nuovo (Ponytail)
+
+Prima di creare un file, componente, CSS, endpoint o servizio:
+
+1. Deve esistere? Se no, non farlo.
+2. Esiste già nel repo? Usalo.
+3. C'è già libreria / componente / servizio / colonna? Usali.
+4. Si fa in una riga o riusando? Fallo così.
+5. Se nessuno dei casi: il minimo possibile.
+
+Vietato installare skill GitHub Ponytail / Caveman / Impeccable / Taste / wiki Obsidian: questo gate + DNA visivo + blocco unico coprono lo stesso bisogno senza seconda governance.
 
 ## Riuso UI (blocco unico)
 
@@ -107,6 +119,8 @@ Card statistiche e tendina sulla **stessa** dimensione = ridondanza da togliere.
 
 Nuovo campo in `aiExpectedSchema` → stessa chiave in `*_MANUAL_EDITABLE_FIELDS` del controller **e** nel form React. CI: `manualEditCompletenessCheck.js`.
 
-## Chiusura
+## Chiusura e handoff
 
 Niente fix a metà. Doc: GUIDA (lezione) + roadmap se cambia una priorità. Merge: [`sgq-git-autonomy.mdc`](sgq-git-autonomy.mdc) — Cloud Agent apre PR, non mergia.
+
+Se la slice **non è chiusa**: copia il blocco di [`docs/agent-tasks/HANDOFF_TEMPLATE.md`](../../docs/agent-tasks/HANDOFF_TEMPLATE.md) nel `DEPUTYTASK*.md` attivo (Stato resta APERTO). La sessione successiva parte dall'handoff, non dalla GUIDA intera.

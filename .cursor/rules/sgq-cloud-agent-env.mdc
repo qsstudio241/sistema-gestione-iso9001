@@ -23,6 +23,8 @@ Su cursor.com/agents → **Edit** accanto al modello:
 
 Epic più grandi di una sessione: skill [`wayfinder-sgq`](../skills/wayfinder-sgq/SKILL.md) (smart zone ~100k; mappa in `PLAN_*_SLICES.md`, una slice per run). Non alzare il context «perché il lavoro è grosso».
 
+**Una sessione = una slice.** Se non chiudi: handoff nel brief ([`HANDOFF_TEMPLATE.md`](../../docs/agent-tasks/HANDOFF_TEMPLATE.md)). Non installare wiki Obsidian / skill GitHub di design o Ponytail.
+
 Avvio: `PROJECT_CONTEXT.md` (bussola) + roadmap § Stato attuale. **Non** iniettare GUIDA o roadmap intere — saturano la smart zone prima del codice.
 
 ## Operatività Cloud
