@@ -21,6 +21,10 @@ const {
     rowToProfile,
     EDITABLE_FIELDS,
 } = require('../data/companyProfileFields');
+const {
+    detectCompanyProfileFile,
+    buildImportTemplateBuffer,
+} = require('../utils/excelCompanyProfileDetector');
 
 function resolveAuditorOrgId(req) {
     const userOrgId = req.user.auditor_org_id;
@@ -178,50 +182,13 @@ async function putProfile(req, res) {
             });
         }
 
-        const existing = await loadProfileRow(scope.company_id);
-        const userId = req.user?.user_id || null;
-        const sourceMeta = mergeSourceMeta(existing?.source_meta, touched, userId);
-
-        const writeParams = {
-            company_id: scope.company_id,
-            organization_id: scope.organization_id,
-            source_meta: sourceMeta,
-            updated_by_user_id: userId,
-            ...fields,
-        };
-
-        if (!existing) {
-            const cols = ['company_id', 'organization_id', 'source_meta', 'updated_by_user_id', ...touched];
-            const values = cols.map((c) => `@${c}`);
-            await query(
-                `INSERT INTO company_profile (${cols.join(', ')}) VALUES (${values.join(', ')})`,
-                writeParams
-            );
-        } else {
-            const sets = [
-                ...touched.map((c) => `${c} = @${c}`),
-                'source_meta = @source_meta',
-                'updated_at = SYSUTCDATETIME()',
-                'updated_by_user_id = @updated_by_user_id',
-            ];
-            const upd = await query(
-                `UPDATE company_profile SET ${sets.join(', ')}
-                 WHERE company_id = @company_id`,
-                writeParams
-            );
-            const affected = Array.isArray(upd.rowsAffected) ? upd.rowsAffected[0] : upd.rowsAffected;
-            if (!affected) {
-                return res.status(409).json({
-                    error: 'Profilo non aggiornato: riga assente o disallineata',
-                    code: 'PROFILE_UPDATE_MISMATCH',
-                });
-            }
+        const upserted = await upsertProfile(scope, fields, req.user?.user_id || null, { source: 'manual' });
+        if (upserted.error) {
+            return res.status(upserted.status).json(upserted.body);
         }
-
-        const row = await loadProfileRow(scope.company_id);
         return res.json({
             success: true,
-            data: serializeProfile(row, scope, true),
+            data: serializeProfile(upserted.row, scope, true),
         });
     } catch (err) {
         logger.error(`[companyProfile] PUT: ${err.message}`);
@@ -229,10 +196,152 @@ async function putProfile(req, res) {
     }
 }
 
+async function upsertProfile(scope, fields, userId, metaExtra = {}) {
+    const touched = Object.keys(fields);
+    const existing = await loadProfileRow(scope.company_id);
+    const sourceMeta = mergeSourceMeta(existing?.source_meta, touched, userId, metaExtra);
+    const writeParams = {
+        company_id: scope.company_id,
+        organization_id: scope.organization_id,
+        source_meta: sourceMeta,
+        updated_by_user_id: userId,
+        ...fields,
+    };
+
+    if (!existing) {
+        const cols = ['company_id', 'organization_id', 'source_meta', 'updated_by_user_id', ...touched];
+        const values = cols.map((c) => `@${c}`);
+        await query(
+            `INSERT INTO company_profile (${cols.join(', ')}) VALUES (${values.join(', ')})`,
+            writeParams
+        );
+    } else {
+        const sets = [
+            ...touched.map((c) => `${c} = @${c}`),
+            'source_meta = @source_meta',
+            'updated_at = SYSUTCDATETIME()',
+            'updated_by_user_id = @updated_by_user_id',
+        ];
+        const upd = await query(
+            `UPDATE company_profile SET ${sets.join(', ')}
+             WHERE company_id = @company_id`,
+            writeParams
+        );
+        const affected = Array.isArray(upd.rowsAffected) ? upd.rowsAffected[0] : upd.rowsAffected;
+        if (!affected) {
+            return {
+                error: true,
+                status: 409,
+                body: {
+                    error: 'Profilo non aggiornato: riga assente o disallineata',
+                    code: 'PROFILE_UPDATE_MISMATCH',
+                },
+            };
+        }
+    }
+
+    const row = await loadProfileRow(scope.company_id);
+    return { error: false, row };
+}
+
+/**
+ * POST /api/v1/companies/:id/profile/detect-import
+ */
+async function detectProfileImport(req, res) {
+    try {
+        const capDenied = await assertCapability(req);
+        if (capDenied) return res.status(capDenied.status).json(capDenied.body);
+
+        const { denied, scope } = await resolveProfileScope(req, req.params.id, 'write');
+        if (denied) return sendAccessDenied(res, denied);
+
+        const file = req.file;
+        if (!file || !file.buffer) {
+            return res.status(400).json({ error: 'File Excel mancante', code: 'MISSING_FILE' });
+        }
+
+        const detection = detectCompanyProfileFile(file.buffer);
+        return res.json({
+            success: true,
+            data: {
+                ...detection,
+                fileName: file.originalname || 'profilo.xlsx',
+                company_id: scope.company_id,
+            },
+        });
+    } catch (err) {
+        logger.error(`[companyProfile] detect-import: ${err.message}`);
+        return res.status(500).json({ error: 'Errore analisi Excel', code: 'PROFILE_DETECT_FAILED' });
+    }
+}
+
+/**
+ * POST /api/v1/companies/:id/profile/import
+ */
+async function importProfile(req, res) {
+    try {
+        const capDenied = await assertCapability(req);
+        if (capDenied) return res.status(capDenied.status).json(capDenied.body);
+
+        const { denied, scope } = await resolveProfileScope(req, req.params.id, 'write');
+        if (denied) return sendAccessDenied(res, denied);
+
+        const fields = pickEditableFields(req.body?.fields || req.body);
+        const touched = Object.keys(fields).filter((k) => fields[k] !== null);
+        if (touched.length === 0) {
+            return res.status(400).json({
+                error: 'Nessun campo profilo da importare',
+                code: 'EMPTY_PROFILE_BODY',
+            });
+        }
+
+        const onlyTouched = {};
+        for (const k of touched) onlyTouched[k] = fields[k];
+
+        const fileName = req.body?.fileName || 'import.xlsx';
+        const upserted = await upsertProfile(scope, onlyTouched, req.user?.user_id || null, {
+            source: 'excel',
+            file: String(fileName).slice(0, 200),
+        });
+        if (upserted.error) {
+            return res.status(upserted.status).json(upserted.body);
+        }
+        return res.json({
+            success: true,
+            data: serializeProfile(upserted.row, scope, true),
+        });
+    } catch (err) {
+        logger.error(`[companyProfile] import: ${err.message}`);
+        return res.status(500).json({ error: 'Errore import profilo', code: 'PROFILE_IMPORT_FAILED' });
+    }
+}
+
+/**
+ * GET /api/v1/companies/profile/import-template
+ */
+async function downloadImportTemplate(req, res) {
+    try {
+        const capDenied = await assertCapability(req);
+        if (capDenied) return res.status(capDenied.status).json(capDenied.body);
+
+        const buf = buildImportTemplateBuffer();
+        res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+        res.setHeader('Content-Disposition', 'attachment; filename="modello_profilo_azienda.xlsx"');
+        return res.send(buf);
+    } catch (err) {
+        logger.error(`[companyProfile] template: ${err.message}`);
+        return res.status(500).json({ error: 'Errore generazione modello', code: 'PROFILE_TEMPLATE_FAILED' });
+    }
+}
+
 module.exports = {
     getProfile,
     putProfile,
+    detectProfileImport,
+    importProfile,
+    downloadImportTemplate,
     resolveProfileScope,
     serializeProfile,
+    upsertProfile,
     EDITABLE_FIELDS,
 };

@@ -48,6 +48,9 @@ vi.mock("../services/apiService", () => ({
     uploadCompanyLogo: vi.fn(),
     getCompanyProfile: vi.fn(),
     updateCompanyProfile: vi.fn(),
+    detectCompanyProfileImport: vi.fn(),
+    importCompanyProfile: vi.fn(),
+    downloadCompanyProfileTemplate: vi.fn(),
   },
 }));
 
