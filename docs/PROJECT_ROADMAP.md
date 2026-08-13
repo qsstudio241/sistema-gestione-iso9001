@@ -8,7 +8,7 @@
 
 > **Risposta standard a «stato di avanzamento del progetto e priorità da affrontare»**: sintetizzare da questa sezione (moduli maturi + sessione più recente + tabella priorità sotto), **non** dal banner storico più sotto (superato, tenuto solo per traccia) né dall'archivio marzo 2026 [`docs/archive/PROJECT_CONTEXT_STATO_FUNZIONALITA_2026-03.md`](archive/PROJECT_CONTEXT_STATO_FUNZIONALITA_2026-03.md). **Aggiornare questa sezione a fine sessione** se emergono nuove priorità o se una priorità elencata viene chiusa (stesso principio delle "Lezioni apprese" in [GUIDA_CONSOLIDATA.md](GUIDA_CONSOLIDATA.md) — sintesi qui, dettaglio linkato).
 
-**Ultimo aggiornamento di questa sezione**: 13/08/2026 (Ambito unico in header + harness dieta).
+**Ultimo aggiornamento di questa sezione**: 13/08/2026 (Ambito unico in header + harness dieta + PR Routing & Approval).
 
 ### Moduli maturi (in produzione, uso quotidiano dai clienti Camellini/Mason)
 
@@ -17,6 +17,8 @@ Audit multi-standard (9001/14001/45001) · Non Conformità (workflow ISO 10.2 co
 ### Sessione più recente (13/08/2026)
 
 Ambito azienda **unico** in alto (`CompanyScopeSelect` nell'header): vale su tutta l'app finché l'utente non lo cambia. I selettori di pagina sono **eliminati** (non spostati). Default: admin/personale studio → Tutto lo studio; utente di un'azienda → quella azienda, non modificabile. Dettaglio: [GUIDA lezione Ambito unico](GUIDA_CONSOLIDATA.md#lezioni-apprese-consolidate-fonte-unica).
+
+Attivati **Bugbot** e **PR Routing & Approval** (Cursor Automations) sul repo — revisione automatica su ogni PR + approvazione automatica su rischio Basso, mai su backend/migrazioni/normativa AI. Non è un cambio prodotto — riguarda solo il workflow agente. Dettaglio: [GUIDA lezione PR Routing & Approval](GUIDA_CONSOLIDATA.md#lezioni-apprese-consolidate-fonte-unica) · [guida setup](how-to/SETUP_PR_ROUTING_APPROVAL.md).
 
 Harness (stesso giorno): handoff se la slice non chiude ([`HANDOFF_TEMPLATE.md`](agent-tasks/HANDOFF_TEMPLATE.md)); gate 5 domande prima di codice nuovo (Ponytail in `sgq-operating-memory.mdc`); smoke UI percorsi critici (`smoke-percorsi-critici.mjs`); una sessione = una slice. Dieta avvio: bussola in `PROJECT_CONTEXT.md` + roadmap **solo** § Stato.
 
