@@ -18,12 +18,13 @@ function xlsxFromRows(rows, sheetName = 'ProfiloAzienda') {
 describe('excelCompanyProfileDetector', () => {
     it('riconosce header canonici e legge la prima riga', () => {
         const buf = xlsxFromRows([
-            ['partita_iva', 'ateco_primario', 'sede_comune', 'n_lavoratori'],
-            ['01234567890', '25.11.00', 'Modena', 12],
+            ['partita_iva', 'ragione_sociale', 'ateco_primario', 'sede_comune', 'n_lavoratori'],
+            ['01234567890', 'Acme Srl', '25.11.00', 'Modena', 12],
         ]);
         const r = detectCompanyProfileFile(buf);
         expect(r.canImport).toBe(true);
         expect(r.preview.vat_number).toBe('01234567890');
+        expect(r.preview.legal_name).toBe('Acme Srl');
         expect(r.preview.ateco_primary).toBe('25.11.00');
         expect(r.preview.registered_city).toBe('Modena');
         expect(r.preview.employees_count).toBe(12);

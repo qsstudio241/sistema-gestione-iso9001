@@ -134,6 +134,7 @@ function detectCompanyProfileFile(buffer) {
         mappedCount,
         confidence,
         canImport: mappedCount >= 1,
+        error: mappedCount === 0 ? 'Nessun campo profilo riconosciuto' : undefined,
     };
 }
 
