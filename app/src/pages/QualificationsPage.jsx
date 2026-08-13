@@ -5,16 +5,12 @@
 
 import React, { useState, useEffect, useCallback, useMemo } from "react";
 import apiService from "../services/apiService";
-import { useAuth } from "../contexts/AuthContext";
+import { useCompanyScope } from "../contexts/CompanyScopeContext";
 import QualificationForm from "./QualificationForm";
 import QualificationUploadButton from "../components/QualificationUploadButton";
 import ReprocessQueueBanner from "../components/ReprocessQueueBanner";
 import { formatDate } from "../utils/dateHelpers";
 import { resolveBackendUploadUrl } from "../utils/resolveBackendUploadUrl";
-import {
-    resolveInitialQualificationsCompanyScope,
-    persistQualificationsCompanyScope,
-} from "../utils/qualificationsCompanyScope";
 import AskAiButton from "../components/AskAiButton";
 import { saveQualContext } from "../utils/aiAssistantContext";
 import { requiresSemiannualConfirmation } from "../utils/weldingConfirmationRules";
@@ -341,7 +337,7 @@ export function QualRow({ q, tabKey, onEdit, onHardDelete, onRenew, onHistory, h
 // ── Componente principale ─────────────────────────────────────────────────────
 
 function QualificationsPage() {
-    const { user } = useAuth() || {};
+    const { companyId: companyScope, companies, scopeCompanyName } = useCompanyScope();
 
     const [activeTab,  setActiveTab]  = useState("tutti");
     const [quals,      setQuals]      = useState([]);
@@ -350,10 +346,7 @@ function QualificationsPage() {
     const [error,      setError]      = useState(null);
     const [total,      setTotal]      = useState(0);
     const [page,       setPage]       = useState(1);
-    const [companies,  setCompanies]  = useState([]);
     const LIMIT = 30;
-
-    const [companyScope, setCompanyScope] = useState(() => resolveInitialQualificationsCompanyScope());
 
     const [filters, setFiltersState] = useState({
         search: "", situazione: "",
@@ -368,33 +361,7 @@ function QualificationsPage() {
         setPage(1);
     }, []);
 
-    useEffect(() => {
-        apiService.getCompanies?.().then(res => {
-            const list = res?.data || res?.companies || res || [];
-            setCompanies(Array.isArray(list) ? list : []);
-        }).catch(() => {});
-    }, []);
-
-    useEffect(() => {
-        const access = user?.company_access;
-        if (Array.isArray(access) && access.length === 1 && !companyScope) {
-            const onlyId = String(access[0].company_id);
-            setCompanyScope(onlyId);
-            persistQualificationsCompanyScope(onlyId);
-        }
-    }, [user, companyScope]);
-
-    const scopeCompanyName = useMemo(() => {
-        if (!companyScope) return "Tutto lo studio";
-        const match = companies.find((c) => String(c.id) === String(companyScope));
-        return match?.name || `Azienda #${companyScope}`;
-    }, [companyScope, companies]);
-
-    const handleCompanyScopeChange = useCallback((value) => {
-        setCompanyScope(value);
-        persistQualificationsCompanyScope(value);
-        setPage(1);
-    }, []);
+    useEffect(() => { setPage(1); }, [companyScope]);
 
     const handleStatClick = useCallback((statKey) => {
         const next = STATS_TO_SITUAZIONE[statKey] ?? "";
@@ -508,22 +475,6 @@ function QualificationsPage() {
                     <p className="sq-subtitle">Registro qualifiche con controllo automatico scadenze</p>
                 </div>
                 <div className="sq-header-actions">
-                    {companies.length > 0 && (
-                        <label className="sq-scope-label">
-                            {"Ambito:"}
-                            <select
-                                className="sq-select sq-scope-select"
-                                value={companyScope}
-                                onChange={(e) => handleCompanyScopeChange(e.target.value)}
-                                aria-label="Ambito qualifiche per azienda"
-                            >
-                                <option value="">{"Tutto lo studio"}</option>
-                                {companies.map((c) => (
-                                    <option key={c.id} value={c.id}>{c.name}</option>
-                                ))}
-                            </select>
-                        </label>
-                    )}
                     {companyScope ? (
                         <QualificationUploadButton
                             companyId={companyScope}
@@ -533,14 +484,14 @@ function QualificationsPage() {
                         />
                     ) : companies.length > 0 && (
                         <span className="sq-upload-no-scope">
-                            Seleziona un&apos;azienda specifica per caricare i patentini
+                            Seleziona un&apos;azienda nell&apos;Ambito in alto per caricare i patentini
                         </span>
                     )}
                     <button
                         className="sq-btn-new"
                         onClick={handleNew}
                         disabled={!companyScope}
-                        title={!companyScope ? "Seleziona un'azienda nell'ambito" : ""}
+                        title={!companyScope ? "Seleziona un'azienda nell'Ambito in alto" : ""}
                     >
                         + Nuova qualifica
                     </button>

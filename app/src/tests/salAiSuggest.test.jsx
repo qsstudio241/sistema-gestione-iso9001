@@ -5,7 +5,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import React from 'react';
 import { render, screen, fireEvent, waitFor, act } from '@testing-library/react';
 import { RouterProvider } from '../contexts/RouterContext';
-import { SAL_COMPANY_SCOPE_KEY } from '../utils/salCompanyScope';
+import { withCompanyScope } from './helpers/withCompanyScope';
 
 vi.mock('../contexts/AuthContext', () => ({
   useAuth: () => ({
@@ -100,7 +100,6 @@ const SUGGESTION_LEGAL = {
 };
 
 async function renderSalWithCompany() {
-  window.localStorage.setItem(SAL_COMPANY_SCOPE_KEY, '1');
   apiService.getCompanies.mockResolvedValue({ data: [{ id: 1, name: 'Acme Srl' }] });
   apiService.getGapMatrix.mockResolvedValue(MATRIX_RESPONSE);
   apiService.updateGapStatus.mockResolvedValue({ success: true, data: {} });
@@ -109,7 +108,7 @@ async function renderSalWithCompany() {
   apiService.syncSalAuditHints.mockResolvedValue({ data: { updated: 0 } });
 
   await act(async () => {
-    render(<RouterProvider><SALModule /></RouterProvider>);
+    render(<RouterProvider>{withCompanyScope(<SALModule />, '1')}</RouterProvider>);
   });
 }
 

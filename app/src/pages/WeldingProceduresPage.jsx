@@ -9,6 +9,7 @@
 
 import React, { useState, useEffect, useCallback } from "react";
 import apiService from "../services/apiService";
+import { useCompanyScope } from "../contexts/CompanyScopeContext";
 import { formatDate } from "../utils/dateHelpers";
 import WpqrUploadButton from "../components/WpqrUploadButton";
 import WpsUploadButton from "../components/WpsUploadButton";
@@ -19,10 +20,6 @@ import {
   consumeWpsGenerateIntent,
   MASON_WPS_GENERATE_DEFAULTS,
 } from "../utils/aiAssistantContext";
-import {
-  resolveInitialQualificationsCompanyScope,
-  persistQualificationsCompanyScope,
-} from "../utils/qualificationsCompanyScope";
 import { exportWpsAnnexADocx } from "../utils/wordExportWps";
 import { resolveBackendUploadUrl } from "../utils/resolveBackendUploadUrl";
 import "./WeldingProceduresPage.css";
@@ -350,7 +347,7 @@ export function GenerateWpsModal({
             {error && <div className="wp-error">{error}</div>}
             {!defaultCompanyId && (
               <div className="wp-warn-no-company">
-                {"\u26A0\uFE0F Seleziona un\u2019azienda nell\u2019Ambito in cima alla pagina per filtrare le WPQR."}
+                {"\u26A0\uFE0F Seleziona un\u2019azienda nell\u2019Ambito in alto per filtrare le WPQR."}
               </div>
             )}
             <div className="wp-form-grid">
@@ -887,16 +884,10 @@ function WPQRFormModal({ wpqr, wpsList, defaultCompanyId, onSave, onClose }) {
 // ?
 
 function WeldingProceduresPage() {
+  const { companyId: companyScopeId, scopeCompanyName: companyScopeName } = useCompanyScope();
   const [activeTab, setActiveTab] = useState("wps");
   /** P2b: upload PDF WPS non e' piu' il flusso primario — visibile solo su richiesta. */
   const [showLegacyWpsUpload, setShowLegacyWpsUpload] = useState(false);
-
-  // Company scope (persistito in localStorage, chiave condivisa con qualifiche)
-  const [companyScopeId, setCompanyScopeId] = useState(() =>
-    resolveInitialQualificationsCompanyScope(null)
-  );
-  const [companies, setCompanies] = useState([]);
-  const companyScopeName = companies.find(c => String(c.id) === String(companyScopeId))?.name || "";
 
   // WPQR stats
   const [wpqrStats, setWpqrStats] = useState(null);
@@ -943,23 +934,10 @@ function WeldingProceduresPage() {
   const [rejectModal, setRejectModal] = useState(null); // { id }
   const [rejectReason, setRejectReason] = useState("");
 
-  // ?? Load companies ??
-
-  const loadCompanies = useCallback(async () => {
-    try {
-      const res = await apiService.getCompanies({ limit: 500 });
-      setCompanies(res.companies || res.data || []);
-    } catch {
-      // non bloccante
-    }
-  }, []);
-
-  const handleCompanyScopeChange = useCallback((newId) => {
-    setCompanyScopeId(newId);
-    persistQualificationsCompanyScope(newId);
+  useEffect(() => {
     setWpsPage(1);
     setWpqrPage(1);
-  }, []);
+  }, [companyScopeId]);
 
   // ?? Load WPQR stats 
 
@@ -1032,7 +1010,6 @@ function WeldingProceduresPage() {
     }
   }, [wpqrPage, wpqrFilterWpsId, wpqrFilters, companyScopeId]);
 
-  useEffect(() => { loadCompanies(); }, [loadCompanies]);
   useEffect(() => { loadWPQRStats(); }, [loadWPQRStats]);
   useEffect(() => { loadWPS(); }, [loadWPS]);
   useEffect(() => { loadAllWps(); }, [loadAllWps]);
@@ -1225,27 +1202,6 @@ function WeldingProceduresPage() {
           />
         </div>
       )}
-
-      {/* Company scope */}
-      <div className="wp-company-scope">
-        <label className="wp-company-scope-label">Azienda:</label>
-        <select
-          className="wp-select"
-          value={companyScopeId}
-          onChange={(e) => handleCompanyScopeChange(e.target.value)}
-          style={{ minWidth: 200 }}
-        >
-          <option value="">Tutte le aziende</option>
-          {companies.map((c) => (
-            <option key={c.id} value={c.id}>{c.name}</option>
-          ))}
-        </select>
-        {companyScopeId && (
-          <button className="wp-link" onClick={() => handleCompanyScopeChange("")}>
-            Mostra tutte
-          </button>
-        )}
-      </div>
 
       {/* Stats semaphore WPQR — solo nel tab WPQR: sono calcolate esclusivamente
           su wpqr_records (vedi getWPQRStats) e non hanno alcun significato

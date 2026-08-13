@@ -9,6 +9,7 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen, waitFor, fireEvent } from "@testing-library/react";
 import ProjectsPage from "../pages/ProjectsPage";
+import { withCompanyScope } from "./helpers/withCompanyScope";
 
 const mockGetProjects = vi.fn();
 const mockGetWPSList = vi.fn();
@@ -55,17 +56,12 @@ beforeEach(() => {
 });
 
 describe("ProjectsPage — Ambito azienda", () => {
-  it("mostra il selettore Ambito quando ci sono aziende e filtra la lista per company_id", async () => {
-    render(<ProjectsPage />);
-
-    const scopeSelect = await screen.findByLabelText("Ambito commesse per azienda");
-    expect(scopeSelect).toBeInTheDocument();
-
-    fireEvent.change(scopeSelect, { target: { value: "47" } });
+  it("filtra la lista per company_id dell'Ambito globale", async () => {
+    render(withCompanyScope(<ProjectsPage />, "47"));
 
     await waitFor(() => {
-      const lastCall = mockGetProjects.mock.calls.at(-1)[0];
-      expect(lastCall.company_id).toBe("47");
+      const lastCall = mockGetProjects.mock.calls.at(-1)?.[0];
+      expect(lastCall?.company_id).toBe("47");
     });
     expect(await screen.findByText("Ambito attivo: ACME Spa")).toBeInTheDocument();
   });
@@ -85,7 +81,7 @@ function getFieldByLabel(container, labelPrefix) {
 
 describe("ProjectsPage — Cliente dall'anagrafica aziende", () => {
   it("propone i clienti (company_counterparties) dell'azienda selezionata nel form", async () => {
-    const { container } = render(<ProjectsPage />);
+    const { container } = render(withCompanyScope(<ProjectsPage />));
 
     fireEvent.click(await screen.findByText("+ Nuova commessa"));
     await screen.findByText("Nuova commessa");
@@ -99,7 +95,7 @@ describe("ProjectsPage — Cliente dall'anagrafica aziende", () => {
   });
 
   it("collega il cliente selezionato (end_customer_id) e lo sincronizza nel payload di creazione", async () => {
-    const { container } = render(<ProjectsPage />);
+    const { container } = render(withCompanyScope(<ProjectsPage />));
 
     fireEvent.click(await screen.findByText("+ Nuova commessa"));
     await screen.findByText("Nuova commessa");

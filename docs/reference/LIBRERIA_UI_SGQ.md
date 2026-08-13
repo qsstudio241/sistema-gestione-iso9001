@@ -30,7 +30,7 @@
 | Conteggio NC/OSS/OM (Sezione 11) | `calculateFindingsMetrics` + `calculateCustomFindingsMetrics` (`metricsCalculator.js`) via `AuditOutcomeSection.jsx` | — |
 | Stato salvato/errore form | `custom-checklist-form-error`, `custom-checklist-saving` | `CustomChecklistAuditView.css` |
 | Route protetta da licenza | `LicensedRoute` (wrapper `App.jsx`) | Prop `licenseKey` |
-| Selezione ambito azienda | Pattern Ambito (`CompanySelector` / `*CompanyScope.js`) | Header pagina, non toolbar |
+| Selezione ambito azienda | `CompanyScopeSelect` in `AppLayout` (`CompanyScopeContext`) | Unico selettore in alto; le pagine **non** hanno un secondo Ambito |
 | Disclaimer AI | `AiDisclaimer.jsx` | Footer non invasivo; testo da ADR-010 §9 |
 | Card/tabella azione admin (dashboard superadmin) | `.billing-card`, `.billing-table`, `.btn-primary`/`.btn-secondary` (`BillingDashboardPage.css`) | Riusato per la sezione "Rielaborazioni disponibili" (28/07/2026); pattern per qualsiasi nuovo pannello cross-tenant nella dashboard superadmin |
 

@@ -16,6 +16,8 @@ import { NavLink, useRouter, useNavigate } from "../contexts/RouterContext";
 import { useAuth } from "../contexts/AuthContext";
 import apiService from "../services/apiService";
 import { hasCompanyAccess, getPrimaryCompanyId } from "../utils/companyAccess";
+import { CompanyScopeProvider } from "../contexts/CompanyScopeContext";
+import CompanyScopeSelect from "../components/CompanyScopeSelect";
 import "./AppLayout.css";
 import { hasLicensedModule } from "../utils/licenseUtils";
 
@@ -253,7 +255,7 @@ function Sidebar({ navGroups, collapsed, onToggle, orgLogoDataUrl, orgName }) {
 
 // ─── Layout principale ────────────────────────────────────────────────────────
 
-function AppLayout({ children }) {
+function AppLayoutInner({ children }) {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
@@ -373,11 +375,16 @@ function AppLayout({ children }) {
               <img src={orgLogoDataUrl} alt="" className="layout-org-banner-logo" width={28} height={28} />
             ) : null}
             <span className="layout-org-banner-name">{user.organization_name}</span>
+            <CompanyScopeSelect />
             {user.organization_vat_number ? (
               <span className="layout-org-banner-vat">P.IVA {user.organization_vat_number}</span>
             ) : null}
           </div>
-        ) : null}
+        ) : (
+          <div className="layout-org-banner" role="region" aria-label="Ambito azienda">
+            <CompanyScopeSelect />
+          </div>
+        )}
 
         {/* Contenuto principale */}
         <main className="layout-main">
@@ -393,6 +400,14 @@ function AppLayout({ children }) {
       {/* Bottom navigation mobile */}
       <BottomNav user={user} alerts={alerts} />
     </div>
+  );
+}
+
+function AppLayout({ children }) {
+  return (
+    <CompanyScopeProvider>
+      <AppLayoutInner>{children}</AppLayoutInner>
+    </CompanyScopeProvider>
   );
 }
 

@@ -32,7 +32,7 @@ Quando un deputy (o il Lead) costruisce o sistema una pagina, **parte da una di 
 | # | Tipo di schermata | Copia da | Quando usarla |
 |---|-------------------|----------|---------------|
 | 1 | **Shell applicazione** | `app/src/layouts/AppLayout.jsx` + `AppLayout.css` | Layout, sidebar, header mobile, colori, raggio, ombre. È l'unica fonte dei token `:root`. |
-| 2 | **Elenco operativo + filtri** | `QualificationsPage.jsx` (stesso pattern in `DeadlinesPage.jsx`) | Lista con card KPI cliccabili, ambito azienda in header, griglia `SgqDataGrid`. Una sola fonte di filtro per dimensione (niente tendina duplicata). |
+| 2 | **Elenco operativo + filtri** | `QualificationsPage.jsx` (stesso pattern in `DeadlinesPage.jsx`) | Lista con card KPI cliccabili, **Ambito unico in AppLayout** (non in pagina), griglia `SgqDataGrid`. Una sola fonte di filtro per dimensione (niente tendina duplicata). |
 | 3 | **Scheda operativa a fasi** | Drawer NC: `NCPage.jsx` + `.nc-drawer-section` + `useNcDrawerWidth.js` | Dettaglio/edit di un record con flusso ISO. Sezioni numerate collassabili, non un form unico alfabetico. |
 
 ### 1 — Shell (`AppLayout`)

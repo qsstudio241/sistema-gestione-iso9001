@@ -1,6 +1,6 @@
 /**
- * Ambito azienda condiviso nel Registro documenti (Priorità / Catalogo / Albero).
- * Persistenza opzionale in localStorage.
+ * DEPRECATED: usare appCompanyScope.js + CompanyScopeContext.
+ * STUDIO_REGISTRY_SCOPE resta il valore URL "studio" (Patrimonio Studio).
  */
 
 export const DOC_REGISTRY_COMPANY_SCOPE_KEY = 'sgq-doc-registry-company-scope';

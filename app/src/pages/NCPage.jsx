@@ -8,6 +8,7 @@ import React, { useState, useEffect, useCallback, useMemo } from "react";
 import apiService from "../services/apiService";
 import { useRouter } from "../contexts/RouterContext";
 import { useAuth } from "../contexts/AuthContext";
+import { useCompanyScope } from "../contexts/CompanyScopeContext";
 import NcDetailPanel from "../components/NcDetailPanel";
 import NcCreateModal from "../components/NcCreateModal";
 import SgqDataGrid from "../components/SgqDataGrid";
@@ -63,6 +64,7 @@ function SeverityTag({ severity }) {
 export default function NCPage() {
   const { replace } = useRouter();
   const { user } = useAuth();
+  const { companyId } = useCompanyScope();
   const [ncList, setNcList]         = useState([]);
   const [stats, setStats]           = useState(null);
   const [loading, setLoading]       = useState(true);
@@ -75,20 +77,24 @@ export default function NCPage() {
   const [showBreakdown, setShowBreakdown] = useState(false);
   const [exportingWord, setExportingWord] = useState(false);
   const [exportWordError, setExportWordError] = useState(null);
-  const [filters, setFilters] = useState({ status: "", severity: "", overdue: "", due_within_days: "", company_id: "", source_category: "" });
+  const [filters, setFilters] = useState({
+    status: "",
+    severity: "",
+    overdue: "",
+    due_within_days: "",
+    company_id: companyId || "",
+    source_category: "",
+  });
   const [page, setPage]       = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [searchNc, setSearchNc] = useState("");
-  const [companies, setCompanies] = useState([]);
 
   const LIMIT = 20;
   const { width: drawerWidth, startResize: startDrawerResize } = useNcDrawerWidth();
 
   useEffect(() => {
-    apiService.getCompanies()
-      .then(res => setCompanies(res?.data || []))
-      .catch(() => setCompanies([]));
-  }, []);
+    setFilters((f) => (f.company_id === (companyId || "") ? f : { ...f, company_id: companyId || "" }));
+  }, [companyId]);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -193,7 +199,7 @@ export default function NCPage() {
   }
 
   function resetFilters() {
-    setFilters({ status: "", severity: "", overdue: "", due_within_days: "", company_id: "", source_category: "" });
+    setFilters({ status: "", severity: "", overdue: "", due_within_days: "", company_id: companyId || "", source_category: "" });
     setSearchNc("");
     setPage(1);
     setSelectedNcId(null);
@@ -476,19 +482,6 @@ export default function NCPage() {
       )}
 
       <div className="nc-filters">
-        {companies.length > 0 && (
-          <select
-            className="nc-filter-company"
-            value={filters.company_id}
-            onChange={e => handleFilter("company_id", e.target.value)}
-          >
-            <option value="">Tutti i clienti</option>
-            {companies.map(c => (
-              <option key={c.id} value={c.id}>{c.name}</option>
-            ))}
-          </select>
-        )}
-
         <input
           type="search"
           className="nc-search"

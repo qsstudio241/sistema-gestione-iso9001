@@ -1,10 +1,6 @@
 /**
- * Ambito azienda condiviso nel modulo Riesame di Direzione.
- * Persistenza in localStorage — pattern identico a qualificationsCompanyScope
- * e documentRegistryCompanyScope.
- *
- * Il riesame può coprire l'intera organizzazione ("Tutto lo studio"),
- * quindi l'ambito non è obbligatorio.
+ * DEPRECATED: usare appCompanyScope.js + CompanyScopeContext.
+ * Tenuto per i test L1 storici del modulo; le pagine non lo chiamano piu'.
  */
 
 export const MGMT_REVIEW_COMPANY_SCOPE_KEY = 'sgq-management-review-company-scope';

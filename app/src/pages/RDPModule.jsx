@@ -13,6 +13,7 @@
 
 import React, { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import apiService from "../services/apiService";
+import { useCompanyScope } from "../contexts/CompanyScopeContext";
 import RdpTestAttachments from "../components/RdpTestAttachments.jsx";
 import "../components/ChecklistModule.css";
 import "./RDPModule.css";
@@ -420,14 +421,13 @@ function RdpReportForm({ report, companies, onSave, onCancel }) {
 
 // ── Componente principale ─────────────────────────────────────────────────────
 export default function RDPModule() {
+    const { companyId: filterCompany, companies } = useCompanyScope();
     const [reports, setReports] = useState([]);
     const [stats, setStats] = useState(null);
-    const [companies, setCompanies] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
 
     const [filterStatus, setFilterStatus] = useState("");
-    const [filterCompany, setFilterCompany] = useState("");
     const [searchText, setSearchText] = useState("");
 
     const [view, setView] = useState("list");
@@ -442,15 +442,13 @@ export default function RDPModule() {
             if (filterCompany) params.company_id = filterCompany;
             if (searchText)    params.search = searchText;
 
-            const [listResp, statsResp, companiesResp] = await Promise.all([
+            const [listResp, statsResp] = await Promise.all([
                 apiService.getRdpReportList(params),
-                apiService.getRdpReportStats(),
-                apiService.getCompanies ? apiService.getCompanies() : Promise.resolve({ data: [] }),
+                apiService.getRdpReportStats(filterCompany ? { company_id: filterCompany } : {}),
             ]);
 
             setReports(listResp.data || []);
             setStats(statsResp.data || null);
-            setCompanies(companiesResp.data || []);
         } catch (err) {
             setError("Errore caricamento rapporti RDP");
         } finally {
@@ -518,10 +516,6 @@ export default function RDPModule() {
                 <select value={filterStatus} onChange={e => setFilterStatus(e.target.value)}>
                     <option value="">Tutti gli stati</option>
                     {REPORT_STATUSES.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
-                </select>
-                <select value={filterCompany} onChange={e => setFilterCompany(e.target.value)}>
-                    <option value="">Tutte le aziende</option>
-                    {companies.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
                 </select>
             </div>
 

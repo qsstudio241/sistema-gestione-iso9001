@@ -1,6 +1,6 @@
 /**
- * Ambito azienda condiviso nel modulo Qualifiche.
- * Persistenza opzionale in localStorage (pattern registro documenti).
+ * DEPRECATED: usare appCompanyScope.js + CompanyScopeContext.
+ * Tenuto per i test L1 storici del modulo; le pagine non lo chiamano piu'.
  */
 
 export const QUALIFICATIONS_COMPANY_SCOPE_KEY = 'sgq-qualifications-company-scope';
