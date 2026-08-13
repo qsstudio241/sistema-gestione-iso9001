@@ -1,28 +1,74 @@
 # Setup PR Routing & Approval (Cursor Automations) — ProgettoISO
 
-**Stato**: proposta pronta lato repo. Attivazione finale richiede accesso al **Dashboard Cursor**
-(cursor.com), non eseguibile da un Cloud Agent — nessun agente ha credenziali/permessi di admin
-sull'organizzazione Cursor.
+**Stato**: proposta pronta lato repo, guida aggiornata per **piano Ultra individuale** (confermato
+13/08/2026). Attivazione finale richiede accesso al **Dashboard Cursor** (cursor.com), non eseguibile
+da un Cloud Agent — nessun agente ha credenziali/permessi admin sull'account.
 
 **Fonti verificate** (13/08/2026, tramite subagent `cursor-guide` sulla documentazione ufficiale, non
 per deduzione):
 
 - [cursor.com/docs/approval-agents](https://cursor.com/docs/approval-agents) — cosa fa e come si
   configura "PR Routing & Approval"
-- [cursor.com/docs/cloud-agent/automations](https://cursor.com/docs/cloud-agent/automations) — trigger
-  supportati, dove si legge `APPROVAL_POLICY.md`/`ROUTING.md`
+- [cursor.com/docs/bugbot](https://cursor.com/docs/bugbot) — setup, vincoli piano Individual, billing
+- [cursor.com/docs/security-agents](https://cursor.com/docs/security-agents) — vincolo Team/Enterprise
+- [cursor.com/docs/cloud-agent/automations](https://cursor.com/docs/cloud-agent/automations) — trigger,
+  scope Private/Team Visible/Team Owned, dove si legge `APPROVAL_POLICY.md`/`ROUTING.md`
 - [cursor.com/docs/cloud-agent/security](https://cursor.com/docs/cloud-agent/security) — vincolo "mai
-  merge autonomo" (già citato in `sgq-git-autonomy.mdc`)
-- [cursor.com/docs/models-and-pricing](https://cursor.com/docs/models-and-pricing) — disponibilità per
-  piano (non incluso nel piano Start)
+  merge autonomo"
+- [cursor.com/docs/integrations/github](https://cursor.com/docs/integrations/github) — permessi GitHub
+  App (Administration in sola lettura)
+- [cursor.com/help/account-and-billing/bugbot-usage-based-billing](https://cursor.com/help/account-and-billing/bugbot-usage-based-billing) — costo per run
 
-## Cosa fa davvero (e cosa non fa)
+## Piano confermato: Ultra ($200/mo, individuale)
+
+Compatibile con tutto il necessario, con **tre differenze concrete** rispetto a un piano Team che
+cambiano come va configurato (non solo "costa meno"):
+
+| Aspetto | Su Ultra (individuale) | Su Team/Enterprise |
+|---|---|---|
+| PR Routing & Approval | Solo scope **Private** (nessun "Team Visible"/"Team Owned" — questi richiedono un'organizzazione Cursor con più membri) | Anche condiviso con service account team |
+| Bugbot | **"Runs only on PRs you author"** — vedi rischio sotto | Gira su tutte le PR di tutti i contributor del repo |
+| Security Review Context | **Non disponibile** (richiede Team/Enterprise, billing a pool team) | Disponibile |
+
+Nessuna di queste è bloccante per l'obiettivo (routing/approvazione automatica su PR a basso rischio),
+ma la seconda richiede una verifica pratica prima di fidarsi del meccanismo.
+
+## Rischio da verificare per primo: Bugbot "solo PR che autori tu"
+
+**Testo esatto della doc**: *"Bugbot runs only on PRs you author"* (piano Individual).
+
+Le PR di questa proposta sono aperte da **Cloud Agent** tramite la GitHub App di Cursor collegata al
+tuo account. Non è documentato in modo esplicito se Cursor attribuisce quelle PR a te (come titolare
+dell'account che ha lanciato l'agente) o a un'identità bot separata — se fosse la seconda, Bugbot
+**non** girerebbe automaticamente su quelle PR con un piano Individual, e "Bugbot Review Context" nel
+Custom Prompt di PR Routing & Approval resterebbe sempre vuoto (comportamento comunque sicuro: il
+prompt tratta "nessun segnale" come rilievo critico, quindi non approva mai — ma perderesti il
+beneficio di velocità).
+
+**Verifica pratica da fare tu** (5 minuti, dopo aver abilitato Bugbot — punto 2 sotto): apri o aggiorna
+una PR creata da Cloud Agent (es. proprio questa, [#402](../../.)) e controlla se compare il check
+`Cursor Bugbot` / un commento di review automatico entro qualche minuto, **senza** che tu scriva
+`bugbot run` a mano. Se compare → tutto funziona come previsto. Se non compare dopo ~10 minuti → il
+meccanismo non gira automaticamente sulle PR dei Cloud Agent col tuo piano, e serve il fallback: fai
+commentare `bugbot run` (o `cursor review`) all'agente stesso come ultimo passo prima di chiedere la
+tua revisione — un passo in più ma ancora molto meno lavoro del gate manuale attuale.
+
+## Costo (usage-based billing, dati reali non stimati)
+
+- Ogni run Bugbot costa in media **$1.00–$1.50**, secondo dimensione/complessità della PR.
+- Consuma prima l'usage incluso nel piano Ultra, poi l'on-demand usage se abilitato; **se l'on-demand è
+  disabilitato, Bugbot si ferma finché non rinnovi il ciclo di fatturazione** (non fallisce in modo
+  silenzioso, semplicemente non gira più).
+- Monitora il consumo reale su `cursor.com/dashboard/spending` dopo la prima settimana.
+- Se il costo preoccupa, puoi impostare Bugbot su "**Run only when mentioned**" invece di automatico —
+  perdi la parte "always-on" ma tieni il controllo del costo per PR.
+
+## Cosa fa davvero PR Routing & Approval (e cosa non fa)
 
 - Assegna reviewer in base a code ownership/commit history quando una PR viene aperta o aggiornata.
 - Può **approvare** (mai mergiare) una PR a basso rischio, quando i segnali configurati lo permettono.
 - Legge questi segnali: risk score, `APPROVAL_POLICY.md` (nella directory più prossima ai file
-  modificati), `.cursor/approval-policies/ROUTING.md`, Bugbot Review Context, Security Review Context
-  (richiede piano Team/Enterprise).
+  modificati), `.cursor/approval-policies/ROUTING.md`, Bugbot Review Context.
 - **Non sostituisce mai una code review completa** ("It does not replace a full code review" — doc
   ufficiale) e **non mergia mai**: il merge resta sempre un click umano.
 
@@ -36,26 +82,34 @@ per deduzione):
 | `backend/src/APPROVAL_POLICY.md` | Mai approvazione automatica, sempre review umana |
 | `database/migrations/APPROVAL_POLICY.md` | Mai approvazione automatica, sempre review umana |
 | `.cursor/approval-policies/ROUTING.md` | Routing per area |
+| `.cursor/BUGBOT.md` | Regole custom Bugbot allineate a `sgq-operating-memory.mdc`/`sgq-git-autonomy.mdc` (multi-tenant, human-in-the-loop AI, encoding, migrazioni idempotenti) |
 
-Questi file sono **inerti** finché l'automation non viene attivata da dashboard: mergiare questa PR non
-comporta nessun rischio operativo.
+Questi file sono **inerti** finché Bugbot e l'automation non vengono attivati da dashboard: mergiare
+questa PR non comporta nessun rischio operativo né costo.
 
-## Cosa devi fare tu (solo tu puoi farlo — richiede login Dashboard Cursor con permessi admin/owner)
+## Cosa devi fare tu — ordine consigliato (Bugbot prima, poi il routing)
 
-1. Verifica il piano del team su `cursor.com/settings` → **Automations non è incluso nel piano Start**;
-   serve Pro/Pro Plus/Ultra/Team/Enterprise. Se avete piano Team/Enterprise potete usare anche
-   "Security Review Context" (opzionale, non richiesto da questa proposta).
-2. Vai su [cursor.com/automations/from-cursor/pr-routing-and-approval](https://cursor.com/automations/from-cursor/pr-routing-and-approval).
-3. Attiva **"Enable PR Routing and Requests for Review"**.
-4. **Consigliato per il primo giro**: lascia **disattivato** "Automatically Approve PRs" — parti solo
+### Passo 1 — Attiva Bugbot (serve come input per il passo 2)
+
+1. Collega il repo su `cursor.com/dashboard/integrations` se non è già collegato.
+2. Vai su [cursor.com/automations/from-cursor/bugbot](https://cursor.com/automations/from-cursor/bugbot).
+3. Abilita Bugbot sul repository `sistema-gestione-iso9001` (lascia **disattivato** "Run only when
+   mentioned" per avere il comportamento always-on di default — attivalo dopo se il costo preoccupa).
+4. Fai la verifica pratica descritta sopra (PR Cloud Agent → Bugbot gira da solo?).
+
+### Passo 2 — Attiva PR Routing & Approval
+
+1. Vai su [cursor.com/automations/from-cursor/pr-routing-and-approval](https://cursor.com/automations/from-cursor/pr-routing-and-approval).
+2. Attiva **"Enable PR Routing and Requests for Review"**. Scope: resterà **Private** (unica opzione
+   su piano individuale — nessuna perdita funzionale per un solo operatore).
+3. **Consigliato per il primo giro**: lascia **disattivato** "Automatically Approve PRs" — parti solo
    con l'assegnazione reviewer per 1–2 settimane, osserva il comportamento, poi valuta di attivare
-   l'approvazione automatica solo per le aree Basso (vedi domanda 3 sotto).
-5. Seleziona il repository `sistema-gestione-iso9001`.
-6. Trigger da abilitare: **Pull request opened**, **Pull request pushed**, **Comment added** (per
-   reagire anche a follow-up tipo `@cursor`).
-7. Segnali: abilita **Bugbot Review Context**. Lascia **Security Review Context** disattivato se non
-   avete piano Team/Enterprise.
-8. Custom Prompt — incolla esattamente questo testo nel campo dedicato:
+   l'approvazione automatica solo per le aree Basso (vedi domanda 2 sotto).
+4. Seleziona il repository `sistema-gestione-iso9001`.
+5. Trigger da abilitare: **Pull request opened**, **Pull request pushed**, **Comment added**.
+6. Segnali: abilita **Bugbot Review Context**. Lascia **Security Review Context** disattivato — non
+   disponibile sul piano Ultra individuale (richiede Team/Enterprise, confermato).
+7. Custom Prompt — incolla esattamente questo testo nel campo dedicato:
 
 ```text
 Sei l'agente di routing/approvazione PR per ProgettoISO (SGQ ISO 9001 multi-tenant).
@@ -84,28 +138,25 @@ Comportamento richiesto:
 6. Se una directory ha un file APPROVAL_POLICY.md, quella policy vince su questo prompt generale.
 ```
 
-9. Azioni: abilita **"Request Reviewers"**. Abilita **"Approve PR"** solo se hai risposto sì alla
-   domanda 3 più sotto.
-10. Salva e attiva.
+8. Azioni: abilita **"Request Reviewers"**. Abilita **"Approve PR"** solo se hai risposto sì alla
+   domanda 2 più sotto.
+9. Salva e attiva.
 
-## Domande a cui serve una tua risposta prima di considerare la configurazione definitiva
+## Domande residue (dopo la tua risposta "Ultra")
 
-1. **Piano Cursor del team**: Pro / Pro Plus / Team / Enterprise? (Determina se "Security Review
-   Context" è disponibile — non blocca il resto.)
-2. **Bugbot è già attivo come automation "always-on" sul repo**, o oggi lo invocate solo su richiesta
-   tramite il subagente `bugbot` (come descritto in `sgq-git-autonomy.mdc`)? Se non è già
-   un'automation attiva, va abilitata anche quella prima che "Bugbot Review Context" abbia dati reali
-   da leggere — altrimenti PR Routing & Approval assegnerà solo reviewer, mai approvazione, per
-   mancanza di segnale (comportamento comunque sicuro per il punto 4 del Custom Prompt).
-3. **Rollout**: partire prudente (solo Request Reviewers, punto 4 sopra) o attivare da subito
-   l'approvazione automatica sulle aree Basso (docs/rules)?
-4. **Auto-merge nativo GitHub**: lo valutiamo in combinazione (già segnalato come opzione separata in
-   `sgq-git-autonomy.mdc`, da attivare solo su richiesta esplicita), o resta fuori scope per ora?
+1. ~~Piano Cursor~~ → **Risposto: Ultra.** Compatibile, con i vincoli sopra.
+2. **Rollout**: partire prudente (solo Request Reviewers) o attivare da subito l'approvazione
+   automatica sulle aree Basso (docs/rules)?
+3. **Auto-merge nativo GitHub** in combinazione: lo valutiamo ora o resta fuori scope per ora?
+4. **Costo**: vuoi Bugbot sempre-attivo (~$1–1.5/PR, consuma usage Ultra) o preferisci "Run only when
+   mentioned" per tenere il controllo manuale del costo, accettando un passo in più per PR?
 
 ## Dopo l'attivazione
 
-- Aggiornare `sgq-git-autonomy.mdc` § Protocollo "pronto al click" PR con una riga che segnala che il
-  routing/approvazione a basso rischio è ora automatizzato (fatto in questa stessa PR, vedi sotto).
-- Monitorare per 1–2 settimane: se PR Routing & Approval assegna reviewer in modo scorretto o approva
-  qualcosa che non doveva, correggere prima il `APPROVAL_POLICY.md` più vicino ai file coinvolti,
-  non disattivare l'intera automation.
+- Fai la verifica pratica sul primo punto (Bugbot gira da solo su PR Cloud Agent?) e riportamela: se il
+  meccanismo non gira in automatico, aggiorno il workflow dei deputy per far commentare `bugbot run`
+  come ultimo passo prima di segnalare la PR pronta.
+- Monitora per 1–2 settimane: se PR Routing & Approval assegna reviewer in modo scorretto o approva
+  qualcosa che non doveva, correggere prima il `APPROVAL_POLICY.md` più vicino ai file coinvolti, non
+  disattivare l'intera automation.
+- Controlla `cursor.com/dashboard/spending` dopo la prima settimana per il costo reale Bugbot.
