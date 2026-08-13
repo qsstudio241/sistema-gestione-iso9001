@@ -11,7 +11,7 @@
 ## Harness (Cursor Lead / Deputy)
 
 [ADR-015](docs/adr/ADR-015-cursor-lead-deputy-workflow.md): Lead pianifica (`DEPUTYTASK*.md`); Deputy esegue slice + test L1 + PR.
-Epic > 1 sessione: [`.cursor/skills/wayfinder-sgq/SKILL.md`](.cursor/skills/wayfinder-sgq/SKILL.md).
+Epic > 1 sessione: [`.cursor/skills/wayfinder-sgq/SKILL.md`](.cursor/skills/wayfinder-sgq/SKILL.md). Slice non chiusa: [`HANDOFF_TEMPLATE.md`](docs/agent-tasks/HANDOFF_TEMPLATE.md).
 AI runtime prodotto: [ADR-010](docs/adr/ADR-010-ai-agentic-architecture.md). UI: [`app/src/design-system/README.md`](app/src/design-system/README.md).
 
 ---

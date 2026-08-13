@@ -16,6 +16,7 @@ alwaysApply: false
 - **Piramide Test**: Dopo modifiche a `app/`, esegui **L1** (`NODE_ENV=test` → `npm run test:run`) e `npm run build`.
 - **Multi-tenant**: Ogni query deve includere lo scope `organization_id`.
 - **Riuso UI (Blocco Unico)**: Usa sempre `.status-btn`, `.notes-textarea`, `QuestionCard.jsx`, `AttachmentSection.jsx`. DNA visivo e schermate di riferimento: `app/src/design-system/README.md`.
+- **Gate Ponytail** (prima di file/componente/CSS/endpoint nuovi): deve esistere? esiste già? libreria in repo? una riga basta? altrimenti il minimo. Dettaglio: `sgq-operating-memory.mdc`.
 
 ## Gestione Git e PR
 - **Branching**: Crea sempre un branch dedicato (es. `feat/nome-task`).

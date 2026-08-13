@@ -28,6 +28,7 @@ nel repo.
 | Creare GitHub Issues come mappa (`wayfinder:map`) | Brief ufficiale = `docs/agent-tasks/DEPUTYTASK*.md` + `PLAN_*_SLICES.md` |
 | Creare un secondo `CONTEXT.md` | Fonte unica: `PROJECT_CONTEXT.md` |
 | Grilling di 40–80 domande tecniche al committente | Scelte tecniche autonome; HITL solo prodotto / commerciale / legale / livello Alto |
+| Skill GitHub Ponytail / Caveman / Impeccable / Taste / wiki Obsidian | Seconda governance vs DNA visivo + gate Ponytail in `sgq-operating-memory.mdc`; fonte unica = `PROJECT_CONTEXT.md` |
 | Implementare l’intera epic nella stessa sessione che disegna la mappa | La sessione di charting **non** esegue le slice |
 | Usare context 1M «perché il lavoro è grosso» | Il grosso si spezza; 1M resta eccezione Lead |
 | Leggere GUIDA + roadmap **intere** all'avvio di ogni slice | Saturano la smart zone prima del codice. Protocollo: `AGENTS.md` (dieta) + bussola in `PROJECT_CONTEXT.md` |
@@ -88,6 +89,7 @@ Sessione Deputy (o Lead su una sola decisione).
 3. Sovrascrivi/apri il brief `DEPUTYTASK*.md` con **una** slice, DoD, file previsti, Cosa NON toccare.
 4. Esegui **solo quella** slice (test L1, PR). Aggiorna il PLAN: spunta DoD, sposta gist in «Decisioni già prese», promuovi nebbia ora specificabile a nuove righe.
 5. Non aprire la slice successiva nella stessa sessione se il contesto sta gonfiandosi (sintomi: rileggere le stesse regole, ripetere un errore già corretto, «mi ricordo che…» senza rileggere il file).
+6. Se la slice **non è chiusa**: copia [`HANDOFF_TEMPLATE.md`](../../../docs/agent-tasks/HANDOFF_TEMPLATE.md) nel brief attivo e ferma. La sessione dopo riparte dall'handoff.
 
 ## Template PLAN
 

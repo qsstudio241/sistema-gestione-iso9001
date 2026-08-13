@@ -221,9 +221,18 @@ npx playwright install chromium 2>&1 | tail -3
 
 Il chromium viene scaricato in `~/.cache/ms-playwright/chromium_headless_shell-*`. Rimane disponibile per tutta la sessione.
 
-### 6b. Script template login + smoke test
+### 6b. Script versionato (preferito) + template login
 
-Salvare in `/tmp/test-login.mjs` e lanciare con `node /tmp/test-login.mjs`:
+**Preferito** (percorsi critici, repo):
+
+```bash
+cd /tmp && npm install playwright && npx playwright install chromium
+SGQ_SMOKE_PATHS=login,nc node backend/scripts/smoke-percorsi-critici.mjs
+```
+
+Filtri: `login`, `nc`, `qualifiche`, `sal`, `wps`. Ingest API: `smoke-ingest-e2e-test.js`. ERAM: `smoke-eram-coverage-ui.js`.
+
+Template minimo solo-login (se lo script versionato non basta). Salvare in `/tmp/test-login.mjs` e lanciare con `node /tmp/test-login.mjs`:
 
 ```js
 import { chromium } from 'playwright';

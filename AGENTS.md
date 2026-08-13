@@ -9,7 +9,7 @@ Istruzioni operative per agenti Cursor (desktop e Cloud). Fonte di governance: [
 0. **Allinea Git in autonomia** (se c'è terminale): `git fetch origin main` e, se lavori su `main` o stai per leggere/eseguire un brief, `git pull origin main`. **Non** chiedere al committente di farlo. Obbligatorio prima di qualsiasi `DEPUTYTASK*.md`.
 1. `PROJECT_CONTEXT.md` — stack + **bussola moduli** (tabella «Se lavori su…»).
 2. `docs/PROJECT_ROADMAP.md` **solo** la sezione [Stato attuale e priorità](docs/PROJECT_ROADMAP.md#stato-attuale-e-priorità-fonte-unica) (prime ~40 righe). Banner storico e backlog lungo: solo se serve quella voce.
-3. Brief attivo: `docs/agent-tasks/DEPUTYTASK.md` e/o `DEPUTYTASK1.md` / `DEPUTYTASK2.md` (lavori paralleli).
+3. Brief attivo: `docs/agent-tasks/DEPUTYTASK.md` e/o `DEPUTYTASK1.md` / `DEPUTYTASK2.md` (lavori paralleli). Se il brief ha una sezione **Handoff**, parti da quella (contesto pulito).
 4. Dalla bussola: apri i 2–4 file del modulo. Nei primi file aperti devono comparire quelli del brief, non GUIDA.
 5. `docs/GUIDA_CONSOLIDATA.md` **solo se** il task è deploy, Word, sync, encoding, o una lezione già citata nel brief — e **solo la sezione indicata**, non il file intero.
 6. **Se il task tocca UI** (JSX, CSS, pagine, modal, drawer, filtri, form visibili): leggi **prima di scrivere markup** [`app/src/design-system/README.md`](app/src/design-system/README.md) e [`docs/reference/LIBRERIA_UI_SGQ.md`](docs/reference/LIBRERIA_UI_SGQ.md). Copia una delle 3 schermate; non inventare un look nuovo.
@@ -26,6 +26,8 @@ Rispondi in **italiano**, operativo e sintetico.
 |-------|---------|
 | **Lead** | Piano, architettura, brief in `DEPUTYTASK*.md` (anche più file in parallelo). Epic grandi: skill `wayfinder-sgq` prima del brief. |
 | **Deputy** | Allinea Git → slice verticali, commit atomici, test L1, PR |
+
+**Una sessione = una slice.** Se non chiudi: compila l'handoff nel `DEPUTYTASK*.md` attivo ([template](docs/agent-tasks/HANDOFF_TEMPLATE.md)) e ferma — nuova sessione, contesto pulito. Non installare skill GitHub (Ponytail, Caveman, Impeccable, wiki Obsidian): i gate sono sotto.
 
 Non usare `.github/agents/` (legacy Copilot). Policy anti-disallineamento: `.cursor/rules/sgq-operating-memory.mdc` (sezione *Allineamento Git autonomo*).
 
@@ -61,14 +63,23 @@ cd app && npm run build
 
 Per fix a basso rischio (1–2 file, no sync/DB): accettabile affidarsi a CI Netlify dopo push.
 
-### Smoke UI autenticato
+### Smoke UI autenticato (percorsi critici)
 
-Pattern Playwright in `/tmp` con `SGQ_APP_EMAIL` / `SGQ_APP_PASSWORD` (Secrets). Non usare MCP Playwright per il login (non legge le env). Template: regola `sgq-bug-fix-methodology.mdc` Fase 6.
+Dopo deploy o PR che tocca questi flussi, eseguire **il percorso toccato** (non tutti). Login: script Node + `SGQ_APP_EMAIL` / `SGQ_APP_PASSWORD` — **non** MCP Playwright (non legge le env). Template: `sgq-bug-fix-methodology.mdc` Fase 6.
+
+| Percorso | Come |
+|----------|------|
+| Login + NC + Qualifiche + SAL + WPS/WPQR | `node backend/scripts/smoke-percorsi-critici.mjs` (`SGQ_SMOKE_PATHS` per filtrare) |
+| Ingest WPQR (API test) | `node backend/scripts/smoke-ingest-e2e-test.js` |
+| Copertura ERAM (tenant 1004) | `node backend/scripts/smoke-eram-coverage-ui.js` |
+
+PR di livello Medio: gate **Bugbot** prima di dichiararla pronta (`sgq-git-autonomy.mdc`). Su logica normativa lo stesso deputy non è verificatore di se stesso.
 
 ## Regole repo da rispettare
 
 - Multi-tenant: scope `organization_id` / pattern RBAC esistenti.
 - Riuso UI: `QuestionCard`, `status-btn`, `notes-textarea`, `AttachmentSection`, `AiDisclaimer` — vedi `docs/reference/LIBRERIA_UI_SGQ.md`. DNA visivo: `app/src/design-system/README.md`.
+- **Prima di codice nuovo** (file/componente/CSS/endpoint): deve esistere? esiste già? libreria già in repo? una riga basta? altrimenti il minimo. Dettaglio: `.cursor/rules/sgq-operating-memory.mdc` § Gate Ponytail.
 - Encoding UTF-8, accenti italiani corretti (regola `sgq-encoding-quality`).
 - Zero segreti in file versionati o chat.
 - Doc operativa: aggiorna `docs/GUIDA_CONSOLIDATA.md` (non creare `SESSION_NOTES_*`).
@@ -86,3 +97,4 @@ Pattern Playwright in `/tmp` con `SGQ_APP_EMAIL` / `SGQ_APP_PASSWORD` (Secrets).
 | Metodo slice | `.cursor/rules/sgq-workflow-method.mdc` |
 | Policy Cloud / context | `.cursor/rules/sgq-cloud-agent-env.mdc` |
 | Epic > 1 sessione (smart zone) | [`.cursor/skills/wayfinder-sgq/SKILL.md`](.cursor/skills/wayfinder-sgq/SKILL.md) |
+| Handoff sessione interrotta | [`docs/agent-tasks/HANDOFF_TEMPLATE.md`](docs/agent-tasks/HANDOFF_TEMPLATE.md) |
