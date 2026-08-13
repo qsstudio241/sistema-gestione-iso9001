@@ -1,7 +1,7 @@
 /**
  * WpqrUploadButton - Upload batch WPQR con revisione pre-commit (IG-3)
  */
-import React, { useState, useRef, useCallback } from "react";
+import React, { useState, useRef, useCallback, useEffect } from "react";
 import apiService from "../services/apiService";
 import IngestReviewDialog from "./IngestReviewDialog";
 import "./WpqrUploadButton.css";
@@ -20,6 +20,17 @@ export default function WpqrUploadButton({ companyId, companyName, onUploadCompl
   const [reviewItem, setReviewItem] = useState(null);
   const [reviewBusy, setReviewBusy] = useState(false);
   const inputRef = useRef(null);
+  const scopeKey = isValidCompany ? String(companyIdInt) : "";
+
+  useEffect(() => {
+    setSelectedFiles([]);
+    setUploading(false);
+    setResults(null);
+    setValidationErr(null);
+    setReviewItem(null);
+    setReviewBusy(false);
+    if (inputRef.current) inputRef.current.value = "";
+  }, [scopeKey]);
 
   const handleClick = () => inputRef.current?.click();
 

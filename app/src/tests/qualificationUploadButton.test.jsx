@@ -4,6 +4,7 @@
 import React from "react";
 import { describe, it, expect, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import QualificationUploadButton, { suggestedDocTypeFromTab } from "../components/QualificationUploadButton.jsx";
 
 vi.mock("../services/apiService", () => ({ default: {} }));
@@ -44,5 +45,18 @@ describe("QualificationUploadButton — visibile anche senza azienda", () => {
     );
     const btn = screen.getByRole("button", { name: /Carica qualifiche \(batch\)/i });
     expect(btn).not.toBeDisabled();
+  });
+
+  it("chiude il pannello se l'Ambito passa a un'altra azienda", async () => {
+    const user = userEvent.setup();
+    const { rerender } = render(
+      <QualificationUploadButton companyId="47" companyName="C.M.P." onUploadComplete={() => {}} />
+    );
+    await user.click(screen.getByRole("button", { name: /Carica qualifiche \(batch\)/i }));
+    expect(await screen.findByText(/Azienda:/)).toBeInTheDocument();
+    rerender(
+      <QualificationUploadButton companyId="11" companyName="Altra Srl" onUploadComplete={() => {}} />
+    );
+    expect(screen.queryByText(/Azienda:/)).not.toBeInTheDocument();
   });
 });
