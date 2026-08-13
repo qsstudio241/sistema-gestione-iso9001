@@ -38,7 +38,7 @@ Verificato con `cursor-guide` (documentazione ufficiale, non ipotesi): Cursor di
 
 **Percorsi alternativi per ridurre l'attesa** (da valutare con il committente, non eseguibili di default):
 - GitHub **auto-merge nativo** sulla PR (il committente click "Enable auto-merge" una volta; GitHub completa da solo il merge quando CI è verde) — richiede comunque un'azione umana iniziale per PR, ma elimina il secondo click a fine CI.
-- Automation Cursor dedicata **"PR Routing & Approval"** (approva PR a basso rischio, non mergia) combinata con auto-merge nativo GitHub — infrastruttura da configurare separatamente, non disponibile in una sessione chat standard.
+- Automation Cursor dedicata **"PR Routing & Approval"** (approva PR a basso rischio, non mergia) combinata con auto-merge nativo GitHub — **verificata 13/08/2026** su documentazione ufficiale ([`cursor.com/docs/approval-agents`](https://cursor.com/docs/approval-agents)): esiste con questo nome esatto, legge segnali Bugbot + `APPROVAL_POLICY.md`/`.cursor/approval-policies/ROUTING.md` dal repo. Policy e guida di attivazione pronte in [`docs/how-to/SETUP_PR_ROUTING_APPROVAL.md`](../../docs/how-to/SETUP_PR_ROUTING_APPROVAL.md) — attivazione finale richiede Dashboard Cursor (solo il committente può farlo).
 - Un Personal Access Token del committente inserito come Secret, usato esplicitamente su richiesta puntuale per bypassare la GitHub App di Cursor — **flusso non ufficialmente supportato da Cursor per il merge**, da usare solo se il committente lo richiede esplicitamente conoscendone il rischio.
 
 ## Commit + push diretto SENZA chiedere conferma (livello Basso)
