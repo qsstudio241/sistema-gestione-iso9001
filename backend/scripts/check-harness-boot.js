@@ -7,6 +7,10 @@
  * o se lo scenario non centra i file del modulo.
  *
  *   node backend/scripts/check-harness-boot.js
+ *
+ * Logica pura esportata per test di mutazione (check-harness-boot.test.js):
+ * ogni funzione qui sotto non tocca il filesystem — prende testo, ritorna errori.
+ * Verifica che il checker INTERCETTI una rottura, non solo che passi sul repo sano.
  */
 
 const fs = require('fs');
@@ -40,21 +44,9 @@ const SCENARIOS = [
   },
 ];
 
-function rel(p) {
-  return path.relative(repoRoot, p).split(path.sep).join('/');
-}
-
-function read(relPath) {
-  return fs.readFileSync(path.join(repoRoot, relPath), 'utf8');
-}
-
-function bytes(relPath) {
-  return fs.statSync(path.join(repoRoot, relPath)).size;
-}
-
-function lineCount(text) {
-  return text.split(/\r?\n/).length;
-}
+// ---------------------------------------------------------------------------
+// Logica pura (nessun fs) — testata da check-harness-boot.test.js
+// ---------------------------------------------------------------------------
 
 function extractCompass(contextMd) {
   const begin = contextMd.indexOf('<!-- MODULE_COMPASS_BEGIN -->');
@@ -91,8 +83,8 @@ function parseCompassRows(compassBlock) {
   return rows;
 }
 
-function roadmapStatoSlice() {
-  const text = read('docs/PROJECT_ROADMAP.md');
+/** @param {string} text intero contenuto di PROJECT_ROADMAP.md */
+function roadmapStatoSliceFromText(text) {
   const lines = text.split(/\r?\n/);
   const start = lines.findIndex((l) => /^## Stato attuale e priorità/.test(l));
   if (start < 0) throw new Error('Sezione Stato attuale non trovata in PROJECT_ROADMAP.md');
@@ -124,8 +116,18 @@ function checkAgentsDiet(agentsMd) {
     if (/GUIDA_CONSOLIDATA/.test(line) && !/solo se/i.test(line)) {
       errors.push(`Passo avvio obbliga GUIDA senza «solo se»: ${line.trim()}`);
     }
-    if (/PROJECT_ROADMAP\.md/.test(line) && !/solo/i.test(line)) {
-      errors.push(`Passo avvio legge roadmap intera senza «solo»: ${line.trim()}`);
+    if (/PROJECT_ROADMAP\.md/.test(line)) {
+      if (!/solo/i.test(line)) {
+        errors.push(`Passo avvio legge roadmap intera senza «solo»: ${line.trim()}`);
+      }
+      // Lezione 13/08/2026 (test empirico su sub-agente): "solo la sezione" senza
+      // indicazione meccanica non basta — un agente reale ha letto il file intero
+      // (927 righe) comunque. Serve l'istruzione esplicita sullo strumento (limit/offset).
+      if (!/\blimit\b/i.test(line)) {
+        errors.push(
+          `Passo avvio roadmap non specifica "limit" per lo strumento Read (regressione nota 13/08/2026): ${line.trim()}`
+        );
+      }
     }
   }
   if (/leggi `docs\/GUIDA_CONSOLIDATA\.md`/i.test(avvio) && !/solo se/i.test(avvio)) {
@@ -134,23 +136,45 @@ function checkAgentsDiet(agentsMd) {
   return errors;
 }
 
-function checkAlwaysApplySelfLearning() {
-  const raw = read('.cursor/rules/sgq-self-learning.mdc');
+/** @param {string} raw contenuto di sgq-self-learning.mdc */
+function checkSelfLearningNotAlwaysOn(raw) {
   if (/alwaysApply:\s*true/.test(raw)) {
-    return ['sgq-self-learning.mdc è still alwaysApply: true — deve essere false (solo chiusura)'];
+    return ['sgq-self-learning.mdc è ancora alwaysApply: true — deve essere false (solo chiusura)'];
   }
   return [];
 }
 
-function runScenario(scenario, rows) {
+/**
+ * @param {string[]} compassPaths
+ * @param {(p: string) => boolean} existsFn
+ */
+function checkCompassPathsExist(compassPaths, existsFn) {
   const errors = [];
-  const briefPath = path.join(repoRoot, scenario.brief);
-  if (!fs.existsSync(briefPath)) {
+  if (compassPaths.length < 10) {
+    errors.push(`Bussola troppo corta (${compassPaths.length} path) — attesi almeno 10`);
+  }
+  if (compassPaths.length > 80) {
+    errors.push(`Bussola troppo lunga (${compassPaths.length} path) — sta diventando un inventario`);
+  }
+  const missing = compassPaths.filter((p) => !existsFn(p));
+  if (missing.length) {
+    errors.push(`Path bussola inesistenti:\n  - ${missing.join('\n  - ')}`);
+  }
+  return errors;
+}
+
+/**
+ * @param {object} scenario
+ * @param {{topic: string, files: string}[]} rows
+ * @param {string} briefText
+ */
+function runScenarioPure(scenario, rows, briefText) {
+  const errors = [];
+  if (briefText == null) {
     errors.push(`Brief mancante: ${scenario.brief}`);
     return { errors, firstFiles: [] };
   }
-  const brief = fs.readFileSync(briefPath, 'utf8');
-  if (!/company_profile|ADR-018|profilo azienda/i.test(brief)) {
+  if (!/company_profile|ADR-018|profilo azienda/i.test(briefText)) {
     errors.push(`Scenario ${scenario.id}: ${scenario.brief} non parla più di company_profile/ADR-018`);
   }
   const row = rows.find((r) => scenario.compassRe.test(r.topic) || scenario.compassRe.test(r.files));
@@ -179,49 +203,53 @@ function runScenario(scenario, rows) {
   return { errors, firstFiles, row: row.topic };
 }
 
+function checkMandatoryBytes(mandatoryBytes) {
+  if (mandatoryBytes > TARGET_MANDATORY_BYTES) {
+    return [`Peso avvio obbligatorio ${mandatoryBytes} B > tetto ${TARGET_MANDATORY_BYTES} B (50 KB)`];
+  }
+  return [];
+}
+
+// ---------------------------------------------------------------------------
+// I/O reale (fs) — solo qui si legge il repo
+// ---------------------------------------------------------------------------
+
+function readRepoFile(relPath) {
+  return fs.readFileSync(path.join(repoRoot, relPath), 'utf8');
+}
+
+function repoFileBytes(relPath) {
+  return fs.statSync(path.join(repoRoot, relPath)).size;
+}
+
+function existsInRepo(relPath) {
+  return fs.existsSync(path.join(repoRoot, relPath));
+}
+
 function main() {
   const errors = [];
-  const contextMd = read('PROJECT_CONTEXT.md');
-  const agentsMd = read('AGENTS.md');
+  const contextMd = readRepoFile('PROJECT_CONTEXT.md');
+  const agentsMd = readRepoFile('AGENTS.md');
   const compass = extractCompass(contextMd);
   const compassPaths = parseCompassPaths(compass);
   const rows = parseCompassRows(compass);
 
-  if (compassPaths.length < 10) {
-    errors.push(`Bussola troppo corta (${compassPaths.length} path) — attesi almeno 10`);
-  }
-  if (compassPaths.length > 80) {
-    errors.push(`Bussola troppo lunga (${compassPaths.length} path) — sta diventando un inventario`);
-  }
-
-  const missing = [];
-  for (const p of compassPaths) {
-    if (!fs.existsSync(path.join(repoRoot, p))) missing.push(p);
-  }
-  if (missing.length) {
-    errors.push(`Path bussola inesistenti:\n  - ${missing.join('\n  - ')}`);
-  }
-
+  errors.push(...checkCompassPathsExist(compassPaths, existsInRepo));
   errors.push(...checkAgentsDiet(agentsMd));
-  errors.push(...checkAlwaysApplySelfLearning());
+  errors.push(...checkSelfLearningNotAlwaysOn(readRepoFile('.cursor/rules/sgq-self-learning.mdc')));
 
-  const stato = roadmapStatoSlice();
-  const mandatoryFiles = ['AGENTS.md', 'PROJECT_CONTEXT.md'];
-  let mandatoryBytes = stato.bytes;
-  for (const f of mandatoryFiles) mandatoryBytes += bytes(f);
+  const stato = roadmapStatoSliceFromText(readRepoFile('docs/PROJECT_ROADMAP.md'));
+  let mandatoryBytes = stato.bytes + repoFileBytes('AGENTS.md') + repoFileBytes('PROJECT_CONTEXT.md');
+  errors.push(...checkMandatoryBytes(mandatoryBytes));
 
   let alwaysBytes = 0;
-  for (const f of ALWAYS_APPLY_RULES) alwaysBytes += bytes(f);
-
-  if (mandatoryBytes > TARGET_MANDATORY_BYTES) {
-    errors.push(
-      `Peso avvio obbligatorio ${mandatoryBytes} B > tetto ${TARGET_MANDATORY_BYTES} B (50 KB)`
-    );
-  }
+  for (const f of ALWAYS_APPLY_RULES) alwaysBytes += repoFileBytes(f);
 
   const scenarioReports = [];
   for (const sc of SCENARIOS) {
-    const r = runScenario(sc, rows);
+    const briefPath = path.join(repoRoot, sc.brief);
+    const briefText = fs.existsSync(briefPath) ? fs.readFileSync(briefPath, 'utf8') : null;
+    const r = runScenarioPure(sc, rows, briefText);
     errors.push(...r.errors);
     scenarioReports.push(r);
   }
@@ -249,4 +277,20 @@ function main() {
   if (human) console.log('\nOK check-harness-boot');
 }
 
-main();
+module.exports = {
+  extractCompass,
+  parseCompassPaths,
+  parseCompassRows,
+  roadmapStatoSliceFromText,
+  checkAgentsDiet,
+  checkSelfLearningNotAlwaysOn,
+  checkCompassPathsExist,
+  runScenarioPure,
+  checkMandatoryBytes,
+  TARGET_MANDATORY_BYTES,
+  SCENARIOS,
+};
+
+if (require.main === module) {
+  main();
+}

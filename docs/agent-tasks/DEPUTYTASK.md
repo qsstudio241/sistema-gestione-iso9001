@@ -31,8 +31,8 @@
 
 **File previsti:**
 
-- `database/migrations/130_company_profile.sql` (idempotente)
-- `backend/scripts/run-migration-130-vps.js`
+- `database/migrations/145_company_profile.sql` (idempotente — **verificare `ls database/migrations/ | sort | tail -5` prima di eseguire**: `130` era già occupato da `130_user_audit_log.sql` al 23/07/2026, sequenza condivisa arrivata a `144` il 13/08/2026; il numero libero cambia ad ogni PR che tocca migrazioni, non fidarsi del valore scritto qui)
+- `backend/scripts/run-migration-145-vps.js` (stesso numero della migrazione)
 
 **Cosa fare:**
 
