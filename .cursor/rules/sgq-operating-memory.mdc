@@ -213,6 +213,8 @@ Prima di implementare qualsiasi nuovo elemento UI (pulsante, textarea, sezione c
 
 Tavola completa: **[`docs/reference/LIBRERIA_UI_SGQ.md`](../../docs/reference/LIBRERIA_UI_SGQ.md)**
 
+**DNA visivo (obbligo se il task tocca JSX/CSS):** leggere **prima di scrivere markup** [`app/src/design-system/README.md`](../../app/src/design-system/README.md) (token, anti-pattern, 3 schermate di riferimento). Copiare una di quelle schermate; non inventare palette, layout da landing o un secondo chrome. Catalogo live in DEV: `/dev/ui-catalog`. **Non** installare skill GitHub di frontend-design (Hallmark / Impeccable / Taste): il DNA e' gia' nel repo.
+
 Blocchi principali:
 
 | Elemento | Componente/classe |
