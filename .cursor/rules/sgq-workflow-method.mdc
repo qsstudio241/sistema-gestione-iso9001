@@ -23,6 +23,7 @@ Regole:
 - **Fix minimo e difensivo**: riusa componenti/pattern esistenti (tabella *Riuso UI* in `sgq-operating-memory.mdc`). Diff piccolo.
 - **Test L1 = build Vite + Vitest mirato** (`app/`). La suite completa **si impalla su Google Drive**: lavorare su disco locale `C:` e usare *build + test mirati* come L1 (vedi lezione *Worktree su C:*).
 - **Chiudere o documentare**: niente "fix a meta'". Se emergono sotto-problemi, chiuderli o annotare il rischio residuo in `GUIDA_CONSOLIDATA.md`.
+- **Epic > 1 sessione**: skill [`wayfinder-sgq`](../skills/wayfinder-sgq/SKILL.md) — mappa in `PLAN_*_SLICES.md`, un `DEPUTYTASK` per run, restare nella smart zone (~100k). Non alzare il context 1M al posto di spezzare.
 
 ## 2. Multitasking sicuro (parallelizzazione)
 

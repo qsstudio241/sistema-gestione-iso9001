@@ -18,7 +18,7 @@ Rispondi in **italiano**, operativo e sintetico.
 
 | Ruolo | Cosa fa |
 |-------|---------|
-| **Lead** | Piano, architettura, brief in `DEPUTYTASK*.md` (anche più file in parallelo) |
+| **Lead** | Piano, architettura, brief in `DEPUTYTASK*.md` (anche più file in parallelo). Epic grandi: skill `wayfinder-sgq` prima del brief. |
 | **Deputy** | Allinea Git → slice verticali, commit atomici, test L1, PR |
 
 Non usare `.github/agents/` (legacy Copilot). Policy anti-disallineamento: `.cursor/rules/sgq-operating-memory.mdc` (sezione *Allineamento Git autonomo*).
@@ -43,6 +43,8 @@ Su [cursor.com/agents](https://cursor.com/agents) usa **Edit** accanto al modell
 | Esplorazione lunga con rischio compaction | Alto | high |
 
 **Non** usare 1M di default: era il comportamento costoso precedente. Preferire brief mirati + regole repo + ricerca file mirata.
+
+Lavoro più grande di una sessione: skill **wayfinder-sgq** (mappa `PLAN_*_SLICES.md` + un `DEPUTYTASK` per run). Non installare il pacchetto intero `mattpocock/skills` (conflitto con ADR-015).
 
 ### Test L1 (frontend)
 
@@ -75,3 +77,4 @@ Pattern Playwright in `/tmp` con `SGQ_APP_EMAIL` / `SGQ_APP_PASSWORD` (Secrets).
 | Memoria operativa | `.cursor/rules/sgq-operating-memory.mdc` |
 | Metodo slice | `.cursor/rules/sgq-workflow-method.mdc` |
 | Policy Cloud / context | `.cursor/rules/sgq-cloud-agent-env.mdc` |
+| Epic > 1 sessione (smart zone) | [`.cursor/skills/wayfinder-sgq/SKILL.md`](.cursor/skills/wayfinder-sgq/SKILL.md) |

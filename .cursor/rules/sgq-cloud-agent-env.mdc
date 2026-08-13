@@ -21,6 +21,8 @@ Su cursor.com/agents → **Edit** accanto al modello:
 
 **Vietato** ripristinare 1M come default su tutti i run (costo inutile: Cursor lo ha reso opzionale).
 
+Epic più grandi di una sessione: skill [`wayfinder-sgq`](../skills/wayfinder-sgq/SKILL.md) (smart zone ~100k; mappa in `PLAN_*_SLICES.md`, una slice per run). Non alzare il context «perché il lavoro è grosso».
+
 ## Operatività Cloud
 - Secrets solo da Dashboard Cloud Agents (`SGQ_SSH_KEY_B64`, `SGQ_SUDO_PASSWORD`, `SGQ_APP_EMAIL`, `SGQ_APP_PASSWORD`, …).
 - Migrazioni DB: pattern VPS (`run-migration-*-vps.js`), non SQL diretto dal cloud.
