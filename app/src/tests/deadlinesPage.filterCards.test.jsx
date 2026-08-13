@@ -53,11 +53,13 @@ describe("DeadlinesPage — card statistiche sostituiscono la tendina Stato", ()
 
   it("mostra le card Archiviate e Prese in carico con i conteggi corretti", async () => {
     render(<DeadlinesPage />);
-    await waitFor(() => expect(apiService.getDeadlineItems).toHaveBeenCalled());
+    await waitFor(() => {
+      const dismissedCard = screen.getByRole("button", { name: /Archiviate/i });
+      expect(dismissedCard.textContent).toContain("1");
+    });
 
     const dismissedCard = screen.getByRole("button", { name: /Archiviate/i });
     const ackCard = screen.getByRole("button", { name: /Prese in carico/i });
-    expect(dismissedCard.textContent).toContain("1");
     expect(dismissedCard.textContent).toContain("Archiviate");
     expect(ackCard.textContent).toContain("1");
     expect(ackCard.textContent).toContain("Prese in carico");
@@ -72,25 +74,23 @@ describe("DeadlinesPage — card statistiche sostituiscono la tendina Stato", ()
   // portando lo status sempre a 'active' il pulsante sarebbe tornato visibile
   // senza l'esclusione esplicita per item_type.
   it("non mostra 'Segna completato' per le righe virtuali tarature (item_type='equipment')", async () => {
-    apiService.getDeadlineItems.mockResolvedValueOnce({
+    apiService.getDeadlineItems.mockResolvedValue({
       data: [
         { id: "equipment_1", item_type: "equipment", title: "Termometro", status: "active", days_until_due: -3, company_id: 1, company_name: "ACME" },
       ],
     });
 
     render(<DeadlinesPage />);
-    await waitFor(() => expect(apiService.getDeadlineItems).toHaveBeenCalled());
-
-    expect(screen.getByText("Termometro")).toBeTruthy();
+    // Attendere la riga, non solo la chiamata API: getDeadlineItems() puo'
+    // risultare called mentre la griglia e' ancora in "Caricamento..." (flake CI).
+    await waitFor(() => expect(screen.getByText("Termometro")).toBeTruthy());
     expect(screen.queryByTitle("Segna completato")).toBeNull();
   });
 
   it("cliccando la card 'Archiviate' filtra la lista alla sola riga dismissed", async () => {
     const user = userEvent.setup();
     render(<DeadlinesPage />);
-    await waitFor(() => expect(apiService.getDeadlineItems).toHaveBeenCalled());
-
-    expect(screen.getByText("Doc attivo")).toBeTruthy();
+    await waitFor(() => expect(screen.getByText("Doc attivo")).toBeTruthy());
 
     await user.click(screen.getByRole("button", { name: /Archiviate/i }));
 
@@ -117,10 +117,9 @@ describe("DeadlinesPage — azioni Archivia / Prendi in carico", () => {
   it("mostra 'Prendi in carico' solo per righe attive già scadute (days_until_due < 0)", async () => {
     apiService.getDeadlineItems.mockResolvedValue({ data: ITEMS });
     render(<DeadlinesPage />);
-    await waitFor(() => expect(apiService.getDeadlineItems).toHaveBeenCalled());
+    await waitFor(() => expect(screen.getByText("Doc attivo")).toBeTruthy());
 
     // Filtro default 'active': solo "Doc attivo" (+10gg) e "Doc scaduto" (-5gg) visibili.
-    expect(screen.getByText("Doc attivo")).toBeTruthy();
     expect(screen.getByText("Doc scaduto")).toBeTruthy();
 
     const ackButtons = screen.getAllByRole("button", { name: "Prendi in carico" });
@@ -164,7 +163,10 @@ describe("DeadlinesPage — azioni Archivia / Prendi in carico", () => {
       data: [{ id: 12, title: "Riga completata", status: "completed", days_until_due: -3, company_id: 1, company_name: "ACME" }],
     });
     render(<DeadlinesPage />);
-    await waitFor(() => expect(apiService.getDeadlineItems).toHaveBeenCalled());
+    await waitFor(() => {
+      const card = screen.getByRole("button", { name: /Completate/i });
+      expect(card.textContent).toContain("1");
+    });
 
     // Filtro default 'active' non mostra la riga completata; forziamo la card "Completate".
     const user = userEvent.setup();
