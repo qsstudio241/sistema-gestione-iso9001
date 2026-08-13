@@ -7,10 +7,12 @@ import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { useRouter, useNavigate, Link } from "../contexts/RouterContext";
 import { useAuth } from "../contexts/AuthContext";
 import { canEditCompany } from "../utils/companyAccess";
+import { hasCompanyProfileCapability } from "../utils/licenseUtils";
 import apiService from "../services/apiService";
 import { useCompanyLogoUrl } from "../hooks/useCompanyLogoUrl";
 import CompanyPersonnelPanel from "../components/CompanyPersonnelPanel";
 import CompanyCounterpartiesPanel from "../components/CompanyCounterpartiesPanel";
+import CompanyProfilePanel from "../components/CompanyProfilePanel";
 import "./CompanyDetailPage.css";
 import "./StudioSettingsPage.css";
 
@@ -19,6 +21,13 @@ const TABS = [
   { id: "personale", label: "Personale" },
   { id: "controparti", label: "Controparti" },
 ];
+
+const PROFILE_TAB = { id: "profilo", label: "Profilo conformit\u00e0" };
+
+function visibleTabs(showProfile) {
+  if (!showProfile) return TABS;
+  return [TABS[0], PROFILE_TAB, TABS[1], TABS[2]];
+}
 
 // Livelli ISO 3834-1 §5: criteri di scelta in base a dimensione/importanza dei
 // prodotti critici per la sicurezza, complessita' di fabbricazione, gamma di
@@ -213,10 +222,13 @@ function CompanyDetailPage() {
   const [company, setCompany] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [profileTabHidden, setProfileTabHidden] = useState(false);
 
   const isSuperadmin = user?.role === "admin" && !user?.auditor_org_id;
   const auditorOrgId = user?.auditor_org_id || company?.auditor_org_id || null;
   const canEdit = canEditCompany(user, companyId);
+  const showProfileTab = hasCompanyProfileCapability(user) && !profileTabHidden;
+  const tabs = visibleTabs(showProfileTab);
 
   const loadCompany = useCallback(async () => {
     if (!companyId) {
@@ -280,12 +292,12 @@ function CompanyDetailPage() {
         </Link>
         <h2 className="studio-title">{company.name}</h2>
         <p className="studio-subtitle">
-          Scheda azienda — anagrafica, personale e controparti commerciali.
+          Scheda azienda: anagrafica, personale e controparti commerciali.
         </p>
       </div>
 
       <div className="studio-tabs" role="tablist">
-        {TABS.map((tab) => (
+        {tabs.map((tab) => (
           <button
             key={tab.id}
             type="button"
@@ -308,6 +320,17 @@ function CompanyDetailPage() {
             canEdit={canEdit}
           />
         )}
+        {activeTab === "profilo" && showProfileTab && (
+          <CompanyProfilePanel
+            companyId={company.id}
+            auditorOrgId={auditorOrgId}
+            canEdit={canEdit}
+            onUnavailable={() => {
+              setProfileTabHidden(true);
+              setActiveTab("anagrafica");
+            }}
+          />
+        )}
         {activeTab === "personale" && (
           <CompanyPersonnelPanel
             companyId={company.id}
@@ -328,4 +351,4 @@ function CompanyDetailPage() {
 }
 
 export default CompanyDetailPage;
-export { parseCompanyId, TABS };
+export { parseCompanyId, TABS, PROFILE_TAB, visibleTabs };

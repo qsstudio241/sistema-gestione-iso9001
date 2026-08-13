@@ -548,6 +548,16 @@ class ApiService {
         return this.put(`/companies/${id}`, data);
     }
 
+    async getCompanyProfile(id, params = {}) {
+        const query = new URLSearchParams(params).toString();
+        return this.get(`/companies/${id}/profile${query ? '?' + query : ''}`);
+    }
+
+    async updateCompanyProfile(id, data, params = {}) {
+        const query = new URLSearchParams(params).toString();
+        return this.put(`/companies/${id}/profile${query ? '?' + query : ''}`, data);
+    }
+
     async deleteCompany(id) {
         return this.delete(`/companies/${id}`);
     }

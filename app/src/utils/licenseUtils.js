@@ -33,3 +33,13 @@ export function hasLicensedModule(user, key) {
     ([sourceKey, impliedKeys]) => impliedKeys.includes(key) && m.includes(sourceKey)
   );
 }
+
+/**
+ * Tab/API profilo conformità (ADR-018): stesso seam SAL_LEGAL_CONFORMITY
+ * (oggi `ai_norms`). Admin/superadmin sempre ON, come il backend.
+ */
+export function hasCompanyProfileCapability(user) {
+  const role = String(user?.role || "").trim().toLowerCase();
+  if (role === "admin" || role === "superadmin") return true;
+  return hasLicensedModule(user, "ai_norms");
+}
