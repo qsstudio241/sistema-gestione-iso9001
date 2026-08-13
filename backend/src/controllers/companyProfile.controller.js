@@ -182,18 +182,20 @@ async function putProfile(req, res) {
         const userId = req.user?.user_id || null;
         const sourceMeta = mergeSourceMeta(existing?.source_meta, touched, userId);
 
+        const writeParams = {
+            company_id: scope.company_id,
+            organization_id: scope.organization_id,
+            source_meta: sourceMeta,
+            updated_by_user_id: userId,
+            ...fields,
+        };
+
         if (!existing) {
             const cols = ['company_id', 'organization_id', 'source_meta', 'updated_by_user_id', ...touched];
             const values = cols.map((c) => `@${c}`);
             await query(
                 `INSERT INTO company_profile (${cols.join(', ')}) VALUES (${values.join(', ')})`,
-                {
-                    company_id: scope.company_id,
-                    organization_id: scope.organization_id,
-                    source_meta: sourceMeta,
-                    updated_by_user_id: userId,
-                    ...fields,
-                }
+                writeParams
             );
         } else {
             const sets = [
@@ -202,17 +204,18 @@ async function putProfile(req, res) {
                 'updated_at = SYSUTCDATETIME()',
                 'updated_by_user_id = @updated_by_user_id',
             ];
-            await query(
+            const upd = await query(
                 `UPDATE company_profile SET ${sets.join(', ')}
-                 WHERE company_id = @company_id AND organization_id = @organization_id`,
-                {
-                    company_id: scope.company_id,
-                    organization_id: scope.organization_id,
-                    source_meta: sourceMeta,
-                    updated_by_user_id: userId,
-                    ...fields,
-                }
+                 WHERE company_id = @company_id`,
+                writeParams
             );
+            const affected = Array.isArray(upd.rowsAffected) ? upd.rowsAffected[0] : upd.rowsAffected;
+            if (!affected) {
+                return res.status(409).json({
+                    error: 'Profilo non aggiornato: riga assente o disallineata',
+                    code: 'PROFILE_UPDATE_MISMATCH',
+                });
+            }
         }
 
         const row = await loadProfileRow(scope.company_id);

@@ -229,6 +229,10 @@ function CompanyDetailPage() {
   const canEdit = canEditCompany(user, companyId);
   const showProfileTab = hasCompanyProfileCapability(user) && !profileTabHidden;
   const tabs = visibleTabs(showProfileTab);
+  const hideProfileTab = useCallback(() => {
+    setProfileTabHidden(true);
+    setActiveTab("anagrafica");
+  }, []);
 
   const loadCompany = useCallback(async () => {
     if (!companyId) {
@@ -325,10 +329,7 @@ function CompanyDetailPage() {
             companyId={company.id}
             auditorOrgId={auditorOrgId}
             canEdit={canEdit}
-            onUnavailable={() => {
-              setProfileTabHidden(true);
-              setActiveTab("anagrafica");
-            }}
+            onUnavailable={hideProfileTab}
           />
         )}
         {activeTab === "personale" && (

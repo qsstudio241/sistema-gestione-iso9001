@@ -208,28 +208,32 @@ function CompanyProfilePanel({ companyId, auditorOrgId, canEdit, onUnavailable }
     });
   }, []);
 
-  const load = useCallback(async () => {
-    if (!companyId) return;
+  useEffect(() => {
+    if (!companyId) return undefined;
+    let cancelled = false;
     setLoading(true);
     setError(null);
-    try {
-      const params = auditorOrgId ? { auditor_org_id: auditorOrgId } : {};
-      const res = await apiService.getCompanyProfile(companyId, params);
-      applyData(res?.data ?? res);
-    } catch (err) {
-      if (err.status === 403) {
-        onUnavailable?.(err);
-        return;
-      }
-      setError(err.message || "Errore caricamento profilo");
-    } finally {
-      setLoading(false);
-    }
+    const params = auditorOrgId ? { auditor_org_id: auditorOrgId } : {};
+    apiService.getCompanyProfile(companyId, params)
+      .then((res) => {
+        if (cancelled) return;
+        applyData(res?.data ?? res);
+      })
+      .catch((err) => {
+        if (cancelled) return;
+        if (err.status === 403) {
+          onUnavailable?.(err);
+          return;
+        }
+        setError(err.message || "Errore caricamento profilo");
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
   }, [companyId, auditorOrgId, applyData, onUnavailable]);
-
-  useEffect(() => {
-    load();
-  }, [load]);
 
   const setField = (key, value) => {
     setForm((prev) => ({ ...prev, [key]: value }));

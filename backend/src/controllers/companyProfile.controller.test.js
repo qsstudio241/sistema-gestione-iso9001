@@ -169,7 +169,7 @@ describe('companyProfile PUT', () => {
 
         mockScope();
         query.mockResolvedValueOnce({ recordset: [savedRow] });
-        query.mockResolvedValueOnce({ recordset: [] });
+        query.mockResolvedValueOnce({ recordset: [], rowsAffected: [1] });
         query.mockResolvedValueOnce({ recordset: [savedRow] });
 
         const req2 = mockReq({ body: { ateco_primary: '25.11.00', legal_name: 'Acme Srl' } });
@@ -184,6 +184,21 @@ describe('companyProfile PUT', () => {
         const updateSql = query.mock.calls.find((c) => String(c[0]).includes('UPDATE company_profile'));
         expect(updateSql).toBeTruthy();
         expect(query.mock.calls.some((c) => String(c[0]).includes('INSERT INTO company_profile'))).toBe(false);
+    });
+
+    it('409 se UPDATE non tocca alcuna riga', async () => {
+        mockScope();
+        query.mockResolvedValueOnce({
+            recordset: [{ company_id: COMPANY_ID, organization_id: ORG_ID, ateco_primary: '25.11.00' }],
+        });
+        query.mockResolvedValueOnce({ recordset: [], rowsAffected: [0] });
+        const req = mockReq({ body: { ateco_primary: '25.11.00' } });
+        const res = mockRes();
+        await ctrl.putProfile(req, res);
+        expect(res.status).toHaveBeenCalledWith(409);
+        expect(res.json).toHaveBeenCalledWith(
+            expect.objectContaining({ code: 'PROFILE_UPDATE_MISMATCH' })
+        );
     });
 
     it('400 se body senza campi catalogo', async () => {
