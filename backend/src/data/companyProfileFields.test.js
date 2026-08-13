@@ -36,6 +36,15 @@ describe('computeProfileCompleteness', () => {
         )).toBe(15);
     });
 
+    it('BIT true/false da SQL Server contano come compilati', () => {
+        expect(computeProfileCompleteness({
+            has_dvr: true,
+            rspp_name: 'Mario Rossi',
+            produces_waste: false,
+            has_air_emissions: true,
+        })).toBe(35);
+    });
+
     it('BIT 0 conta come compilato (DVR assente)', () => {
         const score = computeProfileCompleteness({
             has_dvr: 0,

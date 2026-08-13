@@ -89,4 +89,14 @@ describe("CompanyProfilePanel completezza + sync", () => {
     );
     expect(onSynced).toHaveBeenCalledWith(["name"]);
   });
+
+  it("abilita Salva se solo le checkbox sync sono spuntate", async () => {
+    const user = userEvent.setup();
+    render(<CompanyProfilePanel companyId={42} auditorOrgId={1} canEdit />);
+    await waitFor(() => {
+      expect(screen.getByRole("button", { name: /Salva profilo/i })).toBeDisabled();
+    });
+    await user.click(screen.getByRole("checkbox", { name: /Partita IVA/i }));
+    expect(screen.getByRole("button", { name: /Salva profilo/i })).toBeEnabled();
+  });
 });

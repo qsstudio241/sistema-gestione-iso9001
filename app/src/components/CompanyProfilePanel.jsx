@@ -217,6 +217,8 @@ function CompanyProfilePanel({ companyId, auditorOrgId, canEdit, onUnavailable, 
   });
 
   const dirty = useMemo(() => JSON.stringify(form) !== savedSnapshot, [form, savedSnapshot]);
+  const syncRequested = syncAnagrafica.name || syncAnagrafica.vat_number || syncAnagrafica.address;
+  const canSave = dirty || syncRequested;
 
   const applyData = useCallback((data) => {
     const next = profileToForm(data);
@@ -257,6 +259,10 @@ function CompanyProfilePanel({ companyId, auditorOrgId, canEdit, onUnavailable, 
       cancelled = true;
     };
   }, [companyId, auditorOrgId, applyData, onUnavailable]);
+
+  useEffect(() => {
+    setSyncAnagrafica({ name: false, vat_number: false, address: false });
+  }, [companyId]);
 
   const setField = (key, value) => {
     setForm((prev) => ({ ...prev, [key]: value }));
@@ -343,6 +349,7 @@ function CompanyProfilePanel({ companyId, auditorOrgId, canEdit, onUnavailable, 
       const data = res?.data ?? res;
       applyData(data);
       setSaved(true);
+      setSyncAnagrafica({ name: false, vat_number: false, address: false });
       if (data?.synced_anagrafica?.length) {
         onAnagraficaSynced?.(data.synced_anagrafica);
       }
@@ -478,7 +485,7 @@ function CompanyProfilePanel({ companyId, auditorOrgId, canEdit, onUnavailable, 
         )}
         {canEdit && (
           <div className="studio-actions">
-            <button type="submit" className="btn-studio-primary" disabled={saving || !dirty}>
+            <button type="submit" className="btn-studio-primary" disabled={saving || !canSave}>
               {saving ? "Salvataggio..." : "Salva profilo"}
             </button>
             {saved && !dirty && <span className="studio-hint">Profilo salvato.</span>}

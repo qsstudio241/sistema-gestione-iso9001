@@ -279,7 +279,8 @@ function computeProfileCompleteness(profile, extras = {}) {
     const dimFilled = dimKeys.filter((k) => isProfileFilled(src[k])).length;
     score += Math.round((20 * dimFilled) / dimKeys.length);
 
-    const hasDvr = src.has_dvr === 0 || src.has_dvr === 1;
+    const hasDvr = src.has_dvr === 0 || src.has_dvr === 1
+        || src.has_dvr === false || src.has_dvr === true;
     const hasRole = isProfileFilled(src.rspp_name)
         || isProfileFilled(src.rls_name)
         || isProfileFilled(src.competent_doctor);
@@ -287,7 +288,9 @@ function computeProfileCompleteness(profile, extras = {}) {
     else if (hasDvr || hasRole) score += 8;
 
     const envKeys = ['produces_waste', 'has_water_discharge', 'has_air_emissions', 'has_aua_or_aia'];
-    const envFilled = envKeys.filter((k) => src[k] === 0 || src[k] === 1).length;
+    const envFilled = envKeys.filter((k) => (
+        src[k] === 0 || src[k] === 1 || src[k] === false || src[k] === true
+    )).length;
     if (envFilled >= 2) score += 20;
     else if (envFilled === 1) score += 10;
 
