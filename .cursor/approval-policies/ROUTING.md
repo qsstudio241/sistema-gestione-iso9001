@@ -1,23 +1,30 @@
-# Routing PR — ProgettoISO
+- product: Documentazione / governance agente
+  boundary: "docs/**,.cursor/rules/**,AGENTS.md"
+  policies:
+    - docs/APPROVAL_POLICY.md
+    - .cursor/rules/APPROVAL_POLICY.md
 
-> Letto da **PR Routing & Approval** (Cursor Automations) per instradare le PR al reviewer giusto.
-> Priorità: una `APPROVAL_POLICY.md` nella directory più prossima ai file modificati vince su questo
-> file generale.
+- product: Frontend
+  boundary: "app/src/**"
+  policies:
+    - app/src/APPROVAL_POLICY.md
 
-## Aree e routing
+- product: Backend controller/service/middleware
+  boundary: "backend/src/**"
+  policies:
+    - backend/src/APPROVAL_POLICY.md
 
-| Area | Path | Note routing |
-|---|---|---|
-| Documentazione / governance agente | `docs/**`, `.cursor/rules/**`, `AGENTS.md` | Basso rischio — vedi policy locale |
-| Backend controller/service/middleware | `backend/src/**` | Sempre review umana — vedi `backend/src/APPROVAL_POLICY.md` |
-| Migrazioni DB | `database/migrations/**` | Sempre review umana, mai approvazione — vedi policy locale |
-| Frontend | `app/src/**` | Basso se 1–2 file non sync/auth (vedi `sgq-git-autonomy.mdc`); altrimenti review umana |
-| Script deploy/VPS | `backend/scripts/deploy-*`, `backend/scripts/run-migration-*-vps.js` | Sempre review umana — tocca produzione |
+- product: Migrazioni DB
+  boundary: "database/migrations/**"
+  policies:
+    - database/migrations/APPROVAL_POLICY.md
 
-## Non fare mai
+- product: Script deploy/VPS e CI/CD
+  boundary: "backend/scripts/deploy-**,backend/scripts/run-migration-*-vps.js,.github/workflows/**,database/scripts/**"
+  policies:
+    - "Mai approvazione automatica: tocca produzione, VPS o pipeline CI/CD. Sempre Request Reviewers, anche per diff di 1 riga."
 
-- Approvare automaticamente una PR che tocca più di un'area con livelli di rischio diversi nello
-  stesso diff (regola di declassamento: vale il livello più alto).
-- Approvare automaticamente se Bugbot non ha potuto eseguire — nessun segnale non equivale a "pulito".
-- Approvare automaticamente PR aperte da fork (comunque non supportato dal trigger di Automations per
-  motivi di sicurezza, salvo evento `Pull request merged`).
+- product: Default (qualunque path non elencato sopra)
+  boundary: "**"
+  policies:
+    - APPROVAL_POLICY.md
