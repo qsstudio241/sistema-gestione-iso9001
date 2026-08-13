@@ -1,8 +1,14 @@
 /**
  * @vitest-environment jsdom
  */
-import { describe, it, expect } from "vitest";
-import { suggestedDocTypeFromTab } from "../components/QualificationUploadButton.jsx";
+import React from "react";
+import { describe, it, expect, vi } from "vitest";
+import { render, screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
+import QualificationUploadButton, { suggestedDocTypeFromTab } from "../components/QualificationUploadButton.jsx";
+
+vi.mock("../services/apiService", () => ({ default: {} }));
+vi.mock("../components/IngestReviewDialog", () => ({ default: () => null }));
 
 describe("suggestedDocTypeFromTab", () => {
   it("suggerisce cert_ndt dalla tab NDT", () => {
@@ -22,5 +28,35 @@ describe("suggestedDocTypeFromTab", () => {
     expect(suggestedDocTypeFromTab("tutti")).toBe("");
     expect(suggestedDocTypeFromTab("iso14731")).toBe("");
     expect(suggestedDocTypeFromTab("")).toBe("");
+  });
+});
+
+describe("QualificationUploadButton — visibile anche senza azienda", () => {
+  it("mostra il pulsante Carica qualifiche (batch) disabilitato se manca l'azienda", () => {
+    render(<QualificationUploadButton companyId="" companyName="" onUploadComplete={() => {}} />);
+    const btn = screen.getByRole("button", { name: /Carica qualifiche \(batch\)/i });
+    expect(btn).toBeInTheDocument();
+    expect(btn).toBeDisabled();
+  });
+
+  it("resta cliccabile quando l'azienda e' valida", () => {
+    render(
+      <QualificationUploadButton companyId="47" companyName="C.M.P." onUploadComplete={() => {}} />
+    );
+    const btn = screen.getByRole("button", { name: /Carica qualifiche \(batch\)/i });
+    expect(btn).not.toBeDisabled();
+  });
+
+  it("chiude il pannello se l'Ambito passa a un'altra azienda", async () => {
+    const user = userEvent.setup();
+    const { rerender } = render(
+      <QualificationUploadButton companyId="47" companyName="C.M.P." onUploadComplete={() => {}} />
+    );
+    await user.click(screen.getByRole("button", { name: /Carica qualifiche \(batch\)/i }));
+    expect(await screen.findByText(/Azienda:/)).toBeInTheDocument();
+    rerender(
+      <QualificationUploadButton companyId="11" companyName="Altra Srl" onUploadComplete={() => {}} />
+    );
+    expect(screen.queryByText(/Azienda:/)).not.toBeInTheDocument();
   });
 });

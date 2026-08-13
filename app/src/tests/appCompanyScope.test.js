@@ -101,4 +101,27 @@ describe("appCompanyScope", () => {
     expect(raw.company_id).toBe("");
     expect(raw.organization_id).toBe(1001);
   });
+
+  it("migra l'azienda dalla chiave Qualifiche se manca la chiave globale", () => {
+    localStorage.setItem("sgq-qualifications-company-scope", "47");
+    expect(readStoredAppCompanyScope(1001)).toBe("47");
+    const raw = JSON.parse(localStorage.getItem(APP_COMPANY_SCOPE_KEY));
+    expect(raw.company_id).toBe("47");
+    expect(raw.organization_id).toBe(1001);
+    expect(resolveAppCompanyScope(admin)).toBe("47");
+  });
+
+  it("non sovrascrive Tutto lo studio se la chiave globale esiste gia'", () => {
+    persistAppCompanyScope(1001, "");
+    localStorage.setItem("sgq-qualifications-company-scope", "47");
+    expect(readStoredAppCompanyScope(1001)).toBe("");
+    expect(resolveAppCompanyScope(admin)).toBe("");
+  });
+
+  it("ignora chiavi legacy vuote o 'studio' e prende il primo id numerico", () => {
+    localStorage.setItem("sgq-qualifications-company-scope", "");
+    localStorage.setItem("sgq-projects-company-scope", "studio");
+    localStorage.setItem("sgq-sal-company-scope", "11");
+    expect(readStoredAppCompanyScope(1001)).toBe("11");
+  });
 });
