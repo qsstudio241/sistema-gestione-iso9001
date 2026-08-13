@@ -47,3 +47,16 @@
   margin-bottom: 8px;
   display: block;
 }
+
+.company-profile-section > summary {
+  cursor: pointer;
+  list-style: none;
+}
+
+.company-profile-section > summary::-webkit-details-marker {
+  display: none;
+}
+
+.company-profile-panel .notes-textarea {
+  max-width: 480px;
+}

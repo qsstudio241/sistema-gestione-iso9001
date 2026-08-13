@@ -12,6 +12,7 @@ const crypto = require('crypto');
 const companyController = require('../controllers/company.controller');
 const companyPersonnelController = require('../controllers/companyPersonnel.controller');
 const companyCounterpartiesController = require('../controllers/companyCounterparties.controller');
+const companyProfileController = require('../controllers/companyProfile.controller');
 const { authenticate } = require('../middleware/auth.middleware');
 
 // Multer per upload logo (solo immagini, max 2MB, storage temporaneo)
@@ -43,6 +44,8 @@ router.use(authenticate);
 router.get('/personnel', companyPersonnelController.listPersonnelStudio);
 
 router.get('/companies', companyController.listCompanies);
+router.get('/companies/:id/profile', companyProfileController.getProfile);
+router.put('/companies/:id/profile', companyProfileController.putProfile);
 router.get('/companies/:id', companyController.getCompanyById);
 router.post('/companies', companyController.createCompany);
 router.put('/companies/:id', companyController.updateCompany);

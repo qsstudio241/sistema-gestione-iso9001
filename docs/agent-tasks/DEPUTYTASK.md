@@ -50,6 +50,8 @@
 
 ## Slice S2a — API profilo (BE)
 
+**Stato S2a:** FATTO (13/08/2026) — GET/PUT `/companies/:id/profile`.
+
 **File previsti:**
 
 - `backend/src/controllers/companyProfile.controller.js` (+ test Jest)
@@ -68,6 +70,8 @@
 ---
 
 ## Slice S2b — UI tab Profilo (FE)
+
+**Stato S2b:** FATTO (13/08/2026) — tab «Profilo conformità» in `CompanyDetailPage`.
 
 **File previsti:**
 
