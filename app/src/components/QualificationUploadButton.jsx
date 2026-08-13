@@ -181,8 +181,17 @@ export default function QualificationUploadButton({
 
   if (!isValidCompany) {
     return (
-      <div className="qual-upload__no-company">
-        {"\u26A0\uFE0F"} Seleziona un&apos;azienda specifica per caricare i patentini
+      <div className="qual-upload">
+        <button
+          type="button"
+          className="qual-upload__btn"
+          disabled
+          title="Seleziona un'azienda nell'Ambito in alto per caricare le qualifiche"
+          aria-label="Carica qualifiche (batch). Seleziona un'azienda nell'Ambito in alto."
+        >
+          <span className="qual-upload__icon" role="img" aria-label="upload">{"\u2795"}</span>
+          Carica qualifiche (batch)
+        </button>
       </div>
     );
   }

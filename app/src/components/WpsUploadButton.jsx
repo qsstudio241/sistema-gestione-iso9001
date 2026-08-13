@@ -11,16 +11,8 @@ const MAX_FILE_SIZE = 50 * 1024 * 1024;
 export default function WpsUploadButton({ companyId, companyName, onUploadComplete }) {
   const companyIdInt = companyId != null ? parseInt(String(companyId), 10) : NaN;
   const isValidCompany = !isNaN(companyIdInt) && companyIdInt > 0;
+  const displayName = isValidCompany ? (companyName || `Azienda #${companyIdInt}`) : "";
 
-  if (!isValidCompany) {
-    return (
-      <div className="wps-upload__no-company">
-        {"\u26A0\uFE0F"} Seleziona un&apos;azienda specifica per caricare i WPS
-      </div>
-    );
-  }
-
-  const displayName = companyName || `Azienda #${companyIdInt}`;
   const [selectedFiles, setSelectedFiles] = useState([]);
   const [uploading, setUploading] = useState(false);
   const [results, setResults] = useState(null);
@@ -112,6 +104,23 @@ export default function WpsUploadButton({ companyId, companyName, onUploadComple
     setReviewItem(null);
     if (inputRef.current) inputRef.current.value = "";
   }, []);
+
+  if (!isValidCompany) {
+    return (
+      <div className="wps-upload">
+        <button
+          type="button"
+          className="wps-upload__btn"
+          disabled
+          title="Seleziona un'azienda nell'Ambito in alto per caricare i WPS"
+          aria-label="Seleziona PDF WPS. Seleziona un'azienda nell'Ambito in alto."
+        >
+          <span className="wps-upload__icon" role="img" aria-label="upload">{"\u2795"}</span>
+          Seleziona PDF WPS
+        </button>
+      </div>
+    );
+  }
 
   const hasResults = results && results.length > 0;
   const showPanel  = selectedFiles.length > 0 || hasResults;

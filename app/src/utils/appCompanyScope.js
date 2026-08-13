@@ -8,6 +8,19 @@ import { getPrimaryCompanyId, hasCompanyAccess } from "./companyAccess";
 
 export const APP_COMPANY_SCOPE_KEY = "sgq-app-company-scope";
 
+/**
+ * Chiavi Ambito di pagina pre-unificazione (PR #401).
+ * Se l'utente aveva già un'azienda salvata su una pagina, la si ripristina
+ * una volta nella chiave globale — non si perde il contesto operativo.
+ */
+export const LEGACY_PAGE_SCOPE_KEYS = [
+  "sgq-qualifications-company-scope",
+  "sgq-projects-company-scope",
+  "sgq-sal-company-scope",
+  "sgq-management-review-company-scope",
+  "sgq-doc-registry-company-scope",
+];
+
 /** "" = Tutto lo studio (solo personale studio, non clienti azienda). */
 export const STUDIO_WIDE_SCOPE = "";
 
@@ -40,12 +53,34 @@ function readRawStore() {
   }
 }
 
+/** Id numerico dalla prima chiave Ambito di pagina ancora valorizzata. */
+function readLegacyPageCompanyScope() {
+  if (typeof window === "undefined") return STUDIO_WIDE_SCOPE;
+  for (const key of LEGACY_PAGE_SCOPE_KEYS) {
+    try {
+      const raw = window.localStorage.getItem(key);
+      if (raw == null || raw === "" || raw === "studio") continue;
+      const n = Number(raw);
+      if (Number.isFinite(n) && n > 0) return String(n);
+    } catch {
+      /* ignore */
+    }
+  }
+  return STUDIO_WIDE_SCOPE;
+}
+
 /**
  * @returns {string} id azienda oppure ""
  */
 export function readStoredAppCompanyScope(organizationId) {
   const parsed = readRawStore();
-  if (!parsed) return STUDIO_WIDE_SCOPE;
+  if (!parsed) {
+    const migrated = readLegacyPageCompanyScope();
+    if (migrated && organizationId != null) {
+      persistAppCompanyScope(organizationId, migrated);
+    }
+    return migrated;
+  }
   if (organizationId != null && String(parsed.organization_id) !== String(organizationId)) {
     return STUDIO_WIDE_SCOPE;
   }
