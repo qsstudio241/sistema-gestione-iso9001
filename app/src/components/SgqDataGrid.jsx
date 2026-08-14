@@ -1,6 +1,7 @@
 /**
  * SgqDataGrid  -  griglia tabellare riusabile (sort, loading, empty)
  * theme="plain" | theme="catalog" (classi datagrid-* da DocumentDataGrid.css)
+ * initialSortCol / initialSortDir: override dello sort di default (prima colonna sortable, asc).
  */
 import React, { useState, useMemo, useCallback, useEffect } from "react";
 import "./SgqDataGrid.css";
@@ -44,9 +45,13 @@ function SgqDataGrid({
   onRowDoubleClick,
   onRowClick,
   className = "",
+  initialSortCol,
+  initialSortDir = "asc",
 }) {
-  const [sortCol, setSortCol] = useState(columns.find((c) => c.sortable)?.id || null);
-  const [sortDir, setSortDir] = useState("asc");
+  const [sortCol, setSortCol] = useState(
+    initialSortCol ?? (columns.find((c) => c.sortable)?.id || null)
+  );
+  const [sortDir, setSortDir] = useState(initialSortDir);
   const [internalSelected, setInternalSelected] = useState(null);
 
   const isCatalog = theme === "catalog";

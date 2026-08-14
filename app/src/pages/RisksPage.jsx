@@ -429,6 +429,8 @@ function RisksTab({ companies = [], filterCompany = "" }) {
           loading={loading}
           emptyMessage={'Nessuna valutazione. Clicca "+ Nuovo rischio" per iniziare.'}
           theme="plain"
+          initialSortCol="score"
+          initialSortDir="desc"
           getRowKey={row => row.risk_id}
           onRowClick={row => setModal({ mode: "edit", data: row })}
           getSortValue={(row, colId) => {
