@@ -20,11 +20,7 @@ export default function CompanyScopeSelect() {
     );
   }
 
-  if (!companies.length && !companyScoped) {
-    return null;
-  }
-
-  const options = companies;
+  const options = Array.isArray(companies) ? companies : [];
 
   return (
     <label className="layout-scope">
