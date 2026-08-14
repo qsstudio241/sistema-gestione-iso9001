@@ -8,7 +8,7 @@
 
 > **Risposta standard a «stato di avanzamento del progetto e priorità da affrontare»**: sintetizzare da questa sezione (moduli maturi + sessione più recente + tabella priorità sotto), **non** dal banner storico più sotto (superato, tenuto solo per traccia) né dall'archivio marzo 2026 [`docs/archive/PROJECT_CONTEXT_STATO_FUNZIONALITA_2026-03.md`](archive/PROJECT_CONTEXT_STATO_FUNZIONALITA_2026-03.md). **Aggiornare questa sezione a fine sessione** se emergono nuove priorità o se una priorità elencata viene chiusa (stesso principio delle "Lezioni apprese" in [GUIDA_CONSOLIDATA.md](GUIDA_CONSOLIDATA.md) — sintesi qui, dettaglio linkato).
 
-**Ultimo aggiornamento di questa sezione**: 14/08/2026 (mappa wayfinder Rischi/Opportunità/Obiettivi + snapshot Playwright Cloud).
+**Ultimo aggiornamento di questa sezione**: 14/08/2026 (wayfinder Rischi ribaltato su processo M03; banner Ambito preview PR #414).
 
 ### Moduli maturi (in produzione, uso quotidiano dai clienti Camellini/Mason)
 
@@ -16,9 +16,11 @@ Audit multi-standard (9001/14001/45001) · Non Conformità (workflow ISO 10.2 co
 
 ### Sessione più recente (14/08/2026)
 
-**Rischi / Opportunità / Obiettivi (wayfinder)**: i quattro registri (§4.1, §4.2, §6.1, §6.2) sono già in produzione (PR #279) ma restano silos. Mappa: [PLAN_RISCHI_OPPORTUNITA_OBIETTIVI_SLICES.md](agent-tasks/PLAN_RISCHI_OPPORTUNITA_OBIETTIVI_SLICES.md). Prima slice **ROO-4** (origine fattore/parte sul rischio) in [DEPUTYTASK_RISCHI_ROO.md](agent-tasks/DEPUTYTASK_RISCHI_ROO.md). Il piano 07/07/2026 in fondo a questo file è **superato** (slice 1–3 fatte; la tabella diceva ancora «Pianificato»).
+**Rischi / Opportunità / Obiettivi (wayfinder, secondo passaggio)**: la prima mappa partiva dai quattro tab CRUD e chiedeva come collegarli. Il draft studio **M03-R00** (Camellini, 19/06/2026) mostra il processo reale: **una riga di analisi** (elemento → contesto → parti → azioni attuali → P×G → ulteriori azioni → residuo). Mappa ribaltata: [PLAN](agent-tasks/PLAN_RISCHI_OPPORTUNITA_OBIETTIVI_SLICES.md) · spec [M03](specs/M03_ANALISI_RISCHI_OPPORTUNITA.md). Prima slice **ROO-4** = allineare il record `risks` alla riga M03 (non più FK tra silos).
 
-**Harness Cloud** (stesso giorno): Chromium di Playwright entra in `cloud-install.sh` (snapshot), gli smoke usano `backend/node_modules` — niente più `npm i` in `/tmp` a ogni sessione. **Kitesurf** valutato e **non adottato**. Dettaglio: [GUIDA lezione Playwright snapshot](GUIDA_CONSOLIDATA.md#lezioni-apprese-consolidate-fonte-unica).
+**Banner Ambito** ([PR #414](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/414), **non mergiata**): in **produzione** la barra è ancora logo + Al.project + Ambito + P.IVA. Sulla **preview** è solo «Ambito» + tendina — verificato a schermo. Dettaglio: [GUIDA lezione Claim visivo](GUIDA_CONSOLIDATA.md#lezioni-apprese-consolidate-fonte-unica).
+
+**Harness Cloud**: Chromium di Playwright nello snapshot `cloud-install.sh`. **Kitesurf** non adottato. Dettaglio: [GUIDA lezione Playwright snapshot](GUIDA_CONSOLIDATA.md#lezioni-apprese-consolidate-fonte-unica).
 
 Sessione prodotto precedente (13/08/2026):
 
@@ -40,7 +42,7 @@ Sessione prodotto precedente (10/08/2026): fix filtri dashboard duplicati (Quali
 | 2 | **Shell dialog di revisione ingest — markup/CSS duplicato** (non urgente, basso rischio) | `IngestReviewDialog.jsx` vs dialog interno `ReprocessQueueBanner.jsx`: guscio overlay duplicato (~60-80 righe); pattern sistemico su molti altri modal nel progetto | Vedi backlog sotto per dettaglio |
 | 3 | **Pagina Impostazioni → Organizzazione (P.IVA + logo tenant)** | PR #10 aperta da aprile 2026, 180 file in conflitto — richiede ricostruzione, non merge | Vedi riga dedicata nel backlog sotto |
 | 4 | **Material Compliance AI (certificati EN 10204 3.1)** | Modulo proposto 05/08/2026, slice MC-0 (spec) non ancora avviata | [MODULO_MATERIAL_COMPLIANCE_AI.md](specs/MODULO_MATERIAL_COMPLIANCE_AI.md) |
-| 5 | **Rischi / Opportunità / Obiettivi — chiudere la catena 4.1→6.2** | CRUD già live; manca traccia «da quale fattore/parte nasce il R/O» (ISO 6.1.1) | [PLAN](agent-tasks/PLAN_RISCHI_OPPORTUNITA_OBIETTIVI_SLICES.md) · brief [ROO-4](agent-tasks/DEPUTYTASK_RISCHI_ROO.md) |
+| 5 | **Rischi / Opportunità / Obiettivi — riga di analisi M03** | Il processo è la matrice (elemento→contesto→parti→azioni→P×G→residuo), non quattro tab. Ingest Excel quando l'azienda ce l'ha già | [PLAN](agent-tasks/PLAN_RISCHI_OPPORTUNITA_OBIETTIVI_SLICES.md) · spec [M03](specs/M03_ANALISI_RISCHI_OPPORTUNITA.md) · brief [ROO-4](agent-tasks/DEPUTYTASK_RISCHI_ROO.md) |
 
 > Nota: **Modulo NC — card statistiche duplicate da due tendine** (era riga 1) è stato chiuso da PR #374 (10/08/2026) — riga rimossa da questa tabella, non ancora aggiornata al momento in cui è stata scritta DEPUTYTASK4.
 
@@ -81,7 +83,7 @@ Elenco completo (voci meno urgenti, decisioni di prodotto in attesa, task parche
 | **"Ambito" azienda — selettore unico in header (13/08/2026, UI ✅ PR #401)** | FE: un solo `CompanyScopeSelect` in `AppLayout`; le liste filtrano da `CompanyScopeContext`. Resta backlog **RBAC backend**: `equipment.controller.js` / RDP / NDT non usano ancora `companyAccess.service.js` (equipment filtra su `user.company_id` inesistente). Qualifiche resta l'unico modulo con `company_id` NOT NULL a DB. | `appCompanyScope.js` · [GUIDA lezione Ambito unico](GUIDA_CONSOLIDATA.md#lezioni-apprese-consolidate-fonte-unica) · [ARCHITETTURA_UTENTI_RBAC.md §8.3](ARCHITETTURA_UTENTI_RBAC.md#83-cosa-manca-o-è-parziale-gap-noti) |
 | **Pivot WPS — generazione da WPQR (non ingest)** | Feedback Mason 30/07/2026: matcher 15614 + bozza 15609 + Word Annex A. **P0–P5 ✅** (P5: advisory WPQR + visione nel riesame, non bloccante). | [MODULO_WPS_GENERAZIONE_SCOPO_E_ROADMAP.md](specs/MODULO_WPS_GENERAZIONE_SCOPO_E_ROADMAP.md) |
 | **Material Compliance AI (certificati EN 10204 3.1)** | Modulo proposto 05/08/2026: PDF → estrazione AI → Rule Engine deterministico → HITL. Riuso ingest/AI/RBAC. **Prossimo:** slice **MC-0** (spec DATA_MODEL/UI/API). OCR e dashboard KPI fuori MVP-A. | [MODULO](specs/MODULO_MATERIAL_COMPLIANCE_AI.md) · [PLAN](agent-tasks/PLAN_MATERIAL_COMPLIANCE_SLICES.md) · [brief MC-0](agent-tasks/DEPUTYTASK_MATERIAL_COMPLIANCE_AI_FOUNDATION.md) · ADR-020…024 |
-| **Rischi, Opportunità e Obiettivi (catena §4.1→§6.2)** | Registri live (PR #279). Prossimo: **ROO-4** traccia origine fattore/parte sul rischio. Non eseguire in parallelo su `RisksPage.jsx` (ROO-5 condivide il form). | [PLAN](agent-tasks/PLAN_RISCHI_OPPORTUNITA_OBIETTIVI_SLICES.md) · [DEPUTYTASK_RISCHI_ROO.md](agent-tasks/DEPUTYTASK_RISCHI_ROO.md) |
+| **Rischi, Opportunità e Obiettivi (processo M03)** | Draft studio M03-R00. Prossimo: **ROO-4** campi riga di analisi su `risks`. Cataloghi 4.1/4.2 restano opzionali. Non parallelizzare su `RisksPage.jsx`. | [PLAN](agent-tasks/PLAN_RISCHI_OPPORTUNITA_OBIETTIVI_SLICES.md) · [spec M03](specs/M03_ANALISI_RISCHI_OPPORTUNITA.md) · [DEPUTYTASK_RISCHI_ROO.md](agent-tasks/DEPUTYTASK_RISCHI_ROO.md) |
 
 ---
 
@@ -924,7 +926,7 @@ La pagina NC \u00e8 diventata un Piano Azioni multi-fonte con 7 categorie origin
 
 > **Fonte unica ora**: [PLAN_RISCHI_OPPORTUNITA_OBIETTIVI_SLICES.md](agent-tasks/PLAN_RISCHI_OPPORTUNITA_OBIETTIVI_SLICES.md) + brief [DEPUTYTASK_RISCHI_ROO.md](agent-tasks/DEPUTYTASK_RISCHI_ROO.md).
 >
-> Le slice 1–3 di questa tabella sono **in `main`** (PR #279, 22/07/2026; migrazioni 123/124/125). I trattamenti differenziati opportunità (parte della slice 1) **non** sono stati chiusi — ripresi come **ROO-5**. La FK origine 4.1/4.2 (parte della slice 2) **non** è stata chiusa — è **ROO-4**.
+> Le slice 1–3 di questa tabella sono **in `main`** (PR #279). Il modello a quattro tab è **catalogo**, non il processo. Fonte unica: [PLAN](agent-tasks/PLAN_RISCHI_OPPORTUNITA_OBIETTIVI_SLICES.md) (approccio ribaltato 14/08/2026, draft M03-R00).
 
 **Gap analysis originale** (skill `gap-analysis-normativa`): il modulo `RisksPage` copriva già il §6.2 (Obiettivi con KPI), ma trattava §6.1 come solo "rischi" e non aveva registri §4.1/§4.2. Registri e `nature` ci sono; manca la **catena**.
 
@@ -933,7 +935,7 @@ La pagina NC \u00e8 diventata un Piano Azioni multi-fonte con 7 categorie origin
 | Slice | Voce | ISO ref | Rischio tecnico | Stato |
 |-------|------|---------|------------------|-------|
 | **1 (P0)** | Campo `nature` (`risk`\|`opportunity`) su tabella `risks`, default `risk` (retrocompatibile); UI: selettore natura + trattamenti differenziati (rischio: Accetta/Mitiga/Trasferisci/Evita — opportunità: Persegui/Investi/Non perseguire, nota 2 §6.1.2) | §6.1 | Basso — solo `ALTER TABLE ADD COLUMN` con default | ✅ `nature` fatto (PR #279). Trattamenti opportunità → **ROO-5** |
-| **2 (P1)** | Nuove tabelle `context_factors` (§4.1) e `interested_parties` (§4.2); tab Contesto; FK opzionale da `risks` (traccia §6.1.1) | §4.1, §4.2 | Medio | ✅ tabelle + tab fatti (PR #279, mig. 124). FK origine → **ROO-4** |
+| **2 (P1)** | Nuove tabelle `context_factors` (§4.1) e `interested_parties` (§4.2); tab Contesto; FK opzionale da `risks` (traccia §6.1.1) | §4.1, §4.2 | Medio | ✅ tabelle + tab fatti (PR #279, mig. 124). Cataloghi = opzionali (ROO-8), non il processo |
 | **3 (P2)** | Collegamento Rischi/Opportunità ↔ Piano Azioni quando `status='in_treatment'`; opz. FK obiettivo ← rischio | §6.1, §10.2 | Medio | ✅ pulsante manuale + `source_risk_id` (PR #279, mig. 125). Auto + vista inversa → **ROO-6**. FK obiettivo → **ROO-8** |
 
 Riferimento: `.cursor/skills/gap-analysis-normativa/`. Numerazione migrazioni: **non** usare 121 (già occupato). Sequenza in `database/migrations/` root; al 14/08/2026 ultimo noto `145`.

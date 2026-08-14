@@ -369,22 +369,9 @@ function AppLayoutInner({ children }) {
           </div>
         </header>
 
-        {user?.organization_name ? (
-          <div className="layout-org-banner" role="region" aria-label="Organizzazione attiva">
-            {orgLogoDataUrl ? (
-              <img src={orgLogoDataUrl} alt="" className="layout-org-banner-logo" width={28} height={28} />
-            ) : null}
-            <span className="layout-org-banner-name">{user.organization_name}</span>
-            <CompanyScopeSelect />
-            {user.organization_vat_number ? (
-              <span className="layout-org-banner-vat">P.IVA {user.organization_vat_number}</span>
-            ) : null}
-          </div>
-        ) : (
-          <div className="layout-org-banner" role="region" aria-label="Ambito azienda">
-            <CompanyScopeSelect />
-          </div>
-        )}
+        <div className="layout-org-banner" role="region" aria-label="Ambito azienda">
+          <CompanyScopeSelect />
+        </div>
 
         {/* Contenuto principale */}
         <main className="layout-main">
