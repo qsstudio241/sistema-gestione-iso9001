@@ -87,6 +87,59 @@ export function partitionScopeCompanies(companies, organizationName) {
   return { studio, others };
 }
 
+function companyToOption(c) {
+  return {
+    value: String(c.id || c.company_id),
+    label: String(c.name || ""),
+  };
+}
+
+/**
+ * Voci del menu Ambito, nello stesso ordine della tendina.
+ * Personale studio: Tutto + Patrimonio + altre A→Z.
+ * Utente company_access: solo le sue aziende (niente Tutto/Patrimonio).
+ */
+export function buildScopeMenuOptions(companies, organizationName, { canSeeAllCompanies } = {}) {
+  const list = Array.isArray(companies) ? companies : [];
+  if (!canSeeAllCompanies) {
+    return partitionScopeCompanies(list, "").others.map(companyToOption);
+  }
+  const { others } = partitionScopeCompanies(list, organizationName);
+  return [
+    { value: STUDIO_WIDE_SCOPE, label: "Tutto lo studio" },
+    {
+      value: resolvePatrimonioScopeValue(list, organizationName),
+      label: STUDIO_PATRIMONIO_LABEL,
+    },
+    ...others.map(companyToOption),
+  ];
+}
+
+/**
+ * Voce selezionata nel combobox.
+ * `studio` e l'id azienda-studio sono lo stesso Patrimonio: non cadere su Tutto.
+ */
+export function findSelectedScopeOption(options, companyId) {
+  const list = Array.isArray(options) ? options : [];
+  const id = String(companyId ?? "");
+  const exact = list.find((o) => o.value === id);
+  if (exact) return exact;
+  if (isStudioPatrimonioScope(id)) {
+    return list.find((o) => o.label === STUDIO_PATRIMONIO_LABEL) || list[0] || null;
+  }
+  return list[0] || null;
+}
+
+/** Filtro digitazione: case-insensitive, il testo deve comparire nell'etichetta. */
+export function filterScopeMenuOptions(options, query) {
+  const list = Array.isArray(options) ? options : [];
+  const q = String(query || "")
+    .trim()
+    .toLowerCase();
+  if (!q) return list;
+  return list.filter((o) => String(o.label || "").toLowerCase().includes(q));
+}
+
 export function isCompanyScopedUser(user) {
   return hasCompanyAccess(user);
 }

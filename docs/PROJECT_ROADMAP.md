@@ -8,7 +8,7 @@
 
 > **Risposta standard a «stato di avanzamento del progetto e priorità da affrontare»**: sintetizzare da questa sezione (moduli maturi + sessione più recente + tabella priorità sotto), **non** dal banner storico più sotto (superato, tenuto solo per traccia) né dall'archivio marzo 2026 [`docs/archive/PROJECT_CONTEXT_STATO_FUNZIONALITA_2026-03.md`](archive/PROJECT_CONTEXT_STATO_FUNZIONALITA_2026-03.md). **Aggiornare questa sezione a fine sessione** se emergono nuove priorità o se una priorità elencata viene chiusa (stesso principio delle "Lezioni apprese" in [GUIDA_CONSOLIDATA.md](GUIDA_CONSOLIDATA.md) — sintesi qui, dettaglio linkato).
 
-**Ultimo aggiornamento di questa sezione**: 14/08/2026 (ROO-4: riga M03 + P×G su `risks`; banner #414 in produzione).
+**Ultimo aggiornamento di questa sezione**: 14/08/2026 (ROO-4 chiusa; Patrimonio #417 in produzione; combobox Ambito [PR #419](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/419) in corso).
 
 ### Moduli maturi (in produzione, uso quotidiano dai clienti Camellini/Mason)
 
@@ -18,7 +18,7 @@ Audit multi-standard (9001/14001/45001) · Non Conformità (workflow ISO 10.2 co
 
 **Rischi / Opportunità / Obiettivi**: **ROO-4 chiusa** — `risks` è una riga M03 (elemento, contesto/parti testo, azioni attuali/ulteriori) con `R = P × G` (scala 1–3; G=4/P=5 → 400). Prossima: ROO-5 residuo. [PLAN](agent-tasks/PLAN_RISCHI_OPPORTUNITA_OBIETTIVI_SLICES.md) · [spec M03](specs/M03_ANALISI_RISCHI_OPPORTUNITA.md).
 
-**Banner Ambito** ([PR #414](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/414) **mergiata**): in produzione solo «Ambito» + tendina «Tutto lo studio» (logo in sidebar, niente P.IVA) — verificato 14/08/2026. Menu personale studio: Tutto lo studio → **Patrimonio dello studio** (sempre; Ai.project è lo studio) → altre aziende A→Z. Dettaglio: [GUIDA lezione Ambito unico](GUIDA_CONSOLIDATA.md#lezioni-apprese-consolidate-fonte-unica).
+**Banner Ambito** ([PR #414](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/414) **mergiata**): in produzione solo «Ambito» + menu (logo in sidebar, niente P.IVA). **Patrimonio dello studio** ([PR #417](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/417) **mergiata**): seconda voce fissa per il personale studio (valore azienda omonima o `studio`). Passo successivo: combobox digita-per-filtrare ([PR #419](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/419), non in produzione finché non è mergiata). Dettaglio: [GUIDA lezione Ambito unico](GUIDA_CONSOLIDATA.md#lezioni-apprese-consolidate-fonte-unica).
 
 **Harness Cloud**: Chromium di Playwright nello snapshot `cloud-install.sh`. **Kitesurf** non adottato. Dettaglio: [GUIDA lezione Playwright snapshot](GUIDA_CONSOLIDATA.md#lezioni-apprese-consolidate-fonte-unica).
 

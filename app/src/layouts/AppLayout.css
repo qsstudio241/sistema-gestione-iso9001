@@ -325,7 +325,15 @@
   white-space: nowrap;
 }
 
+.layout-scope-combo {
+  position: relative;
+  min-width: 220px;
+  max-width: 360px;
+}
+
 .layout-scope-select {
+  box-sizing: border-box;
+  width: 100%;
   min-width: 220px;
   max-width: 360px;
   height: 32px;
@@ -336,6 +344,46 @@
   color: var(--color-text);
   font-size: 0.82rem;
   line-height: 30px;
+}
+
+.layout-scope-listbox {
+  position: absolute;
+  z-index: 40;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  margin: 0;
+  padding: 4px 0;
+  list-style: none;
+  max-height: 280px;
+  overflow-y: auto;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-sm);
+}
+
+.layout-scope-option {
+  padding: 6px 10px;
+  font-size: 0.82rem;
+  line-height: 1.3;
+  cursor: pointer;
+  color: var(--color-text);
+}
+
+.layout-scope-option.is-highlight,
+.layout-scope-option:hover {
+  background: var(--color-active-bg);
+}
+
+.layout-scope-option.is-selected {
+  font-weight: 600;
+}
+
+.layout-scope-empty {
+  padding: 6px 10px;
+  font-size: 0.82rem;
+  color: var(--color-text-muted);
 }
 
 .layout-scope-locked {

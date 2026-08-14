@@ -6,25 +6,28 @@
  * se getCompanies non ha ancora risposto (lista vuota).
  */
 import React from "react";
-import { describe, it, expect, vi } from "vitest";
-import { render, screen, within } from "@testing-library/react";
+import { describe, it, expect, vi, beforeAll, afterAll } from "vitest";
+import { act, fireEvent, render, screen, within } from "@testing-library/react";
 import AppLayout from "../layouts/AppLayout.jsx";
 
-vi.mock("../contexts/AuthContext", () => ({
-  useAuth: () => ({
-    user: {
-      id: 1,
-      role: "admin",
-      organization_id: 1001,
-      organization_name: "Al.project",
-      organization_vat_number: "125852",
-      organization_logo_url: "https://example.test/logo.png",
-      licensed_modules: [],
-      company_access: [],
-    },
-    logout: () => {},
-  }),
-}));
+vi.mock("../contexts/AuthContext", () => {
+  const user = {
+    id: 1,
+    role: "admin",
+    organization_id: 1001,
+    organization_name: "Al.project",
+    organization_vat_number: "125852",
+    organization_logo_url: "https://example.test/logo.png",
+    licensed_modules: [],
+    company_access: [],
+  };
+  return {
+    useAuth: () => ({
+      user,
+      logout: () => {},
+    }),
+  };
+});
 
 vi.mock("../contexts/RouterContext", () => ({
   NavLink: ({ children, to }) => <a href={to}>{children}</a>,
@@ -44,6 +47,28 @@ vi.mock("../services/apiService", () => ({
   },
 }));
 
+beforeAll(() => {
+  vi.stubGlobal(
+    "fetch",
+    vi.fn().mockResolvedValue({
+      ok: false,
+      blob: async () => new Blob(),
+    })
+  );
+});
+
+afterAll(() => {
+  vi.unstubAllGlobals();
+});
+
+function openBannerMenu(banner) {
+  const combo = within(banner).getByRole("combobox", { name: "Ambito azienda" });
+  act(() => {
+    fireEvent.focus(combo);
+  });
+  return combo;
+}
+
 describe("AppLayout — banner Ambito", () => {
   it("nel banner c'e' solo Ambito + tendina, senza nome/P.IVA dello studio", async () => {
     companiesPayload.data = [];
@@ -59,6 +84,7 @@ describe("AppLayout — banner Ambito", () => {
     expect(within(banner).queryByText("Al.project")).not.toBeInTheDocument();
     expect(within(banner).queryByText(/P\.IVA/)).not.toBeInTheDocument();
     expect(banner.querySelector("img")).toBeNull();
+    openBannerMenu(banner);
     expect(within(banner).getByRole("option", { name: "Patrimonio dello studio" })).toBeInTheDocument();
   });
 
@@ -74,10 +100,12 @@ describe("AppLayout — banner Ambito", () => {
     );
 
     const banner = await screen.findByRole("region", { name: "Ambito azienda" });
-    const select = within(banner).getByRole("combobox", { name: "Ambito azienda" });
-    expect(await within(select).findByRole("option", { name: "Patrimonio dello studio" })).toBeInTheDocument();
-    expect(within(select).getByRole("option", { name: "Tutto lo studio" })).toBeInTheDocument();
-    expect(within(select).queryByRole("option", { name: "Al.project" })).not.toBeInTheDocument();
+    openBannerMenu(banner);
+    const listbox = within(banner).getByRole("listbox");
+    expect(await within(listbox).findByRole("option", { name: "ADA Azienda Test Fase 1" })).toBeInTheDocument();
+    expect(within(listbox).getByRole("option", { name: "Patrimonio dello studio" })).toBeInTheDocument();
+    expect(within(listbox).getByRole("option", { name: "Tutto lo studio" })).toBeInTheDocument();
+    expect(within(listbox).queryByRole("option", { name: "Al.project" })).not.toBeInTheDocument();
     expect(within(banner).queryByText(/P\.IVA/)).not.toBeInTheDocument();
   });
 });
