@@ -7,12 +7,14 @@ import React, { createContext, useCallback, useContext, useEffect, useMemo, useS
 import { useAuth } from "./AuthContext";
 import apiService from "../services/apiService";
 import {
+  findStudioCompany,
   getAllowedCompanyIds,
   isCompanyScopeLocked,
   isCompanyScopedUser,
   persistAppCompanyScope,
   resolveAppCompanyScope,
   sanitizeScopeAgainstCompanies,
+  STUDIO_PATRIMONIO_LABEL,
   STUDIO_WIDE_SCOPE,
 } from "../utils/appCompanyScope";
 
@@ -94,9 +96,15 @@ export function CompanyScopeProvider({ children, initialCompanyId }) {
 
   const scopeCompanyName = useMemo(() => {
     if (!companyId) return "Tutto lo studio";
+    if (!companyScoped) {
+      const studio = findStudioCompany(companies, user?.organization_name);
+      if (studio && String(studio.id || studio.company_id) === String(companyId)) {
+        return STUDIO_PATRIMONIO_LABEL;
+      }
+    }
     const match = companies.find((c) => String(c.id || c.company_id) === String(companyId));
     return match?.name || `Azienda #${companyId}`;
-  }, [companyId, companies]);
+  }, [companyId, companies, companyScoped, user?.organization_name]);
 
   const value = useMemo(
     () => ({

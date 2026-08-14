@@ -24,6 +24,41 @@ export const LEGACY_PAGE_SCOPE_KEYS = [
 /** "" = Tutto lo studio (solo personale studio, non clienti azienda). */
 export const STUDIO_WIDE_SCOPE = "";
 
+/** Voce fissa nel menu Ambito (personale studio). Non è il nome anagrafica. */
+export const STUDIO_PATRIMONIO_LABEL = "Patrimonio dello studio";
+
+function normalizeOrgName(name) {
+  return String(name || "").trim().toLowerCase();
+}
+
+/**
+ * Azienda-studio già in anagrafica: stesso nome del tenant.
+ * Non crea nulla: se il nome non coincide, la voce Patrimonio non compare.
+ */
+export function findStudioCompany(companies, organizationName) {
+  const needle = normalizeOrgName(organizationName);
+  if (!needle) return null;
+  const list = Array.isArray(companies) ? companies : [];
+  return list.find((c) => normalizeOrgName(c.name) === needle) || null;
+}
+
+/**
+ * Menu Ambito per il personale studio: Patrimonio (se trovata) + altre aziende A→Z.
+ * L'azienda-studio esce dalla lista alfabetica.
+ */
+export function partitionScopeCompanies(companies, organizationName) {
+  const list = Array.isArray(companies) ? companies : [];
+  const studio = findStudioCompany(list, organizationName);
+  const studioId = studio ? String(studio.id || studio.company_id) : null;
+  const others = list
+    .filter((c) => String(c.id || c.company_id) !== studioId)
+    .slice()
+    .sort((a, b) =>
+      String(a.name || "").localeCompare(String(b.name || ""), "it", { sensitivity: "base" })
+    );
+  return { studio, others };
+}
+
 export function isCompanyScopedUser(user) {
   return hasCompanyAccess(user);
 }
