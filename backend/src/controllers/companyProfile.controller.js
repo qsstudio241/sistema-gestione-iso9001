@@ -20,6 +20,11 @@ const {
     mergeSourceMeta,
     rowToProfile,
     EDITABLE_FIELDS,
+    computeProfileCompleteness,
+    completenessLevel,
+    parseSyncAnagrafica,
+    composeRegisteredAddress,
+    isProfileFilled,
 } = require('../data/companyProfileFields');
 const {
     detectCompanyProfileFile,
@@ -120,12 +125,16 @@ function seedFromAnagrafica(profile, scope) {
 function serializeProfile(row, scope, exists) {
     const profile = rowToProfile(row);
     const seededFromAnagrafica = exists ? [] : seedFromAnagrafica(profile, scope);
+    const completeness = computeProfileCompleteness(profile, {
+        addressFallback: scope.address,
+    });
     return {
         ...profile,
         company_id: scope.company_id,
         organization_id: scope.organization_id,
         source_meta: row?.source_meta || null,
-        profile_completeness: row?.profile_completeness ?? null,
+        profile_completeness: completeness,
+        completeness_level: completenessLevel(completeness),
         exists,
         seededFromAnagrafica,
         address_anagrafica: scope.address || null,
@@ -186,9 +195,14 @@ async function putProfile(req, res) {
         if (upserted.error) {
             return res.status(upserted.status).json(upserted.body);
         }
+        const synced = await maybeSyncAnagrafica(scope, upserted.row, parseSyncAnagrafica(req.body));
+        if (synced.address) scope.address = synced.address;
         return res.json({
             success: true,
-            data: serializeProfile(upserted.row, scope, true),
+            data: {
+                ...serializeProfile(upserted.row, scope, true),
+                synced_anagrafica: synced.fields,
+            },
         });
     } catch (err) {
         logger.error(`[companyProfile] PUT: ${err.message}`);
@@ -200,16 +214,19 @@ async function upsertProfile(scope, fields, userId, metaExtra = {}) {
     const touched = Object.keys(fields);
     const existing = await loadProfileRow(scope.company_id);
     const sourceMeta = mergeSourceMeta(existing?.source_meta, touched, userId, metaExtra);
+    const merged = { ...rowToProfile(existing), ...fields };
+    const completeness = computeProfileCompleteness(merged, { addressFallback: scope.address });
     const writeParams = {
         company_id: scope.company_id,
         organization_id: scope.organization_id,
         source_meta: sourceMeta,
         updated_by_user_id: userId,
+        profile_completeness: completeness,
         ...fields,
     };
 
     if (!existing) {
-        const cols = ['company_id', 'organization_id', 'source_meta', 'updated_by_user_id', ...touched];
+        const cols = ['company_id', 'organization_id', 'source_meta', 'updated_by_user_id', 'profile_completeness', ...touched];
         const values = cols.map((c) => `@${c}`);
         await query(
             `INSERT INTO company_profile (${cols.join(', ')}) VALUES (${values.join(', ')})`,
@@ -219,6 +236,7 @@ async function upsertProfile(scope, fields, userId, metaExtra = {}) {
         const sets = [
             ...touched.map((c) => `${c} = @${c}`),
             'source_meta = @source_meta',
+            'profile_completeness = @profile_completeness',
             'updated_at = SYSUTCDATETIME()',
             'updated_by_user_id = @updated_by_user_id',
         ];
@@ -242,6 +260,39 @@ async function upsertProfile(scope, fields, userId, metaExtra = {}) {
 
     const row = await loadProfileRow(scope.company_id);
     return { error: false, row };
+}
+
+async function maybeSyncAnagrafica(scope, row, sync) {
+    const profile = rowToProfile(row);
+    const sets = [];
+    const params = { company_id: scope.company_id };
+    const fields = [];
+    if (sync.name && isProfileFilled(profile.legal_name)) {
+        sets.push('name = @name');
+        params.name = String(profile.legal_name).trim();
+        fields.push('name');
+    }
+    if (sync.vat_number && isProfileFilled(profile.vat_number)) {
+        sets.push('vat_number = @vat_number');
+        params.vat_number = String(profile.vat_number).trim();
+        fields.push('vat_number');
+    }
+    let address = null;
+    if (sync.address) {
+        address = composeRegisteredAddress(profile);
+        if (address) {
+            sets.push('address = @address');
+            params.address = address;
+            fields.push('address');
+        }
+    }
+    if (!sets.length) return { fields: [], address: null };
+    sets.push('updated_at = GETDATE()');
+    await query(
+        `UPDATE companies SET ${sets.join(', ')} WHERE id = @company_id`,
+        params
+    );
+    return { fields, address };
 }
 
 /**

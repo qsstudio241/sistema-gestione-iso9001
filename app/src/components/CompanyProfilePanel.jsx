@@ -6,6 +6,7 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import apiService from "../services/apiService";
 import CompanyProfileImportDialog from "./CompanyProfileImportDialog";
+import StatusBadge from "./StatusBadge";
 import "../pages/CompanyDetailPage.css";
 import "../pages/StudioSettingsPage.css";
 import "../components/ChecklistModule.css";
@@ -191,7 +192,13 @@ function FieldInput({ field, value, onChange, disabled }) {
   );
 }
 
-function CompanyProfilePanel({ companyId, auditorOrgId, canEdit, onUnavailable }) {
+const COMPLETENESS_BADGE = {
+  pronto: { status: "active", label: "Pronto" },
+  parziale: { status: "orphan", label: "Parziale" },
+  incompleto: { status: "inactive", label: "Incompleto" },
+};
+
+function CompanyProfilePanel({ companyId, auditorOrgId, canEdit, onUnavailable, onAnagraficaSynced }) {
   const fileInputRef = useRef(null);
   const [detecting, setDetecting] = useState(false);
   const [importing, setImporting] = useState(false);
@@ -203,8 +210,15 @@ function CompanyProfilePanel({ companyId, auditorOrgId, canEdit, onUnavailable }
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState(null);
+  const [syncAnagrafica, setSyncAnagrafica] = useState({
+    name: false,
+    vat_number: false,
+    address: false,
+  });
 
   const dirty = useMemo(() => JSON.stringify(form) !== savedSnapshot, [form, savedSnapshot]);
+  const syncRequested = syncAnagrafica.name || syncAnagrafica.vat_number || syncAnagrafica.address;
+  const canSave = dirty || syncRequested;
 
   const applyData = useCallback((data) => {
     const next = profileToForm(data);
@@ -214,6 +228,8 @@ function CompanyProfilePanel({ companyId, auditorOrgId, canEdit, onUnavailable }
       seededFromAnagrafica: data?.seededFromAnagrafica || [],
       address_anagrafica: data?.address_anagrafica || null,
       exists: !!data?.exists,
+      completeness: data?.profile_completeness ?? null,
+      completenessLevel: data?.completeness_level || null,
     });
   }, []);
 
@@ -243,6 +259,10 @@ function CompanyProfilePanel({ companyId, auditorOrgId, canEdit, onUnavailable }
       cancelled = true;
     };
   }, [companyId, auditorOrgId, applyData, onUnavailable]);
+
+  useEffect(() => {
+    setSyncAnagrafica({ name: false, vat_number: false, address: false });
+  }, [companyId]);
 
   const setField = (key, value) => {
     setForm((prev) => ({ ...prev, [key]: value }));
@@ -321,9 +341,18 @@ function CompanyProfilePanel({ companyId, auditorOrgId, canEdit, onUnavailable }
     setSaved(false);
     try {
       const params = auditorOrgId ? { auditor_org_id: auditorOrgId } : {};
-      const res = await apiService.updateCompanyProfile(companyId, formToPayload(form), params);
-      applyData(res?.data ?? res);
+      const res = await apiService.updateCompanyProfile(
+        companyId,
+        { ...formToPayload(form), sync_anagrafica: syncAnagrafica },
+        params
+      );
+      const data = res?.data ?? res;
+      applyData(data);
       setSaved(true);
+      setSyncAnagrafica({ name: false, vat_number: false, address: false });
+      if (data?.synced_anagrafica?.length) {
+        onAnagraficaSynced?.(data.synced_anagrafica);
+      }
     } catch (err) {
       if (err.status === 403) {
         onUnavailable?.(err);
@@ -347,6 +376,16 @@ function CompanyProfilePanel({ companyId, auditorOrgId, canEdit, onUnavailable }
   return (
     <div className="studio-tab-content company-detail-anagrafica company-profile-panel">
       {error && <div className="studio-warning-banner">{error}</div>}
+      {meta.completeness != null && (
+        <p className="studio-hint" data-testid="profile-completeness">
+          <StatusBadge
+            type="user"
+            status={(COMPLETENESS_BADGE[meta.completenessLevel] || COMPLETENESS_BADGE.incompleto).status}
+            label={`${meta.completeness}% \u2014 ${(COMPLETENESS_BADGE[meta.completenessLevel] || COMPLETENESS_BADGE.incompleto).label}`}
+          />
+          {" "}Completezza profilo (non blocca gli audit).
+        </p>
+      )}
       {meta.seededFromAnagrafica.length > 0 && (
         <p className="studio-hint">
           Nome e P.IVA sono stati copiati dall&apos;anagrafica esistente. Non sono ancora salvati nel profilo: premi Salva per confermare.
@@ -413,8 +452,40 @@ function CompanyProfilePanel({ companyId, auditorOrgId, canEdit, onUnavailable }
           </details>
         ))}
         {canEdit && (
+          <div className="studio-card">
+            <p className="studio-card-title">Aggiorna anche l&apos;anagrafica base</p>
+            <p className="studio-card-desc">
+              Spunta solo se vuoi copiare questi dati nella scheda Anagrafica (lista aziende). Di default non si tocca.
+            </p>
+            <label className="studio-hint">
+              <input
+                type="checkbox"
+                checked={syncAnagrafica.name}
+                onChange={(e) => setSyncAnagrafica((s) => ({ ...s, name: e.target.checked }))}
+              />
+              {" "}Nome / ragione sociale
+            </label>
+            <label className="studio-hint">
+              <input
+                type="checkbox"
+                checked={syncAnagrafica.vat_number}
+                onChange={(e) => setSyncAnagrafica((s) => ({ ...s, vat_number: e.target.checked }))}
+              />
+              {" "}Partita IVA
+            </label>
+            <label className="studio-hint">
+              <input
+                type="checkbox"
+                checked={syncAnagrafica.address}
+                onChange={(e) => setSyncAnagrafica((s) => ({ ...s, address: e.target.checked }))}
+              />
+              {" "}Indirizzo (via + CAP + comune)
+            </label>
+          </div>
+        )}
+        {canEdit && (
           <div className="studio-actions">
-            <button type="submit" className="btn-studio-primary" disabled={saving || !dirty}>
+            <button type="submit" className="btn-studio-primary" disabled={saving || !canSave}>
               {saving ? "Salvataggio..." : "Salva profilo"}
             </button>
             {saved && !dirty && <span className="studio-hint">Profilo salvato.</span>}

@@ -201,6 +201,57 @@ describe('companyProfile PUT', () => {
         );
     });
 
+    it('non tocca companies se sync_anagrafica assente', async () => {
+        mockScope();
+        query.mockResolvedValueOnce({ recordset: [] });
+        query.mockResolvedValueOnce({ recordset: [] });
+        query.mockResolvedValueOnce({
+            recordset: [{ company_id: COMPANY_ID, organization_id: ORG_ID, legal_name: 'Acme Srl' }],
+        });
+        const req = mockReq({ body: { legal_name: 'Acme Srl' } });
+        const res = mockRes();
+        await ctrl.putProfile(req, res);
+        expect(query.mock.calls.some((c) => String(c[0]).includes('UPDATE companies'))).toBe(false);
+    });
+
+    it('sync opzionale aggiorna name e P.IVA in companies', async () => {
+        mockScope();
+        query.mockResolvedValueOnce({ recordset: [] });
+        query.mockResolvedValueOnce({ recordset: [] });
+        query.mockResolvedValueOnce({
+            recordset: [{
+                company_id: COMPANY_ID,
+                organization_id: ORG_ID,
+                legal_name: 'Nuova Srl',
+                vat_number: '09998887766',
+            }],
+        });
+        query.mockResolvedValueOnce({ recordset: [], rowsAffected: [1] });
+        const req = mockReq({
+            body: {
+                legal_name: 'Nuova Srl',
+                vat_number: '09998887766',
+                sync_anagrafica: { name: true, vat_number: true },
+            },
+        });
+        const res = mockRes();
+        await ctrl.putProfile(req, res);
+        const syncCall = query.mock.calls.find((c) => String(c[0]).includes('UPDATE companies'));
+        expect(syncCall).toBeTruthy();
+        expect(syncCall[1]).toEqual(expect.objectContaining({
+            name: 'Nuova Srl',
+            vat_number: '09998887766',
+            company_id: COMPANY_ID,
+        }));
+        expect(res.json).toHaveBeenCalledWith(
+            expect.objectContaining({
+                data: expect.objectContaining({
+                    synced_anagrafica: expect.arrayContaining(['name', 'vat_number']),
+                }),
+            })
+        );
+    });
+
     it('400 se body senza campi catalogo', async () => {
         mockScope();
         const req = mockReq({ body: { unknown: 'x' } });

@@ -1,6 +1,9 @@
-# DEPUTYTASK — Profilo azienda conformità legislativa (ADR-018) — S1→S3
+# DEPUTYTASK — Profilo azienda conformità legislativa (ADR-018) — S4
 
-**Stato:** CHIUSO (13/08/2026) — S1–S3 TEST OK. PR #409.  
+**Stato:** APERTO  
+**Priorità:** P1 — completezza + sync soft anagrafica (non breaking)  
+**Branch base:** `main` (S1–S3 mergiati, PR #399/#400/#409)  
+**Spec:** [ADR-018](../adr/ADR-018-company-profile-conformita-legislativa.md) § S4 · [Catalogo §6](../specs/COMPANY_PROFILE_CAMPI_E_TEMPLATE_EXCEL.md)
 **Priorità:** P1 — fondazione dati per conformità legislativa 14001/45001 (non breaking)  
 **Branch base:** `main`  
 **Creato da:** Lead 23/07/2026  
@@ -122,10 +125,14 @@
 
 ---
 
-## Slice S4 (dopo S2) — Completeness + sync soft
+## Slice S4 — Completeness + sync soft
 
-- Badge completezza (pesi in catalogo §6).
-- Checkbox opzionali: «Aggiorna anche nome/P.IVA/indirizzo in anagrafica base» → update `companies` solo se spuntate.
+**Stato S4:** in corso (13/08/2026).
+
+- Badge completezza (pesi in catalogo §6): incompleto &lt;50 / parziale 50–79 / pronto ≥80.
+- Persistenza `profile_completeness` su upsert; GET ricalcola live.
+- Checkbox opzionali: «Aggiorna anche nome/P.IVA/indirizzo in anagrafica base» → `UPDATE companies` **solo** se spuntate.
+- S5 lookup registro **fuori scope**.
 
 ---
 
