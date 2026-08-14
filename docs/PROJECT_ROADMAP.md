@@ -8,7 +8,7 @@
 
 > **Risposta standard a «stato di avanzamento del progetto e priorità da affrontare»**: sintetizzare da questa sezione (moduli maturi + sessione più recente + tabella priorità sotto), **non** dal banner storico più sotto (superato, tenuto solo per traccia) né dall'archivio marzo 2026 [`docs/archive/PROJECT_CONTEXT_STATO_FUNZIONALITA_2026-03.md`](archive/PROJECT_CONTEXT_STATO_FUNZIONALITA_2026-03.md). **Aggiornare questa sezione a fine sessione** se emergono nuove priorità o se una priorità elencata viene chiusa (stesso principio delle "Lezioni apprese" in [GUIDA_CONSOLIDATA.md](GUIDA_CONSOLIDATA.md) — sintesi qui, dettaglio linkato).
 
-**Ultimo aggiornamento di questa sezione**: 14/08/2026 (ROO-4: riga M03 + P×G su `risks`; banner #414 in produzione).
+**Ultimo aggiornamento di questa sezione**: 14/08/2026 (ROO-5: residuo P×G + griglia M03 su TEST; banner #414 in produzione).
 
 ### Moduli maturi (in produzione, uso quotidiano dai clienti Camellini/Mason)
 
@@ -16,7 +16,7 @@ Audit multi-standard (9001/14001/45001) · Non Conformità (workflow ISO 10.2 co
 
 ### Sessione più recente (14/08/2026)
 
-**Rischi / Opportunità / Obiettivi**: **ROO-4 chiusa** — `risks` è una riga M03 (elemento, contesto/parti testo, azioni attuali/ulteriori) con `R = P × G` (scala 1–3; G=4/P=5 → 400). Prossima: ROO-5 residuo. [PLAN](agent-tasks/PLAN_RISCHI_OPPORTUNITA_OBIETTIVI_SLICES.md) · [spec M03](specs/M03_ANALISI_RISCHI_OPPORTUNITA.md).
+**Rischi / Opportunità / Obiettivi**: **ROO-5 chiusa** — matrice `SgqDataGrid` (click → form), residuo P×G + nota efficacia (mig. 147, scala 1–3). Prossima: ROO-6 ingest Excel. [PLAN](agent-tasks/PLAN_RISCHI_OPPORTUNITA_OBIETTIVI_SLICES.md) · [spec M03](specs/M03_ANALISI_RISCHI_OPPORTUNITA.md).
 
 **Banner Ambito** ([PR #414](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/414) **mergiata**): in produzione solo «Ambito» + tendina «Tutto lo studio» (logo in sidebar, niente P.IVA) — verificato 14/08/2026. Menu personale studio: Tutto lo studio → **Patrimonio dello studio** (sempre; Ai.project è lo studio) → altre aziende A→Z. Dettaglio: [GUIDA lezione Ambito unico](GUIDA_CONSOLIDATA.md#lezioni-apprese-consolidate-fonte-unica).
 
@@ -42,7 +42,7 @@ Sessione prodotto precedente (10/08/2026): fix filtri dashboard duplicati (Quali
 | 2 | **Shell dialog di revisione ingest — markup/CSS duplicato** (non urgente, basso rischio) | `IngestReviewDialog.jsx` vs dialog interno `ReprocessQueueBanner.jsx`: guscio overlay duplicato (~60-80 righe); pattern sistemico su molti altri modal nel progetto | Vedi backlog sotto per dettaglio |
 | 3 | **Pagina Impostazioni → Organizzazione (P.IVA + logo tenant)** | PR #10 aperta da aprile 2026, 180 file in conflitto — richiede ricostruzione, non merge | Vedi riga dedicata nel backlog sotto |
 | 4 | **Material Compliance AI (certificati EN 10204 3.1)** | Modulo proposto 05/08/2026, slice MC-0 (spec) non ancora avviata | [MODULO_MATERIAL_COMPLIANCE_AI.md](specs/MODULO_MATERIAL_COMPLIANCE_AI.md) |
-| 5 | **Rischi / Opportunità / Obiettivi — score residuo (ROO-5)** | ROO-4 ha la riga M03 e P×G attuale (1–3). Manca il residuo; scala 1–4 = HITL ROO-13 | [PLAN](agent-tasks/PLAN_RISCHI_OPPORTUNITA_OBIETTIVI_SLICES.md) · brief [ROO](agent-tasks/DEPUTYTASK_RISCHI_ROO.md) |
+| 5 | **Rischi / Opportunità / Obiettivi — ingest Excel M03 (ROO-6)** | ROO-5 ha residuo + griglia. Manca l'ingest del foglio cliente; scala 1–4 = HITL ROO-13 | [PLAN](agent-tasks/PLAN_RISCHI_OPPORTUNITA_OBIETTIVI_SLICES.md) · brief [ROO](agent-tasks/DEPUTYTASK_RISCHI_ROO.md) |
 
 > Nota: **Modulo NC — card statistiche duplicate da due tendine** (era riga 1) è stato chiuso da PR #374 (10/08/2026) — riga rimossa da questa tabella, non ancora aggiornata al momento in cui è stata scritta DEPUTYTASK4.
 

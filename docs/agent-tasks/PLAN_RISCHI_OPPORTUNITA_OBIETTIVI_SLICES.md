@@ -3,7 +3,7 @@
 > **Destinazione**: il modulo è il **documento di analisi rischi/opportunità** (HLS §6.1), valido per 9001 / 14001 / 45001 / SGI. Una riga = una valutazione. Il **metodo di pesatura** (P×G, FMEA G×P×Rilev, SWOT con G con segno) è del documento, non del prodotto. L'ingest accetta più layout (M03, SWOT, FMEA HSE). Non sostituisce DVR né registro aspetti. Obiettivi §6.2 = tab collegato.
 > **Spec**: [PROCESSO](../specs/PROCESSO_ANALISI_RISCHI_OPPORTUNITA.md) · [M03 mapping](../specs/M03_ANALISI_RISCHI_OPPORTUNITA.md) · template [M03-R00](../specs/templates/M03-R00-analisi-rischi-opportunita.xlsx)
 > **Norma**: [9001:2015](../Normative/UNI%20EN%20ISO%209001_2015%20Rev.%200.md) · [14001:2015](../Normative/Normative%20NORMA_00003_%20UNI%20EN%20ISO%2014001_2015%20Rev.%200.md) §6.1 · [45001:2018](../Normative/Normative%20NORMA_00002_%20UNI%20ISO%2045001_2018%20Rev.%200.md) §6.1
-> **Brief attivo**: [DEPUTYTASK_RISCHI_ROO.md](DEPUTYTASK_RISCHI_ROO.md) (ROO-4 chiusa — prossima ROO-5)
+> **Brief attivo**: [DEPUTYTASK_RISCHI_ROO.md](DEPUTYTASK_RISCHI_ROO.md) (ROO-5 chiusa — prossima ROO-6 ingest)
 > **Draft studio**: M03 rev.00, 19/06/2026, foglio `Analisi Rischio`, autore Marco Camellini
 
 **Correzione di rotta (14/08/2026)**: la prima mappa partiva dai quattro tab già in app e chiedeva come «chiudere la catena» con FK. Quella premessa **inficia** l'analisi: il processo non è CRUD di registri. Questa mappa parte dal **processo ISO**, poi dal **CRUD che serve a quel processo**, poi dal **gap** sul codice attuale.
@@ -96,11 +96,11 @@ Non c'è colonna «opportunità» né tab obiettivi: il titolo li nomina, il fog
 
 | Processo M03 / ISO | App oggi | Gap |
 |--------------------|----------|-----|
-| Una riga = elemento + contesto + parti + azioni + score + residuo | Quattro tab CRUD (`RisksPage`) | **Modello invertito** |
+| Una riga = elemento + contesto + parti + azioni + score + residuo | Griglia M03 su tab Analisi; cataloghi/obiettivi restano tab secondari | Superficie OK; ingest e scala 1–4 aperti |
 | Contesto e parti **sulla riga** | Enum `context` + tabelle catalogo separate, **senza** testo di analisi | Cataloghi senza processo |
 | Azioni attuali vs ulteriori | Un solo `treatment_desc` + enum `treatment` | Manca il prima/dopo |
-| P×G attuale **e** residuo | Un solo `probability`/`impact` (CHECK 1–3) | Manca residuo; **scala incompatibile con M03 (1–4)** |
-| Resp. + Temp. + Aggiornamento | `responsible` + `review_date` | Manca aggiornamento; Temp. non è distinto dalla revisione |
+| P×G attuale **e** residuo | `probability`/`impact` + `residual_*` (CHECK 1–3) | Residuo c'è (ROO-5); **scala incompatibile con M03 (1–4)** = ROO-13 |
+| Resp. + Temp. + Aggiornamento | `responsible` + `review_date` + `effectiveness_note` | Temp. riusa `review_date` (niente `action_due_date`) |
 | Elemento valutato (gruppo) | `title` = titolo del rischio | Manca il raggruppamento |
 | Informazione documentata M03/rev/data | Nessuna | Manca |
 | Ingest Excel esistente | Nessuno | Manca (ROO-6) |
@@ -141,7 +141,8 @@ La vecchia ROO-4 (FK catalogo → rischio) **non è più la prima slice**: aggiu
 - ROO-1…3 (PR #279) restano in `main` come fondazione tecnica (`nature`, tabelle catalogo, `source_risk_id`), reinterpretate.
 - Numerazione migrazioni: prossimo libero in `database/migrations/` al momento; non riservare.
 - **P×G (ROO-4, 14/08/2026):** `R = probability × impact`. CHECK DB e API restano **1–3** (R in 1–9). G=4 (draft M03) e 1–5 (FMEA) → **400**, non 500 dal CHECK. Livelli UI invariati: 1–3 basso, 4–6 medio, 7–9 alto. Stats `high_priority` resta **≥6** (incoerenza nota, non toccata). Scala 1–4/1–5 = ROO-13.
-- **Processo ricostruito (14/08/2026):** [PROCESSO_ANALISI_RISCHI_OPPORTUNITA.md](../specs/PROCESSO_ANALISI_RISCHI_OPPORTUNITA.md) — Quaderno 3 Conforma + colonne M03. Superficie di lavoro = matrice, non card.
+- **Processo ricostruito (14/08/2026):** [PROCESSO_ANALISI_RISCHI_OPPORTUNITA.md](../specs/PROCESSO_ANALISI_RISCHI_OPPORTUNITA.md) — Quaderno 3 Conforma + colonne M03. Superficie di lavoro = matrice `SgqDataGrid`, click riga → form (non inline edit).
+- **Residuo + aggiornamento (ROO-5, 14/08/2026):** `residual_probability` / `residual_impact` (NULL o 1–3) + `effectiveness_note`. API decora `residual_score` / `residual_score_level` solo se entrambi i fattori residui ci sono. Tab home = «Analisi». Scala 1–4 resta ROO-13.
 
 ## Mappa slice
 
@@ -149,12 +150,12 @@ La vecchia ROO-4 (FK catalogo → rischio) **non è più la prima slice**: aggiu
 |-------|------|-----------|------------|------|
 | ROO-1…3 | `nature`, cataloghi, link NC | già in `main` | — | FATTO |
 | **ROO-4** | **Riga M03 sul record `risks`** (elemento, contesto testo, parti testo, azioni attuali, ulteriori azioni) | migrazione 146 + controller + form/card `RisksPage` + util `riskScore` | — | FATTO |
-| ROO-5 | Score residuo + livello (attuale e residuo) | stessi file; **non** allargare 1–4 senza HITL | ROO-4 | AFK / HITL scala |
+| **ROO-5** | **Score residuo + griglia M03 + aggiornamento** | migrazione 147 + `SgqDataGrid` + form residuo; **non** allargare 1–4 | ROO-4 | FATTO |
 | ROO-6 | Ingest Excel (primo detector M03) | detect/dry-run/upsert + template | ROO-4 | AFK |
 | ROO-6b | Detector SWOT + FMEA HSE | stesso motore ingest, mapping diversi | ROO-6, ROO-15 | AFK |
-| ROO-7 | Tempistica + aggiornamento (efficacia) | campi data/nota + UI | ROO-4 | AFK |
+| ROO-7 | Tempistica distinta da `review_date` | nuovo `action_due_date` se serve; nota efficacia già in ROO-5 | ROO-5 | AFK |
 | ROO-8 | Cataloghi 4.1/4.2 come picker verso i testi della riga | `RisksPage` + API cataloghi | ROO-4 | AFK |
-| ROO-9 | Copy: home = «Analisi rischi e opportunità», non «Registro» | `RisksPage` | ROO-4 | AFK |
+| ROO-9 | Copy: home = «Analisi rischi e opportunità» (tab già «Analisi») | titolo pagina / sidebar | ROO-5 | AFK |
 | ROO-10 | Obiettivi §6.2: piano 6.2.2 + FK opz. alla riga | `objectives` | ROO-4 | AFK |
 | ROO-11 | Hardening RBAC/stats | controller objectives/risks | — | AFK |
 | ROO-12 | Export / ristampa M03 | Excel o Word | ROO-5, ROO-6 | HITL formato |

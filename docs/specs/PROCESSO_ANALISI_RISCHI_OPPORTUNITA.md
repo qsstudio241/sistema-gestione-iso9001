@@ -77,7 +77,7 @@ Elemento
 | 9 | Se si tratta: **pianifica** ulteriori azioni, chi, quando | I, J, K | `further_actions`, `responsible`, `review_date` (Temp. distinta = ROO-7) | §6.1.2 a |
 | 10 | **Attua** le azioni **nei processi** (istruzione, controllo, competenza…) — non solo le scrive | fuori foglio; il foglio ne tiene traccia | (ROO-14 opz. Piano Azioni) | §6.1.2 b)1 + Quaderno «mettere in atto» |
 | 11 | **Valuta l’efficacia** | L Aggiornamento | `effectiveness_note` (ROO-7) | §6.1.2 b)2 |
-| 12 | Rivaluta P e G **dopo** le ulteriori azioni | M–P residuo | residual_* (ROO-5) | stesso metodo |
+| 12 | Rivaluta P e G **dopo** le ulteriori azioni | M–P residuo | `residual_probability` / `residual_impact` / `residual_score` | stesso metodo |
 | 13 | **Apprende**: riesame, obiettivi, nuova riga se il contesto è cambiato | input §9.3 / §6.2 | tab obiettivi | Quaderno «apprendere» |
 
 P e G in M03 arrivano a **4**; l’app oggi è 1–3 (ROO-13). Il livello nel draft osservato: 1–3 basso, 4–8 medio; soglia Alto non compare nel file.

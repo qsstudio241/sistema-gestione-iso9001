@@ -39,9 +39,9 @@ Nel file consegnato le colonne A–D e I–L sono **vuote** (template); restano 
 | Livello | `score_level` | Calcolato in API/UI (soglie 1–3/4–6/7–9) |
 | Ulteriori azioni | `further_actions` | C'è (ROO-4); fallback lettura `treatment_desc` |
 | Resp. | `responsible` | C'è |
-| Temp. | `action_due_date` (nuovo) o `review_date` | Solo `review_date` |
-| Aggiornamento | `effectiveness_note` (nuovo) | Assente |
-| P/G/R/Livello residuo | `residual_probability`, `residual_impact`, … | Assente |
+| Temp. | `review_date` (azione distinta = ROO-7) | C'è (`review_date`) |
+| Aggiornamento | `effectiveness_note` | C'è (ROO-5) |
+| P/G/R/Livello residuo | `residual_probability`, `residual_impact`, `residual_score` | C'è (ROO-5); scala 1–3 |
 | (ISO, non in Excel) | `nature` | C'è (`risk` default in ingest) |
 | Ambito | `company_id` | Opzionale + header `useCompanyScope` |
 
