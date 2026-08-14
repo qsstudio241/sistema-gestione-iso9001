@@ -36,7 +36,12 @@ return {
             '/api/v1': {
                 target: 'https://sistemi.fr-busato.it:8443',
                 changeOrigin: true,
-                secure: false
+                secure: false,
+                // Il backend accetta l'origin Netlify, non localhost.
+                // Senza questo il login da Vite locale torna CORS 500.
+                headers: {
+                    Origin: 'https://sistema-gestione-iso9001.netlify.app',
+                },
             }
         }
     },
