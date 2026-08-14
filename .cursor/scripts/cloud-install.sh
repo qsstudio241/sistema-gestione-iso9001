@@ -27,9 +27,17 @@ install_dir "backend"
 # (`smoke-percorsi-critici.mjs`) usano backend/node_modules, non /tmp.
 # Idempotente: se i binari sono già in ~/.cache/ms-playwright, è un no-op.
 install_playwright_chromium() {
-  if [[ ! -f "$ROOT/backend/node_modules/playwright/package.json" ]]; then
-    echo "[cloud-install] skip playwright chromium (pacchetto assente)"
+  if [[ ! -f "$ROOT/backend/package.json" ]]; then
+    echo "[cloud-install] skip playwright chromium (nessun backend/package.json)"
     return 0
+  fi
+  if ! grep -q '"playwright"' "$ROOT/backend/package.json"; then
+    echo "[cloud-install] skip playwright chromium (non in package.json)"
+    return 0
+  fi
+  if [[ ! -f "$ROOT/backend/node_modules/playwright/package.json" ]]; then
+    echo "[cloud-install] ERRORE: playwright è in package.json ma manca in node_modules (npm ci ha omesso i dev?)" >&2
+    return 1
   fi
   echo "[cloud-install] npx playwright install chromium"
   (cd "$ROOT/backend" && npx playwright install chromium)

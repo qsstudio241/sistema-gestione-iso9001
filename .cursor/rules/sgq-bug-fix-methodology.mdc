@@ -235,7 +235,7 @@ SGQ_SMOKE_PATHS=login,nc node backend/scripts/smoke-percorsi-critici.mjs
 
 Filtri: `login`, `nc`, `qualifiche`, `sal`, `wps`. Ingest API: `smoke-ingest-e2e-test.js`. ERAM: `smoke-eram-coverage-ui.js`.
 
-Template minimo solo-login (se lo script versionato non basta). Preferire una copia sotto `backend/scripts/` così `import 'playwright'` risolve `backend/node_modules`. Se il file è in `/tmp`: `NODE_PATH=backend/node_modules node /tmp/test-login.mjs`.
+Template minimo solo-login (se lo script versionato non basta). Metterlo sotto `backend/scripts/` (non in `/tmp`) così `import 'playwright'` risolve `backend/node_modules`.
 
 ```js
 import { chromium } from 'playwright';

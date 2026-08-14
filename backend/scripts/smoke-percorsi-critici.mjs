@@ -61,7 +61,7 @@ async function launchChromium() {
     return await chromium.launch({ headless: true });
   } catch (err) {
     const msg = String(err?.message || err);
-    if (/Executable doesn't exist|browserType\.launch/i.test(msg)) {
+    if (/Executable doesn't exist/i.test(msg)) {
       console.error('Chromium Playwright assente. Su Cloud Agent lo installa .cursor/scripts/cloud-install.sh.');
       console.error('Fallback una tantum: cd backend && npx playwright install chromium');
     }
