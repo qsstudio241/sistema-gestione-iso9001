@@ -3,9 +3,16 @@
  */
 
 import React from "react";
+import { useAuth } from "../contexts/AuthContext";
 import { useCompanyScope } from "../contexts/CompanyScopeContext";
+import {
+  partitionScopeCompanies,
+  resolvePatrimonioScopeValue,
+  STUDIO_PATRIMONIO_LABEL,
+} from "../utils/appCompanyScope";
 
 export default function CompanyScopeSelect() {
+  const { user } = useAuth();
   const { companyId, setCompanyId, companies, locked, companyScoped, scopeCompanyName } =
     useCompanyScope();
 
@@ -20,7 +27,9 @@ export default function CompanyScopeSelect() {
     );
   }
 
-  const options = Array.isArray(companies) ? companies : [];
+  const { others } = companyScoped
+    ? { others: partitionScopeCompanies(companies, "").others }
+    : partitionScopeCompanies(companies, user?.organization_name);
 
   return (
     <label className="layout-scope">
@@ -32,7 +41,12 @@ export default function CompanyScopeSelect() {
         aria-label="Ambito azienda"
       >
         {!companyScoped && <option value="">{"Tutto lo studio"}</option>}
-        {options.map((c) => {
+        {!companyScoped && (
+          <option value={resolvePatrimonioScopeValue(companies, user?.organization_name)}>
+            {STUDIO_PATRIMONIO_LABEL}
+          </option>
+        )}
+        {others.map((c) => {
           const id = c.id || c.company_id;
           return (
             <option key={id} value={String(id)}>

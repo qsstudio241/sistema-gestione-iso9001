@@ -24,6 +24,69 @@ export const LEGACY_PAGE_SCOPE_KEYS = [
 /** "" = Tutto lo studio (solo personale studio, non clienti azienda). */
 export const STUDIO_WIDE_SCOPE = "";
 
+/** Voce fissa nel menu Ambito (personale studio). Non è il nome anagrafica. */
+export const STUDIO_PATRIMONIO_LABEL = "Patrimonio dello studio";
+
+/** Valore Ambito quando Patrimonio non ha (ancora) una riga azienda omonima. */
+export const STUDIO_PATRIMONIO_SCOPE = "studio";
+
+export function isStudioPatrimonioScope(companyId) {
+  return String(companyId || "") === STUDIO_PATRIMONIO_SCOPE;
+}
+
+function normalizeOrgName(name) {
+  return String(name || "")
+    .trim()
+    .toLowerCase()
+    .replace(/_/g, " ")
+    .replace(/\s+/g, " ");
+}
+
+/** Al.project (L) e Ai.project (i) sono lo stesso studio: in molti font coincidono. */
+function studioNameCandidates(organizationName) {
+  const raw = String(organizationName || "").trim();
+  if (!raw) return [];
+  const names = [raw];
+  if (/^al\.project$/i.test(raw)) names.push("Ai.project", "AI.project");
+  if (/^ai\.project$/i.test(raw)) names.push("Al.project");
+  return names;
+}
+
+/**
+ * Azienda-studio già in anagrafica, se il nome coincide col tenant.
+ * Non crea nulla. Se manca la riga, Patrimonio usa comunque il valore `studio`.
+ */
+export function findStudioCompany(companies, organizationName) {
+  const needles = new Set(studioNameCandidates(organizationName).map(normalizeOrgName).filter(Boolean));
+  if (needles.size === 0) return null;
+  const list = Array.isArray(companies) ? companies : [];
+  return list.find((c) => needles.has(normalizeOrgName(c.name))) || null;
+}
+
+/** Valore della voce Patrimonio: id azienda se c'è, altrimenti `studio`. */
+export function resolvePatrimonioScopeValue(companies, organizationName) {
+  const studio = findStudioCompany(companies, organizationName);
+  if (studio) return String(studio.id || studio.company_id);
+  return STUDIO_PATRIMONIO_SCOPE;
+}
+
+/**
+ * Menu Ambito per il personale studio: Patrimonio (se trovata) + altre aziende A→Z.
+ * L'azienda-studio esce dalla lista alfabetica.
+ */
+export function partitionScopeCompanies(companies, organizationName) {
+  const list = Array.isArray(companies) ? companies : [];
+  const studio = findStudioCompany(list, organizationName);
+  const studioId = studio ? String(studio.id || studio.company_id) : null;
+  const others = list
+    .filter((c) => String(c.id || c.company_id) !== studioId)
+    .slice()
+    .sort((a, b) =>
+      String(a.name || "").localeCompare(String(b.name || ""), "it", { sensitivity: "base" })
+    );
+  return { studio, others };
+}
+
 export function isCompanyScopedUser(user) {
   return hasCompanyAccess(user);
 }
@@ -85,6 +148,7 @@ export function readStoredAppCompanyScope(organizationId) {
     return STUDIO_WIDE_SCOPE;
   }
   if (parsed.company_id == null || parsed.company_id === "") return STUDIO_WIDE_SCOPE;
+  if (isStudioPatrimonioScope(parsed.company_id)) return STUDIO_PATRIMONIO_SCOPE;
   const n = parseInt(parsed.company_id, 10);
   return Number.isNaN(n) ? STUDIO_WIDE_SCOPE : String(n);
 }
@@ -151,6 +215,7 @@ export function resolveAppCompanyScope(user, storedOverride) {
 export function sanitizeScopeAgainstCompanies(user, companyId, companies) {
   if (!companyId) return STUDIO_WIDE_SCOPE;
   const id = String(companyId);
+  if (isStudioPatrimonioScope(id) && !isCompanyScopedUser(user)) return STUDIO_PATRIMONIO_SCOPE;
   if (isCompanyScopedUser(user)) {
     const allowed = getAllowedCompanyIds(user) || [];
     if (allowed.includes(id)) return id;

@@ -959,7 +959,12 @@ function DocumentRegistry() {
   const registryCompanyScope = studioOnly && !companyId ? STUDIO_REGISTRY_SCOPE : (companyId || "");
 
   useEffect(() => {
-    if (companyId) setStudioOnly(false);
+    if (!companyId) return;
+    if (companyId === STUDIO_REGISTRY_SCOPE) {
+      setStudioOnly(true);
+      return;
+    }
+    setStudioOnly(false);
   }, [companyId]);
 
   // Etichetta esplicita di ambito: distingue il Patrimonio Studio dalle aziende clienti.

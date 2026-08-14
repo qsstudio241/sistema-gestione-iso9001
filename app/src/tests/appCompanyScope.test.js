@@ -6,6 +6,11 @@ import {
   persistAppCompanyScope,
   isCompanyScopeLocked,
   sanitizeScopeAgainstCompanies,
+  findStudioCompany,
+  partitionScopeCompanies,
+  resolvePatrimonioScopeValue,
+  STUDIO_PATRIMONIO_LABEL,
+  STUDIO_PATRIMONIO_SCOPE,
 } from "../utils/appCompanyScope";
 
 const admin = { role: "admin", organization_id: 1001, company_access: [] };
@@ -116,6 +121,43 @@ describe("appCompanyScope", () => {
     localStorage.setItem("sgq-qualifications-company-scope", "47");
     expect(readStoredAppCompanyScope(1001)).toBe("");
     expect(resolveAppCompanyScope(admin)).toBe("");
+  });
+
+  it("trova l'azienda-studio per nome uguale al tenant (trim, senza maiuscole)", () => {
+    const list = [
+      { id: 2, name: "C.M.P. SRL" },
+      { id: 9, name: "  Al.project " },
+    ];
+    expect(findStudioCompany(list, "Al.project")?.id).toBe(9);
+    expect(findStudioCompany(list, "AL.PROJECT")?.id).toBe(9);
+    expect(findStudioCompany(list, "Studio Mason")).toBeNull();
+    expect(findStudioCompany([], "Al.project")).toBeNull();
+  });
+
+  it("Al.project e Ai.project sono lo stesso studio", () => {
+    const list = [{ id: 4, name: "Ai.project" }];
+    expect(findStudioCompany(list, "Al.project")?.id).toBe(4);
+    expect(resolvePatrimonioScopeValue([], "Al.project")).toBe(STUDIO_PATRIMONIO_SCOPE);
+  });
+
+  it("persiste e sanifica il valore studio del Patrimonio", () => {
+    persistAppCompanyScope(1001, STUDIO_PATRIMONIO_SCOPE);
+    expect(readStoredAppCompanyScope(1001)).toBe(STUDIO_PATRIMONIO_SCOPE);
+    expect(sanitizeScopeAgainstCompanies(admin, "studio", [{ id: 11 }])).toBe("studio");
+  });
+
+  it("piazza Patrimonio fuori dall'elenco A-Z e non crea aziende", () => {
+    const { studio, others } = partitionScopeCompanies(
+      [
+        { id: 3, name: "Zebra Spa" },
+        { id: 1, name: "Al.project" },
+        { id: 2, name: "ADA Azienda Test Fase 1" },
+      ],
+      "Al.project"
+    );
+    expect(studio?.id).toBe(1);
+    expect(others.map((c) => c.name)).toEqual(["ADA Azienda Test Fase 1", "Zebra Spa"]);
+    expect(STUDIO_PATRIMONIO_LABEL).toBe("Patrimonio dello studio");
   });
 
   it("ignora chiavi legacy vuote o 'studio' e prende il primo id numerico", () => {
