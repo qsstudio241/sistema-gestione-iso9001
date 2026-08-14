@@ -1,7 +1,7 @@
 # Piano slice — Rischi, Opportunità e Obiettivi
 
 > **Destinazione**: il modulo è il **documento di analisi rischi/opportunità** (HLS §6.1), valido per 9001 / 14001 / 45001 / SGI. Una riga = una valutazione. Il **metodo di pesatura** (P×G, FMEA G×P×Rilev, SWOT con G con segno) è del documento, non del prodotto. L'ingest accetta più layout (M03, SWOT, FMEA HSE). Non sostituisce DVR né registro aspetti. Obiettivi §6.2 = tab collegato.
-> **Spec**: [M03_ANALISI_RISCHI_OPPORTUNITA.md](../specs/M03_ANALISI_RISCHI_OPPORTUNITA.md) · template [M03-R00](../specs/templates/M03-R00-analisi-rischi-opportunita.xlsx)
+> **Spec**: [PROCESSO](../specs/PROCESSO_ANALISI_RISCHI_OPPORTUNITA.md) · [M03 mapping](../specs/M03_ANALISI_RISCHI_OPPORTUNITA.md) · template [M03-R00](../specs/templates/M03-R00-analisi-rischi-opportunita.xlsx)
 > **Norma**: [9001:2015](../Normative/UNI%20EN%20ISO%209001_2015%20Rev.%200.md) · [14001:2015](../Normative/Normative%20NORMA_00003_%20UNI%20EN%20ISO%2014001_2015%20Rev.%200.md) §6.1 · [45001:2018](../Normative/Normative%20NORMA_00002_%20UNI%20ISO%2045001_2018%20Rev.%200.md) §6.1
 > **Brief attivo**: [DEPUTYTASK_RISCHI_ROO.md](DEPUTYTASK_RISCHI_ROO.md) (ROO-4 chiusa — prossima ROO-5)
 > **Draft studio**: M03 rev.00, 19/06/2026, foglio `Analisi Rischio`, autore Marco Camellini
@@ -141,6 +141,7 @@ La vecchia ROO-4 (FK catalogo → rischio) **non è più la prima slice**: aggiu
 - ROO-1…3 (PR #279) restano in `main` come fondazione tecnica (`nature`, tabelle catalogo, `source_risk_id`), reinterpretate.
 - Numerazione migrazioni: prossimo libero in `database/migrations/` al momento; non riservare.
 - **P×G (ROO-4, 14/08/2026):** `R = probability × impact`. CHECK DB e API restano **1–3** (R in 1–9). G=4 (draft M03) e 1–5 (FMEA) → **400**, non 500 dal CHECK. Livelli UI invariati: 1–3 basso, 4–6 medio, 7–9 alto. Stats `high_priority` resta **≥6** (incoerenza nota, non toccata). Scala 1–4/1–5 = ROO-13.
+- **Processo ricostruito (14/08/2026):** [PROCESSO_ANALISI_RISCHI_OPPORTUNITA.md](../specs/PROCESSO_ANALISI_RISCHI_OPPORTUNITA.md) — Quaderno 3 Conforma + colonne M03. Superficie di lavoro = matrice, non card.
 
 ## Mappa slice
 
