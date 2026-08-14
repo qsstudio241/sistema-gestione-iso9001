@@ -55,9 +55,10 @@ describe("CompanyProfilePanel import Excel", () => {
   it("mostra pulsanti modello e import se canEdit", async () => {
     render(<CompanyProfilePanel companyId={42} auditorOrgId={1} canEdit />);
     await waitFor(() => {
-      expect(screen.getByRole("button", { name: /Scarica modello/i })).toBeInTheDocument();
+      expect(screen.getByRole("button", { name: /Scarica modello Excel/i })).toBeInTheDocument();
     });
-    expect(screen.getByRole("button", { name: /Importa Excel/i })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /Importa modello Excel/i })).toBeInTheDocument();
+    expect(screen.getByText(/foglio Excel da compilare/i)).toBeInTheDocument();
   });
 
   it("nasconde i pulsanti import se sola lettura", async () => {
@@ -65,8 +66,8 @@ describe("CompanyProfilePanel import Excel", () => {
     await waitFor(() => {
       expect(screen.getByDisplayValue("Acme Srl")).toBeInTheDocument();
     });
-    expect(screen.queryByRole("button", { name: /Importa Excel/i })).not.toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: /Scarica modello/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /Importa modello Excel/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /Scarica modello Excel/i })).not.toBeInTheDocument();
   });
 
   it("detect dry-run apre il dialog e conferma scrive", async () => {

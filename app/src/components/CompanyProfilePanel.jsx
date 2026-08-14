@@ -399,7 +399,7 @@ function CompanyProfilePanel({ companyId, auditorOrgId, canEdit, onUnavailable, 
             onClick={handleDownloadTemplate}
             disabled={detecting || importing}
           >
-            Scarica modello
+            Scarica modello Excel
           </button>
           <button
             type="button"
@@ -407,7 +407,7 @@ function CompanyProfilePanel({ companyId, auditorOrgId, canEdit, onUnavailable, 
             onClick={() => fileInputRef.current?.click()}
             disabled={detecting || importing}
           >
-            {detecting ? "Analisi file..." : "Importa Excel"}
+            {detecting ? "Analisi file..." : "Importa modello Excel"}
           </button>
           <input
             ref={fileInputRef}
@@ -417,6 +417,9 @@ function CompanyProfilePanel({ companyId, auditorOrgId, canEdit, onUnavailable, 
             onChange={handlePickExcel}
             data-testid="company-profile-excel-input"
           />
+          <p className="studio-hint">
+            Scarica il foglio Excel da compilare, poi reimportalo qui. Vale solo per questa azienda.
+          </p>
         </div>
       )}
       {detection && (
