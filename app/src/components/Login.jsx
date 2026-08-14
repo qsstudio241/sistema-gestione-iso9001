@@ -145,10 +145,6 @@ function Login() {
           <p className="demo-title">🧪 Account di prova (email)</p>
           <div className="credentials-list">
             <div className="credential-item">
-              <span className="role-badge admin">Admin</span>
-              <code>admin@sgq.local</code>
-            </div>
-            <div className="credential-item">
               <span className="role-badge auditor">Test</span>
               <code>test@sgq.local</code>
             </div>
