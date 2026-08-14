@@ -207,32 +207,35 @@ Quando un agente deve accedere all'app come utente reale (smoke post-deploy, ver
 
 | Strumento | Quando usarlo | Limite |
 |---|---|---|
-| **Playwright MCP** (`browser_*`) | Snapshot visuale, navigazione rapida, lettura DOM | Non ha accesso alle env var — **non può leggere `SGQ_APP_PASSWORD`** |
-| **Script Node.js** (`/tmp/test-*.mjs`) | Test con credenziali, smoke test autenticati, verifica network | Deve installare playwright + chromium al primo uso (~15s) |
+| **computerUse** (subagente GUI) | Click a schermo, walkthrough visivo | Non legge i Secrets nelle env dello script |
+| **Playwright MCP** (`browser_*`) | Non usarlo su questo repo | Non è collegato in Cloud; non legge `SGQ_APP_PASSWORD` |
+| **Script Node.js** (`backend/scripts/smoke-*.mjs`) | Login, smoke autenticati, verifica network | Playwright+Chromium arrivano da `cloud-install.sh` |
 
-**Regola**: per qualsiasi test che richiede login, usare **sempre lo script Node.js**. Non tentare di iniettare la password via MCP.
+**Regola**: per qualsiasi test che richiede login, usare **sempre lo script Node.js**. Non tentare di iniettare la password via MCP. Non reinstallare Playwright in `/tmp`.
 
-### 6a. Setup una-tantum per sessione cloud agent
+### 6a. Browser già nello snapshot Cloud
+
+Playwright è la **devDependency** di `backend/`. Chromium lo scarica `.cursor/scripts/cloud-install.sh` e resta nello snapshot (`~/.cache/ms-playwright/`).
+
+Se un boot a freddo non ha i binari (messaggio `Executable doesn't exist`):
 
 ```bash
-cd /tmp && npm install playwright 2>&1 | tail -3
-npx playwright install chromium 2>&1 | tail -3
+cd backend && npx playwright install chromium
 ```
 
-Il chromium viene scaricato in `~/.cache/ms-playwright/chromium_headless_shell-*`. Rimane disponibile per tutta la sessione.
+Non fare `cd /tmp && npm install playwright`.
 
 ### 6b. Script versionato (preferito) + template login
 
 **Preferito** (percorsi critici, repo):
 
 ```bash
-cd /tmp && npm install playwright && npx playwright install chromium
 SGQ_SMOKE_PATHS=login,nc node backend/scripts/smoke-percorsi-critici.mjs
 ```
 
 Filtri: `login`, `nc`, `qualifiche`, `sal`, `wps`. Ingest API: `smoke-ingest-e2e-test.js`. ERAM: `smoke-eram-coverage-ui.js`.
 
-Template minimo solo-login (se lo script versionato non basta). Salvare in `/tmp/test-login.mjs` e lanciare con `node /tmp/test-login.mjs`:
+Template minimo solo-login (se lo script versionato non basta). Preferire una copia sotto `backend/scripts/` così `import 'playwright'` risolve `backend/node_modules`. Se il file è in `/tmp`: `NODE_PATH=backend/node_modules node /tmp/test-login.mjs`.
 
 ```js
 import { chromium } from 'playwright';

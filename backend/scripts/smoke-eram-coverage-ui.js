@@ -6,11 +6,11 @@
  *
  * Prerequisiti:
  *   - SGQ_SSH_KEY_B64, SGQ_SUDO_PASSWORD (opz.)
- *   - playwright installato (vedi setup sotto)
+ *   - playwright + Chromium da backend/ (cloud-install.sh sullo snapshot Cloud)
  *
  * Uso:
- *   cd /tmp && npm i playwright && npx playwright install chromium
- *   node backend/scripts/smoke-eram-coverage-ui.mjs
+ *   node backend/scripts/smoke-eram-coverage-ui.js
+ *   Se i binari mancano: cd backend && npx playwright install chromium
  *
  * Env opzionali:
  *   SGQ_SMOKE_BASE_URL  (default https://systemgest.netlify.app)
@@ -101,22 +101,15 @@ async function fillReactInput(page, selector, value) {
 }
 
 async function main() {
-  // Preferisci /tmp (browser installati dallo smoke) rispetto a backend/node_modules
-  // che può avere una revisione Chromium diversa e non presente in cache.
+  // Fonte unica: backend/node_modules (stesso Chromium di cloud-install.sh).
   let chromium;
-  const candidates = ['/tmp/node_modules/playwright', 'playwright'];
   let loaded = null;
-  for (const mod of candidates) {
-    try {
-      loaded = require(mod);
-      console.log(`Playwright da: ${mod} (v${require(mod + '/package.json').version})`);
-      break;
-    } catch {
-      /* next */
-    }
-  }
-  if (!loaded) {
-    console.error('Installa playwright: cd /tmp && npm i playwright && npx playwright install chromium');
+  try {
+    loaded = require('playwright');
+    console.log(`Playwright da: backend (v${require('playwright/package.json').version})`);
+  } catch {
+    console.error('Playwright assente in backend/. Esegui: bash .cursor/scripts/cloud-install.sh');
+    console.error('Oppure: cd backend && npm ci && npx playwright install chromium');
     process.exit(1);
   }
   ({ chromium } = loaded);

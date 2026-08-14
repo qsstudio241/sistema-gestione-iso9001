@@ -65,7 +65,7 @@ Per fix a basso rischio (1–2 file, no sync/DB): accettabile affidarsi a CI Net
 
 ### Smoke UI autenticato (percorsi critici)
 
-Dopo deploy o PR che tocca questi flussi, eseguire **il percorso toccato** (non tutti). Login: script Node + `SGQ_APP_EMAIL` / `SGQ_APP_PASSWORD` — **non** MCP Playwright (non legge le env). Template: `sgq-bug-fix-methodology.mdc` Fase 6.
+Dopo deploy o PR che tocca questi flussi, eseguire **il percorso toccato** (non tutti). Login: script Node + `SGQ_APP_EMAIL` / `SGQ_APP_PASSWORD` — **non** MCP Playwright (non legge le env; non è collegato in Cloud). Playwright+Chromium arrivano da `cloud-install.sh` (devDependency `backend/`): **non** reinstallare in `/tmp`. Template: `sgq-bug-fix-methodology.mdc` Fase 6.
 
 | Percorso | Come |
 |----------|------|

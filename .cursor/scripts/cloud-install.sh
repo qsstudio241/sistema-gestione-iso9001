@@ -23,4 +23,18 @@ install_dir() {
 install_dir "app"
 install_dir "backend"
 
+# Chromium di Playwright nello snapshot Cloud: gli smoke autenticati
+# (`smoke-percorsi-critici.mjs`) usano backend/node_modules, non /tmp.
+# Idempotente: se i binari sono già in ~/.cache/ms-playwright, è un no-op.
+install_playwright_chromium() {
+  if [[ ! -f "$ROOT/backend/node_modules/playwright/package.json" ]]; then
+    echo "[cloud-install] skip playwright chromium (pacchetto assente)"
+    return 0
+  fi
+  echo "[cloud-install] npx playwright install chromium"
+  (cd "$ROOT/backend" && npx playwright install chromium)
+}
+
+install_playwright_chromium
+
 echo "[cloud-install] OK"

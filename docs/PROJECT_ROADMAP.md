@@ -8,13 +8,17 @@
 
 > **Risposta standard a «stato di avanzamento del progetto e priorità da affrontare»**: sintetizzare da questa sezione (moduli maturi + sessione più recente + tabella priorità sotto), **non** dal banner storico più sotto (superato, tenuto solo per traccia) né dall'archivio marzo 2026 [`docs/archive/PROJECT_CONTEXT_STATO_FUNZIONALITA_2026-03.md`](archive/PROJECT_CONTEXT_STATO_FUNZIONALITA_2026-03.md). **Aggiornare questa sezione a fine sessione** se emergono nuove priorità o se una priorità elencata viene chiusa (stesso principio delle "Lezioni apprese" in [GUIDA_CONSOLIDATA.md](GUIDA_CONSOLIDATA.md) — sintesi qui, dettaglio linkato).
 
-**Ultimo aggiornamento di questa sezione**: 13/08/2026 (ripristino upload batch Qualifiche + Ambito unico PR #401 + harness).
+**Ultimo aggiornamento di questa sezione**: 14/08/2026 (Playwright+Chromium nello snapshot Cloud; Kitesurf non adottato).
 
 ### Moduli maturi (in produzione, uso quotidiano dai clienti Camellini/Mason)
 
 Audit multi-standard (9001/14001/45001) · Non Conformità (workflow ISO 10.2 completo) · Qualifiche Personale saldatori/NDT/coordinatori (ISO 9606-1/14732/14731/9712) · Saldatura (WPQR, generazione WPS da WPQR, Welding Book, Commesse ISO 3834, Dashboard 3834) · SAL (gap analysis requisiti con AI) · Registro Documenti + Scadenzari · Notifiche/Alert (documenti/NC/qualifiche) · Riesame di Direzione · RBAC multi-tenant (`company_access`) · Registro obblighi legali (ambiente + sicurezza) · Assistente AI / Gap Analysis euristica.
 
-### Sessione più recente (13/08/2026)
+### Sessione più recente (14/08/2026)
+
+**Harness Cloud**: Chromium di Playwright entra in `cloud-install.sh` (snapshot), gli smoke usano `backend/node_modules` — niente più `npm i` in `/tmp` a ogni sessione. **Kitesurf** (Cloudflare, browser per agenti su Workers) valutato e **non adottato**: non migliora il SGQ e non copre i login autenticati persistenti. Dettaglio: [GUIDA lezione Playwright snapshot](GUIDA_CONSOLIDATA.md#lezioni-apprese-consolidate-fonte-unica).
+
+Sessione prodotto precedente (13/08/2026):
 
 **Regressione chiusa** ([PR #408](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/408) mergiata): dopo Ambito unico il pulsante **Carica qualifiche (batch)** spariva su «Tutto lo studio» (era montato solo con azienda selezionata). I pulsanti batch restano visibili, disabilitati se manca l'azienda; l'azienda salvata sulla vecchia chiave Qualifiche viene migrata nella chiave globale. Stesso trattamento WPQR/WPS. Dettaglio: [GUIDA lezione Azioni gated](GUIDA_CONSOLIDATA.md#lezioni-apprese-consolidate-fonte-unica).
 
