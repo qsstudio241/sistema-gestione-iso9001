@@ -97,6 +97,8 @@ describe('createRisk — riga M03 e P×G', () => {
     expect(insertSql).toMatch(/interested_parties_text/);
     expect(insertSql).toMatch(/current_actions/);
     expect(insertSql).toMatch(/further_actions/);
+    expect(insertSql).toMatch(/residual_probability/);
+    expect(insertSql).toMatch(/effectiveness_note/);
 
     const inputs = inputMock.mock.calls.map(([k, v]) => [k, v]);
     expect(inputs).toEqual(expect.arrayContaining([
@@ -107,7 +109,57 @@ describe('createRisk — riga M03 e P×G', () => {
       ['further_actions', 'Formazione commerciale'],
       ['probability', 3],
       ['impact', 2],
+      ['residual_probability', null],
+      ['residual_impact', null],
     ]));
+  });
+
+  it('persiste P/G residui e restituisce residual_score', async () => {
+    const { queryMock, inputMock } = buildPool();
+    queryMock.mockResolvedValue({
+      recordset: [{
+        risk_id: 43, probability: 3, impact: 3,
+        residual_probability: 1, residual_impact: 2,
+      }],
+    });
+    const req = mockReq({
+      body: {
+        title: 'Perdita commessa',
+        probability: 3,
+        impact: 3,
+        residual_probability: 1,
+        residual_impact: 2,
+        effectiveness_note: 'Azione in corso, da riesaminare',
+      },
+    });
+    const res = mockRes();
+
+    await createRisk(req, res);
+
+    expect(res.status).toHaveBeenCalledWith(201);
+    const payload = res.json.mock.calls[0][0];
+    expect(payload.data.score).toBe(9);
+    expect(payload.data.residual_score).toBe(2);
+    expect(payload.data.residual_score_level).toBe('basso');
+    expect(inputMock.mock.calls).toEqual(expect.arrayContaining([
+      ['residual_probability', 1],
+      ['residual_impact', 2],
+      ['effectiveness_note', 'Azione in corso, da riesaminare'],
+    ]));
+  });
+
+  it('rifiuta residual_impact=4 con 400, senza INSERT', async () => {
+    const { queryMock } = buildPool();
+    const req = mockReq({
+      body: { title: 'x', probability: 2, impact: 2, residual_impact: 4 },
+    });
+    const res = mockRes();
+
+    await createRisk(req, res);
+
+    expect(res.status).toHaveBeenCalledWith(400);
+    expect(res.json.mock.calls[0][0].error).toMatch(/1 e 3/);
+    expect(queryMock).not.toHaveBeenCalled();
   });
 
   it('rifiuta G=4 (draft M03) con 400, senza INSERT', async () => {
@@ -155,6 +207,28 @@ describe('updateRisk — parziale e P×G', () => {
     ]));
   });
 
+  it('svuota il residuo con stringa vuota → null', async () => {
+    const { queryMock, inputMock } = buildPool();
+    queryMock
+      .mockResolvedValueOnce({ recordset: [{ risk_id: 10, company_id: 3 }] })
+      .mockResolvedValueOnce({ recordset: [] });
+    const req = mockReq({
+      params: { id: '10' },
+      body: { residual_probability: '', residual_impact: '' },
+    });
+    const res = mockRes();
+
+    await updateRisk(req, res);
+
+    expect(res.json).toHaveBeenCalledWith({ success: true });
+    const updateSql = queryMock.mock.calls[1][0];
+    expect(updateSql).toMatch(/residual_probability = @residual_probability/);
+    expect(inputMock.mock.calls).toEqual(expect.arrayContaining([
+      ['residual_probability', null],
+      ['residual_impact', null],
+    ]));
+  });
+
   it('rifiuta impact=4 con 400 e non esegue UPDATE', async () => {
     const { queryMock } = buildPool();
     queryMock.mockResolvedValueOnce({ recordset: [{ risk_id: 10, company_id: 3 }] });
@@ -198,10 +272,13 @@ describe('listRisks — colonne M03 e score', () => {
     expect(listSql).toMatch(/r\.interested_parties_text/);
     expect(listSql).toMatch(/r\.current_actions/);
     expect(listSql).toMatch(/r\.further_actions/);
+    expect(listSql).toMatch(/r\.residual_probability/);
+    expect(listSql).toMatch(/r\.effectiveness_note/);
 
     const payload = res.json.mock.calls[0][0];
     expect(payload.data[0].evaluated_element).toBe('Processo commerciale');
     expect(payload.data[0].score).toBe(9);
     expect(payload.data[0].score_level).toBe('alto');
+    expect(payload.data[0].residual_score).toBeNull();
   });
 });

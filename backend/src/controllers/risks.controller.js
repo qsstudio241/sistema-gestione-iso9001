@@ -11,7 +11,7 @@ const {
     assertMutatingAllowed,
     sendAccessDenied,
 } = require('../services/companyAccess.service');
-const { parsePgFactor, decorateRiskRow } = require('../utils/riskScore');
+const { parsePgFactor, parseOptionalPgFactor, decorateRiskRow } = require('../utils/riskScore');
 
 function emptyToNull(v) {
     if (v === undefined || v === null) return null;
@@ -48,6 +48,7 @@ async function listRisks(req, res) {
                        r.treatment_desc, r.responsible, r.review_date, r.status,
                        r.nature, r.evaluated_element, r.context_text, r.interested_parties_text,
                        r.current_actions, r.further_actions,
+                       r.residual_probability, r.residual_impact, r.effectiveness_note,
                        r.created_by, r.created_at, r.updated_at,
                        u.full_name AS created_by_name,
                        c.name AS company_name
@@ -120,7 +121,9 @@ async function getOneRisk(req, res) {
             .query(`SELECT risk_id, organization_id, company_id, title, description, context, category,
                            probability, impact, treatment, treatment_desc, responsible, review_date,
                            status, nature, evaluated_element, context_text, interested_parties_text,
-                           current_actions, further_actions, created_by, created_at, updated_at
+                           current_actions, further_actions,
+                           residual_probability, residual_impact, effectiveness_note,
+                           created_by, created_at, updated_at
                     FROM risks WHERE risk_id = @id AND organization_id = @orgId AND is_deleted = 0`);
         if (!r.recordset.length) return res.status(404).json({ error: 'Rischio non trovato' });
         res.json({ success: true, data: decorateRiskRow(r.recordset[0]) });
@@ -140,6 +143,7 @@ async function createRisk(req, res) {
             responsible, review_date, company_id, nature,
             evaluated_element, context_text, interested_parties_text,
             current_actions, further_actions,
+            residual_probability, residual_impact, effectiveness_note,
         } = req.body;
 
         if (!title) return res.status(400).json({ error: 'Titolo obbligatorio' });
@@ -148,6 +152,10 @@ async function createRisk(req, res) {
         const gParsed = parsePgFactor(impact, 2);
         if (!pParsed.ok) return res.status(400).json({ error: pParsed.error });
         if (!gParsed.ok) return res.status(400).json({ error: gParsed.error });
+        const rpParsed = parseOptionalPgFactor(residual_probability);
+        const rgParsed = parseOptionalPgFactor(residual_impact);
+        if (!rpParsed.ok) return res.status(400).json({ error: rpParsed.error });
+        if (!rgParsed.ok) return res.status(400).json({ error: rgParsed.error });
 
         const validNature = ['risk', 'opportunity'];
         const safeNature  = validNature.includes(nature) ? nature : 'risk';
@@ -168,14 +176,20 @@ async function createRisk(req, res) {
             .input('interested_parties_text', emptyToNull(interested_parties_text))
             .input('current_actions', emptyToNull(current_actions))
             .input('further_actions', emptyToNull(further_actions))
+            .input('residual_probability', rpParsed.value)
+            .input('residual_impact', rgParsed.value)
+            .input('effectiveness_note', emptyToNull(effectiveness_note))
             .query(`
                 INSERT INTO risks (organization_id, company_id, title, description, context, category,
                     probability, impact, treatment, treatment_desc, responsible, review_date, created_by, nature,
-                    evaluated_element, context_text, interested_parties_text, current_actions, further_actions)
-                OUTPUT INSERTED.risk_id, INSERTED.probability, INSERTED.impact
+                    evaluated_element, context_text, interested_parties_text, current_actions, further_actions,
+                    residual_probability, residual_impact, effectiveness_note)
+                OUTPUT INSERTED.risk_id, INSERTED.probability, INSERTED.impact,
+                       INSERTED.residual_probability, INSERTED.residual_impact
                 VALUES (@orgId, @company_id, @title, @description, @context, @category,
                     @probability, @impact, @treatment, @treatment_desc, @responsible, @review_date, @userId, @nature,
-                    @evaluated_element, @context_text, @interested_parties_text, @current_actions, @further_actions)
+                    @evaluated_element, @context_text, @interested_parties_text, @current_actions, @further_actions,
+                    @residual_probability, @residual_impact, @effectiveness_note)
             `);
 
         const created = decorateRiskRow(r.recordset[0]);
@@ -199,6 +213,7 @@ async function updateRisk(req, res) {
             title, description, context, category, probability, impact, treatment, treatment_desc,
             responsible, review_date, status, nature,
             evaluated_element, context_text, interested_parties_text, current_actions, further_actions,
+            residual_probability, residual_impact, effectiveness_note,
         } = req.body;
 
         const check = await pool.request().input('id', id).input('orgId', orgId)
@@ -232,10 +247,23 @@ async function updateRisk(req, res) {
         if (interested_parties_text !== undefined) { sets.push('interested_parties_text = @interested_parties_text'); req2.input('interested_parties_text', emptyToNull(interested_parties_text)); }
         if (current_actions !== undefined) { sets.push('current_actions = @current_actions'); req2.input('current_actions', emptyToNull(current_actions)); }
         if (further_actions !== undefined) { sets.push('further_actions = @further_actions'); req2.input('further_actions', emptyToNull(further_actions)); }
+        if (residual_probability !== undefined) {
+            const rpParsed = parseOptionalPgFactor(residual_probability);
+            if (!rpParsed.ok) return res.status(400).json({ error: rpParsed.error });
+            sets.push('residual_probability = @residual_probability');
+            req2.input('residual_probability', rpParsed.value);
+        }
+        if (residual_impact !== undefined) {
+            const rgParsed = parseOptionalPgFactor(residual_impact);
+            if (!rgParsed.ok) return res.status(400).json({ error: rgParsed.error });
+            sets.push('residual_impact = @residual_impact');
+            req2.input('residual_impact', rgParsed.value);
+        }
+        if (effectiveness_note !== undefined) { sets.push('effectiveness_note = @effectiveness_note'); req2.input('effectiveness_note', emptyToNull(effectiveness_note)); }
         if (treatment     !== undefined) { sets.push('treatment = @treatment');         req2.input('treatment', treatment); }
         if (treatment_desc!== undefined) { sets.push('treatment_desc = @treatment_desc'); req2.input('treatment_desc', treatment_desc); }
         if (responsible   !== undefined) { sets.push('responsible = @responsible');     req2.input('responsible', responsible); }
-        if (review_date   !== undefined) { sets.push('review_date = @review_date');     req2.input('review_date', review_date); }
+        if (review_date   !== undefined) { sets.push('review_date = @review_date');     req2.input('review_date', emptyToNull(review_date)); }
         if (status        !== undefined) { sets.push('status = @status');               req2.input('status', status); }
         if (nature        !== undefined) {
             const validNature = ['risk', 'opportunity'];
