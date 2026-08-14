@@ -114,9 +114,19 @@
 }
 .risk-card-actions { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
 .risk-desc { font-size: 0.875rem; color: #4a5568; margin: 0 0 8px; }
+.risk-element {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #4a5568;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+}
+.risk-m03-line { font-size: 0.8rem; color: #4a5568; margin: 0 0 4px; }
+.risk-m03-line strong { color: #2d3748; font-weight: 600; }
 .risk-meta { display: flex; gap: 14px; font-size: 0.8rem; color: #718096; flex-wrap: wrap; margin-bottom: 4px; }
 .risk-prob-imp { font-weight: 600; }
 .risk-treatment { font-size: 0.85rem; color: #4a5568; margin: 6px 0 0; background: #f7fafc; padding: 6px 10px; border-radius: 4px; }
+.score-preview-level { font-size: 0.7rem; color: #718096; text-transform: capitalize; }
 
 /* Status tags */
 .status-tag {

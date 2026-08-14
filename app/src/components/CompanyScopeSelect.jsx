@@ -1,14 +1,15 @@
 /**
  * Selettore Ambito unico (header). Unico punto in cui l'utente cambia azienda.
+ * Combobox: si digita per filtrare (il select HTML nativo non lo fa).
  */
 
-import React from "react";
+import React, { useEffect, useId, useMemo, useRef, useState } from "react";
 import { useAuth } from "../contexts/AuthContext";
 import { useCompanyScope } from "../contexts/CompanyScopeContext";
 import {
-  partitionScopeCompanies,
-  resolvePatrimonioScopeValue,
-  STUDIO_PATRIMONIO_LABEL,
+  buildScopeMenuOptions,
+  filterScopeMenuOptions,
+  findSelectedScopeOption,
 } from "../utils/appCompanyScope";
 
 export default function CompanyScopeSelect() {
@@ -27,34 +28,160 @@ export default function CompanyScopeSelect() {
     );
   }
 
-  const { others } = companyScoped
-    ? { others: partitionScopeCompanies(companies, "").others }
-    : partitionScopeCompanies(companies, user?.organization_name);
+  return (
+    <CompanyScopeCombobox
+      user={user}
+      companyId={companyId}
+      setCompanyId={setCompanyId}
+      companies={companies}
+      companyScoped={companyScoped}
+    />
+  );
+}
+
+function CompanyScopeCombobox({ user, companyId, setCompanyId, companies, companyScoped }) {
+  const options = useMemo(
+    () =>
+      buildScopeMenuOptions(companies, user?.organization_name, {
+        canSeeAllCompanies: !companyScoped,
+      }),
+    [companies, user?.organization_name, companyScoped]
+  );
+
+  const selected = findSelectedScopeOption(options, companyId) || { value: "", label: "" };
+  const selectedLabel = selected.label;
+
+  const [open, setOpen] = useState(false);
+  const [draft, setDraft] = useState("");
+  const [highlight, setHighlight] = useState(0);
+  const rootRef = useRef(null);
+  const listId = useId();
+
+  const filtered = useMemo(
+    () => filterScopeMenuOptions(options, open ? draft : ""),
+    [options, open, draft]
+  );
+
+  useEffect(() => {
+    if (!open) {
+      setDraft("");
+      setHighlight(0);
+    }
+  }, [open]);
+
+  useEffect(() => {
+    if (filtered.length === 0) return;
+    if (highlight >= filtered.length) setHighlight(0);
+  }, [filtered.length, highlight]);
+
+  useEffect(() => {
+    if (!open) return undefined;
+    function onDocMouseDown(e) {
+      if (rootRef.current && !rootRef.current.contains(e.target)) setOpen(false);
+    }
+    document.addEventListener("mousedown", onDocMouseDown);
+    return () => document.removeEventListener("mousedown", onDocMouseDown);
+  }, [open]);
+
+  function choose(opt) {
+    if (!opt) return;
+    setCompanyId(opt.value);
+    setOpen(false);
+    setDraft("");
+  }
+
+  function onKeyDown(e) {
+    if (e.key === "Escape") {
+      setOpen(false);
+      return;
+    }
+    if (e.key === "ArrowDown") {
+      e.preventDefault();
+      if (!open) {
+        setOpen(true);
+        setHighlight(0);
+        return;
+      }
+      setHighlight((i) => Math.min(i + 1, Math.max(filtered.length - 1, 0)));
+      return;
+    }
+    if (e.key === "ArrowUp") {
+      e.preventDefault();
+      if (!open) {
+        setOpen(true);
+        setHighlight(0);
+        return;
+      }
+      setHighlight((i) => Math.max(i - 1, 0));
+      return;
+    }
+    if (e.key === "Enter" && open) {
+      e.preventDefault();
+      choose(filtered[highlight]);
+    }
+  }
 
   return (
-    <label className="layout-scope">
+    <div className="layout-scope" ref={rootRef}>
       <span className="layout-scope-label">{"Ambito"}</span>
-      <select
-        className="layout-scope-select"
-        value={companyId}
-        onChange={(e) => setCompanyId(e.target.value)}
-        aria-label="Ambito azienda"
-      >
-        {!companyScoped && <option value="">{"Tutto lo studio"}</option>}
-        {!companyScoped && (
-          <option value={resolvePatrimonioScopeValue(companies, user?.organization_name)}>
-            {STUDIO_PATRIMONIO_LABEL}
-          </option>
-        )}
-        {others.map((c) => {
-          const id = c.id || c.company_id;
-          return (
-            <option key={id} value={String(id)}>
-              {c.name}
-            </option>
-          );
-        })}
-      </select>
-    </label>
+      <div className="layout-scope-combo">
+        <input
+          className="layout-scope-select"
+          role="combobox"
+          aria-label="Ambito azienda"
+          aria-expanded={open}
+          aria-controls={open ? listId : undefined}
+          aria-autocomplete="list"
+          aria-activedescendant={
+            open && filtered[highlight] ? `${listId}-opt-${highlight}` : undefined
+          }
+          autoComplete="off"
+          spellCheck={false}
+          value={open ? draft : selectedLabel}
+          placeholder={selectedLabel}
+          onChange={(e) => {
+            setDraft(e.target.value);
+            setOpen(true);
+            setHighlight(0);
+          }}
+          onFocus={() => {
+            setOpen(true);
+            setDraft("");
+          }}
+          onBlur={() => setOpen(false)}
+          onKeyDown={onKeyDown}
+        />
+        {open ? (
+          <ul id={listId} className="layout-scope-listbox" role="listbox">
+            {filtered.length === 0 ? (
+              <li className="layout-scope-empty" role="presentation">
+                {"Nessun risultato"}
+              </li>
+            ) : (
+              filtered.map((opt, i) => (
+                <li
+                  key={`${opt.value}:${opt.label}`}
+                  id={`${listId}-opt-${i}`}
+                  role="option"
+                  data-value={opt.value}
+                  aria-selected={opt.value === String(companyId ?? "")}
+                  className={
+                    "layout-scope-option" +
+                    (i === highlight ? " is-highlight" : "") +
+                    (opt.value === String(companyId ?? "") ? " is-selected" : "")
+                  }
+                  onMouseDown={(e) => {
+                    e.preventDefault();
+                    choose(opt);
+                  }}
+                >
+                  {opt.label}
+                </li>
+              ))
+            )}
+          </ul>
+        ) : null}
+      </div>
+    </div>
   );
 }
