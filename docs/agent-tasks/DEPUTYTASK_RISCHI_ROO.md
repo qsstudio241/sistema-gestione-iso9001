@@ -1,88 +1,90 @@
-# DEPUTYTASK — Rischi / Opportunità / Obiettivi — ROO-4 (origine §4.1/§4.2)
+# DEPUTYTASK — Rischi / Opportunità / Obiettivi — ROO-4 (riga di analisi M03)
 
 **Stato:** APERTO  
-**Priorità:** P1 — chiude la catena ISO 6.1.1 (i rischi devono derivare da contesto e parti)  
+**Priorità:** P1 — il record `risks` deve poter essere una riga M03, non solo un titolo + enum  
 **Branch base:** `main`  
 **Slice:** ROO-4  
-**Creato da:** Lead 14/08/2026 (wayfinder-sgq, sessione mappa — non eseguire altre slice)  
-**Piano:** [PLAN_RISCHI_OPPORTUNITA_OBIETTIVI_SLICES.md](PLAN_RISCHI_OPPORTUNITA_OBIETTIVI_SLICES.md)
+**Creato da:** Lead 14/08/2026 (wayfinder-sgq, **secondo** passaggio: processo → CRUD → gap)  
+**Piano:** [PLAN_RISCHI_OPPORTUNITA_OBIETTIVI_SLICES.md](PLAN_RISCHI_OPPORTUNITA_OBIETTIVI_SLICES.md)  
+**Spec:** [M03_ANALISI_RISCHI_OPPORTUNITA.md](../specs/M03_ANALISI_RISCHI_OPPORTUNITA.md)
 
-> **Allineamento Git (autonomo)**: prima di leggere questo brief eseguire `git fetch origin main` e `git pull origin main` (o partire da `origin/main` aggiornato). **Non** chiedere al committente di farlo.
+> **Allineamento Git (autonomo)**: `git fetch origin main` e partire da `origin/main` aggiornato. **Non** chiedere al committente di farlo.
 
 ---
 
 ## Contesto (leggere prima)
 
-Il modulo è **già in produzione**: CRUD rischi/opportunità (`nature`), obiettivi, tab Contesto (`context_factors` + `interested_parties`), pulsante manuale verso Piano Azioni. Le slice 1–3 (PR #279) sono chiuse.
+Il draft studio **M03-R00** è una matrice: elemento → contesto → parti → azioni attuali → P×G → ulteriori azioni → residuo. L'app ha quattro tab CRUD. La prima mappa wayfinder (FK catalogo→rischio) è **superata**.
 
-**Manca la traccia normativa**: `risks` ha solo un enum `context` (`internal`|`external`|`interested_party`) — nessun FK verso le righe §4.1/§4.2. L'auditor non può vedere *da quale fattore o parte* nasce il rischio.
+Questa slice rende visibile **una riga M03** sul record `risks` già esistente. Non ingest (ROO-6). Non score residuo / scala 1–4 (ROO-5, ROO-13). Non FK cataloghi (ROO-8).
 
-Questa slice è il hello-world della catena. **Non** toccare trattamenti opportunità (ROO-5), auto-azioni (ROO-6), obiettivi (ROO-8).
-
-`DEPUTYTASK.md` resta il brief **profilo azienda** (ADR-018) — non sovrascriverlo.
+`DEPUTYTASK.md` resta il brief profilo azienda — non sovrascriverlo.
 
 ## Cosa NON toccare
 
 - `docs/agent-tasks/DEPUTYTASK.md` e brief Material Compliance.
-- CHECK `treatment` su `risks` (ROO-5).
-- `nc.controller.js` / `NcCreateModal` / `source_risk_id` (ROO-6).
-- Schema `objectives` (ROO-8).
-- Sync / IndexedDB / ADR-008.
-- `backend/database/migrations/` (cartella morta). Non riservare un numero di migrazione in questo brief.
+- CHECK `probability`/`impact` (restano 1–3) e CHECK `treatment`.
+- `nc.controller.js` / `NcCreateModal` / `source_risk_id`.
+- Schema `objectives`.
+- Tabelle `context_factors` / `interested_parties` (niente FK nuove).
+- Sync / ADR-008.
+- `backend/database/migrations/` (cartella morta). Non riservare un numero di migrazione qui.
 
-## Slice ROO-4 — Origine 4.1/4.2 sul rischio
+## Slice ROO-4 — Campi riga M03
 
 ### File previsti
 
-- `database/migrations/NNN_risks_origin_context.sql` — **NNN = prossimo libero** (`ls database/migrations/ | sort | tail -5` al momento dell'esecuzione; oggi ultimo noto `145`)
-- `backend/scripts/run-migration-NNN-vps.js` (pattern cloud: SQL inline + `require` database VPS)
+- `database/migrations/NNN_risks_m03_line.sql` — **NNN = prossimo libero** (`ls database/migrations/ | sort | tail -5` all'esecuzione)
+- `backend/scripts/run-migration-NNN-vps.js`
 - `backend/src/controllers/risks.controller.js` (create / update / list / getOne)
-- `app/src/pages/RisksPage.jsx` (form + card + azione «Deriva da» sul tab Contesto)
-- Test L1: `backend/src/controllers/risks.controller.test.js` (nuovo) e/o Vitest mirato se si estrae un helper puro
+- `app/src/pages/RisksPage.jsx` (form + card, ordine colonne M03)
+- Test L1: `backend/src/controllers/risks.controller.test.js` (nuovo) e `npm run build` se si tocca JSX
 
-Nessun file controller/route nuovo → `deploy-manifest.json` invariato, salvo verifica.
+Nessun controller/route nuovo → `deploy-manifest.json` invariato, salvo verifica.
 
-### Schema
+### Schema (opzionali, idempotenti, niente `ON DELETE CASCADE`)
 
-Su `risks`, colonne **opzionali** (idempotenti, senza `ON DELETE CASCADE` fragile):
+Su `risks`:
 
-- `context_factor_id INT NULL`
-- `interested_party_id INT NULL`
+| Colonna | Tipo | Excel |
+|---------|------|-------|
+| `evaluated_element` | NVARCHAR(200) NULL | Elemento valutato |
+| `context_text` | NVARCHAR(MAX) NULL | Contesto |
+| `interested_parties_text` | NVARCHAR(MAX) NULL | Parti interessate |
+| `current_actions` | NVARCHAR(MAX) NULL | Azioni attuali |
+| `further_actions` | NVARCHAR(MAX) NULL | Possibili ulteriori azioni |
 
-Vincolo applicativo (non CHECK DB): al più **una** delle due valorizzata. Se arrivano entrambe → 400.
-
-Niente FK SQL Server verso le tabelle origine (pattern progetto: colonne INT senza `REFERENCES`). Validare in controller: la riga esiste, stesso `organization_id`, e se il rischio ha `company_id` l'origine è della stessa azienda **oppure** `company_id` origine NULL.
+Non migrare `treatment_desc` in `further_actions` (niente backfill obbligatorio). Se `further_actions` è vuoto e `treatment_desc` è pieno, la UI può mostrare `treatment_desc` come fallback in lettura.
 
 ### API
 
-- `POST/PUT /risks` accettano `context_factor_id` / `interested_party_id` (null per slegare).
-- `GET /risks` e `GET /risks/:id` restituiscono anche `context_factor_description`, `interested_party_name` (LEFT JOIN).
-- Se si imposta un'origine, allineare `context` se assente: fattore `internal`/`external` → stesso valore; parte → `interested_party`. Non sovrascrivere un `context` già scelto dall'utente.
+- POST/PUT accettano i cinque campi (stringa o null).
+- GET lista/dettaglio li restituiscono.
+- Validazione: `title` resta obbligatorio (titolo del rischio/opportunità sulla riga). `evaluated_element` opzionale.
 
 ### UI
 
-1. Nel form rischio: due select (fattori attivi / parti attive) filtrati per ambito azienda del form; mutua esclusione.
-2. Sulla card: badge «Da contesto: …» o «Da parte: …» se l'origine c'è.
-3. Tab Contesto: pulsante **«Deriva rischio/opportunità»** su ogni fattore e ogni parte — apre `RiskForm` con origine e `context` precompilati, `company_id` ereditato.
+Ordine del form allineato a M03: Elemento valutato → Titolo → Natura → Contesto (testo) → Parti interessate (testo) → Azioni attuali → P/G esistenti → Ulteriori azioni → responsabile / data revisione già presenti.
 
-Riuso classi esistenti (`risk-form`, `nature-badge`, `risk-cat`). Nessun CSS parallelo salvo una classe badge minima in `RisksPage.css` se serve.
+Sulla card: mostrare elemento (se c'è) sopra il titolo; contesto/parti/azioni come righe corte, non solo `description`.
 
-Ambito: `useCompanyScope()` è già cablato — **non** aggiungere un secondo selettore in pagina. I picker origine filtrano per `filterCompany` dell'header.
+**Non** aggiungere selettore ambito di pagina (`useCompanyScope` già cablato).  
+**Non** togliere l'enum `context` in questa slice (deprecato di fatto; ROO-8/9).  
+Riuso classi `risk-form` / `risk-card`. Nessun look nuovo.
 
 ### DoD
 
-- [ ] Migration applicabile due volte senza errore (TEST VPS prima, pattern `run-migration-NNN-test-vps.js` / deploy test).
-- [ ] Creare un rischio da un fattore: persistenza + badge in lista.
-- [ ] Creare un'opportunità da una parte: stesso percorso, `nature=opportunity`.
-- [ ] 400 se entrambe le FK; 404/400 se origine di altro tenant.
-- [ ] Test L1 verdi; `npm run build` se si tocca `app/`.
-- [ ] Aggiornare il PLAN: spuntare DoD ROO-4, gist in «Decisioni già prese».
+- [ ] Migration idempotente, prima su TEST VPS.
+- [ ] Creare un rischio con i cinque campi: persistono e si vedono in lista.
+- [ ] Record esistenti senza i nuovi campi: form e lista restano usabili.
+- [ ] Test L1 + build se JSX toccato.
+- [ ] Aggiornare il PLAN: gist in «Decisioni già prese».
 
 ### Test L1
 
-- Jest: create con `context_factor_id` valido; reject cross-org; reject entrambe le FK.
-- Build Vite se JSX toccato.
+- Jest: create con i nuovi campi; update parziale; lista include le colonne.
+- `npm run build` se si tocca `app/`.
 
 ## Parallelismo
 
-ROO-5 (trattamenti) tocca lo stesso `RisksPage.jsx` + CHECK `treatment` — **non** parallelizzare con ROO-4. ROO-10 (RBAC objectives) è su file disgiunti e può andare in `DEPUTYTASK2.md` solo se un secondo deputy parte dopo il merge di ROO-4 o su perimetro davvero disgiunto (`risks.controller.js` è condiviso: evitare).
+ROO-5/6/7/9 toccano gli stessi file — **non** parallelizzare. ROO-11 (solo objectives RBAC) è l'unico perimetro disgiunto, e solo se non si apre `risks.controller.js`.
