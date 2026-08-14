@@ -12,6 +12,7 @@ Documenti di **requisito / design** per feature in corso o backlog.
 | [MODULO_SAL_SCOPO_E_ROADMAP.md](MODULO_SAL_SCOPO_E_ROADMAP.md) | SAL come gap analysis operativa — base Sprint 4 |
 | [MODULO_WPS_GENERAZIONE_SCOPO_E_ROADMAP.md](MODULO_WPS_GENERAZIONE_SCOPO_E_ROADMAP.md) | Generazione WPS da WPQR (ISO 15614/15609) |
 | [MODULO_MATERIAL_COMPLIANCE_AI.md](MODULO_MATERIAL_COMPLIANCE_AI.md) | Material Compliance AI — certificati EN 10204 3.1 (proposto) |
+| [M03_ANALISI_RISCHI_OPPORTUNITA.md](M03_ANALISI_RISCHI_OPPORTUNITA.md) | Analisi rischi/opportunità — processo M03 + mapping Excel |
 | [piano_modulo_saldatura_v2.plan.md](piano_modulo_saldatura_v2.plan.md) | Modulo saldatura ISO 3834 |
 
 Piano slice Material Compliance: [PLAN_MATERIAL_COMPLIANCE_SLICES.md](../agent-tasks/PLAN_MATERIAL_COMPLIANCE_SLICES.md).  

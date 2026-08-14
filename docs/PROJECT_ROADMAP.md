@@ -8,7 +8,7 @@
 
 > **Risposta standard a «stato di avanzamento del progetto e priorità da affrontare»**: sintetizzare da questa sezione (moduli maturi + sessione più recente + tabella priorità sotto), **non** dal banner storico più sotto (superato, tenuto solo per traccia) né dall'archivio marzo 2026 [`docs/archive/PROJECT_CONTEXT_STATO_FUNZIONALITA_2026-03.md`](archive/PROJECT_CONTEXT_STATO_FUNZIONALITA_2026-03.md). **Aggiornare questa sezione a fine sessione** se emergono nuove priorità o se una priorità elencata viene chiusa (stesso principio delle "Lezioni apprese" in [GUIDA_CONSOLIDATA.md](GUIDA_CONSOLIDATA.md) — sintesi qui, dettaglio linkato).
 
-**Ultimo aggiornamento di questa sezione**: 14/08/2026 (banner Ambito: produzione ancora vecchia; preview PR #414 verificata a schermo).
+**Ultimo aggiornamento di questa sezione**: 14/08/2026 (wayfinder Rischi ribaltato su processo M03; banner Ambito preview PR #414).
 
 ### Moduli maturi (in produzione, uso quotidiano dai clienti Camellini/Mason)
 
@@ -16,9 +16,11 @@ Audit multi-standard (9001/14001/45001) · Non Conformità (workflow ISO 10.2 co
 
 ### Sessione più recente (14/08/2026)
 
-**Banner Ambito** ([PR #414](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/414), **non mergiata**): in **produzione** la barra è ancora logo + Al.project + Ambito + P.IVA. Sulla **preview** (dopo il fix menu vuoto) è solo «Ambito» + tendina «Tutto lo studio» — verificato con login Playwright, non dal codice. Lezione: non dichiarare un layout senza aprire la pagina. Dettaglio: [GUIDA lezione Claim visivo](GUIDA_CONSOLIDATA.md#lezioni-apprese-consolidate-fonte-unica).
+**Rischi / Opportunità / Obiettivi (wayfinder)**: processo = riga di analisi, non quattro tab. Tre draft: M03 (P×G), COSBEN (SWOT, G con segno), Pagani HSE (FMEA G×P×Rilev, fogli SSL+Ambiente). Stesso modulo, `method` + `standard_ids`; ingest multi-layout; non sostituisce DVR/aspetti. [PLAN](agent-tasks/PLAN_RISCHI_OPPORTUNITA_OBIETTIVI_SLICES.md) · [spec M03](specs/M03_ANALISI_RISCHI_OPPORTUNITA.md). Prima slice **ROO-4** = campi riga su `risks`.
 
-**Harness Cloud**: Chromium di Playwright entra in `cloud-install.sh` (snapshot), gli smoke usano `backend/node_modules` — niente più `npm i` in `/tmp` a ogni sessione. **Kitesurf** (Cloudflare, browser per agenti su Workers) valutato e **non adottato**: non migliora il SGQ e non copre i login autenticati persistenti. Dettaglio: [GUIDA lezione Playwright snapshot](GUIDA_CONSOLIDATA.md#lezioni-apprese-consolidate-fonte-unica).
+**Banner Ambito** ([PR #414](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/414), **non mergiata**): in **produzione** la barra è ancora logo + Al.project + Ambito + P.IVA. Sulla **preview** è solo «Ambito» + tendina — verificato a schermo. Dettaglio: [GUIDA lezione Claim visivo](GUIDA_CONSOLIDATA.md#lezioni-apprese-consolidate-fonte-unica).
+
+**Harness Cloud**: Chromium di Playwright nello snapshot `cloud-install.sh`. **Kitesurf** non adottato. Dettaglio: [GUIDA lezione Playwright snapshot](GUIDA_CONSOLIDATA.md#lezioni-apprese-consolidate-fonte-unica).
 
 Sessione prodotto precedente (13/08/2026):
 
@@ -40,6 +42,7 @@ Sessione prodotto precedente (10/08/2026): fix filtri dashboard duplicati (Quali
 | 2 | **Shell dialog di revisione ingest — markup/CSS duplicato** (non urgente, basso rischio) | `IngestReviewDialog.jsx` vs dialog interno `ReprocessQueueBanner.jsx`: guscio overlay duplicato (~60-80 righe); pattern sistemico su molti altri modal nel progetto | Vedi backlog sotto per dettaglio |
 | 3 | **Pagina Impostazioni → Organizzazione (P.IVA + logo tenant)** | PR #10 aperta da aprile 2026, 180 file in conflitto — richiede ricostruzione, non merge | Vedi riga dedicata nel backlog sotto |
 | 4 | **Material Compliance AI (certificati EN 10204 3.1)** | Modulo proposto 05/08/2026, slice MC-0 (spec) non ancora avviata | [MODULO_MATERIAL_COMPLIANCE_AI.md](specs/MODULO_MATERIAL_COMPLIANCE_AI.md) |
+| 5 | **Rischi / Opportunità / Obiettivi — riga di analisi M03** | Il processo è la matrice (elemento→contesto→parti→azioni→P×G→residuo), non quattro tab. Ingest Excel quando l'azienda ce l'ha già | [PLAN](agent-tasks/PLAN_RISCHI_OPPORTUNITA_OBIETTIVI_SLICES.md) · spec [M03](specs/M03_ANALISI_RISCHI_OPPORTUNITA.md) · brief [ROO-4](agent-tasks/DEPUTYTASK_RISCHI_ROO.md) |
 
 > Nota: **Modulo NC — card statistiche duplicate da due tendine** (era riga 1) è stato chiuso da PR #374 (10/08/2026) — riga rimossa da questa tabella, non ancora aggiornata al momento in cui è stata scritta DEPUTYTASK4.
 
@@ -80,6 +83,7 @@ Elenco completo (voci meno urgenti, decisioni di prodotto in attesa, task parche
 | **"Ambito" azienda — selettore unico in header (13/08/2026, UI ✅ PR #401)** | FE: un solo `CompanyScopeSelect` in `AppLayout`; le liste filtrano da `CompanyScopeContext`. Resta backlog **RBAC backend**: `equipment.controller.js` / RDP / NDT non usano ancora `companyAccess.service.js` (equipment filtra su `user.company_id` inesistente). Qualifiche resta l'unico modulo con `company_id` NOT NULL a DB. | `appCompanyScope.js` · [GUIDA lezione Ambito unico](GUIDA_CONSOLIDATA.md#lezioni-apprese-consolidate-fonte-unica) · [ARCHITETTURA_UTENTI_RBAC.md §8.3](ARCHITETTURA_UTENTI_RBAC.md#83-cosa-manca-o-è-parziale-gap-noti) |
 | **Pivot WPS — generazione da WPQR (non ingest)** | Feedback Mason 30/07/2026: matcher 15614 + bozza 15609 + Word Annex A. **P0–P5 ✅** (P5: advisory WPQR + visione nel riesame, non bloccante). | [MODULO_WPS_GENERAZIONE_SCOPO_E_ROADMAP.md](specs/MODULO_WPS_GENERAZIONE_SCOPO_E_ROADMAP.md) |
 | **Material Compliance AI (certificati EN 10204 3.1)** | Modulo proposto 05/08/2026: PDF → estrazione AI → Rule Engine deterministico → HITL. Riuso ingest/AI/RBAC. **Prossimo:** slice **MC-0** (spec DATA_MODEL/UI/API). OCR e dashboard KPI fuori MVP-A. | [MODULO](specs/MODULO_MATERIAL_COMPLIANCE_AI.md) · [PLAN](agent-tasks/PLAN_MATERIAL_COMPLIANCE_SLICES.md) · [brief MC-0](agent-tasks/DEPUTYTASK_MATERIAL_COMPLIANCE_AI_FOUNDATION.md) · ADR-020…024 |
+| **Rischi, Opportunità e Obiettivi (processo M03)** | Draft studio M03-R00. Prossimo: **ROO-4** campi riga di analisi su `risks`. Cataloghi 4.1/4.2 restano opzionali. Non parallelizzare su `RisksPage.jsx`. | [PLAN](agent-tasks/PLAN_RISCHI_OPPORTUNITA_OBIETTIVI_SLICES.md) · [spec M03](specs/M03_ANALISI_RISCHI_OPPORTUNITA.md) · [DEPUTYTASK_RISCHI_ROO.md](agent-tasks/DEPUTYTASK_RISCHI_ROO.md) |
 
 ---
 
@@ -911,26 +915,30 @@ La pagina NC \u00e8 diventata un Piano Azioni multi-fonte con 7 categorie origin
 | **P1** | **Collegamento Reclami**: picker complaint nel form quando `source_category='complaint'`; mostra `source_complaint_number` nel dettaglio NC | \u00a78.2.1 | FK `source_complaint_id` gi\u00e0 esiste nel DB (migration 055); solo UI da collegare |
 | **P1** | **Statistiche per categoria**: breakdown `source_category` nei contatori stats bar (badge separati per NC da audit vs azioni da riesame, ecc.) | \u00a79.1 | Estendere `getNonConformitiesStatistics` + card UI |
 | **P2** | **Modulo Riesame di Direzione**: pagina dedicata `RiesameDirectionPage` con campi strutturati (partecipanti, punti ordine del giorno, output) che genera automaticamente azioni nel Piano Azioni | \u00a79.3 | Nuova tabella `management_reviews` + FK verso `action_plan_items` o NC |
-| **P2** | **Registro Rischi \u2192 Piano Azioni**: generazione automatica azione `risk_action` quando un rischio/opportunit\u00e0 passa a `in_treatment` | \u00a76.1 | `RisksPage` \u00e8 gi\u00e0 implementato (non pi\u00f9 stub) — vedi piano dedicato sotto *Rischi, Opportunit\u00e0 e Obiettivi* |
+| **P2** | **Registro Rischi \u2192 Piano Azioni**: generazione automatica azione `risk_action` quando un rischio/opportunit\u00e0 passa a `in_treatment` | \u00a76.1 | Link **manuale** già live (ROO-3). Auto-insert = HITL in [PLAN ROO-6](agent-tasks/PLAN_RISCHI_OPPORTUNITA_OBIETTIVI_SLICES.md) |
 | **P3** | **Dashboard Action Plan**: vista aggregata cross-categoria con KPI (% azioni chiuse per categoria, trend mese, scadute per responsabile) | \u00a79.1 | Nuova sezione in Dashboard o tab dedicata in NCPage |
 | **P3** | **Notifiche azioni non-audit**: il servizio `ncAlertEscalation` usa gi\u00e0 la tabella NC — verificare che le azioni da riesame/rischi ricevano promemoria scadenza | \u00a710.2 | Potrebbe funzionare gi\u00e0 — smoke test da fare |
 | **P4** | **Export Word Action Plan**: template `.docx` separato per le azioni non legate ad audit (senza sezione checklist, con campo origine) | \u00a77.5 | Estendere `ncWordExport.js` |
 
 ---
 
-## Rischi, Opportunit\u00e0 e Obiettivi — piano allineamento \u00a74.1/\u00a74.2/\u00a76.1/\u00a76.2 (07/07/2026)
+## Rischi, Opportunità e Obiettivi — piano 07/07/2026 (SUPERATO il 14/08/2026)
 
-**Gap analysis** (skill `gap-analysis-normativa`): il modulo `RisksPage` coprisse gi\u00e0 bene il \u00a76.2 (Obiettivi con KPI), ma tratta \u00a76.1 come solo "rischi" (manca distinzione rischio/opportunit\u00e0) e non ha nessun registro per \u00a74.1 (contesto) e \u00a74.2 (parti interessate), da cui la norma richiede che rischi/opportunit\u00e0 derivino esplicitamente.
+> **Fonte unica ora**: [PLAN_RISCHI_OPPORTUNITA_OBIETTIVI_SLICES.md](agent-tasks/PLAN_RISCHI_OPPORTUNITA_OBIETTIVI_SLICES.md) + brief [DEPUTYTASK_RISCHI_ROO.md](agent-tasks/DEPUTYTASK_RISCHI_ROO.md).
+>
+> Le slice 1–3 di questa tabella sono **in `main`** (PR #279). Il modello a quattro tab è **catalogo**, non il processo. Fonte unica: [PLAN](agent-tasks/PLAN_RISCHI_OPPORTUNITA_OBIETTIVI_SLICES.md) (approccio ribaltato 14/08/2026, draft M03-R00).
+
+**Gap analysis originale** (skill `gap-analysis-normativa`): il modulo `RisksPage` copriva già il §6.2 (Obiettivi con KPI), ma trattava §6.1 come solo "rischi" e non aveva registri §4.1/§4.2. Registri e `nature` ci sono; manca la **catena**.
 
 **Ambiente TEST dedicato disponibile** (attivo dal 19/06/2026): DB `2026-06-18_SGQ_ISO9001` separato da produzione (`SGQ_ISO9001`), servizio `sgq-backend-test` (porta 3001), API `https://sistemi.fr-busato.it:8443/test-api/api/v1`, Netlify Deploy Preview per-PR punta gi\u00e0 in automatico al test-api. Regola agente: ogni migrazione/deploy backend va fatto **prima su TEST senza chiedere conferma** (pattern `run-migration-NNN-test-vps.js` + `deploy-to-vps-test.sh`), poi verificato via Deploy Preview + smoke, **poi** produzione solo dopo TEST OK o merge su `main`.
 
 | Slice | Voce | ISO ref | Rischio tecnico | Stato |
 |-------|------|---------|------------------|-------|
-| **1 (P0)** | Campo `nature` (`risk`\|`opportunity`) su tabella `risks`, default `risk` (retrocompatibile); UI: selettore natura + trattamenti differenziati (rischio: Accetta/Mitiga/Trasferisci/Evita — opportunit\u00e0: Persegui/Investi/Non perseguire, nota 2 \u00a76.1.2) | \u00a76.1 | Basso — solo `ALTER TABLE ADD COLUMN` con default | \u23f3 Pianificato |
-| **2 (P1)** | Nuove tabelle `context_factors` (\u00a74.1, fattori esterni/interni, tag PESTLE opzionale) e `interested_parties` (\u00a74.2, parte + requisiti); nuova tab "Contesto" in `RisksPage`; FK opzionale da `risks` verso le nuove tabelle (traccia \u00a76.1.1) | \u00a74.1, \u00a74.2 | Medio — nuovo schema, nessuna modifica a tabelle esistenti | \u23f3 Pianificato |
-| **3 (P2)** | Collegamento Rischi/Opportunit\u00e0 \u2194 Piano Azioni (`action_plan_items`, categoria `rischi` gi\u00e0 esistente) quando `status='in_treatment'`; opzionale FK obiettivo \u2190 rischio/opportunit\u00e0 di origine | \u00a76.1, \u00a710.2 | Medio — join con modulo NC/Piano Azioni esistente | \u23f3 Pianificato |
+| **1 (P0)** | Campo `nature` (`risk`\|`opportunity`) su tabella `risks`, default `risk` (retrocompatibile); UI: selettore natura + trattamenti differenziati (rischio: Accetta/Mitiga/Trasferisci/Evita — opportunità: Persegui/Investi/Non perseguire, nota 2 §6.1.2) | §6.1 | Basso — solo `ALTER TABLE ADD COLUMN` con default | ✅ `nature` fatto (PR #279). Trattamenti opportunità → **ROO-5** |
+| **2 (P1)** | Nuove tabelle `context_factors` (§4.1) e `interested_parties` (§4.2); tab Contesto; FK opzionale da `risks` (traccia §6.1.1) | §4.1, §4.2 | Medio | ✅ tabelle + tab fatti (PR #279, mig. 124). Cataloghi = opzionali (ROO-8), non il processo |
+| **3 (P2)** | Collegamento Rischi/Opportunità ↔ Piano Azioni quando `status='in_treatment'`; opz. FK obiettivo ← rischio | §6.1, §10.2 | Medio | ✅ pulsante manuale + `source_risk_id` (PR #279, mig. 125). Auto + vista inversa → **ROO-6**. FK obiettivo → **ROO-8** |
 
-Riferimento: `.cursor/skills/gap-analysis-normativa/`. Prossima migrazione da usare: **121** (sequenza condivisa, ultima esistente: 120).
+Riferimento: `.cursor/skills/gap-analysis-normativa/`. Numerazione migrazioni: **non** usare 121 (già occupato). Sequenza in `database/migrations/` root; al 14/08/2026 ultimo noto `145`.
 
 ### Analisi architetturale conservata
 Vedi sezione *Sessione 18/06/2026* in `docs/GUIDA_CONSOLIDATA.md` per pattern SQL, RBAC e considerazioni su source_type vs source_category.
