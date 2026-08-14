@@ -7,6 +7,7 @@ import { useAuth } from "../contexts/AuthContext";
 import { useCompanyScope } from "../contexts/CompanyScopeContext";
 import {
   partitionScopeCompanies,
+  resolvePatrimonioScopeValue,
   STUDIO_PATRIMONIO_LABEL,
 } from "../utils/appCompanyScope";
 
@@ -26,8 +27,8 @@ export default function CompanyScopeSelect() {
     );
   }
 
-  const { studio, others } = companyScoped
-    ? { studio: null, others: partitionScopeCompanies(companies, "").others }
+  const { others } = companyScoped
+    ? { others: partitionScopeCompanies(companies, "").others }
     : partitionScopeCompanies(companies, user?.organization_name);
 
   return (
@@ -40,9 +41,11 @@ export default function CompanyScopeSelect() {
         aria-label="Ambito azienda"
       >
         {!companyScoped && <option value="">{"Tutto lo studio"}</option>}
-        {studio ? (
-          <option value={String(studio.id || studio.company_id)}>{STUDIO_PATRIMONIO_LABEL}</option>
-        ) : null}
+        {!companyScoped && (
+          <option value={resolvePatrimonioScopeValue(companies, user?.organization_name)}>
+            {STUDIO_PATRIMONIO_LABEL}
+          </option>
+        )}
         {others.map((c) => {
           const id = c.id || c.company_id;
           return (

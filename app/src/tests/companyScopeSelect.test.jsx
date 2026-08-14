@@ -41,7 +41,7 @@ describe("CompanyScopeSelect", () => {
     expect(screen.getByText("Ambito")).toBeInTheDocument();
     expect(screen.getByRole("combobox", { name: "Ambito azienda" })).toBeInTheDocument();
     expect(screen.getByRole("option", { name: "Tutto lo studio" })).toBeInTheDocument();
-    expect(screen.queryByRole("option", { name: "Patrimonio dello studio" })).not.toBeInTheDocument();
+    expect(screen.getByRole("option", { name: "Patrimonio dello studio" })).toHaveValue("studio");
   });
 
   it("personale studio: Tutto lo studio, Patrimonio, poi aziende A-Z senza il nome anagrafica", () => {
@@ -70,8 +70,13 @@ describe("CompanyScopeSelect", () => {
     scopeState.companyScoped = false;
     authState.user = { role: "admin", organization_name: "Al.project", company_access: [] };
     render(<CompanyScopeSelect />);
-    expect(optionLabels()).toEqual(["Tutto lo studio", "ADA Azienda Test Fase 1", "Zebra Spa"]);
-    expect(screen.queryByRole("option", { name: "Patrimonio dello studio" })).not.toBeInTheDocument();
+    expect(optionLabels()).toEqual([
+      "Tutto lo studio",
+      "Patrimonio dello studio",
+      "ADA Azienda Test Fase 1",
+      "Zebra Spa",
+    ]);
+    expect(screen.getByRole("option", { name: "Patrimonio dello studio" })).toHaveValue("studio");
   });
 
   it("utente company_access: niente Tutto lo studio ne' Patrimonio", () => {

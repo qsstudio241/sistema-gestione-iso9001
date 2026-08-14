@@ -59,6 +59,7 @@ describe("AppLayout — banner Ambito", () => {
     expect(within(banner).queryByText("Al.project")).not.toBeInTheDocument();
     expect(within(banner).queryByText(/P\.IVA/)).not.toBeInTheDocument();
     expect(banner.querySelector("img")).toBeNull();
+    expect(within(banner).getByRole("option", { name: "Patrimonio dello studio" })).toBeInTheDocument();
   });
 
   it("con azienda-studio in anagrafica il menu mostra Patrimonio, non il nome tenant", async () => {

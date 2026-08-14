@@ -8,7 +8,9 @@ import {
   sanitizeScopeAgainstCompanies,
   findStudioCompany,
   partitionScopeCompanies,
+  resolvePatrimonioScopeValue,
   STUDIO_PATRIMONIO_LABEL,
+  STUDIO_PATRIMONIO_SCOPE,
 } from "../utils/appCompanyScope";
 
 const admin = { role: "admin", organization_id: 1001, company_access: [] };
@@ -130,6 +132,18 @@ describe("appCompanyScope", () => {
     expect(findStudioCompany(list, "AL.PROJECT")?.id).toBe(9);
     expect(findStudioCompany(list, "Studio Mason")).toBeNull();
     expect(findStudioCompany([], "Al.project")).toBeNull();
+  });
+
+  it("Al.project e Ai.project sono lo stesso studio", () => {
+    const list = [{ id: 4, name: "Ai.project" }];
+    expect(findStudioCompany(list, "Al.project")?.id).toBe(4);
+    expect(resolvePatrimonioScopeValue([], "Al.project")).toBe(STUDIO_PATRIMONIO_SCOPE);
+  });
+
+  it("persiste e sanifica il valore studio del Patrimonio", () => {
+    persistAppCompanyScope(1001, STUDIO_PATRIMONIO_SCOPE);
+    expect(readStoredAppCompanyScope(1001)).toBe(STUDIO_PATRIMONIO_SCOPE);
+    expect(sanitizeScopeAgainstCompanies(admin, "studio", [{ id: 11 }])).toBe("studio");
   });
 
   it("piazza Patrimonio fuori dall'elenco A-Z e non crea aziende", () => {

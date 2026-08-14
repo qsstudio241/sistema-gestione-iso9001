@@ -18,7 +18,7 @@ Audit multi-standard (9001/14001/45001) · Non Conformità (workflow ISO 10.2 co
 
 **Rischi / Opportunità / Obiettivi (wayfinder)**: processo = riga di analisi, non quattro tab. Tre draft: M03 (P×G), COSBEN (SWOT, G con segno), Pagani HSE (FMEA G×P×Rilev, fogli SSL+Ambiente). Stesso modulo, `method` + `standard_ids`; ingest multi-layout; non sostituisce DVR/aspetti. [PLAN](agent-tasks/PLAN_RISCHI_OPPORTUNITA_OBIETTIVI_SLICES.md) · [spec M03](specs/M03_ANALISI_RISCHI_OPPORTUNITA.md). Prima slice **ROO-4** = campi riga su `risks`.
 
-**Banner Ambito** ([PR #414](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/414) **mergiata**): in produzione solo «Ambito» + tendina. Menu personale studio: Tutto lo studio → Patrimonio dello studio (azienda già in anagrafica, stesso nome del tenant) → altre aziende A→Z. Dettaglio: [GUIDA lezione Ambito unico](GUIDA_CONSOLIDATA.md#lezioni-apprese-consolidate-fonte-unica).
+**Banner Ambito** ([PR #414](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/414) **mergiata**): in produzione solo «Ambito» + tendina. Menu personale studio: Tutto lo studio → **Patrimonio dello studio** (sempre; Ai.project è lo studio) → altre aziende A→Z. Dettaglio: [GUIDA lezione Ambito unico](GUIDA_CONSOLIDATA.md#lezioni-apprese-consolidate-fonte-unica).
 
 **Harness Cloud**: Chromium di Playwright nello snapshot `cloud-install.sh`. **Kitesurf** non adottato. Dettaglio: [GUIDA lezione Playwright snapshot](GUIDA_CONSOLIDATA.md#lezioni-apprese-consolidate-fonte-unica).
 

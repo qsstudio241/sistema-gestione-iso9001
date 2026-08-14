@@ -11,6 +11,7 @@ import {
   getAllowedCompanyIds,
   isCompanyScopeLocked,
   isCompanyScopedUser,
+  isStudioPatrimonioScope,
   persistAppCompanyScope,
   resolveAppCompanyScope,
   sanitizeScopeAgainstCompanies,
@@ -27,6 +28,7 @@ const TEST_FALLBACK_SCOPE = Object.freeze({
   locked: false,
   companyScoped: false,
   isStudioWide: true,
+  isStudioPatrimonio: false,
   scopeCompanyName: "Tutto lo studio",
 });
 
@@ -94,17 +96,19 @@ export function CompanyScopeProvider({ children, initialCompanyId }) {
     [locked, companyScoped, user]
   );
 
+  const isStudioPatrimonio = useMemo(() => {
+    if (companyScoped || !companyId) return false;
+    if (isStudioPatrimonioScope(companyId)) return true;
+    const studio = findStudioCompany(companies, user?.organization_name);
+    return Boolean(studio && String(studio.id || studio.company_id) === String(companyId));
+  }, [companyId, companies, companyScoped, user?.organization_name]);
+
   const scopeCompanyName = useMemo(() => {
     if (!companyId) return "Tutto lo studio";
-    if (!companyScoped) {
-      const studio = findStudioCompany(companies, user?.organization_name);
-      if (studio && String(studio.id || studio.company_id) === String(companyId)) {
-        return STUDIO_PATRIMONIO_LABEL;
-      }
-    }
+    if (isStudioPatrimonio) return STUDIO_PATRIMONIO_LABEL;
     const match = companies.find((c) => String(c.id || c.company_id) === String(companyId));
     return match?.name || `Azienda #${companyId}`;
-  }, [companyId, companies, companyScoped, user?.organization_name]);
+  }, [companyId, companies, isStudioPatrimonio]);
 
   const value = useMemo(
     () => ({
@@ -114,9 +118,10 @@ export function CompanyScopeProvider({ children, initialCompanyId }) {
       locked,
       companyScoped,
       isStudioWide: !companyId,
+      isStudioPatrimonio,
       scopeCompanyName,
     }),
-    [companyId, setCompanyId, companies, locked, companyScoped, scopeCompanyName]
+    [companyId, setCompanyId, companies, locked, companyScoped, isStudioPatrimonio, scopeCompanyName]
   );
 
   return (
