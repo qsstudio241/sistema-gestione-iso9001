@@ -115,6 +115,21 @@ export function buildScopeMenuOptions(companies, organizationName, { canSeeAllCo
   ];
 }
 
+/**
+ * Voce selezionata nel combobox.
+ * `studio` e l'id azienda-studio sono lo stesso Patrimonio: non cadere su Tutto.
+ */
+export function findSelectedScopeOption(options, companyId) {
+  const list = Array.isArray(options) ? options : [];
+  const id = String(companyId ?? "");
+  const exact = list.find((o) => o.value === id);
+  if (exact) return exact;
+  if (isStudioPatrimonioScope(id)) {
+    return list.find((o) => o.label === STUDIO_PATRIMONIO_LABEL) || list[0] || null;
+  }
+  return list[0] || null;
+}
+
 /** Filtro digitazione: case-insensitive, il testo deve comparire nell'etichetta. */
 export function filterScopeMenuOptions(options, query) {
   const list = Array.isArray(options) ? options : [];

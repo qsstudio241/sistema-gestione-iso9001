@@ -11,6 +11,7 @@ import {
   resolvePatrimonioScopeValue,
   buildScopeMenuOptions,
   filterScopeMenuOptions,
+  findSelectedScopeOption,
   STUDIO_PATRIMONIO_LABEL,
   STUDIO_PATRIMONIO_SCOPE,
 } from "../utils/appCompanyScope";
@@ -199,6 +200,21 @@ describe("appCompanyScope", () => {
       { canSeeAllCompanies: false }
     );
     expect(opts.map((o) => o.label)).toEqual(["Al.project", "C.M.P. SRL"]);
+  });
+
+  it("findSelectedScopeOption: studio coincide con Patrimonio anche se il valore menu e' l'id", () => {
+    const opts = buildScopeMenuOptions(
+      [
+        { id: 1, name: "Al.project" },
+        { id: 2, name: "ADA" },
+      ],
+      "Al.project",
+      { canSeeAllCompanies: true }
+    );
+    expect(opts[1].value).toBe("1");
+    expect(findSelectedScopeOption(opts, "studio")?.label).toBe(STUDIO_PATRIMONIO_LABEL);
+    expect(findSelectedScopeOption(opts, "1")?.label).toBe(STUDIO_PATRIMONIO_LABEL);
+    expect(findSelectedScopeOption(opts, "")?.label).toBe("Tutto lo studio");
   });
 
   it("filterScopeMenuOptions filtra per testo nell'etichetta", () => {

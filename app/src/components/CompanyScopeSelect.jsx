@@ -6,7 +6,11 @@
 import React, { useEffect, useId, useMemo, useRef, useState } from "react";
 import { useAuth } from "../contexts/AuthContext";
 import { useCompanyScope } from "../contexts/CompanyScopeContext";
-import { buildScopeMenuOptions, filterScopeMenuOptions } from "../utils/appCompanyScope";
+import {
+  buildScopeMenuOptions,
+  filterScopeMenuOptions,
+  findSelectedScopeOption,
+} from "../utils/appCompanyScope";
 
 export default function CompanyScopeSelect() {
   const { user } = useAuth();
@@ -44,8 +48,7 @@ function CompanyScopeCombobox({ user, companyId, setCompanyId, companies, compan
     [companies, user?.organization_name, companyScoped]
   );
 
-  const selected =
-    options.find((o) => o.value === String(companyId ?? "")) || options[0] || { value: "", label: "" };
+  const selected = findSelectedScopeOption(options, companyId) || { value: "", label: "" };
   const selectedLabel = selected.label;
 
   const [open, setOpen] = useState(false);
@@ -94,13 +97,21 @@ function CompanyScopeCombobox({ user, companyId, setCompanyId, companies, compan
     }
     if (e.key === "ArrowDown") {
       e.preventDefault();
-      setOpen(true);
+      if (!open) {
+        setOpen(true);
+        setHighlight(0);
+        return;
+      }
       setHighlight((i) => Math.min(i + 1, Math.max(filtered.length - 1, 0)));
       return;
     }
     if (e.key === "ArrowUp") {
       e.preventDefault();
-      setOpen(true);
+      if (!open) {
+        setOpen(true);
+        setHighlight(0);
+        return;
+      }
       setHighlight((i) => Math.max(i - 1, 0));
       return;
     }
@@ -119,7 +130,7 @@ function CompanyScopeCombobox({ user, companyId, setCompanyId, companies, compan
           role="combobox"
           aria-label="Ambito azienda"
           aria-expanded={open}
-          aria-controls={listId}
+          aria-controls={open ? listId : undefined}
           aria-autocomplete="list"
           aria-activedescendant={
             open && filtered[highlight] ? `${listId}-opt-${highlight}` : undefined
@@ -137,6 +148,7 @@ function CompanyScopeCombobox({ user, companyId, setCompanyId, companies, compan
             setOpen(true);
             setDraft("");
           }}
+          onBlur={() => setOpen(false)}
           onKeyDown={onKeyDown}
         />
         {open ? (

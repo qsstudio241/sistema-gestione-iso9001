@@ -121,6 +121,21 @@ describe("CompanyScopeSelect", () => {
     scopeState.locked = false;
   });
 
+  it("con companyId studio mostra Patrimonio, non Tutto, se esiste l'azienda-studio", () => {
+    scopeState.companyId = "studio";
+    scopeState.companies = [
+      { id: 1, name: "Al.project" },
+      { id: 2, name: "ADA Azienda Test Fase 1" },
+    ];
+    scopeState.companyScoped = false;
+    authState.user = { role: "admin", organization_name: "Al.project", company_access: [] };
+    render(<CompanyScopeSelect />);
+    expect(screen.getByRole("combobox", { name: "Ambito azienda" })).toHaveValue(
+      "Patrimonio dello studio"
+    );
+    scopeState.companyId = "";
+  });
+
   it("digitando si filtrano le voci per etichetta", async () => {
     const user = userEvent.setup();
     const setCompanyId = vi.fn();
