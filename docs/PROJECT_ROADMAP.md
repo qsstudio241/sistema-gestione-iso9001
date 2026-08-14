@@ -8,13 +8,15 @@
 
 > **Risposta standard a «stato di avanzamento del progetto e priorità da affrontare»**: sintetizzare da questa sezione (moduli maturi + sessione più recente + tabella priorità sotto), **non** dal banner storico più sotto (superato, tenuto solo per traccia) né dall'archivio marzo 2026 [`docs/archive/PROJECT_CONTEXT_STATO_FUNZIONALITA_2026-03.md`](archive/PROJECT_CONTEXT_STATO_FUNZIONALITA_2026-03.md). **Aggiornare questa sezione a fine sessione** se emergono nuove priorità o se una priorità elencata viene chiusa (stesso principio delle "Lezioni apprese" in [GUIDA_CONSOLIDATA.md](GUIDA_CONSOLIDATA.md) — sintesi qui, dettaglio linkato).
 
-**Ultimo aggiornamento di questa sezione**: 14/08/2026 (Playwright+Chromium nello snapshot Cloud; Kitesurf non adottato).
+**Ultimo aggiornamento di questa sezione**: 14/08/2026 (banner Ambito: produzione ancora vecchia; preview PR #414 verificata a schermo).
 
 ### Moduli maturi (in produzione, uso quotidiano dai clienti Camellini/Mason)
 
 Audit multi-standard (9001/14001/45001) · Non Conformità (workflow ISO 10.2 completo) · Qualifiche Personale saldatori/NDT/coordinatori (ISO 9606-1/14732/14731/9712) · Saldatura (WPQR, generazione WPS da WPQR, Welding Book, Commesse ISO 3834, Dashboard 3834) · SAL (gap analysis requisiti con AI) · Registro Documenti + Scadenzari · Notifiche/Alert (documenti/NC/qualifiche) · Riesame di Direzione · RBAC multi-tenant (`company_access`) · Registro obblighi legali (ambiente + sicurezza) · Assistente AI / Gap Analysis euristica.
 
 ### Sessione più recente (14/08/2026)
+
+**Banner Ambito** ([PR #414](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/414), **non mergiata**): in **produzione** la barra è ancora logo + Al.project + Ambito + P.IVA. Sulla **preview** (dopo il fix menu vuoto) è solo «Ambito» + tendina «Tutto lo studio» — verificato con login Playwright, non dal codice. Lezione: non dichiarare un layout senza aprire la pagina. Dettaglio: [GUIDA lezione Claim visivo](GUIDA_CONSOLIDATA.md#lezioni-apprese-consolidate-fonte-unica).
 
 **Harness Cloud**: Chromium di Playwright entra in `cloud-install.sh` (snapshot), gli smoke usano `backend/node_modules` — niente più `npm i` in `/tmp` a ogni sessione. **Kitesurf** (Cloudflare, browser per agenti su Workers) valutato e **non adottato**: non migliora il SGQ e non copre i login autenticati persistenti. Dettaglio: [GUIDA lezione Playwright snapshot](GUIDA_CONSOLIDATA.md#lezioni-apprese-consolidate-fonte-unica).
 
