@@ -8,14 +8,9 @@ import React, { useState, useEffect, useCallback } from "react";
 import apiService from "../services/apiService";
 import { useCompanyScope } from "../contexts/CompanyScopeContext";
 import { formatDate } from "../utils/dateHelpers";
+import { riskScore, riskScoreLevel, scoreColor, displayFurtherActions } from "../utils/riskScore";
 import NcCreateModal from "../components/NcCreateModal";
 import "./RisksPage.css";
-
-function scoreColor(score) {
-  if (score >= 7) return "risk-high";
-  if (score >= 4) return "risk-medium";
-  return "risk-low";
-}
 
 const TREATMENT_LABEL = {
   accept:   "Accetta",
@@ -43,14 +38,21 @@ const IMP_LABELS  = { 1: "Basso", 2: "Medio", 3: "Alto" };
 
 // ── Modali form ──────────────────────────────────────────────────────────────
 
-const EMPTY_RISK = { title: "", description: "", context: "internal", category: "", probability: 2, impact: 2, treatment: "mitigate", treatment_desc: "", responsible: "", review_date: "", status: "open", nature: "risk", company_id: "" };
+const EMPTY_RISK = {
+  title: "", description: "", context: "internal", category: "",
+  probability: 2, impact: 2, treatment: "mitigate", treatment_desc: "",
+  responsible: "", review_date: "", status: "open", nature: "risk", company_id: "",
+  evaluated_element: "", context_text: "", interested_parties_text: "",
+  current_actions: "", further_actions: "",
+};
 const EMPTY_OBJ  = { title: "", description: "", iso_clause: "", kpi_description: "", target_value: "", current_value: "", progress_pct: 0, responsible: "", due_date: "", status: "active", company_id: "" };
 
 function RiskForm({ initial, onSave, onClose, companies = [] }) {
   const [form, setForm] = useState({ ...EMPTY_RISK, ...initial });
   const [saving, setSaving] = useState(false);
   const [error, setError]   = useState(null);
-  const score = form.probability * form.impact;
+  const score = riskScore(form.probability, form.impact);
+  const scoreLevel = riskScoreLevel(score);
 
   function upd(k, v) { setForm(f => ({ ...f, [k]: v })); }
 
@@ -59,7 +61,7 @@ function RiskForm({ initial, onSave, onClose, companies = [] }) {
     if (!form.title.trim()) return;
     setSaving(true); setError(null);
     try { await onSave(form); onClose(); }
-    catch { setError("Errore durante il salvataggio."); }
+    catch (err) { setError(err?.message || "Errore durante il salvataggio."); }
     finally { setSaving(false); }
   }
 
@@ -81,8 +83,12 @@ function RiskForm({ initial, onSave, onClose, companies = [] }) {
             </div>
           )}
           <div className="form-row">
+            <label>Elemento valutato</label>
+            <input value={form.evaluated_element || ""} onChange={e => upd("evaluated_element", e.target.value)} placeholder="es. Processo commerciale" />
+          </div>
+          <div className="form-row">
             <label>Titolo *</label>
-            <input required value={form.title} onChange={e => upd("title", e.target.value)} placeholder="Titolo del rischio" />
+            <input required value={form.title} onChange={e => upd("title", e.target.value)} placeholder="Titolo del rischio o dell'opportunità" />
           </div>
           <div className="form-row">
             <label>Descrizione</label>
@@ -90,14 +96,14 @@ function RiskForm({ initial, onSave, onClose, companies = [] }) {
           </div>
           <div className="form-row-2col">
             <div>
-              <label>Tipo</label>
+              <label>Natura</label>
               <select value={form.nature || "risk"} onChange={e => upd("nature", e.target.value)}>
                 <option value="risk">Rischio</option>
                 <option value="opportunity">{"Opportunit\u00e0"}</option>
               </select>
             </div>
             <div>
-              <label>Contesto</label>
+              <label>Contesto (enum)</label>
               <select value={form.context} onChange={e => upd("context", e.target.value)}>
                 <option value="internal">Interno</option>
                 <option value="external">Esterno</option>
@@ -105,34 +111,44 @@ function RiskForm({ initial, onSave, onClose, companies = [] }) {
               </select>
             </div>
           </div>
-          <div className="form-row-3col">
-            <div>
-              <label>Categoria</label>
-              <input value={form.category} onChange={e => upd("category", e.target.value)} placeholder="es. operativo" />
-            </div>
-            <div>
-              <label>Responsabile</label>
-              <input value={form.responsible} onChange={e => upd("responsible", e.target.value)} />
-            </div>
-            <div />
+          <div className="form-row">
+            <label>Contesto (§4.1)</label>
+            <textarea rows={2} value={form.context_text || ""} onChange={e => upd("context_text", e.target.value)} placeholder="Fattori interni/esterni rilevanti per questa riga" />
+          </div>
+          <div className="form-row">
+            <label>Parti interessate (§4.2)</label>
+            <textarea rows={2} value={form.interested_parties_text || ""} onChange={e => upd("interested_parties_text", e.target.value)} placeholder="Parti e requisiti rilevanti per questa riga" />
+          </div>
+          <div className="form-row">
+            <label>Azioni attuali</label>
+            <textarea rows={2} value={form.current_actions || ""} onChange={e => upd("current_actions", e.target.value)} placeholder="Controlli già in atto" />
+          </div>
+          <div className="form-row">
+            <label>Categoria</label>
+            <input value={form.category} onChange={e => upd("category", e.target.value)} placeholder="es. operativo" />
           </div>
           <div className="form-row-3col">
             <div>
-              <label>Probabilità</label>
-              <select value={form.probability} onChange={e => upd("probability", parseInt(e.target.value))}>
+              <label>Probabilità (P)</label>
+              <select value={form.probability} onChange={e => upd("probability", parseInt(e.target.value, 10))}>
                 {[1,2,3].map(v => <option key={v} value={v}>{v} - {PROB_LABELS[v]}</option>)}
               </select>
             </div>
             <div>
-              <label>Impatto</label>
-              <select value={form.impact} onChange={e => upd("impact", parseInt(e.target.value))}>
+              <label>Gravità (G)</label>
+              <select value={form.impact} onChange={e => upd("impact", parseInt(e.target.value, 10))}>
                 {[1,2,3].map(v => <option key={v} value={v}>{v} - {IMP_LABELS[v]}</option>)}
               </select>
             </div>
             <div className="score-preview">
-              <label>Score</label>
+              <label>{"R = P \u00d7 G"}</label>
               <span className={`score-badge ${scoreColor(score)}`}>{score}</span>
+              <span className="score-preview-level">{scoreLevel}</span>
             </div>
+          </div>
+          <div className="form-row">
+            <label>Ulteriori azioni</label>
+            <textarea rows={2} value={form.further_actions || ""} onChange={e => upd("further_actions", e.target.value)} placeholder="Azioni da pianificare (§6.1.2)" />
           </div>
           <div className="form-row-2col">
             <div>
@@ -149,10 +165,14 @@ function RiskForm({ initial, onSave, onClose, companies = [] }) {
             </div>
           </div>
           <div className="form-row">
-            <label>Azione di trattamento</label>
-            <textarea rows={2} value={form.treatment_desc} onChange={e => upd("treatment_desc", e.target.value)} placeholder="Descrivi l'azione di trattamento..." />
+            <label>Azione di trattamento (legacy)</label>
+            <textarea rows={2} value={form.treatment_desc} onChange={e => upd("treatment_desc", e.target.value)} placeholder="Usato in lettura se Ulteriori azioni è vuoto" />
           </div>
           <div className="form-row-2col">
+            <div>
+              <label>Responsabile</label>
+              <input value={form.responsible} onChange={e => upd("responsible", e.target.value)} />
+            </div>
             <div>
               <label>Data revisione</label>
               <input type="date" value={form.review_date} onChange={e => upd("review_date", e.target.value)} />
@@ -317,7 +337,7 @@ function RisksTab({ companies = [], filterCompany = "" }) {
           <option value="">Tutti gli stati</option>
           {Object.entries(RISK_STATUS_CFG).map(([k,v]) => <option key={k} value={k}>{v.label}</option>)}
         </select>
-        <button className="btn-primary" onClick={() => setModal({ mode: "new", data: null })}>+ Nuovo rischio</button>
+        <button className="btn-primary" onClick={() => setModal({ mode: "new", data: { company_id: filterCompany || "" } })}>+ Nuovo rischio</button>
       </div>
 
       {/* Lista */}
@@ -326,7 +346,9 @@ function RisksTab({ companies = [], filterCompany = "" }) {
       ) : (
         <div className="risk-list">
           {list.map(r => {
-            const sc = r.probability * r.impact;
+            const sc = r.score != null ? r.score : riskScore(r.probability, r.impact);
+            const level = r.score_level || riskScoreLevel(sc);
+            const further = displayFurtherActions(r);
             const statusCfg = RISK_STATUS_CFG[r.status] || { label: r.status, cls: "" };
             return (
               <div key={r.risk_id} className={`risk-card ${scoreColor(sc)}-border`}>
@@ -336,6 +358,7 @@ function RisksTab({ companies = [], filterCompany = "" }) {
                     <span className={`nature-badge nature-${r.nature || "risk"}`}>
                       {r.nature === "opportunity" ? "\uD83D\uDFE2 Opportunit\u00e0" : "\uD83D\uDD34 Rischio"}
                     </span>
+                    {r.evaluated_element && <span className="risk-element">{r.evaluated_element}</span>}
                     <strong>{r.title}</strong>
                     {r.category && <span className="risk-cat">{r.category}</span>}
                     {r.company_name && <span className="risk-company-badge">{r.company_name}</span>}
@@ -347,14 +370,17 @@ function RisksTab({ companies = [], filterCompany = "" }) {
                   </div>
                 </div>
                 {r.description && <p className="risk-desc">{r.description}</p>}
+                {r.context_text && <p className="risk-m03-line"><strong>Contesto:</strong> {r.context_text}</p>}
+                {r.interested_parties_text && <p className="risk-m03-line"><strong>Parti:</strong> {r.interested_parties_text}</p>}
+                {r.current_actions && <p className="risk-m03-line"><strong>Azioni attuali:</strong> {r.current_actions}</p>}
                 <div className="risk-meta">
                   <span>{"\uD83D\uDCA1 "}{TREATMENT_LABEL[r.treatment]}</span>
                   {r.responsible && <span>{"\uD83D\uDC64 "}{r.responsible}</span>}
                   {r.review_date && <span>{"\uD83D\uDCC5 "}Revisione: {formatDate(r.review_date)}</span>}
-                  <span className="risk-prob-imp">P:{r.probability} × I:{r.impact}</span>
+                  <span className="risk-prob-imp">{`P:${r.probability} \u00d7 G:${r.impact} = ${sc} (${level})`}</span>
                 </div>
-                {r.treatment_desc && (
-                  <p className="risk-treatment">{"\uD83D\uDEE1\uFE0F "}{r.treatment_desc}</p>
+                {further && (
+                  <p className="risk-treatment">{"\uD83D\uDEE1\uFE0F "}{further}</p>
                 )}
                 {r.status === "in_treatment" && (
                   <button

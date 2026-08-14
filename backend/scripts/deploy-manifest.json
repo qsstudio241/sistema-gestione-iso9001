@@ -68,7 +68,8 @@
                                      "src/utils/ingestErrorMessage.js",
                                      "src/utils/ingestPlausibilityChecks.js",
                                      "src/utils/numericSanitizer.js",
-                                     "src/utils/linkedLegislationParser.js"
+                                     "src/utils/linkedLegislationParser.js",
+                                     "src/utils/riskScore.js"
                                  ]
                    },
                    {
@@ -87,6 +88,7 @@
                                      "src/services/docCodeGenerator.service.js",
                                      "src/services/documentHistoryTracker.service.js",
                                      "src/services/moduleLicense.service.js",
+                                     "src/services/openapiCompanyLookup.service.js",
                                      "src/services/qualificationCompany.service.js",
                                      "src/services/qualificationSituazione.service.js",
                                      "src/services/personnelQualificationLink.service.js",

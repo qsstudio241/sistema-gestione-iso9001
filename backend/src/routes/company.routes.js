@@ -60,6 +60,7 @@ router.get('/companies/:id/profile', companyProfileController.getProfile);
 router.put('/companies/:id/profile', companyProfileController.putProfile);
 router.post('/companies/:id/profile/detect-import', uploadProfileXlsx.single('file'), companyProfileController.detectProfileImport);
 router.post('/companies/:id/profile/import', companyProfileController.importProfile);
+router.post('/companies/:id/profile/lookup', companyProfileController.lookupProfile);
 router.get('/companies/:id', companyController.getCompanyById);
 router.post('/companies', companyController.createCompany);
 router.put('/companies/:id', companyController.updateCompany);

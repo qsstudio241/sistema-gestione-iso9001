@@ -398,11 +398,10 @@ process.on('SIGINT', async () => {
     process.exit(0);
 });
 
-// Start — saltato in test: i test di integrazione usano supertest(app), che
-// gestisce da solo un socket TCP effimero. Un vero app.listen() su PORT fisso
-// qui andrebbe in conflitto (EADDRINUSE) quando più file di test integration
-// richiedono questo modulo nello stesso worker Jest.
-if (process.env.NODE_ENV !== 'test') {
+// Start solo se questo file è il processo principale.
+// Jest richiede il modulo (supertest) e non deve fare listen su PORT fisso.
+// NODE_ENV=test sul VPS TEST è l'ambiente demo, non Jest: non usarlo come guard.
+if (require.main === module) {
     startServer();
 
     // Avvia cron job alert scadenze (dopo startup server)
