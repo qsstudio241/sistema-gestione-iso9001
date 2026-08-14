@@ -30,7 +30,7 @@ const {
     detectCompanyProfileFile,
     buildImportTemplateBuffer,
 } = require('../utils/excelCompanyProfileDetector');
-const { lookupCompanyByVat } = require('../services/openapiCompanyLookup.service');
+const { lookupCompanyByVat, searchCompanies } = require('../services/openapiCompanyLookup.service');
 
 function resolveAuditorOrgId(req) {
     const userOrgId = req.user.auditor_org_id;
@@ -418,6 +418,40 @@ async function lookupProfile(req, res) {
 }
 
 /**
+ * POST /api/v1/companies/registry/search
+ * Dry-run: lista candidati (nome e/o P.IVA). Non crea aziende e non scrive.
+ */
+async function searchRegistry(req, res) {
+    try {
+        const capDenied = await assertCapability(req);
+        if (capDenied) return res.status(capDenied.status).json(capDenied.body);
+
+        const result = await searchCompanies({
+            companyName: req.body?.company_name || req.body?.name,
+            vatNumber: req.body?.vat_number,
+        });
+        if (!result.ok) {
+            return res.status(result.status).json({
+                error: result.error,
+                code: result.code,
+            });
+        }
+
+        return res.json({
+            success: true,
+            data: {
+                results: result.results,
+                source: result.source,
+                warning: result.warning || null,
+            },
+        });
+    } catch (err) {
+        logger.error(`[companyProfile] search: ${err.message}`);
+        return res.status(500).json({ error: 'Errore ricerca registro', code: 'PROFILE_SEARCH_FAILED' });
+    }
+}
+
+/**
  * GET /api/v1/companies/profile/import-template
  */
 async function downloadImportTemplate(req, res) {
@@ -441,6 +475,7 @@ module.exports = {
     detectProfileImport,
     importProfile,
     lookupProfile,
+    searchRegistry,
     downloadImportTemplate,
     resolveProfileScope,
     serializeProfile,

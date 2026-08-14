@@ -8,6 +8,8 @@ import { useNavigate } from "../contexts/RouterContext";
 import { useAuth } from "../contexts/AuthContext";
 import apiService from "../services/apiService";
 import { hasCompanyAccess, canEditCompany } from "../utils/companyAccess";
+import { hasCompanyProfileCapability } from "../utils/licenseUtils";
+import CompanyRegistrySearch from "./CompanyRegistrySearch";
 import { useCompanyLogoUrl } from "../hooks/useCompanyLogoUrl";
 import SgqDataGrid from "./SgqDataGrid";
 import PencilIcon from "./icons/PencilIcon";
@@ -64,6 +66,7 @@ function CompaniesPage({ onBack }) {
   const isSuperadmin = user?.role === "admin" && !user?.auditor_org_id;
   const isCompanyClient = hasCompanyAccess(user);
   const canCreateCompany = canEditCompany(user) && !isCompanyClient;
+  const canSearchRegistry = hasCompanyProfileCapability(user);
 
   const loadAuditorOrgs = useCallback(async () => {
     try {
@@ -345,6 +348,19 @@ function CompaniesPage({ onBack }) {
                   onChange={(e) => setFormData({ ...formData, vat_number: e.target.value })}
                 />
               </div>
+              {canSearchRegistry && (
+                <CompanyRegistrySearch
+                  name={formData.name}
+                  vatNumber={formData.vat_number}
+                  auditorOrgId={effectiveOrgId}
+                  onPick={(picked) => setFormData((prev) => ({
+                    ...prev,
+                    name: picked.name || prev.name,
+                    vat_number: picked.vat_number || prev.vat_number,
+                    address: picked.address || prev.address,
+                  }))}
+                />
+              )}
               <div className="form-group">
                 <label>Settore</label>
                 <input

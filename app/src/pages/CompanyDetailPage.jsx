@@ -13,6 +13,7 @@ import { useCompanyLogoUrl } from "../hooks/useCompanyLogoUrl";
 import CompanyPersonnelPanel from "../components/CompanyPersonnelPanel";
 import CompanyCounterpartiesPanel from "../components/CompanyCounterpartiesPanel";
 import CompanyProfilePanel from "../components/CompanyProfilePanel";
+import CompanyRegistrySearch from "../components/CompanyRegistrySearch";
 import "./CompanyDetailPage.css";
 import "./StudioSettingsPage.css";
 
@@ -55,7 +56,7 @@ function parseCompanyId(path) {
   return m ? parseInt(m[1], 10) : null;
 }
 
-function TabAnagrafica({ company, onSaved, auditorOrgId, canEdit }) {
+function TabAnagrafica({ company, onSaved, auditorOrgId, canEdit, canSearchRegistry }) {
   const [form, setForm] = useState({
     name: "",
     vat_number: "",
@@ -143,6 +144,19 @@ function TabAnagrafica({ company, onSaved, auditorOrgId, canEdit }) {
             disabled={!canEdit}
           />
         </div>
+        {canEdit && canSearchRegistry && (
+          <CompanyRegistrySearch
+            name={form.name}
+            vatNumber={form.vat_number}
+            auditorOrgId={auditorOrgId}
+            onPick={(picked) => setForm((prev) => ({
+              ...prev,
+              name: picked.name || prev.name,
+              vat_number: picked.vat_number || prev.vat_number,
+              address: picked.address || prev.address,
+            }))}
+          />
+        )}
         <div className="form-group">
           <label>Settore</label>
           <input
@@ -334,6 +348,7 @@ function CompanyDetailPage() {
             onSaved={() => navigate("/companies")}
             auditorOrgId={auditorOrgId}
             canEdit={canEdit}
+            canSearchRegistry={showProfileTab}
           />
         )}
         {activeTab === "profilo" && showProfileTab && (

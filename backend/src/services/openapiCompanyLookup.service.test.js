@@ -6,6 +6,9 @@ const {
     mapOpenapiCompanyToProfile,
     lookupCompanyByVat,
     pickAteco,
+    searchCompanies,
+    formatCandidateAddress,
+    buildSearchQuery,
 } = require('./openapiCompanyLookup.service');
 
 describe('normalizeVat', () => {
@@ -134,5 +137,63 @@ describe('lookupCompanyByVat', () => {
             data: { companyName: 'A', balanceSheets: { last: { employees: '12' } } },
         });
         expect(fields.employees_count).toBe(12);
+    });
+});
+
+describe('searchCompanies', () => {
+    it('400 se manca P.IVA e nome corto', async () => {
+        const r = await searchCompanies({ companyName: 'AB' }, { token: 't' });
+        expect(r.ok).toBe(false);
+        expect(r.code).toBe('MISSING_QUERY');
+    });
+
+    it('con P.IVA usa lookup e non chiama IT-search', async () => {
+        const fetchFn = jest.fn(async (path) => {
+            expect(path).toContain('/IT-advanced/');
+            return {
+                status: 200,
+                json: { data: { companyName: 'TECNOVE S.P.A.', vatCode: '01548970357', address: { registeredOffice: { town: 'NOVELLARA', zipCode: '42017' } } } },
+            };
+        });
+        const r = await searchCompanies(
+            { companyName: 'altro', vatNumber: '01548970357' },
+            { token: 't', fetchFn, baseUrl: 'https://example.test' }
+        );
+        expect(r.ok).toBe(true);
+        expect(r.source).toBe('IT-advanced');
+        expect(r.results).toHaveLength(1);
+        expect(r.results[0].legal_name).toBe('TECNOVE S.P.A.');
+        expect(r.results[0].city).toBe('NOVELLARA');
+        expect(fetchFn.mock.calls.some((c) => String(c[0]).includes('IT-search'))).toBe(false);
+    });
+
+    it('cerca per nome con enrichment name e max 8', async () => {
+        const fetchFn = jest.fn(async (path) => {
+            expect(path).toContain('/IT-search?');
+            expect(path).toContain('dataEnrichment=name');
+            expect(path).toContain('limit=8');
+            expect(path).toContain(encodeURIComponent('TECNOVE*'));
+            return {
+                status: 200,
+                json: {
+                    data: [
+                        { id: 'a1', companyName: 'TECNOVE S.P.A.', vatCode: '01548970357', taxCode: '01548970357', activityStatus: 'ATTIVA', address: { registeredOffice: { town: 'NOVELLARA', province: 'RE' } } },
+                        { id: 'a2', companyName: 'TECNOVE SRL', vatCode: '000', address: { registeredOffice: { town: 'MODENA' } } },
+                    ],
+                },
+            };
+        });
+        const r = await searchCompanies({ companyName: 'TECNOVE' }, { token: 't', fetchFn, baseUrl: 'https://example.test' });
+        expect(r.ok).toBe(true);
+        expect(r.source).toBe('IT-search');
+        expect(r.results).toHaveLength(2);
+        expect(r.results[0].legal_name).toBe('TECNOVE S.P.A.');
+        expect(r.results[0].city).toBe('NOVELLARA');
+        expect(formatCandidateAddress(r.results[0])).toBe('NOVELLARA, RE');
+    });
+
+    it('buildSearchQuery aggiunge * solo su una parola', () => {
+        expect(buildSearchQuery('TECNOVE')).toBe('TECNOVE*');
+        expect(buildSearchQuery('TECNOVE SPA')).toBe('TECNOVE SPA');
     });
 });
