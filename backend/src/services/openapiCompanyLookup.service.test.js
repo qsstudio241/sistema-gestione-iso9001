@@ -118,4 +118,21 @@ describe('lookupCompanyByVat', () => {
         expect(r.warning).toBeTruthy();
         expect(r.fields.registered_city).toBe('Modena');
     });
+
+    it('402 se advanced e start non coperti dal piano', async () => {
+        const fetchFn = jest.fn(async (path) => {
+            if (path.includes('IT-advanced')) return { status: 402, json: {} };
+            return { status: 204, json: {} };
+        });
+        const r = await lookupCompanyByVat('01548970357', { token: 't', fetchFn, baseUrl: 'https://example.test' });
+        expect(r.ok).toBe(false);
+        expect(r.code).toBe('LOOKUP_PAYMENT_REQUIRED');
+    });
+
+    it('accetta employees come stringa', () => {
+        const fields = mapOpenapiCompanyToProfile({
+            data: { companyName: 'A', balanceSheets: { last: { employees: '12' } } },
+        });
+        expect(fields.employees_count).toBe(12);
+    });
 });

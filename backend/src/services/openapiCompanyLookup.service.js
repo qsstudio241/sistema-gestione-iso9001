@@ -65,7 +65,8 @@ function mapOpenapiCompanyToProfile(payload) {
     const src = unwrapPayload(payload) || payload || {};
     const office = src.address?.registeredOffice || src.address || {};
     const ateco = pickAteco(src.atecoClassification);
-    const employees = src.balanceSheets?.last?.employees;
+    const employeesRaw = src.balanceSheets?.last?.employees;
+    const employees = Number.isFinite(employeesRaw) ? employeesRaw : parseInt(employeesRaw, 10);
     const share = src.balanceSheets?.last?.shareCapital;
     const province = office.province ? String(office.province).trim().slice(0, 2).toUpperCase() : null;
 
@@ -158,21 +159,21 @@ async function lookupCompanyByVat(vatRaw, options = {}) {
         };
     }
 
+    if (advanced.status === 402 || start.status === 402) {
+        return {
+            ok: false,
+            status: 402,
+            code: 'LOOKUP_PAYMENT_REQUIRED',
+            error: 'Credito o piano OpenAPI insufficiente per il lookup.',
+        };
+    }
+
     if (start.status === 204 || advanced.status === 204) {
         return {
             ok: false,
             status: 404,
             code: 'LOOKUP_NOT_FOUND',
             error: 'Nessuna azienda trovata per questa P.IVA',
-        };
-    }
-
-    if (start.status === 402) {
-        return {
-            ok: false,
-            status: 402,
-            code: 'LOOKUP_PAYMENT_REQUIRED',
-            error: 'Credito o piano OpenAPI insufficiente per il lookup.',
         };
     }
 

@@ -349,6 +349,7 @@ function CompanyProfilePanel({ companyId, auditorOrgId, canEdit, onUnavailable, 
     }
     setLookingUp(true);
     setError(null);
+    setDetection(null);
     try {
       const params = auditorOrgId ? { auditor_org_id: auditorOrgId } : {};
       const res = await apiService.lookupCompanyProfile(companyId, { vat_number: vat }, params);
