@@ -32,6 +32,7 @@ function CompanyProfileImportDialog({
   onConfirm,
   onClose,
   loading = false,
+  title = "Importa profilo da Excel",
 }) {
   const rows = previewEntries(detection?.preview, detection?.mapping, fieldLabels);
   const canImport = detection?.canImport !== false && rows.length > 0;
@@ -47,7 +48,7 @@ function CompanyProfileImportDialog({
     <div className="did-overlay" role="dialog" aria-modal="true" aria-labelledby="cpid-title">
       <div className="did-modal">
         <div className="did-header">
-          <h2 id="cpid-title" className="did-header__title">Importa profilo da Excel</h2>
+          <h2 id="cpid-title" className="did-header__title">{title}</h2>
           <button className="did-close" onClick={onClose} aria-label="Chiudi" disabled={loading} type="button">
             {"\u00D7"}
           </button>
@@ -66,6 +67,9 @@ function CompanyProfileImportDialog({
 
           {detection?.error && (
             <p className="studio-hint">{detection.error}</p>
+          )}
+          {detection?.warning && (
+            <p className="studio-hint">{detection.warning}</p>
           )}
 
           {rows.length === 0 ? (

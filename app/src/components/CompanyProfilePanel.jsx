@@ -201,8 +201,10 @@ const COMPLETENESS_BADGE = {
 function CompanyProfilePanel({ companyId, auditorOrgId, canEdit, onUnavailable, onAnagraficaSynced }) {
   const fileInputRef = useRef(null);
   const [detecting, setDetecting] = useState(false);
+  const [lookingUp, setLookingUp] = useState(false);
   const [importing, setImporting] = useState(false);
   const [detection, setDetection] = useState(null);
+  const [importSource, setImportSource] = useState("excel");
   const [form, setForm] = useState(emptyForm);
   const [savedSnapshot, setSavedSnapshot] = useState("");
   const [meta, setMeta] = useState({ seededFromAnagrafica: [], address_anagrafica: null, exists: false });
@@ -296,6 +298,7 @@ function CompanyProfilePanel({ companyId, auditorOrgId, canEdit, onUnavailable, 
         setError(data?.error || "Nessun campo profilo riconosciuto nel file");
         return;
       }
+      setImportSource("excel");
       setDetection({ ...data, fileName: data.fileName || file.name });
     } catch (err) {
       if (err.status === 403) {
@@ -316,7 +319,11 @@ function CompanyProfilePanel({ companyId, auditorOrgId, canEdit, onUnavailable, 
       const params = auditorOrgId ? { auditor_org_id: auditorOrgId } : {};
       const res = await apiService.importCompanyProfile(
         companyId,
-        { fields, fileName: detection?.fileName || "import.xlsx" },
+        {
+          fields,
+          fileName: detection?.fileName || "import.xlsx",
+          source: importSource === "registry" ? "registry" : "excel",
+        },
         params
       );
       applyData(res?.data ?? res);
@@ -330,6 +337,39 @@ function CompanyProfilePanel({ companyId, auditorOrgId, canEdit, onUnavailable, 
       setError(err.message || "Errore import profilo");
     } finally {
       setImporting(false);
+    }
+  };
+
+  const handleLookup = async () => {
+    if (!canEdit || !companyId) return;
+    const vat = (form.vat_number || "").trim();
+    if (!vat) {
+      setError("Inserisci la Partita IVA (campo Identit\u00e0) prima di recuperare dal registro.");
+      return;
+    }
+    setLookingUp(true);
+    setError(null);
+    try {
+      const params = auditorOrgId ? { auditor_org_id: auditorOrgId } : {};
+      const res = await apiService.lookupCompanyProfile(companyId, { vat_number: vat }, params);
+      const data = res?.data ?? res;
+      if (!data?.canImport) {
+        setError(data?.error || "Nessun dato trovato nel registro");
+        return;
+      }
+      setImportSource("registry");
+      setDetection({
+        ...data,
+        fileName: data.fileName || "registro",
+      });
+    } catch (err) {
+      if (err.status === 403) {
+        onUnavailable?.(err);
+        return;
+      }
+      setError(err.message || "Errore lookup registro");
+    } finally {
+      setLookingUp(false);
     }
   };
 
@@ -397,7 +437,7 @@ function CompanyProfilePanel({ companyId, auditorOrgId, canEdit, onUnavailable, 
             type="button"
             className="btn-studio-secondary"
             onClick={handleDownloadTemplate}
-            disabled={detecting || importing}
+            disabled={detecting || importing || lookingUp}
           >
             Scarica modello Excel
           </button>
@@ -405,9 +445,17 @@ function CompanyProfilePanel({ companyId, auditorOrgId, canEdit, onUnavailable, 
             type="button"
             className="btn-studio-secondary"
             onClick={() => fileInputRef.current?.click()}
-            disabled={detecting || importing}
+            disabled={detecting || importing || lookingUp}
           >
             {detecting ? "Analisi file..." : "Importa modello Excel"}
+          </button>
+          <button
+            type="button"
+            className="btn-studio-secondary"
+            onClick={handleLookup}
+            disabled={detecting || importing || lookingUp}
+          >
+            {lookingUp ? "Interrogazione registro..." : "Recupera da registro"}
           </button>
           <input
             ref={fileInputRef}
@@ -418,7 +466,7 @@ function CompanyProfilePanel({ companyId, auditorOrgId, canEdit, onUnavailable, 
             data-testid="company-profile-excel-input"
           />
           <p className="studio-hint">
-            Scarica il foglio Excel da compilare, poi reimportalo qui. Vale solo per questa azienda.
+            Excel: scarica il foglio, compilalo e reimportalo. Registro: usa la P.IVA del profilo (anteprima, poi conferma). Vale solo per questa azienda.
           </p>
         </div>
       )}
@@ -427,8 +475,9 @@ function CompanyProfilePanel({ companyId, auditorOrgId, canEdit, onUnavailable, 
           detection={detection}
           fieldLabels={FIELD_LABELS}
           onConfirm={handleConfirmImport}
-          onClose={() => setDetection(null)}
+          onClose={() => { setDetection(null); setImportSource("excel"); }}
           loading={importing}
+          title={importSource === "registry" ? "Dati dal registro imprese" : "Importa profilo da Excel"}
         />
       )}
       <form onSubmit={handleSubmit}>
