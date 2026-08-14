@@ -1,0 +1,42 @@
+-- Migration 146: campi riga di analisi M03 su risks (ROO-4)
+-- Idempotente. Nessun CHECK su treatment/probability/impact.
+
+IF NOT EXISTS (
+  SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS
+  WHERE TABLE_NAME = 'risks' AND COLUMN_NAME = 'evaluated_element'
+)
+BEGIN
+  ALTER TABLE risks ADD evaluated_element NVARCHAR(200) NULL;
+END
+
+IF NOT EXISTS (
+  SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS
+  WHERE TABLE_NAME = 'risks' AND COLUMN_NAME = 'context_text'
+)
+BEGIN
+  ALTER TABLE risks ADD context_text NVARCHAR(MAX) NULL;
+END
+
+IF NOT EXISTS (
+  SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS
+  WHERE TABLE_NAME = 'risks' AND COLUMN_NAME = 'interested_parties_text'
+)
+BEGIN
+  ALTER TABLE risks ADD interested_parties_text NVARCHAR(MAX) NULL;
+END
+
+IF NOT EXISTS (
+  SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS
+  WHERE TABLE_NAME = 'risks' AND COLUMN_NAME = 'current_actions'
+)
+BEGIN
+  ALTER TABLE risks ADD current_actions NVARCHAR(MAX) NULL;
+END
+
+IF NOT EXISTS (
+  SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS
+  WHERE TABLE_NAME = 'risks' AND COLUMN_NAME = 'further_actions'
+)
+BEGIN
+  ALTER TABLE risks ADD further_actions NVARCHAR(MAX) NULL;
+END

@@ -1,10 +1,11 @@
 # DEPUTYTASK — Rischi / Opportunità / Obiettivi — ROO-4 (riga di analisi M03)
 
-**Stato:** APERTO  
+**Stato:** CHIUSO  
 **Priorità:** P1 — il record `risks` deve poter essere una riga M03, non solo un titolo + enum  
 **Branch base:** `main`  
 **Slice:** ROO-4  
 **Creato da:** Lead 14/08/2026 (wayfinder-sgq, **secondo** passaggio: processo → CRUD → gap)  
+**Chiuso:** 14/08/2026 — campi riga M03 + indicatore P×G (scala 1–3, rifiuto 4/5)  
 **Piano:** [PLAN_RISCHI_OPPORTUNITA_OBIETTIVI_SLICES.md](PLAN_RISCHI_OPPORTUNITA_OBIETTIVI_SLICES.md)  
 **Spec:** [M03_ANALISI_RISCHI_OPPORTUNITA.md](../specs/M03_ANALISI_RISCHI_OPPORTUNITA.md)
 
@@ -34,13 +35,15 @@ Questa slice rende visibile **una riga M03** sul record `risks` già esistente. 
 
 ### File previsti
 
-- `database/migrations/NNN_risks_m03_line.sql` — **NNN = prossimo libero** (`ls database/migrations/ | sort | tail -5` all'esecuzione)
-- `backend/scripts/run-migration-NNN-vps.js`
+- `database/migrations/146_risks_m03_line.sql`
+- `backend/scripts/run-migration-146-vps.js` / `run-migration-146-test-vps.js`
+- `backend/src/utils/riskScore.js` + test
 - `backend/src/controllers/risks.controller.js` (create / update / list / getOne)
+- `app/src/utils/riskScore.js` + `app/src/tests/riskScore.test.js`
 - `app/src/pages/RisksPage.jsx` (form + card, ordine colonne M03)
-- Test L1: `backend/src/controllers/risks.controller.test.js` (nuovo) e `npm run build` se si tocca JSX
+- Test L1: `backend/src/controllers/risks.controller.test.js`
 
-Nessun controller/route nuovo → `deploy-manifest.json` invariato, salvo verifica.
+Nessun controller/route nuovo → `deploy-manifest.json` invariato.
 
 ### Schema (opzionali, idempotenti, niente `ON DELETE CASCADE`)
 
@@ -54,19 +57,20 @@ Su `risks`:
 | `current_actions` | NVARCHAR(MAX) NULL | Azioni attuali |
 | `further_actions` | NVARCHAR(MAX) NULL | Possibili ulteriori azioni |
 
-Non migrare `treatment_desc` in `further_actions` (niente backfill obbligatorio). Se `further_actions` è vuoto e `treatment_desc` è pieno, la UI può mostrare `treatment_desc` come fallback in lettura.
+Non migrare `treatment_desc` in `further_actions` (niente backfill obbligatorio). Se `further_actions` è vuoto e `treatment_desc` è pieno, la UI mostra `treatment_desc` come fallback in lettura.
 
 ### API
 
 - POST/PUT accettano i cinque campi (stringa o null).
-- GET lista/dettaglio li restituiscono.
-- Validazione: `title` resta obbligatorio (titolo del rischio/opportunità sulla riga). `evaluated_element` opzionale.
+- GET lista/dettaglio li restituiscono + `score` / `score_level` calcolati (`R = P × G`).
+- Validazione: `title` resta obbligatorio. `evaluated_element` opzionale.
+- P e G interi 1–3; G=4 (M03) e 5 (FMEA) → 400.
 
 ### UI
 
 Ordine del form allineato a M03: Elemento valutato → Titolo → Natura → Contesto (testo) → Parti interessate (testo) → Azioni attuali → P/G esistenti → Ulteriori azioni → responsabile / data revisione già presenti.
 
-Sulla card: mostrare elemento (se c'è) sopra il titolo; contesto/parti/azioni come righe corte, non solo `description`.
+Sulla card: elemento (se c'è) sopra il titolo; contesto/parti/azioni come righe corte; `P × G = R (livello)`.
 
 **Non** aggiungere selettore ambito di pagina (`useCompanyScope` già cablato).  
 **Non** togliere l'enum `context` in questa slice (deprecato di fatto; ROO-8/9).  
@@ -74,17 +78,22 @@ Riuso classi `risk-form` / `risk-card`. Nessun look nuovo.
 
 ### DoD
 
-- [ ] Migration idempotente, prima su TEST VPS.
-- [ ] Creare un rischio con i cinque campi: persistono e si vedono in lista.
-- [ ] Record esistenti senza i nuovi campi: form e lista restano usabili.
-- [ ] Test L1 + build se JSX toccato.
-- [ ] Aggiornare il PLAN: gist in «Decisioni già prese».
+- [x] Migration idempotente (`146_risks_m03_line.sql`); esecuzione TEST VPS prima di prod.
+- [x] Creare un rischio con i cinque campi: persistono e si vedono in lista (API + UI).
+- [x] Record esistenti senza i nuovi campi: form e lista restano usabili (colonne NULL + fallback `treatment_desc`).
+- [x] Test L1 (Jest P×G + controller, Vitest FE) + build JSX.
+- [x] Aggiornare il PLAN: gist in «Decisioni già prese».
 
 ### Test L1
 
-- Jest: create con i nuovi campi; update parziale; lista include le colonne.
+- Jest: create con i nuovi campi; 400 se P o G = 4; update parziale; lista include le colonne + score.
+- Vitest: matrice 3×3 e soglie colore.
 - `npm run build` se si tocca `app/`.
 
 ## Parallelismo
 
 ROO-5/6/7/9 toccano gli stessi file — **non** parallelizzare. ROO-11 (solo objectives RBAC) è l'unico perimetro disgiunto, e solo se non si apre `risks.controller.js`.
+
+## Prossima slice
+
+**ROO-5** — score residuo + livello (attuale e residuo). Non allargare 1–4 senza HITL (ROO-13).

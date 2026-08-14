@@ -3,7 +3,7 @@
 > **Destinazione**: il modulo è il **documento di analisi rischi/opportunità** (HLS §6.1), valido per 9001 / 14001 / 45001 / SGI. Una riga = una valutazione. Il **metodo di pesatura** (P×G, FMEA G×P×Rilev, SWOT con G con segno) è del documento, non del prodotto. L'ingest accetta più layout (M03, SWOT, FMEA HSE). Non sostituisce DVR né registro aspetti. Obiettivi §6.2 = tab collegato.
 > **Spec**: [M03_ANALISI_RISCHI_OPPORTUNITA.md](../specs/M03_ANALISI_RISCHI_OPPORTUNITA.md) · template [M03-R00](../specs/templates/M03-R00-analisi-rischi-opportunita.xlsx)
 > **Norma**: [9001:2015](../Normative/UNI%20EN%20ISO%209001_2015%20Rev.%200.md) · [14001:2015](../Normative/Normative%20NORMA_00003_%20UNI%20EN%20ISO%2014001_2015%20Rev.%200.md) §6.1 · [45001:2018](../Normative/Normative%20NORMA_00002_%20UNI%20ISO%2045001_2018%20Rev.%200.md) §6.1
-> **Brief attivo**: [DEPUTYTASK_RISCHI_ROO.md](DEPUTYTASK_RISCHI_ROO.md) (ROO-4 — riga M03)
+> **Brief attivo**: [DEPUTYTASK_RISCHI_ROO.md](DEPUTYTASK_RISCHI_ROO.md) (ROO-4 chiusa — prossima ROO-5)
 > **Draft studio**: M03 rev.00, 19/06/2026, foglio `Analisi Rischio`, autore Marco Camellini
 
 **Correzione di rotta (14/08/2026)**: la prima mappa partiva dai quattro tab già in app e chiedeva come «chiudere la catena» con FK. Quella premessa **inficia** l'analisi: il processo non è CRUD di registri. Questa mappa parte dal **processo ISO**, poi dal **CRUD che serve a quel processo**, poi dal **gap** sul codice attuale.
@@ -140,13 +140,14 @@ La vecchia ROO-4 (FK catalogo → rischio) **non è più la prima slice**: aggiu
 - Layer aspetti/pericoli/DVR **non** si implementa qui.
 - ROO-1…3 (PR #279) restano in `main` come fondazione tecnica (`nature`, tabelle catalogo, `source_risk_id`), reinterpretate.
 - Numerazione migrazioni: prossimo libero in `database/migrations/` al momento; non riservare.
+- **P×G (ROO-4, 14/08/2026):** `R = probability × impact`. CHECK DB e API restano **1–3** (R in 1–9). G=4 (draft M03) e 1–5 (FMEA) → **400**, non 500 dal CHECK. Livelli UI invariati: 1–3 basso, 4–6 medio, 7–9 alto. Stats `high_priority` resta **≥6** (incoerenza nota, non toccata). Scala 1–4/1–5 = ROO-13.
 
 ## Mappa slice
 
 | Slice | Tema | Perimetro | Dipende da | Tipo |
 |-------|------|-----------|------------|------|
 | ROO-1…3 | `nature`, cataloghi, link NC | già in `main` | — | FATTO |
-| **ROO-4** | **Riga M03 sul record `risks`** (elemento, contesto testo, parti testo, azioni attuali, ulteriori azioni) | migrazione + controller + form/card `RisksPage` | — | AFK |
+| **ROO-4** | **Riga M03 sul record `risks`** (elemento, contesto testo, parti testo, azioni attuali, ulteriori azioni) | migrazione 146 + controller + form/card `RisksPage` + util `riskScore` | — | FATTO |
 | ROO-5 | Score residuo + livello (attuale e residuo) | stessi file; **non** allargare 1–4 senza HITL | ROO-4 | AFK / HITL scala |
 | ROO-6 | Ingest Excel (primo detector M03) | detect/dry-run/upsert + template | ROO-4 | AFK |
 | ROO-6b | Detector SWOT + FMEA HSE | stesso motore ingest, mapping diversi | ROO-6, ROO-15 | AFK |
@@ -165,6 +166,8 @@ La vecchia ROO-4 (FK catalogo → rischio) **non è più la prima slice**: aggiu
 Vedi [DEPUTYTASK_RISCHI_ROO.md](DEPUTYTASK_RISCHI_ROO.md).
 
 **Hello world**: una riga in UI con elemento, contesto, parti, azioni attuali, ulteriori azioni — lo stesso ordine del foglio M03. P/G restano quelli di oggi (1–3) fino a ROO-5/13.
+
+**DoD ROO-4 (chiuso 14/08/2026):** migration `146_risks_m03_line.sql` (5 colonne opzionali); API create/update/list/getOne; form ordine M03; preview `R = P × G` + livello; G=4/P=5 → 400; fallback lettura `further_actions || treatment_desc`. Test L1 Jest + Vitest + build.
 
 ## Qualità / vincoli deputy
 
