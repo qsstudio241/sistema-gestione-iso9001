@@ -9,6 +9,8 @@ import {
   findStudioCompany,
   partitionScopeCompanies,
   resolvePatrimonioScopeValue,
+  buildScopeMenuOptions,
+  filterScopeMenuOptions,
   STUDIO_PATRIMONIO_LABEL,
   STUDIO_PATRIMONIO_SCOPE,
 } from "../utils/appCompanyScope";
@@ -158,6 +160,62 @@ describe("appCompanyScope", () => {
     expect(studio?.id).toBe(1);
     expect(others.map((c) => c.name)).toEqual(["ADA Azienda Test Fase 1", "Zebra Spa"]);
     expect(STUDIO_PATRIMONIO_LABEL).toBe("Patrimonio dello studio");
+  });
+
+  it("buildScopeMenuOptions: personale studio ha Tutto, Patrimonio, poi A-Z", () => {
+    const opts = buildScopeMenuOptions(
+      [
+        { id: 3, name: "Zebra Spa" },
+        { id: 1, name: "Al.project" },
+        { id: 2, name: "ADA" },
+      ],
+      "Al.project",
+      { canSeeAllCompanies: true }
+    );
+    expect(opts.map((o) => o.label)).toEqual([
+      "Tutto lo studio",
+      "Patrimonio dello studio",
+      "ADA",
+      "Zebra Spa",
+    ]);
+    expect(opts[1].value).toBe("1");
+  });
+
+  it("buildScopeMenuOptions: senza azienda-studio Patrimonio vale studio", () => {
+    const opts = buildScopeMenuOptions([{ id: 2, name: "ADA" }], "Al.project", {
+      canSeeAllCompanies: true,
+    });
+    expect(opts[0]).toEqual({ value: "", label: "Tutto lo studio" });
+    expect(opts[1]).toEqual({ value: STUDIO_PATRIMONIO_SCOPE, label: STUDIO_PATRIMONIO_LABEL });
+  });
+
+  it("buildScopeMenuOptions: company_access non ha Tutto ne' Patrimonio", () => {
+    const opts = buildScopeMenuOptions(
+      [
+        { id: 11, name: "C.M.P. SRL" },
+        { id: 1, name: "Al.project" },
+      ],
+      "Al.project",
+      { canSeeAllCompanies: false }
+    );
+    expect(opts.map((o) => o.label)).toEqual(["Al.project", "C.M.P. SRL"]);
+  });
+
+  it("filterScopeMenuOptions filtra per testo nell'etichetta", () => {
+    const opts = [
+      { value: "", label: "Tutto lo studio" },
+      { value: "studio", label: "Patrimonio dello studio" },
+      { value: "2", label: "ADA Azienda Test Fase 1" },
+    ];
+    expect(filterScopeMenuOptions(opts, "ada").map((o) => o.label)).toEqual([
+      "ADA Azienda Test Fase 1",
+    ]);
+    expect(filterScopeMenuOptions(opts, "STUDIO").map((o) => o.label)).toEqual([
+      "Tutto lo studio",
+      "Patrimonio dello studio",
+    ]);
+    expect(filterScopeMenuOptions(opts, "   ")).toEqual(opts);
+    expect(filterScopeMenuOptions(opts, "xyz")).toEqual([]);
   });
 
   it("ignora chiavi legacy vuote o 'studio' e prende il primo id numerico", () => {
