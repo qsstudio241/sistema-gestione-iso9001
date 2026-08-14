@@ -582,6 +582,11 @@ class ApiService {
         return this.post(`/companies/${id}/profile/import${query ? '?' + query : ''}`, data);
     }
 
+    async lookupCompanyProfile(id, data = {}, params = {}) {
+        const query = new URLSearchParams(params).toString();
+        return this.post(`/companies/${id}/profile/lookup${query ? '?' + query : ''}`, data);
+    }
+
     async downloadCompanyProfileTemplate() {
         const response = await fetch(`${this.baseUrl}/companies/profile/import-template`, {
             method: 'GET',

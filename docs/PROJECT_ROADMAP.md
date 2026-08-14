@@ -8,7 +8,7 @@
 
 > **Risposta standard a «stato di avanzamento del progetto e priorità da affrontare»**: sintetizzare da questa sezione (moduli maturi + sessione più recente + tabella priorità sotto), **non** dal banner storico più sotto (superato, tenuto solo per traccia) né dall'archivio marzo 2026 [`docs/archive/PROJECT_CONTEXT_STATO_FUNZIONALITA_2026-03.md`](archive/PROJECT_CONTEXT_STATO_FUNZIONALITA_2026-03.md). **Aggiornare questa sezione a fine sessione** se emergono nuove priorità o se una priorità elencata viene chiusa (stesso principio delle "Lezioni apprese" in [GUIDA_CONSOLIDATA.md](GUIDA_CONSOLIDATA.md) — sintesi qui, dettaglio linkato).
 
-**Ultimo aggiornamento di questa sezione**: 14/08/2026 (ROO-4: riga M03 + P×G su `risks`; banner #414 in produzione).
+**Ultimo aggiornamento di questa sezione**: 14/08/2026 (Profilo azienda S5 mergiato; ROO-4 chiusa; Patrimonio #417 in produzione; combobox Ambito [PR #419](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/419) in corso).
 
 ### Moduli maturi (in produzione, uso quotidiano dai clienti Camellini/Mason)
 
@@ -16,9 +16,11 @@ Audit multi-standard (9001/14001/45001) · Non Conformità (workflow ISO 10.2 co
 
 ### Sessione più recente (14/08/2026)
 
+**Profilo azienda S5** ([PR #418](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/418) **mergiata**): pulsante «Recupera da registro» (OpenAPI Company, dry-run + conferma). ATECO con piano `IT-advanced`; se 402 cade su `IT-start`. Token `SGQ_OPENAPI_COMPANY_TOKEN` nel `.env` VPS (come `GEMINI_API_KEY`) + restart. Senza token: 503. S0–S5 chiusi.
+
 **Rischi / Opportunità / Obiettivi**: **ROO-4 chiusa** — `risks` è una riga M03 (elemento, contesto/parti testo, azioni attuali/ulteriori) con `R = P × G` (scala 1–3; G=4/P=5 → 400). Prossima: ROO-5 residuo. [PLAN](agent-tasks/PLAN_RISCHI_OPPORTUNITA_OBIETTIVI_SLICES.md) · [spec M03](specs/M03_ANALISI_RISCHI_OPPORTUNITA.md).
 
-**Banner Ambito** ([PR #414](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/414) **mergiata**): in produzione solo «Ambito» + tendina «Tutto lo studio» (logo in sidebar, niente P.IVA) — verificato 14/08/2026. Menu personale studio: Tutto lo studio → **Patrimonio dello studio** (sempre; Ai.project è lo studio) → altre aziende A→Z. Dettaglio: [GUIDA lezione Ambito unico](GUIDA_CONSOLIDATA.md#lezioni-apprese-consolidate-fonte-unica).
+**Banner Ambito** ([PR #414](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/414) **mergiata**): in produzione solo «Ambito» + menu (logo in sidebar, niente P.IVA). **Patrimonio dello studio** ([PR #417](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/417) **mergiata**): seconda voce fissa per il personale studio (valore azienda omonima o `studio`). Passo successivo: combobox digita-per-filtrare ([PR #419](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/419), non in produzione finché non è mergiata). Dettaglio: [GUIDA lezione Ambito unico](GUIDA_CONSOLIDATA.md#lezioni-apprese-consolidate-fonte-unica).
 
 **Harness Cloud**: Chromium di Playwright nello snapshot `cloud-install.sh`. **Kitesurf** non adottato. Dettaglio: [GUIDA lezione Playwright snapshot](GUIDA_CONSOLIDATA.md#lezioni-apprese-consolidate-fonte-unica).
 
@@ -864,10 +866,10 @@ Un auditor che gestisce 10 aziende → 10 licenze. Prezzo varia per modulo attiv
 | **PR #65** | Connettori Normattiva/EUR-Lex + email norme superate (job settimanale) | Lead (25/05/2026) | ✅ Merged `b0a5900`, deploy VPS 25/05 |
 | **REG-NORM-SOT** | Refactor: `document_registry` = SoT visibile norme/leggi; slice R1–R7 in [PLAN_REGISTRY_NORM_SOT_SLICES.md](agent-tasks/PLAN_REGISTRY_NORM_SOT_SLICES.md) | Deputy/Lead | ✅ Completato (25/05/2026) — commit `ef0d6f8`, PR #66/#67/#68, ADR-011 |
 | **LEGISL-INGEST** | Ingestione testo articoli legge (D.Lgs. 81/2008 → ISO 45001, D.Lgs. 152/2006 → ISO 14001) da Normattiva in `norm_requirements` + matrice `linked_legislation`; connettore `normativaConnector.getClauseText` (riattiva step publicLaw broker). 30 articoli verbatim, seed `backend/data/legislation_seed.json`, script `ingest-legislation-normattiva-vps.js` idempotente. ADR-010 Task 2-B/2-D. | Lead (18/07/2026) | ✅ Completato — branch `feat/legislation-ingest-normattiva` |
-| **COMPANY-PROFILE** | Profilo azienda 1:1 (`company_profile`) per conformità legislativa 14001/45001: campi A (visura/Excel) + B (SSL/ambiente, inserimento studio); gate `SAL_LEGAL_CONFORMITY`; import Excel tipo scadenziario. **S0–S3 ✅**. **S4** badge completezza + sync opzionale `companies` (in corso). **S5** lookup registro da rivedere (iCRIBIS = sito, non API). | Lead (23/07/2026) · S4 Deputy 13/08/2026 | 🔲 S4 in corso |
+| **COMPANY-PROFILE** | Profilo azienda 1:1 (`company_profile`) per conformità legislativa 14001/45001: campi A (visura/Excel/OpenAPI) + B (SSL/ambiente). **S0–S5 ✅** (PR #399/#400/#409/#411/#418). Lookup OpenAPI Company human-in-the-loop. Token `SGQ_OPENAPI_COMPANY_TOKEN` nel `.env` VPS. | Lead (23/07/2026) · S5 14/08/2026 | ✅ Completato |
 | **REGISTRO-LEGALE** | Registro obblighi legali capitolo-per-capitolo, **ambiente e sicurezza separati**. **Ambiente** `LEG_AMBIENTE_152` (già esistente, 46 voci a granularità capitolo). **Sicurezza** `LEG_SICUREZZA_81` (nuovo, 29 capitoli da Grantini + citazioni, SI/NO/NA/NV). Schema sezioni: mig. **138** (`reference_text`/`linked_legislation`). Agente validità esteso (PR #65). | Lead (28/07–01/08/2026) | ✅ PR #317 MERGED · mig. 138 VPS OK · residuo **N5** (revisione umana contenuto prima di audit cliente) + P2 granularità a/b/c ambiente (Certiquality) |
 
-**Prossimo Step**: COMPANY-PROFILE S4 in PR (badge + sync anagrafica). Poi S5 lookup solo se richiesto. REGISTRO-LEGALE: N5 + backlog P2 ambiente a/b/c.
+**Prossimo Step**: REGISTRO-LEGALE N5 (revisione umana contenuto) + backlog P2 ambiente a/b/c. COMPANY-PROFILE chiuso (S0–S5).
 
 > **Regola architetturale da ADR-008 (vincolante)**: ogni nuova feature che tocca la sincronizzazione dati deve essere progettata compatibile con il modello event-based. Nessun nuovo endpoint che accetti "stato corrente intero" senza event log parallelo.
 

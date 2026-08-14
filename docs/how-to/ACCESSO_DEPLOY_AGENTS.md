@@ -94,6 +94,7 @@ Vai su **cursor.com → Dashboard → Cloud Agents → Secrets** e aggiungi:
 | `SGQ_SUDO_PASSWORD` | Password sudo sul VPS (opzionale, abilita `systemctl restart`) | `deploy-to-vps.sh` |
 | `SGQ_APP_EMAIL` | Email login app (es. `admin@sgq.local`) | Smoke E2E Playwright |
 | `SGQ_APP_PASSWORD` | Password login app di test | Smoke E2E Playwright |
+| `SGQ_OPENAPI_COMPANY_TOKEN` | Token Bearer OpenAPI Company (produzione) | Lookup profilo azienda (S5). Sul VPS va in `/var/www/sgq-backend/.env` (stesso posto di `GEMINI_API_KEY`) + restart `sgq-backend`. Mai in Git. |
 
 Per migrazioni DB da cloud agent: script Node su VPS — vedi [database-migrations.md](database-migrations.md) (credenziali SQL solo in `database.json`, non in Secrets).
 
