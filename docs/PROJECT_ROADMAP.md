@@ -16,7 +16,7 @@ Audit multi-standard (9001/14001/45001) · Non Conformità (workflow ISO 10.2 co
 
 ### Sessione più recente (14/08/2026)
 
-**Rischi / Opportunità / Obiettivi (wayfinder, secondo passaggio)**: la prima mappa partiva dai quattro tab CRUD e chiedeva come collegarli. Il draft studio **M03-R00** (Camellini, 19/06/2026) mostra il processo reale: **una riga di analisi** (elemento → contesto → parti → azioni attuali → P×G → ulteriori azioni → residuo). Mappa ribaltata: [PLAN](agent-tasks/PLAN_RISCHI_OPPORTUNITA_OBIETTIVI_SLICES.md) · spec [M03](specs/M03_ANALISI_RISCHI_OPPORTUNITA.md). Prima slice **ROO-4** = allineare il record `risks` alla riga M03 (non più FK tra silos).
+**Rischi / Opportunità / Obiettivi (wayfinder)**: processo = riga di analisi, non quattro tab. Tre draft: M03 (P×G), COSBEN (SWOT, G con segno), Pagani HSE (FMEA G×P×Rilev, fogli SSL+Ambiente). Stesso modulo, `method` + `standard_ids`; ingest multi-layout; non sostituisce DVR/aspetti. [PLAN](agent-tasks/PLAN_RISCHI_OPPORTUNITA_OBIETTIVI_SLICES.md) · [spec M03](specs/M03_ANALISI_RISCHI_OPPORTUNITA.md). Prima slice **ROO-4** = campi riga su `risks`.
 
 **Banner Ambito** ([PR #414](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/414), **non mergiata**): in **produzione** la barra è ancora logo + Al.project + Ambito + P.IVA. Sulla **preview** è solo «Ambito» + tendina — verificato a schermo. Dettaglio: [GUIDA lezione Claim visivo](GUIDA_CONSOLIDATA.md#lezioni-apprese-consolidate-fonte-unica).
 

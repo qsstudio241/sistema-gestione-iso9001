@@ -50,3 +50,15 @@ Ingest (ROO-6): riga 1–2 = testata; dati da riga 3; celle unite → ripetere i
 
 - Obiettivi §6.2 (KPI, target, avanzamento) — tab distinto.
 - Cataloghi PESTLE / anagrafica parti — opzionali, non obbligatori per una riga valida.
+
+## Altri layout di ingest (non versionare i file cliente)
+
+Stesso prodotto, detector diversi (vedi PLAN §5):
+
+| Layout | Segnali di detect | Metodo |
+|--------|-------------------|--------|
+| M03 | foglio `Analisi Rischio` + «Livello di rischio residuo» | `pxg` |
+| SWOT (es. COSBEN 04.34) | colonna `SWOT` con S/W/O/T + `RI`/`RR` | `swot_signed` |
+| FMEA HSE (es. QLT-MOD09) | colonne `G P R IPR` + foglio Istruzioni IPR | `fmea_gpr` |
+
+I due Excel pieni (SSL/Ambiente 2026, COSBEN 2025) restano presso lo studio: dati operativi, non template.

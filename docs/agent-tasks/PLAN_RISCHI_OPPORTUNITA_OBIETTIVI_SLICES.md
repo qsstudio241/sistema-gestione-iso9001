@@ -1,8 +1,8 @@
 # Piano slice — Rischi, Opportunità e Obiettivi
 
-> **Destinazione**: il modulo è la **matrice di analisi** (documento M03): per ogni elemento valutato si registrano contesto, parti, azioni già in atto, punteggio P×G, ulteriori azioni (chi/quando), aggiornamento e **rischio residuo**. Se l'azienda ha già un Excel M03, si importa. Gli obiettivi §6.2 restano un tab collegato, non il centro. I cataloghi §4.1/§4.2 sono riuso opzionale, non la home.
+> **Destinazione**: il modulo è il **documento di analisi rischi/opportunità** (HLS §6.1), valido per 9001 / 14001 / 45001 / SGI. Una riga = una valutazione. Il **metodo di pesatura** (P×G, FMEA G×P×Rilev, SWOT con G con segno) è del documento, non del prodotto. L'ingest accetta più layout (M03, SWOT, FMEA HSE). Non sostituisce DVR né registro aspetti. Obiettivi §6.2 = tab collegato.
 > **Spec**: [M03_ANALISI_RISCHI_OPPORTUNITA.md](../specs/M03_ANALISI_RISCHI_OPPORTUNITA.md) · template [M03-R00](../specs/templates/M03-R00-analisi-rischi-opportunita.xlsx)
-> **Norma**: [ISO 9001:2015 §4.1–4.2, §6.1–6.2](../Normative/UNI%20EN%20ISO%209001_2015%20Rev.%200.md) · Quaderno 3 *Risk Based Thinking*
+> **Norma**: [9001:2015](../Normative/UNI%20EN%20ISO%209001_2015%20Rev.%200.md) · [14001:2015](../Normative/Normative%20NORMA_00003_%20UNI%20EN%20ISO%2014001_2015%20Rev.%200.md) §6.1 · [45001:2018](../Normative/Normative%20NORMA_00002_%20UNI%20ISO%2045001_2018%20Rev.%200.md) §6.1
 > **Brief attivo**: [DEPUTYTASK_RISCHI_ROO.md](DEPUTYTASK_RISCHI_ROO.md) (ROO-4 — riga M03)
 > **Draft studio**: M03 rev.00, 19/06/2026, foglio `Analisi Rischio`, autore Marco Camellini
 
@@ -68,7 +68,29 @@ Non c'è colonna «opportunità» né tab obiettivi: il titolo li nomina, il fog
 - `objectives` — processo §6.2 distinto; tab a parte; FK verso una riga di analisi = slice successiva.
 - Piano Azioni NC — *opzionale*: M03 tiene le ulteriori azioni **sulla riga**. Portarle in NC è un extra, non il processo.
 
-**Ingest** (quando l'azienda ha già un M03): detect foglio `Analisi Rischio` + intestazioni canoniche → dry-run → upsert (pattern ADR-013 / profilo azienda). Template versionato nella spec.
+**Ingest** (quando l'azienda ha già un file): detect del **layout** (M03 / SWOT-COSBEN / FMEA-HSE) → dry-run → upsert. Un solo motore, più detector. I file cliente pieni di dati **non** si versionano nel repo (solo template vuoti).
+
+## 5. Tre draft a confronto (14/08/2026, secondo parere)
+
+| | M03-R00 (studio) | COSBEN 2025-02 | Pagani HSE 2026-01 |
+|--|------------------|----------------|---------------------|
+| Sistemi | 9001 (implicito) | 9001 / business | **45001 + 14001** (due fogli, stesso modulo QLT-MOD09) |
+| Metodo | P×G (1–4), livello | SWOT S/W/O/T; G **con segno** (−3…+3) | FMEA: G×P×**Rilevabilità** = IPR (1–5) |
+| Contesto/parti | colonne sulla riga | parte + fattore sulla riga | solo nelle *Istruzioni*, non in colonna |
+| Residuo | P×G residuo | PR/GR/RR + % riduzione | secondo blocco G/P/R/IPR |
+| Azioni | sulla riga | sulla riga + aggiornamenti anno | **foglio piano** separato (status, owner, budget, verifica) |
+| Processo | elemento valutato | elemento + parte | processo/fase obbligatorio |
+| Cosa non è | — | non è DVR | **non è DVR** né registro aspetti 6.1.2 |
+
+**Decisione di prodotto (Lead, da norme HLS):** un modulo, più *documenti di analisi* per azienda, ciascuno con `standard_ids` + `method`. Non tre app. Non un form unico che pretenda di essere insieme M03, SWOT e FMEA.
+
+**Tre strati ISO (non confonderli):**
+
+1. Contesto e parti (4.1/4.2) — comuni HLS.
+2. Inventari di dominio che *generano* rischi: aspetti 14001 §6.1.2, obblighi 14001 §6.1.3; pericoli 45001 §6.1.2.1, requisiti legali 45001 §6.1.3. **Fuori da questo modulo** (DVR / aspetti / registro obblighi già in prodotto).
+3. Analisi R/O + azioni + efficacia (6.1.1 / 6.1.4) — **questo è il prodotto**.
+
+45001 §6.1.2.2: metodologia e criteri li definisce l'organizzazione e li documenta. Quindi la scala 1–3 attuale **non può restare l'unica**.
 
 ## 4. Gap vs modulo attuale
 
@@ -96,22 +118,26 @@ La vecchia ROO-4 (FK catalogo → rischio) **non è più la prima slice**: aggiu
 - Offline/sync (ADR-008).
 - Sostituire il Piano Azioni NC.
 - Sovrascrivere `DEPUTYTASK.md` (profilo azienda).
-- 14001 aspetti / 45001 pericoli come registri nuovi (nebbia).
+- Sostituire il DVR (D.Lgs. 81/2008) o il registro aspetti ambientali 14001 §6.1.2.
+- Versionare in Git gli Excel cliente pieni di dati (solo template vuoti).
+- Un unico form che unifica FMEA e SWOT.
 
 ## Non ancora specificato
 
-- Soglie esatte Basso / Medio / Alto (il draft non ha legenda; osservato Basso ≤3, Medio 4–8).
-- Scala definitiva 1–3 (app) vs 1–4 (M03) — HITL se si allarga il CHECK.
-- Ulteriori azioni: solo sulla riga, o anche copia nel Piano Azioni.
-- 14001/45001 nello stesso foglio di analisi.
-- Export Word vs ristampa Excel M03.
+- Soglie Basso/Medio/Alto del solo M03 (osservato Basso ≤3, Medio 4–8; Pagani usa fasce IPR 1–16 / 18–36 / 40–125).
+- Ulteriori azioni: solo sulla riga, o anche copia nel Piano Azioni (Pagani ha il foglio piano: è il modello più maturo per ROO-14).
+- Export: ristampa del layout originale vs layout SGQ unico.
+- Se e quando collegare una riga di analisi a un aspetto / obbligo / pericolo già in altri moduli.
 
 ## Decisioni già prese
 
 - Si **riusa** `risks` come riga di analisi (niente quinta tabella).
 - Cataloghi 4.1/4.2 e tab obiettivi **restano**; non sono la destinazione.
 - Ambito: `useCompanyScope()` (PR #401). Non reintrodurre selettore di pagina.
-- Ingest = detect → dry-run → upsert, template M03 versionato.
+- Ingest = detect **per layout** → dry-run → upsert. Primo detector: M03. SWOT e FMEA HSE dopo che la riga esiste.
+- Multi-standard: **stesso modulo**, tag `standard_ids` (9001/14001/45001) + flag SGI come ADR-009. Due documenti (SSL + Ambiente) come Pagani = due analisi, stesso schema.
+- Metodo di pesatura = proprietà del documento (`pxg` \| `fmea_gpr` \| `swot_signed`), non colonna fissa 1–3.
+- Layer aspetti/pericoli/DVR **non** si implementa qui.
 - ROO-1…3 (PR #279) restano in `main` come fondazione tecnica (`nature`, tabelle catalogo, `source_risk_id`), reinterpretate.
 - Numerazione migrazioni: prossimo libero in `database/migrations/` al momento; non riservare.
 
@@ -122,7 +148,8 @@ La vecchia ROO-4 (FK catalogo → rischio) **non è più la prima slice**: aggiu
 | ROO-1…3 | `nature`, cataloghi, link NC | già in `main` | — | FATTO |
 | **ROO-4** | **Riga M03 sul record `risks`** (elemento, contesto testo, parti testo, azioni attuali, ulteriori azioni) | migrazione + controller + form/card `RisksPage` | — | AFK |
 | ROO-5 | Score residuo + livello (attuale e residuo) | stessi file; **non** allargare 1–4 senza HITL | ROO-4 | AFK / HITL scala |
-| ROO-6 | Ingest Excel M03 | detect/dry-run/upsert + template | ROO-4 | AFK |
+| ROO-6 | Ingest Excel (primo detector M03) | detect/dry-run/upsert + template | ROO-4 | AFK |
+| ROO-6b | Detector SWOT + FMEA HSE | stesso motore ingest, mapping diversi | ROO-6, ROO-15 | AFK |
 | ROO-7 | Tempistica + aggiornamento (efficacia) | campi data/nota + UI | ROO-4 | AFK |
 | ROO-8 | Cataloghi 4.1/4.2 come picker verso i testi della riga | `RisksPage` + API cataloghi | ROO-4 | AFK |
 | ROO-9 | Copy: home = «Analisi rischi e opportunità», non «Registro» | `RisksPage` | ROO-4 | AFK |
@@ -130,7 +157,8 @@ La vecchia ROO-4 (FK catalogo → rischio) **non è più la prima slice**: aggiu
 | ROO-11 | Hardening RBAC/stats | controller objectives/risks | — | AFK |
 | ROO-12 | Export / ristampa M03 | Excel o Word | ROO-5, ROO-6 | HITL formato |
 | ROO-13 | Scala P/G 1–4 come M03 | CHECK + UI | HITL | HITL |
-| ROO-14 | Copia ulteriori azioni → Piano Azioni | `source_risk_id` già c'è | HITL | HITL |
+| ROO-14 | Copia ulteriori azioni → Piano Azioni (modello Pagani: foglio piano) | `source_risk_id` già c'è | HITL | HITL |
+| ROO-15 | Documento di analisi: `standard_ids` + `method` + soglie | nuova tabella leggera o colonne su riga | ROO-4 | AFK |
 
 ## ROO-4 — prima slice (dettaglio)
 
