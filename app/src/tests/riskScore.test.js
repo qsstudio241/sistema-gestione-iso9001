@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { riskScore, riskScoreLevel, scoreColor, displayFurtherActions } from "../utils/riskScore";
+import { riskScore, riskScoreLevel, scoreColor, displayFurtherActions, residualScoreFromRisk } from "../utils/riskScore";
 
 describe("riskScore — R = P × G (scala 1-3)", () => {
   const matrix = [];
@@ -40,5 +40,14 @@ describe("displayFurtherActions", () => {
     expect(displayFurtherActions({ further_actions: "piano", treatment_desc: "vecchio" })).toBe("piano");
     expect(displayFurtherActions({ further_actions: "  ", treatment_desc: "vecchio" })).toBe("vecchio");
     expect(displayFurtherActions({ treatment_desc: "solo legacy" })).toBe("solo legacy");
+  });
+});
+
+describe("residualScoreFromRisk", () => {
+  it("calcola R residuo solo se entrambi i fattori ci sono", () => {
+    expect(residualScoreFromRisk({ residual_probability: 2, residual_impact: 3 })).toBe(6);
+    expect(residualScoreFromRisk({ residual_probability: 2 })).toBeNull();
+    expect(residualScoreFromRisk({ residual_probability: "", residual_impact: 2 })).toBeNull();
+    expect(residualScoreFromRisk({})).toBeNull();
   });
 });

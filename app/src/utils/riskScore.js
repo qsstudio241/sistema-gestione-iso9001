@@ -26,3 +26,14 @@ export function displayFurtherActions(row) {
   if (further) return further;
   return row?.treatment_desc || "";
 }
+
+/** R residuo solo se entrambi P e G residui sono valorizzati. */
+export function residualScoreFromRisk(risk) {
+  const p = risk?.residual_probability;
+  const g = risk?.residual_impact;
+  if (p == null || p === "" || g == null || g === "") return null;
+  const nP = Number(p);
+  const nG = Number(g);
+  if (!Number.isInteger(nP) || !Number.isInteger(nG)) return null;
+  return riskScore(nP, nG);
+}

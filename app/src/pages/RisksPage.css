@@ -1,6 +1,27 @@
 /* RisksPage.css — Sprint 6: Rischi & Obiettivi */
 
-.risks-page { padding: 24px; max-width: 960px; margin: 0 auto; }
+.risks-page { padding: 24px; max-width: none; width: 100%; margin: 0; }
+.risks-grid-wrap { overflow-x: auto; }
+.risks-grid-hint { margin: 0 0 10px; font-size: 0.8rem; color: #718096; }
+.risks-grid-cell-clip {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 220px;
+}
+.risks-grid-title {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+.risks-grid-num { text-align: center; font-variant-numeric: tabular-nums; }
+.risks-grid-actions { display: flex; gap: 4px; align-items: center; }
+.risks-page .sgq-datagrid-table { min-width: 1400px; }
+.risks-page .sgq-datagrid-th,
+.risks-page .sgq-datagrid-cell { padding: 8px 10px; font-size: 0.8rem; }
+.risks-page .modal-box { max-width: 720px; }
 .risks-page-header h1 { margin: 0 0 4px; font-size: 1.5rem; color: #1a202c; }
 .risks-page-sub { margin: 0 0 20px; color: #718096; font-size: 0.875rem; }
 
