@@ -2,8 +2,11 @@
  * Smoke UI autenticato — percorsi critici (login, NC, Qualifiche, SAL, WPS/WPQR).
  *
  * Uso (Cloud Agent, dopo deploy o PR che tocca questi flussi):
- *   cd /tmp && npm i playwright && npx playwright install chromium
  *   node backend/scripts/smoke-percorsi-critici.mjs
+ *
+ * Playwright è la devDependency di backend/; Chromium è nello snapshot
+ * Cloud (`cloud-install.sh`). Non reinstallare in /tmp.
+ * Se i binari mancano (boot a freddo): cd backend && npx playwright install chromium
  *
  * Env:
  *   SGQ_APP_EMAIL / SGQ_APP_PASSWORD  (obbligatori — Secrets, mai in Git)
@@ -53,7 +56,20 @@ async function stillOnLogin(page) {
   return (await page.$('input[placeholder="Inserisci email"]')) !== null;
 }
 
-const browser = await chromium.launch({ headless: true });
+async function launchChromium() {
+  try {
+    return await chromium.launch({ headless: true });
+  } catch (err) {
+    const msg = String(err?.message || err);
+    if (/Executable doesn't exist/i.test(msg)) {
+      console.error('Chromium Playwright assente. Su Cloud Agent lo installa .cursor/scripts/cloud-install.sh.');
+      console.error('Fallback una tantum: cd backend && npx playwright install chromium');
+    }
+    throw err;
+  }
+}
+
+const browser = await launchChromium();
 const context = await browser.newContext({ viewport: { width: 1280, height: 900 } });
 const page = await context.newPage();
 const failures = [];
