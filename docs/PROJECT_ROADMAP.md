@@ -8,13 +8,15 @@
 
 > **Risposta standard a «stato di avanzamento del progetto e priorità da affrontare»**: sintetizzare da questa sezione (moduli maturi + sessione più recente + tabella priorità sotto), **non** dal banner storico più sotto (superato, tenuto solo per traccia) né dall'archivio marzo 2026 [`docs/archive/PROJECT_CONTEXT_STATO_FUNZIONALITA_2026-03.md`](archive/PROJECT_CONTEXT_STATO_FUNZIONALITA_2026-03.md). **Aggiornare questa sezione a fine sessione** se emergono nuove priorità o se una priorità elencata viene chiusa (stesso principio delle "Lezioni apprese" in [GUIDA_CONSOLIDATA.md](GUIDA_CONSOLIDATA.md) — sintesi qui, dettaglio linkato).
 
-**Ultimo aggiornamento di questa sezione**: 14/08/2026 (banner #414 in produzione; voce Patrimonio dello studio nel menu Ambito).
+**Ultimo aggiornamento di questa sezione**: 14/08/2026 (Profilo azienda S5 mergiato — lookup OpenAPI Company).
 
 ### Moduli maturi (in produzione, uso quotidiano dai clienti Camellini/Mason)
 
 Audit multi-standard (9001/14001/45001) · Non Conformità (workflow ISO 10.2 completo) · Qualifiche Personale saldatori/NDT/coordinatori (ISO 9606-1/14732/14731/9712) · Saldatura (WPQR, generazione WPS da WPQR, Welding Book, Commesse ISO 3834, Dashboard 3834) · SAL (gap analysis requisiti con AI) · Registro Documenti + Scadenzari · Notifiche/Alert (documenti/NC/qualifiche) · Riesame di Direzione · RBAC multi-tenant (`company_access`) · Registro obblighi legali (ambiente + sicurezza) · Assistente AI / Gap Analysis euristica.
 
 ### Sessione più recente (14/08/2026)
+
+**Profilo azienda S5** ([PR #418](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/418) **mergiata**): pulsante «Recupera da registro» (OpenAPI Company, dry-run + conferma). ATECO con piano `IT-advanced`; se 402 cade su `IT-start`. Token `SGQ_OPENAPI_COMPANY_TOKEN` nel `.env` VPS (come `GEMINI_API_KEY`) + restart. Senza token: 503. S0–S5 chiusi.
 
 **Rischi / Opportunità / Obiettivi (wayfinder)**: processo = riga di analisi, non quattro tab. Tre draft: M03 (P×G), COSBEN (SWOT, G con segno), Pagani HSE (FMEA G×P×Rilev, fogli SSL+Ambiente). Stesso modulo, `method` + `standard_ids`; ingest multi-layout; non sostituisce DVR/aspetti. [PLAN](agent-tasks/PLAN_RISCHI_OPPORTUNITA_OBIETTIVI_SLICES.md) · [spec M03](specs/M03_ANALISI_RISCHI_OPPORTUNITA.md). Prima slice **ROO-4** = campi riga su `risks`.
 
@@ -864,10 +866,10 @@ Un auditor che gestisce 10 aziende → 10 licenze. Prezzo varia per modulo attiv
 | **PR #65** | Connettori Normattiva/EUR-Lex + email norme superate (job settimanale) | Lead (25/05/2026) | ✅ Merged `b0a5900`, deploy VPS 25/05 |
 | **REG-NORM-SOT** | Refactor: `document_registry` = SoT visibile norme/leggi; slice R1–R7 in [PLAN_REGISTRY_NORM_SOT_SLICES.md](agent-tasks/PLAN_REGISTRY_NORM_SOT_SLICES.md) | Deputy/Lead | ✅ Completato (25/05/2026) — commit `ef0d6f8`, PR #66/#67/#68, ADR-011 |
 | **LEGISL-INGEST** | Ingestione testo articoli legge (D.Lgs. 81/2008 → ISO 45001, D.Lgs. 152/2006 → ISO 14001) da Normattiva in `norm_requirements` + matrice `linked_legislation`; connettore `normativaConnector.getClauseText` (riattiva step publicLaw broker). 30 articoli verbatim, seed `backend/data/legislation_seed.json`, script `ingest-legislation-normattiva-vps.js` idempotente. ADR-010 Task 2-B/2-D. | Lead (18/07/2026) | ✅ Completato — branch `feat/legislation-ingest-normattiva` |
-| **COMPANY-PROFILE** | Profilo azienda 1:1 (`company_profile`) per conformità legislativa 14001/45001: campi A (visura/Excel/OpenAPI) + B (SSL/ambiente). **S0–S4 ✅**. **S5** lookup OpenAPI Company (`IT-advanced` → ATECO + PEC/REA/sede; fallback `IT-start`). Token `SGQ_OPENAPI_COMPANY_TOKEN`. Human-in-the-loop. | Lead (23/07/2026) · S5 Deputy 14/08/2026 | 🔲 S5 in corso |
+| **COMPANY-PROFILE** | Profilo azienda 1:1 (`company_profile`) per conformità legislativa 14001/45001: campi A (visura/Excel/OpenAPI) + B (SSL/ambiente). **S0–S5 ✅** (PR #399/#400/#409/#411/#418). Lookup OpenAPI Company human-in-the-loop. Token `SGQ_OPENAPI_COMPANY_TOKEN` nel `.env` VPS. | Lead (23/07/2026) · S5 14/08/2026 | ✅ Completato |
 | **REGISTRO-LEGALE** | Registro obblighi legali capitolo-per-capitolo, **ambiente e sicurezza separati**. **Ambiente** `LEG_AMBIENTE_152` (già esistente, 46 voci a granularità capitolo). **Sicurezza** `LEG_SICUREZZA_81` (nuovo, 29 capitoli da Grantini + citazioni, SI/NO/NA/NV). Schema sezioni: mig. **138** (`reference_text`/`linked_legislation`). Agente validità esteso (PR #65). | Lead (28/07–01/08/2026) | ✅ PR #317 MERGED · mig. 138 VPS OK · residuo **N5** (revisione umana contenuto prima di audit cliente) + P2 granularità a/b/c ambiente (Certiquality) |
 
-**Prossimo Step**: COMPANY-PROFILE S5 (lookup OpenAPI) in PR. REGISTRO-LEGALE: N5 + backlog P2 ambiente a/b/c.
+**Prossimo Step**: REGISTRO-LEGALE N5 (revisione umana contenuto) + backlog P2 ambiente a/b/c. COMPANY-PROFILE chiuso (S0–S5).
 
 > **Regola architetturale da ADR-008 (vincolante)**: ogni nuova feature che tocca la sincronizzazione dati deve essere progettata compatibile con il modello event-based. Nessun nuovo endpoint che accetti "stato corrente intero" senza event log parallelo.
 
