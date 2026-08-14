@@ -9,6 +9,9 @@ jest.mock('../utils/logger', () => ({
 jest.mock('../services/moduleLicense.service', () => ({
     hasSalLegalConformityCapability: jest.fn(),
 }));
+jest.mock('../services/openapiCompanyLookup.service', () => ({
+    lookupCompanyByVat: jest.fn(),
+}));
 jest.mock('../services/companyAccess.service', () => {
     const actual = jest.requireActual('../services/companyAccess.service');
     return {
@@ -23,6 +26,7 @@ jest.mock('../services/companyAccess.service', () => {
 
 const { query } = require('../config/database');
 const { hasSalLegalConformityCapability } = require('../services/moduleLicense.service');
+const { lookupCompanyByVat } = require('../services/openapiCompanyLookup.service');
 const ctrl = require('./companyProfile.controller');
 
 const AUDITOR_ORG_ID = 10;
@@ -333,5 +337,42 @@ describe('companyProfile import Excel', () => {
         expect(query.mock.calls.some((c) => String(c[0]).includes('UPDATE company_profile'))).toBe(true);
         const metaArg = query.mock.calls.find((c) => String(c[0]).includes('UPDATE'))[1];
         expect(String(metaArg.source_meta)).toContain('"excel"');
+    });
+});
+
+describe('companyProfile lookup registro', () => {
+    it('403 se capability OFF', async () => {
+        hasSalLegalConformityCapability.mockResolvedValue(false);
+        const req = mockReq({ body: { vat_number: '01548970357' } });
+        const res = mockRes();
+        await ctrl.lookupProfile(req, res);
+        expect(res.status).toHaveBeenCalledWith(403);
+        expect(lookupCompanyByVat).not.toHaveBeenCalled();
+    });
+
+    it('dry-run non scrive e restituisce ATECO', async () => {
+        mockScope();
+        query.mockResolvedValueOnce({ recordset: [] });
+        lookupCompanyByVat.mockResolvedValue({
+            ok: true,
+            fields: { legal_name: 'TECNOVE S.P.A.', ateco_primary: '25.11.00' },
+            endpoint: 'IT-advanced',
+            vat: '01548970357',
+            atecoFound: true,
+        });
+        const req = mockReq({ body: { vat_number: '01548970357' } });
+        const res = mockRes();
+        await ctrl.lookupProfile(req, res);
+        expect(res.json).toHaveBeenCalledWith(
+            expect.objectContaining({
+                success: true,
+                data: expect.objectContaining({
+                    canImport: true,
+                    atecoFound: true,
+                    preview: expect.objectContaining({ ateco_primary: '25.11.00' }),
+                }),
+            })
+        );
+        expect(query.mock.calls.some((c) => String(c[0]).includes('INSERT INTO company_profile'))).toBe(false);
     });
 });

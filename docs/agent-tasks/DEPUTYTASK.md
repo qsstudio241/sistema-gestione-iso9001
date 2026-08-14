@@ -1,8 +1,8 @@
-# DEPUTYTASK — Profilo azienda conformità legislativa (ADR-018) — S4
+# DEPUTYTASK — Profilo azienda conformità legislativa (ADR-018) — S5
 
 **Stato:** APERTO  
-**Priorità:** P1 — completezza + sync soft anagrafica (non breaking)  
-**Branch base:** `main` (S1–S3 mergiati, PR #399/#400/#409)  
+**Priorità:** P1 — lookup OpenAPI Company (ATECO + anagrafica A), human-in-the-loop  
+**Branch base:** `main` (S1–S4 mergiati)  
 **Spec:** [ADR-018](../adr/ADR-018-company-profile-conformita-legislativa.md) § S4 · [Catalogo §6](../specs/COMPANY_PROFILE_CAMPI_E_TEMPLATE_EXCEL.md)
 **Priorità:** P1 — fondazione dati per conformità legislativa 14001/45001 (non breaking)  
 **Branch base:** `main`  
@@ -127,20 +127,26 @@
 
 ## Slice S4 — Completeness + sync soft
 
-**Stato S4:** in corso (13/08/2026).
+**Stato S4:** FATTO (14/08/2026) — PR #411.
 
-- Badge completezza (pesi in catalogo §6): incompleto &lt;50 / parziale 50–79 / pronto ≥80.
-- Persistenza `profile_completeness` su upsert; GET ricalcola live.
-- Checkbox opzionali: «Aggiorna anche nome/P.IVA/indirizzo in anagrafica base» → `UPDATE companies` **solo** se spuntate.
-- S5 lookup registro **fuori scope**.
+---
+
+## Slice S5 — Lookup OpenAPI Company
+
+**Stato S5:** in corso (14/08/2026).
+
+- Provider: OpenAPI Company (`IT-advanced` per ATECO/PEC/REA/sede; fallback `IT-start`).
+- Token solo env `SGQ_OPENAPI_COMPANY_TOKEN` (VPS + Cloud Secrets). Mai in Git.
+- Flusso: pulsante «Recupera da registro» → dry-run → conferma (stesso dialog Excel, `source=registry`).
+- Non scrivere senza conferma operatore.
 
 ---
 
 ## Fuori scope di questo brief
 
-- Lookup automatico InfoCamere/API (S5 ADR).
 - Auto-create aziende da Excel multi-riga.
 - Registro obblighi automatico da ATECO.
+- iCRIBIS (sito, non API).
 
 ---
 
