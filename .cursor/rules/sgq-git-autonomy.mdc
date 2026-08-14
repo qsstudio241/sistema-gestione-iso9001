@@ -71,7 +71,7 @@ Quando **tutti** i criteri sono veri:
 
 Il merge resta sempre un'azione del committente (vedi vincolo sopra) — l'obiettivo di questo protocollo è arrivarci senza altre soste intermedie:
 
-1. Verificare CI verde (`get_ci_status`).
+1. Verificare CI verde (`get_ci_status` = **SUCCESS** su tutti i check del job app). **Vietato** dire «pronta per il merge» dopo i soli test locali: in CI possono fallire flake che in locale non si vedono (13/08/2026, PR #401: `ncPage.filterCards` verde in locale, rosso su GitHub).
 2. Eseguire il gate Bugbot (vedi sopra).
 3. Aggiornare la PR con l'esito Bugbot nella descrizione (nessun rilievo critico → segnalarlo esplicitamente come "pronta per il merge"; rilievo non banale → NON proporre il merge, riportarlo al committente).
 4. Comunicare al committente che la PR è pronta, con link diretto — **senza tentare azioni di merge/auto-merge non richieste esplicitamente**.
