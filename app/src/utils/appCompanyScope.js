@@ -27,7 +27,11 @@ export const STUDIO_WIDE_SCOPE = "";
 /** Voce fissa nel menu Ambito (personale studio). Non è il nome anagrafica. */
 export const STUDIO_PATRIMONIO_LABEL = "Patrimonio dello studio";
 
-/** Valore Ambito quando Patrimonio non ha (ancora) una riga azienda omonima. */
+/**
+ * Valore Ambito del Patrimonio: sempre `studio`, mai l'id dell'azienda omonima.
+ * Così l'albero documentale dello studio (content_scope=studio) resta distinto
+ * da quello ISO/cliente (es. QS Studio id=48 su Camellini).
+ */
 export const STUDIO_PATRIMONIO_SCOPE = "studio";
 
 export function isStudioPatrimonioScope(companyId) {
@@ -63,10 +67,11 @@ export function findStudioCompany(companies, organizationName) {
   return list.find((c) => needles.has(normalizeOrgName(c.name))) || null;
 }
 
-/** Valore della voce Patrimonio: id azienda se c'è, altrimenti `studio`. */
-export function resolvePatrimonioScopeValue(companies, organizationName) {
-  const studio = findStudioCompany(companies, organizationName);
-  if (studio) return String(studio.id || studio.company_id);
+/**
+ * Valore della voce Patrimonio: sempre `studio`.
+ * L'azienda omonima al tenant (se esiste) resta in anagrafica ma non è l'albero studio.
+ */
+export function resolvePatrimonioScopeValue(_companies, _organizationName) {
   return STUDIO_PATRIMONIO_SCOPE;
 }
 
@@ -276,6 +281,11 @@ export function sanitizeScopeAgainstCompanies(user, companyId, companies) {
     return primary != null ? String(primary) : STUDIO_WIDE_SCOPE;
   }
   const list = Array.isArray(companies) ? companies : [];
+  // Personale studio: id dell'azienda omonima (es. QS Studio=48) → Patrimonio, non cliente.
+  const studio = findStudioCompany(list, user?.organization_name);
+  if (studio && String(studio.id || studio.company_id) === id) {
+    return STUDIO_PATRIMONIO_SCOPE;
+  }
   if (list.length === 0) return id;
   const ok = list.some((c) => String(c.id || c.company_id) === id);
   return ok ? id : STUDIO_WIDE_SCOPE;
