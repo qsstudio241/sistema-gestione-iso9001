@@ -8,7 +8,7 @@
 
 > **Risposta standard a «stato di avanzamento del progetto e priorità da affrontare»**: sintetizzare da questa sezione (moduli maturi + sessione più recente + tabella priorità sotto), **non** dal banner storico più sotto (superato, tenuto solo per traccia) né dall'archivio marzo 2026 [`docs/archive/PROJECT_CONTEXT_STATO_FUNZIONALITA_2026-03.md`](archive/PROJECT_CONTEXT_STATO_FUNZIONALITA_2026-03.md). **Aggiornare questa sezione a fine sessione** se emergono nuove priorità o se una priorità elencata viene chiusa (stesso principio delle "Lezioni apprese" in [GUIDA_CONSOLIDATA.md](GUIDA_CONSOLIDATA.md) — sintesi qui, dettaglio linkato).
 
-**Ultimo aggiornamento di questa sezione**: 15/08/2026 (sessione chiusa: Patrimonio #428 verificato; ROO-6/6c #429 mergiata; Profilo S6).
+**Ultimo aggiornamento di questa sezione**: 15/08/2026 (Lead: PLAN SAL AI evidenze OCR + documento mancante; brief S1a aperto).
 
 ### Moduli maturi (in produzione, uso quotidiano dai clienti Camellini/Mason)
 
@@ -16,7 +16,9 @@ Audit multi-standard (9001/14001/45001) · Non Conformità (workflow ISO 10.2 co
 
 ### Sessione più recente (15/08/2026)
 
-**Chiusura sessione** — Patrimonio studio distinto dai clienti ([PR #428](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/428) **mergiata**, verificato dal committente su Camellini). Ingest Excel rischi ROO-6/6c ([PR #429](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/429) **mergiata**): mapping colonne + residuo P/G a coppia. `DEPUTYTASK.md` (Profilo azienda) resta CHIUSO, non toccato.
+**Lead wayfinder — SAL AI evidenze** (solo doc): mappa [`PLAN_SAL_AI_EVIDENCE_SLICES.md`](agent-tasks/PLAN_SAL_AI_EVIDENCE_SLICES.md). Gap: OCR non collegato all’estrattore usato dal SAL (OCR già in ingest via `ocrExtractor.js`); nessuna ricerca tipo documento / guida upload quando mancano evidenze. Brief [`DEPUTYTASK.md`](agent-tasks/DEPUTYTASK.md) **APERTO** su slice **S1a** (OCR PDF in `documentTextExtractor`). Nessuna implementazione codice in sessione mappa.
+
+**Chiusura precedente (stesso giorno)** — Patrimonio studio distinto dai clienti ([PR #428](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/428) **mergiata**, verificato dal committente su Camellini). Ingest Excel rischi ROO-6/6c ([PR #429](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/429) **mergiata**): mapping colonne + residuo P/G a coppia.
 
 **Profilo azienda S6** ([PR #426](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/426) **mergiata**, doc [PR #427](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/427) **mergiata**, deploy VPS 15/08): pulsante «Cerca nel registro» in anagrafica. P.IVA → 1 risultato (IT-advanced, verificato TECNOVE). Nome → `IT-search` (max 8); oggi 402 finché in console OpenAPI non è attivo Company Search / credito. S0–S6 codice chiuso.
 
@@ -47,6 +49,7 @@ Sessione prodotto precedente (10/08/2026): fix filtri dashboard duplicati (Quali
 | 3 | **Pagina Impostazioni → Organizzazione (P.IVA + logo tenant)** | PR #10 aperta da aprile 2026, 180 file in conflitto — richiede ricostruzione, non merge | Vedi riga dedicata nel backlog sotto |
 | 4 | **Material Compliance AI (certificati EN 10204 3.1)** | Modulo proposto 05/08/2026, slice MC-0 (spec) non ancora avviata | [MODULO_MATERIAL_COMPLIANCE_AI.md](specs/MODULO_MATERIAL_COMPLIANCE_AI.md) |
 | 5 | **Rischi / Opportunità / Obiettivi — detector SWOT/FMEA (ROO-6b)** | M03 si importa. SWOT e FMEA HSE restano da mappare; scala 1–4 = HITL ROO-13 | [PLAN](agent-tasks/PLAN_RISCHI_OPPORTUNITA_OBIETTIVI_SLICES.md) · brief [ROO](agent-tasks/DEPUTYTASK_RISCHI_ROO.md) |
+| 6 | **SAL AI evidenze — OCR + documento mancante (HITL)** | Suggeritore 5-A/5-B legge solo PDF/DOCX testo; PDF scan/immagini saltati; se manca evidenza → solo messaggio low, nessuna ricerca tipo/upload guidato | [PLAN](agent-tasks/PLAN_SAL_AI_EVIDENCE_SLICES.md) · brief [S1a](agent-tasks/DEPUTYTASK.md) |
 
 > Nota: **Modulo NC — card statistiche duplicate da due tendine** (era riga 1) è stato chiuso da PR #374 (10/08/2026) — riga rimossa da questa tabella, non ancora aggiornata al momento in cui è stata scritta DEPUTYTASK4.
 
@@ -88,6 +91,7 @@ Elenco completo (voci meno urgenti, decisioni di prodotto in attesa, task parche
 | **Pivot WPS — generazione da WPQR (non ingest)** | Feedback Mason 30/07/2026: matcher 15614 + bozza 15609 + Word Annex A. **P0–P5 ✅** (P5: advisory WPQR + visione nel riesame, non bloccante). | [MODULO_WPS_GENERAZIONE_SCOPO_E_ROADMAP.md](specs/MODULO_WPS_GENERAZIONE_SCOPO_E_ROADMAP.md) |
 | **Material Compliance AI (certificati EN 10204 3.1)** | Modulo proposto 05/08/2026: PDF → estrazione AI → Rule Engine deterministico → HITL. Riuso ingest/AI/RBAC. **Prossimo:** slice **MC-0** (spec DATA_MODEL/UI/API). OCR e dashboard KPI fuori MVP-A. | [MODULO](specs/MODULO_MATERIAL_COMPLIANCE_AI.md) · [PLAN](agent-tasks/PLAN_MATERIAL_COMPLIANCE_SLICES.md) · [brief MC-0](agent-tasks/DEPUTYTASK_MATERIAL_COMPLIANCE_AI_FOUNDATION.md) · ADR-020…024 |
 | **Rischi, Opportunità e Obiettivi (processo M03)** | Draft studio M03-R00. Prossimo: **ROO-4** campi riga di analisi su `risks`. Cataloghi 4.1/4.2 restano opzionali. Non parallelizzare su `RisksPage.jsx`. | [PLAN](agent-tasks/PLAN_RISCHI_OPPORTUNITA_OBIETTIVI_SLICES.md) · [spec M03](specs/M03_ANALISI_RISCHI_OPPORTUNITA.md) · [DEPUTYTASK_RISCHI_ROO.md](agent-tasks/DEPUTYTASK_RISCHI_ROO.md) |
+| **SAL AI evidenze (OCR + doc mancante)** | Estendere lettura evidenze (OCR PDF/immagini riusando `ocrExtractor`) e flusso HITL «tipo tipico → candidati registro → collega/carica/ignora». Prima slice: **S1a**. | [PLAN](agent-tasks/PLAN_SAL_AI_EVIDENCE_SLICES.md) · [DEPUTYTASK.md](agent-tasks/DEPUTYTASK.md) |
 
 ---
 

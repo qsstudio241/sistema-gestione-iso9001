@@ -1,0 +1,134 @@
+# Piano slice — SAL AI evidenze (OCR + documento mancante)
+
+> **Destinazione**: il suggeritore SAL AI (Fase 5-A/5-B) legge anche PDF scansionati e immagini (OCR riusabile), e quando manca evidenza per una clausola propone tipo documento tipico + candidati dal registro e chiede all’utente se collegare/caricare — **mai** auto-collegamento senza conferma (HITL).
+> **Spec / ADR**: [`MODULO_SAL_SCOPO_E_ROADMAP.md`](../specs/MODULO_SAL_SCOPO_E_ROADMAP.md) §C.1/C.2 · [ADR-010](../adr/ADR-010-ai-agentic-architecture.md) (human-in-the-loop)
+> **Brief attivo**: [`DEPUTYTASK.md`](DEPUTYTASK.md) — slice **S1a** (APERTO)
+> **Mappa creata**: 15/08/2026 (Lead wayfinder A — Chart the map; nessuna implementazione in questa sessione)
+
+---
+
+## Fuori scope
+
+- Scrittura automatica di `evidence_document_ids` o dello stato SAL senza conferma utente
+- Motore giuridico che «certifica» un documento conforme a legge/norma (già escluso in §C.1)
+- Riscrittura della pipeline ingest (`documentIngestPipeline`) — lì OCR PDF è già attivo
+- Dashboard KPI / editor catalogo tipi documento
+- OCR cloud a pagamento obbligatorio (preferire stack già in repo: `tesseract.js` + `pdf2pic`)
+- Conversione batch massiva di tutto lo storico registro
+
+---
+
+## Non ancora specificato (nebbia)
+
+- Mapping definitivo **clausola → tipo documento tipico**: tabella euristica statica vs prompt AI vs ibrido (decidere in S2a dopo prova su 3–5 clausole reali)
+- Supporto **`.doc` legacy** (Word binario): mammoth non lo legge; LibreOffice headless sul VPS vs «non supportato + messaggio chiaro» — prodotto/HITL se emerge domanda reale
+- Soglia qualità OCR (caratteri minimi / confidence) per alzare la confidenza SAL da `low` a `medium`
+- Estendere lo stesso «documento mancante» al suggeritore welding 3834 (`weldingAiSuggest`) — solo dopo S2b stabile su SAL
+- Quota pagine OCR / timeout per PDF molto lunghi oltre il `maxPages` già usato in ingest
+
+---
+
+## Decisioni già prese (stato attuale + lezioni 5-A/5-B)
+
+- **Fase 5-A ✅**: `salAiSuggest.service.js` propone stato + confidenza + motivazione; UI `SalAiSuggestDialog` conferma/modifica/scarta; nessuna scrittura automatica
+- **Fase 5-B ✅**: conformità legislativa su `linked_legislation` + `normBroker.getClauseText`; capability `SAL_LEGAL_CONFORMITY`
+- **Solo evidenze già collegate**: `loadEvidenceDocuments` legge `evidence_document_ids`; se lista vuota → `confidence: low` + messaggio «Collega i documenti…»; se testo non estraibile → messaggio su PDF immagine / formato non supportato
+- **Estrattore SAL**: `documentTextExtractor.service.js` supporta PDF testo, DOCX, `text/*`; **non** chiama OCR; immagini e PDF senza text layer → `reason: pdf_no_text_layer` / `unsupported_format`
+- **OCR già in repo (non riusato da SAL)**: `backend/src/utils/ocrExtractor.js` (`pdf2pic` + `tesseract.js`), già agganciato a `documentIngestPipeline.service.js` quando il testo PDF è sotto soglia; prerequisiti VPS: Ghostscript + GraphicsMagick/ImageMagick
+- **UI evidenze**: `SalEvidenceSection.jsx` elenca/collega dal registro (`apiService.getDocuments`); link «Apri registro» / «Aggiungi nel registro» — nessun flusso «tipo tipico + candidati + upload guidato» dal dialog AI
+- **Tipi documento**: catalogo FE `app/src/data/documentTypes.js` (`procedura`, `istruzione`, `manuale`, …) — riuso per etichette, non inventare nuovi `doc_type` senza seed
+- **Isolamento multi-tenant**: ogni scan registro resta scoped `organization_id` + `company_id` (stesso pattern di `salAiSuggest`)
+
+---
+
+## Gap vs funzione attesa
+
+| Aspetto | Oggi | Atteso | Slice |
+|---------|------|--------|-------|
+| PDF scansionato (no text layer) | Saltato (`pdf_no_text_layer`); AI → low | OCR via `ocrExtractor` già usato in ingest; graceful degradation se motore assente | **S1a** |
+| Immagini (PNG/JPEG) allegate al doc | `unsupported_format` | OCR diretto su buffer immagine (Tesseract, senza pdf2pic) | **S1b** |
+| Formato `.doc` legacy | `unsupported_format` | Decisione prodotto (nebbia); almeno messaggio UX chiaro | Nebbia / eventuale **S1c** |
+| Clausola senza evidenze | Solo messaggio «collega prima» | Suggerire tipo documento tipico + candidati registro | **S2a** |
+| Conferma utente su candidati | N/A | UI: collega esistente / carica nuovo / ignora; zero write senza conferma | **S2b** |
+| Auto-link AI | Vietato (e assente) | Resta vietato | — (vincolo) |
+
+---
+
+## Mappa slice
+
+| Slice | Tema | Perimetro (file/layer) | Dipende da | Tipo |
+|-------|------|------------------------|------------|------|
+| **S1a** | OCR PDF in estrattore riusabile | `documentTextExtractor.service.js` (+ test): se PDF senza testo → `extractTextWithOCR`; aggiornare `isExtractable`; **non** toccare UI SAL | — | AFK |
+| **S1b** | OCR immagini | Stesso service (+ test): PNG/JPEG/WebP → Tesseract su buffer; `reason` dedicati; degradation se tesseract fallisce | S1a (stesso file — **non** parallelizzare) | AFK |
+| **S1c** | `.doc` (opzionale) | Solo se nebbia chiarita HITL: convert/skip esplicito; altrimenti saltare | S1b + HITL | HITL |
+| **S2a** | Backend «documento mancante» | Estensione `salAiSuggest` (o helper dedicato): euristica tipo atteso + query registro scoped; payload `missingEvidenceSuggestion` senza scrivere FK | S1a consigliata (testo più utile), non bloccante | AFK |
+| **S2b** | UI proposta collega / carica / ignora | `SalAiSuggestDialog` + riuso `SalEvidenceSection` / upload registro esistente; conferma esplicita prima di PATCH evidenze | S2a | AFK |
+
+**Ordine**: S1a → S1b → (S1c se deciso) → S2a → S2b.  
+**Parallelo**: no su `documentTextExtractor` (S1a/S1b sequenziali). S2a può partire dopo S1a se il brief S1b non è aperto.
+
+---
+
+## Dettaglio slice
+
+### S1a — OCR PDF nell’estrattore riusabile
+
+**Obiettivo verificabile**: un PDF senza text layer, passato a `extractDocumentText`, restituisce testo OCR quando `ocrExtractor` e prerequisiti VPS sono ok; altrimenti `text: null` + `reason` stabile (es. `ocr_unavailable` / `ocr_failed`) senza crash.
+
+**DoD**
+
+- [ ] Su `pdf_no_text_layer` (o testo sotto soglia allineata a ingest), chiamata a `extractTextWithOCR`
+- [ ] Test L1: mock OCR ok / OCR throw / motore assente — pipeline non esplode
+- [ ] `isExtractable` resta vero per PDF (già lo è); commenti header aggiornati (UTF-8, accenti)
+- [ ] Nessuna modifica a controller/routes/UI in questa slice
+- [ ] `salAiSuggest` beneficia automaticamente (usa già l’estrattore) — smoke mentale: messaggio «PDF immagine» non deve più apparire se OCR ha prodotto testo
+
+**Cosa NON toccare**: `SalAiSuggestDialog`, `SalEvidenceSection`, migrazioni, ingest pipeline (già OCR-aware).
+
+---
+
+### S1b — OCR immagini
+
+**Obiettivo verificabile**: allegato `image/png` o `image/jpeg` produce testo via Tesseract; graceful degradation.
+
+**DoD**
+
+- [ ] Ramo immagini in `documentTextExtractor` (riuso worker Tesseract; evitare duplicare tutta la pipeline PDF se possibile — helper sottile o export da `ocrExtractor`)
+- [ ] Test L1 con buffer minima / mock
+- [ ] `isExtractable` true per immagini raster supportate
+
+**Cosa NON toccare**: UI; `.doc`; S2.
+
+---
+
+### S2a — Backend suggest missing evidence
+
+**Obiettivo verificabile**: per clausola senza `evidence_document_ids` (o con coverage `missing`), la risposta suggest include proposta strutturata (tipo tipico + lista candidati registro) **senza** mutare DB.
+
+**DoD**
+
+- [ ] Contratto JSON documentato nel brief (campi stabili per FE)
+- [ ] Query registro scoped org+azienda; limite risultati
+- [ ] Test L1 service
+- [ ] HITL: nessun UPDATE a `requirement_implementation_status`
+
+---
+
+### S2b — UI HITL collega / carica / ignora
+
+**Obiettivo verificabile**: dal dialog AI l’utente può collegare un candidato, aprire flusso carica nel registro, o ignorare; solo dopo conferma le evidenze si aggiornano (pattern esistente PATCH gap/SAL).
+
+**DoD**
+
+- [ ] Riuso DNA/`SalEvidenceSection` / link registro — gate Ponytail
+- [ ] Test Vitest mirato dialog
+- [ ] Disclaimer AI invariato (`AiDisclaimer` se già presente)
+
+---
+
+## Note per il deputy
+
+1. Allinea Git (`fetch`/`pull` `origin/main`) prima del brief.
+2. Una sessione = una slice; se non chiudi → handoff in `DEPUTYTASK.md`.
+3. Livello Medio (backend service): PR + Bugbot prima di dichiarare pronta; deploy VPS se si tocca service in `deploy-manifest` (verificare se l’estrattore è già listato).
+4. Encoding UTF-8, accenti italiani corretti.
