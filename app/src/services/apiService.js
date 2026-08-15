@@ -1928,6 +1928,47 @@ class ApiService {
     async createRisk(data)          { return this.post('/risks', data); }
     async updateRisk(id, data)      { return this.put(`/risks/${id}`, data); }
     async deleteRisk(id)            { return this.delete(`/risks/${id}`); }
+    async detectRisksM03Import(file) {
+        const formData = new FormData();
+        formData.append('file', file);
+        const token = this.getToken();
+        const headers = token ? { Authorization: `Bearer ${token}` } : {};
+        const response = await fetch(`${this.baseUrl}/risks/detect-import`, {
+            method: 'POST', headers, body: formData,
+        });
+        if (!response.ok) {
+            const errBody = await response.json().catch(() => ({ error: 'Errore analisi Excel' }));
+            const err = new Error(errBody.error || `HTTP ${response.status}`);
+            err.status = response.status;
+            throw err;
+        }
+        return response.json();
+    }
+    async importRisksM03(data) { return this.post('/risks/import', data); }
+    async downloadRisksM03Template() {
+        const response = await fetch(`${this.baseUrl}/risks/import-template`, {
+            method: 'GET',
+            headers: this.getHeaders(true),
+        });
+        if (!response.ok) {
+            const errBody = await response.json().catch(() => ({ error: 'Errore download modello' }));
+            const err = new Error(errBody.error || `HTTP ${response.status}`);
+            err.status = response.status;
+            throw err;
+        }
+        const blob = await response.blob();
+        const url = URL.createObjectURL(blob);
+        try {
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = 'M03-analisi-rischi-opportunita.xlsx';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        } finally {
+            URL.revokeObjectURL(url);
+        }
+    }
 
     // ─── Objectives (Sprint 6) ───────────────────────────────────────────────
     async getObjectivesStats()      { return this.get('/objectives/stats'); }

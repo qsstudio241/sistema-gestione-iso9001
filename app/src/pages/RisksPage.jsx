@@ -10,6 +10,7 @@ import { formatDate } from "../utils/dateHelpers";
 import { riskScore, riskScoreLevel, scoreColor, displayFurtherActions, residualScoreFromRisk } from "../utils/riskScore";
 import NcCreateModal from "../components/NcCreateModal";
 import SgqDataGrid from "../components/SgqDataGrid";
+import RiskM03ImportDialog from "../components/RiskM03ImportDialog";
 import "./RisksPage.css";
 
 const TREATMENT_LABEL = {
@@ -367,6 +368,10 @@ function RisksTab({ companies = [], filterCompany = "" }) {
   const [modal, setModal]         = useState(null); // null | { mode:'new'|'edit', data }
   const [filterStatus, setFS]     = useState("");
   const [actionRisk, setActionRisk] = useState(null);
+  const [detection, setDetection] = useState(null);
+  const [detecting, setDetecting] = useState(false);
+  const [importing, setImporting] = useState(false);
+  const [importError, setImportError] = useState(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -400,6 +405,44 @@ function RisksTab({ companies = [], filterCompany = "" }) {
     await load();
   }
 
+  async function handlePickExcel(e) {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
+    setDetecting(true);
+    setImportError(null);
+    try {
+      const res = await apiService.detectRisksM03Import(file);
+      const data = res?.data ?? res;
+      setDetection({ ...data, fileName: data.fileName || file.name });
+      if (!data?.canImport) {
+        setImportError(data?.error || "Nessuna riga M03 importabile.");
+      }
+    } catch (err) {
+      setImportError(err.message || "Errore analisi Excel");
+    } finally {
+      setDetecting(false);
+    }
+  }
+
+  async function handleConfirmImport(rows) {
+    setImporting(true);
+    setImportError(null);
+    try {
+      await apiService.importRisksM03({
+        rows,
+        company_id: filterCompany || null,
+        fileName: detection?.fileName,
+      });
+      setDetection(null);
+      await load();
+    } catch (err) {
+      setImportError(err.message || "Errore import Excel");
+    } finally {
+      setImporting(false);
+    }
+  }
+
   return (
     <div className="risks-tab">
       {/* Stats */}
@@ -419,7 +462,30 @@ function RisksTab({ companies = [], filterCompany = "" }) {
           {Object.entries(RISK_STATUS_CFG).map(([k,v]) => <option key={k} value={k}>{v.label}</option>)}
         </select>
         <button className="btn-primary" onClick={() => setModal({ mode: "new", data: { company_id: filterCompany || "" } })}>+ Nuovo rischio</button>
+        <button
+          type="button"
+          className="btn-secondary"
+          disabled={detecting}
+          onClick={() => document.getElementById("risks-m03-file")?.click()}
+        >
+          {detecting ? "Analisi Excel..." : "Importa Excel M03"}
+        </button>
+        <button
+          type="button"
+          className="btn-secondary"
+          onClick={() => apiService.downloadRisksM03Template().catch((err) => setImportError(err.message))}
+        >
+          Scarica modello
+        </button>
+        <input
+          id="risks-m03-file"
+          type="file"
+          accept=".xlsx,.xls"
+          hidden
+          onChange={handlePickExcel}
+        />
       </div>
+      {importError && <p className="form-error">{importError}</p>}
 
       <p className="risks-grid-hint">{"Clicca una riga per aprire la scheda."}</p>
       <div className="risks-grid-wrap">
@@ -548,6 +614,15 @@ function RisksTab({ companies = [], filterCompany = "" }) {
           initialOriginText={`Rischio: ${actionRisk.title}`}
           initialSectionCode="clause6"
           sourceRiskId={actionRisk.risk_id}
+        />
+      )}
+
+      {detection && (
+        <RiskM03ImportDialog
+          detection={detection}
+          onConfirm={handleConfirmImport}
+          onClose={() => setDetection(null)}
+          loading={importing}
         />
       )}
     </div>
