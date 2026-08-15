@@ -8,7 +8,7 @@
 
 > **Risposta standard a «stato di avanzamento del progetto e priorità da affrontare»**: sintetizzare da questa sezione (moduli maturi + sessione più recente + tabella priorità sotto), **non** dal banner storico più sotto (superato, tenuto solo per traccia) né dall'archivio marzo 2026 [`docs/archive/PROJECT_CONTEXT_STATO_FUNZIONALITA_2026-03.md`](archive/PROJECT_CONTEXT_STATO_FUNZIONALITA_2026-03.md). **Aggiornare questa sezione a fine sessione** se emergono nuove priorità o se una priorità elencata viene chiusa (stesso principio delle "Lezioni apprese" in [GUIDA_CONSOLIDATA.md](GUIDA_CONSOLIDATA.md) — sintesi qui, dettaglio linkato).
 
-**Ultimo aggiornamento di questa sezione**: 15/08/2026 (Profilo azienda S6 in produzione — cerca nel registro).
+**Ultimo aggiornamento di questa sezione**: 15/08/2026 (Patrimonio sempre `studio` #428 in produzione; Profilo azienda S6).
 
 ### Moduli maturi (in produzione, uso quotidiano dai clienti Camellini/Mason)
 
@@ -20,7 +20,7 @@ Audit multi-standard (9001/14001/45001) · Non Conformità (workflow ISO 10.2 co
 
 **Rischi / Opportunità / Obiettivi**: **ROO-5 chiusa** — matrice `SgqDataGrid` (click → form), residuo P×G + nota efficacia (mig. 147, scala 1–3). Prossima: ROO-6 ingest Excel. [PLAN](agent-tasks/PLAN_RISCHI_OPPORTUNITA_OBIETTIVI_SLICES.md) · [spec M03](specs/M03_ANALISI_RISCHI_OPPORTUNITA.md).
 
-**Banner Ambito** ([PR #414](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/414) **mergiata**): solo «Ambito» + menu. **Patrimonio dello studio** ([PR #417](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/417) **mergiata**). **Combobox digita-per-filtrare** ([PR #419](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/419) **mergiata**): CSS/JS già sul bundle Netlify (`layout-scope-combo`). **Patrimonio = sempre `studio`** (15/08/2026): l'albero STD dello studio non usa più l'id dell'azienda omonima (bug Camellini QS Studio=48). Dettaglio: [GUIDA lezione Patrimonio ≠ omonima](GUIDA_CONSOLIDATA.md#lezioni-apprese-consolidate-fonte-unica).
+**Banner Ambito** ([PR #414](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/414) **mergiata**): solo «Ambito» + menu. **Patrimonio dello studio** ([PR #417](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/417) **mergiata**). **Combobox** ([PR #419](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/419) **mergiata**). **Patrimonio = sempre `studio`** ([PR #428](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/428) **mergiata** 15/08/2026): su Camellini non usa più l'id «QS Studio» (48); albero STD distinto dai clienti. Bundle Netlify contiene `scopeReady`. Dettaglio: [GUIDA lezione Patrimonio ≠ omonima](GUIDA_CONSOLIDATA.md#lezioni-apprese-consolidate-fonte-unica).
 
 **Harness Cloud**: Chromium di Playwright nello snapshot `cloud-install.sh`. **Kitesurf** non adottato. Dettaglio: [GUIDA lezione Playwright snapshot](GUIDA_CONSOLIDATA.md#lezioni-apprese-consolidate-fonte-unica).
 
