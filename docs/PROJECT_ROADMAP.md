@@ -8,17 +8,19 @@
 
 > **Risposta standard a «stato di avanzamento del progetto e priorità da affrontare»**: sintetizzare da questa sezione (moduli maturi + sessione più recente + tabella priorità sotto), **non** dal banner storico più sotto (superato, tenuto solo per traccia) né dall'archivio marzo 2026 [`docs/archive/PROJECT_CONTEXT_STATO_FUNZIONALITA_2026-03.md`](archive/PROJECT_CONTEXT_STATO_FUNZIONALITA_2026-03.md). **Aggiornare questa sezione a fine sessione** se emergono nuove priorità o se una priorità elencata viene chiusa (stesso principio delle "Lezioni apprese" in [GUIDA_CONSOLIDATA.md](GUIDA_CONSOLIDATA.md) — sintesi qui, dettaglio linkato).
 
-**Ultimo aggiornamento di questa sezione**: 15/08/2026 (ROO-6 ingest Excel; Patrimonio #428; Profilo S6).
+**Ultimo aggiornamento di questa sezione**: 15/08/2026 (sessione chiusa: Patrimonio #428 verificato; ROO-6/6c #429 mergiata; Profilo S6).
 
 ### Moduli maturi (in produzione, uso quotidiano dai clienti Camellini/Mason)
 
 Audit multi-standard (9001/14001/45001) · Non Conformità (workflow ISO 10.2 completo) · Qualifiche Personale saldatori/NDT/coordinatori (ISO 9606-1/14732/14731/9712) · Saldatura (WPQR, generazione WPS da WPQR, Welding Book, Commesse ISO 3834, Dashboard 3834) · SAL (gap analysis requisiti con AI) · Registro Documenti + Scadenzari · Notifiche/Alert (documenti/NC/qualifiche) · Riesame di Direzione · RBAC multi-tenant (`company_access`) · Registro obblighi legali (ambiente + sicurezza) · Assistente AI / Gap Analysis euristica.
 
-### Sessione più recente (14/08/2026)
+### Sessione più recente (15/08/2026)
 
-**Profilo azienda S6** ([PR #426](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/426) **mergiata**, doc [PR #427](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/427) **mergiata**, deploy VPS 15/08): pulsante «Cerca nel registro» in anagrafica. P.IVA → 1 risultato (IT-advanced, verificato TECNOVE). Nome → `IT-search` (max 8); oggi 402 finché in console OpenAPI non è attivo Company Search / credito. S0–S6 codice chiuso. Brief `DEPUTYTASK.md` CHIUSO.
+**Chiusura sessione** — Patrimonio studio distinto dai clienti ([PR #428](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/428) **mergiata**, verificato dal committente su Camellini). Ingest Excel rischi ROO-6/6c ([PR #429](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/429) **mergiata**): mapping colonne + residuo P/G a coppia. `DEPUTYTASK.md` (Profilo azienda) resta CHIUSO, non toccato.
 
-**Rischi / Opportunità / Obiettivi**: **ROO-6 chiusa** — ingest Excel M03 (detect → anteprima → inserisce nuove righe; G=4 saltata; SWOT/FMEA rifiutati). Griglia + residuo già in ROO-5. Prossima: ROO-6b detector SWOT/FMEA. [PLAN](agent-tasks/PLAN_RISCHI_OPPORTUNITA_OBIETTIVI_SLICES.md) · [spec M03](specs/M03_ANALISI_RISCHI_OPPORTUNITA.md).
+**Profilo azienda S6** ([PR #426](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/426) **mergiata**, doc [PR #427](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/427) **mergiata**, deploy VPS 15/08): pulsante «Cerca nel registro» in anagrafica. P.IVA → 1 risultato (IT-advanced, verificato TECNOVE). Nome → `IT-search` (max 8); oggi 402 finché in console OpenAPI non è attivo Company Search / credito. S0–S6 codice chiuso.
+
+**Rischi / Opportunità / Obiettivi**: **ROO-6/6c chiuse** — ingest Excel con scelta foglio e corrispondenza colonne; residuo P/G o entrambi o nessuno. Prossima: ROO-6b detector SWOT/FMEA. [PLAN](agent-tasks/PLAN_RISCHI_OPPORTUNITA_OBIETTIVI_SLICES.md) · [spec M03](specs/M03_ANALISI_RISCHI_OPPORTUNITA.md).
 
 **Banner Ambito** ([PR #414](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/414) **mergiata**): solo «Ambito» + menu. **Patrimonio dello studio** ([PR #417](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/417) **mergiata**). **Combobox** ([PR #419](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/419) **mergiata**). **Patrimonio = sempre `studio`** ([PR #428](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/428) **mergiata** 15/08/2026): su Camellini non usa più l'id «QS Studio» (48); albero STD distinto dai clienti. **Verificato dal committente** in produzione. Dettaglio: [GUIDA lezione Patrimonio ≠ omonima](GUIDA_CONSOLIDATA.md#lezioni-apprese-consolidate-fonte-unica).
 
