@@ -23,6 +23,20 @@
   overflow: hidden;
 }
 
+.did-modal--wide {
+  max-width: 880px;
+}
+
+.did-map-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px 16px;
+}
+
+@media (max-width: 700px) {
+  .did-map-grid { grid-template-columns: 1fr; }
+}
+
 /* Header */
 .did-header {
   display: flex;

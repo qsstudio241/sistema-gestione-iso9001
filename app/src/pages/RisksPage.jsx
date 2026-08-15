@@ -369,7 +369,9 @@ function RisksTab({ companies = [], filterCompany = "" }) {
   const [filterStatus, setFS]     = useState("");
   const [actionRisk, setActionRisk] = useState(null);
   const [detection, setDetection] = useState(null);
+  const [importFile, setImportFile] = useState(null);
   const [detecting, setDetecting] = useState(false);
+  const [remapping, setRemapping] = useState(false);
   const [importing, setImporting] = useState(false);
   const [importError, setImportError] = useState(null);
 
@@ -405,24 +407,38 @@ function RisksTab({ companies = [], filterCompany = "" }) {
     await load();
   }
 
+  async function runDetect(file, options = {}, { remap = false } = {}) {
+    if (remap) setRemapping(true);
+    else setDetecting(true);
+    setImportError(null);
+    try {
+      const res = await apiService.detectRisksM03Import(file, options);
+      const data = res?.data ?? res;
+      setDetection({ ...data, fileName: data.fileName || file.name });
+      if (!data?.canMap && !data?.sheets?.length) {
+        setImportError(data?.error || "File Excel non analizzabile.");
+        setDetection(null);
+      }
+    } catch (err) {
+      setImportError(err.message || "Errore analisi Excel");
+      if (!remap) setDetection(null);
+    } finally {
+      if (remap) setRemapping(false);
+      else setDetecting(false);
+    }
+  }
+
   async function handlePickExcel(e) {
     const file = e.target.files?.[0];
     e.target.value = "";
     if (!file) return;
-    setDetecting(true);
-    setImportError(null);
-    try {
-      const res = await apiService.detectRisksM03Import(file);
-      const data = res?.data ?? res;
-      setDetection({ ...data, fileName: data.fileName || file.name });
-      if (!data?.canImport) {
-        setImportError(data?.error || "Nessuna riga M03 importabile.");
-      }
-    } catch (err) {
-      setImportError(err.message || "Errore analisi Excel");
-    } finally {
-      setDetecting(false);
-    }
+    setImportFile(file);
+    await runDetect(file);
+  }
+
+  async function handleRemap(sheetName, mapping) {
+    if (!importFile) return;
+    await runDetect(importFile, { sheetName, mapping }, { remap: true });
   }
 
   async function handleConfirmImport(rows) {
@@ -435,6 +451,7 @@ function RisksTab({ companies = [], filterCompany = "" }) {
         fileName: detection?.fileName,
       });
       setDetection(null);
+      setImportFile(null);
       await load();
     } catch (err) {
       setImportError(err.message || "Errore import Excel");
@@ -468,7 +485,7 @@ function RisksTab({ companies = [], filterCompany = "" }) {
           disabled={detecting}
           onClick={() => document.getElementById("risks-m03-file")?.click()}
         >
-          {detecting ? "Analisi Excel..." : "Importa Excel M03"}
+          {detecting ? "Analisi Excel..." : "Importa Excel"}
         </button>
         <button
           type="button"
@@ -621,8 +638,10 @@ function RisksTab({ companies = [], filterCompany = "" }) {
         <RiskM03ImportDialog
           detection={detection}
           onConfirm={handleConfirmImport}
-          onClose={() => setDetection(null)}
+          onRemap={handleRemap}
+          onClose={() => { setDetection(null); setImportFile(null); }}
           loading={importing}
+          remapping={remapping}
         />
       )}
     </div>

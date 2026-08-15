@@ -289,7 +289,20 @@ async function detectRisksImport(req, res) {
         if (!file || !file.buffer) {
             return res.status(400).json({ error: 'File Excel mancante', code: 'MISSING_FILE' });
         }
-        const detection = detectRisksM03File(file.buffer);
+        let mapping = null;
+        if (req.body?.mapping) {
+            try {
+                mapping = typeof req.body.mapping === 'string'
+                    ? JSON.parse(req.body.mapping)
+                    : req.body.mapping;
+            } catch {
+                return res.status(400).json({ error: 'Mapping colonne non valido', code: 'INVALID_MAPPING' });
+            }
+        }
+        const detection = detectRisksM03File(file.buffer, {
+            sheetName: req.body?.sheetName || null,
+            mapping: mapping && typeof mapping === 'object' ? mapping : null,
+        });
         return res.json({
             success: true,
             data: {
@@ -346,7 +359,7 @@ async function importRisks(req, res) {
                 .input('responsible', emptyToNull(row?.responsible))
                 .input('review_date', emptyToNull(row?.review_date))
                 .input('company_id', company_id)
-                .input('nature', 'risk')
+                .input('nature', row?.nature === 'opportunity' ? 'opportunity' : 'risk')
                 .input('evaluated_element', emptyToNull(row?.evaluated_element))
                 .input('context_text', emptyToNull(row?.context_text))
                 .input('interested_parties_text', emptyToNull(row?.interested_parties_text))

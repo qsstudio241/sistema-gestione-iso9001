@@ -325,4 +325,34 @@ describe('detectRisksImport / importRisks — M03', () => {
     });
     expect(queryMock).toHaveBeenCalledTimes(1);
   });
+
+  it('mapping JSON non valido → 400', async () => {
+    const req = mockReq({
+      file: { buffer: buildM03TemplateBuffer(), originalname: 'M03.xlsx' },
+      body: { mapping: '{not-json' },
+    });
+    const res = mockRes();
+    await detectRisksImport(req, res);
+    expect(res.status).toHaveBeenCalledWith(400);
+    expect(res.json.mock.calls[0][0].code).toBe('INVALID_MAPPING');
+  });
+
+  it('importa nature opportunity dalla riga mappata', async () => {
+    const { queryMock, inputMock } = buildPool();
+    queryMock.mockResolvedValue({ recordset: [{ risk_id: 88 }] });
+    const req = mockReq({
+      body: {
+        rows: [
+          { action: 'create', title: 'Nuovo mercato', nature: 'opportunity', probability: 1, impact: 2 },
+        ],
+      },
+    });
+    const res = mockRes();
+    await importRisks(req, res);
+    expect(res.json).toHaveBeenCalledWith({
+      success: true,
+      data: { inserted: 1, skipped: 0, risk_ids: [88] },
+    });
+    expect(inputMock).toHaveBeenCalledWith('nature', 'opportunity');
+  });
 });
