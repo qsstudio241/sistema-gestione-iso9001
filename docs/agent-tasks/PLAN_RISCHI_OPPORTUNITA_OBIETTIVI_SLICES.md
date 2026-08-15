@@ -156,7 +156,7 @@ Ordine: **prima il ponte catalogo→riga (ROO-8)**, poi metodo documento (ROO-15
 - Ingest: la colonna «Aggiornamento» dell’Excel diventa prima revisione, o solo `effectiveness_note` corrente?
 - Data riesame distinta da `recorded_at` (backdating per §9.3) — eventuale bottone «Registra riesame».
 - Ripristino di uno snapshot (rollback) sulla riga corrente.
-- Agente AI *specializzato* §6.1: oggi **non esiste** (solo chat generale + RAG su `risks` vecchio). Si può fare dopo lo storico (ROO-19), non al posto di ROO-16.
+- Agente AI §6.1: non è un redattore. È un **analista di conformità** (ROO-19). Prima i check catalogo/6.1.2 (deterministici); lo storico abilita i check di ciclo.
 
 ## Decisioni già prese
 
@@ -199,7 +199,7 @@ Ordine: **prima il ponte catalogo→riga (ROO-8)**, poi metodo documento (ROO-15
 | **ROO-16** | **Storico riga + nascondi chiusi** | mig `risk_reviews`; write; `GET /risks/:id/reviews`; timeline **nel form**; default lista senza `closed`; checkbox «Mostra chiusi» | ROO-5, ROO-15 | AFK |
 | ROO-17 | Interrogazione ambito (input §9.3) | `GET /risks/reviews?company_id&from&to` + lista (non un quarto tab) | ROO-16 | AFK |
 | ROO-18 | Ingest → prima revisione / data riesame esplicita | detector + eventuale bottone | ROO-16 | HITL |
-| ROO-19 | Assistente AI sul processo §6.1 (HITL, non inventa righe) | stesso adapter ADR-010; RAG aggiornato a M03+review; suggest in form, conferma umana | ROO-16 | HITL |
+| ROO-19 | Analista conformità §6.1 (notifiche, non chat) | check deterministici + LLM solo sul testo; HITL; non inventa righe | ROO-16, cataloghi | HITL |
 
 ## 7. Aggiornamenti progressivi / storico (ROO-16…)
 
@@ -240,7 +240,16 @@ Pattern già in repo da **non riusare come tabella**: `document_history` (grain 
 
 **ROO-18**: ingest / data riesame esplicita — solo dopo HITL.
 
-**ROO-19** (dopo 16, HITL): non c’è un agente dedicato a questo processo. La chat generale può già *citare* i rischi via RAG (campi vecchi). Un assistente §6.1 userebbe lo stesso adapter (ADR-010): propone testi/P/G o riassume lo storico, **non scrive la riga** senza conferma. Senza `risk_reviews` non ha il «prima/dopo» da spiegare.
+**ROO-19** — non è un chat «scrivi tu la matrice». È un **analista di conformità** sul documento §6.1 (stesso spirito del suggeritore SAL: propone, non scrive). L’esempio del committente: notifica se le parti *sulle righe* non tornano col catalogo §4.2. Skill (ordine di implementazione):
+
+1. **Coerenza catalogo** (regole, poco LLM) — parte/fattore in catalogo mai usato in nessuna riga; testo riga che non matcha il catalogo; catalogo cambiato dopo l’ultimo snapshot della riga che lo cita.
+2. **Completezza 6.1.1** — considerando 4.1/4.2: elemento senza valutazione; solo rischi e zero opportunità (o il contrario) senza nota; SWOT O con `nature=risk` (e viceversa).
+3. **Azioni 6.1.2** — R alto senza ulteriori azioni; azioni senza resp./temp.; residuo o nota efficacia mancanti a scadenza; chiuso senza residuo/efficacia.
+4. **Metodo** — quadrante vs segno G; P/G fuori scala azienda; mix P×G e SWOT nello stesso ambito senza motivo.
+5. **Ciclo / storico** (dopo ROO-16) — mai riesaminato; «mitigato» con P/G identici allo snapshot precedente; chiusi che riappaiono se 4.1/4.2 è cambiato.
+6. **Citazione norma** — ogni rilievo cita 4.1 / 4.2 / 6.1.1 / 6.1.2 (note 1–2), come il SAL. Non inventa rischi; non sostituisce DVR/aspetti.
+
+LLM solo dove serve giudizio sul *testo* (match fuzzy parti, qualità della nota). Il resto è SQL. Stesso adapter ADR-010, ambito azienda, conferma umana prima di qualsiasi write.
 
 ---
 
