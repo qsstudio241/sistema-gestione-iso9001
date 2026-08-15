@@ -1,6 +1,7 @@
 # Spec — Analisi rischi e opportunità (M03)
 
 > Draft di processo dello studio, non un inventario dell'app.
+> **Processo ricostruito:** [`PROCESSO_ANALISI_RISCHI_OPPORTUNITA.md`](PROCESSO_ANALISI_RISCHI_OPPORTUNITA.md)
 > Template: [`templates/M03-R00-analisi-rischi-opportunita.xlsx`](templates/M03-R00-analisi-rischi-opportunita.xlsx)
 > Piano slice: [`../agent-tasks/PLAN_RISCHI_OPPORTUNITA_OBIETTIVI_SLICES.md`](../agent-tasks/PLAN_RISCHI_OPPORTUNITA_OBIETTIVI_SLICES.md)
 
@@ -30,17 +31,17 @@ Nel file consegnato le colonne A–D e I–L sono **vuote** (template); restano 
 
 | Colonna M03 | Campo target (proposto) | Stato app 14/08/2026 |
 |-------------|-------------------------|----------------------|
-| Elemento valutato | `evaluated_element` (nuovo) | Assente (`title` è il rischio, non il gruppo) |
-| Contesto | `context_text` (nuovo) | Solo enum `context` |
-| Parti interessate | `interested_parties_text` (nuovo) | Tab catalogo, non sulla riga |
-| Azioni attuali | `current_actions` (nuovo) | Assente |
-| P / G / R | `probability`, `impact`, score calcolato | C'è, CHECK **1–3** (M03 ha G=4) |
-| Livello | calcolato in UI (ROO-5) | Assente |
-| Ulteriori azioni | `further_actions` (nuovo) o riuso `treatment_desc` | Unico `treatment_desc` + enum treatment |
+| Elemento valutato | `evaluated_element` | C'è (ROO-4); `title` resta il rischio |
+| Contesto | `context_text` | C'è (ROO-4); enum `context` ancora presente |
+| Parti interessate | `interested_parties_text` | C'è (ROO-4); tab catalogo resta a parte |
+| Azioni attuali | `current_actions` | C'è (ROO-4) |
+| P / G / R | `probability`, `impact`, `score` | C'è, CHECK **1–3** (M03 ha G=4) |
+| Livello | `score_level` | Calcolato in API/UI (soglie 1–3/4–6/7–9) |
+| Ulteriori azioni | `further_actions` | C'è (ROO-4); fallback lettura `treatment_desc` |
 | Resp. | `responsible` | C'è |
-| Temp. | `action_due_date` (nuovo) o `review_date` | Solo `review_date` |
-| Aggiornamento | `effectiveness_note` (nuovo) | Assente |
-| P/G/R/Livello residuo | `residual_probability`, `residual_impact`, … | Assente |
+| Temp. | `review_date` (azione distinta = ROO-7) | C'è (`review_date`) |
+| Aggiornamento | `effectiveness_note` | C'è (ROO-5) |
+| P/G/R/Livello residuo | `residual_probability`, `residual_impact`, `residual_score` | C'è (ROO-5); scala 1–3 |
 | (ISO, non in Excel) | `nature` | C'è (`risk` default in ingest) |
 | Ambito | `company_id` | Opzionale + header `useCompanyScope` |
 

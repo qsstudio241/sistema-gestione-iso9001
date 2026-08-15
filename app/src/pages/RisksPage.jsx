@@ -1,15 +1,15 @@
 /**
- * RisksPage - Registro Rischi & Obiettivi ISO 9001 §6.1 + §6.2
- * Sprint 6: matrice rischio (prob×impatto), CRUD rischi, CRUD obiettivi con progress bar
- * Filtro per ambito (azienda): ogni tab mostra e filtra per company_id
+ * RisksPage - Analisi rischi/opportunita ISO 9001 §6.1 + obiettivi §6.2
+ * Superficie: matrice SgqDataGrid (ordine M03). Click riga → form.
  */
 
 import React, { useState, useEffect, useCallback } from "react";
 import apiService from "../services/apiService";
 import { useCompanyScope } from "../contexts/CompanyScopeContext";
 import { formatDate } from "../utils/dateHelpers";
-import { riskScore, riskScoreLevel, scoreColor, displayFurtherActions } from "../utils/riskScore";
+import { riskScore, riskScoreLevel, scoreColor, displayFurtherActions, residualScoreFromRisk } from "../utils/riskScore";
 import NcCreateModal from "../components/NcCreateModal";
+import SgqDataGrid from "../components/SgqDataGrid";
 import "./RisksPage.css";
 
 const TREATMENT_LABEL = {
@@ -44,15 +44,59 @@ const EMPTY_RISK = {
   responsible: "", review_date: "", status: "open", nature: "risk", company_id: "",
   evaluated_element: "", context_text: "", interested_parties_text: "",
   current_actions: "", further_actions: "",
+  residual_probability: "", residual_impact: "", effectiveness_note: "",
 };
 const EMPTY_OBJ  = { title: "", description: "", iso_clause: "", kpi_description: "", target_value: "", current_value: "", progress_pct: 0, responsible: "", due_date: "", status: "active", company_id: "" };
 
+function dateInputValue(value) {
+  if (!value) return "";
+  const s = String(value);
+  return s.length >= 10 ? s.slice(0, 10) : s;
+}
+
+const RISK_GRID_COLUMNS = [
+  { id: "evaluated_element", label: "Elemento", sortable: true },
+  { id: "title", label: "Titolo", sortable: true },
+  { id: "context_text", label: "Contesto", sortable: true },
+  { id: "interested_parties_text", label: "Parti", sortable: true },
+  { id: "current_actions", label: "Azioni attuali", sortable: true },
+  { id: "probability", label: "P", sortable: true, cellClassName: "risks-grid-num", headerClassName: "risks-grid-num" },
+  { id: "impact", label: "G", sortable: true, cellClassName: "risks-grid-num", headerClassName: "risks-grid-num" },
+  { id: "score", label: "R", sortable: true, cellClassName: "risks-grid-num", headerClassName: "risks-grid-num" },
+  { id: "score_level", label: "Livello", sortable: true },
+  { id: "further_actions", label: "Ulteriori azioni", sortable: true },
+  { id: "responsible", label: "Resp.", sortable: true },
+  { id: "review_date", label: "Temp.", sortable: true },
+  { id: "effectiveness_note", label: "Aggiornamento", sortable: true },
+  { id: "residual_probability", label: "P res", sortable: true, cellClassName: "risks-grid-num", headerClassName: "risks-grid-num" },
+  { id: "residual_impact", label: "G res", sortable: true, cellClassName: "risks-grid-num", headerClassName: "risks-grid-num" },
+  { id: "residual_score", label: "R res", sortable: true, cellClassName: "risks-grid-num", headerClassName: "risks-grid-num" },
+  { id: "residual_score_level", label: "Liv. res", sortable: true },
+  { id: "status", label: "Stato", sortable: true },
+  { id: "azioni", label: "", sortable: false },
+];
+
+function clipCell(text) {
+  const s = text == null ? "" : String(text).trim();
+  if (!s) return "\u2014";
+  return <span className="risks-grid-cell-clip" title={s}>{s}</span>;
+}
+
 function RiskForm({ initial, onSave, onClose, companies = [] }) {
-  const [form, setForm] = useState({ ...EMPTY_RISK, ...initial });
+  const [form, setForm] = useState(() => ({
+    ...EMPTY_RISK,
+    ...initial,
+    review_date: dateInputValue(initial?.review_date),
+    residual_probability: initial?.residual_probability ?? "",
+    residual_impact: initial?.residual_impact ?? "",
+    effectiveness_note: initial?.effectiveness_note || "",
+  }));
   const [saving, setSaving] = useState(false);
   const [error, setError]   = useState(null);
   const score = riskScore(form.probability, form.impact);
   const scoreLevel = riskScoreLevel(score);
+  const residualScore = residualScoreFromRisk(form);
+  const residualLevel = residualScore == null ? null : riskScoreLevel(residualScore);
 
   function upd(k, v) { setForm(f => ({ ...f, [k]: v })); }
 
@@ -152,6 +196,53 @@ function RiskForm({ initial, onSave, onClose, companies = [] }) {
           </div>
           <div className="form-row-2col">
             <div>
+              <label>Responsabile</label>
+              <input value={form.responsible} onChange={e => upd("responsible", e.target.value)} />
+            </div>
+            <div>
+              <label>Tempistica</label>
+              <input type="date" value={form.review_date} onChange={e => upd("review_date", e.target.value)} />
+            </div>
+          </div>
+          <div className="form-row">
+            <label>Aggiornamento (efficacia)</label>
+            <textarea rows={2} value={form.effectiveness_note || ""} onChange={e => upd("effectiveness_note", e.target.value)} placeholder="Riesame / esito delle ulteriori azioni" />
+          </div>
+          <div className="form-row-3col">
+            <div>
+              <label>P residua</label>
+              <select
+                value={form.residual_probability === "" || form.residual_probability == null ? "" : form.residual_probability}
+                onChange={e => upd("residual_probability", e.target.value === "" ? "" : parseInt(e.target.value, 10))}
+              >
+                <option value="">{"\u2014"}</option>
+                {[1,2,3].map(v => <option key={v} value={v}>{v} - {PROB_LABELS[v]}</option>)}
+              </select>
+            </div>
+            <div>
+              <label>G residua</label>
+              <select
+                value={form.residual_impact === "" || form.residual_impact == null ? "" : form.residual_impact}
+                onChange={e => upd("residual_impact", e.target.value === "" ? "" : parseInt(e.target.value, 10))}
+              >
+                <option value="">{"\u2014"}</option>
+                {[1,2,3].map(v => <option key={v} value={v}>{v} - {IMP_LABELS[v]}</option>)}
+              </select>
+            </div>
+            <div className="score-preview">
+              <label>{"R residuo"}</label>
+              {residualScore == null ? (
+                <span className="score-preview-level">{"\u2014"}</span>
+              ) : (
+                <>
+                  <span className={`score-badge ${scoreColor(residualScore)}`}>{residualScore}</span>
+                  <span className="score-preview-level">{residualLevel}</span>
+                </>
+              )}
+            </div>
+          </div>
+          <div className="form-row-2col">
+            <div>
               <label>Trattamento</label>
               <select value={form.treatment} onChange={e => upd("treatment", e.target.value)}>
                 {Object.entries(TREATMENT_LABEL).map(([k,v]) => <option key={k} value={k}>{v}</option>)}
@@ -167,16 +258,6 @@ function RiskForm({ initial, onSave, onClose, companies = [] }) {
           <div className="form-row">
             <label>Azione di trattamento (legacy)</label>
             <textarea rows={2} value={form.treatment_desc} onChange={e => upd("treatment_desc", e.target.value)} placeholder="Usato in lettura se Ulteriori azioni è vuoto" />
-          </div>
-          <div className="form-row-2col">
-            <div>
-              <label>Responsabile</label>
-              <input value={form.responsible} onChange={e => upd("responsible", e.target.value)} />
-            </div>
-            <div>
-              <label>Data revisione</label>
-              <input type="date" value={form.review_date} onChange={e => upd("review_date", e.target.value)} />
-            </div>
           </div>
           {error && <p className="form-error">{error}</p>}
           <div className="form-footer">
@@ -340,62 +421,114 @@ function RisksTab({ companies = [], filterCompany = "" }) {
         <button className="btn-primary" onClick={() => setModal({ mode: "new", data: { company_id: filterCompany || "" } })}>+ Nuovo rischio</button>
       </div>
 
-      {/* Lista */}
-      {loading ? <p className="loading-msg">Caricamento...</p> : list.length === 0 ? (
-        <div className="empty-state"><p>Nessun rischio registrato. Clicca "+ Nuovo rischio" per iniziare.</p></div>
-      ) : (
-        <div className="risk-list">
-          {list.map(r => {
-            const sc = r.score != null ? r.score : riskScore(r.probability, r.impact);
-            const level = r.score_level || riskScoreLevel(sc);
-            const further = displayFurtherActions(r);
-            const statusCfg = RISK_STATUS_CFG[r.status] || { label: r.status, cls: "" };
-            return (
-              <div key={r.risk_id} className={`risk-card ${scoreColor(sc)}-border`}>
-                <div className="risk-card-top">
-                  <div className="risk-card-title">
-                    <span className={`score-badge ${scoreColor(sc)}`}>{sc}</span>
-                    <span className={`nature-badge nature-${r.nature || "risk"}`}>
-                      {r.nature === "opportunity" ? "\uD83D\uDFE2 Opportunit\u00e0" : "\uD83D\uDD34 Rischio"}
+      <p className="risks-grid-hint">{"Clicca una riga per aprire la scheda."}</p>
+      <div className="risks-grid-wrap">
+        <SgqDataGrid
+          rows={list}
+          columns={RISK_GRID_COLUMNS}
+          loading={loading}
+          emptyMessage={'Nessuna valutazione. Clicca "+ Nuovo rischio" per iniziare.'}
+          theme="plain"
+          initialSortCol="score"
+          initialSortDir="desc"
+          getRowKey={row => row.risk_id}
+          onRowClick={row => setModal({ mode: "edit", data: row })}
+          getSortValue={(row, colId) => {
+            if (colId === "score") return row.score != null ? row.score : riskScore(row.probability, row.impact);
+            if (colId === "residual_score") return residualScoreFromRisk(row) ?? -1;
+            if (colId === "score_level") {
+              const sc = row.score != null ? row.score : riskScore(row.probability, row.impact);
+              return row.score_level || riskScoreLevel(sc);
+            }
+            if (colId === "residual_score_level") {
+              const rs = residualScoreFromRisk(row);
+              return rs == null ? "" : (row.residual_score_level || riskScoreLevel(rs));
+            }
+            if (colId === "review_date") return row.review_date || "";
+            if (colId === "status") return RISK_STATUS_CFG[row.status]?.label || row.status;
+            if (colId === "further_actions") return displayFurtherActions(row);
+            return row[colId] ?? "";
+          }}
+          renderCell={(row, col) => {
+            const sc = row.score != null ? row.score : riskScore(row.probability, row.impact);
+            const level = row.score_level || riskScoreLevel(sc);
+            const residual = residualScoreFromRisk(row);
+            const residualLevel = residual == null ? null : (row.residual_score_level || riskScoreLevel(residual));
+            switch (col.id) {
+              case "evaluated_element":
+                return clipCell(row.evaluated_element);
+              case "title":
+                return (
+                  <div className="risks-grid-title">
+                    <span className={`nature-badge nature-${row.nature || "risk"}`}>
+                      {row.nature === "opportunity" ? "Opportunit\u00e0" : "Rischio"}
                     </span>
-                    {r.evaluated_element && <span className="risk-element">{r.evaluated_element}</span>}
-                    <strong>{r.title}</strong>
-                    {r.category && <span className="risk-cat">{r.category}</span>}
-                    {r.company_name && <span className="risk-company-badge">{r.company_name}</span>}
+                    <strong className="risks-grid-cell-clip" title={row.title}>{row.title}</strong>
                   </div>
-                  <div className="risk-card-actions">
-                    <span className={`status-tag ${statusCfg.cls}`}>{statusCfg.label}</span>
-                    <button type="button" className="btn-icon" onClick={() => setModal({ mode: "edit", data: r })} title="Modifica">{"\u270F\uFE0F"}</button>
-                    <button type="button" className="btn-icon btn-del" onClick={() => handleDelete(r)} title="Elimina">{"\uD83D\uDDD1\uFE0F"}</button>
+                );
+              case "context_text":
+                return clipCell(row.context_text);
+              case "interested_parties_text":
+                return clipCell(row.interested_parties_text);
+              case "current_actions":
+                return clipCell(row.current_actions);
+              case "probability":
+                return row.probability ?? "\u2014";
+              case "impact":
+                return row.impact ?? "\u2014";
+              case "score":
+                return <span className={`score-badge ${scoreColor(sc)}`}>{sc}</span>;
+              case "score_level":
+                return level;
+              case "further_actions":
+                return clipCell(displayFurtherActions(row));
+              case "responsible":
+                return clipCell(row.responsible);
+              case "review_date":
+                return row.review_date ? formatDate(row.review_date) : "\u2014";
+              case "effectiveness_note":
+                return clipCell(row.effectiveness_note);
+              case "residual_probability":
+                return row.residual_probability ?? "\u2014";
+              case "residual_impact":
+                return row.residual_impact ?? "\u2014";
+              case "residual_score":
+                return residual == null ? "\u2014" : <span className={`score-badge ${scoreColor(residual)}`}>{residual}</span>;
+              case "residual_score_level":
+                return residualLevel || "\u2014";
+              case "status": {
+                const statusCfg = RISK_STATUS_CFG[row.status] || { label: row.status, cls: "" };
+                return <span className={`status-tag ${statusCfg.cls}`}>{statusCfg.label}</span>;
+              }
+              case "azioni":
+                return (
+                  <div className="risks-grid-actions">
+                    {row.status === "in_treatment" && (
+                      <button
+                        type="button"
+                        className="btn-icon"
+                        title="Crea azione nel Piano Azioni"
+                        onClick={e => { e.stopPropagation(); setActionRisk(row); }}
+                      >
+                        NC
+                      </button>
+                    )}
+                    <button
+                      type="button"
+                      className="btn-icon btn-del"
+                      title="Elimina"
+                      onClick={e => { e.stopPropagation(); handleDelete(row); }}
+                    >
+                      {"\u00d7"}
+                    </button>
                   </div>
-                </div>
-                {r.description && <p className="risk-desc">{r.description}</p>}
-                {r.context_text && <p className="risk-m03-line"><strong>Contesto:</strong> {r.context_text}</p>}
-                {r.interested_parties_text && <p className="risk-m03-line"><strong>Parti:</strong> {r.interested_parties_text}</p>}
-                {r.current_actions && <p className="risk-m03-line"><strong>Azioni attuali:</strong> {r.current_actions}</p>}
-                <div className="risk-meta">
-                  <span>{"\uD83D\uDCA1 "}{TREATMENT_LABEL[r.treatment]}</span>
-                  {r.responsible && <span>{"\uD83D\uDC64 "}{r.responsible}</span>}
-                  {r.review_date && <span>{"\uD83D\uDCC5 "}Revisione: {formatDate(r.review_date)}</span>}
-                  <span className="risk-prob-imp">{`P:${r.probability} \u00d7 G:${r.impact} = ${sc} (${level})`}</span>
-                </div>
-                {further && (
-                  <p className="risk-treatment">{"\uD83D\uDEE1\uFE0F "}{further}</p>
-                )}
-                {r.status === "in_treatment" && (
-                  <button
-                    type="button"
-                    className="btn-action-risk"
-                    onClick={() => setActionRisk(r)}
-                  >
-                    {"+ Crea azione nel Piano Azioni"}
-                  </button>
-                )}
-              </div>
-            );
-          })}
-        </div>
-      )}
+                );
+              default:
+                return row[col.id] ?? "\u2014";
+            }
+          }}
+        />
+      </div>
 
       {modal && (
         <RiskForm
@@ -822,12 +955,12 @@ export default function RisksPage() {
     <div className="risks-page">
       <div className="risks-page-header">
         <h1>{"\u26A0\uFE0F Rischi, Opportunit\u00e0 e Obiettivi"}</h1>
-        <p className="risks-page-sub">{"ISO 9001:2015 \u00A7 4.1/4.2 Contesto \u2014 \u00A7 6.1 Rischi e opportunit\u00e0 \u2014 \u00A7 6.2 Obiettivi per la qualit\u00e0"}</p>
+        <p className="risks-page-sub">{"ISO 9001:2015 \u00A7 6.1 analisi rischi e opportunit\u00e0 (matrice M03) \u2014 \u00A7 4.1/4.2 contesto \u2014 \u00A7 6.2 obiettivi"}</p>
       </div>
 
       <div className="risks-tabs">
         <button type="button" className={`risks-tab-btn${activeTab === "risks" ? " active" : ""}`} onClick={() => setActiveTab("risks")}>
-          {"\uD83D\uDEA7 Registro Rischi"}
+          Analisi
         </button>
         <button type="button" className={`risks-tab-btn${activeTab === "objectives" ? " active" : ""}`} onClick={() => setActiveTab("objectives")}>
           {"\uD83C\uDFAF Obiettivi Qualit\u00e0"}

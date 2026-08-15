@@ -2,7 +2,7 @@
  * @jest-environment node
  */
 
-const { parsePgFactor, riskScore, riskScoreLevel, decorateRiskRow } = require('./riskScore');
+const { parsePgFactor, parseOptionalPgFactor, riskScore, riskScoreLevel, decorateRiskRow } = require('./riskScore');
 
 describe('riskScore — R = P × G (scala 1-3)', () => {
     const matrix = [];
@@ -56,6 +56,19 @@ describe('parsePgFactor — rifiuta la scala M03/FMEA', () => {
     });
 });
 
+describe('parseOptionalPgFactor — residuo opzionale', () => {
+    it('vuoto / null → null', () => {
+        expect(parseOptionalPgFactor('')).toEqual({ ok: true, value: null });
+        expect(parseOptionalPgFactor(null)).toEqual({ ok: true, value: null });
+        expect(parseOptionalPgFactor(undefined)).toEqual({ ok: true, value: null });
+    });
+
+    it('accetta 1-3 e rifiuta 4', () => {
+        expect(parseOptionalPgFactor(2)).toEqual({ ok: true, value: 2 });
+        expect(parseOptionalPgFactor(4).ok).toBe(false);
+    });
+});
+
 describe('decorateRiskRow', () => {
     it('aggiunge score e score_level senza mutare P/G', () => {
         const row = decorateRiskRow({ probability: 3, impact: 3, title: 'x' });
@@ -63,5 +76,22 @@ describe('decorateRiskRow', () => {
         expect(row.score_level).toBe('alto');
         expect(row.probability).toBe(3);
         expect(row.impact).toBe(3);
+        expect(row.residual_score).toBeNull();
+        expect(row.residual_score_level).toBeNull();
+    });
+
+    it('calcola residuo solo se entrambi P e G residui sono presenti', () => {
+        const full = decorateRiskRow({
+            probability: 3, impact: 3,
+            residual_probability: 1, residual_impact: 2,
+        });
+        expect(full.residual_score).toBe(2);
+        expect(full.residual_score_level).toBe('basso');
+
+        const partial = decorateRiskRow({
+            probability: 2, impact: 2,
+            residual_probability: 2, residual_impact: null,
+        });
+        expect(partial.residual_score).toBeNull();
     });
 });

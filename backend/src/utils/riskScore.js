@@ -22,6 +22,14 @@ function parsePgFactor(value, fallback) {
     return { ok: true, value: n };
 }
 
+/** P/G residui: vuoto → null (opzionale). Stessa scala 1–3 se valorizzato. */
+function parseOptionalPgFactor(value) {
+    if (value === undefined || value === null || value === '') {
+        return { ok: true, value: null };
+    }
+    return parsePgFactor(value);
+}
+
 function riskScore(probability, impact) {
     return Number(probability) * Number(impact);
 }
@@ -33,17 +41,33 @@ function riskScoreLevel(score) {
     return 'basso';
 }
 
+function residualScoreFromRow(row) {
+    const p = row?.residual_probability;
+    const g = row?.residual_impact;
+    if (p == null || g == null || p === '' || g === '') return null;
+    return riskScore(p, g);
+}
+
 function decorateRiskRow(row) {
     if (!row) return row;
     const score = riskScore(row.probability || 1, row.impact || 1);
-    return { ...row, score, score_level: riskScoreLevel(score) };
+    const residual_score = residualScoreFromRow(row);
+    return {
+        ...row,
+        score,
+        score_level: riskScoreLevel(score),
+        residual_score,
+        residual_score_level: residual_score == null ? null : riskScoreLevel(residual_score),
+    };
 }
 
 module.exports = {
     PG_MIN,
     PG_MAX,
     parsePgFactor,
+    parseOptionalPgFactor,
     riskScore,
     riskScoreLevel,
+    residualScoreFromRow,
     decorateRiskRow,
 };
