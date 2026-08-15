@@ -8,6 +8,7 @@ import apiService from "../services/apiService";
 import { useCompanyScope } from "../contexts/CompanyScopeContext";
 import { formatDate } from "../utils/dateHelpers";
 import { riskScore, riskScoreLevel, scoreColor, displayFurtherActions, residualScoreFromRisk, normalizePgMax, pgOptions } from "../utils/riskScore";
+import { appendCatalogLine, formatContextFactorLine, formatInterestedPartyLine } from "../utils/catalogTextAppend";
 import NcCreateModal from "../components/NcCreateModal";
 import SgqDataGrid from "../components/SgqDataGrid";
 import RiskM03ImportDialog from "../components/RiskM03ImportDialog";
@@ -83,7 +84,7 @@ function clipCell(text) {
   return <span className="risks-grid-cell-clip" title={s}>{s}</span>;
 }
 
-function RiskForm({ initial, onSave, onClose, companies = [], pgMax = 3 }) {
+function RiskForm({ initial, onSave, onClose, companies = [], pgMax = 3, filterCompany = "" }) {
   const [form, setForm] = useState(() => ({
     ...EMPTY_RISK,
     ...initial,
@@ -94,6 +95,8 @@ function RiskForm({ initial, onSave, onClose, companies = [], pgMax = 3 }) {
   }));
   const [saving, setSaving] = useState(false);
   const [error, setError]   = useState(null);
+  const [factors, setFactors] = useState([]);
+  const [parties, setParties] = useState([]);
   const scale = pgOptions(pgMax);
   const score = riskScore(form.probability, form.impact);
   const scoreLevel = riskScoreLevel(score, scale.max);
@@ -101,7 +104,30 @@ function RiskForm({ initial, onSave, onClose, companies = [], pgMax = 3 }) {
   const residualLevel = residualScore == null ? null : riskScoreLevel(residualScore, scale.max);
   const pgValues = Array.from({ length: scale.max }, (_, i) => i + 1);
 
+  useEffect(() => {
+    const params = filterCompany ? { company_id: filterCompany } : {};
+    let cancelled = false;
+    Promise.all([
+      apiService.getContextFactors(params),
+      apiService.getInterestedParties(params),
+    ]).then(([cfRes, ipRes]) => {
+      if (cancelled) return;
+      setFactors(cfRes?.data || []);
+      setParties(ipRes?.data || []);
+    }).catch(() => {
+      if (!cancelled) {
+        setFactors([]);
+        setParties([]);
+      }
+    });
+    return () => { cancelled = true; };
+  }, [filterCompany]);
+
   function upd(k, v) { setForm(f => ({ ...f, [k]: v })); }
+
+  function appendFromCatalog(field, line) {
+    upd(field, appendCatalogLine(form[field], line));
+  }
 
   async function submit(e) {
     e.preventDefault();
@@ -159,12 +185,44 @@ function RiskForm({ initial, onSave, onClose, companies = [], pgMax = 3 }) {
             </div>
           </div>
           <div className="form-row">
-            <label>Contesto (§4.1)</label>
-            <textarea rows={2} value={form.context_text || ""} onChange={e => upd("context_text", e.target.value)} placeholder="Fattori interni/esterni rilevanti per questa riga" />
+            <label htmlFor="risk-context-text">Contesto (§4.1)</label>
+            <textarea id="risk-context-text" rows={2} value={form.context_text || ""} onChange={e => upd("context_text", e.target.value)} placeholder="Fattori interni/esterni rilevanti per questa riga" />
+            {factors.length > 0 && (
+              <select
+                aria-label="Dal catalogo contesto"
+                className="risk-catalog-pick"
+                value=""
+                onChange={(e) => {
+                  const item = factors.find((f) => String(f.id) === e.target.value);
+                  if (item) appendFromCatalog("context_text", formatContextFactorLine(item));
+                }}
+              >
+                <option value="">Dal catalogo §4.1…</option>
+                {factors.map((f) => (
+                  <option key={f.id} value={f.id}>{formatContextFactorLine(f).slice(0, 80)}</option>
+                ))}
+              </select>
+            )}
           </div>
           <div className="form-row">
-            <label>Parti interessate (§4.2)</label>
-            <textarea rows={2} value={form.interested_parties_text || ""} onChange={e => upd("interested_parties_text", e.target.value)} placeholder="Parti e requisiti rilevanti per questa riga" />
+            <label htmlFor="risk-parties-text">Parti interessate (§4.2)</label>
+            <textarea id="risk-parties-text" rows={2} value={form.interested_parties_text || ""} onChange={e => upd("interested_parties_text", e.target.value)} placeholder="Parti e requisiti rilevanti per questa riga" />
+            {parties.length > 0 && (
+              <select
+                aria-label="Dal catalogo parti"
+                className="risk-catalog-pick"
+                value=""
+                onChange={(e) => {
+                  const item = parties.find((p) => String(p.id) === e.target.value);
+                  if (item) appendFromCatalog("interested_parties_text", formatInterestedPartyLine(item));
+                }}
+              >
+                <option value="">Dal catalogo §4.2…</option>
+                {parties.map((p) => (
+                  <option key={p.id} value={p.id}>{formatInterestedPartyLine(p).slice(0, 80)}</option>
+                ))}
+              </select>
+            )}
           </div>
           <div className="form-row">
             <label>Azioni attuali</label>
@@ -671,6 +729,7 @@ function RisksTab({ companies = [], filterCompany = "", reloadCompanies }) {
           onSave={handleSave}
           onClose={() => setModal(null)}
           companies={companies}
+          filterCompany={filterCompany}
           pgMax={normalizePgMax(modal.data?.risk_pg_max || pgMax)}
         />
       )}
@@ -1128,3 +1187,5 @@ export default function RisksPage() {
     </div>
   );
 }
+
+export { RiskForm };

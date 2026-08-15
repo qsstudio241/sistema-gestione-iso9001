@@ -180,7 +180,7 @@ Ordine: **prima il ponte catalogo→riga (ROO-8)**, poi metodo documento (ROO-15
 | **ROO-6** | **Ingest Excel M03** | detect → dry-run → insert (non overwrite); G=4 skip; SWOT/FMEA rifiutati | ROO-5 | FATTO |
 | **ROO-6c** | **Mapping colonne HITL** | scelta foglio + corrispondenza campi SGQ; peso BASSO/MEDIO/ALTO; split Rischi/Opportunità; SWOT non blocca più il file | ROO-6 | FATTO |
 | ROO-6b | Detector SWOT+FMEA (riga unica, troppo spessa) | — | — | spezzata in 6b-S / 6b-F |
-| **ROO-8** | **Picker catalogo 4.1/4.2 → testi riga** | `RiskForm` + API cataloghi già esistenti; accoda testo, no FK | ROO-4 | AFK — **APERTA** |
+| **ROO-8** | **Picker catalogo 4.1/4.2 → testi riga** | `RiskForm` + API cataloghi già esistenti; accoda testo, no FK | ROO-4 | FATTO |
 | ROO-15 | Documento di analisi: `standard_ids` + `method` + posto per G con segno | testata o colonne riga; HITL se testata ≠ riga | ROO-4 | AFK |
 | ROO-6b-S | Detector + UI SWOT (`swot_quadrant`, G con segno) | `excelRisksM03Detector` + griglia/form; stesso guscio ingest | ROO-8, ROO-15 | AFK |
 | ROO-6b-F | Detector FMEA HSE (G×P×Rilev) | stesso motore, mapping diversi | ROO-15 | AFK |

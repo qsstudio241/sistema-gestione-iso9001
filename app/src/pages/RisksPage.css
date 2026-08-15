@@ -299,6 +299,17 @@
   box-sizing: border-box;
 }
 .form-row textarea { resize: vertical; }
+.risk-catalog-pick {
+  margin-top: 6px;
+  width: 100%;
+  padding: 7px 10px;
+  border: 1px solid #cbd5e0;
+  border-radius: 6px;
+  font-size: 0.8rem;
+  box-sizing: border-box;
+  color: #4a5568;
+  background: #fff;
+}
 .form-row-2col { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px; }
 .form-row-2col label { display: block; font-size: 0.8rem; font-weight: 600; color: #4a5568; margin-bottom: 4px; }
 .form-row-2col input,

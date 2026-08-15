@@ -1,8 +1,8 @@
 # DEPUTYTASK — Rischi / Opportunità — ROO-8 (picker 4.1/4.2 → riga)
 
-**Stato:** APERTO  
-**Aperto:** 15/08/2026 (Lead wayfinder — integrazione SWOT / parti)  
-**Slice:** ROO-8  
+**Stato:** CHIUSO (ROO-8) — in esecuzione ROO-15  
+**Aperto:** 15/08/2026  
+**Slice:** ROO-8 FATTO; prossima ROO-15  
 **Piano:** [PLAN_RISCHI_OPPORTUNITA_OBIETTIVI_SLICES.md](PLAN_RISCHI_OPPORTUNITA_OBIETTIVI_SLICES.md) §6  
 **Branch base:** `cursor/rischi-opportunita-obiettivi-c6d2`
 
