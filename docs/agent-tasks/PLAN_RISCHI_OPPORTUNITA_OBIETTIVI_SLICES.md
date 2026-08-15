@@ -3,7 +3,7 @@
 > **Destinazione**: il modulo è il **documento di analisi rischi/opportunità** (HLS §6.1), valido per 9001 / 14001 / 45001 / SGI. Una riga = una valutazione. Il **metodo di pesatura** (P×G, FMEA G×P×Rilev, SWOT con G con segno) è del documento, non del prodotto. L'ingest accetta più layout (M03, SWOT, FMEA HSE). Non sostituisce DVR né registro aspetti. Obiettivi §6.2 = tab collegato.
 > **Spec**: [PROCESSO](../specs/PROCESSO_ANALISI_RISCHI_OPPORTUNITA.md) · [M03 mapping](../specs/M03_ANALISI_RISCHI_OPPORTUNITA.md) · template [M03-R00](../specs/templates/M03-R00-analisi-rischi-opportunita.xlsx)
 > **Norma**: [9001:2015](../Normative/UNI%20EN%20ISO%209001_2015%20Rev.%200.md) · [14001:2015](../Normative/Normative%20NORMA_00003_%20UNI%20EN%20ISO%2014001_2015%20Rev.%200.md) §6.1 · [45001:2018](../Normative/Normative%20NORMA_00002_%20UNI%20ISO%2045001_2018%20Rev.%200.md) §6.1
-> **Brief attivo**: [DEPUTYTASK_RISCHI_ROO.md](DEPUTYTASK_RISCHI_ROO.md) (ROO-13 chiusa — scala P/G per azienda; prossima ROO-6b SWOT/FMEA)
+> **Brief attivo**: [DEPUTYTASK_RISCHI_ROO.md](DEPUTYTASK_RISCHI_ROO.md) (ROO-8 APERTO — picker catalogo 4.1/4.2 → testi della riga)
 > **Draft studio**: M03 rev.00, 19/06/2026, foglio `Analisi Rischio`, autore Marco Camellini
 
 **Correzione di rotta (14/08/2026)**: la prima mappa partiva dai quattro tab già in app e chiedeva come «chiudere la catena» con FK. Quella premessa **inficia** l'analisi: il processo non è CRUD di registri. Questa mappa parte dal **processo ISO**, poi dal **CRUD che serve a quel processo**, poi dal **gap** sul codice attuale.
@@ -122,19 +122,45 @@ La vecchia ROO-4 (FK catalogo → rischio) **non è più la prima slice**: aggiu
 - Versionare in Git gli Excel cliente pieni di dati (solo template vuoti).
 - Un unico form che unifica FMEA e SWOT.
 
+## 6. Integrazione SWOT e parti interessate (15/08/2026)
+
+Non sono due moduli da affiancare all’analisi. Sono **due ingressi dello stesso processo** (HLS: 4.1/4.2 → 6.1). La UI resta **una matrice** + form riga. Niente quarto tab «SWOT», niente tab «Parti» come home.
+
+### Parti interessate (§4.2)
+
+| Strato | Dove vive | Ruolo |
+|--------|-----------|--------|
+| Catalogo da **monitorare e riesaminare** | tab Contesto → `interested_parties` (già c’è, mig. 124) | Anagrafica: nome, relazione, requisiti. Non è la valutazione. |
+| Testo **sulla riga di analisi** | colonna/form `interested_parties_text` (già c’è, ROO-4; ingest ROO-6c) | Quali parti e requisiti contano *per questa* valutazione. Una riga è valida anche senza catalogo. |
+
+Oggi i due strati **non si parlano**: il form ha solo textarea; il tab è CRUD isolato. L’integrazione UI è un **picker** sul form (stesso gesto di «Cerca nel registro»): scegli dal catalogo dell’ambito → si **accoda** nome + requisiti nel testo. Nessuna FK obbligatoria. Stesso gesto per i fattori §4.1 → `context_text`.
+
+### SWOT (metodo, non registro)
+
+| Strato | Dove vive | Ruolo |
+|--------|-----------|--------|
+| Quadrante S/W/O/T + G **con segno** | stessa riga `risks`, metodo documento `swot_signed` (COSBEN) | Pesatura alternativa a P×G. S/W interni, O/T esterni; O ≈ opportunità, T ≈ rischio; S/W restano quadrante, non un terzo `nature`. |
+| Parti e fattore | già previsti sulla riga COSBEN | Stessi campi testo 4.1/4.2; il picker ROO-8 serve anche qui. |
+
+Oggi il detector **avvisa** se il foglio sembra SWOT/FMEA e mappa comunque come P×G (il segno si perde; CHECK `impact` è 1–5). Native SWOT **non** entra finché non esiste `method` (ROO-15) e un posto per il segno (non si mette −3 in `impact`).
+
+Ordine: **prima il ponte catalogo→riga (ROO-8)**, poi metodo documento (ROO-15), poi detector SWOT (ROO-6b-S). FMEA HSE è lo stesso schema, mapping diverso (ROO-6b-F).
+
 ## Non ancora specificato
 
 - Soglie Basso/Medio/Alto del solo M03 (osservato Basso ≤3, Medio 4–8; Pagani usa fasce IPR 1–16 / 18–36 / 40–125).
 - Ulteriori azioni: solo sulla riga, o anche copia nel Piano Azioni (Pagani ha il foglio piano: è il modello più maturo per ROO-14).
 - Export: ristampa del layout originale vs layout SGQ unico.
 - Se e quando collegare una riga di analisi a un aspetto / obbligo / pericolo già in altri moduli.
+- Dove vive `method` (testata documento vs colonna su ogni riga) — si chiude in ROO-15, non in ROO-8.
 
 ## Decisioni già prese
 
 - Si **riusa** `risks` come riga di analisi (niente quinta tabella).
 - Cataloghi 4.1/4.2 e tab obiettivi **restano**; non sono la destinazione.
 - Ambito: `useCompanyScope()` (PR #401). Non reintrodurre selettore di pagina.
-- Ingest = detect **per layout** → dry-run → upsert. Primo detector: M03. SWOT e FMEA HSE dopo che la riga esiste.
+- Ingest = detect **per layout** → dry-run → insert (v1). Primo detector: M03. SWOT e FMEA HSE dopo `method` (ROO-15).
+- **SWOT e parti (15/08/2026):** catalogo 4.2 ≠ testo riga; UI = picker che scrive testo. SWOT = metodo della stessa matrice, non un tab. Vedi §6.
 - Multi-standard: **stesso modulo**, tag `standard_ids` (9001/14001/45001) + flag SGI come ADR-009. Due documenti (SSL + Ambiente) come Pagani = due analisi, stesso schema.
 - Metodo di pesatura = proprietà del documento (`pxg` \| `fmea_gpr` \| `swot_signed`), non colonna fissa 1–3.
 - Layer aspetti/pericoli/DVR **non** si implementa qui.
@@ -153,16 +179,18 @@ La vecchia ROO-4 (FK catalogo → rischio) **non è più la prima slice**: aggiu
 | **ROO-5** | **Score residuo + griglia M03 + aggiornamento** | migrazione 147 + `SgqDataGrid` + form residuo; **non** allargare 1–4 | ROO-4 | FATTO |
 | **ROO-6** | **Ingest Excel M03** | detect → dry-run → insert (non overwrite); G=4 skip; SWOT/FMEA rifiutati | ROO-5 | FATTO |
 | **ROO-6c** | **Mapping colonne HITL** | scelta foglio + corrispondenza campi SGQ; peso BASSO/MEDIO/ALTO; split Rischi/Opportunità; SWOT non blocca più il file | ROO-6 | FATTO |
-| ROO-6b | Detector SWOT + FMEA HSE | stesso motore ingest, mapping diversi | ROO-6, ROO-15 | AFK |
+| ROO-6b | Detector SWOT+FMEA (riga unica, troppo spessa) | — | — | spezzata in 6b-S / 6b-F |
+| **ROO-8** | **Picker catalogo 4.1/4.2 → testi riga** | `RiskForm` + API cataloghi già esistenti; accoda testo, no FK | ROO-4 | AFK — **APERTA** |
+| ROO-15 | Documento di analisi: `standard_ids` + `method` + posto per G con segno | testata o colonne riga; HITL se testata ≠ riga | ROO-4 | AFK |
+| ROO-6b-S | Detector + UI SWOT (`swot_quadrant`, G con segno) | `excelRisksM03Detector` + griglia/form; stesso guscio ingest | ROO-8, ROO-15 | AFK |
+| ROO-6b-F | Detector FMEA HSE (G×P×Rilev) | stesso motore, mapping diversi | ROO-15 | AFK |
 | ROO-7 | Tempistica distinta da `review_date` | nuovo `action_due_date` se serve; nota efficacia già in ROO-5 | ROO-5 | AFK |
-| ROO-8 | Cataloghi 4.1/4.2 come picker verso i testi della riga | `RisksPage` + API cataloghi | ROO-4 | AFK |
 | ROO-9 | Copy: home = «Analisi rischi e opportunità» (tab già «Analisi») | titolo pagina / sidebar | ROO-5 | AFK |
 | ROO-10 | Obiettivi §6.2: piano 6.2.2 + FK opz. alla riga | `objectives` | ROO-4 | AFK |
 | ROO-11 | Hardening RBAC/stats | controller objectives/risks | — | AFK |
 | ROO-12 | Export / ristampa M03 | Excel o Word | ROO-5, ROO-6 | HITL formato |
 | **ROO-13** | **Scala P/G per azienda** | `companies.risk_pg_max` 3\|4\|5; CHECK risks 1–5; set prima ingest/primo rischio | ROO-6c | FATTO |
 | ROO-14 | Copia ulteriori azioni → Piano Azioni (modello Pagani: foglio piano) | `source_risk_id` già c'è | HITL | HITL |
-| ROO-15 | Documento di analisi: `standard_ids` + `method` + soglie | nuova tabella leggera o colonne su riga | ROO-4 | AFK |
 
 ## ROO-4 — prima slice (dettaglio)
 

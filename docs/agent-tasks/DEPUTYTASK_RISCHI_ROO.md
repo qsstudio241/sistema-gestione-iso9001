@@ -1,33 +1,43 @@
-# DEPUTYTASK — Rischi / Opportunità / Obiettivi — ROO-13 (scala P/G per azienda)
+# DEPUTYTASK — Rischi / Opportunità — ROO-8 (picker 4.1/4.2 → riga)
 
-**Stato:** CHIUSO  
-**Priorità:** P1 — i file cliente usano 1–4 / 1–5  
-**Branch base:** `cursor/rischi-opportunita-obiettivi-c6d2`  
-**Slice:** ROO-13  
-**Chiuso:** 15/08/2026 — `companies.risk_pg_max` prima dell'ingest o del primo rischio  
-**Piano:** [PLAN_RISCHI_OPPORTUNITA_OBIETTIVI_SLICES.md](PLAN_RISCHI_OPPORTUNITA_OBIETTIVI_SLICES.md)
+**Stato:** APERTO  
+**Aperto:** 15/08/2026 (Lead wayfinder — integrazione SWOT / parti)  
+**Slice:** ROO-8  
+**Piano:** [PLAN_RISCHI_OPPORTUNITA_OBIETTIVI_SLICES.md](PLAN_RISCHI_OPPORTUNITA_OBIETTIVI_SLICES.md) §6  
+**Branch base:** `cursor/rischi-opportunita-obiettivi-c6d2`
 
-## Cosa NON toccare
+---
 
-- `docs/agent-tasks/DEPUTYTASK.md`
-- Metodo SWOT con segno persistito (ROO-6b / ROO-15)
-- Upsert ingest
-- Selettore azienda in pagina (resta `useCompanyScope`)
+## Slice unica: ROO-8
 
-## Decisione
+**Obiettivo**: dal form della riga di analisi si possono **prendere** fattori §4.1 e parti §4.2 dal catalogo dell’ambito e **accodarli** nei testi `context_text` / `interested_parties_text`. Il tab Contesto resta l’anagrafica da monitorare; non è la home.
 
-La scala P/G è del **metodo dell'azienda**, non del prodotto. Default **1–3**. Si imposta **1–4** (M03) o **1–5** prima dell'ingest o del primo rischio. Non si può scendere sotto il massimo già usato sulle righe.
+### Contesto gap (non riscrivere)
 
-CHECK DB allargato a 1–5; l'API applica `risk_pg_max`. Livelli = terzi di R max (su 1–3 restano 1-3/4-6/7-9).
+- I campi testo sulla riga ci sono (ROO-4); l’ingest li riempie già (ROO-6c).
+- Il tab Contesto è CRUD isolato (`context_factors`, `interested_parties`).
+- Nessun ponte UI: l’operatore ricopia a mano o lascia i testi vuoti.
 
-## Consegnato
+### DoD
 
-| Pezzo | Dove |
-|-------|------|
-| Migrazione | `148_companies_risk_pg_max.sql` |
-| API | `PUT /risks/pg-scale`; create/update/import/detect usano la scala azienda |
-| UI | toolbar Analisi: Scala P/G; dialog ingest: «Imposta scala 1–N e ricalcola» |
+1. In `RiskForm`, sotto i due textarea, un controllo «Dal catalogo» (liste già caricate via API esistenti, filtrate da `useCompanyScope`). Scelta → accoda riga di testo (nome + requisiti / descrizione), non sovrascrive. Testo libero resta editabile.
+2. Nessuna FK nuova, nessuna migrazione. Riga valida anche senza picker.
+3. Test L1 sul form (accoda, non duplica se già presente, non tocca SWOT/scala).
+4. Riuso liste/API del tab Contesto; non un terzo fetch pattern. UI: DNA esistente (`RisksPage` / `btn-secondary`), non un dialog nuovo se basta una `<select>`.
 
-## Prossima slice
+### File previsti
 
-**ROO-6b** — metodo SWOT/FMEA nativo (segno, rilevabilità).
+- `app/src/pages/RisksPage.jsx` (`RiskForm` + eventuale passaggio liste)
+- test Vitest del form (nuovo o accanto a test rischi già presenti)
+- API: solo GET già esistenti (`context-factors`, `interested-parties`)
+
+### Cosa NON toccare
+
+- `docs/agent-tasks/DEPUTYTASK.md` (SAL S1a)
+- Detector SWOT/FMEA, segno G, `method` (ROO-15 / ROO-6b-S)
+- Upsert ingest, scala P/G, selettore azienda in pagina
+- Schema `interested_parties` / `context_factors`
+
+### Prossima (non in questa sessione)
+
+ROO-15 (`method` + G con segno) poi ROO-6b-S (detector SWOT sulla stessa matrice).
