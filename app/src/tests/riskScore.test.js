@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { riskScore, riskScoreLevel, scoreColor, displayFurtherActions, residualScoreFromRisk } from "../utils/riskScore";
+import { riskScore, riskScoreLevel, scoreColor, displayFurtherActions, residualScoreFromRisk, normalizePgMax } from "../utils/riskScore";
 
 describe("riskScore — R = P × G (scala 1-3)", () => {
   const matrix = [];
@@ -32,6 +32,15 @@ describe("riskScoreLevel / scoreColor — soglie UI attuali", () => {
     expect(scoreColor(3)).toBe("risk-low");
     expect(scoreColor(6)).toBe("risk-medium");
     expect(scoreColor(9)).toBe("risk-high");
+  });
+
+  it("scala 1-5: 25 è alto, 9 è medio", () => {
+    expect(riskScoreLevel(8, 5)).toBe("basso");
+    expect(riskScoreLevel(9, 5)).toBe("medio");
+    expect(riskScoreLevel(25, 5)).toBe("alto");
+    expect(scoreColor(25, 5)).toBe("risk-high");
+    expect(normalizePgMax(5)).toBe(5);
+    expect(normalizePgMax(2)).toBe(3);
   });
 });
 

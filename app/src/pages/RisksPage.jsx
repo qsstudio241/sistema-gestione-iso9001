@@ -7,7 +7,7 @@ import React, { useState, useEffect, useCallback } from "react";
 import apiService from "../services/apiService";
 import { useCompanyScope } from "../contexts/CompanyScopeContext";
 import { formatDate } from "../utils/dateHelpers";
-import { riskScore, riskScoreLevel, scoreColor, displayFurtherActions, residualScoreFromRisk } from "../utils/riskScore";
+import { riskScore, riskScoreLevel, scoreColor, displayFurtherActions, residualScoreFromRisk, normalizePgMax, pgOptions } from "../utils/riskScore";
 import NcCreateModal from "../components/NcCreateModal";
 import SgqDataGrid from "../components/SgqDataGrid";
 import RiskM03ImportDialog from "../components/RiskM03ImportDialog";
@@ -34,8 +34,8 @@ const OBJ_STATUS_CFG = {
   cancelled: { label: "Annullato",  cls: "os-cancelled" },
 };
 
-const PROB_LABELS = { 1: "Bassa", 2: "Media", 3: "Alta" };
-const IMP_LABELS  = { 1: "Basso", 2: "Medio", 3: "Alto" };
+const PROB_LABELS = { 1: "Bassa", 2: "Media", 3: "Alta", 4: "Molto alta", 5: "Quasi certa" };
+const IMP_LABELS  = { 1: "Basso", 2: "Medio", 3: "Alto", 4: "Molto alto", 5: "Estremo" };
 
 // ── Modali form ──────────────────────────────────────────────────────────────
 
@@ -83,7 +83,7 @@ function clipCell(text) {
   return <span className="risks-grid-cell-clip" title={s}>{s}</span>;
 }
 
-function RiskForm({ initial, onSave, onClose, companies = [] }) {
+function RiskForm({ initial, onSave, onClose, companies = [], pgMax = 3 }) {
   const [form, setForm] = useState(() => ({
     ...EMPTY_RISK,
     ...initial,
@@ -94,10 +94,12 @@ function RiskForm({ initial, onSave, onClose, companies = [] }) {
   }));
   const [saving, setSaving] = useState(false);
   const [error, setError]   = useState(null);
+  const scale = pgOptions(pgMax);
   const score = riskScore(form.probability, form.impact);
-  const scoreLevel = riskScoreLevel(score);
+  const scoreLevel = riskScoreLevel(score, scale.max);
   const residualScore = residualScoreFromRisk(form);
-  const residualLevel = residualScore == null ? null : riskScoreLevel(residualScore);
+  const residualLevel = residualScore == null ? null : riskScoreLevel(residualScore, scale.max);
+  const pgValues = Array.from({ length: scale.max }, (_, i) => i + 1);
 
   function upd(k, v) { setForm(f => ({ ...f, [k]: v })); }
 
@@ -176,18 +178,18 @@ function RiskForm({ initial, onSave, onClose, companies = [] }) {
             <div>
               <label>Probabilità (P)</label>
               <select value={form.probability} onChange={e => upd("probability", parseInt(e.target.value, 10))}>
-                {[1,2,3].map(v => <option key={v} value={v}>{v} - {PROB_LABELS[v]}</option>)}
+                {pgValues.map(v => <option key={v} value={v}>{v} - {PROB_LABELS[v]}</option>)}
               </select>
             </div>
             <div>
               <label>Gravità (G)</label>
               <select value={form.impact} onChange={e => upd("impact", parseInt(e.target.value, 10))}>
-                {[1,2,3].map(v => <option key={v} value={v}>{v} - {IMP_LABELS[v]}</option>)}
+                {pgValues.map(v => <option key={v} value={v}>{v} - {IMP_LABELS[v]}</option>)}
               </select>
             </div>
             <div className="score-preview">
               <label>{"R = P \u00d7 G"}</label>
-              <span className={`score-badge ${scoreColor(score)}`}>{score}</span>
+              <span className={`score-badge ${scoreColor(score, scale.max)}`}>{score}</span>
               <span className="score-preview-level">{scoreLevel}</span>
             </div>
           </div>
@@ -217,7 +219,7 @@ function RiskForm({ initial, onSave, onClose, companies = [] }) {
                 onChange={e => upd("residual_probability", e.target.value === "" ? "" : parseInt(e.target.value, 10))}
               >
                 <option value="">{"\u2014"}</option>
-                {[1,2,3].map(v => <option key={v} value={v}>{v} - {PROB_LABELS[v]}</option>)}
+                {pgValues.map(v => <option key={v} value={v}>{v} - {PROB_LABELS[v]}</option>)}
               </select>
             </div>
             <div>
@@ -227,7 +229,7 @@ function RiskForm({ initial, onSave, onClose, companies = [] }) {
                 onChange={e => upd("residual_impact", e.target.value === "" ? "" : parseInt(e.target.value, 10))}
               >
                 <option value="">{"\u2014"}</option>
-                {[1,2,3].map(v => <option key={v} value={v}>{v} - {IMP_LABELS[v]}</option>)}
+                {pgValues.map(v => <option key={v} value={v}>{v} - {IMP_LABELS[v]}</option>)}
               </select>
             </div>
             <div className="score-preview">
@@ -236,7 +238,7 @@ function RiskForm({ initial, onSave, onClose, companies = [] }) {
                 <span className="score-preview-level">{"\u2014"}</span>
               ) : (
                 <>
-                  <span className={`score-badge ${scoreColor(residualScore)}`}>{residualScore}</span>
+                  <span className={`score-badge ${scoreColor(residualScore, scale.max)}`}>{residualScore}</span>
                   <span className="score-preview-level">{residualLevel}</span>
                 </>
               )}
@@ -361,7 +363,7 @@ function ObjectiveForm({ initial, onSave, onClose, companies = [] }) {
 
 // ── Tab Rischi ────────────────────────────────────────────────────────────────
 
-function RisksTab({ companies = [], filterCompany = "" }) {
+function RisksTab({ companies = [], filterCompany = "", reloadCompanies }) {
   const [list, setList]           = useState([]);
   const [stats, setStats]         = useState(null);
   const [loading, setLoading]     = useState(true);
@@ -374,6 +376,10 @@ function RisksTab({ companies = [], filterCompany = "" }) {
   const [remapping, setRemapping] = useState(false);
   const [importing, setImporting] = useState(false);
   const [importError, setImportError] = useState(null);
+  const [scaleSaving, setScaleSaving] = useState(false);
+
+  const scopedCompany = companies.find((c) => String(c.id) === String(filterCompany));
+  const pgMax = normalizePgMax(scopedCompany?.risk_pg_max);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -412,7 +418,11 @@ function RisksTab({ companies = [], filterCompany = "" }) {
     else setDetecting(true);
     setImportError(null);
     try {
-      const res = await apiService.detectRisksM03Import(file, options);
+      const res = await apiService.detectRisksM03Import(file, {
+        ...options,
+        pgMax,
+        company_id: filterCompany || undefined,
+      });
       const data = res?.data ?? res;
       setDetection({ ...data, fileName: data.fileName || file.name });
       if (!data?.canMap && !data?.sheets?.length) {
@@ -433,12 +443,37 @@ function RisksTab({ companies = [], filterCompany = "" }) {
     e.target.value = "";
     if (!file) return;
     setImportFile(file);
-    await runDetect(file);
+    await runDetect(file, { pgMax, company_id: filterCompany || undefined });
   }
 
   async function handleRemap(sheetName, mapping) {
     if (!importFile) return;
     await runDetect(importFile, { sheetName, mapping }, { remap: true });
+  }
+
+  async function handleSetPgScale(nextMax) {
+    const max = normalizePgMax(nextMax);
+    if (!filterCompany) {
+      setImportError("Seleziona un'azienda in header per impostare la scala P/G.");
+      return;
+    }
+    setScaleSaving(true);
+    setImportError(null);
+    try {
+      await apiService.setRisksPgScale({ company_id: filterCompany, risk_pg_max: max });
+      if (reloadCompanies) await reloadCompanies();
+      if (importFile) {
+        await runDetect(importFile, {
+          sheetName: detection?.sheetName,
+          mapping: detection?.mapping,
+          pgMax: max,
+        }, { remap: !!detection });
+      }
+    } catch (err) {
+      setImportError(err.message || "Errore scala P/G");
+    } finally {
+      setScaleSaving(false);
+    }
   }
 
   async function handleConfirmImport(rows) {
@@ -479,6 +514,22 @@ function RisksTab({ companies = [], filterCompany = "" }) {
           {Object.entries(RISK_STATUS_CFG).map(([k,v]) => <option key={k} value={k}>{v.label}</option>)}
         </select>
         <button className="btn-primary" onClick={() => setModal({ mode: "new", data: { company_id: filterCompany || "" } })}>+ Nuovo rischio</button>
+        {filterCompany ? (
+          <label className="risks-scale-label">
+            Scala P/G
+            <select
+              value={pgMax}
+              disabled={scaleSaving}
+              onChange={(e) => handleSetPgScale(parseInt(e.target.value, 10))}
+            >
+              <option value={3}>1–3</option>
+              <option value={4}>1–4 (M03)</option>
+              <option value={5}>1–5</option>
+            </select>
+          </label>
+        ) : (
+          <span className="studio-hint">Scala 1–3. Seleziona un&apos;azienda in header per 1–4 o 1–5.</span>
+        )}
         <button
           type="button"
           className="btn-secondary"
@@ -521,11 +572,11 @@ function RisksTab({ companies = [], filterCompany = "" }) {
             if (colId === "residual_score") return residualScoreFromRisk(row) ?? -1;
             if (colId === "score_level") {
               const sc = row.score != null ? row.score : riskScore(row.probability, row.impact);
-              return row.score_level || riskScoreLevel(sc);
+              return row.score_level || riskScoreLevel(sc, row.risk_pg_max);
             }
             if (colId === "residual_score_level") {
               const rs = residualScoreFromRisk(row);
-              return rs == null ? "" : (row.residual_score_level || riskScoreLevel(rs));
+              return rs == null ? "" : (row.residual_score_level || riskScoreLevel(rs, row.risk_pg_max));
             }
             if (colId === "review_date") return row.review_date || "";
             if (colId === "status") return RISK_STATUS_CFG[row.status]?.label || row.status;
@@ -534,9 +585,10 @@ function RisksTab({ companies = [], filterCompany = "" }) {
           }}
           renderCell={(row, col) => {
             const sc = row.score != null ? row.score : riskScore(row.probability, row.impact);
-            const level = row.score_level || riskScoreLevel(sc);
+            const rowMax = normalizePgMax(row.risk_pg_max);
+            const level = row.score_level || riskScoreLevel(sc, rowMax);
             const residual = residualScoreFromRisk(row);
-            const residualLevel = residual == null ? null : (row.residual_score_level || riskScoreLevel(residual));
+            const residualLevel = residual == null ? null : (row.residual_score_level || riskScoreLevel(residual, rowMax));
             switch (col.id) {
               case "evaluated_element":
                 return clipCell(row.evaluated_element);
@@ -560,7 +612,7 @@ function RisksTab({ companies = [], filterCompany = "" }) {
               case "impact":
                 return row.impact ?? "\u2014";
               case "score":
-                return <span className={`score-badge ${scoreColor(sc)}`}>{sc}</span>;
+                return <span className={`score-badge ${scoreColor(sc, rowMax)}`}>{sc}</span>;
               case "score_level":
                 return level;
               case "further_actions":
@@ -576,7 +628,7 @@ function RisksTab({ companies = [], filterCompany = "" }) {
               case "residual_impact":
                 return row.residual_impact ?? "\u2014";
               case "residual_score":
-                return residual == null ? "\u2014" : <span className={`score-badge ${scoreColor(residual)}`}>{residual}</span>;
+                return residual == null ? "\u2014" : <span className={`score-badge ${scoreColor(residual, rowMax)}`}>{residual}</span>;
               case "residual_score_level":
                 return residualLevel || "\u2014";
               case "status": {
@@ -619,6 +671,7 @@ function RisksTab({ companies = [], filterCompany = "" }) {
           onSave={handleSave}
           onClose={() => setModal(null)}
           companies={companies}
+          pgMax={normalizePgMax(modal.data?.risk_pg_max || pgMax)}
         />
       )}
 
@@ -639,9 +692,11 @@ function RisksTab({ companies = [], filterCompany = "" }) {
           detection={detection}
           onConfirm={handleConfirmImport}
           onRemap={handleRemap}
+          onRaiseScale={handleSetPgScale}
           onClose={() => { setDetection(null); setImportFile(null); }}
           loading={importing}
           remapping={remapping}
+          canRaiseScale={!!filterCompany}
         />
       )}
     </div>
@@ -1042,7 +1097,7 @@ function ContestoTab({ companies = [], filterCompany = "" }) {
 // ── Pagina principale ─────────────────────────────────────────────────────────
 
 export default function RisksPage() {
-  const { companyId: filterCompany, companies } = useCompanyScope();
+  const { companyId: filterCompany, companies, reloadCompanies } = useCompanyScope();
   const [activeTab, setActiveTab]   = useState("risks");
 
   return (
@@ -1065,7 +1120,7 @@ export default function RisksPage() {
       </div>
 
       <div className="risks-tab-content">
-        {activeTab === "risks"      && <RisksTab companies={companies} filterCompany={filterCompany} />}
+        {activeTab === "risks"      && <RisksTab companies={companies} filterCompany={filterCompany} reloadCompanies={reloadCompanies} />}
         {activeTab === "objectives" && <ObjectivesTab companies={companies} filterCompany={filterCompany} />}
         {activeTab === "contesto"   && <ContestoTab companies={companies} filterCompany={filterCompany} />}
       </div>

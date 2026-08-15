@@ -102,7 +102,7 @@ async function listCompanies(req, res) {
         const whereClause = whereConditions.join(' AND ');
 
         const result = await query(`
-            SELECT id, auditor_org_id, name, vat_number, sector, address, logo_url, iso3834_level, is_active, created_at, updated_at
+            SELECT id, auditor_org_id, name, vat_number, sector, address, logo_url, iso3834_level, risk_pg_max, is_active, created_at, updated_at
             FROM companies
             WHERE ${whereClause}
             ORDER BY name
@@ -142,7 +142,7 @@ async function getCompanyById(req, res) {
             if (denied) return sendAccessDenied(res, denied);
 
             const result = await query(`
-            SELECT id, auditor_org_id, name, vat_number, sector, address, logo_url, iso3834_level, is_active, created_at, updated_at
+            SELECT id, auditor_org_id, name, vat_number, sector, address, logo_url, iso3834_level, risk_pg_max, is_active, created_at, updated_at
             FROM companies
             WHERE id = @id
         `, { id });
@@ -160,7 +160,7 @@ async function getCompanyById(req, res) {
         }
 
         const result = await query(`
-            SELECT id, auditor_org_id, name, vat_number, sector, address, logo_url, iso3834_level, is_active, created_at, updated_at
+            SELECT id, auditor_org_id, name, vat_number, sector, address, logo_url, iso3834_level, risk_pg_max, is_active, created_at, updated_at
             FROM companies
             WHERE id = @id AND auditor_org_id = @auditor_org_id
         `, { id, auditor_org_id: auditorOrgId });
@@ -348,7 +348,7 @@ async function updateCompany(req, res) {
         `, params);
 
             const updated = await query(`
-            SELECT id, auditor_org_id, name, vat_number, sector, address, logo_url, iso3834_level, is_active, created_at, updated_at
+            SELECT id, auditor_org_id, name, vat_number, sector, address, logo_url, iso3834_level, risk_pg_max, is_active, created_at, updated_at
             FROM companies WHERE id = @id
         `, { id });
 
@@ -393,7 +393,7 @@ async function updateCompany(req, res) {
         `, params);
 
         const updated = await query(`
-            SELECT id, auditor_org_id, name, vat_number, sector, address, logo_url, iso3834_level, is_active, created_at, updated_at
+            SELECT id, auditor_org_id, name, vat_number, sector, address, logo_url, iso3834_level, risk_pg_max, is_active, created_at, updated_at
             FROM companies WHERE id = @id
         `, { id });
 

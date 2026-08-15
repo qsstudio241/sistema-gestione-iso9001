@@ -30,8 +30,10 @@ function RiskM03ImportDialog({
   onConfirm,
   onClose,
   onRemap,
+  onRaiseScale,
   loading = false,
   remapping = false,
+  canRaiseScale = false,
 }) {
   const [sheetName, setSheetName] = useState(detection?.sheetName || "");
   const [mapping, setMapping] = useState(detection?.mapping || {});
@@ -106,6 +108,18 @@ function RiskM03ImportDialog({
           {(detection?.warnings || []).map((w) => (
             <p key={w} className="studio-hint">{w}</p>
           ))}
+          {canRaiseScale && detection?.observedPgMax > (detection?.pgMax || 3) && (
+            <p className="studio-hint">
+              <button
+                type="button"
+                className="did-btn did-btn--confirm"
+                disabled={loading || remapping}
+                onClick={() => onRaiseScale?.(detection.observedPgMax)}
+              >
+                Imposta scala 1–{detection.observedPgMax} e ricalcola
+              </button>
+            </p>
+          )}
           <p className="studio-hint">
             Associa le colonne del file ai campi SGQ. Se rischi e opportunità sono due colonne, una riga Excel può generare due valutazioni. Inserisce nuove righe, non sovrascrive la griglia.
           </p>

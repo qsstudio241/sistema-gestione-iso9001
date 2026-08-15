@@ -44,17 +44,19 @@ const CLIENT_UPLOADS = [
 
 describe('readPg / toDateInput / lettere', () => {
     it('accetta 1-3 e rifiuta 4', () => {
-        expect(readPg(2)).toEqual({ present: true, value: 2, invalid: false });
+        expect(readPg(2)).toMatchObject({ present: true, value: 2, invalid: false });
         expect(readPg(4).invalid).toBe(true);
+        expect(readPg(4, 5)).toMatchObject({ present: true, value: 4, invalid: false });
         expect(readPg('').present).toBe(false);
     });
 
     it('mappa peso qualitativo e valore con segno', () => {
-        expect(readPg('MEDIO')).toEqual({ present: true, value: 2, invalid: false });
-        expect(readPg('basso')).toEqual({ present: true, value: 1, invalid: false });
-        expect(readPg('ALTO')).toEqual({ present: true, value: 3, invalid: false });
-        expect(readPg(-2)).toEqual({ present: true, value: 2, invalid: false });
+        expect(readPg('MEDIO')).toMatchObject({ present: true, value: 2, invalid: false });
+        expect(readPg('basso')).toMatchObject({ present: true, value: 1, invalid: false });
+        expect(readPg('ALTO')).toMatchObject({ present: true, value: 3, invalid: false });
+        expect(readPg(-2)).toMatchObject({ present: true, value: 2, invalid: false });
         expect(readPg(-5).invalid).toBe(true);
+        expect(readPg(-5, 5)).toMatchObject({ present: true, value: 5, invalid: false });
     });
 
     it('normalizza date ISO, DMY e mon-yy', () => {
@@ -197,6 +199,11 @@ describe('detectRisksM03File', () => {
         expect(d.rows[1].action).toBe('skip');
         expect(d.rows[2].nature).toBe('opportunity');
         expect(d.sheets.map((s) => s.name)).toEqual(['Contesto est. (2)', 'RISK_2025']);
+        expect(d.observedPgMax).toBe(5);
+        const d5 = detectRisksM03File(buf, { pgMax: 5 });
+        expect(d5.rows[1].action).toBe('create');
+        expect(d5.rows[1].impact).toBe(5);
+        expect(d5.stats.create).toBe(3);
     });
 
     it('rispetta foglio e mapping scelti dall\'utente', () => {

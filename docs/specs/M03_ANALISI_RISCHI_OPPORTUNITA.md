@@ -35,7 +35,7 @@ Nel file consegnato le colonne A–D e I–L sono **vuote** (template); restano 
 | Contesto | `context_text` | C'è (ROO-4); enum `context` ancora presente |
 | Parti interessate | `interested_parties_text` | C'è (ROO-4); tab catalogo resta a parte |
 | Azioni attuali | `current_actions` | C'è (ROO-4) |
-| P / G / R | `probability`, `impact`, `score` | C'è, CHECK **1–3** (M03 ha G=4) |
+| P / G / R | `probability`, `impact`, `score` | C'è; CHECK **1–5**, massimo = `companies.risk_pg_max` (default 3) |
 | Livello | `score_level` | Calcolato in API/UI (soglie 1–3/4–6/7–9) |
 | Ulteriori azioni | `further_actions` | C'è (ROO-4); fallback lettura `treatment_desc` |
 | Resp. | `responsible` | C'è |
@@ -45,7 +45,7 @@ Nel file consegnato le colonne A–D e I–L sono **vuote** (template); restano 
 | (ISO, non in Excel) | `nature` | C'è (`risk` default in ingest) |
 | Ambito | `company_id` | Opzionale + header `useCompanyScope` |
 
-Ingest (ROO-6 + ROO-6c): riga 1–2 = testata; dati da riga 3; celle unite → ripetere il valore. Detect suggerisce foglio e colonne; l'utente può cambiare foglio e corrispondenze. G=4 / |D|>3 → riga saltata. Peso BASSO/MEDIO/ALTO → P=G=1/2/3. Due colonne Rischi/Opportunità → due righe (`nature`). Solo insert, non overwrite. Metodo SWOT/FMEA nativo = ROO-6b.
+Ingest (ROO-6 + ROO-6c + ROO-13): riga 1–2 = testata; dati da riga 3; celle unite → ripetere il valore. Detect suggerisce foglio e colonne; l'utente può cambiare foglio e corrispondenze. Scala P/G = `risk_pg_max` dell'azienda (1–3 default; 1–4 o 1–5 prima dell'ingest). Valori sopra la scala → riga saltata. Peso BASSO/MEDIO/ALTO → P=G=1/2/3. Due colonne Rischi/Opportunità → due righe (`nature`). Solo insert, non overwrite. Metodo SWOT/FMEA nativo = ROO-6b.
 
 ## Fuori da questo foglio
 
