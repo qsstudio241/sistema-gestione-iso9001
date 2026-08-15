@@ -96,6 +96,7 @@ Il SAL è **operativo** come tracker di implementazione clausola-per-clausola. *
 - Modello esplicito `compliance_kind` su `document_registry.type_specific_data` (legge vs norma vs entrambe)
 - Smoke L3 operatore su `/sal` con «Suggerisci stato (AI)» + sezione «Conformità legislativa»
 - PR2 Riesame Requisiti: select controparti (`DEPUTYTASK.md`)
+- **SAL AI evidenze** (OCR PDF/immagini + suggest documento mancante HITL): piano slice [`PLAN_SAL_AI_EVIDENCE_SLICES.md`](../agent-tasks/PLAN_SAL_AI_EVIDENCE_SLICES.md) — non core griglia SAL, estensione Fase 5-A/5-B
 
 ---
 

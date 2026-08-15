@@ -59,11 +59,19 @@ function riskScoreLevel(score, pgMax) {
     return 'basso';
 }
 
+/** Residuo: o entrambi i fattori, o nessuno. Un solo valore non è un P×G. */
+function normalizeResidualPair(probability, impact) {
+    const empty = (v) => v == null || v === '';
+    if (empty(probability) || empty(impact)) {
+        return { residual_probability: null, residual_impact: null };
+    }
+    return { residual_probability: probability, residual_impact: impact };
+}
+
 function residualScoreFromRow(row) {
-    const p = row?.residual_probability;
-    const g = row?.residual_impact;
-    if (p == null || g == null || p === '' || g === '') return null;
-    return riskScore(p, g);
+    const pair = normalizeResidualPair(row?.residual_probability, row?.residual_impact);
+    if (pair.residual_probability == null || pair.residual_impact == null) return null;
+    return riskScore(pair.residual_probability, pair.residual_impact);
 }
 
 function decorateRiskRow(row) {
@@ -92,6 +100,7 @@ module.exports = {
     parseOptionalPgFactor,
     riskScore,
     riskScoreLevel,
+    normalizeResidualPair,
     residualScoreFromRow,
     decorateRiskRow,
 };

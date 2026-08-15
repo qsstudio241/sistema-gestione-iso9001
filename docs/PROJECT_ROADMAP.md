@@ -8,19 +8,23 @@
 
 > **Risposta standard a «stato di avanzamento del progetto e priorità da affrontare»**: sintetizzare da questa sezione (moduli maturi + sessione più recente + tabella priorità sotto), **non** dal banner storico più sotto (superato, tenuto solo per traccia) né dall'archivio marzo 2026 [`docs/archive/PROJECT_CONTEXT_STATO_FUNZIONALITA_2026-03.md`](archive/PROJECT_CONTEXT_STATO_FUNZIONALITA_2026-03.md). **Aggiornare questa sezione a fine sessione** se emergono nuove priorità o se una priorità elencata viene chiusa (stesso principio delle "Lezioni apprese" in [GUIDA_CONSOLIDATA.md](GUIDA_CONSOLIDATA.md) — sintesi qui, dettaglio linkato).
 
-**Ultimo aggiornamento di questa sezione**: 15/08/2026 (ROO-6 ingest Excel M03; ROO-5 griglia+residuo; combobox Ambito #419; Profilo S5).
+**Ultimo aggiornamento di questa sezione**: 15/08/2026 (Lead: PLAN SAL AI evidenze OCR + documento mancante; brief S1a aperto).
 
 ### Moduli maturi (in produzione, uso quotidiano dai clienti Camellini/Mason)
 
 Audit multi-standard (9001/14001/45001) · Non Conformità (workflow ISO 10.2 completo) · Qualifiche Personale saldatori/NDT/coordinatori (ISO 9606-1/14732/14731/9712) · Saldatura (WPQR, generazione WPS da WPQR, Welding Book, Commesse ISO 3834, Dashboard 3834) · SAL (gap analysis requisiti con AI) · Registro Documenti + Scadenzari · Notifiche/Alert (documenti/NC/qualifiche) · Riesame di Direzione · RBAC multi-tenant (`company_access`) · Registro obblighi legali (ambiente + sicurezza) · Assistente AI / Gap Analysis euristica.
 
-### Sessione più recente (14/08/2026)
+### Sessione più recente (15/08/2026)
 
-**Profilo azienda S5** ([PR #418](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/418) **mergiata**): pulsante «Recupera da registro» (OpenAPI Company, dry-run + conferma). ATECO con piano `IT-advanced`; se 402 cade su `IT-start`. Token `SGQ_OPENAPI_COMPANY_TOKEN` nel `.env` VPS (come `GEMINI_API_KEY`) + restart. Senza token: 503. S0–S5 chiusi.
+**Lead wayfinder — SAL AI evidenze** (solo doc): mappa [`PLAN_SAL_AI_EVIDENCE_SLICES.md`](agent-tasks/PLAN_SAL_AI_EVIDENCE_SLICES.md). Gap: OCR non collegato all’estrattore usato dal SAL (OCR già in ingest via `ocrExtractor.js`); nessuna ricerca tipo documento / guida upload quando mancano evidenze. Brief [`DEPUTYTASK.md`](agent-tasks/DEPUTYTASK.md) **APERTO** su slice **S1a** (OCR PDF in `documentTextExtractor`). Nessuna implementazione codice in sessione mappa.
 
-**Rischi / Opportunità / Obiettivi**: **ROO-6 chiusa** — ingest Excel M03 (detect → anteprima → inserisce nuove righe; G=4 saltata; SWOT/FMEA rifiutati). Griglia + residuo già in ROO-5. Prossima: ROO-6b detector SWOT/FMEA. [PLAN](agent-tasks/PLAN_RISCHI_OPPORTUNITA_OBIETTIVI_SLICES.md) · [spec M03](specs/M03_ANALISI_RISCHI_OPPORTUNITA.md).
+**Chiusura precedente (stesso giorno)** — Patrimonio studio distinto dai clienti ([PR #428](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/428) **mergiata**, verificato dal committente su Camellini). Ingest Excel rischi ROO-6/6c ([PR #429](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/429) **mergiata**): mapping colonne + residuo P/G a coppia.
 
-**Banner Ambito** ([PR #414](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/414) **mergiata**): solo «Ambito» + menu. **Patrimonio dello studio** ([PR #417](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/417) **mergiata**). **Combobox digita-per-filtrare** ([PR #419](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/419) **mergiata**): CSS/JS già sul bundle Netlify (`layout-scope-combo`). Passo successivo: allineare documenti `content_scope=studio`. Dettaglio: [GUIDA lezione Ambito unico](GUIDA_CONSOLIDATA.md#lezioni-apprese-consolidate-fonte-unica).
+**Profilo azienda S6** ([PR #426](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/426) **mergiata**, doc [PR #427](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/427) **mergiata**, deploy VPS 15/08): pulsante «Cerca nel registro» in anagrafica. P.IVA → 1 risultato (IT-advanced, verificato TECNOVE). Nome → `IT-search` (max 8); oggi 402 finché in console OpenAPI non è attivo Company Search / credito. S0–S6 codice chiuso.
+
+**Rischi / Opportunità / Obiettivi**: **ROO-6/6c chiuse** — ingest Excel con scelta foglio e corrispondenza colonne; residuo P/G o entrambi o nessuno. Prossima: ROO-6b detector SWOT/FMEA. [PLAN](agent-tasks/PLAN_RISCHI_OPPORTUNITA_OBIETTIVI_SLICES.md) · [spec M03](specs/M03_ANALISI_RISCHI_OPPORTUNITA.md).
+
+**Banner Ambito** ([PR #414](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/414) **mergiata**): solo «Ambito» + menu. **Patrimonio dello studio** ([PR #417](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/417) **mergiata**). **Combobox** ([PR #419](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/419) **mergiata**). **Patrimonio = sempre `studio`** ([PR #428](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/428) **mergiata** 15/08/2026): su Camellini non usa più l'id «QS Studio» (48); albero STD distinto dai clienti. **Verificato dal committente** in produzione. Dettaglio: [GUIDA lezione Patrimonio ≠ omonima](GUIDA_CONSOLIDATA.md#lezioni-apprese-consolidate-fonte-unica).
 
 **Harness Cloud**: Chromium di Playwright nello snapshot `cloud-install.sh`. **Kitesurf** non adottato. Dettaglio: [GUIDA lezione Playwright snapshot](GUIDA_CONSOLIDATA.md#lezioni-apprese-consolidate-fonte-unica).
 
@@ -45,6 +49,7 @@ Sessione prodotto precedente (10/08/2026): fix filtri dashboard duplicati (Quali
 | 3 | **Pagina Impostazioni → Organizzazione (P.IVA + logo tenant)** | PR #10 aperta da aprile 2026, 180 file in conflitto — richiede ricostruzione, non merge | Vedi riga dedicata nel backlog sotto |
 | 4 | **Material Compliance AI (certificati EN 10204 3.1)** | Modulo proposto 05/08/2026, slice MC-0 (spec) non ancora avviata | [MODULO_MATERIAL_COMPLIANCE_AI.md](specs/MODULO_MATERIAL_COMPLIANCE_AI.md) |
 | 5 | **Rischi / Opportunità / Obiettivi — detector SWOT/FMEA (ROO-6b)** | M03 si importa. SWOT e FMEA HSE restano da mappare; scala 1–4 = HITL ROO-13 | [PLAN](agent-tasks/PLAN_RISCHI_OPPORTUNITA_OBIETTIVI_SLICES.md) · brief [ROO](agent-tasks/DEPUTYTASK_RISCHI_ROO.md) |
+| 6 | **SAL AI evidenze — OCR + documento mancante (HITL)** | Suggeritore 5-A/5-B legge solo PDF/DOCX testo; PDF scan/immagini saltati; se manca evidenza → solo messaggio low, nessuna ricerca tipo/upload guidato | [PLAN](agent-tasks/PLAN_SAL_AI_EVIDENCE_SLICES.md) · brief [S1a](agent-tasks/DEPUTYTASK.md) |
 
 > Nota: **Modulo NC — card statistiche duplicate da due tendine** (era riga 1) è stato chiuso da PR #374 (10/08/2026) — riga rimossa da questa tabella, non ancora aggiornata al momento in cui è stata scritta DEPUTYTASK4.
 
@@ -86,6 +91,7 @@ Elenco completo (voci meno urgenti, decisioni di prodotto in attesa, task parche
 | **Pivot WPS — generazione da WPQR (non ingest)** | Feedback Mason 30/07/2026: matcher 15614 + bozza 15609 + Word Annex A. **P0–P5 ✅** (P5: advisory WPQR + visione nel riesame, non bloccante). | [MODULO_WPS_GENERAZIONE_SCOPO_E_ROADMAP.md](specs/MODULO_WPS_GENERAZIONE_SCOPO_E_ROADMAP.md) |
 | **Material Compliance AI (certificati EN 10204 3.1)** | Modulo proposto 05/08/2026: PDF → estrazione AI → Rule Engine deterministico → HITL. Riuso ingest/AI/RBAC. **Prossimo:** slice **MC-0** (spec DATA_MODEL/UI/API). OCR e dashboard KPI fuori MVP-A. | [MODULO](specs/MODULO_MATERIAL_COMPLIANCE_AI.md) · [PLAN](agent-tasks/PLAN_MATERIAL_COMPLIANCE_SLICES.md) · [brief MC-0](agent-tasks/DEPUTYTASK_MATERIAL_COMPLIANCE_AI_FOUNDATION.md) · ADR-020…024 |
 | **Rischi, Opportunità e Obiettivi (processo M03)** | Draft studio M03-R00. Prossimo: **ROO-4** campi riga di analisi su `risks`. Cataloghi 4.1/4.2 restano opzionali. Non parallelizzare su `RisksPage.jsx`. | [PLAN](agent-tasks/PLAN_RISCHI_OPPORTUNITA_OBIETTIVI_SLICES.md) · [spec M03](specs/M03_ANALISI_RISCHI_OPPORTUNITA.md) · [DEPUTYTASK_RISCHI_ROO.md](agent-tasks/DEPUTYTASK_RISCHI_ROO.md) |
+| **SAL AI evidenze (OCR + doc mancante)** | Estendere lettura evidenze (OCR PDF/immagini riusando `ocrExtractor`) e flusso HITL «tipo tipico → candidati registro → collega/carica/ignora». Prima slice: **S1a**. | [PLAN](agent-tasks/PLAN_SAL_AI_EVIDENCE_SLICES.md) · [DEPUTYTASK.md](agent-tasks/DEPUTYTASK.md) |
 
 ---
 
@@ -866,10 +872,10 @@ Un auditor che gestisce 10 aziende → 10 licenze. Prezzo varia per modulo attiv
 | **PR #65** | Connettori Normattiva/EUR-Lex + email norme superate (job settimanale) | Lead (25/05/2026) | ✅ Merged `b0a5900`, deploy VPS 25/05 |
 | **REG-NORM-SOT** | Refactor: `document_registry` = SoT visibile norme/leggi; slice R1–R7 in [PLAN_REGISTRY_NORM_SOT_SLICES.md](agent-tasks/PLAN_REGISTRY_NORM_SOT_SLICES.md) | Deputy/Lead | ✅ Completato (25/05/2026) — commit `ef0d6f8`, PR #66/#67/#68, ADR-011 |
 | **LEGISL-INGEST** | Ingestione testo articoli legge (D.Lgs. 81/2008 → ISO 45001, D.Lgs. 152/2006 → ISO 14001) da Normattiva in `norm_requirements` + matrice `linked_legislation`; connettore `normativaConnector.getClauseText` (riattiva step publicLaw broker). 30 articoli verbatim, seed `backend/data/legislation_seed.json`, script `ingest-legislation-normattiva-vps.js` idempotente. ADR-010 Task 2-B/2-D. | Lead (18/07/2026) | ✅ Completato — branch `feat/legislation-ingest-normattiva` |
-| **COMPANY-PROFILE** | Profilo 1:1 + lookup. **S0–S5 ✅**. **S6** ricerca per nome/P.IVA in anagrafica (`IT-search` name, max 8, human-in-the-loop). | Lead 23/07 · S6 14/08/2026 | 🔲 S6 in PR |
+| **COMPANY-PROFILE** | Profilo 1:1 + lookup + cerca anagrafica. **S0–S6 ✅** (PR #426, VPS 15/08). Nome richiede Company Search attivo in console OpenAPI. | Lead 23/07 · S6 15/08/2026 | ✅ Completato |
 | **REGISTRO-LEGALE** | Registro obblighi legali capitolo-per-capitolo, **ambiente e sicurezza separati**. **Ambiente** `LEG_AMBIENTE_152` (già esistente, 46 voci a granularità capitolo). **Sicurezza** `LEG_SICUREZZA_81` (nuovo, 29 capitoli da Grantini + citazioni, SI/NO/NA/NV). Schema sezioni: mig. **138** (`reference_text`/`linked_legislation`). Agente validità esteso (PR #65). | Lead (28/07–01/08/2026) | ✅ PR #317 MERGED · mig. 138 VPS OK · residuo **N5** (revisione umana contenuto prima di audit cliente) + P2 granularità a/b/c ambiente (Certiquality) |
 
-**Prossimo Step**: COMPANY-PROFILE S6 (cerca per nome in anagrafica) in PR. REGISTRO-LEGALE N5 + backlog P2 ambiente a/b/c.
+**Prossimo Step**: REGISTRO-LEGALE N5 + backlog P2 ambiente a/b/c. COMPANY-PROFILE S0–S6 in produzione (ricerca per nome: attivare Search in console OpenAPI).
 
 > **Regola architetturale da ADR-008 (vincolante)**: ogni nuova feature che tocca la sincronizzazione dati deve essere progettata compatibile con il modello event-based. Nessun nuovo endpoint che accetti "stato corrente intero" senza event log parallelo.
 

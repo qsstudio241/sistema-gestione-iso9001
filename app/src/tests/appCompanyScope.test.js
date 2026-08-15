@@ -141,6 +141,7 @@ describe("appCompanyScope", () => {
     const list = [{ id: 4, name: "Ai.project" }];
     expect(findStudioCompany(list, "Al.project")?.id).toBe(4);
     expect(resolvePatrimonioScopeValue([], "Al.project")).toBe(STUDIO_PATRIMONIO_SCOPE);
+    expect(resolvePatrimonioScopeValue(list, "Al.project")).toBe(STUDIO_PATRIMONIO_SCOPE);
   });
 
   it("persiste e sanifica il valore studio del Patrimonio", () => {
@@ -179,7 +180,7 @@ describe("appCompanyScope", () => {
       "ADA",
       "Zebra Spa",
     ]);
-    expect(opts[1].value).toBe("1");
+    expect(opts[1].value).toBe(STUDIO_PATRIMONIO_SCOPE);
   });
 
   it("buildScopeMenuOptions: senza azienda-studio Patrimonio vale studio", () => {
@@ -202,7 +203,7 @@ describe("appCompanyScope", () => {
     expect(opts.map((o) => o.label)).toEqual(["Al.project", "C.M.P. SRL"]);
   });
 
-  it("findSelectedScopeOption: studio coincide con Patrimonio anche se il valore menu e' l'id", () => {
+  it("findSelectedScopeOption: Patrimonio vale sempre studio, anche con azienda omonima", () => {
     const opts = buildScopeMenuOptions(
       [
         { id: 1, name: "Al.project" },
@@ -211,10 +212,28 @@ describe("appCompanyScope", () => {
       "Al.project",
       { canSeeAllCompanies: true }
     );
-    expect(opts[1].value).toBe("1");
+    expect(opts[1].value).toBe(STUDIO_PATRIMONIO_SCOPE);
     expect(findSelectedScopeOption(opts, "studio")?.label).toBe(STUDIO_PATRIMONIO_LABEL);
-    expect(findSelectedScopeOption(opts, "1")?.label).toBe(STUDIO_PATRIMONIO_LABEL);
     expect(findSelectedScopeOption(opts, "")?.label).toBe("Tutto lo studio");
+    expect(findSelectedScopeOption(opts, "2")?.label).toBe("ADA");
+  });
+
+  it("sanitize: id azienda omonima del personale studio diventa Patrimonio", () => {
+    const camellini = {
+      role: "admin",
+      organization_id: 1002,
+      organization_name: "QS_Studio",
+      company_access: [],
+    };
+    expect(
+      sanitizeScopeAgainstCompanies(camellini, "48", [
+        { id: 48, name: "QS Studio" },
+        { id: 11, name: "BLOWPACK" },
+      ])
+    ).toBe(STUDIO_PATRIMONIO_SCOPE);
+    expect(sanitizeScopeAgainstCompanies(camellini, "11", [{ id: 11, name: "BLOWPACK" }])).toBe(
+      "11"
+    );
   });
 
   it("filterScopeMenuOptions filtra per testo nell'etichetta", () => {

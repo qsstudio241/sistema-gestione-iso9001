@@ -952,7 +952,7 @@ function DocumentRegistry() {
   const deepLinkHandledRef = useRef(false);
 
   const { user, canWriteModule } = useAuth();
-  const { companyId, setCompanyId, companies } = useCompanyScope();
+  const { companyId, setCompanyId, companies, isStudioPatrimonio, scopeReady } = useCompanyScope();
   const isAdmin = user?.role === 'admin' || user?.role === 'superadmin';
 
   const [studioOnly, setStudioOnly] = useState(initialUrl.companyId === STUDIO_REGISTRY_SCOPE);
@@ -960,15 +960,15 @@ function DocumentRegistry() {
 
   useEffect(() => {
     if (!companyId) return;
-    if (companyId === STUDIO_REGISTRY_SCOPE) {
+    if (isStudioPatrimonio || companyId === STUDIO_REGISTRY_SCOPE) {
       setStudioOnly(true);
       return;
     }
     setStudioOnly(false);
-  }, [companyId]);
+  }, [companyId, isStudioPatrimonio]);
 
   // Etichetta esplicita di ambito: distingue il Patrimonio Studio dalle aziende clienti.
-  const isStudioScope = registryCompanyScope === "studio";
+  const isStudioScope = isStudioPatrimonio || registryCompanyScope === "studio";
   const companyScopeId = isStudioScope ? null : (registryCompanyScope || null);
   const scopeDocFilter = useMemo(
     () => (isStudioScope
@@ -1260,8 +1260,9 @@ function DocumentRegistry() {
   }, [registryCompanyScope, loadPriorityDocs]);
 
   useEffect(() => {
+    if (!scopeReady) return;
     if (activeTab === "tree") tree.loadTree();
-  }, [activeTab, registryCompanyScope]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [activeTab, registryCompanyScope, scopeReady]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleStudioOnlyToggle = useCallback(
     (checked) => {

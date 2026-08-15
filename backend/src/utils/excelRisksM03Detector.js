@@ -366,13 +366,18 @@ function applyMappedRows(rows, headerRowIdx, colByField, pgMax = 3) {
             action = 'skip';
             issues.push('P e G sono entrambi obbligatori sulla riga (oppure un peso qualitativo).');
         }
-        if ((rp.invalid || rg.invalid) && action === 'create') {
-            issues.push('Residuo P/G fuori scala: importo la riga senza residuo.');
-        }
-        if ((rp.present && !rg.present) || (!rp.present && rg.present)) {
+        // Coppia residuo: o entrambi validi, o nessuno. Un solo fattore
+        // (mancante o fuori scala) non deve restare persistito.
+        const residualOutOfScale = rp.invalid || rg.invalid;
+        const residualIncomplete = rp.present !== rg.present;
+        if (residualOutOfScale || residualIncomplete) {
             mapped.residual_probability = null;
             mapped.residual_impact = null;
-            if (action === 'create') issues.push('Residuo incompleto: importo senza P/G residui.');
+            if (action === 'create') {
+                issues.push(residualOutOfScale
+                    ? 'Residuo P/G fuori scala: importo la riga senza residuo.'
+                    : 'Residuo incompleto: importo senza P/G residui.');
+            }
         }
 
         const excelRow = i + 1;

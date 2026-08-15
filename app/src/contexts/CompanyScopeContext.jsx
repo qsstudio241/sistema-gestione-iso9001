@@ -16,6 +16,7 @@ import {
   resolveAppCompanyScope,
   sanitizeScopeAgainstCompanies,
   STUDIO_PATRIMONIO_LABEL,
+  STUDIO_PATRIMONIO_SCOPE,
   STUDIO_WIDE_SCOPE,
 } from "../utils/appCompanyScope";
 
@@ -30,6 +31,7 @@ const TEST_FALLBACK_SCOPE = Object.freeze({
   companyScoped: false,
   isStudioWide: true,
   isStudioPatrimonio: false,
+  scopeReady: true,
   scopeCompanyName: "Tutto lo studio",
 });
 
@@ -48,13 +50,18 @@ export function CompanyScopeProvider({ children, initialCompanyId }) {
   const [companyId, setCompanyIdState] = useState(() =>
     initialCompanyId !== undefined ? String(initialCompanyId) : resolveAppCompanyScope(user)
   );
+  const [scopeReady, setScopeReady] = useState(
+    () => initialCompanyId !== undefined || isCompanyScopedUser(user)
+  );
 
   useEffect(() => {
     if (initialCompanyId !== undefined) {
       setCompanyIdState(String(initialCompanyId));
+      setScopeReady(true);
       return;
     }
     setCompanyIdState(resolveAppCompanyScope(user));
+    if (isCompanyScopedUser(user)) setScopeReady(true);
   }, [user?.id, user?.organization_id, user?.company_access, initialCompanyId]);
 
   const applyCompanyList = useCallback((list) => {
@@ -82,19 +89,26 @@ export function CompanyScopeProvider({ children, initialCompanyId }) {
 
   useEffect(() => {
     let cancelled = false;
+    if (initialCompanyId === undefined && !isCompanyScopedUser(user)) {
+      setScopeReady(false);
+    }
     apiService
       .getCompanies({ limit: 500 })
       .then((res) => {
         if (cancelled) return;
         applyCompanyList(res?.data || []);
+        setScopeReady(true);
       })
       .catch(() => {
-        if (!cancelled) setCompanies([]);
+        if (!cancelled) {
+          setCompanies([]);
+          setScopeReady(true);
+        }
       });
     return () => {
       cancelled = true;
     };
-  }, [user?.organization_id, applyCompanyList]);
+  }, [user?.organization_id, applyCompanyList, initialCompanyId]);
 
   const locked = isCompanyScopeLocked(user);
   const companyScoped = isCompanyScopedUser(user);
@@ -107,11 +121,16 @@ export function CompanyScopeProvider({ children, initialCompanyId }) {
       if (companyScoped) {
         const allowed = getAllowedCompanyIds(user) || [];
         if (next && !allowed.includes(next)) return;
+      } else if (next && companies.length) {
+        const studio = findStudioCompany(companies, user?.organization_name);
+        if (studio && String(studio.id || studio.company_id) === next) {
+          next = STUDIO_PATRIMONIO_SCOPE;
+        }
       }
       setCompanyIdState(next);
       persistAppCompanyScope(user?.organization_id, next);
     },
-    [locked, companyScoped, user]
+    [locked, companyScoped, user, companies]
   );
 
   const isStudioPatrimonio = useMemo(() => {
@@ -138,9 +157,10 @@ export function CompanyScopeProvider({ children, initialCompanyId }) {
       companyScoped,
       isStudioWide: !companyId,
       isStudioPatrimonio,
+      scopeReady,
       scopeCompanyName,
     }),
-    [companyId, setCompanyId, companies, reloadCompanies, locked, companyScoped, isStudioPatrimonio, scopeCompanyName]
+    [companyId, setCompanyId, companies, reloadCompanies, locked, companyScoped, isStudioPatrimonio, scopeReady, scopeCompanyName]
   );
 
   return (
