@@ -45,7 +45,7 @@ Nel file consegnato le colonne A–D e I–L sono **vuote** (template); restano 
 | (ISO, non in Excel) | `nature` | C'è (`risk` default in ingest) |
 | Ambito | `company_id` | Opzionale + header `useCompanyScope` |
 
-Ingest (ROO-6): riga 1–2 = testata; dati da riga 3; celle unite → ripetere il valore sulle righe coperte. Detect: foglio `Analisi Rischio` **oppure** intestazioni `Contesto` + `Parti interessate` + `Livello di rischio residuo`. Pattern ADR-013: detect → dry-run → upsert.
+Ingest (ROO-6 + ROO-6c): riga 1–2 = testata; dati da riga 3; celle unite → ripetere il valore. Detect suggerisce foglio e colonne; l'utente può cambiare foglio e corrispondenze. G=4 / |D|>3 → riga saltata. Peso BASSO/MEDIO/ALTO → P=G=1/2/3. Due colonne Rischi/Opportunità → due righe (`nature`). Solo insert, non overwrite. Metodo SWOT/FMEA nativo = ROO-6b.
 
 ## Fuori da questo foglio
 

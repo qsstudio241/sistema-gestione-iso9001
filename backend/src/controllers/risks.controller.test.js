@@ -19,7 +19,8 @@ jest.mock('../services/companyAccess.service', () => ({
 }));
 
 const { getPool } = require('../config/database');
-const { createRisk, updateRisk, listRisks } = require('./risks.controller');
+const { createRisk, updateRisk, listRisks, detectRisksImport, importRisks } = require('./risks.controller');
+const { buildM03TemplateBuffer } = require('../utils/excelRisksM03Detector');
 
 const USER = { organization_id: 1001, user_id: 7, company_access: [] };
 
@@ -280,5 +281,98 @@ describe('listRisks — colonne M03 e score', () => {
     expect(payload.data[0].score).toBe(9);
     expect(payload.data[0].score_level).toBe('alto');
     expect(payload.data[0].residual_score).toBeNull();
+  });
+});
+
+describe('detectRisksImport / importRisks — M03', () => {
+  it('senza file → 400', async () => {
+    const req = mockReq({ file: null });
+    const res = mockRes();
+    await detectRisksImport(req, res);
+    expect(res.status).toHaveBeenCalledWith(400);
+    expect(res.json.mock.calls[0][0].code).toBe('MISSING_FILE');
+  });
+
+  it('template vuoto: canImport false', async () => {
+    const req = mockReq({ file: { buffer: buildM03TemplateBuffer(), originalname: 'M03.xlsx' } });
+    const res = mockRes();
+    await detectRisksImport(req, res);
+    const data = res.json.mock.calls[0][0].data;
+    expect(data.canImport).toBe(false);
+    expect(data.fileName).toBe('M03.xlsx');
+    expect(data.layout).toBe('m03');
+  });
+
+  it('importa solo le righe create e salta G=4', async () => {
+    const { queryMock } = buildPool();
+    queryMock.mockResolvedValue({ recordset: [{ risk_id: 77 }] });
+    const req = mockReq({
+      body: {
+        company_id: 3,
+        fileName: 'm03.xlsx',
+        rows: [
+          { action: 'create', title: 'A', probability: 2, impact: 2, evaluated_element: 'Comm' },
+          { action: 'skip', title: 'B', probability: 2, impact: 4 },
+          { action: 'create', title: 'C', probability: 2, impact: 4 },
+        ],
+      },
+    });
+    const res = mockRes();
+    await importRisks(req, res);
+    expect(res.json).toHaveBeenCalledWith({
+      success: true,
+      data: { inserted: 1, skipped: 2, risk_ids: [77] },
+    });
+    expect(queryMock).toHaveBeenCalledTimes(1);
+  });
+
+  it('mapping JSON non valido → 400', async () => {
+    const req = mockReq({
+      file: { buffer: buildM03TemplateBuffer(), originalname: 'M03.xlsx' },
+      body: { mapping: '{not-json' },
+    });
+    const res = mockRes();
+    await detectRisksImport(req, res);
+    expect(res.status).toHaveBeenCalledWith(400);
+    expect(res.json.mock.calls[0][0].code).toBe('INVALID_MAPPING');
+  });
+
+  it('residuo a metà (solo G) viene persistito come coppia vuota', async () => {
+    const { queryMock, inputMock } = buildPool();
+    queryMock.mockResolvedValue({ recordset: [{ risk_id: 91 }] });
+    const req = mockReq({
+      body: {
+        rows: [
+          {
+            action: 'create', title: 'A', probability: 2, impact: 2,
+            residual_probability: null, residual_impact: 2,
+          },
+        ],
+      },
+    });
+    const res = mockRes();
+    await importRisks(req, res);
+    expect(res.json.mock.calls[0][0].data.inserted).toBe(1);
+    expect(inputMock).toHaveBeenCalledWith('residual_probability', null);
+    expect(inputMock).toHaveBeenCalledWith('residual_impact', null);
+  });
+
+  it('importa nature opportunity dalla riga mappata', async () => {
+    const { queryMock, inputMock } = buildPool();
+    queryMock.mockResolvedValue({ recordset: [{ risk_id: 88 }] });
+    const req = mockReq({
+      body: {
+        rows: [
+          { action: 'create', title: 'Nuovo mercato', nature: 'opportunity', probability: 1, impact: 2 },
+        ],
+      },
+    });
+    const res = mockRes();
+    await importRisks(req, res);
+    expect(res.json).toHaveBeenCalledWith({
+      success: true,
+      data: { inserted: 1, skipped: 0, risk_ids: [88] },
+    });
+    expect(inputMock).toHaveBeenCalledWith('nature', 'opportunity');
   });
 });
