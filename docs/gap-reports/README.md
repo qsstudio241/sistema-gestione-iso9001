@@ -10,7 +10,7 @@ Output persistente delle gap analysis normative (prompt in `docs/agent-tasks/GAP
 | `GAP_NC_YYYY-MM-DD.md` | Modulo NC §10.2 |
 | `GAP_AUDIT_14001_YYYY-MM-DD.md` | Audit ISO 14001 |
 | `GAP_AUDIT_45001_YYYY-MM-DD.md` | Audit ISO 45001 |
-| `GAP_RDP_3834_YYYY-MM-DD.md` | RDP / ISO 3834 Mason |
+| `GAP_RDP_3834_YYYY-MM-DD.md` | RDP / ISO 3834 Mason (06/08: sintesi moduli; 15/08: vista per processi §5–18 + piano slice) |
 | `GAP_SAL_YYYY-MM-DD.md` | SAL Camellini |
 | `GAP_REGISTRO_NORME_YYYY-MM-DD.md` | Registro norme e documenti |
 | `GAP_RBAC_SAAS_YYYY-MM-DD.md` | RBAC / multi-tenant |

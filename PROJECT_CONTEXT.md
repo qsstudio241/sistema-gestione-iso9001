@@ -54,6 +54,7 @@ Deploy/SSH: [how-to/deploy.md](docs/how-to/deploy.md) + [ACCESSO_DEPLOY_AGENTS.m
 | Saldatura WPQR / WPS | `backend/src/controllers/welding.controller.js`, `backend/src/services/wpsGenerator.service.js`, `app/src/pages/WeldingProceduresPage.jsx` |
 | Welding Book | `backend/src/controllers/weldingBooks.controller.js`, `app/src/pages/WeldingBooksPage.jsx` |
 | Commesse ISO 3834 | `backend/src/controllers/projects.controller.js`, `app/src/pages/ProjectsPage.jsx` |
+| ISO 3834 (completezza / processi) | `docs/agent-tasks/PLAN_3834_SLICES.md`, `docs/gap-reports/GAP_RDP_3834_2026-08-15.md`, `app/src/pages/WeldingDashboardPage.jsx`, `backend/src/controllers/rdp.controller.js` |
 | SAL / gap requisiti | `backend/src/services/gapAnalysis.service.js`, `app/src/pages/SALModule.jsx`, `docs/specs/MODULO_SAL_SCOPO_E_ROADMAP.md` |
 | Profilo azienda / company_profile | `docs/adr/ADR-018-company-profile-conformita-legislativa.md`, `docs/specs/COMPANY_PROFILE_CAMPI_E_TEMPLATE_EXCEL.md`, `backend/src/controllers/company.controller.js`, `backend/src/services/moduleLicense.service.js`, `app/src/pages/CompanyDetailPage.jsx` |
 | Anagrafiche aziende | `backend/src/controllers/company.controller.js`, `app/src/pages/AnagrafichePage.jsx`, `app/src/pages/CompanyDetailPage.jsx` |
