@@ -156,6 +156,7 @@ Ordine: **prima il ponte catalogo→riga (ROO-8)**, poi metodo documento (ROO-15
 - Ingest: la colonna «Aggiornamento» dell’Excel diventa prima revisione, o solo `effectiveness_note` corrente?
 - Data riesame distinta da `recorded_at` (backdating per §9.3) — eventuale bottone «Registra riesame».
 - Ripristino di uno snapshot (rollback) sulla riga corrente.
+- Agente AI *specializzato* §6.1: oggi **non esiste** (solo chat generale + RAG su `risks` vecchio). Si può fare dopo lo storico (ROO-19), non al posto di ROO-16.
 
 ## Decisioni già prese
 
@@ -195,9 +196,10 @@ Ordine: **prima il ponte catalogo→riga (ROO-8)**, poi metodo documento (ROO-15
 | ROO-12 | Export / ristampa M03 | Excel o Word | ROO-5, ROO-6 | HITL formato |
 | **ROO-13** | **Scala P/G per azienda** | `companies.risk_pg_max` 3\|4\|5; CHECK risks 1–5; set prima ingest/primo rischio | ROO-6c | FATTO |
 | ROO-14 | Copia ulteriori azioni → Piano Azioni (modello Pagani: foglio piano) | `source_risk_id` già c'è | HITL | HITL |
-| **ROO-16** | **Storico riga: snapshot + GET + timeline sul form** | mig `risk_reviews`; write su create/update significativo; `GET /risks/:id/reviews`; pannello nel `RiskForm` | ROO-5, ROO-15 | AFK |
+| **ROO-16** | **Storico riga + nascondi chiusi** | mig `risk_reviews`; write; `GET /risks/:id/reviews`; timeline **nel form**; default lista senza `closed`; checkbox «Mostra chiusi» | ROO-5, ROO-15 | AFK |
 | ROO-17 | Interrogazione ambito (input §9.3) | `GET /risks/reviews?company_id&from&to` + lista (non un quarto tab) | ROO-16 | AFK |
 | ROO-18 | Ingest → prima revisione / data riesame esplicita | detector + eventuale bottone | ROO-16 | HITL |
+| ROO-19 | Assistente AI sul processo §6.1 (HITL, non inventa righe) | stesso adapter ADR-010; RAG aggiornato a M03+review; suggest in form, conferma umana | ROO-16 | HITL |
 
 ## 7. Aggiornamenti progressivi / storico (ROO-16…)
 
@@ -225,7 +227,8 @@ Pattern già in repo da **non riusare come tabella**: `document_history` (grain 
 - **Trigger automatico**, non un verbo nuovo in ROO-16. Snapshot se cambia almeno uno: `probability`, `impact`, `impact_sign`, `analysis_method`, `swot_quadrant`, `residual_*`, `effectiveness_note`, `current_actions`, `further_actions`, `nature`. Titolo / testi 4.1–4.2 / responsabile da soli → nessun snapshot.
 - Colonne **interrogabili** (non solo JSON): P, G, segno, metodo, quadrante, residuo, nota, azioni attuali/ulteriori, `nature`, `title`, `evaluated_element`, `recorded_at`, `recorded_by`. Score/livello si decorano in lettura come su `risks`.
 - API: `GET /risks/:id/reviews` (ROO-16). `GET /risks/reviews?company_id&from&to` **dopo** `:id` in routes… no: la lista ambito è `/risks/reviews` e va **registrata prima** di `/:id` (ROO-17).
-- UI ROO-16: nel form della riga, cronologia in sola lettura (data, chi, P/G/R, residuo, nota). Griglia invariata; eventuale conteggio `review_count` è extra, non DoD.
+- UI ROO-16: **click riga = stesso form di oggi** (stato corrente). Dentro il form, sotto i campi, **timeline** dello storico (sola lettura). Non si espande la griglia (troppe colonne M03). Non si apre una seconda finestra-griglia: lo storico di *una* riga è una cronologia, non un’altra matrice. La lista ambito (tutti i riesami) è ROO-17.
+- **Chiusi**: `status=closed` esiste già. Default griglia = **nascondi i chiusi**. Checkbox toolbar «Mostra rischi chiusi». Il filtro stati resta per Aperto / In trattamento / Mitigato.
 - Soft-delete della riga: le review restano (audit §7.5); GET sulla riga cancellata = 404 come oggi.
 - Solo TEST finché il committente non promuove.
 
@@ -236,6 +239,8 @@ Pattern già in repo da **non riusare come tabella**: `document_history` (grain 
 **ROO-17**: «tutti i riesami di quest’azienda tra due date» (input riesame direzione).
 
 **ROO-18**: ingest / data riesame esplicita — solo dopo HITL.
+
+**ROO-19** (dopo 16, HITL): non c’è un agente dedicato a questo processo. La chat generale può già *citare* i rischi via RAG (campi vecchi). Un assistente §6.1 userebbe lo stesso adapter (ADR-010): propone testi/P/G o riassume lo storico, **non scrive la riga** senza conferma. Senza `risk_reviews` non ha il «prima/dopo» da spiegare.
 
 ---
 

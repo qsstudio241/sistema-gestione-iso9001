@@ -20,8 +20,9 @@
 1. Migration in `database/migrations/` (prossimo libero, oggi 150): tabella `risk_reviews` append-only, colonne snapshot interrogabili (P, G, segno, metodo, quadrante, residuo, nota, azioni, nature, title, evaluated_element, recorded_at, recorded_by, organization_id, company_id, risk_id). Idempotente. Solo TEST.
 2. `createRisk` / `updateRisk`: se il salvataggio è significativo (PLAN §7), INSERT snapshot dello stato **nuovo**. Titolo/testi 4.1–4.2 da soli → no snapshot in update.
 3. `GET /risks/:id/reviews` — stesso RBAC della riga; lista `recorded_at` DESC; decora score/livello come `decorateRiskRow`.
-4. `RiskForm`: cronologia in sola lettura (data, chi, P/G/R, residuo, nota). Nessun quarto tab. Griglia invariata.
-5. Test L1: write su create + update significativo; update solo titolo non scrive; GET lista. Vitest sul pannello visibile se ci sono review.
+4. `RiskForm`: cronologia in sola lettura **dentro il form** (data, chi, P/G/R, residuo, nota). Click riga = form, non expand in griglia, non seconda finestra. Nessun quarto tab.
+5. Lista Analisi: di default **esclude** `status=closed`. Checkbox toolbar «Mostra rischi chiusi».
+6. Test L1: write su create + update significativo; update solo titolo non scrive; GET lista. Vitest: timeline se ci sono review; chiusi nascosti se il flag è off.
 
 ### File previsti
 
