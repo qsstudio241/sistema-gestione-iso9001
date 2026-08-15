@@ -103,7 +103,10 @@ describe("AppLayout — banner Ambito", () => {
     openBannerMenu(banner);
     const listbox = within(banner).getByRole("listbox");
     expect(await within(listbox).findByRole("option", { name: "ADA Azienda Test Fase 1" })).toBeInTheDocument();
-    expect(within(listbox).getByRole("option", { name: "Patrimonio dello studio" })).toBeInTheDocument();
+    expect(within(listbox).getByRole("option", { name: "Patrimonio dello studio" })).toHaveAttribute(
+      "data-value",
+      "studio"
+    );
     expect(within(listbox).getByRole("option", { name: "Tutto lo studio" })).toBeInTheDocument();
     expect(within(listbox).queryByRole("option", { name: "Al.project" })).not.toBeInTheDocument();
     expect(within(banner).queryByText(/P\.IVA/)).not.toBeInTheDocument();

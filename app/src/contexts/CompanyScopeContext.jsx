@@ -16,6 +16,7 @@ import {
   resolveAppCompanyScope,
   sanitizeScopeAgainstCompanies,
   STUDIO_PATRIMONIO_LABEL,
+  STUDIO_PATRIMONIO_SCOPE,
   STUDIO_WIDE_SCOPE,
 } from "../utils/appCompanyScope";
 
@@ -89,11 +90,16 @@ export function CompanyScopeProvider({ children, initialCompanyId }) {
       if (companyScoped) {
         const allowed = getAllowedCompanyIds(user) || [];
         if (next && !allowed.includes(next)) return;
+      } else if (next && companies.length) {
+        const studio = findStudioCompany(companies, user?.organization_name);
+        if (studio && String(studio.id || studio.company_id) === next) {
+          next = STUDIO_PATRIMONIO_SCOPE;
+        }
       }
       setCompanyIdState(next);
       persistAppCompanyScope(user?.organization_id, next);
     },
-    [locked, companyScoped, user]
+    [locked, companyScoped, user, companies]
   );
 
   const isStudioPatrimonio = useMemo(() => {

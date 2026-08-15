@@ -69,6 +69,10 @@ describe("CompanyScopeSelect", () => {
       "Zebra Spa",
     ]);
     expect(screen.queryByRole("option", { name: "Al.project" })).not.toBeInTheDocument();
+    expect(screen.getByRole("option", { name: "Patrimonio dello studio" })).toHaveAttribute(
+      "data-value",
+      "studio"
+    );
   });
 
   it("senza azienda omonima: Patrimonio resta visibile con valore studio", async () => {
