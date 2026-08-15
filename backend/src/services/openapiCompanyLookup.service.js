@@ -185,6 +185,146 @@ async function lookupCompanyByVat(vatRaw, options = {}) {
     };
 }
 
+const SEARCH_LIMIT = 8;
+const MIN_NAME_LEN = 3;
+
+function mapSearchHit(row) {
+    if (!row || typeof row !== 'object') return null;
+    const office = row.address?.registeredOffice || row.address || {};
+    return {
+        registry_id: row.id || null,
+        legal_name: row.companyName || null,
+        vat_number: row.vatCode || null,
+        fiscal_code: row.taxCode || null,
+        city: office.town || null,
+        street: composeStreet(office),
+        cap: office.zipCode || null,
+        province: office.province ? String(office.province).trim().slice(0, 2).toUpperCase() : null,
+        status: row.activityStatus || null,
+    };
+}
+
+function fieldsToCandidate(fields, extra = {}) {
+    const src = fields && typeof fields === 'object' ? fields : {};
+    return {
+        registry_id: extra.registry_id || null,
+        legal_name: src.legal_name || null,
+        vat_number: src.vat_number || extra.vat || null,
+        fiscal_code: src.fiscal_code || null,
+        city: src.registered_city || null,
+        street: src.registered_street || null,
+        cap: src.registered_cap || null,
+        province: src.registered_province || null,
+        status: src.company_status || null,
+    };
+}
+
+function formatCandidateAddress(candidate) {
+    if (!candidate || typeof candidate !== 'object') return '';
+    const cityLine = [candidate.cap, candidate.city].filter(Boolean).join(' ');
+    return [candidate.street, cityLine, candidate.province].filter(Boolean).join(', ');
+}
+
+function buildSearchQuery(name) {
+    const q = String(name || '').trim();
+    if (!q) return '';
+    if (q.includes('*') || /\s/.test(q)) return q;
+    return `${q}*`;
+}
+
+/**
+ * Ricerca human-in-the-loop: P.IVA → 1 risultato (IT-advanced/start);
+ * solo nome → IT-search name (max 8). Non scrive.
+ */
+async function searchCompanies(query = {}, options = {}) {
+    const token = options.token !== undefined ? options.token : getOpenapiToken();
+    if (!token) {
+        return {
+            ok: false,
+            status: 503,
+            code: 'LOOKUP_NOT_CONFIGURED',
+            error: 'Lookup registro non configurato (manca il token OpenAPI sul server)',
+        };
+    }
+
+    const vat = normalizeVat(query.vatNumber || query.vat_number);
+    const name = String(query.companyName || query.company_name || query.name || '').trim();
+    if (!vat && name.length < MIN_NAME_LEN) {
+        return {
+            ok: false,
+            status: 400,
+            code: 'MISSING_QUERY',
+            error: 'Inserisci la Partita IVA oppure almeno 3 lettere del nome',
+        };
+    }
+
+    const baseUrl = options.baseUrl || process.env.SGQ_OPENAPI_COMPANY_BASE || DEFAULT_BASE;
+    const fetchFn = options.fetchFn || fetchOpenapi;
+
+    if (vat) {
+        const byVat = await lookupCompanyByVat(vat, { token, fetchFn, baseUrl });
+        if (byVat.ok) {
+            return {
+                ok: true,
+                source: byVat.endpoint,
+                results: [fieldsToCandidate(byVat.fields, { vat: byVat.vat })],
+                warning: byVat.warning || null,
+            };
+        }
+        if (byVat.code === 'LOOKUP_NOT_CONFIGURED' || byVat.code === 'LOOKUP_PAYMENT_REQUIRED') {
+            return byVat;
+        }
+        if (name.length < MIN_NAME_LEN) {
+            return byVat;
+        }
+    }
+
+    const path = `/IT-search?dataEnrichment=name&companyName=${encodeURIComponent(buildSearchQuery(name))}&limit=${SEARCH_LIMIT}`;
+    const res = await fetchFn(path, token, baseUrl);
+    if (res.status === 402) {
+        return {
+            ok: false,
+            status: 402,
+            code: 'LOOKUP_PAYMENT_REQUIRED',
+            error: 'Credito o piano OpenAPI insufficiente per la ricerca.',
+        };
+    }
+    if (res.status === 204) {
+        return {
+            ok: false,
+            status: 404,
+            code: 'LOOKUP_NOT_FOUND',
+            error: 'Nessuna azienda trovata per questo nome',
+        };
+    }
+    if (res.status !== 200) {
+        return {
+            ok: false,
+            status: 502,
+            code: 'LOOKUP_UPSTREAM_FAILED',
+            error: `Registro non raggiungibile (HTTP ${res.status})`,
+        };
+    }
+
+    const raw = res.json;
+    const list = Array.isArray(raw?.data) ? raw.data : (Array.isArray(raw) ? raw : []);
+    const results = list
+        .map(mapSearchHit)
+        .filter((c) => c && (c.legal_name || c.vat_number))
+        .slice(0, SEARCH_LIMIT);
+
+    if (!results.length) {
+        return {
+            ok: false,
+            status: 404,
+            code: 'LOOKUP_NOT_FOUND',
+            error: 'Nessuna azienda trovata per questo nome',
+        };
+    }
+
+    return { ok: true, source: 'IT-search', results, warning: null };
+}
+
 module.exports = {
     getOpenapiToken,
     isLookupConfigured,
@@ -194,4 +334,10 @@ module.exports = {
     pickAteco,
     mapOpenapiCompanyToProfile,
     lookupCompanyByVat,
+    searchCompanies,
+    mapSearchHit,
+    formatCandidateAddress,
+    buildSearchQuery,
+    SEARCH_LIMIT,
+    MIN_NAME_LEN,
 };

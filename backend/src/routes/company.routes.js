@@ -56,6 +56,7 @@ router.get('/personnel', companyPersonnelController.listPersonnelStudio);
 
 router.get('/companies', companyController.listCompanies);
 router.get('/companies/profile/import-template', companyProfileController.downloadImportTemplate);
+router.post('/companies/registry/search', companyProfileController.searchRegistry);
 router.get('/companies/:id/profile', companyProfileController.getProfile);
 router.put('/companies/:id/profile', companyProfileController.putProfile);
 router.post('/companies/:id/profile/detect-import', uploadProfileXlsx.single('file'), companyProfileController.detectProfileImport);

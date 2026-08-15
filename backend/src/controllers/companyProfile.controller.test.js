@@ -11,6 +11,7 @@ jest.mock('../services/moduleLicense.service', () => ({
 }));
 jest.mock('../services/openapiCompanyLookup.service', () => ({
     lookupCompanyByVat: jest.fn(),
+    searchCompanies: jest.fn(),
 }));
 jest.mock('../services/companyAccess.service', () => {
     const actual = jest.requireActual('../services/companyAccess.service');
@@ -26,7 +27,7 @@ jest.mock('../services/companyAccess.service', () => {
 
 const { query } = require('../config/database');
 const { hasSalLegalConformityCapability } = require('../services/moduleLicense.service');
-const { lookupCompanyByVat } = require('../services/openapiCompanyLookup.service');
+const { lookupCompanyByVat, searchCompanies } = require('../services/openapiCompanyLookup.service');
 const ctrl = require('./companyProfile.controller');
 
 const AUDITOR_ORG_ID = 10;
@@ -374,5 +375,41 @@ describe('companyProfile lookup registro', () => {
             })
         );
         expect(query.mock.calls.some((c) => String(c[0]).includes('INSERT INTO company_profile'))).toBe(false);
+    });
+});
+
+describe('companyProfile search registro', () => {
+    beforeEach(() => {
+        searchCompanies.mockReset();
+    });
+
+    it('403 se capability OFF', async () => {
+        hasSalLegalConformityCapability.mockResolvedValue(false);
+        const req = mockReq({ body: { company_name: 'TECNOVE' } });
+        const res = mockRes();
+        await ctrl.searchRegistry(req, res);
+        expect(res.status).toHaveBeenCalledWith(403);
+        expect(searchCompanies).not.toHaveBeenCalled();
+    });
+
+    it('restituisce lista e non scrive', async () => {
+        searchCompanies.mockResolvedValue({
+            ok: true,
+            source: 'IT-search',
+            results: [{ legal_name: 'TECNOVE S.P.A.', vat_number: '01548970357', city: 'NOVELLARA' }],
+            warning: null,
+        });
+        const req = mockReq({ body: { company_name: 'TECNOVE' } });
+        const res = mockRes();
+        await ctrl.searchRegistry(req, res);
+        expect(res.json).toHaveBeenCalledWith({
+            success: true,
+            data: {
+                results: [{ legal_name: 'TECNOVE S.P.A.', vat_number: '01548970357', city: 'NOVELLARA' }],
+                source: 'IT-search',
+                warning: null,
+            },
+        });
+        expect(query).not.toHaveBeenCalled();
     });
 });

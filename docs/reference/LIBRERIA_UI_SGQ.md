@@ -27,6 +27,7 @@
 | Card contenitore | `Card` da `SharedComponents.jsx` | Per KPI cliccabili: `.sq-stat` / `.dl-stat`, non `Card` |
 | Griglia dati | `SgqDataGrid.jsx` | Liste modulo (Qualifiche, Scadenzari, SAL, …) |
 | Overlay dialog ingest / split-view | `IngestDialogShell.jsx` | Guscio unico (PR #377); CSS specifico nel dialog figlio |
+| Cerca azienda nel registro | `CompanyRegistrySearch.jsx` | Lista da spuntare (classi `did-*`); non salva da sola |
 | Conteggio NC/OSS/OM (Sezione 11) | `calculateFindingsMetrics` + `calculateCustomFindingsMetrics` (`metricsCalculator.js`) via `AuditOutcomeSection.jsx` | — |
 | Stato salvato/errore form | `custom-checklist-form-error`, `custom-checklist-saving` | `CustomChecklistAuditView.css` |
 | Route protetta da licenza | `LicensedRoute` (wrapper `App.jsx`) | Prop `licenseKey` |
