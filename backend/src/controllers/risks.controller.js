@@ -11,7 +11,8 @@ const {
     assertMutatingAllowed,
     sendAccessDenied,
 } = require('../services/companyAccess.service');
-const { parsePgFactor, parseOptionalPgFactor, decorateRiskRow } = require('../utils/riskScore');
+const { parsePgFactor, parseOptionalPgFactor, decorateRiskRow, normalizeResidualPair } = require('../utils/riskScore');
+const { detectRisksM03File, buildM03TemplateBuffer } = require('../utils/excelRisksM03Detector');
 
 function emptyToNull(v) {
     if (v === undefined || v === null) return null;
@@ -282,6 +283,130 @@ async function updateRisk(req, res) {
     }
 }
 
+async function detectRisksImport(req, res) {
+    try {
+        const file = req.file;
+        if (!file || !file.buffer) {
+            return res.status(400).json({ error: 'File Excel mancante', code: 'MISSING_FILE' });
+        }
+        let mapping = null;
+        if (req.body?.mapping) {
+            try {
+                mapping = typeof req.body.mapping === 'string'
+                    ? JSON.parse(req.body.mapping)
+                    : req.body.mapping;
+            } catch {
+                return res.status(400).json({ error: 'Mapping colonne non valido', code: 'INVALID_MAPPING' });
+            }
+        }
+        const detection = detectRisksM03File(file.buffer, {
+            sheetName: req.body?.sheetName || null,
+            mapping: mapping && typeof mapping === 'object' ? mapping : null,
+        });
+        return res.json({
+            success: true,
+            data: {
+                ...detection,
+                fileName: file.originalname || 'm03.xlsx',
+            },
+        });
+    } catch (err) {
+        logger.error('detectRisksImport:', err.message);
+        return res.status(500).json({ error: 'Errore analisi Excel', code: 'RISKS_DETECT_FAILED' });
+    }
+}
+
+async function importRisks(req, res) {
+    try {
+        const pool = await getPool();
+        const orgId = req.user.organization_id;
+        const userId = req.user.user_id;
+        const company_id = req.body.company_id || null;
+        const rows = Array.isArray(req.body.rows) ? req.body.rows : [];
+
+        const writeDenied = await assertMutatingAllowed(req.user, { companyId: company_id });
+        if (writeDenied) return sendAccessDenied(res, writeDenied);
+
+        let inserted = 0;
+        let skipped = 0;
+        const createdIds = [];
+
+        for (const row of rows) {
+            if (row?.action === 'skip') {
+                skipped += 1;
+                continue;
+            }
+            const pParsed = parsePgFactor(row?.probability);
+            const gParsed = parsePgFactor(row?.impact);
+            if (!pParsed.ok || !gParsed.ok) {
+                skipped += 1;
+                continue;
+            }
+            const rpParsed = parseOptionalPgFactor(row?.residual_probability);
+            const rgParsed = parseOptionalPgFactor(row?.residual_impact);
+            if (!rpParsed.ok || !rgParsed.ok) {
+                skipped += 1;
+                continue;
+            }
+            const residualPair = normalizeResidualPair(rpParsed.value, rgParsed.value);
+            const title = emptyToNull(row?.title) || emptyToNull(row?.evaluated_element) || `Valutazione riga ${row?.excelRow || inserted + 1}`;
+            const r = await pool.request()
+                .input('orgId', orgId).input('userId', userId)
+                .input('title', String(title).slice(0, 200))
+                .input('description', null)
+                .input('context', 'internal').input('category', null)
+                .input('probability', pParsed.value).input('impact', gParsed.value)
+                .input('treatment', 'mitigate').input('treatment_desc', null)
+                .input('responsible', emptyToNull(row?.responsible))
+                .input('review_date', emptyToNull(row?.review_date))
+                .input('company_id', company_id)
+                .input('nature', row?.nature === 'opportunity' ? 'opportunity' : 'risk')
+                .input('evaluated_element', emptyToNull(row?.evaluated_element))
+                .input('context_text', emptyToNull(row?.context_text))
+                .input('interested_parties_text', emptyToNull(row?.interested_parties_text))
+                .input('current_actions', emptyToNull(row?.current_actions))
+                .input('further_actions', emptyToNull(row?.further_actions))
+                .input('residual_probability', residualPair.residual_probability)
+                .input('residual_impact', residualPair.residual_impact)
+                .input('effectiveness_note', emptyToNull(row?.effectiveness_note))
+                .query(`
+                    INSERT INTO risks (organization_id, company_id, title, description, context, category,
+                        probability, impact, treatment, treatment_desc, responsible, review_date, created_by, nature,
+                        evaluated_element, context_text, interested_parties_text, current_actions, further_actions,
+                        residual_probability, residual_impact, effectiveness_note)
+                    OUTPUT INSERTED.risk_id
+                    VALUES (@orgId, @company_id, @title, @description, @context, @category,
+                        @probability, @impact, @treatment, @treatment_desc, @responsible, @review_date, @userId, @nature,
+                        @evaluated_element, @context_text, @interested_parties_text, @current_actions, @further_actions,
+                        @residual_probability, @residual_impact, @effectiveness_note)
+                `);
+            createdIds.push(r.recordset[0].risk_id);
+            inserted += 1;
+        }
+
+        logger.info('Risks M03 import', { orgId, inserted, skipped, fileName: req.body.fileName });
+        return res.json({ success: true, data: { inserted, skipped, risk_ids: createdIds } });
+    } catch (err) {
+        logger.error('importRisks:', err.message);
+        if (err.number === 547) {
+            return res.status(400).json({ error: 'Valore non ammesso (vincolo CHECK). P e G devono essere interi 1–3.' });
+        }
+        return res.status(500).json({ error: err.message });
+    }
+}
+
+async function downloadM03Template(req, res) {
+    try {
+        const buf = buildM03TemplateBuffer();
+        res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+        res.setHeader('Content-Disposition', 'attachment; filename="M03-analisi-rischi-opportunita.xlsx"');
+        return res.send(buf);
+    } catch (err) {
+        logger.error('downloadM03Template:', err.message);
+        return res.status(500).json({ error: 'Errore generazione modello' });
+    }
+}
+
 async function deleteRisk(req, res) {
     try {
         const pool  = await getPool();
@@ -459,5 +584,6 @@ async function deleteObjective(req, res) {
 
 module.exports = {
     listRisks, getRiskStats, getOneRisk, createRisk, updateRisk, deleteRisk,
+    detectRisksImport, importRisks, downloadM03Template,
     listObjectives, getObjectiveStats, getOneObjective, createObjective, updateObjective, deleteObjective
 };

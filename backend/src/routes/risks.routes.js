@@ -4,6 +4,7 @@
  */
 
 const express = require('express');
+const multer  = require('multer');
 const router  = express.Router();
 const { authenticate } = require('../middleware/auth.middleware');
 const { requireLicensedModule } = require('../middleware/moduleLicense.middleware');
@@ -11,11 +12,25 @@ const ctrl    = require('../controllers/risks.controller');
 const cfCtrl  = require('../controllers/contextFactors.controller');
 const ipCtrl  = require('../controllers/interestedParties.controller');
 
+const uploadM03Xlsx = multer({
+    storage: multer.memoryStorage(),
+    fileFilter: (req, file, cb) => {
+        const name = String(file.originalname || '');
+        const ok = /\.xlsx?$/i.test(name)
+            || /spreadsheet|excel/.test(String(file.mimetype || ''));
+        ok ? cb(null, true) : cb(new Error('Solo file Excel (.xlsx)'), false);
+    },
+    limits: { fileSize: 5 * 1024 * 1024 },
+});
+
 router.use(authenticate);
 router.use(requireLicensedModule('rischi'));
 
 // ─── Risks ──────────────────────────────────────────────────────────────────
 router.get('/risks/stats',  ctrl.getRiskStats);
+router.get('/risks/import-template', ctrl.downloadM03Template);
+router.post('/risks/detect-import', uploadM03Xlsx.single('file'), ctrl.detectRisksImport);
+router.post('/risks/import', ctrl.importRisks);
 router.get('/risks',        ctrl.listRisks);
 router.get('/risks/:id',    ctrl.getOneRisk);
 router.post('/risks',       ctrl.createRisk);
