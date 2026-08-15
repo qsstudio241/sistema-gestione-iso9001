@@ -1,7 +1,7 @@
 # DEPUTYTASK — Rischi / Opportunità — ROO-16 (storico riga)
 
-**Stato:** APERTO  
-**Aperto:** 15/08/2026 (Lead wayfinder — Chart the map)  
+**Stato:** CHIUSO  
+**Chiuso:** 15/08/2026  
 **Slice:** ROO-16  
 **Piano:** [PLAN_RISCHI_OPPORTUNITA_OBIETTIVI_SLICES.md](PLAN_RISCHI_OPPORTUNITA_OBIETTIVI_SLICES.md) §7  
 
@@ -36,7 +36,7 @@
 ### Cosa NON toccare
 
 - `docs/agent-tasks/DEPUTYTASK.md` (SAL S1a)
-- Detector FMEA (ROO-6b-F), ingest → review (ROO-18), lista ambito (ROO-17)
+- Detector FMEA (ROO-6b-F), ingest → review (ROO-18), lista ambito (ROO-17), agente AI §6.1 (ROO-19)
 - Rollback/ripristino snapshot
 - Produzione (DB + BE)
 - Cataloghi 4.1/4.2, tab Obiettivi, scala P/G

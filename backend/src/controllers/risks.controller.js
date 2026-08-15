@@ -23,6 +23,12 @@ const {
     DEFAULT_PG_MAX,
 } = require('../utils/riskScore');
 const { detectRisksM03File, buildM03TemplateBuffer } = require('../utils/excelRisksM03Detector');
+const {
+    isSignificantReviewChange,
+    mergeRiskReviewState,
+    buildRiskReviewSnapshot,
+    insertRiskReview,
+} = require('../utils/riskReviews');
 
 async function resolveCompanyPgMax(pool, companyId) {
     if (!companyId) return DEFAULT_PG_MAX;
@@ -46,8 +52,9 @@ async function listRisks(req, res) {
         const orgId = req.user.organization_id;
         const accessList = await ensureCompanyAccessLoaded(req.user);
         const companyFilter = companyAccessSqlFilter(accessList, 'r');
-        const { status, context, company_id, page = 1, limit = 50 } = req.query;
+        const { status, context, company_id, include_closed, page = 1, limit = 50 } = req.query;
         const offset = (parseInt(page) - 1) * parseInt(limit);
+        const includeClosed = include_closed === '1' || include_closed === 'true';
 
         let where = ['r.organization_id = @orgId', 'r.is_deleted = 0'];
         if (companyFilter.clause) where.push(companyFilter.clause);
@@ -55,6 +62,7 @@ async function listRisks(req, res) {
         Object.entries(companyFilter.params).forEach(([k, v]) => req2.input(k, v));
 
         if (status)     { where.push('r.status = @status');       req2.input('status', status); }
+        else if (!includeClosed) { where.push("r.status <> 'closed'"); }
         if (context)    { where.push('r.context = @context');     req2.input('context', context); }
         if (company_id) { where.push('r.company_id = @companyId'); req2.input('companyId', parseInt(company_id)); }
 
@@ -89,6 +97,7 @@ async function listRisks(req, res) {
                 const cntWhere = ['r.organization_id = @orgId2', 'r.is_deleted = 0'];
                 if (companyFilter.clause) cntWhere.push(companyFilter.clause);
                 if (status)     cntWhere.push('r.status = @cntStatus');
+                else if (!includeClosed) cntWhere.push("r.status <> 'closed'");
                 if (context)    cntWhere.push('r.context = @cntContext');
                 if (company_id) cntWhere.push('r.company_id = @cntCompanyId');
                 return cntReq.query(`SELECT COUNT(*) AS total FROM risks r WHERE ${cntWhere.join(' AND ')}`);
@@ -232,6 +241,20 @@ async function createRisk(req, res) {
             `);
 
         const created = decorateRiskRow({ ...r.recordset[0], risk_pg_max: pgMax });
+        await insertRiskReview(pool, buildRiskReviewSnapshot({
+            ...created,
+            title,
+            evaluated_element,
+            nature: safeNature,
+            current_actions,
+            further_actions,
+            effectiveness_note,
+            residual_probability: rpParsed.value,
+            residual_impact: rgParsed.value,
+            analysis_method: safeMethod,
+            swot_quadrant: safeQuadrant,
+            impact_sign: safeSign,
+        }, { organization_id: orgId, company_id: company_id || null, recorded_by: userId }));
         logger.info('Risk created', { risk_id: created.risk_id, orgId, score: created.score });
         res.status(201).json({ success: true, data: created });
     } catch (err) {
@@ -257,22 +280,28 @@ async function updateRisk(req, res) {
         } = req.body;
 
         const check = await pool.request().input('id', id).input('orgId', orgId)
-            .query('SELECT risk_id, company_id FROM risks WHERE risk_id = @id AND organization_id = @orgId AND is_deleted = 0');
+            .query(`SELECT risk_id, company_id, organization_id, title, evaluated_element, nature,
+                           probability, impact, impact_sign, analysis_method, swot_quadrant,
+                           residual_probability, residual_impact, effectiveness_note,
+                           current_actions, further_actions
+                    FROM risks WHERE risk_id = @id AND organization_id = @orgId AND is_deleted = 0`);
         if (!check.recordset.length) return res.status(404).json({ error: 'Rischio non trovato' });
+        const prev = check.recordset[0];
 
-        const writeDenied = await assertMutatingAllowed(req.user, { companyId: check.recordset[0].company_id });
+        const writeDenied = await assertMutatingAllowed(req.user, { companyId: prev.company_id });
         if (writeDenied) return sendAccessDenied(res, writeDenied);
         const hasPgValue = (v) => v !== undefined && v !== null && v !== '';
         const needsPg = hasPgValue(probability) || hasPgValue(impact)
             || hasPgValue(residual_probability) || hasPgValue(residual_impact);
         const pgMax = needsPg
-            ? await resolveCompanyPgMax(pool, check.recordset[0].company_id)
+            ? await resolveCompanyPgMax(pool, prev.company_id)
             : DEFAULT_PG_MAX;
 
         const sets = ['updated_at = GETDATE()'];
+        const patch = {};
         // orgId incluso nel request per defense-in-depth: il WHERE finale lo riapplica
         const req2 = pool.request().input('id', id).input('orgId', orgId);
-        if (title         !== undefined) { sets.push('title = @title');                 req2.input('title', title); }
+        if (title         !== undefined) { sets.push('title = @title');                 req2.input('title', title); patch.title = title; }
         if (description   !== undefined) { sets.push('description = @description');     req2.input('description', description); }
         if (context       !== undefined) { sets.push('context = @context');             req2.input('context', context); }
         if (category      !== undefined) { sets.push('category = @category');           req2.input('category', category); }
@@ -281,31 +310,35 @@ async function updateRisk(req, res) {
             if (!pParsed.ok) return res.status(400).json({ error: pParsed.error });
             sets.push('probability = @probability');
             req2.input('probability', pParsed.value);
+            patch.probability = pParsed.value;
         }
         if (impact !== undefined) {
             const gParsed = parsePgFactor(impact, undefined, pgMax);
             if (!gParsed.ok) return res.status(400).json({ error: gParsed.error });
             sets.push('impact = @impact');
             req2.input('impact', gParsed.value);
+            patch.impact = gParsed.value;
         }
-        if (evaluated_element !== undefined) { sets.push('evaluated_element = @evaluated_element'); req2.input('evaluated_element', emptyToNull(evaluated_element)); }
+        if (evaluated_element !== undefined) { sets.push('evaluated_element = @evaluated_element'); req2.input('evaluated_element', emptyToNull(evaluated_element)); patch.evaluated_element = emptyToNull(evaluated_element); }
         if (context_text !== undefined) { sets.push('context_text = @context_text'); req2.input('context_text', emptyToNull(context_text)); }
         if (interested_parties_text !== undefined) { sets.push('interested_parties_text = @interested_parties_text'); req2.input('interested_parties_text', emptyToNull(interested_parties_text)); }
-        if (current_actions !== undefined) { sets.push('current_actions = @current_actions'); req2.input('current_actions', emptyToNull(current_actions)); }
-        if (further_actions !== undefined) { sets.push('further_actions = @further_actions'); req2.input('further_actions', emptyToNull(further_actions)); }
+        if (current_actions !== undefined) { sets.push('current_actions = @current_actions'); req2.input('current_actions', emptyToNull(current_actions)); patch.current_actions = emptyToNull(current_actions); }
+        if (further_actions !== undefined) { sets.push('further_actions = @further_actions'); req2.input('further_actions', emptyToNull(further_actions)); patch.further_actions = emptyToNull(further_actions); }
         if (residual_probability !== undefined) {
             const rpParsed = parseOptionalPgFactor(residual_probability, pgMax);
             if (!rpParsed.ok) return res.status(400).json({ error: rpParsed.error });
             sets.push('residual_probability = @residual_probability');
             req2.input('residual_probability', rpParsed.value);
+            patch.residual_probability = rpParsed.value;
         }
         if (residual_impact !== undefined) {
             const rgParsed = parseOptionalPgFactor(residual_impact, pgMax);
             if (!rgParsed.ok) return res.status(400).json({ error: rgParsed.error });
             sets.push('residual_impact = @residual_impact');
             req2.input('residual_impact', rgParsed.value);
+            patch.residual_impact = rgParsed.value;
         }
-        if (effectiveness_note !== undefined) { sets.push('effectiveness_note = @effectiveness_note'); req2.input('effectiveness_note', emptyToNull(effectiveness_note)); }
+        if (effectiveness_note !== undefined) { sets.push('effectiveness_note = @effectiveness_note'); req2.input('effectiveness_note', emptyToNull(effectiveness_note)); patch.effectiveness_note = emptyToNull(effectiveness_note); }
         if (treatment     !== undefined) { sets.push('treatment = @treatment');         req2.input('treatment', treatment); }
         if (treatment_desc!== undefined) { sets.push('treatment_desc = @treatment_desc'); req2.input('treatment_desc', treatment_desc); }
         if (responsible   !== undefined) { sets.push('responsible = @responsible');     req2.input('responsible', responsible); }
@@ -316,32 +349,82 @@ async function updateRisk(req, res) {
             const safeNature  = validNature.includes(nature) ? nature : 'risk';
             sets.push('nature = @nature');
             req2.input('nature', safeNature);
+            patch.nature = safeNature;
         }
         if (analysis_method !== undefined) {
             const safeMethod = normalizeMethod(analysis_method);
             sets.push('analysis_method = @analysis_method');
             req2.input('analysis_method', safeMethod);
+            patch.analysis_method = safeMethod;
             if (safeMethod !== 'swot_signed') {
                 sets.push('swot_quadrant = NULL');
                 sets.push('impact_sign = 1');
+                patch.swot_quadrant = null;
+                patch.impact_sign = 1;
             }
         }
         if (swot_quadrant !== undefined) {
             sets.push('swot_quadrant = @swot_quadrant');
             req2.input('swot_quadrant', normalizeSwotQuadrant(swot_quadrant));
+            patch.swot_quadrant = normalizeSwotQuadrant(swot_quadrant);
         }
         if (impact_sign !== undefined) {
             sets.push('impact_sign = @impact_sign');
             req2.input('impact_sign', normalizeImpactSign(impact_sign));
+            patch.impact_sign = normalizeImpactSign(impact_sign);
         }
 
         await req2.query(`UPDATE risks SET ${sets.join(', ')} WHERE risk_id = @id AND organization_id = @orgId`);
+        const next = mergeRiskReviewState(prev, patch);
+        if (isSignificantReviewChange(prev, next)) {
+            await insertRiskReview(pool, buildRiskReviewSnapshot(next, {
+                organization_id: orgId,
+                company_id: prev.company_id,
+                recorded_by: req.user.user_id,
+            }));
+        }
         res.json({ success: true });
     } catch (err) {
         if (err.number === 547) {
             return res.status(400).json({ error: 'Valore non ammesso (vincolo CHECK). P e G devono essere interi nella scala dell\'azienda.' });
         }
         res.status(500).json({ error: err.message });
+    }
+}
+
+async function listRiskReviews(req, res) {
+    try {
+        const pool = await getPool();
+        const orgId = req.user.organization_id;
+        const id = parseInt(req.params.id, 10);
+        if (!Number.isFinite(id)) {
+            return res.status(400).json({ error: 'Id non valido' });
+        }
+        const head = await pool.request().input('id', id).input('orgId', orgId)
+            .query(`SELECT r.risk_id, c.risk_pg_max
+                    FROM risks r
+                    LEFT JOIN companies c ON c.id = r.company_id
+                    WHERE r.risk_id = @id AND r.organization_id = @orgId AND r.is_deleted = 0`);
+        if (!head.recordset.length) return res.status(404).json({ error: 'Rischio non trovato' });
+        const pgMax = normalizePgMax(head.recordset[0].risk_pg_max);
+        const hist = await pool.request().input('id', id).input('orgId', orgId)
+            .query(`
+                SELECT rv.id, rv.risk_id, rv.organization_id, rv.company_id, rv.title, rv.evaluated_element,
+                       rv.nature, rv.probability, rv.impact, rv.impact_sign, rv.analysis_method, rv.swot_quadrant,
+                       rv.residual_probability, rv.residual_impact, rv.effectiveness_note,
+                       rv.current_actions, rv.further_actions, rv.recorded_at, rv.recorded_by,
+                       u.full_name AS recorded_by_name
+                FROM risk_reviews rv
+                INNER JOIN risks r ON r.risk_id = rv.risk_id AND r.organization_id = @orgId
+                LEFT JOIN users u ON u.user_id = rv.recorded_by
+                WHERE rv.risk_id = @id
+                ORDER BY rv.recorded_at DESC, rv.id DESC
+            `);
+        const data = hist.recordset.map((row) => decorateRiskRow({ ...row, risk_pg_max: pgMax }));
+        return res.json({ success: true, data });
+    } catch (err) {
+        logger.error('listRiskReviews:', err.message);
+        return res.status(500).json({ error: err.message });
     }
 }
 
@@ -459,6 +542,22 @@ async function importRisks(req, res) {
                         @analysis_method, @swot_quadrant, @impact_sign)
                 `);
             createdIds.push(r.recordset[0].risk_id);
+            await insertRiskReview(pool, buildRiskReviewSnapshot({
+                risk_id: r.recordset[0].risk_id,
+                title: String(title).slice(0, 200),
+                evaluated_element: emptyToNull(row?.evaluated_element),
+                nature: ['risk', 'opportunity'].includes(row?.nature) ? row.nature : 'risk',
+                probability: pParsed.value,
+                impact: gParsed.value,
+                impact_sign: safeSign,
+                analysis_method: safeMethod,
+                swot_quadrant: safeQuadrant,
+                residual_probability: residualPair.residual_probability,
+                residual_impact: residualPair.residual_impact,
+                effectiveness_note: emptyToNull(row?.effectiveness_note),
+                current_actions: emptyToNull(row?.current_actions),
+                further_actions: emptyToNull(row?.further_actions),
+            }, { organization_id: orgId, company_id, recorded_by: userId }));
             inserted += 1;
         }
 
@@ -707,6 +806,7 @@ async function setCompanyPgScale(req, res) {
 
 module.exports = {
     listRisks, getRiskStats, getOneRisk, createRisk, updateRisk, deleteRisk,
+    listRiskReviews,
     detectRisksImport, importRisks, downloadM03Template, setCompanyPgScale,
     listObjectives, getObjectiveStats, getOneObjective, createObjective, updateObjective, deleteObjective
 };

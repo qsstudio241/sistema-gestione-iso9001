@@ -9,6 +9,7 @@ import { useCompanyScope } from "../contexts/CompanyScopeContext";
 import { formatDate } from "../utils/dateHelpers";
 import { riskScore, riskScoreLevel, scoreColor, displayFurtherActions, residualScoreFromRisk, normalizePgMax, pgOptions } from "../utils/riskScore";
 import { appendCatalogLine, formatContextFactorLine, formatInterestedPartyLine } from "../utils/catalogTextAppend";
+import { buildRisksListParams } from "../utils/risksListParams";
 import NcCreateModal from "../components/NcCreateModal";
 import SgqDataGrid from "../components/SgqDataGrid";
 import RiskM03ImportDialog from "../components/RiskM03ImportDialog";
@@ -102,6 +103,7 @@ function RiskForm({ initial, onSave, onClose, companies = [], pgMax = 3, filterC
   const [error, setError]   = useState(null);
   const [factors, setFactors] = useState([]);
   const [parties, setParties] = useState([]);
+  const [reviews, setReviews] = useState([]);
   const scale = pgOptions(pgMax);
   const score = riskScore(form.probability, form.impact);
   const scoreLevel = riskScoreLevel(score, scale.max);
@@ -127,6 +129,20 @@ function RiskForm({ initial, onSave, onClose, companies = [], pgMax = 3, filterC
     });
     return () => { cancelled = true; };
   }, [filterCompany]);
+
+  useEffect(() => {
+    if (!initial?.risk_id || !apiService.getRiskReviews) {
+      setReviews([]);
+      return undefined;
+    }
+    let cancelled = false;
+    apiService.getRiskReviews(initial.risk_id).then((res) => {
+      if (!cancelled) setReviews(res?.data || []);
+    }).catch(() => {
+      if (!cancelled) setReviews([]);
+    });
+    return () => { cancelled = true; };
+  }, [initial?.risk_id]);
 
   function upd(k, v) { setForm(f => ({ ...f, [k]: v })); }
 
@@ -367,6 +383,26 @@ function RiskForm({ initial, onSave, onClose, companies = [], pgMax = 3, filterC
             <label>Azione di trattamento (legacy)</label>
             <textarea rows={2} value={form.treatment_desc} onChange={e => upd("treatment_desc", e.target.value)} placeholder="Usato in lettura se Ulteriori azioni è vuoto" />
           </div>
+          {reviews.length > 0 && (
+            <div className="risk-reviews" aria-label="Storico aggiornamenti">
+              <h4 className="risk-reviews-title">Storico aggiornamenti</h4>
+              <ol className="risk-reviews-list">
+                {reviews.map((rv) => (
+                  <li key={rv.id || rv.recorded_at} className="risk-reviews-item">
+                    <div className="risk-reviews-meta">
+                      <span>{rv.recorded_at ? formatDate(rv.recorded_at) : "\u2014"}</span>
+                      {rv.recorded_by_name && <span>{rv.recorded_by_name}</span>}
+                    </div>
+                    <div className="risk-reviews-scores">
+                      <span>{`P ${rv.probability ?? "\u2014"} \u00d7 G ${rv.impact ?? "\u2014"} = ${rv.score ?? "\u2014"}`}</span>
+                      {rv.residual_score != null && <span>{`R res ${rv.residual_score}`}</span>}
+                    </div>
+                    {rv.effectiveness_note && <p className="risk-reviews-note">{rv.effectiveness_note}</p>}
+                  </li>
+                ))}
+              </ol>
+            </div>
+          )}
           {error && <p className="form-error">{error}</p>}
           <div className="form-footer">
             <button type="button" className="btn-secondary" onClick={onClose}>Annulla</button>
@@ -474,6 +510,7 @@ function RisksTab({ companies = [], filterCompany = "", reloadCompanies }) {
   const [loading, setLoading]     = useState(true);
   const [modal, setModal]         = useState(null); // null | { mode:'new'|'edit', data }
   const [filterStatus, setFS]     = useState("");
+  const [showClosed, setShowClosed] = useState(false);
   const [actionRisk, setActionRisk] = useState(null);
   const [detection, setDetection] = useState(null);
   const [importFile, setImportFile] = useState(null);
@@ -489,9 +526,7 @@ function RisksTab({ companies = [], filterCompany = "", reloadCompanies }) {
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const params = {};
-      if (filterStatus)  params.status     = filterStatus;
-      if (filterCompany) params.company_id = filterCompany;
+      const params = buildRisksListParams({ filterStatus, filterCompany, showClosed });
       const [listRes, statsRes] = await Promise.all([
         apiService.getRisks(params),
         apiService.getRisksStats(filterCompany ? { company_id: filterCompany } : {}),
@@ -499,7 +534,7 @@ function RisksTab({ companies = [], filterCompany = "", reloadCompanies }) {
       setList(listRes?.data || []);
       setStats(statsRes?.data || null);
     } finally { setLoading(false); }
-  }, [filterStatus, filterCompany]);
+  }, [filterStatus, filterCompany, showClosed]);
 
   useEffect(() => { load(); }, [load]);
 
@@ -618,6 +653,14 @@ function RisksTab({ companies = [], filterCompany = "", reloadCompanies }) {
           <option value="">Tutti gli stati</option>
           {Object.entries(RISK_STATUS_CFG).map(([k,v]) => <option key={k} value={k}>{v.label}</option>)}
         </select>
+        <label className="risks-closed-toggle">
+          <input
+            type="checkbox"
+            checked={showClosed}
+            onChange={(e) => setShowClosed(e.target.checked)}
+          />
+          Mostra rischi chiusi
+        </label>
         <button className="btn-primary" onClick={() => setModal({ mode: "new", data: { company_id: filterCompany || "" } })}>+ Nuovo rischio</button>
         {filterCompany ? (
           <label className="risks-scale-label">

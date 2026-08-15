@@ -7,6 +7,7 @@ vi.mock("../services/apiService", () => ({
   default: {
     getContextFactors: vi.fn(),
     getInterestedParties: vi.fn(),
+    getRiskReviews: vi.fn(),
   },
 }));
 
@@ -20,6 +21,7 @@ describe("RiskForm picker catalogo ROO-8", () => {
     apiService.getInterestedParties.mockResolvedValue({
       data: [{ id: 9, name: "Cliente", requirements: "On time" }],
     });
+    apiService.getRiskReviews.mockResolvedValue({ data: [] });
   });
 
   it("accoda dal catalogo e non duplica", async () => {
@@ -63,5 +65,26 @@ describe("RiskForm picker catalogo ROO-8", () => {
     await waitFor(() => expect(apiService.getContextFactors).toHaveBeenCalled());
     expect(screen.queryByLabelText("Dal catalogo contesto")).toBeNull();
     expect(screen.queryByLabelText("Dal catalogo parti")).toBeNull();
+  });
+
+  it("mostra lo storico se la riga ha review", async () => {
+    apiService.getRiskReviews.mockResolvedValue({
+      data: [{
+        id: 1,
+        probability: 2,
+        impact: 3,
+        score: 6,
+        residual_score: 2,
+        effectiveness_note: "Mitigazione efficace",
+        recorded_at: "2026-06-10",
+        recorded_by_name: "Marco",
+      }],
+    });
+    render(
+      <RiskForm initial={{ risk_id: 1043, title: "X" }} onSave={vi.fn()} onClose={vi.fn()} />,
+    );
+    expect(await screen.findByLabelText("Storico aggiornamenti")).toBeInTheDocument();
+    expect(screen.getByText("Mitigazione efficace")).toBeInTheDocument();
+    expect(screen.getByText(/P 2/)).toBeInTheDocument();
   });
 });

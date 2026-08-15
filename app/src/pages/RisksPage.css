@@ -367,6 +367,46 @@
 }
 .btn-action-risk:hover { background: #bee3f8; }
 
+.risks-closed-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.85rem;
+  color: #4a5568;
+  cursor: pointer;
+  user-select: none;
+}
+
+.risk-reviews {
+  margin: 16px 0 8px;
+  padding: 12px;
+  background: #f7fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+}
+.risk-reviews-title {
+  margin: 0 0 8px;
+  font-size: 0.85rem;
+  color: #2d3748;
+}
+.risk-reviews-list {
+  margin: 0;
+  padding-left: 18px;
+}
+.risk-reviews-item { margin-bottom: 10px; }
+.risk-reviews-meta,
+.risk-reviews-scores {
+  display: flex;
+  gap: 12px;
+  font-size: 0.8rem;
+  color: #4a5568;
+}
+.risk-reviews-note {
+  margin: 4px 0 0;
+  font-size: 0.8rem;
+  color: #2d3748;
+}
+
 @media (max-width: 640px) {
   .risks-page { padding: 12px; }
   .stats-bar { gap: 8px; }

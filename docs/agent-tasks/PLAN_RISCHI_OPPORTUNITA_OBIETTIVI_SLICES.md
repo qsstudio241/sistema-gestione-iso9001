@@ -3,7 +3,7 @@
 > **Destinazione**: il modulo è il **documento di analisi rischi/opportunità** (HLS §6.1), valido per 9001 / 14001 / 45001 / SGI. Una riga = una valutazione. Il **metodo di pesatura** (P×G, FMEA G×P×Rilev, SWOT con G con segno) è del documento, non del prodotto. L'ingest accetta più layout (M03, SWOT, FMEA HSE). Non sostituisce DVR né registro aspetti. Obiettivi §6.2 = tab collegato.
 > **Spec**: [PROCESSO](../specs/PROCESSO_ANALISI_RISCHI_OPPORTUNITA.md) · [M03 mapping](../specs/M03_ANALISI_RISCHI_OPPORTUNITA.md) · template [M03-R00](../specs/templates/M03-R00-analisi-rischi-opportunita.xlsx)
 > **Norma**: [9001:2015](../Normative/UNI%20EN%20ISO%209001_2015%20Rev.%200.md) · [14001:2015](../Normative/Normative%20NORMA_00003_%20UNI%20EN%20ISO%2014001_2015%20Rev.%200.md) §6.1 · [45001:2018](../Normative/Normative%20NORMA_00002_%20UNI%20ISO%2045001_2018%20Rev.%200.md) §6.1
-> **Brief attivo**: [DEPUTYTASK_RISCHI_ROO.md](DEPUTYTASK_RISCHI_ROO.md) (ROO-16 APERTO — storico aggiornamenti riga)
+> **Brief attivo**: [DEPUTYTASK_RISCHI_ROO.md](DEPUTYTASK_RISCHI_ROO.md) (ROO-16 FATTO — prossima ROO-17 lista riesami ambito)
 > **Draft studio**: M03 rev.00, 19/06/2026, foglio `Analisi Rischio`, autore Marco Camellini
 
 **Correzione di rotta (14/08/2026)**: la prima mappa partiva dai quattro tab già in app e chiedeva come «chiudere la catena» con FK. Quella premessa **inficia** l'analisi: il processo non è CRUD di registri. Questa mappa parte dal **processo ISO**, poi dal **CRUD che serve a quel processo**, poi dal **gap** sul codice attuale.
@@ -196,7 +196,7 @@ Ordine: **prima il ponte catalogo→riga (ROO-8)**, poi metodo documento (ROO-15
 | ROO-12 | Export / ristampa M03 | Excel o Word | ROO-5, ROO-6 | HITL formato |
 | **ROO-13** | **Scala P/G per azienda** | `companies.risk_pg_max` 3\|4\|5; CHECK risks 1–5; set prima ingest/primo rischio | ROO-6c | FATTO |
 | ROO-14 | Copia ulteriori azioni → Piano Azioni (modello Pagani: foglio piano) | `source_risk_id` già c'è | HITL | HITL |
-| **ROO-16** | **Storico riga + nascondi chiusi** | mig `risk_reviews`; write; `GET /risks/:id/reviews`; timeline **nel form**; default lista senza `closed`; checkbox «Mostra chiusi» | ROO-5, ROO-15 | AFK |
+| **ROO-16** | **Storico riga + nascondi chiusi** | mig `risk_reviews`; write; `GET /risks/:id/reviews`; timeline **nel form**; default lista senza `closed`; checkbox «Mostra chiusi» | ROO-5, ROO-15 | FATTO |
 | ROO-17 | Interrogazione ambito (input §9.3) | `GET /risks/reviews?company_id&from&to` + lista (non un quarto tab) | ROO-16 | AFK |
 | ROO-18 | Ingest → prima revisione / data riesame esplicita | detector + eventuale bottone | ROO-16 | HITL |
 | ROO-19 | Analista conformità §6.1 (notifiche, non chat) | check deterministici + LLM solo sul testo; HITL; non inventa righe | ROO-16, cataloghi | HITL |

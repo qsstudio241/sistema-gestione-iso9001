@@ -19,7 +19,7 @@ jest.mock('../services/companyAccess.service', () => ({
 }));
 
 const { getPool } = require('../config/database');
-const { createRisk, updateRisk, listRisks, detectRisksImport, importRisks, setCompanyPgScale } = require('./risks.controller');
+const { createRisk, updateRisk, listRisks, listRiskReviews, detectRisksImport, importRisks, setCompanyPgScale } = require('./risks.controller');
 const { buildM03TemplateBuffer } = require('../utils/excelRisksM03Detector');
 
 const USER = { organization_id: 1001, user_id: 7, company_access: [] };
@@ -167,7 +167,8 @@ describe('createRisk — riga M03 e P×G', () => {
     const { queryMock, inputMock } = buildPool();
     queryMock
       .mockResolvedValueOnce({ recordset: [{ risk_pg_max: 5 }] })
-      .mockResolvedValueOnce({ recordset: [{ risk_id: 44, probability: 2, impact: 5 }] });
+      .mockResolvedValueOnce({ recordset: [{ risk_id: 44, probability: 2, impact: 5 }] })
+      .mockResolvedValueOnce({ recordset: [] });
     const req = mockReq({
       body: { title: 'x', probability: 2, impact: 5, company_id: 3 },
     });
@@ -227,7 +228,8 @@ describe('updateRisk — parziale e P×G', () => {
   it('aggiorna solo further_actions', async () => {
     const { queryMock, inputMock } = buildPool();
     queryMock
-      .mockResolvedValueOnce({ recordset: [{ risk_id: 10, company_id: 3 }] })
+      .mockResolvedValueOnce({ recordset: [{ risk_id: 10, company_id: 3, further_actions: 'Vecchio' }] })
+      .mockResolvedValueOnce({ recordset: [] })
       .mockResolvedValueOnce({ recordset: [] });
     const req = mockReq({
       params: { id: '10' },
@@ -249,7 +251,8 @@ describe('updateRisk — parziale e P×G', () => {
   it('svuota il residuo con stringa vuota → null', async () => {
     const { queryMock, inputMock } = buildPool();
     queryMock
-      .mockResolvedValueOnce({ recordset: [{ risk_id: 10, company_id: 3 }] })
+      .mockResolvedValueOnce({ recordset: [{ risk_id: 10, company_id: 3, residual_probability: 2, residual_impact: 2 }] })
+      .mockResolvedValueOnce({ recordset: [] })
       .mockResolvedValueOnce({ recordset: [] });
     const req = mockReq({
       params: { id: '10' },
@@ -289,8 +292,9 @@ describe('updateRisk — parziale e P×G', () => {
   it('accetta impact=5 se l\'azienda ha scala 1-5', async () => {
     const { queryMock, inputMock } = buildPool();
     queryMock
-      .mockResolvedValueOnce({ recordset: [{ risk_id: 10, company_id: 3 }] })
+      .mockResolvedValueOnce({ recordset: [{ risk_id: 10, company_id: 3, impact: 3 }] })
       .mockResolvedValueOnce({ recordset: [{ risk_pg_max: 5 }] })
+      .mockResolvedValueOnce({ recordset: [] })
       .mockResolvedValueOnce({ recordset: [] });
     const req = mockReq({
       params: { id: '10' },
@@ -300,6 +304,32 @@ describe('updateRisk — parziale e P×G', () => {
     await updateRisk(req, res);
     expect(res.json).toHaveBeenCalledWith({ success: true });
     expect(inputMock).toHaveBeenCalledWith('impact', 5);
+  });
+
+  it('solo titolo non scrive snapshot', async () => {
+    const { queryMock } = buildPool();
+    queryMock
+      .mockResolvedValueOnce({ recordset: [{ risk_id: 10, company_id: 3, title: 'A', probability: 2, impact: 2 }] })
+      .mockResolvedValueOnce({ recordset: [] });
+    const req = mockReq({ params: { id: '10' }, body: { title: 'B' } });
+    const res = mockRes();
+    await updateRisk(req, res);
+    expect(res.json).toHaveBeenCalledWith({ success: true });
+    expect(queryMock.mock.calls.some(([sql]) => /INSERT INTO risk_reviews/.test(sql))).toBe(false);
+  });
+
+  it('cambio G scrive snapshot', async () => {
+    const { queryMock, inputMock } = buildPool();
+    queryMock
+      .mockResolvedValueOnce({ recordset: [{ risk_id: 10, company_id: 3, organization_id: 1001, impact: 3, probability: 2 }] })
+      .mockResolvedValueOnce({ recordset: [] })
+      .mockResolvedValueOnce({ recordset: [] });
+    const req = mockReq({ params: { id: '10' }, body: { impact: 2 } });
+    const res = mockRes();
+    await updateRisk(req, res);
+    expect(res.json).toHaveBeenCalledWith({ success: true });
+    expect(queryMock.mock.calls.some(([sql]) => /INSERT INTO risk_reviews/.test(sql))).toBe(true);
+    expect(inputMock).toHaveBeenCalledWith('impact', 2);
   });
 });
 
@@ -324,6 +354,7 @@ describe('listRisks — colonne M03 e score', () => {
     await listRisks(req, res);
 
     const listSql = queryMock.mock.calls.find(([sql]) => /SELECT r\.risk_id/.test(sql))[0];
+    expect(listSql).toMatch(/r\.status <> 'closed'/);
     expect(listSql).toMatch(/r\.evaluated_element/);
     expect(listSql).toMatch(/r\.context_text/);
     expect(listSql).toMatch(/r\.interested_parties_text/);
@@ -337,6 +368,52 @@ describe('listRisks — colonne M03 e score', () => {
     expect(payload.data[0].score).toBe(9);
     expect(payload.data[0].score_level).toBe('alto');
     expect(payload.data[0].residual_score).toBeNull();
+  });
+
+  it('include_closed=1 non esclude i chiusi', async () => {
+    const { queryMock } = buildPool();
+    queryMock.mockImplementation((sql) => {
+      if (/COUNT\(\*\)/.test(sql)) return Promise.resolve({ recordset: [{ total: 0 }] });
+      return Promise.resolve({ recordset: [] });
+    });
+    const req = mockReq({ query: { include_closed: '1' } });
+    const res = mockRes();
+    await listRisks(req, res);
+    const listSql = queryMock.mock.calls.find(([sql]) => /SELECT r\.risk_id/.test(sql))[0];
+    expect(listSql).not.toMatch(/r\.status <> 'closed'/);
+  });
+});
+
+describe('listRiskReviews', () => {
+  it('404 se la riga non esiste', async () => {
+    const { queryMock } = buildPool();
+    queryMock.mockResolvedValue({ recordset: [] });
+    const req = mockReq({ params: { id: '9' } });
+    const res = mockRes();
+    await listRiskReviews(req, res);
+    expect(res.status).toHaveBeenCalledWith(404);
+  });
+
+  it('restituisce snapshot decorati', async () => {
+    const { queryMock } = buildPool();
+    queryMock
+      .mockResolvedValueOnce({ recordset: [{ risk_id: 9, risk_pg_max: 3 }] })
+      .mockResolvedValueOnce({
+        recordset: [{
+          id: 1, risk_id: 9, probability: 2, impact: 3, impact_sign: -1,
+          analysis_method: 'swot_signed', residual_probability: 1, residual_impact: 1,
+          recorded_at: '2026-08-15T12:00:00.000Z', recorded_by_name: 'Marco',
+        }],
+      });
+    const req = mockReq({ params: { id: '9' } });
+    const res = mockRes();
+    await listRiskReviews(req, res);
+    const payload = res.json.mock.calls[0][0];
+    expect(payload.success).toBe(true);
+    expect(payload.data[0].score).toBe(6);
+    expect(payload.data[0].signed_score).toBe(-6);
+    expect(payload.data[0].residual_score).toBe(1);
+    expect(payload.data[0].recorded_by_name).toBe('Marco');
   });
 });
 
