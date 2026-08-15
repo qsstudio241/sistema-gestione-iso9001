@@ -82,6 +82,13 @@
   font-size: 0.875rem;
   background: #fff;
 }
+.risks-scale-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.85rem;
+  color: #4a5568;
+}
 
 /* Nature badge (rischio / opportunità) */
 .nature-badge        { padding: 2px 8px; border-radius: 10px; font-size: 0.75rem; font-weight: 600; flex-shrink: 0; }

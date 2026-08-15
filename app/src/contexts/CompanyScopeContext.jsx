@@ -25,6 +25,7 @@ const TEST_FALLBACK_SCOPE = Object.freeze({
   companyId: "",
   setCompanyId: () => {},
   companies: [],
+  reloadCompanies: () => Promise.resolve([]),
   locked: false,
   companyScoped: false,
   isStudioWide: true,
@@ -56,19 +57,36 @@ export function CompanyScopeProvider({ children, initialCompanyId }) {
     setCompanyIdState(resolveAppCompanyScope(user));
   }, [user?.id, user?.organization_id, user?.company_access, initialCompanyId]);
 
+  const applyCompanyList = useCallback((list) => {
+    setCompanies(list);
+    setCompanyIdState((prev) => {
+      const next = sanitizeScopeAgainstCompanies(user, prev, list);
+      if (next !== prev) persistAppCompanyScope(user?.organization_id, next);
+      return next;
+    });
+  }, [user]);
+
+  const reloadCompanies = useCallback(() => {
+    return apiService
+      .getCompanies({ limit: 500 })
+      .then((res) => {
+        const list = res?.data || [];
+        applyCompanyList(list);
+        return list;
+      })
+      .catch(() => {
+        setCompanies([]);
+        return [];
+      });
+  }, [applyCompanyList]);
+
   useEffect(() => {
     let cancelled = false;
     apiService
       .getCompanies({ limit: 500 })
       .then((res) => {
         if (cancelled) return;
-        const list = res?.data || [];
-        setCompanies(list);
-        setCompanyIdState((prev) => {
-          const next = sanitizeScopeAgainstCompanies(user, prev, list);
-          if (next !== prev) persistAppCompanyScope(user?.organization_id, next);
-          return next;
-        });
+        applyCompanyList(res?.data || []);
       })
       .catch(() => {
         if (!cancelled) setCompanies([]);
@@ -76,7 +94,7 @@ export function CompanyScopeProvider({ children, initialCompanyId }) {
     return () => {
       cancelled = true;
     };
-  }, [user?.organization_id]);
+  }, [user?.organization_id, applyCompanyList]);
 
   const locked = isCompanyScopeLocked(user);
   const companyScoped = isCompanyScopedUser(user);
@@ -115,13 +133,14 @@ export function CompanyScopeProvider({ children, initialCompanyId }) {
       companyId,
       setCompanyId,
       companies,
+      reloadCompanies,
       locked,
       companyScoped,
       isStudioWide: !companyId,
       isStudioPatrimonio,
       scopeCompanyName,
     }),
-    [companyId, setCompanyId, companies, locked, companyScoped, isStudioPatrimonio, scopeCompanyName]
+    [companyId, setCompanyId, companies, reloadCompanies, locked, companyScoped, isStudioPatrimonio, scopeCompanyName]
   );
 
   return (

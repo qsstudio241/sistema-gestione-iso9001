@@ -1928,11 +1928,14 @@ class ApiService {
     async createRisk(data)          { return this.post('/risks', data); }
     async updateRisk(id, data)      { return this.put(`/risks/${id}`, data); }
     async deleteRisk(id)            { return this.delete(`/risks/${id}`); }
+    async setRisksPgScale(data) { return this.put('/risks/pg-scale', data); }
     async detectRisksM03Import(file, options = {}) {
         const formData = new FormData();
         formData.append('file', file);
         if (options.sheetName) formData.append('sheetName', options.sheetName);
         if (options.mapping) formData.append('mapping', JSON.stringify(options.mapping));
+        if (options.pgMax) formData.append('pgMax', String(options.pgMax));
+        if (options.company_id) formData.append('company_id', String(options.company_id));
         const token = this.getToken();
         const headers = token ? { Authorization: `Bearer ${token}` } : {};
         const response = await fetch(`${this.baseUrl}/risks/detect-import`, {
