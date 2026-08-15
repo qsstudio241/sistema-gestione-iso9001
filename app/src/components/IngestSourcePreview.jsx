@@ -4,7 +4,13 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import apiService from "../services/apiService";
 import { openPdfBlob, prefersMobilePdfFallback } from "./DocumentPdfViewer";
+import SpreadsheetViewer from "./SpreadsheetViewer";
 import "./IngestSourcePreview.css";
+
+export function isSpreadsheetSource(fileName, mimeType) {
+  return /\.xlsx?$/i.test(fileName || "")
+    || /spreadsheet|excel/i.test(String(mimeType || ""));
+}
 
 function isImageMime(mime) {
   return typeof mime === "string" && mime.startsWith("image/");
@@ -29,7 +35,10 @@ export default function IngestSourcePreview({
   mimeType = "application/pdf",
   previewFile = null,
   tall = false,
+  sheetName,
+  onSheetNameChange,
 }) {
+  const spreadsheet = isSpreadsheetSource(fileName, mimeType);
   const [blobUrl, setBlobUrl] = useState(null);
   const [blobRef, setBlobRef] = useState(null);
   const [loadError, setLoadError] = useState(false);
@@ -55,6 +64,10 @@ export default function IngestSourcePreview({
     setBlobRef(null);
 
     async function load() {
+      if (isSpreadsheetSource(fileName, mimeType)) {
+        setLoading(false);
+        return;
+      }
       try {
         let blob;
         if (previewFile instanceof Blob) {
@@ -81,7 +94,7 @@ export default function IngestSourcePreview({
       cancelled = true;
       cleanupUrl();
     };
-  }, [stagingId, previewFile, cleanupUrl]);
+  }, [stagingId, previewFile, cleanupUrl, fileName, mimeType]);
 
   const handleOpenNewTab = useCallback(async () => {
     if (!blobUrl || !blobRef) return;
@@ -139,6 +152,31 @@ export default function IngestSourcePreview({
       />
     );
   };
+
+  if (spreadsheet) {
+    return (
+      <div className={`ingest-source-preview ${tall ? "ingest-source-preview--tall" : ""}`}>
+        <div className="ingest-source-preview__toolbar">
+          <span className="ingest-source-preview__label">Documento sorgente</span>
+        </div>
+        <div className="ingest-source-preview__frame ingest-source-preview__frame--spreadsheet">
+          {previewFile instanceof Blob ? (
+            <SpreadsheetViewer
+              file={previewFile}
+              fileName={fileName}
+              embedded
+              sheetName={sheetName}
+              onSheetNameChange={onSheetNameChange}
+            />
+          ) : (
+            <p className="ingest-source-preview__status">
+              Anteprima Excel non disponibile. Ricarica il file.
+            </p>
+          )}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className={`ingest-source-preview ${tall ? "ingest-source-preview--tall" : ""}`}>

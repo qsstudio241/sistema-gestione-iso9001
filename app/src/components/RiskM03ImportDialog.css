@@ -1,0 +1,85 @@
+/*
+ * Dimensioni del dialog M03 sulla shell ingest condivisa.
+ * Overlay/layout/resizer: IngestDialogShell.css
+ */
+.rm03-import__dialog {
+  width: min(1180px, 100%);
+  max-height: 92vh;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.2);
+  padding: 1.25rem 1.5rem 1.5rem;
+}
+
+.rm03-import__dialog--expanded {
+  padding: 0.75rem 1rem 1rem;
+}
+
+.rm03-import__dialog .ingest-dialog-shell__layout {
+  margin-top: 0.75rem;
+}
+
+.rm03-import__dialog--expanded .ingest-dialog-shell__layout {
+  margin-top: 0.5rem;
+}
+
+.rm03-import__dialog .ingest-dialog-shell__preview-pane {
+  min-height: 440px;
+  max-height: calc(92vh - 200px);
+}
+
+.rm03-import__form-pane {
+  overflow: auto;
+  max-height: calc(92vh - 220px);
+  padding-right: 0.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.rm03-import__dialog--expanded .rm03-import__form-pane {
+  max-height: none;
+  min-height: 0;
+}
+
+.rm03-import__dialog--expanded .ingest-dialog-shell__actions {
+  flex-shrink: 0;
+  margin-top: 0.75rem;
+  padding-top: 0.75rem;
+}
+
+.rm03-import__title {
+  margin: 0 0 0.35rem;
+  font-size: 1.2rem;
+}
+
+.rm03-import__file {
+  margin: 0;
+  font-size: 0.9rem;
+  color: #334155;
+}
+
+.rm03-import__hint {
+  font-size: 0.85rem;
+  color: #64748b;
+  margin: 0.35rem 0 0;
+}
+
+@media (max-width: 900px) {
+  .rm03-import__dialog .ingest-dialog-shell__layout {
+    grid-template-columns: 1fr !important;
+    overflow: auto;
+    gap: 0.75rem;
+  }
+
+  .rm03-import__dialog .ingest-dialog-shell__resizer {
+    display: none;
+  }
+
+  .rm03-import__dialog .ingest-dialog-shell__preview-pane {
+    max-height: 45vh;
+    min-height: 220px;
+  }
+
+  .rm03-import__form-pane {
+    max-height: none;
+  }
+}

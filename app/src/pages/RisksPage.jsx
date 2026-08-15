@@ -690,6 +690,7 @@ function RisksTab({ companies = [], filterCompany = "", reloadCompanies }) {
       {detection && (
         <RiskM03ImportDialog
           detection={detection}
+          previewFile={importFile}
           onConfirm={handleConfirmImport}
           onRemap={handleRemap}
           onRaiseScale={handleSetPgScale}

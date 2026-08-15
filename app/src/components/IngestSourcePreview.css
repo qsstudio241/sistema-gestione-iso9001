@@ -52,6 +52,11 @@
   background: #e2e8f0;
 }
 
+.ingest-source-preview__frame--spreadsheet {
+  background: #fff;
+  overflow: hidden;
+}
+
 .ingest-source-preview__iframe {
   width: 100%;
   height: 100%;

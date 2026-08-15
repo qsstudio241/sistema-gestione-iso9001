@@ -196,4 +196,20 @@ describe("SpreadsheetViewer", () => {
     );
     expect(container.innerHTML).toBe("");
   });
+
+  it("in embedded legge un File locale senza chiamare l'API documenti", async () => {
+    const file = new File([new Uint8Array([1, 2, 3])], "locale.xlsx");
+    file.arrayBuffer = () => Promise.resolve(new ArrayBuffer(100));
+
+    render(
+      <SpreadsheetViewer file={file} embedded fileName="locale.xlsx" />
+    );
+
+    await waitFor(() => {
+      expect(screen.getByText("Nome")).toBeInTheDocument();
+    });
+    expect(mockGetDocFileBlob).not.toHaveBeenCalled();
+    expect(screen.getByTestId("spreadsheet-embedded")).toBeInTheDocument();
+    expect(document.querySelector(".spreadsheet-viewer-overlay")).toBeNull();
+  });
 });
