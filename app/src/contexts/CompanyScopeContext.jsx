@@ -30,6 +30,7 @@ const TEST_FALLBACK_SCOPE = Object.freeze({
   companyScoped: false,
   isStudioWide: true,
   isStudioPatrimonio: false,
+  scopeReady: true,
   scopeCompanyName: "Tutto lo studio",
 });
 
@@ -48,17 +49,25 @@ export function CompanyScopeProvider({ children, initialCompanyId }) {
   const [companyId, setCompanyIdState] = useState(() =>
     initialCompanyId !== undefined ? String(initialCompanyId) : resolveAppCompanyScope(user)
   );
+  const [scopeReady, setScopeReady] = useState(
+    () => initialCompanyId !== undefined || isCompanyScopedUser(user)
+  );
 
   useEffect(() => {
     if (initialCompanyId !== undefined) {
       setCompanyIdState(String(initialCompanyId));
+      setScopeReady(true);
       return;
     }
     setCompanyIdState(resolveAppCompanyScope(user));
+    if (isCompanyScopedUser(user)) setScopeReady(true);
   }, [user?.id, user?.organization_id, user?.company_access, initialCompanyId]);
 
   useEffect(() => {
     let cancelled = false;
+    if (initialCompanyId === undefined && !isCompanyScopedUser(user)) {
+      setScopeReady(false);
+    }
     apiService
       .getCompanies({ limit: 500 })
       .then((res) => {
@@ -70,14 +79,18 @@ export function CompanyScopeProvider({ children, initialCompanyId }) {
           if (next !== prev) persistAppCompanyScope(user?.organization_id, next);
           return next;
         });
+        setScopeReady(true);
       })
       .catch(() => {
-        if (!cancelled) setCompanies([]);
+        if (!cancelled) {
+          setCompanies([]);
+          setScopeReady(true);
+        }
       });
     return () => {
       cancelled = true;
     };
-  }, [user?.organization_id]);
+  }, [user?.organization_id, initialCompanyId]);
 
   const locked = isCompanyScopeLocked(user);
   const companyScoped = isCompanyScopedUser(user);
@@ -125,9 +138,10 @@ export function CompanyScopeProvider({ children, initialCompanyId }) {
       companyScoped,
       isStudioWide: !companyId,
       isStudioPatrimonio,
+      scopeReady,
       scopeCompanyName,
     }),
-    [companyId, setCompanyId, companies, locked, companyScoped, isStudioPatrimonio, scopeCompanyName]
+    [companyId, setCompanyId, companies, locked, companyScoped, isStudioPatrimonio, scopeReady, scopeCompanyName]
   );
 
   return (
