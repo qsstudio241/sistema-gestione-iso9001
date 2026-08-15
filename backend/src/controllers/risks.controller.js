@@ -11,8 +11,22 @@ const {
     assertMutatingAllowed,
     sendAccessDenied,
 } = require('../services/companyAccess.service');
-const { parsePgFactor, parseOptionalPgFactor, decorateRiskRow } = require('../utils/riskScore');
+const {
+    parsePgFactor,
+    parseOptionalPgFactor,
+    decorateRiskRow,
+    normalizePgMax,
+    DEFAULT_PG_MAX,
+} = require('../utils/riskScore');
 const { detectRisksM03File, buildM03TemplateBuffer } = require('../utils/excelRisksM03Detector');
+
+async function resolveCompanyPgMax(pool, companyId) {
+    if (!companyId) return DEFAULT_PG_MAX;
+    const r = await pool.request()
+        .input('cid', parseInt(companyId, 10))
+        .query('SELECT risk_pg_max FROM companies WHERE id = @cid');
+    return normalizePgMax(r.recordset[0]?.risk_pg_max);
+}
 
 function emptyToNull(v) {
     if (v === undefined || v === null) return null;
@@ -52,7 +66,8 @@ async function listRisks(req, res) {
                        r.residual_probability, r.residual_impact, r.effectiveness_note,
                        r.created_by, r.created_at, r.updated_at,
                        u.full_name AS created_by_name,
-                       c.name AS company_name
+                       c.name AS company_name,
+                       c.risk_pg_max
                 FROM risks r
                 LEFT JOIN users u ON u.user_id = r.created_by
                 LEFT JOIN companies c ON c.id = r.company_id
@@ -103,8 +118,12 @@ async function getRiskStats(req, res) {
                 SUM(CASE WHEN status = 'open' THEN 1 ELSE 0 END) AS [open],
                 SUM(CASE WHEN status = 'in_treatment' THEN 1 ELSE 0 END) AS in_treatment,
                 SUM(CASE WHEN status = 'mitigated' THEN 1 ELSE 0 END) AS mitigated,
-                SUM(CASE WHEN (probability * impact) >= 6 THEN 1 ELSE 0 END) AS high_priority
-            FROM risks r WHERE r.organization_id = @orgId AND r.is_deleted = 0${whereExtra}
+                SUM(CASE WHEN (r.probability * r.impact) >=
+                    ((ISNULL(c.risk_pg_max, 3) * ISNULL(c.risk_pg_max, 3)) * 2 / 3)
+                    THEN 1 ELSE 0 END) AS high_priority
+            FROM risks r
+            LEFT JOIN companies c ON c.id = r.company_id
+            WHERE r.organization_id = @orgId AND r.is_deleted = 0${whereExtra}
         `);
         res.json({ success: true, data: r.recordset[0] });
     } catch (err) {
@@ -119,13 +138,15 @@ async function getOneRisk(req, res) {
         const r = await pool.request()
             .input('id', parseInt(req.params.id))
             .input('orgId', orgId)
-            .query(`SELECT risk_id, organization_id, company_id, title, description, context, category,
-                           probability, impact, treatment, treatment_desc, responsible, review_date,
-                           status, nature, evaluated_element, context_text, interested_parties_text,
-                           current_actions, further_actions,
-                           residual_probability, residual_impact, effectiveness_note,
-                           created_by, created_at, updated_at
-                    FROM risks WHERE risk_id = @id AND organization_id = @orgId AND is_deleted = 0`);
+            .query(`SELECT r.risk_id, r.organization_id, r.company_id, r.title, r.description, r.context, r.category,
+                           r.probability, r.impact, r.treatment, r.treatment_desc, r.responsible, r.review_date,
+                           r.status, r.nature, r.evaluated_element, r.context_text, r.interested_parties_text,
+                           r.current_actions, r.further_actions,
+                           r.residual_probability, r.residual_impact, r.effectiveness_note,
+                           r.created_by, r.created_at, r.updated_at, c.risk_pg_max
+                    FROM risks r
+                    LEFT JOIN companies c ON c.id = r.company_id
+                    WHERE r.risk_id = @id AND r.organization_id = @orgId AND r.is_deleted = 0`);
         if (!r.recordset.length) return res.status(404).json({ error: 'Rischio non trovato' });
         res.json({ success: true, data: decorateRiskRow(r.recordset[0]) });
     } catch (err) {
@@ -149,12 +170,13 @@ async function createRisk(req, res) {
 
         if (!title) return res.status(400).json({ error: 'Titolo obbligatorio' });
 
-        const pParsed = parsePgFactor(probability, 2);
-        const gParsed = parsePgFactor(impact, 2);
+        const pgMax = await resolveCompanyPgMax(pool, company_id);
+        const pParsed = parsePgFactor(probability, 2, pgMax);
+        const gParsed = parsePgFactor(impact, 2, pgMax);
         if (!pParsed.ok) return res.status(400).json({ error: pParsed.error });
         if (!gParsed.ok) return res.status(400).json({ error: gParsed.error });
-        const rpParsed = parseOptionalPgFactor(residual_probability);
-        const rgParsed = parseOptionalPgFactor(residual_impact);
+        const rpParsed = parseOptionalPgFactor(residual_probability, pgMax);
+        const rgParsed = parseOptionalPgFactor(residual_impact, pgMax);
         if (!rpParsed.ok) return res.status(400).json({ error: rpParsed.error });
         if (!rgParsed.ok) return res.status(400).json({ error: rgParsed.error });
 
@@ -193,13 +215,13 @@ async function createRisk(req, res) {
                     @residual_probability, @residual_impact, @effectiveness_note)
             `);
 
-        const created = decorateRiskRow(r.recordset[0]);
+        const created = decorateRiskRow({ ...r.recordset[0], risk_pg_max: pgMax });
         logger.info('Risk created', { risk_id: created.risk_id, orgId, score: created.score });
         res.status(201).json({ success: true, data: created });
     } catch (err) {
         logger.error('createRisk:', err.message);
         if (err.number === 547) {
-            return res.status(400).json({ error: 'Valore non ammesso (vincolo CHECK). P e G devono essere interi 1–3.' });
+            return res.status(400).json({ error: 'Valore non ammesso (vincolo CHECK). P e G devono essere interi nella scala dell\'azienda.' });
         }
         res.status(500).json({ error: err.message });
     }
@@ -223,6 +245,12 @@ async function updateRisk(req, res) {
 
         const writeDenied = await assertMutatingAllowed(req.user, { companyId: check.recordset[0].company_id });
         if (writeDenied) return sendAccessDenied(res, writeDenied);
+        const hasPgValue = (v) => v !== undefined && v !== null && v !== '';
+        const needsPg = hasPgValue(probability) || hasPgValue(impact)
+            || hasPgValue(residual_probability) || hasPgValue(residual_impact);
+        const pgMax = needsPg
+            ? await resolveCompanyPgMax(pool, check.recordset[0].company_id)
+            : DEFAULT_PG_MAX;
 
         const sets = ['updated_at = GETDATE()'];
         // orgId incluso nel request per defense-in-depth: il WHERE finale lo riapplica
@@ -232,13 +260,13 @@ async function updateRisk(req, res) {
         if (context       !== undefined) { sets.push('context = @context');             req2.input('context', context); }
         if (category      !== undefined) { sets.push('category = @category');           req2.input('category', category); }
         if (probability !== undefined) {
-            const pParsed = parsePgFactor(probability);
+            const pParsed = parsePgFactor(probability, undefined, pgMax);
             if (!pParsed.ok) return res.status(400).json({ error: pParsed.error });
             sets.push('probability = @probability');
             req2.input('probability', pParsed.value);
         }
         if (impact !== undefined) {
-            const gParsed = parsePgFactor(impact);
+            const gParsed = parsePgFactor(impact, undefined, pgMax);
             if (!gParsed.ok) return res.status(400).json({ error: gParsed.error });
             sets.push('impact = @impact');
             req2.input('impact', gParsed.value);
@@ -249,13 +277,13 @@ async function updateRisk(req, res) {
         if (current_actions !== undefined) { sets.push('current_actions = @current_actions'); req2.input('current_actions', emptyToNull(current_actions)); }
         if (further_actions !== undefined) { sets.push('further_actions = @further_actions'); req2.input('further_actions', emptyToNull(further_actions)); }
         if (residual_probability !== undefined) {
-            const rpParsed = parseOptionalPgFactor(residual_probability);
+            const rpParsed = parseOptionalPgFactor(residual_probability, pgMax);
             if (!rpParsed.ok) return res.status(400).json({ error: rpParsed.error });
             sets.push('residual_probability = @residual_probability');
             req2.input('residual_probability', rpParsed.value);
         }
         if (residual_impact !== undefined) {
-            const rgParsed = parseOptionalPgFactor(residual_impact);
+            const rgParsed = parseOptionalPgFactor(residual_impact, pgMax);
             if (!rgParsed.ok) return res.status(400).json({ error: rgParsed.error });
             sets.push('residual_impact = @residual_impact');
             req2.input('residual_impact', rgParsed.value);
@@ -277,7 +305,7 @@ async function updateRisk(req, res) {
         res.json({ success: true });
     } catch (err) {
         if (err.number === 547) {
-            return res.status(400).json({ error: 'Valore non ammesso (vincolo CHECK). P e G devono essere interi 1–3.' });
+            return res.status(400).json({ error: 'Valore non ammesso (vincolo CHECK). P e G devono essere interi nella scala dell\'azienda.' });
         }
         res.status(500).json({ error: err.message });
     }
@@ -299,9 +327,16 @@ async function detectRisksImport(req, res) {
                 return res.status(400).json({ error: 'Mapping colonne non valido', code: 'INVALID_MAPPING' });
             }
         }
+        let pgMax = normalizePgMax(req.body?.pgMax);
+        if (req.body?.company_id) {
+            const pool = await getPool();
+            pgMax = await resolveCompanyPgMax(pool, req.body.company_id);
+            if (req.body.pgMax) pgMax = normalizePgMax(req.body.pgMax);
+        }
         const detection = detectRisksM03File(file.buffer, {
             sheetName: req.body?.sheetName || null,
             mapping: mapping && typeof mapping === 'object' ? mapping : null,
+            pgMax,
         });
         return res.json({
             success: true,
@@ -326,6 +361,7 @@ async function importRisks(req, res) {
 
         const writeDenied = await assertMutatingAllowed(req.user, { companyId: company_id });
         if (writeDenied) return sendAccessDenied(res, writeDenied);
+        const pgMax = await resolveCompanyPgMax(pool, company_id);
 
         let inserted = 0;
         let skipped = 0;
@@ -336,14 +372,14 @@ async function importRisks(req, res) {
                 skipped += 1;
                 continue;
             }
-            const pParsed = parsePgFactor(row?.probability);
-            const gParsed = parsePgFactor(row?.impact);
+            const pParsed = parsePgFactor(row?.probability, undefined, pgMax);
+            const gParsed = parsePgFactor(row?.impact, undefined, pgMax);
             if (!pParsed.ok || !gParsed.ok) {
                 skipped += 1;
                 continue;
             }
-            const rpParsed = parseOptionalPgFactor(row?.residual_probability);
-            const rgParsed = parseOptionalPgFactor(row?.residual_impact);
+            const rpParsed = parseOptionalPgFactor(row?.residual_probability, pgMax);
+            const rgParsed = parseOptionalPgFactor(row?.residual_impact, pgMax);
             if (!rpParsed.ok || !rgParsed.ok) {
                 skipped += 1;
                 continue;
@@ -388,7 +424,7 @@ async function importRisks(req, res) {
     } catch (err) {
         logger.error('importRisks:', err.message);
         if (err.number === 547) {
-            return res.status(400).json({ error: 'Valore non ammesso (vincolo CHECK). P e G devono essere interi 1–3.' });
+            return res.status(400).json({ error: 'Valore non ammesso (vincolo CHECK). P e G devono essere interi nella scala dell\'azienda.' });
         }
         return res.status(500).json({ error: err.message });
     }
@@ -581,8 +617,53 @@ async function deleteObjective(req, res) {
     }
 }
 
+async function setCompanyPgScale(req, res) {
+    try {
+        const pool = await getPool();
+        const companyId = parseInt(req.body?.company_id, 10);
+        const pgMax = normalizePgMax(req.body?.risk_pg_max);
+        if (!companyId) {
+            return res.status(400).json({ error: 'Seleziona un\'azienda per impostare la scala P/G.', code: 'COMPANY_REQUIRED' });
+        }
+        if (![3, 4, 5].includes(Number(req.body?.risk_pg_max))) {
+            return res.status(400).json({ error: 'Scala P/G ammessa: 1–3, 1–4 o 1–5.', code: 'INVALID_PG_MAX' });
+        }
+        const writeDenied = await assertMutatingAllowed(req.user, { companyId });
+        if (writeDenied) return sendAccessDenied(res, writeDenied);
+
+        const used = await pool.request().input('cid', companyId).query(`
+            SELECT MAX(v) AS used_max FROM (
+                SELECT probability AS v FROM risks WHERE company_id = @cid AND is_deleted = 0
+                UNION ALL SELECT impact FROM risks WHERE company_id = @cid AND is_deleted = 0
+                UNION ALL SELECT residual_probability FROM risks
+                    WHERE company_id = @cid AND is_deleted = 0 AND residual_probability IS NOT NULL
+                UNION ALL SELECT residual_impact FROM risks
+                    WHERE company_id = @cid AND is_deleted = 0 AND residual_impact IS NOT NULL
+            ) x
+        `);
+        const usedMax = used.recordset[0]?.used_max || 0;
+        if (usedMax > pgMax) {
+            return res.status(400).json({
+                error: `Ci sono valutazioni con P/G = ${usedMax}. Non puoi scendere sotto 1–${usedMax}.`,
+                code: 'PG_SCALE_IN_USE',
+                used_max: usedMax,
+            });
+        }
+
+        await pool.request()
+            .input('cid', companyId)
+            .input('pgMax', pgMax)
+            .query('UPDATE companies SET risk_pg_max = @pgMax, updated_at = GETDATE() WHERE id = @cid');
+
+        return res.json({ success: true, data: { company_id: companyId, risk_pg_max: pgMax, used_max: usedMax } });
+    } catch (err) {
+        logger.error('setCompanyPgScale:', err.message);
+        return res.status(500).json({ error: err.message });
+    }
+}
+
 module.exports = {
     listRisks, getRiskStats, getOneRisk, createRisk, updateRisk, deleteRisk,
-    detectRisksImport, importRisks, downloadM03Template,
+    detectRisksImport, importRisks, downloadM03Template, setCompanyPgScale,
     listObjectives, getObjectiveStats, getOneObjective, createObjective, updateObjective, deleteObjective
 };

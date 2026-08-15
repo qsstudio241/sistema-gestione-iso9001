@@ -225,24 +225,27 @@ function cellText(row, idx) {
     return s === '' ? null : s;
 }
 
-function readPg(value) {
+function readPg(value, pgMax = 3) {
     if (value == null || String(value).trim() === '') {
-        return { present: false, value: null, invalid: false };
+        return { present: false, value: null, invalid: false, observed: null };
     }
     const raw = String(value).trim();
     const label = QUALITATIVE_PG[normHeader(raw)];
     if (label != null) {
-        return { present: true, value: label, invalid: false };
+        return { present: true, value: label, invalid: false, observed: label };
     }
     const n = Number(String(raw).replace(',', '.'));
     if (!Number.isFinite(n)) {
-        return { present: true, value: null, invalid: true, raw: value };
+        return { present: true, value: null, invalid: true, raw: value, observed: null };
     }
     const i = Math.abs(Math.round(n));
-    if (i < 1 || i > 3) {
-        return { present: true, value: null, invalid: true, raw: value };
+    if (i < 1 || i > 5) {
+        return { present: true, value: null, invalid: true, raw: value, observed: i };
     }
-    return { present: true, value: i, invalid: false };
+    if (i > pgMax) {
+        return { present: true, value: null, invalid: true, raw: value, observed: i };
+    }
+    return { present: true, value: i, invalid: false, observed: i };
 }
 
 function toDateInput(value) {
@@ -310,12 +313,16 @@ function buildColumns(headers) {
     }));
 }
 
-function applyMappedRows(rows, headerRowIdx, colByField) {
+function applyMappedRows(rows, headerRowIdx, colByField, pgMax = 3) {
     ['evaluated_element', 'context_text', 'current_actions', 'interested_parties_text'].forEach((field) => {
         if (colByField[field] != null) forwardFillColumn(rows, headerRowIdx + 1, colByField[field]);
     });
 
     const previewRows = [];
+    let observedPgMax = 0;
+    const bumpObserved = (pg) => {
+        if (pg && pg.observed != null && pg.observed > observedPgMax) observedPgMax = pg.observed;
+    };
     for (let i = headerRowIdx + 1; i < rows.length; i += 1) {
         const raw = rows[i] || [];
         const mapped = {
@@ -331,16 +338,17 @@ function applyMappedRows(rows, headerRowIdx, colByField) {
             effectiveness_note: cellText(raw, colByField.effectiveness_note),
         };
 
-        const peso = readPg(raw[colByField.peso]);
-        const pesoRes = readPg(raw[colByField.peso_residuo]);
-        let p = readPg(raw[colByField.probability]);
-        let g = readPg(raw[colByField.impact]);
-        let rp = readPg(raw[colByField.residual_probability]);
-        let rg = readPg(raw[colByField.residual_impact]);
+        const peso = readPg(raw[colByField.peso], pgMax);
+        const pesoRes = readPg(raw[colByField.peso_residuo], pgMax);
+        let p = readPg(raw[colByField.probability], pgMax);
+        let g = readPg(raw[colByField.impact], pgMax);
+        let rp = readPg(raw[colByField.residual_probability], pgMax);
+        let rg = readPg(raw[colByField.residual_impact], pgMax);
         if (colByField.probability == null && colByField.peso != null) p = peso;
         if (colByField.impact == null && colByField.peso != null) g = peso;
         if (colByField.residual_probability == null && colByField.peso_residuo != null) rp = pesoRes;
         if (colByField.residual_impact == null && colByField.peso_residuo != null) rg = pesoRes;
+        [p, g, rp, rg].forEach(bumpObserved);
 
         mapped.probability = p.value;
         mapped.impact = g.value;
@@ -353,7 +361,7 @@ function applyMappedRows(rows, headerRowIdx, colByField) {
         let action = 'create';
         if (p.invalid || g.invalid) {
             action = 'skip';
-            issues.push('P o G fuori scala 1-3 (ROO-13). Riga non importata.');
+            issues.push(`P o G fuori scala 1-${pgMax}. Riga non importata.`);
         } else if (!p.present || !g.present) {
             action = 'skip';
             issues.push('P e G sono entrambi obbligatori sulla riga (oppure un peso qualitativo).');
@@ -415,7 +423,7 @@ function applyMappedRows(rows, headerRowIdx, colByField) {
             });
         });
     }
-    return previewRows;
+    return { previewRows, observedPgMax };
 }
 
 function analyzeSheet(wb, sheetName) {
@@ -476,9 +484,10 @@ function buildM03TemplateBuffer() {
 
 /**
  * @param {Buffer} buffer
- * @param {{ sheetName?: string, mapping?: Record<string, string> }} [options]
+ * @param {{ sheetName?: string, mapping?: Record<string, string>, pgMax?: number }} [options]
  */
 function detectRisksM03File(buffer, options = {}) {
+    const pgMax = [3, 4, 5].includes(Number(options.pgMax)) ? Number(options.pgMax) : 3;
     const empty = {
         layout: null,
         sheetName: '',
@@ -494,6 +503,8 @@ function detectRisksM03File(buffer, options = {}) {
         canMap: false,
         warnings: [],
         error: null,
+        pgMax,
+        observedPgMax: 0,
     };
 
     if (!buffer || !buffer.length) {
@@ -521,7 +532,9 @@ function detectRisksM03File(buffer, options = {}) {
         ? options.mapping
         : selected.suggestedMapping;
     const colByField = mappingToColByField(mapping);
-    const previewRows = applyMappedRows(selected.rows, selected.headerRow - 1, colByField);
+    const { previewRows, observedPgMax } = applyMappedRows(
+        selected.rows, selected.headerRow - 1, colByField, pgMax
+    );
 
     const create = previewRows.filter((r) => r.action === 'create').length;
     const skip = previewRows.filter((r) => r.action === 'skip').length;
@@ -536,13 +549,15 @@ function detectRisksM03File(buffer, options = {}) {
 
     const warnings = [];
     if (selected.looksSpecial) {
-        warnings.push('Il foglio ha segnali SWOT/FMEA: controlla il mapping. La scala resta 1–3.');
+        warnings.push('Il foglio ha segnali SWOT/FMEA: controlla il mapping. La scala è quella dell\'azienda.');
     }
     if (mapping.peso && !mapping.probability) {
         warnings.push('Peso BASSO/MEDIO/ALTO convertito in P e G = 1/2/3.');
     }
-    if (skip > 0) {
-        warnings.push('Righe con P/G fuori scala 1–3 (o peso non riconosciuto) vengono saltate, non bloccano il file.');
+    if (observedPgMax > pgMax) {
+        warnings.push(`Il file ha P/G fino a ${observedPgMax}. Scala azienda 1–${pgMax}: alza la scala per importare quelle righe.`);
+    } else if (skip > 0) {
+        warnings.push(`Righe con P/G fuori scala 1–${pgMax} (o peso non riconosciuto) vengono saltate, non bloccano il file.`);
     }
 
     let confidence = 'bassa';
@@ -555,7 +570,7 @@ function detectRisksM03File(buffer, options = {}) {
     let error = null;
     if (!canImport) {
         if (previewRows.length) {
-            error = 'Nessuna riga importabile con questo mapping (servono P e G 1–3, o un peso qualitativo).';
+            error = `Nessuna riga importabile con questo mapping (servono P e G 1–${pgMax}, o un peso qualitativo).`;
         } else if (!hasTitle && !hasPg) {
             error = 'Intestazioni non riconosciute. Seleziona il foglio e associa le colonne.';
         } else {
@@ -584,6 +599,8 @@ function detectRisksM03File(buffer, options = {}) {
         canMap,
         warnings,
         error,
+        pgMax,
+        observedPgMax,
     };
 }
 

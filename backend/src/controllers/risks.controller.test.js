@@ -19,7 +19,7 @@ jest.mock('../services/companyAccess.service', () => ({
 }));
 
 const { getPool } = require('../config/database');
-const { createRisk, updateRisk, listRisks, detectRisksImport, importRisks } = require('./risks.controller');
+const { createRisk, updateRisk, listRisks, detectRisksImport, importRisks, setCompanyPgScale } = require('./risks.controller');
 const { buildM03TemplateBuffer } = require('../utils/excelRisksM03Detector');
 
 const USER = { organization_id: 1001, user_id: 7, company_access: [] };
@@ -163,6 +163,21 @@ describe('createRisk — riga M03 e P×G', () => {
     expect(queryMock).not.toHaveBeenCalled();
   });
 
+  it('accetta G=5 se l\'azienda ha scala 1-5', async () => {
+    const { queryMock, inputMock } = buildPool();
+    queryMock
+      .mockResolvedValueOnce({ recordset: [{ risk_pg_max: 5 }] })
+      .mockResolvedValueOnce({ recordset: [{ risk_id: 44, probability: 2, impact: 5 }] });
+    const req = mockReq({
+      body: { title: 'x', probability: 2, impact: 5, company_id: 3 },
+    });
+    const res = mockRes();
+    await createRisk(req, res);
+    expect(res.status).toHaveBeenCalledWith(201);
+    expect(res.json.mock.calls[0][0].data.score).toBe(10);
+    expect(inputMock).toHaveBeenCalledWith('impact', 5);
+  });
+
   it('rifiuta G=4 (draft M03) con 400, senza INSERT', async () => {
     const { queryMock } = buildPool();
     const req = mockReq({ body: { title: 'x', probability: 2, impact: 4 } });
@@ -232,7 +247,9 @@ describe('updateRisk — parziale e P×G', () => {
 
   it('rifiuta impact=4 con 400 e non esegue UPDATE', async () => {
     const { queryMock } = buildPool();
-    queryMock.mockResolvedValueOnce({ recordset: [{ risk_id: 10, company_id: 3 }] });
+    queryMock
+      .mockResolvedValueOnce({ recordset: [{ risk_id: 10, company_id: 3 }] })
+      .mockResolvedValueOnce({ recordset: [{ risk_pg_max: 3 }] });
     const req = mockReq({
       params: { id: '10' },
       body: { impact: 4 },
@@ -243,7 +260,23 @@ describe('updateRisk — parziale e P×G', () => {
 
     expect(res.status).toHaveBeenCalledWith(400);
     expect(res.json.mock.calls[0][0].error).toMatch(/1 e 3/);
-    expect(queryMock).toHaveBeenCalledTimes(1);
+    expect(queryMock.mock.calls.some(([sql]) => /UPDATE risks/.test(sql))).toBe(false);
+  });
+
+  it('accetta impact=5 se l\'azienda ha scala 1-5', async () => {
+    const { queryMock, inputMock } = buildPool();
+    queryMock
+      .mockResolvedValueOnce({ recordset: [{ risk_id: 10, company_id: 3 }] })
+      .mockResolvedValueOnce({ recordset: [{ risk_pg_max: 5 }] })
+      .mockResolvedValueOnce({ recordset: [] });
+    const req = mockReq({
+      params: { id: '10' },
+      body: { impact: 5 },
+    });
+    const res = mockRes();
+    await updateRisk(req, res);
+    expect(res.json).toHaveBeenCalledWith({ success: true });
+    expect(inputMock).toHaveBeenCalledWith('impact', 5);
   });
 });
 
@@ -305,7 +338,10 @@ describe('detectRisksImport / importRisks — M03', () => {
 
   it('importa solo le righe create e salta G=4', async () => {
     const { queryMock } = buildPool();
-    queryMock.mockResolvedValue({ recordset: [{ risk_id: 77 }] });
+    queryMock.mockImplementation((sql) => {
+      if (/risk_pg_max/.test(sql)) return Promise.resolve({ recordset: [{ risk_pg_max: 3 }] });
+      return Promise.resolve({ recordset: [{ risk_id: 77 }] });
+    });
     const req = mockReq({
       body: {
         company_id: 3,
@@ -323,7 +359,31 @@ describe('detectRisksImport / importRisks — M03', () => {
       success: true,
       data: { inserted: 1, skipped: 2, risk_ids: [77] },
     });
-    expect(queryMock).toHaveBeenCalledTimes(1);
+    expect(queryMock.mock.calls.filter(([sql]) => /INSERT INTO risks/.test(sql))).toHaveLength(1);
+  });
+
+  it('imposta la scala azienda 1-5', async () => {
+    const { queryMock } = buildPool();
+    queryMock
+      .mockResolvedValueOnce({ recordset: [{ used_max: 3 }] })
+      .mockResolvedValueOnce({ recordset: [] });
+    const req = mockReq({ body: { company_id: 3, risk_pg_max: 5 } });
+    const res = mockRes();
+    await setCompanyPgScale(req, res);
+    expect(res.json).toHaveBeenCalledWith({
+      success: true,
+      data: { company_id: 3, risk_pg_max: 5, used_max: 3 },
+    });
+  });
+
+  it('rifiuta scala 1-3 se esistono valori 5', async () => {
+    const { queryMock } = buildPool();
+    queryMock.mockResolvedValueOnce({ recordset: [{ used_max: 5 }] });
+    const req = mockReq({ body: { company_id: 3, risk_pg_max: 3 } });
+    const res = mockRes();
+    await setCompanyPgScale(req, res);
+    expect(res.status).toHaveBeenCalledWith(400);
+    expect(res.json.mock.calls[0][0].code).toBe('PG_SCALE_IN_USE');
   });
 
   it('mapping JSON non valido → 400', async () => {
