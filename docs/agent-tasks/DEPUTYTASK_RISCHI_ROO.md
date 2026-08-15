@@ -1,6 +1,6 @@
-# DEPUTYTASK — Rischi / Opportunità — ROO-15 (metodo + G con segno)
+# DEPUTYTASK — Rischi / Opportunità — ROO-8 / 15 / 6b-S
 
-**Stato:** CHIUSO (ROO-15) — prossima ROO-6b-S  
+**Stato:** CHIUSO  
 **Chiuso:** 15/08/2026  
 **Piano:** [PLAN_RISCHI_OPPORTUNITA_OBIETTIVI_SLICES.md](PLAN_RISCHI_OPPORTUNITA_OBIETTIVI_SLICES.md) §6  
 
@@ -10,11 +10,11 @@
 |-------|------|
 | ROO-8 | Picker catalogo 4.1/4.2 → testi riga (no FK) |
 | ROO-15 | `analysis_method`, `swot_quadrant`, `impact_sign` (mig 149, solo TEST) |
+| ROO-6b-S | Detector SWOT: quadrante + G con segno |
 
 ## Non fatto
 
 - `standard_ids` (resta in nebbia ROO-15)
-- ROO-6b-S Detector SWOT
 - ROO-6b-F FMEA HSE
 - Produzione (DB + BE)
 

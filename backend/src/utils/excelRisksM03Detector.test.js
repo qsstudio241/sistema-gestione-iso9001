@@ -227,6 +227,31 @@ describe('detectRisksM03File', () => {
         expect(d.rows[0].probability).toBe(1);
         expect(d.rows[0].impact).toBe(3);
     });
+
+    it('SWOT: quadrante e G negativo → method + segno + nature', () => {
+        const buf = bookFromAoa([
+            ['Elemento', 'Parti interessate', 'SWOT', 'P', 'G'],
+            ['Mercato', 'Clienti', 'T', 2, -3],
+            ['Offerta', 'Cliente', 'O', 1, 2],
+        ], 'RISK_2025');
+        const d = detectRisksM03File(buf, { pgMax: 3 });
+        expect(d.layout).toBe('swot');
+        expect(d.canImport).toBe(true);
+        const threat = d.rows.find((r) => r.swot_quadrant === 'T');
+        expect(threat).toMatchObject({
+            analysis_method: 'swot_signed',
+            impact: 3,
+            impact_sign: -1,
+            nature: 'risk',
+        });
+        const opp = d.rows.find((r) => r.swot_quadrant === 'O');
+        expect(opp).toMatchObject({
+            analysis_method: 'swot_signed',
+            impact: 2,
+            impact_sign: 1,
+            nature: 'opportunity',
+        });
+    });
 });
 
 describe('file cliente reali (se presenti)', () => {

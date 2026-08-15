@@ -18,6 +18,7 @@ const MAP_FIELDS = [
   { key: "further_actions", label: "Ulteriori azioni" },
   { key: "probability", label: "P (probabilità)" },
   { key: "impact", label: "G (gravità)" },
+  { key: "swot_quadrant", label: "Quadrante SWOT (S/W/O/T)" },
   { key: "peso", label: "Peso qualitativo (P e G)" },
   { key: "residual_probability", label: "P residuo" },
   { key: "residual_impact", label: "G residuo" },
