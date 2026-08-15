@@ -56,6 +56,22 @@ export function residualScoreFromRisk(risk) {
   return riskScore(nP, nG);
 }
 
+export const ANALYSIS_METHODS = ["pxg", "swot_signed", "fmea_gpr"];
+
+export function normalizeMethod(value) {
+  const v = String(value || "").trim();
+  return ANALYSIS_METHODS.includes(v) ? v : "pxg";
+}
+
+export function normalizeSwotQuadrant(value) {
+  const v = String(value || "").trim().toUpperCase();
+  return ["S", "W", "O", "T"].includes(v) ? v : null;
+}
+
+export function normalizeImpactSign(value) {
+  return Number(value) === -1 ? -1 : 1;
+}
+
 export function pgOptions(pgMax) {
   const max = normalizePgMax(pgMax);
   const labels = {

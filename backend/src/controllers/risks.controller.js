@@ -17,6 +17,9 @@ const {
     decorateRiskRow,
     normalizePgMax,
     normalizeResidualPair,
+    normalizeMethod,
+    normalizeSwotQuadrant,
+    normalizeImpactSign,
     DEFAULT_PG_MAX,
 } = require('../utils/riskScore');
 const { detectRisksM03File, buildM03TemplateBuffer } = require('../utils/excelRisksM03Detector');
@@ -65,6 +68,7 @@ async function listRisks(req, res) {
                        r.nature, r.evaluated_element, r.context_text, r.interested_parties_text,
                        r.current_actions, r.further_actions,
                        r.residual_probability, r.residual_impact, r.effectiveness_note,
+                       r.analysis_method, r.swot_quadrant, r.impact_sign,
                        r.created_by, r.created_at, r.updated_at,
                        u.full_name AS created_by_name,
                        c.name AS company_name,
@@ -144,6 +148,7 @@ async function getOneRisk(req, res) {
                            r.status, r.nature, r.evaluated_element, r.context_text, r.interested_parties_text,
                            r.current_actions, r.further_actions,
                            r.residual_probability, r.residual_impact, r.effectiveness_note,
+                           r.analysis_method, r.swot_quadrant, r.impact_sign,
                            r.created_by, r.created_at, r.updated_at, c.risk_pg_max
                     FROM risks r
                     LEFT JOIN companies c ON c.id = r.company_id
@@ -167,6 +172,7 @@ async function createRisk(req, res) {
             evaluated_element, context_text, interested_parties_text,
             current_actions, further_actions,
             residual_probability, residual_impact, effectiveness_note,
+            analysis_method, swot_quadrant, impact_sign,
         } = req.body;
 
         if (!title) return res.status(400).json({ error: 'Titolo obbligatorio' });
@@ -183,6 +189,9 @@ async function createRisk(req, res) {
 
         const validNature = ['risk', 'opportunity'];
         const safeNature  = validNature.includes(nature) ? nature : 'risk';
+        const safeMethod = normalizeMethod(analysis_method);
+        const safeQuadrant = safeMethod === 'swot_signed' ? normalizeSwotQuadrant(swot_quadrant) : null;
+        const safeSign = safeMethod === 'swot_signed' ? normalizeImpactSign(impact_sign) : 1;
 
         const writeDenied = await assertMutatingAllowed(req.user, { companyId: company_id });
         if (writeDenied) return sendAccessDenied(res, writeDenied);
@@ -203,17 +212,23 @@ async function createRisk(req, res) {
             .input('residual_probability', rpParsed.value)
             .input('residual_impact', rgParsed.value)
             .input('effectiveness_note', emptyToNull(effectiveness_note))
+            .input('analysis_method', safeMethod)
+            .input('swot_quadrant', safeQuadrant)
+            .input('impact_sign', safeSign)
             .query(`
                 INSERT INTO risks (organization_id, company_id, title, description, context, category,
                     probability, impact, treatment, treatment_desc, responsible, review_date, created_by, nature,
                     evaluated_element, context_text, interested_parties_text, current_actions, further_actions,
-                    residual_probability, residual_impact, effectiveness_note)
+                    residual_probability, residual_impact, effectiveness_note,
+                    analysis_method, swot_quadrant, impact_sign)
                 OUTPUT INSERTED.risk_id, INSERTED.probability, INSERTED.impact,
-                       INSERTED.residual_probability, INSERTED.residual_impact
+                       INSERTED.residual_probability, INSERTED.residual_impact,
+                       INSERTED.analysis_method, INSERTED.swot_quadrant, INSERTED.impact_sign
                 VALUES (@orgId, @company_id, @title, @description, @context, @category,
                     @probability, @impact, @treatment, @treatment_desc, @responsible, @review_date, @userId, @nature,
                     @evaluated_element, @context_text, @interested_parties_text, @current_actions, @further_actions,
-                    @residual_probability, @residual_impact, @effectiveness_note)
+                    @residual_probability, @residual_impact, @effectiveness_note,
+                    @analysis_method, @swot_quadrant, @impact_sign)
             `);
 
         const created = decorateRiskRow({ ...r.recordset[0], risk_pg_max: pgMax });
@@ -238,6 +253,7 @@ async function updateRisk(req, res) {
             responsible, review_date, status, nature,
             evaluated_element, context_text, interested_parties_text, current_actions, further_actions,
             residual_probability, residual_impact, effectiveness_note,
+            analysis_method, swot_quadrant, impact_sign,
         } = req.body;
 
         const check = await pool.request().input('id', id).input('orgId', orgId)
@@ -300,6 +316,23 @@ async function updateRisk(req, res) {
             const safeNature  = validNature.includes(nature) ? nature : 'risk';
             sets.push('nature = @nature');
             req2.input('nature', safeNature);
+        }
+        if (analysis_method !== undefined) {
+            const safeMethod = normalizeMethod(analysis_method);
+            sets.push('analysis_method = @analysis_method');
+            req2.input('analysis_method', safeMethod);
+            if (safeMethod !== 'swot_signed') {
+                sets.push('swot_quadrant = NULL');
+                sets.push('impact_sign = 1');
+            }
+        }
+        if (swot_quadrant !== undefined) {
+            sets.push('swot_quadrant = @swot_quadrant');
+            req2.input('swot_quadrant', normalizeSwotQuadrant(swot_quadrant));
+        }
+        if (impact_sign !== undefined) {
+            sets.push('impact_sign = @impact_sign');
+            req2.input('impact_sign', normalizeImpactSign(impact_sign));
         }
 
         await req2.query(`UPDATE risks SET ${sets.join(', ')} WHERE risk_id = @id AND organization_id = @orgId`);
@@ -387,6 +420,9 @@ async function importRisks(req, res) {
             }
             const residualPair = normalizeResidualPair(rpParsed.value, rgParsed.value);
             const title = emptyToNull(row?.title) || emptyToNull(row?.evaluated_element) || `Valutazione riga ${row?.excelRow || inserted + 1}`;
+            const safeMethod = normalizeMethod(row?.analysis_method);
+            const safeQuadrant = safeMethod === 'swot_signed' ? normalizeSwotQuadrant(row?.swot_quadrant) : null;
+            const safeSign = safeMethod === 'swot_signed' ? normalizeImpactSign(row?.impact_sign) : 1;
             const r = await pool.request()
                 .input('orgId', orgId).input('userId', userId)
                 .input('title', String(title).slice(0, 200))
@@ -406,16 +442,21 @@ async function importRisks(req, res) {
                 .input('residual_probability', residualPair.residual_probability)
                 .input('residual_impact', residualPair.residual_impact)
                 .input('effectiveness_note', emptyToNull(row?.effectiveness_note))
+                .input('analysis_method', safeMethod)
+                .input('swot_quadrant', safeQuadrant)
+                .input('impact_sign', safeSign)
                 .query(`
                     INSERT INTO risks (organization_id, company_id, title, description, context, category,
                         probability, impact, treatment, treatment_desc, responsible, review_date, created_by, nature,
                         evaluated_element, context_text, interested_parties_text, current_actions, further_actions,
-                        residual_probability, residual_impact, effectiveness_note)
+                        residual_probability, residual_impact, effectiveness_note,
+                        analysis_method, swot_quadrant, impact_sign)
                     OUTPUT INSERTED.risk_id
                     VALUES (@orgId, @company_id, @title, @description, @context, @category,
                         @probability, @impact, @treatment, @treatment_desc, @responsible, @review_date, @userId, @nature,
                         @evaluated_element, @context_text, @interested_parties_text, @current_actions, @further_actions,
-                        @residual_probability, @residual_impact, @effectiveness_note)
+                        @residual_probability, @residual_impact, @effectiveness_note,
+                        @analysis_method, @swot_quadrant, @impact_sign)
                 `);
             createdIds.push(r.recordset[0].risk_id);
             inserted += 1;

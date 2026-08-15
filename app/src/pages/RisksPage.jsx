@@ -47,6 +47,7 @@ const EMPTY_RISK = {
   evaluated_element: "", context_text: "", interested_parties_text: "",
   current_actions: "", further_actions: "",
   residual_probability: "", residual_impact: "", effectiveness_note: "",
+  analysis_method: "pxg", swot_quadrant: "", impact_sign: 1,
 };
 const EMPTY_OBJ  = { title: "", description: "", iso_clause: "", kpi_description: "", target_value: "", current_value: "", progress_pct: 0, responsible: "", due_date: "", status: "active", company_id: "" };
 
@@ -64,6 +65,7 @@ const RISK_GRID_COLUMNS = [
   { id: "current_actions", label: "Azioni attuali", sortable: true },
   { id: "probability", label: "P", sortable: true, cellClassName: "risks-grid-num", headerClassName: "risks-grid-num" },
   { id: "impact", label: "G", sortable: true, cellClassName: "risks-grid-num", headerClassName: "risks-grid-num" },
+  { id: "swot_quadrant", label: "SWOT", sortable: true },
   { id: "score", label: "R", sortable: true, cellClassName: "risks-grid-num", headerClassName: "risks-grid-num" },
   { id: "score_level", label: "Livello", sortable: true },
   { id: "further_actions", label: "Ulteriori azioni", sortable: true },
@@ -92,6 +94,9 @@ function RiskForm({ initial, onSave, onClose, companies = [], pgMax = 3, filterC
     residual_probability: initial?.residual_probability ?? "",
     residual_impact: initial?.residual_impact ?? "",
     effectiveness_note: initial?.effectiveness_note || "",
+    analysis_method: initial?.analysis_method || "pxg",
+    swot_quadrant: initial?.swot_quadrant || "",
+    impact_sign: initial?.impact_sign === -1 ? -1 : 1,
   }));
   const [saving, setSaving] = useState(false);
   const [error, setError]   = useState(null);
@@ -175,6 +180,48 @@ function RiskForm({ initial, onSave, onClose, companies = [], pgMax = 3, filterC
                 <option value="opportunity">{"Opportunit\u00e0"}</option>
               </select>
             </div>
+            <div>
+              <label htmlFor="risk-method">Metodo</label>
+              <select
+                id="risk-method"
+                value={form.analysis_method || "pxg"}
+                onChange={(e) => {
+                  const method = e.target.value;
+                  setForm((f) => ({
+                    ...f,
+                    analysis_method: method,
+                    swot_quadrant: method === "swot_signed" ? (f.swot_quadrant || "") : "",
+                    impact_sign: method === "swot_signed" ? f.impact_sign : 1,
+                  }));
+                }}
+              >
+                <option value="pxg">P×G</option>
+                <option value="swot_signed">SWOT (G con segno)</option>
+              </select>
+            </div>
+          </div>
+          {form.analysis_method === "swot_signed" && (
+            <div className="form-row-2col">
+              <div>
+                <label htmlFor="risk-swot-q">Quadrante SWOT</label>
+                <select id="risk-swot-q" value={form.swot_quadrant || ""} onChange={(e) => upd("swot_quadrant", e.target.value)}>
+                  <option value="">—</option>
+                  <option value="S">S — Strength</option>
+                  <option value="W">W — Weakness</option>
+                  <option value="O">O — Opportunity</option>
+                  <option value="T">T — Threat</option>
+                </select>
+              </div>
+              <div>
+                <label htmlFor="risk-g-sign">Segno G</label>
+                <select id="risk-g-sign" value={String(form.impact_sign || 1)} onChange={(e) => upd("impact_sign", Number(e.target.value))}>
+                  <option value="1">+ (positivo)</option>
+                  <option value="-1">− (negativo)</option>
+                </select>
+              </div>
+            </div>
+          )}
+          <div className="form-row-2col">
             <div>
               <label>Contesto (enum)</label>
               <select value={form.context} onChange={e => upd("context", e.target.value)}>
@@ -669,6 +716,8 @@ function RisksTab({ companies = [], filterCompany = "", reloadCompanies }) {
                 return row.probability ?? "\u2014";
               case "impact":
                 return row.impact ?? "\u2014";
+              case "swot_quadrant":
+                return row.swot_quadrant || "\u2014";
               case "score":
                 return <span className={`score-badge ${scoreColor(sc, rowMax)}`}>{sc}</span>;
               case "score_level":

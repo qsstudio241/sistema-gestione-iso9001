@@ -190,6 +190,29 @@ describe('createRisk — riga M03 e P×G', () => {
     expect(queryMock).not.toHaveBeenCalled();
   });
 
+  it('persiste metodo SWOT, quadrante e segno G', async () => {
+    const { queryMock, inputMock } = buildPool();
+    queryMock.mockResolvedValue({
+      recordset: [{ risk_id: 55, probability: 2, impact: 3, analysis_method: 'swot_signed', swot_quadrant: 'T', impact_sign: -1 }],
+    });
+    const req = mockReq({
+      body: {
+        title: 'Minaccia mercato',
+        probability: 2,
+        impact: 3,
+        analysis_method: 'swot_signed',
+        swot_quadrant: 'T',
+        impact_sign: -1,
+      },
+    });
+    const res = mockRes();
+    await createRisk(req, res);
+    expect(res.status).toHaveBeenCalledWith(201);
+    expect(inputMock).toHaveBeenCalledWith('analysis_method', 'swot_signed');
+    expect(inputMock).toHaveBeenCalledWith('swot_quadrant', 'T');
+    expect(inputMock).toHaveBeenCalledWith('impact_sign', -1);
+  });
+
   it('rifiuta P=5 (FMEA) con 400', async () => {
     buildPool();
     const req = mockReq({ body: { title: 'x', probability: 5, impact: 2 } });

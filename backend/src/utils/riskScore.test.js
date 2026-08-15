@@ -133,6 +133,20 @@ describe('decorateRiskRow', () => {
         });
         expect(partial.residual_score).toBeNull();
     });
+
+    it('SWOT: metodo, quadrante e G con segno', () => {
+        const row = decorateRiskRow({
+            probability: 2, impact: 3, analysis_method: 'swot_signed',
+            swot_quadrant: 't', impact_sign: -1,
+        });
+        expect(row.analysis_method).toBe('swot_signed');
+        expect(row.swot_quadrant).toBe('T');
+        expect(row.impact_sign).toBe(-1);
+        expect(row.signed_impact).toBe(-3);
+        expect(row.signed_score).toBe(-6);
+        expect(row.score).toBe(6);
+        expect(row.score_level).toBe('medio');
+    });
 });
 
 describe('normalizePgMax / highPriorityThreshold', () => {

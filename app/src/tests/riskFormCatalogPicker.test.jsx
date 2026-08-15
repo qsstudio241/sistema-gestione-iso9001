@@ -43,6 +43,17 @@ describe("RiskForm picker catalogo ROO-8", () => {
     expect(screen.getByLabelText("Parti interessate (§4.2)")).toHaveValue("Cliente — On time");
   });
 
+  it("mostra quadrante e segno G solo se metodo SWOT", async () => {
+    render(
+      <RiskForm initial={{ title: "X" }} onSave={vi.fn()} onClose={vi.fn()} />,
+    );
+    await waitFor(() => expect(apiService.getContextFactors).toHaveBeenCalled());
+    expect(screen.queryByLabelText("Quadrante SWOT")).toBeNull();
+    fireEvent.change(screen.getByLabelText("Metodo"), { target: { value: "swot_signed" } });
+    expect(screen.getByLabelText("Quadrante SWOT")).toBeInTheDocument();
+    expect(screen.getByLabelText("Segno G")).toBeInTheDocument();
+  });
+
   it("senza catalogo non mostra i picker", async () => {
     apiService.getContextFactors.mockResolvedValue({ data: [] });
     apiService.getInterestedParties.mockResolvedValue({ data: [] });
