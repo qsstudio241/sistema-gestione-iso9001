@@ -107,6 +107,21 @@ describe('detectRisksM03File', () => {
         expect(d.rows[1].residual_probability).toBeNull();
     });
 
+    it('residuo P=4 e G=2: importa la riga senza nessun fattore residuo', () => {
+        const aoa = [
+            HEADER,
+            ['A', 'c', 'p', 'x', 2, 2, 4, 'Medio', null, null, null, null, 4, 2, 8, 'Alto'],
+        ];
+        const d = detectRisksM03File(bookFromAoa(aoa));
+        expect(d.stats.create).toBe(1);
+        expect(d.rows[0].action).toBe('create');
+        expect(d.rows[0].probability).toBe(2);
+        expect(d.rows[0].impact).toBe(2);
+        expect(d.rows[0].residual_probability).toBeNull();
+        expect(d.rows[0].residual_impact).toBeNull();
+        expect(d.rows[0].issues.join(' ')).toMatch(/senza residuo/i);
+    });
+
     it('skippa G=4 senza bloccare le altre righe', () => {
         const aoa = [
             HEADER,

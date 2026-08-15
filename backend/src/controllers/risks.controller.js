@@ -11,7 +11,7 @@ const {
     assertMutatingAllowed,
     sendAccessDenied,
 } = require('../services/companyAccess.service');
-const { parsePgFactor, parseOptionalPgFactor, decorateRiskRow } = require('../utils/riskScore');
+const { parsePgFactor, parseOptionalPgFactor, decorateRiskRow, normalizeResidualPair } = require('../utils/riskScore');
 const { detectRisksM03File, buildM03TemplateBuffer } = require('../utils/excelRisksM03Detector');
 
 function emptyToNull(v) {
@@ -348,6 +348,7 @@ async function importRisks(req, res) {
                 skipped += 1;
                 continue;
             }
+            const residualPair = normalizeResidualPair(rpParsed.value, rgParsed.value);
             const title = emptyToNull(row?.title) || emptyToNull(row?.evaluated_element) || `Valutazione riga ${row?.excelRow || inserted + 1}`;
             const r = await pool.request()
                 .input('orgId', orgId).input('userId', userId)
@@ -365,8 +366,8 @@ async function importRisks(req, res) {
                 .input('interested_parties_text', emptyToNull(row?.interested_parties_text))
                 .input('current_actions', emptyToNull(row?.current_actions))
                 .input('further_actions', emptyToNull(row?.further_actions))
-                .input('residual_probability', rpParsed.value)
-                .input('residual_impact', rgParsed.value)
+                .input('residual_probability', residualPair.residual_probability)
+                .input('residual_impact', residualPair.residual_impact)
                 .input('effectiveness_note', emptyToNull(row?.effectiveness_note))
                 .query(`
                     INSERT INTO risks (organization_id, company_id, title, description, context, category,

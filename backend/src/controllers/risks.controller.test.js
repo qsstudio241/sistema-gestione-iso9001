@@ -337,6 +337,26 @@ describe('detectRisksImport / importRisks — M03', () => {
     expect(res.json.mock.calls[0][0].code).toBe('INVALID_MAPPING');
   });
 
+  it('residuo a metà (solo G) viene persistito come coppia vuota', async () => {
+    const { queryMock, inputMock } = buildPool();
+    queryMock.mockResolvedValue({ recordset: [{ risk_id: 91 }] });
+    const req = mockReq({
+      body: {
+        rows: [
+          {
+            action: 'create', title: 'A', probability: 2, impact: 2,
+            residual_probability: null, residual_impact: 2,
+          },
+        ],
+      },
+    });
+    const res = mockRes();
+    await importRisks(req, res);
+    expect(res.json.mock.calls[0][0].data.inserted).toBe(1);
+    expect(inputMock).toHaveBeenCalledWith('residual_probability', null);
+    expect(inputMock).toHaveBeenCalledWith('residual_impact', null);
+  });
+
   it('importa nature opportunity dalla riga mappata', async () => {
     const { queryMock, inputMock } = buildPool();
     queryMock.mockResolvedValue({ recordset: [{ risk_id: 88 }] });

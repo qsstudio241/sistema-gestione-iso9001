@@ -2,7 +2,7 @@
  * @jest-environment node
  */
 
-const { parsePgFactor, parseOptionalPgFactor, riskScore, riskScoreLevel, decorateRiskRow } = require('./riskScore');
+const { parsePgFactor, parseOptionalPgFactor, riskScore, riskScoreLevel, decorateRiskRow, normalizeResidualPair } = require('./riskScore');
 
 describe('riskScore — R = P × G (scala 1-3)', () => {
     const matrix = [];
@@ -53,6 +53,20 @@ describe('parsePgFactor — rifiuta la scala M03/FMEA', () => {
         expect(parsePgFactor(5).ok).toBe(false);
         expect(parsePgFactor(0).ok).toBe(false);
         expect(parsePgFactor(2.5).ok).toBe(false);
+    });
+});
+
+describe('normalizeResidualPair', () => {
+    it('svuota la coppia se manca un fattore', () => {
+        expect(normalizeResidualPair(2, null)).toEqual({
+            residual_probability: null, residual_impact: null,
+        });
+        expect(normalizeResidualPair(null, 3)).toEqual({
+            residual_probability: null, residual_impact: null,
+        });
+        expect(normalizeResidualPair(1, 2)).toEqual({
+            residual_probability: 1, residual_impact: 2,
+        });
     });
 });
 
