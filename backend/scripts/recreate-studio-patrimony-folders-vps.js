@@ -42,6 +42,16 @@ function n(row, key) {
   return Number(row?.[key] ?? row?.[key?.toLowerCase?.()] ?? 0) || 0;
 }
 
+async function countSafe(sql, params) {
+  try {
+    const res = await query(sql, params);
+    return n(res.recordset[0], 'n');
+  } catch (err) {
+    console.log(`  (conteggio opzionale saltato: ${err.message})`);
+    return 0;
+  }
+}
+
 async function inspectOrg(orgId) {
   const p = { org_id: orgId };
   const org = await query(`
@@ -66,7 +76,7 @@ async function inspectOrg(orgId) {
       AND doc_type <> 'folder'
       AND ISNULL(status, 'rilasciato') <> 'obsoleto'
   `, p);
-  const attachments = await query(`
+  const attachments = await countSafe(`
     SELECT COUNT(*) AS n
     FROM attachments a
     INNER JOIN document_registry dr ON dr.id = a.document_id
@@ -74,7 +84,7 @@ async function inspectOrg(orgId) {
       AND dr.content_scope = 'studio'
       AND dr.company_id IS NULL
   `, p);
-  const fileAtt = await query(`
+  const fileAtt = await countSafe(`
     SELECT COUNT(*) AS n
     FROM document_file_attachments a
     INNER JOIN document_registry dr ON dr.id = a.document_id
@@ -93,8 +103,8 @@ async function inspectOrg(orgId) {
     org: org.recordset[0] || { organization_id: orgId },
     folders: folders.recordset,
     studioDocs: n(docs.recordset[0], 'n'),
-    attachments: n(attachments.recordset[0], 'n'),
-    fileAtt: n(fileAtt.recordset[0], 'n'),
+    attachments,
+    fileAtt,
     clientDocs: n(clientDocs.recordset[0], 'n'),
   };
 }
@@ -103,7 +113,7 @@ async function archiveEmptyStudioFolders(orgId) {
   const res = await query(`
     UPDATE document_registry
     SET status = 'obsoleto',
-        folder_code = LEFT(N'STD_ARCH_' + CAST(id AS NVARCHAR(20)), 50),
+        folder_code = LEFT(N'A' + CAST(id AS NVARCHAR(20)), 10),
         updated_at = GETDATE()
     WHERE organization_id = @org_id
       AND content_scope = 'studio'
@@ -152,7 +162,7 @@ async function recreateOrg(orgId) {
   }
 
   const archived = await archiveEmptyStudioFolders(orgId);
-  console.log(`Archiviate (obsoleto + STD_ARCH_<id>): ${archived}`);
+  console.log(`Archiviate (obsoleto + folder_code A<id>): ${archived}`);
   const provisioned = await provisionStudioPatrimony(orgId);
   const after = await listLiveStudioFolders(orgId);
   console.log(`Provision rootId=${provisioned.rootId}  cartelle vive ora: ${after.length}`);
