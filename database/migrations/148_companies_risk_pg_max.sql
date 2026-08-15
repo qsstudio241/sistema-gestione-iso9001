@@ -8,9 +8,8 @@ IF NOT EXISTS (
 )
 BEGIN
   ALTER TABLE companies ADD risk_pg_max TINYINT NOT NULL
-    CONSTRAINT DF_companies_risk_pg_max DEFAULT 3;
-  ALTER TABLE companies ADD CONSTRAINT CK_companies_risk_pg_max
-    CHECK (risk_pg_max IN (3, 4, 5));
+    CONSTRAINT DF_companies_risk_pg_max DEFAULT 3
+    CONSTRAINT CK_companies_risk_pg_max CHECK (risk_pg_max IN (3, 4, 5));
 END
 
 IF EXISTS (SELECT 1 FROM sys.check_constraints WHERE name = 'CHK_risks_prob')
