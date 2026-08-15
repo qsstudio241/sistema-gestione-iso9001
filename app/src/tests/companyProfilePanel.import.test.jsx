@@ -7,6 +7,7 @@ const mockGetCompanyProfile = vi.fn();
 const mockDetect = vi.fn();
 const mockImport = vi.fn();
 const mockDownload = vi.fn();
+const mockLookup = vi.fn();
 
 vi.mock("../services/apiService", () => ({
   default: {
@@ -15,6 +16,7 @@ vi.mock("../services/apiService", () => ({
     detectCompanyProfileImport: (...args) => mockDetect(...args),
     importCompanyProfile: (...args) => mockImport(...args),
     downloadCompanyProfileTemplate: (...args) => mockDownload(...args),
+    lookupCompanyProfile: (...args) => mockLookup(...args),
   },
 }));
 
@@ -24,6 +26,7 @@ describe("CompanyProfilePanel import Excel", () => {
     mockDetect.mockReset();
     mockImport.mockReset();
     mockDownload.mockReset();
+    mockLookup.mockReset();
     mockGetCompanyProfile.mockResolvedValue({
       data: {
         exists: false,
@@ -58,7 +61,8 @@ describe("CompanyProfilePanel import Excel", () => {
       expect(screen.getByRole("button", { name: /Scarica modello Excel/i })).toBeInTheDocument();
     });
     expect(screen.getByRole("button", { name: /Importa modello Excel/i })).toBeInTheDocument();
-    expect(screen.getByText(/foglio Excel da compilare/i)).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /Recupera da registro/i })).toBeInTheDocument();
+    expect(screen.getByText(/usa la P.IVA del profilo/i)).toBeInTheDocument();
   });
 
   it("nasconde i pulsanti import se sola lettura", async () => {
@@ -93,6 +97,40 @@ describe("CompanyProfilePanel import Excel", () => {
         42,
         expect.objectContaining({
           fileName: "visura.xlsx",
+          fields: expect.objectContaining({ ateco_primary: "25.11.00" }),
+        }),
+        { auditor_org_id: 1 }
+      );
+    });
+  });
+
+  it("recupera da registro: anteprima ATECO e conferma con source registry", async () => {
+    mockLookup.mockResolvedValue({
+      data: {
+        canImport: true,
+        confidence: "alta",
+        fileName: "openapi:IT-advanced",
+        atecoFound: true,
+        preview: { ateco_primary: "25.11.00", legal_name: "TECNOVE S.P.A." },
+      },
+    });
+    const user = userEvent.setup();
+    render(<CompanyProfilePanel companyId={42} auditorOrgId={1} canEdit />);
+    await waitFor(() => {
+      expect(screen.getByRole("button", { name: /Recupera da registro/i })).toBeInTheDocument();
+    });
+    await user.click(screen.getByRole("button", { name: /Recupera da registro/i }));
+    await waitFor(() => {
+      expect(mockLookup).toHaveBeenCalledWith(42, { vat_number: "IT123" }, { auditor_org_id: 1 });
+    });
+    expect(screen.getByRole("heading", { name: /registro imprese/i })).toBeInTheDocument();
+    expect(screen.getByText("25.11.00")).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: /Conferma import/i }));
+    await waitFor(() => {
+      expect(mockImport).toHaveBeenCalledWith(
+        42,
+        expect.objectContaining({
+          source: "registry",
           fields: expect.objectContaining({ ateco_primary: "25.11.00" }),
         }),
         { auditor_org_id: 1 }

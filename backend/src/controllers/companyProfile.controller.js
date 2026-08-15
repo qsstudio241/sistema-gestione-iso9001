@@ -30,6 +30,7 @@ const {
     detectCompanyProfileFile,
     buildImportTemplateBuffer,
 } = require('../utils/excelCompanyProfileDetector');
+const { lookupCompanyByVat } = require('../services/openapiCompanyLookup.service');
 
 function resolveAuditorOrgId(req) {
     const userOrgId = req.user.auditor_org_id;
@@ -349,9 +350,10 @@ async function importProfile(req, res) {
         const onlyTouched = {};
         for (const k of touched) onlyTouched[k] = fields[k];
 
-        const fileName = req.body?.fileName || 'import.xlsx';
+        const source = req.body?.source === 'registry' ? 'registry' : 'excel';
+        const fileName = req.body?.fileName || (source === 'registry' ? 'openapi' : 'import.xlsx');
         const upserted = await upsertProfile(scope, onlyTouched, req.user?.user_id || null, {
-            source: 'excel',
+            source,
             file: String(fileName).slice(0, 200),
         });
         if (upserted.error) {
@@ -364,6 +366,54 @@ async function importProfile(req, res) {
     } catch (err) {
         logger.error(`[companyProfile] import: ${err.message}`);
         return res.status(500).json({ error: 'Errore import profilo', code: 'PROFILE_IMPORT_FAILED' });
+    }
+}
+
+/**
+ * POST /api/v1/companies/:id/profile/lookup
+ * Dry-run: interroga OpenAPI, non scrive.
+ */
+async function lookupProfile(req, res) {
+    try {
+        const capDenied = await assertCapability(req);
+        if (capDenied) return res.status(capDenied.status).json(capDenied.body);
+
+        const { denied, scope } = await resolveProfileScope(req, req.params.id, 'write');
+        if (denied) return sendAccessDenied(res, denied);
+
+        const existing = await loadProfileRow(scope.company_id);
+        const vat = req.body?.vat_number || existing?.vat_number || scope.vat_number;
+        const result = await lookupCompanyByVat(vat);
+        if (!result.ok) {
+            return res.status(result.status).json({
+                error: result.error,
+                code: result.code,
+            });
+        }
+
+        const preview = result.fields;
+        const mappedCount = Object.values(preview).filter((v) => v != null && v !== '').length;
+        return res.json({
+            success: true,
+            data: {
+                canImport: mappedCount >= 1,
+                confidence: result.atecoFound ? 'alta' : 'media',
+                fileName: `openapi:${result.endpoint}`,
+                mapping: Object.fromEntries(
+                    Object.keys(preview).filter((k) => preview[k] != null && preview[k] !== '')
+                        .map((k) => [k, result.endpoint])
+                ),
+                preview,
+                endpoint: result.endpoint,
+                vat: result.vat,
+                atecoFound: result.atecoFound,
+                warning: result.warning || null,
+                company_id: scope.company_id,
+            },
+        });
+    } catch (err) {
+        logger.error(`[companyProfile] lookup: ${err.message}`);
+        return res.status(500).json({ error: 'Errore lookup registro', code: 'PROFILE_LOOKUP_FAILED' });
     }
 }
 
@@ -390,6 +440,7 @@ module.exports = {
     putProfile,
     detectProfileImport,
     importProfile,
+    lookupProfile,
     downloadImportTemplate,
     resolveProfileScope,
     serializeProfile,
