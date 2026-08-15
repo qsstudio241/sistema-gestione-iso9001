@@ -3,7 +3,7 @@
 > **Destinazione**: il modulo è il **documento di analisi rischi/opportunità** (HLS §6.1), valido per 9001 / 14001 / 45001 / SGI. Una riga = una valutazione. Il **metodo di pesatura** (P×G, FMEA G×P×Rilev, SWOT con G con segno) è del documento, non del prodotto. L'ingest accetta più layout (M03, SWOT, FMEA HSE). Non sostituisce DVR né registro aspetti. Obiettivi §6.2 = tab collegato.
 > **Spec**: [PROCESSO](../specs/PROCESSO_ANALISI_RISCHI_OPPORTUNITA.md) · [M03 mapping](../specs/M03_ANALISI_RISCHI_OPPORTUNITA.md) · template [M03-R00](../specs/templates/M03-R00-analisi-rischi-opportunita.xlsx)
 > **Norma**: [9001:2015](../Normative/UNI%20EN%20ISO%209001_2015%20Rev.%200.md) · [14001:2015](../Normative/Normative%20NORMA_00003_%20UNI%20EN%20ISO%2014001_2015%20Rev.%200.md) §6.1 · [45001:2018](../Normative/Normative%20NORMA_00002_%20UNI%20ISO%2045001_2018%20Rev.%200.md) §6.1
-> **Brief attivo**: [DEPUTYTASK_RISCHI_ROO.md](DEPUTYTASK_RISCHI_ROO.md) (ROO-8/15/6b-S CHIUSI — prossima ROO-6b-F FMEA HSE)
+> **Brief attivo**: [DEPUTYTASK_RISCHI_ROO.md](DEPUTYTASK_RISCHI_ROO.md) (ROO-16 APERTO — storico aggiornamenti riga)
 > **Draft studio**: M03 rev.00, 19/06/2026, foglio `Analisi Rischio`, autore Marco Camellini
 
 **Correzione di rotta (14/08/2026)**: la prima mappa partiva dai quattro tab già in app e chiedeva come «chiudere la catena» con FK. Quella premessa **inficia** l'analisi: il processo non è CRUD di registri. Questa mappa parte dal **processo ISO**, poi dal **CRUD che serve a quel processo**, poi dal **gap** sul codice attuale.
@@ -152,7 +152,10 @@ Ordine: **prima il ponte catalogo→riga (ROO-8)**, poi metodo documento (ROO-15
 - Ulteriori azioni: solo sulla riga, o anche copia nel Piano Azioni (Pagani ha il foglio piano: è il modello più maturo per ROO-14).
 - Export: ristampa del layout originale vs layout SGQ unico.
 - Se e quando collegare una riga di analisi a un aspetto / obbligo / pericolo già in altri moduli.
-- Dove vive `method` (testata documento vs colonna su ogni riga) — si chiude in ROO-15, non in ROO-8.
+- `standard_ids` / method in testata documento vs riga (ROO-15 ha chiuso method *sulla riga*; testata resta nebbia).
+- Ingest: la colonna «Aggiornamento» dell’Excel diventa prima revisione, o solo `effectiveness_note` corrente?
+- Data riesame distinta da `recorded_at` (backdating per §9.3) — eventuale bottone «Registra riesame».
+- Ripristino di uno snapshot (rollback) sulla riga corrente.
 
 ## Decisioni già prese
 
@@ -169,6 +172,7 @@ Ordine: **prima il ponte catalogo→riga (ROO-8)**, poi metodo documento (ROO-15
 - **P×G (ROO-4, 14/08/2026):** `R = probability × impact`. CHECK DB e API restano **1–3** (R in 1–9). G=4 (draft M03) e 1–5 (FMEA) → **400**, non 500 dal CHECK. Livelli UI invariati: 1–3 basso, 4–6 medio, 7–9 alto. Stats `high_priority` resta **≥6** (incoerenza nota, non toccata). Scala 1–4/1–5 = ROO-13.
 - **Processo ricostruito (14/08/2026):** [PROCESSO_ANALISI_RISCHI_OPPORTUNITA.md](../specs/PROCESSO_ANALISI_RISCHI_OPPORTUNITA.md) — Quaderno 3 Conforma + colonne M03. Superficie di lavoro = matrice `SgqDataGrid`, click riga → form (non inline edit).
 - **Residuo + aggiornamento (ROO-5, 14/08/2026):** `residual_probability` / `residual_impact` (NULL o 1–3) + `effectiveness_note`. API decora `residual_score` / `residual_score_level` solo se entrambi i fattori residui ci sono. Tab home = «Analisi». Scala 1–4 resta ROO-13.
+- **Storico riga (15/08/2026, wayfinder):** `risks` resta lo stato *corrente*. Ogni aggiornamento significativo scrive uno **snapshot** in `risk_reviews` (interrogabile). Non è audit campo-per-campo (`document_history`) e non è una riga `risks` nuova. Vedi §7.
 
 ## Mappa slice
 
@@ -191,6 +195,49 @@ Ordine: **prima il ponte catalogo→riga (ROO-8)**, poi metodo documento (ROO-15
 | ROO-12 | Export / ristampa M03 | Excel o Word | ROO-5, ROO-6 | HITL formato |
 | **ROO-13** | **Scala P/G per azienda** | `companies.risk_pg_max` 3\|4\|5; CHECK risks 1–5; set prima ingest/primo rischio | ROO-6c | FATTO |
 | ROO-14 | Copia ulteriori azioni → Piano Azioni (modello Pagani: foglio piano) | `source_risk_id` già c'è | HITL | HITL |
+| **ROO-16** | **Storico riga: snapshot + GET + timeline sul form** | mig `risk_reviews`; write su create/update significativo; `GET /risks/:id/reviews`; pannello nel `RiskForm` | ROO-5, ROO-15 | AFK |
+| ROO-17 | Interrogazione ambito (input §9.3) | `GET /risks/reviews?company_id&from&to` + lista (non un quarto tab) | ROO-16 | AFK |
+| ROO-18 | Ingest → prima revisione / data riesame esplicita | detector + eventuale bottone | ROO-16 | HITL |
+
+## 7. Aggiornamenti progressivi / storico (ROO-16…)
+
+**Destinazione**: si vede e si interroga *come era* la valutazione a ogni riesame, senza perdere P/G, residuo e nota. La griglia resta lo stato corrente. Frontend e backend.
+
+### Gap oggi
+
+`PUT /risks/:id` **sovrascrive** `risks`. `effectiveness_note` e il residuo sono un solo valore. Il ciclo del Quaderno («quando si ripete») in foglio aggiorna L e il blocco residuo: in app quel passato **non esiste**. Un secondo ingest crea un’altra riga (insert-only), non uno storico della stessa valutazione.
+
+### Cosa non è
+
+| Modello | Perché no |
+|---------|-----------|
+| Audit campo-per-campo (`document_history`) | Interroga «chi ha toccato G», non «qual era R a marzo». Troppo rumoroso (typo sul titolo). |
+| Nuova riga `risks` sotto lo stesso elemento | Spezza identità, stats, picker. È l’alternativa *Excel*, non la storicizzazione della riga. |
+| JSON blob unico | Non filtrabile per data/azienda/R. |
+| Quarto tab «Storico» | Lo storico è della *riga*, si apre sulla riga. |
+
+Pattern già in repo da **non riusare come tabella**: `document_history` (grain sbagliato). Pattern da **imitare come API**: `GET` cronologia SAL (`requirement_implementation_history`) — lista per id, `changed_at` DESC, chi ha scritto.
+
+### Modello deciso
+
+- Tabella figlia **`risk_reviews`** (append-only). FK `risk_id` + `organization_id` (tenant) + `company_id` (query ambito).
+- `risks` = **corrente**. Ogni snapshot è lo stato **dopo** il salvataggio significativo (create = prima revisione).
+- **Trigger automatico**, non un verbo nuovo in ROO-16. Snapshot se cambia almeno uno: `probability`, `impact`, `impact_sign`, `analysis_method`, `swot_quadrant`, `residual_*`, `effectiveness_note`, `current_actions`, `further_actions`, `nature`. Titolo / testi 4.1–4.2 / responsabile da soli → nessun snapshot.
+- Colonne **interrogabili** (non solo JSON): P, G, segno, metodo, quadrante, residuo, nota, azioni attuali/ulteriori, `nature`, `title`, `evaluated_element`, `recorded_at`, `recorded_by`. Score/livello si decorano in lettura come su `risks`.
+- API: `GET /risks/:id/reviews` (ROO-16). `GET /risks/reviews?company_id&from&to` **dopo** `:id` in routes… no: la lista ambito è `/risks/reviews` e va **registrata prima** di `/:id` (ROO-17).
+- UI ROO-16: nel form della riga, cronologia in sola lettura (data, chi, P/G/R, residuo, nota). Griglia invariata; eventuale conteggio `review_count` è extra, non DoD.
+- Soft-delete della riga: le review restano (audit §7.5); GET sulla riga cancellata = 404 come oggi.
+- Solo TEST finché il committente non promuove.
+
+### Slice
+
+**ROO-16** (hello world verticale): migrazione + write su create/update + GET per riga + timeline nel form + test L1. Demo: due salvataggi con G diversa → due snapshot, la griglia mostra solo l’ultimo.
+
+**ROO-17**: «tutti i riesami di quest’azienda tra due date» (input riesame direzione).
+
+**ROO-18**: ingest / data riesame esplicita — solo dopo HITL.
+
+---
 
 ## ROO-4 — prima slice (dettaglio)
 

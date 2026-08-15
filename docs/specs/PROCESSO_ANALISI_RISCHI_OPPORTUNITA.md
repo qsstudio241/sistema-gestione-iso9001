@@ -96,6 +96,8 @@ Una riga non è «chiusa per sempre». Il Quaderno 3 elenca i trigger di riesame
 
 In foglio: si aggiorna L e il blocco residuo, o si aggiunge una riga sotto lo stesso elemento.
 
+In app la riga `risks` è lo stato **corrente**. Gli aggiornamenti significativi (P/G, residuo, nota, azioni) si **storicizzano** in `risk_reviews` (interrogabile). Non si crea un secondo `risk_id` per il riesame. Mappa: [PLAN §7](../agent-tasks/PLAN_RISCHI_OPPORTUNITA_OBIETTIVI_SLICES.md).
+
 ---
 
 ## 5. Cosa non è questo processo

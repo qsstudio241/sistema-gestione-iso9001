@@ -1,23 +1,45 @@
-# DEPUTYTASK — Rischi / Opportunità — ROO-8 / 15 / 6b-S
+# DEPUTYTASK — Rischi / Opportunità — ROO-16 (storico riga)
 
-**Stato:** CHIUSO  
-**Chiuso:** 15/08/2026  
-**Piano:** [PLAN_RISCHI_OPPORTUNITA_OBIETTIVI_SLICES.md](PLAN_RISCHI_OPPORTUNITA_OBIETTIVI_SLICES.md) §6  
+**Stato:** APERTO  
+**Aperto:** 15/08/2026 (Lead wayfinder — Chart the map)  
+**Slice:** ROO-16  
+**Piano:** [PLAN_RISCHI_OPPORTUNITA_OBIETTIVI_SLICES.md](PLAN_RISCHI_OPPORTUNITA_OBIETTIVI_SLICES.md) §7  
 
-## Consegnato
+## Slice unica: ROO-16
 
-| Slice | Cosa |
-|-------|------|
-| ROO-8 | Picker catalogo 4.1/4.2 → testi riga (no FK) |
-| ROO-15 | `analysis_method`, `swot_quadrant`, `impact_sign` (mig 149, solo TEST) |
-| ROO-6b-S | Detector SWOT: quadrante + G con segno |
+**Obiettivo**: ogni create e ogni update *significativo* di una riga di analisi lascia uno snapshot interrogabile; nel form si vede la cronologia. `risks` resta lo stato corrente.
 
-## Non fatto
+### Contesto gap (non riscrivere)
 
-- `standard_ids` (resta in nebbia ROO-15)
-- ROO-6b-F FMEA HSE
-- Produzione (DB + BE)
+- Oggi `PUT /risks/:id` sovrascrive. Residuo e `effectiveness_note` sono un solo valore: il ciclo di riesame perde P/G precedenti.
+- Non è un tab nuovo. Non è `document_history` (grain campo). Non è una seconda riga `risks`.
+- Decisioni: PLAN §7.
 
-## Cosa NON toccare (resta)
+### DoD
+
+1. Migration in `database/migrations/` (prossimo libero, oggi 150): tabella `risk_reviews` append-only, colonne snapshot interrogabili (P, G, segno, metodo, quadrante, residuo, nota, azioni, nature, title, evaluated_element, recorded_at, recorded_by, organization_id, company_id, risk_id). Idempotente. Solo TEST.
+2. `createRisk` / `updateRisk`: se il salvataggio è significativo (PLAN §7), INSERT snapshot dello stato **nuovo**. Titolo/testi 4.1–4.2 da soli → no snapshot in update.
+3. `GET /risks/:id/reviews` — stesso RBAC della riga; lista `recorded_at` DESC; decora score/livello come `decorateRiskRow`.
+4. `RiskForm`: cronologia in sola lettura (data, chi, P/G/R, residuo, nota). Nessun quarto tab. Griglia invariata.
+5. Test L1: write su create + update significativo; update solo titolo non scrive; GET lista. Vitest sul pannello visibile se ci sono review.
+
+### File previsti
+
+- `database/migrations/150_risk_reviews.sql` (verificare il numero libero al momento)
+- `backend/src/controllers/risks.controller.js` + test
+- `backend/src/routes/risks.routes.js`
+- `app/src/pages/RisksPage.jsx` (`RiskForm`)
+- `app/src/services/apiService.js` (GET reviews)
+- test Vitest accanto a `riskFormCatalogPicker.test.jsx`
+
+### Cosa NON toccare
 
 - `docs/agent-tasks/DEPUTYTASK.md` (SAL S1a)
+- Detector FMEA (ROO-6b-F), ingest → review (ROO-18), lista ambito (ROO-17)
+- Rollback/ripristino snapshot
+- Produzione (DB + BE)
+- Cataloghi 4.1/4.2, tab Obiettivi, scala P/G
+
+### Prossima (non in questa sessione)
+
+ROO-17 — interrogazione per azienda/periodo (input §9.3).

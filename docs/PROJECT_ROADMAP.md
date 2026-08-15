@@ -8,7 +8,7 @@
 
 > **Risposta standard a «stato di avanzamento del progetto e priorità da affrontare»**: sintetizzare da questa sezione (moduli maturi + sessione più recente + tabella priorità sotto), **non** dal banner storico più sotto (superato, tenuto solo per traccia) né dall'archivio marzo 2026 [`docs/archive/PROJECT_CONTEXT_STATO_FUNZIONALITA_2026-03.md`](archive/PROJECT_CONTEXT_STATO_FUNZIONALITA_2026-03.md). **Aggiornare questa sezione a fine sessione** se emergono nuove priorità o se una priorità elencata viene chiusa (stesso principio delle "Lezioni apprese" in [GUIDA_CONSOLIDATA.md](GUIDA_CONSOLIDATA.md) — sintesi qui, dettaglio linkato).
 
-**Ultimo aggiornamento di questa sezione**: 15/08/2026 (ROO-8/15/6b-S chiusi su TEST; prossima ROO-6b-F).
+**Ultimo aggiornamento di questa sezione**: 15/08/2026 (wayfinder storico riga ROO-16 aperto; 6b-F resta in mappa).
 
 ### Moduli maturi (in produzione, uso quotidiano dai clienti Camellini/Mason)
 
@@ -16,7 +16,9 @@ Audit multi-standard (9001/14001/45001) · Non Conformità (workflow ISO 10.2 co
 
 ### Sessione più recente (15/08/2026)
 
-**Deputy ROO-8 / 15 / 6b-S** (solo TEST): picker catalogo §4.1/§4.2 sulla riga; `analysis_method` + quadrante + G con segno (mig 149); detector Excel SWOT. Preview 436 + API `test-api`. Produzione non toccata. Brief [`DEPUTYTASK_RISCHI_ROO.md`](agent-tasks/DEPUTYTASK_RISCHI_ROO.md) **CHIUSO**. Prossima **ROO-6b-F** (FMEA HSE). Non toccato [`DEPUTYTASK.md`](agent-tasks/DEPUTYTASK.md) (SAL S1a).
+**Lead wayfinder — storico aggiornamenti riga** (solo doc): oggi il Salva sovrascrive P/G/residuo/nota. Destinazione: snapshot interrogabile (`risk_reviews`), `risks` = corrente, timeline sul form. Brief [`DEPUTYTASK_RISCHI_ROO.md`](agent-tasks/DEPUTYTASK_RISCHI_ROO.md) **APERTO** su **ROO-16**. Non toccato [`DEPUTYTASK.md`](agent-tasks/DEPUTYTASK.md) (SAL S1a). Nessuna implementazione in sessione mappa.
+
+**Deputy ROO-8 / 15 / 6b-S** (solo TEST): picker catalogo §4.1/§4.2 sulla riga; `analysis_method` + quadrante + G con segno (mig 149); detector Excel SWOT. Preview 436 + API `test-api`. Produzione non toccata.
 
 **Lead wayfinder — SWOT e parti in M03** (solo doc): stessa matrice, non tab nuovi. Catalogo §4.2 = anagrafica da riesaminare; testo sulla riga = parti di *quella* valutazione; ponte UI = picker (ROO-8, ora fatto). SWOT = metodo `swot_signed` (ora fatto).
 
@@ -26,7 +28,7 @@ Audit multi-standard (9001/14001/45001) · Non Conformità (workflow ISO 10.2 co
 
 **Profilo azienda S6** ([PR #426](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/426) **mergiata**, doc [PR #427](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/427) **mergiata**, deploy VPS 15/08): pulsante «Cerca nel registro» in anagrafica. P.IVA → 1 risultato (IT-advanced, verificato TECNOVE). Nome → `IT-search` (max 8); oggi 402 finché in console OpenAPI non è attivo Company Search / credito. S0–S6 codice chiuso.
 
-**Rischi / Opportunità / Obiettivi**: ingest M03 + scala P/G + guscio ingest file|campi + picker 4.1/4.2 + metodo SWOT. **Prossima ROO-6b-F**: detector FMEA HSE. [PLAN §6](agent-tasks/PLAN_RISCHI_OPPORTUNITA_OBIETTIVI_SLICES.md).
+**Rischi / Opportunità / Obiettivi**: ingest M03 + scala P/G + picker 4.1/4.2 + metodo SWOT. **Prossima ROO-16**: storico aggiornamenti riga. FMEA HSE resta in mappa (ROO-6b-F). [PLAN §7](agent-tasks/PLAN_RISCHI_OPPORTUNITA_OBIETTIVI_SLICES.md).
 
 **Banner Ambito** ([PR #414](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/414) **mergiata**): solo «Ambito» + menu. **Patrimonio dello studio** ([PR #417](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/417) **mergiata**). **Combobox** ([PR #419](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/419) **mergiata**). **Patrimonio = sempre `studio`** ([PR #428](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/428) **mergiata** 15/08/2026): su Camellini non usa più l'id «QS Studio» (48); albero STD distinto dai clienti. **Verificato dal committente** in produzione. Dettaglio: [GUIDA lezione Patrimonio ≠ omonima](GUIDA_CONSOLIDATA.md#lezioni-apprese-consolidate-fonte-unica).
 
@@ -52,7 +54,7 @@ Sessione prodotto precedente (10/08/2026): fix filtri dashboard duplicati (Quali
 | 2 | **Shell dialog di revisione ingest — markup/CSS duplicato** (non urgente, basso rischio) | `IngestReviewDialog.jsx` vs dialog interno `ReprocessQueueBanner.jsx`: guscio overlay duplicato (~60-80 righe); pattern sistemico su molti altri modal nel progetto | Vedi backlog sotto per dettaglio |
 | 3 | **Pagina Impostazioni → Organizzazione (P.IVA + logo tenant)** | PR #10 aperta da aprile 2026, 180 file in conflitto — richiede ricostruzione, non merge | Vedi riga dedicata nel backlog sotto |
 | 4 | **Material Compliance AI (certificati EN 10204 3.1)** | Modulo proposto 05/08/2026, slice MC-0 (spec) non ancora avviata | [MODULO_MATERIAL_COMPLIANCE_AI.md](specs/MODULO_MATERIAL_COMPLIANCE_AI.md) |
-| 5 | **Rischi — detector FMEA HSE (ROO-6b-F)** | SWOT nativo c’è; manca G×P×Rilev sullo stesso motore ingest | [PLAN §6](agent-tasks/PLAN_RISCHI_OPPORTUNITA_OBIETTIVI_SLICES.md) |
+| 5 | **Rischi — storico aggiornamenti riga (ROO-16)** | Salva sovrascrive P/G/residuo/nota; serve snapshot interrogabile | [PLAN §7](agent-tasks/PLAN_RISCHI_OPPORTUNITA_OBIETTIVI_SLICES.md) · brief [ROO-16](agent-tasks/DEPUTYTASK_RISCHI_ROO.md) |
 | 6 | **SAL AI evidenze — OCR + documento mancante (HITL)** | Suggeritore 5-A/5-B legge solo PDF/DOCX testo; PDF scan/immagini saltati; se manca evidenza → solo messaggio low, nessuna ricerca tipo/upload guidato | [PLAN](agent-tasks/PLAN_SAL_AI_EVIDENCE_SLICES.md) · brief [S1a](agent-tasks/DEPUTYTASK.md) |
 
 > Nota: **Modulo NC — card statistiche duplicate da due tendine** (era riga 1) è stato chiuso da PR #374 (10/08/2026) — riga rimossa da questa tabella, non ancora aggiornata al momento in cui è stata scritta DEPUTYTASK4.
