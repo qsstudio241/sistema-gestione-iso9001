@@ -25,6 +25,7 @@ reale scelto, es. `C:\NormeISO_PDF\` oppure una cartella dentro OneDrive):
   ISO-156xx-WPS-WPQR\         # WPS/WPQR (15609, 15614...)
   ISO-consumabili-parametri\  # gas (14175), fili (14341), temperature (13916)...
   EN-10204-certificati\       # 10204, 10168, 10474, 404, 6929, facsimile MTC
+  EN-10025-acciai-strutturali\ # 10025-2 (e in seguito 10025-1/3…, 10210, 10219)
   altre-norme\                # ASME, DIN, quaderni tecnici, ecc.
 ```
 
@@ -54,6 +55,7 @@ reale scelto, es. `C:\NormeISO_PDF\` oppure una cartella dentro OneDrive):
 | ISO 6929:2013 | `Normative NORMA_00024_...md/.json` | `EN-10204-certificati\ISO 6929-2013.pdf` | Vocabolario forme prodotto |
 | ISO 404:2013+A1:2022 | `Normative NORMA_00025_...md/.json` | `EN-10204-certificati\BS ISO 404-2013 + A1-2022.pdf` | Due PDF identici in consegna; uno solo convertito |
 | Facsimile MTC 3.1/3.2 | `MTC_Type_3.1_FAC_SIMILE.md/.json` | `EN-10204-certificati\MTC Type 3.1 FAC SIMILE.pdf` | Filename 3.1, contenuto 3.2 |
+| EN 10025-2:2019 | `Normative NORMA_00026_...md/.json` | `EN-10025-acciai-strutturali\BS EN 10025-2-2019.pdf` | Soglie S235–S500; estratto operativo in `docs/reference/EN-10025-2-acciai-strutturali.md` |
 | ISO 9712:2012 | *(nessun `.md` ancora — backlog RC-7)* | `ISO-96xx-patentini\UNI EN ISO 9712_2012.pdf` | **PDF era committato per errore in Git — vedi nota sotto** |
 | ISO 19011:2018 | *(nessun `.md` ancora)* | `ISO-96xx-patentini\UNI EN ISO 19011_2018_ITA.pdf` | **PDF era committato per errore in Git — vedi nota sotto** |
 

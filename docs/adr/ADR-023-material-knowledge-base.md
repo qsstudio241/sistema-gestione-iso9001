@@ -37,8 +37,8 @@ knowledge/material-compliance/
 | Area | Priorità MVP |
 |------|----------------|
 | `dictionary/` chiavi + sinonimi base | Obbligatorio prima del Rule Engine |
-| `standards/` dalle **norme consegnate dal committente** (HITL 16/08) | Obbligatorio — non seed inventato |
-| Altre EN 10025-4 / 10149 / 10210 / 10219 | Appena disponibili |
+| `standards/` dalle **norme consegnate dal committente** (HITL 16/08 + EN 10025-2) | Obbligatorio — non seed inventato |
+| Altre EN 10025-3/4/5/6 / 10149 / 10210 / 10219 | Appena disponibili |
 | 1–2 `customers/` di pilota | Consigliato |
 | `companies/<slug>/` pilota | Consigliato |
 | `lessons/` | Dopo feedback loop (post-MVP) |

@@ -8,7 +8,7 @@
 
 > **Risposta standard a «stato di avanzamento del progetto e priorità da affrontare»**: sintetizzare da questa sezione (moduli maturi + sessione più recente + tabella priorità sotto), **non** dal banner storico più sotto (superato, tenuto solo per traccia) né dall'archivio marzo 2026 [`docs/archive/PROJECT_CONTEXT_STATO_FUNZIONALITA_2026-03.md`](archive/PROJECT_CONTEXT_STATO_FUNZIONALITA_2026-03.md). **Aggiornare questa sezione a fine sessione** se emergono nuove priorità o se una priorità elencata viene chiusa (stesso principio delle "Lezioni apprese" in [GUIDA_CONSOLIDATA.md](GUIDA_CONSOLIDATA.md) — sintesi qui, dettaglio linkato).
 
-**Ultimo aggiornamento di questa sezione**: 16/08/2026 (norme certificati 3.1 digitalizzate; ISO-2 mergiata [PR #443](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/443)).
+**Ultimo aggiornamento di questa sezione**: 16/08/2026 (EN 10025-2 digitalizzata — soglie lamiere/profili; ISO-2 mergiata [PR #443](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/443)).
 
 ### Moduli maturi (in produzione, uso quotidiano dai clienti Camellini/Mason)
 
@@ -16,7 +16,9 @@ Audit multi-standard (9001/14001/45001) · Non Conformità (workflow ISO 10.2 co
 
 ### Sessione più recente (15/08/2026)
 
-**Norme certificati 3.1 consegnate (16/08)** — EN 10204, EN 10168, ISO 10474/404/6929 + facsimile MTC → Markdown in `docs/Normative/` + estratti in [`MATERIAL-COMPLIANCE-NORME-SINTESI.md`](reference/MATERIAL-COMPLIANCE-NORME-SINTESI.md). Sblocca dizionario campi MC e chiavi capitolato ISO-3. Soglie EN 10025-… ancora da consegnare.
+**EN 10025-2:2019 consegnata (16/08)** — NORMA_00026 + estratto soglie S235–S500 in [`EN-10025-2-acciai-strutturali.md`](reference/EN-10025-2-acciai-strutturali.md). Sblocca il seed MC-2 per lamiere/profili. Tubi/sezioni cave: ancora EN 10210-1 / EN 10219-1.
+
+**Norme certificati 3.1 consegnate (16/08)** — EN 10204, EN 10168, ISO 10474/404/6929 + facsimile MTC → Markdown in `docs/Normative/` + estratti in [`MATERIAL-COMPLIANCE-NORME-SINTESI.md`](reference/MATERIAL-COMPLIANCE-NORME-SINTESI.md). Sblocca dizionario campi MC e chiavi capitolato ISO-3.
 
 **ISO-2 — Riesame §5.3 data/utente + Word** ([PR #443](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/443) **mergiata**): timbro nel JSON, niente blocco apertura, Word checklist. Prossima: ISO-3 (AI capitolato, prompt + chiavi 10204). Brief [`DEPUTYTASK1.md`](agent-tasks/DEPUTYTASK1.md) **CHIUSO**.
 
@@ -55,7 +57,7 @@ Sessione prodotto precedente (10/08/2026): fix filtri dashboard duplicati (Quali
 | 1 | **Modulo Notifiche/Alert — destinatario allerte qualifiche non è una scelta esplicita in anagrafica** | Oggi risolto da un algoritmo a cascata, non da una scelta visibile in UI | `qualificationAlert.service.js` (`resolveWeldingCoordinatorRecipients`) |
 | 2 | **Shell dialog di revisione ingest — markup/CSS duplicato** (non urgente, basso rischio) | `IngestReviewDialog.jsx` vs dialog interno `ReprocessQueueBanner.jsx`: guscio overlay duplicato (~60-80 righe); pattern sistemico su molti altri modal nel progetto | Vedi backlog sotto per dettaglio |
 | 3 | **Pagina Impostazioni → Organizzazione (P.IVA + logo tenant)** | PR #10 aperta da aprile 2026, 180 file in conflitto — richiede ricostruzione, non merge | Vedi riga dedicata nel backlog sotto |
-| 4 | **Material Compliance AI (certificati EN 10204 3.1)** | Norme tipo/layout consegnate 16/08; MC-0 spec ancora da fare. Soglie grado (EN 10025-…) mancanti | [sintesi norme](reference/MATERIAL-COMPLIANCE-NORME-SINTESI.md) · [MODULO](specs/MODULO_MATERIAL_COMPLIANCE_AI.md) |
+| 4 | **Material Compliance AI (certificati EN 10204 3.1)** | Tipo/layout + soglie lamiere EN 10025-2 consegnate. MC-0 spec ancora da fare. Tubi: 10210/10219 mancanti | [sintesi norme](reference/MATERIAL-COMPLIANCE-NORME-SINTESI.md) · [MODULO](specs/MODULO_MATERIAL_COMPLIANCE_AI.md) |
 | 5 | **Rischi / Opportunità / Obiettivi — detector SWOT/FMEA (ROO-6b)** | M03 si importa. SWOT e FMEA HSE restano da mappare; scala 1–4 = HITL ROO-13 | [PLAN](agent-tasks/PLAN_RISCHI_OPPORTUNITA_OBIETTIVI_SLICES.md) · brief [ROO](agent-tasks/DEPUTYTASK_RISCHI_ROO.md) |
 | 6 | **SAL AI evidenze — OCR + documento mancante (HITL)** | Suggeritore 5-A/5-B legge solo PDF/DOCX testo; PDF scan/immagini saltati; se manca evidenza → solo messaggio low, nessuna ricerca tipo/upload guidato | [PLAN](agent-tasks/PLAN_SAL_AI_EVIDENCE_SLICES.md) · brief [S1a](agent-tasks/DEPUTYTASK.md) |
 | 7 | **ISO 3834 — completezza per processi (RBAC + ponti + report)** | ISO-1* + ISO-2 mergiate. Prossima: ISO-3 AI capitolato (chiavi 3.1/EN 10204). Word RDP Mason = ISO-4 | [PLAN](agent-tasks/PLAN_3834_SLICES.md) · brief [ISO-2 CHIUSO](agent-tasks/DEPUTYTASK1.md) |
