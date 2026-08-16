@@ -93,3 +93,5 @@ Quando si digitalizza una nuova norma con `pdf_to_json`:
 1. Aggiungere una riga alla tabella sopra con norma, file `.md`/`.json` prodotto, e
    percorso atteso del PDF sorgente nella cartella family-based.
 2. Non serve copiare qui il PDF né il suo contenuto: solo il nome file e la posizione.
+
+**Vigore:** il convertitore **non** verifica se la norma è ancora in vigore (solo estrazione testo). Il job settimanale sul registro documenti dei clienti non copre questi Markdown. Backlog (giorno 1 del mese, superadmin): riga in [PROJECT_ROADMAP § Backlog parcheggiato](../PROJECT_ROADMAP.md#backlog-parcheggiato-task-futuri--fonte-unica).

@@ -81,6 +81,11 @@ interni al package, quindi eseguire `cli.py` direttamente (`python cli.py ...`)
 Per ogni PDF in input vengono scritti `<nome-pdf>.md` e `<nome-pdf>.json`
 nella cartella di output.
 
+**Fuori scope (oggi):** il tool **non** verifica se la norma e' in vigore sul catalogo UNI/ISO.
+Quella verifica esiste gia' per il registro documenti dei tenant (`normValidityChecker`,
+lunedi 03:00). I Markdown in `docs/Normative/` restano un backlog: controllo al
+**giorno 1 del mese** in dashboard superadmin (vedi roadmap, backlog parcheggiato).
+
 ## Dove finiscono gli output e come revisionarli
 
 - Il file **`.md`** e' sempre generato (salvo `--no-keep-markdown`, sconsigliato):

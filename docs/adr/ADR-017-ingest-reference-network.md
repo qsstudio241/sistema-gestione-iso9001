@@ -101,7 +101,7 @@ Non si investe in “assistente brillante” senza ingest affidabile — sequenz
 - Nuova tabella `ingest_reference_patterns` (migrazione 120)
 - `ingestLearning.service.js` arricchito con pattern Livello B
 - `normCatalogLookup` delega a `uniStoreConnector` per norme tecniche
-- Slice future: IG-N (norme in staging), binding catalogo persistente, dashboard metriche
+- Slice future: IG-N (norme in staging), binding catalogo persistente, dashboard metriche, **job mensile vigore Markdown KB** (`docs/Normative/`, giorno 1, superadmin — non confondere col job settimanale sul `document_registry`)
 
 ## Riferimenti implementativi
 
