@@ -15,6 +15,8 @@
 **Sì, a slice verticali.** Non in un unico commit.  
 **HITL 16/08/2026 (committente):** i certificati sono di solito **scansioni**; l’agente deve estrarre i valori e imparare dalle correzioni. Il modello ingest qualifiche/WPQR (schema → revisione umana → commit → feedback) è **valido e da riusare**, non da rifare. OCR: riusare `ocrExtractor` / `documentTextExtractor` (SAL S1a lo sta collegando) — **non** un secondo motore.
 
+**Norme e campi da estrarre (HITL 16/08, chiusura):** il committente **fornirà in seguito** le normative. Da quelle si fanno i Markdown in `knowledge/material-compliance/standards/` (e il dizionario campi). **Non** inventare schema di estrazione né seed di norma prima di quei file. L’agente specializzato (MC-0 in poi sul contenuto tecnico) parte **dopo** la consegna delle norme, non ora. La griglia elenco (DDT + anagrafica) resta valida come UI; i campi di laboratorio (chimica, ReH, CEV, …) li fissa la norma consegnata.
+
 Ordine consigliato: **MC-0 → MC-1 → MC-2 → MC-3 → MC-4 → MC-B → MC-5 → MC-6 → MC-7**.  
 MC-B (OCR) **non** è più post-MVP: senza testo i certificati reali non si leggono.
 
@@ -58,7 +60,7 @@ MC-0/MC-1/MC-5 devono prevedere questi campi (DDT era assente dalla lista spec d
 |-------|------|-----------|------------|
 | **MC-0** | Spec tecniche | DATA_MODEL / UI / API md | — |
 | **MC-1** | Schema DB | `database/migrations/NNN_*.sql` + `run-migration-NNN-vps.js` | MC-0 |
-| **MC-2** | KB seed + loader | `knowledge/material-compliance/**` + service load | MC-0 |
+| **MC-2** | KB seed + loader | `knowledge/material-compliance/**` da **norme consegnate dal committente** (PDF → MD, skill `pdf-to-json`) + loader | MC-0 + HITL norme |
 | **MC-3** | Rule Engine | service puro + test L1 | MC-2 |
 | **MC-4** | API | routes/controller/services; riuso extract | MC-1, MC-3 |
 | **MC-5** | UI MVP | lista + dettaglio + azioni HITL | MC-4 |

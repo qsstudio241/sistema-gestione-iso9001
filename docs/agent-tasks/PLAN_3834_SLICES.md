@@ -19,6 +19,7 @@
 
 - Registro **subfornitura saldatura** dedicato (ISO-11): oggi solo checkbox + cliente commessa — da aprire solo se un cliente lo chiede in campo
 - Il file Word Mason `Check List Audit/RDP_MSN-260127-01_REV_0.docx` **non è in git** (solo citato). ISO-4: copiarlo in `app/public/templates/rdp-mason-report.docx` quando il deputy lo trova in cartella locale / archivio; se manca, chiedere il file al committente (non inventare un layout)
+- **Norme certificati 3.1**: il committente le consegna in seguito → Markdown KB + agente specializzato MC. Non anticipare lo schema di estrazione.
 
 ## Decisioni già prese
 

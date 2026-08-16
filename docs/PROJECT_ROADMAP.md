@@ -16,7 +16,7 @@ Audit multi-standard (9001/14001/45001) · Non Conformità (workflow ISO 10.2 co
 
 ### Sessione più recente (15/08/2026)
 
-**Lead wayfinder — ISO 3834 HITL 16/08** (solo doc): §5.3 senza blocco; Word RDP Mason; livelli 2/3/4 = obiettivo «meno schermate» ma **partenza senza filtri**; certificati = tab/griglia con **DDT** + anagrafica materiale (epic MC, ingest qualifiche/WPQR + OCR). Brief [`DEPUTYTASK1.md`](agent-tasks/DEPUTYTASK1.md) resta **ISO-1a**. Nessun codice applicativo.
+**Lead wayfinder — ISO 3834 HITL 16/08** (solo doc): §5.3 senza blocco; Word RDP Mason; livelli 2/3/4 = meno schermate dopo, partenza senza filtri; certificati = griglia DDT+anagrafica (confermata). **Norme 3.1 e campi da estrarre: il committente li consegna in seguito** → Markdown KB + agente MC; non inventare lo schema ora. Brief [`DEPUTYTASK1.md`](agent-tasks/DEPUTYTASK1.md) resta **ISO-1a**. Nessun codice applicativo.
 
 **In parallelo — SAL AI evidenze** (stesso giorno): mappa [`PLAN_SAL_AI_EVIDENCE_SLICES.md`](agent-tasks/PLAN_SAL_AI_EVIDENCE_SLICES.md). Brief [`DEPUTYTASK.md`](agent-tasks/DEPUTYTASK.md) **APERTO** su slice **S1a** (OCR PDF in `documentTextExtractor`). Non sovrascrivere.
 
