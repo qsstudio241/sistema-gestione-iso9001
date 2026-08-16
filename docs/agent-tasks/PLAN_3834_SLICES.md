@@ -129,7 +129,6 @@ Ogni slice è un **tracer verticale** (un processo o un ponte), non «tutto il D
 | **ISO-3** — persistenza AI capitolato (dopo merge #443) | ISO-4 Word RDP: file Mason non è in git |
 | **SAL S1a** — già APERTO su `main` in `DEPUTYTASK.md` | — |
 | **MC-0** — solo spec DATA_MODEL/UI/API (griglia DDT già chiusa; campi lab **estendibili**) | MC-2/3/4 extract+regole: **norme del committente** |
-| **ISO-3** — persistenza AI capitolato (file diversi da RDP) | ISO-4 Word RDP: file Mason non è in git |
 | — | Filtri UI per livello 2/3/4 (partenza senza filtri) |
 
 Dopo merge #443: Lead apre brief ISO-3 in `DEPUTYTASK1.md` (sovrascrive, Stato APERTO).  

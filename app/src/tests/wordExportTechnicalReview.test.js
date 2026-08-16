@@ -42,4 +42,22 @@ describe("wordExportTechnicalReview", () => {
     expect(xml).toContain("Paola Verdi");
     expect(xml).toContain("3834");
   });
+
+  it("senza timbro persistito non scrive Completata il / nome utente", async () => {
+    const checklist = {};
+    for (const item of TECHNICAL_REVIEW_ITEMS) {
+      checklist[item.key] = { checked: true };
+    }
+    const blob = await generateTechnicalReviewBlob({
+      projectCode: "CM-2026-010",
+      clientName: "Mason",
+      status: "aperta",
+      checklist,
+    });
+    const zip = new PizZip(await blobToArrayBuffer(blob));
+    const xml = zip.files["word/document.xml"].asText();
+    expect(xml).toContain("timbro al salvataggio");
+    expect(xml).not.toContain("Completata il");
+    expect(xml).not.toContain("Paola Verdi");
+  });
 });

@@ -35,6 +35,23 @@ export function formatTechnicalReviewCompletion(stamp) {
 }
 
 /**
+ * Word: punti dalla form, timbro solo se già persistito in DB.
+ * Evita un .docx con «Completata il …» prima del salvataggio.
+ */
+export function checklistForWordExport(localChecklist, persistedRaw) {
+  const next = { ...(localChecklist || {}) };
+  const persistedStamp = getTechnicalReviewCompletion(
+    parseTechnicalReviewChecklist(persistedRaw)
+  );
+  if (persistedStamp) {
+    next[TECHNICAL_REVIEW_COMPLETION_KEY] = persistedStamp;
+  } else {
+    delete next[TECHNICAL_REVIEW_COMPLETION_KEY];
+  }
+  return next;
+}
+
+/**
  * Primo completamento: scrive data/utente.
  * Se incompleta: toglie il timbro.
  * Se già completa con timbro: lo conserva.

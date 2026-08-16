@@ -2,6 +2,7 @@ import { describe, it, expect } from "vitest";
 import { TECHNICAL_REVIEW_ITEMS } from "../data/technicalReviewItems";
 import {
   applyTechnicalReviewCompletionStamp,
+  checklistForWordExport,
   formatTechnicalReviewCompletion,
   isTechnicalReviewComplete,
   parseTechnicalReviewChecklist,
@@ -60,6 +61,30 @@ describe("technicalReviewChecklist", () => {
     const next = applyTechnicalReviewCompletionStamp(complete, { user_id: 1, full_name: "Anna" });
     expect(next._completion).toBeUndefined();
     expect(isTechnicalReviewComplete(next)).toBe(false);
+  });
+
+  it("Word: niente timbro locale se il server non l'ha ancora salvato", () => {
+    const local = applyTechnicalReviewCompletionStamp(allChecked(), {
+      user_id: 9,
+      full_name: "Mario Rossi",
+    }, new Date("2026-08-16T10:00:00.000Z"));
+    const forWord = checklistForWordExport(local, null);
+    expect(forWord._completion).toBeUndefined();
+    expect(forWord.materiale_base.checked).toBe(true);
+  });
+
+  it("Word: usa il timbro persistito, non quello locale", () => {
+    const local = applyTechnicalReviewCompletionStamp(allChecked(), {
+      user_id: 9,
+      full_name: "Falso",
+    }, new Date("2099-01-01T00:00:00.000Z"));
+    const persisted = JSON.stringify({
+      ...allChecked(),
+      _completion: { at: "2026-02-01T00:00:00.000Z", by_user_id: 1, by_name: "Anna" },
+    });
+    const forWord = checklistForWordExport(local, persisted);
+    expect(forWord._completion.by_name).toBe("Anna");
+    expect(forWord._completion.at).toBe("2026-02-01T00:00:00.000Z");
   });
 
   it("parse JSON string e oggetto", () => {

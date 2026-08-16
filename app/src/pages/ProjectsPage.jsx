@@ -16,6 +16,7 @@ import AiDisclaimer from "../components/AiDisclaimer";
 import { TECHNICAL_REVIEW_ITEMS } from "../data/technicalReviewItems";
 import {
   applyTechnicalReviewCompletionStamp,
+  checklistForWordExport,
   formatTechnicalReviewCompletion,
   getTechnicalReviewCompletion,
   isTechnicalReviewComplete,
@@ -335,7 +336,10 @@ function ProjectFormModal({ project, companies, defaultCompanyId, wpsList, quali
                       projectCode: form.project_code,
                       clientName: form.client_name,
                       status: form.status,
-                      checklist: applyTechnicalReviewCompletionStamp(technicalReviewChecklist, user),
+                      checklist: checklistForWordExport(
+                        technicalReviewChecklist,
+                        project?.technical_review_checklist
+                      ),
                     });
                   } catch (err) {
                     setError(err.message || "Export Word non riuscito");
