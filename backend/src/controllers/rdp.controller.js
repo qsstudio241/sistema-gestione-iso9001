@@ -17,6 +17,14 @@
 
 const { query } = require('../config/database');
 const logger = require('../utils/logger');
+const {
+    ensureCompanyAccessLoaded,
+    companyAccessSqlFilter,
+    hasCompanyAccessRows,
+    assertCompanyAccess,
+    assertMutatingAllowed,
+    sendAccessDenied,
+} = require('../services/companyAccess.service');
 
 // ── Numerazione automatica ───────────────────────────────────────────────────
 async function allocateReportNumber(organization_id, report_year) {
@@ -165,9 +173,13 @@ async function getRdpStats(req, res) {
     try {
         const { organization_id } = req.user;
         const { company_id } = req.query;
+        const accessList = await ensureCompanyAccessLoaded(req.user);
+        const companyFilter = companyAccessSqlFilter(accessList, 'r');
 
         const conditions = ['r.organization_id = @organization_id', 'r.is_deleted = 0'];
         const params = { organization_id };
+        if (companyFilter.clause) conditions.push(companyFilter.clause);
+        Object.assign(params, companyFilter.params);
         if (company_id) { conditions.push('r.company_id = @company_id'); params.company_id = parseInt(company_id); }
 
         const result = await query(`
@@ -197,8 +209,13 @@ async function listRdpReports(req, res) {
             page = 1, limit = 50,
         } = req.query;
 
+        const accessList = await ensureCompanyAccessLoaded(req.user);
+        const companyFilter = companyAccessSqlFilter(accessList, 'r');
+
         const conditions = ['r.organization_id = @organization_id', 'r.is_deleted = 0'];
         const params = { organization_id, limit: parseInt(limit), offset: (parseInt(page) - 1) * parseInt(limit) };
+        if (companyFilter.clause) conditions.push(companyFilter.clause);
+        Object.assign(params, companyFilter.params);
 
         if (company_id) { conditions.push('r.company_id = @company_id'); params.company_id = parseInt(company_id); }
         if (status) { conditions.push('r.status = @status'); params.status = status; }
@@ -281,6 +298,16 @@ async function getRdpReport(req, res) {
             return res.status(404).json({ error: 'Rapporto RDP non trovato', code: 'RDP_NOT_FOUND' });
         }
 
+        const report = reportResult.recordset[0];
+        const accessList = await ensureCompanyAccessLoaded(req.user);
+        if (hasCompanyAccessRows(accessList)) {
+            if (!report.company_id) {
+                return res.status(403).json({ error: 'Azienda non accessibile', code: 'FORBIDDEN' });
+            }
+            const denied = await assertCompanyAccess(req.user, report.company_id, 'read');
+            if (denied) return sendAccessDenied(res, denied);
+        }
+
         const photoCountByTest = new Map(photoCountsResult.recordset.map((r) => [r.test_id, r.photo_count]));
         const testsBySection = new Map();
         for (const test of testsResult.recordset) {
@@ -295,7 +322,7 @@ async function getRdpReport(req, res) {
 
         res.json({
             success: true,
-            data: { ...reportResult.recordset[0], sections },
+            data: { ...report, sections },
         });
     } catch (err) {
         logger.error('getRdpReport error', { error: err.message });
@@ -313,6 +340,10 @@ async function createRdpReport(req, res) {
             inspection_date, mason_inspector, client_inspector,
             notes, status = 'draft', sections = [],
         } = req.body;
+
+        const companyIdVal = company_id ? parseInt(company_id) : null;
+        const writeDenied = await assertMutatingAllowed(req.user, { companyId: companyIdVal });
+        if (writeDenied) return sendAccessDenied(res, writeDenied);
 
         const report_year = new Date().getFullYear();
         const report_number = await allocateReportNumber(organization_id, report_year);
@@ -336,7 +367,7 @@ async function createRdpReport(req, res) {
             )
         `, {
             organization_id,
-            company_id: company_id ? parseInt(company_id) : null,
+            company_id: companyIdVal,
             report_number,
             report_year,
             client: client || null,
@@ -406,12 +437,16 @@ async function updateRdpReport(req, res) {
         const id = parseInt(req.params.id);
 
         const existing = await query(
-            `SELECT id FROM rdp_reports WHERE id = @id AND organization_id = @organization_id AND is_deleted = 0`,
+            `SELECT id, company_id FROM rdp_reports WHERE id = @id AND organization_id = @organization_id AND is_deleted = 0`,
             { id, organization_id }
         );
         if (existing.recordset.length === 0) {
             return res.status(404).json({ error: 'Rapporto RDP non trovato', code: 'RDP_NOT_FOUND' });
         }
+
+        const existingCompanyId = existing.recordset[0].company_id;
+        const writeDenied = await assertMutatingAllowed(req.user, { companyId: existingCompanyId });
+        if (writeDenied) return sendAccessDenied(res, writeDenied);
 
         const {
             company_id, client, supplier_name, project_name, purpose,
@@ -419,6 +454,14 @@ async function updateRdpReport(req, res) {
             inspection_date, mason_inspector, client_inspector,
             notes, status, sections,
         } = req.body;
+
+        const nextCompanyId = company_id !== undefined
+            ? (company_id ? parseInt(company_id) : null)
+            : existingCompanyId;
+        if (nextCompanyId !== existingCompanyId) {
+            const nextDenied = await assertMutatingAllowed(req.user, { companyId: nextCompanyId });
+            if (nextDenied) return sendAccessDenied(res, nextDenied);
+        }
 
         const average_score = sections !== undefined ? computeAverageScore(sections) : undefined;
 
@@ -435,7 +478,7 @@ async function updateRdpReport(req, res) {
             WHERE id = @id
         `, {
             id,
-            company_id: company_id ? parseInt(company_id) : null,
+            company_id: nextCompanyId,
             client: client || null,
             supplier_name: supplier_name || null,
             project_name: project_name || null,
@@ -469,12 +512,15 @@ async function deleteRdpReport(req, res) {
         const id = parseInt(req.params.id);
 
         const existing = await query(
-            `SELECT id FROM rdp_reports WHERE id = @id AND organization_id = @organization_id AND is_deleted = 0`,
+            `SELECT id, company_id FROM rdp_reports WHERE id = @id AND organization_id = @organization_id AND is_deleted = 0`,
             { id, organization_id }
         );
         if (existing.recordset.length === 0) {
             return res.status(404).json({ error: 'Rapporto RDP non trovato', code: 'RDP_NOT_FOUND' });
         }
+
+        const writeDenied = await assertMutatingAllowed(req.user, { companyId: existing.recordset[0].company_id });
+        if (writeDenied) return sendAccessDenied(res, writeDenied);
 
         await query(`UPDATE rdp_reports SET is_deleted = 1, updated_at = GETDATE() WHERE id = @id`, { id });
         res.json({ success: true });
