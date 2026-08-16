@@ -3,6 +3,7 @@
 **Stato:** CHIUSO — TEST OK  
 **Aperto:** 16/08/2026 (Lead wayfinder — Chart the map Second Brain)  
 **Chiuso:** 16/08/2026 — SB-1 implementata (dopo deputy FIX NON APPLICABILI: brief non era su `main`)  
+**Mergiata:** [PR #440](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/440) il 16/08/2026 (committente)  
 **Piano:** [`PLAN_SECOND_BRAIN_SLICES.md`](PLAN_SECOND_BRAIN_SLICES.md)  
 **Spec / ADR:** [ADR-010](../adr/ADR-010-ai-agentic-architecture.md) · `aiCompanyScope.service.js`  
 **Rischio:** Medio — PR + gate Bugbot; **non** push su `main`; **non** toccare `DEPUTYTASK.md` (SAL S1a)
