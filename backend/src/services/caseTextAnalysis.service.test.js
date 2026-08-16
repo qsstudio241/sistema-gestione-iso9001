@@ -41,14 +41,14 @@ describe('caseTextAnalysis.service — ISO-3 chiavi capitolato', () => {
                 {
                     req_type: 'spec',
                     field_key: 'filo',
-                    value_text: 'G 42 4 M21 3Si1',
+                    value_text: 'materiale d\'apporto richiesto',
                     confidence: 0.8,
                 },
             ],
         }));
         expect(rows).toHaveLength(2);
         expect(rows[0].field_key).toBe('inspection_document_type');
-        expect(rows[1].field_key).toBe('filler_designation');
+        expect(rows[1].field_key).toBe('material_role');
         expect(rows[0].req_type).toBe('spec');
     });
 

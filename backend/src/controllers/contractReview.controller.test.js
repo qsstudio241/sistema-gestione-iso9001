@@ -773,6 +773,11 @@ describe('analyzeRequirements — persistenza', () => {
     expect(body.suggestion.identified_standards).toEqual(
       expect.arrayContaining(['ISO 3834-2', 'EN 10204', 'ISO 14341']),
     );
+    const jobInsert = query.mock.calls.find((c) => /INSERT INTO commercial_case_drawing_extractions/.test(c[0]));
+    const stored = JSON.parse(jobInsert[1].raw);
+    expect(stored.identified_standards).toEqual(
+      expect.arrayContaining(['ISO 3834-2', 'EN 10204', 'ISO 14341']),
+    );
   });
 
   it('ISO-3: persiste field_key canonico se presente sulla riga requisito', async () => {
@@ -782,7 +787,7 @@ describe('analyzeRequirements — persistenza', () => {
         identified_requirements: [
           {
             ref: 'REQ-01',
-            field_key: 'inspection_document_type',
+            field_key: 'MTC',
             description: 'Certificato 3.1',
           },
         ],

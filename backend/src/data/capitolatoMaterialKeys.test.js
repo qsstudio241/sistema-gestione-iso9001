@@ -24,7 +24,9 @@ describe('capitolatoMaterialKeys', () => {
             expect(canonicalizeFieldKey('tipo certificato')).toBe('inspection_document_type');
             expect(canonicalizeFieldKey('materiale d\'apporto')).toBe('material_role');
             expect(canonicalizeFieldKey('filler_material')).toBe('filler_designation');
-            expect(canonicalizeFieldKey('filo')).toBe('filler_designation');
+            expect(canonicalizeFieldKey('filo')).toBe('material_role');
+            expect(canonicalizeFieldKey('elettrodo')).toBe('material_role');
+            expect(canonicalizeFieldKey('designazione_filo')).toBe('filler_designation');
         });
 
         test('chiave sconosciuta resta (troncata)', () => {
