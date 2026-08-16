@@ -9,8 +9,8 @@
 
 | Modulo | Domanda | Cosa usiamo da questo pacchetto |
 |--------|---------|----------------------------------|
-| **ISO-3** — analisi AI capitolato (`ContractReviewPage`, `caseTextAnalysis.service.js`) | «Cosa chiede il cliente sull’acciaio / sui certificati?» | Tipo documento 2.1–3.2, forma prodotto, designazione, condizione di fornitura, NDT, divieti intermediario |
-| **Material Compliance** — verifica 3.1/3.2 sul PDF | «Questo certificato è la prova giusta e i valori coprono i requisiti?» | Layout EN 10168, tipi EN 10204, dizionario campi, facsimile, **soglie EN 10025-2** (lamiere/profili) |
+| **ISO-3** — analisi AI capitolato (`ContractReviewPage`, `caseTextAnalysis.service.js`) | «Cosa chiede il cliente sull’acciaio / sui certificati / sull’apporto?» | Tipo 2.1–3.2, `material_role`, forma, designazione acciaio **o** filo, NDT, divieti intermediario |
+| **Material Compliance** — verifica 2.1–3.2 sul PDF | «Questo certificato (base **o** apporto) è la prova giusta e i valori coprono i requisiti?» | Layout EN 10168, tipi EN 10204, dizionario (incluso `material_role`), facsimile, **soglie EN 10025-2** (lamiere/profili). Apporto: tipo sì, soglie prodotto skip se manca Markdown |
 
 ISO-3 **estrae requisiti dal capitolato**. MC **estrae valori dal certificato** e li confronta (ADR-021: il 3.1 non si auto-valuta). Stesso dizionario chiavi, due pipeline.
 
@@ -29,6 +29,7 @@ Consegnato ora:
 **Ancora assente (non inventare seed):**
 
 - EN 10210-1 / EN 10219-1 (hollow sections / tubi)
+- Norme **prodotto** apporto per soglie 3.1 lotto: ISO 2560 (elettrodo), ISO 17632 (filo animato), ISO 14174 (flussi), tabelle chimica ISO 14341 3A/3B (GAP estrazione)
 - Altre parti 10025 (3/4/5/6) se arrivano certificati fine grain / TM / weathering
 - Requisiti cliente FASSI/CLAAS (`knowledge/.../customers/`)
 - Criteri interni azienda (`companies/<slug>/`)
@@ -42,9 +43,11 @@ Oggi `caseTextAnalysis` ha `req_type`: `delivery` \| `legal` \| `commercial` \| 
 | `field_key` | `req_type` | Esempio in capitolato |
 |-------------|------------|------------------------|
 | `inspection_document_type` | spec | «certificato 3.1 EN 10204», «ISO 10474 3.2» |
-| `material_standard` | spec | EN 10025-2, EN 10219-1 (già citato nel prompt) |
+| `material_role` | spec | «acciaio di base», «materiale d’apporto», «filo», «elettrodo» |
+| `material_standard` | spec | EN 10025-2, EN 10219-1, ISO 14341 |
 | `steel_designation` | spec | S355J2, S420KT-40 |
-| `product_form` | spec | lamiera, tubo, profilato |
+| `filler_designation` | spec | G 42 4 M21 3Si1, ISO 2560 E 42 5 B |
+| `product_form` | spec | lamiera, tubo, profilato, filo, elettrodo, flusso |
 | `delivery_condition` | spec | normalizzato, QT, as rolled |
 | `heat_treatment_required` | spec | PWHT, vacuum degassed |
 | `ndt_required` | spec | UT, PT, MT su prodotto |
@@ -53,7 +56,7 @@ Oggi `caseTextAnalysis` ha `req_type`: `delivery` \| `legal` \| `commercial` \| 
 | `qms_required` | legal | ISO 9001 del fabbricante |
 | `quantity` / `dimensions` / `tolerances` | delivery/spec | ISO 404 §4.1 a–d |
 
-`identified_standards` in `aiContextBuilder` deve riconoscere: `EN 10204`, `EN 10168`, `ISO 10474`, `ISO 404`, `ISO 6929`, `EN 10025-2` oltre a 9001/3834.
+`identified_standards` in `aiContextBuilder` deve riconoscere: `EN 10204`, `EN 10168`, `ISO 10474`, `ISO 404`, `ISO 6929`, `EN 10025-2`, `ISO 14341` oltre a 9001/3834.
 
 NormBroker: queste norme **non** vanno in `import-norms-from-markdown.js` (non sono SGQ a clausole 4–10). Restano KB + prompt, come gas 14175 / temperature 13916.
 
@@ -62,13 +65,16 @@ NormBroker: queste norme **non** vanno in `import-norms-from-markdown.js` (non s
 Allineato alla griglia HITL 16/08 + EN 10168:
 
 ```text
+material_role           ← base | filler
 certificate_no          ← A03
 inspection_document_type← A02   (2.1|2.2|3.1|3.2)
 manufacturer_works      ← A01
 purchaser_order_no      ← A07   (ponte DDT/ordine)
-steel_designation       ← B02
-product_form            ← B01   (enum ISO 6929 ridotto)
-heat_no                 ← B07
+steel_designation       ← B02   (solo base)
+filler_designation      ← es. G 42 4 M21 3Si1 (solo filler)
+filler_standard         ← ISO 14341 / 2560 / …
+product_form            ← B01   (base: ISO 6929 ridotto; filler: wire/electrode/flux)
+heat_or_lot_no          ← B07   (colata base / lotto apporto)
 dimensions              ← B09–B11
 actual_mass             ← B13
 delivery_condition      ← B04
@@ -124,8 +130,10 @@ Vietato inventare soglie. Vietato rinviare la slice coperta perché manca un’a
 | Facsimile MTC | `MTC_Type_3.1_FAC_SIMILE.*` | **presente** | esempio 3.2 |
 | EN 10025-2:2019 | NORMA_00026 + `EN-10025-2-acciai-strutturali.md` | **presente** | soglie lamiere/profili S235–S500 |
 | ISO/TR 15608 | `ISO-TR-15608-gruppi-materiali.md` | **presente** | gruppi materiale |
+| ISO 14341:2020 | NORMA_00016 + `ISO-14341-consumabili-filo.md` | **presente** (classificazione filo WPS/WPQR; **non** soglie 3.1 lotto) | `filler_designation` |
 | **EN 10210-1** | — | **mancante** (traccia) | soglie tubi/hollow a caldo |
 | **EN 10219-1** | — | **mancante** (traccia) | soglie tubi/hollow a freddo |
+| ISO 2560 / 17632 / 14174 | — | **mancante** (traccia) | soglie certificato elettrodo / filo animato / flusso |
 | EN 10025-3/4/5/6 | — | traccia, non ora | fine grain / TM / weathering |
 | EN 10164, 10163, 10160, EN 1011-2 | — | traccia, solo se capitolato | Z, superfici, UT, saldatura |
 | EN ISO 6892-1, 148-1, 377, 14284 | — | non richiesta MVP | metodi di prova |
@@ -136,6 +144,7 @@ Dettaglio perché (non l’elenco §2 intero della 10025-2): 10025-2 **non** cop
 
 ## Prossimi passi consigliati
 
-1. **ISO-3** (capitolato): estendere il prompt di `caseTextAnalysis` / `aiContextBuilder` con le chiavi sopra + elenco norme (ora anche EN 10025-2). Persistenza già coperta da mig. 116: non serve nuova tabella.
-2. **MC-0**: chiudere le tre spec con il dizionario 10168 (campi lab estendibili).
-3. **MC-2**: seed soglie da [EN 10025-2](EN-10025-2-acciai-strutturali.md) **dopo dichiarazione fonti**. Tubi: skip finché EN 10210-1 / EN 10219-1 non sono in Markdown (riga inventario sopra).
+1. **ISO-3** (capitolato): estendere il prompt di `caseTextAnalysis` / `aiContextBuilder` con le chiavi sopra (incluso `material_role` e `filler_designation`) + elenco norme. Persistenza già coperta da mig. 116: non serve nuova tabella.
+2. **MC-0**: ✅ spec [DATA_MODEL](../specs/MATERIAL_COMPLIANCE_DATA_MODEL.md) / [UI](../specs/MATERIAL_COMPLIANCE_UI.md) / [API](../specs/MATERIAL_COMPLIANCE_API.md) — base e apporto sulla stessa riga.
+3. **MC-1**: migration tabelle proposte nel DATA_MODEL (prossimo NNN libero).
+4. **MC-2**: seed soglie da [EN 10025-2](EN-10025-2-acciai-strutturali.md) **dopo dichiarazione fonti**. Tubi e soglie apporto: skip finché le norme prodotto non sono in Markdown.
