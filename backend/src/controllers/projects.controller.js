@@ -18,6 +18,21 @@ const {
 } = require('../services/commercialCustomerCounterparty.service');
 const { stampTechnicalReviewChecklistJson } = require('../utils/technicalReviewChecklist');
 
+/** JWT non include full_name: se manca, lo legge da users. */
+async function userForReviewStamp(user) {
+    if (!user) return { full_name: 'Utente' };
+    if (user.full_name) return user;
+    try {
+        const r = await query(
+            'SELECT full_name FROM users WHERE user_id = @user_id',
+            { user_id: user.user_id }
+        );
+        return { ...user, full_name: r.recordset[0]?.full_name || user.email || 'Utente' };
+    } catch {
+        return { ...user, full_name: user.email || 'Utente' };
+    }
+}
+
 // GET /projects
 async function listProjects(req, res) {
     try {
@@ -235,10 +250,12 @@ async function createProject(req, res) {
         const wpsIdsJson = applicable_wps_ids
             ? JSON.stringify(Array.isArray(applicable_wps_ids) ? applicable_wps_ids : [applicable_wps_ids])
             : null;
-        const technicalReviewChecklistJson = stampTechnicalReviewChecklistJson(
-            technical_review_checklist,
-            req.user
-        );
+        const technicalReviewChecklistJson = technical_review_checklist
+            ? stampTechnicalReviewChecklistJson(
+                technical_review_checklist,
+                await userForReviewStamp(req.user)
+            )
+            : null;
 
         const result = await query(`
             INSERT INTO projects (
@@ -323,7 +340,7 @@ async function updateProject(req, res) {
                 } else if (field === 'technical_review_checklist') {
                     params[field] = stampTechnicalReviewChecklistJson(
                         req.body[field],
-                        req.user,
+                        await userForReviewStamp(req.user),
                         { previous: existingProject.technical_review_checklist },
                     );
                 } else if (field === 'company_id') {

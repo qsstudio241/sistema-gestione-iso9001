@@ -46,6 +46,26 @@ describe('createProject — timbro §5.3', () => {
     expect(parsed._completion.by_name).toBe('Mario Rossi');
   });
 
+  it('se JWT non ha full_name, legge il nome da users', async () => {
+    query
+      .mockResolvedValueOnce({ recordset: [{ full_name: 'Mario Rossi' }] })
+      .mockResolvedValueOnce({ recordset: [{ id: 71 }] });
+    const res = mockRes();
+    await createProject({
+      user: { organization_id: 1004, user_id: 9, email: 'mario@studio.it' },
+      body: {
+        project_code: 'CM-ISO2b',
+        company_id: 47,
+        client_name: 'Mason',
+        technical_review_checklist: allChecked(),
+      },
+    }, res);
+    expect(res.status).toHaveBeenCalledWith(201);
+    expect(query.mock.calls[0][0]).toMatch(/full_name FROM users/);
+    const parsed = JSON.parse(query.mock.calls[1][1].technical_review_checklist);
+    expect(parsed._completion.by_name).toBe('Mario Rossi');
+  });
+
   it('in update conserva il timbro già in DB, non quello del client', async () => {
     const persisted = JSON.stringify({
       ...allChecked(),
