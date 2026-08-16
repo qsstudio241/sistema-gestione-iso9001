@@ -9,6 +9,7 @@ const logger = require('../utils/logger');
 const workflow = require('../services/contractReviewWorkflow.service');
 const crNotify = require('../services/contractReviewNotification.service');
 const contextBuilder = require('../services/aiContextBuilder.service');
+const { mergeIdentifiedStandards, canonicalizeFieldKey } = require('../data/capitolatoMaterialKeys');
 const { chat, getActiveProvider } = require('../services/aiProviderAdapter');
 const { enrichSystemPromptWithOrganization } = require('../services/aiOrganizationContext.service');
 const { parseCompanyId, companyBelongsToOrg } = require('../services/qualificationCompany.service');
@@ -1485,7 +1486,8 @@ async function persistTextAnalysis({ caseId, organizationId, userId, provider, s
             ? suggestion.identified_requirements
             : [];
         for (const r of requirements) {
-            const fieldKey = r.ref != null ? String(r.ref).substring(0, 100) : null;
+            const fieldKey = canonicalizeFieldKey(r.field_key)
+                || (r.ref != null ? String(r.ref).substring(0, 100) : null);
             const valueText = r.description != null ? String(r.description) : null;
             await query(
                 `
@@ -1550,6 +1552,19 @@ async function analyzeRequirements(req, res) {
             suggestion = { raw: result.content };
         }
 
+        if (suggestion && !suggestion.raw) {
+            suggestion.identified_standards = mergeIdentifiedStandards(
+                suggestion.identified_standards,
+                capitolatoText,
+            );
+            if (Array.isArray(suggestion.identified_requirements)) {
+                suggestion.identified_requirements = suggestion.identified_requirements.map((r) => ({
+                    ...r,
+                    field_key: canonicalizeFieldKey(r.field_key) || null,
+                }));
+            }
+        }
+
         // Persistenza sul caso (riuso tabelle migr. 101, source='text'): l'analisi sopravvive
         // al riaccesso e alimenta il riesame definitivo. Difensiva: non blocca la risposta.
         const analysisId = await persistTextAnalysis({
@@ -1558,7 +1573,9 @@ async function analyzeRequirements(req, res) {
             userId,
             provider,
             suggestion,
-            rawContent: result.content,
+            rawContent: suggestion && !suggestion.raw
+                ? JSON.stringify(suggestion)
+                : result.content,
         });
 
         return res.json({

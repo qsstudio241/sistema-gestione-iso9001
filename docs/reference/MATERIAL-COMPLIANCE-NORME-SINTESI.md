@@ -144,7 +144,6 @@ Dettaglio perché (non l’elenco §2 intero della 10025-2): 10025-2 **non** cop
 
 ## Prossimi passi consigliati
 
-1. **ISO-3** (capitolato): estendere il prompt di `caseTextAnalysis` / `aiContextBuilder` con le chiavi sopra (incluso `material_role` e `filler_designation`) + elenco norme. Persistenza già coperta da mig. 116: non serve nuova tabella.
-2. **MC-0**: ✅ spec [DATA_MODEL](../specs/MATERIAL_COMPLIANCE_DATA_MODEL.md) / [UI](../specs/MATERIAL_COMPLIANCE_UI.md) / [API](../specs/MATERIAL_COMPLIANCE_API.md) — base e apporto sulla stessa riga.
-3. **MC-1**: migration tabelle proposte nel DATA_MODEL (prossimo NNN libero).
-4. **MC-2**: seed soglie da [EN 10025-2](EN-10025-2-acciai-strutturali.md) **dopo dichiarazione fonti**. Tubi e soglie apporto: skip finché le norme prodotto non sono in Markdown.
+1. **ISO-3** (capitolato): ✅ prompt `caseTextAnalysis` / `aiContextBuilder` + merge norme citate nel testo. Persistenza mig. 116.
+2. **MC-1**: migration tabelle proposte nel DATA_MODEL (prossimo NNN libero).
+3. **MC-2**: seed soglie da [EN 10025-2](EN-10025-2-acciai-strutturali.md) **dopo dichiarazione fonti**. Tubi e soglie apporto: skip finché le norme prodotto non sono in Markdown.
