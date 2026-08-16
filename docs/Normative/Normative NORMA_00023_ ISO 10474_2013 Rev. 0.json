@@ -1,0 +1,146 @@
+[
+  {
+    "standard_code": "ISO_10474_2013",
+    "clause_ref": "1",
+    "clause_title": "Scope 1",
+    "requirement_text": "........................................................................................................................................................................................................................................"
+  },
+  {
+    "standard_code": "ISO_10474_2013",
+    "clause_ref": "2",
+    "clause_title": "Normative references 1",
+    "requirement_text": "................................................................................................................................................................................................................................."
+  },
+  {
+    "standard_code": "ISO_10474_2013",
+    "clause_ref": "3",
+    "clause_title": "Terms and definitions 1",
+    "requirement_text": "......................................................................................................................................................................................"
+  },
+  {
+    "standard_code": "ISO_10474_2013",
+    "clause_ref": "4",
+    "clause_title": "Inspection documents based on non-specific inspection 2",
+    "requirement_text": "..................................................................................................................................................................................... .......................................................................................... 4.1 Declaration of compliance with the order “2.1” .........................................................................................................2"
+  },
+  {
+    "standard_code": "ISO_10474_2013",
+    "clause_ref": "5",
+    "clause_title": "Inspection documents based on specific inspection 2",
+    "requirement_text": "4.2 Test report “2.2” .....................................................................................................................................................................................2 ....................................................................................................... 5.1 Inspection certificate 3.1 ................................................................................................................................................................2"
+  },
+  {
+    "standard_code": "ISO_10474_2013",
+    "clause_ref": "6",
+    "clause_title": "Inspection documents supplied by an intermediary 3",
+    "requirement_text": "5.2 Inspection certificate 3.2 ................................................................................................................................................................2"
+  },
+  {
+    "standard_code": "ISO_10474_2013",
+    "clause_ref": "7",
+    "clause_title": "Validation of inspection documents 3",
+    "requirement_text": "......................................................................................................"
+  },
+  {
+    "standard_code": "ISO_10474_2013",
+    "clause_ref": "8",
+    "clause_title": "Summary of documents 3",
+    "requirement_text": "................................................................................................................................................. Bibliography 4 ................................................................................................................................................................................. ................................................................................................................................................................................................................................ © ISO 2013 – All rights reserved iii"
+  },
+  {
+    "standard_code": "ISO_10474_2013",
+    "clause_ref": "1",
+    "clause_title": "Scope",
+    "requirement_text": "This International Standard defines the different types of inspection documents supplied to the purchaser, in accordance with the requirements of the order, for the delivery of steel products. This International Standard is to be used in conjunction with other International Standards which specify the general technical delivery conditions: — for steel and steel products, see ISO 404; — for steel castings, see ISO 4990. NOTE This International Standard can also apply to other products."
+  },
+  {
+    "standard_code": "ISO_10474_2013",
+    "clause_ref": "2",
+    "clause_title": "Normative references",
+    "requirement_text": "The following referenced documents are indispensable for the application of this document. For dated references, only the edition cited applies. For undated references, the latest edition of the referenced document (inclSutdeeinl ga nadn yst aemel epnrdomduecnttss —) a pGpenlieersa.l technical delivery requirements ISO 404:20S1te3e, l castings — General technical delivery requirements ISO 4990,"
+  },
+  {
+    "standard_code": "ISO_10474_2013",
+    "clause_ref": "3",
+    "clause_title": "Terms and definitions",
+    "requirement_text": "F3o.1r the purposes of this document, the following terms and definitions apply. non-specific inspection inspection carried out by the manufacturer in accordance with his own procedures, to verify that products made by the same manufacturing process meet the requirements of the order"
+  },
+  {
+    "standard_code": "ISO_10474_2013",
+    "clause_ref": "4",
+    "clause_title": "Inspection documents based on non-specific inspection",
+    "requirement_text": ""
+  },
+  {
+    "standard_code": "ISO_10474_2013",
+    "clause_ref": "4.1",
+    "clause_title": "Declaration of compliance with the order “2.1”",
+    "requirement_text": "Document issued by the manufacturer declaring that the products supplied comply with the requirements of the order, without test results."
+  },
+  {
+    "standard_code": "ISO_10474_2013",
+    "clause_ref": "4.2",
+    "clause_title": "Test report “2.2”",
+    "requirement_text": "Document issued by the manufacturer declaring that the products supplied comply with the requirements of the order and in which test results are supplied based on non-specific inspection. NOTE In nations or districts where submission of inspection certificate 2.3 of ISO 10474:1991 is specified in product standards, 2.3 can be used until the product standard is revised."
+  },
+  {
+    "standard_code": "ISO_10474_2013",
+    "clause_ref": "5",
+    "clause_title": "Inspection documents based on specific inspection",
+    "requirement_text": ""
+  },
+  {
+    "standard_code": "ISO_10474_2013",
+    "clause_ref": "5.1",
+    "clause_title": "Inspection certificate 3.1",
+    "requirement_text": "Document issued by the manufacturer declaring that the products supplied comply with the requirements of the order and in which test results are supplied from specific inspection. The test unit and the tests carried out are defined by the product specification and/or the order. It shall be permissible for the manufacturer to transfer to the inspection certificate 3.1 relevant test results obtained by specific inspection on primary incoming products provided that the manufacturer operates traceability procedures and can provide the corresponding inspection documents required. The document shall be validated by the manufacturer’s authorized inspection representative, independent of the manufacturing department. NOTE 1 In ISO 10474:1991, replaced by the current edition, the designation for this document is 3.1.B. NOTE 2 In nations or districts where submission of inspection certificate 3.1 B is specified in product standards, 3.1B instead of 3.1 can be used."
+  },
+  {
+    "standard_code": "ISO_10474_2013",
+    "clause_ref": "5.2",
+    "clause_title": "Inspection certificate 3.2",
+    "requirement_text": "Document issued by the manufacturer declaring that the products supplied comply with the requirements of the order and in which test results are supplied from specific inspection. The test unit and the tests carried out are defined by the product specification and/or the order. It shall be permissible for the manufacturer to transfer to the inspection certificate 3.2 relevant test results obtained by specific inspection on primary incoming products provided that the manufacturer operates traceability procedures and can provide the corresponding inspection documents required. The inspection certificate shall be validated by both the manufacturer’s authorized representative and the purchaser’s authorized representative or by an inspector designated by a third party. © ISO 2013 – All rights reserved"
+  },
+  {
+    "standard_code": "ISO_10474_2013",
+    "clause_ref": "6",
+    "clause_title": "Inspection documents supplied by an intermediary",
+    "requirement_text": ""
+  },
+  {
+    "standard_code": "ISO_10474_2013",
+    "clause_ref": "7",
+    "clause_title": "Validation of inspection documents",
+    "requirement_text": ""
+  },
+  {
+    "standard_code": "ISO_10474_2013",
+    "clause_ref": "8",
+    "clause_title": "Summary of documents",
+    "requirement_text": ""
+  },
+  {
+    "standard_code": "ISO_10474_2013",
+    "clause_ref": "2.1",
+    "clause_title": "tion of compliance with the",
+    "requirement_text": "with the order order without test results Non-specific Manufacturer’s declara- The manufacturer tion of compliance with"
+  },
+  {
+    "standard_code": "ISO_10474_2013",
+    "clause_ref": "2.2",
+    "clause_title": "Test report the order, with test results",
+    "requirement_text": "based on non-specific inspection The manufacturer’s authorized inspection"
+  },
+  {
+    "standard_code": "ISO_10474_2013",
+    "clause_ref": "3.1",
+    "clause_title": "Inspection certificate 3.1 representative independent of the manufacturing department",
+    "requirement_text": "Manufacturer’s declaration of compliance with The manufacturer’s Specific the order, with test results authorized inspecbased on specific inspection tion representative and either purchaser’s"
+  },
+  {
+    "standard_code": "ISO_10474_2013",
+    "clause_ref": "3.2",
+    "clause_title": "Inspection certificate 3.2",
+    "requirement_text": "authorized representative or by an inspector designated by a third party. © ISO 2013 – All rights reserved\n\n| Standard desig- nation | Name of the document | Type of inspec- tion | Contents of document | Document validated by |\n| --- | --- | --- | --- | --- |\n|  | Declaration of compliance | Non-specific | Manufacturer’s declara- | The manufacturer |\n| 2.1 2.2 | with the order Test report |  | tion of compliance with the order without test results Manufacturer’s declara- tion of compliance with the order, with test results |  |\n| 3.1 | Inspection certificate 3.1 | Specific | based on non-specific inspection Manufacturer’s declara- tion of compliance with the order, with test results based on specific inspection | The manufacturer’s authorized inspection representative inde- |\n| 3.2 | Inspection certificate 3.2 |  |  | pendent of the manufac- turing department The manufacturer’s authorized inspec- tion representative and either purchaser’s authorized representa- tive or by an inspector |"
+  }
+]
