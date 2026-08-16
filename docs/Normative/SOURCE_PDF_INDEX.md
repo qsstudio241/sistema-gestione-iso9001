@@ -24,6 +24,7 @@ reale scelto, es. `C:\NormeISO_PDF\` oppure una cartella dentro OneDrive):
   ISO-96xx-patentini\         # qualifiche saldatori/operatori (9606, 14732, 9712...)
   ISO-156xx-WPS-WPQR\         # WPS/WPQR (15609, 15614...)
   ISO-consumabili-parametri\  # gas (14175), fili (14341), temperature (13916)...
+  EN-10204-certificati\       # 10204, 10168, 10474, 404, 6929, facsimile MTC
   altre-norme\                # ASME, DIN, quaderni tecnici, ecc.
 ```
 
@@ -46,6 +47,13 @@ reale scelto, es. `C:\NormeISO_PDF\` oppure una cartella dentro OneDrive):
 | ISO 14341:2020 | `Normative NORMA_00016_...md/.json` | `ISO-consumabili-parametri\UNI EN ISO 14341_2020.pdf` | |
 | ISO 9606-1:2017 | `Normative NORMA_00018_...md/.json` | `ISO-96xx-patentini\BS EN ISO 9606-1_2017.pdf` | Numero 00017 saltato (collisione due agenti paralleli, sessione 26/07/2026) |
 | ISO 15614-1:2017 | `Normative NORMA_00019_...md/.json` | `ISO-156xx-WPS-WPQR\BS EN ISO 15614-1_2017.pdf` | |
+| UNI EN 10168:2005 | `Normative NORMA_00020_...md/.json` | `EN-10204-certificati\UNI EN 10168 Ed.2005 steel docs.pdf` | Digitalizzato 16/08/2026 |
+| EN 10168:2004 (EN) | `Normative NORMA_00021_...md/.json` | `EN-10204-certificati\EN 10168 steel docs.pdf` | Stessa norma, testo BSI inglese |
+| UNI EN 10204:2005 | `Normative NORMA_00022_...md/.json` | `EN-10204-certificati\EN 10204 Ed 2005 (Commented).pdf` | Edizione commentata UNI |
+| ISO 10474:2013 | `Normative NORMA_00023_...md/.json` | `EN-10204-certificati\ISO 10474 - 2013.pdf` | Equivalente acciaio di EN 10204 |
+| ISO 6929:2013 | `Normative NORMA_00024_...md/.json` | `EN-10204-certificati\ISO 6929-2013.pdf` | Vocabolario forme prodotto |
+| ISO 404:2013+A1:2022 | `Normative NORMA_00025_...md/.json` | `EN-10204-certificati\BS ISO 404-2013 + A1-2022.pdf` | Due PDF identici in consegna; uno solo convertito |
+| Facsimile MTC 3.1/3.2 | `MTC_Type_3.1_FAC_SIMILE.md/.json` | `EN-10204-certificati\MTC Type 3.1 FAC SIMILE.pdf` | Filename 3.1, contenuto 3.2 |
 | ISO 9712:2012 | *(nessun `.md` ancora — backlog RC-7)* | `ISO-96xx-patentini\UNI EN ISO 9712_2012.pdf` | **PDF era committato per errore in Git — vedi nota sotto** |
 | ISO 19011:2018 | *(nessun `.md` ancora)* | `ISO-96xx-patentini\UNI EN ISO 19011_2018_ITA.pdf` | **PDF era committato per errore in Git — vedi nota sotto** |
 
