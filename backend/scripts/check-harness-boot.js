@@ -33,7 +33,9 @@ const ALWAYS_APPLY_RULES = [
 const SCENARIOS = [
   {
     id: 'company_profile',
-    brief: 'docs/agent-tasks/DEPUTYTASK.md',
+    // DEPUTYTASK.md è riusato per la slice APERTA (oggi SAL S1a). Lo scenario
+    // deve restare su un file stabile del modulo, non sul brief corrente.
+    brief: 'docs/adr/ADR-018-company-profile-conformita-legislativa.md',
     compassRe: /profilo azienda|company_profile/i,
     mustOpen: [
       'docs/adr/ADR-018-company-profile-conformita-legislativa.md',

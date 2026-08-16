@@ -33,6 +33,8 @@ Requisiti interni azienda (KB companies/<slug>/)
 Per ogni grandezza confrontata (ReH, Rm, KV, CEV, …) **prevale il requisito più restrittivo** tra i livelli applicabili.  
 L’esito finale del certificato è **NON CONFORME** se **anche un solo** livello applicabile fallisce (dopo aggregazione del più restrittivo sul campo).
 
+**HITL committente 16/08/2026:** confermato. L’agente specializzato deve usare questa gerarchia in base all’Ambito utente (azienda) e ai documenti di origine esterna **pertinenti** (ordine/DDT, specifica cliente, criteri interni). Livello non presente nello scope → `skip`. Il 3.1 non si auto-valuta: è evidenza, non fonte del requisito.
+
 ### Output obbligatorio per ogni check
 
 | Campo | Significato |

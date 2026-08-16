@@ -1,9 +1,10 @@
 # Piano slice — Material Compliance AI
 
-> **Obiettivo**: portare il modulo da fondazione documentale a MVP usabile (PDF testo → estrazione → Rule Engine → HITL), riusando ingest/AI/RBAC esistenti.  
+> **Obiettivo**: portare il modulo da fondazione documentale a MVP usabile (scansione/PDF → estrazione → Rule Engine → HITL), riusando ingest qualifiche/WPQR + OCR.  
 > **Spec**: [`MODULO_MATERIAL_COMPLIANCE_AI.md`](../specs/MODULO_MATERIAL_COMPLIANCE_AI.md)  
 > **ADR**: 020–024  
 > **Brief fondazione (MC-0)**: [`DEPUTYTASK_MATERIAL_COMPLIANCE_AI_FOUNDATION.md`](DEPUTYTASK_MATERIAL_COMPLIANCE_AI_FOUNDATION.md)  
+> **Ponte 3834**: §11–13 del [PLAN_3834_SLICES.md](PLAN_3834_SLICES.md) — niente CRUD consumabili nel modulo saldatura  
 > **Branch base**: `main`  
 > **Migrazioni**: numerazione condivisa da `database/migrations/` — oggi ultimo ≥138; MC-1 userà il **prossimo libero** al momento dell’implementazione (non riservare numeri in anticipo se altre PR avanzano).
 
@@ -12,15 +13,46 @@
 ## Si può fare?
 
 **Sì, a slice verticali.** Non in un unico commit.  
-Ordine consigliato: **MC-0 → MC-1 → MC-2 → MC-3 → MC-4 → MC-5 → MC-6**.  
-MC-B e MC-7 dopo feedback sul MVP-A.
+**HITL 16/08/2026 (committente):** i certificati sono di solito **scansioni**; l’agente deve estrarre i valori e imparare dalle correzioni. Il modello ingest qualifiche/WPQR (schema → revisione umana → commit → feedback) è **valido e da riusare**, non da rifare. OCR: riusare `ocrExtractor` / `documentTextExtractor` (SAL S1a lo sta collegando) — **non** un secondo motore.
+
+**Norme e campi da estrarre (HITL 16/08, chiusura):** il committente **fornirà in seguito** le normative. Da quelle si fanno i Markdown in `knowledge/material-compliance/standards/` (e il dizionario campi). **Non** inventare schema di estrazione né seed di norma prima di quei file. L’agente specializzato (MC-0 in poi sul contenuto tecnico) parte **dopo** la consegna delle norme, non ora. La griglia elenco (DDT + anagrafica) resta valida come UI; i campi di laboratorio (chimica, ReH, CEV, …) li fissa la norma consegnata.
+
+**Conformità = norma + documenti di origine esterna pertinenti (HITL 16/08, sì):** l’agente **non** valuta il 3.1 solo contro la norma materiale. Applica la gerarchia [ADR-021](../adr/ADR-021-material-requirements-hierarchy.md) in base all’**Ambito** (azienda) e, se c’è, a DDT/ordine/cliente/commessa. Un livello assente nello scope = `skip`, non un fail. I Markdown KB copriranno `standards/` **e** (quando il committente li consegna) `customers/` + `companies/<slug>/`. Il certificato è la **prova**; i requisiti stanno sempre in documenti esterni al certificato (norma, ordine, specifica cliente, criteri azienda).
+
+Ordine consigliato: **MC-0 → MC-1 → MC-2 → MC-3 → MC-4 → MC-B → MC-5 → MC-6 → MC-7**.  
+MC-B (OCR) **non** è più post-MVP: senza testo i certificati reali non si leggono.
 
 ### Fuori scope MVP-A
 
-- OCR scansioni (MC-B)
 - Dashboard KPI / editor KB in UI
 - PPAP, verniciatura, scorecard fornitore
 - Nuova chiave licenza dedicata (solo seam → `saldatura` + `ai_import`)
+- Registro PWHT / trattamenti come primo certificato (dopo 3.1 stabile)
+
+## Griglia elenco (HITL 16/08 — committente, **confermata**)
+
+**Sì**: una tab/pagina elenco (copia `QualificationsPage` + `SgqDataGrid`, non un look nuovo) con **riferimento al DDT** e anagrafica materiale. Un DDT può avere più righe/certificati. Colonne sotto **chiuse** (16/08, «Sembra OK»).
+
+### Colonne in griglia (MVP)
+
+| Colonna | Perché |
+|---------|--------|
+| N. DDT | Ponte arrivo merce ↔ certificato (rintracciabilità §12/§17) |
+| Data DDT | Ordine cronologico in accettazione |
+| N. certificato 3.1 | Identificativo del PDF |
+| Materiale (designazione) | Anagrafica (es. S355J2, S235JR) |
+| Colata | Chiave di rintracciabilità in officina |
+| Forma | Piastra / tubo / profilo / lamiera |
+| Dimensioni | Spessore e/o Ø e/o lunghezza (una cella compatta) |
+| Norma | EN 10025-2, EN 10219, … |
+| Fornitore / acciaieria | Chi ha emesso il 3.1 |
+| Esito | In revisione / conforme / non conforme |
+
+### Non in griglia (solo scheda dettaglio, al click)
+
+Analisi chimica, prove meccaniche (ReH, Rm, A%, KV), CEV, trattamento termico, quantità/peso, PDF, note operatore. **Commessa** = ponte dopo (come NC↔commessa), non colonna obbligatoria del primo elenco.
+
+MC-0/MC-1/MC-5 devono prevedere questi campi (DDT era assente dalla lista spec del 05/08).
 
 ---
 
@@ -30,13 +62,13 @@ MC-B e MC-7 dopo feedback sul MVP-A.
 |-------|------|-----------|------------|
 | **MC-0** | Spec tecniche | DATA_MODEL / UI / API md | — |
 | **MC-1** | Schema DB | `database/migrations/NNN_*.sql` + `run-migration-NNN-vps.js` | MC-0 |
-| **MC-2** | KB seed + loader | `knowledge/material-compliance/**` + service load | MC-0 |
+| **MC-2** | KB seed + loader | `knowledge/material-compliance/**` da **norme consegnate dal committente** (PDF → MD, skill `pdf-to-json`) + loader | MC-0 + HITL norme |
 | **MC-3** | Rule Engine | service puro + test L1 | MC-2 |
 | **MC-4** | API | routes/controller/services; riuso extract | MC-1, MC-3 |
 | **MC-5** | UI MVP | lista + dettaglio + azioni HITL | MC-4 |
 | **MC-6** | Licenza + audit AI + disclaimer | seam + `logAiInteraction` + `AiDisclaimer` | MC-4/5 |
-| **MC-B** | OCR adapter | provider configurabile | MC-4 |
-| **MC-7** | Registry + lessons | commit documento + feedback | MC-5 |
+| **MC-B** | OCR su scan (riuso `documentTextExtractor` / `ocrExtractor`, non un secondo motore) | MC-4 |
+| **MC-7** | Registry + lessons (stesso anello feedback di qualifiche/WPQR) | MC-5 |
 
 ---
 
@@ -55,9 +87,9 @@ Aggiornare questa mappa se emergono vincoli nuovi.
 ### DoD
 
 - [ ] Tre file spec presenti, UTF-8, linkati dalla MODULO
-- [ ] Entità minime definite: certificato, check_result, (opz.) requirement_snapshot
+- [ ] Entità minime definite: certificato (con **n. DDT** + data DDT), check_result, (opz.) requirement_snapshot
 - [ ] Nessun hardcode cliente; path KB come ADR-023
-- [ ] OCR esplicitamente **fuori** MVP-A
+- [ ] OCR: in MVP (MC-B dopo extract), riuso estrattore esistente — non «fuori scope»
 
 ### Test L1
 
