@@ -2,7 +2,7 @@
 
 > **Destinazione**: in app, l’utente (studio o cliente pagante) vede e interroga **i fatti del solo Ambito attivo** — NC, scadenze, gap — senza un secondo sistema Claude e senza mescolare i clienti. La chat esistente (`/ai-assistant`) diventa consumatore di quei fatti, non un cervello parallelo.
 > **Spec / ADR**: [ADR-010](../adr/ADR-010-ai-agentic-architecture.md) (licenze, audit trail, HITL) · [SAL §K](../specs/MODULO_SAL_SCOPO_E_ROADMAP.md) (AI = consumatore del motore gap, isolamento `organization_id` + `company_id`) · Ambito unico (`CompanyScopeSelect`)
-> **Brief attivo**: [`DEPUTYTASK2.md`](DEPUTYTASK2.md) — slice **SB-1** (APERTO). **Non** usare `DEPUTYTASK.md` (occupato da SAL S1a).
+> **Brief attivo**: [`DEPUTYTASK2.md`](DEPUTYTASK2.md) — slice **SB-1** (**CHIUSO**). Prossima: SB-2. **Non** usare `DEPUTYTASK.md` (occupato da SAL S1a).
 > **Mappa creata**: 16/08/2026 (Lead wayfinder A — Chart the map; nessuna implementazione in questa sessione)
 > **Fonte intuizione**: masterclass AIOS (Fontanella) — adottare i *livelli* (contesto / dati / intelligence / automazioni / controllo) **dentro** il prodotto, non una cartella Claude parallela.
 
@@ -38,6 +38,8 @@
 ---
 
 ## Decisioni già prese (16/08/2026, committente + Lead)
+
+- **SB-1 ✅** — `GET /ai/ambito-facts` + card in Assistente AI; zero LLM; isolamento per `company_id`. Brief CHIUSO.
 
 - **In-app, non Claude**: l’AIOS è il prodotto venduto a studio e clienti paganti
 - **N cervelli, non uno**: isolamento obbligatorio `organization_id` + `company_id` (Ambito). Vietato un ricordo unico «studio + tutti i clienti»

@@ -145,6 +145,7 @@
                                      "src/services/commercialCustomerCounterparty.service.js",
                                      "src/services/drawingExtraction.service.js",
                                      "src/services/aiOrganizationContext.service.js",
+                                     "src/services/ambitoFacts.service.js",
                                      "src/services/documentTextExtractor.service.js",
                                      "src/services/knowledgeIndexer.service.js",
                                      "src/services/alertMail.service.js",

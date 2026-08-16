@@ -1,7 +1,8 @@
 # DEPUTYTASK2 — Second Brain SB-1: snapshot fatti per Ambito (zero LLM)
 
-**Stato:** APERTO  
+**Stato:** CHIUSO — TEST OK  
 **Aperto:** 16/08/2026 (Lead wayfinder — Chart the map Second Brain)  
+**Chiuso:** 16/08/2026 — SB-1 implementata (dopo deputy FIX NON APPLICABILI: brief non era su `main`)  
 **Piano:** [`PLAN_SECOND_BRAIN_SLICES.md`](PLAN_SECOND_BRAIN_SLICES.md)  
 **Spec / ADR:** [ADR-010](../adr/ADR-010-ai-agentic-architecture.md) · `aiCompanyScope.service.js`  
 **Rischio:** Medio — PR + gate Bugbot; **non** push su `main`; **non** toccare `DEPUTYTASK.md` (SAL S1a)
@@ -58,6 +59,11 @@ cd app && npm run build
 
 (Adatta i path d’ingresso test a come è lanciata la suite backend nel repo — non inventare un runner nuovo.)
 
-### Esito atteso
+### Esito
 
-PR draft con i file della slice. Aggiornare questo brief a **CHIUSO** + riga in «Decisioni già prese» del PLAN. Non aprire SB-2 nella stessa sessione.
+- Service `ambitoFacts.service.js` + GET `/ai/ambito-facts` (licenza `ai_chat`, no `logAiInteraction`)
+- Card `AmbitoFactsBar` in `AiAssistantPage` (classi `.sq-stat`)
+- Jest: ambitoFacts + getAmbitoFacts 15 verdi; Vitest AmbitoFactsBar 2 verdi
+- Deputy precedente: **FIX NON APPLICABILI** (su `main` c’era ancora il brief licenze CHIUSO). Lezione: brief APERTO deve essere su `origin/main` prima di lanciare il deputy.
+
+Prossima slice: **SB-2** (Ambito header = unico input). Non aperta in questo brief.

@@ -28,7 +28,7 @@ Audit multi-standard (9001/14001/45001) · Non Conformità (workflow ISO 10.2 co
 
 **Lead wayfinder — ISO 3834 HITL 16/08** (solo doc, mergiata [PR #437](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/437)): §5.3 senza blocco; Word RDP Mason; livelli 2/3/4 = meno schermate dopo, partenza senza filtri; certificati = griglia DDT+anagrafica. Conformità = norma + documenti esterni pertinenti all’Ambito (ADR-021).
 
-**Lead wayfinder — Second Brain / Assistente di Ambito** (16/08, solo mappa): l’AIOS va **in app** (N cervelli per Ambito, non un Claude parallelo). **SB-1** = fatti live. **CTX-0…3** = wizard contesto su Il mio Studio / anagrafica (intervista + score vs rubrica; web pubblico; email/Drive solo dopo opt-in). Brief [`DEPUTYTASK2.md`](agent-tasks/DEPUTYTASK2.md) **APERTO** su SB-1. Non sovrascrivere [`DEPUTYTASK.md`](agent-tasks/DEPUTYTASK.md) (SAL S1a).
+**Second Brain SB-1** (16/08): snapshot fatti Ambito (NC / qualifiche / documenti, zero LLM) in Assistente AI. Brief [`DEPUTYTASK2.md`](agent-tasks/DEPUTYTASK2.md) **CHIUSO**. Prossima: SB-2. Non sovrascrivere [`DEPUTYTASK.md`](agent-tasks/DEPUTYTASK.md) (SAL S1a).
 
 **In parallelo — SAL AI evidenze**: mappa [`PLAN_SAL_AI_EVIDENCE_SLICES.md`](agent-tasks/PLAN_SAL_AI_EVIDENCE_SLICES.md). Brief [`DEPUTYTASK.md`](agent-tasks/DEPUTYTASK.md) **APERTO** su slice **S1a**. Non sovrascrivere.
 

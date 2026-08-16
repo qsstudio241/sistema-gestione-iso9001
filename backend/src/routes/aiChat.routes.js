@@ -22,6 +22,14 @@ router.post(
   ctrl.aiReindex
 );
 
+// GET /ai/ambito-facts — snapshot fatti Ambito (licenza ai_chat, zero LLM)
+router.get(
+  '/ai/ambito-facts',
+  authenticate,
+  requireLicensedModule('ai_chat'),
+  ctrl.getAmbitoFacts
+);
+
 // GET /ai/knowledge-health — KPI salute knowledge base (solo admin)
 router.get(
   '/ai/knowledge-health',
