@@ -1,84 +1,63 @@
-# DEPUTYTASK2 — Chiarezza "Licenze moduli per studio" (badge + campo piano abbonamento)
+# DEPUTYTASK2 — Second Brain SB-1: snapshot fatti per Ambito (zero LLM)
 
-**Stato:** CHIUSO — TEST OK (S1 + S2 implementati)
-**Priorità:** P2 — chiarezza UI segnalata dal committente (11/08/2026), nessun bug funzionale bloccante
-**Branch base:** `main`
-**Creato da:** Lead 11/08/2026
-**Chiuso da:** Deputy 11/08/2026 — vedi esito sotto
+**Stato:** APERTO  
+**Aperto:** 16/08/2026 (Lead wayfinder — Chart the map Second Brain)  
+**Piano:** [`PLAN_SECOND_BRAIN_SLICES.md`](PLAN_SECOND_BRAIN_SLICES.md)  
+**Spec / ADR:** [ADR-010](../adr/ADR-010-ai-agentic-architecture.md) · `aiCompanyScope.service.js`  
+**Rischio:** Medio — PR + gate Bugbot; **non** push su `main`; **non** toccare `DEPUTYTASK.md` (SAL S1a)
 
-> **Allineamento Git (autonomo)**: prima di leggere questo brief eseguire `git fetch origin main` e `git pull origin main` (o partire da `origin/main` aggiornato). **Non** chiedere al committente di farlo.
-
----
-
-## Contesto (leggere prima)
-
-Il committente, guardando la pagina "Gestione utenti" → sezione "Licenze moduli per studio" (`app/src/components/UsersAdminPage.jsx`), ha notato due incoerenze visive. Non sono bug bloccanti (nessun dato è a rischio), ma generano confusione — vanno chiarite con fix minimi, senza toccare la logica di licensing esistente né il provisioning nuovo studio (PR #382/#384, già mergiate o in review separata).
-
-**File coinvolto**: solo `app/src/components/UsersAdminPage.jsx` (+ eventualmente `.css` per lo stile del badge/hint) e il relativo test `app/src/tests/usersAdminPage.test.jsx`. Nessun file backend, nessuna migrazione.
-
-## Cosa NON toccare
-
-- `backend/src/services/moduleLicense.service.js` / `app/src/utils/licenseUtils.js` (logica di licensing runtime — invariata).
-- `createAuditorOrg` / `inviteFirstStudioAdmin` (PR #382/#384) — non fanno parte di questo brief.
-- Il campo `subscription_plan` resta **non collegato** a nessuna logica di gating moduli — questo brief lo rende solo più chiaro all'utente, non lo attiva.
+> **Allineamento Git (autonomo)**: `git fetch origin main` e partire da `origin/main` aggiornato. Non chiedere al committente.
 
 ---
 
-## Slice S1 — Badge "Tutti i moduli" coerente anche per elenchi espliciti equivalenti
+## Slice unica di questa sessione: SB-1
 
-**Comportamento attuale (bug di chiarezza)**: il badge "Tutti i moduli (default)" (riga ~920-923 di `UsersAdminPage.jsx`) compare **solo** quando `licensed_modules` è `NULL` nel DB. Gli studi **Mason** ed **ERAM** hanno invece un array esplicito che, verificato in produzione (11/08/2026), contiene già tutti i 15 moduli attuali (incluso `cnd`, aggiunto in PR #380) — quindi hanno **lo stesso accesso effettivo** di uno studio "default", ma non mostrano alcun badge. Al.project e QS_Studio (licensed_modules `NULL`) mostrano il badge. Risultato: due studi con accesso identico appaiono diversi in UI, confondendo il committente/futuri admin.
+**Obiettivo**: un GET che, dato l’Ambito azienda, restituisce tre conteggi **vivi dal DB** (non dal RAG). Una card in Assistente AI li mostra. **Nessuna chiamata LLM.**
 
-**Cosa fare:**
-1. Calcolare se l'elenco esplicito (`effectiveMods` quando non è `null`) contiene **tutti** i key di `ALL_MODULE_KEYS` (confronto per uguaglianza di insieme, non solo lunghezza — usare `Set`).
-2. Se sì: mostrare comunque un badge equivalente, ma **senza** la parola "(default)" (perché non è il valore NULL non toccato, è una scelta esplicita salvata) — es. testo `"Tutti i moduli"` con classe CSS leggermente diversa (es. `org-license-badge full` invece di `default`) per permettere in futuro una distinzione visiva se utile, oppure riusare la stessa classe `default` se si preferisce trattarli come visivamente identici (decisione a discrezione del deputy, purché documentata nel commit — nessuna preferenza forte dal Lead, l'importante è che il badge compaia in entrambi i casi).
-3. Non toccare la logica di `useDefault` esistente (continua a controllare se i checkbox partono tutti spuntati) — questo è solo un secondo controllo per la visualizzazione del badge.
+Questo è il «hello world» del second brain: il sistema *mostra* i fatti dell’azienda, prima di *parlarne*.
 
-**DoD:** Vitest — nuovo caso che monta la pagina con un `auditorOrgs` mock dove uno studio ha `licensed_modules` esplicito ma completo (tutti i 15 key) e verifica che il badge compaia comunque; un test esistente con elenco esplicito **parziale** deve continuare a NON mostrare alcun badge (nessuna regressione). `npm run build` OK.
+### Contesto (non riscrivere)
 
----
+- Chat già esiste: `POST /ai/chat`, pagina `AiAssistantPage.jsx`, licenza `ai_chat`
+- Scope già esiste: `resolveAiCompanyScope` (cliente forzato sulla sua azienda; studio può passare `companyId`)
+- Conteggio già esistono in moduli sparsi (`getNcStats`, `getQualificationStats`, `getDocumentStats`) — **non** fare N round-trip dal frontend; un service unico lato server
+- Ambito UI: `CompanyScopeContext` / `resolveAppCompanyScope` — la card legge lo stesso Ambito dell’header
 
-## Slice S2 — Nota di chiarezza sotto "Piano abbonamento" nel form "Nuovo studio"
+### DoD
 
-**Comportamento attuale (bug di chiarezza)**: nel form "+ Nuovo studio" (righe ~875-895), il menu a tendina "Piano abbonamento" (Standard/Premium/Trial) è l'unico altro campo oltre ai dati anagrafici. Il committente si aspetta ragionevolmente che scegliere un piano determini i moduli abilitati — verificato nel codice (backend e frontend): **non è così**, `subscription_plan` è salvato in `auditor_orgs.subscription_plan` ma **nessuna** logica lo legge per decidere quali moduli attivare. Ogni nuovo studio nasce sempre con tutti i moduli attivi, indipendentemente dal piano scelto; i moduli si personalizzano solo con le checkbox nella riga dello studio, dopo la creazione.
+1. Service puro `backend/src/services/ambitoFacts.service.js`:
+   - input: `user` + `companyId` già risolto (o null)
+   - se `companyId` assente → `{ ready: false, reason: 'seleziona_azienda', counts: null }` (niente query cross-cliente in SB-1)
+   - se presente → `{ ready: true, companyId, companyName, counts: { ncOpen, qualsExpiring30, docsExpiring30 }, generatedAt }`
+   - query scoped `organization_id` / `auditor_org_id` + `company_id`; riusare le **stesse regole di «aperta» / «in scadenza 30gg»** già usate dalle card Qualifiche / NC / Scadenze (non inventare un terzo semaforo)
+2. `GET /ai/ambito-facts?companyId=` su `aiChat.routes.js`: `authenticate` + `requireLicensedModule('ai_chat')` + `resolveAiCompanyScope` (403 se studio fuori ambito). **Non** `logAiInteraction` (non è una chiamata AI)
+3. Frontend: `apiService.getAmbitoFacts` + card in cima a `AiAssistantPage` (classi `.sq-stat` / pattern Qualifiche — **non** CSS nuovo, **non** pagina nuova). Se `ready: false` → testo «Seleziona un’azienda nell’Ambito» (azioni visibili, non smontate)
+4. Test L1:
+   - service: azienda A vs B (stesso org) → conteggi isolati; `companyId` null → `ready: false`
+   - controller: 403 scope negato (stesso pattern di `aiChat.controller.test.js`)
+   - UI: card mostra i tre numeri da mock API
+5. `deploy-manifest.json` aggiornato se si aggiunge il `.js` service
+6. Zero segreti; encoding UTF-8; accenti italiani corretti
 
-**Cosa fare:**
-1. Aggiungere una riga di testo esplicativo subito sotto il `<select>` "Piano abbonamento" (stesso punto dove già esiste il paragrafo `form-hint` con "Il nuovo studio nasce con tutti i moduli abilitati...", righe ~888-891) — o integrare in quel paragrafo esistente — che chiarisca: *"Il piano abbonamento è un'etichetta informativa (es. per fatturazione futura): oggi non modifica quali moduli sono attivi."*
-2. Testo esatto a discrezione del deputy, purché il messaggio sia chiaro, breve, e non tecnico (il committente ha competenze tecniche limitate — vedi tono richiesto in `AGENTS.md`).
-3. Riuso della classe `form-hint` già presente, nessun nuovo stile.
+### Cosa NON toccare
 
-**DoD:** Vitest — verificare che il testo (o una sua sottostringa stabile) sia presente quando il form "Nuovo studio" è aperto. `npm run build` OK.
+- `DEPUTYTASK.md`, `documentTextExtractor`, OCR, SAL
+- `POST /ai/chat` / system prompt (è **SB-3**)
+- Vista «Tutto lo studio» aggregata (è **SB-4**)
+- JWT, sync, migrazioni SQL, nuove tabelle, nuova licenza
+- Knowledge indexer / reindex
+- Home page
 
----
+### Come verificare
 
-## Fuori scope di questo brief
-
-- Collegare realmente `subscription_plan` a un set di moduli predefiniti (decisione di prodotto, non richiesta ora).
-- Qualsiasi modifica al provisioning nuovo studio o all'invito primo admin (PR #382/#384).
-
----
-
-## Verifica chiusura
-
-Alla fine di ogni slice: TEST OK (Vitest mirati + build `app`) oppure FIX NON APPLICABILI con motivo.
-
----
-
-## Esito (Deputy, 11/08/2026) — TEST OK
-
-**S1** — Aggiunto un secondo controllo `isFullExplicit` (confronto per insieme con `Set`/`every`, non solo lunghezza) accanto a `useDefault` esistente (non toccato). Quando l'elenco esplicito contiene tutti i 15 `ALL_MODULE_KEYS`, compare un badge equivalente con classe `org-license-badge full` (nuova, CSS analogo a `.default` ma colore verde per distinguerla in futuro se utile) e testo `"Tutti i moduli"` (senza `"(default)"`, perché è una scelta esplicita salvata, non il valore NULL non toccato). Un elenco esplicito parziale continua a non mostrare alcun badge (verificato con nuovo test di non-regressione).
-
-**S2** — Integrato il paragrafo `form-hint` già esistente sotto il `<select>` "Piano abbonamento" con una frase aggiuntiva: *"Il piano abbonamento è solo un'etichetta informativa (es. per fatturazione futura): oggi non modifica quali moduli sono attivi."* Nessun nuovo stile, riuso della classe esistente.
-
-**Test**: 3 nuovi casi in `app/src/tests/usersAdminPage.test.jsx` (describe `DEPUTYTASK2: chiarezza licenze studio`) — badge su elenco esplicito completo, nessun badge su elenco esplicito parziale, nota informativa visibile nel form. Suite completa `NODE_ENV=test npm run test:run`: 147 file / 1057 test verdi (nessuna regressione). `npm run build`: OK.
-
-**File toccati**: `app/src/components/UsersAdminPage.jsx`, `app/src/components/UsersAdminPage.css`, `app/src/tests/usersAdminPage.test.jsx`, questo brief.
-
----
-
-## Comando deputy (dopo push di questo brief su `origin/main`)
-
-```
-Leggi docs/agent-tasks/DEPUTYTASK2.md ed eseguilo. Chiudi con TEST OK o FIX NON APPLICABILI.
+```bash
+cd backend && node --test src/services/ambitoFacts.service.test.js src/controllers/aiChat.controller.test.js
+cd app && NODE_ENV=test npm run test:run
+cd app && npm run build
 ```
 
-Il deputy allinea Git da solo all'avvio (`git fetch` / `git pull origin main`).
+(Adatta i path d’ingresso test a come è lanciata la suite backend nel repo — non inventare un runner nuovo.)
+
+### Esito atteso
+
+PR draft con i file della slice. Aggiornare questo brief a **CHIUSO** + riga in «Decisioni già prese» del PLAN. Non aprire SB-2 nella stessa sessione.
