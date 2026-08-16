@@ -106,7 +106,7 @@ function slugFieldKey(raw) {
 function canonicalizeFieldKey(raw) {
     if (raw == null) return null;
     const trimmed = String(raw).trim();
-    if (!trimmed) return null;
+    if (!trimmed || /^null$/i.test(trimmed) || trimmed === '-') return null;
     if (CAPITOLATO_MATERIAL_FIELD_KEY_SET.has(trimmed)) return trimmed;
     const slug = slugFieldKey(trimmed);
     if (CAPITOLATO_MATERIAL_FIELD_KEY_SET.has(slug)) return slug;

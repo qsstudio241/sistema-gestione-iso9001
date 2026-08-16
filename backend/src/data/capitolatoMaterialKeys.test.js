@@ -33,9 +33,10 @@ describe('capitolatoMaterialKeys', () => {
             expect(canonicalizeFieldKey('delivery_date')).toBe('delivery_date');
         });
 
-        test('vuoto → null', () => {
+        test('vuoto o letterale null → null', () => {
             expect(canonicalizeFieldKey('')).toBeNull();
             expect(canonicalizeFieldKey(null)).toBeNull();
+            expect(canonicalizeFieldKey('null')).toBeNull();
         });
     });
 

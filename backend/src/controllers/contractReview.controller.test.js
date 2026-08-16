@@ -808,6 +808,12 @@ describe('analyzeRequirements — persistenza', () => {
       fieldKey: 'inspection_document_type',
       valueText: 'Certificato 3.1',
     });
+    expect(res.json.mock.calls[0][0].suggestion.identified_requirements[0].field_key)
+      .toBe('inspection_document_type');
+    const stored = JSON.parse(
+      query.mock.calls.find((c) => /INSERT INTO commercial_case_drawing_extractions/.test(c[0]))[1].raw,
+    );
+    expect(stored.identified_requirements[0].field_key).toBe('inspection_document_type');
   });
 
   it('provider AI non configurato → 503', async () => {

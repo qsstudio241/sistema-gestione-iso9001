@@ -1557,6 +1557,12 @@ async function analyzeRequirements(req, res) {
                 suggestion.identified_standards,
                 capitolatoText,
             );
+            if (Array.isArray(suggestion.identified_requirements)) {
+                suggestion.identified_requirements = suggestion.identified_requirements.map((r) => ({
+                    ...r,
+                    field_key: canonicalizeFieldKey(r.field_key) || null,
+                }));
+            }
         }
 
         // Persistenza sul caso (riuso tabelle migr. 101, source='text'): l'analisi sopravvive
