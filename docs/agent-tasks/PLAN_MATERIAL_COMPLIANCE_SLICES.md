@@ -25,9 +25,9 @@ MC-B (OCR) **non** è più post-MVP: senza testo i certificati reali non si legg
 - Nuova chiave licenza dedicata (solo seam → `saldatura` + `ai_import`)
 - Registro PWHT / trattamenti come primo certificato (dopo 3.1 stabile)
 
-## Griglia elenco (HITL 16/08 — committente)
+## Griglia elenco (HITL 16/08 — committente, **confermata**)
 
-**Sì**: una tab/pagina elenco (copia `QualificationsPage` + `SgqDataGrid`, non un look nuovo) con **riferimento al DDT** e anagrafica materiale. Un DDT può avere più righe/certificati.
+**Sì**: una tab/pagina elenco (copia `QualificationsPage` + `SgqDataGrid`, non un look nuovo) con **riferimento al DDT** e anagrafica materiale. Un DDT può avere più righe/certificati. Colonne sotto **chiuse** (16/08, «Sembra OK»).
 
 ### Colonne in griglia (MVP)
 

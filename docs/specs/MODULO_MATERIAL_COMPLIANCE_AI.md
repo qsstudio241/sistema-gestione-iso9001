@@ -103,7 +103,7 @@ Voce sidebar: **Material Compliance** (gate licenza).
 | Editor KB / Norme / Requisiti cliente in UI | No (file Git) | Valutare |
 | Statistiche avanzate | No | Sì |
 
-Campi lista (HITL 16/08): **N. DDT**, data DDT, n. certificato 3.1, materiale (designazione), colata, forma, dimensioni, norma, fornitore/acciaieria, esito.  
+Campi lista (HITL 16/08, **confermati**): **N. DDT**, data DDT, n. certificato 3.1, materiale (designazione), colata, forma, dimensioni, norma, fornitore/acciaieria, esito.  
 Copia `QualificationsPage` + `SgqDataGrid`. Dettaglio al click: chimica, meccaniche, PDF, azioni HITL. Commessa = ponte successivo, non colonna MVP.
 
 ---
