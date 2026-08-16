@@ -40,13 +40,16 @@ function isTechnicalReviewComplete(checklist) {
   return TECHNICAL_REVIEW_KEYS.every((key) => checklist?.[key]?.checked);
 }
 
-function applyTechnicalReviewCompletionStamp(checklist, user, now = new Date()) {
+/**
+ * Ignora _completion del client. Conserva solo un timbro già persistito (previous).
+ */
+function applyTechnicalReviewCompletionStamp(checklist, user, now = new Date(), { previous } = {}) {
   const next = { ...(checklist || {}) };
-  const prev = next[COMPLETION_KEY];
   delete next[COMPLETION_KEY];
   if (!isTechnicalReviewComplete(next)) {
     return next;
   }
+  const prev = parseTechnicalReviewChecklist(previous)[COMPLETION_KEY];
   if (prev?.at && prev?.by_user_id) {
     return { ...next, [COMPLETION_KEY]: prev };
   }
@@ -60,10 +63,10 @@ function applyTechnicalReviewCompletionStamp(checklist, user, now = new Date()) 
   };
 }
 
-function stampTechnicalReviewChecklistJson(raw, user) {
+function stampTechnicalReviewChecklistJson(raw, user, { previous } = {}) {
   if (raw == null || raw === '') return null;
   const parsed = parseTechnicalReviewChecklist(raw);
-  const stamped = applyTechnicalReviewCompletionStamp(parsed, user);
+  const stamped = applyTechnicalReviewCompletionStamp(parsed, user, new Date(), { previous });
   return JSON.stringify(stamped);
 }
 

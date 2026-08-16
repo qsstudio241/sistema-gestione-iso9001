@@ -8,7 +8,7 @@ jest.mock('../utils/logger', () => ({
 }));
 
 const { query } = require('../config/database');
-const { createProject } = require('./projects.controller');
+const { createProject, updateProject } = require('./projects.controller');
 const { TECHNICAL_REVIEW_KEYS } = require('../utils/technicalReviewChecklist');
 
 function allChecked() {
@@ -44,5 +44,40 @@ describe('createProject — timbro §5.3', () => {
     const parsed = JSON.parse(params.technical_review_checklist);
     expect(parsed._completion.by_user_id).toBe(9);
     expect(parsed._completion.by_name).toBe('Mario Rossi');
+  });
+
+  it('in update conserva il timbro già in DB, non quello del client', async () => {
+    const persisted = JSON.stringify({
+      ...allChecked(),
+      _completion: { at: '2026-02-01T00:00:00.000Z', by_user_id: 1, by_name: 'Anna' },
+    });
+    query
+      .mockResolvedValueOnce({
+        recordset: [{
+          id: 1,
+          company_id: 47,
+          end_customer_id: null,
+          client_name: 'Mason',
+          technical_review_checklist: persisted,
+        }],
+      })
+      .mockResolvedValueOnce({ recordset: [] });
+
+    const forged = {
+      ...allChecked(),
+      _completion: { at: '2099-01-01T00:00:00.000Z', by_user_id: 99, by_name: 'Falso' },
+    };
+    const res = mockRes();
+    await updateProject({
+      params: { id: '1' },
+      user: { organization_id: 1004, user_id: 9, full_name: 'Mario Rossi' },
+      body: { technical_review_checklist: forged },
+    }, res);
+
+    expect(res.json).toHaveBeenCalledWith(expect.objectContaining({ success: true }));
+    const params = query.mock.calls[1][1];
+    const parsed = JSON.parse(params.technical_review_checklist);
+    expect(parsed._completion.by_name).toBe('Anna');
+    expect(parsed._completion.by_user_id).toBe(1);
   });
 });

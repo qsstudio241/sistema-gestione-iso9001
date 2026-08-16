@@ -289,7 +289,7 @@ async function updateProject(req, res) {
         const { organization_id } = req.user;
 
         const existing = await query(`
-            SELECT id, company_id, end_customer_id, client_name FROM projects
+            SELECT id, company_id, end_customer_id, client_name, technical_review_checklist FROM projects
             WHERE id = @id AND organization_id = @organization_id
         `, { id: parseInt(id), organization_id });
 
@@ -321,7 +321,11 @@ async function updateProject(req, res) {
                     const val = req.body[field];
                     params[field] = val ? JSON.stringify(Array.isArray(val) ? val : [val]) : null;
                 } else if (field === 'technical_review_checklist') {
-                    params[field] = stampTechnicalReviewChecklistJson(req.body[field], req.user);
+                    params[field] = stampTechnicalReviewChecklistJson(
+                        req.body[field],
+                        req.user,
+                        { previous: existingProject.technical_review_checklist },
+                    );
                 } else if (field === 'company_id') {
                     params[field] = companyIdNext;
                 } else {

@@ -38,15 +38,34 @@ describe('technicalReviewChecklist (backend)', () => {
     expect(JSON.parse(json)._completion).toBeUndefined();
   });
 
-  it('conserva il primo timbro', () => {
-    const first = applyTechnicalReviewCompletionStamp(allChecked(), {
+  it('conserva il timbro già persistito, non quello del client', () => {
+    const persisted = applyTechnicalReviewCompletionStamp(allChecked(), {
       user_id: 1,
       full_name: 'Anna',
     }, new Date('2026-02-01T00:00:00.000Z'));
-    const second = applyTechnicalReviewCompletionStamp(first, {
+    const forged = {
+      ...allChecked(),
+      _completion: { at: '2099-01-01T00:00:00.000Z', by_user_id: 99, by_name: 'Falso' },
+    };
+    const second = applyTechnicalReviewCompletionStamp(forged, {
       user_id: 2,
       full_name: 'Luca',
-    }, new Date('2026-08-16T00:00:00.000Z'));
+    }, new Date('2026-08-16T00:00:00.000Z'), { previous: persisted });
     expect(second._completion.by_name).toBe('Anna');
+    expect(second._completion.by_user_id).toBe(1);
+  });
+
+  it('in create ignora un _completion contraffatto dal client', () => {
+    const forged = {
+      ...allChecked(),
+      _completion: { at: '2099-01-01T00:00:00.000Z', by_user_id: 99, by_name: 'Falso' },
+    };
+    const json = stampTechnicalReviewChecklistJson(forged, {
+      user_id: 4,
+      full_name: 'Studio Admin',
+    });
+    const parsed = JSON.parse(json);
+    expect(parsed._completion.by_user_id).toBe(4);
+    expect(parsed._completion.by_name).toBe('Studio Admin');
   });
 });
