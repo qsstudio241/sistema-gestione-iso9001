@@ -8,7 +8,7 @@
 
 > **Risposta standard a «stato di avanzamento del progetto e priorità da affrontare»**: sintetizzare da questa sezione (moduli maturi + sessione più recente + tabella priorità sotto), **non** dal banner storico più sotto (superato, tenuto solo per traccia) né dall'archivio marzo 2026 [`docs/archive/PROJECT_CONTEXT_STATO_FUNZIONALITA_2026-03.md`](archive/PROJECT_CONTEXT_STATO_FUNZIONALITA_2026-03.md). **Aggiornare questa sezione a fine sessione** se emergono nuove priorità o se una priorità elencata viene chiusa (stesso principio delle "Lezioni apprese" in [GUIDA_CONSOLIDATA.md](GUIDA_CONSOLIDATA.md) — sintesi qui, dettaglio linkato).
 
-**Ultimo aggiornamento di questa sezione**: 16/08/2026 (HITL 3834: niente blocco §5.3; Word RDP da verbale Mason; stessa UI per livello 2/3/4; certificati → epic MC con ingest/OCR).
+**Ultimo aggiornamento di questa sezione**: 16/08/2026 (ISO-1a RBAC RDP in [PR #438](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/438); HITL 3834 chiusi lo stesso giorno).
 
 ### Moduli maturi (in produzione, uso quotidiano dai clienti Camellini/Mason)
 
@@ -16,7 +16,9 @@ Audit multi-standard (9001/14001/45001) · Non Conformità (workflow ISO 10.2 co
 
 ### Sessione più recente (15/08/2026)
 
-**Lead wayfinder — ISO 3834 HITL 16/08** (solo doc): §5.3 senza blocco; Word RDP Mason; livelli 2/3/4 = meno schermate dopo, partenza senza filtri; certificati = griglia DDT+anagrafica (confermata). **Norme 3.1 e campi da estrarre: il committente li consegna in seguito** → Markdown KB + agente MC; non inventare lo schema ora. Conformità = norma + documenti esterni pertinenti all’Ambito (ADR-021), non solo il 3.1 contro la norma. Brief [`DEPUTYTASK1.md`](agent-tasks/DEPUTYTASK1.md) resta **ISO-1a**. Mappa pronta a eseguire **dopo merge PR** (su `main` il brief ISO-1a non c’è ancora). In parallelo: SAL S1a e/o MC-0 (solo spec). Nessun codice applicativo in sessione mappa.
+**ISO-1a — RBAC `company_access` sui RDP** ([PR #438](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/438)): utente con una sola azienda del tenant non vede/modifica i RDP delle altre. Studio senza access list resta org-wide. Test L1 Jest 22 verdi. Prossima slice 3834: ISO-1b (NDT), dopo merge. Brief [`DEPUTYTASK1.md`](agent-tasks/DEPUTYTASK1.md) **CHIUSO**.
+
+**Lead wayfinder — ISO 3834 HITL 16/08** (solo doc, mergiata [PR #437](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/437)): §5.3 senza blocco; Word RDP Mason; livelli 2/3/4 = meno schermate dopo, partenza senza filtri; certificati = griglia DDT+anagrafica. Conformità = norma + documenti esterni pertinenti all’Ambito (ADR-021).
 
 **In parallelo — SAL AI evidenze** (stesso giorno): mappa [`PLAN_SAL_AI_EVIDENCE_SLICES.md`](agent-tasks/PLAN_SAL_AI_EVIDENCE_SLICES.md). Brief [`DEPUTYTASK.md`](agent-tasks/DEPUTYTASK.md) **APERTO** su slice **S1a** (OCR PDF in `documentTextExtractor`). Non sovrascrivere.
 
@@ -52,7 +54,7 @@ Sessione prodotto precedente (10/08/2026): fix filtri dashboard duplicati (Quali
 | 4 | **Material Compliance AI (certificati EN 10204 3.1)** | Modulo proposto 05/08/2026, slice MC-0 (spec) non ancora avviata | [MODULO_MATERIAL_COMPLIANCE_AI.md](specs/MODULO_MATERIAL_COMPLIANCE_AI.md) |
 | 5 | **Rischi / Opportunità / Obiettivi — detector SWOT/FMEA (ROO-6b)** | M03 si importa. SWOT e FMEA HSE restano da mappare; scala 1–4 = HITL ROO-13 | [PLAN](agent-tasks/PLAN_RISCHI_OPPORTUNITA_OBIETTIVI_SLICES.md) · brief [ROO](agent-tasks/DEPUTYTASK_RISCHI_ROO.md) |
 | 6 | **SAL AI evidenze — OCR + documento mancante (HITL)** | Suggeritore 5-A/5-B legge solo PDF/DOCX testo; PDF scan/immagini saltati; se manca evidenza → solo messaggio low, nessuna ricerca tipo/upload guidato | [PLAN](agent-tasks/PLAN_SAL_AI_EVIDENCE_SLICES.md) · brief [S1a](agent-tasks/DEPUTYTASK.md) |
-| 7 | **ISO 3834 — completezza per processi (RBAC + ponti + report)** | HITL 16/08 chiusi. Prima: isolamento azienda su RDP (ISO-1a), poi Word RDP da verbale Mason, ponti NC/offerta | [PLAN](agent-tasks/PLAN_3834_SLICES.md) · brief [ISO-1a](agent-tasks/DEPUTYTASK1.md) |
+| 7 | **ISO 3834 — completezza per processi (RBAC + ponti + report)** | ISO-1a in PR #438. Dopo merge: ISO-1b NDT, poi Word RDP Mason, ponti NC/offerta | [PLAN](agent-tasks/PLAN_3834_SLICES.md) · brief [ISO-1a CHIUSO](agent-tasks/DEPUTYTASK1.md) |
 
 > Nota: **Modulo NC — card statistiche duplicate da due tendine** (era riga 1) è stato chiuso da PR #374 (10/08/2026) — riga rimossa da questa tabella, non ancora aggiornata al momento in cui è stata scritta DEPUTYTASK4.
 
