@@ -13,6 +13,15 @@ import PencilIcon from "../components/icons/PencilIcon";
 import TrashIcon from "../components/icons/TrashIcon";
 import { getWelderQualificationWarning } from "../utils/welderQualificationExpiryWarnings";
 import AiDisclaimer from "../components/AiDisclaimer";
+import { TECHNICAL_REVIEW_ITEMS } from "../data/technicalReviewItems";
+import {
+  applyTechnicalReviewCompletionStamp,
+  formatTechnicalReviewCompletion,
+  getTechnicalReviewCompletion,
+  isTechnicalReviewComplete,
+  parseTechnicalReviewChecklist,
+} from "../utils/technicalReviewChecklist";
+import { exportTechnicalReviewDocx } from "../utils/wordExportTechnicalReview";
 import "./ProjectsPage.css";
 
 const AI_COVERAGE_LABELS = {
@@ -30,44 +39,6 @@ const PROJECT_STATUSES = [
 
 // Stati di commessa che richiedono il riesame tecnico §5.3 completato (gate soft).
 const STATUSES_REQUIRING_TECHNICAL_REVIEW = ["aperta"];
-
-// Punti chiave del riesame tecnico ISO 3834-3 §5.3 (elenco sintetico, non la norma integrale).
-const TECHNICAL_REVIEW_ITEMS = [
-  { key: "materiale_base",        label: "Materiale base" },
-  { key: "requisiti_qualita",     label: "Requisiti di qualita\u2019 delle saldature" },
-  { key: "posizione_accessibilita", label: "Posizione e accessibilita\u2019 delle saldature" },
-  { key: "specifica_procedure",   label: "Specifica procedure saldatura / CND / trattamento termico" },
-  { key: "criterio_qualificazione_procedure", label: "Criterio di qualificazione delle procedure" },
-  { key: "qualificazione_personale", label: "Qualificazione del personale" },
-  { key: "identificazione_rintracciabilita", label: "Identificazione e rintracciabilita\u2019" },
-  { key: "controllo_qualita",     label: "Controllo qualita\u2019" },
-  { key: "ispezioni_prove",       label: "Ispezioni e prove" },
-  { key: "subfornitura",          label: "Subfornitura" },
-  { key: "trattamenti_termici",   label: "Trattamenti termici" },
-  { key: "altri_requisiti",       label: "Altri requisiti di saldatura" },
-  { key: "metodi_particolari",    label: "Metodi particolari" },
-  { key: "dimensioni_giunti",     label: "Dimensioni dei giunti" },
-  { key: "luogo_esecuzione",      label: "Luogo di esecuzione" },
-  { key: "condizioni_ambientali", label: "Condizioni ambientali" },
-  { key: "gestione_nc",           label: "Gestione delle non conformita\u2019" },
-];
-
-/** Parsea in modo defensivo la checklist di riesame tecnico (JSON string o oggetto). */
-function parseTechnicalReviewChecklist(raw) {
-  if (!raw) return {};
-  if (typeof raw === "object") return raw;
-  try {
-    const parsed = JSON.parse(raw);
-    return parsed && typeof parsed === "object" ? parsed : {};
-  } catch {
-    return {};
-  }
-}
-
-/** True se tutti i punti §5.3 risultano verificati (checkbox spuntata). */
-function isTechnicalReviewComplete(checklist) {
-  return TECHNICAL_REVIEW_ITEMS.every((item) => checklist?.[item.key]?.checked);
-}
 
 //  Form modale commessa 
 
@@ -115,16 +86,21 @@ function ProjectFormModal({ project, companies, defaultCompanyId, wpsList, quali
       .finally(() => { if (!cancelled) setCustomersLoading(false); });
     return () => { cancelled = true; };
   }, [form.company_id]);
+  const { user } = useAuth();
   const [technicalReviewChecklist, setTechnicalReviewChecklist] = useState(() =>
     parseTechnicalReviewChecklist(project?.technical_review_checklist)
   );
   const [technicalReviewOpen, setTechnicalReviewOpen] = useState(false);
+  const [wordExporting, setWordExporting] = useState(false);
 
   function setTechnicalReviewItem(key, patch) {
-    setTechnicalReviewChecklist((prev) => ({
-      ...prev,
-      [key]: { ...(prev[key] || {}), ...patch },
-    }));
+    setTechnicalReviewChecklist((prev) => {
+      const next = {
+        ...prev,
+        [key]: { ...(prev[key] || {}), ...patch },
+      };
+      return applyTechnicalReviewCompletionStamp(next, user);
+    });
   }
 
   const technicalReviewComplete = isTechnicalReviewComplete(technicalReviewChecklist);
@@ -177,7 +153,9 @@ function ProjectFormModal({ project, companies, defaultCompanyId, wpsList, quali
       const payload = {
         ...form,
         applicable_wps_ids: JSON.stringify(form.applicable_wps_ids || []),
-        technical_review_checklist: JSON.stringify(technicalReviewChecklist || {}),
+        technical_review_checklist: JSON.stringify(
+          applyTechnicalReviewCompletionStamp(technicalReviewChecklist || {}, user)
+        ),
       };
       let savedProjectId;
       if (project?.id) {
@@ -336,10 +314,40 @@ function ProjectFormModal({ project, companies, defaultCompanyId, wpsList, quali
               {showTechnicalReviewWarning && (
                 <div className="pj-warn-banner">
                   {"\u26A0\uFE0F"} Il riesame tecnico non risulta completato per tutti i punti previsti dalla norma.
-                  La commessa puo\u2019 comunque essere salvata come &quot;Aperta&quot;, ma si consiglia di completare
+                  La commessa può comunque essere salvata come &quot;Aperta&quot;, ma si consiglia di completare
                   la verifica prima di avviare la produzione.
                 </div>
               )}
+
+              {technicalReviewComplete && getTechnicalReviewCompletion(technicalReviewChecklist) && (
+                <p className="pj-technical-review-stamp">
+                  {formatTechnicalReviewCompletion(getTechnicalReviewCompletion(technicalReviewChecklist))}
+                </p>
+              )}
+
+              <button
+                type="button"
+                className="pj-btn-ai-suggest"
+                onClick={async () => {
+                  setWordExporting(true);
+                  try {
+                    await exportTechnicalReviewDocx({
+                      projectCode: form.project_code,
+                      clientName: form.client_name,
+                      status: form.status,
+                      checklist: applyTechnicalReviewCompletionStamp(technicalReviewChecklist, user),
+                    });
+                  } catch (err) {
+                    setError(err.message || "Export Word non riuscito");
+                  } finally {
+                    setWordExporting(false);
+                  }
+                }}
+                disabled={wordExporting}
+                title="Scarica la checklist §5.3 in Word"
+              >
+                {wordExporting ? "Preparazione Word..." : "Scarica Word checklist"}
+              </button>
 
               {technicalReviewOpen && (
                 <div className="pj-checkbox-list pj-technical-review-list">

@@ -16,6 +16,7 @@ const {
 const {
     resolveCommercialCustomerFields,
 } = require('../services/commercialCustomerCounterparty.service');
+const { stampTechnicalReviewChecklistJson } = require('../utils/technicalReviewChecklist');
 
 // GET /projects
 async function listProjects(req, res) {
@@ -234,9 +235,10 @@ async function createProject(req, res) {
         const wpsIdsJson = applicable_wps_ids
             ? JSON.stringify(Array.isArray(applicable_wps_ids) ? applicable_wps_ids : [applicable_wps_ids])
             : null;
-        const technicalReviewChecklistJson = technical_review_checklist
-            ? (typeof technical_review_checklist === 'string' ? technical_review_checklist : JSON.stringify(technical_review_checklist))
-            : null;
+        const technicalReviewChecklistJson = stampTechnicalReviewChecklistJson(
+            technical_review_checklist,
+            req.user
+        );
 
         const result = await query(`
             INSERT INTO projects (
@@ -319,8 +321,7 @@ async function updateProject(req, res) {
                     const val = req.body[field];
                     params[field] = val ? JSON.stringify(Array.isArray(val) ? val : [val]) : null;
                 } else if (field === 'technical_review_checklist') {
-                    const val = req.body[field];
-                    params[field] = val ? (typeof val === 'string' ? val : JSON.stringify(val)) : null;
+                    params[field] = stampTechnicalReviewChecklistJson(req.body[field], req.user);
                 } else if (field === 'company_id') {
                     params[field] = companyIdNext;
                 } else {
