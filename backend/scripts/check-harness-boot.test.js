@@ -175,6 +175,7 @@ describe('check-harness-boot — logica pura (mutazione)', () => {
   });
 
   describe('runScenarioPure — scenario company_profile', () => {
+    // Brief stabile = ADR-018 (DEPUTYTASK.md è la slice aperta, non il modulo).
     const scenario = SCENARIOS[0];
     const healthyRow = {
       topic: 'Profilo azienda / company_profile',
