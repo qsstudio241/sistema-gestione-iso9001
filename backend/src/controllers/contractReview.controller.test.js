@@ -754,6 +754,57 @@ describe('analyzeRequirements — persistenza', () => {
     expect(body.suggestion).toMatchObject({ overall_risk: 'medium' });
   });
 
+  it('ISO-3: unisce EN 10204 rilevata nel testo a identified_standards', async () => {
+    getActiveProvider.mockReturnValue('gemini');
+    chat.mockResolvedValue({
+      content: JSON.stringify({ ...suggestion, identified_standards: ['ISO 3834-2'] }),
+      model: 'm',
+    });
+    installQueryMock();
+
+    const req = mockReq({
+      params: { id: String(CASE_ID) },
+      body: { capitolatoText: 'Richiesto certificato 3.1 secondo EN 10204 e filo ISO 14341' },
+    });
+    const res = mockRes();
+    await ctrl.analyzeRequirements(req, res);
+
+    const body = res.json.mock.calls[0][0];
+    expect(body.suggestion.identified_standards).toEqual(
+      expect.arrayContaining(['ISO 3834-2', 'EN 10204', 'ISO 14341']),
+    );
+  });
+
+  it('ISO-3: persiste field_key canonico se presente sulla riga requisito', async () => {
+    getActiveProvider.mockReturnValue('gemini');
+    chat.mockResolvedValue({
+      content: JSON.stringify({
+        identified_requirements: [
+          {
+            ref: 'REQ-01',
+            field_key: 'inspection_document_type',
+            description: 'Certificato 3.1',
+          },
+        ],
+        identified_standards: [],
+        overall_risk: 'low',
+        summary: 'ok',
+      }),
+      model: 'm',
+    });
+    installQueryMock();
+
+    const req = mockReq({ params: { id: String(CASE_ID) }, body: { capitolatoText: 'x' } });
+    const res = mockRes();
+    await ctrl.analyzeRequirements(req, res);
+
+    const reqInserts = query.mock.calls.filter((c) => /INSERT INTO commercial_case_extracted_requirements/.test(c[0]));
+    expect(reqInserts[0][1]).toMatchObject({
+      fieldKey: 'inspection_document_type',
+      valueText: 'Certificato 3.1',
+    });
+  });
+
   it('provider AI non configurato → 503', async () => {
     getActiveProvider.mockReturnValue(null);
     const req = mockReq({ params: { id: String(CASE_ID) }, body: { capitolatoText: 'x' } });

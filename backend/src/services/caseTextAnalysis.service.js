@@ -19,6 +19,10 @@
 const { chat, getActiveProvider } = require('./aiProviderAdapter');
 const { extractPdfText } = require('../utils/importPdfText');
 const { parseJsonWithRepair } = require('../utils/jsonRepair');
+const {
+    canonicalizeFieldKey,
+    formatFieldKeysForPrompt,
+} = require('../data/capitolatoMaterialKeys');
 
 const MAX_INPUT_CHARS = Number(process.env.OPENAI_IMPORT_MAX_CHARS) || 20000;
 
@@ -41,7 +45,7 @@ function buildUserPrompt(text) {
         'Estrai i requisiti e restituisci questo schema JSON:\n' +
         '{ "requirements": [ {\n' +
         '  "req_type": "delivery|legal|commercial|spec|note",\n' +
-        '  "field_key": "chiave breve (es. delivery_date, material_standard, payment_terms)",\n' +
+        '  "field_key": "chiave breve (preferire l\'elenco sotto; es. delivery_date, payment_terms)",\n' +
         '  "value_text": "valore o descrizione testuale del requisito",\n' +
         '  "unit": null,\n' +
         '  "confidence": 0..1,\n' +
@@ -49,10 +53,17 @@ function buildUserPrompt(text) {
         '} ] }\n\n' +
         'Tipi req_type:\n' +
         '- delivery: date consegna, tempi di esecuzione, penali ritardo\n' +
-        '- legal: clausole contrattuali, responsabilità, garanzie legali\n' +
+        '- legal: clausole contrattuali, responsabilità, garanzie legali (anche ISO 9001 del fabbricante)\n' +
         '- commercial: prezzi, pagamenti, sconti, incoterms\n' +
-        '- spec: specifiche tecniche, standard applicabili (es. ISO, EN), materiali, certificazioni richieste\n' +
+        '- spec: specifiche tecniche, standard, materiali di BASE e d\'APPORTO, certificati EN 10204\n' +
         '- note: requisiti non classificabili nelle categorie precedenti\n' +
+        'Chiavi field_key da usare quando il testo parla di acciaio / certificati / consumabili:\n' +
+        formatFieldKeysForPrompt() +
+        '\nRegole materiali:\n' +
+        '- inspection_document_type: solo 2.1 | 2.2 | 3.1 | 3.2 (3.1.B storico = 3.1).\n' +
+        '- material_role: base (lamiera/profilo/tubo) oppure filler (filo/elettrodo/flusso).\n' +
+        '- steel_designation per l\'acciaio di base; filler_designation per il consumabile (es. G 42 4 M21 3Si1).\n' +
+        '- Non inventare soglie ReH/chimica: il capitolato chiede il tipo di prova, non i valori del 3.1.\n' +
         'Includi solo requisiti esplicitamente o chiaramente presenti.\n' +
         'confidence = 0.85 se chiaro, 0.55 se implicito, 0.3 se dedotto.'
     );
@@ -73,8 +84,7 @@ function normalizeReq(raw) {
     const req_type = VALID_TEXT_REQ_TYPES.has(reqTypeRaw) ? reqTypeRaw : 'note';
     const value_text = raw.value_text != null ? String(raw.value_text).trim() : null;
     if (!value_text) return null;
-    const field_key =
-        raw.field_key != null ? String(raw.field_key).trim().substring(0, 100) : null;
+    const field_key = canonicalizeFieldKey(raw.field_key);
     return {
         req_type,
         field_key: field_key || null,
@@ -174,4 +184,9 @@ async function extractTextRequirements(buffer, mimeType, options = {}) {
     };
 }
 
-module.exports = { extractTextRequirements };
+module.exports = {
+    extractTextRequirements,
+    buildUserPrompt,
+    parseRequirements,
+    canonicalizeFieldKey,
+};

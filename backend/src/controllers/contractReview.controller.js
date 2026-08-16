@@ -9,6 +9,7 @@ const logger = require('../utils/logger');
 const workflow = require('../services/contractReviewWorkflow.service');
 const crNotify = require('../services/contractReviewNotification.service');
 const contextBuilder = require('../services/aiContextBuilder.service');
+const { mergeIdentifiedStandards } = require('../data/capitolatoMaterialKeys');
 const { chat, getActiveProvider } = require('../services/aiProviderAdapter');
 const { enrichSystemPromptWithOrganization } = require('../services/aiOrganizationContext.service');
 const { parseCompanyId, companyBelongsToOrg } = require('../services/qualificationCompany.service');
@@ -1485,7 +1486,9 @@ async function persistTextAnalysis({ caseId, organizationId, userId, provider, s
             ? suggestion.identified_requirements
             : [];
         for (const r of requirements) {
-            const fieldKey = r.ref != null ? String(r.ref).substring(0, 100) : null;
+            const fieldKey = (r.field_key || r.ref) != null
+                ? String(r.field_key || r.ref).substring(0, 100)
+                : null;
             const valueText = r.description != null ? String(r.description) : null;
             await query(
                 `
@@ -1548,6 +1551,13 @@ async function analyzeRequirements(req, res) {
             suggestion = JSON.parse(String(result.content).replace(/^```json\s*/i, '').replace(/\s*```$/i, ''));
         } catch {
             suggestion = { raw: result.content };
+        }
+
+        if (suggestion && !suggestion.raw) {
+            suggestion.identified_standards = mergeIdentifiedStandards(
+                suggestion.identified_standards,
+                capitolatoText,
+            );
         }
 
         // Persistenza sul caso (riuso tabelle migr. 101, source='text'): l'analisi sopravvive

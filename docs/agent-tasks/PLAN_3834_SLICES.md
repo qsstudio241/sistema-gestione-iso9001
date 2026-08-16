@@ -47,7 +47,7 @@ La norma non è una checklist a sezioni 4–10: è un **sistema di processi**. C
 
 | § | Processo | Modulo app oggi | Ponte | Import | Export / report | Stato | Gap |
 |---|---------|-----------------|-------|--------|-----------------|-------|-----|
-| 5 | Riesame requisiti e riesame tecnico | Commesse (`ProjectsPage`) + Riesame contratto (`ContractReviewPage`) | **Due flussi paralleli**, nessuna FK `case_id`/`project_id` | Persistenza analisi capitolato (mig. 116); checklist §5.3 con timbro | Word checklist §5.3 (ISO-2) | Parziale | ISO-3: chiavi EN 10204/10168 nel prompt. ISO-8 ponte offerta |
+| 5 | Riesame requisiti e riesame tecnico | Commesse (`ProjectsPage`) + Riesame contratto (`ContractReviewPage`) | **Due flussi paralleli**, nessuna FK `case_id`/`project_id` | Persistenza analisi capitolato (mig. 116) + chiavi 10204/apporto (ISO-3); checklist §5.3 con timbro | Word checklist §5.3 (ISO-2) | Parziale | ISO-8 ponte offerta |
 | 6 | Subfornitura | Voce checklist §5.3 + controparti (`end_customer_id`) | Cliente commessa ↔ `company_counterparties` | — | — | Parziale | Nessun registro subfornitori di **saldatura** (chi salda fuori, con quali WPS/qualifiche) |
 | 7 | Personale di saldatura | Qualifiche 9606/14732/14731 | Warning su commessa; copertura WPS | Ingest AI + batch | N/A (norma chiede registro, non un Word dedicato) | Implementato | Report riepilogo per audit cliente = P2 |
 | 8 | Personale ispezioni/prove | Qualifiche `cert_ndt` + idoneità visiva | NDT consuma la qualifica a monte | Ingest `cert_ndt` | N/A | Implementato | Collegare operatore firmatario del verbale CND alla qualifica 9712 (oggi implicito) |
@@ -88,7 +88,7 @@ Registro documenti ← ingest WPS/WPQR/qualifiche; RDP/WB ancora fuori
 | Patentini / NDT / coordinatori | Ingest AI + batch | — | P2: Word riepilogo qualifiche per audit |
 | WPQR | Ingest AI (pipeline matura) | — | P2 Tabella 7 Level 1 |
 | WPS | Genera da WPQR; PDF legacy | Word Annex A 15609-1 | Feedback Mason |
-| Commessa / §5.3 | Checklist + timbro + Word (ISO-2). Capitolato: persistenza mig. 116; mancano chiavi 3.1/10204 | — | ISO-3 prompt EN 10204/10168 |
+| Commessa / §5.3 | Checklist + timbro + Word (ISO-2). Capitolato: persistenza mig. 116 + chiavi 10204/apporto (ISO-3) | — | ISO-4 Word RDP Mason |
 | RDP | Manuale + foto | **Assente** (`TEMPLATE_MAP['RDP_MSN']` punta al template audit 3834) | ISO-4 da verbale Mason `RDP_MSN-260127-01` |
 | Verbali NDT | Manuale + foto | Word VT | — |
 | Welding Book | Manuale | **Assente** (hint in UI: Fase 2–3) | ISO-5 |
@@ -106,7 +106,7 @@ Ogni slice è un **tracer verticale** (un processo o un ponte), non «tutto il D
 | **ISO-1c** | RBAC su Attrezzature | `equipment.controller.js`: togliere `buildScopeCondition` / `user.company_id` | ISO-1a | Fatto (PR #441) |
 | **ISO-1d** | RBAC su Welding Book | `weldingBooks.controller.js` | ISO-1a | Fatto (PR #442) |
 | **ISO-2** | Riesame §5.3: data/utente + Word (niente blocco) | `projects.controller.js`, `ProjectsPage.jsx`, mini-export Word | — | Fatto (PR #443) |
-| **ISO-3** | Chiavi certificato nel prompt capitolato | `caseTextAnalysis.service.js` + `aiContextBuilder.service.js` | norme 16/08 | AFK |
+| **ISO-3** | Chiavi certificato nel prompt capitolato | `caseTextAnalysis.service.js` + `aiContextBuilder.service.js` | norme 16/08 | Fatto |
 | **ISO-4** | Export Word RDP da verbale Mason | `app/public/templates/rdp-mason-report.docx` (da `RDP_MSN-260127-01`), `wordExport.js`, `RDPModule.jsx` | file Mason in cartella | AFK |
 | **ISO-5** | Export Word Welding Book + foto cordone | `WeldingBooksPage.jsx`, `wordExport` (pattern VT/WPS), allegati | ADR-016 Fase 2–3 | AFK |
 | **ISO-6** | Ponte NC ↔ commessa | `nc.controller.js` + `NCPage` / drawer: `project_id` opzionale | — | AFK |
@@ -120,19 +120,18 @@ Ogni slice è un **tracer verticale** (un processo o un ponte), non «tutto il D
 
 **ISO-1* + ISO-2 chiuse** (PR #438–#442, #443): isolamento azienda + traccia/Word riesame §5.3.
 
-## Pronto a eseguire (16/08, dopo ISO-2)
+## Pronto a eseguire (16/08, dopo ISO-3)
 
 **Sì, si parte a slice.** Un deputy = una slice. In parallelo solo se i file sono disgiunti.
 
 | Ora | Aspettare |
 |-----|-----------|
-| **ISO-3** — chiavi EN 10204/10168 nel prompt capitolato (persistenza già in mig. 116) | ISO-4 Word RDP: file Mason non è in git |
+| **ISO-4** Word RDP: file Mason non è in git | — |
 | **SAL S1a** — già APERTO su `main` in `DEPUTYTASK.md` | — |
-| **MC-0** — solo spec DATA_MODEL/UI/API (griglia DDT già chiusa; campi lab **estendibili**) | MC-2/3/4 extract+regole: **norme del committente** |
-| — | Filtri UI per livello 2/3/4 (partenza senza filtri) |
+| **MC-1** — migration tabelle (dopo MC-0 mergiata) | MC-2/3 extract+regole: **norme prodotto** ancora mancanti si skippano |
 
-Dopo merge #443: Lead apre brief ISO-3 in `DEPUTYTASK1.md` (sovrascrive, Stato APERTO) — **prompt + field_key** da [`MATERIAL-COMPLIANCE-NORME-SINTESI.md`](../reference/MATERIAL-COMPLIANCE-NORME-SINTESI.md), non una nuova tabella.  
-Secondo deputy in parallelo: lasciare SAL S1a, oppure *«Leggi `docs/agent-tasks/DEPUTYTASK_MATERIAL_COMPLIANCE_AI_FOUNDATION.md` ed eseguilo»* (solo doc MC-0).
+Dopo merge #447 (MC-0): ISO-3 = prompt + field_key (questa slice). ISO-4 resta in attesa del file Word Mason.  
+`DEPUTYTASK.md` resta SAL S1a — non sovrascrivere. MC-1 = brief dedicato, non `DEPUTYTASK.md`.
 
 ## Qualità della mappa
 
