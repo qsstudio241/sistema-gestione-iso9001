@@ -17,6 +17,8 @@
 
 **Norme e campi da estrarre (HITL 16/08, chiusura):** il committente **fornirà in seguito** le normative. Da quelle si fanno i Markdown in `knowledge/material-compliance/standards/` (e il dizionario campi). **Non** inventare schema di estrazione né seed di norma prima di quei file. L’agente specializzato (MC-0 in poi sul contenuto tecnico) parte **dopo** la consegna delle norme, non ora. La griglia elenco (DDT + anagrafica) resta valida come UI; i campi di laboratorio (chimica, ReH, CEV, …) li fissa la norma consegnata.
 
+**Conformità = norma + documenti di origine esterna pertinenti (HITL 16/08, sì):** l’agente **non** valuta il 3.1 solo contro la norma materiale. Applica la gerarchia [ADR-021](../adr/ADR-021-material-requirements-hierarchy.md) in base all’**Ambito** (azienda) e, se c’è, a DDT/ordine/cliente/commessa. Un livello assente nello scope = `skip`, non un fail. I Markdown KB copriranno `standards/` **e** (quando il committente li consegna) `customers/` + `companies/<slug>/`. Il certificato è la **prova**; i requisiti stanno sempre in documenti esterni al certificato (norma, ordine, specifica cliente, criteri azienda).
+
 Ordine consigliato: **MC-0 → MC-1 → MC-2 → MC-3 → MC-4 → MC-B → MC-5 → MC-6 → MC-7**.  
 MC-B (OCR) **non** è più post-MVP: senza testo i certificati reali non si leggono.
 
