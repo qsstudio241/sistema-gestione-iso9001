@@ -7,7 +7,7 @@
 > **Spec tecniche MC-0**: [`MATERIAL_COMPLIANCE_DATA_MODEL.md`](../specs/MATERIAL_COMPLIANCE_DATA_MODEL.md) · [`MATERIAL_COMPLIANCE_UI.md`](../specs/MATERIAL_COMPLIANCE_UI.md) · [`MATERIAL_COMPLIANCE_API.md`](../specs/MATERIAL_COMPLIANCE_API.md)  
 > **Ponte 3834**: §11–13 del [PLAN_3834_SLICES.md](PLAN_3834_SLICES.md) — niente CRUD consumabili nel modulo saldatura  
 > **Branch base**: `main`  
-> **Migrazioni**: numerazione condivisa da `database/migrations/` — oggi ultimo ≥138; MC-1 userà il **prossimo libero** al momento dell’implementazione (non riservare numeri in anticipo se altre PR avanzano).
+> **Migrazioni**: numerazione condivisa da `database/migrations/` — MC-1 = **149** (`149_material_certificates.sql` + `run-migration-149-vps.js`).
 
 ---
 
@@ -105,15 +105,16 @@ Encoding / link interni; nessun test app.
 
 ### Scope
 
-- SQL idempotente in `database/migrations/` (prossimo NNN libero)
-- Script `backend/scripts/run-migration-NNN-vps.js` (pattern cloud VPS)
-- Colonne: `organization_id`, `company_id`, stati ADR-024, riferimenti file/job, JSON extract/result, hash KB, audit utente
+- SQL idempotente in `database/migrations/` (**149**)
+- Script `backend/scripts/run-migration-149-vps.js` (prod; `SGQ_MIGRATION_TARGET=test` per DB test)
+- Colonne: `organization_id`, `company_id` NOT NULL, stati ADR-024 (incluso `ocr_running` per MC-B), riferimenti file/job, JSON extract/result, hash KB, audit utente
 
 ### DoD
 
-- [ ] Migration applicata su VPS (o dry-run verificato)
-- [ ] Indici `(organization_id, company_id)`, stato
-- [ ] Nessun `ON DELETE CASCADE` fragile senza verifica SQL Server
+- [x] SQL + script VPS in repo (L1 statico)
+- [ ] Migration applicata su VPS TEST poi PROD
+- [x] Indici `(organization_id, company_id)`, stato, ruolo, DDT
+- [x] Nessun `ON DELETE CASCADE` fragile: CASCADE solo `checks` → certificato; job/registry/commessa = `SET NULL`; `import_job_file_id` senza ON DELETE (evita multiple cascade path)
 
 ### Test L1
 
