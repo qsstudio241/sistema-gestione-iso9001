@@ -1,0 +1,201 @@
+/**
+ * ISO-1b — RBAC company_access sui verbali NDT (CND)
+ * Service reale: user.company_access già caricato, nessuna query su user_company_access.
+ */
+
+jest.mock('../config/database', () => ({ query: jest.fn() }));
+jest.mock('../utils/logger', () => ({
+  info: jest.fn(), error: jest.fn(), warn: jest.fn(), debug: jest.fn(),
+}));
+
+const { query } = require('../config/database');
+const ctrl = require('./ndtReports.controller');
+
+const ORG_ID = 1001;
+
+const studioAdmin = {
+  user_id: 1,
+  role: 'admin',
+  organization_id: ORG_ID,
+  company_access: [],
+  full_name: 'Studio Admin',
+};
+
+const companyWrite11 = {
+  user_id: 2,
+  role: 'viewer',
+  organization_id: ORG_ID,
+  company_access: [{ company_id: 11, permission: 'write' }],
+  full_name: 'Utente Azienda 11',
+};
+
+function mockReq(overrides = {}) {
+  return {
+    params: {},
+    query: {},
+    body: {},
+    ...overrides,
+    user: { ...(overrides.user || studioAdmin) },
+  };
+}
+
+function mockRes() {
+  const res = {};
+  res.status = jest.fn().mockReturnValue(res);
+  res.json = jest.fn().mockReturnValue(res);
+  return res;
+}
+
+function mockListQueries() {
+  query.mockImplementation(async (sql) => {
+    if (sql.includes('COUNT(*) AS total')) return { recordset: [{ total: 0 }] };
+    return { recordset: [] };
+  });
+}
+
+function mockGetQueries(report) {
+  query.mockImplementation(async (sql) => {
+    if (sql.includes('FROM ndt_reports')) return { recordset: report ? [report] : [] };
+    return { recordset: [] };
+  });
+}
+
+afterEach(() => jest.clearAllMocks());
+
+describe('listNdtReports — company_access', () => {
+  it('studio senza access list: SQL senza IN (@uca_', async () => {
+    mockListQueries();
+    const res = mockRes();
+    await ctrl.listNdtReports(mockReq({ user: studioAdmin }), res);
+
+    expect(res.json).toHaveBeenCalledWith(expect.objectContaining({ success: true }));
+    const sql = query.mock.calls[0][0];
+    const params = query.mock.calls[0][1];
+    expect(sql).not.toMatch(/r\.company_id IN/);
+    expect(Object.keys(params).some((k) => k.startsWith('uca_'))).toBe(false);
+  });
+
+  it('utente con company_access su 11: SQL contiene r.company_id IN', async () => {
+    mockListQueries();
+    const res = mockRes();
+    await ctrl.listNdtReports(mockReq({ user: companyWrite11 }), res);
+
+    const sql = query.mock.calls[0][0];
+    const params = query.mock.calls[0][1];
+    expect(sql).toMatch(/r\.company_id IN \(@uca_0\)/);
+    expect(params.uca_0).toBe(11);
+  });
+});
+
+describe('getNdtStats — company_access', () => {
+  it('studio senza access list: SQL senza IN', async () => {
+    query.mockResolvedValueOnce({ recordset: [{ total: 0 }] });
+    const res = mockRes();
+    await ctrl.getNdtStats(mockReq({ user: studioAdmin }), res);
+    expect(query.mock.calls[0][0]).not.toMatch(/r\.company_id IN/);
+  });
+
+  it('utente con company_access: SQL contiene r.company_id IN', async () => {
+    query.mockResolvedValueOnce({ recordset: [{ total: 0 }] });
+    const res = mockRes();
+    await ctrl.getNdtStats(mockReq({ user: companyWrite11 }), res);
+    expect(query.mock.calls[0][0]).toMatch(/r\.company_id IN \(@uca_0\)/);
+    expect(query.mock.calls[0][1].uca_0).toBe(11);
+  });
+});
+
+describe('getNdtReport — company_access', () => {
+  it('verbale azienda 12 con access solo 11 → 403 FORBIDDEN', async () => {
+    mockGetQueries({ id: 5, company_id: 12, report_number: 'VT-2026-001' });
+    const res = mockRes();
+    await ctrl.getNdtReport(mockReq({ params: { id: '5' }, user: companyWrite11 }), res);
+    expect(res.status).toHaveBeenCalledWith(403);
+    expect(res.json).toHaveBeenCalledWith(expect.objectContaining({ code: 'FORBIDDEN' }));
+  });
+
+  it('verbale senza company_id con access list → 403 FORBIDDEN (non 400)', async () => {
+    mockGetQueries({ id: 6, company_id: null, report_number: 'VT-2026-002' });
+    const res = mockRes();
+    await ctrl.getNdtReport(mockReq({ params: { id: '6' }, user: companyWrite11 }), res);
+    expect(res.status).toHaveBeenCalledWith(403);
+    expect(res.json).toHaveBeenCalledWith(expect.objectContaining({ code: 'FORBIDDEN' }));
+  });
+
+  it('verbale azienda 11 con access 11 → 200', async () => {
+    mockGetQueries({ id: 7, company_id: 11, report_number: 'VT-2026-003' });
+    const res = mockRes();
+    await ctrl.getNdtReport(mockReq({ params: { id: '7' }, user: companyWrite11 }), res);
+    expect(res.status).not.toHaveBeenCalled();
+    expect(res.json).toHaveBeenCalledWith(expect.objectContaining({
+      success: true,
+      data: expect.objectContaining({ id: 7, company_id: 11 }),
+    }));
+  });
+
+  it('studio admin senza access list: get ok su qualsiasi azienda', async () => {
+    mockGetQueries({ id: 8, company_id: 12, report_number: 'VT-2026-004' });
+    const res = mockRes();
+    await ctrl.getNdtReport(mockReq({ params: { id: '8' }, user: studioAdmin }), res);
+    expect(res.json).toHaveBeenCalledWith(expect.objectContaining({
+      success: true,
+      data: expect.objectContaining({ id: 8, company_id: 12 }),
+    }));
+  });
+});
+
+describe('createNdtReport — company_access', () => {
+  it('create fuori scope (azienda 12) → 403, nessun INSERT', async () => {
+    const res = mockRes();
+    await ctrl.createNdtReport(mockReq({
+      user: companyWrite11,
+      body: { company_id: 12, client: 'Altro' },
+    }), res);
+    expect(res.status).toHaveBeenCalledWith(403);
+    expect(query).not.toHaveBeenCalled();
+  });
+
+  it('studio admin senza access list: create ok', async () => {
+    query.mockImplementation(async (sql) => {
+      if (sql.includes('COUNT(*) AS cnt')) return { recordset: [{ cnt: 0 }] };
+      if (sql.includes('INSERT INTO ndt_reports')) {
+        return { recordset: [{ id: 99, company_id: 12, report_number: 'VT-2026-001' }] };
+      }
+      return { recordset: [] };
+    });
+    const res = mockRes();
+    await ctrl.createNdtReport(mockReq({
+      user: studioAdmin,
+      body: { company_id: 12, client: 'Cliente' },
+    }), res);
+    expect(res.status).toHaveBeenCalledWith(201);
+    expect(res.json).toHaveBeenCalledWith(expect.objectContaining({ success: true }));
+  });
+});
+
+describe('updateNdtReport — company_access', () => {
+  it('update verbale di altra azienda → 403', async () => {
+    query.mockResolvedValueOnce({ recordset: [{ id: 5, company_id: 12 }] });
+    const res = mockRes();
+    await ctrl.updateNdtReport(mockReq({
+      params: { id: '5' },
+      user: companyWrite11,
+      body: { client: 'Tentativo' },
+    }), res);
+    expect(res.status).toHaveBeenCalledWith(403);
+    expect(res.json).toHaveBeenCalledWith(expect.objectContaining({ code: 'FORBIDDEN' }));
+    expect(query.mock.calls.length).toBe(1);
+  });
+});
+
+describe('deleteNdtReport — company_access', () => {
+  it('delete verbale di altra azienda → 403', async () => {
+    query.mockResolvedValueOnce({ recordset: [{ id: 5, company_id: 12 }] });
+    const res = mockRes();
+    await ctrl.deleteNdtReport(mockReq({
+      params: { id: '5' },
+      user: companyWrite11,
+    }), res);
+    expect(res.status).toHaveBeenCalledWith(403);
+    expect(query.mock.calls.length).toBe(1);
+  });
+});

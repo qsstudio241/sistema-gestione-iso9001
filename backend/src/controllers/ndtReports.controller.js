@@ -7,6 +7,14 @@
 
 const { query } = require('../config/database');
 const logger = require('../utils/logger');
+const {
+    ensureCompanyAccessLoaded,
+    companyAccessSqlFilter,
+    hasCompanyAccessRows,
+    assertCompanyAccess,
+    assertMutatingAllowed,
+    sendAccessDenied,
+} = require('../services/companyAccess.service');
 
 // ── Numerazione automatica ───────────────────────────────────────────────────
 async function allocateReportNumber(pool_query, report_type, report_year, organization_id) {
@@ -28,9 +36,13 @@ async function getNdtStats(req, res) {
     try {
         const { organization_id } = req.user;
         const { company_id } = req.query;
+        const accessList = await ensureCompanyAccessLoaded(req.user);
+        const companyFilter = companyAccessSqlFilter(accessList, 'r');
 
         const conditions = ['r.organization_id = @organization_id', 'r.is_deleted = 0'];
         const params = { organization_id };
+        if (companyFilter.clause) conditions.push(companyFilter.clause);
+        Object.assign(params, companyFilter.params);
         if (company_id) { conditions.push('r.company_id = @company_id'); params.company_id = parseInt(company_id); }
 
         const result = await query(`
@@ -64,8 +76,13 @@ async function listNdtReports(req, res) {
             page = 1, limit = 50,
         } = req.query;
 
+        const accessList = await ensureCompanyAccessLoaded(req.user);
+        const companyFilter = companyAccessSqlFilter(accessList, 'r');
+
         const conditions = ['r.organization_id = @organization_id', 'r.is_deleted = 0'];
         const params = { organization_id, limit: parseInt(limit), offset: (parseInt(page) - 1) * parseInt(limit) };
+        if (companyFilter.clause) conditions.push(companyFilter.clause);
+        Object.assign(params, companyFilter.params);
 
         if (company_id) { conditions.push('r.company_id = @company_id'); params.company_id = parseInt(company_id); }
         if (report_type) { conditions.push('r.report_type = @report_type'); params.report_type = report_type; }
@@ -142,10 +159,20 @@ async function getNdtReport(req, res) {
             return res.status(404).json({ error: 'Verbale CND non trovato', code: 'NDT_NOT_FOUND' });
         }
 
+        const report = reportResult.recordset[0];
+        const accessList = await ensureCompanyAccessLoaded(req.user);
+        if (hasCompanyAccessRows(accessList)) {
+            if (!report.company_id) {
+                return res.status(403).json({ error: 'Azienda non accessibile', code: 'FORBIDDEN' });
+            }
+            const denied = await assertCompanyAccess(req.user, report.company_id, 'read');
+            if (denied) return sendAccessDenied(res, denied);
+        }
+
         res.json({
             success: true,
             data: {
-                ...reportResult.recordset[0],
+                ...report,
                 items: itemsResult.recordset,
                 instruments: instrumentsResult.recordset,
             },
@@ -171,6 +198,10 @@ async function createNdtReport(req, res) {
             items = [],
             instrument_ids = [],
         } = req.body;
+
+        const companyIdVal = company_id ? parseInt(company_id) : null;
+        const writeDenied = await assertMutatingAllowed(req.user, { companyId: companyIdVal });
+        if (writeDenied) return sendAccessDenied(res, writeDenied);
 
         const year = new Date().getFullYear();
         const report_number = await allocateReportNumber(query, report_type, year, organization_id);
@@ -198,7 +229,7 @@ async function createNdtReport(req, res) {
             )
         `, {
             organization_id,
-            company_id: company_id ? parseInt(company_id) : null,
+            company_id: companyIdVal,
             report_type,
             report_number,
             report_year: year,
@@ -281,12 +312,16 @@ async function updateNdtReport(req, res) {
         const id = parseInt(req.params.id);
 
         const existing = await query(
-            `SELECT id FROM ndt_reports WHERE id = @id AND organization_id = @organization_id AND is_deleted = 0`,
+            `SELECT id, company_id FROM ndt_reports WHERE id = @id AND organization_id = @organization_id AND is_deleted = 0`,
             { id, organization_id }
         );
         if (existing.recordset.length === 0) {
             return res.status(404).json({ error: 'Verbale CND non trovato', code: 'NDT_NOT_FOUND' });
         }
+
+        const existingCompanyId = existing.recordset[0].company_id;
+        const writeDenied = await assertMutatingAllowed(req.user, { companyId: existingCompanyId });
+        if (writeDenied) return sendAccessDenied(res, writeDenied);
 
         const {
             company_id, client, supplier_name, job_order, wps_number, wps_id,
@@ -296,6 +331,14 @@ async function updateNdtReport(req, res) {
             responsible, inspector, client_representative,
             status, items, instrument_ids,
         } = req.body;
+
+        const nextCompanyId = company_id !== undefined
+            ? (company_id ? parseInt(company_id) : null)
+            : existingCompanyId;
+        if (nextCompanyId !== existingCompanyId) {
+            const nextDenied = await assertMutatingAllowed(req.user, { companyId: nextCompanyId });
+            if (nextDenied) return sendAccessDenied(res, nextDenied);
+        }
 
         await query(`
             UPDATE ndt_reports SET
@@ -312,7 +355,7 @@ async function updateNdtReport(req, res) {
             WHERE id = @id
         `, {
             id,
-            company_id: company_id ? parseInt(company_id) : null,
+            company_id: nextCompanyId,
             client: client || null,
             supplier_name: supplier_name || null,
             job_order: job_order || null,
@@ -395,12 +438,15 @@ async function deleteNdtReport(req, res) {
         const id = parseInt(req.params.id);
 
         const existing = await query(
-            `SELECT id FROM ndt_reports WHERE id = @id AND organization_id = @organization_id AND is_deleted = 0`,
+            `SELECT id, company_id FROM ndt_reports WHERE id = @id AND organization_id = @organization_id AND is_deleted = 0`,
             { id, organization_id }
         );
         if (existing.recordset.length === 0) {
             return res.status(404).json({ error: 'Verbale CND non trovato', code: 'NDT_NOT_FOUND' });
         }
+
+        const writeDenied = await assertMutatingAllowed(req.user, { companyId: existing.recordset[0].company_id });
+        if (writeDenied) return sendAccessDenied(res, writeDenied);
 
         await query(`UPDATE ndt_reports SET is_deleted = 1, updated_at = GETDATE() WHERE id = @id`, { id });
         res.json({ success: true });
