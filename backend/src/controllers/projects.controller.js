@@ -24,8 +24,8 @@ async function userForReviewStamp(user) {
     if (user.full_name) return user;
     try {
         const r = await query(
-            'SELECT full_name FROM users WHERE user_id = @user_id',
-            { user_id: user.user_id }
+            'SELECT full_name FROM users WHERE user_id = @user_id AND organization_id = @organization_id',
+            { user_id: user.user_id, organization_id: user.organization_id }
         );
         return { ...user, full_name: r.recordset[0]?.full_name || user.email || 'Utente' };
     } catch {

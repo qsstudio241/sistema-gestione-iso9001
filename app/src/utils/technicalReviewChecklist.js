@@ -40,13 +40,15 @@ export function formatTechnicalReviewCompletion(stamp) {
  */
 export function checklistForWordExport(localChecklist, persistedRaw) {
   const next = { ...(localChecklist || {}) };
+  delete next[TECHNICAL_REVIEW_COMPLETION_KEY];
+  if (!isTechnicalReviewComplete(next)) {
+    return next;
+  }
   const persistedStamp = getTechnicalReviewCompletion(
     parseTechnicalReviewChecklist(persistedRaw)
   );
   if (persistedStamp) {
     next[TECHNICAL_REVIEW_COMPLETION_KEY] = persistedStamp;
-  } else {
-    delete next[TECHNICAL_REVIEW_COMPLETION_KEY];
   }
   return next;
 }

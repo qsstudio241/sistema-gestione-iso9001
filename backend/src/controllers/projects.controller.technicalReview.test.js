@@ -62,6 +62,10 @@ describe('createProject — timbro §5.3', () => {
     }, res);
     expect(res.status).toHaveBeenCalledWith(201);
     expect(query.mock.calls[0][0]).toMatch(/full_name FROM users/);
+    expect(query.mock.calls[0][0]).toMatch(/organization_id/);
+    expect(query.mock.calls[0][1]).toEqual(
+      expect.objectContaining({ user_id: 9, organization_id: 1004 })
+    );
     const parsed = JSON.parse(query.mock.calls[1][1].technical_review_checklist);
     expect(parsed._completion.by_name).toBe('Mario Rossi');
   });

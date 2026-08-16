@@ -73,6 +73,17 @@ describe("technicalReviewChecklist", () => {
     expect(forWord.materiale_base.checked).toBe(true);
   });
 
+  it("Word: se in form manca una spunta, niente timbro anche se persistito", () => {
+    const local = { ...allChecked(), gestione_nc: { checked: false } };
+    const persisted = JSON.stringify({
+      ...allChecked(),
+      _completion: { at: "2026-02-01T00:00:00.000Z", by_user_id: 1, by_name: "Anna" },
+    });
+    const forWord = checklistForWordExport(local, persisted);
+    expect(forWord._completion).toBeUndefined();
+    expect(forWord.gestione_nc.checked).toBe(false);
+  });
+
   it("Word: usa il timbro persistito, non quello locale", () => {
     const local = applyTechnicalReviewCompletionStamp(allChecked(), {
       user_id: 9,

@@ -105,6 +105,9 @@ function ProjectFormModal({ project, companies, defaultCompanyId, wpsList, quali
   }
 
   const technicalReviewComplete = isTechnicalReviewComplete(technicalReviewChecklist);
+  const persistedReviewStamp = getTechnicalReviewCompletion(
+    parseTechnicalReviewChecklist(project?.technical_review_checklist)
+  );
   const showTechnicalReviewWarning =
     STATUSES_REQUIRING_TECHNICAL_REVIEW.includes(form.status) && !technicalReviewComplete;
 
@@ -320,9 +323,9 @@ function ProjectFormModal({ project, companies, defaultCompanyId, wpsList, quali
                 </div>
               )}
 
-              {technicalReviewComplete && getTechnicalReviewCompletion(technicalReviewChecklist) && (
+              {technicalReviewComplete && persistedReviewStamp && (
                 <p className="pj-technical-review-stamp">
-                  {formatTechnicalReviewCompletion(getTechnicalReviewCompletion(technicalReviewChecklist))}
+                  {formatTechnicalReviewCompletion(persistedReviewStamp)}
                 </p>
               )}
 
