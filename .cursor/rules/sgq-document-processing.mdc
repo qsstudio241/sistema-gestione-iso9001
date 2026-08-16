@@ -22,3 +22,7 @@ globs: "**/*.{docx,xlsx,pdf,py,md}"
 ## Workflow
 - Se l'utente carica un file Word/PDF: attiva questa regola.
 - Se l'utente chiede un export: proponi lo script Python corrispondente.
+
+## Fonti Markdown (norme / certificati)
+
+Prima di seed, Rule Engine o gap su una norma: **dichiarare** Markdown presente vs mancante (inventario in `docs/reference/MATERIAL-COMPLIANCE-NORME-SINTESI.md`). Poi si parte sul perimetro coperto. Non inventare soglie; non aspettare tutti i PDF. PDF → JSON: skill `pdf-to-json`.

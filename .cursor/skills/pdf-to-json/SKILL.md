@@ -40,13 +40,17 @@ singolo documento, va sempre riusato invece di scrivere parsing ad-hoc.
 
 ```
 Progresso conversione PDF -> JSON:
+- [ ] 0. Dichiarare fonti Markdown (coperte / mancanti / si parte su…) — inventario MC se norma materiale
 - [ ] 1. Verificare Python locale e dipendenze (vedi Setup)
 - [ ] 2. Lanciare la CLI sul PDF (singolo file o cartella batch)
 - [ ] 3. Leggere il .md intermedio generato e verificarne la qualita'
 - [ ] 4. Se ci sono pagine "ATTENZIONE" (bassa qualita'/OCR), correggerle a mano nel .md
 - [ ] 5. Rigenerare/validare il .json solo dopo aver revisionato il .md
 - [ ] 6. Usare il .json nel backend (seed, import, ecc.) o consegnarlo al committente
+- [ ] 7. Aggiornare inventario + SOURCE_PDF_INDEX (presente/mancante), non lasciare la lacuna solo in chat
 ```
+
+**Gate (16/08/2026):** la mancanza di *altre* norme richiamate **non** blocca l'avvio. Si traccia (inventario in [`MATERIAL-COMPLIANCE-NORME-SINTESI.md`](../../../docs/reference/MATERIAL-COMPLIANCE-NORME-SINTESI.md)), si dichiara, si parte sul perimetro coperto. Vietato inventare soglie per un prodotto senza Markdown (es. tubo senza EN 10219-1).
 
 ### Step 1 — Setup (una tantum per macchina)
 
@@ -201,4 +205,5 @@ ISO 14341:2020 → `ISO-14341-consumabili-filo.md` + `fillerWire14341.js` (RC-11
 
 - Tool e documentazione completa: [`backend/scripts/pdf_to_json/README.md`](../../../backend/scripts/pdf_to_json/README.md)
 - Script legacy per le 6 norme storiche (non toccare le sue regex): `backend/scripts/import-norms-from-markdown.js`
-- Pattern riutilizzabile: `docs/GUIDA_CONSOLIDATA.md` (sezione pattern/documentazione)
+- Pattern riutilizzabile: `docs/GUIDA_CONSOLIDATA.md` (sezione Ambiente di lavoro e tooling)
+- Inventario fonti MC (presente/mancante): [`docs/reference/MATERIAL-COMPLIANCE-NORME-SINTESI.md`](../../../docs/reference/MATERIAL-COMPLIANCE-NORME-SINTESI.md)

@@ -63,6 +63,7 @@ Skill di progetto per confrontare **requisiti normativi** e **stato app** (codic
 
 ```
 Progresso gap analysis:
+- [ ] 0. Dichiarare fonti Markdown: coperte / mancanti / si parte su… (mancante = limite documentale, non gap app)
 - [ ] 1. Definire modulo, standard, scope
 - [ ] 2. Leggere fonti normative + Quaderni pertinenti
 - [ ] 3. Leggere roadmap/brief/ADR per stato dichiarato
@@ -75,7 +76,7 @@ Progresso gap analysis:
 
 ### Step 1 — Perimetro
 
-Usare [reference.md](reference.md) per mapping modulo → clausole/file. Se lo scope supera le norme disponibili in repo, segnalarlo come **limite documentale** (non come gap app).
+Usare [reference.md](reference.md) per mapping modulo → clausole/file. Se lo scope supera le norme disponibili in repo, segnalarlo come **limite documentale** (non come gap app). Per Material Compliance: inventario in [`MATERIAL-COMPLIANCE-NORME-SINTESI.md`](../../../docs/reference/MATERIAL-COMPLIANCE-NORME-SINTESI.md) — dichiarare, tracciare, **partire** sul perimetro coperto; non inventare clausole/soglie.
 
 ### Step 2 — Estrazione requisiti
 

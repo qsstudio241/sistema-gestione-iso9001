@@ -19,7 +19,7 @@
 
 - Registro **subfornitura saldatura** dedicato (ISO-11): oggi solo checkbox + cliente commessa — da aprire solo se un cliente lo chiede in campo
 - Il file Word Mason `Check List Audit/RDP_MSN-260127-01_REV_0.docx` **non è in git** (solo citato). ISO-4: copiarlo in `app/public/templates/rdp-mason-report.docx` quando il deputy lo trova in cartella locale / archivio; se manca, chiedere il file al committente (non inventare un layout)
-- **Norme certificati 3.1**: consegnate 16/08/2026 (EN 10204, EN 10168, ISO 10474/404/6929 + facsimile). Estratti in [`docs/reference/MATERIAL-COMPLIANCE-NORME-SINTESI.md`](../reference/MATERIAL-COMPLIANCE-NORME-SINTESI.md). Soglie di grado (EN 10025-…) ancora da consegnare.
+- **Norme certificati 3.1**: consegnate 16/08/2026 (EN 10204, EN 10168, ISO 10474/404/6929 + facsimile). Soglie lamiere EN 10025-2:2019 in [`EN-10025-2-acciai-strutturali.md`](../reference/EN-10025-2-acciai-strutturali.md). Inventario fonti (dichiarare, poi partire): [`MATERIAL-COMPLIANCE-NORME-SINTESI.md`](../reference/MATERIAL-COMPLIANCE-NORME-SINTESI.md).
 
 ## Decisioni già prese
 

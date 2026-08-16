@@ -121,6 +121,12 @@ Card statistiche e tendina sulla **stessa** dimensione = ridondanza da togliere.
 
 Nuovo campo in `aiExpectedSchema` → stessa chiave in `*_MANUAL_EDITABLE_FIELDS` del controller **e** nel form React. CI: `manualEditCompletenessCheck.js`.
 
+## Fonti Markdown prima di seed / Rule Engine / gap normativa
+
+Inventario (presente / mancante): [`docs/reference/MATERIAL-COMPLIANCE-NORME-SINTESI.md`](../../docs/reference/MATERIAL-COMPLIANCE-NORME-SINTESI.md) § Inventario fonti.
+
+**Prima** di seed soglie, prompt ISO-3, Rule Engine o gap analysis su una norma: dichiarare in chat (3 righe) cosa c’è in Markdown, cosa manca, su cosa si parte. Le lacune si **tracciano**, non bloccano la slice coperta. Vietato inventare numeri. Skill: `pdf-to-json`, `gap-analysis-normativa`.
+
 ## Chiusura e handoff
 
 Niente fix a metà. Doc: GUIDA (lezione) + roadmap se cambia una priorità. Merge: [`sgq-git-autonomy.mdc`](sgq-git-autonomy.mdc) — Cloud Agent apre PR, non mergia.
