@@ -48,7 +48,7 @@ Tutti i tipi EN 10204 hanno A+B+Z. Il tipo **2.1 non ha** C né D (niente risult
 | B01 | Forma prodotto | `product_form` | lamiera, tubo, profilato, … (vocabolario ISO 6929) |
 | B02 | Designazione acciaio | `steel_designation` | es. S355J2 + norma prodotto |
 | B04 | Condizione di fornitura | `delivery_condition` | N, QT, AR, … |
-| B07 | Identificazione / colata | `heat_no` | colata, lingotto, lotto, n. prova |
+| B07 | Identificazione / colata | `heat_or_lot_no` | colata, lingotto, lotto, n. prova. Sull’**apporto** è di solito il lotto/batch |
 | B09–B11 | Dimensioni | `dimensions` | spessore / Ø / lunghezza |
 | B13 | Massa effettiva | `actual_mass` | |
 | C11 | Snervamento | `ReH` | MPa (Rp0,2 se prova) |

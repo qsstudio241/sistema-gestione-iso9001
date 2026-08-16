@@ -8,7 +8,7 @@
 
 ## Contesto e problema
 
-La conformità di una materia prima **non** dipende da una sola norma. Concorrono certificato EN 10204, norma materiale, ordine di acquisto, requisiti cliente e criteri interni azienda. Senza una gerarchia esplicita, il Rule Engine e l’UI produrrebbero esiti ambigui o non auditabili.
+La conformità di un **materiale di base o d’apporto** **non** dipende da una sola norma. Concorrono certificato EN 10204, norma materiale (o norma prodotto consumabile), ordine di acquisto, requisiti cliente e criteri interni azienda. Senza una gerarchia esplicita, il Rule Engine e l’UI produrrebbero esiti ambigui o non auditabili.
 
 ---
 

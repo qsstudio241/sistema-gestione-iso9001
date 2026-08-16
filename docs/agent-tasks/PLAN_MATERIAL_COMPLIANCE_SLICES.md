@@ -4,6 +4,7 @@
 > **Spec**: [`MODULO_MATERIAL_COMPLIANCE_AI.md`](../specs/MODULO_MATERIAL_COMPLIANCE_AI.md)  
 > **ADR**: 020–024  
 > **Brief fondazione (MC-0)**: [`DEPUTYTASK_MATERIAL_COMPLIANCE_AI_FOUNDATION.md`](DEPUTYTASK_MATERIAL_COMPLIANCE_AI_FOUNDATION.md)  
+> **Spec tecniche MC-0**: [`MATERIAL_COMPLIANCE_DATA_MODEL.md`](../specs/MATERIAL_COMPLIANCE_DATA_MODEL.md) · [`MATERIAL_COMPLIANCE_UI.md`](../specs/MATERIAL_COMPLIANCE_UI.md) · [`MATERIAL_COMPLIANCE_API.md`](../specs/MATERIAL_COMPLIANCE_API.md)  
 > **Ponte 3834**: §11–13 del [PLAN_3834_SLICES.md](PLAN_3834_SLICES.md) — niente CRUD consumabili nel modulo saldatura  
 > **Branch base**: `main`  
 > **Migrazioni**: numerazione condivisa da `database/migrations/` — oggi ultimo ≥138; MC-1 userà il **prossimo libero** al momento dell’implementazione (non riservare numeri in anticipo se altre PR avanzano).
@@ -15,7 +16,7 @@
 **Sì, a slice verticali.** Non in un unico commit.  
 **HITL 16/08/2026 (committente):** i certificati sono di solito **scansioni**; l’agente deve estrarre i valori e imparare dalle correzioni. Il modello ingest qualifiche/WPQR (schema → revisione umana → commit → feedback) è **valido e da riusare**, non da rifare. OCR: riusare `ocrExtractor` / `documentTextExtractor` (SAL S1a lo sta collegando) — **non** un secondo motore.
 
-**Fonti Markdown — dichiarare poi partire (HITL 16/08, seguito):** inventario in [`MATERIAL-COMPLIANCE-NORME-SINTESI.md`](../reference/MATERIAL-COMPLIANCE-NORME-SINTESI.md). Prima di ogni slice MC-2/MC-3/ISO-3: 3 righe (coperte / mancanti / si parte su). Le lacune (oggi EN 10210-1 / 10219-1) si tracciano; **non** bloccano lamiere/profili; **non** si inventano soglie.
+**Fonti Markdown — dichiarare poi partire (HITL 16/08, seguito):** inventario in [`MATERIAL-COMPLIANCE-NORME-SINTESI.md`](../reference/MATERIAL-COMPLIANCE-NORME-SINTESI.md). Prima di ogni slice MC-2/MC-3/ISO-3: 3 righe (coperte / mancanti / si parte su). Le lacune (EN 10210-1 / 10219-1; norme prodotto apporto oltre ISO 14341) si tracciano; **non** bloccano lamiere/profili né l’elenco certificati d’apporto; **non** si inventano soglie.
 
 **Norme e campi da estrarre:** consegnate 16/08/2026 (EN 10204, EN 10168, ISO 10474, ISO 404, ISO 6929, facsimile MTC, **EN 10025-2:2019**). Markdown in `docs/Normative/` NORMA_00020–00026 + KB `knowledge/material-compliance/`. Dizionario campi = EN 10168. Soglie lamiere/profili S235–S500: [`EN-10025-2-acciai-strutturali.md`](../reference/EN-10025-2-acciai-strutturali.md). Tubi/hollow: **mancante** in Markdown → skip, non fail. Sintesi: [`MATERIAL-COMPLIANCE-NORME-SINTESI.md`](../reference/MATERIAL-COMPLIANCE-NORME-SINTESI.md). La griglia elenco (DDT + anagrafica) resta valida; i campi lab seguono i codici 10168.
 
@@ -33,7 +34,7 @@ MC-B (OCR) **non** è più post-MVP: senza testo i certificati reali non si legg
 
 ## Griglia elenco (HITL 16/08 — committente, **confermata**)
 
-**Sì**: una tab/pagina elenco (copia `QualificationsPage` + `SgqDataGrid`, non un look nuovo) con **riferimento al DDT** e anagrafica materiale. Un DDT può avere più righe/certificati. Colonne sotto **chiuse** (16/08, «Sembra OK»).
+**Sì**: una tab/pagina elenco (copia `QualificationsPage` + `SgqDataGrid`, non un look nuovo) con **riferimento al DDT** e anagrafica materiale. Un DDT può avere più righe/certificati. **Base e apporto nella stessa griglia** (`material_role`). Colonne sotto **chiuse** (16/08 + ruolo apporto 16/08).
 
 ### Colonne in griglia (MVP)
 
@@ -41,13 +42,14 @@ MC-B (OCR) **non** è più post-MVP: senza testo i certificati reali non si legg
 |---------|--------|
 | N. DDT | Ponte arrivo merce ↔ certificato (rintracciabilità §12/§17) |
 | Data DDT | Ordine cronologico in accettazione |
-| N. certificato 3.1 | Identificativo del PDF |
-| Materiale (designazione) | Anagrafica (es. S355J2, S235JR) |
-| Colata | Chiave di rintracciabilità in officina |
-| Forma | Piastra / tubo / profilo / lamiera |
+| N. certificato | Identificativo del PDF (2.1–3.2) |
+| Ruolo | Base (lamiera/profilo/tubo) o Apporto (filo/elettrodo/flusso) — ISO 3834 §11 e §12 |
+| Materiale (designazione) | Anagrafica: S355J2 **oppure** `G 42 4 M21 3Si1` |
+| Colata / lotto | Chiave rintracciabilità: colata in officina; lotto/batch sul consumabile |
+| Forma | Piastra / tubo / profilo / lamiera **o** filo / elettrodo / flusso |
 | Dimensioni | Spessore e/o Ø e/o lunghezza (una cella compatta) |
-| Norma | EN 10025-2, EN 10219, … |
-| Fornitore / acciaieria | Chi ha emesso il 3.1 |
+| Norma | EN 10025-2, ISO 14341, … |
+| Fornitore / acciaieria | Chi ha emesso il certificato |
 | Esito | In revisione / conforme / non conforme |
 
 ### Non in griglia (solo scheda dettaglio, al click)
@@ -88,10 +90,10 @@ Aggiornare questa mappa se emergono vincoli nuovi.
 
 ### DoD
 
-- [ ] Tre file spec presenti, UTF-8, linkati dalla MODULO
-- [ ] Entità minime definite: certificato (con **n. DDT** + data DDT), check_result, (opz.) requirement_snapshot
-- [ ] Nessun hardcode cliente; path KB come ADR-023
-- [ ] OCR: in MVP (MC-B dopo extract), riuso estrattore esistente — non «fuori scope»
+- [x] Tre file spec presenti, UTF-8, linkati dalla MODULO ([DATA_MODEL](../specs/MATERIAL_COMPLIANCE_DATA_MODEL.md), [UI](../specs/MATERIAL_COMPLIANCE_UI.md), [API](../specs/MATERIAL_COMPLIANCE_API.md))
+- [x] Entità minime definite: certificato (con **n. DDT** + data DDT + **`material_role` base\|filler**), check_result, snapshot hash KB (JSON sulla riga, non terza tabella MVP)
+- [x] Nessun hardcode cliente; path KB come ADR-023
+- [x] OCR: in MVP (MC-B dopo extract), riuso estrattore esistente — non «fuori scope»
 
 ### Test L1
 
@@ -238,9 +240,9 @@ Usare dopo ogni PR di slice:
 
 | Check | MC-0 | MC-1 | MC-2 | MC-3 | MC-4 | MC-5 | MC-6 |
 |-------|------|------|------|------|------|------|------|
-| Spec / ADR rispettati | ☐ | ☐ | ☐ | ☐ | ☐ | ☐ | ☐ |
+| Spec / ADR rispettati | ☑ | ☐ | ☐ | ☐ | ☐ | ☐ | ☐ |
 | Multi-tenant / company scope | — | ☐ | — | — | ☐ | ☐ | ☐ |
 | AI ≠ approvazione | — | — | — | ☐ | ☐ | ☐ | ☐ |
-| Test L1 / build | ☐ | ☐ | ☐ | ☐ | ☐ | ☐ | ☐ |
+| Test L1 / build | ☑ | ☐ | ☐ | ☐ | ☐ | ☐ | ☐ |
 | Deploy manifest (se nuovi `.js` BE) | — | — | ☐ | ☐ | ☐ | — | ☐ |
-| Doc roadmap aggiornata | ☐ | — | — | — | — | — | ☐ |
+| Doc roadmap aggiornata | ☑ | — | — | — | — | — | ☐ |
