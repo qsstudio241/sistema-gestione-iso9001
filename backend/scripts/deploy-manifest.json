@@ -70,7 +70,8 @@
                                      "src/utils/ingestPlausibilityChecks.js",
                                      "src/utils/numericSanitizer.js",
                                      "src/utils/linkedLegislationParser.js",
-                                     "src/utils/riskScore.js"
+                                     "src/utils/riskScore.js",
+                                     "src/utils/technicalReviewChecklist.js"
                                  ]
                    },
                    {

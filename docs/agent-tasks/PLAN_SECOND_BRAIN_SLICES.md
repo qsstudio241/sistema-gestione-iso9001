@@ -94,6 +94,16 @@
 
 **Parallelo**: SB-1/2/3 toccano gli stessi file chat — **non** aprire due deputy lì. CTX-0 può stare su `DEPUTYTASK3.md` quando vorrai il parallelo (file ≠ `AiAssistantPage`). `DEPUTYTASK.md` resta SAL; i fatti usano **`DEPUTYTASK2.md`**.
 
+**Altri moduli in corso (16/08 pomeriggio) — non pestare**
+
+| In corso | File vietati a Second Brain |
+|---|---|
+| ISO 3834 (agente «completezza», ISO-3) | `projects.*`, `rdp.*`, `welding*`, `PLAN_3834*`, `DEPUTYTASK1.md`, livello 3834 in `CompanyDetailPage` |
+| SAL S1a (`DEPUTYTASK.md` APERTO) | `documentTextExtractor*`, `ocrExtractor*`, `salAiSuggest*`, `DEPUTYTASK.md` |
+| Rischi PR #436 (SWOT / 4.1–4.2) | `RisksPage*`, `risks.controller*`, cataloghi 4.1/4.2. `apiService.js` solo **righe additive** in fondo |
+
+CTX-2 (scheda azienda) **non** partire finché l’agente 3834 è attivo (stesso file anagrafica). CTX-0 e SB-1 sono disgiunti da 3834.
+
 **Rischio SB-1…SB-5**: Medio (endpoint additivo, no schema, no auth nuovo) — PR + Bugbot. Non Alto: non si tocca JWT / sync / migrazioni distruttive.
 
 ---

@@ -5,6 +5,14 @@
 
 const { query } = require('../config/database');
 const logger = require('../utils/logger');
+const {
+    ensureCompanyAccessLoaded,
+    companyAccessSqlFilter,
+    hasCompanyAccessRows,
+    assertCompanyAccess,
+    assertMutatingAllowed,
+    sendAccessDenied,
+} = require('../services/companyAccess.service');
 
 async function allocateBookNumber(report_year, organization_id) {
     const result = await query(`
@@ -30,9 +38,13 @@ async function getWeldingBookStats(req, res) {
     try {
         const { organization_id } = req.user;
         const { company_id } = req.query;
+        const accessList = await ensureCompanyAccessLoaded(req.user);
+        const companyFilter = companyAccessSqlFilter(accessList, 'b');
 
         const conditions = ['b.organization_id = @organization_id', 'b.is_deleted = 0'];
         const params = { organization_id };
+        if (companyFilter.clause) conditions.push(companyFilter.clause);
+        Object.assign(params, companyFilter.params);
         if (company_id) {
             conditions.push('b.company_id = @company_id');
             params.company_id = parseInt(company_id, 10);
@@ -63,12 +75,17 @@ async function listWeldingBooks(req, res) {
             page = 1, limit = 50,
         } = req.query;
 
+        const accessList = await ensureCompanyAccessLoaded(req.user);
+        const companyFilter = companyAccessSqlFilter(accessList, 'b');
+
         const conditions = ['b.organization_id = @organization_id', 'b.is_deleted = 0'];
         const params = {
             organization_id,
             limit: parseInt(limit, 10),
             offset: (parseInt(page, 10) - 1) * parseInt(limit, 10),
         };
+        if (companyFilter.clause) conditions.push(companyFilter.clause);
+        Object.assign(params, companyFilter.params);
 
         if (company_id) {
             conditions.push('b.company_id = @company_id');
@@ -171,12 +188,22 @@ async function getWeldingBook(req, res) {
             return res.status(404).json({ error: 'Welding Book non trovato', code: 'WB_NOT_FOUND' });
         }
 
+        const book = bookResult.recordset[0];
+        const accessList = await ensureCompanyAccessLoaded(req.user);
+        if (hasCompanyAccessRows(accessList)) {
+            if (!book.company_id) {
+                return res.status(403).json({ error: 'Azienda non accessibile', code: 'FORBIDDEN' });
+            }
+            const denied = await assertCompanyAccess(req.user, book.company_id, 'read');
+            if (denied) return sendAccessDenied(res, denied);
+        }
+
         const children = await loadBookChildren(id);
 
         res.json({
             success: true,
             data: {
-                ...bookResult.recordset[0],
+                ...book,
                 ...children,
             },
         });
@@ -248,6 +275,10 @@ async function createWeldingBook(req, res) {
             welds = [],
         } = req.body;
 
+        const companyIdVal = company_id ? parseInt(company_id, 10) : null;
+        const writeDenied = await assertMutatingAllowed(req.user, { companyId: companyIdVal });
+        if (writeDenied) return sendAccessDenied(res, writeDenied);
+
         const book_year = new Date().getFullYear();
         const book_number = await allocateBookNumber(book_year, organization_id);
 
@@ -273,7 +304,7 @@ async function createWeldingBook(req, res) {
             )
         `, {
             organization_id,
-            company_id: company_id ? parseInt(company_id, 10) : null,
+            company_id: companyIdVal,
             book_number,
             book_year,
             project_id: project_id ? parseInt(project_id, 10) : null,
@@ -325,12 +356,24 @@ async function updateWeldingBook(req, res) {
         } = req.body;
 
         const existing = await query(`
-            SELECT id FROM welding_books
+            SELECT id, company_id FROM welding_books
             WHERE id = @id AND organization_id = @organization_id AND is_deleted = 0
         `, { id, organization_id });
 
         if (existing.recordset.length === 0) {
             return res.status(404).json({ error: 'Welding Book non trovato', code: 'WB_NOT_FOUND' });
+        }
+
+        const existingCompanyId = existing.recordset[0].company_id;
+        const writeDenied = await assertMutatingAllowed(req.user, { companyId: existingCompanyId });
+        if (writeDenied) return sendAccessDenied(res, writeDenied);
+
+        const nextCompanyId = company_id !== undefined
+            ? (company_id ? parseInt(company_id, 10) : null)
+            : existingCompanyId;
+        if (nextCompanyId !== existingCompanyId) {
+            const nextDenied = await assertMutatingAllowed(req.user, { companyId: nextCompanyId });
+            if (nextDenied) return sendAccessDenied(res, nextDenied);
         }
 
         await query(`
@@ -359,7 +402,7 @@ async function updateWeldingBook(req, res) {
         `, {
             id,
             organization_id,
-            company_id: company_id ? parseInt(company_id, 10) : null,
+            company_id: nextCompanyId,
             project_id: project_id ? parseInt(project_id, 10) : null,
             product_code: product_code || null,
             product_description: product_description || null,
@@ -398,14 +441,21 @@ async function deleteWeldingBook(req, res) {
         const { organization_id } = req.user;
         const id = parseInt(req.params.id, 10);
 
-        const result = await query(`
+        const existing = await query(`
+            SELECT id, company_id FROM welding_books
+            WHERE id = @id AND organization_id = @organization_id AND is_deleted = 0
+        `, { id, organization_id });
+        if (existing.recordset.length === 0) {
+            return res.status(404).json({ error: 'Welding Book non trovato', code: 'WB_NOT_FOUND' });
+        }
+
+        const writeDenied = await assertMutatingAllowed(req.user, { companyId: existing.recordset[0].company_id });
+        if (writeDenied) return sendAccessDenied(res, writeDenied);
+
+        await query(`
             UPDATE welding_books SET is_deleted = 1, updated_at = GETDATE()
             WHERE id = @id AND organization_id = @organization_id AND is_deleted = 0
         `, { id, organization_id });
-
-        if (result.rowsAffected[0] === 0) {
-            return res.status(404).json({ error: 'Welding Book non trovato', code: 'WB_NOT_FOUND' });
-        }
 
         res.json({ success: true });
     } catch (err) {

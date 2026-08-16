@@ -16,6 +16,22 @@ const {
 const {
     resolveCommercialCustomerFields,
 } = require('../services/commercialCustomerCounterparty.service');
+const { stampTechnicalReviewChecklistJson } = require('../utils/technicalReviewChecklist');
+
+/** JWT non include full_name: se manca, lo legge da users. */
+async function userForReviewStamp(user) {
+    if (!user) return { full_name: 'Utente' };
+    if (user.full_name) return user;
+    try {
+        const r = await query(
+            'SELECT full_name FROM users WHERE user_id = @user_id AND organization_id = @organization_id',
+            { user_id: user.user_id, organization_id: user.organization_id }
+        );
+        return { ...user, full_name: r.recordset[0]?.full_name || user.email || 'Utente' };
+    } catch {
+        return { ...user, full_name: user.email || 'Utente' };
+    }
+}
 
 // GET /projects
 async function listProjects(req, res) {
@@ -235,7 +251,10 @@ async function createProject(req, res) {
             ? JSON.stringify(Array.isArray(applicable_wps_ids) ? applicable_wps_ids : [applicable_wps_ids])
             : null;
         const technicalReviewChecklistJson = technical_review_checklist
-            ? (typeof technical_review_checklist === 'string' ? technical_review_checklist : JSON.stringify(technical_review_checklist))
+            ? stampTechnicalReviewChecklistJson(
+                technical_review_checklist,
+                await userForReviewStamp(req.user)
+            )
             : null;
 
         const result = await query(`
@@ -287,7 +306,7 @@ async function updateProject(req, res) {
         const { organization_id } = req.user;
 
         const existing = await query(`
-            SELECT id, company_id, end_customer_id, client_name FROM projects
+            SELECT id, company_id, end_customer_id, client_name, technical_review_checklist FROM projects
             WHERE id = @id AND organization_id = @organization_id
         `, { id: parseInt(id), organization_id });
 
@@ -319,8 +338,11 @@ async function updateProject(req, res) {
                     const val = req.body[field];
                     params[field] = val ? JSON.stringify(Array.isArray(val) ? val : [val]) : null;
                 } else if (field === 'technical_review_checklist') {
-                    const val = req.body[field];
-                    params[field] = val ? (typeof val === 'string' ? val : JSON.stringify(val)) : null;
+                    params[field] = stampTechnicalReviewChecklistJson(
+                        req.body[field],
+                        await userForReviewStamp(req.user),
+                        { previous: existingProject.technical_review_checklist },
+                    );
                 } else if (field === 'company_id') {
                     params[field] = companyIdNext;
                 } else {

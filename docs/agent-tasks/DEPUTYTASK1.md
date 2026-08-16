@@ -1,8 +1,8 @@
-# DEPUTYTASK1 — ISO-1a: RBAC `company_access` sui Rapporti di Prova (RDP)
+# DEPUTYTASK1 — ISO-2: Riesame §5.3 — traccia data/utente + Word (niente blocco)
 
 **Stato:** CHIUSO  
-**Aperto:** 15/08/2026 (Lead wayfinder — Chart the map ISO 3834)  
-**Chiuso:** 16/08/2026 — [PR #438](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/438)  
+**Aperto:** 16/08/2026 (dopo merge ISO-1d [PR #442](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/442))  
+**Chiuso:** 16/08/2026 — [PR #443](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/443)  
 **Piano:** [`PLAN_3834_SLICES.md`](PLAN_3834_SLICES.md)  
 **Rischio:** Medio — PR + gate Bugbot; **non** push su `main`
 
@@ -10,13 +10,12 @@
 
 ## Esito
 
-Un utente con `user_company_access` su una sola azienda non vede e non modifica i RDP delle altre. Studio senza access list resta org-wide.
+- Primo completamento dei 17 punti: timbro data + utente nel JSON (`_completion`). Nessuna colonna nuova.
+- Se si toglie una spunta, il timbro sparisce.
+- Pulsante «Scarica Word checklist» (anche se incompleta).
+- Banner di avviso invariato; **nessun blocco** apertura commessa.
+- Test L1: FE 7 verdi, BE 10 verdi (util + create + endCustomer).
 
-- `listRdpReports` / `getRdpStats`: `companyAccessSqlFilter` (alias `r`)
-- get: 403 se `company_id` NULL o fuori elenco (`FORBIDDEN`, non 400)
-- create / update / delete: `assertMutatingAllowed`
-- Test L1 Jest: 22 verdi (`rdp.controller.test.js` + `companyAccess.service.test.js`)
-
-Prossima slice 3834: **ISO-1b** (RBAC su verbali NDT) — stesso pattern, file disgiunto. Non aprire finché questa PR non è mergiata.
+Prossima slice 3834: **ISO-3** (persistenza AI capitolato) o **ISO-4** (Word RDP Mason, serve il file).
 
 `DEPUTYTASK.md` (SAL S1a) non toccato.

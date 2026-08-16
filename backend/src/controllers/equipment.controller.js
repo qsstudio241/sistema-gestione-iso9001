@@ -8,33 +8,42 @@
 
 const { query } = require('../config/database');
 const logger = require('../utils/logger');
+const {
+    ensureCompanyAccessLoaded,
+    companyAccessSqlFilter,
+    hasCompanyAccessRows,
+    assertCompanyAccess,
+    assertMutatingAllowed,
+    sendAccessDenied,
+} = require('../services/companyAccess.service');
 
-// ── Scope helper ────────────────────────────────────────────────────────────
-// Un utente studio vede: asset del proprio studio (company_id IS NULL)
-//                       + asset di tutte le aziende del tenant
-// Un utente azienda vede: asset dello studio (company_id IS NULL)
-//                        + asset della propria azienda
-
-function buildScopeCondition(user, alias = 'ea') {
-    const { organization_id, company_id: userCompanyId, role } = user;
-    // Studio admin/superadmin/auditor: vede tutto il tenant
-    if (!userCompanyId) {
-        return {
-            condition: `${alias}.organization_id = @organization_id`,
-            params: { organization_id },
-        };
-    }
-    // Utente azienda: vede solo studio (NULL) + la propria azienda
+/**
+ * Lista: utente con company_access vede asset studio (NULL) + le proprie aziende.
+ * Non usa user.company_id (colonna inesistente — bug storico di buildScopeCondition).
+ */
+function equipmentListFilter(accessList, alias = 'ea') {
+    const companyFilter = companyAccessSqlFilter(accessList, alias);
+    if (!companyFilter.clause) return { clause: '', params: {} };
     return {
-        condition: `(${alias}.organization_id = @organization_id AND (${alias}.company_id IS NULL OR ${alias}.company_id = @user_company_id))`,
-        params: { organization_id, user_company_id: userCompanyId },
+        clause: `(${alias}.company_id IS NULL OR ${companyFilter.clause})`,
+        params: companyFilter.params,
     };
+}
+
+/** Lettura: asset studio (NULL) visibile a tutti; asset azienda solo se in elenco. */
+async function assertEquipmentRead(user, companyId) {
+    const accessList = await ensureCompanyAccessLoaded(user);
+    if (!hasCompanyAccessRows(accessList)) return null;
+    if (companyId == null || companyId === '') return null;
+    return assertCompanyAccess(user, companyId, 'read');
 }
 
 // ── GET /equipment ───────────────────────────────────────────────────────────
 async function listEquipment(req, res) {
     try {
-        const scope = buildScopeCondition(req.user);
+        const { organization_id } = req.user;
+        const accessList = await ensureCompanyAccessLoaded(req.user);
+        const companyFilter = equipmentListFilter(accessList, 'ea');
         const {
             company_id,
             asset_category,
@@ -46,8 +55,14 @@ async function listEquipment(req, res) {
             limit = 50,
         } = req.query;
 
-        const conditions = [scope.condition, 'ea.is_deleted = 0'];
-        const params = { ...scope.params, limit: parseInt(limit), offset: (parseInt(page) - 1) * parseInt(limit) };
+        const conditions = ['ea.organization_id = @organization_id', 'ea.is_deleted = 0'];
+        const params = {
+            organization_id,
+            limit: parseInt(limit),
+            offset: (parseInt(page) - 1) * parseInt(limit),
+        };
+        if (companyFilter.clause) conditions.push(companyFilter.clause);
+        Object.assign(params, companyFilter.params);
 
         if (company_id) { conditions.push('ea.company_id = @company_id'); params.company_id = parseInt(company_id); }
         if (asset_category) { conditions.push('ea.asset_category = @asset_category'); params.asset_category = asset_category; }
@@ -101,7 +116,7 @@ async function listEquipment(req, res) {
 // ── GET /equipment/:id ───────────────────────────────────────────────────────
 async function getEquipment(req, res) {
     try {
-        const scope = buildScopeCondition(req.user);
+        const { organization_id } = req.user;
         const id = parseInt(req.params.id);
 
         const [assetResult, calResult] = await Promise.all([
@@ -110,8 +125,8 @@ async function getEquipment(req, res) {
                        DATEDIFF(day, GETDATE(), ea.next_calibration_date) AS days_to_expiry
                 FROM equipment_assets ea
                 LEFT JOIN companies c ON c.id = ea.company_id
-                WHERE ea.id = @id AND ${scope.condition} AND ea.is_deleted = 0
-            `, { id, ...scope.params }),
+                WHERE ea.id = @id AND ea.organization_id = @organization_id AND ea.is_deleted = 0
+            `, { id, organization_id }),
             query(`
                 SELECT ec.*, u.full_name AS created_by_name
                 FROM equipment_calibrations ec
@@ -125,9 +140,13 @@ async function getEquipment(req, res) {
             return res.status(404).json({ error: 'Strumento non trovato', code: 'EQUIPMENT_NOT_FOUND' });
         }
 
+        const asset = assetResult.recordset[0];
+        const denied = await assertEquipmentRead(req.user, asset.company_id);
+        if (denied) return sendAccessDenied(res, denied);
+
         res.json({
             success: true,
-            data: { ...assetResult.recordset[0], calibrations: calResult.recordset },
+            data: { ...asset, calibrations: calResult.recordset },
         });
     } catch (err) {
         logger.error('getEquipment error', { error: err.message });
@@ -150,6 +169,10 @@ async function createEquipment(req, res) {
         } = req.body;
 
         if (!name) return res.status(400).json({ error: 'Il nome è obbligatorio', code: 'EQUIPMENT_NAME_REQUIRED' });
+
+        const companyIdVal = company_id ? parseInt(company_id) : null;
+        const writeDenied = await assertMutatingAllowed(req.user, { companyId: companyIdVal });
+        if (writeDenied) return sendAccessDenied(res, writeDenied);
 
         // Auto-calcola next_calibration_date se non fornita
         const freqMonths = calibration_frequency_months ? parseInt(calibration_frequency_months) : null;
@@ -176,7 +199,7 @@ async function createEquipment(req, res) {
             )
         `, {
             organization_id,
-            company_id: company_id ? parseInt(company_id) : null,
+            company_id: companyIdVal,
             asset_category: asset_category || 'measuring_instrument',
             asset_subcategory: asset_subcategory || null,
             name,
@@ -208,16 +231,20 @@ async function createEquipment(req, res) {
 // ── PUT /equipment/:id ───────────────────────────────────────────────────────
 async function updateEquipment(req, res) {
     try {
-        const scope = buildScopeCondition(req.user);
+        const { organization_id } = req.user;
         const id = parseInt(req.params.id);
 
         const existing = await query(
-            `SELECT id FROM equipment_assets ea WHERE ea.id = @id AND ${scope.condition} AND ea.is_deleted = 0`,
-            { id, ...scope.params }
+            `SELECT id, company_id FROM equipment_assets WHERE id = @id AND organization_id = @organization_id AND is_deleted = 0`,
+            { id, organization_id }
         );
         if (existing.recordset.length === 0) {
             return res.status(404).json({ error: 'Strumento non trovato', code: 'EQUIPMENT_NOT_FOUND' });
         }
+
+        const existingCompanyId = existing.recordset[0].company_id;
+        const writeDenied = await assertMutatingAllowed(req.user, { companyId: existingCompanyId });
+        if (writeDenied) return sendAccessDenied(res, writeDenied);
 
         const {
             company_id, asset_category, asset_subcategory,
@@ -227,6 +254,14 @@ async function updateEquipment(req, res) {
             last_calibration_date, next_calibration_date,
             purchase_date, purchase_price, notes,
         } = req.body;
+
+        const nextCompanyId = company_id !== undefined
+            ? (company_id ? parseInt(company_id) : null)
+            : existingCompanyId;
+        if (nextCompanyId !== existingCompanyId) {
+            const nextDenied = await assertMutatingAllowed(req.user, { companyId: nextCompanyId });
+            if (nextDenied) return sendAccessDenied(res, nextDenied);
+        }
 
         // Auto-calcola next_calibration_date se non fornita esplicitamente
         const freqMonthsUpd = calibration_frequency_months ? parseInt(calibration_frequency_months) : null;
@@ -259,7 +294,7 @@ async function updateEquipment(req, res) {
             WHERE id = @id
         `, {
             id,
-            company_id: company_id ? parseInt(company_id) : null,
+            company_id: nextCompanyId,
             asset_category: asset_category || 'measuring_instrument',
             asset_subcategory: asset_subcategory || null,
             name: name || existing.recordset[0]?.name,
@@ -290,16 +325,19 @@ async function updateEquipment(req, res) {
 // ── DELETE /equipment/:id (soft delete) ─────────────────────────────────────
 async function deleteEquipment(req, res) {
     try {
-        const scope = buildScopeCondition(req.user);
+        const { organization_id } = req.user;
         const id = parseInt(req.params.id);
 
         const existing = await query(
-            `SELECT id FROM equipment_assets ea WHERE ea.id = @id AND ${scope.condition} AND ea.is_deleted = 0`,
-            { id, ...scope.params }
+            `SELECT id, company_id FROM equipment_assets WHERE id = @id AND organization_id = @organization_id AND is_deleted = 0`,
+            { id, organization_id }
         );
         if (existing.recordset.length === 0) {
             return res.status(404).json({ error: 'Strumento non trovato', code: 'EQUIPMENT_NOT_FOUND' });
         }
+
+        const writeDenied = await assertMutatingAllowed(req.user, { companyId: existing.recordset[0].company_id });
+        if (writeDenied) return sendAccessDenied(res, writeDenied);
 
         await query(`UPDATE equipment_assets SET is_deleted = 1, updated_at = GETDATE() WHERE id = @id`, { id });
         res.json({ success: true });
@@ -321,17 +359,19 @@ function computeNextCalibrationDate(calibrationDateStr, frequencyMonths) {
 // ── POST /equipment/:id/calibrations ─────────────────────────────────────────
 async function addCalibration(req, res) {
     try {
-        const scope = buildScopeCondition(req.user);
+        const { organization_id } = req.user;
         const asset_id = parseInt(req.params.id);
 
         // Legge anche calibration_frequency_months dall'asset per auto-calcolo
         const existing = await query(
-            `SELECT id, calibration_frequency_months FROM equipment_assets ea WHERE ea.id = @id AND ${scope.condition} AND ea.is_deleted = 0`,
-            { id: asset_id, ...scope.params }
+            `SELECT id, company_id, calibration_frequency_months FROM equipment_assets WHERE id = @id AND organization_id = @organization_id AND is_deleted = 0`,
+            { id: asset_id, organization_id }
         );
         if (existing.recordset.length === 0) {
             return res.status(404).json({ error: 'Strumento non trovato', code: 'EQUIPMENT_NOT_FOUND' });
         }
+        const writeDenied = await assertMutatingAllowed(req.user, { companyId: existing.recordset[0].company_id });
+        if (writeDenied) return sendAccessDenied(res, writeDenied);
         const assetFreqMonths = existing.recordset[0].calibration_frequency_months;
 
         const { calibration_date, next_calibration_date: reqNextDate, calibrated_by, certificate_number, result: calResult, attachment_id, notes } = req.body;
@@ -387,7 +427,18 @@ async function addCalibration(req, res) {
 // ── GET /equipment/:id/calibrations ──────────────────────────────────────────
 async function getCalibrations(req, res) {
     try {
+        const { organization_id } = req.user;
         const asset_id = parseInt(req.params.id);
+        const asset = await query(
+            `SELECT id, company_id FROM equipment_assets WHERE id = @id AND organization_id = @organization_id AND is_deleted = 0`,
+            { id: asset_id, organization_id }
+        );
+        if (asset.recordset.length === 0) {
+            return res.status(404).json({ error: 'Strumento non trovato', code: 'EQUIPMENT_NOT_FOUND' });
+        }
+        const denied = await assertEquipmentRead(req.user, asset.recordset[0].company_id);
+        if (denied) return sendAccessDenied(res, denied);
+
         const result = await query(`
             SELECT ec.*, u.full_name AS created_by_name
             FROM equipment_calibrations ec
@@ -405,7 +456,11 @@ async function getCalibrations(req, res) {
 // ── GET /equipment/stats ──────────────────────────────────────────────────────
 async function getEquipmentStats(req, res) {
     try {
-        const scope = buildScopeCondition(req.user);
+        const { organization_id } = req.user;
+        const accessList = await ensureCompanyAccessLoaded(req.user);
+        const companyFilter = equipmentListFilter(accessList, 'ea');
+        const whereExtra = companyFilter.clause ? ` AND ${companyFilter.clause}` : '';
+        const params = { organization_id, ...companyFilter.params };
         const result = await query(`
             SELECT
                 COUNT(*) AS total,
@@ -415,8 +470,8 @@ async function getEquipmentStats(req, res) {
                 SUM(CASE WHEN ea.next_calibration_date < GETDATE() AND ea.requires_calibration = 1 AND ea.status = 'active' THEN 1 ELSE 0 END) AS expired,
                 SUM(CASE WHEN ea.next_calibration_date BETWEEN GETDATE() AND DATEADD(day, 30, GETDATE()) AND ea.requires_calibration = 1 AND ea.status = 'active' THEN 1 ELSE 0 END) AS expiring_30d
             FROM equipment_assets ea
-            WHERE ${scope.condition} AND ea.is_deleted = 0
-        `, scope.params);
+            WHERE ea.organization_id = @organization_id AND ea.is_deleted = 0${whereExtra}
+        `, params);
 
         res.json({ success: true, data: result.recordset[0] });
     } catch (err) {
@@ -429,11 +484,15 @@ async function getEquipmentStats(req, res) {
 // Usato dal form VT per popolare la select strumenti con stato e avvisi taratura
 async function getEquipmentForReport(req, res) {
     try {
-        const scope = buildScopeCondition(req.user);
+        const { organization_id } = req.user;
+        const accessList = await ensureCompanyAccessLoaded(req.user);
+        const companyFilter = equipmentListFilter(accessList, 'ea');
         const { method, company_id } = req.query;
 
-        const conditions = [scope.condition, "ea.is_deleted = 0", "ea.status != 'retired'", "ea.status != 'lost'"];
-        const params = { ...scope.params };
+        const conditions = ['ea.organization_id = @organization_id', "ea.is_deleted = 0", "ea.status != 'retired'", "ea.status != 'lost'"];
+        const params = { organization_id };
+        if (companyFilter.clause) conditions.push(companyFilter.clause);
+        Object.assign(params, companyFilter.params);
 
         if (method) {
             conditions.push("ea.applicable_methods LIKE @method");

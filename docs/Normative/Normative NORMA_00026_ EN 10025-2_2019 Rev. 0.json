@@ -1,0 +1,1849 @@
+{
+  "title": "BS_EN_10025-2_2019",
+  "level": 0,
+  "path": null,
+  "content": "",
+  "children": [
+    {
+      "title": "BS EN 10025-2:2019",
+      "level": 2,
+      "path": null,
+      "content": "BSI Standards Publication Hot rolled products of structural steels Part 2: Technical delivery conditions for non-alloy structural steels\n\n|  |  |  |  |  |\n| --- | --- | --- | --- | --- |\n|  |  |  |  |  |\n| BSI Standards Publication |  |  |  |  |",
+      "children": []
+    },
+    {
+      "title": "EN 10025-2",
+      "level": 2,
+      "path": null,
+      "content": "",
+      "children": []
+    },
+    {
+      "title": "BS EN 10025‑2:2019 BRITISH STANDARD",
+      "level": 2,
+      "path": null,
+      "content": "",
+      "children": []
+    },
+    {
+      "title": "National foreword",
+      "level": 2,
+      "path": null,
+      "content": "",
+      "children": []
+    },
+    {
+      "title": "EUROPEAN STANDARD",
+      "level": 2,
+      "path": null,
+      "content": "",
+      "children": []
+    },
+    {
+      "title": "NORME EUROPÉENNE",
+      "level": 2,
+      "path": null,
+      "content": "August 2019 This British Standard is the UK implementation of EN 10025‑2:2019. It EUROPÄISCHE NORM supersedes BS EN 10025‑2:2004, which is withdrawn. ICS 77.140.10; 77.140.45; 77.140.50 Supersedes EN 10025-2:2004 The UK participation in its preparation was entrusted to Technical Committee ISE/103, Structural Steels Other Than Reinforcements. English Version A list of organizations represented on this committee can be obtained on request to its secretary.",
+      "children": []
+    },
+    {
+      "title": "Hot rolled products of structural steels - Part 2: Technical",
+      "level": 2,
+      "path": null,
+      "content": "This publication does not purport to include all the necessary provisions",
+      "children": []
+    },
+    {
+      "title": "delivery conditions for non-alloy structural steels",
+      "level": 2,
+      "path": null,
+      "content": "of a contract. Users are responsible for its correct application. Produits laminés à chaud en aciers de construction - Warmgewalzte Erzeugnisse aus Baustählen - Teil 2: © The British Standards Institution 2019 Partie 2 : Conditions techniques de livraison pour les Technische Lieferbedingungen für unlegierte Published by BSI Standards Limited 2019 aciers de construction non alliés Baustähle",
+      "children": []
+    },
+    {
+      "title": "ISBN 978 0 580 73966 8",
+      "level": 2,
+      "path": null,
+      "content": "This European Standard was approved by CEN on 16 June 2019. ICCoSm 7p7l.1ia4n0c.1e0 w; 9i1th.1 0a0 B.9r9it; i7s7h. 1S4t0a.n5d0a; 7rd7. 1c4a0n.n4o5t confer immunity from CEN members are bound to comply with the CEN/CENELEC Internal Regulations which stipulate the conditions for giving this legal obligations. European Standard the status of a national standard without any alteration. Up-to-date lists and bibliographical references concerning such national standards may be obtained on application to the CEN-CENELEC Management Centre or to any CEN member. This British Standard was published under the authority of the This European Standard exists in three official versions (English, French, German). A version in any other language made by Standards Policy and Strategy Committee on 31 August 2019. translation under the responsibility of a CEN member into its own language and notified to the CEN-CENELEC Management Amendments/corrigenda issued since publication Centre has the same status as the official versions. CEN members are the national standards bodies of Austria, Belgium, Bulgaria, Croatia, Cyprus, Czech Republic, Denmark, Estonia, Finland, France, Germany, Greece, Hungary, Iceland, Ireland, Italy, Latvia, Lithuania, Luxembourg, Malta, Netherlands, Norway, Date Text affected Poland, Portugal, Republic of North Macedonia, Romania, Serbia, Slovakia, Slovenia, Spain, Sweden, Switzerland, Turkey and United Kingdom.",
+      "children": []
+    },
+    {
+      "title": "EUROPEAN COMMITTEE FOR STANDARDIZATION",
+      "level": 2,
+      "path": null,
+      "content": "",
+      "children": []
+    },
+    {
+      "title": "COMITÉ EUROPÉEN DE NORMALISATION",
+      "level": 2,
+      "path": null,
+      "content": "",
+      "children": []
+    },
+    {
+      "title": "EUROPÄISCHES KOMITEE FÜR NORMUNG",
+      "level": 2,
+      "path": null,
+      "content": "CEN-CENELECM anagement Centre: Rue de la Science 23, B-1040 Brussels © 2019 CEN All rights of exploitation in any form and by any means reserved Ref. No. EN 10025-2:2019 E worldwide for CEN national Members.",
+      "children": []
+    },
+    {
+      "title": "EN 10025-2",
+      "level": 2,
+      "path": null,
+      "content": "",
+      "children": []
+    },
+    {
+      "title": "EUROPEAN STANDARD",
+      "level": 2,
+      "path": null,
+      "content": "",
+      "children": []
+    },
+    {
+      "title": "NORME EUROPÉENNE",
+      "level": 2,
+      "path": null,
+      "content": "",
+      "children": []
+    },
+    {
+      "title": "August 2019",
+      "level": 2,
+      "path": null,
+      "content": "",
+      "children": []
+    },
+    {
+      "title": "EUROPÄISCHE NORM",
+      "level": 2,
+      "path": null,
+      "content": "ICS 77.140.10; 77.140.45; 77.140.50 Supersedes EN 10025-2:2004",
+      "children": []
+    },
+    {
+      "title": "English Version",
+      "level": 2,
+      "path": null,
+      "content": "",
+      "children": []
+    },
+    {
+      "title": "Hot rolled products of structural steels - Part 2: Technical",
+      "level": 2,
+      "path": null,
+      "content": "",
+      "children": []
+    },
+    {
+      "title": "delivery conditions for non-alloy structural steels",
+      "level": 2,
+      "path": null,
+      "content": "Produits laminés à chaud en aciers de construction - Warmgewalzte Erzeugnisse aus Baustählen - Teil 2: Partie 2 : Conditions techniques de livraison pour les Technische Lieferbedingungen für unlegierte aciers de construction non alliés Baustähle This European Standard was approved by CEN on 16 June 2019. CEN members are bound to comply with the CEN/CENELEC Internal Regulations which stipulate the conditions for giving this European Standard the status of a national standard without any alteration. Up-to-date lists and bibliographical references concerning such national standards may be obtained on application to the CEN-CENELEC Management Centre or to any CEN member. This European Standard exists in three official versions (English, French, German). A version in any other language made by translation under the responsibility of a CEN member into its own language and notified to the CEN-CENELEC Management Centre has the same status as the official versions. CEN members are the national standards bodies of Austria, Belgium, Bulgaria, Croatia, Cyprus, Czech Republic, Denmark, Estonia, Finland, France, Germany, Greece, Hungary, Iceland, Ireland, Italy, Latvia, Lithuania, Luxembourg, Malta, Netherlands, Norway, Poland, Portugal, Republic of North Macedonia, Romania, Serbia, Slovakia, Slovenia, Spain, Sweden, Switzerland, Turkey and United Kingdom.",
+      "children": []
+    },
+    {
+      "title": "EUROPEAN COMMITTEE FOR STANDARDIZATION",
+      "level": 2,
+      "path": null,
+      "content": "",
+      "children": []
+    },
+    {
+      "title": "COMITÉ EUROPÉEN DE NORMALISATION",
+      "level": 2,
+      "path": null,
+      "content": "",
+      "children": []
+    },
+    {
+      "title": "EUROPÄISCHES KOMITEE FÜR NORMUNG",
+      "level": 2,
+      "path": null,
+      "content": "CEN-CENELECM anagement Centre: Rue de la Science 23, B-1040 Brussels © 2019 CEN All rights of exploitation in any form and by any means reserved Ref. No. EN 10025-2:2019 E worldwide for CEN national Members.\n\n\nContents Page European foreword ...................................................................................................................................................... 4 1 Scope .................................................................................................................................................................... 6 2 Normative references .................................................................................................................................... 6 3 Terms and definitions ................................................................................................................................... 8",
+      "children": []
+    },
+    {
+      "title": "Classification and designation ................................................................................................................... 9",
+      "level": 1,
+      "path": "4",
+      "content": "4.1 Classification .................................................................................................................................................... 9 4.1.1 Main quality classes ....................................................................................................................................... 9 4.1.2 Grades and qualities ...................................................................................................................................... 9 4.2 Designation ....................................................................................................................................................... 9",
+      "children": []
+    },
+    {
+      "title": "Information to be supplied by the purchaser ....................................................................................... 9",
+      "level": 1,
+      "path": "5",
+      "content": "5.1 Mandatory information ................................................................................................................................ 9 5.2 Options .............................................................................................................................................................. 10 6 Manufacturing process ............................................................................................................................... 10 6.1 Steel making process ................................................................................................................................... 10 6.2 Deoxidation ..................................................................................................................................................... 10 6.3 Delivery conditions ...................................................................................................................................... 10 7 Requirements ................................................................................................................................................. 11 7.1 General ............................................................................................................................................................. 11 7.2 Chemical composition ................................................................................................................................. 11 7.3 Mechanical properties ................................................................................................................................ 12 7.3.1 General ............................................................................................................................................................. 12 7.3.2 Impact properties ......................................................................................................................................... 12",
+      "children": [
+        {
+          "title": "Improved deformation properties perpendicular to the surface ............................................... 12",
+          "level": 3,
+          "path": "7.3.3",
+          "content": "",
+          "children": []
+        },
+        {
+          "title": "Technological properties ........................................................................................................................... 13",
+          "level": 2,
+          "path": "7.4",
+          "content": "7.4.1 Weldability ...................................................................................................................................................... 13",
+          "children": [
+            {
+              "title": "Formability and flame straightening ..................................................................................................... 13",
+              "level": 3,
+              "path": "7.4.2",
+              "content": "7.4.3 Hot-dip zinc-coating ..................................................................................................................................... 14 7.4.4 Machinability .................................................................................................................................................. 14 7.5 Surface properties ........................................................................................................................................ 14 7.5.1 Strip ................................................................................................................................................................... 14 7.5.2 Plates and wide flats .................................................................................................................................... 14 7.5.3 Sections ............................................................................................................................................................. 14 7.5.4 Bars and rods ................................................................................................................................................. 15 7.6 Internal soundness ....................................................................................................................................... 15",
+              "children": []
+            }
+          ]
+        },
+        {
+          "title": "Dimensions, tolerances on dimensions and shape, mass............................................................... 15",
+          "level": 2,
+          "path": "7.7",
+          "content": "8 Inspection ........................................................................................................................................................ 15",
+          "children": []
+        },
+        {
+          "title": "Type of inspection and inspection document ..................................................................................... 15",
+          "level": 2,
+          "path": "8.1",
+          "content": "",
+          "children": []
+        },
+        {
+          "title": "Content of inspection document ............................................................................................................. 16",
+          "level": 2,
+          "path": "8.2",
+          "content": "",
+          "children": []
+        },
+        {
+          "title": "Tests to be carried out for specific inspection ................................................................................... 16",
+          "level": 2,
+          "path": "8.3",
+          "content": "",
+          "children": []
+        }
+      ]
+    },
+    {
+      "title": "Frequency of testing and preparation of samples and test pieces .............................................. 16",
+      "level": 1,
+      "path": "9",
+      "content": "9.1 Frequency of testing .................................................................................................................................... 16 9.1.1 Chemical analysis .......................................................................................................................................... 16 9.1.2 Mechanical tests ............................................................................................................................................ 16",
+      "children": [
+        {
+          "title": "Preparation of samples and test pieces ................................................................................................ 17",
+          "level": 2,
+          "path": "9.2",
+          "content": "",
+          "children": [
+            {
+              "title": "Selection and preparation of samples for chemical analysis ........................................................ 17",
+              "level": 3,
+              "path": "9.2.1",
+              "content": "",
+              "children": []
+            },
+            {
+              "title": "Location of samples and orientation of test pieces for mechanical tests ................................. 17",
+              "level": 3,
+              "path": "9.2.2",
+              "content": "",
+              "children": []
+            },
+            {
+              "title": "Preparation of test pieces for mechanical tests ................................................................................. 17",
+              "level": 3,
+              "path": "9.2.3",
+              "content": "",
+              "children": []
+            }
+          ]
+        },
+        {
+          "title": "Identification of samples and test pieces ............................................................................................. 18",
+          "level": 2,
+          "path": "9.3",
+          "content": "10 Test methods .................................................................................................................................................. 18 10.1 Chemical analysis ......................................................................................................................................... 18 10.2 Mechanical tests ............................................................................................................................................ 18 10.2.1 Tensile test ...................................................................................................................................................... 18 10.2.2 Impact test ...................................................................................................................................................... 19 10.3 Ultrasonic testing ......................................................................................................................................... 19 10.4 Retests .............................................................................................................................................................. 19",
+          "children": []
+        }
+      ]
+    },
+    {
+      "title": "Marking, labelling, packaging .................................................................................................................. 19",
+      "level": 1,
+      "path": "11",
+      "content": "12 Complaints ...................................................................................................................................................... 20 13 Options ............................................................................................................................................................. 20 Annex A Location of samples and test pieces ........................................................................... 36 Annex B List of Options of EN 10025-2 to −6 ......................................................................... 39 (normative) Bibliography ................................................................................................................................................................. 41 (informative)",
+      "children": [
+        {
+          "title": "European foreword",
+          "level": 2,
+          "path": null,
+          "content": "This document (EN 10025-2:2019) has been prepared by Technical Committee CEN/TC 459/SC 3 “Structural steels other than reinforcement”, the secretariat of which is held by DIN. This European Standard shall be given the status of a national standard, either by publication of an identical text or by endorsement, at the latest by February 2020 and conflicting national standards shall be withdrawn at the latest by February 2020. Attention is drawn to the possibility that some of the elements of this document may be the subject of patent rights. CEN shall not be held responsible for identifying any or all such patent rights. This document supersedes EN 10025-2:2004. Hot rolled products of structural steels: This document consists of the following parts, under the general title — Pa rt 1: General technical delivery conditions — Part 2: Technical delivery conditions for non -alloy structural steels — Part 3: Technical delivery conditions for normalized/normalized ro lled weldable fine grain structural steels — Part 4 : Technical delivery conditions for thermomechanical rolled weldable fine grain structural steels — Part 5: Technical delivery conditions for structural steels with improved atmospheric corrosion resistance — Part 6: Te chnical delivery conditions for flat products of high yield strength structural steels in the quenched and tempered condition For a short transition period, there will be a coexistence of EN 10025-1:2004 with EN 10025-2:2019 to EN 10025−6:2019, since the new EN 10025-1 has to fulfil the requirements of the CPR and will therefore be published later. For this short transition period up-to-the publication of the next edition of part 1 the following is to be taken into account for EN 10025-1:2004:\n\na) all dated and undated references to EN 10025-1:2004 to EN 10025−6:2004 are unchanged to this\n\nversion with following exception: In 9.2.2.1 the references are 8.3.1 and 8.3.2 instead of 8.4.1 and 8.4.2;\n\nb) Clauses 5, 12 and 13 of EN 10025-1:2004 are no longer relevant.\n\nThe main changes with respect to the previous edition are listed below:\n\na) part 2 is now a stand-alone standard for technical delivery conditions including the preparation of\n\nsamples and test pieces, the test methods, the marking, labelling and packaging and the drawings;\n\nb) for applications under the CPR, this document and part 1 are used together;\n\nc) requirements for elements not definded were added to 7.2.1 and 7.2.2;\n\nd) Option 33 was added, Options 9 and 21 were deleted;\n\ne) Si-content in 7.2.5 was changed;\n\nf) 7.4.3 concerning hot-dip zinc coating was modified;\n\n\ng) key to Figure A.1 was updated;\n\nh) steel grade S450 was deleted and steel grades S460 and S500 were added;\n\ni) Annex B concerning the corresponding EURONORMS was deleted;\n\nj) references were updated and the document was editorially revised.\n\nAccording to the CEN-CENELEC Internal Regulations, the national standards organisations of the following countries are bound to implement this European Standard: Austria, Belgium, Bulgaria, Croatia, Cyprus, Czech Republic, Denmark, Estonia, Finland, Republic of North Macedonia, France, Germany, Greece, Hungary, Iceland, Ireland, Italy, Latvia, Lithuania, Luxembourg, Malta, Netherlands, Norway, Poland, Portugal, Romania, Serbia, Slovakia, Slovenia, Spain, Sweden, Switzerland, Turkey and the United Kingdom.",
+          "children": []
+        }
+      ]
+    },
+    {
+      "title": "Scope",
+      "level": 1,
+      "path": "1",
+      "content": "This document specifies the technical delivery conditions for flat and long products as well as semifinished products which are meant for further processing to flat and long products of hot rolled nonalloy quality steels in the grades and qualities given in Tables 1 to 5 (chemical composition) and Tables",
+      "children": []
+    },
+    {
+      "title": "to 8 (mechanical properties) in the usual delivery conditions as given in 6.3. Three engineering steels",
+      "level": 1,
+      "path": "6",
+      "content": "are also specified in this document (see Tables 2 and 4) (chemical composition) and Table 7 (mechanical properties). This document does not apply to structural hollow sections (see EN 10210-1 and EN 10219-1) and tubes. The technical delivery conditions apply to: — thicknesses ≥ 3 mm and ≤ 150 mm for long products of steel grade S460JR, J0, J2, K2 and S500J0; — thicknesses ≤ 400 mm for flat products of qualities JR, J0, J2 and K2; — thicknesses ≤ 250 mm for flat and long products of all other grades and qualities. The steels specified in this document are not intended to be heat treated except products delivered in the delivery condition +N. Stress relieving is accepted. Products delivered in +N condition can be hot formed and/or normalized after delivery (see Clause 3). This document foresees that semi-finished products which are to be converted to rolled finished products conforming to this document are the subject of special agreements at the time of the order. The chemical compositions are also agreed to at the time of the order; the values are within the limits of Tables 1 and 2. For certain grades and product forms suitability for particular applications are specified at the time of t2h e oNrdoerrm (saetei 7v.e4. 2r,e 7f.e4r.3e anncde Tsa ble 9). The following documents are referred to in the text in such a way that some or all of their content constitutes requirements of this document. For dated references, only the edition cited applies. For Welding — Recommendations for welding of metallic materials — Part 2: Arc welding of undated references, the latest edition of the referenced document (including any amendments) applies. ferritic steels EN 1011-2, St eel rod for drawing and/or cold rolling — Dimensions and tolerances EN 10017, Definition and classification of grades of steel EN 10020:2G0e0n0er, al technical delivery conditions for steel produ cts EN 10021, Hot rolled taper flange I sections — Tolerances on shap e and dimensions EN 10024, Hot rolled products of structural steels — Part 1: General technical deli very conditions EN 10025-1, Designation systems for steels — Part 1: Steel names EN 10027-1, Designation systems for steels — Part 2: Numerical s ystem EN 10027-2H, ot-rolled steel plates 3 mm thick or above — Tolerances on dimensions and shape EN 10029, Structural steel I and H sections — Tolerances on shape and dimensions EN 10034, Hot rolled narrow steel strip — Tolerances on dimensions and shape EN 10048, Continuously hot-rolled strip and plate/sheet cut from wide strip of non-alloy and alloy steels — Tolerances on dimensions and shape EN 10051,\n\n\nHot rolled steel equal flange tees with radiused root and toes — Dimensions and tolerances on shape and dimensions EN 10055, Structura l steel equal and unequal leg angles — Part 1: Dimensions EN 10056-1, Structural steel equal and unequal leg angles — Part 2: Tolerances o n shape and dimensions EN 10056-2H,o t rolled flat steel bars and steel wide flats for general purposes — Dimensions and tolerances on shape and dimensions EN 10058, Hot rolled squ are steel bars for general purposes — Dimensions and tolerances on shape and dimensions EN 10059, Hot rolled round steel bars for general purposes — Dimensions and tolerances on shape and dimensions EN 10060, Hot rolled hexagon steel bars for general purposes — Dimensions and tolerances on shape and dimensions EN 10061, Hot rolled bulb flats — Dimensions and tolerances on shape, dimensions and mass EN 10067, Definition of steel products EN 10079, Ultrasonic testing of steel flat product of thickness equal or greater than 6 mm (reflection method) EN 10160, Delivery requirements for surface condition of hot-rolled steel plates, wide flats and sections — Part 1: General requirements EN 10163-1, Delivery requireme nts for surface condition of hot-rolled steel plates, wide flats and sections — Part 2: Plate and wide flats EN 10163-2, Delivery requirem ents for surface condition of hot-rolled steel plates, wide flats and sections — Part 3: Sections EN 10163-3, Steel p roducts with improved deformation properties perpendicular to the surface of the product — Technical delivery conditions EN 10164, Steel products — Inspection d ocuments — List of information and description EN 10168, Metallic products — Types of inspection documents EN 10204, Hot rolled steel channels — Tolerances on shape, dim ensions and mass EN 10279, Iron and steel — Ultrasonic testing of H beams with parallel flanges an d IPE beams EN 10306, Non destructive testing — Ultrasonic testing of steel bars EN 10308, Routine method for analysis of high alloy steel by X-ray Fluorescence Spectrometry (XRF) by using a near by technique EN 10315, Optical emissio n analysis of low alloy steels (routine method) — Method for determination of C, Si, S, P, Mn, Cr, Ni and Cu CR 10320, Guidanc e for forming of structural steels in processing CEN/TR 10C3o4n7t,i nuously hot-rolled patterned steel strip and plate/shee t cut from wide strip — Tolerances on dimensions and shape EN 10363, Hot rolled stee l channels, I and H sections — Dimensions and masses EN 10365,\n\n\nMetallic materials — Charpy pendulum impact test — Part 1: Test method (ISO 148-1) EN ISO 148-1S, teel and steel products — Location and preparation of samples and test pieces for mechanical testing (ISO 377) EN ISO 377, Steel — Conv e rsion of elongation values — Part 1: Carbon and low alloy steels (ISO 2566) EN ISO 2566-1, Metallic materials — Tensile testing — Part 1: Method of test at room temperature",
+      "children": [
+        {
+          "title": "(ISO 6892-1:2016)",
+          "level": 2,
+          "path": null,
+          "content": "EN ISO 6892-1:2016, Surfa ce quality classes for hot-rolled bars and wire rod (ISO 9443) EN ISO 9443, Steel and iron — Sampling and preparation of samples for the d etermination of chemical composition (ISO 14284) EN ISO 14284, Z i nc coatings — Guidelines and recommendations for the protection against corrosion of iron and steel in structures — Part 2: Hot dip galvanizing (ISO 14713-2:2009) EN ISO 14713-2:2009, Steel and iron — Determination of total carbon and sulfur content — Infr ared absorption method after combustion in an induction furnace (routine method) (ISO 15350) EN ISO 15350,",
+          "children": []
+        }
+      ]
+    },
+    {
+      "title": "Terms and definitions",
+      "level": 1,
+      "path": "3",
+      "content": "For the purposes of this document, the terms and definitions given in EN 10079 and the following apply. ISO and IEC maintain terminological databases for use in standardization at the following addresses: — IEC Electropedia: available at http://www.electropedia.org/ 3.1 — ISO Online browsing platform: available at http://www.iso.org/obp normalized rolled +N rolling process in which the final deformation is carried out in a certain temperature range leading to a material condition equivalent to that obtained after normalizing so that the specified values of the mechanical properties are retained even after normalizing Note 1 to entry: In international publications for both the normalizing rolling, as well as the thermomechanical rolling, the expression “controlled rolling” may be found. However in view of the different applicability of the p3r.2od ucts a distinction of the terms is necessary. as-rolled +AR conventional hot rolling without any normalized rolling or thermomechanical rolling and/or heat t3r.e3a tment like normalizing or quenching thermomechanical rolling +M rolling process in which the final deformation is carried out in a certain temperature range leading to a material condition with certain properties which cannot be achieved or repeated by heat treatment alone Note 1 to entry: Thermomechanical rolling leading to the delivery condition +M can include processes with an increasing cooling rate with or without tempering including self-tempering but excluding direct quenching and quenching and tempering. N8o te 2 to entry: In some publications the word TMCP (Thermomechanical Control Process) is also used.\n\n\n3.4 Normalizing +N h4e atC trleaastsmifeincta ctoinosnis tainngd o df aeussitgenniatitziiongn f ollowed by air cooling",
+      "children": [
+        {
+          "title": "Classification",
+          "level": 2,
+          "path": "4.1",
+          "content": "",
+          "children": [
+            {
+              "title": "Main quality classes",
+              "level": 3,
+              "path": "4.1.1",
+              "content": "The steel grades specified in this document shall be classified as non-alloy quality steels according to",
+              "children": []
+            },
+            {
+              "title": "Grades and qualities",
+              "level": 3,
+              "path": "4.1.2",
+              "content": "EN 10020. This document specifies nine steel grades S185, S235, S275, S355, S460, S500, E295, E335 and E360. The steel grades S235 and S275 may be supplied in qualities JR, J0 and J2. The steel grades S355 and S460 may be supplied in qualities JR, J0, J2 and K2. The steel grade S500 may be supplied in quality J0. The qualities differ in specified impact energy requirements.",
+              "children": []
+            }
+          ]
+        },
+        {
+          "title": "Designation",
+          "level": 2,
+          "path": "4.2",
+          "content": "For steel grades S185, E295 to E360 no requirements for impact energy are specified. 4.2.1 For the steel grades covered by this document the steel names shall be allocated in accordance w4.i2th.2 EN 10027-1; the steel numbers shall be allocated in accordance with EN 10027-2. The designation shall consist of: — the number of this document (EN 10025-2); — the steel name or the steel number; the steel name consisting of: — symbol S (for structural steel) or E (for engineering steel); — indication of the minimum specified yield strength for thickness ≤ 16 mm expressed in MPa; — if applicable, the quality designation (see 4.1.2) in respect of specified impact energy values; — if applicable, the additional symbol C for the suitability for the particular application (see Tables 9, 10, 11 and 12); — indication “+N”, “+AR” or “+M”, when the products are ordered and delivered in the condition +N, +AR or +M (see 3.1, 3.2, 3.3, 3.4 and 6.3). The indication “+N”, “+AR” or “+M” shall also be added to the steel name or the steel number. EXAMPLE Structural steel (S) with a specified minimum yield strength at room temperature of 355 MPa with a minimum impact energy of 27 J at 0 °C (J0) and suitable for cold flanging (C), delivery condition +N (Option 19, see Clause 13):",
+          "children": []
+        },
+        {
+          "title": "EN 10025-2 - S355J0C+N",
+          "level": 2,
+          "path": null,
+          "content": "Or",
+          "children": []
+        }
+      ]
+    },
+    {
+      "title": "IEnNf 1o0r0m25a-2t i- o1.n05 t5o4 +bNe supplied by the purchaser",
+      "level": 1,
+      "path": "5",
+      "content": "",
+      "children": [
+        {
+          "title": "Mandatory information",
+          "level": 2,
+          "path": "5.1",
+          "content": "The following information shall be supplied by the purchaser at the time of the order:\n\n\na) quantity to be delivered;\n\nb) product form and the number of the standard for dimensions and tolerances (see 2.2);\n\nc) nominal dimensions and tolerances on dimensions and shape (see 7.7.1);\n\nd) steel designation (see 4.2.2);\n\ne) additional requirements of inspection and testing and all required options (see 5.2 and Clause 13);",
+          "children": []
+        },
+        {
+          "title": "Options",
+          "level": 2,
+          "path": "5.2",
+          "content": "f) type of inspection document according to EN 10204 (see 8.1).\n\nA number of options are specified in Clause 13. In the event that the purchaser does not indicate his wish to implement any of these options, the supplier shall supply in accordance with the basic 6sp ecMificaantiuonfa, sceteu 5r.i1n ag) ptor do)c aensds f ).",
+          "children": []
+        },
+        {
+          "title": "Steel making process",
+          "level": 2,
+          "path": "6.1",
+          "content": "The steel making process is at the discretion of the manufacturer with the exclusion of the open hearth Option 1, (Siemens-Martin) process.",
+          "children": []
+        },
+        {
+          "title": "Deoxidation",
+          "level": 2,
+          "path": "6.2",
+          "content": "See Clause 13, (details of manufacturing process). The deoxidation methods are designated as follows:\n\na) Optional Method at the manufacturer's discretion;\n\nb) FN Rimming steel not permitted;\n\nc) FF Fully killed steel containing nitrogen binding elements in amounts sufficient to\n\nbind the available nitrogen (for example min. 0,020 % total aluminium). The usual guideline is a minimum aluminium to nitrogen ratio of 2:1, when no other nitrogen binding elements are present. Such other elements and their content (% mass) shall be reported in the inspection document.",
+          "children": []
+        },
+        {
+          "title": "Delivery conditions",
+          "level": 2,
+          "path": "6.3",
+          "content": "The method of deoxidation shall be as given in Tables 1 and 2. Unless otherwise agreed upon, the delivery condition of long products and hot rolled strip can be +AR, +N or +M at the manufacturer's discretion; the delivery condition for quarto plates can only be +AR or Option 19 +N at the manufacturer's discretion. See , Clause 13, (delivery condition +AR, +N or +M for long products and strip, +AR, +N for quarto plates). If an inspection document is required (see 8.1) the delivery condition shall be indicated in it with its specific symbol (+AR, +N or +M). In case the products are ordered in the delivery condition +AR, +N or +M, the specific symbol (+AR, +N or +M) shall be added to the designation (see 4.2.2). NOTE The requirements on the mechanical properties of the steel grades according to this document are not depending on the delivery condition.",
+          "children": []
+        }
+      ]
+    },
+    {
+      "title": "Requirements",
+      "level": 1,
+      "path": "7",
+      "content": "",
+      "children": [
+        {
+          "title": "General",
+          "level": 2,
+          "path": "7.1",
+          "content": "The requirements in 7.2 and 7.3 apply for sampling, preparation of test pieces and testing specified in",
+          "children": []
+        },
+        {
+          "title": "Chemical composition",
+          "level": 2,
+          "path": "7.2",
+          "content": "Clauses 9 and 10. 7.2.1 The chemical composition determined by heat analysis shall comply with the specified values of Tables 1 and 2. For elements not defined in tables for the chemical composition for heat analysis, limit values of Table 1 7.2.2 of EN 10020:2000 shall apply as maximum values. The upper limits applicable for the product analysis are given in Tables 3 and 4. Option 2 The product analysis shall be carried out when specified at the time of the order. See , Clause 13, (product analysis). For elements not defined in tables for the chemical composition for product analysis, limit values of 7.2.3 Table 1 of EN 10020:2000 shall apply as maximum values. The maximum carbon equivalent values for the grades S235, S275, S355, S460 and S500 based on the heat analysis, given in Table 5 shall apply. For determining the carbon equivalent value the following IIW (International Institute of Welding) Cr+Mo+V Ni+Cu formula shall bMen used:",
+          "children": []
+        },
+        {
+          "title": "CEV =C+ + +",
+          "level": 2,
+          "path": null,
+          "content": "",
+          "children": [
+            {
+              "title": "6 5 15",
+              "level": 3,
+              "path": "7.2.4",
+              "content": "For all S235, S275 and S355 qualities, a copper-content between 0,25 % and 0,40 % on heat analysis and between 0,20 % and 0,45 % on product analysis can be agreed upon at the time of enquiry and Oorpdtieorn. I 2n0 this case, the maximum carbon equivalent value of Table 5 shall be increased by 0,02. 7.2.5 See , Clause 13, (Cu alloyed). When products of grade S275 and S355 are supplied with a control on Si e.g. for hot-dip zinccoating so that there could be a need to increase the content of other elements like C and Mn to achieve the required tensile properties, the maximum carbon equivalent values of Table 5 shall be increased as follows: — for Si ≤ 0,04 %, increase the value of the CEV by 0,02; —7.2 .6for Si ≤ 0,25 %, increase the value of the CEV by 0,01. The chemical composition of steel grades for cold formability (see 7.4.2.3) shall be in conformance with the corresponding grades in Tables 1 to 5.",
+              "children": []
+            }
+          ]
+        },
+        {
+          "title": "Mechanical properties",
+          "level": 2,
+          "path": "7.3",
+          "content": "",
+          "children": [
+            {
+              "title": "General",
+              "level": 3,
+              "path": "7.3.1",
+              "content": "7.3.1.1 Under the inspection and testing conditions as specified in Clauses 8, 9 and 10 and in the delivery condition as specified in 6.3 the mechanical properties shall comply with the values given in Tables 6, 7 and 8. Stress relieving at more than 580 °C or for over 1 h may lead to a deterioration of the mechanical properties of the steel grades. For normalized and normalized rolled flat products the maximum stress relief temperature should be 560 °C. If the purchaser intends to stress relief the products at higher temperatures or for longer times than mentioned above the minimum values of the mechanical 7.3.1.2 properties after such a treatment should be agreed upon at the time of the order. For flat and bar products ordered and supplied in the normalized or normalized rolled condition (delivery condition +N) the mechanical properties shall comply with the relevant tables for mechanical properties in the normalized or normalized rolled condition or after normalizing by heat treatment after delivery or after hot forming if the provisions of CEN/TR 10347 are satisfied. Products can be susceptible to a deterioration in mechanical strength if they are subjected to incorrect heat treatment processes at higher temperatures such as flame straightening, rerolling, etc. Products in the +N delivery condition are less sensitive than other delivery conditions, but it is recommended that 7.3.1.3 guidance is sought from the manufacturer if any higher temperature processing is required. For flat products the nominal thickness applies. For long products of irregular section the n7o.3m.1in.4al thickness of that part from which the samples are taken applies (Annex A). The mechanical properties of steel grades for cold formability (7.4.2.3) shall be in c7o.3n.f2o rImmapnaccet wpritohp tehret iceosr responding grades in Tables 6 to 8. 7.3.2.1 The impact properties, except for qualities JR, shall be verified by test at the temperature given in Table 8, unless otherwise agreed upon at the time of the order. Option 3 The impact properties of quality JR products are verified only when specified at the time of the order. 7.3.2.2 See , Clause 13, (Verification of impact properties for quality JR). If specified at the time of the order for flat products of quality J2 and K2 out of each parent plate or coil the impact properties only or the impact properties and the tensile properties shall be verifOiepdt.i on 13 See , Clause 13, (For flat products on each parent plate or coil impact properties only to be Option 14 verified). See , Clause 13, (For flat products on each parent plate or coil impact and tensile properties",
+              "children": []
+            },
+            {
+              "title": "Improved deformation properties perpendicular to the surface",
+              "level": 3,
+              "path": "7.3.3",
+              "content": "to be verified). If agreed upon at the time of the order flat and long products shall comply with one of requirements Option 4 specified in EN 10164. See , Clause 13, (Deformation properties perpendicular to the surface).",
+              "children": []
+            }
+          ]
+        },
+        {
+          "title": "Technological properties",
+          "level": 2,
+          "path": "7.4",
+          "content": "",
+          "children": [
+            {
+              "title": "Weldability",
+              "level": 3,
+              "path": "7.4.1",
+              "content": "7.4.1.1 General requirements for arc welding of the steels of the qualities JR, J0, J2 and K2 shall be as given in EN 1011-2. NOTE With increasing product thickness and strength level, cold cracking can occur. Cold cracking is caused by the following factors in combination: — the amount of diffusible hydrogen in the weld metal; — a brittle structure of the heat affected zone; —7.4 .1.2 significant tensile stress concentrations in the welded joint. This document gives no information concerning the weldability of the steel grades S185, 7E2.49.25 , FEo3r3m5 aabnidl iEty3 6a0n db efclaamusee sthtrea cihghemteincainl gco mposition is not specified.",
+              "children": [
+                {
+                  "title": "General",
+                  "level": 4,
+                  "path": "7.4.2.1",
+                  "content": "Recommendations regarding hot forming, cold forming and flame straightening are laid down in",
+                  "children": []
+                },
+                {
+                  "title": "Hot forming",
+                  "level": 4,
+                  "path": "7.4.2.2",
+                  "content": "CEN/TR 10347. Only products ordered and supplied in the normalized or normalized rolled condition shall comply with the requirements of Tables 6, 7 and 8 if hot forming is carried out after delivery (see 7.3.1.2). NOTE The products ordered and supplied in the thermomechanical rolled and as-rolled condition are not s7u.4it.a2b.l3e fCoor lhdo fto forrmmainbgi.l ity",
+                  "children": [
+                    {
+                      "title": "General",
+                      "level": 5,
+                      "path": "7.4.2.3.1",
+                      "content": "Grades and qualities suitable for cold forming and engineering steels suitable for cold drawing shall be designated by the appropriate steel name (including symbol C or GC) or the appropriate steel number as indicated in Tables 9 to 12 (see 4.2.2). NOTE Cold forming leads to reduction in the ductility. The recommendation given in Tables 11 and 12 are i7m.4p.o2r.t3a.n2t Ftola rnedguecaeb riilsikt yo f brittle fracture especially in connection with hot-dip zinc-coating. If specified at the time of the order plate, sheet, strip, wide flats and flats (width < 150 mm) with a nominal thickness ≤ 30 mm shall be suitable for flanging without cracking with the minimum recommended bend radii given in Table 11. The grades and qualities to which this applies are given in Option 11 Table 9.",
+                      "children": []
+                    },
+                    {
+                      "title": "Roll forming",
+                      "level": 5,
+                      "path": "7.4.2.3.3",
+                      "content": "See , Clause 13, (Flangeability without cracking). If specified at the time of the order plate, sheet and strip with a nominal thickness ≤ 8 mm shall be suitable for the production of sections by cold rolling (for example according to EN 10162). The suitability is applicable for bend radii given in Table 12. The grades and qualities to which this applies are given in Table 9.\n\n\nOption 12",
+                      "children": []
+                    },
+                    {
+                      "title": "Drawing of bars",
+                      "level": 5,
+                      "path": "7.4.2.3.4",
+                      "content": "See , Clause 13, (Roll forming for flat products). If specified at the time of the order, bars shall be suitable for cold drawing. The grades and qualities to Option 22 which this applies are given in Tables 9 and 10.",
+                      "children": []
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "title": "Hot-dip zinc-coating",
+              "level": 3,
+              "path": "7.4.3",
+              "content": "See , Clause 13, (Drawing of bars). EN ISO 1461 should be used to specify coating requirements. EN ISO 14713-2 provides further guidance, including information on the influence of various factors, including steel chemical composition, on the coating formation. Option 5, Clause 13, can be used to order steels with a chemical composition required for hot-dip zinc coating. When option 5 is implemented, tPhe purchaser and manufacturer shall agree to a steel composition (heat analysis) of silicon and phosphorous according to either Category A (or steels satisfying the formula Si ≤ 0,03 % and Si+2,5 ≤ 0,09 %) or Category B (limited to 0,14 % ≤ Si ≤ 0,25 %) or Category D (limited to 0,25 % < Si ≤ 0,35 %) with required values as cited by the ranges given in EN ISO 14713-2:2009, Table 1, column 2. NOTE EN ISO 14713-2:2009, Table 1, gives guidance on typical coating characteristics associated with certain steel compositions on the basis of the surface composition of silicon and phosphorous. The maximum carbon equivalent shall be increased by 0,02 or by 0,01 (see 7.2.5). In some cases steels above S460 may be sensitive to cracking during galvanizing and therefore special Option 5 care should be taken.",
+              "children": []
+            },
+            {
+              "title": "Machinability",
+              "level": 3,
+              "path": "7.4.4",
+              "content": "See , Clause 13, (Chemical composition for hot dip zinc coating). All steel grades and qualities are machinable with common operations. NOTE Due to the good ductility of qualities JR, J0, J2 and K2 problems can occur in the chip formation and in surface finish quality. Generally a higher S content improves machinability. A proper Ca treatment applicable for long Opprotdiounct s2 7gives better machining properties (see footnote e of Table 1 and footnote c of Table 2).",
+              "children": []
+            }
+          ]
+        },
+        {
+          "title": "Surface properties",
+          "level": 2,
+          "path": "7.5",
+          "content": "See , Clause 13, (higher S-content for better machinability).",
+          "children": [
+            {
+              "title": "Strip",
+              "level": 3,
+              "path": "7.5.1",
+              "content": "The surface condition should not impair an application appropriate to the steel grade if adequate",
+              "children": []
+            },
+            {
+              "title": "Plates and wide flats",
+              "level": 3,
+              "path": "7.5.2",
+              "content": "processing of the strip is applied. EN 10163-1 and EN 10163-2 shall apply for the permissible surface discontinuities and for the repair of surface defects by grinding and/or welding. Class A, subclass 1 of EN 10163-2 shall apply, unless Option 15 otherwise agreed upon at the time of the order.",
+              "children": []
+            },
+            {
+              "title": "Sections",
+              "level": 3,
+              "path": "7.5.3",
+              "content": "See , Clause 13, (Other surface class for plates and wide flats). EN 10163-1 and EN 10163-3 shall apply for the permissible surface discontinuities and for the repair of surface defects by grinding and/or welding. Class C, subclass 1 of EN 10163-3 shall apply, unless Option 16 otherwise agreed upon at the time of the order. S1e4e , Clause 13, (Other surface class for sections).",
+              "children": []
+            },
+            {
+              "title": "Bars and rods",
+              "level": 3,
+              "path": "7.5.4",
+              "content": "EN ISO 9443 applies for the permissible surface discontinuities and for the repair of surface defects by grinding and/or welding. Class A of EN ISO 9443 shall apply, unless otherwise agreed upon at the time Option 17 of the order.",
+              "children": []
+            }
+          ]
+        },
+        {
+          "title": "Internal soundness",
+          "level": 2,
+          "path": "7.6",
+          "content": "See , Clause 13, (Other surface class for bars and rods). Option 6 Ultrasonic testing may be agreed upon at the time of the order and shall comply with 10.3. Option 7 See , Clause 13, (Ultrasonic testing for flat products). Option 8 See , Clause 13, (Ultrasonic testing for H beams with parallel flanges and IPE beams).",
+          "children": []
+        },
+        {
+          "title": "Dimensions, tolerances on dimensions and shape, mass",
+          "level": 2,
+          "path": "7.7",
+          "content": "See , Clause 13, (Ultrasonic testing for bars). 7.7.1 Dimensions, tolerances on dimensions and shape shall be in accordance with the requirements given in the order by reference to the following standards: EN 10017, EN 10024, EN 10029, EN 10034, EN 10048, EN 10051, EN 10055, EN 10056-1, EN 10056-2, EN 10058, EN 10059, EN 10060, EN 10061, EN 10067, EN 10279, EN 10363 and EN 10365. For hot rolled plate tolerances, the basic requirements shall be in accordance with EN 10029, including Option 18 thickness tolerances to class A, unless otherwise agreed upon at the time of the order. See , Clause 13, (For plates other thickness tolerance than class A). For plates cut from continuously hot rolled strip, the thickness tolerances shall be in accordance with Option 34 EN 10051, unless otherwise agreed upon at the time of the order. 7.7.2 See , Clause 13, (For plates cut from strip thickness tolerances according to EN 10029). The nominal mass shall be determined from the nominal dimensions using a volumetric mass of 3",
+          "children": []
+        }
+      ]
+    },
+    {
+      "title": "85I0n ksgp/mect. ion",
+      "level": 1,
+      "path": "87",
+      "content": "",
+      "children": [
+        {
+          "title": "Type of inspection and inspection document",
+          "level": 2,
+          "path": "8.1",
+          "content": "The products shall be delivered either with specific or non-specific inspection and testing to indicate compliance with the order and this document. The manufacturer shall obtain from the purchaser the required inspection documents specified in EN 10204. NOTE Some application standards, e.g. EN 1090-2, require particular inspection documents according to EN 10204. Unless otherwise agreed upon, steel grades of this document (except steels S185, E295, E335 and E360 and semi-finished products) are delivered with CE marking, and they shallt not only fulfil these technical delivery conditions but also the requirements of EN 10025-1. It can be agreed upon at the time of enquiry and order to abstain from CE-marking, see Option 33, Option 33 Clause 13, in this case, EN 10025-1 does not apply. See , Clause 13, (no application of CE-marking). In the case of specific inspection, testing shall be carried out according to the requirements of 8.3, Clauses 9 and 10. In addition products of steel S185 shall only be submitted to non-specific inspection and testing and only declarations/statements of compliance with the order shall be supplied when specified at the time of the order.\n\n\nOption 23",
+          "children": []
+        },
+        {
+          "title": "Content of inspection document",
+          "level": 2,
+          "path": "8.2",
+          "content": "See , Clause 13, (Certificate of compliance for S185). The inspection document shall include, in accordance with EN 10168, the following codes and/or information, where applicable: A commercial transactions and parties involved; B description of products to which the inspection document applies; C00-C03 identification of the sample, location of the sample, direction of the test pieces, test temperature; C10-C13 shape of the test piece, yield or proof strength, tensile strength, elongation after fracture; C40-C43 type of test piece, width of test piece, individual values, mean value; C70-C92 steelmaking process, chemical composition; D other tests; 8.3 Z T ests to be v a c l a id r a r t i i e o d n . o ut for specific inspection 8.3.1 The following tests shall be carried out: — the heat analysis; — the tensile test; —8.3 .2for products of quality J0, J2 and K2 the impact test with thickness limitation as specified in 9.2.3.3. At the time of the order the folloOwpitniog na d2ditional tests can be agreed upon (see also Clause 13):\n\na) the product analysis, see 7.2.2 and , Clause 13; Option 3\n\nb9) Fforre aqll uperondcuyc tos fo ft equsatilintyg J Ra nthde pimrpeapcat rteastti, osene o7.f3 s.2a.1m apndle s and te, Cslta upsiee 1c3e. s",
+          "children": []
+        },
+        {
+          "title": "Frequency of testing",
+          "level": 2,
+          "path": "9.1",
+          "content": "",
+          "children": [
+            {
+              "title": "Chemical analysis",
+              "level": 3,
+              "path": "9.1.1",
+              "content": "The heat analysis shall be determined once per cast. If a product analysis has been agreed upon at the",
+              "children": []
+            },
+            {
+              "title": "Mechanical tests",
+              "level": 3,
+              "path": "9.1.2",
+              "content": "time of enquiry and order, the purchaser shall specify the frequency if not once per cast. The verification of the mechanical properties (tensile strength, yield strength, impact energy and elongation) shall be by test unit(s) from within each cast. For verifying the mechanical properties the following test unit shall apply: — 60 tonnes or part thereof; — 80 tonnes or part thereof for heavy sections with a mass > 200 kg/m; — 80 tonnes or part thereof for all sections if the mass of the cast exceeds 200 tonnes. The test unit shall contain products of the same form, grade and quality, delivery condition and of the same thickness range as specified in Table 6 for the yield strength. The following samples shall be taken from one sample product of each test unit:\n\n\n— one sample for tensile testing; —9.2 Ponree psaamraptleio snuf oficf iseanmt foprl eosn ea nsedt otef ssitx p imiepcaecst test pieces.",
+              "children": []
+            },
+            {
+              "title": "Selection and preparation of samples for chemical analysis",
+              "level": 3,
+              "path": "9.2.1",
+              "content": "The selection and preparation of samples for product analysis shall be in accordance with",
+              "children": []
+            },
+            {
+              "title": "Location of samples and orientation of test pieces for mechanical tests",
+              "level": 3,
+              "path": "9.2.2",
+              "content": "EN ISO 14284. The location of samples shall be as shown in Annex A. In addition the samples shall be taken: — from the thickest product in the test unit; — from any product of the test unit for products in delivery condition +N (see 3.1, 3.4). Additionally for plates, sheet, wide strip and wide flats the samples shall be taken so that the axes of the test pieces are approximately midway between the edge and centre line of the products. For wide strip and rod the sample shall be taken at an adequate distance from the end of the product. For narrow strip (<600 mm wide) the sample shall be taken at an adequate distance from the end of the coil and at one third of the width. The preparation of samples for semi-finished products, when the order specifies the requirement for testing the mechanical properties, in addition to chemical composition, shall be agreed upon at the time Option 25 of the order.",
+              "children": []
+            },
+            {
+              "title": "Preparation of test pieces for mechanical tests",
+              "level": 3,
+              "path": "9.2.3",
+              "content": "See , Clause 13, (Sample preparation for semi-finished products).",
+              "children": [
+                {
+                  "title": "General",
+                  "level": 4,
+                  "path": "9.2.3.1",
+                  "content": "",
+                  "children": []
+                },
+                {
+                  "title": "Preparation of tensile test pieces",
+                  "level": 4,
+                  "path": "9.2.3.2",
+                  "content": "The requirements of EN ISO 377 shall apply. The requirements of EN ISO 6892-1 shall apply. For flat products of nominal thickness > 30 mm a round test piece may be used with the longitudinal axis at ¼ thickness if a testing machine with an adequate capacity is not available. In case of doubt or dispute, results on full thickness of the product will prevail. NOTE For bars round test pieces are commonly used but other forms are not prohibited (see EN ISO 6892-1).",
+                  "children": []
+                },
+                {
+                  "title": "Preparation of impact test pieces",
+                  "level": 4,
+                  "path": "9.2.3.3",
+                  "content": "V-notch test pieces shall be machined and prepared in accordance with EN ISO 148-1. In addition, the following requirements apply:\n\na) flat products and sections:\n\n— for nominal thicknesses > 12 mm, standard 10 mm × 10 mm test pieces shall be machined in such a way that one side is not further away than 2 mm from a rolled surface; — for nominal thicknesses ≤ 12 mm, when test pieces with reduced widths are used, the largest width possible has to be chosen; — for nominal thickness < 6 mm no impact tests are required;\n\nb) bars and rod:\n\n— for nominal diameter ≥ 16 mm (round cross section) or nominal thickness ≥ 12 mm (rectangular cross section), standard 10 mm × 10 mm test pieces shall be machined; — for nominal diameter < 16 mm (round cross section) or nominal thickness < 12 mm",
+                  "children": []
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "title": "Identification of samples and test pieces",
+          "level": 2,
+          "path": "9.3",
+          "content": "(rectangular cross section) no impact tests are required. Samples and test pieces shall be marked so that the original products and their location and orientation i1n0 th Te epsrotd mucet tahreo kdnso wn.",
+          "children": []
+        },
+        {
+          "title": "Chemical analysis",
+          "level": 2,
+          "path": "10.1",
+          "content": "Test methods shall be in accordance with EN 10315, EN ISO 15350 or CR 10320 depending on the elements to be analysed and their content. The choice of a suitable physical or chemical analytical method for the analysis shall be at the discretion of the manufacturer. In case of dispute, the method used shall be agreed upon taking into account CEN/TR 10261. For the heat analysis the manufacturer shall report values of all elements defined in Tables 1 or 2 for the steel grade concerned for each cast as well as of the elements for determining the carbon equivalent value. For the product analysis, if not otherwise agreed upon, the manufacturer shall report values of all",
+          "children": []
+        },
+        {
+          "title": "Mechanical tests",
+          "level": 2,
+          "path": "10.2",
+          "content": "elements defined in Tables 3 or 4 for the steel grade concerned, see Option 2, Clause 13.",
+          "children": [
+            {
+              "title": "Tensile test",
+              "level": 3,
+              "path": "10.2.1",
+              "content": "The tensile test shall be carried out in accordance with EN ISO 6892-1. The manufacturer may choose R between method A or B specified in EN ISO 6892-1 for the tensile test. For the specified yield strength the upper yield strength ( ) sRhall be determined. eH If a yield phenomenon is not present, the 0,2 % proof strength ( ) shall be determined. p0,2 L S Test pieces may be non-proportional but in cases of dispute proportional test pieces having a gauge length = 5,65 0 shall be used. o L For flat products with a nominal thickness < 3 mm the test pieces shall always have a gauge length = 80 mm and a width of 20 mm (test piece number 2 EN ISO 6892-1:2016, Annex B). o For normal testing, for reasons of economy, test pieces of a constant measuring length may be used provided the result obtained for elongation after fracture is converted by the formula in EN ISO 2566-1.",
+              "children": []
+            },
+            {
+              "title": "Impact test",
+              "level": 3,
+              "path": "10.2.2",
+              "content": "The impact test shall be carried out in accordance with EN ISO 148-1 on V-notch specimen using 2 mm striker. The average value of the three test results shall meet the specified requirement. One individual value may be below the minimum average value specified, provided that it is not less than 70 % of that value. Three additional test pieces shall be taken from the same sample in accordance with 9.1.2 and tested in any one of the following cases: — if the average of three impact values is lower than the minimum average value specified; — if the average value meets the specified requirement, but two individual values are lower than the minimum average value specified; — if any one value is lower than 70 % of the minimum average value specified. The average value of the six tests shall not be less than the minimum average value specified. Not more than two of the individual values may be lower than the minimum average value specified and not more",
+              "children": []
+            }
+          ]
+        },
+        {
+          "title": "Ultrasonic testing",
+          "level": 2,
+          "path": "10.3",
+          "content": "than one may be lower than 70 % of this value. ≥ If specified at the time of the order (see 7.6), ultrasonic testing shall be carried out: — for flat products in nominal thicknesses 6 mm, except for hot rolled strip and plate cut from strip in accordance with EN 10160; — for H beams with parallel flanges and IPE beams in accordance with EN 10306; —10 .4fo Rr ebtaerss tisn accordance with EN 10308. The retests shall be in accordance with EN 10021. In the case of strip and rod, retests on a rejected coil shall be carried out after the cutting of an additional longitudinal section of sufficient length to remove the coil end effect with a maximum of 2101 m M. arking, labelling, packaging 11.1 The products shall be legibly marked using methods such as painting, stamping, laser marking, bar coding, durable adhesive labels or attached tags with the following: — the grade, the quality and if applicable the delivery condition indicated by its abridged designation; — a number by which the cast and if applicable the sample can be identified; — the manufacturer’s name or trademark. Option 10 The type of marking may be specified at the time of the order. See , Clause 13 (special type of marking). NOTE 1 Where the option for hot dip galvanizing is chosen (see Clause 13) the marking methods and materials used can be agreed upon in order to avoid interference with preparation for hot dip galvanizing (see EN ISO 14713-2). The mark of the external inspection representative may be marked (where applicable). NOTE 2 This depends on the type of inspection document (see 8.1).\n\n\n11.2 Marking shall be at a position close to one end of each product or on the end cut face at the m11a.n3ufacturer's discretion. Where products are supplied in securely tied bundles the marking shall be on a label attached to t1h2e bCuonmdlep olar ionnt tsh e top product of the bundle. A1n3y Ocopmtpiolaninst s shall be dealt with in accordance with EN 10021. A list of options for parts 2 to 6 is given in Annex B for information. The following options (see 5.2) apply for this part:",
+          "children": []
+        }
+      ]
+    },
+    {
+      "title": "The steel making process of the relevant quality shall be indicated (see 6.1).",
+      "level": 1,
+      "path": "1",
+      "content": "",
+      "children": []
+    },
+    {
+      "title": "Product analysis shall be carried out; the number of samples shall be as agreed upon (see",
+      "level": 1,
+      "path": "2",
+      "content": "",
+      "children": [
+        {
+          "title": "and 9.1.1).",
+          "level": 3,
+          "path": "7.2.2",
+          "content": "",
+          "children": []
+        }
+      ]
+    },
+    {
+      "title": "The impact properties of quality JR shall be verified (see 7.3.2.1 and 8.3.2).",
+      "level": 1,
+      "path": "3",
+      "content": "",
+      "children": []
+    },
+    {
+      "title": "Products shall comply with one of the improved properties perpendicular to the surface of",
+      "level": 1,
+      "path": "4",
+      "content": "EN 10164 (see 7.3.3).",
+      "children": []
+    },
+    {
+      "title": "The product shall have a chemical composition required for hot-dip zinc coating (see 7.4.3).",
+      "level": 1,
+      "path": "5",
+      "content": "",
+      "children": []
+    },
+    {
+      "title": "For flat products in nominal thickness ≥ 6 mm, except for hot rolled strip and plate cut from",
+      "level": 1,
+      "path": "6",
+      "content": "strip, the freedom from internal defects shall be verified in accordance with EN 10160 (see",
+      "children": [
+        {
+          "title": "and 10.3).",
+          "level": 2,
+          "path": "7.6",
+          "content": "",
+          "children": []
+        }
+      ]
+    },
+    {
+      "title": "For H beams with parallel flanges and IPE beams the freedom from internal defects shall be",
+      "level": 1,
+      "path": "7",
+      "content": "verified in accordance with EN 10306 (see 7.6 and 10.3).",
+      "children": []
+    },
+    {
+      "title": "For bars the freedom from internal defects shall be verified in accordance with EN 10308",
+      "level": 1,
+      "path": "8",
+      "content": "(see 7.6 and 10.3).",
+      "children": []
+    },
+    {
+      "title": "The type of marking required (see Clause 11).",
+      "level": 1,
+      "path": "10",
+      "content": "",
+      "children": []
+    },
+    {
+      "title": "Sheet, plate, strip, wide flats and flats (width < 150 mm) with a nominal thickness ≤ 30 mm",
+      "level": 1,
+      "path": "11",
+      "content": "shall be suitable for flanging without cracking (see 7.4.2.3.2).",
+      "children": []
+    },
+    {
+      "title": "Plate, sheet and strip with nominal thickness ≤ 8 mm shall be suitable for the production of",
+      "level": 1,
+      "path": "12",
+      "content": "sections by cold rolling with bend radii given in Table 12 (see 7.4.2.3.3).",
+      "children": []
+    },
+    {
+      "title": "For flat products of quality J2 and K2 out of each parent plate or coil the impact properties",
+      "level": 1,
+      "path": "13",
+      "content": "only shall be verified (see 7.3.2.2).",
+      "children": []
+    },
+    {
+      "title": "For flat products of quality J2 and K2 out of each parent plate or coil the impact properties",
+      "level": 1,
+      "path": "14",
+      "content": "and the tensile properties shall be verified (see 7.3.2.2).",
+      "children": []
+    },
+    {
+      "title": "For plates and wide flats the permissible surface discontinuities and for the repair of surface",
+      "level": 1,
+      "path": "15",
+      "content": "defects by grinding and/or welding another class than class A, subclass 1 of EN 10163-2 applies (see 7.5.2).",
+      "children": []
+    },
+    {
+      "title": "For sections the permissible surface discontinuities and for the repair of surface defects by",
+      "level": 1,
+      "path": "16",
+      "content": "grinding and/or welding another class than class C, subclass 1 of EN 10163-3 applies (see 7.5.3).",
+      "children": []
+    },
+    {
+      "title": "For bars and rods the permissible surface discontinuities and for the repair of surface defects",
+      "level": 1,
+      "path": "17",
+      "content": "by grinding and/or welding another class than class A of EN ISO 9443 applies (see 7.5.4).",
+      "children": []
+    },
+    {
+      "title": "For hot rolled plates other tolerances than class A of EN 10029 apply (see 7.7.1).",
+      "level": 1,
+      "path": "18",
+      "content": "",
+      "children": []
+    },
+    {
+      "title": "For long products and hot rolled strip the delivery condition +AR, +N or +M, for quarto plates",
+      "level": 1,
+      "path": "19",
+      "content": "the delivery condition +AR or +N is required (see 6.3).",
+      "children": []
+    },
+    {
+      "title": "A copper content between 0,25 % and 0,40 % on heat analysis and between 0,20 % and",
+      "level": 1,
+      "path": "20",
+      "content": "0,45 % on product analysis for all S235, S275 and S355 qualities is required (see 7.2.4).",
+      "children": []
+    },
+    {
+      "title": "Bars shall be suitable for cold drawing (see 7.4.2.3.4).",
+      "level": 1,
+      "path": "22",
+      "content": "",
+      "children": []
+    },
+    {
+      "title": "A certificate of compliance with the order shall be supplied for the grade S185 (see 8.1).",
+      "level": 1,
+      "path": "23",
+      "content": "",
+      "children": []
+    },
+    {
+      "title": "For semi-finished products, the preparation of samples shall be agreed upon, when the order",
+      "level": 1,
+      "path": "25",
+      "content": "specifies the requirement for testing the mechanical properties, in addition to chemical composition (see 9.2.2).",
+      "children": []
+    },
+    {
+      "title": "The limitation of the maximum carbon content shall be provided for sections with nominal",
+      "level": 1,
+      "path": "26",
+      "content": "thickness > 100 mm (see Tables 1 and 3).",
+      "children": []
+    },
+    {
+      "title": "For long products the max. S content can be increased for improved machinability by 0,015 %",
+      "level": 1,
+      "path": "27",
+      "content": "if the steel is treated to modify the sulphide morphology and the chemical composition shows min. 0,002 0 % Ca (see Tables 1 to 4).",
+      "children": []
+    },
+    {
+      "title": "The minimum impact values shall be provided for sections with a nominal thickness >",
+      "level": 1,
+      "path": "28",
+      "content": "100 mm (see Table 8).",
+      "children": []
+    },
+    {
+      "title": "No application of CE-marking according to EN 10025-1, and no application of assessment and",
+      "level": 1,
+      "path": "33",
+      "content": "verification of constancy of performance according to EN 10025-1, for products, which are not covered by the Construction Product Regulation.",
+      "children": []
+    },
+    {
+      "title": "For plates cut from continuously hot rolled strip thickness tolerances according to EN 10029",
+      "level": 1,
+      "path": "34",
+      "content": "apply (see 7.7.1).",
+      "children": [
+        {
+          "title": "a",
+          "level": 2,
+          "path": null,
+          "content": "",
+          "children": []
+        },
+        {
+          "title": "Table 1 — Chemical composition of the heat analysis for steel grades S235 to S500",
+          "level": 2,
+          "path": null,
+          "content": "Designation Method C in % max. Si Mn P S N Cu Other of for nominal product % % % % % % % deoxithickness in mm max max max. max. max. max. max. dation . . d d e f g l Steel name Steel b ≤ 16 > 16 > 40 number ≤ 40 c",
+          "children": []
+        },
+        {
+          "title": "S235JR 1.0038 FN 0,17 0,17 0,20 - 1,40 0,035 0,035 0,012 0,55 -",
+          "level": 2,
+          "path": null,
+          "content": "",
+          "children": []
+        },
+        {
+          "title": "S235J0 1.0114 FN 0,17 0,17 0,17 - 1,40 0,030 0,030 0,012 0,55 -",
+          "level": 2,
+          "path": null,
+          "content": "",
+          "children": []
+        },
+        {
+          "title": "S235J2 1.0117 FF 0,17 0,17 0,17 - 1,40 0,025 0,025 - 0,55 -",
+          "level": 2,
+          "path": null,
+          "content": "",
+          "children": []
+        },
+        {
+          "title": "S275JR 1.0044 FN 0,21 0,21 0,22 - 1,50 0,035 0,035 0,012 0,55 -",
+          "level": 2,
+          "path": null,
+          "content": "S275J0 1.0143 FN 0,18 0,18 0,18 h - 1,50 0,030 0,030 0,012 0,55 - S275J2 1.0145 FF 0,18 0,18 0,18 h - 1,50 0,025 0,025 - 0,55 -",
+          "children": []
+        },
+        {
+          "title": "S355JR 1.0045 FN 0,24 0,24 0,24 0,55 1,60 0,035 0,035 0,012 0,55 -",
+          "level": 2,
+          "path": null,
+          "content": "S355J0 1.0553 FN 0,20 0,20 i 0,22 0,55 1,60 0,030 0,030 0,012 0,55 - S355J2 1.0577 FF 0,20 0,20 i 0,22 0,55 1,60 0,025 0,025 - 0,55 - S355K2 1.0596 FF 0,20 0,20 i 0,22 0,55 1,60 0,025 0,025 - 0,55 - S460JR j 1.0507 FF S460J0 j 1.0538 FF 0,20 0,20 i 0,22 0,55 1,70 0,030 0,030 0,025 0,55 k S460J2 j 1.0552 FF S460K2 j 1.0581 FF S500J0 j 1.0502 FF 0,20 0,20 0,22 0,55 1,70 0,030 0,030 0,025 0,55 k a See 7.2. b FN = rimming steels not permitted; FF = fully killed steel (see 6.2). Option 26 c For sections with nominal thickness > 100 mm the C content by agreement, see , Clause 13. d For long products the P and S content can be 0,005 % higher. Option 27 e For long products the max. S content can be increased for improved machinability by 0,015 % by agreement if the steel is treated to modify the sulphide morphology and the chemical composition shows min. 0,002 0 % Ca, see , Clause 13. f The max. value for nitrogen does not apply if the chemical composition shows a minimum total Al content of 0,020 % or alternatively min. 0,015 % acid soluble Al or if sufficient other N binding elements are present. In this case the N binding elements shall be mentioned in the inspection document. g If other elements are added, they shall be mentioned in the inspection document. h For nominal thickness > 150 mm: C = 0,20 % max. i For nominal thickness > 30 mm: C = 0,22 % max. j Applicable for long products only. k The steel may show a Nb content of max. 0,05 %, a V content of max. 0,13 % and a Ti content of max. 0,05 %. l For elements Ni, Cr and Mo the maximum value (%) is limited to Ni = 0,42; Cr = 0,29 and Mo = 0,11.\n\n| Designation Steel name Steel number |  | Method of deoxi- dation b | C in % max. for nominal product thickness in mm ≤ 16 > 16 > 40 ≤ 40 c |  |  | Si % max . | Mn % max . | P % max. d | S % max. d e | N % max. f | Cu % max. | Other % max. g l |\n| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |\n|  |  |  |  |  |  |  |  |  |  |  |  |  |\n| S235JR | 1.0038 | FN | 0,17 | 0,17 | 0,20 | - | 1,40 | 0,035 | 0,035 | 0,012 | 0,55 | - |\n| S235J0 | 1.0114 | FN | 0,17 | 0,17 | 0,17 | - | 1,40 | 0,030 | 0,030 | 0,012 | 0,55 | - |\n| S235J2 | 1.0117 | FF | 0,17 | 0,17 | 0,17 | - | 1,40 | 0,025 | 0,025 | - | 0,55 | - |\n| S275JR | 1.0044 | FN | 0,21 | 0,21 | 0,22 | - | 1,50 | 0,035 | 0,035 | 0,012 | 0,55 | - |\n| S275J0 | 1.0143 | FN | 0,18 | 0,18 | 0,18 h | - | 1,50 | 0,030 | 0,030 | 0,012 | 0,55 | - |\n| S275J2 | 1.0145 | FF | 0,18 | 0,18 | 0,18 h | - | 1,50 | 0,025 | 0,025 | - | 0,55 | - |\n| S355JR | 1.0045 | FN | 0,24 | 0,24 | 0,24 | 0,55 | 1,60 | 0,035 | 0,035 | 0,012 | 0,55 | - |\n| S355J0 | 1.0553 | FN | 0,20 | 0,20 i | 0,22 | 0,55 | 1,60 | 0,030 | 0,030 | 0,012 | 0,55 | - |\n| S355J2 | 1.0577 | FF | 0,20 | 0,20 i | 0,22 | 0,55 | 1,60 | 0,025 | 0,025 | - | 0,55 | - |\n| S355K2 | 1.0596 | FF | 0,20 0,20 | 0,20 i 0,20 i | 0,22 0,22 | 0,55 0,55 | 1,60 1,70 | 0,025 0,030 | 0,025 0,030 | - 0,025 | 0,55 0,55 | - k |\n| S460JR j | 1.0507 | FF |  |  |  |  |  |  |  |  |  |  |\n| S460J0 j | 1.0538 | FF |  |  |  |  |  |  |  |  |  |  |\n| S460J2 j | 1.0552 | FF |  |  |  |  |  |  |  |  |  |  |\n| S460K2 j | 1.0581 | FF |  |  |  |  |  |  |  |  |  |  |\n| S500J0 j 1.0502 FF 0,20 0,20 0,22 0,55 1,70 0,030 0,030 0,025 0,55 k a See 7.2. b FN = rimming steels not permitted; FF = fully killed steel (see 6.2). Option 26 c For sections with nominal thickness > 100 mm the C content by agreement, see , Clause 13. d For long products the P and S content can be 0,005 % higher. Option 27 e For long products the max. S content can be increased for improved machinability by 0,015 % by agreement if the steel is treated to modify the sulphide morphology and the chemical composition shows min. 0,002 0 % Ca, see , Clause 13. f The max. value for nitrogen does not apply if the chemical composition shows a minimum total Al content of 0,020 % or alternatively min. 0,015 % acid soluble Al or if sufficient other N binding elements are present. In this case the N binding elements shall be mentioned in the inspection document. g If other elements are added, they shall be mentioned in the inspection document. h For nominal thickness > 150 mm: C = 0,20 % max. i For nominal thickness > 30 mm: C = 0,22 % max. j Applicable for long products only. k The steel may show a Nb content of max. 0,05 %, a V content of max. 0,13 % and a Ti content of max. 0,05 %. |  |  |  |  |  |  |  |  |  |  |  |  |",
+          "children": []
+        },
+        {
+          "title": "a",
+          "level": 2,
+          "path": null,
+          "content": "",
+          "children": []
+        },
+        {
+          "title": "Table 2 — Chemical composition of the heat analysis for steel grades S185, E295 to E360",
+          "level": 2,
+          "path": null,
+          "content": "Designation Method of P S N Steel name Steel number deoxi- % % % dation max. max. max. b c d S185 1.0035 opt. - - -",
+          "children": []
+        },
+        {
+          "title": "E295 1.0050 FN 0,045 0,045 0,012",
+          "level": 2,
+          "path": null,
+          "content": "",
+          "children": []
+        },
+        {
+          "title": "E335 1.0060 FN 0,045 0,045 0,012",
+          "level": 2,
+          "path": null,
+          "content": "",
+          "children": []
+        },
+        {
+          "title": "E360 1.0070 FN 0,045 0,045 0,012",
+          "level": 2,
+          "path": null,
+          "content": "a See 7.2. b opt. = method at the manufacturer's discretion; FN = rimming steels not permitted (see 6.2). c For Olopntgio pnr 2o7ducts the max. S content can be increased for improved machinability by 0,010 % by agreement if the steel is treated to modify the sulphide morphology and the chemical composition shows min. 0,002 0 % Ca. See , Clause 13. d The max. value for nitrogen does not apply if the chemical composition shows a minimum total Al content of 0,020 % or if sufficient other N binding elements are present. In this case the N binding elements shall be mentioned in the inspection document.\n\n| Designation Steel name Steel number |  | Method of deoxi- dation | P % max. | S % max. | N % max. |\n| --- | --- | --- | --- | --- | --- |\n|  |  | b |  | c | d |\n| S185 | 1.0035 | opt. | - | - | - |\n| E295 | 1.0050 | FN | 0,045 | 0,045 | 0,012 |\n| E335 | 1.0060 | FN | 0,045 | 0,045 | 0,012 |\n| E360 1.0070 FN 0,045 0,045 0,012 a See 7.2. b opt. = method at the manufacturer's discretion; FN = rimming steels not permitted (see 6.2). c For Olopntgio pnr 2o7ducts the max. S content can be increased for improved machinability by 0,010 % by agreement if the steel is treated to modify the sulphide morphology and the chemical composition shows min. 0,002 0 % Ca. See , Clause 13. d The max. value for nitrogen does not apply if the chemical composition shows a minimum total Al content of 0,020 % |  |  |  |  |  |",
+          "children": []
+        },
+        {
+          "title": "a",
+          "level": 2,
+          "path": null,
+          "content": "",
+          "children": []
+        },
+        {
+          "title": "Table 3 — Chemical composition of the product analysis based on Table 1",
+          "level": 2,
+          "path": null,
+          "content": "Designation Method C in % max. Si Mn P S N Cu Other of for nominal product % % % % % % % deoxithickness in mm max max max. max. max. max max. dation Steel name Steel ≤ 16 > 16 > 40 . . . number b ≤ 40 c d d e f g l",
+          "children": []
+        },
+        {
+          "title": "S235JR 1.0038 FN 0,19 0,19 0,23 - 1,50 0,045 0,045 0,014 0,60 -",
+          "level": 2,
+          "path": null,
+          "content": "",
+          "children": []
+        },
+        {
+          "title": "S235J0 1.0114 FN 0,19 0,19 0,19 - 1,50 0,040 0,040 0,014 0,60 -",
+          "level": 2,
+          "path": null,
+          "content": "",
+          "children": []
+        },
+        {
+          "title": "S235J2 1.0117 FF 0,19 0,19 0,19 - 1,50 0,035 0,035 - 0,60 -",
+          "level": 2,
+          "path": null,
+          "content": "",
+          "children": []
+        },
+        {
+          "title": "S275JR 1.0044 FN 0,24 0,24 0,25 - 1,60 0,045 0,045 0,014 0,60 -",
+          "level": 2,
+          "path": null,
+          "content": "S275J0 1.0143 FN 0,21 0,21 0,21 h - 1,60 0,040 0,040 0,014 0,60 - S275J2 1.0145 FF 0,21 0,21 0,21 h - 1,60 0,035 0,035 - 0,60 -",
+          "children": []
+        },
+        {
+          "title": "S355JR 1.0045 FN 0,27 0,27 0,27 0,60 1,70 0,045 0,045 0,014 0,60 -",
+          "level": 2,
+          "path": null,
+          "content": "S355J0 1.0553 FN 0,23 0,23 i 0,24 0,60 1,70 0,040 0,040 0,014 0,60 - S355J2 1.0577 FF 0,23 0,23 i 0,24 0,60 1,70 0,035 0,035 - 0,60 - S355K2 1.0596 FF 0,23 0,23 i 0,24 0,60 1,70 0,035 0,035 - 0,60 - S460JR j 1.0507 FF S460J0 j 1.0538 FF 0,23 0,23 i 0,24 0,60 1,80 0,040 0,040 0,027 0,60 k S460J2 j 1.0552 FF S460K2 j 1.0581 FF S500J0 j 1.0502 FF 0,23 0,23 0,24 0,60 1,80 0,040 0,040 0,027 0,60 k a See 7.2. b FN = rimming steels not permitted; FF = fully killed steel (see 6.2). Option 26 c For sections with nominal thickness > 100 mm the C content by agreement. See , Clause 13. d For long products the P and S content can be 0,005 % higher. e For Olopntgi opnr o2d7ucts the max. S content can be increased for improved machinability by 0,015 % by agreement if the steel is treated to modify the sulphide morphology and the chemical composition shows min. 0,002 0 % Ca. See , Clause 13. f The max. value for nitrogen does not apply if the chemical composition shows a minimum total Al content of 0,015 % or alternatively min. 0,013 % acid soluble Al or if sufficient other N binding elements are present. In this case the N binding elements shall be mentioned in the inspection document. g If other elements are added, they shall be mentioned on the inspection document. h For nominal thickness > 150 mm: C = 0,22 % max. i For nominal thickness > 30 mm: C = 0,24 % max. j Applicable for long products only. k The steel may show a Nb content of max. 0,06 %, a V content of max. 0,15 % and a Ti content of max. 0,06 %. l For elements Ni, Cr and Mo the maximum value (%) is limited to Ni = 0,47; Cr = 0,34 and Mo = 0,14.\n\n| Designation Steel name Steel number |  | Method of deoxi- dation | C in % max. for nominal product thickness in mm ≤ 16 > 16 > 40 ≤ 40 c |  |  | Si % max . | Mn % max . | P % max. d | S % max. d e | N % max. f | Cu % max . | Other % max. g l |\n| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |\n|  |  | b |  |  |  |  |  |  |  |  |  |  |\n| S235JR | 1.0038 | FN | 0,19 | 0,19 | 0,23 | - | 1,50 | 0,045 | 0,045 | 0,014 | 0,60 | - |\n| S235J0 | 1.0114 | FN | 0,19 | 0,19 | 0,19 | - | 1,50 | 0,040 | 0,040 | 0,014 | 0,60 | - |\n| S235J2 | 1.0117 | FF | 0,19 | 0,19 | 0,19 | - | 1,50 | 0,035 | 0,035 | - | 0,60 | - |\n| S275JR | 1.0044 | FN | 0,24 | 0,24 | 0,25 | - | 1,60 | 0,045 | 0,045 | 0,014 | 0,60 | - |\n| S275J0 | 1.0143 | FN | 0,21 | 0,21 | 0,21 h | - | 1,60 | 0,040 | 0,040 | 0,014 | 0,60 | - |\n| S275J2 | 1.0145 | FF | 0,21 | 0,21 | 0,21 h | - | 1,60 | 0,035 | 0,035 | - | 0,60 | - |\n| S355JR | 1.0045 | FN | 0,27 | 0,27 | 0,27 | 0,60 | 1,70 | 0,045 | 0,045 | 0,014 | 0,60 | - |\n| S355J0 | 1.0553 | FN | 0,23 | 0,23 i | 0,24 | 0,60 | 1,70 | 0,040 | 0,040 | 0,014 | 0,60 | - |\n| S355J2 | 1.0577 | FF | 0,23 | 0,23 i | 0,24 | 0,60 | 1,70 | 0,035 | 0,035 | - | 0,60 | - |\n| S355K2 | 1.0596 | FF | 0,23 0,23 | 0,23 i 0,23 i | 0,24 0,24 | 0,60 0,60 | 1,70 1,80 | 0,035 0,040 | 0,035 0,040 | - 0,027 | 0,60 0,60 | - k |\n| S460JR j | 1.0507 | FF |  |  |  |  |  |  |  |  |  |  |\n| S460J0 j | 1.0538 | FF |  |  |  |  |  |  |  |  |  |  |\n| S460J2 j | 1.0552 | FF |  |  |  |  |  |  |  |  |  |  |\n| S460K2 j | 1.0581 | FF |  |  |  |  |  |  |  |  |  |  |\n| S500J0 j 1.0502 FF 0,23 0,23 0,24 0,60 1,80 0,040 0,040 0,027 0,60 k a See 7.2. b FN = rimming steels not permitted; FF = fully killed steel (see 6.2). Option 26 c For sections with nominal thickness > 100 mm the C content by agreement. See , Clause 13. d For long products the P and S content can be 0,005 % higher. e For Olopntgi opnr o2d7ucts the max. S content can be increased for improved machinability by 0,015 % by agreement if the steel is treated to modify the sulphide morphology and the chemical composition shows min. 0,002 0 % Ca. See , Clause 13. f The max. value for nitrogen does not apply if the chemical composition shows a minimum total Al content of 0,015 % or alternatively min. 0,013 % acid soluble Al or if sufficient other N binding elements are present. In this case the N binding elements shall be mentioned in the inspection document. g If other elements are added, they shall be mentioned on the inspection document. h For nominal thickness > 150 mm: C = 0,22 % max. i For nominal thickness > 30 mm: C = 0,24 % max. j Applicable for long products only. k The steel may show a Nb content of max. 0,06 %, a V content of max. 0,15 % and a Ti content of max. 0,06 %. |  |  |  |  |  |  |  |  |  |  |  |  |",
+          "children": []
+        },
+        {
+          "title": "a",
+          "level": 2,
+          "path": null,
+          "content": "",
+          "children": []
+        },
+        {
+          "title": "Table 4 — Chemical composition of the product analysis based on Table 2",
+          "level": 2,
+          "path": null,
+          "content": "Designation Method P S N of deoxi- % % % dation max. max. max. b Steel name Steel number c d",
+          "children": []
+        },
+        {
+          "title": "S185 1.0035 opt. - - -",
+          "level": 2,
+          "path": null,
+          "content": "",
+          "children": []
+        },
+        {
+          "title": "E295 1.0050 FN 0,055 0,055 0,014",
+          "level": 2,
+          "path": null,
+          "content": "",
+          "children": []
+        },
+        {
+          "title": "E335 1.0060 FN 0,055 0,055 0,014",
+          "level": 2,
+          "path": null,
+          "content": "",
+          "children": []
+        },
+        {
+          "title": "E360 1.0070 FN 0,055 0,055 0,014",
+          "level": 2,
+          "path": null,
+          "content": "a See 7.2. b opt. = method at the manufacturer's discretion; FN = rimming steels not permitted (see 6.2). c For Olopntgi opnr o2d7ucts the max. S content can be increased for improved machinability by 0,010 % by agreement if the steel is treated to modify the sulphide morphology and the chemical composition shows min. 0,002 0 % Ca. See , Clause 13. d The max. value for nitrogen does not apply if the chemical composition shows a minimum total Al content of 0,015 % or if sufficient other N binding elements are present. In this case the N binding elements shall be mentioned in the inspection document.\n\n| Designation Steel name Steel number |  | Method of deoxi- dation b | P % max. | S % max. c | N % max. d |\n| --- | --- | --- | --- | --- | --- |\n|  |  |  |  |  |  |\n| S185 | 1.0035 | opt. | - | - | - |\n| E295 | 1.0050 | FN | 0,055 | 0,055 | 0,014 |\n| E335 | 1.0060 | FN | 0,055 | 0,055 | 0,014 |\n| E360 1.0070 FN 0,055 0,055 0,014 a See 7.2. b opt. = method at the manufacturer's discretion; FN = rimming steels not permitted (see 6.2). c For Olopntgi opnr o2d7ucts the max. S content can be increased for improved machinability by 0,010 % by agreement if the steel is treated to modify the sulphide morphology and the chemical composition shows min. 0,002 0 % Ca. See , Clause 13. d The max. value for nitrogen does not apply if the chemical composition shows a minimum total Al content of 0,015 % or if sufficient other N binding elements are present. In this case the N binding elements shall be |  |  |  |  |  |",
+          "children": []
+        },
+        {
+          "title": "a",
+          "level": 2,
+          "path": null,
+          "content": "",
+          "children": []
+        },
+        {
+          "title": "Table 5 — Maximum CEV based on the heat analysis",
+          "level": 2,
+          "path": null,
+          "content": "Designation Maximum CEV in % for nominal product thickness in mm Steel name Steel ≤ 30 > 30 > 40 > 150 > 250 number ≤ 40 ≤ 150 ≤ 250 ≤ 400",
+          "children": []
+        },
+        {
+          "title": "S235JR 1.0038",
+          "level": 2,
+          "path": null,
+          "content": "S235J0 1.0114 0,35 0,35 0,38 0,40 0,40 S235J2 1.0117",
+          "children": []
+        },
+        {
+          "title": "S275JR 1.0044",
+          "level": 2,
+          "path": null,
+          "content": "S275J0 1.0143 0,40 0,40 0,42 0,44 0,44 S275J2 1.0145",
+          "children": []
+        },
+        {
+          "title": "S355JR 1.0045",
+          "level": 2,
+          "path": null,
+          "content": "S355J0 1.0553 0,45 0,47 0,47 0,49 b 0,49 S355J2 1.0577 S355K2 1.0596 S460JR c 1.0507 S460J0 c 1.0538 0,47 0,49 0,49 - - S460J2 c 1.0552 S460K2 c 1.0581 S500J0 c 1.05 O 0 p 2 t ion 20 0,49 Optio 0 n ,4 5 9 0,49 - - a Max. CEV is increased for , see 7.2.4, and , see 7.4.3. b For long products a maximum CEV of 0,54 applies. c Applicable for long products only.\n\n| Designation Steel name Steel number |  | Maximum CEV in % for nominal product thickness in mm ≤ 30 > 30 > 40 > 150 > 250 ≤ 40 ≤ 150 ≤ 250 ≤ 400 |  |  |  |  |\n| --- | --- | --- | --- | --- | --- | --- |\n|  |  | 0,35 | 0,35 | 0,38 | 0,40 | 0,40 |\n| S235JR | 1.0038 |  |  |  |  |  |\n| S235J0 | 1.0114 |  |  |  |  |  |\n| S235J2 | 1.0117 | 0,40 | 0,40 | 0,42 | 0,44 | 0,44 |\n| S275JR | 1.0044 |  |  |  |  |  |\n| S275J0 | 1.0143 |  |  |  |  |  |\n| S275J2 | 1.0145 | 0,45 | 0,47 | 0,47 | 0,49 b | 0,49 |\n| S355JR | 1.0045 |  |  |  |  |  |\n| S355J0 | 1.0553 |  |  |  |  |  |\n| S355J2 | 1.0577 |  |  |  |  |  |\n| S355K2 | 1.0596 | 0,47 | 0,49 | 0,49 | - | - |\n| S460JR c | 1.0507 |  |  |  |  |  |\n| S460J0 c | 1.0538 |  |  |  |  |  |\n| S460J2 c | 1.0552 |  |  |  |  |  |\n| S460K2 c | 1.0581 |  |  |  |  |  |\n| S500J0 c 1.05 O 0 p 2 t ion 20 0,49 Optio 0 n ,4 5 9 0,49 - - a Max. CEV is increased for , see 7.2.4, and , see 7.4.3. b For long products a maximum CEV of 0,54 applies. |  |  |  |  |  |  |\n\n\n**Nota tecnica:** testo di questa pagina ricostruito con motore alternativo per problema di ordinamento caratteri.",
+          "children": []
+        },
+        {
+          "title": "Table 6 — Mechanical properties – Tensile test properties at room temperature for steel grades S235 to S500",
+          "level": 2,
+          "path": null,
+          "content": "Designation Minimum yield strength ReH a MPa Tensile strength Rm a MPa\n\nNominal thickness mm Nominal thickness mm Steel name Steel number ≤ 16 > 16 ≤ 40 > 40 ≤ 63 > 63 ≤ 80 > 80 ≤ 100 > 100 ≤ 150 > 150 ≤ 200 > 200 ≤ 250 > 250 ≤ 400 < 3 ≥ 3 ≤ 100 > 100 ≤ 150 > 150 ≤ 250 > 250 ≤ 400",
+          "children": []
+        },
+        {
+          "title": "S235JR",
+          "level": 2,
+          "path": null,
+          "content": "1.0038 235 225 215 215 215 195 185 175 165 360 to 510 360 to 510 350 to 500 340 to 490 330 to 480 S235J0 1.0114 S235J2 1.0117",
+          "children": []
+        },
+        {
+          "title": "S275JR",
+          "level": 2,
+          "path": null,
+          "content": "1.0044 275 265 255 245 235 225 215 205 195 430 to 580 410 to 560 400 to 540 380 to 540 380 to 540 S275J0 1.0143 S275J2 1.0145",
+          "children": []
+        },
+        {
+          "title": "S355JR",
+          "level": 2,
+          "path": null,
+          "content": "1.0045 355 345 335 325 315 295 285 275 265 510 to 680 470 to 630 450 to 600 450 to 600 450 to 600 S355J0 1.0553 S355J2 1.0577 S355K2 1.0596 S460JR b 1.0507 460 440 420 400 390 390 - - - - 550 to 720 530 to 700 - - S460J0 b 1.0538 S460J2 b 1.0552 S460K2 b 1.0581 S500J0 b 1.0502 500 480 460 450 450 450 - - - - 580 to 760 560 to 750 - - a For plate, strip and wide flats with widths ≥ 600 mm the direction transverse (t) to the rolling direction applies. For all other products the values apply for the direction\n\nparallel (l) to the rolling direction. b Applicable for long products only.",
+          "children": []
+        },
+        {
+          "title": "BS EN 10025‑2:2019",
+          "level": 2,
+          "path": null,
+          "content": "| 052 004 > ≤ 051 052 > ≤ a mR ssenkciht htgnerts aPM mm 001 051 lanimoN > ≤ elisneT 3 001 ≥ ≤ 3 < | 084 ot 033 |  |  | 045 ot 083 |  |  | 006 ot 054 |  |  |  | - |  |  |  |  | noitcerid - eht rof ylppa - seulav 057 eht ot stcudorp 065 067 rehto ot 085 lla roF .seilppa - noitcerid - gnillor - eht ot )t( - esrevsnart 054 noitcerid 054 eht 054 mm 006 064 ≥ shtdiw 084 htiw .noitcerid stalf 005 ediw gnillor dna 2050.1 eht pirts ot )l( ,etalp lellarap b roF 0J005S a |\n| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |\n|  | 094 ot 043 |  |  | 045 ot 083 |  |  | 006 ot 054 |  |  |  | - |  |  |  |  |  |\n|  | 005 ot 053 |  |  | 045 ot 004 |  |  | 006 ot 054 |  |  |  | 007 ot 035 |  |  |  |  |  |\n|  | 015 ot 063 |  |  | 065 ot 014 |  |  | 036 ot 074 |  |  |  | 027 ot 055 |  |  |  |  |  |\n|  | 015 ot 063 |  |  | 085 ot 034 |  |  | 086 ot 015 |  |  |  | - |  |  |  |  |  |\n| 052 004 > ≤ 002 052 > ≤ 051 002 a > ≤ HeR 001 051 htgnerts ssenkciht > ≤ aPM mm 08 001 dleiy lanimoN > ≤ muminiM 36 08 > ≤ 04 36 > ≤ 61 04 > ≤ 61 ≤ | 561 |  |  | 591 |  |  | 562 |  |  |  | - |  |  |  |  |  |\n|  | 571 |  |  | 502 |  |  | 572 |  |  |  | - |  |  |  |  |  |\n|  | 581 |  |  | 512 |  |  | 582 |  |  |  | - |  |  |  |  |  |\n|  | 591 |  |  | 522 |  |  | 592 |  |  |  | 093 |  |  |  |  |  |\n|  | 512 |  |  | 532 |  |  | 513 |  |  |  | 093 |  |  |  |  |  |\n|  | 512 |  |  | 542 |  |  | 523 |  |  |  | 004 |  |  |  |  |  |\n|  | 512 |  |  | 552 |  |  | 533 |  |  |  | 024 |  |  |  |  |  |\n|  | 522 |  |  | 562 |  |  | 543 |  |  |  | 044 |  |  |  |  |  |\n|  | 532 |  |  | 572 |  |  | 553 |  |  |  | 064 |  |  |  |  |  |\n| rebmun leetS noitangiseD leetS eman |  | 8300.1 | 4110.1 | 7110.1 | 4400.1 | 3410.1 | 5410.1 | 5400.1 | 3550.1 | 7750.1 | 6950.1 | 7050.1 | 8350.1 | 2550.1 | 1850.1 |  |\n|  |  | RJ532S | 0J532S | 2J532S | RJ572S | 0J572S | 2J572S | RJ553S | 0J553S | 2J553S | 2K553S | b RJ064S | b 0J064S | b 2J064S | b 2K064S |  |\n\n\n**Nota tecnica:** testo di questa pagina ricostruito con motore alternativo per problema di ordinamento caratteri.",
+          "children": []
+        },
+        {
+          "title": "Table 6 — Mechanical properties – Tensile test properties at room temperature for steel grades S235 to S500 (concluded)",
+          "level": 2,
+          "path": null,
+          "content": "Designation Orientation of test pieces a Minimum percentage elongation after fracture a %\n\nL0 = 80 mm Nominal thickness mm L0 = 5,65 √So Nominal thickness mm Steel name Steel number\n\n≤ 1 > 1 ≤ 1,5 > 1,5 ≤ 2 > 2 ≤ 2,5 > 2,5 < 3 ≥ 3 ≤ 40 > 40 ≤ 63 > 63 ≤ 100 > 100 ≤ 150 > 150 ≤ 250 > 250 ≤ 400",
+          "children": []
+        },
+        {
+          "title": "S235JR",
+          "level": 2,
+          "path": null,
+          "content": "1.0038 l t 17 15 18 16 19 17 20 18 21 19 26 24 25 23 24 22 22 22 21 21 21 21 S235J0 1.0114 S235J2 1.0117",
+          "children": []
+        },
+        {
+          "title": "S275JR",
+          "level": 2,
+          "path": null,
+          "content": "1.0044 l t 15 13 16 14 17 15 18 16 19 17 23 21 22 20 21 19 19 19 18 18 18 18 S275J0 1.0143 S275J2 1.0145",
+          "children": []
+        },
+        {
+          "title": "S355JR",
+          "level": 2,
+          "path": null,
+          "content": "1.0045 l t 14 12 15 13 16 14 17 15 18 16 22 20 21 19 20 18 18 18 17 17 17 17 S355J0 1.0553 S355J2 1.0577 S355K2 1.0596 S460JR b 1.0507 l - - - - - 17 17 17 17 - - S460J0 b 1.0538 S460J2 b 1.0552 S460K2 b 1.0581 S500J0 b 1.0502 l - - - - - 15 15 15 15 - -",
+          "children": []
+        },
+        {
+          "title": "BS EN 10025‑2:2019",
+          "level": 2,
+          "path": null,
+          "content": "| 052 004 > ≤ 051 052 > ≤ ssenkciht oS√ 001 051 56,5 mm > ≤ a erutcarf lanimoN = 0L 36 001 retfa > ≤ noitagnole 04 36 > ≤ % egatnecrep 3 04 ≥ ≤ muminiM 5,2 3 < > 5,2 ssenkciht 2 > mm ≤ 08 mm 5,1 lanimoN 2 = ≤ 0L > 5,1 1 > ≤ 1 ≤ | 12 |  |  | 12 81 |  |  | 81 71 71 |  |  |  | - |  |  |  |  |\n| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |\n|  | 12 |  |  | 12 81 |  |  | 81 71 71 |  |  |  | - |  |  |  |  |\n|  | 22 |  |  | 22 91 |  |  | 91 81 81 |  |  |  | 71 |  |  |  |  |\n|  | 42 |  |  | 22 12 |  |  | 91 02 81 |  |  |  | 71 |  |  |  |  |\n|  | 52 |  |  | 32 22 |  |  | 02 12 91 |  |  |  | 71 |  |  |  |  |\n|  | 62 |  |  | 42 32 |  |  | 12 22 02 |  |  |  | 71 |  |  |  |  |\n|  | 12 |  |  | 91 91 |  |  | 71 81 61 |  |  |  | - |  |  |  |  |\n|  | 02 |  |  | 81 81 |  |  | 61 71 51 |  |  |  | - |  |  |  |  |\n|  | 91 |  |  | 71 71 |  |  | 51 61 41 |  |  |  | - |  |  |  |  |\n|  | 81 |  |  | 61 61 |  |  | 41 51 31 |  |  |  | - |  |  |  |  |\n|  | 71 |  |  | 51 51 |  |  | 31 41 21 |  |  |  | - |  |  |  |  |\n| fo -neirO seceip noitat tset a | l |  |  | t l |  |  | t l t |  |  |  | l |  |  |  |  |\n| rebmun leetS noitangiseD eman leetS |  | 8300.1 | 4110.1 | 7110.1 | 4400.1 | 3410.1 | 5410.1 | 5400.1 | 3550.1 | 7750.1 | 6950.1 | 7050.1 | 8350.1 | 2550.1 | 1850.1 |\n|  |  | RJ532S | 0J532S | 2J532S | RJ572S | 0J572S | 2J572S | RJ553S | 0J553S | 2J553S | 2K553S | b RJ064S | b 0J064S | b 2J064S | b 2K064S |\n\n\n**Nota tecnica:** testo di questa pagina ricostruito con motore alternativo per problema di ordinamento caratteri.\n\nDesignation Orientation of test pieces a Minimum percentage elongation after fracture a %\n\nL0 = 80 mm Nominal thickness mm L0 = 5,65 √So Nominal thickness mm Steel name Steel number\n\n≤ 1 > 1 ≤ 1,5 > 1,5 ≤ 2 > 2 ≤ 2,5 > 2,5 < 3 ≥ 3 ≤ 40 > 40 ≤ 63 > 63 ≤ 100 > 100 ≤ 150 > 150 ≤ 250 > 250 ≤ 400 a For plate, strip and wide flats with widths ≥ 600 mm the direction transverse (t) to the rolling direction applies. For all other products the values apply for the direction\n\nparallel (l) to the rolling direction. In the case of plates used for the manufacture of hot rolled patterned plates, the elongation values only apply to the base plate and not to\n\nthe final hot rolled patterned plates. b Applicable for long products only.",
+          "children": []
+        },
+        {
+          "title": "BS EN 10025‑2:2019",
+          "level": 2,
+          "path": null,
+          "content": "| 052 004 > ≤ 051 052 > ≤ ssenkciht oS√ 001 051 56,5 mm > ≤ a erutcarf lanimoN = 0L 36 001 retfa > ≤ noitagnole 04 36 > ≤ % egatnecrep 3 04 ≥ ≤ muminiM 5,2 3 < > 5,2 ssenkciht 2 > mm ≤ 08 mm 5,1 lanimoN 2 = ≤ 0L > 5,1 1 > ≤ 1 ≤ | noitcerid ot ton dna eht etalp rof esab ylppa eht seulav ot ylppa eht stcudorp ylno seulav rehto noitagnole lla roF .seilppa eht ,setalp noitcerid denrettap gnillor dellor eht toh ot fo )t( erutcafunam esrevsnart noitcerid eht rof desu eht setalp mm 006 fo esac ≥ shtdiw eht nI htiw .setalp .noitcerid stalf denrettap ediw gnillor dna dellor eht pirts ot toh )l( ,etalp lellarap lanif roF eht a |\n| --- | --- |\n| fo -neirO seceip noitat tset a |  |\n| rebmun leetS noitangiseD eman leetS |  |\n\n\n**Nota tecnica:** testo di questa pagina ricostruito con motore alternativo per problema di ordinamento caratteri.",
+          "children": []
+        },
+        {
+          "title": "Table 7 — Mechanical properties – Tensile test properties at room temperature for steel grades S185, E295 to E360",
+          "level": 2,
+          "path": null,
+          "content": "Designation Minimum yield strength ReH a MPa Tensile strength Rm a MPa\n\nNominal thickness mm Nominal thickness mm Steel name Steel number ≤ 16 > 16 ≤ 40 > 40 ≤ 63 > 63 ≤ 80 > 80 ≤ 100 > 100 ≤ 150 > 150 ≤ 200 > 200 ≤ 250 < 3 ≥ 3 ≤ 100 > 100 ≤ 150 > 150 ≤ 250 S185 1.0035 185 175 175 175 175 165 155 145 310 to 540 290 to 510 280 to 500 270 to 490 E295 b 1.0050 295 285 275 265 255 245 235 225 490 to 660 470 to 610 450 to 610 440 to 610 E335 b 1.0060 335 325 315 305 295 275 265 255 590 to 770 570 to 710 550 to 710 540 to 710 E360 b 1.0070 360 355 345 335 325 305 295 285 690 to 900 670 to 830 650 to 830 640 to 830 a For plate, strip and wide flats with widths ≥ 600 mm the direction transverse (t) to the rolling direction applies. For all other products the values apply for the direction\n\nparallel (l) to the rolling direction. b These steels are normally not used for channels, angles and sections.",
+          "children": []
+        },
+        {
+          "title": "BS EN 10025‑2:2019",
+          "level": 2,
+          "path": null,
+          "content": "| 051 052 > ≤ a mR ssenkciht 001 051 htgnerts > ≤ aPM mm lanimoN elisneT 3 001 ≥ ≤ 3 < |  | 094 ot 072 | 016 ot 044 | 017 ot 045 | noitcerid 038 ot 046 eht rof 038 ylppa ot 056 seulav eht 038 stcudorp ot 076 rehto 009 lla ot roF 096 .seilppa 582 noitcerid 592 gnillor eht 503 ot )t( esrevsnart 523 533 noitcerid 543 eht mm 006 553 ≥ shtdiw 063 htiw .noitcerid stalf 0700.1 ediw gnillor dna eht pirts ot )l( ,etalp lellarap roF b 063E a |\n| --- | --- | --- | --- | --- | --- |\n|  |  | 005 ot 082 | 016 ot 054 | 017 ot 055 |  |\n|  |  | 015 ot 092 | 016 ot 074 | 017 ot 075 |  |\n|  |  | 045 ot 013 | 066 ot 094 | 077 ot 095 |  |\n| 002 052 > ≤ 051 002 > ≤ 001 051 a HeR > ≤ htgnerts ssenkciht 08 001 aPM mm > ≤ dleiy lanimoN 36 08 muminiM > ≤ 04 36 > ≤ 61 04 > ≤ 61 ≤ |  | 541 | 522 | 552 |  |\n|  |  | 551 | 532 | 562 |  |\n|  |  | 561 | 542 | 572 |  |\n|  |  | 571 | 552 | 592 |  |\n|  |  | 571 | 562 | 503 |  |\n|  |  | 571 | 572 | 513 |  |\n|  |  | 571 | 582 | 523 |  |\n|  |  | 581 | 592 | 533 |  |\n| rebmun leetS noitangiseD eman leetS |  | 5300.1 | 0500.1 | 0600.1 |  |\n|  |  | 581S | b 592E | b 533E |  |\n\n\n**Nota tecnica:** testo di questa pagina ricostruito con motore alternativo per problema di ordinamento caratteri.",
+          "children": []
+        },
+        {
+          "title": "Table 7 — Mechanical properties – Tensile test properties at room temperature for steel grades S185, E295 to E360 (concluded)",
+          "level": 2,
+          "path": null,
+          "content": "Designation Orientation of test pieces a Minimum percentage elongation after fracture a %\n\nL0 = 80 mm Nominal thickness mm L0 = 5,65 √So Nominal thickness mm Steel name Steel number\n\n≤ 1 > 1 ≤ 1,5 > 1,5 ≤ 2 > 2 ≤ 2,5 > 2,5 < 3 ≥ 3 ≤ 40 > 40 ≤ 63 > 63 ≤ 100 > 100 ≤ 150 > 150 ≤ 250 S185 1.0035 l t 10 8 11 9 12 10 13 11 14 12 18 16 17 15 16 14 15 13 15 13 E295 b 1.0050 b l t 12 10 13 11 14 12 15 13 16 14 20 18 19 17 18 16 16 15 15 14 E335 b 1.0060 b l t 8 6 9 7 10 8 11 9 12 10 16 14 15 13 14 12 12 11 11 10 E360 b 1.0070 b l t 4 3 5 4 6 5 7 6 8 7 11 10 10 9 9 8 8 7 7 6 a For plate, strip and wide flats with widths ≥ 600 mm the direction transverse (t) to the rolling direction applies. For all other products the\n\nvalues apply for the direction parallel (l) to the rolling direction. In the case of plates used for the manufacture of hot rolled patterned\n\nplates, the elongation values only apply to the base plate and not to the final hot rolled patterned plates. b These steels are normally not used for channels, angles and sections.",
+          "children": []
+        },
+        {
+          "title": "BS EN 10025‑2:2019",
+          "level": 2,
+          "path": null,
+          "content": "| 051 052 > ≤ 001 051 sse oS√ nkciht > ≤ a 56,5 mm 36 001 erutcarf lanimoN = > ≤ 0L 04 36 retfa > ≤ noitagnole 3 04 ≥ ≤ % egatnecrep 5,2 3 < > 5,2 2 muminiM sse > ≤ mm nkciht 08 mm 5,1 2 = lanimoN > ≤ 0L 5,1 1 > ≤ 1 ≤ | 51 | 31 51 | 41 11 | 01 7 | eht denrettap 6 stcudorp dellor 7 rehto toh lla fo roF 8 erutcafunam .seilppa 9 noitcerid .setalp eht rof 01 denrettap gnillor desu eht setalp 7 dellor ot )t( fo esac toh esrevsnart 6 lanif eht eht nI noitcerid .noitcerid ot 5 ton dna eht gnillor etalp 4 mm esab 006 eht 3 ≥ ot eht shtdiw )l( ot lellarap ylppa htiw t ylno stalf noitcerid seulav ediw noitagnole eht dna rof pirts ylppa ,etalp eht seulav ,setalp roF a |\n| --- | --- | --- | --- | --- | --- |\n|  | 51 | 31 61 | 51 21 | 11 8 |  |\n|  | 61 | 41 81 | 61 41 | 21 9 |  |\n|  | 71 | 51 91 | 71 51 | 31 01 |  |\n|  | 81 | 61 02 | 81 61 | 41 11 |  |\n|  | 41 | 21 61 | 41 21 | 01 8 |  |\n|  | 31 | 11 51 | 31 11 | 9 7 |  |\n|  | 21 | 01 41 | 21 01 | 8 6 |  |\n|  | 11 | 9 31 | 11 9 | 7 5 |  |\n|  | 01 | 8 21 | 01 8 | 6 4 |  |\n| fo -neirO seceip noitat tset a | l | t l | t l | t l |  |\n| rebmun leetS noitangiseD eman leetS | 5300.1 | b | b 0500.1 | b 0600.1 0700.1 |  |\n|  | 581S | b | b 592E | b 533E 063E |  |",
+          "children": []
+        },
+        {
+          "title": "Table 8 — Mechanical properties - Impact energy KV on longitudinal test pieces for steel",
+          "level": 2,
+          "path": null,
+          "content": "",
+          "children": []
+        },
+        {
+          "title": "a",
+          "level": 2,
+          "path": null,
+          "content": "",
+          "children": []
+        },
+        {
+          "title": "grades S235 to S500",
+          "level": 2,
+          "path": null,
+          "content": "Designation Tempe- Minimum energyKV 2 (J) rature Nominal thickn ess °C in mm Steel name Steel number ≤ 150 > 150 > 250 ≤ 250 ≤ 400 a b b c",
+          "children": []
+        },
+        {
+          "title": "S235JR 1.0038 20 27 27 27",
+          "level": 2,
+          "path": null,
+          "content": "S235J0 1.0114 0 27 27 27 S235J2 1.0117 - 20 27 27 27",
+          "children": []
+        },
+        {
+          "title": "S275JR 1.0044 20 27 27 27",
+          "level": 2,
+          "path": null,
+          "content": "S275J0 1.0143 0 27 27 27 S275J2 1.0145 - 20 27 27 27",
+          "children": []
+        },
+        {
+          "title": "S355JR 1.0045 20 27 27 27",
+          "level": 2,
+          "path": null,
+          "content": "S355J0 1.0553 0 27 27 27 S355J2 1.0577 - 20 27 27 27 S355K2 1.0596 - 20 40 d 33 33 S460JR e 1.0507 20 27 - - S460J0 e 1.0538 0 27 - - S460J2 e 1.0552 - 20 27 - - S460K2 e 1.0581 - 20 40 - - S500J0 e 1.0502 0 27 - - For subsized specimens the minimum values shall be reduced in direct proportion to the crosssectional area of the test piece. a Exceptions due to product size restrictions see 9.2.3.3. Option 28 b For sections with a nominal thickness > 100 mm the values shall be agreed upon, see , Clause 13. c The values apply to flat products. d This value corresponds with 27 J at - 30 °C (see EN 1993-1-10). e Applicable for long products only.\n\n| Designation Steel name Steel number |  | Tempe- rature °C | Minimum energyKV 2 (J) Nominal thickn ess in mm ≤ 150 > 150 > 250 ≤ 250 ≤ 400 a b |  |  |\n| --- | --- | --- | --- | --- | --- |\n|  |  |  |  | b | c |\n| S235JR | 1.0038 | 20 | 27 | 27 | 27 |\n| S235J0 | 1.0114 | 0 | 27 | 27 | 27 |\n| S235J2 | 1.0117 | - 20 | 27 | 27 | 27 |\n| S275JR | 1.0044 | 20 | 27 | 27 | 27 |\n| S275J0 | 1.0143 | 0 | 27 | 27 | 27 |\n| S275J2 | 1.0145 | - 20 | 27 | 27 | 27 |\n| S355JR | 1.0045 | 20 | 27 | 27 | 27 |\n| S355J0 | 1.0553 | 0 | 27 | 27 | 27 |\n| S355J2 | 1.0577 | - 20 | 27 | 27 | 27 |\n| S355K2 | 1.0596 | - 20 | 40 d | 33 | 33 |\n| S460JR e | 1.0507 | 20 | 27 | - | - |\n| S460J0 e | 1.0538 | 0 | 27 | - | - |\n| S460J2 e | 1.0552 | - 20 | 27 | - | - |\n| S460K2 e | 1.0581 | - 20 | 40 | - | - |\n| S500J0 e 1.0502 0 27 - - |  |  |  |  |  |\n| For subsized specimens the minimum values shall be reduced in direct proportion to the cross- sectional area of the test piece. a Exceptions due to product size restrictions see 9.2.3.3. Option 28 b For sections with a nominal thickness > 100 mm the values shall be agreed upon, see , Clause 13. c The values apply to flat products. d This value corresponds with 27 J at - 30 °C (see EN 1993-1-10). |  |  |  |  |  |",
+          "children": []
+        },
+        {
+          "title": "Table 9 — Technological properties for steel grades S235 to S355",
+          "level": 2,
+          "path": null,
+          "content": "Designation Suitability for Steel name Steel number Cold Cold roll Cold drawing flanging forming S235JRC 1.0122 x x x S235J0C 1.0115 x x x S235J2C 1.0119 x x x S275JRC 1.0128 x x x S275J0C 1.0140 x x x S275J2C 1.0142 x x x S355JRC 1.0551 - - x S355J0C 1.0554 x x x S355J2C 1.0579 x x x S355K2C 1.0594 x x x",
+          "children": []
+        },
+        {
+          "title": "Table 10 — Technological properties for steel E295 to E360",
+          "level": 2,
+          "path": null,
+          "content": "Designation Suitability for cold drawing Steel name Steel number E295GC 1.0533 x E335GC 1.0543 x E360GC 1.0633 x\n\n| Designation Steel name Steel number |  | Suitability for Cold Cold roll Cold drawing flanging forming |  |  |\n| --- | --- | --- | --- | --- |\n|  |  |  |  |  |\n| S235JRC | 1.0122 | x | x | x |\n| S235J0C | 1.0115 | x | x | x |\n| S235J2C | 1.0119 | x | x | x |\n| S275JRC | 1.0128 | x | x | x |\n| S275J0C | 1.0140 | x | x | x |\n| S275J2C | 1.0142 | x | x | x |\n| S355JRC | 1.0551 | - | - | x |\n| S355J0C | 1.0554 | x | x | x |\n| S355J2C | 1.0579 | x | x | x |\n\n| Designation Steel name Steel number |  | Suitability for cold drawing |\n| --- | --- | --- |\n|  |  |  |\n| E295GC | 1.0533 | x |\n| E335GC | 1.0543 | x |\n\n\n**Nota tecnica:** testo di questa pagina ricostruito con motore alternativo per problema di ordinamento caratteri.",
+          "children": []
+        },
+        {
+          "title": "Table 11 — Cold flanging of flat products",
+          "level": 2,
+          "path": null,
+          "content": "Designation Bending direction a Minimum recommended inside bend radius b for nominal thicknesses in mm Steel name Steel number\n\n> 1 ≤ 1,5 > 1,5 ≤ 2,5 > 2,5 ≤ 3 > 3 ≤ 4 > 4 ≤ 5 > 5 ≤ 6 > 6 ≤ 7 > 7 ≤ 8 > 8 ≤ 10 > 10 ≤ 12 > 12 ≤ 14 > 14 ≤ 16 > 16 ≤ 18 > 18 ≤ 20 > 20 ≤ 25 > 25 ≤ 30",
+          "children": []
+        },
+        {
+          "title": "S235JRC",
+          "level": 2,
+          "path": null,
+          "content": "1.0122 t l 1,6 1,6 2,5 2,5 3 3 5 6 6 8 8 10 10 12 12 16 16 20 20 25 25 28 28 32 36 40 40 45 50 55 60 70",
+          "children": []
+        },
+        {
+          "title": "S235J0C",
+          "level": 2,
+          "path": null,
+          "content": "1.0115",
+          "children": []
+        },
+        {
+          "title": "S235J2C",
+          "level": 2,
+          "path": null,
+          "content": "1.0119",
+          "children": []
+        },
+        {
+          "title": "S275JRC",
+          "level": 2,
+          "path": null,
+          "content": "1.0128 t l 2 2 3 3 4 4 5 6 8 10 10 12 12 16 16 20 20 25 25 32 28 36 32 40 40 45 45 50 55 60 70 75",
+          "children": []
+        },
+        {
+          "title": "S275J0C",
+          "level": 2,
+          "path": null,
+          "content": "1.0140",
+          "children": []
+        },
+        {
+          "title": "S275J2C",
+          "level": 2,
+          "path": null,
+          "content": "1.0142",
+          "children": []
+        },
+        {
+          "title": "S355J0C",
+          "level": 2,
+          "path": null,
+          "content": "1.0554 t l 2,5 2,5 4 4 5 5 6 8 8 10 10 12 12 16 16 20 20 25 25 32 32 36 36 40 45 50 50 63 65 75 80 90",
+          "children": []
+        },
+        {
+          "title": "S355J2C",
+          "level": 2,
+          "path": null,
+          "content": "1.0579",
+          "children": []
+        },
+        {
+          "title": "S355K2C",
+          "level": 2,
+          "path": null,
+          "content": "1.0594 a t: transverse to the rolling direction.\n\nl: parallel to the rolling direction. b The values are applicable for bend angles ≤ 90°.",
+          "children": []
+        },
+        {
+          "title": "BS EN 10025‑2:2019",
+          "level": 2,
+          "path": null,
+          "content": "| 52 03 > ≤ 02 52 > ≤ 81 02 > ≤ mm 61 81 ni > ≤ sessenkciht 41 61 > ≤ 21 41 lanimon > ≤ 01 21 rof > ≤ b suidar 8 01 > ≤ dneb 7 8 > ≤ edisni 6 7 > ≤ dednemmocer 5 6 > ≤ 4 5 > ≤ muminiM 3 4 > ≤ 5,2 3 ≤ > 5,1 5,2 > ≤ 5,1 1 > ≤ | 06 07 |  |  | 07 57 |  |  | 08 |  |  | 09 57 36 05 04 63 23 52 02 61 21 01 8 5 4 5,2 .noitcerid .noitcerid l gnillor gnillor 4950.1 eht ot eht esrevsnart ot lellarap C2K553S :t :l a |\n| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |\n|  | 05 55 |  |  | 55 06 |  |  | 56 |  |  |  |\n|  | 04 54 |  |  | 54 05 |  |  | 05 |  |  |  |\n|  | 63 04 |  |  | 04 54 |  |  | 54 |  |  |  |\n|  | 82 23 |  |  | 23 04 |  |  | 63 |  |  |  |\n|  | 52 82 |  |  | 82 63 |  |  | 23 |  |  |  |\n|  | 02 52 |  |  | 52 23 |  |  | 52 |  |  |  |\n|  | 61 02 |  |  | 02 52 |  |  | 02 |  |  |  |\n|  | 21 61 |  |  | 61 02 |  |  | 61 |  |  |  |\n|  | 01 21 |  |  | 21 61 |  |  | 21 |  |  |  |\n|  | 8 01 |  |  | 01 21 |  |  | 01 |  |  |  |\n|  | 6 8 |  |  | 8 01 |  |  | 8 |  |  |  |\n|  | 5 6 |  |  | 5 6 |  |  | 6 |  |  |  |\n|  | 3 3 |  |  | 4 4 |  |  | 5 |  |  |  |\n|  | 5,2 5,2 |  |  | 3 3 |  |  | 4 |  |  |  |\n|  | 6,1 6,1 |  |  | 2 2 |  |  | 5,2 |  |  |  |\n| gnidneB -cerid noit a | t l |  |  | t l |  |  | t |  |  |  |\n| rebmun leetS noitangiseD eman leetS |  | 2210.1 | 5110.1 | 9110.1 | 8210.1 | 0410.1 | 2410.1 | 4550.1 | 9750.1 |  |\n|  |  | CRJ532S | C0J532S | C2J532S | CRJ572S | C0J572S | C2J572S | C0J553S | C2J553S |  |",
+          "children": []
+        },
+        {
+          "title": "Table 12 — Cold roll forming of flat products",
+          "level": 2,
+          "path": null,
+          "content": "Designation Minimum recommended inside bend radii for nominal thicknesses (t) in mm a Steel name Steel number t ≤ 4 4 < t ≤ 6 6 < t ≤ 8 t t t",
+          "children": []
+        },
+        {
+          "title": "S235JRC 1.0122",
+          "level": 2,
+          "path": null,
+          "content": "",
+          "children": []
+        }
+      ]
+    },
+    {
+      "title": "1 1,5",
+      "level": 1,
+      "path": "1",
+      "content": "",
+      "children": [
+        {
+          "title": "S235J0C 1.0115",
+          "level": 2,
+          "path": null,
+          "content": "",
+          "children": []
+        },
+        {
+          "title": "S235J2C 1.0119",
+          "level": 2,
+          "path": null,
+          "content": "t t t",
+          "children": []
+        },
+        {
+          "title": "S275JRC 1.0128",
+          "level": 2,
+          "path": null,
+          "content": "",
+          "children": []
+        }
+      ]
+    },
+    {
+      "title": "1 1,5",
+      "level": 1,
+      "path": "1",
+      "content": "",
+      "children": [
+        {
+          "title": "S275J0C 1.0140",
+          "level": 2,
+          "path": null,
+          "content": "",
+          "children": []
+        },
+        {
+          "title": "S275J2C 1.0142",
+          "level": 2,
+          "path": null,
+          "content": "t t t",
+          "children": []
+        },
+        {
+          "title": "S355J0C 1.0554",
+          "level": 2,
+          "path": null,
+          "content": "",
+          "children": []
+        }
+      ]
+    },
+    {
+      "title": "1,5 1,5",
+      "level": 1,
+      "path": "1",
+      "content": "",
+      "children": [
+        {
+          "title": "S355J2C 1.0579",
+          "level": 2,
+          "path": null,
+          "content": "",
+          "children": []
+        },
+        {
+          "title": "S355K2C 1.0594",
+          "level": 2,
+          "path": null,
+          "content": "a The values are applicable for bend angles ≤ 90°.\n\n| Designation Steel name Steel number |  | Minimum recommended inside bend radii for nominal thicknesses (t) in mm a t ≤ 4 4 < t ≤ 6 6 < t ≤ 8 |  |  |\n| --- | --- | --- | --- | --- |\n|  |  | t 1 | t 1 | t 1,5 |\n| S235JRC | 1.0122 |  |  |  |\n| S235J0C | 1.0115 |  |  |  |\n| S235J2C | 1.0119 | t 1 | t 1 | t 1,5 |\n| S275JRC | 1.0128 |  |  |  |\n| S275J0C | 1.0140 |  |  |  |\n| S275J2C | 1.0142 | t 1 | t 1,5 | t 1,5 |\n| S355J0C | 1.0554 |  |  |  |\n| S355J2C | 1.0579 |  |  |  |\n| S355K2C 1.0594 |  |  |  |  |",
+          "children": []
+        },
+        {
+          "title": "Annex A",
+          "level": 2,
+          "path": null,
+          "content": "",
+          "children": []
+        },
+        {
+          "title": "Location of s(anmorpmleasti vaen)d test pieces",
+          "level": 2,
+          "path": null,
+          "content": "The following three categories of products are covered: — sections (beams, channels, angles, T sections and Z sections) (Figure A.1); — bars and rod (Figure A.2); — flat products (Figure A.3). Key c)",
+          "children": []
+        }
+      ]
+    },
+    {
+      "title": "Location of the sample (s) in respect to the edge (s) of the product.",
+      "level": 1,
+      "path": "1",
+      "content": "a) Usually the samples shall be taken from the flange location.\n\nb) By agreement at the time of the order, the sample may be taken from the web, at a quarter of the total height.\n\nc) Test pieces shall be taken from the sample in respect to the surface of the product as indicated in Figure A.3.\n\nFor sections with inclined flanges, machining of the inclined surface shall be permitted in order to make it parallel to the other surface. Figure A.1 — Beams, channels, angles, T sections and Z sections\n\n\nType of Products with round cross-section Products with rectangular Dcrimosesn-ssieocntsio inn millimetres test d d b b ≤ 25 a > 25 b ≤ 25 a > 25 b Tensile a d b ≥ 16 ≥ 12 Impact c d b a For products with small dimensions ( or ≤ 25 mm) the test piece, if practical, shall consist of an un-machined full section of the product. b For products of nominal diameter or thickness ≤ 40 mm the manufacturer may either apply: the rules specified for products of nominal diameter or thickness ≤ 25 mm, or take the test piece at a location nearer the centre than indicated in the figure. c For products of round cross-section, the axis of the notch is perpendicular to axis of the product; for products with rectangular cross-section, the axis of the notch is perpendicular to the greatest rolled surface. Figure A.2 — Bars and rod\n\n| Type of test | Products with round cross-section | Products with rectangular Dcrimosesn-ssieocntsio inn millimetres |\n| --- | --- | --- |\n| Tensile a | d d ≤ 25 a > 25 b | b b ≤ 25 a > 25 b |\n| Impact c | d ≥ 16 | b ≥ 12 |\n| d b a For products with small dimensions ( or ≤ 25 mm) the test piece, if practical, shall consist of an un-machined full section of the product. b For products of nominal diameter or thickness ≤ 40 mm the manufacturer may either apply: the rules specified for products of nominal diameter or thickness ≤ 25 mm, or take the test piece at a location nearer the centre than indicated in the figure. c For products of round cross-section, the axis of the notch is perpendicular to axis of the product; for products with |  |  |\n\n\nType of test Nominal Direction of the Distance of the test Dpiimeceen sfiroonms i nt hmei llrimolelterde s thickness longitudinal axis of the test surface of product piece in relation to the principal direction of rolling for product nominal widths of < 600 ≥ 600 ≤ 30",
+      "children": []
+    },
+    {
+      "title": "rolled surface",
+      "level": 1,
+      "path": "1",
+      "content": "Tensile a longitudinal transverse or > 30 Impact b > 12 c longitudinal longitudinal a In case of dis L pute, for pr S ooducts of nominal thickness greater than or equal to 3 mm use proportional test pieces of gauge length o = 5,65 , see 9.2.3.2 and 10.2.1. b The axis of the notch shal t l be perpendicular to the surface of the product. c For nominal thicknesses ≤ 12 mm, see 9.2.3.3. Figure A.3 — Flat products\n\n| Type of test | Nominal thickness of product | Direction of the longitudinal axis of the test piece in relation to the principal direction of rolling for product nominal widths of < 600 ≥ 600 |  | Distance of the test Dpiimeceen sfiroonms i nt hmei llrimolelterde s surface |\n| --- | --- | --- | --- | --- |\n| Tensile a | ≤ 30 | longitudinal | transverse | 1 rolled surface |\n|  | > 30 |  |  | or |\n| Impact b | > 12 c | longitudinal | longitudinal |  |\n| a In case of dis L pute, for pr S ooducts of nominal thickness greater than or equal to 3 mm use proportional test pieces of gauge length o = 5,65 , see 9.2.3.2 and 10.2.1. b The axis of the notch shal t l be perpendicular to the surface of the product. c For nominal thicknesses ≤ 12 mm, see 9.2.3.3. |  |  |  |  |",
+      "children": [
+        {
+          "title": "Annex B",
+          "level": 2,
+          "path": null,
+          "content": "",
+          "children": []
+        },
+        {
+          "title": "List of Optio(innsfo orfm EaNti 1ve0)025-2 to −6",
+          "level": 2,
+          "path": null,
+          "content": "",
+          "children": []
+        },
+        {
+          "title": "Table B.1 — List of Options in EN 10025-2 to −6",
+          "level": 2,
+          "path": null,
+          "content": "Number Options Part 2 Part 3 Part 4 Part 5 Part 6 of Option",
+          "children": []
+        }
+      ]
+    },
+    {
+      "title": "Details of manufacturing process x x x x x",
+      "level": 1,
+      "path": "1",
+      "content": "",
+      "children": []
+    },
+    {
+      "title": "Product analysis x x x x x",
+      "level": 1,
+      "path": "2",
+      "content": "",
+      "children": []
+    },
+    {
+      "title": "Verification of impact properties x - - x",
+      "level": 1,
+      "path": "3",
+      "content": "Part 2: for qualities JR Part 5: for qualities S355 class WP",
+      "children": []
+    },
+    {
+      "title": "Deformation properties perpendicular to the surface x x x x x",
+      "level": 1,
+      "path": "4",
+      "content": "",
+      "children": []
+    },
+    {
+      "title": "Chemical composition for hot dip zinc coating x x x - x",
+      "level": 1,
+      "path": "5",
+      "content": "",
+      "children": []
+    },
+    {
+      "title": "Ultrasonic testing for flat products x x x x x",
+      "level": 1,
+      "path": "6",
+      "content": "",
+      "children": []
+    },
+    {
+      "title": "Ultrasonic testing for sections x x x x -",
+      "level": 1,
+      "path": "7",
+      "content": "",
+      "children": []
+    },
+    {
+      "title": "Ultrasonic testing for bars x x x x -",
+      "level": 1,
+      "path": "8",
+      "content": "",
+      "children": []
+    },
+    {
+      "title": "- - - - - -",
+      "level": 1,
+      "path": "9",
+      "content": "",
+      "children": []
+    },
+    {
+      "title": "Special type of marking x x x x x",
+      "level": 1,
+      "path": "10",
+      "content": "",
+      "children": []
+    },
+    {
+      "title": "Flangeability without cracking x x x x x",
+      "level": 1,
+      "path": "11",
+      "content": "Part 2: nominal thickness ≤ 30 mm Part 3: nominal thickness ≤ 16 mm Part 4: nominal thickness ≤ 12 mm Part 5: nominal thickness ≤ 20 mm Part 6: nominal thickness ≤ 16 mm",
+      "children": []
+    },
+    {
+      "title": "Roll forming of flat products x x x - -",
+      "level": 1,
+      "path": "12",
+      "content": "",
+      "children": []
+    },
+    {
+      "title": "For flat products out of each parent plate or coil impact x x x x x",
+      "level": 1,
+      "path": "13",
+      "content": "properties only to be verified. Part 2: for qualities J2 and K2 Part 3 and 4: for all qualities Part 5: for qualities J2, J4, J5 and K2 Part 6: for each heat treatment unit and for all qualities",
+      "children": []
+    },
+    {
+      "title": "For flat products out of each parent plate or coil impact x x x x x",
+      "level": 1,
+      "path": "14",
+      "content": "and tensile properties to be verified. Part 2: for qualities J2 and K2 Part 3 and 4: for all qualities Part 5: for qualities J2, J4, J5 and K2 Part 6: for each heat treatment unit and for all qualities",
+      "children": []
+    },
+    {
+      "title": "Other surface class for plates and wide flats x x x x x",
+      "level": 1,
+      "path": "15",
+      "content": "",
+      "children": []
+    },
+    {
+      "title": "Other surface class for sections x x x x -",
+      "level": 1,
+      "path": "16",
+      "content": "",
+      "children": []
+    },
+    {
+      "title": "Other surface class for bars and rods x x x x -",
+      "level": 1,
+      "path": "17",
+      "content": "",
+      "children": []
+    },
+    {
+      "title": "For plates other thickness tolerance than class A x x x x x",
+      "level": 1,
+      "path": "18",
+      "content": "(EN 10029)\n\n| Number of Option | Options | Part 2 | Part 3 | Part 4 | Part 5 | Part 6 |\n| --- | --- | --- | --- | --- | --- | --- |\n|  |  |  |  |  |  |  |\n| 1 | Details of manufacturing process | x | x | x | x | x |\n| 2 3 | Product analysis Verification of impact properties Part 2: for qualities JR | x x | x - | x - | x x | x |\n|  | Part 5: for qualities S355 class WP |  |  |  |  |  |\n| 4 | Deformation properties perpendicular to the surface | x | x | x | x | x |\n| 5 | Chemical composition for hot dip zinc coating | x | x | x | - | x |\n| 6 | Ultrasonic testing for flat products | x | x | x | x | x |\n| 7 | Ultrasonic testing for sections | x | x | x | x | - |\n| 8 | Ultrasonic testing for bars | x | x | x | x | - |\n| 9 | - | - | - | - | - | - |\n| 10 11 | Special type of marking Flangeability without cracking Part 2: nominal thickness ≤ 30 mm Part 3: nominal thickness ≤ 16 mm Part 4: nominal thickness ≤ 12 mm Part 5: nominal thickness ≤ 20 mm | x x | x x | x x | x x | x x |\n|  | Part 6: nominal thickness ≤ 16 mm |  |  |  |  |  |\n| 12 13 | Roll forming of flat products For flat products out of each parent plate or coil impact properties only to be verified. Part 2: for qualities J2 and K2 Part 3 and 4: for all qualities Part 5: for qualities J2, J4, J5 and K2 | x x | x x | x x | - x | - x |\n| 14 | Part 6: for each heat treatment unit and for all qualities For flat products out of each parent plate or coil impact and tensile properties to be verified. Part 2: for qualities J2 and K2 Part 3 and 4: for all qualities Part 5: for qualities J2, J4, J5 and K2 | x | x | x | x | x |\n|  | Part 6: for each heat treatment unit and for all qualities |  |  |  |  |  |\n| 15 | Other surface class for plates and wide flats | x | x | x | x | x |\n| 16 | Other surface class for sections | x | x | x | x | - |\n| 17 | Other surface class for bars and rods | x | x | x | x | - |\n\n\nNumber Options Part 2 Part 3 Part 4 Part 5 Part 6 of Option",
+      "children": []
+    },
+    {
+      "title": "Special delivery condition: x - - X -",
+      "level": 1,
+      "path": "19",
+      "content": "Part 2: +AR, +N or +M for long products and strip, +AR, +N for quarto plates Part 5: +AR, +N, +M",
+      "children": []
+    },
+    {
+      "title": "Cu alloyed x - - - -",
+      "level": 1,
+      "path": "20",
+      "content": "",
+      "children": []
+    },
+    {
+      "title": "- - - - - -",
+      "level": 1,
+      "path": "21",
+      "content": "",
+      "children": []
+    },
+    {
+      "title": "Drawing of bars x - - - -",
+      "level": 1,
+      "path": "22",
+      "content": "",
+      "children": []
+    },
+    {
+      "title": "Certificate of compliance for S185 x - - - -",
+      "level": 1,
+      "path": "23",
+      "content": "",
+      "children": []
+    },
+    {
+      "title": "Agreement on another impact test temperature - x x - x",
+      "level": 1,
+      "path": "24",
+      "content": "",
+      "children": []
+    },
+    {
+      "title": "Sample preparation for semi-finished products x - - -",
+      "level": 1,
+      "path": "25",
+      "content": "",
+      "children": []
+    },
+    {
+      "title": "Max. Carbon for sections thickness > 100 mm x - - -",
+      "level": 1,
+      "path": "26",
+      "content": "",
+      "children": []
+    },
+    {
+      "title": "Higher S-content for better machinability x - - -",
+      "level": 1,
+      "path": "27",
+      "content": "",
+      "children": []
+    },
+    {
+      "title": "Min. impact values for sections thickness > 100 mm x - - -",
+      "level": 1,
+      "path": "28",
+      "content": "",
+      "children": []
+    },
+    {
+      "title": "- - - - - -",
+      "level": 1,
+      "path": "29",
+      "content": "",
+      "children": []
+    },
+    {
+      "title": "Impact properties verified on transverse test pieces - x x - x",
+      "level": 1,
+      "path": "30",
+      "content": "",
+      "children": []
+    },
+    {
+      "title": "Die stamping not allowed or at special position - x x - x",
+      "level": 1,
+      "path": "31",
+      "content": "",
+      "children": []
+    },
+    {
+      "title": "Max. S-content - x x - -",
+      "level": 1,
+      "path": "32",
+      "content": "",
+      "children": []
+    },
+    {
+      "title": "No application of CE-marking x x x x x",
+      "level": 1,
+      "path": "33",
+      "content": "",
+      "children": []
+    },
+    {
+      "title": "For plates cut from strip thickness tolerances according to x x x x x",
+      "level": 1,
+      "path": "34",
+      "content": "EN 10029\n\n| Number of Option | Options | Part 2 | Part 3 | Part 4 | Part 5 | Part 6 |\n| --- | --- | --- | --- | --- | --- | --- |\n| 19 | Special delivery condition: Part 2: +AR, +N or +M for long products and strip, +AR, +N for quarto plates | x | - | - | X | - |\n|  | Part 5: +AR, +N, +M |  |  |  |  |  |\n| 20 | Cu alloyed | x | - | - | - | - |\n| 21 | - | - | - | - | - | - |\n| 22 | Drawing of bars | x | - | - | - | - |\n| 23 | Certificate of compliance for S185 | x | - | - | - | - |\n| 24 | Agreement on another impact test temperature | - | x | x | - | x |\n| 25 | Sample preparation for semi-finished products | x | - |  | - | - |\n| 26 | Max. Carbon for sections thickness > 100 mm | x | - |  | - | - |\n| 27 | Higher S-content for better machinability | x | - |  | - | - |\n| 28 | Min. impact values for sections thickness > 100 mm | x | - |  | - | - |\n| 29 | - | - | - | - | - | - |\n| 30 | Impact properties verified on transverse test pieces | - | x | x | - | x |\n| 31 | Die stamping not allowed or at special position | - | x | x | - | x |\n| 32 | Max. S-content | - | x | x | - | - |\n| 33 | No application of CE-marking | x | x | x | x | x |",
+      "children": [
+        {
+          "title": "Bibliography",
+          "level": 2,
+          "path": null,
+          "content": "Execution of steel structures and aluminium structures — Part 2: Technical requirements for steel structures [1] EN 1090-2, Eurocode 3: Desig n of steel structures — Part 1-10: Material toughness and through-thickness properties [2] EN 1993-1-10, Cold rolled steel se ctions — Technical delivery conditions — Dimensional and crosssectional tolerances [3] EN 10162, Iron and steel — European standards for the determination of chemical composition [4] CEN/TR 10261, Hot dip galvanized coatings on fabricated iron and steel articles — Specifications and test methods (ISO 1461) [5] EN ISO 1461,",
+          "children": []
+        },
+        {
+          "title": "NO COPYING WITHOUT BSI PERMISSION EXCEPT AS PERMITTED BY COPYRIGHT LAW",
+          "level": 2,
+          "path": null,
+          "content": "",
+          "children": []
+        },
+        {
+          "title": "British Standards Institution (BSI)",
+          "level": 2,
+          "path": null,
+          "content": "",
+          "children": []
+        },
+        {
+          "title": "BSI is the national body responsible for preparing British Standards and other",
+          "level": 2,
+          "path": null,
+          "content": "",
+          "children": []
+        },
+        {
+          "title": "standards-related publications, information and services.",
+          "level": 2,
+          "path": null,
+          "content": "",
+          "children": []
+        },
+        {
+          "title": "BSI is incorporated by Royal Charter. British Standards and other standardization",
+          "level": 2,
+          "path": null,
+          "content": "",
+          "children": []
+        },
+        {
+          "title": "products are published by BSI Standards Limited.",
+          "level": 2,
+          "path": null,
+          "content": "",
+          "children": []
+        },
+        {
+          "title": "About us Reproducing extracts",
+          "level": 2,
+          "path": null,
+          "content": "We bring together business, industry, government, consumers, innovators For permission to reproduce content from BSI publications contact the BSI and others to shape their combined experience and expertise into standards Copyright and Licensing team. -based solutions.",
+          "children": []
+        },
+        {
+          "title": "Subscriptions",
+          "level": 2,
+          "path": null,
+          "content": "The knowledge embodied in our standards has been carefully assembled in a dependable format and refined through our open consultation process. Our range of subscription services are designed to make using standards Organizations of all sizes and across all sectors choose standards to help easier for you. For further information on our subscription products go to bsigroup. them achieve their goals. com/subscriptions. With British Standards Online (BSOL) you’ll have instant access to over 55,000",
+          "children": []
+        },
+        {
+          "title": "Information on standards",
+          "level": 2,
+          "path": null,
+          "content": "British and adopted European and international standards from your desktop. We can provide you with the knowledge that your organization needs It’s available 24/7 and is refreshed daily so you’ll always be up to date. to succeed. Find out more about British Standards by visiting our website at You can keep in touch with standards developments and receive substantial bsigroup.com/standards or contacting our Customer Services team or discounts on the purchase price of standards, both in single copy and subscription Knowledge Centre. format, by becoming a BSI Subscribing Member. Buying standards PLUS is an updating service exclusive to BSI Subscribing Members. You will automatically receive the latest hard copy of your standards when they’re You can buy and download PDF versions of BSI publications, including British and revised or replaced. adopted European and international standards, through our website at bsigroup. com/shop, where hard copies can also be purchased. To find out more about becoming a BSI Subscribing Member and the benefits of membership, please visit bsigroup.com/shop. If you need international and foreign standards from other Standards Development Organizations, hard copies can be ordered from our Customer Services team. With a Multi-User Network Licence (MUNL) you are able to host standards publications on your intranet. Licences can cover as few or as many users as you",
+          "children": []
+        },
+        {
+          "title": "Copyright in BSI publications wish. With updates supplied as soon as they’re available, you can be sure your",
+          "level": 2,
+          "path": null,
+          "content": "documentation is current. For further information, email cservices@bsigroup.com. All the content in BSI publications, including British Standards, is the property of and copyrighted by BSI or some person or entity that owns copyright in the Revisions information used (such as the international standardization bodies) and has Our British Standards and other publications are updated by amendment or revision. formally licensed such information to BSI for commercial publication and use. We continually improve the quality of our products and services to benefit your Save for the provisions below, you may not transfer, share or disseminate any business. If you find an inaccuracy or ambiguity within a British Standard or other portion of the standard to any other person. You may not adapt, distribute, BSI publication please inform the Knowledge Centre. commercially exploit or publicly display the standard or any portion thereof in any manner whatsoever without BSI’s prior written consent.",
+          "children": []
+        },
+        {
+          "title": "Useful Contacts",
+          "level": 2,
+          "path": null,
+          "content": "",
+          "children": []
+        },
+        {
+          "title": "Storing and using standards",
+          "level": 2,
+          "path": null,
+          "content": "Customer Services Standards purchased in soft copy format: Tel: +44 345 086 9001\n\n• A British Standard purchased in soft copy format is licensed to a sole named Email: cservices@bsigroup.com\n\nuser for personal or internal company use only.",
+          "children": []
+        },
+        {
+          "title": "Subscriptions",
+          "level": 2,
+          "path": null,
+          "content": "• The standard may be stored on more than one device provided that it is Tel: +44 345 086 9001\n\naccessible by the sole named user only and that only one copy is accessed at Email: subscriptions@bsigroup.com any one time.\n\n• A single paper copy may be printed for personal or internal company use only. Knowledge Centre\n\nTel: +44 20 8996 7004 Standards purchased in hard copy format: Email: knowledgecentre@bsigroup.com\n\n• A British Standard purchased in hard copy format is for personal or internal\n\ncompany use only. Copyright & Licensing Tel: +44 20 8996 7070\n\n• It may not be further reproduced – in any format – to create an additional copy.\n\nThis includes scanning of the document. Email: copyright@bsigroup.com If you need more than one copy of the document, or if you wish to share the BSI Group Headquarters document on an internal network, you can save money by choosing a subscription 389 Chiswick High Road London W4 4AL UK product (see ‘Subscriptions’).",
+          "children": []
+        },
+        {
+          "title": "This page deliberately left blank",
+          "level": 2,
+          "path": null,
+          "content": "",
+          "children": []
+        }
+      ]
+    }
+  ]
+}
