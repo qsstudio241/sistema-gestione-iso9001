@@ -8,7 +8,7 @@
 
 > **Risposta standard a «stato di avanzamento del progetto e priorità da affrontare»**: sintetizzare da questa sezione (moduli maturi + sessione più recente + tabella priorità sotto), **non** dal banner storico più sotto (superato, tenuto solo per traccia) né dall'archivio marzo 2026 [`docs/archive/PROJECT_CONTEXT_STATO_FUNZIONALITA_2026-03.md`](archive/PROJECT_CONTEXT_STATO_FUNZIONALITA_2026-03.md). **Aggiornare questa sezione a fine sessione** se emergono nuove priorità o se una priorità elencata viene chiusa (stesso principio delle "Lezioni apprese" in [GUIDA_CONSOLIDATA.md](GUIDA_CONSOLIDATA.md) — sintesi qui, dettaglio linkato).
 
-**Ultimo aggiornamento di questa sezione**: 16/08/2026 (ISO-1c Attrezzature in [PR #441](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/441); ISO-1a/1b mergiate).
+**Ultimo aggiornamento di questa sezione**: 16/08/2026 (ISO-1d Welding Book in [PR #442](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/442); serie ISO-1* RBAC completa dopo merge).
 
 ### Moduli maturi (in produzione, uso quotidiano dai clienti Camellini/Mason)
 
@@ -16,9 +16,9 @@ Audit multi-standard (9001/14001/45001) · Non Conformità (workflow ISO 10.2 co
 
 ### Sessione più recente (15/08/2026)
 
-**ISO-1c — RBAC `company_access` sulle Attrezzature** ([PR #441](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/441)): rimosso `user.company_id` (inesistente). Asset studio visibili in lettura; scrittura solo studio. Test L1 Jest 23 verdi. Prossima: ISO-1d (Welding Book). Brief [`DEPUTYTASK1.md`](agent-tasks/DEPUTYTASK1.md) **CHIUSO**.
+**ISO-1d — RBAC `company_access` sul Welding Book** ([PR #442](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/442)): stesso isolamento di RDP/NDT. Test L1 Jest 22 verdi. Serie ISO-1* (RDP/NDT/Attrezzature/WB) completa dopo merge. Prossima: ISO-2 (§5.3) o ISO-3 (AI capitolato). Brief [`DEPUTYTASK1.md`](agent-tasks/DEPUTYTASK1.md) **CHIUSO**.
 
-**ISO-1a/1b mergiate** ([PR #438](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/438), [PR #439](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/439)): isolamento azienda su RDP e verbali NDT.
+**ISO-1a/1b/1c mergiate** ([#438](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/438), [#439](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/439), [#441](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/441)).
 
 **Lead wayfinder — ISO 3834 HITL 16/08** (solo doc, mergiata [PR #437](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/437)): §5.3 senza blocco; Word RDP Mason; livelli 2/3/4 = meno schermate dopo, partenza senza filtri; certificati = griglia DDT+anagrafica. Conformità = norma + documenti esterni pertinenti all’Ambito (ADR-021).
 
@@ -56,7 +56,7 @@ Sessione prodotto precedente (10/08/2026): fix filtri dashboard duplicati (Quali
 | 4 | **Material Compliance AI (certificati EN 10204 3.1)** | Modulo proposto 05/08/2026, slice MC-0 (spec) non ancora avviata | [MODULO_MATERIAL_COMPLIANCE_AI.md](specs/MODULO_MATERIAL_COMPLIANCE_AI.md) |
 | 5 | **Rischi / Opportunità / Obiettivi — detector SWOT/FMEA (ROO-6b)** | M03 si importa. SWOT e FMEA HSE restano da mappare; scala 1–4 = HITL ROO-13 | [PLAN](agent-tasks/PLAN_RISCHI_OPPORTUNITA_OBIETTIVI_SLICES.md) · brief [ROO](agent-tasks/DEPUTYTASK_RISCHI_ROO.md) |
 | 6 | **SAL AI evidenze — OCR + documento mancante (HITL)** | Suggeritore 5-A/5-B legge solo PDF/DOCX testo; PDF scan/immagini saltati; se manca evidenza → solo messaggio low, nessuna ricerca tipo/upload guidato | [PLAN](agent-tasks/PLAN_SAL_AI_EVIDENCE_SLICES.md) · brief [S1a](agent-tasks/DEPUTYTASK.md) |
-| 7 | **ISO 3834 — completezza per processi (RBAC + ponti + report)** | ISO-1a/1b mergiate. ISO-1c in PR #441. Dopo merge: ISO-1d Welding Book, poi Word RDP Mason | [PLAN](agent-tasks/PLAN_3834_SLICES.md) · brief [ISO-1c CHIUSO](agent-tasks/DEPUTYTASK1.md) |
+| 7 | **ISO 3834 — completezza per processi (RBAC + ponti + report)** | ISO-1* RBAC in PR #442 (WB). Dopo merge: ISO-2 §5.3 o ISO-3 AI capitolato; Word RDP Mason = ISO-4 | [PLAN](agent-tasks/PLAN_3834_SLICES.md) · brief [ISO-1d CHIUSO](agent-tasks/DEPUTYTASK1.md) |
 
 > Nota: **Modulo NC — card statistiche duplicate da due tendine** (era riga 1) è stato chiuso da PR #374 (10/08/2026) — riga rimossa da questa tabella, non ancora aggiornata al momento in cui è stata scritta DEPUTYTASK4.
 
