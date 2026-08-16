@@ -1,9 +1,10 @@
 # DEPUTYTASK — Material Compliance AI — Fondazione MC-0 (solo documentazione)
 
-**Stato:** APERTO  
+**Stato:** CHIUSO  
 **Priorità:** P1 — fondazione modulo (nessun codice applicativo)  
 **Branch base:** `main`  
 **Slice:** MC-0  
+**Chiuso:** 16/08/2026 — spec DATA_MODEL / UI / API con `material_role` base\|filler  
 **Creato da:** Lead 05/08/2026  
 **Spec:** [MODULO_MATERIAL_COMPLIANCE_AI.md](../specs/MODULO_MATERIAL_COMPLIANCE_AI.md)  
 **Piano:** [PLAN_MATERIAL_COMPLIANCE_SLICES.md](PLAN_MATERIAL_COMPLIANCE_SLICES.md)  
@@ -62,11 +63,11 @@ Aggiornare in `MODULO_MATERIAL_COMPLIANCE_AI.md` e `PLAN_MATERIAL_COMPLIANCE_SLI
 
 ## Definition of Done
 
-- [ ] Tre file spec committati, UTF-8 senza BOM, accenti italiani corretti
-- [ ] Nessun `U+FFFD`
-- [ ] Link da MODULO + PLAN funzionanti
-- [ ] Nessuna modifica codice runtime
-- [ ] PR aperta su branch `cursor/…-c6d4` (o branch assegnato)
+- [x] Tre file spec committati, UTF-8 senza BOM, accenti italiani corretti
+- [x] Nessun `U+FFFD`
+- [x] Link da MODULO + PLAN funzionanti
+- [x] Nessuna modifica codice runtime
+- [x] PR aperta su branch `cursor/mc-0-specs-filler-e090`
 
 ## Test L1
 
@@ -80,5 +81,5 @@ node backend/scripts/check-utf8-encoding.js docs/specs/MATERIAL_COMPLIANCE_API.m
 
 ## Chiusura
 
-Esito: **TEST OK** (spec complete) oppure **FIX NON APPLICABILI** solo se su `origin/main` le tre spec esistono già e coincidenti.  
-Dopo merge MC-0: Lead apre brief MC-1 (migration) su `DEPUTYTASK.md` o file numerato dedicato — **non** mescolare DB e UI nella stessa PR.
+Esito: **TEST OK** (spec complete, `material_role` base\|filler in DATA_MODEL/UI/API + dizionario).  
+Dopo merge MC-0: Lead apre brief **MC-1** (migration) su file numerato dedicato — **non** mescolare DB e UI nella stessa PR. Non usare `DEPUTYTASK.md` (SAL S1a). Prossima slice 3834: **ISO-3** (stesse chiavi, incluso `filler_designation`).

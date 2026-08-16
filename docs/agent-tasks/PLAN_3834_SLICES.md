@@ -28,7 +28,7 @@
 - **§5.3 — niente blocco**: la commessa si può aprire anche con checklist incompleta. ISO-2 = solo tracciabilità (data/utente che ha completato) + export Word della checklist. Il banner di avviso resta.
 - **Word RDP**: usare il verbale Mason già in cartella (`RDP_MSN-260127-01_REV_0.docx`) come modello. ISO-4 diventa AFK (non più in attesa di un layout nuovo).
 - **Livello 2/3/4**: obiettivo = **vedere meno schermate** al livello più semplice. **Partiamo senza filtri** (stesse schermate per tutti; etichetta 2/3/4 in anagrafica). I filtri per livello si aggiungono dopo, non in ISO-1*.
-- **Consumabili / certificati materiali / PWHT**: **non** un CRUD 3834. Epic **Material Compliance**: scan → ingest (riuso qualifiche/WPQR) → regole → HITL. **UI MVP confermata 16/08**: tab/elenco con **DDT** + griglia anagrafica (colonne in [PLAN MC](PLAN_MATERIAL_COMPLIANCE_SLICES.md) § Griglia). ISO-12 esce da questo piano.
+- **Consumabili / certificati materiali / PWHT**: **non** un CRUD 3834. Epic **Material Compliance**: scan → ingest (riuso qualifiche/WPQR) → regole → HITL. **UI MVP**: tab/elenco con **DDT** + griglia (colonne in [PLAN MC](PLAN_MATERIAL_COMPLIANCE_SLICES.md) § Griglia) — **base e apporto nella stessa lista** (`material_role`). ISO-12 esce da questo piano.
 
 ### Da codice + gap 06/08 (invariate)
 

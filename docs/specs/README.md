@@ -11,7 +11,10 @@ Documenti di **requisito / design** per feature in corso o backlog.
 | [MODULO_INGEST_AI_COMMESSE_SCOPO_E_ROADMAP.md](MODULO_INGEST_AI_COMMESSE_SCOPO_E_ROADMAP.md) | Ingest AI commesse (testo + disegni) |
 | [MODULO_SAL_SCOPO_E_ROADMAP.md](MODULO_SAL_SCOPO_E_ROADMAP.md) | SAL come gap analysis operativa — base Sprint 4 |
 | [MODULO_WPS_GENERAZIONE_SCOPO_E_ROADMAP.md](MODULO_WPS_GENERAZIONE_SCOPO_E_ROADMAP.md) | Generazione WPS da WPQR (ISO 15614/15609) |
-| [MODULO_MATERIAL_COMPLIANCE_AI.md](MODULO_MATERIAL_COMPLIANCE_AI.md) | Material Compliance AI — certificati EN 10204 3.1 (proposto) |
+| [MODULO_MATERIAL_COMPLIANCE_AI.md](MODULO_MATERIAL_COMPLIANCE_AI.md) | Material Compliance AI — certificati EN 10204 (base **e** apporto) |
+| [MATERIAL_COMPLIANCE_DATA_MODEL.md](MATERIAL_COMPLIANCE_DATA_MODEL.md) | MC-0 — tabelle certificato / check, `material_role` |
+| [MATERIAL_COMPLIANCE_UI.md](MATERIAL_COMPLIANCE_UI.md) | MC-0 — elenco Qualifiche + griglia DDT, ruolo Base/Apporto |
+| [MATERIAL_COMPLIANCE_API.md](MATERIAL_COMPLIANCE_API.md) | MC-0 — endpoint extract/evaluate/HITL, seam licenza |
 | [M03_ANALISI_RISCHI_OPPORTUNITA.md](M03_ANALISI_RISCHI_OPPORTUNITA.md) | Analisi rischi/opportunità — processo M03 + mapping Excel |
 | [piano_modulo_saldatura_v2.plan.md](piano_modulo_saldatura_v2.plan.md) | Modulo saldatura ISO 3834 |
 

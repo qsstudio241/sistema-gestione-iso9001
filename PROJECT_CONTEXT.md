@@ -68,7 +68,7 @@ Deploy/SSH: [how-to/deploy.md](docs/how-to/deploy.md) + [ACCESSO_DEPLOY_AGENTS.m
 | Export Word verbale audit | `app/src/utils/wordExport.js`, `app/src/utils/wordExportHelpers.js` |
 | UI / design system | `app/src/design-system/README.md`, `docs/reference/LIBRERIA_UI_SGQ.md` |
 | Deploy VPS | `docs/how-to/deploy.md`, `backend/scripts/deploy-to-vps.sh`, `docs/how-to/ACCESSO_DEPLOY_AGENTS.md` |
-| Material Compliance (epic) | `docs/specs/MODULO_MATERIAL_COMPLIANCE_AI.md`, `docs/agent-tasks/PLAN_MATERIAL_COMPLIANCE_SLICES.md` |
+| Material Compliance (epic) | `docs/specs/MODULO_MATERIAL_COMPLIANCE_AI.md`, `docs/specs/MATERIAL_COMPLIANCE_DATA_MODEL.md`, `docs/specs/MATERIAL_COMPLIANCE_UI.md`, `docs/specs/MATERIAL_COMPLIANCE_API.md` |
 | Rischi / opportunità / obiettivi | `app/src/pages/RisksPage.jsx`, `backend/src/controllers/risks.controller.js`, `docs/specs/PROCESSO_ANALISI_RISCHI_OPPORTUNITA.md`, `docs/specs/M03_ANALISI_RISCHI_OPPORTUNITA.md`, `docs/agent-tasks/PLAN_RISCHI_OPPORTUNITA_OBIETTIVI_SLICES.md` |
 
 <!-- MODULE_COMPASS_END -->
