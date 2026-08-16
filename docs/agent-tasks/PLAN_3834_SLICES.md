@@ -118,7 +118,22 @@ Ogni slice è un **tracer verticale** (un processo o un ponte), non «tutto il D
 | **ISO-12** | *(chiusa come slice 3834)* | Consumabili / 3.1 / PWHT → epic Material Compliance | — | — |
 | **ISO-13** | RDP/WB → registro documenti | commit tipo `rdp` / `welding_book` | ISO-4 / ISO-5 | AFK |
 
-**Prima slice eseguibile (questa sessione apre solo questa):** ISO-1a — hello world dell’affidabilità multi-azienda. Senza di essa un utente con una sola azienda del tenant vede tutti i RDP.
+**Prima slice eseguibile:** ISO-1a — hello world dell’affidabilità multi-azienda. Senza di essa un utente con una sola azienda del tenant vede tutti i RDP.
+
+## Pronto a eseguire (16/08, dopo HITL)
+
+**Sì, si parte a slice.** Un deputy = una slice. In parallelo solo se i file sono disgiunti.
+
+| Ora (dopo merge PR mappa su `main`) | Aspettare |
+|-------------------------------------|-----------|
+| **ISO-1a** — brief `DEPUTYTASK1.md` | ISO-1b/1c/1d (stesso pattern: prima chiudere 1a) |
+| **SAL S1a** — già APERTO su `main` in `DEPUTYTASK.md` | — |
+| **MC-0** — solo spec DATA_MODEL/UI/API (griglia DDT già chiusa; campi lab **estendibili**) | MC-2/3/4 extract+regole: **norme del committente** |
+| **ISO-3** — persistenza AI capitolato (file diversi da RDP) | ISO-4 Word RDP: file Mason non è in git |
+| — | Filtri UI per livello 2/3/4 (partenza senza filtri) |
+
+Comando dopo il merge: *«Leggi `docs/agent-tasks/DEPUTYTASK1.md` ed eseguilo.»*  
+Secondo deputy in parallelo: lasciare SAL S1a, oppure *«Leggi `docs/agent-tasks/DEPUTYTASK_MATERIAL_COMPLIANCE_AI_FOUNDATION.md` ed eseguilo»* (solo doc MC-0).
 
 ## Qualità della mappa
 
