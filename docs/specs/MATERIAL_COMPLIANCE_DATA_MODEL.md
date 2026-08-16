@@ -1,9 +1,9 @@
-# Material Compliance — Data model (MC-0)
+# Material Compliance — Data model (MC-0 → schema MC-1)
 
-> **Tipo**: spec tecnica (nessun SQL in questa slice)  
-> **Versione**: 1.0 — 16/08/2026  
-> **Stato**: Proposto — fondazione  
-> **Slice**: MC-0 → implementazione schema in **MC-1** (prossimo NNN libero in `database/migrations/`, oggi ultimo ≥148)  
+> **Tipo**: spec tecnica + schema SQL in MC-1  
+> **Versione**: 1.1 — 16/08/2026  
+> **Stato**: Schema MC-1 = migrazione **149** (`database/migrations/149_material_certificates.sql`)  
+> **Slice**: MC-0 spec → **MC-1** tabelle `material_certificates` + `material_certificate_checks`  
 > **Spec prodotto**: [MODULO_MATERIAL_COMPLIANCE_AI.md](MODULO_MATERIAL_COMPLIANCE_AI.md)  
 > **UI**: [MATERIAL_COMPLIANCE_UI.md](MATERIAL_COMPLIANCE_UI.md) · **API**: [MATERIAL_COMPLIANCE_API.md](MATERIAL_COMPLIANCE_API.md)  
 > **ADR**: [020](../adr/ADR-020-material-compliance-ai-module.md) · [021](../adr/ADR-021-material-requirements-hierarchy.md) · [022](../adr/ADR-022-ai-extraction-rule-engine.md) · [023](../adr/ADR-023-material-knowledge-base.md) · [024](../adr/ADR-024-material-certificate-workflow.md)  
@@ -76,7 +76,7 @@ Nomi indicativi. MC-1 sceglie tipi SQL Server precisi; qui il contratto.
 | `organization_id` | INT NOT NULL | FK `organizations` |
 | `company_id` | INT NOT NULL | FK `companies`. Obbligatorio: il certificato appartiene all’azienda in Ambito |
 | `import_job_id` | INT NULL | FK `import_jobs`, SET NULL |
-| `import_job_file_id` | INT NULL | FK `import_job_files`, SET NULL |
+| `import_job_file_id` | INT NULL | Puntatore al PDF in `import_job_files`. **Niente FK SQL** (MC-1): SET NULL insieme a `import_job_id` crea due cascade path (job→files CASCADE, mig. 038); NO ACTION blocca `DELETE` dei job. Integrità in API (MC-4) |
 | `document_registry_id` | INT NULL | FK `document_registry`, SET NULL — valorizzato in MC-7 a `archived` |
 | `project_id` | INT NULL | FK `projects` — **non** in griglia MVP |
 | `storage_path` | NVARCHAR(2000) NULL | Copia/riferimento file se non si riusa solo il path del job file |

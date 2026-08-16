@@ -8,7 +8,7 @@
 
 > **Risposta standard a «stato di avanzamento del progetto e priorità da affrontare»**: sintetizzare da questa sezione (moduli maturi + sessione più recente + tabella priorità sotto), **non** dal banner storico più sotto (superato, tenuto solo per traccia) né dall'archivio marzo 2026 [`docs/archive/PROJECT_CONTEXT_STATO_FUNZIONALITA_2026-03.md`](archive/PROJECT_CONTEXT_STATO_FUNZIONALITA_2026-03.md). **Aggiornare questa sezione a fine sessione** se emergono nuove priorità o se una priorità elencata viene chiusa (stesso principio delle "Lezioni apprese" in [GUIDA_CONSOLIDATA.md](GUIDA_CONSOLIDATA.md) — sintesi qui, dettaglio linkato).
 
-**Ultimo aggiornamento di questa sezione**: 16/08/2026 (MC-0 mergiata #447; ISO-3 chiavi capitolato; SB-1 Second Brain [PLAN_SECOND_BRAIN_SLICES.md](agent-tasks/PLAN_SECOND_BRAIN_SLICES.md)).
+**Ultimo aggiornamento di questa sezione**: 16/08/2026 (ISO-3 deployata; MC-1 tabelle 149 su VPS, PR #450).
 
 ### Moduli maturi (in produzione, uso quotidiano dai clienti Camellini/Mason)
 
@@ -16,9 +16,11 @@ Audit multi-standard (9001/14001/45001) · Non Conformità (workflow ISO 10.2 co
 
 ### Sessione più recente (16/08/2026)
 
-**MC-0 mergiata (16/08)** — [PR #447](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/447): spec DATA_MODEL/UI/API, `material_role` base\|filler. Prossima MC: **MC-1** migration.
+**MC-1 applicata (16/08)** — [PR #450](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/450): tabelle `material_certificates` + `material_certificate_checks` (mig. **149**) su TEST e PROD. Prossima: **MC-2** seed KB.
 
-**ISO-3** — chiavi EN 10204/10168 + apporto nel prompt capitolato (`caseTextAnalysis` / `aiContextBuilder`); persistenza mig. 116; merge norme se citate nel testo.
+**ISO-3 mergiata + deploy (16/08)** — [PR #448](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/448): chiavi EN 10204/10168 + apporto nel prompt capitolato; persistenza mig. 116. VPS health 200.
+
+**MC-0 mergiata (16/08)** — [PR #447](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/447): spec DATA_MODEL/UI/API, `material_role` base\|filler.
 
 **EN 10025-2:2019 consegnata (16/08)** — NORMA_00026 + estratto soglie S235–S500 in [`EN-10025-2-acciai-strutturali.md`](reference/EN-10025-2-acciai-strutturali.md). Sblocca il seed MC-2 per lamiere/profili. Tubi: EN 10210-1 / 10219-1 **tracciate come mancanti**. Soglie apporto (2560/17632/14174) **mancanti** → skip, non fail. Inventario: [`MATERIAL-COMPLIANCE-NORME-SINTESI.md`](reference/MATERIAL-COMPLIANCE-NORME-SINTESI.md).
 
@@ -63,10 +65,10 @@ Sessione prodotto precedente (10/08/2026): fix filtri dashboard duplicati (Quali
 | 1 | **Modulo Notifiche/Alert — destinatario allerte qualifiche non è una scelta esplicita in anagrafica** | Oggi risolto da un algoritmo a cascata, non da una scelta visibile in UI | `qualificationAlert.service.js` (`resolveWeldingCoordinatorRecipients`) |
 | 2 | **Shell dialog di revisione ingest — markup/CSS duplicato** (non urgente, basso rischio) | `IngestReviewDialog.jsx` vs dialog interno `ReprocessQueueBanner.jsx`: guscio overlay duplicato (~60-80 righe); pattern sistemico su molti altri modal nel progetto | Vedi backlog sotto per dettaglio |
 | 3 | **Pagina Impostazioni → Organizzazione (P.IVA + logo tenant)** | PR #10 aperta da aprile 2026, 180 file in conflitto — richiede ricostruzione, non merge | Vedi riga dedicata nel backlog sotto |
-| 4 | **Material Compliance AI (certificati EN 10204, base e apporto)** | MC-0 mergiata (#447). Prossimo: MC-1 migration. Tubi e soglie apporto: Markdown mancante → skip | [DATA_MODEL](specs/MATERIAL_COMPLIANCE_DATA_MODEL.md) · [MODULO](specs/MODULO_MATERIAL_COMPLIANCE_AI.md) |
+| 4 | **Material Compliance AI (certificati EN 10204, base e apporto)** | MC-0 mergiata (#447). MC-1 tabelle 149 su VPS (PR #450). Prossimo: MC-2 seed KB. Tubi e soglie apporto: Markdown mancante → skip | [DATA_MODEL](specs/MATERIAL_COMPLIANCE_DATA_MODEL.md) · [MODULO](specs/MODULO_MATERIAL_COMPLIANCE_AI.md) · brief [MC-1 CHIUSO](agent-tasks/DEPUTYTASK_MC1.md) |
 | 5 | **Rischi / Opportunità / Obiettivi — detector SWOT/FMEA (ROO-6b)** | M03 si importa. SWOT e FMEA HSE restano da mappare; scala 1–4 = HITL ROO-13 | [PLAN](agent-tasks/PLAN_RISCHI_OPPORTUNITA_OBIETTIVI_SLICES.md) · brief [ROO](agent-tasks/DEPUTYTASK_RISCHI_ROO.md) |
 | 6 | **SAL AI evidenze — OCR + documento mancante (HITL)** | Suggeritore 5-A/5-B legge solo PDF/DOCX testo; PDF scan/immagini saltati; se manca evidenza → solo messaggio low, nessuna ricerca tipo/upload guidato | [PLAN](agent-tasks/PLAN_SAL_AI_EVIDENCE_SLICES.md) · brief [S1a](agent-tasks/DEPUTYTASK.md) |
-| 7 | **ISO 3834 — completezza per processi (RBAC + ponti + report)** | ISO-1* + ISO-2 mergiate. ISO-3 = chiavi 3.1/apporto nel prompt capitolato. Word RDP Mason = ISO-4 | [PLAN](agent-tasks/PLAN_3834_SLICES.md) · brief [ISO-3](agent-tasks/DEPUTYTASK1.md) |
+| 7 | **ISO 3834 — completezza per processi (RBAC + ponti + report)** | ISO-1* + ISO-2 + ISO-3 mergiate e ISO-3 deployata. Prossima: ISO-4 Word RDP Mason (serve il file) | [PLAN](agent-tasks/PLAN_3834_SLICES.md) · brief [ISO-3 CHIUSO](agent-tasks/DEPUTYTASK1.md) |
 | 8 | **Second Brain — Assistente di Ambito (SB-1 fatti, zero LLM)** | Studio + clienti paganti: fatti dell'Ambito in app, non AIOS Claude. Chat dopo i numeri veri | [PLAN](agent-tasks/PLAN_SECOND_BRAIN_SLICES.md) · brief [SB-1](agent-tasks/DEPUTYTASK2.md) |
 
 > Nota: **Modulo NC — card statistiche duplicate da due tendine** (era riga 1) è stato chiuso da PR #374 (10/08/2026) — riga rimossa da questa tabella, non ancora aggiornata al momento in cui è stata scritta DEPUTYTASK4.
