@@ -78,7 +78,7 @@ async function loadAmbitoFacts(user, companyId) {
     query(
       `SELECT SUM(CASE WHEN nc.status <> 'closed' THEN 1 ELSE 0 END) AS nc_open
        FROM non_conformities nc
-       LEFT JOIN audits a ON a.id = nc.audit_id
+       LEFT JOIN audits a ON nc.audit_id = a.audit_id
        WHERE COALESCE(a.organization_id, nc.organization_id) = @organizationId
          AND COALESCE(a.company_id, nc.company_id) = @companyId`,
       params

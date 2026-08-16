@@ -43,6 +43,9 @@ describe('ambitoFacts.service', () => {
     expect(a.companyName).toBe('Mason');
     expect(a.counts).toEqual({ ncOpen: 4, qualsExpiring30: 2, docsExpiring30: 1 });
     expect(query.mock.calls.some((c) => c[1].companyId === 11)).toBe(true);
+    const ncSql = query.mock.calls.find((c) => String(c[0]).includes('non_conformities'))[0];
+    expect(ncSql).toMatch(/nc\.audit_id = a\.audit_id/);
+    expect(ncSql).not.toMatch(/a\.id = nc\.audit_id/);
 
     jest.clearAllMocks();
     mockFacts({ name: 'Camellini', nc: 0, quals: 9, docs: 0 });
