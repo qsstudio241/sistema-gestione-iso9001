@@ -38,15 +38,15 @@ Non è un’app nuova: è un modulo della piattaforma SGQ, che riusa ingest docu
 
 - Certificati **EN 10204 3.1**
 - Prodotti: laminati, tubi, profilati, piastre, lamiere
-- PDF con **strato testo** (estrazione attuale)
-- Estrazione AI → Rule Engine → revisione umana
+- Certificati **anche scansioni** (caso normale in campo — HITL 16/08/2026)
+- Estrazione AI → Rule Engine → revisione umana (stesso anello delle qualifiche/WPQR)
+- Apprendimento progressivo dalle correzioni (`ingestFeedback` / few-shot), non un modello addestrato a parte
 - KB Markdown versionata (dizionario + 1–2 norme + pilota cliente/azienda)
 
 ### Escluso MVP (evoluzione)
 
-- Certificati trattamenti termici / verniciatura  
+- Certificati trattamenti termici / verniciatura (dopo 3.1 stabile)  
 - PPAP, ISIR, dossier fornitore, supplier scorecard  
-- OCR obbligatorio su scansioni (slice dedicata MC-B)  
 - Menu completo “Norme / Statistiche / KB editor” in UI  
 
 ---
@@ -57,8 +57,8 @@ Non è un’app nuova: è un modulo della piattaforma SGQ, che riusa ingest docu
 PDF (upload / import_jobs)
         │
         ▼
-documentTextExtractor / importPdfText   ← MVP-A (no OCR)
-        │  (+ OCR adapter opzionale — MC-B)
+documentTextExtractor / importPdfText   ← testo; se vuoto → OCR (ocrExtractor, MC-B)
+        │  (stesso estrattore del SAL S1a — non un secondo motore)
         ▼
 Markdown / testo normalizzato
         │
@@ -126,8 +126,8 @@ Fonte operativa dettagliata: [PLAN_MATERIAL_COMPLIANCE_SLICES.md](../agent-tasks
 | **MC-4** | API: upload/lista/dettaglio + extract (riuso AI) + evaluate | ⬜ |
 | **MC-5** | UI elenco + dettaglio + HITL approve/reject | ⬜ |
 | **MC-6** | Gate licenza + `AiDisclaimer` + audit trail AI | ⬜ |
-| **MC-B** | Adapter OCR configurabile (solo PDF senza testo) | ⬜ Post-MVP-A |
-| **MC-7** | Commit Document Registry + lessons/feedback | ⬜ Post-MVP-A |
+| **MC-B** | OCR su scan: riuso `documentTextExtractor` / `ocrExtractor` | ⬜ In MVP (dopo MC-4) |
+| **MC-7** | Commit Document Registry + lessons/feedback (anello qualifiche/WPQR) | ⬜ In MVP |
 
 ---
 

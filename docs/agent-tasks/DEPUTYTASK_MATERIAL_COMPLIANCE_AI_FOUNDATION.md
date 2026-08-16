@@ -47,7 +47,7 @@ Il modulo **non** è un’app nuova. Riusa ingest, AI adapter, Document Registry
 ### Vincoli di contenuto
 
 - Menu MVP: **non** includere Dashboard/Statistiche/editor KB come obbligatori
-- OCR: sezione «fuori MVP-A / slice MC-B»
+- OCR: **in MVP** (MC-B dopo extract). I certificati in campo sono di solito scansioni (HITL 16/08). Riusare `documentTextExtractor` / `ocrExtractor` (stesso SAL S1a), non un secondo motore. In DATA_MODEL/API prevedere `reason: ocr_*` come sull’ingest WPQR.
 - Path KB: `knowledge/material-compliance/` con `companies/<slug>/` (non cartella fissa `tecnove/`)
 - Nessun `if (cliente === …)` nel design API/motore
 - Formato ADR/spec progetto: header con stato/link, tabelle, «Cosa NON fare»
