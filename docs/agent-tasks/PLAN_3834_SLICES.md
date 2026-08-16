@@ -3,7 +3,7 @@
 > **Destinazione**: ogni processo della ISO 3834-2/-3 (adattato al livello 2/3/4 in anagrafica) ha un percorso verificabile: dati + ponte con gli altri moduli + import/export o report. I gap residui sono solo HITL o fuori scope.
 > **Spec / ADR**: [ISO 3834-3:2021](../Normative/Normative%20NORMA_00009_%20UNI%20EN%20ISO%203834-3_2021%20Rev.%200.md) §5–18 · [ISO 3834-5:2021](../Normative/Normative%20NORMA_00008_%20UNI%20EN%20ISO%203834-5_2021%20Rev.%200.md) · [ADR-016](../adr/ADR-016-welding-book-e-modulo-strumenti.md) · [WPS](../specs/MODULO_WPS_GENERAZIONE_SCOPO_E_ROADMAP.md)
 > **Gap di partenza**: [GAP_RDP_3834_2026-08-06.md](../gap-reports/GAP_RDP_3834_2026-08-06.md) (Mason, 06/08) · aggiornamento processi [GAP_RDP_3834_2026-08-15.md](../gap-reports/GAP_RDP_3834_2026-08-15.md)
-> **Brief**: [DEPUTYTASK1.md](DEPUTYTASK1.md) — slice **ISO-1b** **CHIUSO** (PR #439). Prossima: ISO-1c dopo merge.
+> **Brief**: [DEPUTYTASK1.md](DEPUTYTASK1.md) — slice **ISO-1c** **CHIUSO** (PR #441). Prossima: ISO-1d dopo merge.
 > **Non confondere**: [DEPUTYTASK.md](DEPUTYTASK.md) resta **APERTO** sulla slice SAL S1a (OCR). Non sovrascriverlo.
 
 ## Fuori scope
@@ -103,7 +103,7 @@ Ogni slice è un **tracer verticale** (un processo o un ponte), non «tutto il D
 |-------|------|------------------------|------------|------|
 | **ISO-1a** | RBAC `company_access` su RDP | `rdp.controller.js` + test L1; pattern Qualifiche / `companyAccess.service.js` | — | Fatto (PR #438) |
 | **ISO-1b** | RBAC su verbali NDT | `ndtReports.controller.js` + test | ISO-1a (stesso pattern) | Fatto (PR #439) |
-| **ISO-1c** | RBAC su Attrezzature | `equipment.controller.js`: togliere `buildScopeCondition` / `user.company_id` | ISO-1a | AFK |
+| **ISO-1c** | RBAC su Attrezzature | `equipment.controller.js`: togliere `buildScopeCondition` / `user.company_id` | ISO-1a | Fatto (PR #441) |
 | **ISO-1d** | RBAC su Welding Book | `weldingBooks.controller.js` | ISO-1a | AFK |
 | **ISO-2** | Riesame §5.3: data/utente + Word (niente blocco) | `projects.controller.js`, `ProjectsPage.jsx`, mini-export Word | — | AFK |
 | **ISO-3** | Persistenza analisi AI capitolato | `contractReview.controller.js` + colonna `source` (est. mig. 101) | — (parallelo a ISO-1*) | AFK |
@@ -118,21 +118,21 @@ Ogni slice è un **tracer verticale** (un processo o un ponte), non «tutto il D
 | **ISO-12** | *(chiusa come slice 3834)* | Consumabili / 3.1 / PWHT → epic Material Compliance | — | — |
 | **ISO-13** | RDP/WB → registro documenti | commit tipo `rdp` / `welding_book` | ISO-4 / ISO-5 | AFK |
 
-**ISO-1a/1b chiuse** (PR #438 / #439): utente azienda A non vede/modifica RDP né verbali NDT di B. Prossima hello-world RBAC: ISO-1c (Attrezzature), dopo merge.
+**ISO-1a/1b/1c chiuse** (PR #438 / #439 / #441): isolamento azienda su RDP, NDT e Attrezzature. Prossima: ISO-1d (Welding Book), dopo merge.
 
-## Pronto a eseguire (16/08, dopo ISO-1b)
+## Pronto a eseguire (16/08, dopo ISO-1c)
 
 **Sì, si parte a slice.** Un deputy = una slice. In parallelo solo se i file sono disgiunti.
 
 | Ora | Aspettare |
 |-----|-----------|
-| **ISO-1c** — dopo merge PR #439 | ISO-1d (stesso pattern) |
+| **ISO-1d** — dopo merge PR #441 | — |
 | **SAL S1a** — già APERTO su `main` in `DEPUTYTASK.md` | — |
 | **MC-0** — solo spec DATA_MODEL/UI/API (griglia DDT già chiusa; campi lab **estendibili**) | MC-2/3/4 extract+regole: **norme del committente** |
 | **ISO-3** — persistenza AI capitolato (file diversi da RDP) | ISO-4 Word RDP: file Mason non è in git |
 | — | Filtri UI per livello 2/3/4 (partenza senza filtri) |
 
-Dopo merge #439: Lead apre brief ISO-1c in `DEPUTYTASK1.md` (sovrascrive, Stato APERTO).  
+Dopo merge #441: Lead apre brief ISO-1d in `DEPUTYTASK1.md` (sovrascrive, Stato APERTO).  
 Secondo deputy in parallelo: lasciare SAL S1a, oppure *«Leggi `docs/agent-tasks/DEPUTYTASK_MATERIAL_COMPLIANCE_AI_FOUNDATION.md` ed eseguilo»* (solo doc MC-0).
 
 ## Qualità della mappa
