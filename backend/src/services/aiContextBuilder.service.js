@@ -1,4 +1,8 @@
 const logger = require('../utils/logger');
+const {
+  MATERIAL_CERTIFICATE_REVIEW_HINT,
+  mergeIdentifiedStandards,
+} = require('../data/capitolatoMaterialKeys');
 
 /**
  * Build context for contract review requirements analysis.
@@ -116,6 +120,7 @@ ${commercialCustomerContext ? '\nContesto committente:' + commercialCustomerCont
   "identified_requirements": [
     {
       "ref": "REQ-01",
+      "field_key": "inspection_document_type|material_role|steel_designation|filler_designation|null",
       "description": "descrizione requisito",
       "source": "dove nel capitolato",
       "applicable_norms": ["ISO 9001:2015 §8.4", ...],
@@ -124,10 +129,12 @@ ${commercialCustomerContext ? '\nContesto committente:' + commercialCustomerCont
       "suggested_action": "azione suggerita se gap"
     }
   ],
-  "identified_standards": ["ISO 9001:2015", "ISO 3834-2", ...],
+  "identified_standards": ["ISO 9001:2015", "ISO 3834-2", "EN 10204", ...],
   "overall_risk": "low|medium|high",
   "summary": "sintesi dell'analisi"
 }
+
+${MATERIAL_CERTIFICATE_REVIEW_HINT}
 
 CAPITOLATO:
 ---
@@ -433,4 +440,6 @@ module.exports = {
   buildAuditConclusionsContext,
   buildExtractNormMetadataContext,
   buildNcCauseContext,
+  mergeIdentifiedStandards,
+  MATERIAL_CERTIFICATE_REVIEW_HINT,
 };
