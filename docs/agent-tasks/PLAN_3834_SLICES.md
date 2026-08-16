@@ -26,8 +26,8 @@
 
 - **§5.3 — niente blocco**: la commessa si può aprire anche con checklist incompleta. ISO-2 = solo tracciabilità (data/utente che ha completato) + export Word della checklist. Il banner di avviso resta.
 - **Word RDP**: usare il verbale Mason già in cartella (`RDP_MSN-260127-01_REV_0.docx`) come modello. ISO-4 diventa AFK (non più in attesa di un layout nuovo).
-- **Livello 2/3/4**: stessa schermata per tutti. In anagrafica resta l’etichetta 2/3/4 (come oggi). Non costruire un’app «più corta» per il livello 4 finché un cliente non lo chiede. (La domanda originale era: «un’azienda certificata al livello più semplice deve vedere meno cose?». Risposta di default: no, vede le stesse cose.)
-- **Consumabili / certificati materiali / PWHT**: **non** un CRUD 3834. Si fa l’epic **Material Compliance** già mappata: agente che legge certificati (di solito **scansioni**), estrae i valori, confronta con le regole, impara dalle correzioni. **Riuso obbligatorio** della pipeline ingest qualifiche/WPQR (schema → revisione umana → commit → feedback), più OCR già in corso per il SAL (S1a). ISO-12 esce da questo piano.
+- **Livello 2/3/4**: obiettivo = **vedere meno schermate** al livello più semplice. **Partiamo senza filtri** (stesse schermate per tutti; etichetta 2/3/4 in anagrafica). I filtri per livello si aggiungono dopo, non in ISO-1*.
+- **Consumabili / certificati materiali / PWHT**: **non** un CRUD 3834. Epic **Material Compliance**: scan → ingest (riuso qualifiche/WPQR) → regole → HITL. **UI MVP**: tab/elenco certificati con riferimento al **DDT** + griglia anagrafica materiale (campi in [PLAN MC](PLAN_MATERIAL_COMPLIANCE_SLICES.md) § Griglia). ISO-12 esce da questo piano.
 
 ### Da codice + gap 06/08 (invariate)
 
@@ -61,7 +61,7 @@ La norma non è una checklist a sezioni 4–10: è un **sistema di processi**. C
 | 17 | Identificazione e rintracciabilità | Welding Book (IOF) | WB ↔ commessa / WPS / attrezzature | — | Word **non fatto** (ADR-016 Fase 2–3) | Parziale | Export Word WB + foto cordone |
 | 18 | Registrazioni della qualità | Registro documenti + export audit 3834 | Tipi `wps`/`wpqr`/`report_ndt`/`rdp` nel registro | Ingest verso registro | Word audit 3834 **sì** | Parziale | RDP/WB non entrano nel registro come prova firmabile |
 
-**Livello azienda** (`iso3834_level` 2/3/4): etichetta in anagrafica. Stesse schermate per tutti (decisione 16/08). La dashboard ISO-10 può *mostrare* il livello, non nascondere processi.
+**Livello azienda** (`iso3834_level` 2/3/4): etichetta in anagrafica. **Ora** stesse schermate per tutti; **dopo** filtri per nascondere processi non richiesti dal livello (obiettivo: meno schermate). ISO-10 può mostrare il livello senza filtrare.
 
 ## Ponti tra moduli (cosa manca per «sistema», non «pagine»)
 

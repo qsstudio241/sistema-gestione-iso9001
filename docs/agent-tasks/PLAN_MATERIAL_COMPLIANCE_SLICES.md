@@ -25,6 +25,31 @@ MC-B (OCR) **non** è più post-MVP: senza testo i certificati reali non si legg
 - Nuova chiave licenza dedicata (solo seam → `saldatura` + `ai_import`)
 - Registro PWHT / trattamenti come primo certificato (dopo 3.1 stabile)
 
+## Griglia elenco (HITL 16/08 — committente)
+
+**Sì**: una tab/pagina elenco (copia `QualificationsPage` + `SgqDataGrid`, non un look nuovo) con **riferimento al DDT** e anagrafica materiale. Un DDT può avere più righe/certificati.
+
+### Colonne in griglia (MVP)
+
+| Colonna | Perché |
+|---------|--------|
+| N. DDT | Ponte arrivo merce ↔ certificato (rintracciabilità §12/§17) |
+| Data DDT | Ordine cronologico in accettazione |
+| N. certificato 3.1 | Identificativo del PDF |
+| Materiale (designazione) | Anagrafica (es. S355J2, S235JR) |
+| Colata | Chiave di rintracciabilità in officina |
+| Forma | Piastra / tubo / profilo / lamiera |
+| Dimensioni | Spessore e/o Ø e/o lunghezza (una cella compatta) |
+| Norma | EN 10025-2, EN 10219, … |
+| Fornitore / acciaieria | Chi ha emesso il 3.1 |
+| Esito | In revisione / conforme / non conforme |
+
+### Non in griglia (solo scheda dettaglio, al click)
+
+Analisi chimica, prove meccaniche (ReH, Rm, A%, KV), CEV, trattamento termico, quantità/peso, PDF, note operatore. **Commessa** = ponte dopo (come NC↔commessa), non colonna obbligatoria del primo elenco.
+
+MC-0/MC-1/MC-5 devono prevedere questi campi (DDT era assente dalla lista spec del 05/08).
+
 ---
 
 ## Mappa slice
@@ -58,7 +83,7 @@ Aggiornare questa mappa se emergono vincoli nuovi.
 ### DoD
 
 - [ ] Tre file spec presenti, UTF-8, linkati dalla MODULO
-- [ ] Entità minime definite: certificato, check_result, (opz.) requirement_snapshot
+- [ ] Entità minime definite: certificato (con **n. DDT** + data DDT), check_result, (opz.) requirement_snapshot
 - [ ] Nessun hardcode cliente; path KB come ADR-023
 - [ ] OCR: in MVP (MC-B dopo extract), riuso estrattore esistente — non «fuori scope»
 
