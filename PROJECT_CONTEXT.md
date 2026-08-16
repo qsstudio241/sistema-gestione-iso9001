@@ -70,7 +70,7 @@ Deploy/SSH: [how-to/deploy.md](docs/how-to/deploy.md) + [ACCESSO_DEPLOY_AGENTS.m
 | Deploy VPS | `docs/how-to/deploy.md`, `backend/scripts/deploy-to-vps.sh`, `docs/how-to/ACCESSO_DEPLOY_AGENTS.md` |
 | Material Compliance (epic) | `docs/specs/MODULO_MATERIAL_COMPLIANCE_AI.md`, `docs/agent-tasks/PLAN_MATERIAL_COMPLIANCE_SLICES.md` |
 | Rischi / opportunità / obiettivi | `app/src/pages/RisksPage.jsx`, `backend/src/controllers/risks.controller.js`, `docs/specs/PROCESSO_ANALISI_RISCHI_OPPORTUNITA.md`, `docs/specs/M03_ANALISI_RISCHI_OPPORTUNITA.md`, `docs/agent-tasks/PLAN_RISCHI_OPPORTUNITA_OBIETTIVI_SLICES.md` |
-| Second Brain / Assistente di Ambito | `docs/agent-tasks/PLAN_SECOND_BRAIN_SLICES.md`, `app/src/pages/AiAssistantPage.jsx`, `backend/src/controllers/aiChat.controller.js`, `backend/src/services/aiCompanyScope.service.js`, `docs/adr/ADR-010-ai-agentic-architecture.md` |
+| Second Brain / Assistente di Ambito | `docs/agent-tasks/PLAN_SECOND_BRAIN_SLICES.md`, `app/src/pages/AiAssistantPage.jsx`, `app/src/pages/StudioSettingsPage.jsx`, `app/src/pages/CompanyDetailPage.jsx`, `backend/src/controllers/aiChat.controller.js`, `backend/src/services/aiCompanyScope.service.js`, `docs/adr/ADR-010-ai-agentic-architecture.md` |
 
 <!-- MODULE_COMPASS_END -->
 
