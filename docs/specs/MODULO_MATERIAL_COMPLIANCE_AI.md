@@ -37,7 +37,7 @@ Non è un’app nuova: è un modulo della piattaforma SGQ, che riusa ingest docu
 ### Incluso MVP
 
 - Certificati **EN 10204 3.1**
-- Prodotti: laminati, tubi, profilati, piastre, lamiere
+- Prodotti: laminati, profilati, piastre, lamiere (soglie EN 10025-2). **Tubi / sezioni cave**: in MVP come forma prodotto, soglie solo quando c’è Markdown EN 10210-1 / 10219-1 (oggi **mancante** → skip, non fail). Inventario: [sintesi fonti](../reference/MATERIAL-COMPLIANCE-NORME-SINTESI.md).
 - Certificati **anche scansioni** (caso normale in campo — HITL 16/08/2026)
 - Estrazione AI → Rule Engine → revisione umana (stesso anello delle qualifiche/WPQR)
 - Apprendimento progressivo dalle correzioni (`ingestFeedback` / few-shot), non un modello addestrato a parte

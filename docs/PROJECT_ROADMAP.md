@@ -16,7 +16,7 @@ Audit multi-standard (9001/14001/45001) · Non Conformità (workflow ISO 10.2 co
 
 ### Sessione più recente (15/08/2026)
 
-**EN 10025-2:2019 consegnata (16/08)** — NORMA_00026 + estratto soglie S235–S500 in [`EN-10025-2-acciai-strutturali.md`](reference/EN-10025-2-acciai-strutturali.md). Sblocca il seed MC-2 per lamiere/profili. Tubi/sezioni cave: ancora EN 10210-1 / EN 10219-1.
+**EN 10025-2:2019 consegnata (16/08)** — NORMA_00026 + estratto soglie S235–S500 in [`EN-10025-2-acciai-strutturali.md`](reference/EN-10025-2-acciai-strutturali.md). Sblocca il seed MC-2 per lamiere/profili. Tubi: EN 10210-1 / 10219-1 **tracciate come mancanti** — si parte lo stesso; l’agente dichiara le fonti Markdown ([inventario](reference/MATERIAL-COMPLIANCE-NORME-SINTESI.md)).
 
 **Norme certificati 3.1 consegnate (16/08)** — EN 10204, EN 10168, ISO 10474/404/6929 + facsimile MTC → Markdown in `docs/Normative/` + estratti in [`MATERIAL-COMPLIANCE-NORME-SINTESI.md`](reference/MATERIAL-COMPLIANCE-NORME-SINTESI.md). Sblocca dizionario campi MC e chiavi capitolato ISO-3.
 

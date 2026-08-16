@@ -99,24 +99,43 @@ Rule Engine (dopo MC-2): confronta questi valori con il **più restrittivo** tra
 
 Duplicato scartato: `BS ISO 404-2013 + A1-2022 (1).pdf` = stesso hash del file senza `(1)`.
 
-## Altre norme: già in archivio vs da chiedere
+## Inventario fonti Markdown (traccia, non blocco)
 
-**Già digitalizzate (non rinviare):** EN 10204, EN 10168, ISO 10474, ISO 404, ISO 6929, EN 10025-2, ISO/TR 15608 (estratto già in `docs/reference/`).
+Fonte unica per «cosa abbiamo / cosa manca». Aggiornare **qui** dopo ogni `pdf-to-json`, non solo in chat.
 
-Dalla **EN 10025-2** e dalle norme certificato già ingerite — cosa manca, in ordine utile al prodotto (lamiere S235/S355), non l’elenco §2 intero:
+**Dichiarazione obbligatoria** (skill `pdf-to-json` / `gap-analysis-normativa`, Rule Engine, seed MC-2, prompt ISO-3) — 3 righe in chat, poi si parte:
 
-| Priorità | Norma | Perché |
-|----------|-------|--------|
-| Utile se usate quei prodotti | **EN 10210-1**, **EN 10219-1** | 10025-2 **non** copre tubi e sezioni cave. Senza queste, un 3.1 su tubo resta senza soglie |
-| Solo se capitolato le cita | EN 10164 (Z-properties), EN 10163-1/2/3 (superfici), EN 10160 (UT lamiere), EN 1011-2 (saldatura) | Opzioni d’ordine, non seed ReH/chimica |
-| Non per il Rule Engine | EN ISO 6892-1, 148-1, 377, 14284 | Metodi di prova: servono a validare *come* si misura, non i limiti |
-| Basso valore MC | EN 10027-1/2 (nomi), EN 10029/10051/10024 (tolleranze), EN 10025-1 (condizioni generali; molte clausole 2004 non più rilevanti in parte 2:2019) | Designazione e quote, non chimica/ReH |
-| Solo se arrivano quei certificati | EN 10025-3/4/5/6 (fine grain / TM / weathering), ISO 4990 (getti, da ISO 10474) | Non il caso S235JR/S355J2 tipico |
+```text
+Fonti Markdown:
+- Coperte: …
+- Mancanti (non bloccano): … → GAP, skip su quel prodotto
+- Si parte su: …
+```
 
-**Non chiedere ora** (già coperti o non bloccanti per MVP lamiere): ISO 377/4948/14284 da ISO 404.
+Vietato inventare soglie. Vietato rinviare la slice coperta perché manca un’altra norma.
+
+| Norma | Markdown / estratto | Stato | Serve a |
+|-------|---------------------|-------|---------|
+| EN 10204 | NORMA_00022 + `EN-10204-documenti-controllo.md` | **presente** | tipo 2.1–3.2 |
+| EN 10168 | NORMA_00020/00021 + `EN-10168-layout-certificato.md` | **presente** | layout campi A–Z |
+| ISO 10474 | NORMA_00023 | **presente** | equivalente 10204 |
+| ISO 404 | NORMA_00025 | **presente** | contenuto ordine |
+| ISO 6929 | NORMA_00024 | **presente** | forme prodotto |
+| Facsimile MTC | `MTC_Type_3.1_FAC_SIMILE.*` | **presente** | esempio 3.2 |
+| EN 10025-2:2019 | NORMA_00026 + `EN-10025-2-acciai-strutturali.md` | **presente** | soglie lamiere/profili S235–S500 |
+| ISO/TR 15608 | `ISO-TR-15608-gruppi-materiali.md` | **presente** | gruppi materiale |
+| **EN 10210-1** | — | **mancante** (traccia) | soglie tubi/hollow a caldo |
+| **EN 10219-1** | — | **mancante** (traccia) | soglie tubi/hollow a freddo |
+| EN 10025-3/4/5/6 | — | traccia, non ora | fine grain / TM / weathering |
+| EN 10164, 10163, 10160, EN 1011-2 | — | traccia, solo se capitolato | Z, superfici, UT, saldatura |
+| EN ISO 6892-1, 148-1, 377, 14284 | — | non richiesta MVP | metodi di prova |
+| EN 10027, 10029, 10051, 10025-1 | — | non richiesta MVP | nomi e tolleranze |
+| ISO 4990 | — | traccia, solo getti | da ISO 10474 |
+
+Dettaglio perché (non l’elenco §2 intero della 10025-2): 10025-2 **non** copre tubi — senza 10210/10219 un 3.1 su tubo resta senza soglie (skip, non fail).
 
 ## Prossimi passi consigliati
 
 1. **ISO-3** (capitolato): estendere il prompt di `caseTextAnalysis` / `aiContextBuilder` con le chiavi sopra + elenco norme (ora anche EN 10025-2). Persistenza già coperta da mig. 116: non serve nuova tabella.
 2. **MC-0**: chiudere le tre spec con il dizionario 10168 (campi lab estendibili).
-3. **MC-2**: seed soglie da [EN 10025-2](EN-10025-2-acciai-strutturali.md). Per tubi/hollow: chiedere EN 10210-1 e/o EN 10219-1.
+3. **MC-2**: seed soglie da [EN 10025-2](EN-10025-2-acciai-strutturali.md) **dopo dichiarazione fonti**. Tubi: skip finché EN 10210-1 / EN 10219-1 non sono in Markdown (riga inventario sopra).

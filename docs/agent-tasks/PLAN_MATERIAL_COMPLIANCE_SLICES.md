@@ -15,7 +15,9 @@
 **Sì, a slice verticali.** Non in un unico commit.  
 **HITL 16/08/2026 (committente):** i certificati sono di solito **scansioni**; l’agente deve estrarre i valori e imparare dalle correzioni. Il modello ingest qualifiche/WPQR (schema → revisione umana → commit → feedback) è **valido e da riusare**, non da rifare. OCR: riusare `ocrExtractor` / `documentTextExtractor` (SAL S1a lo sta collegando) — **non** un secondo motore.
 
-**Norme e campi da estrarre:** consegnate 16/08/2026 (EN 10204, EN 10168, ISO 10474, ISO 404, ISO 6929, facsimile MTC, **EN 10025-2:2019**). Markdown in `docs/Normative/` NORMA_00020–00026 + KB `knowledge/material-compliance/`. Dizionario campi = EN 10168. Soglie lamiere/profili S235–S500: [`EN-10025-2-acciai-strutturali.md`](../reference/EN-10025-2-acciai-strutturali.md). Tubi/hollow: ancora EN 10210-1 / EN 10219-1. Sintesi: [`MATERIAL-COMPLIANCE-NORME-SINTESI.md`](../reference/MATERIAL-COMPLIANCE-NORME-SINTESI.md). La griglia elenco (DDT + anagrafica) resta valida; i campi lab seguono i codici 10168.
+**Fonti Markdown — dichiarare poi partire (HITL 16/08, seguito):** inventario in [`MATERIAL-COMPLIANCE-NORME-SINTESI.md`](../reference/MATERIAL-COMPLIANCE-NORME-SINTESI.md). Prima di ogni slice MC-2/MC-3/ISO-3: 3 righe (coperte / mancanti / si parte su). Le lacune (oggi EN 10210-1 / 10219-1) si tracciano; **non** bloccano lamiere/profili; **non** si inventano soglie.
+
+**Norme e campi da estrarre:** consegnate 16/08/2026 (EN 10204, EN 10168, ISO 10474, ISO 404, ISO 6929, facsimile MTC, **EN 10025-2:2019**). Markdown in `docs/Normative/` NORMA_00020–00026 + KB `knowledge/material-compliance/`. Dizionario campi = EN 10168. Soglie lamiere/profili S235–S500: [`EN-10025-2-acciai-strutturali.md`](../reference/EN-10025-2-acciai-strutturali.md). Tubi/hollow: **mancante** in Markdown → skip, non fail. Sintesi: [`MATERIAL-COMPLIANCE-NORME-SINTESI.md`](../reference/MATERIAL-COMPLIANCE-NORME-SINTESI.md). La griglia elenco (DDT + anagrafica) resta valida; i campi lab seguono i codici 10168.
 
 **Conformità = norma + documenti di origine esterna pertinenti (HITL 16/08, sì):** l’agente **non** valuta il 3.1 solo contro la norma materiale. Applica la gerarchia [ADR-021](../adr/ADR-021-material-requirements-hierarchy.md) in base all’**Ambito** (azienda) e, se c’è, a DDT/ordine/cliente/commessa. Un livello assente nello scope = `skip`, non un fail. I Markdown KB copriranno `standards/` **e** (quando il committente li consegna) `customers/` + `companies/<slug>/`. Il certificato è la **prova**; i requisiti stanno sempre in documenti esterni al certificato (norma, ordine, specifica cliente, criteri azienda).
 
@@ -127,6 +129,8 @@ Script/migrazione idempotente; eventuale test service smoke.
 
 ### DoD
 
+- [ ] Dichiarazione fonti Markdown in PR/chat (coperte / mancanti / si parte su) — inventario sintesi
+- [ ] Seed solo da Markdown presente (oggi EN 10025-2 lamiere/profili; tubi = skip)
 - [ ] Loader testabile senza rete
 - [ ] Hash stabile a parità di file
 

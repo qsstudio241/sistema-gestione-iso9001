@@ -11,6 +11,8 @@ knowledge/material-compliance/
 └── lessons/       # post-MVP
 ```
 
-Soglie di grado S235–S500 (EN 10025-2:2019): [`standards/en-10025-2.md`](standards/en-10025-2.md) + estratto [`docs/reference/EN-10025-2-acciai-strutturali.md`](../../docs/reference/EN-10025-2-acciai-strutturali.md). Tubi/sezioni cave restano in attesa di EN 10210-1 / EN 10219-1.
+Soglie di grado S235–S500 (EN 10025-2:2019): [`standards/en-10025-2.md`](standards/en-10025-2.md) + estratto [`docs/reference/EN-10025-2-acciai-strutturali.md`](../../docs/reference/EN-10025-2-acciai-strutturali.md).
+
+Inventario presente/mancante (dichiarare all’avvio, poi partire): [`MATERIAL-COMPLIANCE-NORME-SINTESI.md`](../../docs/reference/MATERIAL-COMPLIANCE-NORME-SINTESI.md). Tubi: EN 10210-1 / 10219-1 ancora senza Markdown.
 
 Sintesi operativa: [`docs/reference/MATERIAL-COMPLIANCE-NORME-SINTESI.md`](../../docs/reference/MATERIAL-COMPLIANCE-NORME-SINTESI.md).
