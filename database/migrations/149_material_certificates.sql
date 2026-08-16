@@ -6,7 +6,8 @@
 -- Niente GO (lo script VPS esegue gli stessi statement a step).
 -- CASCADE solo figlio→padre (checks → certificato).
 -- FK verso import_jobs / document_registry / projects: ON DELETE SET NULL.
--- import_job_file_id: NO ACTION (evita multiple cascade path via import_jobs).
+-- import_job_file_id: colonna senza FK (SQL Server rifiuta SET NULL su job+file;
+-- NO ACTION bloccherebbe DELETE dei job). DROP idempotente se il vincolo esiste.
 -- =============================================================================
 
 SET NOCOUNT ON;
@@ -107,10 +108,11 @@ IF NOT EXISTS (SELECT 1 FROM sys.foreign_keys WHERE name = 'FK_mc_cert_import_jo
         FOREIGN KEY (import_job_id) REFERENCES dbo.import_jobs(id)
         ON DELETE SET NULL;
 
-IF NOT EXISTS (SELECT 1 FROM sys.foreign_keys WHERE name = 'FK_mc_cert_import_job_file')
-    ALTER TABLE dbo.material_certificates
-    ADD CONSTRAINT FK_mc_cert_import_job_file
-        FOREIGN KEY (import_job_file_id) REFERENCES dbo.import_job_files(id);
+-- Nessun FK su import_job_file_id: ON DELETE SET NULL qui + SET NULL su import_job_id
+-- crea due cascade path da import_jobs (job→files CASCADE, mig. 038). NO ACTION
+-- bloccherebbe DELETE dei job (Bugbot PR #450). La colonna resta per MC-4.
+IF EXISTS (SELECT 1 FROM sys.foreign_keys WHERE name = 'FK_mc_cert_import_job_file')
+    ALTER TABLE dbo.material_certificates DROP CONSTRAINT FK_mc_cert_import_job_file;
 
 IF NOT EXISTS (SELECT 1 FROM sys.foreign_keys WHERE name = 'FK_mc_cert_document_registry')
     ALTER TABLE dbo.material_certificates

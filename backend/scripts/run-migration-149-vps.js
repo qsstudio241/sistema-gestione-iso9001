@@ -28,9 +28,9 @@ const SQL_CANDIDATES = [
 function splitIdempotentSteps(sqlText) {
   const withoutBom = String(sqlText).replace(/^\uFEFF/, '');
   return withoutBom
-    .split(/\n(?=IF NOT EXISTS)/i)
+    .split(/\n(?=IF (?:NOT )?EXISTS)/i)
     .map((chunk) => chunk.trim())
-    .filter((chunk) => /^IF NOT EXISTS/i.test(chunk));
+    .filter((chunk) => /^IF (?:NOT )?EXISTS/i.test(chunk));
 }
 
 function resolveSqlPath() {

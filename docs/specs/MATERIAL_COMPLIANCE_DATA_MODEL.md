@@ -76,7 +76,7 @@ Nomi indicativi. MC-1 sceglie tipi SQL Server precisi; qui il contratto.
 | `organization_id` | INT NOT NULL | FK `organizations` |
 | `company_id` | INT NOT NULL | FK `companies`. Obbligatorio: il certificato appartiene all’azienda in Ambito |
 | `import_job_id` | INT NULL | FK `import_jobs`, SET NULL |
-| `import_job_file_id` | INT NULL | FK `import_job_files`, SET NULL |
+| `import_job_file_id` | INT NULL | Puntatore al PDF in `import_job_files`. **Niente FK SQL** (MC-1): SET NULL insieme a `import_job_id` crea due cascade path (job→files CASCADE, mig. 038); NO ACTION blocca `DELETE` dei job. Integrità in API (MC-4) |
 | `document_registry_id` | INT NULL | FK `document_registry`, SET NULL — valorizzato in MC-7 a `archived` |
 | `project_id` | INT NULL | FK `projects` — **non** in griglia MVP |
 | `storage_path` | NVARCHAR(2000) NULL | Copia/riferimento file se non si riusa solo il path del job file |

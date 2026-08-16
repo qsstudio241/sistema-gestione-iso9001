@@ -114,7 +114,7 @@ Encoding / link interni; nessun test app.
 - [x] SQL + script VPS in repo (L1 statico)
 - [x] Migration applicata su VPS TEST (idempotente) e PROD (16/08/2026)
 - [x] Indici `(organization_id, company_id)`, stato, ruolo, DDT
-- [x] Nessun `ON DELETE CASCADE` fragile: CASCADE solo `checks` → certificato; job/registry/commessa = `SET NULL`; `import_job_file_id` senza ON DELETE (evita multiple cascade path)
+- [x] Nessun `ON DELETE CASCADE` fragile: CASCADE solo `checks` → certificato; job/registry/commessa = `SET NULL`; `import_job_file_id` **senza FK** (SQL Server: due cascade path; Bugbot PR #450)
 
 ### Test L1
 

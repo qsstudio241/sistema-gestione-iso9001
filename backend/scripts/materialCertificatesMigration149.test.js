@@ -90,9 +90,9 @@ function readUtf8(filePath) {
 function splitIdempotentSteps(sqlText) {
   return String(sqlText)
     .replace(/^\uFEFF/, '')
-    .split(/\n(?=IF NOT EXISTS)/i)
+    .split(/\n(?=IF (?:NOT )?EXISTS)/i)
     .map((chunk) => chunk.trim())
-    .filter((chunk) => /^IF NOT EXISTS/i.test(chunk));
+    .filter((chunk) => /^IF (?:NOT )?EXISTS/i.test(chunk));
 }
 
 describe('migration 149 material_certificates (MC-1)', () => {
@@ -163,15 +163,13 @@ describe('migration 149 material_certificates (MC-1)', () => {
     expect(sql).toMatch(/FK_mc_cert_project[\s\S]*ON DELETE SET NULL/);
   });
 
-  it('CASCADE solo su FK_mc_checks_certificate; file job senza ON DELETE', () => {
+  it('CASCADE solo su FK_mc_checks_certificate; niente FK sul file job (cascade path)', () => {
     const cascadeMatches = sql.match(/ON DELETE CASCADE/gi) || [];
     expect(cascadeMatches).toHaveLength(1);
     expect(sql).toMatch(/FK_mc_checks_certificate[\s\S]*ON DELETE CASCADE/);
-    const fileFk = sql.match(
-      /FK_mc_cert_import_job_file[\s\S]*?REFERENCES dbo\.import_job_files\(id\);/
-    );
-    expect(fileFk).not.toBeNull();
-    expect(fileFk[0]).not.toMatch(/ON DELETE/i);
+    expect(sql).toMatch(/import_job_file_id\s+INT\s+NULL/);
+    expect(sql).not.toMatch(/ADD CONSTRAINT FK_mc_cert_import_job_file/);
+    expect(sql).toMatch(/DROP CONSTRAINT FK_mc_cert_import_job_file/);
     expect(sql).not.toMatch(/ON DELETE CASCADE[\s\S]*import_jobs/);
     expect(sql).not.toMatch(/ON DELETE CASCADE[\s\S]*document_registry/);
   });
