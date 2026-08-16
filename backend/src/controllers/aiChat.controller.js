@@ -19,6 +19,7 @@ const {
 const { buildCitationsFromChunks } = require('../utils/aiCitations');
 const { resolveAiCompanyScope } = require('../services/aiCompanyScope.service');
 const { sendAccessDenied } = require('../services/companyAccess.service');
+const { loadAmbitoFacts } = require('../services/ambitoFacts.service');
 const { buildMaterialGroupPromptSection } = require('../data/materialGroups15608');
 
 const BASE_SYSTEM_PROMPT = `Sei l'assistente AI del Sistema di Gestione Qualit\u00e0 ISO 9001 di questa organizzazione.
@@ -111,6 +112,27 @@ async function logUsage({ organizationId, userId, companyId, message, reply, con
        WHERE id IN (${placeholders.join(',')})`,
       paramObj
     );
+  }
+}
+
+/**
+ * GET /ai/ambito-facts?companyId=
+ * Snapshot NC / qualifiche / documenti per Ambito. Zero LLM.
+ */
+async function getAmbitoFacts(req, res) {
+  try {
+    const scope = await resolveAiCompanyScope(req.user, req.query?.companyId);
+    if (scope.denied) {
+      return sendAccessDenied(res, scope.denied);
+    }
+    const data = await loadAmbitoFacts(req.user, scope.companyId);
+    return res.json({ success: true, data });
+  } catch (err) {
+    logger.error('[AMBITO_FACTS] Error:', err.message);
+    return res.status(500).json({
+      error: 'Errore nel calcolo dei fatti di Ambito.',
+      code: 'AMBITO_FACTS_ERROR',
+    });
   }
 }
 
@@ -454,4 +476,4 @@ async function knowledgeHealth(req, res) {
   }
 }
 
-module.exports = { aiChat, aiReindex, knowledgeHealth };
+module.exports = { aiChat, aiReindex, knowledgeHealth, getAmbitoFacts };

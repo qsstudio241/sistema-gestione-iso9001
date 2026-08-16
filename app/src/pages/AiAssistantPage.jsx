@@ -23,6 +23,7 @@ import {
   toGenerateWpsApiPayload,
 } from "../utils/aiAssistantContext";
 import AiAssistantCitations from "../components/AiAssistantCitations";
+import AmbitoFactsBar from "../components/AmbitoFactsBar";
 import {
   buildChatStorageKey,
   loadChatMessages,
@@ -751,6 +752,10 @@ function AiAssistantPage() {
             </button>
           )}
         </div>
+      </div>
+
+      <div style={{ padding: "12px 16px 0", flexShrink: 0 }}>
+        <AmbitoFactsBar />
       </div>
 
       {/* Messages */}

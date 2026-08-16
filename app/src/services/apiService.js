@@ -2312,6 +2312,12 @@ class ApiService {
         return this.post('/ai/feedback', { feature, action, aiText, finalText, recommendation, auditId, contextSummary, modelUsed });
     }
 
+    async getAmbitoFacts(companyId) {
+        const qs = new URLSearchParams();
+        if (companyId != null && companyId !== '') qs.set('companyId', String(companyId));
+        return this.get(`/ai/ambito-facts${qs.toString() ? '?' + qs.toString() : ''}`);
+    }
+
     async aiChat(message, options = {}) {
         const body = { message };
         const opts = typeof options === 'object' && options !== null ? options : {};
