@@ -76,6 +76,7 @@ const CERT = {
   }),
   corrected_json: null,
   evaluate_result_json: null,
+  updated_at: new Date('2026-08-17T12:00:00.000Z'),
 };
 
 function sqlOf(call) {
@@ -176,7 +177,8 @@ describe('materialCertificates.controller (MC-4)', () => {
   });
 
   it('create persiste received e non compliant', async () => {
-    query
+    const { queryMock } = mockTx();
+    queryMock
       .mockResolvedValueOnce({ recordset: [{ id: 50 }] })
       .mockResolvedValueOnce({ recordset: [{ id: 51 }] })
       .mockResolvedValueOnce({ recordset: [{ id: 11, workflow_status: 'received', material_role: 'base', company_id: 3 }] });
@@ -193,7 +195,7 @@ describe('materialCertificates.controller (MC-4)', () => {
   it('extract senza testo → text_ready ocr_skipped, 200, non 500', async () => {
     query.mockResolvedValueOnce({ recordset: [{ ...CERT, workflow_status: 'received' }] });
     extractDocumentText.mockResolvedValueOnce({ text: null, reason: 'pdf_no_text_layer' });
-    query.mockResolvedValueOnce({ recordset: [] });
+    query.mockResolvedValueOnce({ recordset: [{ id: 11 }] });
     const res = mockRes();
     await ctrl.extractCertificate(mockReq({ params: { id: '11' } }), res);
     expect(res.status).not.toHaveBeenCalledWith(500);
@@ -205,6 +207,7 @@ describe('materialCertificates.controller (MC-4)', () => {
     const readySql = query.mock.calls.find((c) => /workflow_status = 'text_ready'/.test(sqlOf(c)));
     expect(readySql).toBeTruthy();
     expect(sqlOf(readySql)).toMatch(/extracted_json = NULL/);
+    expect(sqlOf(readySql)).toMatch(/OUTPUT INSERTED\.id/);
   });
 
   it('extract con testo persiste extracted_json e stato extracted', async () => {
@@ -223,7 +226,7 @@ describe('materialCertificates.controller (MC-4)', () => {
         },
       },
     });
-    query.mockResolvedValueOnce({ recordset: [] });
+    query.mockResolvedValueOnce({ recordset: [{ id: 11 }] });
     const res = mockRes();
     await ctrl.extractCertificate(mockReq({ params: { id: '11' } }), res);
     const body = res.json.mock.calls[0][0];
@@ -263,6 +266,7 @@ describe('materialCertificates.controller (MC-4)', () => {
     expect(sqls.some((s) => /INSERT INTO dbo.material_certificate_checks/.test(s))).toBe(true);
     expect(sqls.some((s) => /workflow_status = 'pending_review'/.test(s))).toBe(true);
     expect(sqls.some((s) => /reviewed_by = NULL/.test(s))).toBe(true);
+    expect(sqls.some((s) => /updated_at = @updated_at/.test(s))).toBe(true);
   });
 
   it('extract da compliant → 409 (non degrada HITL)', async () => {

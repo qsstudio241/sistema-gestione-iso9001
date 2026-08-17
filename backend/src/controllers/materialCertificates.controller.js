@@ -124,6 +124,18 @@ function illegalTransition(workflowStatus) {
   return err;
 }
 
+function outputRow(result) {
+  return result && result.recordset && result.recordset[0] ? result.recordset[0] : null;
+}
+
+async function txQuery(tx, sqlText, params) {
+  const request = tx.request();
+  for (const [key, value] of Object.entries(params)) {
+    request.input(key, value);
+  }
+  return request.query(sqlText);
+}
+
 function parseRole(raw, fallback = 'base') {
   const v = emptyToNull(raw);
   if (!v) return fallback;
@@ -255,48 +267,39 @@ function jsonPayloadFromAi(aiResult) {
   return specific && typeof specific === 'object' && !Array.isArray(specific) ? specific : {};
 }
 
-async function persistEvaluateResult(organizationId, certificateId, result) {
+async function persistEvaluateResult(organizationId, certificateId, result, updatedAt) {
   const pool = await getPool();
   const tx = pool.transaction();
   await tx.begin();
   try {
-    await tx.request()
-      .input('certificate_id', certificateId)
-      .input('organization_id', organizationId)
-      .query(`
+    await txQuery(tx, `
         DELETE FROM dbo.material_certificate_checks
         WHERE certificate_id = @certificate_id AND organization_id = @organization_id
-      `);
+      `, {
+      certificate_id: certificateId,
+      organization_id: organizationId,
+    });
     for (const check of result.checks || []) {
-      await tx.request()
-        .input('organization_id', organizationId)
-        .input('certificate_id', certificateId)
-        .input('requirement_key', clip(check.requirement_key, 80))
-        .input('source_level', clip(check.source_level, 32))
-        .input('source_ref', clip(check.source_ref, 300))
-        .input('required_value', clip(check.required_value, 200))
-        .input('actual_value', clip(check.actual_value, 200))
-        .input('result', check.result)
-        .input('explanation', clip(check.explanation, 500))
-        .query(`
+      await txQuery(tx, `
           INSERT INTO dbo.material_certificate_checks
             (organization_id, certificate_id, requirement_key, source_level, source_ref,
              required_value, actual_value, result, explanation)
           VALUES
             (@organization_id, @certificate_id, @requirement_key, @source_level, @source_ref,
              @required_value, @actual_value, @result, @explanation)
-        `);
+        `, {
+        organization_id: organizationId,
+        certificate_id: certificateId,
+        requirement_key: clip(check.requirement_key, 80),
+        source_level: clip(check.source_level, 32),
+        source_ref: clip(check.source_ref, 300),
+        required_value: clip(check.required_value, 200),
+        actual_value: clip(check.actual_value, 200),
+        result: check.result,
+        explanation: clip(check.explanation, 500),
+      });
     }
-    const upd = await tx.request()
-      .input('id', certificateId)
-      .input('organization_id', organizationId)
-      .input('evaluate_result_json', JSON.stringify(result))
-      .input('kb_snapshot_hash', result.kb_snapshot_hash || null)
-      .input('kb_snapshot_json', JSON.stringify({
-        hash: result.kb_snapshot_hash,
-        evaluated_at: new Date().toISOString(),
-      }))
-      .query(`
+    const upd = await txQuery(tx, `
         UPDATE dbo.material_certificates
         SET evaluate_result_json = @evaluate_result_json,
             kb_snapshot_hash = @kb_snapshot_hash,
@@ -309,8 +312,19 @@ async function persistEvaluateResult(organizationId, certificateId, result) {
         OUTPUT INSERTED.id
         WHERE id = @id AND organization_id = @organization_id
           AND workflow_status IN (${sqlInStatus(EVALUABLE)})
-      `);
-    if (!upd.recordset || !upd.recordset.length) {
+          AND updated_at = @updated_at
+      `, {
+      id: certificateId,
+      organization_id: organizationId,
+      evaluate_result_json: JSON.stringify(result),
+      kb_snapshot_hash: result.kb_snapshot_hash || null,
+      kb_snapshot_json: JSON.stringify({
+        hash: result.kb_snapshot_hash,
+        evaluated_at: new Date().toISOString(),
+      }),
+      updated_at: updatedAt,
+    });
+    if (!outputRow(upd)) {
       throw illegalTransition();
     }
     await tx.commit();
@@ -476,41 +490,40 @@ async function createCertificate(req, res) {
       return res.status(400).json({ error: 'material_role deve essere base o filler', code: 'INVALID_ROLE' });
     }
 
-    const job = await query(
-      `INSERT INTO import_jobs (organization_id, company_id, created_by, title, status, document_type_hint)
-       OUTPUT INSERTED.id
-       VALUES (@organization_id, @company_id, @created_by, @title, 'draft', 'material_certificate')`,
-      {
+    const pool = await getPool();
+    const tx = pool.transaction();
+    await tx.begin();
+    let inserted;
+    try {
+      const job = await txQuery(tx, `
+        INSERT INTO import_jobs (organization_id, company_id, created_by, title, status, document_type_hint)
+        OUTPUT INSERTED.id
+        VALUES (@organization_id, @company_id, @created_by, @title, 'draft', 'material_certificate')`, {
         organization_id: orgId,
         company_id: companyId,
         created_by: req.user.user_id || null,
         title: clip(req.file.originalname || 'Certificato materiale', 255),
-      }
-    );
-    const importJobId = job.recordset[0].id;
-    const fileIns = await query(
-      `INSERT INTO import_job_files (job_id, original_name, storage_path, mime_type, file_size, status)
-       OUTPUT INSERTED.id
-       VALUES (@job_id, @original_name, @storage_path, @mime_type, @file_size, 'uploaded')`,
-      {
+      });
+      const importJobId = job.recordset[0].id;
+      const fileIns = await txQuery(tx, `
+        INSERT INTO import_job_files (job_id, original_name, storage_path, mime_type, file_size, status)
+        OUTPUT INSERTED.id
+        VALUES (@job_id, @original_name, @storage_path, @mime_type, @file_size, 'uploaded')`, {
         job_id: importJobId,
         original_name: clip(req.file.originalname, 255),
         storage_path: req.file.path,
         mime_type: req.file.mimetype || 'application/pdf',
         file_size: req.file.size || 0,
-      }
-    );
-    const importJobFileId = fileIns.recordset[0].id;
-
-    const inserted = await query(
-      `INSERT INTO dbo.material_certificates
-        (organization_id, company_id, import_job_id, import_job_file_id, storage_path,
-         ddt_no, ddt_date, material_role, workflow_status, created_by)
-       OUTPUT INSERTED.id, INSERTED.workflow_status, INSERTED.material_role, INSERTED.company_id
-       VALUES
-        (@organization_id, @company_id, @import_job_id, @import_job_file_id, @storage_path,
-         @ddt_no, @ddt_date, @material_role, 'received', @created_by)`,
-      {
+      });
+      const importJobFileId = fileIns.recordset[0].id;
+      inserted = await txQuery(tx, `
+        INSERT INTO dbo.material_certificates
+          (organization_id, company_id, import_job_id, import_job_file_id, storage_path,
+           ddt_no, ddt_date, material_role, workflow_status, created_by)
+        OUTPUT INSERTED.id, INSERTED.workflow_status, INSERTED.material_role, INSERTED.company_id
+        VALUES
+          (@organization_id, @company_id, @import_job_id, @import_job_file_id, @storage_path,
+           @ddt_no, @ddt_date, @material_role, 'received', @created_by)`, {
         organization_id: orgId,
         company_id: companyId,
         import_job_id: importJobId,
@@ -520,8 +533,12 @@ async function createCertificate(req, res) {
         ddt_date: emptyToNull(req.body?.ddt_date),
         material_role: role,
         created_by: req.user.user_id || null,
-      }
-    );
+      });
+      await tx.commit();
+    } catch (txErr) {
+      try { await tx.rollback(); } catch (_) { /* ignore */ }
+      throw txErr;
+    }
     res.status(201).json({ success: true, data: inserted.recordset[0] });
   } catch (err) {
     logger.error('createCertificate', err);
@@ -626,7 +643,8 @@ async function patchCertificate(req, res) {
            inspection_document_type = @inspection_document_type,
            corrected_json = @corrected_json, updated_at = SYSUTCDATETIME()
        OUTPUT INSERTED.id, INSERTED.workflow_status, INSERTED.material_role
-       WHERE id = @id AND organization_id = @organization_id`,
+       WHERE id = @id AND organization_id = @organization_id
+         AND workflow_status IN (${sqlInStatus(PATCHABLE)})`,
       {
         id,
         organization_id: req.user.organization_id,
@@ -634,6 +652,12 @@ async function patchCertificate(req, res) {
         corrected_json: JSON.stringify(corrected),
       }
     );
+    if (!outputRow(updated)) {
+      return res.status(409).json({
+        error: 'Modifica non consentita in questo stato',
+        code: 'ILLEGAL_TRANSITION',
+      });
+    }
     res.json({ success: true, data: updated.recordset[0] });
   } catch (err) {
     logger.error('patchCertificate', err);
@@ -661,11 +685,12 @@ async function extractCertificate(req, res) {
     const reason = mapTextReason(extracted.reason, text);
 
     if (!text || text.trim().length < MIN_TEXT_CHARS) {
-      await query(
+      const saved = await query(
         `UPDATE dbo.material_certificates
          SET extracted_text = @extracted_text, text_extract_reason = @text_extract_reason,
              extracted_json = NULL,
              workflow_status = 'text_ready', updated_at = SYSUTCDATETIME()
+         OUTPUT INSERTED.id
          WHERE id = @id AND organization_id = @organization_id
            AND workflow_status IN (${sqlInStatus(EXTRACTABLE)})`,
         {
@@ -675,6 +700,12 @@ async function extractCertificate(req, res) {
           text_extract_reason: reason,
         }
       );
+      if (!outputRow(saved)) {
+        return res.status(409).json({
+          error: 'Estrazione non consentita in questo stato',
+          code: 'ILLEGAL_TRANSITION',
+        });
+      }
       return res.json({
         success: true,
         data: {
@@ -695,11 +726,12 @@ async function extractCertificate(req, res) {
       });
     } catch (aiErr) {
       logger.warn('extractCertificate AI', aiErr.message);
-      await query(
+      const saved = await query(
         `UPDATE dbo.material_certificates
          SET extracted_text = @extracted_text, text_extract_reason = @text_extract_reason,
              extracted_json = NULL,
              workflow_status = 'text_ready', updated_at = SYSUTCDATETIME()
+         OUTPUT INSERTED.id
          WHERE id = @id AND organization_id = @organization_id
            AND workflow_status IN (${sqlInStatus(EXTRACTABLE)})`,
         {
@@ -709,6 +741,12 @@ async function extractCertificate(req, res) {
           text_extract_reason: reason,
         }
       );
+      if (!outputRow(saved)) {
+        return res.status(409).json({
+          error: 'Estrazione non consentita in questo stato',
+          code: 'ILLEGAL_TRANSITION',
+        });
+      }
       const code = aiErr.code === 'AI_NOT_CONFIGURED' ? 'AI_NOT_CONFIGURED' : 'AI_EXTRACT_FAILED';
       return res.json({
         success: true,
@@ -733,7 +771,7 @@ async function extractCertificate(req, res) {
     const ana = applyAnagraficaFromJson(extractedJson, row.material_role);
     const model = clip(aiResult.model, 80);
 
-    await query(
+    const saved = await query(
       `UPDATE dbo.material_certificates
        SET extracted_text = @extracted_text, text_extract_reason = @text_extract_reason,
            extracted_json = @extracted_json, ai_model = @ai_model,
@@ -747,6 +785,7 @@ async function extractCertificate(req, res) {
            inspection_document_type = COALESCE(@inspection_document_type, inspection_document_type),
            material_role = @material_role,
            workflow_status = 'extracted', updated_at = SYSUTCDATETIME()
+       OUTPUT INSERTED.id
        WHERE id = @id AND organization_id = @organization_id
          AND workflow_status IN (${sqlInStatus(EXTRACTABLE)})`,
       {
@@ -767,6 +806,12 @@ async function extractCertificate(req, res) {
         material_role: ana.material_role,
       }
     );
+    if (!outputRow(saved)) {
+      return res.status(409).json({
+        error: 'Estrazione non consentita in questo stato',
+        code: 'ILLEGAL_TRANSITION',
+      });
+    }
 
     res.json({
       success: true,
@@ -819,7 +864,7 @@ async function evaluateCertificate(req, res) {
       scope,
     });
 
-    await persistEvaluateResult(req.user.organization_id, id, result);
+    await persistEvaluateResult(req.user.organization_id, id, result, row.updated_at);
 
     res.json({
       success: true,
