@@ -132,10 +132,10 @@ Script/migrazione idempotente; eventuale test service smoke.
 
 ### DoD
 
-- [ ] Dichiarazione fonti Markdown in PR/chat (coperte / mancanti / si parte su) — inventario sintesi
-- [ ] Seed solo da Markdown presente (oggi EN 10025-2 lamiere/profili; tubi = skip)
-- [ ] Loader testabile senza rete
-- [ ] Hash stabile a parità di file
+- [x] Dichiarazione fonti Markdown in PR/chat (coperte / mancanti / si parte su) — inventario sintesi
+- [x] Seed solo da Markdown presente (oggi EN 10025-2 lamiere/profili; tubi = skip)
+- [x] Loader testabile senza rete (`materialKbLoader.service.js`)
+- [x] Hash stabile a parità di file (SHA-256); copia `backend/data/material-compliance/` allineata
 
 ### Test L1
 

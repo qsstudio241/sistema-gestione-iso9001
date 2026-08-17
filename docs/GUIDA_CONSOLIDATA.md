@@ -2062,6 +2062,7 @@ Script aggiuntivo: `patch-verbale-visita-headings.cjs` (allinea Titolo 1 offline
 - Lo script repro normalizza `NODE_ENV=test` → `development` prima del pool.  
 - Comandi: vedi sezione **D** sotto.
 - **MC-1 (16/08/2026)**: tabelle additive `material_certificates` / `material_certificate_checks` = mig. **149**. FK verso `import_jobs`/`document_registry`/`projects` = `ON DELETE SET NULL`. `import_job_file_id` **senza FK** (SQL Server rifiuta SET NULL su job+file insieme; NO ACTION bloccherebbe `DELETE import_jobs` — Bugbot PR #450). CASCADE solo checks→certificato. Esecuzione: `node /tmp/run-migration-149-vps.js` (prod) o `SGQ_MIGRATION_TARGET=test node /tmp/run-migration-149-vps.js`.
+- **MC-2 (17/08/2026)**: KB Markdown in `knowledge/material-compliance/` (copia deploy `backend/data/material-compliance/`). Loader `materialKbLoader.service.js`: hash SHA-256 dei file, soglie EN 10025-2 da tabelle; tubi, apporto, grado non seedato e spessore assente/fuori fascia = skip. Note h/i (C heat) e b (CEV lunghi) nel seed. Niente soglie inventate. PR [#451](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/451).
 
 ---
 
