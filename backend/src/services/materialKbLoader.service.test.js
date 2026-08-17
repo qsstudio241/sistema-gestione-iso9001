@@ -130,4 +130,83 @@ describe('materialKbLoader (MC-2)', () => {
     expect(hit.cHeatMax).toBe(0.17);
     expect(hit.rehMin).toBe(235);
   });
+
+  it('spessore assente → skip (non skip:false con limiti nulli)', () => {
+    const hit = lookupEn10025Limits(snap, {
+      designation: 'S355J2',
+      productForm: 'plate',
+    });
+    expect(hit.skip).toBe(true);
+    expect(hit.reason).toMatch(/spessore/);
+  });
+
+  it('S185 fuori seed → skip', () => {
+    const hit = lookupEn10025Limits(snap, {
+      designation: 'S185',
+      productForm: 'plate',
+      thicknessMm: 10,
+    });
+    expect(hit.skip).toBe(true);
+    expect(hit.reason).toMatch(/non seedato/);
+  });
+
+  it('nota i: S355J2 C heat 0.22 oltre 30 mm', () => {
+    const thin = lookupEn10025Limits(snap, {
+      designation: 'S355J2',
+      productForm: 'plate',
+      thicknessMm: 25,
+    });
+    const thick = lookupEn10025Limits(snap, {
+      designation: 'S355J2',
+      productForm: 'plate',
+      thicknessMm: 35,
+    });
+    expect(thin.skip).toBe(false);
+    expect(thin.cHeatMax).toBe(0.2);
+    expect(thick.cHeatMax).toBe(0.22);
+  });
+
+  it('nota h: S275J0 C heat 0.20 oltre 150 mm', () => {
+    const mid = lookupEn10025Limits(snap, {
+      designation: 'S275J0',
+      productForm: 'plate',
+      thicknessMm: 100,
+    });
+    const thick = lookupEn10025Limits(snap, {
+      designation: 'S275J0',
+      productForm: 'plate',
+      thicknessMm: 160,
+    });
+    expect(mid.cHeatMax).toBe(0.18);
+    expect(thick.cHeatMax).toBe(0.2);
+  });
+
+  it('oltre 400 mm: ReH/Rm/CEV assenti, C heat >150 ancora applicabile', () => {
+    const hit = lookupEn10025Limits(snap, {
+      designation: 'S355J2',
+      productForm: 'plate',
+      thicknessMm: 500,
+    });
+    expect(hit.skip).toBe(false);
+    expect(hit.rehMin).toBeNull();
+    expect(hit.rm).toBeNull();
+    expect(hit.cevMax).toBeNull();
+    expect(hit.cHeatMax).toBe(0.22);
+  });
+
+  it('nota b: S355J2 prodotti lunghi 150–250 mm CEV 0.54, lamiera 0.49', () => {
+    const plate = lookupEn10025Limits(snap, {
+      designation: 'S355J2',
+      productForm: 'plate',
+      thicknessMm: 200,
+    });
+    const bar = lookupEn10025Limits(snap, {
+      designation: 'S355J2',
+      productForm: 'bar',
+      thicknessMm: 200,
+    });
+    expect(plate.skip).toBe(false);
+    expect(plate.cevMax).toBe(0.49);
+    expect(bar.cevMax).toBe(0.54);
+  });
 });

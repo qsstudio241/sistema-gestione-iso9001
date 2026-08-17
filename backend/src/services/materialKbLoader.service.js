@@ -9,6 +9,7 @@ const fs = require('fs');
 const path = require('path');
 
 const TUBE_FORMS = new Set(['tube', 'hollow_section']);
+const LONG_PRODUCT_FORMS = new Set(['section', 'bar']);
 const LONG_ONLY_FAMILIES = new Set(['S460', 'S500']);
 
 function defaultKbRoot() {
@@ -132,19 +133,24 @@ function pickBandValue(bands, thicknessMm) {
 }
 
 function parseGradeKeyedNumericTable(table, { skipCols = 1, asRange = false } = {}) {
-  const out = {};
-  if (!table) return out;
+  const standard = {};
+  const long = {};
+  if (!table) return { standard, long };
   const bands = table.headers.slice(skipCols).map(parseBandHeader);
   for (const row of table.rows) {
-    const grade = String(row[0] || '').replace(/\s+lunghi$/i, '').trim();
+    const rawGrade = String(row[0] || '').trim();
+    const isLong = /\s+lunghi$/i.test(rawGrade);
+    const grade = rawGrade.replace(/\s+lunghi$/i, '').trim();
     if (!grade) continue;
     const values = row.slice(skipCols).map((cell) => parseNumberCell(cell));
-    out[grade] = bands.map((band, i) => ({
+    const rec = bands.map((band, i) => ({
       band,
       value: asRange && values[i] && typeof values[i] === 'object' ? values[i] : values[i],
     })).filter((x) => x.band);
+    if (isLong) long[grade] = rec;
+    else standard[grade] = rec;
   }
-  return out;
+  return { standard, long };
 }
 
 function parseChemistryTable(table) {
@@ -245,11 +251,15 @@ function findTable(tables, re) {
 
 function loadEn10025(md) {
   const tables = tablesAfterHeadings(md);
+  const cev = parseGradeKeyedNumericTable(findTable(tables, /Tabella 5/i), { skipCols: 1 });
+  const reh = parseGradeKeyedNumericTable(findTable(tables, /Tabella 6 — ReH/i), { skipCols: 1 });
+  const rm = parseGradeKeyedNumericTable(findTable(tables, /Tabella 6b/i), { skipCols: 1, asRange: true });
   return {
     heatChemistry: parseChemistryTable(findTable(tables, /Tabella 1/i)),
-    cev: parseGradeKeyedNumericTable(findTable(tables, /Tabella 5/i), { skipCols: 1 }),
-    reh: parseGradeKeyedNumericTable(findTable(tables, /Tabella 6 — ReH/i), { skipCols: 1 }),
-    rm: parseGradeKeyedNumericTable(findTable(tables, /Tabella 6b/i), { skipCols: 1, asRange: true }),
+    cev: cev.standard,
+    cevLong: cev.long,
+    reh: reh.standard,
+    rm: rm.standard,
     kv: parseKvTable(findTable(tables, /Tabella 8/i)),
     longProductsOnly: [...LONG_ONLY_FAMILIES],
     notApplicableProductForms: [...TUBE_FORMS],
@@ -314,24 +324,61 @@ function lookupEn10025Limits(snapshot, query = {}) {
   if (!parsed) {
     return { skip: true, source: 'en10025', reason: 'designazione non riconosciuta (seed Sxxx)' };
   }
+  const seededFamilies = new Set(Object.keys(snapshot.en10025_2.reh || {}));
+  if (!seededFamilies.has(parsed.family)) {
+    return {
+      skip: true,
+      source: 'en10025',
+      reason: `grado ${parsed.grade} non seedato`,
+      designation: parsed,
+    };
+  }
   if (LONG_ONLY_FAMILIES.has(parsed.family) && (form === 'plate' || form === 'sheet')) {
     return { skip: true, source: 'en10025', reason: 'S460/S500 solo prodotti lunghi' };
   }
   const t = query.thicknessMm;
+  if (!Number.isFinite(t)) {
+    return {
+      skip: true,
+      source: 'en10025',
+      reason: 'spessore assente',
+      designation: parsed,
+    };
+  }
   const reh = pickBandValue(snapshot.en10025_2.reh[parsed.family] || [], t);
   const rm = pickBandValue(snapshot.en10025_2.rm[parsed.family] || [], t);
-  const cev = pickBandValue(snapshot.en10025_2.cev[parsed.grade] || snapshot.en10025_2.cev[parsed.family] || [], t);
+  const cevSource = (LONG_PRODUCT_FORMS.has(form)
+    && snapshot.en10025_2.cevLong
+    && (snapshot.en10025_2.cevLong[parsed.grade] || snapshot.en10025_2.cevLong[parsed.family]))
+    || snapshot.en10025_2.cev[parsed.grade]
+    || snapshot.en10025_2.cev[parsed.family]
+    || [];
+  const cev = pickBandValue(cevSource, t);
   const chem = snapshot.en10025_2.heatChemistry[parsed.grade];
   let cMax = null;
-  if (chem && Number.isFinite(t)) {
-    const cHit = pickBandValue(chem.C.map((c) => ({ band: c.band, value: c.max })), t);
-    if (!cHit.skip) cMax = cHit.value;
+  let cSkip = { skip: true, reason: 'chimica heat assente per questo grado' };
+  if (chem) {
+    cSkip = pickBandValue(chem.C.map((c) => ({ band: c.band, value: c.max })), t);
+    if (!cSkip.skip) cMax = cSkip.value;
   }
   const kv = snapshot.en10025_2.kv[parsed.grade];
   let kvMin = null;
-  if (kv && Number.isFinite(t)) {
-    const kvHit = pickBandValue(kv.bands.map((b) => ({ band: b.band, value: b.minJ })), t);
-    if (!kvHit.skip) kvMin = { tempC: kv.tempC, minJ: kvHit.value };
+  let kvSkip = { skip: true, reason: 'KV assente per questo grado' };
+  if (kv) {
+    kvSkip = pickBandValue(kv.bands.map((b) => ({ band: b.band, value: b.minJ })), t);
+    if (!kvSkip.skip) kvMin = { tempC: kv.tempC, minJ: kvSkip.value };
+  }
+  const skippedLookups = [reh, rm, cev, cSkip, kvSkip].filter((x) => x.skip);
+  const reasons = skippedLookups.map((x) => x.reason);
+  const noUsableLimit = reh.skip && rm.skip && cev.skip && cMax == null && kvMin == null;
+  if (noUsableLimit) {
+    return {
+      skip: true,
+      source: 'en10025',
+      reason: reasons[0] || 'nessun limite per questa combinazione',
+      designation: parsed,
+      reasons,
+    };
   }
   return {
     skip: false,
@@ -342,7 +389,7 @@ function lookupEn10025Limits(snapshot, query = {}) {
     cevMax: cev.skip ? null : cev.value,
     cHeatMax: cMax,
     kv: kvMin,
-    reasons: [reh, rm, cev].filter((x) => x.skip).map((x) => x.reason),
+    reasons,
   };
 }
 

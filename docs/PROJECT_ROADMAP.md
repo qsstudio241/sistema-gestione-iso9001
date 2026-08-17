@@ -16,7 +16,7 @@ Audit multi-standard (9001/14001/45001) · Non Conformità (workflow ISO 10.2 co
 
 ### Sessione più recente (16/08/2026)
 
-**MC-2 in corso (17/08)** — seed EN 10025-2 + loader snapshot/hash. Prossima: **MC-3** Rule Engine.
+**MC-2 PR [#451](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/451) (17/08)** — seed EN 10025-2 + loader snapshot/hash (skip se spessore/grado assente; note h/i/b). Prossima: **MC-3** Rule Engine.
 
 **MC-1 mergiata (17/08)** — [PR #450](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/450): tabelle `material_certificates` + `material_certificate_checks` (mig. **149**) su TEST e PROD.
 

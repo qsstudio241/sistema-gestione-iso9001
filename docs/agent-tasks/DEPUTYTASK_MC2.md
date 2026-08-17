@@ -14,6 +14,7 @@
 - `COVERAGE.md`: coperte / mancanti / si parte su
 - Loader `materialKbLoader.service.js`: snapshot + hash SHA-256; lookup ReH/CEV/C/KV; skip tubi e apporto
 - Copia identica in `backend/data/material-compliance/` (deploy VPS)
-- L1: 12/12
+- L1: 18/18 (`materialKbLoader.service.test.js`)
+- PR: [#451](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/451)
 
 Prossima: **MC-3** Rule Engine (zero LLM). `DEPUTYTASK.md` (SAL S1a) non toccato.
