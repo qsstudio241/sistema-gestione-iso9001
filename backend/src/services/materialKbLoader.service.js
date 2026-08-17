@@ -259,7 +259,8 @@ function parseDesignation(raw) {
 function parseMaterialStandard(raw) {
   const s = String(raw || '').toUpperCase().replace(/\s+/g, '');
   if (/10219/.test(s)) return 'en10219';
-  if (/10210/.test(s)) return 'en10210';
+  if (/10210-1/.test(s) || (/10210/.test(s) && !/10210-2/.test(s))) return 'en10210';
+  if (/10210-2/.test(s)) return 'en10210-2';
   if (/10025/.test(s)) return 'en10025';
   return null;
 }
@@ -452,6 +453,13 @@ function lookupEn10210Limits(snapshot, query = {}) {
   const std = parseMaterialStandard(query.materialStandard);
   if (std === 'en10219') {
     return { skip: true, source: 'en10219', reason: snapshot.skip.tubes };
+  }
+  if (std === 'en10210-2') {
+    return {
+      skip: true,
+      source: 'en10210-2',
+      reason: 'EN 10210-2 è tolleranze/dimensioni, non soglie di grado (serve 10210-1)',
+    };
   }
   if (std !== 'en10210') {
     return {

@@ -165,6 +165,17 @@ describe('materialKbLoader (MC-2)', () => {
     expect(hit.kv).toEqual({ tempC: -50, minJ: 27 });
   });
 
+  it('EN 10210-2 da sola non applica le soglie della Part 1', () => {
+    const hit = lookupEn10025Limits(snap, {
+      productForm: 'tube',
+      designation: 'S355J2H',
+      materialStandard: 'EN 10210-2',
+      thicknessMm: 10,
+    });
+    expect(hit.skip).toBe(true);
+    expect(hit.source).toBe('en10210-2');
+  });
+
   it('S275JRH non è in Annex A → skip', () => {
     const hit = lookupEn10025Limits(snap, {
       productForm: 'tube',
