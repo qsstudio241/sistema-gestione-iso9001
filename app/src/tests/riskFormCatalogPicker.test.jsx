@@ -87,4 +87,52 @@ describe("RiskForm picker catalogo ROO-8", () => {
     expect(screen.getByText("Mitigazione efficace")).toBeInTheDocument();
     expect(screen.getByText(/P 2/)).toBeInTheDocument();
   });
+
+  it("con Ambito azienda non mostra Nessuna azienda", async () => {
+    render(
+      <RiskForm
+        initial={{ title: "Prova" }}
+        onSave={vi.fn()}
+        onClose={vi.fn()}
+        filterCompany="48"
+        companies={[{ id: 48, name: "Smoke Ingest Test SRL" }]}
+      />,
+    );
+    await waitFor(() => expect(apiService.getContextFactors).toHaveBeenCalled());
+    expect(screen.queryByText("-- Nessuna azienda --")).toBeNull();
+    expect(screen.queryByLabelText("Azienda")).toBeNull();
+  });
+
+  it("orfano in Tutto lo studio richiede l'azienda", async () => {
+    const onSave = vi.fn();
+    render(
+      <RiskForm
+        initial={{ title: "Orfano", risk_id: 9, company_id: "" }}
+        onSave={onSave}
+        onClose={vi.fn()}
+        companies={[{ id: 48, name: "Smoke Ingest Test SRL" }]}
+      />,
+    );
+    await waitFor(() => expect(apiService.getContextFactors).toHaveBeenCalled());
+    expect(screen.getByLabelText("Azienda")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Salva" }));
+    expect(onSave).not.toHaveBeenCalled();
+    expect(screen.getByText(/Seleziona un'azienda in Ambito/)).toBeInTheDocument();
+  });
+
+  it("in salvataggio usa l'azienda dell'Ambito", async () => {
+    const onSave = vi.fn().mockResolvedValue(undefined);
+    render(
+      <RiskForm
+        initial={{ title: "Prova" }}
+        onSave={onSave}
+        onClose={vi.fn()}
+        filterCompany="48"
+      />,
+    );
+    await waitFor(() => expect(apiService.getContextFactors).toHaveBeenCalled());
+    fireEvent.click(screen.getByRole("button", { name: "Salva" }));
+    await waitFor(() => expect(onSave).toHaveBeenCalled());
+    expect(onSave.mock.calls[0][0].company_id).toBe("48");
+  });
 });

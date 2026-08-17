@@ -91,6 +91,7 @@ function RiskForm({ initial, onSave, onClose, companies = [], pgMax = 3, filterC
   const [form, setForm] = useState(() => ({
     ...EMPTY_RISK,
     ...initial,
+    company_id: initial?.company_id || filterCompany || "",
     review_date: dateInputValue(initial?.review_date),
     residual_probability: initial?.residual_probability ?? "",
     residual_impact: initial?.residual_impact ?? "",
@@ -153,8 +154,13 @@ function RiskForm({ initial, onSave, onClose, companies = [], pgMax = 3, filterC
   async function submit(e) {
     e.preventDefault();
     if (!form.title.trim()) return;
+    const companyId = filterCompany || form.company_id;
+    if (!companyId) {
+      setError("Seleziona un'azienda in Ambito.");
+      return;
+    }
     setSaving(true); setError(null);
-    try { await onSave(form); onClose(); }
+    try { await onSave({ ...form, company_id: companyId }); onClose(); }
     catch (err) { setError(err?.message || "Errore durante il salvataggio."); }
     finally { setSaving(false); }
   }
@@ -167,11 +173,16 @@ function RiskForm({ initial, onSave, onClose, companies = [], pgMax = 3, filterC
           <button type="button" className="modal-close" onClick={onClose} aria-label="Chiudi">{"\u2715"}</button>
         </div>
         <form className="risk-form" onSubmit={submit}>
-          {companies.length > 0 && (
+          {!filterCompany && companies.length > 0 && (
             <div className="form-row">
-              <label>Azienda (ambito)</label>
-              <select value={form.company_id || ""} onChange={e => upd("company_id", e.target.value || null)}>
-                <option value="">-- Nessuna azienda --</option>
+              <label htmlFor="risk-form-company">Azienda *</label>
+              <select
+                id="risk-form-company"
+                aria-label="Azienda"
+                value={form.company_id || ""}
+                onChange={e => upd("company_id", e.target.value)}
+              >
+                <option value="">-- Seleziona azienda --</option>
                 {companies.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
               </select>
             </div>
@@ -539,10 +550,15 @@ function RisksTab({ companies = [], filterCompany = "", reloadCompanies }) {
   useEffect(() => { load(); }, [load]);
 
   async function handleSave(form) {
+    const company_id = filterCompany || form.company_id;
+    if (!company_id) {
+      throw new Error("Seleziona un'azienda in Ambito.");
+    }
+    const payload = { ...form, company_id };
     if (modal.data?.risk_id) {
-      await apiService.updateRisk(modal.data.risk_id, form);
+      await apiService.updateRisk(modal.data.risk_id, payload);
     } else {
-      await apiService.createRisk(form);
+      await apiService.createRisk(payload);
     }
     await load();
   }
@@ -582,8 +598,12 @@ function RisksTab({ companies = [], filterCompany = "", reloadCompanies }) {
     const file = e.target.files?.[0];
     e.target.value = "";
     if (!file) return;
+    if (!filterCompany) {
+      setImportError("Seleziona un'azienda nell'Ambito in alto.");
+      return;
+    }
     setImportFile(file);
-    await runDetect(file, { pgMax, company_id: filterCompany || undefined });
+    await runDetect(file, { pgMax, company_id: filterCompany });
   }
 
   async function handleRemap(sheetName, mapping) {
@@ -617,12 +637,16 @@ function RisksTab({ companies = [], filterCompany = "", reloadCompanies }) {
   }
 
   async function handleConfirmImport(rows) {
+    if (!filterCompany) {
+      setImportError("Seleziona un'azienda nell'Ambito in alto.");
+      return;
+    }
     setImporting(true);
     setImportError(null);
     try {
       await apiService.importRisksM03({
         rows,
-        company_id: filterCompany || null,
+        company_id: filterCompany,
         fileName: detection?.fileName,
       });
       setDetection(null);
@@ -661,7 +685,14 @@ function RisksTab({ companies = [], filterCompany = "", reloadCompanies }) {
           />
           Mostra rischi chiusi
         </label>
-        <button className="btn-primary" onClick={() => setModal({ mode: "new", data: { company_id: filterCompany || "" } })}>+ Nuovo rischio</button>
+        <button
+          className="btn-primary"
+          disabled={!filterCompany}
+          title={!filterCompany ? "Seleziona un'azienda nell'Ambito in alto" : ""}
+          onClick={() => setModal({ mode: "new", data: { company_id: filterCompany } })}
+        >
+          + Nuovo rischio
+        </button>
         {filterCompany ? (
           <label className="risks-scale-label">
             Scala P/G
@@ -681,7 +712,8 @@ function RisksTab({ companies = [], filterCompany = "", reloadCompanies }) {
         <button
           type="button"
           className="btn-secondary"
-          disabled={detecting}
+          disabled={detecting || !filterCompany}
+          title={!filterCompany ? "Seleziona un'azienda nell'Ambito in alto" : ""}
           onClick={() => document.getElementById("risks-m03-file")?.click()}
         >
           {detecting ? "Analisi Excel..." : "Importa Excel"}
@@ -698,6 +730,7 @@ function RisksTab({ companies = [], filterCompany = "", reloadCompanies }) {
           type="file"
           accept=".xlsx,.xls"
           hidden
+          disabled={!filterCompany}
           onChange={handlePickExcel}
         />
       </div>
@@ -709,7 +742,9 @@ function RisksTab({ companies = [], filterCompany = "", reloadCompanies }) {
           rows={list}
           columns={RISK_GRID_COLUMNS}
           loading={loading}
-          emptyMessage={'Nessuna valutazione. Clicca "+ Nuovo rischio" per iniziare.'}
+          emptyMessage={filterCompany
+            ? 'Nessuna valutazione. Clicca "+ Nuovo rischio" per iniziare.'
+            : "Seleziona un'azienda nell'Ambito in alto per creare o importare valutazioni."}
           theme="plain"
           initialSortCol="score"
           initialSortDir="desc"

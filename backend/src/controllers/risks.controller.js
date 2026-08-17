@@ -185,8 +185,12 @@ async function createRisk(req, res) {
         } = req.body;
 
         if (!title) return res.status(400).json({ error: 'Titolo obbligatorio' });
+        const companyId = parseInt(company_id, 10);
+        if (!companyId) {
+            return res.status(400).json({ error: 'Seleziona un\'azienda in Ambito.', code: 'COMPANY_REQUIRED' });
+        }
 
-        const pgMax = await resolveCompanyPgMax(pool, company_id);
+        const pgMax = await resolveCompanyPgMax(pool, companyId);
         const pParsed = parsePgFactor(probability, 2, pgMax);
         const gParsed = parsePgFactor(impact, 2, pgMax);
         if (!pParsed.ok) return res.status(400).json({ error: pParsed.error });
@@ -202,7 +206,7 @@ async function createRisk(req, res) {
         const safeQuadrant = safeMethod === 'swot_signed' ? normalizeSwotQuadrant(swot_quadrant) : null;
         const safeSign = safeMethod === 'swot_signed' ? normalizeImpactSign(impact_sign) : 1;
 
-        const writeDenied = await assertMutatingAllowed(req.user, { companyId: company_id });
+        const writeDenied = await assertMutatingAllowed(req.user, { companyId });
         if (writeDenied) return sendAccessDenied(res, writeDenied);
 
         const r = await pool.request()
@@ -212,7 +216,7 @@ async function createRisk(req, res) {
             .input('probability', pParsed.value).input('impact', gParsed.value)
             .input('treatment', treatment).input('treatment_desc', treatment_desc || null)
             .input('responsible', responsible || null).input('review_date', review_date || null)
-            .input('company_id', company_id || null).input('nature', safeNature)
+            .input('company_id', companyId).input('nature', safeNature)
             .input('evaluated_element', emptyToNull(evaluated_element))
             .input('context_text', emptyToNull(context_text))
             .input('interested_parties_text', emptyToNull(interested_parties_text))
@@ -254,7 +258,7 @@ async function createRisk(req, res) {
             analysis_method: safeMethod,
             swot_quadrant: safeQuadrant,
             impact_sign: safeSign,
-        }, { organization_id: orgId, company_id: company_id || null, recorded_by: userId }));
+        }, { organization_id: orgId, company_id: companyId, recorded_by: userId }));
         logger.info('Risk created', { risk_id: created.risk_id, orgId, score: created.score });
         res.status(201).json({ success: true, data: created });
     } catch (err) {
@@ -273,7 +277,7 @@ async function updateRisk(req, res) {
         const id    = parseInt(req.params.id);
         const {
             title, description, context, category, probability, impact, treatment, treatment_desc,
-            responsible, review_date, status, nature,
+            responsible, review_date, status, nature, company_id,
             evaluated_element, context_text, interested_parties_text, current_actions, further_actions,
             residual_probability, residual_impact, effectiveness_note,
             analysis_method, swot_quadrant, impact_sign,
@@ -351,27 +355,37 @@ async function updateRisk(req, res) {
             req2.input('nature', safeNature);
             patch.nature = safeNature;
         }
-        if (analysis_method !== undefined) {
-            const safeMethod = normalizeMethod(analysis_method);
+        if (company_id !== undefined && company_id !== null && company_id !== '') {
+            const cid = parseInt(company_id, 10);
+            if (!cid) return res.status(400).json({ error: 'Seleziona un\'azienda in Ambito.', code: 'COMPANY_REQUIRED' });
+            sets.push('company_id = @company_id');
+            req2.input('company_id', cid);
+            patch.company_id = cid;
+        }
+        const methodSent = analysis_method !== undefined;
+        const safeMethod = methodSent ? normalizeMethod(analysis_method) : null;
+        if (methodSent) {
             sets.push('analysis_method = @analysis_method');
             req2.input('analysis_method', safeMethod);
             patch.analysis_method = safeMethod;
-            if (safeMethod !== 'swot_signed') {
-                sets.push('swot_quadrant = NULL');
-                sets.push('impact_sign = 1');
-                patch.swot_quadrant = null;
-                patch.impact_sign = 1;
+        }
+        const forcePxg = methodSent && safeMethod !== 'swot_signed';
+        if (forcePxg) {
+            sets.push('swot_quadrant = NULL');
+            sets.push('impact_sign = 1');
+            patch.swot_quadrant = null;
+            patch.impact_sign = 1;
+        } else {
+            if (swot_quadrant !== undefined) {
+                sets.push('swot_quadrant = @swot_quadrant');
+                req2.input('swot_quadrant', normalizeSwotQuadrant(swot_quadrant));
+                patch.swot_quadrant = normalizeSwotQuadrant(swot_quadrant);
             }
-        }
-        if (swot_quadrant !== undefined) {
-            sets.push('swot_quadrant = @swot_quadrant');
-            req2.input('swot_quadrant', normalizeSwotQuadrant(swot_quadrant));
-            patch.swot_quadrant = normalizeSwotQuadrant(swot_quadrant);
-        }
-        if (impact_sign !== undefined) {
-            sets.push('impact_sign = @impact_sign');
-            req2.input('impact_sign', normalizeImpactSign(impact_sign));
-            patch.impact_sign = normalizeImpactSign(impact_sign);
+            if (impact_sign !== undefined) {
+                sets.push('impact_sign = @impact_sign');
+                req2.input('impact_sign', normalizeImpactSign(impact_sign));
+                patch.impact_sign = normalizeImpactSign(impact_sign);
+            }
         }
 
         await req2.query(`UPDATE risks SET ${sets.join(', ')} WHERE risk_id = @id AND organization_id = @orgId`);
@@ -379,7 +393,7 @@ async function updateRisk(req, res) {
         if (isSignificantReviewChange(prev, next)) {
             await insertRiskReview(pool, buildRiskReviewSnapshot(next, {
                 organization_id: orgId,
-                company_id: prev.company_id,
+                company_id: patch.company_id || prev.company_id,
                 recorded_by: req.user.user_id,
             }));
         }
@@ -473,12 +487,15 @@ async function importRisks(req, res) {
         const pool = await getPool();
         const orgId = req.user.organization_id;
         const userId = req.user.user_id;
-        const company_id = req.body.company_id || null;
+        const companyId = parseInt(req.body.company_id, 10);
+        if (!companyId) {
+            return res.status(400).json({ error: 'Seleziona un\'azienda in Ambito.', code: 'COMPANY_REQUIRED' });
+        }
         const rows = Array.isArray(req.body.rows) ? req.body.rows : [];
 
-        const writeDenied = await assertMutatingAllowed(req.user, { companyId: company_id });
+        const writeDenied = await assertMutatingAllowed(req.user, { companyId });
         if (writeDenied) return sendAccessDenied(res, writeDenied);
-        const pgMax = await resolveCompanyPgMax(pool, company_id);
+        const pgMax = await resolveCompanyPgMax(pool, companyId);
 
         let inserted = 0;
         let skipped = 0;
@@ -515,7 +532,7 @@ async function importRisks(req, res) {
                 .input('treatment', 'mitigate').input('treatment_desc', null)
                 .input('responsible', emptyToNull(row?.responsible))
                 .input('review_date', emptyToNull(row?.review_date))
-                .input('company_id', company_id)
+                .input('company_id', companyId)
                 .input('nature', row?.nature === 'opportunity' ? 'opportunity' : 'risk')
                 .input('evaluated_element', emptyToNull(row?.evaluated_element))
                 .input('context_text', emptyToNull(row?.context_text))
@@ -557,7 +574,7 @@ async function importRisks(req, res) {
                 effectiveness_note: emptyToNull(row?.effectiveness_note),
                 current_actions: emptyToNull(row?.current_actions),
                 further_actions: emptyToNull(row?.further_actions),
-            }, { organization_id: orgId, company_id, recorded_by: userId }));
+            }, { organization_id: orgId, company_id: companyId, recorded_by: userId }));
             inserted += 1;
         }
 

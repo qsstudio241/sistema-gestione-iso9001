@@ -57,6 +57,15 @@ function buildPool() {
   return { queryMock, inputMock };
 }
 
+function findSql(queryMock, re) {
+  const hit = queryMock.mock.calls.find(([sql]) => re.test(String(sql)));
+  return hit ? hit[0] : undefined;
+}
+
+function hasSql(queryMock, re) {
+  return Boolean(findSql(queryMock, re));
+}
+
 const M03_FIELDS = {
   evaluated_element: 'Processo commerciale',
   context_text: 'Mercato in calo',
@@ -74,6 +83,7 @@ describe('createRisk — riga M03 e P×G', () => {
     const req = mockReq({
       body: {
         title: 'Perdita commessa',
+        company_id: 3,
         probability: 3,
         impact: 2,
         ...M03_FIELDS,
@@ -92,7 +102,7 @@ describe('createRisk — riga M03 e P×G', () => {
     expect(payload.data.score).toBe(6);
     expect(payload.data.score_level).toBe('medio');
 
-    const insertSql = queryMock.mock.calls[0][0];
+    const insertSql = findSql(queryMock, /INSERT INTO risks/);
     expect(insertSql).toMatch(/evaluated_element/);
     expect(insertSql).toMatch(/context_text/);
     expect(insertSql).toMatch(/interested_parties_text/);
@@ -126,6 +136,7 @@ describe('createRisk — riga M03 e P×G', () => {
     const req = mockReq({
       body: {
         title: 'Perdita commessa',
+        company_id: 3,
         probability: 3,
         impact: 3,
         residual_probability: 1,
@@ -151,8 +162,9 @@ describe('createRisk — riga M03 e P×G', () => {
 
   it('rifiuta residual_impact=4 con 400, senza INSERT', async () => {
     const { queryMock } = buildPool();
+    queryMock.mockResolvedValue({ recordset: [{ risk_pg_max: 3 }] });
     const req = mockReq({
-      body: { title: 'x', probability: 2, impact: 2, residual_impact: 4 },
+      body: { title: 'x', probability: 2, impact: 2, residual_impact: 4, company_id: 3 },
     });
     const res = mockRes();
 
@@ -160,7 +172,7 @@ describe('createRisk — riga M03 e P×G', () => {
 
     expect(res.status).toHaveBeenCalledWith(400);
     expect(res.json.mock.calls[0][0].error).toMatch(/1 e 3/);
-    expect(queryMock).not.toHaveBeenCalled();
+    expect(hasSql(queryMock, /INSERT INTO risks/)).toBe(false);
   });
 
   it('accetta G=5 se l\'azienda ha scala 1-5', async () => {
@@ -181,14 +193,15 @@ describe('createRisk — riga M03 e P×G', () => {
 
   it('rifiuta G=4 (draft M03) con 400, senza INSERT', async () => {
     const { queryMock } = buildPool();
-    const req = mockReq({ body: { title: 'x', probability: 2, impact: 4 } });
+    queryMock.mockResolvedValue({ recordset: [{ risk_pg_max: 3 }] });
+    const req = mockReq({ body: { title: 'x', probability: 2, impact: 4, company_id: 3 } });
     const res = mockRes();
 
     await createRisk(req, res);
 
     expect(res.status).toHaveBeenCalledWith(400);
     expect(res.json.mock.calls[0][0].error).toMatch(/1 e 3/);
-    expect(queryMock).not.toHaveBeenCalled();
+    expect(hasSql(queryMock, /INSERT INTO risks/)).toBe(false);
   });
 
   it('persiste metodo SWOT, quadrante e segno G', async () => {
@@ -199,6 +212,7 @@ describe('createRisk — riga M03 e P×G', () => {
     const req = mockReq({
       body: {
         title: 'Minaccia mercato',
+        company_id: 3,
         probability: 2,
         impact: 3,
         analysis_method: 'swot_signed',
@@ -215,12 +229,24 @@ describe('createRisk — riga M03 e P×G', () => {
   });
 
   it('rifiuta P=5 (FMEA) con 400', async () => {
-    buildPool();
-    const req = mockReq({ body: { title: 'x', probability: 5, impact: 2 } });
+    const { queryMock } = buildPool();
+    queryMock.mockResolvedValue({ recordset: [{ risk_pg_max: 3 }] });
+    const req = mockReq({ body: { title: 'x', probability: 5, impact: 2, company_id: 3 } });
     const res = mockRes();
     await createRisk(req, res);
     expect(res.status).toHaveBeenCalledWith(400);
     expect(res.json.mock.calls[0][0].error).toMatch(/1 e 3/);
+    expect(hasSql(queryMock, /INSERT INTO risks/)).toBe(false);
+  });
+
+  it('senza company_id → 400 COMPANY_REQUIRED, senza INSERT', async () => {
+    const { queryMock } = buildPool();
+    const req = mockReq({ body: { title: 'x', probability: 2, impact: 2 } });
+    const res = mockRes();
+    await createRisk(req, res);
+    expect(res.status).toHaveBeenCalledWith(400);
+    expect(res.json.mock.calls[0][0].code).toBe('COMPANY_REQUIRED');
+    expect(hasSql(queryMock, /INSERT INTO risks/)).toBe(false);
   });
 });
 
@@ -330,6 +356,52 @@ describe('updateRisk — parziale e P×G', () => {
     expect(res.json).toHaveBeenCalledWith({ success: true });
     expect(queryMock.mock.calls.some(([sql]) => /INSERT INTO risk_reviews/.test(sql))).toBe(true);
     expect(inputMock).toHaveBeenCalledWith('impact', 2);
+  });
+
+  it('PUT form completo P×G imposta impact_sign una sola volta', async () => {
+    const { queryMock, inputMock } = buildPool();
+    queryMock
+      .mockResolvedValueOnce({
+        recordset: [{
+          risk_id: 10, company_id: 3, organization_id: 1001,
+          title: 'X', probability: 2, impact: 2, analysis_method: 'pxg', impact_sign: 1,
+        }],
+      })
+      .mockResolvedValueOnce({ recordset: [] });
+    const req = mockReq({
+      params: { id: '10' },
+      body: {
+        title: 'X',
+        probability: 2,
+        impact: 2,
+        analysis_method: 'pxg',
+        swot_quadrant: '',
+        impact_sign: 1,
+        company_id: 3,
+      },
+    });
+    const res = mockRes();
+    await updateRisk(req, res);
+    expect(res.json).toHaveBeenCalledWith({ success: true });
+    const updateSql = findSql(queryMock, /UPDATE risks SET/);
+    expect((updateSql.match(/impact_sign\s*=/g) || []).length).toBe(1);
+    expect((updateSql.match(/swot_quadrant\s*=/g) || []).length).toBe(1);
+    expect(updateSql).toMatch(/impact_sign = 1/);
+    expect(updateSql).toMatch(/swot_quadrant = NULL/);
+    expect(inputMock).toHaveBeenCalledWith('company_id', 3);
+  });
+
+  it('persiste company_id sull\'orfano', async () => {
+    const { queryMock, inputMock } = buildPool();
+    queryMock
+      .mockResolvedValueOnce({ recordset: [{ risk_id: 10, company_id: null, title: 'Orfano' }] })
+      .mockResolvedValueOnce({ recordset: [] });
+    const req = mockReq({ params: { id: '10' }, body: { company_id: 48 } });
+    const res = mockRes();
+    await updateRisk(req, res);
+    expect(res.json).toHaveBeenCalledWith({ success: true });
+    expect(findSql(queryMock, /UPDATE risks SET/)).toMatch(/company_id = @company_id/);
+    expect(inputMock).toHaveBeenCalledWith('company_id', 48);
   });
 });
 
@@ -502,6 +574,7 @@ describe('detectRisksImport / importRisks — M03', () => {
     queryMock.mockResolvedValue({ recordset: [{ risk_id: 91 }] });
     const req = mockReq({
       body: {
+        company_id: 3,
         rows: [
           {
             action: 'create', title: 'A', probability: 2, impact: 2,
@@ -522,6 +595,7 @@ describe('detectRisksImport / importRisks — M03', () => {
     queryMock.mockResolvedValue({ recordset: [{ risk_id: 88 }] });
     const req = mockReq({
       body: {
+        company_id: 3,
         rows: [
           { action: 'create', title: 'Nuovo mercato', nature: 'opportunity', probability: 1, impact: 2 },
         ],
@@ -534,5 +608,19 @@ describe('detectRisksImport / importRisks — M03', () => {
       data: { inserted: 1, skipped: 0, risk_ids: [88] },
     });
     expect(inputMock).toHaveBeenCalledWith('nature', 'opportunity');
+  });
+
+  it('senza company_id → 400 COMPANY_REQUIRED, senza INSERT', async () => {
+    const { queryMock } = buildPool();
+    const req = mockReq({
+      body: {
+        rows: [{ action: 'create', title: 'A', probability: 2, impact: 2 }],
+      },
+    });
+    const res = mockRes();
+    await importRisks(req, res);
+    expect(res.status).toHaveBeenCalledWith(400);
+    expect(res.json.mock.calls[0][0].code).toBe('COMPANY_REQUIRED');
+    expect(hasSql(queryMock, /INSERT INTO risks/)).toBe(false);
   });
 });
