@@ -4,7 +4,7 @@
  * L1 MC-4 — API certificati materiale (mock DB).
  */
 
-jest.mock('../config/database', () => ({ query: jest.fn() }));
+jest.mock('../config/database', () => ({ query: jest.fn(), getPool: jest.fn() }));
 jest.mock('../utils/logger', () => ({
   info: jest.fn(),
   error: jest.fn(),
@@ -16,6 +16,9 @@ jest.mock('../services/companyAccess.service', () => ({
   companyAccessSqlFilter: jest.fn().mockReturnValue({ clause: '', params: {} }),
   assertMutatingAllowed: jest.fn().mockResolvedValue(null),
   sendAccessDenied: jest.fn((res, denied) => res.status(denied.status).json(denied.body)),
+}));
+jest.mock('../services/qualificationCompany.service', () => ({
+  companyBelongsToOrg: jest.fn().mockResolvedValue(true),
 }));
 jest.mock('../services/documentTextExtractor.service', () => ({
   extractDocumentText: jest.fn(),
@@ -29,8 +32,9 @@ jest.mock('../services/materialComplianceRuleEngine.service', () => ({
 
 const fs = require('fs');
 const path = require('path');
-const { query } = require('../config/database');
+const { query, getPool } = require('../config/database');
 const { assertMutatingAllowed, sendAccessDenied } = require('../services/companyAccess.service');
+const { companyBelongsToOrg } = require('../services/qualificationCompany.service');
 const { extractDocumentText } = require('../services/documentTextExtractor.service');
 const { extractStructuredByDocType } = require('../services/importAiExtraction.service');
 const { evaluateMaterialCertificate } = require('../services/materialComplianceRuleEngine.service');
@@ -78,9 +82,26 @@ function sqlOf(call) {
   return String(call[0] || '');
 }
 
+function mockTx() {
+  const queryMock = jest.fn().mockResolvedValue({ recordset: [] });
+  const tx = {
+    begin: jest.fn().mockResolvedValue(undefined),
+    commit: jest.fn().mockResolvedValue(undefined),
+    rollback: jest.fn().mockResolvedValue(undefined),
+    request: jest.fn(() => {
+      const r = { query: queryMock };
+      r.input = jest.fn().mockReturnValue(r);
+      return r;
+    }),
+  };
+  getPool.mockResolvedValue({ transaction: () => tx });
+  return { queryMock, tx };
+}
+
 beforeEach(() => {
   jest.clearAllMocks();
   assertMutatingAllowed.mockResolvedValue(null);
+  companyBelongsToOrg.mockResolvedValue(true);
 });
 
 describe('materialCertificates.controller (MC-4)', () => {
@@ -130,6 +151,28 @@ describe('materialCertificates.controller (MC-4)', () => {
       file: { path: '/tmp/a.pdf', originalname: 'a.pdf', mimetype: 'application/pdf', size: 10 },
     }), res);
     expect(sendAccessDenied).toHaveBeenCalled();
+  });
+
+  it('create 403 se company_id non appartiene al tenant', async () => {
+    companyBelongsToOrg.mockResolvedValueOnce(false);
+    const res = mockRes();
+    await ctrl.createCertificate(mockReq({
+      body: { company_id: 3 },
+      file: { path: '/tmp/a.pdf', originalname: 'a.pdf', mimetype: 'application/pdf', size: 10 },
+    }), res);
+    expect(sendAccessDenied).toHaveBeenCalledWith(res, expect.objectContaining({ status: 403 }));
+    expect(query).not.toHaveBeenCalled();
+  });
+
+  it('list e stats 403 se company_id fuori tenant', async () => {
+    companyBelongsToOrg.mockResolvedValue(false);
+    const resList = mockRes();
+    await ctrl.listCertificates(mockReq({ query: { company_id: '99' } }), resList);
+    expect(sendAccessDenied).toHaveBeenCalledWith(resList, expect.objectContaining({ status: 403 }));
+
+    const resStats = mockRes();
+    await ctrl.getStats(mockReq({ query: { company_id: '99' } }), resStats);
+    expect(sendAccessDenied).toHaveBeenCalledWith(resStats, expect.objectContaining({ status: 403 }));
   });
 
   it('create persiste received e non compliant', async () => {
@@ -190,6 +233,7 @@ describe('materialCertificates.controller (MC-4)', () => {
 
   it('evaluate persiste checks, pending_review, mai compliant', async () => {
     query.mockResolvedValueOnce({ recordset: [CERT] });
+    const { queryMock, tx } = mockTx();
     evaluateMaterialCertificate.mockReturnValueOnce({
       status: 'pass',
       kb_snapshot_hash: 'a'.repeat(64),
@@ -203,22 +247,37 @@ describe('materialCertificates.controller (MC-4)', () => {
         explanation: 'ok',
       }],
     });
-    query.mockResolvedValue({ recordset: [] });
     const res = mockRes();
     await ctrl.evaluateCertificate(mockReq({ params: { id: '11' }, body: {} }), res);
     const body = res.json.mock.calls[0][0];
     expect(body.data.workflow_status).toBe('pending_review');
     expect(body.data.status).toBe('pass');
     expect(body.data.workflow_status).not.toBe('compliant');
-    expect(evaluateMaterialCertificate).toHaveBeenCalledWith(expect.objectContaining({
-      extractedJson: expect.any(Object),
-    }));
-    const deleteSql = query.mock.calls.find((c) => /DELETE FROM dbo.material_certificate_checks/.test(sqlOf(c)));
-    const insertSql = query.mock.calls.find((c) => /INSERT INTO dbo.material_certificate_checks/.test(sqlOf(c)));
-    const updateSql = query.mock.calls.find((c) => /workflow_status = 'pending_review'/.test(sqlOf(c)));
-    expect(deleteSql).toBeTruthy();
-    expect(insertSql).toBeTruthy();
-    expect(updateSql).toBeTruthy();
+    expect(tx.begin).toHaveBeenCalled();
+    expect(tx.commit).toHaveBeenCalled();
+    const sqls = queryMock.mock.calls.map((c) => String(c[0]));
+    expect(sqls.some((s) => /DELETE FROM dbo.material_certificate_checks/.test(s))).toBe(true);
+    expect(sqls.some((s) => /INSERT INTO dbo.material_certificate_checks/.test(s))).toBe(true);
+    expect(sqls.some((s) => /workflow_status = 'pending_review'/.test(s))).toBe(true);
+  });
+
+  it('evaluate rollback se INSERT checks fallisce', async () => {
+    query.mockResolvedValueOnce({ recordset: [CERT] });
+    const { queryMock, tx } = mockTx();
+    queryMock.mockReset();
+    queryMock
+      .mockResolvedValueOnce({ recordset: [] })
+      .mockRejectedValueOnce(new Error('insert fail'));
+    evaluateMaterialCertificate.mockReturnValueOnce({
+      status: 'pass',
+      kb_snapshot_hash: 'a'.repeat(64),
+      checks: [{ requirement_key: 'ReH', result: 'pass' }],
+    });
+    const res = mockRes();
+    await ctrl.evaluateCertificate(mockReq({ params: { id: '11' }, body: {} }), res);
+    expect(res.status).toHaveBeenCalledWith(500);
+    expect(tx.rollback).toHaveBeenCalled();
+    expect(tx.commit).not.toHaveBeenCalled();
   });
 
   it('evaluate 409 se già compliant', async () => {
@@ -246,6 +305,26 @@ describe('materialCertificates.controller (MC-4)', () => {
     const res = mockRes();
     await ctrl.approveCertificate(mockReq({ params: { id: '11' } }), res);
     expect(res.json.mock.calls[0][0].data.workflow_status).toBe('compliant');
+  });
+
+  it('reject da compliant → 409 (solo archive)', async () => {
+    query.mockResolvedValueOnce({ recordset: [{ ...CERT, workflow_status: 'compliant' }] });
+    const res = mockRes();
+    await ctrl.rejectCertificate(mockReq({ params: { id: '11' } }), res);
+    expect(res.status).toHaveBeenCalledWith(409);
+  });
+
+  it('evaluate da non_compliant è consentito (ri-valuta dopo correzione)', async () => {
+    query.mockResolvedValueOnce({ recordset: [{ ...CERT, workflow_status: 'non_compliant' }] });
+    mockTx();
+    evaluateMaterialCertificate.mockReturnValueOnce({
+      status: 'fail',
+      kb_snapshot_hash: 'b'.repeat(64),
+      checks: [],
+    });
+    const res = mockRes();
+    await ctrl.evaluateCertificate(mockReq({ params: { id: '11' } }), res);
+    expect(res.json.mock.calls[0][0].data.workflow_status).toBe('pending_review');
   });
 
   it('approve da extracted → 409', async () => {

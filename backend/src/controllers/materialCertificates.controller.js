@@ -7,7 +7,7 @@
 
 const fs = require('fs');
 const path = require('path');
-const { query } = require('../config/database');
+const { query, getPool } = require('../config/database');
 const logger = require('../utils/logger');
 const {
   ensureCompanyAccessLoaded,
@@ -15,6 +15,7 @@ const {
   assertMutatingAllowed,
   sendAccessDenied,
 } = require('../services/companyAccess.service');
+const { companyBelongsToOrg } = require('../services/qualificationCompany.service');
 const { extractDocumentText } = require('../services/documentTextExtractor.service');
 const { extractStructuredByDocType } = require('../services/importAiExtraction.service');
 const { evaluateMaterialCertificate } = require('../services/materialComplianceRuleEngine.service');
@@ -32,9 +33,9 @@ const GRID_STATUSES = new Set([
 ]);
 const ROLES = new Set(['base', 'filler']);
 const DOC_TYPES = new Set(['2.1', '2.2', '3.1', '3.2']);
-const EVALUABLE = new Set(['received', 'text_ready', 'extracted', 'pending_review']);
+const EVALUABLE = new Set(['received', 'text_ready', 'extracted', 'pending_review', 'non_compliant']);
 const APPROVABLE = new Set(['pending_review', 'non_compliant']);
-const REJECTABLE = new Set(['pending_review', 'compliant']);
+const REJECTABLE = new Set(['pending_review']);
 const ARCHIVABLE = new Set(['compliant', 'non_compliant']);
 const MIN_TEXT_CHARS = 80;
 
@@ -205,6 +206,24 @@ async function loadCertificate(req, id) {
   return r.recordset[0] || null;
 }
 
+async function denyIfCompanyOutOfScope(req, companyId) {
+  const accessList = await ensureCompanyAccessLoaded(req.user);
+  if (Array.isArray(accessList) && accessList.length) {
+    const ok = accessList.some((a) => Number(a.company_id) === Number(companyId));
+    if (!ok) {
+      return { status: 403, body: { error: 'Azienda non accessibile', code: 'FORBIDDEN' } };
+    }
+  }
+  const belongs = await companyBelongsToOrg(companyId, req.user.organization_id);
+  if (!belongs) {
+    return {
+      status: 403,
+      body: { error: 'Azienda non accessibile', code: 'FORBIDDEN' },
+    };
+  }
+  return null;
+}
+
 async function denyIfCannotWrite(req, res, companyId) {
   const denied = await assertMutatingAllowed(req.user, { companyId });
   if (denied) {
@@ -222,32 +241,60 @@ function jsonPayloadFromAi(aiResult) {
   return specific && typeof specific === 'object' && !Array.isArray(specific) ? specific : {};
 }
 
-async function persistChecks(organizationId, certificateId, checks) {
-  await query(
-    `DELETE FROM dbo.material_certificate_checks
-     WHERE certificate_id = @certificate_id AND organization_id = @organization_id`,
-    { certificate_id: certificateId, organization_id: organizationId }
-  );
-  for (const check of checks || []) {
-    await query(
-      `INSERT INTO dbo.material_certificate_checks
-        (organization_id, certificate_id, requirement_key, source_level, source_ref,
-         required_value, actual_value, result, explanation)
-       VALUES
-        (@organization_id, @certificate_id, @requirement_key, @source_level, @source_ref,
-         @required_value, @actual_value, @result, @explanation)`,
-      {
-        organization_id: organizationId,
-        certificate_id: certificateId,
-        requirement_key: clip(check.requirement_key, 80),
-        source_level: clip(check.source_level, 32),
-        source_ref: clip(check.source_ref, 300),
-        required_value: clip(check.required_value, 200),
-        actual_value: clip(check.actual_value, 200),
-        result: check.result,
-        explanation: clip(check.explanation, 500),
-      }
-    );
+async function persistEvaluateResult(organizationId, certificateId, result) {
+  const pool = await getPool();
+  const tx = pool.transaction();
+  await tx.begin();
+  try {
+    await tx.request()
+      .input('certificate_id', certificateId)
+      .input('organization_id', organizationId)
+      .query(`
+        DELETE FROM dbo.material_certificate_checks
+        WHERE certificate_id = @certificate_id AND organization_id = @organization_id
+      `);
+    for (const check of result.checks || []) {
+      await tx.request()
+        .input('organization_id', organizationId)
+        .input('certificate_id', certificateId)
+        .input('requirement_key', clip(check.requirement_key, 80))
+        .input('source_level', clip(check.source_level, 32))
+        .input('source_ref', clip(check.source_ref, 300))
+        .input('required_value', clip(check.required_value, 200))
+        .input('actual_value', clip(check.actual_value, 200))
+        .input('result', check.result)
+        .input('explanation', clip(check.explanation, 500))
+        .query(`
+          INSERT INTO dbo.material_certificate_checks
+            (organization_id, certificate_id, requirement_key, source_level, source_ref,
+             required_value, actual_value, result, explanation)
+          VALUES
+            (@organization_id, @certificate_id, @requirement_key, @source_level, @source_ref,
+             @required_value, @actual_value, @result, @explanation)
+        `);
+    }
+    await tx.request()
+      .input('id', certificateId)
+      .input('organization_id', organizationId)
+      .input('evaluate_result_json', JSON.stringify(result))
+      .input('kb_snapshot_hash', result.kb_snapshot_hash || null)
+      .input('kb_snapshot_json', JSON.stringify({
+        hash: result.kb_snapshot_hash,
+        evaluated_at: new Date().toISOString(),
+      }))
+      .query(`
+        UPDATE dbo.material_certificates
+        SET evaluate_result_json = @evaluate_result_json,
+            kb_snapshot_hash = @kb_snapshot_hash,
+            kb_snapshot_json = @kb_snapshot_json,
+            workflow_status = 'pending_review',
+            updated_at = SYSUTCDATETIME()
+        WHERE id = @id AND organization_id = @organization_id
+      `);
+    await tx.commit();
+  } catch (err) {
+    try { await tx.rollback(); } catch (_) { /* ignore */ }
+    throw err;
   }
 }
 
@@ -260,13 +307,8 @@ async function listCertificates(req, res) {
       return res.status(400).json({ error: 'company_id non valido', code: 'INVALID_COMPANY_ID' });
     }
     if (companyId) {
-      const accessList = req.user.company_access;
-      if (Array.isArray(accessList) && accessList.length) {
-        const ok = accessList.some((a) => a.company_id === companyId);
-        if (!ok) {
-          return res.status(403).json({ error: 'Azienda non accessibile', code: 'FORBIDDEN' });
-        }
-      }
+      const denied = await denyIfCompanyOutOfScope(req, companyId);
+      if (denied) return sendAccessDenied(res, denied);
     }
 
     const where = ['c.organization_id = @organization_id'];
@@ -332,6 +374,13 @@ async function getStats(req, res) {
     const orgId = req.user.organization_id;
     const companyFilter = await scopedCompanyFilter(req);
     const companyId = parseId(req.query.company_id);
+    if (req.query.company_id && !companyId) {
+      return res.status(400).json({ error: 'company_id non valido', code: 'INVALID_COMPANY_ID' });
+    }
+    if (companyId) {
+      const denied = await denyIfCompanyOutOfScope(req, companyId);
+      if (denied) return sendAccessDenied(res, denied);
+    }
     const where = ['c.organization_id = @organization_id'];
     const params = { organization_id: orgId, ...companyFilter.params };
     if (companyFilter.clause) where.push(companyFilter.clause);
@@ -394,6 +443,8 @@ async function createCertificate(req, res) {
     if (!companyId) {
       return res.status(400).json({ error: 'company_id obbligatorio', code: 'COMPANY_REQUIRED' });
     }
+    const scopeDenied = await denyIfCompanyOutOfScope(req, companyId);
+    if (scopeDenied) return sendAccessDenied(res, scopeDenied);
     if (await denyIfCannotWrite(req, res, companyId)) return;
     if (!req.file) {
       return res.status(400).json({ error: 'File PDF mancante', code: 'FILE_REQUIRED' });
@@ -727,26 +778,7 @@ async function evaluateCertificate(req, res) {
       scope,
     });
 
-    await persistChecks(req.user.organization_id, id, result.checks);
-    await query(
-      `UPDATE dbo.material_certificates
-       SET evaluate_result_json = @evaluate_result_json,
-           kb_snapshot_hash = @kb_snapshot_hash,
-           kb_snapshot_json = @kb_snapshot_json,
-           workflow_status = 'pending_review',
-           updated_at = SYSUTCDATETIME()
-       WHERE id = @id AND organization_id = @organization_id`,
-      {
-        id,
-        organization_id: req.user.organization_id,
-        evaluate_result_json: JSON.stringify(result),
-        kb_snapshot_hash: result.kb_snapshot_hash || null,
-        kb_snapshot_json: JSON.stringify({
-          hash: result.kb_snapshot_hash,
-          evaluated_at: new Date().toISOString(),
-        }),
-      }
-    );
+    await persistEvaluateResult(req.user.organization_id, id, result);
 
     res.json({
       success: true,
