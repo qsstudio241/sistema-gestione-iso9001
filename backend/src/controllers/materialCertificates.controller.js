@@ -35,6 +35,7 @@ const ROLES = new Set(['base', 'filler']);
 const DOC_TYPES = new Set(['2.1', '2.2', '3.1', '3.2']);
 const EXTRACTABLE = new Set(['received', 'text_ready', 'extracted', 'ocr_running']);
 const EVALUABLE = new Set(['received', 'text_ready', 'extracted', 'pending_review', 'non_compliant']);
+const PATCHABLE = new Set(['received', 'text_ready', 'extracted', 'ocr_running', 'pending_review', 'non_compliant']);
 const APPROVABLE = new Set(['pending_review', 'non_compliant']);
 const REJECTABLE = new Set(['pending_review']);
 const ARCHIVABLE = new Set(['compliant', 'non_compliant']);
@@ -109,6 +110,18 @@ function parseJsonField(raw) {
 function parseId(raw) {
   const n = parseInt(raw, 10);
   return Number.isFinite(n) && n > 0 ? n : null;
+}
+
+function sqlInStatus(statuses) {
+  return [...statuses].map((s) => `'${String(s).replace(/'/g, '')}'`).join(', ');
+}
+
+function illegalTransition(workflowStatus) {
+  const err = new Error('Transizione di stato non consentita');
+  err.code = 'ILLEGAL_TRANSITION';
+  err.httpStatus = 409;
+  err.workflowStatus = workflowStatus || null;
+  return err;
 }
 
 function parseRole(raw, fallback = 'base') {
@@ -274,7 +287,7 @@ async function persistEvaluateResult(organizationId, certificateId, result) {
              @required_value, @actual_value, @result, @explanation)
         `);
     }
-    await tx.request()
+    const upd = await tx.request()
       .input('id', certificateId)
       .input('organization_id', organizationId)
       .input('evaluate_result_json', JSON.stringify(result))
@@ -293,8 +306,13 @@ async function persistEvaluateResult(organizationId, certificateId, result) {
             reviewed_at = NULL,
             review_notes = NULL,
             updated_at = SYSUTCDATETIME()
+        OUTPUT INSERTED.id
         WHERE id = @id AND organization_id = @organization_id
+          AND workflow_status IN (${sqlInStatus(EVALUABLE)})
       `);
+    if (!upd.recordset || !upd.recordset.length) {
+      throw illegalTransition();
+    }
     await tx.commit();
   } catch (err) {
     try { await tx.rollback(); } catch (_) { /* ignore */ }
@@ -541,6 +559,13 @@ async function patchCertificate(req, res) {
     const row = await loadCertificate(req, id);
     if (!row) return res.status(404).json({ error: 'Certificato non trovato' });
     if (await denyIfCannotWrite(req, res, row.company_id)) return;
+    if (!PATCHABLE.has(row.workflow_status)) {
+      return res.status(409).json({
+        error: 'Modifica non consentita in questo stato',
+        code: 'ILLEGAL_TRANSITION',
+        workflow_status: row.workflow_status,
+      });
+    }
 
     const cols = pickPatchColumns(req.body || {});
     if (cols.material_role != null) {
@@ -639,8 +664,10 @@ async function extractCertificate(req, res) {
       await query(
         `UPDATE dbo.material_certificates
          SET extracted_text = @extracted_text, text_extract_reason = @text_extract_reason,
+             extracted_json = NULL,
              workflow_status = 'text_ready', updated_at = SYSUTCDATETIME()
-         WHERE id = @id AND organization_id = @organization_id`,
+         WHERE id = @id AND organization_id = @organization_id
+           AND workflow_status IN (${sqlInStatus(EXTRACTABLE)})`,
         {
           id,
           organization_id: req.user.organization_id,
@@ -671,8 +698,10 @@ async function extractCertificate(req, res) {
       await query(
         `UPDATE dbo.material_certificates
          SET extracted_text = @extracted_text, text_extract_reason = @text_extract_reason,
+             extracted_json = NULL,
              workflow_status = 'text_ready', updated_at = SYSUTCDATETIME()
-         WHERE id = @id AND organization_id = @organization_id`,
+         WHERE id = @id AND organization_id = @organization_id
+           AND workflow_status IN (${sqlInStatus(EXTRACTABLE)})`,
         {
           id,
           organization_id: req.user.organization_id,
@@ -718,7 +747,8 @@ async function extractCertificate(req, res) {
            inspection_document_type = COALESCE(@inspection_document_type, inspection_document_type),
            material_role = @material_role,
            workflow_status = 'extracted', updated_at = SYSUTCDATETIME()
-       WHERE id = @id AND organization_id = @organization_id`,
+       WHERE id = @id AND organization_id = @organization_id
+         AND workflow_status IN (${sqlInStatus(EXTRACTABLE)})`,
       {
         id,
         organization_id: req.user.organization_id,
@@ -802,6 +832,13 @@ async function evaluateCertificate(req, res) {
       },
     });
   } catch (err) {
+    if (err.code === 'ILLEGAL_TRANSITION') {
+      return res.status(409).json({
+        error: 'Valutazione non consentita in questo stato',
+        code: 'ILLEGAL_TRANSITION',
+        workflow_status: err.workflowStatus,
+      });
+    }
     logger.error('evaluateCertificate', err);
     res.status(500).json({ error: 'Errore durante la valutazione del certificato' });
   }
@@ -833,7 +870,8 @@ async function transitionHitl(req, res, { nextStatus, allowed, notesRequired }) 
          reviewed_at = CASE WHEN @stamp = 1 THEN SYSUTCDATETIME() ELSE reviewed_at END,
          updated_at = SYSUTCDATETIME()
      OUTPUT INSERTED.id, INSERTED.workflow_status, INSERTED.reviewed_at
-     WHERE id = @id AND organization_id = @organization_id`,
+     WHERE id = @id AND organization_id = @organization_id
+       AND workflow_status IN (${sqlInStatus(allowed)})`,
     {
       id,
       organization_id: req.user.organization_id,
@@ -843,6 +881,12 @@ async function transitionHitl(req, res, { nextStatus, allowed, notesRequired }) 
       stamp: stampReview ? 1 : 0,
     }
   );
+  if (!updated.recordset || !updated.recordset.length) {
+    return res.status(409).json({
+      error: 'Transizione di stato non consentita',
+      code: 'ILLEGAL_TRANSITION',
+    });
+  }
   return res.json({ success: true, data: updated.recordset[0] });
 }
 

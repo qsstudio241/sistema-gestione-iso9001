@@ -83,7 +83,7 @@ function sqlOf(call) {
 }
 
 function mockTx() {
-  const queryMock = jest.fn().mockResolvedValue({ recordset: [] });
+  const queryMock = jest.fn().mockResolvedValue({ recordset: [{ id: 11 }] });
   const tx = {
     begin: jest.fn().mockResolvedValue(undefined),
     commit: jest.fn().mockResolvedValue(undefined),
@@ -202,6 +202,9 @@ describe('materialCertificates.controller (MC-4)', () => {
     expect(body.data.text_extract_reason).toBe('ocr_skipped');
     expect(body.data.workflow_status).not.toBe('compliant');
     expect(extractStructuredByDocType).not.toHaveBeenCalled();
+    const readySql = query.mock.calls.find((c) => /workflow_status = 'text_ready'/.test(sqlOf(c)));
+    expect(readySql).toBeTruthy();
+    expect(sqlOf(readySql)).toMatch(/extracted_json = NULL/);
   });
 
   it('extract con testo persiste extracted_json e stato extracted', async () => {
@@ -295,6 +298,37 @@ describe('materialCertificates.controller (MC-4)', () => {
     await ctrl.evaluateCertificate(mockReq({ params: { id: '11' } }), res);
     expect(res.status).toHaveBeenCalledWith(409);
     expect(evaluateMaterialCertificate).not.toHaveBeenCalled();
+  });
+
+  it('PATCH da compliant → 409', async () => {
+    query.mockResolvedValueOnce({ recordset: [{ ...CERT, workflow_status: 'compliant' }] });
+    const res = mockRes();
+    await ctrl.patchCertificate(mockReq({
+      params: { id: '11' },
+      body: { designation: 'S355J2' },
+    }), res);
+    expect(res.status).toHaveBeenCalledWith(409);
+  });
+
+  it('evaluate 409 se lo stato non è più valutabile in transazione', async () => {
+    query.mockResolvedValueOnce({ recordset: [CERT] });
+    const { queryMock, tx } = mockTx();
+    queryMock.mockImplementation((sql) => {
+      if (/UPDATE dbo.material_certificates/.test(String(sql))) {
+        return Promise.resolve({ recordset: [] });
+      }
+      return Promise.resolve({ recordset: [{ id: 11 }] });
+    });
+    evaluateMaterialCertificate.mockReturnValueOnce({
+      status: 'pass',
+      kb_snapshot_hash: 'a'.repeat(64),
+      checks: [],
+    });
+    const res = mockRes();
+    await ctrl.evaluateCertificate(mockReq({ params: { id: '11' }, body: {} }), res);
+    expect(res.status).toHaveBeenCalledWith(409);
+    expect(tx.rollback).toHaveBeenCalled();
+    expect(tx.commit).not.toHaveBeenCalled();
   });
 
   it('PATCH rifiuta workflow_status nel body', async () => {
