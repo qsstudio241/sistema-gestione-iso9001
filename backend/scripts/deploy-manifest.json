@@ -131,7 +131,8 @@
                                      "src/services/wpsGenerator.service.js",
                                      "src/services/normBroker.service.js",
                                      "src/services/gapAnalysis.service.js",
-                                     "src/services/materialKbLoader.service.js"
+                                     "src/services/materialKbLoader.service.js",
+                                     "src/services/materialComplianceRuleEngine.service.js"
                                  ]
                    },
                    {

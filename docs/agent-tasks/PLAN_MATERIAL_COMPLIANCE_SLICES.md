@@ -154,12 +154,12 @@ Unit test loader + parse limiti.
 
 ### DoD
 
-- [ ] Casi L1: conforme / non conforme / skip campo mancante
-- [ ] Più restrittivo vince (esempio ADR-021)
+- [x] Casi L1: conforme / non conforme / skip campo mancante
+- [x] Più restrittivo vince (esempio ADR-021)
 
 ### Test L1
 
-Jest/Vitest backend su fixture JSON.
+Jest backend su fixture JSON (`materialComplianceRuleEngine.service.test.js`). Persistenza `evaluate_result_json` / righe checks = **MC-4**.
 
 ---
 

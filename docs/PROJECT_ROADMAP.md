@@ -8,7 +8,7 @@
 
 > **Risposta standard a «stato di avanzamento del progetto e priorità da affrontare»**: sintetizzare da questa sezione (moduli maturi + sessione più recente + tabella priorità sotto), **non** dal banner storico più sotto (superato, tenuto solo per traccia) né dall'archivio marzo 2026 [`docs/archive/PROJECT_CONTEXT_STATO_FUNZIONALITA_2026-03.md`](archive/PROJECT_CONTEXT_STATO_FUNZIONALITA_2026-03.md). **Aggiornare questa sezione a fine sessione** se emergono nuove priorità o se una priorità elencata viene chiusa (stesso principio delle "Lezioni apprese" in [GUIDA_CONSOLIDATA.md](GUIDA_CONSOLIDATA.md) — sintesi qui, dettaglio linkato).
 
-**Ultimo aggiornamento di questa sezione**: 17/08/2026 (ROO-17 lista riesami ambito; EN 10219-1 + EN 10210-1).
+**Ultimo aggiornamento di questa sezione**: 17/08/2026 (ROO-17 lista riesami ambito verificata su TEST; MC-3 Rule Engine su main).
 
 ### Moduli maturi (in produzione, uso quotidiano dai clienti Camellini/Mason)
 
@@ -16,11 +16,15 @@ Audit multi-standard (9001/14001/45001) · Non Conformità (workflow ISO 10.2 co
 
 ### Sessione più recente (17/08/2026)
 
-**EN 10219-1:2006 consegnata (17/08)** — NORMA_00028 + estratto [`EN-10219-1-sezioni-cave.md`](reference/EN-10219-1-sezioni-cave.md). Hollow **a freddo** seedabile se il certificato cita 10219. Lacuna tubi chiusa (resta skip senza citazione 10210 vs 10219). Prossima MC: **MC-3** Rule Engine.
+**MC-3 Rule Engine (17/08)** — `materialComplianceRuleEngine.service.js`: JSON certificato + snapshot KB → `status` + `checks[]`. Zero LLM; non scrive `compliant`. Prossima: **MC-4** API. Mergiata [PR #454](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/454).
+
+**ROO-17 lista riesami ambito (17/08)** — tab Analisi: toggle Stato corrente / Riesami ambito; `GET /risks/reviews?company_id&from&to`. Verificato dal committente su TEST. PR [#455](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/455). Prossima **ROO-18** solo HITL.
+
+**EN 10219-1:2006 consegnata (17/08)** — NORMA_00028 + estratto [`EN-10219-1-sezioni-cave.md`](reference/EN-10219-1-sezioni-cave.md). Hollow **a freddo** seedabile se il certificato cita 10219.
 
 **EN 10210-1:2006 consegnata (17/08)** — NORMA_00027 + estratto [`EN-10210-1-sezioni-cave.md`](reference/EN-10210-1-sezioni-cave.md). Hollow **a caldo** seedabile se il certificato cita 10210.
 
-**MC-2 mergiata (17/08)** — [PR #451](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/451): seed EN 10025-2 + loader snapshot/hash. Prossima: **MC-3** Rule Engine.
+**MC-2 mergiata (17/08)** — [PR #451](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/451): seed EN 10025-2 + loader snapshot/hash.
 
 **MC-1 mergiata (17/08)** — [PR #450](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/450): tabelle `material_certificates` + `material_certificate_checks` (mig. **149**) su TEST e PROD.
 
@@ -73,8 +77,8 @@ Sessione prodotto precedente (10/08/2026): fix filtri dashboard duplicati (Quali
 | 1 | **Modulo Notifiche/Alert — destinatario allerte qualifiche non è una scelta esplicita in anagrafica** | Oggi risolto da un algoritmo a cascata, non da una scelta visibile in UI | `qualificationAlert.service.js` (`resolveWeldingCoordinatorRecipients`) |
 | 2 | **Shell dialog di revisione ingest — markup/CSS duplicato** (non urgente, basso rischio) | `IngestReviewDialog.jsx` vs dialog interno `ReprocessQueueBanner.jsx`: guscio overlay duplicato (~60-80 righe); pattern sistemico su molti altri modal nel progetto | Vedi backlog sotto per dettaglio |
 | 3 | **Pagina Impostazioni → Organizzazione (P.IVA + logo tenant)** | PR #10 aperta da aprile 2026, 180 file in conflitto — richiede ricostruzione, non merge | Vedi riga dedicata nel backlog sotto |
-| 4 | **Material Compliance AI (certificati EN 10204, base e apporto)** | MC-0/MC-1/MC-2 mergiate. EN 10210-1 e EN 10219-1 presenti (hollow se citata la norma giusta). Poi MC-3 Rule Engine. Soglie apporto: Markdown mancante → skip | [DATA_MODEL](specs/MATERIAL_COMPLIANCE_DATA_MODEL.md) · [MODULO](specs/MODULO_MATERIAL_COMPLIANCE_AI.md) · [10210](reference/EN-10210-1-sezioni-cave.md) · [10219](reference/EN-10219-1-sezioni-cave.md) |
-| 5 | **Rischi — ingest / data riesame (ROO-18, HITL)** | Lista riesami ambito c’è; data riesame esplicita e ingest→review solo dopo conferma | [PLAN §7](agent-tasks/PLAN_RISCHI_OPPORTUNITA_OBIETTIVI_SLICES.md) |
+| 4 | **Material Compliance AI (certificati EN 10204, base e apporto)** | MC-0/MC-1/MC-2/MC-3 mergiate. Hollow 10210/10219 se citata. Prossima **MC-4** API. Soglie apporto: Markdown mancante → skip | [DATA_MODEL](specs/MATERIAL_COMPLIANCE_DATA_MODEL.md) · motore `materialComplianceRuleEngine.service.js` |
+| 5 | **Rischi — ingest / data riesame (ROO-18, HITL)** | Lista riesami ambito c’è (ROO-17, verificata su TEST); data riesame esplicita e ingest→review solo dopo conferma | [PLAN §7](agent-tasks/PLAN_RISCHI_OPPORTUNITA_OBIETTIVI_SLICES.md) |
 | 6 | **SAL AI evidenze — OCR + documento mancante (HITL)** | Suggeritore 5-A/5-B legge solo PDF/DOCX testo; PDF scan/immagini saltati; se manca evidenza → solo messaggio low, nessuna ricerca tipo/upload guidato | [PLAN](agent-tasks/PLAN_SAL_AI_EVIDENCE_SLICES.md) · brief [S1a](agent-tasks/DEPUTYTASK.md) |
 | 7 | **ISO 3834 — completezza per processi (RBAC + ponti + report)** | ISO-1* + ISO-2 + ISO-3 mergiate e ISO-3 deployata. Prossima: ISO-4 Word RDP Mason (serve il file) | [PLAN](agent-tasks/PLAN_3834_SLICES.md) · brief [ISO-3 CHIUSO](agent-tasks/DEPUTYTASK1.md) |
 | 8 | **Second Brain — Assistente di Ambito (SB-1 fatti, zero LLM)** | Studio + clienti paganti: fatti dell'Ambito in app, non AIOS Claude. Chat dopo i numeri veri | [PLAN](agent-tasks/PLAN_SECOND_BRAIN_SLICES.md) · brief [SB-1](agent-tasks/DEPUTYTASK2.md) |
