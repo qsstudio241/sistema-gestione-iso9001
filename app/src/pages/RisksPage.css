@@ -16,6 +16,11 @@
   gap: 2px;
   min-width: 0;
 }
+.risks-deleted-hint {
+  font-size: 0.7rem;
+  color: #718096;
+  font-weight: 600;
+}
 .risks-grid-num { text-align: center; font-variant-numeric: tabular-nums; }
 .risks-grid-actions { display: flex; gap: 4px; align-items: center; }
 .risks-page .sgq-datagrid-table { min-width: 1400px; }

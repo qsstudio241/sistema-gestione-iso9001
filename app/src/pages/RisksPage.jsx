@@ -886,6 +886,9 @@ function RisksTab({ companies = [], filterCompany = "", reloadCompanies }) {
                       {row.nature === "opportunity" ? "Opportunit\u00e0" : "Rischio"}
                     </span>
                     <strong className="risks-grid-cell-clip" title={row.title}>{row.title}</strong>
+                    {(row.risk_deleted === true || row.risk_deleted === 1) && (
+                      <span className="risks-deleted-hint">eliminata</span>
+                    )}
                   </div>
                 );
               case "context_text":

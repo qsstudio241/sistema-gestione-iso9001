@@ -522,6 +522,8 @@ describe('listRiskReviewsScope — ROO-17', () => {
     const sql = findSql(queryMock, /FROM risk_reviews rv/);
     expect(sql).toMatch(/rv\.company_id = @companyId/);
     expect(sql).toMatch(/CAST\(rv\.recorded_at AS date\)/);
+    expect(sql).toMatch(/LEFT JOIN risks r/);
+    expect(sql).not.toMatch(/r\.is_deleted = 0/);
     expect(inputMock).toHaveBeenCalledWith('companyId', 48);
     expect(inputMock).toHaveBeenCalledWith('fromDay', '2026-01-01');
     expect(inputMock).toHaveBeenCalledWith('toDay', '2026-06-30');

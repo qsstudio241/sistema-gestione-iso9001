@@ -503,9 +503,10 @@ async function listRiskReviewsScope(req, res) {
                    rv.nature, rv.probability, rv.impact, rv.impact_sign, rv.analysis_method, rv.swot_quadrant,
                    rv.residual_probability, rv.residual_impact, rv.effectiveness_note,
                    rv.current_actions, rv.further_actions, rv.recorded_at, rv.recorded_by,
-                   u.full_name AS recorded_by_name
+                   u.full_name AS recorded_by_name,
+                   CAST(CASE WHEN r.risk_id IS NULL OR r.is_deleted = 1 THEN 1 ELSE 0 END AS bit) AS risk_deleted
             FROM risk_reviews rv
-            INNER JOIN risks r ON r.risk_id = rv.risk_id AND r.organization_id = @orgId AND r.is_deleted = 0
+            LEFT JOIN risks r ON r.risk_id = rv.risk_id AND r.organization_id = @orgId
             LEFT JOIN users u ON u.user_id = rv.recorded_by
             WHERE rv.organization_id = @orgId
               AND rv.company_id = @companyId
