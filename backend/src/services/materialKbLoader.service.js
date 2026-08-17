@@ -236,17 +236,58 @@ function parseCoverage(md) {
 
 function parseDesignation(raw) {
   const s = String(raw || '').toUpperCase().replace(/\s+/g, '');
-  const m = s.match(/S(\d{3})(JR|J0|J2|K2|JO)?/);
+  let m = s.match(/S(\d{3})(NL|N)H(?![A-Z0-9])/);
+  if (m) {
+    const family = `S${m[1]}`;
+    const quality = m[2];
+    return { family, quality, grade: `${family}${quality}H`, hollow: true };
+  }
+  m = s.match(/S(\d{3})(JR|J0|J2|K2|JO)H(?![A-Z0-9])/);
+  if (m) {
+    const family = `S${m[1]}`;
+    const quality = m[2] === 'JO' ? 'J0' : m[2];
+    return { family, quality, grade: `${family}${quality}H`, hollow: true };
+  }
+  m = s.match(/S(\d{3})(JR|J0|J2|K2|JO)?/);
   if (!m) return null;
   const family = `S${m[1]}`;
   const quality = m[2] === 'JO' ? 'J0' : (m[2] || '');
   const grade = quality ? `${family}${quality}` : family;
-  return { family, quality, grade };
+  return { family, quality, grade, hollow: false };
+}
+
+function parseMaterialStandard(raw) {
+  const s = String(raw || '').toUpperCase().replace(/\s+/g, '');
+  if (/10219/.test(s)) return 'en10219';
+  if (/10210/.test(s)) return 'en10210';
+  if (/10025/.test(s)) return 'en10025';
+  return null;
 }
 
 function findTable(tables, re) {
   const key = Object.keys(tables).find((k) => re.test(k));
   return key ? tables[key] : null;
+}
+
+function loadEn10210(md) {
+  const tables = tablesAfterHeadings(md);
+  const chemA = parseChemistryTable(findTable(tables, /Tabella A\.1/i));
+  const chemB = parseChemistryTable(findTable(tables, /Tabella B\.1/i));
+  const cevA = parseGradeKeyedNumericTable(findTable(tables, /Tabella A\.2/i), { skipCols: 1 });
+  const cevB = parseGradeKeyedNumericTable(findTable(tables, /Tabella B\.2/i), { skipCols: 1 });
+  const rehA = parseGradeKeyedNumericTable(findTable(tables, /Tabella A\.3 — ReH/i), { skipCols: 1 });
+  const rehB = parseGradeKeyedNumericTable(findTable(tables, /Tabella B\.3 — ReH/i), { skipCols: 1 });
+  const rmA = parseGradeKeyedNumericTable(findTable(tables, /Tabella A\.3b/i), { skipCols: 1, asRange: true });
+  const rmB = parseGradeKeyedNumericTable(findTable(tables, /Tabella B\.3b/i), { skipCols: 1, asRange: true });
+  const kvA = parseKvTable(findTable(tables, /Tabella A\.8/i));
+  const kvB = parseKvTable(findTable(tables, /Tabella B\.8/i));
+  return {
+    heatChemistry: { ...chemA, ...chemB },
+    cev: { ...cevA.standard, ...cevB.standard },
+    reh: { ...rehA.standard, ...rehB.standard },
+    rm: { ...rmA.standard, ...rmB.standard },
+    kv: { ...kvA, ...kvB },
+  };
 }
 
 function loadEn10025(md) {
@@ -289,6 +330,7 @@ function loadMaterialKbSnapshot(opts = {}) {
   const coverage = parseCoverage(byPath['COVERAGE.md'] || '');
   const dictionary = parseDictionary(byPath['dictionary/fields.md'] || '');
   const en10025 = loadEn10025(byPath['standards/en-10025-2.md'] || '');
+  const en10210 = loadEn10210(byPath['standards/en-10210-1.md'] || '');
 
   return {
     kbRoot,
@@ -298,8 +340,10 @@ function loadMaterialKbSnapshot(opts = {}) {
     dictionary,
     inspectionDocumentTypes: ['2.1', '2.2', '3.1', '3.2'],
     en10025_2: en10025,
+    en10210_1: en10210,
     skip: {
-      tubes: 'EN 10210-1 / EN 10219-1 Markdown assente',
+      tubes: 'EN 10219-1 Markdown assente (cold formed); EN 10210-1 sì se citata',
+      tubeStandardAmbiguous: 'citare EN 10210-1 (hot finished) o EN 10219-1 (cold formed)',
       fillerProduct: 'ISO 2560 / 17632 / 14174 Markdown assente',
       iso14341LotChemistry: 'ISO 14341 tabelle 3A/3B non seedate (classificazione sì)',
     },
@@ -318,11 +362,14 @@ function lookupEn10025Limits(snapshot, query = {}) {
   }
   const form = query.productForm || '';
   if (TUBE_FORMS.has(form)) {
-    return { skip: true, source: 'en10210', reason: snapshot.skip.tubes };
+    return lookupEn10210Limits(snapshot, query);
   }
   const parsed = parseDesignation(query.designation);
   if (!parsed) {
     return { skip: true, source: 'en10025', reason: 'designazione non riconosciuta (seed Sxxx)' };
+  }
+  if (parsed.hollow) {
+    return { skip: true, source: 'en10025', reason: 'designazione hollow (*H): usare EN 10210-1 / 10219-1' };
   }
   const seededFamilies = new Set(Object.keys(snapshot.en10025_2.reh || {}));
   if (!seededFamilies.has(parsed.family)) {
@@ -393,9 +440,95 @@ function lookupEn10025Limits(snapshot, query = {}) {
   };
 }
 
+/**
+ * Lookup limiti EN 10210-1 (hollow a caldo). Non valuta pass/fail (MC-3).
+ * Skip se manca la citazione 10210, se è 10219, o se il grado non è seedato.
+ */
+function lookupEn10210Limits(snapshot, query = {}) {
+  const role = query.materialRole || 'base';
+  if (role === 'filler') {
+    return { skip: true, source: 'filler_product', reason: snapshot.skip.fillerProduct };
+  }
+  const std = parseMaterialStandard(query.materialStandard);
+  if (std === 'en10219') {
+    return { skip: true, source: 'en10219', reason: snapshot.skip.tubes };
+  }
+  if (std !== 'en10210') {
+    return {
+      skip: true,
+      source: 'en10210',
+      reason: snapshot.skip.tubeStandardAmbiguous,
+    };
+  }
+  const parsed = parseDesignation(query.designation);
+  if (!parsed || !parsed.hollow) {
+    return { skip: true, source: 'en10210', reason: 'designazione hollow non riconosciuta (seed *H)' };
+  }
+  const tables = snapshot.en10210_1 || {};
+  if (!tables.reh || !tables.reh[parsed.grade]) {
+    return {
+      skip: true,
+      source: 'en10210',
+      reason: `grado ${parsed.grade} non seedato in EN 10210-1`,
+      designation: parsed,
+    };
+  }
+  const t = query.thicknessMm;
+  if (!Number.isFinite(t)) {
+    return {
+      skip: true,
+      source: 'en10210',
+      reason: 'spessore assente',
+      designation: parsed,
+    };
+  }
+  const reh = pickBandValue(tables.reh[parsed.grade] || [], t);
+  const rm = pickBandValue(tables.rm[parsed.grade] || [], t);
+  const cev = pickBandValue(tables.cev[parsed.grade] || [], t);
+  const chem = tables.heatChemistry[parsed.grade];
+  let cMax = null;
+  let cSkip = { skip: true, reason: 'chimica heat assente per questo grado' };
+  if (chem) {
+    cSkip = pickBandValue(chem.C.map((c) => ({ band: c.band, value: c.max })), t);
+    if (!cSkip.skip) cMax = cSkip.value;
+  }
+  const kv = tables.kv[parsed.grade];
+  let kvMin = null;
+  let kvSkip = { skip: true, reason: 'KV assente per questo grado' };
+  if (kv) {
+    kvSkip = pickBandValue(kv.bands.map((b) => ({ band: b.band, value: b.minJ })), t);
+    if (!kvSkip.skip) kvMin = { tempC: kv.tempC, minJ: kvSkip.value };
+  }
+  const skippedLookups = [reh, rm, cev, cSkip, kvSkip].filter((x) => x.skip);
+  const reasons = skippedLookups.map((x) => x.reason);
+  const noUsableLimit = reh.skip && rm.skip && cev.skip && cMax == null && kvMin == null;
+  if (noUsableLimit) {
+    return {
+      skip: true,
+      source: 'en10210',
+      reason: reasons[0] || 'nessun limite per questa combinazione',
+      designation: parsed,
+      reasons,
+    };
+  }
+  return {
+    skip: false,
+    source: 'en10210-1',
+    designation: parsed,
+    rehMin: reh.skip ? null : reh.value,
+    rm: rm.skip ? null : rm.value,
+    cevMax: cev.skip ? null : cev.value,
+    cHeatMax: cMax,
+    kv: kvMin,
+    reasons,
+  };
+}
+
 module.exports = {
   defaultKbRoot,
   loadMaterialKbSnapshot,
   lookupEn10025Limits,
+  lookupEn10210Limits,
   parseDesignation,
+  parseMaterialStandard,
 };

@@ -16,15 +16,15 @@ covered:
   - ISO 404
   - ISO 6929
   - EN 10025-2
+  - EN 10210-1
   - ISO/TR 15608
   - ISO 14341
 missing:
-  - EN 10210-1
   - EN 10219-1
   - ISO 2560
   - ISO 17632
   - ISO 14174
-start_on: certificati base Sxxx (lamiere/profili) + tipo EN 10204 2.1–3.2 anche sull'apporto; chimica/ReH apporto = skip; tubi/hollow = skip
+start_on: certificati base Sxxx lamiere/profili (10025-2) e hollow a caldo se citata EN 10210-1; cold formed 10219 e chimica/ReH apporto = skip
 ```
 
 ISO 14341: **classificazione** della designazione filo, non tabelle chimica 3A/3B (GAP estrazione).  

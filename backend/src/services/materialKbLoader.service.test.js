@@ -56,9 +56,11 @@ describe('materialKbLoader (MC-2)', () => {
   });
 
   it('dichiara fonti coperte e mancanti (niente soglie inventate)', () => {
-    expect(snap.coverage.covered).toEqual(expect.arrayContaining(['EN 10025-2', 'EN 10204', 'ISO 14341']));
-    expect(snap.coverage.missing).toEqual(expect.arrayContaining(['EN 10210-1', 'EN 10219-1', 'ISO 2560']));
-    expect(snap.skip.tubes).toMatch(/10210/);
+    expect(snap.coverage.covered).toEqual(expect.arrayContaining(['EN 10025-2', 'EN 10210-1', 'EN 10204', 'ISO 14341']));
+    expect(snap.coverage.missing).toEqual(expect.arrayContaining(['EN 10219-1', 'ISO 2560']));
+    expect(snap.coverage.missing).not.toEqual(expect.arrayContaining(['EN 10210-1']));
+    expect(snap.skip.tubes).toMatch(/10219/);
+    expect(snap.skip.tubeStandardAmbiguous).toMatch(/10210/);
     expect(snap.skip.fillerProduct).toMatch(/2560/);
   });
 
@@ -73,7 +75,15 @@ describe('materialKbLoader (MC-2)', () => {
       family: 'S355',
       quality: 'J2',
       grade: 'S355J2',
+      hollow: false,
     });
+    expect(parseDesignation('EN 10210-S355J2H')).toEqual({
+      family: 'S355',
+      quality: 'J2',
+      grade: 'S355J2H',
+      hollow: true,
+    });
+    expect(parseDesignation('S355NLH').grade).toBe('S355NLH');
   });
 
   it('limiti S355J2 lamiera 10 mm: ReH 355, C heat 0.20, KV 27 J a -20', () => {
@@ -101,7 +111,7 @@ describe('materialKbLoader (MC-2)', () => {
     expect(hit.rehMin).toBe(345);
   });
 
-  it('tubo / hollow: skip (Markdown EN 10210/10219 assente)', () => {
+  it('tubo senza norma 10210 vs 10219 → skip (non inventare 10219)', () => {
     const hit = lookupEn10025Limits(snap, {
       materialRole: 'base',
       productForm: 'tube',
@@ -110,6 +120,60 @@ describe('materialKbLoader (MC-2)', () => {
     });
     expect(hit.skip).toBe(true);
     expect(hit.source).toBe('en10210');
+    expect(hit.reason).toMatch(/10219/);
+  });
+
+  it('tubo EN 10219-1 → skip (Markdown assente)', () => {
+    const hit = lookupEn10025Limits(snap, {
+      materialRole: 'base',
+      productForm: 'hollow_section',
+      designation: 'S355J2H',
+      materialStandard: 'EN 10219-1',
+      thicknessMm: 10,
+    });
+    expect(hit.skip).toBe(true);
+    expect(hit.source).toBe('en10219');
+  });
+
+  it('tubo EN 10210-1 S355J2H 10 mm: ReH 355, C 0.22, CEV 0.45', () => {
+    const hit = lookupEn10025Limits(snap, {
+      materialRole: 'base',
+      productForm: 'tube',
+      designation: 'S355J2H',
+      materialStandard: 'EN 10210-1',
+      thicknessMm: 10,
+    });
+    expect(hit.skip).toBe(false);
+    expect(hit.source).toBe('en10210-1');
+    expect(hit.rehMin).toBe(355);
+    expect(hit.cHeatMax).toBe(0.22);
+    expect(hit.cevMax).toBe(0.45);
+    expect(hit.rm).toEqual({ min: 470, max: 630 });
+    expect(hit.kv).toEqual({ tempC: -20, minJ: 27 });
+  });
+
+  it('hollow EN 10210-1 S355NLH 20 mm: ReH 345, C 0.18, KV 27 J a -50', () => {
+    const hit = lookupEn10025Limits(snap, {
+      productForm: 'hollow_section',
+      designation: 'S355NLH',
+      materialStandard: 'UNI EN 10210',
+      thicknessMm: 20,
+    });
+    expect(hit.skip).toBe(false);
+    expect(hit.rehMin).toBe(345);
+    expect(hit.cHeatMax).toBe(0.18);
+    expect(hit.kv).toEqual({ tempC: -50, minJ: 27 });
+  });
+
+  it('S275JRH non è in Annex A → skip', () => {
+    const hit = lookupEn10025Limits(snap, {
+      productForm: 'tube',
+      designation: 'S275JRH',
+      materialStandard: 'EN 10210-1',
+      thicknessMm: 10,
+    });
+    expect(hit.skip).toBe(true);
+    expect(hit.reason).toMatch(/non seedato/);
   });
 
   it('apporto: skip soglie prodotto', () => {
