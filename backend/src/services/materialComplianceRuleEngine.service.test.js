@@ -132,6 +132,23 @@ describe('materialComplianceRuleEngine (MC-3)', () => {
     expect(hit.status).toBe('skip');
   });
 
+  it('tubo senza citazione 10210 vs 10219: ReH da PO si valuta comunque (ADR-021)', () => {
+    const fail = evaluateMaterialCertificate({
+      snapshot,
+      extractedJson: {
+        material_role: 'base',
+        product_form: 'tube',
+        steel_designation: 'S355J2H',
+        thickness_mm: 10,
+        ReH: 360,
+      },
+      scope: { po: { ReH: 400, source_ref: 'PO-TUBO' } },
+    });
+    expect(check(fail, 'ReH').result).toBe('fail');
+    expect(check(fail, 'ReH').source_level).toBe('po');
+    expect(fail.status).toBe('fail');
+  });
+
   it('hollow EN 10210-1 S355J2H 10 mm entro soglie → pass', () => {
     const hit = evaluateMaterialCertificate({
       snapshot,

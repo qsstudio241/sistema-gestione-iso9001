@@ -325,6 +325,7 @@ function evaluateNumericCheck({
   actual,
   kind,
   skipIfNoMaterial,
+  skipExplanation,
 }) {
   const fromStd = materialCandidate
     ? [{
@@ -342,7 +343,7 @@ function evaluateNumericCheck({
       required_value: null,
       actual_value: actual,
       result: 'skip',
-      explanation: 'Nessun limite nello scope per questo campo',
+      explanation: skipExplanation || 'Nessun limite nello scope per questo campo',
     });
   }
 
@@ -406,7 +407,7 @@ function evaluateNumericCheck({
   });
 }
 
-function evaluateKvCheck({ materialKv, extraCandidates, actual }) {
+function evaluateKvCheck({ materialKv, extraCandidates, actual, skipExplanation }) {
   const fromStd = materialKv && Number.isFinite(materialKv.minJ)
     ? [{ value: materialKv, source_level: 'material_std', source_ref: materialKv.source_ref || 'material_std' }]
     : [];
@@ -424,7 +425,7 @@ function evaluateKvCheck({ materialKv, extraCandidates, actual }) {
       required_value: null,
       actual_value: actual,
       result: 'skip',
-      explanation: 'Nessun limite KV nello scope',
+      explanation: skipExplanation || 'Nessun limite KV nello scope',
     });
   }
   const picked = pickMaxMin(all.map((c) => ({ ...c, value: c.value.minJ })));
@@ -535,30 +536,64 @@ function evaluateBaseLimits(cert, snapshot, scope, checks) {
 
   const stdRef = lookup.source || 'material_std';
   const skipReason = lookup.skip ? lookup.reason : null;
-
-  const pushSkipAll = (reason) => {
-    for (const key of ['ReH', 'Rm', 'CEV', 'C', 'KV']) {
-      checks.push(checkRow({
-        requirement_key: key,
-        source_level: 'material_std',
-        source_ref: stdRef,
-        required_value: null,
-        actual_value: null,
-        result: 'skip',
-        explanation: reason,
-      }));
-    }
+  const extras = {
+    ReH: extraLimitCandidates(scope, 'ReH'),
+    Rm: extraLimitCandidates(scope, 'Rm'),
+    CEV: extraLimitCandidates(scope, 'CEV'),
+    C: extraLimitCandidates(scope, 'C'),
+    KV: extraLimitCandidates(scope, 'KV'),
   };
 
   if (lookup.skip) {
-    pushSkipAll(skipReason);
+    checks.push(evaluateNumericCheck({
+      requirement_key: 'ReH',
+      materialCandidate: null,
+      extraCandidates: extras.ReH,
+      actual: actualReH(cert),
+      kind: 'min',
+      skipIfNoMaterial: stdRef,
+      skipExplanation: skipReason,
+    }));
+    checks.push(evaluateNumericCheck({
+      requirement_key: 'Rm',
+      materialCandidate: null,
+      extraCandidates: extras.Rm,
+      actual: actualRm(cert),
+      kind: 'range',
+      skipIfNoMaterial: stdRef,
+      skipExplanation: skipReason,
+    }));
+    checks.push(evaluateNumericCheck({
+      requirement_key: 'CEV',
+      materialCandidate: null,
+      extraCandidates: extras.CEV,
+      actual: actualCev(cert),
+      kind: 'max',
+      skipIfNoMaterial: stdRef,
+      skipExplanation: skipReason,
+    }));
+    checks.push(evaluateNumericCheck({
+      requirement_key: 'C',
+      materialCandidate: null,
+      extraCandidates: extras.C,
+      actual: actualC(cert),
+      kind: 'max',
+      skipIfNoMaterial: stdRef,
+      skipExplanation: skipReason,
+    }));
+    checks.push(evaluateKvCheck({
+      materialKv: null,
+      extraCandidates: extras.KV,
+      actual: actualKv(cert),
+      skipExplanation: skipReason,
+    }));
     return;
   }
 
   checks.push(evaluateNumericCheck({
     requirement_key: 'ReH',
     materialCandidate: lookup.rehMin,
-    extraCandidates: extraLimitCandidates(scope, 'ReH'),
+    extraCandidates: extras.ReH,
     actual: actualReH(cert),
     kind: 'min',
     skipIfNoMaterial: stdRef,
@@ -566,7 +601,7 @@ function evaluateBaseLimits(cert, snapshot, scope, checks) {
   checks.push(evaluateNumericCheck({
     requirement_key: 'Rm',
     materialCandidate: lookup.rm,
-    extraCandidates: extraLimitCandidates(scope, 'Rm'),
+    extraCandidates: extras.Rm,
     actual: actualRm(cert),
     kind: 'range',
     skipIfNoMaterial: stdRef,
@@ -574,7 +609,7 @@ function evaluateBaseLimits(cert, snapshot, scope, checks) {
   checks.push(evaluateNumericCheck({
     requirement_key: 'CEV',
     materialCandidate: lookup.cevMax,
-    extraCandidates: extraLimitCandidates(scope, 'CEV'),
+    extraCandidates: extras.CEV,
     actual: actualCev(cert),
     kind: 'max',
     skipIfNoMaterial: stdRef,
@@ -582,14 +617,14 @@ function evaluateBaseLimits(cert, snapshot, scope, checks) {
   checks.push(evaluateNumericCheck({
     requirement_key: 'C',
     materialCandidate: lookup.cHeatMax,
-    extraCandidates: extraLimitCandidates(scope, 'C'),
+    extraCandidates: extras.C,
     actual: actualC(cert),
     kind: 'max',
     skipIfNoMaterial: stdRef,
   }));
   checks.push(evaluateKvCheck({
     materialKv: lookup.kv ? { ...lookup.kv, source_ref: stdRef } : null,
-    extraCandidates: extraLimitCandidates(scope, 'KV'),
+    extraCandidates: extras.KV,
     actual: actualKv(cert),
   }));
 }

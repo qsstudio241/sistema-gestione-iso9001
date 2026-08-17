@@ -26,7 +26,7 @@ Fonti Markdown:
 - Input: `corrected_json` ?? `extracted_json` + snapshot loader; `scope.po|customer|company` opzionale
 - Output: `{ status: pass|fail|skip, kb_snapshot_hash, checks[] }` — zero LLM, niente `workflow_status=compliant`
 - Più restrittivo vince (ReH min più alto, CEV/C max più basso) senza `if (cliente === 'FASSI')`
-- L1: 16/16 `materialComplianceRuleEngine.service.test.js`
+- L1: 17/17 `materialComplianceRuleEngine.service.test.js`
 - Nessuna migrazione (schema 149 basta)
 
 Prossima: **MC-4** API (`POST .../evaluate` persiste checks). `DEPUTYTASK.md` (SAL S1a) non toccato.
