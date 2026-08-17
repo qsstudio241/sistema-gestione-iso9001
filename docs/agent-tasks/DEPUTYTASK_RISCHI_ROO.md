@@ -1,7 +1,8 @@
 # DEPUTYTASK — Rischi / Opportunità — ROO-17 (lista riesami ambito)
 
-**Stato:** APERTO  
+**Stato:** CHIUSO — TEST OK  
 **Aperto:** 17/08/2026 (dopo promote #436/#453)  
+**Chiuso:** 17/08/2026  
 **Slice:** ROO-17  
 **Piano:** [PLAN_RISCHI_OPPORTUNITA_OBIETTIVI_SLICES.md](PLAN_RISCHI_OPPORTUNITA_OBIETTIVI_SLICES.md) §7  
 
@@ -42,5 +43,5 @@
 
 ### Verifica TEST
 
-- `deploy-to-vps-test.sh` (nessuna SQL nuova)
-- Preview / smoke: azienda 48, due date, lista snapshot; click apre form corrente
+- `deploy-to-vps-test.sh` (nessuna SQL nuova) — health 200, PID test cambiato, PROD invariato
+- Smoke: senza `company_id` → 400 `COMPANY_REQUIRED`; range invertito → 400; `company_id=48` 2026 → **8** snapshot (righe smoke soft-deleted, visibili per §9.3)
