@@ -3,6 +3,7 @@
 **Stato:** CHIUSO — TEST OK  
 **Aperto:** 17/08/2026 (dopo merge MC-2 #451 e hollow 10210/10219 #452)  
 **Chiuso:** 17/08/2026  
+**PR:** [#454](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/454)  
 **Piano:** [`PLAN_MATERIAL_COMPLIANCE_SLICES.md`](PLAN_MATERIAL_COMPLIANCE_SLICES.md) § MC-3  
 **Spec:** [`MATERIAL_COMPLIANCE_DATA_MODEL.md`](../specs/MATERIAL_COMPLIANCE_DATA_MODEL.md) § Rule Engine · [ADR-021](../adr/ADR-021-material-requirements-hierarchy.md)  
 **Rischio:** Medio — service backend additivo, nessuna migrazione; PR + gate Bugbot; Cloud **non** mergia  
