@@ -8,6 +8,8 @@ import apiService from "../services/apiService";
 import { useCompanyScope } from "../contexts/CompanyScopeContext";
 import { formatDate } from "../utils/dateHelpers";
 import { riskScore, riskScoreLevel, scoreColor, displayFurtherActions, residualScoreFromRisk, normalizePgMax, pgOptions } from "../utils/riskScore";
+import { appendCatalogLine, formatContextFactorLine, formatInterestedPartyLine } from "../utils/catalogTextAppend";
+import { buildRisksListParams } from "../utils/risksListParams";
 import NcCreateModal from "../components/NcCreateModal";
 import SgqDataGrid from "../components/SgqDataGrid";
 import RiskM03ImportDialog from "../components/RiskM03ImportDialog";
@@ -46,6 +48,7 @@ const EMPTY_RISK = {
   evaluated_element: "", context_text: "", interested_parties_text: "",
   current_actions: "", further_actions: "",
   residual_probability: "", residual_impact: "", effectiveness_note: "",
+  analysis_method: "pxg", swot_quadrant: "", impact_sign: 1,
 };
 const EMPTY_OBJ  = { title: "", description: "", iso_clause: "", kpi_description: "", target_value: "", current_value: "", progress_pct: 0, responsible: "", due_date: "", status: "active", company_id: "" };
 
@@ -63,6 +66,7 @@ const RISK_GRID_COLUMNS = [
   { id: "current_actions", label: "Azioni attuali", sortable: true },
   { id: "probability", label: "P", sortable: true, cellClassName: "risks-grid-num", headerClassName: "risks-grid-num" },
   { id: "impact", label: "G", sortable: true, cellClassName: "risks-grid-num", headerClassName: "risks-grid-num" },
+  { id: "swot_quadrant", label: "SWOT", sortable: true },
   { id: "score", label: "R", sortable: true, cellClassName: "risks-grid-num", headerClassName: "risks-grid-num" },
   { id: "score_level", label: "Livello", sortable: true },
   { id: "further_actions", label: "Ulteriori azioni", sortable: true },
@@ -83,17 +87,24 @@ function clipCell(text) {
   return <span className="risks-grid-cell-clip" title={s}>{s}</span>;
 }
 
-function RiskForm({ initial, onSave, onClose, companies = [], pgMax = 3 }) {
+function RiskForm({ initial, onSave, onClose, companies = [], pgMax = 3, filterCompany = "" }) {
   const [form, setForm] = useState(() => ({
     ...EMPTY_RISK,
     ...initial,
+    company_id: initial?.company_id || filterCompany || "",
     review_date: dateInputValue(initial?.review_date),
     residual_probability: initial?.residual_probability ?? "",
     residual_impact: initial?.residual_impact ?? "",
     effectiveness_note: initial?.effectiveness_note || "",
+    analysis_method: initial?.analysis_method || "pxg",
+    swot_quadrant: initial?.swot_quadrant || "",
+    impact_sign: initial?.impact_sign === -1 ? -1 : 1,
   }));
   const [saving, setSaving] = useState(false);
   const [error, setError]   = useState(null);
+  const [factors, setFactors] = useState([]);
+  const [parties, setParties] = useState([]);
+  const [reviews, setReviews] = useState([]);
   const scale = pgOptions(pgMax);
   const score = riskScore(form.probability, form.impact);
   const scoreLevel = riskScoreLevel(score, scale.max);
@@ -101,13 +112,55 @@ function RiskForm({ initial, onSave, onClose, companies = [], pgMax = 3 }) {
   const residualLevel = residualScore == null ? null : riskScoreLevel(residualScore, scale.max);
   const pgValues = Array.from({ length: scale.max }, (_, i) => i + 1);
 
+  useEffect(() => {
+    const params = filterCompany ? { company_id: filterCompany } : {};
+    let cancelled = false;
+    Promise.all([
+      apiService.getContextFactors(params),
+      apiService.getInterestedParties(params),
+    ]).then(([cfRes, ipRes]) => {
+      if (cancelled) return;
+      setFactors(cfRes?.data || []);
+      setParties(ipRes?.data || []);
+    }).catch(() => {
+      if (!cancelled) {
+        setFactors([]);
+        setParties([]);
+      }
+    });
+    return () => { cancelled = true; };
+  }, [filterCompany]);
+
+  useEffect(() => {
+    if (!initial?.risk_id || !apiService.getRiskReviews) {
+      setReviews([]);
+      return undefined;
+    }
+    let cancelled = false;
+    apiService.getRiskReviews(initial.risk_id).then((res) => {
+      if (!cancelled) setReviews(res?.data || []);
+    }).catch(() => {
+      if (!cancelled) setReviews([]);
+    });
+    return () => { cancelled = true; };
+  }, [initial?.risk_id]);
+
   function upd(k, v) { setForm(f => ({ ...f, [k]: v })); }
+
+  function appendFromCatalog(field, line) {
+    upd(field, appendCatalogLine(form[field], line));
+  }
 
   async function submit(e) {
     e.preventDefault();
     if (!form.title.trim()) return;
+    const companyId = filterCompany || form.company_id;
+    if (!companyId) {
+      setError("Seleziona un'azienda in Ambito.");
+      return;
+    }
     setSaving(true); setError(null);
-    try { await onSave(form); onClose(); }
+    try { await onSave({ ...form, company_id: companyId }); onClose(); }
     catch (err) { setError(err?.message || "Errore durante il salvataggio."); }
     finally { setSaving(false); }
   }
@@ -120,11 +173,16 @@ function RiskForm({ initial, onSave, onClose, companies = [], pgMax = 3 }) {
           <button type="button" className="modal-close" onClick={onClose} aria-label="Chiudi">{"\u2715"}</button>
         </div>
         <form className="risk-form" onSubmit={submit}>
-          {companies.length > 0 && (
+          {!filterCompany && companies.length > 0 && (
             <div className="form-row">
-              <label>Azienda (ambito)</label>
-              <select value={form.company_id || ""} onChange={e => upd("company_id", e.target.value || null)}>
-                <option value="">-- Nessuna azienda --</option>
+              <label htmlFor="risk-form-company">Azienda *</label>
+              <select
+                id="risk-form-company"
+                aria-label="Azienda"
+                value={form.company_id || ""}
+                onChange={e => upd("company_id", e.target.value)}
+              >
+                <option value="">-- Seleziona azienda --</option>
                 {companies.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
               </select>
             </div>
@@ -150,6 +208,48 @@ function RiskForm({ initial, onSave, onClose, companies = [], pgMax = 3 }) {
               </select>
             </div>
             <div>
+              <label htmlFor="risk-method">Metodo</label>
+              <select
+                id="risk-method"
+                value={form.analysis_method || "pxg"}
+                onChange={(e) => {
+                  const method = e.target.value;
+                  setForm((f) => ({
+                    ...f,
+                    analysis_method: method,
+                    swot_quadrant: method === "swot_signed" ? (f.swot_quadrant || "") : "",
+                    impact_sign: method === "swot_signed" ? f.impact_sign : 1,
+                  }));
+                }}
+              >
+                <option value="pxg">P×G</option>
+                <option value="swot_signed">SWOT (G con segno)</option>
+              </select>
+            </div>
+          </div>
+          {form.analysis_method === "swot_signed" && (
+            <div className="form-row-2col">
+              <div>
+                <label htmlFor="risk-swot-q">Quadrante SWOT</label>
+                <select id="risk-swot-q" value={form.swot_quadrant || ""} onChange={(e) => upd("swot_quadrant", e.target.value)}>
+                  <option value="">—</option>
+                  <option value="S">S — Strength</option>
+                  <option value="W">W — Weakness</option>
+                  <option value="O">O — Opportunity</option>
+                  <option value="T">T — Threat</option>
+                </select>
+              </div>
+              <div>
+                <label htmlFor="risk-g-sign">Segno G</label>
+                <select id="risk-g-sign" value={String(form.impact_sign || 1)} onChange={(e) => upd("impact_sign", Number(e.target.value))}>
+                  <option value="1">+ (positivo)</option>
+                  <option value="-1">− (negativo)</option>
+                </select>
+              </div>
+            </div>
+          )}
+          <div className="form-row-2col">
+            <div>
               <label>Contesto (enum)</label>
               <select value={form.context} onChange={e => upd("context", e.target.value)}>
                 <option value="internal">Interno</option>
@@ -159,12 +259,44 @@ function RiskForm({ initial, onSave, onClose, companies = [], pgMax = 3 }) {
             </div>
           </div>
           <div className="form-row">
-            <label>Contesto (§4.1)</label>
-            <textarea rows={2} value={form.context_text || ""} onChange={e => upd("context_text", e.target.value)} placeholder="Fattori interni/esterni rilevanti per questa riga" />
+            <label htmlFor="risk-context-text">Contesto (§4.1)</label>
+            <textarea id="risk-context-text" rows={2} value={form.context_text || ""} onChange={e => upd("context_text", e.target.value)} placeholder="Fattori interni/esterni rilevanti per questa riga" />
+            {factors.length > 0 && (
+              <select
+                aria-label="Dal catalogo contesto"
+                className="risk-catalog-pick"
+                value=""
+                onChange={(e) => {
+                  const item = factors.find((f) => String(f.id) === e.target.value);
+                  if (item) appendFromCatalog("context_text", formatContextFactorLine(item));
+                }}
+              >
+                <option value="">Dal catalogo §4.1…</option>
+                {factors.map((f) => (
+                  <option key={f.id} value={f.id}>{formatContextFactorLine(f).slice(0, 80)}</option>
+                ))}
+              </select>
+            )}
           </div>
           <div className="form-row">
-            <label>Parti interessate (§4.2)</label>
-            <textarea rows={2} value={form.interested_parties_text || ""} onChange={e => upd("interested_parties_text", e.target.value)} placeholder="Parti e requisiti rilevanti per questa riga" />
+            <label htmlFor="risk-parties-text">Parti interessate (§4.2)</label>
+            <textarea id="risk-parties-text" rows={2} value={form.interested_parties_text || ""} onChange={e => upd("interested_parties_text", e.target.value)} placeholder="Parti e requisiti rilevanti per questa riga" />
+            {parties.length > 0 && (
+              <select
+                aria-label="Dal catalogo parti"
+                className="risk-catalog-pick"
+                value=""
+                onChange={(e) => {
+                  const item = parties.find((p) => String(p.id) === e.target.value);
+                  if (item) appendFromCatalog("interested_parties_text", formatInterestedPartyLine(item));
+                }}
+              >
+                <option value="">Dal catalogo §4.2…</option>
+                {parties.map((p) => (
+                  <option key={p.id} value={p.id}>{formatInterestedPartyLine(p).slice(0, 80)}</option>
+                ))}
+              </select>
+            )}
           </div>
           <div className="form-row">
             <label>Azioni attuali</label>
@@ -262,6 +394,26 @@ function RiskForm({ initial, onSave, onClose, companies = [], pgMax = 3 }) {
             <label>Azione di trattamento (legacy)</label>
             <textarea rows={2} value={form.treatment_desc} onChange={e => upd("treatment_desc", e.target.value)} placeholder="Usato in lettura se Ulteriori azioni è vuoto" />
           </div>
+          {reviews.length > 0 && (
+            <div className="risk-reviews" aria-label="Storico aggiornamenti">
+              <h4 className="risk-reviews-title">Storico aggiornamenti</h4>
+              <ol className="risk-reviews-list">
+                {reviews.map((rv) => (
+                  <li key={rv.id || rv.recorded_at} className="risk-reviews-item">
+                    <div className="risk-reviews-meta">
+                      <span>{rv.recorded_at ? formatDate(rv.recorded_at) : "\u2014"}</span>
+                      {rv.recorded_by_name && <span>{rv.recorded_by_name}</span>}
+                    </div>
+                    <div className="risk-reviews-scores">
+                      <span>{`P ${rv.probability ?? "\u2014"} \u00d7 G ${rv.impact ?? "\u2014"} = ${rv.score ?? "\u2014"}`}</span>
+                      {rv.residual_score != null && <span>{`R res ${rv.residual_score}`}</span>}
+                    </div>
+                    {rv.effectiveness_note && <p className="risk-reviews-note">{rv.effectiveness_note}</p>}
+                  </li>
+                ))}
+              </ol>
+            </div>
+          )}
           {error && <p className="form-error">{error}</p>}
           <div className="form-footer">
             <button type="button" className="btn-secondary" onClick={onClose}>Annulla</button>
@@ -369,6 +521,7 @@ function RisksTab({ companies = [], filterCompany = "", reloadCompanies }) {
   const [loading, setLoading]     = useState(true);
   const [modal, setModal]         = useState(null); // null | { mode:'new'|'edit', data }
   const [filterStatus, setFS]     = useState("");
+  const [showClosed, setShowClosed] = useState(false);
   const [actionRisk, setActionRisk] = useState(null);
   const [detection, setDetection] = useState(null);
   const [importFile, setImportFile] = useState(null);
@@ -384,9 +537,7 @@ function RisksTab({ companies = [], filterCompany = "", reloadCompanies }) {
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const params = {};
-      if (filterStatus)  params.status     = filterStatus;
-      if (filterCompany) params.company_id = filterCompany;
+      const params = buildRisksListParams({ filterStatus, filterCompany, showClosed });
       const [listRes, statsRes] = await Promise.all([
         apiService.getRisks(params),
         apiService.getRisksStats(filterCompany ? { company_id: filterCompany } : {}),
@@ -394,15 +545,20 @@ function RisksTab({ companies = [], filterCompany = "", reloadCompanies }) {
       setList(listRes?.data || []);
       setStats(statsRes?.data || null);
     } finally { setLoading(false); }
-  }, [filterStatus, filterCompany]);
+  }, [filterStatus, filterCompany, showClosed]);
 
   useEffect(() => { load(); }, [load]);
 
   async function handleSave(form) {
+    const company_id = filterCompany || form.company_id;
+    if (!company_id) {
+      throw new Error("Seleziona un'azienda in Ambito.");
+    }
+    const payload = { ...form, company_id };
     if (modal.data?.risk_id) {
-      await apiService.updateRisk(modal.data.risk_id, form);
+      await apiService.updateRisk(modal.data.risk_id, payload);
     } else {
-      await apiService.createRisk(form);
+      await apiService.createRisk(payload);
     }
     await load();
   }
@@ -442,8 +598,12 @@ function RisksTab({ companies = [], filterCompany = "", reloadCompanies }) {
     const file = e.target.files?.[0];
     e.target.value = "";
     if (!file) return;
+    if (!filterCompany) {
+      setImportError("Seleziona un'azienda nell'Ambito in alto.");
+      return;
+    }
     setImportFile(file);
-    await runDetect(file, { pgMax, company_id: filterCompany || undefined });
+    await runDetect(file, { pgMax, company_id: filterCompany });
   }
 
   async function handleRemap(sheetName, mapping) {
@@ -477,12 +637,16 @@ function RisksTab({ companies = [], filterCompany = "", reloadCompanies }) {
   }
 
   async function handleConfirmImport(rows) {
+    if (!filterCompany) {
+      setImportError("Seleziona un'azienda nell'Ambito in alto.");
+      return;
+    }
     setImporting(true);
     setImportError(null);
     try {
       await apiService.importRisksM03({
         rows,
-        company_id: filterCompany || null,
+        company_id: filterCompany,
         fileName: detection?.fileName,
       });
       setDetection(null);
@@ -513,7 +677,22 @@ function RisksTab({ companies = [], filterCompany = "", reloadCompanies }) {
           <option value="">Tutti gli stati</option>
           {Object.entries(RISK_STATUS_CFG).map(([k,v]) => <option key={k} value={k}>{v.label}</option>)}
         </select>
-        <button className="btn-primary" onClick={() => setModal({ mode: "new", data: { company_id: filterCompany || "" } })}>+ Nuovo rischio</button>
+        <label className="risks-closed-toggle">
+          <input
+            type="checkbox"
+            checked={showClosed}
+            onChange={(e) => setShowClosed(e.target.checked)}
+          />
+          Mostra rischi chiusi
+        </label>
+        <button
+          className="btn-primary"
+          disabled={!filterCompany}
+          title={!filterCompany ? "Seleziona un'azienda nell'Ambito in alto" : ""}
+          onClick={() => setModal({ mode: "new", data: { company_id: filterCompany } })}
+        >
+          + Nuovo rischio
+        </button>
         {filterCompany ? (
           <label className="risks-scale-label">
             Scala P/G
@@ -533,7 +712,8 @@ function RisksTab({ companies = [], filterCompany = "", reloadCompanies }) {
         <button
           type="button"
           className="btn-secondary"
-          disabled={detecting}
+          disabled={detecting || !filterCompany}
+          title={!filterCompany ? "Seleziona un'azienda nell'Ambito in alto" : ""}
           onClick={() => document.getElementById("risks-m03-file")?.click()}
         >
           {detecting ? "Analisi Excel..." : "Importa Excel"}
@@ -550,6 +730,7 @@ function RisksTab({ companies = [], filterCompany = "", reloadCompanies }) {
           type="file"
           accept=".xlsx,.xls"
           hidden
+          disabled={!filterCompany}
           onChange={handlePickExcel}
         />
       </div>
@@ -561,7 +742,9 @@ function RisksTab({ companies = [], filterCompany = "", reloadCompanies }) {
           rows={list}
           columns={RISK_GRID_COLUMNS}
           loading={loading}
-          emptyMessage={'Nessuna valutazione. Clicca "+ Nuovo rischio" per iniziare.'}
+          emptyMessage={filterCompany
+            ? 'Nessuna valutazione. Clicca "+ Nuovo rischio" per iniziare.'
+            : "Seleziona un'azienda nell'Ambito in alto per creare o importare valutazioni."}
           theme="plain"
           initialSortCol="score"
           initialSortDir="desc"
@@ -611,6 +794,8 @@ function RisksTab({ companies = [], filterCompany = "", reloadCompanies }) {
                 return row.probability ?? "\u2014";
               case "impact":
                 return row.impact ?? "\u2014";
+              case "swot_quadrant":
+                return row.swot_quadrant || "\u2014";
               case "score":
                 return <span className={`score-badge ${scoreColor(sc, rowMax)}`}>{sc}</span>;
               case "score_level":
@@ -671,6 +856,7 @@ function RisksTab({ companies = [], filterCompany = "", reloadCompanies }) {
           onSave={handleSave}
           onClose={() => setModal(null)}
           companies={companies}
+          filterCompany={filterCompany}
           pgMax={normalizePgMax(modal.data?.risk_pg_max || pgMax)}
         />
       )}
@@ -690,6 +876,7 @@ function RisksTab({ companies = [], filterCompany = "", reloadCompanies }) {
       {detection && (
         <RiskM03ImportDialog
           detection={detection}
+          previewFile={importFile}
           onConfirm={handleConfirmImport}
           onRemap={handleRemap}
           onRaiseScale={handleSetPgScale}
@@ -1127,3 +1314,5 @@ export default function RisksPage() {
     </div>
   );
 }
+
+export { RiskForm };

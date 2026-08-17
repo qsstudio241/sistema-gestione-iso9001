@@ -29,6 +29,7 @@ const FIELD_SYNONYMS = [
     { field: 'title_risk', syns: ['rischi', 'identificazione rischi'] },
     { field: 'evaluated_element', syns: ['elemento valutato', 'elemento valutatao', 'elemento di rischio', 'elemento', "unita'", 'unita'] },
     { field: 'context_text', syns: ['fattore del contesto', 'fattori del contesto', 'fattori', 'contesto'] },
+    { field: 'swot_quadrant', syns: ['swot', 'quadrante'] },
     { field: 'interested_parties_text', syns: ['parte interessata', 'parti interessate', 'parti'] },
     { field: 'current_actions', syns: ['situazione iniziale', 'azioni attuali di mitigazione del rischio', 'azioni attuali'] },
     { field: 'further_actions', syns: ['azioni di miglioramento', 'possibili ulteriori azioni', 'ulteriori azioni', 'trattamento - action'] },
@@ -39,7 +40,7 @@ const FIELD_SYNONYMS = [
 
 const MAPPING_FIELDS = [
     'evaluated_element', 'title_risk', 'title_opportunity',
-    'context_text', 'interested_parties_text',
+    'context_text', 'interested_parties_text', 'swot_quadrant',
     'current_actions', 'further_actions',
     'responsible', 'review_date',
     'probability', 'impact', 'peso',
@@ -227,25 +228,36 @@ function cellText(row, idx) {
 
 function readPg(value, pgMax = 3) {
     if (value == null || String(value).trim() === '') {
-        return { present: false, value: null, invalid: false, observed: null };
+        return { present: false, value: null, invalid: false, observed: null, sign: 1 };
     }
     const raw = String(value).trim();
     const label = QUALITATIVE_PG[normHeader(raw)];
     if (label != null) {
-        return { present: true, value: label, invalid: false, observed: label };
+        return { present: true, value: label, invalid: false, observed: label, sign: 1 };
     }
     const n = Number(String(raw).replace(',', '.'));
     if (!Number.isFinite(n)) {
-        return { present: true, value: null, invalid: true, raw: value, observed: null };
+        return { present: true, value: null, invalid: true, raw: value, observed: null, sign: 1 };
     }
     const i = Math.abs(Math.round(n));
+    const sign = n < 0 ? -1 : 1;
     if (i < 1 || i > 5) {
-        return { present: true, value: null, invalid: true, raw: value, observed: i };
+        return { present: true, value: null, invalid: true, raw: value, observed: i, sign };
     }
     if (i > pgMax) {
-        return { present: true, value: null, invalid: true, raw: value, observed: i };
+        return { present: true, value: null, invalid: true, raw: value, observed: i, sign };
     }
-    return { present: true, value: i, invalid: false, observed: i };
+    return { present: true, value: i, invalid: false, observed: i, sign };
+}
+
+function parseSwotQuadrant(value) {
+    const n = normHeader(value);
+    if (!n) return null;
+    if (n === 's' || n.startsWith('s ') || n === 'strength' || n === 'forza') return 'S';
+    if (n === 'w' || n.startsWith('w ') || n === 'weakness' || n === 'debolezza') return 'W';
+    if (n === 'o' || n.startsWith('o ') || n === 'opportunity' || n === 'opportunita') return 'O';
+    if (n === 't' || n.startsWith('t ') || n === 'threat' || n === 'minaccia') return 'T';
+    return null;
 }
 
 function toDateInput(value) {
@@ -354,6 +366,11 @@ function applyMappedRows(rows, headerRowIdx, colByField, pgMax = 3) {
         mapped.impact = g.value;
         mapped.residual_probability = rp.invalid ? null : rp.value;
         mapped.residual_impact = rg.invalid ? null : rg.value;
+        const swot = parseSwotQuadrant(cellText(raw, colByField.swot_quadrant));
+        const signedG = g.sign === -1;
+        mapped.analysis_method = (swot || signedG) ? 'swot_signed' : 'pxg';
+        mapped.swot_quadrant = swot;
+        mapped.impact_sign = signedG ? -1 : 1;
 
         if (!rowHasContent(mapped, p, g) && !p.present && !g.present) continue;
 
@@ -398,8 +415,9 @@ function applyMappedRows(rows, headerRowIdx, colByField, pgMax = 3) {
                 });
             }
         } else {
+            const swotNature = mapped.swot_quadrant === 'O' ? 'opportunity' : 'risk';
             variants.push({
-                nature: 'risk',
+                nature: swotNature,
                 title: buildTitle(mapped, excelRow),
                 evaluated_element: mapped.evaluated_element,
             });
@@ -425,6 +443,9 @@ function applyMappedRows(rows, headerRowIdx, colByField, pgMax = 3) {
                 impact: mapped.impact,
                 residual_probability: mapped.residual_probability,
                 residual_impact: mapped.residual_impact,
+                analysis_method: mapped.analysis_method,
+                swot_quadrant: mapped.swot_quadrant,
+                impact_sign: mapped.impact_sign,
             });
         });
     }
@@ -465,7 +486,7 @@ function pickBestSheet(sheetInfos, preferredName) {
 
 function inferLayout(mapping, headers, previewRows) {
     if (mapping.peso && !mapping.probability) return 'qualitative';
-    if (looksLikeSwotOrFmea(headers)) return 'swot_or_fmea';
+    if (mapping.swot_quadrant || looksLikeSwotOrFmea(headers)) return 'swot';
     if (previewRows.some((r) => r.nature === 'opportunity')) return 'split_titles';
     if (/analisi\s*rischio/i.test(headers.join(' ')) || mapping.residual_probability) return 'm03';
     return 'mapped';
@@ -554,7 +575,7 @@ function detectRisksM03File(buffer, options = {}) {
 
     const warnings = [];
     if (selected.looksSpecial) {
-        warnings.push('Il foglio ha segnali SWOT/FMEA: controlla il mapping. La scala è quella dell\'azienda.');
+        warnings.push('Rilevato SWOT/FMEA: quadrante e G con segno vengono persistiti se mappati. Controlla il mapping.');
     }
     if (mapping.peso && !mapping.probability) {
         warnings.push('Peso BASSO/MEDIO/ALTO convertito in P e G = 1/2/3.');
@@ -621,5 +642,6 @@ module.exports = {
     letterToIndex,
     applyMappedRows,
     mappingToColByField,
+    parseSwotQuadrant,
     MAPPING_FIELDS,
 };

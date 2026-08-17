@@ -74,14 +74,37 @@ function residualScoreFromRow(row) {
     return riskScore(pair.residual_probability, pair.residual_impact);
 }
 
+const ANALYSIS_METHODS = ['pxg', 'swot_signed', 'fmea_gpr'];
+
+function normalizeMethod(value) {
+    const v = String(value || '').trim();
+    return ANALYSIS_METHODS.includes(v) ? v : 'pxg';
+}
+
+function normalizeSwotQuadrant(value) {
+    const v = String(value || '').trim().toUpperCase();
+    return ['S', 'W', 'O', 'T'].includes(v) ? v : null;
+}
+
+function normalizeImpactSign(value) {
+    return Number(value) === -1 ? -1 : 1;
+}
+
 function decorateRiskRow(row) {
     if (!row) return row;
     const pgMax = normalizePgMax(row.risk_pg_max);
     const score = riskScore(row.probability || 1, row.impact || 1);
     const residual_score = residualScoreFromRow(row);
+    const analysis_method = normalizeMethod(row.analysis_method);
+    const impact_sign = normalizeImpactSign(row.impact_sign);
     return {
         ...row,
         risk_pg_max: pgMax,
+        analysis_method,
+        swot_quadrant: normalizeSwotQuadrant(row.swot_quadrant),
+        impact_sign,
+        signed_impact: (row.impact || 1) * impact_sign,
+        signed_score: score * impact_sign,
         score,
         score_level: riskScoreLevel(score, pgMax),
         residual_score,
@@ -103,4 +126,8 @@ module.exports = {
     normalizeResidualPair,
     residualScoreFromRow,
     decorateRiskRow,
+    ANALYSIS_METHODS,
+    normalizeMethod,
+    normalizeSwotQuadrant,
+    normalizeImpactSign,
 };

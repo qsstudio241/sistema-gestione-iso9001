@@ -33,6 +33,7 @@ router.put('/risks/pg-scale', ctrl.setCompanyPgScale);
 router.post('/risks/detect-import', uploadM03Xlsx.single('file'), ctrl.detectRisksImport);
 router.post('/risks/import', ctrl.importRisks);
 router.get('/risks',        ctrl.listRisks);
+router.get('/risks/:id/reviews', ctrl.listRiskReviews);
 router.get('/risks/:id',    ctrl.getOneRisk);
 router.post('/risks',       ctrl.createRisk);
 router.put('/risks/:id',    ctrl.updateRisk);

@@ -1,10 +1,12 @@
 /**
  * Conferma ingest Excel analisi rischi (ROO-6c).
- * Scelta foglio + corrispondenza colonne → anteprima.
- * Riusa il guscio CSS di DeadlineImportDialog (classi did-*).
+ * Stesso guscio di qualifiche/WPQR: file a sinistra, mapping a destra.
  */
 import React, { useEffect, useState } from "react";
+import IngestDialogShell from "./IngestDialogShell";
+import IngestSourcePreview from "./IngestSourcePreview";
 import "./DeadlineImportDialog.css";
+import "./RiskM03ImportDialog.css";
 
 const MAP_FIELDS = [
   { key: "evaluated_element", label: "Elemento / unità" },
@@ -16,6 +18,7 @@ const MAP_FIELDS = [
   { key: "further_actions", label: "Ulteriori azioni" },
   { key: "probability", label: "P (probabilità)" },
   { key: "impact", label: "G (gravità)" },
+  { key: "swot_quadrant", label: "Quadrante SWOT (S/W/O/T)" },
   { key: "peso", label: "Peso qualitativo (P e G)" },
   { key: "residual_probability", label: "P residuo" },
   { key: "residual_impact", label: "G residuo" },
@@ -27,6 +30,7 @@ const MAP_FIELDS = [
 
 function RiskM03ImportDialog({
   detection,
+  previewFile = null,
   onConfirm,
   onClose,
   onRemap,
@@ -63,10 +67,12 @@ function RiskM03ImportDialog({
     : level === "media"
       ? "Rilevamento media affidabilità"
       : "Rilevamento bassa affidabilità";
+  const fileName = detection?.fileName || "file.xlsx";
 
   function changeSheet(nextName) {
+    if (!nextName || nextName === sheetName) return;
     const next = sheets.find((s) => s.name === nextName);
-    const nextMapping = next?.suggestedMapping || {};
+    const nextMapping = next?.suggestedMapping || mapping;
     setSheetName(nextName);
     setMapping(nextMapping);
     setDirty(true);
@@ -83,21 +89,38 @@ function RiskM03ImportDialog({
   }
 
   return (
-    <div className="did-overlay" role="dialog" aria-modal="true" aria-labelledby="rm03-title">
-      <div className="did-modal did-modal--wide">
-        <div className="did-header">
-          <h2 id="rm03-title" className="did-header__title">Importa analisi Excel</h2>
-          <button className="did-close" onClick={onClose} aria-label="Chiudi" disabled={loading} type="button">
-            {"\u00D7"}
-          </button>
-        </div>
-
-        <div className="did-body">
-          <div className="did-file-info">
-            <span className="did-file-name">{detection?.fileName || "file.xlsx"}</span>
+    <IngestDialogShell
+      overlayClassName="rm03-import__overlay"
+      dialogClassName="rm03-import__dialog"
+      ariaLabelledBy="rm03-title"
+      titleSlot={<h2 id="rm03-title" className="rm03-import__title">Importa analisi Excel</h2>}
+      headerExtra={(expanded) => (
+        <>
+          <p className="rm03-import__file">
+            File: <strong>{fileName}</strong>
+            {" "}
             <span className={badgeClass}>{badgeText}</span>
-          </div>
-
+          </p>
+          <p className="rm03-import__hint">
+            {expanded
+              ? "File e campi a schermo intero: trascina il divisore per dare più spazio al foglio o al mapping."
+              : "Confronta il file a sinistra con le colonne e l'anteprima a destra. Trascina il divisore per ridimensionare."}
+          </p>
+        </>
+      )}
+      renderPreview={(expanded) => (
+        <IngestSourcePreview
+          fileName={fileName}
+          mimeType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+          previewFile={previewFile}
+          tall={expanded}
+          sheetName={sheetName}
+          onSheetNameChange={changeSheet}
+        />
+      )}
+      contentClassName="rm03-import__form-pane"
+      renderContent={() => (
+        <>
           <div className="did-stats">
             <span>{create} righe da inserire</span>
             {skip > 0 ? <span>{skip} saltate (P/G fuori scala o incomplete)</span> : null}
@@ -200,9 +223,10 @@ function RiskM03ImportDialog({
               </table>
             </div>
           )}
-        </div>
-
-        <div className="did-footer">
+        </>
+      )}
+      footer={(
+        <>
           <button className="did-btn did-btn--cancel" onClick={onClose} disabled={loading} type="button">
             Annulla
           </button>
@@ -214,9 +238,9 @@ function RiskM03ImportDialog({
           >
             {loading ? "Importazione..." : remapping || dirty ? "Aggiornamento anteprima..." : `Conferma ${create} righe`}
           </button>
-        </div>
-      </div>
-    </div>
+        </>
+      )}
+    />
   );
 }
 
