@@ -38,7 +38,7 @@ Non è un’app nuova: è un modulo della piattaforma SGQ, che riusa ingest docu
 ### Incluso MVP
 
 - Certificati **EN 10204** tipi `2.1` \| `2.2` \| `3.1` \| `3.2` (EN 10204 vale per tutti i prodotti metallici, anche i consumabili)
-- **Materiale di base** (`material_role=base`): laminati, profilati, piastre, lamiere (soglie EN 10025-2). **Tubi / sezioni cave**: in MVP come forma, soglie solo con Markdown EN 10210-1 / 10219-1 (oggi **mancante** → skip, non fail)
+- **Materiale di base** (`material_role=base`): laminati, profilati, piastre, lamiere (soglie EN 10025-2). **Tubi / sezioni cave a caldo**: soglie EN 10210-1 se citata sul certificato. **Cold formed (EN 10219-1)**: Markdown **mancante** → skip, non fail
 - **Materiale d’apporto** (`material_role=filler`): filo, elettrodo, flusso, inserto — **stesso flusso** (DDT + PDF + HITL). Tipo documento sì; chimica/ReH apporto = **skip** finché manca Markdown norma prodotto (ISO 2560 / 17632 / 14174, …). ISO 14341 in repo = classificazione designazione, non tabelle 3.1 lotto
 - Inventario: [sintesi fonti](../reference/MATERIAL-COMPLIANCE-NORME-SINTESI.md)
 - Certificati **anche scansioni** (caso normale in campo — HITL 16/08/2026)

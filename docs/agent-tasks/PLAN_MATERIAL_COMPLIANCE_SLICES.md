@@ -16,7 +16,7 @@
 **Sì, a slice verticali.** Non in un unico commit.  
 **HITL 16/08/2026 (committente):** i certificati sono di solito **scansioni**; l’agente deve estrarre i valori e imparare dalle correzioni. Il modello ingest qualifiche/WPQR (schema → revisione umana → commit → feedback) è **valido e da riusare**, non da rifare. OCR: riusare `ocrExtractor` / `documentTextExtractor` (SAL S1a lo sta collegando) — **non** un secondo motore.
 
-**Fonti Markdown — dichiarare poi partire (HITL 16/08, seguito):** inventario in [`MATERIAL-COMPLIANCE-NORME-SINTESI.md`](../reference/MATERIAL-COMPLIANCE-NORME-SINTESI.md). Prima di ogni slice MC-2/MC-3/ISO-3: 3 righe (coperte / mancanti / si parte su). Le lacune (EN 10210-1 / 10219-1; norme prodotto apporto oltre ISO 14341) si tracciano; **non** bloccano lamiere/profili né l’elenco certificati d’apporto; **non** si inventano soglie.
+**Fonti Markdown — dichiarare poi partire (HITL 16/08, seguito):** inventario in [`MATERIAL-COMPLIANCE-NORME-SINTESI.md`](../reference/MATERIAL-COMPLIANCE-NORME-SINTESI.md). Prima di ogni slice MC-2/MC-3/ISO-3: 3 righe (coperte / mancanti / si parte su). Lacuna residua tubi: **EN 10219-1** (cold). EN 10210-1 (hot) presente dal 17/08. Norme prodotto apporto oltre ISO 14341: tracciare; **non** si inventano soglie.
 
 **Norme e campi da estrarre:** consegnate 16/08/2026 (EN 10204, EN 10168, ISO 10474, ISO 404, ISO 6929, facsimile MTC, **EN 10025-2:2019**). Markdown in `docs/Normative/` NORMA_00020–00026 + KB `knowledge/material-compliance/`. Dizionario campi = EN 10168. Soglie lamiere/profili S235–S500: [`EN-10025-2-acciai-strutturali.md`](../reference/EN-10025-2-acciai-strutturali.md). Tubi/hollow: **mancante** in Markdown → skip, non fail. Sintesi: [`MATERIAL-COMPLIANCE-NORME-SINTESI.md`](../reference/MATERIAL-COMPLIANCE-NORME-SINTESI.md). La griglia elenco (DDT + anagrafica) resta valida; i campi lab seguono i codici 10168.
 
@@ -133,7 +133,7 @@ Script/migrazione idempotente; eventuale test service smoke.
 ### DoD
 
 - [x] Dichiarazione fonti Markdown in PR/chat (coperte / mancanti / si parte su) — inventario sintesi
-- [x] Seed solo da Markdown presente (oggi EN 10025-2 lamiere/profili; tubi = skip)
+- [x] Seed solo da Markdown presente (EN 10025-2 lamiere/profili; EN 10210-1 hollow a caldo se citata; 10219 = skip)
 - [x] Loader testabile senza rete (`materialKbLoader.service.js`)
 - [x] Hash stabile a parità di file (SHA-256); copia `backend/data/material-compliance/` allineata
 
