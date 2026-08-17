@@ -124,10 +124,10 @@ Fonte operativa dettagliata: [PLAN_MATERIAL_COMPLIANCE_SLICES.md](../agent-tasks
 | Slice | Obiettivo | Stato |
 |-------|-----------|--------|
 | **MC-0** | Spec tecniche: DATA_MODEL + UI + API; piano chiuso | ✅ 16/08/2026 |
-| **MC-1** | Migration DB + script VPS (entità certificato / check / audit) | ⬜ |
-| **MC-2** | KB seed (dictionary + EN10204 + EN10025-2) + loader | ⬜ |
-| **MC-3** | Rule Engine puro + test L1 (casi ReH/CEV) | ✅ |
-| **MC-4** | API: upload/lista/dettaglio + extract (riuso AI) + evaluate | ⬜ |
+| **MC-1** | Migration DB + script VPS (entità certificato / check / audit) | ✅ 17/08/2026 (#450, mig. 149) |
+| **MC-2** | KB seed (dictionary + EN10204 + EN10025-2) + loader | ✅ 17/08/2026 (#451) |
+| **MC-3** | Rule Engine puro + test L1 (casi ReH/CEV) | ✅ 17/08/2026 (#454) |
+| **MC-4** | API: upload/lista/dettaglio + extract (riuso AI) + evaluate | ✅ 17/08/2026 |
 | **MC-5** | UI elenco + dettaglio + HITL approve/reject | ⬜ |
 | **MC-6** | Gate licenza + `AiDisclaimer` + audit trail AI | ⬜ |
 | **MC-B** | OCR su scan: riuso `documentTextExtractor` / `ocrExtractor` | ⬜ In MVP (dopo MC-4) |

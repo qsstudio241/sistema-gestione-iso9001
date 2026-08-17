@@ -8,7 +8,7 @@
 
 > **Risposta standard a «stato di avanzamento del progetto e priorità da affrontare»**: sintetizzare da questa sezione (moduli maturi + sessione più recente + tabella priorità sotto), **non** dal banner storico più sotto (superato, tenuto solo per traccia) né dall'archivio marzo 2026 [`docs/archive/PROJECT_CONTEXT_STATO_FUNZIONALITA_2026-03.md`](archive/PROJECT_CONTEXT_STATO_FUNZIONALITA_2026-03.md). **Aggiornare questa sezione a fine sessione** se emergono nuove priorità o se una priorità elencata viene chiusa (stesso principio delle "Lezioni apprese" in [GUIDA_CONSOLIDATA.md](GUIDA_CONSOLIDATA.md) — sintesi qui, dettaglio linkato).
 
-**Ultimo aggiornamento di questa sezione**: 17/08/2026 (MC-3 Rule Engine; hollow 10210/10219 su main).
+**Ultimo aggiornamento di questa sezione**: 17/08/2026 (MC-4 API certificati; MC-3 Rule Engine su main).
 
 ### Moduli maturi (in produzione, uso quotidiano dai clienti Camellini/Mason)
 
@@ -16,7 +16,9 @@ Audit multi-standard (9001/14001/45001) · Non Conformità (workflow ISO 10.2 co
 
 ### Sessione più recente (17/08/2026)
 
-**MC-3 Rule Engine (17/08)** — `materialComplianceRuleEngine.service.js`: JSON certificato + snapshot KB → `status` + `checks[]`. Zero LLM; non scrive `compliant`. Prossima: **MC-4** API.
+**MC-4 API (17/08)** — `materialCertificates.controller.js`: lista/dettaglio/upload, extract (ingest) e evaluate (motore MC-3 persistito in `pending_review`). `compliant` solo da HITL approve. Prossima: **MC-5** UI.
+
+**MC-3 Rule Engine (17/08)** — `materialComplianceRuleEngine.service.js`: JSON certificato + snapshot KB → `status` + `checks[]`. Zero LLM; non scrive `compliant`. Mergiata [#454](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/454).
 
 **EN 10219-1:2006 consegnata (17/08)** — NORMA_00028 + estratto [`EN-10219-1-sezioni-cave.md`](reference/EN-10219-1-sezioni-cave.md). Hollow **a freddo** seedabile se il certificato cita 10219.
 
@@ -75,7 +77,7 @@ Sessione prodotto precedente (10/08/2026): fix filtri dashboard duplicati (Quali
 | 1 | **Modulo Notifiche/Alert — destinatario allerte qualifiche non è una scelta esplicita in anagrafica** | Oggi risolto da un algoritmo a cascata, non da una scelta visibile in UI | `qualificationAlert.service.js` (`resolveWeldingCoordinatorRecipients`) |
 | 2 | **Shell dialog di revisione ingest — markup/CSS duplicato** (non urgente, basso rischio) | `IngestReviewDialog.jsx` vs dialog interno `ReprocessQueueBanner.jsx`: guscio overlay duplicato (~60-80 righe); pattern sistemico su molti altri modal nel progetto | Vedi backlog sotto per dettaglio |
 | 3 | **Pagina Impostazioni → Organizzazione (P.IVA + logo tenant)** | PR #10 aperta da aprile 2026, 180 file in conflitto — richiede ricostruzione, non merge | Vedi riga dedicata nel backlog sotto |
-| 4 | **Material Compliance AI (certificati EN 10204, base e apporto)** | MC-0/MC-1/MC-2 mergiate. Hollow 10210/10219 se citata. MC-3 Rule Engine in PR. Poi MC-4 API. Soglie apporto: Markdown mancante → skip | [DATA_MODEL](specs/MATERIAL_COMPLIANCE_DATA_MODEL.md) · motore `materialComplianceRuleEngine.service.js` |
+| 4 | **Material Compliance AI (certificati EN 10204, base e apporto)** | MC-0…MC-3 mergiate. MC-4 API in PR. Poi MC-5 UI. Soglie apporto: Markdown mancante → skip | [DATA_MODEL](specs/MATERIAL_COMPLIANCE_DATA_MODEL.md) · API `materialCertificates.controller.js` |
 | 5 | **Rischi — lista riesami ambito (ROO-17)** | Storico per riga c’è; manca l’interrogazione per azienda/periodo (§9.3) | [PLAN §7](agent-tasks/PLAN_RISCHI_OPPORTUNITA_OBIETTIVI_SLICES.md) |
 | 6 | **SAL AI evidenze — OCR + documento mancante (HITL)** | Suggeritore 5-A/5-B legge solo PDF/DOCX testo; PDF scan/immagini saltati; se manca evidenza → solo messaggio low, nessuna ricerca tipo/upload guidato | [PLAN](agent-tasks/PLAN_SAL_AI_EVIDENCE_SLICES.md) · brief [S1a](agent-tasks/DEPUTYTASK.md) |
 | 7 | **ISO 3834 — completezza per processi (RBAC + ponti + report)** | ISO-1* + ISO-2 + ISO-3 mergiate e ISO-3 deployata. Prossima: ISO-4 Word RDP Mason (serve il file) | [PLAN](agent-tasks/PLAN_3834_SLICES.md) · brief [ISO-3 CHIUSO](agent-tasks/DEPUTYTASK1.md) |

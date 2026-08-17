@@ -1,8 +1,8 @@
 # Material Compliance — API (MC-0)
 
-> **Tipo**: spec tecnica API (nessun controller in questa slice)  
+> **Tipo**: spec tecnica API — implementata in MC-4 (`materialCertificates.controller.js`)  
 > **Versione**: 1.0 — 16/08/2026  
-> **Stato**: Proposto — fondazione  
+> **Stato**: Implementato in **MC-4** (routes/controller). Seam licenza dedicata = **MC-6** (oggi AND `saldatura`+`ai_import`).  
 > **Slice**: implementazione in **MC-4** (routes/controller) + **MC-6** (seam licenza)  
 > **Data model**: [MATERIAL_COMPLIANCE_DATA_MODEL.md](MATERIAL_COMPLIANCE_DATA_MODEL.md) · **UI**: [MATERIAL_COMPLIANCE_UI.md](MATERIAL_COMPLIANCE_UI.md)  
 > **Prodotto**: [MODULO_MATERIAL_COMPLIANCE_AI.md](MODULO_MATERIAL_COMPLIANCE_AI.md)  

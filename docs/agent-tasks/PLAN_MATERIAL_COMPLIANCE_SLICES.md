@@ -175,13 +175,13 @@ Jest backend su fixture JSON (`materialComplianceRuleEngine.service.test.js`). P
 
 ### DoD
 
-- [ ] 401/403 corretti senza licenza / senza accesso azienda
-- [ ] Extract e evaluate tracciati
-- [ ] Nessun auto-passaggio a `compliant`
+- [x] 401/403 corretti senza licenza / senza accesso azienda
+- [x] Extract e evaluate tracciati
+- [x] Nessun auto-passaggio a `compliant`
 
 ### Test L1
 
-Test controller/service con mock DB se pattern esistente.
+Test controller/service con mock DB (`materialCertificates.controller.test.js`). Persistenza `evaluate_result_json` / righe checks = questa slice.
 
 ---
 
