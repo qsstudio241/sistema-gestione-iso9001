@@ -135,6 +135,17 @@ describe('materialKbLoader (MC-2)', () => {
     expect(hit.source).toBe('en10219');
   });
 
+  it('tubo EN 10210-1 S355J2H 3 mm: Rm fascia ≤3 (510–680), non 3–100', () => {
+    const hit = lookupEn10025Limits(snap, {
+      productForm: 'tube',
+      designation: 'S355J2H',
+      materialStandard: 'EN 10210-1',
+      thicknessMm: 3,
+    });
+    expect(hit.skip).toBe(false);
+    expect(hit.rm).toEqual({ min: 510, max: 680 });
+  });
+
   it('tubo EN 10210-1 S355J2H 10 mm: ReH 355, C 0.22, CEV 0.45', () => {
     const hit = lookupEn10025Limits(snap, {
       materialRole: 'base',
