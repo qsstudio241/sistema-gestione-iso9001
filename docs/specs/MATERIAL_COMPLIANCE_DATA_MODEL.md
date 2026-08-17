@@ -253,7 +253,8 @@ Non duplicare lo storage del PDF se `import_job_files.storage_path` basta.
 ## Rule Engine (contratto dati — implementazione MC-3)
 
 Input: `corrected_json` ?? `extracted_json` + `kb_snapshot_*`.  
-Output: `evaluate_result_json` + righe `material_certificate_checks`.
+Output (MC-3): oggetto `{ status: pass|fail|skip, kb_snapshot_hash, checks[] }`.  
+Persistenza `evaluate_result_json` + righe `material_certificate_checks` = **MC-4**. Il motore **non** imposta `workflow_status=compliant`.
 
 Regole MVP già chiuse:
 

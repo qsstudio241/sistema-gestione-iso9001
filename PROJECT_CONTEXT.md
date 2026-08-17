@@ -68,7 +68,7 @@ Deploy/SSH: [how-to/deploy.md](docs/how-to/deploy.md) + [ACCESSO_DEPLOY_AGENTS.m
 | Export Word verbale audit | `app/src/utils/wordExport.js`, `app/src/utils/wordExportHelpers.js` |
 | UI / design system | `app/src/design-system/README.md`, `docs/reference/LIBRERIA_UI_SGQ.md` |
 | Deploy VPS | `docs/how-to/deploy.md`, `backend/scripts/deploy-to-vps.sh`, `docs/how-to/ACCESSO_DEPLOY_AGENTS.md` |
-| Material Compliance (epic) | `docs/specs/MODULO_MATERIAL_COMPLIANCE_AI.md`, `docs/specs/MATERIAL_COMPLIANCE_DATA_MODEL.md`, `docs/specs/MATERIAL_COMPLIANCE_UI.md`, `docs/specs/MATERIAL_COMPLIANCE_API.md` |
+| Material Compliance (epic) | `docs/specs/MODULO_MATERIAL_COMPLIANCE_AI.md`, `docs/specs/MATERIAL_COMPLIANCE_DATA_MODEL.md`, `backend/src/services/materialKbLoader.service.js`, `backend/src/services/materialComplianceRuleEngine.service.js` |
 | Rischi / opportunità / obiettivi | `app/src/pages/RisksPage.jsx`, `backend/src/controllers/risks.controller.js`, `docs/specs/PROCESSO_ANALISI_RISCHI_OPPORTUNITA.md`, `docs/specs/M03_ANALISI_RISCHI_OPPORTUNITA.md`, `docs/agent-tasks/PLAN_RISCHI_OPPORTUNITA_OBIETTIVI_SLICES.md` |
 | Second Brain / Assistente di Ambito | `docs/agent-tasks/PLAN_SECOND_BRAIN_SLICES.md`, `app/src/pages/AiAssistantPage.jsx`, `app/src/pages/StudioSettingsPage.jsx`, `app/src/pages/CompanyDetailPage.jsx`, `backend/src/controllers/aiChat.controller.js`, `backend/src/services/aiCompanyScope.service.js`, `docs/adr/ADR-010-ai-agentic-architecture.md` |
 

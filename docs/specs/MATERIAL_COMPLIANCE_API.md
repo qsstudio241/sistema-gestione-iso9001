@@ -127,6 +127,7 @@ Prompt AI: deve classificare `material_role` (`base` \| `filler`). Sinonimi appo
 ## Evaluate `POST /:id/evaluate`
 
 - Input DB: JSON corretto ?? estratto + loader KB (hash).
+- Motore: `evaluateMaterialCertificate` in `materialComplianceRuleEngine.service.js` (**MC-3**, zero LLM).
 - **Zero** chiamate LLM.
 - Scrive `evaluate_result_json`, sostituisce le righe `material_certificate_checks`, stato → `pending_review` se era `extracted` / `pending_review`.
 - Non passa a `compliant`.
