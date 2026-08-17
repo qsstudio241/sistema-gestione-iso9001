@@ -333,7 +333,7 @@ function lookupEn10025Limits(snapshot, query = {}) {
       designation: parsed,
     };
   }
-  if (LONG_ONLY_FAMILIES.has(parsed.family) && (form === 'plate' || form === 'sheet')) {
+  if (LONG_ONLY_FAMILIES.has(parsed.family) && !LONG_PRODUCT_FORMS.has(form)) {
     return { skip: true, source: 'en10025', reason: 'S460/S500 solo prodotti lunghi' };
   }
   const t = query.thicknessMm;

@@ -194,6 +194,27 @@ describe('materialKbLoader (MC-2)', () => {
     expect(hit.cHeatMax).toBe(0.22);
   });
 
+  it('S460 senza forma o su lamiera → skip; barra 10 mm ReH 460', () => {
+    const none = lookupEn10025Limits(snap, {
+      designation: 'S460J2',
+      thicknessMm: 10,
+    });
+    const plate = lookupEn10025Limits(snap, {
+      designation: 'S460J2',
+      productForm: 'plate',
+      thicknessMm: 10,
+    });
+    const bar = lookupEn10025Limits(snap, {
+      designation: 'S460J2',
+      productForm: 'bar',
+      thicknessMm: 10,
+    });
+    expect(none.skip).toBe(true);
+    expect(plate.skip).toBe(true);
+    expect(bar.skip).toBe(false);
+    expect(bar.rehMin).toBe(460);
+  });
+
   it('nota b: S355J2 prodotti lunghi 150–250 mm CEV 0.54, lamiera 0.49', () => {
     const plate = lookupEn10025Limits(snap, {
       designation: 'S355J2',
