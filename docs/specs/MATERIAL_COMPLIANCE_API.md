@@ -133,7 +133,7 @@ Prompt AI: deve classificare `material_role` (`base` \| `filler`). Sinonimi appo
 
 Skip obbligatori (stesso motore, `result: skip`):
 
-- Norma prodotto assente in Markdown (tubi 10210/10219; apporto oltre classificazione 14341).
+- Norma prodotto assente in Markdown (apporto oltre classificazione 14341); hollow senza citazione 10210 vs 10219; EN 10210-2 / 10219-2 da sole.
 - Livello ADR-021 non nello scope (niente PO, niente `customers/`, niente `companies/<slug>/`).
 
 Fail: tipo documento richiesto dal capitolato/PO ≠ tipo sul PDF, quando quel requisito è nello snapshot.
