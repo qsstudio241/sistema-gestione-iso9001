@@ -1,8 +1,7 @@
 # DEPUTYTASK — Material Compliance MC-4 (API)
 
-**Stato:** CHIUSO — TEST OK  
+**Stato:** APERTO — TEST OK, attesa PR/merge  
 **Aperto:** 17/08/2026 (dopo merge MC-3 #454)  
-**Chiuso:** 17/08/2026  
 **Piano:** [`PLAN_MATERIAL_COMPLIANCE_SLICES.md`](PLAN_MATERIAL_COMPLIANCE_SLICES.md) § MC-4  
 **Spec:** [`MATERIAL_COMPLIANCE_API.md`](../specs/MATERIAL_COMPLIANCE_API.md) · [`MATERIAL_COMPLIANCE_DATA_MODEL.md`](../specs/MATERIAL_COMPLIANCE_DATA_MODEL.md)  
 **Rischio:** Medio — backend additivo, nessuna migrazione; PR + gate Bugbot; Cloud **non** mergia  
@@ -23,10 +22,11 @@ Fonti Markdown:
 ## Esito
 
 - Prefisso `/api/v1/material-certificates` (JWT + AND `saldatura`/`ai_import`)
-- Extract: `documentTextExtractor` + `importAiExtraction` (`logAiInteraction`); senza testo → `text_ready` / `ocr_skipped`, non 500
-- Evaluate: `evaluateMaterialCertificate` → `evaluate_result_json` + sostituisce `material_certificate_checks`, stato `pending_review`
-- `compliant` solo da POST approve (HITL). PATCH rifiuta `workflow_status`
-- L1: `materialCertificates.controller.test.js` + seam licenza
+- Extract: `documentTextExtractor` + `importAiExtraction` (`logAiInteraction`); senza testo → `text_ready` / `ocr_skipped`, non 500; **409** se già `compliant`/`archived`/`pending_review`
+- Evaluate: `evaluateMaterialCertificate` → transazione DELETE+INSERT checks + `pending_review`; azzera `reviewed_by`/`reviewed_at`/`review_notes`
+- `compliant` solo da POST approve (HITL). PATCH rifiuta `workflow_status`. Reject solo da `pending_review`
+- Tenant: `companyBelongsToOrg` su create/list/stats
+- L1: 46/46 (`materialCertificates.controller.test.js` + seam licenza)
 - Nessuna migrazione (schema 149 basta)
 
-Prossima: **MC-5** UI. `DEPUTYTASK.md` (SAL S1a) non toccato.
+Bugbot (branch): extract non degrada HITL; evaluate pulisce i timbri di revisione. Prossima: **MC-5** UI dopo merge. `DEPUTYTASK.md` (SAL S1a) non toccato.

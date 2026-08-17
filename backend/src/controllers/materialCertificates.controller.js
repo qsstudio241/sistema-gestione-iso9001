@@ -33,6 +33,7 @@ const GRID_STATUSES = new Set([
 ]);
 const ROLES = new Set(['base', 'filler']);
 const DOC_TYPES = new Set(['2.1', '2.2', '3.1', '3.2']);
+const EXTRACTABLE = new Set(['received', 'text_ready', 'extracted', 'ocr_running']);
 const EVALUABLE = new Set(['received', 'text_ready', 'extracted', 'pending_review', 'non_compliant']);
 const APPROVABLE = new Set(['pending_review', 'non_compliant']);
 const REJECTABLE = new Set(['pending_review']);
@@ -288,6 +289,9 @@ async function persistEvaluateResult(organizationId, certificateId, result) {
             kb_snapshot_hash = @kb_snapshot_hash,
             kb_snapshot_json = @kb_snapshot_json,
             workflow_status = 'pending_review',
+            reviewed_by = NULL,
+            reviewed_at = NULL,
+            review_notes = NULL,
             updated_at = SYSUTCDATETIME()
         WHERE id = @id AND organization_id = @organization_id
       `);
@@ -619,6 +623,13 @@ async function extractCertificate(req, res) {
     const row = await loadCertificate(req, id);
     if (!row) return res.status(404).json({ error: 'Certificato non trovato' });
     if (await denyIfCannotWrite(req, res, row.company_id)) return;
+    if (!EXTRACTABLE.has(row.workflow_status)) {
+      return res.status(409).json({
+        error: 'Estrazione non consentita in questo stato',
+        code: 'ILLEGAL_TRANSITION',
+        workflow_status: row.workflow_status,
+      });
+    }
 
     const extracted = await extractDocumentText(row.storage_path, 'application/pdf', row.storage_path);
     const text = extracted.text || '';

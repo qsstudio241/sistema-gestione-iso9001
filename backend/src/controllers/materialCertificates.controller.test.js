@@ -259,6 +259,15 @@ describe('materialCertificates.controller (MC-4)', () => {
     expect(sqls.some((s) => /DELETE FROM dbo.material_certificate_checks/.test(s))).toBe(true);
     expect(sqls.some((s) => /INSERT INTO dbo.material_certificate_checks/.test(s))).toBe(true);
     expect(sqls.some((s) => /workflow_status = 'pending_review'/.test(s))).toBe(true);
+    expect(sqls.some((s) => /reviewed_by = NULL/.test(s))).toBe(true);
+  });
+
+  it('extract da compliant → 409 (non degrada HITL)', async () => {
+    query.mockResolvedValueOnce({ recordset: [{ ...CERT, workflow_status: 'compliant' }] });
+    const res = mockRes();
+    await ctrl.extractCertificate(mockReq({ params: { id: '11' } }), res);
+    expect(res.status).toHaveBeenCalledWith(409);
+    expect(extractDocumentText).not.toHaveBeenCalled();
   });
 
   it('evaluate rollback se INSERT checks fallisce', async () => {
