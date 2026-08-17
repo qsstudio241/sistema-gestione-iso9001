@@ -54,6 +54,7 @@ Deploy/SSH: [how-to/deploy.md](docs/how-to/deploy.md) + [ACCESSO_DEPLOY_AGENTS.m
 | Saldatura WPQR / WPS | `backend/src/controllers/welding.controller.js`, `backend/src/services/wpsGenerator.service.js`, `app/src/pages/WeldingProceduresPage.jsx` |
 | Welding Book | `backend/src/controllers/weldingBooks.controller.js`, `app/src/pages/WeldingBooksPage.jsx` |
 | Commesse ISO 3834 | `backend/src/controllers/projects.controller.js`, `app/src/pages/ProjectsPage.jsx` |
+| ISO 3834 (completezza / processi) | `docs/agent-tasks/PLAN_3834_SLICES.md`, `docs/gap-reports/GAP_RDP_3834_2026-08-15.md`, `app/src/pages/WeldingDashboardPage.jsx`, `backend/src/controllers/rdp.controller.js` |
 | SAL / gap requisiti | `backend/src/services/gapAnalysis.service.js`, `app/src/pages/SALModule.jsx`, `docs/specs/MODULO_SAL_SCOPO_E_ROADMAP.md` |
 | Profilo azienda / company_profile | `docs/adr/ADR-018-company-profile-conformita-legislativa.md`, `docs/specs/COMPANY_PROFILE_CAMPI_E_TEMPLATE_EXCEL.md`, `backend/src/controllers/company.controller.js`, `backend/src/services/moduleLicense.service.js`, `app/src/pages/CompanyDetailPage.jsx` |
 | Anagrafiche aziende | `backend/src/controllers/company.controller.js`, `app/src/pages/AnagrafichePage.jsx`, `app/src/pages/CompanyDetailPage.jsx` |
@@ -67,8 +68,9 @@ Deploy/SSH: [how-to/deploy.md](docs/how-to/deploy.md) + [ACCESSO_DEPLOY_AGENTS.m
 | Export Word verbale audit | `app/src/utils/wordExport.js`, `app/src/utils/wordExportHelpers.js` |
 | UI / design system | `app/src/design-system/README.md`, `docs/reference/LIBRERIA_UI_SGQ.md` |
 | Deploy VPS | `docs/how-to/deploy.md`, `backend/scripts/deploy-to-vps.sh`, `docs/how-to/ACCESSO_DEPLOY_AGENTS.md` |
-| Material Compliance (epic) | `docs/specs/MODULO_MATERIAL_COMPLIANCE_AI.md`, `docs/agent-tasks/PLAN_MATERIAL_COMPLIANCE_SLICES.md` |
+| Material Compliance (epic) | `docs/specs/MODULO_MATERIAL_COMPLIANCE_AI.md`, `docs/specs/MATERIAL_COMPLIANCE_DATA_MODEL.md`, `docs/specs/MATERIAL_COMPLIANCE_UI.md`, `docs/specs/MATERIAL_COMPLIANCE_API.md` |
 | Rischi / opportunità / obiettivi | `app/src/pages/RisksPage.jsx`, `backend/src/controllers/risks.controller.js`, `docs/specs/PROCESSO_ANALISI_RISCHI_OPPORTUNITA.md`, `docs/specs/M03_ANALISI_RISCHI_OPPORTUNITA.md`, `docs/agent-tasks/PLAN_RISCHI_OPPORTUNITA_OBIETTIVI_SLICES.md` |
+| Second Brain / Assistente di Ambito | `docs/agent-tasks/PLAN_SECOND_BRAIN_SLICES.md`, `app/src/pages/AiAssistantPage.jsx`, `app/src/pages/StudioSettingsPage.jsx`, `app/src/pages/CompanyDetailPage.jsx`, `backend/src/controllers/aiChat.controller.js`, `backend/src/services/aiCompanyScope.service.js`, `docs/adr/ADR-010-ai-agentic-architecture.md` |
 
 <!-- MODULE_COMPASS_END -->
 

@@ -6,13 +6,32 @@
                              "src/services/normConnectors",
                              "src/services/adapters",
                              "src/utils",
-                             "src/data"
+                             "src/data",
+                             "data/material-compliance",
+                             "data/material-compliance/dictionary",
+                             "data/material-compliance/standards",
+                             "data/material-compliance/customers",
+                             "data/material-compliance/companies"
                          ],
     "groups":  [
                    {
                        "name":  "package",
                        "files":  [
                                      "package.json"
+                                 ]
+                   },
+                   {
+                       "name":  "material-kb",
+                       "files":  [
+                                     "data/material-compliance/COVERAGE.md",
+                                     "data/material-compliance/README.md",
+                                     "data/material-compliance/dictionary/fields.md",
+                                     "data/material-compliance/standards/en-10025-2.md",
+                                     "data/material-compliance/standards/en-10168.md",
+                                     "data/material-compliance/standards/en-10204.md",
+                                     "data/material-compliance/standards/iso-14341.md",
+                                     "data/material-compliance/customers/README.md",
+                                     "data/material-compliance/companies/README.md"
                                  ]
                    },
                    {
@@ -37,6 +56,7 @@
                                      "src/data/shieldingGases14175.js",
                                      "src/data/weldingTemperatures13916.js",
                                      "src/data/fillerWire14341.js",
+                                     "src/data/capitolatoMaterialKeys.js",
                                      "src/data/weldingQualificationRules9606.js",
                                      "src/data/weldingQualificationRules15614.js",
                                      "src/data/weldingSymbols2553.js",
@@ -71,7 +91,8 @@
                                      "src/utils/numericSanitizer.js",
                                      "src/utils/linkedLegislationParser.js",
                                      "src/utils/riskScore.js",
-                                     "src/utils/riskReviews.js"
+                                     "src/utils/riskReviews.js",
+                                     "src/utils/technicalReviewChecklist.js"
                                  ]
                    },
                    {
@@ -107,7 +128,8 @@
                                      "src/services/wpsIngest.service.js",
                                      "src/services/wpsGenerator.service.js",
                                      "src/services/normBroker.service.js",
-                                     "src/services/gapAnalysis.service.js"
+                                     "src/services/gapAnalysis.service.js",
+                                     "src/services/materialKbLoader.service.js"
                                  ]
                    },
                    {
@@ -145,6 +167,7 @@
                                      "src/services/commercialCustomerCounterparty.service.js",
                                      "src/services/drawingExtraction.service.js",
                                      "src/services/aiOrganizationContext.service.js",
+                                     "src/services/ambitoFacts.service.js",
                                      "src/services/documentTextExtractor.service.js",
                                      "src/services/knowledgeIndexer.service.js",
                                      "src/services/alertMail.service.js",

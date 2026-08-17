@@ -1,4 +1,4 @@
-# ADR-020 — Material Compliance AI (modulo certificati materia prima)
+# ADR-020 — Material Compliance AI (modulo certificati materiali di base e d’apporto)
 
 > **Stato**: Proposto — fondazione documentale 05/08/2026  
 > **Autori**: Lead architect (AI), Product owner  
@@ -11,7 +11,7 @@
 
 ## Contesto e problema
 
-Le aziende metalmeccaniche (es. forniture EN 1090 / ISO 3834) ricevono molti **certificati EN 10204 3.1** e li verificano a mano contro norma materiale, ordine, requisiti cliente e criteri interni. Oggi la piattaforma SGQ ha ingest PDF, registro documenti e AI adapter, ma **non** un flusso dedicato a:
+Le aziende metalmeccaniche (es. forniture EN 1090 / ISO 3834) ricevono molti **certificati EN 10204** (2.1–3.2) sui **materiali di base** (lamiere, profili, tubi) e sui **materiali d’apporto** (filo, elettrodo, flusso) e li verificano a mano contro norma, ordine, requisiti cliente e criteri interni. Oggi la piattaforma SGQ ha ingest PDF, registro documenti e AI adapter, ma **non** un flusso dedicato a:
 
 1. estrarre campi tecnici dal certificato;
 2. confrontarli in modo **deterministico** con requisiti multi-livello;
@@ -26,7 +26,8 @@ Serve un **modulo integrato**, non un’app separata.
 ### 1. Modulo nella piattaforma esistente
 
 Nome prodotto: **Material Compliance AI**.  
-Implementazione: route/UI/API/DB **dentro** `sistema-gestione-iso9001`, multi-tenant (`organization_id` + company scope).
+Implementazione: route/UI/API/DB **dentro** `sistema-gestione-iso9001`, multi-tenant (`organization_id` + company scope).  
+Stesso modulo per ISO 3834 §11 (consumabili) e §12 (materiali base): colonna `material_role` = `base` \| `filler`, non un CRUD nel modulo Saldatura. Spec: [DATA_MODEL](../specs/MATERIAL_COMPLIANCE_DATA_MODEL.md).
 
 ### 2. Riuso obbligatorio (nessuna architettura parallela)
 
@@ -49,8 +50,7 @@ Implementazione: route/UI/API/DB **dentro** `sistema-gestione-iso9001`, multi-te
 
 ### 4. OCR
 
-MVP **A**: solo PDF con strato testo (pipeline attuale).  
-MVP **B** (slice successiva): adapter OCR **configurabile** (env), dietro interfaccia unica — non hardcoded a un vendor nel codice di business.
+I certificati in campo sono di solito **scansioni** (HITL 16/08). OCR è **in MVP** (slice MC-B dopo extract), riusando `documentTextExtractor` / `ocrExtractor` — non un secondo motore. ADR precedente «MVP A senza OCR» superato dal piano MC. Spec: [DATA_MODEL](../specs/MATERIAL_COMPLIANCE_DATA_MODEL.md) § `text_extract_reason`.
 
 ### 5. Cosa produce il modulo
 
@@ -84,4 +84,5 @@ Flusso: PDF → testo/Markdown → JSON estratto (AI) → **Rule Engine** → st
 |---------|-------------|
 | Over-scope UI (7 voci menu) | MVP: elenco + dettaglio + approvazione (vedi spec) |
 | Allucinazione campi AI | Rule Engine + HITL obbligatorio; AI solo propone |
-| Duplicazione con ingest generico | Stesso job/pipeline; tipo documento dedicato `material_certificate_3_1` |
+| Duplicazione con ingest generico | Stesso job/pipeline; tipo documento dedicato `material_certificate` (tipo 2.1–3.2 nel JSON, non un tipo per ogni edizione) |
+| CRUD consumabili in 3834 | Vietato: i certificati d’apporto sono righe MC con `material_role=filler` |

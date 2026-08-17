@@ -24,6 +24,16 @@ const MATERIAL_FIELD_KEYS = new Set([
     'gruppo_materiale',
 ]);
 
+/** Chiavi ISO-3 certificato: non sono il gruppo materiale WPS (ISO 15608). */
+const NOT_WPS_BASE_MATERIAL_KEYS = new Set([
+    'material_role',
+    'material_standard',
+    'filler_designation',
+    'filler_standard',
+    'inspection_document_type',
+    'steel_designation',
+]);
+
 const PROCESS_FIELD_KEYS = new Set([
     'welding_process',
     'process',
@@ -98,10 +108,13 @@ function buildTechnicalProfile(requirements) {
         const reqType = String(r.req_type || '').toLowerCase();
 
         if (
-            reqType === 'material'
-            || MATERIAL_FIELD_KEYS.has(fk)
-            || fk.includes('material')
-            || fk.includes('materiale')
+            !NOT_WPS_BASE_MATERIAL_KEYS.has(fk)
+            && (
+                reqType === 'material'
+                || MATERIAL_FIELD_KEYS.has(fk)
+                || fk.includes('material')
+                || fk.includes('materiale')
+            )
         ) {
             if (!profile.base_material_group) {
                 profile.base_material_group = val;

@@ -218,11 +218,12 @@ function buildUserPrompt(project, wpsList, clauses, evidences) {
     let checklist = null;
     try { checklist = JSON.parse(project.technical_review_checklist); } catch (_) { checklist = null; }
     if (checklist && typeof checklist === 'object') {
-      const checked = Object.entries(checklist).filter(([, v]) => v && v.checked).length;
-      const total = Object.keys(checklist).length;
+      const itemEntries = Object.entries(checklist).filter(([k]) => k !== '_completion');
+      const checked = itemEntries.filter(([, v]) => v && v.checked).length;
+      const total = itemEntries.length;
       lines.push('');
       lines.push(`RIESAME TECNICO \u00A75.3: ${checked}/${total} punti verificati.`);
-      for (const [key, val] of Object.entries(checklist)) {
+      for (const [key, val] of itemEntries) {
         if (val && (val.checked || val.note)) {
           lines.push(`- ${key}: ${val.checked ? 'verificato' : 'non verificato'}${val.note ? ` (${val.note})` : ''}`);
         }

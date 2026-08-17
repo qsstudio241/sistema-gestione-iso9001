@@ -36,6 +36,10 @@ jest.mock('../utils/logger', () => ({
   debug: jest.fn(),
 }));
 
+jest.mock('../services/ambitoFacts.service', () => ({
+  loadAmbitoFacts: jest.fn(),
+}));
+
 const { chat, getActiveProvider } = require('../services/aiProviderAdapter');
 const { searchKnowledge } = require('../services/knowledgeIndexer.service');
 const {
@@ -44,7 +48,8 @@ const {
   buildStandardContextBlock,
 } = require('../services/aiStandardContext.service');
 const { resolveAiCompanyScope } = require('../services/aiCompanyScope.service');
-const { aiChat } = require('./aiChat.controller');
+const { loadAmbitoFacts } = require('../services/ambitoFacts.service');
+const { aiChat, getAmbitoFacts } = require('./aiChat.controller');
 
 function createRes() {
   const res = { statusCode: 200 };
@@ -318,4 +323,46 @@ describe('aiChat.controller — aiChat', () => {
     expect(systemContent).not.toContain('PREFERENZE APPRESE');
   });
 
+});
+
+describe('aiChat.controller — getAmbitoFacts', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
+  it('returns 403 when company scope is denied', async () => {
+    resolveAiCompanyScope.mockResolvedValue({
+      companyId: null,
+      denied: { status: 403, body: { error: 'Forbidden', code: 'FORBIDDEN' } },
+    });
+    const req = {
+      query: { companyId: '99' },
+      user: { organization_id: 99, auditor_org_id: 10, user_id: 5 },
+    };
+    const res = createRes();
+    await getAmbitoFacts(req, res);
+    expect(res.statusCode).toBe(403);
+    expect(loadAmbitoFacts).not.toHaveBeenCalled();
+  });
+
+  it('returns snapshot when scope is allowed', async () => {
+    resolveAiCompanyScope.mockResolvedValue({ companyId: 11, denied: null });
+    loadAmbitoFacts.mockResolvedValue({
+      ready: true,
+      companyId: 11,
+      companyName: 'Mason',
+      counts: { ncOpen: 1, qualsExpiring30: 0, docsExpiring30: 2 },
+    });
+    const req = {
+      query: { companyId: '11' },
+      user: { organization_id: 99, auditor_org_id: 10, user_id: 5 },
+    };
+    const res = createRes();
+    await getAmbitoFacts(req, res);
+    expect(loadAmbitoFacts).toHaveBeenCalledWith(req.user, 11);
+    expect(res.json).toHaveBeenCalledWith({
+      success: true,
+      data: expect.objectContaining({ ready: true, companyId: 11 }),
+    });
+  });
 });

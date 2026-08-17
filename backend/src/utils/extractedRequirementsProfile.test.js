@@ -32,6 +32,17 @@ describe('extractedRequirementsProfile', () => {
         expect(profileHasTechnicalData(profile)).toBe(true);
     });
 
+    test('ISO-3: material_role / filler_designation / material_standard non sono gruppo WPS', () => {
+        const profile = buildTechnicalProfile([
+            { req_type: 'spec', field_key: 'material_role', value_text: 'filler' },
+            { req_type: 'spec', field_key: 'filler_designation', value_text: 'G 42 4 M21 3Si1' },
+            { req_type: 'spec', field_key: 'material_standard', value_text: 'EN 10025-2' },
+            { req_type: 'spec', field_key: 'steel_designation', value_text: 'S355J2' },
+            { req_type: 'material', field_key: 'material_group', value_text: '1.2' },
+        ]);
+        expect(profile.base_material_group).toBe('1.2');
+    });
+
     test('mergeWpsWithExtractedProfile: estratto prevale su WPS', () => {
         const merged = mergeWpsWithExtractedProfile(
             {

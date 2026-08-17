@@ -8,23 +8,37 @@
 
 > **Risposta standard a «stato di avanzamento del progetto e priorità da affrontare»**: sintetizzare da questa sezione (moduli maturi + sessione più recente + tabella priorità sotto), **non** dal banner storico più sotto (superato, tenuto solo per traccia) né dall'archivio marzo 2026 [`docs/archive/PROJECT_CONTEXT_STATO_FUNZIONALITA_2026-03.md`](archive/PROJECT_CONTEXT_STATO_FUNZIONALITA_2026-03.md). **Aggiornare questa sezione a fine sessione** se emergono nuove priorità o se una priorità elencata viene chiusa (stesso principio delle "Lezioni apprese" in [GUIDA_CONSOLIDATA.md](GUIDA_CONSOLIDATA.md) — sintesi qui, dettaglio linkato).
 
-**Ultimo aggiornamento di questa sezione**: 15/08/2026 (wayfinder storico riga ROO-16 aperto; 6b-F resta in mappa).
+**Ultimo aggiornamento di questa sezione**: 17/08/2026 (MC-1 mergiata #450; MC-2 KB seed + loader; ROO-16 in PR #436 TEST).
 
 ### Moduli maturi (in produzione, uso quotidiano dai clienti Camellini/Mason)
 
 Audit multi-standard (9001/14001/45001) · Non Conformità (workflow ISO 10.2 completo) · Qualifiche Personale saldatori/NDT/coordinatori (ISO 9606-1/14732/14731/9712) · Saldatura (WPQR, generazione WPS da WPQR, Welding Book, Commesse ISO 3834, Dashboard 3834) · SAL (gap analysis requisiti con AI) · Registro Documenti + Scadenzari · Notifiche/Alert (documenti/NC/qualifiche) · Riesame di Direzione · RBAC multi-tenant (`company_access`) · Registro obblighi legali (ambiente + sicurezza) · Assistente AI / Gap Analysis euristica.
 
-### Sessione più recente (15/08/2026)
+### Sessione più recente (17/08/2026)
 
-**Deputy ROO-16** (solo TEST): snapshot `risk_reviews` su create/update significativo; `GET /risks/:id/reviews`; timeline nel form; default lista senza chiusi + checkbox. Brief [`DEPUTYTASK_RISCHI_ROO.md`](agent-tasks/DEPUTYTASK_RISCHI_ROO.md) **CHIUSO**. Prossima **ROO-17**. Non toccato [`DEPUTYTASK.md`](agent-tasks/DEPUTYTASK.md) (SAL S1a).
+**MC-2 PR [#451](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/451) (17/08)** — seed EN 10025-2 + loader snapshot/hash (skip se spessore/grado assente; note h/i/b). Prossima: **MC-3** Rule Engine.
 
-**Lead wayfinder — storico aggiornamenti riga** (solo doc): destinazione snapshot interrogabile; `risks` = corrente. Ora implementato in ROO-16.
+**MC-1 mergiata (17/08)** — [PR #450](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/450): tabelle `material_certificates` + `material_certificate_checks` (mig. **149**) su TEST e PROD.
 
-**Deputy ROO-8 / 15 / 6b-S** (solo TEST): picker catalogo §4.1/§4.2 sulla riga; `analysis_method` + quadrante + G con segno (mig 149); detector Excel SWOT. Preview 436 + API `test-api`. Produzione non toccata.
+**ISO-3 mergiata + deploy (16/08)** — [PR #448](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/448): chiavi EN 10204/10168 + apporto nel prompt capitolato; persistenza mig. 116. VPS health 200.
 
-**Lead wayfinder — SWOT e parti in M03** (solo doc): stessa matrice, non tab nuovi. Catalogo §4.2 = anagrafica da riesaminare; testo sulla riga = parti di *quella* valutazione; ponte UI = picker (ROO-8, ora fatto). SWOT = metodo `swot_signed` (ora fatto).
+**MC-0 mergiata (16/08)** — [PR #447](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/447): spec DATA_MODEL/UI/API, `material_role` base\|filler.
 
-**Lead wayfinder — SAL AI evidenze** (solo doc): mappa [`PLAN_SAL_AI_EVIDENCE_SLICES.md`](agent-tasks/PLAN_SAL_AI_EVIDENCE_SLICES.md). Gap: OCR non collegato all’estrattore usato dal SAL. Brief [`DEPUTYTASK.md`](agent-tasks/DEPUTYTASK.md) **APERTO** su slice **S1a**. Nessuna implementazione codice in sessione mappa.
+**EN 10025-2:2019 consegnata (16/08)** — NORMA_00026 + estratto soglie S235–S500 in [`EN-10025-2-acciai-strutturali.md`](reference/EN-10025-2-acciai-strutturali.md). Sblocca il seed MC-2 per lamiere/profili. Tubi: EN 10210-1 / 10219-1 **tracciate come mancanti**. Soglie apporto (2560/17632/14174) **mancanti** → skip, non fail. Inventario: [`MATERIAL-COMPLIANCE-NORME-SINTESI.md`](reference/MATERIAL-COMPLIANCE-NORME-SINTESI.md).
+
+**Norme certificati 3.1 consegnate (16/08)** — EN 10204, EN 10168, ISO 10474/404/6929 + facsimile MTC → Markdown in `docs/Normative/` + estratti in [`MATERIAL-COMPLIANCE-NORME-SINTESI.md`](reference/MATERIAL-COMPLIANCE-NORME-SINTESI.md). Sblocca dizionario campi MC e chiavi capitolato ISO-3.
+
+**ISO-2 — Riesame §5.3 data/utente + Word** ([PR #443](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/443) **mergiata**): timbro nel JSON, niente blocco apertura, Word checklist. Prossima: ISO-3 (AI capitolato, prompt + chiavi 10204). Brief [`DEPUTYTASK1.md`](agent-tasks/DEPUTYTASK1.md) **CHIUSO**.
+
+**ISO-1* mergiata** (RDP #438, NDT #439, Attrezzature #441, Welding Book #442).
+
+**Lead wayfinder — ISO 3834 HITL 16/08** (solo doc, mergiata [PR #437](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/437)): §5.3 senza blocco; Word RDP Mason; livelli 2/3/4 = meno schermate dopo, partenza senza filtri; certificati = griglia DDT+anagrafica. Conformità = norma + documenti esterni pertinenti all’Ambito (ADR-021).
+
+**Second Brain SB-1** (16/08): snapshot fatti Ambito (NC / qualifiche / documenti, zero LLM) in Assistente AI. Brief [`DEPUTYTASK2.md`](agent-tasks/DEPUTYTASK2.md) **CHIUSO**. Prossima: SB-2. Non sovrascrivere [`DEPUTYTASK.md`](agent-tasks/DEPUTYTASK.md) (SAL S1a).
+
+**In parallelo — SAL AI evidenze**: mappa [`PLAN_SAL_AI_EVIDENCE_SLICES.md`](agent-tasks/PLAN_SAL_AI_EVIDENCE_SLICES.md). Brief [`DEPUTYTASK.md`](agent-tasks/DEPUTYTASK.md) **APERTO** su slice **S1a**. Non sovrascrivere.
+
+**PR [#436](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/436) (TEST, non mergiata)** — ROO-16 storico riga (`risk_reviews`); ROO-8/15/6b-S picker §4.1/§4.2 + SWOT. Prossima **ROO-17**. Non toccato [`DEPUTYTASK.md`](agent-tasks/DEPUTYTASK.md) (SAL S1a).
 
 **Chiusura precedente (stesso giorno)** — Patrimonio studio distinto dai clienti ([PR #428](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/428) **mergiata**, verificato dal committente su Camellini). Ingest Excel rischi ROO-6/6c ([PR #429](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/429) **mergiata**): mapping colonne + residuo P/G a coppia.
 
@@ -55,9 +69,11 @@ Sessione prodotto precedente (10/08/2026): fix filtri dashboard duplicati (Quali
 | 1 | **Modulo Notifiche/Alert — destinatario allerte qualifiche non è una scelta esplicita in anagrafica** | Oggi risolto da un algoritmo a cascata, non da una scelta visibile in UI | `qualificationAlert.service.js` (`resolveWeldingCoordinatorRecipients`) |
 | 2 | **Shell dialog di revisione ingest — markup/CSS duplicato** (non urgente, basso rischio) | `IngestReviewDialog.jsx` vs dialog interno `ReprocessQueueBanner.jsx`: guscio overlay duplicato (~60-80 righe); pattern sistemico su molti altri modal nel progetto | Vedi backlog sotto per dettaglio |
 | 3 | **Pagina Impostazioni → Organizzazione (P.IVA + logo tenant)** | PR #10 aperta da aprile 2026, 180 file in conflitto — richiede ricostruzione, non merge | Vedi riga dedicata nel backlog sotto |
-| 4 | **Material Compliance AI (certificati EN 10204 3.1)** | Modulo proposto 05/08/2026, slice MC-0 (spec) non ancora avviata | [MODULO_MATERIAL_COMPLIANCE_AI.md](specs/MODULO_MATERIAL_COMPLIANCE_AI.md) |
+| 4 | **Material Compliance AI (certificati EN 10204, base e apporto)** | MC-0/MC-1 mergiate. MC-2 = seed KB + loader. Poi MC-3 Rule Engine. Tubi e soglie apporto: Markdown mancante → skip | [DATA_MODEL](specs/MATERIAL_COMPLIANCE_DATA_MODEL.md) · [MODULO](specs/MODULO_MATERIAL_COMPLIANCE_AI.md) · brief [MC-2](agent-tasks/DEPUTYTASK_MC2.md) |
 | 5 | **Rischi — lista riesami ambito (ROO-17)** | Storico per riga c’è; manca l’interrogazione per azienda/periodo (§9.3) | [PLAN §7](agent-tasks/PLAN_RISCHI_OPPORTUNITA_OBIETTIVI_SLICES.md) |
 | 6 | **SAL AI evidenze — OCR + documento mancante (HITL)** | Suggeritore 5-A/5-B legge solo PDF/DOCX testo; PDF scan/immagini saltati; se manca evidenza → solo messaggio low, nessuna ricerca tipo/upload guidato | [PLAN](agent-tasks/PLAN_SAL_AI_EVIDENCE_SLICES.md) · brief [S1a](agent-tasks/DEPUTYTASK.md) |
+| 7 | **ISO 3834 — completezza per processi (RBAC + ponti + report)** | ISO-1* + ISO-2 + ISO-3 mergiate e ISO-3 deployata. Prossima: ISO-4 Word RDP Mason (serve il file) | [PLAN](agent-tasks/PLAN_3834_SLICES.md) · brief [ISO-3 CHIUSO](agent-tasks/DEPUTYTASK1.md) |
+| 8 | **Second Brain — Assistente di Ambito (SB-1 fatti, zero LLM)** | Studio + clienti paganti: fatti dell'Ambito in app, non AIOS Claude. Chat dopo i numeri veri | [PLAN](agent-tasks/PLAN_SECOND_BRAIN_SLICES.md) · brief [SB-1](agent-tasks/DEPUTYTASK2.md) |
 
 > Nota: **Modulo NC — card statistiche duplicate da due tendine** (era riga 1) è stato chiuso da PR #374 (10/08/2026) — riga rimossa da questa tabella, non ancora aggiornata al momento in cui è stata scritta DEPUTYTASK4.
 
@@ -97,9 +113,10 @@ Elenco completo (voci meno urgenti, decisioni di prodotto in attesa, task parche
 | **Controparti azienda (PR1 ✅ · PR2 ✅)** | Tab **Controparti** in scheda azienda; `company_counterparties` (mig. **096**); backfill + `projects.end_customer_id` (mig. **097**); API nested; select committente in Riesame Requisiti con sync FK↔snapshot (`ContractReviewPage`, PR #230/#233). | Mig. 096–097; `companyCounterparties.controller.js`; `commercialCustomerCounterparty.service.js`; `CompanyCounterpartiesPanel.jsx`; `ContractReviewPage.jsx` |
 | **"Ambito" azienda — selettore unico in header (13/08/2026, UI ✅ PR #401)** | FE: un solo `CompanyScopeSelect` in `AppLayout`; le liste filtrano da `CompanyScopeContext`. Resta backlog **RBAC backend**: `equipment.controller.js` / RDP / NDT non usano ancora `companyAccess.service.js` (equipment filtra su `user.company_id` inesistente). Qualifiche resta l'unico modulo con `company_id` NOT NULL a DB. | `appCompanyScope.js` · [GUIDA lezione Ambito unico](GUIDA_CONSOLIDATA.md#lezioni-apprese-consolidate-fonte-unica) · [ARCHITETTURA_UTENTI_RBAC.md §8.3](ARCHITETTURA_UTENTI_RBAC.md#83-cosa-manca-o-è-parziale-gap-noti) |
 | **Pivot WPS — generazione da WPQR (non ingest)** | Feedback Mason 30/07/2026: matcher 15614 + bozza 15609 + Word Annex A. **P0–P5 ✅** (P5: advisory WPQR + visione nel riesame, non bloccante). | [MODULO_WPS_GENERAZIONE_SCOPO_E_ROADMAP.md](specs/MODULO_WPS_GENERAZIONE_SCOPO_E_ROADMAP.md) |
-| **Material Compliance AI (certificati EN 10204 3.1)** | Modulo proposto 05/08/2026: PDF → estrazione AI → Rule Engine deterministico → HITL. Riuso ingest/AI/RBAC. **Prossimo:** slice **MC-0** (spec DATA_MODEL/UI/API). OCR e dashboard KPI fuori MVP-A. | [MODULO](specs/MODULO_MATERIAL_COMPLIANCE_AI.md) · [PLAN](agent-tasks/PLAN_MATERIAL_COMPLIANCE_SLICES.md) · [brief MC-0](agent-tasks/DEPUTYTASK_MATERIAL_COMPLIANCE_AI_FOUNDATION.md) · ADR-020…024 |
+| **Material Compliance AI (certificati EN 10204, base e apporto)** | Modulo proposto 05/08/2026: PDF → estrazione AI → Rule Engine → HITL. **MC-0 mergiata 16/08** ([PR #447](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/447)). **Prossimo:** MC-1 migration. Soglie lamiere EN 10025-2 in Markdown; tubi e soglie apporto ancora da consegnare (skip). | [sintesi](reference/MATERIAL-COMPLIANCE-NORME-SINTESI.md) · [MODULO](specs/MODULO_MATERIAL_COMPLIANCE_AI.md) · [PLAN](agent-tasks/PLAN_MATERIAL_COMPLIANCE_SLICES.md) · ADR-020…024 |
 | **Rischi, Opportunità e Obiettivi (processo M03)** | Draft studio M03-R00. Prossimo: **ROO-4** campi riga di analisi su `risks`. Cataloghi 4.1/4.2 restano opzionali. Non parallelizzare su `RisksPage.jsx`. | [PLAN](agent-tasks/PLAN_RISCHI_OPPORTUNITA_OBIETTIVI_SLICES.md) · [spec M03](specs/M03_ANALISI_RISCHI_OPPORTUNITA.md) · [DEPUTYTASK_RISCHI_ROO.md](agent-tasks/DEPUTYTASK_RISCHI_ROO.md) |
 | **SAL AI evidenze (OCR + doc mancante)** | Estendere lettura evidenze (OCR PDF/immagini riusando `ocrExtractor`) e flusso HITL «tipo tipico → candidati registro → collega/carica/ignora». Prima slice: **S1a**. | [PLAN](agent-tasks/PLAN_SAL_AI_EVIDENCE_SLICES.md) · [DEPUTYTASK.md](agent-tasks/DEPUTYTASK.md) |
+| **ISO 3834 completo/affidabile (processi §5–18)** | Vista per processo. HITL 16/08 chiusi. ISO-1*+ISO-2 mergiate; ISO-3 = prompt certificati base/apporto. | [PLAN](agent-tasks/PLAN_3834_SLICES.md) · [DEPUTYTASK1.md](agent-tasks/DEPUTYTASK1.md) · [gap 15/08](gap-reports/GAP_RDP_3834_2026-08-15.md) |
 
 ---
 
@@ -109,6 +126,7 @@ Elenco completo (voci meno urgenti, decisioni di prodotto in attesa, task parche
 
 | Task | Origine | Perché parcheggiato | Condizione di ripresa |
 |------|---------|---------------------|-----------------------|
+| **Verifica mensile vigore Markdown norme in Git (giorno 1) — scadenziario superadmin** | HITL 16/08/2026, dopo digitalizzazione EN 10204/10168 | `pdf_to_json` **non** interroga UNI/ISO: estrae solo testo. Il job esistente (`normValidityChecker`, lunedì 03:00) copre il **registro documenti dei tenant**, non `docs/Normative/*.md` né `knowledge/`. Rischio: agente ISO-3/MC su edizione ritirata | Non urgente. Slice: (1) lookup UNI in conversione (frontmatter vigore); (2) cron `0 6 1 * *` su elenco Markdown KB; (3) alert in dashboard superadmin (`BillingDashboardPage`), **non** in Scadenzari da file. Riusare `uniStoreConnector` / `normCatalogLookup`. Nessun download automatico del testo UNI (ToS). |
 | **Pagina Impostazioni → Organizzazione (P.IVA + logo tenant)** | [PR #10](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/10) (resta **aperta**) | **Aggiornamento 08/08/2026**: verificato stato reale su GitHub — `mergeable: CONFLICTING`, **180 file coinvolti nel confronto** con `main` (branch fermo da aprile 2026, 4 mesi di deriva). Non è più un semplice rebase: la funzionalità (P.IVA/logo tenant) non risulta ancora implementata altrove, ma il codice della PR va **ricostruito su base aggiornata**, non aggiornato. Il committente aprirà una sessione dedicata (nuova chat, eventualmente recuperando la chat originale che l'ha prodotta) invece di procedere in coda a questa | Sessione dedicata: NON tentare "Update branch"/merge diretto (rischio alto con 180 file in conflitto). Verificare prima se la funzionalità serve ancora così com'è; se sì, ripartire da `main` corrente e reimplementare il form (`OrganizationProfileForm`), non risolvere i conflitti a mano. Poi chiudere questa PR o sostituirla |
 | **Caricamento verbale di audit con revisione = numeratore audit** | Chiusura [PR #52](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/52) (07/06/2026) | Il report Word deve restare **modificabile** e caricato **manualmente** (no automatismo audit-close → registry) | Tipo doc «Verbale di audit» (cartella 12 AUDIT); al caricamento `revision = audit.audit_number` read-only; valutare allargare `document_registry.revision` (NVARCHAR > 20); salvare `audit_id`/`audit_number` in `type_specific_data`. Dettaglio in [DEPUTYTASK.md](agent-tasks/DEPUTYTASK.md) |
 | **T6 — Recovery UI + history API + compaction notturna** | Sprint sync T (ADR-008) | Dipende da T5 stabile | Compliance ISO 9001 §7.5; vedi [GUIDA § ADR-008](GUIDA_CONSOLIDATA.md#architettura-target-sync--event-sourced-adr-008) |

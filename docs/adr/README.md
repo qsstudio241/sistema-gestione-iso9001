@@ -72,7 +72,7 @@ Rinumerazione sequenziale univoca: backlog doc Fase 3 (vedi [INDICE_DOCUMENTAZIO
 | [ADR-011-registry-norm-sot](./ADR-011-registry-norm-sot.md) | Registro documentale SoT metadati norma (R1–R7) | Accettato |
 | [ADR-018-company-profile-conformita-legislativa](./ADR-018-company-profile-conformita-legislativa.md) | Profilo azienda conformità legislativa | Accettato |
 | [ADR-019-registro-obblighi-legali-ambiente-sicurezza](./ADR-019-registro-obblighi-legali-ambiente-sicurezza.md) | Registro obblighi legali ambiente/sicurezza | Accettato |
-| [ADR-020-material-compliance-ai-module](./ADR-020-material-compliance-ai-module.md) | Material Compliance AI (modulo certificati 3.1) | Proposto |
+| [ADR-020-material-compliance-ai-module](./ADR-020-material-compliance-ai-module.md) | Material Compliance AI (certificati base e apporto) | Proposto |
 | [ADR-021-material-requirements-hierarchy](./ADR-021-material-requirements-hierarchy.md) | Gerarchia requisiti materiali | Proposto |
 | [ADR-022-ai-extraction-rule-engine](./ADR-022-ai-extraction-rule-engine.md) | Separazione estrazione AI / Rule Engine | Proposto |
 | [ADR-023-material-knowledge-base](./ADR-023-material-knowledge-base.md) | KB Markdown requisiti materiali | Proposto |

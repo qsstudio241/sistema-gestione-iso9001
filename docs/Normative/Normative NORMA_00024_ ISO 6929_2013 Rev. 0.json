@@ -1,0 +1,2483 @@
+{
+  "title": "ISO_6929_2013",
+  "level": 0,
+  "path": null,
+  "content": "",
+  "children": [
+    {
+      "title": "ISO",
+      "level": 2,
+      "path": null,
+      "content": "",
+      "children": []
+    },
+    {
+      "title": "INTERNATIONAL",
+      "level": 2,
+      "path": null,
+      "content": "",
+      "children": []
+    },
+    {
+      "title": "STANDARD",
+      "level": 2,
+      "path": null,
+      "content": "Second edition 2013-11-01",
+      "children": []
+    },
+    {
+      "title": "Steel products — Vocabulary",
+      "level": 2,
+      "path": null,
+      "content": "Produits en acier — Vocabulaire Reference number ©",
+      "children": []
+    },
+    {
+      "title": "ISO 2013",
+      "level": 2,
+      "path": null,
+      "content": "",
+      "children": []
+    },
+    {
+      "title": "COPYRIGHT PROTECTED DOCUMENT",
+      "level": 2,
+      "path": null,
+      "content": "",
+      "children": []
+    },
+    {
+      "title": "© ISO 2013",
+      "level": 2,
+      "path": null,
+      "content": "All rights reserved. Unless otherwise specified, no part of this publication may be reproduced or utilized otherwise in any form or by any means, electronic or mechanical, including photocopying, or posting on the internet or an intranet, without prior written permission. Permission can be requested from either ISO at the address below or ISO’s member body in the country of the requester. ISO copyright office Case postale 56 • CH-1211 Geneva 20 Tel. + 41 22 749 01 11 Fax + 41 22 749 09 47 E-mail copyright@iso.org Web www.iso.org Published in Switzerland ii © ISO 2013 – All rights reserved",
+      "children": []
+    },
+    {
+      "title": "Contents",
+      "level": 2,
+      "path": null,
+      "content": "Page Foreword iv Scope 1 ........................................................................................................................................................................................................................................",
+      "children": []
+    },
+    {
+      "title": "Terms and definitions 1",
+      "level": 1,
+      "path": "1",
+      "content": "..... ............................................................................................................................................................................................................................................... ..................................................................................................................................................................................... 1.1 Liquid steel .................................................................................................................................................................................................1 1.2 Ingots and semi-finished products ........................................................................................................................................1 1.3 Flat products .............................................................................................................................................................................................3 1.4 Long products ..........................................................................................................................................................................................9 Annex A Vocabulary in numerical order 18 1.5 Other products .....................................................................................................................................................................................16 Annex B Vocabulary in alphabetical order 26 (informative) .................................................................................................................. Annex C Examples of sheet piles 34 (informative) ............................................................................................................ Annex D Examples of typical mining frame sections 38 (informative) ...................................................................................................................................... Annex E Examples of typical heavy sections 39 (informative) .................................................................................. Bibliography 40 (informative) ........................................................................................................ ............................................................................................................................................................................................................................. © ISO 2013 – All rights reserved iii",
+      "children": [
+        {
+          "title": "Foreword",
+          "level": 2,
+          "path": null,
+          "content": "ISO (the International Organization for Standardization) is a worldwide federation of national standards bodies (ISO member bodies). The work of preparing International Standards is normally carried out through ISO technical committees. Each member body interested in a subject for which a technical committee has been established has the right to be represented on that committee. International organizations, governmental and non-governmental, in liaison with ISO, also take part in the work. ISO collaborates closely with the International Electrotechnical Commission (IEC) on all matters of electrotechnical standardization. The procedures used to develop this document and those intended for its further maintenance are described in the ISO/IEC Directives, Part 1. In particular the different approval criteria needed for the different types of ISO documents should be noted. This document was drafted in accordance with the editorial rules of the ISO/IEC Directives, Part 2. www.iso.org/directives Attention is drawn to the possibility that some of the elements of this document may be the subject of patent rights. ISO shall not be held responsible for identifying any or all such patent rights. Details of any patent rights identified during the development of the document will be in the Introduction and/or on the ISO list of patent declarations received. www.iso.org/patents Any trade name used in this document is information given for the convenience of users and does not constitute an endorsement. Steel The committee responsible for this document is ISO/TC 17, . This second edition cancels and replaces the first edition (ISO 6929:1987), which has been technically revised. iv © ISO 2013 – All rights reserved",
+          "children": []
+        },
+        {
+          "title": "INTERNATIONAL STANDARD ISO 6929:2013(E)",
+          "level": 2,
+          "path": null,
+          "content": "",
+          "children": []
+        },
+        {
+          "title": "Steel products — Vocabulary",
+          "level": 2,
+          "path": null,
+          "content": "",
+          "children": []
+        },
+        {
+          "title": "Scope",
+          "level": 2,
+          "path": null,
+          "content": "This International Standard defines terms for steel products according to their\n\na) stage of manufacture,\n\nb) shape and dimensions, and\n\nc) appearance.\n\nNOTE 1 Although the products are generally defined independently of their end uses or manufacturing processes, it has sometimes been necessary to make reference to these criteria. NOTE 2 All dimensions given in this International Standard are nominal. NOTE 3 See the list of terms and relevant subclauses in Annexes A and B.",
+          "children": []
+        }
+      ]
+    },
+    {
+      "title": "Terms and definitions",
+      "level": 1,
+      "path": "1",
+      "content": "",
+      "children": [
+        {
+          "title": "Liquid steel",
+          "level": 2,
+          "path": "1.1",
+          "content": "1.1.1 liquid steel steel in the liquid state ready for pouring and obtained from the melting of raw materials",
+          "children": []
+        },
+        {
+          "title": "Ingots and semi-finished products",
+          "level": 2,
+          "path": "1.2",
+          "content": "1.2.1 ingot product obtained by pouring liquid steel into moulds of a shape appropriate to the subsequent processing into semi-finished products, or flat or long products, generally by hot rolling or forging Note 1 to entry: The shape generally resembles a truncated pyramid or truncated cone, the side surfaces may be corrugated and the corners more or less rounded. Depending on subsequent conversion requirements, ingots may be dressed or hot scarfed or both, or cropped without altering their status as “ingots”. Note 2 to entry: According to the cross-sectional shape and dimensions, a distinction is made between the following:\n\na) ingots, having a cross section that may be square, rectangular (of width up to twice the thickness), polygonal,\n\nround, oval, or shaped according to the profile to be rolled; b1). 2.2slab ingots, of rectangular cross section of width twice the thickness or over. semi-finished product product obtained by\n\na) continuous casting that may or may not be followed by rolling, forging, or cutting,\n\nb) pressure casting, and\n\nc) rolling, forging, or cutting of ingots or large sections of continuous cast products and generally intended\n\nfor conversion into flat or long products by hot rolling or forging, or for the manufacture of forgings\n\n\nNote 1 to entry: The cross sections may be of various shapes (see 1.2.2.1 to 1.2.2.5); the cross-sectional dimensions are constant along the length with wider tolerances than those of the corresponding flat or long products and side corners more or less rounded. The side surfaces are sometimes slightly convex or concave, retaining rolling, forging, or continuous casting marks and may be partly or totally dressed to remove surface defects, e.g. by c1u.2tt.i2n.g1, flame melting, or grinding. semi-finished product of square cross section semi-finished product with sides of 50 mm or over, generally described as blooms if the sides are greater than 200 mm or as billets if smaller N1.o2te.2 1.2 to entry: These dimensions may be less for certain types of steel, e.g. high-speed steels. semi-finished product of rectangular cross section 2 semi-finished product of cross-sectional area of 2 500 mm or over of width up to twice the thickness, 1ge.2n.e2r.a3lly described as blooms if the cross-sectional area is greater than 40 000 mm 2 or as billets if smaller flat semi-finished product p1r.2o.d2u.4ct with a thickness of at least 50 mm and a width of at least twice the thickness, described as a slab round semi-finished product c1o.2n.t2in.5uously cast or forged semi-finished product of circular cross section blank for sections semi-finished product intended for the manufacture of sections that have been preformed for that purpose 2 Note 1 to entry: The cross-sectional area is generally over 2 500 mm . Note 2 to entry: In many countries, long products are obtained by rolling semi-finished products of square or r1e.2ct.a2n.6gular cross sections. blank for tubes and pipes semi-finished product, usually shaped as round bars, intended for the manufacture of tubes and pipes t1h.2at.2 h.7ave been preformed for that purpose VAR ingot semi-finished product, usually shaped as round ingots or blooms, obtained by melting press-formed metallic raw material or by remelting ingots or blooms using a vacuum arc remelting (VAR) furnace Note 1 to entry: Vacuum arc remelting results in products with improved chemical homogeneity and inclusion 1cl.e2a.n2l.i8ness. ESR ingot semi-finished product, usually shaped as round ingots or blooms, obtained by melting press-formed metallic raw material or by remelting ingots or blooms using an electro slag remelting (ESR) furnace Note 1 to entry: Use of electro slag remelting results in products with improved chemical homogeneity and inclusion cleanliness.",
+          "children": []
+        },
+        {
+          "title": "Flat products",
+          "level": 2,
+          "path": "1.3",
+          "content": "1.3.1 flat product product having approximately rectangular cross sections, the width being much greater than the thickness Note 1 to entry: The surfaces are generally smooth except for certain products, e.g. floor plates, that show regular 1ra.3is.e2d or indented surface patterns. uncoated flat product flat product without any coating or surface treatment Note 1 to entry: Flat products that have received a simple coating for the purpose of protection from corrosion or m1.e3c.h2a.1nical damage, e.g. passivation, organic coatings, paper, oil, and lacquer, are defined as uncoated flat products. hot-rolled uncoated flat product flat product manufactured by hot rolling semi-finished products or by hot rolling ingots Note 1 to entry: Hot-rolled flat products include those that have been subjected to a light cold-rolling pass, 1no.3rm.2a.1ll.y1 less than 5 % reduction, known as a “skin pass” or “dressing pass”. wide flat flat product of width over 150 mm up to and including 1 250 mm and thickness generally over 4 mm, s1u.3p.p2l.i1ed.2 in lengths, i.e. not coiled, and the edges are square, i.e. hot rolled on the four sides (or in box passes) hot-rolled sheet and plate hot-rolled flat product, the edges of which are allowed to deform freely, supplied flat and generally in square or rectangular shapes with a width of 600 mm or over; but also in any other shape, e.g. circular or according to a drawing showing the product shape Note 1 to entry: The edges may be as rolled or sheared, flame cut or chamfered. The product may also be delivered pre-curved. Hot-rolled sheet and plate are defined as:\n\na) sheet: thickness less than 3 mm;\n\nb) plate: thickness 3 mm or over.\n\nNote 2 to entry: Sheet and plate may be produced\n\na) directly on a reversing mill (this product is generally known as quarto plate) or by cutting from a parent plate\n\nrolled on a reversing mill, and b1). 3.2b.y1 c.3utting from a hot-rolled wide strip (this product is generally known as hot-rolled sheet or plate). hot-rolled strip hot-rolled flat product that immediately after the final rolling pass or after pickling or continuous annealing, is wound into a regular coil Note 1 to entry: As-rolled strip has slightly convex edges, but may also be supplied with sheared edges or slit from wider strip. Note 2 to entry: Hot-rolled strip is further defined as:\n\na) hot-rolled wide strip: width 600 mm or over;\n\nb) hot-rolled slit wide strip: rolling width 600 mm or over, slit to widths less than 600 mm;\n\nc) hot-rolled narrow strip: rolling width less than 600 mm.\n\n\nN1.o3te.2 3.2 to entry: After decoiling and transverse cutting, hot-rolled strip may be supplied as cut lengths or sheets. cold-rolled uncoated flat product uncoated flat product that have undergone a reduction in cross section of 25 % or over by cold rolling Note 1 to entry: For flat products of rolling width less than 600 mm and for certain qualities of special steel, levels 1of. 3re.2d.u2c.t1ion of cross-sectional area less than 25 % may be included. cold-rolled sheet and plate cold-rolled flat product, the edges of which are allowed to deform freely, supplied flat and generally in square or rectangular shapes with a width of 600 mm or over, but also in any other shape, e.g. circular or according to a drawing showing the product shape Note 1 to entry: Cold-rolled sheet and plate are defined as:\n\na) sheet: thickness less than 3 mm;\n\nb) plate: thickness 3 mm or over.\n\n1N.o3te.2 2.2 to.2 entry: The edges may be as rolled, sheared, flame cut, or chamfered. cold-rolled strip cold-rolled flat product that immediately after the final rolling pass, or after pickling or annealing, is wound into a regular coil Note 1 to entry: As-rolled strip has slightly convex edges, but may also be supplied with sheared edges or slit from wider strip. Note 2 to entry: Cold-rolled strip is further defined as:\n\na) cold-rolled wide strip: width 600 mm or over;\n\nb) cold-rolled slit wide strip: rolling width 600 mm or over, slit to widths less than 600 mm;\n\nc) cold-rolled narrow strip: rolling width less than 600 mm.\n\nN1.o3te.3 3 to entry: After decoiling and cutting to length, cold-rolled strip may be supplied as cut lengths or sheets. electrical steel steel characterized by its magnetic properties, that is intended for use in magnetic circuits in electrical machines Note 1 to entry: Electrical steels are supplied in the form of cold-rolled sheet or strip, generally less than 2 mm thick and width of up to and including 1 500 mm. Note 2 to entry: There are also certain hot-rolled flat products with thicknesses of 1,5 mm up to 5 mm with specified mechanical and magnetic properties. Note 3 to entry: Electrical steels are defined by the following specified principal magnetic propTerties: f\n\na) specific total loss in mass per kilogram at a specified level of peak magnetic flux density, , and frequency, ,\n\nexpressed in hertz; T\n\nb) peak magnetic flux density, , at a specified level of peak magnetic field strength expressed in amperes per\n\nmetre and frequency expressed in hertz. Note 4 to entry: Electrical steels are further defined in 1.3.3.1 and 1.3.3.2.\n\n\n1.3.3.1 non-oriented grain electrical steel non-alloy steel and steel alloyed with silicon or silicon and aluminium that is essentially isotropic in its magnetic properties, i.e. the magnetic properties are similar both in the direction of rolling and in the transverse direction Note 1 to entry: These steels may be supplied either\n\na) in the semi-processed state with the required specific total loss achieved after the material has been annealed\n\nby the user according to a reference heat treatment, or\n\nb) in the final annealed state with specific total loss. The product may be supplied uncoated or with an insulating\n\n1.3.3co.2ating on one or both surfaces. grain-oriented electrical steel steel alloyed with silicon that is anisotropic in that it possesses a metallurgical structure that gives preferential magnetic properties in the direction of rolling N1.o3te.4 1 to entry: These steels are supplied with an insulating coating on both surfaces. tin mill and allied products for packing non-alloy low carbon steel supplied in strip or sheet form, normally coated with tin or electrolytic chromium/chromium oxide for packaging purposes N1.o3te.4 1.1 to entry: This includes the products listed in 1.3.4.1 to 1.3.4.4. blackplate non-alloy, low carbon steel supplied in strip or sheet form that has been single or double cold reduced Note 1 to entry: Single cold-reduced blackplate is commonly supplied with a thickness of 0,15 mm up to and including 0,60 mm, double cold-reduced blackplate with a thickness 0,14 mm up to and including 0,36 mm. Note 2 to entry: Blackplate is normally used to manufacture tinplate or electrolytic chromium-coated sheet (ECCS), but blackplate may be used as such for some packaging applications. In such a case, the product should be s1u.3it.a4b.l2e for varnishing (lacquering) or printing. tinplate non-alloy, low carbon steel supplied in strip or sheet form that has been single or double cold reduced and coated on both surfaces with tin in a continuous electrolytic process Note 1 to entry: Single-reduced tinplate is commonly supplied with a thickness of 0,15 mm up to and including 0,60 mm, double-reduced tinplate with a thickness of 0,14 mm up to and including 0,36 mm. Tinplate is supplied normally with a passivation treatment and a protective coating of oil and is suitable for varnishing (lacquering) or printing. N1.o3te.4 2.3 to entry: Tinplate may also be obtained by hot dipping in a bath of molten tin. tinned sheet and strip non-alloy, low carbon steel supplied in strip or sheet form of a thickness of 0,50 mm or over and tin coated on both surfaces\n\n\n1.3.4.4 electrolytic chromium-/chromium oxide-coated steel",
+          "children": []
+        },
+        {
+          "title": "ECCS",
+          "level": 2,
+          "path": null,
+          "content": "non-alloy, low carbon steel supplied in strip or sheet form that may have been single or double cold reduced; coated on both surfaces by a cathodic process with a duplex film of metallic chromium adjacent to the steel substrate with an outer layer of hydrated chromium oxide or hydroxide Note 1 to entry: Single cold-reduced ECCS is commonly supplied with a thickness of 0,17 mm up to and including 0,49 mm, double cold-reduced ECCS with a thickness of 0,14 mm up to and including 0,29 mm. ECCS is supplied 1no.3rm.5ally with a protective coating of oil and is suitable for varnishing (lacquering) or printing. coated hot-rolled or cold-rolled flat product hot-rolled or cold-rolled product with a permanent coating other than those defined in 1.3.2, 1.3.3, or 1.3.4, whether\n\na) on both surfaces of\n\n1) equal thickness, or\n\n2) different thickness (differential coating), or\n\nb) on one surface only\n\nNote 1 to entry: Coating masses and coating thicknesses cited in the following subclauses are nominal and relate to the current technology. N1.o3te.5 2.1 to entry: According to the type of coating, the products are classified in 1.3.5.1 to 1.3.5.3. metal-coated sheet and strip sheet and strip coated with metallic material such as aluminium, zinc, silicon, etc. N1.o3te.5 1.1 t.o1 entry: According to the type of coating process, the products are classified in 1.3.5.1.1 and 1.3.5.1.2. hot-dipped metal-coated sheet and strip flat products that has been metal coated by hot dipping in a molten bath, described by reference to the total coating mass, expressed in grams per square metre 1N.o3te.5 1.1 t.o1 e.1ntry: This includes the products listed in 1.3.5.1.1.1 to 1.3.5.1.1.4. zinc-coated sheet and strip (hot-dipped sheet and strip, galvanized sheet and strip) hot-dipped metal sheet and strip coated with zinc 2 2 Note 1 to entry: The total mass of the zinc varies in general between 60 g/m and 700 g/m . The coatings may have a spangle finish or be without spangle. After zinc coating, the surfaces may be passivated by chromating, phosphating, or treatment with compounds of vanadium or titanium or both. This final surface treatment does n1o.3t .a5lt.1er.1 t.h2e definition of such products as “hot-dipped zinc-coated flat products”. aluminium-zinc coated sheet and strip hot-dipped metal sheet and strip coated with aluminium 2 2 Note 1 to entry: The total mass of the alloy varies in general between 80 g/m and 450 g/m . Note 2 to entry: According to the aluminium content, a distinction is made between\n\na) aluminium-zinc alloys (aluminium 50 % or over), and\n\nb) zinc-aluminium alloys (aluminium over 3 % but less than 50 %).\n\n\n1.3.5.1.1.3 aluminium or aluminium-silicon alloy coated sheet and strip hot-dipped metal sheet and strip coated with aluminium or aluminium-silicon 2 2 N1.o3te.5 1.1 t.o1 e.4ntry: The total mass of the alloy varies in general between 40 g/m and 300 g/m . lead-tin alloy coated sheet and strip terne plate sheet and strip coated with a lead-tin alloy 2 Note 1 to entry: In general, the highest nominal mass for the coating corresponds to a minimum of 120 g/m i1n.c3lu.5d.i1n.g2 both surfaces. electrolytically metal-coated sheet and strip flat products metal coated electrolytically, described by reference to the single surface coating thickness in micrometres N1.o3te.5 1.1 t.o2 e.1ntry: This includes the products listed in 1.3.5.1.2.1 to 1.3.5.1.2.3. electrolytically zinc-coated sheet and strip (electrozinc sheet) sheet and strip coated electrolytically with zinc with coating thickness generally between 1 μm and",
+          "children": []
+        }
+      ]
+    },
+    {
+      "title": "μm on each surface",
+      "level": 1,
+      "path": "10",
+      "content": "Note 1 to entry: This coating does not show a spangle finish. After zinc coating, the surfaces may be passivated by chromating, phosphating, or treatment with compounds of vanadium and/or titanium. This final surface t1r.e3a.t5m.1e.n2t. d2oes not alter the definition of such products as “electrolytically zinc-coated flat products”. electrolytically zinc-nickel coated sheet and strip sheet and strip coated electrolytically with zinc-nickel alloy with coating thickness generally between",
+      "children": []
+    },
+    {
+      "title": ".μ3m.5 .a1n.2d. 38,5 μm on each surface",
+      "level": 1,
+      "path": "11",
+      "content": "electrolytically lead-tin coated sheet and strip sheet and strip coated electrolytically with a lead-tin alloy with coating thickness generally between 21,.53 .μ5m.2 and 10 μm on each surface sheet and strip with organic coatings uncoated or metal-coated (e.g. zinc-coated) sheet and strip, subsequently coated with an organic material or a mixture of metal powder and organic material by one of the following continuous processes:\n\na) by the application of one or more coats of paint or other type of product;\n\nNote 1 to entry After drying, the thickness of the coating varies according to its characteristics from",
+      "children": []
+    },
+    {
+      "title": "μm to 400 μm on each surface.",
+      "level": 1,
+      "path": "2",
+      "content": "b) by the application of an adhesive film whether or not followed by a coating of organic materials\n\nNote 1 to entry The coating may have different surface patterns and a thickness generally between",
+      "children": [
+        {
+          "title": "μm to 500 μm on each surface.",
+          "level": 4,
+          "path": "1.3.53.53",
+          "content": "sheet and strip with miscellaneous inorganic coatings sheet and strip coated with an inorganic material, e.g. vitreous enamel\n\n\n1.3.6 profiled sheet sheet usually manufactured from coated sheet, but also from uncoated sheet, with a width much greater than the height of the profile Note 1 to entry: See Figure 1. Note 2 to entry: A distinction is made between\n\na) corrugated sheet: products showing large or small longitudinal corrugations, mainly used for cladding,\n\nflooring, and roofing [Figure 1 a)], and\n\nb) ribbed sheet: products with rectangular or trapezoidal longitudinal ribs [Figure 1 b)].",
+          "children": []
+        }
+      ]
+    },
+    {
+      "title": "a)",
+      "level": 1,
+      "path": "1",
+      "content": "",
+      "children": []
+    },
+    {
+      "title": "b)",
+      "level": 1,
+      "path": "1",
+      "content": "Figure 1 — Illustration of typical profiled sheet (see 1.3.6) 1.3.7 composite products products comprising\n\na) plate, sheet, and strip clad with steels or alloys to resist wear, chemical corrosion, or heat distortion;\n\nbonding is usually achieved by rolling, spraying, welding, or explosion,\n\nb) sandwich steel sheet formed from two sheets bonded together by means of a synthetic sound\n\ninsulating plastic layer, or\n\nc) sandwich panels fabricated from two ribbed sheets bonded by an insulating layer (See Figure 2)\n\nFigure 2 — Illustration of typical sandwich panel [see 1.3.7 c)]",
+      "children": [
+        {
+          "title": "Long products",
+          "level": 2,
+          "path": "1.4",
+          "content": "1.4.1 long product flat product product that does not conform to the definition of a (1.3.1) Note 1 to entry: Long products have a constant cross section that is usually defined by a standard that establishes the normal size ranges and the tolerances on shape and dimensions. The surface is generally smooth, but in c1e.4rt.a2in cases, e.g. reinforcing bars, may have a regularly raised or indented pattern. rod hot-rolled long product having a nominal size generally of 5 mm or above and wound into irregular coils Note 1 to entry: The cross section may be round, oval, square, rectangular, hexagonal, octagonal, half round, or of any similar shape. Its surface is smooth. Rod is generally intended to undergo further processing. It may also be used with or without further processing, e.g. cold deforming, for the fabrication of welded fabric or for other elements used to reinforce concrete. 1N.o4t.e3 2 to entry: Rod used for wire drawing purposes in coil form is generally named “wire rod”. wire product of constant cross section along its length, obtained by cold drawing rod through a reducing die or passing under pressure between rollers and rewinding the drawn product Note 1 to entry: The cross section is generally round, though sometimes oval, rectangular, square, hexagonal, octagonal, or other convex section. Note 2 to entry: The manufacturing processes provide close control of geometric (size, surface condition) and mechanical properties. Wire may be supplied uncoated (as drawn, annealed) or coated (e.g. with zinc, copper, nickel, or plastic materials). Note 3 to entry: Heat treatments or surface treatments or both may be applied during the course of manufacture to improve the properties of wire. Note 4 to entry: Wire is often confused with rod. To avoid confusion, wire can be more specifically called “drawn w1.i4re.4” [especially when passed through reducing die(s)] and rod more specifically called “wire rod”. hot-finished bar p1r.4o.d4u.1ct supplied in straight lengths but not in coils, thus differentiating them from rod hot-rolled bar hot-rolled product in straight lengths of constant transverse section having a solid (convex) cross section a1s.4 d.4ef.1in.1ed in 1.4.4.1.1 to 1.4.4.1.3 round bar b1a.4r. 4h.a1v.i2ng a circular cross section of diameter generally 8 mm or over square, hexagon, and octagon bar bar having square, hexagonal, or octagonal cross section; the side is generally 8 mm or over for squares or 13 mm or over for hexagons Note 1 to entry: Squares of sides up to 50 mm with rounded corners are considered to be square bars.\n\n\n1.4.4.1.3 flat bar bar of rectangular cross section rolled on the four faces of thickness generally 5 mm or above and with a1 .w4.i4d.t1h. 4not over 150 mm bar of special shape product hot rolled in lengths of particular full cross-sectional shapes including particular trapezoids, bevels, triangles, bars for grooved springs, semi-rounds, and half flat semi-rounds N1.o4t.e4 1.2 to entry: Special shapes are generally rolled in limited quantities. forged bar product obtained by forging and that does not undergo subsequent hot conversion N1.o4t.e4 1.3 to entry: These products are mainly in the form of rounds or squares. hollow mining drill bar bar with an internal hollow of any cross-sectional shape, suitable for the manufacture of drill bits, with a maximum external cross-sectional dimension over 15 mm up to and including 52 mm that is at least t1w.4i.c5e the maximum dimension of the cross section of the internal hollow bright product round bar of various cross-sectional shapes obtained by drawing or turning 1N.o4t.e5 1.1 to entry: This includes the products listed in 1.4.5.1 to 1.4.5.3. drawn product product of various cross-sectional shapes obtained, after descaling, by drawing of hot-rolled bars, rods, or tubes on a drawing bench (cold forming without removing material) Note 1 to entry: This operation results in the product’s special features with respect to shape, dimensional accuracy, and surface finish. In addition, the process causes cold working of the product that can be eliminated by 1su.4bs.5eq.2uent heat treatment. Products in lengths are delivered straightened regardless of size. turned product round bar produced by turning on a lathe where the product can be further processed by straightening and polishing Note 1 to entry: This operation gives the bar special features with respect to shape, dimensional accuracy, and surface finish. The removal of metal is carried out in such a way that the bright product is generally free from rolling defects and surface decarburization. Note 2 to entry: Some bars ordered as hot-rolled products may be delivered roughly turned (peeled); nevertheless, 1su.4ch.5 p.r3oducts are considered as hot-rolled products and not as bright products. ground product drawn or turned round bar with improved surface quality and dimensional accuracy provided by g1r.4in.6ding or grinding and polishing deformed product for reinforcement and prestressing of concrete product with a cross section that is round or almost round, with crenelated or ribbed surfaces, for reinforcement and prestressing of concrete and supplied in the forms defined in 1.4.6.1 to 1.4.6.3\n\n\n1.4.6.1 rod s1e.4e .16..42.2 wire s1e.4e .16..43.3 bar see 1.4.4 Note 1 to entry: These bars may, after hot rolling, have undergone a controlled cold deformation, e.g. lengthening 1or.4 tw.7isting about their longitudinal axis. hot-rolled section product of various cross-sectional shapes obtained by hot rolling N1.o4t.e7 1.1 to entry: This includes the products listed in 1.4.7.1 to 1.4.7.5. railway material p1r.4o.d7u.1c.t1 used in the construction of railway tracks and other systems of rails railway track product l1ig.4h.7t .a1n.1d. 1heavy hot-rolled railway products as defined in 1.4.7.1.1.1 and 1.4.7.1.1.2 heavy railway product railway product including\n\na) rails of linear mass 20 kg/m or over (except those in 1.4.7.1.2), and\n\nb1).4 .7s.l1e.e1p.2ers of linear mass 15 kg/m or over light railway product railway product including\n\na) rails of linear mass up to 20 kg/m (except those in 1.4.7.1.2),\n\nb) sleepers of linear mass up to 15 kg/m,\n\nc) conductor rails with specified electrical resistivity properties,\n\nd) rails for switches and crossings,\n\ne) guide rails,\n\nf) brake rails,\n\ng) fish plates, and\n\nh) base plates (also known as sole, tie, or bearing plates)\n\n\n1.4.7.1.2 product for other rail systems hot-rolled product for other rail systems as follows:\n\na) crane rails;\n\nb1).4 .7g.r2ooved rails piling product used for piling N1.o4t.e7 1.2 t.o1 entry: According to the product shape and application, products are classified in 1.4.7.2.1 to 1.4.7.2.3. sheet piling product obtained by hot rolling or cold forming (e.g. drawing, bending, roll forming) to a shape such that, by interlocking of the joints or fitting of longitudinal grooves or by means of special fasteners, it forms partitions or continuous walls Note 1 to entry: Sheet piling is distinguished according to its form in cross section and its application as follows (see Annex C for examples):\n\na) U, Z, and hat shape sheet piling;\n\nb) straight web or flat sheet piling;\n\nc) fabricated sheet piling;\n\nd) box piles: fabricated from U- or Z-sheet piles and steel plates;\n\ne) combined walls:\n\n1) interlocking H-sheet piling;\n\n2) H piles with intermediary Z-sheet piling;\n\n3) interlocking tubular piles;\n\n4) tubular piles with intermediate sheet piling;\n\n5) combined walls using box piles;\n\nf) cold-formed sheet piling:\n\n1) sheet piling Ω (Omega) and Z;\n\n2) trench sheeting;\n\n1g). 4.7c.o2r.n2er sections. fabricated bearing piling fabricated piling, made up from steel elements and used for bearing purposes N1.o4t.e7 1.2 t.o3 entry: Box piles may be used as fabricated bearing piling. tubular fabricated bearing piling tube of circular, square, or rectangular cross section, driven into the ground to transmit the weight of structures to the soil by resistance developed at its base and by friction along its surface Note 1 to entry: The terms sheet piling and bearing piling include piling that has undergone certain finishing operations such as piercing or welding of attachments.\n\n\n1.4.7.3 mining frame section product with cross sections resembling the letter Ι or the Greek capital letter Omega (Ω) Note 1 to entry: Mining frame Ι sections are distinguished from other Ι sections by a greater slope of the inside f1a.c4e. 7o.f4 the flanges. Generally, they also have a flange width over 0,70 of the nominal web height (see Annex D). heavy section hot-rolled product with cross sections resembling the letters Ι, H, or U Note 1 to entry: See Annex E. Note 2 to entry: Heavy sections have the following characteristics:\n\na) nominal height of 80 mm or over;\n\nb) surfaces of the webs are continued by fillets to the inside faces of the flange;\n\nc) flanges are generally symmetrical and of equal width (see also 1.4.7.4.5);\n\nd) outside faces of the flanges are parallel;\n\ne) flanges are either of decreasing thickness from the web to the edge (“tapered flanged”) or of uniform\n\nthickness (“parallel flanged”). Note 3 to entry: A distinction is made between\n\na) parent sections: sections with web and flange thickness considered as standard,\n\nb) thin sections: sections manufactured with the same series of rolls used in producing the corresponding\n\nparent section, which provides a thinner web or flanges or both (as a result of adjustment of the vertical or horizontal rolls) for an approximately equal nominal height, and\n\nc) thick sections: sections manufactured with the same series of rolls used in producing the corresponding\n\nparent section, which provides a thicker web or flanges or both (as a result of adjustment of the vertical or 1.4.7h.o4r.1izontal rolls) for an approximately equal nominal height. Ι section (narrow and medium flanges) section having a cross-sectional shape resembling the letter Ι where the flanges are not wider than 0,66 o1f.4 th.7e.4 n.2ominal height of the section and less than 300 mm H section (wide-flanged beam) section having a cross-sectional shape resembling the letter H where the flanges are wider than 0,66 of the nominal height of 300 mm or over Note 1 to entry: Sections with flanges wider than 0,8 of the nominal height are sometimes called “columns”. Note 2 to entry: H sections with the same series of equal nominal height and flange width are sometimes called “equal outer dimension H sections”, which can provide more efficient fabrication in steel structures such as 1ar.4ch.7it.4ec.3ture. U section (channel) section having a cross-sectional shape resembling the letter U\n\n\n1.4.7.4.4 bearing pile section having a cross-sectional shape resembling the letters H or Ι where the thicknesses of the web and flanges are identical Note 1 to entry: Bearing piles may also be equipped with laggings (enlargements along the length of the pile or a1t. 4it.s7 .b4o.t5tom). special heavy section section having Ι, H, U, or similar cross-sectional shape with a nominal height of 80 mm or above, but with features such as unequal or asymmetric flanges or non-standard web thickness N1.o4t.e7 1.5 to entry: These products are generally manufactured in limited quantities. other section s1e.4ct.7io.5n. 1other than railway material, piling, mining frame section, and heavy section small U section small I section small H section section having a cross-sectional shape resembling the letters U, Ι, or H and where the nominal height is less than 80 mm N1.o4t.e7 1.5 t.o2 entry: See Annex E. L section (angle) section having a cross-sectional shape resembling the letter L Note 1 to entry: Angles can be defined as equal or unequal angles depending on the ratio of the flange widths. The 1co.4rn.7e.r5s. 3of the flanges are rounded. T section with equal flanges section having a cross-sectional shape resembling the letter T, where the corners are rounded and the flanges and web are slightly tapered, and where the flanges are of equal width Note 1 to entry: T sections can also be fabricated from H sections that are split along the web. These have parallel w1.e4b.7 a.n5d.4 flange profiles and are sometimes called CT (Cut T shape) sections. P section (bulb flat) section with a generally rectangular cross-sectional shape with a bulge along the full length of a l1o.n4g.7i.t5u.d5inal edge of one of the wider surfaces and a width generally up to 430 mm special section product hot rolled in lengths usually of small open cross section or of very special shape that is generally rolled in limited quantities and is not covered by 1.4.7.4 or 1.4.7.5.1 to 1.4.7.5.4 Note 1 to entry: This special section includes, in particular, Z section, T section with unequal flanges, squareedged L, U, and T section, and track shoe section. Note 2 to entry: These sections may also be obtained by hot extrusion.\n\n\n1.4.8 welded section long product of open cross sections that has a cross-sectional shape similar to the products defined in",
+          "children": [
+            {
+              "title": "and 1.4.7.5, but instead of being obtained directly by hot rolling, is made by welding together",
+              "level": 4,
+              "path": "1.4.7.4",
+              "content": "c1o.4m.9binations of hot-rolled long products, hot-rolled flat products, or cold-rolled flat products cold-formed section cold-formed long product having various cross-sectional shapes, either open or with edges abutting, constant along their length Note 1 to entry: Cold-formed sections are made from coated or uncoated hot- or cold-rolled flat products whose thicknesses are only slightly modified by the cold forming process (e.g. profiling, drawing, press forming, and flanging). They consist of\n\na) general purpose cold-formed sections, e.g. L, U, C, Z, and Ω (Omega) sections, and\n\nb) products for particular applications including cold-formed sheet piling [see 1.4.7.2.1 f)], crash barriers,\n\n1.4.1b0uilding frames, door frames, and lorry and wagon chassis. tubular product hollow long product, open at both ends, of round or polygonal cross section Note 1 to entry: Tubes may be finished at the ends, e.g. by threading or flaring, or coated on the interior or exterior surfaces or both (organic or metallic coating), or have integral or fitted flanges. N1.o4t.e1 20 .t1o entry: Small diameter tubes may be supplied in coil. seamless tube tube made by piercing a solid product to obtain a tube hollow, which is further processed, either hot or cold, into its final dimensions Note 1 to entry: Seamless tubes may be manufactured by hot rolling, pressing and drawing, forging, or c1e.4nt.1ri0fu.2gal casting. welded tube tube made by forming a hollow profile from a flat product and welding adjacent edges together Note 1 to entry: After welding, the tube may be further processed, either hot or cold, into its final dimensions. The w1.e4ld.1s0 m.2a.y1 be longitudinal or helical. submerged arc welded steel tube",
+              "children": []
+            }
+          ]
+        },
+        {
+          "title": "SAW",
+          "level": 2,
+          "path": null,
+          "content": "tube made by forming either hot or cold a hollow profile from a strip or plate and welding the adjacent edges together, without pressure, by addition of filler metal Note 1 to entry: The adjacent edges and the filler metal are heated to welding temperature by an arc generated by the resistance to the passage of an electric current. The arc generated and the molten metals are protected from atmospheric contamination by the presence of a layer of flux. Note 2 to entry: The tubes may have one or two longitudinal seam welds (SAWL) or one helical seam weld (SAWH) with at least one pass on the inside of the tube and at least one pass on the outside of the tube.\n\n\n1.4.10.2.2 electric resistance welded steel tube EW tube made by pressure welding, in a continuous or non-continuous process, in which strip is formed cold into a hollow profile and the seam weld made by heating the adjacent edges through the resistance to the passage of high- or low-frequency current and pressing the edges together N1.o4t.e1 10 .t2o .e3ntry: The electric current may be applied either by direct electrode contact or by induction. butt welded steel tube BW tube made by a continuous process in which uncoiled strip, welded end to end, is passed through a furnace and formed into a hollow profile and the seam weld made by further increasing the temperature of the adjacent edges (e.g. using a jet of oxygen) and pressing the edges together N1.o4t.e1 10 .t3o entry: BW is also known as continuous welded tube or Fretz Moon tube. hollow section seamless or welded tube of circular, square, rectangular, or elliptical cross section used in construction, e1..g4.. 1of0 s.4tructural steelwork, cranes, vehicle chassis, and handrails hollow bar circular seamless tube, intended for the manufacture of engineering components by machining, e.g. by removing shavings with a tool Note 1 to entry: This product is distinguished from seamless fluid-carrying tubes or hollow sections by its dimensions and metallurgical properties that confer machinability, suitability for heat treatment, and a surface c1o.4nd.1it0io.5n suitable for final machining of the component. fitting component attached to a tube, for joining tubes or for changing the direction or bore of a tube",
+          "children": []
+        },
+        {
+          "title": "Other products",
+          "level": 2,
+          "path": "1.5",
+          "content": "1.5.1 open-die forging product obtained by forming steel at a suitable temperature by impact or pressure, using an open die to produce approximate shapes that do not require further hot deformation Note 1 to entry: This product is generally machined to final shape. Open-die forgings include products that are preforged and finished in ring rolling mills, e.g. wheels. 1N.o5te.2 2 to entry: Forgings exclude semi-finished products defined in 1.2.2 and bars defined in 1.4.4.2. closed-die forging and stamping product obtained by forming steel at a specified temperature in a closed die that determines the required shape and volume of the product N1.o5te.3 1 to entry: Deformation may be carried out in a press (closed-die forging) or under a drop hammer (stampings). casting product whose shapes and final dimensions, apart from any dressing or machining, are obtained directly by the solidification of liquid steel cast in sand moulds, fire clay or other refractory materials, or more rarely in metal or graphite permanent moulds\n\n\n1.5.4 powder metallurgy product p1r.5o.d4u.1ct obtained from metallic powder steel powder c1o.5ll.e4c.t2ion of steel particles of dimensions generally up to 1 mm sintered product product manufactured from powder by pressing and sintering and sometimes by re-pressing Note 1 to entry: These products often have close dimensional tolerances and are generally ready for use. Note 2 to entry: Sintering involves the thermal treatment of a powder or compact at a temperature below the m1.e5l.t4in.3g point of the principal constituent with the object of increasing its strength. full density product product manufactured from powder by joint use of temperature and pressure (hot isostatic compression, extrusion)",
+          "children": []
+        },
+        {
+          "title": "Annex A",
+          "level": 2,
+          "path": null,
+          "content": "Vocabular(iyn ifonr nmuamtiveer)ical order Table A.1 — Vocabulary in numerical order numerical order Subclause Term",
+          "children": []
+        },
+        {
+          "title": "liquid steel",
+          "level": 2,
+          "path": "1.1",
+          "content": "",
+          "children": []
+        },
+        {
+          "title": "ingots and semi-finished products",
+          "level": 2,
+          "path": "1.2",
+          "content": "",
+          "children": [
+            {
+              "title": "ingot",
+              "level": 3,
+              "path": "1.2.1",
+              "content": "",
+              "children": []
+            },
+            {
+              "title": "semi-finished product",
+              "level": 3,
+              "path": "1.2.2",
+              "content": "",
+              "children": []
+            },
+            {
+              "title": "a) continuous casting",
+              "level": 3,
+              "path": "1.2.2",
+              "content": "",
+              "children": []
+            },
+            {
+              "title": "b) pressure casting",
+              "level": 3,
+              "path": "1.2.2",
+              "content": "",
+              "children": []
+            },
+            {
+              "title": "c) rolling, forging, or cutting of ingots or large sections of continuous cast products",
+              "level": 3,
+              "path": "1.2.2",
+              "content": "",
+              "children": [
+                {
+                  "title": "semi-finished product of square cross section",
+                  "level": 4,
+                  "path": "1.2.2.1",
+                  "content": "",
+                  "children": []
+                },
+                {
+                  "title": "/ 1.2.2.2 billets",
+                  "level": 4,
+                  "path": "1.2.2.1",
+                  "content": "",
+                  "children": []
+                },
+                {
+                  "title": "/ 1.2.2.2 blooms",
+                  "level": 4,
+                  "path": "1.2.2.1",
+                  "content": "",
+                  "children": []
+                },
+                {
+                  "title": "semi-finished product of rectangular cross section",
+                  "level": 4,
+                  "path": "1.2.2.2",
+                  "content": "",
+                  "children": []
+                },
+                {
+                  "title": "flat semi-finished products",
+                  "level": 4,
+                  "path": "1.2.2.3",
+                  "content": "",
+                  "children": []
+                },
+                {
+                  "title": "slab",
+                  "level": 4,
+                  "path": "1.2.2.3",
+                  "content": "",
+                  "children": []
+                },
+                {
+                  "title": "round semi-finished product",
+                  "level": 4,
+                  "path": "1.2.2.4",
+                  "content": "",
+                  "children": []
+                },
+                {
+                  "title": "blank for sections",
+                  "level": 4,
+                  "path": "1.2.2.5",
+                  "content": "",
+                  "children": []
+                },
+                {
+                  "title": "blank for tubes and pipes",
+                  "level": 4,
+                  "path": "1.2.2.6",
+                  "content": "",
+                  "children": []
+                },
+                {
+                  "title": "VAR ingot",
+                  "level": 4,
+                  "path": "1.2.2.7",
+                  "content": "",
+                  "children": []
+                },
+                {
+                  "title": "ESR ingot",
+                  "level": 4,
+                  "path": "1.2.2.8",
+                  "content": "",
+                  "children": []
+                }
+              ]
+            },
+            {
+              "title": "flat product",
+              "level": 3,
+              "path": "1.3.1",
+              "content": "",
+              "children": []
+            },
+            {
+              "title": "uncoated flat product",
+              "level": 3,
+              "path": "1.3.2",
+              "content": "",
+              "children": [
+                {
+                  "title": "hot-rolled uncoated flat product",
+                  "level": 4,
+                  "path": "1.3.2.1",
+                  "content": "",
+                  "children": [
+                    {
+                      "title": "wide flat",
+                      "level": 5,
+                      "path": "1.3.2.1.1",
+                      "content": "| numerical order |  |\n| --- | --- |\n| Subclause | Term |\n|  |  |\n| 1.1 | liquid steel |\n| 1.2 | ingots and semi-finished products |\n| 1.2.1 | ingot |\n| 1.2.2 | semi-finished product |\n| 1.2.2 a) | continuous casting |\n| 1.2.2 b) | pressure casting |\n| 1.2.2 c) | rolling, forging, or cutting of ingots or large sections of continuous cast products |\n| 1.2.2.1 | semi-finished product of square cross section |\n| 1.2.2.1 / 1.2.2.2 | billets |\n| 1.2.2.1 / 1.2.2.2 | blooms |\n| 1.2.2.2 | semi-finished product of rectangular cross section |\n| 1.2.2.3 | flat semi-finished products |\n| 1.2.2.3 | slab |\n| 1.2.2.4 | round semi-finished product |\n| 1.2.2.5 | blank for sections |\n| 1.2.2.6 | blank for tubes and pipes |\n| 1.2.2.7 | VAR ingot |\n| 1.2.2.8 | ESR ingot |\n| 1.3.1 | flat product |\n| 1.3.2 | uncoated flat product |\n| 1.3.2.1 | hot-rolled uncoated flat product |\n\n\nTable A.1 — (continued) numerical order Subclause Term",
+                      "children": []
+                    },
+                    {
+                      "title": "hot-rolled sheet and plate",
+                      "level": 5,
+                      "path": "1.3.2.1.2",
+                      "content": "",
+                      "children": []
+                    },
+                    {
+                      "title": "Note 1 a) hot-rolled sheet and plate with sheet (thickness < 3 mm)",
+                      "level": 5,
+                      "path": "1.3.2.1.2",
+                      "content": "",
+                      "children": []
+                    },
+                    {
+                      "title": "Note 1 b) hot-rolled sheet and plate with plate (thickness ≥ 3 mm)",
+                      "level": 5,
+                      "path": "1.3.2.1.2",
+                      "content": "",
+                      "children": []
+                    },
+                    {
+                      "title": "Note 2 a) quarto plate",
+                      "level": 5,
+                      "path": "1.3.2.1.2",
+                      "content": "",
+                      "children": []
+                    },
+                    {
+                      "title": "Note 2 b) hot-rolled sheet and plate cut from wide strip",
+                      "level": 5,
+                      "path": "1.3.2.1.2",
+                      "content": "",
+                      "children": []
+                    },
+                    {
+                      "title": "hot-rolled strip",
+                      "level": 5,
+                      "path": "1.3.2.1.3",
+                      "content": "",
+                      "children": []
+                    },
+                    {
+                      "title": "/ 1.3.2.2.2 coil",
+                      "level": 5,
+                      "path": "1.3.2.1.3",
+                      "content": "",
+                      "children": []
+                    },
+                    {
+                      "title": "/ 1.3.2.2.2 strip",
+                      "level": 5,
+                      "path": "1.3.2.1.3",
+                      "content": "",
+                      "children": []
+                    },
+                    {
+                      "title": "Note 2 a) hot-rolled wide strip (width ≥ 600 mm)",
+                      "level": 5,
+                      "path": "1.3.2.1.3",
+                      "content": "",
+                      "children": []
+                    },
+                    {
+                      "title": "Note 2 b) hot-rolled slit wide strip (rolling width ≥ 600 mm, delivery width < 600 mm)",
+                      "level": 5,
+                      "path": "1.3.2.1.3",
+                      "content": "",
+                      "children": []
+                    },
+                    {
+                      "title": "Note 2 c) hot-rolled narrow strip (rolling width < 600 mm)",
+                      "level": 5,
+                      "path": "1.3.2.1.3",
+                      "content": "",
+                      "children": []
+                    }
+                  ]
+                },
+                {
+                  "title": "cold-rolled uncoated flat product",
+                  "level": 4,
+                  "path": "1.3.2.2",
+                  "content": "",
+                  "children": [
+                    {
+                      "title": "cold-rolled sheet and plate (width ≥ 600 mm)",
+                      "level": 5,
+                      "path": "1.3.2.2.1",
+                      "content": "",
+                      "children": []
+                    },
+                    {
+                      "title": "cold-rolled strip",
+                      "level": 5,
+                      "path": "1.3.2.2.2",
+                      "content": "",
+                      "children": []
+                    },
+                    {
+                      "title": "Note 2 a) cold-rolled wide strip (width ≥ 600 mm)",
+                      "level": 5,
+                      "path": "1.3.2.2.2",
+                      "content": "",
+                      "children": []
+                    },
+                    {
+                      "title": "Note 2 b) cold-rolled slit wide strip (rolling width ≥ 600 mm, delivery width < 600 mm)",
+                      "level": 5,
+                      "path": "1.3.2.2.2",
+                      "content": "",
+                      "children": []
+                    },
+                    {
+                      "title": "Note 2 c) cold-rolled narrow strip (rolling width < 600 mm)",
+                      "level": 5,
+                      "path": "1.3.2.2.2",
+                      "content": "1.3.2.2.2, Note 3 cold-rolled strip in cut lengths",
+                      "children": []
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "title": "electrical steel",
+              "level": 3,
+              "path": "1.3.3",
+              "content": "",
+              "children": [
+                {
+                  "title": "non-oriented grain electrical steel",
+                  "level": 4,
+                  "path": "1.3.3.1",
+                  "content": "1.3.3.1, Note 1 a) non-oriented grain electrical steel in the semi-processed state 1.3.3.1, Note 1 b) non-oriented grain electrical steel in the final annealed state",
+                  "children": []
+                },
+                {
+                  "title": "grain-oriented electrical steel",
+                  "level": 4,
+                  "path": "1.3.3.2",
+                  "content": "| numerical order |  |\n| --- | --- |\n| Subclause | Term |\n|  |  |\n| 1.3.2.1.2 | hot-rolled sheet and plate |\n| 1.3.2.1.2 Note 1 a) | hot-rolled sheet and plate with sheet (thickness < 3 mm) |\n| 1.3.2.1.2 Note 1 b) | hot-rolled sheet and plate with plate (thickness ≥ 3 mm) |\n| 1.3.2.1.2 Note 2 a) | quarto plate |\n| 1.3.2.1.2 Note 2 b) | hot-rolled sheet and plate cut from wide strip |\n| 1.3.2.1.3 | hot-rolled strip |\n| 1.3.2.1.3 / 1.3.2.2.2 | coil |\n| 1.3.2.1.3 / 1.3.2.2.2 | strip |\n| 1.3.2.1.3 Note 2 a) | hot-rolled wide strip (width ≥ 600 mm) |\n| 1.3.2.1.3 Note 2 b) | hot-rolled slit wide strip (rolling width ≥ 600 mm, delivery width < 600 mm) |\n| 1.3.2.1.3 Note 2 c) | hot-rolled narrow strip (rolling width < 600 mm) |\n| 1.3.2.2 | cold-rolled uncoated flat product |\n| 1.3.2.2.1 | cold-rolled sheet and plate (width ≥ 600 mm) |\n| 1.3.2.2.2 | cold-rolled strip |\n| 1.3.2.2.2 Note 2 a) | cold-rolled wide strip (width ≥ 600 mm) |\n| 1.3.2.2.2 Note 2 b) | cold-rolled slit wide strip (rolling width ≥ 600 mm, delivery width < 600 mm) |\n| 1.3.2.2.2 Note 2 c) | cold-rolled narrow strip (rolling width < 600 mm) |\n| 1.3.2.2.2, Note 3 | cold-rolled strip in cut lengths |\n| 1.3.3 | electrical steel |\n| 1.3.3.1 | non-oriented grain electrical steel |\n| 1.3.3.1, Note 1 a) | non-oriented grain electrical steel in the semi-processed state |\n| 1.3.3.1, Note 1 b) | non-oriented grain electrical steel in the final annealed state |\n\n\nTable A.1 — (continued) numerical order Subclause Term",
+                  "children": []
+                }
+              ]
+            },
+            {
+              "title": "tin mill and allied products for packaging",
+              "level": 3,
+              "path": "1.3.4",
+              "content": "",
+              "children": [
+                {
+                  "title": "blackplate",
+                  "level": 4,
+                  "path": "1.3.4.1",
+                  "content": "",
+                  "children": []
+                },
+                {
+                  "title": "tinplate",
+                  "level": 4,
+                  "path": "1.3.4.2",
+                  "content": "",
+                  "children": []
+                },
+                {
+                  "title": "tinned sheet and strip",
+                  "level": 4,
+                  "path": "1.3.4.3",
+                  "content": "",
+                  "children": []
+                },
+                {
+                  "title": "electrolytic chromium-/chromium oxide-coated steel",
+                  "level": 4,
+                  "path": "1.3.4.4",
+                  "content": "",
+                  "children": []
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "title": "ECCS",
+          "level": 2,
+          "path": null,
+          "content": "",
+          "children": [
+            {
+              "title": "coated hot- or cold-rolled flat products",
+              "level": 3,
+              "path": "1.3.5",
+              "content": "",
+              "children": [
+                {
+                  "title": "metal-coated sheet and strip",
+                  "level": 4,
+                  "path": "1.3.5.1",
+                  "content": "",
+                  "children": [
+                    {
+                      "title": "hot-dipped metal-coated sheet and strip",
+                      "level": 5,
+                      "path": "1.3.5.1.1",
+                      "content": "",
+                      "children": [
+                        {
+                          "title": "zinc-coated sheet and strip",
+                          "level": 6,
+                          "path": "1.3.5.1.1.1",
+                          "content": "hot-dipped sheet and strip galvanized sheet and strip",
+                          "children": []
+                        },
+                        {
+                          "title": "aluminium-zinc coated sheet and strip",
+                          "level": 6,
+                          "path": "1.3.5.1.1.2",
+                          "content": "1.3.5.1.1.2, Note 2 a) aluminium-zinc alloys (Al ≥ 50 %) 1.3.5.1.1.2, Note 2 b) zinc-aluminium alloys (3 % < Al < 50 %)",
+                          "children": []
+                        },
+                        {
+                          "title": "aluminium or aluminium-silicon alloy coated sheet and strip",
+                          "level": 6,
+                          "path": "1.3.5.1.1.3",
+                          "content": "",
+                          "children": []
+                        },
+                        {
+                          "title": "lead-tin alloy coated sheet and strip",
+                          "level": 6,
+                          "path": "1.3.5.1.1.4",
+                          "content": "terne plate",
+                          "children": []
+                        }
+                      ]
+                    },
+                    {
+                      "title": "electrolytically metal-coated sheet and strip",
+                      "level": 5,
+                      "path": "1.3.5.1.2",
+                      "content": "",
+                      "children": [
+                        {
+                          "title": "electrolytically zinc-coated sheet and strip",
+                          "level": 6,
+                          "path": "1.3.5.1.2.1",
+                          "content": "electrozinc sheet",
+                          "children": []
+                        },
+                        {
+                          "title": "electrolytically zinc-nickel coated sheet and strip",
+                          "level": 6,
+                          "path": "1.3.5.1.2.2",
+                          "content": "",
+                          "children": []
+                        },
+                        {
+                          "title": "electrolytically lead-tin coated sheet and strip",
+                          "level": 6,
+                          "path": "1.3.5.1.2.3",
+                          "content": "",
+                          "children": []
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "title": "sheet and strip with organic coatings",
+                  "level": 4,
+                  "path": "1.3.5.2",
+                  "content": "",
+                  "children": []
+                },
+                {
+                  "title": "sheet and strip with miscellaneous inorganic coatings",
+                  "level": 4,
+                  "path": "1.3.5.3",
+                  "content": "",
+                  "children": []
+                }
+              ]
+            },
+            {
+              "title": "profiled sheet",
+              "level": 3,
+              "path": "1.3.6",
+              "content": "",
+              "children": []
+            },
+            {
+              "title": "a) corrugated sheet",
+              "level": 3,
+              "path": "1.3.6",
+              "content": "| numerical order |  |\n| --- | --- |\n| Subclause | Term |\n|  |  |\n| 1.3.4 | tin mill and allied products for packaging |\n| 1.3.4.1 | blackplate |\n| 1.3.4.2 | tinplate |\n| 1.3.4.3 1.3.4.4 | tinned sheet and strip electrolytic chromium-/chromium oxide-coated steel |\n|  | ECCS |\n| 1.3.5 | coated hot- or cold-rolled flat products |\n| 1.3.5.1 | metal-coated sheet and strip |\n| 1.3.5.1.1 1.3.5.1.1.1 | hot-dipped metal-coated sheet and strip zinc-coated sheet and strip hot-dipped sheet and strip |\n|  | galvanized sheet and strip |\n| 1.3.5.1.1.2 | aluminium-zinc coated sheet and strip |\n| 1.3.5.1.1.2, Note 2 a) | aluminium-zinc alloys (Al ≥ 50 %) |\n| 1.3.5.1.1.2, Note 2 b) | zinc-aluminium alloys (3 % < Al < 50 %) |\n| 1.3.5.1.1.3 1.3.5.1.1.4 | aluminium or aluminium-silicon alloy coated sheet and strip lead-tin alloy coated sheet and strip |\n|  | terne plate |\n| 1.3.5.1.2 1.3.5.1.2.1 | electrolytically metal-coated sheet and strip electrolytically zinc-coated sheet and strip |\n|  | electrozinc sheet |\n| 1.3.5.1.2.2 | electrolytically zinc-nickel coated sheet and strip |\n| 1.3.5.1.2.3 | electrolytically lead-tin coated sheet and strip |\n| 1.3.5.2 | sheet and strip with organic coatings |\n| 1.3.5.3 | sheet and strip with miscellaneous inorganic coatings |\n| 1.3.6 | profiled sheet |\n\n\nTable A.1 — (continued) numerical order Subclause Term",
+              "children": []
+            },
+            {
+              "title": "b) ribbed sheet",
+              "level": 3,
+              "path": "1.3.6",
+              "content": "",
+              "children": []
+            },
+            {
+              "title": "composite products",
+              "level": 3,
+              "path": "1.3.7",
+              "content": "",
+              "children": []
+            },
+            {
+              "title": "a) clad sheet and strip",
+              "level": 3,
+              "path": "1.3.7",
+              "content": "",
+              "children": []
+            },
+            {
+              "title": "b) sandwich sheet",
+              "level": 3,
+              "path": "1.3.7",
+              "content": "",
+              "children": []
+            },
+            {
+              "title": "c) sandwich panel",
+              "level": 3,
+              "path": "1.3.7",
+              "content": "",
+              "children": []
+            },
+            {
+              "title": "long product",
+              "level": 3,
+              "path": "1.4.1",
+              "content": "",
+              "children": []
+            },
+            {
+              "title": "/ 1.4.6.1 rod",
+              "level": 3,
+              "path": "1.4.2",
+              "content": "",
+              "children": []
+            },
+            {
+              "title": "/ 1.4.6.2 wire (cold drawing)",
+              "level": 3,
+              "path": "1.4.3",
+              "content": "",
+              "children": []
+            },
+            {
+              "title": "/ 1.4.6.3 hot-finished bar",
+              "level": 3,
+              "path": "1.4.4",
+              "content": "",
+              "children": [
+                {
+                  "title": "hot-rolled bar",
+                  "level": 4,
+                  "path": "1.4.4.1",
+                  "content": "",
+                  "children": [
+                    {
+                      "title": "round bar (hot-rolled)",
+                      "level": 5,
+                      "path": "1.4.4.1.1",
+                      "content": "",
+                      "children": []
+                    },
+                    {
+                      "title": "square, hexagon, and octagon bar (hot-rolled)",
+                      "level": 5,
+                      "path": "1.4.4.1.2",
+                      "content": "",
+                      "children": []
+                    },
+                    {
+                      "title": "flat bar (hot-rolled on the four faces)",
+                      "level": 5,
+                      "path": "1.4.4.1.3",
+                      "content": "",
+                      "children": []
+                    },
+                    {
+                      "title": "bar for grooved springs (hot-rolled)",
+                      "level": 5,
+                      "path": "1.4.4.1.4",
+                      "content": "",
+                      "children": []
+                    },
+                    {
+                      "title": "bevel bar (hot-rolled)",
+                      "level": 5,
+                      "path": "1.4.4.1.4",
+                      "content": "",
+                      "children": []
+                    },
+                    {
+                      "title": "half flat semi-round bar (hot-rolled)",
+                      "level": 5,
+                      "path": "1.4.4.1.4",
+                      "content": "",
+                      "children": []
+                    },
+                    {
+                      "title": "semi-round bar (hot-rolled)",
+                      "level": 5,
+                      "path": "1.4.4.1.4",
+                      "content": "",
+                      "children": []
+                    },
+                    {
+                      "title": "trapezoidal bar (hot-rolled)",
+                      "level": 5,
+                      "path": "1.4.4.1.4",
+                      "content": "",
+                      "children": []
+                    },
+                    {
+                      "title": "triangle bar (hot-rolled)",
+                      "level": 5,
+                      "path": "1.4.4.1.4",
+                      "content": "1.4.4.1.4, Note 1 bar of special shape (hot-rolled)",
+                      "children": []
+                    }
+                  ]
+                },
+                {
+                  "title": "forged bar",
+                  "level": 4,
+                  "path": "1.4.4.2",
+                  "content": "",
+                  "children": []
+                },
+                {
+                  "title": "hollow mining drill bar",
+                  "level": 4,
+                  "path": "1.4.4.3",
+                  "content": "",
+                  "children": []
+                }
+              ]
+            },
+            {
+              "title": "bright product",
+              "level": 3,
+              "path": "1.4.5",
+              "content": "",
+              "children": [
+                {
+                  "title": "drawn product",
+                  "level": 4,
+                  "path": "1.4.5.1",
+                  "content": "",
+                  "children": []
+                },
+                {
+                  "title": "turned product",
+                  "level": 4,
+                  "path": "1.4.5.2",
+                  "content": "| numerical order |  |\n| --- | --- |\n| Subclause | Term |\n|  |  |\n| 1.3.6 b) | ribbed sheet |\n| 1.3.7 | composite products |\n| 1.3.7 a) | clad sheet and strip |\n| 1.3.7 b) | sandwich sheet |\n| 1.3.7 c) | sandwich panel |\n| 1.4.1 | long product |\n| 1.4.2 / 1.4.6.1 | rod |\n| 1.4.3 / 1.4.6.2 | wire (cold drawing) |\n| 1.4.4 / 1.4.6.3 | hot-finished bar |\n| 1.4.4.1 | hot-rolled bar |\n| 1.4.4.1.1 | round bar (hot-rolled) |\n| 1.4.4.1.2 | square, hexagon, and octagon bar (hot-rolled) |\n| 1.4.4.1.3 | flat bar (hot-rolled on the four faces) |\n| 1.4.4.1.4 | bar for grooved springs (hot-rolled) |\n| 1.4.4.1.4 | bevel bar (hot-rolled) |\n| 1.4.4.1.4 | half flat semi-round bar (hot-rolled) |\n| 1.4.4.1.4 | semi-round bar (hot-rolled) |\n| 1.4.4.1.4 | trapezoidal bar (hot-rolled) |\n| 1.4.4.1.4 | triangle bar (hot-rolled) |\n| 1.4.4.1.4, Note 1 | bar of special shape (hot-rolled) |\n| 1.4.4.2 | forged bar |\n| 1.4.4.3 | hollow mining drill bar |\n| 1.4.5 | bright product |\n| 1.4.5.1 | drawn product |\n\n\nTable A.1 — (continued) numerical order Subclause Term",
+                  "children": []
+                },
+                {
+                  "title": "ground product",
+                  "level": 4,
+                  "path": "1.4.5.3",
+                  "content": "",
+                  "children": []
+                }
+              ]
+            },
+            {
+              "title": "deformed product for reinforcement and prestressing of concrete",
+              "level": 3,
+              "path": "1.4.6",
+              "content": "",
+              "children": []
+            },
+            {
+              "title": "hot-rolled section",
+              "level": 3,
+              "path": "1.4.7",
+              "content": "",
+              "children": [
+                {
+                  "title": "railway material",
+                  "level": 4,
+                  "path": "1.4.7.1",
+                  "content": "",
+                  "children": [
+                    {
+                      "title": "railway track product",
+                      "level": 5,
+                      "path": "1.4.7.1.1",
+                      "content": "",
+                      "children": [
+                        {
+                          "title": "heavy railway product",
+                          "level": 6,
+                          "path": "1.4.7.1.1.1",
+                          "content": "",
+                          "children": []
+                        },
+                        {
+                          "title": "a) rails of linear mass ≥ 20 kg/m (except those in 1.4.7.1.2)",
+                          "level": 6,
+                          "path": "1.4.7.1.1.1",
+                          "content": "",
+                          "children": []
+                        },
+                        {
+                          "title": "b) sleepers of linear mass ≥ 15 kg/m",
+                          "level": 6,
+                          "path": "1.4.7.1.1.1",
+                          "content": "",
+                          "children": []
+                        },
+                        {
+                          "title": "light railway product",
+                          "level": 6,
+                          "path": "1.4.7.1.1.2",
+                          "content": "",
+                          "children": []
+                        },
+                        {
+                          "title": "a) rails of linear mass ≤ 20 kg/m (except those in 1.4.7.1.1)",
+                          "level": 6,
+                          "path": "1.4.7.1.1.2",
+                          "content": "",
+                          "children": []
+                        },
+                        {
+                          "title": "b) sleepers of linear mass ≤ 15 kg/m",
+                          "level": 6,
+                          "path": "1.4.7.1.1.2",
+                          "content": "",
+                          "children": []
+                        },
+                        {
+                          "title": "c) conductor rails",
+                          "level": 6,
+                          "path": "1.4.7.1.1.2",
+                          "content": "",
+                          "children": []
+                        },
+                        {
+                          "title": "d) rails for switches and crossings",
+                          "level": 6,
+                          "path": "1.4.7.1.1.2",
+                          "content": "",
+                          "children": []
+                        },
+                        {
+                          "title": "e) guide rails",
+                          "level": 6,
+                          "path": "1.4.7.1.1.2",
+                          "content": "",
+                          "children": []
+                        },
+                        {
+                          "title": "f) brake rails",
+                          "level": 6,
+                          "path": "1.4.7.1.1.2",
+                          "content": "",
+                          "children": []
+                        },
+                        {
+                          "title": "g) fish plates",
+                          "level": 6,
+                          "path": "1.4.7.1.1.2",
+                          "content": "",
+                          "children": []
+                        },
+                        {
+                          "title": "h) base plates (also known as sole, tie, or bearing plates)",
+                          "level": 6,
+                          "path": "1.4.7.1.1.2",
+                          "content": "",
+                          "children": []
+                        }
+                      ]
+                    },
+                    {
+                      "title": "product for other rail systems",
+                      "level": 5,
+                      "path": "1.4.7.1.2",
+                      "content": "",
+                      "children": []
+                    },
+                    {
+                      "title": "a) crane rails",
+                      "level": 5,
+                      "path": "1.4.7.1.2",
+                      "content": "",
+                      "children": []
+                    },
+                    {
+                      "title": "b) grooved rails",
+                      "level": 5,
+                      "path": "1.4.7.1.2",
+                      "content": "",
+                      "children": []
+                    }
+                  ]
+                },
+                {
+                  "title": "piling",
+                  "level": 4,
+                  "path": "1.4.7.2",
+                  "content": "",
+                  "children": [
+                    {
+                      "title": "sheet piling",
+                      "level": 5,
+                      "path": "1.4.7.2.1",
+                      "content": "",
+                      "children": []
+                    },
+                    {
+                      "title": "Note 1 a) U, Z, and hat shape sheet piling",
+                      "level": 5,
+                      "path": "1.4.7.2.1",
+                      "content": "",
+                      "children": []
+                    },
+                    {
+                      "title": "Note 1 b) straight web or flat sheet piling",
+                      "level": 5,
+                      "path": "1.4.7.2.1",
+                      "content": "",
+                      "children": []
+                    },
+                    {
+                      "title": "Note 1 c) fabricated sheet piling",
+                      "level": 5,
+                      "path": "1.4.7.2.1",
+                      "content": "| numerical order |  |\n| --- | --- |\n| Subclause | Term |\n|  |  |\n| 1.4.5.3 | ground product |\n| 1.4.6 | deformed product for reinforcement and prestressing of concrete |\n| 1.4.7 | hot-rolled section |\n| 1.4.7.1 | railway material |\n| 1.4.7.1.1 | railway track product |\n| 1.4.7.1.1.1 | heavy railway product |\n| 1.4.7.1.1.1 a) | rails of linear mass ≥ 20 kg/m (except those in 1.4.7.1.2) |\n| 1.4.7.1.1.1 b) | sleepers of linear mass ≥ 15 kg/m |\n| 1.4.7.1.1.2 | light railway product |\n| 1.4.7.1.1.2 a) | rails of linear mass ≤ 20 kg/m (except those in 1.4.7.1.1) |\n| 1.4.7.1.1.2 b) | sleepers of linear mass ≤ 15 kg/m |\n| 1.4.7.1.1.2 c) | conductor rails |\n| 1.4.7.1.1.2 d) | rails for switches and crossings |\n| 1.4.7.1.1.2 e) | guide rails |\n| 1.4.7.1.1.2 f) | brake rails |\n| 1.4.7.1.1.2 g) | fish plates |\n| 1.4.7.1.1.2 h) | base plates (also known as sole, tie, or bearing plates) |\n| 1.4.7.1.2 | product for other rail systems |\n| 1.4.7.1.2 a) | crane rails |\n| 1.4.7.1.2 b) | grooved rails |\n| 1.4.7.2 | piling |\n| 1.4.7.2.1 | sheet piling |\n| 1.4.7.2.1 Note 1 a) | U, Z, and hat shape sheet piling |\n| 1.4.7.2.1 Note 1 b) | straight web or flat sheet piling |\n\n\nTable A.1 — (continued) numerical order Subclause Term",
+                      "children": []
+                    },
+                    {
+                      "title": "Note 1 d) / box piles: fabricated from U- or Z-sheet piling and steel plates",
+                      "level": 5,
+                      "path": "1.4.7.2.1",
+                      "content": "1.4.7.2.2",
+                      "children": []
+                    },
+                    {
+                      "title": "Note 1 e) 1) combined walls: interlocking H-sheet piling",
+                      "level": 5,
+                      "path": "1.4.7.2.1",
+                      "content": "",
+                      "children": []
+                    },
+                    {
+                      "title": "Note 1 e) 2) combined walls: H-piles with intermediary Z-sheet piling",
+                      "level": 5,
+                      "path": "1.4.7.2.1",
+                      "content": "",
+                      "children": []
+                    },
+                    {
+                      "title": "Note 1 e) 3) combined walls: interlocking tubular piles",
+                      "level": 5,
+                      "path": "1.4.7.2.1",
+                      "content": "",
+                      "children": []
+                    },
+                    {
+                      "title": "Note 1 e) 4) combined walls: tubular piles with intermediate sheet piling",
+                      "level": 5,
+                      "path": "1.4.7.2.1",
+                      "content": "",
+                      "children": []
+                    },
+                    {
+                      "title": "Note 1 e) 5) combined walls: combined walls using box piles",
+                      "level": 5,
+                      "path": "1.4.7.2.1",
+                      "content": "",
+                      "children": []
+                    },
+                    {
+                      "title": "Note 1 f) cold-formed sheet piling",
+                      "level": 5,
+                      "path": "1.4.7.2.1",
+                      "content": "",
+                      "children": []
+                    },
+                    {
+                      "title": "Note 1 f) 1) cold-formed sheet piling: sheet piling Ω (Omega) and Z",
+                      "level": 5,
+                      "path": "1.4.7.2.1",
+                      "content": "",
+                      "children": []
+                    },
+                    {
+                      "title": "Note 1 f) 2) cold-formed sheet piling: trench sheeting",
+                      "level": 5,
+                      "path": "1.4.7.2.1",
+                      "content": "",
+                      "children": []
+                    },
+                    {
+                      "title": "Note 1 g) sheet piling: corner sections",
+                      "level": 5,
+                      "path": "1.4.7.2.1",
+                      "content": "",
+                      "children": []
+                    },
+                    {
+                      "title": "fabricated bearing piling",
+                      "level": 5,
+                      "path": "1.4.7.2.2",
+                      "content": "",
+                      "children": []
+                    },
+                    {
+                      "title": "tubular fabricated bearing piling",
+                      "level": 5,
+                      "path": "1.4.7.2.3",
+                      "content": "",
+                      "children": []
+                    }
+                  ]
+                },
+                {
+                  "title": "mining frame section",
+                  "level": 4,
+                  "path": "1.4.7.3",
+                  "content": "",
+                  "children": []
+                },
+                {
+                  "title": "heavy section (hot-rolled, web height ≥ 80 mm)",
+                  "level": 4,
+                  "path": "1.4.7.4",
+                  "content": "1.4.7.4, Note 3 a) parent sections 1.4.7.4, Note 3 b) thin sections 1.4.7.4, Note 3 c) thick sections",
+                  "children": [
+                    {
+                      "title": "I section (narrow and medium flanges)",
+                      "level": 5,
+                      "path": "1.4.7.4.1",
+                      "content": "",
+                      "children": []
+                    },
+                    {
+                      "title": "H section (wide-flanged beam)",
+                      "level": 5,
+                      "path": "1.4.7.4.2",
+                      "content": "1.4.7.4.2, Note 1 column",
+                      "children": []
+                    },
+                    {
+                      "title": "U section (channel)",
+                      "level": 5,
+                      "path": "1.4.7.4.3",
+                      "content": "",
+                      "children": []
+                    },
+                    {
+                      "title": "bearing pile",
+                      "level": 5,
+                      "path": "1.4.7.4.4",
+                      "content": "",
+                      "children": []
+                    },
+                    {
+                      "title": "special heavy section (web height ≥ 80 mm)",
+                      "level": 5,
+                      "path": "1.4.7.4.5",
+                      "content": "| numerical order |  |\n| --- | --- |\n| Subclause | Term |\n|  |  |\n| 1.4.7.2.1 Note 1 d) / 1.4.7.2.2 | box piles: fabricated from U- or Z-sheet piling and steel plates |\n| 1.4.7.2.1 Note 1 e) 1) | combined walls: interlocking H-sheet piling |\n| 1.4.7.2.1 Note 1 e) 2) | combined walls: H-piles with intermediary Z-sheet piling |\n| 1.4.7.2.1 Note 1 e) 3) | combined walls: interlocking tubular piles |\n| 1.4.7.2.1 Note 1 e) 4) | combined walls: tubular piles with intermediate sheet piling |\n| 1.4.7.2.1 Note 1 e) 5) | combined walls: combined walls using box piles |\n| 1.4.7.2.1 Note 1 f) | cold-formed sheet piling |\n| 1.4.7.2.1 Note 1 f) 1) | cold-formed sheet piling: sheet piling Ω (Omega) and Z |\n| 1.4.7.2.1 Note 1 f) 2) | cold-formed sheet piling: trench sheeting |\n| 1.4.7.2.1 Note 1 g) | sheet piling: corner sections |\n| 1.4.7.2.2 | fabricated bearing piling |\n| 1.4.7.2.3 | tubular fabricated bearing piling |\n| 1.4.7.3 | mining frame section |\n| 1.4.7.4 | heavy section (hot-rolled, web height ≥ 80 mm) |\n| 1.4.7.4, Note 3 a) | parent sections |\n| 1.4.7.4, Note 3 b) | thin sections |\n| 1.4.7.4, Note 3 c) | thick sections |\n| 1.4.7.4.1 | I section (narrow and medium flanges) |\n| 1.4.7.4.2 | H section (wide-flanged beam) |\n| 1.4.7.4.2, Note 1 | column |\n| 1.4.7.4.3 | U section (channel) |\n| 1.4.7.4.4 | bearing pile |\n\n\nTable A.1 — (continued) numerical order Subclause Term",
+                      "children": []
+                    },
+                    {
+                      "title": "small U, I, and H sections (web height < 80 mm)",
+                      "level": 5,
+                      "path": "1.4.7.5.1",
+                      "content": "",
+                      "children": []
+                    },
+                    {
+                      "title": "angle",
+                      "level": 5,
+                      "path": "1.4.7.5.2",
+                      "content": "",
+                      "children": []
+                    },
+                    {
+                      "title": "T section with equal flanges",
+                      "level": 5,
+                      "path": "1.4.7.5.3",
+                      "content": "",
+                      "children": []
+                    },
+                    {
+                      "title": "bulb flat",
+                      "level": 5,
+                      "path": "1.4.7.5.4",
+                      "content": "",
+                      "children": []
+                    },
+                    {
+                      "title": "special section",
+                      "level": 5,
+                      "path": "1.4.7.5.5",
+                      "content": "1.4.7.5.5, Note 1 square edged L, U, and T sections 1.4.7.5.5, Note 1 T section with unequal flanges 1.4.7.5.5, Note 1 track shoe section 1.4.7.5.5, Note 1 Z section",
+                      "children": []
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "title": "welded section",
+              "level": 3,
+              "path": "1.4.8",
+              "content": "",
+              "children": []
+            },
+            {
+              "title": "cold-formed section",
+              "level": 3,
+              "path": "1.4.9",
+              "content": "1.4.9, Note 1 b) building frames 1.4.9, Note 1 b) crash barriers 1.4.9, Note 1 b) door frames 1.4.9, Note 1 b) lorry chassis 1.4.9, Note 1 b) wagon chassis",
+              "children": []
+            },
+            {
+              "title": "tubular product",
+              "level": 3,
+              "path": "1.4.10",
+              "content": "",
+              "children": [
+                {
+                  "title": "seamless tube",
+                  "level": 4,
+                  "path": "1.4.10.1",
+                  "content": "",
+                  "children": []
+                },
+                {
+                  "title": "welded tube",
+                  "level": 4,
+                  "path": "1.4.10.2",
+                  "content": "",
+                  "children": [
+                    {
+                      "title": "submerged arc welded steel tube",
+                      "level": 5,
+                      "path": "1.4.10.2.1",
+                      "content": "",
+                      "children": []
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "title": "SAW",
+          "level": 2,
+          "path": null,
+          "content": "",
+          "children": [
+            {
+              "title": "electric resistance welded steel tube",
+              "level": 5,
+              "path": "1.4.10.2.2",
+              "content": "EW",
+              "children": []
+            },
+            {
+              "title": "butt welded steel tube",
+              "level": 5,
+              "path": "1.4.10.2.3",
+              "content": "BW\n\n| numerical order |  |\n| --- | --- |\n| Subclause | Term |\n|  |  |\n| 1.4.7.5.1 | small U, I, and H sections (web height < 80 mm) |\n| 1.4.7.5.2 | angle |\n| 1.4.7.5.3 | T section with equal flanges |\n| 1.4.7.5.4 | bulb flat |\n| 1.4.7.5.5 | special section |\n| 1.4.7.5.5, Note 1 | square edged L, U, and T sections |\n| 1.4.7.5.5, Note 1 | T section with unequal flanges |\n| 1.4.7.5.5, Note 1 | track shoe section |\n| 1.4.7.5.5, Note 1 | Z section |\n| 1.4.8 | welded section |\n| 1.4.9 | cold-formed section |\n| 1.4.9, Note 1 b) | building frames |\n| 1.4.9, Note 1 b) | crash barriers |\n| 1.4.9, Note 1 b) | door frames |\n| 1.4.9, Note 1 b) | lorry chassis |\n| 1.4.9, Note 1 b) | wagon chassis |\n| 1.4.10 | tubular product |\n| 1.4.10.1 | seamless tube |\n| 1.4.10.2 1.4.10.2.1 | welded tube submerged arc welded steel tube |\n| 1.4.10.2.2 | SAW electric resistance welded steel tube |\n| 1.4.10.2.3 | EW butt welded steel tube |\n\n\nTable A.1 — (continued) numerical order Subclause Term",
+              "children": []
+            },
+            {
+              "title": "hollow section",
+              "level": 4,
+              "path": "1.4.10.3",
+              "content": "",
+              "children": []
+            },
+            {
+              "title": "hollow bar",
+              "level": 4,
+              "path": "1.4.10.4",
+              "content": "",
+              "children": []
+            },
+            {
+              "title": "fitting",
+              "level": 4,
+              "path": "1.4.10.5",
+              "content": "",
+              "children": []
+            },
+            {
+              "title": "open-die forging",
+              "level": 3,
+              "path": "1.5.1",
+              "content": "",
+              "children": []
+            },
+            {
+              "title": "closed-die forging and stamping",
+              "level": 3,
+              "path": "1.5.2",
+              "content": "",
+              "children": []
+            },
+            {
+              "title": "casting",
+              "level": 3,
+              "path": "1.5.3",
+              "content": "",
+              "children": []
+            },
+            {
+              "title": "powder metallurgy product",
+              "level": 3,
+              "path": "1.5.4",
+              "content": "",
+              "children": [
+                {
+                  "title": "steel powder",
+                  "level": 4,
+                  "path": "1.5.4.1",
+                  "content": "",
+                  "children": []
+                },
+                {
+                  "title": "sintered product",
+                  "level": 4,
+                  "path": "1.5.4.2",
+                  "content": "",
+                  "children": []
+                },
+                {
+                  "title": "full density product",
+                  "level": 4,
+                  "path": "1.5.4.3",
+                  "content": "| numerical order |  |\n| --- | --- |\n| Subclause | Term |\n|  |  |\n| 1.4.10.3 | hollow section |\n| 1.4.10.4 | hollow bar |\n| 1.4.10.5 | fitting |\n| 1.5.1 | open-die forging |\n| 1.5.2 | closed-die forging and stamping |\n| 1.5.3 | casting |\n| 1.5.4 | powder metallurgy product |\n| 1.5.4.1 | steel powder |\n| 1.5.4.2 | sintered product |",
+                  "children": []
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "title": "Annex B",
+          "level": 2,
+          "path": null,
+          "content": "Vocabulary(i ninfo arlmpahtaivbee)tical order Table B.1 — Vocabulary in alphabetical order alphabetical order Subclause Term",
+          "children": [
+            {
+              "title": "aluminium or aluminium-silicon alloy coated sheet and strip",
+              "level": 6,
+              "path": "1.3.5.1.1.3",
+              "content": "1.3.5.1.1.2, aluminium-zinc alloys (Al ≥ 50 %) Note 2 a)",
+              "children": []
+            },
+            {
+              "title": "aluminium-zinc coated sheet and strip",
+              "level": 6,
+              "path": "1.3.5.1.1.2",
+              "content": "",
+              "children": []
+            },
+            {
+              "title": "angle",
+              "level": 5,
+              "path": "1.4.7.5.2",
+              "content": "1.4.4/1.4.6.3 bar",
+              "children": []
+            },
+            {
+              "title": "bar for grooved springs (hot-rolled)",
+              "level": 5,
+              "path": "1.4.4.1.4",
+              "content": "1.4.4.1.4, Note 1 bar of special shape (hot-rolled)",
+              "children": [
+                {
+                  "title": "h) base plates (also known as sole, tie, or bearing plates)",
+                  "level": 6,
+                  "path": "1.4.7.1.1.2",
+                  "content": "",
+                  "children": []
+                }
+              ]
+            },
+            {
+              "title": "bearing pile",
+              "level": 5,
+              "path": "1.4.7.4.4",
+              "content": "",
+              "children": []
+            },
+            {
+              "title": "bevel bar (hot-rolled)",
+              "level": 5,
+              "path": "1.4.4.1.4",
+              "content": "",
+              "children": []
+            },
+            {
+              "title": "/ 1.2.2.2 billet",
+              "level": 4,
+              "path": "1.2.2.1",
+              "content": "",
+              "children": []
+            },
+            {
+              "title": "blackplate",
+              "level": 4,
+              "path": "1.3.4.1",
+              "content": "",
+              "children": []
+            },
+            {
+              "title": "blank for sections",
+              "level": 4,
+              "path": "1.2.2.5",
+              "content": "",
+              "children": []
+            },
+            {
+              "title": "blank for tubes and pipes",
+              "level": 4,
+              "path": "1.2.2.6",
+              "content": "",
+              "children": []
+            },
+            {
+              "title": "/ 1.2.2.2 bloom",
+              "level": 4,
+              "path": "1.2.2.1",
+              "content": "",
+              "children": [
+                {
+                  "title": "Note 1 d) / box piles: fabricated from U- or Z-sheet piling and steel plates",
+                  "level": 5,
+                  "path": "1.4.7.2.1",
+                  "content": "1.4.7.2.2",
+                  "children": [
+                    {
+                      "title": "f) brake rails",
+                      "level": 6,
+                      "path": "1.4.7.1.1.2",
+                      "content": "",
+                      "children": []
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "title": "bright product",
+              "level": 3,
+              "path": "1.4.5",
+              "content": "1.4.9, Note 1 b) building frames",
+              "children": [
+                {
+                  "title": "bulb flat",
+                  "level": 5,
+                  "path": "1.4.7.5.4",
+                  "content": "| alphabetical order |  |\n| --- | --- |\n| Subclause | Term |\n|  |  |\n| 1.3.5.1.1.3 | aluminium or aluminium-silicon alloy coated sheet and strip |\n| 1.3.5.1.1.2, Note 2 a) | aluminium-zinc alloys (Al ≥ 50 %) |\n| 1.3.5.1.1.2 | aluminium-zinc coated sheet and strip |\n| 1.4.7.5.2 | angle |\n| 1.4.4/1.4.6.3 | bar |\n| 1.4.4.1.4 | bar for grooved springs (hot-rolled) |\n| 1.4.4.1.4, Note 1 | bar of special shape (hot-rolled) |\n| 1.4.7.1.1.2 h) | base plates (also known as sole, tie, or bearing plates) |\n| 1.4.7.4.4 | bearing pile |\n| 1.4.4.1.4 | bevel bar (hot-rolled) |\n| 1.2.2.1 / 1.2.2.2 | billet |\n| 1.3.4.1 | blackplate |\n| 1.2.2.5 | blank for sections |\n| 1.2.2.6 | blank for tubes and pipes |\n| 1.2.2.1 / 1.2.2.2 | bloom |\n| 1.4.7.2.1 Note 1 d) / 1.4.7.2.2 | box piles: fabricated from U- or Z-sheet piling and steel plates |\n| 1.4.7.1.1.2 f) | brake rails |\n| 1.4.5 | bright product |\n| 1.4.9, Note 1 b) | building frames |\n\n\nTable B.1 — (continued) alphabetical order Subclause Term",
+                  "children": []
+                },
+                {
+                  "title": "butt welded steel tube",
+                  "level": 5,
+                  "path": "1.4.10.2.3",
+                  "content": "BW",
+                  "children": []
+                }
+              ]
+            },
+            {
+              "title": "casting",
+              "level": 3,
+              "path": "1.5.3",
+              "content": "",
+              "children": []
+            },
+            {
+              "title": "a) clad sheet and strip",
+              "level": 3,
+              "path": "1.3.7",
+              "content": "",
+              "children": []
+            },
+            {
+              "title": "closed-die forging and stamping",
+              "level": 3,
+              "path": "1.5.2",
+              "content": "",
+              "children": []
+            },
+            {
+              "title": "coated hot- or cold-rolled flat product",
+              "level": 3,
+              "path": "1.3.5",
+              "content": "",
+              "children": [
+                {
+                  "title": "/ 1.3.2.2.2 coil",
+                  "level": 5,
+                  "path": "1.3.2.1.3",
+                  "content": "",
+                  "children": []
+                }
+              ]
+            },
+            {
+              "title": "cold-formed section",
+              "level": 3,
+              "path": "1.4.9",
+              "content": "",
+              "children": [
+                {
+                  "title": "Note 1 f) cold-formed sheet piling",
+                  "level": 5,
+                  "path": "1.4.7.2.1",
+                  "content": "",
+                  "children": []
+                },
+                {
+                  "title": "Note 1 f) 1) cold-formed sheet piling: sheet piling Ω (Omega) and Z",
+                  "level": 5,
+                  "path": "1.4.7.2.1",
+                  "content": "",
+                  "children": []
+                },
+                {
+                  "title": "Note 1 f) 2) cold-formed sheet piling: trench sheeting",
+                  "level": 5,
+                  "path": "1.4.7.2.1",
+                  "content": "1.3.2.2.2, Note 2 c) cold-rolled narrow strip (rolling width < 600 mm)",
+                  "children": []
+                },
+                {
+                  "title": "cold-rolled sheet and plate (width ≥ 600 mm)",
+                  "level": 5,
+                  "path": "1.3.2.2.1",
+                  "content": "1.3.2.2.2, Note 2 b) cold-rolled slit wide strip (rolling width ≥ 600 mm, delivery width < 600 mm)",
+                  "children": []
+                },
+                {
+                  "title": "cold-rolled strip",
+                  "level": 5,
+                  "path": "1.3.2.2.2",
+                  "content": "1.3.2.2.2, Note 3 cold-rolled strip in cut lengths",
+                  "children": []
+                },
+                {
+                  "title": "cold-rolled uncoated flat product",
+                  "level": 4,
+                  "path": "1.3.2.2",
+                  "content": "1.3.2.2.2, Note 2 a) cold-rolled wide strip (width ≥ 600 mm) 1.4.7.4.2, Note column",
+                  "children": [
+                    {
+                      "title": "Note 1 e) 5) combined walls: combined walls using box piles",
+                      "level": 5,
+                      "path": "1.4.7.2.1",
+                      "content": "",
+                      "children": []
+                    },
+                    {
+                      "title": "Note 1 e) 2) combined walls: H-piles with intermediary Z-sheet piling",
+                      "level": 5,
+                      "path": "1.4.7.2.1",
+                      "content": "",
+                      "children": []
+                    },
+                    {
+                      "title": "Note 1 e) 1) combined walls: interlocking H-sheet piling",
+                      "level": 5,
+                      "path": "1.4.7.2.1",
+                      "content": "",
+                      "children": []
+                    },
+                    {
+                      "title": "Note 1 e) 3) combined walls: interlocking tubular piles",
+                      "level": 5,
+                      "path": "1.4.7.2.1",
+                      "content": "",
+                      "children": []
+                    },
+                    {
+                      "title": "Note 1 e) 4) combined walls: tubular piles with intermediate sheet piling",
+                      "level": 5,
+                      "path": "1.4.7.2.1",
+                      "content": "| alphabetical order |  |\n| --- | --- |\n| Subclause | Term |\n| 1.4.10.2.3 | butt welded steel tube |\n|  | BW |\n| 1.5.3 | casting |\n| 1.3.7 a) | clad sheet and strip |\n| 1.5.2 | closed-die forging and stamping |\n| 1.3.5 | coated hot- or cold-rolled flat product |\n| 1.3.2.1.3 / 1.3.2.2.2 | coil |\n| 1.4.9 | cold-formed section |\n| 1.4.7.2.1 Note 1 f) | cold-formed sheet piling |\n| 1.4.7.2.1 Note 1 f) 1) | cold-formed sheet piling: sheet piling Ω (Omega) and Z |\n| 1.4.7.2.1 Note 1 f) 2) | cold-formed sheet piling: trench sheeting |\n| 1.3.2.2.2, Note 2 c) | cold-rolled narrow strip (rolling width < 600 mm) |\n| 1.3.2.2.1 | cold-rolled sheet and plate (width ≥ 600 mm) |\n| 1.3.2.2.2, Note 2 b) | cold-rolled slit wide strip (rolling width ≥ 600 mm, delivery width < 600 mm) |\n| 1.3.2.2.2 | cold-rolled strip |\n| 1.3.2.2.2, Note 3 | cold-rolled strip in cut lengths |\n| 1.3.2.2 | cold-rolled uncoated flat product |\n| 1.3.2.2.2, Note 2 a) | cold-rolled wide strip (width ≥ 600 mm) |\n| 1.4.7.4.2, Note | column |\n| 1.4.7.2.1 Note 1 e) 5) | combined walls: combined walls using box piles |\n| 1.4.7.2.1 Note 1 e) 2) | combined walls: H-piles with intermediary Z-sheet piling |\n| 1.4.7.2.1 Note 1 e) 1) | combined walls: interlocking H-sheet piling |\n| 1.4.7.2.1 Note 1 e) 3) | combined walls: interlocking tubular piles |\n\n\nTable B.1 — (continued) alphabetical order Subclause Term",
+                      "children": []
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "title": "composite products",
+              "level": 3,
+              "path": "1.3.7",
+              "content": "",
+              "children": [
+                {
+                  "title": "c) conductor rails",
+                  "level": 6,
+                  "path": "1.4.7.1.1.2",
+                  "content": "",
+                  "children": []
+                }
+              ]
+            },
+            {
+              "title": "a) continuous casting",
+              "level": 3,
+              "path": "1.2.2",
+              "content": "",
+              "children": []
+            },
+            {
+              "title": "a) corrugated sheet",
+              "level": 3,
+              "path": "1.3.6",
+              "content": "",
+              "children": [
+                {
+                  "title": "a) crane rails",
+                  "level": 5,
+                  "path": "1.4.7.1.2",
+                  "content": "1.4.9, Note 1 b) crash barriers",
+                  "children": []
+                }
+              ]
+            },
+            {
+              "title": "deformed product for reinforcement and prestressing of concrete",
+              "level": 3,
+              "path": "1.4.6",
+              "content": "1.4.9, Note 1 b) door frames",
+              "children": [
+                {
+                  "title": "drawn product",
+                  "level": 4,
+                  "path": "1.4.5.1",
+                  "content": "",
+                  "children": [
+                    {
+                      "title": "electric resistance welded steel tube",
+                      "level": 5,
+                      "path": "1.4.10.2.2",
+                      "content": "EW",
+                      "children": []
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "title": "electrical steel",
+              "level": 3,
+              "path": "1.3.3",
+              "content": "",
+              "children": [
+                {
+                  "title": "electrolytic chromium-/chromium oxide-coated steel",
+                  "level": 4,
+                  "path": "1.3.4.4",
+                  "content": "",
+                  "children": []
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "title": "ECCS",
+          "level": 2,
+          "path": null,
+          "content": "",
+          "children": [
+            {
+              "title": "electrolytically lead-tin coated sheet and strip",
+              "level": 6,
+              "path": "1.3.5.1.2.3",
+              "content": "",
+              "children": []
+            },
+            {
+              "title": "electrolytically metal-coated sheet and strip",
+              "level": 5,
+              "path": "1.3.5.1.2",
+              "content": "",
+              "children": [
+                {
+                  "title": "electrolytically zinc-coated sheet and strip",
+                  "level": 6,
+                  "path": "1.3.5.1.2.1",
+                  "content": "electrozinc sheet",
+                  "children": []
+                },
+                {
+                  "title": "electrolytically zinc-nickel coated sheet and strip",
+                  "level": 6,
+                  "path": "1.3.5.1.2.2",
+                  "content": "",
+                  "children": []
+                }
+              ]
+            },
+            {
+              "title": "ESR ingot",
+              "level": 4,
+              "path": "1.2.2.8",
+              "content": "",
+              "children": [
+                {
+                  "title": "fabricated bearing piling",
+                  "level": 5,
+                  "path": "1.4.7.2.2",
+                  "content": "",
+                  "children": []
+                },
+                {
+                  "title": "Note 1 c) fabricated sheet piling",
+                  "level": 5,
+                  "path": "1.4.7.2.1",
+                  "content": "",
+                  "children": [
+                    {
+                      "title": "g) fish plates",
+                      "level": 6,
+                      "path": "1.4.7.1.1.2",
+                      "content": "",
+                      "children": []
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "title": "fitting",
+              "level": 4,
+              "path": "1.4.10.5",
+              "content": "",
+              "children": [
+                {
+                  "title": "flat bar (hot-rolled on the four faces)",
+                  "level": 5,
+                  "path": "1.4.4.1.3",
+                  "content": "",
+                  "children": []
+                }
+              ]
+            },
+            {
+              "title": "flat product",
+              "level": 3,
+              "path": "1.3.1",
+              "content": "| alphabetical order |  |\n| --- | --- |\n| Subclause | Term |\n|  |  |\n| 1.3.7 | composite products |\n| 1.4.7.1.1.2 c) | conductor rails |\n| 1.2.2 a) | continuous casting |\n| 1.3.6 a) | corrugated sheet |\n| 1.4.7.1.2 a) | crane rails |\n| 1.4.9, Note 1 b) | crash barriers |\n| 1.4.6 | deformed product for reinforcement and prestressing of concrete |\n| 1.4.9, Note 1 b) | door frames |\n| 1.4.5.1 1.4.10.2.2 | drawn product electric resistance welded steel tube |\n|  | EW |\n| 1.3.3 1.3.4.4 | electrical steel electrolytic chromium-/chromium oxide-coated steel |\n|  | ECCS |\n| 1.3.5.1.2.3 | electrolytically lead-tin coated sheet and strip |\n| 1.3.5.1.2 1.3.5.1.2.1 | electrolytically metal-coated sheet and strip electrolytically zinc-coated sheet and strip |\n|  | electrozinc sheet |\n| 1.3.5.1.2.2 | electrolytically zinc-nickel coated sheet and strip |\n| 1.2.2.8 | ESR ingot |\n| 1.4.7.2.2 | fabricated bearing piling |\n| 1.4.7.2.1 Note 1 c) | fabricated sheet piling |\n| 1.4.7.1.1.2 g) | fish plates |\n| 1.4.10.5 | fitting |\n| 1.4.4.1.3 | flat bar (hot-rolled on the four faces) |\n\n\nTable B.1 — (continued) alphabetical order Subclause Term",
+              "children": [
+                {
+                  "title": "flat semi-finished products",
+                  "level": 4,
+                  "path": "1.2.2.3",
+                  "content": "",
+                  "children": []
+                },
+                {
+                  "title": "forged bar",
+                  "level": 4,
+                  "path": "1.4.4.2",
+                  "content": "",
+                  "children": []
+                },
+                {
+                  "title": "full density product",
+                  "level": 4,
+                  "path": "1.5.4.3",
+                  "content": "",
+                  "children": []
+                },
+                {
+                  "title": "grain-oriented electrical steel",
+                  "level": 4,
+                  "path": "1.3.3.2",
+                  "content": "",
+                  "children": [
+                    {
+                      "title": "b) grooved rail",
+                      "level": 5,
+                      "path": "1.4.7.1.2",
+                      "content": "",
+                      "children": []
+                    }
+                  ]
+                },
+                {
+                  "title": "ground product",
+                  "level": 4,
+                  "path": "1.4.5.3",
+                  "content": "",
+                  "children": [
+                    {
+                      "title": "e) guide rails",
+                      "level": 6,
+                      "path": "1.4.7.1.1.2",
+                      "content": "",
+                      "children": []
+                    },
+                    {
+                      "title": "H section (wide-flanged beam)",
+                      "level": 5,
+                      "path": "1.4.7.4.2",
+                      "content": "",
+                      "children": []
+                    },
+                    {
+                      "title": "half flat semi-round bar (hot-rolled)",
+                      "level": 5,
+                      "path": "1.4.4.1.4",
+                      "content": "",
+                      "children": [
+                        {
+                          "title": "heavy railway product",
+                          "level": 6,
+                          "path": "1.4.7.1.1.1",
+                          "content": "",
+                          "children": []
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "title": "heavy section (hot-rolled, web height ≥ 80 mm)",
+                  "level": 4,
+                  "path": "1.4.7.4",
+                  "content": "",
+                  "children": []
+                },
+                {
+                  "title": "hollow bar",
+                  "level": 4,
+                  "path": "1.4.10.4",
+                  "content": "",
+                  "children": []
+                },
+                {
+                  "title": "hollow mining drill bar",
+                  "level": 4,
+                  "path": "1.4.4.3",
+                  "content": "",
+                  "children": []
+                },
+                {
+                  "title": "hollow section",
+                  "level": 4,
+                  "path": "1.4.10.3",
+                  "content": "",
+                  "children": [
+                    {
+                      "title": "hot-dipped metal-coated sheet and strip",
+                      "level": 5,
+                      "path": "1.3.5.1.1",
+                      "content": "",
+                      "children": []
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "title": "/ 1.4.6.3 hot-finished bar",
+              "level": 3,
+              "path": "1.4.4",
+              "content": "",
+              "children": [
+                {
+                  "title": "hot-rolled bar",
+                  "level": 4,
+                  "path": "1.4.4.1",
+                  "content": "",
+                  "children": [
+                    {
+                      "title": "Note 2 c) hot-rolled narrow strip (rolling width < 600 mm)",
+                      "level": 5,
+                      "path": "1.3.2.1.3",
+                      "content": "",
+                      "children": []
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "title": "hot-rolled section",
+              "level": 3,
+              "path": "1.4.7",
+              "content": "",
+              "children": [
+                {
+                  "title": "hot-rolled sheet and plate",
+                  "level": 5,
+                  "path": "1.3.2.1.2",
+                  "content": "",
+                  "children": []
+                },
+                {
+                  "title": "Note 2 b) hot-rolled sheet and plate cut from wide strip",
+                  "level": 5,
+                  "path": "1.3.2.1.2",
+                  "content": "",
+                  "children": []
+                },
+                {
+                  "title": "Note 2 b) hot-rolled slit wide strip (rolling width ≥ 600 mm, delivery width < 600 mm)",
+                  "level": 5,
+                  "path": "1.3.2.1.3",
+                  "content": "",
+                  "children": []
+                },
+                {
+                  "title": "hot-rolled strip",
+                  "level": 5,
+                  "path": "1.3.2.1.3",
+                  "content": "",
+                  "children": []
+                },
+                {
+                  "title": "hot-rolled uncoated flat product",
+                  "level": 4,
+                  "path": "1.3.2.1",
+                  "content": "",
+                  "children": [
+                    {
+                      "title": "Note 2 a) hot-rolled wide strip (width ≥ 600 mm)",
+                      "level": 5,
+                      "path": "1.3.2.1.3",
+                      "content": "| alphabetical order |  |\n| --- | --- |\n| Subclause | Term |\n|  |  |\n| 1.2.2.3 | flat semi-finished products |\n| 1.4.4.2 | forged bar |\n| 1.5.4.3 | full density product |\n| 1.3.3.2 | grain-oriented electrical steel |\n| 1.4.7.1.2 b) | grooved rail |\n| 1.4.5.3 | ground product |\n| 1.4.7.1.1.2 e) | guide rails |\n| 1.4.7.4.2 | H section (wide-flanged beam) |\n| 1.4.4.1.4 | half flat semi-round bar (hot-rolled) |\n| 1.4.7.1.1.1 | heavy railway product |\n| 1.4.7.4 | heavy section (hot-rolled, web height ≥ 80 mm) |\n| 1.4.10.4 | hollow bar |\n| 1.4.4.3 | hollow mining drill bar |\n| 1.4.10.3 | hollow section |\n| 1.3.5.1.1 | hot-dipped metal-coated sheet and strip |\n| 1.4.4 / 1.4.6.3 | hot-finished bar |\n| 1.4.4.1 | hot-rolled bar |\n| 1.3.2.1.3 Note 2 c) | hot-rolled narrow strip (rolling width < 600 mm) |\n| 1.4.7 | hot-rolled section |\n| 1.3.2.1.2 | hot-rolled sheet and plate |\n| 1.3.2.1.2 Note 2 b) | hot-rolled sheet and plate cut from wide strip |\n| 1.3.2.1.3 Note 2 b) | hot-rolled slit wide strip (rolling width ≥ 600 mm, delivery width < 600 mm) |\n| 1.3.2.1.3 | hot-rolled strip |\n| 1.3.2.1 | hot-rolled uncoated flat product |\n\n\nTable B.1 — (continued) alphabetical order Subclause Term",
+                      "children": []
+                    },
+                    {
+                      "title": "I section (narrow and medium flanges)",
+                      "level": 5,
+                      "path": "1.4.7.4.1",
+                      "content": "",
+                      "children": []
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "title": "ingot",
+              "level": 3,
+              "path": "1.2.1",
+              "content": "",
+              "children": []
+            }
+          ]
+        },
+        {
+          "title": "ingots and semi-finished products",
+          "level": 2,
+          "path": "1.2",
+          "content": "",
+          "children": [
+            {
+              "title": "lead-tin alloy coated sheet and strip",
+              "level": 6,
+              "path": "1.3.5.1.1.4",
+              "content": "terne plate",
+              "children": []
+            },
+            {
+              "title": "light railway products",
+              "level": 6,
+              "path": "1.4.7.1.1.2",
+              "content": "",
+              "children": []
+            }
+          ]
+        },
+        {
+          "title": "liquid steel",
+          "level": 2,
+          "path": "1.1",
+          "content": "",
+          "children": [
+            {
+              "title": "long product",
+              "level": 3,
+              "path": "1.4.1",
+              "content": "1.4.9, Note 1 b) lorry chassis",
+              "children": [
+                {
+                  "title": "metal-coated sheet and strip",
+                  "level": 4,
+                  "path": "1.3.5.1",
+                  "content": "",
+                  "children": []
+                },
+                {
+                  "title": "mining frame section",
+                  "level": 4,
+                  "path": "1.4.7.3",
+                  "content": "",
+                  "children": []
+                },
+                {
+                  "title": "non-oriented grain electrical steel",
+                  "level": 4,
+                  "path": "1.3.3.1",
+                  "content": "1.3.3.1, Note 1 b) non-oriented grain electrical steel in the final annealed state 1.3.3.1, Note 1 a) non-oriented grain electrical steel in the semi-processed state",
+                  "children": []
+                }
+              ]
+            },
+            {
+              "title": "open-die forging",
+              "level": 3,
+              "path": "1.5.1",
+              "content": "1.4.7.4, Note 3 a) parent sections",
+              "children": [
+                {
+                  "title": "piling",
+                  "level": 4,
+                  "path": "1.4.7.2",
+                  "content": "",
+                  "children": [
+                    {
+                      "title": "/ 1.3.2.2.1, plate (thickness ≥ 3 mm)",
+                      "level": 5,
+                      "path": "1.3.2.1.2",
+                      "content": "Note 1 b)",
+                      "children": []
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "title": "powder metallurgy product",
+              "level": 3,
+              "path": "1.5.4",
+              "content": "",
+              "children": []
+            },
+            {
+              "title": "b) pressure casting",
+              "level": 3,
+              "path": "1.2.2",
+              "content": "",
+              "children": [
+                {
+                  "title": "product for other rail systems",
+                  "level": 5,
+                  "path": "1.4.7.1.2",
+                  "content": "",
+                  "children": []
+                }
+              ]
+            },
+            {
+              "title": "profiled sheet",
+              "level": 3,
+              "path": "1.3.6",
+              "content": "",
+              "children": [
+                {
+                  "title": "Note 2 a) quarto plate",
+                  "level": 5,
+                  "path": "1.3.2.1.2",
+                  "content": "",
+                  "children": [
+                    {
+                      "title": "d) rails for switches and crossings",
+                      "level": 6,
+                      "path": "1.4.7.1.1.2",
+                      "content": "| alphabetical order |  |\n| --- | --- |\n| Subclause | Term |\n|  |  |\n| 1.4.7.4.1 | I section (narrow and medium flanges) |\n| 1.2.1 | ingot |\n| 1.2 1.3.5.1.1.4 | ingots and semi-finished products lead-tin alloy coated sheet and strip |\n|  | terne plate |\n| 1.4.7.1.1.2 | light railway products |\n| 1.1 | liquid steel |\n| 1.4.1 | long product |\n| 1.4.9, Note 1 b) | lorry chassis |\n| 1.3.5.1 | metal-coated sheet and strip |\n| 1.4.7.3 | mining frame section |\n| 1.3.3.1 | non-oriented grain electrical steel |\n| 1.3.3.1, Note 1 b) | non-oriented grain electrical steel in the final annealed state |\n| 1.3.3.1, Note 1 a) | non-oriented grain electrical steel in the semi-processed state |\n| 1.5.1 | open-die forging |\n| 1.4.7.4, Note 3 a) | parent sections |\n| 1.4.7.2 | piling |\n| 1.3.2.1.2 / 1.3.2.2.1, Note 1 b) | plate (thickness ≥ 3 mm) |\n| 1.5.4 | powder metallurgy product |\n| 1.2.2 b) | pressure casting |\n| 1.4.7.1.2 | product for other rail systems |\n| 1.3.6 | profiled sheet |\n| 1.3.2.1.2 Note 2 a) | quarto plate |\n\n\nTable B.1 — (continued) alphabetical order Subclause Term",
+                      "children": []
+                    },
+                    {
+                      "title": "a) rails of linear mass < 20 kg/m (except those in 1.4.7.1.1)",
+                      "level": 6,
+                      "path": "1.4.7.1.1.2",
+                      "content": "",
+                      "children": []
+                    },
+                    {
+                      "title": "a) rails of linear mass ≥ 20 kg/m (except those in 1.4.7.1.2)",
+                      "level": 6,
+                      "path": "1.4.7.1.1.1",
+                      "content": "",
+                      "children": []
+                    }
+                  ]
+                },
+                {
+                  "title": "railway material",
+                  "level": 4,
+                  "path": "1.4.7.1",
+                  "content": "",
+                  "children": [
+                    {
+                      "title": "railway track product",
+                      "level": 5,
+                      "path": "1.4.7.1.1",
+                      "content": "",
+                      "children": []
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "title": "Note 1 b) ribbed sheet",
+              "level": 3,
+              "path": "1.3.6",
+              "content": "",
+              "children": []
+            },
+            {
+              "title": "/ 1.4.6.1 rod",
+              "level": 3,
+              "path": "1.4.2",
+              "content": "",
+              "children": []
+            },
+            {
+              "title": "c) rolling, forging, or cutting of ingots or large sections of continuous cast products",
+              "level": 3,
+              "path": "1.2.2",
+              "content": "",
+              "children": [
+                {
+                  "title": "round bar (hot-rolled)",
+                  "level": 5,
+                  "path": "1.4.4.1.1",
+                  "content": "",
+                  "children": []
+                },
+                {
+                  "title": "round semi-finished product",
+                  "level": 4,
+                  "path": "1.2.2.4",
+                  "content": "",
+                  "children": []
+                }
+              ]
+            },
+            {
+              "title": "c) sandwich panel",
+              "level": 3,
+              "path": "1.3.7",
+              "content": "",
+              "children": []
+            },
+            {
+              "title": "b) sandwich sheet",
+              "level": 3,
+              "path": "1.3.7",
+              "content": "",
+              "children": [
+                {
+                  "title": "seamless tube",
+                  "level": 4,
+                  "path": "1.4.10.1",
+                  "content": "",
+                  "children": []
+                }
+              ]
+            },
+            {
+              "title": "semi-finished product",
+              "level": 3,
+              "path": "1.2.2",
+              "content": "",
+              "children": [
+                {
+                  "title": "semi-finished product of rectangular cross section",
+                  "level": 4,
+                  "path": "1.2.2.2",
+                  "content": "",
+                  "children": []
+                },
+                {
+                  "title": "semi-finished product of square cross section",
+                  "level": 4,
+                  "path": "1.2.2.1",
+                  "content": "",
+                  "children": [
+                    {
+                      "title": "semi-round bar (hot-rolled)",
+                      "level": 5,
+                      "path": "1.4.4.1.4",
+                      "content": "",
+                      "children": []
+                    }
+                  ]
+                },
+                {
+                  "title": "sheet and strip with miscellaneous inorganic coatings",
+                  "level": 4,
+                  "path": "1.3.5.3",
+                  "content": "",
+                  "children": []
+                },
+                {
+                  "title": "sheet and strip with organic coatings",
+                  "level": 4,
+                  "path": "1.3.5.2",
+                  "content": "",
+                  "children": [
+                    {
+                      "title": "sheet piling",
+                      "level": 5,
+                      "path": "1.4.7.2.1",
+                      "content": "",
+                      "children": []
+                    },
+                    {
+                      "title": "Note 1 g) sheet piling: corner sections",
+                      "level": 5,
+                      "path": "1.4.7.2.1",
+                      "content": "",
+                      "children": []
+                    },
+                    {
+                      "title": "/ 1.3.2.2.1 sheet (thickness < 3 mm)",
+                      "level": 5,
+                      "path": "1.3.2.1.2",
+                      "content": "Note 1 a)",
+                      "children": []
+                    }
+                  ]
+                },
+                {
+                  "title": "sintered product",
+                  "level": 4,
+                  "path": "1.5.4.2",
+                  "content": "",
+                  "children": []
+                },
+                {
+                  "title": "slab",
+                  "level": 4,
+                  "path": "1.2.2.3",
+                  "content": "",
+                  "children": [
+                    {
+                      "title": "b) sleepers of linear mass ≤ 15 kg/m",
+                      "level": 6,
+                      "path": "1.4.7.1.1.2",
+                      "content": "",
+                      "children": []
+                    },
+                    {
+                      "title": "b) sleepers of linear mass ≥ 15 kg/m",
+                      "level": 6,
+                      "path": "1.4.7.1.1.1",
+                      "content": "",
+                      "children": []
+                    },
+                    {
+                      "title": "small U, I, and H sections (web height < 80 mm)",
+                      "level": 5,
+                      "path": "1.4.7.5.1",
+                      "content": "| alphabetical order |  |\n| --- | --- |\n| Subclause | Term |\n|  |  |\n| 1.4.7.1.1.2 a) | rails of linear mass < 20 kg/m (except those in 1.4.7.1.1) |\n| 1.4.7.1.1.1 a) | rails of linear mass ≥ 20 kg/m (except those in 1.4.7.1.2) |\n| 1.4.7.1 | railway material |\n| 1.4.7.1.1 | railway track product |\n| 1.3.6 Note 1 b) | ribbed sheet |\n| 1.4.2 / 1.4.6.1 | rod |\n| 1.2.2 c) | rolling, forging, or cutting of ingots or large sections of continuous cast products |\n| 1.4.4.1.1 | round bar (hot-rolled) |\n| 1.2.2.4 | round semi-finished product |\n| 1.3.7 c) | sandwich panel |\n| 1.3.7 b) | sandwich sheet |\n| 1.4.10.1 | seamless tube |\n| 1.2.2 | semi-finished product |\n| 1.2.2.2 | semi-finished product of rectangular cross section |\n| 1.2.2.1 | semi-finished product of square cross section |\n| 1.4.4.1.4 | semi-round bar (hot-rolled) |\n| 1.3.5.3 | sheet and strip with miscellaneous inorganic coatings |\n| 1.3.5.2 | sheet and strip with organic coatings |\n| 1.4.7.2.1 | sheet piling |\n| 1.4.7.2.1 Note 1 g) | sheet piling: corner sections |\n| 1.3.2.1.2 / 1.3.2.2.1 Note 1 a) | sheet (thickness < 3 mm) |\n| 1.5.4.2 | sintered product |\n| 1.2.2.3 | slab |\n| 1.4.7.1.1.2 b) | sleepers of linear mass ≤ 15 kg/m |\n| 1.4.7.1.1.1 b) | sleepers of linear mass ≥ 15 kg/m |\n\n\nTable B.1 — (continued) alphabetical order Subclause Term",
+                      "children": []
+                    },
+                    {
+                      "title": "special heavy section (web height ≥ 80 mm)",
+                      "level": 5,
+                      "path": "1.4.7.4.5",
+                      "content": "",
+                      "children": []
+                    },
+                    {
+                      "title": "special section",
+                      "level": 5,
+                      "path": "1.4.7.5.5",
+                      "content": "1.4.7.5.5, Note 1 square edged L, U, and T sections",
+                      "children": []
+                    },
+                    {
+                      "title": "square, hexagon, and octagon bar (hot-rolled)",
+                      "level": 5,
+                      "path": "1.4.4.1.2",
+                      "content": "",
+                      "children": []
+                    }
+                  ]
+                },
+                {
+                  "title": "steel powder",
+                  "level": 4,
+                  "path": "1.5.4.1",
+                  "content": "",
+                  "children": [
+                    {
+                      "title": "Note 1 b) straight web or flat sheet piling",
+                      "level": 5,
+                      "path": "1.4.7.2.1",
+                      "content": "",
+                      "children": []
+                    },
+                    {
+                      "title": "/ 1.3.2.2.2 strip",
+                      "level": 5,
+                      "path": "1.3.2.1.3",
+                      "content": "",
+                      "children": []
+                    },
+                    {
+                      "title": "submerged arc welded steel tube",
+                      "level": 5,
+                      "path": "1.4.10.2.1",
+                      "content": "",
+                      "children": []
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "title": "SAW",
+          "level": 2,
+          "path": null,
+          "content": "",
+          "children": [
+            {
+              "title": "T section with equal flanges",
+              "level": 5,
+              "path": "1.4.7.5.3",
+              "content": "1.4.7.5.5, Note 1 T section with unequal flanges 1.4.7.4, Note 3 c) thick sections 1.4.7.4, Note 3 b) thin sections",
+              "children": []
+            },
+            {
+              "title": "tin mill and allied products for packaging",
+              "level": 3,
+              "path": "1.3.4",
+              "content": "",
+              "children": [
+                {
+                  "title": "tinned sheet and strip",
+                  "level": 4,
+                  "path": "1.3.4.3",
+                  "content": "",
+                  "children": []
+                },
+                {
+                  "title": "tinplate",
+                  "level": 4,
+                  "path": "1.3.4.2",
+                  "content": "1.4.7.5.5, Note 1 track shoe section",
+                  "children": [
+                    {
+                      "title": "trapezoidal bar (hot-rolled)",
+                      "level": 5,
+                      "path": "1.4.4.1.4",
+                      "content": "",
+                      "children": []
+                    },
+                    {
+                      "title": "triangle bar (hot-rolled)",
+                      "level": 5,
+                      "path": "1.4.4.1.4",
+                      "content": "",
+                      "children": []
+                    },
+                    {
+                      "title": "tubular fabricated bearing piling",
+                      "level": 5,
+                      "path": "1.4.7.2.3",
+                      "content": "",
+                      "children": []
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "title": "tubular product",
+              "level": 3,
+              "path": "1.4.10",
+              "content": "",
+              "children": [
+                {
+                  "title": "turned product",
+                  "level": 4,
+                  "path": "1.4.5.2",
+                  "content": "",
+                  "children": [
+                    {
+                      "title": "U section (channel)",
+                      "level": 5,
+                      "path": "1.4.7.4.3",
+                      "content": "| alphabetical order |  |\n| --- | --- |\n| Subclause | Term |\n|  |  |\n| 1.4.7.4.5 | special heavy section (web height ≥ 80 mm) |\n| 1.4.7.5.5 | special section |\n| 1.4.7.5.5, Note 1 | square edged L, U, and T sections |\n| 1.4.4.1.2 | square, hexagon, and octagon bar (hot-rolled) |\n| 1.5.4.1 | steel powder |\n| 1.4.7.2.1 Note 1 b) | straight web or flat sheet piling |\n| 1.3.2.1.3 / 1.3.2.2.2 1.4.10.2.1 | strip submerged arc welded steel tube |\n|  | SAW |\n| 1.4.7.5.3 | T section with equal flanges |\n| 1.4.7.5.5, Note 1 | T section with unequal flanges |\n| 1.4.7.4, Note 3 c) | thick sections |\n| 1.4.7.4, Note 3 b) | thin sections |\n| 1.3.4 | tin mill and allied products for packaging |\n| 1.3.4.3 | tinned sheet and strip |\n| 1.3.4.2 | tinplate |\n| 1.4.7.5.5, Note 1 | track shoe section |\n| 1.4.4.1.4 | trapezoidal bar (hot-rolled) |\n| 1.4.4.1.4 | triangle bar (hot-rolled) |\n| 1.4.7.2.3 | tubular fabricated bearing piling |\n| 1.4.10 | tubular product |\n| 1.4.5.2 | turned product |\n\n\nTable B.1 — (continued) alphabetical order Subclause Term",
+                      "children": []
+                    },
+                    {
+                      "title": "Note 1 a) U, Z, and hat shape sheet piling",
+                      "level": 5,
+                      "path": "1.4.7.2.1",
+                      "content": "",
+                      "children": []
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "title": "uncoated flat products",
+              "level": 3,
+              "path": "1.3.2",
+              "content": "",
+              "children": [
+                {
+                  "title": "VAR ingot",
+                  "level": 4,
+                  "path": "1.2.2.7",
+                  "content": "1.4.9, Note 1 b) wagon chassis",
+                  "children": []
+                }
+              ]
+            },
+            {
+              "title": "welded section",
+              "level": 3,
+              "path": "1.4.8",
+              "content": "",
+              "children": [
+                {
+                  "title": "welded tube",
+                  "level": 4,
+                  "path": "1.4.10.2",
+                  "content": "",
+                  "children": [
+                    {
+                      "title": "wide flat",
+                      "level": 5,
+                      "path": "1.3.2.1.1",
+                      "content": "",
+                      "children": []
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "title": "/ 1.4.6.2 wire (cold drawing)",
+              "level": 3,
+              "path": "1.4.3",
+              "content": "1.4.7.5.5, Note 1 Z section 1.3.5.1.1.2, Note 2 b) zinc-aluminium alloys (3 % < Al < 50 %)",
+              "children": [
+                {
+                  "title": "zinc-coated sheet and strip",
+                  "level": 6,
+                  "path": "1.3.5.1.1.1",
+                  "content": "hot-dipped sheet and strip galvanized sheet and strip\n\n| alphabetical order |  |\n| --- | --- |\n| Subclause | Term |\n|  |  |\n| 1.4.7.2.1 Note 1 a) | U, Z, and hat shape sheet piling |\n| 1.3.2 | uncoated flat products |\n| 1.2.2.7 | VAR ingot |\n| 1.4.9, Note 1 b) | wagon chassis |\n| 1.4.8 | welded section |\n| 1.4.10.2 | welded tube |\n| 1.3.2.1.1 | wide flat |\n| 1.4.3 / 1.4.6.2 | wire (cold drawing) |\n| 1.4.7.5.5, Note 1 | Z section |\n| 1.3.5.1.1.2, Note 2 b) 1.3.5.1.1.1 | zinc-aluminium alloys (3 % < Al < 50 %) zinc-coated sheet and strip hot-dipped sheet and strip |",
+                  "children": []
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "title": "Annex C",
+          "level": 2,
+          "path": null,
+          "content": "Exam(pilnefso romf sahtievee)t piles U sheet piling Z sheet piling Hat shaped sheet piling Flat sheet piling Fabricated sheet piling Figure C.1 — (Continued)\n\n| U sheet piling |  |\n| --- | --- |\n| Z sheet piling |  |\n| Hat shaped sheet piling |  |\n|  |  |\n| Flat sheet piling Fabricated sheet piling |  |\n\n\nBox piles Box piles Box piles Figure C.1 — (Continued)\n\n| Box piles |  |\n| --- | --- |\n| Box piles |  |\n| Box piles |  |\n\n\nInterlocking H-sheet piling H piles with intermediary Z sheet piling Tubular pile with intermediate sheet piling Box piles combined wall Box piles combined wall Cold formed sheet piling: Ω and Z piling Figure C.1 — (Continued)\n\n| Interlocking H-sheet piling H piles with intermediary Z sheet piling |  |\n| --- | --- |\n| Tubular pile with intermedi- ate sheet piling |  |\n| Box piles com- bined wall |  |\n| Box piles com- bined wall |  |\n| Cold formed sheet piling: Ω and Z piling |  |\n\n|  |  |  |\n| --- | --- | --- |\n\n\nTrench sheeting Corner sections NOTE Design of interlocks varies according to manufacturer. Figure C.1 — Examples of typical sheet piling (see 1.4.7.2.1)\n\n|  |  |\n| --- | --- |\n| Trench sheeting Corner sections |  |\n\n|  |  |  |\n| --- | --- | --- |",
+          "children": []
+        },
+        {
+          "title": "Annex D",
+          "level": 2,
+          "path": null,
+          "content": "Examples of typ(iincfaolr mmiantiivneg) frame sections Figure D.1 — Illustration of typical mining frame sections (see 1.4.7.3)\n\n|  |  |\n| --- | --- |\n|  |  |\n\n|  |  |\n| --- | --- |",
+          "children": []
+        },
+        {
+          "title": "Annex E",
+          "level": 2,
+          "path": null,
+          "content": "Examples o(fi ntyfoprimcaalt hiveea)vy sections H section h Ι section h h U section h h Parallel flanged Tapered flanged h = nominal height Figure E.1 — Examples of typical heavy sections (see 1.4.7.4)\n\n| H section | h |  |\n| --- | --- | --- |\n| Ι section | h | h |\n| U section | h | h |\n|  | Parallel flanged | Tapered flanged |\n|  |  |  |",
+          "children": []
+        },
+        {
+          "title": "Bibliography",
+          "level": 2,
+          "path": null,
+          "content": "Steels — Classification — Part 1: Classification of steels into unalloyed and alloy steels based on chemical composition [1] ISO 4948-1, Steels — Classification — Part 2: Classification of unalloyed and alloy steels according to main quality classes and main property or application characteristics [2] ISO 4948-2, Terminological entries in standards — Part 1: General requirements and examples of presentation [3] ISO 10241-1:2011, Definition of steel products [4] EN 10079:2007, Steel tubes, fittings and structural hollow sections — Symbols and definitions of terms for use in product standards [5] EN 10266:2003, Standard Terminology Relating to Steel, Stainless Steel, Related Alloys, and Ferroalloys [6] ASTM A941-10a, Glossary of terms used in iron and steel (Products and quality) [7] JIS G 0203:2009,",
+          "children": []
+        },
+        {
+          "title": "ICS 77.140.01;01.040.77",
+          "level": 2,
+          "path": null,
+          "content": "Price based on 40 pages",
+          "children": []
+        }
+      ]
+    }
+  ]
+}
