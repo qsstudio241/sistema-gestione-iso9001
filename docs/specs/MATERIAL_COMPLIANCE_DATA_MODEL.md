@@ -24,9 +24,9 @@ ISO 3834 §11 (consumabili) e §12 (materiali base) arrivano qui, non in un CRUD
 
 ```text
 Fonti Markdown:
-- Coperte: EN 10204, EN 10168, ISO 10474/404/6929, EN 10025-2, EN 10210-1 (hollow a caldo se citata), ISO/TR 15608, ISO 14341 (classificazione filo, non soglie 3.1 lotto)
-- Mancanti (non bloccano): EN 10219-1 (tubi cold); ISO 2560 / 17632 / 14174 e altre norme prodotto apporto
-- Si parte su: certificati base Sxxx (lamiere/profili) + hollow 10210 se citata + certificati apporto sullo stesso flusso EN 10204 (tipo documento sì; chimica/ReH apporto = skip finché manca Markdown norma prodotto)
+- Coperte: EN 10204, EN 10168, ISO 10474/404/6929, EN 10025-2, EN 10210-1 (hollow a caldo se citata), EN 10219-1 (hollow a freddo se citata), ISO/TR 15608, ISO 14341 (classificazione filo, non soglie 3.1 lotto)
+- Mancanti (non bloccano): ISO 2560 / 17632 / 14174 e altre norme prodotto apporto
+- Si parte su: certificati base Sxxx (lamiere/profili) + hollow 10210/10219 se citata + certificati apporto sullo stesso flusso EN 10204 (tipo documento sì; chimica/ReH apporto = skip finché manca Markdown norma prodotto)
 ```
 
 Vietato inventare soglie. Un livello assente nello scope → `skip`, non `fail` (ADR-021).
@@ -261,8 +261,9 @@ Regole MVP già chiuse:
 |------|-------------|
 | Capitolato chiede 3.1, PDF è 2.2 | `fail` su `inspection_document_type` |
 | Lamiera S355, Markdown EN 10025-2 presente | confronta ReH/chimica/KV se in specifica |
-| Tubo cold (EN 10219-1 assente) o hollow senza citazione 10210 vs 10219 | `skip` soglie meccaniche/chimica prodotto |
+| Tubo/hollow senza citazione 10210 vs 10219 | `skip` soglie meccaniche/chimica prodotto |
 | Tubo hot con EN 10210-1 citata | soglie Annex A/B (seed MC-2 + NORMA_00027) |
+| Tubo cold con EN 10219-1 citata | soglie Annex A/B (seed MC-2 + NORMA_00028) |
 | Apporto, ISO 2560/17632/14174 assenti | `skip` soglie; **non** skip del tipo EN 10204 se richiesto |
 | ISO 14341 presente | al più verifica **forma** della designazione (classificazione), non tabelle chimica 3A/3B (GAP estrazione noto) |
 

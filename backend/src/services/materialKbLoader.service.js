@@ -236,7 +236,7 @@ function parseCoverage(md) {
 
 function parseDesignation(raw) {
   const s = String(raw || '').toUpperCase().replace(/\s+/g, '');
-  let m = s.match(/S(\d{3})(NL|N)H(?![A-Z0-9])/);
+  let m = s.match(/S(\d{3})(NL|N|ML|M)H(?![A-Z0-9])/);
   if (m) {
     const family = `S${m[1]}`;
     const quality = m[2];
@@ -258,9 +258,10 @@ function parseDesignation(raw) {
 
 function parseMaterialStandard(raw) {
   const s = String(raw || '').toUpperCase().replace(/\s+/g, '');
+  if (/10219-2/.test(s)) return 'en10219-2';
   if (/10219/.test(s)) return 'en10219';
-  if (/10210-1/.test(s) || (/10210/.test(s) && !/10210-2/.test(s))) return 'en10210';
   if (/10210-2/.test(s)) return 'en10210-2';
+  if (/10210/.test(s)) return 'en10210';
   if (/10025/.test(s)) return 'en10025';
   return null;
 }
@@ -332,6 +333,8 @@ function loadMaterialKbSnapshot(opts = {}) {
   const dictionary = parseDictionary(byPath['dictionary/fields.md'] || '');
   const en10025 = loadEn10025(byPath['standards/en-10025-2.md'] || '');
   const en10210 = loadEn10210(byPath['standards/en-10210-1.md'] || '');
+  // Seed 10219 usa gli stessi heading Tabella A.1/A.2/A.3/A.3b/A.8 e B.* del parser 10210.
+  const en10219 = loadEn10210(byPath['standards/en-10219-1.md'] || '');
 
   return {
     kbRoot,
@@ -342,8 +345,9 @@ function loadMaterialKbSnapshot(opts = {}) {
     inspectionDocumentTypes: ['2.1', '2.2', '3.1', '3.2'],
     en10025_2: en10025,
     en10210_1: en10210,
+    en10219_1: en10219,
     skip: {
-      tubes: 'EN 10219-1 Markdown assente (cold formed); EN 10210-1 sì se citata',
+      tubes: 'EN 10219-2 / 10210-2 da sole sono dimensioni, non soglie Part 1',
       tubeStandardAmbiguous: 'citare EN 10210-1 (hot finished) o EN 10219-1 (cold formed)',
       fillerProduct: 'ISO 2560 / 17632 / 14174 Markdown assente',
       iso14341LotChemistry: 'ISO 14341 tabelle 3A/3B non seedate (classificazione sì)',
@@ -442,42 +446,23 @@ function lookupEn10025Limits(snapshot, query = {}) {
 }
 
 /**
- * Lookup limiti EN 10210-1 (hollow a caldo). Non valuta pass/fail (MC-3).
- * Skip se manca la citazione 10210, se è 10219, o se il grado non è seedato.
+ * Lookup limiti hollow (EN 10210-1 a caldo / EN 10219-1 a freddo). Non valuta pass/fail (MC-3).
+ * Skip se manca la citazione 10210 vs 10219, se è solo Part 2, o se il grado non è seedato.
  */
-function lookupEn10210Limits(snapshot, query = {}) {
-  const role = query.materialRole || 'base';
-  if (role === 'filler') {
-    return { skip: true, source: 'filler_product', reason: snapshot.skip.fillerProduct };
-  }
-  const std = parseMaterialStandard(query.materialStandard);
-  if (std === 'en10219') {
-    return { skip: true, source: 'en10219', reason: snapshot.skip.tubes };
-  }
-  if (std === 'en10210-2') {
-    return {
-      skip: true,
-      source: 'en10210-2',
-      reason: 'EN 10210-2 è tolleranze/dimensioni, non soglie di grado (serve 10210-1)',
-    };
-  }
-  if (std !== 'en10210') {
-    return {
-      skip: true,
-      source: 'en10210',
-      reason: snapshot.skip.tubeStandardAmbiguous,
-    };
-  }
+function lookupHollowGradeLimits(tables, query, labels) {
   const parsed = parseDesignation(query.designation);
   if (!parsed || !parsed.hollow) {
-    return { skip: true, source: 'en10210', reason: 'designazione hollow non riconosciuta (seed *H)' };
+    return {
+      skip: true,
+      source: labels.skipSource,
+      reason: 'designazione hollow non riconosciuta (seed *H)',
+    };
   }
-  const tables = snapshot.en10210_1 || {};
   if (!tables.reh || !tables.reh[parsed.grade]) {
     return {
       skip: true,
-      source: 'en10210',
-      reason: `grado ${parsed.grade} non seedato in EN 10210-1`,
+      source: labels.skipSource,
+      reason: `grado ${parsed.grade} non seedato in ${labels.standardName}`,
       designation: parsed,
     };
   }
@@ -485,7 +470,7 @@ function lookupEn10210Limits(snapshot, query = {}) {
   if (!Number.isFinite(t)) {
     return {
       skip: true,
-      source: 'en10210',
+      source: labels.skipSource,
       reason: 'spessore assente',
       designation: parsed,
     };
@@ -513,7 +498,7 @@ function lookupEn10210Limits(snapshot, query = {}) {
   if (noUsableLimit) {
     return {
       skip: true,
-      source: 'en10210',
+      source: labels.skipSource,
       reason: reasons[0] || 'nessun limite per questa combinazione',
       designation: parsed,
       reasons,
@@ -521,7 +506,7 @@ function lookupEn10210Limits(snapshot, query = {}) {
   }
   return {
     skip: false,
-    source: 'en10210-1',
+    source: labels.okSource,
     designation: parsed,
     rehMin: reh.skip ? null : reh.value,
     rm: rm.skip ? null : rm.value,
@@ -530,6 +515,47 @@ function lookupEn10210Limits(snapshot, query = {}) {
     kv: kvMin,
     reasons,
   };
+}
+
+function lookupEn10210Limits(snapshot, query = {}) {
+  const role = query.materialRole || 'base';
+  if (role === 'filler') {
+    return { skip: true, source: 'filler_product', reason: snapshot.skip.fillerProduct };
+  }
+  const std = parseMaterialStandard(query.materialStandard);
+  if (std === 'en10219') {
+    return lookupHollowGradeLimits(snapshot.en10219_1 || {}, query, {
+      okSource: 'en10219-1',
+      skipSource: 'en10219',
+      standardName: 'EN 10219-1',
+    });
+  }
+  if (std === 'en10219-2') {
+    return {
+      skip: true,
+      source: 'en10219-2',
+      reason: 'EN 10219-2 è tolleranze/dimensioni, non soglie di grado (serve 10219-1)',
+    };
+  }
+  if (std === 'en10210-2') {
+    return {
+      skip: true,
+      source: 'en10210-2',
+      reason: 'EN 10210-2 è tolleranze/dimensioni, non soglie di grado (serve 10210-1)',
+    };
+  }
+  if (std !== 'en10210') {
+    return {
+      skip: true,
+      source: 'en10210',
+      reason: snapshot.skip.tubeStandardAmbiguous,
+    };
+  }
+  return lookupHollowGradeLimits(snapshot.en10210_1 || {}, query, {
+    okSource: 'en10210-1',
+    skipSource: 'en10210',
+    standardName: 'EN 10210-1',
+  });
 }
 
 module.exports = {
