@@ -9,7 +9,7 @@
 
 Condizioni tecniche di fornitura per **sezioni cave finite a caldo** (circolari, quadre, rettangolari, ellittiche): formate a caldo, oppure formate a freddo **con** trattamento termico successivo equivalente al prodotto hot formed (§1).
 
-**Non** copre sezioni cave **cold formed senza** quel trattamento → **EN 10219-1** (Markdown ancora assente → skip, non fail).  
+**Non** copre sezioni cave **cold formed senza** quel trattamento → **EN 10219-1** (estratto `EN-10219-1-sezioni-cave.md`).  
 **Non** copre lamiere/profili → EN 10025-2.  
 Tolleranze/dimensioni: EN 10210-2 (non in questo PDF).
 
@@ -155,7 +155,7 @@ Deox: GF (fully killed, fine grain). S275/S355 = quality steel; S420/S460 = spec
 
 ## Cosa non seedare (GAP onesto)
 
-- EN 10219-1 (cold formed): **mancante**
+- EN 10219-1 (cold formed): presente — [estratto](EN-10219-1-sezioni-cave.md)
 - EN 10210-2 (tolleranze/dimensioni)
 - Analisi di prodotto (se prevista: non è Tab. A.1)
 - Opzione 1.3 (KV su JR) e altre opzioni d’ordine: MC-3 tratta come skip se non risultano dal 3.1

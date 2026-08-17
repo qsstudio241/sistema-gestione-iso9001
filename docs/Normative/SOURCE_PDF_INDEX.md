@@ -57,7 +57,7 @@ reale scelto, es. `C:\NormeISO_PDF\` oppure una cartella dentro OneDrive):
 | Facsimile MTC 3.1/3.2 | `MTC_Type_3.1_FAC_SIMILE.md/.json` | `EN-10204-certificati\MTC Type 3.1 FAC SIMILE.pdf` | Filename 3.1, contenuto 3.2 |
 | EN 10025-2:2019 | `Normative NORMA_00026_...md/.json` | `EN-10025-acciai-strutturali\BS EN 10025-2-2019.pdf` | Soglie S235–S500; estratto `docs/reference/EN-10025-2-acciai-strutturali.md` |
 | EN 10210-1:2006 | `Normative NORMA_00027_...md/.json` | `EN-10025-acciai-strutturali\BS EN 10210-1-2006.pdf` | Hollow a caldo; estratto `docs/reference/EN-10210-1-sezioni-cave.md` (17/08/2026) |
-| EN 10219-1 | *(nessun `.md` — traccia)* | `EN-10025-acciai-strutturali\EN 10219-1.pdf` | Tubi/hollow a freddo |
+| EN 10219-1:2006 | `Normative NORMA_00028_...md/.json` | `EN-10025-acciai-strutturali\BS EN 10219-1-2006.pdf` | Hollow a freddo; estratto `docs/reference/EN-10219-1-sezioni-cave.md` (17/08/2026) |
 | ISO 9712:2012 | *(nessun `.md` ancora — backlog RC-7)* | `ISO-96xx-patentini\UNI EN ISO 9712_2012.pdf` | **PDF era committato per errore in Git — vedi nota sotto** |
 | ISO 19011:2018 | *(nessun `.md` ancora)* | `ISO-96xx-patentini\UNI EN ISO 19011_2018_ITA.pdf` | **PDF era committato per errore in Git — vedi nota sotto** |
 
