@@ -186,7 +186,7 @@ Ordine: **prima il ponte catalogo→riga (ROO-8)**, poi metodo documento (ROO-15
 | **ROO-6c** | **Mapping colonne HITL** | scelta foglio + corrispondenza campi SGQ; peso BASSO/MEDIO/ALTO; split Rischi/Opportunità; SWOT non blocca più il file | ROO-6 | FATTO |
 | ROO-6b | Detector SWOT+FMEA (riga unica, troppo spessa) | — | — | spezzata in 6b-S / 6b-F |
 | **ROO-8** | **Picker catalogo 4.1/4.2 → testi riga** | `RiskForm` + API cataloghi già esistenti; accoda testo, no FK | ROO-4 | FATTO |
-| **ROO-15** | **`analysis_method` + quadrante + G con segno** | mig 149; `standard_ids` resta nebbia | ROO-4 | FATTO |
+| **ROO-15** | **`analysis_method` + quadrante + G con segno** | mig **151** (ex 149 su TEST; 149 = MC-1); `standard_ids` resta nebbia | ROO-4 | FATTO |
 | **ROO-6b-S** | **Detector SWOT** | colonna SWOT + G negativo → method/segno/nature | ROO-8, ROO-15 | FATTO |
 | ROO-6b-F | Detector FMEA HSE (G×P×Rilev) | stesso motore, mapping diversi | ROO-15 | AFK |
 | ROO-7 | Tempistica distinta da `review_date` | nuovo `action_due_date` se serve; nota efficacia già in ROO-5 | ROO-5 | AFK |
@@ -196,7 +196,7 @@ Ordine: **prima il ponte catalogo→riga (ROO-8)**, poi metodo documento (ROO-15
 | ROO-12 | Export / ristampa M03 | Excel o Word | ROO-5, ROO-6 | HITL formato |
 | **ROO-13** | **Scala P/G per azienda** | `companies.risk_pg_max` 3\|4\|5; CHECK risks 1–5; set prima ingest/primo rischio | ROO-6c | FATTO |
 | ROO-14 | Copia ulteriori azioni → Piano Azioni (modello Pagani: foglio piano) | `source_risk_id` già c'è | HITL | HITL |
-| **ROO-16** | **Storico riga + nascondi chiusi** | mig `risk_reviews`; write; `GET /risks/:id/reviews`; timeline **nel form**; default lista senza `closed`; checkbox «Mostra chiusi» | ROO-5, ROO-15 | FATTO |
+| **ROO-16** | **Storico riga + nascondi chiusi** | mig **152** `risk_reviews`; write; `GET /risks/:id/reviews`; timeline **nel form**; default lista senza `closed`; checkbox «Mostra chiusi» | ROO-5, ROO-15 | FATTO |
 | ROO-17 | Interrogazione ambito (input §9.3) | `GET /risks/reviews?company_id&from&to` + lista (non un quarto tab) | ROO-16 | AFK |
 | ROO-18 | Ingest → prima revisione / data riesame esplicita | detector + eventuale bottone | ROO-16 | HITL |
 | ROO-19 | Analista conformità §6.1 (notifiche, non chat) | check deterministici + LLM solo sul testo; HITL; non inventa righe | ROO-16, cataloghi | HITL |

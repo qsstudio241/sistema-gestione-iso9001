@@ -1,5 +1,6 @@
--- Migration 150: snapshot aggiornamenti riga analisi (ROO-16)
+-- Migration 152 (ex 150 su TEST prima del merge MC-1): snapshot aggiornamenti riga analisi (ROO-16)
 -- risks resta lo stato corrente. risk_reviews è append-only.
+-- Idempotente: su TEST la tabella c'è già.
 
 IF NOT EXISTS (SELECT 1 FROM sys.tables WHERE name = 'risk_reviews' AND schema_id = SCHEMA_ID('dbo'))
 BEGIN

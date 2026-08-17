@@ -1,6 +1,8 @@
--- Migration 149: metodo di analisi + G con segno (ROO-15)
+-- Migration 151 (ex 149 su TEST prima del merge MC-1): metodo di analisi + G con segno (ROO-15)
+-- 149 ufficiale dopo merge = 149_material_certificates.sql (MC-1, già su TEST/PROD).
 -- method sulla riga (default pxg). SWOT usa swot_quadrant e impact_sign.
 -- impact resta 1–5 (assoluto); il segno è colonna a parte.
+-- Idempotente: su TEST le colonne ci sono già.
 
 IF NOT EXISTS (
   SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS

@@ -17,7 +17,7 @@
 
 ### DoD
 
-1. Migration in `database/migrations/` (prossimo libero, oggi 150): tabella `risk_reviews` append-only, colonne snapshot interrogabili (P, G, segno, metodo, quadrante, residuo, nota, azioni, nature, title, evaluated_element, recorded_at, recorded_by, organization_id, company_id, risk_id). Idempotente. Solo TEST.
+1. Migration in `database/migrations/` (prossimo libero, oggi **152**; ex 150 — 149 preso da MC-1): tabella `risk_reviews` append-only, colonne snapshot interrogabili (P, G, segno, metodo, quadrante, residuo, nota, azioni, nature, title, evaluated_element, recorded_at, recorded_by, organization_id, company_id, risk_id). Idempotente. Solo TEST.
 2. `createRisk` / `updateRisk`: se il salvataggio è significativo (PLAN §7), INSERT snapshot dello stato **nuovo**. Titolo/testi 4.1–4.2 da soli → no snapshot in update.
 3. `GET /risks/:id/reviews` — stesso RBAC della riga; lista `recorded_at` DESC; decora score/livello come `decorateRiskRow`.
 4. `RiskForm`: cronologia in sola lettura **dentro il form** (data, chi, P/G/R, residuo, nota). Click riga = form, non expand in griglia, non seconda finestra. Nessun quarto tab.
@@ -26,7 +26,7 @@
 
 ### File previsti
 
-- `database/migrations/150_risk_reviews.sql` (verificare il numero libero al momento)
+- `database/migrations/152_risk_reviews.sql` (ex 150; 149 ufficiale = MC-1)
 - `backend/src/controllers/risks.controller.js` + test
 - `backend/src/routes/risks.routes.js`
 - `app/src/pages/RisksPage.jsx` (`RiskForm`)
