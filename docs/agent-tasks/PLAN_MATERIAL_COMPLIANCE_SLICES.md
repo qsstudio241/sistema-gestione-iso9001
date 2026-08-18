@@ -1,11 +1,13 @@
 # Piano slice — Material Compliance AI
 
-> **Obiettivo**: portare il modulo da fondazione documentale a MVP usabile (scansione/PDF → estrazione → Rule Engine → HITL), riusando ingest qualifiche/WPQR + OCR.  
+> **Destinazione (ingest)**: da PDF reali (3.1, DDT scansionato, busta con più mill) si arriva a righe in Materiali con DDT / colata / norma compilati, **Valuta** che gira, HITL che decide. L’agente impara dalle correzioni con lo **stesso anello ADR-017** di qualifiche/WPQR. Nessun secondo motore OCR.  
 > **Spec**: [`MODULO_MATERIAL_COMPLIANCE_AI.md`](../specs/MODULO_MATERIAL_COMPLIANCE_AI.md)  
-> **ADR**: 020–024  
+> **ADR**: 020–024 · apprendimento ingest: [ADR-017](../adr/ADR-017-ingest-reference-network.md)  
+> **Brief ingest attivo**: [`DEPUTYTASK_MC_INGEST.md`](DEPUTYTASK_MC_INGEST.md) — slice **MC-I0** (Valuta 409)  
+> **Brief SAL**: [`DEPUTYTASK.md`](DEPUTYTASK.md) resta **APERTO** su S1a — **non toccarlo** da questa epic ingest  
 > **Brief fondazione (MC-0)**: [`DEPUTYTASK_MATERIAL_COMPLIANCE_AI_FOUNDATION.md`](DEPUTYTASK_MATERIAL_COMPLIANCE_AI_FOUNDATION.md)  
 > **Spec tecniche MC-0**: [`MATERIAL_COMPLIANCE_DATA_MODEL.md`](../specs/MATERIAL_COMPLIANCE_DATA_MODEL.md) · [`MATERIAL_COMPLIANCE_UI.md`](../specs/MATERIAL_COMPLIANCE_UI.md) · [`MATERIAL_COMPLIANCE_API.md`](../specs/MATERIAL_COMPLIANCE_API.md)  
-> **Ponte 3834**: §11–13 del [PLAN_3834_SLICES.md](PLAN_3834_SLICES.md) — niente CRUD consumabili nel modulo saldatura  
+> **Ponte 3834**: §11–13 del [PLAN_3834_SLICES.md](PLAN_3834_SLICES.md) — niente CRUD consumabili; **questa chat non apre ISO-4**  
 > **Branch base**: `main`  
 > **Migrazioni**: numerazione condivisa da `database/migrations/` — MC-1 = **149** (`149_material_certificates.sql` + `run-migration-149-vps.js`).
 
@@ -22,23 +24,61 @@
 
 **Conformità = norma + documenti di origine esterna pertinenti (HITL 16/08, sì):** l’agente **non** valuta il 3.1 solo contro la norma materiale. Applica la gerarchia [ADR-021](../adr/ADR-021-material-requirements-hierarchy.md) in base all’**Ambito** (azienda) e, se c’è, a DDT/ordine/cliente/commessa. Un livello assente nello scope = `skip`, non un fail. I Markdown KB copriranno `standards/` **e** (quando il committente li consegna) `customers/` + `companies/<slug>/`. Il certificato è la **prova**; i requisiti stanno sempre in documenti esterni al certificato (norma, ordine, specifica cliente, criteri azienda).
 
-Ordine consigliato: **MC-0 → MC-1 → MC-2 → MC-3 → MC-4 → MC-B → MC-5 → MC-6 → MC-7**.  
-MC-B (OCR) **non** è più post-MVP: senza testo i certificati reali non si leggono.
+Fondazione chiusa: **MC-0 → MC-1 → MC-2 → MC-3 → MC-4 → MC-5**.  
+Resto ingest (questa mappa): **MC-I0 → MC-I1 → MC-B → MC-I2 → MC-I3 → MC-I4 → MC-7**.  
+MC-6 (licenza dedicata) resta in mappa ma **non** è ingest. MC-B (OCR) **non** è più post-MVP: senza testo i DDT scansionati non si leggono — **dopo** MC-I0, e **dopo** SAL S1a se l’OCR manca ancora in `documentTextExtractor`. MC-7 è **obbligatoria** in mappa, **non** la prima slice.
 
 ### Decisione 18/08/2026 (prova PDF reali su ADA)
 
-L’ingest certificati **non sta in una chat 3834** né in un unico deputy: PDF reali arrivano come busta+più mill, DDT scansionato, 3.1 filo, testo mill specchiato. Serve chat/epic dedicata (MC-B + classificazione documento + 1 PDF → N righe + MC-7 lezioni), con skill addestrata sul riuso ingest qualifiche/WPQR. **Non** un secondo motore OCR.
+L’ingest certificati **non sta in una chat 3834** né in un unico deputy: PDF reali arrivano come busta+più mill, DDT scansionato, 3.1 filo, testo mill specchiato. Skill addestrata sul riuso ingest qualifiche/WPQR. **Non** un secondo motore OCR. **Non** fine-tuning.
 
-Prova ADA (produzione, record 3–5): upload OK; Estrai sul 3.1 Tecnovespa parziale (manca colata); pack 26DDT06266 JSON vuoto; DDT 000775RE = `ocr_skipped`; **Valuta 409** (lock `updated_at`); click riga dettaglio apriva SAL (`/sal` prefisso di `/saldatura`) — fix router in PR di questa slice.
+Prova ADA (produzione, record **3–5**, azienda **179**): fatti già noti, non riscoprirli.
 
-Questa linea 3834 **non** continua l’ingest: riprende da ISO-4 (Word RDP) o ponti ISO-6/7. Ingest = nuova chat su questo PLAN (prima slice eseguibile: **fix Valuta 409** poi MC-B).
+| Fatto | Esito |
+|-------|--------|
+| Upload | OK |
+| Click riga → dettaglio | OK (router `/sal` prefisso `/saldatura` — [PR #461](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/461)) |
+| Valuta su stato `extracted` | **409** — lock ottimista `updated_at` (confermato in codice 18/08: `EVALUABLE` include già `extracted`; il 409 non è il gate di stato) |
+| 3.1 Tecnovespa | Estrai parziale — manca colata `12174/2026` |
+| `Certificati_26DDT06266.pdf` | Busta + più mill, testo specchiato, JSON quasi vuoto |
+| DDT `000775RE` | Scan senza text layer → `ocr_skipped` (`pdf_no_text_layer` mappato così) |
+| Ruolo in UI | Upload forza sempre `materialRole: "base"` |
+| Cardinalità | Un PDF può essere N certificati; DDT ≠ 3.1 |
 
-### Fuori scope MVP-A
+Linea 3834 **non** continua l’ingest: ISO-4 (Word RDP) resta sull’altro PLAN. Ingest = questo PLAN + brief [`DEPUTYTASK_MC_INGEST.md`](DEPUTYTASK_MC_INGEST.md).
 
+---
+
+## Fuori scope (MVP ingest + MVP-A)
+
+- ISO-4 / ponti 3834 / Welding Book CRUD consumabili
+- SAL S1a (OCR nel suggeritore) — brief [`DEPUTYTASK.md`](DEPUTYTASK.md); l’ingest **riusa** l’estrattore, non lo duplica
+- Secondo motore OCR, cloud OCR, fine-tuning, nuovo `lessons/` parallelo ad ADR-017
 - Dashboard KPI / editor KB in UI
 - PPAP, verniciatura, scorecard fornitore
-- Nuova chiave licenza dedicata (solo seam → `saldatura` + `ai_import`)
+- Nuova chiave licenza dedicata (MC-6: seam resta `saldatura` + `ai_import`)
 - Registro PWHT / trattamenti come primo certificato (dopo 3.1 stabile)
+- Overlay PO/cliente/azienda in `evaluate` (`scope: {}` oggi) — ADR-021, slice dopo ingest base
+- Seed soglie apporto: Markdown ancora mancante → `skip`, non inventare numeri
+
+---
+
+## Non ancora specificato (nebbia in-scope)
+
+- Come spezzare un PDF-busta in N righe: split pagine vs split per colata vs HITL «crea riga da questa pagina» — si decide in **MC-I4**, non prima
+- Preprocessing testo specchiato (26DDT06266) vs basta OCR + prompt: dipende da MC-B / MC-I2
+- Commit riga certificato nel Document Registry (era accorpato a MC-7): l’apprendimento è ADR-017; il registry è un ponte successivo
+- Se S1a non è mergiata quando si apre MC-B: MC-B aspetta S1a oppure verifica se `extractDocumentText` ha già l’OCR in `main` — non copiare `ocrExtractor` nel controller MC
+
+---
+
+## Decisioni già prese
+
+- MC-0…MC-5 consegnate (spec, mig. **149**, KB, Rule Engine, API, UI). `compliant` solo HITL.
+- Apprendimento continuo = **stesso anello** di WPQR/qualifiche: `recordFeedback` → `import_extraction_feedback` → few-shot in `extractStructuredByDocType` ([ADR-017](../adr/ADR-017-ingest-reference-network.md) livello C). Extract MC passa già `organizationId`. Manca il **produce** (PATCH/approve MC non chiama `recordFeedback`).
+- OCR: riuso `documentTextExtractor` / `ocrExtractor` già in repo. `mapTextReason` oggi traduce `pdf_no_text_layer` → `ocr_skipped`.
+- UI elenco: Base e apporto nella stessa griglia (`material_role`). Colonne DDT/colata/norma chiuse (HITL 16/08).
+- Prova ADA 18/08: tabella sopra. Prima slice eseguibile confermata dal codice: **MC-I0** (Valuta 409).
 
 ## Griglia elenco (HITL 16/08 — committente, **confermata**)
 
@@ -70,17 +110,22 @@ MC-0/MC-1/MC-5 devono prevedere questi campi (DDT era assente dalla lista spec d
 
 ## Mappa slice
 
-| Slice | Tema | Perimetro | Dipende da |
-|-------|------|-----------|------------|
-| **MC-0** | Spec tecniche | DATA_MODEL / UI / API md | — |
-| **MC-1** | Schema DB | `database/migrations/NNN_*.sql` + `run-migration-NNN-vps.js` | MC-0 |
-| **MC-2** | KB seed + loader | `knowledge/material-compliance/**` da **norme consegnate dal committente** (PDF → MD, skill `pdf-to-json`) + loader | MC-0 + HITL norme |
-| **MC-3** | Rule Engine | service puro + test L1 | MC-2 |
-| **MC-4** | API | routes/controller/services; riuso extract | MC-1, MC-3 |
-| **MC-5** | UI MVP | lista + dettaglio + azioni HITL | MC-4 |
-| **MC-6** | Licenza + audit AI + disclaimer | seam + `logAiInteraction` + `AiDisclaimer` | MC-4/5 |
-| **MC-B** | OCR su scan (riuso `documentTextExtractor` / `ocrExtractor`, non un secondo motore) | MC-4 |
-| **MC-7** | Registry + lessons (stesso anello feedback di qualifiche/WPQR) | MC-5 |
+| Slice | Tema | Perimetro (file/layer) | Dipende da | Tipo |
+|-------|------|------------------------|------------|------|
+| **MC-0** | Spec tecniche | DATA_MODEL / UI / API md | — | AFK (chiusa) |
+| **MC-1** | Schema DB | mig. **149** | MC-0 | AFK (chiusa) |
+| **MC-2** | KB seed + loader | `knowledge/material-compliance/**` | MC-0 + HITL norme | AFK (chiusa) |
+| **MC-3** | Rule Engine | service puro + test L1 | MC-2 | AFK (chiusa) |
+| **MC-4** | API | `materialCertificates.controller.js` | MC-1, MC-3 | AFK (chiusa) |
+| **MC-5** | UI MVP | `MaterialCertificatesPage.jsx` | MC-4 | AFK (chiusa) |
+| **MC-I0** | Valuta 409 (lock `updated_at`) | controller + test evaluate | MC-4/5 | AFK — **prima eseguibile** |
+| **MC-I1** | Ruolo Base/Apporto in upload | UI upload + default `base` hardcoded | MC-I0 | AFK |
+| **MC-B** | OCR scan (riuso estrattore, non un secondo motore) | `extractCertificate` + `mapTextReason`; **non** nuovo OCR | MC-I0, SAL **S1a** | AFK (aspetta S1a se OCR assente) |
+| **MC-I2** | 3.1 singolo: colata / DDT / norma | schema `material_certificate` + mapping anagrafica | MC-I0 | AFK |
+| **MC-I3** | DDT ≠ 3.1 (classifica tipo) | extract + UI: DDT non è un mill | MC-I2, MC-B | AFK |
+| **MC-I4** | 1 PDF → N certificati (busta mill) | split/HITL; 26DDT06266 | MC-I2, MC-I3 | AFK (nebbia split: vedi sopra) |
+| **MC-7** | Feedback ADR-017 (recordFeedback → few-shot) | PATCH/approve MC → `ingestFeedback.service` | MC-I2 (c’è qualcosa da correggere) | AFK |
+| **MC-6** | Licenza + audit AI | seam + `logAiInteraction` | MC-4/5 | AFK — **non ingest** |
 
 ---
 
@@ -216,6 +261,8 @@ Test controller/service con mock DB (`materialCertificates.controller.test.js`).
 
 ## MC-6 — Licenza, audit AI, chiusura MVP-A
 
+**Non è ingest.** Non aprire da `DEPUTYTASK_MC_INGEST.md`.
+
 ### Scope
 
 - Seam `MATERIAL_COMPLIANCE` in `moduleLicense.service.js`
@@ -230,16 +277,61 @@ Test controller/service con mock DB (`materialCertificates.controller.test.js`).
 
 ---
 
-## MC-B — OCR (post MVP-A)
+## Track ingest (dopo MC-5)
 
-Adapter dietro interfaccia unica; env per provider; fallback se testo già sufficiente.  
-Non bloccare MC-1…6.
+### MC-I0 — Valuta 409 (hello world)
 
----
+**Brief:** [`DEPUTYTASK_MC_INGEST.md`](DEPUTYTASK_MC_INGEST.md) — **unica slice aperta**.
 
-## MC-7 — Registry + lessons (post MVP-A)
+Causa confermata dal codice (18/08), non dallo stato workflow: `EVALUABLE` include `extracted`. `persistEvaluateResult` fa `AND updated_at = @updated_at` su colonna `DATETIME2` (SYSUTCDATETIME) con il `Date` JS di `node-mssql`. Il FE **non** invia il lock. Su ADA il click Valuta dopo Estrai → 409 anche se lo stato è `extracted`.
 
-Commit umano verso Document Registry; feedback correzioni → `lessons/` o pattern ADR-017.
+Demoable: record ADA 3–5 in `extracted` → Valuta → `pending_review` + checks, non 409.
+
+### MC-I1 — Ruolo Base / Apporto in upload
+
+Oggi `MaterialCertificatesPage` chiama `createMaterialCertificate({ materialRole: "base" })` sempre. API accetta `base|filler`. Un 3.1 filo resta Base in griglia.
+
+Demoable: in upload si sceglie Base o Apporto (o Estrai imposta `material_role` e la griglia lo mostra). Non spezzare PDF.
+
+### MC-B — OCR su scan (riuso, non un secondo motore)
+
+`extractCertificate` chiama già `extractDocumentText`. `mapTextReason` mappa `pdf_no_text_layer` → `ocr_skipped` (DDT 000775RE). SAL **S1a** collega `ocrExtractor` a `documentTextExtractor` — **non** duplicare. Se S1a non è in `main`, questa slice **aspetta**.
+
+Demoable: DDT scansionato senza text layer → testo (anche rumoroso) + `text_extract_reason` ≠ `ocr_skipped` se OCR ok; se OCR fail, reason `ocr_*` senza 500.
+
+### MC-I2 — 3.1 singolo: colata / DDT / norma
+
+3.1 Tecnovespa: Estrai parziale, manca colata `12174/2026`. Schema `material_certificate` + `applyAnagraficaFromJson` già mappano `heat_or_lot_no` / `ddt_no` / `material_standard`. Un PDF → **una** riga.
+
+Demoable: 3.1 con text layer → griglia con colata + norma (DDT se stampato). Niente split N mill.
+
+### MC-I3 — DDT ≠ 3.1
+
+Un DDT non è un certificato 3.1. Non estrarre colata/mill dal DDT come se fosse EN 10168. Collegare n. DDT alle righe certificato.
+
+Demoable: upload DDT → ruolo/tipo riconoscibile, n. DDT in colonna, **non** un JSON mill inventato.
+
+### MC-I4 — 1 PDF → N certificati (busta)
+
+`Certificati_26DDT06266.pdf`: busta + più mill, testo specchiato, JSON quasi vuoto. Nebbia: come spezzare (pagine / colate / HITL). Si decide **in questa slice**, non prima.
+
+Demoable: un upload → N righe in Materiali (o HITL esplicito «crea riga»), ciascuna con colata propria.
+
+### MC-7 — Apprendimento ADR-017 (obbligatoria, non prima)
+
+Stesso anello di WPQR/qualifiche. **Niente** secondo store `lessons/`, niente fine-tuning.
+
+```
+HITL corregge (PATCH) o accetta
+  → recordFeedback (ingestFeedback.service)
+  → import_extraction_feedback
+  → buildIngestLearningPromptSection
+  → extractStructuredByDocType (già riceve organizationId)
+```
+
+Demoable: correggi colata sul 3.1 → secondo Estrai sullo stesso tipo/org usa il few-shot (campo corretto, non PII vietata da ADR-017 livello B).
+
+Registry documenti: **nebbia** (ponte dopo).
 
 ---
 
@@ -247,11 +339,11 @@ Commit umano verso Document Registry; feedback correzioni → `lessons/` o patte
 
 Usare dopo ogni PR di slice:
 
-| Check | MC-0 | MC-1 | MC-2 | MC-3 | MC-4 | MC-5 | MC-6 |
-|-------|------|------|------|------|------|------|------|
-| Spec / ADR rispettati | ☑ | ☐ | ☐ | ☐ | ☐ | ☐ | ☐ |
-| Multi-tenant / company scope | — | ☐ | — | — | ☐ | ☐ | ☐ |
-| AI ≠ approvazione | — | — | — | ☐ | ☐ | ☐ | ☐ |
-| Test L1 / build | ☑ | ☐ | ☐ | ☐ | ☐ | ☐ | ☐ |
-| Deploy manifest (se nuovi `.js` BE) | — | — | ☐ | ☐ | ☐ | — | ☐ |
-| Doc roadmap aggiornata | ☑ | — | — | — | — | — | ☐ |
+| Check | MC-0 | MC-1 | MC-2 | MC-3 | MC-4 | MC-5 | MC-I0 |
+|-------|------|------|------|------|------|------|-------|
+| Spec / ADR rispettati | ☑ | ☑ | ☑ | ☑ | ☑ | ☑ | ☐ |
+| Multi-tenant / company scope | — | ☑ | — | — | ☑ | ☑ | ☑ |
+| AI ≠ approvazione | — | — | — | ☑ | ☑ | ☑ | ☑ |
+| Test L1 / build | ☑ | ☑ | ☑ | ☑ | ☑ | ☑ | ☐ |
+| Deploy manifest (se nuovi `.js` BE) | — | — | ☑ | ☑ | ☑ | — | — |
+| Doc roadmap aggiornata | ☑ | ☑ | ☑ | ☑ | ☑ | ☑ | ☐ |

@@ -1,7 +1,9 @@
 # DEPUTYTASK — Material Compliance MC-5 (UI)
 
-**Stato:** APERTO  
+**Stato:** CHIUSO — mergiata [#457](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/457); router dettaglio [#461](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/461)  
 **Aperto:** 18/08/2026 (dopo merge MC-4 #456)  
+**Chiuso:** 18/08/2026  
+**Prossima ingest:** [`DEPUTYTASK_MC_INGEST.md`](DEPUTYTASK_MC_INGEST.md) (MC-I0)  
 **Piano:** [`PLAN_MATERIAL_COMPLIANCE_SLICES.md`](PLAN_MATERIAL_COMPLIANCE_SLICES.md) § MC-5  
 **Spec:** [`MATERIAL_COMPLIANCE_UI.md`](../specs/MATERIAL_COMPLIANCE_UI.md)  
 **Rischio:** Medio — UI additiva, nessuna migrazione; PR + gate Bugbot; Cloud **non** mergia  
