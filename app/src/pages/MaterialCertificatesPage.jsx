@@ -178,13 +178,17 @@ export default function MaterialCertificatesPage() {
   }
 
   function onFieldBlur(key) {
-    if (!canHitl("patch", status)) return;
+    if (!hitlReady || !canHitl("patch", status)) return;
     const current = jsonOf(detail)[key];
     if (String(draft[key] ?? "") === String(current ?? "")) return;
     runAction("patch", () => apiService.patchMaterialCertificate(detail.id, { [key]: draft[key] }));
   }
 
   const pdfUrl = resolveBackendUploadUrl(detail?.file_url, apiService.baseUrl);
+  const hitlReady = Boolean(detail && selectedId && detail.id === selectedId);
+  function hitlDisabled(action) {
+    return !hitlReady || !canHitl(action, status) || Boolean(busy);
+  }
 
   return (
     <div className="sq-page">
@@ -286,7 +290,7 @@ export default function MaterialCertificatesPage() {
                   <input
                     id={`mc-${key}`}
                     value={draft[key] ?? detail[key] ?? ""}
-                    disabled={!canHitl("patch", status) || busy === "patch"}
+                    disabled={hitlDisabled("patch")}
                     title={hitlTitle("patch", status)}
                     onChange={(e) => setDraft((d) => ({ ...d, [key]: e.target.value }))}
                     onBlur={() => onFieldBlur(key)}
@@ -359,7 +363,7 @@ export default function MaterialCertificatesPage() {
               <button
                 type="button"
                 className="btn-secondary"
-                disabled={!detail || detail.id !== selectedId || !canHitl("extract", status) || Boolean(busy)}
+                disabled={hitlDisabled("extract")}
                 title={hitlTitle("extract", status)}
                 onClick={() => runAction("extract", () => apiService.extractMaterialCertificate(detail.id))}
               >
@@ -368,7 +372,7 @@ export default function MaterialCertificatesPage() {
               <button
                 type="button"
                 className="btn-secondary"
-                disabled={!canHitl("evaluate", status) || Boolean(busy)}
+                disabled={hitlDisabled("evaluate")}
                 title={hitlTitle("evaluate", status)}
                 onClick={() => runAction("evaluate", () => apiService.evaluateMaterialCertificate(detail.id))}
               >
@@ -378,7 +382,7 @@ export default function MaterialCertificatesPage() {
                 type="button"
                 className="btn-primary"
                 data-testid="mc-approve"
-                disabled={!canHitl("approve", status) || Boolean(busy)}
+                disabled={hitlDisabled("approve")}
                 title={hitlTitle("approve", status) || "Approva conforme (click esplicito)"}
                 onClick={() => runAction("approve", () => apiService.approveMaterialCertificate(detail.id))}
               >
@@ -387,7 +391,7 @@ export default function MaterialCertificatesPage() {
               <button
                 type="button"
                 className="btn-secondary"
-                disabled={!canHitl("reject", status) || Boolean(busy)}
+                disabled={hitlDisabled("reject")}
                 title={hitlTitle("reject", status)}
                 onClick={() => runAction("reject", () => apiService.rejectMaterialCertificate(detail.id))}
               >
@@ -396,7 +400,7 @@ export default function MaterialCertificatesPage() {
               <button
                 type="button"
                 className="btn-secondary"
-                disabled={!canHitl("archive", status) || Boolean(busy)}
+                disabled={hitlDisabled("archive")}
                 title={hitlTitle("archive", status)}
                 onClick={() => runAction("archive", () => apiService.archiveMaterialCertificate(detail.id))}
               >
