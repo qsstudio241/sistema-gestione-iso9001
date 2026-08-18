@@ -1,7 +1,8 @@
 # DEPUTYTASK — Material Compliance ingest (MC-I0)
 
-**Stato:** APERTO  
+**Stato:** TEST OK — PR [#463](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/463) (Bugbot: nessun bug). Attende merge + deploy TEST.  
 **Aperto:** 18/08/2026 (Lead wayfinder — Chart the map, track ingest)  
+**Chiuso (codice):** 18/08/2026 — L1 24/24 `materialCertificates.controller.test.js`  
 **Piano:** [`PLAN_MATERIAL_COMPLIANCE_SLICES.md`](PLAN_MATERIAL_COMPLIANCE_SLICES.md) § MC-I0  
 **Spec:** [`MATERIAL_COMPLIANCE_API.md`](../specs/MATERIAL_COMPLIANCE_API.md) · ADR-024 stati  
 **Rischio:** Medio — backend additivo sul lock evaluate, nessuna migrazione; PR + gate Bugbot; Cloud **non** mergia  

@@ -1,6 +1,7 @@
 /**
  * Material Compliance MC-4 — API certificati materiale (base e apporto).
  * Extract: ingest AI. Evaluate: Rule Engine MC-3 (zero LLM).
+ * MC-I0: evaluate non usa lock updated_at (Date JS vs DATETIME2 → 409 spurio).
  * workflow_status=compliant solo da HITL approve, mai da AI o dal motore.
  */
 'use strict';
@@ -267,7 +268,7 @@ function jsonPayloadFromAi(aiResult) {
   return specific && typeof specific === 'object' && !Array.isArray(specific) ? specific : {};
 }
 
-async function persistEvaluateResult(organizationId, certificateId, result, updatedAt) {
+async function persistEvaluateResult(organizationId, certificateId, result) {
   const pool = await getPool();
   const tx = pool.transaction();
   await tx.begin();
@@ -299,6 +300,9 @@ async function persistEvaluateResult(organizationId, certificateId, result, upda
         explanation: clip(check.explanation, 500),
       });
     }
+    // MC-I0: non confrontare updated_at con il Date JS di node-mssql.
+    // DATETIME2 (100 ns) vs Date (ms) → 409 spurio su extracted (ADA 18/08).
+    // Race: workflow_status IN EVALUABLE nella stessa transazione.
     const upd = await txQuery(tx, `
         UPDATE dbo.material_certificates
         SET evaluate_result_json = @evaluate_result_json,
@@ -312,7 +316,6 @@ async function persistEvaluateResult(organizationId, certificateId, result, upda
         OUTPUT INSERTED.id
         WHERE id = @id AND organization_id = @organization_id
           AND workflow_status IN (${sqlInStatus(EVALUABLE)})
-          AND updated_at = @updated_at
       `, {
       id: certificateId,
       organization_id: organizationId,
@@ -322,7 +325,6 @@ async function persistEvaluateResult(organizationId, certificateId, result, upda
         hash: result.kb_snapshot_hash,
         evaluated_at: new Date().toISOString(),
       }),
-      updated_at: updatedAt,
     });
     if (!outputRow(upd)) {
       throw illegalTransition();
@@ -867,7 +869,7 @@ async function evaluateCertificate(req, res) {
       scope: {},
     });
 
-    await persistEvaluateResult(req.user.organization_id, id, result, row.updated_at);
+    await persistEvaluateResult(req.user.organization_id, id, result);
 
     res.json({
       success: true,
