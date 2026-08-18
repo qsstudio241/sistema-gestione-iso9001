@@ -24,6 +24,8 @@
 
 - `backend/src/services/documentTextExtractor.service.js`
 - `backend/src/services/documentTextExtractor.service.test.js`
+- `backend/src/controllers/materialCertificates.controller.js` (mappa `ocr_failed` / `ocr_unavailable` — rilievo Bugbot)
+- `backend/src/controllers/materialCertificates.controller.test.js`
 - `docs/agent-tasks/PLAN_SAL_AI_EVIDENCE_SLICES.md`
 - `docs/agent-tasks/DEPUTYTASK.md`
 - `docs/PROJECT_ROADMAP.md` § Stato attuale
