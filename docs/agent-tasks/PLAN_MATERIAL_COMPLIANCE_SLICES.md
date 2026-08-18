@@ -196,9 +196,9 @@ Test controller/service con mock DB (`materialCertificates.controller.test.js`).
 
 ### DoD
 
-- [ ] Build Vite OK
-- [ ] Gate `ModuleLocked` se capability OFF
-- [ ] Nessuna approvazione senza click esplicito
+- [x] Build Vite OK
+- [x] Gate `ModuleLocked` se capability OFF
+- [x] Nessuna approvazione senza click esplicito
 
 ### Test L1
 

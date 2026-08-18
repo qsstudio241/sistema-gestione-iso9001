@@ -49,6 +49,7 @@ const EquipmentPage  = React.lazy(() => import("./pages/EquipmentPage"));
 const NdtReportsPage = React.lazy(() => import("./pages/NdtReportsPage"));
 const RDPModule = React.lazy(() => import("./pages/RDPModule"));
 const WeldingBooksPage = React.lazy(() => import("./pages/WeldingBooksPage"));
+const MaterialCertificatesPage = React.lazy(() => import("./pages/MaterialCertificatesPage"));
 const ProjectsPage = React.lazy(() => import("./pages/ProjectsPage"));
 const DeadlinesPage = React.lazy(() => import("./pages/DeadlinesPage"));
 const ManagementReviewsPage = React.lazy(() => import("./pages/ManagementReviewsPage"));
@@ -59,6 +60,7 @@ const ForgotPasswordPage = React.lazy(() => import("./pages/ForgotPasswordPage")
 const ResetPasswordPage = React.lazy(() => import("./pages/ResetPasswordPage"));
 import ModuleLocked from "./components/ModuleLocked";
 import LicensedRoute from "./components/LicensedRoute";
+import { hasMaterialComplianceCapability } from "./utils/licenseUtils";
 import Login from "./components/Login";
 import ConnectionStatus from "./components/ConnectionStatus";
 import AuditLockBanner from "./components/AuditLockBanner";
@@ -193,6 +195,7 @@ function AppContent() {
         <Route path="/saldatura/procedure" element={<LicensedRoute moduleKey="saldatura"><WeldingProceduresPage /></LicensedRoute>} />
         <Route path="/wps" element={<LicensedRoute moduleKey="saldatura"><WeldingProceduresPage /></LicensedRoute>} />
         <Route path="/saldatura/commesse" element={<LicensedRoute moduleKey="saldatura"><ProjectsPage /></LicensedRoute>} />
+        <Route path="/saldatura/materiali" element={<LicensedRoute moduleKey="material_compliance" isAllowed={hasMaterialComplianceCapability}><MaterialCertificatesPage /></LicensedRoute>} />
         <Route path="/saldatura/welding-book" element={<LicensedRoute moduleKey="saldatura"><WeldingBooksPage /></LicensedRoute>} />
         <Route path="/saldatura" element={<LicensedRoute moduleKey="saldatura"><WeldingDashboardPage /></LicensedRoute>} />
         <Route path="/cnd/strumenti" element={<LicensedRoute moduleKey="cnd"><EquipmentPage /></LicensedRoute>} />
