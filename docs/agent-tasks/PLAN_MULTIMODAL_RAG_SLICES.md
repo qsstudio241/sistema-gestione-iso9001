@@ -2,8 +2,8 @@
 
 > **Destinazione**: l’SGQ ingerisce PDF normativi con tavole (es. simboli saldatura ISO 2553 / AWS A2.4), conserva testo *e* ritagli di figura con bounding box, e li recupera in uno spazio vettoriale **locale** così l’assistente può citare la tavola e, in seguito, confrontarla con un disegno/WPS caricato. Verificabile: dato un PDF di prova, una query testo (e poi una query immagine) restituisce la figura giusta con pagina + bbox, senza chiamate cloud sui byte delle tavole.
 > **Spec / ADR**: [ADR-010](../adr/ADR-010-ai-agentic-architecture.md) (AI cita, non certifica; audit trail) · skill [`pdf-to-json`](../../.cursor/skills/pdf-to-json/SKILL.md) · indexer esistente `knowledgeIndexer.service.js` / `knowledge_chunks` · catalogo già in repo [`ISO-2553-simboli-saldatura.md`](../reference/ISO-2553-simboli-saldatura.md) + `weldingSymbols2553.js`
-> **Brief attivo**: [`DEPUTYTASK5.md`](DEPUTYTASK5.md) — slice **MR-0** (APERTO). `DEPUTYTASK.md` resta SAL S1a, non usarlo.
-> **Mappa creata**: 18/08/2026 (Lead wayfinder A — Chart the map; nessuna implementazione in questa sessione)
+> **Brief attivo**: MR-0 **CHIUSO** (TEST OK, [PR #464](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/464)). Prossima slice **MR-1** (non aperta in questa sessione). `DEPUTYTASK.md` resta SAL S1a, non usarlo.
+> **Mappa creata**: 18/08/2026 (Lead wayfinder A — Chart the map)
 > **Vincolo prodotto (HITL 18/08)**: sviluppare **tutto in locale** con un modello adatto. I byte delle figure non escono verso Gemini né altri parser cloud.
 
 ---
@@ -42,6 +42,7 @@
 - **Catalogo 2553 esistente** (`weldingSymbols2553.js`) resta la fonte simboli/codici; il RAG visivo lo affianca, non lo duplica come truth
 - **Nessun numero di migrazione riservato** in anticipo (sequenza condivisa `database/migrations/`)
 - **MR-0 non tocca** indexer, Gemini, UI, SQL
+- **MR-0 chiuso (18/08)** — CLI `--extract-figures` + `extract_figures.py`: raster (`get_images` + bbox pagina) e cluster `get_drawings()` → PNG + `*.figures.json`. Fixture ReportLab, test L1 unittest senza rete. Nessun embed/DB/UI.
 
 ---
 
@@ -49,7 +50,7 @@
 
 | Slice | Tema | Perimetro (file/layer) | Dipende da | Tipo |
 |-------|------|------------------------|------------|------|
-| **MR-0** | Hello world: estrai figure + bbox da un PDF | `backend/scripts/pdf_to_json/` (`extract` figure, CLI `--extract-figures`, fixture ReportLab, test, README skill-aligned) | — | AFK |
+| **MR-0** | Hello world: estrai figure + bbox da un PDF | `backend/scripts/pdf_to_json/` (`extract_figures.py`, CLI `--extract-figures`, fixture ReportLab, test, README) | — | AFK, **fatto** |
 | **MR-1** | Persisti + embed locale + GET retrieve testo→figura | migrazione `knowledge_figures` + service embed locale + GET `/api/…` (isolation `organization_id`) + test L1 con vettori mock/reali corti | MR-0 | AFK |
 | **MR-2** | UI: query testo cita la tavola | `AiAssistantPage` (o pannello citazioni esistente): crop + pagina + bbox; niente nuovo layout di prodotto | MR-1 | AFK |
 | **MR-3** | Ingest norma → extract + embed | aggancio pipeline/job su PDF normativo; riuso MR-0+MR-1; niente fork `documentIngestPipeline` | MR-1 | AFK |
@@ -58,7 +59,18 @@
 
 **Ordine**: MR-0 → MR-1 → poi MR-2 e MR-3/MR-4 possono parallellizzarsi su file disgiunti (UI vs ingest vs query visiva). MR-5 per ultimo.
 
-**Hello world (MR-0)**: dalla CLI, su un PDF fixture con almeno una tavola disegnata, escono PNG + JSON `{page, bbox, kind: raster|vector, caption?}` senza rete. Demoable da solo.
+**Hello world (MR-0)**: **fatto.** Dalla CLI, su un PDF fixture con almeno una tavola disegnata, escono PNG + JSON `{page, bbox, kind: raster|vector, caption?}` senza rete.
+
+### DoD MR-0 (spuntato 18/08/2026)
+
+- [x] Flag CLI `--extract-figures` (default off): `figures/` + `*.figures.json`
+- [x] Ogni figura: `id`, `page`, `bbox`, `kind` `raster|vector`, `path`, `caption` best-effort
+- [x] Raster: XObject + bbox di pagina (non solo xref)
+- [x] Vector: cluster `get_drawings()`, rumore scartato, PNG
+- [x] Test L1 fixture ReportLab: ≥1 raster e ≥1 vector, bbox non degeneri, PNG non vuoti
+- [x] Pagina/PDF senza figure → `figures: []`, exit 0
+- [x] README + skill; nessuna chiamata cloud
+- [x] Nessun PDF copyright / modelli / `.venv` / segreti
 
 ---
 

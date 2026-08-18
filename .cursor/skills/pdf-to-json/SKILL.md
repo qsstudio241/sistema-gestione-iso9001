@@ -62,7 +62,8 @@ C:\Users\AI.Project\AppData\Local\Python\bin\python.exe -m pip install -r backen
 ```
 
 Librerie usate (tutte locali, nessuna chiamata cloud/API esterna in nessuna
-fase): `pdfplumber` (motore primario), `pypdf` e `pymupdf` (fallback testo),
+fase): `pdfplumber` (motore primario), `pypdf` e `pymupdf` (fallback testo
+e, con `--extract-figures`, ritaglio tavole raster/vettoriali),
 `pytesseract` + `Pillow` (OCR opzionale, solo se il binario di sistema
 `tesseract` e' installato a parte — vedi README per il link Windows).
 
@@ -86,6 +87,12 @@ C:\Users\AI.Project\AppData\Local\Python\bin\python.exe -m backend.scripts.pdf_t
 ```
 
 Documentazione completa opzioni/schemi JSON: [`backend/scripts/pdf_to_json/README.md`](../../../backend/scripts/pdf_to_json/README.md).
+
+**Figure / tavole (flag `--extract-figures`, default off):** accanto a `.md`/`.json`
+scrive `figures/` (PNG) e `<nome>.figures.json` con `page`, `bbox`, `kind`
+`raster|vector`. Usa pymupdf in locale (`get_images` + cluster di
+`get_drawings()`): **nessuna chiamata cloud** sui byte delle tavole. Non
+sostituisce l'estrazione testo. Non committare PDF coperti da copyright.
 
 ### Step 3-4 — Revisione obbligatoria del Markdown intermedio
 

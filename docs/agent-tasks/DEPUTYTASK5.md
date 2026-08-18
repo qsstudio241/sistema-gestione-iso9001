@@ -1,7 +1,8 @@
 # DEPUTYTASK5 — Multimodal RAG MR-0: estrai figure + bbox (pdf-to-json, locale)
 
-**Stato:** APERTO  
+**Stato:** CHIUSO  
 **Aperto:** 18/08/2026 (Lead wayfinder — Chart the map Multimodal RAG)  
+**Chiuso:** 18/08/2026 — **TEST OK** (MR-0, [PR #464](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/464)). MR-1 **non** aperta in questa sessione.  
 **Piano:** [`PLAN_MULTIMODAL_RAG_SLICES.md`](PLAN_MULTIMODAL_RAG_SLICES.md)  
 **Spec:** skill [`pdf-to-json`](../../.cursor/skills/pdf-to-json/SKILL.md) · `backend/scripts/pdf_to_json/README.md`  
 **Rischio:** Medio — PR + gate Bugbot; **non** push su `main`; **non** toccare `DEPUTYTASK.md` (SAL S1a ancora APERTO)
@@ -60,9 +61,13 @@ Adattare al runner già usato da `backend/scripts/pdf_to_json/tests/`. Deve gira
 
 ### Chiusura
 
-- Aggiorna PLAN: spunta DoD MR-0; next brief = MR-1 su un nuovo `DEPUTYTASK5.md` (sovrascrivi questo file solo a slice chiusa) oppure lascia handoff
+- PLAN: DoD MR-0 spuntato; next brief = MR-1 **non** scritto in questa sessione
 - PR livello Medio + gate Bugbot
-- Chiudi con **TEST OK** o **FIX NON APPLICABILI** + handoff se incompleto
+- Chiusura: **TEST OK**
+
+```bash
+python3 -m unittest discover -s backend/scripts/pdf_to_json/tests -v
+```
 
 ---
 
