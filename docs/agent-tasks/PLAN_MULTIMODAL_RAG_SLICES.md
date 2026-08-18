@@ -2,7 +2,7 @@
 
 > **Destinazione**: l’SGQ ingerisce PDF normativi con tavole (es. simboli saldatura ISO 2553 / AWS A2.4), conserva testo *e* ritagli di figura con bounding box, e li recupera in uno spazio vettoriale **locale** così l’assistente può citare la tavola e, in seguito, confrontarla con un disegno/WPS caricato. Verificabile: dato un PDF di prova, una query testo (e poi una query immagine) restituisce la figura giusta con pagina + bbox, senza chiamate cloud sui byte delle tavole.
 > **Spec / ADR**: [ADR-010](../adr/ADR-010-ai-agentic-architecture.md) (AI cita, non certifica; audit trail) · skill [`pdf-to-json`](../../.cursor/skills/pdf-to-json/SKILL.md) · indexer esistente `knowledgeIndexer.service.js` / `knowledge_chunks` · catalogo già in repo [`ISO-2553-simboli-saldatura.md`](../reference/ISO-2553-simboli-saldatura.md) + `weldingSymbols2553.js`
-> **Brief attivo**: [`DEPUTYTASK5.md`](DEPUTYTASK5.md) — slice **MR-1** (APERTO, 18/08/2026). MR-0 chiuso [PR #464](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/464). `DEPUTYTASK.md` resta SAL S1a, non usarlo.
+> **Brief attivo**: MR-1 **CHIUSO** (TEST OK, 18/08/2026). Prossima slice **MR-2** (UI citazioni, non aperta). MR-0 [PR #464](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/464). `DEPUTYTASK.md` resta SAL S1a, non usarlo.
 > **Mappa creata**: 18/08/2026 (Lead wayfinder A — Chart the map)
 > **Vincolo prodotto (HITL 18/08)**: sviluppare **tutto in locale** con un modello adatto. I byte delle figure non escono verso Gemini né altri parser cloud.
 
@@ -42,7 +42,7 @@
 - **Catalogo 2553 esistente** (`weldingSymbols2553.js`) resta la fonte simboli/codici; il RAG visivo lo affianca, non lo duplica come truth
 - **Nessun numero di migrazione riservato** in anticipo (sequenza condivisa `database/migrations/`)
 - **MR-0 non tocca** indexer, Gemini, UI, SQL
-- **MR-0 chiuso (18/08)** — CLI `--extract-figures` + `extract_figures.py`: raster (`get_images` + bbox pagina) e cluster `get_drawings()` → PNG + `*.figures.json`. Fixture ReportLab, test L1 unittest senza rete. Nessun embed/DB/UI.
+- **MR-1 chiuso (18/08)** — mig. **153** `knowledge_figures` + adapter CLIP locale (mock in L1) + GET `/api/v1/ai/figures/search?q=`. Isolamento `organization_id`. Gemini testo invariato.
 
 ---
 
@@ -51,7 +51,7 @@
 | Slice | Tema | Perimetro (file/layer) | Dipende da | Tipo |
 |-------|------|------------------------|------------|------|
 | **MR-0** | Hello world: estrai figure + bbox da un PDF | `backend/scripts/pdf_to_json/` (`extract_figures.py`, CLI `--extract-figures`, fixture ReportLab, test, README) | — | AFK, **fatto** |
-| **MR-1** | Persisti + embed locale + GET retrieve testo→figura | migrazione `knowledge_figures` + service embed locale + GET `/api/…` (isolation `organization_id`) + test L1 con vettori mock/reali corti | MR-0 | AFK |
+| **MR-1** | Persisti + embed locale + GET retrieve testo→figura | migrazione `knowledge_figures` + service embed locale + GET `/api/v1/ai/figures/search` (isolation `organization_id`) + test L1 mock | MR-0 | AFK, **fatto** |
 | **MR-2** | UI: query testo cita la tavola | `AiAssistantPage` (o pannello citazioni esistente): crop + pagina + bbox; niente nuovo layout di prodotto | MR-1 | AFK |
 | **MR-3** | Ingest norma → extract + embed | aggancio pipeline/job su PDF normativo; riuso MR-0+MR-1; niente fork `documentIngestPipeline` | MR-1 | AFK |
 | **MR-4** | Query visiva (disegno → simboli) | upload ritaglio/pagina; stesso spazio CLIP; top-k figure; test L1 con due crop della fixture | MR-1 | AFK |
@@ -72,15 +72,26 @@
 - [x] README + skill; nessuna chiamata cloud
 - [x] Nessun PDF copyright / modelli / `.venv` / segreti
 
+### DoD MR-1 (spuntato 18/08/2026)
+
+- [x] Migrazione idempotente `153_knowledge_figures.sql` (IF NOT EXISTS, indice org+space, niente CASCADE / `GO`)
+- [x] Runner VPS `run-migration-153-vps.js` (PROD + `SGQ_MIGRATION_TARGET=test`) — da applicare **dopo merge**, non da Cloud
+- [x] Adapter `figureEmbed.service.js`: `embedText` / `embedImage` / `embeddingSpace`; default `jinaai/jina-clip-v2`; env `FIGURE_EMBED_MODEL`; fallback `clip-ViT-B-32`. L1 con mock (niente pesi in CI)
+- [x] `persistFigures` + `searchFiguresByText`: isolamento `organization_id` + stesso `embedding_space`; cosine in-file; niente `knowledge_chunks`
+- [x] GET autenticato `/api/v1/ai/figures/search?q=` (licenza `ai_chat`); org dal JWT; vuoto → `{ figures: [] }` 200
+- [x] Test Jest mock (persist, retrieve, cross-org, lista vuota, controller)
+- [x] Nuovi `.js` in `deploy-manifest.json`
+- [x] Nessun Gemini sui PNG, nessuna UI, nessun PDF copyright; MR-2 **non** aperta
+
 ---
 
-## Architettura target (MR-1 implementa persist+CLIP+GET testo; UI/ingest/VLM dopo)
+## Architettura target (MR-1 persist+CLIP+GET testo **fatto**; UI/ingest/VLM dopo)
 
 ```
 PDF norma (operatore)
     → pdf-to-json testo/md/json          (già esiste, locale)
     → pdf-to-json figures/ + figures.json (MR-0: bbox + PNG) ✅
-    → knowledge_figures + CLIP locale     (MR-1 — questa slice)
+    → knowledge_figures + CLIP locale     (MR-1) ✅
     → retrieve testo (MR-1/2) | retrieve immagine (MR-4)
     → (MR-5) Ollama VLM sui crop, citazioni, HITL umano
 ```

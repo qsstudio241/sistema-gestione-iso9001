@@ -8,7 +8,7 @@
 
 > **Risposta standard a «stato di avanzamento del progetto e priorità da affrontare»**: sintetizzare da questa sezione (moduli maturi + sessione più recente + tabella priorità sotto), **non** dal banner storico più sotto (superato, tenuto solo per traccia) né dall'archivio marzo 2026 [`docs/archive/PROJECT_CONTEXT_STATO_FUNZIONALITA_2026-03.md`](archive/PROJECT_CONTEXT_STATO_FUNZIONALITA_2026-03.md). **Aggiornare questa sezione a fine sessione** se emergono nuove priorità o se una priorità elencata viene chiusa (stesso principio delle "Lezioni apprese" in [GUIDA_CONSOLIDATA.md](GUIDA_CONSOLIDATA.md) — sintesi qui, dettaglio linkato).
 
-**Ultimo aggiornamento di questa sezione**: 18/08/2026 (MR-0 figure pdf-to-json mergiato #464; MC-I0 Valuta 409 #463).
+**Ultimo aggiornamento di questa sezione**: 18/08/2026 (MR-1 persist figure TEST OK; MR-0 #464 mergiato).
 
 ### Moduli maturi (in produzione, uso quotidiano dai clienti Camellini/Mason)
 
@@ -16,7 +16,9 @@ Audit multi-standard (9001/14001/45001) · Non Conformità (workflow ISO 10.2 co
 
 ### Sessione più recente (18/08/2026)
 
-**Multimodal RAG MR-0 mergiato (18/08)** — [PR #464](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/464): `pdf-to-json --extract-figures` (raster + cluster vettoriali, PNG + bbox, locale). Brief [`DEPUTYTASK5.md`](agent-tasks/DEPUTYTASK5.md) **CHIUSO**. Prossima: **MR-1** (persist + embed locale) — non aperta. Piano: [`PLAN_MULTIMODAL_RAG_SLICES.md`](agent-tasks/PLAN_MULTIMODAL_RAG_SLICES.md). `DEPUTYTASK.md` resta SAL S1a.
+**Multimodal RAG MR-1 TEST OK (18/08)** — persist `knowledge_figures` (mig. **153**) + adapter CLIP locale (mock L1) + GET `/api/v1/ai/figures/search?q=` isolato per `organization_id`. Brief [`DEPUTYTASK5.md`](agent-tasks/DEPUTYTASK5.md) **CHIUSO**. **MR-2 non aperta**. Migrazione VPS dopo merge (SCP + `run-migration-153-vps.js`). Piano: [`PLAN_MULTIMODAL_RAG_SLICES.md`](agent-tasks/PLAN_MULTIMODAL_RAG_SLICES.md). `DEPUTYTASK.md` resta SAL S1a.
+
+**Multimodal RAG MR-0 mergiato (18/08)** — [PR #464](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/464): `pdf-to-json --extract-figures` (raster + cluster vettoriali, PNG + bbox, locale).
 
 **MC-I0 Valuta 409 (18/08)** — lock `updated_at` rimosso da evaluate; resta il gate sullo stato. L1 24/24. Bugbot: nessun bug. PR [#463](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/463). Prossima ingest dopo merge: **MC-I1** (ruolo upload). SAL S1a e ISO-4 **non** toccati.
 
