@@ -229,6 +229,63 @@ material_grade, heat_number, supplier_name, issue_date (YYYY-MM-DD). Usa null se
     },
   },
 
+  material_certificate: {
+    label: 'Certificato materiale EN 10204 (Material Compliance)',
+    aiPrompt: `Stai analizzando un certificato di controllo EN 10204 / EN 10168 (2.1, 2.2, 3.1 o 3.2), su acciaio di BASE oppure materiale d'APPORTO (filo, elettrodo, flusso).
+Estrai TUTTI i campi in type_specific_data. Se un campo non e' sul documento usa null. NON dire se il certificato e' conforme.
+
+Classifica material_role:
+- "filler" se il documento e' filo, wire, electrode, elettrodo, flux, flusso, consumabile, ISO 14341, ISO 2560, AWS ER70S
+- altrimenti "base" (anche se incerto: l'operatore correggera')
+Mai un terzo valore.
+
+Campi comuni (codici EN 10168 dove applicabili):
+- inspection_document_type: SOLO 2.1 | 2.2 | 3.1 | 3.2 (A02)
+- certificate_no (A03), manufacturer_works (A01), purchaser (A06), purchaser_order_no (A07)
+- material_role: base|filler
+- product_form (B01): per base plate|sheet|section|tube|hollow_section|bar|other_base; per filler wire|covered_electrode|cored_wire|flux|insert|other_filler
+- material_standard, delivery_condition (B04), heat_or_lot_no (B07), dimensions (B09-B11), actual_mass (B13), thickness_mm
+- ReH, Rm, A, KV (numero o {minJ, tempC}), hardness, CEV
+- chemistry: oggetto con elementi (C, Mn, Si, P, S, ...)
+- ndt: array di metodi se stampati
+- validated_by (Z02), compliance_statement (Z01)
+
+Solo base: steel_designation (B02, es. S355J2)
+Solo filler: filler_designation (es. G 42 4 M21 3Si1), filler_standard (ISO 14341 / 2560 / ...), filler_diameter_mm, hydrogen_class (H5/H10 se stampato)
+
+Non inventare soglie, numeri di colata o valori di laboratorio assenti.`,
+    aiExpectedSchema: {
+      inspection_document_type: '2.1|2.2|3.1|3.2|null',
+      certificate_no: 'string|null',
+      manufacturer_works: 'string|null',
+      purchaser: 'string|null',
+      purchaser_order_no: 'string|null',
+      material_role: 'base|filler',
+      product_form: 'string|null',
+      material_standard: 'string|null',
+      delivery_condition: 'string|null',
+      heat_or_lot_no: 'string|null',
+      dimensions: 'string|null',
+      actual_mass: 'number|string|null',
+      thickness_mm: 'number|null',
+      ReH: 'number|null',
+      Rm: 'number|null',
+      A: 'number|null',
+      KV: 'number|{minJ,tempC}|null',
+      hardness: 'number|string|null',
+      chemistry: 'object|null',
+      CEV: 'number|null',
+      ndt: 'string[]|null',
+      validated_by: 'string|null',
+      compliance_statement: 'string|null',
+      steel_designation: 'string|null',
+      filler_designation: 'string|null',
+      filler_standard: 'string|null',
+      filler_diameter_mm: 'number|null',
+      hydrogen_class: 'string|null',
+    },
+  },
+
   // cert_ndt (ISO 9712:2022) — schema allineato a FE (documentTypeSchemas.js app/)
   // Campi per scadenziario + copertura personale NDT su commessa (ISO 3834 §8.2)
   cert_ndt: {

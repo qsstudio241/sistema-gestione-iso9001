@@ -2,7 +2,7 @@
 
 > **Tipo**: spec tecnica + schema SQL in MC-1  
 > **Versione**: 1.1 — 16/08/2026  
-> **Stato**: Schema MC-1 = migrazione **149** (`database/migrations/149_material_certificates.sql`)  
+> **Stato**: Schema MC-1 = migrazione **149**; motore MC-3 su main; persistenza evaluate = **MC-4**  
 > **Slice**: MC-0 spec → **MC-1** tabelle `material_certificates` + `material_certificate_checks`  
 > **Spec prodotto**: [MODULO_MATERIAL_COMPLIANCE_AI.md](MODULO_MATERIAL_COMPLIANCE_AI.md)  
 > **UI**: [MATERIAL_COMPLIANCE_UI.md](MATERIAL_COMPLIANCE_UI.md) · **API**: [MATERIAL_COMPLIANCE_API.md](MATERIAL_COMPLIANCE_API.md)  
@@ -254,7 +254,7 @@ Non duplicare lo storage del PDF se `import_job_files.storage_path` basta.
 
 Input: `corrected_json` ?? `extracted_json` + `kb_snapshot_*`.  
 Output (MC-3): oggetto `{ status: pass|fail|skip, kb_snapshot_hash, checks[] }`.  
-Persistenza `evaluate_result_json` + righe `material_certificate_checks` = **MC-4**. Il motore **non** imposta `workflow_status=compliant`.
+Persistenza `evaluate_result_json` + righe `material_certificate_checks` = **MC-4** (`POST /api/v1/material-certificates/:id/evaluate`). Il motore **non** imposta `workflow_status=compliant`.
 
 Regole MVP già chiuse:
 

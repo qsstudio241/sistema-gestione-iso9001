@@ -103,4 +103,38 @@ describe('moduleLicense.service', () => {
       expect(await svc.hasSalLegalConformityCapability(1004, 'user')).toBe(false);
     });
   });
+
+  describe('hasMaterialComplianceCapability (seam MATERIAL_COMPLIANCE)', () => {
+    it('AND di saldatura e ai_import, niente chiave nuova in catalogo', () => {
+      expect(svc.MATERIAL_COMPLIANCE_MODULE_KEYS).toEqual(['saldatura', 'ai_import']);
+      expect(svc.KNOWN_MODULE_KEYS).not.toContain('MATERIAL_COMPLIANCE');
+    });
+
+    it('admin/superadmin hanno sempre la capability senza query DB', async () => {
+      expect(await svc.hasMaterialComplianceCapability(1004, 'admin')).toBe(true);
+      expect(await svc.hasMaterialComplianceCapability(1004, 'SuperAdmin')).toBe(true);
+      expect(query).not.toHaveBeenCalled();
+    });
+
+    it('org con solo saldatura -> OFF', async () => {
+      query.mockResolvedValueOnce({
+        recordset: [{ licensed_modules: JSON.stringify(['audit', 'saldatura']) }],
+      });
+      expect(await svc.hasMaterialComplianceCapability(1004, 'user')).toBe(false);
+    });
+
+    it('org con solo ai_import -> OFF', async () => {
+      query.mockResolvedValueOnce({
+        recordset: [{ licensed_modules: JSON.stringify(['audit', 'ai_import']) }],
+      });
+      expect(await svc.hasMaterialComplianceCapability(1004, 'user')).toBe(false);
+    });
+
+    it('org con saldatura e ai_import -> ON', async () => {
+      query.mockResolvedValueOnce({
+        recordset: [{ licensed_modules: JSON.stringify(['audit', 'saldatura', 'ai_import']) }],
+      });
+      expect(await svc.hasMaterialComplianceCapability(1004, 'user')).toBe(true);
+    });
+  });
 });

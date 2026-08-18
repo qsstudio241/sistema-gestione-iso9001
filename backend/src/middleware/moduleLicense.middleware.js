@@ -4,7 +4,11 @@
  */
 
 const logger = require('../utils/logger');
-const { getLicensedModuleKeysForOrg, expandWithImpliedModuleKeys } = require('../services/moduleLicense.service');
+const {
+    getLicensedModuleKeysForOrg,
+    expandWithImpliedModuleKeys,
+    hasMaterialComplianceCapability,
+} = require('../services/moduleLicense.service');
 
 async function userHasAnyLicensedModule(req, moduleKeys) {
     const role = req.user?.role ? String(req.user.role).trim().toLowerCase() : '';
@@ -52,4 +56,36 @@ function requireLicensedModuleAny(moduleKeys) {
     };
 }
 
-module.exports = { requireLicensedModule, requireLicensedModuleAny };
+/**
+ * AND di saldatura + ai_import (MC-4). Non usare requireLicensedModuleAny (è OR).
+ */
+function requireMaterialComplianceCapability() {
+    return async (req, res, next) => {
+        try {
+            const ok = await hasMaterialComplianceCapability(
+                req.user?.organization_id,
+                req.user?.role
+            );
+            if (ok) return next();
+
+            logger.warn('Module license denied (MATERIAL_COMPLIANCE)', {
+                org: req.user?.organization_id,
+                path: req.path,
+            });
+            return res.status(403).json({
+                error: 'Modulo Material Compliance non abilitato per la tua organizzazione',
+                code: 'MODULE_NOT_LICENSED',
+                module: 'MATERIAL_COMPLIANCE',
+            });
+        } catch (err) {
+            logger.error('requireMaterialComplianceCapability', err);
+            next(err);
+        }
+    };
+}
+
+module.exports = {
+    requireLicensedModule,
+    requireLicensedModuleAny,
+    requireMaterialComplianceCapability,
+};

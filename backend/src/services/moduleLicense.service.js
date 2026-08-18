@@ -63,6 +63,13 @@ function expandWithImpliedModuleKeys(moduleKeys) {
 // seam, so nothing else needs to change.
 const SAL_LEGAL_CONFORMITY_MODULE_KEY = 'ai_norms';
 
+// --- Capability seam: Material Compliance (MC-4, ADR-020) -------------------
+// Oggi ON solo se l'org ha SIA 'saldatura' SIA 'ai_import' (AND, non OR).
+// Admin/superadmin bypass come requireLicensedModule.
+// Scorporo futuro: aggiungere una chiave in KNOWN_MODULE_KEYS e ripuntare
+// MATERIAL_COMPLIANCE_MODULE_KEYS senza riscrivere le route.
+const MATERIAL_COMPLIANCE_MODULE_KEYS = ['saldatura', 'ai_import'];
+
 const LABELS_IT = {
     audit: 'Audit',
     documents: 'Registro documenti',
@@ -158,6 +165,20 @@ async function hasSalLegalConformityCapability(organizationId, role) {
     return keys.includes(SAL_LEGAL_CONFORMITY_MODULE_KEY);
 }
 
+/**
+ * Capability seam MATERIAL_COMPLIANCE: certificati EN 10204 (MC-4).
+ * ON se saldatura AND ai_import (o admin/superadmin).
+ * @param {number} organizationId
+ * @param {string} [role]
+ * @returns {Promise<boolean>}
+ */
+async function hasMaterialComplianceCapability(organizationId, role) {
+    const r = role ? String(role).trim().toLowerCase() : '';
+    if (r === 'superadmin' || r === 'admin') return true;
+    const keys = await getLicensedModuleKeysForOrg(organizationId);
+    return MATERIAL_COMPLIANCE_MODULE_KEYS.every((k) => keys.includes(k));
+}
+
 /** Ripristina comportamento default (tutti i moduli) */
 async function clearLicensedModulesOverride(organizationId) {
     await query(
@@ -218,6 +239,7 @@ module.exports = {
     MODULE_ACCESS_IMPLICATIONS,
     expandWithImpliedModuleKeys,
     SAL_LEGAL_CONFORMITY_MODULE_KEY,
+    MATERIAL_COMPLIANCE_MODULE_KEYS,
     parseLicensedModulesColumn,
     mergeModuleKeys,
     buildAvailableCatalog,
@@ -227,4 +249,5 @@ module.exports = {
     clearLicensedModulesOverride,
     appendLicensedModulesForOrg,
     hasSalLegalConformityCapability,
+    hasMaterialComplianceCapability,
 };
