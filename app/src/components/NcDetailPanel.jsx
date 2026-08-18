@@ -121,6 +121,7 @@ function initForm(nc, organizationId) {
       scope,
       "effectiveness_verification_notes",
     ),
+    project_id: nc?.project_id != null ? String(nc.project_id) : "",
   };
 }
 
@@ -156,6 +157,7 @@ export default function NcDetailPanel({
   const [descError, setDescError] = useState(null);
   const [contactsAttuazione, setContactsAttuazione] = useState([]);
   const [contactsVerifica, setContactsVerifica] = useState([]);
+  const [projects, setProjects] = useState([]);
 
   const { suggest: suggestCause, suggestion: causeSuggestion, loading: causeLoading, error: causeError, clear: clearCause } = useAiAssist();
   const hasAiAssist = hasLicensedModule(user, "ai_assist");
@@ -192,6 +194,19 @@ export default function NcDetailPanel({
 
     return () => { cancelled = true; };
   }, [nc?.company_id, organizationId]);
+
+  useEffect(() => {
+    const companyId = nc?.company_id ?? null;
+    if (!companyId) {
+      setProjects([]);
+      return;
+    }
+    let cancelled = false;
+    apiService.getProjects({ company_id: companyId, limit: 100 })
+      .then((res) => { if (!cancelled) setProjects(res?.data || []); })
+      .catch(() => { if (!cancelled) setProjects([]); });
+    return () => { cancelled = true; };
+  }, [nc?.company_id]);
 
   useEffect(() => {
     setForm(initForm(nc, organizationId));
@@ -247,6 +262,7 @@ export default function NcDetailPanel({
         corrective_action_needed: form.corrective_action_needed || null,
         corrective_action_evaluation_notes: form.corrective_action_evaluation_notes.trim() || null,
         effectiveness_verification_notes: form.effectiveness_verification_notes.trim() || null,
+        project_id: form.project_id ? parseInt(form.project_id, 10) : null,
       });
       if (organizationId && draftScope) {
         clearNcFieldDraftsForScope(organizationId, draftScope, NC_TEXT_FIELDS);
@@ -296,6 +312,11 @@ export default function NcDetailPanel({
               {nc.client_name ? ` - ${nc.client_name}` : ""}
             </Link>
           )}
+          {(nc.project_code || nc.project_id) && (
+            <span className="nc-source-badge" title="Commessa ISO 3834">
+              Commessa {nc.project_code || `#${nc.project_id}`}
+            </span>
+          )}
         </div>
         <div className="nc-form-row nc-form-row-2col nc-form-row-2col--date">
           <div>
@@ -322,6 +343,30 @@ export default function NcDetailPanel({
               onChange={(e) => setField("due_date", e.target.value)}
             />
           </div>
+        </div>
+        <div className="nc-form-row">
+          <label htmlFor={`nc-project-${nc.nc_id}`}>Commessa (opzionale)</label>
+          <select
+            id={`nc-project-${nc.nc_id}`}
+            value={form.project_id}
+            disabled={readOnly || !nc?.company_id}
+            title={nc?.company_id ? undefined : "Seleziona prima l'azienda della NC"}
+            onChange={(e) => setField("project_id", e.target.value)}
+          >
+            <option value="">
+              {nc?.company_id ? "\u2014 Nessuna commessa \u2014" : "\u2014 Azienda assente \u2014"}
+            </option>
+            {form.project_id && !projects.some((p) => String(p.id) === String(form.project_id)) && (
+              <option value={form.project_id}>
+                {nc.project_code || `Commessa #${form.project_id}`}
+              </option>
+            )}
+            {projects.map((p) => (
+              <option key={p.id} value={String(p.id)}>
+                {p.project_code}{p.description ? ` \u2014 ${p.description}` : ""}
+              </option>
+            ))}
+          </select>
         </div>
         <NcResponsibleSelect
           contacts={contactsAttuazione}

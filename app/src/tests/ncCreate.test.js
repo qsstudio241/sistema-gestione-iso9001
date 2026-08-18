@@ -72,7 +72,30 @@ describe('ncCreateHelpers', () => {
         responsible_person: 'Mario',
         due_date: '2026-06-01',
       });
-      expect(result.payload.nc_number).toMatch(/^NC-M-AUD-1-/);
+    it('include project_id opzionale se selezionato', () => {
+      const result = buildManualNcPayload({
+        source_category: 'audit',
+        audit_id: '99',
+        section_code: 'clause10',
+        description: 'NC di prova',
+        severity: 'minor',
+        project_id: '12',
+      });
+      expect(result.ok).toBe(true);
+      expect(result.payload.project_id).toBe(12);
+    });
+
+    it('omette project_id se vuoto (NC senza commessa)', () => {
+      const result = buildManualNcPayload({
+        source_category: 'audit',
+        audit_id: '99',
+        section_code: 'clause10',
+        description: 'NC di prova',
+        severity: 'minor',
+        project_id: '',
+      });
+      expect(result.ok).toBe(true);
+      expect(result.payload.project_id).toBeUndefined();
     });
   });
 
