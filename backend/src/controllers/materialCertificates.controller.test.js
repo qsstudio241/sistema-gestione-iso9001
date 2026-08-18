@@ -210,6 +210,30 @@ describe('materialCertificates.controller (MC-4)', () => {
     expect(sqlOf(readySql)).toMatch(/OUTPUT INSERTED\.id/);
   });
 
+  it('extract OCR fallito → text_ready ocr_failed, 200', async () => {
+    query.mockResolvedValueOnce({ recordset: [{ ...CERT, workflow_status: 'received' }] });
+    extractDocumentText.mockResolvedValueOnce({ text: null, reason: 'ocr_failed' });
+    query.mockResolvedValueOnce({ recordset: [{ id: 11 }] });
+    const res = mockRes();
+    await ctrl.extractCertificate(mockReq({ params: { id: '11' } }), res);
+    expect(res.status).not.toHaveBeenCalledWith(500);
+    const body = res.json.mock.calls[0][0];
+    expect(body.data.workflow_status).toBe('text_ready');
+    expect(body.data.text_extract_reason).toBe('ocr_failed');
+  });
+
+  it('extract OCR non disponibile → text_ready ocr_skipped, 200', async () => {
+    query.mockResolvedValueOnce({ recordset: [{ ...CERT, workflow_status: 'received' }] });
+    extractDocumentText.mockResolvedValueOnce({ text: null, reason: 'ocr_unavailable' });
+    query.mockResolvedValueOnce({ recordset: [{ id: 11 }] });
+    const res = mockRes();
+    await ctrl.extractCertificate(mockReq({ params: { id: '11' } }), res);
+    expect(res.status).not.toHaveBeenCalledWith(500);
+    const body = res.json.mock.calls[0][0];
+    expect(body.data.workflow_status).toBe('text_ready');
+    expect(body.data.text_extract_reason).toBe('ocr_skipped');
+  });
+
   it('extract con testo persiste extracted_json e stato extracted', async () => {
     query.mockResolvedValueOnce({ recordset: [{ ...CERT, workflow_status: 'received' }] });
     extractDocumentText.mockResolvedValueOnce({

@@ -54,11 +54,7 @@ function normalizeWhitespace(raw) {
  */
 function classifyOcrReason(err) {
   const msg = err && err.message ? err.message : String(err || '');
-  if (
-    /Nessun motore immagini|non configurato|Ghostscript|MODULE_NOT_FOUND|Cannot find module/i.test(
-      msg
-    )
-  ) {
+  if (/Nessun motore immagini|MODULE_NOT_FOUND|Cannot find module/i.test(msg)) {
     return 'ocr_unavailable';
   }
   return 'ocr_failed';

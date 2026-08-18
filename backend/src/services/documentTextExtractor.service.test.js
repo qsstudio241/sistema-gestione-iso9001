@@ -77,6 +77,18 @@ describe('extractDocumentText', () => {
     expect(out.reason).toBe('ocr_failed');
   });
 
+  test('PDF scansionato: conversione Ghostscript fallita → ocr_failed (non unavailable)', async () => {
+    extractPdfText.mockResolvedValue('');
+    extractTextWithOCR.mockRejectedValue(
+      new Error(
+        '[OCR] Conversione PDF->immagine ha prodotto un output vuoto (motore: gm). Verificare che Ghostscript sia installato.'
+      )
+    );
+    const out = await extractDocumentText('/x/scan.pdf', 'application/pdf', 'scan.pdf');
+    expect(out.text).toBeNull();
+    expect(out.reason).toBe('ocr_failed');
+  });
+
   test('PDF scansionato: motore immagini assente → ocr_unavailable', async () => {
     extractPdfText.mockResolvedValue('');
     extractTextWithOCR.mockRejectedValue(

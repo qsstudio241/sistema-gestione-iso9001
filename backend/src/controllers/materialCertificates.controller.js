@@ -148,14 +148,14 @@ function mapTextReason(extractorReason, text) {
   if (t.length >= MIN_TEXT_CHARS && !extractorReason) return 'text_layer';
   if (t.length > 0 && t.length < MIN_TEXT_CHARS && !extractorReason) return 'ocr_poor';
   switch (extractorReason) {
+    case 'ocr_unavailable':
     case 'pdf_no_text_layer':
       return 'ocr_skipped';
+    case 'ocr_failed':
     case 'file_not_found':
     case 'pdf_parse_error':
     case 'no_storage_path':
-      return extractorReason === 'file_not_found' || extractorReason === 'pdf_parse_error'
-        ? 'ocr_failed'
-        : 'ocr_failed';
+      return 'ocr_failed';
     case 'unsupported':
       return 'ocr_skipped';
     default:
