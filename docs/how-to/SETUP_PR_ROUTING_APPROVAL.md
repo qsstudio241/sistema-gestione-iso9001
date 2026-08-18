@@ -60,8 +60,10 @@ tua revisione — un passo in più ma ancora molto meno lavoro del gate manuale 
   disabilitato, Bugbot si ferma finché non rinnovi il ciclo di fatturazione** (non fallisce in modo
   silenzioso, semplicemente non gira più).
 - Monitora il consumo reale su `cursor.com/dashboard/spending` dopo la prima settimana.
-- Se il costo preoccupa, puoi impostare Bugbot su "**Run only when mentioned**" invece di automatico —
-  perdi la parte "always-on" ma tieni il controllo del costo per PR.
+- **Policy repo (18/08/2026):** impostare Bugbot su **Run only when mentioned**, non always-on.
+  I Cloud Agent aprono la PR presto e pushano spesso: l'automatico addebita ogni push (~$1.00–$1.50).
+  Con «only when mentioned» si paga **un** `bugbot run` a slice chiusa. Dettaglio metodo:
+  [`sgq-workflow-method.mdc` § 4](../../.cursor/rules/sgq-workflow-method.mdc).
 
 ## Cosa fa davvero PR Routing & Approval (e cosa non fa)
 
