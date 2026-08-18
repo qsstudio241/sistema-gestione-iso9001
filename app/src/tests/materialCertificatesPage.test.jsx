@@ -83,4 +83,21 @@ describe("MaterialCertificatesPage (MC-5)", () => {
       expect(apiService.approveMaterialCertificate).toHaveBeenCalledWith(11);
     });
   });
+
+  it("anteprima PDF usa file_url web, non il path disco", async () => {
+    routerState.path = "/saldatura/materiali/11";
+    apiService.getMaterialCertificate.mockResolvedValue({
+      data: {
+        ...ROW,
+        storage_path: "/var/www/sgq-backend/uploads/material-certificates/1001/a.pdf",
+        file_url: "/uploads/material-certificates/1001/a.pdf",
+      },
+    });
+    render(<MaterialCertificatesPage />);
+    const iframe = await screen.findByTitle("Anteprima certificato");
+    expect(iframe.getAttribute("src")).toBe(
+      "https://example.test/uploads/material-certificates/1001/a.pdf"
+    );
+    expect(iframe.getAttribute("src")).not.toContain("/var/www");
+  });
 });

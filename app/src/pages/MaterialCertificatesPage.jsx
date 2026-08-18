@@ -184,7 +184,7 @@ export default function MaterialCertificatesPage() {
     runAction("patch", () => apiService.patchMaterialCertificate(detail.id, { [key]: draft[key] }));
   }
 
-  const pdfUrl = resolveBackendUploadUrl(detail?.storage_path, apiService.baseUrl);
+  const pdfUrl = resolveBackendUploadUrl(detail?.file_url, apiService.baseUrl);
 
   return (
     <div className="sq-page">
