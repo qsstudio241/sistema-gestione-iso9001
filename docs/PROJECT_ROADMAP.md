@@ -8,7 +8,7 @@
 
 > **Risposta standard a «stato di avanzamento del progetto e priorità da affrontare»**: sintetizzare da questa sezione (moduli maturi + sessione più recente + tabella priorità sotto), **non** dal banner storico più sotto (superato, tenuto solo per traccia) né dall'archivio marzo 2026 [`docs/archive/PROJECT_CONTEXT_STATO_FUNZIONALITA_2026-03.md`](archive/PROJECT_CONTEXT_STATO_FUNZIONALITA_2026-03.md). **Aggiornare questa sezione a fine sessione** se emergono nuove priorità o se una priorità elencata viene chiusa (stesso principio delle "Lezioni apprese" in [GUIDA_CONSOLIDATA.md](GUIDA_CONSOLIDATA.md) — sintesi qui, dettaglio linkato).
 
-**Ultimo aggiornamento di questa sezione**: 18/08/2026 (MC-I0 Valuta 409 TEST OK PR #463; wayfinder ingest; ISO-4 resta 3834).
+**Ultimo aggiornamento di questa sezione**: 18/08/2026 (MC-I0 mergiata #463 + deploy TEST/PROD + smoke ADA; prossima MC-I1).
 
 ### Moduli maturi (in produzione, uso quotidiano dai clienti Camellini/Mason)
 
@@ -16,7 +16,7 @@ Audit multi-standard (9001/14001/45001) · Non Conformità (workflow ISO 10.2 co
 
 ### Sessione più recente (18/08/2026)
 
-**MC-I0 Valuta 409 (18/08)** — lock `updated_at` rimosso da evaluate; resta il gate sullo stato. L1 24/24. Bugbot: nessun bug. PR [#463](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/463). Prossima ingest dopo merge: **MC-I1** (ruolo upload). SAL S1a e ISO-4 **non** toccati.
+**MC-I0 Valuta 409 (18/08, mergiata)** — [#463](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/463). Deploy TEST PID `967399`, PROD PID `967465`, health 200. Smoke PROD azienda 179: certificato id 4 `extracted` → `pending_review` HTTP 200 (non 409). Prossima ingest: **MC-I1** (ruolo upload). SAL S1a e ISO-4 **non** toccati.
 
 **MC ingest — Chart the map (18/08)** — [PLAN MC](agent-tasks/PLAN_MATERIAL_COMPLIANCE_SLICES.md) spezzato (MC-I0…I4, MC-B, MC-7 ADR-017). Brief [`DEPUTYTASK_MC_INGEST.md`](agent-tasks/DEPUTYTASK_MC_INGEST.md).
 
@@ -97,7 +97,7 @@ Sessione prodotto precedente (10/08/2026): fix filtri dashboard duplicati (Quali
 | 1 | **Modulo Notifiche/Alert — destinatario allerte qualifiche non è una scelta esplicita in anagrafica** | Oggi risolto da un algoritmo a cascata, non da una scelta visibile in UI | `qualificationAlert.service.js` (`resolveWeldingCoordinatorRecipients`) |
 | 2 | **Shell dialog di revisione ingest — markup/CSS duplicato** (non urgente, basso rischio) | `IngestReviewDialog.jsx` vs dialog interno `ReprocessQueueBanner.jsx`: guscio overlay duplicato (~60-80 righe); pattern sistemico su molti altri modal nel progetto | Vedi backlog sotto per dettaglio |
 | 3 | **Pagina Impostazioni → Organizzazione (P.IVA + logo tenant)** | PR #10 aperta da aprile 2026, 180 file in conflitto — richiede ricostruzione, non merge | Vedi riga dedicata nel backlog sotto |
-| 4 | **Material Compliance AI — ingest certificati (base e apporto)** | MC-0…MC-5 mergiate. **MC-I0** TEST OK PR [#463](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/463). Prossima dopo merge: **MC-I1** ruolo upload | [PLAN](agent-tasks/PLAN_MATERIAL_COMPLIANCE_SLICES.md) · brief [MC-I0](agent-tasks/DEPUTYTASK_MC_INGEST.md) |
+| 4 | **Material Compliance AI — ingest certificati (base e apporto)** | MC-0…MC-5 + **MC-I0** mergiate. Prossima: **MC-I1** ruolo Base/Apporto in upload | [PLAN](agent-tasks/PLAN_MATERIAL_COMPLIANCE_SLICES.md) · brief [MC-I0 CHIUSO](agent-tasks/DEPUTYTASK_MC_INGEST.md) |
 | 5 | **Rischi — ingest / data riesame (ROO-18, HITL)** | Lista riesami ambito c’è (ROO-17, verificata su TEST); data riesame esplicita e ingest→review solo dopo conferma | [PLAN §7](agent-tasks/PLAN_RISCHI_OPPORTUNITA_OBIETTIVI_SLICES.md) |
 | 6 | **SAL AI evidenze — OCR + documento mancante (HITL)** | Suggeritore 5-A/5-B legge solo PDF/DOCX testo; PDF scan/immagini saltati; se manca evidenza → solo messaggio low, nessuna ricerca tipo/upload guidato | [PLAN](agent-tasks/PLAN_SAL_AI_EVIDENCE_SLICES.md) · brief [S1a](agent-tasks/DEPUTYTASK.md) |
 | 7 | **ISO 3834 — completezza per processi (RBAC + ponti + report)** | ISO-1* + ISO-2 + ISO-3 mergiate e ISO-3 deployata. Prossima: ISO-4 Word RDP Mason (serve il file) | [PLAN](agent-tasks/PLAN_3834_SLICES.md) · brief [ISO-3 CHIUSO](agent-tasks/DEPUTYTASK1.md) |
