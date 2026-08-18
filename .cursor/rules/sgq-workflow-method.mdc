@@ -37,7 +37,7 @@ ogni PR tocca GUIDA e va in conflitto.
 
 | File | Cosa tiene | In parallelo |
 |---|---|---|
-| `docs/agent-tasks/DEPUTYTASK.md` / `DEPUTYTASK1.md` / `2` / … | Compito **di quella chat** (APERTO/CHIUSO, fatto, manca) | Ognuno **solo il proprio**. Mai sovrascrivere il brief dell'altra chat. |
+| `docs/agent-tasks/DEPUTYTASK.md` / `1` / `2`… e `DEPUTYTASK_<EPIC>.md` | Compito **di quella chat**. Il numero **non** è il modulo; lo sono titolo + elenco file. | Ognuno **solo il proprio**. Non cancellare i CHIUSI (scontrino). Sovrascrivere uno slot solo se già CHIUSO su `main`. Stream epic: non riusare per un altro modulo. |
 | `docs/agent-tasks/PLAN_*_SLICES.md` | Mappa dell'epic (checkbox slice) | Solo la chat di **quell'epic**. Due chat sullo stesso piano = serializzare. |
 | `docs/GUIDA_CONSOLIDATA.md` | Lezioni (come si lavora, errori da non ripetere) | **Non** nella PR di codice se c'è un'altra chat aperta. Bozza 5 righe nel proprio brief. Dopo il merge: una riga in tabella lezioni. |
 | `docs/PROJECT_ROADMAP.md` § Stato attuale | Dove siamo **ora** e le priorità | Stesso trattamento della GUIDA. Una riga sotto «Sessione più recente», non riscrivere le altrui. |

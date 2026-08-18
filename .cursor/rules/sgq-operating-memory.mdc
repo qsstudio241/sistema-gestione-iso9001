@@ -42,15 +42,23 @@ Sì, più chat in parallelo. No, non sullo stesso foglio. Dettaglio: [`sgq-workf
 
 ## Convenzione DEPUTYTASK
 
-- Brief in `docs/agent-tasks/DEPUTYTASK.md`; paralleli: `DEPUTYTASK1.md`, `DEPUTYTASK2.md`, … File di codice **disgiunti** (niente file hub in comune).
-- Task singolo: sovrascrivi con **Stato: APERTO**. Mai lasciare **CHIUSO** se chiedi di lanciare quel deputy.
+Il **nome del file non è il modulo**. Evita le sovrapposizioni l'elenco «File previsti» + «Cosa NON toccare», più `Stato: APERTO` su `origin/main`. Due tipi di file:
+
+| Tipo | Nome | Uso |
+|---|---|---|
+| **Slot** | `DEPUTYTASK.md` (principale), `DEPUTYTASK1.md`, `2`, `3`… | Posti numerati per chat parallele *una tantum*. Il numero non dice NC vs SAL. |
+| **Stream** | `DEPUTYTASK_<EPIC>.md` (es. `DEPUTYTASK_MC_INGEST.md`, `DEPUTYTASK_RISCHI_ROO.md`) | Epic lunga. **Non** riusare quel file per un altro epic. |
+
+- File di codice **disgiunti** tra brief APERTO. Mai due `Stato: APERTO` sullo stesso filename.
+- **Sovrascrivere uno slot** solo se su `origin/main` è già **CHIUSO**. Mai lasciare CHIUSO se stai lanciando quel deputy — passa ad APERTO e cambia titolo/file list.
+- **Non cancellare i CHIUSI.** Sono lo scontrino (PR, file toccati, cosa non toccare) per la chat successiva. Git tiene la storia; il PLAN dell'epic è la mappa. Archiviare in `docs/archive/agent-tasks/` solo brief vecchio stile `TASK_*` o slot che stai per sovrascrivere e vuoi ancora leggere come file. Non è un terzo diario.
 
 ### Gate prima di «lancia il deputy»
 
 1. Brief **pushato su `origin/main`** (non solo branch feature).
-2. `git fetch` + `git show origin/main:docs/agent-tasks/<file>` → titolo e `Stato: APERTO`.
-3. File del brief **disgiunti** da ogni altro `DEPUTYTASK*` APERTO e dalle PR aperte (niente file hub in comune).
-4. Comando utente: `Leggi docs/agent-tasks/DEPUTYTASK.md ed eseguilo. Chiudi con TEST OK o FIX NON APPLICABILI.`
+2. `git fetch` + `git show origin/main:docs/agent-tasks/<file>` → titolo e `Stato: APERTO`. Se CHIUSO → **FIX NON APPLICABILI** (non eseguire il vecchio compito).
+3. File del brief **disgiunti** da ogni altro `DEPUTYTASK*` APERTO e dalle PR aperte.
+4. Comando utente: `Leggi docs/agent-tasks/<file> ed eseguilo. Chiudi con TEST OK o FIX NON APPLICABILI.`
 5. Non chiedere `git pull` al committente.
 
 Errore 07/07/2026: brief su branch, `main` ancora CHIUSO → deputy FIX NON APPLICABILI.
