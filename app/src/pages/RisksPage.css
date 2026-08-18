@@ -16,6 +16,11 @@
   gap: 2px;
   min-width: 0;
 }
+.risks-deleted-hint {
+  font-size: 0.7rem;
+  color: #718096;
+  font-weight: 600;
+}
 .risks-grid-num { text-align: center; font-variant-numeric: tabular-nums; }
 .risks-grid-actions { display: flex; gap: 4px; align-items: center; }
 .risks-page .sgq-datagrid-table { min-width: 1400px; }
@@ -75,6 +80,29 @@
   align-items: center;
   flex-wrap: wrap;
 }
+.risks-view-toggle {
+  display: inline-flex;
+  border: 1px solid #cbd5e0;
+  border-radius: 8px;
+  overflow: hidden;
+}
+.risks-view-toggle button {
+  border: none;
+  background: #fff;
+  padding: 7px 12px;
+  font-size: 0.85rem;
+  color: #4a5568;
+  cursor: pointer;
+}
+.risks-view-toggle button.active {
+  background: #ebf8ff;
+  color: #2b6cb0;
+  font-weight: 600;
+}
+.risks-view-toggle button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
 .tab-toolbar select {
   padding: 7px 12px;
   border: 1px solid #cbd5e0;
@@ -88,6 +116,11 @@
   gap: 8px;
   font-size: 0.85rem;
   color: #4a5568;
+}
+.risks-scale-label input[type="date"] {
+  padding: 6px 8px;
+  border: 1px solid #cbd5e0;
+  border-radius: 6px;
 }
 
 /* Nature badge (rischio / opportunità) */

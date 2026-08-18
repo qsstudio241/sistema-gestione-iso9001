@@ -28,6 +28,7 @@ router.use(requireLicensedModule('rischi'));
 
 // ─── Risks ──────────────────────────────────────────────────────────────────
 router.get('/risks/stats',  ctrl.getRiskStats);
+router.get('/risks/reviews', ctrl.listRiskReviewsScope);
 router.get('/risks/import-template', ctrl.downloadM03Template);
 router.put('/risks/pg-scale', ctrl.setCompanyPgScale);
 router.post('/risks/detect-import', uploadM03Xlsx.single('file'), ctrl.detectRisksImport);

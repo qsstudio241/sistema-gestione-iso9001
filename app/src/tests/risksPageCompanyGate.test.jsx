@@ -29,6 +29,8 @@ vi.mock("../services/apiService", () => ({
     getContextFactors: vi.fn().mockResolvedValue({ data: [] }),
     getInterestedParties: vi.fn().mockResolvedValue({ data: [] }),
     getRiskReviews: vi.fn().mockResolvedValue({ data: [] }),
+    getRiskReviewsScope: vi.fn().mockResolvedValue({ data: [] }),
+    getRisk: vi.fn(),
     downloadRisksM03Template: vi.fn(),
   },
 }));
@@ -49,6 +51,7 @@ describe("RisksPage — create/import richiedono Ambito azienda", () => {
     expect(nuovo).toBeDisabled();
     expect(importa).toBeDisabled();
     expect(nuovo).toHaveAttribute("title", "Seleziona un'azienda nell'Ambito in alto");
+    expect(screen.getByRole("button", { name: "Riesami ambito" })).toBeDisabled();
     await waitFor(() => {
       expect(screen.getByText(/Seleziona un'azienda nell'Ambito in alto per creare/)).toBeInTheDocument();
     });
