@@ -63,27 +63,44 @@ export function useNavigate() {
   return useRouter().navigate;
 }
 
+/**
+ * Match di rotta con confine di segmento.
+ * `/sal` non deve catturare `/saldatura/...` (bug 18/08/2026: dettaglio Materiali apriva SAL).
+ * Una rotta `/companies/` (slash finale) resta il prefisso di `/companies/42`.
+ */
+export function pathMatchesRoute(path, routePath) {
+  if (!routePath) return false;
+  if (path === routePath) return true;
+  const base = String(routePath).replace(/\/+$/, "") || "/";
+  if (base === "/") return false;
+  return path.startsWith(`${base}/`);
+}
+
+/** Esatto, altrimenti il prefisso più lungo, altrimenti `/`. */
+export function resolveMatchingRoute(path, routePaths) {
+  const paths = Array.isArray(routePaths) ? routePaths : [];
+  if (paths.includes(path)) return path;
+  const prefixes = paths.filter((p) => p && p !== "/" && pathMatchesRoute(path, p));
+  if (prefixes.length) {
+    return prefixes.reduce((best, p) => (p.length > best.length ? p : best));
+  }
+  return paths.includes("/") ? "/" : null;
+}
+
 // ─── Componente <Routes> ─────────────────────────────────────────────────────
 /**
- * Renderizza il primo figlio <Route> il cui path corrisponde.
- * Supporta match esatto e prefissi (startsWith per rotte annidate).
+ * Renderizza il figlio <Route> il cui path corrisponde (esatto o prefisso annidato).
  */
 export function Routes({ children }) {
   const { path } = useRouter();
   const routes = React.Children.toArray(children);
-
-  // Prima cerca match esatto, poi prefisso
-  const exact = routes.find((r) => r.props.path === path);
-  if (exact) return exact.props.element;
-
-  const prefix = routes.find(
-    (r) => r.props.path !== "/" && path.startsWith(r.props.path)
-  );
-  if (prefix) return prefix.props.element;
-
-  // Fallback: cerca "/"
-  const fallback = routes.find((r) => r.props.path === "/");
-  return fallback ? fallback.props.element : null;
+  const byPath = new Map();
+  for (const r of routes) {
+    if (r?.props?.path != null) byPath.set(r.props.path, r);
+  }
+  const matched = resolveMatchingRoute(path, [...byPath.keys()]);
+  if (matched != null && byPath.has(matched)) return byPath.get(matched).props.element;
+  return null;
 }
 
 /**
@@ -114,7 +131,7 @@ export function Link({ to, children, className, style, ...props }) {
 export function NavLink({ to, children, className = "", activeClassName = "active", exact = false, ...props }) {
   const { path } = useRouter();
   const { navigate } = useRouter();
-  const isActive = exact ? path === to : path === to || path.startsWith(to + "/");
+  const isActive = exact ? path === to : pathMatchesRoute(path, to);
   const fullClass = isActive ? `${className} ${activeClassName}`.trim() : className;
 
   const handleClick = (e) => {

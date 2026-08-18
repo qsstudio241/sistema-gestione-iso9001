@@ -25,6 +25,14 @@
 Ordine consigliato: **MC-0 → MC-1 → MC-2 → MC-3 → MC-4 → MC-B → MC-5 → MC-6 → MC-7**.  
 MC-B (OCR) **non** è più post-MVP: senza testo i certificati reali non si leggono.
 
+### Decisione 18/08/2026 (prova PDF reali su ADA)
+
+L’ingest certificati **non sta in una chat 3834** né in un unico deputy: PDF reali arrivano come busta+più mill, DDT scansionato, 3.1 filo, testo mill specchiato. Serve chat/epic dedicata (MC-B + classificazione documento + 1 PDF → N righe + MC-7 lezioni), con skill addestrata sul riuso ingest qualifiche/WPQR. **Non** un secondo motore OCR.
+
+Prova ADA (produzione, record 3–5): upload OK; Estrai sul 3.1 Tecnovespa parziale (manca colata); pack 26DDT06266 JSON vuoto; DDT 000775RE = `ocr_skipped`; **Valuta 409** (lock `updated_at`); click riga dettaglio apriva SAL (`/sal` prefisso di `/saldatura`) — fix router in PR di questa slice.
+
+Questa linea 3834 **non** continua l’ingest: riprende da ISO-4 (Word RDP) o ponti ISO-6/7. Ingest = nuova chat su questo PLAN (prima slice eseguibile: **fix Valuta 409** poi MC-B).
+
 ### Fuori scope MVP-A
 
 - Dashboard KPI / editor KB in UI

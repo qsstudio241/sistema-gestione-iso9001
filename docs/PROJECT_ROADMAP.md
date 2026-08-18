@@ -8,7 +8,7 @@
 
 > **Risposta standard a «stato di avanzamento del progetto e priorità da affrontare»**: sintetizzare da questa sezione (moduli maturi + sessione più recente + tabella priorità sotto), **non** dal banner storico più sotto (superato, tenuto solo per traccia) né dall'archivio marzo 2026 [`docs/archive/PROJECT_CONTEXT_STATO_FUNZIONALITA_2026-03.md`](archive/PROJECT_CONTEXT_STATO_FUNZIONALITA_2026-03.md). **Aggiornare questa sezione a fine sessione** se emergono nuove priorità o se una priorità elencata viene chiusa (stesso principio delle "Lezioni apprese" in [GUIDA_CONSOLIDATA.md](GUIDA_CONSOLIDATA.md) — sintesi qui, dettaglio linkato).
 
-**Ultimo aggiornamento di questa sezione**: 18/08/2026 (filtri KPI rischi PR #459; MC-4/MC-5 su main; 4.1/4.2/§6.2 = prossima slice rischi dedicata).
+**Ultimo aggiornamento di questa sezione**: 18/08/2026 (router Materiali vs SAL; ingest 3.1 = chat dedicata; ISO-4 Word RDP = prossima slice 3834).
 
 ### Moduli maturi (in produzione, uso quotidiano dai clienti Camellini/Mason)
 
@@ -16,7 +16,9 @@ Audit multi-standard (9001/14001/45001) · Non Conformità (workflow ISO 10.2 co
 
 ### Sessione più recente (18/08/2026)
 
-**Rischi — filtri KPI + viste (18/08)** — tab Analisi: banner cliccabili = filtro stato (niente tendina); **Valutazioni** vs **Storico riesami**. Backend TEST PID `942768`, PROD `930373` invariato. PR [#459](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/459) pronta al merge (Bugbot: nessun rilievo). **Non** è ROO-18.
+**Router Materiali (18/08, pomeriggio)** — click su un certificato apriva **SAL** perché `/sal` è prefisso di `/saldatura`. Fix: confine di segmento + prefisso più lungo in `RouterContext`. Ingest 3.1 (OCR, 1 PDF→N righe, Valuta 409) **non** si chiude qui: chat dedicata sul [PLAN MC](agent-tasks/PLAN_MATERIAL_COMPLIANCE_SLICES.md). **3834 su questa linea:** ISO-4 Word RDP.
+
+**Rischi — filtri KPI + viste (18/08)** — tab Analisi: banner cliccabili = filtro stato (niente tendina); **Valutazioni** vs **Storico riesami**. PR [#459](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/459) mergiata. **Non** è ROO-18.
 
 **Prossima rischi (HITL prodotto, non questa sessione):** **ROO-10** — fattori §4.1, parti §4.2 e obiettivi §6.2 in una slice dedicata, **scambio di informazioni** con la matrice (oggi solo picker one-way ROO-8). Dettaglio: [PLAN § decisioni](agent-tasks/PLAN_RISCHI_OPPORTUNITA_OBIETTIVI_SLICES.md).
 
