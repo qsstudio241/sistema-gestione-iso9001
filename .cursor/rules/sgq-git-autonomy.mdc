@@ -17,11 +17,11 @@ alwaysApply: true
 
 ## Gate Bugbot obbligatorio prima del merge autonomo (livello Medio)
 
-Lezione 07-08/08/2026 (sessione fix ingest WPQR/3834): lo stesso agente che scrive codice e test può riflettere lo stesso errore di interpretazione in entrambi — "test verde" non equivale a "corretto", soprattutto su logica normativa (ISO 3834/15614). Prima di mergiare autonomamente una PR di livello Medio:
+Lezione 07-08/08/2026 (sessione fix ingest WPQR/3834): lo stesso agente che scrive codice e test può riflettere lo stesso errore di interpretazione in entrambi — "test verde" non equivale a "corretto", soprattutto su logica normativa (ISO 3834/15614). Prima di dichiarare pronta una PR di livello Medio:
 
-1. Lanciare il subagente **`bugbot`** (Diff: "branch changes") sulla PR.
-2. Mergiare in autonomia **solo se** il Bugbot non segnala problemi critici/bloccanti.
-3. Se il Bugbot segnala anche un solo problema non banale: **non mergiare**, riportare il rilievo al committente e attendere decisione.
+1. **Un solo run Bugbot fatturabile per PR** (dettaglio in [`sgq-workflow-method.mdc`](sgq-workflow-method.mdc) § 4). Attendere il check GitHub `Cursor Bugbot` se già partito. Lanciare il subagente **`bugbot`** (Diff: "branch changes") **solo se** GitHub non ha prodotto il check entro ~10 minuti. Non commentare `bugbot run` se un run è già in corso o completato — è un secondo addebito.
+2. Dichiarare pronta / (desktop) mergiare **solo se** quel run non segnala problemi critici/bloccanti.
+3. Se il Bugbot segnala anche un solo problema non banale: **non mergiare**, riportare il rilievo al committente e attendere decisione. Un secondo run solo dopo il fix reale.
 4. Registrare nel messaggio di merge/commento PR l'esito del gate (es. "Bugbot: nessun rilievo critico — merge autonomo").
 
 Questo gate **non sostituisce** il livello di rischio: un task di livello Alto resta sempre bloccato, indipendentemente dall'esito Bugbot.

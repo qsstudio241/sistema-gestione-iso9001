@@ -1,69 +1,173 @@
 ---
-description: Metodo di lavoro ripetibile per ProgettoISO - slice verticali, multitasking sicuro (worker async, worktree isolati), una sola operazione git pesante per repo, triage PR backlog. Attiva questa regola quando pianifichi un task corposo, lavori in parallelo, usi worktree, o fai triage di PR aperte.
+description: Metodo di lavoro ripetibile per ProgettoISO — slice verticali, multitasking sicuro (worktree desktop / VM Cloud isolate), allineamento git frequente, una sola review Bugbot fatturabile per PR, triage backlog. Attiva questa regola quando pianifichi un task corposo, lavori in parallelo, usi worktree, apri o aggiorni una Pull Request, o fai triage di PR aperte.
 globs: "**/*"
 alwaysApply: false
 ---
 
-# Metodo di lavoro - SGQ ISO 9001 (slice + multitasking)
+# Metodo di lavoro — SGQ ISO 9001 (slice + multitasking + 1 review PR)
 
-> **Fonte unica del metodo operativo.** Le procedure di chiusura slice e gli smoke ripetibili vivono in
-> [`docs/GUIDA_CONSOLIDATA.md` - Procedura chiusura autonoma](../../docs/GUIDA_CONSOLIDATA.md#procedura-chiusura-autonoma).
-> Le golden rules trasversali vivono in [`sgq-operating-memory.mdc`](sgq-operating-memory.mdc). Qui si codifica **come** lavorare, non cosa.
+> **Rev. 2026-08-18.** Fonte unica del **come** lavorare. Le procedure di chiusura slice e gli smoke
+> ripetibili vivono in [`docs/GUIDA_CONSOLIDATA.md` — Procedura chiusura autonoma](../../docs/GUIDA_CONSOLIDATA.md#procedura-chiusura-autonoma).
+> Le golden rules trasversali vivono in [`sgq-operating-memory.mdc`](sgq-operating-memory.mdc).
+> Commit / rischio / merge: [`sgq-git-autonomy.mdc`](sgq-git-autonomy.mdc).
 
-## 1. Slice verticale (unita' minima di lavoro)
+**Obiettivo:** lavorare su più moduli in parallelo senza sovrascritture di file, e limitare le review
+Bugbot fatturabili su GitHub a **1 per Pull Request** (salvo ri-verifica di un fix reale).
 
-Ogni attivita' si spezza in **slice verticali** indipendenti, ognuna chiudibile con un commit:
+## 1. Slice verticale (unità minima di lavoro)
+
+Ogni attività si spezza in **slice verticali** indipendenti, ognuna chiudibile con un commit:
 
 ```
 diagnosi (causa reale) -> fix minimo -> test L1 -> deploy (se serve) -> smoke -> commit/PR
 ```
 
 Regole:
-- **Una slice = un obiettivo verificabile** (un bug, una feature minima, un blocco doc). Niente refactor paralleli non richiesti.
-- **Fix minimo e difensivo**: riusa componenti/pattern esistenti (tabella *Riuso UI* in `sgq-operating-memory.mdc`). Diff piccolo. Se la slice tocca UI: copia una delle 3 schermate in [`app/src/design-system/README.md`](../../app/src/design-system/README.md); non inventare un look nuovo.
-- **Test L1 = build Vite + Vitest mirato** (`app/`). La suite completa **si impalla su Google Drive**: lavorare su disco locale `C:` e usare *build + test mirati* come L1 (vedi lezione *Worktree su C:*).
-- **Chiudere o documentare**: niente "fix a meta'". Se emergono sotto-problemi, chiuderli o annotare il rischio residuo in `GUIDA_CONSOLIDATA.md`.
-- **Epic > 1 sessione**: skill [`wayfinder-sgq`](../skills/wayfinder-sgq/SKILL.md) — mappa in `PLAN_*_SLICES.md`, un `DEPUTYTASK` per run, restare nella smart zone (~100k). Non alzare il context 1M al posto di spezzare.
-- **Una sessione = una slice.** Se non chiudi: handoff in `DEPUTYTASK*.md` ([template](../../docs/agent-tasks/HANDOFF_TEMPLATE.md)), nuova sessione. Non aprire la slice successiva con il contesto già gonfio.
-- **Prima di codice nuovo**: gate Ponytail in `sgq-operating-memory.mdc` (esiste già? riusa; altrimenti il minimo).
+- **Una slice = un obiettivo verificabile** (un bug, una feature minima, un blocco doc). Niente
+  refactor paralleli non richiesti. Evitare il "rabbit hole" su componenti non correlati.
+- **Nessun incrocio di core:** se la slice è UI / un modulo applicativo, **divieto** di modificare
+  `.env`, middleware di auth, JWT, `syncService`, schema DB principale, senza approvazione esplicita
+  del committente (livello Alto in `sgq-git-autonomy.mdc`). I confini stanno nel `DEPUTYTASK*.md`:
+  l'agente **non** chiede di nuovo i confini se il brief è già APERTO e pushato su `origin/main`.
+- **Fix minimo e difensivo:** riusa componenti/pattern esistenti (tabella *Riuso UI* in
+  `sgq-operating-memory.mdc`). Diff piccolo. Se la slice tocca UI: copia una delle 3 schermate in
+  [`app/src/design-system/README.md`](../../app/src/design-system/README.md); non inventare un look nuovo.
+- **Test L1 = build Vite + Vitest mirato** (`app/`). La suite completa **si impalla su Google Drive**:
+  lavorare su disco locale `C:` e usare *build + test mirati* come L1 (lezione *Worktree su C:*).
+- **Chiudere o documentare:** niente "fix a metà". Se emergono sotto-problemi, chiuderli o annotare
+  il rischio residuo in `GUIDA_CONSOLIDATA.md`.
+- **Epic > 1 sessione:** skill [`wayfinder-sgq`](../skills/wayfinder-sgq/SKILL.md) — mappa in
+  `PLAN_*_SLICES.md`, un `DEPUTYTASK` per run, restare nella smart zone (~100k). Non alzare il
+  context 1M al posto di spezzare.
+- **Una sessione = una slice.** Se non chiudi: handoff in `DEPUTYTASK*.md`
+  ([template](../../docs/agent-tasks/HANDOFF_TEMPLATE.md)), nuova sessione.
+- **Prima di codice nuovo:** gate Ponytail in `sgq-operating-memory.mdc` (esiste già? riusa; altrimenti il minimo).
 
-## 2. Multitasking sicuro (parallelizzazione)
+## 2. Isolamento fisico (worktree desktop / VM Cloud)
 
-| Consentito | Vietato |
-|------------|---------|
-| Slice su **file/perimetri disgiunti** (es. adapter vs migrazione SQL) | Due worker sullo **stesso file** o stesso endpoint |
-| **Worker async in background** per esplorazione/lavoro lungo mentre si prosegue su altro | Slice che condividono migrazione DB o refactor sync senza coordinamento |
-| **Worktree isolato** quando c'e' WIP del committente nel working tree principale | Lavorare nel working tree principale se ha modifiche non committate altrui |
-| **Una sola operazione git pesante alla volta** sullo stesso repo (clone/worktree/fetch grandi) | Piu' `worktree add` / `fetch` concorrenti sullo stesso `.git` |
+Due agenti sulla **stessa cartella** si pestano i file. Il isolamento dipende dall'ambiente.
 
-**Worktree isolato (pattern):** per task corposi (specie doc) che non vanno mescolati con la WIP del committente, creare un worktree su disco locale `C:` da `origin/main` aggiornato, lavorare su un **branch dedicato**, aprire **PR** (mai merge diretto se c'e' overlap con WIP), poi **rimuovere il worktree**:
+| Ambiente | Come isolare | Vietato |
+|---|---|---|
+| **Desktop** (più finestre Cursor) | **Worktree obbligatorio** per task paralleli (es. Registro Norme e modulo NC) | Due finestre Cursor sulla stessa directory (`C:\ProgettoISO` o `C:\Dev\ProgettoISO`) |
+| **Cloud Agent** | Ogni run ha già una VM isolata | Due Cloud Agent sullo **stesso file** / stesso endpoint / stessa migrazione numerata |
+| **Deputy paralleli** | File disgiunti dichiarati nei `DEPUTYTASK*.md` | Stesso `DEPUTYTASK.md` eseguito da due run |
+
+**Procedura desktop — nuovo task parallelo:**
 
 ```powershell
 git -C "C:\ProgettoISO" fetch origin main
-git -C "C:\ProgettoISO" worktree add -b <branch> "C:\<wt>" origin/main
-# ... lavoro nel worktree, commit, push del branch, PR via MCP GitHub ...
-git -C "C:\ProgettoISO" worktree remove "C:\<wt>"
+git -C "C:\ProgettoISO" worktree add -b <branch> "C:\iso9001-<feature>" origin/main
+# Aprire una NUOVA finestra Cursor sulla cartella del worktree, non sulla directory principale.
+# ... lavoro, commit, push del branch, PR ...
+git -C "C:\ProgettoISO" worktree remove "C:\iso9001-<feature>"
 ```
 
-## 3. Triage PR backlog (criterio deciso)
+Equivalente generico: `git worktree add ../iso9001-<feature> <feature-branch>`.
 
-Quando si trovano molte PR aperte, applicare in autonomia (senior lead):
+**Nota AI (desktop):** non tentare di "sistemare" i conflitti generati da **un'altra istanza Cursor**
+sullo stesso checkout. Suggerire il worktree e fermarsi. I conflitti con `origin/main` sulla propria
+branch (Cloud o desktop isolato) si risolvono invece in autonomia, tenendo `main` + la propria slice.
+
+**Una sola operazione git pesante alla volta** sullo stesso `.git` (clone / `worktree add` / fetch grandi).
+
+| Consentito | Vietato |
+|---|---|
+| Slice su **file/perimetri disgiunti** | Due worker sullo **stesso file** o stesso endpoint |
+| Worker async in background per esplorazione | Slice che condividono migrazione DB o refactor sync senza coordinamento |
+| Worktree isolato se c'è WIP del committente nel tree principale | Lavorare nel working tree principale se ha modifiche non committate altrui |
+
+## 3. Commit e allineamento (prevenzione conflitti)
+
+L'assenza di allineamento genera conflitti costosi al merge. Flusso frequente, non "paranoico" con force-push.
+
+- **Micro-commit:** committare ogni unità funzionale chiusa (es. UI pronta, rotta API creata, test L1 verde).
+- **Sync prima di modifiche architetturali.** Branch **non ancora pushata** (desktop):
+
+```bash
+git fetch origin
+git rebase origin/main
+```
+
+- Branch **già su GitHub** (Cloud Agent, PR aperta): **non rebase**. Rebase di una branch pubblicata
+  richiede force-push, vietato. Usare:
+
+```bash
+git fetch origin main
+git merge origin/main
+```
+
+  (oppure `git pull origin main` se si è sulla branch di lavoro e il remote è già impostato).
+- Mai `git push --force` su `main`. Mai force-push su una branch con PR aperta, salvo richiesta
+  esplicita del committente.
+- Cloud Agent: `git fetch origin main` all'avvio; non chiedere al committente di fare pull.
+
+## 4. Una review Bugbot per Pull Request (costo)
+
+Ogni run Bugbot costa in media **$1.00–$1.50**
+([billing](https://cursor.com/help/account-and-billing/bugbot-usage-based-billing); dettaglio in
+[`docs/how-to/SETUP_PR_ROUTING_APPROVAL.md`](../../docs/how-to/SETUP_PR_ROUTING_APPROVAL.md)).
+Push ripetuti su una PR già aperta, più un secondo lancio del subagente `bugbot`, **raddoppiano o
+moltiplicano** il costo a parità di codice.
+
+**Regola: 1 run Bugbot fatturabile per PR.** Un secondo run solo se il primo ha trovato un bug reale
+e il fix è stato pushato (ri-verifica del fix, non "per sicurezza").
+
+Procedura:
+
+1. **Chiudere la slice in locale** (L1 verde) prima di aprire la PR, quando l'ambiente lo consente.
+2. **Raggruppare i push.** Non aprire la PR sul primo commit parziale se ne seguiranno altri entro
+   pochi minuti. Un solo push "slice chiusa" = un solo trigger.
+3. **Aprire la PR una volta.** Attendere il check GitHub `Cursor Bugbot`.
+4. **Non duplicare.** Se il check GitHub è già partito o completato, **non** lanciare anche il
+   subagente `bugbot` e **non** commentare `bugbot run` / `cursor review`. È lo stesso servizio,
+   secondo addebito.
+5. **Fallback (piano Individual):** se dopo ~10 minuti il check GitHub **non** compare sulle PR dei
+   Cloud Agent, allora **un** `bugbot run` (o subagente Diff: "branch changes") — non entrambi.
+6. Dopo quel run: aggiornare la descrizione PR con l'esito (pronta / rilievo da decidere). Non
+   spingere commit cosmetici solo per "ritoccare" dopo Bugbot.
+7. **PR Routing & Approval** non è Bugbot: non è la review a consumo per run; non disabilitarla
+   da questa regola. Security Review Context non è nel piano Ultra individuale.
+
+Cloud: se la piattaforma impone di aprire la PR prima dei test, tenerla **draft**, raggruppare i
+commit successivi in **un** push, e far partire Bugbot **solo a slice chiusa** (passo 3–5). Non
+lanciare Bugbot sul revision "pre-testing".
+
+Gate di correttezza (livello Medio / normativa): 1 run resta **obbligatorio** — azzerare i run
+*duplicati*, non il gate. Dettaglio merge: `sgq-git-autonomy.mdc`.
+
+## 5. Triage PR backlog (criterio deciso)
+
+Quando si trovano molte PR aperte, applicare in autonomia (senior lead **desktop**; Cloud Agent:
+preparare, non mergiare):
 
 | Caso | Azione |
-|------|--------|
-| Contenuto **gia' in `main`** o stale/obsoleto | **Chiudi** con commento che spiega dove e' confluito / perche' superata |
-| Fix a **basso rischio, ancora utile, non in main** | **Mergia** (dopo CI verde / build), risolvendo conflitti tenendo `main` + nota |
+|---|---|
+| Contenuto **già in `main`** o stale/obsoleto | **Chiudi** con commento che spiega dove è confluito / perché superata |
+| Fix a **basso rischio, ancora utile, non in main** | Desktop: **mergia** dopo CI verde. Cloud Agent: lascia pronta, click al committente |
 | **Feature di prodotto** o decisione commerciale | **Lascia aperta**; registra in backlog roadmap con prossimo passo |
 | Tocca **sync sensibile** (ADR-008) o **breaking change** | **Lascia aperta**; richiede review umana / coordinamento |
 
-- `gh` spesso **non e' autenticato** su questo PC: usare il **MCP GitHub** (server `project-0-ProgettoISO-github`); leggere lo schema del tool **prima** di chiamarlo. I commenti su PR si fanno con `add_issue_comment` (la PR e' un issue); la chiusura con `update_pull_request` (`state: closed`).
-- Ogni chiusura/parcheggio va **tracciato** in `docs/PROJECT_ROADMAP.md` (backlog) e/o `docs/agent-tasks/DEPUTYTASK.md`.
+- `gh` spesso **non è autenticato** sul PC Windows: usare il **MCP GitHub** (server
+  `project-0-ProgettoISO-github`); leggere lo schema del tool **prima** di chiamarlo. Commenti PR:
+  `add_issue_comment`; chiusura: `update_pull_request` (`state: closed`).
+- Ogni chiusura/parcheggio va **tracciato** in `docs/PROJECT_ROADMAP.md` (backlog) e/o
+  `docs/agent-tasks/DEPUTYTASK.md`.
 
-## 4. Migrazioni DB - sequenza condivisa
+## 6. Migrazioni DB — sequenza condivisa
 
-- La numerazione migrazioni e' **una sequenza unica e condivisa** (stato attuale ~082). Le PR vecchie con numeri bassi vanno **rinumerate in coda** e rese **idempotenti** (verificare esistenza colonna/tabella prima di `ALTER`/`CREATE`).
-- Per FK SQL Server usare statement separati (ALTER colonna, ADD CONSTRAINT senza `ON DELETE` problematici, CREATE INDEX), verificando ogni step.
+- La numerazione migrazioni è **una sequenza unica e condivisa** (stato attuale **~154**). Le PR
+  vecchie con numeri bassi vanno **rinumerate in coda** e rese **idempotenti** (verificare esistenza
+  colonna/tabella prima di `ALTER`/`CREATE`).
+- Due Cloud Agent non prenotano lo stesso numero: il deputy che crea la migrazione lo dichiara nel
+  brief **prima** di scrivere il file.
+- Per FK SQL Server usare statement separati (ALTER colonna, ADD CONSTRAINT senza `ON DELETE`
+  problematici, CREATE INDEX), verificando ogni step.
 
-## 5. Encoding (vincolo bloccante)
+## 7. Encoding (vincolo bloccante)
 
-Su questo PC lo strumento di salvataggio puo' produrre **ANSI/BOM** o convertire i caratteri non-ASCII (em-dash, frecce, virgolette, accenti) in **U+FFFD**, oppure interpretare `\n`/`\t` come newline/tab reali. Dopo ogni scrittura doc/sorgente: verificare **UTF-8 senza BOM**, accenti italiani corretti, **nessun `U+FFFD`** (tofu). Script: `backend/scripts/check-utf8-encoding.js`. Dettaglio: [`sgq-encoding-quality.mdc`](sgq-encoding-quality.mdc).
+Su Windows lo strumento di salvataggio può produrre **ANSI/BOM** o convertire i caratteri non-ASCII
+(em-dash, frecce, virgolette, accenti) in **U+FFFD**, oppure interpretare `\n`/`\t` come newline/tab
+reali. Dopo ogni scrittura doc/sorgente: verificare **UTF-8 senza BOM**, accenti italiani corretti,
+**nessun `U+FFFD`** (tofu). Script: `backend/scripts/check-utf8-encoding.js`. Dettaglio:
+[`sgq-encoding-quality.mdc`](sgq-encoding-quality.mdc).
