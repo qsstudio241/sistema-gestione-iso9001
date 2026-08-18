@@ -8,7 +8,7 @@
 
 > **Risposta standard a «stato di avanzamento del progetto e priorità da affrontare»**: sintetizzare da questa sezione (moduli maturi + sessione più recente + tabella priorità sotto), **non** dal banner storico più sotto (superato, tenuto solo per traccia) né dall'archivio marzo 2026 [`docs/archive/PROJECT_CONTEXT_STATO_FUNZIONALITA_2026-03.md`](archive/PROJECT_CONTEXT_STATO_FUNZIONALITA_2026-03.md). **Aggiornare questa sezione a fine sessione** se emergono nuove priorità o se una priorità elencata viene chiusa (stesso principio delle "Lezioni apprese" in [GUIDA_CONSOLIDATA.md](GUIDA_CONSOLIDATA.md) — sintesi qui, dettaglio linkato).
 
-**Ultimo aggiornamento di questa sezione**: 18/08/2026 (MR-0 figure pdf-to-json mergiato #464; MC-I0 Valuta 409 #463).
+**Ultimo aggiornamento di questa sezione**: 18/08/2026 (ISO-6 ponte NC ↔ commessa PR #465; MR-0 figure #464; MC-I0 Valuta 409 #463).
 
 ### Moduli maturi (in produzione, uso quotidiano dai clienti Camellini/Mason)
 
@@ -16,11 +16,11 @@ Audit multi-standard (9001/14001/45001) · Non Conformità (workflow ISO 10.2 co
 
 ### Sessione più recente (18/08/2026)
 
-**Multimodal RAG MR-0 mergiato (18/08)** — [PR #464](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/464): `pdf-to-json --extract-figures` (raster + cluster vettoriali, PNG + bbox, locale). Brief [`DEPUTYTASK5.md`](agent-tasks/DEPUTYTASK5.md) **CHIUSO**. Prossima: **MR-1** (persist + embed locale) — non aperta. Piano: [`PLAN_MULTIMODAL_RAG_SLICES.md`](agent-tasks/PLAN_MULTIMODAL_RAG_SLICES.md). `DEPUTYTASK.md` resta SAL S1a.
+**ISO-6 — ponte NC ↔ commessa (18/08)** — `non_conformities.project_id` opzionale (mig. **153**). Picker Commessa in creazione e drawer, stesso pattern Welding Book. **Non** obbligatorio. PR [#465](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/465). Ingest MC e SAL **non** toccati.
 
-**MC-I0 Valuta 409 (18/08)** — lock `updated_at` rimosso da evaluate; resta il gate sullo stato. L1 24/24. Bugbot: nessun bug. PR [#463](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/463). Prossima ingest dopo merge: **MC-I1** (ruolo upload). SAL S1a e ISO-4 **non** toccati.
+**Multimodal RAG MR-0 mergiato (18/08)** — [PR #464](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/464): `pdf-to-json --extract-figures` (raster + cluster vettoriali, PNG + bbox, locale). Brief [`DEPUTYTASK5.md`](agent-tasks/DEPUTYTASK5.md) **CHIUSO**. Prossima: **MR-1** (persist + embed locale). Piano: [`PLAN_MULTIMODAL_RAG_SLICES.md`](agent-tasks/PLAN_MULTIMODAL_RAG_SLICES.md). `DEPUTYTASK.md` resta SAL S1a.
 
-**MC ingest — Chart the map (18/08)** — [PLAN MC](agent-tasks/PLAN_MATERIAL_COMPLIANCE_SLICES.md) spezzato (MC-I0…I4, MC-B, MC-7 ADR-017). Brief [`DEPUTYTASK_MC_INGEST.md`](agent-tasks/DEPUTYTASK_MC_INGEST.md).
+**MC-I0 Valuta 409 mergiato (18/08)** — lock `updated_at` rimosso da evaluate; resta il gate sullo stato. PR [#463](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/463). Prossima ingest: **MC-I1** (ruolo upload). SAL S1a e ISO-4 **non** toccati.
 
 **Router Materiali (18/08, pomeriggio)** — click su un certificato apriva **SAL** perché `/sal` è prefisso di `/saldatura`. Fix: confine di segmento + prefisso più lungo in `RouterContext` ([PR #461](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/461)).
 

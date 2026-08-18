@@ -56,6 +56,7 @@ vi.mock('../services/apiService', () => ({
     uploadAttachment: vi.fn(),
     deleteAttachment: vi.fn(),
     getAttachmentDownloadUrl: vi.fn(),
+    getProjects: vi.fn().mockResolvedValue({ data: [] }),
   },
 }));
 
@@ -230,6 +231,7 @@ describe('NcDetailPanel', () => {
         corrective_action_needed: null,
         corrective_action_evaluation_notes: null,
         effectiveness_verification_notes: null,
+        project_id: null,
       });
     });
 
