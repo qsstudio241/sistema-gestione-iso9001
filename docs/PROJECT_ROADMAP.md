@@ -20,7 +20,7 @@ Audit multi-standard (9001/14001/45001) · Non Conformità (workflow ISO 10.2 co
 
 **MC-3 Rule Engine (17/08)** — `materialComplianceRuleEngine.service.js`: JSON certificato + snapshot KB → `status` + `checks[]`. Zero LLM; non scrive `compliant`. Mergiata [PR #454](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/454).
 
-**ROO-17 lista riesami ambito (17/08)** — tab Analisi: toggle Stato corrente / Riesami ambito; `GET /risks/reviews?company_id&from&to`. Verificato dal committente su TEST. PR [#455](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/455). Prossima **ROO-18** solo HITL.
+**ROO-17 lista riesami ambito (17/08)** — tab Analisi: `GET /risks/reviews?company_id&from&to`. Viste **Valutazioni** / **Storico riesami**; filtri stato = banner KPI cliccabili (niente tendina). PR [#455](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/455). Prossima **ROO-18** solo HITL.
 
 **EN 10219-1:2006 consegnata (17/08)** — NORMA_00028 + estratto [`EN-10219-1-sezioni-cave.md`](reference/EN-10219-1-sezioni-cave.md). Hollow **a freddo** seedabile se il certificato cita 10219.
 

@@ -51,7 +51,7 @@ describe("RisksPage — create/import richiedono Ambito azienda", () => {
     expect(nuovo).toBeDisabled();
     expect(importa).toBeDisabled();
     expect(nuovo).toHaveAttribute("title", "Seleziona un'azienda nell'Ambito in alto");
-    expect(screen.getByRole("button", { name: "Riesami ambito" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Storico riesami" })).toBeDisabled();
     await waitFor(() => {
       expect(screen.getByText(/Seleziona un'azienda nell'Ambito in alto per creare/)).toBeInTheDocument();
     });

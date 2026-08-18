@@ -228,7 +228,7 @@ Pattern già in repo da **non riusare come tabella**: `document_history` (grain 
 - Colonne **interrogabili** (non solo JSON): P, G, segno, metodo, quadrante, residuo, nota, azioni attuali/ulteriori, `nature`, `title`, `evaluated_element`, `recorded_at`, `recorded_by`. Score/livello si decorano in lettura come su `risks`.
 - API: `GET /risks/:id/reviews` (ROO-16). `GET /risks/reviews?company_id&from&to` **dopo** `:id` in routes… no: la lista ambito è `/risks/reviews` e va **registrata prima** di `/:id` (ROO-17).
 - UI ROO-16: **click riga = stesso form di oggi** (stato corrente). Dentro il form, sotto i campi, **timeline** dello storico (sola lettura). Non si espande la griglia (troppe colonne M03). Non si apre una seconda finestra-griglia: lo storico di *una* riga è una cronologia, non un’altra matrice. La lista ambito (tutti i riesami) è ROO-17.
-- **Chiusi**: `status=closed` esiste già. Default griglia = **nascondi i chiusi**. Checkbox toolbar «Mostra rischi chiusi». Il filtro stati resta per Aperto / In trattamento / Mitigato.
+- **Chiusi**: `status=closed` esiste già. Default griglia = **nascondi i chiusi**. Filtro stato = card KPI cliccabili (Totale / Aperti / In trattamento / Mitigati / Chiusi / Alta priorità), niente tendina né checkbox. Viste griglia: **Valutazioni** (stato attuale) vs **Storico riesami** (snapshot periodo, input §9.3).
 - Soft-delete della riga: le review restano (audit §7.5); GET sulla riga cancellata = 404 come oggi.
 - Solo TEST finché il committente non promuove.
 
