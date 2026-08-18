@@ -64,6 +64,7 @@ describe('listNonConformities  -  RBAC studio', () => {
         const listSql = query.mock.calls[0][0];
         const listParams = query.mock.calls[0][1];
         expect(listSql).toContain('auditor_org_id = @auditor_org_id');
+        expect(listSql).toContain('LEFT JOIN projects');
         expect(listParams).toMatchObject({
             organization_id: ORG_ID,
             auditor_org_id: AUDITOR_ORG_ID,
@@ -401,6 +402,104 @@ describe('approveNcClosure (endpoint legacy, flusso UI usa Chiudi diretto)', () 
 
         expect(res.json).toHaveBeenCalledWith(
             expect.objectContaining({ success: true, nc_id: 5 }),
+        );
+    });
+});
+
+describe('resolveNcProjectId  -  ISO-6', () => {
+    it('skip se project_id assente', async () => {
+        const r = await ctrl.resolveNcProjectId({
+            organizationId: ORG_ID, projectId: undefined, companyId: 7,
+        });
+        expect(r).toEqual({ skip: true });
+        expect(query).not.toHaveBeenCalled();
+    });
+
+    it('null se stringa vuota (scollega commessa)', async () => {
+        const r = await ctrl.resolveNcProjectId({
+            organizationId: ORG_ID, projectId: '', companyId: 7,
+        });
+        expect(r).toEqual({ value: null });
+        expect(query).not.toHaveBeenCalled();
+    });
+
+    it('404 se la commessa non è in organizzazione', async () => {
+        query.mockResolvedValueOnce({ recordset: [] });
+        const r = await ctrl.resolveNcProjectId({
+            organizationId: ORG_ID, projectId: 12, companyId: 7,
+        });
+        expect(r).toMatchObject({ code: 'PROJECT_NOT_FOUND', status: 404 });
+    });
+
+    it('400 se la commessa è di un\'altra azienda', async () => {
+        query.mockResolvedValueOnce({ recordset: [{ id: 12, company_id: 99 }] });
+        const r = await ctrl.resolveNcProjectId({
+            organizationId: ORG_ID, projectId: 12, companyId: 7,
+        });
+        expect(r).toMatchObject({ code: 'PROJECT_COMPANY_MISMATCH', status: 400 });
+    });
+
+    it('accetta la commessa della stessa azienda', async () => {
+        query.mockResolvedValueOnce({ recordset: [{ id: 12, company_id: 7 }] });
+        const r = await ctrl.resolveNcProjectId({
+            organizationId: ORG_ID, projectId: '12', companyId: 7,
+        });
+        expect(r).toEqual({ value: 12 });
+    });
+});
+
+describe('createNonConformity  -  project_id opzionale', () => {
+    it('inserisce project_id se la commessa è dell\'azienda audit', async () => {
+        query
+            .mockResolvedValueOnce({ recordset: [{ audit_id: 99, company_id: 7 }] })
+            .mockResolvedValueOnce({ recordset: [{ standard_id: 1 }] })
+            .mockResolvedValueOnce({ recordset: [{ id: 12, company_id: 7 }] })
+            .mockResolvedValueOnce({ recordset: [] })
+            .mockResolvedValueOnce({ recordset: [{ nc_id: 1, nc_uuid: 'uuid-1' }] })
+            .mockResolvedValueOnce({ recordset: [] });
+
+        const req = mockReq({
+            body: {
+                audit_id: 99,
+                nc_number: 'NC-PROJ-001',
+                section_code: '4.1',
+                description: 'NC con commessa',
+                severity: 'minor',
+                project_id: 12,
+            },
+        });
+        const res = mockRes();
+        await ctrl.createNonConformity(req, res);
+
+        const insertSql = query.mock.calls[4][0];
+        const insertParams = query.mock.calls[4][1];
+        expect(insertSql).toContain('project_id');
+        expect(insertParams.project_id).toBe(12);
+        expect(res.status).toHaveBeenCalledWith(201);
+    });
+
+    it('400 se la commessa non è dell\'azienda audit', async () => {
+        query
+            .mockResolvedValueOnce({ recordset: [{ audit_id: 99, company_id: 7 }] })
+            .mockResolvedValueOnce({ recordset: [{ standard_id: 1 }] })
+            .mockResolvedValueOnce({ recordset: [{ id: 12, company_id: 99 }] });
+
+        const req = mockReq({
+            body: {
+                audit_id: 99,
+                nc_number: 'NC-PROJ-002',
+                section_code: '4.1',
+                description: 'NC mismatch',
+                severity: 'minor',
+                project_id: 12,
+            },
+        });
+        const res = mockRes();
+        await ctrl.createNonConformity(req, res);
+
+        expect(res.status).toHaveBeenCalledWith(400);
+        expect(res.json).toHaveBeenCalledWith(
+            expect.objectContaining({ code: 'PROJECT_COMPANY_MISMATCH' }),
         );
     });
 });
