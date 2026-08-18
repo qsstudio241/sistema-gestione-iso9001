@@ -120,18 +120,17 @@ Ogni slice è un **tracer verticale** (un processo o un ponte), non «tutto il D
 
 **ISO-1* + ISO-2 chiuse** (PR #438–#442, #443): isolamento azienda + traccia/Word riesame §5.3.
 
-## Pronto a eseguire (16/08, dopo ISO-3)
+## Pronto a eseguire (18/08, dopo prova certificati ADA)
 
 **Sì, si parte a slice.** Un deputy = una slice. In parallelo solo se i file sono disgiunti.
 
 | Ora | Aspettare |
 |-----|-----------|
-| **ISO-4** Word RDP: file Mason non è in git | — |
-| **SAL S1a** — già APERTO su `main` in `DEPUTYTASK.md` | — |
-| **MC-1** — migration tabelle (dopo MC-0 mergiata) | MC-2/3 extract+regole: **norme prodotto** ancora mancanti si skippano |
+| **ISO-4** Word RDP: file Mason non è in git | file `RDP_MSN-260127-01` in cartella / dal committente |
+| **SAL S1a** — già APERTO su `main` in `DEPUTYTASK.md` | non sovrascrivere |
+| **Ingest 3.1 / MC-B** | **altra chat** — [PLAN MC](PLAN_MATERIAL_COMPLIANCE_SLICES.md) § decisione 18/08. Non mescolare con ISO-4 |
 
-Dopo merge #447 (MC-0): ISO-3 = prompt + field_key (questa slice). ISO-4 resta in attesa del file Word Mason.  
-`DEPUTYTASK.md` resta SAL S1a — non sovrascrivere. MC-1 = brief dedicato, non `DEPUTYTASK.md`.
+`DEPUTYTASK.md` resta SAL S1a. ISO-4 = brief dedicato (`DEPUTYTASK1.md` o parallelo), non `DEPUTYTASK.md`.
 
 ## Qualità della mappa
 

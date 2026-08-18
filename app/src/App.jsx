@@ -190,6 +190,7 @@ function AppContent() {
         <Route path="/ai-assistant"     element={<LicensedRoute moduleKey="ai_chat"><AiAssistantPage /></LicensedRoute>} />
         <Route path="/ai-knowledge-health" element={<LicensedRoute moduleKey="ai_chat"><KnowledgeHealthPage /></LicensedRoute>} />
         <Route path="/search"          element={<SearchPage />} />
+        {/* /sal non deve catturare /saldatura (confine di segmento in RouterContext). */}
         <Route path="/sal"              element={<LicensedRoute moduleKey="sal"><SALModule /></LicensedRoute>} />
 
         <Route path="/saldatura/procedure" element={<LicensedRoute moduleKey="saldatura"><WeldingProceduresPage /></LicensedRoute>} />
