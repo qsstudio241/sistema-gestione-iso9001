@@ -30,17 +30,27 @@ git show origin/main:docs/agent-tasks/DEPUTYTASK.md | head -20
 
 Working tree sporco: niente reset distruttivo; stash/commit/worktree. Mai force-push su `main`.
 
+## Parallelo, conflitti PR, costo Bugbot (vincolante)
+
+Sì, più chat in parallelo. No, non sullo stesso foglio. Dettaglio: [`sgq-workflow-method.mdc`](sgq-workflow-method.mdc).
+
+- **Prima di scrivere codice:** elenca i file che toccherai. Se un altro `DEPUTYTASK*` APERTO o una PR aperta tocca gli stessi file, **fermati** (non è parallelo: è conflitto).
+- **File hub — un solo owner per volta:** `docs/GUIDA_CONSOLIDATA.md`, `docs/PROJECT_ROADMAP.md`, `PROJECT_CONTEXT.md`, `docs/agent-tasks/DEPUTYTASK.md`, `backend/scripts/deploy-manifest.json`. Gli altri deputy non li modificano.
+- **Desktop:** worktree + nuova finestra Cursor. Vietato due finestre sulla stessa cartella.
+- **Bugbot:** 1 run a pagamento per PR. Non duplicare check GitHub + subagente. Always-on addebita **ogni push**: policy = Dashboard «Run only when mentioned» + un `bugbot run` a slice chiusa.
+
 ## Convenzione DEPUTYTASK
 
-- Brief in `docs/agent-tasks/DEPUTYTASK.md`; paralleli: `DEPUTYTASK1.md`, `DEPUTYTASK2.md`, … File di codice **disgiunti**.
+- Brief in `docs/agent-tasks/DEPUTYTASK.md`; paralleli: `DEPUTYTASK1.md`, `DEPUTYTASK2.md`, … File di codice **disgiunti** (niente file hub in comune).
 - Task singolo: sovrascrivi con **Stato: APERTO**. Mai lasciare **CHIUSO** se chiedi di lanciare quel deputy.
 
 ### Gate prima di «lancia il deputy»
 
 1. Brief **pushato su `origin/main`** (non solo branch feature).
 2. `git fetch` + `git show origin/main:docs/agent-tasks/<file>` → titolo e `Stato: APERTO`.
-3. Comando utente: `Leggi docs/agent-tasks/DEPUTYTASK.md ed eseguilo. Chiudi con TEST OK o FIX NON APPLICABILI.`
-4. Non chiedere `git pull` al committente.
+3. File del brief **disgiunti** da ogni altro `DEPUTYTASK*` APERTO e dalle PR aperte (niente file hub in comune).
+4. Comando utente: `Leggi docs/agent-tasks/DEPUTYTASK.md ed eseguilo. Chiudi con TEST OK o FIX NON APPLICABILI.`
+5. Non chiedere `git pull` al committente.
 
 Errore 07/07/2026: brief su branch, `main` ancora CHIUSO → deputy FIX NON APPLICABILI.
 

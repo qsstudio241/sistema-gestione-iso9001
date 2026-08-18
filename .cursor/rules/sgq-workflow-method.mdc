@@ -11,8 +11,23 @@ alwaysApply: false
 > Le golden rules trasversali vivono in [`sgq-operating-memory.mdc`](sgq-operating-memory.mdc).
 > Commit / rischio / merge: [`sgq-git-autonomy.mdc`](sgq-git-autonomy.mdc).
 
-**Obiettivo:** lavorare su più moduli in parallelo senza sovrascritture di file, e limitare le review
-Bugbot fatturabili su GitHub a **1 per Pull Request** (salvo ri-verifica di un fix reale).
+**Obiettivo (committente):** sì, puoi lavorare in parallelo su più aspetti in più chat; le PR non
+devono pestarsi; i controlli bot si pagano **una volta** per PR, non a ogni push.
+
+## 0. Come aprire più chat senza conflitti né sprechi
+
+Ogni chat = **un modulo** = **file diversi**. Due chat sullo stesso controller / stessa pagina =
+due PR in conflitto. Non è un bug di GitHub.
+
+| Tu (committente) | Agente |
+|---|---|
+| Chat A: «solo NC». Chat B: «solo Qualifiche». Dillo esplicito. | Elenca i file **prima** di scrivere. Se overlap con PR/`DEPUTYTASK*` aperto → stop. |
+| Sul PC, seconda chat = **seconda cartella** (worktree sotto). Mai due finestre su `C:\ProgettoISO`. | Worktree (desktop) o VM già isolata (Cloud). Non «sistemare» i file dell'altra chat. |
+| Costi bot: in [cursor.com/dashboard](https://cursor.com/dashboard) → Bugbot → **Run only when mentioned**. | Un solo `bugbot run` a slice chiusa. Mai subagente + check GitHub insieme. |
+| Brief paralleli: `DEPUTYTASK.md` + `DEPUTYTASK1.md` con file disgiunti, pushati su `main`. | Non toccare i **file hub** se non sei l'owner (GUIDA, roadmap, `PROJECT_CONTEXT`, `DEPUTYTASK.md`, `deploy-manifest.json`). |
+
+Comando overlap (prima del codice): `gh pr list --state open` e i path nel brief dell'altro deputy.
+Se i path si incrociano, **serializzare** (finire chat A, mergiare, poi chat B) — non «andare avanti lo stesso».
 
 ## 1. Slice verticale (unità minima di lavoro)
 
@@ -107,34 +122,33 @@ git merge origin/main
 Ogni run Bugbot costa in media **$1.00–$1.50**
 ([billing](https://cursor.com/help/account-and-billing/bugbot-usage-based-billing); dettaglio in
 [`docs/how-to/SETUP_PR_ROUTING_APPROVAL.md`](../../docs/how-to/SETUP_PR_ROUTING_APPROVAL.md)).
-Push ripetuti su una PR già aperta, più un secondo lancio del subagente `bugbot`, **raddoppiano o
-moltiplicano** il costo a parità di codice.
 
-**Regola: 1 run Bugbot fatturabile per PR.** Un secondo run solo se il primo ha trovato un bug reale
-e il fix è stato pushato (ri-verifica del fix, non "per sicurezza").
+**Le regole nel repo non fermano il contatore** se in Dashboard Bugbot è **always-on**: ogni push
+su una PR aperta (e i Cloud Agent ne fanno tanti) = un addebito. Lo switch che azzera gli sprechi
+lo fa il committente, una volta:
 
-Procedura:
+1. Apri [cursor.com/dashboard](https://cursor.com/dashboard) → Bugbot (o Automations).
+2. Imposta **Run only when mentioned** (non automatico su ogni PR/push).
+3. Da quel momento si paga solo quando qualcuno scrive `bugbot run` (o `cursor review`) sulla PR.
 
-1. **Chiudere la slice in locale** (L1 verde) prima di aprire la PR, quando l'ambiente lo consente.
-2. **Raggruppare i push.** Non aprire la PR sul primo commit parziale se ne seguiranno altri entro
-   pochi minuti. Un solo push "slice chiusa" = un solo trigger.
-3. **Aprire la PR una volta.** Attendere il check GitHub `Cursor Bugbot`.
-4. **Non duplicare.** Se il check GitHub è già partito o completato, **non** lanciare anche il
-   subagente `bugbot` e **non** commentare `bugbot run` / `cursor review`. È lo stesso servizio,
-   secondo addebito.
-5. **Fallback (piano Individual):** se dopo ~10 minuti il check GitHub **non** compare sulle PR dei
-   Cloud Agent, allora **un** `bugbot run` (o subagente Diff: "branch changes") — non entrambi.
-6. Dopo quel run: aggiornare la descrizione PR con l'esito (pronta / rilievo da decidere). Non
-   spingere commit cosmetici solo per "ritoccare" dopo Bugbot.
-7. **PR Routing & Approval** non è Bugbot: non è la review a consumo per run; non disabilitarla
-   da questa regola. Security Review Context non è nel piano Ultra individuale.
+**Dopo quello switch — regola agente: 1 `bugbot run` per PR**, a slice chiusa (L1 verde). Secondo
+run solo se il primo ha trovato un bug reale e il fix è stato pushato.
 
-Cloud: se la piattaforma impone di aprire la PR prima dei test, tenerla **draft**, raggruppare i
-commit successivi in **un** push, e far partire Bugbot **solo a slice chiusa** (passo 3–5). Non
-lanciare Bugbot sul revision "pre-testing".
+Se Bugbot è ancora always-on (finché il committente non clicca):
 
-Gate di correttezza (livello Medio / normativa): 1 run resta **obbligatorio** — azzerare i run
-*duplicati*, non il gate. Dettaglio merge: `sgq-git-autonomy.mdc`.
+1. Raggruppare i push; non aprire la PR sul primo commit parziale.
+2. Aprire la PR **una volta**. Attendere il check GitHub `Cursor Bugbot`.
+3. **Non duplicare:** se il check è già partito, non lanciare il subagente `bugbot` e non
+   commentare `bugbot run`. È lo stesso servizio, secondo addebito.
+4. Fallback piano Individual: se dopo ~10 minuti il check **non** compare, allora **un**
+   `bugbot run` — non entrambi.
+5. Niente commit cosmetici dopo Bugbot. PR Routing & Approval **non** è Bugbot: non disabilitarla.
+
+Cloud: se la piattaforma impone la PR prima dei test, tenerla **draft** e **non** far partire
+Bugbot sul revision pre-testing.
+
+Gate di correttezza (livello Medio / normativa): 1 run resta **obbligatorio** — si tagliano i
+duplicati, non il controllo qualità. Dettaglio: `sgq-git-autonomy.mdc`.
 
 ## 5. Triage PR backlog (criterio deciso)
 
