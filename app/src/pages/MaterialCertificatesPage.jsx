@@ -14,7 +14,6 @@ import { resolveBackendUploadUrl } from "../utils/resolveBackendUploadUrl";
 import {
   OUTCOME_LABELS,
   ROLE_LABELS,
-  STATUS_LABELS,
   countByOutcome,
   countByRole,
   filterCertificates,
@@ -108,6 +107,7 @@ export default function MaterialCertificatesPage() {
       setDetail(null);
       return;
     }
+    setDetail(null);
     let cancelled = false;
     (async () => {
       try {
@@ -161,7 +161,7 @@ export default function MaterialCertificatesPage() {
   }
 
   async function runAction(name, fn) {
-    if (!detail?.id) return;
+    if (!detail?.id || detail.id !== selectedId) return;
     setBusy(name);
     setError("");
     try {
@@ -259,11 +259,7 @@ export default function MaterialCertificatesPage() {
           if (col.id === "material_role") return ROLE_LABELS[row.material_role] || row.material_role || "\u2014";
           if (col.id === "workflow_status") {
             return (
-              <StatusBadge
-                type="document"
-                status={row.workflow_status === "compliant" ? "vigente" : "bozza"}
-                label={STATUS_LABELS[row.workflow_status] || row.workflow_status}
-              />
+              <StatusBadge type="material_certificate" status={row.workflow_status} />
             );
           }
           return row[col.id] || "\u2014";
@@ -363,7 +359,7 @@ export default function MaterialCertificatesPage() {
               <button
                 type="button"
                 className="btn-secondary"
-                disabled={!canHitl("extract", status) || Boolean(busy)}
+                disabled={!detail || detail.id !== selectedId || !canHitl("extract", status) || Boolean(busy)}
                 title={hitlTitle("extract", status)}
                 onClick={() => runAction("extract", () => apiService.extractMaterialCertificate(detail.id))}
               >

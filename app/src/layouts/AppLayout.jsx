@@ -19,7 +19,7 @@ import { hasCompanyAccess, getPrimaryCompanyId } from "../utils/companyAccess";
 import { CompanyScopeProvider } from "../contexts/CompanyScopeContext";
 import CompanyScopeSelect from "../components/CompanyScopeSelect";
 import "./AppLayout.css";
-import { hasLicensedModule } from "../utils/licenseUtils";
+import { hasLicensedModule, hasMaterialComplianceCapability } from "../utils/licenseUtils";
 
 // ─── Definizione navigazione ──────────────────────────────────────────────────
 
@@ -34,7 +34,10 @@ function buildNavItems(user, alerts = {}) {
     : { to: "/companies", icon: "🏢", label: "Aziende" };
 
   const filterByLicense = (items) =>
-    (items || []).filter((it) => !it.licenseKey || hasLicensedModule(user, it.licenseKey));
+    (items || []).filter((it) => {
+      if (it.requireMaterialCompliance) return hasMaterialComplianceCapability(user);
+      return !it.licenseKey || hasLicensedModule(user, it.licenseKey);
+    });
 
   return [
     // Gruppo principale
@@ -71,7 +74,7 @@ function buildNavItems(user, alerts = {}) {
       items: filterByLicense([
         { to: "/saldatura", icon: "\uD83C\uDFED", label: "Dashboard 3834", licenseKey: "saldatura" },
         { to: "/saldatura/commesse", icon: "\uD83D\uDCCB", label: "Commesse", licenseKey: "saldatura" },
-        { to: "/saldatura/materiali", icon: "\uD83D\uDCC4", label: "Materiali", licenseKey: "saldatura" },
+        { to: "/saldatura/materiali", icon: "\uD83D\uDCC4", label: "Materiali", requireMaterialCompliance: true },
         { to: "/saldatura/procedure", icon: "\uD83D\uDD27", label: "Procedure WPS/WPQR", licenseKey: "saldatura" },
         { to: "/saldatura/welding-book", icon: "\uD83D\uDCD6", label: "Welding Book", licenseKey: "saldatura" },
         { to: "/saldatura/rdp", icon: "\uD83D\uDCCA", label: "RDP - Rapporto di Prova", licenseKey: "saldatura" },
