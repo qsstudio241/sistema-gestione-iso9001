@@ -11,6 +11,12 @@ import { riskScore, riskScoreLevel, scoreColor, displayFurtherActions, residualS
 import { appendCatalogLine, formatContextFactorLine, formatInterestedPartyLine } from "../utils/catalogTextAppend";
 import { buildRisksListParams } from "../utils/risksListParams";
 import {
+  RISK_STAT_ITEMS,
+  toggleRiskStatFilter,
+  countForRiskStat,
+  titleForRiskStat,
+} from "../utils/risksStatsFilter";
+import {
   defaultReviewFromDay,
   defaultReviewToDay,
   buildRiskReviewsScopeParams,
@@ -539,8 +545,7 @@ function RisksTab({ companies = [], filterCompany = "", reloadCompanies }) {
   const [stats, setStats]         = useState(null);
   const [loading, setLoading]     = useState(true);
   const [modal, setModal]         = useState(null); // null | { mode:'new'|'edit', data }
-  const [filterStatus, setFS]     = useState("");
-  const [showClosed, setShowClosed] = useState(false);
+  const [statFilter, setStatFilter] = useState("total");
   const [listView, setListView]   = useState("current");
   const [fromDay, setFromDay]     = useState(() => defaultReviewFromDay());
   const [toDay, setToDay]         = useState(() => defaultReviewToDay());
@@ -572,7 +577,7 @@ function RisksTab({ companies = [], filterCompany = "", reloadCompanies }) {
         const listRes = await apiService.getRiskReviewsScope(params);
         setList(listRes?.data || []);
       } else {
-        const params = buildRisksListParams({ filterStatus, filterCompany, showClosed });
+        const params = buildRisksListParams({ statFilter, filterCompany });
         const listRes = await apiService.getRisks(params);
         setList(listRes?.data || []);
       }
@@ -580,7 +585,7 @@ function RisksTab({ companies = [], filterCompany = "", reloadCompanies }) {
       setListError(err.message || "Errore caricamento");
       setList([]);
     } finally { setLoading(false); }
-  }, [filterStatus, filterCompany, showClosed, listView, fromDay, toDay]);
+  }, [statFilter, filterCompany, listView, fromDay, toDay]);
 
   useEffect(() => { load(); }, [load]);
 
@@ -711,37 +716,57 @@ function RisksTab({ companies = [], filterCompany = "", reloadCompanies }) {
 
   return (
     <div className="risks-tab">
-      {/* Stats */}
       {stats && (
-        <div className="stats-bar">
-          <div className="stat-item"><span className="stat-num">{stats.total}</span><span className="stat-lbl">Totale</span></div>
-          <div className="stat-item stat-open"><span className="stat-num">{stats.open}</span><span className="stat-lbl">Aperti</span></div>
-          <div className="stat-item stat-treat"><span className="stat-num">{stats.in_treatment}</span><span className="stat-lbl">In trattamento</span></div>
-          <div className="stat-item stat-high"><span className="stat-num">{stats.high_priority}</span><span className="stat-lbl">Alta priorità</span></div>
+        <div className="stats-bar" role="group" aria-label="Filtri rapidi per stato">
+          {RISK_STAT_ITEMS.map(({ key, label, cls }) => {
+            const isActive = listView === "current" && statFilter === key;
+            return (
+              <button
+                key={key}
+                type="button"
+                className={`stat-item stat-clickable ${cls}${isActive ? " stat-active" : ""}`}
+                aria-pressed={isActive}
+                title={titleForRiskStat(key, label)}
+                onClick={() => {
+                  setListView("current");
+                  if (listView === "reviews") {
+                    setStatFilter(key === "total" ? "total" : key);
+                    return;
+                  }
+                  setStatFilter((current) => toggleRiskStatFilter(current, key));
+                }}
+              >
+                <span className="stat-num">{countForRiskStat(stats, key)}</span>
+                <span className="stat-lbl">{label}</span>
+              </button>
+            );
+          })}
         </div>
       )}
 
       {/* Toolbar */}
       <div className="tab-toolbar">
-        <div className="risks-view-toggle" role="group" aria-label="Vista analisi">
+        <div className="risks-view-toggle" role="group" aria-label="Cosa mostra la griglia">
           <button
             type="button"
             className={listView === "current" ? "active" : ""}
+            aria-pressed={listView === "current"}
             onClick={() => setListView("current")}
           >
-            Stato corrente
+            Valutazioni
           </button>
           <button
             type="button"
             className={listView === "reviews" ? "active" : ""}
+            aria-pressed={listView === "reviews"}
             disabled={!filterCompany}
-            title={!filterCompany ? "Seleziona un'azienda nell'Ambito in alto" : ""}
+            title={!filterCompany ? "Seleziona un'azienda nell'Ambito in alto" : "Snapshot dei riesami per il riesame di direzione"}
             onClick={() => setListView("reviews")}
           >
-            Riesami ambito
+            Storico riesami
           </button>
         </div>
-        {listView === "reviews" ? (
+        {listView === "reviews" && (
           <>
             <label className="risks-scale-label">
               Dal
@@ -760,21 +785,6 @@ function RisksTab({ companies = [], filterCompany = "", reloadCompanies }) {
                 value={toDay}
                 onChange={(e) => setToDay(e.target.value)}
               />
-            </label>
-          </>
-        ) : (
-          <>
-            <select value={filterStatus} onChange={e => setFS(e.target.value)}>
-              <option value="">Tutti gli stati</option>
-              {Object.entries(RISK_STATUS_CFG).map(([k,v]) => <option key={k} value={k}>{v.label}</option>)}
-            </select>
-            <label className="risks-closed-toggle">
-              <input
-                type="checkbox"
-                checked={showClosed}
-                onChange={(e) => setShowClosed(e.target.checked)}
-              />
-              Mostra rischi chiusi
             </label>
           </>
         )}
@@ -832,8 +842,8 @@ function RisksTab({ companies = [], filterCompany = "", reloadCompanies }) {
 
       <p className="risks-grid-hint">
         {listView === "reviews"
-          ? "Clicca una riga per aprire la scheda corrente. Lo snapshot resta in sola lettura nel form."
-          : "Clicca una riga per aprire la scheda."}
+          ? "Storico: ogni riga è un riesame nel periodo (input §9.3). Clicca per aprire la scheda attuale, non lo snapshot."
+          : "Valutazioni attuali (una riga = stato di oggi). I banner filtrano per stato; clicca di nuovo per togliere il filtro."}
       </p>
       <div className="risks-grid-wrap">
         <SgqDataGrid

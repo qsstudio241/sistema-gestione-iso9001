@@ -71,9 +71,10 @@ async function listRisks(req, res) {
         const orgId = req.user.organization_id;
         const accessList = await ensureCompanyAccessLoaded(req.user);
         const companyFilter = companyAccessSqlFilter(accessList, 'r');
-        const { status, context, company_id, include_closed, page = 1, limit = 50 } = req.query;
+        const { status, context, company_id, include_closed, high_priority, page = 1, limit = 50 } = req.query;
         const offset = (parseInt(page) - 1) * parseInt(limit);
         const includeClosed = include_closed === '1' || include_closed === 'true';
+        const highPriority = high_priority === '1' || high_priority === 'true';
 
         let where = ['r.organization_id = @orgId', 'r.is_deleted = 0'];
         if (companyFilter.clause) where.push(companyFilter.clause);
@@ -84,6 +85,9 @@ async function listRisks(req, res) {
         else if (!includeClosed) { where.push("r.status <> 'closed'"); }
         if (context)    { where.push('r.context = @context');     req2.input('context', context); }
         if (company_id) { where.push('r.company_id = @companyId'); req2.input('companyId', parseInt(company_id)); }
+        if (highPriority) {
+            where.push('(r.probability * r.impact) >= ((ISNULL(c.risk_pg_max, 3) * ISNULL(c.risk_pg_max, 3)) * 2 / 3)');
+        }
 
         const whereClause = where.join(' AND ');
 
@@ -119,7 +123,10 @@ async function listRisks(req, res) {
                 else if (!includeClosed) cntWhere.push("r.status <> 'closed'");
                 if (context)    cntWhere.push('r.context = @cntContext');
                 if (company_id) cntWhere.push('r.company_id = @cntCompanyId');
-                return cntReq.query(`SELECT COUNT(*) AS total FROM risks r WHERE ${cntWhere.join(' AND ')}`);
+                if (highPriority) {
+                    cntWhere.push('(r.probability * r.impact) >= ((ISNULL(c.risk_pg_max, 3) * ISNULL(c.risk_pg_max, 3)) * 2 / 3)');
+                }
+                return cntReq.query(`SELECT COUNT(*) AS total FROM risks r LEFT JOIN companies c ON c.id = r.company_id WHERE ${cntWhere.join(' AND ')}`);
             })(),
         ]);
 
@@ -151,7 +158,8 @@ async function getRiskStats(req, res) {
                 SUM(CASE WHEN status = 'open' THEN 1 ELSE 0 END) AS [open],
                 SUM(CASE WHEN status = 'in_treatment' THEN 1 ELSE 0 END) AS in_treatment,
                 SUM(CASE WHEN status = 'mitigated' THEN 1 ELSE 0 END) AS mitigated,
-                SUM(CASE WHEN (r.probability * r.impact) >=
+                SUM(CASE WHEN status = 'closed' THEN 1 ELSE 0 END) AS closed,
+                SUM(CASE WHEN r.status <> 'closed' AND (r.probability * r.impact) >=
                     ((ISNULL(c.risk_pg_max, 3) * ISNULL(c.risk_pg_max, 3)) * 2 / 3)
                     THEN 1 ELSE 0 END) AS high_priority
             FROM risks r

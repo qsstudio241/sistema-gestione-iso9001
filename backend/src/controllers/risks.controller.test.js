@@ -19,7 +19,7 @@ jest.mock('../services/companyAccess.service', () => ({
 }));
 
 const { getPool } = require('../config/database');
-const { createRisk, updateRisk, listRisks, listRiskReviews, listRiskReviewsScope, detectRisksImport, importRisks, setCompanyPgScale } = require('./risks.controller');
+const { createRisk, updateRisk, listRisks, getRiskStats, listRiskReviews, listRiskReviewsScope, detectRisksImport, importRisks, setCompanyPgScale } = require('./risks.controller');
 const { buildM03TemplateBuffer } = require('../utils/excelRisksM03Detector');
 
 const USER = { organization_id: 1001, user_id: 7, company_access: [] };
@@ -453,6 +453,39 @@ describe('listRisks — colonne M03 e score', () => {
     await listRisks(req, res);
     const listSql = queryMock.mock.calls.find(([sql]) => /SELECT r\.risk_id/.test(sql))[0];
     expect(listSql).not.toMatch(/r\.status <> 'closed'/);
+  });
+
+  it('high_priority=1 filtra sulla soglia P×G e tiene esclusi i chiusi', async () => {
+    const { queryMock } = buildPool();
+    queryMock.mockImplementation((sql) => {
+      if (/COUNT\(\*\)/.test(sql)) return Promise.resolve({ recordset: [{ total: 0 }] });
+      return Promise.resolve({ recordset: [] });
+    });
+    const req = mockReq({ query: { high_priority: '1' } });
+    const res = mockRes();
+    await listRisks(req, res);
+    const listSql = queryMock.mock.calls.find(([sql]) => /SELECT r\.risk_id/.test(sql))[0];
+    expect(listSql).toMatch(/r\.status <> 'closed'/);
+    expect(listSql).toMatch(/risk_pg_max/);
+    const countSql = queryMock.mock.calls.find(([sql]) => /COUNT\(\*\)/.test(sql))[0];
+    expect(countSql).toMatch(/LEFT JOIN companies c/);
+    expect(countSql).toMatch(/risk_pg_max/);
+  });
+});
+
+describe('getRiskStats', () => {
+  it('conteggia closed e alta priorità solo sul working set', async () => {
+    const { queryMock } = buildPool();
+    queryMock.mockResolvedValue({
+      recordset: [{ total: 5, open: 2, in_treatment: 1, mitigated: 1, closed: 1, high_priority: 2 }],
+    });
+    const req = mockReq({ query: {} });
+    const res = mockRes();
+    await getRiskStats(req, res);
+    const sql = queryMock.mock.calls[0][0];
+    expect(sql).toMatch(/status = 'closed'/);
+    expect(sql).toMatch(/r\.status <> 'closed'/);
+    expect(res.json.mock.calls[0][0].data.closed).toBe(1);
   });
 });
 

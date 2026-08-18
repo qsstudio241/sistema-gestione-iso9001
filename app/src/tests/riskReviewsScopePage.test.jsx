@@ -58,10 +58,10 @@ describe("RisksPage — ROO-17 riesami ambito", () => {
     });
   });
 
-  it("toggle Riesami ambito chiama GET /risks/reviews con azienda e date", async () => {
+  it("toggle Storico riesami chiama GET /risks/reviews con azienda e date", async () => {
     render(<RisksPage />);
-    await screen.findByRole("button", { name: "Riesami ambito" });
-    fireEvent.click(screen.getByRole("button", { name: "Riesami ambito" }));
+    await screen.findByRole("button", { name: "Storico riesami" });
+    fireEvent.click(screen.getByRole("button", { name: "Storico riesami" }));
     await waitFor(() => {
       expect(apiService.getRiskReviewsScope).toHaveBeenCalledWith({
         company_id: "48",
@@ -72,5 +72,19 @@ describe("RisksPage — ROO-17 riesami ambito", () => {
     expect(screen.getByLabelText("Riesami dal")).toBeInTheDocument();
     expect(screen.getByLabelText("Riesami al")).toBeInTheDocument();
     expect(screen.queryByText("Mostra rischi chiusi")).not.toBeInTheDocument();
+    expect(screen.queryByText("Tutti gli stati")).not.toBeInTheDocument();
+  });
+
+  it("click banner Aperti chiama GET /risks con status=open e non usa la tendina", async () => {
+    render(<RisksPage />);
+    const aperti = await screen.findByRole("button", { name: /Aperti/i });
+    fireEvent.click(aperti);
+    await waitFor(() => {
+      expect(apiService.getRisks).toHaveBeenCalledWith({
+        company_id: "48",
+        status: "open",
+      });
+    });
+    expect(screen.queryByText("Tutti gli stati")).not.toBeInTheDocument();
   });
 });

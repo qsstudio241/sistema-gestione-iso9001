@@ -8,13 +8,23 @@
 
 > **Risposta standard a «stato di avanzamento del progetto e priorità da affrontare»**: sintetizzare da questa sezione (moduli maturi + sessione più recente + tabella priorità sotto), **non** dal banner storico più sotto (superato, tenuto solo per traccia) né dall'archivio marzo 2026 [`docs/archive/PROJECT_CONTEXT_STATO_FUNZIONALITA_2026-03.md`](archive/PROJECT_CONTEXT_STATO_FUNZIONALITA_2026-03.md). **Aggiornare questa sezione a fine sessione** se emergono nuove priorità o se una priorità elencata viene chiusa (stesso principio delle "Lezioni apprese" in [GUIDA_CONSOLIDATA.md](GUIDA_CONSOLIDATA.md) — sintesi qui, dettaglio linkato).
 
-**Ultimo aggiornamento di questa sezione**: 18/08/2026 (MC-4 API su main; MC-5 UI in corso; ROO-17 lista riesami ambito su TEST).
+**Ultimo aggiornamento di questa sezione**: 18/08/2026 (filtri KPI rischi PR #459; MC-4/MC-5 su main; 4.1/4.2/§6.2 = prossima slice rischi dedicata).
 
 ### Moduli maturi (in produzione, uso quotidiano dai clienti Camellini/Mason)
 
 Audit multi-standard (9001/14001/45001) · Non Conformità (workflow ISO 10.2 completo) · Qualifiche Personale saldatori/NDT/coordinatori (ISO 9606-1/14732/14731/9712) · Saldatura (WPQR, generazione WPS da WPQR, Welding Book, Commesse ISO 3834, Dashboard 3834) · SAL (gap analysis requisiti con AI) · Registro Documenti + Scadenzari · Notifiche/Alert (documenti/NC/qualifiche) · Riesame di Direzione · RBAC multi-tenant (`company_access`) · Registro obblighi legali (ambiente + sicurezza) · Assistente AI / Gap Analysis euristica.
 
-### Sessione più recente (17/08/2026)
+### Sessione più recente (18/08/2026)
+
+**Rischi — filtri KPI + viste (18/08)** — tab Analisi: banner cliccabili = filtro stato (niente tendina); **Valutazioni** vs **Storico riesami**. Backend TEST PID `942768`, PROD `930373` invariato. PR [#459](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/459) pronta al merge (Bugbot: nessun rilievo). **Non** è ROO-18.
+
+**Prossima rischi (HITL prodotto, non questa sessione):** **ROO-10** — fattori §4.1, parti §4.2 e obiettivi §6.2 in una slice dedicata, **scambio di informazioni** con la matrice (oggi solo picker one-way ROO-8). Dettaglio: [PLAN § decisioni](agent-tasks/PLAN_RISCHI_OPPORTUNITA_OBIETTIVI_SLICES.md).
+
+**ROO-17 lista riesami ambito (17/08)** — `GET /risks/reviews?company_id&from&to` su TEST e PROD. PR [#455](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/455).
+
+**MC-5 UI mergiata (18/08)** — [PR #457](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/457): `MaterialCertificatesPage`. Parallelismo MC, non rischi.
+
+### Sessione precedente (17/08/2026)
 
 **MC-4 API mergiata (18/08)** — [PR #456](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/456): `/api/v1/material-certificates`. `compliant` solo HITL. Prossima: **MC-5** UI.
 
@@ -22,7 +32,7 @@ Audit multi-standard (9001/14001/45001) · Non Conformità (workflow ISO 10.2 co
 
 **MC-3 Rule Engine (17/08)** — `materialComplianceRuleEngine.service.js`: JSON certificato + snapshot KB → `status` + `checks[]`. Zero LLM; non scrive `compliant`. Mergiata [PR #454](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/454).
 
-**ROO-17 lista riesami ambito (17/08)** — tab Analisi: toggle Stato corrente / Riesami ambito; `GET /risks/reviews?company_id&from&to`. Verificato dal committente su TEST. PR [#455](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/455). Prossima **ROO-18** solo HITL.
+**ROO-17 lista riesami ambito (17/08)** — `GET /risks/reviews?company_id&from&to`. PR [#455](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/455). Filtri KPI e viste: sessione 18/08 / PR #459.
 
 **EN 10219-1:2006 consegnata (17/08)** — NORMA_00028 + estratto [`EN-10219-1-sezioni-cave.md`](reference/EN-10219-1-sezioni-cave.md). Hollow **a freddo** seedabile se il certificato cita 10219.
 
@@ -56,7 +66,7 @@ Audit multi-standard (9001/14001/45001) · Non Conformità (workflow ISO 10.2 co
 
 **Profilo azienda S6** ([PR #426](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/426) **mergiata**, doc [PR #427](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/427) **mergiata**, deploy VPS 15/08): pulsante «Cerca nel registro» in anagrafica. P.IVA → 1 risultato (IT-advanced, verificato TECNOVE). Nome → `IT-search` (max 8); oggi 402 finché in console OpenAPI non è attivo Company Search / credito. S0–S6 codice chiuso.
 
-**Rischi / Opportunità / Obiettivi**: ingest M03 + SWOT + storico riga (ROO-16) + **lista riesami ambito (ROO-17)**. Prossima ROO-18 solo HITL. [PLAN §7](agent-tasks/PLAN_RISCHI_OPPORTUNITA_OBIETTIVI_SLICES.md).
+**Rischi / Opportunità / Obiettivi**: ingest M03 + SWOT + storico riga (ROO-16) + lista riesami (ROO-17) + filtri KPI (#459). Prossima slice dedicata **ROO-10** (4.1/4.2/§6.2 si parlano con la matrice). ROO-18 solo HITL ingest. [PLAN](agent-tasks/PLAN_RISCHI_OPPORTUNITA_OBIETTIVI_SLICES.md).
 
 **Banner Ambito** ([PR #414](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/414) **mergiata**): solo «Ambito» + menu. **Patrimonio dello studio** ([PR #417](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/417) **mergiata**). **Combobox** ([PR #419](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/419) **mergiata**). **Patrimonio = sempre `studio`** ([PR #428](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/428) **mergiata** 15/08/2026): su Camellini non usa più l'id «QS Studio» (48); albero STD distinto dai clienti. **Verificato dal committente** in produzione. Dettaglio: [GUIDA lezione Patrimonio ≠ omonima](GUIDA_CONSOLIDATA.md#lezioni-apprese-consolidate-fonte-unica).
 
