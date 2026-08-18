@@ -19,7 +19,7 @@ jest.mock('../services/companyAccess.service', () => ({
 }));
 
 const { getPool } = require('../config/database');
-const { createRisk, updateRisk, listRisks, listRiskReviews, detectRisksImport, importRisks, setCompanyPgScale } = require('./risks.controller');
+const { createRisk, updateRisk, listRisks, listRiskReviews, listRiskReviewsScope, detectRisksImport, importRisks, setCompanyPgScale } = require('./risks.controller');
 const { buildM03TemplateBuffer } = require('../utils/excelRisksM03Detector');
 
 const USER = { organization_id: 1001, user_id: 7, company_access: [] };
@@ -486,6 +486,51 @@ describe('listRiskReviews', () => {
     expect(payload.data[0].signed_score).toBe(-6);
     expect(payload.data[0].residual_score).toBe(1);
     expect(payload.data[0].recorded_by_name).toBe('Marco');
+  });
+});
+
+describe('listRiskReviewsScope — ROO-17', () => {
+  it('senza company_id → 400 COMPANY_REQUIRED', async () => {
+    const req = mockReq({ query: { from: '2026-01-01', to: '2026-12-31' } });
+    const res = mockRes();
+    await listRiskReviewsScope(req, res);
+    expect(res.status).toHaveBeenCalledWith(400);
+    expect(res.json.mock.calls[0][0].code).toBe('COMPANY_REQUIRED');
+  });
+
+  it('from > to → 400 INVALID_RANGE', async () => {
+    const req = mockReq({ query: { company_id: '48', from: '2026-12-31', to: '2026-01-01' } });
+    const res = mockRes();
+    await listRiskReviewsScope(req, res);
+    expect(res.status).toHaveBeenCalledWith(400);
+    expect(res.json.mock.calls[0][0].code).toBe('INVALID_RANGE');
+  });
+
+  it('filtra company_id e date, decora score', async () => {
+    const { queryMock, inputMock } = buildPool();
+    queryMock
+      .mockResolvedValueOnce({ recordset: [{ risk_pg_max: 3 }] })
+      .mockResolvedValueOnce({
+        recordset: [{
+          id: 4, risk_id: 9, company_id: 48, probability: 2, impact: 3, impact_sign: 1,
+          analysis_method: 'pxg', recorded_at: '2026-03-02T10:00:00.000Z', recorded_by_name: 'Marco',
+        }],
+      });
+    const req = mockReq({ query: { company_id: '48', from: '2026-01-01', to: '2026-06-30' } });
+    const res = mockRes();
+    await listRiskReviewsScope(req, res);
+    const sql = findSql(queryMock, /FROM risk_reviews rv/);
+    expect(sql).toMatch(/rv\.company_id = @companyId/);
+    expect(sql).toMatch(/CAST\(rv\.recorded_at AS date\)/);
+    expect(sql).toMatch(/LEFT JOIN risks r/);
+    expect(sql).not.toMatch(/r\.is_deleted = 0/);
+    expect(inputMock).toHaveBeenCalledWith('companyId', 48);
+    expect(inputMock).toHaveBeenCalledWith('fromDay', '2026-01-01');
+    expect(inputMock).toHaveBeenCalledWith('toDay', '2026-06-30');
+    const payload = res.json.mock.calls[0][0];
+    expect(payload.success).toBe(true);
+    expect(payload.data[0].score).toBe(6);
+    expect(payload.meta).toEqual({ company_id: 48, from: '2026-01-01', to: '2026-06-30' });
   });
 });
 

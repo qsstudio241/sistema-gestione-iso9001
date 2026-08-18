@@ -44,6 +44,25 @@ function emptyToNull(v) {
     return s === '' ? null : s;
 }
 
+function parseIsoDay(value) {
+    if (value === undefined || value === null || String(value).trim() === '') {
+        return { empty: true, day: null };
+    }
+    const s = String(value).trim();
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(s)) return { empty: false, day: null };
+    const t = Date.parse(`${s}T00:00:00Z`);
+    if (Number.isNaN(t)) return { empty: false, day: null };
+    return { empty: false, day: s };
+}
+
+function defaultScopeFromDay() {
+    return `${new Date().getUTCFullYear()}-01-01`;
+}
+
+function defaultScopeToDay() {
+    return new Date().toISOString().slice(0, 10);
+}
+
 // ─── RISKS ──────────────────────────────────────────────────────────────────
 
 async function listRisks(req, res) {
@@ -442,6 +461,73 @@ async function listRiskReviews(req, res) {
     }
 }
 
+async function listRiskReviewsScope(req, res) {
+    try {
+        const pool = await getPool();
+        const orgId = req.user.organization_id;
+        const companyId = parseInt(req.query.company_id, 10);
+        if (!companyId) {
+            return res.status(400).json({ error: 'Seleziona un\'azienda in Ambito.', code: 'COMPANY_REQUIRED' });
+        }
+        const fromParsed = parseIsoDay(req.query.from);
+        const toParsed = parseIsoDay(req.query.to);
+        if (!fromParsed.empty && !fromParsed.day) {
+            return res.status(400).json({ error: 'Data da non valida (YYYY-MM-DD).', code: 'INVALID_FROM' });
+        }
+        if (!toParsed.empty && !toParsed.day) {
+            return res.status(400).json({ error: 'Data a non valida (YYYY-MM-DD).', code: 'INVALID_TO' });
+        }
+        const fromDay = fromParsed.day || defaultScopeFromDay();
+        const toDay = toParsed.day || defaultScopeToDay();
+        if (fromDay > toDay) {
+            return res.status(400).json({ error: 'Intervallo date non valido.', code: 'INVALID_RANGE' });
+        }
+        let limit = parseInt(req.query.limit, 10);
+        if (!Number.isFinite(limit) || limit <= 0) limit = 200;
+        if (limit > 500) limit = 500;
+
+        const accessList = await ensureCompanyAccessLoaded(req.user);
+        const companyFilter = companyAccessSqlFilter(accessList, 'rv');
+        const pgMax = await resolveCompanyPgMax(pool, companyId);
+
+        const req2 = pool.request()
+            .input('orgId', orgId)
+            .input('companyId', companyId)
+            .input('fromDay', fromDay)
+            .input('toDay', toDay)
+            .input('limit', limit);
+        Object.entries(companyFilter.params).forEach(([k, v]) => req2.input(k, v));
+        const extra = companyFilter.clause ? ` AND ${companyFilter.clause}` : '';
+        const hist = await req2.query(`
+            SELECT rv.id, rv.risk_id, rv.organization_id, rv.company_id, rv.title, rv.evaluated_element,
+                   rv.nature, rv.probability, rv.impact, rv.impact_sign, rv.analysis_method, rv.swot_quadrant,
+                   rv.residual_probability, rv.residual_impact, rv.effectiveness_note,
+                   rv.current_actions, rv.further_actions, rv.recorded_at, rv.recorded_by,
+                   u.full_name AS recorded_by_name,
+                   CAST(CASE WHEN r.risk_id IS NULL OR r.is_deleted = 1 THEN 1 ELSE 0 END AS bit) AS risk_deleted
+            FROM risk_reviews rv
+            LEFT JOIN risks r ON r.risk_id = rv.risk_id AND r.organization_id = @orgId
+            LEFT JOIN users u ON u.user_id = rv.recorded_by
+            WHERE rv.organization_id = @orgId
+              AND rv.company_id = @companyId
+              AND CAST(rv.recorded_at AS date) >= CAST(@fromDay AS date)
+              AND CAST(rv.recorded_at AS date) <= CAST(@toDay AS date)
+              ${extra}
+            ORDER BY rv.recorded_at DESC, rv.id DESC
+            OFFSET 0 ROWS FETCH NEXT @limit ROWS ONLY
+        `);
+        const data = hist.recordset.map((row) => decorateRiskRow({ ...row, risk_pg_max: pgMax }));
+        return res.json({
+            success: true,
+            data,
+            meta: { company_id: companyId, from: fromDay, to: toDay },
+        });
+    } catch (err) {
+        logger.error('listRiskReviewsScope:', err.message);
+        return res.status(500).json({ error: err.message });
+    }
+}
+
 async function detectRisksImport(req, res) {
     try {
         const file = req.file;
@@ -823,7 +909,7 @@ async function setCompanyPgScale(req, res) {
 
 module.exports = {
     listRisks, getRiskStats, getOneRisk, createRisk, updateRisk, deleteRisk,
-    listRiskReviews,
+    listRiskReviews, listRiskReviewsScope,
     detectRisksImport, importRisks, downloadM03Template, setCompanyPgScale,
     listObjectives, getObjectiveStats, getOneObjective, createObjective, updateObjective, deleteObjective
 };

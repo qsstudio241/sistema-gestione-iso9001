@@ -1926,6 +1926,10 @@ class ApiService {
     async getRisks(params = {})     { const qs = new URLSearchParams(params).toString(); return this.get(`/risks${qs ? '?' + qs : ''}`); }
     async getRisk(id)               { return this.get(`/risks/${id}`); }
     async getRiskReviews(id)        { return this.get(`/risks/${id}/reviews`); }
+    async getRiskReviewsScope(params = {}) {
+        const qs = new URLSearchParams(params).toString();
+        return this.get(`/risks/reviews${qs ? `?${qs}` : ''}`);
+    }
     async createRisk(data)          { return this.post('/risks', data); }
     async updateRisk(id, data)      { return this.put(`/risks/${id}`, data); }
     async deleteRisk(id)            { return this.delete(`/risks/${id}`); }

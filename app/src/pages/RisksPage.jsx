@@ -10,6 +10,11 @@ import { formatDate } from "../utils/dateHelpers";
 import { riskScore, riskScoreLevel, scoreColor, displayFurtherActions, residualScoreFromRisk, normalizePgMax, pgOptions } from "../utils/riskScore";
 import { appendCatalogLine, formatContextFactorLine, formatInterestedPartyLine } from "../utils/catalogTextAppend";
 import { buildRisksListParams } from "../utils/risksListParams";
+import {
+  defaultReviewFromDay,
+  defaultReviewToDay,
+  buildRiskReviewsScopeParams,
+} from "../utils/riskReviewsScopeParams";
 import NcCreateModal from "../components/NcCreateModal";
 import SgqDataGrid from "../components/SgqDataGrid";
 import RiskM03ImportDialog from "../components/RiskM03ImportDialog";
@@ -79,6 +84,20 @@ const RISK_GRID_COLUMNS = [
   { id: "residual_score_level", label: "Liv. res", sortable: true },
   { id: "status", label: "Stato", sortable: true },
   { id: "azioni", label: "", sortable: false },
+];
+
+const REVIEW_GRID_COLUMNS = [
+  { id: "recorded_at", label: "Data", sortable: true },
+  { id: "evaluated_element", label: "Elemento", sortable: true },
+  { id: "title", label: "Titolo", sortable: true },
+  { id: "probability", label: "P", sortable: true, cellClassName: "risks-grid-num", headerClassName: "risks-grid-num" },
+  { id: "impact", label: "G", sortable: true, cellClassName: "risks-grid-num", headerClassName: "risks-grid-num" },
+  { id: "swot_quadrant", label: "SWOT", sortable: true },
+  { id: "score", label: "R", sortable: true, cellClassName: "risks-grid-num", headerClassName: "risks-grid-num" },
+  { id: "score_level", label: "Livello", sortable: true },
+  { id: "effectiveness_note", label: "Aggiornamento", sortable: true },
+  { id: "residual_score", label: "R res", sortable: true, cellClassName: "risks-grid-num", headerClassName: "risks-grid-num" },
+  { id: "recorded_by_name", label: "Chi", sortable: true },
 ];
 
 function clipCell(text) {
@@ -522,6 +541,10 @@ function RisksTab({ companies = [], filterCompany = "", reloadCompanies }) {
   const [modal, setModal]         = useState(null); // null | { mode:'new'|'edit', data }
   const [filterStatus, setFS]     = useState("");
   const [showClosed, setShowClosed] = useState(false);
+  const [listView, setListView]   = useState("current");
+  const [fromDay, setFromDay]     = useState(() => defaultReviewFromDay());
+  const [toDay, setToDay]         = useState(() => defaultReviewToDay());
+  const [listError, setListError] = useState(null);
   const [actionRisk, setActionRisk] = useState(null);
   const [detection, setDetection] = useState(null);
   const [importFile, setImportFile] = useState(null);
@@ -536,16 +559,28 @@ function RisksTab({ companies = [], filterCompany = "", reloadCompanies }) {
 
   const load = useCallback(async () => {
     setLoading(true);
+    setListError(null);
     try {
-      const params = buildRisksListParams({ filterStatus, filterCompany, showClosed });
-      const [listRes, statsRes] = await Promise.all([
-        apiService.getRisks(params),
-        apiService.getRisksStats(filterCompany ? { company_id: filterCompany } : {}),
-      ]);
-      setList(listRes?.data || []);
+      const statsRes = await apiService.getRisksStats(filterCompany ? { company_id: filterCompany } : {});
       setStats(statsRes?.data || null);
+      if (listView === "reviews") {
+        if (!filterCompany) {
+          setList([]);
+          return;
+        }
+        const params = buildRiskReviewsScopeParams({ companyId: filterCompany, fromDay, toDay });
+        const listRes = await apiService.getRiskReviewsScope(params);
+        setList(listRes?.data || []);
+      } else {
+        const params = buildRisksListParams({ filterStatus, filterCompany, showClosed });
+        const listRes = await apiService.getRisks(params);
+        setList(listRes?.data || []);
+      }
+    } catch (err) {
+      setListError(err.message || "Errore caricamento");
+      setList([]);
     } finally { setLoading(false); }
-  }, [filterStatus, filterCompany, showClosed]);
+  }, [filterStatus, filterCompany, showClosed, listView, fromDay, toDay]);
 
   useEffect(() => { load(); }, [load]);
 
@@ -567,6 +602,21 @@ function RisksTab({ companies = [], filterCompany = "", reloadCompanies }) {
     if (!window.confirm(`Eliminare il rischio "${r.title}"?`)) return;
     await apiService.deleteRisk(r.risk_id);
     await load();
+  }
+
+  async function openRow(row) {
+    if (listView !== "reviews") {
+      setModal({ mode: "edit", data: row });
+      return;
+    }
+    try {
+      const res = await apiService.getRisk(row.risk_id);
+      const live = res?.data;
+      if (!live) throw new Error("Valutazione non trovata");
+      setModal({ mode: "edit", data: live });
+    } catch (err) {
+      setListError(err.message || "Impossibile aprire la valutazione");
+    }
   }
 
   async function runDetect(file, options = {}, { remap = false } = {}) {
@@ -673,18 +723,61 @@ function RisksTab({ companies = [], filterCompany = "", reloadCompanies }) {
 
       {/* Toolbar */}
       <div className="tab-toolbar">
-        <select value={filterStatus} onChange={e => setFS(e.target.value)}>
-          <option value="">Tutti gli stati</option>
-          {Object.entries(RISK_STATUS_CFG).map(([k,v]) => <option key={k} value={k}>{v.label}</option>)}
-        </select>
-        <label className="risks-closed-toggle">
-          <input
-            type="checkbox"
-            checked={showClosed}
-            onChange={(e) => setShowClosed(e.target.checked)}
-          />
-          Mostra rischi chiusi
-        </label>
+        <div className="risks-view-toggle" role="group" aria-label="Vista analisi">
+          <button
+            type="button"
+            className={listView === "current" ? "active" : ""}
+            onClick={() => setListView("current")}
+          >
+            Stato corrente
+          </button>
+          <button
+            type="button"
+            className={listView === "reviews" ? "active" : ""}
+            disabled={!filterCompany}
+            title={!filterCompany ? "Seleziona un'azienda nell'Ambito in alto" : ""}
+            onClick={() => setListView("reviews")}
+          >
+            Riesami ambito
+          </button>
+        </div>
+        {listView === "reviews" ? (
+          <>
+            <label className="risks-scale-label">
+              Dal
+              <input
+                type="date"
+                aria-label="Riesami dal"
+                value={fromDay}
+                onChange={(e) => setFromDay(e.target.value)}
+              />
+            </label>
+            <label className="risks-scale-label">
+              Al
+              <input
+                type="date"
+                aria-label="Riesami al"
+                value={toDay}
+                onChange={(e) => setToDay(e.target.value)}
+              />
+            </label>
+          </>
+        ) : (
+          <>
+            <select value={filterStatus} onChange={e => setFS(e.target.value)}>
+              <option value="">Tutti gli stati</option>
+              {Object.entries(RISK_STATUS_CFG).map(([k,v]) => <option key={k} value={k}>{v.label}</option>)}
+            </select>
+            <label className="risks-closed-toggle">
+              <input
+                type="checkbox"
+                checked={showClosed}
+                onChange={(e) => setShowClosed(e.target.checked)}
+              />
+              Mostra rischi chiusi
+            </label>
+          </>
+        )}
         <button
           className="btn-primary"
           disabled={!filterCompany}
@@ -735,21 +828,31 @@ function RisksTab({ companies = [], filterCompany = "", reloadCompanies }) {
         />
       </div>
       {importError && <p className="form-error">{importError}</p>}
+      {listError && <p className="form-error">{listError}</p>}
 
-      <p className="risks-grid-hint">{"Clicca una riga per aprire la scheda."}</p>
+      <p className="risks-grid-hint">
+        {listView === "reviews"
+          ? "Clicca una riga per aprire la scheda corrente. Lo snapshot resta in sola lettura nel form."
+          : "Clicca una riga per aprire la scheda."}
+      </p>
       <div className="risks-grid-wrap">
         <SgqDataGrid
+          key={listView}
           rows={list}
-          columns={RISK_GRID_COLUMNS}
+          columns={listView === "reviews" ? REVIEW_GRID_COLUMNS : RISK_GRID_COLUMNS}
           loading={loading}
-          emptyMessage={filterCompany
-            ? 'Nessuna valutazione. Clicca "+ Nuovo rischio" per iniziare.'
-            : "Seleziona un'azienda nell'Ambito in alto per creare o importare valutazioni."}
+          emptyMessage={listView === "reviews"
+            ? (filterCompany
+              ? "Nessun riesame in questo periodo."
+              : "Seleziona un'azienda nell'Ambito in alto per interrogare i riesami.")
+            : (filterCompany
+              ? 'Nessuna valutazione. Clicca "+ Nuovo rischio" per iniziare.'
+              : "Seleziona un'azienda nell'Ambito in alto per creare o importare valutazioni.")}
           theme="plain"
-          initialSortCol="score"
+          initialSortCol={listView === "reviews" ? "recorded_at" : "score"}
           initialSortDir="desc"
-          getRowKey={row => row.risk_id}
-          onRowClick={row => setModal({ mode: "edit", data: row })}
+          getRowKey={row => (listView === "reviews" ? row.id : row.risk_id)}
+          onRowClick={openRow}
           getSortValue={(row, colId) => {
             if (colId === "score") return row.score != null ? row.score : riskScore(row.probability, row.impact);
             if (colId === "residual_score") return residualScoreFromRisk(row) ?? -1;
@@ -762,6 +865,7 @@ function RisksTab({ companies = [], filterCompany = "", reloadCompanies }) {
               return rs == null ? "" : (row.residual_score_level || riskScoreLevel(rs, row.risk_pg_max));
             }
             if (colId === "review_date") return row.review_date || "";
+            if (colId === "recorded_at") return row.recorded_at || "";
             if (colId === "status") return RISK_STATUS_CFG[row.status]?.label || row.status;
             if (colId === "further_actions") return displayFurtherActions(row);
             return row[colId] ?? "";
@@ -782,6 +886,9 @@ function RisksTab({ companies = [], filterCompany = "", reloadCompanies }) {
                       {row.nature === "opportunity" ? "Opportunit\u00e0" : "Rischio"}
                     </span>
                     <strong className="risks-grid-cell-clip" title={row.title}>{row.title}</strong>
+                    {(row.risk_deleted === true || row.risk_deleted === 1) && (
+                      <span className="risks-deleted-hint">eliminata</span>
+                    )}
                   </div>
                 );
               case "context_text":
@@ -806,6 +913,10 @@ function RisksTab({ companies = [], filterCompany = "", reloadCompanies }) {
                 return clipCell(row.responsible);
               case "review_date":
                 return row.review_date ? formatDate(row.review_date) : "\u2014";
+              case "recorded_at":
+                return row.recorded_at ? formatDate(row.recorded_at) : "\u2014";
+              case "recorded_by_name":
+                return clipCell(row.recorded_by_name);
               case "effectiveness_note":
                 return clipCell(row.effectiveness_note);
               case "residual_probability":
