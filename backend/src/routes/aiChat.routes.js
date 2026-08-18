@@ -4,6 +4,7 @@ const { authenticate, authorize } = require('../middleware/auth.middleware');
 const { requireLicensedModule } = require('../middleware/moduleLicense.middleware');
 const { logAiInteraction } = require('../middleware/aiAuditTrail.middleware');
 const ctrl = require('../controllers/aiChat.controller');
+const figureCtrl = require('../controllers/figureKnowledge.controller');
 
 // POST /ai/chat — chat assistente globale (richiede licenza ai_chat)
 router.post(
@@ -20,6 +21,14 @@ router.post(
   authenticate,
   authorize('admin'),
   ctrl.aiReindex
+);
+
+// GET /ai/figures/search — testo -> tavola (CLIP locale, licenza ai_chat)
+router.get(
+  '/ai/figures/search',
+  authenticate,
+  requireLicensedModule('ai_chat'),
+  figureCtrl.searchFigures
 );
 
 // GET /ai/ambito-facts — snapshot fatti Ambito (licenza ai_chat, zero LLM)
