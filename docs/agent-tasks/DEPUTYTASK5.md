@@ -2,7 +2,7 @@
 
 **Stato:** CHIUSO  
 **Aperto:** 18/08/2026 (Lead wayfinder — Chart the map Multimodal RAG)  
-**Chiuso:** 18/08/2026 — **TEST OK** (MR-0). MR-1 **non** aperta in questa sessione.  
+**Chiuso:** 18/08/2026 — **TEST OK** (MR-0, [PR #464](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/464)). MR-1 **non** aperta in questa sessione.  
 **Piano:** [`PLAN_MULTIMODAL_RAG_SLICES.md`](PLAN_MULTIMODAL_RAG_SLICES.md)  
 **Spec:** skill [`pdf-to-json`](../../.cursor/skills/pdf-to-json/SKILL.md) · `backend/scripts/pdf_to_json/README.md`  
 **Rischio:** Medio — PR + gate Bugbot; **non** push su `main`; **non** toccare `DEPUTYTASK.md` (SAL S1a ancora APERTO)

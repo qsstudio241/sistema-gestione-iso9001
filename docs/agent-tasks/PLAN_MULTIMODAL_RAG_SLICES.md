@@ -2,7 +2,7 @@
 
 > **Destinazione**: l’SGQ ingerisce PDF normativi con tavole (es. simboli saldatura ISO 2553 / AWS A2.4), conserva testo *e* ritagli di figura con bounding box, e li recupera in uno spazio vettoriale **locale** così l’assistente può citare la tavola e, in seguito, confrontarla con un disegno/WPS caricato. Verificabile: dato un PDF di prova, una query testo (e poi una query immagine) restituisce la figura giusta con pagina + bbox, senza chiamate cloud sui byte delle tavole.
 > **Spec / ADR**: [ADR-010](../adr/ADR-010-ai-agentic-architecture.md) (AI cita, non certifica; audit trail) · skill [`pdf-to-json`](../../.cursor/skills/pdf-to-json/SKILL.md) · indexer esistente `knowledgeIndexer.service.js` / `knowledge_chunks` · catalogo già in repo [`ISO-2553-simboli-saldatura.md`](../reference/ISO-2553-simboli-saldatura.md) + `weldingSymbols2553.js`
-> **Brief attivo**: MR-0 **CHIUSO** (TEST OK, 18/08/2026). Prossima slice **MR-1** (non aperta in questa sessione). `DEPUTYTASK.md` resta SAL S1a, non usarlo.
+> **Brief attivo**: MR-0 **CHIUSO** (TEST OK, [PR #464](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/464)). Prossima slice **MR-1** (non aperta in questa sessione). `DEPUTYTASK.md` resta SAL S1a, non usarlo.
 > **Mappa creata**: 18/08/2026 (Lead wayfinder A — Chart the map)
 > **Vincolo prodotto (HITL 18/08)**: sviluppare **tutto in locale** con un modello adatto. I byte delle figure non escono verso Gemini né altri parser cloud.
 
