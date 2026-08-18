@@ -14,13 +14,15 @@ generico e riutilizzabile (nuove norme, nuovi Quaderni, checklist, capitolati...
 ## Pipeline
 
 ```
-extract.py          -> testo + tabelle + indizi di formattazione, per pagina
+extract.py           -> testo + tabelle + indizi di formattazione, per pagina
                         (usa quality.py per correggere pagine con caratteri riordinati)
+extract_figures.py   -> (opzionale, --extract-figures) tavole raster + cluster
+                        vettoriali con bbox, PNG in figures/ + *.figures.json
 quality.py           -> punteggio di leggibilita' del testo (bigram/dizionario)
 clean.py             -> pulizia/normalizzazione testo
 markdown_convert.py  -> conversione in Markdown (heading, liste, tabelle)
 structure.py         -> Markdown -> JSON strutturato (albero o lista piatta)
-cli.py               -> orchestrazione delle 4 fasi + interfaccia a riga di comando
+cli.py               -> orchestrazione delle fasi + interfaccia a riga di comando
 ```
 
 Ogni fase e' una funzione pura testabile in isolamento (vedi `tests/`).
@@ -76,10 +78,12 @@ interni al package, quindi eseguire `cli.py` direttamente (`python cli.py ...`)
 | `--standard-code` | (nessuno) | Codice standard da inserire nei record, usato solo con `--schema norm-clause` |
 | `--keep-markdown` / `--no-keep-markdown` | `--keep-markdown` | Salva sempre il `.md` intermedio (consigliato lasciare attivo) |
 | `--ocr` / `--no-ocr` | `--ocr` | Tenta OCR locale (tesseract) sulle pagine senza testo, se il binario e' disponibile |
+| `--extract-figures` | disattivo | Estrae tavole raster e regioni vettoriali (pymupdf, **locale**): `figures/` + `<nome>.figures.json` |
 | `--verbose` | disattivo | Log dettagliato per pagina (motore usato, caratteri, tabelle, indizi heading) |
 
 Per ogni PDF in input vengono scritti `<nome-pdf>.md` e `<nome-pdf>.json`
-nella cartella di output.
+nella cartella di output. Con `--extract-figures` (default off) si aggiungono
+`<nome-pdf>.figures.json` e i PNG in `figures/`.
 
 **Fuori scope (oggi):** il tool **non** verifica se la norma e' in vigore sul catalogo UNI/ISO.
 Quella verifica esiste gia' per il registro documenti dei tenant (`normValidityChecker`,
@@ -201,8 +205,27 @@ separatamente, es. su Windows
   "nessun testo estraibile" a scopo di test).
 
 **Nessuna chiamata cloud/API esterna in nessun caso**: ne' per l'estrazione,
-ne' per l'OCR, ne' per la strutturazione JSON (parsing deterministico basato
-su heading Markdown, non un modello linguistico).
+ne' per l'OCR, ne' per le figure (`--extract-figures`), ne' per la
+strutturazione JSON (parsing deterministico basato su heading Markdown,
+non un modello linguistico).
+
+## Estrazione figure (`--extract-figures`, default off)
+
+Le tavole delle norme (es. simboli ISO 2553) sono spesso **vettoriali**:
+`page.get_images()` da solo non basta. Con il flag il tool, in locale:
+
+1. raccoglie le immagini XObject con **bbox di pagina** (`get_image_rects`,
+   non solo xref) e ne rasterizza il ritaglio in PNG (`kind: raster`);
+2. raggruppa i `get_drawings()` vicini, scarta rumore (linee isolate,
+   footer/header, cornici a pagina intera) e rasterizza ogni cluster
+   (`kind: vector`).
+
+Ogni figura nel JSON ha `id`, `page` (1-based), `bbox` `[x0,y0,x1,y1]` in
+punti pagina, `kind`, `path` relativo al PNG, `caption` se c'e' testo
+vicino (best-effort, puo' essere `null`). Una pagina senza figure produce
+`"figures": []` e exit 0. Nessun embedding, nessun database: solo file
+su disco. Non committare PDF coperti da copyright; i test usano fixture
+ReportLab in `tests/pdf_fixtures.py`.
 
 ## Rilevamento automatico testo con caratteri riordinati (pdfplumber, tabelle multi-colonna)
 
@@ -288,8 +311,10 @@ Include test unitari su `clean`/`markdown_convert`/`structure`/`quality`
 (fixture testuali, nessuna dipendenza da PDF reali) e test di integrazione
 end-to-end che generano PDF sintetici al volo con `reportlab` (nessun file
 binario committato nel repository) per validare l'intera pipeline CLI,
-incluso il caso di PDF "scansionato" senza testo e il caso di testo con
-caratteri riordinati (simulato via mock dei motori di estrazione).
+incluso il caso di PDF "scansionato" senza testo, il caso di testo con
+caratteri riordinati (simulato via mock dei motori di estrazione) e
+l'estrazione figure MR-0 (`tests/test_extract_figures.py`: almeno 1 raster
+e 1 vector, bbox non degeneri, pagina senza figure -> `figures: []`).
 
 ### Test manuale con un PDF reale (consigliato prima di usare il tool su un documento importante)
 

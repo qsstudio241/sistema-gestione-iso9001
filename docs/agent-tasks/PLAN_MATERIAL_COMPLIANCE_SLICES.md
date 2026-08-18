@@ -3,7 +3,7 @@
 > **Destinazione (ingest)**: da PDF reali (3.1, DDT scansionato, busta con più mill) si arriva a righe in Materiali con DDT / colata / norma compilati, **Valuta** che gira, HITL che decide. L’agente impara dalle correzioni con lo **stesso anello ADR-017** di qualifiche/WPQR. Nessun secondo motore OCR.  
 > **Spec**: [`MODULO_MATERIAL_COMPLIANCE_AI.md`](../specs/MODULO_MATERIAL_COMPLIANCE_AI.md)  
 > **ADR**: 020–024 · apprendimento ingest: [ADR-017](../adr/ADR-017-ingest-reference-network.md)  
-> **Brief ingest attivo**: [`DEPUTYTASK_MC_INGEST.md`](DEPUTYTASK_MC_INGEST.md) — slice **MC-I0** (Valuta 409)  
+> **Brief ingest attivo**: [`DEPUTYTASK_MC_INGEST.md`](DEPUTYTASK_MC_INGEST.md) — **MC-I0** TEST OK, PR [#463](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/463)  
 > **Brief SAL**: [`DEPUTYTASK.md`](DEPUTYTASK.md) resta **APERTO** su S1a — **non toccarlo** da questa epic ingest  
 > **Brief fondazione (MC-0)**: [`DEPUTYTASK_MATERIAL_COMPLIANCE_AI_FOUNDATION.md`](DEPUTYTASK_MATERIAL_COMPLIANCE_AI_FOUNDATION.md)  
 > **Spec tecniche MC-0**: [`MATERIAL_COMPLIANCE_DATA_MODEL.md`](../specs/MATERIAL_COMPLIANCE_DATA_MODEL.md) · [`MATERIAL_COMPLIANCE_UI.md`](../specs/MATERIAL_COMPLIANCE_UI.md) · [`MATERIAL_COMPLIANCE_API.md`](../specs/MATERIAL_COMPLIANCE_API.md)  
@@ -118,7 +118,7 @@ MC-0/MC-1/MC-5 devono prevedere questi campi (DDT era assente dalla lista spec d
 | **MC-3** | Rule Engine | service puro + test L1 | MC-2 | AFK (chiusa) |
 | **MC-4** | API | `materialCertificates.controller.js` | MC-1, MC-3 | AFK (chiusa) |
 | **MC-5** | UI MVP | `MaterialCertificatesPage.jsx` | MC-4 | AFK (chiusa) |
-| **MC-I0** | Valuta 409 (lock `updated_at`) | controller + test evaluate | MC-4/5 | AFK — **prima eseguibile** |
+| **MC-I0** | Valuta 409 (lock `updated_at`) | controller + test evaluate | MC-4/5 | AFK — PR [#463](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/463) |
 | **MC-I1** | Ruolo Base/Apporto in upload | UI upload + default `base` hardcoded | MC-I0 | AFK |
 | **MC-B** | OCR scan (riuso estrattore, non un secondo motore) | `extractCertificate` + `mapTextReason`; **non** nuovo OCR | MC-I0, SAL **S1a** | AFK (aspetta S1a se OCR assente) |
 | **MC-I2** | 3.1 singolo: colata / DDT / norma | schema `material_certificate` + mapping anagrafica | MC-I0 | AFK |
@@ -281,11 +281,11 @@ Test controller/service con mock DB (`materialCertificates.controller.test.js`).
 
 ### MC-I0 — Valuta 409 (hello world)
 
-**Brief:** [`DEPUTYTASK_MC_INGEST.md`](DEPUTYTASK_MC_INGEST.md) — **unica slice aperta**.
+**Brief:** [`DEPUTYTASK_MC_INGEST.md`](DEPUTYTASK_MC_INGEST.md) — TEST OK, PR [#463](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/463).
 
-Causa confermata dal codice (18/08), non dallo stato workflow: `EVALUABLE` include `extracted`. `persistEvaluateResult` fa `AND updated_at = @updated_at` su colonna `DATETIME2` (SYSUTCDATETIME) con il `Date` JS di `node-mssql`. Il FE **non** invia il lock. Su ADA il click Valuta dopo Estrai → 409 anche se lo stato è `extracted`.
+Causa: `EVALUABLE` include `extracted`; il 409 era `AND updated_at = @updated_at` (`DATETIME2` vs Date JS). Fix: lock solo su `workflow_status` in transazione. Bugbot: nessun bug. Smoke ADA (azienda 179) dopo merge + deploy TEST.
 
-Demoable: record ADA 3–5 in `extracted` → Valuta → `pending_review` + checks, non 409.
+Prossima ingest dopo merge: **MC-I1** (ruolo Base/Apporto in upload).
 
 ### MC-I1 — Ruolo Base / Apporto in upload
 
@@ -341,9 +341,9 @@ Usare dopo ogni PR di slice:
 
 | Check | MC-0 | MC-1 | MC-2 | MC-3 | MC-4 | MC-5 | MC-I0 |
 |-------|------|------|------|------|------|------|-------|
-| Spec / ADR rispettati | ☑ | ☑ | ☑ | ☑ | ☑ | ☑ | ☐ |
+| Spec / ADR rispettati | ☑ | ☑ | ☑ | ☑ | ☑ | ☑ | ☑ |
 | Multi-tenant / company scope | — | ☑ | — | — | ☑ | ☑ | ☑ |
 | AI ≠ approvazione | — | — | — | ☑ | ☑ | ☑ | ☑ |
-| Test L1 / build | ☑ | ☑ | ☑ | ☑ | ☑ | ☑ | ☐ |
+| Test L1 / build | ☑ | ☑ | ☑ | ☑ | ☑ | ☑ | ☑ |
 | Deploy manifest (se nuovi `.js` BE) | — | — | ☑ | ☑ | ☑ | — | — |
-| Doc roadmap aggiornata | ☑ | ☑ | ☑ | ☑ | ☑ | ☑ | ☐ |
+| Doc roadmap aggiornata | ☑ | ☑ | ☑ | ☑ | ☑ | ☑ | ☑ |

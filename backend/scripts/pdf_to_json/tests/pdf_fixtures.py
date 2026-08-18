@@ -64,6 +64,69 @@ def build_sample_norm_pdf(path):
     doc.build(story)
 
 
+def build_text_only_pdf(path):
+    """
+    PDF con una pagina di solo testo (nessuna immagine XObject, nessun
+    disegno): usato per verificare che `--extract-figures` esca 0 con
+    `figures: []`.
+    """
+    canvas_obj = pdf_canvas.Canvas(str(path), pagesize=A4)
+    width, height = A4
+    canvas_obj.setFont("Helvetica", 12)
+    canvas_obj.drawString(72, height - 80, "Pagina solo testo, nessuna tavola.")
+    canvas_obj.drawString(
+        72,
+        height - 110,
+        "L'organizzazione deve determinare i fattori esterni e interni rilevanti.",
+    )
+    canvas_obj.showPage()
+    canvas_obj.save()
+
+
+def build_figures_sample_pdf(path):
+    """
+    PDF sintetico per MR-0: una pagina con tavola vettoriale (linee/rettangolo
+    tipo simbolo) + un'immagine raster minima + caption, e una seconda pagina
+    solo testo (nessuna figura). Nessun PDF normativo reale.
+    """
+    from PIL import Image
+
+    raster = Image.new("RGB", (48, 48), (200, 30, 30))
+    width, height = A4
+    canvas_obj = pdf_canvas.Canvas(str(path), pagesize=A4)
+    canvas_obj.setFont("Helvetica", 14)
+    canvas_obj.drawString(72, height - 56, "Pagina di prova simboli")
+
+    symbol_y = height - 280
+    canvas_obj.setFont("Helvetica", 11)
+    canvas_obj.drawString(120, symbol_y + 70, "Figura 1 - Simbolo di prova")
+
+    canvas_obj.setStrokeColorRGB(0, 0, 0)
+    canvas_obj.setLineWidth(2)
+    x = 120
+    canvas_obj.line(x, symbol_y, x + 180, symbol_y)
+    canvas_obj.line(x + 60, symbol_y, x + 90, symbol_y - 40)
+    canvas_obj.line(x + 90, symbol_y - 40, x + 120, symbol_y)
+    canvas_obj.line(x + 60, symbol_y, x + 120, symbol_y)
+    canvas_obj.rect(x + 40, symbol_y + 10, 100, 50, stroke=1, fill=0)
+
+    canvas_obj.setFont("Helvetica", 11)
+    canvas_obj.drawString(360, height - 120, "Figura 2 - Ritaglio raster")
+    canvas_obj.drawImage(ImageReader(raster), 360, height - 220, width=80, height=80)
+
+    canvas_obj.setLineWidth(0.5)
+    canvas_obj.line(50, 30, width - 50, 30)
+    canvas_obj.setFont("Helvetica", 9)
+    canvas_obj.drawString(width / 2 - 4, 18, "1")
+    canvas_obj.showPage()
+
+    canvas_obj.setFont("Helvetica", 12)
+    canvas_obj.drawString(72, height - 80, "Pagina solo testo, nessuna tavola.")
+    canvas_obj.drawString(72, height - 110, "Nessun disegno e nessuna immagine su questa pagina.")
+    canvas_obj.showPage()
+    canvas_obj.save()
+
+
 def build_scanned_like_pdf(path, text="Documento acquisito via scanner, nessun livello testo reale"):
     """
     Costruisce un PDF "come se fosse" una scansione: il contenuto e' solo
