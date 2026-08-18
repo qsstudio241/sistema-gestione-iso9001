@@ -71,6 +71,7 @@ function buildNavItems(user, alerts = {}) {
       items: filterByLicense([
         { to: "/saldatura", icon: "\uD83C\uDFED", label: "Dashboard 3834", licenseKey: "saldatura" },
         { to: "/saldatura/commesse", icon: "\uD83D\uDCCB", label: "Commesse", licenseKey: "saldatura" },
+        { to: "/saldatura/materiali", icon: "\uD83D\uDCC4", label: "Materiali", licenseKey: "saldatura" },
         { to: "/saldatura/procedure", icon: "\uD83D\uDD27", label: "Procedure WPS/WPQR", licenseKey: "saldatura" },
         { to: "/saldatura/welding-book", icon: "\uD83D\uDCD6", label: "Welding Book", licenseKey: "saldatura" },
         { to: "/saldatura/rdp", icon: "\uD83D\uDCCA", label: "RDP - Rapporto di Prova", licenseKey: "saldatura" },

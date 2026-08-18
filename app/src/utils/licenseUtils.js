@@ -43,3 +43,13 @@ export function hasCompanyProfileCapability(user) {
   if (role === "admin" || role === "superadmin") return true;
   return hasLicensedModule(user, "ai_norms");
 }
+
+/**
+ * Capability MATERIAL_COMPLIANCE (MC-4/MC-5): AND saldatura + ai_import.
+ * Admin/superadmin sempre ON, come il backend.
+ */
+export function hasMaterialComplianceCapability(user) {
+  const role = String(user?.role || "").trim().toLowerCase();
+  if (role === "admin" || role === "superadmin") return true;
+  return hasLicensedModule(user, "saldatura") && hasLicensedModule(user, "ai_import");
+}

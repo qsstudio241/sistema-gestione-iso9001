@@ -154,6 +154,19 @@ const MODULE_INFO = {
     sprint: "Sprint 4",
     eta: "Prossimamente",
   },
+  material_compliance: {
+    icon: "\uD83D\uDCC4",
+    title: "Materiali (certificati EN 10204)",
+    description:
+      "Carica i certificati 3.1 di lamiera e filo, confrontali con la norma e con l'ordine, poi approva tu l'esito.",
+    features: [
+      "Carica il PDF del certificato 3.1",
+      "Confronta i valori con la norma e l'ordine",
+      "Approva o respingi con un click esplicito",
+    ],
+    sprint: "MC-5",
+    eta: "Contatta l'amministratore",
+  },
   saldatura: {
     icon: "🔧",
     title: "Modulo Saldatura ISO 3834",

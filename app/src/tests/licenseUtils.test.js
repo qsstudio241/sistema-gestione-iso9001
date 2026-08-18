@@ -3,7 +3,7 @@
  * Bridge P0 gap ISO 3834: saldatura implica accesso a cnd.
  */
 import { describe, it, expect } from "vitest";
-import { hasLicensedModule, hasCompanyProfileCapability } from "../utils/licenseUtils";
+import { hasLicensedModule, hasCompanyProfileCapability, hasMaterialComplianceCapability } from "../utils/licenseUtils";
 
 describe("hasLicensedModule", () => {
   it("licensed_modules assente = tutti i moduli attivi (retrocompatibilit\u00e0)", () => {
@@ -42,5 +42,20 @@ describe("hasCompanyProfileCapability", () => {
   it("auditor con ai_norms ON, senza ai_norms OFF", () => {
     expect(hasCompanyProfileCapability({ role: "auditor", licensed_modules: ["audit", "ai_norms"] })).toBe(true);
     expect(hasCompanyProfileCapability({ role: "auditor", licensed_modules: ["audit"] })).toBe(false);
+  });
+});
+
+describe("hasMaterialComplianceCapability", () => {
+  it("admin sempre ON anche senza saldatura/ai_import", () => {
+    expect(hasMaterialComplianceCapability({ role: "admin", licensed_modules: ["audit"] })).toBe(true);
+  });
+
+  it("utente: ON solo con AND saldatura + ai_import", () => {
+    expect(hasMaterialComplianceCapability({ role: "user", licensed_modules: ["saldatura"] })).toBe(false);
+    expect(hasMaterialComplianceCapability({ role: "user", licensed_modules: ["ai_import"] })).toBe(false);
+    expect(hasMaterialComplianceCapability({
+      role: "user",
+      licensed_modules: ["saldatura", "ai_import"],
+    })).toBe(true);
   });
 });
