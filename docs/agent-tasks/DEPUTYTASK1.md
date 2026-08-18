@@ -1,39 +1,39 @@
-# DEPUTYTASK1 — ISO-3: chiavi certificato EN 10204 nel prompt capitolato
+# DEPUTYTASK1 — ISO-6: ponte NC ↔ commessa (`project_id` opzionale)
 
-**Stato:** CHIUSO  
-**Aperto:** 16/08/2026 (dopo merge MC-0 [PR #447](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/447))  
-**Chiuso:** 16/08/2026  
+**Stato:** APERTO  
+**Aperto:** 18/08/2026 (Lead — altri punti 3834 dopo merge wayfinder MC ingest #462)  
 **Piano:** [`PLAN_3834_SLICES.md`](PLAN_3834_SLICES.md)  
-**Rischio:** Medio — PR + gate Bugbot; **non** push su `main`  
-**Spec chiavi:** [`MATERIAL-COMPLIANCE-NORME-SINTESI.md`](../reference/MATERIAL-COMPLIANCE-NORME-SINTESI.md)
+**Rischio:** Medio — migrazione nullable + NC; PR + gate Bugbot; Cloud **non** mergia  
+**Ambiente:** migrazione **prima su TEST** (`SGQ_MIGRATION_TARGET=test`). Produzione solo su richiesta.
 
 ---
 
 ## Slice
 
-Prompt + `field_key` su estrazione capitolato. **Niente nuova tabella** (mig. 116 già c’è). Base **e** apporto (`material_role`, `filler_designation`).
+Una NC può (non deve) essere collegata a una commessa ISO 3834. Stesso pattern del Welding Book: picker dopo l'azienda, `project_id` NULL ammesso.
 
 ### File
 
-- `backend/src/data/capitolatoMaterialKeys.js` (+ test)
-- `backend/src/services/caseTextAnalysis.service.js` (+ test)
-- `backend/src/services/aiContextBuilder.service.js` (+ test)
-- `backend/src/controllers/contractReview.controller.js` (merge norme dal testo + persist `field_key`)
-- `backend/scripts/deploy-manifest.json`
+- `database/migrations/153_nc_project_id.sql` + `backend/scripts/run-migration-153-vps.js`
+- `backend/src/controllers/nc.controller.js` (+ test)
+- `app/src/utils/ncCreateHelpers.js`, `NcCreateModal.jsx`, `NcDetailPanel.jsx`, `NCPage.jsx`
+
+### DoD
+
+- Create/update accettano `project_id` opzionale
+- 400 `PROJECT_COMPANY_MISMATCH` se la commessa non è dell'azienda NC/audit
+- Lista/dettaglio espongono `project_code`
+- Picker **Commessa** visibile, `disabled` senza azienda
+- **Non** rendere `project_id` obbligatorio
 
 ### Cosa NON toccare
 
 - `docs/agent-tasks/DEPUTYTASK.md` (SAL S1a)
-- Migrazioni DB / `import-norms-from-markdown.js`
-- UI `ContractReviewPage` (i JSON restano gli stessi campi, più `field_key` opzionale)
+- `docs/agent-tasks/DEPUTYTASK_MC_INGEST.md` (deputy ingest in altra chat)
+- Ingest MC, SAL, Materiali, ISO-4 (file Mason assente)
 
 ---
 
-## Esito
+## Esito (da compilare in chiusura)
 
-- Elenco chiavi canoniche nel prompt (tipo 2.1–3.2, ruolo base/filler, designazione acciaio e filo).
-- `identified_standards`: se il testo cita EN 10204 / 10168 / ISO 10474 / 404 / 6929 / EN 10025-2 / ISO 14341, le norme si aggiungono anche se l’AI le omette.
-- Alias `MTC` / `filo` → chiavi canoniche in `parseRequirements`.
-- Persistenza: `field_key` se presente, altrimenti `ref` (REQ-01) come prima.
-
-`DEPUTYTASK.md` (SAL S1a) non toccato. Prossima 3834: **ISO-4** (Word RDP, serve il file Mason). Prossima MC: **MC-1** migration.
+- …
