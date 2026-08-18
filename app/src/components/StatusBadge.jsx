@@ -58,6 +58,16 @@ const STATUS_CONFIGS = {
     active:   { label: "Attivo",      color: "green" },
     inactive: { label: "Non attivo",  color: "grey"  },
   },
+  material_certificate: {
+    received:       { label: "Ricevuto",      color: "yellow" },
+    text_ready:     { label: "Testo pronto",  color: "yellow" },
+    extracted:      { label: "Estratto",      color: "yellow" },
+    ocr_running:    { label: "OCR in corso",  color: "yellow" },
+    pending_review: { label: "In revisione",  color: "yellow" },
+    compliant:      { label: "Conforme",      color: "green"  },
+    non_compliant:  { label: "Non conforme",  color: "red"    },
+    archived:       { label: "Archiviato",    color: "slate"  },
+  },
   norm_catalog: {
     active:     { label: "In vigore",            color: "green"  },
     withdrawn:  { label: "Ritirata",             color: "red"    },

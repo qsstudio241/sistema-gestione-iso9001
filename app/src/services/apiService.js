@@ -1796,6 +1796,66 @@ class ApiService {
         return this.get(`/qualifications/vision-fitness-gaps${qs ? '?' + qs : ''}`);
     }
 
+    // ─── Material Compliance MC-4/MC-5 ────────────────────────────────────────
+
+    async getMaterialCertificates(params = {}) {
+        const qs = new URLSearchParams();
+        Object.entries(params).forEach(([k, v]) => {
+            if (v != null && v !== "") qs.set(k, v);
+        });
+        const q = qs.toString();
+        return this.get(`/material-certificates${q ? `?${q}` : ""}`);
+    }
+
+    async getMaterialCertificate(id) {
+        return this.get(`/material-certificates/${id}`);
+    }
+
+    async createMaterialCertificate({ companyId, file, materialRole }) {
+        const fd = new FormData();
+        fd.append("file", file);
+        fd.append("company_id", String(companyId));
+        if (materialRole) fd.append("material_role", materialRole);
+        const token = this.getToken();
+        const response = await fetch(`${this.baseUrl}/material-certificates`, {
+            method: "POST",
+            headers: token ? { Authorization: `Bearer ${token}` } : {},
+            body: fd,
+        });
+        if (!response.ok) {
+            const err = await response.json().catch(() => ({}));
+            const error = new Error(err.error || `Upload certificato fallito (${response.status})`);
+            error.status = response.status;
+            error.code = err.code;
+            throw error;
+        }
+        return response.json();
+    }
+
+    async extractMaterialCertificate(id) {
+        return this.post(`/material-certificates/${id}/extract`, {}, { timeout: 120000 });
+    }
+
+    async evaluateMaterialCertificate(id) {
+        return this.post(`/material-certificates/${id}/evaluate`, {});
+    }
+
+    async approveMaterialCertificate(id, body = {}) {
+        return this.post(`/material-certificates/${id}/approve`, body);
+    }
+
+    async rejectMaterialCertificate(id, body = {}) {
+        return this.post(`/material-certificates/${id}/reject`, body);
+    }
+
+    async archiveMaterialCertificate(id, body = {}) {
+        return this.post(`/material-certificates/${id}/archive`, body);
+    }
+
+    async patchMaterialCertificate(id, body) {
+        return this.patch(`/material-certificates/${id}`, body);
+    }
+
     async uploadQualificationCertificate(id, file) {
         const fd = new FormData();
         fd.append('certificate', file);
