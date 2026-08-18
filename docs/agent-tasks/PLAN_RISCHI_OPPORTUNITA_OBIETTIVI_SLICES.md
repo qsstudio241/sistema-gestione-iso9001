@@ -3,7 +3,7 @@
 > **Destinazione**: il modulo è il **documento di analisi rischi/opportunità** (HLS §6.1), valido per 9001 / 14001 / 45001 / SGI. Una riga = una valutazione. Il **metodo di pesatura** (P×G, FMEA G×P×Rilev, SWOT con G con segno) è del documento, non del prodotto. L'ingest accetta più layout (M03, SWOT, FMEA HSE). Non sostituisce DVR né registro aspetti. Obiettivi §6.2 = tab collegato.
 > **Spec**: [PROCESSO](../specs/PROCESSO_ANALISI_RISCHI_OPPORTUNITA.md) · [M03 mapping](../specs/M03_ANALISI_RISCHI_OPPORTUNITA.md) · template [M03-R00](../specs/templates/M03-R00-analisi-rischi-opportunita.xlsx)
 > **Norma**: [9001:2015](../Normative/UNI%20EN%20ISO%209001_2015%20Rev.%200.md) · [14001:2015](../Normative/Normative%20NORMA_00003_%20UNI%20EN%20ISO%2014001_2015%20Rev.%200.md) §6.1 · [45001:2018](../Normative/Normative%20NORMA_00002_%20UNI%20ISO%2045001_2018%20Rev.%200.md) §6.1
-> **Brief attivo**: [DEPUTYTASK_RISCHI_ROO.md](DEPUTYTASK_RISCHI_ROO.md) (ROO-17 lista riesami ambito)
+> **Brief attivo**: nessuno su rischi (ROO-17 + filtri KPI chiusi). Prossima slice dedicata: **ROO-10** (4.1 / 4.2 / §6.2 si scambiano informazioni con la matrice) — non ROO-18.
 > **Draft studio**: M03 rev.00, 19/06/2026, foglio `Analisi Rischio`, autore Marco Camellini
 
 **Correzione di rotta (14/08/2026)**: la prima mappa partiva dai quattro tab già in app e chiedeva come «chiudere la catena» con FK. Quella premessa **inficia** l'analisi: il processo non è CRUD di registri. Questa mappa parte dal **processo ISO**, poi dal **CRUD che serve a quel processo**, poi dal **gap** sul codice attuale.
@@ -133,7 +133,7 @@ Non sono due moduli da affiancare all’analisi. Sono **due ingressi dello stess
 | Catalogo da **monitorare e riesaminare** | tab Contesto → `interested_parties` (già c’è, mig. 124) | Anagrafica: nome, relazione, requisiti. Non è la valutazione. |
 | Testo **sulla riga di analisi** | colonna/form `interested_parties_text` (già c’è, ROO-4; ingest ROO-6c) | Quali parti e requisiti contano *per questa* valutazione. Una riga è valida anche senza catalogo. |
 
-Oggi i due strati **non si parlano**: il form ha solo textarea; il tab è CRUD isolato. L’integrazione UI è un **picker** sul form (stesso gesto di «Cerca nel registro»): scegli dal catalogo dell’ambito → si **accoda** nome + requisiti nel testo. Nessuna FK obbligatoria. Stesso gesto per i fattori §4.1 → `context_text`.
+Oggi i due strati si parlano **solo in un verso** (ROO-8, 15/08): picker sul form, accoda nome + requisiti nel testo. Nessuna FK. Il catalogo **non** sa quali righe lo citano; un cambio 4.1/4.2 non riesamina le valutazioni. Lo scambio bidirezionale (e gli obiettivi §6.2) è **ROO-10**, slice dedicata 18/08.
 
 ### SWOT (metodo, non registro)
 
@@ -162,6 +162,7 @@ Ordine: **prima il ponte catalogo→riga (ROO-8)**, poi metodo documento (ROO-15
 
 - Si **riusa** `risks` come riga di analisi (niente quinta tabella).
 - Cataloghi 4.1/4.2 e tab obiettivi **restano**; non sono la destinazione.
+- **4.1 / 4.2 / §6.2 (18/08/2026, committente):** slice **dedicata**, non un ritocco sulla tab Analisi. Restano collegati al processo HLS e **devono scambiarsi informazioni** con la matrice (non tre CRUD isolati). Oggi: picker one-way catalogo→testo riga (ROO-8). Manca: catalogo che vede quali righe lo citano; obiettivo collegato alla valutazione; monitorare/riesaminare 4.1–4.2 quando cambia il catalogo. Copre e allarga **ROO-10**. Non è ROO-18 (HITL ingest).
 - Ambito: `useCompanyScope()` (PR #401). Non reintrodurre selettore di pagina.
 - Ingest = detect **per layout** → dry-run → insert (v1). Primo detector: M03. SWOT e FMEA HSE dopo `method` (ROO-15).
 - **SWOT e parti (15/08/2026):** catalogo 4.2 ≠ testo riga; UI = picker che scrive testo. SWOT = metodo della stessa matrice, non un tab. Vedi §6.
@@ -191,7 +192,7 @@ Ordine: **prima il ponte catalogo→riga (ROO-8)**, poi metodo documento (ROO-15
 | ROO-6b-F | Detector FMEA HSE (G×P×Rilev) | stesso motore, mapping diversi | ROO-15 | AFK |
 | ROO-7 | Tempistica distinta da `review_date` | nuovo `action_due_date` se serve; nota efficacia già in ROO-5 | ROO-5 | AFK |
 | ROO-9 | Copy: home = «Analisi rischi e opportunità» (tab già «Analisi») | titolo pagina / sidebar | ROO-5 | AFK |
-| ROO-10 | Obiettivi §6.2: piano 6.2.2 + FK opz. alla riga | `objectives` | ROO-4 | AFK |
+| ROO-10 | **4.1 / 4.2 / §6.2 si parlano con la matrice** | cataloghi da monitorare + testi riga + obiettivi 6.2.2; scambio info (non solo FK opz.) | ROO-8 | AFK — prossima dopo #459 |
 | ROO-11 | Hardening RBAC/stats | controller objectives/risks | — | AFK |
 | ROO-12 | Export / ristampa M03 | Excel o Word | ROO-5, ROO-6 | HITL formato |
 | **ROO-13** | **Scala P/G per azienda** | `companies.risk_pg_max` 3\|4\|5; CHECK risks 1–5; set prima ingest/primo rischio | ROO-6c | FATTO |
