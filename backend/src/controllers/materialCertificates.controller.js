@@ -689,6 +689,7 @@ async function extractCertificate(req, res) {
         `UPDATE dbo.material_certificates
          SET extracted_text = @extracted_text, text_extract_reason = @text_extract_reason,
              extracted_json = NULL,
+             corrected_json = NULL,
              workflow_status = 'text_ready', updated_at = SYSUTCDATETIME()
          OUTPUT INSERTED.id
          WHERE id = @id AND organization_id = @organization_id
@@ -730,6 +731,7 @@ async function extractCertificate(req, res) {
         `UPDATE dbo.material_certificates
          SET extracted_text = @extracted_text, text_extract_reason = @text_extract_reason,
              extracted_json = NULL,
+             corrected_json = NULL,
              workflow_status = 'text_ready', updated_at = SYSUTCDATETIME()
          OUTPUT INSERTED.id
          WHERE id = @id AND organization_id = @organization_id
@@ -857,11 +859,12 @@ async function evaluateCertificate(req, res) {
       });
     }
 
-    const scope = req.body?.scope && typeof req.body.scope === 'object' ? req.body.scope : {};
     const result = evaluateMaterialCertificate({
       extractedJson,
       correctedJson,
-      scope,
+      // Overlay PO/cliente/azienda solo da KB server-side (slice successiva).
+      // Il body client non è fonte di verità ADR-021.
+      scope: {},
     });
 
     await persistEvaluateResult(req.user.organization_id, id, result, row.updated_at);
