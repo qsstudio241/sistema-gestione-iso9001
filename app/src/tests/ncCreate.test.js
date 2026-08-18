@@ -72,6 +72,9 @@ describe('ncCreateHelpers', () => {
         responsible_person: 'Mario',
         due_date: '2026-06-01',
       });
+      expect(result.payload.nc_number).toMatch(/^NC-M-AUD-1-/);
+    });
+
     it('include project_id opzionale se selezionato', () => {
       const result = buildManualNcPayload({
         source_category: 'audit',

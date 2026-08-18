@@ -3,7 +3,7 @@
 > **Destinazione**: ogni processo della ISO 3834-2/-3 (adattato al livello 2/3/4 in anagrafica) ha un percorso verificabile: dati + ponte con gli altri moduli + import/export o report. I gap residui sono solo HITL o fuori scope.
 > **Spec / ADR**: [ISO 3834-3:2021](../Normative/Normative%20NORMA_00009_%20UNI%20EN%20ISO%203834-3_2021%20Rev.%200.md) §5–18 · [ISO 3834-5:2021](../Normative/Normative%20NORMA_00008_%20UNI%20EN%20ISO%203834-5_2021%20Rev.%200.md) · [ADR-016](../adr/ADR-016-welding-book-e-modulo-strumenti.md) · [WPS](../specs/MODULO_WPS_GENERAZIONE_SCOPO_E_ROADMAP.md)
 > **Gap di partenza**: [GAP_RDP_3834_2026-08-06.md](../gap-reports/GAP_RDP_3834_2026-08-06.md) (Mason, 06/08) · aggiornamento processi [GAP_RDP_3834_2026-08-15.md](../gap-reports/GAP_RDP_3834_2026-08-15.md)
-> **Brief**: [DEPUTYTASK1.md](DEPUTYTASK1.md) — slice **ISO-6** in corso (ponte NC ↔ commessa). Serie ISO-1*…ISO-3 chiuse. ISO-4 Word RDP **BLOCCATA** (file Mason non in git).
+> **Brief**: [DEPUTYTASK1.md](DEPUTYTASK1.md) — slice **ISO-6** **CHIUSO** (PR #465, ponte NC ↔ commessa). Serie ISO-1*…ISO-3 chiuse. ISO-4 Word RDP **BLOCCATA** (file Mason non in git).
 > **Non confondere**: [DEPUTYTASK.md](DEPUTYTASK.md) resta **APERTO** sulla slice SAL S1a (OCR). Non sovrascriverlo.
 
 ## Fuori scope
@@ -109,7 +109,7 @@ Ogni slice è un **tracer verticale** (un processo o un ponte), non «tutto il D
 | **ISO-3** | Chiavi certificato nel prompt capitolato | `caseTextAnalysis.service.js` + `aiContextBuilder.service.js` | norme 16/08 | Fatto |
 | **ISO-4** | Export Word RDP da verbale Mason | `app/public/templates/rdp-mason-report.docx` (da `RDP_MSN-260127-01`), `wordExport.js`, `RDPModule.jsx` | file Mason in cartella | AFK |
 | **ISO-5** | Export Word Welding Book + foto cordone | `WeldingBooksPage.jsx`, `wordExport` (pattern VT/WPS), allegati | ADR-016 Fase 2–3 | AFK |
-| **ISO-6** | Ponte NC ↔ commessa | `nc.controller.js` + `NCPage` / drawer: `project_id` opzionale | — | In corso |
+| **ISO-6** | Ponte NC ↔ commessa | `nc.controller.js` + `NCPage` / drawer: `project_id` opzionale | — | Fatto (PR #465) |
 | **ISO-7** | Ponte RDP/NDT ↔ commessa | FK `project_id` (o picker) su RDP e NDT | ISO-1a/1b | AFK |
 | **ISO-8** | Ponte offerta → commessa | FK `commercial_case_id` su `projects` o viceversa | ISO-3 utile ma non bloccante | AFK |
 | **ISO-9** | Operatore NDT = qualifica 9712 | `NdtReportsPage` + check copertura | ISO-1b | AFK |
@@ -126,12 +126,13 @@ Ogni slice è un **tracer verticale** (un processo o un ponte), non «tutto il D
 
 | Ora | Aspettare |
 |-----|-----------|
-| **ISO-6** ponte NC ↔ commessa (questa sessione) | merge PR + migrazione 153 su TEST |
+| **ISO-6** ponte NC ↔ commessa | merge [PR #465](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/465) + migrazione 153 su TEST |
+| **ISO-7** RDP/NDT ↔ commessa | dopo ISO-6 in produzione (stesso pattern picker) |
 | **ISO-4** Word RDP: file Mason non è in git | file `RDP_MSN-260127-01` in cartella / dal committente |
 | **SAL S1a** — già APERTO su `main` in `DEPUTYTASK.md` | non sovrascrivere |
 | **Ingest 3.1 / MC-I0** | **altra chat** — [PLAN MC](PLAN_MATERIAL_COMPLIANCE_SLICES.md) § decisione 18/08. Non mescolare |
 
-`DEPUTYTASK.md` resta SAL S1a. ISO-4 = brief dedicato (`DEPUTYTASK1.md` o parallelo), non `DEPUTYTASK.md`.
+`DEPUTYTASK.md` resta SAL S1a. `DEPUTYTASK1.md` = ISO-6 **CHIUSO**. Non sovrascrivere `DEPUTYTASK_MC_INGEST.md`.
 
 ## Qualità della mappa
 
