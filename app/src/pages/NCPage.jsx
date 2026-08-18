@@ -45,6 +45,7 @@ const NC_GRID_COLUMNS = [
   { id: "status", label: "Stato", sortable: true },
   { id: "severity", label: "Severit\u00E0", sortable: true },
   { id: "client_name", label: "Cliente", sortable: true },
+  { id: "project_code", label: "Commessa", sortable: true },
   { id: "audit_number", label: "Audit", sortable: true },
   { id: "due_date", label: "Scadenza", sortable: true },
   { id: "source_type", label: "Origine", sortable: true },

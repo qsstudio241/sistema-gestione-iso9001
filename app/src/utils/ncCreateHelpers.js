@@ -120,6 +120,7 @@ export function buildManualNcNumber(auditNumber) {
  * @param {string} [form.due_date]
  * @param {number|null} [form.source_complaint_id] - ID reclamo collegato (solo se source_category='complaint')
  * @param {number|string} [form.company_id] - azienda/ambito (solo categorie non legate ad audit)
+ * @param {number|string} [form.project_id] - commessa ISO 3834 (opzionale)
  * @param {string|number} [auditNumber]   - usato per generare il nc_number
  */
 export function buildManualNcPayload(form, auditNumber) {
@@ -163,6 +164,7 @@ export function buildManualNcPayload(form, auditNumber) {
       responsible_contact_id: form.responsible_contact_id ?? null,
       due_date: form.due_date || null,
       ...(!requiresAudit && form.company_id ? { company_id: parseInt(form.company_id, 10) } : {}),
+      ...(form.project_id ? { project_id: parseInt(form.project_id, 10) } : {}),
     },
   };
 }

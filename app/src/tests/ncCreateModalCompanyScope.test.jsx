@@ -29,6 +29,7 @@ vi.mock('../services/apiService', () => ({
     getAudit: vi.fn(),
     getChecklistSectionsByStandard: vi.fn(),
     createNonConformity: vi.fn(),
+    getProjects: vi.fn().mockResolvedValue({ data: [] }),
   },
 }));
 
@@ -50,6 +51,7 @@ describe('NcCreateModal — ambito azienda per categorie non-audit', () => {
     apiService.getCompanies.mockResolvedValue({ data: COMPANIES });
     apiService.getAudits.mockResolvedValue({ data: [] });
     apiService.getComplaints.mockResolvedValue({ data: [] });
+    apiService.getProjects.mockResolvedValue({ data: [] });
     mockLoadNcResponsibleContacts.mockResolvedValue([]);
   });
 
@@ -103,6 +105,37 @@ describe('NcCreateModal — ambito azienda per categorie non-audit', () => {
     await waitFor(() => expect(apiService.createNonConformity).toHaveBeenCalled());
     const payload = apiService.createNonConformity.mock.calls[0][0];
     expect(payload.company_id).toBe(7);
+  });
+
+  it('include project_id nel payload se si sceglie una commessa', async () => {
+    apiService.getProjects.mockResolvedValue({
+      data: [{ id: 12, project_code: 'C-12', description: 'Telaio' }],
+    });
+    apiService.createNonConformity.mockResolvedValue({ data: { nc_id: 1 } });
+
+    render(React.createElement(NcCreateModal, {
+      open: true,
+      onClose: vi.fn(),
+      onCreated: vi.fn(),
+      defaultCategory: 'risk_action',
+    }));
+
+    await screen.findByLabelText(/Azienda \/ ambito/i);
+    fireEvent.change(screen.getByLabelText(/Azienda \/ ambito/i), { target: { value: '7' } });
+
+    await waitFor(() => {
+      expect(apiService.getProjects).toHaveBeenCalledWith(
+        expect.objectContaining({ company_id: '7' }),
+      );
+    });
+
+    const projectSelect = await screen.findByLabelText(/Commessa/i);
+    fireEvent.change(projectSelect, { target: { value: '12' } });
+    fireEvent.change(screen.getByLabelText(/Descrizione/i), { target: { value: 'Rischio di test' } });
+    fireEvent.click(screen.getByRole('button', { name: /^Crea$/i }));
+
+    await waitFor(() => expect(apiService.createNonConformity).toHaveBeenCalled());
+    expect(apiService.createNonConformity.mock.calls[0][0].project_id).toBe(12);
   });
 
   it('resetta selectedCompanyId senza lasciare residui quando si passa a categoria audit', async () => {

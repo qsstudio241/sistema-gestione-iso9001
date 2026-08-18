@@ -40,6 +40,41 @@ function withEffectiveCompanyId(row) {
     return { ...rest, company_id: effective_company_id ?? null };
 }
 
+/**
+ * project_id opzionale (ISO-6): stessa organizzazione; se la NC ha azienda
+ * (diretta o dall'audit) la commessa deve essere di quell'azienda.
+ * @returns {Promise<{ skip: true } | { value: number|null } | { error: string, code: string, status: number }>}
+ */
+async function resolveNcProjectId({ organizationId, projectId, companyId }) {
+    if (projectId === undefined) return { skip: true };
+    if (projectId === null || projectId === '') return { value: null };
+    const id = parseInt(projectId, 10);
+    if (!Number.isFinite(id) || id <= 0) {
+        return { error: 'project_id non valido', code: 'VALIDATION_ERROR', status: 400 };
+    }
+    const rows = await query(
+        `SELECT id, company_id FROM dbo.projects
+         WHERE id = @id AND organization_id = @organization_id`,
+        { id, organization_id: organizationId },
+    );
+    if (!rows.recordset?.length) {
+        return {
+            error: 'Commessa non trovata in questa organizzazione',
+            code: 'PROJECT_NOT_FOUND',
+            status: 404,
+        };
+    }
+    const proj = rows.recordset[0];
+    if (companyId != null && companyId !== '' && Number(proj.company_id) !== Number(companyId)) {
+        return {
+            error: 'La commessa non appartiene all\'azienda della NC',
+            code: 'PROJECT_COMPANY_MISMATCH',
+            status: 400,
+        };
+    }
+    return { value: id };
+}
+
 /** Ruoli che possono approvare la chiusura NC (RQ / admin org). */
 function isNcClosureApprover(user) {
     const role = user?.role;
@@ -254,6 +289,7 @@ async function listNonConformities(req, res) {
         a.audit_uuid,
         a.client_name,
         COALESCE(a.company_id, nc.company_id) AS effective_company_id,
+        p.project_code,
         cs.section_title,
         c.complaint_number AS source_complaint_number,
         approver.full_name AS approved_by_name,
@@ -273,6 +309,7 @@ async function listNonConformities(req, res) {
         END AS is_due_soon
       FROM non_conformities nc
       LEFT JOIN audits a             ON nc.audit_id = a.audit_id
+      LEFT JOIN projects p           ON p.id = nc.project_id
       LEFT JOIN checklist_sections cs ON nc.section_code = cs.section_code
                                       AND cs.standard_id = nc.standard_id
       LEFT JOIN complaints c         ON c.id = nc.source_complaint_id
@@ -407,6 +444,7 @@ async function getNonConformityById(req, res) {
         a.audit_uuid,
         a.client_name,
         COALESCE(a.company_id, nc.company_id) AS effective_company_id,
+        p.project_code,
         a.audit_date,
         cs.section_title,
         approver.full_name AS approved_by_name,
@@ -420,6 +458,7 @@ async function getNonConformityById(req, res) {
         END AS is_overdue
       FROM non_conformities nc
       LEFT JOIN audits a ON nc.audit_id = a.audit_id
+      LEFT JOIN projects p ON p.id = nc.project_id
       LEFT JOIN checklist_sections cs ON nc.section_code = cs.section_code AND cs.standard_id = nc.standard_id
       LEFT JOIN users approver ON nc.approved_by = approver.user_id
       WHERE nc.nc_id = @id
@@ -525,6 +564,7 @@ async function createNonConformity(req, res) {
             source_complaint_id: rawComplaintId,
             source_risk_id,
             company_id: rawCompanyId,
+            project_id: rawProjectId,
         } = req.body;
 
         const source_complaint_id = (rawComplaintId != null && rawComplaintId !== '')
@@ -648,6 +688,19 @@ async function createNonConformity(req, res) {
             }
         }
 
+        const projectResolved = await resolveNcProjectId({
+            organizationId: organization_id,
+            projectId: rawProjectId,
+            companyId: company_id,
+        });
+        if (projectResolved.error) {
+            return res.status(projectResolved.status).json({
+                error: projectResolved.error,
+                code: projectResolved.code,
+            });
+        }
+        const project_id = projectResolved.skip ? null : projectResolved.value;
+
         // Verifica unicità nc_number nell'organizzazione
         const existingNC = await query(`
       SELECT nc.nc_id FROM non_conformities nc
@@ -694,6 +747,7 @@ async function createNonConformity(req, res) {
         source_complaint_id,
         management_review_id,
         source_risk_id,
+        project_id,
         created_at,
         updated_at
       )
@@ -718,6 +772,7 @@ async function createNonConformity(req, res) {
         @source_complaint_id,
         @management_review_id,
         @source_risk_id,
+        @project_id,
         GETDATE(),
         GETDATE()
       )
@@ -737,6 +792,7 @@ async function createNonConformity(req, res) {
             source_complaint_id: source_category === 'complaint' ? source_complaint_id : null,
             management_review_id: managementReviewId,
             source_risk_id: safeSourceRiskId,
+            project_id,
             due_date: due_date || null,
             corrective_action: corrective_action || null
         });
@@ -815,6 +871,7 @@ async function updateNonConformity(req, res) {
             corrective_action_needed,
             corrective_action_evaluation_notes,
             effectiveness_verification_notes,
+            project_id: rawProjectId,
         } = req.body;
 
         const scope = studioScopeClause(req.user, 'a');
@@ -827,6 +884,7 @@ async function updateNonConformity(req, res) {
         const existingNC = await query(`
       SELECT nc.nc_id, nc.status AS current_status, nc.verification_notes, nc.approved_at,
              nc.audit_id, nc.source_category, a.company_id,
+             nc.company_id AS nc_company_id,
              nc.corrective_action_needed, nc.corrective_action_evaluation_notes,
              nc.root_cause, nc.verification_contact_id
       FROM non_conformities nc
@@ -950,6 +1008,22 @@ async function updateNonConformity(req, res) {
         if (effectiveness_verification_notes !== undefined) {
             updates.push('effectiveness_verification_notes = @effectiveness_verification_notes');
             params.effectiveness_verification_notes = effectiveness_verification_notes;
+        }
+        if (rawProjectId !== undefined) {
+            const effectiveCompanyId = existingRow.company_id ?? existingRow.nc_company_id;
+            const projectResolved = await resolveNcProjectId({
+                organizationId: organization_id,
+                projectId: rawProjectId,
+                companyId: effectiveCompanyId,
+            });
+            if (projectResolved.error) {
+                return res.status(projectResolved.status).json({
+                    error: projectResolved.error,
+                    code: projectResolved.code,
+                });
+            }
+            updates.push('project_id = @project_id');
+            params.project_id = projectResolved.value;
         }
 
         // Gestione transizione stato (con validazione workflow)
@@ -2056,4 +2130,5 @@ module.exports = {
     undoPushAuditToNcRegister,
     approveNcClosure,
     listAggregateDueNcActions,
+    resolveNcProjectId,
 };
