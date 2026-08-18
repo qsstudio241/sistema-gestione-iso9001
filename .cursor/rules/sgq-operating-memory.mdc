@@ -12,7 +12,7 @@ alwaysApply: true
 - Leggi `PROJECT_CONTEXT.md` (bussola moduli). `docs/PROJECT_ROADMAP.md` (>900 righe): **Read con `limit: 45`**, mai il file intero — è § Stato attuale. **Non** leggere `docs/GUIDA_CONSOLIDATA.md` per intero.
 - Brief: `docs/agent-tasks/DEPUTYTASK*.md`. Poi i 2–4 file della bussola.
 - GUIDA **solo se** deploy / Word / sync / encoding / lezione citata nel brief — una sezione, non il file.
-- **Non** creare `docs/sessions/SESSION_NOTES_*.md`: aggiorna GUIDA (sezione) + roadmap.
+- **Non** creare `docs/sessions/SESSION_NOTES_*.md`. Traccia della slice = il `DEPUTYTASK*.md` di quella chat. GUIDA + roadmap § Stato attuale: stessa PR se sei **l'unica** chat aperta; se c'è parallelo, **dopo il merge** (bozza nel brief). Dettaglio: [`sgq-workflow-method.mdc`](sgq-workflow-method.mdc) § File di traccia.
 - Italiano, operativo. Comandi meccanici: eseguili tu. Chiedi al committente solo password, login terzi, scelte di business.
 
 ## Allineamento Git autonomo (vincolante)
@@ -34,10 +34,11 @@ Working tree sporco: niente reset distruttivo; stash/commit/worktree. Mai force-
 
 Sì, più chat in parallelo. No, non sullo stesso foglio. Dettaglio: [`sgq-workflow-method.mdc`](sgq-workflow-method.mdc).
 
-- **Prima di scrivere codice:** elenca i file che toccherai. Se un altro `DEPUTYTASK*` APERTO o una PR aperta tocca gli stessi file, **fermati** (non è parallelo: è conflitto).
-- **File hub — un solo owner per volta:** `docs/GUIDA_CONSOLIDATA.md`, `docs/PROJECT_ROADMAP.md`, `PROJECT_CONTEXT.md`, `docs/agent-tasks/DEPUTYTASK.md`, `backend/scripts/deploy-manifest.json`. Gli altri deputy non li modificano.
+- **Prima di scrivere codice:** elenca i file che toccherai. Se un altro `DEPUTYTASK*` APERTO o una PR aperta tocca gli stessi file di codice, **fermati**.
+- **Diari condivisi (GUIDA, roadmap § Stato attuale):** non nella PR di codice se un'altra chat è aperta. Traccia nel proprio `DEPUTYTASK*.md`; sync hub **dopo il merge**. Chat sola = puoi aggiornarli nella stessa PR (come prima).
+- **Altri hub:** `PROJECT_CONTEXT.md` solo se nasce/si rinomina un modulo (una chat). `DEPUTYTASK.md` solo il deputy di quel brief (i paralleli usano `DEPUTYTASK1.md`, …). `deploy-manifest.json` non è un diario: se due PR aggiungono file diversi, in merge si tengono **entrambe** le righe.
 - **Desktop:** worktree + nuova finestra Cursor. Vietato due finestre sulla stessa cartella.
-- **Bugbot:** 1 run a pagamento per PR. Non duplicare check GitHub + subagente. Always-on addebita **ogni push**: policy = Dashboard «Run only when mentioned» + un `bugbot run` a slice chiusa.
+- **Bugbot:** 1 run a pagamento per PR. Policy Dashboard «Run only when mentioned» + un `bugbot run` a slice chiusa.
 
 ## Convenzione DEPUTYTASK
 

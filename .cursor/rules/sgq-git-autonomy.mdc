@@ -75,4 +75,4 @@ Il merge resta sempre un'azione del committente (vedi vincolo sopra) — l'obiet
 2. Eseguire il gate Bugbot (vedi sopra).
 3. Aggiornare la PR con l'esito Bugbot nella descrizione (nessun rilievo critico → segnalarlo esplicitamente come "pronta per il merge"; rilievo non banale → NON proporre il merge, riportarlo al committente).
 4. Comunicare al committente che la PR è pronta, con link diretto — **senza tentare azioni di merge/auto-merge non richieste esplicitamente**.
-5. Dopo che il committente mergia (via GitHub): `git pull origin main` in locale per allinearsi, aggiornare `docs/GUIDA_CONSOLIDATA.md` con l'esito e chiudere eventuale `DEPUTYTASK.md`.
+5. Dopo che il committente mergia (via GitHub): `git pull origin main`. Chiudere il `DEPUTYTASK*.md` **di quella chat**. GUIDA + roadmap § Stato attuale: nella stessa PR solo se eri l'unica chat; se c'era parallelo, sync **ora** (dopo merge), tenendo tutte le righe nuove — vedi `sgq-workflow-method.mdc` § File di traccia.

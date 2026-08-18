@@ -24,10 +24,31 @@ due PR in conflitto. Non è un bug di GitHub.
 | Chat A: «solo NC». Chat B: «solo Qualifiche». Dillo esplicito. | Elenca i file **prima** di scrivere. Se overlap con PR/`DEPUTYTASK*` aperto → stop. |
 | Sul PC, seconda chat = **seconda cartella** (worktree sotto). Mai due finestre su `C:\ProgettoISO`. | Worktree (desktop) o VM già isolata (Cloud). Non «sistemare» i file dell'altra chat. |
 | Costi bot: in [cursor.com/dashboard](https://cursor.com/dashboard) → Bugbot → **Run only when mentioned**. | Un solo `bugbot run` a slice chiusa. Mai subagente + check GitHub insieme. |
-| Brief paralleli: `DEPUTYTASK.md` + `DEPUTYTASK1.md` con file disgiunti, pushati su `main`. | Non toccare i **file hub** se non sei l'owner (GUIDA, roadmap, `PROJECT_CONTEXT`, `DEPUTYTASK.md`, `deploy-manifest.json`). |
+| Brief paralleli: `DEPUTYTASK.md` + `DEPUTYTASK1.md` con file disgiunti, pushati su `main`. | Codice disgiunto. GUIDA/roadmap: dopo il merge se c'è un'altra chat (vedi § File di traccia). |
 
 Comando overlap (prima del codice): `gh pr list --state open` e i path nel brief dell'altro deputy.
-Se i path si incrociano, **serializzare** (finire chat A, mergiare, poi chat B) — non «andare avanti lo stesso».
+Se i path di **codice** si incrociano, **serializzare** (finire chat A, mergiare, poi chat B).
+GUIDA e roadmap si incrociano **sempre**: non serializzare il lavoro per quello — si aggiornano dopo il merge.
+
+## 0.1 File di traccia (GUIDA e compagni)
+
+Servono a ricordare dove siamo. Non sono codice. In parallelo vanno trattati così, altrimenti
+ogni PR tocca GUIDA e va in conflitto.
+
+| File | Cosa tiene | In parallelo |
+|---|---|---|
+| `docs/agent-tasks/DEPUTYTASK.md` / `DEPUTYTASK1.md` / `2` / … | Compito **di quella chat** (APERTO/CHIUSO, fatto, manca) | Ognuno **solo il proprio**. Mai sovrascrivere il brief dell'altra chat. |
+| `docs/agent-tasks/PLAN_*_SLICES.md` | Mappa dell'epic (checkbox slice) | Solo la chat di **quell'epic**. Due chat sullo stesso piano = serializzare. |
+| `docs/GUIDA_CONSOLIDATA.md` | Lezioni (come si lavora, errori da non ripetere) | **Non** nella PR di codice se c'è un'altra chat aperta. Bozza 5 righe nel proprio brief. Dopo il merge: una riga in tabella lezioni. |
+| `docs/PROJECT_ROADMAP.md` § Stato attuale | Dove siamo **ora** e le priorità | Stesso trattamento della GUIDA. Una riga sotto «Sessione più recente», non riscrivere le altrui. |
+| `PROJECT_CONTEXT.md` | Bussola moduli (quali file aprire) | Solo se **nasce o si rinomina** un modulo. Una chat alla volta. |
+| `backend/scripts/deploy-manifest.json` | Elenco file da copiare sul server | Non è un diario. Due PR che aggiungono `.js` diversi: in merge tenere **entrambe** le righe. |
+
+**Chat sola** (nessun altro `DEPUTYTASK*` APERTO): GUIDA + roadmap nella **stessa** PR, come oggi.
+
+**Dopo il merge** (parallelo): `git pull origin main`, poi un aggiornamento docs basso rischio —
+tenere **tutte** le righe nuove, non «la mia al posto della tua». Cloud Agent: piccola PR docs,
+oppure la chat Lead. Non inventare un terzo diario (`SESSION_NOTES_*` vietato).
 
 ## 1. Slice verticale (unità minima di lavoro)
 

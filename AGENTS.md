@@ -18,7 +18,7 @@ Istruzioni operative per agenti Cursor (desktop e Cloud). Fonte di governance: [
 
 Rispondi in **italiano**, operativo e sintetico.
 
-**Domanda tipo «stato di avanzamento del progetto e priorità da affrontare»**: rispondi sintetizzando da [`docs/PROJECT_ROADMAP.md` § Stato attuale e priorità](docs/PROJECT_ROADMAP.md#stato-attuale-e-priorità-fonte-unica) (moduli maturi + sessione più recente + tabella priorità) — è la fonte unica pensata apposta per questa domanda, non il banner storico più sotto nello stesso file né l'archivio marzo 2026 in [`docs/archive/PROJECT_CONTEXT_STATO_FUNZIONALITA_2026-03.md`](docs/archive/PROJECT_CONTEXT_STATO_FUNZIONALITA_2026-03.md). **Aggiorna quella sezione a fine sessione** se emergono nuove priorità o se una priorità elencata viene chiusa.
+**Domanda tipo «stato di avanzamento del progetto e priorità da affrontare»**: rispondi sintetizzando da [`docs/PROJECT_ROADMAP.md` § Stato attuale e priorità](docs/PROJECT_ROADMAP.md#stato-attuale-e-priorità-fonte-unica) (moduli maturi + sessione più recente + tabella priorità) — è la fonte unica pensata apposta per questa domanda, non il banner storico più sotto nello stesso file né l'archivio marzo 2026 in [`docs/archive/PROJECT_CONTEXT_STATO_FUNZIONALITA_2026-03.md`](docs/archive/PROJECT_CONTEXT_STATO_FUNZIONALITA_2026-03.md). **Aggiorna quella sezione a fine sessione** se emergono nuove priorità o se una priorità elencata viene chiusa. In **parallelo** (altra chat/`DEPUTYTASK*` aperto): non nella PR di codice — bozza nel proprio brief, sync dopo merge ([`sgq-workflow-method.mdc`](.cursor/rules/sgq-workflow-method.mdc) § File di traccia).
 
 ## Workflow Lead / Deputy
 
@@ -82,7 +82,7 @@ PR di livello Medio: gate **Bugbot** prima di dichiararla pronta (`sgq-git-auton
 - **Prima di codice nuovo** (file/componente/CSS/endpoint): deve esistere? esiste già? libreria già in repo? una riga basta? altrimenti il minimo. Dettaglio: `.cursor/rules/sgq-operating-memory.mdc` § Gate Ponytail.
 - Encoding UTF-8, accenti italiani corretti (regola `sgq-encoding-quality`).
 - Zero segreti in file versionati o chat.
-- Doc operativa: aggiorna `docs/GUIDA_CONSOLIDATA.md` (non creare `SESSION_NOTES_*`).
+- Doc operativa: aggiorna `docs/GUIDA_CONSOLIDATA.md` (non creare `SESSION_NOTES_*`). In parallelo: GUIDA/roadmap **dopo il merge**, non nella PR di codice.
 
 ## Riferimenti rapidi
 

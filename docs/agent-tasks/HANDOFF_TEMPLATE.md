@@ -15,4 +15,6 @@
 - **Rischi / Bugbot**:
 - **Brief**: `docs/agent-tasks/DEPUTYTASK.md`
 - **Branch / PR**:
+- **Lezione GUIDA** (bozza da copiare dopo merge se c'era parallelo):
+- **Roadmap** (1 riga «sessione più recente», stessa regola):
 ```
