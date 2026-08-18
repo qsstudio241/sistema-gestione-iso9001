@@ -8,13 +8,15 @@
 
 > **Risposta standard a «stato di avanzamento del progetto e priorità da affrontare»**: sintetizzare da questa sezione (moduli maturi + sessione più recente + tabella priorità sotto), **non** dal banner storico più sotto (superato, tenuto solo per traccia) né dall'archivio marzo 2026 [`docs/archive/PROJECT_CONTEXT_STATO_FUNZIONALITA_2026-03.md`](archive/PROJECT_CONTEXT_STATO_FUNZIONALITA_2026-03.md). **Aggiornare questa sezione a fine sessione** se emergono nuove priorità o se una priorità elencata viene chiusa (stesso principio delle "Lezioni apprese" in [GUIDA_CONSOLIDATA.md](GUIDA_CONSOLIDATA.md) — sintesi qui, dettaglio linkato).
 
-**Ultimo aggiornamento di questa sezione**: 18/08/2026 (MC-I0 Valuta 409 TEST OK PR #463; wayfinder ingest; ISO-4 resta 3834).
+**Ultimo aggiornamento di questa sezione**: 18/08/2026 (MR-0 figure pdf-to-json mergiato #464; MC-I0 Valuta 409 #463).
 
 ### Moduli maturi (in produzione, uso quotidiano dai clienti Camellini/Mason)
 
 Audit multi-standard (9001/14001/45001) · Non Conformità (workflow ISO 10.2 completo) · Qualifiche Personale saldatori/NDT/coordinatori (ISO 9606-1/14732/14731/9712) · Saldatura (WPQR, generazione WPS da WPQR, Welding Book, Commesse ISO 3834, Dashboard 3834) · SAL (gap analysis requisiti con AI) · Registro Documenti + Scadenzari · Notifiche/Alert (documenti/NC/qualifiche) · Riesame di Direzione · RBAC multi-tenant (`company_access`) · Registro obblighi legali (ambiente + sicurezza) · Assistente AI / Gap Analysis euristica.
 
 ### Sessione più recente (18/08/2026)
+
+**Multimodal RAG MR-0 mergiato (18/08)** — [PR #464](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/464): `pdf-to-json --extract-figures` (raster + cluster vettoriali, PNG + bbox, locale). Brief [`DEPUTYTASK5.md`](agent-tasks/DEPUTYTASK5.md) **CHIUSO**. Prossima: **MR-1** (persist + embed locale) — non aperta. Piano: [`PLAN_MULTIMODAL_RAG_SLICES.md`](agent-tasks/PLAN_MULTIMODAL_RAG_SLICES.md). `DEPUTYTASK.md` resta SAL S1a.
 
 **MC-I0 Valuta 409 (18/08)** — lock `updated_at` rimosso da evaluate; resta il gate sullo stato. L1 24/24. Bugbot: nessun bug. PR [#463](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/463). Prossima ingest dopo merge: **MC-I1** (ruolo upload). SAL S1a e ISO-4 **non** toccati.
 
@@ -102,6 +104,7 @@ Sessione prodotto precedente (10/08/2026): fix filtri dashboard duplicati (Quali
 | 6 | **SAL AI evidenze — OCR + documento mancante (HITL)** | Suggeritore 5-A/5-B legge solo PDF/DOCX testo; PDF scan/immagini saltati; se manca evidenza → solo messaggio low, nessuna ricerca tipo/upload guidato | [PLAN](agent-tasks/PLAN_SAL_AI_EVIDENCE_SLICES.md) · brief [S1a](agent-tasks/DEPUTYTASK.md) |
 | 7 | **ISO 3834 — completezza per processi (RBAC + ponti + report)** | ISO-1* + ISO-2 + ISO-3 mergiate e ISO-3 deployata. Prossima: ISO-4 Word RDP Mason (serve il file) | [PLAN](agent-tasks/PLAN_3834_SLICES.md) · brief [ISO-3 CHIUSO](agent-tasks/DEPUTYTASK1.md) |
 | 8 | **Second Brain — Assistente di Ambito (SB-1 fatti, zero LLM)** | Studio + clienti paganti: fatti dell'Ambito in app, non AIOS Claude. Chat dopo i numeri veri | [PLAN](agent-tasks/PLAN_SECOND_BRAIN_SLICES.md) · brief [SB-1](agent-tasks/DEPUTYTASK2.md) |
+| 9 | **Multimodal RAG — figure normative in locale** | MR-0 mergiato (#464). Prossima **MR-1**: tabella `knowledge_figures` + CLIP locale + GET retrieve (spazio vettoriale distinto da Gemini testo) | [PLAN](agent-tasks/PLAN_MULTIMODAL_RAG_SLICES.md) · brief [MR-0 CHIUSO](agent-tasks/DEPUTYTASK5.md) |
 
 > Nota: **Modulo NC — card statistiche duplicate da due tendine** (era riga 1) è stato chiuso da PR #374 (10/08/2026) — riga rimossa da questa tabella, non ancora aggiornata al momento in cui è stata scritta DEPUTYTASK4.
 
