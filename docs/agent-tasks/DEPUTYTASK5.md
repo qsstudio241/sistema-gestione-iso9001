@@ -1,6 +1,6 @@
 # DEPUTYTASK5 — Multimodal RAG MR-1: persisti + embed locale + GET testo→figura
 
-**Stato:** CHIUSO — TEST OK (18/08/2026). **Non aprire MR-2** in questa run.  
+**Stato:** CHIUSO — TEST OK (18/08/2026, [PR #469](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/469)). **Non aprire MR-2** in questa run.  
 **Aperto:** 18/08/2026 (Lead wayfinder B — Work through the map, dopo merge MR-0 [PR #464](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/464))  
 **Piano:** [`PLAN_MULTIMODAL_RAG_SLICES.md`](PLAN_MULTIMODAL_RAG_SLICES.md)  
 **Spec:** ADR-010 (AI cita, non certifica) · `knowledgeIndexer.service.js` (RAG testo Gemini, **invariato**) · MR-0 `extract_figures.py`  

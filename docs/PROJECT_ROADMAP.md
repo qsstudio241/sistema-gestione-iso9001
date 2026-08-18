@@ -16,7 +16,7 @@ Audit multi-standard (9001/14001/45001) · Non Conformità (workflow ISO 10.2 co
 
 ### Sessione più recente (18/08/2026)
 
-**Multimodal RAG MR-1 TEST OK (18/08)** — persist `knowledge_figures` (mig. **153**) + adapter CLIP locale (mock L1) + GET `/api/v1/ai/figures/search?q=` isolato per `organization_id`. Brief [`DEPUTYTASK5.md`](agent-tasks/DEPUTYTASK5.md) **CHIUSO**. **MR-2 non aperta**. Migrazione VPS dopo merge (SCP + `run-migration-153-vps.js`). Piano: [`PLAN_MULTIMODAL_RAG_SLICES.md`](agent-tasks/PLAN_MULTIMODAL_RAG_SLICES.md). `DEPUTYTASK.md` resta SAL S1a.
+**Multimodal RAG MR-1 TEST OK (18/08)** — persist `knowledge_figures` (mig. **153**) + adapter CLIP locale (mock L1) + GET `/api/v1/ai/figures/search?q=` isolato per `organization_id`. Brief [`DEPUTYTASK5.md`](agent-tasks/DEPUTYTASK5.md) **CHIUSO**. [PR #469](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/469). **MR-2 non aperta**. Migrazione VPS dopo merge (SCP + `run-migration-153-vps.js`). Piano: [`PLAN_MULTIMODAL_RAG_SLICES.md`](agent-tasks/PLAN_MULTIMODAL_RAG_SLICES.md). `DEPUTYTASK.md` resta SAL S1a.
 
 **Multimodal RAG MR-0 mergiato (18/08)** — [PR #464](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/464): `pdf-to-json --extract-figures` (raster + cluster vettoriali, PNG + bbox, locale).
 
