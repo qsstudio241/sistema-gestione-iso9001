@@ -266,7 +266,29 @@ describe('materialCertificates.controller (MC-4)', () => {
     expect(sqls.some((s) => /INSERT INTO dbo.material_certificate_checks/.test(s))).toBe(true);
     expect(sqls.some((s) => /workflow_status = 'pending_review'/.test(s))).toBe(true);
     expect(sqls.some((s) => /reviewed_by = NULL/.test(s))).toBe(true);
-    expect(sqls.some((s) => /updated_at = @updated_at/.test(s))).toBe(true);
+    expect(sqls.some((s) => /updated_at = SYSUTCDATETIME\(\)/.test(s))).toBe(true);
+    expect(sqls.some((s) => /AND updated_at = @updated_at/.test(s))).toBe(false);
+  });
+
+  it('evaluate da extracted con Date JS (driver mssql) non dà 409', async () => {
+    query.mockResolvedValueOnce({
+      recordset: [{
+        ...CERT,
+        workflow_status: 'extracted',
+        updated_at: new Date('2026-08-17T12:00:00.123Z'),
+      }],
+    });
+    mockTx();
+    evaluateMaterialCertificate.mockReturnValueOnce({
+      status: 'pass',
+      kb_snapshot_hash: 'a'.repeat(64),
+      checks: [],
+    });
+    const res = mockRes();
+    await ctrl.evaluateCertificate(mockReq({ params: { id: '11' }, body: {} }), res);
+    expect(res.status).not.toHaveBeenCalledWith(409);
+    expect(res.json.mock.calls[0][0].data.workflow_status).toBe('pending_review');
+    expect(res.json.mock.calls[0][0].data.workflow_status).not.toBe('compliant');
   });
 
   it('extract da compliant → 409 (non degrada HITL)', async () => {
