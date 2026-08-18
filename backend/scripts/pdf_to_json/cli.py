@@ -26,6 +26,7 @@ from pathlib import Path
 
 from .clean import clean_pages
 from .extract import PdfExtractionError, extract_pdf
+from .extract_figures import FigureExtractionError, extract_and_save_figures
 from .markdown_convert import build_markdown
 from .structure import markdown_to_json
 
@@ -43,11 +44,13 @@ def _configure_logging(verbose):
 
 
 def process_pdf(pdf_path, output_dir, schema="generic", standard_code=None,
-                 keep_markdown=True, verbose=False, allow_ocr=True):
+                 keep_markdown=True, verbose=False, allow_ocr=True,
+                 extract_figures=False):
     """
     Esegue la pipeline completa su un singolo PDF.
 
-    Ritorna un dict {"markdown_path": Path|None, "json_path": Path, "warnings": [str, ...]}.
+    Ritorna un dict {"markdown_path": Path|None, "json_path": Path,
+    "figures_json_path": Path|None, "figures": list, "warnings": [str, ...]}.
     Solleva `PdfExtractionError` se il PDF non produce testo utilizzabile
     (nessun file viene scritto in questo caso, per evitare JSON vuoti fuorvianti).
     """
@@ -105,7 +108,21 @@ def process_pdf(pdf_path, output_dir, schema="generic", standard_code=None,
             f"con pymupdf: {pages_list}. Cercare 'Nota tecnica' nel markdown intermedio e verificare il risultato."
         )
 
-    return {"markdown_path": markdown_path, "json_path": json_path, "warnings": warnings}
+    figures_json_path = None
+    figures = []
+    if extract_figures:
+        fig_result = extract_and_save_figures(pdf_path, output_dir, base_name=base_name)
+        figures_json_path = fig_result["json_path"]
+        figures = fig_result["figures"]
+        logger.info("Figure estratte: %s (locale, nessuna chiamata cloud)", len(figures))
+
+    return {
+        "markdown_path": markdown_path,
+        "json_path": json_path,
+        "figures_json_path": figures_json_path,
+        "figures": figures,
+        "warnings": warnings,
+    }
 
 
 def _collect_pdf_inputs(input_path):
@@ -163,6 +180,11 @@ def build_arg_parser():
         "--verbose", action="store_true", default=False,
         help="Log dettagliato per pagina (motore usato, caratteri estratti, tabelle, indizi heading).",
     )
+    parser.add_argument(
+        "--extract-figures", action="store_true", default=False,
+        help="Estrae tavole raster e regioni vettoriali (pymupdf, locale): "
+             "scrive figures/ e <nome>.figures.json accanto a .md/.json. Default: off.",
+    )
     return parser
 
 
@@ -187,11 +209,15 @@ def main(argv=None):
                 keep_markdown=args.keep_markdown,
                 verbose=args.verbose,
                 allow_ocr=args.allow_ocr,
+                extract_figures=args.extract_figures,
             )
             for warning in result["warnings"]:
                 logger.warning(warning)
         except PdfExtractionError as exc:
             logger.error("FALLITO '%s': %s", pdf_path, exc)
+            exit_code = 1
+        except FigureExtractionError as exc:
+            logger.error("FIGURE FALLITE '%s': %s", pdf_path, exc)
             exit_code = 1
         except Exception as exc:  # difensivo: un PDF malformato non deve bloccare l'intero batch
             logger.error("ERRORE INATTESO su '%s': %s", pdf_path, exc)
