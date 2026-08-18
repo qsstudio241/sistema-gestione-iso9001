@@ -2,8 +2,8 @@
  * @jest-environment node
  *
  * Test L1 — documentTextExtractor.service
- * Copre: estrazione PDF, DOCX, testo semplice, formati non supportati,
- * file mancante e PDF senza strato testo (scansione).
+ * Copre: estrazione PDF, fallback OCR (ok / fail / unavailable), DOCX,
+ * testo semplice, formati non supportati, file mancante.
  */
 
 jest.mock('fs', () => ({
@@ -11,6 +11,9 @@ jest.mock('fs', () => ({
 }));
 jest.mock('../utils/importPdfText', () => ({
   extractPdfText: jest.fn(),
+}));
+jest.mock('../utils/ocrExtractor', () => ({
+  extractTextWithOCR: jest.fn(),
 }));
 jest.mock('mammoth', () => ({
   extractRawText: jest.fn(),
@@ -24,6 +27,7 @@ jest.mock('../utils/logger', () => ({
 
 const fs = require('fs').promises;
 const { extractPdfText } = require('../utils/importPdfText');
+const { extractTextWithOCR } = require('../utils/ocrExtractor');
 const mammoth = require('mammoth');
 const { extractDocumentText, isExtractable, normalizeWhitespace } = require('./documentTextExtractor.service');
 
@@ -34,30 +38,76 @@ beforeEach(() => {
 
 describe('extractDocumentText', () => {
   test('estrae testo da PDF con strato testo', async () => {
-    extractPdfText.mockResolvedValue('Contenuto   del PDF\r\n\r\n\r\nseconda riga');
+    extractPdfText.mockResolvedValue(
+      'Contenuto   del PDF con strato testo sufficiente per superare la soglia OCR\r\n\r\n\r\nseconda riga del documento'
+    );
     const out = await extractDocumentText('/x/file.pdf', 'application/pdf', 'file.pdf');
-    expect(out.text).toBe('Contenuto del PDF\n\nseconda riga');
+    expect(out.text).toBe(
+      'Contenuto del PDF con strato testo sufficiente per superare la soglia OCR\n\nseconda riga del documento'
+    );
     expect(extractPdfText).toHaveBeenCalledTimes(1);
+    expect(extractTextWithOCR).not.toHaveBeenCalled();
   });
 
   test('riconosce PDF da mime anche senza estensione nel nome', async () => {
-    extractPdfText.mockResolvedValue('Testo valido del documento');
+    extractPdfText.mockResolvedValue(
+      'Testo valido del documento con lunghezza oltre la soglia minima OCR ingest'
+    );
     const out = await extractDocumentText('/x/blob', 'application/pdf', 'blob');
-    expect(out.text).toBe('Testo valido del documento');
+    expect(out.text).toBe(
+      'Testo valido del documento con lunghezza oltre la soglia minima OCR ingest'
+    );
+    expect(extractTextWithOCR).not.toHaveBeenCalled();
   });
 
-  test('PDF scansionato senza testo → skip con reason', async () => {
+  test('PDF scansionato: OCR ok → testo senza throw', async () => {
     extractPdfText.mockResolvedValue('   \n  ');
+    extractTextWithOCR.mockResolvedValue('Testo da scansione  OCR');
+    const out = await extractDocumentText('/x/scan.pdf', 'application/pdf', 'scan.pdf');
+    expect(out.text).toBe('Testo da scansione OCR');
+    expect(out.reason).toBeUndefined();
+    expect(extractTextWithOCR).toHaveBeenCalledTimes(1);
+  });
+
+  test('PDF scansionato: OCR throw → ocr_failed senza lanciare', async () => {
+    extractPdfText.mockResolvedValue('');
+    extractTextWithOCR.mockRejectedValue(new Error('[OCR] Tesseract non ha estratto testo utilizzabile'));
     const out = await extractDocumentText('/x/scan.pdf', 'application/pdf', 'scan.pdf');
     expect(out.text).toBeNull();
-    expect(out.reason).toBe('pdf_no_text_layer');
+    expect(out.reason).toBe('ocr_failed');
   });
 
-  test('errore parsing PDF → skip senza lanciare', async () => {
+  test('PDF scansionato: motore immagini assente → ocr_unavailable', async () => {
+    extractPdfText.mockResolvedValue('');
+    extractTextWithOCR.mockRejectedValue(
+      new Error('[OCR] Nessun motore immagini installato sul server: serve GraphicsMagick')
+    );
+    const out = await extractDocumentText('/x/scan.pdf', 'application/pdf', 'scan.pdf');
+    expect(out.text).toBeNull();
+    expect(out.reason).toBe('ocr_unavailable');
+  });
+
+  test('PDF sotto soglia: tenta OCR; se OCR fallisce tiene lo strato testo', async () => {
+    extractPdfText.mockResolvedValue('breve');
+    extractTextWithOCR.mockRejectedValue(new Error('ocr boom'));
+    const out = await extractDocumentText('/x/short.pdf', 'application/pdf', 'short.pdf');
+    expect(out.text).toBe('breve');
+    expect(extractTextWithOCR).toHaveBeenCalledTimes(1);
+  });
+
+  test('errore parsing PDF: tenta OCR e se ok restituisce testo', async () => {
     extractPdfText.mockRejectedValue(new Error('corrupt'));
+    extractTextWithOCR.mockResolvedValue('Recuperato da OCR');
+    const out = await extractDocumentText('/x/bad.pdf', 'application/pdf', 'bad.pdf');
+    expect(out.text).toBe('Recuperato da OCR');
+  });
+
+  test('errore parsing PDF: OCR fallito → skip senza lanciare', async () => {
+    extractPdfText.mockRejectedValue(new Error('corrupt'));
+    extractTextWithOCR.mockRejectedValue(new Error('ocr boom'));
     const out = await extractDocumentText('/x/bad.pdf', 'application/pdf', 'bad.pdf');
     expect(out.text).toBeNull();
-    expect(out.reason).toBe('pdf_parse_error');
+    expect(out.reason).toBe('ocr_failed');
   });
 
   test('estrae testo da DOCX via mammoth', async () => {
