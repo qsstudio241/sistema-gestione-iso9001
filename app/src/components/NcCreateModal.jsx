@@ -45,6 +45,7 @@ const EMPTY_FORM = {
   due_date:           "",
   source_complaint_id: null,
   company_id:         "",
+  project_id:         "",
 };
 
 export default function NcCreateModal({
@@ -66,6 +67,7 @@ export default function NcCreateModal({
   const [selectedCompanyId, setSelectedCompanyId] = useState(null);
   const [complaints, setComplaints]       = useState([]);
   const [companies, setCompanies]         = useState([]);
+  const [projects, setProjects]           = useState([]);
 
   const categoryConfig = NC_SOURCE_CATEGORIES[form.source_category] || NC_SOURCE_CATEGORIES.audit;
   const requiresAudit  = categoryConfig.requiresAudit;
@@ -93,6 +95,21 @@ export default function NcCreateModal({
     if (!open || requiresAudit) return;
     setSelectedCompanyId(form.company_id || null);
   }, [open, requiresAudit, form.company_id]);
+
+  /* ── Commesse dell'azienda (audit o ambito) ───────────────────── */
+  useEffect(() => {
+    if (!open) return;
+    const cid = requiresAudit ? selectedCompanyId : (form.company_id || null);
+    if (!cid) {
+      setProjects([]);
+      return;
+    }
+    let cancelled = false;
+    apiService.getProjects({ company_id: cid, limit: 100 })
+      .then((res) => { if (!cancelled) setProjects(res?.data || []); })
+      .catch(() => { if (!cancelled) setProjects([]); });
+    return () => { cancelled = true; };
+  }, [open, requiresAudit, selectedCompanyId, form.company_id]);
 
   /* ── Carica aziende per selettore ambito (categorie non legate ad audit) ── */
   useEffect(() => {
@@ -200,6 +217,7 @@ export default function NcCreateModal({
       audit_id: cfg.requiresAudit ? f.audit_id : "",
       // Reset complaint se si passa ad altra categoria
       source_complaint_id: newCat === 'complaint' ? f.source_complaint_id : null,
+      project_id: "",
     }));
     setSectionOptions(NC_MANUAL_SECTIONS);
     // Per le categorie non-audit, selectedCompanyId resta sincronizzato con
@@ -292,7 +310,7 @@ export default function NcCreateModal({
                 required
                 value={form.audit_id}
                 disabled={loadingAudits || saving}
-                onChange={e => setField("audit_id", e.target.value)}
+                onChange={e => setForm(f => ({ ...f, audit_id: e.target.value, project_id: "" }))}
               >
                 <option value="">
                   {loadingAudits ? "Caricamento audit..." : "Seleziona audit"}
@@ -336,7 +354,7 @@ export default function NcCreateModal({
                 id="nc-create-company"
                 value={form.company_id}
                 disabled={saving}
-                onChange={e => setField("company_id", e.target.value)}
+                onChange={e => setForm(f => ({ ...f, company_id: e.target.value, project_id: "" }))}
               >
                 <option value="">{"\u2014"} Nessuna azienda specifica (organizzazione) {"\u2014"}</option>
                 {companies.map(c => (
@@ -346,6 +364,34 @@ export default function NcCreateModal({
               <small className="form-hint">Se questa azione riguarda un cliente specifico, selezionalo per ritrovarla nei filtri per azienda.</small>
             </div>
           )}
+
+          {/* ── 2b-ter. Commessa (opzionale; visibile, disabilitata senza azienda) ── */}
+          <div className="nc-form-row">
+            <label htmlFor="nc-create-project">Commessa (opzionale)</label>
+            <select
+              id="nc-create-project"
+              value={form.project_id}
+              disabled={saving || !(requiresAudit ? selectedCompanyId : form.company_id)}
+              title={
+                (requiresAudit ? selectedCompanyId : form.company_id)
+                  ? undefined
+                  : "Seleziona prima l'azienda (o un audit con azienda)"
+              }
+              onChange={e => setField("project_id", e.target.value)}
+            >
+              <option value="">
+                {(requiresAudit ? selectedCompanyId : form.company_id)
+                  ? "\u2014 Nessuna commessa \u2014"
+                  : "\u2014 Seleziona prima l'azienda \u2014"}
+              </option>
+              {projects.map((p) => (
+                <option key={p.id} value={p.id}>
+                  {p.project_code}{p.description ? ` \u2014 ${p.description}` : ""}
+                </option>
+              ))}
+            </select>
+            <small className="form-hint">Collega questa NC alla commessa ISO 3834, se pertinente. Non \u00E8 obbligatorio.</small>
+          </div>
 
           {/* ── 2c. Picker reclamo (solo se source_category = 'complaint') ── */}
           {form.source_category === "complaint" && (

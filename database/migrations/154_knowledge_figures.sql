@@ -1,11 +1,12 @@
 -- =============================================================================
--- Migration 153 — knowledge_figures (Multimodal RAG MR-1)
+-- Migration 154 — knowledge_figures (Multimodal RAG MR-1)
 -- Tabella additiva: ritagli figura (bbox + PNG path + embedding CLIP locale).
 -- Spazio vettoriale DISTINTO da knowledge_chunks (Gemini testo): colonna
 -- embedding_space obbligatoria, niente mix di dimensioni/modelli.
 -- Idempotente: IF NOT EXISTS su tabella, CHECK, indice.
 -- Niente GO (lo script VPS esegue gli stessi statement a step).
 -- Nessun ON DELETE CASCADE.
+-- Nota: 153 su main è ISO-6 (nc.project_id); questa slice usa il prossimo libero.
 -- =============================================================================
 
 SET NOCOUNT ON;

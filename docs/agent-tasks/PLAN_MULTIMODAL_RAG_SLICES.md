@@ -42,7 +42,7 @@
 - **Catalogo 2553 esistente** (`weldingSymbols2553.js`) resta la fonte simboli/codici; il RAG visivo lo affianca, non lo duplica come truth
 - **Nessun numero di migrazione riservato** in anticipo (sequenza condivisa `database/migrations/`)
 - **MR-0 non tocca** indexer, Gemini, UI, SQL
-- **MR-1 chiuso (18/08)** — mig. **153** `knowledge_figures` + adapter CLIP locale (mock in L1) + GET `/api/v1/ai/figures/search?q=`. Isolamento `organization_id`. Gemini testo invariato.
+- **MR-1 chiuso (18/08)** — mig. **154** `knowledge_figures` (153 già usata da ISO-6 #465) + adapter CLIP locale (mock in L1) + GET `/api/v1/ai/figures/search?q=`. Isolamento `organization_id`. Gemini testo invariato.
 
 ---
 
@@ -74,8 +74,8 @@
 
 ### DoD MR-1 (spuntato 18/08/2026)
 
-- [x] Migrazione idempotente `153_knowledge_figures.sql` (IF NOT EXISTS, indice org+space, niente CASCADE / `GO`)
-- [x] Runner VPS `run-migration-153-vps.js` (PROD + `SGQ_MIGRATION_TARGET=test`) — da applicare **dopo merge**, non da Cloud
+- [x] Migrazione idempotente `154_knowledge_figures.sql` (IF NOT EXISTS, indice org+space, niente CASCADE / `GO`)
+- [x] Runner VPS `run-migration-154-vps.js` (PROD + `SGQ_MIGRATION_TARGET=test`) — da applicare **dopo merge**, non da Cloud
 - [x] Adapter `figureEmbed.service.js`: `embedText` / `embedImage` / `embeddingSpace`; default `jinaai/jina-clip-v2`; env `FIGURE_EMBED_MODEL`; fallback `clip-ViT-B-32`. L1 con mock (niente pesi in CI)
 - [x] `persistFigures` + `searchFiguresByText`: isolamento `organization_id` + stesso `embedding_space`; cosine in-file; niente `knowledge_chunks`
 - [x] GET autenticato `/api/v1/ai/figures/search?q=` (licenza `ai_chat`); org dal JWT; vuoto → `{ figures: [] }` 200

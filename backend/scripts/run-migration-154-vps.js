@@ -1,13 +1,13 @@
 /**
- * Migration 153 (VPS) — non_conformities.project_id (ISO-6, ponte NC ↔ commessa).
+ * Migration 154 (VPS) — knowledge_figures (Multimodal RAG MR-1).
+ * Ex 153 su questo branch: rinumerata dopo collisione con ISO-6 / 153_nc_project_id.
  *
- *   scp -P 1122 database/migrations/153_nc_project_id.sql \
+ *   scp -P 1122 database/migrations/154_knowledge_figures.sql \
  *     spascarella@sistemi.fr-busato.it:/var/www/sgq-backend/database/migrations/
- *   scp -P 1122 backend/scripts/run-migration-153-vps.js \
+ *   scp -P 1122 backend/scripts/run-migration-154-vps.js \
  *     spascarella@sistemi.fr-busato.it:/tmp/
- *   ssh -p 1122 spascarella@sistemi.fr-busato.it \
- *     'SGQ_MIGRATION_TARGET=test node /tmp/run-migration-153-vps.js'
- *   # produzione solo su richiesta committente, stesso file senza TARGET=test
+ *   ssh -p 1122 spascarella@sistemi.fr-busato.it 'node /tmp/run-migration-154-vps.js'
+ *   ssh -p 1122 ... 'SGQ_MIGRATION_TARGET=test node /tmp/run-migration-154-vps.js'
  */
 const fs = require('fs');
 
@@ -19,8 +19,8 @@ require(`${BACKEND_ROOT}/node_modules/dotenv`).config({ path: ENV_FILE });
 const { getPool } = require(`${BACKEND_ROOT}/src/config/database`);
 
 const SQL_CANDIDATES = [
-  `${BACKEND_ROOT}/database/migrations/153_nc_project_id.sql`,
-  '/tmp/153_nc_project_id.sql',
+  `${BACKEND_ROOT}/database/migrations/154_knowledge_figures.sql`,
+  '/tmp/154_knowledge_figures.sql',
 ];
 
 function splitIdempotentSteps(sqlText) {
@@ -34,7 +34,10 @@ function splitIdempotentSteps(sqlText) {
 function resolveSqlPath() {
   const found = SQL_CANDIDATES.find((p) => fs.existsSync(p));
   if (!found) {
-    throw new Error('SQL 153 non trovato. Copia 153_nc_project_id.sql in ' + SQL_CANDIDATES.join(' oppure '));
+    throw new Error(
+      'SQL 154 non trovato. Copia 154_knowledge_figures.sql in ' +
+        SQL_CANDIDATES.join(' oppure ')
+    );
   }
   return found;
 }
@@ -47,23 +50,22 @@ async function run() {
   }
   const pool = await getPool();
   try {
-    console.log(`[153] target=${IS_TEST ? 'test' : 'prod'} SQL: ${sqlPath} — ${steps.length} step`);
+    console.log(`[154] target=${IS_TEST ? 'test' : 'prod'} SQL: ${sqlPath} — ${steps.length} step`);
     for (let i = 0; i < steps.length; i++) {
       await pool.request().query(steps[i]);
-      console.log(`[153] Step ${i + 1}/${steps.length} OK`);
+      console.log(`[154] Step ${i + 1}/${steps.length} OK`);
     }
-    const col = await pool.request().query(`
-      SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS
-      WHERE TABLE_SCHEMA = 'dbo' AND TABLE_NAME = 'non_conformities' AND COLUMN_NAME = 'project_id'
+    const tab = await pool.request().query(`
+      SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME = 'knowledge_figures'
     `);
-    if (!(col.recordset || []).length) {
-      console.error('[153] ERRORE: colonna project_id assente');
+    if (!(tab.recordset || []).length) {
+      console.error('[154] ERRORE: tabella knowledge_figures assente');
       process.exitCode = 1;
       return;
     }
-    console.log('[153] Migration completata.');
+    console.log('[154] Migration completata.');
   } catch (e) {
-    console.error('[153] ERRORE:', e.message);
+    console.error('[154] ERRORE:', e.message);
     process.exitCode = 1;
   } finally {
     await pool.close().catch(() => {});

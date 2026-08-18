@@ -3,7 +3,7 @@
 > **Destinazione (ingest)**: da PDF reali (3.1, DDT scansionato, busta con più mill) si arriva a righe in Materiali con DDT / colata / norma compilati, **Valuta** che gira, HITL che decide. L’agente impara dalle correzioni con lo **stesso anello ADR-017** di qualifiche/WPQR. Nessun secondo motore OCR.  
 > **Spec**: [`MODULO_MATERIAL_COMPLIANCE_AI.md`](../specs/MODULO_MATERIAL_COMPLIANCE_AI.md)  
 > **ADR**: 020–024 · apprendimento ingest: [ADR-017](../adr/ADR-017-ingest-reference-network.md)  
-> **Brief ingest attivo**: [`DEPUTYTASK_MC_INGEST.md`](DEPUTYTASK_MC_INGEST.md) — **MC-I0** TEST OK, PR [#463](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/463)  
+> **Brief ingest attivo**: [`DEPUTYTASK_MC_INGEST.md`](DEPUTYTASK_MC_INGEST.md) — **MC-I0 CHIUSO** (mergiata [#463](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/463)). Prossima: MC-I1  
 > **Brief SAL**: [`DEPUTYTASK.md`](DEPUTYTASK.md) resta **APERTO** su S1a — **non toccarlo** da questa epic ingest  
 > **Brief fondazione (MC-0)**: [`DEPUTYTASK_MATERIAL_COMPLIANCE_AI_FOUNDATION.md`](DEPUTYTASK_MATERIAL_COMPLIANCE_AI_FOUNDATION.md)  
 > **Spec tecniche MC-0**: [`MATERIAL_COMPLIANCE_DATA_MODEL.md`](../specs/MATERIAL_COMPLIANCE_DATA_MODEL.md) · [`MATERIAL_COMPLIANCE_UI.md`](../specs/MATERIAL_COMPLIANCE_UI.md) · [`MATERIAL_COMPLIANCE_API.md`](../specs/MATERIAL_COMPLIANCE_API.md)  
@@ -118,7 +118,7 @@ MC-0/MC-1/MC-5 devono prevedere questi campi (DDT era assente dalla lista spec d
 | **MC-3** | Rule Engine | service puro + test L1 | MC-2 | AFK (chiusa) |
 | **MC-4** | API | `materialCertificates.controller.js` | MC-1, MC-3 | AFK (chiusa) |
 | **MC-5** | UI MVP | `MaterialCertificatesPage.jsx` | MC-4 | AFK (chiusa) |
-| **MC-I0** | Valuta 409 (lock `updated_at`) | controller + test evaluate | MC-4/5 | AFK — PR [#463](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/463) |
+| **MC-I0** | Valuta 409 (lock `updated_at`) | controller + test evaluate | MC-4/5 | AFK (chiusa, [#463](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/463)) |
 | **MC-I1** | Ruolo Base/Apporto in upload | UI upload + default `base` hardcoded | MC-I0 | AFK |
 | **MC-B** | OCR scan (riuso estrattore, non un secondo motore) | `extractCertificate` + `mapTextReason`; **non** nuovo OCR | MC-I0, SAL **S1a** | AFK (aspetta S1a se OCR assente) |
 | **MC-I2** | 3.1 singolo: colata / DDT / norma | schema `material_certificate` + mapping anagrafica | MC-I0 | AFK |
@@ -281,11 +281,11 @@ Test controller/service con mock DB (`materialCertificates.controller.test.js`).
 
 ### MC-I0 — Valuta 409 (hello world)
 
-**Brief:** [`DEPUTYTASK_MC_INGEST.md`](DEPUTYTASK_MC_INGEST.md) — TEST OK, PR [#463](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/463).
+**Brief:** [`DEPUTYTASK_MC_INGEST.md`](DEPUTYTASK_MC_INGEST.md) — **CHIUSO**. Mergiata [#463](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/463). Deploy TEST+PROD. Smoke PROD azienda 179: id 4 `extracted` → `pending_review` 200.
 
-Causa: `EVALUABLE` include `extracted`; il 409 era `AND updated_at = @updated_at` (`DATETIME2` vs Date JS). Fix: lock solo su `workflow_status` in transazione. Bugbot: nessun bug. Smoke ADA (azienda 179) dopo merge + deploy TEST.
+Causa: `EVALUABLE` include `extracted`; il 409 era `AND updated_at = @updated_at` (`DATETIME2` vs Date JS). Fix: lock solo su `workflow_status` in transazione.
 
-Prossima ingest dopo merge: **MC-I1** (ruolo Base/Apporto in upload).
+Prossima ingest: **MC-I1** (ruolo Base/Apporto in upload).
 
 ### MC-I1 — Ruolo Base / Apporto in upload
 

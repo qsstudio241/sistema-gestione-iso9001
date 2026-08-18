@@ -12,7 +12,7 @@
 
 **TEST OK.** Slice MR-1 implementata:
 
-- Migrazione `database/migrations/153_knowledge_figures.sql` + runner `backend/scripts/run-migration-153-vps.js` (non applicata da Cloud)
+- Migrazione `database/migrations/154_knowledge_figures.sql` + runner `backend/scripts/run-migration-154-vps.js` (non applicata da Cloud; 153 è ISO-6)
 - Adapter CLIP locale `figureEmbed.service.js` (L1 mock; runtime senza pesi → `FIGURE_EMBED_UNAVAILABLE` / GET 503)
 - Persist + search `figureKnowledge.service.js` (isolamento `organization_id` + `embedding_space`)
 - GET `/api/v1/ai/figures/search?q=` su `aiChat.routes.js` (JWT + licenza `ai_chat`)
@@ -20,7 +20,7 @@
 
 **Non aperto MR-2.** `DEPUTYTASK.md` (SAL S1a) non toccato.
 
-Dopo merge di questa PR: SCP + `run-migration-153-vps.js` su TEST poi PROD. Poi (run **nuova**): aprire MR-2.
+Dopo merge di questa PR: SCP + `run-migration-154-vps.js` su TEST poi PROD. Poi (run **nuova**): aprire MR-2.
 
 ---
 
@@ -40,9 +40,9 @@ Dopo merge di questa PR: SCP + `run-migration-153-vps.js` su TEST poi PROD. Poi 
 
 ### DoD
 
-1. Migrazione idempotente `153_knowledge_figures.sql` (IF NOT EXISTS): tabella `knowledge_figures` con almeno  
+1. Migrazione idempotente `154_knowledge_figures.sql` (IF NOT EXISTS): tabella `knowledge_figures` con almeno  
    `id`, `organization_id` NOT NULL, `company_id` NULL, `source_pdf`, `page` (1-based), `bbox` (JSON `[x0,y0,x1,y1]`), `kind` (`raster`\|`vector`), `caption` NULL, `png_path`, `embedding` NVARCHAR(MAX) NULL (JSON float[]), `embedding_space` NVARCHAR NOT NULL, `created_at`. Indice `(organization_id, embedding_space)`. Niente `ON DELETE CASCADE` avventato. Niente `GO` se lo script VPS splitta su `IF NOT EXISTS`
-2. Runner `backend/scripts/run-migration-153-vps.js` sul pattern 149/152 (PROD + `SGQ_MIGRATION_TARGET=test`)
+2. Runner `backend/scripts/run-migration-154-vps.js` sul pattern 149/152 (PROD + `SGQ_MIGRATION_TARGET=test`)
 3. Adapter embed locale (`figureEmbed.service.js` o equivalente): interfaccia `embedText` / `embedImage` + getter `embeddingSpace`. Default modello `jinaai/jina-clip-v2`; env override; fallback `clip-ViT-B-32`. **I test L1 usano un mock** (vettori corti finti) — **non** scaricare pesi in CI/Cloud, **non** committare `.venv` / modelli
 4. Service persist + retrieve: upsert da lista figure MR-0 (PNG su disco o buffer) → righe con `embedding` + `embedding_space`; `searchFiguresByText(query, organizationId, { companyId, topK })` filtra `organization_id` **e** stesso `embedding_space`, cosine, top-k. Query org A **non** vede righe org B
 5. GET autenticato testo→figura (stesso assistente, stessa licenza `ai_chat`): es. `GET /api/v1/ai/figures/search?q=` (query obbligatorio). Scope `organization_id` dal JWT, mai dal client. Risposta: `{ figures: [{ id, page, bbox, kind, caption, path, score, embedding_space }] }`. Vuoto → `{ figures: [] }` 200, non 500
@@ -52,7 +52,7 @@ Dopo merge di questa PR: SCP + `run-migration-153-vps.js` su TEST poi PROD. Poi 
 
 ### File previsti
 
-- `database/migrations/153_knowledge_figures.sql` + `backend/scripts/run-migration-153-vps.js`
+- `database/migrations/154_knowledge_figures.sql` + `backend/scripts/run-migration-154-vps.js`
 - `backend/src/services/figureEmbed.service.js` (nome equivalente ok)
 - `backend/src/services/figureKnowledge.service.js` (persist + search)
 - `backend/src/controllers/` + `backend/src/routes/` — GET search (preferire `aiChat.routes.js` già montato, o file nuovo minimo + `server.js` + manifest)
