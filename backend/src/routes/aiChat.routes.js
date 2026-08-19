@@ -31,6 +31,14 @@ router.get(
   figureCtrl.searchFigures
 );
 
+// POST /ai/figures/ingest — PDF già sul disco ? extract + persist (MR-3)
+router.post(
+  '/ai/figures/ingest',
+  authenticate,
+  requireLicensedModule('ai_chat'),
+  figureCtrl.ingestFigures
+);
+
 // GET /ai/figures/:id/image — byte PNG (JWT header o ?token= per <img>)
 router.get(
   '/ai/figures/:id/image',
