@@ -2,7 +2,7 @@
 
 **Stato:** CHIUSO — TEST OK (19/08/2026, [PR #481](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/481))  
 **Aperto:** 19/08/2026 (dopo merge hub MC-B [#479](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/479))  
-**Chiuso:** 19/08/2026 — L1 33/33 (`materialCertificates.controller`) + pagina Materiali 5/5  
+**Chiuso:** 19/08/2026 — L1 34/34 (`materialCertificates.controller`) + pagina Materiali 5/5  
 **Piano:** [`PLAN_MATERIAL_COMPLIANCE_SLICES.md`](PLAN_MATERIAL_COMPLIANCE_SLICES.md) § MC-I2  
 **Spec:** [`MATERIAL_COMPLIANCE_DATA_MODEL.md`](../specs/MATERIAL_COMPLIANCE_DATA_MODEL.md) · EN 10168 B07  
 **Rischio:** Medio — mapping extract + prompt; nessuna migrazione; Cloud **non** mergia  
@@ -27,6 +27,7 @@ Fonti Markdown:
 - DDT: `ddt_no` / `delivery_note_no` / `ddt` — **non** `purchaser_order_no` (A07)
 - Extract SQL: `COALESCE` anche `ddt_no` / `ddt_date` (data `DD/MM/YYYY` → ISO)
 - Fallback etichettato sul testo (`Colata` / `Heat No` / `B07`); niente regex cieca su `NNNN/YYYY`
+- Alias droppati dopo la copia: PATCH che svuota il DDT non lo re-inietta da `delivery_note_no`
 - Prompt BE+FE: colata come stampata; DDT solo se stampato
 - HITL: `ddt_date` nel form PATCH
 
@@ -45,7 +46,7 @@ Fonti Markdown:
 
 ### Test L1
 
-33/33 controller (alias heat → colonna; testo «Colata 12174/2026»; A07 ≠ DDT; persist `ddt_no`). Pagina Materiali 5/5.
+34/34 controller (alias heat → colonna; testo «Colata 12174/2026»; A07 ≠ DDT; persist `ddt_no`; PATCH non re-inietta DDT da alias). Pagina Materiali 5/5.
 
 ### DoD
 

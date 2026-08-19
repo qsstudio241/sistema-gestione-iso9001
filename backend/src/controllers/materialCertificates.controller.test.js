@@ -588,6 +588,44 @@ describe('materialCertificates.controller (MC-4)', () => {
     expect(ctrl.fallbackHeatFromText('Colata 12174/2026')).toBe('12174/2026');
     expect(ctrl.fallbackHeatFromText('Heat No. 12174/2026')).toBe('12174/2026');
     expect(ctrl.fallbackHeatFromText('solo 12174/2026 senza etichetta')).toBeNull();
+    const stripped = ctrl.canonicalizeExtractedJson({
+      B07: '12174/2026',
+      delivery_note_no: 'WRONG',
+    });
+    expect(stripped.heat_or_lot_no).toBe('12174/2026');
+    expect(stripped.ddt_no).toBe('WRONG');
+    expect(stripped.B07).toBeUndefined();
+    expect(stripped.delivery_note_no).toBeUndefined();
+  });
+
+  it('PATCH svuota ddt_no e non lo re-inietta da delivery_note_no', async () => {
+    query.mockResolvedValueOnce({
+      recordset: [{
+        ...CERT,
+        workflow_status: 'extracted',
+        ddt_no: 'WRONG',
+        extracted_json: JSON.stringify({
+          material_role: 'base',
+          delivery_note_no: 'WRONG',
+          heat_or_lot_no: 'H1',
+        }),
+      }],
+    });
+    query.mockResolvedValueOnce({
+      recordset: [{ id: 11, workflow_status: 'extracted', material_role: 'base' }],
+    });
+    const res = mockRes();
+    await ctrl.patchCertificate(mockReq({
+      params: { id: '11' },
+      body: { ddt_no: '' },
+    }), res);
+    expect(res.status).not.toHaveBeenCalledWith(409);
+    const updateSql = query.mock.calls.find((c) => /SET ddt_no = @ddt_no/.test(sqlOf(c)));
+    expect(updateSql).toBeTruthy();
+    expect(updateSql[1].ddt_no).toBeNull();
+    const stored = JSON.parse(updateSql[1].corrected_json);
+    expect(stored.ddt_no).toBeNull();
+    expect(stored.delivery_note_no).toBeUndefined();
   });
 
   it('routes: authenticate + capability AND, extract con logAiInteraction', () => {

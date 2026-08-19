@@ -214,12 +214,23 @@ function canonicalizeExtractedJson(raw) {
   const json = raw && typeof raw === 'object' && !Array.isArray(raw) ? { ...raw } : {};
   const heat = firstNonEmpty(json, HEAT_ALIASES);
   if (heat) json.heat_or_lot_no = heat;
+  for (const k of HEAT_ALIASES) {
+    if (k !== 'heat_or_lot_no') delete json[k];
+  }
   const std = firstNonEmpty(json, STANDARD_ALIASES);
   if (std) json.material_standard = std;
+  delete json.steel_standard;
+  delete json.product_standard;
   const ddt = firstNonEmpty(json, DDT_NO_ALIASES);
   if (ddt) json.ddt_no = ddt;
+  for (const k of DDT_NO_ALIASES) {
+    if (k !== 'ddt_no') delete json[k];
+  }
   const ddtDate = firstNonEmpty(json, DDT_DATE_ALIASES);
   if (ddtDate) json.ddt_date = ddtDate;
+  for (const k of DDT_DATE_ALIASES) {
+    if (k !== 'ddt_date') delete json[k];
+  }
   return json;
 }
 
@@ -710,6 +721,11 @@ async function patchCertificate(req, res) {
         ? emptyToNull(cols.inspection_document_type)
         : (fromJson.inspection_document_type || row.inspection_document_type),
     };
+    for (const key of Object.keys(cols)) {
+      if (Object.prototype.hasOwnProperty.call(next, key)) {
+        corrected[key] = next[key];
+      }
+    }
 
     const updated = await query(
       `UPDATE dbo.material_certificates

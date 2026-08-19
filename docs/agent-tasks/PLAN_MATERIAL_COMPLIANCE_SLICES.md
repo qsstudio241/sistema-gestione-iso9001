@@ -305,7 +305,7 @@ Prossima ingest: **MC-I2** (3.1 singolo: colata / DDT / norma).
 
 ### MC-I2 — 3.1 singolo: colata / DDT / norma
 
-**CHIUSO** — brief [`DEPUTYTASK_MC_INGEST.md`](DEPUTYTASK_MC_INGEST.md). PR [#481](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/481). L1 33/33.
+**CHIUSO** — brief [`DEPUTYTASK_MC_INGEST.md`](DEPUTYTASK_MC_INGEST.md). PR [#481](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/481). L1 34/34.
 
 Causa: `applyAnagraficaFromJson` leggeva solo `heat_or_lot_no`; l’AI spesso restituisce `heat_number` / `colata` / `B07`. `ddt_no` non andava in colonna; A07 non è un DDT.
 
