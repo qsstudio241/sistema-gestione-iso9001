@@ -646,6 +646,7 @@ describe('materialCertificates.controller (MC-4)', () => {
     expect(updateSql[1].heat_or_lot_no).toBeNull();
     expect(updateSql[1].clear_mill).toBe(1);
     expect(sqlOf(updateSql)).toMatch(/WHEN @clear_mill = 1 THEN @heat_or_lot_no/);
+    expect(sqlOf(updateSql)).toMatch(/corrected_json = NULL/);
   });
 
   it('MC-I3 CERTIFICATO nel nome resta mill (Tecnovespa)', async () => {
@@ -757,6 +758,37 @@ describe('materialCertificates.controller (MC-4)', () => {
     const stored = JSON.parse(updateSql[1].corrected_json);
     expect(stored.ddt_no).toBeNull();
     expect(stored.delivery_note_no).toBeUndefined();
+  });
+
+  it('MC-I3 PATCH document_kind delivery_note azzera colata in colonna', async () => {
+    query.mockResolvedValueOnce({
+      recordset: [{
+        ...CERT,
+        workflow_status: 'extracted',
+        heat_or_lot_no: '692976',
+        material_standard: 'EN 10149-2',
+        extracted_json: JSON.stringify({
+          material_role: 'base',
+          heat_or_lot_no: '692976',
+          material_standard: 'EN 10149-2',
+        }),
+      }],
+    });
+    query.mockResolvedValueOnce({
+      recordset: [{ id: 11, workflow_status: 'extracted', material_role: 'base' }],
+    });
+    const res = mockRes();
+    await ctrl.patchCertificate(mockReq({
+      params: { id: '11' },
+      body: { document_kind: 'delivery_note' },
+    }), res);
+    expect(res.status).not.toHaveBeenCalledWith(409);
+    const updateSql = query.mock.calls.find((c) => /SET ddt_no = @ddt_no/.test(sqlOf(c)));
+    expect(updateSql[1].heat_or_lot_no).toBeNull();
+    expect(updateSql[1].material_standard).toBeNull();
+    const stored = JSON.parse(updateSql[1].corrected_json);
+    expect(stored.document_kind).toBe('delivery_note');
+    expect(stored.heat_or_lot_no).toBeNull();
   });
 
   it('routes: authenticate + capability AND, extract con logAiInteraction', () => {

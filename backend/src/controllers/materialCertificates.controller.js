@@ -770,31 +770,39 @@ async function patchCertificate(req, res) {
       }
     }
     corrected = canonicalizeExtractedJson(corrected);
+    const patchToDdt = normalizeDocumentKind(corrected.document_kind) === 'delivery_note';
+    if (patchToDdt) {
+      corrected = applyDeliveryNoteExtract(corrected, {
+        text: '',
+        storagePath: row.storage_path,
+      });
+    }
     const fromJson = applyAnagraficaFromJson(corrected, cols.material_role || row.material_role);
+    const millOrRow = (jsonVal, rowVal) => (patchToDdt ? jsonVal : (jsonVal || rowVal));
     const next = {
       ddt_no: cols.ddt_no !== undefined ? clip(emptyToNull(cols.ddt_no), 80) : (fromJson.ddt_no || row.ddt_no),
       ddt_date: cols.ddt_date !== undefined
         ? normalizeSqlDate(cols.ddt_date)
         : (fromJson.ddt_date || row.ddt_date),
       certificate_no: cols.certificate_no !== undefined
-        ? clip(emptyToNull(cols.certificate_no), 120) : (fromJson.certificate_no || row.certificate_no),
+        ? clip(emptyToNull(cols.certificate_no), 120) : millOrRow(fromJson.certificate_no, row.certificate_no),
       material_role: cols.material_role || fromJson.material_role || row.material_role,
       designation: cols.designation !== undefined
-        ? clip(emptyToNull(cols.designation), 200) : (fromJson.designation || row.designation),
+        ? clip(emptyToNull(cols.designation), 200) : millOrRow(fromJson.designation, row.designation),
       heat_or_lot_no: cols.heat_or_lot_no !== undefined
-        ? clip(emptyToNull(cols.heat_or_lot_no), 80) : (fromJson.heat_or_lot_no || row.heat_or_lot_no),
+        ? clip(emptyToNull(cols.heat_or_lot_no), 80) : millOrRow(fromJson.heat_or_lot_no, row.heat_or_lot_no),
       product_form: cols.product_form !== undefined
-        ? clip(emptyToNull(cols.product_form), 40) : (fromJson.product_form || row.product_form),
+        ? clip(emptyToNull(cols.product_form), 40) : millOrRow(fromJson.product_form, row.product_form),
       dimensions: cols.dimensions !== undefined
-        ? clip(emptyToNull(cols.dimensions), 120) : (fromJson.dimensions || row.dimensions),
+        ? clip(emptyToNull(cols.dimensions), 120) : millOrRow(fromJson.dimensions, row.dimensions),
       material_standard: cols.material_standard !== undefined
-        ? clip(emptyToNull(cols.material_standard), 80) : (fromJson.material_standard || row.material_standard),
+        ? clip(emptyToNull(cols.material_standard), 80) : millOrRow(fromJson.material_standard, row.material_standard),
       manufacturer_works: cols.manufacturer_works !== undefined
         ? clip(emptyToNull(cols.manufacturer_works), 200)
-        : (fromJson.manufacturer_works || row.manufacturer_works),
+        : millOrRow(fromJson.manufacturer_works, row.manufacturer_works),
       inspection_document_type: cols.inspection_document_type !== undefined
         ? emptyToNull(cols.inspection_document_type)
-        : (fromJson.inspection_document_type || row.inspection_document_type),
+        : millOrRow(fromJson.inspection_document_type, row.inspection_document_type),
     };
     for (const key of Object.keys(cols)) {
       if (Object.prototype.hasOwnProperty.call(next, key)) {
@@ -964,6 +972,7 @@ async function extractCertificate(req, res) {
       `UPDATE dbo.material_certificates
        SET extracted_text = @extracted_text, text_extract_reason = @text_extract_reason,
            extracted_json = @extracted_json, ai_model = @ai_model,
+           corrected_json = NULL,
            certificate_no = CASE WHEN @clear_mill = 1 THEN @certificate_no ELSE COALESCE(@certificate_no, certificate_no) END,
            designation = CASE WHEN @clear_mill = 1 THEN @designation ELSE COALESCE(@designation, designation) END,
            heat_or_lot_no = CASE WHEN @clear_mill = 1 THEN @heat_or_lot_no ELSE COALESCE(@heat_or_lot_no, heat_or_lot_no) END,
