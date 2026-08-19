@@ -187,7 +187,7 @@ const HEAT_ALIASES = [
   'colata', 'lot_no', 'lot_number', 'B07',
 ];
 const STANDARD_ALIASES = [
-  'material_standard', 'filler_standard', 'steel_standard', 'product_standard',
+  'material_standard', 'steel_standard', 'product_standard',
 ];
 const DDT_NO_ALIASES = ['ddt_no', 'delivery_note_no', 'ddt'];
 const DDT_DATE_ALIASES = ['ddt_date', 'delivery_note_date'];
@@ -221,6 +221,7 @@ function canonicalizeExtractedJson(raw) {
   if (std) json.material_standard = std;
   delete json.steel_standard;
   delete json.product_standard;
+  // filler_standard resta: è campo schema apporto, non alias.
   const ddt = firstNonEmpty(json, DDT_NO_ALIASES);
   if (ddt) json.ddt_no = ddt;
   for (const k of DDT_NO_ALIASES) {
@@ -264,7 +265,8 @@ function applyAnagraficaFromJson(json, roleHint) {
     heat_or_lot_no: emptyToNull(canon.heat_or_lot_no),
     product_form: emptyToNull(canon.product_form),
     dimensions: emptyToNull(canon.dimensions),
-    material_standard: emptyToNull(canon.material_standard),
+    material_standard: emptyToNull(canon.material_standard)
+      || (role === 'filler' ? emptyToNull(canon.filler_standard) : null),
     manufacturer_works: emptyToNull(canon.manufacturer_works),
     inspection_document_type: DOC_TYPES.has(canon.inspection_document_type)
       ? canon.inspection_document_type

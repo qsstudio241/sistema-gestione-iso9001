@@ -596,6 +596,12 @@ describe('materialCertificates.controller (MC-4)', () => {
     expect(stripped.ddt_no).toBe('WRONG');
     expect(stripped.B07).toBeUndefined();
     expect(stripped.delivery_note_no).toBeUndefined();
+    const filler = ctrl.canonicalizeExtractedJson({
+      filler_standard: 'ISO 14341',
+      material_role: 'filler',
+    });
+    expect(filler.filler_standard).toBe('ISO 14341');
+    expect(ctrl.applyAnagraficaFromJson(filler, 'filler').material_standard).toBe('ISO 14341');
   });
 
   it('PATCH svuota ddt_no e non lo re-inietta da delivery_note_no', async () => {
