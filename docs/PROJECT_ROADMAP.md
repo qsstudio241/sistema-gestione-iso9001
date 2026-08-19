@@ -8,13 +8,17 @@
 
 > **Risposta standard a «stato di avanzamento del progetto e priorità da affrontare»**: sintetizzare da questa sezione (moduli maturi + sessione più recente + tabella priorità sotto), **non** dal banner storico più sotto (superato, tenuto solo per traccia) né dall'archivio marzo 2026 [`docs/archive/PROJECT_CONTEXT_STATO_FUNZIONALITA_2026-03.md`](archive/PROJECT_CONTEXT_STATO_FUNZIONALITA_2026-03.md). **Aggiornare questa sezione a fine sessione** se emergono nuove priorità o se una priorità elencata viene chiusa (stesso principio delle "Lezioni apprese" in [GUIDA_CONSOLIDATA.md](GUIDA_CONSOLIDATA.md) — sintesi qui, dettaglio linkato).
 
-**Ultimo aggiornamento di questa sezione**: 18/08/2026 (SAL S1a OCR PDF PR #471; MR-1 persist figure PR #469 mig. 154; ISO-6 #465; MC-I0 #463; MR-0 #464).
+**Ultimo aggiornamento di questa sezione**: 19/08/2026 (MC-I1 ruolo upload PR #473; SAL S1a OCR PDF PR #471; MR-1 persist figure PR #469 mig. 154; ISO-6 #465; MC-I0 #463).
 
 ### Moduli maturi (in produzione, uso quotidiano dai clienti Camellini/Mason)
 
 Audit multi-standard (9001/14001/45001) · Non Conformità (workflow ISO 10.2 completo) · Qualifiche Personale saldatori/NDT/coordinatori (ISO 9606-1/14732/14731/9712) · Saldatura (WPQR, generazione WPS da WPQR, Welding Book, Commesse ISO 3834, Dashboard 3834) · SAL (gap analysis requisiti con AI) · Registro Documenti + Scadenzari · Notifiche/Alert (documenti/NC/qualifiche) · Riesame di Direzione · RBAC multi-tenant (`company_access`) · Registro obblighi legali (ambiente + sicurezza) · Assistente AI / Gap Analysis euristica.
 
-### Sessione più recente (18/08/2026)
+### Sessione più recente (19/08/2026)
+
+**MC-I1 ruolo upload (19/08)** — in Materiali si sceglie **Base** o **Apporto** prima di Carica (default Base). Distinto dai filtri KPI. Brief [`DEPUTYTASK_MC_INGEST.md`](agent-tasks/DEPUTYTASK_MC_INGEST.md) **CHIUSO**. [PR #473](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/473). Prossima ingest: **MC-B** (OCR scan; S1a già in `main`). ISO-4 **non** toccata.
+
+### Sessione precedente (18/08/2026)
 
 **SAL S1a OCR PDF TEST OK (18/08)** — `documentTextExtractor` tenta `ocrExtractor` se lo strato testo è vuoto o sotto soglia ingest; `ocr_unavailable` / `ocr_failed` senza throw. Brief [`DEPUTYTASK.md`](agent-tasks/DEPUTYTASK.md) **CHIUSO**. [PR #471](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/471). Prossima evidenze SAL: **S1b** (OCR immagini). Piano: [`PLAN_SAL_AI_EVIDENCE_SLICES.md`](agent-tasks/PLAN_SAL_AI_EVIDENCE_SLICES.md).
 
@@ -103,12 +107,12 @@ Sessione prodotto precedente (10/08/2026): fix filtri dashboard duplicati (Quali
 | 1 | **Modulo Notifiche/Alert — destinatario allerte qualifiche non è una scelta esplicita in anagrafica** | Oggi risolto da un algoritmo a cascata, non da una scelta visibile in UI | `qualificationAlert.service.js` (`resolveWeldingCoordinatorRecipients`) |
 | 2 | **Shell dialog di revisione ingest — markup/CSS duplicato** (non urgente, basso rischio) | `IngestReviewDialog.jsx` vs dialog interno `ReprocessQueueBanner.jsx`: guscio overlay duplicato (~60-80 righe); pattern sistemico su molti altri modal nel progetto | Vedi backlog sotto per dettaglio |
 | 3 | **Pagina Impostazioni → Organizzazione (P.IVA + logo tenant)** | PR #10 aperta da aprile 2026, 180 file in conflitto — richiede ricostruzione, non merge | Vedi riga dedicata nel backlog sotto |
-| 4 | **Material Compliance AI — ingest certificati (base e apporto)** | MC-0…MC-5 + **MC-I0** mergiate. Prossima: **MC-I1** ruolo Base/Apporto in upload | [PLAN](agent-tasks/PLAN_MATERIAL_COMPLIANCE_SLICES.md) · brief [MC-I0 CHIUSO](agent-tasks/DEPUTYTASK_MC_INGEST.md) |
+| 4 | **Material Compliance AI — ingest certificati (base e apporto)** | MC-0…MC-5 + MC-I0 + **MC-I1** (PR #473). Prossima: **MC-B** OCR scan (S1a già in `main`) | [PLAN](agent-tasks/PLAN_MATERIAL_COMPLIANCE_SLICES.md) · brief [MC-I1 CHIUSO](agent-tasks/DEPUTYTASK_MC_INGEST.md) |
 | 5 | **Rischi — ingest / data riesame (ROO-18, HITL)** | Lista riesami ambito c’è (ROO-17, verificata su TEST); data riesame esplicita e ingest→review solo dopo conferma | [PLAN §7](agent-tasks/PLAN_RISCHI_OPPORTUNITA_OBIETTIVI_SLICES.md) |
-| 6 | **SAL AI evidenze — OCR + documento mancante (HITL)** | Suggeritore 5-A/5-B legge solo PDF/DOCX testo; PDF scan/immagini saltati; se manca evidenza → solo messaggio low, nessuna ricerca tipo/upload guidato | [PLAN](agent-tasks/PLAN_SAL_AI_EVIDENCE_SLICES.md) · brief [S1a](agent-tasks/DEPUTYTASK.md) |
+| 6 | **SAL AI evidenze — OCR + documento mancante (HITL)** | **S1a** mergiata (#471): OCR PDF in `documentTextExtractor`. Prossima: **S1b** OCR immagini | [PLAN](agent-tasks/PLAN_SAL_AI_EVIDENCE_SLICES.md) · brief [S1a CHIUSO](agent-tasks/DEPUTYTASK.md) |
 | 7 | **ISO 3834 — completezza per processi (RBAC + ponti + report)** | ISO-1* + ISO-2 + ISO-3 mergiate e ISO-3 deployata. Prossima: ISO-4 Word RDP Mason (serve il file) | [PLAN](agent-tasks/PLAN_3834_SLICES.md) · brief [ISO-3 CHIUSO](agent-tasks/DEPUTYTASK1.md) |
 | 8 | **Second Brain — Assistente di Ambito (SB-1 fatti, zero LLM)** | Studio + clienti paganti: fatti dell'Ambito in app, non AIOS Claude. Chat dopo i numeri veri | [PLAN](agent-tasks/PLAN_SECOND_BRAIN_SLICES.md) · brief [SB-1](agent-tasks/DEPUTYTASK2.md) |
-| 9 | **Multimodal RAG — figure normative in locale** | MR-0 mergiato (#464). Prossima **MR-1**: tabella `knowledge_figures` + CLIP locale + GET retrieve (spazio vettoriale distinto da Gemini testo) | [PLAN](agent-tasks/PLAN_MULTIMODAL_RAG_SLICES.md) · brief [MR-0 CHIUSO](agent-tasks/DEPUTYTASK5.md) |
+| 9 | **Multimodal RAG — figure normative in locale** | MR-0 + **MR-1** mergiati (#464/#469, mig. 154). **MR-2 non aperta** | [PLAN](agent-tasks/PLAN_MULTIMODAL_RAG_SLICES.md) · brief [MR-1 CHIUSO](agent-tasks/DEPUTYTASK5.md) |
 
 > Nota: **Modulo NC — card statistiche duplicate da due tendine** (era riga 1) è stato chiuso da PR #374 (10/08/2026) — riga rimossa da questa tabella, non ancora aggiornata al momento in cui è stata scritta DEPUTYTASK4.
 

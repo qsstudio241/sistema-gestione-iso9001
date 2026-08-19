@@ -3,7 +3,7 @@
 > **Destinazione (ingest)**: da PDF reali (3.1, DDT scansionato, busta con più mill) si arriva a righe in Materiali con DDT / colata / norma compilati, **Valuta** che gira, HITL che decide. L’agente impara dalle correzioni con lo **stesso anello ADR-017** di qualifiche/WPQR. Nessun secondo motore OCR.  
 > **Spec**: [`MODULO_MATERIAL_COMPLIANCE_AI.md`](../specs/MODULO_MATERIAL_COMPLIANCE_AI.md)  
 > **ADR**: 020–024 · apprendimento ingest: [ADR-017](../adr/ADR-017-ingest-reference-network.md)  
-> **Brief ingest attivo**: [`DEPUTYTASK_MC_INGEST.md`](DEPUTYTASK_MC_INGEST.md) — **MC-I1 APERTO** (ruolo Base/Apporto in upload). MC-I0 CHIUSO ([#463](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/463)).  
+> **Brief ingest attivo**: [`DEPUTYTASK_MC_INGEST.md`](DEPUTYTASK_MC_INGEST.md) — **MC-I1 CHIUSO** (PR [#473](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/473)). Prossima: **MC-B**.  
 > **Brief SAL**: [`DEPUTYTASK.md`](DEPUTYTASK.md) resta **APERTO** su S1a — **non toccarlo** da questa epic ingest  
 > **Brief fondazione (MC-0)**: [`DEPUTYTASK_MATERIAL_COMPLIANCE_AI_FOUNDATION.md`](DEPUTYTASK_MATERIAL_COMPLIANCE_AI_FOUNDATION.md)  
 > **Spec tecniche MC-0**: [`MATERIAL_COMPLIANCE_DATA_MODEL.md`](../specs/MATERIAL_COMPLIANCE_DATA_MODEL.md) · [`MATERIAL_COMPLIANCE_UI.md`](../specs/MATERIAL_COMPLIANCE_UI.md) · [`MATERIAL_COMPLIANCE_API.md`](../specs/MATERIAL_COMPLIANCE_API.md)  
@@ -119,7 +119,7 @@ MC-0/MC-1/MC-5 devono prevedere questi campi (DDT era assente dalla lista spec d
 | **MC-4** | API | `materialCertificates.controller.js` | MC-1, MC-3 | AFK (chiusa) |
 | **MC-5** | UI MVP | `MaterialCertificatesPage.jsx` | MC-4 | AFK (chiusa) |
 | **MC-I0** | Valuta 409 (lock `updated_at`) | controller + test evaluate | MC-4/5 | AFK (chiusa, [#463](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/463)) |
-| **MC-I1** | Ruolo Base/Apporto in upload | UI upload + default `base` hardcoded | MC-I0 | AFK (in corso) |
+| **MC-I1** | Ruolo Base/Apporto in upload | UI upload + default `base` hardcoded | MC-I0 | AFK (chiusa, [#473](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/473)) |
 | **MC-B** | OCR scan (riuso estrattore, non un secondo motore) | `extractCertificate` + `mapTextReason`; **non** nuovo OCR | MC-I0, SAL **S1a** | AFK (S1a mergiata [#471](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/471) — dopo MC-I1) |
 | **MC-I2** | 3.1 singolo: colata / DDT / norma | schema `material_certificate` + mapping anagrafica | MC-I0 | AFK |
 | **MC-I3** | DDT ≠ 3.1 (classifica tipo) | extract + UI: DDT non è un mill | MC-I2, MC-B | AFK |
@@ -289,11 +289,11 @@ Prossima ingest dopo I1: **MC-B** (OCR scan; S1a già in `main`, PR [#471](https
 
 ### MC-I1 — Ruolo Base / Apporto in upload
 
-**IN CORSO** — brief [`DEPUTYTASK_MC_INGEST.md`](DEPUTYTASK_MC_INGEST.md).
+**CHIUSO** — brief [`DEPUTYTASK_MC_INGEST.md`](DEPUTYTASK_MC_INGEST.md). PR [#473](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/473). L1 5/5 + build.
 
-Oggi `MaterialCertificatesPage` chiama `createMaterialCertificate({ materialRole: "base" })` sempre. API accetta `base|filler`. Un 3.1 filo resta Base in griglia.
+Header: radiogroup Base/Apporto (default Base), distinto dai filtri KPI. Upload Apporto → `materialRole: "filler"`.
 
-Demoable: in upload si sceglie Base o Apporto (o Estrai imposta `material_role` e la griglia lo mostra). Non spezzare PDF. Il filtro KPI Base/Apporto **non** è la scelta di upload.
+Prossima ingest: **MC-B** (OCR scan; S1a già in `main`, PR [#471](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/471)).
 
 ### MC-B — OCR su scan (riuso, non un secondo motore)
 
@@ -341,11 +341,11 @@ Registry documenti: **nebbia** (ponte dopo).
 
 Usare dopo ogni PR di slice:
 
-| Check | MC-0 | MC-1 | MC-2 | MC-3 | MC-4 | MC-5 | MC-I0 |
-|-------|------|------|------|------|------|------|-------|
-| Spec / ADR rispettati | ☑ | ☑ | ☑ | ☑ | ☑ | ☑ | ☑ |
-| Multi-tenant / company scope | — | ☑ | — | — | ☑ | ☑ | ☑ |
-| AI ≠ approvazione | — | — | — | ☑ | ☑ | ☑ | ☑ |
-| Test L1 / build | ☑ | ☑ | ☑ | ☑ | ☑ | ☑ | ☑ |
-| Deploy manifest (se nuovi `.js` BE) | — | — | ☑ | ☑ | ☑ | — | — |
-| Doc roadmap aggiornata | ☑ | ☑ | ☑ | ☑ | ☑ | ☑ | ☑ |
+| Check | MC-0 | MC-1 | MC-2 | MC-3 | MC-4 | MC-5 | MC-I0 | MC-I1 |
+|-------|------|------|------|------|------|------|-------|--------|
+| Spec / ADR rispettati | ☑ | ☑ | ☑ | ☑ | ☑ | ☑ | ☑ | ☑ |
+| Multi-tenant / company scope | — | ☑ | — | — | ☑ | ☑ | ☑ | ☑ |
+| AI ≠ approvazione | — | — | — | ☑ | ☑ | ☑ | ☑ | — |
+| Test L1 / build | ☑ | ☑ | ☑ | ☑ | ☑ | ☑ | ☑ | ☑ |
+| Deploy manifest (se nuovi `.js` BE) | — | — | ☑ | ☑ | ☑ | — | — | — |
+| Doc roadmap aggiornata | ☑ | ☑ | ☑ | ☑ | ☑ | ☑ | ☑ | ☑ |

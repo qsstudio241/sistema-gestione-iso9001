@@ -1,12 +1,13 @@
 # DEPUTYTASK — Material Compliance ingest (MC-I1)
 
-**Stato:** APERTO  
+**Stato:** CHIUSO — TEST OK (19/08/2026, [PR #473](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/473))  
 **Aperto:** 19/08/2026 (Lead wayfinder — Chart the map, track ingest)  
+**Chiuso:** 19/08/2026 — L1 5/5 `materialCertificatesPage.test.jsx` + `npm run build`  
 **Piano:** [`PLAN_MATERIAL_COMPLIANCE_SLICES.md`](PLAN_MATERIAL_COMPLIANCE_SLICES.md) § MC-I1  
 **Spec:** [`MATERIAL_COMPLIANCE_UI.md`](../specs/MATERIAL_COMPLIANCE_UI.md) · API già accetta `base|filler`  
 **Rischio:** Basso — solo UI upload + test pagina; API e schema invariati; Cloud **non** mergia  
 **Ambiente:** FE Netlify dopo merge. Record ADA produzione 3–5 / azienda 179 = prova già fatta, non riscoprire.  
-**Stream:** stesso file epic ingest (MC-I0 CHIUSO su main). Non riusare per un altro modulo.
+**Stream:** stesso file epic ingest (MC-I0 CHIUSO). Non riusare per un altro modulo.
 
 ---
 
@@ -22,44 +23,39 @@ Fonti Markdown:
 
 **Obiettivo**: in Materiali, prima di **Carica certificato**, si sceglie **Base** o **Apporto**. Un 3.1 filo non resta sempre Base in griglia.
 
-Oggi `MaterialCertificatesPage` chiama `createMaterialCertificate({ materialRole: "base" })` sempre. L’API accetta già `base|filler` (`apiService` appende `material_role`).
+### Fatto
 
-### DoD
+- Header: radiogroup **Ruolo** Base / Apporto (default Base), classi già in `QualificationsPage.css`
+- Upload Apporto → `createMaterialCertificate({ materialRole: "filler" })`
+- Filtro KPI «Apporto» non cambia il ruolo dell’upload (test L1)
+- Senza azienda: **Carica certificato** visibile e `disabled`
 
-1. Header: scelta visibile Base / Apporto (default **Base**), distinta dai filtri KPI della griglia
-2. Upload con Apporto → `createMaterialCertificate` riceve `materialRole: "filler"`
-3. Clic sul filtro KPI «Apporto» **non** cambia il ruolo dell’upload
-4. Senza azienda in Ambito: **Carica certificato** resta visibile e `disabled` (azioni gated)
-5. Test L1 in `materialCertificatesPage.test.jsx`; `NODE_ENV=test npm run test:run` sul file + `npm run build`
-6. Nessun commit di segreti; Bugbot a slice chiusa
-
-### File previsti (disgiunti)
+### File toccati
 
 - `app/src/pages/MaterialCertificatesPage.jsx`
-- `app/src/pages/MaterialCertificatesPage.css` (minimo, se serve)
 - `app/src/tests/materialCertificatesPage.test.jsx`
-- `docs/agent-tasks/DEPUTYTASK_MC_INGEST.md` (questo brief)
-- `docs/agent-tasks/PLAN_MATERIAL_COMPLIANCE_SLICES.md` (stesso epic)
-- `docs/PROJECT_ROADMAP.md` § Stato attuale + `docs/GUIDA_CONSOLIDATA.md` (chat sola: nessun altro brief APERTO)
+- `docs/agent-tasks/DEPUTYTASK_MC_INGEST.md`
+- `docs/agent-tasks/PLAN_MATERIAL_COMPLIANCE_SLICES.md`
+- `docs/PROJECT_ROADMAP.md` § Stato attuale
+- `docs/GUIDA_CONSOLIDATA.md` (1 riga lezione)
 
-### Cosa NON toccare
+### Cosa NON è stato toccato
 
-- [`DEPUTYTASK.md`](DEPUTYTASK.md) (SAL S1a **CHIUSO**, scontrino: non sovrascrivere)
-- `documentTextExtractor.service.js` / `ocrExtractor.js` (MC-B)
+- [`DEPUTYTASK.md`](DEPUTYTASK.md) (scontrino SAL S1a)
+- `documentTextExtractor.service.js` / `ocrExtractor.js`
 - PLAN 3834 / ISO-4 / Welding Book
-- Slice successive: MC-B, MC-I2…I4, MC-7 (`recordFeedback`), MC-6
-- Backend (`materialCertificates.controller.js`) — l’API accetta già il ruolo
-- Soglie apporto / Rule Engine / migrazioni SQL
+- Backend MC, Rule Engine, MC-B / I2–I4 / MC-7 / MC-6
 
 ### Test
 
 ```bash
 cd app && NODE_ENV=test npx vitest run src/tests/materialCertificatesPage.test.jsx
+# 5/5
 cd app && npm run build
 ```
 
 Dopo merge Netlify: in Materiali, Ambito azienda, scegli Apporto → Carica PDF → colonna Ruolo = Apporto.
 
-### Comando per il deputy
+### Prossima slice
 
-`Leggi docs/agent-tasks/DEPUTYTASK_MC_INGEST.md ed eseguilo. Chiudi con TEST OK o FIX NON APPLICABILI.`
+**MC-B** — OCR scan, riuso `documentTextExtractor` (S1a già in `main`, [#471](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/471)). Nuovo brief APERTO su questo stream prima del deputy.
