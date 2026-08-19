@@ -16,7 +16,7 @@ Audit multi-standard (9001/14001/45001) · Non Conformità (workflow ISO 10.2 co
 
 ### Sessione più recente (19/08/2026)
 
-**MC-I3 DDT ≠ 3.1 (19/08, TEST OK)** — Estrai su bolla `D.D.T._n._000775RE` classifica `delivery_note`, n. DDT in colonna, mill azzerato (SET, non solo COALESCE). Valuta 409 `NOT_A_CERTIFICATE`; pulsante visibile disabled. Brief [`DEPUTYTASK_MC_INGEST.md`](agent-tasks/DEPUTYTASK_MC_INGEST.md) **CHIUSO**. Prossima ingest: **MC-I4**. ISO-4 **non** toccata.
+**MC-I3 DDT ≠ 3.1 (19/08, TEST OK)** — [#488](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/488). Estrai su bolla `D.D.T._n._000775RE` classifica `delivery_note`, n. DDT in colonna, mill azzerato (SET, non solo COALESCE). Valuta 409 `NOT_A_CERTIFICATE`; pulsante visibile disabled. Brief [`DEPUTYTASK_MC_INGEST.md`](agent-tasks/DEPUTYTASK_MC_INGEST.md) **CHIUSO**. Prossima ingest: **MC-I4**. ISO-4 **non** toccata.
 
 **MC-I2 3.1 colata / DDT / norma (19/08, mergiata + deploy)** — [#481](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/481). Alias AI → `heat_or_lot_no`; DDT ≠ A07. Deploy TEST PID `993561`→`1019412`, PROD `1005497`→`1031291`, health 200. Smoke PROD azienda 179 id 6 (`CERTIFICATO31-…-TECNOVESPA-12174.PDF`) → Estrai HTTP 200, `extracted`, colata **`12174/2026`**.
 

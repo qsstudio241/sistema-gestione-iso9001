@@ -713,6 +713,15 @@ describe('materialCertificates.controller (MC-4)', () => {
       storagePath: 'CERTIFICATO31-TECNOVESPA-12174.PDF',
       text: 'D.D.T. n. 000775RE',
     })).toBe('mill_certificate');
+    expect(ctrl.detectSourceDocumentKind({
+      storagePath: '/tmp/mtc.pdf',
+      text: 'Certificato 3.1 S355J2 D.D.T. n. 000775RE Colata 12174/2026 '.repeat(4),
+    })).toBe('mill_certificate');
+    expect(ctrl.isDeliveryNotePayload(
+      { document_kind: 'delivery_note' },
+      { document_kind: '' }
+    )).toBe(true);
+    expect(ctrl.isDeliveryNotePayload({ document_kind: 'bolla' }, null)).toBe(true);
   });
 
   it('PATCH svuota ddt_no e non lo re-inietta da delivery_note_no', async () => {

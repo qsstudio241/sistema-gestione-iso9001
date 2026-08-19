@@ -278,9 +278,8 @@ function detectSourceDocumentKind({ text, storagePath, aiKind }) {
   if (/\bD\.?D\.?T\.?\b/i.test(file) || /\bbolla\b/i.test(file)) return 'delivery_note';
   const fromAi = emptyToNull(aiKind);
   if (fromAi === 'delivery_note' || fromAi === 'mill_certificate') return fromAi;
-  const head = String(text || '').slice(0, 900);
-  if (/\bdocumento di trasporto\b/i.test(head) || /\bD\.D\.T\.\b/i.test(head)
-    || /\bbolla di accompagnamento\b/i.test(head)) {
+  const head = String(text || '').slice(0, 160);
+  if (/\bdocumento di trasporto\b/i.test(head) || /\bbolla di accompagnamento\b/i.test(head)) {
     return 'delivery_note';
   }
   return 'mill_certificate';
@@ -317,8 +316,9 @@ function applyDeliveryNoteExtract(json, { text, storagePath }) {
 }
 
 function isDeliveryNotePayload(extracted, corrected) {
-  const j = { ...(extracted || {}), ...(corrected || {}) };
-  return j.document_kind === 'delivery_note';
+  const kind = emptyToNull(corrected?.document_kind) || emptyToNull(extracted?.document_kind);
+  const k = String(kind || '').toLowerCase();
+  return k === 'delivery_note' || k === 'ddt' || k === 'bolla';
 }
 
 function applyAnagraficaFromJson(json, roleHint) {

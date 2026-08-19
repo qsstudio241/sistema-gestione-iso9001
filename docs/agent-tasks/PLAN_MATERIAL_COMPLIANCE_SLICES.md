@@ -3,7 +3,7 @@
 > **Destinazione (ingest)**: da PDF reali (3.1, DDT scansionato, busta con più mill) si arriva a righe in Materiali con DDT / colata / norma compilati, **Valuta** che gira, HITL che decide. L’agente impara dalle correzioni con lo **stesso anello ADR-017** di qualifiche/WPQR. Nessun secondo motore OCR.  
 > **Spec**: [`MODULO_MATERIAL_COMPLIANCE_AI.md`](../specs/MODULO_MATERIAL_COMPLIANCE_AI.md)  
 > **ADR**: 020–024 · apprendimento ingest: [ADR-017](../adr/ADR-017-ingest-reference-network.md)  
-> **Brief ingest attivo**: [`DEPUTYTASK_MC_INGEST.md`](DEPUTYTASK_MC_INGEST.md) — **MC-I3 CHIUSO** (TEST OK). Prossima: **MC-I4**.  
+> **Brief ingest attivo**: [`DEPUTYTASK_MC_INGEST.md`](DEPUTYTASK_MC_INGEST.md) — **MC-I3 CHIUSO** (PR [#488](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/488)). Prossima: **MC-I4**.  
 > **Brief SAL**: [`DEPUTYTASK.md`](DEPUTYTASK.md) **CHIUSO** su S1a ([#471](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/471)) — **non sovrascriverlo**  
 > **Brief fondazione (MC-0)**: [`DEPUTYTASK_MATERIAL_COMPLIANCE_AI_FOUNDATION.md`](DEPUTYTASK_MATERIAL_COMPLIANCE_AI_FOUNDATION.md)  
 > **Spec tecniche MC-0**: [`MATERIAL_COMPLIANCE_DATA_MODEL.md`](../specs/MATERIAL_COMPLIANCE_DATA_MODEL.md) · [`MATERIAL_COMPLIANCE_UI.md`](../specs/MATERIAL_COMPLIANCE_UI.md) · [`MATERIAL_COMPLIANCE_API.md`](../specs/MATERIAL_COMPLIANCE_API.md)  
@@ -122,7 +122,7 @@ MC-0/MC-1/MC-5 devono prevedere questi campi (DDT era assente dalla lista spec d
 | **MC-I1** | Ruolo Base/Apporto in upload | UI upload + default `base` hardcoded | MC-I0 | AFK (chiusa, [#473](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/473)) |
 | **MC-B** | OCR scan (riuso estrattore, non un secondo motore) | `extractCertificate` + `mapTextReason`; **non** nuovo OCR | MC-I0, SAL **S1a** | AFK (chiusa, [#476](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/476)) |
 | **MC-I2** | 3.1 singolo: colata / DDT / norma | schema `material_certificate` + mapping anagrafica | MC-I0 | AFK (chiusa, [#481](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/481)) |
-| **MC-I3** | DDT ≠ 3.1 (classifica tipo) | extract + UI: DDT non è un mill | MC-I2, MC-B | AFK (chiusa, TEST OK) |
+| **MC-I3** | DDT ≠ 3.1 (classifica tipo) | extract + UI: DDT non è un mill | MC-I2, MC-B | AFK (chiusa, [#488](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/488)) |
 | **MC-I4** | 1 PDF → N certificati (busta mill) | split/HITL; 26DDT06266 | MC-I2, MC-I3 | AFK (nebbia split: vedi sopra) |
 | **MC-7** | Feedback ADR-017 (recordFeedback → few-shot) | PATCH/approve MC → `ingestFeedback.service` | MC-I2 (c’è qualcosa da correggere) | AFK |
 | **MC-6** | Licenza + audit AI | seam + `logAiInteraction` | MC-4/5 | AFK — **non ingest** |
@@ -317,7 +317,7 @@ Prossima ingest: **MC-I3** (DDT ≠ 3.1).
 
 Un DDT non è un certificato 3.1. Non estrarre colata/mill dal DDT come se fosse EN 10168.
 
-**Chiusa 19/08/2026 (TEST OK).** Filename `D.D.T.`/`bolla` → `document_kind=delivery_note` (vince sull’AI); `CERTIFICATO`/`3.1` nel nome resta mill. Sanitize campi mill a NULL + SQL `SET` (re-extract non lascia la colata sbagliata). Valuta 409 `NOT_A_CERTIFICATE`; pulsante Valuta visibile, `disabled` + title. Un PDF → una riga. Niente split.
+**Chiusa 19/08/2026** — PR [#488](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/488). Filename `D.D.T.`/`bolla` → `document_kind=delivery_note` (vince sull’AI); `CERTIFICATO`/`3.1` nel nome resta mill. Sanitize campi mill a NULL + SQL `SET` (re-extract non lascia la colata sbagliata). Valuta 409 `NOT_A_CERTIFICATE`; pulsante Valuta visibile, `disabled` + title. Un PDF → una riga. Niente split.
 
 Demoable: Estrai su `D.D.T._n._000775RE_…pdf` → n. DDT in colonna, JSON mill vuoto.
 

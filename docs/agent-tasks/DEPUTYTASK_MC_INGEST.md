@@ -2,7 +2,7 @@
 
 **Stato:** CHIUSO — TEST OK  
 **Aperto:** 19/08/2026 (dopo merge hub MC-I2 [#487](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/487))  
-**Chiuso:** 19/08/2026  
+**Chiuso:** 19/08/2026 — PR [#488](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/488)  
 **Piano:** [`PLAN_MATERIAL_COMPLIANCE_SLICES.md`](PLAN_MATERIAL_COMPLIANCE_SLICES.md) § MC-I3  
 **Spec:** [`MATERIAL_COMPLIANCE_DATA_MODEL.md`](../specs/MATERIAL_COMPLIANCE_DATA_MODEL.md) — DDT = colonne sul certificato, niente anagrafica DDT  
 **Rischio:** Medio — classifica extract + gate Valuta; nessuna migrazione; Cloud **non** mergia  
