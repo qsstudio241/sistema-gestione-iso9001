@@ -157,21 +157,23 @@ async function persistFigures(opts) {
  * @param {object} [options]
  * @returns {Promise<Array<object>>}
  */
-async function searchFiguresByText(queryText, organizationId, options = {}) {
+function imageRefLabel(imageRef) {
+  if (!imageRef) return '';
+  if (typeof imageRef === 'string') return imageRef;
+  return String(imageRef.originalname || imageRef.path || imageRef.filename || '');
+}
+
+async function rankFiguresByQueryVec(queryVec, organizationId, options = {}) {
   const orgId = Number(organizationId);
   if (!Number.isFinite(orgId)) {
-    throw new Error('organizationId obbligatorio per searchFiguresByText');
+    throw new Error('organizationId obbligatorio per la ricerca figure');
   }
-  const q = String(queryText || '').trim();
-  if (!q) return [];
+  if (!queryVec) return [];
 
   const embedder = resolveEmbedder(options.embedder);
   const space = embedder.embeddingSpace();
   const topK = Number.isFinite(Number(options.topK)) ? Math.max(1, Number(options.topK)) : 5;
   const minScore = Number.isFinite(Number(options.minScore)) ? Number(options.minScore) : 0;
-
-  const [queryVec] = await embedder.embedText([q]);
-  if (!queryVec) return [];
 
   let sql = `SELECT id, page, bbox, kind, caption, png_path, embedding, embedding_space, organization_id
      FROM knowledge_figures
@@ -196,7 +198,7 @@ async function searchFiguresByText(queryText, organizationId, options = {}) {
     if (!vec) continue;
     const score = cosineSimilarity(queryVec, vec);
     if (score < minScore) continue;
-    let bbox = parseBbox(row.bbox);
+    const bbox = parseBbox(row.bbox);
     scored.push({
       id: row.id,
       page: row.page,
@@ -213,8 +215,41 @@ async function searchFiguresByText(queryText, organizationId, options = {}) {
   return scored.slice(0, topK);
 }
 
+async function searchFiguresByText(queryText, organizationId, options = {}) {
+  const orgId = Number(organizationId);
+  if (!Number.isFinite(orgId)) {
+    throw new Error('organizationId obbligatorio per searchFiguresByText');
+  }
+  const q = String(queryText || '').trim();
+  if (!q) return [];
+
+  const embedder = resolveEmbedder(options.embedder);
+  const [queryVec] = await embedder.embedText([q]);
+  if (!queryVec) return [];
+  return rankFiguresByQueryVec(queryVec, orgId, { ...options, embedder });
+}
+
+/**
+ * Ricerca ritaglio/disegno → figura nello stesso embedding_space (MR-4).
+ * @param {string|object} imageRef path, buffer o file multer
+ */
+async function searchFiguresByImage(imageRef, organizationId, options = {}) {
+  const orgId = Number(organizationId);
+  if (!Number.isFinite(orgId)) {
+    throw new Error('organizationId obbligatorio per searchFiguresByImage');
+  }
+  if (!imageRef) return [];
+
+  const embedder = resolveEmbedder(options.embedder);
+  const queryVec = await embedder.embedImage(imageRef);
+  if (!queryVec) return [];
+  return rankFiguresByQueryVec(queryVec, orgId, { ...options, embedder });
+}
+
 module.exports = {
   cosineSimilarity,
   persistFigures,
   searchFiguresByText,
+  searchFiguresByImage,
+  imageRefLabel,
 };

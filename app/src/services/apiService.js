@@ -2383,6 +2383,33 @@ class ApiService {
         return this.get(`/ai/ambito-facts${qs.toString() ? '?' + qs.toString() : ''}`);
     }
 
+    /**
+     * Ricerca tavole da ritaglio (MR-4). FormData, non JSON.
+     */
+    async searchFiguresByImage(file, companyId) {
+        const formData = new FormData();
+        formData.append('file', file);
+        if (companyId != null && companyId !== '') {
+            formData.append('companyId', String(companyId));
+        }
+        const token = this.getToken();
+        const headers = token ? { Authorization: `Bearer ${token}` } : {};
+        const response = await fetch(`${this.baseUrl}/ai/figures/search-by-image`, {
+            method: 'POST',
+            headers,
+            body: formData,
+        });
+        if (!response.ok) {
+            const errorData = await response.json().catch(() => ({}));
+            throw new ApiError(
+                errorData.error || 'Ricerca visiva fallita',
+                response.status,
+                errorData.code || 'FIGURES_SEARCH_IMAGE_ERROR'
+            );
+        }
+        return response.json();
+    }
+
     async aiChat(message, options = {}) {
         const body = { message };
         const opts = typeof options === 'object' && options !== null ? options : {};

@@ -17,6 +17,7 @@ const { query } = require('../config/database');
 const {
   persistFigures,
   searchFiguresByText,
+  searchFiguresByImage,
   cosineSimilarity,
 } = require('./figureKnowledge.service');
 
@@ -32,7 +33,9 @@ function mockEmbedder() {
       return [0, 0, 1, 0];
     })),
     embedImage: jest.fn(async (pngPath) => {
-      const s = String(pngPath).toLowerCase();
+      const s = String(
+        (pngPath && pngPath.originalname) || pngPath || ''
+      ).toLowerCase();
       if (s.includes('vector')) return [1, 0, 0, 0];
       if (s.includes('raster')) return [0, 1, 0, 0];
       return [0, 0, 1, 0];
@@ -142,6 +145,59 @@ describe('searchFiguresByText', () => {
   it('query senza match → lista vuota', async () => {
     query.mockResolvedValue({ recordset: [] });
     const hits = await searchFiguresByText('simbolo', 1001, { embedder: mockEmbedder() });
+    expect(hits).toEqual([]);
+  });
+});
+
+describe('searchFiguresByImage (MR-4)', () => {
+  const vectorFig = {
+    id: 1,
+    page: 1,
+    bbox: '[120,220,300,320]',
+    kind: 'vector',
+    caption: 'Figura 1 - Simbolo di prova',
+    png_path: 'figures/p1_vector_001.png',
+    embedding: JSON.stringify([1, 0, 0, 0]),
+    embedding_space: SPACE,
+    organization_id: 1001,
+  };
+  const rasterFig = {
+    id: 2,
+    page: 1,
+    bbox: '[360,140,440,220]',
+    kind: 'raster',
+    caption: 'Figura 2 - Ritaglio raster',
+    png_path: 'figures/p1_raster_001.png',
+    embedding: JSON.stringify([0, 1, 0, 0]),
+    embedding_space: SPACE,
+    organization_id: 1001,
+  };
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+    query.mockResolvedValue({ recordset: [vectorFig, rasterFig] });
+  });
+
+  it('crop vettoriale trova la tavola vector (score maggiore)', async () => {
+    const hits = await searchFiguresByImage('crop_vector.png', 1001, { embedder: mockEmbedder() });
+    expect(hits[0].id).toBe(1);
+    expect(hits[0].kind).toBe('vector');
+    expect(hits[0].score).toBeGreaterThan(hits[1].score);
+  });
+
+  it('crop raster trova la tavola raster (due crop della fixture)', async () => {
+    const hits = await searchFiguresByImage({ originalname: 'p1_raster_crop.png' }, 1001, {
+      embedder: mockEmbedder(),
+    });
+    expect(hits[0].id).toBe(2);
+    expect(hits[0].kind).toBe('raster');
+  });
+
+  it('isolamento org: ritaglio org A non vede figure org B', async () => {
+    query.mockResolvedValue({
+      recordset: [{ ...vectorFig, id: 99, organization_id: 1004 }],
+    });
+    const hits = await searchFiguresByImage('crop_vector.png', 1001, { embedder: mockEmbedder() });
     expect(hits).toEqual([]);
   });
 });
