@@ -1,7 +1,8 @@
 /**
  * @jest-environment node
  *
- * Test L1 — GET search (MR-1), GET image (MR-2), POST ingest (MR-3), POST search-by-image (MR-4).
+ * Test L1 — GET search (MR-1), GET image (MR-2), POST ingest (MR-3),
+ * POST search-by-image (MR-4 + VLM MR-5).
  */
 
 const mockAccess = jest.fn();
@@ -26,6 +27,13 @@ jest.mock('../services/figureKnowledge.service', () => ({
 jest.mock('../services/figureIngest.service', () => ({
   ingestFiguresFromPdf: jest.fn(),
 }));
+jest.mock('../services/figureVlm.service', () => ({
+  describeCropAgainstFigures: jest.fn().mockResolvedValue({
+    reply: null,
+    unavailable: true,
+    model: 'qwen2.5vl:7b',
+  }),
+}));
 jest.mock('../utils/logger', () => ({
   error: jest.fn(),
   warn: jest.fn(),
@@ -36,6 +44,7 @@ jest.mock('../utils/logger', () => ({
 const { resolveAiCompanyScope } = require('../services/aiCompanyScope.service');
 const { searchFiguresByText, searchFiguresByImage } = require('../services/figureKnowledge.service');
 const { ingestFiguresFromPdf } = require('../services/figureIngest.service');
+const { describeCropAgainstFigures } = require('../services/figureVlm.service');
 const { searchFigures, searchFiguresByImage: searchFiguresByImageCtrl, getFigureImage, ingestFigures } = require('./figureKnowledge.controller');
 
 function createRes() {
@@ -221,10 +230,15 @@ describe('figureKnowledge.controller — ingestFigures', () => {
   });
 });
 
-describe('figureKnowledge.controller — searchFiguresByImage (MR-4)', () => {
+describe('figureKnowledge.controller — searchFiguresByImage (MR-4 + MR-5)', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     resolveAiCompanyScope.mockResolvedValue({ companyId: null, denied: null });
+    describeCropAgainstFigures.mockResolvedValue({
+      reply: null,
+      unavailable: true,
+      model: 'qwen2.5vl:7b',
+    });
   });
 
   it('400 se manca il file', async () => {
@@ -233,9 +247,10 @@ describe('figureKnowledge.controller — searchFiguresByImage (MR-4)', () => {
     await searchFiguresByImageCtrl(req, res);
     expect(res.status).toHaveBeenCalledWith(400);
     expect(searchFiguresByImage).not.toHaveBeenCalled();
+    expect(describeCropAgainstFigures).not.toHaveBeenCalled();
   });
 
-  it('200 con figures vuote se nessun match', async () => {
+  it('200 con figures vuote e reply null se nessun match e VLM assente', async () => {
     searchFiguresByImage.mockResolvedValue([]);
     const req = {
       user: { organization_id: 1001 },
@@ -245,7 +260,10 @@ describe('figureKnowledge.controller — searchFiguresByImage (MR-4)', () => {
     const res = createRes();
     await searchFiguresByImageCtrl(req, res);
     expect(res.statusCode).toBe(200);
-    expect(res.json).toHaveBeenCalledWith({ figures: [] });
+    expect(res.json).toHaveBeenCalledWith(expect.objectContaining({
+      figures: [],
+      reply: null,
+    }));
   });
 
   it('usa organization_id del JWT, non body.organization_id del client', async () => {
@@ -260,9 +278,55 @@ describe('figureKnowledge.controller — searchFiguresByImage (MR-4)', () => {
     expect(searchFiguresByImage.mock.calls[0][1]).toBe(1001);
     expect(searchFiguresByImage.mock.calls[0][1]).not.toBe(9999);
     expect(res.json.mock.calls[0][0].figures).toHaveLength(1);
+    expect(describeCropAgainstFigures).toHaveBeenCalledWith(
+      expect.objectContaining({
+        queryImage: req.file,
+        figures: [{ id: 1, score: 0.9 }],
+      })
+    );
   });
 
-  it('503 se embedding locale non disponibile', async () => {
+  it('200 con reply del VLM se Ollama risponde', async () => {
+    searchFiguresByImage.mockResolvedValue([{ id: 2, page: 3, caption: 'Angolo' }]);
+    describeCropAgainstFigures.mockResolvedValue({
+      reply: 'Il ritaglio ricorda il simbolo a pagina 3.\n\nQuesta lettura non certifica la copertura di WPQR, patentino o WPS. Va verificata sui documenti del SGQ.',
+      unavailable: false,
+      model: 'qwen2.5vl:7b',
+    });
+    const req = {
+      user: { organization_id: 1001 },
+      body: {},
+      file: { originalname: 'crop.png', buffer: Buffer.from('x'), mimetype: 'image/png' },
+    };
+    const res = createRes();
+    await searchFiguresByImageCtrl(req, res);
+    expect(res.statusCode).toBe(200);
+    const body = res.json.mock.calls[0][0];
+    expect(body.figures).toHaveLength(1);
+    expect(body.reply).toMatch(/pagina 3/);
+    expect(body.reply).toMatch(/non certifica/i);
+    expect(body._aiMeta.provider).toBe('ollama');
+    expect(body._aiMeta.model).toMatch(/qwen2\.5vl/);
+  });
+
+  it('VLM in errore → 200 con figures e reply null', async () => {
+    searchFiguresByImage.mockResolvedValue([{ id: 9, page: 1 }]);
+    describeCropAgainstFigures.mockRejectedValue(new Error('boom'));
+    const req = {
+      user: { organization_id: 1001 },
+      body: {},
+      file: { originalname: 'crop.png', buffer: Buffer.from('x'), mimetype: 'image/png' },
+    };
+    const res = createRes();
+    await searchFiguresByImageCtrl(req, res);
+    expect(res.statusCode).toBe(200);
+    expect(res.json).toHaveBeenCalledWith(expect.objectContaining({
+      figures: [{ id: 9, page: 1 }],
+      reply: null,
+    }));
+  });
+
+  it('503 se embedding locale non disponibile (VLM non chiamato)', async () => {
     const err = new Error('no clip');
     err.code = 'FIGURE_EMBED_UNAVAILABLE';
     searchFiguresByImage.mockRejectedValue(err);
@@ -274,5 +338,6 @@ describe('figureKnowledge.controller — searchFiguresByImage (MR-4)', () => {
     const res = createRes();
     await searchFiguresByImageCtrl(req, res);
     expect(res.status).toHaveBeenCalledWith(503);
+    expect(describeCropAgainstFigures).not.toHaveBeenCalled();
   });
 });

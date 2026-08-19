@@ -66,12 +66,13 @@ router.post(
   figureCtrl.ingestFigures
 );
 
-// POST /ai/figures/search-by-image — ritaglio ? tavole (MR-4, prima di /:id/image)
+// POST /ai/figures/search-by-image — ritaglio ? tavole CLIP (MR-4) + VLM locale (MR-5)
 router.post(
   '/ai/figures/search-by-image',
   authenticate,
   requireLicensedModule('ai_chat'),
   uploadFigureQueryMw,
+  logAiInteraction('chat'),
   figureCtrl.searchFiguresByImage
 );
 

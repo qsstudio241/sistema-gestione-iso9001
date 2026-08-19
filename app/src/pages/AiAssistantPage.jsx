@@ -62,16 +62,20 @@ async function fetchCitedFigures(queryText, companyId) {
 }
 
 /**
- * Retrieve tavole da ritaglio. Fallimento o lista vuota → [] (niente errore in chat).
+ * Retrieve tavole da ritaglio + commento VLM (MR-5).
+ * Fallimento → figures vuote e reply null (niente errore in chat).
  */
 async function fetchCitedFiguresByImage(file, companyId) {
-  if (!file) return [];
+  if (!file) return { figures: [], reply: null };
   try {
     const res = await apiService.searchFiguresByImage(file, companyId);
     const list = res?.figures ?? res?.data?.figures;
-    return Array.isArray(list) ? list : [];
+    const figures = Array.isArray(list) ? list : [];
+    const raw = res?.reply ?? res?.data?.reply;
+    const reply = typeof raw === 'string' && raw.trim() ? raw.trim() : null;
+    return { figures, reply };
   } catch {
-    return [];
+    return { figures: [], reply: null };
   }
 }
 
@@ -624,10 +628,14 @@ function AiAssistantPage() {
     ]);
     setLoading(true);
     try {
-      const figures = await fetchCitedFiguresByImage(file, companyContext.companyId);
-      const text = figures.length
+      const { figures, reply } = await fetchCitedFiguresByImage(
+        file,
+        companyContext.companyId
+      );
+      const fallback = figures.length
         ? `Tavole più simili al ritaglio «${name}».`
         : `Nessuna tavola simile a «${name}».`;
+      const text = reply || fallback;
       setMessages((prev) => [
         ...prev,
         {

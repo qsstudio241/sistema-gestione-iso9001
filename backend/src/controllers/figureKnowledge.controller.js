@@ -2,8 +2,9 @@
  * GET /ai/figures/search — retrieve testo→figura (Multimodal RAG MR-1).
  * GET /ai/figures/:id/image — byte PNG della tavola (MR-2), stesso isolamento org.
  * POST /ai/figures/ingest — PDF già sul disco → extract + persist (MR-3).
- * POST /ai/figures/search-by-image — ritaglio → tavole nello stesso spazio CLIP (MR-4).
+ * POST /ai/figures/search-by-image — ritaglio → tavole CLIP (MR-4) + commento VLM locale (MR-5).
  * Isolamento organization_id dal JWT. Niente Gemini sui byte delle tavole.
+ * Ollama assente → reply null, figures restano, niente 500.
  */
 
 const path = require('path');
@@ -17,6 +18,7 @@ const {
   searchFiguresByImage: findFiguresByImage,
 } = require('../services/figureKnowledge.service');
 const { ingestFiguresFromPdf } = require('../services/figureIngest.service');
+const { describeCropAgainstFigures } = require('../services/figureVlm.service');
 
 const IMAGE_EXT_OK = new Set(['.png', '.jpg', '.jpeg', '.webp']);
 
@@ -65,7 +67,8 @@ async function searchFigures(req, res) {
 
 /**
  * Ricerca visiva: file PNG/JPEG/WebP in memoria, org solo dal JWT.
- * Senza file → 400. Nessun match → { figures: [] } 200.
+ * Senza file → 400. Nessun match → { figures: [], reply } 200.
+ * VLM in errore o assente → reply null, figures invariate.
  */
 async function searchFiguresByImage(req, res) {
   try {
@@ -89,11 +92,39 @@ async function searchFiguresByImage(req, res) {
       return sendAccessDenied(res, scope.denied);
     }
 
-    const figures = await findFiguresByImage(req.file, organizationId, {
+    const figures = (await findFiguresByImage(req.file, organizationId, {
       companyId: scope.companyId,
       topK: req.body?.topK || req.query?.topK,
+    })) || [];
+
+    let reply = null;
+    let vlmMeta = {
+      provider: 'none',
+      model: 'unknown',
+      contextSummary: 'figure-vlm-skipped',
+    };
+    try {
+      const vlm = await describeCropAgainstFigures({
+        queryImage: req.file,
+        figures,
+      });
+      reply = vlm && vlm.reply ? vlm.reply : null;
+      vlmMeta = {
+        provider: vlm && vlm.unavailable ? 'none' : 'ollama',
+        model: (vlm && vlm.model) || 'unknown',
+        contextSummary: vlm && vlm.unavailable
+          ? 'figure-vlm-unavailable'
+          : (reply ? 'figure-vlm-cite' : 'figure-vlm-empty'),
+      };
+    } catch (vlmErr) {
+      logger.warn('[FIGURES_SEARCH_IMAGE] VLM skip: %s', vlmErr && vlmErr.message);
+    }
+
+    return res.json({
+      figures,
+      reply,
+      _aiMeta: vlmMeta,
     });
-    return res.json({ figures: figures || [] });
   } catch (err) {
     if (err && err.code === 'FIGURE_EMBED_UNAVAILABLE') {
       return res.status(503).json({
