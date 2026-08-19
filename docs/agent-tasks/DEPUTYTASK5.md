@@ -1,94 +1,71 @@
-# DEPUTYTASK5 — Multimodal RAG MR-1: persisti + embed locale + GET testo→figura
+# DEPUTYTASK5 — Multimodal RAG MR-2: UI citazioni tavola (testo → figura)
 
-**Stato:** CHIUSO — TEST OK (18/08/2026, [PR #469](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/469)). **Non aprire MR-2** in questa run.  
-**Aperto:** 18/08/2026 (Lead wayfinder B — Work through the map, dopo merge MR-0 [PR #464](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/464))  
+**Stato:** APERTO  
+**Aperto:** 19/08/2026 (dopo merge MR-1 [PR #469](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/469) e migrazione **154** applicata su VPS **TEST**)  
 **Piano:** [`PLAN_MULTIMODAL_RAG_SLICES.md`](PLAN_MULTIMODAL_RAG_SLICES.md)  
-**Spec:** ADR-010 (AI cita, non certifica) · `knowledgeIndexer.service.js` (RAG testo Gemini, **invariato**) · MR-0 `extract_figures.py`  
-**Rischio:** Medio — migrazione **additiva** + endpoint GET; PR + gate Bugbot; **non** push su `main`; **non** toccare `DEPUTYTASK.md` (SAL S1a ancora APERTO)
+**Spec:** ADR-010 (AI cita, non certifica) · GET già su `main`: `/api/v1/ai/figures/search?q=`  
+**Rischio:** Medio — solo UI + eventuale GET immagine sul controller figure già esistente; PR + **un** Bugbot a slice chiusa; **non** push su `main`
+
+**Scontrino MR-1 (non rifare):** CHIUSO TEST OK, mig. **154** `knowledge_figures`, adapter CLIP locale, GET search. 153 = ISO-6.
 
 ---
 
-## Esito (18/08/2026)
+## Slice unica: MR-2
 
-**TEST OK.** Slice MR-1 implementata:
+**Obiettivo:** nella pagina Assistente AI, una query di testo mostra le **tavole** citate (ritaglio + pagina + bbox), riusando il pannello citazioni esistente. Nessun layout di prodotto nuovo. Nessun Gemini sui PNG.
 
-- Migrazione `database/migrations/154_knowledge_figures.sql` + runner `backend/scripts/run-migration-154-vps.js` (non applicata da Cloud; 153 è ISO-6)
-- Adapter CLIP locale `figureEmbed.service.js` (L1 mock; runtime senza pesi → `FIGURE_EMBED_UNAVAILABLE` / GET 503)
-- Persist + search `figureKnowledge.service.js` (isolamento `organization_id` + `embedding_space`)
-- GET `/api/v1/ai/figures/search?q=` su `aiChat.routes.js` (JWT + licenza `ai_chat`)
-- Jest: 9 test verdi + uniqueness migrazione 153
+### Contesto
 
-**Non aperto MR-2.** `DEPUTYTASK.md` (SAL S1a) non toccato.
-
-Dopo merge di questa PR: SCP + `run-migration-154-vps.js` su TEST poi PROD. Poi (run **nuova**): aprire MR-2.
-
----
-
-## Slice unica di questa sessione: MR-1
-
-**Obiettivo**: dato l’output MR-0 (`*.figures.json` + PNG), salvare le figure in SQL Server (`knowledge_figures`), calcolare embedding **locale** (stesso spazio testo↔immagine) e restituire le tavole giuste con un GET testo→figura, isolate per `organization_id`. Nessuna UI. Nessun Gemini sui byte delle tavole.
-
-### Contesto (non riscrivere)
-
-- MR-0 è su `main`: CLI `--extract-figures` scrive `figures/` + `*.figures.json` (`id`, `page`, `bbox`, `kind`, `path`, `caption`)
-- RAG testo esistente: `knowledge_chunks.embedding` = JSON Gemini (`aiProviderAdapter.embed`). **Non** mescolare dimensioni/modelli
-- Decisioni chiuse: tabella nuova `knowledge_figures` + colonna `embedding_space`; default `jinaai/jina-clip-v2` (IT+EN); override env; fallback `clip-ViT-B-32` se VRAM stretta
-- Catalogo `weldingSymbols2553.js` resta la fonte codici — **non** duplicarlo
-- Cosine similarity già in `knowledgeIndexer.service.js` (`cosineSimilarity`) — riusare (export o copia minima), non riscrivere il RAG testo
-- Cartella migrazioni canonica: **`database/migrations/`** (root). `backend/database/migrations/` è morta. **Nessun numero riservato in anticipo**: prendere il prossimo libero su `origin/main` al momento del commit (`ls database/migrations/ | sort`; oggi l’ultimo è **152**, buco 150 storico)
-- Cloud Agent **non** raggiunge SQL Server: scrivere SQL + `run-migration-NNN-vps.js`; **non** applicare la migrazione da questa VM
+- Backend retrieve è su `main` (MR-1). Tabella **154** già creata su SQL **TEST** (19/08). PROD non ancora.
+- Citazioni testo già esistono: `AiAssistantCitations.jsx` sotto i messaggi.
+- DNA UI: leggere **prima di JSX** `app/src/design-system/README.md` e `docs/reference/LIBRERIA_UI_SGQ.md`. Copiare la scheda a fasi (riferimento 3) o i chip citazioni già in pagina — non inventare una galleria.
 
 ### DoD
 
-1. Migrazione idempotente `154_knowledge_figures.sql` (IF NOT EXISTS): tabella `knowledge_figures` con almeno  
-   `id`, `organization_id` NOT NULL, `company_id` NULL, `source_pdf`, `page` (1-based), `bbox` (JSON `[x0,y0,x1,y1]`), `kind` (`raster`\|`vector`), `caption` NULL, `png_path`, `embedding` NVARCHAR(MAX) NULL (JSON float[]), `embedding_space` NVARCHAR NOT NULL, `created_at`. Indice `(organization_id, embedding_space)`. Niente `ON DELETE CASCADE` avventato. Niente `GO` se lo script VPS splitta su `IF NOT EXISTS`
-2. Runner `backend/scripts/run-migration-154-vps.js` sul pattern 149/152 (PROD + `SGQ_MIGRATION_TARGET=test`)
-3. Adapter embed locale (`figureEmbed.service.js` o equivalente): interfaccia `embedText` / `embedImage` + getter `embeddingSpace`. Default modello `jinaai/jina-clip-v2`; env override; fallback `clip-ViT-B-32`. **I test L1 usano un mock** (vettori corti finti) — **non** scaricare pesi in CI/Cloud, **non** committare `.venv` / modelli
-4. Service persist + retrieve: upsert da lista figure MR-0 (PNG su disco o buffer) → righe con `embedding` + `embedding_space`; `searchFiguresByText(query, organizationId, { companyId, topK })` filtra `organization_id` **e** stesso `embedding_space`, cosine, top-k. Query org A **non** vede righe org B
-5. GET autenticato testo→figura (stesso assistente, stessa licenza `ai_chat`): es. `GET /api/v1/ai/figures/search?q=` (query obbligatorio). Scope `organization_id` dal JWT, mai dal client. Risposta: `{ figures: [{ id, page, bbox, kind, caption, path, score, embedding_space }] }`. Vuoto → `{ figures: [] }` 200, non 500
-6. Test L1 Jest (mock DB + mock embed): persist scrive `embedding_space`; retrieve testo trova la figura “giusta” (score maggiore); isolamento cross-org; query senza match → lista vuota. `npx jest` sul file toccato
-7. Nuovi `.js` in `backend/src/` aggiunti a `backend/scripts/deploy-manifest.json`
-8. Nessun Gemini/`aiProviderAdapter.embed` sui PNG; nessuna UI; nessun PDF copyright; gate Bugbot prima di dichiarare la PR pronta
+1. Dopo una risposta (o una ricerca figure), l’utente vede fino a top-k tavole: **immagine** (o placeholder se manca il file), **pagina**, **bbox**, caption, score. Vuoto → niente errore, nessuna card.
+2. `organization_id` solo dal JWT (già nel GET). Nessun id org dal client.
+3. Se il PNG non è servibile via URL, aggiungere **minimo** `GET` bytes/file sul controller/route **già** di `figureKnowledge` (stesso modulo). Niente secondo store, niente Gemini.
+4. Test L1 (Vitest) sul componente citazioni figura: con lista vuota non crasha; con 1 hit mostra pagina. `cd app && NODE_ENV=test npm run test:run` sul file toccato + `npm run build` se si tocca JSX.
+5. **Un** `bugbot run` solo a slice chiusa (L1 verde). Non a ogni push.
+6. Nessun PDF copyright in repo. Nessuna UI nuova di prodotto.
 
-### File previsti
+### File previsti (disgiunti — tocca SOLO questi)
 
-- `database/migrations/154_knowledge_figures.sql` + `backend/scripts/run-migration-154-vps.js`
-- `backend/src/services/figureEmbed.service.js` (nome equivalente ok)
-- `backend/src/services/figureKnowledge.service.js` (persist + search)
-- `backend/src/controllers/` + `backend/src/routes/` — GET search (preferire `aiChat.routes.js` già montato, o file nuovo minimo + `server.js` + manifest)
-- test Jest accanto ai service/controller
-- `backend/scripts/deploy-manifest.json`
+- `app/src/pages/AiAssistantPage.jsx` (+ CSS della pagina se già esiste)
+- `app/src/components/AiAssistantCitations.jsx` (estendere; non creare un layout parallelo)
+- test accanto: es. `app/src/tests/AiAssistantCitations.test.jsx` o `app/src/components/AiAssistantCitations.test.jsx`
+- **solo se serve l’immagine:** `backend/src/controllers/figureKnowledge.controller.js` + `backend/src/routes/aiChat.routes.js` + test controller + riga già in `deploy-manifest.json` (non aggiungere file backend nuovi se si può evitare)
 
 ### Cosa NON toccare
 
-- `knowledgeIndexer.service.js` / `normChunker.service.js` / `geminiAdapter.js` / `aiProviderAdapter.js` (salvo **export** di `cosineSimilarity` se già esiste — zero cambi al RAG testo)
-- `knowledge_chunks` (niente ALTER, niente INSERT figure lì)
-- UI, `AiAssistantPage`, ingest commesse, WPS, `documentIngestPipeline`
-- `weldingSymbols2553.js`, Markdown in `docs/Normative/`
-- `backend/scripts/pdf_to_json/` (MR-0 chiuso; non rifare extract)
-- `DEPUTYTASK.md` (SAL S1a)
-- Slice MR-2…MR-5 (niente query immagine, niente Ollama, niente job ingest norma)
+- `knowledgeIndexer.service.js`, Gemini, `knowledge_chunks`
+- `figureEmbed.service.js` / persist MR-1 (già fatti)
+- `weldingSymbols2553.js`, `backend/scripts/pdf_to_json/`
+- migrazioni SQL, `run-migration-*-vps.js`
+- `DEPUTYTASK.md`, `DEPUTYTASK1.md`… altri slot
+- `docs/GUIDA_CONSOLIDATA.md`, `docs/PROJECT_ROADMAP.md` (parallelo: bozza 5 righe in questo brief, sync **dopo merge**)
+- Slice MR-3…MR-5 (ingest, query visiva, Ollama)
 
 ### Verifica
 
 ```bash
-# numero migrazione unico (dopo aver scelto NNN su origin/main)
-node backend/scripts/migrationNumberUniqueness.test.js
-
-cd backend && npx jest src/services/figureKnowledge.service.test.js --forceExit
-# + test controller se presente
+cd app && NODE_ENV=test npm run test:run -- src/components/AiAssistantCitations.test.jsx
+cd app && npm run build
 ```
-
-Senza rete, senza download del modello. Mock obbligatorio.
 
 ### Chiusura
 
-- Aggiorna PLAN: spunta DoD MR-1; **non** aprire MR-2 nella stessa run
-- PR livello Medio + gate Bugbot; migrazione VPS **dopo** merge (SCP + runner), non in questa slice se il Cloud non ha ancora il merge
-- Chiudi con **TEST OK** o **FIX NON APPLICABILI** + handoff se incompleto
+- Spunta DoD MR-2 nel PLAN. **Non** aprire MR-3.
+- PR livello Medio; 1 Bugbot; Cloud Agent **non** mergia.
+- Chiudi con **TEST OK** o **FIX NON APPLICABILI** + handoff se incompleto.
+
+### Bozza hub (dopo merge, non in questa PR)
+
+- GUIDA: una riga — citazioni tavola = stesso pannello Assistente, crop locale, AI non certifica.
+- Roadmap § Stato attuale: una riga MR-2 + priorità 9 aggiornata.
 
 ---
 
-## Comando per aprire MR-2 (dopo merge di questa PR — non ora)
+## Comando per il deputy
 
-Leggi `docs/agent-tasks/PLAN_MULTIMODAL_RAG_SLICES.md` e apri MR-2 in `DEPUTYTASK5.md`.
+Leggi `docs/agent-tasks/DEPUTYTASK5.md` ed eseguilo. Chiudi con TEST OK o FIX NON APPLICABILI. Non aprire MR-3. Non toccare GUIDA né roadmap. Un solo Bugbot a slice chiusa.
