@@ -7,7 +7,12 @@
 import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { useStorage } from "../contexts/StorageContext";
 import { useAuth } from "../contexts/AuthContext";
+import { useCompanyScope } from "../contexts/CompanyScopeContext";
 import { getNextAuditNumber, sortAuditsByNumber } from "../utils/auditUtils";
+import {
+  auditMatchesCompanyScope,
+  resolveNumericCompanyScope,
+} from "../utils/auditCompanyScope";
 import {
   formatAuditPeriodLabel,
   normalizeAuditDateEndForStorage,
@@ -49,10 +54,12 @@ function AuditSelector() {
     isSaving,
   } = useStorage();
   const { user } = useAuth();
+  const { companyId: companyScope, scopeCompanyName } = useCompanyScope();
+  const scopedNumericId = resolveNumericCompanyScope(companyScope);
+  const canCreateAudit = scopedNumericId != null;
 
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [isReauditMode, setIsReauditMode] = useState(false);
-  const [selectedCompany, setSelectedCompany] = useState("");
   const [showClosedAudits, setShowClosedAudits] = useState(false);
 
   // Ordina audit per numero (più recente prima) - filtro audit validi
@@ -68,33 +75,24 @@ function AuditSelector() {
       .join("|");
   }, [audits]);
 
-const hasAnyClosedAudit = useMemo(
-    () => sortedAudits.some((a) => isClosedAuditStatus(a.metadata?.status)),
-    [sortedAudits]
+  const scopedAudits = useMemo(
+    () =>
+      sortedAudits.filter((a) =>
+        auditMatchesCompanyScope(a, companyScope, { scopeCompanyName })
+      ),
+    [sortedAudits, companyScope, scopeCompanyName]
   );
 
-  const companyOptions = useMemo(() => {
-    const seen = new Map();
-    for (const a of sortedAudits) {
-      const raw = a.metadata?.clientName;
-      if (raw == null) continue;
-      const norm = String(raw).trim();
-      if (!norm) continue;
-      if (!seen.has(norm)) seen.set(norm, String(raw).trim());
-    }
-    return Array.from(seen.entries()).sort((a, b) => a[0].localeCompare(b[0], "it-IT"));
-  }, [sortedAudits]);
+  const hasAnyClosedAudit = useMemo(
+    () => scopedAudits.some((a) => isClosedAuditStatus(a.metadata?.status)),
+    [scopedAudits]
+  );
 
   const buildAuditsForSecondSelect = useCallback(
-    (companyNorm, includeClosed) => {
-      const forCo = companyNorm
-        ? sortedAudits.filter(
-            (a) => String(a.metadata?.clientName || "").trim() === companyNorm
-          )
-        : sortedAudits;
+    (includeClosed) => {
       const filtered = includeClosed
-        ? forCo
-        : forCo.filter((a) => !isClosedAuditStatus(a.metadata?.status));
+        ? scopedAudits
+        : scopedAudits.filter((a) => !isClosedAuditStatus(a.metadata?.status));
       const cur =
         currentAuditId &&
         validAudits.find((a) => auditRowId(a) === currentAuditId);
@@ -107,12 +105,12 @@ const hasAnyClosedAudit = useMemo(
         currentOutsideFilter: forcedCurrent,
       };
     },
-    [sortedAudits, validAudits, currentAuditId]
+    [scopedAudits, validAudits, currentAuditId]
   );
 
   const { list: auditsForSecondSelect, currentOutsideFilter } = useMemo(
-    () => buildAuditsForSecondSelect(selectedCompany, showClosedAudits),
-    [buildAuditsForSecondSelect, selectedCompany, showClosedAudits]
+    () => buildAuditsForSecondSelect(showClosedAudits),
+    [buildAuditsForSecondSelect, showClosedAudits]
   );
 
   // === HANDLERS ===
@@ -124,18 +122,13 @@ const hasAnyClosedAudit = useMemo(
     }
   };
 
-  const handleCompanyChange = (e) => {
-    setSelectedCompany(e.target.value);
-    // Il filtro restringe la lista visibile ma non cambia l'audit attivo.
-    // Se l'audit corrente è fuori filtro, rimane selezionato e appare in testa con indicatore.
-  };
-
   const handleShowClosedAuditsChange = (e) => {
     setShowClosedAudits(e.target.checked);
     // Il filtro restringe la lista visibile ma non cambia l'audit attivo.
   };
 
   const handleCreateNewAudit = () => {
+    if (!canCreateAudit) return;
     setIsReauditMode(false);
     setShowCreateModal(true);
   };
@@ -173,8 +166,14 @@ const hasAnyClosedAudit = useMemo(
       <>
         <div className="audit-selector empty">
           <p>Nessun audit disponibile</p>
-          <button onClick={handleCreateNewAudit} className="btn btn-primary">
-            ➕ Crea Primo Audit
+          <button
+            type="button"
+            onClick={handleCreateNewAudit}
+            className="btn btn-primary"
+            disabled={!canCreateAudit}
+            title={!canCreateAudit ? "Seleziona un'azienda nell'Ambito in alto" : ""}
+          >
+            {"\u2795"} Crea Primo Audit
           </button>
         </div>
 
@@ -186,6 +185,8 @@ const hasAnyClosedAudit = useMemo(
             isReaudit={false}
             onClose={() => setShowCreateModal(false)}
             onCreate={createAudit}
+            defaultCompanyId={scopedNumericId}
+            companyName={scopeCompanyName}
           />
         )}
       </>
@@ -197,24 +198,6 @@ const hasAnyClosedAudit = useMemo(
       <div className="audit-selector-header">
         <div className="audit-selector-controls">
 <div className="audit-selector-filters">
-            <div className="audit-filter-field">
-              <label htmlFor="audit-company-select" className="audit-filter-label">
-                Azienda
-              </label>
-              <select
-                id="audit-company-select"
-                value={selectedCompany}
-                onChange={handleCompanyChange}
-                className="audit-dropdown audit-company-select"
-              >
-                <option value="">- Tutte le aziende -</option>
-                {companyOptions.map(([norm, label]) => (
-                  <option key={norm} value={norm}>
-                    {label}
-                  </option>
-                ))}
-              </select>
-            </div>
             <div className="audit-filter-field audit-filter-field-grow">
               <label htmlFor="audit-select" className="audit-filter-label">
                 Audit
@@ -267,11 +250,13 @@ const hasAnyClosedAudit = useMemo(
 
           {/* Due pulsanti distinti: Nuovo Audit vs Re-Audit */}
           <button
+            type="button"
             onClick={handleCreateNewAudit}
             className="btn btn-icon btn-success"
-            title="Crea nuovo audit"
+            title={!canCreateAudit ? "Seleziona un'azienda nell'Ambito in alto" : "Crea nuovo audit"}
+            disabled={!canCreateAudit}
           >
-            ➕ Nuovo
+            {"\u2795"} Nuovo
           </button>
           
           <button
@@ -352,6 +337,8 @@ const hasAnyClosedAudit = useMemo(
           isReaudit={isReauditMode}
           onClose={() => setShowCreateModal(false)}
           onCreate={createAudit}
+          defaultCompanyId={scopedNumericId}
+          companyName={scopeCompanyName}
         />
       )}
 
@@ -362,7 +349,9 @@ const hasAnyClosedAudit = useMemo(
 
 // === MODAL CREAZIONE AUDIT ===
 
-function CreateAuditModal({ audits, currentAudit, isReaudit, onClose, onCreate }) {
+function CreateAuditModal({
+  audits, currentAudit, isReaudit, onClose, onCreate, defaultCompanyId, companyName,
+}) {
   const { user } = useAuth();
   const currentYear = new Date().getFullYear();
   // Standard visibili in base a user_standards: se allowed_standard_ids presente, solo quelli
@@ -374,12 +363,12 @@ function CreateAuditModal({ audits, currentAudit, isReaudit, onClose, onCreate }
   const nextNumber = getNextAuditNumber(audits, currentYear);
 
   // Pre-popola clientName, companyId, tipologia, fornitore, norme e auditor se re-audit
-  const initialClientName = isReaudit && currentAudit 
-    ? currentAudit.metadata.clientName 
-    : "";
-  const initialCompanyId = isReaudit && currentAudit?.metadata?.companyId 
-    ? currentAudit.metadata.companyId 
-    : null;
+  const initialClientName = isReaudit && currentAudit
+    ? currentAudit.metadata.clientName
+    : (companyName || "");
+  const initialCompanyId = isReaudit && currentAudit?.metadata?.companyId
+    ? currentAudit.metadata.companyId
+    : (defaultCompanyId ?? null);
   const initialPartyType = isReaudit && currentAudit?.metadata?.auditPartyType 
     ? currentAudit.metadata.auditPartyType 
     : "first_party";
@@ -421,28 +410,7 @@ function CreateAuditModal({ audits, currentAudit, isReaudit, onClose, onCreate }
     }).catch(() => setCustomChecklists([]));
   }, []);
 
-  // Carica aziende dall'anagrafica (Fase 1)
-  const [companies, setCompanies] = useState([]);
-  const [companiesLoading, setCompaniesLoading] = useState(false);
-  const effectiveOrgId = user?.auditor_org_id ?? null;
-
-  const loadCompanies = useCallback(async () => {
-    setCompaniesLoading(true);
-    try {
-      const params = effectiveOrgId ? { auditor_org_id: effectiveOrgId } : {};
-      const res = await apiService.getCompanies(params);
-      setCompanies(res.data || []);
-    } catch (err) {
-      console.warn("Caricamento aziende:", err.message);
-      setCompanies([]);
-    } finally {
-      setCompaniesLoading(false);
-    }
-  }, [effectiveOrgId]);
-
-  useEffect(() => {
-    loadCompanies();
-  }, [loadCompanies]);
+  // Aziende: il tenant arriva da Ambito (o dalla riga in re-audit), non da un select.
 
   const [suppliers, setSuppliers] = useState([]);
   const [suppliersLoading, setSuppliersLoading] = useState(false);
@@ -541,12 +509,12 @@ function CreateAuditModal({ audits, currentAudit, isReaudit, onClose, onCreate }
       .catch(() => setAuditHistory([]));
   }, [isReaudit, formData.companyId, formData.clientName]);
 
-  // Nuovo audit: controlla pending quando l'utente lascia il campo clientName (min 3 char)
-  const handleClientNameBlur = () => {
-    if (!isReaudit && formData.clientName.trim().length >= 3) {
-      checkPendingIssues(formData.clientName.trim(), null);
-    }
-  };
+  // Nuovo audit: rilievi pendenti del cliente fissato dall'Ambito.
+  React.useEffect(() => {
+    if (isReaudit) return;
+    const cn = formData.clientName?.trim();
+    if (cn && cn.length >= 3) checkPendingIssues(cn, null);
+  }, [isReaudit, formData.clientName]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -559,32 +527,6 @@ function CreateAuditModal({ audits, currentAudit, isReaudit, onClose, onCreate }
   };
 
   const MANUAL_COMPANY_VALUE = "__manual__";
-
-  // Menu a tendina Azienda committente: selezione da Anagrafica o inserimento manuale
-  const handleCompanySelect = (e) => {
-    const value = e.target.value;
-    if (!value) {
-      setFormData((prev) => ({ ...prev, companyId: null, clientName: "" }));
-      return;
-    }
-    if (value === MANUAL_COMPANY_VALUE) {
-      setFormData((prev) => ({ ...prev, companyId: null, clientName: prev.clientName || "" }));
-      return;
-    }
-    const company = companies.find((c) => String(c.id) === value);
-    if (company) {
-      setFormData((prev) => ({
-        ...prev,
-        companyId: company.id,
-        clientName: company.name || "",
-      }));
-    }
-  };
-
-  // Valore del dropdown: companyId, MANUAL_COMPANY_VALUE, o ""
-  const companySelectValue = formData.companyId != null && formData.companyId !== ""
-    ? String(formData.companyId)
-    : (formData.clientName && !formData.companyId ? MANUAL_COMPANY_VALUE : "");
 
   const handleNormToggle = (norm) => {
     setFormData((prev) => ({
@@ -761,64 +703,20 @@ function CreateAuditModal({ audits, currentAudit, isReaudit, onClose, onCreate }
           </div>
 
           <div className="form-group">
-            <label htmlFor="companySelect">Azienda committente *</label>
-            {isReaudit ? (
-              <input
-                type="text"
-                id="clientName"
-                readOnly
-                value={formData.clientName || "-"}
-                className="form-control readonly"
-              />
-            ) : companies.length > 0 ? (
-              <>
-                <select
-                  key={`company-select-${effectiveOrgId ?? "none"}`}
-                  id="companySelect"
-                  value={companySelectValue}
-                  onChange={handleCompanySelect}
-                  className={`form-control ${errors.clientName ? "error" : ""}`}
-                  disabled={companiesLoading}
-                >
-                  <option value="">- Seleziona azienda -</option>
-                  <option value={MANUAL_COMPANY_VALUE}>- Nuova azienda / Inserimento manuale -</option>
-                  {companies.map((c) => (
-                    <option key={c.id} value={c.id}>
-                      {c.name}
-                      {c.vat_number ? ` (P.IVA ${c.vat_number})` : ""}
-                    </option>
-                  ))}
-                </select>
-                {companySelectValue === MANUAL_COMPANY_VALUE && (
-                  <input
-                    type="text"
-                    id="clientName"
-                    name="clientName"
-                    value={formData.clientName}
-                    onChange={handleChange}
-                    onBlur={handleClientNameBlur}
-                    className={`form-control ${errors.clientName ? "error" : ""}`}
-                    placeholder="es. Acme Industries SpA"
-                    style={{ marginTop: "0.5rem" }}
-                  />
-                )}
-                <small className="form-hint">Scegli dall&apos;anagrafica aziende oppure inserimento manuale per una nuova.</small>
-              </>
-            ) : (
-              <>
-                <input
-                  type="text"
-                  id="clientName"
-                  name="clientName"
-                  value={formData.clientName}
-                  onChange={handleChange}
-                  onBlur={handleClientNameBlur}
-                  className={`form-control ${errors.clientName ? "error" : ""}`}
-                  placeholder="es. Acme Industries SpA"
-                />
-                <small className="form-hint">Anagrafica vuota: inserisci il nome azienda. Aggiungi aziende da 🏢 Anagrafica Aziende.</small>
-              </>
-            )}
+            <label htmlFor="clientName">Azienda committente</label>
+            <input
+              type="text"
+              id="clientName"
+              readOnly
+              value={formData.clientName || "\u2014"}
+              className="form-control readonly"
+              aria-label="Azienda non modificabile"
+            />
+            <small className="form-hint">
+              {isReaudit
+                ? "Presa dall'audit da rinnovare. Non si cambia da qui."
+                : "Fissata dall'Ambito. Non si cambia da qui."}
+            </small>
             {errors.clientName && (
               <span className="error-message">{errors.clientName}</span>
             )}
