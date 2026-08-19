@@ -84,6 +84,48 @@ describe("MaterialCertificatesPage (MC-5)", () => {
     });
   });
 
+  it("upload di default invia materialRole base", async () => {
+    scopeState.companyId = "3";
+    apiService.createMaterialCertificate.mockResolvedValue({ data: { id: 12 } });
+    const { container } = render(<MaterialCertificatesPage />);
+    await screen.findByRole("button", { name: "Carica certificato" });
+    const input = container.querySelector('input[aria-label="File PDF certificato"]');
+    const file = new File(["%PDF-1.4"], "lamiera.pdf", { type: "application/pdf" });
+    await userEvent.upload(input, file);
+    await waitFor(() => {
+      expect(apiService.createMaterialCertificate).toHaveBeenCalledWith({
+        companyId: "3",
+        file,
+        materialRole: "base",
+      });
+    });
+  });
+
+  it("scelta Apporto in header invia filler; il filtro KPI non cambia l'upload", async () => {
+    scopeState.companyId = "3";
+    apiService.createMaterialCertificate.mockResolvedValue({ data: { id: 13 } });
+    const { container } = render(<MaterialCertificatesPage />);
+    await screen.findByRole("button", { name: "Carica certificato" });
+
+    const filterApporto = screen.getByRole("button", { name: /Apporto$/ });
+    await userEvent.click(filterApporto);
+    expect(screen.getByRole("radio", { name: "Base" })).toHaveAttribute("aria-checked", "true");
+
+    await userEvent.click(screen.getByRole("radio", { name: "Apporto" }));
+    expect(screen.getByRole("radio", { name: "Apporto" })).toHaveAttribute("aria-checked", "true");
+
+    const input = container.querySelector('input[aria-label="File PDF certificato"]');
+    const file = new File(["%PDF-1.4"], "filo.pdf", { type: "application/pdf" });
+    await userEvent.upload(input, file);
+    await waitFor(() => {
+      expect(apiService.createMaterialCertificate).toHaveBeenCalledWith({
+        companyId: "3",
+        file,
+        materialRole: "filler",
+      });
+    });
+  });
+
   it("anteprima PDF usa file_url web, non il path disco", async () => {
     routerState.path = "/saldatura/materiali/11";
     apiService.getMaterialCertificate.mockResolvedValue({

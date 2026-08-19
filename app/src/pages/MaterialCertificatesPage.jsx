@@ -83,6 +83,7 @@ export default function MaterialCertificatesPage() {
   const [detail, setDetail] = useState(null);
   const [busy, setBusy] = useState("");
   const [draft, setDraft] = useState({});
+  const [uploadRole, setUploadRole] = useState("base");
 
   const loadList = useCallback(async () => {
     setLoading(true);
@@ -149,7 +150,7 @@ export default function MaterialCertificatesPage() {
       const res = await apiService.createMaterialCertificate({
         companyId,
         file,
-        materialRole: "base",
+        materialRole: uploadRole,
       });
       await loadList();
       if (res.data?.id) navigate(`/saldatura/materiali/${res.data.id}`);
@@ -200,11 +201,32 @@ export default function MaterialCertificatesPage() {
           </p>
         </div>
         <div className="sq-header-actions">
+          <span className="sq-scope-label" id="mc-upload-role-label">Ruolo</span>
+          <div
+            className="sq-action-group"
+            role="radiogroup"
+            aria-labelledby="mc-upload-role-label"
+          >
+            {Object.entries(ROLE_LABELS).map(([key, label]) => (
+              <button
+                key={key}
+                type="button"
+                role="radio"
+                aria-checked={uploadRole === key}
+                className={`sq-btn-secondary${uploadRole === key ? " sq-stat-active" : ""}`}
+                disabled={busy === "upload"}
+                onClick={() => setUploadRole(key)}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
           <input
             ref={fileRef}
             className="mc-hidden"
             type="file"
             accept="application/pdf,.pdf"
+            aria-label="File PDF certificato"
             onChange={onUpload}
           />
           <button
