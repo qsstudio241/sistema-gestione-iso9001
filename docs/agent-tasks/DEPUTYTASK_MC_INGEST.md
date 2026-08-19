@@ -1,6 +1,6 @@
 # DEPUTYTASK — Material Compliance ingest (MC-I2)
 
-**Stato:** CHIUSO — TEST OK (19/08/2026, [PR #481](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/481))  
+**Stato:** CHIUSO — TEST OK (19/08/2026, [PR #481](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/481)); deploy TEST PID `1019412` + PROD PID `1031291`; smoke PROD azienda 179 id 6 `extracted` colata `12174/2026`.  
 **Aperto:** 19/08/2026 (dopo merge hub MC-B [#479](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/479))  
 **Chiuso:** 19/08/2026 — L1 34/34 (`materialCertificates.controller`) + pagina Materiali 5/5  
 **Piano:** [`PLAN_MATERIAL_COMPLIANCE_SLICES.md`](PLAN_MATERIAL_COMPLIANCE_SLICES.md) § MC-I2  
@@ -52,7 +52,7 @@ Fonti Markdown:
 
 - [x] L1 verdi
 - [x] Brief CHIUSO TEST OK
-- [ ] PR draft; Cloud non mergia — **dopo merge: deploy backend**, poi Estrai di nuovo sul 3.1 Tecnovespa (non riscoprire id 7 OCR)
+- [x] PR mergiata; deploy backend TEST+PROD; Estrai 3.1 Tecnovespa id 6 → colata `12174/2026` (id 7 OCR non ritestato)
 
 ### Prossima ingest
 
