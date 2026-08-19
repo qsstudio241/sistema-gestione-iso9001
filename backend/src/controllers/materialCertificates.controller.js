@@ -145,6 +145,7 @@ function parseRole(raw, fallback = 'base') {
   return ROLES.has(v) ? v : null;
 }
 
+/** MC-B: vocabolario DATA_MODEL. ocr_skipped solo se il file non è un PDF. */
 function mapTextReason(extractorReason, text) {
   const t = String(text || '').trim();
   switch (extractorReason) {

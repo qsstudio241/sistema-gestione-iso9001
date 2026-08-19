@@ -3,7 +3,7 @@
 > **Destinazione (ingest)**: da PDF reali (3.1, DDT scansionato, busta con più mill) si arriva a righe in Materiali con DDT / colata / norma compilati, **Valuta** che gira, HITL che decide. L’agente impara dalle correzioni con lo **stesso anello ADR-017** di qualifiche/WPQR. Nessun secondo motore OCR.  
 > **Spec**: [`MODULO_MATERIAL_COMPLIANCE_AI.md`](../specs/MODULO_MATERIAL_COMPLIANCE_AI.md)  
 > **ADR**: 020–024 · apprendimento ingest: [ADR-017](../adr/ADR-017-ingest-reference-network.md)  
-> **Brief ingest attivo**: [`DEPUTYTASK_MC_INGEST.md`](DEPUTYTASK_MC_INGEST.md) — **MC-B APERTO** (OCR scan, riuso estrattore S1a). MC-I1 CHIUSO ([#473](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/473)).  
+> **Brief ingest attivo**: [`DEPUTYTASK_MC_INGEST.md`](DEPUTYTASK_MC_INGEST.md) — **MC-B CHIUSO** (PR [#476](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/476)). Prossima: **MC-I2**.  
 > **Brief SAL**: [`DEPUTYTASK.md`](DEPUTYTASK.md) **CHIUSO** su S1a ([#471](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/471)) — **non sovrascriverlo**  
 > **Brief fondazione (MC-0)**: [`DEPUTYTASK_MATERIAL_COMPLIANCE_AI_FOUNDATION.md`](DEPUTYTASK_MATERIAL_COMPLIANCE_AI_FOUNDATION.md)  
 > **Spec tecniche MC-0**: [`MATERIAL_COMPLIANCE_DATA_MODEL.md`](../specs/MATERIAL_COMPLIANCE_DATA_MODEL.md) · [`MATERIAL_COMPLIANCE_UI.md`](../specs/MATERIAL_COMPLIANCE_UI.md) · [`MATERIAL_COMPLIANCE_API.md`](../specs/MATERIAL_COMPLIANCE_API.md)  
@@ -120,7 +120,7 @@ MC-0/MC-1/MC-5 devono prevedere questi campi (DDT era assente dalla lista spec d
 | **MC-5** | UI MVP | `MaterialCertificatesPage.jsx` | MC-4 | AFK (chiusa) |
 | **MC-I0** | Valuta 409 (lock `updated_at`) | controller + test evaluate | MC-4/5 | AFK (chiusa, [#463](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/463)) |
 | **MC-I1** | Ruolo Base/Apporto in upload | UI upload + default `base` hardcoded | MC-I0 | AFK (chiusa, [#473](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/473)) |
-| **MC-B** | OCR scan (riuso estrattore, non un secondo motore) | `extractCertificate` + `mapTextReason`; **non** nuovo OCR | MC-I0, SAL **S1a** | AFK (in corso) |
+| **MC-B** | OCR scan (riuso estrattore, non un secondo motore) | `extractCertificate` + `mapTextReason`; **non** nuovo OCR | MC-I0, SAL **S1a** | AFK (chiusa, [#476](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/476)) |
 | **MC-I2** | 3.1 singolo: colata / DDT / norma | schema `material_certificate` + mapping anagrafica | MC-I0 | AFK |
 | **MC-I3** | DDT ≠ 3.1 (classifica tipo) | extract + UI: DDT non è un mill | MC-I2, MC-B | AFK |
 | **MC-I4** | 1 PDF → N certificati (busta mill) | split/HITL; 26DDT06266 | MC-I2, MC-I3 | AFK (nebbia split: vedi sopra) |
@@ -297,11 +297,11 @@ Prossima ingest: **MC-B** (OCR scan; S1a già in `main`, PR [#471](https://githu
 
 ### MC-B — OCR su scan (riuso, non un secondo motore)
 
-**IN CORSO** — brief [`DEPUTYTASK_MC_INGEST.md`](DEPUTYTASK_MC_INGEST.md).
+**CHIUSO** — brief [`DEPUTYTASK_MC_INGEST.md`](DEPUTYTASK_MC_INGEST.md). PR [#476](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/476). L1 47/47.
 
-`extractCertificate` chiama già `extractDocumentText`. S1a mergiata [#471](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/471). `mapTextReason` non deve più collassare `ocr_unavailable` / `pdf_no_text_layer` in `ocr_skipped`. OCR ok → `ocr_ok` (DATA_MODEL). **Non** duplicare `ocrExtractor` nel controller.
+OCR ok → `ocr_ok`. `ocr_unavailable` / `ocr_failed` non diventano `ocr_skipped`. Skipped = formato non PDF. Nessun secondo motore.
 
-Demoable: DDT scansionato senza text layer → testo (anche rumoroso) + `text_extract_reason` ≠ `ocr_skipped` se OCR ok; se OCR fail, reason `ocr_*` senza 500.
+Prossima ingest: **MC-I2** (3.1 singolo: colata / DDT / norma).
 
 ### MC-I2 — 3.1 singolo: colata / DDT / norma
 
