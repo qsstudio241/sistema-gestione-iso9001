@@ -2,7 +2,7 @@
 
 > **Destinazione**: il suggeritore SAL AI (Fase 5-A/5-B) legge anche PDF scansionati e immagini (OCR riusabile), e quando manca evidenza per una clausola propone tipo documento tipico + candidati dal registro e chiede all’utente se collegare/caricare — **mai** auto-collegamento senza conferma (HITL).
 > **Spec / ADR**: [`MODULO_SAL_SCOPO_E_ROADMAP.md`](../specs/MODULO_SAL_SCOPO_E_ROADMAP.md) §C.1/C.2 · [ADR-010](../adr/ADR-010-ai-agentic-architecture.md) (human-in-the-loop)
-> **Brief attivo**: [`DEPUTYTASK.md`](DEPUTYTASK.md) — slice **S1a** (APERTO)
+> **Brief attivo**: [`DEPUTYTASK.md`](DEPUTYTASK.md) — slice **S1a** (CHIUSO, PR [#471](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/471)). Prossima: **S1b** (OCR immagini).
 > **Mappa creata**: 15/08/2026 (Lead wayfinder A — Chart the map; nessuna implementazione in questa sessione)
 
 ---
@@ -33,8 +33,8 @@
 - **Fase 5-A ✅**: `salAiSuggest.service.js` propone stato + confidenza + motivazione; UI `SalAiSuggestDialog` conferma/modifica/scarta; nessuna scrittura automatica
 - **Fase 5-B ✅**: conformità legislativa su `linked_legislation` + `normBroker.getClauseText`; capability `SAL_LEGAL_CONFORMITY`
 - **Solo evidenze già collegate**: `loadEvidenceDocuments` legge `evidence_document_ids`; se lista vuota → `confidence: low` + messaggio «Collega i documenti…»; se testo non estraibile → messaggio su PDF immagine / formato non supportato
-- **Estrattore SAL**: `documentTextExtractor.service.js` supporta PDF testo, DOCX, `text/*`; **non** chiama OCR; immagini e PDF senza text layer → `reason: pdf_no_text_layer` / `unsupported_format`
-- **OCR già in repo (non riusato da SAL)**: `backend/src/utils/ocrExtractor.js` (`pdf2pic` + `tesseract.js`), già agganciato a `documentIngestPipeline.service.js` quando il testo PDF è sotto soglia; prerequisiti VPS: Ghostscript + GraphicsMagick/ImageMagick
+- **Estrattore SAL**: `documentTextExtractor.service.js` supporta PDF testo, DOCX, `text/*`; **S1a**: PDF vuoto/sotto soglia ingest → `extractTextWithOCR`; fallimento → `ocr_unavailable` / `ocr_failed`. Immagini → `unsupported_format` (S1b)
+- **OCR PDF riusato da SAL (S1a)**: `ocrExtractor.js` (`pdf2pic` + `tesseract.js`) è agganciato sia a ingest sia a `documentTextExtractor`; prerequisiti VPS: Ghostscript + GraphicsMagick/ImageMagick
 - **UI evidenze**: `SalEvidenceSection.jsx` elenca/collega dal registro (`apiService.getDocuments`); link «Apri registro» / «Aggiungi nel registro» — nessun flusso «tipo tipico + candidati + upload guidato» dal dialog AI
 - **Tipi documento**: catalogo FE `app/src/data/documentTypes.js` (`procedura`, `istruzione`, `manuale`, …) — riuso per etichette, non inventare nuovi `doc_type` senza seed
 - **Isolamento multi-tenant**: ogni scan registro resta scoped `organization_id` + `company_id` (stesso pattern di `salAiSuggest`)
@@ -45,7 +45,7 @@
 
 | Aspetto | Oggi | Atteso | Slice |
 |---------|------|--------|-------|
-| PDF scansionato (no text layer) | Saltato (`pdf_no_text_layer`); AI → low | OCR via `ocrExtractor` già usato in ingest; graceful degradation se motore assente | **S1a** |
+| PDF scansionato (no text layer) | **S1a fatto** — OCR via `ocrExtractor`; `ocr_unavailable` / `ocr_failed` se motore assente | Fatto | **S1a** |
 | Immagini (PNG/JPEG) allegate al doc | `unsupported_format` | OCR diretto su buffer immagine (Tesseract, senza pdf2pic) | **S1b** |
 | Formato `.doc` legacy | `unsupported_format` | Decisione prodotto (nebbia); almeno messaggio UX chiaro | Nebbia / eventuale **S1c** |
 | Clausola senza evidenze | Solo messaggio «collega prima» | Suggerire tipo documento tipico + candidati registro | **S2a** |
@@ -77,11 +77,11 @@
 
 **DoD**
 
-- [ ] Su `pdf_no_text_layer` (o testo sotto soglia allineata a ingest), chiamata a `extractTextWithOCR`
-- [ ] Test L1: mock OCR ok / OCR throw / motore assente — pipeline non esplode
-- [ ] `isExtractable` resta vero per PDF (già lo è); commenti header aggiornati (UTF-8, accenti)
-- [ ] Nessuna modifica a controller/routes/UI in questa slice
-- [ ] `salAiSuggest` beneficia automaticamente (usa già l’estrattore) — smoke mentale: messaggio «PDF immagine» non deve più apparire se OCR ha prodotto testo
+- [x] Su `pdf_no_text_layer` (o testo sotto soglia allineata a ingest), chiamata a `extractTextWithOCR`
+- [x] Test L1: mock OCR ok / OCR throw / motore assente — pipeline non esplode
+- [x] `isExtractable` resta vero per PDF (già lo è); commenti header aggiornati (UTF-8, accenti)
+- [x] Nessuna modifica a controller/routes/UI in questa slice
+- [x] `salAiSuggest` beneficia automaticamente (usa già l’estrattore) — smoke mentale: messaggio «PDF immagine» non deve più apparire se OCR ha prodotto testo
 
 **Cosa NON toccare**: `SalAiSuggestDialog`, `SalEvidenceSection`, migrazioni, ingest pipeline (già OCR-aware).
 

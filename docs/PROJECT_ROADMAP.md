@@ -8,7 +8,7 @@
 
 > **Risposta standard a «stato di avanzamento del progetto e priorità da affrontare»**: sintetizzare da questa sezione (moduli maturi + sessione più recente + tabella priorità sotto), **non** dal banner storico più sotto (superato, tenuto solo per traccia) né dall'archivio marzo 2026 [`docs/archive/PROJECT_CONTEXT_STATO_FUNZIONALITA_2026-03.md`](archive/PROJECT_CONTEXT_STATO_FUNZIONALITA_2026-03.md). **Aggiornare questa sezione a fine sessione** se emergono nuove priorità o se una priorità elencata viene chiusa (stesso principio delle "Lezioni apprese" in [GUIDA_CONSOLIDATA.md](GUIDA_CONSOLIDATA.md) — sintesi qui, dettaglio linkato).
 
-**Ultimo aggiornamento di questa sezione**: 18/08/2026 (MR-1 persist figure PR #469 mig. 154; ISO-6 #465; MC-I0 #463; MR-0 #464).
+**Ultimo aggiornamento di questa sezione**: 18/08/2026 (SAL S1a OCR PDF PR #471; MR-1 persist figure PR #469 mig. 154; ISO-6 #465; MC-I0 #463; MR-0 #464).
 
 ### Moduli maturi (in produzione, uso quotidiano dai clienti Camellini/Mason)
 
@@ -16,7 +16,9 @@ Audit multi-standard (9001/14001/45001) · Non Conformità (workflow ISO 10.2 co
 
 ### Sessione più recente (18/08/2026)
 
-**Multimodal RAG MR-1 TEST OK (18/08)** — persist `knowledge_figures` (mig. **154**, 153 già usata da ISO-6) + adapter CLIP locale (mock L1) + GET `/api/v1/ai/figures/search?q=` isolato per `organization_id`. Brief [`DEPUTYTASK5.md`](agent-tasks/DEPUTYTASK5.md) **CHIUSO**. [PR #469](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/469). **MR-2 non aperta**. Migrazione VPS dopo merge (SCP + `run-migration-154-vps.js`). Piano: [`PLAN_MULTIMODAL_RAG_SLICES.md`](agent-tasks/PLAN_MULTIMODAL_RAG_SLICES.md). `DEPUTYTASK.md` resta SAL S1a.
+**SAL S1a OCR PDF TEST OK (18/08)** — `documentTextExtractor` tenta `ocrExtractor` se lo strato testo è vuoto o sotto soglia ingest; `ocr_unavailable` / `ocr_failed` senza throw. Brief [`DEPUTYTASK.md`](agent-tasks/DEPUTYTASK.md) **CHIUSO**. [PR #471](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/471). Prossima evidenze SAL: **S1b** (OCR immagini). Piano: [`PLAN_SAL_AI_EVIDENCE_SLICES.md`](agent-tasks/PLAN_SAL_AI_EVIDENCE_SLICES.md).
+
+**Multimodal RAG MR-1 TEST OK (18/08)** — persist `knowledge_figures` (mig. **154**, 153 già usata da ISO-6) + adapter CLIP locale (mock L1) + GET `/api/v1/ai/figures/search?q=` isolato per `organization_id`. Brief [`DEPUTYTASK5.md`](agent-tasks/DEPUTYTASK5.md) **CHIUSO**. [PR #469](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/469). **MR-2 non aperta**. Migrazione VPS dopo merge (SCP + `run-migration-154-vps.js`). Piano: [`PLAN_MULTIMODAL_RAG_SLICES.md`](agent-tasks/PLAN_MULTIMODAL_RAG_SLICES.md).
 
 **ISO-6 — ponte NC ↔ commessa (18/08)** — `non_conformities.project_id` opzionale (mig. **153**). Picker Commessa in creazione e drawer, stesso pattern Welding Book. **Non** obbligatorio. PR [#465](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/465). Ingest MC e SAL **non** toccati.
 
