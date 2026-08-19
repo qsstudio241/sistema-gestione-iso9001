@@ -3,7 +3,7 @@
 > **Destinazione (ingest)**: da PDF reali (3.1, DDT scansionato, busta con più mill) si arriva a righe in Materiali con DDT / colata / norma compilati, **Valuta** che gira, HITL che decide. L’agente impara dalle correzioni con lo **stesso anello ADR-017** di qualifiche/WPQR. Nessun secondo motore OCR.  
 > **Spec**: [`MODULO_MATERIAL_COMPLIANCE_AI.md`](../specs/MODULO_MATERIAL_COMPLIANCE_AI.md)  
 > **ADR**: 020–024 · apprendimento ingest: [ADR-017](../adr/ADR-017-ingest-reference-network.md)  
-> **Brief ingest attivo**: [`DEPUTYTASK_MC_INGEST.md`](DEPUTYTASK_MC_INGEST.md) — **MC-I0 CHIUSO** (mergiata [#463](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/463)). Prossima: MC-I1  
+> **Brief ingest attivo**: [`DEPUTYTASK_MC_INGEST.md`](DEPUTYTASK_MC_INGEST.md) — **MC-I1 APERTO** (ruolo Base/Apporto in upload). MC-I0 CHIUSO ([#463](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/463)).  
 > **Brief SAL**: [`DEPUTYTASK.md`](DEPUTYTASK.md) resta **APERTO** su S1a — **non toccarlo** da questa epic ingest  
 > **Brief fondazione (MC-0)**: [`DEPUTYTASK_MATERIAL_COMPLIANCE_AI_FOUNDATION.md`](DEPUTYTASK_MATERIAL_COMPLIANCE_AI_FOUNDATION.md)  
 > **Spec tecniche MC-0**: [`MATERIAL_COMPLIANCE_DATA_MODEL.md`](../specs/MATERIAL_COMPLIANCE_DATA_MODEL.md) · [`MATERIAL_COMPLIANCE_UI.md`](../specs/MATERIAL_COMPLIANCE_UI.md) · [`MATERIAL_COMPLIANCE_API.md`](../specs/MATERIAL_COMPLIANCE_API.md)  
@@ -68,7 +68,7 @@ Linea 3834 **non** continua l’ingest: ISO-4 (Word RDP) resta sull’altro PLAN
 - Come spezzare un PDF-busta in N righe: split pagine vs split per colata vs HITL «crea riga da questa pagina» — si decide in **MC-I4**, non prima
 - Preprocessing testo specchiato (26DDT06266) vs basta OCR + prompt: dipende da MC-B / MC-I2
 - Commit riga certificato nel Document Registry (era accorpato a MC-7): l’apprendimento è ADR-017; il registry è un ponte successivo
-- Se S1a non è mergiata quando si apre MC-B: MC-B aspetta S1a oppure verifica se `extractDocumentText` ha già l’OCR in `main` — non copiare `ocrExtractor` nel controller MC
+- S1a mergiata [#471](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/471): `extractDocumentText` ha già l’OCR. MC-B riusa quello — non copiare `ocrExtractor` nel controller MC
 
 ---
 
@@ -119,8 +119,8 @@ MC-0/MC-1/MC-5 devono prevedere questi campi (DDT era assente dalla lista spec d
 | **MC-4** | API | `materialCertificates.controller.js` | MC-1, MC-3 | AFK (chiusa) |
 | **MC-5** | UI MVP | `MaterialCertificatesPage.jsx` | MC-4 | AFK (chiusa) |
 | **MC-I0** | Valuta 409 (lock `updated_at`) | controller + test evaluate | MC-4/5 | AFK (chiusa, [#463](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/463)) |
-| **MC-I1** | Ruolo Base/Apporto in upload | UI upload + default `base` hardcoded | MC-I0 | AFK |
-| **MC-B** | OCR scan (riuso estrattore, non un secondo motore) | `extractCertificate` + `mapTextReason`; **non** nuovo OCR | MC-I0, SAL **S1a** | AFK (aspetta S1a se OCR assente) |
+| **MC-I1** | Ruolo Base/Apporto in upload | UI upload + default `base` hardcoded | MC-I0 | AFK (in corso) |
+| **MC-B** | OCR scan (riuso estrattore, non un secondo motore) | `extractCertificate` + `mapTextReason`; **non** nuovo OCR | MC-I0, SAL **S1a** | AFK (S1a mergiata [#471](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/471) — dopo MC-I1) |
 | **MC-I2** | 3.1 singolo: colata / DDT / norma | schema `material_certificate` + mapping anagrafica | MC-I0 | AFK |
 | **MC-I3** | DDT ≠ 3.1 (classifica tipo) | extract + UI: DDT non è un mill | MC-I2, MC-B | AFK |
 | **MC-I4** | 1 PDF → N certificati (busta mill) | split/HITL; 26DDT06266 | MC-I2, MC-I3 | AFK (nebbia split: vedi sopra) |
@@ -285,17 +285,19 @@ Test controller/service con mock DB (`materialCertificates.controller.test.js`).
 
 Causa: `EVALUABLE` include `extracted`; il 409 era `AND updated_at = @updated_at` (`DATETIME2` vs Date JS). Fix: lock solo su `workflow_status` in transazione.
 
-Prossima ingest: **MC-I1** (ruolo Base/Apporto in upload).
+Prossima ingest dopo I1: **MC-B** (OCR scan; S1a già in `main`, PR [#471](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/471)).
 
 ### MC-I1 — Ruolo Base / Apporto in upload
 
+**IN CORSO** — brief [`DEPUTYTASK_MC_INGEST.md`](DEPUTYTASK_MC_INGEST.md).
+
 Oggi `MaterialCertificatesPage` chiama `createMaterialCertificate({ materialRole: "base" })` sempre. API accetta `base|filler`. Un 3.1 filo resta Base in griglia.
 
-Demoable: in upload si sceglie Base o Apporto (o Estrai imposta `material_role` e la griglia lo mostra). Non spezzare PDF.
+Demoable: in upload si sceglie Base o Apporto (o Estrai imposta `material_role` e la griglia lo mostra). Non spezzare PDF. Il filtro KPI Base/Apporto **non** è la scelta di upload.
 
 ### MC-B — OCR su scan (riuso, non un secondo motore)
 
-`extractCertificate` chiama già `extractDocumentText`. `mapTextReason` mappa `pdf_no_text_layer` → `ocr_skipped` (DDT 000775RE). SAL **S1a** collega `ocrExtractor` a `documentTextExtractor` — **non** duplicare. Se S1a non è in `main`, questa slice **aspetta**.
+`extractCertificate` chiama già `extractDocumentText`. `mapTextReason` mappa `pdf_no_text_layer` → `ocr_skipped` (DDT 000775RE). SAL **S1a** (mergiata [#471](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/471)) collega `ocrExtractor` a `documentTextExtractor` — **non** duplicare. Sbloccata dopo MC-I1.
 
 Demoable: DDT scansionato senza text layer → testo (anche rumoroso) + `text_extract_reason` ≠ `ocr_skipped` se OCR ok; se OCR fail, reason `ocr_*` senza 500.
 
