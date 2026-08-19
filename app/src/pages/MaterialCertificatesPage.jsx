@@ -20,6 +20,7 @@ import {
   outcomeRowClass,
   canHitl,
   hitlTitle,
+  isDeliveryNote,
 } from "../utils/materialCertificateFilters";
 import "./QualificationsPage.css";
 import "./MaterialCertificatesPage.css";
@@ -41,6 +42,7 @@ const COLUMNS = [
 const PATCH_KEYS = [
   "ddt_no",
   "ddt_date",
+  "document_kind",
   "certificate_no",
   "designation",
   "heat_or_lot_no",
@@ -188,7 +190,9 @@ export default function MaterialCertificatesPage() {
 
   const pdfUrl = resolveBackendUploadUrl(detail?.file_url, apiService.baseUrl);
   const hitlReady = Boolean(detail && selectedId && detail.id === selectedId);
+  const deliveryNote = isDeliveryNote(detail);
   function hitlDisabled(action) {
+    if (action === "evaluate" && deliveryNote) return true;
     return !hitlReady || !canHitl(action, status) || Boolean(busy);
   }
 
@@ -297,12 +301,19 @@ export default function MaterialCertificatesPage() {
         <section className="mc-detail" aria-label="Dettaglio certificato">
           <div className="mc-detail-header">
             <h2 className="mc-detail-title">
-              {detail.certificate_no || detail.ddt_no || `Certificato ${detail.id}`}
+              {deliveryNote
+                ? `DDT ${detail.ddt_no || detail.id}`
+                : (detail.certificate_no || detail.ddt_no || `Certificato ${detail.id}`)}
             </h2>
             <button type="button" className="sq-btn-reload" onClick={() => navigate("/saldatura/materiali")}>
               Chiudi
             </button>
           </div>
+          {deliveryNote ? (
+            <p className="sq-subtitle">
+              Documento di trasporto (DDT): non è un certificato 3.1. Valuta non si applica.
+            </p>
+          ) : null}
 
           <div className="mc-section">
             <h3>1. Identificazione</h3>
@@ -396,7 +407,7 @@ export default function MaterialCertificatesPage() {
                 type="button"
                 className="btn-secondary"
                 disabled={hitlDisabled("evaluate")}
-                title={hitlTitle("evaluate", status)}
+                title={hitlTitle("evaluate", status, { deliveryNote })}
                 onClick={() => runAction("evaluate", () => apiService.evaluateMaterialCertificate(detail.id))}
               >
                 Valuta

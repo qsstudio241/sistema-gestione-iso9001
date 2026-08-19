@@ -126,6 +126,26 @@ describe("MaterialCertificatesPage (MC-5)", () => {
     });
   });
 
+  it("Valuta resta visibile ma disabled su DDT", async () => {
+    routerState.path = "/saldatura/materiali/11";
+    apiService.getMaterialCertificate.mockResolvedValue({
+      data: {
+        ...ROW,
+        workflow_status: "extracted",
+        ddt_no: "000775RE",
+        certificate_no: null,
+        extracted_json: { document_kind: "delivery_note", ddt_no: "000775RE" },
+      },
+    });
+    render(<MaterialCertificatesPage />);
+    expect(await screen.findByRole("heading", { name: "DDT 000775RE" })).toBeInTheDocument();
+    expect(screen.getByText(/Documento di trasporto \(DDT\)/)).toBeInTheDocument();
+    const valuta = screen.getByRole("button", { name: "Valuta" });
+    expect(valuta).toBeVisible();
+    expect(valuta).toBeDisabled();
+    expect(valuta).toHaveAttribute("title", expect.stringMatching(/DDT/));
+  });
+
   it("anteprima PDF usa file_url web, non il path disco", async () => {
     routerState.path = "/saldatura/materiali/11";
     apiService.getMaterialCertificate.mockResolvedValue({

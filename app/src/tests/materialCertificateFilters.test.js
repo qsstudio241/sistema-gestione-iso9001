@@ -8,6 +8,8 @@ import {
   countByRole,
   filterCertificates,
   canHitl,
+  isDeliveryNote,
+  hitlTitle,
 } from "../utils/materialCertificateFilters";
 
 const rows = [
@@ -45,5 +47,16 @@ describe("materialCertificateFilters", () => {
     expect(canHitl("approve", "extracted")).toBe(false);
     expect(canHitl("reject", "compliant")).toBe(false);
     expect(canHitl("archive", "compliant")).toBe(true);
+  });
+
+  it("MC-I3 isDeliveryNote legge JSON; Valuta ha titolo ma canHitl resta sullo stato", () => {
+    expect(isDeliveryNote({ extracted_json: { document_kind: "delivery_note" } })).toBe(true);
+    expect(isDeliveryNote({
+      extracted_json: { document_kind: "delivery_note" },
+      corrected_json: { document_kind: "mill_certificate" },
+    })).toBe(false);
+    expect(isDeliveryNote({ extracted_json: { document_kind: "mill_certificate" } })).toBe(false);
+    expect(canHitl("evaluate", "extracted")).toBe(true);
+    expect(hitlTitle("evaluate", "extracted", { deliveryNote: true })).toMatch(/DDT/);
   });
 });

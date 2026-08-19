@@ -652,6 +652,11 @@ const material_certificate = {
         { value: "base", label: "Base (lamiera/profilo/tubo)" },
         { value: "filler", label: "Apporto (filo/elettrodo/flusso)" },
       ] },
+    { key: "document_kind", label: "Tipo documento", type: "select", required: false,
+      options: [
+        { value: "mill_certificate", label: "Certificato 3.1 / mill" },
+        { value: "delivery_note", label: "DDT / bolla" },
+      ] },
     { key: "inspection_document_type", label: "Tipo EN 10204", type: "select", required: false,
       options: [
         { value: "2.1", label: "2.1" },
@@ -672,9 +677,12 @@ const material_certificate = {
     { key: "Rm", label: "Rm", type: "number", required: false },
     { key: "CEV", label: "CEV", type: "number", required: false },
   ],
-  aiPrompt: `Stai analizzando un certificato EN 10204 / EN 10168 (base o apporto).
-Estrai in type_specific_data i campi del dizionario Material Compliance (material_role base|filler, inspection_document_type 2.1-3.2, certificate_no, manufacturer_works, steel_designation o filler_designation, heat_or_lot_no, material_standard, ddt_no, ddt_date, thickness_mm, ReH, Rm, CEV, chemistry). heat_or_lot_no (B07): copia la colata COME STAMPATA (es. 12174/2026; etichette Colata, Heat No, B07). ddt_no solo se stampato (DDT/bolla); NON copiare purchaser_order_no (A07). material_standard: norma prodotto stampata, non inventare. Se incerto su material_role usa base. NON dichiarare se il certificato è conforme.`,
+  aiPrompt: `Stai analizzando un PDF di Material Compliance: certificato EN 10204 / EN 10168 (base o apporto) OPPURE un DDT / bolla.
+PRIMA classifica document_kind: "delivery_note" se DDT/bolla/documento di trasporto (anche se elenca acciaio e colata della merce); "mill_certificate" se certificato 3.1/EN 10168.
+Se delivery_note: estrai SOLO ddt_no, ddt_date, purchaser; heat_or_lot_no, certificate_no, material_standard, chemistry, ReH = null. NON copiare colata/norma dalla merce.
+Se mill_certificate: estrai in type_specific_data i campi del dizionario Material Compliance (material_role base|filler, inspection_document_type 2.1-3.2, certificate_no, manufacturer_works, steel_designation o filler_designation, heat_or_lot_no, material_standard, ddt_no, ddt_date, thickness_mm, ReH, Rm, CEV, chemistry). heat_or_lot_no (B07): copia la colata COME STAMPATA (es. 12174/2026; etichette Colata, Heat No, B07). ddt_no solo se stampato (DDT/bolla); NON copiare purchaser_order_no (A07). material_standard: norma prodotto stampata, non inventare. Se incerto su material_role usa base. NON dichiarare se il certificato è conforme.`,
   aiExpectedSchema: {
+    document_kind: "mill_certificate|delivery_note|null",
     inspection_document_type: "2.1|2.2|3.1|3.2|null",
     certificate_no: "string|null",
     manufacturer_works: "string|null",

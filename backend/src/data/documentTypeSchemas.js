@@ -231,10 +231,17 @@ material_grade, heat_number, supplier_name, issue_date (YYYY-MM-DD). Usa null se
 
   material_certificate: {
     label: 'Certificato materiale EN 10204 (Material Compliance)',
-    aiPrompt: `Stai analizzando un certificato di controllo EN 10204 / EN 10168 (2.1, 2.2, 3.1 o 3.2), su acciaio di BASE oppure materiale d'APPORTO (filo, elettrodo, flusso).
-Estrai TUTTI i campi in type_specific_data. Se un campo non e' sul documento usa null. NON dire se il certificato e' conforme.
+    aiPrompt: `Stai analizzando un PDF di Material Compliance: certificato EN 10204 / EN 10168 (2.1, 2.2, 3.1 o 3.2) OPPURE un DDT / bolla di consegna.
 
-Classifica material_role:
+PRIMA classifica document_kind:
+- "delivery_note" se è un DDT, bolla, documento di trasporto (anche se elenca acciaio, colata o norma della merce)
+- "mill_certificate" se è un certificato di controllo EN 10204 / EN 10168
+
+Se document_kind=delivery_note: estrai SOLO ddt_no, ddt_date, purchaser. Tutti i campi mill (heat_or_lot_no, certificate_no, material_standard, chemistry, ReH, Rm, steel_designation, …) = null. NON copiare colata/norma dal testo della merce.
+
+Se mill_certificate: estrai TUTTI i campi in type_specific_data. Se un campo non e' sul documento usa null. NON dire se il certificato e' conforme.
+
+Classifica material_role (solo se mill_certificate):
 - "filler" se il documento e' filo, wire, electrode, elettrodo, flux, flusso, consumabile, ISO 14341, ISO 2560, AWS ER70S
 - altrimenti "base" (anche se incerto: l'operatore correggera')
 Mai un terzo valore.
@@ -258,6 +265,7 @@ Solo filler: filler_designation (es. G 42 4 M21 3Si1), filler_standard (ISO 1434
 
 Non inventare soglie, numeri di colata o valori di laboratorio assenti.`,
     aiExpectedSchema: {
+      document_kind: 'mill_certificate|delivery_note|null',
       inspection_document_type: '2.1|2.2|3.1|3.2|null',
       certificate_no: 'string|null',
       manufacturer_works: 'string|null',

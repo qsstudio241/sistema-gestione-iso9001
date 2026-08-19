@@ -100,7 +100,22 @@ export function canHitl(action, workflowStatus) {
   return false;
 }
 
-export function hitlTitle(action, workflowStatus) {
+/** MC-I3: bolla, non mill. Corretto_json vince su extracted. */
+export function isDeliveryNote(row) {
+  const corrected = row?.corrected_json && typeof row.corrected_json === "object"
+    ? row.corrected_json
+    : {};
+  const extracted = row?.extracted_json && typeof row.extracted_json === "object"
+    ? row.extracted_json
+    : {};
+  const kind = String(corrected.document_kind || extracted.document_kind || "").toLowerCase();
+  return kind === "delivery_note" || kind === "ddt" || kind === "bolla";
+}
+
+export function hitlTitle(action, workflowStatus, extras = {}) {
+  if (action === "evaluate" && extras.deliveryNote) {
+    return "Valutazione non applicabile: questo è un DDT, non un certificato 3.1";
+  }
   if (canHitl(action, workflowStatus)) return "";
   if (action === "approve") return "Approva solo da In revisione o Non conforme";
   if (action === "reject") return "Respingi solo da In revisione";
