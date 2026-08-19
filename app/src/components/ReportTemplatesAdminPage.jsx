@@ -23,7 +23,7 @@ const STANDARD_LABELS = {
   2: "ISO 14001",
   3: "ISO 45001",
   6: "ISO 3834-2",
-  7: "RDP Mason",
+  7: "Audit sistema 3834",
 };
 
 const GRID_COLUMNS = [

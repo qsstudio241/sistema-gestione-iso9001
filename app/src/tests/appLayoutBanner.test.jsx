@@ -111,4 +111,17 @@ describe("AppLayout — banner Ambito", () => {
     expect(within(listbox).queryByRole("option", { name: "Al.project" })).not.toBeInTheDocument();
     expect(within(banner).queryByText(/P\.IVA/)).not.toBeInTheDocument();
   });
+
+  it("non mostra Saldatura RDP Rapporto di Prova (menu spento 19/08)", async () => {
+    companiesPayload.data = [];
+    render(
+      <AppLayout>
+        <div>pagina</div>
+      </AppLayout>
+    );
+    await screen.findByRole("region", { name: "Ambito azienda" });
+    expect(screen.queryByText(/RDP - Rapporto di Prova/)).not.toBeInTheDocument();
+    expect(screen.getByText("Welding Book")).toBeInTheDocument();
+    expect(screen.getByText("Audit")).toBeInTheDocument();
+  });
 });

@@ -705,7 +705,7 @@ export const ISO_45001_LEGISLATIVO_TEMPLATE = {
 export const RDP_MSN_TEMPLATE = {
   standardId: 7,
   standardCode: "RDP_MSN",
-  standardName: "Rapporto di Prova / Audit Fornitori (ISO 3834)",
+  standardName: "Audit di Sistema Saldatura (ISO 3834-2)",
   sections: [
     {
       sectionCode: "3834_s4",
@@ -1019,7 +1019,7 @@ export const CHECKLIST_TEMPLATES = {
   2: ISO_14001_TEMPLATE,  // ISO 14001:2015
   3: ISO_45001_TEMPLATE,  // ISO 45001:2018
   6: ISO_3834_TEMPLATE,   // ISO 3834-2 Checklist In Campo (Mason)
-  7: RDP_MSN_TEMPLATE,    // Rapporto di Prova / Audit Fornitori (clausole norma ISO 3834-2)
+  7: RDP_MSN_TEMPLATE,    // Audit di sistema 3834 (clausole norma; codice interno RDP_MSN)
 };
 
 /**

@@ -2,7 +2,7 @@
 
 **Data:** 19/08/2026  
 **Fonti in git:** [`docs/reference/mason-rdp/`](../reference/mason-rdp/)  
-**HITL:** sì — non implementare ISO-4 Word sul modulo RDP finché non si sceglie sotto.
+**HITL:** chiusa 19/08 pomeriggio — menu spento, Word da Audit id 6, id 7 solo rinomina UI.
 
 Mason usa **RDP** come codice di serie dei verbali di visita (`RDP_MSN-AAMMGG-NN`). Non significa «rapporto di prova di laboratorio». I due file lo dimostrano.
 
@@ -60,7 +60,7 @@ All’apertura di un **nuovo Audit** (`AuditSelector`) si possono spuntare, tra 
 | Checkbox (etichetta UI) | Standard DB | Cosa contiene | Produzione (oggi) |
 |---|---|---|---|
 | ISO 3834-2 - Audit Fornitori in Campo | `ISO_3834_2` id **6** | Le **22 domande del Word 27/01** | **6** audit |
-| RDP Mason - Audit di Sistema Saldatura (ISO 3834-2) | `RDP_MSN` id **7** | **36 domande sulle clausole** della norma (non il Word 27/01) | **3** audit |
+| Audit di Sistema Saldatura (ISO 3834-2) | `RDP_MSN` id **7** | **36 domande sulle clausole** della norma (non il Word 27/01) | **3** audit |
 
 Menu: **Audit** in alto (non sotto Saldatura). Motore: checklist + C/NC + Word `ISO3834-audit-report.docx`.  
 Su tutti gli audit in produzione `document_type` è `'audit'` (41 righe). **Nessun** audit è `'rdp'`.
@@ -114,7 +114,14 @@ Standard Audit `RDP_MSN` (id 7): **non eliminare** (3 audit già aperti). Solo *
 
 ---
 
-## Decisione da prendere
+## Decisione (confermata 19/08/2026 pomeriggio)
 
-- **Menu Saldatura → RDP**: togliere (nascondere) **sì / no**
-- **Output Word**: A check list 27/01 da Audit · B resoconto 23/02 · C entrambi
+| Scelta | Esito |
+|---|---|
+| Menu Saldatura → RDP | **Spento.** Route `/saldatura/rdp` resta; tabelle `rdp_*` non droppate. |
+| Output Word | **A** — check list 27/01 dal modulo **Audit ISO 3834-2** (id 6). Resoconto 23/02 **parcheggiato**. |
+| Audit id 7 | **Rinominato in UI** (niente «RDP»). Codice DB `RDP_MSN` invariato (3 audit aperti). |
+| Scala 1–6 | **Non in questa slice** (ISO-4b). Oggi l’app usa C/NC/OSS. |
+| CND | **Non toccato.** |
+
+Roadmap: ISO-4 = Word da Audit; ISO-5 Welding Book invariata; ISO-7 `project_id` su `rdp_reports` resta in DB; ISO-13 tipo `rdp` = codice verbale, non il modulo prove. Dettaglio slice: [`PLAN_3834_SLICES.md`](../agent-tasks/PLAN_3834_SLICES.md).

@@ -1,14 +1,12 @@
 /**
- * RDPModule — Rapporto di Prova (RDP, Scenario 4 — cliente Mason)
+ * RDPModule — tabelle rdp_* (menu Saldatura spento 19/08/2026).
  *
- * Riferimento: docs/PROJECT_ROADMAP.md sezione "Modulo RDP - Rapporto di Prova
- * (Scenario 4 - Mason)". Template cliente (non normativo, solo struttura):
- * Check List Audit/RDP_MSN-260127-01_REV_0.docx.
+ * Il verbale Mason 27/01 e' una check list visita: vive nel modulo Audit
+ * (ISO 3834-2 id 6), non qui. Non copiare quel Word come template di questo modulo.
+ * Route /saldatura/rdp resta per URL salvati; eventuale riuso = resoconto 23/02.
  *
- * Pattern: lista + form a sezioni collassabili (NdtReportsPage) con prove
- * tecniche raggruppate per area (es. "Gestione Qualita'", "Ispezione in campo").
- * Foto OBBLIGATORIE per prova — galleria abilitata dopo il primo salvataggio
- * (la prova deve avere un id reale prima di poter allegare foto, come in CND).
+ * Pattern: lista + form a sezioni (come NdtReportsPage). Foto per prova dopo
+ * il primo salvataggio (serve un id reale, come in CND).
  */
 
 import React, { useState, useEffect, useCallback, useMemo, useRef } from "react";
