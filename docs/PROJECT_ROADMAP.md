@@ -8,13 +8,15 @@
 
 > **Risposta standard a «stato di avanzamento del progetto e priorità da affrontare»**: sintetizzare da questa sezione (moduli maturi + sessione più recente + tabella priorità sotto), **non** dal banner storico più sotto (superato, tenuto solo per traccia) né dall'archivio marzo 2026 [`docs/archive/PROJECT_CONTEXT_STATO_FUNZIONALITA_2026-03.md`](archive/PROJECT_CONTEXT_STATO_FUNZIONALITA_2026-03.md). **Aggiornare questa sezione a fine sessione** se emergono nuove priorità o se una priorità elencata viene chiusa (stesso principio delle "Lezioni apprese" in [GUIDA_CONSOLIDATA.md](GUIDA_CONSOLIDATA.md) — sintesi qui, dettaglio linkato).
 
-**Ultimo aggiornamento di questa sezione**: 19/08/2026 (MC-B OCR #476 deploy TEST+PROD; ISO-7 #474 mig. 155 anche PROD; MC-I1 #473).
+**Ultimo aggiornamento di questa sezione**: 19/08/2026 (MR-2 citazioni tavola #475; MC-B OCR #476 deploy TEST+PROD; ISO-7 #474 mig. 155 anche PROD; MC-I1 #473).
 
 ### Moduli maturi (in produzione, uso quotidiano dai clienti Camellini/Mason)
 
 Audit multi-standard (9001/14001/45001) · Non Conformità (workflow ISO 10.2 completo) · Qualifiche Personale saldatori/NDT/coordinatori (ISO 9606-1/14732/14731/9712) · Saldatura (WPQR, generazione WPS da WPQR, Welding Book, Commesse ISO 3834, Dashboard 3834) · SAL (gap analysis requisiti con AI) · Registro Documenti + Scadenzari · Notifiche/Alert (documenti/NC/qualifiche) · Riesame di Direzione · RBAC multi-tenant (`company_access`) · Registro obblighi legali (ambiente + sicurezza) · Assistente AI / Gap Analysis euristica.
 
 ### Sessione più recente (19/08/2026)
+
+**Multimodal RAG MR-2 mergiato (19/08)** — citazioni tavola nello stesso pannello Assistente (crop + pagina + bbox). GET `/ai/figures/:id/image`, org dal JWT. Brief [`DEPUTYTASK5.md`](agent-tasks/DEPUTYTASK5.md) **CHIUSO**. [PR #475](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/475). **MR-3 non aperta**. Piano: [`PLAN_MULTIMODAL_RAG_SLICES.md`](agent-tasks/PLAN_MULTIMODAL_RAG_SLICES.md). Serve deploy backend per il GET immagine.
 
 **MC-B OCR scan (19/08, mergiata + deploy)** — [#476](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/476). Estrattore tagga `ocr_ok`; `ocr_skipped` solo formato non PDF. Deploy TEST PID `981527`→`993561`, PROD `967465`→`1005497`, health 200. Smoke PROD azienda 179 id 7 → Estrai HTTP 200, `extracted`, `ocr_ok`, 4397 caratteri. Brief [`DEPUTYTASK_MC_INGEST.md`](agent-tasks/DEPUTYTASK_MC_INGEST.md) **CHIUSO**. Prossima ingest: **MC-I2**. ISO-4 **non** toccata.
 
@@ -116,7 +118,7 @@ Sessione prodotto precedente (10/08/2026): fix filtri dashboard duplicati (Quali
 | 6 | **SAL AI evidenze — OCR + documento mancante (HITL)** | **S1a** mergiata (#471): OCR PDF in `documentTextExtractor`. Prossima: **S1b** OCR immagini | [PLAN](agent-tasks/PLAN_SAL_AI_EVIDENCE_SLICES.md) · brief [S1a CHIUSO](agent-tasks/DEPUTYTASK.md) |
 | 7 | **ISO 3834 — completezza per processi (RBAC + ponti + report)** | ISO-1* + ISO-2 + ISO-3 mergiate e ISO-3 deployata. Prossima: ISO-4 Word RDP Mason (serve il file) | [PLAN](agent-tasks/PLAN_3834_SLICES.md) · brief [ISO-3 CHIUSO](agent-tasks/DEPUTYTASK1.md) |
 | 8 | **Second Brain — Assistente di Ambito (SB-1 fatti, zero LLM)** | Studio + clienti paganti: fatti dell'Ambito in app, non AIOS Claude. Chat dopo i numeri veri | [PLAN](agent-tasks/PLAN_SECOND_BRAIN_SLICES.md) · brief [SB-1](agent-tasks/DEPUTYTASK2.md) |
-| 9 | **Multimodal RAG — figure normative in locale** | MR-0 + MR-1 + **MR-2** mergiati (#464/#469/#475). Prossima da piano | [PLAN](agent-tasks/PLAN_MULTIMODAL_RAG_SLICES.md) · brief [MR-2](agent-tasks/DEPUTYTASK5.md) |
+| 9 | **Multimodal RAG — figure normative in locale** | MR-0 + MR-1 + **MR-2** mergiati (#464/#469/#475). Prossima: **MR-3** ingest (non aperta) | [PLAN](agent-tasks/PLAN_MULTIMODAL_RAG_SLICES.md) · brief [MR-2 CHIUSO](agent-tasks/DEPUTYTASK5.md) |
 
 > Nota: **Modulo NC — card statistiche duplicate da due tendine** (era riga 1) è stato chiuso da PR #374 (10/08/2026) — riga rimossa da questa tabella, non ancora aggiornata al momento in cui è stata scritta DEPUTYTASK4.
 

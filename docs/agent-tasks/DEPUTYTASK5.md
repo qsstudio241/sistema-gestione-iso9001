@@ -57,12 +57,12 @@ cd app && npm run build
 
 - Spunta DoD MR-2 nel PLAN. **Non** aprire MR-3.
 - PR livello Medio; 1 Bugbot; Cloud Agent **non** mergia.
-- **TEST OK** (19/08/2026) — Vitest `AiAssistantCitations.test.jsx` 4/4; Jest `figureKnowledge.controller.test.js` 8/8; `npm run build` in `app/`. PR [#475](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/475). MR-3 **non** aperta. GUIDA/roadmap non toccate.
+- **TEST OK** (19/08/2026) — Vitest `AiAssistantCitations.test.jsx` 4/4; Jest `figureKnowledge.controller.test.js` 8/8; `npm run build` in `app/`. PR [#475](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/475) **mergiata**. MR-3 **non** aperta. Hub GUIDA/roadmap in questa slice docs.
 
-### Bozza hub (dopo merge, non in questa PR)
+### Hub dopo merge
 
 - GUIDA: una riga — citazioni tavola = stesso pannello Assistente, crop locale, AI non certifica.
-- Roadmap § Stato attuale: una riga MR-2 + priorità 9 aggiornata.
+- Roadmap § Stato attuale: una riga MR-2 + priorità 9 (prossima MR-3, non aperta).
 
 ---
 
