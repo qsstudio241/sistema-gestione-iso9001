@@ -722,6 +722,11 @@ describe('materialCertificates.controller (MC-4)', () => {
       { document_kind: '' }
     )).toBe(true);
     expect(ctrl.isDeliveryNotePayload({ document_kind: 'bolla' }, null)).toBe(true);
+    expect(ctrl.detectSourceDocumentKind({
+      storagePath: '/tmp/scan.pdf',
+      aiKind: 'BOLLA',
+      text: 'S500 MC EN 10149-2 colata 692976',
+    })).toBe('delivery_note');
   });
 
   it('PATCH svuota ddt_no e non lo re-inietta da delivery_note_no', async () => {

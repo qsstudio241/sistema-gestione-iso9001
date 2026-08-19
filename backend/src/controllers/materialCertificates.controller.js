@@ -271,13 +271,20 @@ function filenameOf(storagePath) {
   return raw.replace(/^\d+_/, '');
 }
 
+function normalizeDocumentKind(raw) {
+  const k = String(emptyToNull(raw) || '').toLowerCase();
+  if (k === 'delivery_note' || k === 'ddt' || k === 'bolla') return 'delivery_note';
+  if (k === 'mill_certificate' || k === 'mill') return 'mill_certificate';
+  return null;
+}
+
 /** MC-I3: il PDF è una bolla, non un 3.1. Filename CERTIFICATO/3.1 vince; DDT nel nome vince sull'AI. */
 function detectSourceDocumentKind({ text, storagePath, aiKind }) {
   const file = filenameOf(storagePath);
   if (/\bCERTIFICATO\b/i.test(file) || /\b3[._-]1\b/.test(file)) return 'mill_certificate';
   if (/\bD\.?D\.?T\.?\b/i.test(file) || /\bbolla\b/i.test(file)) return 'delivery_note';
-  const fromAi = emptyToNull(aiKind);
-  if (fromAi === 'delivery_note' || fromAi === 'mill_certificate') return fromAi;
+  const fromAi = normalizeDocumentKind(aiKind);
+  if (fromAi) return fromAi;
   const head = String(text || '').slice(0, 160);
   if (/\bdocumento di trasporto\b/i.test(head) || /\bbolla di accompagnamento\b/i.test(head)) {
     return 'delivery_note';
@@ -316,9 +323,9 @@ function applyDeliveryNoteExtract(json, { text, storagePath }) {
 }
 
 function isDeliveryNotePayload(extracted, corrected) {
-  const kind = emptyToNull(corrected?.document_kind) || emptyToNull(extracted?.document_kind);
-  const k = String(kind || '').toLowerCase();
-  return k === 'delivery_note' || k === 'ddt' || k === 'bolla';
+  return normalizeDocumentKind(
+    emptyToNull(corrected?.document_kind) || emptyToNull(extracted?.document_kind)
+  ) === 'delivery_note';
 }
 
 function applyAnagraficaFromJson(json, roleHint) {
