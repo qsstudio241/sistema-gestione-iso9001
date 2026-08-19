@@ -1,12 +1,12 @@
-# DEPUTYTASK — Material Compliance ingest (MC-B)
+# DEPUTYTASK — Material Compliance ingest (MC-I2)
 
-**Stato:** CHIUSO — TEST OK (19/08/2026, [PR #476](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/476)); deploy TEST PID `993561` + PROD PID `1005497`; smoke PROD azienda 179 id 7 `text_ready` → `extracted` `ocr_ok`.  
-**Aperto:** 19/08/2026 (dopo merge MC-I1 [#473](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/473))  
-**Chiuso:** 19/08/2026 — L1 47/47 (`materialCertificates.controller` + `documentTextExtractor`)  
-**Piano:** [`PLAN_MATERIAL_COMPLIANCE_SLICES.md`](PLAN_MATERIAL_COMPLIANCE_SLICES.md) § MC-B  
-**Spec:** [`MATERIAL_COMPLIANCE_DATA_MODEL.md`](../specs/MATERIAL_COMPLIANCE_DATA_MODEL.md) § OCR `text_extract_reason` · ADR-024  
-**Rischio:** Medio — mapping extract + tag `ocr_ok`; nessuna migrazione; Cloud **non** mergia  
-**Stream:** stesso file epic ingest.
+**Stato:** CHIUSO — TEST OK (19/08/2026)  
+**Aperto:** 19/08/2026 (dopo merge hub MC-B [#479](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/479))  
+**Chiuso:** 19/08/2026 — L1 33/33 (`materialCertificates.controller`) + pagina Materiali 5/5  
+**Piano:** [`PLAN_MATERIAL_COMPLIANCE_SLICES.md`](PLAN_MATERIAL_COMPLIANCE_SLICES.md) § MC-I2  
+**Spec:** [`MATERIAL_COMPLIANCE_DATA_MODEL.md`](../specs/MATERIAL_COMPLIANCE_DATA_MODEL.md) · EN 10168 B07  
+**Rischio:** Medio — mapping extract + prompt; nessuna migrazione; Cloud **non** mergia  
+**Stream:** stesso file epic ingest. **Non** sovrascrivere `DEPUTYTASK.md` (SAL S1a CHIUSO).
 
 ---
 
@@ -14,44 +14,45 @@
 
 ```text
 Fonti Markdown:
-- Coperte: DATA_MODEL text_extract_reason (ocr_ok / ocr_unavailable / ocr_failed / ocr_skipped / text_layer)
-- Si parte su: collegare Estrai MC all’OCR già in documentTextExtractor (S1a #471)
+- Coperte: EN 10168 B07 = heat_or_lot_no (colata/lotto); dizionario EN-10168-layout; schema material_certificate ha heat_or_lot_no / material_standard
+- Mancanti: soglie apporto (non questa slice); DDT non è codice 10168 — solo se stampato
+- Si parte su: mapping anagrafica + prompt; skip split, skip OCR, skip few-shot, skip soglie inventate
 ```
 
-## Slice unica: MC-B — OCR scan
+## Slice unica: MC-I2 — 3.1 singolo: colata / DDT / norma
 
 ### Fatto
 
-- `extractDocumentText`: OCR ok → `{ text, reason: 'ocr_ok' }` (niente secondo motore)
-- `mapTextReason`: `ocr_ok` / `ocr_unavailable` / `ocr_failed` restano; `ocr_skipped` solo `unsupported(_format)`
-- `pdf_no_text_layer` legacy → `ocr_unavailable` (l’estrattore non lo emette più)
+- `canonicalizeExtractedJson`: alias heat (`heat_number`/`colata`/`B07`/…) e norma (`steel_standard`/`filler_standard`) → chiavi canoniche anche in `extracted_json`
+- DDT: `ddt_no` / `delivery_note_no` / `ddt` — **non** `purchaser_order_no` (A07)
+- Extract SQL: `COALESCE` anche `ddt_no` / `ddt_date` (data `DD/MM/YYYY` → ISO)
+- Fallback etichettato sul testo (`Colata` / `Heat No` / `B07`); niente regex cieca su `NNNN/YYYY`
+- Prompt BE+FE: colata come stampata; DDT solo se stampato
+- HITL: `ddt_date` nel form PATCH
 
 ### File toccati
 
 - `backend/src/controllers/materialCertificates.controller.js` (+ test)
-- `backend/src/services/documentTextExtractor.service.js` (+ test)
+- `backend/src/data/documentTypeSchemas.js`
+- `app/src/data/documentTypeSchemas.js`
+- `app/src/pages/MaterialCertificatesPage.jsx`
 - `docs/agent-tasks/DEPUTYTASK_MC_INGEST.md`
 - `docs/agent-tasks/PLAN_MATERIAL_COMPLIANCE_SLICES.md`
 
 ### Non toccato
 
-- GUIDA / roadmap (bozza sotto; parallelo MR-2 #475 e ISO-7 #474)
-- `ocrExtractor.js`, ISO-4, Assistente AI, RDP/NDT
+- `ocrExtractor.js`, Rule Engine, split (MC-I4), few-shot (MC-7), ISO-4, `DEPUTYTASK.md`
 
-### Test
+### Test L1
 
-```bash
-cd backend && npx jest src/controllers/materialCertificates.controller.test.js src/services/documentTextExtractor.service.test.js --forceExit
-# 47/47
-```
+33/33 controller (alias heat → colonna; testo «Colata 12174/2026»; A07 ≠ DDT; persist `ddt_no`). Pagina Materiali 5/5.
 
-Dopo merge + **deploy backend** VPS: Estrai su DDT scansionato azienda 179 → `ocr_ok` (o `ocr_failed`/`ocr_unavailable` se manca Ghostscript/tesseract), mai `ocr_skipped` su un PDF.
+### DoD
 
-### Bozza GUIDA / roadmap (hub dopo merge)
+- [x] L1 verdi
+- [x] Brief CHIUSO TEST OK
+- [ ] PR draft; Cloud non mergia — **dopo merge: deploy backend**, poi Estrai di nuovo sul 3.1 Tecnovespa (non riscoprire id 7 OCR)
 
-- GUIDA: `ocr_skipped` ≠ `ocr_unavailable`. OCR ok = `ocr_ok` sull’estrattore, non `text_layer`.
-- Roadmap: MC-B OCR scan PR #476. Prossima ingest **MC-I2**.
+### Prossima ingest
 
-### Prossima slice
-
-**MC-I2** — 3.1 singolo: colata / DDT / norma (Tecnovespa `12174/2026`). Nuovo brief APERTO su questo stream prima del deputy.
+**MC-I3** — DDT ≠ 3.1.
