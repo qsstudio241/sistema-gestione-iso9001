@@ -8,7 +8,7 @@
 
 > **Risposta standard a «stato di avanzamento del progetto e priorità da affrontare»**: sintetizzare da questa sezione (moduli maturi + sessione più recente + tabella priorità sotto), **non** dal banner storico più sotto (superato, tenuto solo per traccia) né dall'archivio marzo 2026 [`docs/archive/PROJECT_CONTEXT_STATO_FUNZIONALITA_2026-03.md`](archive/PROJECT_CONTEXT_STATO_FUNZIONALITA_2026-03.md). **Aggiornare questa sezione a fine sessione** se emergono nuove priorità o se una priorità elencata viene chiusa (stesso principio delle "Lezioni apprese" in [GUIDA_CONSOLIDATA.md](GUIDA_CONSOLIDATA.md) — sintesi qui, dettaglio linkato).
 
-**Ultimo aggiornamento di questa sezione**: 19/08/2026 (MC-I2 #481 deploy TEST+PROD + smoke colata; MR-2 #475; MC-B #476; ISO-7 #474).
+**Ultimo aggiornamento di questa sezione**: 19/08/2026 (MC-I3 DDT ≠ mill TEST OK; MC-I2 #481 deploy; MR-2 #475; MC-B #476; ISO-7 #474).
 
 ### Moduli maturi (in produzione, uso quotidiano dai clienti Camellini/Mason)
 
@@ -16,7 +16,9 @@ Audit multi-standard (9001/14001/45001) · Non Conformità (workflow ISO 10.2 co
 
 ### Sessione più recente (19/08/2026)
 
-**MC-I2 3.1 colata / DDT / norma (19/08, mergiata + deploy)** — [#481](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/481). Alias AI → `heat_or_lot_no`; DDT ≠ A07. Deploy TEST PID `993561`→`1019412`, PROD `1005497`→`1031291`, health 200. Smoke PROD azienda 179 id 6 (`CERTIFICATO31-…-TECNOVESPA-12174.PDF`) → Estrai HTTP 200, `extracted`, colata **`12174/2026`**. Brief [`DEPUTYTASK_MC_INGEST.md`](agent-tasks/DEPUTYTASK_MC_INGEST.md) **CHIUSO**. Prossima ingest: **MC-I3**. ISO-4 **non** toccata.
+**MC-I3 DDT ≠ 3.1 (19/08, TEST OK)** — Estrai su bolla `D.D.T._n._000775RE` classifica `delivery_note`, n. DDT in colonna, mill azzerato (SET, non solo COALESCE). Valuta 409 `NOT_A_CERTIFICATE`; pulsante visibile disabled. Brief [`DEPUTYTASK_MC_INGEST.md`](agent-tasks/DEPUTYTASK_MC_INGEST.md) **CHIUSO**. Prossima ingest: **MC-I4**. ISO-4 **non** toccata.
+
+**MC-I2 3.1 colata / DDT / norma (19/08, mergiata + deploy)** — [#481](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/481). Alias AI → `heat_or_lot_no`; DDT ≠ A07. Deploy TEST PID `993561`→`1019412`, PROD `1005497`→`1031291`, health 200. Smoke PROD azienda 179 id 6 (`CERTIFICATO31-…-TECNOVESPA-12174.PDF`) → Estrai HTTP 200, `extracted`, colata **`12174/2026`**.
 
 **Multimodal RAG MR-2 mergiato (19/08)** — citazioni tavola nello stesso pannello Assistente (crop + pagina + bbox). GET `/ai/figures/:id/image`, org dal JWT. Brief [`DEPUTYTASK5.md`](agent-tasks/DEPUTYTASK5.md) **CHIUSO**. [PR #475](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/475). Piano: [`PLAN_MULTIMODAL_RAG_SLICES.md`](agent-tasks/PLAN_MULTIMODAL_RAG_SLICES.md). Serve deploy backend per il GET immagine.
 
@@ -115,7 +117,7 @@ Sessione prodotto precedente (10/08/2026): fix filtri dashboard duplicati (Quali
 | 1 | **Modulo Notifiche/Alert — destinatario allerte qualifiche non è una scelta esplicita in anagrafica** | Oggi risolto da un algoritmo a cascata, non da una scelta visibile in UI | `qualificationAlert.service.js` (`resolveWeldingCoordinatorRecipients`) |
 | 2 | **Shell dialog di revisione ingest — markup/CSS duplicato** (non urgente, basso rischio) | `IngestReviewDialog.jsx` vs dialog interno `ReprocessQueueBanner.jsx`: guscio overlay duplicato (~60-80 righe); pattern sistemico su molti altri modal nel progetto | Vedi backlog sotto per dettaglio |
 | 3 | **Pagina Impostazioni → Organizzazione (P.IVA + logo tenant)** | PR #10 aperta da aprile 2026, 180 file in conflitto — richiede ricostruzione, non merge | Vedi riga dedicata nel backlog sotto |
-| 4 | **Material Compliance AI — ingest certificati (base e apporto)** | MC-0…MC-5 + MC-I0 + MC-I1 + MC-B (#476 in prod) + **MC-I2** (colata/DDT/norma). Prossima: **MC-I3** DDT ≠ 3.1 | [PLAN](agent-tasks/PLAN_MATERIAL_COMPLIANCE_SLICES.md) · brief [MC-I2 CHIUSO](agent-tasks/DEPUTYTASK_MC_INGEST.md) |
+| 4 | **Material Compliance AI — ingest certificati (base e apporto)** | MC-0…MC-5 + MC-I0 + MC-I1 + MC-B (#476) + MC-I2 (#481) + **MC-I3** (DDT ≠ mill). Prossima: **MC-I4** busta 1→N | [PLAN](agent-tasks/PLAN_MATERIAL_COMPLIANCE_SLICES.md) · brief [MC-I3 CHIUSO](agent-tasks/DEPUTYTASK_MC_INGEST.md) |
 | 5 | **Rischi — ingest / data riesame (ROO-18, HITL)** | Lista riesami ambito c’è (ROO-17, verificata su TEST); data riesame esplicita e ingest→review solo dopo conferma | [PLAN §7](agent-tasks/PLAN_RISCHI_OPPORTUNITA_OBIETTIVI_SLICES.md) |
 | 6 | **SAL AI evidenze — OCR + documento mancante (HITL)** | **S1a** mergiata (#471): OCR PDF in `documentTextExtractor`. Prossima: **S1b** OCR immagini | [PLAN](agent-tasks/PLAN_SAL_AI_EVIDENCE_SLICES.md) · brief [S1a CHIUSO](agent-tasks/DEPUTYTASK.md) |
 | 7 | **ISO 3834 — completezza per processi (RBAC + ponti + report)** | ISO-1* + ISO-2 + ISO-3 mergiate e ISO-3 deployata. Prossima: ISO-4 Word RDP Mason (serve il file) | [PLAN](agent-tasks/PLAN_3834_SLICES.md) · brief [ISO-3 CHIUSO](agent-tasks/DEPUTYTASK1.md) |
