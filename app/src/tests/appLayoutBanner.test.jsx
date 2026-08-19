@@ -121,7 +121,8 @@ describe("AppLayout — banner Ambito", () => {
     );
     await screen.findByRole("region", { name: "Ambito azienda" });
     expect(screen.queryByText(/RDP - Rapporto di Prova/)).not.toBeInTheDocument();
+    expect(document.querySelector('a[href="/saldatura/rdp"]')).toBeNull();
     expect(screen.getByText("Welding Book")).toBeInTheDocument();
-    expect(screen.getByText("Audit")).toBeInTheDocument();
+    expect(screen.getAllByText("Audit").length).toBeGreaterThan(0);
   });
 });
