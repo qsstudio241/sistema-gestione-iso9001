@@ -660,6 +660,8 @@ const material_certificate = {
         { value: "3.2", label: "3.2" },
       ] },
     { key: "certificate_no", label: "N. certificato", type: "text", required: false },
+    { key: "ddt_no", label: "N. DDT", type: "text", required: false },
+    { key: "ddt_date", label: "Data DDT", type: "date", required: false },
     { key: "manufacturer_works", label: "Acciaieria / produttore", type: "text", required: false },
     { key: "steel_designation", label: "Designazione acciaio", type: "text", required: false },
     { key: "filler_designation", label: "Designazione apporto", type: "text", required: false },
@@ -671,7 +673,7 @@ const material_certificate = {
     { key: "CEV", label: "CEV", type: "number", required: false },
   ],
   aiPrompt: `Stai analizzando un certificato EN 10204 / EN 10168 (base o apporto).
-Estrai in type_specific_data i campi del dizionario Material Compliance (material_role base|filler, inspection_document_type 2.1-3.2, certificate_no, manufacturer_works, steel_designation o filler_designation, heat_or_lot_no, material_standard, thickness_mm, ReH, Rm, CEV, chemistry). Se incerto su material_role usa base. NON dichiarare se il certificato è conforme.`,
+Estrai in type_specific_data i campi del dizionario Material Compliance (material_role base|filler, inspection_document_type 2.1-3.2, certificate_no, manufacturer_works, steel_designation o filler_designation, heat_or_lot_no, material_standard, ddt_no, ddt_date, thickness_mm, ReH, Rm, CEV, chemistry). heat_or_lot_no (B07): copia la colata COME STAMPATA (es. 12174/2026; etichette Colata, Heat No, B07). ddt_no solo se stampato (DDT/bolla); NON copiare purchaser_order_no (A07). material_standard: norma prodotto stampata, non inventare. Se incerto su material_role usa base. NON dichiarare se il certificato è conforme.`,
   aiExpectedSchema: {
     inspection_document_type: "2.1|2.2|3.1|3.2|null",
     certificate_no: "string|null",
@@ -683,6 +685,8 @@ Estrai in type_specific_data i campi del dizionario Material Compliance (materia
     material_standard: "string|null",
     delivery_condition: "string|null",
     heat_or_lot_no: "string|null",
+    ddt_no: "string|null",
+    ddt_date: "YYYY-MM-DD|null",
     dimensions: "string|null",
     actual_mass: "number|string|null",
     thickness_mm: "number|null",
