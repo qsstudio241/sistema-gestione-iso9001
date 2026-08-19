@@ -41,6 +41,27 @@ const SUGGESTIONS_GENERIC = [
 ];
 
 /**
+ * Retrieve tavole (testo → figura). organization_id solo dal JWT lato server.
+ * Fallimento o lista vuota → [] (niente errore in chat).
+ */
+async function fetchCitedFigures(queryText, companyId) {
+  const q = String(queryText || "").trim();
+  if (!q) return [];
+  try {
+    const qs = new URLSearchParams();
+    qs.set("q", q);
+    if (companyId != null && companyId !== "") {
+      qs.set("companyId", String(companyId));
+    }
+    const res = await apiService.get(`/ai/figures/search?${qs.toString()}`);
+    const list = res?.figures ?? res?.data?.figures;
+    return Array.isArray(list) ? list : [];
+  } catch {
+    return [];
+  }
+}
+
+/**
  * Costruisce i chip di suggerimento contestuali.
  * Se c'è un audit aperto con clausola in focus → suggerimenti specifici per campo.
  * Se c'è un'azienda selezionata → suggerimenti per quell'azienda.
@@ -522,15 +543,18 @@ function AiAssistantPage() {
       }
 
       const chatCtx = buildAiChatContextPayload(currentAudit, companies);
-      const res = await apiService.aiChat(msg, {
-        companyId: companyContext.companyId,
-        standardId: standardContext.standardId,
-        auditId: chatCtx.auditId,
-        clauseRef: chatCtx.clauseRef,
-        questionId: chatCtx.questionId,
-        questionText: chatCtx.questionText,
-        standardKey: chatCtx.standardKey,
-      });
+      const [res, figures] = await Promise.all([
+        apiService.aiChat(msg, {
+          companyId: companyContext.companyId,
+          standardId: standardContext.standardId,
+          auditId: chatCtx.auditId,
+          clauseRef: chatCtx.clauseRef,
+          questionId: chatCtx.questionId,
+          questionText: chatCtx.questionText,
+          standardKey: chatCtx.standardKey,
+        }),
+        fetchCitedFigures(msg, companyContext.companyId),
+      ]);
       const data = res.data || res;
       const citations = Array.isArray(data.citations) ? data.citations : [];
       setMessages((prev) => [
@@ -542,6 +566,7 @@ function AiAssistantPage() {
           contextUsed: data.contextUsed || 0,
           sourcesCount: data.sourcesCount ?? citations.length,
           citations,
+          figures,
         },
       ]);
     } catch (err) {
@@ -844,6 +869,7 @@ function AiAssistantPage() {
                     citations={msg.citations}
                     sourcesCount={msg.sourcesCount}
                     contextUsed={msg.contextUsed}
+                    figures={msg.figures}
                   />
                 )}
               </div>

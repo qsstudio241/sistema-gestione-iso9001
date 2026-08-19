@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { authenticate, authorize } = require('../middleware/auth.middleware');
+const { authenticate, authenticateDownload, authorize } = require('../middleware/auth.middleware');
 const { requireLicensedModule } = require('../middleware/moduleLicense.middleware');
 const { logAiInteraction } = require('../middleware/aiAuditTrail.middleware');
 const ctrl = require('../controllers/aiChat.controller');
@@ -29,6 +29,14 @@ router.get(
   authenticate,
   requireLicensedModule('ai_chat'),
   figureCtrl.searchFigures
+);
+
+// GET /ai/figures/:id/image — byte PNG (JWT header o ?token= per <img>)
+router.get(
+  '/ai/figures/:id/image',
+  authenticateDownload,
+  requireLicensedModule('ai_chat'),
+  figureCtrl.getFigureImage
 );
 
 // GET /ai/ambito-facts — snapshot fatti Ambito (licenza ai_chat, zero LLM)
