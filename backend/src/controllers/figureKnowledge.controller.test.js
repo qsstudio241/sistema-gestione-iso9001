@@ -1,7 +1,7 @@
 /**
  * @jest-environment node
  *
- * Test L1 — GET /ai/figures/search (MR-1).
+ * Test L1 — GET search (MR-1), GET image (MR-2), POST ingest (MR-3).
  */
 
 const mockAccess = jest.fn();
@@ -22,6 +22,9 @@ jest.mock('../services/companyAccess.service', () => ({
 jest.mock('../services/figureKnowledge.service', () => ({
   searchFiguresByText: jest.fn(),
 }));
+jest.mock('../services/figureIngest.service', () => ({
+  ingestFiguresFromPdf: jest.fn(),
+}));
 jest.mock('../utils/logger', () => ({
   error: jest.fn(),
   warn: jest.fn(),
@@ -31,7 +34,8 @@ jest.mock('../utils/logger', () => ({
 
 const { resolveAiCompanyScope } = require('../services/aiCompanyScope.service');
 const { searchFiguresByText } = require('../services/figureKnowledge.service');
-const { searchFigures, getFigureImage } = require('./figureKnowledge.controller');
+const { ingestFiguresFromPdf } = require('../services/figureIngest.service');
+const { searchFigures, getFigureImage, ingestFigures } = require('./figureKnowledge.controller');
 
 function createRes() {
   const res = { statusCode: 200, headers: {} };
@@ -161,5 +165,57 @@ describe('figureKnowledge.controller — getFigureImage', () => {
     expect(res.sendFile).toHaveBeenCalled();
     expect(res.headers['Content-Type']).toBe('image/png');
     expect(res.status).not.toHaveBeenCalled();
+  });
+});
+
+describe('figureKnowledge.controller — ingestFigures', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+    resolveAiCompanyScope.mockResolvedValue({ companyId: null, denied: null });
+  });
+
+  it('401 se manca organization_id nel JWT', async () => {
+    const req = { user: {}, body: { pdfPath: '/tmp/a.pdf' } };
+    const res = createRes();
+    await ingestFigures(req, res);
+    expect(res.status).toHaveBeenCalledWith(401);
+    expect(ingestFiguresFromPdf).not.toHaveBeenCalled();
+  });
+
+  it('400 se manca pdfPath', async () => {
+    const req = { user: { organization_id: 1001 }, body: {} };
+    const res = createRes();
+    await ingestFigures(req, res);
+    expect(res.status).toHaveBeenCalledWith(400);
+    expect(ingestFiguresFromPdf).not.toHaveBeenCalled();
+  });
+
+  it('usa organization_id del JWT, non body.organization_id del client', async () => {
+    ingestFiguresFromPdf.mockResolvedValue({ figures: [], count: 0 });
+    const req = {
+      user: { organization_id: 1001 },
+      body: { pdfPath: '/tmp/a.pdf', organization_id: 9999 },
+    };
+    const res = createRes();
+    await ingestFigures(req, res);
+    expect(ingestFiguresFromPdf).toHaveBeenCalledWith(
+      expect.objectContaining({
+        organizationId: 1001,
+        pdfPath: '/tmp/a.pdf',
+      })
+    );
+    expect(ingestFiguresFromPdf.mock.calls[0][0].organizationId).not.toBe(9999);
+  });
+
+  it('200 con figures vuote se il PDF non ha tavole', async () => {
+    ingestFiguresFromPdf.mockResolvedValue({ figures: [], count: 0 });
+    const req = {
+      user: { organization_id: 1001 },
+      body: { pdfPath: '/tmp/vuoto.pdf' },
+    };
+    const res = createRes();
+    await ingestFigures(req, res);
+    expect(res.statusCode).toBe(200);
+    expect(res.json).toHaveBeenCalledWith({ figures: [], count: 0 });
   });
 });
