@@ -1,13 +1,12 @@
-# DEPUTYTASK — Material Compliance ingest (MC-I1)
+# DEPUTYTASK — Material Compliance ingest (MC-B)
 
-**Stato:** CHIUSO — TEST OK (19/08/2026, [PR #473](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/473))  
-**Aperto:** 19/08/2026 (Lead wayfinder — Chart the map, track ingest)  
-**Chiuso:** 19/08/2026 — L1 5/5 `materialCertificatesPage.test.jsx` + `npm run build`  
-**Piano:** [`PLAN_MATERIAL_COMPLIANCE_SLICES.md`](PLAN_MATERIAL_COMPLIANCE_SLICES.md) § MC-I1  
-**Spec:** [`MATERIAL_COMPLIANCE_UI.md`](../specs/MATERIAL_COMPLIANCE_UI.md) · API già accetta `base|filler`  
-**Rischio:** Basso — solo UI upload + test pagina; API e schema invariati; Cloud **non** mergia  
-**Ambiente:** FE Netlify dopo merge. Record ADA produzione 3–5 / azienda 179 = prova già fatta, non riscoprire.  
-**Stream:** stesso file epic ingest (MC-I0 CHIUSO). Non riusare per un altro modulo.
+**Stato:** CHIUSO — TEST OK (19/08/2026, [PR #476](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/476))  
+**Aperto:** 19/08/2026 (dopo merge MC-I1 [#473](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/473))  
+**Chiuso:** 19/08/2026 — L1 47/47 (`materialCertificates.controller` + `documentTextExtractor`)  
+**Piano:** [`PLAN_MATERIAL_COMPLIANCE_SLICES.md`](PLAN_MATERIAL_COMPLIANCE_SLICES.md) § MC-B  
+**Spec:** [`MATERIAL_COMPLIANCE_DATA_MODEL.md`](../specs/MATERIAL_COMPLIANCE_DATA_MODEL.md) § OCR `text_extract_reason` · ADR-024  
+**Rischio:** Medio — mapping extract + tag `ocr_ok`; nessuna migrazione; Cloud **non** mergia  
+**Stream:** stesso file epic ingest.
 
 ---
 
@@ -15,47 +14,44 @@
 
 ```text
 Fonti Markdown:
-- Coperte: EN 10204 (tipo documento), DATA_MODEL material_role base|filler, UI MC elenco unico
-- Si parte su: scelta ruolo in upload; skip OCR, skip split PDF, skip soglie apporto, skip few-shot
+- Coperte: DATA_MODEL text_extract_reason (ocr_ok / ocr_unavailable / ocr_failed / ocr_skipped / text_layer)
+- Si parte su: collegare Estrai MC all’OCR già in documentTextExtractor (S1a #471)
 ```
 
-## Slice unica di questa sessione: MC-I1 — Ruolo Base / Apporto in upload
-
-**Obiettivo**: in Materiali, prima di **Carica certificato**, si sceglie **Base** o **Apporto**. Un 3.1 filo non resta sempre Base in griglia.
+## Slice unica: MC-B — OCR scan
 
 ### Fatto
 
-- Header: radiogroup **Ruolo** Base / Apporto (default Base), classi già in `QualificationsPage.css`
-- Upload Apporto → `createMaterialCertificate({ materialRole: "filler" })`
-- Filtro KPI «Apporto» non cambia il ruolo dell’upload (test L1)
-- Senza azienda: **Carica certificato** visibile e `disabled`
+- `extractDocumentText`: OCR ok → `{ text, reason: 'ocr_ok' }` (niente secondo motore)
+- `mapTextReason`: `ocr_ok` / `ocr_unavailable` / `ocr_failed` restano; `ocr_skipped` solo `unsupported(_format)`
+- `pdf_no_text_layer` legacy → `ocr_unavailable` (l’estrattore non lo emette più)
 
 ### File toccati
 
-- `app/src/pages/MaterialCertificatesPage.jsx`
-- `app/src/tests/materialCertificatesPage.test.jsx`
+- `backend/src/controllers/materialCertificates.controller.js` (+ test)
+- `backend/src/services/documentTextExtractor.service.js` (+ test)
 - `docs/agent-tasks/DEPUTYTASK_MC_INGEST.md`
 - `docs/agent-tasks/PLAN_MATERIAL_COMPLIANCE_SLICES.md`
-- `docs/PROJECT_ROADMAP.md` § Stato attuale
-- `docs/GUIDA_CONSOLIDATA.md` (1 riga lezione)
 
-### Cosa NON è stato toccato
+### Non toccato
 
-- [`DEPUTYTASK.md`](DEPUTYTASK.md) (scontrino SAL S1a)
-- `documentTextExtractor.service.js` / `ocrExtractor.js`
-- PLAN 3834 / ISO-4 / Welding Book
-- Backend MC, Rule Engine, MC-B / I2–I4 / MC-7 / MC-6
+- GUIDA / roadmap (bozza sotto; parallelo MR-2 #475 e ISO-7 #474)
+- `ocrExtractor.js`, ISO-4, Assistente AI, RDP/NDT
 
 ### Test
 
 ```bash
-cd app && NODE_ENV=test npx vitest run src/tests/materialCertificatesPage.test.jsx
-# 5/5
-cd app && npm run build
+cd backend && npx jest src/controllers/materialCertificates.controller.test.js src/services/documentTextExtractor.service.test.js --forceExit
+# 47/47
 ```
 
-Dopo merge Netlify: in Materiali, Ambito azienda, scegli Apporto → Carica PDF → colonna Ruolo = Apporto.
+Dopo merge + **deploy backend** VPS: Estrai su DDT scansionato azienda 179 → `ocr_ok` (o `ocr_failed`/`ocr_unavailable` se manca Ghostscript/tesseract), mai `ocr_skipped` su un PDF.
+
+### Bozza GUIDA / roadmap (hub dopo merge)
+
+- GUIDA: `ocr_skipped` ≠ `ocr_unavailable`. OCR ok = `ocr_ok` sull’estrattore, non `text_layer`.
+- Roadmap: MC-B OCR scan PR #476. Prossima ingest **MC-I2**.
 
 ### Prossima slice
 
-**MC-B** — OCR scan, riuso `documentTextExtractor` (S1a già in `main`, [#471](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/471)). Nuovo brief APERTO su questo stream prima del deputy.
+**MC-I2** — 3.1 singolo: colata / DDT / norma (Tecnovespa `12174/2026`). Nuovo brief APERTO su questo stream prima del deputy.
