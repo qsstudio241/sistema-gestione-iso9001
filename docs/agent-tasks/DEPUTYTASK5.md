@@ -26,7 +26,7 @@
 - L1 Jest: **18/18** (`figureIngest.service.test.js` + `figureKnowledge.controller.test.js`)
 - Manifest: riga `src/services/figureIngest.service.js`
 - Hook `normIngest` **non** aggiunto (file list; colla è l'API)
-- MR-4 **non** aperta; GUIDA/roadmap **non** toccate
+- MR-4 **non** aperta; GUIDA/roadmap allineate **dopo merge** (questa hub)
 
 ### Contesto
 
@@ -81,10 +81,11 @@ Senza rete, senza download CLIP.
 - PR Medio [#484](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/484); 1 Bugbot a slice chiusa; Cloud Agent **non** mergia.
 - Esito: **TEST OK**.
 
-### Bozza hub (dopo merge, non in questa PR codice)
+### Hub dopo merge #484
 
 - GUIDA: ingest figure = extract locale + persist CLIP; stesso tenant; AI non certifica.
-- Roadmap: una riga MR-3 + priorità RAG aggiornata.
+- Roadmap: riga MR-3 + priorità 9 → prossima MR-4 (non aperta).
+- Hub: [PR #485](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/485).
 
 ---
 
