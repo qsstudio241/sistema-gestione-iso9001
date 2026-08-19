@@ -31,6 +31,14 @@ describe('STANDARDS_REGISTRY — struttura base', () => {
     expect(STANDARDS_REGISTRY.RDP_MSN).toBeDefined();
   });
 
+  it('etichetta UI di RDP_MSN non usa piu RDP ne Rapporto di Prova (codice interno invariato)', () => {
+    expect(STANDARDS_REGISTRY.RDP_MSN.key).toBe('RDP_MSN');
+    expect(STANDARDS_REGISTRY.RDP_MSN.standardId).toBe(7);
+    expect(STANDARDS_REGISTRY.RDP_MSN.label).not.toMatch(/RDP|Rapporto di Prova/i);
+    expect(STANDARDS_REGISTRY.RDP_MSN.shortLabel).not.toMatch(/RDP/i);
+    expect(STANDARDS_REGISTRY.RDP_MSN.label).toContain('Audit di Sistema Saldatura');
+  });
+
   it('ogni entry espone i campi richiesti da ADR-009 Fase 1', () => {
     for (const entry of STANDARDS_LIST) {
       expect(entry.key).toBeTypeOf('string');

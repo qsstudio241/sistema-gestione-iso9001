@@ -201,6 +201,8 @@ function AppContent() {
         <Route path="/saldatura" element={<LicensedRoute moduleKey="saldatura"><WeldingDashboardPage /></LicensedRoute>} />
         <Route path="/cnd/strumenti" element={<LicensedRoute moduleKey="cnd"><EquipmentPage /></LicensedRoute>} />
         <Route path="/cnd/verbali"   element={<LicensedRoute moduleKey="cnd"><NdtReportsPage /></LicensedRoute>} />
+        {/* Nascosta dal menu 19/08/2026: RDP Mason è visita/audit, non laboratorio.
+            Route viva per URL salvati. Tabelle rdp_* non droppate. */}
         <Route path="/saldatura/rdp" element={<LicensedRoute moduleKey="saldatura"><RDPModule /></LicensedRoute>} />
 
         {/* Gestione aziende — dettaglio prima della lista (prefix match router) */}

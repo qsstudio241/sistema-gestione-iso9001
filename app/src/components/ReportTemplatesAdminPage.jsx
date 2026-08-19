@@ -23,7 +23,7 @@ const STANDARD_LABELS = {
   2: "ISO 14001",
   3: "ISO 45001",
   6: "ISO 3834-2",
-  7: "RDP Mason",
+  7: "Audit sistema 3834",
 };
 
 const GRID_COLUMNS = [
@@ -56,7 +56,6 @@ const ReportTemplatesAdminPage = ({ onBack }) => {
   const [duplicateName, setDuplicateName] = useState("");
   const [duplicating, setDuplicating] = useState(false);
   const [duplicateError, setDuplicateError] = useState(null);
-  const [bannerDuplicateId, setBannerDuplicateId] = useState("");
 
   const activeScope = pageTab === "nc" ? "nc" : "audit";
   const currentTemplates = pageTab === "nc" ? ncTemplates : templates;
@@ -114,22 +113,6 @@ const ReportTemplatesAdminPage = ({ onBack }) => {
   useEffect(() => {
     loadData();
   }, [loadData]);
-
-  const systemTemplates = useMemo(
-    () => currentTemplates.filter(isSystemReportTemplate),
-    [currentTemplates],
-  );
-
-  useEffect(() => {
-    if (!systemTemplates.length) {
-      setBannerDuplicateId("");
-      return;
-    }
-    setBannerDuplicateId((prev) => {
-      if (prev && systemTemplates.some((t) => String(t.id) === prev)) return prev;
-      return String(systemTemplates[0].id);
-    });
-  }, [systemTemplates]);
 
   const refreshTemplates = async (scope = activeScope) => {
     const tplRes = await apiService.getReportTemplates(scope);
@@ -266,11 +249,6 @@ const ReportTemplatesAdminPage = ({ onBack }) => {
     setDuplicateError(null);
   };
 
-  const handleBannerDuplicate = () => {
-    const template = systemTemplates.find((t) => String(t.id) === bannerDuplicateId);
-    if (template) openDuplicateModal(template);
-  };
-
   const closeDuplicateModal = () => {
     setDuplicateSource(null);
     setDuplicateName("");
@@ -385,7 +363,7 @@ const ReportTemplatesAdminPage = ({ onBack }) => {
         <h2>Template report Word</h2>
         <p className="rt-desc">
           Catalogo template per export Word: report audit ISO, checklist custom e scheda non conformità.
-          Carica o duplica un modello di sistema, poi assegnalo allo standard ISO, alla checklist custom o all&apos;export NC.
+          Carica un .docx personalizzato o duplica un modello di sistema dalla riga dell&apos;elenco, poi assegnalo allo standard ISO, alla checklist custom o all&apos;export NC.
         </p>
       </div>
 
@@ -422,8 +400,8 @@ const ReportTemplatesAdminPage = ({ onBack }) => {
         </h3>
         <p className="rt-banner-guide">
           {pageTab === "nc"
-            ? "Scarica il modello di sistema, personalizzalo in Word mantenendo i segnaposto {ncNumber}, {description}, {#actions}..., poi caricalo o duplicalo."
-            : "Scarica dalla griglia, carica un .docx o duplica un modello di sistema; assegna agli standard ISO o alle checklist custom."}
+            ? "Duplica sulla riga per una copia nello studio, oppure scarica, modifica in Word (segnaposto {ncNumber}, {description}, {#actions}...) e carica qui."
+            : "Duplica sulla riga per una copia nello studio. Carica file se hai gia un .docx modificato in Word. Poi assegna lo standard sotto l'elenco."}
         </p>
         <div className="rt-banner-cards">
           <div className="rt-banner-card">
@@ -455,42 +433,6 @@ const ReportTemplatesAdminPage = ({ onBack }) => {
                 </button>
               </div>
             </form>
-          </div>
-
-          <div className="rt-banner-card">
-            <h4 className="rt-card-title">Duplica modello</h4>
-            <div className="rt-duplicate-form">
-              <label className="rt-field-label" htmlFor="rt-banner-dup-select">
-                Modello di sistema
-                <select
-                  id="rt-banner-dup-select"
-                  className="rt-select"
-                  value={bannerDuplicateId}
-                  onChange={(e) => setBannerDuplicateId(e.target.value)}
-                  disabled={!systemTemplates.length || duplicating}
-                >
-                  {systemTemplates.length === 0 ? (
-                    <option value="">Nessun modello di sistema</option>
-                  ) : (
-                    systemTemplates.map((t) => (
-                      <option key={t.id} value={t.id}>
-                        {t.name}
-                      </option>
-                    ))
-                  )}
-                </select>
-              </label>
-              <div className="rt-card-footer">
-                <button
-                  type="button"
-                  className="btn-rt-secondary"
-                  onClick={handleBannerDuplicate}
-                  disabled={!bannerDuplicateId || duplicating}
-                >
-                  {duplicating ? "Duplicazione..." : "Duplica"}
-                </button>
-              </div>
-            </div>
           </div>
         </div>
 

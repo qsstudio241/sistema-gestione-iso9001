@@ -5,46 +5,18 @@
 
 const { query } = require('../config/database');
 const { getReportTemplate, getNcReportTemplate } = require('../services/reportTemplate.service');
+const { getUploadDir, resolveTemplateSourcePath } = require('../utils/reportTemplatePath');
 const logger = require('../utils/logger');
 const path = require('path');
 const fs = require('fs').promises;
-const fsSync = require('fs');
 const crypto = require('crypto');
 
 const ALLOWED_SCOPES = new Set(['audit', 'self_assessment', 'nc']);
+const UPLOAD_DIR = getUploadDir();
 
 function normalizeScope(scope) {
   const s = String(scope || 'audit').trim().toLowerCase();
   return ALLOWED_SCOPES.has(s) ? s : 'audit';
-}
-
-/** Risolve path assoluto del file sorgente (sistema /uploads o /templates) */
-async function resolveTemplateSourcePath(filePath) {
-  if (!filePath) return null;
-  if (filePath.startsWith('/uploads/')) {
-    const rel = filePath.replace(/^\/uploads\//, '');
-    const full = path.join(path.resolve(UPLOAD_DIR), rel);
-    try {
-      await fs.access(full);
-      return full;
-    } catch {
-      return null;
-    }
-  }
-  if (filePath.startsWith('/templates/')) {
-    const basename = path.basename(filePath);
-    const candidates = [
-      process.env.REPORT_TEMPLATES_STATIC_DIR,
-      path.join(__dirname, '../../../app/public/templates'),
-      path.join(process.cwd(), 'app/public/templates'),
-      path.join(process.cwd(), '../app/public/templates'),
-    ].filter(Boolean);
-    for (const dir of candidates) {
-      const full = path.join(dir, basename);
-      if (fsSync.existsSync(full)) return full;
-    }
-  }
-  return null;
 }
 
 /**
@@ -341,7 +313,7 @@ async function duplicateTemplate(req, res) {
       });
     }
 
-    const sourcePath = await resolveTemplateSourcePath(src.file_path);
+    const sourcePath = resolveTemplateSourcePath(src.file_path);
     if (!sourcePath) {
       return res.status(500).json({ error: 'File sorgente non trovato sul server', code: 'SOURCE_NOT_FOUND' });
     }

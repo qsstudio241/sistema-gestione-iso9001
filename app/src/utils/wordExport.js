@@ -59,7 +59,7 @@ const NORM_LABELS = {
     'ISO_14001':  'ISO 14001:2015',
     'ISO_45001':  'ISO 45001:2018',
     'ISO_3834_2': 'ISO 3834-2:2021',
-    'RDP_MSN':    'ISO 3834-2:2021 - Rapporto di Prova (Mason)',
+    'RDP_MSN':    'ISO 3834-2:2021 - Audit di Sistema Saldatura',
 };
 
 // ─── Mappa standard → template ────────────────────────────────────────────────

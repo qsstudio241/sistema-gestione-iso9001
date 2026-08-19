@@ -17,7 +17,7 @@ const STANDARDS_LIST = [
   { standard_id: 2, label: "ISO 14001:2015 - Ambiente" },
   { standard_id: 3, label: "ISO 45001:2018 - Salute e Sicurezza" },
   { standard_id: 6, label: "ISO 3834-2 - Audit Fornitori in Campo" },
-  { standard_id: 7, label: "RDP Mason - Audit di Sistema Saldatura" },
+  { standard_id: 7, label: "Audit di Sistema Saldatura (ISO 3834-2)" },
 ];
 
 /** Stesso raggruppamento già usato nel menu laterale (AppLayout.jsx: gruppi
