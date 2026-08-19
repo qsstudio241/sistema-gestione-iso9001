@@ -65,7 +65,7 @@ describe('extractDocumentText', () => {
     extractTextWithOCR.mockResolvedValue('Testo da scansione  OCR');
     const out = await extractDocumentText('/x/scan.pdf', 'application/pdf', 'scan.pdf');
     expect(out.text).toBe('Testo da scansione OCR');
-    expect(out.reason).toBeUndefined();
+    expect(out.reason).toBe('ocr_ok');
     expect(extractTextWithOCR).toHaveBeenCalledTimes(1);
   });
 
@@ -112,6 +112,7 @@ describe('extractDocumentText', () => {
     extractTextWithOCR.mockResolvedValue('Recuperato da OCR');
     const out = await extractDocumentText('/x/bad.pdf', 'application/pdf', 'bad.pdf');
     expect(out.text).toBe('Recuperato da OCR');
+    expect(out.reason).toBe('ocr_ok');
   });
 
   test('errore parsing PDF: OCR fallito → skip senza lanciare', async () => {

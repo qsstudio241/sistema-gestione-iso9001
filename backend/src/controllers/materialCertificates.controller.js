@@ -2,6 +2,8 @@
  * Material Compliance MC-4 — API certificati materiale (base e apporto).
  * Extract: ingest AI. Evaluate: Rule Engine MC-3 (zero LLM).
  * MC-I0: evaluate non usa lock updated_at (Date JS vs DATETIME2 → 409 spurio).
+ * MC-B: OCR via documentTextExtractor (reason ocr_ok); mapTextReason non collassa unavailable in skipped.
+
  * workflow_status=compliant solo da HITL approve, mai da AI o dal motore.
  */
 'use strict';
@@ -145,23 +147,27 @@ function parseRole(raw, fallback = 'base') {
 
 function mapTextReason(extractorReason, text) {
   const t = String(text || '').trim();
-  if (t.length >= MIN_TEXT_CHARS && !extractorReason) return 'text_layer';
-  if (t.length > 0 && t.length < MIN_TEXT_CHARS && !extractorReason) return 'ocr_poor';
   switch (extractorReason) {
+    case 'ocr_ok':
+      if (t.length >= MIN_TEXT_CHARS) return 'ocr_ok';
+      if (t.length > 0) return 'ocr_poor';
+      return 'ocr_failed';
     case 'ocr_unavailable':
-    case 'pdf_no_text_layer':
-      return 'ocr_skipped';
+      return 'ocr_unavailable';
     case 'ocr_failed':
     case 'file_not_found':
     case 'pdf_parse_error':
     case 'no_storage_path':
-      return 'ocr_failed';
+      return t.length > 0 ? 'ocr_poor' : 'ocr_failed';
+    case 'pdf_no_text_layer':
+      return t.length >= MIN_TEXT_CHARS ? 'ocr_ok' : 'ocr_unavailable';
     case 'unsupported':
+    case 'unsupported_format':
       return 'ocr_skipped';
     default:
       if (t.length >= MIN_TEXT_CHARS) return 'text_layer';
       if (t.length > 0) return 'ocr_poor';
-      return 'ocr_skipped';
+      return extractorReason || 'ocr_failed';
   }
 }
 

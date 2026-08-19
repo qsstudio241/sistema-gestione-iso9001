@@ -192,7 +192,7 @@ describe('materialCertificates.controller (MC-4)', () => {
     expect(res.json.mock.calls[0][0].data.workflow_status).not.toBe('compliant');
   });
 
-  it('extract senza testo → text_ready ocr_skipped, 200, non 500', async () => {
+  it('extract senza testo → text_ready ocr_unavailable, 200, non 500', async () => {
     query.mockResolvedValueOnce({ recordset: [{ ...CERT, workflow_status: 'received' }] });
     extractDocumentText.mockResolvedValueOnce({ text: null, reason: 'pdf_no_text_layer' });
     query.mockResolvedValueOnce({ recordset: [{ id: 11 }] });
@@ -201,7 +201,8 @@ describe('materialCertificates.controller (MC-4)', () => {
     expect(res.status).not.toHaveBeenCalledWith(500);
     const body = res.json.mock.calls[0][0];
     expect(body.data.workflow_status).toBe('text_ready');
-    expect(body.data.text_extract_reason).toBe('ocr_skipped');
+    expect(body.data.text_extract_reason).toBe('ocr_unavailable');
+    expect(body.data.text_extract_reason).not.toBe('ocr_skipped');
     expect(body.data.workflow_status).not.toBe('compliant');
     expect(extractStructuredByDocType).not.toHaveBeenCalled();
     const readySql = query.mock.calls.find((c) => /workflow_status = 'text_ready'/.test(sqlOf(c)));
@@ -222,7 +223,7 @@ describe('materialCertificates.controller (MC-4)', () => {
     expect(body.data.text_extract_reason).toBe('ocr_failed');
   });
 
-  it('extract OCR non disponibile → text_ready ocr_skipped, 200', async () => {
+  it('extract OCR non disponibile → text_ready ocr_unavailable, 200', async () => {
     query.mockResolvedValueOnce({ recordset: [{ ...CERT, workflow_status: 'received' }] });
     extractDocumentText.mockResolvedValueOnce({ text: null, reason: 'ocr_unavailable' });
     query.mockResolvedValueOnce({ recordset: [{ id: 11 }] });
@@ -231,7 +232,48 @@ describe('materialCertificates.controller (MC-4)', () => {
     expect(res.status).not.toHaveBeenCalledWith(500);
     const body = res.json.mock.calls[0][0];
     expect(body.data.workflow_status).toBe('text_ready');
-    expect(body.data.text_extract_reason).toBe('ocr_skipped');
+    expect(body.data.text_extract_reason).toBe('ocr_unavailable');
+    expect(body.data.text_extract_reason).not.toBe('ocr_skipped');
+  });
+
+  it('extract OCR ok su scan persiste testo e reason ocr_ok, non ocr_skipped', async () => {
+    const ocrText = 'DDT 000775RE materiale S355 colata 12174 scansione '.repeat(4);
+    query.mockResolvedValueOnce({ recordset: [{ ...CERT, workflow_status: 'received' }] });
+    extractDocumentText.mockResolvedValueOnce({ text: ocrText, reason: 'ocr_ok' });
+    extractStructuredByDocType.mockResolvedValueOnce({
+      model: 'test-model',
+      data: {
+        type_specific_data: {
+          material_role: 'base',
+          steel_designation: 'S355',
+          ddt_no: '000775RE',
+        },
+      },
+    });
+    query.mockResolvedValueOnce({ recordset: [{ id: 11 }] });
+    const res = mockRes();
+    await ctrl.extractCertificate(mockReq({ params: { id: '11' } }), res);
+    const body = res.json.mock.calls[0][0];
+    expect(res.status).not.toHaveBeenCalledWith(500);
+    expect(body.data.workflow_status).toBe('extracted');
+    expect(body.data.text_extract_reason).toBe('ocr_ok');
+    expect(body.data.text_extract_reason).not.toBe('ocr_skipped');
+    expect(body.data.text_extract_reason).not.toBe('text_layer');
+    expect(extractStructuredByDocType).toHaveBeenCalled();
+    const updateSql = query.mock.calls.find((c) => /workflow_status = 'extracted'/.test(sqlOf(c)));
+    expect(updateSql).toBeTruthy();
+    expect(updateSql[1].extracted_text).toBe(ocrText);
+    expect(updateSql[1].text_extract_reason).toBe('ocr_ok');
+  });
+
+  it('extract formato non PDF → text_ready ocr_skipped, 200', async () => {
+    query.mockResolvedValueOnce({ recordset: [{ ...CERT, workflow_status: 'received' }] });
+    extractDocumentText.mockResolvedValueOnce({ text: null, reason: 'unsupported_format' });
+    query.mockResolvedValueOnce({ recordset: [{ id: 11 }] });
+    const res = mockRes();
+    await ctrl.extractCertificate(mockReq({ params: { id: '11' } }), res);
+    expect(res.status).not.toHaveBeenCalledWith(500);
+    expect(res.json.mock.calls[0][0].data.text_extract_reason).toBe('ocr_skipped');
   });
 
   it('extract con testo persiste extracted_json e stato extracted', async () => {
@@ -256,6 +298,7 @@ describe('materialCertificates.controller (MC-4)', () => {
     const body = res.json.mock.calls[0][0];
     expect(body.data.workflow_status).toBe('extracted');
     expect(body.data.extracted_json.steel_designation).toBe('S355J2');
+    expect(body.data.text_extract_reason).toBe('text_layer');
     expect(body.data.workflow_status).not.toBe('compliant');
     const updateSql = query.mock.calls.find((c) => /workflow_status = 'extracted'/.test(sqlOf(c)));
     expect(updateSql).toBeTruthy();

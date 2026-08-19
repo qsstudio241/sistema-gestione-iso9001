@@ -126,7 +126,7 @@ async function extractDocumentText(storagePath, mimeType, fileName) {
 
     const ocrOut = await tryExtractPdfOcr(buffer, storagePath);
     if (ocrOut.text) {
-      return { text: ocrOut.text };
+      return { text: ocrOut.text, reason: 'ocr_ok' };
     }
     if (layerNorm) {
       return { text: layerNorm };
