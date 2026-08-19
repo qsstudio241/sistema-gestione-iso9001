@@ -8,7 +8,7 @@
 
 > **Risposta standard a «stato di avanzamento del progetto e priorità da affrontare»**: sintetizzare da questa sezione (moduli maturi + sessione più recente + tabella priorità sotto), **non** dal banner storico più sotto (superato, tenuto solo per traccia) né dall'archivio marzo 2026 [`docs/archive/PROJECT_CONTEXT_STATO_FUNZIONALITA_2026-03.md`](archive/PROJECT_CONTEXT_STATO_FUNZIONALITA_2026-03.md). **Aggiornare questa sezione a fine sessione** se emergono nuove priorità o se una priorità elencata viene chiusa (stesso principio delle "Lezioni apprese" in [GUIDA_CONSOLIDATA.md](GUIDA_CONSOLIDATA.md) — sintesi qui, dettaglio linkato).
 
-**Ultimo aggiornamento di questa sezione**: 19/08/2026 (ISO-7 RDP/NDT ↔ commessa PR #474 mig. 155; MC-I1 ruolo upload PR #473; SAL S1a #471).
+**Ultimo aggiornamento di questa sezione**: 19/08/2026 (MC-B OCR #476 deploy TEST+PROD; ISO-7 #474 mig. 155 anche PROD; MC-I1 #473).
 
 ### Moduli maturi (in produzione, uso quotidiano dai clienti Camellini/Mason)
 
@@ -16,9 +16,11 @@ Audit multi-standard (9001/14001/45001) · Non Conformità (workflow ISO 10.2 co
 
 ### Sessione più recente (19/08/2026)
 
-**ISO-7 — ponte RDP/NDT ↔ commessa (19/08, mergiata)** — `project_id` opzionale su verbali RDP e NDT (mig. **155**). Picker Commessa visibile, `disabled` senza azienda. Testo libero invariato. Helper `resolveOptionalProjectId`. Brief [`DEPUTYTASK1.md`](agent-tasks/DEPUTYTASK1.md) **CHIUSO**. [PR #474](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/474). Migrazione 155 **applicata su TEST** (6/6); backend TEST PID `967399` → `981527`, health 200. **Produzione non toccata** (solo su richiesta). Prossima 3834: **ISO-5** Word Welding Book; **ISO-4** resta bloccata (file Mason non in git).
+**MC-B OCR scan (19/08, mergiata + deploy)** — [#476](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/476). Estrattore tagga `ocr_ok`; `ocr_skipped` solo formato non PDF. Deploy TEST PID `981527`→`993561`, PROD `967465`→`1005497`, health 200. Smoke PROD azienda 179 id 7 → Estrai HTTP 200, `extracted`, `ocr_ok`, 4397 caratteri. Brief [`DEPUTYTASK_MC_INGEST.md`](agent-tasks/DEPUTYTASK_MC_INGEST.md) **CHIUSO**. Prossima ingest: **MC-I2**. ISO-4 **non** toccata.
 
-**MC-I1 ruolo upload (19/08)** — in Materiali si sceglie **Base** o **Apporto** prima di Carica (default Base). Distinto dai filtri KPI. Brief [`DEPUTYTASK_MC_INGEST.md`](agent-tasks/DEPUTYTASK_MC_INGEST.md) **CHIUSO**. [PR #473](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/473). Prossima ingest: **MC-B** (OCR scan; S1a già in `main`). ISO-4 **non** toccata.
+**ISO-7 — ponte RDP/NDT ↔ commessa (19/08, mergiata)** — `project_id` opzionale su verbali RDP e NDT (mig. **155**). Picker Commessa visibile, `disabled` senza azienda. Testo libero invariato. Helper `resolveOptionalProjectId`. Brief [`DEPUTYTASK1.md`](agent-tasks/DEPUTYTASK1.md) **CHIUSO**. [PR #474](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/474). Migrazione 155 su TEST (hub ISO-7) e **su PROD** (19/08, insieme al deploy backend MC-B: il manifest includeva già il codice ISO-7).
+
+**MC-I1 ruolo upload (19/08)** — in Materiali si sceglie **Base** o **Apporto** prima di Carica (default Base). Distinto dai filtri KPI. Brief [`DEPUTYTASK_MC_INGEST.md`](agent-tasks/DEPUTYTASK_MC_INGEST.md) **CHIUSO**. [PR #473](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/473).
 
 ### Sessione precedente (18/08/2026)
 
@@ -109,12 +111,12 @@ Sessione prodotto precedente (10/08/2026): fix filtri dashboard duplicati (Quali
 | 1 | **Modulo Notifiche/Alert — destinatario allerte qualifiche non è una scelta esplicita in anagrafica** | Oggi risolto da un algoritmo a cascata, non da una scelta visibile in UI | `qualificationAlert.service.js` (`resolveWeldingCoordinatorRecipients`) |
 | 2 | **Shell dialog di revisione ingest — markup/CSS duplicato** (non urgente, basso rischio) | `IngestReviewDialog.jsx` vs dialog interno `ReprocessQueueBanner.jsx`: guscio overlay duplicato (~60-80 righe); pattern sistemico su molti altri modal nel progetto | Vedi backlog sotto per dettaglio |
 | 3 | **Pagina Impostazioni → Organizzazione (P.IVA + logo tenant)** | PR #10 aperta da aprile 2026, 180 file in conflitto — richiede ricostruzione, non merge | Vedi riga dedicata nel backlog sotto |
-| 4 | **Material Compliance AI — ingest certificati (base e apporto)** | MC-0…MC-5 + MC-I0 + **MC-I1** (PR #473). Prossima: **MC-B** OCR scan (S1a già in `main`) | [PLAN](agent-tasks/PLAN_MATERIAL_COMPLIANCE_SLICES.md) · brief [MC-I1 CHIUSO](agent-tasks/DEPUTYTASK_MC_INGEST.md) |
+| 4 | **Material Compliance AI — ingest certificati (base e apporto)** | MC-0…MC-5 + MC-I0 + MC-I1 + **MC-B** (PR #476, deploy TEST+PROD). Prossima: **MC-I2** colata/DDT/norma 3.1 | [PLAN](agent-tasks/PLAN_MATERIAL_COMPLIANCE_SLICES.md) · brief [MC-B CHIUSO](agent-tasks/DEPUTYTASK_MC_INGEST.md) |
 | 5 | **Rischi — ingest / data riesame (ROO-18, HITL)** | Lista riesami ambito c’è (ROO-17, verificata su TEST); data riesame esplicita e ingest→review solo dopo conferma | [PLAN §7](agent-tasks/PLAN_RISCHI_OPPORTUNITA_OBIETTIVI_SLICES.md) |
 | 6 | **SAL AI evidenze — OCR + documento mancante (HITL)** | **S1a** mergiata (#471): OCR PDF in `documentTextExtractor`. Prossima: **S1b** OCR immagini | [PLAN](agent-tasks/PLAN_SAL_AI_EVIDENCE_SLICES.md) · brief [S1a CHIUSO](agent-tasks/DEPUTYTASK.md) |
 | 7 | **ISO 3834 — completezza per processi (RBAC + ponti + report)** | ISO-1* + ISO-2 + ISO-3 mergiate e ISO-3 deployata. Prossima: ISO-4 Word RDP Mason (serve il file) | [PLAN](agent-tasks/PLAN_3834_SLICES.md) · brief [ISO-3 CHIUSO](agent-tasks/DEPUTYTASK1.md) |
 | 8 | **Second Brain — Assistente di Ambito (SB-1 fatti, zero LLM)** | Studio + clienti paganti: fatti dell'Ambito in app, non AIOS Claude. Chat dopo i numeri veri | [PLAN](agent-tasks/PLAN_SECOND_BRAIN_SLICES.md) · brief [SB-1](agent-tasks/DEPUTYTASK2.md) |
-| 9 | **Multimodal RAG — figure normative in locale** | MR-0 + **MR-1** mergiati (#464/#469, mig. 154). **MR-2 non aperta** | [PLAN](agent-tasks/PLAN_MULTIMODAL_RAG_SLICES.md) · brief [MR-1 CHIUSO](agent-tasks/DEPUTYTASK5.md) |
+| 9 | **Multimodal RAG — figure normative in locale** | MR-0 + MR-1 + **MR-2** mergiati (#464/#469/#475). Prossima da piano | [PLAN](agent-tasks/PLAN_MULTIMODAL_RAG_SLICES.md) · brief [MR-2](agent-tasks/DEPUTYTASK5.md) |
 
 > Nota: **Modulo NC — card statistiche duplicate da due tendine** (era riga 1) è stato chiuso da PR #374 (10/08/2026) — riga rimossa da questa tabella, non ancora aggiornata al momento in cui è stata scritta DEPUTYTASK4.
 
