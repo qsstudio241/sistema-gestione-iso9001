@@ -8,13 +8,15 @@
 
 > **Risposta standard a «stato di avanzamento del progetto e priorità da affrontare»**: sintetizzare da questa sezione (moduli maturi + sessione più recente + tabella priorità sotto), **non** dal banner storico più sotto (superato, tenuto solo per traccia) né dall'archivio marzo 2026 [`docs/archive/PROJECT_CONTEXT_STATO_FUNZIONALITA_2026-03.md`](archive/PROJECT_CONTEXT_STATO_FUNZIONALITA_2026-03.md). **Aggiornare questa sezione a fine sessione** se emergono nuove priorità o se una priorità elencata viene chiusa (stesso principio delle "Lezioni apprese" in [GUIDA_CONSOLIDATA.md](GUIDA_CONSOLIDATA.md) — sintesi qui, dettaglio linkato).
 
-**Ultimo aggiornamento di questa sezione**: 19/08/2026 (MC-I1 ruolo upload PR #473; SAL S1a OCR PDF PR #471; MR-1 persist figure PR #469 mig. 154; ISO-6 #465; MC-I0 #463).
+**Ultimo aggiornamento di questa sezione**: 19/08/2026 (ISO-7 RDP/NDT ↔ commessa PR #474 mig. 155; MC-I1 ruolo upload PR #473; SAL S1a #471).
 
 ### Moduli maturi (in produzione, uso quotidiano dai clienti Camellini/Mason)
 
 Audit multi-standard (9001/14001/45001) · Non Conformità (workflow ISO 10.2 completo) · Qualifiche Personale saldatori/NDT/coordinatori (ISO 9606-1/14732/14731/9712) · Saldatura (WPQR, generazione WPS da WPQR, Welding Book, Commesse ISO 3834, Dashboard 3834) · SAL (gap analysis requisiti con AI) · Registro Documenti + Scadenzari · Notifiche/Alert (documenti/NC/qualifiche) · Riesame di Direzione · RBAC multi-tenant (`company_access`) · Registro obblighi legali (ambiente + sicurezza) · Assistente AI / Gap Analysis euristica.
 
 ### Sessione più recente (19/08/2026)
+
+**ISO-7 — ponte RDP/NDT ↔ commessa (19/08, mergiata)** — `project_id` opzionale su verbali RDP e NDT (mig. **155**). Picker Commessa visibile, `disabled` senza azienda. Testo libero invariato. Helper `resolveOptionalProjectId`. Brief [`DEPUTYTASK1.md`](agent-tasks/DEPUTYTASK1.md) **CHIUSO**. [PR #474](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/474). Migrazione 155 **applicata su TEST** (6/6); backend TEST PID `967399` → `981527`, health 200. **Produzione non toccata** (solo su richiesta). Prossima 3834: **ISO-5** Word Welding Book; **ISO-4** resta bloccata (file Mason non in git).
 
 **MC-I1 ruolo upload (19/08)** — in Materiali si sceglie **Base** o **Apporto** prima di Carica (default Base). Distinto dai filtri KPI. Brief [`DEPUTYTASK_MC_INGEST.md`](agent-tasks/DEPUTYTASK_MC_INGEST.md) **CHIUSO**. [PR #473](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/473). Prossima ingest: **MC-B** (OCR scan; S1a già in `main`). ISO-4 **non** toccata.
 

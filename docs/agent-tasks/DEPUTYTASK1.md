@@ -40,6 +40,6 @@ Un verbale RDP o NDT può (non deve) essere collegato a una commessa ISO 3834. S
 - L1 backend: **36/36** (helper, migrazione 155, RDP, NDT).
 - Bugbot (1 run, slice chiusa): rilievo su `project_id` stale se cambia azienda senza mandare il campo — **corretto** in update RDP/NDT (400 `PROJECT_COMPANY_MISMATCH`). Nessun secondo Bugbot.
 
-Dopo merge: migrazione **prima su TEST** (`SGQ_MIGRATION_TARGET=test node /tmp/run-migration-155-vps.js`). Produzione solo su richiesta.
+Dopo merge: migrazione **155 applicata su TEST** (6/6). Backend TEST PID `981527`, health 200. Produzione solo su richiesta.
 
 Prossima 3834: **ISO-5** Word Welding Book, oppure **ISO-4** se arriva il file Mason.
