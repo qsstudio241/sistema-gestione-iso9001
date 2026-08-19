@@ -94,7 +94,8 @@
                                      "src/utils/linkedLegislationParser.js",
                                      "src/utils/riskScore.js",
                                      "src/utils/riskReviews.js",
-                                     "src/utils/technicalReviewChecklist.js"
+                                     "src/utils/technicalReviewChecklist.js",
+                                     "src/utils/resolveOptionalProjectId.js"
                                  ]
                    },
                    {
