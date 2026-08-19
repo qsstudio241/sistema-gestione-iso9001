@@ -173,6 +173,22 @@ describe('createRdpReport — company_access', () => {
     expect(res.status).toHaveBeenCalledWith(201);
     expect(res.json).toHaveBeenCalledWith(expect.objectContaining({ success: true }));
   });
+
+  it('create con project_id di altra azienda → 400', async () => {
+    query.mockImplementation(async (sql) => {
+      if (sql.includes('FROM dbo.projects')) {
+        return { recordset: [{ id: 12, company_id: 99 }] };
+      }
+      return { recordset: [] };
+    });
+    const res = mockRes();
+    await ctrl.createRdpReport(mockReq({
+      user: studioAdmin,
+      body: { company_id: 12, client: 'Cliente', project_id: 12 },
+    }), res);
+    expect(res.status).toHaveBeenCalledWith(400);
+    expect(res.json).toHaveBeenCalledWith(expect.objectContaining({ code: 'PROJECT_COMPANY_MISMATCH' }));
+  });
 });
 
 describe('updateRdpReport — company_access', () => {
