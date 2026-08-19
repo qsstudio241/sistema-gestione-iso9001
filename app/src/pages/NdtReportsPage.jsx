@@ -195,6 +195,7 @@ function NdtReportForm({ report, companies, availableInstruments, onSave, onCanc
         client: "",
         supplier_name: "",
         job_order: "",
+        project_id: "",
         wps_number: "",
         wps_id: "",
         base_material: "",
@@ -219,6 +220,7 @@ function NdtReportForm({ report, companies, availableInstruments, onSave, onCanc
             client:               report.client || "",
             supplier_name:        report.supplier_name || "",
             job_order:            report.job_order || "",
+            project_id:           report.project_id != null ? String(report.project_id) : "",
             wps_number:           report.wps_number || "",
             wps_id:               report.wps_id || "",
             base_material:        report.base_material || "",
@@ -270,11 +272,21 @@ function NdtReportForm({ report, companies, availableInstruments, onSave, onCanc
 
     // Fornitori filtrati per il cliente selezionato (si ricaricano al cambio company_id)
     const [suppliers, setSuppliers] = useState([]);
+    const [projects, setProjects] = useState([]);
     useEffect(() => {
         if (!form.company_id) { setSuppliers([]); return; }
         apiService.getSuppliers({ company_id: form.company_id, limit: 200 })
             .then(res => setSuppliers(res?.data || []))
             .catch(() => setSuppliers([]));
+    }, [form.company_id]);
+
+    useEffect(() => {
+        if (!form.company_id) { setProjects([]); return; }
+        let cancelled = false;
+        apiService.getProjects({ company_id: form.company_id, limit: 100 })
+            .then((res) => { if (!cancelled) setProjects(res?.data || []); })
+            .catch(() => { if (!cancelled) setProjects([]); });
+        return () => { cancelled = true; };
     }, [form.company_id]);
 
     // WPS filtrate per il cliente selezionato (si ricaricano al cambio company_id)
@@ -334,6 +346,7 @@ function NdtReportForm({ report, companies, availableInstruments, onSave, onCanc
             const payload = {
                 ...form,
                 company_id: form.company_id ? parseInt(form.company_id) : null,
+                project_id: form.project_id ? parseInt(form.project_id, 10) : null,
                 status: targetStatus || form.status,
                 items,
                 instrument_ids: selectedInstruments.map(i => ({ asset_id: i.asset_id, instrument_role: i.role })),
@@ -433,9 +446,12 @@ function NdtReportForm({ report, companies, availableInstruments, onSave, onCanc
                                     <select value={form.company_id} onChange={e => {
                                         const cid = e.target.value;
                                         const company = companies.find(c => String(c.id) === String(cid));
-                                        set("company_id", cid);
-                                        // Aggiorna anche il campo client per il Word
-                                        set("client", company ? company.name : "");
+                                        setForm(f => ({
+                                            ...f,
+                                            company_id: cid,
+                                            client: company ? company.name : "",
+                                            project_id: "",
+                                        }));
                                     }}>
                                         <option value="">{"— seleziona azienda —"}</option>
                                         {companies.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
@@ -479,9 +495,43 @@ function NdtReportForm({ report, companies, availableInstruments, onSave, onCanc
                             </div>
                             <div className="ndt-form-row">
                                 <div className="ndt-form-group">
+                                    <label htmlFor="ndt-project">Commessa (opzionale)</label>
+                                    <select
+                                        id="ndt-project"
+                                        value={form.project_id}
+                                        disabled={!form.company_id}
+                                        title={form.company_id ? undefined : "Seleziona prima l'azienda"}
+                                        onChange={e => {
+                                            const pid = e.target.value;
+                                            const p = projects.find((x) => String(x.id) === String(pid));
+                                            setForm(f => ({
+                                                ...f,
+                                                project_id: pid,
+                                                job_order: p?.project_code || f.job_order,
+                                            }));
+                                        }}
+                                    >
+                                        <option value="">
+                                            {form.company_id ? "\u2014 Nessuna commessa \u2014" : "\u2014 Seleziona prima l'azienda \u2014"}
+                                        </option>
+                                        {form.project_id && !projects.some((p) => String(p.id) === String(form.project_id)) && (
+                                            <option value={form.project_id}>
+                                                {report?.project_code || `Commessa #${form.project_id}`}
+                                            </option>
+                                        )}
+                                        {projects.map((p) => (
+                                            <option key={p.id} value={p.id}>
+                                                {p.project_code}{p.description ? ` \u2014 ${p.description}` : ""}
+                                            </option>
+                                        ))}
+                                    </select>
+                                </div>
+                                <div className="ndt-form-group">
                                     <label>Commessa / Ordine</label>
                                     <input type="text" value={form.job_order} onChange={e => set("job_order", e.target.value)} placeholder="es. ORD-2026-001" />
                                 </div>
+                            </div>
+                            <div className="ndt-form-row">
                                 <div className="ndt-form-group ndt-grow">
                                     <label>{"Fornitore ispezionato"}<span className="eq-computed-label"> (stabilimento dove si va fisicamente)</span></label>
                                     {/* Select dall'anagrafica fornitori + testo libero per fornitori non censiti */}
@@ -1024,7 +1074,7 @@ export default function NdtReportsPage() {
                                         <td className="ndt-mono">{r.report_number || <em>bozza</em>}</td>
                                         <td><span className="ndt-type-tag">{r.report_type}</span></td>
                                         <td>{r.client || "—"}</td>
-                                        <td>{r.job_order || "—"}</td>
+                                        <td>{r.project_code || r.job_order || "—"}</td>
                                         <td>{r.inspector || "—"}</td>
                                         <td>{r.inspection_date ? formatDate(r.inspection_date) : "—"}</td>
                                         <td className="ndt-center">{r.items_count}</td>
