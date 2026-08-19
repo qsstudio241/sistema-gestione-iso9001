@@ -56,8 +56,10 @@ describe("QualificationForm — azienda fissata, picker persona resta", () => {
     });
 
     expect(screen.queryByRole("option", { name: /seleziona azienda/i })).toBeNull();
-    expect(screen.queryByRole("combobox", { name: /azienda/i })).toBeNull();
-    expect(screen.getByLabelText("Azienda non modificabile")).toHaveTextContent("Mason Demo");
+    expect(screen.queryByRole("option", { name: "Altra Azienda SRL" })).toBeNull();
+    const locked = screen.getByLabelText("Azienda non modificabile");
+    expect(locked.tagName).toBe("SPAN");
+    expect(locked).toHaveTextContent("Mason Demo");
     expect(screen.getByLabelText("Da anagrafica azienda")).toBeInTheDocument();
     expect(screen.getByRole("option", { name: /testo libero/i })).toBeInTheDocument();
 
