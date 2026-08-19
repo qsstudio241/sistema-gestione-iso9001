@@ -85,6 +85,7 @@ Senza rete, senza download CLIP.
 
 - GUIDA: ingest figure = extract locale + persist CLIP; stesso tenant; AI non certifica.
 - Roadmap: riga MR-3 + priorità 9 → prossima MR-4 (non aperta).
+- Hub: [PR #485](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/485).
 
 ---
 
