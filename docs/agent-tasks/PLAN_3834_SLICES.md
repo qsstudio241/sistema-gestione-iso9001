@@ -3,7 +3,7 @@
 > **Destinazione**: ogni processo della ISO 3834-2/-3 (adattato al livello 2/3/4 in anagrafica) ha un percorso verificabile: dati + ponte con gli altri moduli + import/export o report. I gap residui sono solo HITL o fuori scope.
 > **Spec / ADR**: [ISO 3834-3:2021](../Normative/Normative%20NORMA_00009_%20UNI%20EN%20ISO%203834-3_2021%20Rev.%200.md) §5–18 · [ISO 3834-5:2021](../Normative/Normative%20NORMA_00008_%20UNI%20EN%20ISO%203834-5_2021%20Rev.%200.md) · [ADR-016](../adr/ADR-016-welding-book-e-modulo-strumenti.md) · [WPS](../specs/MODULO_WPS_GENERAZIONE_SCOPO_E_ROADMAP.md)
 > **Gap di partenza**: [GAP_RDP_3834_2026-08-06.md](../gap-reports/GAP_RDP_3834_2026-08-06.md) (Mason, 06/08) · aggiornamento processi [GAP_RDP_3834_2026-08-15.md](../gap-reports/GAP_RDP_3834_2026-08-15.md)
-> **Brief**: [DEPUTYTASK1.md](DEPUTYTASK1.md) — slice **ISO-7** **CHIUSO** (PR [#474](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/474), ponte RDP/NDT ↔ commessa). ISO-6 **CHIUSO** (PR #465). Serie ISO-1*…ISO-3 chiuse. ISO-4 Word RDP **BLOCCATA** (file Mason non in git).
+> **Brief**: [DEPUTYTASK1.md](DEPUTYTASK1.md) — slice **ISO-7** **CHIUSO** (PR [#474](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/474)). ISO-4 Word **non** è «manca il file»: i due Word Mason sono in [`docs/reference/mason-rdp/`](../reference/mason-rdp/) e mostrano che RDP in Audit e RDP in Saldatura sono **due prodotti diversi**. Analisi: [`GAP_RDP_DUE_DOCUMENTI_MASON_2026-08-19.md`](../gap-reports/GAP_RDP_DUE_DOCUMENTI_MASON_2026-08-19.md). HITL prima di qualsiasi export.
 > **Non confondere**: [DEPUTYTASK.md](DEPUTYTASK.md) è **CHIUSO** (SAL S1a, PR #471). Non sovrascriverlo. Non toccare `DEPUTYTASK_MC_INGEST.md`.
 
 ## Fuori scope
@@ -18,7 +18,7 @@
 ## Non ancora specificato
 
 - Registro **subfornitura saldatura** dedicato (ISO-11): oggi solo checkbox + cliente commessa — da aprire solo se un cliente lo chiede in campo
-- Il file Word Mason `Check List Audit/RDP_MSN-260127-01_REV_0.docx` **non è in git** (solo citato). ISO-4: copiarlo in `app/public/templates/rdp-mason-report.docx` quando il deputy lo trova in cartella locale / archivio; se manca, chiedere il file al committente (non inventare un layout)
+- Il file Word Mason `RDP_MSN-260127-01` **è in git** ([`docs/reference/mason-rdp/`](../reference/mason-rdp/)). Non è il template del modulo `/saldatura/rdp`: è una **check list visita ispettiva** già (quasi) nello standard Audit **ISO 3834-2**. Secondo file `RDP_MSN-260223-01` = resoconto avanzamento + foto, prodotto diverso. Vedi [gap 19/08](../gap-reports/GAP_RDP_DUE_DOCUMENTI_MASON_2026-08-19.md).
 - **Norme certificati 3.1**: consegnate 16/08/2026 (EN 10204, EN 10168, ISO 10474/404/6929 + facsimile). Soglie lamiere EN 10025-2:2019 in [`EN-10025-2-acciai-strutturali.md`](../reference/EN-10025-2-acciai-strutturali.md). Inventario fonti (dichiarare, poi partire): [`MATERIAL-COMPLIANCE-NORME-SINTESI.md`](../reference/MATERIAL-COMPLIANCE-NORME-SINTESI.md).
 
 ## Decisioni già prese
@@ -26,7 +26,7 @@
 ### HITL committente 16/08/2026
 
 - **§5.3 — niente blocco**: la commessa si può aprire anche con checklist incompleta. ISO-2 = solo tracciabilità (data/utente che ha completato) + export Word della checklist. Il banner di avviso resta.
-- **Word RDP**: usare il verbale Mason già in cartella (`RDP_MSN-260127-01_REV_0.docx`) come modello. ISO-4 diventa AFK (non più in attesa di un layout nuovo).
+- **Word RDP**: **HITL 19/08** — i due verbali Mason non sono un unico template. Non copiare 27/01 su `RDPModule`. Vedi [gap due documenti](../gap-reports/GAP_RDP_DUE_DOCUMENTI_MASON_2026-08-19.md).
 - **Livello 2/3/4**: obiettivo = **vedere meno schermate** al livello più semplice. **Partiamo senza filtri** (stesse schermate per tutti; etichetta 2/3/4 in anagrafica). I filtri per livello si aggiungono dopo, non in ISO-1*.
 - **Consumabili / certificati materiali / PWHT**: **non** un CRUD 3834. Epic **Material Compliance**: scan → ingest (riuso qualifiche/WPQR) → regole → HITL. **UI MVP**: tab/elenco con **DDT** + griglia (colonne in [PLAN MC](PLAN_MATERIAL_COMPLIANCE_SLICES.md) § Griglia) — **base e apporto nella stessa lista** (`material_role`). ISO-12 esce da questo piano.
 
@@ -89,7 +89,7 @@ Registro documenti ← ingest WPS/WPQR/qualifiche; RDP/WB ancora fuori
 | WPQR | Ingest AI (pipeline matura) | — | P2 Tabella 7 Level 1 |
 | WPS | Genera da WPQR; PDF legacy | Word Annex A 15609-1 | Feedback Mason |
 | Commessa / §5.3 | Checklist + timbro + Word (ISO-2). Capitolato: persistenza mig. 116 + chiavi 10204/apporto (ISO-3) | — | ISO-4 Word RDP Mason |
-| RDP | Manuale + foto | **Assente** (`TEMPLATE_MAP['RDP_MSN']` punta al template audit 3834) | ISO-4 da verbale Mason `RDP_MSN-260127-01` |
+| RDP | Manuale + foto | **Assente** (e il Word Mason 27/01 appartiene all’Audit ISO 3834-2, non a questo modulo) | HITL [gap 19/08](../gap-reports/GAP_RDP_DUE_DOCUMENTI_MASON_2026-08-19.md) |
 | Verbali NDT | Manuale + foto | Word VT | — |
 | Welding Book | Manuale | **Assente** (hint in UI: Fase 2–3) | ISO-5 |
 | Audit ISO 3834 | Checklist audit | Word `ISO3834-audit-report.docx` (test L1) | — |
@@ -107,7 +107,7 @@ Ogni slice è un **tracer verticale** (un processo o un ponte), non «tutto il D
 | **ISO-1d** | RBAC su Welding Book | `weldingBooks.controller.js` | ISO-1a | Fatto (PR #442) |
 | **ISO-2** | Riesame §5.3: data/utente + Word (niente blocco) | `projects.controller.js`, `ProjectsPage.jsx`, mini-export Word | — | Fatto (PR #443) |
 | **ISO-3** | Chiavi certificato nel prompt capitolato | `caseTextAnalysis.service.js` + `aiContextBuilder.service.js` | norme 16/08 | Fatto |
-| **ISO-4** | Export Word RDP da verbale Mason | `app/public/templates/rdp-mason-report.docx` (da `RDP_MSN-260127-01`), `wordExport.js`, `RDPModule.jsx` | file Mason in cartella | AFK |
+| **ISO-4** | Export Word visita Mason | **non** `rdp-mason-report.docx` su RDPModule senza HITL. Check list 27/01 = Audit ISO 3834-2; resoconto 23/02 = altro tipo | file in `docs/reference/mason-rdp/` | HITL |
 | **ISO-5** | Export Word Welding Book + foto cordone | `WeldingBooksPage.jsx`, `wordExport` (pattern VT/WPS), allegati | ADR-016 Fase 2–3 | AFK |
 | **ISO-6** | Ponte NC ↔ commessa | `nc.controller.js` + `NCPage` / drawer: `project_id` opzionale | — | Fatto (PR #465) |
 | **ISO-7** | Ponte RDP/NDT ↔ commessa | FK `project_id` (o picker) su RDP e NDT | ISO-1a/1b | Fatto (PR #474) |
@@ -128,7 +128,7 @@ Ogni slice è un **tracer verticale** (un processo o un ponte), non «tutto il D
 |-----|-----------|
 | **ISO-7** RDP/NDT ↔ commessa | fatto [PR #474](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/474); migrazione **155 applicata su TEST**; PROD solo su richiesta |
 | **ISO-5** Word Welding Book | dopo 155 su TEST |
-| **ISO-4** Word RDP: file Mason non è in git | file `RDP_MSN-260127-01` in cartella / dal committente |
+| **ISO-4** Word visita Mason | HITL [gap 19/08](../gap-reports/GAP_RDP_DUE_DOCUMENTI_MASON_2026-08-19.md) — file in git, architettura prima dell’export |
 | **ISO-8** ponte offerta → commessa | file disgiunti da ISO-5 |
 | **Ingest / MR-2** | **altra chat** — non mescolare (`DEPUTYTASK5.md` APERTO) |
 
