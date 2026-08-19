@@ -1,40 +1,45 @@
-# DEPUTYTASK1 — ISO-6: ponte NC ↔ commessa (`project_id` opzionale)
+# DEPUTYTASK1 — ISO-7: ponte RDP/NDT ↔ commessa (`project_id` opzionale)
 
-**Stato:** CHIUSO  
-**Aperto:** 18/08/2026  
-**Chiuso:** 18/08/2026  
+**Stato:** CHIUSO — TEST OK  
+**Aperto:** 19/08/2026  
+**Chiuso:** 19/08/2026  
 **Piano:** [`PLAN_3834_SLICES.md`](PLAN_3834_SLICES.md)  
-**PR:** [#465](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/465)  
-**Rischio:** Medio — migrazione nullable + NC; PR + gate Bugbot; Cloud **non** mergia
+**PR:** [#474](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/474)  
+**Rischio:** Medio — migrazione nullable + RDP/NDT; PR + 1 Bugbot a slice chiusa; Cloud **non** mergia
 
 ---
 
 ## Slice
 
-Una NC può (non deve) essere collegata a una commessa ISO 3834. Stesso pattern del Welding Book.
+Un verbale RDP o NDT può (non deve) essere collegato a una commessa ISO 3834. Stesso pattern di NC (ISO-6) e Welding Book. Il testo libero (`project_name` / `job_order`) resta.
 
 ### File
 
-- `database/migrations/153_nc_project_id.sql` + `backend/scripts/run-migration-153-vps.js`
-- `backend/src/controllers/nc.controller.js` (+ test)
-- `app/src/utils/ncCreateHelpers.js`, `NcCreateModal.jsx`, `NcDetailPanel.jsx`, `NCPage.jsx`
+- `database/migrations/155_rdp_ndt_project_id.sql` + `backend/scripts/run-migration-155-vps.js`
+- `backend/src/utils/resolveOptionalProjectId.js` (+ test)
+- `backend/src/controllers/rdp.controller.js` (+ test)
+- `backend/src/controllers/ndtReports.controller.js` (+ test)
+- `app/src/pages/RDPModule.jsx`, `app/src/pages/NdtReportsPage.jsx`
+- `backend/scripts/deploy-manifest.json`
+- `docs/agent-tasks/PLAN_3834_SLICES.md`
 
 ### Cosa NON è stato toccato
 
-- `docs/agent-tasks/DEPUTYTASK.md` (SAL S1a resta APERTO)
-- `docs/agent-tasks/DEPUTYTASK_MC_INGEST.md` (deputy ingest in altra chat)
-- Ingest MC, SAL, Materiali, ISO-4 (file Mason assente)
+- `docs/agent-tasks/DEPUTYTASK.md` (SAL S1a resta CHIUSO)
+- `docs/agent-tasks/DEPUTYTASK_MC_INGEST.md`
+- `docs/GUIDA_CONSOLIDATA.md`, `docs/PROJECT_ROADMAP.md` (sync hub dopo merge)
+- Ingest MC, Materiali, SAL, NC, ISO-4 (file Mason assente)
 
 ---
 
 ## Esito
 
-- Colonna `project_id` nullable, FK `ON DELETE SET NULL`, indice. Niente CASCADE.
-- Create/update: `project_id` opzionale; 400 `PROJECT_COMPANY_MISMATCH` se azienda diversa; 404 se commessa fuori org.
-- Lista/dettaglio: `project_code`. Griglia NC: colonna Commessa.
-- Picker visibile, `disabled` senza azienda.
-- L1: backend 26/26; frontend 31/31 (ncCreate, modal, detail).
+- Colonne `project_id` nullable, FK `ON DELETE SET NULL`, indici. Niente CASCADE.
+- Create/update: `project_id` opzionale; 400 `PROJECT_COMPANY_MISMATCH` se azienda diversa; 404 se commessa fuori org; omettere il campo in update non azzera.
+- Lista/dettaglio: `project_code`. Picker visibile, `disabled` senza azienda.
+- L1 backend: **36/36** (helper, migrazione 155, RDP, NDT).
+- Bugbot (1 run, slice chiusa): rilievo su `project_id` stale se cambia azienda senza mandare il campo — **corretto** in update RDP/NDT (400 `PROJECT_COMPANY_MISMATCH`). Nessun secondo Bugbot.
 
-Dopo merge: migrazione **prima su TEST** (`SGQ_MIGRATION_TARGET=test node /tmp/run-migration-153-vps.js`). Produzione solo su richiesta.
+Dopo merge: migrazione **prima su TEST** (`SGQ_MIGRATION_TARGET=test node /tmp/run-migration-155-vps.js`). Produzione solo su richiesta.
 
-Prossima 3834: **ISO-7** (RDP/NDT ↔ commessa) oppure **ISO-4** se arriva il file Mason.
+Prossima 3834: **ISO-5** Word Welding Book, oppure **ISO-4** se arriva il file Mason.

@@ -3,8 +3,8 @@
 > **Destinazione**: ogni processo della ISO 3834-2/-3 (adattato al livello 2/3/4 in anagrafica) ha un percorso verificabile: dati + ponte con gli altri moduli + import/export o report. I gap residui sono solo HITL o fuori scope.
 > **Spec / ADR**: [ISO 3834-3:2021](../Normative/Normative%20NORMA_00009_%20UNI%20EN%20ISO%203834-3_2021%20Rev.%200.md) §5–18 · [ISO 3834-5:2021](../Normative/Normative%20NORMA_00008_%20UNI%20EN%20ISO%203834-5_2021%20Rev.%200.md) · [ADR-016](../adr/ADR-016-welding-book-e-modulo-strumenti.md) · [WPS](../specs/MODULO_WPS_GENERAZIONE_SCOPO_E_ROADMAP.md)
 > **Gap di partenza**: [GAP_RDP_3834_2026-08-06.md](../gap-reports/GAP_RDP_3834_2026-08-06.md) (Mason, 06/08) · aggiornamento processi [GAP_RDP_3834_2026-08-15.md](../gap-reports/GAP_RDP_3834_2026-08-15.md)
-> **Brief**: [DEPUTYTASK1.md](DEPUTYTASK1.md) — slice **ISO-6** **CHIUSO** (PR #465, ponte NC ↔ commessa). Serie ISO-1*…ISO-3 chiuse. ISO-4 Word RDP **BLOCCATA** (file Mason non in git).
-> **Non confondere**: [DEPUTYTASK.md](DEPUTYTASK.md) resta **APERTO** sulla slice SAL S1a (OCR). Non sovrascriverlo.
+> **Brief**: [DEPUTYTASK1.md](DEPUTYTASK1.md) — slice **ISO-7** **CHIUSO** (PR [#474](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/474), ponte RDP/NDT ↔ commessa). ISO-6 **CHIUSO** (PR #465). Serie ISO-1*…ISO-3 chiuse. ISO-4 Word RDP **BLOCCATA** (file Mason non in git).
+> **Non confondere**: [DEPUTYTASK.md](DEPUTYTASK.md) è **CHIUSO** (SAL S1a, PR #471). Non sovrascriverlo. Non toccare `DEPUTYTASK_MC_INGEST.md`.
 
 ## Fuori scope
 
@@ -56,7 +56,7 @@ La norma non è una checklist a sezioni 4–10: è un **sistema di processi**. C
 | 11 | Consumabili (immagazzinamento) | — | Epic Material Compliance | Ingest da riusare (qualifiche/WPQR) | — | Assente | Fuori da questo piano — [PLAN MC](PLAN_MATERIAL_COMPLIANCE_SLICES.md) |
 | 12 | Materiali base (immagazzinamento) | — | Epic Material Compliance | Certificati 3.1 (spesso scan) | — | Assente | Come §11 |
 | 13 | Trattamento termico dopo saldatura | Solo voce checklist §5.3 | Epic MC (evoluzione, dopo 3.1) | — | — | Assente | Non aprire un registro PWHT in 3834 |
-| 14 | Ispezioni e prove | RDP + verbali NDT | Nessun `project_id` obbligatorio su RDP/NDT | N/A (compilazione + foto) | VT Word **sì**; RDP Word **no** | Parziale | ISO-4 Word da verbale Mason + RBAC + ponte commessa |
+| 14 | Ispezioni e prove | RDP + verbali NDT | `project_id` opzionale (ISO-7, mig. 155) | N/A (compilazione + foto) | VT Word **sì**; RDP Word **no** | Parziale | ISO-4 Word da verbale Mason |
 | 15 | Non conformità e azioni correttive | Modulo NC (ISO 9001 §10.2) | `project_id` opzionale (ISO-6, mig. 153) | — | Export PDF NC assente (P2, non 3834) | Parziale | Welding Book resta scollegato; ISO-7 RDP/NDT |
 | 16 | Taratura e convalida | `equipment_calibrations` + scadenzario | Attrezzature ↔ Scadenzari (ADR-013) | — | — | Implementato | Stesso buco RBAC di §9 |
 | 17 | Identificazione e rintracciabilità | Welding Book (IOF) | WB ↔ commessa / WPS / attrezzature | — | Word **non fatto** (ADR-016 Fase 2–3) | Parziale | Export Word WB + foto cordone |
@@ -73,7 +73,7 @@ Anagrafica (livello 2/3/4)
         ↔ Qualifiche (warning scadenza/copertura)
         ↔ WPS/WPQR (generazione + advisory P5)
         ↔ Welding Book (project_id opzionale)
-        ↔ RDP / NDT                            [ponte debole: testo libero, non FK]
+        ↔ RDP / NDT                            [project_id opzionale — ISO-7]
         ↔ NC                                   [project_id opzionale — ISO-6]
         ↔ Controparti (cliente / subfornitura) [solo end_customer]
 Attrezzature ↔ Welding Book (junction) + Scadenzari (taratura)
@@ -110,7 +110,7 @@ Ogni slice è un **tracer verticale** (un processo o un ponte), non «tutto il D
 | **ISO-4** | Export Word RDP da verbale Mason | `app/public/templates/rdp-mason-report.docx` (da `RDP_MSN-260127-01`), `wordExport.js`, `RDPModule.jsx` | file Mason in cartella | AFK |
 | **ISO-5** | Export Word Welding Book + foto cordone | `WeldingBooksPage.jsx`, `wordExport` (pattern VT/WPS), allegati | ADR-016 Fase 2–3 | AFK |
 | **ISO-6** | Ponte NC ↔ commessa | `nc.controller.js` + `NCPage` / drawer: `project_id` opzionale | — | Fatto (PR #465) |
-| **ISO-7** | Ponte RDP/NDT ↔ commessa | FK `project_id` (o picker) su RDP e NDT | ISO-1a/1b | AFK |
+| **ISO-7** | Ponte RDP/NDT ↔ commessa | FK `project_id` (o picker) su RDP e NDT | ISO-1a/1b | PR [#474](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/474) |
 | **ISO-8** | Ponte offerta → commessa | FK `commercial_case_id` su `projects` o viceversa | ISO-3 utile ma non bloccante | AFK |
 | **ISO-9** | Operatore NDT = qualifica 9712 | `NdtReportsPage` + check copertura | ISO-1b | AFK |
 | **ISO-10** | Dashboard copertura per processo | `WeldingDashboardPage.jsx`: semaforo §5–18 sul livello azienda | ISO-1* + ISO-2 decisione | AFK |
@@ -120,19 +120,19 @@ Ogni slice è un **tracer verticale** (un processo o un ponte), non «tutto il D
 
 **ISO-1* + ISO-2 chiuse** (PR #438–#442, #443): isolamento azienda + traccia/Word riesame §5.3.
 
-## Pronto a eseguire (18/08, dopo prova certificati ADA)
+## Pronto a eseguire (19/08)
 
 **Sì, si parte a slice.** Un deputy = una slice. In parallelo solo se i file sono disgiunti.
 
 | Ora | Aspettare |
 |-----|-----------|
-| **ISO-6** ponte NC ↔ commessa | merge [PR #465](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/465) + migrazione 153 su TEST |
-| **ISO-7** RDP/NDT ↔ commessa | dopo ISO-6 in produzione (stesso pattern picker) |
+| **ISO-7** RDP/NDT ↔ commessa | PR [#474](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/474) — merge + migrazione 155 **prima su TEST** |
+| **ISO-6** ponte NC ↔ commessa | fatto [PR #465](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/465); migrazione 153 **prima su TEST** se non già applicata |
 | **ISO-4** Word RDP: file Mason non è in git | file `RDP_MSN-260127-01` in cartella / dal committente |
-| **SAL S1a** — già APERTO su `main` in `DEPUTYTASK.md` | non sovrascrivere |
-| **Ingest 3.1 / MC-I0** | **altra chat** — [PLAN MC](PLAN_MATERIAL_COMPLIANCE_SLICES.md) § decisione 18/08. Non mescolare |
+| **ISO-5** Word Welding Book | dopo ISO-7 |
+| **Ingest 3.1 / MC-I1** | **altra chat** — non mescolare |
 
-`DEPUTYTASK.md` resta SAL S1a. `DEPUTYTASK1.md` = ISO-6 **CHIUSO**. Non sovrascrivere `DEPUTYTASK_MC_INGEST.md`.
+`DEPUTYTASK.md` = SAL S1a **CHIUSO** (#471). `DEPUTYTASK1.md` = ISO-7 **CHIUSO** (PR #474). Non sovrascrivere `DEPUTYTASK_MC_INGEST.md`.
 
 ## Qualità della mappa
 

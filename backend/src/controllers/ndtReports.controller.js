@@ -7,6 +7,7 @@
 
 const { query } = require('../config/database');
 const logger = require('../utils/logger');
+const { resolveOptionalProjectId } = require('../utils/resolveOptionalProjectId');
 const {
     ensureCompanyAccessLoaded,
     companyAccessSqlFilter,
@@ -90,7 +91,7 @@ async function listNdtReports(req, res) {
         if (date_from) { conditions.push('r.inspection_date >= @date_from'); params.date_from = date_from; }
         if (date_to) { conditions.push('r.inspection_date <= @date_to'); params.date_to = date_to; }
         if (search) {
-            conditions.push('(r.client LIKE @search OR r.job_order LIKE @search OR r.report_number LIKE @search OR r.inspector LIKE @search)');
+            conditions.push('(r.client LIKE @search OR r.job_order LIKE @search OR r.report_number LIKE @search OR r.inspector LIKE @search OR EXISTS (SELECT 1 FROM projects px WHERE px.id = r.project_id AND px.project_code LIKE @search))');
             params.search = `%${search}%`;
         }
 
@@ -103,9 +104,11 @@ async function listNdtReports(req, res) {
                        r.inspection_date, r.certificate_date,
                        r.created_at, r.updated_at,
                        c.name AS company_name,
+                       p.project_code,
                        (SELECT COUNT(*) FROM ndt_report_items i WHERE i.report_id = r.id) AS items_count
                 FROM ndt_reports r
                 LEFT JOIN companies c ON c.id = r.company_id
+                LEFT JOIN projects p ON p.id = r.project_id
                 WHERE ${where}
                 ORDER BY r.updated_at DESC
                 OFFSET @offset ROWS FETCH NEXT @limit ROWS ONLY
@@ -137,9 +140,10 @@ async function getNdtReport(req, res) {
 
         const [reportResult, itemsResult, instrumentsResult] = await Promise.all([
             query(`
-                SELECT r.*, c.name AS company_name
+                SELECT r.*, c.name AS company_name, p.project_code
                 FROM ndt_reports r
                 LEFT JOIN companies c ON c.id = r.company_id
+                LEFT JOIN projects p ON p.id = r.project_id
                 WHERE r.id = @id AND r.organization_id = @organization_id AND r.is_deleted = 0
             `, { id, organization_id }),
             query(`
@@ -197,11 +201,25 @@ async function createNdtReport(req, res) {
             status = 'draft',
             items = [],
             instrument_ids = [],
+            project_id: rawProjectId,
         } = req.body;
 
         const companyIdVal = company_id ? parseInt(company_id) : null;
         const writeDenied = await assertMutatingAllowed(req.user, { companyId: companyIdVal });
         if (writeDenied) return sendAccessDenied(res, writeDenied);
+
+        const projectResolved = await resolveOptionalProjectId(query, {
+            organizationId: organization_id,
+            projectId: rawProjectId,
+            companyId: companyIdVal,
+        });
+        if (projectResolved.error) {
+            return res.status(projectResolved.status).json({
+                error: projectResolved.error,
+                code: projectResolved.code,
+            });
+        }
+        const project_id = projectResolved.skip ? null : projectResolved.value;
 
         const year = new Date().getFullYear();
         const report_number = await allocateReportNumber(query, report_type, year, organization_id);
@@ -215,7 +233,7 @@ async function createNdtReport(req, res) {
                 method_params, notes,
                 inspection_date, certificate_date,
                 responsible, inspector, client_representative,
-                status, created_by
+                status, created_by, project_id
             )
             OUTPUT INSERTED.*
             VALUES (
@@ -225,7 +243,7 @@ async function createNdtReport(req, res) {
                 @method_params, @notes,
                 @inspection_date, @certificate_date,
                 @responsible, @inspector, @client_representative,
-                @status, @created_by
+                @status, @created_by, @project_id
             )
         `, {
             organization_id,
@@ -252,6 +270,7 @@ async function createNdtReport(req, res) {
             client_representative: client_representative || null,
             status,
             created_by: req.user.user_id,
+            project_id,
         });
 
         const report_id = reportResult.recordset[0].id;
@@ -312,7 +331,7 @@ async function updateNdtReport(req, res) {
         const id = parseInt(req.params.id);
 
         const existing = await query(
-            `SELECT id, company_id FROM ndt_reports WHERE id = @id AND organization_id = @organization_id AND is_deleted = 0`,
+            `SELECT id, company_id, project_id FROM ndt_reports WHERE id = @id AND organization_id = @organization_id AND is_deleted = 0`,
             { id, organization_id }
         );
         if (existing.recordset.length === 0) {
@@ -330,6 +349,7 @@ async function updateNdtReport(req, res) {
             inspection_date, certificate_date,
             responsible, inspector, client_representative,
             status, items, instrument_ids,
+            project_id: rawProjectId,
         } = req.body;
 
         const nextCompanyId = company_id !== undefined
@@ -338,6 +358,24 @@ async function updateNdtReport(req, res) {
         if (nextCompanyId !== existingCompanyId) {
             const nextDenied = await assertMutatingAllowed(req.user, { companyId: nextCompanyId });
             if (nextDenied) return sendAccessDenied(res, nextDenied);
+        }
+
+        let nextProjectId = existing.recordset[0].project_id;
+        const mustResolveProject = rawProjectId !== undefined
+            || (nextProjectId != null && Number(nextCompanyId) !== Number(existingCompanyId));
+        if (mustResolveProject) {
+            const projectResolved = await resolveOptionalProjectId(query, {
+                organizationId: organization_id,
+                projectId: rawProjectId !== undefined ? rawProjectId : nextProjectId,
+                companyId: nextCompanyId,
+            });
+            if (projectResolved.error) {
+                return res.status(projectResolved.status).json({
+                    error: projectResolved.error,
+                    code: projectResolved.code,
+                });
+            }
+            nextProjectId = projectResolved.value;
         }
 
         await query(`
@@ -350,7 +388,7 @@ async function updateNdtReport(req, res) {
                 inspection_date = @inspection_date, certificate_date = @certificate_date,
                 responsible = @responsible, inspector = @inspector,
                 client_representative = @client_representative,
-                status = @status,
+                status = @status, project_id = @project_id,
                 updated_at = GETDATE()
             WHERE id = @id
         `, {
@@ -373,6 +411,7 @@ async function updateNdtReport(req, res) {
             inspector: inspector || null,
             client_representative: client_representative || null,
             status: status || 'draft',
+            project_id: nextProjectId,
         });
 
         // Aggiorna righe Elenco Marche (replace completo)
@@ -420,7 +459,11 @@ async function updateNdtReport(req, res) {
         }
 
         const updated = await query(
-            `SELECT r.*, c.name AS company_name FROM ndt_reports r LEFT JOIN companies c ON c.id = r.company_id WHERE r.id = @id`,
+            `SELECT r.*, c.name AS company_name, p.project_code
+             FROM ndt_reports r
+             LEFT JOIN companies c ON c.id = r.company_id
+             LEFT JOIN projects p ON p.id = r.project_id
+             WHERE r.id = @id`,
             { id }
         );
 

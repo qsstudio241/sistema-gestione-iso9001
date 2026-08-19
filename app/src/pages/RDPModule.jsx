@@ -133,6 +133,7 @@ function RdpReportForm({ report, companies, onSave, onCancel }) {
         company_id: "",
         client: "",
         supplier_name: "",
+        project_id: "",
         project_name: "",
         purpose: "",
         welded_element_type: "",
@@ -150,6 +151,7 @@ function RdpReportForm({ report, companies, onSave, onCancel }) {
             company_id:          report.company_id || "",
             client:              report.client || "",
             supplier_name:       report.supplier_name || "",
+            project_id:          report.project_id != null ? String(report.project_id) : "",
             project_name:        report.project_name || "",
             purpose:             report.purpose || "",
             welded_element_type: report.welded_element_type || "",
@@ -181,8 +183,21 @@ function RdpReportForm({ report, companies, onSave, onCancel }) {
     const [error, setError] = useState(null);
     const [savedAt, setSavedAt] = useState(null);
     const [currentReport, setCurrentReport] = useState(report || null);
+    const [projects, setProjects] = useState([]);
 
     const set = (k, v) => setForm(f => ({ ...f, [k]: v }));
+
+    useEffect(() => {
+        if (!form.company_id) {
+            setProjects([]);
+            return;
+        }
+        let cancelled = false;
+        apiService.getProjects({ company_id: form.company_id, limit: 100 })
+            .then((res) => { if (!cancelled) setProjects(res?.data || []); })
+            .catch(() => { if (!cancelled) setProjects([]); });
+        return () => { cancelled = true; };
+    }, [form.company_id]);
 
     const averageScore = useMemo(() => {
         const scores = [];
@@ -216,6 +231,7 @@ function RdpReportForm({ report, companies, onSave, onCancel }) {
             const payload = {
                 ...form,
                 company_id: form.company_id ? parseInt(form.company_id) : null,
+                project_id: form.project_id ? parseInt(form.project_id, 10) : null,
                 status: targetStatus || form.status,
                 sections: sections.filter(s => (s.title || "").trim() || (s.tests || []).length > 0),
             };
@@ -283,8 +299,12 @@ function RdpReportForm({ report, companies, onSave, onCancel }) {
                                     <select value={form.company_id} onChange={e => {
                                         const cid = e.target.value;
                                         const company = companies.find(c => String(c.id) === String(cid));
-                                        set("company_id", cid);
-                                        set("client", company ? company.name : "");
+                                        setForm(f => ({
+                                            ...f,
+                                            company_id: cid,
+                                            client: company ? company.name : "",
+                                            project_id: "",
+                                        }));
                                     }}>
                                         <option value="">{"\u2014 seleziona azienda \u2014"}</option>
                                         {companies.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
@@ -296,6 +316,38 @@ function RdpReportForm({ report, companies, onSave, onCancel }) {
                                 </div>
                             </div>
                             <div className="rdp-form-row">
+                                <div className="rdp-form-group rdp-grow">
+                                    <label htmlFor="rdp-project">Commessa (opzionale)</label>
+                                    <select
+                                        id="rdp-project"
+                                        value={form.project_id}
+                                        disabled={!form.company_id}
+                                        title={form.company_id ? undefined : "Seleziona prima l'azienda"}
+                                        onChange={e => {
+                                            const pid = e.target.value;
+                                            const p = projects.find((x) => String(x.id) === String(pid));
+                                            setForm(f => ({
+                                                ...f,
+                                                project_id: pid,
+                                                project_name: p?.project_code || p?.description || f.project_name,
+                                            }));
+                                        }}
+                                    >
+                                        <option value="">
+                                            {form.company_id ? "\u2014 Nessuna commessa \u2014" : "\u2014 Seleziona prima l'azienda \u2014"}
+                                        </option>
+                                        {form.project_id && !projects.some((p) => String(p.id) === String(form.project_id)) && (
+                                            <option value={form.project_id}>
+                                                {report?.project_code || `Commessa #${form.project_id}`}
+                                            </option>
+                                        )}
+                                        {projects.map((p) => (
+                                            <option key={p.id} value={p.id}>
+                                                {p.project_code}{p.description ? ` \u2014 ${p.description}` : ""}
+                                            </option>
+                                        ))}
+                                    </select>
+                                </div>
                                 <div className="rdp-form-group rdp-grow">
                                     <label>Intervento / progetto</label>
                                     <input type="text" value={form.project_name} onChange={e => set("project_name", e.target.value)} placeholder="es. Audit progetto saldatura..." />
@@ -548,7 +600,7 @@ export default function RDPModule() {
                                         <td className="rdp-mono">{r.report_number || <em>bozza</em>}</td>
                                         <td>{r.client || r.company_name || "\u2014"}</td>
                                         <td>{r.supplier_name || "\u2014"}</td>
-                                        <td>{r.project_name || "\u2014"}</td>
+                                        <td>{r.project_code || r.project_name || "\u2014"}</td>
                                         <td>{r.inspection_date ? new Date(r.inspection_date).toLocaleDateString("it-IT") : "\u2014"}</td>
                                         <td className="rdp-center">{r.tests_count}</td>
                                         <td className="rdp-center">{r.average_score != null ? r.average_score : "\u2014"}</td>
