@@ -1,4 +1,4 @@
-import { describe, it, expect, vi } from "vitest";
+import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen } from "@testing-library/react";
 import AiAssistantCitations from "../components/AiAssistantCitations";
 
@@ -10,7 +10,25 @@ vi.mock("../contexts/RouterContext", () => ({
   ),
 }));
 
+vi.mock("../services/apiService", () => ({
+  default: {
+    baseUrl: "http://test/api/v1",
+    getToken: () => "tok",
+  },
+}));
+
 describe("AiAssistantCitations", () => {
+  beforeEach(() => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue({
+        ok: false,
+        blob: async () => new Blob(),
+        headers: { get: () => "" },
+      }),
+    );
+  });
+
   it("renders footnote and linked chips when citations exist", () => {
     render(
       <AiAssistantCitations
@@ -48,5 +66,45 @@ describe("AiAssistantCitations", () => {
 
     expect(screen.getByText(/senza fonti verificabili/)).toBeTruthy();
     expect(screen.queryByRole("list", { name: "Fonti SGQ" })).toBeNull();
+  });
+
+  it("lista figure vuota: non crasha e non mostra card", () => {
+    render(
+      <AiAssistantCitations
+        sourcesCount={0}
+        contextUsed={0}
+        citations={[]}
+        figures={[]}
+      />,
+    );
+
+    expect(screen.getByText(/senza fonti verificabili/)).toBeTruthy();
+    expect(screen.queryByRole("list", { name: "Tavole citate" })).toBeNull();
+  });
+
+  it("con 1 hit figura mostra pagina, bbox, caption e score", () => {
+    render(
+      <AiAssistantCitations
+        sourcesCount={0}
+        contextUsed={0}
+        citations={[]}
+        figures={[
+          {
+            id: 12,
+            page: 3,
+            bbox: [10, 20, 110, 80],
+            caption: "Simbolo saldatura d'angolo",
+            score: 0.91,
+          },
+        ]}
+      />,
+    );
+
+    expect(screen.getByRole("list", { name: "Tavole citate" })).toBeTruthy();
+    expect(screen.getByText("Pagina 3")).toBeTruthy();
+    expect(screen.getByText("bbox 10, 20, 110, 80")).toBeTruthy();
+    expect(screen.getByText("Simbolo saldatura d'angolo")).toBeTruthy();
+    expect(screen.getByText("score 0.91")).toBeTruthy();
+    expect(screen.getByText("Tavola")).toBeTruthy();
   });
 });
