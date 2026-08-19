@@ -1,6 +1,7 @@
 /**
  * GET /ai/figures/search — retrieve testo→figura (Multimodal RAG MR-1).
  * GET /ai/figures/:id/image — byte PNG della tavola (MR-2), stesso isolamento org.
+ * POST /ai/figures/ingest — PDF già sul disco → extract + persist (MR-3).
  * Isolamento organization_id dal JWT. Niente Gemini sui byte delle tavole.
  */
 
@@ -11,6 +12,7 @@ const { query } = require('../config/database');
 const { resolveAiCompanyScope } = require('../services/aiCompanyScope.service');
 const { sendAccessDenied } = require('../services/companyAccess.service');
 const { searchFiguresByText } = require('../services/figureKnowledge.service');
+const { ingestFiguresFromPdf } = require('../services/figureIngest.service');
 
 const IMAGE_EXT_OK = new Set(['.png', '.jpg', '.jpeg', '.webp']);
 
@@ -137,4 +139,65 @@ async function getFigureImage(req, res) {
   }
 }
 
-module.exports = { searchFigures, getFigureImage };
+/**
+ * Ingest tavole da un PDF già sul server. Org solo dal JWT.
+ * Path client libero fuori dalle radici autorizzate → 400.
+ */
+async function ingestFigures(req, res) {
+  try {
+    const organizationId = req.user && req.user.organization_id;
+    if (!organizationId) {
+      return res.status(401).json({
+        error: 'Organizzazione non presente nel token.',
+        code: 'UNAUTHORIZED',
+      });
+    }
+
+    const pdfPath = typeof req.body?.pdfPath === 'string' ? req.body.pdfPath.trim() : '';
+    if (!pdfPath) {
+      return res.status(400).json({
+        error: 'Il percorso PDF è obbligatorio.',
+        code: 'MISSING_PARAMS',
+      });
+    }
+
+    const scope = await resolveAiCompanyScope(req.user, req.body?.companyId);
+    if (scope.denied) {
+      return sendAccessDenied(res, scope.denied);
+    }
+
+    const result = await ingestFiguresFromPdf({
+      organizationId,
+      companyId: scope.companyId,
+      pdfPath,
+    });
+    return res.json({
+      figures: (result && result.figures) || [],
+      count: (result && result.count) || 0,
+    });
+  } catch (err) {
+    const code = err && err.code;
+    if (code === 'UNAUTHORIZED') {
+      return res.status(401).json({ error: err.message, code });
+    }
+    if (code === 'INVALID_PDF_PATH') {
+      return res.status(400).json({ error: err.message, code });
+    }
+    if (code === 'PDF_NOT_FOUND') {
+      return res.status(404).json({ error: err.message, code });
+    }
+    if (code === 'FIGURE_EXTRACT_UNAVAILABLE' || code === 'FIGURE_EMBED_UNAVAILABLE') {
+      return res.status(503).json({
+        error: err.message || 'Servizio figure non disponibile.',
+        code,
+      });
+    }
+    logger.error('[FIGURES_INGEST] Error: %s', err.message);
+    return res.status(500).json({
+      error: "Errore nell'ingest delle figure.",
+      code: 'FIGURES_INGEST_ERROR',
+    });
+  }
+}
+
+module.exports = { searchFigures, getFigureImage, ingestFigures };
