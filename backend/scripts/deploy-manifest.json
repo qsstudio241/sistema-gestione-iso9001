@@ -7,6 +7,7 @@
                              "src/services/adapters",
                              "src/utils",
                              "src/data",
+                             "templates",
                              "data/material-compliance",
                              "data/material-compliance/dictionary",
                              "data/material-compliance/standards",
@@ -18,6 +19,17 @@
                        "name":  "package",
                        "files":  [
                                      "package.json"
+                                 ]
+                   },
+                   {
+                       "name":  "report-templates-static",
+                       "files":  [
+                                     "templates/ISO9001-audit-report.docx",
+                                     "templates/ISO14001-audit-report.docx",
+                                     "templates/ISO45001-audit-report.docx",
+                                     "templates/ISO3834-audit-report.docx",
+                                     "templates/VerbaleVisita-generic.docx",
+                                     "templates/NC-scheda.docx"
                                  ]
                    },
                    {
@@ -95,7 +107,8 @@
                                      "src/utils/riskScore.js",
                                      "src/utils/riskReviews.js",
                                      "src/utils/technicalReviewChecklist.js",
-                                     "src/utils/resolveOptionalProjectId.js"
+                                     "src/utils/resolveOptionalProjectId.js",
+                                     "src/utils/reportTemplatePath.js"
                                  ]
                    },
                    {

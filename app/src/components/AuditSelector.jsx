@@ -30,7 +30,7 @@ const AVAILABLE_STANDARDS = [
   { code: "ISO_14001",  label: "ISO 14001:2015 - Ambiente", standardId: 2 },
   { code: "ISO_45001",  label: "ISO 45001:2018 - Salute e Sicurezza", standardId: 3 },
   { code: "ISO_3834_2", label: "ISO 3834-2 - Audit Fornitori in Campo", standardId: 6 },
-  { code: "RDP_MSN",    label: "RDP Mason - Audit di Sistema Saldatura (ISO 3834-2)", standardId: 7 },
+  { code: "RDP_MSN",    label: "Audit di Sistema Saldatura (ISO 3834-2)", standardId: 7 },
 ];
 
 const CLOSED_AUDIT_STATUSES = new Set(["completed", "approved", "archived"]);

@@ -77,7 +77,9 @@ function buildNavItems(user, alerts = {}) {
         { to: "/saldatura/materiali", icon: "\uD83D\uDCC4", label: "Materiali", requireMaterialCompliance: true },
         { to: "/saldatura/procedure", icon: "\uD83D\uDD27", label: "Procedure WPS/WPQR", licenseKey: "saldatura" },
         { to: "/saldatura/welding-book", icon: "\uD83D\uDCD6", label: "Welding Book", licenseKey: "saldatura" },
-        { to: "/saldatura/rdp", icon: "\uD83D\uDCCA", label: "RDP - Rapporto di Prova", licenseKey: "saldatura" },
+        // /saldatura/rdp nascosto 19/08/2026: il verbale Mason è visita/audit
+        // (modulo Audit ISO 3834-2), non un rapporto di prova. La route in App.jsx
+        // resta per URL salvati; tabelle rdp_* non droppate (eventuale resoconto 23/02).
       ]),
     },
     // Modulo CND (Controlli Non Distruttivi)
