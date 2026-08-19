@@ -618,6 +618,10 @@ function QualificationsPage() {
                 <QualificationForm
                     qualification={editingQual}
                     defaultCompanyId={!editingQual && companyScope ? companyScope : undefined}
+                    companyName={
+                        editingQual?.company_name
+                        || (!editingQual && companyScope ? scopeCompanyName : undefined)
+                    }
                     onSave={handleSaved}
                     onClose={() => { setFormOpen(false); setEditingQual(null); }}
                 />

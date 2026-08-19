@@ -72,7 +72,7 @@ const WELDER_REQUIRED = {
   expiry_date: "La data di scadenza \u00e8 obbligatoria.",
 };
 
-function QualificationForm({ qualification, onSave, onClose, defaultCompanyId, openSection }) {
+function QualificationForm({ qualification, onSave, onClose, defaultCompanyId, companyName, openSection }) {
   const isEdit  = !!qualification;
   const isRenew = !!qualification?._renew;
   const [form,    setForm]    = useState(EMPTY);
@@ -192,13 +192,14 @@ function QualificationForm({ qualification, onSave, onClose, defaultCompanyId, o
   function handle(field) {
     return (e) => {
       const value = e.target.type === "checkbox" ? e.target.checked : e.target.value;
-      if (field === "company_id") {
-        setForm((f) => ({ ...f, company_id: value, personnel_id: "" }));
-        return;
-      }
       setForm((f) => ({ ...f, [field]: value }));
     };
   }
+
+  const lockedCompanyName = companyName
+    || qualification?.company_name
+    || companies.find((c) => String(c.id) === String(form.company_id))?.name
+    || (form.company_id ? `Azienda #${form.company_id}` : "\u2014");
 
   async function handleSave() {
     if (!form.person_name.trim()) { setError("Il nome della persona \u00e8 obbligatorio."); return; }
@@ -271,8 +272,9 @@ function QualificationForm({ qualification, onSave, onClose, defaultCompanyId, o
           <div className="qf-section-title">Persona</div>
           <div className="qf-row">
             <div className="qf-field qf-flex2">
-              <label>Da anagrafica azienda</label>
+              <label htmlFor="qf-personnel">Da anagrafica azienda</label>
               <select
+                id="qf-personnel"
                 value={form.personnel_id}
                 onChange={(e) => {
                   const pid = e.target.value;
@@ -335,14 +337,11 @@ function QualificationForm({ qualification, onSave, onClose, defaultCompanyId, o
               <input type="text" value={form.department} onChange={handle("department")} placeholder="Produzione" />
             </div>
             <div className="qf-field">
-              <label>Azienda <span className="req">*</span></label>
-              <select
-                value={form.company_id}
-                onChange={handle("company_id")}
-              >
-                <option value="">-- seleziona azienda --</option>
-                {companies.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-              </select>
+              <label>Azienda</label>
+              <span className="qf-locked" aria-label="Azienda non modificabile">
+                {lockedCompanyName}
+                <span className="qf-locked-hint">{" (non modificabile)"}</span>
+              </span>
             </div>
           </div>
 
