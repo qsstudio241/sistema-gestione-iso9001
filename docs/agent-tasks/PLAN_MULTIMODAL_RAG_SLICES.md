@@ -2,7 +2,7 @@
 
 > **Destinazione**: l’SGQ ingerisce PDF normativi con tavole (es. simboli saldatura ISO 2553 / AWS A2.4), conserva testo *e* ritagli di figura con bounding box, e li recupera in uno spazio vettoriale **locale** così l’assistente può citare la tavola e, in seguito, confrontarla con un disegno/WPS caricato. Verificabile: dato un PDF di prova, una query testo (e poi una query immagine) restituisce la figura giusta con pagina + bbox, senza chiamate cloud sui byte delle tavole.
 > **Spec / ADR**: [ADR-010](../adr/ADR-010-ai-agentic-architecture.md) (AI cita, non certifica; audit trail) · skill [`pdf-to-json`](../../.cursor/skills/pdf-to-json/SKILL.md) · indexer esistente `knowledgeIndexer.service.js` / `knowledge_chunks` · catalogo già in repo [`ISO-2553-simboli-saldatura.md`](../reference/ISO-2553-simboli-saldatura.md) + `weldingSymbols2553.js`
-> **Brief attivo**: nessuno in questa slice. MR-3 [PR #484](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/484) CHIUSO (`DEPUTYTASK5.md`). MR-2 [PR #475](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/475). MR-1 [PR #469](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/469). MR-0 [PR #464](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/464). **MR-4 non aperta** qui.
+> **Brief attivo**: nessuno in questa slice. MR-4 CHIUSO (`DEPUTYTASK5.md`, questa PR). MR-3 [PR #484](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/484). MR-2 [PR #475](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/475). MR-1 [PR #469](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/469). MR-0 [PR #464](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/464). **MR-5 non aperta** qui.
 > **Mappa creata**: 18/08/2026 (Lead wayfinder A — Chart the map)
 > **Vincolo prodotto (HITL 18/08)**: sviluppare **tutto in locale** con un modello adatto. I byte delle figure non escono verso Gemini né altri parser cloud.
 
@@ -54,7 +54,7 @@
 | **MR-1** | Persisti + embed locale + GET retrieve testo→figura | migrazione `knowledge_figures` + service embed locale + GET `/api/v1/ai/figures/search` (isolation `organization_id`) + test L1 mock | MR-0 | AFK, **fatto** |
 | **MR-2** | UI: query testo cita la tavola | `AiAssistantPage` (o pannello citazioni esistente): crop + pagina + bbox; niente nuovo layout di prodotto | MR-1 | AFK, **fatto** |
 | **MR-3** | Ingest norma → extract + embed | aggancio pipeline/job su PDF normativo; riuso MR-0+MR-1; niente fork `documentIngestPipeline` | MR-1 | AFK, **fatto** |
-| **MR-4** | Query visiva (disegno → simboli) | upload ritaglio/pagina; stesso spazio CLIP; top-k figure; test L1 con due crop della fixture | MR-1 | AFK |
+| **MR-4** | Query visiva (disegno → simboli) | upload ritaglio/pagina; stesso spazio CLIP; top-k figure; test L1 con due crop della fixture | MR-1 | AFK, **fatto** |
 | **MR-5** | VLM locale risponde con figure citate | Ollama `qwen2.5vl:7b` + crop recuperati + `logAiInteraction`; AI cita, non certifica (ADR-010) | MR-2, MR-4 | AFK |
 
 **Ordine**: MR-0 → MR-1 → poi MR-2 e MR-3/MR-4 possono parallellizzarsi su file disgiunti (UI vs ingest vs query visiva). MR-5 per ultimo.
@@ -100,16 +100,24 @@
 - [x] Service nuovo in `deploy-manifest.json`
 - [x] Nessun Gemini sui PNG; **non** aprire MR-4
 
+### DoD MR-4 (spuntato 19/08/2026)
+
+- [x] Upload ritaglio/pagina → stesso `embedding_space` CLIP → top-k figure
+- [x] L1 Jest: due crop fixture (vector vs raster) + isolamento org; mock CLIP
+- [x] `POST /api/v1/ai/figures/search-by-image` (auth + licenza `ai_chat`); org dal JWT; vuoto → `{ figures: [] }` 200
+- [x] Bottone ritaglio nel composer Assistente; stesso pannello citazioni; niente galleria nuova
+- [x] Nessun Gemini sui PNG; **non** aprire MR-5
+
 ---
 
-## Architettura target (MR-1 persist+CLIP+GET testo **fatto**; MR-2 UI citazioni **fatto**; ingest/VLM dopo)
+## Architettura target (MR-1 persist+CLIP+GET testo **fatto**; MR-2 UI citazioni **fatto**; MR-3 ingest **fatto**; MR-4 query visiva **fatto**; VLM dopo)
 
 ```
 PDF norma (operatore)
     → pdf-to-json testo/md/json          (già esiste, locale)
     → pdf-to-json figures/ + figures.json (MR-0: bbox + PNG) ✅
     → knowledge_figures + CLIP locale     (MR-1) ✅
-    → retrieve testo (MR-1/2) | retrieve immagine (MR-4)
+    → retrieve testo (MR-1/2) | retrieve immagine (MR-4) ✅
     → (MR-5) Ollama VLM sui crop, citazioni, HITL umano
 ```
 
@@ -119,6 +127,6 @@ Non aprire un secondo “cervello”. Stesso assistente, stesse regole di Ambito
 
 ## Allineamento harness
 
-- Una slice = un Cloud Agent. Non eseguire MR-4 nella stessa run di MR-3.
+- Una slice = un Cloud Agent. Non eseguire MR-5 nella stessa run di MR-4.
 - Deputy: context default/basso. Solo `DEPUTYTASK5.md` + file della slice.
-- Se MR-3 non chiude: `HANDOFF_TEMPLATE.md` nel brief, stop.
+- Se MR-4 non chiude: `HANDOFF_TEMPLATE.md` nel brief, stop.

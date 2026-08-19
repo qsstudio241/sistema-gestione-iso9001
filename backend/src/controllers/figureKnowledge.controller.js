@@ -2,6 +2,7 @@
  * GET /ai/figures/search — retrieve testo→figura (Multimodal RAG MR-1).
  * GET /ai/figures/:id/image — byte PNG della tavola (MR-2), stesso isolamento org.
  * POST /ai/figures/ingest — PDF già sul disco → extract + persist (MR-3).
+ * POST /ai/figures/search-by-image — ritaglio → tavole nello stesso spazio CLIP (MR-4).
  * Isolamento organization_id dal JWT. Niente Gemini sui byte delle tavole.
  */
 
@@ -11,7 +12,10 @@ const logger = require('../utils/logger');
 const { query } = require('../config/database');
 const { resolveAiCompanyScope } = require('../services/aiCompanyScope.service');
 const { sendAccessDenied } = require('../services/companyAccess.service');
-const { searchFiguresByText } = require('../services/figureKnowledge.service');
+const {
+  searchFiguresByText,
+  searchFiguresByImage: findFiguresByImage,
+} = require('../services/figureKnowledge.service');
 const { ingestFiguresFromPdf } = require('../services/figureIngest.service');
 
 const IMAGE_EXT_OK = new Set(['.png', '.jpg', '.jpeg', '.webp']);
@@ -55,6 +59,52 @@ async function searchFigures(req, res) {
     return res.status(500).json({
       error: 'Errore nella ricerca figure.',
       code: 'FIGURES_SEARCH_ERROR',
+    });
+  }
+}
+
+/**
+ * Ricerca visiva: file PNG/JPEG/WebP in memoria, org solo dal JWT.
+ * Senza file → 400. Nessun match → { figures: [] } 200.
+ */
+async function searchFiguresByImage(req, res) {
+  try {
+    if (!req.file) {
+      return res.status(400).json({
+        error: 'Il file immagine è obbligatorio.',
+        code: 'MISSING_FILE',
+      });
+    }
+
+    const organizationId = req.user && req.user.organization_id;
+    if (!organizationId) {
+      return res.status(401).json({
+        error: 'Organizzazione non presente nel token.',
+        code: 'UNAUTHORIZED',
+      });
+    }
+
+    const scope = await resolveAiCompanyScope(req.user, req.body?.companyId);
+    if (scope.denied) {
+      return sendAccessDenied(res, scope.denied);
+    }
+
+    const figures = await findFiguresByImage(req.file, organizationId, {
+      companyId: scope.companyId,
+      topK: req.body?.topK || req.query?.topK,
+    });
+    return res.json({ figures: figures || [] });
+  } catch (err) {
+    if (err && err.code === 'FIGURE_EMBED_UNAVAILABLE') {
+      return res.status(503).json({
+        error: 'Embedding locale figure non disponibile.',
+        code: 'FIGURE_EMBED_UNAVAILABLE',
+      });
+    }
+    logger.error('[FIGURES_SEARCH_IMAGE] Error: %s', err.message);
+    return res.status(500).json({
+      error: 'Errore nella ricerca figure da immagine.',
+      code: 'FIGURES_SEARCH_IMAGE_ERROR',
     });
   }
 }
@@ -200,4 +250,4 @@ async function ingestFigures(req, res) {
   }
 }
 
-module.exports = { searchFigures, getFigureImage, ingestFigures };
+module.exports = { searchFigures, searchFiguresByImage, getFigureImage, ingestFigures };

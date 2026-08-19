@@ -1,7 +1,7 @@
 /**
  * @jest-environment node
  *
- * Test L1 — GET search (MR-1), GET image (MR-2), POST ingest (MR-3).
+ * Test L1 — GET search (MR-1), GET image (MR-2), POST ingest (MR-3), POST search-by-image (MR-4).
  */
 
 const mockAccess = jest.fn();
@@ -21,6 +21,7 @@ jest.mock('../services/companyAccess.service', () => ({
 }));
 jest.mock('../services/figureKnowledge.service', () => ({
   searchFiguresByText: jest.fn(),
+  searchFiguresByImage: jest.fn(),
 }));
 jest.mock('../services/figureIngest.service', () => ({
   ingestFiguresFromPdf: jest.fn(),
@@ -33,9 +34,9 @@ jest.mock('../utils/logger', () => ({
 }));
 
 const { resolveAiCompanyScope } = require('../services/aiCompanyScope.service');
-const { searchFiguresByText } = require('../services/figureKnowledge.service');
+const { searchFiguresByText, searchFiguresByImage } = require('../services/figureKnowledge.service');
 const { ingestFiguresFromPdf } = require('../services/figureIngest.service');
-const { searchFigures, getFigureImage, ingestFigures } = require('./figureKnowledge.controller');
+const { searchFigures, searchFiguresByImage: searchFiguresByImageCtrl, getFigureImage, ingestFigures } = require('./figureKnowledge.controller');
 
 function createRes() {
   const res = { statusCode: 200, headers: {} };
@@ -217,5 +218,61 @@ describe('figureKnowledge.controller — ingestFigures', () => {
     await ingestFigures(req, res);
     expect(res.statusCode).toBe(200);
     expect(res.json).toHaveBeenCalledWith({ figures: [], count: 0 });
+  });
+});
+
+describe('figureKnowledge.controller — searchFiguresByImage (MR-4)', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+    resolveAiCompanyScope.mockResolvedValue({ companyId: null, denied: null });
+  });
+
+  it('400 se manca il file', async () => {
+    const req = { user: { organization_id: 1001 }, body: {}, file: undefined };
+    const res = createRes();
+    await searchFiguresByImageCtrl(req, res);
+    expect(res.status).toHaveBeenCalledWith(400);
+    expect(searchFiguresByImage).not.toHaveBeenCalled();
+  });
+
+  it('200 con figures vuote se nessun match', async () => {
+    searchFiguresByImage.mockResolvedValue([]);
+    const req = {
+      user: { organization_id: 1001 },
+      body: {},
+      file: { originalname: 'crop.png', buffer: Buffer.from('x'), mimetype: 'image/png' },
+    };
+    const res = createRes();
+    await searchFiguresByImageCtrl(req, res);
+    expect(res.statusCode).toBe(200);
+    expect(res.json).toHaveBeenCalledWith({ figures: [] });
+  });
+
+  it('usa organization_id del JWT, non body.organization_id del client', async () => {
+    searchFiguresByImage.mockResolvedValue([{ id: 1, score: 0.9 }]);
+    const req = {
+      user: { organization_id: 1001 },
+      body: { organization_id: 9999 },
+      file: { originalname: 'crop_vector.png', buffer: Buffer.from('x'), mimetype: 'image/png' },
+    };
+    const res = createRes();
+    await searchFiguresByImageCtrl(req, res);
+    expect(searchFiguresByImage.mock.calls[0][1]).toBe(1001);
+    expect(searchFiguresByImage.mock.calls[0][1]).not.toBe(9999);
+    expect(res.json.mock.calls[0][0].figures).toHaveLength(1);
+  });
+
+  it('503 se embedding locale non disponibile', async () => {
+    const err = new Error('no clip');
+    err.code = 'FIGURE_EMBED_UNAVAILABLE';
+    searchFiguresByImage.mockRejectedValue(err);
+    const req = {
+      user: { organization_id: 1001 },
+      body: {},
+      file: { originalname: 'crop.png', buffer: Buffer.from('x'), mimetype: 'image/png' },
+    };
+    const res = createRes();
+    await searchFiguresByImageCtrl(req, res);
+    expect(res.status).toHaveBeenCalledWith(503);
   });
 });

@@ -62,6 +62,20 @@ async function fetchCitedFigures(queryText, companyId) {
 }
 
 /**
+ * Retrieve tavole da ritaglio. Fallimento o lista vuota → [] (niente errore in chat).
+ */
+async function fetchCitedFiguresByImage(file, companyId) {
+  if (!file) return [];
+  try {
+    const res = await apiService.searchFiguresByImage(file, companyId);
+    const list = res?.figures ?? res?.data?.figures;
+    return Array.isArray(list) ? list : [];
+  } catch {
+    return [];
+  }
+}
+
+/**
  * Costruisce i chip di suggerimento contestuali.
  * Se c'è un audit aperto con clausola in focus → suggerimenti specifici per campo.
  * Se c'è un'azienda selezionata → suggerimenti per quell'azienda.
@@ -179,6 +193,7 @@ function AiAssistantPage() {
   const [wpsPending, setWpsPending] = useState(null);
   const messagesEndRef = useRef(null);
   const textareaRef = useRef(null);
+  const cropInputRef = useRef(null);
   const prevAuditIdRef = useRef(null);
   const saveTimerRef = useRef(null);
   const isAdmin = user?.role === "admin" || user?.role === "superadmin";
@@ -600,6 +615,43 @@ function AiAssistantPage() {
     handleSend(s);
   }, [handleSend]);
 
+  const handleCropSearch = useCallback(async (file) => {
+    if (!file || loading) return;
+    const name = file.name || "ritaglio.png";
+    setMessages((prev) => [
+      ...prev,
+      { role: "user", text: `Cerca tavole simili a ${name}`, time: new Date() },
+    ]);
+    setLoading(true);
+    try {
+      const figures = await fetchCitedFiguresByImage(file, companyContext.companyId);
+      const text = figures.length
+        ? `Tavole più simili al ritaglio «${name}».`
+        : `Nessuna tavola simile a «${name}».`;
+      setMessages((prev) => [
+        ...prev,
+        {
+          role: "assistant",
+          text,
+          time: new Date(),
+          contextUsed: 0,
+          sourcesCount: 0,
+          citations: [],
+          figures,
+        },
+      ]);
+    } catch (err) {
+      const errMsg =
+        err?.data?.error || err?.message || "Errore di comunicazione con il server.";
+      setMessages((prev) => [
+        ...prev,
+        { role: "error", text: errMsg, time: new Date() },
+      ]);
+    } finally {
+      setLoading(false);
+    }
+  }, [loading, companyContext.companyId]);
+
   const handleKeyDown = useCallback(
     (e) => {
       if (e.key === "Enter" && !e.shiftKey) {
@@ -908,7 +960,28 @@ function AiAssistantPage() {
           rows={1}
           disabled={loading}
         />
+        <input
+          ref={cropInputRef}
+          type="file"
+          accept="image/png,image/jpeg,image/webp"
+          hidden
+          onChange={(e) => {
+            const file = e.target.files && e.target.files[0];
+            e.target.value = "";
+            if (file) handleCropSearch(file);
+          }}
+        />
         <button
+          type="button"
+          className="ai-assistant-send-btn"
+          onClick={() => cropInputRef.current && cropInputRef.current.click()}
+          disabled={loading}
+          title="Cerca da ritaglio"
+        >
+          {"\u25A3"}
+        </button>
+        <button
+          type="button"
           className="ai-assistant-send-btn"
           onClick={() => handleSend()}
           disabled={!input.trim() || loading}
