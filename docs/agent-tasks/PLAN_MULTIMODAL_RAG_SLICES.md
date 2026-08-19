@@ -2,7 +2,7 @@
 
 > **Destinazione**: l’SGQ ingerisce PDF normativi con tavole (es. simboli saldatura ISO 2553 / AWS A2.4), conserva testo *e* ritagli di figura con bounding box, e li recupera in uno spazio vettoriale **locale** così l’assistente può citare la tavola e, in seguito, confrontarla con un disegno/WPS caricato. Verificabile: dato un PDF di prova, una query testo (e poi una query immagine) restituisce la figura giusta con pagina + bbox, senza chiamate cloud sui byte delle tavole.
 > **Spec / ADR**: [ADR-010](../adr/ADR-010-ai-agentic-architecture.md) (AI cita, non certifica; audit trail) · skill [`pdf-to-json`](../../.cursor/skills/pdf-to-json/SKILL.md) · indexer esistente `knowledgeIndexer.service.js` / `knowledge_chunks` · catalogo già in repo [`ISO-2553-simboli-saldatura.md`](../reference/ISO-2553-simboli-saldatura.md) + `weldingSymbols2553.js`
-> **Brief attivo**: MR-1 **CHIUSO** (TEST OK, 18/08/2026, [PR #469](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/469)). Prossima slice **MR-2** (UI citazioni, non aperta). MR-0 [PR #464](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/464). `DEPUTYTASK.md` resta SAL S1a, non usarlo.
+> **Brief attivo**: MR-2 **CHIUSO** (TEST OK, 19/08/2026, [PR #475](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/475)). MR-1 [PR #469](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/469). **Non aprire MR-3** in questa slice. MR-0 [PR #464](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/464).
 > **Mappa creata**: 18/08/2026 (Lead wayfinder A — Chart the map)
 > **Vincolo prodotto (HITL 18/08)**: sviluppare **tutto in locale** con un modello adatto. I byte delle figure non escono verso Gemini né altri parser cloud.
 
@@ -52,7 +52,7 @@
 |-------|------|------------------------|------------|------|
 | **MR-0** | Hello world: estrai figure + bbox da un PDF | `backend/scripts/pdf_to_json/` (`extract_figures.py`, CLI `--extract-figures`, fixture ReportLab, test, README) | — | AFK, **fatto** |
 | **MR-1** | Persisti + embed locale + GET retrieve testo→figura | migrazione `knowledge_figures` + service embed locale + GET `/api/v1/ai/figures/search` (isolation `organization_id`) + test L1 mock | MR-0 | AFK, **fatto** |
-| **MR-2** | UI: query testo cita la tavola | `AiAssistantPage` (o pannello citazioni esistente): crop + pagina + bbox; niente nuovo layout di prodotto | MR-1 | AFK |
+| **MR-2** | UI: query testo cita la tavola | `AiAssistantPage` (o pannello citazioni esistente): crop + pagina + bbox; niente nuovo layout di prodotto | MR-1 | AFK, **fatto** |
 | **MR-3** | Ingest norma → extract + embed | aggancio pipeline/job su PDF normativo; riuso MR-0+MR-1; niente fork `documentIngestPipeline` | MR-1 | AFK |
 | **MR-4** | Query visiva (disegno → simboli) | upload ritaglio/pagina; stesso spazio CLIP; top-k figure; test L1 con due crop della fixture | MR-1 | AFK |
 | **MR-5** | VLM locale risponde con figure citate | Ollama `qwen2.5vl:7b` + crop recuperati + `logAiInteraction`; AI cita, non certifica (ADR-010) | MR-2, MR-4 | AFK |
@@ -83,9 +83,17 @@
 - [x] Nuovi `.js` in `deploy-manifest.json`
 - [x] Nessun Gemini sui PNG, nessuna UI, nessun PDF copyright; MR-2 **non** aperta
 
+### DoD MR-2 (spuntato 19/08/2026)
+
+- [x] Dopo una risposta, fino a top-k tavole nel pannello citazioni esistente: immagine (o placeholder), pagina, bbox, caption, score
+- [x] Lista vuota → nessuna card, nessun errore
+- [x] `organization_id` solo dal JWT; GET `/ai/figures/:id/image` sul controller figure già presente
+- [x] Test L1 Vitest (lista vuota + 1 hit mostra pagina) e `npm run build`
+- [x] Nessun layout di prodotto nuovo, nessun Gemini sui PNG, nessun PDF copyright; MR-3 **non** aperta
+
 ---
 
-## Architettura target (MR-1 persist+CLIP+GET testo **fatto**; UI/ingest/VLM dopo)
+## Architettura target (MR-1 persist+CLIP+GET testo **fatto**; MR-2 UI citazioni **fatto**; ingest/VLM dopo)
 
 ```
 PDF norma (operatore)

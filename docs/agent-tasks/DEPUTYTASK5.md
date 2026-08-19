@@ -1,6 +1,6 @@
 # DEPUTYTASK5 — Multimodal RAG MR-2: UI citazioni tavola (testo → figura)
 
-**Stato:** APERTO  
+**Stato:** CHIUSO — TEST OK (19/08/2026, [PR #475](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/475))  
 **Aperto:** 19/08/2026 (dopo merge MR-1 [PR #469](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/469) e migrazione **154** applicata su VPS **TEST**)  
 **Piano:** [`PLAN_MULTIMODAL_RAG_SLICES.md`](PLAN_MULTIMODAL_RAG_SLICES.md)  
 **Spec:** ADR-010 (AI cita, non certifica) · GET già su `main`: `/api/v1/ai/figures/search?q=`  
@@ -57,7 +57,7 @@ cd app && npm run build
 
 - Spunta DoD MR-2 nel PLAN. **Non** aprire MR-3.
 - PR livello Medio; 1 Bugbot; Cloud Agent **non** mergia.
-- Chiudi con **TEST OK** o **FIX NON APPLICABILI** + handoff se incompleto.
+- **TEST OK** (19/08/2026) — Vitest `AiAssistantCitations.test.jsx` 4/4; Jest `figureKnowledge.controller.test.js` 8/8; `npm run build` in `app/`. PR [#475](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/475). MR-3 **non** aperta. GUIDA/roadmap non toccate.
 
 ### Bozza hub (dopo merge, non in questa PR)
 
