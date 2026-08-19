@@ -3,7 +3,7 @@
 > **Destinazione (ingest)**: da PDF reali (3.1, DDT scansionato, busta con più mill) si arriva a righe in Materiali con DDT / colata / norma compilati, **Valuta** che gira, HITL che decide. L’agente impara dalle correzioni con lo **stesso anello ADR-017** di qualifiche/WPQR. Nessun secondo motore OCR.  
 > **Spec**: [`MODULO_MATERIAL_COMPLIANCE_AI.md`](../specs/MODULO_MATERIAL_COMPLIANCE_AI.md)  
 > **ADR**: 020–024 · apprendimento ingest: [ADR-017](../adr/ADR-017-ingest-reference-network.md)  
-> **Brief ingest attivo**: [`DEPUTYTASK_MC_INGEST.md`](DEPUTYTASK_MC_INGEST.md) — **MC-I2 CHIUSO**. Prossima: **MC-I3**.  
+> **Brief ingest attivo**: [`DEPUTYTASK_MC_INGEST.md`](DEPUTYTASK_MC_INGEST.md) — **MC-I2 CHIUSO** (PR [#481](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/481)). Prossima: **MC-I3**.  
 > **Brief SAL**: [`DEPUTYTASK.md`](DEPUTYTASK.md) **CHIUSO** su S1a ([#471](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/471)) — **non sovrascriverlo**  
 > **Brief fondazione (MC-0)**: [`DEPUTYTASK_MATERIAL_COMPLIANCE_AI_FOUNDATION.md`](DEPUTYTASK_MATERIAL_COMPLIANCE_AI_FOUNDATION.md)  
 > **Spec tecniche MC-0**: [`MATERIAL_COMPLIANCE_DATA_MODEL.md`](../specs/MATERIAL_COMPLIANCE_DATA_MODEL.md) · [`MATERIAL_COMPLIANCE_UI.md`](../specs/MATERIAL_COMPLIANCE_UI.md) · [`MATERIAL_COMPLIANCE_API.md`](../specs/MATERIAL_COMPLIANCE_API.md)  
@@ -121,7 +121,7 @@ MC-0/MC-1/MC-5 devono prevedere questi campi (DDT era assente dalla lista spec d
 | **MC-I0** | Valuta 409 (lock `updated_at`) | controller + test evaluate | MC-4/5 | AFK (chiusa, [#463](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/463)) |
 | **MC-I1** | Ruolo Base/Apporto in upload | UI upload + default `base` hardcoded | MC-I0 | AFK (chiusa, [#473](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/473)) |
 | **MC-B** | OCR scan (riuso estrattore, non un secondo motore) | `extractCertificate` + `mapTextReason`; **non** nuovo OCR | MC-I0, SAL **S1a** | AFK (chiusa, [#476](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/476)) |
-| **MC-I2** | 3.1 singolo: colata / DDT / norma | schema `material_certificate` + mapping anagrafica | MC-I0 | AFK (chiusa, questa PR) |
+| **MC-I2** | 3.1 singolo: colata / DDT / norma | schema `material_certificate` + mapping anagrafica | MC-I0 | AFK (chiusa, [#481](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/481)) |
 | **MC-I3** | DDT ≠ 3.1 (classifica tipo) | extract + UI: DDT non è un mill | MC-I2, MC-B | AFK |
 | **MC-I4** | 1 PDF → N certificati (busta mill) | split/HITL; 26DDT06266 | MC-I2, MC-I3 | AFK (nebbia split: vedi sopra) |
 | **MC-7** | Feedback ADR-017 (recordFeedback → few-shot) | PATCH/approve MC → `ingestFeedback.service` | MC-I2 (c’è qualcosa da correggere) | AFK |
@@ -305,7 +305,7 @@ Prossima ingest: **MC-I2** (3.1 singolo: colata / DDT / norma).
 
 ### MC-I2 — 3.1 singolo: colata / DDT / norma
 
-**CHIUSO** — brief [`DEPUTYTASK_MC_INGEST.md`](DEPUTYTASK_MC_INGEST.md). L1 33/33.
+**CHIUSO** — brief [`DEPUTYTASK_MC_INGEST.md`](DEPUTYTASK_MC_INGEST.md). PR [#481](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/481). L1 33/33.
 
 Causa: `applyAnagraficaFromJson` leggeva solo `heat_or_lot_no`; l’AI spesso restituisce `heat_number` / `colata` / `B07`. `ddt_no` non andava in colonna; A07 non è un DDT.
 

@@ -16,7 +16,7 @@ Audit multi-standard (9001/14001/45001) · Non Conformità (workflow ISO 10.2 co
 
 ### Sessione più recente (19/08/2026)
 
-**MC-I2 3.1 colata / DDT / norma (19/08)** — alias AI (`heat_number`/`colata`/`B07`) → `heat_or_lot_no`; `ddt_no` persistito (non A07); fallback etichettato sul testo (es. `Colata 12174/2026`). Brief [`DEPUTYTASK_MC_INGEST.md`](agent-tasks/DEPUTYTASK_MC_INGEST.md) **CHIUSO**. Prossima ingest: **MC-I3**. ISO-4 **non** toccata. Dopo merge: **deploy backend** e rieditare Estrai sul 3.1 Tecnovespa.
+**MC-I2 3.1 colata / DDT / norma (19/08)** — [#481](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/481). Alias AI (`heat_number`/`colata`/`B07`) → `heat_or_lot_no`; `ddt_no` persistito (non A07); fallback etichettato sul testo (es. `Colata 12174/2026`). Brief [`DEPUTYTASK_MC_INGEST.md`](agent-tasks/DEPUTYTASK_MC_INGEST.md) **CHIUSO**. Prossima ingest: **MC-I3**. ISO-4 **non** toccata. Dopo merge: **deploy backend** e rieditare Estrai sul 3.1 Tecnovespa.
 
 **MC-B OCR scan (19/08, mergiata + deploy)** — [#476](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/476). Estrattore tagga `ocr_ok`; `ocr_skipped` solo formato non PDF. Deploy TEST PID `981527`→`993561`, PROD `967465`→`1005497`, health 200. Smoke PROD azienda 179 id 7 → Estrai HTTP 200, `extracted`, `ocr_ok`, 4397 caratteri.
 

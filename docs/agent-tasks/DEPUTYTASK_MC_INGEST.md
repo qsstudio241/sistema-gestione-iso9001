@@ -1,6 +1,6 @@
 # DEPUTYTASK — Material Compliance ingest (MC-I2)
 
-**Stato:** CHIUSO — TEST OK (19/08/2026)  
+**Stato:** CHIUSO — TEST OK (19/08/2026, [PR #481](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/481))  
 **Aperto:** 19/08/2026 (dopo merge hub MC-B [#479](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/479))  
 **Chiuso:** 19/08/2026 — L1 33/33 (`materialCertificates.controller`) + pagina Materiali 5/5  
 **Piano:** [`PLAN_MATERIAL_COMPLIANCE_SLICES.md`](PLAN_MATERIAL_COMPLIANCE_SLICES.md) § MC-I2  
