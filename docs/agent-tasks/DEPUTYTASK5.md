@@ -1,71 +1,82 @@
-# DEPUTYTASK5 — Multimodal RAG MR-2: UI citazioni tavola (testo → figura)
+# DEPUTYTASK5 — Multimodal RAG MR-3: ingest norma → extract + embed figure
 
-**Stato:** CHIUSO — TEST OK (19/08/2026, [PR #475](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/475))  
-**Aperto:** 19/08/2026 (dopo merge MR-1 [PR #469](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/469) e migrazione **154** applicata su VPS **TEST**)  
+**Stato:** APERTO  
+**Aperto:** 19/08/2026 (dopo merge MR-2 [PR #475](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/475); hub docs [PR #480](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/480))  
 **Piano:** [`PLAN_MULTIMODAL_RAG_SLICES.md`](PLAN_MULTIMODAL_RAG_SLICES.md)  
-**Spec:** ADR-010 (AI cita, non certifica) · GET già su `main`: `/api/v1/ai/figures/search?q=`  
-**Rischio:** Medio — solo UI + eventuale GET immagine sul controller figure già esistente; PR + **un** Bugbot a slice chiusa; **non** push su `main`
+**Spec:** ADR-010 (AI cita, non certifica) · MR-0 `extract_figures.py` · MR-1 `persistFigures` / CLIP locale  
+**Rischio:** Medio — job/API ingest, niente schema breaking; PR + **un** Bugbot a slice chiusa; **non** push su `main`
 
-**Scontrino MR-1 (non rifare):** CHIUSO TEST OK, mig. **154** `knowledge_figures`, adapter CLIP locale, GET search. 153 = ISO-6.
+**Scontrini (non rifare):**  
+- MR-0 CHIUSO #464 — CLI `--extract-figures`  
+- MR-1 CHIUSO #469 — tabella **154** `knowledge_figures`, GET search (SQL TEST già applicato; PROD a parte)  
+- MR-2 CHIUSO #475 — UI citazioni tavola  
 
 ---
 
-## Slice unica: MR-2
+## Slice unica: MR-3
 
-**Obiettivo:** nella pagina Assistente AI, una query di testo mostra le **tavole** citate (ritaglio + pagina + bbox), riusando il pannello citazioni esistente. Nessun layout di prodotto nuovo. Nessun Gemini sui PNG.
+**Obiettivo:** dato un PDF normativo **già sul disco** (fixture in test; in runtime path tenant), estrarre le tavole (MR-0) e persistirle con embedding locale (MR-1), isolate per `organization_id`. Un solo passaggio operatore/API. Nessuna UI nuova. Nessun Gemini sui PNG. Nessun fork di `documentIngestPipeline`.
 
 ### Contesto
 
-- Backend retrieve è su `main` (MR-1). Tabella **154** già creata su SQL **TEST** (19/08). PROD non ancora.
-- Citazioni testo già esistono: `AiAssistantCitations.jsx` sotto i messaggi.
-- DNA UI: leggere **prima di JSX** `app/src/design-system/README.md` e `docs/reference/LIBRERIA_UI_SGQ.md`. Copiare la scheda a fasi (riferimento 3) o i chip citazioni già in pagina — non inventare una galleria.
+- Extract: `backend/scripts/pdf_to_json/` flag `--extract-figures` (PNG + `*.figures.json`).
+- Persist: `persistFigures` in `figureKnowledge.service.js` (mock embed in L1).
+- Catalogo `weldingSymbols2553.js` resta la fonte codici — non duplicarlo.
+- Pipeline ingest documenti/certificati/WPS **non** si clona: si **chiama** extract+persist da un servizio nuovo (e, se naturale, 5 righe *dopo* un ingest norma già riuscito — senza refactor della pipeline).
 
 ### DoD
 
-1. Dopo una risposta (o una ricerca figure), l’utente vede fino a top-k tavole: **immagine** (o placeholder se manca il file), **pagina**, **bbox**, caption, score. Vuoto → niente errore, nessuna card.
-2. `organization_id` solo dal JWT (già nel GET). Nessun id org dal client.
-3. Se il PNG non è servibile via URL, aggiungere **minimo** `GET` bytes/file sul controller/route **già** di `figureKnowledge` (stesso modulo). Niente secondo store, niente Gemini.
-4. Test L1 (Vitest) sul componente citazioni figura: con lista vuota non crasha; con 1 hit mostra pagina. `cd app && NODE_ENV=test npm run test:run` sul file toccato + `npm run build` se si tocca JSX.
-5. **Un** `bugbot run` solo a slice chiusa (L1 verde). Non a ogni push.
-6. Nessun PDF copyright in repo. Nessuna UI nuova di prodotto.
+1. Servizio `figureIngest.service.js` (o nome equivalente): input `organizationId` + path PDF → extract figure → `persistFigures`. Org dal chiamante/JWT, mai dal client come id libero.
+2. PDF senza figure → `{ figures: [] }` / zero insert, exit ok, niente 500.
+3. Test L1 Jest: fixture ReportLab già in `pdf_to_json/tests` (o mock dello spawn extract); persist chiamato con `organization_id` e `embedding_space`; org A non scrive/legge org B. **Mock CLIP** — niente download pesi. Nessun PDF copyright in Git.
+4. Entrypoint unico: `POST /api/v1/ai/figures/ingest` (stessa auth/licenza `ai_chat` o admin già usata in AI) **oppure** hook minimo post-ingest norma. Multipart o path server già autorizzato; niente upload cloud.
+5. Nuovi `.js` in `backend/src/` aggiunti a `deploy-manifest.json`.
+6. **Un** Bugbot solo a slice chiusa (L1 verde).
+7. Nessun Gemini sui byte tavola; non aprire MR-4/MR-5.
 
 ### File previsti (disgiunti — tocca SOLO questi)
 
-- `app/src/pages/AiAssistantPage.jsx` (+ CSS della pagina se già esiste)
-- `app/src/components/AiAssistantCitations.jsx` (estendere; non creare un layout parallelo)
-- test accanto: es. `app/src/tests/AiAssistantCitations.test.jsx` o `app/src/components/AiAssistantCitations.test.jsx`
-- **solo se serve l’immagine:** `backend/src/controllers/figureKnowledge.controller.js` + `backend/src/routes/aiChat.routes.js` + test controller + riga già in `deploy-manifest.json` (non aggiungere file backend nuovi se si può evitare)
+- `backend/src/services/figureIngest.service.js` (**nuovo**, colla MR-0+MR-1)
+- `backend/src/services/figureIngest.service.test.js`
+- `backend/src/controllers/figureKnowledge.controller.js` + test (aggiungere ingest)
+- `backend/src/routes/aiChat.routes.js` (POST ingest)
+- `backend/scripts/deploy-manifest.json` (riga del service nuovo)
+- *Opzionale, max ~15 righe:* `backend/src/services/normIngest.service.js` solo chiamata dopo successo, senza cambiare lo staging/OCR
 
 ### Cosa NON toccare
 
-- `knowledgeIndexer.service.js`, Gemini, `knowledge_chunks`
-- `figureEmbed.service.js` / persist MR-1 (già fatti)
-- `weldingSymbols2553.js`, `backend/scripts/pdf_to_json/`
-- migrazioni SQL, `run-migration-*-vps.js`
-- `DEPUTYTASK.md`, `DEPUTYTASK1.md`… altri slot
-- `docs/GUIDA_CONSOLIDATA.md`, `docs/PROJECT_ROADMAP.md` (parallelo: bozza 5 righe in questo brief, sync **dopo merge**)
-- Slice MR-3…MR-5 (ingest, query visiva, Ollama)
+- `documentIngestPipeline.service.js` (niente fork, niente copia)
+- `knowledgeIndexer.service.js` / Gemini / `knowledge_chunks`
+- `extract_figures.py` / CLI MR-0 (riusare, non riscrivere)
+- `figureEmbed.service.js` (già fatto; mock nei test)
+- UI Assistente (`AiAssistantPage`, `AiAssistantCitations`)
+- `weldingSymbols2553.js`, PDF in `docs/Normative/`
+- migrazioni SQL (154 già c’è)
+- `DEPUTYTASK.md` e altri slot
+- `docs/GUIDA_CONSOLIDATA.md`, `docs/PROJECT_ROADMAP.md` (bozza 5 righe qui sotto; sync **dopo merge**)
+- PR aperte MC (`materialCertificates.*`)
 
 ### Verifica
 
 ```bash
-cd app && NODE_ENV=test npm run test:run -- src/components/AiAssistantCitations.test.jsx
-cd app && npm run build
+cd backend && npx jest src/services/figureIngest.service.test.js src/controllers/figureKnowledge.controller.test.js --forceExit
 ```
+
+Senza rete, senza download CLIP.
 
 ### Chiusura
 
-- Spunta DoD MR-2 nel PLAN. **Non** aprire MR-3.
-- PR livello Medio; 1 Bugbot; Cloud Agent **non** mergia.
-- **TEST OK** (19/08/2026) — Vitest `AiAssistantCitations.test.jsx` 4/4; Jest `figureKnowledge.controller.test.js` 8/8; `npm run build` in `app/`. PR [#475](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/475) **mergiata**. MR-3 **non** aperta. Hub GUIDA/roadmap in questa slice docs.
+- Spunta DoD MR-3 nel PLAN. **Non** aprire MR-4.
+- PR Medio; 1 Bugbot; Cloud Agent **non** mergia.
+- Chiudi con **TEST OK** o **FIX NON APPLICABILI**.
 
-### Hub dopo merge
+### Bozza hub (dopo merge, non in questa PR codice)
 
-- GUIDA: una riga — citazioni tavola = stesso pannello Assistente, crop locale, AI non certifica.
-- Roadmap § Stato attuale: una riga MR-2 + priorità 9 (prossima MR-3, non aperta).
+- GUIDA: ingest figure = extract locale + persist CLIP; stesso tenant; AI non certifica.
+- Roadmap: una riga MR-3 + priorità RAG aggiornata.
 
 ---
 
 ## Comando per il deputy
 
-Leggi `docs/agent-tasks/DEPUTYTASK5.md` ed eseguilo. Chiudi con TEST OK o FIX NON APPLICABILI. Non aprire MR-3. Non toccare GUIDA né roadmap. Un solo Bugbot a slice chiusa.
+Leggi `docs/agent-tasks/DEPUTYTASK5.md` ed eseguilo. Chiudi con TEST OK o FIX NON APPLICABILI. Non aprire MR-4. Non toccare GUIDA né roadmap. Un solo Bugbot a slice chiusa.
