@@ -37,7 +37,8 @@ Un verbale RDP o NDT può (non deve) essere collegato a una commessa ISO 3834. S
 - Colonne `project_id` nullable, FK `ON DELETE SET NULL`, indici. Niente CASCADE.
 - Create/update: `project_id` opzionale; 400 `PROJECT_COMPANY_MISMATCH` se azienda diversa; 404 se commessa fuori org; omettere il campo in update non azzera.
 - Lista/dettaglio: `project_code`. Picker visibile, `disabled` senza azienda.
-- L1 backend: **34/34** (helper, migrazione 155, RDP, NDT).
+- L1 backend: **36/36** (helper, migrazione 155, RDP, NDT).
+- Bugbot (1 run, slice chiusa): rilievo su `project_id` stale se cambia azienda senza mandare il campo — **corretto** in update RDP/NDT (400 `PROJECT_COMPANY_MISMATCH`). Nessun secondo Bugbot.
 
 Dopo merge: migrazione **prima su TEST** (`SGQ_MIGRATION_TARGET=test node /tmp/run-migration-155-vps.js`). Produzione solo su richiesta.
 

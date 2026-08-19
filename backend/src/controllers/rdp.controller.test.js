@@ -204,6 +204,26 @@ describe('updateRdpReport — company_access', () => {
     expect(res.json).toHaveBeenCalledWith(expect.objectContaining({ code: 'FORBIDDEN' }));
     expect(query.mock.calls.length).toBe(1);
   });
+
+  it('cambio azienda senza project_id: 400 se la commessa resta dell\'altra azienda', async () => {
+    query.mockImplementation(async (sql) => {
+      if (sql.includes('SELECT id, company_id, project_id FROM rdp_reports')) {
+        return { recordset: [{ id: 5, company_id: 12, project_id: 40 }] };
+      }
+      if (sql.includes('FROM dbo.projects')) {
+        return { recordset: [{ id: 40, company_id: 12 }] };
+      }
+      return { recordset: [] };
+    });
+    const res = mockRes();
+    await ctrl.updateRdpReport(mockReq({
+      params: { id: '5' },
+      user: studioAdmin,
+      body: { company_id: 99, client: 'Altro' },
+    }), res);
+    expect(res.status).toHaveBeenCalledWith(400);
+    expect(res.json).toHaveBeenCalledWith(expect.objectContaining({ code: 'PROJECT_COMPANY_MISMATCH' }));
+  });
 });
 
 describe('deleteRdpReport — company_access', () => {

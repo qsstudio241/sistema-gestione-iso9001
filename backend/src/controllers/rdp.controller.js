@@ -484,10 +484,12 @@ async function updateRdpReport(req, res) {
         }
 
         let nextProjectId = existing.recordset[0].project_id;
-        if (rawProjectId !== undefined) {
+        const mustResolveProject = rawProjectId !== undefined
+            || (nextProjectId != null && Number(nextCompanyId) !== Number(existingCompanyId));
+        if (mustResolveProject) {
             const projectResolved = await resolveOptionalProjectId(query, {
                 organizationId: organization_id,
-                projectId: rawProjectId,
+                projectId: rawProjectId !== undefined ? rawProjectId : nextProjectId,
                 companyId: nextCompanyId,
             });
             if (projectResolved.error) {
