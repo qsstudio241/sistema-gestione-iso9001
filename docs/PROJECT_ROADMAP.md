@@ -8,7 +8,7 @@
 
 > **Risposta standard a «stato di avanzamento del progetto e priorità da affrontare»**: sintetizzare da questa sezione (moduli maturi + sessione più recente + tabella priorità sotto), **non** dal banner storico più sotto (superato, tenuto solo per traccia) né dall'archivio marzo 2026 [`docs/archive/PROJECT_CONTEXT_STATO_FUNZIONALITA_2026-03.md`](archive/PROJECT_CONTEXT_STATO_FUNZIONALITA_2026-03.md). **Aggiornare questa sezione a fine sessione** se emergono nuove priorità o se una priorità elencata viene chiusa (stesso principio delle "Lezioni apprese" in [GUIDA_CONSOLIDATA.md](GUIDA_CONSOLIDATA.md) — sintesi qui, dettaglio linkato).
 
-**Ultimo aggiornamento di questa sezione**: 19/08/2026 (MC-I2 colata/DDT/norma #481; MR-2 citazioni tavola #475; MC-B OCR #476 in prod; ISO-7 #474).
+**Ultimo aggiornamento di questa sezione**: 19/08/2026 (MC-I2 #481 deploy TEST+PROD + smoke colata; MR-2 #475; MC-B #476; ISO-7 #474).
 
 ### Moduli maturi (in produzione, uso quotidiano dai clienti Camellini/Mason)
 
@@ -16,7 +16,7 @@ Audit multi-standard (9001/14001/45001) · Non Conformità (workflow ISO 10.2 co
 
 ### Sessione più recente (19/08/2026)
 
-**MC-I2 3.1 colata / DDT / norma (19/08)** — [#481](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/481). Alias AI (`heat_number`/`colata`/`B07`) → `heat_or_lot_no`; `ddt_no` persistito (non A07); fallback etichettato sul testo (es. `Colata 12174/2026`). Brief [`DEPUTYTASK_MC_INGEST.md`](agent-tasks/DEPUTYTASK_MC_INGEST.md) **CHIUSO**. Prossima ingest: **MC-I3**. ISO-4 **non** toccata. Dopo merge: **deploy backend** e rieditare Estrai sul 3.1 Tecnovespa.
+**MC-I2 3.1 colata / DDT / norma (19/08, mergiata + deploy)** — [#481](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/481). Alias AI → `heat_or_lot_no`; DDT ≠ A07. Deploy TEST PID `993561`→`1019412`, PROD `1005497`→`1031291`, health 200. Smoke PROD azienda 179 id 6 (`CERTIFICATO31-…-TECNOVESPA-12174.PDF`) → Estrai HTTP 200, `extracted`, colata **`12174/2026`**. Brief [`DEPUTYTASK_MC_INGEST.md`](agent-tasks/DEPUTYTASK_MC_INGEST.md) **CHIUSO**. Prossima ingest: **MC-I3**. ISO-4 **non** toccata.
 
 **Multimodal RAG MR-2 mergiato (19/08)** — citazioni tavola nello stesso pannello Assistente (crop + pagina + bbox). GET `/ai/figures/:id/image`, org dal JWT. Brief [`DEPUTYTASK5.md`](agent-tasks/DEPUTYTASK5.md) **CHIUSO**. [PR #475](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/475). Piano: [`PLAN_MULTIMODAL_RAG_SLICES.md`](agent-tasks/PLAN_MULTIMODAL_RAG_SLICES.md). Serve deploy backend per il GET immagine.
 
