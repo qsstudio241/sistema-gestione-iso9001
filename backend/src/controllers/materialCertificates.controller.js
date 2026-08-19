@@ -4,6 +4,7 @@
  * MC-I0: evaluate non usa lock updated_at (Date JS vs DATETIME2 → 409 spurio).
  * MC-B: OCR via documentTextExtractor (reason ocr_ok); mapTextReason non collassa unavailable in skipped.
  * MC-I2: alias AI (heat_number/colata/B07, ddt, norma) → colonne griglia; DDT ≠ A07.
+ * MC-I3: DDT ≠ mill; document_kind delivery_note non copia colata/norma; Valuta 409.
 
  * workflow_status=compliant solo da HITL approve, mai da AI o dal motore.
  */
@@ -49,6 +50,7 @@ const MIN_TEXT_CHARS = 80;
 const MATERIAL_CERTIFICATE_MANUAL_EDITABLE_FIELDS = [
   'ddt_no',
   'ddt_date',
+  'document_kind',
   'certificate_no',
   'material_role',
   'designation',
@@ -253,6 +255,77 @@ function fallbackHeatFromText(text) {
     if (v.length >= 3 && v.length <= 40) return v;
   }
   return null;
+}
+
+const MILL_JSON_KEYS = [
+  'heat_or_lot_no', 'certificate_no', 'inspection_document_type',
+  'steel_designation', 'filler_designation', 'ReH', 'Rm', 'A', 'KV',
+  'chemistry', 'CEV', 'hardness', 'product_form', 'dimensions',
+  'material_standard', 'filler_standard', 'delivery_condition', 'ndt',
+  'thickness_mm', 'actual_mass', 'hydrogen_class', 'filler_diameter_mm',
+  'manufacturer_works',
+];
+
+function filenameOf(storagePath) {
+  const raw = String(storagePath || '').split(/[/\\]/).pop() || '';
+  return raw.replace(/^\d+_/, '');
+}
+
+function normalizeDocumentKind(raw) {
+  const k = String(emptyToNull(raw) || '').toLowerCase();
+  if (k === 'delivery_note' || k === 'ddt' || k === 'bolla') return 'delivery_note';
+  if (k === 'mill_certificate' || k === 'mill') return 'mill_certificate';
+  return null;
+}
+
+/** MC-I3: il PDF è una bolla, non un 3.1. Filename CERTIFICATO/3.1 vince; DDT nel nome vince sull'AI. */
+function detectSourceDocumentKind({ text, storagePath, aiKind }) {
+  const file = filenameOf(storagePath);
+  if (/\bCERTIFICATO\b/i.test(file) || /\b3[._-]1\b/.test(file)) return 'mill_certificate';
+  if (/\bD\.?D\.?T\.?\b/i.test(file) || /\bbolla\b/i.test(file)) return 'delivery_note';
+  const fromAi = normalizeDocumentKind(aiKind);
+  if (fromAi) return fromAi;
+  const head = String(text || '').slice(0, 160);
+  if (/\bdocumento di trasporto\b/i.test(head) || /\bbolla di accompagnamento\b/i.test(head)) {
+    return 'delivery_note';
+  }
+  return 'mill_certificate';
+}
+
+function fallbackDdtFromFilename(storagePath) {
+  const file = filenameOf(storagePath);
+  const m = file.match(/\bD\.?D\.?T\.?(?:_n\._|_n[._]|[\s_]*n[°o.]?\s*)([A-Z0-9]+)/i)
+    || file.match(/\bDDT[_-]?n?[._-]?([A-Z0-9]+)/i);
+  if (!m || !m[1]) return { ddt_no: null, ddt_date: null };
+  const del = file.match(/del[_-](\d{1,2})[-.](\d{1,2})[-.](\d{2,4})/i);
+  let ddtDate = null;
+  if (del) {
+    const year = del[3].length === 2 ? `20${del[3]}` : del[3];
+    ddtDate = `${year}-${del[2].padStart(2, '0')}-${del[1].padStart(2, '0')}`;
+  }
+  return { ddt_no: m[1], ddt_date: ddtDate };
+}
+
+function fallbackDdtFromText(text) {
+  const t = String(text || '');
+  const m = t.match(/\b(?:D\.D\.T\.|DDT)\s*n[°o.]?\s*([A-Z0-9]+)/i);
+  return m && m[1] ? m[1] : null;
+}
+
+function applyDeliveryNoteExtract(json, { text, storagePath }) {
+  const out = json && typeof json === 'object' ? { ...json } : {};
+  out.document_kind = 'delivery_note';
+  for (const key of MILL_JSON_KEYS) out[key] = null;
+  const fromFile = fallbackDdtFromFilename(storagePath);
+  if (!emptyToNull(out.ddt_no)) out.ddt_no = fromFile.ddt_no || fallbackDdtFromText(text);
+  if (!emptyToNull(out.ddt_date)) out.ddt_date = fromFile.ddt_date || out.ddt_date || null;
+  return out;
+}
+
+function isDeliveryNotePayload(extracted, corrected) {
+  return normalizeDocumentKind(
+    emptyToNull(corrected?.document_kind) || emptyToNull(extracted?.document_kind)
+  ) === 'delivery_note';
 }
 
 function applyAnagraficaFromJson(json, roleHint) {
@@ -697,31 +770,39 @@ async function patchCertificate(req, res) {
       }
     }
     corrected = canonicalizeExtractedJson(corrected);
+    const patchToDdt = normalizeDocumentKind(corrected.document_kind) === 'delivery_note';
+    if (patchToDdt) {
+      corrected = applyDeliveryNoteExtract(corrected, {
+        text: '',
+        storagePath: row.storage_path,
+      });
+    }
     const fromJson = applyAnagraficaFromJson(corrected, cols.material_role || row.material_role);
+    const millOrRow = (jsonVal, rowVal) => (patchToDdt ? jsonVal : (jsonVal || rowVal));
     const next = {
       ddt_no: cols.ddt_no !== undefined ? clip(emptyToNull(cols.ddt_no), 80) : (fromJson.ddt_no || row.ddt_no),
       ddt_date: cols.ddt_date !== undefined
         ? normalizeSqlDate(cols.ddt_date)
         : (fromJson.ddt_date || row.ddt_date),
       certificate_no: cols.certificate_no !== undefined
-        ? clip(emptyToNull(cols.certificate_no), 120) : (fromJson.certificate_no || row.certificate_no),
+        ? clip(emptyToNull(cols.certificate_no), 120) : millOrRow(fromJson.certificate_no, row.certificate_no),
       material_role: cols.material_role || fromJson.material_role || row.material_role,
       designation: cols.designation !== undefined
-        ? clip(emptyToNull(cols.designation), 200) : (fromJson.designation || row.designation),
+        ? clip(emptyToNull(cols.designation), 200) : millOrRow(fromJson.designation, row.designation),
       heat_or_lot_no: cols.heat_or_lot_no !== undefined
-        ? clip(emptyToNull(cols.heat_or_lot_no), 80) : (fromJson.heat_or_lot_no || row.heat_or_lot_no),
+        ? clip(emptyToNull(cols.heat_or_lot_no), 80) : millOrRow(fromJson.heat_or_lot_no, row.heat_or_lot_no),
       product_form: cols.product_form !== undefined
-        ? clip(emptyToNull(cols.product_form), 40) : (fromJson.product_form || row.product_form),
+        ? clip(emptyToNull(cols.product_form), 40) : millOrRow(fromJson.product_form, row.product_form),
       dimensions: cols.dimensions !== undefined
-        ? clip(emptyToNull(cols.dimensions), 120) : (fromJson.dimensions || row.dimensions),
+        ? clip(emptyToNull(cols.dimensions), 120) : millOrRow(fromJson.dimensions, row.dimensions),
       material_standard: cols.material_standard !== undefined
-        ? clip(emptyToNull(cols.material_standard), 80) : (fromJson.material_standard || row.material_standard),
+        ? clip(emptyToNull(cols.material_standard), 80) : millOrRow(fromJson.material_standard, row.material_standard),
       manufacturer_works: cols.manufacturer_works !== undefined
         ? clip(emptyToNull(cols.manufacturer_works), 200)
-        : (fromJson.manufacturer_works || row.manufacturer_works),
+        : millOrRow(fromJson.manufacturer_works, row.manufacturer_works),
       inspection_document_type: cols.inspection_document_type !== undefined
         ? emptyToNull(cols.inspection_document_type)
-        : (fromJson.inspection_document_type || row.inspection_document_type),
+        : millOrRow(fromJson.inspection_document_type, row.inspection_document_type),
     };
     for (const key of Object.keys(cols)) {
       if (Object.prototype.hasOwnProperty.call(next, key)) {
@@ -861,14 +942,28 @@ async function extractCertificate(req, res) {
       });
     }
 
-    const extractedJson = canonicalizeExtractedJson(jsonPayloadFromAi(aiResult));
+    let extractedJson = canonicalizeExtractedJson(jsonPayloadFromAi(aiResult));
     if (extractedJson.material_role && !ROLES.has(extractedJson.material_role)) {
       extractedJson.material_role = 'base';
     }
     if (!extractedJson.material_role) extractedJson.material_role = row.material_role || 'base';
-    if (!emptyToNull(extractedJson.heat_or_lot_no)) {
-      const fromText = fallbackHeatFromText(text);
-      if (fromText) extractedJson.heat_or_lot_no = fromText;
+    const documentKind = detectSourceDocumentKind({
+      text,
+      storagePath: row.storage_path,
+      aiKind: extractedJson.document_kind,
+    });
+    const clearMill = documentKind === 'delivery_note';
+    if (clearMill) {
+      extractedJson = applyDeliveryNoteExtract(extractedJson, {
+        text,
+        storagePath: row.storage_path,
+      });
+    } else {
+      extractedJson.document_kind = 'mill_certificate';
+      if (!emptyToNull(extractedJson.heat_or_lot_no)) {
+        const fromText = fallbackHeatFromText(text);
+        if (fromText) extractedJson.heat_or_lot_no = fromText;
+      }
     }
     const ana = applyAnagraficaFromJson(extractedJson, row.material_role);
     const model = clip(aiResult.model, 80);
@@ -877,14 +972,15 @@ async function extractCertificate(req, res) {
       `UPDATE dbo.material_certificates
        SET extracted_text = @extracted_text, text_extract_reason = @text_extract_reason,
            extracted_json = @extracted_json, ai_model = @ai_model,
-           certificate_no = COALESCE(@certificate_no, certificate_no),
-           designation = COALESCE(@designation, designation),
-           heat_or_lot_no = COALESCE(@heat_or_lot_no, heat_or_lot_no),
-           product_form = COALESCE(@product_form, product_form),
-           dimensions = COALESCE(@dimensions, dimensions),
-           material_standard = COALESCE(@material_standard, material_standard),
-           manufacturer_works = COALESCE(@manufacturer_works, manufacturer_works),
-           inspection_document_type = COALESCE(@inspection_document_type, inspection_document_type),
+           corrected_json = NULL,
+           certificate_no = CASE WHEN @clear_mill = 1 THEN @certificate_no ELSE COALESCE(@certificate_no, certificate_no) END,
+           designation = CASE WHEN @clear_mill = 1 THEN @designation ELSE COALESCE(@designation, designation) END,
+           heat_or_lot_no = CASE WHEN @clear_mill = 1 THEN @heat_or_lot_no ELSE COALESCE(@heat_or_lot_no, heat_or_lot_no) END,
+           product_form = CASE WHEN @clear_mill = 1 THEN @product_form ELSE COALESCE(@product_form, product_form) END,
+           dimensions = CASE WHEN @clear_mill = 1 THEN @dimensions ELSE COALESCE(@dimensions, dimensions) END,
+           material_standard = CASE WHEN @clear_mill = 1 THEN @material_standard ELSE COALESCE(@material_standard, material_standard) END,
+           manufacturer_works = CASE WHEN @clear_mill = 1 THEN @manufacturer_works ELSE COALESCE(@manufacturer_works, manufacturer_works) END,
+           inspection_document_type = CASE WHEN @clear_mill = 1 THEN @inspection_document_type ELSE COALESCE(@inspection_document_type, inspection_document_type) END,
            ddt_no = COALESCE(@ddt_no, ddt_no),
            ddt_date = COALESCE(@ddt_date, ddt_date),
            material_role = @material_role,
@@ -899,6 +995,7 @@ async function extractCertificate(req, res) {
         text_extract_reason: reason,
         extracted_json: JSON.stringify(extractedJson),
         ai_model: model,
+        clear_mill: clearMill ? 1 : 0,
         certificate_no: clip(ana.certificate_no, 120),
         designation: clip(ana.designation, 200),
         heat_or_lot_no: clip(ana.heat_or_lot_no, 80),
@@ -960,6 +1057,12 @@ async function evaluateCertificate(req, res) {
       return res.status(400).json({
         error: 'JSON di estrazione assente: esegui prima extract',
         code: 'EXTRACT_REQUIRED',
+      });
+    }
+    if (isDeliveryNotePayload(extractedJson, correctedJson)) {
+      return res.status(409).json({
+        error: 'Questo documento è un DDT, non un certificato 3.1: la valutazione non si applica',
+        code: 'NOT_A_CERTIFICATE',
       });
     }
 
@@ -1097,4 +1200,8 @@ module.exports = {
   canonicalizeExtractedJson,
   applyAnagraficaFromJson,
   fallbackHeatFromText,
+  detectSourceDocumentKind,
+  applyDeliveryNoteExtract,
+  fallbackDdtFromFilename,
+  isDeliveryNotePayload,
 };

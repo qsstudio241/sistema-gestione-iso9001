@@ -604,6 +604,132 @@ describe('materialCertificates.controller (MC-4)', () => {
     expect(ctrl.applyAnagraficaFromJson(filler, 'filler').material_standard).toBe('ISO 14341');
   });
 
+  it('MC-I3 filename DDT → ddt_no, mill null anche se AI inventa colata', async () => {
+    const ddtPath = '/uploads/material-certificates/1001/1750000000000_D.D.T._n._000775RE_del_28-07-2026.pdf';
+    query.mockResolvedValueOnce({
+      recordset: [{
+        ...CERT,
+        workflow_status: 'received',
+        storage_path: ddtPath,
+        heat_or_lot_no: '692976',
+        material_standard: 'EN 10149-2',
+      }],
+    });
+    extractDocumentText.mockResolvedValueOnce({
+      text: 'Documento di trasporto merce S500 MC EN 10149-2 colata 692976 '.repeat(4),
+      reason: 'ocr_ok',
+    });
+    extractStructuredByDocType.mockResolvedValueOnce({
+      model: 'test-model',
+      data: {
+        type_specific_data: {
+          document_kind: 'mill_certificate',
+          material_role: 'base',
+          heat_or_lot_no: '692976',
+          material_standard: 'EN 10149-2',
+          steel_designation: 'S500 MC',
+        },
+      },
+    });
+    query.mockResolvedValueOnce({ recordset: [{ id: 11 }] });
+    const res = mockRes();
+    await ctrl.extractCertificate(mockReq({ params: { id: '11' } }), res);
+    const body = res.json.mock.calls[0][0];
+    expect(body.data.extracted_json.document_kind).toBe('delivery_note');
+    expect(body.data.extracted_json.ddt_no).toBe('000775RE');
+    expect(body.data.extracted_json.ddt_date).toBe('2026-07-28');
+    expect(body.data.extracted_json.heat_or_lot_no).toBeNull();
+    expect(body.data.extracted_json.material_standard).toBeNull();
+    expect(body.data.extracted_json.steel_designation).toBeNull();
+    const updateSql = query.mock.calls.find((c) => /workflow_status = 'extracted'/.test(sqlOf(c)));
+    expect(updateSql[1].ddt_no).toBe('000775RE');
+    expect(updateSql[1].heat_or_lot_no).toBeNull();
+    expect(updateSql[1].clear_mill).toBe(1);
+    expect(sqlOf(updateSql)).toMatch(/WHEN @clear_mill = 1 THEN @heat_or_lot_no/);
+    expect(sqlOf(updateSql)).toMatch(/corrected_json = NULL/);
+  });
+
+  it('MC-I3 CERTIFICATO nel nome resta mill (Tecnovespa)', async () => {
+    query.mockResolvedValueOnce({
+      recordset: [{
+        ...CERT,
+        workflow_status: 'received',
+        storage_path: '/tmp/CERTIFICATO31-TECNOVESPA-12174.PDF',
+      }],
+    });
+    extractDocumentText.mockResolvedValueOnce({
+      text: 'Certificato 3.1 Tecnovespa Colata 12174/2026 EN 10025-2 '.repeat(4),
+    });
+    extractStructuredByDocType.mockResolvedValueOnce({
+      model: 'test-model',
+      data: {
+        type_specific_data: {
+          material_role: 'base',
+          heat_or_lot_no: '12174/2026',
+          material_standard: 'EN 10025-2',
+        },
+      },
+    });
+    query.mockResolvedValueOnce({ recordset: [{ id: 11 }] });
+    const res = mockRes();
+    await ctrl.extractCertificate(mockReq({ params: { id: '11' } }), res);
+    const body = res.json.mock.calls[0][0];
+    expect(body.data.extracted_json.document_kind).toBe('mill_certificate');
+    expect(body.data.extracted_json.heat_or_lot_no).toBe('12174/2026');
+    expect(body.data.extracted_json.material_standard).toBe('EN 10025-2');
+    const updateSql = query.mock.calls.find((c) => /workflow_status = 'extracted'/.test(sqlOf(c)));
+    expect(updateSql[1].clear_mill).toBe(0);
+    expect(updateSql[1].heat_or_lot_no).toBe('12174/2026');
+  });
+
+  it('MC-I3 evaluate DDT → 409 NOT_A_CERTIFICATE', async () => {
+    query.mockResolvedValueOnce({
+      recordset: [{
+        ...CERT,
+        workflow_status: 'extracted',
+        extracted_json: JSON.stringify({
+          document_kind: 'delivery_note',
+          ddt_no: '000775RE',
+        }),
+      }],
+    });
+    const res = mockRes();
+    await ctrl.evaluateCertificate(mockReq({ params: { id: '11' }, body: {} }), res);
+    expect(res.status).toHaveBeenCalledWith(409);
+    expect(res.json.mock.calls[0][0].code).toBe('NOT_A_CERTIFICATE');
+    expect(evaluateMaterialCertificate).not.toHaveBeenCalled();
+  });
+
+  it('MC-I3 helper filename DDT e CERTIFICATO', () => {
+    expect(ctrl.fallbackDdtFromFilename('D.D.T._n._000775RE_del_28-07-2026.pdf')).toEqual({
+      ddt_no: '000775RE',
+      ddt_date: '2026-07-28',
+    });
+    expect(ctrl.detectSourceDocumentKind({
+      storagePath: '1750000000000_D.D.T._n._000775RE.pdf',
+      aiKind: 'mill_certificate',
+      text: 'S500 MC EN 10149-2 heat 692976',
+    })).toBe('delivery_note');
+    expect(ctrl.detectSourceDocumentKind({
+      storagePath: 'CERTIFICATO31-TECNOVESPA-12174.PDF',
+      text: 'D.D.T. n. 000775RE',
+    })).toBe('mill_certificate');
+    expect(ctrl.detectSourceDocumentKind({
+      storagePath: '/tmp/mtc.pdf',
+      text: 'Certificato 3.1 S355J2 D.D.T. n. 000775RE Colata 12174/2026 '.repeat(4),
+    })).toBe('mill_certificate');
+    expect(ctrl.isDeliveryNotePayload(
+      { document_kind: 'delivery_note' },
+      { document_kind: '' }
+    )).toBe(true);
+    expect(ctrl.isDeliveryNotePayload({ document_kind: 'bolla' }, null)).toBe(true);
+    expect(ctrl.detectSourceDocumentKind({
+      storagePath: '/tmp/scan.pdf',
+      aiKind: 'BOLLA',
+      text: 'S500 MC EN 10149-2 colata 692976',
+    })).toBe('delivery_note');
+  });
+
   it('PATCH svuota ddt_no e non lo re-inietta da delivery_note_no', async () => {
     query.mockResolvedValueOnce({
       recordset: [{
@@ -632,6 +758,37 @@ describe('materialCertificates.controller (MC-4)', () => {
     const stored = JSON.parse(updateSql[1].corrected_json);
     expect(stored.ddt_no).toBeNull();
     expect(stored.delivery_note_no).toBeUndefined();
+  });
+
+  it('MC-I3 PATCH document_kind delivery_note azzera colata in colonna', async () => {
+    query.mockResolvedValueOnce({
+      recordset: [{
+        ...CERT,
+        workflow_status: 'extracted',
+        heat_or_lot_no: '692976',
+        material_standard: 'EN 10149-2',
+        extracted_json: JSON.stringify({
+          material_role: 'base',
+          heat_or_lot_no: '692976',
+          material_standard: 'EN 10149-2',
+        }),
+      }],
+    });
+    query.mockResolvedValueOnce({
+      recordset: [{ id: 11, workflow_status: 'extracted', material_role: 'base' }],
+    });
+    const res = mockRes();
+    await ctrl.patchCertificate(mockReq({
+      params: { id: '11' },
+      body: { document_kind: 'delivery_note' },
+    }), res);
+    expect(res.status).not.toHaveBeenCalledWith(409);
+    const updateSql = query.mock.calls.find((c) => /SET ddt_no = @ddt_no/.test(sqlOf(c)));
+    expect(updateSql[1].heat_or_lot_no).toBeNull();
+    expect(updateSql[1].material_standard).toBeNull();
+    const stored = JSON.parse(updateSql[1].corrected_json);
+    expect(stored.document_kind).toBe('delivery_note');
+    expect(stored.heat_or_lot_no).toBeNull();
   });
 
   it('routes: authenticate + capability AND, extract con logAiInteraction', () => {
