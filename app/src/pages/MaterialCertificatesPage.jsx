@@ -40,6 +40,7 @@ const COLUMNS = [
 
 const PATCH_KEYS = [
   "ddt_no",
+  "ddt_date",
   "certificate_no",
   "designation",
   "heat_or_lot_no",

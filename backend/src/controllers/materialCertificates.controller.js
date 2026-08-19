@@ -3,6 +3,7 @@
  * Extract: ingest AI. Evaluate: Rule Engine MC-3 (zero LLM).
  * MC-I0: evaluate non usa lock updated_at (Date JS vs DATETIME2 → 409 spurio).
  * MC-B: OCR via documentTextExtractor (reason ocr_ok); mapTextReason non collassa unavailable in skipped.
+ * MC-I2: alias AI (heat_number/colata/B07, ddt, norma) → colonne griglia; DDT ≠ A07.
 
  * workflow_status=compliant solo da HITL approve, mai da AI o dal motore.
  */
@@ -180,20 +181,85 @@ function designationFromJson(json, role) {
   return emptyToNull(json.steel_designation || json.designation);
 }
 
+/** MC-I2: chiavi canoniche EN 10168. A07 (ordine acquirente) non è un DDT. */
+const HEAT_ALIASES = [
+  'heat_or_lot_no', 'heat_number', 'heat_no', 'cast_no', 'cast_number',
+  'colata', 'lot_no', 'lot_number', 'B07',
+];
+const STANDARD_ALIASES = [
+  'material_standard', 'filler_standard', 'steel_standard', 'product_standard',
+];
+const DDT_NO_ALIASES = ['ddt_no', 'delivery_note_no', 'ddt'];
+const DDT_DATE_ALIASES = ['ddt_date', 'delivery_note_date'];
+
+function firstNonEmpty(obj, keys) {
+  if (!obj || typeof obj !== 'object') return null;
+  for (const key of keys) {
+    const v = emptyToNull(obj[key]);
+    if (v) return v;
+  }
+  return null;
+}
+
+function normalizeSqlDate(raw) {
+  const s = emptyToNull(raw);
+  if (!s) return null;
+  if (/^\d{4}-\d{2}-\d{2}/.test(s)) return s.slice(0, 10);
+  const m = s.match(/^(\d{1,2})[./-](\d{1,2})[./-](\d{4})$/);
+  if (!m) return null;
+  return `${m[3]}-${m[2].padStart(2, '0')}-${m[1].padStart(2, '0')}`;
+}
+
+function canonicalizeExtractedJson(raw) {
+  const json = raw && typeof raw === 'object' && !Array.isArray(raw) ? { ...raw } : {};
+  const heat = firstNonEmpty(json, HEAT_ALIASES);
+  if (heat) json.heat_or_lot_no = heat;
+  const std = firstNonEmpty(json, STANDARD_ALIASES);
+  if (std) json.material_standard = std;
+  const ddt = firstNonEmpty(json, DDT_NO_ALIASES);
+  if (ddt) json.ddt_no = ddt;
+  const ddtDate = firstNonEmpty(json, DDT_DATE_ALIASES);
+  if (ddtDate) json.ddt_date = ddtDate;
+  return json;
+}
+
+/** Fallback etichettato: Colata / Heat No / B07. Non cattura NNNN/YYYY isolato. */
+function fallbackHeatFromText(text) {
+  const t = String(text || '');
+  if (!t.trim()) return null;
+  const patterns = [
+    /\bB07\s*[:.\-]?\s*([A-Z0-9][A-Z0-9./\-]{2,40})/i,
+    /\bColata\s*(?:n[°ºo.]?\s*)?[:.\-]?\s*([A-Z0-9][A-Z0-9./\-]{2,40})/i,
+    /\bHeat\s*(?:No\.?|Number|#)?\s*[:.\-]?\s*([A-Z0-9][A-Z0-9./\-]{2,40})/i,
+    /\bCast\s*(?:No\.?|Number|#)?\s*[:.\-]?\s*([A-Z0-9][A-Z0-9./\-]{2,40})/i,
+    /\bLotto\s*(?:n[°ºo.]?\s*)?[:.\-]?\s*([A-Z0-9][A-Z0-9./\-]{2,40})/i,
+  ];
+  for (const re of patterns) {
+    const m = t.match(re);
+    if (!m || !m[1]) continue;
+    const v = String(m[1]).replace(/[.,;:]+$/, '').trim();
+    if (v.length >= 3 && v.length <= 40) return v;
+  }
+  return null;
+}
+
 function applyAnagraficaFromJson(json, roleHint) {
-  const role = parseRole(json?.material_role, roleHint || 'base') || roleHint || 'base';
+  const canon = canonicalizeExtractedJson(json);
+  const role = parseRole(canon.material_role, roleHint || 'base') || roleHint || 'base';
   return {
     material_role: role,
-    certificate_no: emptyToNull(json?.certificate_no),
-    designation: designationFromJson(json, role),
-    heat_or_lot_no: emptyToNull(json?.heat_or_lot_no),
-    product_form: emptyToNull(json?.product_form),
-    dimensions: emptyToNull(json?.dimensions),
-    material_standard: emptyToNull(json?.material_standard || json?.filler_standard),
-    manufacturer_works: emptyToNull(json?.manufacturer_works),
-    inspection_document_type: DOC_TYPES.has(json?.inspection_document_type)
-      ? json.inspection_document_type
+    certificate_no: emptyToNull(canon.certificate_no),
+    designation: designationFromJson(canon, role),
+    heat_or_lot_no: emptyToNull(canon.heat_or_lot_no),
+    product_form: emptyToNull(canon.product_form),
+    dimensions: emptyToNull(canon.dimensions),
+    material_standard: emptyToNull(canon.material_standard),
+    manufacturer_works: emptyToNull(canon.manufacturer_works),
+    inspection_document_type: DOC_TYPES.has(canon.inspection_document_type)
+      ? canon.inspection_document_type
       : null,
+    ddt_no: emptyToNull(canon.ddt_no),
+    ddt_date: normalizeSqlDate(canon.ddt_date),
   };
 }
 
@@ -617,10 +683,13 @@ async function patchCertificate(req, res) {
         corrected[key] = req.body[key];
       }
     }
+    corrected = canonicalizeExtractedJson(corrected);
     const fromJson = applyAnagraficaFromJson(corrected, cols.material_role || row.material_role);
     const next = {
-      ddt_no: cols.ddt_no !== undefined ? clip(emptyToNull(cols.ddt_no), 80) : row.ddt_no,
-      ddt_date: cols.ddt_date !== undefined ? emptyToNull(cols.ddt_date) : row.ddt_date,
+      ddt_no: cols.ddt_no !== undefined ? clip(emptyToNull(cols.ddt_no), 80) : (fromJson.ddt_no || row.ddt_no),
+      ddt_date: cols.ddt_date !== undefined
+        ? normalizeSqlDate(cols.ddt_date)
+        : (fromJson.ddt_date || row.ddt_date),
       certificate_no: cols.certificate_no !== undefined
         ? clip(emptyToNull(cols.certificate_no), 120) : (fromJson.certificate_no || row.certificate_no),
       material_role: cols.material_role || fromJson.material_role || row.material_role,
@@ -774,11 +843,15 @@ async function extractCertificate(req, res) {
       });
     }
 
-    const extractedJson = jsonPayloadFromAi(aiResult);
+    const extractedJson = canonicalizeExtractedJson(jsonPayloadFromAi(aiResult));
     if (extractedJson.material_role && !ROLES.has(extractedJson.material_role)) {
       extractedJson.material_role = 'base';
     }
     if (!extractedJson.material_role) extractedJson.material_role = row.material_role || 'base';
+    if (!emptyToNull(extractedJson.heat_or_lot_no)) {
+      const fromText = fallbackHeatFromText(text);
+      if (fromText) extractedJson.heat_or_lot_no = fromText;
+    }
     const ana = applyAnagraficaFromJson(extractedJson, row.material_role);
     const model = clip(aiResult.model, 80);
 
@@ -794,6 +867,8 @@ async function extractCertificate(req, res) {
            material_standard = COALESCE(@material_standard, material_standard),
            manufacturer_works = COALESCE(@manufacturer_works, manufacturer_works),
            inspection_document_type = COALESCE(@inspection_document_type, inspection_document_type),
+           ddt_no = COALESCE(@ddt_no, ddt_no),
+           ddt_date = COALESCE(@ddt_date, ddt_date),
            material_role = @material_role,
            workflow_status = 'extracted', updated_at = SYSUTCDATETIME()
        OUTPUT INSERTED.id
@@ -814,6 +889,8 @@ async function extractCertificate(req, res) {
         material_standard: clip(ana.material_standard, 80),
         manufacturer_works: clip(ana.manufacturer_works, 200),
         inspection_document_type: ana.inspection_document_type,
+        ddt_no: clip(ana.ddt_no, 80),
+        ddt_date: ana.ddt_date,
         material_role: ana.material_role,
       }
     );
@@ -999,4 +1076,7 @@ module.exports = {
   rejectCertificate,
   archiveCertificate,
   mapTextReason,
+  canonicalizeExtractedJson,
+  applyAnagraficaFromJson,
+  fallbackHeatFromText,
 };

@@ -245,6 +245,9 @@ Campi comuni (codici EN 10168 dove applicabili):
 - material_role: base|filler
 - product_form (B01): per base plate|sheet|section|tube|hollow_section|bar|other_base; per filler wire|covered_electrode|cored_wire|flux|insert|other_filler
 - material_standard, delivery_condition (B04), heat_or_lot_no (B07), dimensions (B09-B11), actual_mass (B13), thickness_mm
+- heat_or_lot_no (B07): copia il valore COME STAMPATO (es. 12174/2026). Etichette: Colata, Heat No, Cast No, Lotto, B07. Non togliere l'anno.
+- ddt_no / ddt_date: SOLO se stampati (DDT, bolla, delivery note). NON copiare purchaser_order_no (A07) nel DDT.
+- material_standard: norma prodotto stampata (EN 10025-2, EN 10210-1, ISO 14341, …). Non inventare numeri.
 - ReH, Rm, A, KV (numero o {minJ, tempC}), hardness, CEV
 - chemistry: oggetto con elementi (C, Mn, Si, P, S, ...)
 - ndt: array di metodi se stampati
@@ -265,6 +268,8 @@ Non inventare soglie, numeri di colata o valori di laboratorio assenti.`,
       material_standard: 'string|null',
       delivery_condition: 'string|null',
       heat_or_lot_no: 'string|null',
+      ddt_no: 'string|null',
+      ddt_date: 'YYYY-MM-DD|null',
       dimensions: 'string|null',
       actual_mass: 'number|string|null',
       thickness_mm: 'number|null',

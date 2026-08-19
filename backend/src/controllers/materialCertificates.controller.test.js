@@ -264,6 +264,8 @@ describe('materialCertificates.controller (MC-4)', () => {
     expect(updateSql).toBeTruthy();
     expect(updateSql[1].extracted_text).toBe(ocrText);
     expect(updateSql[1].text_extract_reason).toBe('ocr_ok');
+    expect(updateSql[1].ddt_no).toBe('000775RE');
+    expect(sqlOf(updateSql)).toMatch(/ddt_no = COALESCE/);
   });
 
   it('extract formato non PDF → text_ready ocr_skipped, 200', async () => {
@@ -302,6 +304,107 @@ describe('materialCertificates.controller (MC-4)', () => {
     expect(body.data.workflow_status).not.toBe('compliant');
     const updateSql = query.mock.calls.find((c) => /workflow_status = 'extracted'/.test(sqlOf(c)));
     expect(updateSql).toBeTruthy();
+  });
+
+  it('extract alias heat_number / steel_standard / delivery_note_no → colonne canoniche', async () => {
+    query.mockResolvedValueOnce({ recordset: [{ ...CERT, workflow_status: 'received' }] });
+    extractDocumentText.mockResolvedValueOnce({
+      text: 'Certificato 3.1 S355J2 Tecnovespa '.repeat(10),
+    });
+    extractStructuredByDocType.mockResolvedValueOnce({
+      model: 'test-model',
+      data: {
+        type_specific_data: {
+          material_role: 'base',
+          heat_number: '12174/2026',
+          steel_standard: 'EN 10025-2',
+          delivery_note_no: 'DDT-99',
+          delivery_note_date: '19/08/2026',
+        },
+      },
+    });
+    query.mockResolvedValueOnce({ recordset: [{ id: 11 }] });
+    const res = mockRes();
+    await ctrl.extractCertificate(mockReq({ params: { id: '11' } }), res);
+    const body = res.json.mock.calls[0][0];
+    expect(body.data.workflow_status).toBe('extracted');
+    expect(body.data.extracted_json.heat_or_lot_no).toBe('12174/2026');
+    expect(body.data.extracted_json.material_standard).toBe('EN 10025-2');
+    expect(body.data.extracted_json.ddt_no).toBe('DDT-99');
+    const updateSql = query.mock.calls.find((c) => /workflow_status = 'extracted'/.test(sqlOf(c)));
+    expect(updateSql[1].heat_or_lot_no).toBe('12174/2026');
+    expect(updateSql[1].material_standard).toBe('EN 10025-2');
+    expect(updateSql[1].ddt_no).toBe('DDT-99');
+    expect(updateSql[1].ddt_date).toBe('2026-08-19');
+  });
+
+  it('extract testo Colata 12174/2026 se JSON senza heat', async () => {
+    query.mockResolvedValueOnce({ recordset: [{ ...CERT, workflow_status: 'received' }] });
+    extractDocumentText.mockResolvedValueOnce({
+      text: 'Certificato 3.1 Tecnovespa Colata 12174/2026 S355J2 '.repeat(4),
+    });
+    extractStructuredByDocType.mockResolvedValueOnce({
+      model: 'test-model',
+      data: {
+        type_specific_data: {
+          material_role: 'base',
+          steel_designation: 'S355J2',
+        },
+      },
+    });
+    query.mockResolvedValueOnce({ recordset: [{ id: 11 }] });
+    const res = mockRes();
+    await ctrl.extractCertificate(mockReq({ params: { id: '11' } }), res);
+    const body = res.json.mock.calls[0][0];
+    expect(body.data.extracted_json.heat_or_lot_no).toBe('12174/2026');
+    const updateSql = query.mock.calls.find((c) => /workflow_status = 'extracted'/.test(sqlOf(c)));
+    expect(updateSql[1].heat_or_lot_no).toBe('12174/2026');
+  });
+
+  it('extract A07 purchaser_order_no non diventa DDT', async () => {
+    query.mockResolvedValueOnce({ recordset: [{ ...CERT, workflow_status: 'received' }] });
+    extractDocumentText.mockResolvedValueOnce({
+      text: 'Ordine acquirente OC-7788 certificato 3.1 '.repeat(8),
+    });
+    extractStructuredByDocType.mockResolvedValueOnce({
+      model: 'test-model',
+      data: {
+        type_specific_data: {
+          material_role: 'base',
+          purchaser_order_no: 'OC-7788',
+          heat_or_lot_no: 'H1',
+        },
+      },
+    });
+    query.mockResolvedValueOnce({ recordset: [{ id: 11 }] });
+    const res = mockRes();
+    await ctrl.extractCertificate(mockReq({ params: { id: '11' } }), res);
+    const body = res.json.mock.calls[0][0];
+    expect(body.data.extracted_json.purchaser_order_no).toBe('OC-7788');
+    expect(body.data.extracted_json.ddt_no).toBeFalsy();
+    const updateSql = query.mock.calls.find((c) => /workflow_status = 'extracted'/.test(sqlOf(c)));
+    expect(updateSql[1].ddt_no).toBeNull();
+  });
+
+  it('extract NNNN/YYYY senza etichetta Colata/Heat/B07 non è colata', async () => {
+    query.mockResolvedValueOnce({ recordset: [{ ...CERT, workflow_status: 'received' }] });
+    extractDocumentText.mockResolvedValueOnce({
+      text: 'Documento 3.1 riferimento ordine 12174/2026 acciaio S355J2 '.repeat(4),
+    });
+    extractStructuredByDocType.mockResolvedValueOnce({
+      model: 'test-model',
+      data: {
+        type_specific_data: {
+          material_role: 'base',
+          steel_designation: 'S355J2',
+        },
+      },
+    });
+    query.mockResolvedValueOnce({ recordset: [{ id: 11 }] });
+    const res = mockRes();
+    await ctrl.extractCertificate(mockReq({ params: { id: '11' } }), res);
+    const body = res.json.mock.calls[0][0];
+    expect(body.data.extracted_json.heat_or_lot_no).toBeFalsy();
   });
 
   it('evaluate persiste checks, pending_review, mai compliant', async () => {
@@ -476,6 +579,15 @@ describe('materialCertificates.controller (MC-4)', () => {
     expect(src).toMatch(/workflow_status = 'extracted'/);
     expect(src).not.toMatch(/workflow_status = 'compliant'/);
     expect(src).toMatch(/nextStatus: 'compliant'/);
+  });
+
+  it('canonicalize alias B07/colata e non copia A07 in DDT', () => {
+    expect(ctrl.canonicalizeExtractedJson({ B07: '12174/2026' }).heat_or_lot_no).toBe('12174/2026');
+    expect(ctrl.applyAnagraficaFromJson({ colata: '12174/2026' }, 'base').heat_or_lot_no).toBe('12174/2026');
+    expect(ctrl.applyAnagraficaFromJson({ purchaser_order_no: 'OC-1' }, 'base').ddt_no).toBeNull();
+    expect(ctrl.fallbackHeatFromText('Colata 12174/2026')).toBe('12174/2026');
+    expect(ctrl.fallbackHeatFromText('Heat No. 12174/2026')).toBe('12174/2026');
+    expect(ctrl.fallbackHeatFromText('solo 12174/2026 senza etichetta')).toBeNull();
   });
 
   it('routes: authenticate + capability AND, extract con logAiInteraction', () => {
