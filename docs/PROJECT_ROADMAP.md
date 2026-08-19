@@ -8,7 +8,7 @@
 
 > **Risposta standard a «stato di avanzamento del progetto e priorità da affrontare»**: sintetizzare da questa sezione (moduli maturi + sessione più recente + tabella priorità sotto), **non** dal banner storico più sotto (superato, tenuto solo per traccia) né dall'archivio marzo 2026 [`docs/archive/PROJECT_CONTEXT_STATO_FUNZIONALITA_2026-03.md`](archive/PROJECT_CONTEXT_STATO_FUNZIONALITA_2026-03.md). **Aggiornare questa sezione a fine sessione** se emergono nuove priorità o se una priorità elencata viene chiusa (stesso principio delle "Lezioni apprese" in [GUIDA_CONSOLIDATA.md](GUIDA_CONSOLIDATA.md) — sintesi qui, dettaglio linkato).
 
-**Ultimo aggiornamento di questa sezione**: 19/08/2026 (MC-I3 DDT ≠ mill #488; ISO-4 architettura RDP #486; MC-I2 #481 deploy; MR-3 ingest figure #484; audit Ambito #482; MR-2 #475; MC-B #476; ISO-7 #474).
+**Ultimo aggiornamento di questa sezione**: 19/08/2026 (MR-4 query visiva #489; MC-I3 DDT ≠ mill #488; ISO-4 architettura RDP #486; MC-I2 #481 deploy; MR-3 ingest figure #484; audit Ambito #482; MR-2 #475; MC-B #476; ISO-7 #474).
 
 ### Moduli maturi (in produzione, uso quotidiano dai clienti Camellini/Mason)
 
@@ -16,13 +16,15 @@ Audit multi-standard (9001/14001/45001) · Non Conformità (workflow ISO 10.2 co
 
 ### Sessione più recente (19/08/2026)
 
+**Multimodal RAG MR-4 mergiato (19/08, sera)** — query visiva: ritaglio PNG/JPEG/WebP → stesso spazio CLIP → top-k tavole. `POST /ai/figures/search-by-image`, org dal JWT; lista vuota senza 500. Bottone ritaglio nel composer Assistente. Brief [`DEPUTYTASK5.md`](agent-tasks/DEPUTYTASK5.md) **CHIUSO**. [PR #489](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/489). Mig. **154** già su TEST e PROD. **MR-5 non aperta**. Piano: [`PLAN_MULTIMODAL_RAG_SLICES.md`](agent-tasks/PLAN_MULTIMODAL_RAG_SLICES.md). Serve deploy backend per l’endpoint search-by-image (e ingest/GET immagine MR-2/3).
+
 **MC-I3 DDT ≠ 3.1 (19/08, TEST OK)** — [#488](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/488). Estrai su bolla `D.D.T._n._000775RE` classifica `delivery_note`, n. DDT in colonna, mill azzerato (SET, non solo COALESCE). Valuta 409 `NOT_A_CERTIFICATE`; pulsante visibile disabled. Brief [`DEPUTYTASK_MC_INGEST.md`](agent-tasks/DEPUTYTASK_MC_INGEST.md) **CHIUSO**. Prossima ingest: **MC-I4**. ISO-4 **non** toccata.
 
 **ISO-4 architettura RDP (19/08, pomeriggio)** — Mason chiama «RDP» il **verbale di visita**, non il laboratorio. Menu **Saldatura → RDP** spento (route `/saldatura/rdp` resta, tabelle `rdp_*` non droppate). Word della check list 27/01 = export dal modulo **Audit ISO 3834-2** (id 6). Standard Audit id 7 resta (3 audit aperti): solo etichette UI senza «RDP». Scala voto 1–6 = slice successiva (oggi l'app usa C/NC/OSS). File Mason in [`docs/reference/mason-rdp/`](reference/mason-rdp/). Analisi: [`GAP_RDP_DUE_DOCUMENTI_MASON_2026-08-19.md`](gap-reports/GAP_RDP_DUE_DOCUMENTI_MASON_2026-08-19.md). [PR #486](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/486).
 
 **MC-I2 3.1 colata / DDT / norma (19/08, mergiata + deploy)** — [#481](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/481). Alias AI → `heat_or_lot_no`; DDT ≠ A07. Deploy TEST PID `993561`→`1019412`, PROD `1005497`→`1031291`, health 200. Smoke PROD azienda 179 id 6 (`CERTIFICATO31-…-TECNOVESPA-12174.PDF`) → Estrai HTTP 200, `extracted`, colata **`12174/2026`**.
 
-**Multimodal RAG MR-3 mergiato (19/08)** — ingest figure da PDF già sul disco: extract locale (MR-0) + persist CLIP (MR-1). `POST /ai/figures/ingest`, org dal JWT; PDF senza tavole → lista vuota. Brief [`DEPUTYTASK5.md`](agent-tasks/DEPUTYTASK5.md) **CHIUSO**. [PR #484](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/484). **MR-4 non aperta**. Piano: [`PLAN_MULTIMODAL_RAG_SLICES.md`](agent-tasks/PLAN_MULTIMODAL_RAG_SLICES.md). Serve deploy backend per l'endpoint ingest (e per il GET immagine MR-2).
+**Multimodal RAG MR-3 mergiato (19/08)** — ingest figure da PDF già sul disco: extract locale (MR-0) + persist CLIP (MR-1). `POST /ai/figures/ingest`, org dal JWT; PDF senza tavole → lista vuota. Brief [`DEPUTYTASK5.md`](agent-tasks/DEPUTYTASK5.md) **CHIUSO**. [PR #484](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/484). Piano: [`PLAN_MULTIMODAL_RAG_SLICES.md`](agent-tasks/PLAN_MULTIMODAL_RAG_SLICES.md).
 
 **Audit — Ambito filtra gli audit (19/08, mergiata)** — via il secondo select Azienda; le azioni restano visibili. [PR #482](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/482).
 
@@ -128,7 +130,7 @@ Sessione prodotto precedente (10/08/2026): fix filtri dashboard duplicati (Quali
 | 6 | **SAL AI evidenze — OCR + documento mancante (HITL)** | **S1a** mergiata (#471): OCR PDF in `documentTextExtractor`. Prossima: **S1b** OCR immagini | [PLAN](agent-tasks/PLAN_SAL_AI_EVIDENCE_SLICES.md) · brief [S1a CHIUSO](agent-tasks/DEPUTYTASK.md) |
 | 7 | **ISO 3834 — completezza per processi (RBAC + ponti + report)** | ISO-1*…ISO-3 + ISO-6/7 mergiate. Menu `/saldatura/rdp` spento. Prossima: **ISO-4** Word visita Mason **da Audit ISO 3834-2** (id 6), layout check list 27/01. Scala 1–6 = ISO-4b (HITL). ISO-5 Word Welding Book indipendente | [PLAN](agent-tasks/PLAN_3834_SLICES.md) · [gap 19/08](gap-reports/GAP_RDP_DUE_DOCUMENTI_MASON_2026-08-19.md) · PR [architettura #486](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/486) |
 | 8 | **Second Brain — Assistente di Ambito (SB-1 fatti, zero LLM)** | Studio + clienti paganti: fatti dell'Ambito in app, non AIOS Claude. Chat dopo i numeri veri | [PLAN](agent-tasks/PLAN_SECOND_BRAIN_SLICES.md) · brief [SB-1](agent-tasks/DEPUTYTASK2.md) |
-| 9 | **Multimodal RAG — figure normative in locale** | MR-0 + MR-1 + MR-2 + **MR-3** mergiati (#464/#469/#475/#484). Prossima: **MR-4** query visiva (non aperta) | [PLAN](agent-tasks/PLAN_MULTIMODAL_RAG_SLICES.md) · brief [MR-3 CHIUSO](agent-tasks/DEPUTYTASK5.md) |
+| 9 | **Multimodal RAG — figure normative in locale** | MR-0 + MR-1 + MR-2 + MR-3 + **MR-4** mergiati (#464/#469/#475/#484/#489). Prossima: **MR-5** VLM locale (non aperta). Serve deploy backend MR-4 | [PLAN](agent-tasks/PLAN_MULTIMODAL_RAG_SLICES.md) · brief [MR-4 CHIUSO](agent-tasks/DEPUTYTASK5.md) |
 
 > Nota: **Modulo NC — card statistiche duplicate da due tendine** (era riga 1) è stato chiuso da PR #374 (10/08/2026) — riga rimossa da questa tabella, non ancora aggiornata al momento in cui è stata scritta DEPUTYTASK4.
 
