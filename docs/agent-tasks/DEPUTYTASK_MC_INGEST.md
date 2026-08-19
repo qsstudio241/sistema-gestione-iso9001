@@ -1,6 +1,6 @@
 # DEPUTYTASK — Material Compliance ingest (MC-B)
 
-**Stato:** CHIUSO — TEST OK (19/08/2026, [PR #476](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/476))  
+**Stato:** CHIUSO — TEST OK (19/08/2026, [PR #476](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/476)); deploy TEST PID `993561` + PROD PID `1005497`; smoke PROD azienda 179 id 7 `text_ready` → `extracted` `ocr_ok`.  
 **Aperto:** 19/08/2026 (dopo merge MC-I1 [#473](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/473))  
 **Chiuso:** 19/08/2026 — L1 47/47 (`materialCertificates.controller` + `documentTextExtractor`)  
 **Piano:** [`PLAN_MATERIAL_COMPLIANCE_SLICES.md`](PLAN_MATERIAL_COMPLIANCE_SLICES.md) § MC-B  
