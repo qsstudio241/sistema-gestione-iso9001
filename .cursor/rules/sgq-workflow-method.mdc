@@ -168,8 +168,9 @@ Se Bugbot è ancora always-on (finché il committente non clicca):
 Cloud: se la piattaforma impone la PR prima dei test, tenerla **draft** e **non** far partire
 Bugbot sul revision pre-testing.
 
-Gate di correttezza (livello Medio / normativa): 1 run resta **obbligatorio** — si tagliano i
-duplicati, non il controllo qualità. Dettaglio: `sgq-git-autonomy.mdc`.
+Gate di correttezza (livello Medio / normativa): 1 run Bugbot resta **obbligatorio**, più
+**Security Review conclusa** — si tagliano i duplicati, non il controllo qualità.
+**Vietato** dire «pronta» dopo la sola CI (20/08/2026, PR #507). Dettaglio: `sgq-git-autonomy.mdc`.
 
 ## 5. Triage PR backlog (criterio deciso)
 

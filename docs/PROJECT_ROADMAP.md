@@ -8,13 +8,15 @@
 
 > **Risposta standard a «stato di avanzamento del progetto e priorità da affrontare»**: sintetizzare da questa sezione (moduli maturi + sessione più recente + tabella priorità sotto), **non** dal banner storico più sotto (superato, tenuto solo per traccia) né dall'archivio marzo 2026 [`docs/archive/PROJECT_CONTEXT_STATO_FUNZIONALITA_2026-03.md`](archive/PROJECT_CONTEXT_STATO_FUNZIONALITA_2026-03.md). **Aggiornare questa sezione a fine sessione** se emergono nuove priorità o se una priorità elencata viene chiusa (stesso principio delle "Lezioni apprese" in [GUIDA_CONSOLIDATA.md](GUIDA_CONSOLIDATA.md) — sintesi qui, dettaglio linkato).
 
-**Ultimo aggiornamento di questa sezione**: 20/08/2026 (conclusioni AI editabili #498; FW-0 mergiato #494).
+**Ultimo aggiornamento di questa sezione**: 20/08/2026 (superadmin duplica template #503; conclusioni AI #498; FW-0 #494).
 
 ### Moduli maturi (in produzione, uso quotidiano dai clienti Camellini/Mason)
 
 Audit multi-standard (9001/14001/45001) · Non Conformità (workflow ISO 10.2 completo) · Qualifiche Personale saldatori/NDT/coordinatori (ISO 9606-1/14732/14731/9712) · Saldatura (WPQR, generazione WPS da WPQR, Welding Book, Commesse ISO 3834, Dashboard 3834) · SAL (gap analysis requisiti con AI) · Registro Documenti + Scadenzari · Notifiche/Alert (documenti/NC/qualifiche) · Riesame di Direzione · RBAC multi-tenant (`company_access`) · Registro obblighi legali (ambiente + sicurezza) · Assistente AI / Gap Analysis euristica.
 
 ### Sessione più recente (20/08/2026)
+
+**Superadmin duplica template Word (20/08, mergiata + deploy)** — «Solo admin/auditor possono duplicare template» anche da superadmin: `authorize()` lo lasciava passare, il controller riboccava. Stesso buco su carica/elimina. Deploy PROD PID `1095643`→`1096030`, health 200. Smoke: duplicate id inesistente → 404, non 403. [PR #503](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/503).
 
 **Conclusioni AI editabili (20/08, mergiata)** — nel modal Assistente AI — Conclusioni il testo proposto è un campo modificabile; **Accetta** salva la versione corretta (HITL). [PR #498](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/498). Solo frontend, nessun deploy VPS.
 
