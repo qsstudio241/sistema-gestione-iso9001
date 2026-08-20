@@ -53,7 +53,16 @@ jobs:
 
       - name: Health check backend test (test-api)
         run: |
-          curl -sf --insecure \
-            https://sistemi.fr-busato.it:8443/test-api/api/v1/health \
-            || (echo "HEALTH CHECK FAIL: backend test non raggiungibile" && exit 1)
+          URL="https://sistemi.fr-busato.it:8443/test-api/api/v1/health"
+          CODE=$(curl -sk -o /tmp/sgq_test_health.json -w '%{http_code}' --max-time 15 "$URL")
+          echo "HTTP ${CODE}"
+          cat /tmp/sgq_test_health.json || true
+          echo
+          if [ "${CODE}" != "200" ]; then
+            echo "HEALTH CHECK FAIL: ${URL} → HTTP ${CODE} (atteso 200)."
+            echo "Se Node TEST su :3001 risponde su /api/v1/health, nginx non sta strippando /test-api/."
+            exit 1
+          fi
+          grep -q '"status":"healthy"' /tmp/sgq_test_health.json \
+            || { echo "HEALTH CHECK FAIL: HTTP 200 ma body non healthy"; exit 1; }
         timeout-minutes: 1
