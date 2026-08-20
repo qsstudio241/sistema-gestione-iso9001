@@ -87,6 +87,35 @@ describe('persistFigures', () => {
     expect(query.mock.calls.some((c) => String(c[0]).includes('knowledge_chunks'))).toBe(false);
     expect(embedder.embedImage).toHaveBeenCalled();
   });
+
+  it('DELETE sostituisce solo le tavole della stessa azienda (stesso PDF)', async () => {
+    await persistFigures({
+      organizationId: 1001,
+      companyId: 10,
+      sourcePdf: 'ISO-9001.pdf',
+      figures: [],
+      embedder: mockEmbedder(),
+    });
+    const del = query.mock.calls.find((c) => String(c[0]).includes('DELETE FROM knowledge_figures'));
+    expect(del).toBeTruthy();
+    expect(String(del[0])).toMatch(/company_id = @companyId/);
+    expect(String(del[0])).toMatch(/company_id IS NULL/);
+    expect(del[1].orgId).toBe(1001);
+    expect(del[1].companyId).toBe(10);
+    expect(del[1].sourcePdf).toBe('ISO-9001.pdf');
+  });
+
+  it('DELETE con companyId assente tocca solo le tavole condivise (NULL)', async () => {
+    await persistFigures({
+      organizationId: 1001,
+      sourcePdf: 'ISO-9001.pdf',
+      figures: [],
+      embedder: mockEmbedder(),
+    });
+    const del = query.mock.calls.find((c) => String(c[0]).includes('DELETE FROM knowledge_figures'));
+    expect(del[1].companyId).toBeNull();
+    expect(String(del[0])).toMatch(/@companyId IS NULL AND company_id IS NULL/);
+  });
 });
 
 describe('searchFiguresByText', () => {
