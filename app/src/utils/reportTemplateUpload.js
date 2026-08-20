@@ -4,7 +4,7 @@ import PizZip from "pizzip";
 
 export const MAX_TEMPLATE_BYTES = 5 * 1024 * 1024;
 
-/** Modelli di sistema scaricabili da /templates/ (placeholder + marker) */
+/** Elenco modelli di sistema (file sul VPS: backend/templates + GET /report-templates/:id/file) */
 export const SYSTEM_TEMPLATE_DOWNLOADS = [
   { label: "ISO 9001", path: "/templates/ISO9001-audit-report.docx", filename: "ISO9001-audit-report.docx" },
   { label: "ISO 14001", path: "/templates/ISO14001-audit-report.docx", filename: "ISO14001-audit-report.docx" },
@@ -90,17 +90,20 @@ export function formatNcMarkerWarning(missing) {
   return `Attenzione: nel file mancano i segnaposto NC ${list}. L'export scheda potrebbe risultare incompleto.`;
 }
 
-/** URL download per riga griglia (sistema = path app, org = backend uploads) */
+/** URL download: sempre API sul VPS (auth), mai /templates/ su Netlify. */
+export function reportTemplateFileUrl(templateId, apiBaseUrl) {
+  if (templateId == null || templateId === "") return null;
+  const base = String(apiBaseUrl || "").replace(/\/$/, "");
+  if (!base) return `/report-templates/${templateId}/file`;
+  return `${base}/report-templates/${templateId}/file`;
+}
+
 export function getReportTemplateDownloadUrl(template, apiBaseUrl) {
-  if (!template?.file_path) return null;
-  const fp = template.file_path;
-  if (fp.startsWith("/templates/")) {
-    return { url: fp, filename: fp.split("/").pop() || "template.docx" };
-  }
-  const backendBase = (apiBaseUrl || "").replace(/\/api\/v1\/?$/, "");
-  const url = backendBase + (fp.startsWith("/") ? fp : `/${fp}`);
-  const filename = fp.split("/").pop() || `${template.name || "template"}.docx`;
-  return { url, filename };
+  if (!template?.id) return null;
+  const url = reportTemplateFileUrl(template.id, apiBaseUrl);
+  const fromPath = template.file_path ? String(template.file_path).split("/").pop() : "";
+  const filename = fromPath || `${template.name || "template"}.docx`;
+  return { url, filename, templateId: template.id };
 }
 
 export function isSystemReportTemplate(template) {

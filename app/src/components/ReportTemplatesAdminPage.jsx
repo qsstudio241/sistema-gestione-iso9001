@@ -231,16 +231,18 @@ const ReportTemplatesAdminPage = ({ onBack }) => {
     }
   };
 
-  const handleDownload = (template) => {
+  const handleDownload = async (template) => {
+    if (!template?.id) return;
     const info = getReportTemplateDownloadUrl(template, apiService.baseUrl);
-    if (!info?.url) return;
-    const a = document.createElement("a");
-    a.href = info.url;
-    a.download = info.filename;
-    a.rel = "noopener";
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
+    try {
+      await apiService.downloadReportTemplateFile(
+        template.id,
+        info?.filename || `${template.name || "template"}.docx`,
+      );
+    } catch (err) {
+      console.error("Download template:", err);
+      window.alert(err.message || "Download del template non riuscito.");
+    }
   };
 
   const openDuplicateModal = (template) => {

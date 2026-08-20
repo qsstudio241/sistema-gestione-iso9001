@@ -14,6 +14,7 @@ vi.mock("../services/apiService", () => ({
     getStandards: vi.fn(),
     getReportTemplateStandardAssignments: vi.fn(),
     getNcReportTemplateAssignment: vi.fn(),
+    downloadReportTemplateFile: vi.fn(),
   },
 }));
 

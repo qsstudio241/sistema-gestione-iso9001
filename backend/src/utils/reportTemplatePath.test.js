@@ -20,6 +20,7 @@ describe('resolveTemplateSourcePath', () => {
       'ISO45001-audit-report.docx',
       'VerbaleVisita-generic.docx',
       'NC-scheda.docx',
+      'Verbale_di_riunione_QTAFI_VIS001.docx',
     ];
     for (const name of names) {
       const found = resolveTemplateSourcePath(`/templates/${name}`);

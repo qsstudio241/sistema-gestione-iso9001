@@ -14,6 +14,9 @@ router.use(authenticate);
 // GET /api/v1/report-templates/resolve?standardId=1 (prima di /report-templates per match corretto)
 router.get('/report-templates/resolve', reportTemplateController.resolveTemplate);
 
+// GET /api/v1/report-templates/:id/file  (prima di GET lista: path più specifico)
+router.get('/report-templates/:id/file', reportTemplateController.downloadTemplateFile);
+
 // GET /api/v1/report-templates?scope=audit
 router.get('/report-templates', reportTemplateController.listTemplates);
 
