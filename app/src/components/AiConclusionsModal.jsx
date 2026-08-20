@@ -50,7 +50,7 @@ export default function AiConclusionsModal({
 
   const sendFeedback = useCallback((action, finalText) => {
     if (!result?.conclusion_text) return;
-    apiService.aiFeedback({
+    Promise.resolve(apiService.aiFeedback({
       feature: "audit_conclusions",
       action,
       aiText: result.conclusion_text,
@@ -59,7 +59,7 @@ export default function AiConclusionsModal({
       auditId: auditId || null,
       contextSummary: metaRef.current?.contextSummary || null,
       modelUsed: metaRef.current?.model || null,
-    }).catch(() => {});
+    })).catch(() => {});
   }, [result, auditId]);
 
   const runSuggestion = useCallback(async () => {

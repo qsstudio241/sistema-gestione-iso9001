@@ -4,9 +4,11 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen, fireEvent } from "@testing-library/react";
 
-const mockSuggest = vi.fn();
-const mockClear = vi.fn();
-const mockAiFeedback = vi.fn().mockResolvedValue({});
+const { mockSuggest, mockClear, mockAiFeedback } = vi.hoisted(() => ({
+  mockSuggest: vi.fn(),
+  mockClear: vi.fn(),
+  mockAiFeedback: vi.fn().mockResolvedValue({}),
+}));
 
 vi.mock("../hooks/useAiAssist", () => ({
   useAiAssist: () => ({
@@ -19,7 +21,7 @@ vi.mock("../hooks/useAiAssist", () => ({
 
 vi.mock("../services/apiService", () => ({
   default: {
-    aiFeedback: (...args) => mockAiFeedback(...args),
+    aiFeedback: mockAiFeedback,
   },
 }));
 
