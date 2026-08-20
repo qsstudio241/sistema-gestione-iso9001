@@ -1,42 +1,40 @@
-# DEPUTYTASK — Ingest archivio IA-2 (capitolato → 2.2)
+# DEPUTYTASK — Ingest archivio IA-4 (picker cartella radice)
 
-**Stato:** CHIUSO — TEST OK L1 (20/08/2026)  
+**Stato:** APERTO  
 **Aperto:** 20/08/2026  
-**Chiuso:** 20/08/2026  
 **Piano:** [`PLAN_INGEST_ARCHIVIO_SLICES.md`](PLAN_INGEST_ARCHIVIO_SLICES.md)  
-**Nota:** la PR #505 ha mergiato solo la mappa. Il feat IA-1 è cherry-pick in questa stessa linea + IA-2/IA-3.  
-**Rischio:** Medio — Cloud **non** mergia. Prossima: **IA-4** picker cartella radice.
+**Nota:** stessa linea PR #506 (IA-1 cherry-pick + IA-2/IA-3). Slot precedente IA-2 CHIUSO su questo branch.  
+**Rischio:** Medio — Cloud **non** mergia. Nessuna migrazione: path relativo in `original_name`.
+
+HITL: cartella radice + sottocartelle (non ZIP). Screening/allocazione = **IA-5**, non questa slice.
 
 ---
 
-## Esito IA-2 + preview IA-3
+## Slice unica: IA-4
 
-- Tipo registro `capitolato` (etichetta «Capitolato / RFQ / ordine»)
-- Scaffale azienda `2.2` CAPITOLATI (mappe FE + provisioner + folder-suggestion)
-- Alias backend `rfq` / `ordine` / `order` → stesso cassetto (se l’AI indovina così)
-- Dialog Import PDF mostra «Scaffale azienda previsto: CAPITOLATI (2.2)»
-- **Non** creato il caso Riesame (IA-6)
+**Obiettivo (parole povere)**: in Import PDF si può scegliere una cartella intera. I PDF tengono il percorso delle sottocartelle (es. `Rossi-2024/capitolato.pdf`). I file restano in coda sul server. Non si crea il caso Riesame e non si classifica in automatico.
 
-### Test
+### DoD
 
-- Backend: `importJobs.controller` + `documentTreeProvisioner.folder` verdi
-- Frontend: `documentTypesAlignment` + `uploadNormaE2E` 24 verdi
+- [ ] Secondo controllo «Carica cartella» (`webkitdirectory`) accanto a «Carica PDF»
+- [ ] `relative_paths[]` in FormData; server sanitizza (`..`, path assoluti, solo PDF)
+- [ ] Path salvato in `import_job_files.original_name` (NVARCHAR 500) — **niente colonna nuova**
+- [ ] Limite file alzato a 80 (FE + multer), non-PDF della cartella ignorati
+- [ ] Titolo commit / nome allegato usano il basename (lista file mostra il path)
+- [ ] **Non** screening, **non** alloca, **non** ZIP, **non** caso Riesame
 
-### File
+### Cosa NON toccare
 
-- `app/src/data/documentTypes.js`
-- `app/src/data/documentFolderMapping.js`
-- `app/src/pages/ImportJobsPage.jsx`
-- `app/src/tests/documentTypesAlignment.test.js`
-- `backend/src/services/documentTreeProvisioner.service.js`
-- `backend/src/services/documentTreeProvisioner.folder.test.js`
-- `backend/src/controllers/document.controller.js` (solo chiave mappa)
-- `backend/src/controllers/importJobs.controller.test.js`
+`contractReview.*`, `caseDocumentAnalysis`, OCR, ingest staging, MC, SAL, GUIDA, `PROJECT_ROADMAP.md` § Stato attuale, `PROJECT_CONTEXT.md`, mappe folder 4.3 vs 4.5.
+
+### File previsti
+
+- `app/src/pages/ImportJobsPage.jsx` + CSS
+- `app/src/services/apiService.js`
+- `app/src/utils/importFolderUpload.js` + test
+- `app/src/utils/importNormCommit.js` (solo basename titolo)
+- `backend/src/utils/importRelativePath.js` + test
+- `backend/src/controllers/importJobs.controller.js`
+- `backend/src/routes/importJobs.routes.js`
+- `backend/scripts/deploy-manifest.json`
 - PLAN + questo brief
-
----
-
-## Bozza sync hub (dopo merge)
-
-- Roadmap: IA-1+IA-2: capitolato va in 2.2; preview scaffale in Import PDF. Prossima IA-4.
-- GUIDA: tipo `capitolato` nel registro; non è il Riesame di direzione (cartella 14).

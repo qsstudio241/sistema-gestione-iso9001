@@ -24,6 +24,11 @@ const {
 const { resolvePersonnelForQualification } = require('../services/personnelQualificationLink.service');
 const { parseCompanyId, companyBelongsToOrg } = require('../services/qualificationCompany.service');
 const { buildWelderQualificationDesignation } = require('../utils/weldingDesignation');
+const {
+    basenameImportRelativePath,
+    resolveImportOriginalName,
+    relativePathsFromBody,
+} = require('../utils/importRelativePath');
 
 /** Converte un valore in numero finito o null (per colonne DECIMAL). */
 function toNum(v) {
@@ -217,13 +222,15 @@ async function uploadFiles(req, res) {
             return res.status(404).json({ error: 'Job non trovato' });
         }
         if (!req.files?.length) return res.status(400).json({ error: 'Nessun file PDF ricevuto.' });
-        for (const f of req.files) {
+        const relativePaths = relativePathsFromBody(req.body);
+        for (let i = 0; i < req.files.length; i++) {
+            const f = req.files[i];
             await query(
                 `INSERT INTO import_job_files (job_id, original_name, storage_path, mime_type, file_size, status)
                  VALUES (@job_id, @original_name, @storage_path, @mime_type, @file_size, 'uploaded')`,
                 {
                     job_id: jobId,
-                    original_name: f.originalname.substring(0, 500),
+                    original_name: resolveImportOriginalName(f.originalname, relativePaths[i]),
                     storage_path: f.path,
                     mime_type: f.mimetype || 'application/pdf',
                     file_size: f.size || null,
@@ -551,7 +558,9 @@ async function commitToRegistry(req, res) {
                 scope_summary: bodyTsd.scope_summary ?? aiTypeSpecific.scope_summary ?? aiData.summary,
             };
             if (!normRaw.standard_code && file.original_name) {
-                const fromName = guessStandardCodeFromFilename(file.original_name);
+                const fromName = guessStandardCodeFromFilename(
+                    basenameImportRelativePath(file.original_name) || file.original_name
+                );
                 if (fromName) normRaw.standard_code = fromName;
             }
 
@@ -573,7 +582,13 @@ async function commitToRegistry(req, res) {
                 issue_date = `${built.edition_year}-01-01`;
             }
         } else {
-            title = String(body.title || aiData.title || file.original_name || 'Documento importato').substring(0, 500);
+            title = String(
+                body.title
+                || aiData.title
+                || basenameImportRelativePath(file.original_name)
+                || file.original_name
+                || 'Documento importato'
+            ).substring(0, 500);
             doc_code = body.doc_code != null ? String(body.doc_code).substring(0, 100) : (aiData.doc_code || aiData.code || null);
             revision = body.revision != null ? String(body.revision).substring(0, 20) : (aiData.revision || null);
             responsible = body.responsible != null
@@ -710,7 +725,7 @@ async function commitToRegistry(req, res) {
                     {
                         docId: registryId,
                         userId: user_id || null,
-                        fileName: file.original_name || 'documento.pdf',
+                        fileName: basenameImportRelativePath(file.original_name) || file.original_name || 'documento.pdf',
                         fileType: fileExt,
                         storagePath: file.storage_path,
                         fileSize: file.file_size || null,

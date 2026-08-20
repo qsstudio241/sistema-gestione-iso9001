@@ -2,7 +2,7 @@
 
 > **Destinazione**: screening in background da cartella radice. Lo screening sceglie prima la **stanza** (studio / azienda / commessa), poi lo **scaffale**. Un file = una copia, visibile da due viste se è di commessa. Specialisti già in repo lavorano in parallelo. Primo verticale: documenti di commessa → stanza Riesame + cassetto azienda `2.2`. Review = coda incompleti. Learning = ADR-017.
 > **Spec già in repo (non rifare)**: [`MODULO_INGEST_AI_COMMESSE_SCOPO_E_ROADMAP.md`](../specs/MODULO_INGEST_AI_COMMESSE_SCOPO_E_ROADMAP.md) (analisi sul caso, slice #5–#7 già fatte) · [`MINI_SPEC_RIESAME_REQUISITI_CONTRATTO.md`](../specs/MINI_SPEC_RIESAME_REQUISITI_CONTRATTO.md) · albero in mig. 059/076 · ADR-010 HITL
-> **Brief attivo**: [`DEPUTYTASK.md`](DEPUTYTASK.md) — **IA-2** (tipo capitolato → 2.2). IA-1 codice era rimasto fuori da #505: cherry-pick in questa linea. Prossima dopo merge: **IA-4** (picker cartella).
+> **Brief attivo**: [`DEPUTYTASK.md`](DEPUTYTASK.md) — **IA-4** (picker cartella radice). Stessa linea PR #506 (IA-1+IA-2+IA-3). Prossima dopo merge: **IA-5** (screening+alloca).
 > **Mappa creata**: 20/08/2026 (Lead wayfinder A). Codice da IA-1 in poi.
 
 ---
@@ -14,7 +14,7 @@ Il modulo vive in **GESTIONE → Impostazioni → Import PDF** (`/settings/impor
 Flusso attuale, un job alla volta:
 
 1. **Crea job** — titolo, azienda opzionale, tipo documento opzionale (suggerimento per l’AI).
-2. **Carica PDF** — massimo **30 file**, solo `.pdf`, fino a 200 MB l’uno. I file finiscono sul server in `uploads/imports/{organizzazione}/{job}/`.
+2. **Carica PDF o cartella** — massimo **80 file**, solo `.pdf`, fino a 200 MB l’uno. «Carica cartella» tiene i path delle sottocartelle in `original_name`. I file finiscono sul server in `uploads/imports/{organizzazione}/{job}/`.
 3. **Elabora** — estrae il testo dal PDF (`pdf-parse`). Se il PDF è una scansione senza testo, la confidence è bassa. L’OCR **esiste già** in altri moduli (`ocrExtractor` / `documentTextExtractor`, SAL S1a) ma **non è collegato** a questa pagina.
 4. **Analisi AI** (pulsante, non automatica) — propone tipo documento e campi (codice, date, titolo, …). L’operatore può correggere.
 5. **Commit a mano**, tre uscite diverse:
@@ -140,7 +140,7 @@ IA-1 tocca **solo scaffali della stanza azienda** (chiudere il buco: procedura �
 
 | Asse | Perché scala | Limite onesto |
 |---|---|---|
-| **Molte commesse** | Ogni sottocartella (`Rossi-2024/…`, `Bianchi-2025/…`) è un indizio: screening raggruppa, specialista apre/aggancia **un caso Riesame per gruppo** | Oggi `import-from-job` fa **un caso** da file scelti a mano, max **30 PDF** a job. IA-4/5 spezzano in coda. |
+| **Molte commesse** | Ogni sottocartella (`Rossi-2024/…`, `Bianchi-2025/…`) è un indizio: screening raggruppa, specialista apre/aggancia **un caso Riesame per gruppo** | Oggi `import-from-job` fa **un caso** da file scelti a mano, max **80 PDF** a job. IA-5 spezza in coda. |
 | **File diversi nella stessa commessa** | Router per tipo: capitolato → analisi già esistente; disegno → vision già esistente; ordine → stesso caso. Parallelo = coda, non un LLM-capo | Lo screening deve restare **leggero** (path + nome + poco testo). Vision/analisi piena solo sullo specialista, o i costi esplodono. |
 | **Dove stanno i file** | Cartella `2.2` = cassetto SGQ; il **caso Riesame** è il faldone della commessa (allegati + requisiti). I due si legano (IA-6) | Un solo cassetto `2.2` per 200 commesse diventa illeggibile. Raggruppare per sottocartella/caso; sottocartelle in albero = nebbia, non bloccante. |
 | **Job successivi** | Correzioni → ADR-017: il secondo carico dello stesso studio classifica meglio gli RFQ | Non si addestra un modello; si accumulano esempi. |
@@ -203,7 +203,7 @@ IA-1 tocca **solo scaffali della stanza azienda** (chiudere il buco: procedura �
 | **IA-1** | Un PDF «Procedura» finisce nella cartella PROCEDURE (oggi solo le norme hanno una cartella) | `documentTreeProvisioner` + `importJobs.controller` `commitToRegistry` + test; **non** UI nuova | — | AFK |
 | **IA-2** | Verticale commessa: tipo `capitolato` → cartella `2.2` ✅ | `documentTypes.js`, mappe FE/BE, commit; **non** nuovo caso Riesame | IA-1 | AFK |
 | **IA-3** | Preview scaffale nel dialog commit ✅ | `ImportJobsPage.jsx` + `getSuggestedFolderLabel`; override resta `parent_folder_id` API | IA-1 | AFK |
-| **IA-4** | Sorgente: cartella radice + `relative_path` | picker `webkitdirectory`, upload albero, path relativo in `import_job_files`; job passa in coda server; **non** ZIP di default | IA-1 | AFK |
+| **IA-4** | Sorgente: cartella radice + path relativo (in `original_name`, no colonna) | picker `webkitdirectory`, upload albero, path sanitizzato; limite 80; **non** ZIP; screening = IA-5 | IA-1 | AFK |
 | **IA-5** | Screening veloce in background + allocazione | classifica tipo (path+nome+testo corto) → `commitToRegistry` in cartella; stato `ai_draft`/`da_verificare`; campi vuoti OK | IA-1, IA-4 | AFK |
 | **IA-5b** | Coda admin «da completare» | lista filtrata incompleti (tipo/cartella/campi), badge come profilo/qualifiche; non blocca lo screening | IA-5 | AFK |
 | **IA-6** | Ponte 2.2 → caso Riesame (batch) | riuso `import-from-job` su N file capitolato dello stesso job/cartella relativa | IA-2, IA-5 | AFK |

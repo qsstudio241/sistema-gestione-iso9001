@@ -16,6 +16,7 @@ import {
   isNormDocType,
   buildInitialNormTypeData,
 } from "../utils/importNormCommit";
+import { MAX_IMPORT_JOB_FILES, takeImportFiles } from "../utils/importFolderUpload";
 import StatusBadge from "../components/StatusBadge";
 import "./ImportJobsPage.css";
 import "../components/DocumentForm.css";
@@ -57,7 +58,10 @@ function buildRiesameTitle(job, file) {
   const ai = parseAiJson(file?.ai_extraction_json);
   if (ai?.title) return String(ai.title).trim();
   if (job?.title) return String(job.title).trim();
-  if (file?.original_name) return String(file.original_name).replace(/\.pdf$/i, "");
+  if (file?.original_name) {
+    const base = String(file.original_name).split(/[/\\]/).pop();
+    return String(base || file.original_name).replace(/\.pdf$/i, "");
+  }
   return "Riesame da import";
 }
 
@@ -298,6 +302,7 @@ export default function ImportJobsPage() {
   const [detail, setDetail] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [folderNotice, setFolderNotice] = useState(null);
   const [newTitle, setNewTitle] = useState("");
   const [docTypeHint, setDocTypeHint] = useState("");
   const [newCompanyId, setNewCompanyId] = useState("");
@@ -427,21 +432,39 @@ export default function ImportJobsPage() {
     }
   }
 
-  async function handleFiles(e) {
-    const files = e.target.files;
-    if (!selectedId || !files?.length) return;
+  async function uploadPickedFiles(fileList, inputEl) {
+    if (!selectedId || !fileList?.length) return;
+    const { files, skippedNonPdf, truncated } = takeImportFiles(fileList);
+    if (!files.length) {
+      setError("Nessun PDF selezionato. Sono accettati solo file .pdf.");
+      if (inputEl) inputEl.value = "";
+      return;
+    }
     setBusy(true);
     setError(null);
+    setFolderNotice(null);
     try {
       await apiService.uploadImportJobFiles(selectedId, files);
-      e.target.value = "";
+      if (inputEl) inputEl.value = "";
+      const notes = [];
+      if (truncated) {
+        notes.push(`Caricati i primi ${MAX_IMPORT_JOB_FILES} PDF (limite per job).`);
+      }
+      if (skippedNonPdf) {
+        notes.push(`${skippedNonPdf} file non PDF ignorati.`);
+      }
+      setFolderNotice(notes.length ? notes.join(" ") : null);
       await loadList();
       await loadDetail(selectedId);
-    } catch (e) {
-      setError(e.message || "Upload fallito");
+    } catch (err) {
+      setError(err.message || "Upload fallito");
     } finally {
       setBusy(false);
     }
+  }
+
+  async function handleFiles(e) {
+    await uploadPickedFiles(e.target.files, e.target);
   }
 
   async function handleProcess() {
@@ -611,7 +634,7 @@ export default function ImportJobsPage() {
         isNorm: true,
         normLookup: { loading: false, result: null },
         form: {
-          title: ai.title || typeData.norm_title || commitDialog.file.original_name || "",
+          title: ai.title || typeData.norm_title || commitDialog.file.original_name?.split(/[/\\]/).pop() || "",
           doc_type: "norma",
           notes: d.form.notes || "",
           typeData,
@@ -623,7 +646,7 @@ export default function ImportJobsPage() {
         isNorm: false,
         normLookup: { loading: false, result: null },
         form: {
-          title: ai.title || commitDialog.file.original_name || "",
+          title: ai.title || commitDialog.file.original_name?.split(/[/\\]/).pop() || "",
           doc_type: nextType,
           responsible: ai.person_name || ai.responsible || "",
           issue_date: ai.issue_date || "",
@@ -829,10 +852,27 @@ export default function ImportJobsPage() {
                     disabled={busy || (isQualificationDocType(detail.job.document_type_hint) && !detail.job.company_id)}
                   />
                 </label>
+                <label className="btn-file">
+                  Carica cartella
+                  <input
+                    type="file"
+                    accept="application/pdf,.pdf"
+                    multiple
+                    webkitdirectory=""
+                    directory=""
+                    onChange={handleFiles}
+                    disabled={busy || (isQualificationDocType(detail.job.document_type_hint) && !detail.job.company_id)}
+                  />
+                </label>
                 <button type="button" className="btn-secondary" onClick={handleProcess} disabled={busy}>
                   Estrai testo da PDF
                 </button>
               </div>
+              <p className="import-jobs-folder-hint">
+                La cartella mantiene i nomi delle sottocartelle (es. Rossi-2024/capitolato.pdf).
+                I file restano in coda sul server; lo screening automatico arriverà dopo.
+              </p>
+              {folderNotice && <p className="import-jobs-warning">{folderNotice}</p>}
               <h3>File ({(detail.files || []).length})</h3>
               <ul className="import-files-list">
                 {(detail.files || []).map((f) => {

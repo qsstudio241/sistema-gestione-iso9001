@@ -10,7 +10,7 @@ const fs = require('fs');
 const path = require('path');
 
 const { query } = require('../config/database');
-const { createJob, commitToRegistry, commitToQualification, listJobs, getJob } = require('./importJobs.controller');
+const { createJob, commitToRegistry, commitToQualification, listJobs, getJob, uploadFiles } = require('./importJobs.controller');
 
 function makeRes() {
     return {
@@ -108,6 +108,52 @@ describe('importJobs.controller createJob', () => {
             code: 'COMPANY_NOT_IN_ORG',
         });
         expect(query).toHaveBeenCalledTimes(1);
+    });
+});
+
+describe('importJobs.controller uploadFiles (path relativo)', () => {
+    beforeEach(() => {
+        jest.clearAllMocks();
+    });
+
+    function uploadReq(body, files) {
+        return {
+            user: { organization_id: 1002, user_id: 12 },
+            params: { id: '55' },
+            body,
+            files,
+        };
+    }
+
+    it('salva il path relativo sanitizzato in original_name', async () => {
+        query
+            .mockResolvedValueOnce({ recordset: [{ id: 55, status: 'draft' }] })
+            .mockResolvedValueOnce({ recordset: [] })
+            .mockResolvedValueOnce({ recordset: [] });
+        const res = makeRes();
+        await uploadFiles(uploadReq(
+            { relative_paths: ['Commesse/Rossi-2024/capitolato.pdf'] },
+            [{ originalname: 'capitolato.pdf', path: '/tmp/x.pdf', mimetype: 'application/pdf', size: 12 }]
+        ), res);
+
+        expect(res.status).toHaveBeenCalledWith(201);
+        const insert = query.mock.calls.find(([sql]) => sql.includes('INSERT INTO import_job_files'));
+        expect(insert[1].original_name).toBe('Commesse/Rossi-2024/capitolato.pdf');
+    });
+
+    it('rifiuta path con parent e usa il nome file multer', async () => {
+        query
+            .mockResolvedValueOnce({ recordset: [{ id: 55, status: 'draft' }] })
+            .mockResolvedValueOnce({ recordset: [] })
+            .mockResolvedValueOnce({ recordset: [] });
+        const res = makeRes();
+        await uploadFiles(uploadReq(
+            { relative_paths: ['../../segreto.pdf'] },
+            [{ originalname: 'capitolato.pdf', path: '/tmp/x.pdf', mimetype: 'application/pdf', size: 12 }]
+        ), res);
+
+        const insert = query.mock.calls.find(([sql]) => sql.includes('INSERT INTO import_job_files'));
+        expect(insert[1].original_name).toBe('capitolato.pdf');
     });
 });
 
@@ -529,6 +575,33 @@ describe('importJobs.controller commitToRegistry', () => {
         expect(res.json).toHaveBeenCalledWith(expect.objectContaining({
             code: 'NORM_FOLDER_NOT_FOUND',
         }));
+    });
+
+    it('commit senza title usa il basename se original_name è un path', async () => {
+        query
+            .mockResolvedValueOnce({ recordset: [{ id: 55, company_id: 8 }] })
+            .mockResolvedValueOnce({
+                recordset: [{
+                    ...reviewedFileRow(),
+                    original_name: 'Commesse/Rossi-2024/capitolato.pdf',
+                }],
+            })
+            .mockResolvedValueOnce({ recordset: [{ id: 8 }] })
+            .mockResolvedValueOnce({ recordset: [{ id: 220, company_id: 8 }] })
+            .mockResolvedValueOnce({ recordset: [{ id: 903 }] })
+            .mockResolvedValueOnce({ recordset: [{ parent_id: 220 }] })
+            .mockResolvedValueOnce({ recordset: [{ parent_id: null }] })
+            .mockResolvedValueOnce({ recordset: [] })
+            .mockResolvedValueOnce({ recordset: [] });
+
+        const res = makeRes();
+        await commitToRegistry(makeReq({ company_id: 8, doc_type: 'capitolato' }), res);
+
+        expect(res.status).toHaveBeenCalledWith(201);
+        expect(res.json).toHaveBeenCalledWith({
+            success: true,
+            data: { registry_document_id: 903, doc_type: 'capitolato', title: 'capitolato.pdf' },
+        });
     });
 
     it('commit capitolato posa il documento nella cartella 2.2', async () => {
