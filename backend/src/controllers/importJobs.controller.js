@@ -648,6 +648,12 @@ async function commitToRegistry(req, res) {
             } else {
                 const folderCode = folderCodeForDocType(doc_type);
                 if (folderCode) {
+                    if (company_id == null) {
+                        return res.status(400).json({
+                            error: 'Seleziona l\'azienda del job (o nel commit) per posare il documento nello scaffale. Senza azienda lo scaffale azienda non esiste.',
+                            code: 'COMPANY_REQUIRED_FOR_FOLDER',
+                        });
+                    }
                     folder = await resolveFolderByCode(organization_id, folderCode, company_id);
                     if (!folder) {
                         return res.status(404).json({

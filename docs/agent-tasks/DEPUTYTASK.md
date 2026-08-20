@@ -17,6 +17,7 @@
 - Limite 80 PDF (FE + multer); non-PDF della cartella ignorati
 - Titolo commit / nome allegato = basename; lista file mostra il path
 - **Non** screening, **non** alloca, **non** ZIP, **non** caso Riesame
+- Bugbot: senza azienda, commit tipo mappato → `400 COMPANY_REQUIRED_FOR_FOLDER` (non più 404). Mappa FE 4.3 vs BE 4.5 **non** allineata (debito già in piano).
 
 ### Test
 
