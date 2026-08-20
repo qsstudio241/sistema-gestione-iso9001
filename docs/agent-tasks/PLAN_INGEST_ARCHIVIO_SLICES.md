@@ -1,6 +1,6 @@
 # Piano slice — Ingest massivo archivio (Import PDF → albero → moduli)
 
-> **Destinazione**: un admin sceglie una **cartella radice** (con N sottocartelle); il server fa **screening in background** (tipo + cartella albero) e **alloca** i file. I metadati restano vuoti/`da_verificare` in una **coda admin** (stesso spirito dei campi qualifiche aggiunti e lasciati da completare). Gli specialisti ingest già in repo partono in parallelo per tipo. Il primo verticale è **capitolato → 2.2 → Riesame**. Le correzioni alimentano ADR-017 per i job successivi.
+> **Destinazione**: screening in background da cartella radice. Lo screening sceglie prima la **stanza** (studio / azienda / commessa), poi lo **scaffale**. Un file = una copia, visibile da due viste se è di commessa. Specialisti già in repo lavorano in parallelo. Primo verticale: documenti di commessa → stanza Riesame + cassetto azienda `2.2`. Review = coda incompleti. Learning = ADR-017.
 > **Spec già in repo (non rifare)**: [`MODULO_INGEST_AI_COMMESSE_SCOPO_E_ROADMAP.md`](../specs/MODULO_INGEST_AI_COMMESSE_SCOPO_E_ROADMAP.md) (analisi sul caso, slice #5–#7 già fatte) · [`MINI_SPEC_RIESAME_REQUISITI_CONTRATTO.md`](../specs/MINI_SPEC_RIESAME_REQUISITI_CONTRATTO.md) · albero in mig. 059/076 · ADR-010 HITL
 > **Brief attivo**: [`DEPUTYTASK.md`](DEPUTYTASK.md) — slice **IA-1** (APERTO)
 > **Mappa creata**: 20/08/2026 (Lead wayfinder A — Chart the map; **nessun codice applicativo** in questa sessione)
@@ -109,7 +109,30 @@ Allineata al template già provisionato sulle aziende (codici 059/076):
 | `patentino_saldatore`, `qualifica_*`, `cert_ndt` | `4.5` o commit-to-qualification (già esiste) | QUALIFICHE SALDATORI |
 | `altro` senza hint | — | resta senza cartella (come oggi) |
 
-**Primo verticale commessa** (IA-2, non IA-1): nuovo tipo `capitolato` (e in seguito `ordine` / `rfq` se servono) → cartella **`2.2` CAPITOLATI**. Poi si riusa «Crea caso Riesame». Non è il Riesame di direzione (cartella `14`).
+**Primo verticale commessa** (IA-2 / IA-6, non IA-1): tipo `capitolato` (poi `ordine` / `rfq`) → **cassetto azienda `2.2`** *e* **stanza commessa** (caso Riesame + scaffale `capitolato` / `drawing` / `order`). Non è il Riesame di direzione (scaffale azienda `14`).
+
+---
+
+## Stanze e scaffali (decisione architetturale — 20/08, da non rinviare)
+
+Concordato col committente: **non è un solo armadio**. Lo screening sbaglia se confonde le stanze.
+
+| Stanza | Cos’è oggi in app | Scaffali | Chi la vede |
+|---|---|---|---|
+| **Studio** | Albero `content_scope=studio`, `company_id` vuoto, radice `STD` | Patrimonio dello studio (modelli, know-how) | Solo lo studio, mai il cliente |
+| **Azienda** | Albero SGQ per `company_id` (template 059/076) | Procedure, Manuale, Norme, Capitolati, Scadenzario, … | Studio + quell’azienda |
+| **Commessa (riesame)** | `commercial_cases` + allegati + link al registro | **Altri** scaffali: da cliente (RFQ, capitolato, disegno), offerta, ordine | Chi lavora quel caso |
+| **Commessa produzione** (non mescolare) | `projects` ISO 3834 (saldatori, WPS) | Non è un albero documentale | Dopo handoff del riesame |
+
+**Regole vincolanti**
+
+1. **Un file, una copia.** Niente PDF duplicato in azienda e in commessa. La commessa *punta* al record (`commercial_case_documents`), non lo ricopia.
+2. **Due viste.** Stesso capitolato: nello scaffale azienda `2.2` *e* nello scaffale commessa «da cliente». Cambi il file una volta.
+3. **Scaffali diversi.** In commessa non si ricreano Procedure/Manuale/Norme. Quelli restano nella stanza azienda. In commessa: ruolo (`capitolato`, `drawing`, `order`, …) già usato da `caseDocumentAnalysis`.
+4. **Prima la stanza, poi lo scaffale.** Screening: studio vs azienda X vs commessa (sottocartella `Rossi-2024`) → poi tipo → poi specialista.
+5. **«Commessa» ≠ «progetto 3834».** Finché il riesame non è handoff, i file stanno sul caso commerciale. Non si inventa un quarto albero su `projects`.
+
+IA-1 tocca **solo scaffali della stanza azienda** (chiudere il buco: procedura → PROCEDURE). La stanza commessa si allestisce da IA-2/IA-6.
 
 ### Scalabilità sui documenti di commessa (risposta 20/08)
 
@@ -146,7 +169,8 @@ Allineata al template già provisionato sulle aziende (codici 059/076):
 
 ## Non ancora specificato
 
-- Sottocartella per commessa sotto `2.2` (es. `2.2/{codice-commessa}`) vs un unico cassetto Capitolati — il path relativo (`Commessa-Rossi/…`) è un indizio, non ancora una cartella nuova
+- Sottoalbero in **albero azienda** `2.2/Rossi-2024` oltre al caso — utile in vetrina SGQ, non obbligatorio se la stanza commessa (caso + ruoli) è solida
+- Quanti file restano solo in stanza commessa (allegato caso) senza riga in registro azienda — default proposto: **sempre anche registro** (una copia, due viste)
 - Tipo unico `capitolato` vs `capitolato` / `rfq` / `ordine` — in IA-2 dopo 3–5 PDF reali
 - Soglia screening: sotto quale confidence il file resta in `Inbox/da_classificare` invece di 2.2/1.2 — dopo un job reale
 - Quanti specialisti in parallelo sul VPS (limite costi AI / CPU OCR) — default prudente (es. 2–3) da misurare
@@ -165,7 +189,8 @@ Allineata al template già provisionato sulle aziende (codici 059/076):
 - **Orchestratore v1 = router `doc_type`** verso service già in repo; parallelo = coda server. Non un LLM-capo.
 - **Learning = ADR-017** (feedback + few-shot). Il job massivo addestra il successivo, non un modello nuovo.
 - **Placement prima della massa**: IA-1 resta la prima slice (senza mapper, lo screening non ha dove mettere i file).
-- **Primo verticale = commesse / riesame** (`2.2`). Il processo **scala** (stessa coda, un caso per sottocartella/gruppo). `2.2` piatto è il cassetto; il faldone è il caso. Procedure/norme = stesso motore, dopo.
+- **Stanze distinte (ora)**: studio / azienda / commessa riesame. Un file, una copia, due viste. Scaffali commessa ≠ scaffali SGQ. `projects` 3834 non è la stanza documentale.
+- **Primo verticale = stanza commessa** + cassetto azienda `2.2`. Procedure/norme = stesso screening, stanza azienda.
 - **OCR**: riuso S1a, non un secondo motore.
 - **Analisi commessa**: non rifare slice #5–#7 — si agganciano dopo l’allocazione in 2.2.
 
@@ -190,6 +215,35 @@ Allineata al template già provisionato sulle aziende (codici 059/076):
 **Ordine**: IA-1 → IA-2 (tipo capitolato) e IA-3 (preview un file) → IA-4 (picker cartella) → IA-5 (screening+alloca) → IA-5b (coda) → IA-6 → IA-7. IA-8 (OCR) può entrare in IA-5 se lo screening vede PDF senza testo. IA-9/10 dopo che il registro ha massa.
 
 **Parallelo**: non due brief aperti su `importJobs.controller.js`. IA-3 (solo FE) può stare in `DEPUTYTASK1.md` **dopo** merge IA-1.
+
+---
+
+## Specialisti (oggi / previsti)
+
+Non sono agenti Cursor. Sono **destinazioni** già in codice che il router chiama dopo stanza+tipo. Motore comune (non specialista): `documentIngestPipeline`, OCR, ADR-017.
+
+| # | Specialista oggi | Destinazione | Stanza |
+|---|---|---|---|
+| 1 | `qualificationIngest` | Qualifiche (patentino, 14732, 14731, NDT, PES/PAV) | Azienda |
+| 2 | `wpqrIngest` | WPQR | Azienda |
+| 3 | `wpsIngest` | WPS | Azienda |
+| 4 | `normIngest` | Norme + cartella `2.3` | Azienda (o studio se patrimonio) |
+| 5 | `figureIngest` | Tavole/figure da PDF norma | Stessa della norma |
+| 6 | `caseTextAnalysis` | Requisiti da capitolato/ordine | **Commessa** |
+| 7 | `drawingExtraction` | Requisiti da disegno (vision) | **Commessa** |
+| 8 | Estrai certificato 3.1 (MC) | Materiali | Azienda |
+| 9 | `commitToRegistry` | Registro generico (catch-all) | Azienda / studio |
+
+`caseDocumentAnalysis` è già il mini-router di **6+7**, non un decimo cervello.
+
+| Previsti in questa epic | Cosa fa | Non è |
+|---|---|---|
+| **10. Allestitore stanza commessa** (IA-6, soprattutto deterministico) | Sottocartella → un caso + ruolo scaffale; collega il file già in registro | Nuovo LLM |
+| Tipi `capitolato` / `ordine` / `rfq` | Alimentano 6 e 10 | Nuovo motore |
+
+**Non aprire ora** (consumatori, non ingest): SAL evidenze (S2a), welding suggest, obblighi legali, verbale RDP, «specialista procedure» (basta 9 + schema).
+
+**Ordine di crescita**: 9 sistemato (IA-1) → 10 + tipi commessa → gli altri si accendono da soli quando lo screening dice il tipo. Non si progettano 20 agenti.
 
 ---
 

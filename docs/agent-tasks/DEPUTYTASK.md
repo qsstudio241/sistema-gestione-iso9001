@@ -7,7 +7,7 @@
 **Rischio:** Medio — backend additivo su `commitToRegistry`, nessuna migrazione; PR + **un** Bugbot a slice chiusa; Cloud **non** mergia  
 **Slot precedente:** SAL S1a CHIUSO ([PR #471](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/471)) — scontrino in git, non rieseguire
 
-HITL 20/08 (non cambia IA-1): sorgente = **cartella radice + sottocartelle**; screening in background; questo step **alloca**; review = coda incompleti. Dettaglio nel PLAN.
+HITL 20/08 (non cambia IA-1): cartella radice; screening in background; **alloca**. Architettura: stanza studio / azienda / commessa (un file, due viste). IA-1 = solo scaffali **azienda**. Dettaglio nel PLAN.
 
 ---
 
