@@ -434,9 +434,9 @@ export default function ImportJobsPage() {
 
   async function uploadPickedFiles(fileList, inputEl) {
     if (!selectedId || !fileList?.length) return;
-    const { files, skippedNonPdf, truncated } = takeImportFiles(fileList);
+    const { files, skippedJunk, truncated } = takeImportFiles(fileList);
     if (!files.length) {
-      setError("Nessun PDF selezionato. Sono accettati solo file .pdf.");
+      setError("Nessun file selezionato nella cartella.");
       if (inputEl) inputEl.value = "";
       return;
     }
@@ -448,10 +448,10 @@ export default function ImportJobsPage() {
       if (inputEl) inputEl.value = "";
       const notes = [];
       if (truncated) {
-        notes.push(`Caricati i primi ${MAX_IMPORT_JOB_FILES} PDF (limite per job).`);
+        notes.push(`Caricati i primi ${MAX_IMPORT_JOB_FILES} file (limite per job).`);
       }
-      if (skippedNonPdf) {
-        notes.push(`${skippedNonPdf} file non PDF ignorati.`);
+      if (skippedJunk) {
+        notes.push(`${skippedJunk} file di sistema ignorati (Thumbs.db / .DS_Store).`);
       }
       setFolderNotice(notes.length ? notes.join(" ") : null);
       await loadList();
@@ -877,7 +877,6 @@ export default function ImportJobsPage() {
                   Carica cartella
                   <input
                     type="file"
-                    accept="application/pdf,.pdf"
                     multiple
                     ref={bindDirectoryPicker}
                     onChange={handleFiles}
@@ -905,8 +904,8 @@ export default function ImportJobsPage() {
                 </button>
               </div>
               <p className="import-jobs-folder-hint">
-                La cartella mantiene i nomi delle sottocartelle (es. Rossi-2024/capitolato.pdf).
-                Dopo «Estrai testo», «Screening e posa» classifica e mette in scaffale i tipi chiari.
+                La cartella prende tutti i file (Word, Excel, disegni, PDF, …) e tiene i nomi delle sottocartelle.
+                Il testo si estrae solo dai PDF; gli altri si classificano da nome e cartella.
               </p>
               {folderNotice && <p className="import-jobs-warning">{folderNotice}</p>}
               <h3>File ({(detail.files || []).length})</h3>

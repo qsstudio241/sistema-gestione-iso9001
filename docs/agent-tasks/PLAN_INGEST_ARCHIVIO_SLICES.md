@@ -14,7 +14,7 @@ Il modulo vive in **GESTIONE → Impostazioni → Import PDF** (`/settings/impor
 Flusso attuale, un job alla volta:
 
 1. **Crea job** — titolo, azienda opzionale, tipo documento opzionale (suggerimento per l’AI).
-2. **Carica PDF o cartella** — massimo **80 file**, solo `.pdf`, fino a 200 MB l’uno. «Carica cartella» tiene i path delle sottocartelle in `original_name`. I file finiscono sul server in `uploads/imports/{organizzazione}/{job}/`.
+2. **Carica PDF o cartella** — massimo **80 file**, fino a 200 MB l’uno. «Carica PDF» è solo `.pdf`. «Carica cartella» prende **tutti i tipi** (Word, Excel, disegni, immagini, PDF) e tiene i path in `original_name`. I file finiscono sul server in `uploads/imports/{organizzazione}/{job}/`.
 3. **Elabora** — estrae il testo dal PDF (`pdf-parse`). Se il PDF è una scansione senza testo, la confidence è bassa. L’OCR **esiste già** in altri moduli (`ocrExtractor` / `documentTextExtractor`, SAL S1a) ma **non è collegato** a questa pagina.
 4. **Analisi AI** (pulsante, non automatica) — propone tipo documento e campi (codice, date, titolo, …). L’operatore può correggere.
 5. **Commit a mano**, tre uscite diverse:

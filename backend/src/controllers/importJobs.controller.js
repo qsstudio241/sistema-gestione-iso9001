@@ -28,6 +28,7 @@ const {
     basenameImportRelativePath,
     resolveImportOriginalName,
     relativePathsFromBody,
+    isPdfImportName,
 } = require('../utils/importRelativePath');
 const { screenImportFile } = require('../utils/importScreening');
 
@@ -289,6 +290,16 @@ async function processJob(req, res) {
         let fail = 0;
         for (const row of files.recordset || []) {
             try {
+                if (!isPdfImportName(row.original_name) && !isPdfImportName(row.storage_path)) {
+                    await query(
+                        `UPDATE import_job_files SET status = 'extracted', extracted_text = NULL,
+                         confidence_score = 0, updated_at = GETDATE(), error_message = NULL
+                         WHERE id = @fid`,
+                        { fid: row.id }
+                    );
+                    ok += 1;
+                    continue;
+                }
                 const buf = fs.readFileSync(row.storage_path);
                 const text = await extractPdfText(buf);
                 const conf = confidenceFromTextLength(text.length);
@@ -374,7 +385,7 @@ async function screenAndPlace(req, res) {
         const files = await query(
             `SELECT id, original_name, extracted_text, status, ai_extraction_json, registry_document_id
              FROM import_job_files
-             WHERE job_id = @job_id AND status IN ('extracted', 'reviewed')`,
+             WHERE job_id = @job_id AND status IN ('uploaded', 'extracted', 'reviewed')`,
             { job_id: jobId }
         );
 

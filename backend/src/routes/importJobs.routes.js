@@ -42,7 +42,7 @@ const importStorage = multer.diskStorage({
     destination: importDestination,
     filename(req, file, cb) {
         const stamp = Date.now();
-        const ext = path.extname(file.originalname) || '.pdf';
+        const ext = path.extname(file.originalname) || '';
         const base = path.basename(file.originalname, ext).replace(/[^a-zA-Z0-9._-]/g, '_').substring(0, 120);
         cb(null, `${stamp}_${base}${ext}`);
     },
@@ -52,10 +52,8 @@ const importUpload = multer({
     storage: importStorage,
     limits: { fileSize: 200 * 1024 * 1024, files: MAX_IMPORT_JOB_FILES },
     fileFilter(req, file, cb) {
-        const ok =
-            file.mimetype === 'application/pdf' ||
-            file.originalname.toLowerCase().endsWith('.pdf');
-        if (!ok) return cb(new Error('Solo file PDF consentiti'));
+        const name = String(file.originalname || '').trim();
+        if (!name) return cb(new Error('Nome file mancante'));
         cb(null, true);
     },
 });
@@ -63,15 +61,12 @@ const importUpload = multer({
 const uploadImportMiddleware = (req, res, next) => {
     importUpload.array('files', MAX_IMPORT_JOB_FILES)(req, res, (err) => {
         if (err) {
-            if (err.message && err.message.includes('Solo file PDF')) {
-                return res.status(415).json({ error: err.message, code: 'UNSUPPORTED_MEDIA_TYPE' });
-            }
             if (err.code === 'LIMIT_FILE_SIZE') {
                 return res.status(413).json({ error: 'File troppo grande (max 50 MB)', code: 'PAYLOAD_TOO_LARGE' });
             }
             if (err.code === 'LIMIT_FILE_COUNT') {
                 return res.status(400).json({
-                    error: `Troppi file (max ${MAX_IMPORT_JOB_FILES} PDF per job).`,
+                    error: `Troppi file (max ${MAX_IMPORT_JOB_FILES} per job).`,
                     code: 'LIMIT_FILE_COUNT',
                 });
             }

@@ -18,9 +18,15 @@ describe('sanitizeImportRelativePath', () => {
         expect(sanitizeImportRelativePath('/var/data/file.pdf')).toBeNull();
         expect(sanitizeImportRelativePath('../segreto.pdf')).toBeNull();
         expect(sanitizeImportRelativePath('a/../../etc/passwd.pdf')).toBeNull();
-        expect(sanitizeImportRelativePath('foto.jpg')).toBeNull();
         expect(sanitizeImportRelativePath('')).toBeNull();
         expect(sanitizeImportRelativePath(null)).toBeNull();
+    });
+
+    it('accetta docx, xlsx, dwg e immagini', () => {
+        expect(sanitizeImportRelativePath('Commesse/Rossi/capitolato.docx'))
+            .toBe('Commesse/Rossi/capitolato.docx');
+        expect(sanitizeImportRelativePath('disegni/pianta.dwg')).toBe('disegni/pianta.dwg');
+        expect(sanitizeImportRelativePath('foto.jpg')).toBe('foto.jpg');
     });
 });
 

@@ -7,7 +7,7 @@ const MAX_IMPORT_RELATIVE_PATH = 500;
 
 /**
  * Normalizza e valida un path relativo inviato dal client.
- * Rifiuta path assoluti, `..`, non-PDF. Restituisce null se non usabile.
+ * Rifiuta path assoluti e `..`. Qualsiasi estensione (docx, xlsx, dwg, …).
  * @param {unknown} raw
  * @returns {string|null}
  */
@@ -19,9 +19,11 @@ function sanitizeImportRelativePath(raw) {
     const parts = s.split('/').filter(Boolean);
     if (!parts.length) return null;
     if (parts.some((p) => p === '.' || p === '..')) return null;
-    const joined = parts.join('/');
-    if (!joined.toLowerCase().endsWith('.pdf')) return null;
-    return joined;
+    return parts.join('/');
+}
+
+function isPdfImportName(name) {
+    return /\.pdf$/i.test(String(name || ''));
 }
 
 /**
@@ -46,7 +48,7 @@ function basenameImportRelativePath(stored) {
 function resolveImportOriginalName(multerOriginalName, relativeFromClient) {
     const sanitized = sanitizeImportRelativePath(relativeFromClient);
     if (sanitized) return sanitized.substring(0, MAX_IMPORT_RELATIVE_PATH);
-    const fallback = String(multerOriginalName || 'documento.pdf');
+    const fallback = String(multerOriginalName || 'documento');
     return fallback.substring(0, MAX_IMPORT_RELATIVE_PATH);
 }
 
@@ -65,6 +67,7 @@ function relativePathsFromBody(body) {
 module.exports = {
     MAX_IMPORT_RELATIVE_PATH,
     sanitizeImportRelativePath,
+    isPdfImportName,
     basenameImportRelativePath,
     resolveImportOriginalName,
     relativePathsFromBody,
