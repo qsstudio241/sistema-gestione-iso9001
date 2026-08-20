@@ -188,6 +188,7 @@ describe('importJobs.controller screenAndPlace', () => {
         expect(payload.data.placed).toBe(0);
         expect(payload.data.results[0].doc_type).toBe('capitolato');
         expect(payload.data.results[0].place_error).toBe('COMPANY_REQUIRED_FOR_FOLDER');
+        expect(payload.data.results[0].lines_used).toBeGreaterThan(0);
         const update = query.mock.calls.find(([sql]) => sql.includes('SET ai_extraction_json'));
         expect(update[1].json).toContain('capitolato');
     });

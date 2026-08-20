@@ -1,19 +1,21 @@
-# DEPUTYTASK — Import cartella: tutti i tipi di file
+# DEPUTYTASK — Import cartella: tutti i tipi + screening a campioni
 
 **Stato:** CHIUSO — TEST OK L1 (20/08/2026)  
 **Aperto:** 20/08/2026  
 **Chiuso:** 20/08/2026  
 **Piano:** [`PLAN_INGEST_ARCHIVIO_SLICES.md`](PLAN_INGEST_ARCHIVIO_SLICES.md)  
+**PR:** [#511](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/511)  
 **Rischio:** Medio — Cloud **non** mergia.
 
 ---
 
 ## Esito
 
-- Path relativo per qualsiasi estensione
-- Multer accetta tutti i file
-- FE tiene docx/xlsx/dwg/immagini/PDF; salta solo Thumbs.db / .DS_Store
-- Estrazione testo solo sui PDF
-- Screening anche senza testo (nome/cartella)
+- Path relativo per qualsiasi estensione; Multer e FE tengono docx/xlsx/dwg/immagini/PDF
+- Estrazione testo: PDF, Word, Excel, txt (immagini/DWG: nessun testo, OCR = IA-8)
+- Screening: 30 → 90 → 200 righe, tetto 8 000 caratteri; stop quando il tipo non è più `low`
+- Pulsante «Estrai testo» (non più «solo PDF»)
 
-«Carica PDF» resta solo PDF. Dopo merge: deploy VPS (stessi file import).
+L1: `importExtractText`, `importProgressiveScreen`, `importScreening`, `importJobs.controller` — 41 verdi.
+
+Dopo merge: deploy VPS (stessi file import). Non dichiarare la PR pronta prima di CI + Bugbot + Security su **questa** revisione.

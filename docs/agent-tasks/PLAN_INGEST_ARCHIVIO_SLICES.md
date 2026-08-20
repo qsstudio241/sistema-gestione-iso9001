@@ -15,7 +15,7 @@ Flusso attuale, un job alla volta:
 
 1. **Crea job** — titolo, azienda opzionale, tipo documento opzionale (suggerimento per l’AI).
 2. **Carica PDF o cartella** — massimo **80 file**, fino a 200 MB l’uno. «Carica PDF» è solo `.pdf`. «Carica cartella» prende **tutti i tipi** (Word, Excel, disegni, immagini, PDF) e tiene i path in `original_name`. I file finiscono sul server in `uploads/imports/{organizzazione}/{job}/`.
-3. **Elabora** — estrae il testo dal PDF (`pdf-parse`). Se il PDF è una scansione senza testo, la confidence è bassa. L’OCR **esiste già** in altri moduli (`ocrExtractor` / `documentTextExtractor`, SAL S1a) ma **non è collegato** a questa pagina.
+3. **Elabora** — estrae il testo da PDF (`pdf-parse`), Word (`mammoth`) ed Excel (`xlsx`). Poi lo screening legge **30 righe**, e solo se il tipo è ancora incerto passa a 90 poi 200 (tetto 8 000 caratteri). Disegni/foto: solo nome/cartella. Se il PDF è una scansione senza testo, la confidence è bassa. L’OCR **esiste già** in altri moduli (`ocrExtractor` / `documentTextExtractor`, SAL S1a) ma **non è collegato** a questa pagina (IA-8).
 4. **Analisi AI** (pulsante, non automatica) — propone tipo documento e campi (codice, date, titolo, …). L’operatore può correggere.
 5. **Commit a mano**, tre uscite diverse:
    - **Commit al Registry** — crea una riga nel registro documenti. **Solo le norme** (`doc_type=norma`) vengono messe nella cartella **2.3 NORME E LEGGI**. Tutti gli altri tipi restano **senza cartella** (`parent_id` vuoto): sono nell’archivio ma **non sotto Procedure / Capitolati / Scadenzario**.
@@ -204,7 +204,7 @@ IA-1 tocca **solo scaffali della stanza azienda** (chiudere il buco: procedura �
 | **IA-2** | Verticale commessa: tipo `capitolato` → cartella `2.2` ✅ | `documentTypes.js`, mappe FE/BE, commit; **non** nuovo caso Riesame | IA-1 | AFK |
 | **IA-3** | Preview scaffale nel dialog commit ✅ | `ImportJobsPage.jsx` + `getSuggestedFolderLabel`; override resta `parent_folder_id` API | IA-1 | AFK |
 | **IA-4** | Sorgente: cartella radice + path relativo (in `original_name`, no colonna) ✅ | picker `webkitdirectory`, upload albero, path sanitizzato; limite 80; **non** ZIP; screening = IA-5 | IA-1 | AFK |
-| **IA-5** | Screening veloce + posa (pulsante, path+nome+testo) ✅ | `importScreening` + `POST …/screen-and-place`; auto-posa solo high+azienda+non-qualifica; coda incompleti = IA-5b | IA-1, IA-4 | AFK |
+| **IA-5** | Screening veloce + posa (pulsante, path+nome+testo) ✅ | `importScreening` + `POST …/screen-and-place`; auto-posa solo high+azienda+non-qualifica; coda incompleti = IA-5b. Campioni 30→90→200 righe (#511) | IA-1, IA-4 | AFK |
 | **IA-5b** | Coda admin «da completare» | lista filtrata incompleti (tipo/cartella/campi), badge come profilo/qualifiche; non blocca lo screening | IA-5 | AFK |
 | **IA-6** | Ponte 2.2 → caso Riesame (batch) | riuso `import-from-job` su N file capitolato dello stesso job/cartella relativa | IA-2, IA-5 | AFK |
 | **IA-7** | Dopo il ponte: lanciare analisi già esistente | `analyze-documents` / `analyzeRequirements` persistito — **solo hook**, no nuovo motore | IA-6 | AFK |

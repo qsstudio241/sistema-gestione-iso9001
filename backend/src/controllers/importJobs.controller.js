@@ -6,7 +6,8 @@ const fs = require('fs');
 const path = require('path');
 const { query } = require('../config/database');
 const logger = require('../utils/logger');
-const { confidenceFromTextLength, extractPdfText } = require('../utils/importPdfText');
+const { confidenceFromTextLength } = require('../utils/importPdfText');
+const { extractImportFileText } = require('../utils/importExtractText');
 const { extractStructuredByDocType } = require('../services/importAiExtraction.service');
 const { getActiveProvider } = require('../services/aiProviderAdapter');
 const {
@@ -28,9 +29,8 @@ const {
     basenameImportRelativePath,
     resolveImportOriginalName,
     relativePathsFromBody,
-    isPdfImportName,
 } = require('../utils/importRelativePath');
-const { screenImportFile } = require('../utils/importScreening');
+const { progressiveScreenImportFile } = require('../utils/importProgressiveScreen');
 
 /** Converte un valore in numero finito o null (per colonne DECIMAL). */
 function toNum(v) {
@@ -290,24 +290,17 @@ async function processJob(req, res) {
         let fail = 0;
         for (const row of files.recordset || []) {
             try {
-                if (!isPdfImportName(row.original_name) && !isPdfImportName(row.storage_path)) {
-                    await query(
-                        `UPDATE import_job_files SET status = 'extracted', extracted_text = NULL,
-                         confidence_score = 0, updated_at = GETDATE(), error_message = NULL
-                         WHERE id = @fid`,
-                        { fid: row.id }
-                    );
-                    ok += 1;
-                    continue;
-                }
-                const buf = fs.readFileSync(row.storage_path);
-                const text = await extractPdfText(buf);
-                const conf = confidenceFromTextLength(text.length);
+                const extracted = await extractImportFileText({
+                    storagePath: row.storage_path,
+                    originalName: row.original_name,
+                });
+                const text = extracted.text || null;
+                const conf = text ? confidenceFromTextLength(text.length) : 0;
                 await query(
                     `UPDATE import_job_files SET status = 'extracted', extracted_text = @text,
                      confidence_score = @conf, updated_at = GETDATE(), error_message = NULL
                      WHERE id = @fid`,
-                    { fid: row.id, text: text || null, conf }
+                    { fid: row.id, text, conf }
                 );
                 ok += 1;
             } catch (e) {
@@ -363,6 +356,8 @@ function mergeScreeningExtraction(existing, screen, placed) {
             folder_code: screen.folder_code,
             reason: screen.reason,
             placed: !!placed,
+            lines_used: screen.lines_used ?? 0,
+            chars_used: screen.chars_used ?? 0,
         },
     });
 }
@@ -399,7 +394,7 @@ async function screenAndPlace(req, res) {
                 });
                 continue;
             }
-            const screen = screenImportFile({
+            const screen = progressiveScreenImportFile({
                 original_name: file.original_name,
                 extracted_text: file.extracted_text,
                 hint: job.document_type_hint,
@@ -443,6 +438,7 @@ async function screenAndPlace(req, res) {
                 confidence: screen.confidence,
                 folder_code: screen.folder_code,
                 reason: screen.reason,
+                lines_used: screen.lines_used,
                 placed,
                 place_error,
             });

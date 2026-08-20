@@ -884,7 +884,7 @@ export default function ImportJobsPage() {
                   />
                 </label>
                 <button type="button" className="btn-secondary" onClick={handleProcess} disabled={busy}>
-                  Estrai testo da PDF
+                  Estrai testo
                 </button>
                 <button
                   type="button"
@@ -896,7 +896,7 @@ export default function ImportJobsPage() {
                   }
                   title={
                     detail.job.company_id
-                      ? "Classifica i PDF e li posa nello scaffale se il tipo è chiaro"
+                      ? "Classifica i file e li posa nello scaffale se il tipo è chiaro"
                       : "Senza azienda classifica comunque; la posa in scaffale richiede l'azienda"
                   }
                 >
@@ -905,7 +905,8 @@ export default function ImportJobsPage() {
               </div>
               <p className="import-jobs-folder-hint">
                 La cartella prende tutti i file (Word, Excel, disegni, PDF, …) e tiene i nomi delle sottocartelle.
-                Il testo si estrae solo dai PDF; gli altri si classificano da nome e cartella.
+                Dal testo di PDF, Word ed Excel si leggono prima 30 righe, poi altre se il tipo non è chiaro.
+                Disegni e foto si classificano da nome e cartella (senza OCR).
               </p>
               {folderNotice && <p className="import-jobs-warning">{folderNotice}</p>}
               <h3>File ({(detail.files || []).length})</h3>
