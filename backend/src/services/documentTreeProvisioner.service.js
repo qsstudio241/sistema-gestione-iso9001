@@ -8,6 +8,88 @@ const { query } = require('../config/database');
 const logger = require('../utils/logger');
 
 /**
+ * Scaffale azienda (folder_code template 059/076) per tipo documento.
+ * `altro` e tipi non elencati: nessuna cartella automatica.
+ * Le norme restano su resolveNormFolderId (stesso codice 2.3).
+ */
+const DOC_TYPE_TO_FOLDER_CODE = Object.freeze({
+    manuale: '1.1',
+    procedura: '1.2',
+    istruzione: '1.3',
+    modulo: '1.4',
+    norma: '2.3',
+    certificato_materiale: '2.1',
+    cert_taratura: '2.1',
+    dichiarazione_ce: '2.1',
+    wps: '9.1',
+    wpqr: '9.1',
+    report_ndt: '9.3',
+    rdp: '9.3',
+    patentino_saldatore: '4.5',
+    qualifica: '4.5',
+    qualifica_14732: '4.5',
+    qualifica_14731: '4.5',
+    pes_pav: '4.5',
+    cert_ndt: '4.5',
+    capitolato: '2.2',
+    rfq: '2.2',
+    ordine: '2.2',
+    order: '2.2',
+});
+
+function folderCodeForDocType(docType) {
+    const key = String(docType || '').trim();
+    return DOC_TYPE_TO_FOLDER_CODE[key] || null;
+}
+
+/**
+ * Cartella albero per folder_code. Stesso criterio di resolveNormFolderId
+ * (doc_type=folder, scope org) + preferenza company_id.
+ * @param {number} orgId
+ * @param {string} folderCode
+ * @param {number|null|undefined} companyId
+ * @returns {Promise<{ id: number, company_id: number|null }|null>}
+ */
+async function resolveFolderByCode(orgId, folderCode, companyId) {
+    if (!folderCode) return null;
+    const params = { orgId, folderCode: String(folderCode) };
+    let sql = `
+        SELECT TOP 1 id, company_id FROM document_registry
+        WHERE folder_code = @folderCode
+          AND organization_id = @orgId
+          AND doc_type = 'folder'
+    `;
+    if (companyId != null && companyId !== '') {
+        sql += ' AND company_id = @companyId';
+        params.companyId = parseInt(companyId, 10);
+    } else {
+        sql += ' AND company_id IS NULL';
+    }
+    sql += ' ORDER BY id ASC';
+    const result = await query(sql, params);
+    const row = result.recordset[0];
+    return row ? { id: row.id, company_id: row.company_id ?? null } : null;
+}
+
+/**
+ * Cartella esplicita (override parent_folder_id). Deve appartenere all'org.
+ * @param {number} orgId
+ * @param {number} folderId
+ * @returns {Promise<{ id: number, company_id: number|null }|null>}
+ */
+async function resolveExplicitFolder(orgId, folderId) {
+    const id = parseInt(folderId, 10);
+    if (!id) return null;
+    const explicit = await query(
+        `SELECT id, company_id FROM document_registry
+         WHERE id = @folderId AND organization_id = @orgId AND doc_type = 'folder'`,
+        { folderId: id, orgId }
+    );
+    const row = explicit.recordset[0];
+    return row ? { id: row.id, company_id: row.company_id ?? null } : null;
+}
+
+/**
  * Risale l'albero parent_id per costruire path_cache = /ancestor1/ancestor2/.../nodeId/
  */
 async function calculatePathCache(nodeId, orgId) {
@@ -249,4 +331,8 @@ module.exports = {
     STUDIO_ROOT_FOLDER_CODE,
     calculatePathCache,
     refreshPathCacheRecursive,
+    DOC_TYPE_TO_FOLDER_CODE,
+    folderCodeForDocType,
+    resolveFolderByCode,
+    resolveExplicitFolder,
 };

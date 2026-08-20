@@ -15,6 +15,12 @@ const crypto = require('crypto');
 const ALLOWED_SCOPES = new Set(['audit', 'self_assessment', 'nc']);
 const UPLOAD_DIR = getUploadDir();
 const DOCX_MIME = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
+/** Stesso perimetro di authorize('admin','auditor'): il middleware lascia già passare superadmin. */
+const TEMPLATE_WRITE_ROLES = new Set(['admin', 'auditor', 'superadmin']);
+
+function canWriteReportTemplates(role) {
+  return TEMPLATE_WRITE_ROLES.has(role);
+}
 
 function normalizeScope(scope) {
   const s = String(scope || 'audit').trim().toLowerCase();
@@ -73,13 +79,13 @@ async function listTemplates(req, res) {
 /**
  * POST /api/v1/report-templates
  * Upload template .docx per l'organizzazione
- * Solo admin/auditor
+ * Solo admin / auditor / superadmin
  */
 async function uploadTemplate(req, res) {
   try {
     const { organization_id, role } = req.user;
-    if (!['admin', 'auditor'].includes(role)) {
-      return res.status(403).json({ error: 'Solo admin/auditor possono caricare template', code: 'FORBIDDEN' });
+    if (!canWriteReportTemplates(role)) {
+      return res.status(403).json({ error: 'Solo admin, auditor e superadmin possono caricare template', code: 'FORBIDDEN' });
     }
 
     if (!req.file || !req.file.path) {
@@ -361,8 +367,8 @@ async function downloadTemplateFile(req, res) {
 async function duplicateTemplate(req, res) {
   try {
     const { role, organization_id: organizationId } = req.user;
-    if (!['admin', 'auditor'].includes(role)) {
-      return res.status(403).json({ error: 'Solo admin/auditor possono duplicare template', code: 'FORBIDDEN' });
+    if (!canWriteReportTemplates(role)) {
+      return res.status(403).json({ error: 'Solo admin, auditor e superadmin possono duplicare template', code: 'FORBIDDEN' });
     }
 
     const templateId = parseInt(req.params.id, 10);
@@ -440,8 +446,8 @@ async function duplicateTemplate(req, res) {
 async function deleteTemplate(req, res) {
   try {
     const { role, organization_id: organizationId } = req.user;
-    if (!['admin', 'auditor'].includes(role)) {
-      return res.status(403).json({ error: 'Solo admin/auditor possono eliminare template', code: 'FORBIDDEN' });
+    if (!canWriteReportTemplates(role)) {
+      return res.status(403).json({ error: 'Solo admin, auditor e superadmin possono eliminare template', code: 'FORBIDDEN' });
     }
 
     const templateId = parseInt(req.params.id, 10);

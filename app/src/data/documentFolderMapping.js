@@ -29,6 +29,7 @@ export const DOC_TYPE_FOLDER_MAP = {
   piano_qualita:        '1.2',
   sal:                  '14',
   rdp:                  '9.1',
+  capitolato:           '2.2',
   altro:                null,
 };
 
@@ -41,4 +42,27 @@ export const DOC_TYPE_FOLDER_MAP = {
 export function getSuggestedFolderCode(docType) {
   if (!docType) return null;
   return DOC_TYPE_FOLDER_MAP[docType] || null;
+}
+
+/** Etichette scaffale azienda (template 059/076) — preview commit Import PDF. */
+export const FOLDER_CODE_LABELS = {
+  '1.1': 'MANUALE',
+  '1.2': 'PROCEDURE',
+  '1.3': 'ISTRUZIONI',
+  '1.4': 'MODULI',
+  '2.1': 'CERTIFICATI',
+  '2.2': 'CAPITOLATI',
+  '2.3': 'NORME E LEGGI',
+  '4.3': 'SKILL MATRIX',
+  '4.5': 'QUALIFICHE SALDATORI',
+  '9.1': 'WPS / WPQR',
+  '9.3': 'CND / PROVE NON DISTRUTTIVE',
+  '14': 'RIESAME DIREZIONE',
+};
+
+export function getSuggestedFolderLabel(docType) {
+  const code = getSuggestedFolderCode(docType);
+  if (!code) return null;
+  const title = FOLDER_CODE_LABELS[code];
+  return title ? `${title} (${code})` : code;
 }

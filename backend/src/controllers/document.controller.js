@@ -851,6 +851,7 @@ const DOC_TYPE_FOLDER_MAP = {
     piano_qualita:        '1.2',
     sal:                  '14',
     rdp:                  '9.1',
+    capitolato:           '2.2',
     altro:                null,
 };
 

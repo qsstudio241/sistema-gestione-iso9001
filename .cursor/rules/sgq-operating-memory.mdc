@@ -39,6 +39,7 @@ Sì, più chat in parallelo. No, non sullo stesso foglio. Dettaglio: [`sgq-workf
 - **Altri hub:** `PROJECT_CONTEXT.md` solo se nasce/si rinomina un modulo (una chat). `DEPUTYTASK.md` solo il deputy di quel brief (i paralleli usano `DEPUTYTASK1.md`, …). `deploy-manifest.json` non è un diario: se due PR aggiungono file diversi, in merge si tengono **entrambe** le righe.
 - **Desktop:** worktree + nuova finestra Cursor. Vietato due finestre sulla stessa cartella.
 - **Bugbot:** 1 run a pagamento per PR. Policy Dashboard «Run only when mentioned» + un `bugbot run` a slice chiusa.
+- **«Pronta / mergiabile»:** solo dopo aver **letto** su quella revisione CI + Bugbot + Security Review. Vietato dirlo dopo la sola CI (lezione 20/08/2026, PR #507). Doppio check **non** autorizza il Cloud Agent a mergiare; l'auto-merge è solo GitHub, attivato dal committente. Dettaglio: [`sgq-git-autonomy.mdc`](sgq-git-autonomy.mdc).
 
 ## Convenzione DEPUTYTASK
 

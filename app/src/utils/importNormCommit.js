@@ -3,6 +3,8 @@
  * Allineato a documentRegistryNorm.service e DocumentForm (norm-lookup).
  */
 
+import { basenameImportRelativePath } from './importFolderUpload';
+
 export const NORM_DOC_TYPE = 'norma';
 
 /** Alias doc_type AI / job hint ? registry canonico `norma`. */
@@ -66,7 +68,9 @@ export function guessIssuingBodyFromCode(code) {
 export function buildInitialNormTypeData(ai, file) {
   const tsd = { ...(ai?.type_specific_data || {}) };
   if (!String(tsd.standard_code || '').trim()) {
-    const fromName = guessStandardCodeFromFilename(file?.original_name);
+    const fromName = guessStandardCodeFromFilename(
+      basenameImportRelativePath(file?.original_name) || file?.original_name
+    );
     if (fromName) tsd.standard_code = fromName;
   }
   if (tsd.edition_year == null || tsd.edition_year === '') {
@@ -95,7 +99,7 @@ export function buildCommitFormFromFile(ai, file, jobDocTypeHint = '') {
     return {
       isNorm: false,
       form: {
-        title: ai?.title || file?.original_name || '',
+        title: ai?.title || basenameImportRelativePath(file?.original_name) || file?.original_name || '',
         doc_type: docType,
         responsible: ai?.person_name || ai?.responsible || '',
         issue_date: ai?.issue_date || '',
@@ -109,7 +113,7 @@ export function buildCommitFormFromFile(ai, file, jobDocTypeHint = '') {
   }
 
   const typeData = buildInitialNormTypeData(ai, file);
-  const title = ai?.title || typeData.norm_title || file?.original_name || '';
+  const title = ai?.title || typeData.norm_title || basenameImportRelativePath(file?.original_name) || file?.original_name || '';
 
   return {
     isNorm: true,

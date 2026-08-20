@@ -30,6 +30,7 @@ export const DOC_TYPE_OPTIONS = [
   { value: "piano_qualita",      label: "Piano qualità " },
   { value: "sal",                label: "SAL  -  Stato avanzamento lavori" },
   { value: "rdp",                label: "RDP  -  Rapporto di prova" },
+  { value: "capitolato",         label: "Capitolato / RFQ / ordine" },
   { value: "altro",              label: "Altro" },
 ];
 
@@ -46,6 +47,10 @@ export const DOC_TYPE_GROUPS = [
   {
     group: "SGQ  -  Sistema Gestione qualità ",
     types: ["procedura", "istruzione", "modulo", "manuale", "norma", "piano_qualita", "sal", "altro"],
+  },
+  {
+    group: "Commesse / riesame requisiti",
+    types: ["capitolato"],
   },
   {
     group: "Personale e qualifiche",
