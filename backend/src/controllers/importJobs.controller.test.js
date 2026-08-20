@@ -434,4 +434,100 @@ describe('importJobs.controller commitToRegistry', () => {
         });
         expect(query).toHaveBeenCalledTimes(3);
     });
+
+    function reviewedFileRow() {
+        return {
+            id: 9,
+            status: 'reviewed',
+            original_name: 'PG-04.pdf',
+            storage_path: null,
+            mime_type: 'application/pdf',
+            file_size: 1000,
+            ai_extraction_json: null,
+            registry_document_id: null,
+            extracted_text: 'testo',
+            confidence_score: 80,
+        };
+    }
+
+    it('commit procedura posa il documento nella cartella 1.2 e scrive path_cache', async () => {
+        query
+            .mockResolvedValueOnce({ recordset: [{ id: 55, company_id: 8 }] })
+            .mockResolvedValueOnce({ recordset: [reviewedFileRow()] })
+            .mockResolvedValueOnce({ recordset: [{ id: 8 }] })
+            .mockResolvedValueOnce({ recordset: [{ id: 120, company_id: 8 }] })
+            .mockResolvedValueOnce({ recordset: [{ id: 900 }] })
+            .mockResolvedValueOnce({ recordset: [{ parent_id: 120 }] })
+            .mockResolvedValueOnce({ recordset: [{ parent_id: null }] })
+            .mockResolvedValueOnce({ recordset: [] })
+            .mockResolvedValueOnce({ recordset: [] });
+
+        const res = makeRes();
+        await commitToRegistry(makeReq({ company_id: 8, doc_type: 'procedura', title: 'PG-04' }), res);
+
+        expect(res.status).toHaveBeenCalledWith(201);
+        expect(res.json).toHaveBeenCalledWith({
+            success: true,
+            data: { registry_document_id: 900, doc_type: 'procedura', title: 'PG-04' },
+        });
+        const insert = query.mock.calls.find(([sql]) => sql.includes('INSERT INTO document_registry'));
+        expect(insert[1].parent_id).toBe(120);
+        const pathUpdate = query.mock.calls.find(([sql]) => sql.includes('SET path_cache'));
+        expect(pathUpdate).toBeTruthy();
+    });
+
+    it('altro senza parent_folder_id resta senza cartella', async () => {
+        query
+            .mockResolvedValueOnce({ recordset: [{ id: 55, company_id: 8 }] })
+            .mockResolvedValueOnce({ recordset: [reviewedFileRow()] })
+            .mockResolvedValueOnce({ recordset: [{ id: 8 }] })
+            .mockResolvedValueOnce({ recordset: [{ id: 901 }] });
+
+        const res = makeRes();
+        await commitToRegistry(makeReq({ company_id: 8, doc_type: 'altro', title: 'Varie' }), res);
+
+        expect(res.status).toHaveBeenCalledWith(201);
+        const insert = query.mock.calls.find(([sql]) => sql.includes('INSERT INTO document_registry'));
+        expect(insert[1].parent_id).toBeNull();
+        const folderLookup = query.mock.calls.filter(([sql]) => sql.includes('folder_code'));
+        expect(folderLookup).toHaveLength(0);
+    });
+
+    it('procedura senza cartella albero → 404 FOLDER_NOT_FOUND', async () => {
+        query
+            .mockResolvedValueOnce({ recordset: [{ id: 55, company_id: 8 }] })
+            .mockResolvedValueOnce({ recordset: [reviewedFileRow()] })
+            .mockResolvedValueOnce({ recordset: [{ id: 8 }] })
+            .mockResolvedValueOnce({ recordset: [] });
+
+        const res = makeRes();
+        await commitToRegistry(makeReq({ company_id: 8, doc_type: 'procedura', title: 'PG-04' }), res);
+
+        expect(res.status).toHaveBeenCalledWith(404);
+        expect(res.json).toHaveBeenCalledWith(expect.objectContaining({
+            code: 'FOLDER_NOT_FOUND',
+        }));
+        const insert = query.mock.calls.find(([sql]) => sql.includes('INSERT INTO document_registry'));
+        expect(insert).toBeUndefined();
+    });
+
+    it('norma senza cartella 2.3 resta NORM_FOLDER_NOT_FOUND', async () => {
+        query
+            .mockResolvedValueOnce({ recordset: [{ id: 55, company_id: 8 }] })
+            .mockResolvedValueOnce({ recordset: [reviewedFileRow()] })
+            .mockResolvedValueOnce({ recordset: [] });
+
+        const res = makeRes();
+        await commitToRegistry(makeReq({
+            company_id: 8,
+            doc_type: 'norma',
+            title: 'ISO 9001',
+            type_specific_data: { standard_code: 'ISO 9001', issuing_body: 'ISO', edition_year: 2015 },
+        }), res);
+
+        expect(res.status).toHaveBeenCalledWith(404);
+        expect(res.json).toHaveBeenCalledWith(expect.objectContaining({
+            code: 'NORM_FOLDER_NOT_FOUND',
+        }));
+    });
 });

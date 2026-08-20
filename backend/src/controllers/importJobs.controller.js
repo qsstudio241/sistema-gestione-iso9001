@@ -15,7 +15,12 @@ const {
     guessStandardCodeFromFilename,
 } = require('../services/documentRegistryNorm.service');
 const { resolveNormFolderId } = require('../services/normCodesImport.service');
-const { calculatePathCache } = require('../services/documentTreeProvisioner.service');
+const {
+    calculatePathCache,
+    folderCodeForDocType,
+    resolveFolderByCode,
+    resolveExplicitFolder,
+} = require('../services/documentTreeProvisioner.service');
 const { resolvePersonnelForQualification } = require('../services/personnelQualificationLink.service');
 const { parseCompanyId, companyBelongsToOrg } = require('../services/qualificationCompany.service');
 const { buildWelderQualificationDesignation } = require('../utils/weldingDesignation');
@@ -588,11 +593,12 @@ async function commitToRegistry(req, res) {
         }
 
         let parentId = null;
-        let resolvedNormFolderCompanyId = null;
+        let resolvedFolderCompanyId = null;
+        const requestedFolderId = body.parent_folder_id
+            ? parseInt(body.parent_folder_id, 10)
+            : null;
+
         if (isNorma) {
-            const requestedFolderId = body.parent_folder_id
-                ? parseInt(body.parent_folder_id, 10)
-                : null;
             const normFolder = await resolveNormFolderId(organization_id, requestedFolderId);
             if (!normFolder) {
                 return res.status(404).json({
@@ -601,11 +607,11 @@ async function commitToRegistry(req, res) {
                 });
             }
             parentId = normFolder.id;
-            resolvedNormFolderCompanyId = normFolder.company_id;
+            resolvedFolderCompanyId = normFolder.company_id;
         }
 
-        if (isNorma && company_id == null && resolvedNormFolderCompanyId != null) {
-            company_id = resolvedNormFolderCompanyId;
+        if (isNorma && company_id == null && resolvedFolderCompanyId != null) {
+            company_id = resolvedFolderCompanyId;
         }
 
         const companyScope = await resolveOptionalCompanyId(company_id, organization_id);
@@ -613,6 +619,36 @@ async function commitToRegistry(req, res) {
             return res.status(companyScope.status).json({ error: companyScope.error, code: companyScope.code });
         }
         company_id = companyScope.companyId;
+
+        if (!isNorma) {
+            let folder = null;
+            if (requestedFolderId) {
+                folder = await resolveExplicitFolder(organization_id, requestedFolderId);
+                if (!folder) {
+                    return res.status(404).json({
+                        error: 'Cartella destinazione non trovata.',
+                        code: 'FOLDER_NOT_FOUND',
+                    });
+                }
+            } else {
+                const folderCode = folderCodeForDocType(doc_type);
+                if (folderCode) {
+                    folder = await resolveFolderByCode(organization_id, folderCode, company_id);
+                    if (!folder) {
+                        return res.status(404).json({
+                            error: `Cartella albero (folder_code ${folderCode}) non trovata. Inizializza la struttura documentale.`,
+                            code: 'FOLDER_NOT_FOUND',
+                        });
+                    }
+                }
+            }
+            if (folder) {
+                parentId = folder.id;
+                if (company_id == null && folder.company_id != null) {
+                    company_id = folder.company_id;
+                }
+            }
+        }
 
         // Crea record document_registry
         const ins = await query(
@@ -648,7 +684,7 @@ async function commitToRegistry(req, res) {
         );
         const registryId = ins.recordset[0].id;
 
-        if (isNorma && parentId) {
+        if (parentId) {
             const pathCache = await calculatePathCache(registryId, organization_id);
             await query(
                 `UPDATE document_registry SET path_cache = @path_cache WHERE id = @id`,
