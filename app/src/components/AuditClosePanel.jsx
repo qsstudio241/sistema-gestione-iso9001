@@ -12,7 +12,13 @@ import apiService from "../services/apiService";
 import { useStorage } from "../contexts/StorageContext";
 import { useAuth } from "../contexts/AuthContext";
 import { calculateFindingsMetrics, calculateCustomFindingsMetrics } from "../utils/metricsCalculator";
-import { STANDARD_TO_SUBSID, getSelectedStandardEntries } from "../data/standardsRegistry";
+import { getSelectedStandardEntries } from "../data/standardsRegistry";
+import {
+  calcChecklistCompletion,
+  calcNormCompletion,
+  getFirstUnansweredTarget,
+  pickChecklistForSelectedStandards,
+} from "../utils/activeAuditChecklist";
 import { useGuidedCompletion } from "../hooks/useGuidedCompletion";
 import "./AuditClosePanel.css";
 
@@ -21,33 +27,6 @@ const NC_PUSH_UNDO_SECONDS = 10;
 
 /** Tutti i punti norma devono essere valutati (anche NA/NV contano come risposta) */
 const COMPLETION_THRESHOLD = 100;
-
-function calcNormCompletion(normData) {
-  if (!normData || typeof normData !== "object") return 0;
-  let total = 0, answered = 0;
-  Object.values(normData).forEach((clause) => {
-    (clause?.questions || []).forEach((q) => {
-      total++;
-      if (q.status && q.status !== "NOT_ANSWERED") answered++;
-    });
-  });
-  return total === 0 ? 0 : Math.round((answered / total) * 100);
-}
-
-function calcCompletion(checklist) {
-  if (!checklist || typeof checklist !== "object") return 0;
-  let total = 0, answered = 0;
-  Object.values(checklist).forEach((norm) => {
-    if (!norm || typeof norm !== "object") return;
-    Object.values(norm).forEach((clause) => {
-      (clause?.questions || []).forEach((q) => {
-        total++;
-        if (q.status && q.status !== "NOT_ANSWERED") answered++;
-      });
-    });
-  });
-  return total === 0 ? 0 : Math.round((answered / total) * 100);
-}
 
 function AuditClosePanel({ currentAudit, onCompleted, onNavigateTo }) {
   const { updateCurrentAudit } = useStorage();
@@ -101,23 +80,6 @@ function AuditClosePanel({ currentAudit, onCompleted, onNavigateTo }) {
     return null;
   }
 
-  // Trova la prima domanda non risposta: ritorna { subsId, fieldId }
-  function getFirstUnansweredTarget(checklist) {
-    for (const [normKey, normData] of Object.entries(checklist || {})) {
-      if (!normData || typeof normData !== "object") continue;
-      for (const clause of Object.values(normData)) {
-        for (const q of (clause?.questions || [])) {
-          if (!q.status || q.status === "NOT_ANSWERED") {
-            const subsId = STANDARD_TO_SUBSID[normKey] ?? null;
-            const fieldId = q.questionId ? `question-${q.questionId}` : null;
-            return { subsId, fieldId };
-          }
-        }
-      }
-    }
-    return { subsId: null, fieldId: null };
-  }
-
   // ─── Descrittori campi obbligatori (fonte unica, riusabile via useGuidedCompletion) ──
   const gd = currentAudit?.metadata?.generalData    || {};
   const ao = currentAudit?.metadata?.auditObjective || {};
@@ -128,8 +90,14 @@ function AuditClosePanel({ currentAudit, onCompleted, onNavigateTo }) {
   const isIntegratedSystem = currentAudit?.metadata?.isIntegratedSystem ?? null;
   const effectiveIntegrated = isMultiStandard ? (isIntegratedSystem ?? false) : true;
 
-  const hasIsoChecklistForGuide = Object.keys(currentAudit?.checklist || {}).length > 0;
-  const checklistPct = hasIsoChecklistForGuide ? calcCompletion(currentAudit.checklist) : 100;
+  // Solo le norme ancora spuntate in 1.1: una checklist attivata e poi spenta
+  // (template vuoto in IndexedDB) non deve bloccare la chiusura né dirottare "Vai al campo".
+  const activeChecklist = pickChecklistForSelectedStandards(
+    currentAudit?.checklist,
+    selectedStandards,
+  );
+  const hasIsoChecklistForGuide = Object.keys(activeChecklist).length > 0;
+  const checklistPct = hasIsoChecklistForGuide ? calcChecklistCompletion(activeChecklist) : 100;
 
   // Completamento per-norma (usato per barre multi-standard e fieldDescriptors)
   const normCompletions = standardEntries.map(({ key, shortLabel, label }) => {
@@ -154,7 +122,7 @@ function AuditClosePanel({ currentAudit, onCompleted, onNavigateTo }) {
 
   // Per audit mono-standard: target dinamico legacy
   const firstUnanswered = (!isMultiStandard && hasIsoChecklistForGuide && checklistPct < COMPLETION_THRESHOLD)
-    ? getFirstUnansweredTarget(currentAudit?.checklist) : { subsId: null, fieldId: null };
+    ? getFirstUnansweredTarget(activeChecklist) : { subsId: null, fieldId: null };
 
   const fieldDescriptors = [
     {
