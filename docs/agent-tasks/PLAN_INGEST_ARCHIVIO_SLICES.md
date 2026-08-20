@@ -2,7 +2,7 @@
 
 > **Destinazione**: screening in background da cartella radice. Lo screening sceglie prima la **stanza** (studio / azienda / commessa), poi lo **scaffale**. Un file = una copia, visibile da due viste se è di commessa. Specialisti già in repo lavorano in parallelo. Primo verticale: documenti di commessa → stanza Riesame + cassetto azienda `2.2`. Review = coda incompleti. Learning = ADR-017.
 > **Spec già in repo (non rifare)**: [`MODULO_INGEST_AI_COMMESSE_SCOPO_E_ROADMAP.md`](../specs/MODULO_INGEST_AI_COMMESSE_SCOPO_E_ROADMAP.md) (analisi sul caso, slice #5–#7 già fatte) · [`MINI_SPEC_RIESAME_REQUISITI_CONTRATTO.md`](../specs/MINI_SPEC_RIESAME_REQUISITI_CONTRATTO.md) · albero in mig. 059/076 · ADR-010 HITL
-> **Brief attivo**: [`DEPUTYTASK.md`](DEPUTYTASK.md) — **IA-5 CHIUSO** [#509](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/509). Prossima: **IA-5b** (coda da completare).
+> **Brief attivo**: [`DEPUTYTASK.md`](DEPUTYTASK.md) — **CHIUSO** cartella tutti i tipi + screening a campioni [#511](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/511). Prossima: **IA-5b** (coda da completare).
 > **Mappa creata**: 20/08/2026 (Lead wayfinder A). Codice da IA-1 in poi.
 
 ---

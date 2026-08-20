@@ -89,6 +89,8 @@
                                      "src/utils/docTypeConfigHelpers.js",
                                      "src/utils/importPdfText.js",
                                      "src/utils/importRelativePath.js",
+                                     "src/utils/importExtractText.js",
+                                     "src/utils/importProgressiveScreen.js",
                                      "src/utils/importScreening.js",
                                      "src/utils/documentTreeCompanyScope.js",
                                      "src/utils/documentRegistryFile.js",
