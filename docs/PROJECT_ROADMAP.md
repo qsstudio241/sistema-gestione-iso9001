@@ -8,13 +8,15 @@
 
 > **Risposta standard a «stato di avanzamento del progetto e priorità da affrontare»**: sintetizzare da questa sezione (moduli maturi + sessione più recente + tabella priorità sotto), **non** dal banner storico più sotto (superato, tenuto solo per traccia) né dall'archivio marzo 2026 [`docs/archive/PROJECT_CONTEXT_STATO_FUNZIONALITA_2026-03.md`](archive/PROJECT_CONTEXT_STATO_FUNZIONALITA_2026-03.md). **Aggiornare questa sezione a fine sessione** se emergono nuove priorità o se una priorità elencata viene chiusa (stesso principio delle "Lezioni apprese" in [GUIDA_CONSOLIDATA.md](GUIDA_CONSOLIDATA.md) — sintesi qui, dettaglio linkato).
 
-**Ultimo aggiornamento di questa sezione**: 20/08/2026 (FW-0 mergiato #494: commit norma → tavole CLIP; nginx TEST `/test-api/` riparato).
+**Ultimo aggiornamento di questa sezione**: 20/08/2026 (conclusioni AI editabili #498; FW-0 mergiato #494).
 
 ### Moduli maturi (in produzione, uso quotidiano dai clienti Camellini/Mason)
 
 Audit multi-standard (9001/14001/45001) · Non Conformità (workflow ISO 10.2 completo) · Qualifiche Personale saldatori/NDT/coordinatori (ISO 9606-1/14732/14731/9712) · Saldatura (WPQR, generazione WPS da WPQR, Welding Book, Commesse ISO 3834, Dashboard 3834) · SAL (gap analysis requisiti con AI) · Registro Documenti + Scadenzari · Notifiche/Alert (documenti/NC/qualifiche) · Riesame di Direzione · RBAC multi-tenant (`company_access`) · Registro obblighi legali (ambiente + sicurezza) · Assistente AI / Gap Analysis euristica.
 
 ### Sessione più recente (20/08/2026)
+
+**Conclusioni AI editabili (20/08, mergiata)** — nel modal Assistente AI — Conclusioni il testo proposto è un campo modificabile; **Accetta** salva la versione corretta (HITL). [PR #498](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/498). Solo frontend, nessun deploy VPS.
 
 **FW-0 mergiato (20/08)** — dopo il commit di una norma PDF le tavole vanno in `knowledge_figures` (stesso tenant). Errore CLIP non blocca la norma. WPQR **non** collegato. Brief [`DEPUTYTASK_FIGURE_WPQR.md`](agent-tasks/DEPUTYTASK_FIGURE_WPQR.md) **CHIUSO**. [PR #494](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/494). Piano: [`PLAN_FIGURE_WPQR_SLICES.md`](agent-tasks/PLAN_FIGURE_WPQR_SLICES.md). Smoke TEST era rosso per nginx (unattended-upgrade 06:32), non per il codice: `proxy_pass` con slash finale.
 
