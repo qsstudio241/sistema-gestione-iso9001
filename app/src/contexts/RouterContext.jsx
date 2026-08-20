@@ -19,8 +19,10 @@ function getPath() {
 }
 
 /**
- * Pathname senza query/hash. navigate/replace accettano `/documents?tab=tree`;
- * il match delle rotte deve restare sul pathname, altrimenti cade sulla Home.
+ * Pathname senza query/hash.
+ * Regola: `?…` e `#…` sono dettagli (tab, riga, filtro), non un'altra pagina.
+ * Se il match usa l'URL intero, la rotta non si trova e si cade sulla Home.
+ * Unico punto: questo file. Non duplicare lo strip nei moduli.
  */
 export function pathnameOnly(path) {
   const raw = String(path || "/");
