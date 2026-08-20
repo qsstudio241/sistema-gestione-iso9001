@@ -33,7 +33,14 @@ export default function AiConclusionsModal({
 }) {
   const { suggest, loading, error, clear } = useAiAssist();
   const [result, setResult] = useState(null);
+  const [editedText, setEditedText] = useState("");
   const metaRef = useRef(null);
+
+  const applySuggestion = useCallback((s) => {
+    if (!s) return;
+    setResult(s);
+    setEditedText(s.conclusion_text || s.raw || "");
+  }, []);
 
   const hasExisting = !!(
     (auditContext?.existingConclusions || "").trim() ||
@@ -60,27 +67,27 @@ export default function AiConclusionsModal({
       sendFeedback("rejected", null);
     }
     setResult(null);
+    setEditedText("");
     metaRef.current = null;
     const ctx = { ...auditContext, mode };
     if (standardKey && auditContext?.byStandardConclusions?.[standardKey]) {
       ctx.existingConclusions = auditContext.byStandardConclusions[standardKey];
     }
     const s = await suggest("audit_conclusions", ctx);
-    if (s) setResult(s);
-  }, [suggest, auditContext, standardKey, mode, result, sendFeedback]);
+    applySuggestion(s);
+  }, [suggest, auditContext, standardKey, mode, result, sendFeedback, applySuggestion]);
 
   useEffect(() => {
     if (open) {
       clear();
       setResult(null);
+      setEditedText("");
       metaRef.current = null;
       const ctx = { ...auditContext, mode };
       if (standardKey && auditContext?.byStandardConclusions?.[standardKey]) {
         ctx.existingConclusions = auditContext.byStandardConclusions[standardKey];
       }
-      suggest("audit_conclusions", ctx).then((s) => {
-        if (s) setResult(s);
-      });
+      suggest("audit_conclusions", ctx).then(applySuggestion);
     }
   }, [open]);
 
@@ -90,9 +97,10 @@ export default function AiConclusionsModal({
   const recInfo = RECOMMENDATION_LABELS[recKey];
 
   const handleAccept = () => {
-    if (result?.conclusion_text) {
-      sendFeedback("accepted", result.conclusion_text);
-      onAccept(result.conclusion_text);
+    const text = editedText.trim();
+    if (text) {
+      sendFeedback("accepted", text);
+      onAccept(text);
     }
     onClose();
   };
@@ -151,9 +159,17 @@ export default function AiConclusionsModal({
                   {recInfo.icon} {recInfo.label}
                 </div>
               )}
-              <div className="ai-conclusions-modal__text">
-                {result.conclusion_text || result.raw || "Nessun testo generato"}
-              </div>
+              <p className="ai-conclusions-modal__edit-hint">
+                Puoi modificare il testo prima di accettare
+              </p>
+              <textarea
+                className="ai-conclusions-modal__text"
+                value={editedText}
+                onChange={(e) => setEditedText(e.target.value)}
+                rows={10}
+                aria-label="Testo proposto dall'assistente AI, modificabile"
+                placeholder="Nessun testo generato"
+              />
               {result.key_findings_summary && (
                 <div className="ai-conclusions-modal__key-findings">
                   {result.key_findings_summary}
@@ -182,7 +198,7 @@ export default function AiConclusionsModal({
           <button
             className="ai-conclusions-modal__btn accept"
             onClick={handleAccept}
-            disabled={loading || !result?.conclusion_text}
+            disabled={loading || !editedText.trim()}
           >
             Accetta
           </button>
