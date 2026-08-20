@@ -8,7 +8,7 @@
 
 > **Risposta standard a «stato di avanzamento del progetto e priorità da affrontare»**: sintetizzare da questa sezione (moduli maturi + sessione più recente + tabella priorità sotto), **non** dal banner storico più sotto (superato, tenuto solo per traccia) né dall'archivio marzo 2026 [`docs/archive/PROJECT_CONTEXT_STATO_FUNZIONALITA_2026-03.md`](archive/PROJECT_CONTEXT_STATO_FUNZIONALITA_2026-03.md). **Aggiornare questa sezione a fine sessione** se emergono nuove priorità o se una priorità elencata viene chiusa (stesso principio delle "Lezioni apprese" in [GUIDA_CONSOLIDATA.md](GUIDA_CONSOLIDATA.md) — sintesi qui, dettaglio linkato).
 
-**Ultimo aggiornamento di questa sezione**: 20/08/2026 (ingest archivio IA-1–IA-5 #506/#507/#509; superadmin duplica template #503; template Word sul VPS #501).
+**Ultimo aggiornamento di questa sezione**: 20/08/2026 (ingest cartella tutti i tipi + screening a campioni #511; IA-1–IA-5 #506/#507/#509; superadmin duplica template #503; template Word sul VPS #501).
 
 ### Moduli maturi (in produzione, uso quotidiano dai clienti Camellini/Mason)
 
@@ -16,7 +16,9 @@ Audit multi-standard (9001/14001/45001) · Non Conformità (workflow ISO 10.2 co
 
 ### Sessione più recente (20/08/2026)
 
-**Ingest archivio IA-1–IA-5 (20/08, mergiata)** — Import PDF posa i tipi nello scaffale azienda; tipo `capitolato` → 2.2; **Carica cartella** (path in `original_name`, max 80); **Screening e posa** (path+nome+testo; auto-posa solo se tipo chiaro + azienda; qualifiche no). Brief [`DEPUTYTASK.md`](agent-tasks/DEPUTYTASK.md) **CHIUSO**. Piano: [`PLAN_INGEST_ARCHIVIO_SLICES.md`](agent-tasks/PLAN_INGEST_ARCHIVIO_SLICES.md). [PR #506](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/506) · [#507](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/507) · [#509](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/509). Prossima: **IA-5b** coda da completare. Serve deploy VPS (FE già su Netlify da `main`).
+**Ingest cartella tutti i tipi + screening a campioni (20/08, mergiata #511 + deploy)** — «Carica cartella» prende Word/Excel/disegni/PDF (max 80). Estrae testo da PDF/Word/Excel; screening **30→90→200 righe** (tetto 8 000). Disegni/foto: solo nome/cartella. Deploy PROD PID `1134189`→`1134259`, health 200. Brief [`DEPUTYTASK.md`](agent-tasks/DEPUTYTASK.md) **CHIUSO**. [PR #511](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/511). Prossima: **IA-5b** coda da completare.
+
+**Ingest archivio IA-1–IA-5 (20/08, mergiata)** — Import PDF posa i tipi nello scaffale azienda; tipo `capitolato` → 2.2; **Carica cartella** (path in `original_name`, max 80); **Screening e posa** (path+nome+testo; auto-posa solo se tipo chiaro + azienda; qualifiche no). Piano: [`PLAN_INGEST_ARCHIVIO_SLICES.md`](agent-tasks/PLAN_INGEST_ARCHIVIO_SLICES.md). [PR #506](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/506) · [#507](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/507) · [#509](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/509).
 
 **Superadmin duplica template Word (20/08, mergiata + deploy)** — «Solo admin/auditor possono duplicare template» anche da superadmin: `authorize()` lo lasciava passare, il controller riboccava. Stesso buco su carica/elimina. Deploy PROD PID `1095643`→`1096030`, health 200. Smoke: duplicate id inesistente → 404, non 403. [PR #503](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/503).
 
