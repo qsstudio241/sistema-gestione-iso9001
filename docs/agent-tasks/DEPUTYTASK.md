@@ -13,7 +13,7 @@ HITL 20/08 (non cambia IA-1): sorgente = **cartella radice + sottocartelle**; sc
 
 ## Slice unica di questa sessione: IA-1
 
-**Obiettivo**: quando si fa **Commit al Registry** da Import PDF, il documento va nella **cartella giusta** dell’albero (Procedure, Manuale, …), non in un mucchio piatto. Oggi solo le **norme** hanno una cartella (`2.3`).
+**Obiettivo (parole povere)**: oggi Import PDF mette in cartella **solo le norme**. Una procedura resta «in mezzo» al registro. IA-1 fa sì che «Procedura» vada in PROCEDURE, «Manuale» in MANUALE, ecc. Non è una domanda al committente.
 
 ### DoD
 

@@ -162,7 +162,7 @@ Allineata al template già provisionato sulle aziende (codici 059/076):
 
 | Slice | Tema | Perimetro (file/layer) | Dipende da | Tipo |
 |-------|------|------------------------|------------|------|
-| **IA-1** | Hello world: tipo → cartella albero al commit Registry | `documentTreeProvisioner` + `importJobs.controller` `commitToRegistry` + test; **non** UI nuova | — | AFK |
+| **IA-1** | Un PDF «Procedura» finisce nella cartella PROCEDURE (oggi solo le norme hanno una cartella) | `documentTreeProvisioner` + `importJobs.controller` `commitToRegistry` + test; **non** UI nuova | — | AFK |
 | **IA-2** | Verticale commessa: tipo `capitolato` → cartella `2.2` | `documentTypes.js` (FE; mirror se esiste), mappa, commit; **non** nuovo caso Riesame | IA-1 | AFK |
 | **IA-3** | Preview / override cartella su un file (debug) | `ImportJobsPage.jsx`: mostra cartella proposta; serve per IA-1 prima della massa | IA-1 | AFK |
 | **IA-4** | Sorgente: cartella radice + `relative_path` | picker `webkitdirectory`, upload albero, path relativo in `import_job_files`; job passa in coda server; **non** ZIP di default | IA-1 | AFK |
@@ -182,7 +182,15 @@ Allineata al template già provisionato sulle aziende (codici 059/076):
 
 ## Dettaglio slice IA-1 (prima eseguibile)
 
-**Obiettivo verificabile**: un PDF già in stato `extracted`/`reviewed`, committato come `procedura` (o `manuale` / `istruzione`), compare nel registro **sotto la cartella** `1.2` / `1.1` / `1.3` dell’azienda. Una norma continua ad andare in `2.3`. Se la cartella manca → errore chiaro (`FOLDER_NOT_FOUND`), niente riga orfana.
+**Non è una domanda al committente.** È il primo pezzo di codice: oggi il registro ha già le cartelle (Procedure, Manuale, Norme…), ma Import PDF ci mette dentro **solo le norme**. Tutto il resto finisce «in mezzo», senza cartella. IA-1 insegna all’app: *se è una procedura → cartella Procedure; se è un manuale → cartella Manuale;* ecc. Senza questo, lo screening massivo non sa dove posare i file.
+
+**In parole povere (prima / dopo)**
+
+- **Oggi:** importi `PG-04 Gestione commesse.pdf`, lo segni come Procedura, fai Commit al Registry → il file è nel registro ma **non** sotto «PROCEDURE». Lo trovi solo cercandolo.
+- **Dopo IA-1:** stessa azione → il file compare **dentro** la cartella PROCEDURE dell’azienda (come già succede per una norma in NORME E LEGGI).
+- **Tu non devi scegliere nulla** per questa slice. La fai un deputy. Tu vedi il risultato: un PDF di prova nella cartella giusta.
+
+**Obiettivo verificabile**: un PDF già estratto, salvato come procedura (o manuale / istruzione), compare nel registro **sotto la cartella** Procedure / Manuale / Istruzioni dell’azienda. Una norma continua ad andare in Norme. Se la cartella manca → errore chiaro, niente riga orfana.
 
 **DoD**
 
