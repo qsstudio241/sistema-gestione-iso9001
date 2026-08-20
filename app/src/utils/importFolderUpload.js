@@ -1,6 +1,8 @@
 /** Limite allineato a multer in importJobs.routes.js */
 export const MAX_IMPORT_JOB_FILES = 80;
 
+const JUNK_FILE_RE = /^(thumbs\.db|desktop\.ini|\.ds_store)$/i;
+
 /**
  * Ultimo segmento del path relativo salvato in original_name.
  * @param {unknown} stored
@@ -14,16 +16,11 @@ export function basenameImportRelativePath(stored) {
   return i >= 0 ? s.slice(i + 1) : s;
 }
 
-function isPdfFile(file) {
-  const name = String(file?.name || file?.webkitRelativePath || "");
-  return /\.pdf$/i.test(name);
+function isJunkOsFile(file) {
+  const name = String(file?.name || "").split(/[/\\]/).pop() || "";
+  return JUNK_FILE_RE.test(name);
 }
 
-/**
- * Filtra PDF e taglia al limite per job.
- * @param {FileList|File[]|null|undefined} fileList
- * @returns {{ files: File[], skippedNonPdf: number, truncated: boolean }}
- */
 /**
  * React non garantisce l'attributo non-standard webkitdirectory via JSX.
  * @param {HTMLInputElement|null} el
@@ -35,14 +32,20 @@ export function bindDirectoryPicker(el) {
   el.multiple = true;
 }
 
+/**
+ * Tiene tutti i tipi di file (docx, xlsx, dwg, immagini, PDF…).
+ * Salta solo spazzatura OS. Taglia al limite per job.
+ * @param {FileList|File[]|null|undefined} fileList
+ * @returns {{ files: File[], skippedJunk: number, truncated: boolean }}
+ */
 export function takeImportFiles(fileList) {
   const all = Array.from(fileList || []);
-  const pdfs = all.filter(isPdfFile);
-  const skippedNonPdf = all.length - pdfs.length;
-  const truncated = pdfs.length > MAX_IMPORT_JOB_FILES;
+  const usable = all.filter((f) => f && (f.name || f.webkitRelativePath) && !isJunkOsFile(f));
+  const skippedJunk = all.length - usable.length;
+  const truncated = usable.length > MAX_IMPORT_JOB_FILES;
   return {
-    files: pdfs.slice(0, MAX_IMPORT_JOB_FILES),
-    skippedNonPdf,
+    files: usable.slice(0, MAX_IMPORT_JOB_FILES),
+    skippedJunk,
     truncated,
   };
 }

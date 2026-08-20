@@ -14,15 +14,17 @@ describe("importFolderUpload", () => {
     expect(basenameImportRelativePath("solo.pdf")).toBe("solo.pdf");
   });
 
-  it("takeImportFiles tiene solo PDF e taglia al limite", () => {
+  it("takeImportFiles tiene tutti i tipi e salta solo junk OS", () => {
     const files = [
       { name: "a.pdf" },
+      { name: "capitolato.docx" },
       { name: "foto.jpg" },
+      { name: "Thumbs.db" },
       { name: "b.PDF" },
     ];
     const out = takeImportFiles(files);
-    expect(out.files).toHaveLength(2);
-    expect(out.skippedNonPdf).toBe(1);
+    expect(out.files).toHaveLength(4);
+    expect(out.skippedJunk).toBe(1);
     expect(out.truncated).toBe(false);
   });
 
@@ -36,11 +38,11 @@ describe("importFolderUpload", () => {
 
   it("takeImportFiles tronca oltre MAX_IMPORT_JOB_FILES", () => {
     const files = Array.from({ length: MAX_IMPORT_JOB_FILES + 3 }, (_, i) => ({
-      name: `f${i}.pdf`,
+      name: `f${i}.docx`,
     }));
     const out = takeImportFiles(files);
     expect(out.files).toHaveLength(MAX_IMPORT_JOB_FILES);
     expect(out.truncated).toBe(true);
-    expect(out.skippedNonPdf).toBe(0);
+    expect(out.skippedJunk).toBe(0);
   });
 });
