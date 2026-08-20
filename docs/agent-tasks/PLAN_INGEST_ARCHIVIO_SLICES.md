@@ -2,7 +2,7 @@
 
 > **Destinazione**: screening in background da cartella radice. Lo screening sceglie prima la **stanza** (studio / azienda / commessa), poi lo **scaffale**. Un file = una copia, visibile da due viste se è di commessa. Specialisti già in repo lavorano in parallelo. Primo verticale: documenti di commessa → stanza Riesame + cassetto azienda `2.2`. Review = coda incompleti. Learning = ADR-017.
 > **Spec già in repo (non rifare)**: [`MODULO_INGEST_AI_COMMESSE_SCOPO_E_ROADMAP.md`](../specs/MODULO_INGEST_AI_COMMESSE_SCOPO_E_ROADMAP.md) (analisi sul caso, slice #5–#7 già fatte) · [`MINI_SPEC_RIESAME_REQUISITI_CONTRATTO.md`](../specs/MINI_SPEC_RIESAME_REQUISITI_CONTRATTO.md) · albero in mig. 059/076 · ADR-010 HITL
-> **Brief attivo**: [`DEPUTYTASK.md`](DEPUTYTASK.md) — slice **IA-1** (APERTO)
+> **Brief attivo**: [`DEPUTYTASK.md`](DEPUTYTASK.md) — slice **IA-1** (L1 OK; PR in review). Prossima: **IA-2** (tipo capitolato, stanza commessa) — non parallelizzare su `importJobs.controller.js`.
 > **Mappa creata**: 20/08/2026 (Lead wayfinder A — Chart the map; **nessun codice applicativo** in questa sessione)
 
 ---
@@ -261,13 +261,13 @@ Non sono agenti Cursor. Sono **destinazioni** già in codice che il router chiam
 
 **DoD**
 
-- [ ] Helper unico `resolveFolderByCode(orgId, folderCode, companyId)` (stesso criterio di `resolveNormFolderId`: cartella `doc_type='folder'`, scope org + azienda)
-- [ ] Mappa statica `doc_type → folder_code` (tabella sopra, senza tipi nuovi)
-- [ ] `commitToRegistry` imposta `parent_id` + `path_cache` per tutti i tipi mappati, non solo `norma`
-- [ ] `altro` senza override resta `parent_id` null (comportamento attuale)
-- [ ] Override esplicito `parent_folder_id` nel body resta valido
-- [ ] Test L1: mappa + commit con cartella trovata / mancante / norma invariata
-- [ ] Nessuna UI nuova; nessuna migrazione; nessun tipo `capitolato` (è IA-2)
+- [x] Helper unico `resolveFolderByCode(orgId, folderCode, companyId)` (stesso criterio di `resolveNormFolderId`: cartella `doc_type='folder'`, scope org + azienda)
+- [x] Mappa statica `doc_type → folder_code` (tabella sopra, senza tipi nuovi)
+- [x] `commitToRegistry` imposta `parent_id` + `path_cache` per tutti i tipi mappati, non solo `norma`
+- [x] `altro` senza override resta `parent_id` null (comportamento attuale)
+- [x] Override esplicito `parent_folder_id` nel body resta valido (`resolveExplicitFolder`)
+- [x] Test L1: mappa + commit con cartella trovata / mancante / norma invariata (26 verdi)
+- [x] Nessuna UI nuova; nessuna migrazione; nessun tipo `capitolato` (è IA-2)
 
 **File previsti**
 
