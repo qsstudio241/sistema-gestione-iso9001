@@ -16,7 +16,7 @@ import {
   isNormDocType,
   buildInitialNormTypeData,
 } from "../utils/importNormCommit";
-import { MAX_IMPORT_JOB_FILES, takeImportFiles } from "../utils/importFolderUpload";
+import { MAX_IMPORT_JOB_FILES, takeImportFiles, bindDirectoryPicker } from "../utils/importFolderUpload";
 import StatusBadge from "../components/StatusBadge";
 import "./ImportJobsPage.css";
 import "../components/DocumentForm.css";
@@ -858,8 +858,7 @@ export default function ImportJobsPage() {
                     type="file"
                     accept="application/pdf,.pdf"
                     multiple
-                    webkitdirectory=""
-                    directory=""
+                    ref={bindDirectoryPicker}
                     onChange={handleFiles}
                     disabled={busy || (isQualificationDocType(detail.job.document_type_hint) && !detail.job.company_id)}
                   />

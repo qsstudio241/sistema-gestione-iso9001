@@ -203,7 +203,7 @@ IA-1 tocca **solo scaffali della stanza azienda** (chiudere il buco: procedura �
 | **IA-1** | Un PDF «Procedura» finisce nella cartella PROCEDURE (oggi solo le norme hanno una cartella) | `documentTreeProvisioner` + `importJobs.controller` `commitToRegistry` + test; **non** UI nuova | — | AFK |
 | **IA-2** | Verticale commessa: tipo `capitolato` → cartella `2.2` ✅ | `documentTypes.js`, mappe FE/BE, commit; **non** nuovo caso Riesame | IA-1 | AFK |
 | **IA-3** | Preview scaffale nel dialog commit ✅ | `ImportJobsPage.jsx` + `getSuggestedFolderLabel`; override resta `parent_folder_id` API | IA-1 | AFK |
-| **IA-4** | Sorgente: cartella radice + path relativo (in `original_name`, no colonna) | picker `webkitdirectory`, upload albero, path sanitizzato; limite 80; **non** ZIP; screening = IA-5 | IA-1 | AFK |
+| **IA-4** | Sorgente: cartella radice + path relativo (in `original_name`, no colonna) ✅ | picker `webkitdirectory`, upload albero, path sanitizzato; limite 80; **non** ZIP; screening = IA-5 | IA-1 | AFK |
 | **IA-5** | Screening veloce in background + allocazione | classifica tipo (path+nome+testo corto) → `commitToRegistry` in cartella; stato `ai_draft`/`da_verificare`; campi vuoti OK | IA-1, IA-4 | AFK |
 | **IA-5b** | Coda admin «da completare» | lista filtrata incompleti (tipo/cartella/campi), badge come profilo/qualifiche; non blocca lo screening | IA-5 | AFK |
 | **IA-6** | Ponte 2.2 → caso Riesame (batch) | riuso `import-from-job` su N file capitolato dello stesso job/cartella relativa | IA-2, IA-5 | AFK |

@@ -1,8 +1,9 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, vi } from "vitest";
 import {
   MAX_IMPORT_JOB_FILES,
   basenameImportRelativePath,
   takeImportFiles,
+  bindDirectoryPicker,
 } from "../utils/importFolderUpload";
 
 describe("importFolderUpload", () => {
@@ -23,6 +24,14 @@ describe("importFolderUpload", () => {
     expect(out.files).toHaveLength(2);
     expect(out.skippedNonPdf).toBe(1);
     expect(out.truncated).toBe(false);
+  });
+
+  it("bindDirectoryPicker imposta webkitdirectory", () => {
+    const el = { setAttribute: vi.fn(), multiple: false };
+    bindDirectoryPicker(el);
+    expect(el.setAttribute).toHaveBeenCalledWith("webkitdirectory", "");
+    expect(el.setAttribute).toHaveBeenCalledWith("directory", "");
+    expect(el.multiple).toBe(true);
   });
 
   it("takeImportFiles tronca oltre MAX_IMPORT_JOB_FILES", () => {

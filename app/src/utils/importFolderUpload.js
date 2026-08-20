@@ -24,6 +24,17 @@ function isPdfFile(file) {
  * @param {FileList|File[]|null|undefined} fileList
  * @returns {{ files: File[], skippedNonPdf: number, truncated: boolean }}
  */
+/**
+ * React non garantisce l'attributo non-standard webkitdirectory via JSX.
+ * @param {HTMLInputElement|null} el
+ */
+export function bindDirectoryPicker(el) {
+  if (!el) return;
+  el.setAttribute("webkitdirectory", "");
+  el.setAttribute("directory", "");
+  el.multiple = true;
+}
+
 export function takeImportFiles(fileList) {
   const all = Array.from(fileList || []);
   const pdfs = all.filter(isPdfFile);
