@@ -8,7 +8,7 @@
 
 > **Risposta standard a «stato di avanzamento del progetto e priorità da affrontare»**: sintetizzare da questa sezione (moduli maturi + sessione più recente + tabella priorità sotto), **non** dal banner storico più sotto (superato, tenuto solo per traccia) né dall'archivio marzo 2026 [`docs/archive/PROJECT_CONTEXT_STATO_FUNZIONALITA_2026-03.md`](archive/PROJECT_CONTEXT_STATO_FUNZIONALITA_2026-03.md). **Aggiornare questa sezione a fine sessione** se emergono nuove priorità o se una priorità elencata viene chiusa (stesso principio delle "Lezioni apprese" in [GUIDA_CONSOLIDATA.md](GUIDA_CONSOLIDATA.md) — sintesi qui, dettaglio linkato).
 
-**Ultimo aggiornamento di questa sezione**: 20/08/2026 (FW-0 riscritto: hook norme→CLIP, non slot WPQR; MR-5 mergiato #492; MR-4 query visiva #489).
+**Ultimo aggiornamento di questa sezione**: 20/08/2026 (FW-0 mergiato #494: commit norma → tavole CLIP; nginx TEST `/test-api/` riparato).
 
 ### Moduli maturi (in produzione, uso quotidiano dai clienti Camellini/Mason)
 
@@ -16,7 +16,9 @@ Audit multi-standard (9001/14001/45001) · Non Conformità (workflow ISO 10.2 co
 
 ### Sessione più recente (20/08/2026)
 
-**FW-0 riscritto (20/08, docs)** — bisogno reale: tavole delle **norme PDF** in Assistente (domanda→immagine, ritaglio→CLIP), non slot WPQR. Epic visiva→WPQR **parcheggiata**. Brief [`DEPUTYTASK_FIGURE_WPQR.md`](agent-tasks/DEPUTYTASK_FIGURE_WPQR.md) **PRONTO** (non APERTO). Piano: [`PLAN_FIGURE_WPQR_SLICES.md`](agent-tasks/PLAN_FIGURE_WPQR_SLICES.md). MR-5 già mergiato [#492](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/492).
+**FW-0 mergiato (20/08)** — dopo il commit di una norma PDF le tavole vanno in `knowledge_figures` (stesso tenant). Errore CLIP non blocca la norma. WPQR **non** collegato. Brief [`DEPUTYTASK_FIGURE_WPQR.md`](agent-tasks/DEPUTYTASK_FIGURE_WPQR.md) **CHIUSO**. [PR #494](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/494). Piano: [`PLAN_FIGURE_WPQR_SLICES.md`](agent-tasks/PLAN_FIGURE_WPQR_SLICES.md). Smoke TEST era rosso per nginx (unattended-upgrade 06:32), non per il codice: `proxy_pass` con slash finale.
+
+**FW-0 riscritto (20/08, docs)** — bisogno reale: tavole delle **norme PDF** in Assistente, non slot WPQR. Epic visiva→WPQR **parcheggiata**. MR-5 già mergiato [#492](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/492).
 
 ### Sessione precedente (19/08/2026)
 
