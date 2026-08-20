@@ -31,6 +31,12 @@
   font-size: 0.82rem;
 }
 
+.import-jobs-folder-hint {
+  margin: 0.45rem 0 0;
+  font-size: 0.85rem;
+  color: #546e7a;
+}
+
 .import-jobs-denied {
   color: #666;
 }

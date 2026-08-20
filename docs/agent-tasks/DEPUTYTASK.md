@@ -1,66 +1,43 @@
-# DEPUTYTASK — Ingest archivio IA-1 (tipo documento → cartella albero)
+# DEPUTYTASK — Ingest archivio IA-4 (picker cartella radice)
 
-**Stato:** APERTO  
-**Aperto:** 20/08/2026 (Lead wayfinder — Chart the map)  
+**Stato:** CHIUSO — TEST OK L1 (20/08/2026)  
+**Aperto:** 20/08/2026  
+**Chiuso:** 20/08/2026  
 **Piano:** [`PLAN_INGEST_ARCHIVIO_SLICES.md`](PLAN_INGEST_ARCHIVIO_SLICES.md)  
-**Spec già in repo:** [`MODULO_INGEST_AI_COMMESSE_SCOPO_E_ROADMAP.md`](../specs/MODULO_INGEST_AI_COMMESSE_SCOPO_E_ROADMAP.md) (non rifare slice #5–#7) · template albero mig. 059/076 · `resolveNormFolderId`  
-**Rischio:** Medio — backend additivo su `commitToRegistry`, nessuna migrazione; PR + **un** Bugbot a slice chiusa; Cloud **non** mergia  
-**Slot precedente:** SAL S1a CHIUSO ([PR #471](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/471)) — scontrino in git, non rieseguire
-
-HITL 20/08 (non cambia IA-1): cartella radice; screening in background; **alloca**. Architettura: stanza studio / azienda / commessa (un file, due viste). IA-1 = solo scaffali **azienda**. Dettaglio nel PLAN.
+**Nota:** stessa linea PR #506 (IA-1 + IA-2/IA-3 + IA-4).  
+**Rischio:** Medio — Cloud **non** mergia. Nessuna migrazione: path relativo in `original_name`.
 
 ---
 
-## Slice unica di questa sessione: IA-1
+## Esito IA-4
 
-**Obiettivo (parole povere)**: oggi Import PDF mette in cartella **solo le norme**. Una procedura resta «in mezzo» al registro. IA-1 fa sì che «Procedura» vada in PROCEDURE, «Manuale» in MANUALE, ecc. Non è una domanda al committente.
-
-### DoD
-
-- [ ] Helper `resolveFolderByCode(orgId, folderCode, companyId)` riusando il criterio di `resolveNormFolderId` (niente secondo resolver per le norme)
-- [ ] Mappa statica `doc_type → folder_code` come in PLAN § Mappa tipo → cartella (senza tipi nuovi)
-- [ ] `commitToRegistry` imposta `parent_id` + `path_cache` per i tipi mappati
-- [ ] `altro` senza `parent_folder_id` resta senza cartella
-- [ ] Cartella assente → errore stabile (`FOLDER_NOT_FOUND`), niente riga orfana
-- [ ] Norma: comportamento `2.3` invariato
-- [ ] Test L1 verdi sul controller + helper
-- [ ] PLAN: spuntare DoD IA-1 a slice chiusa
-
-### File previsti
-
-- `backend/src/services/documentTreeProvisioner.service.js`
-- test provisioner esistente e/o nuovo test accanto (`documentTreeProvisioner.*.test.js`)
-- `backend/src/controllers/importJobs.controller.js`
-- `backend/src/controllers/importJobs.controller.test.js`
-- `docs/agent-tasks/PLAN_INGEST_ARCHIVIO_SLICES.md` (solo checkbox IA-1)
-
-Se aggiungi un `.js` nuovo sotto `backend/src/`: aggiorna `backend/scripts/deploy-manifest.json`.
-
-### Cosa NON toccare
-
-- `app/src/pages/ImportJobsPage.jsx` (IA-3)
-- `app/src/data/documentTypes.js` / `documentTypeSchemas.js` (IA-2)
-- `contractReview.*`, `caseDocumentAnalysis.service.js`
-- `ocrExtractor.js`, `documentTextExtractor.service.js`
-- `ingestStaging.*`, Material Compliance, SAL UI
-- `docs/GUIDA_CONSOLIDATA.md`, `docs/PROJECT_ROADMAP.md`, `PROJECT_CONTEXT.md`
-- qualsiasi `database/migrations/*.sql`
+- Secondo controllo «Carica cartella» (`webkitdirectory` via `bindDirectoryPicker`)
+- `relative_paths[]` in FormData; server sanitizza (`..`, path assoluti, solo PDF)
+- Path in `import_job_files.original_name` (NVARCHAR 500) — **niente colonna nuova**
+- Limite 80 PDF (FE + multer); non-PDF della cartella ignorati
+- Titolo commit / nome allegato = basename; lista file mostra il path
+- **Non** screening, **non** alloca, **non** ZIP, **non** caso Riesame
 
 ### Test
 
-```bash
-cd backend && npm test -- --testPathPattern='importJobs.controller|documentTreeProvisioner'
-```
+- Backend: `importRelativePath` + `importJobs.controller` (35 verdi con folder + registry)
+- Frontend: `importFolderUpload` + `importNormCommit` + `documentTypesAlignment`
 
-Niente build FE (solo backend). Niente smoke UI.
+### File
 
-### Comando deputy
-
-Leggi `docs/agent-tasks/DEPUTYTASK.md` ed eseguilo. Chiudi con TEST OK o FIX NON APPLICABILI.
+- `app/src/pages/ImportJobsPage.jsx` + CSS
+- `app/src/services/apiService.js`
+- `app/src/utils/importFolderUpload.js` + test
+- `app/src/utils/importNormCommit.js` (basename titolo)
+- `backend/src/utils/importRelativePath.js` + test
+- `backend/src/controllers/importJobs.controller.js`
+- `backend/src/routes/importJobs.routes.js`
+- `backend/scripts/deploy-manifest.json`
+- PLAN + questo brief
 
 ---
 
-## Bozza sync hub (dopo merge — PR docs #502/#504 aperte)
+## Bozza sync hub (dopo merge)
 
-- Roadmap § Sessione più recente: «Ingest archivio — mappa IA-1…IA-10; brief IA-1 APERTO in DEPUTYTASK.md. Piano PLAN_INGEST_ARCHIVIO_SLICES.md.»
-- GUIDA: una riga lezione — «Import PDF committa in albero solo le norme; gli altri tipi restano senza parent_id finché IA-1.»
+- Roadmap: IA-4 picker cartella in Import PDF; path in `original_name`; prossima IA-5 screening+alloca.
+- GUIDA: in Import PDF si può caricare una cartella; i nomi delle sottocartelle restano visibili. Lo screening automatico non è ancora attivo.

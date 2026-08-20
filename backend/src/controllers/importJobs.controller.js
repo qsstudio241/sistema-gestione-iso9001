@@ -15,10 +15,20 @@ const {
     guessStandardCodeFromFilename,
 } = require('../services/documentRegistryNorm.service');
 const { resolveNormFolderId } = require('../services/normCodesImport.service');
-const { calculatePathCache } = require('../services/documentTreeProvisioner.service');
+const {
+    calculatePathCache,
+    folderCodeForDocType,
+    resolveFolderByCode,
+    resolveExplicitFolder,
+} = require('../services/documentTreeProvisioner.service');
 const { resolvePersonnelForQualification } = require('../services/personnelQualificationLink.service');
 const { parseCompanyId, companyBelongsToOrg } = require('../services/qualificationCompany.service');
 const { buildWelderQualificationDesignation } = require('../utils/weldingDesignation');
+const {
+    basenameImportRelativePath,
+    resolveImportOriginalName,
+    relativePathsFromBody,
+} = require('../utils/importRelativePath');
 
 /** Converte un valore in numero finito o null (per colonne DECIMAL). */
 function toNum(v) {
@@ -212,13 +222,15 @@ async function uploadFiles(req, res) {
             return res.status(404).json({ error: 'Job non trovato' });
         }
         if (!req.files?.length) return res.status(400).json({ error: 'Nessun file PDF ricevuto.' });
-        for (const f of req.files) {
+        const relativePaths = relativePathsFromBody(req.body);
+        for (let i = 0; i < req.files.length; i++) {
+            const f = req.files[i];
             await query(
                 `INSERT INTO import_job_files (job_id, original_name, storage_path, mime_type, file_size, status)
                  VALUES (@job_id, @original_name, @storage_path, @mime_type, @file_size, 'uploaded')`,
                 {
                     job_id: jobId,
-                    original_name: f.originalname.substring(0, 500),
+                    original_name: resolveImportOriginalName(f.originalname, relativePaths[i]),
                     storage_path: f.path,
                     mime_type: f.mimetype || 'application/pdf',
                     file_size: f.size || null,
@@ -546,7 +558,9 @@ async function commitToRegistry(req, res) {
                 scope_summary: bodyTsd.scope_summary ?? aiTypeSpecific.scope_summary ?? aiData.summary,
             };
             if (!normRaw.standard_code && file.original_name) {
-                const fromName = guessStandardCodeFromFilename(file.original_name);
+                const fromName = guessStandardCodeFromFilename(
+                    basenameImportRelativePath(file.original_name) || file.original_name
+                );
                 if (fromName) normRaw.standard_code = fromName;
             }
 
@@ -568,7 +582,13 @@ async function commitToRegistry(req, res) {
                 issue_date = `${built.edition_year}-01-01`;
             }
         } else {
-            title = String(body.title || aiData.title || file.original_name || 'Documento importato').substring(0, 500);
+            title = String(
+                body.title
+                || aiData.title
+                || basenameImportRelativePath(file.original_name)
+                || file.original_name
+                || 'Documento importato'
+            ).substring(0, 500);
             doc_code = body.doc_code != null ? String(body.doc_code).substring(0, 100) : (aiData.doc_code || aiData.code || null);
             revision = body.revision != null ? String(body.revision).substring(0, 20) : (aiData.revision || null);
             responsible = body.responsible != null
@@ -588,11 +608,12 @@ async function commitToRegistry(req, res) {
         }
 
         let parentId = null;
-        let resolvedNormFolderCompanyId = null;
+        let resolvedFolderCompanyId = null;
+        const requestedFolderId = body.parent_folder_id
+            ? parseInt(body.parent_folder_id, 10)
+            : null;
+
         if (isNorma) {
-            const requestedFolderId = body.parent_folder_id
-                ? parseInt(body.parent_folder_id, 10)
-                : null;
             const normFolder = await resolveNormFolderId(organization_id, requestedFolderId);
             if (!normFolder) {
                 return res.status(404).json({
@@ -601,11 +622,11 @@ async function commitToRegistry(req, res) {
                 });
             }
             parentId = normFolder.id;
-            resolvedNormFolderCompanyId = normFolder.company_id;
+            resolvedFolderCompanyId = normFolder.company_id;
         }
 
-        if (isNorma && company_id == null && resolvedNormFolderCompanyId != null) {
-            company_id = resolvedNormFolderCompanyId;
+        if (isNorma && company_id == null && resolvedFolderCompanyId != null) {
+            company_id = resolvedFolderCompanyId;
         }
 
         const companyScope = await resolveOptionalCompanyId(company_id, organization_id);
@@ -613,6 +634,36 @@ async function commitToRegistry(req, res) {
             return res.status(companyScope.status).json({ error: companyScope.error, code: companyScope.code });
         }
         company_id = companyScope.companyId;
+
+        if (!isNorma) {
+            let folder = null;
+            if (requestedFolderId) {
+                folder = await resolveExplicitFolder(organization_id, requestedFolderId);
+                if (!folder) {
+                    return res.status(404).json({
+                        error: 'Cartella destinazione non trovata.',
+                        code: 'FOLDER_NOT_FOUND',
+                    });
+                }
+            } else {
+                const folderCode = folderCodeForDocType(doc_type);
+                if (folderCode) {
+                    folder = await resolveFolderByCode(organization_id, folderCode, company_id);
+                    if (!folder) {
+                        return res.status(404).json({
+                            error: `Cartella albero (folder_code ${folderCode}) non trovata. Inizializza la struttura documentale.`,
+                            code: 'FOLDER_NOT_FOUND',
+                        });
+                    }
+                }
+            }
+            if (folder) {
+                parentId = folder.id;
+                if (company_id == null && folder.company_id != null) {
+                    company_id = folder.company_id;
+                }
+            }
+        }
 
         // Crea record document_registry
         const ins = await query(
@@ -648,7 +699,7 @@ async function commitToRegistry(req, res) {
         );
         const registryId = ins.recordset[0].id;
 
-        if (isNorma && parentId) {
+        if (parentId) {
             const pathCache = await calculatePathCache(registryId, organization_id);
             await query(
                 `UPDATE document_registry SET path_cache = @path_cache WHERE id = @id`,
@@ -674,7 +725,7 @@ async function commitToRegistry(req, res) {
                     {
                         docId: registryId,
                         userId: user_id || null,
-                        fileName: file.original_name || 'documento.pdf',
+                        fileName: basenameImportRelativePath(file.original_name) || file.original_name || 'documento.pdf',
                         fileType: fileExt,
                         storagePath: file.storage_path,
                         fileSize: file.file_size || null,
