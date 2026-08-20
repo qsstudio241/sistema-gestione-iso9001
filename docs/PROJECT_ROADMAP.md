@@ -16,7 +16,7 @@ Audit multi-standard (9001/14001/45001) · Non Conformità (workflow ISO 10.2 co
 
 ### Sessione più recente (20/08/2026)
 
-**FW-0 mergiato (20/08)** — dopo il commit di una norma PDF le tavole vanno in `knowledge_figures` (stesso tenant). Errore CLIP non blocca la norma. WPQR **non** collegato. Brief [`DEPUTYTASK_FIGURE_WPQR.md`](agent-tasks/DEPUTYTASK_FIGURE_WPQR.md) **CHIUSO**. [PR #494](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/494). Piano: [`PLAN_FIGURE_WPQR_SLICES.md`](agent-tasks/PLAN_FIGURE_WPQR_SLICES.md). Smoke TEST era rosso per nginx (unattended-upgrade 06:32), non per il codice: `proxy_pass` con slash finale.
+**FW-0 mergiato + deploy (20/08)** — dopo il commit di una norma PDF le tavole vanno in `knowledge_figures` (stesso tenant). Errore CLIP non blocca la norma. WPQR **non** collegato. Brief [`DEPUTYTASK_FIGURE_WPQR.md`](agent-tasks/DEPUTYTASK_FIGURE_WPQR.md) **CHIUSO**. [PR #494](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/494). Piano: [`PLAN_FIGURE_WPQR_SLICES.md`](agent-tasks/PLAN_FIGURE_WPQR_SLICES.md). Deploy TEST PID `1019412`→`1070401`, PROD `1048322`→`1082786`, health 200. Smoke TEST era rosso per nginx (unattended-upgrade 06:32), non per il codice: `proxy_pass` con slash finale.
 
 **FW-0 riscritto (20/08, docs)** — bisogno reale: tavole delle **norme PDF** in Assistente, non slot WPQR. Epic visiva→WPQR **parcheggiata**. MR-5 già mergiato [#492](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/492).
 
