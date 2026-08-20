@@ -132,6 +132,10 @@ Layout = ordine operativo reale (sezioni/gate), non form alfabetico.
 
 **Azioni gated**: prima di rimuovere un controllo (es. selettore Ambito di pagina), elencare i pulsanti che ne dipendono. Il controllo si toglie; **i pulsanti operativi restano visibili** (`disabled` + `title` se manca il prerequisito). Non smontarli.
 
+## URL interni: query ≠ pagina
+
+`navigate` / `replace` / `Link` usano spesso `?tab=` `?select=` `?company_id=` `?highlight=` (Documenti, NC, Qualifiche, SAL, Reclami, Scadenzari). **Il pezzo prima del `?` è la pagina; dopo è un dettaglio.** Il match delle rotte sta **solo** in `RouterContext` (`pathnameOnly`). Non confrontare l'URL intero con le rotte (finisce in Home). Test di regressione: `app/src/tests/routerContext.match.test.js`. Smoke: cliccare il controllo, non solo `goto` dell'URL.
+
 ## Filtri: una fonte per dimensione
 
 Card statistiche e tendina sulla **stessa** dimensione = ridondanza da togliere. Prima: elencare i valori di entrambi; se la tendina ha valori senza card, aggiungere la card **prima** di togliere la tendina. Allineare conteggio card e colore riga alla **stessa** funzione. Qualifiche/Scadenzari/NC/WPQR già corretti (PR #368/#371/#374 + DEPUTYTASK4).

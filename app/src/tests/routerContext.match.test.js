@@ -64,11 +64,29 @@ describe("resolveMatchingRoute", () => {
     expect(resolveMatchingRoute("/companies", APP_PATHS)).toBe("/companies");
   });
 
-  it("query string su Documenti/NC non cade sulla Home", () => {
-    const paths = ["/", "/documents", "/nc", ...APP_PATHS];
-    expect(resolveMatchingRoute("/documents?tab=tree", paths)).toBe("/documents");
-    expect(resolveMatchingRoute("/documents?tab=catalog", paths)).toBe("/documents");
-    expect(resolveMatchingRoute("/nc?select=12", paths)).toBe("/nc");
+  it("query string su qualsiasi pagina nota non cade sulla Home", () => {
+    const paths = [
+      "/",
+      "/documents",
+      "/nc",
+      "/qualifiche",
+      "/reclami",
+      "/search",
+      ...APP_PATHS,
+    ];
+    const deepLinks = [
+      ["/documents?tab=tree", "/documents"],
+      ["/documents?tab=catalog", "/documents"],
+      ["/documents?tab=tree&select=99&company_id=5", "/documents"],
+      ["/nc?select=12", "/nc"],
+      ["/qualifiche?qualification_type=iso9606_1", "/qualifiche"],
+      ["/qualifiche?company_id=3&highlight=8&section=conferma", "/qualifiche"],
+      ["/sal?company_id=11&standard=ISO_9001_2015&clause=4.1", "/sal"],
+      ["/reclami?complaint=7", "/reclami"],
+    ];
+    for (const [href, page] of deepLinks) {
+      expect(resolveMatchingRoute(href, paths), href).toBe(page);
+    }
   });
 });
 
