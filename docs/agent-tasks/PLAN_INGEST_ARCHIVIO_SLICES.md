@@ -1,6 +1,6 @@
 # Piano slice — Ingest massivo archivio (Import PDF → albero → moduli)
 
-> **Destinazione**: un admin sceglie un **archivio locale** (cartella o ZIP); l’app elenca i file, propone tipo + cartella dell’albero SGQ, e dopo conferma umana i documenti finiscono nel registro **nella directory giusta**. Il primo percorso verticale è **capitolato / ordine / RFQ → cartella 2.2 CAPITOLATI → caso Riesame requisiti → analisi già esistente**, così SAL e gli assistenti trovano evidenze invece di un registro vuoto.
+> **Destinazione**: un admin sceglie una **cartella radice** (con N sottocartelle); il server fa **screening in background** (tipo + cartella albero) e **alloca** i file. I metadati restano vuoti/`da_verificare` in una **coda admin** (stesso spirito dei campi qualifiche aggiunti e lasciati da completare). Gli specialisti ingest già in repo partono in parallelo per tipo. Il primo verticale è **capitolato → 2.2 → Riesame**. Le correzioni alimentano ADR-017 per i job successivi.
 > **Spec già in repo (non rifare)**: [`MODULO_INGEST_AI_COMMESSE_SCOPO_E_ROADMAP.md`](../specs/MODULO_INGEST_AI_COMMESSE_SCOPO_E_ROADMAP.md) (analisi sul caso, slice #5–#7 già fatte) · [`MINI_SPEC_RIESAME_REQUISITI_CONTRATTO.md`](../specs/MINI_SPEC_RIESAME_REQUISITI_CONTRATTO.md) · albero in mig. 059/076 · ADR-010 HITL
 > **Brief attivo**: [`DEPUTYTASK.md`](DEPUTYTASK.md) — slice **IA-1** (APERTO)
 > **Mappa creata**: 20/08/2026 (Lead wayfinder A — Chart the map; **nessun codice applicativo** in questa sessione)
@@ -43,29 +43,54 @@ Già in produzione e da **riusare**, non duplicare:
 
 ---
 
-## Strategia (scalabile, primo verticale = commesse / riesame)
+## Strategia (due velocità + coda incompleti)
+
+Decisione committente 20/08/2026: **cartella radice con sottocartelle**; lo screening può girare **in background sul server**; in questo step conta **allocare bene**; la review umana è **se necessario**, come i campi nuovi delle qualifiche lasciati vuoti e segnalati all’admin.
 
 ```
-Archivio locale (cartella o ZIP)
+Cartella radice (N sottocartelle)  — picker browser
         │
         ▼
-[IA-4] Sorgente: il browser invia i file + il percorso relativo
-        (es. Commessa-2024-Rossi/RFQ/capitolato.pdf)
+Upload albero relativo sul server (uploads/imports/…)
         │
         ▼
-[IA-1/2] Classifica tipo + propone cartella albero (folder_code)
+[screening veloce, coda]  nome + path + prime pagine / OCR corto
+        → doc_type + folder_code
+        → riga registro già nella cartella giusta
+        → stato ai_draft / da_verificare, campi vuoti OK
+        │
+        ├──► [specialista in parallelo]  patentino → qualificationIngest
+        ├──►                         wpqr → wpqrIngest
+        ├──►                         norma → normIngest
+        ├──►                         capitolato → caso Riesame + caseDocumentAnalysis
+        └──►                         procedura / altro → solo registro + coda
         │
         ▼
-[IA-3/5] Revisione umana per gruppi (non file-per-file su 500 PDF)
-        │
-        ├──► Registro documenti nella cartella giusta
-        ├──► (se capitolato/RFQ/ordine) caso Riesame + analisi già esistente
-        └──► (dopo) scadenze da expiry_date · candidati evidenza SAL
+Coda admin «da completare» (tipo, cartella, campi vuoti, confidence)
+        │  correzione umana
+        ▼
+ADR-017 (feedback org + pattern)  → i job successivi sbagliano di meno
 ```
 
-**Regola di scalabilità**: un tipo documento nuovo = una riga nella mappa `doc_type → folder_code` + (se serve) uno schema in `documentTypeSchemas.js`. Stesso motore. Niente pipeline parallela per «procedure» vs «commesse» vs «norme».
+**Due velocità (non due motori)**
 
-**Regola HITL (ADR-010)**: l’AI propone, l’umano conferma. Nessun commit automatico nel registro, nessun caso Riesame creato da solo, nessun collegamento evidenza SAL da solo. Su un archivio grosso la conferma è **per gruppo** (tutti i file proposti come «Procedura → 1.2»), non un click per file.
+| Velocità | Cosa decide | Cosa non fa |
+|---|---|---|
+| **Screening** (questo step) | Di che tipo è, in quale cartella sta | Non riempie più di 2–3 indizi (titolo, codice se ovvio) |
+| **Specialista** (subordinato) | Campi del modulo (qualifica, WPQR, requisiti commessa) | Non riclassifica se lo screening è già confermato / ad alta confidence |
+
+**Allocare ≠ certificare.** Mettere il PDF sotto `1.2 PROCEDURE` è un atto di catalogo. Dire «questa procedura è conforme» o «il riesame è chiuso» resta HITL.
+
+**Coda incompleti (pattern già visto)**  
+Come `commitToQualification` che **crea la bozza** anche se mancano processo/materiale/scadenza (solo `warnings`, non blocco), e come il profilo azienda `incompleto` / `parziale` / `pronto`: il primo carico massivo **nasce vuoto di metadati**. L’admin non sta fermo al click su ogni file: vede «47 capitolati in 2.2, 12 senza titolo; 8 patentini bozza». Prende in carico i rossi. I verdi (tipo + cartella chiari) restano in coda bassa priorità.
+
+**Orchestratore — sì, ma router, non un secondo cervello LLM**  
+Allineato ad ADR-010 e alla spec commesse (FASE 3): v1 = `switch(doc_type)` deterministico che **chiama i service già esistenti** (`qualificationIngest`, `wpqrIngest`, `normIngest`, `caseDocumentAnalysis`). Parallelo = coda job sul server (N file / N tipi insieme). Un LLM che «sceglie gli agenti» arriva solo se il router regge (stessa prudenza della spec commesse FASE 5). Non si installa un harness Cursor dentro l’app.
+
+**Apprendimento**  
+Non si addestra un modello. Le correzioni di cartella/tipo/campi vanno in `import_extraction_feedback` + pattern ADR-017 (già fatti in IG-4/IG-5). Il job massivo n. 2 dello stesso studio deve riusare quei few-shot. Niente seconda «skill» parallela.
+
+**Regola di scalabilità**: un tipo nuovo = riga `doc_type → folder_code` + (se serve) schema + un `case` nel router verso lo specialista. Zero pipeline nuova.
 
 ### Mappa tipo → cartella (proposta Lead, da usare in IA-1)
 
@@ -93,7 +118,9 @@ Allineata al template già provisionato sulle aziende (codici 059/076):
 ## Fuori scope
 
 - Il server che apre un path arbitrario sul PC dello studio (`C:\…`) o sul VPS fuori da `uploads/` — rischio sicurezza Alto
-- Commit automatico senza conferma, anche con confidence alta
+- Auto-chiusura di un Riesame / auto-link evidenza SAL / auto-approvazione qualifica (la **bozza** e l’**allocazione in cartella** sì; lo stato «confermato» no)
+- Orchestratore LLM che sceglie i tool da solo (v1 = router `doc_type`)
+- Secondo anello di learning fuori da ADR-017
 - Fine-tuning / secondo motore OCR / seconda pipeline AI
 - WebDAV come canale di ingest (altro epic, PoC storico)
 - Excel BOM, DWG/STEP, `.doc` binario
@@ -106,28 +133,28 @@ Allineata al template già provisionato sulle aziende (codici 059/076):
 
 ## Non ancora specificato
 
-- Sottocartella per commessa sotto `2.2` (es. `2.2/{codice-commessa}`) vs tutti i capitolati in un unico cassetto
-- Tipo unico `capitolato` vs tre tipi `capitolato` / `rfq` / `ordine` — decidere in IA-2 dopo 3–5 PDF reali
-- Job one-shot da migliaia di file: coda a pezzi (es. 50 alla volta) vs un job solo — dopo IA-4 su un archivio vero
-- Copia preventiva sul VPS (`uploads/archive-ingest/{org}/`) per archivi da decine di GB — solo se il picker/ZIP non basta
-- Stesso ingest sul **Patrimonio Studio** (`folder_code STD`) vs solo albero azienda — dopo IA-1 stabile
-- Mapping clausola SAL → tipo documento (già nebbia in piano SAL S2a): questa epic **prepara i file**, non scrive le evidenze
+- Sottocartella per commessa sotto `2.2` (es. `2.2/{codice-commessa}`) vs un unico cassetto Capitolati — il path relativo (`Commessa-Rossi/…`) è un indizio, non ancora una cartella nuova
+- Tipo unico `capitolato` vs `capitolato` / `rfq` / `ordine` — in IA-2 dopo 3–5 PDF reali
+- Soglia screening: sotto quale confidence il file resta in `Inbox/da_classificare` invece di 2.2/1.2 — dopo un job reale
+- Quanti specialisti in parallelo sul VPS (limite costi AI / CPU OCR) — default prudente (es. 2–3) da misurare
+- Picker browser vs copia sul VPS per archivi da decine di GB — solo se Chrome non regge l’upload
+- Patrimonio Studio (`STD`) vs solo albero azienda
+- Mapping clausola SAL → tipo (nebbia piano SAL S2a)
 
 ---
 
-## Decisioni già prese (questa sessione Lead)
+## Decisioni già prese (Lead + committente 20/08/2026)
 
-- **Non un modulo nuovo**: si estende Import PDF + albero + ponti già esistenti.
-- **«Percorso» = percorso relativo dentro l’archivio scelto** (es. `Commessa Rossi/02-Capitolato/file.pdf`), più un picker/ZIP nel browser. Il server non legge il disco del PC.
-- **Placement in albero prima della scansione massiva**: oggi manca il pezzo «metti nella cartella giusta». Senza quello, importare 200 file produce un mucchio piatto.
-- **Primo verticale = riesame requisiti / commesse** (cartella 2.2 + caso Riesame). Procedure, norme, scadenze sono **lo stesso motore**, slice dopo.
-- **Conferma umana obbligatoria**; su volumi grandi = conferma per gruppo.
-- **OCR**: collegare quello già in repo, non inventarne uno.
-- **Analisi commessa**: non rifare le slice #5–#7 di `MODULO_INGEST_AI_COMMESSE` — si alimentano dopo che i file sono in 2.2.
-
-### HITL prodotto (una domanda, non blocca IA-1)
-
-Quando arriveremo a IA-4 (primo job reale): preferisci **selezionare una cartella dal browser** (Chrome) o **caricare uno ZIP**? Entrambe restano nel piano. IA-1 non serve questa risposta.
+- **Non un modulo nuovo**: si estende Import PDF + albero + specialisti già esistenti.
+- **Sorgente = cartella radice + sottocartelle** (picker). ZIP è piano B, non il default. Il server non legge `C:\` del PC: riceve l’albero e poi lavora in background.
+- **Questo step = allocare**: screening tipo + cartella; i campi possono restare vuoti.
+- **Review = coda incompleti**, non un cancello su ogni file. Stesso spirito della bozza qualifica con `warnings` e dei campi nuovi lasciati da prendere in carico.
+- **Orchestratore v1 = router `doc_type`** verso service già in repo; parallelo = coda server. Non un LLM-capo.
+- **Learning = ADR-017** (feedback + few-shot). Il job massivo addestra il successivo, non un modello nuovo.
+- **Placement prima della massa**: IA-1 resta la prima slice (senza mapper, lo screening non ha dove mettere i file).
+- **Primo verticale = commesse / riesame** (`2.2`). Procedure/norme/scadenze = stesso motore, dopo.
+- **OCR**: riuso S1a, non un secondo motore.
+- **Analisi commessa**: non rifare slice #5–#7 — si agganciano dopo l’allocazione in 2.2.
 
 ---
 
@@ -137,18 +164,19 @@ Quando arriveremo a IA-4 (primo job reale): preferisci **selezionare una cartell
 |-------|------|------------------------|------------|------|
 | **IA-1** | Hello world: tipo → cartella albero al commit Registry | `documentTreeProvisioner` + `importJobs.controller` `commitToRegistry` + test; **non** UI nuova | — | AFK |
 | **IA-2** | Verticale commessa: tipo `capitolato` → cartella `2.2` | `documentTypes.js` (FE; mirror se esiste), mappa, commit; **non** nuovo caso Riesame | IA-1 | AFK |
-| **IA-3** | Preview cartella prima del commit (un file) | `ImportJobsPage.jsx` dialog commit: mostra cartella proposta, override umano | IA-1 | AFK |
-| **IA-4** | Sorgente archivio: cartella browser e/o ZIP + `relative_path` | upload Import (multer/webkitdirectory o ZIP), colonna path relativo; **non** scan path VPS | IA-1 | AFK (+ HITL quale UI prima) |
-| **IA-5** | Classifica elenco + conferma per gruppo | process/AI a lotti; UI «accetta tutti Procedura→1.2»; zero auto-commit | IA-3, IA-4 | AFK |
+| **IA-3** | Preview / override cartella su un file (debug) | `ImportJobsPage.jsx`: mostra cartella proposta; serve per IA-1 prima della massa | IA-1 | AFK |
+| **IA-4** | Sorgente: cartella radice + `relative_path` | picker `webkitdirectory`, upload albero, path relativo in `import_job_files`; job passa in coda server; **non** ZIP di default | IA-1 | AFK |
+| **IA-5** | Screening veloce in background + allocazione | classifica tipo (path+nome+testo corto) → `commitToRegistry` in cartella; stato `ai_draft`/`da_verificare`; campi vuoti OK | IA-1, IA-4 | AFK |
+| **IA-5b** | Coda admin «da completare» | lista filtrata incompleti (tipo/cartella/campi), badge come profilo/qualifiche; non blocca lo screening | IA-5 | AFK |
 | **IA-6** | Ponte 2.2 → caso Riesame (batch) | riuso `import-from-job` su N file capitolato dello stesso job/cartella relativa | IA-2, IA-5 | AFK |
 | **IA-7** | Dopo il ponte: lanciare analisi già esistente | `analyze-documents` / `analyzeRequirements` persistito — **solo hook**, no nuovo motore | IA-6 | AFK |
 | **IA-8** | OCR sull’import job (riuso S1a) | `processJob` / extract: se testo sotto soglia → `ocrExtractor` | IA-1 (stesso job, dopo o in parallelo a IA-2/3 se file disgiunti) | AFK |
 | **IA-9** | Candidati evidenza SAL dai doc importati | non scrivere `evidence_document_ids`; allinea a SAL S2a/S2b | IA-5 + SAL S2a | AFK |
 | **IA-10** | Scadenze da `expiry_date` (norme/cert/procedure) | niente dump in cartella `99`; hook scadenzario esistente | IA-5 | AFK |
 
-**Ordine**: IA-1 → IA-2 e IA-3 (file in parte disgiunti: IA-2 backend tipi, IA-3 solo FE se IA-1 già espone la cartella) → IA-4 → IA-5 → IA-6 → IA-7. IA-8 può partire dopo IA-1 se nessun altro brief tocca `importJobs.controller` `processJob`. IA-9/10 dopo che il registro ha massa.
+**Ordine**: IA-1 → IA-2 (tipo capitolato) e IA-3 (preview un file) → IA-4 (picker cartella) → IA-5 (screening+alloca) → IA-5b (coda) → IA-6 → IA-7. IA-8 (OCR) può entrare in IA-5 se lo screening vede PDF senza testo. IA-9/10 dopo che il registro ha massa.
 
-**Parallelo**: non due brief aperti su `importJobs.controller.js`. IA-3 (solo `ImportJobsPage.jsx`) può stare in `DEPUTYTASK1.md` **dopo** merge IA-1.
+**Parallelo**: non due brief aperti su `importJobs.controller.js`. IA-3 (solo FE) può stare in `DEPUTYTASK1.md` **dopo** merge IA-1.
 
 ---
 

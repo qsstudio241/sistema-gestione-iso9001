@@ -7,6 +7,8 @@
 **Rischio:** Medio — backend additivo su `commitToRegistry`, nessuna migrazione; PR + **un** Bugbot a slice chiusa; Cloud **non** mergia  
 **Slot precedente:** SAL S1a CHIUSO ([PR #471](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/471)) — scontrino in git, non rieseguire
 
+HITL 20/08 (non cambia IA-1): sorgente = **cartella radice + sottocartelle**; screening in background; questo step **alloca**; review = coda incompleti. Dettaglio nel PLAN.
+
 ---
 
 ## Slice unica di questa sessione: IA-1
