@@ -29,6 +29,7 @@ const {
     resolveImportOriginalName,
     relativePathsFromBody,
 } = require('../utils/importRelativePath');
+const { screenImportFile } = require('../utils/importScreening');
 
 /** Converte un valore in numero finito o null (per colonne DECIMAL). */
 function toNum(v) {
@@ -315,6 +316,137 @@ async function processJob(req, res) {
         res.json({ success: true, extracted: ok, errors: fail, job_status: nextStatus });
     } catch (err) {
         logger.error('processJob', err);
+        res.status(500).json({ error: err.message });
+    }
+}
+
+function captureJsonRes() {
+    const out = { statusCode: 200, body: null };
+    return {
+        out,
+        status(code) {
+            out.statusCode = code;
+            return this;
+        },
+        json(body) {
+            out.body = body;
+            return this;
+        },
+    };
+}
+
+function mergeScreeningExtraction(existing, screen, placed) {
+    let parsed = {};
+    if (existing) {
+        try {
+            parsed = typeof existing === 'string' ? JSON.parse(existing) : { ...existing };
+        } catch (_) {
+            parsed = {};
+        }
+    }
+    return JSON.stringify({
+        ...parsed,
+        document_type_guess: screen.doc_type,
+        screening: {
+            confidence: screen.confidence,
+            folder_code: screen.folder_code,
+            reason: screen.reason,
+            placed: !!placed,
+        },
+    });
+}
+
+/**
+ * IA-5: classifica path+nome+testo corto e, se confidence alta e tipo posabile, commit in scaffale.
+ * Qualifiche: solo guess (niente auto-commit registry). Senza azienda: solo guess.
+ */
+async function screenAndPlace(req, res) {
+    try {
+        const { organization_id } = req.user;
+        const jobId = parseInt(req.params.id, 10);
+        const jobRows = await query(
+            `SELECT id, company_id, document_type_hint FROM import_jobs
+             WHERE id = @id AND organization_id = @organization_id`,
+            { id: jobId, organization_id }
+        );
+        if (!jobRows.recordset.length) return res.status(404).json({ error: 'Job non trovato' });
+        const job = jobRows.recordset[0];
+        const files = await query(
+            `SELECT id, original_name, extracted_text, status, ai_extraction_json, registry_document_id
+             FROM import_job_files
+             WHERE job_id = @job_id AND status IN ('extracted', 'reviewed')`,
+            { job_id: jobId }
+        );
+
+        const results = [];
+        for (const file of files.recordset || []) {
+            if (file.registry_document_id) {
+                results.push({
+                    file_id: file.id,
+                    skipped: true,
+                    reason: 'già in registro',
+                });
+                continue;
+            }
+            const screen = screenImportFile({
+                original_name: file.original_name,
+                extracted_text: file.extracted_text,
+                hint: job.document_type_hint,
+            });
+            let placed = false;
+            let place_error = null;
+            if (screen.can_auto_place && !job.company_id) {
+                place_error = 'COMPANY_REQUIRED_FOR_FOLDER';
+            } else if (screen.can_auto_place) {
+                const cap = captureJsonRes();
+                await commitToRegistry({
+                    user: req.user,
+                    params: { id: String(jobId), fileId: String(file.id) },
+                    body: {
+                        doc_type: screen.doc_type,
+                        company_id: job.company_id,
+                        title: String(screen.basename || '').replace(/\.pdf$/i, '') || screen.basename,
+                    },
+                }, cap);
+                if (cap.out.statusCode === 201) {
+                    placed = true;
+                } else {
+                    place_error = cap.out.body?.code || cap.out.body?.error || 'PLACE_FAILED';
+                }
+            }
+
+            await query(
+                `UPDATE import_job_files
+                 SET ai_extraction_json = @json, ai_extraction_at = GETDATE(), updated_at = GETDATE()
+                 WHERE id = @fid AND job_id = @jid`,
+                {
+                    json: mergeScreeningExtraction(file.ai_extraction_json, screen, placed),
+                    fid: file.id,
+                    jid: jobId,
+                }
+            );
+            results.push({
+                file_id: file.id,
+                original_name: file.original_name,
+                doc_type: screen.doc_type,
+                confidence: screen.confidence,
+                folder_code: screen.folder_code,
+                reason: screen.reason,
+                placed,
+                place_error,
+            });
+        }
+
+        res.json({
+            success: true,
+            data: {
+                screened: results.length,
+                placed: results.filter((r) => r.placed).length,
+                results,
+            },
+        });
+    } catch (err) {
+        logger.error('screenAndPlace', err);
         res.status(500).json({ error: err.message });
     }
 }
@@ -1091,6 +1223,7 @@ module.exports = {
     deleteJob,
     uploadFiles,
     processJob,
+    screenAndPlace,
     patchFile,
     suggestAiExtraction,
     commitToRegistry,

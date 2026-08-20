@@ -2242,6 +2242,10 @@ class ApiService {
         return this.post(`/import-jobs/${id}/process`, {});
     }
 
+    async screenAndPlaceImportJob(id) {
+        return this.post(`/import-jobs/${id}/screen-and-place`, {});
+    }
+
     async patchImportJobFile(jobId, fileId, body) {
         return this.patch(`/import-jobs/${jobId}/files/${fileId}`, body);
     }

@@ -482,6 +482,27 @@ export default function ImportJobsPage() {
     }
   }
 
+  async function handleScreenAndPlace() {
+    if (!selectedId) return;
+    setBusy(true);
+    setError(null);
+    setFolderNotice(null);
+    try {
+      const res = await apiService.screenAndPlaceImportJob(selectedId);
+      const placed = res?.data?.placed ?? 0;
+      const screened = res?.data?.screened ?? 0;
+      setFolderNotice(
+        `Screening: ${screened} file letti, ${placed} posati in scaffale. I tipi incerti restano in coda.`
+      );
+      await loadList();
+      await loadDetail(selectedId);
+    } catch (e) {
+      setError(e.message || "Screening fallito");
+    } finally {
+      setBusy(false);
+    }
+  }
+
   async function handleMarkReviewed(fileId) {
     if (!selectedId) return;
     setBusy(true);
@@ -866,10 +887,26 @@ export default function ImportJobsPage() {
                 <button type="button" className="btn-secondary" onClick={handleProcess} disabled={busy}>
                   Estrai testo da PDF
                 </button>
+                <button
+                  type="button"
+                  className="btn-primary"
+                  onClick={handleScreenAndPlace}
+                  disabled={
+                    busy
+                    || (isQualificationDocType(detail.job.document_type_hint) && !detail.job.company_id)
+                  }
+                  title={
+                    detail.job.company_id
+                      ? "Classifica i PDF e li posa nello scaffale se il tipo è chiaro"
+                      : "Senza azienda classifica comunque; la posa in scaffale richiede l'azienda"
+                  }
+                >
+                  Screening e posa
+                </button>
               </div>
               <p className="import-jobs-folder-hint">
                 La cartella mantiene i nomi delle sottocartelle (es. Rossi-2024/capitolato.pdf).
-                I file restano in coda sul server; lo screening automatico arriverà dopo.
+                Dopo «Estrai testo», «Screening e posa» classifica e mette in scaffale i tipi chiari.
               </p>
               {folderNotice && <p className="import-jobs-warning">{folderNotice}</p>}
               <h3>File ({(detail.files || []).length})</h3>
@@ -979,6 +1016,14 @@ export default function ImportJobsPage() {
                         <span className="file-conf">Attendibilità: {f.confidence_score}%</span>
                       )}
                     </div>
+                    {aiData?.screening && (
+                      <p className="import-jobs-folder-hint">
+                        Screening: {aiData.document_type_guess || "—"}
+                        {aiData.screening.folder_code ? ` → ${aiData.screening.folder_code}` : ""}
+                        {` (${aiData.screening.confidence})`}
+                        {aiData.screening.placed ? " — posato" : ""}
+                      </p>
+                    )}
                     {f.error_message && (
                       <p className="file-err">{f.error_message}</p>
                     )}

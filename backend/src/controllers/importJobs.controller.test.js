@@ -10,7 +10,7 @@ const fs = require('fs');
 const path = require('path');
 
 const { query } = require('../config/database');
-const { createJob, commitToRegistry, commitToQualification, listJobs, getJob, uploadFiles } = require('./importJobs.controller');
+const { createJob, commitToRegistry, commitToQualification, listJobs, getJob, uploadFiles, screenAndPlace } = require('./importJobs.controller');
 
 function makeRes() {
     return {
@@ -154,6 +154,42 @@ describe('importJobs.controller uploadFiles (path relativo)', () => {
 
         const insert = query.mock.calls.find(([sql]) => sql.includes('INSERT INTO import_job_files'));
         expect(insert[1].original_name).toBe('capitolato.pdf');
+    });
+});
+
+describe('importJobs.controller screenAndPlace', () => {
+    beforeEach(() => {
+        jest.clearAllMocks();
+    });
+
+    it('senza azienda classifica ma non posa (COMPANY_REQUIRED_FOR_FOLDER)', async () => {
+        query
+            .mockResolvedValueOnce({ recordset: [{ id: 55, company_id: null, document_type_hint: null }] })
+            .mockResolvedValueOnce({
+                recordset: [{
+                    id: 9,
+                    original_name: 'Commesse/Rossi/capitolato.pdf',
+                    extracted_text: 'Capitolato tecnico',
+                    status: 'extracted',
+                    ai_extraction_json: null,
+                    registry_document_id: null,
+                }],
+            })
+            .mockResolvedValueOnce({ recordset: [] });
+
+        const res = makeRes();
+        await screenAndPlace({
+            user: { organization_id: 1002, user_id: 12 },
+            params: { id: '55' },
+        }, res);
+
+        expect(res.json).toHaveBeenCalled();
+        const payload = res.json.mock.calls[0][0];
+        expect(payload.data.placed).toBe(0);
+        expect(payload.data.results[0].doc_type).toBe('capitolato');
+        expect(payload.data.results[0].place_error).toBe('COMPANY_REQUIRED_FOR_FOLDER');
+        const update = query.mock.calls.find(([sql]) => sql.includes('SET ai_extraction_json'));
+        expect(update[1].json).toContain('capitolato');
     });
 });
 
