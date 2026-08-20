@@ -2221,7 +2221,9 @@ class ApiService {
     async uploadImportJobFiles(jobId, fileList) {
         const formData = new FormData();
         for (let i = 0; i < fileList.length; i++) {
-            formData.append('files', fileList[i]);
+            const file = fileList[i];
+            formData.append('files', file);
+            formData.append('relative_paths', file.webkitRelativePath || file.name);
         }
         const token = this.getToken();
         const response = await fetch(`${this.baseUrl}/import-jobs/${jobId}/files`, {

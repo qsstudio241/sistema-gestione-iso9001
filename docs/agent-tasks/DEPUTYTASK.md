@@ -1,40 +1,44 @@
-# DEPUTYTASK — SAL AI evidenze S1a (OCR PDF in documentTextExtractor)
+# DEPUTYTASK — Ingest archivio IA-4 (picker cartella radice)
 
-**Stato:** CHIUSO — TEST OK (18/08/2026, [PR #471](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/471))  
-**Aperto:** 15/08/2026 (Lead wayfinder — Chart the map)  
-**Chiuso:** 18/08/2026  
-**Piano:** [`PLAN_SAL_AI_EVIDENCE_SLICES.md`](PLAN_SAL_AI_EVIDENCE_SLICES.md)  
-**Spec:** [`MODULO_SAL_SCOPO_E_ROADMAP.md`](../specs/MODULO_SAL_SCOPO_E_ROADMAP.md) §C.1/C.2 · ADR-010 HITL  
+**Stato:** CHIUSO — TEST OK L1 (20/08/2026)  
+**Aperto:** 20/08/2026  
+**Chiuso:** 20/08/2026  
+**Piano:** [`PLAN_INGEST_ARCHIVIO_SLICES.md`](PLAN_INGEST_ARCHIVIO_SLICES.md)  
+**Nota:** stessa linea PR #506 (IA-1 + IA-2/IA-3 + IA-4).  
+**Rischio:** Medio — Cloud **non** mergia. Nessuna migrazione: path relativo in `original_name`.
 
 ---
 
-## Slice unica di questa sessione: S1a
+## Esito IA-4
 
-**Obiettivo**: collegare l’OCR PDF già presente in repo (`ocrExtractor.js`, usato dall’ingest) a `documentTextExtractor.service.js`, così il suggeritore SAL AI può leggere PDF scansionati senza text layer.
+- Secondo controllo «Carica cartella» (`webkitdirectory` via `bindDirectoryPicker`)
+- `relative_paths[]` in FormData; server sanitizza (`..`, path assoluti, solo PDF)
+- Path in `import_job_files.original_name` (NVARCHAR 500) — **niente colonna nuova**
+- Limite 80 PDF (FE + multer); non-PDF della cartella ignorati
+- Titolo commit / nome allegato = basename; lista file mostra il path
+- **Non** screening, **non** alloca, **non** ZIP, **non** caso Riesame
+- Bugbot: senza azienda, commit tipo mappato → `400 COMPANY_REQUIRED_FOR_FOLDER` (non più 404). Mappa FE 4.3 vs BE 4.5 **non** allineata (debito già in piano).
 
-### Esito
+### Test
 
-- PDF vuoto o sotto soglia ingest (`INGEST_OCR_MIN_CHARS`, default 50) → `extractTextWithOCR`
-- Successo → `{ text }`; fallimento → `{ text: null, reason: 'ocr_unavailable' | 'ocr_failed' }` senza throw
-- Test L1: 18 verdi (`documentTextExtractor.service.test.js`)
-- Header service aggiornato; `ocrExtractor.js` riusato (nessun duplicato)
-- UI / `salAiSuggest` / ingest / migrazioni **non** toccati
+- Backend: `importRelativePath` + `importJobs.controller` (35 verdi con folder + registry)
+- Frontend: `importFolderUpload` + `importNormCommit` + `documentTypesAlignment`
 
-### File toccati
+### File
 
-- `backend/src/services/documentTextExtractor.service.js`
-- `backend/src/services/documentTextExtractor.service.test.js`
-- `backend/src/controllers/materialCertificates.controller.js` (mappa `ocr_failed` / `ocr_unavailable` — rilievo Bugbot)
-- `backend/src/controllers/materialCertificates.controller.test.js`
-- `docs/agent-tasks/PLAN_SAL_AI_EVIDENCE_SLICES.md`
-- `docs/agent-tasks/DEPUTYTASK.md`
-- `docs/PROJECT_ROADMAP.md` § Stato attuale
-- `docs/GUIDA_CONSOLIDATA.md` (lezione S1a)
+- `app/src/pages/ImportJobsPage.jsx` + CSS
+- `app/src/services/apiService.js`
+- `app/src/utils/importFolderUpload.js` + test
+- `app/src/utils/importNormCommit.js` (basename titolo)
+- `backend/src/utils/importRelativePath.js` + test
+- `backend/src/controllers/importJobs.controller.js`
+- `backend/src/routes/importJobs.routes.js`
+- `backend/scripts/deploy-manifest.json`
+- PLAN + questo brief
 
-### Prossima slice
+---
 
-**S1b** — OCR immagini (PNG/JPEG) nello stesso service. Non parallelizzare su `documentTextExtractor`.
+## Bozza sync hub (dopo merge)
 
-### Comando originale per il deputy
-
-Leggi `docs/agent-tasks/DEPUTYTASK.md` ed eseguilo. Chiudi con TEST OK o FIX NON APPLICABILI.
+- Roadmap: IA-4 picker cartella in Import PDF; path in `original_name`; prossima IA-5 screening+alloca.
+- GUIDA: in Import PDF si può caricare una cartella; i nomi delle sottocartelle restano visibili. Lo screening automatico non è ancora attivo.

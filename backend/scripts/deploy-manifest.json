@@ -88,6 +88,7 @@
                                      "src/utils/aiCitations.js",
                                      "src/utils/docTypeConfigHelpers.js",
                                      "src/utils/importPdfText.js",
+                                     "src/utils/importRelativePath.js",
                                      "src/utils/documentTreeCompanyScope.js",
                                      "src/utils/documentRegistryFile.js",
                                      "src/utils/excelDeadlineDetector.js",

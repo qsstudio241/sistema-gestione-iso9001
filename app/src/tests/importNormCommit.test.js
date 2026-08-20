@@ -36,6 +36,15 @@ describe('importNormCommit', () => {
     expect(tsd.norm_title).toBe('Qualification testing');
   });
 
+  it('buildCommitFormFromFile usa solo il nome file se original_name è un path', () => {
+    const { form } = buildCommitFormFromFile(
+      { document_type_guess: 'capitolato' },
+      { original_name: 'Commesse/Rossi-2024/capitolato.pdf' },
+      ''
+    );
+    expect(form.title).toBe('capitolato.pdf');
+  });
+
   it('buildCommitFormFromFile usa document_type_guess norma', () => {
     const { isNorm, form } = buildCommitFormFromFile(
       { document_type_guess: 'norma', type_specific_data: { standard_code: 'ISO 9001:2015' } },

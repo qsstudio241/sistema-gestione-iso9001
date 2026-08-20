@@ -14,6 +14,8 @@ const { logAiInteraction } = require('../middleware/aiAuditTrail.middleware');
 const ctrl = require('../controllers/importJobs.controller');
 
 const UPLOAD_DIR = process.env.UPLOAD_DIR || './uploads';
+/** Allineato a MAX_IMPORT_JOB_FILES in app/src/utils/importFolderUpload.js */
+const MAX_IMPORT_JOB_FILES = 80;
 
 /** Limita costi API OpenAI (per IP) */
 const aiExtractLimiter = rateLimit({
@@ -48,7 +50,7 @@ const importStorage = multer.diskStorage({
 
 const importUpload = multer({
     storage: importStorage,
-    limits: { fileSize: 200 * 1024 * 1024, files: 30 },
+    limits: { fileSize: 200 * 1024 * 1024, files: MAX_IMPORT_JOB_FILES },
     fileFilter(req, file, cb) {
         const ok =
             file.mimetype === 'application/pdf' ||
@@ -59,13 +61,19 @@ const importUpload = multer({
 });
 
 const uploadImportMiddleware = (req, res, next) => {
-    importUpload.array('files', 30)(req, res, (err) => {
+    importUpload.array('files', MAX_IMPORT_JOB_FILES)(req, res, (err) => {
         if (err) {
             if (err.message && err.message.includes('Solo file PDF')) {
                 return res.status(415).json({ error: err.message, code: 'UNSUPPORTED_MEDIA_TYPE' });
             }
             if (err.code === 'LIMIT_FILE_SIZE') {
                 return res.status(413).json({ error: 'File troppo grande (max 50 MB)', code: 'PAYLOAD_TOO_LARGE' });
+            }
+            if (err.code === 'LIMIT_FILE_COUNT') {
+                return res.status(400).json({
+                    error: `Troppi file (max ${MAX_IMPORT_JOB_FILES} PDF per job).`,
+                    code: 'LIMIT_FILE_COUNT',
+                });
             }
             return res.status(400).json({ error: err.message || 'Upload non valido' });
         }
