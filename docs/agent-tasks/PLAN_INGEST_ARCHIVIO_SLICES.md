@@ -111,6 +111,19 @@ Allineata al template già provisionato sulle aziende (codici 059/076):
 
 **Primo verticale commessa** (IA-2, non IA-1): nuovo tipo `capitolato` (e in seguito `ordine` / `rfq` se servono) → cartella **`2.2` CAPITOLATI**. Poi si riusa «Crea caso Riesame». Non è il Riesame di direzione (cartella `14`).
 
+### Scalabilità sui documenti di commessa (risposta 20/08)
+
+**Sì, il processo scala sulle commesse** — è il primo verticale apposta. «Scalabile» qui non vuol dire «un click e 10 anni di archivio sono perfetti». Vuol dire: stessa macchina per 1 commessa o 80, senza un modulo nuovo.
+
+| Asse | Perché scala | Limite onesto |
+|---|---|---|
+| **Molte commesse** | Ogni sottocartella (`Rossi-2024/…`, `Bianchi-2025/…`) è un indizio: screening raggruppa, specialista apre/aggancia **un caso Riesame per gruppo** | Oggi `import-from-job` fa **un caso** da file scelti a mano, max **30 PDF** a job. IA-4/5 spezzano in coda. |
+| **File diversi nella stessa commessa** | Router per tipo: capitolato → analisi già esistente; disegno → vision già esistente; ordine → stesso caso. Parallelo = coda, non un LLM-capo | Lo screening deve restare **leggero** (path + nome + poco testo). Vision/analisi piena solo sullo specialista, o i costi esplodono. |
+| **Dove stanno i file** | Cartella `2.2` = cassetto SGQ; il **caso Riesame** è il faldone della commessa (allegati + requisiti). I due si legano (IA-6) | Un solo cassetto `2.2` per 200 commesse diventa illeggibile. Raggruppare per sottocartella/caso; sottocartelle in albero = nebbia, non bloccante. |
+| **Job successivi** | Correzioni → ADR-017: il secondo carico dello stesso studio classifica meglio gli RFQ | Non si addestra un modello; si accumulano esempi. |
+
+**Non scala** (e non è questo processo): chiudere da solo il riesame, marcare evidenze SAL, o analizzare in profondità ogni PDF allo screening.
+
 **Scadenzario** (cartella `99`): non ci si butta il PDF. Lo scadenzario legge `expiry_date` sul documento già in `1.x` / `2.x`. Slice dedicata dopo il verticale commessa.
 
 ---
@@ -152,7 +165,7 @@ Allineata al template già provisionato sulle aziende (codici 059/076):
 - **Orchestratore v1 = router `doc_type`** verso service già in repo; parallelo = coda server. Non un LLM-capo.
 - **Learning = ADR-017** (feedback + few-shot). Il job massivo addestra il successivo, non un modello nuovo.
 - **Placement prima della massa**: IA-1 resta la prima slice (senza mapper, lo screening non ha dove mettere i file).
-- **Primo verticale = commesse / riesame** (`2.2`). Procedure/norme/scadenze = stesso motore, dopo.
+- **Primo verticale = commesse / riesame** (`2.2`). Il processo **scala** (stessa coda, un caso per sottocartella/gruppo). `2.2` piatto è il cassetto; il faldone è il caso. Procedure/norme = stesso motore, dopo.
 - **OCR**: riuso S1a, non un secondo motore.
 - **Analisi commessa**: non rifare slice #5–#7 — si agganciano dopo l’allocazione in 2.2.
 
