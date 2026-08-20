@@ -18,6 +18,17 @@ function getPath() {
   return window.location.pathname || "/";
 }
 
+/**
+ * Pathname senza query/hash. navigate/replace accettano `/documents?tab=tree`;
+ * il match delle rotte deve restare sul pathname, altrimenti cade sulla Home.
+ */
+export function pathnameOnly(path) {
+  const raw = String(path || "/");
+  const noHash = raw.split("#")[0];
+  const noQuery = noHash.split("?")[0];
+  return noQuery || "/";
+}
+
 // ─── Provider ────────────────────────────────────────────────────────────────
 export function RouterProvider({ children }) {
   const [path, setPath] = useState(getPath);
@@ -30,15 +41,19 @@ export function RouterProvider({ children }) {
   }, []);
 
   const navigate = useCallback((to) => {
-    if (to === getPath()) return; // già lì
-    window.history.pushState(null, "", to);
-    setPath(to);
+    const href = String(to || "/");
+    const nextPath = pathnameOnly(href);
+    const currentHref = `${window.location.pathname}${window.location.search}`;
+    if (href === currentHref || (href === getPath() && !window.location.search)) return;
+    window.history.pushState(null, "", href);
+    setPath(nextPath);
     window.scrollTo(0, 0);
   }, []);
 
   const replace = useCallback((to) => {
-    window.history.replaceState(null, "", to);
-    setPath(to);
+    const href = String(to || "/");
+    window.history.replaceState(null, "", href);
+    setPath(pathnameOnly(href));
   }, []);
 
   return (
@@ -69,18 +84,20 @@ export function useNavigate() {
  * Una rotta `/companies/` (slash finale) resta il prefisso di `/companies/42`.
  */
 export function pathMatchesRoute(path, routePath) {
+  const clean = pathnameOnly(path);
   if (!routePath) return false;
-  if (path === routePath) return true;
+  if (clean === routePath) return true;
   const base = String(routePath).replace(/\/+$/, "") || "/";
   if (base === "/") return false;
-  return path.startsWith(`${base}/`);
+  return clean.startsWith(`${base}/`);
 }
 
 /** Esatto, altrimenti il prefisso più lungo, altrimenti `/`. */
 export function resolveMatchingRoute(path, routePaths) {
+  const clean = pathnameOnly(path);
   const paths = Array.isArray(routePaths) ? routePaths : [];
-  if (paths.includes(path)) return path;
-  const prefixes = paths.filter((p) => p && p !== "/" && pathMatchesRoute(path, p));
+  if (paths.includes(clean)) return clean;
+  const prefixes = paths.filter((p) => p && p !== "/" && pathMatchesRoute(clean, p));
   if (prefixes.length) {
     return prefixes.reduce((best, p) => (p.length > best.length ? p : best));
   }
@@ -131,7 +148,7 @@ export function Link({ to, children, className, style, ...props }) {
 export function NavLink({ to, children, className = "", activeClassName = "active", exact = false, ...props }) {
   const { path } = useRouter();
   const { navigate } = useRouter();
-  const isActive = exact ? path === to : pathMatchesRoute(path, to);
+  const isActive = exact ? pathnameOnly(path) === pathnameOnly(to) : pathMatchesRoute(path, to);
   const fullClass = isActive ? `${className} ${activeClassName}`.trim() : className;
 
   const handleClick = (e) => {
