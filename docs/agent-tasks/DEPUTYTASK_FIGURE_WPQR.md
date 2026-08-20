@@ -1,6 +1,6 @@
 # DEPUTYTASK_FIGURE_WPQR — FW-0: ingest norma PDF → tavole CLIP
 
-**Stato:** CHIUSO — TEST OK (20/08/2026)  
+**Stato:** CHIUSO — TEST OK (20/08/2026), mergiata [#494](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/494)  
 **Aperto:** 20/08/2026  
 **Chiuso:** 20/08/2026  
 **Piano:** [`PLAN_FIGURE_WPQR_SLICES.md`](PLAN_FIGURE_WPQR_SLICES.md)  
