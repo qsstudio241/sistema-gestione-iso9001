@@ -18,6 +18,7 @@ const normCatalog = require('./normCatalogLookup.service');
 const normChunker = require('./normChunker.service');
 const { resolveNormFolderId } = require('./normCodesImport.service');
 const { calculatePathCache } = require('./documentTreeProvisioner.service');
+const { ingestFiguresFromPdf } = require('./figureIngest.service');
 const {
   parseStandardCode,
   normalizeStandardCodeForStorage,
@@ -352,6 +353,23 @@ async function commitNormFromFields(fields, organizationId, options = {}) {
         logger.warn('[NormIngest] Async indexing failed', { sourceId, error: err.message });
       });
     });
+  }
+
+  // FW-0: tavole CLIP sullo stesso PDF. Fallimento extract/CLIP non rollback della norma.
+  if (filePath) {
+    try {
+      await ingestFiguresFromPdf({
+        organizationId,
+        companyId: normFolder.company_id,
+        pdfPath: filePath,
+      });
+    } catch (figErr) {
+      logger.warn('[NormIngest] Ingest figure fallito (norma già committata)', {
+        documentId,
+        organizationId,
+        error: figErr && figErr.message,
+      });
+    }
   }
 
   return {

@@ -2,8 +2,8 @@
 
 > **Destinazione**: carichi una **norma PDF** (stesso pulsante di oggi). Dopo il commit, le **tavole** sono in `knowledge_figures` (stesso tenant). In Assistente: domanda di testo → miniatura della tavola citata; ritaglio PNG → confronto CLIP + commento VLM. L’AI **cita** l’immagine in archivio, non la inventa e **non** certifica WPQR/patentino.
 > **Spec / ADR**: [ADR-010](../adr/ADR-010-ai-agentic-architecture.md) · MR-0…MR-5 già mergiati · ingest norme `commitNormFromFields` · `ingestFiguresFromPdf` (MR-3)
-> **Brief pronto**: [`DEPUTYTASK_FIGURE_WPQR.md`](DEPUTYTASK_FIGURE_WPQR.md) — slice **FW-0**. **Non** APERTO (solo docs in questa sessione).
-> **Mappa aggiornata**: 20/08/2026 (Lead — riscrittura dopo HITL: buco = ingest norma senza CLIP, non gli slot WPQR)
+> **Brief**: [`DEPUTYTASK_FIGURE_WPQR.md`](DEPUTYTASK_FIGURE_WPQR.md) — slice **FW-0** **fatto** (TEST OK 20/08).
+> **Mappa aggiornata**: 20/08/2026 (deputy FW-0: hook `commitNormFromFields` → `ingestFiguresFromPdf`)
 > **Dipende da**: MR-5 mergiato (#492)
 
 ---
@@ -51,7 +51,7 @@ Oggi Ask+immagine **funziona solo se** le tavole sono già in `knowledge_figures
 
 | Aspetto | Oggi | Atteso | Slice |
 |---------|------|--------|-------|
-| Ingest norma PDF | Testo + campi + revisione; niente CLIP | Stesso flusso **più** extract tavole + persist CLIP sullo stesso PDF | **FW-0** |
+| Ingest norma PDF | Testo + campi + revisione; niente CLIP | Stesso flusso **più** extract tavole + persist CLIP sullo stesso PDF | **FW-0 fatto** |
 | Domanda testo → immagine | MR-2, se le tavole esistono | Stesso pannello, alimentato dalle norme caricate | (già fatto; sbloccato da FW-0) |
 | Ritaglio → chiarimenti | MR-4+5, bottone composer | Invariato | (già fatto) |
 | WPQR da disegno | Non collegato | Parcheggiato | dopo FW-0, brief nuovo |
@@ -62,12 +62,12 @@ Oggi Ask+immagine **funziona solo se** le tavole sono già in `knowledge_figures
 
 | Slice | Tema | Perimetro (file/layer) | Dipende da | Tipo |
 |-------|------|------------------------|------------|------|
-| **FW-0** | Hook post-commit norma → CLIP | `normIngest.service.js` `commitNormFromFields` (copre auto-commit **e** conferma staging) chiama `ingestFiguresFromPdf`; L1 mock CLIP; PDF senza tavole = `[]` | MR-5 mergiato | AFK |
+| **FW-0** | Hook post-commit norma → CLIP | `normIngest.service.js` `commitNormFromFields` (copre auto-commit **e** conferma staging) chiama `ingestFiguresFromPdf`; L1 mock CLIP; PDF senza tavole = `[]` | MR-5 mergiato | AFK, **fatto** |
 | **FW-1** | (parcheggio) slot visivi / candidati WPQR | Non aprire in questa epic | FW-0 in uso reale | — |
 
 **Ordine**: solo **FW-0** ora.
 
-**Hello world (FW-0)**: commit di un PDF norma di prova (fixture senza copyright) → `knowledge_figures` ha ≥0 righe per quella org; ingest CLIP in errore → norma comunque salvata.
+**Hello world (FW-0)**: **fatto.** L1: mock `ingestFiguresFromPdf` chiamato con path+org sul commit; throw CLIP → `commitNormFromFields` comunque ok.
 
 ---
 

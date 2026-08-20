@@ -14,13 +14,56 @@ jest.mock('../config/database', () => ({
   query: jest.fn(),
 }));
 
+jest.mock('./normCodesImport.service', () => ({
+  resolveNormFolderId: jest.fn(),
+}));
+
+jest.mock('./documentTreeProvisioner.service', () => ({
+  calculatePathCache: jest.fn(),
+}));
+
+jest.mock('./figureIngest.service', () => ({
+  ingestFiguresFromPdf: jest.fn(),
+}));
+
+jest.mock('./normChunker.service', () => ({
+  indexDocument: jest.fn().mockResolvedValue(undefined),
+}));
+
 const { runDocumentIngest } = require('./documentIngestPipeline.service');
 const normCatalog = require('./normCatalogLookup.service');
 const { query } = require('../config/database');
+const { resolveNormFolderId } = require('./normCodesImport.service');
+const { calculatePathCache } = require('./documentTreeProvisioner.service');
+const { ingestFiguresFromPdf } = require('./figureIngest.service');
 const {
   enrichNormFields,
   extractNormFromPdf,
+  commitNormFromFields,
 } = require('./normIngest.service');
+
+const NORM_FIELDS = {
+  standard_code: 'ISO 9001:2015',
+  norm_title: 'Sistemi di gestione per la qualità',
+  issuing_body: 'ISO',
+  edition_year: 2015,
+  validity_status: 'vigente',
+};
+
+function mockCommitDb({ documentId = 501, attachmentId = 77, sourceId = 12, withAttachment = true } = {}) {
+  resolveNormFolderId.mockResolvedValue({ id: 23, company_id: 8 });
+  calculatePathCache.mockResolvedValue('Norme / ISO 9001');
+  const rows = [
+    { recordset: [{ id: documentId }] },
+    { recordset: [] },
+  ];
+  if (withAttachment) {
+    rows.push({ recordset: [{ attachment_id: attachmentId }] });
+    rows.push({ recordset: [] });
+  }
+  rows.push({ recordset: [{ id: sourceId }] });
+  rows.forEach((row) => query.mockResolvedValueOnce(row));
+}
 
 describe('normIngest.service (IG-N)', () => {
   afterEach(() => jest.clearAllMocks());
@@ -164,5 +207,55 @@ describe('normIngest.service (IG-N)', () => {
     expect(out.fields.standard_code).toBe('UNI EN ISO 15614-1:2019');
     expect(out.fields.validity_status).toBe('vigente');
     expect(out.needsReview).toBe(false);
+  });
+
+  it('commitNormFromFields chiama ingestFiguresFromPdf con path e organizationId', async () => {
+    mockCommitDb();
+    ingestFiguresFromPdf.mockResolvedValue({ figures: [], count: 0 });
+
+    const out = await commitNormFromFields(NORM_FIELDS, 1001, {
+      userId: 7,
+      filePath: '/tmp/norma-test.pdf',
+      fileName: 'ISO-9001.pdf',
+    });
+
+    expect(out.document_id).toBe(501);
+    expect(ingestFiguresFromPdf).toHaveBeenCalledTimes(1);
+    expect(ingestFiguresFromPdf).toHaveBeenCalledWith({
+      organizationId: 1001,
+      companyId: 8,
+      pdfPath: '/tmp/norma-test.pdf',
+    });
+  });
+
+  it('commitNormFromFields resta ok se ingestFiguresFromPdf throw', async () => {
+    mockCommitDb({ documentId: 602 });
+    ingestFiguresFromPdf.mockRejectedValue(new Error('CLIP down'));
+
+    const out = await commitNormFromFields(NORM_FIELDS, 1004, {
+      userId: 7,
+      filePath: '/tmp/norma-clip-fail.pdf',
+      fileName: 'ISO-9001.pdf',
+    });
+
+    expect(out.document_id).toBe(602);
+    expect(out.standard_code).toBe('ISO 9001:2015');
+    expect(ingestFiguresFromPdf).toHaveBeenCalledWith({
+      organizationId: 1004,
+      companyId: 8,
+      pdfPath: '/tmp/norma-clip-fail.pdf',
+    });
+  });
+
+  it('commitNormFromFields non chiama ingest figure senza filePath', async () => {
+    mockCommitDb({ withAttachment: false });
+
+    const out = await commitNormFromFields(NORM_FIELDS, 1001, {
+      userId: 7,
+      fileName: 'ISO-9001.pdf',
+    });
+
+    expect(out.document_id).toBe(501);
+    expect(ingestFiguresFromPdf).not.toHaveBeenCalled();
   });
 });

@@ -1,7 +1,8 @@
 # DEPUTYTASK_FIGURE_WPQR — FW-0: ingest norma PDF → tavole CLIP
 
-**Stato:** PRONTO — **non APERTO**. Solo brief; non eseguire in questa sessione.  
-**Aperto:** —  
+**Stato:** CHIUSO — TEST OK (20/08/2026)  
+**Aperto:** 20/08/2026  
+**Chiuso:** 20/08/2026  
 **Piano:** [`PLAN_FIGURE_WPQR_SLICES.md`](PLAN_FIGURE_WPQR_SLICES.md)  
 **Spec:** ADR-010 · MR-3 `ingestFiguresFromPdf` · `commitNormFromFields` (auto-commit + conferma staging)  
 **Rischio:** Medio — hook additivo; CLIP non deve far fallire il commit norma; PR + 1 Bugbot a slice chiusa; **non** push su `main`
@@ -59,3 +60,14 @@ cd backend && npx jest src/services/normIngest.service.test.js src/services/figu
 ## Comando per il deputy (quando il committente lancia)
 
 Sovrascrivi lo **Stato** in **APERTO**, poi: leggi `docs/agent-tasks/DEPUTYTASK_FIGURE_WPQR.md` ed eseguilo. Chiudi con TEST OK o FIX NON APPLICABILI. Non collegare WPQR. Non toccare GUIDA né roadmap.
+
+---
+
+## Esito deputy (20/08/2026)
+
+**TEST OK.** Hook in `commitNormFromFields`: dopo gli INSERT, se c’è `filePath` chiama `ingestFiguresFromPdf({ organizationId, companyId dalla cartella norme, pdfPath })`. Throw CLIP/extract → `logger.warn`, return della norma invariato. Senza PDF → niente chiamata. Ricerca Assistente: tavole azienda **o** condivise (`company_id` NULL). WPQR/GUIDA/roadmap non toccati. PR [#494](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/494). Bugbot: 1 rilievo (`companyId`) corretto; 2° run nessun rilievo critico.
+
+```
+cd backend && npx jest src/services/normIngest.service.test.js src/services/figureIngest.service.test.js --forceExit
+# Test Suites: 2 passed · Tests: 16 passed
+```

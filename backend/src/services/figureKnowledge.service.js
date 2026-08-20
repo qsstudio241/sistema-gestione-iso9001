@@ -83,12 +83,18 @@ async function persistFigures(opts) {
   const space = embedder.embeddingSpace();
   const sourcePdf = opts.sourcePdf || null;
   const companyId = opts.companyId != null ? Number(opts.companyId) : null;
+  const companyIdParam = Number.isFinite(companyId) ? companyId : null;
   const figures = Array.isArray(opts.figures) ? opts.figures : [];
 
   await query(
     `DELETE FROM knowledge_figures
-     WHERE organization_id = @orgId AND ISNULL(source_pdf, N'') = ISNULL(@sourcePdf, N'')`,
-    { orgId: organizationId, sourcePdf }
+     WHERE organization_id = @orgId
+       AND ISNULL(source_pdf, N'') = ISNULL(@sourcePdf, N'')
+       AND (
+         (@companyId IS NULL AND company_id IS NULL)
+         OR company_id = @companyId
+       )`,
+    { orgId: organizationId, sourcePdf, companyId: companyIdParam }
   );
 
   const inserted = [];
@@ -124,7 +130,7 @@ async function persistFigures(opts) {
         (@orgId, @companyId, @sourcePdf, @page, @bbox, @kind, @caption, @pngPath, @embedding, @space)`,
       {
         orgId: organizationId,
-        companyId: Number.isFinite(companyId) ? companyId : null,
+        companyId: companyIdParam,
         sourcePdf,
         page,
         bbox: JSON.stringify(bbox),
@@ -185,7 +191,8 @@ async function rankFiguresByQueryVec(queryVec, organizationId, options = {}) {
   if (options.companyId != null && options.companyId !== '') {
     const cid = Number(options.companyId);
     if (Number.isFinite(cid)) {
-      sql += ' AND company_id = @companyId';
+      // Come il registro norme: tavole dell'azienda + condivise (company_id NULL).
+      sql += ' AND (company_id = @companyId OR company_id IS NULL)';
       params.companyId = cid;
     }
   }
