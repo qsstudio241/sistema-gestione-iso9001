@@ -10,6 +10,10 @@ import {
   STANDARDS_LIST,
   STANDARD_INIT_MAP,
 } from "../data/standardsRegistry";
+import {
+  applyPrunedChecklist,
+  pruneUnansweredDeselectedChecklist,
+} from "../utils/activeAuditChecklist";
 import "./AuditAccordionLayout.css";
 
 // Import sezioni
@@ -32,7 +36,7 @@ import StatusBadge from "./StatusBadge";
 const MANUAL_COMPANY_VALUE = "__manual__";
 
 function AuditAccordionLayout({ currentAudit, onUpdate, onBack, isSaving, allSaved }) {
-  const { initializeChecklist, hydrateQuestionIds, fetchAndApplyServerResponses, syncStatus, serverDataStatus, setServerDataStatus, auditLock } = useStorage();
+  const { initializeChecklist, hydrateQuestionIds, fetchAndApplyServerResponses, syncStatus, serverDataStatus, setServerDataStatus, auditLock, updateCurrentAudit } = useStorage();
   // Il banner "ready" sparisce dopo 3 secondi
   const [showReadyBanner, setShowReadyBanner] = useState(false);
   useEffect(() => {
@@ -233,6 +237,24 @@ function AuditAccordionLayout({ currentAudit, onUpdate, onBack, isSaving, allSav
     if (!currentAudit) return;
     const standards = currentAudit.metadata?.selectedStandards || [];
 
+    // Checklist attivata in 1.1 e poi spenta, mai compilata: toglila da IndexedDB
+    // così chiusura e % non restano appese a domande nascoste.
+    const leftover = pruneUnansweredDeselectedChecklist(
+      currentAudit.checklist,
+      standards,
+    );
+    if (leftover) {
+      const pruneUpdater = (audit) => {
+        const pruned = pruneUnansweredDeselectedChecklist(
+          audit.checklist,
+          audit.metadata?.selectedStandards,
+        );
+        return applyPrunedChecklist(audit, pruned);
+      };
+      pruneUpdater._systemCall = true;
+      updateCurrentAudit(pruneUpdater, { skipSync: true });
+    }
+
     // Per ogni standard supportato: se selezionato e checklist vuota → inizializza template
     Object.entries(STANDARD_INIT_MAP).forEach(([key, codes]) => {
       const isSelected = standards.some((s) => codes.includes(s));
@@ -305,8 +327,17 @@ function AuditAccordionLayout({ currentAudit, onUpdate, onBack, isSaving, allSav
       }
     });
 
-    // TODO: Rimuovere checklist per standard deselezionati
-    // (per ora lasciamo la checklist anche se deselezionato, per evitare perdita dati)
+    if (removedStandards.length > 0) {
+      const pruneUpdater = (audit) => {
+        const pruned = pruneUnansweredDeselectedChecklist(
+          audit.checklist,
+          updatedStandards,
+        );
+        return applyPrunedChecklist(audit, pruned);
+      };
+      pruneUpdater._systemCall = true;
+      updateCurrentAudit(pruneUpdater, { skipSync: true });
+    }
   };
 
   // Guardia: se currentAudit è null, mostra messaggio
