@@ -1,37 +1,27 @@
 # DEPUTYTASK — Ingest archivio IA-5 (screening + posa)
 
-**Stato:** APERTO  
+**Stato:** CHIUSO — TEST OK, mergiata [#509](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/509) (20/08/2026)  
 **Aperto:** 20/08/2026  
+**Chiuso:** 20/08/2026  
 **Piano:** [`PLAN_INGEST_ARCHIVIO_SLICES.md`](PLAN_INGEST_ARCHIVIO_SLICES.md)  
-**Rischio:** Medio — Cloud **non** mergia. Nessuna migrazione.
-
-Gate «pronta»: CI + Bugbot + Security Review letti su questa revisione (regola 20/08).
+**Rischio:** Medio — Cloud **non** mergia.
 
 ---
 
-## Slice unica: IA-5
+## Esito IA-5
 
-**Obiettivo (parole povere)**: dopo «Estrai testo», un pulsante **Screening e posa** legge nome/cartella/poco testo, decide il tipo e, se è chiaro, mette il PDF nello scaffale azienda. I tipi dubbi restano in coda. Le qualifiche **non** diventano da sole una riga registro (resta Commit a Qualifica). Senza azienda: classifica, non posa.
+- Helper `screenImportFile` (path + nome + testo corto)
+- `POST /import-jobs/:id/screen-and-place`
+- Auto-posa solo `confidence=high` + tipo mappato + azienda + non-qualifica
+- Guess in `ai_extraction_json.screening`
+- Pulsante **Screening e posa** in Import PDF
+- **Non** caso Riesame (IA-6), **non** coda admin (IA-5b)
 
-### DoD
+Prossima: **IA-5b** (coda «da completare»).
 
-- [ ] Helper `screenImportFile` (path + nome + testo corto)
-- [ ] `POST /import-jobs/:id/screen-and-place`
-- [ ] Auto-posa solo `confidence=high` + tipo mappato + azienda + non-qualifica
-- [ ] Guess salvata in `ai_extraction_json.screening`
-- [ ] Pulsante in Import PDF
-- [ ] **Non** caso Riesame (IA-6), **Non** coda admin (IA-5b), **Non** OCR nuovo
+---
 
-### Cosa NON toccare
+## Bozza sync hub (questa PR, chat sola)
 
-`contractReview.*`, ingest staging, MC, SAL, GUIDA, `PROJECT_ROADMAP.md` § Stato attuale, `PROJECT_CONTEXT.md`, mappe 4.3 vs 4.5.
-
-### File previsti
-
-- `backend/src/utils/importScreening.js` + test
-- `backend/src/controllers/importJobs.controller.js`
-- `backend/src/routes/importJobs.routes.js`
-- `backend/scripts/deploy-manifest.json`
-- `app/src/pages/ImportJobsPage.jsx`
-- `app/src/services/apiService.js`
-- PLAN + questo brief
+- Roadmap: IA-1–IA-5 in `main` (#506/#507/#509). Prossima IA-5b.
+- GUIDA: Carica cartella + Screening e posa; path in `original_name`; posa solo con azienda.
