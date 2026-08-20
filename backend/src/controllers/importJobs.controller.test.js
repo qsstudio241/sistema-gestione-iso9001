@@ -533,6 +533,29 @@ describe('importJobs.controller commitToRegistry', () => {
         };
     }
 
+    it('accetta status uploaded (posa da path senza estrazione)', async () => {
+        const uploaded = { ...reviewedFileRow(), status: 'uploaded', original_name: 'Capitolati/rfq.docx' };
+        query
+            .mockResolvedValueOnce({ recordset: [{ id: 55, company_id: 8 }] })
+            .mockResolvedValueOnce({ recordset: [uploaded] })
+            .mockResolvedValueOnce({ recordset: [{ id: 8 }] })
+            .mockResolvedValueOnce({ recordset: [{ id: 220, company_id: 8 }] })
+            .mockResolvedValueOnce({ recordset: [{ id: 910 }] })
+            .mockResolvedValueOnce({ recordset: [{ parent_id: 220 }] })
+            .mockResolvedValueOnce({ recordset: [{ parent_id: null }] })
+            .mockResolvedValueOnce({ recordset: [] })
+            .mockResolvedValueOnce({ recordset: [] });
+
+        const res = makeRes();
+        await commitToRegistry(makeReq({ company_id: 8, doc_type: 'capitolato', title: 'RFQ' }), res);
+
+        expect(res.status).toHaveBeenCalledWith(201);
+        expect(res.json).toHaveBeenCalledWith({
+            success: true,
+            data: { registry_document_id: 910, doc_type: 'capitolato', title: 'RFQ' },
+        });
+    });
+
     it('commit procedura posa il documento nella cartella 1.2 e scrive path_cache', async () => {
         query
             .mockResolvedValueOnce({ recordset: [{ id: 55, company_id: 8 }] })
