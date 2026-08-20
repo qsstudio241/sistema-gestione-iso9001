@@ -577,6 +577,22 @@ describe('importJobs.controller commitToRegistry', () => {
         }));
     });
 
+    it('tipo mappato senza company_id → 400 COMPANY_REQUIRED_FOR_FOLDER', async () => {
+        query
+            .mockResolvedValueOnce({ recordset: [{ id: 55, company_id: null }] })
+            .mockResolvedValueOnce({ recordset: [reviewedFileRow()] });
+
+        const res = makeRes();
+        await commitToRegistry(makeReq({ doc_type: 'capitolato', title: 'RFQ' }), res);
+
+        expect(res.status).toHaveBeenCalledWith(400);
+        expect(res.json).toHaveBeenCalledWith(expect.objectContaining({
+            code: 'COMPANY_REQUIRED_FOR_FOLDER',
+        }));
+        const folderLookup = query.mock.calls.find(([sql]) => sql.includes('folder_code'));
+        expect(folderLookup).toBeUndefined();
+    });
+
     it('commit senza title usa il basename se original_name è un path', async () => {
         query
             .mockResolvedValueOnce({ recordset: [{ id: 55, company_id: 8 }] })
