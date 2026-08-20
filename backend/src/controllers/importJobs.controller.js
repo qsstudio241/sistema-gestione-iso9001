@@ -636,9 +636,10 @@ async function commitToRegistry(req, res) {
                 registry_document_id: file.registry_document_id,
             });
         }
-        if (!['extracted', 'reviewed'].includes(file.status)) {
+        // uploaded: screening da path (disegni/foto) senza «Estrai testo»
+        if (!['uploaded', 'extracted', 'reviewed'].includes(file.status)) {
             return res.status(400).json({
-                error: 'Il file deve essere in stato extracted o reviewed per il commit.',
+                error: 'Il file deve essere in stato uploaded, extracted o reviewed per il commit.',
                 code: 'INVALID_FILE_STATUS',
             });
         }
