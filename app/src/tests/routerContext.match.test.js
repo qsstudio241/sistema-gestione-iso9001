@@ -3,7 +3,7 @@
  * Regressione: /saldatura/materiali/3 non deve aprire /sal.
  */
 import { describe, it, expect } from "vitest";
-import { pathMatchesRoute, resolveMatchingRoute } from "../contexts/RouterContext";
+import { pathMatchesRoute, pathnameOnly, resolveMatchingRoute } from "../contexts/RouterContext";
 
 const APP_PATHS = [
   "/sal",
@@ -36,6 +36,11 @@ describe("pathMatchesRoute", () => {
     expect(pathMatchesRoute("/companies/42", "/companies")).toBe(true);
     expect(pathMatchesRoute("/companies", "/companies/")).toBe(false);
   });
+
+  it("ignora ?tab= albero e resta su /documents", () => {
+    expect(pathMatchesRoute("/documents?tab=tree", "/documents")).toBe(true);
+    expect(pathMatchesRoute("/documents?tab=tree", "/")).toBe(false);
+  });
 });
 
 describe("resolveMatchingRoute", () => {
@@ -57,5 +62,20 @@ describe("resolveMatchingRoute", () => {
 
   it("sulla lista aziende non apre il dettaglio", () => {
     expect(resolveMatchingRoute("/companies", APP_PATHS)).toBe("/companies");
+  });
+
+  it("query string su Documenti/NC non cade sulla Home", () => {
+    const paths = ["/", "/documents", "/nc", ...APP_PATHS];
+    expect(resolveMatchingRoute("/documents?tab=tree", paths)).toBe("/documents");
+    expect(resolveMatchingRoute("/documents?tab=catalog", paths)).toBe("/documents");
+    expect(resolveMatchingRoute("/nc?select=12", paths)).toBe("/nc");
+  });
+});
+
+describe("pathnameOnly", () => {
+  it("toglie query e hash", () => {
+    expect(pathnameOnly("/documents?tab=tree")).toBe("/documents");
+    expect(pathnameOnly("/nc?select=1#x")).toBe("/nc");
+    expect(pathnameOnly("/")).toBe("/");
   });
 });
