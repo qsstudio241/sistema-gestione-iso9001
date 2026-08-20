@@ -1100,11 +1100,42 @@ export function embedImagesInZip(zip, imageRegistry) {
     console.log(`[wordExport] ${imageRegistry.length} immagini embedded nel documento.`);
 }
 
+/**
+ * Carica il .docx: prima dal VPS (id risolto), poi URL, poi fallback locale /templates/.
+ */
+async function loadTemplateArrayBuffer(templateUrl, resolved, localFallbackUrl) {
+    if (resolved?.id) {
+        try {
+            const mod = await import('../services/apiService.js');
+            const api = mod.default;
+            if (api && typeof api.getReportTemplateArrayBuffer === 'function') {
+                return await api.getReportTemplateArrayBuffer(resolved.id);
+            }
+        } catch (e) {
+            console.warn('[wordExport] template dal server non disponibile, fallback:', e.message);
+        }
+    }
+    const candidates = [templateUrl, localFallbackUrl].filter(Boolean);
+    const unique = [...new Set(candidates)];
+    let lastErr = null;
+    for (const url of unique) {
+        try {
+            const resp = await fetch(url, { cache: 'no-store' });
+            if (resp.ok) return await resp.arrayBuffer();
+            lastErr = new Error('HTTP ' + resp.status);
+        } catch (e) {
+            lastErr = e;
+        }
+    }
+    throw lastErr || new Error('nessun URL template');
+}
+
 async function generateDocxBlob(audit, getViewUrl, options = {}) {
     const customChecklistId = options.customChecklistId ?? audit?.metadata?.customChecklistId ?? audit?.custom_checklist_id;
     const isCustomChecklist = customChecklistId && (audit?.customChecklist || audit?.customResponses);
 
     let templateUrl;
+    let resolvedMeta = null;
     const getTemplateResolver = options.getTemplateResolver;
 
     // Checklist custom: sempre template verbale (o da API se resolver ok). Senza questo blocco,
@@ -1113,7 +1144,8 @@ async function generateDocxBlob(audit, getViewUrl, options = {}) {
         if (getTemplateResolver && typeof getTemplateResolver === 'function') {
             try {
                 const resolved = await getTemplateResolver();
-                if (resolved?.url) {
+                if (resolved?.url || resolved?.id) {
+                    resolvedMeta = resolved;
                     templateUrl = resolved.url;
                     console.log('[wordExport] Template risolto da API (checklist custom):', resolved.name || templateUrl);
                 }
@@ -1121,12 +1153,16 @@ async function generateDocxBlob(audit, getViewUrl, options = {}) {
                 console.warn('[wordExport] Risoluzione template custom fallita:', e.message);
             }
         }
-        if (!templateUrl) {
+        if (!templateUrl && !resolvedMeta?.id) {
             templateUrl = TEMPLATE_MAP.custom_checklist || TEMPLATE_MAP.default;
         }
     }
 
-    if (!templateUrl) {
+    let localFallbackUrl = isCustomChecklist
+        ? (TEMPLATE_MAP.custom_checklist || TEMPLATE_MAP.default)
+        : null;
+
+    if (!templateUrl && !resolvedMeta?.id) {
         const rawKey    = options.standardKey || null;
         const normKey   = rawKey ? normalizeStdKey(rawKey) : null;
 
@@ -1142,13 +1178,15 @@ async function generateDocxBlob(audit, getViewUrl, options = {}) {
 
         const stdKey = normKey || Object.keys(checklistFiltered)[0];
         templateUrl = getTemplateUrl(stdKey || 'default');
+        localFallbackUrl = templateUrl;
         if (getTemplateResolver && typeof getTemplateResolver === 'function') {
             const stdId = STANDARD_KEY_TO_ID[stdKey] ?? STANDARD_KEY_TO_ID[normalizeStdKey(stdKey)];
             if (stdId) {
                 try {
                     const resolved = await getTemplateResolver(stdId);
-                    if (resolved?.url) {
-                        templateUrl = resolved.url;
+                    if (resolved?.url || resolved?.id) {
+                        resolvedMeta = resolved;
+                        templateUrl = resolved.url || templateUrl;
                         console.log('[wordExport] Template risolto da API:', resolved.name || templateUrl);
                     }
                 } catch (e) {
@@ -1156,6 +1194,14 @@ async function generateDocxBlob(audit, getViewUrl, options = {}) {
                 }
             }
         }
+    }
+
+    if (!localFallbackUrl) {
+        const rawKey = options.standardKey || null;
+        const normKey = rawKey ? normalizeStdKey(rawKey) : null;
+        localFallbackUrl = isCustomChecklist
+            ? (TEMPLATE_MAP.custom_checklist || TEMPLATE_MAP.default)
+            : getTemplateUrl(normKey || 'default');
     }
 
     const auditForGen = isCustomChecklist
@@ -1172,12 +1218,10 @@ async function generateDocxBlob(audit, getViewUrl, options = {}) {
         })();
     let arrayBuffer;
     try {
-        const resp = await fetch(templateUrl, { cache: 'no-store' });
-        if (!resp.ok) throw new Error('HTTP ' + resp.status);
-        arrayBuffer = await resp.arrayBuffer();
+        arrayBuffer = await loadTemplateArrayBuffer(templateUrl, resolvedMeta, localFallbackUrl);
     } catch (e) {
         throw new Error(
-            'Impossibile caricare il template "' + templateUrl + '": ' + e.message + '\n' +
+            'Impossibile caricare il template "' + (templateUrl || localFallbackUrl) + '": ' + e.message + '\n' +
             'Esegui: node scripts/generateTemplate.js'
         );
     }

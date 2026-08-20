@@ -11,6 +11,7 @@ import {
   formatNcMarkerWarning,
   isSystemReportTemplate,
   formatTemplateOrigin,
+  getReportTemplateDownloadUrl,
 } from "../utils/reportTemplateUpload";
 
 function createFile(name, size, type = "application/vnd.openxmlformats-officedocument.wordprocessingml.document") {
@@ -95,5 +96,38 @@ describe("origine template", () => {
   it("identifica template studio", () => {
     expect(isSystemReportTemplate({ organization_id: 1001 })).toBe(false);
     expect(formatTemplateOrigin({ organization_id: 1001 })).toBe("Studio");
+  });
+});
+
+describe("getReportTemplateDownloadUrl — archivio VPS", () => {
+  const apiBase = "https://sistemi.example/api/v1";
+
+  it("i modelli di sistema non puntano a /templates/ su Netlify", () => {
+    const info = getReportTemplateDownloadUrl(
+      {
+        id: 4,
+        name: "Report Audit ISO 3834-2",
+        file_path: "/templates/ISO3834-audit-report.docx",
+        organization_id: null,
+        is_system: 1,
+      },
+      apiBase,
+    );
+    expect(info.url).toBe("https://sistemi.example/api/v1/report-templates/4/file");
+    expect(info.url).not.toMatch(/^\/templates\//);
+    expect(info.filename).toBe("ISO3834-audit-report.docx");
+  });
+
+  it("le copie studio usano lo stesso endpoint file (non /uploads diretto)", () => {
+    const info = getReportTemplateDownloadUrl(
+      {
+        id: 88,
+        name: "Verbale Mason",
+        file_path: "/uploads/templates/1001/copia.docx",
+        organization_id: 1001,
+      },
+      apiBase,
+    );
+    expect(info.url).toBe("https://sistemi.example/api/v1/report-templates/88/file");
   });
 });

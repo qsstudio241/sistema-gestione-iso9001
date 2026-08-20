@@ -1248,9 +1248,10 @@ class ApiService {
     /**
      * Risolve quale template usare per standard_id o custom_checklist_id.
      * Usato da wordExport prima di generare report.
+     * L'URL è sempre GET /report-templates/:id/file sul backend (archivio VPS).
      * @param {number|null} standardId - ID standard (1=9001, 2=14001, ...)
      * @param {number|null} customChecklistId - ID checklist custom (per audit solo-checklist)
-     * @returns {Promise<{url: string, file_path: string, name: string}|null>} URL assoluto per fetch, o null se API non disponibile
+     * @returns {Promise<{url: string, file_path: string, name: string, id: number, fromServer: boolean}|null>}
      */
     async getReportTemplate(standardId, customChecklistId = null) {
         try {
@@ -1258,20 +1259,65 @@ class ApiService {
             if (standardId != null) params.set('standardId', standardId);
             if (customChecklistId != null) params.set('customChecklistId', customChecklistId);
             const res = await this.get(`/report-templates/resolve?${params.toString()}`);
-            if (!res?.success || !res?.data?.file_path) return null;
-            const fp = res.data.file_path;
-            const name = res.data.name;
-            const id = res.data.id;
-            // Template di sistema: /templates/xxx → path relativo, fetch usa origin dell'app
-            if (fp.startsWith('/templates/')) {
-                return { id, url: fp, file_path: fp, name };
-            }
-            // Template org: /uploads/xxx → URL assoluto backend
-            const backendBase = this.baseUrl.replace(/\/api\/v1\/?$/, '');
-            return { id, url: backendBase + (fp.startsWith('/') ? fp : '/' + fp), file_path: fp, name };
+            if (!res?.success || !res?.data?.id) return null;
+            return this._reportTemplateResolvePayload(res.data);
         } catch {
             return null;
         }
+    }
+
+    _reportTemplateResolvePayload(data) {
+        if (!data?.id) return null;
+        return {
+            id: data.id,
+            name: data.name,
+            file_path: data.file_path,
+            url: `${this.baseUrl}/report-templates/${data.id}/file`,
+            fromServer: true,
+        };
+    }
+
+    /**
+     * Scarica il .docx del template dal VPS (Authorization Bearer).
+     * @param {number} templateId
+     * @returns {Promise<ArrayBuffer>}
+     */
+    async getReportTemplateArrayBuffer(templateId) {
+        const token = this.getToken();
+        const url = `${this.baseUrl}/report-templates/${templateId}/file`;
+        const response = await fetch(url, {
+            method: 'GET',
+            cache: 'no-store',
+            credentials: 'include',
+            headers: token ? { Authorization: `Bearer ${token}` } : {},
+        });
+        if (!response.ok) {
+            const errorData = await response.json().catch(() => ({}));
+            throw new ApiError(
+                errorData.error || 'Download template fallito',
+                response.status,
+                errorData.code || 'REPORT_TEMPLATE_FILE_ERROR',
+            );
+        }
+        return response.arrayBuffer();
+    }
+
+    /**
+     * Download in browser del template (Gestione → Template report).
+     */
+    async downloadReportTemplateFile(templateId, suggestedName) {
+        const buf = await this.getReportTemplateArrayBuffer(templateId);
+        const blob = new Blob([buf], {
+            type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        });
+        const blobUrl = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = blobUrl;
+        link.download = suggestedName || `template-${templateId}.docx`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        setTimeout(() => URL.revokeObjectURL(blobUrl), 10000);
     }
 
     /**
@@ -1360,20 +1406,8 @@ class ApiService {
     async resolveNcReportTemplate() {
         try {
             const res = await this.get('/report-templates/resolve?scope=nc');
-            if (!res?.success || !res?.data?.file_path) return null;
-            const fp = res.data.file_path;
-            const name = res.data.name;
-            const id = res.data.id;
-            if (fp.startsWith('/templates/')) {
-                return { id, url: fp, file_path: fp, name };
-            }
-            const backendBase = this.baseUrl.replace(/\/api\/v1\/?$/, '');
-            return {
-                id,
-                url: backendBase + (fp.startsWith('/') ? fp : '/' + fp),
-                file_path: fp,
-                name,
-            };
+            if (!res?.success || !res?.data?.id) return null;
+            return this._reportTemplateResolvePayload(res.data);
         } catch {
             return null;
         }

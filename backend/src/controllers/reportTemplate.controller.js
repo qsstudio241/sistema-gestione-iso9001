@@ -9,14 +9,40 @@ const { getUploadDir, resolveTemplateSourcePath } = require('../utils/reportTemp
 const logger = require('../utils/logger');
 const path = require('path');
 const fs = require('fs').promises;
+const fsSync = require('fs');
 const crypto = require('crypto');
 
 const ALLOWED_SCOPES = new Set(['audit', 'self_assessment', 'nc']);
 const UPLOAD_DIR = getUploadDir();
+const DOCX_MIME = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
 
 function normalizeScope(scope) {
   const s = String(scope || 'audit').trim().toLowerCase();
   return ALLOWED_SCOPES.has(s) ? s : 'audit';
+}
+
+/** URL relativo all'API: il file sta sul VPS, non su Netlify. */
+function withFileUrl(template) {
+  if (!template || template.id == null) return template;
+  return {
+    ...template,
+    file_url: `/report-templates/${template.id}/file`,
+  };
+}
+
+function canReadTemplate(row, organizationId) {
+  if (!row) return false;
+  const isSystem = !!(row.is_system || row.organization_id == null);
+  if (isSystem) return true;
+  return Number(row.organization_id) === Number(organizationId);
+}
+
+function safeDocxFilename(name, filePath) {
+  const fromPath = filePath ? path.basename(String(filePath)) : '';
+  const raw = (fromPath && fromPath.toLowerCase().endsWith('.docx'))
+    ? fromPath
+    : `${String(name || 'template').replace(/[^\w.\-àèéìòù ]+/gi, '_').slice(0, 80) || 'template'}.docx`;
+  return raw.replace(/"/g, '');
 }
 
 /**
@@ -37,7 +63,7 @@ async function listTemplates(req, res) {
       { scope: normalizedScope, organization_id: organizationId }
     );
 
-    res.json({ success: true, data: result.recordset });
+    res.json({ success: true, data: result.recordset.map(withFileUrl) });
   } catch (err) {
     logger.error('listTemplates error', { error: err.message });
     res.status(500).json({ error: 'Errore recupero template', code: 'REPORT_TEMPLATES_LIST_ERROR' });
@@ -92,7 +118,7 @@ async function uploadTemplate(req, res) {
 
     res.status(201).json({
       success: true,
-      data: { id: row.id, file_path: row.file_path, name: row.name },
+      data: withFileUrl({ id: row.id, file_path: row.file_path, name: row.name }),
     });
   } catch (err) {
     logger.error('uploadTemplate error', { error: err.message });
@@ -170,14 +196,14 @@ async function resolveTemplate(req, res) {
 
     if (normalizeScope(scope) === 'nc') {
       const template = await getNcReportTemplate(organizationId);
-      return res.json({ success: true, data: template });
+      return res.json({ success: true, data: withFileUrl(template) });
     }
 
     const stdId = standardId ? parseInt(standardId, 10) : null;
     const customId = customChecklistId ? parseInt(customChecklistId, 10) : null;
     const template = await getReportTemplate(organizationId, stdId, customId);
 
-    res.json({ success: true, data: template });
+    res.json({ success: true, data: withFileUrl(template) });
   } catch (err) {
     logger.error('resolveTemplate error', { error: err.message });
     res.status(500).json({ error: 'Errore risoluzione template', code: 'RESOLVE_TEMPLATE_ERROR' });
@@ -273,6 +299,62 @@ async function listStandardAssignments(req, res) {
 }
 
 /**
+ * GET /api/v1/report-templates/:id/file
+ * Scarica il .docx dal VPS (modelli di sistema in backend/templates, copie studio in uploads).
+ */
+async function downloadTemplateFile(req, res) {
+  try {
+    const templateId = parseInt(req.params.id, 10);
+    const organizationId = req.user.organization_id;
+    if (isNaN(templateId)) {
+      return res.status(400).json({ error: 'ID template non valido', code: 'INVALID_ID' });
+    }
+
+    const tplResult = await query(
+      `SELECT id, organization_id, name, file_path, is_system
+       FROM report_templates WHERE id = @id`,
+      { id: templateId }
+    );
+    if (tplResult.recordset.length === 0) {
+      return res.status(404).json({ error: 'Template non trovato', code: 'NOT_FOUND' });
+    }
+
+    const row = tplResult.recordset[0];
+    if (!canReadTemplate(row, organizationId)) {
+      return res.status(403).json({
+        error: 'Template non appartenente a questa organizzazione',
+        code: 'FORBIDDEN',
+      });
+    }
+
+    const sourcePath = resolveTemplateSourcePath(row.file_path);
+    if (!sourcePath) {
+      return res.status(404).json({
+        error: 'File template non trovato sul server',
+        code: 'SOURCE_NOT_FOUND',
+      });
+    }
+
+    const filename = safeDocxFilename(row.name, row.file_path);
+    res.setHeader('Content-Type', DOCX_MIME);
+    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+    const stream = fsSync.createReadStream(sourcePath);
+    stream.on('error', (err) => {
+      logger.error('downloadTemplateFile stream error', { error: err.message, id: templateId });
+      if (!res.headersSent) {
+        res.status(500).json({ error: 'Errore lettura file template', code: 'TEMPLATE_READ_ERROR' });
+      }
+    });
+    stream.pipe(res);
+  } catch (err) {
+    logger.error('downloadTemplateFile error', { error: err.message });
+    if (!res.headersSent) {
+      res.status(500).json({ error: 'Errore download template', code: 'TEMPLATE_DOWNLOAD_ERROR' });
+    }
+  }
+}
+
+/**
  * POST /api/v1/report-templates/:id/duplicate
  * Duplica template di sistema nello studio (body: { name })
  */
@@ -344,7 +426,7 @@ async function duplicateTemplate(req, res) {
     const row = ins.recordset[0];
     logger.info('Report template duplicated', { sourceId: templateId, newId: row.id, org: organizationId });
 
-    res.status(201).json({ success: true, data: row });
+    res.status(201).json({ success: true, data: withFileUrl(row) });
   } catch (err) {
     logger.error('duplicateTemplate error', { error: err.message });
     res.status(500).json({ error: 'Errore duplicazione template', code: 'DUPLICATE_TEMPLATE_ERROR' });
@@ -490,6 +572,7 @@ module.exports = {
   resolveTemplate,
   listStandardAssignments,
   listNcAssignment,
+  downloadTemplateFile,
   duplicateTemplate,
   deleteTemplate,
 };

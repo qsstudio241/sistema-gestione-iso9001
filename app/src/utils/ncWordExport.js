@@ -278,35 +278,61 @@ function buildNcAttachmentsOoxml(attachments, getViewUrl, imageRegistry) {
     return ooxml;
 }
 
-async function loadNcWordTemplate(templateUrl = NC_WORD_TEMPLATE_URL) {
-    const resp = await fetch(templateUrl, { cache: 'no-store' });
-    if (!resp.ok) {
-        throw new Error(
-            `Impossibile caricare il template "${templateUrl}". Verifica Admin > Template report o esegui: node scripts/generateNcTemplate.js`,
-        );
+async function loadNcWordTemplate(templateUrl = NC_WORD_TEMPLATE_URL, resolved = null, apiService = null) {
+    if (resolved?.id && apiService?.getReportTemplateArrayBuffer) {
+        try {
+            return await apiService.getReportTemplateArrayBuffer(resolved.id);
+        } catch (e) {
+            console.warn('[ncWordExport] template dal server non disponibile, fallback:', e.message);
+        }
     }
-    return resp.arrayBuffer();
+    const candidates = [templateUrl, NC_WORD_TEMPLATE_URL].filter(Boolean);
+    const unique = [...new Set(candidates)];
+    let lastErr = null;
+    for (const url of unique) {
+        try {
+            const resp = await fetch(url, { cache: 'no-store' });
+            if (resp.ok) return await resp.arrayBuffer();
+            lastErr = new Error(`HTTP ${resp.status}`);
+        } catch (e) {
+            lastErr = e;
+        }
+    }
+    throw new Error(
+        `Impossibile caricare il template "${templateUrl || NC_WORD_TEMPLATE_URL}". ${lastErr?.message || ''} Verifica Admin > Template report o esegui: node scripts/generateNcTemplate.js`,
+    );
 }
 
 /**
  * @param {import('../services/apiService.js').default} apiService
- * @returns {Promise<string>}
+ * @returns {Promise<{url: string, id?: number, name?: string}>}
  */
-export async function resolveNcTemplateUrl(apiService) {
-    if (!apiService?.resolveNcReportTemplate) return NC_WORD_TEMPLATE_URL;
+export async function resolveNcTemplate(apiService) {
+    if (!apiService?.resolveNcReportTemplate) return { url: NC_WORD_TEMPLATE_URL };
     try {
         const resolved = await apiService.resolveNcReportTemplate();
-        return resolved?.url || NC_WORD_TEMPLATE_URL;
+        if (resolved?.id || resolved?.url) return resolved;
+        return { url: NC_WORD_TEMPLATE_URL };
     } catch {
-        return NC_WORD_TEMPLATE_URL;
+        return { url: NC_WORD_TEMPLATE_URL };
     }
+}
+
+/** @deprecated usa resolveNcTemplate */
+export async function resolveNcTemplateUrl(apiService) {
+    const resolved = await resolveNcTemplate(apiService);
+    return resolved?.url || NC_WORD_TEMPLATE_URL;
 }
 
 export async function generateNcDocxBlob(nc, actions = [], attachments = [], options = {}) {
     const templateUrl = options.templateUrl || NC_WORD_TEMPLATE_URL;
     const getViewUrl = options.getViewUrl || null;
     const fetchAttachmentBlob = options.fetchAttachmentBlob || null;
-    const arrayBuffer = await loadNcWordTemplate(templateUrl);
+    const arrayBuffer = await loadNcWordTemplate(
+        templateUrl,
+        options.resolvedTemplate || null,
+        options.apiService || null,
+    );
     const zip = new PizZip(arrayBuffer);
     const docPath = 'word/document.xml';
 
@@ -374,13 +400,15 @@ export async function exportNcToWord(ncId, apiService) {
         }
     }
 
-    const templateUrl = await resolveNcTemplateUrl(apiService);
+    const resolved = await resolveNcTemplate(apiService);
     const getViewUrl = (id) => apiService.getAttachmentViewUrl(id);
     const fetchAttachmentBlob = typeof apiService.fetchAttachmentBlob === 'function'
         ? (id, mode) => apiService.fetchAttachmentBlob(id, mode)
         : null;
     const blob = await generateNcDocxBlob(nc, actions, attachments, {
-        templateUrl,
+        templateUrl: resolved.url || NC_WORD_TEMPLATE_URL,
+        resolvedTemplate: resolved,
+        apiService,
         getViewUrl,
         fetchAttachmentBlob,
     });
