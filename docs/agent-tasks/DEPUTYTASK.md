@@ -18,4 +18,4 @@
 
 L1: `importExtractText`, `importProgressiveScreen`, `importScreening`, `importJobs.controller` — 41 verdi.
 
-Dopo merge #511: deploy VPS 20/08 PID `1134189`→`1134259`, health 200. Manifest: `importExtractText.js` + `importProgressiveScreen.js`.
+Dopo merge #511: deploy VPS 20/08 PID `1108923`→`1134259`, health 200. Manifest: `importExtractText.js` + `importProgressiveScreen.js`. Bugbot/Security non comparsi; merge umano.

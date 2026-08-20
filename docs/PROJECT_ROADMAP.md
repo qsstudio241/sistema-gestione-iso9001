@@ -16,7 +16,7 @@ Audit multi-standard (9001/14001/45001) · Non Conformità (workflow ISO 10.2 co
 
 ### Sessione più recente (20/08/2026)
 
-**Ingest cartella tutti i tipi + screening a campioni (20/08, mergiata #511 + deploy)** — «Carica cartella» prende Word/Excel/disegni/PDF (max 80). Estrae testo da PDF/Word/Excel; screening **30→90→200 righe** (tetto 8 000). Disegni/foto: solo nome/cartella. Deploy PROD PID `1134189`→`1134259`, health 200. Brief [`DEPUTYTASK.md`](agent-tasks/DEPUTYTASK.md) **CHIUSO**. [PR #511](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/511). Prossima: **IA-5b** coda da completare.
+**Ingest cartella tutti i tipi + screening a campioni (20/08, mergiata #511 + deploy)** — «Carica cartella» prende Word/Excel/disegni/PDF (max 80). Estrae testo da PDF/Word/Excel; screening **30→90→200 righe** (tetto 8 000). Disegni/foto: solo nome/cartella. Deploy PROD PID `1108923`→`1134259`, health 200. Brief [`DEPUTYTASK.md`](agent-tasks/DEPUTYTASK.md) **CHIUSO**. [PR #511](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/511). Bugbot/Security Review **non** comparsi sulla revisione; merge umano. Prossima: **IA-5b** coda da completare.
 
 **Ingest archivio IA-1–IA-5 (20/08, mergiata)** — Import PDF posa i tipi nello scaffale azienda; tipo `capitolato` → 2.2; **Carica cartella** (path in `original_name`, max 80); **Screening e posa** (path+nome+testo; auto-posa solo se tipo chiaro + azienda; qualifiche no). Piano: [`PLAN_INGEST_ARCHIVIO_SLICES.md`](agent-tasks/PLAN_INGEST_ARCHIVIO_SLICES.md). [PR #506](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/506) · [#507](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/507) · [#509](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/509).
 
