@@ -147,6 +147,18 @@ describe('searchFiguresByText', () => {
     const hits = await searchFiguresByText('simbolo', 1001, { embedder: mockEmbedder() });
     expect(hits).toEqual([]);
   });
+
+  it('ambito azienda include tavole condivise (company_id NULL)', async () => {
+    query.mockResolvedValue({ recordset: [vectorFig] });
+    await searchFiguresByText('simbolo', 1001, {
+      embedder: mockEmbedder(),
+      companyId: 10,
+    });
+    expect(String(query.mock.calls[0][0])).toMatch(
+      /company_id = @companyId OR company_id IS NULL/
+    );
+    expect(query.mock.calls[0][1].companyId).toBe(10);
+  });
 });
 
 describe('searchFiguresByImage (MR-4)', () => {

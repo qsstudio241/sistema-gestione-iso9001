@@ -360,6 +360,7 @@ async function commitNormFromFields(fields, organizationId, options = {}) {
     try {
       await ingestFiguresFromPdf({
         organizationId,
+        companyId: normFolder.company_id,
         pdfPath: filePath,
       });
     } catch (figErr) {

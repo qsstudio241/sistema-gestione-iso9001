@@ -223,6 +223,7 @@ describe('normIngest.service (IG-N)', () => {
     expect(ingestFiguresFromPdf).toHaveBeenCalledTimes(1);
     expect(ingestFiguresFromPdf).toHaveBeenCalledWith({
       organizationId: 1001,
+      companyId: 8,
       pdfPath: '/tmp/norma-test.pdf',
     });
   });
@@ -241,6 +242,7 @@ describe('normIngest.service (IG-N)', () => {
     expect(out.standard_code).toBe('ISO 9001:2015');
     expect(ingestFiguresFromPdf).toHaveBeenCalledWith({
       organizationId: 1004,
+      companyId: 8,
       pdfPath: '/tmp/norma-clip-fail.pdf',
     });
   });

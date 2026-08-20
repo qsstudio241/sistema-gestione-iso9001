@@ -185,7 +185,8 @@ async function rankFiguresByQueryVec(queryVec, organizationId, options = {}) {
   if (options.companyId != null && options.companyId !== '') {
     const cid = Number(options.companyId);
     if (Number.isFinite(cid)) {
-      sql += ' AND company_id = @companyId';
+      // Come il registro norme: tavole dell'azienda + condivise (company_id NULL).
+      sql += ' AND (company_id = @companyId OR company_id IS NULL)';
       params.companyId = cid;
     }
   }

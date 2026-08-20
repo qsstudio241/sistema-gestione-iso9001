@@ -65,7 +65,7 @@ Sovrascrivi lo **Stato** in **APERTO**, poi: leggi `docs/agent-tasks/DEPUTYTASK_
 
 ## Esito deputy (20/08/2026)
 
-**TEST OK.** Hook in `commitNormFromFields`: dopo gli INSERT, se c’è `filePath` chiama `ingestFiguresFromPdf({ organizationId, pdfPath })`. Throw CLIP/extract → `logger.warn`, return della norma invariato. Senza PDF → niente chiamata. WPQR/GUIDA/roadmap non toccati. PR [#494](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/494).
+**TEST OK.** Hook in `commitNormFromFields`: dopo gli INSERT, se c’è `filePath` chiama `ingestFiguresFromPdf({ organizationId, companyId dalla cartella norme, pdfPath })`. Throw CLIP/extract → `logger.warn`, return della norma invariato. Senza PDF → niente chiamata. Ricerca Assistente: tavole azienda **o** condivise (`company_id` NULL). WPQR/GUIDA/roadmap non toccati. PR [#494](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/494).
 
 ```
 cd backend && npx jest src/services/normIngest.service.test.js src/services/figureIngest.service.test.js --forceExit
