@@ -1,51 +1,42 @@
-# DEPUTYTASK — Ingest archivio IA-1 (tipo documento → cartella albero)
+# DEPUTYTASK — Ingest archivio IA-2 (capitolato → 2.2)
 
-**Stato:** CHIUSO — TEST OK L1 (20/08/2026, 26 test)  
-**Aperto:** 20/08/2026 (Lead wayfinder — Chart the map)  
-**Chiuso:** 20/08/2026 (stesso run: mappa + IA-1)  
+**Stato:** CHIUSO — TEST OK L1 (20/08/2026)  
+**Aperto:** 20/08/2026  
+**Chiuso:** 20/08/2026  
 **Piano:** [`PLAN_INGEST_ARCHIVIO_SLICES.md`](PLAN_INGEST_ARCHIVIO_SLICES.md)  
-**Rischio:** Medio — PR + **un** Bugbot a slice chiusa; Cloud **non** mergia  
-**Prossima:** IA-2 (tipo `capitolato` → stanza commessa / cassetto `2.2`). Non aprire su `importJobs.controller.js` in parallelo.
-
-HITL 20/08: cartella radice; screening in background; **alloca**. Stanze studio / azienda / commessa. IA-1 = solo scaffali **azienda**.
+**Nota:** la PR #505 ha mergiato solo la mappa. Il feat IA-1 è cherry-pick in questa stessa linea + IA-2/IA-3.  
+**Rischio:** Medio — Cloud **non** mergia. Prossima: **IA-4** picker cartella radice.
 
 ---
 
-## Slice IA-1 — esito
+## Esito IA-2 + preview IA-3
 
-Import PDF, Commit al Registry: procedura/manuale/istruzione/… vanno nello scaffale azienda. Le norme restano in `2.3` (`NORM_FOLDER_NOT_FOUND`). `altro` resta senza cartella. Cartella assente → `FOLDER_NOT_FOUND`, nessuna riga orfana.
-
-### DoD
-
-- [x] `resolveFolderByCode` + `resolveExplicitFolder` in `documentTreeProvisioner.service.js`
-- [x] Mappa `DOC_TYPE_TO_FOLDER_CODE` (niente `capitolato`)
-- [x] `commitToRegistry`: `parent_id` + `path_cache` per i tipi mappati
-- [x] `altro` senza override: `parent_id` null
-- [x] Norma invariata
-- [x] L1: 26 verdi (`importJobs.controller` + `documentTreeProvisioner`)
-
-### File toccati
-
-- `backend/src/services/documentTreeProvisioner.service.js`
-- `backend/src/services/documentTreeProvisioner.folder.test.js` (nuovo, solo test)
-- `backend/src/controllers/importJobs.controller.js`
-- `backend/src/controllers/importJobs.controller.test.js`
-- `docs/agent-tasks/PLAN_INGEST_ARCHIVIO_SLICES.md`
-- questo brief
-
-Nessun file nuovo in `deploy-manifest` (helper nello stesso service già listato).
+- Tipo registro `capitolato` (etichetta «Capitolato / RFQ / ordine»)
+- Scaffale azienda `2.2` CAPITOLATI (mappe FE + provisioner + folder-suggestion)
+- Alias backend `rfq` / `ordine` / `order` → stesso cassetto (se l’AI indovina così)
+- Dialog Import PDF mostra «Scaffale azienda previsto: CAPITOLATI (2.2)»
+- **Non** creato il caso Riesame (IA-6)
 
 ### Test
 
-```bash
-cd backend && npm test -- --testPathPattern='importJobs.controller|documentTreeProvisioner' --coverage=false
-```
+- Backend: `importJobs.controller` + `documentTreeProvisioner.folder` verdi
+- Frontend: `documentTypesAlignment` + `uploadNormaE2E` 24 verdi
 
-26 passed. Niente FE / smoke UI.
+### File
+
+- `app/src/data/documentTypes.js`
+- `app/src/data/documentFolderMapping.js`
+- `app/src/pages/ImportJobsPage.jsx`
+- `app/src/tests/documentTypesAlignment.test.js`
+- `backend/src/services/documentTreeProvisioner.service.js`
+- `backend/src/services/documentTreeProvisioner.folder.test.js`
+- `backend/src/controllers/document.controller.js` (solo chiave mappa)
+- `backend/src/controllers/importJobs.controller.test.js`
+- PLAN + questo brief
 
 ---
 
-## Bozza sync hub (dopo merge — PR docs #502/#504 aperte)
+## Bozza sync hub (dopo merge)
 
-- Roadmap: «IA-1 mergiata: commit Registry posa procedura/manuale nello scaffale azienda. Prossima IA-2 capitolato.»
-- GUIDA: «Import PDF committa in albero i tipi mappati, non solo le norme. `altro` resta senza cartella.»
+- Roadmap: IA-1+IA-2: capitolato va in 2.2; preview scaffale in Import PDF. Prossima IA-4.
+- GUIDA: tipo `capitolato` nel registro; non è il Riesame di direzione (cartella 14).

@@ -27,7 +27,12 @@ describe('folderCodeForDocType', () => {
         expect(folderCodeForDocType('altro')).toBeNull();
         expect(folderCodeForDocType('')).toBeNull();
         expect(folderCodeForDocType(null)).toBeNull();
-        expect(folderCodeForDocType('capitolato')).toBeNull();
+    });
+
+    it('capitolato e alias RFQ/ordine → cassetto 2.2', () => {
+        expect(folderCodeForDocType('capitolato')).toBe('2.2');
+        expect(folderCodeForDocType('rfq')).toBe('2.2');
+        expect(folderCodeForDocType('ordine')).toBe('2.2');
     });
 });
 

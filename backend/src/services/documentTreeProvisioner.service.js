@@ -31,6 +31,10 @@ const DOC_TYPE_TO_FOLDER_CODE = Object.freeze({
     qualifica_14731: '4.5',
     pes_pav: '4.5',
     cert_ndt: '4.5',
+    capitolato: '2.2',
+    rfq: '2.2',
+    ordine: '2.2',
+    order: '2.2',
 });
 
 function folderCodeForDocType(docType) {

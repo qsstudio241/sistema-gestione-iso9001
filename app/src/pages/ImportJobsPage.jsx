@@ -7,6 +7,7 @@ import apiService, { ApiError } from "../services/apiService";
 import { useAuth } from "../contexts/AuthContext";
 import { useNavigate } from "../contexts/RouterContext";
 import { DOC_TYPE_OPTIONS } from "../data/documentTypes";
+import { getSuggestedFolderLabel } from "../data/documentFolderMapping";
 import { getSchemaForDocType } from "../data/documentTypeSchemas";
 import {
   buildCommitFormFromFile,
@@ -1026,6 +1027,12 @@ export default function ImportJobsPage() {
                   ))}
                 </select>
               </label>
+              {getSuggestedFolderLabel(commitDialog.form.doc_type) && (
+                <p className="commit-dialog-norm-hint">
+                  Scaffale azienda previsto:{" "}
+                  <strong>{getSuggestedFolderLabel(commitDialog.form.doc_type)}</strong>
+                </p>
+              )}
 
               {commitDialog.isNorm ? (
                 <>

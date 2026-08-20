@@ -530,4 +530,27 @@ describe('importJobs.controller commitToRegistry', () => {
             code: 'NORM_FOLDER_NOT_FOUND',
         }));
     });
+
+    it('commit capitolato posa il documento nella cartella 2.2', async () => {
+        query
+            .mockResolvedValueOnce({ recordset: [{ id: 55, company_id: 8 }] })
+            .mockResolvedValueOnce({ recordset: [reviewedFileRow()] })
+            .mockResolvedValueOnce({ recordset: [{ id: 8 }] })
+            .mockResolvedValueOnce({ recordset: [{ id: 220, company_id: 8 }] })
+            .mockResolvedValueOnce({ recordset: [{ id: 902 }] })
+            .mockResolvedValueOnce({ recordset: [{ parent_id: 220 }] })
+            .mockResolvedValueOnce({ recordset: [{ parent_id: null }] })
+            .mockResolvedValueOnce({ recordset: [] })
+            .mockResolvedValueOnce({ recordset: [] });
+
+        const res = makeRes();
+        await commitToRegistry(makeReq({ company_id: 8, doc_type: 'capitolato', title: 'RFQ Rossi' }), res);
+
+        expect(res.status).toHaveBeenCalledWith(201);
+        const insert = query.mock.calls.find(([sql]) => sql.includes('INSERT INTO document_registry'));
+        expect(insert[1].parent_id).toBe(220);
+        expect(insert[1].doc_type).toBe('capitolato');
+        const folderLookup = query.mock.calls.find(([sql, p]) => sql.includes('folder_code') && p?.folderCode === '2.2');
+        expect(folderLookup).toBeTruthy();
+    });
 });

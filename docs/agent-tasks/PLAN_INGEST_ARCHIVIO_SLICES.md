@@ -2,8 +2,8 @@
 
 > **Destinazione**: screening in background da cartella radice. Lo screening sceglie prima la **stanza** (studio / azienda / commessa), poi lo **scaffale**. Un file = una copia, visibile da due viste se è di commessa. Specialisti già in repo lavorano in parallelo. Primo verticale: documenti di commessa → stanza Riesame + cassetto azienda `2.2`. Review = coda incompleti. Learning = ADR-017.
 > **Spec già in repo (non rifare)**: [`MODULO_INGEST_AI_COMMESSE_SCOPO_E_ROADMAP.md`](../specs/MODULO_INGEST_AI_COMMESSE_SCOPO_E_ROADMAP.md) (analisi sul caso, slice #5–#7 già fatte) · [`MINI_SPEC_RIESAME_REQUISITI_CONTRATTO.md`](../specs/MINI_SPEC_RIESAME_REQUISITI_CONTRATTO.md) · albero in mig. 059/076 · ADR-010 HITL
-> **Brief attivo**: [`DEPUTYTASK.md`](DEPUTYTASK.md) — slice **IA-1** (L1 OK; PR in review). Prossima: **IA-2** (tipo capitolato, stanza commessa) — non parallelizzare su `importJobs.controller.js`.
-> **Mappa creata**: 20/08/2026 (Lead wayfinder A — Chart the map; **nessun codice applicativo** in questa sessione)
+> **Brief attivo**: [`DEPUTYTASK.md`](DEPUTYTASK.md) — **IA-2** (tipo capitolato → 2.2). IA-1 codice era rimasto fuori da #505: cherry-pick in questa linea. Prossima dopo merge: **IA-4** (picker cartella).
+> **Mappa creata**: 20/08/2026 (Lead wayfinder A). Codice da IA-1 in poi.
 
 ---
 
@@ -201,8 +201,8 @@ IA-1 tocca **solo scaffali della stanza azienda** (chiudere il buco: procedura �
 | Slice | Tema | Perimetro (file/layer) | Dipende da | Tipo |
 |-------|------|------------------------|------------|------|
 | **IA-1** | Un PDF «Procedura» finisce nella cartella PROCEDURE (oggi solo le norme hanno una cartella) | `documentTreeProvisioner` + `importJobs.controller` `commitToRegistry` + test; **non** UI nuova | — | AFK |
-| **IA-2** | Verticale commessa: tipo `capitolato` → cartella `2.2` | `documentTypes.js` (FE; mirror se esiste), mappa, commit; **non** nuovo caso Riesame | IA-1 | AFK |
-| **IA-3** | Preview / override cartella su un file (debug) | `ImportJobsPage.jsx`: mostra cartella proposta; serve per IA-1 prima della massa | IA-1 | AFK |
+| **IA-2** | Verticale commessa: tipo `capitolato` → cartella `2.2` ✅ | `documentTypes.js`, mappe FE/BE, commit; **non** nuovo caso Riesame | IA-1 | AFK |
+| **IA-3** | Preview scaffale nel dialog commit ✅ | `ImportJobsPage.jsx` + `getSuggestedFolderLabel`; override resta `parent_folder_id` API | IA-1 | AFK |
 | **IA-4** | Sorgente: cartella radice + `relative_path` | picker `webkitdirectory`, upload albero, path relativo in `import_job_files`; job passa in coda server; **non** ZIP di default | IA-1 | AFK |
 | **IA-5** | Screening veloce in background + allocazione | classifica tipo (path+nome+testo corto) → `commitToRegistry` in cartella; stato `ai_draft`/`da_verificare`; campi vuoti OK | IA-1, IA-4 | AFK |
 | **IA-5b** | Coda admin «da completare» | lista filtrata incompleti (tipo/cartella/campi), badge come profilo/qualifiche; non blocca lo screening | IA-5 | AFK |
