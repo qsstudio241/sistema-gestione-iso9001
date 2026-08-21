@@ -1,9 +1,13 @@
 /**
  * URL deep link Registro Documenti — contratto allineato a NCPage (?select=).
  * tab: priority | catalog | tree
- * select: id documento ? tab Albero + drawer dettaglio
+ * select: id documento → tab Albero + drawer dettaglio
  * company_id: ambito azienda condiviso (assente = tutto lo studio)
+ * incomplete: 1 → Catalogo filtrato sulla coda «da completare» (IA-5b)
  */
+
+import { isClientCompanyId } from './importFolderUpload';
+import { getAllowedCompanyIds } from './appCompanyScope';
 
 export const VALID_DOC_REGISTRY_TABS = ['priority', 'catalog', 'tree'];
 
@@ -32,7 +36,7 @@ export function buildDocumentTreeQuery({ depth = 2, companyId } = {}) {
 
 /**
  * @param {string} [search] — query string (es. window.location.search)
- * @returns {{ tab: string|null, selectId: number|null, companyId: number|null }}
+ * @returns {{ tab: string|null, selectId: number|null, companyId: number|null, incomplete: boolean }}
  */
 export function parseDocumentRegistrySearch(search) {
   const params = new URLSearchParams(
@@ -40,18 +44,20 @@ export function parseDocumentRegistrySearch(search) {
   );
   const tabParam = params.get('tab');
   const tab = VALID_DOC_REGISTRY_TABS.includes(tabParam) ? tabParam : null;
+  const incompleteRaw = String(params.get('incomplete') || '').toLowerCase();
   return {
     tab,
     selectId: parseOptionalInt(params.get('select')),
     companyId: parseOptionalInt(params.get('company_id')),
+    incomplete: incompleteRaw === '1' || incompleteRaw === 'true',
   };
 }
 
 /**
- * @param {{ tab?: string|null, selectId?: number|null, companyId?: number|string|null }} opts
+ * @param {{ tab?: string|null, selectId?: number|null, companyId?: number|string|null, incomplete?: boolean }} opts
  * @returns {string}
  */
-export function buildDocumentRegistryPath({ tab, selectId, companyId } = {}) {
+export function buildDocumentRegistryPath({ tab, selectId, companyId, incomplete } = {}) {
   const params = new URLSearchParams();
   if (selectId != null && !Number.isNaN(selectId)) {
     params.set('tab', 'tree');
@@ -64,6 +70,10 @@ export function buildDocumentRegistryPath({ tab, selectId, companyId } = {}) {
   );
   if (cid != null) {
     params.set('company_id', String(cid));
+  }
+  if (incomplete && selectId == null) {
+    if (!params.get('tab')) params.set('tab', 'catalog');
+    params.set('incomplete', '1');
   }
   const qs = params.toString();
   return qs ? `/documents?${qs}` : '/documents';
@@ -78,4 +88,49 @@ export function buildDocumentDeepLink(entityId) {
   const id = parseInt(entityId, 10);
   if (Number.isNaN(id)) return '/documents';
   return buildDocumentRegistryPath({ selectId: id });
+}
+
+/**
+ * Link Import → coda «da completare».
+ * `company_id` solo se è un'azienda cliente (non Tutto lo studio / Patrimonio / omonimo).
+ * @param {{ companyId?: number|string|null }} [opts]
+ * @returns {string}
+ */
+export function buildIncompleteQueuePath({ companyId } = {}) {
+  return buildDocumentRegistryPath({
+    tab: 'catalog',
+    incomplete: true,
+    ...(isClientCompanyId(companyId) ? { companyId } : {}),
+  });
+}
+
+/**
+ * company_id dall'URL se è un'azienda cliente. Null se assente, Patrimonio o invalido.
+ * Serve al primo render del registro: loadCatalog non deve partire sullo scope header.
+ * Non applica RBAC: usare resolveAllowedUrlClientCompanyId prima di un override di scope.
+ * @param {string|{ companyId?: unknown }|null|undefined} [searchOrParsed]
+ * @returns {string|null}
+ */
+export function resolveUrlClientCompanyId(searchOrParsed) {
+  const companyId =
+    searchOrParsed && typeof searchOrParsed === 'object' && !Array.isArray(searchOrParsed)
+      ? searchOrParsed.companyId
+      : parseDocumentRegistrySearch(searchOrParsed).companyId;
+  if (!isClientCompanyId(companyId)) return null;
+  return String(parseInt(companyId, 10));
+}
+
+/**
+ * Deep-link company_id solo se setCompanyId lo accetterebbe:
+ * admin org-wide (niente company_access) → ok; utente company-scoped → solo getAllowedCompanyIds.
+ * @param {string|{ companyId?: unknown }|null|undefined} [searchOrParsed]
+ * @param {object|null|undefined} user
+ * @returns {string|null}
+ */
+export function resolveAllowedUrlClientCompanyId(searchOrParsed, user) {
+  const id = resolveUrlClientCompanyId(searchOrParsed);
+  if (!id) return null;
+  const allowed = getAllowedCompanyIds(user);
+  if (allowed == null) return id;
+  return allowed.includes(id) ? id : null;
 }

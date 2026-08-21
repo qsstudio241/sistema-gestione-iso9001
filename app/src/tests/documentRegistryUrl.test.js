@@ -4,6 +4,9 @@ import {
   buildDocumentRegistryPath,
   buildDocumentDeepLink,
   buildDocumentTreeQuery,
+  buildIncompleteQueuePath,
+  resolveUrlClientCompanyId,
+  resolveAllowedUrlClientCompanyId,
   VALID_DOC_REGISTRY_TABS,
 } from '../utils/documentRegistryUrl';
 
@@ -55,10 +58,68 @@ describe('documentRegistryUrl', () => {
     );
   });
 
+  it('parse e build tengono incomplete=1 sulla coda catalogo', () => {
+    expect(parseDocumentRegistrySearch('?tab=catalog&incomplete=1').incomplete).toBe(true);
+    expect(parseDocumentRegistrySearch('?tab=catalog').incomplete).toBe(false);
+    expect(buildDocumentRegistryPath({ incomplete: true })).toBe(
+      '/documents?tab=catalog&incomplete=1'
+    );
+    expect(buildDocumentRegistryPath({ tab: 'catalog', incomplete: true, companyId: 4 })).toBe(
+      '/documents?tab=catalog&company_id=4&incomplete=1'
+    );
+    expect(buildDocumentRegistryPath({ selectId: 9, incomplete: true })).toBe(
+      '/documents?tab=tree&select=9'
+    );
+  });
+
   it('buildDocumentTreeQuery passa company_id all API albero', () => {
     expect(buildDocumentTreeQuery({ depth: 2 })).toBe('depth=2');
     expect(buildDocumentTreeQuery({ depth: 2, companyId: 7 })).toBe(
       'depth=2&company_id=7'
     );
+  });
+
+  it('buildIncompleteQueuePath aggiunge company_id solo se azienda cliente', () => {
+    expect(buildIncompleteQueuePath({ companyId: 11 })).toBe(
+      '/documents?tab=catalog&company_id=11&incomplete=1'
+    );
+    expect(buildIncompleteQueuePath({ companyId: '11' })).toBe(
+      '/documents?tab=catalog&company_id=11&incomplete=1'
+    );
+    expect(buildIncompleteQueuePath({})).toBe('/documents?tab=catalog&incomplete=1');
+    expect(buildIncompleteQueuePath({ companyId: null })).toBe(
+      '/documents?tab=catalog&incomplete=1'
+    );
+    expect(buildIncompleteQueuePath({ companyId: '' })).toBe(
+      '/documents?tab=catalog&incomplete=1'
+    );
+    expect(buildIncompleteQueuePath({ companyId: 'studio' })).toBe(
+      '/documents?tab=catalog&incomplete=1'
+    );
+  });
+
+  it('resolveUrlClientCompanyId accetta solo azienda cliente dal deep link', () => {
+    expect(resolveUrlClientCompanyId('?tab=catalog&company_id=11&incomplete=1')).toBe('11');
+    expect(resolveUrlClientCompanyId({ companyId: 11 })).toBe('11');
+    expect(resolveUrlClientCompanyId({ companyId: '11' })).toBe('11');
+    expect(resolveUrlClientCompanyId('?tab=catalog&incomplete=1')).toBeNull();
+    expect(resolveUrlClientCompanyId({ companyId: null })).toBeNull();
+    expect(resolveUrlClientCompanyId({ companyId: 'studio' })).toBeNull();
+    expect(resolveUrlClientCompanyId({ companyId: '' })).toBeNull();
+  });
+
+  it('resolveAllowedUrlClientCompanyId blocca company_id fuori da company_access', () => {
+    const admin = { role: 'admin', organization_id: 1001 };
+    const restricted = {
+      role: 'viewer',
+      organization_id: 1001,
+      company_access: [{ company_id: 11, permission: 'read' }],
+    };
+    expect(resolveAllowedUrlClientCompanyId('?company_id=99', admin)).toBe('99');
+    expect(resolveAllowedUrlClientCompanyId('?company_id=11&incomplete=1', admin)).toBe('11');
+    expect(resolveAllowedUrlClientCompanyId('?company_id=11', restricted)).toBe('11');
+    expect(resolveAllowedUrlClientCompanyId('?tab=tree&company_id=99&incomplete=1', restricted)).toBeNull();
+    expect(resolveAllowedUrlClientCompanyId({ companyId: 99 }, restricted)).toBeNull();
+    expect(resolveAllowedUrlClientCompanyId('?incomplete=1', restricted)).toBeNull();
   });
 });

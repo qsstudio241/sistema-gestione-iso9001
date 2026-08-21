@@ -7,6 +7,7 @@ import apiService, { ApiError } from "../services/apiService";
 import { useAuth } from "../contexts/AuthContext";
 import { useCompanyScope } from "../contexts/CompanyScopeContext";
 import { useNavigate } from "../contexts/RouterContext";
+import { buildIncompleteQueuePath } from "../utils/documentRegistryUrl";
 import { DOC_TYPE_OPTIONS } from "../data/documentTypes";
 import { getSuggestedFolderLabel } from "../data/documentFolderMapping";
 import { getSchemaForDocType } from "../data/documentTypeSchemas";
@@ -1306,7 +1307,22 @@ export default function ImportJobsPage() {
                 Capitolati e commesse partono prima di Scan. Dal testo di PDF, Word ed Excel si leggono prima 30 righe.
                 Disegni e foto si classificano da nome e cartella (senza OCR).
               </p>
-              {folderNotice && <p className="import-jobs-warning">{folderNotice}</p>}
+              {folderNotice && (
+                <p className="import-jobs-warning">
+                  {folderNotice}{" "}
+                  <button
+                    type="button"
+                    className="btn-small"
+                    onClick={() =>
+                      navigate(
+                        buildIncompleteQueuePath({ companyId: detail?.job?.company_id })
+                      )
+                    }
+                  >
+                    Apri coda da completare
+                  </button>
+                </p>
+              )}
               {folderPlan && (
                 <ImportFolderPlanPanel
                   plan={folderPlan}

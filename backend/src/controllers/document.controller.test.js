@@ -94,6 +94,26 @@ describe('listDocuments', () => {
         expect(listSql).toMatch(/expiry_date < CAST\(GETDATE\(\) AS DATE\)/i);
     });
 
+    it('incomplete=1 filtra coda da completare e seleziona parent_id', async () => {
+        query
+            .mockResolvedValueOnce({ recordset: [] })
+            .mockResolvedValueOnce({ recordset: [{ total: 0 }] });
+
+        const req = mockReq({ query: { incomplete: '1', page: 1, limit: 20 } });
+        const res = mockRes();
+        await ctrl.listDocuments(req, res);
+
+        const listSql = query.mock.calls[0][0];
+        expect(listSql).toMatch(/import_status = 'ai_draft'/i);
+        expect(listSql).toMatch(/doc_type = 'altro'/);
+        expect(listSql).toMatch(/parent_id IS NULL/);
+        expect(listSql).toMatch(/dr\.parent_id/);
+        expect(listSql).toMatch(/THEN 0 ELSE 1/);
+        expect(res.json).toHaveBeenCalledWith(
+            expect.objectContaining({ success: true, data: expect.any(Array) })
+        );
+    });
+
     it('include_expired rimuove filtro futuro con expiring_days', async () => {
         query
             .mockResolvedValueOnce({ recordset: [] })
@@ -277,6 +297,8 @@ describe('getDocumentStats', () => {
         const statsSql = query.mock.calls[0][0];
         expect(statsSql).toMatch(/senza_file/i);
         expect(statsSql).toMatch(/rilasciati_senza_file/i);
+        expect(statsSql).toMatch(/da_completare/i);
+        expect(statsSql).toMatch(/import_status = 'ai_draft'/i);
         expect(statsSql).toMatch(/SELECT COUNT\(\*\)\s+FROM document_registry dr/i);
         expect(statsSql).not.toMatch(/SUM\(CASE[\s\S]*NOT EXISTS/i);
         expect(res.json).toHaveBeenCalledWith({

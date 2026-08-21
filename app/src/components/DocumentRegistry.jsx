@@ -20,6 +20,8 @@ import { useRouter } from "../contexts/RouterContext";
 import {
   parseDocumentRegistrySearch,
   buildDocumentRegistryPath,
+  resolveUrlClientCompanyId,
+  resolveAllowedUrlClientCompanyId,
 } from "../utils/documentRegistryUrl";
 import { resolveRegistryFormContextScope } from "../utils/documentFormContextScope";
 import { STUDIO_REGISTRY_SCOPE } from "../utils/documentRegistryCompanyScope";
@@ -41,6 +43,10 @@ import { STANDARDS_REGISTRY } from "../data/standardsRegistry";
 import DocumentDataGrid from "./DocumentDataGrid";
 import StatusBadge from "./StatusBadge";
 import { documentHasFile } from "../utils/documentRegistryFile";
+import {
+  applyIncompleteQueueFilters,
+  catalogQueryFromFilters,
+} from "../utils/documentIncompleteQueue";
 import "./DocumentRegistry.css";
 
 // ─── Alberi clausole per vista per-standard ──────────────────────────────────
@@ -706,6 +712,7 @@ function CatalogView({
               setFilter("search", "");
               setFilter("expiring_days", null);
               setFilter("without_file", false);
+              setFilter("incomplete", false);
             }}
           >
             Reset
@@ -723,7 +730,11 @@ function CatalogView({
 
       {/* Conteggio */}
       {!loading && !error && (
-        <div className="catalog-count">{total} documento{total !== 1 ? "i" : ""}</div>
+        <div className="catalog-count">
+          {filters.incomplete
+            ? `${total} da completare`
+            : `${total} documento${total !== 1 ? "i" : ""}`}
+        </div>
       )}
 
       {/* DataGrid */}
@@ -946,7 +957,9 @@ function DocumentRegistry() {
 
   // Tab attiva: "priority" | "catalog" | "tree"
   const [activeTab, setActiveTab] = useState(
-    initialUrl.selectId ? "tree" : (initialUrl.tab || "priority")
+    initialUrl.selectId
+      ? "tree"
+      : (initialUrl.tab || (initialUrl.incomplete ? "catalog" : "priority"))
   );
   const deepLinkSelectRef = useRef(initialUrl.selectId);
   const deepLinkHandledRef = useRef(false);
@@ -955,8 +968,18 @@ function DocumentRegistry() {
   const { companyId, setCompanyId, companies, isStudioPatrimonio, scopeReady } = useCompanyScope();
   const isAdmin = user?.role === 'admin' || user?.role === 'superadmin';
 
-  const [studioOnly, setStudioOnly] = useState(initialUrl.companyId === STUDIO_REGISTRY_SCOPE);
-  const registryCompanyScope = studioOnly && !companyId ? STUDIO_REGISTRY_SCOPE : (companyId || "");
+  // URL ?company_id= vince sul context header al primo render, prima di loadCatalog.
+  // Solo se setCompanyId accetterebbe quella company (niente bypass RBAC).
+  // applyFromUrl allinea poi l'ambito header; l'override cade quando coincide.
+  const [urlCompanyOverride, setUrlCompanyOverride] = useState(() =>
+    resolveAllowedUrlClientCompanyId(initialUrl, user)
+  );
+
+  const [studioOnly, setStudioOnly] = useState(
+    !resolveUrlClientCompanyId(initialUrl) && initialUrl.companyId === STUDIO_REGISTRY_SCOPE
+  );
+  const contextCompanyScope = studioOnly && !companyId ? STUDIO_REGISTRY_SCOPE : (companyId || "");
+  const registryCompanyScope = urlCompanyOverride || contextCompanyScope;
 
   useEffect(() => {
     if (!companyId) return;
@@ -968,7 +991,9 @@ function DocumentRegistry() {
   }, [companyId, isStudioPatrimonio]);
 
   // Etichetta esplicita di ambito: distingue il Patrimonio Studio dalle aziende clienti.
-  const isStudioScope = isStudioPatrimonio || registryCompanyScope === "studio";
+  // Deep link Import con company_id cliente non deve ereditare Patrimonio dal header.
+  const isStudioScope =
+    !urlCompanyOverride && (isStudioPatrimonio || registryCompanyScope === "studio");
   const companyScopeId = isStudioScope ? null : (registryCompanyScope || null);
   const scopeDocFilter = useMemo(
     () => (isStudioScope
@@ -1033,6 +1058,7 @@ function DocumentRegistry() {
     standard_id: "",
     expiring_days: null,
     without_file: false,
+    incomplete: !!initialUrl.incomplete,
   });
   const setFilter = useCallback((key, val) => {
     setFiltersState((f) => ({ ...f, [key]: val }));
@@ -1090,10 +1116,11 @@ function DocumentRegistry() {
           tab,
           selectId: tab === "tree" ? selectId : null,
           companyId: companyId || null,
+          incomplete: tab === "catalog" && filters.incomplete,
         })
       );
     },
-    [replace, registryCompanyScope]
+    [replace, registryCompanyScope, filters.incomplete]
   );
 
   const handleTabChange = useCallback(
@@ -1112,16 +1139,28 @@ function DocumentRegistry() {
   // URL ?tab= & ?select= & ?company_id= al mount e su Back/Forward
   useEffect(() => {
     const applyFromUrl = () => {
-      const { tab, selectId, companyId } = parseDocumentRegistrySearch(window.location.search);
-      if (tab) setActiveTab(tab);
-      if (companyId != null) {
-        if (String(companyId) === STUDIO_REGISTRY_SCOPE) {
-          setStudioOnly(true);
-          setCompanyId("");
-        } else {
-          setStudioOnly(false);
-          setCompanyId(String(companyId));
-        }
+      const parsed = parseDocumentRegistrySearch(window.location.search);
+      const { tab, selectId, companyId, incomplete } = parsed;
+      setFiltersState((f) =>
+        incomplete ? applyIncompleteQueueFilters(f, true) : { ...f, incomplete: false }
+      );
+      if (incomplete && !selectId) setActiveTab(tab || "catalog");
+      else if (tab) setActiveTab(tab);
+      const urlClient = resolveAllowedUrlClientCompanyId(parsed, user);
+      if (urlClient) {
+        setStudioOnly(false);
+        setCompanyId(urlClient);
+        setUrlCompanyOverride(urlClient);
+      } else if (companyId != null && String(companyId) === STUDIO_REGISTRY_SCOPE) {
+        setStudioOnly(true);
+        setCompanyId("");
+        setUrlCompanyOverride(null);
+      } else if (companyId != null) {
+        setStudioOnly(false);
+        setCompanyId(String(companyId));
+        setUrlCompanyOverride(null);
+      } else {
+        setUrlCompanyOverride(null);
       }
       if (selectId != null) {
         deepLinkSelectRef.current = selectId;
@@ -1133,6 +1172,13 @@ function DocumentRegistry() {
     window.addEventListener("popstate", applyFromUrl);
     return () => window.removeEventListener("popstate", applyFromUrl);
   }, []);
+
+  useEffect(() => {
+    if (!urlCompanyOverride) return;
+    if (String(companyId) === urlCompanyOverride) {
+      setUrlCompanyOverride(null);
+    }
+  }, [companyId, urlCompanyOverride]);
 
   // ─── Provisioning albero documentale ───────────────────────────────────
   const [provisioning, setProvisioning] = useState(false);
@@ -1210,13 +1256,8 @@ function DocumentRegistry() {
     try {
       const params = {
         page: catalogPage, limit: LIMIT,
-        ...(filters.search        && { search:       filters.search }),
-        ...(filters.doc_type      && { doc_type:     filters.doc_type }),
-        ...(filters.status        && { status:       filters.status }),
         ...scopeDocFilter,
-        ...(filters.standard_id   && { standard_id:  filters.standard_id }),
-        ...(filters.expiring_days && { expiring_days: filters.expiring_days }),
-        ...(filters.without_file && { without_file: 1 }),
+        ...catalogQueryFromFilters(filters),
       };
       const res = await apiService.getDocuments(params);
       setCatalogDocs(res.data || []);
@@ -1419,13 +1460,8 @@ function DocumentRegistry() {
       // Esporta fino a 500 righe con i filtri attivi
       const params = {
         page: 1, limit: 500,
-        ...(filters.search        && { search:       filters.search }),
-        ...(filters.doc_type      && { doc_type:     filters.doc_type }),
-        ...(filters.status        && { status:       filters.status }),
         ...scopeDocFilter,
-        ...(filters.standard_id   && { standard_id:  filters.standard_id }),
-        ...(filters.expiring_days && { expiring_days: filters.expiring_days }),
-        ...(filters.without_file && { without_file: 1 }),
+        ...catalogQueryFromFilters(filters),
       };
       const res = await apiService.getDocuments(params);
       exportToCSV(res.data || []);
@@ -1535,6 +1571,38 @@ function DocumentRegistry() {
     setCatalogPage(1);
   }, [handleTabChange]);
 
+  const openIncompleteQueue = useCallback(() => {
+    setActiveTab("catalog");
+    setShowDetail(false);
+    setSelectedDoc(null);
+    setDocHistory([]);
+    setFiltersState((f) => {
+      const next = !f.incomplete;
+      replace(
+        buildDocumentRegistryPath({
+          tab: "catalog",
+          companyId: registryCompanyScope || null,
+          incomplete: next,
+        })
+      );
+      return applyIncompleteQueueFilters(f, next);
+    });
+    setCatalogPage(1);
+  }, [replace, registryCompanyScope]);
+
+  useEffect(() => {
+    if (activeTab !== "catalog") return;
+    const parsed = parseDocumentRegistrySearch(window.location.search);
+    if (!!parsed.incomplete === !!filters.incomplete) return;
+    replace(
+      buildDocumentRegistryPath({
+        tab: "catalog",
+        companyId: registryCompanyScope || null,
+        incomplete: filters.incomplete,
+      })
+    );
+  }, [filters.incomplete, activeTab, registryCompanyScope, replace]);
+
   return (
     <div className="docregistry-page">
       {/* Header */}
@@ -1562,6 +1630,20 @@ function DocumentRegistry() {
                   {" "}({stats.rilasciati_senza_file} rilasciati)
                 </span>
               )}
+              {(Number(stats.da_completare) > 0 || filters.incomplete) && (
+                <>
+                  {" \u00b7 "}
+                  <button
+                    type="button"
+                    className="docregistry-file-alert"
+                    onClick={openIncompleteQueue}
+                    title="Apri la coda dei documenti da completare (tipo, cartella, campi)"
+                    aria-pressed={filters.incomplete}
+                  >
+                    {Number(stats.da_completare) || 0} da completare
+                  </button>
+                </>
+              )}
             </span>
           )}
         </div>
@@ -1586,16 +1668,30 @@ function DocumentRegistry() {
         </div>
       )}
 
-      {/* Badge Inbox orfani */}
-      {orphanDocs.length > 0 && (
+      {/* Badge Inbox orfani + coda da completare (IA-5b) */}
+      {(orphanDocs.length > 0 || Number(stats?.da_completare) > 0 || filters.incomplete) && (
         <div className="inbox-badge-wrap">
-          <button
-            className={`inbox-badge${inboxOpen ? ' inbox-badge--active' : ''}`}
-            onClick={() => setInboxOpen(v => !v)}
-          >
-            {"\uD83D\uDCE5"} Inbox
-            <span className="inbox-badge__count">{orphanDocs.length}</span>
-          </button>
+          {orphanDocs.length > 0 && (
+            <button
+              className={`inbox-badge${inboxOpen ? " inbox-badge--active" : ""}`}
+              onClick={() => setInboxOpen((v) => !v)}
+            >
+              {"\uD83D\uDCE5"} Inbox
+              <span className="inbox-badge__count">{orphanDocs.length}</span>
+            </button>
+          )}
+          {(Number(stats?.da_completare) > 0 || filters.incomplete) && (
+            <button
+              type="button"
+              className={`inbox-badge${filters.incomplete ? " inbox-badge--active" : ""}`}
+              onClick={openIncompleteQueue}
+              title="Coda admin: tipo incerto, cartella mancante, campi vuoti, bozza AI"
+              aria-pressed={filters.incomplete}
+            >
+              Da completare
+              <span className="inbox-badge__count">{Number(stats?.da_completare) || 0}</span>
+            </button>
+          )}
           {inboxToast && <span className="inbox-toast">{inboxToast}</span>}
         </div>
       )}

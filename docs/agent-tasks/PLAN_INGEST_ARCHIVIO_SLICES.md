@@ -2,7 +2,7 @@
 
 > **Destinazione**: screening in background da cartella radice. Lo screening sceglie prima la **stanza** (studio / azienda / commessa), poi lo **scaffale**. Un file = una copia, visibile da due viste se è di commessa. Specialisti già in repo lavorano in parallelo. Primo verticale: documenti di commessa → stanza Riesame + cassetto azienda `2.2`. Review = coda incompleti. Learning = ADR-017.
 > **Spec già in repo (non rifare)**: [`MODULO_INGEST_AI_COMMESSE_SCOPO_E_ROADMAP.md`](../specs/MODULO_INGEST_AI_COMMESSE_SCOPO_E_ROADMAP.md) (analisi sul caso, slice #5–#7 già fatte) · [`MINI_SPEC_RIESAME_REQUISITI_CONTRATTO.md`](../specs/MINI_SPEC_RIESAME_REQUISITI_CONTRATTO.md) · albero in mig. 059/076 · ADR-010 HITL
-> **Brief attivo**: [`DEPUTYTASK.md`](DEPUTYTASK.md) — **CHIUSO** gate azienda [#514](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/514) + cartella/screening [#511](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/511). Prossima: **IA-5b** (coda da completare).
+> **Brief attivo**: [`DEPUTYTASK.md`](DEPUTYTASK.md) — **APERTO** **IA-5b** (coda da completare). Gate azienda [#514](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/514) + cartella/screening [#511](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/511) + piano company [#518](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/518) chiusi.
 > **Mappa creata**: 20/08/2026 (Lead wayfinder A). Codice da IA-1 in poi.
 
 ---
@@ -205,7 +205,7 @@ IA-1 tocca **solo scaffali della stanza azienda** (chiudere il buco: procedura �
 | **IA-3** | Preview scaffale nel dialog commit ✅ | `ImportJobsPage.jsx` + `getSuggestedFolderLabel`; override resta `parent_folder_id` API | IA-1 | AFK |
 | **IA-4** | Sorgente: cartella radice + path relativo (in `original_name`, no colonna) ✅ | picker `webkitdirectory`, upload albero, path sanitizzato; limite 80; **non** ZIP; screening = IA-5 | IA-1 | AFK |
 | **IA-5** | Screening veloce + posa (pulsante, path+nome+testo) ✅ | `importScreening` + `POST …/screen-and-place`; auto-posa solo high+azienda+non-qualifica; coda incompleti = IA-5b. Campioni 30→90→200 righe (#511) | IA-1, IA-4 | AFK |
-| **IA-5b** | Coda admin «da completare» | lista filtrata incompleti (tipo/cartella/campi), badge come profilo/qualifiche; non blocca lo screening | IA-5 | AFK |
+| **IA-5b** | Coda admin «da completare» ✅ | lista filtrata incompleti (tipo/cartella/campi), badge come profilo/qualifiche; non blocca lo screening. `GET /documents?incomplete=1` + `stats.da_completare`; Documenti badge; link da Import dopo Screening | IA-5 | AFK |
 | **IA-6** | Ponte 2.2 → caso Riesame (batch) | riuso `import-from-job` su N file capitolato dello stesso job/cartella relativa | IA-2, IA-5 | AFK |
 | **IA-7** | Dopo il ponte: lanciare analisi già esistente | `analyze-documents` / `analyzeRequirements` persistito — **solo hook**, no nuovo motore | IA-6 | AFK |
 | **IA-8** | OCR sull’import job (riuso S1a) | `processJob` / extract: se testo sotto soglia → `ocrExtractor` | IA-1 (stesso job, dopo o in parallelo a IA-2/3 se file disgiunti) | AFK |

@@ -3,8 +3,27 @@ import { DOC_TYPE_LABELS, DOC_STATUS_LABELS } from "../data/documentTypes";
 import { formatDate } from "../utils/dateHelpers";
 import { shouldShowDocumentStatusBadge } from "../utils/documentValidity";
 import { documentHasFile, formatDocumentFileLabel } from "../utils/documentRegistryFile";
+import { getIncompleteReasons } from "../utils/documentIncompleteQueue";
 import StatusBadge from "./StatusBadge";
 import "./DocumentDataGrid.css";
+
+function IncompleteReasonChips({ doc }) {
+  const reasons = getIncompleteReasons(doc);
+  if (!reasons.length) return null;
+  return (
+    <span className="incomplete-reason-row" aria-label="Da completare">
+      {reasons.map((r) => (
+        <StatusBadge
+          key={r.key}
+          type={r.priority === "high" ? "user" : "document"}
+          status={r.badgeStatus}
+          label={r.label}
+          size="small"
+        />
+      ))}
+    </span>
+  );
+}
 
 const COLUMNS = [
   { id: "doc_code", label: "Codice", width: "100px", sortable: true },
@@ -105,6 +124,7 @@ function DocumentCatalogCard({
         {shouldShowDocumentStatusBadge(doc) && (
           <StatusBadge type="document" status={doc.status} />
         )}
+        <IncompleteReasonChips doc={doc} />
         {doc.revision && (
           <span className="catalog-doc-card__rev">Rev. {doc.revision}</span>
         )}
@@ -376,6 +396,7 @@ function DocumentDataGrid({
                           </span>
                         );
                       })()}
+                      <IncompleteReasonChips doc={doc} />
                     </td>
                     <td className="datagrid-cell datagrid-cell--file">
                       <DocumentFileBadge doc={doc} />
