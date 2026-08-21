@@ -1,60 +1,54 @@
-# DEPUTYTASK — Import: un solo controllo azienda (Ambito)
+# DEPUTYTASK — IA-11: posa norme in NORME E LEGGI se l’albero c’è
 
-**Stato:** CHIUSO — TEST OK (21/08/2026), mergiata [#521](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/521)  
+**Stato:** APERTO  
 **Aperto:** 21/08/2026  
-**Chiuso:** 21/08/2026  
-**Piano:** [`PLAN_INGEST_ARCHIVIO_SLICES.md`](PLAN_INGEST_ARCHIVIO_SLICES.md) (post IA-5b)  
-**Rischio:** Medio — UI Import; niente schema/auth/sync.  
-**Branch:** `cursor/import-ambito-only-d492`  
-**SHA merge:** `877aa8d8fdd18ad84197a88c2861eb767501d1cd`  
-**Origine:** committente — la tendina «Azienda cliente» sul job Import non serve. Un solo controllo: **Ambito** (header).
+**Piano:** [`PLAN_INGEST_ARCHIVIO_SLICES.md`](PLAN_INGEST_ARCHIVIO_SLICES.md) (IA-11; post IA-5b)  
+**Rischio:** Medio — backend Import additivo (`parent_id`); niente schema/auth/sync.  
+**Branch:** `cursor/ingest-posa-norme-folder-d492`  
+**Precedente slot:** Import Ambito-only CHIUSO [#521](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/521)
 
 ---
 
 ## Perché
 
-Due tendine (Ambito header + Azienda sul job) confondono. Tutto lo studio / Patrimonio non sono un cliente (lezione #428). L’azienda del job è quella scelta in **Ambito**.
+Lo Screening Import posa le norme nello scaffale **senza cartella** → albero vuoto. Male. Se l’azienda ha già **NORME E LEGGI** (`folder_code` 2.3, albero inizializzato), il file deve finire lì. Se l’albero non c’è, resta la coda «Cartella mancante».
+
+Destinazione (non questa slice): un solo flusso Ambito → (albero se serve) → carico/screening → cartella giusta → ingest famiglia (**Carica norme** in NORME E LEGGI; Modifica non lo lancia).
 
 ## File previsti
 
-- `app/src/pages/ImportJobsPage.jsx`
-- `app/src/utils/importFolderUpload.js` (messaggio + helper match Ambito/job)
-- `app/src/tests/importJobsPage.companyGate.test.jsx`
-- `app/src/tests/importJobsPage.folderPlan.test.jsx`
-- `app/src/tests/importFolderUpload.test.js`
+- `backend/src/services/documentTreeProvisioner.service.js` (predicato posa)
+- `backend/src/services/documentTreeProvisioner.folder.test.js`
+- `backend/src/controllers/importJobs.controller.js` (`commitToRegistry` / `screenAndPlace`)
+- `backend/src/controllers/importJobs.controller.test.js`
+- `docs/agent-tasks/PLAN_INGEST_ARCHIVIO_SLICES.md` (IA-11–IA-14)
 - `docs/agent-tasks/DEPUTYTASK.md`
 - `docs/PROJECT_ROADMAP.md` § Stato attuale (chat sola)
 - `docs/GUIDA_CONSOLIDATA.md` (una lezione; chat sola)
 
 ## Cosa NON toccare
 
-Backend se il gate `COMPANY_REQUIRED_FOR_UPLOAD` basta (`company_id` arriva da Ambito). `CompanyScopeSelect` globale. IA-6. DocumentRegistry. Commessa. Nessuna seconda tendina.
+- Pulsante ingest in Modifica documento
+- Init albero in creazione azienda (IA-13)
+- Unificare Import e Carica norme in un wizard (IA-14)
+- `normIngest` / `normUpload.controller` / Carica norme batch (IA-12)
+- `resolveNormFolderId` (resta per Carica norme)
+- IA-6 Riesame, OCR nuovo, tetto 80, auto-merge
+- `ImportJobsPage.jsx` / CSS (niente markup)
+- `auth.middleware`, `syncService`, migrazioni SQL
+- `DocumentRegistry.jsx`, Material Compliance
 
 ## Slice
 
-1. Rimuovere la tendina «Azienda cliente» dal form job (create/edit). Niente state morto.
-2. `company_id` per create / upload / piano cartella = Ambito se `isClientCompanyId`.
-3. Ambito Tutto lo studio / Patrimonio: `+ Nuovo job` e picker/upload visibili ma `disabled` + title. Alert: «Scegli un’azienda cliente in Ambito (in alto). Con Tutto lo studio o Patrimonio non si crea un job e non si caricano file.»
-4. Job esistenti: si aprono. Upload solo se Ambito è cliente **e** Ambito === `job.company_id` (se il job ha già company). Altrimenti alert «Ambito diverso dall’azienda di questo job».
-5. Test L1: studio / Patrimonio / company 11; nessuna tendina «Azienda cliente» nel DOM.
+1. Predicato: `doc_type`/`hint` = `norma` **e** cartella 2.3 di quella `company_id` + `organization_id` → `parent_id`; altrimenti `null` (coda).
+2. `commitToRegistry`: lookup con `resolveFolderByCode`, non la prima 2.3 dell’org. Cartella assente → posa senza cartella, non 404.
+3. `screenAndPlace`: se classifica `norma` o hint job `norma`, tenta la posa (anche confidence medium da hint).
+4. Norma senza `standard_code`: posa comunque come `ai_draft` (coda campi), titolo dal nome file. Niente riga duplicata (`ALREADY_COMMITTED`).
+5. Test L1 sul predicato + commit + screenAndPlace.
 
 ## Acceptance
 
-- Un solo controllo azienda: Ambito.
-- Nessun create/upload con Tutto lo studio o Patrimonio.
-- Create/upload con Ambito azienda cliente usano quella `company_id`.
-- Pulsanti operativi restano visibili.
-
-## Esito L1 (21/08/2026)
-
-- Vitest: companyGate 7 + folderPlan 9 + importFolderUpload 8 + incompleteQueue 2 = **26 verdi**
-- `cd app && npm run build` OK
-- SHA HEAD: `01c39764` (docs) / `8e256688` (fix)
-- **Non pronta**: CI + Bugbot + Security. Cloud non mergia. `ManagePullRequest` assente — body in `/opt/cursor/artifacts/pr_import_ambito_only.md`.
-
-## Chiusura (21/08/2026)
-
-- [PR #521](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/521) mergiata su `main` `877aa8d8`.
-- Solo FE: **nessun deploy VPS**. Netlify da `main`. Hard-refresh **Ctrl+Shift+R**.
-- Ambito Tutto lo studio / Patrimonio = niente `+ Nuovo job` e niente carica (pulsanti visibili, `disabled`). Scegli un’azienda cliente in Ambito.
-- GUIDA + roadmap già in #521. Questa closeout tocca solo lo slot. Prossima fetta solo se chiesta: **IA-6**.
+- Con albero già inizializzato: dopo Screening le norme sono **dentro NORME E LEGGI** di quell’azienda.
+- Senza albero: riga in registro, coda «Cartella mancante».
+- Multi-tenant: solo cartella della stessa `organization_id` + `company_id`.
+- PR **non pronta** (niente Bugbot, niente merge, deploy VPS dopo merge).
