@@ -42,6 +42,9 @@ const DOC_TYPE_OPTIONS_IMPORT = [
   ...DOC_TYPE_OPTIONS,
 ];
 
+/** Picker cartella: niente company dal job precedente mentre il dettaglio nuovo carica. */
+const DETAIL_STALE_TITLE = "Attendi il dettaglio del job selezionato";
+
 const QUALIFICATION_DOC_TYPES = new Set([
   "qualifica",
   "patentino_saldatore",
@@ -446,9 +449,14 @@ export default function ImportJobsPage() {
   const [companies, setCompanies] = useState([]);
   const [folderPlan, setFolderPlan] = useState(null);
   const [folderPlanSelected, setFolderPlanSelected] = useState(() => new Set());
+  const [folderPlanCompanyId, setFolderPlanCompanyId] = useState(null);
   const [folderUpload, setFolderUpload] = useState(null);
   const folderUploadCancelRef = useRef(false);
+  const folderUploadRef = useRef(null);
   const folderInputRef = useRef(null);
+  const selectedIdRef = useRef(selectedId);
+  folderUploadRef.current = folderUpload;
+  selectedIdRef.current = selectedId;
 
   const bindFolderInput = useCallback((el) => {
     folderInputRef.current = el;
@@ -475,8 +483,10 @@ export default function ImportJobsPage() {
     }
     try {
       const res = await apiService.getImportJob(id);
+      if (Number(selectedIdRef.current) !== Number(id)) return;
       setDetail(res.data || null);
     } catch (e) {
+      if (Number(selectedIdRef.current) !== Number(id)) return;
       setError(e.message || "Errore dettaglio job");
     }
   }, []);
@@ -519,8 +529,23 @@ export default function ImportJobsPage() {
   }, []);
 
   useEffect(() => {
+    const upload = folderUploadRef.current;
+    if (!(upload && !upload.cancelled)) {
+      setDetail((prev) => (prev?.job?.id === selectedId ? prev : null));
+    }
     loadDetail(selectedId);
   }, [selectedId, loadDetail]);
+
+  // Piano orfano: al cambio job (lista / create / delete) il piano sparisce.
+  // Durante i lotti il confirm aggiorna selectedId — non resettare (ref upload attivo).
+  useEffect(() => {
+    const upload = folderUploadRef.current;
+    if (upload && !upload.cancelled) return;
+    setFolderPlan(null);
+    setFolderPlanSelected(new Set());
+    setFolderPlanCompanyId(null);
+    setFolderUpload(null);
+  }, [selectedId]);
 
   // Dopo codice norma (AI o filename): norm-lookup → prefill vigore e link catalogo
   useEffect(() => {
@@ -641,8 +666,20 @@ export default function ImportJobsPage() {
       resetFolderInput();
       return;
     }
-    if (!isClientCompanyId(detail?.job?.company_id)) {
-      setError(COMPANY_REQUIRED_UPLOAD_TITLE);
+    if (folderUploadRef.current && !folderUploadRef.current.cancelled) {
+      resetFolderInput();
+      return;
+    }
+    const pickedCompanyId = detail?.job?.company_id;
+    if (Number(detail?.job?.id) !== Number(selectedId) || !isClientCompanyId(pickedCompanyId)) {
+      setError(
+        Number(detail?.job?.id) === Number(selectedId)
+          ? COMPANY_REQUIRED_UPLOAD_TITLE
+          : DETAIL_STALE_TITLE
+      );
+      setFolderPlan(null);
+      setFolderPlanSelected(new Set());
+      setFolderPlanCompanyId(null);
       resetFolderInput();
       return;
     }
@@ -652,6 +689,7 @@ export default function ImportJobsPage() {
       setError("Nessun file selezionato nella cartella.");
       setFolderPlan(null);
       setFolderPlanSelected(new Set());
+      setFolderPlanCompanyId(null);
       return;
     }
     setError(null);
@@ -659,6 +697,7 @@ export default function ImportJobsPage() {
     setFolderUpload(null);
     folderUploadCancelRef.current = false;
     setFolderPlan(inventory);
+    setFolderPlanCompanyId(parseInt(pickedCompanyId, 10));
     setFolderPlanSelected(new Set(inventory.folders.map((f) => f.key)));
   }
 
@@ -666,6 +705,7 @@ export default function ImportJobsPage() {
     folderUploadCancelRef.current = true;
     setFolderPlan(null);
     setFolderPlanSelected(new Set());
+    setFolderPlanCompanyId(null);
     setFolderUpload(null);
     resetFolderInput();
   }
@@ -684,8 +724,8 @@ export default function ImportJobsPage() {
   }
 
   async function handleConfirmFolderPlan() {
-    if (!folderPlan || !selectedId) return;
-    if (!isClientCompanyId(detail?.job?.company_id)) {
+    if (!folderPlan) return;
+    if (!isClientCompanyId(folderPlanCompanyId)) {
       setError(COMPANY_REQUIRED_UPLOAD_TITLE);
       return;
     }
@@ -698,7 +738,7 @@ export default function ImportJobsPage() {
     setBusy(true);
     setError(null);
     setFolderNotice(null);
-    const companyId = parseInt(detail.job.company_id, 10);
+    const companyId = parseInt(folderPlanCompanyId, 10);
     let uploaded = 0;
     try {
       for (let i = 0; i < lots.length; i += 1) {
@@ -742,10 +782,16 @@ export default function ImportJobsPage() {
         );
         setFolderPlan(null);
         setFolderPlanSelected(new Set());
+        setFolderPlanCompanyId(null);
         setFolderUpload(null);
+        folderUploadRef.current = null;
       }
     } catch (err) {
       setError(err.message || "Upload fallito");
+      // Lotti terminati: niente folderUpload "in corso" se busy torna false,
+      // altrimenti l'effect su selectedId non azzera il piano al cambio job.
+      folderUploadRef.current = null;
+      setFolderUpload(null);
     } finally {
       setBusy(false);
     }
@@ -1039,6 +1085,14 @@ export default function ImportJobsPage() {
     }
   }
 
+  const detailMatchesSelection =
+    selectedId != null && Number(detail?.job?.id) === Number(selectedId);
+  const canUploadForJob =
+    detailMatchesSelection && isClientCompanyId(detail.job.company_id);
+  const uploadGateTitle = detailMatchesSelection
+    ? COMPANY_REQUIRED_UPLOAD_TITLE
+    : DETAIL_STALE_TITLE;
+
   if (!isAdmin) {
     return (
       <div className="import-jobs-page">
@@ -1144,10 +1198,10 @@ export default function ImportJobsPage() {
         <section className="import-jobs-col import-jobs-detail">
           {!selectedId ? (
             <p>Seleziona un job o creane uno nuovo.</p>
-          ) : !detail ? (
-            <p>Caricamento dettaglio…</p>
           ) : (
             <>
+              {detailMatchesSelection ? (
+                <>
               <h2>Job #{detail.job.id}</h2>
               <p className="job-detail-status">
                 Stato: <strong>{detail.job.status}</strong>
@@ -1164,13 +1218,17 @@ export default function ImportJobsPage() {
                   Crea un nuovo job scegliendo l&apos;azienda (non Tutto lo studio).
                 </p>
               )}
+                </>
+              ) : (
+                <p>Caricamento dettaglio…</p>
+              )}
               <div className="import-jobs-actions">
                 <label
-                  className={isClientCompanyId(detail.job.company_id) ? "btn-file" : "btn-file is-disabled"}
+                  className={canUploadForJob ? "btn-file" : "btn-file is-disabled"}
                   title={
-                    isClientCompanyId(detail.job.company_id)
+                    canUploadForJob
                       ? "Carica uno o più PDF"
-                      : COMPANY_REQUIRED_UPLOAD_TITLE
+                      : uploadGateTitle
                   }
                 >
                   Carica PDF
@@ -1179,15 +1237,15 @@ export default function ImportJobsPage() {
                     accept="application/pdf,.pdf"
                     multiple
                     onChange={handleFiles}
-                    disabled={busy || !isClientCompanyId(detail.job.company_id)}
+                    disabled={busy || !canUploadForJob}
                   />
                 </label>
                 <label
-                  className={isClientCompanyId(detail.job.company_id) ? "btn-file" : "btn-file is-disabled"}
+                  className={canUploadForJob ? "btn-file" : "btn-file is-disabled"}
                   title={
-                    isClientCompanyId(detail.job.company_id)
+                    canUploadForJob
                       ? "Scegli la cartella: prima vedi il piano, poi confermi i lotti"
-                      : COMPANY_REQUIRED_UPLOAD_TITLE
+                      : uploadGateTitle
                   }
                 >
                   Carica cartella
@@ -1196,18 +1254,18 @@ export default function ImportJobsPage() {
                     multiple
                     ref={bindFolderInput}
                     onChange={handleFolderPicked}
-                    disabled={busy || !isClientCompanyId(detail.job.company_id)}
+                    disabled={busy || !canUploadForJob}
                   />
                 </label>
                 <button
                   type="button"
                   className="btn-secondary"
                   onClick={handleProcess}
-                  disabled={busy || !isClientCompanyId(detail.job.company_id)}
+                  disabled={busy || !canUploadForJob}
                   title={
-                    isClientCompanyId(detail.job.company_id)
+                    canUploadForJob
                       ? "Estrae il testo da PDF, Word ed Excel"
-                      : COMPANY_REQUIRED_UPLOAD_TITLE
+                      : uploadGateTitle
                   }
                 >
                   Estrai testo
@@ -1216,11 +1274,11 @@ export default function ImportJobsPage() {
                   type="button"
                   className="btn-primary"
                   onClick={handleScreenAndPlace}
-                  disabled={busy || !isClientCompanyId(detail.job.company_id)}
+                  disabled={busy || !canUploadForJob}
                   title={
-                    isClientCompanyId(detail.job.company_id)
+                    canUploadForJob
                       ? "Classifica i file e li posa nello scaffale se il tipo è chiaro"
-                      : COMPANY_REQUIRED_UPLOAD_TITLE
+                      : uploadGateTitle
                   }
                 >
                   Screening e posa
@@ -1228,9 +1286,16 @@ export default function ImportJobsPage() {
                 <button
                   type="button"
                   className="btn-secondary"
-                  onClick={() => handleDeleteJob(detail.job.id)}
-                  disabled={busy}
-                  title="Elimina il job e i file non posati. I file già nello scaffale restano."
+                  onClick={() => {
+                    if (!detailMatchesSelection) return;
+                    handleDeleteJob(detail.job.id);
+                  }}
+                  disabled={busy || !detailMatchesSelection}
+                  title={
+                    detailMatchesSelection
+                      ? "Elimina il job e i file non posati. I file già nello scaffale restano."
+                      : DETAIL_STALE_TITLE
+                  }
                 >
                   Annulla caricamento
                 </button>
@@ -1254,6 +1319,8 @@ export default function ImportJobsPage() {
                   onStopLots={handleStopFolderLots}
                 />
               )}
+              {detailMatchesSelection ? (
+                <>
               <h3>File ({(detail.files || []).length})</h3>
               <ul className="import-files-list">
                 {(detail.files || []).map((f) => {
@@ -1427,6 +1494,8 @@ export default function ImportJobsPage() {
                   );
                 })}
               </ul>
+                </>
+              ) : null}
             </>
           )}
         </section>

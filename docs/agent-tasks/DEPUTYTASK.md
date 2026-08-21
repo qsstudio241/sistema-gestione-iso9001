@@ -1,54 +1,40 @@
-# DEPUTYTASK — Import cartella: piano di carico (lotti da 80)
+# DEPUTYTASK — Import cartella: piano ancorato alla company del picker
 
 **Stato:** CHIUSO — TEST OK L1 (21/08/2026)  
 **Aperto:** 21/08/2026  
 **Chiuso:** 21/08/2026  
 **Piano:** [`PLAN_INGEST_ARCHIVIO_SLICES.md`](PLAN_INGEST_ARCHIVIO_SLICES.md)  
-**Rischio:** Medio — solo FE (inventory/piano/lotti); tetto server 80 invariato; Cloud **non** mergia.  
-**Branch:** `cursor/import-folder-plan-d492`  
-**SHA:** `cd791b67`
+**Rischio:** Medio — solo FE; gate azienda e tetto 80 invariati; Cloud **non** mergia.  
+**Branch:** `cursor/import-plan-company-d492`  
+**SHA:** `dbd3f16d`  
+**Origine:** Bugbot HIGH post-merge PR #517 (`Folder plan wrong company_id`)
 
 ---
 
 ## Perché
 
-Utente sproveduto sceglie `Documenti` (anche 1473 file). L’app non deve caricare subito: mostra un piano, aspetta conferma, poi lotti da 80. Priorità: cartelle riconoscibili (Capitolati/commessa) prima di Scan, per arrivare presto ai file di commessa.
+Il piano di carico resta in memoria se l’utente cambia job nella lista. `handleConfirmFolderPlan` leggeva `company_id` da `detail.job` al click: i lotti nuovi potevano finire sotto un’altra azienda.
 
 ## File previsti
 
-- `app/src/utils/importFolderUpload.js`
-- `app/src/utils/importFolderPlan.js`
-- `app/src/tests/importFolderUpload.test.js`
-- `app/src/tests/importFolderPlan.test.js`
 - `app/src/pages/ImportJobsPage.jsx`
-- `app/src/pages/ImportJobsPage.css`
 - `app/src/tests/importJobsPage.folderPlan.test.jsx`
+- `docs/agent-tasks/DEPUTYTASK.md`
 
 ## Cosa NON toccare
 
-contractReview, MC, SAL, OCR, tetto 80 server, unificare mappe folder, `PROJECT_CONTEXT.md`, GUIDA/roadmap (bozza sotto: altri agent sullo stesso repo).
+GUIDA, roadmap, `PROJECT_CONTEXT.md`, backend, tetto 80, `reuseId`, IA-5b, contractReview, MC, SAL.
 
 ## Slice
 
-1. Dopo picker + consenso Chrome: **non** upload subito. Inventory in browser (FileList + webkitRelativePath): conta, somma size, raggruppa per cartella di primo livello, salta junk come `takeImportFiles`.
-2. Piano visibile: totale file+MB; tabella cartelle (nome, n., size, label onesta path-only); «Servono N lotti da 80. Tempo orientativo: …».
-3. Checkbox per cartella (default tutte). **Carica i lotti selezionati** / Annulla piano (torna a 0, nessun upload).
-4. Conferma → upload sequenziale lotti da 80. Ordine: tipi indovinati (capitolato/commessa in testa), poi altro. Stessa `company_id`. Titoli `Documenti / Capitolati (1/2)` o `Documenti 3/19`.
-5. Avanzamento «Lotto 3/19 — Procedure». Annulla = stop lotti successivi (non cestino). Lotti già caricati restano.
-6. Gate azienda già in vigore: senza `company_id` niente picker.
+1. Catturare `company_id` in `handleFolderPicked` (quando si costruisce il piano).
+2. `handleConfirmFolderPlan` usa **quella** company + `isClientCompanyId`. Se manca: errore, nessun upload.
+3. Reset del piano al cambio `selectedId` (niente piano orfano). Non resettare durante l’upload lotti (il confirm aggiorna `selectedId`).
+4. Ogni lotto resta `createImportJob` con title + hint + company catturata.
 
 ## Esito
 
-- Picker cartella → piano, **nessun** upload. Conferma → lotti da 80, stessa `company_id`.
-- Ordine: capitolato/commessa prima di Scan. Titoli `Documenti / Capitolati (1/2)` / `Documenti 3/19`.
-- Annulla piano = zero upload. Annulla in corso = stop successivi; lotti già caricati restano.
-- Tetto server 80 non alzato. Niente BE. Niente mappe folder.
-
-L1: `importFolderPlan` + `importFolderUpload` + `importJobsPage.folderPlan` + `companyGate` — 30 verdi. Suite FE 1268 verdi. Build Vite OK.
-
-PR: tool `ManagePullRequest` assente; `gh pr create` → Resource not accessible. Titolo/body per il parent sotto. **Non pronta** senza CI+Bugbot+Security su questo SHA.
-
-## Bozza hub (dopo merge)
-
-- GUIDA: Import cartella mostra piano di carico prima dell’upload; lotti da 80; Annulla ferma i successivi.
-- Roadmap § Stato attuale: una riga su piano di carico Import cartella.
+- Cattura `company_id` al picker; confirm usa quella (non `detail.job` al click).
+- Cambio job: piano sparisce; nessun create/upload sull’altra azienda.
+- L1: folderPlan 6 + companyGate 7 = 13 verdi. Build Vite OK.
+- `ManagePullRequest` assente; `gh pr create` → Resource not accessible. Titolo/body per il parent. **Non pronta** senza CI+Bugbot+Security su questo SHA. Nessun deploy.
