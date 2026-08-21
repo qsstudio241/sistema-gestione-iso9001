@@ -1,10 +1,11 @@
 # DEPUTYTASK — IA-5b: coda admin «da completare»
 
-**Stato:** APERTO  
+**Stato:** APERTO — TEST OK L1 (21/08/2026), PR da aprire (draft)  
 **Aperto:** 21/08/2026  
 **Piano:** [`PLAN_INGEST_ARCHIVIO_SLICES.md`](PLAN_INGEST_ARCHIVIO_SLICES.md) § IA-5b  
 **Rischio:** Medio — filtro registro + UI; niente schema/auth/sync; Cloud **non** mergia.  
 **Branch:** `cursor/ingest-ia5b-coda-d492`  
+**SHA:** `70835016`  
 **Origine:** committente «Mergiato» su [#518](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/518); prossima fetta concordata IA-5b.
 
 ---
@@ -42,6 +43,13 @@ Dopo un carico grosso i file finiscono nello scaffale (`document_registry`) inco
 3. Documenti: badge **Da completare** (stesso posto di «senza allegato» / Inbox). Click → Catalogo filtrato. Chip motivo in griglia. URL `?tab=catalog&incomplete=1`.
 4. Import PDF: dopo Screening, link «Apri coda da completare» (non è un cancello).
 5. L1 + build. PR draft. Non Bugbot da questo deputy.
+
+## Esito L1
+
+- FE Vitest: documentIncompleteQueue 4 + documentRegistryUrl 9 + documentDataGrid 2 + importJobsPage.incompleteQueue 1 = **16 verdi**
+- BE Jest: `document.controller.test.js` **12 verdi** (incluso `incomplete=1` + `da_completare`)
+- `cd app && npm run build` OK
+- `ManagePullRequest` assente; titolo/body per il parent. **Non pronta** senza CI + Bugbot + Security su questo SHA. Nessun deploy VPS (dopo merge).
 
 ## Acceptance
 
