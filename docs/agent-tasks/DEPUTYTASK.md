@@ -42,3 +42,10 @@ Backend se il gate `COMPANY_REQUIRED_FOR_UPLOAD` basta (`company_id` arriva da A
 - Nessun create/upload con Tutto lo studio o Patrimonio.
 - Create/upload con Ambito azienda cliente usano quella `company_id`.
 - Pulsanti operativi restano visibili.
+
+## Esito L1 (21/08/2026)
+
+- Vitest: companyGate 7 + folderPlan 9 + importFolderUpload 8 + incompleteQueue 2 = **26 verdi**
+- `cd app && npm run build` OK
+- SHA HEAD: `01c39764` (docs) / `8e256688` (fix)
+- **Non pronta**: CI + Bugbot + Security. Cloud non mergia. `ManagePullRequest` assente — body in `/opt/cursor/artifacts/pr_import_ambito_only.md`.
