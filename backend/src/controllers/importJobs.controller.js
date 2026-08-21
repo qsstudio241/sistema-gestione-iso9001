@@ -95,6 +95,25 @@ function unlinkUploadedFiles(files) {
     });
 }
 
+/**
+ * Path da cancellare dal disco quando si elimina un job.
+ * I PDF già posati nello scaffale (registry_document_id / committed)
+ * o ancora referenziati come allegato documento restano sul disco.
+ */
+function storagePathsSafeToUnlink(fileRows, referencedAttachmentPaths) {
+    const referenced = new Set(referencedAttachmentPaths || []);
+    const out = [];
+    for (const row of fileRows || []) {
+        if (!row?.storage_path) continue;
+        if (row.registry_document_id) continue;
+        if (row.qualification_id) continue;
+        if (String(row.status || '').toLowerCase() === 'committed') continue;
+        if (referenced.has(row.storage_path)) continue;
+        out.push(row.storage_path);
+    }
+    return out;
+}
+
 async function resolveOptionalCompanyId(rawCompanyId, organizationId) {
     if (rawCompanyId == null || rawCompanyId === '') return { ok: true, companyId: null };
     const companyId = parseCompanyId(rawCompanyId);
@@ -212,10 +231,27 @@ async function deleteJob(req, res) {
             { id, organization_id }
         );
         if (!chk.recordset.length) return res.status(404).json({ error: 'Job non trovato' });
-        const files = await query(`SELECT storage_path FROM import_job_files WHERE job_id = @id`, { id });
-        for (const row of files.recordset || []) {
+        const files = await query(
+            `SELECT storage_path, registry_document_id, qualification_id, status
+             FROM import_job_files WHERE job_id = @id`,
+            { id }
+        );
+        const rows = files.recordset || [];
+        let referencedPaths = [];
+        const maybeUnlink = storagePathsSafeToUnlink(rows, []);
+        if (maybeUnlink.length) {
+            const att = await query(
+                `SELECT a.storage_path
+                 FROM attachments a
+                 INNER JOIN import_job_files f ON f.storage_path = a.storage_path
+                 WHERE f.job_id = @id AND a.storage_path IS NOT NULL`,
+                { id }
+            );
+            referencedPaths = (att.recordset || []).map((r) => r.storage_path).filter(Boolean);
+        }
+        for (const storagePath of storagePathsSafeToUnlink(rows, referencedPaths)) {
             try {
-                if (row.storage_path && fs.existsSync(row.storage_path)) fs.unlinkSync(row.storage_path);
+                if (storagePath && fs.existsSync(storagePath)) fs.unlinkSync(storagePath);
             } catch (_) { /* ignore */ }
         }
         await query(`DELETE FROM import_jobs WHERE id = @id`, { id });
@@ -1251,6 +1287,7 @@ module.exports = {
     createJob,
     getJob,
     deleteJob,
+    storagePathsSafeToUnlink,
     uploadFiles,
     processJob,
     screenAndPlace,
