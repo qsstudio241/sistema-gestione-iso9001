@@ -10,7 +10,7 @@ const fs = require('fs');
 const path = require('path');
 
 const { query } = require('../config/database');
-const { createJob, commitToRegistry, commitToQualification, listJobs, getJob, uploadFiles, screenAndPlace } = require('./importJobs.controller');
+const { createJob, commitToRegistry, commitToQualification, listJobs, getJob, uploadFiles, screenAndPlace, deleteJob, storagePathsSafeToUnlink } = require('./importJobs.controller');
 
 function makeRes() {
     return {
@@ -719,5 +719,76 @@ describe('importJobs.controller commitToRegistry', () => {
         expect(insert[1].doc_type).toBe('capitolato');
         const folderLookup = query.mock.calls.find(([sql, p]) => sql.includes('folder_code') && p?.folderCode === '2.2');
         expect(folderLookup).toBeTruthy();
+    });
+});
+
+describe('importJobs.controller storagePathsSafeToUnlink / deleteJob', () => {
+    beforeEach(() => {
+        jest.clearAllMocks();
+    });
+
+    it('non include path con registry_document_id o status committed', () => {
+        expect(storagePathsSafeToUnlink([
+            { storage_path: '/uploads/in-registro.pdf', registry_document_id: 910, status: 'committed' },
+            { storage_path: '/uploads/qualifica.pdf', qualification_id: 12, status: 'committed' },
+            { storage_path: '/uploads/pending.pdf', registry_document_id: null, status: 'uploaded' },
+        ], [])).toEqual(['/uploads/pending.pdf']);
+    });
+
+    it('non include path ancora referenziato in attachments', () => {
+        expect(storagePathsSafeToUnlink([
+            { storage_path: '/uploads/shared.pdf', registry_document_id: null, status: 'extracted' },
+        ], ['/uploads/shared.pdf'])).toEqual([]);
+    });
+
+    it('deleteJob unlinka solo i file non committati', async () => {
+        const unlinkSpy = jest.spyOn(fs, 'unlinkSync').mockImplementation(() => {});
+        const existsSpy = jest.spyOn(fs, 'existsSync').mockReturnValue(true);
+        query
+            .mockResolvedValueOnce({ recordset: [{ id: 55 }] })
+            .mockResolvedValueOnce({
+                recordset: [
+                    { storage_path: '/uploads/in-registro.pdf', registry_document_id: 910, status: 'committed' },
+                    { storage_path: '/uploads/pending.pdf', registry_document_id: null, status: 'uploaded' },
+                ],
+            })
+            .mockResolvedValueOnce({ recordset: [] })
+            .mockResolvedValueOnce({ recordset: [] });
+
+        const res = makeRes();
+        await deleteJob(makeReq(), res);
+
+        expect(unlinkSpy).toHaveBeenCalledTimes(1);
+        expect(unlinkSpy).toHaveBeenCalledWith('/uploads/pending.pdf');
+        expect(unlinkSpy).not.toHaveBeenCalledWith('/uploads/in-registro.pdf');
+        const filesSql = query.mock.calls[1][0];
+        expect(filesSql).toMatch(/registry_document_id/);
+        const attSql = query.mock.calls[2][0];
+        expect(attSql).toMatch(/FROM attachments/);
+        expect(res.json).toHaveBeenCalledWith({ success: true });
+        unlinkSpy.mockRestore();
+        existsSpy.mockRestore();
+    });
+
+    it('deleteJob non unlinka un path ancora in attachments anche senza registry_document_id', async () => {
+        const unlinkSpy = jest.spyOn(fs, 'unlinkSync').mockImplementation(() => {});
+        const existsSpy = jest.spyOn(fs, 'existsSync').mockReturnValue(true);
+        query
+            .mockResolvedValueOnce({ recordset: [{ id: 55 }] })
+            .mockResolvedValueOnce({
+                recordset: [
+                    { storage_path: '/uploads/shared.pdf', registry_document_id: null, status: 'extracted' },
+                ],
+            })
+            .mockResolvedValueOnce({ recordset: [{ storage_path: '/uploads/shared.pdf' }] })
+            .mockResolvedValueOnce({ recordset: [] });
+
+        const res = makeRes();
+        await deleteJob(makeReq(), res);
+
+        expect(unlinkSpy).not.toHaveBeenCalled();
+        expect(res.json).toHaveBeenCalledWith({ success: true });
+        unlinkSpy.mockRestore();
+        existsSpy.mockRestore();
     });
 });

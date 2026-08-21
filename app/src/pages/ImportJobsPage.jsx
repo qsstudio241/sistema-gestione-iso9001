@@ -441,7 +441,7 @@ export default function ImportJobsPage() {
       const id = res.data?.id;
       setNewTitle("");
       setDocTypeHint("");
-      setNewCompanyId("");
+      setNewCompanyId(resolvePrefillCompanyId(scopeCompanyId));
       await loadList();
       if (id) setSelectedId(id);
     } catch (e) {
@@ -774,7 +774,9 @@ export default function ImportJobsPage() {
   }
 
   async function handleDeleteJob(id) {
-    if (!window.confirm("Annullare il caricamento? Elimina questo job e tutti i file associati. Non tocca l'archivio già in registro.")) return;
+    if (!window.confirm(
+      "Annullare il caricamento? Si eliminano il job e i file non ancora posati. I file già posati nello scaffale restano."
+    )) return;
     setBusy(true);
     try {
       await apiService.deleteImportJob(id);
@@ -801,7 +803,7 @@ export default function ImportJobsPage() {
       <p className="import-jobs-intro">
         Flusso operativo: <strong>Azienda cliente → tipo documento → file → estrazione → revisione → AI → registro</strong>.
         Serve sempre un&apos;azienda sul job: Ambito «Tutto lo studio» o Patrimonio non basta.
-        Sbagli il carico? <strong>Annulla caricamento</strong> elimina il job e i file (non tocca l&apos;archivio già in registro).
+        Sbagli il carico? <strong>Annulla caricamento</strong> elimina il job e i file non posati. Quelli già nello scaffale restano.
       </p>
       {error && <p className="import-jobs-error">{error}</p>}
 
@@ -876,7 +878,7 @@ export default function ImportJobsPage() {
                   <button
                     type="button"
                     className="btn-del"
-                    title="Annulla caricamento: elimina il job e i file"
+                    title="Annulla caricamento: elimina il job e i file non posati. I file già nello scaffale restano."
                     onClick={() => handleDeleteJob(j.id)}
                     disabled={busy}
                   >
@@ -977,7 +979,7 @@ export default function ImportJobsPage() {
                   className="btn-secondary"
                   onClick={() => handleDeleteJob(detail.job.id)}
                   disabled={busy}
-                  title="Elimina questo job e i file caricati. Non tocca l'archivio già in registro."
+                  title="Elimina il job e i file non posati. I file già nello scaffale restano."
                 >
                   Annulla caricamento
                 </button>
