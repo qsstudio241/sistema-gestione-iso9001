@@ -1,6 +1,33 @@
 /** Limite allineato a multer in importJobs.routes.js */
 export const MAX_IMPORT_JOB_FILES = 80;
 
+/** Title / messaggio gate: upload e screening richiedono un'azienda cliente sul job. */
+export const COMPANY_REQUIRED_UPLOAD_TITLE =
+  "Scegli un'azienda sul job (non Tutto lo studio)";
+
+/**
+ * True solo per un id azienda cliente numerico.
+ * "" (Tutto lo studio) e "studio" (Patrimonio) non valgono — lezione PR #428.
+ * @param {unknown} value
+ * @returns {boolean}
+ */
+export function isClientCompanyId(value) {
+  if (value == null || value === "") return false;
+  if (String(value) === "studio") return false;
+  const n = parseInt(value, 10);
+  return Number.isFinite(n) && n > 0 && String(n) === String(value).trim();
+}
+
+/**
+ * Prefill create-job dal CompanyScope header: solo azienda cliente.
+ * Non usa l'id omonimo patrimonio (il context lo normalizza già a "studio").
+ * @param {unknown} scopeCompanyId
+ * @returns {string}
+ */
+export function resolvePrefillCompanyId(scopeCompanyId) {
+  return isClientCompanyId(scopeCompanyId) ? String(parseInt(scopeCompanyId, 10)) : "";
+}
+
 const JUNK_FILE_RE = /^(thumbs\.db|desktop\.ini|\.ds_store)$/i;
 
 /**

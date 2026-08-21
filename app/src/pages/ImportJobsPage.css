@@ -193,6 +193,11 @@
   display: none;
 }
 
+.btn-file.is-disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
 .btn-primary,
 .btn-secondary {
   padding: 0.45rem 0.9rem;

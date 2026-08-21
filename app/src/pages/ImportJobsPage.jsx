@@ -5,6 +5,7 @@
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import apiService, { ApiError } from "../services/apiService";
 import { useAuth } from "../contexts/AuthContext";
+import { useCompanyScope } from "../contexts/CompanyScopeContext";
 import { useNavigate } from "../contexts/RouterContext";
 import { DOC_TYPE_OPTIONS } from "../data/documentTypes";
 import { getSuggestedFolderLabel } from "../data/documentFolderMapping";
@@ -16,7 +17,14 @@ import {
   isNormDocType,
   buildInitialNormTypeData,
 } from "../utils/importNormCommit";
-import { MAX_IMPORT_JOB_FILES, takeImportFiles, bindDirectoryPicker } from "../utils/importFolderUpload";
+import {
+  MAX_IMPORT_JOB_FILES,
+  COMPANY_REQUIRED_UPLOAD_TITLE,
+  takeImportFiles,
+  bindDirectoryPicker,
+  isClientCompanyId,
+  resolvePrefillCompanyId,
+} from "../utils/importFolderUpload";
 import StatusBadge from "../components/StatusBadge";
 import "./ImportJobsPage.css";
 import "../components/DocumentForm.css";
@@ -87,6 +95,9 @@ function mapImportErrorMessage(err) {
   }
   if (err.code === "VALIDATION_ERROR") {
     return err.message || "Dati non validi. Controlla titolo e cliente.";
+  }
+  if (err.code === "COMPANY_REQUIRED_FOR_UPLOAD") {
+    return err.message || COMPANY_REQUIRED_UPLOAD_TITLE;
   }
   return err.message || "Creazione caso Riesame fallita";
 }
@@ -296,6 +307,7 @@ function FileActionsMenu({ actions }) {
 export default function ImportJobsPage() {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const { companyId: scopeCompanyId } = useCompanyScope();
   const isAdmin = user?.role === "admin" || user?.role === "superadmin";
   const [jobs, setJobs] = useState([]);
   const [selectedId, setSelectedId] = useState(null);
@@ -359,6 +371,13 @@ export default function ImportJobsPage() {
   }, [loadCompanies]);
 
   useEffect(() => {
+    const prefill = resolvePrefillCompanyId(scopeCompanyId);
+    if (prefill) {
+      setNewCompanyId((prev) => prev || prefill);
+    }
+  }, [scopeCompanyId]);
+
+  useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const jobParam = params.get('job');
     if (jobParam) {
@@ -407,8 +426,8 @@ export default function ImportJobsPage() {
   ]);
 
   async function handleCreate() {
-    if (isQualificationDocType(docTypeHint) && !newCompanyId) {
-      setError("Per importare qualifiche devi selezionare prima l'azienda cliente.");
+    if (!isClientCompanyId(newCompanyId)) {
+      setError(COMPANY_REQUIRED_UPLOAD_TITLE);
       return;
     }
     setBusy(true);
@@ -434,6 +453,21 @@ export default function ImportJobsPage() {
 
   async function uploadPickedFiles(fileList, inputEl) {
     if (!selectedId || !fileList?.length) return;
+    if (!isClientCompanyId(detail?.job?.company_id)) {
+      setError(COMPANY_REQUIRED_UPLOAD_TITLE);
+      if (inputEl) inputEl.value = "";
+      return;
+    }
+    const existingCount = (detail?.files || []).length;
+    if (existingCount > 0) {
+      const ok = window.confirm(
+        `Il job ha già ${existingCount} file. Aggiungere altri file a questo job?`
+      );
+      if (!ok) {
+        if (inputEl) inputEl.value = "";
+        return;
+      }
+    }
     const { files, skippedJunk, truncated } = takeImportFiles(fileList);
     if (!files.length) {
       setError("Nessun file selezionato nella cartella.");
@@ -469,6 +503,10 @@ export default function ImportJobsPage() {
 
   async function handleProcess() {
     if (!selectedId) return;
+    if (!isClientCompanyId(detail?.job?.company_id)) {
+      setError(COMPANY_REQUIRED_UPLOAD_TITLE);
+      return;
+    }
     setBusy(true);
     setError(null);
     try {
@@ -484,6 +522,10 @@ export default function ImportJobsPage() {
 
   async function handleScreenAndPlace() {
     if (!selectedId) return;
+    if (!isClientCompanyId(detail?.job?.company_id)) {
+      setError(COMPANY_REQUIRED_UPLOAD_TITLE);
+      return;
+    }
     setBusy(true);
     setError(null);
     setFolderNotice(null);
@@ -732,7 +774,7 @@ export default function ImportJobsPage() {
   }
 
   async function handleDeleteJob(id) {
-    if (!window.confirm("Eliminare il job e tutti i file associati?")) return;
+    if (!window.confirm("Annullare il caricamento? Elimina questo job e tutti i file associati. Non tocca l'archivio già in registro.")) return;
     setBusy(true);
     try {
       await apiService.deleteImportJob(id);
@@ -757,9 +799,9 @@ export default function ImportJobsPage() {
     <div className="import-jobs-page">
       <h1>Import batch PDF</h1>
       <p className="import-jobs-intro">
-        Flusso operativo: <strong>Azienda → tipo documento → PDF → estrazione → revisione → AI → qualifica nel registro</strong>.
-        Per i documenti di qualifica l&apos;azienda è obbligatoria prima del caricamento, così la qualifica nasce già nel fascicolo corretto e da subito consultabile per le risposte di copertura.
-        Norme e altri documenti possono restare senza azienda quando sono condivisi a livello studio.
+        Flusso operativo: <strong>Azienda cliente → tipo documento → file → estrazione → revisione → AI → registro</strong>.
+        Serve sempre un&apos;azienda sul job: Ambito «Tutto lo studio» o Patrimonio non basta.
+        Sbagli il carico? <strong>Annulla caricamento</strong> elimina il job e i file (non tocca l&apos;archivio già in registro).
       </p>
       {error && <p className="import-jobs-error">{error}</p>}
 
@@ -778,7 +820,7 @@ export default function ImportJobsPage() {
               value={newCompanyId}
               onChange={(e) => setNewCompanyId(e.target.value)}
             >
-              <option value="">Azienda cliente (obbligatoria per qualifiche)</option>
+              <option value="">Azienda cliente (obbligatoria)</option>
               {companies.map((c) => {
                 const companyId = getCompanyId(c);
                 return (
@@ -799,12 +841,18 @@ export default function ImportJobsPage() {
                 </option>
               ))}
             </select>
-            <button type="button" className="btn-primary" onClick={handleCreate} disabled={busy}>
+            <button
+              type="button"
+              className="btn-primary"
+              onClick={handleCreate}
+              disabled={busy || !isClientCompanyId(newCompanyId)}
+              title={!isClientCompanyId(newCompanyId) ? COMPANY_REQUIRED_UPLOAD_TITLE : ""}
+            >
               + Nuovo job
             </button>
-            {isQualificationDocType(docTypeHint) && !newCompanyId && (
+            {!isClientCompanyId(newCompanyId) && (
               <p className="import-jobs-field-hint">
-                Seleziona l&apos;azienda prima di creare un job per qualifiche.
+                {COMPANY_REQUIRED_UPLOAD_TITLE}
               </p>
             )}
           </div>
@@ -828,7 +876,7 @@ export default function ImportJobsPage() {
                   <button
                     type="button"
                     className="btn-del"
-                    title="Elimina"
+                    title="Annulla caricamento: elimina il job e i file"
                     onClick={() => handleDeleteJob(j.id)}
                     disabled={busy}
                   >
@@ -857,54 +905,86 @@ export default function ImportJobsPage() {
                   <> - azienda: {detail.job.company_name || `#${detail.job.company_id}`}</>
                 )}
               </p>
-              {isQualificationDocType(detail.job.document_type_hint) && !detail.job.company_id && (
+              {!isClientCompanyId(detail.job.company_id) && (
                 <p className="import-jobs-warning">
-                  Questo job è di qualifica ma non ha azienda associata: crea un nuovo job selezionando l&apos;azienda prima del caricamento.
+                  Questo job non ha un&apos;azienda cliente: carica, estrai e screening restano visibili ma bloccati.
+                  Crea un nuovo job scegliendo l&apos;azienda (non Tutto lo studio).
                 </p>
               )}
               <div className="import-jobs-actions">
-                <label className="btn-file">
+                <label
+                  className={isClientCompanyId(detail.job.company_id) ? "btn-file" : "btn-file is-disabled"}
+                  title={
+                    isClientCompanyId(detail.job.company_id)
+                      ? "Carica uno o più PDF"
+                      : COMPANY_REQUIRED_UPLOAD_TITLE
+                  }
+                >
                   Carica PDF
                   <input
                     type="file"
                     accept="application/pdf,.pdf"
                     multiple
                     onChange={handleFiles}
-                    disabled={busy || (isQualificationDocType(detail.job.document_type_hint) && !detail.job.company_id)}
+                    disabled={busy || !isClientCompanyId(detail.job.company_id)}
                   />
                 </label>
-                <label className="btn-file">
+                <label
+                  className={isClientCompanyId(detail.job.company_id) ? "btn-file" : "btn-file is-disabled"}
+                  title={
+                    isClientCompanyId(detail.job.company_id)
+                      ? "Carica una cartella (max 80 file)"
+                      : COMPANY_REQUIRED_UPLOAD_TITLE
+                  }
+                >
                   Carica cartella
                   <input
                     type="file"
                     multiple
                     ref={bindDirectoryPicker}
                     onChange={handleFiles}
-                    disabled={busy || (isQualificationDocType(detail.job.document_type_hint) && !detail.job.company_id)}
+                    disabled={busy || !isClientCompanyId(detail.job.company_id)}
                   />
                 </label>
-                <button type="button" className="btn-secondary" onClick={handleProcess} disabled={busy}>
+                <button
+                  type="button"
+                  className="btn-secondary"
+                  onClick={handleProcess}
+                  disabled={busy || !isClientCompanyId(detail.job.company_id)}
+                  title={
+                    isClientCompanyId(detail.job.company_id)
+                      ? "Estrae il testo da PDF, Word ed Excel"
+                      : COMPANY_REQUIRED_UPLOAD_TITLE
+                  }
+                >
                   Estrai testo
                 </button>
                 <button
                   type="button"
                   className="btn-primary"
                   onClick={handleScreenAndPlace}
-                  disabled={
-                    busy
-                    || (isQualificationDocType(detail.job.document_type_hint) && !detail.job.company_id)
-                  }
+                  disabled={busy || !isClientCompanyId(detail.job.company_id)}
                   title={
-                    detail.job.company_id
+                    isClientCompanyId(detail.job.company_id)
                       ? "Classifica i file e li posa nello scaffale se il tipo è chiaro"
-                      : "Senza azienda classifica comunque; la posa in scaffale richiede l'azienda"
+                      : COMPANY_REQUIRED_UPLOAD_TITLE
                   }
                 >
                   Screening e posa
                 </button>
+                <button
+                  type="button"
+                  className="btn-secondary"
+                  onClick={() => handleDeleteJob(detail.job.id)}
+                  disabled={busy}
+                  title="Elimina questo job e i file caricati. Non tocca l'archivio già in registro."
+                >
+                  Annulla caricamento
+                </button>
               </div>
               <p className="import-jobs-folder-hint">
                 La cartella prende tutti i file (Word, Excel, disegni, PDF, …) e tiene i nomi delle sottocartelle.
+                Massimo {MAX_IMPORT_JOB_FILES} file per job: oltre il tetto i rimanenti non partono.
                 Dal testo di PDF, Word ed Excel si leggono prima 30 righe, poi altre se il tipo non è chiaro.
                 Disegni e foto si classificano da nome e cartella (senza OCR).
               </p>
