@@ -76,13 +76,14 @@ Destinazione (non questa slice): un solo wizard Ambito → albero → carico →
 
 ## Esito L1 (21/08/2026)
 
-- SHA: `6e4f3199` (`6e4f31999bd745b74c5f16ef145ce012594d2cb6`)
-- Jest BE: `normIngest.service.test.js` + `ingestStaging.service.test.js` + `normUpload.controller.test.js` = **32 verdi**
-- Vitest FE: `normUploadButton.test.jsx` + `normUploadResults.test.js` = **19 verdi**
+- SHA feature: `6e4f3199` (`6e4f31999bd745b74c5f16ef145ce012594d2cb6`)
+- SHA review #524: `cc419377` (`cc419377960ead1a56d0701734c8fb7e539f1aaf`) + commit docs SHA sotto
+- Jest BE: `normIngest.service.test.js` + `ingestStaging.service.test.js` + `normUpload.controller.test.js` = **38 verdi**
+- Vitest FE: `normUploadButton.test.jsx` + `normUploadResults.test.js` = **23 verdi**
 - `cd app && npm run build` OK
 - **Non pronta**: niente Bugbot, niente merge. Deploy VPS di IA-12 **dopo merge**. Cloud non mergia.
 
-## Review #524 (rilievi — in corso)
+## Review #524 (rilievi chiusi, stessa PR)
 
 - RBAC: `assertMutatingAllowed` su `folder.company_id` dopo `assertFolderIsNorms`; stesso check su `doc.company_id` in `applyNormToExistingDocument` (+ `parent_id` se `expectedFolderId`).
 - Batch: 200 (non 500) se `results` ha solo duplicati/errori; FE non butta l'array.
