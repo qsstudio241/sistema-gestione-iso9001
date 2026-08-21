@@ -105,7 +105,7 @@ async function createStagingRecord(params) {
     return insertResult.recordset[0].id;
 }
 
-async function confirmStaging(stagingId, organizationId, userId, fieldsOverride = {}) {
+async function confirmStaging(stagingId, organizationId, userId, fieldsOverride = {}, user = null) {
     const row = await getStagingById(stagingId, organizationId);
     if (!row) {
         const err = new Error('Staging non trovato');
@@ -184,9 +184,11 @@ async function confirmStaging(stagingId, organizationId, userId, fieldsOverride 
             const targetDocId = parseInt(meta._target_document_id, 10);
             const normOpts = {
                 userId,
+                user,
                 filePath: row.storage_path,
                 fileName: row.original_name,
                 parentFolderId: meta._parent_folder_id ?? null,
+                expectedFolderId: meta._parent_folder_id ?? null,
                 extractedText: meta._extracted_text ?? null,
                 textQuality: meta._text_quality ?? null,
                 mimeType: row.mime_type,

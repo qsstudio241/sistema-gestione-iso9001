@@ -123,6 +123,7 @@ async function confirmStagingHandler(req, res) {
             req.user.organization_id,
             req.user.user_id,
             req.body?.fields || {},
+            req.user,
         );
 
         if (result.status === 'duplicate') {
@@ -136,9 +137,12 @@ async function confirmStagingHandler(req, res) {
         res.json({ success: true, ...result });
     } catch (error) {
         logger.error('confirmStaging', { error: error.message });
-        const status = error.code === 'VALIDATION_ERROR' ? 400
-            : error.code === 'INVALID_STATUS' ? 409
-                : 500;
+        const status = error.status
+            || (error.code === 'VALIDATION_ERROR' ? 400
+                : error.code === 'INVALID_STATUS' ? 409
+                    : error.code === 'AUTH_FORBIDDEN' ? 403
+                        : error.code === 'NOT_FOUND' ? 404
+                            : 500);
         res.status(status).json({ error: error.message, code: error.code || 'STAGING_CONFIRM_ERROR' });
     }
 }
