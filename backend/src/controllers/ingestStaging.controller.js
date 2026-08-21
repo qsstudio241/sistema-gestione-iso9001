@@ -138,7 +138,7 @@ async function confirmStagingHandler(req, res) {
     } catch (error) {
         logger.error('confirmStaging', { error: error.message });
         const status = error.status
-            || (error.code === 'VALIDATION_ERROR' ? 400
+            || (error.code === 'VALIDATION_ERROR' || error.code === 'DOC_NOT_IN_FOLDER' ? 400
                 : error.code === 'INVALID_STATUS' ? 409
                     : error.code === 'AUTH_FORBIDDEN' ? 403
                         : error.code === 'NOT_FOUND' ? 404

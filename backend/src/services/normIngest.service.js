@@ -511,6 +511,7 @@ async function applyNormToExistingDocument(documentId, fields, organizationId, o
     if (Number.isFinite(expected) && parseInt(doc.parent_id, 10) !== expected) {
       const err = new Error('Il documento non appartiene alla cartella NORME E LEGGI selezionata.');
       err.code = 'DOC_NOT_IN_FOLDER';
+      err.status = 400;
       throw err;
     }
   }
