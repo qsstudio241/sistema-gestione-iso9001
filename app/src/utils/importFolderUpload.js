@@ -1,9 +1,13 @@
 /** Limite allineato a multer in importJobs.routes.js */
 export const MAX_IMPORT_JOB_FILES = 80;
 
-/** Title / messaggio gate: upload e screening richiedono un'azienda cliente sul job. */
+/** Title / messaggio gate: create e upload richiedono un'azienda cliente in Ambito. */
 export const COMPANY_REQUIRED_UPLOAD_TITLE =
-  "Scegli un'azienda sul job (non Tutto lo studio)";
+  "Scegli un'azienda cliente in Ambito (in alto). Con Tutto lo studio o Patrimonio non si crea un job e non si caricano file.";
+
+/** Upload su job esistente: Ambito deve coincidere con l'azienda del job. */
+export const AMBITO_JOB_MISMATCH_TITLE =
+  "Ambito diverso dall'azienda di questo job";
 
 /**
  * True solo per un id azienda cliente numerico.
@@ -16,6 +20,17 @@ export function isClientCompanyId(value) {
   if (String(value) === "studio") return false;
   const n = parseInt(value, 10);
   return Number.isFinite(n) && n > 0 && String(n) === String(value).trim();
+}
+
+/**
+ * Ambito header e company del job sono la stessa azienda cliente.
+ * @param {unknown} scopeCompanyId
+ * @param {unknown} jobCompanyId
+ * @returns {boolean}
+ */
+export function scopeMatchesJobCompany(scopeCompanyId, jobCompanyId) {
+  if (!isClientCompanyId(scopeCompanyId) || !isClientCompanyId(jobCompanyId)) return false;
+  return String(parseInt(scopeCompanyId, 10)) === String(parseInt(jobCompanyId, 10));
 }
 
 /**

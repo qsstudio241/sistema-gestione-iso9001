@@ -8,6 +8,8 @@ import {
   bindDirectoryPicker,
   isClientCompanyId,
   resolvePrefillCompanyId,
+  scopeMatchesJobCompany,
+  AMBITO_JOB_MISMATCH_TITLE,
 } from "../utils/importFolderUpload";
 
 describe("importFolderUpload", () => {
@@ -47,6 +49,17 @@ describe("importFolderUpload", () => {
     expect(isClientCompanyId("48")).toBe(true);
     expect(isClientCompanyId(48)).toBe(true);
     expect(COMPANY_REQUIRED_UPLOAD_TITLE).toMatch(/Tutto lo studio/);
+    expect(COMPANY_REQUIRED_UPLOAD_TITLE).toMatch(/Ambito/);
+    expect(AMBITO_JOB_MISMATCH_TITLE).toMatch(/Ambito diverso/);
+  });
+
+  it("scopeMatchesJobCompany solo se Ambito e job sono la stessa azienda cliente", () => {
+    expect(scopeMatchesJobCompany("11", 11)).toBe(true);
+    expect(scopeMatchesJobCompany(11, "11")).toBe(true);
+    expect(scopeMatchesJobCompany("11", 22)).toBe(false);
+    expect(scopeMatchesJobCompany("", 11)).toBe(false);
+    expect(scopeMatchesJobCompany("studio", 11)).toBe(false);
+    expect(scopeMatchesJobCompany("11", null)).toBe(false);
   });
 
   it("resolvePrefillCompanyId precompila solo un'azienda cliente", () => {

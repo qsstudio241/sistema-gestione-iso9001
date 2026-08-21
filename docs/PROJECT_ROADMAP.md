@@ -8,7 +8,7 @@
 
 > **Risposta standard a «stato di avanzamento del progetto e priorità da affrontare»**: sintetizzare da questa sezione (moduli maturi + sessione più recente + tabella priorità sotto), **non** dal banner storico più sotto (superato, tenuto solo per traccia) né dall'archivio marzo 2026 [`docs/archive/PROJECT_CONTEXT_STATO_FUNZIONALITA_2026-03.md`](archive/PROJECT_CONTEXT_STATO_FUNZIONALITA_2026-03.md). **Aggiornare questa sezione a fine sessione** se emergono nuove priorità o se una priorità elencata viene chiusa (stesso principio delle "Lezioni apprese" in [GUIDA_CONSOLIDATA.md](GUIDA_CONSOLIDATA.md) — sintesi qui, dettaglio linkato).
 
-**Ultimo aggiornamento di questa sezione**: 21/08/2026 (IA-5b coda da completare; piano cartella #518; Import richiede azienda #514 + deploy; ingest cartella #511; IA-1–IA-5 #506/#507/#509).
+**Ultimo aggiornamento di questa sezione**: 21/08/2026 (Import solo Ambito; IA-5b #519; piano cartella #518; Import richiede azienda #514 + deploy; ingest cartella #511; IA-1–IA-5 #506/#507/#509).
 
 ### Moduli maturi (in produzione, uso quotidiano dai clienti Camellini/Mason)
 
@@ -16,7 +16,9 @@ Audit multi-standard (9001/14001/45001) · Non Conformità (workflow ISO 10.2 co
 
 ### Sessione più recente (21/08/2026)
 
-**IA-5b coda «da completare» (21/08, PR aperta)** — dopo un carico grosso i file incompleti (tipo incerto, cartella assente, campi vuoti, bozza AI) hanno una lista con badge in **Documenti**, stesso modello Inbox/Qualifiche. Click sul badge → Catalogo filtrato (`?incomplete=1`). Da Import, dopo Screening: «Apri coda da completare». Screening non è un cancello. Brief [`DEPUTYTASK.md`](agent-tasks/DEPUTYTASK.md) **APERTO**. Branch `cursor/ingest-ia5b-coda-d492`. Deploy VPS dopo merge (BE `document.controller`).
+**Import: un solo controllo azienda (21/08, PR aperta)** — niente tendina «Azienda cliente» sul job. Ambito header è la `company_id` di create/upload/piano. Tutto lo studio / Patrimonio: pulsanti visibili ma `disabled`. Upload su job esistente solo se Ambito === `job.company_id`. Brief [`DEPUTYTASK.md`](agent-tasks/DEPUTYTASK.md) **APERTO**. Branch `cursor/import-ambito-only-d492`.
+
+**IA-5b coda «da completare» (21/08, mergiata #519 + deploy)** — dopo un carico grosso i file incompleti (tipo incerto, cartella assente, campi vuoti, bozza AI) hanno una lista con badge in **Documenti**, stesso modello Inbox/Qualifiche. Click sul badge → Catalogo filtrato (`?incomplete=1`). Da Import, dopo Screening: «Apri coda da completare». Screening non è un cancello. [PR #519](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/519).
 
 **Piano cartella ancorato alla company (21/08, mergiata #518)** — `company_id` catturato al picker, non riletto dal job selezionato al confirm. [PR #518](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/518).
 
