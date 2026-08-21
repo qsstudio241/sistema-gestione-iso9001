@@ -210,6 +210,144 @@ describe('importJobs.controller screenAndPlace', () => {
         });
         expect(query).toHaveBeenCalledTimes(1);
     });
+
+    function mockScreenAndPlaceQueries({ folder, hint, originalName, alreadyCommitted }) {
+        query.mockImplementation(async (sql, params) => {
+            if (sql.includes('FROM import_jobs') && sql.includes('document_type_hint')) {
+                return { recordset: [{ id: 55, company_id: 8, document_type_hint: hint }] };
+            }
+            if (sql.includes('FROM import_job_files') && sql.includes("status IN")) {
+                return {
+                    recordset: [{
+                        id: 9,
+                        original_name: originalName,
+                        extracted_text: '',
+                        status: 'uploaded',
+                        ai_extraction_json: null,
+                        registry_document_id: alreadyCommitted ? 777 : null,
+                    }],
+                };
+            }
+            if (sql.includes('FROM import_jobs') && sql.includes('j.company_id')) {
+                return { recordset: [{ id: 55, company_id: 8 }] };
+            }
+            if (sql.includes('FROM import_job_files WHERE id')) {
+                return {
+                    recordset: [{
+                        id: 9,
+                        status: 'uploaded',
+                        original_name: originalName,
+                        storage_path: null,
+                        mime_type: 'application/pdf',
+                        file_size: 100,
+                        ai_extraction_json: null,
+                        registry_document_id: null,
+                        extracted_text: '',
+                        confidence_score: 40,
+                    }],
+                };
+            }
+            if (sql.includes('FROM companies c')) {
+                return { recordset: [{ id: 8 }] };
+            }
+            if (sql.includes('folder_code')) {
+                expect(params.folderCode).toBe('2.3');
+                expect(params.companyId).toBe(8);
+                expect(params.orgId).toBe(1002);
+                return { recordset: folder ? [folder] : [] };
+            }
+            if (sql.includes('INSERT INTO document_registry')) {
+                return { recordset: [{ id: 910 }] };
+            }
+            if (sql.includes('SELECT parent_id')) {
+                return { recordset: [{ parent_id: params.id === 910 ? 23 : null }] };
+            }
+            return { recordset: [] };
+        });
+    }
+
+    it('norma + cartella 2.3 azienda → placed e parent_id sulla cartella', async () => {
+        mockScreenAndPlaceQueries({
+            folder: { id: 23, company_id: 8 },
+            hint: null,
+            originalName: 'ISO 9001.pdf',
+        });
+
+        const res = makeRes();
+        await screenAndPlace({
+            user: { organization_id: 1002, user_id: 12 },
+            params: { id: '55' },
+        }, res);
+
+        expect(res.json).toHaveBeenCalledWith(expect.objectContaining({
+            success: true,
+            data: expect.objectContaining({ screened: 1, placed: 1 }),
+        }));
+        const insert = query.mock.calls.find(([sql]) => sql.includes('INSERT INTO document_registry'));
+        expect(insert[1].parent_id).toBe(23);
+        expect(insert[1].doc_type).toBe('norma');
+        expect(insert[1].company_id).toBe(8);
+    });
+
+    it('hint norma (medium) posa in 2.3 se l’albero c’è', async () => {
+        mockScreenAndPlaceQueries({
+            folder: { id: 23, company_id: 8 },
+            hint: 'norma',
+            originalName: 'scan-senza-codice.pdf',
+        });
+
+        const res = makeRes();
+        await screenAndPlace({
+            user: { organization_id: 1002, user_id: 12 },
+            params: { id: '55' },
+        }, res);
+
+        const payload = res.json.mock.calls[0][0];
+        expect(payload.data.placed).toBe(1);
+        const insert = query.mock.calls.find(([sql]) => sql.includes('INSERT INTO document_registry'));
+        expect(insert[1].parent_id).toBe(23);
+        expect(insert[1].doc_type).toBe('norma');
+    });
+
+    it('norma senza albero → placed senza parent_id (coda Cartella mancante)', async () => {
+        mockScreenAndPlaceQueries({
+            folder: null,
+            hint: 'norma',
+            originalName: 'ISO 15614-1.pdf',
+        });
+
+        const res = makeRes();
+        await screenAndPlace({
+            user: { organization_id: 1002, user_id: 12 },
+            params: { id: '55' },
+        }, res);
+
+        const payload = res.json.mock.calls[0][0];
+        expect(payload.data.placed).toBe(1);
+        const insert = query.mock.calls.find(([sql]) => sql.includes('INSERT INTO document_registry'));
+        expect(insert[1].parent_id).toBeNull();
+    });
+
+    it('già in registro → skipped, niente duplicato', async () => {
+        mockScreenAndPlaceQueries({
+            folder: { id: 23, company_id: 8 },
+            hint: 'norma',
+            originalName: 'ISO 9001.pdf',
+            alreadyCommitted: true,
+        });
+
+        const res = makeRes();
+        await screenAndPlace({
+            user: { organization_id: 1002, user_id: 12 },
+            params: { id: '55' },
+        }, res);
+
+        const payload = res.json.mock.calls[0][0];
+        expect(payload.data.placed).toBe(0);
+        expect(payload.data.results[0].skipped).toBe(true);
+        const insert = query.mock.calls.find(([sql]) => sql.includes('INSERT INTO document_registry'));
+        expect(insert).toBeUndefined();
+    });
 });
 
 describe('importJobs.controller commitToQualification', () => {
@@ -635,10 +773,13 @@ describe('importJobs.controller commitToRegistry', () => {
         expect(insert).toBeUndefined();
     });
 
-    it('norma senza cartella 2.3 resta NORM_FOLDER_NOT_FOUND', async () => {
+    it('norma senza cartella 2.3 → parent_id null (coda Cartella mancante), non 404', async () => {
         query
             .mockResolvedValueOnce({ recordset: [{ id: 55, company_id: 8 }] })
             .mockResolvedValueOnce({ recordset: [reviewedFileRow()] })
+            .mockResolvedValueOnce({ recordset: [{ id: 8 }] })
+            .mockResolvedValueOnce({ recordset: [] })
+            .mockResolvedValueOnce({ recordset: [{ id: 904 }] })
             .mockResolvedValueOnce({ recordset: [] });
 
         const res = makeRes();
@@ -649,10 +790,69 @@ describe('importJobs.controller commitToRegistry', () => {
             type_specific_data: { standard_code: 'ISO 9001', issuing_body: 'ISO', edition_year: 2015 },
         }), res);
 
-        expect(res.status).toHaveBeenCalledWith(404);
-        expect(res.json).toHaveBeenCalledWith(expect.objectContaining({
-            code: 'NORM_FOLDER_NOT_FOUND',
+        expect(res.status).toHaveBeenCalledWith(201);
+        const insert = query.mock.calls.find(([sql]) => sql.includes('INSERT INTO document_registry'));
+        expect(insert[1].parent_id).toBeNull();
+        expect(insert[1].doc_type).toBe('norma');
+        const folderLookup = query.mock.calls.find(([sql, p]) => sql.includes('folder_code') && p?.folderCode === '2.3');
+        expect(folderLookup[1].companyId).toBe(8);
+        expect(folderLookup[1].orgId).toBe(1002);
+    });
+
+    it('norma con cartella 2.3 dell’azienda imposta parent_id', async () => {
+        query
+            .mockResolvedValueOnce({ recordset: [{ id: 55, company_id: 8 }] })
+            .mockResolvedValueOnce({ recordset: [reviewedFileRow()] })
+            .mockResolvedValueOnce({ recordset: [{ id: 8 }] })
+            .mockResolvedValueOnce({ recordset: [{ id: 23, company_id: 8 }] })
+            .mockResolvedValueOnce({ recordset: [{ id: 905 }] })
+            .mockResolvedValueOnce({ recordset: [{ parent_id: 23 }] })
+            .mockResolvedValueOnce({ recordset: [{ parent_id: null }] })
+            .mockResolvedValueOnce({ recordset: [] })
+            .mockResolvedValueOnce({ recordset: [] })
+            .mockResolvedValueOnce({ recordset: [] });
+
+        const res = makeRes();
+        await commitToRegistry(makeReq({
+            company_id: 8,
+            doc_type: 'norma',
+            title: 'ISO 9001',
+            type_specific_data: { standard_code: 'ISO 9001', issuing_body: 'ISO', edition_year: 2015 },
+        }), res);
+
+        expect(res.status).toHaveBeenCalledWith(201);
+        const insert = query.mock.calls.find(([sql]) => sql.includes('INSERT INTO document_registry'));
+        expect(insert[1].parent_id).toBe(23);
+        expect(insert[1].company_id).toBe(8);
+        const folderLookup = query.mock.calls.find(([sql, p]) => sql.includes('folder_code') && p?.folderCode === '2.3');
+        expect(folderLookup[1]).toEqual(expect.objectContaining({
+            orgId: 1002,
+            folderCode: '2.3',
+            companyId: 8,
         }));
+    });
+
+    it('norma senza standard_code posa comunque (bozza, coda campi)', async () => {
+        query
+            .mockResolvedValueOnce({ recordset: [{ id: 55, company_id: 8 }] })
+            .mockResolvedValueOnce({ recordset: [{ ...reviewedFileRow(), original_name: 'scan-norma.pdf' }] })
+            .mockResolvedValueOnce({ recordset: [{ id: 8 }] })
+            .mockResolvedValueOnce({ recordset: [{ id: 23, company_id: 8 }] })
+            .mockResolvedValueOnce({ recordset: [{ id: 906 }] })
+            .mockResolvedValueOnce({ recordset: [{ parent_id: 23 }] })
+            .mockResolvedValueOnce({ recordset: [{ parent_id: null }] })
+            .mockResolvedValueOnce({ recordset: [] })
+            .mockResolvedValueOnce({ recordset: [] });
+
+        const res = makeRes();
+        await commitToRegistry(makeReq({ company_id: 8, doc_type: 'norma', title: 'Scan norma' }), res);
+
+        expect(res.status).toHaveBeenCalledWith(201);
+        const insert = query.mock.calls.find(([sql]) => sql.includes('INSERT INTO document_registry'));
+        expect(insert[1].parent_id).toBe(23);
+        expect(insert[1].type_specific_data).toBeNull();
+        const normSrc = query.mock.calls.find(([sql]) => sql.includes('norm_document_sources'));
+        expect(normSrc).toBeUndefined();
     });
 
     it('tipo mappato senza company_id → 400 COMPANY_REQUIRED_FOR_FOLDER', async () => {

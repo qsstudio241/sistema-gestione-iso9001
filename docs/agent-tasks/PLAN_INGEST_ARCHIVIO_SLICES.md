@@ -2,7 +2,8 @@
 
 > **Destinazione**: screening in background da cartella radice. Lo screening sceglie prima la **stanza** (studio / azienda / commessa), poi lo **scaffale**. Un file = una copia, visibile da due viste se è di commessa. Specialisti già in repo lavorano in parallelo. Primo verticale: documenti di commessa → stanza Riesame + cassetto azienda `2.2`. Review = coda incompleti. Learning = ADR-017.
 > **Spec già in repo (non rifare)**: [`MODULO_INGEST_AI_COMMESSE_SCOPO_E_ROADMAP.md`](../specs/MODULO_INGEST_AI_COMMESSE_SCOPO_E_ROADMAP.md) (analisi sul caso, slice #5–#7 già fatte) · [`MINI_SPEC_RIESAME_REQUISITI_CONTRATTO.md`](../specs/MINI_SPEC_RIESAME_REQUISITI_CONTRATTO.md) · albero in mig. 059/076 · ADR-010 HITL
-> **Brief attivo**: [`DEPUTYTASK.md`](DEPUTYTASK.md) — **APERTO** **IA-5b** (coda da completare). Gate azienda [#514](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/514) + cartella/screening [#511](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/511) + piano company [#518](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/518) chiusi.
+> **Brief attivo**: [`DEPUTYTASK.md`](DEPUTYTASK.md) — **APERTO** **IA-11** (posa norme in NORME E LEGGI se l’albero c’è). IA-1–IA-5b + Import Ambito [#521](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/521) chiusi.
+> **Destinazione (21/08, committente)**: un solo flusso **Ambito → (albero se serve) → carico/screening → file nella cartella giusta → ingest norme dalla stessa famiglia**. Non tre moduli scollegati. Ingest vero = **Carica norme (batch)** in NORME E LEGGI; Modifica non lo lancia. Albero in creazione azienda = slice futura, non IA-11.
 > **Mappa creata**: 20/08/2026 (Lead wayfinder A). Codice da IA-1 in poi.
 
 ---
@@ -206,13 +207,17 @@ IA-1 tocca **solo scaffali della stanza azienda** (chiudere il buco: procedura �
 | **IA-4** | Sorgente: cartella radice + path relativo (in `original_name`, no colonna) ✅ | picker `webkitdirectory`, upload albero, path sanitizzato; limite 80; **non** ZIP; screening = IA-5 | IA-1 | AFK |
 | **IA-5** | Screening veloce + posa (pulsante, path+nome+testo) ✅ | `importScreening` + `POST …/screen-and-place`; auto-posa solo high+azienda+non-qualifica; coda incompleti = IA-5b. Campioni 30→90→200 righe (#511) | IA-1, IA-4 | AFK |
 | **IA-5b** | Coda admin «da completare» ✅ | lista filtrata incompleti (tipo/cartella/campi), badge come profilo/qualifiche; non blocca lo screening. `GET /documents?incomplete=1` + `stats.da_completare`; Documenti badge; link da Import dopo Screening | IA-5 | AFK |
-| **IA-6** | Ponte 2.2 → caso Riesame (batch) | riuso `import-from-job` su N file capitolato dello stesso job/cartella relativa | IA-2, IA-5 | AFK |
+| **IA-11** | Posa norme in **NORME E LEGGI** se l’albero azienda c’è già | screening `norma` / hint `norma` → `parent_id` sulla cartella `2.3` di quella `company_id` (`resolveFolderByCode`); se l’albero manca → coda «Cartella mancante». Niente duplicati. **Non** init albero, **non** ingest, **non** unificare wizard | IA-5 | AFK |
+| **IA-12** | Ingest famiglia: **Carica norme (batch)** sui file già in 2.3 | `normIngest` dalla stessa cartella / stessa famiglia; **non** da Modifica documento | IA-11 | AFK |
+| **IA-13** | Albero in creazione azienda | proporre init struttura (2.3 e scaffali) alla create company; oggi si fa a mano in Documenti | — | AFK |
+| **IA-14** | Un solo wizard Ambito → carico → screening → posa → ingest | unificare Import e Carica norme; niente secondo modulo | IA-11, IA-12 | AFK |
+| **IA-6** | Ponte 2.2 → caso Riesame (batch) — **fuori scope** di questo flusso | riuso `import-from-job` su N file capitolato dello stesso job/cartella relativa | IA-2, IA-5 | AFK |
 | **IA-7** | Dopo il ponte: lanciare analisi già esistente | `analyze-documents` / `analyzeRequirements` persistito — **solo hook**, no nuovo motore | IA-6 | AFK |
 | **IA-8** | OCR sull’import job (riuso S1a) | `processJob` / extract: se testo sotto soglia → `ocrExtractor` | IA-1 (stesso job, dopo o in parallelo a IA-2/3 se file disgiunti) | AFK |
 | **IA-9** | Candidati evidenza SAL dai doc importati | non scrivere `evidence_document_ids`; allinea a SAL S2a/S2b | IA-5 + SAL S2a | AFK |
 | **IA-10** | Scadenze da `expiry_date` (norme/cert/procedure) | niente dump in cartella `99`; hook scadenzario esistente | IA-5 | AFK |
 
-**Ordine**: IA-1 → IA-2 (tipo capitolato) e IA-3 (preview un file) → IA-4 (picker cartella) → IA-5 (screening+alloca) → IA-5b (coda) → IA-6 → IA-7. IA-8 (OCR) può entrare in IA-5 se lo screening vede PDF senza testo. IA-9/10 dopo che il registro ha massa.
+**Ordine**: IA-1 → IA-2 (tipo capitolato) e IA-3 (preview un file) → IA-4 (picker cartella) → IA-5 (screening+alloca) → IA-5b (coda) → **IA-11 (posa 2.3)** → IA-12 (ingest famiglia) → IA-13 (albero in create) / IA-14 (wizard unico). IA-6 Riesame, OCR nuovo (IA-8), tetto 80, auto-merge: **fuori** da questo flusso. IA-9/10 dopo che il registro ha massa.
 
 **Parallelo**: non due brief aperti su `importJobs.controller.js`. IA-3 (solo FE) può stare in `DEPUTYTASK1.md` **dopo** merge IA-1.
 
@@ -286,3 +291,20 @@ Non sono agenti Cursor. Sono **destinazioni** già in codice che il router chiam
 - `ingestStaging.controller.js`, Material Compliance, SAL UI
 - GUIDA, roadmap § Stato attuale, `PROJECT_CONTEXT.md`
 - migrazioni SQL
+
+---
+
+## Dettaglio slice IA-11 (posa in cartella — flusso unico)
+
+Dolore 21/08: Screening posa le norme nello scaffale **senza** cartella (albero azienda vuoto) anche se l’operatore ha già inizializzato **NORME E LEGGI**. `resolveNormFolderId` non filtra per `company_id`.
+
+**Dopo IA-11:** se lo screening dice `norma` (o hint job `norma`) **e** esiste la cartella `2.3` di quella `company_id`, il file ha `parent_id` su quella cartella. Se l’albero manca → riga in registro senza cartella (coda «Cartella mancante»).
+
+**DoD**
+
+- [x] Predicato `isNormaPlacementType` + `parentIdForExistingFolder`
+- [x] `commitToRegistry` usa `resolveFolderByCode(org, '2.3', company_id)`, non la prima 2.3 dell’org
+- [x] Cartella assente → `parent_id` null, non 404
+- [x] `screenAndPlace` tenta la posa anche con hint `norma` (medium)
+- [x] Test L1 predicato + commit + screenAndPlace (46 verdi)
+- [x] Niente init albero, niente pulsante ingest in Modifica, niente wizard unico
