@@ -456,6 +456,100 @@ describe("ImportJobsPage — piano di carico cartella", () => {
     expect(createsAfterSwitch.every((c) => c[0].company_id !== 11)).toBe(true);
   });
 
+  it("cambio Ambito a 22: il piano sparisce e confirm non crea job", async () => {
+    const user = userEvent.setup();
+    const { rerender } = render(<ImportJobsPage />);
+    await waitFor(() => expect(screen.getByText("Job Mason")).toBeInTheDocument());
+    await user.click(screen.getByText("Job Mason"));
+    await waitFor(() => expect(screen.getByText("Job #8")).toBeInTheDocument());
+    pickFolder([relFile("Documenti/Capitolati/rfq.pdf")]);
+    expect(await screen.findByText("Piano di carico — Documenti")).toBeInTheDocument();
+
+    scopeState.companyId = "22";
+    scopeState.scopeCompanyName = "Camellini";
+    rerender(<ImportJobsPage />);
+
+    await waitFor(() => {
+      expect(screen.queryByText(/Piano di carico/)).not.toBeInTheDocument();
+    });
+    expect(screen.queryByRole("button", { name: "Carica i lotti selezionati" })).not.toBeInTheDocument();
+    expect(apiService.createImportJob).not.toHaveBeenCalled();
+    expect(apiService.uploadImportJobFiles).not.toHaveBeenCalled();
+  });
+
+  it("cambio Ambito a Tutto lo studio: il piano sparisce e confirm non crea job", async () => {
+    const user = userEvent.setup();
+    const { rerender } = render(<ImportJobsPage />);
+    await waitFor(() => expect(screen.getByText("Job Mason")).toBeInTheDocument());
+    await user.click(screen.getByText("Job Mason"));
+    await waitFor(() => expect(screen.getByText("Job #8")).toBeInTheDocument());
+    pickFolder([relFile("Documenti/Capitolati/rfq.pdf")]);
+    expect(await screen.findByText("Piano di carico — Documenti")).toBeInTheDocument();
+
+    scopeState.companyId = "";
+    scopeState.isStudioWide = true;
+    scopeState.companyScoped = false;
+    scopeState.scopeCompanyName = "Tutto lo studio";
+    rerender(<ImportJobsPage />);
+
+    await waitFor(() => {
+      expect(screen.queryByText(/Piano di carico/)).not.toBeInTheDocument();
+    });
+    expect(screen.queryByRole("button", { name: "Carica i lotti selezionati" })).not.toBeInTheDocument();
+    expect(apiService.createImportJob).not.toHaveBeenCalled();
+  });
+
+  it("confirm con Ambito ancora 11: i lotti usano company_id 11", async () => {
+    const user = await openMasonJob();
+    pickFolder([relFile("Documenti/Capitolati/rfq.pdf")]);
+    await screen.findByText("Piano di carico — Documenti");
+    const confirmBtn = screen.getByRole("button", { name: "Carica i lotti selezionati" });
+    expect(confirmBtn).not.toBeDisabled();
+    await user.click(confirmBtn);
+    await waitFor(() => expect(apiService.createImportJob).toHaveBeenCalled());
+    expect(apiService.createImportJob.mock.calls[0][0].company_id).toBe(11);
+    expect(apiService.uploadImportJobFiles).toHaveBeenCalled();
+  });
+
+  it("cambio Ambito durante i lotti: non azzera il piano e i job restano company 11", async () => {
+    let releaseFirst;
+    apiService.uploadImportJobFiles
+      .mockImplementationOnce(
+        () =>
+          new Promise((resolve) => {
+            releaseFirst = () => resolve({ data: {} });
+          })
+      )
+      .mockResolvedValue({ data: {} });
+
+    const user = userEvent.setup();
+    const { rerender } = render(<ImportJobsPage />);
+    await waitFor(() => expect(screen.getByText("Job Mason")).toBeInTheDocument());
+    await user.click(screen.getByText("Job Mason"));
+    await waitFor(() => expect(screen.getByText("Job #8")).toBeInTheDocument());
+    pickFolder([
+      relFile("Documenti/Capitolati/rfq.pdf"),
+      relFile("Documenti/Scan/pagina.jpg"),
+    ]);
+    await screen.findByText("Piano di carico — Documenti");
+    await user.click(screen.getByRole("button", { name: "Carica i lotti selezionati" }));
+    expect(await screen.findByText(/Lotto 1\/2 — Capitolati/)).toBeInTheDocument();
+
+    scopeState.companyId = "22";
+    scopeState.scopeCompanyName = "Camellini";
+    rerender(<ImportJobsPage />);
+
+    expect(screen.getByText(/Piano di carico/)).toBeInTheDocument();
+    expect(screen.getByText(/Lotto 1\/2 — Capitolati/)).toBeInTheDocument();
+
+    releaseFirst();
+    await waitFor(() => {
+      expect(apiService.createImportJob.mock.calls.length).toBeGreaterThanOrEqual(1);
+    });
+    expect(apiService.createImportJob.mock.calls.every((c) => c[0].company_id === 11)).toBe(true);
+    expect(apiService.createImportJob.mock.calls.every((c) => c[0].company_id !== 22)).toBe(true);
+  });
+
   it("Annulla durante l'upload ferma i lotti successivi", async () => {
     let releaseFirst;
     apiService.uploadImportJobFiles

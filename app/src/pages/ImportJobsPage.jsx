@@ -322,10 +322,12 @@ function ImportFolderPlanPanel({
   onConfirm,
   onCancelPlan,
   onStopLots,
+  confirmAllowed = true,
+  confirmGateTitle = "",
 }) {
   const lots = buildUploadLots(plan, selectedKeys);
   const selectedCount = plan.folders.filter((f) => selectedKeys.has(f.key)).length;
-  const canConfirm = selectedCount > 0 && !busy && !upload;
+  const canConfirm = selectedCount > 0 && !busy && !upload && confirmAllowed;
   const uploading = busy && !!upload && !upload.cancelled;
 
   return (
@@ -392,11 +394,13 @@ function ImportFolderPlanPanel({
           onClick={onConfirm}
           disabled={!canConfirm}
           title={
-            selectedCount === 0
-              ? "Seleziona almeno una cartella"
-              : uploading
-                ? "Caricamento in corso"
-                : "Carica i lotti delle cartelle spuntate, 80 file per job"
+            !confirmAllowed
+              ? confirmGateTitle
+              : selectedCount === 0
+                ? "Seleziona almeno una cartella"
+                : uploading
+                  ? "Caricamento in corso"
+                  : "Carica i lotti delle cartelle spuntate, 80 file per job"
           }
         >
           Carica i lotti selezionati
@@ -537,6 +541,19 @@ export default function ImportJobsPage() {
     setFolderPlanCompanyId(null);
     setFolderUpload(null);
   }, [selectedId]);
+
+  // Piano orfano: al cambio Ambito il piano catturato non vale più (azienda A vs B / studio).
+  // Durante i lotti non resettare — i job in volo restano sulla company del confirm.
+  useEffect(() => {
+    const upload = folderUploadRef.current;
+    if (upload && !upload.cancelled) return;
+    if (folderPlan == null && folderPlanCompanyId == null) return;
+    if (scopeMatchesJobCompany(scopeCompanyId, folderPlanCompanyId)) return;
+    setFolderPlan(null);
+    setFolderPlanSelected(new Set());
+    setFolderPlanCompanyId(null);
+    setFolderUpload(null);
+  }, [scopeCompanyId, folderPlan, folderPlanCompanyId]);
 
   // Dopo codice norma (AI o filename): norm-lookup → prefill vigore e link catalogo
   useEffect(() => {
@@ -738,8 +755,12 @@ export default function ImportJobsPage() {
 
   async function handleConfirmFolderPlan() {
     if (!folderPlan) return;
-    if (!isClientCompanyId(folderPlanCompanyId)) {
+    if (!isClientCompanyId(scopeCompanyId) || !isClientCompanyId(folderPlanCompanyId)) {
       setError(COMPANY_REQUIRED_UPLOAD_TITLE);
+      return;
+    }
+    if (!scopeMatchesJobCompany(scopeCompanyId, folderPlanCompanyId)) {
+      setError(AMBITO_JOB_MISMATCH_TITLE);
       return;
     }
     const lots = buildUploadLots(folderPlan, folderPlanSelected);
@@ -1343,6 +1364,12 @@ export default function ImportJobsPage() {
                   selectedKeys={folderPlanSelected}
                   upload={folderUpload}
                   busy={busy}
+                  confirmAllowed={scopeMatchesJobCompany(scopeCompanyId, folderPlanCompanyId)}
+                  confirmGateTitle={
+                    !isClientCompanyId(scopeCompanyId)
+                      ? COMPANY_REQUIRED_UPLOAD_TITLE
+                      : AMBITO_JOB_MISMATCH_TITLE
+                  }
                   onToggle={toggleFolderPlanKey}
                   onConfirm={handleConfirmFolderPlan}
                   onCancelPlan={handleCancelFolderPlan}
