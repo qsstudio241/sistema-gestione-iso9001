@@ -1,10 +1,12 @@
 # DEPUTYTASK — Import cartella: piano di carico (lotti da 80)
 
-**Stato:** APERTO  
+**Stato:** CHIUSO — TEST OK L1 (21/08/2026)  
 **Aperto:** 21/08/2026  
+**Chiuso:** 21/08/2026  
 **Piano:** [`PLAN_INGEST_ARCHIVIO_SLICES.md`](PLAN_INGEST_ARCHIVIO_SLICES.md)  
 **Rischio:** Medio — solo FE (inventory/piano/lotti); tetto server 80 invariato; Cloud **non** mergia.  
-**Branch:** `cursor/import-folder-plan-d492`
+**Branch:** `cursor/import-folder-plan-d492`  
+**SHA:** `cd791b67`
 
 ---
 
@@ -34,6 +36,17 @@ contractReview, MC, SAL, OCR, tetto 80 server, unificare mappe folder, `PROJECT_
 4. Conferma → upload sequenziale lotti da 80. Ordine: tipi indovinati (capitolato/commessa in testa), poi altro. Stessa `company_id`. Titoli `Documenti / Capitolati (1/2)` o `Documenti 3/19`.
 5. Avanzamento «Lotto 3/19 — Procedure». Annulla = stop lotti successivi (non cestino). Lotti già caricati restano.
 6. Gate azienda già in vigore: senza `company_id` niente picker.
+
+## Esito
+
+- Picker cartella → piano, **nessun** upload. Conferma → lotti da 80, stessa `company_id`.
+- Ordine: capitolato/commessa prima di Scan. Titoli `Documenti / Capitolati (1/2)` / `Documenti 3/19`.
+- Annulla piano = zero upload. Annulla in corso = stop successivi; lotti già caricati restano.
+- Tetto server 80 non alzato. Niente BE. Niente mappe folder.
+
+L1: `importFolderPlan` + `importFolderUpload` + `importJobsPage.folderPlan` + `companyGate` — 30 verdi. Suite FE 1268 verdi. Build Vite OK.
+
+PR: tool `ManagePullRequest` assente; `gh pr create` → Resource not accessible. Titolo/body per il parent sotto. **Non pronta** senza CI+Bugbot+Security su questo SHA.
 
 ## Bozza hub (dopo merge)
 
