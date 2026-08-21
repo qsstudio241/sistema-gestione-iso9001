@@ -257,4 +257,55 @@ describe('confirmStagingHandler — RBAC company su conferma norma (IA-12)', () 
         expect(res.status).toHaveBeenCalledWith(403);
         expect(res.json).toHaveBeenCalledWith(expect.objectContaining({ code: 'AUTH_FORBIDDEN' }));
     });
+
+    it('folder mismatch DOC_NOT_IN_FOLDER -> 400, non 500', async () => {
+        getStagingById.mockResolvedValue({
+            id: 72,
+            doc_type: 'norma',
+            review_status: 'pending',
+        });
+        getModuleForDocType.mockReturnValue('documents');
+        getLicensedModuleKeysForOrg.mockResolvedValue(['documents']);
+        const mismatch = new Error('Il documento non appartiene alla cartella NORME E LEGGI selezionata.');
+        mismatch.code = 'DOC_NOT_IN_FOLDER';
+        mismatch.status = 400;
+        confirmStaging.mockRejectedValue(mismatch);
+
+        const req = {
+            params: { id: '72' },
+            body: {},
+            user: { organization_id: 1001, user_id: 9, role: 'auditor' },
+        };
+        const res = mockRes();
+        await confirmStagingHandler(req, res);
+
+        expect(res.status).toHaveBeenCalledWith(400);
+        expect(res.status).not.toHaveBeenCalledWith(500);
+        expect(res.json).toHaveBeenCalledWith(expect.objectContaining({ code: 'DOC_NOT_IN_FOLDER' }));
+    });
+
+    it('folder mismatch DOC_NOT_IN_FOLDER senza status -> 400 via code', async () => {
+        getStagingById.mockResolvedValue({
+            id: 73,
+            doc_type: 'norma',
+            review_status: 'pending',
+        });
+        getModuleForDocType.mockReturnValue('documents');
+        getLicensedModuleKeysForOrg.mockResolvedValue(['documents']);
+        const mismatch = new Error('Il documento non appartiene alla cartella NORME E LEGGI selezionata.');
+        mismatch.code = 'DOC_NOT_IN_FOLDER';
+        confirmStaging.mockRejectedValue(mismatch);
+
+        const req = {
+            params: { id: '73' },
+            body: {},
+            user: { organization_id: 1001, user_id: 9, role: 'auditor' },
+        };
+        const res = mockRes();
+        await confirmStagingHandler(req, res);
+
+        expect(res.status).toHaveBeenCalledWith(400);
+        expect(res.status).not.toHaveBeenCalledWith(500);
+        expect(res.json).toHaveBeenCalledWith(expect.objectContaining({ code: 'DOC_NOT_IN_FOLDER' }));
+    });
 });

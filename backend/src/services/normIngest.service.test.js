@@ -361,6 +361,20 @@ describe('normIngest.service (IG-N)', () => {
     expect(listed.total).toBe(25);
   });
 
+  it('applyNormToExistingDocument rifiuta parent_id diverso da expectedFolderId', async () => {
+    query.mockResolvedValueOnce({
+      recordset: [{ id: 88, company_id: 8, parent_id: 99, title: 'iso9001.pdf' }],
+    });
+
+    await expect(applyNormToExistingDocument(88, NORM_FIELDS, 1001, {
+      expectedFolderId: 23,
+    })).rejects.toMatchObject({ code: 'DOC_NOT_IN_FOLDER', status: 400 });
+
+    expect(assertMutatingAllowed).not.toHaveBeenCalled();
+    const sqls = query.mock.calls.map((c) => String(c[0]));
+    expect(sqls.some((s) => /UPDATE document_registry/i.test(s))).toBe(false);
+  });
+
   it('applyNormToExistingDocument rifiuta se assertMutatingAllowed nega doc.company_id', async () => {
     query.mockResolvedValueOnce({
       recordset: [{ id: 88, company_id: 99, parent_id: 23, title: 'iso9001.pdf' }],
