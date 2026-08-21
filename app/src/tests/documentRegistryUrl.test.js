@@ -5,6 +5,7 @@ import {
   buildDocumentDeepLink,
   buildDocumentTreeQuery,
   buildIncompleteQueuePath,
+  resolveUrlClientCompanyId,
   VALID_DOC_REGISTRY_TABS,
 } from '../utils/documentRegistryUrl';
 
@@ -94,5 +95,15 @@ describe('documentRegistryUrl', () => {
     expect(buildIncompleteQueuePath({ companyId: 'studio' })).toBe(
       '/documents?tab=catalog&incomplete=1'
     );
+  });
+
+  it('resolveUrlClientCompanyId accetta solo azienda cliente dal deep link', () => {
+    expect(resolveUrlClientCompanyId('?tab=catalog&company_id=11&incomplete=1')).toBe('11');
+    expect(resolveUrlClientCompanyId({ companyId: 11 })).toBe('11');
+    expect(resolveUrlClientCompanyId({ companyId: '11' })).toBe('11');
+    expect(resolveUrlClientCompanyId('?tab=catalog&incomplete=1')).toBeNull();
+    expect(resolveUrlClientCompanyId({ companyId: null })).toBeNull();
+    expect(resolveUrlClientCompanyId({ companyId: 'studio' })).toBeNull();
+    expect(resolveUrlClientCompanyId({ companyId: '' })).toBeNull();
   });
 });

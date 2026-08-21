@@ -20,6 +20,7 @@ import { useRouter } from "../contexts/RouterContext";
 import {
   parseDocumentRegistrySearch,
   buildDocumentRegistryPath,
+  resolveUrlClientCompanyId,
 } from "../utils/documentRegistryUrl";
 import { resolveRegistryFormContextScope } from "../utils/documentFormContextScope";
 import { STUDIO_REGISTRY_SCOPE } from "../utils/documentRegistryCompanyScope";
@@ -966,8 +967,17 @@ function DocumentRegistry() {
   const { companyId, setCompanyId, companies, isStudioPatrimonio, scopeReady } = useCompanyScope();
   const isAdmin = user?.role === 'admin' || user?.role === 'superadmin';
 
-  const [studioOnly, setStudioOnly] = useState(initialUrl.companyId === STUDIO_REGISTRY_SCOPE);
-  const registryCompanyScope = studioOnly && !companyId ? STUDIO_REGISTRY_SCOPE : (companyId || "");
+  // URL ?company_id= vince sul context header al primo render, prima di loadCatalog.
+  // applyFromUrl allinea poi l'ambito header; l'override cade quando coincide.
+  const [urlCompanyOverride, setUrlCompanyOverride] = useState(() =>
+    resolveUrlClientCompanyId(initialUrl)
+  );
+
+  const [studioOnly, setStudioOnly] = useState(
+    !resolveUrlClientCompanyId(initialUrl) && initialUrl.companyId === STUDIO_REGISTRY_SCOPE
+  );
+  const contextCompanyScope = studioOnly && !companyId ? STUDIO_REGISTRY_SCOPE : (companyId || "");
+  const registryCompanyScope = urlCompanyOverride || contextCompanyScope;
 
   useEffect(() => {
     if (!companyId) return;
@@ -979,7 +989,9 @@ function DocumentRegistry() {
   }, [companyId, isStudioPatrimonio]);
 
   // Etichetta esplicita di ambito: distingue il Patrimonio Studio dalle aziende clienti.
-  const isStudioScope = isStudioPatrimonio || registryCompanyScope === "studio";
+  // Deep link Import con company_id cliente non deve ereditare Patrimonio dal header.
+  const isStudioScope =
+    !urlCompanyOverride && (isStudioPatrimonio || registryCompanyScope === "studio");
   const companyScopeId = isStudioScope ? null : (registryCompanyScope || null);
   const scopeDocFilter = useMemo(
     () => (isStudioScope
@@ -1125,20 +1137,28 @@ function DocumentRegistry() {
   // URL ?tab= & ?select= & ?company_id= al mount e su Back/Forward
   useEffect(() => {
     const applyFromUrl = () => {
-      const { tab, selectId, companyId, incomplete } = parseDocumentRegistrySearch(window.location.search);
+      const parsed = parseDocumentRegistrySearch(window.location.search);
+      const { tab, selectId, companyId, incomplete } = parsed;
       setFiltersState((f) =>
         incomplete ? applyIncompleteQueueFilters(f, true) : { ...f, incomplete: false }
       );
       if (incomplete && !selectId) setActiveTab(tab || "catalog");
       else if (tab) setActiveTab(tab);
-      if (companyId != null) {
-        if (String(companyId) === STUDIO_REGISTRY_SCOPE) {
-          setStudioOnly(true);
-          setCompanyId("");
-        } else {
-          setStudioOnly(false);
-          setCompanyId(String(companyId));
-        }
+      const urlClient = resolveUrlClientCompanyId(parsed);
+      if (urlClient) {
+        setStudioOnly(false);
+        setCompanyId(urlClient);
+        setUrlCompanyOverride(urlClient);
+      } else if (companyId != null && String(companyId) === STUDIO_REGISTRY_SCOPE) {
+        setStudioOnly(true);
+        setCompanyId("");
+        setUrlCompanyOverride(null);
+      } else if (companyId != null) {
+        setStudioOnly(false);
+        setCompanyId(String(companyId));
+        setUrlCompanyOverride(null);
+      } else {
+        setUrlCompanyOverride(null);
       }
       if (selectId != null) {
         deepLinkSelectRef.current = selectId;
@@ -1150,6 +1170,13 @@ function DocumentRegistry() {
     window.addEventListener("popstate", applyFromUrl);
     return () => window.removeEventListener("popstate", applyFromUrl);
   }, []);
+
+  useEffect(() => {
+    if (!urlCompanyOverride) return;
+    if (String(companyId) === urlCompanyOverride) {
+      setUrlCompanyOverride(null);
+    }
+  }, [companyId, urlCompanyOverride]);
 
   // ─── Provisioning albero documentale ───────────────────────────────────
   const [provisioning, setProvisioning] = useState(false);

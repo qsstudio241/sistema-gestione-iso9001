@@ -102,3 +102,18 @@ export function buildIncompleteQueuePath({ companyId } = {}) {
     ...(isClientCompanyId(companyId) ? { companyId } : {}),
   });
 }
+
+/**
+ * company_id dall'URL se è un'azienda cliente. Null se assente, Patrimonio o invalido.
+ * Serve al primo render del registro: loadCatalog non deve partire sullo scope header.
+ * @param {string|{ companyId?: unknown }|null|undefined} [searchOrParsed]
+ * @returns {string|null}
+ */
+export function resolveUrlClientCompanyId(searchOrParsed) {
+  const companyId =
+    searchOrParsed && typeof searchOrParsed === 'object' && !Array.isArray(searchOrParsed)
+      ? searchOrParsed.companyId
+      : parseDocumentRegistrySearch(searchOrParsed).companyId;
+  if (!isClientCompanyId(companyId)) return null;
+  return String(parseInt(companyId, 10));
+}
