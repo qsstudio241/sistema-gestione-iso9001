@@ -67,7 +67,7 @@ Destinazione (non questa slice): un solo wizard Ambito → albero → carico →
 - Con PDF già in 2.3 (has_file): click **Ingest dalla cartella** → stessa pipeline/revisione di Carica norme, senza file picker.
 - Carica norme (batch) dal PC resta com’è.
 - Modifica documento: nessun pulsante ingest nuovo.
-- PR **non pronta** (niente Bugbot, niente merge). Deploy VPS di IA-12 **dopo** merge di IA-12.
+- Gate merge #525: CI + Bugbot + Security OK su `fc627aff` — **pronta al click umano**. Deploy VPS di IA-12 **dopo** merge.
 
 ## Dove cliccare (operatore)
 
@@ -80,11 +80,11 @@ Destinazione (non questa slice): un solo wizard Ambito → albero → carico →
 
 - SHA feature: `6e4f3199` (`6e4f31999bd745b74c5f16ef145ce012594d2cb6`)
 - SHA review #524 (RBAC cartella + batch 200 + tetto 20): `1112525e`
-- SHA fix confirmStaging RBAC: `62eb6324` · HEAD `f4ebc5d9` · PR [#525](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/525) (follow-up; #524 già mergiata)
+- SHA fix confirmStaging RBAC: `62eb6324` · SHA review `fc627aff` · PR [#525](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/525) (follow-up; #524 già mergiata)
 - Jest BE: `ingestStaging.service` + `ingestStaging.controller` + `normIngest.service` = **43 verdi** (include 403 confirm)
 - Vitest FE: `normUploadButton.test.jsx` + `normUploadResults.test.js` = **23 verdi**
 - `cd app && npm run build` OK
-- **Non pronta** finché CI + Bugbot + Security Review sul **nuovo** SHA. Deploy VPS **dopo merge**. Cloud non mergia.
+- **Gate (21/08/2026):** CI SUCCESS + Bugbot nessun rilievo + Security Review nessun bloccante su SHA `fc627aff`. PR [#525](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/525) **pronta al click umano**. Cloud non mergia. Deploy VPS **dopo merge**. Stato resta APERTO fino al merge.
 
 ## Review #524 (rilievi chiusi, stessa PR)
 
