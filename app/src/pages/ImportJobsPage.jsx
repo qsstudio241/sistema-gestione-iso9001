@@ -784,9 +784,14 @@ export default function ImportJobsPage() {
         setFolderPlanSelected(new Set());
         setFolderPlanCompanyId(null);
         setFolderUpload(null);
+        folderUploadRef.current = null;
       }
     } catch (err) {
       setError(err.message || "Upload fallito");
+      // Lotti terminati: niente folderUpload "in corso" se busy torna false,
+      // altrimenti l'effect su selectedId non azzera il piano al cambio job.
+      folderUploadRef.current = null;
+      setFolderUpload(null);
     } finally {
       setBusy(false);
     }
