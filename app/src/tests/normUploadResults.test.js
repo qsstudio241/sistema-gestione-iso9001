@@ -2,6 +2,8 @@ import { describe, it, expect } from 'vitest';
 import {
   normalizeNormUploadResults,
   countNormUploadSuccesses,
+  resultsFromNormBatchPayload,
+  folderCapNoticeFromPayload,
 } from '../utils/normUploadResults';
 
 describe('normUploadResults', () => {
@@ -33,6 +35,21 @@ describe('normUploadResults', () => {
       fileName: 'a.pdf',
     }]);
     expect(row.norm_title).toBe('Già piatto');
+  });
+
+  it('resultsFromNormBatchPayload non butta l\'array su payload di errore', () => {
+    const recovered = resultsFromNormBatchPayload({
+      success: false,
+      results: [{ status: 'duplicate', fileName: 'iso.pdf', standard_code: 'ISO 9001:2015' }],
+    });
+    expect(recovered).toHaveLength(1);
+    expect(recovered[0].status).toBe('duplicate');
+  });
+
+  it('folderCapNoticeFromPayload descrive il tetto 20', () => {
+    expect(folderCapNoticeFromPayload({ truncated: true, omitted: 7 }))
+      .toBe('Prime 20. Ne restano 7.');
+    expect(folderCapNoticeFromPayload({ truncated: false, omitted: 0 })).toBeNull();
   });
 
   it('countNormUploadSuccesses richiede documentId e ignora errori', () => {

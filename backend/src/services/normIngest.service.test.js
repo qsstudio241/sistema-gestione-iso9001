@@ -30,16 +30,25 @@ jest.mock('./normChunker.service', () => ({
   indexDocument: jest.fn().mockResolvedValue(undefined),
 }));
 
+jest.mock('./companyAccess.service', () => ({
+  assertMutatingAllowed: jest.fn().mockResolvedValue(null),
+}));
+
 const { runDocumentIngest } = require('./documentIngestPipeline.service');
 const normCatalog = require('./normCatalogLookup.service');
 const { query } = require('../config/database');
 const { resolveNormFolderId } = require('./normCodesImport.service');
 const { calculatePathCache } = require('./documentTreeProvisioner.service');
 const { ingestFiguresFromPdf } = require('./figureIngest.service');
+const { assertMutatingAllowed } = require('./companyAccess.service');
 const {
   enrichNormFields,
   extractNormFromPdf,
   commitNormFromFields,
+  applyNormToExistingDocument,
+  assertFolderIsNorms,
+  listFolderNormPdfs,
+  checkNormDuplicate,
 } = require('./normIngest.service');
 
 const NORM_FIELDS = {
@@ -66,7 +75,10 @@ function mockCommitDb({ documentId = 501, attachmentId = 77, sourceId = 12, with
 }
 
 describe('normIngest.service (IG-N)', () => {
-  afterEach(() => jest.clearAllMocks());
+  afterEach(() => {
+    jest.clearAllMocks();
+    assertMutatingAllowed.mockResolvedValue(null);
+  });
 
   it('enrichNormFields normalizza ISO/TR 15608 e imposta vigore da catalogo', async () => {
     normCatalog.lookupNormStatus.mockResolvedValue({
@@ -245,6 +257,146 @@ describe('normIngest.service (IG-N)', () => {
       companyId: 8,
       pdfPath: '/tmp/norma-clip-fail.pdf',
     });
+  });
+
+  it('extractNormFromPdf esclude il documento corrente dal duplicate (ingest cartella)', async () => {
+    runDocumentIngest.mockResolvedValue({
+      fields: { standard_code: 'ISO 9001:2015', norm_title: 'Qualità' },
+      fieldConfidence: { standard_code: 'high' },
+      warnings: [],
+      extractionConfidence: 90,
+      text: 'x'.repeat(6000),
+    });
+    normCatalog.lookupNormStatus.mockResolvedValue({
+      status: 'active',
+      checkedAt: '2026-08-21T10:00:00.000Z',
+    });
+    query.mockResolvedValue({ recordset: [] });
+
+    const out = await extractNormFromPdf(
+      Buffer.from('%PDF'),
+      'iso9001.pdf',
+      1001,
+      23,
+      { excludeDocumentId: 88 },
+    );
+
+    expect(out.status).toBe('ready_commit');
+    expect(query).toHaveBeenCalledWith(
+      expect.stringContaining('@excludeId'),
+      expect.objectContaining({ excludeId: 88, code: 'ISO 9001:2015' }),
+    );
+  });
+
+  it('checkNormDuplicate è falso se l\'unico match è il documento escluso', async () => {
+    query.mockResolvedValue({ recordset: [] });
+    const dup = await checkNormDuplicate('ISO 9001:2015', 1001, 88);
+    expect(dup).toBe(false);
+    expect(query).toHaveBeenCalledWith(
+      expect.stringContaining('id <> @excludeId'),
+      expect.objectContaining({ excludeId: 88 }),
+    );
+  });
+
+  it('applyNormToExistingDocument aggiorna il record e non fa INSERT in document_registry', async () => {
+    ingestFiguresFromPdf.mockResolvedValue({ figures: [], count: 0 });
+    query
+      .mockResolvedValueOnce({ recordset: [{ id: 88, company_id: 8, parent_id: 23, title: 'iso9001.pdf' }] })
+      .mockResolvedValueOnce({ recordset: [] })
+      .mockResolvedValueOnce({ recordset: [] })
+      .mockResolvedValueOnce({ recordset: [] })
+      .mockResolvedValueOnce({ recordset: [] })
+      .mockResolvedValueOnce({ recordset: [{ id: 12 }] });
+
+    const out = await applyNormToExistingDocument(88, NORM_FIELDS, 1001, {
+      userId: 7,
+      filePath: '/uploads/import/iso9001.pdf',
+      fileName: 'iso9001.pdf',
+      extractedText: 'x'.repeat(6000),
+      textQuality: 'good',
+    });
+
+    expect(out.document_id).toBe(88);
+    expect(out.standard_code).toBe('ISO 9001:2015');
+    const sqls = query.mock.calls.map((c) => String(c[0]));
+    expect(sqls.some((s) => /INSERT INTO document_registry/i.test(s))).toBe(false);
+    expect(sqls.some((s) => /UPDATE document_registry/i.test(s))).toBe(true);
+    expect(ingestFiguresFromPdf).toHaveBeenCalledWith({
+      organizationId: 1001,
+      companyId: 8,
+      pdfPath: '/uploads/import/iso9001.pdf',
+    });
+  });
+
+  it('assertFolderIsNorms rifiuta una cartella che non è 2.3', async () => {
+    query.mockResolvedValue({ recordset: [{ id: 9, company_id: 8, folder_code: '2.2' }] });
+    await expect(assertFolderIsNorms(1001, 9)).rejects.toMatchObject({ code: 'FOLDER_NOT_NORMS' });
+  });
+
+  it('listFolderNormPdfs filtra per document_ids', async () => {
+    query
+      .mockResolvedValueOnce({ recordset: [{ total: 2 }] })
+      .mockResolvedValueOnce({
+        recordset: [
+          { id: 11, file_name: 'a.pdf', storage_path: '/a.pdf' },
+          { id: 12, file_name: 'b.pdf', storage_path: '/b.pdf' },
+        ],
+      });
+    const listed = await listFolderNormPdfs(1001, 23, [12]);
+    expect(listed.docs).toHaveLength(1);
+    expect(listed.docs[0].id).toBe(12);
+    expect(listed.truncated).toBe(false);
+    expect(listed.omitted).toBe(0);
+  });
+
+  it('listFolderNormPdfs segnala truncated/omitted oltre il tetto 20', async () => {
+    query
+      .mockResolvedValueOnce({ recordset: [{ total: 25 }] })
+      .mockResolvedValueOnce({
+        recordset: [{ id: 11, file_name: 'a.pdf', storage_path: '/a.pdf' }],
+      });
+    const listed = await listFolderNormPdfs(1001, 23);
+    expect(listed.truncated).toBe(true);
+    expect(listed.omitted).toBe(5);
+    expect(listed.total).toBe(25);
+  });
+
+  it('applyNormToExistingDocument rifiuta se assertMutatingAllowed nega doc.company_id', async () => {
+    query.mockResolvedValueOnce({
+      recordset: [{ id: 88, company_id: 99, parent_id: 23, title: 'iso9001.pdf' }],
+    });
+    assertMutatingAllowed.mockResolvedValue({
+      status: 403,
+      body: { error: 'Permesso negato', code: 'AUTH_FORBIDDEN' },
+    });
+
+    await expect(applyNormToExistingDocument(88, NORM_FIELDS, 1001, {
+      user: { user_id: 7, company_access: [{ company_id: 8, permission: 'write' }] },
+      expectedFolderId: 23,
+    })).rejects.toMatchObject({ code: 'AUTH_FORBIDDEN' });
+
+    expect(assertMutatingAllowed).toHaveBeenCalledWith(
+      expect.objectContaining({ user_id: 7 }),
+      { companyId: 99 },
+    );
+    const sqls = query.mock.calls.map((c) => String(c[0]));
+    expect(sqls.some((s) => /UPDATE document_registry/i.test(s))).toBe(false);
+  });
+
+  it('applyNormToExistingDocument non overwrite se checkNormDuplicate trova un altro documento', async () => {
+    query
+      .mockResolvedValueOnce({ recordset: [{ id: 88, company_id: 8, parent_id: 23, title: 'iso9001.pdf' }] })
+      .mockResolvedValueOnce({ recordset: [{ id: 77 }] });
+
+    await expect(applyNormToExistingDocument(88, NORM_FIELDS, 1001, { userId: 7 }))
+      .rejects.toMatchObject({ code: 'DUPLICATE' });
+
+    const sqls = query.mock.calls.map((c) => String(c[0]));
+    expect(sqls.some((s) => /UPDATE document_registry/i.test(s))).toBe(false);
+    expect(query).toHaveBeenCalledWith(
+      expect.stringContaining('id <> @excludeId'),
+      expect.objectContaining({ excludeId: 88, code: 'ISO 9001:2015' }),
+    );
   });
 
   it('commitNormFromFields non chiama ingest figure senza filePath', async () => {

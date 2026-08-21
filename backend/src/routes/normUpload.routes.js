@@ -59,6 +59,11 @@ router.post(
   normUploadCtrl.uploadNorms
 );
 
+router.post(
+  '/documents/norms/ingest-from-folder',
+  normUploadCtrl.ingestFromFolder
+);
+
 router.post('/documents/norms/reindex', async (req, res) => {
   const orgId = req.user.organization_id;
   try {

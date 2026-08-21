@@ -18,6 +18,7 @@ const normCatalog = require('./normCatalogLookup.service');
 const normChunker = require('./normChunker.service');
 const { resolveNormFolderId } = require('./normCodesImport.service');
 const { calculatePathCache } = require('./documentTreeProvisioner.service');
+const { assertMutatingAllowed } = require('./companyAccess.service');
 const { ingestFiguresFromPdf } = require('./figureIngest.service');
 const {
   parseStandardCode,
@@ -158,22 +159,25 @@ async function enrichNormFields(rawFields, pipelineWarnings = []) {
   return { fields, catalogLookup, catalog_lookup, warnings, needsReview };
 }
 
-async function checkNormDuplicate(standardCode, organizationId) {
+async function checkNormDuplicate(standardCode, organizationId, excludeDocumentId = null) {
   if (!standardCode) return false;
+  const excludeId = excludeDocumentId != null ? parseInt(excludeDocumentId, 10) : null;
   const result = await query(`
     SELECT TOP 1 id FROM document_registry
     WHERE organization_id = @orgId
       AND doc_type = 'norma'
       AND ISNULL(status, 'rilasciato') NOT IN ('eliminato', 'obsoleto')
       AND JSON_VALUE(type_specific_data, '$.standard_code') = @code
-  `, { orgId: organizationId, code: standardCode });
+      AND (@excludeId IS NULL OR id <> @excludeId)
+  `, { orgId: organizationId, code: standardCode, excludeId: Number.isFinite(excludeId) ? excludeId : null });
   return result.recordset.length > 0;
 }
 
 /**
  * Estrae metadati norma da PDF via pipeline unificata + lookup catalogo.
  */
-async function extractNormFromPdf(pdfBuffer, fileName, organizationId, parentFolderId = null) {
+async function extractNormFromPdf(pdfBuffer, fileName, organizationId, parentFolderId = null, options = {}) {
+  const excludeDocumentId = options.excludeDocumentId != null ? options.excludeDocumentId : null;
   const pipeline = await runDocumentIngest({
     pdfBuffer,
     docType: 'norma',
@@ -187,7 +191,7 @@ async function extractNormFromPdf(pdfBuffer, fileName, organizationId, parentFol
   );
 
   const standardCode = enriched.fields.standard_code;
-  if (standardCode && await checkNormDuplicate(standardCode, organizationId)) {
+  if (standardCode && await checkNormDuplicate(standardCode, organizationId, excludeDocumentId)) {
     return {
       status: 'duplicate',
       standard_code: standardCode,
@@ -382,11 +386,301 @@ async function commitNormFromFields(fields, organizationId, options = {}) {
   };
 }
 
+const FOLDER_INGEST_LIMIT = 20;
+
+async function assertFolderIsNorms(organizationId, folderId) {
+  const folder = parseInt(folderId, 10);
+  if (!Number.isFinite(folder)) return null;
+  const result = await query(`
+    SELECT id, company_id, folder_code
+    FROM document_registry
+    WHERE id = @folderId
+      AND organization_id = @orgId
+      AND doc_type = 'folder'
+  `, { folderId: folder, orgId: organizationId });
+  const row = result.recordset[0];
+  if (!row) return null;
+  if (String(row.folder_code || '') !== '2.3') {
+    const err = new Error('La cartella selezionata non è NORME E LEGGI.');
+    err.code = 'FOLDER_NOT_NORMS';
+    throw err;
+  }
+  return { id: row.id, company_id: row.company_id ?? null };
+}
+
+/**
+ * PDF già in registry sotto la cartella NORME E LEGGI (allegato corrente).
+ * Non richiede re-upload: IA-12.
+ */
+const FOLDER_PDF_FROM_WHERE = `
+    FROM document_registry d
+    INNER JOIN attachments a
+      ON a.document_id = d.id
+     AND ISNULL(a.is_current_doc_version, 1) = 1
+    WHERE d.organization_id = @orgId
+      AND d.parent_id = @folderId
+      AND d.doc_type <> 'folder'
+      AND ISNULL(d.status, 'rilasciato') NOT IN ('eliminato')
+      AND (
+        a.mime_type = 'application/pdf'
+        OR LOWER(ISNULL(a.file_name, '')) LIKE '%.pdf'
+      )`;
+
+async function listFolderNormPdfs(organizationId, folderId, documentIds = null) {
+  const folder = parseInt(folderId, 10);
+  if (!Number.isFinite(folder)) {
+    return { docs: [], total: 0, truncated: false, omitted: 0 };
+  }
+
+  const params = { orgId: organizationId, folderId: folder };
+  const countResult = await query(
+    `SELECT COUNT(*) AS total ${FOLDER_PDF_FROM_WHERE}`,
+    params,
+  );
+  const total = Number(countResult.recordset?.[0]?.total) || 0;
+
+  const result = await query(`
+    SELECT TOP ${FOLDER_INGEST_LIMIT}
+      d.id,
+      d.title,
+      d.doc_type,
+      d.company_id,
+      d.parent_id,
+      a.storage_path,
+      a.file_name,
+      a.mime_type,
+      a.file_size
+    ${FOLDER_PDF_FROM_WHERE}
+    ORDER BY d.id ASC
+  `, params);
+
+  let rows = result.recordset || [];
+  if (Array.isArray(documentIds) && documentIds.length > 0) {
+    const allowed = new Set(
+      documentIds.map((id) => parseInt(id, 10)).filter((id) => Number.isFinite(id)),
+    );
+    rows = rows.filter((r) => allowed.has(r.id));
+  }
+  const omitted = Math.max(0, total - FOLDER_INGEST_LIMIT);
+  return {
+    docs: rows,
+    total,
+    truncated: omitted > 0,
+    omitted,
+  };
+}
+
+/**
+ * Applica i campi norma a un documento già in registry (niente INSERT, niente nuovo allegato).
+ */
+async function applyNormToExistingDocument(documentId, fields, organizationId, options = {}) {
+  const {
+    userId,
+    user = null,
+    expectedFolderId = null,
+    extractedText = null,
+    textQuality = null,
+    filePath = null,
+  } = options;
+
+  const docId = parseInt(documentId, 10);
+  if (!Number.isFinite(docId)) {
+    const err = new Error('Documento non valido');
+    err.code = 'VALIDATION_ERROR';
+    throw err;
+  }
+
+  const existing = await query(`
+    SELECT id, company_id, parent_id, title
+    FROM document_registry
+    WHERE id = @documentId
+      AND organization_id = @orgId
+      AND doc_type <> 'folder'
+      AND ISNULL(status, 'rilasciato') NOT IN ('eliminato')
+  `, { documentId: docId, orgId: organizationId });
+
+  const doc = existing.recordset[0];
+  if (!doc) {
+    const err = new Error('Documento non trovato');
+    err.code = 'NOT_FOUND';
+    throw err;
+  }
+
+  if (expectedFolderId != null && expectedFolderId !== '') {
+    const expected = parseInt(expectedFolderId, 10);
+    if (Number.isFinite(expected) && parseInt(doc.parent_id, 10) !== expected) {
+      const err = new Error('Il documento non appartiene alla cartella NORME E LEGGI selezionata.');
+      err.code = 'DOC_NOT_IN_FOLDER';
+      throw err;
+    }
+  }
+
+  if (user) {
+    const denied = await assertMutatingAllowed(user, { companyId: doc.company_id });
+    if (denied) {
+      const err = new Error(denied.body?.error || 'Permesso negato');
+      err.code = denied.body?.code || 'AUTH_FORBIDDEN';
+      err.status = denied.status;
+      throw err;
+    }
+  }
+
+  const cleanFields = { ...fields };
+  delete cleanFields._fileName;
+  delete cleanFields.catalog_lookup;
+  delete cleanFields._parent_folder_id;
+  delete cleanFields._extracted_text;
+  delete cleanFields._text_quality;
+  delete cleanFields._target_document_id;
+
+  const normTsd = buildNormTypeSpecificData(cleanFields);
+  if (!normTsd?.standard_code) {
+    const err = new Error('Codice norma obbligatorio per il commit (standard_code)');
+    err.code = 'VALIDATION_ERROR';
+    throw err;
+  }
+
+  if (await checkNormDuplicate(normTsd.standard_code, organizationId, docId)) {
+    const err = new Error(`Duplicato: norma già presente (${normTsd.standard_code}).`);
+    err.code = 'DUPLICATE';
+    err.standard_code = normTsd.standard_code;
+    err.warnings = [`Duplicato: norma già presente (${normTsd.standard_code}).`];
+    throw err;
+  }
+
+  const metadata = {
+    ...cleanFields,
+    standard_code: normTsd.standard_code,
+    edition_year: normTsd.edition_year,
+    validity_status: normTsd.validity_status,
+  };
+
+  const fileNameHint = options.fileName || doc.title || 'documento.pdf';
+  const docTitle = formatReadableTitle(metadata)
+    || path.basename(fileNameHint, path.extname(fileNameHint));
+  const editionYear = normTsd.edition_year ?? null;
+  const typeSpecificData = JSON.stringify(normTsd);
+  const tQuality = textQuality || assessTextQuality(extractedText);
+
+  await query(`
+    UPDATE document_registry SET
+      title = @title,
+      doc_type = 'norma',
+      issue_date = CASE
+        WHEN @editionYear IS NOT NULL THEN DATEFROMPARTS(@editionYear, 1, 1)
+        ELSE issue_date
+      END,
+      type_specific_data = @typeSpecificData,
+      updated_at = GETDATE()
+    WHERE id = @id AND organization_id = @orgId
+  `, {
+    id: docId,
+    orgId: organizationId,
+    title: String(docTitle).substring(0, 255),
+    editionYear,
+    typeSpecificData,
+  });
+
+  const srcExisting = await query(
+    `SELECT TOP 1 id FROM norm_document_sources WHERE document_id = @docId`,
+    { docId },
+  );
+
+  if (srcExisting.recordset[0]) {
+    await query(`
+      UPDATE norm_document_sources SET
+        standard_code = @stdCode,
+        norm_title = @normTitle,
+        edition_year = @editionYear,
+        issuing_body = @issuingBody,
+        extracted_text = COALESCE(@extractedText, extracted_text),
+        text_quality = @textQuality,
+        validity_status = @validityStatus,
+        updated_at = GETDATE()
+      WHERE document_id = @docId
+    `, {
+      docId,
+      stdCode: normTsd.standard_code,
+      normTitle: normTsd.norm_title || null,
+      editionYear,
+      issuingBody: normTsd.issuing_body || null,
+      extractedText: extractedText || null,
+      textQuality: tQuality,
+      validityStatus: normTsd.validity_status || 'da_verificare',
+    });
+  } else {
+    await query(`
+      INSERT INTO norm_document_sources (
+        document_id, organization_id, standard_code, norm_title,
+        edition_year, issuing_body, extracted_text, text_quality,
+        validity_status, created_at, updated_at
+      )
+      VALUES (
+        @docId, @orgId, @stdCode, @normTitle,
+        @editionYear, @issuingBody, @extractedText, @textQuality,
+        @validityStatus, GETDATE(), GETDATE()
+      )
+    `, {
+      docId,
+      orgId: organizationId,
+      stdCode: normTsd.standard_code,
+      normTitle: normTsd.norm_title || null,
+      editionYear,
+      issuingBody: normTsd.issuing_body || null,
+      extractedText: extractedText || null,
+      textQuality: tQuality,
+      validityStatus: normTsd.validity_status || 'da_verificare',
+    });
+  }
+
+  const srcIdRow = await query(
+    `SELECT TOP 1 id FROM norm_document_sources WHERE document_id = @docId`,
+    { docId },
+  );
+  const sourceId = srcIdRow.recordset?.[0]?.id;
+  if (sourceId) {
+    setImmediate(() => {
+      normChunker.indexDocument(sourceId).catch((err) => {
+        logger.warn('[NormIngest] Async indexing failed', { sourceId, error: err.message });
+      });
+    });
+  }
+
+  if (filePath) {
+    try {
+      await ingestFiguresFromPdf({
+        organizationId,
+        companyId: doc.company_id,
+        pdfPath: filePath,
+      });
+    } catch (figErr) {
+      logger.warn('[NormIngest] Ingest figure fallito (norma già aggiornata)', {
+        documentId: docId,
+        organizationId,
+        error: figErr && figErr.message,
+      });
+    }
+  }
+
+  return {
+    document_id: docId,
+    attachment_id: null,
+    standard_code: normTsd.standard_code,
+    norm_title: normTsd.norm_title || docTitle,
+    validity_status: normTsd.validity_status,
+    text_quality: tQuality,
+  };
+}
+
 module.exports = {
   assessTextQuality,
   enrichNormFields,
   extractNormFromPdf,
   commitNormFromFields,
+  applyNormToExistingDocument,
+  assertFolderIsNorms,
+  listFolderNormPdfs,
   checkNormDuplicate,
+  FOLDER_INGEST_LIMIT,
   REVIEW_CONFIDENCE_THRESHOLD,
 };

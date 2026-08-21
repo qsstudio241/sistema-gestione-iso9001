@@ -9,7 +9,7 @@ const { query } = require('../config/database');
 const { commitWPQRFromFields, applyFieldReprocessUpdate: applyWpqrFieldReprocessUpdate } = require('./wpqrIngest.service');
 const { commitQualificationFromFields, applyFieldReprocessUpdate: applyQualificationFieldReprocessUpdate } = require('./qualificationIngest.service');
 const { commitWPSFromFields } = require('./wpsIngest.service');
-const { commitNormFromFields } = require('./normIngest.service');
+const { commitNormFromFields, applyNormToExistingDocument } = require('./normIngest.service');
 const { recordFeedback } = require('./ingestFeedback.service');
 
 const DOC_TYPE_MODULES = {
@@ -181,20 +181,31 @@ async function confirmStaging(stagingId, organizationId, userId, fieldsOverride 
             );
         } else if (row.doc_type === 'norma') {
             const meta = parseJson(row.staged_fields_json, {});
-            commitResult = await commitNormFromFields(
-                fields,
-                organizationId,
-                {
-                    userId,
-                    filePath: row.storage_path,
-                    fileName: row.original_name,
-                    parentFolderId: meta._parent_folder_id ?? null,
-                    extractedText: meta._extracted_text ?? null,
-                    textQuality: meta._text_quality ?? null,
-                    mimeType: row.mime_type,
-                    fileSize: row.file_size,
-                },
-            );
+            const targetDocId = parseInt(meta._target_document_id, 10);
+            const normOpts = {
+                userId,
+                filePath: row.storage_path,
+                fileName: row.original_name,
+                parentFolderId: meta._parent_folder_id ?? null,
+                extractedText: meta._extracted_text ?? null,
+                textQuality: meta._text_quality ?? null,
+                mimeType: row.mime_type,
+                fileSize: row.file_size,
+            };
+            if (Number.isFinite(targetDocId)) {
+                commitResult = await applyNormToExistingDocument(
+                    targetDocId,
+                    fields,
+                    organizationId,
+                    normOpts,
+                );
+            } else {
+                commitResult = await commitNormFromFields(
+                    fields,
+                    organizationId,
+                    normOpts,
+                );
+            }
         } else {
             const err = new Error(`Tipo documento non supportato: ${row.doc_type}`);
             err.code = 'UNSUPPORTED_DOC_TYPE';
@@ -310,7 +321,13 @@ async function rejectStaging(stagingId, organizationId, userId, deleteFile = tru
     // certificato già collegato a un record esistente (certificate_file_url).
     // Cancellarlo romperebbe il record definitivo — va preservato sempre, a
     // prescindere dal flag deleteFile richiesto dal chiamante.
-    if (deleteFile && row.storage_path && !row.target_qualification_id && !row.target_wpqr_id) {
+    const stagedMeta = parseJson(row.staged_fields_json, {});
+    const preservesRegistryFile = Boolean(
+        row.target_qualification_id
+        || row.target_wpqr_id
+        || stagedMeta._target_document_id,
+    );
+    if (deleteFile && row.storage_path && !preservesRegistryFile) {
         try {
             fs.unlinkSync(row.storage_path);
         } catch (_) {

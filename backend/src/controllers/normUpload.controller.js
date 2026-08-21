@@ -4,11 +4,46 @@
  */
 
 const fs = require('fs').promises;
+const fsSync = require('fs');
 const logger = require('../utils/logger');
 const { resolveNormFolderId } = require('../services/normCodesImport.service');
-const { extractNormFromPdf, commitNormFromFields } = require('../services/normIngest.service');
+const {
+  extractNormFromPdf,
+  commitNormFromFields,
+  applyNormToExistingDocument,
+  assertFolderIsNorms,
+  listFolderNormPdfs,
+} = require('../services/normIngest.service');
 const { createStagingRecord } = require('../services/ingestStaging.service');
 const { describeIngestFileError } = require('../utils/ingestErrorMessage');
+const {
+  assertMutatingAllowed,
+  sendAccessDenied,
+} = require('../services/companyAccess.service');
+
+function unpackFolderNormPdfs(listed) {
+  if (Array.isArray(listed)) {
+    return { docs: listed, truncated: false, omitted: 0 };
+  }
+  return {
+    docs: listed?.docs || [],
+    truncated: listed?.truncated === true,
+    omitted: Number(listed?.omitted) || 0,
+  };
+}
+
+function batchHttpStatus(results, { successIfOk = 200 } = {}) {
+  const successCount = results.filter((r) => r.status === 'confirmed' || r.status === 'pending_review').length;
+  const pendingCount = results.filter((r) => r.status === 'pending_review').length;
+  if (successCount > 0) {
+    return { httpStatus: successIfOk, successCount, pendingCount };
+  }
+  // Duplicati/errori per file: 200 così il FE mostra `results` (non un 500 opaco).
+  if (results.length > 0) {
+    return { httpStatus: 200, successCount, pendingCount };
+  }
+  return { httpStatus: 500, successCount, pendingCount };
+}
 
 /** Campi piatti per UI (NormUploadButton). */
 function flattenNormBatchEntry(entry) {
@@ -170,10 +205,9 @@ async function uploadNorms(req, res) {
     results.push(flattenNormBatchEntry(entry));
   }
 
-  const successCount = results.filter((r) => r.status === 'confirmed' || r.status === 'pending_review').length;
-  const pendingCount = results.filter((r) => r.status === 'pending_review').length;
+  const { httpStatus, successCount, pendingCount } = batchHttpStatus(results, { successIfOk: 201 });
 
-  res.status(successCount > 0 ? 201 : 500).json({
+  res.status(httpStatus).json({
     success: successCount > 0,
     uploaded: successCount,
     pending_review: pendingCount,
@@ -182,4 +216,196 @@ async function uploadNorms(req, res) {
   });
 }
 
-module.exports = { uploadNorms };
+/**
+ * POST /documents/norms/ingest-from-folder
+ * Pipeline normIngest sui PDF già in registry (cartella 2.3). Nessun re-upload.
+ */
+async function ingestFromFolder(req, res) {
+  const { user_id, organization_id } = req.user;
+  const requestedFolderId = req.body?.folder_id ?? req.body?.parent_folder_id;
+  const folderId = requestedFolderId != null && requestedFolderId !== ''
+    ? parseInt(requestedFolderId, 10)
+    : null;
+  const documentIds = Array.isArray(req.body?.document_ids) ? req.body.document_ids : null;
+
+  if (!Number.isFinite(folderId)) {
+    return res.status(400).json({
+      error: 'Seleziona la cartella NORME E LEGGI (folder_id).',
+      code: 'FOLDER_REQUIRED',
+    });
+  }
+
+  let normFolder;
+  try {
+    normFolder = await assertFolderIsNorms(organization_id, folderId);
+  } catch (err) {
+    if (err.code === 'FOLDER_NOT_NORMS') {
+      return res.status(400).json({ error: err.message, code: err.code });
+    }
+    logger.error('[NormUpload] ingest-from-folder lookup cartella', err.message);
+    return res.status(500).json({ error: 'Errore interno', code: 'INTERNAL_ERROR' });
+  }
+
+  if (!normFolder) {
+    return res.status(404).json({
+      error: 'Cartella "NORME E LEGGI" (folder_code 2.3) non trovata. In Albero → vista libera, usa «Inizializza struttura documentale».',
+      code: 'NORM_FOLDER_NOT_FOUND',
+    });
+  }
+
+  const writeDenied = await assertMutatingAllowed(req.user, { companyId: normFolder.company_id });
+  if (writeDenied) return sendAccessDenied(res, writeDenied);
+
+  let docs;
+  let truncated = false;
+  let omitted = 0;
+  try {
+    const listed = await listFolderNormPdfs(organization_id, normFolder.id, documentIds);
+    ({ docs, truncated, omitted } = unpackFolderNormPdfs(listed));
+  } catch (err) {
+    logger.error('[NormUpload] ingest-from-folder lista PDF', err.message);
+    return res.status(500).json({ error: 'Errore interno', code: 'INTERNAL_ERROR' });
+  }
+
+  if (!docs.length) {
+    return res.status(400).json({
+      error: 'Nessun PDF in questa cartella. Carica i file (Import o Carica norme) prima di lanciare l\'ingest.',
+      code: 'NO_FOLDER_PDFS',
+    });
+  }
+
+  const results = [];
+  for (const doc of docs) {
+    const fileName = doc.file_name || doc.title || `documento-${doc.id}.pdf`;
+    let entry = { fileName, status: 'error', warnings: [] };
+    try {
+      if (!doc.storage_path || !fsSync.existsSync(doc.storage_path)) {
+        results.push(flattenNormBatchEntry({
+          fileName,
+          status: 'error',
+          error: 'Allegato non trovato sul server',
+          warnings: ['Allegato non trovato sul server'],
+        }));
+        continue;
+      }
+
+      const buffer = await fs.readFile(doc.storage_path);
+      const extracted = await extractNormFromPdf(
+        buffer,
+        fileName,
+        organization_id,
+        normFolder.id,
+        { excludeDocumentId: doc.id },
+      );
+
+      if (extracted.status === 'duplicate') {
+        results.push(flattenNormBatchEntry({
+          fileName,
+          status: 'duplicate',
+          standard_code: extracted.standard_code,
+          norm_title: extracted.norm_title,
+          warnings: extracted.warnings || [],
+        }));
+        continue;
+      }
+
+      const stagingFields = {
+        ...extracted.fields,
+        _parent_folder_id: normFolder.id,
+        _extracted_text: extracted.extracted_text || null,
+        _text_quality: extracted.text_quality || null,
+        _target_document_id: doc.id,
+      };
+
+      if (extracted.status === 'ready_commit') {
+        const applied = await applyNormToExistingDocument(doc.id, extracted.fields, organization_id, {
+          userId: user_id,
+          user: req.user,
+          expectedFolderId: normFolder.id,
+          filePath: doc.storage_path,
+          fileName,
+          extractedText: extracted.extracted_text,
+          textQuality: extracted.text_quality,
+        });
+        entry = {
+          fileName,
+          status: 'confirmed',
+          document_id: applied.document_id,
+          standard_code: applied.standard_code,
+          norm_title: applied.norm_title,
+          validity_status: applied.validity_status,
+          text_quality: applied.text_quality,
+          catalog_lookup: extracted.catalog_lookup,
+          warnings: extracted.warnings || [],
+        };
+        logger.info('[NormUpload] Ingest cartella — applicato a documento esistente', {
+          documentId: applied.document_id,
+          standardCode: applied.standard_code,
+          organization_id,
+        });
+      } else {
+        const stagingId = await createStagingRecord({
+          organizationId: organization_id,
+          companyId: doc.company_id != null ? doc.company_id : normFolder.company_id,
+          docType: 'norma',
+          originalName: fileName,
+          storagePath: doc.storage_path,
+          mimeType: doc.mime_type || 'application/pdf',
+          fileSize: doc.file_size,
+          fields: stagingFields,
+          fieldConfidence: extracted.field_confidence,
+          warnings: extracted.warnings,
+          userId: user_id,
+          aiModel: extracted.ai_model || null,
+        });
+        entry = {
+          fileName,
+          status: 'pending_review',
+          staging_id: stagingId,
+          fields: extracted.fields,
+          field_confidence: extracted.field_confidence,
+          catalog_lookup: extracted.catalog_lookup,
+          text_quality: extracted.text_quality,
+          warnings: extracted.warnings || [],
+        };
+      }
+    } catch (fileErr) {
+      if (fileErr.code === 'DUPLICATE') {
+        results.push(flattenNormBatchEntry({
+          fileName,
+          status: 'duplicate',
+          standard_code: fileErr.standard_code || null,
+          warnings: fileErr.warnings || [fileErr.message],
+        }));
+        continue;
+      }
+      const errMsg = describeIngestFileError(fileErr);
+      logger.error('[NormUpload/folder] Estrazione fallita', {
+        documentId: doc.id,
+        fileName,
+        error: errMsg,
+      });
+      entry = {
+        fileName,
+        status: 'error',
+        error: errMsg,
+        warnings: [errMsg],
+      };
+    }
+    results.push(flattenNormBatchEntry(entry));
+  }
+
+  const { httpStatus, successCount, pendingCount } = batchHttpStatus(results, { successIfOk: 200 });
+
+  res.status(httpStatus).json({
+    success: successCount > 0,
+    uploaded: successCount,
+    pending_review: pendingCount,
+    total: results.length,
+    truncated,
+    omitted,
+    results,
+  });
+}
+
+module.exports = { uploadNorms, ingestFromFolder };
