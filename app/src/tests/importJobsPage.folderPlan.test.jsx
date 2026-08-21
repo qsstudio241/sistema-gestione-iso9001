@@ -6,6 +6,7 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen, waitFor, fireEvent } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { AMBITO_JOB_MISMATCH_TITLE } from "../utils/importFolderUpload";
 
 const scopeState = {
   companyId: "11",
@@ -65,9 +66,19 @@ function pickFolder(files) {
 
 describe("ImportJobsPage — piano di carico cartella", () => {
   beforeEach(() => {
+    scopeState.companyId = "11";
+    scopeState.isStudioWide = false;
+    scopeState.isStudioPatrimonio = false;
+    scopeState.companyScoped = true;
+    scopeState.scopeCompanyName = "Mason Demo";
     apiService.createImportJob.mockReset();
     apiService.uploadImportJobFiles.mockReset();
-    apiService.getCompanies.mockResolvedValue({ data: [{ id: 11, name: "Mason Demo" }] });
+    apiService.getCompanies.mockResolvedValue({
+      data: [
+        { id: 11, name: "Mason Demo" },
+        { id: 22, name: "Camellini" },
+      ],
+    });
     apiService.getImportJobs.mockResolvedValue({
       data: [
         {
@@ -333,11 +344,49 @@ describe("ImportJobsPage — piano di carico cartella", () => {
 
     releaseB();
     await waitFor(() => expect(screen.getByText("Job #9")).toBeInTheDocument());
-    await waitFor(() => {
-      const readyInput = screen.getByText("Carica cartella").closest("label").querySelector("input");
-      expect(readyInput).not.toBeDisabled();
-    });
+    const mismatchInput = screen.getByText("Carica cartella").closest("label").querySelector("input");
+    expect(mismatchInput).toBeDisabled();
+    expect(screen.getByText("Carica cartella").closest("label")).toHaveAttribute(
+      "title",
+      AMBITO_JOB_MISMATCH_TITLE
+    );
+    expect(apiService.createImportJob).not.toHaveBeenCalled();
+  });
 
+  it("Ambito 22 + job Camellini: i lotti usano company_id 22", async () => {
+    scopeState.companyId = "22";
+    scopeState.scopeCompanyName = "Camellini";
+    apiService.getImportJobs.mockResolvedValue({
+      data: [
+        {
+          id: 9,
+          title: "Job Camellini",
+          status: "ready",
+          file_count: 1,
+          company_id: 22,
+          company_name: "Camellini",
+        },
+      ],
+    });
+    apiService.getImportJob.mockImplementation((id) =>
+      Promise.resolve({
+        data: {
+          job: {
+            id: Number(id) || 9,
+            status: "ready",
+            company_id: 22,
+            company_name: "Camellini",
+          },
+          files: [{ id: 9, original_name: "x.pdf", status: "uploaded" }],
+        },
+      })
+    );
+
+    const user = userEvent.setup();
+    render(<ImportJobsPage />);
+    await waitFor(() => expect(screen.getByText("Job Camellini")).toBeInTheDocument());
+    await user.click(screen.getByText("Job Camellini"));
+    await waitFor(() => expect(screen.getByText("Job #9")).toBeInTheDocument());
     pickFolder([relFile("Documenti/Capitolati/rfq.pdf")]);
     expect(await screen.findByText("Piano di carico — Documenti")).toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: "Carica i lotti selezionati" }));

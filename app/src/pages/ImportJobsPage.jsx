@@ -21,10 +21,12 @@ import {
 import {
   MAX_IMPORT_JOB_FILES,
   COMPANY_REQUIRED_UPLOAD_TITLE,
+  AMBITO_JOB_MISMATCH_TITLE,
   takeImportFiles,
   bindDirectoryPicker,
   isClientCompanyId,
   resolvePrefillCompanyId,
+  scopeMatchesJobCompany,
 } from "../utils/importFolderUpload";
 import {
   buildFolderInventory,
@@ -57,10 +59,6 @@ const QUALIFICATION_DOC_TYPES = new Set([
 
 function isQualificationDocType(docType) {
   return QUALIFICATION_DOC_TYPES.has(String(docType || ""));
-}
-
-function getCompanyId(company) {
-  return company?.id ?? company?.company_id;
 }
 
 function parseAiJson(val) {
@@ -441,7 +439,6 @@ export default function ImportJobsPage() {
   const [folderNotice, setFolderNotice] = useState(null);
   const [newTitle, setNewTitle] = useState("");
   const [docTypeHint, setDocTypeHint] = useState("");
-  const [newCompanyId, setNewCompanyId] = useState("");
   const [busy, setBusy] = useState(false);
   const [commitDialog, setCommitDialog] = useState(null); // { file, isNorm, form, normLookup }
   const [commitResult, setCommitResult] = useState(null); // { fileId, registryId }
@@ -512,13 +509,6 @@ export default function ImportJobsPage() {
   }, [loadCompanies]);
 
   useEffect(() => {
-    const prefill = resolvePrefillCompanyId(scopeCompanyId);
-    if (prefill) {
-      setNewCompanyId((prev) => prev || prefill);
-    }
-  }, [scopeCompanyId]);
-
-  useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const jobParam = params.get('job');
     if (jobParam) {
@@ -582,7 +572,8 @@ export default function ImportJobsPage() {
   ]);
 
   async function handleCreate() {
-    if (!isClientCompanyId(newCompanyId)) {
+    const scopeId = resolvePrefillCompanyId(scopeCompanyId);
+    if (!isClientCompanyId(scopeId)) {
       setError(COMPANY_REQUIRED_UPLOAD_TITLE);
       return;
     }
@@ -592,12 +583,11 @@ export default function ImportJobsPage() {
       const res = await apiService.createImportJob({
         title: newTitle || undefined,
         document_type_hint: docTypeHint || undefined,
-        company_id: newCompanyId ? parseInt(newCompanyId, 10) : undefined,
+        company_id: parseInt(scopeId, 10),
       });
       const id = res.data?.id;
       setNewTitle("");
       setDocTypeHint("");
-      setNewCompanyId(resolvePrefillCompanyId(scopeCompanyId));
       await loadList();
       if (id) setSelectedId(id);
     } catch (e) {
@@ -609,8 +599,18 @@ export default function ImportJobsPage() {
 
   async function uploadPickedFiles(fileList, inputEl) {
     if (!selectedId || !fileList?.length) return;
+    if (!isClientCompanyId(scopeCompanyId)) {
+      setError(COMPANY_REQUIRED_UPLOAD_TITLE);
+      if (inputEl) inputEl.value = "";
+      return;
+    }
     if (!isClientCompanyId(detail?.job?.company_id)) {
       setError(COMPANY_REQUIRED_UPLOAD_TITLE);
+      if (inputEl) inputEl.value = "";
+      return;
+    }
+    if (!scopeMatchesJobCompany(scopeCompanyId, detail.job.company_id)) {
+      setError(AMBITO_JOB_MISMATCH_TITLE);
       if (inputEl) inputEl.value = "";
       return;
     }
@@ -671,13 +671,25 @@ export default function ImportJobsPage() {
       resetFolderInput();
       return;
     }
-    const pickedCompanyId = detail?.job?.company_id;
-    if (Number(detail?.job?.id) !== Number(selectedId) || !isClientCompanyId(pickedCompanyId)) {
-      setError(
-        Number(detail?.job?.id) === Number(selectedId)
-          ? COMPANY_REQUIRED_UPLOAD_TITLE
-          : DETAIL_STALE_TITLE
-      );
+    const scopeId = resolvePrefillCompanyId(scopeCompanyId);
+    if (Number(detail?.job?.id) !== Number(selectedId)) {
+      setError(DETAIL_STALE_TITLE);
+      setFolderPlan(null);
+      setFolderPlanSelected(new Set());
+      setFolderPlanCompanyId(null);
+      resetFolderInput();
+      return;
+    }
+    if (!isClientCompanyId(scopeId) || !isClientCompanyId(detail?.job?.company_id)) {
+      setError(COMPANY_REQUIRED_UPLOAD_TITLE);
+      setFolderPlan(null);
+      setFolderPlanSelected(new Set());
+      setFolderPlanCompanyId(null);
+      resetFolderInput();
+      return;
+    }
+    if (!scopeMatchesJobCompany(scopeId, detail.job.company_id)) {
+      setError(AMBITO_JOB_MISMATCH_TITLE);
       setFolderPlan(null);
       setFolderPlanSelected(new Set());
       setFolderPlanCompanyId(null);
@@ -698,7 +710,7 @@ export default function ImportJobsPage() {
     setFolderUpload(null);
     folderUploadCancelRef.current = false;
     setFolderPlan(inventory);
-    setFolderPlanCompanyId(parseInt(pickedCompanyId, 10));
+    setFolderPlanCompanyId(parseInt(scopeId, 10));
     setFolderPlanSelected(new Set(inventory.folders.map((f) => f.key)));
   }
 
@@ -1088,11 +1100,21 @@ export default function ImportJobsPage() {
 
   const detailMatchesSelection =
     selectedId != null && Number(detail?.job?.id) === Number(selectedId);
+  const scopeIsClient = isClientCompanyId(scopeCompanyId);
+  const jobHasCompany = detailMatchesSelection && isClientCompanyId(detail.job.company_id);
   const canUploadForJob =
-    detailMatchesSelection && isClientCompanyId(detail.job.company_id);
-  const uploadGateTitle = detailMatchesSelection
-    ? COMPANY_REQUIRED_UPLOAD_TITLE
-    : DETAIL_STALE_TITLE;
+    jobHasCompany && scopeMatchesJobCompany(scopeCompanyId, detail.job.company_id);
+  const canProcessForJob = jobHasCompany;
+  const uploadGateTitle = !detailMatchesSelection
+    ? DETAIL_STALE_TITLE
+    : !scopeIsClient || !jobHasCompany
+      ? COMPANY_REQUIRED_UPLOAD_TITLE
+      : canUploadForJob
+        ? ""
+        : AMBITO_JOB_MISMATCH_TITLE;
+  const processGateTitle = !detailMatchesSelection
+    ? DETAIL_STALE_TITLE
+    : COMPANY_REQUIRED_UPLOAD_TITLE;
 
   if (!isAdmin) {
     return (
@@ -1106,8 +1128,8 @@ export default function ImportJobsPage() {
     <div className="import-jobs-page">
       <h1>Import batch PDF</h1>
       <p className="import-jobs-intro">
-        Flusso operativo: <strong>Azienda cliente → tipo documento → file → estrazione → revisione → AI → registro</strong>.
-        Serve sempre un&apos;azienda sul job: Ambito «Tutto lo studio» o Patrimonio non basta.
+        Flusso operativo: <strong>Ambito (azienda cliente) → tipo documento → file → estrazione → revisione → AI → registro</strong>.
+        Scegli un&apos;azienda cliente in Ambito (in alto). Con Tutto lo studio o Patrimonio non si crea un job e non si caricano file.
         Una cartella non parte subito: vedi il piano (file, MB, lotti da {MAX_IMPORT_JOB_FILES}) e confermi.
         Sbagli il carico? <strong>Annulla caricamento</strong> elimina il job e i file non posati. Quelli già nello scaffale restano.
       </p>
@@ -1125,21 +1147,6 @@ export default function ImportJobsPage() {
             />
             <select
               className="import-jobs-select"
-              value={newCompanyId}
-              onChange={(e) => setNewCompanyId(e.target.value)}
-            >
-              <option value="">Azienda cliente (obbligatoria)</option>
-              {companies.map((c) => {
-                const companyId = getCompanyId(c);
-                return (
-                  <option key={companyId} value={String(companyId)}>
-                    {c.name || `ID ${companyId}`}
-                  </option>
-                );
-              })}
-            </select>
-            <select
-              className="import-jobs-select"
               value={docTypeHint}
               onChange={(e) => setDocTypeHint(e.target.value)}
             >
@@ -1153,12 +1160,12 @@ export default function ImportJobsPage() {
               type="button"
               className="btn-primary"
               onClick={handleCreate}
-              disabled={busy || !isClientCompanyId(newCompanyId)}
-              title={!isClientCompanyId(newCompanyId) ? COMPANY_REQUIRED_UPLOAD_TITLE : ""}
+              disabled={busy || !scopeIsClient}
+              title={!scopeIsClient ? COMPANY_REQUIRED_UPLOAD_TITLE : ""}
             >
               + Nuovo job
             </button>
-            {!isClientCompanyId(newCompanyId) && (
+            {!scopeIsClient && (
               <p className="import-jobs-field-hint">
                 {COMPANY_REQUIRED_UPLOAD_TITLE}
               </p>
@@ -1216,7 +1223,14 @@ export default function ImportJobsPage() {
               {!isClientCompanyId(detail.job.company_id) && (
                 <p className="import-jobs-warning">
                   Questo job non ha un&apos;azienda cliente: carica, estrai e screening restano visibili ma bloccati.
-                  Crea un nuovo job scegliendo l&apos;azienda (non Tutto lo studio).
+                  Scegli un&apos;azienda cliente in Ambito (in alto) e crea un nuovo job.
+                </p>
+              )}
+              {isClientCompanyId(detail.job.company_id) &&
+                scopeIsClient &&
+                !scopeMatchesJobCompany(scopeCompanyId, detail.job.company_id) && (
+                <p className="import-jobs-warning">
+                  {AMBITO_JOB_MISMATCH_TITLE}
                 </p>
               )}
                 </>
@@ -1262,11 +1276,11 @@ export default function ImportJobsPage() {
                   type="button"
                   className="btn-secondary"
                   onClick={handleProcess}
-                  disabled={busy || !canUploadForJob}
+                  disabled={busy || !canProcessForJob}
                   title={
-                    canUploadForJob
+                    canProcessForJob
                       ? "Estrae il testo da PDF, Word ed Excel"
-                      : uploadGateTitle
+                      : processGateTitle
                   }
                 >
                   Estrai testo
@@ -1275,11 +1289,11 @@ export default function ImportJobsPage() {
                   type="button"
                   className="btn-primary"
                   onClick={handleScreenAndPlace}
-                  disabled={busy || !canUploadForJob}
+                  disabled={busy || !canProcessForJob}
                   title={
-                    canUploadForJob
+                    canProcessForJob
                       ? "Classifica i file e li posa nello scaffale se il tipo è chiaro"
-                      : uploadGateTitle
+                      : processGateTitle
                   }
                 >
                   Screening e posa
