@@ -76,6 +76,7 @@ Destinazione (non questa slice): un solo wizard Ambito → albero → carico →
 
 ## Esito L1 (21/08/2026)
 
+- SHA: `6e4f3199` (`6e4f31999bd745b74c5f16ef145ce012594d2cb6`)
 - Jest BE: `normIngest.service.test.js` + `ingestStaging.service.test.js` + `normUpload.controller.test.js` = **32 verdi**
 - Vitest FE: `normUploadButton.test.jsx` + `normUploadResults.test.js` = **19 verdi**
 - `cd app && npm run build` OK
