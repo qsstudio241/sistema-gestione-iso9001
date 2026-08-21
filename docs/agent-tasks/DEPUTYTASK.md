@@ -81,3 +81,10 @@ Destinazione (non questa slice): un solo wizard Ambito → albero → carico →
 - Vitest FE: `normUploadButton.test.jsx` + `normUploadResults.test.js` = **19 verdi**
 - `cd app && npm run build` OK
 - **Non pronta**: niente Bugbot, niente merge. Deploy VPS di IA-12 **dopo merge**. Cloud non mergia.
+
+## Review #524 (rilievi — in corso)
+
+- RBAC: `assertMutatingAllowed` su `folder.company_id` dopo `assertFolderIsNorms`; stesso check su `doc.company_id` in `applyNormToExistingDocument` (+ `parent_id` se `expectedFolderId`).
+- Batch: 200 (non 500) se `results` ha solo duplicati/errori; FE non butta l'array.
+- Tetto 20: `truncated` / `omitted` in risposta + avviso UI. Tetto non alzato.
+- Update: `checkNormDuplicate(..., excludeDocumentId)` prima dell'UPDATE.

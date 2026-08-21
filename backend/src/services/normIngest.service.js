@@ -18,6 +18,7 @@ const normCatalog = require('./normCatalogLookup.service');
 const normChunker = require('./normChunker.service');
 const { resolveNormFolderId } = require('./normCodesImport.service');
 const { calculatePathCache } = require('./documentTreeProvisioner.service');
+const { assertMutatingAllowed } = require('./companyAccess.service');
 const { ingestFiguresFromPdf } = require('./figureIngest.service');
 const {
   parseStandardCode,
@@ -411,9 +412,32 @@ async function assertFolderIsNorms(organizationId, folderId) {
  * PDF già in registry sotto la cartella NORME E LEGGI (allegato corrente).
  * Non richiede re-upload: IA-12.
  */
+const FOLDER_PDF_FROM_WHERE = `
+    FROM document_registry d
+    INNER JOIN attachments a
+      ON a.document_id = d.id
+     AND ISNULL(a.is_current_doc_version, 1) = 1
+    WHERE d.organization_id = @orgId
+      AND d.parent_id = @folderId
+      AND d.doc_type <> 'folder'
+      AND ISNULL(d.status, 'rilasciato') NOT IN ('eliminato')
+      AND (
+        a.mime_type = 'application/pdf'
+        OR LOWER(ISNULL(a.file_name, '')) LIKE '%.pdf'
+      )`;
+
 async function listFolderNormPdfs(organizationId, folderId, documentIds = null) {
   const folder = parseInt(folderId, 10);
-  if (!Number.isFinite(folder)) return [];
+  if (!Number.isFinite(folder)) {
+    return { docs: [], total: 0, truncated: false, omitted: 0 };
+  }
+
+  const params = { orgId: organizationId, folderId: folder };
+  const countResult = await query(
+    `SELECT COUNT(*) AS total ${FOLDER_PDF_FROM_WHERE}`,
+    params,
+  );
+  const total = Number(countResult.recordset?.[0]?.total) || 0;
 
   const result = await query(`
     SELECT TOP ${FOLDER_INGEST_LIMIT}
@@ -426,20 +450,9 @@ async function listFolderNormPdfs(organizationId, folderId, documentIds = null) 
       a.file_name,
       a.mime_type,
       a.file_size
-    FROM document_registry d
-    INNER JOIN attachments a
-      ON a.document_id = d.id
-     AND ISNULL(a.is_current_doc_version, 1) = 1
-    WHERE d.organization_id = @orgId
-      AND d.parent_id = @folderId
-      AND d.doc_type <> 'folder'
-      AND ISNULL(d.status, 'rilasciato') NOT IN ('eliminato')
-      AND (
-        a.mime_type = 'application/pdf'
-        OR LOWER(ISNULL(a.file_name, '')) LIKE '%.pdf'
-      )
+    ${FOLDER_PDF_FROM_WHERE}
     ORDER BY d.id ASC
-  `, { orgId: organizationId, folderId: folder });
+  `, params);
 
   let rows = result.recordset || [];
   if (Array.isArray(documentIds) && documentIds.length > 0) {
@@ -448,7 +461,13 @@ async function listFolderNormPdfs(organizationId, folderId, documentIds = null) 
     );
     rows = rows.filter((r) => allowed.has(r.id));
   }
-  return rows;
+  const omitted = Math.max(0, total - FOLDER_INGEST_LIMIT);
+  return {
+    docs: rows,
+    total,
+    truncated: omitted > 0,
+    omitted,
+  };
 }
 
 /**
@@ -457,6 +476,8 @@ async function listFolderNormPdfs(organizationId, folderId, documentIds = null) 
 async function applyNormToExistingDocument(documentId, fields, organizationId, options = {}) {
   const {
     userId,
+    user = null,
+    expectedFolderId = null,
     extractedText = null,
     textQuality = null,
     filePath = null,
@@ -485,6 +506,25 @@ async function applyNormToExistingDocument(documentId, fields, organizationId, o
     throw err;
   }
 
+  if (expectedFolderId != null && expectedFolderId !== '') {
+    const expected = parseInt(expectedFolderId, 10);
+    if (Number.isFinite(expected) && parseInt(doc.parent_id, 10) !== expected) {
+      const err = new Error('Il documento non appartiene alla cartella NORME E LEGGI selezionata.');
+      err.code = 'DOC_NOT_IN_FOLDER';
+      throw err;
+    }
+  }
+
+  if (user) {
+    const denied = await assertMutatingAllowed(user, { companyId: doc.company_id });
+    if (denied) {
+      const err = new Error(denied.body?.error || 'Permesso negato');
+      err.code = denied.body?.code || 'AUTH_FORBIDDEN';
+      err.status = denied.status;
+      throw err;
+    }
+  }
+
   const cleanFields = { ...fields };
   delete cleanFields._fileName;
   delete cleanFields.catalog_lookup;
@@ -497,6 +537,14 @@ async function applyNormToExistingDocument(documentId, fields, organizationId, o
   if (!normTsd?.standard_code) {
     const err = new Error('Codice norma obbligatorio per il commit (standard_code)');
     err.code = 'VALIDATION_ERROR';
+    throw err;
+  }
+
+  if (await checkNormDuplicate(normTsd.standard_code, organizationId, docId)) {
+    const err = new Error(`Duplicato: norma già presente (${normTsd.standard_code}).`);
+    err.code = 'DUPLICATE';
+    err.standard_code = normTsd.standard_code;
+    err.warnings = [`Duplicato: norma già presente (${normTsd.standard_code}).`];
     throw err;
   }
 

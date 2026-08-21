@@ -16,6 +16,34 @@ const {
 } = require('../services/normIngest.service');
 const { createStagingRecord } = require('../services/ingestStaging.service');
 const { describeIngestFileError } = require('../utils/ingestErrorMessage');
+const {
+  assertMutatingAllowed,
+  sendAccessDenied,
+} = require('../services/companyAccess.service');
+
+function unpackFolderNormPdfs(listed) {
+  if (Array.isArray(listed)) {
+    return { docs: listed, truncated: false, omitted: 0 };
+  }
+  return {
+    docs: listed?.docs || [],
+    truncated: listed?.truncated === true,
+    omitted: Number(listed?.omitted) || 0,
+  };
+}
+
+function batchHttpStatus(results, { successIfOk = 200 } = {}) {
+  const successCount = results.filter((r) => r.status === 'confirmed' || r.status === 'pending_review').length;
+  const pendingCount = results.filter((r) => r.status === 'pending_review').length;
+  if (successCount > 0) {
+    return { httpStatus: successIfOk, successCount, pendingCount };
+  }
+  // Duplicati/errori per file: 200 così il FE mostra `results` (non un 500 opaco).
+  if (results.length > 0) {
+    return { httpStatus: 200, successCount, pendingCount };
+  }
+  return { httpStatus: 500, successCount, pendingCount };
+}
 
 /** Campi piatti per UI (NormUploadButton). */
 function flattenNormBatchEntry(entry) {
@@ -177,10 +205,9 @@ async function uploadNorms(req, res) {
     results.push(flattenNormBatchEntry(entry));
   }
 
-  const successCount = results.filter((r) => r.status === 'confirmed' || r.status === 'pending_review').length;
-  const pendingCount = results.filter((r) => r.status === 'pending_review').length;
+  const { httpStatus, successCount, pendingCount } = batchHttpStatus(results, { successIfOk: 201 });
 
-  res.status(successCount > 0 ? 201 : 500).json({
+  res.status(httpStatus).json({
     success: successCount > 0,
     uploaded: successCount,
     pending_review: pendingCount,
@@ -226,9 +253,15 @@ async function ingestFromFolder(req, res) {
     });
   }
 
+  const writeDenied = await assertMutatingAllowed(req.user, { companyId: normFolder.company_id });
+  if (writeDenied) return sendAccessDenied(res, writeDenied);
+
   let docs;
+  let truncated = false;
+  let omitted = 0;
   try {
-    docs = await listFolderNormPdfs(organization_id, normFolder.id, documentIds);
+    const listed = await listFolderNormPdfs(organization_id, normFolder.id, documentIds);
+    ({ docs, truncated, omitted } = unpackFolderNormPdfs(listed));
   } catch (err) {
     logger.error('[NormUpload] ingest-from-folder lista PDF', err.message);
     return res.status(500).json({ error: 'Errore interno', code: 'INTERNAL_ERROR' });
@@ -287,6 +320,8 @@ async function ingestFromFolder(req, res) {
       if (extracted.status === 'ready_commit') {
         const applied = await applyNormToExistingDocument(doc.id, extracted.fields, organization_id, {
           userId: user_id,
+          user: req.user,
+          expectedFolderId: normFolder.id,
           filePath: doc.storage_path,
           fileName,
           extractedText: extracted.extracted_text,
@@ -335,6 +370,15 @@ async function ingestFromFolder(req, res) {
         };
       }
     } catch (fileErr) {
+      if (fileErr.code === 'DUPLICATE') {
+        results.push(flattenNormBatchEntry({
+          fileName,
+          status: 'duplicate',
+          standard_code: fileErr.standard_code || null,
+          warnings: fileErr.warnings || [fileErr.message],
+        }));
+        continue;
+      }
       const errMsg = describeIngestFileError(fileErr);
       logger.error('[NormUpload/folder] Estrazione fallita', {
         documentId: doc.id,
@@ -351,14 +395,15 @@ async function ingestFromFolder(req, res) {
     results.push(flattenNormBatchEntry(entry));
   }
 
-  const successCount = results.filter((r) => r.status === 'confirmed' || r.status === 'pending_review').length;
-  const pendingCount = results.filter((r) => r.status === 'pending_review').length;
+  const { httpStatus, successCount, pendingCount } = batchHttpStatus(results, { successIfOk: 200 });
 
-  res.status(successCount > 0 ? 200 : 500).json({
+  res.status(httpStatus).json({
     success: successCount > 0,
     uploaded: successCount,
     pending_review: pendingCount,
     total: results.length,
+    truncated,
+    omitted,
     results,
   });
 }

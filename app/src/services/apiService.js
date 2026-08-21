@@ -2726,7 +2726,8 @@ class ApiService {
                 throw new ApiError(
                     errorData.error || `Upload norme fallito (${response.status})`,
                     response.status,
-                    errorData.code || 'NORM_UPLOAD_ERROR'
+                    errorData.code || 'NORM_UPLOAD_ERROR',
+                    errorData,
                 );
             }
 

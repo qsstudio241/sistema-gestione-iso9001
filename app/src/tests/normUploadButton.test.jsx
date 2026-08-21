@@ -344,4 +344,54 @@ describe('NormUploadButton — flusso upload norme', () => {
     });
     expect(onUploadComplete).toHaveBeenCalledTimes(1);
   });
+
+  it('Ingest dalla cartella mostra i duplicati anche se la promise rifiuta con results', async () => {
+    const err = new Error('Batch senza conferme');
+    err.data = {
+      success: false,
+      results: [{
+        status: 'duplicate',
+        fileName: 'iso9001.pdf',
+        standard_code: 'ISO 9001:2015',
+      }],
+    };
+    apiService.ingestNormsFromFolder.mockRejectedValue(err);
+
+    render(<NormUploadButton folderId={42} onUploadComplete={onUploadComplete} />);
+
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: /Ingest dalla cartella/ }));
+    });
+
+    await waitFor(() => {
+      expect(screen.getByText(/Duplicato/)).toBeTruthy();
+      expect(screen.getByText('iso9001.pdf')).toBeTruthy();
+    });
+    expect(screen.queryByText(/Batch senza conferme/)).toBeNull();
+    expect(onUploadComplete).not.toHaveBeenCalled();
+  });
+
+  it('Ingest dalla cartella avvisa se restano PDF oltre le prime 20', async () => {
+    apiService.ingestNormsFromFolder.mockResolvedValue({
+      truncated: true,
+      omitted: 4,
+      results: [{
+        status: 'confirmed',
+        documentId: 88,
+        fileName: 'gia_in_cartella.pdf',
+        norm_title: 'ISO 9001 gia in registry',
+        standard_code: 'ISO 9001:2015',
+      }],
+    });
+
+    render(<NormUploadButton folderId={42} onUploadComplete={onUploadComplete} />);
+
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: /Ingest dalla cartella/ }));
+    });
+
+    await waitFor(() => {
+      expect(screen.getByText('Prime 20. Ne restano 4.')).toBeTruthy();
+    });
+  });
 });

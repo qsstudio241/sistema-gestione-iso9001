@@ -24,6 +24,11 @@ jest.mock('../services/ingestStaging.service', () => ({
   createStagingRecord: jest.fn(),
 }));
 
+jest.mock('../services/companyAccess.service', () => ({
+  assertMutatingAllowed: jest.fn().mockResolvedValue(null),
+  sendAccessDenied: (res, denied) => res.status(denied.status).json(denied.body),
+}));
+
 const fsSync = require('fs');
 const {
   extractNormFromPdf,
@@ -32,6 +37,7 @@ const {
   listFolderNormPdfs,
 } = require('../services/normIngest.service');
 const { createStagingRecord } = require('../services/ingestStaging.service');
+const { assertMutatingAllowed } = require('../services/companyAccess.service');
 const { ingestFromFolder } = require('./normUpload.controller');
 
 function mockRes() {
@@ -49,6 +55,7 @@ describe('ingestFromFolder (IA-12)', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
+    assertMutatingAllowed.mockResolvedValue(null);
     jest.spyOn(fsSync, 'existsSync').mockReturnValue(true);
     jest.spyOn(require('fs').promises, 'readFile').mockResolvedValue(Buffer.from('%PDF'));
   });
@@ -112,11 +119,16 @@ describe('ingestFromFolder (IA-12)', () => {
       23,
       { excludeDocumentId: 88 },
     );
+    expect(assertMutatingAllowed).toHaveBeenCalledWith(reqBase.user, { companyId: 8 });
     expect(applyNormToExistingDocument).toHaveBeenCalledWith(
       88,
       expect.objectContaining({ standard_code: 'ISO 9001:2015' }),
       1001,
-      expect.objectContaining({ filePath: '/uploads/import/iso9001.pdf' }),
+      expect.objectContaining({
+        filePath: '/uploads/import/iso9001.pdf',
+        user: reqBase.user,
+        expectedFolderId: 23,
+      }),
     );
     expect(createStagingRecord).not.toHaveBeenCalled();
     expect(res.status).toHaveBeenCalledWith(200);
@@ -153,5 +165,90 @@ describe('ingestFromFolder (IA-12)', () => {
     }));
     expect(res.status).toHaveBeenCalledWith(200);
     expect(res.json.mock.calls[0][0].results[0].status).toBe('pending_review');
+  });
+
+  it('403 se company_access copre solo azienda A e la cartella 2.3 è azienda B', async () => {
+    assertFolderIsNorms.mockResolvedValue({ id: 23, company_id: 99 });
+    assertMutatingAllowed.mockResolvedValue({
+      status: 403,
+      body: { error: 'Permesso negato', code: 'AUTH_FORBIDDEN' },
+    });
+    const req = {
+      user: {
+        user_id: 7,
+        organization_id: 1001,
+        role: 'cliente',
+        company_access: [{ company_id: 8, permission: 'write' }],
+      },
+      body: { folder_id: 23 },
+    };
+    const res = mockRes();
+    await ingestFromFolder(req, res);
+
+    expect(assertMutatingAllowed).toHaveBeenCalledWith(req.user, { companyId: 99 });
+    expect(res.status).toHaveBeenCalledWith(403);
+    expect(res.json).toHaveBeenCalledWith(expect.objectContaining({ code: 'AUTH_FORBIDDEN' }));
+    expect(listFolderNormPdfs).not.toHaveBeenCalled();
+    expect(extractNormFromPdf).not.toHaveBeenCalled();
+  });
+
+  it('200 con results visibili se tutti i file sono duplicati (niente confirmed)', async () => {
+    assertFolderIsNorms.mockResolvedValue({ id: 23, company_id: 8 });
+    listFolderNormPdfs.mockResolvedValue({
+      docs: [{
+        id: 88,
+        file_name: 'iso9001.pdf',
+        storage_path: '/uploads/import/iso9001.pdf',
+        mime_type: 'application/pdf',
+        company_id: 8,
+      }],
+      truncated: false,
+      omitted: 0,
+    });
+    extractNormFromPdf.mockResolvedValue({
+      status: 'duplicate',
+      standard_code: 'ISO 9001:2015',
+      norm_title: 'Qualità',
+      warnings: ['Duplicato'],
+    });
+
+    const res = mockRes();
+    await ingestFromFolder(reqBase, res);
+
+    expect(res.status).toHaveBeenCalledWith(200);
+    const payload = res.json.mock.calls[0][0];
+    expect(payload.success).toBe(false);
+    expect(payload.results).toHaveLength(1);
+    expect(payload.results[0].status).toBe('duplicate');
+    expect(applyNormToExistingDocument).not.toHaveBeenCalled();
+  });
+
+  it('segnala truncated/omitted se la cartella ha più di 20 PDF', async () => {
+    assertFolderIsNorms.mockResolvedValue({ id: 23, company_id: 8 });
+    listFolderNormPdfs.mockResolvedValue({
+      docs: [{
+        id: 88,
+        file_name: 'iso9001.pdf',
+        storage_path: '/uploads/import/iso9001.pdf',
+        mime_type: 'application/pdf',
+        company_id: 8,
+      }],
+      truncated: true,
+      omitted: 5,
+    });
+    extractNormFromPdf.mockResolvedValue({
+      status: 'duplicate',
+      standard_code: 'ISO 9001:2015',
+      warnings: ['Duplicato'],
+    });
+
+    const res = mockRes();
+    await ingestFromFolder(reqBase, res);
+
+    expect(res.status).toHaveBeenCalledWith(200);
+    expect(res.json.mock.calls[0][0]).toEqual(expect.objectContaining({
+      truncated: true,
+      omitted: 5,
+    }));
   });
 });

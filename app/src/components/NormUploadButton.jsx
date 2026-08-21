@@ -3,7 +3,12 @@
  */
 import React, { useState, useRef, useCallback } from "react";
 import apiService from "../services/apiService";
-import { normalizeNormUploadResults, countNormUploadSuccesses } from "../utils/normUploadResults";
+import {
+  normalizeNormUploadResults,
+  countNormUploadSuccesses,
+  resultsFromNormBatchPayload,
+  folderCapNoticeFromPayload,
+} from "../utils/normUploadResults";
 import IngestReviewDialog from "./IngestReviewDialog";
 import StatusBadge from "./StatusBadge";
 import "./NormUploadButton.css";
@@ -17,6 +22,7 @@ export default function NormUploadButton({ folderId, onUploadComplete }) {
   const [validationErr, setValidationErr] = useState(null);
   const [reviewItem, setReviewItem] = useState(null);
   const [reviewBusy, setReviewBusy] = useState(false);
+  const [folderCapNotice, setFolderCapNotice] = useState(null);
   const inputRef = useRef(null);
   const canIngestFolder = folderId != null && folderId !== "";
 
@@ -43,25 +49,38 @@ export default function NormUploadButton({ folderId, onUploadComplete }) {
     }
   }, [onUploadComplete]);
 
+  const applyBatchPayload = useCallback((payload) => {
+    const recovered = resultsFromNormBatchPayload(payload);
+    if (recovered) {
+      applyNormalizedResults(normalizeNormUploadResults(recovered));
+    }
+    setFolderCapNotice(folderCapNoticeFromPayload(payload));
+  }, [applyNormalizedResults]);
+
   const handleIngestFolder = useCallback(async () => {
     if (!canIngestFolder) return;
     setValidationErr(null);
     setUploading(true);
     setSelectedFiles([]);
     setResults(null);
+    setFolderCapNotice(null);
     try {
       const res = await apiService.ingestNormsFromFolder(folderId);
-      applyNormalizedResults(normalizeNormUploadResults(res.results || []));
+      applyBatchPayload(res);
     } catch (err) {
-      setResults([{
-        status: "error",
-        fileName: "cartella",
-        error: err.message || "Errore ingest dalla cartella",
-      }]);
+      if (resultsFromNormBatchPayload(err.data)) {
+        applyBatchPayload(err.data);
+      } else {
+        setResults([{
+          status: "error",
+          fileName: "cartella",
+          error: err.message || "Errore ingest dalla cartella",
+        }]);
+      }
     } finally {
       setUploading(false);
     }
-  }, [canIngestFolder, folderId, applyNormalizedResults]);
+  }, [canIngestFolder, folderId, applyBatchPayload]);
 
   const handleUpload = useCallback(async () => {
     if (selectedFiles.length === 0) return;
@@ -73,15 +92,20 @@ export default function NormUploadButton({ folderId, onUploadComplete }) {
     setValidationErr(null);
     setUploading(true);
     setResults(null);
+    setFolderCapNotice(null);
     try {
       const res = await apiService.uploadNorms(selectedFiles, folderId);
-      applyNormalizedResults(normalizeNormUploadResults(res.results || []));
+      applyBatchPayload(res);
     } catch (err) {
-      setResults([{ status: "error", fileName: "tutti i file", error: err.message || "Errore upload" }]);
+      if (resultsFromNormBatchPayload(err.data)) {
+        applyBatchPayload(err.data);
+      } else {
+        setResults([{ status: "error", fileName: "tutti i file", error: err.message || "Errore upload" }]);
+      }
     } finally {
       setUploading(false);
     }
-  }, [selectedFiles, folderId, applyNormalizedResults]);
+  }, [selectedFiles, folderId, applyBatchPayload]);
 
   const handleOpenReview = useCallback((item) => {
     const localFile = selectedFiles.find((f) => f.name === item.fileName) || null;
@@ -128,6 +152,7 @@ export default function NormUploadButton({ folderId, onUploadComplete }) {
     setSelectedFiles([]);
     setResults(null);
     setValidationErr(null);
+    setFolderCapNotice(null);
     setReviewItem(null);
     if (inputRef.current) inputRef.current.value = "";
   }, []);
@@ -221,6 +246,9 @@ export default function NormUploadButton({ folderId, onUploadComplete }) {
                   )}
                 </span>
               </div>
+              {folderCapNotice && (
+                <div className="norm-upload__size-warning" role="status">{folderCapNotice}</div>
+              )}
               <ul className="norm-upload__results">
                 {results.map((r, i) => {
                   const isPending = r.status === "pending_review";

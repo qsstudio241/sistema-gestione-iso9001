@@ -39,3 +39,17 @@ export function countNormUploadSuccesses(results) {
     (r) => (r.status === 'confirmed' && r.documentId) || r.status === 'pending_review',
   ).length;
 }
+
+/** Recupera `results` da 200 o da errore strutturato (409/200 con body). */
+export function resultsFromNormBatchPayload(payload) {
+  const results = payload?.results;
+  return Array.isArray(results) && results.length > 0 ? results : null;
+}
+
+export function folderCapNoticeFromPayload(payload) {
+  const omitted = Number(payload?.omitted) || 0;
+  if (payload?.truncated === true && omitted > 0) {
+    return `Prime 20. Ne restano ${omitted}.`;
+  }
+  return null;
+}

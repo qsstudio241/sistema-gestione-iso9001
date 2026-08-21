@@ -311,6 +311,10 @@
   border-radius: 6px;
 }
 
+.norm-upload__panel .norm-upload__size-warning {
+  margin: 8px 16px 0;
+}
+
 /* Import da lista codici (Fase 3) */
 
 .norm-folder-actions {
