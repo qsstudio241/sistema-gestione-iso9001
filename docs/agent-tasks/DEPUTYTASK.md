@@ -1,12 +1,13 @@
 # DEPUTYTASK — IA-5b: coda admin «da completare»
 
-**Stato:** APERTO — TEST OK L1 (21/08/2026), PR da aprire (draft)  
+**Stato:** CHIUSO — TEST OK (21/08/2026), mergiata [#519](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/519) + deploy VPS  
 **Aperto:** 21/08/2026  
+**Chiuso:** 21/08/2026  
 **Piano:** [`PLAN_INGEST_ARCHIVIO_SLICES.md`](PLAN_INGEST_ARCHIVIO_SLICES.md) § IA-5b  
-**Rischio:** Medio — filtro registro + UI; niente schema/auth/sync; Cloud **non** mergia.  
+**Rischio:** Medio — filtro registro + UI; niente schema/auth/sync.  
 **Branch:** `cursor/ingest-ia5b-coda-d492`  
-**SHA:** `70835016`  
-**Origine:** committente «Mergiato» su [#518](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/518); prossima fetta concordata IA-5b.
+**SHA merge:** `503a9e33eb9531cc8297e1fc32bef01b17f92e57`  
+**Origine:** committente «Mergiato» su [#518](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/518); slice IA-5b.
 
 ---
 
@@ -57,3 +58,10 @@ Dopo un carico grosso i file finiscono nello scaffale (`document_registry`) inco
 - Badge con conteggio.
 - Screening non bloccato.
 - Click riga = form documento esistente (nessuna pagina nuova).
+
+## Chiusura (21/08/2026)
+
+- [PR #519](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/519) mergiata su `main` `503a9e33`.
+- Deploy VPS: PID `1149359` → `1163278`, health 200. Nessuna migrazione SQL (solo predicato query). `document.controller.js` già nel manifest.
+- Smoke: login 200; `GET /documents/stats` → `da_completare=1`; `GET /documents?incomplete=1` 200 (1 riga).
+- GUIDA + piano già in #519. Prossima fetta solo se chiesta: **IA-6**.
