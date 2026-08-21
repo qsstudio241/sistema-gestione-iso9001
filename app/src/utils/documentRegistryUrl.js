@@ -7,6 +7,7 @@
  */
 
 import { isClientCompanyId } from './importFolderUpload';
+import { getAllowedCompanyIds } from './appCompanyScope';
 
 export const VALID_DOC_REGISTRY_TABS = ['priority', 'catalog', 'tree'];
 
@@ -106,6 +107,7 @@ export function buildIncompleteQueuePath({ companyId } = {}) {
 /**
  * company_id dall'URL se è un'azienda cliente. Null se assente, Patrimonio o invalido.
  * Serve al primo render del registro: loadCatalog non deve partire sullo scope header.
+ * Non applica RBAC: usare resolveAllowedUrlClientCompanyId prima di un override di scope.
  * @param {string|{ companyId?: unknown }|null|undefined} [searchOrParsed]
  * @returns {string|null}
  */
@@ -116,4 +118,19 @@ export function resolveUrlClientCompanyId(searchOrParsed) {
       : parseDocumentRegistrySearch(searchOrParsed).companyId;
   if (!isClientCompanyId(companyId)) return null;
   return String(parseInt(companyId, 10));
+}
+
+/**
+ * Deep-link company_id solo se setCompanyId lo accetterebbe:
+ * admin org-wide (niente company_access) → ok; utente company-scoped → solo getAllowedCompanyIds.
+ * @param {string|{ companyId?: unknown }|null|undefined} [searchOrParsed]
+ * @param {object|null|undefined} user
+ * @returns {string|null}
+ */
+export function resolveAllowedUrlClientCompanyId(searchOrParsed, user) {
+  const id = resolveUrlClientCompanyId(searchOrParsed);
+  if (!id) return null;
+  const allowed = getAllowedCompanyIds(user);
+  if (allowed == null) return id;
+  return allowed.includes(id) ? id : null;
 }

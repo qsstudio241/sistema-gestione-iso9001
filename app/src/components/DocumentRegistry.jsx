@@ -21,6 +21,7 @@ import {
   parseDocumentRegistrySearch,
   buildDocumentRegistryPath,
   resolveUrlClientCompanyId,
+  resolveAllowedUrlClientCompanyId,
 } from "../utils/documentRegistryUrl";
 import { resolveRegistryFormContextScope } from "../utils/documentFormContextScope";
 import { STUDIO_REGISTRY_SCOPE } from "../utils/documentRegistryCompanyScope";
@@ -968,9 +969,10 @@ function DocumentRegistry() {
   const isAdmin = user?.role === 'admin' || user?.role === 'superadmin';
 
   // URL ?company_id= vince sul context header al primo render, prima di loadCatalog.
+  // Solo se setCompanyId accetterebbe quella company (niente bypass RBAC).
   // applyFromUrl allinea poi l'ambito header; l'override cade quando coincide.
   const [urlCompanyOverride, setUrlCompanyOverride] = useState(() =>
-    resolveUrlClientCompanyId(initialUrl)
+    resolveAllowedUrlClientCompanyId(initialUrl, user)
   );
 
   const [studioOnly, setStudioOnly] = useState(
@@ -1144,7 +1146,7 @@ function DocumentRegistry() {
       );
       if (incomplete && !selectId) setActiveTab(tab || "catalog");
       else if (tab) setActiveTab(tab);
-      const urlClient = resolveUrlClientCompanyId(parsed);
+      const urlClient = resolveAllowedUrlClientCompanyId(parsed, user);
       if (urlClient) {
         setStudioOnly(false);
         setCompanyId(urlClient);

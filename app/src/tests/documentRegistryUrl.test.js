@@ -6,6 +6,7 @@ import {
   buildDocumentTreeQuery,
   buildIncompleteQueuePath,
   resolveUrlClientCompanyId,
+  resolveAllowedUrlClientCompanyId,
   VALID_DOC_REGISTRY_TABS,
 } from '../utils/documentRegistryUrl';
 
@@ -105,5 +106,20 @@ describe('documentRegistryUrl', () => {
     expect(resolveUrlClientCompanyId({ companyId: null })).toBeNull();
     expect(resolveUrlClientCompanyId({ companyId: 'studio' })).toBeNull();
     expect(resolveUrlClientCompanyId({ companyId: '' })).toBeNull();
+  });
+
+  it('resolveAllowedUrlClientCompanyId blocca company_id fuori da company_access', () => {
+    const admin = { role: 'admin', organization_id: 1001 };
+    const restricted = {
+      role: 'viewer',
+      organization_id: 1001,
+      company_access: [{ company_id: 11, permission: 'read' }],
+    };
+    expect(resolveAllowedUrlClientCompanyId('?company_id=99', admin)).toBe('99');
+    expect(resolveAllowedUrlClientCompanyId('?company_id=11&incomplete=1', admin)).toBe('11');
+    expect(resolveAllowedUrlClientCompanyId('?company_id=11', restricted)).toBe('11');
+    expect(resolveAllowedUrlClientCompanyId('?tab=tree&company_id=99&incomplete=1', restricted)).toBeNull();
+    expect(resolveAllowedUrlClientCompanyId({ companyId: 99 }, restricted)).toBeNull();
+    expect(resolveAllowedUrlClientCompanyId('?incomplete=1', restricted)).toBeNull();
   });
 });

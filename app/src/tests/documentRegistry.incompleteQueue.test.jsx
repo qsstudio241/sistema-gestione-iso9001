@@ -20,11 +20,13 @@ const scopeState = {
   scopeCompanyName: "Tutto lo studio",
 };
 
+const authState = {
+  user: { role: "admin", organization_id: 1001 },
+  canWriteModule: () => true,
+};
+
 vi.mock("../contexts/AuthContext", () => ({
-  useAuth: () => ({
-    user: { role: "admin", organization_id: 1001 },
-    canWriteModule: () => true,
-  }),
+  useAuth: () => authState,
 }));
 
 vi.mock("../contexts/CompanyScopeContext", () => ({
@@ -58,14 +60,23 @@ function catalogCalls() {
     .filter((params) => params.incomplete === 1 || params.page != null);
 }
 
+function firstTreeCompanyId() {
+  const call = apiService.getDocumentTree.mock.calls[0];
+  return call ? call[1] : undefined;
+}
+
 describe("DocumentRegistry — deep link coda company_id al primo fetch", () => {
   const originalSearch = window.location.search;
 
   beforeEach(() => {
     vi.clearAllMocks();
+    authState.user = { role: "admin", organization_id: 1001 };
+    authState.canWriteModule = () => true;
     scopeState.companyId = "";
     scopeState.isStudioWide = true;
     scopeState.isStudioPatrimonio = false;
+    scopeState.companyScoped = false;
+    scopeState.locked = false;
     scopeState.setCompanyId = vi.fn();
     apiService.getDocuments.mockResolvedValue({
       data: [],
@@ -78,6 +89,8 @@ describe("DocumentRegistry — deep link coda company_id al primo fetch", () => 
     apiService.getOrphanDocuments.mockResolvedValue({ data: [] });
     apiService.getNotificationsConfig.mockResolvedValue({ alert_days_1: 30 });
     apiService.getPriorityDeadlines.mockResolvedValue({ data: [] });
+    apiService.getDocumentTree.mockResolvedValue({ data: [] });
+    apiService.getDocumentTreeChildren.mockResolvedValue({ data: [] });
     window.history.replaceState(
       {},
       "",
@@ -121,6 +134,89 @@ describe("DocumentRegistry — deep link coda company_id al primo fetch", () => 
     const firstCatalog = catalogCalls()[0];
     expect(String(firstCatalog.company_id)).toBe("11");
     expect(firstCatalog.content_scope).toBeUndefined();
+    expect(firstCatalog.incomplete).toBe(1);
+  });
+
+  it("company_access solo [11]: URL company_id=99 non entra nella prima GET catalogo", async () => {
+    authState.user = {
+      role: "viewer",
+      organization_id: 1001,
+      company_access: [{ company_id: 11, permission: "read" }],
+    };
+    scopeState.companyId = "11";
+    scopeState.companyScoped = true;
+    scopeState.locked = true;
+    scopeState.isStudioWide = false;
+    window.history.replaceState(
+      {},
+      "",
+      "/documents?tab=catalog&company_id=99&incomplete=1"
+    );
+    render(<DocumentRegistry />);
+
+    await waitFor(() => expect(catalogCalls().length).toBeGreaterThan(0));
+
+    const firstCatalog = catalogCalls()[0];
+    expect(String(firstCatalog.company_id)).toBe("11");
+    expect(String(firstCatalog.company_id)).not.toBe("99");
+  });
+
+  it("company_access solo [11]: URL tree company_id=99 non entra nella prima GET albero", async () => {
+    authState.user = {
+      role: "viewer",
+      organization_id: 1001,
+      company_access: [{ company_id: 11, permission: "read" }],
+    };
+    scopeState.companyId = "11";
+    scopeState.companyScoped = true;
+    scopeState.locked = true;
+    scopeState.isStudioWide = false;
+    window.history.replaceState(
+      {},
+      "",
+      "/documents?tab=tree&company_id=99&incomplete=1"
+    );
+    render(<DocumentRegistry />);
+
+    await waitFor(() => expect(apiService.getDocumentTree).toHaveBeenCalled());
+
+    expect(firstTreeCompanyId()).toBe(11);
+    expect(firstTreeCompanyId()).not.toBe(99);
+  });
+
+  it("admin: URL tree company_id=11&incomplete=1 entra nella prima GET albero", async () => {
+    window.history.replaceState(
+      {},
+      "",
+      "/documents?tab=tree&company_id=11&incomplete=1"
+    );
+    render(<DocumentRegistry />);
+
+    await waitFor(() => expect(apiService.getDocumentTree).toHaveBeenCalled());
+
+    expect(firstTreeCompanyId()).toBe(11);
+  });
+
+  it("utente allowed 11: URL company_id=11&incomplete=1 entra nella prima GET catalogo", async () => {
+    authState.user = {
+      role: "viewer",
+      organization_id: 1001,
+      company_access: [{ company_id: 11, permission: "read" }],
+    };
+    scopeState.companyId = "";
+    scopeState.companyScoped = true;
+    scopeState.locked = true;
+    window.history.replaceState(
+      {},
+      "",
+      "/documents?tab=catalog&company_id=11&incomplete=1"
+    );
+    render(<DocumentRegistry />);
+
+    await waitFor(() => expect(catalogCalls().length).toBeGreaterThan(0));
+
+    const firstCatalog = catalogCalls()[0];
+    expect(String(firstCatalog.company_id)).toBe("11");
     expect(firstCatalog.incomplete).toBe(1);
   });
 });
