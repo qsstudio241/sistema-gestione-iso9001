@@ -55,6 +55,8 @@ describe("ImportJobsPage — gate azienda cliente", () => {
     scopeState.companyId = "";
     scopeState.isStudioWide = true;
     scopeState.isStudioPatrimonio = false;
+    apiService.createImportJob.mockReset();
+    apiService.deleteImportJob.mockReset();
     apiService.getCompanies.mockResolvedValue({ data: [{ id: 11, name: "Mason Demo" }] });
     apiService.getImportJobs.mockResolvedValue({
       data: [
@@ -148,5 +150,39 @@ describe("ImportJobsPage — gate azienda cliente", () => {
     const createBtn = await screen.findByRole("button", { name: "+ Nuovo job" });
     expect(createBtn).toBeDisabled();
     expect(screen.getByRole("option", { name: "Azienda cliente (obbligatoria)" }).selected).toBe(true);
+  });
+
+  it("dopo create re-prefill da Ambito se è un'azienda cliente", async () => {
+    scopeState.companyId = "11";
+    scopeState.isStudioWide = false;
+    scopeState.isStudioPatrimonio = false;
+    scopeState.scopeCompanyName = "Mason Demo";
+    apiService.createImportJob.mockResolvedValue({ data: { id: 99 } });
+    const user = userEvent.setup();
+    render(<ImportJobsPage />);
+    const createBtn = await screen.findByRole("button", { name: "+ Nuovo job" });
+    expect(createBtn).not.toBeDisabled();
+    await user.click(createBtn);
+    await waitFor(() => {
+      expect(apiService.createImportJob).toHaveBeenCalled();
+    });
+    expect(screen.getByRole("option", { name: "Mason Demo" }).selected).toBe(true);
+    expect(screen.getByRole("button", { name: "+ Nuovo job" })).not.toBeDisabled();
+  });
+
+  it("Annulla caricamento avvisa che i file già posati restano", async () => {
+    const confirmSpy = vi.spyOn(window, "confirm").mockReturnValue(false);
+    const user = userEvent.setup();
+    render(<ImportJobsPage />);
+    await waitFor(() => expect(screen.getByText("Job Mason")).toBeInTheDocument());
+    await user.click(screen.getByText("Job Mason"));
+    await waitFor(() => expect(screen.getByText("Job #8")).toBeInTheDocument());
+    await user.click(screen.getByRole("button", { name: "Annulla caricamento" }));
+    expect(confirmSpy).toHaveBeenCalled();
+    const msg = String(confirmSpy.mock.calls[0][0]);
+    expect(msg).toMatch(/già posati nello scaffale restano/i);
+    expect(msg).toMatch(/file non ancora posati/i);
+    expect(apiService.deleteImportJob).not.toHaveBeenCalled();
+    confirmSpy.mockRestore();
   });
 });
