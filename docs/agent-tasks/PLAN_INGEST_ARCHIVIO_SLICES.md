@@ -2,7 +2,7 @@
 
 > **Destinazione**: screening in background da cartella radice. Lo screening sceglie prima la **stanza** (studio / azienda / commessa), poi lo **scaffale**. Un file = una copia, visibile da due viste se è di commessa. Specialisti già in repo lavorano in parallelo. Primo verticale: documenti di commessa → stanza Riesame + cassetto azienda `2.2`. Review = coda incompleti. Learning = ADR-017.
 > **Spec già in repo (non rifare)**: [`MODULO_INGEST_AI_COMMESSE_SCOPO_E_ROADMAP.md`](../specs/MODULO_INGEST_AI_COMMESSE_SCOPO_E_ROADMAP.md) (analisi sul caso, slice #5–#7 già fatte) · [`MINI_SPEC_RIESAME_REQUISITI_CONTRATTO.md`](../specs/MINI_SPEC_RIESAME_REQUISITI_CONTRATTO.md) · albero in mig. 059/076 · ADR-010 HITL
-> **Brief attivo**: [`DEPUTYTASK.md`](DEPUTYTASK.md) — **CHIUSO** cartella tutti i tipi + screening a campioni [#511](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/511). Prossima: **IA-5b** (coda da completare).
+> **Brief attivo**: [`DEPUTYTASK.md`](DEPUTYTASK.md) — **CHIUSO** gate azienda [#514](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/514) + cartella/screening [#511](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/511). Prossima: **IA-5b** (coda da completare).
 > **Mappa creata**: 20/08/2026 (Lead wayfinder A). Codice da IA-1 in poi.
 
 ---
@@ -13,8 +13,8 @@ Il modulo vive in **GESTIONE → Impostazioni → Import PDF** (`/settings/impor
 
 Flusso attuale, un job alla volta:
 
-1. **Crea job** — titolo, azienda opzionale, tipo documento opzionale (suggerimento per l’AI).
-2. **Carica PDF o cartella** — massimo **80 file**, fino a 200 MB l’uno. «Carica PDF» è solo `.pdf`. «Carica cartella» prende **tutti i tipi** (Word, Excel, disegni, immagini, PDF) e tiene i path in `original_name`. I file finiscono sul server in `uploads/imports/{organizzazione}/{job}/`.
+1. **Crea job** — titolo, **azienda cliente obbligatoria** (non «Tutto lo studio» / Patrimonio), tipo documento opzionale (suggerimento per l’AI).
+2. **Carica PDF o cartella** — massimo **80 file**, fino a 200 MB l’uno. Senza azienda i pulsanti restano visibili ma disabilitati. «Carica PDF» è solo `.pdf`. «Carica cartella» prende **tutti i tipi** (Word, Excel, disegni, immagini, PDF) e tiene i path in `original_name`. I file finiscono sul server in `uploads/imports/{organizzazione}/{job}/`. **Annulla caricamento** elimina il job e i file non ancora posati (non toglie i documenti già in registro).
 3. **Elabora** — estrae il testo da PDF (`pdf-parse`), Word (`mammoth`) ed Excel (`xlsx`). Poi lo screening legge **30 righe**, e solo se il tipo è ancora incerto passa a 90 poi 200 (tetto 8 000 caratteri). Disegni/foto: solo nome/cartella. Se il PDF è una scansione senza testo, la confidence è bassa. L’OCR **esiste già** in altri moduli (`ocrExtractor` / `documentTextExtractor`, SAL S1a) ma **non è collegato** a questa pagina (IA-8).
 4. **Analisi AI** (pulsante, non automatica) — propone tipo documento e campi (codice, date, titolo, …). L’operatore può correggere.
 5. **Commit a mano**, tre uscite diverse:

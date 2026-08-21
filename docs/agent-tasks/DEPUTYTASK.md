@@ -5,7 +5,7 @@
 **Chiuso:** 21/08/2026  
 **Piano:** [`PLAN_INGEST_ARCHIVIO_SLICES.md`](PLAN_INGEST_ARCHIVIO_SLICES.md)  
 **Rischio:** Medio — FE + BE additivo (`COMPANY_REQUIRED_FOR_UPLOAD`); Cloud **non** mergia.  
-**PR:** (draft, da aprire)
+**PR:** [#514](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/514) mergiata 21/08/2026 · deploy PROD PID `1134642`→`1149359`, health 200
 
 ---
 
@@ -49,4 +49,4 @@ contractReview, ingest staging, MC, SAL, OCR, `PROJECT_CONTEXT.md`, tetto 80, ma
 
 L1: `importFolderUpload` + `importJobsPage.companyGate` + `importJobs.controller` — verdi. Suite FE 1249 verdi. Build Vite OK.
 
-GUIDA/roadmap: bozza in questo brief (altri agent IDLE sullo stesso repo). Sync hub dopo merge.
+GUIDA/roadmap: sync hub post-merge (nessun altro DEPUTYTASK APERTO). Deploy PROD PID `1134642`→`1149359`, health 200.
