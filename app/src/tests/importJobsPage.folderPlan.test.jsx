@@ -153,6 +153,59 @@ describe("ImportJobsPage — piano di carico cartella", () => {
     expect(firstUploadFiles[0].webkitRelativePath).toMatch(/Capitolati/);
   });
 
+  it("job vuoto: il primo lotto crea comunque title + hint capitolato (stessa azienda)", async () => {
+    apiService.getImportJobs.mockResolvedValue({
+      data: [
+        {
+          id: 8,
+          title: "Job Mason",
+          status: "draft",
+          file_count: 0,
+          company_id: 11,
+          company_name: "Mason Demo",
+        },
+      ],
+    });
+    apiService.getImportJob.mockImplementation((id) =>
+      Promise.resolve({
+        data: {
+          job: {
+            id: Number(id) || 8,
+            status: "draft",
+            company_id: 11,
+            company_name: "Mason Demo",
+          },
+          files: Number(id) === 8 ? [] : [{ id: 9, original_name: "b.pdf", status: "uploaded" }],
+        },
+      })
+    );
+    apiService.createImportJob
+      .mockResolvedValueOnce({ data: { id: 31 } })
+      .mockResolvedValueOnce({ data: { id: 32 } });
+
+    const user = await openMasonJob();
+    pickFolder([
+      relFile("Documenti/Scan/pagina.jpg"),
+      relFile("Documenti/Capitolati/rfq.pdf"),
+    ]);
+    await screen.findByText("Piano di carico — Documenti");
+    await user.click(screen.getByRole("button", { name: "Carica i lotti selezionati" }));
+    await waitFor(() => {
+      expect(apiService.createImportJob).toHaveBeenCalled();
+      expect(apiService.uploadImportJobFiles).toHaveBeenCalled();
+    });
+    expect(apiService.createImportJob.mock.calls[0][0]).toEqual(
+      expect.objectContaining({
+        title: "Documenti / Capitolati",
+        document_type_hint: "capitolato",
+        company_id: 11,
+      })
+    );
+    expect(apiService.uploadImportJobFiles.mock.calls[0][0]).toBe(31);
+    const firstUploadFiles = apiService.uploadImportJobFiles.mock.calls[0][1];
+    expect(firstUploadFiles[0].webkitRelativePath).toMatch(/Capitolati/);
+  });
+
   it("Annulla durante l'upload ferma i lotti successivi", async () => {
     let releaseFirst;
     apiService.uploadImportJobFiles

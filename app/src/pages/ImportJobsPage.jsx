@@ -699,7 +699,6 @@ export default function ImportJobsPage() {
     setError(null);
     setFolderNotice(null);
     const companyId = parseInt(detail.job.company_id, 10);
-    let reuseId = (detail.files || []).length === 0 ? selectedId : null;
     let uploaded = 0;
     try {
       for (let i = 0; i < lots.length; i += 1) {
@@ -722,16 +721,14 @@ export default function ImportJobsPage() {
           label: lot.progressLabel,
           cancelled: false,
         });
-        let jobId = reuseId;
-        if (!jobId) {
-          const res = await apiService.createImportJob({
-            title: lot.title,
-            document_type_hint: lotDocumentTypeHint(lot.guessedType),
-            company_id: companyId,
-          });
-          jobId = res.data?.id;
-        }
-        reuseId = null;
+        // Sempre create: un job vuoto riusato non ha titolo pianificato né document_type_hint
+        // (niente PATCH job; screening capitolato-first dipende da hint sul primo lotto).
+        const res = await apiService.createImportJob({
+          title: lot.title,
+          document_type_hint: lotDocumentTypeHint(lot.guessedType),
+          company_id: companyId,
+        });
+        const jobId = res.data?.id;
         if (!jobId) throw new Error("Creazione job fallita");
         await apiService.uploadImportJobFiles(jobId, lot.files);
         uploaded += 1;
