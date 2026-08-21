@@ -1,9 +1,11 @@
 # DEPUTYTASK — Import: sempre un'azienda (niente Tutto lo studio)
 
-**Stato:** APERTO  
+**Stato:** CHIUSO — TEST OK L1 (21/08/2026)  
 **Aperto:** 21/08/2026  
+**Chiuso:** 21/08/2026  
 **Piano:** [`PLAN_INGEST_ARCHIVIO_SLICES.md`](PLAN_INGEST_ARCHIVIO_SLICES.md)  
-**Rischio:** Medio — FE + BE additivo (`COMPANY_REQUIRED_FOR_UPLOAD`); Cloud **non** mergia.
+**Rischio:** Medio — FE + BE additivo (`COMPANY_REQUIRED_FOR_UPLOAD`); Cloud **non** mergia.  
+**PR:** (draft, da aprire)
 
 ---
 
@@ -40,4 +42,11 @@ contractReview, ingest staging, MC, SAL, OCR, `PROJECT_CONTEXT.md`, tetto 80, ma
 
 ## Esito
 
-_(da compilare in chiusura)_
+- FE: Carica PDF / cartella / Estrai / Screening visibili, `disabled` + title se manca `company_id`. Prefill da CompanyScope solo azienda cliente (non `""` / `studio`).
+- BE: `createJob`, `uploadFiles`, `screenAndPlace` → 400 `COMPANY_REQUIRED_FOR_UPLOAD`.
+- Annulla caricamento: pulsante in dettaglio + × in lista, conferma, elimina job e file (non purge registro).
+- Anti-errore: tetto 80 + avviso; conferma se il job ha già file. Non alzato il tetto. Non mappe. Non OCR.
+
+L1: `importFolderUpload` + `importJobsPage.companyGate` + `importJobs.controller` — verdi. Suite FE 1249 verdi. Build Vite OK.
+
+GUIDA/roadmap: bozza in questo brief (altri agent IDLE sullo stesso repo). Sync hub dopo merge.
