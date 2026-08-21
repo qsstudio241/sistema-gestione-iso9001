@@ -1,10 +1,12 @@
 # DEPUTYTASK — Import: un solo controllo azienda (Ambito)
 
-**Stato:** APERTO  
+**Stato:** CHIUSO — TEST OK (21/08/2026), mergiata [#521](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/521)  
 **Aperto:** 21/08/2026  
+**Chiuso:** 21/08/2026  
 **Piano:** [`PLAN_INGEST_ARCHIVIO_SLICES.md`](PLAN_INGEST_ARCHIVIO_SLICES.md) (post IA-5b)  
-**Rischio:** Medio — UI Import; niente schema/auth/sync. PR + gate Bugbot; Cloud **non** mergia.  
+**Rischio:** Medio — UI Import; niente schema/auth/sync.  
 **Branch:** `cursor/import-ambito-only-d492`  
+**SHA merge:** `877aa8d8fdd18ad84197a88c2861eb767501d1cd`  
 **Origine:** committente — la tendina «Azienda cliente» sul job Import non serve. Un solo controllo: **Ambito** (header).
 
 ---
@@ -49,3 +51,10 @@ Backend se il gate `COMPANY_REQUIRED_FOR_UPLOAD` basta (`company_id` arriva da A
 - `cd app && npm run build` OK
 - SHA HEAD: `01c39764` (docs) / `8e256688` (fix)
 - **Non pronta**: CI + Bugbot + Security. Cloud non mergia. `ManagePullRequest` assente — body in `/opt/cursor/artifacts/pr_import_ambito_only.md`.
+
+## Chiusura (21/08/2026)
+
+- [PR #521](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/521) mergiata su `main` `877aa8d8`.
+- Solo FE: **nessun deploy VPS**. Netlify da `main`. Hard-refresh **Ctrl+Shift+R**.
+- Ambito Tutto lo studio / Patrimonio = niente `+ Nuovo job` e niente carica (pulsanti visibili, `disabled`). Scegli un’azienda cliente in Ambito.
+- GUIDA + roadmap già in #521. Questa closeout tocca solo lo slot. Prossima fetta solo se chiesta: **IA-6**.
