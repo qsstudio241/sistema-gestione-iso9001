@@ -56,5 +56,5 @@ Destinazione (non questa slice): un solo flusso Ambito → (albero se serve) →
 ## Esito L1 (21/08/2026)
 
 - Jest BE: `importJobs.controller.test.js` + `documentTreeProvisioner.folder.test.js` = **46 verdi**
-- SHA: vedi ultimo commit su `cursor/ingest-posa-norme-folder-d492`
+- SHA: `d2a69d68` (`d2a69d6897d767eb470e922d7911be5fd9870369`)
 - **Non pronta**: CI + Bugbot + Security. Cloud non mergia. Deploy VPS **dopo merge**.
