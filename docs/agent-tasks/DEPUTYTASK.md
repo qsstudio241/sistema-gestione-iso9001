@@ -1,11 +1,18 @@
 # DEPUTYTASK — IA-12: ingest famiglia sui PDF già in NORME E LEGGI
 
-**Stato:** APERTO  
+**Stato:** CHIUSO — TEST OK  
 **Aperto:** 21/08/2026  
+**Chiuso:** 21/08/2026  
 **Piano:** [`PLAN_INGEST_ARCHIVIO_SLICES.md`](PLAN_INGEST_ARCHIVIO_SLICES.md) (IA-12; post IA-11)  
 **Rischio:** Medio — endpoint additivo `ingest-from-folder` + UPDATE documento esistente; niente schema/auth/sync.  
 **Branch:** `cursor/ingest-ia12-norme-famiglia-d492`  
+**PR feature:** [#524](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/524) (già su main, merge `a34a902d`)  
+**PR follow-up RBAC:** [#525](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/525)  
+**Merge commit:** `248b901c04ea57ce89737d4c3b6f81ea55be2b2e`  
+**Deploy:** PID `1176534` → `1189353`, health 200  
 **Precedente slot:** IA-11 CHIUSO [#523](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/523) (mergiata 21/08/2026, deploy VPS dopo merge)
+
+**Leftover Low (non in questa chiusura):** `DOC_NOT_IN_FOLDER` è throwato in `normIngest.service.js` senza `status`; `ingestStaging.controller.js` su `main` non mappa il code → 500 su folder mismatch. Slice 4xx a parte; non aperta qui (committente: solo «mergiato»).
 
 ---
 
@@ -84,7 +91,7 @@ Destinazione (non questa slice): un solo wizard Ambito → albero → carico →
 - Jest BE: `ingestStaging.service` + `ingestStaging.controller` + `normIngest.service` = **43 verdi** (include 403 confirm)
 - Vitest FE: `normUploadButton.test.jsx` + `normUploadResults.test.js` = **23 verdi**
 - `cd app && npm run build` OK
-- **Gate (21/08/2026):** CI SUCCESS + Bugbot nessun rilievo + Security Review nessun bloccante su SHA `fc627aff`. PR [#525](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/525) **pronta al click umano**. Cloud non mergia. Deploy VPS **dopo merge**. Stato resta APERTO fino al merge.
+- **Gate (21/08/2026):** CI SUCCESS + Bugbot nessun rilievo + Security Review nessun bloccante su SHA `fc627aff`. PR [#525](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/525) mergiata dal committente (`248b901c`). Deploy VPS OK: PID `1176534` → `1189353`, health 200. Brief **CHIUSO**. GUIDA/roadmap non toccate (parallelo 4xx + altre chat).
 
 ## Review #524 (rilievi chiusi, stessa PR)
 
