@@ -60,18 +60,31 @@ export function bindDirectoryPicker(el) {
 }
 
 /**
+ * Tutti i file utilizzabili (niente junk OS), senza tagliare al tetto 80.
+ * Per il piano di carico cartella: l'utente conferma, poi i lotti spezzano a 80.
+ * @param {FileList|File[]|null|undefined} fileList
+ * @returns {{ files: File[], skippedJunk: number }}
+ */
+export function collectImportFiles(fileList) {
+  const all = Array.from(fileList || []);
+  const files = all.filter((f) => f && (f.name || f.webkitRelativePath) && !isJunkOsFile(f));
+  return {
+    files,
+    skippedJunk: all.length - files.length,
+  };
+}
+
+/**
  * Tiene tutti i tipi di file (docx, xlsx, dwg, immagini, PDF…).
- * Salta solo spazzatura OS. Taglia al limite per job.
+ * Salta solo spazzatura OS. Taglia al limite per job (upload singolo / PDF).
  * @param {FileList|File[]|null|undefined} fileList
  * @returns {{ files: File[], skippedJunk: number, truncated: boolean }}
  */
 export function takeImportFiles(fileList) {
-  const all = Array.from(fileList || []);
-  const usable = all.filter((f) => f && (f.name || f.webkitRelativePath) && !isJunkOsFile(f));
-  const skippedJunk = all.length - usable.length;
-  const truncated = usable.length > MAX_IMPORT_JOB_FILES;
+  const { files, skippedJunk } = collectImportFiles(fileList);
+  const truncated = files.length > MAX_IMPORT_JOB_FILES;
   return {
-    files: usable.slice(0, MAX_IMPORT_JOB_FILES),
+    files: files.slice(0, MAX_IMPORT_JOB_FILES),
     skippedJunk,
     truncated,
   };
