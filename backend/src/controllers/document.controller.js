@@ -30,6 +30,27 @@ const { allocateDocCode, resolveExpiryDate } = require('../services/docCodeGener
 /** Giorni finestra alert documenti (allineato a notifications_config.alert_days_1). */
 const DEFAULT_DOC_ALERT_WINDOW_DAYS = 30;
 
+/**
+ * Coda IA-5b «da completare»: tipo incerto, cartella assente, titolo vuoto, bozza AI.
+ * Allineato a app/src/utils/documentIncompleteQueue.js
+ */
+function incompleteDocumentSql(alias = 'dr') {
+    return `(
+        ${alias}.doc_type <> 'folder'
+        AND ${alias}.status <> 'obsoleto'
+        AND (
+            ${alias}.import_status = 'ai_draft'
+            OR ${alias}.doc_type IS NULL
+            OR LTRIM(RTRIM(${alias}.doc_type)) = ''
+            OR ${alias}.doc_type = 'altro'
+            OR ${alias}.parent_id IS NULL
+            OR ${alias}.parent_id = 0
+            OR ${alias}.title IS NULL
+            OR LTRIM(RTRIM(${alias}.title)) = ''
+        )
+    )`;
+}
+
 // ─── GET /api/v1/documents ────────────────────────────────────────────────────
 /**
  * Lista documenti con filtri opzionali.
@@ -39,6 +60,7 @@ const DEFAULT_DOC_ALERT_WINDOW_DAYS = 30;
  *   include_expired (1/true: con expiring_days include anche scaduti),
  *   search (testo libero su title/doc_code),
  *   without_file (1/true: solo documenti senza allegato),
+ *   incomplete (1/true: coda «da completare» — tipo/cartella/campi/bozza AI),
  *   page (default 1), limit (default 50)
  */
 async function listDocuments(req, res) {
@@ -55,6 +77,7 @@ async function listDocuments(req, res) {
             include_expired,
             search,
             without_file,
+            incomplete,
             page  = 1,
             limit = 50,
         } = req.query;
@@ -112,6 +135,9 @@ async function listDocuments(req, res) {
         if (parseTruthyQueryFlag(without_file)) {
             conditions.push(`NOT ${buildHasAnyFileSql('dr')}`);
         }
+        if (parseTruthyQueryFlag(incomplete)) {
+            conditions.push(incompleteDocumentSql('dr'));
+        }
 
         const where = conditions.join(' AND ');
 
@@ -124,6 +150,8 @@ async function listDocuments(req, res) {
                 dr.revision,
                 dr.status,
                 dr.import_status,
+                dr.parent_id,
+                dr.company_id,
                 dr.issue_date,
                 dr.expiry_date,
                 dr.responsible,
@@ -164,6 +192,17 @@ async function listDocuments(req, res) {
             ${buildCurrentFileApplySql('dr')}
             WHERE ${where}
             ORDER BY
+                ${parseTruthyQueryFlag(incomplete) ? `
+                CASE
+                    WHEN dr.doc_type IS NULL
+                      OR LTRIM(RTRIM(dr.doc_type)) = ''
+                      OR dr.doc_type = 'altro'
+                      OR dr.parent_id IS NULL
+                      OR dr.parent_id = 0
+                      OR dr.title IS NULL
+                      OR LTRIM(RTRIM(dr.title)) = ''
+                    THEN 0 ELSE 1
+                END,` : ''}
                 CASE dr.status
                     WHEN 'rilasciato'      THEN 1
                     WHEN 'vigente'         THEN 1
@@ -189,7 +228,7 @@ async function listDocuments(req, res) {
         logger.info('Documents list retrieved', {
             organization_id,
             count: result.recordset.length,
-            filters: { company_id, standard_id, doc_type, status },
+            filters: { company_id, standard_id, doc_type, status, incomplete: !!parseTruthyQueryFlag(incomplete) },
         });
 
         res.json({
@@ -259,7 +298,14 @@ async function getDocumentStats(req, res) {
                       AND dr.status IN ${RELEASED_STATUS_SQL_IN}
                       AND NOT ${noFileExists}
                       ${scopeSql}
-                )                                                                AS rilasciati_senza_file
+                )                                                                AS rilasciati_senza_file,
+                (
+                    SELECT COUNT(*)
+                    FROM document_registry dr
+                    WHERE dr.organization_id = @organization_id
+                      AND ${incompleteDocumentSql('dr')}
+                      ${scopeSql}
+                )                                                                AS da_completare
             FROM document_registry dr
             WHERE dr.organization_id = @organization_id
               AND dr.doc_type <> 'folder'

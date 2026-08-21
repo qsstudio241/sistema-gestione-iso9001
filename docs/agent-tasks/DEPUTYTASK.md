@@ -1,40 +1,51 @@
-# DEPUTYTASK — Import cartella: piano ancorato alla company del picker
+# DEPUTYTASK — IA-5b: coda admin «da completare»
 
-**Stato:** CHIUSO — TEST OK L1 (21/08/2026)  
+**Stato:** APERTO  
 **Aperto:** 21/08/2026  
-**Chiuso:** 21/08/2026  
-**Piano:** [`PLAN_INGEST_ARCHIVIO_SLICES.md`](PLAN_INGEST_ARCHIVIO_SLICES.md)  
-**Rischio:** Medio — solo FE; gate azienda e tetto 80 invariati; Cloud **non** mergia.  
-**Branch:** `cursor/import-plan-company-d492`  
-**SHA:** `dbd3f16d`  
-**Origine:** Bugbot HIGH post-merge PR #517 (`Folder plan wrong company_id`)
+**Piano:** [`PLAN_INGEST_ARCHIVIO_SLICES.md`](PLAN_INGEST_ARCHIVIO_SLICES.md) § IA-5b  
+**Rischio:** Medio — filtro registro + UI; niente schema/auth/sync; Cloud **non** mergia.  
+**Branch:** `cursor/ingest-ia5b-coda-d492`  
+**Origine:** committente «Mergiato» su [#518](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/518); prossima fetta concordata IA-5b.
 
 ---
 
 ## Perché
 
-Il piano di carico resta in memoria se l’utente cambia job nella lista. `handleConfirmFolderPlan` leggeva `company_id` da `detail.job` al click: i lotti nuovi potevano finire sotto un’altra azienda.
+Dopo un carico grosso i file finiscono nello scaffale (`document_registry`) incompleti: tipo incerto (`altro`), cartella assente, campi vuoti, bozza `ai_draft`. Oggi l’admin apre uno per uno. Serve una **coda** con badge, come profilo/qualifiche.
 
 ## File previsti
 
+- `backend/src/controllers/document.controller.js`
+- `backend/src/controllers/document.controller.test.js`
+- `app/src/utils/documentIncompleteQueue.js`
+- `app/src/tests/documentIncompleteQueue.test.js`
+- `app/src/utils/documentRegistryUrl.js`
+- `app/src/tests/documentRegistryUrl.test.js`
+- `app/src/components/DocumentRegistry.jsx`
+- `app/src/components/DocumentDataGrid.jsx`
+- `app/src/components/DocumentDataGrid.css`
 - `app/src/pages/ImportJobsPage.jsx`
-- `app/src/tests/importJobsPage.folderPlan.test.jsx`
+- `app/src/tests/importJobsPage.incompleteQueue.test.jsx`
 - `docs/agent-tasks/DEPUTYTASK.md`
+- `docs/agent-tasks/PLAN_INGEST_ARCHIVIO_SLICES.md` (spuntare IA-5b)
+- `docs/PROJECT_ROADMAP.md` § Stato attuale (chat sola)
+- `docs/GUIDA_CONSOLIDATA.md` (una lezione breve; chat sola)
 
 ## Cosa NON toccare
 
-GUIDA, roadmap, `PROJECT_CONTEXT.md`, backend, tetto 80, `reuseId`, IA-5b, contractReview, MC, SAL.
+`contractReview.*` (IA-6), ingest staging MC, SAL, unificare mappe folder, tetto 80, OCR, UX ×/Annulla/Storico Import, path `Z:\`, `PROJECT_CONTEXT.md`, auth/sync, migrazioni.
 
 ## Slice
 
-1. Catturare `company_id` in `handleFolderPicked` (quando si costruisce il piano).
-2. `handleConfirmFolderPlan` usa **quella** company + `isClientCompanyId`. Se manca: errore, nessun upload.
-3. Reset del piano al cambio `selectedId` (niente piano orfano). Non resettare durante l’upload lotti (il confirm aggiorna `selectedId`).
-4. Ogni lotto resta `createImportJob` con title + hint + company catturata.
+1. Predicato condiviso: incompleto = tipo `altro`/vuoto **o** `parent_id` assente **o** titolo vuoto **o** `import_status=ai_draft`. Esclude cartelle e obsoleti.
+2. `GET /documents?incomplete=1` + conteggio `da_completare` in `GET /documents/stats`. Scope `organization_id` / RBAC invariato.
+3. Documenti: badge **Da completare** (stesso posto di «senza allegato» / Inbox). Click → Catalogo filtrato. Chip motivo in griglia. URL `?tab=catalog&incomplete=1`.
+4. Import PDF: dopo Screening, link «Apri coda da completare» (non è un cancello).
+5. L1 + build. PR draft. Non Bugbot da questo deputy.
 
-## Esito
+## Acceptance
 
-- Cattura `company_id` al picker; confirm usa quella (non `detail.job` al click).
-- Cambio job: piano sparisce; nessun create/upload sull’altra azienda.
-- L1: folderPlan 6 + companyGate 7 = 13 verdi. Build Vite OK.
-- `ManagePullRequest` assente; `gh pr create` → Resource not accessible. Titolo/body per il parent. **Non pronta** senza CI+Bugbot+Security su questo SHA. Nessun deploy.
+- Lista filtrata incompleti (tipo / cartella / campi / bozza AI).
+- Badge con conteggio.
+- Screening non bloccato.
+- Click riga = form documento esistente (nessuna pagina nuova).

@@ -55,6 +55,20 @@ describe('documentRegistryUrl', () => {
     );
   });
 
+  it('parse e build tengono incomplete=1 sulla coda catalogo', () => {
+    expect(parseDocumentRegistrySearch('?tab=catalog&incomplete=1').incomplete).toBe(true);
+    expect(parseDocumentRegistrySearch('?tab=catalog').incomplete).toBe(false);
+    expect(buildDocumentRegistryPath({ incomplete: true })).toBe(
+      '/documents?tab=catalog&incomplete=1'
+    );
+    expect(buildDocumentRegistryPath({ tab: 'catalog', incomplete: true, companyId: 4 })).toBe(
+      '/documents?tab=catalog&company_id=4&incomplete=1'
+    );
+    expect(buildDocumentRegistryPath({ selectId: 9, incomplete: true })).toBe(
+      '/documents?tab=tree&select=9'
+    );
+  });
+
   it('buildDocumentTreeQuery passa company_id all API albero', () => {
     expect(buildDocumentTreeQuery({ depth: 2 })).toBe('depth=2');
     expect(buildDocumentTreeQuery({ depth: 2, companyId: 7 })).toBe(

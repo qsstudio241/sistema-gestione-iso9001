@@ -1,8 +1,9 @@
 /**
  * URL deep link Registro Documenti — contratto allineato a NCPage (?select=).
  * tab: priority | catalog | tree
- * select: id documento ? tab Albero + drawer dettaglio
+ * select: id documento → tab Albero + drawer dettaglio
  * company_id: ambito azienda condiviso (assente = tutto lo studio)
+ * incomplete: 1 → Catalogo filtrato sulla coda «da completare» (IA-5b)
  */
 
 export const VALID_DOC_REGISTRY_TABS = ['priority', 'catalog', 'tree'];
@@ -32,7 +33,7 @@ export function buildDocumentTreeQuery({ depth = 2, companyId } = {}) {
 
 /**
  * @param {string} [search] — query string (es. window.location.search)
- * @returns {{ tab: string|null, selectId: number|null, companyId: number|null }}
+ * @returns {{ tab: string|null, selectId: number|null, companyId: number|null, incomplete: boolean }}
  */
 export function parseDocumentRegistrySearch(search) {
   const params = new URLSearchParams(
@@ -40,18 +41,20 @@ export function parseDocumentRegistrySearch(search) {
   );
   const tabParam = params.get('tab');
   const tab = VALID_DOC_REGISTRY_TABS.includes(tabParam) ? tabParam : null;
+  const incompleteRaw = String(params.get('incomplete') || '').toLowerCase();
   return {
     tab,
     selectId: parseOptionalInt(params.get('select')),
     companyId: parseOptionalInt(params.get('company_id')),
+    incomplete: incompleteRaw === '1' || incompleteRaw === 'true',
   };
 }
 
 /**
- * @param {{ tab?: string|null, selectId?: number|null, companyId?: number|string|null }} opts
+ * @param {{ tab?: string|null, selectId?: number|null, companyId?: number|string|null, incomplete?: boolean }} opts
  * @returns {string}
  */
-export function buildDocumentRegistryPath({ tab, selectId, companyId } = {}) {
+export function buildDocumentRegistryPath({ tab, selectId, companyId, incomplete } = {}) {
   const params = new URLSearchParams();
   if (selectId != null && !Number.isNaN(selectId)) {
     params.set('tab', 'tree');
@@ -64,6 +67,10 @@ export function buildDocumentRegistryPath({ tab, selectId, companyId } = {}) {
   );
   if (cid != null) {
     params.set('company_id', String(cid));
+  }
+  if (incomplete && selectId == null) {
+    if (!params.get('tab')) params.set('tab', 'catalog');
+    params.set('incomplete', '1');
   }
   const qs = params.toString();
   return qs ? `/documents?${qs}` : '/documents';

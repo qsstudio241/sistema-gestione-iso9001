@@ -706,6 +706,7 @@ function CatalogView({
               setFilter("search", "");
               setFilter("expiring_days", null);
               setFilter("without_file", false);
+              setFilter("incomplete", false);
             }}
           >
             Reset
@@ -723,7 +724,11 @@ function CatalogView({
 
       {/* Conteggio */}
       {!loading && !error && (
-        <div className="catalog-count">{total} documento{total !== 1 ? "i" : ""}</div>
+        <div className="catalog-count">
+          {filters.incomplete
+            ? `${total} da completare`
+            : `${total} documento${total !== 1 ? "i" : ""}`}
+        </div>
       )}
 
       {/* DataGrid */}
@@ -1033,6 +1038,7 @@ function DocumentRegistry() {
     standard_id: "",
     expiring_days: null,
     without_file: false,
+    incomplete: false,
   });
   const setFilter = useCallback((key, val) => {
     setFiltersState((f) => ({ ...f, [key]: val }));
@@ -1090,10 +1096,11 @@ function DocumentRegistry() {
           tab,
           selectId: tab === "tree" ? selectId : null,
           companyId: companyId || null,
+          incomplete: tab === "catalog" && filters.incomplete,
         })
       );
     },
-    [replace, registryCompanyScope]
+    [replace, registryCompanyScope, filters.incomplete]
   );
 
   const handleTabChange = useCallback(
@@ -1112,8 +1119,10 @@ function DocumentRegistry() {
   // URL ?tab= & ?select= & ?company_id= al mount e su Back/Forward
   useEffect(() => {
     const applyFromUrl = () => {
-      const { tab, selectId, companyId } = parseDocumentRegistrySearch(window.location.search);
-      if (tab) setActiveTab(tab);
+      const { tab, selectId, companyId, incomplete } = parseDocumentRegistrySearch(window.location.search);
+      setFiltersState((f) => ({ ...f, incomplete: !!incomplete }));
+      if (incomplete && !selectId) setActiveTab(tab || "catalog");
+      else if (tab) setActiveTab(tab);
       if (companyId != null) {
         if (String(companyId) === STUDIO_REGISTRY_SCOPE) {
           setStudioOnly(true);
@@ -1217,6 +1226,7 @@ function DocumentRegistry() {
         ...(filters.standard_id   && { standard_id:  filters.standard_id }),
         ...(filters.expiring_days && { expiring_days: filters.expiring_days }),
         ...(filters.without_file && { without_file: 1 }),
+        ...(filters.incomplete && { incomplete: 1 }),
       };
       const res = await apiService.getDocuments(params);
       setCatalogDocs(res.data || []);
@@ -1426,6 +1436,7 @@ function DocumentRegistry() {
         ...(filters.standard_id   && { standard_id:  filters.standard_id }),
         ...(filters.expiring_days && { expiring_days: filters.expiring_days }),
         ...(filters.without_file && { without_file: 1 }),
+        ...(filters.incomplete && { incomplete: 1 }),
       };
       const res = await apiService.getDocuments(params);
       exportToCSV(res.data || []);
@@ -1535,6 +1546,38 @@ function DocumentRegistry() {
     setCatalogPage(1);
   }, [handleTabChange]);
 
+  const openIncompleteQueue = useCallback(() => {
+    setActiveTab("catalog");
+    setShowDetail(false);
+    setSelectedDoc(null);
+    setDocHistory([]);
+    setFiltersState((f) => {
+      const next = !f.incomplete;
+      replace(
+        buildDocumentRegistryPath({
+          tab: "catalog",
+          companyId: registryCompanyScope || null,
+          incomplete: next,
+        })
+      );
+      return { ...f, incomplete: next };
+    });
+    setCatalogPage(1);
+  }, [replace, registryCompanyScope]);
+
+  useEffect(() => {
+    if (activeTab !== "catalog") return;
+    const parsed = parseDocumentRegistrySearch(window.location.search);
+    if (!!parsed.incomplete === !!filters.incomplete) return;
+    replace(
+      buildDocumentRegistryPath({
+        tab: "catalog",
+        companyId: registryCompanyScope || null,
+        incomplete: filters.incomplete,
+      })
+    );
+  }, [filters.incomplete, activeTab, registryCompanyScope, replace]);
+
   return (
     <div className="docregistry-page">
       {/* Header */}
@@ -1562,6 +1605,20 @@ function DocumentRegistry() {
                   {" "}({stats.rilasciati_senza_file} rilasciati)
                 </span>
               )}
+              {(Number(stats.da_completare) > 0 || filters.incomplete) && (
+                <>
+                  {" \u00b7 "}
+                  <button
+                    type="button"
+                    className="docregistry-file-alert"
+                    onClick={openIncompleteQueue}
+                    title="Apri la coda dei documenti da completare (tipo, cartella, campi)"
+                    aria-pressed={filters.incomplete}
+                  >
+                    {Number(stats.da_completare) || 0} da completare
+                  </button>
+                </>
+              )}
             </span>
           )}
         </div>
@@ -1586,16 +1643,30 @@ function DocumentRegistry() {
         </div>
       )}
 
-      {/* Badge Inbox orfani */}
-      {orphanDocs.length > 0 && (
+      {/* Badge Inbox orfani + coda da completare (IA-5b) */}
+      {(orphanDocs.length > 0 || Number(stats?.da_completare) > 0 || filters.incomplete) && (
         <div className="inbox-badge-wrap">
-          <button
-            className={`inbox-badge${inboxOpen ? ' inbox-badge--active' : ''}`}
-            onClick={() => setInboxOpen(v => !v)}
-          >
-            {"\uD83D\uDCE5"} Inbox
-            <span className="inbox-badge__count">{orphanDocs.length}</span>
-          </button>
+          {orphanDocs.length > 0 && (
+            <button
+              className={`inbox-badge${inboxOpen ? " inbox-badge--active" : ""}`}
+              onClick={() => setInboxOpen((v) => !v)}
+            >
+              {"\uD83D\uDCE5"} Inbox
+              <span className="inbox-badge__count">{orphanDocs.length}</span>
+            </button>
+          )}
+          {(Number(stats?.da_completare) > 0 || filters.incomplete) && (
+            <button
+              type="button"
+              className={`inbox-badge${filters.incomplete ? " inbox-badge--active" : ""}`}
+              onClick={openIncompleteQueue}
+              title="Coda admin: tipo incerto, cartella mancante, campi vuoti, bozza AI"
+              aria-pressed={filters.incomplete}
+            >
+              Da completare
+              <span className="inbox-badge__count">{Number(stats?.da_completare) || 0}</span>
+            </button>
+          )}
           {inboxToast && <span className="inbox-toast">{inboxToast}</span>}
         </div>
       )}
