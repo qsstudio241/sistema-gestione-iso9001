@@ -80,7 +80,7 @@ Destinazione (non questa slice): un solo wizard Ambito → albero → carico →
 
 - SHA feature: `6e4f3199` (`6e4f31999bd745b74c5f16ef145ce012594d2cb6`)
 - SHA review #524 (RBAC cartella + batch 200 + tetto 20): `1112525e`
-- SHA fix confirmStaging RBAC: da aggiornare dopo commit
+- SHA fix confirmStaging RBAC: `62eb6324` · HEAD `f4ebc5d9` · PR [#525](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/525) (follow-up; #524 già mergiata)
 - Jest BE: `ingestStaging.service` + `ingestStaging.controller` + `normIngest.service` = **43 verdi** (include 403 confirm)
 - Vitest FE: `normUploadButton.test.jsx` + `normUploadResults.test.js` = **23 verdi**
 - `cd app && npm run build` OK
