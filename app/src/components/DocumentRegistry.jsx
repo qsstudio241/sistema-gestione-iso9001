@@ -951,7 +951,9 @@ function DocumentRegistry() {
 
   // Tab attiva: "priority" | "catalog" | "tree"
   const [activeTab, setActiveTab] = useState(
-    initialUrl.selectId ? "tree" : (initialUrl.tab || "priority")
+    initialUrl.selectId
+      ? "tree"
+      : (initialUrl.tab || (initialUrl.incomplete ? "catalog" : "priority"))
   );
   const deepLinkSelectRef = useRef(initialUrl.selectId);
   const deepLinkHandledRef = useRef(false);
@@ -1038,7 +1040,7 @@ function DocumentRegistry() {
     standard_id: "",
     expiring_days: null,
     without_file: false,
-    incomplete: false,
+    incomplete: !!initialUrl.incomplete,
   });
   const setFilter = useCallback((key, val) => {
     setFiltersState((f) => ({ ...f, [key]: val }));
