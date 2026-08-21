@@ -302,9 +302,9 @@ Dolore 21/08: Screening posa le norme nello scaffale **senza** cartella (albero 
 
 **DoD**
 
-- [ ] Predicato `isNormaPlacementType` + `parentIdForExistingFolder`
-- [ ] `commitToRegistry` usa `resolveFolderByCode(org, '2.3', company_id)`, non la prima 2.3 dell’org
-- [ ] Cartella assente → `parent_id` null, non 404
-- [ ] `screenAndPlace` tenta la posa anche con hint `norma` (medium)
-- [ ] Test L1 predicato + commit + screenAndPlace
-- [ ] Niente init albero, niente pulsante ingest in Modifica, niente wizard unico
+- [x] Predicato `isNormaPlacementType` + `parentIdForExistingFolder`
+- [x] `commitToRegistry` usa `resolveFolderByCode(org, '2.3', company_id)`, non la prima 2.3 dell’org
+- [x] Cartella assente → `parent_id` null, non 404
+- [x] `screenAndPlace` tenta la posa anche con hint `norma` (medium)
+- [x] Test L1 predicato + commit + screenAndPlace (46 verdi)
+- [x] Niente init albero, niente pulsante ingest in Modifica, niente wizard unico

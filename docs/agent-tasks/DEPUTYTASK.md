@@ -52,3 +52,9 @@ Destinazione (non questa slice): un solo flusso Ambito → (albero se serve) →
 - Senza albero: riga in registro, coda «Cartella mancante».
 - Multi-tenant: solo cartella della stessa `organization_id` + `company_id`.
 - PR **non pronta** (niente Bugbot, niente merge, deploy VPS dopo merge).
+
+## Esito L1 (21/08/2026)
+
+- Jest BE: `importJobs.controller.test.js` + `documentTreeProvisioner.folder.test.js` = **46 verdi**
+- SHA: vedi ultimo commit su `cursor/ingest-posa-norme-folder-d492`
+- **Non pronta**: CI + Bugbot + Security. Cloud non mergia. Deploy VPS **dopo merge**.
