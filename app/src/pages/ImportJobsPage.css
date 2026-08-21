@@ -31,6 +31,65 @@
   font-size: 0.82rem;
 }
 
+.import-folder-plan {
+  margin: 1rem 0;
+  padding: 0.75rem 1rem;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  background: #fff;
+}
+
+.import-folder-plan-title {
+  margin: 0 0 0.5rem;
+  font-size: 1rem;
+}
+
+.import-folder-plan-stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem 1.25rem;
+  margin-bottom: 0.4rem;
+  font-size: 0.9rem;
+}
+
+.import-folder-plan-muted {
+  color: #546e7a;
+}
+
+.import-folder-plan-estimate {
+  margin: 0 0 0.65rem;
+  font-size: 0.88rem;
+  color: #374151;
+}
+
+.import-folder-plan-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.88rem;
+  margin-bottom: 0.75rem;
+}
+
+.import-folder-plan-table th,
+.import-folder-plan-table td {
+  text-align: left;
+  padding: 0.4rem 0.5rem;
+  border-bottom: 1px solid #eee;
+}
+
+.import-folder-plan-table th {
+  color: #546e7a;
+  font-weight: 600;
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+}
+
+.import-folder-plan-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
 .import-jobs-folder-hint {
   margin: 0.45rem 0 0;
   font-size: 0.85rem;

@@ -3,6 +3,7 @@ import {
   MAX_IMPORT_JOB_FILES,
   COMPANY_REQUIRED_UPLOAD_TITLE,
   basenameImportRelativePath,
+  collectImportFiles,
   takeImportFiles,
   bindDirectoryPicker,
   isClientCompanyId,
@@ -63,5 +64,15 @@ describe("importFolderUpload", () => {
     expect(out.files).toHaveLength(MAX_IMPORT_JOB_FILES);
     expect(out.truncated).toBe(true);
     expect(out.skippedJunk).toBe(0);
+  });
+
+  it("collectImportFiles non tronca: il piano tiene tutti i file (meno junk)", () => {
+    const files = Array.from({ length: MAX_IMPORT_JOB_FILES + 3 }, (_, i) => ({
+      name: `f${i}.docx`,
+    }));
+    files.push({ name: ".DS_Store" });
+    const out = collectImportFiles(files);
+    expect(out.files).toHaveLength(MAX_IMPORT_JOB_FILES + 3);
+    expect(out.skippedJunk).toBe(1);
   });
 });

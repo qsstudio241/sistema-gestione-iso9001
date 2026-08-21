@@ -25,6 +25,13 @@ import {
   isClientCompanyId,
   resolvePrefillCompanyId,
 } from "../utils/importFolderUpload";
+import {
+  buildFolderInventory,
+  buildUploadLots,
+  estimateLotsText,
+  formatImportSize,
+  lotDocumentTypeHint,
+} from "../utils/importFolderPlan";
 import StatusBadge from "../components/StatusBadge";
 import "./ImportJobsPage.css";
 import "../components/DocumentForm.css";
@@ -304,6 +311,119 @@ function FileActionsMenu({ actions }) {
   );
 }
 
+function ImportFolderPlanPanel({
+  plan,
+  selectedKeys,
+  upload,
+  busy,
+  onToggle,
+  onConfirm,
+  onCancelPlan,
+  onStopLots,
+}) {
+  const lots = buildUploadLots(plan, selectedKeys);
+  const selectedCount = plan.folders.filter((f) => selectedKeys.has(f.key)).length;
+  const canConfirm = selectedCount > 0 && !busy && !upload;
+  const uploading = busy && !!upload && !upload.cancelled;
+
+  return (
+    <section className="import-folder-plan" aria-label="Piano di carico cartella">
+      <h3 className="import-folder-plan-title">
+        Piano di carico
+        {plan.pickedRoot ? ` — ${plan.pickedRoot}` : ""}
+      </h3>
+      <div className="import-folder-plan-stats" role="group" aria-label="Riepilogo piano di carico">
+        <span>
+          <strong>{plan.files.length}</strong> file
+        </span>
+        <span>
+          <strong>{formatImportSize(plan.totalBytes)}</strong>
+        </span>
+        {plan.skippedJunk > 0 && (
+          <span className="import-folder-plan-muted">
+            {plan.skippedJunk} file di sistema ignorati
+          </span>
+        )}
+      </div>
+      <p className="import-folder-plan-estimate">{estimateLotsText(lots.length)}</p>
+      {upload && (
+        <p className="import-jobs-warning" aria-live="polite">
+          {upload.cancelled
+            ? `Interrotto. ${upload.label || ""}`
+            : upload.label}
+        </p>
+      )}
+      <table className="import-folder-plan-table">
+        <thead>
+          <tr>
+            <th scope="col">Carica</th>
+            <th scope="col">Cartella</th>
+            <th scope="col">File</th>
+            <th scope="col">Size</th>
+            <th scope="col">Indizio</th>
+          </tr>
+        </thead>
+        <tbody>
+          {plan.folders.map((folder) => (
+            <tr key={folder.key}>
+              <td>
+                <input
+                  type="checkbox"
+                  checked={selectedKeys.has(folder.key)}
+                  onChange={() => onToggle(folder.key)}
+                  disabled={uploading}
+                  aria-label={`Includi ${folder.name}`}
+                />
+              </td>
+              <td>{folder.name}</td>
+              <td>{folder.fileCount}</td>
+              <td>{formatImportSize(folder.totalBytes)}</td>
+              <td>{folder.label}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+      <div className="import-folder-plan-actions">
+        <button
+          type="button"
+          className="btn-primary"
+          onClick={onConfirm}
+          disabled={!canConfirm}
+          title={
+            selectedCount === 0
+              ? "Seleziona almeno una cartella"
+              : uploading
+                ? "Caricamento in corso"
+                : "Carica i lotti delle cartelle spuntate, 80 file per job"
+          }
+        >
+          Carica i lotti selezionati
+        </button>
+        {uploading ? (
+          <button
+            type="button"
+            className="btn-secondary"
+            onClick={onStopLots}
+            title="Ferma i lotti successivi. Quelli già caricati restano."
+          >
+            Annulla
+          </button>
+        ) : (
+          <button
+            type="button"
+            className="btn-secondary"
+            onClick={onCancelPlan}
+            disabled={busy}
+            title="Chiude il piano. Nessun file viene caricato."
+          >
+            Annulla piano
+          </button>
+        )}
+      </div>
+    </section>
+  );
+}
+
 export default function ImportJobsPage() {
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -324,6 +444,16 @@ export default function ImportJobsPage() {
   const [qualifCommitResult, setQualifCommitResult] = useState({}); // { [fileId]: { qualification_id, error } }
   const [riesameDialog, setRiesameDialog] = useState(null); // { file, form }
   const [companies, setCompanies] = useState([]);
+  const [folderPlan, setFolderPlan] = useState(null);
+  const [folderPlanSelected, setFolderPlanSelected] = useState(() => new Set());
+  const [folderUpload, setFolderUpload] = useState(null);
+  const folderUploadCancelRef = useRef(false);
+  const folderInputRef = useRef(null);
+
+  const bindFolderInput = useCallback((el) => {
+    folderInputRef.current = el;
+    bindDirectoryPicker(el);
+  }, []);
 
   const loadList = useCallback(async () => {
     setLoading(true);
@@ -499,6 +629,129 @@ export default function ImportJobsPage() {
 
   async function handleFiles(e) {
     await uploadPickedFiles(e.target.files, e.target);
+  }
+
+  function resetFolderInput() {
+    if (folderInputRef.current) folderInputRef.current.value = "";
+  }
+
+  function handleFolderPicked(e) {
+    const fileList = e.target.files;
+    if (!selectedId || !fileList?.length) {
+      resetFolderInput();
+      return;
+    }
+    if (!isClientCompanyId(detail?.job?.company_id)) {
+      setError(COMPANY_REQUIRED_UPLOAD_TITLE);
+      resetFolderInput();
+      return;
+    }
+    const inventory = buildFolderInventory(fileList);
+    resetFolderInput();
+    if (!inventory.files.length) {
+      setError("Nessun file selezionato nella cartella.");
+      setFolderPlan(null);
+      setFolderPlanSelected(new Set());
+      return;
+    }
+    setError(null);
+    setFolderNotice(null);
+    setFolderUpload(null);
+    folderUploadCancelRef.current = false;
+    setFolderPlan(inventory);
+    setFolderPlanSelected(new Set(inventory.folders.map((f) => f.key)));
+  }
+
+  function handleCancelFolderPlan() {
+    folderUploadCancelRef.current = true;
+    setFolderPlan(null);
+    setFolderPlanSelected(new Set());
+    setFolderUpload(null);
+    resetFolderInput();
+  }
+
+  function handleStopFolderLots() {
+    folderUploadCancelRef.current = true;
+  }
+
+  function toggleFolderPlanKey(key) {
+    setFolderPlanSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return next;
+    });
+  }
+
+  async function handleConfirmFolderPlan() {
+    if (!folderPlan || !selectedId) return;
+    if (!isClientCompanyId(detail?.job?.company_id)) {
+      setError(COMPANY_REQUIRED_UPLOAD_TITLE);
+      return;
+    }
+    const lots = buildUploadLots(folderPlan, folderPlanSelected);
+    if (!lots.length) {
+      setError("Seleziona almeno una cartella.");
+      return;
+    }
+    folderUploadCancelRef.current = false;
+    setBusy(true);
+    setError(null);
+    setFolderNotice(null);
+    const companyId = parseInt(detail.job.company_id, 10);
+    let reuseId = (detail.files || []).length === 0 ? selectedId : null;
+    let uploaded = 0;
+    try {
+      for (let i = 0; i < lots.length; i += 1) {
+        if (folderUploadCancelRef.current) {
+          setFolderUpload({
+            current: uploaded,
+            total: lots.length,
+            label: lots[i].progressLabel,
+            cancelled: true,
+          });
+          setFolderNotice(
+            `Caricamento interrotto dopo ${uploaded} ${uploaded === 1 ? "lotto" : "lotti"}. I file già caricati restano.`
+          );
+          break;
+        }
+        const lot = lots[i];
+        setFolderUpload({
+          current: i + 1,
+          total: lots.length,
+          label: lot.progressLabel,
+          cancelled: false,
+        });
+        let jobId = reuseId;
+        if (!jobId) {
+          const res = await apiService.createImportJob({
+            title: lot.title,
+            document_type_hint: lotDocumentTypeHint(lot.guessedType),
+            company_id: companyId,
+          });
+          jobId = res.data?.id;
+        }
+        reuseId = null;
+        if (!jobId) throw new Error("Creazione job fallita");
+        await apiService.uploadImportJobFiles(jobId, lot.files);
+        uploaded += 1;
+        setSelectedId(jobId);
+        await loadList();
+        await loadDetail(jobId);
+      }
+      if (!folderUploadCancelRef.current) {
+        setFolderNotice(
+          `Caricati ${uploaded} ${uploaded === 1 ? "lotto" : "lotti"}.`
+        );
+        setFolderPlan(null);
+        setFolderPlanSelected(new Set());
+        setFolderUpload(null);
+      }
+    } catch (err) {
+      setError(err.message || "Upload fallito");
+    } finally {
+      setBusy(false);
+    }
   }
 
   async function handleProcess() {
@@ -803,6 +1056,7 @@ export default function ImportJobsPage() {
       <p className="import-jobs-intro">
         Flusso operativo: <strong>Azienda cliente → tipo documento → file → estrazione → revisione → AI → registro</strong>.
         Serve sempre un&apos;azienda sul job: Ambito «Tutto lo studio» o Patrimonio non basta.
+        Una cartella non parte subito: vedi il piano (file, MB, lotti da {MAX_IMPORT_JOB_FILES}) e confermi.
         Sbagli il carico? <strong>Annulla caricamento</strong> elimina il job e i file non posati. Quelli già nello scaffale restano.
       </p>
       {error && <p className="import-jobs-error">{error}</p>}
@@ -935,7 +1189,7 @@ export default function ImportJobsPage() {
                   className={isClientCompanyId(detail.job.company_id) ? "btn-file" : "btn-file is-disabled"}
                   title={
                     isClientCompanyId(detail.job.company_id)
-                      ? "Carica una cartella (max 80 file)"
+                      ? "Scegli la cartella: prima vedi il piano, poi confermi i lotti"
                       : COMPANY_REQUIRED_UPLOAD_TITLE
                   }
                 >
@@ -943,8 +1197,8 @@ export default function ImportJobsPage() {
                   <input
                     type="file"
                     multiple
-                    ref={bindDirectoryPicker}
-                    onChange={handleFiles}
+                    ref={bindFolderInput}
+                    onChange={handleFolderPicked}
                     disabled={busy || !isClientCompanyId(detail.job.company_id)}
                   />
                 </label>
@@ -986,11 +1240,23 @@ export default function ImportJobsPage() {
               </div>
               <p className="import-jobs-folder-hint">
                 La cartella prende tutti i file (Word, Excel, disegni, PDF, …) e tiene i nomi delle sottocartelle.
-                Massimo {MAX_IMPORT_JOB_FILES} file per job: oltre il tetto i rimanenti non partono.
-                Dal testo di PDF, Word ed Excel si leggono prima 30 righe, poi altre se il tipo non è chiaro.
+                Dopo la scelta vedi il piano: confermi, poi i lotti da {MAX_IMPORT_JOB_FILES} file (limite server, non alzato).
+                Capitolati e commesse partono prima di Scan. Dal testo di PDF, Word ed Excel si leggono prima 30 righe.
                 Disegni e foto si classificano da nome e cartella (senza OCR).
               </p>
               {folderNotice && <p className="import-jobs-warning">{folderNotice}</p>}
+              {folderPlan && (
+                <ImportFolderPlanPanel
+                  plan={folderPlan}
+                  selectedKeys={folderPlanSelected}
+                  upload={folderUpload}
+                  busy={busy}
+                  onToggle={toggleFolderPlanKey}
+                  onConfirm={handleConfirmFolderPlan}
+                  onCancelPlan={handleCancelFolderPlan}
+                  onStopLots={handleStopFolderLots}
+                />
+              )}
               <h3>File ({(detail.files || []).length})</h3>
               <ul className="import-files-list">
                 {(detail.files || []).map((f) => {
