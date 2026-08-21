@@ -293,17 +293,70 @@ describe('ingestStaging.service — modalità rielaborazione (migrazione 137)', 
             standard_code: 'ISO 9001:2015',
         });
 
-        const out = await confirmStaging(70, 1001, 9, { standard_code: 'ISO 9001:2015' });
+        const reviewer = { user_id: 9, organization_id: 1001, role: 'auditor' };
+        const out = await confirmStaging(70, 1001, 9, { standard_code: 'ISO 9001:2015' }, reviewer);
 
         expect(applyNormToExistingDocument).toHaveBeenCalledWith(
             88,
             expect.objectContaining({ standard_code: 'ISO 9001:2015' }),
             1001,
-            expect.objectContaining({ filePath: '/uploads/import/iso9001.pdf' }),
+            expect.objectContaining({
+                filePath: '/uploads/import/iso9001.pdf',
+                user: reviewer,
+                expectedFolderId: 23,
+            }),
         );
         expect(commitNormFromFields).not.toHaveBeenCalled();
         expect(out.status).toBe('confirmed');
         expect(out.document_id).toBe(88);
+    });
+
+    it('confirmStaging propaga 403 se applyNormToExistingDocument nega company del documento', async () => {
+        query.mockResolvedValueOnce({
+            recordset: [{
+                id: 71,
+                organization_id: 1001,
+                company_id: 2,
+                doc_type: 'norma',
+                storage_path: '/uploads/import/iso14001.pdf',
+                original_name: 'iso14001.pdf',
+                mime_type: 'application/pdf',
+                file_size: 800,
+                staged_fields_json: JSON.stringify({
+                    standard_code: 'ISO 14001:2015',
+                    _target_document_id: 99,
+                    _parent_folder_id: 23,
+                }),
+                warnings_json: '[]',
+                review_status: 'pending',
+                target_qualification_id: null,
+                target_wpqr_id: null,
+            }],
+        });
+        const forbidden = new Error('Permesso negato');
+        forbidden.code = 'AUTH_FORBIDDEN';
+        forbidden.status = 403;
+        applyNormToExistingDocument.mockRejectedValue(forbidden);
+
+        await expect(confirmStaging(
+            71,
+            1001,
+            9,
+            {},
+            { user_id: 9, organization_id: 1001, company_access: [{ company_id: 2, permission: 'write' }] },
+        )).rejects.toMatchObject({ code: 'AUTH_FORBIDDEN', status: 403 });
+
+        expect(applyNormToExistingDocument).toHaveBeenCalledWith(
+            99,
+            expect.any(Object),
+            1001,
+            expect.objectContaining({
+                user: expect.objectContaining({ user_id: 9 }),
+                expectedFolderId: 23,
+            }),
+        );
+        const sqls = query.mock.calls.map((c) => String(c[0]));
+        expect(sqls.some((s) => /review_status = 'confirmed'/i.test(s))).toBe(false);
     });
 
     it('rejectStaging NON cancella l\'allegato se _target_document_id (file già in registry)', async () => {

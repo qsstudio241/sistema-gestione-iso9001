@@ -26,9 +26,9 @@ jest.mock('../services/moduleLicense.service', () => ({ getLicensedModuleKeysFor
 jest.mock('../services/ingestFeedback.service', () => ({ getLearningStats: jest.fn() }));
 jest.mock('../utils/logger', () => ({ info: jest.fn(), error: jest.fn(), warn: jest.fn() }));
 
-const { listStaging, getModuleForDocType, getStagingById, resolveStagingFilePath } = require('../services/ingestStaging.service');
+const { listStaging, getModuleForDocType, getStagingById, resolveStagingFilePath, confirmStaging } = require('../services/ingestStaging.service');
 const { getLicensedModuleKeysForOrg } = require('../services/moduleLicense.service');
-const { listStaging: listStagingHandler, getStaging, getStagingFile } = require('./ingestStaging.controller');
+const { listStaging: listStagingHandler, getStaging, getStagingFile, confirmStaging: confirmStagingHandler } = require('./ingestStaging.controller');
 
 function mockRes() {
     const res = {};
@@ -208,5 +208,53 @@ describe('getStagingFile — anteprima documento sorgente (bug "fs" mancante, 09
         await getStagingFile(req, res);
 
         expect(res.status).toHaveBeenCalledWith(404);
+    });
+});
+
+describe('confirmStagingHandler — RBAC company su conferma norma (IA-12)', () => {
+    afterEach(() => jest.clearAllMocks());
+
+    it('passa req.user a confirmStaging (applyNorm usa assertMutatingAllowed)', async () => {
+        getStagingById.mockResolvedValue({
+            id: 70,
+            doc_type: 'norma',
+            review_status: 'pending',
+        });
+        getModuleForDocType.mockReturnValue('documents');
+        getLicensedModuleKeysForOrg.mockResolvedValue(['documents']);
+        confirmStaging.mockResolvedValue({ status: 'confirmed', document_id: 88 });
+
+        const user = { organization_id: 1001, user_id: 9, role: 'auditor' };
+        const req = { params: { id: '70' }, body: { fields: {} }, user };
+        const res = mockRes();
+        await confirmStagingHandler(req, res);
+
+        expect(confirmStaging).toHaveBeenCalledWith(70, 1001, 9, {}, user);
+        expect(res.json).toHaveBeenCalledWith(expect.objectContaining({ success: true, document_id: 88 }));
+    });
+
+    it('doc.company_id diverso da cartella: confirm negato -> 403', async () => {
+        getStagingById.mockResolvedValue({
+            id: 71,
+            doc_type: 'norma',
+            review_status: 'pending',
+        });
+        getModuleForDocType.mockReturnValue('documents');
+        getLicensedModuleKeysForOrg.mockResolvedValue(['documents']);
+        const forbidden = new Error('Permesso negato');
+        forbidden.code = 'AUTH_FORBIDDEN';
+        forbidden.status = 403;
+        confirmStaging.mockRejectedValue(forbidden);
+
+        const req = {
+            params: { id: '71' },
+            body: {},
+            user: { organization_id: 1001, user_id: 9, role: 'utente' },
+        };
+        const res = mockRes();
+        await confirmStagingHandler(req, res);
+
+        expect(res.status).toHaveBeenCalledWith(403);
+        expect(res.json).toHaveBeenCalledWith(expect.objectContaining({ code: 'AUTH_FORBIDDEN' }));
     });
 });
