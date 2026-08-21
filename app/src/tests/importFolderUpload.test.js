@@ -1,9 +1,12 @@
 import { describe, it, expect, vi } from "vitest";
 import {
   MAX_IMPORT_JOB_FILES,
+  COMPANY_REQUIRED_UPLOAD_TITLE,
   basenameImportRelativePath,
   takeImportFiles,
   bindDirectoryPicker,
+  isClientCompanyId,
+  resolvePrefillCompanyId,
 } from "../utils/importFolderUpload";
 
 describe("importFolderUpload", () => {
@@ -34,6 +37,22 @@ describe("importFolderUpload", () => {
     expect(el.setAttribute).toHaveBeenCalledWith("webkitdirectory", "");
     expect(el.setAttribute).toHaveBeenCalledWith("directory", "");
     expect(el.multiple).toBe(true);
+  });
+
+  it("isClientCompanyId accetta solo id azienda, non Tutto lo studio / Patrimonio", () => {
+    expect(isClientCompanyId("")).toBe(false);
+    expect(isClientCompanyId(null)).toBe(false);
+    expect(isClientCompanyId("studio")).toBe(false);
+    expect(isClientCompanyId("48")).toBe(true);
+    expect(isClientCompanyId(48)).toBe(true);
+    expect(COMPANY_REQUIRED_UPLOAD_TITLE).toMatch(/Tutto lo studio/);
+  });
+
+  it("resolvePrefillCompanyId precompila solo un'azienda cliente", () => {
+    expect(resolvePrefillCompanyId("")).toBe("");
+    expect(resolvePrefillCompanyId("studio")).toBe("");
+    expect(resolvePrefillCompanyId("11")).toBe("11");
+    expect(resolvePrefillCompanyId(11)).toBe("11");
   });
 
   it("takeImportFiles tronca oltre MAX_IMPORT_JOB_FILES", () => {

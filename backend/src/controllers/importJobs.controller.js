@@ -83,6 +83,18 @@ function buildCertificateFileUrl(storagePath) {
     }
 }
 
+const COMPANY_REQUIRED_FOR_UPLOAD = {
+    error: "Scegli un'azienda sul job (non Tutto lo studio).",
+    code: 'COMPANY_REQUIRED_FOR_UPLOAD',
+};
+
+function unlinkUploadedFiles(files) {
+    if (!files) return;
+    files.forEach((f) => {
+        try { if (f?.path) fs.unlinkSync(f.path); } catch (_) { /* ignore */ }
+    });
+}
+
 async function resolveOptionalCompanyId(rawCompanyId, organizationId) {
     if (rawCompanyId == null || rawCompanyId === '') return { ok: true, companyId: null };
     const companyId = parseCompanyId(rawCompanyId);
@@ -130,11 +142,14 @@ async function createJob(req, res) {
         if (!companyScope.ok) {
             return res.status(companyScope.status).json({ error: companyScope.error, code: companyScope.code });
         }
-        if (isQualificationDocType(document_type_hint) && !companyScope.companyId) {
-            return res.status(400).json({
-                error: "company_id obbligatorio per i job di qualifica.",
-                code: 'COMPANY_REQUIRED_FOR_QUALIFICATION_IMPORT',
-            });
+        if (!companyScope.companyId) {
+            if (isQualificationDocType(document_type_hint)) {
+                return res.status(400).json({
+                    error: "company_id obbligatorio per i job di qualifica.",
+                    code: 'COMPANY_REQUIRED_FOR_QUALIFICATION_IMPORT',
+                });
+            }
+            return res.status(400).json(COMPANY_REQUIRED_FOR_UPLOAD);
         }
         const t = (title && String(title).trim()) || 'Import documenti';
         const r = await query(
@@ -216,12 +231,16 @@ async function uploadFiles(req, res) {
         const { organization_id } = req.user;
         const jobId = parseInt(req.params.id, 10);
         const chk = await query(
-            `SELECT id, status FROM import_jobs WHERE id = @id AND organization_id = @organization_id`,
+            `SELECT id, status, company_id FROM import_jobs WHERE id = @id AND organization_id = @organization_id`,
             { id: jobId, organization_id }
         );
         if (!chk.recordset.length) {
-            if (req.files) req.files.forEach((f) => { try { fs.unlinkSync(f.path); } catch (_) {} });
+            unlinkUploadedFiles(req.files);
             return res.status(404).json({ error: 'Job non trovato' });
+        }
+        if (!chk.recordset[0].company_id) {
+            unlinkUploadedFiles(req.files);
+            return res.status(400).json(COMPANY_REQUIRED_FOR_UPLOAD);
         }
         if (!req.files?.length) return res.status(400).json({ error: 'Nessun file PDF ricevuto.' });
         const relativePaths = relativePathsFromBody(req.body);
@@ -377,6 +396,9 @@ async function screenAndPlace(req, res) {
         );
         if (!jobRows.recordset.length) return res.status(404).json({ error: 'Job non trovato' });
         const job = jobRows.recordset[0];
+        if (!job.company_id) {
+            return res.status(400).json(COMPANY_REQUIRED_FOR_UPLOAD);
+        }
         const files = await query(
             `SELECT id, original_name, extracted_text, status, ai_extraction_json, registry_document_id
              FROM import_job_files

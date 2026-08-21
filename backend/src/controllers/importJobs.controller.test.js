@@ -92,6 +92,23 @@ describe('importJobs.controller createJob', () => {
         expect(query).not.toHaveBeenCalled();
     });
 
+    it('senza company_id rifiuta anche i job non di qualifica (COMPANY_REQUIRED_FOR_UPLOAD)', async () => {
+        const req = {
+            user: { organization_id: 1002, user_id: 12 },
+            body: { document_type_hint: 'norma' },
+        };
+        const res = makeRes();
+
+        await createJob(req, res);
+
+        expect(res.status).toHaveBeenCalledWith(400);
+        expect(res.json).toHaveBeenCalledWith({
+            error: "Scegli un'azienda sul job (non Tutto lo studio).",
+            code: 'COMPANY_REQUIRED_FOR_UPLOAD',
+        });
+        expect(query).not.toHaveBeenCalled();
+    });
+
     it('rifiuta company_id non appartenente alla organizzazione', async () => {
         query.mockResolvedValueOnce({ recordset: [] });
         const req = {
@@ -127,7 +144,7 @@ describe('importJobs.controller uploadFiles (path relativo)', () => {
 
     it('salva il path relativo sanitizzato in original_name', async () => {
         query
-            .mockResolvedValueOnce({ recordset: [{ id: 55, status: 'draft' }] })
+            .mockResolvedValueOnce({ recordset: [{ id: 55, status: 'draft', company_id: 44 }] })
             .mockResolvedValueOnce({ recordset: [] })
             .mockResolvedValueOnce({ recordset: [] });
         const res = makeRes();
@@ -143,7 +160,7 @@ describe('importJobs.controller uploadFiles (path relativo)', () => {
 
     it('rifiuta path con parent e usa il nome file multer', async () => {
         query
-            .mockResolvedValueOnce({ recordset: [{ id: 55, status: 'draft' }] })
+            .mockResolvedValueOnce({ recordset: [{ id: 55, status: 'draft', company_id: 44 }] })
             .mockResolvedValueOnce({ recordset: [] })
             .mockResolvedValueOnce({ recordset: [] });
         const res = makeRes();
@@ -155,6 +172,21 @@ describe('importJobs.controller uploadFiles (path relativo)', () => {
         const insert = query.mock.calls.find(([sql]) => sql.includes('INSERT INTO import_job_files'));
         expect(insert[1].original_name).toBe('capitolato.pdf');
     });
+
+    it('senza azienda sul job rifiuta l\'upload (COMPANY_REQUIRED_FOR_UPLOAD)', async () => {
+        query.mockResolvedValueOnce({ recordset: [{ id: 55, status: 'draft', company_id: null }] });
+        const res = makeRes();
+        const files = [{ originalname: 'capitolato.pdf', path: '/tmp/x-no-company.pdf', mimetype: 'application/pdf', size: 12 }];
+        await uploadFiles(uploadReq({}, files), res);
+
+        expect(res.status).toHaveBeenCalledWith(400);
+        expect(res.json).toHaveBeenCalledWith({
+            error: "Scegli un'azienda sul job (non Tutto lo studio).",
+            code: 'COMPANY_REQUIRED_FOR_UPLOAD',
+        });
+        const insert = query.mock.calls.find(([sql]) => sql.includes('INSERT INTO import_job_files'));
+        expect(insert).toBeUndefined();
+    });
 });
 
 describe('importJobs.controller screenAndPlace', () => {
@@ -162,20 +194,8 @@ describe('importJobs.controller screenAndPlace', () => {
         jest.clearAllMocks();
     });
 
-    it('senza azienda classifica ma non posa (COMPANY_REQUIRED_FOR_FOLDER)', async () => {
-        query
-            .mockResolvedValueOnce({ recordset: [{ id: 55, company_id: null, document_type_hint: null }] })
-            .mockResolvedValueOnce({
-                recordset: [{
-                    id: 9,
-                    original_name: 'Commesse/Rossi/capitolato.pdf',
-                    extracted_text: 'Capitolato tecnico',
-                    status: 'extracted',
-                    ai_extraction_json: null,
-                    registry_document_id: null,
-                }],
-            })
-            .mockResolvedValueOnce({ recordset: [] });
+    it('senza azienda rifiuta lo screening (COMPANY_REQUIRED_FOR_UPLOAD)', async () => {
+        query.mockResolvedValueOnce({ recordset: [{ id: 55, company_id: null, document_type_hint: null }] });
 
         const res = makeRes();
         await screenAndPlace({
@@ -183,14 +203,12 @@ describe('importJobs.controller screenAndPlace', () => {
             params: { id: '55' },
         }, res);
 
-        expect(res.json).toHaveBeenCalled();
-        const payload = res.json.mock.calls[0][0];
-        expect(payload.data.placed).toBe(0);
-        expect(payload.data.results[0].doc_type).toBe('capitolato');
-        expect(payload.data.results[0].place_error).toBe('COMPANY_REQUIRED_FOR_FOLDER');
-        expect(payload.data.results[0].lines_used).toBeGreaterThan(0);
-        const update = query.mock.calls.find(([sql]) => sql.includes('SET ai_extraction_json'));
-        expect(update[1].json).toContain('capitolato');
+        expect(res.status).toHaveBeenCalledWith(400);
+        expect(res.json).toHaveBeenCalledWith({
+            error: "Scegli un'azienda sul job (non Tutto lo studio).",
+            code: 'COMPANY_REQUIRED_FOR_UPLOAD',
+        });
+        expect(query).toHaveBeenCalledTimes(1);
     });
 });
 
