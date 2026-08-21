@@ -4,6 +4,7 @@ import {
   buildDocumentRegistryPath,
   buildDocumentDeepLink,
   buildDocumentTreeQuery,
+  buildIncompleteQueuePath,
   VALID_DOC_REGISTRY_TABS,
 } from '../utils/documentRegistryUrl';
 
@@ -73,6 +74,25 @@ describe('documentRegistryUrl', () => {
     expect(buildDocumentTreeQuery({ depth: 2 })).toBe('depth=2');
     expect(buildDocumentTreeQuery({ depth: 2, companyId: 7 })).toBe(
       'depth=2&company_id=7'
+    );
+  });
+
+  it('buildIncompleteQueuePath aggiunge company_id solo se azienda cliente', () => {
+    expect(buildIncompleteQueuePath({ companyId: 11 })).toBe(
+      '/documents?tab=catalog&company_id=11&incomplete=1'
+    );
+    expect(buildIncompleteQueuePath({ companyId: '11' })).toBe(
+      '/documents?tab=catalog&company_id=11&incomplete=1'
+    );
+    expect(buildIncompleteQueuePath({})).toBe('/documents?tab=catalog&incomplete=1');
+    expect(buildIncompleteQueuePath({ companyId: null })).toBe(
+      '/documents?tab=catalog&incomplete=1'
+    );
+    expect(buildIncompleteQueuePath({ companyId: '' })).toBe(
+      '/documents?tab=catalog&incomplete=1'
+    );
+    expect(buildIncompleteQueuePath({ companyId: 'studio' })).toBe(
+      '/documents?tab=catalog&incomplete=1'
     );
   });
 });

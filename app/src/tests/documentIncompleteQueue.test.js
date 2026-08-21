@@ -3,6 +3,8 @@ import {
   getIncompleteReasons,
   isIncompleteRegistryDoc,
   isHighPriorityIncomplete,
+  applyIncompleteQueueFilters,
+  catalogQueryFromFilters,
 } from "../utils/documentIncompleteQueue";
 
 describe("documentIncompleteQueue", () => {
@@ -57,5 +59,51 @@ describe("documentIncompleteQueue", () => {
       import_status: "verified",
       status: "rilasciato",
     })).toBe(false);
+  });
+
+  it("aprendo la coda resetta status e gli altri filtri che nascondono gli incompleti", () => {
+    const opened = applyIncompleteQueueFilters({
+      search: "PG",
+      doc_type: "procedura",
+      status: "rilasciato",
+      standard_id: "3",
+      expiring_days: 30,
+      without_file: true,
+      incomplete: false,
+    }, true);
+    expect(opened).toMatchObject({
+      search: "",
+      doc_type: "",
+      status: "",
+      standard_id: "",
+      expiring_days: null,
+      without_file: false,
+      incomplete: true,
+    });
+    expect(catalogQueryFromFilters(opened)).toEqual({ incomplete: 1 });
+  });
+
+  it("chiudendo la coda spegne solo incomplete", () => {
+    const closed = applyIncompleteQueueFilters({
+      status: "in_approvazione",
+      incomplete: true,
+    }, false);
+    expect(closed.incomplete).toBe(false);
+    expect(closed.status).toBe("in_approvazione");
+  });
+
+  it("badge e lista: dopo apertura la query coincide col predicato incomplete", () => {
+    const stale = { status: "rilasciato", doc_type: "altro", incomplete: false };
+    const inApprovazione = {
+      doc_type: "altro",
+      title: "",
+      parent_id: null,
+      import_status: "ai_draft",
+      status: "in_approvazione",
+    };
+    expect(isIncompleteRegistryDoc(inApprovazione)).toBe(true);
+    const query = catalogQueryFromFilters(applyIncompleteQueueFilters(stale, true));
+    expect(query.status).toBeUndefined();
+    expect(query).toEqual({ incomplete: 1 });
   });
 });

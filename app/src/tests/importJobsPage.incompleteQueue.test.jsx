@@ -48,6 +48,7 @@ vi.mock("../services/apiService", () => ({
 
 import apiService from "../services/apiService";
 import ImportJobsPage from "../pages/ImportJobsPage.jsx";
+import { buildIncompleteQueuePath } from "../utils/documentRegistryUrl";
 
 describe("ImportJobsPage — coda da completare (IA-5b)", () => {
   beforeEach(() => {
@@ -79,6 +80,20 @@ describe("ImportJobsPage — coda da completare (IA-5b)", () => {
     expect(screen.getByText(/file letti/i)).toBeInTheDocument();
 
     await user.click(coda);
-    expect(navigate).toHaveBeenCalledWith("/documents?tab=catalog&incomplete=1");
+    expect(navigate).toHaveBeenCalledWith(
+      "/documents?tab=catalog&company_id=11&incomplete=1"
+    );
+  });
+
+  it("job senza azienda cliente non mette company_id spurio nell URL coda", () => {
+    expect(buildIncompleteQueuePath({ companyId: null })).toBe(
+      "/documents?tab=catalog&incomplete=1"
+    );
+    expect(buildIncompleteQueuePath({ companyId: "" })).toBe(
+      "/documents?tab=catalog&incomplete=1"
+    );
+    expect(buildIncompleteQueuePath({ companyId: "studio" })).toBe(
+      "/documents?tab=catalog&incomplete=1"
+    );
   });
 });

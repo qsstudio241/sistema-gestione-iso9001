@@ -41,6 +41,10 @@ import { STANDARDS_REGISTRY } from "../data/standardsRegistry";
 import DocumentDataGrid from "./DocumentDataGrid";
 import StatusBadge from "./StatusBadge";
 import { documentHasFile } from "../utils/documentRegistryFile";
+import {
+  applyIncompleteQueueFilters,
+  catalogQueryFromFilters,
+} from "../utils/documentIncompleteQueue";
 import "./DocumentRegistry.css";
 
 // ─── Alberi clausole per vista per-standard ──────────────────────────────────
@@ -1122,7 +1126,9 @@ function DocumentRegistry() {
   useEffect(() => {
     const applyFromUrl = () => {
       const { tab, selectId, companyId, incomplete } = parseDocumentRegistrySearch(window.location.search);
-      setFiltersState((f) => ({ ...f, incomplete: !!incomplete }));
+      setFiltersState((f) =>
+        incomplete ? applyIncompleteQueueFilters(f, true) : { ...f, incomplete: false }
+      );
       if (incomplete && !selectId) setActiveTab(tab || "catalog");
       else if (tab) setActiveTab(tab);
       if (companyId != null) {
@@ -1221,14 +1227,8 @@ function DocumentRegistry() {
     try {
       const params = {
         page: catalogPage, limit: LIMIT,
-        ...(filters.search        && { search:       filters.search }),
-        ...(filters.doc_type      && { doc_type:     filters.doc_type }),
-        ...(filters.status        && { status:       filters.status }),
         ...scopeDocFilter,
-        ...(filters.standard_id   && { standard_id:  filters.standard_id }),
-        ...(filters.expiring_days && { expiring_days: filters.expiring_days }),
-        ...(filters.without_file && { without_file: 1 }),
-        ...(filters.incomplete && { incomplete: 1 }),
+        ...catalogQueryFromFilters(filters),
       };
       const res = await apiService.getDocuments(params);
       setCatalogDocs(res.data || []);
@@ -1431,14 +1431,8 @@ function DocumentRegistry() {
       // Esporta fino a 500 righe con i filtri attivi
       const params = {
         page: 1, limit: 500,
-        ...(filters.search        && { search:       filters.search }),
-        ...(filters.doc_type      && { doc_type:     filters.doc_type }),
-        ...(filters.status        && { status:       filters.status }),
         ...scopeDocFilter,
-        ...(filters.standard_id   && { standard_id:  filters.standard_id }),
-        ...(filters.expiring_days && { expiring_days: filters.expiring_days }),
-        ...(filters.without_file && { without_file: 1 }),
-        ...(filters.incomplete && { incomplete: 1 }),
+        ...catalogQueryFromFilters(filters),
       };
       const res = await apiService.getDocuments(params);
       exportToCSV(res.data || []);
@@ -1562,7 +1556,7 @@ function DocumentRegistry() {
           incomplete: next,
         })
       );
-      return { ...f, incomplete: next };
+      return applyIncompleteQueueFilters(f, next);
     });
     setCatalogPage(1);
   }, [replace, registryCompanyScope]);

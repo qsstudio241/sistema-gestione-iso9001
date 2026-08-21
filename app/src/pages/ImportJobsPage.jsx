@@ -7,7 +7,7 @@ import apiService, { ApiError } from "../services/apiService";
 import { useAuth } from "../contexts/AuthContext";
 import { useCompanyScope } from "../contexts/CompanyScopeContext";
 import { useNavigate } from "../contexts/RouterContext";
-import { buildDocumentRegistryPath } from "../utils/documentRegistryUrl";
+import { buildIncompleteQueuePath } from "../utils/documentRegistryUrl";
 import { DOC_TYPE_OPTIONS } from "../data/documentTypes";
 import { getSuggestedFolderLabel } from "../data/documentFolderMapping";
 import { getSchemaForDocType } from "../data/documentTypeSchemas";
@@ -1313,7 +1313,11 @@ export default function ImportJobsPage() {
                   <button
                     type="button"
                     className="btn-small"
-                    onClick={() => navigate(buildDocumentRegistryPath({ tab: "catalog", incomplete: true }))}
+                    onClick={() =>
+                      navigate(
+                        buildIncompleteQueuePath({ companyId: detail?.job?.company_id })
+                      )
+                    }
                   >
                     Apri coda da completare
                   </button>

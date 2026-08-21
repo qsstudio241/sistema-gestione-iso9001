@@ -6,6 +6,8 @@
  * incomplete: 1 → Catalogo filtrato sulla coda «da completare» (IA-5b)
  */
 
+import { isClientCompanyId } from './importFolderUpload';
+
 export const VALID_DOC_REGISTRY_TABS = ['priority', 'catalog', 'tree'];
 
 function parseOptionalInt(raw) {
@@ -85,4 +87,18 @@ export function buildDocumentDeepLink(entityId) {
   const id = parseInt(entityId, 10);
   if (Number.isNaN(id)) return '/documents';
   return buildDocumentRegistryPath({ selectId: id });
+}
+
+/**
+ * Link Import → coda «da completare».
+ * `company_id` solo se è un'azienda cliente (non Tutto lo studio / Patrimonio / omonimo).
+ * @param {{ companyId?: number|string|null }} [opts]
+ * @returns {string}
+ */
+export function buildIncompleteQueuePath({ companyId } = {}) {
+  return buildDocumentRegistryPath({
+    tab: 'catalog',
+    incomplete: true,
+    ...(isClientCompanyId(companyId) ? { companyId } : {}),
+  });
 }
