@@ -206,6 +206,57 @@ describe("ImportJobsPage — piano di carico cartella", () => {
     expect(firstUploadFiles[0].webkitRelativePath).toMatch(/Capitolati/);
   });
 
+  it("cambio job: il piano sparisce e non carica sull'altra azienda", async () => {
+    apiService.getImportJobs.mockResolvedValue({
+      data: [
+        {
+          id: 8,
+          title: "Job Mason",
+          status: "ready",
+          file_count: 2,
+          company_id: 11,
+          company_name: "Mason Demo",
+        },
+        {
+          id: 9,
+          title: "Job Camellini",
+          status: "ready",
+          file_count: 1,
+          company_id: 22,
+          company_name: "Camellini",
+        },
+      ],
+    });
+    apiService.getImportJob.mockImplementation((id) =>
+      Promise.resolve({
+        data: {
+          job: {
+            id: Number(id),
+            status: "ready",
+            company_id: Number(id) === 8 ? 11 : 22,
+            company_name: Number(id) === 8 ? "Mason Demo" : "Camellini",
+          },
+          files: [{ id: Number(id), original_name: "x.pdf", status: "uploaded" }],
+        },
+      })
+    );
+
+    const user = userEvent.setup();
+    render(<ImportJobsPage />);
+    await waitFor(() => expect(screen.getByText("Job Mason")).toBeInTheDocument());
+    await user.click(screen.getByText("Job Mason"));
+    await waitFor(() => expect(screen.getByText("Job #8")).toBeInTheDocument());
+    pickFolder([relFile("Documenti/Capitolati/rfq.pdf")]);
+    expect(await screen.findByText("Piano di carico — Documenti")).toBeInTheDocument();
+
+    await user.click(screen.getByText("Job Camellini"));
+    await waitFor(() => expect(screen.getByText("Job #9")).toBeInTheDocument());
+    expect(screen.queryByText(/Piano di carico/)).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Carica i lotti selezionati" })).not.toBeInTheDocument();
+    expect(apiService.createImportJob).not.toHaveBeenCalled();
+    expect(apiService.uploadImportJobFiles).not.toHaveBeenCalled();
+  });
+
   it("Annulla durante l'upload ferma i lotti successivi", async () => {
     let releaseFirst;
     apiService.uploadImportJobFiles

@@ -446,9 +446,12 @@ export default function ImportJobsPage() {
   const [companies, setCompanies] = useState([]);
   const [folderPlan, setFolderPlan] = useState(null);
   const [folderPlanSelected, setFolderPlanSelected] = useState(() => new Set());
+  const [folderPlanCompanyId, setFolderPlanCompanyId] = useState(null);
   const [folderUpload, setFolderUpload] = useState(null);
   const folderUploadCancelRef = useRef(false);
+  const folderUploadRef = useRef(null);
   const folderInputRef = useRef(null);
+  folderUploadRef.current = folderUpload;
 
   const bindFolderInput = useCallback((el) => {
     folderInputRef.current = el;
@@ -521,6 +524,17 @@ export default function ImportJobsPage() {
   useEffect(() => {
     loadDetail(selectedId);
   }, [selectedId, loadDetail]);
+
+  // Piano orfano: al cambio job (lista / create / delete) il piano sparisce.
+  // Durante i lotti il confirm aggiorna selectedId — non resettare (ref upload attivo).
+  useEffect(() => {
+    const upload = folderUploadRef.current;
+    if (upload && !upload.cancelled) return;
+    setFolderPlan(null);
+    setFolderPlanSelected(new Set());
+    setFolderPlanCompanyId(null);
+    setFolderUpload(null);
+  }, [selectedId]);
 
   // Dopo codice norma (AI o filename): norm-lookup → prefill vigore e link catalogo
   useEffect(() => {
@@ -641,7 +655,8 @@ export default function ImportJobsPage() {
       resetFolderInput();
       return;
     }
-    if (!isClientCompanyId(detail?.job?.company_id)) {
+    const pickedCompanyId = detail?.job?.company_id;
+    if (!isClientCompanyId(pickedCompanyId)) {
       setError(COMPANY_REQUIRED_UPLOAD_TITLE);
       resetFolderInput();
       return;
@@ -652,6 +667,7 @@ export default function ImportJobsPage() {
       setError("Nessun file selezionato nella cartella.");
       setFolderPlan(null);
       setFolderPlanSelected(new Set());
+      setFolderPlanCompanyId(null);
       return;
     }
     setError(null);
@@ -659,6 +675,7 @@ export default function ImportJobsPage() {
     setFolderUpload(null);
     folderUploadCancelRef.current = false;
     setFolderPlan(inventory);
+    setFolderPlanCompanyId(parseInt(pickedCompanyId, 10));
     setFolderPlanSelected(new Set(inventory.folders.map((f) => f.key)));
   }
 
@@ -666,6 +683,7 @@ export default function ImportJobsPage() {
     folderUploadCancelRef.current = true;
     setFolderPlan(null);
     setFolderPlanSelected(new Set());
+    setFolderPlanCompanyId(null);
     setFolderUpload(null);
     resetFolderInput();
   }
@@ -684,8 +702,8 @@ export default function ImportJobsPage() {
   }
 
   async function handleConfirmFolderPlan() {
-    if (!folderPlan || !selectedId) return;
-    if (!isClientCompanyId(detail?.job?.company_id)) {
+    if (!folderPlan) return;
+    if (!isClientCompanyId(folderPlanCompanyId)) {
       setError(COMPANY_REQUIRED_UPLOAD_TITLE);
       return;
     }
@@ -698,7 +716,7 @@ export default function ImportJobsPage() {
     setBusy(true);
     setError(null);
     setFolderNotice(null);
-    const companyId = parseInt(detail.job.company_id, 10);
+    const companyId = parseInt(folderPlanCompanyId, 10);
     let uploaded = 0;
     try {
       for (let i = 0; i < lots.length; i += 1) {
@@ -742,6 +760,7 @@ export default function ImportJobsPage() {
         );
         setFolderPlan(null);
         setFolderPlanSelected(new Set());
+        setFolderPlanCompanyId(null);
         setFolderUpload(null);
       }
     } catch (err) {
