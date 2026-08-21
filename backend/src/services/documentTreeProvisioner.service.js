@@ -43,6 +43,28 @@ function folderCodeForDocType(docType) {
 }
 
 /**
+ * IA-11 — screening/commit posano in NORME E LEGGI se il tipo o l'hint job è norma.
+ * @param {string|null|undefined} docType
+ * @param {string|null|undefined} hint
+ * @returns {boolean}
+ */
+function isNormaPlacementType(docType, hint) {
+    const type = String(docType || '').trim().toLowerCase();
+    const jobHint = String(hint || '').trim().toLowerCase();
+    return type === 'norma' || jobHint === 'norma';
+}
+
+/**
+ * parent_id solo se la cartella azienda esiste; altrimenti null (coda «Cartella mancante»).
+ * @param {{ id?: number }|null|undefined} folder
+ * @returns {number|null}
+ */
+function parentIdForExistingFolder(folder) {
+    const id = folder && folder.id != null ? parseInt(folder.id, 10) : NaN;
+    return Number.isFinite(id) && id > 0 ? id : null;
+}
+
+/**
  * Cartella albero per folder_code. Stesso criterio di resolveNormFolderId
  * (doc_type=folder, scope org) + preferenza company_id.
  * @param {number} orgId
@@ -333,6 +355,8 @@ module.exports = {
     refreshPathCacheRecursive,
     DOC_TYPE_TO_FOLDER_CODE,
     folderCodeForDocType,
+    isNormaPlacementType,
+    parentIdForExistingFolder,
     resolveFolderByCode,
     resolveExplicitFolder,
 };

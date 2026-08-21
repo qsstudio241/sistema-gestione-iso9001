@@ -10,6 +10,8 @@ jest.mock('../utils/logger', () => ({ info: jest.fn(), warn: jest.fn(), error: j
 const { query } = require('../config/database');
 const {
     folderCodeForDocType,
+    isNormaPlacementType,
+    parentIdForExistingFolder,
     resolveFolderByCode,
     resolveExplicitFolder,
 } = require('./documentTreeProvisioner.service');
@@ -33,6 +35,23 @@ describe('folderCodeForDocType', () => {
         expect(folderCodeForDocType('capitolato')).toBe('2.2');
         expect(folderCodeForDocType('rfq')).toBe('2.2');
         expect(folderCodeForDocType('ordine')).toBe('2.2');
+    });
+});
+
+describe('isNormaPlacementType / parentIdForExistingFolder (IA-11)', () => {
+    it('classifica norma o hint job norma', () => {
+        expect(isNormaPlacementType('norma', null)).toBe(true);
+        expect(isNormaPlacementType('altro', 'norma')).toBe(true);
+        expect(isNormaPlacementType('NORMA', 'capitolato')).toBe(true);
+        expect(isNormaPlacementType('capitolato', 'procedura')).toBe(false);
+        expect(isNormaPlacementType(null, null)).toBe(false);
+    });
+
+    it('parent_id solo se la cartella 2.3 esiste', () => {
+        expect(parentIdForExistingFolder({ id: 23, company_id: 8 })).toBe(23);
+        expect(parentIdForExistingFolder(null)).toBeNull();
+        expect(parentIdForExistingFolder({})).toBeNull();
+        expect(parentIdForExistingFolder({ id: 0 })).toBeNull();
     });
 });
 

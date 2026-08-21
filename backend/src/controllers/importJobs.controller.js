@@ -15,10 +15,11 @@ const {
     serializeNormTypeSpecificData,
     guessStandardCodeFromFilename,
 } = require('../services/documentRegistryNorm.service');
-const { resolveNormFolderId } = require('../services/normCodesImport.service');
 const {
     calculatePathCache,
     folderCodeForDocType,
+    isNormaPlacementType,
+    parentIdForExistingFolder,
     resolveFolderByCode,
     resolveExplicitFolder,
 } = require('../services/documentTreeProvisioner.service');
@@ -459,15 +460,17 @@ async function screenAndPlace(req, res) {
             });
             let placed = false;
             let place_error = null;
-            if (screen.can_auto_place && !job.company_id) {
+            const placeAsNorma = isNormaPlacementType(screen.doc_type, job.document_type_hint);
+            const shouldTryPlace = screen.can_auto_place || placeAsNorma;
+            if (shouldTryPlace && !job.company_id) {
                 place_error = 'COMPANY_REQUIRED_FOR_FOLDER';
-            } else if (screen.can_auto_place) {
+            } else if (shouldTryPlace) {
                 const cap = captureJsonRes();
                 await commitToRegistry({
                     user: req.user,
                     params: { id: String(jobId), fileId: String(file.id) },
                     body: {
-                        doc_type: screen.doc_type,
+                        doc_type: placeAsNorma ? 'norma' : screen.doc_type,
                         company_id: job.company_id,
                         title: String(screen.basename || '').replace(/\.pdf$/i, '') || screen.basename,
                     },
@@ -763,21 +766,25 @@ async function commitToRegistry(req, res) {
             }
 
             const built = buildNormTypeSpecificData(normRaw);
-            if (!built) {
-                return res.status(400).json({
-                    error: 'Codice norma obbligatorio per il commit (standard_code).',
-                    code: 'MISSING_STANDARD_CODE',
-                });
-            }
+            if (built) {
+                type_specific_data = serializeNormTypeSpecificData(normRaw);
+                const codeLabel = built.standard_code;
+                const normTitle = built.norm_title || aiData.title || '';
+                title = String(body.title || (normTitle ? `${codeLabel} — ${normTitle}` : codeLabel))
+                    .substring(0, 500);
 
-            type_specific_data = serializeNormTypeSpecificData(normRaw);
-            const codeLabel = built.standard_code;
-            const normTitle = built.norm_title || aiData.title || '';
-            title = String(body.title || (normTitle ? `${codeLabel} — ${normTitle}` : codeLabel))
-                .substring(0, 500);
-
-            if (built.edition_year) {
-                issue_date = `${built.edition_year}-01-01`;
+                if (built.edition_year) {
+                    issue_date = `${built.edition_year}-01-01`;
+                }
+            } else {
+                // IA-11: screening/hint posa la bozza anche senza codice (coda campi).
+                title = String(
+                    body.title
+                    || basenameImportRelativePath(file.original_name)
+                    || file.original_name
+                    || 'Norma importata'
+                ).substring(0, 500);
+                type_specific_data = null;
             }
         } else {
             title = String(
@@ -806,32 +813,34 @@ async function commitToRegistry(req, res) {
         }
 
         let parentId = null;
-        let resolvedFolderCompanyId = null;
         const requestedFolderId = body.parent_folder_id
             ? parseInt(body.parent_folder_id, 10)
             : null;
-
-        if (isNorma) {
-            const normFolder = await resolveNormFolderId(organization_id, requestedFolderId);
-            if (!normFolder) {
-                return res.status(404).json({
-                    error: 'Cartella "NORME E LEGGI" (folder_code 2.3) non trovata. Inizializza la struttura documentale.',
-                    code: 'NORM_FOLDER_NOT_FOUND',
-                });
-            }
-            parentId = normFolder.id;
-            resolvedFolderCompanyId = normFolder.company_id;
-        }
-
-        if (isNorma && company_id == null && resolvedFolderCompanyId != null) {
-            company_id = resolvedFolderCompanyId;
-        }
 
         const companyScope = await resolveOptionalCompanyId(company_id, organization_id);
         if (!companyScope.ok) {
             return res.status(companyScope.status).json({ error: companyScope.error, code: companyScope.code });
         }
         company_id = companyScope.companyId;
+
+        if (isNorma) {
+            let folder = null;
+            if (requestedFolderId) {
+                folder = await resolveExplicitFolder(organization_id, requestedFolderId);
+                if (!folder) {
+                    return res.status(404).json({
+                        error: 'Cartella destinazione non trovata.',
+                        code: 'FOLDER_NOT_FOUND',
+                    });
+                }
+            } else if (company_id != null) {
+                folder = await resolveFolderByCode(organization_id, '2.3', company_id);
+            }
+            parentId = parentIdForExistingFolder(folder);
+            if (company_id == null && folder && folder.company_id != null) {
+                company_id = folder.company_id;
+            }
+        }
 
         if (!isNorma) {
             let folder = null;
