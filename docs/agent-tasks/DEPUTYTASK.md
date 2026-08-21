@@ -32,8 +32,10 @@ Destinazione (non questa slice): un solo wizard Ambito → albero → carico →
 - `backend/src/controllers/normUpload.controller.js` (`ingestFromFolder`)
 - `backend/src/controllers/normUpload.controller.test.js`
 - `backend/src/routes/normUpload.routes.js`
-- `backend/src/services/ingestStaging.service.js` (confirm/reject con `_target_document_id`)
+- `backend/src/services/ingestStaging.service.js` (confirm/reject con `_target_document_id`; passa `user` + `expectedFolderId`)
 - `backend/src/services/ingestStaging.service.test.js`
+- `backend/src/controllers/ingestStaging.controller.js` (passa `req.user`; 403 su AUTH_FORBIDDEN)
+- `backend/src/controllers/ingestStaging.controller.test.js`
 - `app/src/components/NormUploadButton.jsx` (pulsante «Ingest dalla cartella»)
 - `app/src/components/NormUploadButton.css` (riga pulsanti, niente look nuovo)
 - `app/src/tests/normUploadButton.test.jsx`
@@ -77,11 +79,12 @@ Destinazione (non questa slice): un solo wizard Ambito → albero → carico →
 ## Esito L1 (21/08/2026)
 
 - SHA feature: `6e4f3199` (`6e4f31999bd745b74c5f16ef145ce012594d2cb6`)
-- SHA review #524: `cc419377` (`cc419377960ead1a56d0701734c8fb7e539f1aaf`) + commit docs SHA sotto
-- Jest BE: `normIngest.service.test.js` + `ingestStaging.service.test.js` + `normUpload.controller.test.js` = **38 verdi**
+- SHA review #524 (RBAC cartella + batch 200 + tetto 20): `1112525e`
+- SHA fix confirmStaging RBAC: da aggiornare dopo commit
+- Jest BE: `ingestStaging.service` + `ingestStaging.controller` + `normIngest.service` = **43 verdi** (include 403 confirm)
 - Vitest FE: `normUploadButton.test.jsx` + `normUploadResults.test.js` = **23 verdi**
 - `cd app && npm run build` OK
-- **Non pronta**: niente Bugbot, niente merge. Deploy VPS di IA-12 **dopo merge**. Cloud non mergia.
+- **Non pronta** finché CI + Bugbot + Security Review sul **nuovo** SHA. Deploy VPS **dopo merge**. Cloud non mergia.
 
 ## Review #524 (rilievi chiusi, stessa PR)
 
@@ -89,3 +92,4 @@ Destinazione (non questa slice): un solo wizard Ambito → albero → carico →
 - Batch: 200 (non 500) se `results` ha solo duplicati/errori; FE non butta l'array.
 - Tetto 20: `truncated` / `omitted` in risposta + avviso UI. Tetto non alzato.
 - Update: `checkNormDuplicate(..., excludeDocumentId)` prima dell'UPDATE.
+- **Bugbot HIGH / Security MEDIUM (21/08):** `confirmStaging` non passava `user` né `expectedFolderId` → `assertMutatingAllowed` saltato sul ramo pending_review. Fix: controller passa `req.user`; apply riceve `user` + `expectedFolderId` da `_parent_folder_id`; handler mappa 403. Test: call-args + 403 non conferma.
