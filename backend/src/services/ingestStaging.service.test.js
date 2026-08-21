@@ -16,6 +16,11 @@ jest.mock('./ingestFeedback.service', () => ({
     recordFeedback: jest.fn().mockResolvedValue({ action: 'accepted', field_diffs: {} }),
 }));
 
+jest.mock('./normIngest.service', () => ({
+    commitNormFromFields: jest.fn(),
+    applyNormToExistingDocument: jest.fn(),
+}));
+
 jest.mock('../config/database', () => ({
     query: jest.fn(),
 }));
@@ -24,6 +29,7 @@ const fs = require('fs');
 const { query } = require('../config/database');
 const { commitWPQRFromFields, applyFieldReprocessUpdate: applyWpqrFieldReprocessUpdate } = require('./wpqrIngest.service');
 const { commitQualificationFromFields, applyFieldReprocessUpdate } = require('./qualificationIngest.service');
+const { commitNormFromFields, applyNormToExistingDocument } = require('./normIngest.service');
 const {
     createStagingRecord,
     confirmStaging,
@@ -254,6 +260,66 @@ describe('ingestStaging.service — modalità rielaborazione (migrazione 137)', 
         query.mockResolvedValueOnce({ recordset: [] });
 
         const out = await rejectStaging(61, 1001, 9, true);
+
+        expect(out.status).toBe('rejected');
+        expect(fs.unlinkSync).not.toHaveBeenCalled();
+    });
+
+    it('confirmStaging con _target_document_id aggiorna il documento esistente (mai commitNormFromFields)', async () => {
+        query.mockResolvedValueOnce({
+            recordset: [{
+                id: 70,
+                organization_id: 1001,
+                company_id: 2,
+                doc_type: 'norma',
+                storage_path: '/uploads/import/iso9001.pdf',
+                original_name: 'iso9001.pdf',
+                mime_type: 'application/pdf',
+                file_size: 1200,
+                staged_fields_json: JSON.stringify({
+                    standard_code: 'ISO 9001:2015',
+                    _target_document_id: 88,
+                    _parent_folder_id: 23,
+                }),
+                warnings_json: '[]',
+                review_status: 'pending',
+                target_qualification_id: null,
+                target_wpqr_id: null,
+            }],
+        });
+        query.mockResolvedValueOnce({ recordset: [] });
+        applyNormToExistingDocument.mockResolvedValue({
+            document_id: 88,
+            standard_code: 'ISO 9001:2015',
+        });
+
+        const out = await confirmStaging(70, 1001, 9, { standard_code: 'ISO 9001:2015' });
+
+        expect(applyNormToExistingDocument).toHaveBeenCalledWith(
+            88,
+            expect.objectContaining({ standard_code: 'ISO 9001:2015' }),
+            1001,
+            expect.objectContaining({ filePath: '/uploads/import/iso9001.pdf' }),
+        );
+        expect(commitNormFromFields).not.toHaveBeenCalled();
+        expect(out.status).toBe('confirmed');
+        expect(out.document_id).toBe(88);
+    });
+
+    it('rejectStaging NON cancella l\'allegato se _target_document_id (file già in registry)', async () => {
+        query.mockResolvedValueOnce({
+            recordset: [{
+                id: 71,
+                review_status: 'pending',
+                storage_path: '/uploads/import/iso9001.pdf',
+                staged_fields_json: '{"_target_document_id":88}',
+                target_qualification_id: null,
+                target_wpqr_id: null,
+            }],
+        });
+        query.mockResolvedValueOnce({ recordset: [] });
+
+        const out = await rejectStaging(71, 1001, 9, true);
 
         expect(out.status).toBe('rejected');
         expect(fs.unlinkSync).not.toHaveBeenCalled();

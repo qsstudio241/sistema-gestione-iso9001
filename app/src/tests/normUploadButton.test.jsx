@@ -9,6 +9,7 @@ import NormUploadButton from '../components/NormUploadButton';
 vi.mock('../services/apiService', () => ({
   default: {
     uploadNorms: vi.fn(),
+    ingestNormsFromFolder: vi.fn(),
     confirmIngestStaging: vi.fn(),
     rejectIngestStaging: vi.fn(),
   },
@@ -274,6 +275,46 @@ describe('NormUploadButton — flusso upload norme', () => {
       expect(screen.getByText('PDF danneggiato')).toBeTruthy();
       expect(screen.getByText(/Norma OK/)).toBeTruthy();
     });
+  });
+
+  it('mostra il pulsante Ingest dalla cartella senza aprire il file picker', () => {
+    render(<NormUploadButton folderId={42} onUploadComplete={onUploadComplete} />);
+    expect(screen.getByRole('button', { name: /Ingest dalla cartella/ })).toBeTruthy();
+    expect(screen.getByRole('button', { name: /Ingest dalla cartella/ }).disabled).toBe(false);
+  });
+
+  it('Ingest dalla cartella chiama ingestNormsFromFolder e non uploadNorms', async () => {
+    apiService.ingestNormsFromFolder.mockResolvedValue({
+      results: [{
+        status: 'confirmed',
+        documentId: 88,
+        fileName: 'gia_in_cartella.pdf',
+        norm_title: 'ISO 9001 gia in registry',
+        standard_code: 'ISO 9001:2015',
+      }],
+    });
+
+    render(<NormUploadButton folderId={42} onUploadComplete={onUploadComplete} />);
+
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: /Ingest dalla cartella/ }));
+    });
+
+    await waitFor(() => {
+      expect(screen.getByText(/Risultati estrazione/)).toBeTruthy();
+    });
+    expect(apiService.ingestNormsFromFolder).toHaveBeenCalledTimes(1);
+    expect(apiService.ingestNormsFromFolder).toHaveBeenCalledWith(42);
+    expect(apiService.uploadNorms).not.toHaveBeenCalled();
+    expect(onUploadComplete).toHaveBeenCalledTimes(1);
+    expect(document.querySelector('input[type="file"]').files).toHaveLength(0);
+  });
+
+  it('Ingest dalla cartella è visibile ma disabled senza folderId', () => {
+    render(<NormUploadButton onUploadComplete={onUploadComplete} />);
+    const btn = screen.getByRole('button', { name: /Ingest dalla cartella/ });
+    expect(btn).toBeTruthy();
+    expect(btn.disabled).toBe(true);
   });
 
   it('mostra pending_review con pulsante Rivedi campi', async () => {

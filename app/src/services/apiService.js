@@ -2740,6 +2740,20 @@ class ApiService {
             throw new ApiError(error.message, 0, 'NETWORK_ERROR');
         }
     }
+
+    /**
+     * Ingest norme dai PDF già in cartella NORME E LEGGI (niente re-upload).
+     * @param {number|string} folderId
+     * @param {Array<number|string>|null} documentIds
+     */
+    async ingestNormsFromFolder(folderId, documentIds = null) {
+        const body = { folder_id: folderId };
+        if (Array.isArray(documentIds) && documentIds.length > 0) {
+            body.document_ids = documentIds;
+        }
+        const res = await this.post('/documents/norms/ingest-from-folder', body, { timeout: 180000 });
+        return res?.data ?? res;
+    }
 }
 
 /**

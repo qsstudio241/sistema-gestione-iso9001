@@ -7,6 +7,12 @@
   margin-bottom: 16px;
 }
 
+.norm-upload__triggers {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
 .norm-upload__btn {
   display: inline-flex;
   align-items: center;

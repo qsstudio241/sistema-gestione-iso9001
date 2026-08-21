@@ -18,6 +18,7 @@ export default function NormUploadButton({ folderId, onUploadComplete }) {
   const [reviewItem, setReviewItem] = useState(null);
   const [reviewBusy, setReviewBusy] = useState(false);
   const inputRef = useRef(null);
+  const canIngestFolder = folderId != null && folderId !== "";
 
   const handleClick = () => inputRef.current?.click();
 
@@ -35,6 +36,33 @@ export default function NormUploadButton({ folderId, onUploadComplete }) {
     )));
   }, []);
 
+  const applyNormalizedResults = useCallback((normalized) => {
+    setResults(normalized);
+    if (onUploadComplete && countNormUploadSuccesses(normalized) > 0) {
+      onUploadComplete();
+    }
+  }, [onUploadComplete]);
+
+  const handleIngestFolder = useCallback(async () => {
+    if (!canIngestFolder) return;
+    setValidationErr(null);
+    setUploading(true);
+    setSelectedFiles([]);
+    setResults(null);
+    try {
+      const res = await apiService.ingestNormsFromFolder(folderId);
+      applyNormalizedResults(normalizeNormUploadResults(res.results || []));
+    } catch (err) {
+      setResults([{
+        status: "error",
+        fileName: "cartella",
+        error: err.message || "Errore ingest dalla cartella",
+      }]);
+    } finally {
+      setUploading(false);
+    }
+  }, [canIngestFolder, folderId, applyNormalizedResults]);
+
   const handleUpload = useCallback(async () => {
     if (selectedFiles.length === 0) return;
     const oversized = selectedFiles.filter((f) => f.size > MAX_FILE_SIZE);
@@ -47,17 +75,13 @@ export default function NormUploadButton({ folderId, onUploadComplete }) {
     setResults(null);
     try {
       const res = await apiService.uploadNorms(selectedFiles, folderId);
-      const normalized = normalizeNormUploadResults(res.results || []);
-      setResults(normalized);
-      if (onUploadComplete && countNormUploadSuccesses(normalized) > 0) {
-        onUploadComplete();
-      }
+      applyNormalizedResults(normalizeNormUploadResults(res.results || []));
     } catch (err) {
       setResults([{ status: "error", fileName: "tutti i file", error: err.message || "Errore upload" }]);
     } finally {
       setUploading(false);
     }
-  }, [selectedFiles, folderId, onUploadComplete]);
+  }, [selectedFiles, folderId, applyNormalizedResults]);
 
   const handleOpenReview = useCallback((item) => {
     const localFile = selectedFiles.find((f) => f.name === item.fileName) || null;
@@ -119,10 +143,24 @@ export default function NormUploadButton({ folderId, onUploadComplete }) {
 
   return (
     <div className="norm-upload">
-      <button className="norm-upload__btn" onClick={handleClick} disabled={uploading}>
-        <span className="norm-upload__icon" role="img" aria-label="upload">{"\u2795"}</span>
-        Carica norme (batch)
-      </button>
+      <div className="norm-upload__triggers">
+        <button className="norm-upload__btn" onClick={handleClick} disabled={uploading}>
+          <span className="norm-upload__icon" role="img" aria-label="upload">{"\u2795"}</span>
+          Carica norme (batch)
+        </button>
+        <button
+          type="button"
+          className="norm-upload__btn"
+          onClick={handleIngestFolder}
+          disabled={uploading || !canIngestFolder}
+          title={canIngestFolder
+            ? "Estrae i campi dai PDF gi\u00e0 in questa cartella, senza ricaricare dal PC"
+            : "Apri la cartella NORME E LEGGI"}
+        >
+          <span className="norm-upload__icon" role="img" aria-label="ingest">{"\u26A1"}</span>
+          Ingest dalla cartella
+        </button>
+      </div>
 
       <input
         ref={inputRef}
