@@ -12,7 +12,7 @@
 **Deploy:** PID `1176534` → `1189353`, health 200  
 **Precedente slot:** IA-11 CHIUSO [#523](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/523) (mergiata 21/08/2026, deploy VPS dopo merge)
 
-**Leftover Low (non in questa chiusura):** `DOC_NOT_IN_FOLDER` è throwato in `normIngest.service.js` senza `status`; `ingestStaging.controller.js` su `main` non mappa il code → 500 su folder mismatch. Slice 4xx a parte; non aperta qui (committente: solo «mergiato»).
+**Leftover Low (non in questa chiusura):** `DOC_NOT_IN_FOLDER` è throwato in `normIngest.service.js` senza `status`; `ingestStaging.controller.js` su `main` non mappa il code → 500 su folder mismatch. Parallel: [#526](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/526) (non aperta da questa chat).
 
 ---
 
