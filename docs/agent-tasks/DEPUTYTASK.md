@@ -1,17 +1,20 @@
 # DEPUTYTASK — IA-15: duplicati e edizioni (stessa famiglia in NORME)
 
-**Stato:** APERTO  
+**Stato:** CHIUSO — TEST OK  
 **Aperto:** 22/08/2026  
+**Chiuso:** 22/08/2026  
 **Piano:** [`PLAN_INGEST_ARCHIVIO_SLICES.md`](PLAN_INGEST_ARCHIVIO_SLICES.md) (IA-15; follow-up IA-12)  
 **Rischio:** Medio — estende `checkNormDuplicate` + ingest cartella; UPDATE additivo `validity_status`; niente schema/auth/sync.  
-**Branch:** `cursor/ingest-norme-duplicati-edizione-d492`  
+**PR:** [#532](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/532)  
+**SHA merge:** `8ebea510` · feature `45496a22`  
+**Branch feature:** `cursor/ingest-norme-duplicati-edizione-d492`  
 **Precedente slot:** IA-12 CHIUSO [#524](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/524) / [#525](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/525)
 
 ## Perché
 
 Ingest dalla cartella deve confrontare i PDF **già in quella cartella 2.3** (stessa azienda). L’utente può tenere un’edizione **obsoleta**; non deve ottenere un **duplicato** (stessa famiglia + stesso anno). Un’edizione **più recente** diventa vigente e quella precedente passa a non vigente.
 
-## File previsti
+## File toccati
 
 - `backend/src/services/standardCodeNormalizer.service.js` (`normFamilyKey`)
 - `backend/src/services/standardCodeNormalizer.service.test.js`
@@ -27,7 +30,7 @@ Ingest dalla cartella deve confrontare i PDF **già in quella cartella 2.3** (st
 
 - `importJobs.controller.js` / Screening / posa 2.3
 - contractReview, smoke #530
-- GUIDA / roadmap (eventuale parallelo: solo questo brief)
+- GUIDA / roadmap (hub dopo merge, non nella PR di codice)
 - `auth.middleware`, `syncService`, migrazioni SQL, CASCADE
 - Material Compliance, Qualifiche, WPQR
 
@@ -44,3 +47,7 @@ Ingest dalla cartella deve confrontare i PDF **già in quella cartella 2.3** (st
 - Due PDF stesso anno → una sola riga `duplicate`.
 - PDF più vecchio con vigente più recente → warning «Esiste già un’edizione più recente…»; non due vigente.
 - PDF più nuovo → vecchio `superata`.
+
+## Esito
+
+Mergiato su `main` (click committente). Closeout docs + deploy VPS in sessione 22/08/2026. Residuo noto (non in questa slice): gap RBAC su `uploadNorms` (Security Medium #532) — da slice successiva se il committente la vuole.
