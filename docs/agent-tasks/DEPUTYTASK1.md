@@ -1,45 +1,43 @@
-# DEPUTYTASK1 — ISO-7: ponte RDP/NDT ↔ commessa (`project_id` opzionale)
+# DEPUTYTASK1 — IA-17: timeout ingest dalla cartella
 
-**Stato:** CHIUSO — TEST OK  
-**Aperto:** 19/08/2026  
-**Chiuso:** 19/08/2026  
-**Piano:** [`PLAN_3834_SLICES.md`](PLAN_3834_SLICES.md)  
-**PR:** [#474](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/474)  
-**Rischio:** Medio — migrazione nullable + RDP/NDT; PR + 1 Bugbot a slice chiusa; Cloud **non** mergia
+**Stato:** CHIUSO — TEST OK (22/08/2026)  
+**Aperto:** 22/08/2026  
+**Chiuso:** 22/08/2026  
+**PR:** `gh pr create` 403 — compare: https://github.com/qsstudio241/sistema-gestione-iso9001/compare/main...cursor/ingest-folder-timeout-d492?expand=1  
+**SHA:** `c9c6f9f3`  
+**Piano:** [`PLAN_INGEST_ARCHIVIO_SLICES.md`](PLAN_INGEST_ARCHIVIO_SLICES.md) (follow-up IA-16 mergiata #534)  
+**Rischio:** Medio — FE + nginx in-repo + `setTimeout` socket sul controller norme; niente schema/auth/sync.  
+**Branch feature:** `cursor/ingest-folder-timeout-d492`  
+**Slot:** `DEPUTYTASK.md` su `origin/main` è ancora APERTO per chiusura docs IA-16 ([#535](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/535)); file di codice disgiunti → questo brief nello slot 1.
 
----
+## Perché
+
+Dopo IA-16 le pause (2s/file + 2.5s/batch embed + retry TPM 20–45s) allungano `POST /documents/norms/ingest-from-folder`. Un run era già ~61s. Il client mostrava **«Richiesta timeout»** (`AbortError` in `apiService.request`). Timeout dedicato era **180s**; con 7–20 PDF non basta. Default GET 10–15s resta.
+
+## File previsti
+
+- `app/src/services/apiService.js` (+ test timeout)
+- `app/src/components/NormUploadButton.jsx` (+ `normUploadButton.test.jsx`)
+- `backend/src/controllers/normUpload.controller.js` (`req`/`res.setTimeout` 15 min, + test)
+- `backend/config/nginx/sgq-backend.conf` (già in repo: 300s → 900s)
+- `docs/agent-tasks/DEPUTYTASK1.md`
+
+## Cosa NON toccare
+
+- Pause IA-16 / `geminiKeyPool`
+- Job async nuovo
+- `contractReview`, `auth.middleware`, `syncService`
+- `DEPUTYTASK.md` (chiusura IA-16 in #535)
+- GUIDA / roadmap (hub dopo merge; chat parallela #535)
+- Deploy VPS / nginx sul server (Cloud non mergia)
 
 ## Slice
 
-Un verbale RDP o NDT può (non deve) essere collegato a una commessa ISO 3834. Stesso pattern di NC (ISO-6) e Welding Book. Il testo libero (`project_name` / `job_order`) resta.
+1. Timeout **15 min** solo ingest-from-folder e upload batch norme (stesso client, stessi tetti PDF).
+2. Messaggio UI italiano se ancora timeout (non «Richiesta timeout»).
+3. Socket Node + proxy nginx in-repo allineati a 15 min.
 
-### File
+## Acceptance
 
-- `database/migrations/155_rdp_ndt_project_id.sql` + `backend/scripts/run-migration-155-vps.js`
-- `backend/src/utils/resolveOptionalProjectId.js` (+ test)
-- `backend/src/controllers/rdp.controller.js` (+ test)
-- `backend/src/controllers/ndtReports.controller.js` (+ test)
-- `app/src/pages/RDPModule.jsx`, `app/src/pages/NdtReportsPage.jsx`
-- `backend/scripts/deploy-manifest.json`
-- `docs/agent-tasks/PLAN_3834_SLICES.md`
-
-### Cosa NON è stato toccato
-
-- `docs/agent-tasks/DEPUTYTASK.md` (SAL S1a resta CHIUSO)
-- `docs/agent-tasks/DEPUTYTASK_MC_INGEST.md`
-- `docs/GUIDA_CONSOLIDATA.md`, `docs/PROJECT_ROADMAP.md` (sync hub dopo merge)
-- Ingest MC, Materiali, SAL, NC, ISO-4 (file Mason assente)
-
----
-
-## Esito
-
-- Colonne `project_id` nullable, FK `ON DELETE SET NULL`, indici. Niente CASCADE.
-- Create/update: `project_id` opzionale; 400 `PROJECT_COMPANY_MISMATCH` se azienda diversa; 404 se commessa fuori org; omettere il campo in update non azzera.
-- Lista/dettaglio: `project_code`. Picker visibile, `disabled` senza azienda.
-- L1 backend: **36/36** (helper, migrazione 155, RDP, NDT).
-- Bugbot (1 run, slice chiusa): rilievo su `project_id` stale se cambia azienda senza mandare il campo — **corretto** in update RDP/NDT (400 `PROJECT_COMPANY_MISMATCH`). Nessun secondo Bugbot.
-
-Dopo merge: migrazione **155 applicata su TEST** (6/6). Backend TEST PID `981527`, health 200. Produzione solo su richiesta.
-
-Prossima 3834: **ISO-5** Word Welding Book, oppure **ISO-4** se arriva il file Mason.
+- L1: Vitest timeout/messaggio + Jest `setTimeout` controller.
+- PR draft, Cloud non mergia, no deploy.

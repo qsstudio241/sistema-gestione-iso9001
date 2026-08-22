@@ -6,16 +6,20 @@ import React from 'react';
 import { render, screen, fireEvent, waitFor, act } from '@testing-library/react';
 import NormUploadButton from '../components/NormUploadButton';
 
-vi.mock('../services/apiService', () => ({
-  default: {
-    uploadNorms: vi.fn(),
-    ingestNormsFromFolder: vi.fn(),
-    confirmIngestStaging: vi.fn(),
-    rejectIngestStaging: vi.fn(),
-  },
-}));
+vi.mock('../services/apiService', async (importOriginal) => {
+  const actual = await importOriginal();
+  return {
+    ...actual,
+    default: {
+      uploadNorms: vi.fn(),
+      ingestNormsFromFolder: vi.fn(),
+      confirmIngestStaging: vi.fn(),
+      rejectIngestStaging: vi.fn(),
+    },
+  };
+});
 
-import apiService from '../services/apiService';
+import apiService, { NORM_BATCH_TIMEOUT_MESSAGE } from '../services/apiService';
 
 function createFile(name, size, type = 'application/pdf') {
   const buffer = new ArrayBuffer(size);
@@ -393,6 +397,25 @@ describe('NormUploadButton — flusso upload norme', () => {
     await waitFor(() => {
       expect(screen.getByText('Prime 20. Ne restano 4.')).toBeTruthy();
     });
+  });
+
+  it('Ingest dalla cartella: timeout mostra messaggio italiano, non Richiesta timeout', async () => {
+    const err = new Error('Richiesta timeout');
+    err.code = 'TIMEOUT';
+    err.status = 408;
+    apiService.ingestNormsFromFolder.mockRejectedValue(err);
+
+    render(<NormUploadButton folderId={42} onUploadComplete={onUploadComplete} />);
+
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: /Ingest dalla cartella/ }));
+    });
+
+    await waitFor(() => {
+      expect(screen.getByText(NORM_BATCH_TIMEOUT_MESSAGE)).toBeTruthy();
+    });
+    expect(screen.queryByText('Richiesta timeout')).toBeNull();
+    expect(onUploadComplete).not.toHaveBeenCalled();
   });
 
   it('mostra il warning duplicato dalla risposta ingest e il disclaimer AI', async () => {
