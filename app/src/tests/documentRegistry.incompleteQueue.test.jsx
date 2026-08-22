@@ -5,7 +5,7 @@
  * dall'URL, non solo dopo applyFromUrl (secondo render).
  */
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { render, waitFor } from "@testing-library/react";
+import { render, screen, waitFor, within } from "@testing-library/react";
 
 const scopeState = {
   companyId: "",
@@ -218,5 +218,65 @@ describe("DocumentRegistry — deep link coda company_id al primo fetch", () => 
     const firstCatalog = catalogCalls()[0];
     expect(String(firstCatalog.company_id)).toBe("11");
     expect(firstCatalog.incomplete).toBe(1);
+  });
+});
+
+describe("DocumentRegistry — riassunto senza link da completare", () => {
+  const originalSearch = window.location.search;
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    authState.user = { role: "admin", organization_id: 1001 };
+    authState.canWriteModule = () => true;
+    scopeState.companyId = "";
+    scopeState.isStudioWide = true;
+    scopeState.isStudioPatrimonio = false;
+    scopeState.companyScoped = false;
+    scopeState.locked = false;
+    scopeState.setCompanyId = vi.fn();
+    apiService.getDocuments.mockResolvedValue({
+      data: [],
+      pagination: { total: 0, totalPages: 1 },
+    });
+    apiService.getDocumentStats.mockResolvedValue({
+      data: {
+        total: 8,
+        vigenti: 5,
+        senza_file: 0,
+        rilasciati_senza_file: 0,
+        da_completare: 4,
+      },
+    });
+    apiService.getStandards.mockResolvedValue({ data: [] });
+    apiService.getOrphanDocuments.mockResolvedValue({ data: [] });
+    apiService.getNotificationsConfig.mockResolvedValue({ alert_days_1: 30 });
+    apiService.getPriorityDeadlines.mockResolvedValue({ data: [] });
+    apiService.getDocumentTree.mockResolvedValue({ data: [] });
+    apiService.getDocumentTreeChildren.mockResolvedValue({ data: [] });
+    window.history.replaceState({}, "", "/documents?tab=catalog");
+  });
+
+  afterEach(() => {
+    window.history.replaceState({}, "", `/${originalSearch || ""}`);
+  });
+
+  it("il subtitle non ripete il link da completare; il pulsante filtro resta", async () => {
+    render(<DocumentRegistry />);
+
+    const subtitle = await screen.findByText(/8 documenti/);
+    expect(subtitle).toHaveClass("docregistry-subtitle");
+    expect(subtitle.textContent).toMatch(/8 documenti/);
+    expect(subtitle.textContent).toMatch(/5 vigenti/);
+    expect(subtitle.textContent).not.toMatch(/da completare/i);
+    expect(
+      within(subtitle).queryByRole("button", { name: /da completare/i })
+    ).toBeNull();
+
+    const filterBtn = await screen.findByRole("button", {
+      name: /Da completare/i,
+    });
+    expect(filterBtn).toBeInTheDocument();
+    expect(filterBtn).toHaveClass("inbox-badge");
+    expect(filterBtn.textContent).toMatch(/4/);
   });
 });

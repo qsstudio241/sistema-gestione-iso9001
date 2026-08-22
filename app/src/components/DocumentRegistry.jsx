@@ -1630,20 +1630,6 @@ function DocumentRegistry() {
                   {" "}({stats.rilasciati_senza_file} rilasciati)
                 </span>
               )}
-              {(Number(stats.da_completare) > 0 || filters.incomplete) && (
-                <>
-                  {" \u00b7 "}
-                  <button
-                    type="button"
-                    className="docregistry-file-alert"
-                    onClick={openIncompleteQueue}
-                    title="Apri la coda dei documenti da completare (tipo, cartella, campi)"
-                    aria-pressed={filters.incomplete}
-                  >
-                    {Number(stats.da_completare) || 0} da completare
-                  </button>
-                </>
-              )}
             </span>
           )}
         </div>
