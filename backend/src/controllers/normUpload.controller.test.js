@@ -117,7 +117,7 @@ describe('ingestFromFolder (IA-12)', () => {
       'iso9001.pdf',
       1001,
       23,
-      { excludeDocumentId: 88 },
+      { excludeDocumentId: 88, companyId: 8, folderId: 23 },
     );
     expect(assertMutatingAllowed).toHaveBeenCalledWith(reqBase.user, { companyId: 8 });
     expect(applyNormToExistingDocument).toHaveBeenCalledWith(

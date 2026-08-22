@@ -63,6 +63,7 @@ function mockCommitDb({ documentId = 501, attachmentId = 77, sourceId = 12, with
   resolveNormFolderId.mockResolvedValue({ id: 23, company_id: 8 });
   calculatePathCache.mockResolvedValue('Norme / ISO 9001');
   const rows = [
+    { recordset: [] },
     { recordset: [{ id: documentId }] },
     { recordset: [] },
   ];
@@ -171,12 +172,20 @@ describe('normIngest.service (IG-N)', () => {
       text: 'test',
     });
     normCatalog.lookupNormStatus.mockResolvedValue({ status: 'active', checkedAt: '2026-07-04' });
-    query.mockResolvedValue({ recordset: [{ id: 99 }] });
+    query.mockResolvedValue({
+      recordset: [{
+        id: 99,
+        standard_code: 'ISO/TR 15608:2013',
+        edition_year: 2013,
+        validity_status: 'vigente',
+      }],
+    });
 
     const out = await extractNormFromPdf(Buffer.from('%PDF'), 'dup.pdf', 1001, null);
 
     expect(out.status).toBe('duplicate');
     expect(out.standard_code).toBe('ISO/TR 15608:2013');
+    expect(out.warnings.join(' ')).toMatch(/Duplicato/);
     expect(query).toHaveBeenCalledWith(
       expect.stringContaining("'obsoleto'"),
       expect.any(Object),
@@ -284,14 +293,14 @@ describe('normIngest.service (IG-N)', () => {
     expect(out.status).toBe('ready_commit');
     expect(query).toHaveBeenCalledWith(
       expect.stringContaining('@excludeId'),
-      expect.objectContaining({ excludeId: 88, code: 'ISO 9001:2015' }),
+      expect.objectContaining({ excludeId: 88, folderId: 23 }),
     );
   });
 
   it('checkNormDuplicate è falso se l\'unico match è il documento escluso', async () => {
     query.mockResolvedValue({ recordset: [] });
     const dup = await checkNormDuplicate('ISO 9001:2015', 1001, 88);
-    expect(dup).toBe(false);
+    expect(dup.duplicate).toBe(false);
     expect(query).toHaveBeenCalledWith(
       expect.stringContaining('id <> @excludeId'),
       expect.objectContaining({ excludeId: 88 }),
@@ -400,7 +409,14 @@ describe('normIngest.service (IG-N)', () => {
   it('applyNormToExistingDocument non overwrite se checkNormDuplicate trova un altro documento', async () => {
     query
       .mockResolvedValueOnce({ recordset: [{ id: 88, company_id: 8, parent_id: 23, title: 'iso9001.pdf' }] })
-      .mockResolvedValueOnce({ recordset: [{ id: 77 }] });
+      .mockResolvedValueOnce({
+        recordset: [{
+          id: 77,
+          standard_code: 'ISO 9001:2015',
+          edition_year: 2015,
+          validity_status: 'vigente',
+        }],
+      });
 
     await expect(applyNormToExistingDocument(88, NORM_FIELDS, 1001, { userId: 7 }))
       .rejects.toMatchObject({ code: 'DUPLICATE' });
@@ -409,8 +425,121 @@ describe('normIngest.service (IG-N)', () => {
     expect(sqls.some((s) => /UPDATE document_registry/i.test(s))).toBe(false);
     expect(query).toHaveBeenCalledWith(
       expect.stringContaining('id <> @excludeId'),
-      expect.objectContaining({ excludeId: 88, code: 'ISO 9001:2015' }),
+      expect.objectContaining({ excludeId: 88, companyId: 8, folderId: 23 }),
     );
+  });
+
+  it('checkNormDuplicate: UNI EN 10168 e EN 10168 stesso anno sono duplicato', async () => {
+    query.mockResolvedValue({
+      recordset: [{
+        id: 41,
+        standard_code: 'EN 10168:2004',
+        edition_year: 2004,
+        validity_status: 'vigente',
+      }],
+    });
+    const dup = await checkNormDuplicate('UNI EN 10168:2004', 1001, 90, {
+      companyId: 8,
+      folderId: 23,
+      editionYear: 2004,
+    });
+    expect(dup.duplicate).toBe(true);
+    expect(dup.obsolete).toBe(false);
+    expect(dup.message).toMatch(/stessa famiglia e la stessa edizione/);
+  });
+
+  it('checkNormDuplicate: edizione più vecchia di un vigente è obsolete, non duplicate', async () => {
+    query.mockResolvedValue({
+      recordset: [{
+        id: 41,
+        standard_code: 'EN 10168:2011',
+        edition_year: 2011,
+        validity_status: 'vigente',
+      }],
+    });
+    const dup = await checkNormDuplicate('EN 10168:2004', 1001, 90, {
+      folderId: 23,
+      editionYear: 2004,
+    });
+    expect(dup.duplicate).toBe(false);
+    expect(dup.obsolete).toBe(true);
+    expect(dup.newer).toBe(false);
+    expect(dup.message).toMatch(/edizione più recente/);
+    expect(dup.message).toMatch(/obsoleta/);
+  });
+
+  it('extractNormFromPdf su edizione più vecchia: pending_review, non due vigente', async () => {
+    runDocumentIngest.mockResolvedValue({
+      fields: { standard_code: 'ISO 9001:2008', edition_year: 2008, norm_title: 'Qualità' },
+      fieldConfidence: { standard_code: 'high' },
+      warnings: [],
+      extractionConfidence: 90,
+      text: 'x'.repeat(6000),
+    });
+    normCatalog.lookupNormStatus.mockResolvedValue({
+      status: 'withdrawn',
+      checkedAt: '2026-08-22T10:00:00.000Z',
+    });
+    query.mockResolvedValue({
+      recordset: [{
+        id: 41,
+        standard_code: 'ISO 9001:2015',
+        edition_year: 2015,
+        validity_status: 'vigente',
+      }],
+    });
+
+    const out = await extractNormFromPdf(
+      Buffer.from('%PDF'),
+      'iso9001-2008.pdf',
+      1001,
+      23,
+      { excludeDocumentId: 90, companyId: 8, folderId: 23 },
+    );
+
+    expect(out.status).toBe('pending_review');
+    expect(out.fields.validity_status).toBe('superata');
+    expect(out.warnings.join(' ')).toMatch(/edizione più recente/);
+    expect(out.edition_conflict).toBe('obsolete');
+  });
+
+  it('applyNormToExistingDocument su edizione più nuova marca la precedente come superata', async () => {
+    ingestFiguresFromPdf.mockResolvedValue({ figures: [], count: 0 });
+    query
+      .mockResolvedValueOnce({ recordset: [{ id: 88, company_id: 8, parent_id: 23, title: 'iso9001-2026.pdf' }] })
+      .mockResolvedValueOnce({
+        recordset: [{
+          id: 41,
+          standard_code: 'ISO 9001:2015',
+          edition_year: 2015,
+          validity_status: 'vigente',
+        }],
+      })
+      .mockResolvedValueOnce({ recordset: [] })
+      .mockResolvedValueOnce({ recordset: [] })
+      .mockResolvedValueOnce({ recordset: [] })
+      .mockResolvedValueOnce({ recordset: [{ id: 12 }] })
+      .mockResolvedValueOnce({ recordset: [] })
+      .mockResolvedValueOnce({ recordset: [] });
+
+    const out = await applyNormToExistingDocument(88, {
+      ...NORM_FIELDS,
+      standard_code: 'ISO 9001:2026',
+      edition_year: 2026,
+    }, 1001, {
+      userId: 7,
+      filePath: '/uploads/import/iso9001-2026.pdf',
+      fileName: 'iso9001-2026.pdf',
+      extractedText: 'x'.repeat(6000),
+      textQuality: 'good',
+    });
+
+    expect(out.document_id).toBe(88);
+    expect(out.validity_status).toBe('vigente');
+    expect(out.superseded_ids).toEqual([41]);
+    const sqls = query.mock.calls.map((c) => String(c[0]));
+    expect(sqls.some((s) => /JSON_MODIFY/i.test(s) && /validity_status/i.test(s))).toBe(true);
+    expect(sqls.some((s) => /ON DELETE CASCADE/i.test(s))).toBe(false);
   });
 
   it('commitNormFromFields non chiama ingest figure senza filePath', async () => {

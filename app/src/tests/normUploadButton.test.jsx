@@ -394,4 +394,28 @@ describe('NormUploadButton — flusso upload norme', () => {
       expect(screen.getByText('Prime 20. Ne restano 4.')).toBeTruthy();
     });
   });
+
+  it('mostra il warning duplicato dalla risposta ingest e il disclaimer AI', async () => {
+    apiService.ingestNormsFromFolder.mockResolvedValue({
+      results: [{
+        status: 'duplicate',
+        fileName: 'uni-en-10168.pdf',
+        standard_code: 'UNI EN 10168:2004',
+        warnings: [
+          "Duplicato: in questa cartella esiste già la stessa famiglia e la stessa edizione (EN 10168:2004, 2004). Non è stato creato un secondo documento.",
+        ],
+      }],
+    });
+
+    render(<NormUploadButton folderId={42} onUploadComplete={onUploadComplete} />);
+
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: /Ingest dalla cartella/ }));
+    });
+
+    await waitFor(() => {
+      expect(screen.getByText(/stessa famiglia e la stessa edizione/)).toBeTruthy();
+      expect(screen.getByText(/supervisione di un professionista/)).toBeTruthy();
+    });
+  });
 });

@@ -6,6 +6,8 @@ const {
   parseStandardCode,
   normalizeStandardCodeForStorage,
   buildCatalogSearchVariants,
+  normFamilyKey,
+  editionYearFromCode,
 } = require('./standardCodeNormalizer.service');
 
 describe('parseStandardCode', () => {
@@ -106,5 +108,23 @@ describe('buildCatalogSearchVariants', () => {
     expect(v[0]).toBe('D.Lgs. 81/2008');
     expect(v).toContain('81/2008');
     expect(v.some((x) => x.includes('81-2008'))).toBe(false);
+  });
+});
+
+describe('normFamilyKey', () => {
+  it('UNI EN 10168 ≡ EN 10168 (stessa famiglia, senza anno)', () => {
+    expect(normFamilyKey('UNI EN 10168')).toBe(normFamilyKey('EN 10168'));
+    expect(normFamilyKey('UNI EN 10168:2004')).toBe('EN 10168');
+    expect(normFamilyKey('EN 10168:2004')).toBe('EN 10168');
+  });
+
+  it('UNI EN ISO 9001 ≡ ISO 9001', () => {
+    expect(normFamilyKey('UNI EN ISO 9001:2015')).toBe('ISO 9001');
+    expect(normFamilyKey('ISO 9001:2015')).toBe('ISO 9001');
+  });
+
+  it('editionYearFromCode legge i due punti o il campo', () => {
+    expect(editionYearFromCode('EN 10168:2004')).toBe(2004);
+    expect(editionYearFromCode('EN 10168', 2011)).toBe(2011);
   });
 });

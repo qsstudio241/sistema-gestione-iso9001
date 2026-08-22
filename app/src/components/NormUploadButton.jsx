@@ -11,6 +11,7 @@ import {
 } from "../utils/normUploadResults";
 import IngestReviewDialog from "./IngestReviewDialog";
 import StatusBadge from "./StatusBadge";
+import AiDisclaimer from "./AiDisclaimer";
 import "./NormUploadButton.css";
 
 const MAX_FILE_SIZE = 50 * 1024 * 1024;
@@ -319,7 +320,11 @@ export default function NormUploadButton({ folderId, onUploadComplete }) {
                           <span className="norm-upload__result-icon">{"\uD83D\uDD04"}</span>
                           <div>
                             <strong>{r.fileName}</strong>
-                            <p>Duplicato: norma già presente ({r.standard_code || "codice sconosciuto"}).</p>
+                            <p>
+                              {(r.warnings && r.warnings[0])
+                                || r.error
+                                || `Duplicato: norma già presente (${r.standard_code || "codice sconosciuto"}).`}
+                            </p>
                           </div>
                         </div>
                       ) : isRejected ? (
@@ -340,6 +345,7 @@ export default function NormUploadButton({ folderId, onUploadComplete }) {
                   );
                 })}
               </ul>
+              <AiDisclaimer style={{ marginTop: "0.5rem" }} />
               <div className="norm-upload__actions">
                 <button
                   className="norm-upload__action-btn norm-upload__action-btn--secondary"
