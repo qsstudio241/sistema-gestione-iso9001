@@ -1050,6 +1050,7 @@ function DocumentRegistry() {
   const [catalogPage, setCatalogPage]   = useState(1);
   const [loadingCatalog, setLoadingCatalog] = useState(false);
   const [catalogError, setCatalogError] = useState(null);
+  const [catalogIsIncompleteQueue, setCatalogIsIncompleteQueue] = useState(false);
 
   // Filtri catalogo
   const [filters, setFiltersState] = useState({
@@ -1222,6 +1223,7 @@ function DocumentRegistry() {
     incomplete: filters.incomplete,
     catalogTotal,
     statsCount: stats?.da_completare,
+    catalogIsIncompleteQueue,
   });
 
   const loadPriorityDocs = useCallback(async () => {
@@ -1272,6 +1274,7 @@ function DocumentRegistry() {
       setCatalogDocs(res.data || []);
       setCatalogTotal(res.pagination?.total || 0);
       setCatalogPages(res.pagination?.totalPages || 1);
+      setCatalogIsIncompleteQueue(!!params.incomplete);
     } catch (err) {
       setCatalogError(err.message || "Errore caricamento");
     } finally {
@@ -1598,6 +1601,10 @@ function DocumentRegistry() {
     });
     setCatalogPage(1);
   }, [replace, registryCompanyScope]);
+
+  useEffect(() => {
+    if (!filters.incomplete) setCatalogIsIncompleteQueue(false);
+  }, [filters.incomplete]);
 
   useEffect(() => {
     if (activeTab !== "catalog") return;

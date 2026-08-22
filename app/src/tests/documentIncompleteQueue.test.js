@@ -98,17 +98,34 @@ describe("documentIncompleteQueue", () => {
       incomplete: true,
       catalogTotal: 3,
       statsCount: 4,
+      catalogIsIncompleteQueue: true,
     })).toBe(3);
     expect(incompleteQueueBadgeCount({
       incomplete: false,
       catalogTotal: 3,
       statsCount: 4,
+      catalogIsIncompleteQueue: true,
     })).toBe(4);
     expect(incompleteQueueBadgeCount({
       incomplete: true,
       catalogTotal: 0,
       statsCount: 4,
+      catalogIsIncompleteQueue: true,
     })).toBe(0);
+  });
+
+  it("aprendo la coda non usa il totale catalogo precedente", () => {
+    expect(incompleteQueueBadgeCount({
+      incomplete: true,
+      catalogTotal: 100,
+      statsCount: 4,
+      catalogIsIncompleteQueue: false,
+    })).toBe(4);
+    expect(incompleteQueueBadgeCount({
+      incomplete: true,
+      catalogTotal: 100,
+      statsCount: 4,
+    })).toBe(4);
   });
 
   it("badge e lista: dopo apertura la query coincide col predicato incomplete", () => {
