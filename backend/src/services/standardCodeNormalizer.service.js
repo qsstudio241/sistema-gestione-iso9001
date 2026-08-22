@@ -182,6 +182,48 @@ function normalizeStandardCodeForStorage(raw, editionYear = null) {
 }
 
 /**
+ * Famiglia senza edizione: toglie UNI (adattamento nazionale) e tiene EN/ISO/IEC + numero.
+ * UNI EN 10168 ≡ EN 10168; UNI EN ISO 9001 ≡ ISO 9001.
+ * @param {string} raw
+ * @param {number|null} [editionYear]
+ * @returns {string}
+ */
+function normFamilyKey(raw, editionYear = null) {
+  const parsed = parseStandardCode(raw, editionYear);
+  if (!parsed) {
+    return String(raw || '')
+      .replace(/_/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim()
+      .toUpperCase();
+  }
+  if (parsed.isItalianLaw) {
+    return String(parsed.canonical || '').toUpperCase();
+  }
+  const keep = (parsed.prefixes || []).filter((p) => p === 'EN' || p === 'ISO' || p === 'IEC');
+  let body = '';
+  if (keep.includes('ISO')) {
+    body = parsed.docType ? `ISO/${parsed.docType}` : 'ISO';
+  } else if (keep.includes('IEC')) {
+    body = parsed.docType ? `IEC/${parsed.docType}` : 'IEC';
+  } else if (keep.includes('EN')) {
+    body = 'EN';
+  } else if (parsed.docType) {
+    body = parsed.docType;
+  }
+  return `${body} ${parsed.number}`.replace(/\s+/g, ' ').trim().toUpperCase();
+}
+
+function editionYearFromCode(raw, editionYear = null) {
+  if (editionYear != null && editionYear !== '') {
+    const y = parseInt(editionYear, 10);
+    if (Number.isFinite(y)) return y;
+  }
+  const parsed = parseStandardCode(raw, editionYear);
+  return parsed?.year != null ? parsed.year : null;
+}
+
+/**
  * Genera varianti di ricerca dal più specifico al più generico.
  * @param {string} raw
  * @param {number|null} [editionYear]
@@ -253,4 +295,6 @@ module.exports = {
   parseStandardCode,
   normalizeStandardCodeForStorage,
   buildCatalogSearchVariants,
+  normFamilyKey,
+  editionYearFromCode,
 };

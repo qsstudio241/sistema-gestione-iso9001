@@ -112,6 +112,7 @@ async function uploadNorms(req, res) {
         file.originalname,
         organization_id,
         normFolder.id,
+        { companyId: normFolder.company_id, folderId: normFolder.id },
       );
 
       if (extracted.status === 'duplicate') {
@@ -121,7 +122,9 @@ async function uploadNorms(req, res) {
           status: 'duplicate',
           standard_code: extracted.standard_code,
           norm_title: extracted.norm_title,
+          edition_year: extracted.edition_year,
           warnings: extracted.warnings || [],
+          error: extracted.message || null,
         }));
         continue;
       }
@@ -295,7 +298,11 @@ async function ingestFromFolder(req, res) {
         fileName,
         organization_id,
         normFolder.id,
-        { excludeDocumentId: doc.id },
+        {
+          excludeDocumentId: doc.id,
+          companyId: doc.company_id != null ? doc.company_id : normFolder.company_id,
+          folderId: normFolder.id,
+        },
       );
 
       if (extracted.status === 'duplicate') {
@@ -304,7 +311,9 @@ async function ingestFromFolder(req, res) {
           status: 'duplicate',
           standard_code: extracted.standard_code,
           norm_title: extracted.norm_title,
+          edition_year: extracted.edition_year,
           warnings: extracted.warnings || [],
+          error: extracted.message || null,
         }));
         continue;
       }

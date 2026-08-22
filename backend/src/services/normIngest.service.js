@@ -23,6 +23,8 @@ const { ingestFiguresFromPdf } = require('./figureIngest.service');
 const {
   parseStandardCode,
   normalizeStandardCodeForStorage,
+  normFamilyKey,
+  editionYearFromCode,
 } = require('./standardCodeNormalizer.service');
 
 const REVIEW_CONFIDENCE_THRESHOLD = Number(process.env.INGEST_NORM_REVIEW_CONFIDENCE) || 55;
@@ -159,18 +161,167 @@ async function enrichNormFields(rawFields, pipelineWarnings = []) {
   return { fields, catalogLookup, catalog_lookup, warnings, needsReview };
 }
 
-async function checkNormDuplicate(standardCode, organizationId, excludeDocumentId = null) {
-  if (!standardCode) return false;
+function emptyNormDuplicateResult(standardCode, editionYear) {
+  return {
+    duplicate: false,
+    obsolete: false,
+    newer: false,
+    familyKey: standardCode ? normFamilyKey(standardCode, editionYear) : null,
+    incomingYear: editionYearFromCode(standardCode, editionYear),
+    matches: [],
+    vigente: null,
+    message: null,
+  };
+}
+
+function formatNormLabel(row) {
+  if (!row) return '';
+  const code = row.standard_code || '';
+  const year = editionYearFromCode(row.standard_code, row.edition_year);
+  if (code && year) return `${code}, ${year}`;
+  return code || String(year || '');
+}
+
+/**
+ * Confronta la famiglia (EN/ISO/IEC + numero) nella stessa org + cartella/azienda.
+ * Stesso anno = duplicato; anno più vecchio di un vigente = obsoleto; anno più nuovo = newer.
+ * @returns {Promise<{duplicate: boolean, obsolete: boolean, newer: boolean, familyKey: string|null, incomingYear: number|null, matches: object[], vigente: object|null, message: string|null}>}
+ */
+async function checkNormDuplicate(standardCode, organizationId, excludeDocumentId = null, scope = {}) {
+  if (!standardCode) return emptyNormDuplicateResult(standardCode, scope.editionYear);
   const excludeId = excludeDocumentId != null ? parseInt(excludeDocumentId, 10) : null;
+  const companyId = scope.companyId != null && scope.companyId !== ''
+    ? parseInt(scope.companyId, 10)
+    : null;
+  const folderId = scope.folderId != null && scope.folderId !== ''
+    ? parseInt(scope.folderId, 10)
+    : null;
+  const incomingYear = editionYearFromCode(standardCode, scope.editionYear);
+  const incomingFamily = normFamilyKey(standardCode, incomingYear);
+  const incomingCanonical = normalizeStandardCodeForStorage(standardCode, incomingYear);
+
   const result = await query(`
-    SELECT TOP 1 id FROM document_registry
+    SELECT id, company_id, parent_id,
+      JSON_VALUE(type_specific_data, '$.standard_code') AS standard_code,
+      JSON_VALUE(type_specific_data, '$.edition_year') AS edition_year,
+      JSON_VALUE(type_specific_data, '$.validity_status') AS validity_status
+    FROM document_registry
     WHERE organization_id = @orgId
       AND doc_type = 'norma'
       AND ISNULL(status, 'rilasciato') NOT IN ('eliminato', 'obsoleto')
-      AND JSON_VALUE(type_specific_data, '$.standard_code') = @code
       AND (@excludeId IS NULL OR id <> @excludeId)
-  `, { orgId: organizationId, code: standardCode, excludeId: Number.isFinite(excludeId) ? excludeId : null });
-  return result.recordset.length > 0;
+      AND (@companyId IS NULL OR company_id = @companyId)
+      AND (@folderId IS NULL OR parent_id = @folderId)
+  `, {
+    orgId: organizationId,
+    excludeId: Number.isFinite(excludeId) ? excludeId : null,
+    companyId: Number.isFinite(companyId) ? companyId : null,
+    folderId: Number.isFinite(folderId) ? folderId : null,
+  });
+
+  const familyMatches = (result.recordset || []).filter((row) => {
+    const code = row.standard_code;
+    if (!code) return false;
+    const year = editionYearFromCode(code, row.edition_year);
+    const family = normFamilyKey(code, year);
+    const canonical = normalizeStandardCodeForStorage(code, year);
+    return family === incomingFamily
+      || canonical === incomingCanonical
+      || String(code).trim() === String(standardCode).trim();
+  }).map((row) => ({
+    ...row,
+    edition_year: editionYearFromCode(row.standard_code, row.edition_year),
+  }));
+
+  const sameEdition = familyMatches.filter((row) => {
+    const sameYear = incomingYear != null && row.edition_year != null && row.edition_year === incomingYear;
+    const sameCode = normalizeStandardCodeForStorage(row.standard_code, row.edition_year) === incomingCanonical;
+    return sameYear || sameCode;
+  });
+
+  const vigenteMatches = familyMatches.filter((row) => {
+    const vs = String(row.validity_status || '').toLowerCase();
+    return vs === 'vigente' || vs === 'active';
+  });
+  const vigentePool = vigenteMatches.length > 0 ? vigenteMatches : familyMatches;
+  const vigente = vigentePool.reduce((best, row) => {
+    if (!best) return row;
+    const by = best.edition_year;
+    const ry = row.edition_year;
+    if (ry != null && (by == null || ry > by)) return row;
+    return best;
+  }, null);
+
+  if (sameEdition.length > 0) {
+    const hit = sameEdition[0];
+    return {
+      duplicate: true,
+      obsolete: false,
+      newer: false,
+      familyKey: incomingFamily,
+      incomingYear,
+      matches: familyMatches,
+      vigente: vigente || hit,
+      message: `Duplicato: in questa cartella esiste già la stessa famiglia e la stessa edizione (${formatNormLabel(hit)}). Non è stato creato un secondo documento.`,
+    };
+  }
+
+  const vigenteYear = vigente ? vigente.edition_year : null;
+  const obsolete = incomingYear != null && vigenteYear != null && incomingYear < vigenteYear;
+  const newer = incomingYear != null && vigenteYear != null && incomingYear > vigenteYear;
+
+  let message = null;
+  if (obsolete) {
+    message = `Esiste già un'edizione più recente (${formatNormLabel(vigente)}). Puoi tenere questa come obsoleta.`;
+  } else if (newer) {
+    message = `Trovata un'edizione precedente (${formatNormLabel(vigente)}). Verrà impostata come non vigente.`;
+  }
+
+  return {
+    duplicate: false,
+    obsolete,
+    newer,
+    familyKey: incomingFamily,
+    incomingYear,
+    matches: familyMatches,
+    vigente,
+    message,
+  };
+}
+
+async function markOlderEditionsSuperseded(organizationId, check, excludeDocumentId) {
+  if (!check || !check.newer || !Array.isArray(check.matches)) return [];
+  const incomingYear = check.incomingYear;
+  const excludeId = excludeDocumentId != null ? parseInt(excludeDocumentId, 10) : null;
+  const older = check.matches.filter((row) => {
+    if (excludeId != null && parseInt(row.id, 10) === excludeId) return false;
+    const vs = String(row.validity_status || '').toLowerCase();
+    const already = vs === 'superata' || vs === 'ritirata';
+    if (already) return false;
+    if (incomingYear == null) return vs === 'vigente' || vs === 'active' || !vs;
+    return row.edition_year == null || row.edition_year < incomingYear;
+  });
+
+  const updated = [];
+  for (const row of older) {
+    await query(`
+      UPDATE document_registry
+      SET type_specific_data = JSON_MODIFY(
+            CASE WHEN ISJSON(type_specific_data) = 1 THEN type_specific_data ELSE '{}' END,
+            '$.validity_status',
+            @status
+          ),
+          updated_at = GETDATE()
+      WHERE id = @id AND organization_id = @orgId
+    `, { id: row.id, orgId: organizationId, status: 'superata' });
+    await query(`
+      UPDATE norm_document_sources
+      SET validity_status = @status, updated_at = GETDATE()
+      WHERE document_id = @id AND organization_id = @orgId
+    `, { id: row.id, orgId: organizationId, status: 'superata' });
+    updated.push(row.id);
+  }
+  return updated;
 }
 
 /**
@@ -178,6 +329,10 @@ async function checkNormDuplicate(standardCode, organizationId, excludeDocumentI
  */
 async function extractNormFromPdf(pdfBuffer, fileName, organizationId, parentFolderId = null, options = {}) {
   const excludeDocumentId = options.excludeDocumentId != null ? options.excludeDocumentId : null;
+  const folderId = options.folderId != null && options.folderId !== ''
+    ? options.folderId
+    : parentFolderId;
+  const companyId = options.companyId != null ? options.companyId : null;
   const pipeline = await runDocumentIngest({
     pdfBuffer,
     docType: 'norma',
@@ -191,18 +346,36 @@ async function extractNormFromPdf(pdfBuffer, fileName, organizationId, parentFol
   );
 
   const standardCode = enriched.fields.standard_code;
-  if (standardCode && await checkNormDuplicate(standardCode, organizationId, excludeDocumentId)) {
+  const dupCheck = standardCode
+    ? await checkNormDuplicate(standardCode, organizationId, excludeDocumentId, {
+      companyId,
+      folderId,
+      editionYear: enriched.fields.edition_year,
+    })
+    : emptyNormDuplicateResult(standardCode, enriched.fields.edition_year);
+
+  if (dupCheck.duplicate) {
     return {
       status: 'duplicate',
       standard_code: standardCode,
       norm_title: enriched.fields.norm_title || null,
-      warnings: enriched.warnings,
+      edition_year: enriched.fields.edition_year ?? dupCheck.incomingYear,
+      warnings: [...enriched.warnings, dupCheck.message].filter(Boolean),
+      message: dupCheck.message,
     };
+  }
+
+  if (dupCheck.obsolete) {
+    enriched.fields.validity_status = 'superata';
+    if (dupCheck.message) enriched.warnings.push(dupCheck.message);
+  } else if (dupCheck.newer && dupCheck.message) {
+    enriched.warnings.push(dupCheck.message);
   }
 
   const needsReview = enriched.needsReview
     || pipeline.extractionConfidence < REVIEW_CONFIDENCE_THRESHOLD
-    || !standardCode;
+    || !standardCode
+    || dupCheck.obsolete;
 
   return {
     status: needsReview ? 'pending_review' : 'ready_commit',
@@ -215,6 +388,7 @@ async function extractNormFromPdf(pdfBuffer, fileName, organizationId, parentFol
     parent_folder_id: parentFolderId,
     extracted_text: pipeline.text,
     text_quality: assessTextQuality(pipeline.text),
+    edition_conflict: dupCheck.obsolete ? 'obsolete' : dupCheck.newer ? 'newer' : null,
   };
 }
 
@@ -249,6 +423,23 @@ async function commitNormFromFields(fields, organizationId, options = {}) {
     const err = new Error('Codice norma obbligatorio per il commit (standard_code)');
     err.code = 'VALIDATION_ERROR';
     throw err;
+  }
+
+  const dupCheck = await checkNormDuplicate(normTsd.standard_code, organizationId, null, {
+    companyId: normFolder.company_id,
+    folderId: normFolder.id,
+    editionYear: normTsd.edition_year,
+  });
+  if (dupCheck.duplicate) {
+    const err = new Error(dupCheck.message || `Duplicato: norma già presente (${normTsd.standard_code}).`);
+    err.code = 'DUPLICATE';
+    err.standard_code = normTsd.standard_code;
+    err.warnings = [err.message];
+    throw err;
+  }
+  if (dupCheck.obsolete) {
+    normTsd.validity_status = 'superata';
+    cleanFields.validity_status = 'superata';
   }
 
   const metadata = {
@@ -376,6 +567,11 @@ async function commitNormFromFields(fields, organizationId, options = {}) {
     }
   }
 
+  let supersededIds = [];
+  if (dupCheck.newer) {
+    supersededIds = await markOlderEditionsSuperseded(organizationId, dupCheck, documentId);
+  }
+
   return {
     document_id: documentId,
     attachment_id: attachmentId,
@@ -383,6 +579,7 @@ async function commitNormFromFields(fields, organizationId, options = {}) {
     norm_title: normTsd.norm_title || docTitle,
     validity_status: normTsd.validity_status,
     text_quality: tQuality,
+    superseded_ids: supersededIds,
   };
 }
 
@@ -541,12 +738,21 @@ async function applyNormToExistingDocument(documentId, fields, organizationId, o
     throw err;
   }
 
-  if (await checkNormDuplicate(normTsd.standard_code, organizationId, docId)) {
-    const err = new Error(`Duplicato: norma già presente (${normTsd.standard_code}).`);
+  const dupCheck = await checkNormDuplicate(normTsd.standard_code, organizationId, docId, {
+    companyId: doc.company_id,
+    folderId: doc.parent_id,
+    editionYear: normTsd.edition_year,
+  });
+  if (dupCheck.duplicate) {
+    const err = new Error(dupCheck.message || `Duplicato: norma già presente (${normTsd.standard_code}).`);
     err.code = 'DUPLICATE';
     err.standard_code = normTsd.standard_code;
-    err.warnings = [`Duplicato: norma già presente (${normTsd.standard_code}).`];
+    err.warnings = [err.message];
     throw err;
+  }
+  if (dupCheck.obsolete) {
+    normTsd.validity_status = 'superata';
+    cleanFields.validity_status = 'superata';
   }
 
   const metadata = {
@@ -663,6 +869,11 @@ async function applyNormToExistingDocument(documentId, fields, organizationId, o
     }
   }
 
+  let supersededIds = [];
+  if (dupCheck.newer) {
+    supersededIds = await markOlderEditionsSuperseded(organizationId, dupCheck, docId);
+  }
+
   return {
     document_id: docId,
     attachment_id: null,
@@ -670,6 +881,7 @@ async function applyNormToExistingDocument(documentId, fields, organizationId, o
     norm_title: normTsd.norm_title || docTitle,
     validity_status: normTsd.validity_status,
     text_quality: tQuality,
+    superseded_ids: supersededIds,
   };
 }
 
@@ -682,6 +894,8 @@ module.exports = {
   assertFolderIsNorms,
   listFolderNormPdfs,
   checkNormDuplicate,
+  markOlderEditionsSuperseded,
+  normFamilyKey,
   FOLDER_INGEST_LIMIT,
   REVIEW_CONFIDENCE_THRESHOLD,
 };
