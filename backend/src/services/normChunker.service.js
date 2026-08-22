@@ -6,6 +6,7 @@
 
 const { query } = require('../config/database');
 const { embed } = require('./aiProviderAdapter');
+const { getGeminiEmbedBatch, getGeminiEmbedPauseMs, pause } = require('./adapters/geminiKeyPool');
 const logger = require('../utils/logger');
 
 // ---------------------------------------------------------------------------
@@ -57,8 +58,6 @@ function chunkText(text, maxTokens = 500, overlap = 50) {
 // Indexing
 // ---------------------------------------------------------------------------
 
-const EMBED_BATCH = 20;
-
 /**
  * Indicizza un singolo documento normativo: chunking ? embedding ? INSERT.
  * @param {number} documentSourceId  PK di norm_document_sources
@@ -87,13 +86,17 @@ async function indexDocument(documentSourceId) {
 
   logger.info(`[NormChunker] Indexing source ${documentSourceId}: ${chunks.length} chunks`);
 
-  for (let i = 0; i < chunks.length; i += EMBED_BATCH) {
-    const batch = chunks.slice(i, i + EMBED_BATCH);
+  const embedBatch = getGeminiEmbedBatch();
+  const embedPauseMs = getGeminiEmbedPauseMs();
+
+  for (let i = 0; i < chunks.length; i += embedBatch) {
+    if (i > 0) await pause(embedPauseMs);
+    const batch = chunks.slice(i, i + embedBatch);
     let vectors;
     try {
       vectors = await embed(batch.map(c => c.text));
     } catch (err) {
-      logger.error(`[NormChunker] embed failed batch ${i}:`, err.message);
+      logger.warn(`[NormChunker] embed failed batch ${i} (estrazione già ok):`, err.message);
       vectors = batch.map(() => null);
     }
 

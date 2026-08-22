@@ -8,9 +8,8 @@ const { query } = require('../config/database');
 const { embed } = require('./aiProviderAdapter');
 const { chunkText } = require('./normChunker.service');
 const { extractDocumentText } = require('./documentTextExtractor.service');
+const { getGeminiEmbedBatch, getGeminiEmbedPauseMs, pause } = require('./adapters/geminiKeyPool');
 const logger = require('../utils/logger');
-
-const EMBED_BATCH = 20;
 
 // Tipo chunk dedicato al contenuto testuale dei documenti allegati.
 // Distinto da 'document' (solo metadati) per consentire prune/dedup mirati.
@@ -344,9 +343,12 @@ async function indexAllEntities(organizationId) {
 
       if (allChunks.length === 0) continue;
 
+      const embedBatch = getGeminiEmbedBatch();
+      const embedPauseMs = getGeminiEmbedPauseMs();
       // Embed a batch e inserisci
-      for (let i = 0; i < allChunks.length; i += EMBED_BATCH) {
-        const batch = allChunks.slice(i, i + EMBED_BATCH);
+      for (let i = 0; i < allChunks.length; i += embedBatch) {
+        if (i > 0) await pause(embedPauseMs);
+        const batch = allChunks.slice(i, i + embedBatch);
         let vectors;
         try {
           vectors = await embed(batch.map(c => c.text));
@@ -491,9 +493,12 @@ async function indexDocumentContents(organizationId) {
     return 0;
   }
 
+  const embedBatch = getGeminiEmbedBatch();
+  const embedPauseMs = getGeminiEmbedPauseMs();
   // Embed a batch e inserisci (stesso flusso delle altre entità).
-  for (let i = 0; i < allChunks.length; i += EMBED_BATCH) {
-    const batch = allChunks.slice(i, i + EMBED_BATCH);
+  for (let i = 0; i < allChunks.length; i += embedBatch) {
+    if (i > 0) await pause(embedPauseMs);
+    const batch = allChunks.slice(i, i + embedBatch);
     let vectors;
     try {
       vectors = await embed(batch.map(c => c.text));
@@ -717,8 +722,11 @@ async function processFeedbackChunks(organizationId) {
   }
 
   let created = 0;
-  for (let i = 0; i < allChunks.length; i += EMBED_BATCH) {
-    const batch = allChunks.slice(i, i + EMBED_BATCH);
+  const embedBatch = getGeminiEmbedBatch();
+  const embedPauseMs = getGeminiEmbedPauseMs();
+  for (let i = 0; i < allChunks.length; i += embedBatch) {
+    if (i > 0) await pause(embedPauseMs);
+    const batch = allChunks.slice(i, i + embedBatch);
     let vectors;
     try {
       vectors = await embed(batch.map(c => c.text));

@@ -1,53 +1,41 @@
-# DEPUTYTASK — IA-15: duplicati e edizioni (stessa famiglia in NORME)
+# DEPUTYTASK — IA-16: throttle ingest cartella + 429 TPM Gemini
 
-**Stato:** CHIUSO — TEST OK  
+**Stato:** APERTO  
 **Aperto:** 22/08/2026  
-**Chiuso:** 22/08/2026  
-**Piano:** [`PLAN_INGEST_ARCHIVIO_SLICES.md`](PLAN_INGEST_ARCHIVIO_SLICES.md) (IA-15; follow-up IA-12)  
-**Rischio:** Medio — estende `checkNormDuplicate` + ingest cartella; UPDATE additivo `validity_status`; niente schema/auth/sync.  
-**PR:** [#532](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/532)  
-**SHA merge:** `8ebea510` · feature `45496a22`  
-**Branch feature:** `cursor/ingest-norme-duplicati-edizione-d492`  
-**Precedente slot:** IA-12 CHIUSO [#524](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/524) / [#525](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/525)
+**Piano:** [`PLAN_INGEST_ARCHIVIO_SLICES.md`](PLAN_INGEST_ARCHIVIO_SLICES.md) (IA-16; follow-up IA-15 CHIUSO #532)  
+**Rischio:** Medio — backend additivo (classificazione 429 + pause/batch); niente schema/auth/sync.  
+**Branch feature:** `cursor/ingest-gemini-throttle-d492`  
+**Precedente slot:** IA-15 CHIUSO [#532](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/532)
 
 ## Perché
 
-Ingest dalla cartella deve confrontare i PDF **già in quella cartella 2.3** (stessa azienda). L’utente può tenere un’edizione **obsoleta**; non deve ottenere un **duplicato** (stessa famiglia + stesso anno). Un’edizione **più recente** diventa vigente e quella precedente passa a non vigente.
+Ingest dalla cartella tratta tutti i PDF in sequenza stretta: embedding Gemini sfora TPM (1M token/min). Un 429 TPM marcava la chiave **esaurita** e spegneva anche Flash (stesso pool).
 
-## File toccati
+## File previsti
 
-- `backend/src/services/standardCodeNormalizer.service.js` (`normFamilyKey`)
-- `backend/src/services/standardCodeNormalizer.service.test.js`
-- `backend/src/services/normIngest.service.js` (`checkNormDuplicate` esteso, supersede)
-- `backend/src/services/normIngest.service.test.js`
-- `backend/src/controllers/normUpload.controller.js` (scope company/folder su extract)
-- `backend/src/controllers/normUpload.controller.test.js`
-- `app/src/components/NormUploadButton.jsx` (warning lista risultati + AiDisclaimer)
-- `app/src/tests/normUploadButton.test.jsx`
+- `backend/src/services/adapters/geminiKeyPool.js` (+ test)
+- `backend/src/services/adapters/geminiAdapter.js`
+- `backend/src/services/aiProviderAdapter.test.js` (embed 429 TPM)
+- `backend/src/services/normChunker.service.js`
+- `backend/src/services/knowledgeIndexer.service.js` (stesso percorso embed)
+- `backend/src/controllers/normUpload.controller.js` (+ test pausa)
 - `docs/agent-tasks/DEPUTYTASK.md`
 
 ## Cosa NON toccare
 
-- `importJobs.controller.js` / Screening / posa 2.3
-- contractReview, smoke #530
-- GUIDA / roadmap (hub dopo merge, non nella PR di codice)
-- `auth.middleware`, `syncService`, migrazioni SQL, CASCADE
-- Material Compliance, Qualifiche, WPQR
+- `contractReview`, tetto 20 PDF cartella
+- `auth.middleware`, `syncService`, migrazioni
+- GUIDA / roadmap (hub dopo merge)
+- Schermata ingest nuova (riusa lista risultati + warning)
 
-## Slice (minimo verificabile)
+## Slice
 
-1. Stessa famiglia + stesso anno (o stesso `standard_code` normalizzato) → `duplicate`, niente secondo documento.
-2. Stessa famiglia + anno **più vecchio** di un vigente → non auto-commit come vigente; `pending_review` + warning italiano; `validity_status` non vigente. Non cancellare.
-3. Stessa famiglia + anno **più nuovo** → ingest vigente; i precedenti in cartella/azienda → `superata`.
-4. UI: lista risultati ingest già esistente + testo warning. Niente look nuovo.
+1. 429 TPM / rate / resource exhausted transitorio → retry + backoff; **non** `markKeyExhausted`.
+2. `markKeyExhausted` solo 403 o quota giornaliera/billing davvero morta.
+3. Batch embed default 5 + pausa ~2,5s (`GEMINI_EMBED_BATCH` / `GEMINI_EMBED_PAUSE_MS`).
+4. Pausa ~2s tra PDF cartella (`INGEST_FOLDER_PAUSE_MS`). Embed fallito dopo retry → warning, extract Flash già ok resta.
 
 ## Acceptance
 
-- `UNI EN 10168` ≡ `EN 10168` (togli UNI, tieni EN/ISO/IEC + numero).
-- Due PDF stesso anno → una sola riga `duplicate`.
-- PDF più vecchio con vigente più recente → warning «Esiste già un’edizione più recente…»; non due vigente.
-- PDF più nuovo → vecchio `superata`.
-
-## Esito
-
-Mergiato su `main` (click committente). Closeout docs + deploy VPS in sessione 22/08/2026. Residuo noto (non in questa slice): gap RBAC su `uploadNorms` (Security Medium #532) — da slice successiva se il committente la vuole.
+- L1: 429 TPM non marca chiave; 403 sì.
+- 7 PDF: Flash non muore per un picco embed al minuto.

@@ -71,7 +71,7 @@ function getRetryAfterMs(response) {
     if (!header) return null;
     const seconds = parseFloat(header);
     if (Number.isFinite(seconds) && seconds >= 0) {
-      return Math.min(Math.round(seconds * 1000), 10000);
+      return Math.min(Math.round(seconds * 1000), 60000);
     }
   } catch {
     // ignora header malformati
@@ -259,8 +259,11 @@ async function generateContent(body, options = {}) {
         if (isLast || !isRetryable) {
           break;
         }
-        const waitMs =
-          err.retryAfterMs != null ? err.retryAfterMs : computeBackoffMs(attempt);
+        const waitMs = keyPool.isTransientRateLimitError(err)
+          ? keyPool.getTpmRetryWaitMs(err, attempt)
+          : err.retryAfterMs != null
+            ? err.retryAfterMs
+            : computeBackoffMs(attempt);
         await sleep(waitMs);
       }
     }
@@ -465,9 +468,8 @@ async function embed(texts) {
 
           if (isRateLimit && rateLimitRetries < MAX_RATE_LIMIT_RETRIES) {
             rateLimitRetries += 1;
-            const waitMs =
-              err.retryAfterMs != null ? err.retryAfterMs : 5000;
-            await sleep(Math.min(waitMs, 30000));
+            const waitMs = keyPool.getTpmRetryWaitMs(err, rateLimitRetries - 1);
+            await sleep(waitMs);
             continue;
           }
 
