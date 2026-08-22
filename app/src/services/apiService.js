@@ -25,6 +25,11 @@ const API_CONFIG = {
 const ENV = import.meta.env.MODE || 'development';
 const config = API_CONFIG[ENV] || API_CONFIG.development;
 
+/** Timeout solo per ingest/upload batch norme (pause IA-16 + 7–20 PDF). GET restano sul default 10–15s. */
+const NORM_BATCH_REQUEST_TIMEOUT_MS = 15 * 60 * 1000;
+const NORM_BATCH_TIMEOUT_MESSAGE =
+    "L'elaborazione delle norme sta richiedendo più tempo del previsto (molti PDF e pause anti-sovraccarico AI). Non è un errore di rete: attendere o riprovare con meno file.";
+
 // Storage keys
 const TOKEN_KEY = 'sgq_auth_token';
 const REFRESH_TOKEN_KEY = 'sgq_refresh_token';
@@ -269,7 +274,7 @@ class ApiService {
             clearTimeout(timeoutId);
 
             if (error.name === 'AbortError') {
-                throw new ApiError('Richiesta timeout', 408, 'TIMEOUT');
+                throw new ApiError(options.timeoutMessage || 'Richiesta timeout', 408, 'TIMEOUT');
             }
 
             if (error instanceof ApiError) {
@@ -2713,7 +2718,7 @@ class ApiService {
         const headers = token ? { Authorization: `Bearer ${token}` } : {};
 
         const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 180000);
+        const timeoutId = setTimeout(() => controller.abort(), NORM_BATCH_REQUEST_TIMEOUT_MS);
 
         try {
             const response = await fetch(`${this.baseUrl}/documents/norms/upload`, {
@@ -2738,7 +2743,7 @@ class ApiService {
         } catch (error) {
             clearTimeout(timeoutId);
             if (error.name === 'AbortError') {
-                throw new ApiError('Upload norme timeout (3 min)', 408, 'TIMEOUT');
+                throw new ApiError(NORM_BATCH_TIMEOUT_MESSAGE, 408, 'TIMEOUT');
             }
             if (error instanceof ApiError) throw error;
             throw new ApiError(error.message, 0, 'NETWORK_ERROR');
@@ -2755,7 +2760,10 @@ class ApiService {
         if (Array.isArray(documentIds) && documentIds.length > 0) {
             body.document_ids = documentIds;
         }
-        const res = await this.post('/documents/norms/ingest-from-folder', body, { timeout: 180000 });
+        const res = await this.post('/documents/norms/ingest-from-folder', body, {
+            timeout: NORM_BATCH_REQUEST_TIMEOUT_MS,
+            timeoutMessage: NORM_BATCH_TIMEOUT_MESSAGE,
+        });
         return res?.data ?? res;
     }
 }
@@ -2775,5 +2783,5 @@ class ApiError extends Error {
 
 // Singleton export
 const apiService = new ApiService();
-export { apiService, ApiError, config as apiConfig, setAuditLockTokensForAudit, clearAllAuditLockTokens, hasAuditLockToken };
+export { apiService, ApiError, config as apiConfig, setAuditLockTokensForAudit, clearAllAuditLockTokens, hasAuditLockToken, NORM_BATCH_REQUEST_TIMEOUT_MS, NORM_BATCH_TIMEOUT_MESSAGE };
 export default apiService;

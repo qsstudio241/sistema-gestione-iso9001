@@ -64,6 +64,17 @@ describe('ingestFromFolder (IA-12)', () => {
     jest.restoreAllMocks();
   });
 
+  it('allunga il timeout socket (15 min) su ingest dalla cartella', async () => {
+    const res = mockRes();
+    res.setTimeout = jest.fn();
+    const req = { ...reqBase, setTimeout: jest.fn() };
+    assertFolderIsNorms.mockResolvedValue({ id: 23, company_id: 8 });
+    listFolderNormPdfs.mockResolvedValue([]);
+    await ingestFromFolder(req, res);
+    expect(req.setTimeout).toHaveBeenCalledWith(15 * 60 * 1000);
+    expect(res.setTimeout).toHaveBeenCalledWith(15 * 60 * 1000);
+  });
+
   it('400 se manca folder_id', async () => {
     const res = mockRes();
     await ingestFromFolder({ user: reqBase.user, body: {} }, res);

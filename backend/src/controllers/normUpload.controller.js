@@ -22,6 +22,14 @@ const {
 } = require('../services/companyAccess.service');
 const { getIngestFolderPauseMs, pause } = require('../services/adapters/geminiKeyPool');
 
+/** Allinea socket Node al client FE (15 min): 7–20 PDF + pause IA-16. */
+const NORM_BATCH_SOCKET_TIMEOUT_MS = 15 * 60 * 1000;
+
+function extendNormBatchSocketTimeout(req, res) {
+  if (req && typeof req.setTimeout === 'function') req.setTimeout(NORM_BATCH_SOCKET_TIMEOUT_MS);
+  if (res && typeof res.setTimeout === 'function') res.setTimeout(NORM_BATCH_SOCKET_TIMEOUT_MS);
+}
+
 function unpackFolderNormPdfs(listed) {
   if (Array.isArray(listed)) {
     return { docs: listed, truncated: false, omitted: 0 };
@@ -77,6 +85,7 @@ function flattenNormBatchEntry(entry) {
  * Multer array field "files", max 10, solo PDF.
  */
 async function uploadNorms(req, res) {
+  extendNormBatchSocketTimeout(req, res);
   const results = [];
   const { user_id, organization_id } = req.user;
 
@@ -225,6 +234,7 @@ async function uploadNorms(req, res) {
  * Pipeline normIngest sui PDF già in registry (cartella 2.3). Nessun re-upload.
  */
 async function ingestFromFolder(req, res) {
+  extendNormBatchSocketTimeout(req, res);
   const { user_id, organization_id } = req.user;
   const requestedFolderId = req.body?.folder_id ?? req.body?.parent_folder_id;
   const folderId = requestedFolderId != null && requestedFolderId !== ''

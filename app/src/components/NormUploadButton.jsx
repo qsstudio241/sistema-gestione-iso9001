@@ -2,7 +2,7 @@
  * NormUploadButton — Upload batch norme con pipeline unificata + revisione pre-commit (IG-N)
  */
 import React, { useState, useRef, useCallback } from "react";
-import apiService from "../services/apiService";
+import apiService, { NORM_BATCH_TIMEOUT_MESSAGE } from "../services/apiService";
 import {
   normalizeNormUploadResults,
   countNormUploadSuccesses,
@@ -15,6 +15,13 @@ import AiDisclaimer from "./AiDisclaimer";
 import "./NormUploadButton.css";
 
 const MAX_FILE_SIZE = 50 * 1024 * 1024;
+
+function messageFromNormBatchError(err, fallback) {
+  if (err?.code === "TIMEOUT" || err?.status === 408 || /timeout/i.test(err?.message || "")) {
+    return NORM_BATCH_TIMEOUT_MESSAGE;
+  }
+  return err?.message || fallback;
+}
 
 export default function NormUploadButton({ folderId, onUploadComplete }) {
   const [selectedFiles, setSelectedFiles] = useState([]);
@@ -75,7 +82,7 @@ export default function NormUploadButton({ folderId, onUploadComplete }) {
         setResults([{
           status: "error",
           fileName: "cartella",
-          error: err.message || "Errore ingest dalla cartella",
+          error: messageFromNormBatchError(err, "Errore ingest dalla cartella"),
         }]);
       }
     } finally {
@@ -101,7 +108,11 @@ export default function NormUploadButton({ folderId, onUploadComplete }) {
       if (resultsFromNormBatchPayload(err.data)) {
         applyBatchPayload(err.data);
       } else {
-        setResults([{ status: "error", fileName: "tutti i file", error: err.message || "Errore upload" }]);
+        setResults([{
+          status: "error",
+          fileName: "tutti i file",
+          error: messageFromNormBatchError(err, "Errore upload"),
+        }]);
       }
     } finally {
       setUploading(false);
