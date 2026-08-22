@@ -301,9 +301,9 @@ describe("DocumentRegistry — riassunto senza link da completare", () => {
     render(<DocumentRegistry />);
 
     await waitFor(() => {
-      const filterBtn = screen.getByRole("button", { name: /Da completare/i });
-      expect(filterBtn.textContent).toMatch(/3/);
-      expect(filterBtn.textContent).not.toMatch(/4/);
+      const filterBtn = screen.getByRole("button", { pressed: true, name: /Da completare/i });
+      expect(filterBtn).toHaveClass("inbox-badge");
+      expect(filterBtn.querySelector(".inbox-badge__count")?.textContent).toBe("3");
     });
     expect(await screen.findByText("3 da completare")).toBeInTheDocument();
     await waitFor(() => expect(apiService.getDocumentStats).toHaveBeenCalled());
