@@ -66,6 +66,33 @@ describe('geminiKeyPool', () => {
     expect(keyPool.isTransientRateLimitError(asErr(403, 'Permission denied'))).toBe(false);
   });
 
+  test('429 daily+try again è esausta; solo resource exhausted/TPM resta transitorio', () => {
+    const asErr = (status, message) =>
+      Object.assign(new Error(message), { status });
+
+    const dailyPlusRetry = asErr(
+      429,
+      'You exceeded your current quota. Daily quota exceeded. Please try again later.'
+    );
+    expect(keyPool.isQuotaExhaustedError(dailyPlusRetry)).toBe(true);
+    expect(keyPool.isTransientRateLimitError(dailyPlusRetry)).toBe(false);
+
+    const billingPlusRetry = asErr(
+      429,
+      'Billing account disabled. Please try again later.'
+    );
+    expect(keyPool.isQuotaExhaustedError(billingPlusRetry)).toBe(true);
+    expect(keyPool.isTransientRateLimitError(billingPlusRetry)).toBe(false);
+
+    const resourceOnly = asErr(429, 'Resource exhausted. Please try again later.');
+    expect(keyPool.isQuotaExhaustedError(resourceOnly)).toBe(false);
+    expect(keyPool.isTransientRateLimitError(resourceOnly)).toBe(true);
+
+    const tpmOnly = asErr(429, 'RESOURCE_EXHAUSTED: TokensPerMinute. Please try again.');
+    expect(keyPool.isQuotaExhaustedError(tpmOnly)).toBe(false);
+    expect(keyPool.isTransientRateLimitError(tpmOnly)).toBe(true);
+  });
+
   test('429 TPM non chiama markKeyExhausted: la chiave resta nel try-order', () => {
     process.env.GEMINI_API_KEY = 'a';
     const tpm = Object.assign(

@@ -54,13 +54,31 @@ function errorMessageLower(err) {
   return String((err && err.message) || '').toLowerCase();
 }
 
+/** Quota giornaliera o billing davvero morto — ha priorità sul testo TPM/retry. */
+function isDailyQuotaOrDeadBillingMessage(msg) {
+  if (!msg) return false;
+  return (
+    /per[\s_-]?day/.test(msg) ||
+    msg.includes('requestsperday') ||
+    msg.includes('generatecontentrequestsperday') ||
+    msg.includes('daily quota') ||
+    msg.includes('daily limit') ||
+    msg.includes('quota for the day') ||
+    msg.includes('billing account') ||
+    msg.includes('billing disabled') ||
+    msg.includes('limit: 0')
+  );
+}
+
 /**
  * Picco al minuto / rate-limit: ritentare la stessa chiave, non spegnere il pool.
  * I 429 Gemini TPM usano spesso il testo stock «exceeded your current quota»
  * + «billing details» anche quando il metrico è PerMinute.
+ * Daily/billing si valuta prima: «try again later» su quota giornaliera non è TPM.
  */
 function isTransientRateLimitMessage(msg) {
   if (!msg) return false;
+  if (isDailyQuotaOrDeadBillingMessage(msg)) return false;
   return (
     /per[\s_-]?minute/.test(msg) ||
     msg.includes('tokensperminute') ||
@@ -74,23 +92,6 @@ function isTransientRateLimitMessage(msg) {
     msg.includes('try again later') ||
     msg.includes('please retry') ||
     msg.includes('please try again')
-  );
-}
-
-/** Quota giornaliera o billing davvero morto — non un picco TPM. */
-function isDailyQuotaOrDeadBillingMessage(msg) {
-  if (!msg) return false;
-  if (isTransientRateLimitMessage(msg)) return false;
-  return (
-    /per[\s_-]?day/.test(msg) ||
-    msg.includes('requestsperday') ||
-    msg.includes('generatecontentrequestsperday') ||
-    msg.includes('daily quota') ||
-    msg.includes('daily limit') ||
-    msg.includes('quota for the day') ||
-    msg.includes('billing account') ||
-    msg.includes('billing disabled') ||
-    msg.includes('limit: 0')
   );
 }
 
