@@ -223,6 +223,42 @@ describe('ingestFromFolder (IA-12)', () => {
     expect(applyNormToExistingDocument).not.toHaveBeenCalled();
   });
 
+  it('estrae due PDF in sequenza (pausa 0 in test, tetto 20 invariato)', async () => {
+    assertFolderIsNorms.mockResolvedValue({ id: 23, company_id: 8 });
+    listFolderNormPdfs.mockResolvedValue({
+      docs: [
+        {
+          id: 88,
+          file_name: 'a.pdf',
+          storage_path: '/uploads/import/a.pdf',
+          mime_type: 'application/pdf',
+          company_id: 8,
+        },
+        {
+          id: 89,
+          file_name: 'b.pdf',
+          storage_path: '/uploads/import/b.pdf',
+          mime_type: 'application/pdf',
+          company_id: 8,
+        },
+      ],
+      truncated: false,
+      omitted: 0,
+    });
+    extractNormFromPdf.mockResolvedValue({
+      status: 'duplicate',
+      standard_code: 'ISO 9001:2015',
+      warnings: ['Duplicato'],
+    });
+
+    const res = mockRes();
+    await ingestFromFolder(reqBase, res);
+
+    expect(extractNormFromPdf).toHaveBeenCalledTimes(2);
+    expect(res.json.mock.calls[0][0].total).toBe(2);
+    expect(res.json.mock.calls[0][0].results).toHaveLength(2);
+  });
+
   it('segnala truncated/omitted se la cartella ha più di 20 PDF', async () => {
     assertFolderIsNorms.mockResolvedValue({ id: 23, company_id: 8 });
     listFolderNormPdfs.mockResolvedValue({

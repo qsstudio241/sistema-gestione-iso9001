@@ -20,6 +20,7 @@ const {
   assertMutatingAllowed,
   sendAccessDenied,
 } = require('../services/companyAccess.service');
+const { getIngestFolderPauseMs, pause } = require('../services/adapters/geminiKeyPool');
 
 function unpackFolderNormPdfs(listed) {
   if (Array.isArray(listed)) {
@@ -278,7 +279,10 @@ async function ingestFromFolder(req, res) {
   }
 
   const results = [];
-  for (const doc of docs) {
+  const folderPauseMs = getIngestFolderPauseMs();
+  for (let docIdx = 0; docIdx < docs.length; docIdx += 1) {
+    if (docIdx > 0) await pause(folderPauseMs);
+    const doc = docs[docIdx];
     const fileName = doc.file_name || doc.title || `documento-${doc.id}.pdf`;
     let entry = { fileName, status: 'error', warnings: [] };
     try {
