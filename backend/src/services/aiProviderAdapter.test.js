@@ -342,7 +342,7 @@ describe('aiProviderAdapter.chat error handling', () => {
       status: 429,
       headers: { get: () => null },
       json: async () => ({
-        error: { message: 'You exceeded your current quota, please check your plan and billing details.' },
+        error: { message: 'GenerateRequestsPerDayPerProjectPerModel daily quota exceeded' },
       }),
     };
     const anthropicOk = {
@@ -384,7 +384,7 @@ describe('aiProviderAdapter.chat error handling', () => {
       status: 429,
       headers: { get: () => null },
       json: async () => ({
-        error: { message: 'You exceeded your current quota, please check your plan and billing details.' },
+        error: { message: 'GenerateRequestsPerDayPerProjectPerModel daily quota exceeded' },
       }),
     };
     const okResponse = {
@@ -569,6 +569,84 @@ describe('geminiAdapter.embed difensivo (timeout + rate-limit)', () => {
 
     expect(vectors).toEqual([null, null]);
     expect(jobContinued).toBe(true);
+  }, 10000);
+
+  test('429 TPM non marca la chiave: dopo i retry la stessa chiave resta usabile', async () => {
+    process.env.GEMINI_API_KEY = 'gk-tpm';
+    const keyPool = require('./adapters/geminiKeyPool');
+    keyPool.resetKeyPoolState();
+
+    const rateLimited = {
+      ok: false,
+      status: 429,
+      headers: { get: () => '0' },
+      json: async () => ({
+        error: {
+          message:
+            'You exceeded your current quota. GenerateContentInputTokensPerMinute. Please try again later.',
+        },
+      }),
+    };
+    jest.spyOn(global, 'fetch').mockResolvedValue(rateLimited);
+
+    await expect(geminiEmbed(['x'])).rejects.toMatchObject({
+      code: 'AI_UPSTREAM_ERROR',
+      status: 429,
+    });
+    expect(keyPool.isKeyExhausted(0)).toBe(false);
+    expect(keyPool.buildKeyTryOrder(1)).toEqual([0]);
+  }, 10000);
+
+  test('403 quota/billing marca la chiave esaurita', async () => {
+    process.env.GEMINI_API_KEY = 'gk-dead';
+    process.env.GEMINI_API_KEYS = 'gk-other';
+    const keyPool = require('./adapters/geminiKeyPool');
+    keyPool.resetKeyPoolState();
+
+    const forbidden = {
+      ok: false,
+      status: 403,
+      headers: { get: () => null },
+      json: async () => ({ error: { message: 'Permission denied' } }),
+    };
+    jest.spyOn(global, 'fetch').mockResolvedValue(forbidden);
+
+    await expect(geminiEmbed(['x'])).rejects.toMatchObject({
+      code: 'AI_UPSTREAM_ERROR',
+      status: 403,
+    });
+    expect(keyPool.isKeyExhausted(0)).toBe(true);
+    expect(keyPool.isKeyExhausted(1)).toBe(true);
+  }, 10000);
+
+  test('chat: 429 TPM ritenta la stessa chiave e non spegne Flash', async () => {
+    process.env.GEMINI_API_KEY = 'gk-flash';
+    keyPool.resetKeyPoolState();
+    const limited = {
+      ok: false,
+      status: 429,
+      headers: { get: () => '0' },
+      json: async () => ({
+        error: { message: 'Resource exhausted. TokensPerMinute. Please try again later.' },
+      }),
+    };
+    const ok = {
+      ok: true,
+      status: 200,
+      json: async () => ({
+        candidates: [{ content: { parts: [{ text: 'ok-flash' }], role: 'model' } }],
+        usageMetadata: { promptTokenCount: 1, candidatesTokenCount: 1 },
+      }),
+    };
+    const fetchSpy = jest
+      .spyOn(global, 'fetch')
+      .mockResolvedValueOnce(limited)
+      .mockResolvedValueOnce(ok);
+
+    const res = await aiProviderAdapter.chat([{ role: 'user', content: 'x' }], { timeout: 5000 });
+    expect(res.content).toBe('ok-flash');
+    expect(keyPool.isKeyExhausted(0)).toBe(false);
+    expect(fetchSpy).toHaveBeenCalledTimes(2);
   }, 10000);
 
   test('cap ai retry su 429: fallisce pulito invece di ciclare all\u2019infinito', async () => {
