@@ -62,6 +62,22 @@ describe("documentIncompleteQueue", () => {
     })).toBe(false);
   });
 
+  it("rilasciato + ai_draft (prima del Salva) resta in coda; dopo clear no", () => {
+    const beforeSave = {
+      doc_type: "norma",
+      title: "ISO 404",
+      parent_id: 23,
+      import_status: "ai_draft",
+      status: "rilasciato",
+    };
+    expect(isIncompleteRegistryDoc(beforeSave)).toBe(true);
+    expect(getIncompleteReasons(beforeSave).map((r) => r.key)).toEqual(["bozza"]);
+    expect(isIncompleteRegistryDoc({
+      ...beforeSave,
+      import_status: "active",
+    })).toBe(false);
+  });
+
   it("aprendo la coda resetta status e gli altri filtri che nascondono gli incompleti", () => {
     const opened = applyIncompleteQueueFilters({
       search: "PG",

@@ -51,6 +51,20 @@ function incompleteDocumentSql(alias = 'dr') {
     )`;
 }
 
+/**
+ * Salvataggio umano con status rilasciato (o già rilasciato): esce dalla coda «da completare».
+ * Non tocca import_status se il caller ha già inviato un valore diverso da ai_draft.
+ */
+function applyClearAiDraftOnReleased(updates, params, nextStatus) {
+    if (!isReleasedDocStatus(nextStatus)) return;
+    const incoming = params.import_status;
+    if (incoming != null && String(incoming).trim().toLowerCase() !== 'ai_draft') return;
+    if (!updates.some((u) => /^import_status\s*=/i.test(u))) {
+        updates.push('import_status = @import_status');
+    }
+    params.import_status = 'active';
+}
+
 // ─── GET /api/v1/documents ────────────────────────────────────────────────────
 /**
  * Lista documenti con filtri opzionali.
@@ -145,7 +159,10 @@ async function listDocuments(req, res) {
             SELECT
                 dr.id,
                 dr.doc_type,
-                dr.doc_code,
+                COALESCE(
+                    NULLIF(LTRIM(RTRIM(dr.doc_code)), ''),
+                    NULLIF(LTRIM(RTRIM(JSON_VALUE(dr.type_specific_data, '$.standard_code'))), '')
+                ) AS doc_code,
                 dr.title,
                 dr.revision,
                 dr.status,
@@ -163,7 +180,10 @@ async function listDocuments(req, res) {
                 dr.created_at,
                 dr.updated_at,
                 c.name        AS company_name,
-                s.standard_code,
+                COALESCE(
+                    NULLIF(LTRIM(RTRIM(JSON_VALUE(dr.type_specific_data, '$.standard_code'))), ''),
+                    s.standard_code
+                ) AS standard_code,
                 s.standard_name,
                 u.email       AS created_by_email,
                 JSON_VALUE(dr.type_specific_data, '$.validity_status')     AS norm_validity_status,
@@ -682,6 +702,9 @@ async function updateDocument(req, res) {
             params.status = statusParsed.status;
         }
 
+        const nextStatus = params.status !== undefined ? params.status : doc.status;
+        applyClearAiDraftOnReleased(updates, params, nextStatus);
+
         updates.push('updated_at = GETDATE()');
 
         await query(`
@@ -855,6 +878,7 @@ async function releaseRevision(req, res) {
         const updateSql = finalExpiry
             ? `UPDATE document_registry
                SET status          = 'rilasciato',
+                   import_status   = 'active',
                    revision_number = @revision_number,
                    revision        = @revision,
                    released_at     = GETDATE(),
@@ -863,6 +887,7 @@ async function releaseRevision(req, res) {
                WHERE id = @id`
             : `UPDATE document_registry
                SET status          = 'rilasciato',
+                   import_status   = 'active',
                    revision_number = @revision_number,
                    revision        = @revision,
                    released_at     = GETDATE(),

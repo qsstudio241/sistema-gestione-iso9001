@@ -32,6 +32,12 @@ export function registryDocStatusForForm(raw) {
   return normalizeRegistryDocStatusForApi(raw);
 }
 
+/** Codice in griglia catalogo: doc_code, altrimenti codice norma in TSD / JOIN. */
+export function documentCatalogCode(doc) {
+  const code = String(doc?.doc_code || doc?.standard_code || "").trim();
+  return code || "";
+}
+
 export function isDocumentFolder(doc) {
   if (!doc) return false;
   return (
