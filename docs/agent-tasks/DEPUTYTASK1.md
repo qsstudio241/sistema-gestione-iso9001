@@ -1,7 +1,10 @@
 # DEPUTYTASK1 — IA-17: timeout ingest dalla cartella
 
-**Stato:** APERTO  
+**Stato:** CHIUSO — TEST OK (22/08/2026)  
 **Aperto:** 22/08/2026  
+**Chiuso:** 22/08/2026  
+**PR:** `gh pr create` 403 — compare: https://github.com/qsstudio241/sistema-gestione-iso9001/compare/main...cursor/ingest-folder-timeout-d492?expand=1  
+**SHA:** `c9c6f9f3`  
 **Piano:** [`PLAN_INGEST_ARCHIVIO_SLICES.md`](PLAN_INGEST_ARCHIVIO_SLICES.md) (follow-up IA-16 mergiata #534)  
 **Rischio:** Medio — FE + nginx in-repo + `setTimeout` socket sul controller norme; niente schema/auth/sync.  
 **Branch feature:** `cursor/ingest-folder-timeout-d492`  
