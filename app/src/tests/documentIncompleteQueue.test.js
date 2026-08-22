@@ -5,6 +5,7 @@ import {
   isHighPriorityIncomplete,
   applyIncompleteQueueFilters,
   catalogQueryFromFilters,
+  incompleteQueueBadgeCount,
 } from "../utils/documentIncompleteQueue";
 
 describe("documentIncompleteQueue", () => {
@@ -90,6 +91,41 @@ describe("documentIncompleteQueue", () => {
     }, false);
     expect(closed.incomplete).toBe(false);
     expect(closed.status).toBe("in_approvazione");
+  });
+
+  it("badge e lista: stessa fonte quando la coda è aperta (non stats org-wide)", () => {
+    expect(incompleteQueueBadgeCount({
+      incomplete: true,
+      catalogTotal: 3,
+      statsCount: 4,
+      catalogIsIncompleteQueue: true,
+    })).toBe(3);
+    expect(incompleteQueueBadgeCount({
+      incomplete: false,
+      catalogTotal: 3,
+      statsCount: 4,
+      catalogIsIncompleteQueue: true,
+    })).toBe(4);
+    expect(incompleteQueueBadgeCount({
+      incomplete: true,
+      catalogTotal: 0,
+      statsCount: 4,
+      catalogIsIncompleteQueue: true,
+    })).toBe(0);
+  });
+
+  it("aprendo la coda non usa il totale catalogo precedente", () => {
+    expect(incompleteQueueBadgeCount({
+      incomplete: true,
+      catalogTotal: 100,
+      statsCount: 4,
+      catalogIsIncompleteQueue: false,
+    })).toBe(4);
+    expect(incompleteQueueBadgeCount({
+      incomplete: true,
+      catalogTotal: 100,
+      statsCount: 4,
+    })).toBe(4);
   });
 
   it("badge e lista: dopo apertura la query coincide col predicato incomplete", () => {

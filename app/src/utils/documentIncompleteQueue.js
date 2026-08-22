@@ -86,6 +86,24 @@ export function applyIncompleteQueueFilters(filters, nextIncomplete) {
 }
 
 /**
+ * Conteggio badge «Da completare»: stessa fonte della label catalogo
+ * solo dopo la GET incomplete=1 (`catalogIsIncompleteQueue`).
+ * All'apertura, finché arriva quella risposta, resta `stats.da_completare`
+ * (niente flash del totale catalogo precedente).
+ * Fuori dalla coda: sempre `stats.da_completare` (stesso predicato SQL, stesso company_id).
+ * @param {{ incomplete?: boolean, catalogTotal?: number, statsCount?: number, catalogIsIncompleteQueue?: boolean }} opts
+ */
+export function incompleteQueueBadgeCount({
+  incomplete,
+  catalogTotal,
+  statsCount,
+  catalogIsIncompleteQueue,
+} = {}) {
+  if (incomplete && catalogIsIncompleteQueue) return Number(catalogTotal) || 0;
+  return Number(statsCount) || 0;
+}
+
+/**
  * Query GET /documents allineata ai filtri catalogo (stessa funzione di load + export).
  * Dopo `applyIncompleteQueueFilters(..., true)` resta solo `incomplete=1` — stesso
  * predicato del badge `da_completare` (lo scope azienda lo aggiunge il caller).

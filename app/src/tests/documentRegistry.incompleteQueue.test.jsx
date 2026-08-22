@@ -5,7 +5,7 @@
  * dall'URL, non solo dopo applyFromUrl (secondo render).
  */
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { render, screen, waitFor, within } from "@testing-library/react";
+import { render, screen, waitFor, within, fireEvent } from "@testing-library/react";
 
 const scopeState = {
   companyId: "",
@@ -110,6 +110,10 @@ describe("DocumentRegistry — deep link coda company_id al primo fetch", () => 
     const firstCatalog = catalogCalls()[0];
     expect(String(firstCatalog.company_id)).toBe("11");
     expect(firstCatalog.incomplete).toBe(1);
+    await waitFor(() => expect(apiService.getDocumentStats).toHaveBeenCalled());
+    expect(apiService.getDocumentStats.mock.calls[0][0]).toEqual(
+      expect.objectContaining({ company_id: "11" })
+    );
   });
 
   it("URL senza company_id valido non inventa lo scope sul primo fetch", async () => {
@@ -278,5 +282,80 @@ describe("DocumentRegistry — riassunto senza link da completare", () => {
     expect(filterBtn).toBeInTheDocument();
     expect(filterBtn).toHaveClass("inbox-badge");
     expect(filterBtn.textContent).toMatch(/4/);
+  });
+
+  it("coda aperta: badge e label usano pagination.total, non stats org-wide", async () => {
+    apiService.getDocuments.mockResolvedValue({
+      data: [
+        { id: 1, title: "BS ISO 404", doc_type: "norma", parent_id: null, import_status: "ai_draft", status: "in_approvazione" },
+        { id: 2, title: "ISO 10474", doc_type: "norma", parent_id: null, import_status: "ai_draft", status: "in_approvazione" },
+        { id: 3, title: "ISO 6929", doc_type: "norma", parent_id: null, import_status: "ai_draft", status: "in_approvazione" },
+      ],
+      pagination: { total: 3, totalPages: 1 },
+    });
+    window.history.replaceState(
+      {},
+      "",
+      "/documents?tab=catalog&company_id=180&incomplete=1"
+    );
+    render(<DocumentRegistry />);
+
+    await waitFor(() => {
+      const filterBtn = screen.getByRole("button", { pressed: true, name: /Da completare/i });
+      expect(filterBtn).toHaveClass("inbox-badge");
+      expect(filterBtn.querySelector(".inbox-badge__count")?.textContent).toBe("3");
+    });
+    expect(await screen.findByText("3 da completare")).toBeInTheDocument();
+    await waitFor(() => expect(apiService.getDocumentStats).toHaveBeenCalled());
+    expect(apiService.getDocumentStats.mock.calls[0][0]).toEqual(
+      expect.objectContaining({ company_id: "180" })
+    );
+  });
+
+  it("aprendo la coda il badge non usa il totale catalogo precedente", async () => {
+    let resolveIncomplete;
+    const incompletePromise = new Promise((resolve) => {
+      resolveIncomplete = resolve;
+    });
+    apiService.getDocuments.mockImplementation((params) => {
+      if (params?.incomplete === 1) {
+        return incompletePromise;
+      }
+      return Promise.resolve({
+        data: [{ id: 10, title: "PG-01", doc_type: "procedura", parent_id: 1, status: "rilasciato" }],
+        pagination: { total: 100, totalPages: 5 },
+      });
+    });
+
+    render(<DocumentRegistry />);
+
+    const filterBtn = await screen.findByRole("button", { name: /Da completare/i });
+    expect(filterBtn.querySelector(".inbox-badge__count")?.textContent).toBe("4");
+    await waitFor(() => {
+      expect(document.querySelector(".catalog-count")?.textContent).toMatch(/100/);
+    });
+
+    fireEvent.click(filterBtn);
+
+    expect(filterBtn).toHaveAttribute("aria-pressed", "true");
+    expect(filterBtn.querySelector(".inbox-badge__count")?.textContent).toBe("4");
+    expect(filterBtn.querySelector(".inbox-badge__count")?.textContent).not.toBe("100");
+
+    resolveIncomplete({
+      data: [
+        { id: 1, title: "BS ISO 404", doc_type: "norma", parent_id: null, import_status: "ai_draft", status: "in_approvazione" },
+        { id: 2, title: "ISO 10474", doc_type: "norma", parent_id: null, import_status: "ai_draft", status: "in_approvazione" },
+        { id: 3, title: "ISO 6929", doc_type: "norma", parent_id: null, import_status: "ai_draft", status: "in_approvazione" },
+      ],
+      pagination: { total: 3, totalPages: 1 },
+    });
+
+    await waitFor(() => {
+      expect(
+        screen.getByRole("button", { pressed: true, name: /Da completare/i })
+          .querySelector(".inbox-badge__count")?.textContent
+      ).toBe("3");
+    });
+    expect(await screen.findByText("3 da completare")).toBeInTheDocument();
   });
 });

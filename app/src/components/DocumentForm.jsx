@@ -86,6 +86,21 @@ function toDateInput(val) {
   return val.substring(0, 10);
 }
 
+/** TSD può arrivare come oggetto o stringa JSON (GET dettaglio vs riga elenco). */
+export function parseTypeSpecificData(raw) {
+  if (raw == null || raw === "") return {};
+  if (typeof raw === "string") {
+    try {
+      const parsed = JSON.parse(raw);
+      return parsed && typeof parsed === "object" && !Array.isArray(parsed) ? parsed : {};
+    } catch {
+      return {};
+    }
+  }
+  if (typeof raw === "object" && !Array.isArray(raw)) return { ...raw };
+  return {};
+}
+
 // ─── Indicatore step ──────────────────────────────────────────────────────────
 
 function StepIndicator({ step }) {
@@ -169,16 +184,7 @@ function DocumentForm({
   const isNormaType = form.doc_type === 'norma';
 
   // Dati tipo-specifici
-  const [typeData, setTypeData] = useState(() => {
-    if (doc?.type_specific_data) {
-      try {
-        return typeof doc.type_specific_data === "string"
-          ? JSON.parse(doc.type_specific_data)
-          : doc.type_specific_data;
-      } catch { return {}; }
-    }
-    return {};
-  });
+  const [typeData, setTypeData] = useState(() => parseTypeSpecificData(doc?.type_specific_data));
   const [typeDetailsOpen, setTypeDetailsOpen] = useState(true);
   const docTypePrevRef = useRef(form.doc_type);
 
@@ -243,6 +249,46 @@ function DocumentForm({
     if (isEdit || !defaultFolderId || userOverrodeFolder) return;
     setSelectedFolderId(defaultFolderId);
   }, [defaultFolderId, isEdit, userOverrodeFolder]);
+
+  // Modifica: la riga catalogo/albero omette type_specific_data. Stesso GET del Dettaglio.
+  useEffect(() => {
+    if (!isEdit || doc?.id == null) return;
+    let cancelled = false;
+
+    const applyFullDocument = (full) => {
+      if (cancelled || !full) return;
+      const nextType = parseTypeSpecificData(full.type_specific_data);
+      if (full.doc_type) docTypePrevRef.current = full.doc_type;
+      setForm((prev) => ({
+        ...prev,
+        doc_type:        full.doc_type        || prev.doc_type,
+        doc_code:        full.doc_code        ?? prev.doc_code,
+        title:           full.title           ?? prev.title,
+        revision:        full.revision        ?? prev.revision,
+        status:          registryDocStatusForForm(full.status) || prev.status,
+        issue_date:      toDateInput(full.issue_date) || prev.issue_date,
+        expiry_date:     toDateInput(full.expiry_date) || prev.expiry_date,
+        responsible:     full.responsible     ?? prev.responsible,
+        retention_years: full.retention_years ?? prev.retention_years,
+        standard_id:     full.standard_id     ?? prev.standard_id,
+        clause_ref:      full.clause_ref      ?? prev.clause_ref,
+        company_id:      full.company_id      ?? prev.company_id,
+        content_scope:   full.content_scope   || prev.content_scope,
+        notes:           full.notes           ?? prev.notes,
+      }));
+      if (Object.keys(nextType).length > 0) {
+        setTypeData(nextType);
+      }
+    };
+
+    applyFullDocument(doc);
+
+    apiService.getDocument(doc.id)
+      .then((res) => applyFullDocument(res?.data))
+      .catch(() => {});
+
+    return () => { cancelled = true; };
+  }, [isEdit, doc?.id]);
 
   // Reset dati tipo-specifici quando il tipo cambia
   useEffect(() => {

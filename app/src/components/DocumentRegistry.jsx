@@ -46,6 +46,7 @@ import { documentHasFile } from "../utils/documentRegistryFile";
 import {
   applyIncompleteQueueFilters,
   catalogQueryFromFilters,
+  incompleteQueueBadgeCount,
 } from "../utils/documentIncompleteQueue";
 import "./DocumentRegistry.css";
 
@@ -1049,6 +1050,7 @@ function DocumentRegistry() {
   const [catalogPage, setCatalogPage]   = useState(1);
   const [loadingCatalog, setLoadingCatalog] = useState(false);
   const [catalogError, setCatalogError] = useState(null);
+  const [catalogIsIncompleteQueue, setCatalogIsIncompleteQueue] = useState(false);
 
   // Filtri catalogo
   const [filters, setFiltersState] = useState({
@@ -1210,10 +1212,19 @@ function DocumentRegistry() {
 
   const loadStats = useCallback(async () => {
     try {
-      const res = await apiService.getDocumentStats();
+      const res = await apiService.getDocumentStats(
+        companyScopeId ? { company_id: companyScopeId } : {}
+      );
       setStats(res.data);
     } catch { /* non bloccante */ }
-  }, []);
+  }, [companyScopeId]);
+
+  const incompleteBadgeCount = incompleteQueueBadgeCount({
+    incomplete: filters.incomplete,
+    catalogTotal,
+    statsCount: stats?.da_completare,
+    catalogIsIncompleteQueue,
+  });
 
   const loadPriorityDocs = useCallback(async () => {
     setLoadingPriority(true);
@@ -1263,6 +1274,7 @@ function DocumentRegistry() {
       setCatalogDocs(res.data || []);
       setCatalogTotal(res.pagination?.total || 0);
       setCatalogPages(res.pagination?.totalPages || 1);
+      setCatalogIsIncompleteQueue(!!params.incomplete);
     } catch (err) {
       setCatalogError(err.message || "Errore caricamento");
     } finally {
@@ -1591,6 +1603,10 @@ function DocumentRegistry() {
   }, [replace, registryCompanyScope]);
 
   useEffect(() => {
+    if (!filters.incomplete) setCatalogIsIncompleteQueue(false);
+  }, [filters.incomplete]);
+
+  useEffect(() => {
     if (activeTab !== "catalog") return;
     const parsed = parseDocumentRegistrySearch(window.location.search);
     if (!!parsed.incomplete === !!filters.incomplete) return;
@@ -1655,7 +1671,7 @@ function DocumentRegistry() {
       )}
 
       {/* Badge Inbox orfani + coda da completare (IA-5b) */}
-      {(orphanDocs.length > 0 || Number(stats?.da_completare) > 0 || filters.incomplete) && (
+      {(orphanDocs.length > 0 || incompleteBadgeCount > 0 || filters.incomplete) && (
         <div className="inbox-badge-wrap">
           {orphanDocs.length > 0 && (
             <button
@@ -1666,7 +1682,7 @@ function DocumentRegistry() {
               <span className="inbox-badge__count">{orphanDocs.length}</span>
             </button>
           )}
-          {(Number(stats?.da_completare) > 0 || filters.incomplete) && (
+          {(incompleteBadgeCount > 0 || filters.incomplete) && (
             <button
               type="button"
               className={`inbox-badge${filters.incomplete ? " inbox-badge--active" : ""}`}
@@ -1675,7 +1691,7 @@ function DocumentRegistry() {
               aria-pressed={filters.incomplete}
             >
               Da completare
-              <span className="inbox-badge__count">{Number(stats?.da_completare) || 0}</span>
+              <span className="inbox-badge__count">{incompleteBadgeCount}</span>
             </button>
           )}
           {inboxToast && <span className="inbox-toast">{inboxToast}</span>}

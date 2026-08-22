@@ -253,15 +253,25 @@ async function listDocuments(req, res) {
 
 // ─── GET /api/v1/documents/stats ─────────────────────────────────────────────
 /**
- * Statistiche riassuntive del registro per l'organizzazione.
- * Utile per la dashboard / alert badge.
+ * Statistiche riassuntive del registro.
+ * Query opzionale: company_id (stesso scope della lista catalogo / badge da_completare).
  */
 async function getDocumentStats(req, res) {
     try {
         const { organization_id } = req.user;
+        const { company_id } = req.query;
         const docScope = documentRegistryScopeClause(req.user, 'dr');
         const scopeSql = appendScopeSql(docScope);
         const noFileExists = buildHasAnyFileSql('dr');
+        const params = { organization_id, ...docScope.params };
+        let companySql = '';
+        if (company_id !== undefined && company_id !== null && String(company_id).trim() !== '') {
+            const parsedCompanyId = parseInt(company_id, 10);
+            if (!Number.isNaN(parsedCompanyId)) {
+                companySql = ' AND dr.company_id = @company_id';
+                params.company_id = parsedCompanyId;
+            }
+        }
 
         const result = await query(`
             SELECT
@@ -289,6 +299,7 @@ async function getDocumentStats(req, res) {
                       AND dr.status <> 'obsoleto'
                       AND NOT ${noFileExists}
                       ${scopeSql}
+                      ${companySql}
                 )                                                                AS senza_file,
                 (
                     SELECT COUNT(*)
@@ -298,6 +309,7 @@ async function getDocumentStats(req, res) {
                       AND dr.status IN ${RELEASED_STATUS_SQL_IN}
                       AND NOT ${noFileExists}
                       ${scopeSql}
+                      ${companySql}
                 )                                                                AS rilasciati_senza_file,
                 (
                     SELECT COUNT(*)
@@ -305,12 +317,14 @@ async function getDocumentStats(req, res) {
                     WHERE dr.organization_id = @organization_id
                       AND ${incompleteDocumentSql('dr')}
                       ${scopeSql}
+                      ${companySql}
                 )                                                                AS da_completare
             FROM document_registry dr
             WHERE dr.organization_id = @organization_id
               AND dr.doc_type <> 'folder'
               ${scopeSql}
-        `, { organization_id, ...docScope.params });
+              ${companySql}
+        `, params);
 
         res.json({ success: true, data: result.recordset[0] });
 
