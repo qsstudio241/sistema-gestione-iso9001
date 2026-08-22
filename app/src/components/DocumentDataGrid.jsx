@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useCallback } from "react";
 import { DOC_TYPE_LABELS, DOC_STATUS_LABELS } from "../data/documentTypes";
 import { formatDate } from "../utils/dateHelpers";
-import { shouldShowDocumentStatusBadge } from "../utils/documentValidity";
+import { shouldShowDocumentStatusBadge, documentCatalogCode } from "../utils/documentValidity";
 import { documentHasFile, formatDocumentFileLabel } from "../utils/documentRegistryFile";
 import { getIncompleteReasons } from "../utils/documentIncompleteQueue";
 import StatusBadge from "./StatusBadge";
@@ -111,8 +111,8 @@ function DocumentCatalogCard({
       <div className="catalog-doc-card__head">
         <div className="catalog-doc-card__title-wrap">
           <h4 className="catalog-doc-card__title">{doc.title}</h4>
-          {doc.doc_code && (
-            <span className="catalog-doc-card__code">{doc.doc_code}</span>
+          {documentCatalogCode(doc) && (
+            <span className="catalog-doc-card__code">{documentCatalogCode(doc)}</span>
           )}
         </div>
         <DocumentFileBadge doc={doc} />
@@ -290,8 +290,8 @@ function DocumentDataGrid({
         </div>
         {selectedDoc && (
           <span className="datagrid-toolbar__selection">
-            <strong>{selectedDoc.doc_code || selectedDoc.title}</strong>
-            {selectedDoc.doc_code && (
+            <strong>{documentCatalogCode(selectedDoc) || selectedDoc.title}</strong>
+            {documentCatalogCode(selectedDoc) && (
               <span className="datagrid-toolbar__selection-title">{selectedDoc.title}</span>
             )}
           </span>
@@ -374,8 +374,8 @@ function DocumentDataGrid({
                         aria-hidden="true"
                       />
                     </td>
-                    <td className="datagrid-cell datagrid-cell--code" title={doc.doc_code || ""}>
-                      {doc.doc_code || "-"}
+                    <td className="datagrid-cell datagrid-cell--code" title={documentCatalogCode(doc)}>
+                      {documentCatalogCode(doc) || "-"}
                     </td>
                     <td className="datagrid-cell datagrid-cell--title" title={doc.title}>
                       <span className="datagrid-cell__title">{doc.title}</span>

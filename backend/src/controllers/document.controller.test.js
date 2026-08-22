@@ -109,6 +109,8 @@ describe('listDocuments', () => {
         expect(listSql).toMatch(/parent_id IS NULL/);
         expect(listSql).toMatch(/dr\.parent_id/);
         expect(listSql).toMatch(/THEN 0 ELSE 1/);
+        expect(listSql).toMatch(/JSON_VALUE\(dr\.type_specific_data, '\$\.standard_code'\)/);
+        expect(listSql).not.toMatch(/status <> 'rilasciato'/);
         expect(res.json).toHaveBeenCalledWith(
             expect.objectContaining({ success: true, data: expect.any(Array) })
         );
@@ -276,6 +278,138 @@ describe('updateDocument', () => {
         expect(res.json).toHaveBeenCalledWith(
             expect.objectContaining({ success: true })
         );
+    });
+
+    it('salva con status rilasciato pulisce import_status ai_draft', async () => {
+        query
+            .mockResolvedValueOnce({
+                recordset: [{
+                    id: 40,
+                    is_system_folder: 0,
+                    doc_type: 'norma',
+                    title: 'ISO 404',
+                    folder_code: null,
+                    issue_date: null,
+                    expiry_date: null,
+                    status: 'in_approvazione',
+                    company_id: 11,
+                }],
+            })
+            .mockResolvedValueOnce({ recordset: [] });
+
+        const req = mockReq({
+            user: adminUser,
+            params: { id: '40' },
+            body: { title: 'ISO 404', status: 'rilasciato' },
+        });
+        const res = mockRes();
+        await ctrl.updateDocument(req, res);
+
+        const updateSql = query.mock.calls[1][0];
+        const updateParams = query.mock.calls[1][1];
+        expect(updateSql).toMatch(/import_status\s*=\s*@import_status/);
+        expect(updateParams.import_status).toBe('active');
+        expect(updateParams.status).toBe('rilasciato');
+        expect(res.json).toHaveBeenCalledWith(expect.objectContaining({ success: true }));
+    });
+
+    it('salva già rilasciato (solo note) pulisce ai_draft residuo', async () => {
+        query
+            .mockResolvedValueOnce({
+                recordset: [{
+                    id: 41,
+                    is_system_folder: 0,
+                    doc_type: 'norma',
+                    title: 'ISO 10474',
+                    folder_code: null,
+                    issue_date: null,
+                    expiry_date: null,
+                    status: 'rilasciato',
+                    company_id: 11,
+                }],
+            })
+            .mockResolvedValueOnce({ recordset: [] });
+
+        const req = mockReq({
+            user: adminUser,
+            params: { id: '41' },
+            body: { notes: 'Confermata' },
+        });
+        const res = mockRes();
+        await ctrl.updateDocument(req, res);
+
+        const updateSql = query.mock.calls[1][0];
+        const updateParams = query.mock.calls[1][1];
+        expect(updateSql).toMatch(/import_status\s*=\s*@import_status/);
+        expect(updateParams.import_status).toBe('active');
+        expect(updateParams.status).toBeUndefined();
+        expect(res.json).toHaveBeenCalledWith(expect.objectContaining({ success: true }));
+    });
+
+    it('salva in_approvazione non pulisce ai_draft', async () => {
+        query
+            .mockResolvedValueOnce({
+                recordset: [{
+                    id: 42,
+                    is_system_folder: 0,
+                    doc_type: 'norma',
+                    title: 'ISO 6929',
+                    folder_code: null,
+                    issue_date: null,
+                    expiry_date: null,
+                    status: 'in_approvazione',
+                    company_id: 11,
+                }],
+            })
+            .mockResolvedValueOnce({ recordset: [] });
+
+        const req = mockReq({
+            user: adminUser,
+            params: { id: '42' },
+            body: { title: 'ISO 6929', status: 'in_approvazione' },
+        });
+        const res = mockRes();
+        await ctrl.updateDocument(req, res);
+
+        const updateSql = query.mock.calls[1][0];
+        const updateParams = query.mock.calls[1][1];
+        expect(updateSql).not.toMatch(/import_status\s*=/);
+        expect(updateParams.import_status).toBeUndefined();
+    });
+});
+
+describe('releaseRevision', () => {
+    it('rilascio da bozza pulisce import_status ai_draft', async () => {
+        query
+            .mockResolvedValueOnce({
+                recordset: [{
+                    id: 50,
+                    status: 'bozza',
+                    revision_number: 0,
+                    revision: null,
+                    company_id: 11,
+                }],
+            })
+            .mockResolvedValueOnce({
+                recordset: [{ doc_type: 'norma', issue_date: null, expiry_date: '2027-01-01' }],
+            })
+            .mockResolvedValueOnce({ recordset: [] });
+
+        const req = mockReq({
+            user: { organization_id: ORG_ID, user_id: 1, role: 'admin' },
+            params: { id: '50' },
+            body: {},
+        });
+        const res = mockRes();
+        await ctrl.releaseRevision(req, res);
+
+        const updateSql = query.mock.calls[2][0];
+        expect(updateSql).toMatch(/status\s*=\s*'rilasciato'/);
+        expect(updateSql).toMatch(/import_status\s*=\s*'active'/);
+        expect(res.json).toHaveBeenCalledWith(expect.objectContaining({
+            success: true,
+            status: 'rilasciato',
+        }));
     });
 });
 

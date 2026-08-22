@@ -10,6 +10,7 @@ import {
   shouldShowDocumentStatusBadge,
   normalizeRegistryDocStatusForApi,
   registryDocStatusForForm,
+  documentCatalogCode,
 } from "../utils/documentValidity";
 
 describe("documentValidity — normalizeRegistryDocStatusForApi", () => {
@@ -24,6 +25,15 @@ describe("documentValidity — normalizeRegistryDocStatusForApi", () => {
   it("registryDocStatusForForm normalizza documenti legacy", () => {
     expect(registryDocStatusForForm("vigente")).toBe("rilasciato");
     expect(registryDocStatusForForm("bozza")).toBe("bozza");
+  });
+});
+
+describe("documentValidity — documentCatalogCode", () => {
+  it("usa standard_code se doc_code è vuoto (stesso DTO lista)", () => {
+    expect(documentCatalogCode({ doc_code: null, standard_code: "ISO 404" })).toBe("ISO 404");
+    expect(documentCatalogCode({ doc_code: "-", standard_code: "ISO 404" })).toBe("-");
+    expect(documentCatalogCode({ doc_code: "PG-01", standard_code: "ISO 9001" })).toBe("PG-01");
+    expect(documentCatalogCode({})).toBe("");
   });
 });
 

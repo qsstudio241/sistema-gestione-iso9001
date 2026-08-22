@@ -49,4 +49,26 @@ describe("DocumentDataGrid — coda da completare", () => {
     expect(screen.queryByText("Bozza AI")).toBeNull();
     expect(screen.queryByText("Tipo incerto")).toBeNull();
   });
+
+  it("colonna Codice usa standard_code se doc_code manca", () => {
+    render(
+      <DocumentDataGrid
+        documents={[
+          {
+            id: 3,
+            doc_type: "norma",
+            title: "ISO 404",
+            parent_id: 23,
+            import_status: "active",
+            status: "rilasciato",
+            doc_code: null,
+            standard_code: "ISO 404",
+          },
+        ]}
+        loading={false}
+      />
+    );
+    const codeCell = document.querySelector(".datagrid-cell--code");
+    expect(codeCell?.textContent?.trim()).toBe("ISO 404");
+  });
 });
