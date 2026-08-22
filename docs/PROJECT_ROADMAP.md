@@ -8,13 +8,15 @@
 
 > **Risposta standard a «stato di avanzamento del progetto e priorità da affrontare»**: sintetizzare da questa sezione (moduli maturi + sessione più recente + tabella priorità sotto), **non** dal banner storico più sotto (superato, tenuto solo per traccia) né dall'archivio marzo 2026 [`docs/archive/PROJECT_CONTEXT_STATO_FUNZIONALITA_2026-03.md`](archive/PROJECT_CONTEXT_STATO_FUNZIONALITA_2026-03.md). **Aggiornare questa sezione a fine sessione** se emergono nuove priorità o se una priorità elencata viene chiusa (stesso principio delle "Lezioni apprese" in [GUIDA_CONSOLIDATA.md](GUIDA_CONSOLIDATA.md) — sintesi qui, dettaglio linkato).
 
-**Ultimo aggiornamento di questa sezione**: 22/08/2026 (IA-16 throttle Gemini ingest cartella mergiata #534).
+**Ultimo aggiornamento di questa sezione**: 22/08/2026 (IA-17 timeout ingest cartella 15 min, mergiata #536).
 
 ### Moduli maturi (in produzione, uso quotidiano dai clienti Camellini/Mason)
 
 Audit multi-standard (9001/14001/45001) · Non Conformità (workflow ISO 10.2 completo) · Qualifiche Personale saldatori/NDT/coordinatori (ISO 9606-1/14732/14731/9712) · Saldatura (WPQR, generazione WPS da WPQR, Welding Book, Commesse ISO 3834, Dashboard 3834) · SAL (gap analysis requisiti con AI) · Registro Documenti + Scadenzari · Notifiche/Alert (documenti/NC/qualifiche) · Riesame di Direzione · RBAC multi-tenant (`company_access`) · Registro obblighi legali (ambiente + sicurezza) · Assistente AI / Gap Analysis euristica.
 
 ### Sessione più recente (22/08/2026)
+
+**IA-17 timeout ingest dalla cartella (22/08, mergiata #536)** — `POST /documents/norms/ingest-from-folder` e upload batch: client 15 min (`NORM_BATCH_REQUEST_TIMEOUT_MS`), `req`/`res.setTimeout` Node 15 min, nginx `proxy_read_timeout`/`proxy_send_timeout` **900s**. Default GET 10–15s invariato. Brief [`DEPUTYTASK1.md`](agent-tasks/DEPUTYTASK1.md) **CHIUSO**. [PR #536](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/536) (`d1a177d1`).
 
 **IA-16 throttle Gemini ingest cartella (22/08, mergiata #534)** — 429 TPM / rate / resource exhausted è transitorio: retry + backoff, **non** spegne la chiave. `markKeyExhausted` solo 403 o quota giornaliera/billing. Pausa tra PDF in cartella + batch embed. Brief [`DEPUTYTASK.md`](agent-tasks/DEPUTYTASK.md) **CHIUSO**. [PR #534](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/534) (`1e418118`).
 

@@ -3,12 +3,12 @@
 **Stato:** CHIUSO — TEST OK (22/08/2026)  
 **Aperto:** 22/08/2026  
 **Chiuso:** 22/08/2026  
-**PR:** `gh pr create` 403 — compare: https://github.com/qsstudio241/sistema-gestione-iso9001/compare/main...cursor/ingest-folder-timeout-d492?expand=1  
-**SHA:** `c9c6f9f3`  
+**PR:** [#536](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/536)  
+**SHA:** `c9c6f9f3` (merge `d1a177d1`)  
 **Piano:** [`PLAN_INGEST_ARCHIVIO_SLICES.md`](PLAN_INGEST_ARCHIVIO_SLICES.md) (follow-up IA-16 mergiata #534)  
 **Rischio:** Medio — FE + nginx in-repo + `setTimeout` socket sul controller norme; niente schema/auth/sync.  
 **Branch feature:** `cursor/ingest-folder-timeout-d492`  
-**Slot:** `DEPUTYTASK.md` su `origin/main` è ancora APERTO per chiusura docs IA-16 ([#535](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/535)); file di codice disgiunti → questo brief nello slot 1.
+**Slot:** closeout docs post-merge #536; `DEPUTYTASK.md` IA-16 già CHIUSO.
 
 ## Perché
 
