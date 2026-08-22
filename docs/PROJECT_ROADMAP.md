@@ -8,7 +8,7 @@
 
 > **Risposta standard a «stato di avanzamento del progetto e priorità da affrontare»**: sintetizzare da questa sezione (moduli maturi + sessione più recente + tabella priorità sotto), **non** dal banner storico più sotto (superato, tenuto solo per traccia) né dall'archivio marzo 2026 [`docs/archive/PROJECT_CONTEXT_STATO_FUNZIONALITA_2026-03.md`](archive/PROJECT_CONTEXT_STATO_FUNZIONALITA_2026-03.md). **Aggiornare questa sezione a fine sessione** se emergono nuove priorità o se una priorità elencata viene chiusa (stesso principio delle "Lezioni apprese" in [GUIDA_CONSOLIDATA.md](GUIDA_CONSOLIDATA.md) — sintesi qui, dettaglio linkato).
 
-**Ultimo aggiornamento di questa sezione**: 22/08/2026 (IA-15 duplicati/edizioni ingest norme mergiata #532).
+**Ultimo aggiornamento di questa sezione**: 22/08/2026 (IA-16 throttle Gemini ingest cartella mergiata #534).
 
 ### Moduli maturi (in produzione, uso quotidiano dai clienti Camellini/Mason)
 
@@ -16,7 +16,9 @@ Audit multi-standard (9001/14001/45001) · Non Conformità (workflow ISO 10.2 co
 
 ### Sessione più recente (22/08/2026)
 
-**IA-15 duplicati e edizioni ingest norme (22/08, mergiata #532)** — stessa cartella 2.3 / stessa azienda: `UNI EN` ≡ `EN` (`normFamilyKey`); stesso anno → `duplicate`; edizione più nuova → vigente, precedenti `superata`; più vecchia → `pending_review` + warning, non due vigente. Brief [`DEPUTYTASK.md`](agent-tasks/DEPUTYTASK.md) **CHIUSO**. [PR #532](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/532) (`8ebea510` / `45496a22`). Residuo: gap RBAC `uploadNorms` (non ingest-from-folder).
+**IA-16 throttle Gemini ingest cartella (22/08, mergiata #534)** — 429 TPM / rate / resource exhausted è transitorio: retry + backoff, **non** spegne la chiave. `markKeyExhausted` solo 403 o quota giornaliera/billing. Pausa tra PDF in cartella + batch embed. Brief [`DEPUTYTASK.md`](agent-tasks/DEPUTYTASK.md) **CHIUSO**. [PR #534](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/534) (`1e418118`).
+
+**IA-15 duplicati e edizioni ingest norme (22/08, mergiata #532)** — stessa cartella 2.3 / stessa azienda: `UNI EN` ≡ `EN` (`normFamilyKey`); stesso anno → `duplicate`; edizione più nuova → vigente, precedenti `superata`; più vecchia → `pending_review` + warning, non due vigente. Brief precedente **CHIUSO**. [PR #532](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/532) (`8ebea510` / `45496a22`). Residuo: gap RBAC `uploadNorms` (non ingest-from-folder).
 
 **IA-12 ingest famiglia da cartella (21/08, mergiata)** — in **Documenti → Albero → NORME E LEGGI**, pulsante **Ingest dalla cartella**: gira `normIngest` sui PDF già in registry, senza riselezionarli dal PC. Non in Modifica. Brief precedente **CHIUSO** [#524](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/524) / [#525](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/525).
 

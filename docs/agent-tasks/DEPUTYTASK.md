@@ -1,7 +1,9 @@
 # DEPUTYTASK — IA-16: throttle ingest cartella + 429 TPM Gemini
 
-**Stato:** APERTO  
-**Aperto:** 22/08/2026  
+**Stato:** CHIUSO — TEST OK (22/08/2026)  
+**Chiuso:** 22/08/2026  
+**PR:** [#534](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/534)  
+**SHA:** `1e418118`  
 **Piano:** [`PLAN_INGEST_ARCHIVIO_SLICES.md`](PLAN_INGEST_ARCHIVIO_SLICES.md) (IA-16; follow-up IA-15 CHIUSO #532)  
 **Rischio:** Medio — backend additivo (classificazione 429 + pause/batch); niente schema/auth/sync.  
 **Branch feature:** `cursor/ingest-gemini-throttle-d492`  
@@ -39,3 +41,7 @@ Ingest dalla cartella tratta tutti i PDF in sequenza stretta: embedding Gemini s
 
 - L1: 429 TPM non marca chiave; 403 sì.
 - 7 PDF: Flash non muore per un picco embed al minuto.
+
+## Esito (22/08/2026) — TEST OK
+
+Mergiata [#534](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/534) su `main` SHA `1e418118`. 429 TPM / rate / resource exhausted → retry + backoff, **non** `markKeyExhausted`. Esausta solo 403 o quota giornaliera/billing. Batch embed + pausa tra PDF cartella. Deploy VPS in closeout (manifest già copriva i `.js`).
