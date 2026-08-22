@@ -300,7 +300,7 @@ describe('updateDocument', () => {
         const req = mockReq({
             user: adminUser,
             params: { id: '40' },
-            body: { title: 'ISO 404', status: 'rilasciato' },
+            body: { title: 'ISO 404', status: 'rilasciato', expiry_date: '2027-01-01' },
         });
         const res = mockRes();
         await ctrl.updateDocument(req, res);
@@ -390,20 +390,17 @@ describe('releaseRevision', () => {
                     company_id: 11,
                 }],
             })
-            .mockResolvedValueOnce({
-                recordset: [{ doc_type: 'norma', issue_date: null, expiry_date: '2027-01-01' }],
-            })
             .mockResolvedValueOnce({ recordset: [] });
 
         const req = mockReq({
             user: { organization_id: ORG_ID, user_id: 1, role: 'admin' },
             params: { id: '50' },
-            body: {},
+            body: { expiry_date: '2027-01-01' },
         });
         const res = mockRes();
         await ctrl.releaseRevision(req, res);
 
-        const updateSql = query.mock.calls[2][0];
+        const updateSql = query.mock.calls[1][0];
         expect(updateSql).toMatch(/status\s*=\s*'rilasciato'/);
         expect(updateSql).toMatch(/import_status\s*=\s*'active'/);
         expect(res.json).toHaveBeenCalledWith(expect.objectContaining({
