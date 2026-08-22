@@ -309,4 +309,30 @@ describe('getDocumentStats', () => {
             }),
         });
     });
+
+    it('company_id filtra da_completare con lo stesso predicato della lista', async () => {
+        query.mockResolvedValueOnce({
+            recordset: [{
+                total: 3,
+                vigenti: 0,
+                senza_file: 0,
+                rilasciati_senza_file: 0,
+                da_completare: 3,
+            }],
+        });
+
+        const req = mockReq({ query: { company_id: '180' } });
+        const res = mockRes();
+        await ctrl.getDocumentStats(req, res);
+
+        const statsSql = query.mock.calls[0][0];
+        const statsParams = query.mock.calls[0][1];
+        expect(statsSql).toMatch(/da_completare/i);
+        expect(statsSql).toMatch(/dr\.company_id = @company_id/);
+        expect(statsParams.company_id).toBe(180);
+        expect(res.json).toHaveBeenCalledWith({
+            success: true,
+            data: expect.objectContaining({ da_completare: 3 }),
+        });
+    });
 });

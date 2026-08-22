@@ -1521,9 +1521,12 @@ class ApiService {
         return this.get(`/documents${query ? '?' + query : ''}`);
     }
 
-    /** Statistiche registro (vigenti, scaduti, in_scadenza_30gg, ecc.) */
-    async getDocumentStats() {
-        return this.get('/documents/stats');
+    /** Statistiche registro (vigenti, scaduti, in_scadenza_30gg, da_completare, ecc.) */
+    async getDocumentStats(params = {}) {
+        const query = new URLSearchParams(
+            Object.fromEntries(Object.entries(params).filter(([, v]) => v !== undefined && v !== '' && v !== null))
+        ).toString();
+        return this.get(`/documents/stats${query ? '?' + query : ''}`);
     }
 
     async getDocument(id) {

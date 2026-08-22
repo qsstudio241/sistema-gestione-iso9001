@@ -110,6 +110,10 @@ describe("DocumentRegistry — deep link coda company_id al primo fetch", () => 
     const firstCatalog = catalogCalls()[0];
     expect(String(firstCatalog.company_id)).toBe("11");
     expect(firstCatalog.incomplete).toBe(1);
+    await waitFor(() => expect(apiService.getDocumentStats).toHaveBeenCalled());
+    expect(apiService.getDocumentStats.mock.calls[0][0]).toEqual(
+      expect.objectContaining({ company_id: "11" })
+    );
   });
 
   it("URL senza company_id valido non inventa lo scope sul primo fetch", async () => {
@@ -278,5 +282,33 @@ describe("DocumentRegistry — riassunto senza link da completare", () => {
     expect(filterBtn).toBeInTheDocument();
     expect(filterBtn).toHaveClass("inbox-badge");
     expect(filterBtn.textContent).toMatch(/4/);
+  });
+
+  it("coda aperta: badge e label usano pagination.total, non stats org-wide", async () => {
+    apiService.getDocuments.mockResolvedValue({
+      data: [
+        { id: 1, title: "BS ISO 404", doc_type: "norma", parent_id: null, import_status: "ai_draft", status: "in_approvazione" },
+        { id: 2, title: "ISO 10474", doc_type: "norma", parent_id: null, import_status: "ai_draft", status: "in_approvazione" },
+        { id: 3, title: "ISO 6929", doc_type: "norma", parent_id: null, import_status: "ai_draft", status: "in_approvazione" },
+      ],
+      pagination: { total: 3, totalPages: 1 },
+    });
+    window.history.replaceState(
+      {},
+      "",
+      "/documents?tab=catalog&company_id=180&incomplete=1"
+    );
+    render(<DocumentRegistry />);
+
+    await waitFor(() => {
+      const filterBtn = screen.getByRole("button", { name: /Da completare/i });
+      expect(filterBtn.textContent).toMatch(/3/);
+      expect(filterBtn.textContent).not.toMatch(/4/);
+    });
+    expect(await screen.findByText("3 da completare")).toBeInTheDocument();
+    await waitFor(() => expect(apiService.getDocumentStats).toHaveBeenCalled());
+    expect(apiService.getDocumentStats.mock.calls[0][0]).toEqual(
+      expect.objectContaining({ company_id: "180" })
+    );
   });
 });

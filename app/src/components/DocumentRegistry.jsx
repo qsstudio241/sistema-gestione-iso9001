@@ -46,6 +46,7 @@ import { documentHasFile } from "../utils/documentRegistryFile";
 import {
   applyIncompleteQueueFilters,
   catalogQueryFromFilters,
+  incompleteQueueBadgeCount,
 } from "../utils/documentIncompleteQueue";
 import "./DocumentRegistry.css";
 
@@ -1210,10 +1211,18 @@ function DocumentRegistry() {
 
   const loadStats = useCallback(async () => {
     try {
-      const res = await apiService.getDocumentStats();
+      const res = await apiService.getDocumentStats(
+        companyScopeId ? { company_id: companyScopeId } : {}
+      );
       setStats(res.data);
     } catch { /* non bloccante */ }
-  }, []);
+  }, [companyScopeId]);
+
+  const incompleteBadgeCount = incompleteQueueBadgeCount({
+    incomplete: filters.incomplete,
+    catalogTotal,
+    statsCount: stats?.da_completare,
+  });
 
   const loadPriorityDocs = useCallback(async () => {
     setLoadingPriority(true);
@@ -1655,7 +1664,7 @@ function DocumentRegistry() {
       )}
 
       {/* Badge Inbox orfani + coda da completare (IA-5b) */}
-      {(orphanDocs.length > 0 || Number(stats?.da_completare) > 0 || filters.incomplete) && (
+      {(orphanDocs.length > 0 || incompleteBadgeCount > 0 || filters.incomplete) && (
         <div className="inbox-badge-wrap">
           {orphanDocs.length > 0 && (
             <button
@@ -1666,7 +1675,7 @@ function DocumentRegistry() {
               <span className="inbox-badge__count">{orphanDocs.length}</span>
             </button>
           )}
-          {(Number(stats?.da_completare) > 0 || filters.incomplete) && (
+          {(incompleteBadgeCount > 0 || filters.incomplete) && (
             <button
               type="button"
               className={`inbox-badge${filters.incomplete ? " inbox-badge--active" : ""}`}
@@ -1675,7 +1684,7 @@ function DocumentRegistry() {
               aria-pressed={filters.incomplete}
             >
               Da completare
-              <span className="inbox-badge__count">{Number(stats?.da_completare) || 0}</span>
+              <span className="inbox-badge__count">{incompleteBadgeCount}</span>
             </button>
           )}
           {inboxToast && <span className="inbox-toast">{inboxToast}</span>}
