@@ -49,7 +49,8 @@ jobs:
           # Host non è un segreto: evita CI rossa se secrets.SMOKE_ENDPOINT è stale
           SMOKE_ENDPOINT: sistemi.fr-busato.it:8443
           SMOKE_TOKEN: ${{ secrets.SMOKE_TOKEN }}
-        timeout-minutes: 2
+        # 4 tentativi × 30s timeout socket + backoff 2+4+8s ≈ 2.5 min worst-case
+        timeout-minutes: 4
 
       - name: Health check backend test (test-api)
         run: |

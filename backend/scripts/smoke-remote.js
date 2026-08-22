@@ -16,27 +16,50 @@
  *   - node backend/scripts/smoke-remote.js
  *
  * Esito OK → exit 0 | FAIL → exit 1
+ *
+ * Retry: solo errori DNS/rete transitori (EAI_AGAIN, ENOTFOUND, ECONNRESET,
+ * ETIMEDOUT). HTTP 4xx/5xx e altri fallimenti applicativi non si ritentano.
  */
 
 const https = require('https');
 
-const endpoint = process.env.SMOKE_ENDPOINT || process.argv[2] || '';
-const token    = process.env.SMOKE_TOKEN    || process.argv[3] || '';
+/** Codici Node di flake DNS/socket. Non includere fallimenti HTTP applicativi. */
+const TRANSIENT_NETWORK_CODES = Object.freeze(['EAI_AGAIN', 'ENOTFOUND', 'ECONNRESET', 'ETIMEDOUT']);
+/** 3 retry dopo il primo tentativo: 2s, 4s, 8s. */
+const TRANSIENT_RETRY_DELAYS_MS = Object.freeze([2000, 4000, 8000]);
 
-if (!endpoint) {
-  console.error('SMOKE-REMOTE: SMOKE_ENDPOINT non impostato. Imposta la variabile d\'ambiente o passa il valore come primo argomento CLI.');
-  process.exit(1);
+function isTransientNetworkError(err) {
+  if (!err) return false;
+  if (err.code && TRANSIENT_NETWORK_CODES.includes(err.code)) return true;
+  const msg = String(err.message || '');
+  return /(?:^|\b)(EAI_AGAIN|ENOTFOUND|ECONNRESET|ETIMEDOUT)(?:\b|$)/.test(msg);
 }
-if (!token) {
-  console.error('SMOKE-REMOTE: SMOKE_TOKEN non impostato. Imposta la variabile d\'ambiente o passa il valore come secondo argomento CLI.');
-  process.exit(1);
+
+function sleep(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-// Normalizza: rimuovi schema se già presente, poi aggiunge sempre https://
-const host = endpoint.replace(/^https?:\/\//, '');
-const url  = `https://${host}/api/v1/smoke/testdb`;
-
-console.log(`SMOKE-REMOTE: GET ${url}`);
+/**
+ * Esegue `fn` e ritenta solo su errori di rete transitori.
+ * `sleepFn` è iniettabile per i test (niente attesa reale).
+ */
+async function withTransientRetry(fn, { delays = TRANSIENT_RETRY_DELAYS_MS, sleepFn = sleep, onRetry } = {}) {
+  const maxAttempts = delays.length + 1;
+  let lastErr;
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    try {
+      return await fn();
+    } catch (err) {
+      lastErr = err;
+      const canRetry = isTransientNetworkError(err) && attempt < maxAttempts;
+      if (!canRetry) throw err;
+      const delayMs = delays[attempt - 1];
+      if (onRetry) onRetry({ err, attempt, delayMs, remaining: maxAttempts - attempt });
+      await sleepFn(delayMs);
+    }
+  }
+  throw lastErr;
+}
 
 function request(url, token) {
   return new Promise((resolve, reject) => {
@@ -65,16 +88,45 @@ function request(url, token) {
     req.on('error', reject);
     req.on('timeout', () => {
       req.destroy();
-      reject(new Error('Timeout connessione (30s)'));
+      const timeoutErr = new Error('Timeout connessione (30s)');
+      timeoutErr.code = 'ETIMEDOUT';
+      reject(timeoutErr);
     });
 
     req.end();
   });
 }
 
+function resolveTarget() {
+  const endpoint = process.env.SMOKE_ENDPOINT || process.argv[2] || '';
+  const token = process.env.SMOKE_TOKEN || process.argv[3] || '';
+  if (!endpoint) {
+    console.error('SMOKE-REMOTE: SMOKE_ENDPOINT non impostato. Imposta la variabile d\'ambiente o passa il valore come primo argomento CLI.');
+    process.exit(1);
+  }
+  if (!token) {
+    console.error('SMOKE-REMOTE: SMOKE_TOKEN non impostato. Imposta la variabile d\'ambiente o passa il valore come secondo argomento CLI.');
+    process.exit(1);
+  }
+  const host = endpoint.replace(/^https?:\/\//, '');
+  return { url: `https://${host}/api/v1/smoke/testdb`, token };
+}
+
 async function main() {
+  const { url, token } = resolveTarget();
+  console.log(`SMOKE-REMOTE: GET ${url}`);
   try {
-    const { statusCode, body } = await request(url, token);
+    const { statusCode, body } = await withTransientRetry(
+      () => request(url, token),
+      {
+        onRetry: ({ err, attempt, delayMs, remaining }) => {
+          const code = err.code || err.message;
+          console.warn(
+            `SMOKE-REMOTE: errore transitorio ${code} — ritento ${attempt}/${attempt + remaining} tra ${delayMs / 1000}s`
+          );
+        },
+      }
+    );
 
     let data;
     try {
@@ -108,4 +160,13 @@ async function main() {
   }
 }
 
-main();
+module.exports = {
+  isTransientNetworkError,
+  withTransientRetry,
+  TRANSIENT_NETWORK_CODES,
+  TRANSIENT_RETRY_DELAYS_MS,
+};
+
+if (require.main === module) {
+  main();
+}
