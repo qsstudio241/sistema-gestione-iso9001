@@ -1,7 +1,9 @@
 # DEPUTYTASK — CND-1: verbale VT usabile in tasca
 
-**Stato:** APERTO  
+**Stato:** CHIUSO — TEST OK  
 **Aperto:** 23/08/2026  
+**Chiuso:** 23/08/2026  
+**Branch:** `cursor/cnd-1-marche-mobile-d554`  
 **Piano:** [`PLAN_CND_SLICES.md`](PLAN_CND_SLICES.md)  
 **Rischio:** Basso — solo frontend (layout marche su `NdtReportsPage`); niente schema, auth, sync, Word, 9712.  
 **Slot precedente:** IA-16 CHIUSO [#534](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/534)
@@ -58,3 +60,21 @@ Il verbale CND esiste e in officina al tavolo funziona. In campo (telefono, stud
 ## Comando di lancio
 
 `Leggi docs/agent-tasks/DEPUTYTASK.md ed eseguilo. Chiudi con TEST OK o FIX NON APPLICABILI.`
+
+---
+
+## Esito (23/08/2026) — TEST OK
+
+**Fatto:**
+- Elenco marche VT: ogni riga è `tbody.ndt-mark-card` con `data-label` sulle celle (Pos./Codice, Q.tà, descrizione, parte, superficie, % Ctrl, difetti, giudizio A/R/S, foto, note se R/S).
+- Viewport sotto 768px: layout a scheda (token AppLayout, DNA scheda a fasi). Bottoni A/R/S e foto ~44px. Hint «Scorri per vedere tutte le colonne» rimosso. Niente `min-width: 720px` sulla tabella marche.
+- Desktop ≥768px: tabella invariata (`thead` visibile, `display: table-row-group`).
+- Stesso verbale, stessa API. Riuso `status-btn` + `NdtItemAttachments` già montato. `useNdtAutoSave` non toccato.
+
+**Test:**
+- Vitest `ndtReportsMarksMobile.test.jsx` + `ndtReportsInstruments.test.jsx`: 6/6
+- `cd app && npm run build`: OK
+
+**Non toccato:** `ndtReports.controller`, migrazioni, auth, sync, 9712, MT/PT, Template report, ingest `report_ndt`, `useNdtAutoSave`, EquipmentPage, Qualifiche, GUIDA/roadmap hub, `DEPUTYTASK1.md`, `DEPUTYTASK2.md`.
+
+**Non «pronta»:** manca lettura CI + Bugbot + Security Review su questa revisione. Merge solo click umano. `gh pr create` non disponibile da questo Cloud Agent (GraphQL createPullRequest). Branch pushata: `cursor/cnd-1-marche-mobile-d554`.

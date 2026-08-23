@@ -104,36 +104,38 @@ function MarkRow({ item, index, onChange, onRemove, reportId, onRegisterNc }) {
     };
 
     return (
-        <>
+        <tbody className={`ndt-mark-card${hasDefect ? " ndt-mark-card--defect" : ""}`}>
         <tr className={`ndt-mark-row${hasDefect ? " ndt-mark-defect" : ""}`}>
-            <td>{index + 1}</td>
-            <td><input type="text" value={item.position_code || ""} onChange={e => set("position_code", e.target.value)} placeholder="es. P01" className="ndt-mark-input ndt-input-sm" /></td>
-            <td><input type="text" value={item.quantity || ""} onChange={e => set("quantity", e.target.value)} placeholder="1" className="ndt-mark-input ndt-input-xs" /></td>
-            <td><input type="text" value={item.description || ""} onChange={e => set("description", e.target.value)} placeholder="Descrizione componente" className="ndt-mark-input ndt-input-lg" /></td>
-            <td><input type="text" value={item.examined_part || "SALDATURA"} onChange={e => set("examined_part", e.target.value)} className="ndt-mark-input ndt-input-sm" /></td>
-            <td>
+            <td data-label="Marca" className="ndt-mark-index">{index + 1}</td>
+            <td data-label="Pos. / Codice"><input type="text" value={item.position_code || ""} onChange={e => set("position_code", e.target.value)} placeholder="es. P01" className="ndt-mark-input ndt-input-sm" /></td>
+            <td data-label={"Q.t\u00e0"}><input type="text" value={item.quantity || ""} onChange={e => set("quantity", e.target.value)} placeholder="1" className="ndt-mark-input ndt-input-xs" /></td>
+            <td data-label="Descrizione"><input type="text" value={item.description || ""} onChange={e => set("description", e.target.value)} placeholder="Descrizione componente" className="ndt-mark-input ndt-input-lg" /></td>
+            <td data-label="Parte esaminata"><input type="text" value={item.examined_part || "SALDATURA"} onChange={e => set("examined_part", e.target.value)} className="ndt-mark-input ndt-input-sm" /></td>
+            <td data-label="Superficie">
                 <select value={item.surface_condition || "M/S"} onChange={e => set("surface_condition", e.target.value)} className="ndt-mark-select">
                     {SURFACE_CONDITIONS.map(s => <option key={s.value} value={s.value}>{s.value}</option>)}
                 </select>
             </td>
-            <td><input type="number" min="0" max="100" value={item.inspection_percentage ?? 100} onChange={e => set("inspection_percentage", e.target.value)} className="ndt-mark-input ndt-input-xs" /></td>
-            <td>
+            <td data-label="% Ctrl"><input type="number" min="0" max="100" value={item.inspection_percentage ?? 100} onChange={e => set("inspection_percentage", e.target.value)} className="ndt-mark-input ndt-input-xs" /></td>
+            <td data-label="Difetti">
                 <select value={item.defects || "NESSUNO"} onChange={e => set("defects", e.target.value)} className="ndt-mark-select ndt-defect-select">
                     {DEFECT_CODES_SELECT.map(d => <option key={d.value} value={d.value}>{d.label}</option>)}
                 </select>
             </td>
-            <td>
-                <div className="ndt-eval-btns">
+            <td data-label="Giudizio">
+                <div className="ndt-eval-btns" role="group" aria-label={"Giudizio A R S marca " + (index + 1)}>
                     {EVALUATION_OPTIONS.map(ev => (
                         <button key={ev.value} type="button"
                             className={`status-btn ${ev.cls}${item.evaluation === ev.value ? " active" : ""}`}
+                            aria-pressed={item.evaluation === ev.value}
+                            aria-label={ev.label}
                             onClick={() => set("evaluation", ev.value)}>
                             {ev.value}
                         </button>
                     ))}
                 </div>
             </td>
-            <td className="ndt-actions-cell">
+            <td className="ndt-actions-cell" data-label="Foto">
                 <button
                     type="button"
                     className={`ndt-photo-row-btn${!item.id ? " ndt-photo-row-btn-disabled" : ""}${photoState.count > 0 ? " ndt-photo-row-btn-has-photos" : ""}`}
@@ -156,7 +158,7 @@ function MarkRow({ item, index, onChange, onRemove, reportId, onRegisterNc }) {
         {/* Galleria foto — visibile solo se ci sono foto, caricamento o errore */}
         {item.id && (
             <tr className={`ndt-mark-photos-row${showPhotoPanel ? "" : " ndt-mark-photos-row-collapsed"}`}>
-                <td></td>
+                <td className="ndt-mark-skip-cell"></td>
                 <td colSpan={9}>
                     <NdtItemAttachments
                         ref={attRef}
@@ -171,7 +173,7 @@ function MarkRow({ item, index, onChange, onRemove, reportId, onRegisterNc }) {
         {/* Riga note difetto — visibile solo se R o S */}
         {hasDefect && (
             <tr className="ndt-mark-notes-row">
-                <td></td>
+                <td className="ndt-mark-skip-cell"></td>
                 <td colSpan={9}>
                     <div className="ndt-defect-notes-wrap">
                                         <span className="ndt-defect-notes-label">
@@ -199,7 +201,7 @@ function MarkRow({ item, index, onChange, onRemove, reportId, onRegisterNc }) {
                 </td>
             </tr>
         )}
-        </>
+        </tbody>
     );
 }
 
@@ -757,9 +759,6 @@ function NdtReportForm({ report, companies, availableInstruments, onSave, onCanc
                     </button>
                     {sections.marks && (
                         <div className="ndt-section-body">
-                            <div className="ndt-mobile-scroll-hint">
-                                {"\u21C4"} Scorri per vedere tutte le colonne
-                            </div>
                             <div className="ndt-marks-table-wrap">
                                 <table className="ndt-marks-table">
                                     <thead>
@@ -776,11 +775,9 @@ function NdtReportForm({ report, companies, availableInstruments, onSave, onCanc
                                             <th></th>
                                         </tr>
                                     </thead>
-                                    <tbody>
                                         {items.map((item, idx) => (
                                             <MarkRow key={item.id || idx} item={item} index={idx} onChange={updateMarkRow} onRemove={removeMarkRow} reportId={report?.id} onRegisterNc={openNcModalForItem} />
                                         ))}
-                                    </tbody>
                                 </table>
                             </div>
                             <button type="button" className="btn ndt-add-row-btn" onClick={addMarkRow}>+ Aggiungi riga</button>

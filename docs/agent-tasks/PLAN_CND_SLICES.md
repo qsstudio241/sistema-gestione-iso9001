@@ -2,8 +2,8 @@
 
 > **Destinazione**: uno studio (Mason) e l’operatore CND chiudono sul telefono il ciclo **incarico → esecuzione in campo → verbale Word + eventuale NC**, riusando qualifiche ISO 9712, strumenti, commesse, foto e PWA già in produzione. Niente app nativa, niente secondo motore, niente tabelle gemelle.
 > **Spec / ADR**: [ISO 9712:2022](../reference/ISO_9712_2022_NDT_QUALIFICATION.md) · ADR-004 (auth mobile) · ADR-016 (strumenti trasversali, verbali ≠ Welding Book) · [PLAN ISO 3834](PLAN_3834_SLICES.md) (ISO-1b/ISO-7 fatti; **ISO-9** eseguita qui come CND-2)
-> **Brief attivi**: [`DEPUTYTASK.md`](DEPUTYTASK.md) — **CND-1** · [`DEPUTYTASK1.md`](DEPUTYTASK1.md) — **CND-11** · [`DEPUTYTASK2.md`](DEPUTYTASK2.md) — **CND-4** (template, file disgiunti)
-> **Mappa**: CND-0 chiusa (HITL + estrazione Word 23/08, PR #540 su `main`). **Follow-up 23/08**: prova HTML (`CND-PREVIEW`) — se doppio lavoro si abortisce; certificato resta Word. GUIDA/roadmap hub: non toccati (brief CND-1/4/11 aperti).
+> **Brief attivi**: [`DEPUTYTASK2.md`](DEPUTYTASK2.md) — **CND-4** (template, file disgiunti). **CND-1** chiusa (`DEPUTYTASK.md`, branch `cursor/cnd-1-marche-mobile-d554`). CND-11 chiusa (#546).
+> **Mappa**: CND-0 chiusa (HITL + estrazione Word 23/08, PR #540 su `main`). **Follow-up 23/08**: prova HTML (`CND-PREVIEW`) — se doppio lavoro si abortisce; certificato resta Word. GUIDA/roadmap hub: non toccati (CND-4 aperto; CND-1 e CND-11 chiusi).
 > **Licenza**: modulo `cnd` (bridge: licenza `saldatura` implica `cnd`)
 > **Schermate oggi**: `/cnd/verbali` (`NdtReportsPage.jsx`) · `/cnd/strumenti` (`EquipmentPage.jsx`) · Qualifiche tab NDT
 
@@ -150,7 +150,7 @@ Ogni slice è un **tracciante verticale** (un passaggio del flusso), non «tutto
 |-------|------|------------------------|------------|------|-----------|
 | **CND-0** | Questa mappa | `PLAN_CND_SLICES.md`, bussola, ISO-9 puntatore | — | AFK docs | *chiusa* |
 | **CND-PREVIEW** | Spike HTML specchio flag PT (timebox, usa-e-getta) | `docs/agent-tasks/spike-cnd-pt-preview.html` + `SPIKE_CND_HTML_PREVIEW.md` | — | HITL | **non** sostituisce CND-4; vietato `NdtReportsPage` / `vtWordExport` |
-| **CND-1** | Verbale VT usabile in tasca (marche a scheda, non tabella da scroll) | `NdtReportsPage.jsx` / `.css`, riuso `status-btn` (`ChecklistModule.css`) + `NdtItemAttachments` | — | AFK | brief in `DEPUTYTASK.md` |
+| **CND-1** | Verbale VT usabile in tasca (marche a scheda, non tabella da scroll) | `NdtReportsPage.jsx` / `.css`, riuso `status-btn` (`ChecklistModule.css`) + `NdtItemAttachments` | — | AFK | *chiusa* (`DEPUTYTASK.md`, branch `cursor/cnd-1-marche-mobile-d554`) |
 | **CND-2** | Gate ispettore: 9712 valida **e** visita medica/visione (`visionFitness.service.js`); stesso codice per studio e per azienda con licenza | `NdtReportsPage.jsx`, `ndtReports.controller.js`, GET qualifiche + gap visione già esistenti | CND-1 (stesso JSX) | AFK | = ISO-9; **non** aprire da PLAN 3834 |
 | **CND-3** | UI flag PT **e** MT da modelli Mason → `method_params` JSON (metodi indipendenti, nessuna tabella nuova) | `NdtReportsPage.jsx` sezioni metodo; catalogo in appendice | CND-1 (stesso JSX) | AFK | dopo CND-1; **non** parallelo a CND-1 |
 | **CND-4** | Scope `cnd` in Template report + upload modelli Mason `.docx` + resolve per `report_type` | `ReportTemplatesAdminPage.jsx`, `reportTemplate.service.js` / controller, `vtWordExport.js` resolve VPS (come NC) | — | ✅ 23/08 | **parallelo a CND-1 e CND-11** (niente `NdtReportsPage`) |
@@ -167,9 +167,9 @@ Ogni slice è un **tracciante verticale** (un passaggio del flusso), non «tutto
 
 ```
 Ora (dopo merge mappa):
-  CND-1  (NdtReportsPage marche mobile)
+  CND-1  (NdtReportsPage marche mobile)  ← *chiusa* (branch cursor/cnd-1-marche-mobile-d554)
   CND-4  (Template report scope cnd)     ← parallelo
-  CND-11 (ingest report_ndt)             ← parallelo
+  CND-11 (ingest report_ndt)             ← chiusa (#546)
 
 Dopo merge CND-1:
   CND-9  (useNdtAutoSave → syncQueue)    ← hook, dopo CND-1 se CND-1 non tocca l’hook
@@ -194,7 +194,7 @@ Due deputy **mai** sullo stesso `NdtReportsPage.jsx` o sullo stesso controller.
 | Input: chi ispeziona | Nome libero; manca gate 9712 + visita medica | CND-2 |
 | Input: cosa ispezionare | Si crea da zero; allineare a bozza-audit | CND-8 |
 | Input: con quali mezzi | Strumenti VT-centrici | CND-5 |
-| Esecuzione: marche in campo | Tabella 10 colonne | CND-1 |
+| Esecuzione: marche in campo | Tabella 10 colonne | CND-1 *chiusa* |
 | Esecuzione: parametri metodo | Solo lux VT; PT/MT da Word Mason | CND-3 |
 | Esecuzione: evidenza fotografica | C’è; touch/camera da irrobustire | CND-6 |
 | Esecuzione: rete assente | localStorage; coda NDT non agganciata | CND-9 |
