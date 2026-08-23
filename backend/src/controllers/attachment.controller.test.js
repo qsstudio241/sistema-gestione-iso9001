@@ -80,7 +80,7 @@ describe('listAttachments — RBAC studio', () => {
 
         const listSql = query.mock.calls[0][0];
         expect(listSql).toContain('att.ndt_report_item_id = @ndt_report_item_id');
-        expect(listSql).toContain('COALESCE(a.organization_id, ndt_r.organization_id, rdp_r.organization_id)');
+        expect(listSql).toContain('COALESCE(a.organization_id, nc.organization_id, ndt_r.organization_id, rdp_r.organization_id)');
         expect(res.json).toHaveBeenCalledWith(expect.objectContaining({ success: true }));
     });
 });
@@ -116,6 +116,28 @@ describe('uploadAttachment — NDT', () => {
 
         expect(query.mock.calls[0][0]).toContain('ndt_report_items');
         expect(res.status).toHaveBeenCalledWith(201);
+    });
+
+    it('mappa violazione CHK_attachments_parent a 400 (non 500 generico)', async () => {
+        const checkErr = new Error(
+            'The INSERT statement conflicted with the CHECK constraint "CHK_attachments_parent".'
+        );
+        checkErr.number = 547;
+        query
+            .mockResolvedValueOnce({ recordset: [{ id: 42 }] })
+            .mockRejectedValueOnce(checkErr);
+
+        const req = mockReq({
+            file: { path: '/tmp/x.jpg', originalname: 'x.jpg', size: 100, mimetype: 'image/jpeg' },
+            body: { ndt_report_item_id: '42', category: 'photo' },
+        });
+        const res = mockRes();
+        await ctrl.uploadAttachment(req, res);
+
+        expect(res.status).toHaveBeenCalledWith(400);
+        expect(res.json).toHaveBeenCalledWith(expect.objectContaining({
+            code: 'ATTACHMENT_PARENT_REQUIRED',
+        }));
     });
 });
 
