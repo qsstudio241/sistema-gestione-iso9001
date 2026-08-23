@@ -1,6 +1,6 @@
 # DEPUTYTASK1 — CND-11: ingest verbali PDF storici (`report_ndt`)
 
-**Stato:** APERTO  
+**Stato:** CHIUSO — TEST OK (23/08/2026)  
 **Aperto:** 23/08/2026  
 **Piano:** [`PLAN_CND_SLICES.md`](PLAN_CND_SLICES.md)  
 **Rischio:** Medio — ingest additivo (stesso anello di `cert_ndt`); niente schema DB, auth, sync, pagina verbali.  
@@ -55,3 +55,22 @@ Questa slice **non** crea righe in `ndt_reports` (ponte verbale operativo ↔ PD
 ## Comando di lancio
 
 `Leggi docs/agent-tasks/DEPUTYTASK1.md ed eseguilo. Chiudi con TEST OK o FIX NON APPLICABILI.`
+
+---
+
+## Esito (23/08/2026) — TEST OK
+
+**Fatto:**
+- `report_ndt` in `SUPPORTED_DOC_TYPES` (stesso anello di `cert_ndt`). Tipo sconosciuto resta `UNSUPPORTED_DOC_TYPE`.
+- Schema AI BE allineato al contratto slice: `report_number`, `ndt_method` (UT|RT|MT|PT|VT), `part_ref`, `test_date`, `inspector_name`, `outcome_summary`. Alias pipeline per i nomi vecchi (`component_ref` → `part_ref`, `operator_name` → `inspector_name`, `result_summary` → `outcome_summary`).
+- Schema form FE `report_ndt` (stessi 6 campi; metodo select UT/RT/MT/PT/VT). HITL ingest esistente, nessuna pagina nuova.
+- Zero INSERT su `ndt_reports`. Posa registro 9.3 invariata (mappa già presente).
+
+**Test:**
+- Jest `documentIngestPipeline.test.js`: 26/26 (whitelist `report_ndt` + chiavi estratte + rifiuto tipo sconosciuto)
+- Vitest `documentTypesAlignment.test.js`: 11/11 (schema FE CND-11)
+- `cd app && npm run build`: OK
+
+**Non fatto (fuori slice):** ponte PDF storico → riga `ndt_reports` (da discutere). GUIDA/roadmap hub: sync dopo merge (parallelo CND-1 / CND-4).
+
+**Non «pronta»:** manca lettura CI + Bugbot + Security Review su questa revisione. Merge solo click umano.

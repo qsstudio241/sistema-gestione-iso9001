@@ -50,6 +50,26 @@ describe('documentTypeSchemas AI', () => {
     const schema = getSchemaForDocType('certificato_materiale');
     expect(schema?.aiExpectedSchema?.certificate_type).toContain('3.1');
   });
+
+  it('report_ndt espone i campi minimi CND-11 (specchio schema AI)', () => {
+    const schema = getSchemaForDocType('report_ndt');
+    expect(schema).toBeTruthy();
+    expect(schema.aiPrompt).toBeTruthy();
+    expect(schema.aiExpectedSchema).toBeTruthy();
+    const keys = schema.fields.map((f) => f.key);
+    expect(keys).toEqual([
+      'report_number',
+      'ndt_method',
+      'part_ref',
+      'test_date',
+      'inspector_name',
+      'outcome_summary',
+    ]);
+    expect(Object.keys(schema.aiExpectedSchema)).toEqual(keys);
+    const methodField = schema.fields.find((f) => f.key === 'ndt_method');
+    const methodValues = methodField.options.map((o) => o.value);
+    expect(methodValues).toEqual(['UT', 'RT', 'MT', 'PT', 'VT']);
+  });
 });
 
 describe('patentino_saldatore - norma di riferimento (fix default 9606-1:2017)', () => {

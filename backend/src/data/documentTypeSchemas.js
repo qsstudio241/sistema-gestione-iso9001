@@ -440,16 +440,18 @@ certificate_number, issue_date (YYYY-MM-DD), notified_body.`,
   },
 
   report_ndt: {
-    label: 'Report NDT',
-    aiPrompt: `Rapporto prove NDT. Estrai: report_number, ndt_method (UT|RT|MT|PT|VT),
-component_ref, test_date (YYYY-MM-DD), operator_name, result_summary.`,
+    label: 'Rapporto di prova NDT',
+    aiPrompt: `Rapporto prove NDT (verbale CND storico). Estrai: report_number, ndt_method (UT|RT|MT|PT|VT),
+part_ref, test_date (YYYY-MM-DD), inspector_name, outcome_summary.
+Sinonimi: part_ref = pezzo/componente/disegno; inspector_name = ispettore/operatore CND;
+outcome_summary = esito/accettabile/non accettabile. Usa null se assente.`,
     aiExpectedSchema: {
       report_number: 'string|null',
       ndt_method: 'UT|RT|MT|PT|VT|null',
-      component_ref: 'string|null',
+      part_ref: 'string|null',
       test_date: 'YYYY-MM-DD|null',
-      operator_name: 'string|null',
-      result_summary: 'string|null',
+      inspector_name: 'string|null',
+      outcome_summary: 'string|null',
     },
   },
 };

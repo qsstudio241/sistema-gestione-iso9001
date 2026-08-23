@@ -160,7 +160,7 @@ Ogni slice è un **tracciante verticale** (un passaggio del flusso), non «tutto
 | **CND-8** | Crea verbale come audit: bozza UUID → form → coda sync (niente nuova entità “incarico”) | `NdtReportsPage` lista + `enqueueNdtReportSync` / create | CND-9 utile | AFK | dopo CND-9 se tocca la stessa coda; filtro «oggi» è lo stesso elenco |
 | **CND-9** | Rete di salvataggio officina: `useNdtAutoSave` → IndexedDB `syncQueue` (tipi NDT **già** in `syncService`) | `useNdtAutoSave.js`, eventuale gancio foto | — | AFK | overlap con CND-1 se si tocca la pagina; **dopo CND-1** oppure solo hook/coda se CND-1 non tocca l’hook |
 | **CND-10** | Firma grafica / controfirma | — | HITL 23/08: **parcheggio** | HITL | non aprire |
-| **CND-11** | Ingest verbali PDF storici (`report_ndt`) | whitelist pipeline + schema FE `documentTypeSchemas.js` (schema AI BE già c’è); **non** crea righe `ndt_reports` | — | AFK | brief in `DEPUTYTASK1.md`; **parallelo a CND-1** |
+| **CND-11** | Ingest verbali PDF storici (`report_ndt`) | whitelist pipeline + schema FE `documentTypeSchemas.js` (schema AI BE già c’è); **non** crea righe `ndt_reports` | — | AFK | *chiusa* (questa PR, `DEPUTYTASK1.md`) |
 | **CND-12** | RT/ET oltre l’etichetta | `method_params` + UI | modello Mason assente | HITL | dopo MT/PT/UT se servono |
 
 ### Onde di parallelismo (file disgiunti)
@@ -201,7 +201,7 @@ Due deputy **mai** sullo stesso `NdtReportsPage.jsx` o sullo stesso controller.
 | Output: certificato | Solo Word VT in `public/templates` | CND-4 |
 | Output: fascicolo SGQ | Verbale fuori registro | CND-7 |
 | Output: difetto | NC già collegabile | CND-6 (UX) |
-| Output: storico cartaceo | Schema `report_ndt` inerte | CND-11 |
+| Output: storico cartaceo | Schema `report_ndt` in whitelist pipeline + form FE | CND-11 *chiusa* |
 | Output: firma grafica | Non richiesta ora | CND-10 parcheggiata |
 
 ## Qualità della mappa

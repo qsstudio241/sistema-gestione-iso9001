@@ -28,6 +28,8 @@ try {
 
 // cert_ndt (ISO 9712) aggiunto 02/08/2026 — prima era in menu upload ma bloccato qui
 // con UNSUPPORTED_DOC_TYPE (simulazione UT Level II TEC-Eurolab).
+// report_ndt (verbali CND storici) aggiunto 23/08/2026 — stesso buco: tipo in menu,
+// schema AI sì, whitelist pipeline no. Non crea righe in ndt_reports (CND-11).
 const SUPPORTED_DOC_TYPES = new Set([
     'wpqr',
     'patentino_saldatore',
@@ -35,6 +37,7 @@ const SUPPORTED_DOC_TYPES = new Set([
     'norma',
     'qualifica_14732',
     'cert_ndt',
+    'report_ndt',
 ]);
 
 /** Alias campi AI/schema → campi piatti pipeline */
@@ -47,6 +50,12 @@ const FIELD_ALIASES = {
     material_group: ['base_material_group', 'base_material'],
     approval_date: ['issue_date'],
     issue_date: ['approval_date', 'exam_date'],
+    part_ref: ['component_ref'],
+    component_ref: ['part_ref'],
+    inspector_name: ['operator_name'],
+    operator_name: ['inspector_name'],
+    outcome_summary: ['result_summary'],
+    result_summary: ['outcome_summary'],
 };
 
 const OCR_MIN_CHARS = Number(process.env.INGEST_OCR_MIN_CHARS) || 50;
