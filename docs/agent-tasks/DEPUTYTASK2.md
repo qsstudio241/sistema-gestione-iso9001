@@ -1,69 +1,57 @@
-# DEPUTYTASK2 — Second Brain SB-1: snapshot fatti per Ambito (zero LLM)
+# DEPUTYTASK2 — CND-4: Template report scope `cnd`
 
-**Stato:** CHIUSO — TEST OK  
-**Aperto:** 16/08/2026 (Lead wayfinder — Chart the map Second Brain)  
-**Chiuso:** 16/08/2026 — SB-1 implementata (dopo deputy FIX NON APPLICABILI: brief non era su `main`)  
-**Piano:** [`PLAN_SECOND_BRAIN_SLICES.md`](PLAN_SECOND_BRAIN_SLICES.md)  
-**Spec / ADR:** [ADR-010](../adr/ADR-010-ai-agentic-architecture.md) · `aiCompanyScope.service.js`  
-**Rischio:** Medio — PR + gate Bugbot; **non** push su `main`; **non** toccare `DEPUTYTASK.md` (SAL S1a)
+**Stato:** APERTO  
+**Aperto:** 23/08/2026  
+**Piano:** [`PLAN_CND_SLICES.md`](PLAN_CND_SLICES.md) (HITL 23/08: modelli in Template report; Word resta il layout; PDF dopo)  
+**Rischio:** Medio — scope template + eventuale migrazione CHECK; niente auth JWT, niente sync audit, niente `NdtReportsPage`.  
+**Parallelo a:** CND-1 (`DEPUTYTASK.md`) e CND-11 (`DEPUTYTASK1.md`) — file **disgiunti**  
+**Slot precedente:** SB-1 CHIUSO (16/08)
 
-> **Allineamento Git (autonomo)**: `git fetch origin main` e partire da `origin/main` aggiornato. Non chiedere al committente.
+## Perché
 
----
+Mason consegna report PT/MT in Word con checkbox. L’app oggi esporta il VT da un file fisso in `public/templates`. Audit e NC usano già **Template report** sul VPS (`GET /report-templates/:id/file`, scope `audit`|`nc`). I CND devono usare **la stessa infrastruttura**, con uno scope `cnd` e una chiave per metodo (VT/MT/PT/UT).
 
-## Slice unica di questa sessione: SB-1
+## File previsti
 
-**Obiettivo**: un GET che, dato l’Ambito azienda, restituisce tre conteggi **vivi dal DB** (non dal RAG). Una card in Assistente AI li mostra. **Nessuna chiamata LLM.**
+- `app/src/pages/ReportTemplatesAdminPage.jsx` (+ CSS se serve tab)
+- `app/src/utils/reportTemplateUpload.js` (marker CND, come NC)
+- `backend/src/services/reportTemplate.service.js`
+- `backend/src/controllers/reportTemplate.controller.js`
+- `app/src/utils/vtWordExport.js` — resolve template VPS per `report_type` (stesso pattern NC), fallback file locale solo offline
+- eventuale migrazione **dichiarata prima** in `database/migrations/` se il CHECK `CK_report_templates_scope` va esteso a `'cnd'` (oggi: `audit`, `self_assessment`, `nc`)
+- `docs/agent-tasks/DEPUTYTASK2.md`, spunta CND-4 sul PLAN
 
-Questo è il «hello world» del second brain: il sistema *mostra* i fatti dell’azienda, prima di *parlarne*.
+## Cosa NON toccare
 
-### Contesto (non riscrivere)
+- `NdtReportsPage.jsx` / `.css` (CND-1)
+- ingest `report_ndt` / pipeline (CND-11)
+- `useNdtAutoSave.js`, `syncService.js` (CND-9)
+- Qualifiche, firma grafica, PDF engine nuovo, HTML design-mode
+- GUIDA / roadmap hub (traccia nel brief)
+- `DEPUTYTASK.md`, `DEPUTYTASK1.md`
 
-- Chat già esiste: `POST /ai/chat`, pagina `AiAssistantPage.jsx`, licenza `ai_chat`
-- Scope già esiste: `resolveAiCompanyScope` (cliente forzato sulla sua azienda; studio può passare `companyId`)
-- Conteggio già esistono in moduli sparsi (`getNcStats`, `getQualificationStats`, `getDocumentStats`) — **non** fare N round-trip dal frontend; un service unico lato server
-- Ambito UI: `CompanyScopeContext` / `resolveAppCompanyScope` — la card legge lo stesso Ambito dell’header
+## Riuso obbligatorio
 
-### DoD
+- Upload solo `.docx` (`validateDocxFile`) — convertire il `.doc` MT **una volta** in `.docx`, non supportare OLE a runtime
+- Tab/scope come Audit vs NC: terza tab **CND**, non una pagina nuova
+- Resolve: `organization_id` + `scope=cnd` + `standard_key` = `VT`|`MT`|`PT`|`UT` (stesso ordine: assegnazione org → sistema)
+- Placeholder = flag UI (appendice PLAN). Marker minimi VT già in `vtWordExport.js`; per MT/PT aggiungere warning marker come `checkNcDocxMarkers`, **senza** cambiare la UI verbale in questa slice
+- `SgqDataGrid` / DNA admin template esistente
 
-1. Service puro `backend/src/services/ambitoFacts.service.js`:
-   - input: `user` + `companyId` già risolto (o null)
-   - se `companyId` assente → `{ ready: false, reason: 'seleziona_azienda', counts: null }` (niente query cross-cliente in SB-1)
-   - se presente → `{ ready: true, companyId, companyName, counts: { ncOpen, qualsExpiring30, docsExpiring30 }, generatedAt }`
-   - query scoped `organization_id` / `auditor_org_id` + `company_id`; riusare le **stesse regole di «aperta» / «in scadenza 30gg»** già usate dalle card Qualifiche / NC / Scadenze (non inventare un terzo semaforo)
-2. `GET /ai/ambito-facts?companyId=` su `aiChat.routes.js`: `authenticate` + `requireLicensedModule('ai_chat')` + `resolveAiCompanyScope` (403 se studio fuori ambito). **Non** `logAiInteraction` (non è una chiamata AI)
-3. Frontend: `apiService.getAmbitoFacts` + card in cima a `AiAssistantPage` (classi `.sq-stat` / pattern Qualifiche — **non** CSS nuovo, **non** pagina nuova). Se `ready: false` → testo «Seleziona un’azienda nell’Ambito» (azioni visibili, non smontate)
-4. Test L1:
-   - service: azienda A vs B (stesso org) → conteggi isolati; `companyId` null → `ready: false`
-   - controller: 403 scope negato (stesso pattern di `aiChat.controller.test.js`)
-   - UI: card mostra i tre numeri da mock API
-5. `deploy-manifest.json` aggiornato se si aggiunge il `.js` service
-6. Zero segreti; encoding UTF-8; accenti italiani corretti
+## Slice (unica)
 
-### Cosa NON toccare
+1. Estendere scope template a `cnd` (API lista/upload/resolve + tab admin).
+2. Seed o upload modelli sistema: VT (quello già usato) + PT/MT da Word Mason (checkbox → `{pt_acc_l2}` ☑/☐). Se la conversione MT `.doc` non è fattibile in Cloud, lasciare slot `MT` con istruzione e template PT `.docx`.
+3. Export VT: scarica il file dal VPS (`resolve?scope=cnd&standard_key=VT`) invece di solo `/templates/VT-verbale.docx`, con fallback locale offline.
+4. Test L1: lista scope `cnd`; upload `.docx`; resolve per org; `.doc` rifiutato.
 
-- `DEPUTYTASK.md`, `documentTextExtractor`, OCR, SAL
-- `POST /ai/chat` / system prompt (è **SB-3**)
-- Vista «Tutto lo studio» aggregata (è **SB-4**)
-- JWT, sync, migrazioni SQL, nuove tabelle, nuova licenza
-- Knowledge indexer / reindex
-- Home page
+## Acceptance
 
-### Come verificare
+- L1 test service/controller + `cd app && npm run build` se si tocca `app/`
+- In Gestione → Template report si vede lo scope CND; si carica un `.docx` PT
+- Export verbale VT usa il template risolto (o fallback documentato)
+- Nessun tocco a `NdtReportsPage.jsx`
 
-```bash
-cd backend && node --test src/services/ambitoFacts.service.test.js src/controllers/aiChat.controller.test.js
-cd app && NODE_ENV=test npm run test:run
-cd app && npm run build
-```
+## Comando di lancio
 
-(Adatta i path d’ingresso test a come è lanciata la suite backend nel repo — non inventare un runner nuovo.)
-
-### Esito
-
-- Service `ambitoFacts.service.js` + GET `/ai/ambito-facts` (licenza `ai_chat`, no `logAiInteraction`)
-- Card `AmbitoFactsBar` in `AiAssistantPage` (classi `.sq-stat`)
-- Jest: ambitoFacts + getAmbitoFacts 15 verdi; Vitest AmbitoFactsBar 2 verdi
-- Deputy precedente: **FIX NON APPLICABILI** (su `main` c’era ancora il brief licenze CHIUSO). Lezione: brief APERTO deve essere su `origin/main` prima di lanciare il deputy.
-
-Prossima slice: **SB-2** (Ambito header = unico input). Non aperta in questo brief.
+`Leggi docs/agent-tasks/DEPUTYTASK2.md ed eseguilo. Chiudi con TEST OK o FIX NON APPLICABILI.`

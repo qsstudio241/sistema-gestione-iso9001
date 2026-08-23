@@ -5,6 +5,7 @@
 **Piano:** [`PLAN_CND_SLICES.md`](PLAN_CND_SLICES.md)  
 **Rischio:** Basso — solo frontend (layout marche su `NdtReportsPage`); niente schema, auth, sync, Word, 9712.  
 **Slot precedente:** IA-16 CHIUSO [#534](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/534)
+**Parallelo a:** CND-4 (`DEPUTYTASK2.md`) e CND-11 (`DEPUTYTASK1.md`) — non toccare Template report né ingest.
 
 ## Perché
 
