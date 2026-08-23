@@ -232,35 +232,21 @@
     .ndt-params-grid { grid-template-columns: 1fr; gap: 10px; }
     .ndt-params-grid .ndt-form-group { min-width: unset; }
 
-    /* ── Elenco Marche — scroll orizzontale su mobile ── */
+    /* ── Elenco Marche: schede CND-1, niente min-width 720 ── */
     .ndt-marks-table-wrap {
-        overflow-x: auto;
-        -webkit-overflow-scrolling: touch;
-        border-radius: 8px;
-        /* hint visivo: ombra destra indica che c'è altro da scorrere */
-        background:
-            linear-gradient(to right, #fff 30%, rgba(255,255,255,0)),
-            linear-gradient(to left,  #fff 30%, rgba(255,255,255,0)) 100% 0,
-            radial-gradient(farthest-side at 0   50%, rgba(0,0,0,.12), transparent),
-            radial-gradient(farthest-side at 100% 50%, rgba(0,0,0,.12), transparent) 100% 0;
-        background-repeat: no-repeat;
-        background-size: 40px 100%, 40px 100%, 14px 100%, 14px 100%;
-        background-attachment: local, local, scroll, scroll;
+        overflow: visible;
+        border: none;
+        background: none;
+        border-radius: 0;
     }
-    .ndt-marks-table { min-width: 720px; font-size: 0.78rem; }
-    .ndt-marks-table th { padding: 7px 8px; font-size: 0.75rem; }
-    .ndt-marks-table td { padding: 5px 6px; }
-
-    /* Input nelle celle della tabella: più compatti ma touch-safe */
-    .ndt-mark-input { padding: 6px 8px; font-size: 0.8rem; min-height: 36px; }
-    .ndt-mark-select { padding: 6px 8px; font-size: 0.8rem; min-height: 36px; }
-    .ndt-input-lg { width: 160px; }
-
-    /* Pulsanti A/R/S: più grandi sul touch screen */
+    .ndt-marks-table { min-width: 0; width: 100%; font-size: 0.85rem; }
+    .ndt-mark-input { padding: 8px 10px; font-size: 1rem; min-height: 44px; }
+    .ndt-mark-select { padding: 8px 10px; font-size: 1rem; min-height: 44px; width: 100%; }
+    .ndt-input-xs, .ndt-input-sm, .ndt-input-lg { width: 100%; }
     .ndt-eval-btns .status-btn {
-        width: 38px; height: 38px; font-size: 0.85rem;
+        width: 44px; height: 44px; min-width: 44px; font-size: 1rem;
     }
-    .ndt-eval-btns { gap: 4px; }
+    .ndt-eval-btns { gap: 8px; }
 
     /* Pulsante aggiungi riga: full width */
     .ndt-add-row-btn { width: 100%; margin-top: 10px; min-height: 44px; }
@@ -276,18 +262,10 @@
     .ndt-stat-n { font-size: 1rem; }
     .ndt-stat > span:last-child { font-size: 0.7rem; }
     .ndt-section-title { font-size: 0.85rem; }
-    .ndt-marks-table { min-width: 640px; }
 }
 
-/* Hint scroll mobile — nascosto su desktop */
-.ndt-mobile-scroll-hint {
-    display: none;
-    font-size: 0.75rem; color: #6b7280; text-align: center;
-    padding: 4px 0 8px; letter-spacing: 0.03em;
-}
-@media (max-width: 768px) {
-    .ndt-mobile-scroll-hint { display: block; }
-}
+/* Hint scroll colonne rimosso: CND-1 marche a scheda sotto 768px */
+.ndt-mobile-scroll-hint { display: none !important; }
 
 /* ── Strumenti: selezione con ruolo ────────────────────────────────────────── */
 .ndt-inst-check-label {
@@ -403,7 +381,7 @@
 
 /* Mobile: pulsante più grande */
 @media (max-width: 768px) {
-    .ndt-photo-row-btn { padding: 6px 9px; font-size: 1.15rem; min-height: 36px; }
+    .ndt-photo-row-btn { padding: 8px 12px; font-size: 1.2rem; min-height: 44px; min-width: 44px; }
     .ndt-actions-cell { gap: 6px; }
 }
 
@@ -452,4 +430,101 @@
 }
 @media (max-width: 768px) {
     .ndt-client-input { min-height: 44px; font-size: 16px; }
+}
+
+/* CND-1: marca a scheda sotto 768px — token AppLayout, DNA scheda a fasi */
+@media (max-width: 767px) {
+    .ndt-marks-table thead { display: none; }
+    .ndt-marks-table,
+    .ndt-marks-table tbody,
+    .ndt-marks-table tr,
+    .ndt-marks-table td {
+        display: block;
+        width: 100%;
+        box-sizing: border-box;
+    }
+    .ndt-mark-card {
+        display: block;
+        background: var(--color-surface, #ffffff);
+        border: 1px solid var(--color-border, #e2e8f0);
+        border-radius: var(--radius, 8px);
+        box-shadow: var(--shadow-sm, 0 1px 3px rgba(0,0,0,0.08));
+        margin: 0 0 12px;
+        padding: 12px 14px 14px;
+    }
+    .ndt-mark-card--defect {
+        border-color: #fca5a5;
+        background: #fff8f8;
+    }
+    .ndt-mark-card .ndt-mark-row td {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        padding: 8px 0;
+        border-bottom: 1px solid var(--color-border, #e2e8f0);
+    }
+    .ndt-mark-card .ndt-mark-row td::before {
+        content: attr(data-label);
+        flex: 0 0 42%;
+        font-size: 0.75rem;
+        font-weight: 600;
+        color: var(--color-text-muted, #64748b);
+    }
+    .ndt-mark-card .ndt-mark-index {
+        font-weight: 700;
+        color: var(--color-primary, #1e3a5f);
+        border-bottom: 2px solid var(--color-border, #e2e8f0);
+        margin-bottom: 4px;
+        padding-bottom: 10px;
+    }
+    .ndt-mark-card .ndt-mark-row td[data-label="Giudizio"] { flex-wrap: wrap; }
+    .ndt-mark-card .ndt-mark-row td[data-label="Giudizio"]::before {
+        flex-basis: 100%;
+        margin-bottom: 4px;
+    }
+    .ndt-mark-card .ndt-actions-cell {
+        white-space: normal;
+        justify-content: flex-end;
+        gap: 8px;
+    }
+    .ndt-mark-card .ndt-mark-input,
+    .ndt-mark-card .ndt-mark-select {
+        flex: 1;
+        min-width: 0;
+        min-height: 44px;
+        font-size: 16px;
+    }
+    .ndt-mark-card .ndt-eval-btns .status-btn {
+        width: 44px;
+        height: 44px;
+        min-width: 44px;
+        min-height: 44px;
+    }
+    .ndt-mark-card .ndt-photo-row-btn,
+    .ndt-mark-card .ndt-row-remove {
+        min-width: 44px;
+        min-height: 44px;
+    }
+    .ndt-mark-card .ndt-mark-skip-cell { display: none; }
+    .ndt-mark-card .ndt-mark-photos-row td,
+    .ndt-mark-card .ndt-mark-notes-row td {
+        padding: 10px 0 0;
+        border-bottom: none;
+        background: transparent;
+    }
+    .ndt-mark-card .ndt-defect-notes-wrap {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    .ndt-mark-card .ndt-input-defect-note,
+    .ndt-mark-card .notes-textarea {
+        min-width: 0;
+        width: 100%;
+        min-height: 44px;
+    }
+}
+
+@media (min-width: 768px) {
+    .ndt-mark-card { display: table-row-group; }
 }
