@@ -499,6 +499,14 @@ async function uploadAttachment(req, res) {
         }
 
         logger.error('Error uploading attachment', { error: error.message, stack: error.stack });
+        const parentCheckFailed = error.number === 547
+            && /CHK_attachments_parent/i.test(error.message || '');
+        if (parentCheckFailed) {
+            return res.status(400).json({
+                error: 'Allegato senza elemento padre valido (audit, NC, documento, verbale CND o prova RDP).',
+                code: 'ATTACHMENT_PARENT_REQUIRED'
+            });
+        }
         res.status(500).json({
             error: 'Errore durante l\'upload dell\'allegato',
             code: 'ATTACHMENT_UPLOAD_ERROR'
