@@ -2,7 +2,7 @@
 
 **Stato:** APERTO  
 **Aperto:** 23/08/2026  
-**Piano:** [`PLAN_CND_SLICES.md`](PLAN_CND_SLICES.md) (HITL 23/08: modelli in Template report; Word resta il layout; PDF dopo)  
+**Piano:** [`PLAN_CND_SLICES.md`](PLAN_CND_SLICES.md) (HITL 23/08 + estrazione Word: layout = Template report scope `cnd`; placeholder semantici `{pt_acc_l2}`; PDF secondo export dopo CND-4; `.doc` MT → `.docx` una volta)  
 **Rischio:** Medio — scope template + eventuale migrazione CHECK; niente auth JWT, niente sync audit, niente `NdtReportsPage`.  
 **Parallelo a:** CND-1 (`DEPUTYTASK.md`) e CND-11 (`DEPUTYTASK1.md`) — file **disgiunti**  
 **Slot precedente:** SB-1 CHIUSO (16/08)
@@ -32,10 +32,11 @@ Mason consegna report PT/MT in Word con checkbox. L’app oggi esporta il VT da 
 
 ## Riuso obbligatorio
 
-- Upload solo `.docx` (`validateDocxFile`) — convertire il `.doc` MT **una volta** in `.docx`, non supportare OLE a runtime
+- Upload solo `.docx` (`validateDocxFile`) — convertire `MTxxx-2026.doc` **una volta** in `.docx` (LibreOffice/Word), non OLE a runtime
 - Tab/scope come Audit vs NC: terza tab **CND**, non una pagina nuova
 - Resolve: `organization_id` + `scope=cnd` + `standard_key` = `VT`|`MT`|`PT`|`UT` (stesso ordine: assegnazione org → sistema)
-- Placeholder = flag UI (appendice PLAN). Marker minimi VT già in `vtWordExport.js`; per MT/PT aggiungere warning marker come `checkNcDocxMarkers`, **senza** cambiare la UI verbale in questa slice
+- Placeholder = catalogo **semantico** in appendice PLAN (`{pt_acc_l2}`, `{mt_tr_wet}`, …). **Non** usare i nomi FORMCHECKBOX (`Controllo2`/`Controllo3` riusati 27 volte sul PT). Marker minimi VT già in `vtWordExport.js`; per MT/PT warning marker come `checkNcDocxMarkers`, **senza** cambiare la UI verbale (flag UI = CND-3)
+- Nessun motore PDF parallelo e nessun HTML design-mode come filiera report
 - `SgqDataGrid` / DNA admin template esistente
 
 ## Slice (unica)
