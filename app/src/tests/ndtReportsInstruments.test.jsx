@@ -115,9 +115,11 @@ describe("NdtReportsPage — sezione strumenti", () => {
     const card = await screen.findByText("Calibro");
     const cardRoot = card.closest(".ndt-instrument-card");
     expect(cardRoot).toBeTruthy();
+    expect(card.className).toContain("ndt-inst-name");
     expect(within(cardRoot).getByText("Calibro")).toBeInTheDocument();
 
     const checkbox = within(cardRoot).getByRole("checkbox");
+    expect(checkbox.closest(".ndt-inst-check-label")).toBeTruthy();
     await user.click(checkbox);
 
     const roleSelect = within(cardRoot).getByLabelText("Ruolo di Calibro");
