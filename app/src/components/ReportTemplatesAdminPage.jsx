@@ -9,8 +9,12 @@ import {
   stripDocxExtension,
   checkDocxMarkers,
   checkNcDocxMarkers,
+  checkCndDocxMarkers,
   formatMarkerWarning,
   formatNcMarkerWarning,
+  formatCndMarkerWarning,
+  CND_METHOD_KEYS,
+  normalizeCndMethodKey,
   validateDuplicateTemplateName,
   getReportTemplateDownloadUrl,
   isSystemReportTemplate,
@@ -37,6 +41,7 @@ const ReportTemplatesAdminPage = ({ onBack }) => {
   const [pageTab, setPageTab] = useState("audit");
   const [templates, setTemplates] = useState([]);
   const [ncTemplates, setNcTemplates] = useState([]);
+  const [cndTemplates, setCndTemplates] = useState([]);
   const [standards, setStandards] = useState([]);
   const [assignments, setAssignments] = useState({});
   const [ncAssignment, setNcAssignment] = useState(null);
@@ -47,6 +52,7 @@ const ReportTemplatesAdminPage = ({ onBack }) => {
 
   const [uploadFile, setUploadFile] = useState(null);
   const [uploadName, setUploadName] = useState("");
+  const [uploadMethod, setUploadMethod] = useState("VT");
   const [uploading, setUploading] = useState(false);
   const [uploadFeedback, setUploadFeedback] = useState(null);
   const [markerWarning, setMarkerWarning] = useState(null);
@@ -57,8 +63,8 @@ const ReportTemplatesAdminPage = ({ onBack }) => {
   const [duplicating, setDuplicating] = useState(false);
   const [duplicateError, setDuplicateError] = useState(null);
 
-  const activeScope = pageTab === "nc" ? "nc" : "audit";
-  const currentTemplates = pageTab === "nc" ? ncTemplates : templates;
+  const activeScope = pageTab === "nc" ? "nc" : pageTab === "cnd" ? "cnd" : "audit";
+  const currentTemplates = pageTab === "nc" ? ncTemplates : pageTab === "cnd" ? cndTemplates : templates;
 
   const loadData = useCallback(async () => {
     try {
@@ -67,6 +73,7 @@ const ReportTemplatesAdminPage = ({ onBack }) => {
       const settled = await Promise.allSettled([
         apiService.getReportTemplates("audit"),
         apiService.getReportTemplates("nc"),
+        apiService.getReportTemplates("cnd"),
         apiService.getStandards(),
         apiService.getReportTemplateStandardAssignments(),
         apiService.getNcReportTemplateAssignment(),
@@ -78,18 +85,20 @@ const ReportTemplatesAdminPage = ({ onBack }) => {
 
       const tplRes = pick(settled[0]);
       const ncTplRes = pick(settled[1]);
-      const stdRes = pick(settled[2]);
-      const assignRes = pick(settled[3]);
-      const ncAssignRes = pick(settled[4]);
+      const cndTplRes = pick(settled[2]);
+      const stdRes = pick(settled[3]);
+      const assignRes = pick(settled[4]);
+      const ncAssignRes = pick(settled[5]);
 
       const criticalError =
-        rejectMsg(settled[0]) || rejectMsg(settled[2]) || rejectMsg(settled[3]);
+        rejectMsg(settled[0]) || rejectMsg(settled[3]) || rejectMsg(settled[4]);
       if (criticalError) {
         setLoadError(criticalError);
       }
 
       const tplList = tplRes?.data ?? [];
       const ncTplList = ncTplRes?.data ?? [];
+      const cndTplList = cndTplRes?.data ?? [];
       const stdList = (stdRes?.data ?? []).filter((s) =>
         [1, 2, 3, 6, 7].includes(s.standard_id),
       );
@@ -99,6 +108,7 @@ const ReportTemplatesAdminPage = ({ onBack }) => {
       });
       setTemplates(Array.isArray(tplList) ? tplList : []);
       setNcTemplates(Array.isArray(ncTplList) ? ncTplList : []);
+      setCndTemplates(Array.isArray(cndTplList) ? cndTplList : []);
       setStandards(stdList);
       setAssignments(assignMap);
       setNcAssignment(ncAssignRes?.data?.report_template_id ?? null);
@@ -118,6 +128,7 @@ const ReportTemplatesAdminPage = ({ onBack }) => {
     const tplRes = await apiService.getReportTemplates(scope);
     const list = Array.isArray(tplRes?.data) ? tplRes.data : [];
     if (scope === "nc") setNcTemplates(list);
+    else if (scope === "cnd") setCndTemplates(list);
     else setTemplates(list);
   };
 
@@ -133,6 +144,7 @@ const ReportTemplatesAdminPage = ({ onBack }) => {
   const resetUploadForm = () => {
     setUploadFile(null);
     setUploadName("");
+    setUploadMethod("VT");
     setMarkerWarning(null);
     if (fileInputRef.current) fileInputRef.current.value = "";
   };
@@ -160,6 +172,10 @@ const ReportTemplatesAdminPage = ({ onBack }) => {
       const missing = await checkNcDocxMarkers(file);
       const warn = formatNcMarkerWarning(missing);
       if (warn) setMarkerWarning(warn);
+    } else if (activeScope === "cnd") {
+      const missing = await checkCndDocxMarkers(file, uploadMethod);
+      const warn = formatCndMarkerWarning(missing, uploadMethod);
+      if (warn) setMarkerWarning(warn);
     } else {
       const missing = await checkDocxMarkers(file);
       const warn = formatMarkerWarning(missing);
@@ -180,6 +196,7 @@ const ReportTemplatesAdminPage = ({ onBack }) => {
       const res = await apiService.uploadReportTemplate(uploadFile, {
         name: uploadName.trim() || stripDocxExtension(uploadFile.name),
         scope: activeScope,
+        standard_key: activeScope === "cnd" ? (normalizeCndMethodKey(uploadMethod) || "VT") : undefined,
       });
       const created = res?.data;
       await refreshTemplates(activeScope);
@@ -190,6 +207,10 @@ const ReportTemplatesAdminPage = ({ onBack }) => {
           ? (created?.name
             ? `Template NC "${created.name}" caricato. Assegnalo nella sezione sotto per l'export dal registro NC.`
             : "Template NC caricato. Assegnalo per l'export dal registro NC.")
+          : activeScope === "cnd"
+          ? (created?.name
+            ? `Template CND "${created.name}" caricato. L'export usa il modello studio con la stessa chiave metodo (VT/MT/PT/UT), altrimenti il sistema.`
+            : "Template CND caricato.")
           : (created?.name
             ? `Template "${created.name}" caricato. Assegnalo agli standard ISO qui sotto o alle checklist custom in Admin → Checklist personalizzate.`
             : "Template caricato. Assegnalo agli standard ISO o alle checklist custom."),
@@ -264,7 +285,7 @@ const ReportTemplatesAdminPage = ({ onBack }) => {
       setDuplicateError(nameErr);
       return;
     }
-    const dupScope = duplicateSource?.scope === "nc" ? "nc" : "audit";
+    const dupScope = duplicateSource?.scope === "nc" ? "nc" : duplicateSource?.scope === "cnd" ? "cnd" : "audit";
     try {
       setDuplicating(true);
       setDuplicateError(null);
@@ -275,6 +296,8 @@ const ReportTemplatesAdminPage = ({ onBack }) => {
         type: "success",
         message: dupScope === "nc"
           ? `Template NC "${duplicateName.trim()}" creato nello studio. Assegnalo per l'export dal registro NC.`
+          : dupScope === "cnd"
+          ? `Template CND "${duplicateName.trim()}" creato nello studio. L'export usa la copia studio se ha la stessa chiave metodo.`
           : `Template "${duplicateName.trim()}" creato nello studio. Puoi assegnarlo a checklist custom (5S, sopralluogo, ecc.) o agli standard ISO.`,
       });
     } catch (err) {
@@ -289,7 +312,7 @@ const ReportTemplatesAdminPage = ({ onBack }) => {
     if (!window.confirm(`Eliminare il template "${template.name}"? Le assegnazioni collegate verranno rimosse.`)) {
       return;
     }
-    const delScope = template.scope === "nc" ? "nc" : "audit";
+    const delScope = template.scope === "nc" ? "nc" : template.scope === "cnd" ? "cnd" : "audit";
     try {
       await apiService.deleteReportTemplate(template.id);
       await refreshTemplates(delScope);
@@ -364,8 +387,8 @@ const ReportTemplatesAdminPage = ({ onBack }) => {
         </button>
         <h2>Template report Word</h2>
         <p className="rt-desc">
-          Catalogo template per export Word: report audit ISO, checklist custom e scheda non conformità.
-          Carica un .docx personalizzato o duplica un modello di sistema dalla riga dell&apos;elenco, poi assegnalo allo standard ISO, alla checklist custom o all&apos;export NC.
+          Catalogo template per export Word: report audit ISO, checklist custom, scheda non conformità e verbali CND (VT/MT/PT/UT).
+          Carica un .docx personalizzato o duplica un modello di sistema dalla riga dell&apos;elenco, poi assegnalo allo standard ISO, alla checklist custom, all&apos;export NC o usa la chiave metodo CND.
         </p>
       </div>
 
@@ -388,6 +411,15 @@ const ReportTemplatesAdminPage = ({ onBack }) => {
         >
           Non conformità
         </button>
+        <button
+          type="button"
+          role="tab"
+          aria-selected={pageTab === "cnd"}
+          className={`rt-tab${pageTab === "cnd" ? " rt-tab--active" : ""}`}
+          onClick={() => switchTab("cnd")}
+        >
+          CND
+        </button>
       </div>
 
       {loadError && (
@@ -398,12 +430,18 @@ const ReportTemplatesAdminPage = ({ onBack }) => {
 
       <section className="rt-banner" aria-labelledby="rt-banner-title">
         <h3 id="rt-banner-title" className="rt-banner-title">
-          {pageTab === "nc" ? "Gestione template scheda NC" : "Gestione template audit"}
+          {pageTab === "nc"
+            ? "Gestione template scheda NC"
+            : pageTab === "cnd"
+              ? "Gestione template verbali CND"
+              : "Gestione template audit"}
         </h3>
         <p className="rt-banner-guide">
           {pageTab === "nc"
             ? "Duplica sulla riga per una copia nello studio, oppure scarica, modifica in Word (segnaposto {ncNumber}, {description}, {#actions}...) e carica qui."
-            : "Duplica sulla riga per una copia nello studio. Carica file se hai gia un .docx modificato in Word. Poi assegna lo standard sotto l'elenco."}
+            : pageTab === "cnd"
+              ? "Carica un .docx per metodo (VT, MT, PT, UT). Segnaposto semantici tipo {pt_acc_l2}, non nomi FORMCHECKBOX. Il .doc non è accettato: convertire una volta in .docx. L'export usa il template studio con la stessa chiave, altrimenti il modello di sistema."
+              : "Duplica sulla riga per una copia nello studio. Carica file se hai gia un .docx modificato in Word. Poi assegna lo standard sotto l'elenco."}
         </p>
         <div className="rt-banner-cards">
           <div className="rt-banner-card">
@@ -425,10 +463,37 @@ const ReportTemplatesAdminPage = ({ onBack }) => {
                   type="text"
                   value={uploadName}
                   onChange={(e) => setUploadName(e.target.value)}
-                  placeholder={pageTab === "nc" ? "Es. Scheda NC studio" : "Es. Verbale 5S, Sopralluogo cantiere"}
+                  placeholder={
+                    pageTab === "nc"
+                      ? "Es. Scheda NC studio"
+                      : pageTab === "cnd"
+                        ? "Es. Verbale PT Mason 2026"
+                        : "Es. Verbale 5S, Sopralluogo cantiere"
+                  }
                   disabled={uploading}
                 />
               </label>
+              {pageTab === "cnd" && (
+                <label className="rt-field-label">
+                  Metodo
+                  <select
+                    value={uploadMethod}
+                    onChange={async (e) => {
+                      const next = normalizeCndMethodKey(e.target.value) || "VT";
+                      setUploadMethod(next);
+                      if (uploadFile) {
+                        const missing = await checkCndDocxMarkers(uploadFile, next);
+                        setMarkerWarning(formatCndMarkerWarning(missing, next));
+                      }
+                    }}
+                    disabled={uploading}
+                  >
+                    {CND_METHOD_KEYS.map((k) => (
+                      <option key={k} value={k}>{k}</option>
+                    ))}
+                  </select>
+                </label>
+              )}
               <div className="rt-card-footer">
                 <button type="submit" className="btn-rt-primary" disabled={uploading || !uploadFile}>
                   {uploading ? "Caricamento..." : "Carica"}
@@ -461,7 +526,11 @@ const ReportTemplatesAdminPage = ({ onBack }) => {
 
       <section className="rt-grid-section" aria-labelledby="rt-grid-title">
         <h3 id="rt-grid-title" className="rt-section-title">
-          {pageTab === "nc" ? "Elenco template scheda NC" : "Elenco template audit"}
+          {pageTab === "nc"
+            ? "Elenco template scheda NC"
+            : pageTab === "cnd"
+              ? "Elenco template CND"
+              : "Elenco template audit"}
         </h3>
         <SgqDataGrid
           rows={gridRows}
@@ -515,7 +584,7 @@ const ReportTemplatesAdminPage = ({ onBack }) => {
             ))}
           </div>
         </section>
-      ) : (
+      ) : pageTab === "nc" ? (
         <section className="rt-assign-section" aria-labelledby="rt-assign-nc-title">
           <h3 id="rt-assign-nc-title" className="rt-section-title">
             Template export dal registro NC
@@ -545,6 +614,16 @@ const ReportTemplatesAdminPage = ({ onBack }) => {
               {savingNc && <span className="rt-saving">Salvataggio...</span>}
             </div>
           </div>
+        </section>
+      ) : (
+        <section className="rt-assign-section" aria-labelledby="rt-assign-cnd-title">
+          <h3 id="rt-assign-cnd-title" className="rt-section-title">
+            Export verbale CND
+          </h3>
+          <p className="rt-assign-hint">
+            L&apos;export usa il template studio con la stessa chiave metodo (VT, MT, PT, UT), altrimenti il modello di sistema.
+            Per sostituire un modello di sistema carica un .docx con quel metodo. Il file .doc Mason va convertito una volta in .docx (Word o LibreOffice), non a runtime.
+          </p>
         </section>
       )}
 

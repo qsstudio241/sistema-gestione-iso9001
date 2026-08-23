@@ -101,7 +101,7 @@ Quindi: **UI = flag**; **modello grafico = Word in Template report**; **PDF = op
 - Verbali CND: bozza locale + coda `syncQueue` (stessi tipi già in `syncService`); `useNdtAutoSave.js` oggi solo `localStorage` — CND-9 allinea allo standard audit **senza** `audit_events`
 - RDP Mason = visita ispettiva (Audit id 6), **non** verbale di laboratorio
 - Gate personale = Qualifiche 9712 + idoneità visiva (`visionFitness.service.js`), tenant studio **o** azienda con licenza CND
-- Template CND = stesso modulo Template report; scope `cnd` da aggiungere (oggi solo `audit` / `nc`); placeholder semantici, non nomi FORMCHECKBOX
+- Template CND = stesso modulo Template report; scope `cnd` (CND-4, 23/08): tab CND, resolve `standard_key` VT|MT|PT|UT, runtime solo `.docx`; placeholder semantici, non nomi FORMCHECKBOX
 - Catalogo flag PT/MT = appendice sotto, estratto dai file Mason 23/08 (non inventato)
 - Riuso UI: `status-btn` / `notes-textarea` / `AttachmentSection` / sezioni a fasi come drawer NC — DNA in `app/src/design-system/README.md`
 - Ingest certificati NDT = schema `cert_ndt` esistente; verbali PDF storici = `report_ndt` nello stesso ingest
@@ -133,7 +133,7 @@ Ogni slice è un **tracciante verticale** (un passaggio del flusso), non «tutto
 | **CND-1** | Verbale VT usabile in tasca (marche a scheda, non tabella da scroll) | `NdtReportsPage.jsx` / `.css`, riuso `status-btn` (`ChecklistModule.css`) + `NdtItemAttachments` | — | AFK | brief in `DEPUTYTASK.md` |
 | **CND-2** | Gate ispettore: 9712 valida **e** visita medica/visione (`visionFitness.service.js`); stesso codice per studio e per azienda con licenza | `NdtReportsPage.jsx`, `ndtReports.controller.js`, GET qualifiche + gap visione già esistenti | CND-1 (stesso JSX) | AFK | = ISO-9; **non** aprire da PLAN 3834 |
 | **CND-3** | UI flag PT **e** MT da modelli Mason → `method_params` JSON (metodi indipendenti, nessuna tabella nuova) | `NdtReportsPage.jsx` sezioni metodo; catalogo in appendice | CND-1 (stesso JSX) | AFK | dopo CND-1; **non** parallelo a CND-1 |
-| **CND-4** | Scope `cnd` in Template report + upload modelli Mason `.docx` + resolve per `report_type` | `ReportTemplatesAdminPage.jsx`, `reportTemplate.service.js` / controller, `vtWordExport.js` resolve VPS (come NC) | — | AFK | **parallelo a CND-1 e CND-11** (niente `NdtReportsPage`) |
+| **CND-4** | Scope `cnd` in Template report + upload modelli Mason `.docx` + resolve per `report_type` | `ReportTemplatesAdminPage.jsx`, `reportTemplate.service.js` / controller, `vtWordExport.js` resolve VPS (come NC) | — | ✅ 23/08 | **parallelo a CND-1 e CND-11** (niente `NdtReportsPage`) |
 | **CND-5** | Parametri UT + ruoli strumento non-VT (sonda/giogo) su anagrafica esistente | `NdtReportsPage.jsx`, `EquipmentPage.jsx` (etichette ruolo) | CND-3 | AFK | serializzare con CND-3 sullo stesso JSX; EquipmentPage può partire in parallelo a CND-2 se **solo** CSS/etichette ruoli |
 | **CND-6** | Foto + NC da marca in campo (hardening mobile del già fatto) | `NdtItemAttachments.jsx`, hint `NcCreateModal` | CND-1 | AFK | dopo CND-1; file allegati **disgiunti** da CND-2 se non si tocca la pagina verbale |
 | **CND-7** | Completa verbale → posa nel registro documenti (`report_ndt` / cartella 9.3) | `ndtReports.controller.js`, pattern posa ingest | CND-4 utile | AFK | overlap controller con CND-2 → **dopo** CND-2 |

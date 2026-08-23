@@ -9,6 +9,8 @@ import {
   validateDuplicateTemplateName,
   formatMarkerWarning,
   formatNcMarkerWarning,
+  formatCndMarkerWarning,
+  CND_METHOD_KEYS,
   isSystemReportTemplate,
   formatTemplateOrigin,
   getReportTemplateDownloadUrl,
@@ -27,6 +29,11 @@ describe("validateDocxFile  -  template report", () => {
 
   it("rifiuta estensioni diverse da .docx", () => {
     const file = createFile("verbale.pdf", 1024, "application/pdf");
+    expect(validateDocxFile(file)).toMatch(/\.docx/);
+  });
+
+  it("rifiuta .doc (runtime solo OOXML)", () => {
+    const file = createFile("MTxxx-2026.doc", 1024, "application/msword");
     expect(validateDocxFile(file)).toMatch(/\.docx/);
   });
 
@@ -84,6 +91,22 @@ describe("formatNcMarkerWarning", () => {
   it("restituisce null se nessun segnaposto mancante", () => {
     expect(formatNcMarkerWarning(null)).toBeNull();
     expect(formatNcMarkerWarning([])).toBeNull();
+  });
+});
+
+describe("segnaposto CND", () => {
+  it("elenca i quattro metodi", () => {
+    expect(CND_METHOD_KEYS).toEqual(["VT", "MT", "PT", "UT"]);
+  });
+
+  it("avvisa se mancano placeholder semantici PT", () => {
+    const msg = formatCndMarkerWarning(["{pt_acc_l2}"], "PT");
+    expect(msg).toMatch(/pt_acc_l2/);
+    expect(msg).toMatch(/FORMCHECKBOX/);
+  });
+
+  it("nessun warning se i marker ci sono", () => {
+    expect(formatCndMarkerWarning(null, "PT")).toBeNull();
   });
 });
 

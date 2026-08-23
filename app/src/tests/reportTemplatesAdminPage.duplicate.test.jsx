@@ -25,7 +25,7 @@ describe("ReportTemplatesAdminPage — un solo Duplica", () => {
     apiService.getReportTemplates.mockImplementation((scope) =>
       Promise.resolve({
         data:
-          scope === "nc"
+          scope === "nc" || scope === "cnd"
             ? []
             : [
                 {

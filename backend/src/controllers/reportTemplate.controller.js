@@ -4,7 +4,12 @@
  */
 
 const { query } = require('../config/database');
-const { getReportTemplate, getNcReportTemplate } = require('../services/reportTemplate.service');
+const {
+  getReportTemplate,
+  getNcReportTemplate,
+  getCndReportTemplate,
+  normalizeCndMethodKey,
+} = require('../services/reportTemplate.service');
 const { getUploadDir, resolveTemplateSourcePath } = require('../utils/reportTemplatePath');
 const logger = require('../utils/logger');
 const path = require('path');
@@ -12,7 +17,7 @@ const fs = require('fs').promises;
 const fsSync = require('fs');
 const crypto = require('crypto');
 
-const ALLOWED_SCOPES = new Set(['audit', 'self_assessment', 'nc']);
+const ALLOWED_SCOPES = new Set(['audit', 'self_assessment', 'nc', 'cnd']);
 const UPLOAD_DIR = getUploadDir();
 const DOCX_MIME = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
 /** Stesso perimetro di authorize('admin','auditor'): il middleware lascia già passare superadmin. */
@@ -100,7 +105,18 @@ async function uploadTemplate(req, res) {
 
     const name = req.body.name || path.basename(req.file.originalname, '.docx');
     const scope = normalizeScope(req.body.scope);
-    const standardKey = req.body.standard_key || (scope === 'nc' ? 'default' : null);
+    let standardKey = req.body.standard_key || (scope === 'nc' ? 'default' : null);
+    if (scope === 'cnd') {
+      const methodKey = normalizeCndMethodKey(req.body.standard_key);
+      if (!methodKey) {
+        await fs.unlink(req.file.path).catch(() => {});
+        return res.status(400).json({
+          error: 'Per i template CND indica il metodo VT, MT, PT o UT',
+          code: 'MISSING_STANDARD_KEY',
+        });
+      }
+      standardKey = methodKey;
+    }
 
     const uploadDir = process.env.UPLOAD_DIR || './uploads';
     let relPath = path.relative(path.resolve(uploadDir), req.file.path).replace(/\\/g, '/');
@@ -202,6 +218,18 @@ async function resolveTemplate(req, res) {
 
     if (normalizeScope(scope) === 'nc') {
       const template = await getNcReportTemplate(organizationId);
+      return res.json({ success: true, data: withFileUrl(template) });
+    }
+
+    if (normalizeScope(scope) === 'cnd') {
+      const methodKey = normalizeCndMethodKey(req.query.standard_key || req.query.report_type);
+      if (!methodKey) {
+        return res.status(400).json({
+          error: 'standard_key VT|MT|PT|UT richiesto',
+          code: 'MISSING_STANDARD_KEY',
+        });
+      }
+      const template = await getCndReportTemplate(organizationId, methodKey);
       return res.json({ success: true, data: withFileUrl(template) });
     }
 

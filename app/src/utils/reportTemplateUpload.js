@@ -13,7 +13,27 @@ export const SYSTEM_TEMPLATE_DOWNLOADS = [
   { label: "Verbale visita (generico)", path: "/templates/VerbaleVisita-generic.docx", filename: "VerbaleVisita-generic.docx" },
   { label: "Verbale visita QTAFI", path: "/templates/Verbale_di_riunione_QTAFI_VIS001.docx", filename: "Verbale_di_riunione_QTAFI_VIS001.docx" },
   { label: "Scheda NC (default)", path: "/templates/NC-scheda.docx", filename: "NC-scheda.docx" },
+  { label: "Verbale CND VT", path: "/templates/VT-verbale.docx", filename: "VT-verbale.docx" },
+  { label: "Verbale CND PT", path: "/templates/CND-PT-verbale.docx", filename: "CND-PT-verbale.docx" },
+  { label: "Verbale CND MT (stub)", path: "/templates/CND-MT-verbale.docx", filename: "CND-MT-verbale.docx" },
+  { label: "Verbale CND UT (stub)", path: "/templates/CND-UT-verbale.docx", filename: "CND-UT-verbale.docx" },
 ];
+
+/** Metodi CND: standard_key in Template report (scope cnd) */
+export const CND_METHOD_KEYS = ["VT", "MT", "PT", "UT"];
+
+/** Segnaposto semantici minimi (appendice PLAN_CND). Non usare nomi FORMCHECKBOX. */
+export const CND_TEMPLATE_MARKERS = {
+  VT: ["{reportNumber}", "{#items}"],
+  PT: ["{pt_acc_l2}", "{pt_acc_l1}", "{pt_acc_l3}"],
+  MT: ["{mt_tr_wet}", "{mt_tr_dry}", "{mt_tr_flu}"],
+  UT: ["{inspection_pct}"],
+};
+
+export function normalizeCndMethodKey(value) {
+  const key = String(value || "").trim().toUpperCase();
+  return CND_METHOD_KEYS.includes(key) ? key : null;
+}
 
 /** Segnaposto minimi attesi nel template scheda NC (docxtemplater) */
 export const NC_TEMPLATE_MARKERS = ["{ncNumber}", "{description}", "{#actions}"];
@@ -88,6 +108,34 @@ export function formatNcMarkerWarning(missing) {
   if (!missing?.length) return null;
   const list = missing.join(", ");
   return `Attenzione: nel file mancano i segnaposto NC ${list}. L'export scheda potrebbe risultare incompleto.`;
+}
+
+/**
+ * Verifica segnaposto CND nel document.xml (warning soft, come NC).
+ * @param {File} file
+ * @param {string} methodKey VT|MT|PT|UT
+ * @returns {Promise<string[]|null>}
+ */
+export async function checkCndDocxMarkers(file, methodKey) {
+  if (!file) return null;
+  const key = normalizeCndMethodKey(methodKey) || "VT";
+  const markers = CND_TEMPLATE_MARKERS[key] || CND_TEMPLATE_MARKERS.VT;
+  try {
+    const buffer = await file.arrayBuffer();
+    const zip = new PizZip(buffer);
+    const docXml = zip.file("word/document.xml")?.asText() || "";
+    const missing = markers.filter((marker) => !docXml.includes(marker));
+    return missing.length ? missing : null;
+  } catch {
+    return null;
+  }
+}
+
+export function formatCndMarkerWarning(missing, methodKey) {
+  if (!missing?.length) return null;
+  const list = missing.join(", ");
+  const method = normalizeCndMethodKey(methodKey) || "CND";
+  return `Attenzione: nel file ${method} mancano i segnaposto ${list}. Usare chiavi semantiche (es. {pt_acc_l2}), non nomi FORMCHECKBOX.`;
 }
 
 /** URL download: sempre API sul VPS (auth), mai /templates/ su Netlify. */
