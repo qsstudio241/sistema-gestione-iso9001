@@ -49,7 +49,7 @@ function StatusBadge({ status }) {
 }
 
 // ── Form modale crea/modifica strumento ───────────────────────────────────────
-function EquipmentFormModal({ asset, companies, onSave, onClose }) {
+function EquipmentFormModal({ asset, companies = [], onSave, onClose }) {
     const isEdit = !!asset;
     const [form, setForm] = useState({
         company_id:                  asset?.company_id || "",
@@ -185,10 +185,10 @@ function EquipmentFormModal({ asset, companies, onSave, onClose }) {
                         </div>
                         <div className="eq-form-row">
                             <div className="eq-form-group">
-                                <label>Propriet\u00e0</label>
+                                <label>{"Propriet\u00e0"}</label>
                                 <select value={form.company_id} onChange={e => set("company_id", e.target.value)}>
                                     <option value="">Studio (condiviso con tutte le aziende)</option>
-                                    {companies.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                                    {(companies || []).map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
                                 </select>
                             </div>
                             <div className="eq-form-group">
@@ -202,7 +202,7 @@ function EquipmentFormModal({ asset, companies, onSave, onClose }) {
 
                     {/* Sezione 2 - Applicabilit\u00e0 */}
                     <fieldset className="eq-fieldset">
-                        <legend>Applicabilit\u00e0 CND</legend>
+                        <legend>{"Applicabilit\u00e0 CND"}</legend>
                         <div className="eq-methods-group">
                             <label>Metodi CND applicabili</label>
                             <div className="eq-methods-checkboxes">
@@ -274,7 +274,7 @@ function EquipmentFormModal({ asset, companies, onSave, onClose }) {
 
 // ── Componente principale ─────────────────────────────────────────────────────
 export default function EquipmentPage() {
-    const { companyId: filterCompany } = useCompanyScope();
+    const { companyId: filterCompany, companies } = useCompanyScope();
     const [assets, setAssets] = useState([]);
     const [stats, setStats] = useState(null);
     const [loading, setLoading] = useState(true);
@@ -378,7 +378,7 @@ export default function EquipmentPage() {
                                 <th>Nome / Modello</th>
                                 <th>Tipo</th>
                                 <th>Matricola</th>
-                                <th>Propriet\u00e0</th>
+                                <th>{"Propriet\u00e0"}</th>
                                 <th>Metodi CND</th>
                                 <th>Prossima taratura</th>
                                 <th>Stato</th>
