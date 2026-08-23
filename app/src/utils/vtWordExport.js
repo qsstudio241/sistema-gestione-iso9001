@@ -119,7 +119,23 @@ export function buildVtTemplateData(report) {
     };
 }
 
-async function loadVtTemplate(templateUrl) {
+export async function loadVtTemplate(templateUrl, options) {
+    options = options || {};
+    var api = options.api || apiService;
+    var reportType = String(options.reportType || 'VT').toUpperCase();
+    if (['VT', 'MT', 'PT', 'UT'].indexOf(reportType) < 0) {
+        reportType = 'VT';
+    }
+    if (!options.skipServer && api && typeof api.resolveCndReportTemplate === 'function') {
+        try {
+            var resolved = await api.resolveCndReportTemplate(reportType);
+            if (resolved && resolved.id && typeof api.getReportTemplateArrayBuffer === 'function') {
+                return await api.getReportTemplateArrayBuffer(resolved.id);
+            }
+        } catch (e) {
+            console.warn('[vtWordExport] template VPS non disponibile, fallback locale:', e && e.message);
+        }
+    }
     templateUrl = templateUrl || VT_WORD_TEMPLATE_URL;
     var resp = await fetch(templateUrl, { cache: 'no-store' });
     if (!resp.ok) {
@@ -265,7 +281,11 @@ function injectPhotosSection(zip, photoGroups) {
 export async function generateVtDocxBlob(report, options) {
     options = options || {};
     var templateUrl = options.templateUrl || VT_WORD_TEMPLATE_URL;
-    var arrayBuffer = await loadVtTemplate(templateUrl);
+    var arrayBuffer = await loadVtTemplate(templateUrl, {
+        api: options.api || apiService,
+        reportType: (report && report.report_type) || 'VT',
+        skipServer: options.skipServer,
+    });
     var zip = new PizZip(arrayBuffer);
 
     var docPath = 'word/document.xml';

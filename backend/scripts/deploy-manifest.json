@@ -30,7 +30,11 @@
                                      "templates/ISO3834-audit-report.docx",
                                      "templates/VerbaleVisita-generic.docx",
                                      "templates/Verbale_di_riunione_QTAFI_VIS001.docx",
-                                     "templates/NC-scheda.docx"
+                                     "templates/NC-scheda.docx",
+                                     "templates/VT-verbale.docx",
+                                     "templates/CND-PT-verbale.docx",
+                                     "templates/CND-MT-verbale.docx",
+                                     "templates/CND-UT-verbale.docx"
                                  ]
                    },
                    {

@@ -1335,15 +1335,18 @@ class ApiService {
     /**
      * Carica un template Word (.docx) per l'organizzazione (admin/auditor)
      * @param {File} file - file .docx (max 5 MB)
-     * @param {{ name?: string, scope?: string }} options
+     * @param {{ name?: string, scope?: string, standard_key?: string }} options
      */
     async uploadReportTemplate(file, options = {}) {
-        const { name, scope = 'audit' } = options;
+        const { name, scope = 'audit', standard_key: standardKey } = options;
         const formData = new FormData();
         formData.append('file', file);
         formData.append('scope', scope);
         if (name && String(name).trim()) {
             formData.append('name', String(name).trim());
+        }
+        if (options.standard_key) {
+            formData.append('standard_key', String(options.standard_key).trim());
         }
 
         const token = this.getToken();
@@ -1411,6 +1414,23 @@ class ApiService {
     async resolveNcReportTemplate() {
         try {
             const res = await this.get('/report-templates/resolve?scope=nc');
+            if (!res?.success || !res?.data?.id) return null;
+            return this._reportTemplateResolvePayload(res.data);
+        } catch {
+            return null;
+        }
+    }
+
+    /**
+     * Risolve template Word per verbale CND (VT|MT|PT|UT).
+     * Studio (stessa chiave) poi modello di sistema.
+     * @param {string} standardKey
+     * @returns {Promise<{url: string, file_path: string, name: string, id: number}|null>}
+     */
+    async resolveCndReportTemplate(standardKey) {
+        try {
+            const key = encodeURIComponent(String(standardKey || 'VT').toUpperCase());
+            const res = await this.get(`/report-templates/resolve?scope=cnd&standard_key=${key}`);
             if (!res?.success || !res?.data?.id) return null;
             return this._reportTemplateResolvePayload(res.data);
         } catch {

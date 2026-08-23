@@ -148,4 +148,60 @@ async function getNcReportTemplate(organizationId) {
   throw new Error('Nessun template NC configurato');
 }
 
-module.exports = { getReportTemplate, getNcReportTemplate, STANDARD_KEY_MAP };
+/** Chiavi metodo CND (scope cnd). Runtime solo .docx. */
+const CND_METHOD_KEYS = ['VT', 'MT', 'PT', 'UT'];
+
+function normalizeCndMethodKey(value) {
+  const key = String(value || '').trim().toUpperCase();
+  return CND_METHOD_KEYS.includes(key) ? key : null;
+}
+
+/**
+ * Risolve template export Word per verbale CND (scope cnd).
+ * 1. Template studio con standard_key = VT|MT|PT|UT
+ * 2. Template di sistema stessa chiave
+ *
+ * @param {number} organizationId
+ * @param {string} methodKey
+ * @returns {Promise<{id: number, file_path: string, name: string}>}
+ */
+async function getCndReportTemplate(organizationId, methodKey) {
+  const key = normalizeCndMethodKey(methodKey);
+  if (!key) {
+    throw new Error('standard_key CND non valido (attesi VT, MT, PT, UT)');
+  }
+
+  if (organizationId) {
+    const orgTpl = await query(
+      `SELECT TOP 1 id, file_path, name FROM report_templates
+       WHERE organization_id = @organization_id AND scope = 'cnd' AND standard_key = @standard_key
+       ORDER BY updated_at DESC`,
+      { organization_id: organizationId, standard_key: key }
+    );
+    if (orgTpl.recordset.length > 0) {
+      const r = orgTpl.recordset[0];
+      return { id: r.id, file_path: r.file_path, name: r.name };
+    }
+  }
+
+  const sysTpl = await query(
+    `SELECT TOP 1 id, file_path, name FROM report_templates
+     WHERE organization_id IS NULL AND scope = 'cnd' AND standard_key = @standard_key`,
+    { standard_key: key }
+  );
+  if (sysTpl.recordset.length > 0) {
+    const r = sysTpl.recordset[0];
+    return { id: r.id, file_path: r.file_path, name: r.name };
+  }
+
+  throw new Error(`Nessun template CND configurato per ${key}`);
+}
+
+module.exports = {
+  getReportTemplate,
+  getNcReportTemplate,
+  getCndReportTemplate,
+  normalizeCndMethodKey,
+  CND_METHOD_KEYS,
+  STANDARD_KEY_MAP,
+};
