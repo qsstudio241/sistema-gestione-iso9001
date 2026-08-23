@@ -5,8 +5,14 @@
 
 ## Cosa aprire
 
-1. HTML: [`spike-cnd-pt-preview.html`](spike-cnd-pt-preview.html) (doppio clic / apri nel browser). Niente server.
-2. Word Mason: `PT-2026.docx` (consegna 23/08). Stesso ordine di sezione, **non** stesse pagine al millimetro.
+**Non usare Simple Browser di Cursor.** Lì l’HTML viene spesso mostrato come sorgente: pagina bianca e checkbox «Pretty-print». Non è un file vuoto.
+
+1. **Chrome / Edge / Firefox** (browser esterno): apri
+   `http://127.0.0.1:8000/docs/agent-tasks/spike-cnd-pt-preview.html`
+   (server: `python3 -m http.server 8000` dalla root del repo) **oppure** doppio clic sul file
+   [`spike-cnd-pt-preview.html`](spike-cnd-pt-preview.html).
+2. Devi vedere il titolo **RAPPORTO D'ESAME LIQUIDI PENETRANTI**, classe **PT**, e i flag Mason (accettazione, superficie, pulizia, applicazione, griglia difetti).
+3. Word Mason: `PT-2026.docx` (consegna 23/08). Stesso ordine di sezione, **non** stesse pagine al millimetro.
 
 ## Cosa confrontare
 
