@@ -3,7 +3,7 @@
 > **Destinazione**: uno studio (Mason) e l’operatore CND chiudono sul telefono il ciclo **incarico → esecuzione in campo → verbale Word + eventuale NC**, riusando qualifiche ISO 9712, strumenti, commesse, foto e PWA già in produzione. Niente app nativa, niente secondo motore, niente tabelle gemelle.
 > **Spec / ADR**: [ISO 9712:2022](../reference/ISO_9712_2022_NDT_QUALIFICATION.md) · ADR-004 (auth mobile) · ADR-016 (strumenti trasversali, verbali ≠ Welding Book) · [PLAN ISO 3834](PLAN_3834_SLICES.md) (ISO-1b/ISO-7 fatti; **ISO-9** eseguita qui come CND-2)
 > **Brief attivi**: [`DEPUTYTASK.md`](DEPUTYTASK.md) — **CND-1** · [`DEPUTYTASK1.md`](DEPUTYTASK1.md) — **CND-11** · [`DEPUTYTASK2.md`](DEPUTYTASK2.md) — **CND-4** (template, file disgiunti)
-> **Mappa**: CND-0 chiusa (HITL + estrazione Word 23/08). PR #540 già su `main`; questa revisione completa catalogo flag e strategia report. GUIDA/roadmap hub: non toccati (parallelo PR #543 foto).
+> **Mappa**: CND-0 chiusa (HITL + estrazione Word 23/08, PR #540 su `main`). **Follow-up 23/08**: prova HTML (`CND-PREVIEW`) — se doppio lavoro si abortisce; certificato resta Word. GUIDA/roadmap hub: non toccati (brief CND-1/4/11 aperti).
 > **Licenza**: modulo `cnd` (bridge: licenza `saldatura` implica `cnd`)
 > **Schermate oggi**: `/cnd/verbali` (`NdtReportsPage.jsx`) · `/cnd/strumenti` (`EquipmentPage.jsx`) · Qualifiche tab NDT
 
@@ -61,6 +61,9 @@ Tracciabilità ISO 3834-3 §8 (personale prove) e §14 (ispezioni): il verbale �
 - Template Word **per singolo cliente** (i modelli sono dello studio, in Template report; ritocco = duplica template, non una tabella nuova)
 - Sostituire `ndt_reports` con checklist audit
 - Nuova riga in bussola per «modulo strumenti CND» separato: gli strumenti restano ADR-016 trasversali, route sotto `/cnd/strumenti`
+- Pipeline **HTML → PDF** di produzione (PDF = stampa/export dal Word compilato)
+- Secondo motore di impaginazione millimetrica (HTML o Cursor design-mode) parallelo al Word
+- Sostituire **CND-4** (Template report scope `cnd`) con una preview HTML
 
 ## Decisioni HITL 23/08/2026 (committente)
 
@@ -80,15 +83,31 @@ Tracciabilità ISO 3834-3 §8 (personale prove) e §14 (ispezioni): il verbale �
 | Canale | A cosa serve | Perché sì / no per i CND |
 |--------|----------------|--------------------------|
 | **Word + placeholder** (oggi audit/NC/VT) | Layout dello **studio** (logo, tabella, checkbox, bilingue) | Mason ritocca il `.docx` senza sviluppatore. I flag UI 1:1 con i checkbox. Nomi FORMCHECKBOX **non** sono chiavi (`Controllo2`/`Controllo3` riusati): placeholder semantici tipo `{pt_acc_l2}`. |
-| **PDF diretto** | Consegna “non modificabile” al cliente | **Secondo** export dallo **stesso** template compilato, **dopo CND-4**. Non un motore parallelo. |
+| **PDF diretto** | Consegna “non modificabile” al cliente | **Secondo** export / stampa dallo **stesso** Word compilato, **dopo CND-4**. Committente 23/08: il PDF può uscire facilmente **dal Word**. Non un motore parallelo. |
 | **Preview HTML + design mode Cursor → PDF** | Bozza **nostra** di una schermata app | OK per disegnare la **UI**. No come pipeline report: Mason non usa Cursor; due layout divergono; i suoi PT/MT sono già Word. |
 
-Quindi: **UI = flag**; **modello grafico = Word in Template report**; **PDF = opzionale dopo CND-4**. Runtime solo `.docx` (convertire il `.doc` MT **una volta** in CND-4).
+Quindi: **UI = flag**; **modello grafico = Word in Template report**; **PDF = stampa/export dal Word compilato** (dopo CND-4). Runtime solo `.docx` (convertire il `.doc` MT **una volta** in CND-4).
+
+### Follow-up HITL 23/08 — prova HTML (`CND-PREVIEW`)
+
+Committente: d’accordo che il PDF esca dal Word. Chiede una **prova**: preview HTML del foglio PT. Se è **doppio lavoro**, si abortisce e si torna a: genera Word → lui stampa/apre e verifica → dice cosa cambiare → si itera il template.
+
+**Fonte layout certificato = Word** in Template report (**invariata**). **CND-4 non si sostituisce.** Nessun HTML→PDF di produzione; nessuno `vtWordExport` / `NdtReportsPage` in questa prova.
+
+**Spike timebox, usa-e-getta:** HTML statico che specchia i **gruppi campo/flag** del PT Mason (stesso ordine di sezione), **non** pagine al millimetro. Scopo = vedere se operatore/Mason rivedono i flag nel browser.
+
+| Gate | Criterio | Azione |
+|------|----------|--------|
+| **Abort** | Tenere HTML + Word allineati è chiaramente doppio lavoro (due placeholder, due tabelle, due blocchi bilingue) | **CANCELLARE** lo spike; resta solo itera Word («stampo, verifico, ti dico cosa cambiare») |
+| **Successo** | HTML è solo **preview dati/flag** (stessi gruppi radio del Word), non un secondo layout stampabile | Si può tenere più avanti un «riepilogo» leggero in-app — **non** HTML→PDF come pipeline |
+
+Artefatto: [`spike-cnd-pt-preview.html`](spike-cnd-pt-preview.html) · nota [`SPIKE_CND_HTML_PREVIEW.md`](SPIKE_CND_HTML_PREVIEW.md).
 
 ## Non ancora specificato (nebbia residua)
 
 - UT / RT: nessun Word Mason in questa consegna — parametri UT restano CND-5 quando arriverà un modello.
-- PDF come bottone “Consegna cliente” accanto a Word: dopo CND-4, se serve.
+- Esito della prova HTML (`CND-PREVIEW`): abort (cancella spike) vs riepilogo flag leggero — lo dice il committente dopo aver aperto HTML + Word.
+- PDF come bottone «Consegna cliente» accanto a Word: dopo CND-4, se serve (sempre dal Word, non da HTML).
 
 ## Decisioni già prese (codice + ADR, non da ridiscutere)
 
@@ -129,7 +148,8 @@ Ogni slice è un **tracciante verticale** (un passaggio del flusso), non «tutto
 
 | Slice | Tema | Perimetro (file/layer) | Dipende da | Tipo | Parallelo |
 |-------|------|------------------------|------------|------|-----------|
-| **CND-0** | Questa mappa | `PLAN_CND_SLICES.md`, bussola, ISO-9 puntatore | — | AFK docs | *questa sessione* |
+| **CND-0** | Questa mappa | `PLAN_CND_SLICES.md`, bussola, ISO-9 puntatore | — | AFK docs | *chiusa* |
+| **CND-PREVIEW** | Spike HTML specchio flag PT (timebox, usa-e-getta) | `docs/agent-tasks/spike-cnd-pt-preview.html` + `SPIKE_CND_HTML_PREVIEW.md` | — | HITL | **non** sostituisce CND-4; vietato `NdtReportsPage` / `vtWordExport` |
 | **CND-1** | Verbale VT usabile in tasca (marche a scheda, non tabella da scroll) | `NdtReportsPage.jsx` / `.css`, riuso `status-btn` (`ChecklistModule.css`) + `NdtItemAttachments` | — | AFK | brief in `DEPUTYTASK.md` |
 | **CND-2** | Gate ispettore: 9712 valida **e** visita medica/visione (`visionFitness.service.js`); stesso codice per studio e per azienda con licenza | `NdtReportsPage.jsx`, `ndtReports.controller.js`, GET qualifiche + gap visione già esistenti | CND-1 (stesso JSX) | AFK | = ISO-9; **non** aprire da PLAN 3834 |
 | **CND-3** | UI flag PT **e** MT da modelli Mason → `method_params` JSON (metodi indipendenti, nessuna tabella nuova) | `NdtReportsPage.jsx` sezioni metodo; catalogo in appendice | CND-1 (stesso JSX) | AFK | dopo CND-1; **non** parallelo a CND-1 |
@@ -140,7 +160,7 @@ Ogni slice è un **tracciante verticale** (un passaggio del flusso), non «tutto
 | **CND-8** | Crea verbale come audit: bozza UUID → form → coda sync (niente nuova entità “incarico”) | `NdtReportsPage` lista + `enqueueNdtReportSync` / create | CND-9 utile | AFK | dopo CND-9 se tocca la stessa coda; filtro «oggi» è lo stesso elenco |
 | **CND-9** | Rete di salvataggio officina: `useNdtAutoSave` → IndexedDB `syncQueue` (tipi NDT **già** in `syncService`) | `useNdtAutoSave.js`, eventuale gancio foto | — | AFK | overlap con CND-1 se si tocca la pagina; **dopo CND-1** oppure solo hook/coda se CND-1 non tocca l’hook |
 | **CND-10** | Firma grafica / controfirma | — | HITL 23/08: **parcheggio** | HITL | non aprire |
-| **CND-11** | Ingest verbali PDF storici (`report_ndt`) | whitelist pipeline + schema FE `documentTypeSchemas.js` (schema AI BE già c’è); **non** crea righe `ndt_reports` | — | AFK | brief in `DEPUTYTASK1.md`; **parallelo a CND-1** |
+| **CND-11** | Ingest verbali PDF storici (`report_ndt`) | whitelist pipeline + schema FE `documentTypeSchemas.js` (schema AI BE già c’è); **non** crea righe `ndt_reports` | — | AFK | *chiusa* (questa PR, `DEPUTYTASK1.md`) |
 | **CND-12** | RT/ET oltre l’etichetta | `method_params` + UI | modello Mason assente | HITL | dopo MT/PT/UT se servono |
 
 ### Onde di parallelismo (file disgiunti)
@@ -181,7 +201,7 @@ Due deputy **mai** sullo stesso `NdtReportsPage.jsx` o sullo stesso controller.
 | Output: certificato | Solo Word VT in `public/templates` | CND-4 |
 | Output: fascicolo SGQ | Verbale fuori registro | CND-7 |
 | Output: difetto | NC già collegabile | CND-6 (UX) |
-| Output: storico cartaceo | Schema `report_ndt` inerte | CND-11 |
+| Output: storico cartaceo | Schema `report_ndt` in whitelist pipeline + form FE | CND-11 *chiusa* |
 | Output: firma grafica | Non richiesta ora | CND-10 parcheggiata |
 
 ## Qualità della mappa

@@ -1380,6 +1380,76 @@ Estrai in type_specific_data: report_number, test_type, component_ref, test_date
   },
 };
 
+// --- report_ndt (verbali CND storici — CND-11: ingest PDF, non crea righe ndt_reports)
+
+const REPORT_NDT_METHOD_ORDER = ["UT", "RT", "MT", "PT", "VT"];
+const REPORT_NDT_METHOD_OPTIONS = REPORT_NDT_METHOD_ORDER.map((value) =>
+  NDT_METHOD_OPTIONS.find((o) => o.value === value)
+).filter(Boolean);
+
+const report_ndt = {
+  id: "report_ndt",
+  label: "Rapporto di prova NDT",
+  expiryField: null,
+  rangeFields: ["ndt_method"],
+  fields: [
+    {
+      key: "report_number",
+      label: "Numero rapporto",
+      type: "text",
+      required: true,
+      hint: "Numero del verbale come sul PDF",
+    },
+    {
+      key: "ndt_method",
+      label: "Metodo NDT",
+      type: "select",
+      required: true,
+      options: REPORT_NDT_METHOD_OPTIONS,
+      hint: "Uno tra UT, RT, MT, PT, VT",
+    },
+    {
+      key: "part_ref",
+      label: "Riferimento pezzo",
+      type: "text",
+      required: false,
+      hint: "Codice pezzo, disegno o commessa sul verbale",
+    },
+    {
+      key: "test_date",
+      label: "Data prova",
+      type: "date",
+      required: false,
+    },
+    {
+      key: "inspector_name",
+      label: "Nome ispettore",
+      type: "text",
+      required: false,
+      hint: "Chi ha eseguito o firmato la prova",
+    },
+    {
+      key: "outcome_summary",
+      label: "Esito / sintesi",
+      type: "textarea",
+      required: false,
+      hint: "Esito complessivo (accettabile / non accettabile) e note",
+    },
+  ],
+  aiPrompt: `Rapporto prove NDT (verbale CND storico, non un certificato ISO 9712).
+Estrai in type_specific_data: report_number, ndt_method (UT|RT|MT|PT|VT),
+part_ref, test_date (YYYY-MM-DD), inspector_name, outcome_summary.
+Usa null se assente. Non inventare campi.`,
+  aiExpectedSchema: {
+    report_number: "string|null",
+    ndt_method: "UT|RT|MT|PT|VT|null",
+    part_ref: "string|null",
+    test_date: "YYYY-MM-DD|null",
+    inspector_name: "string|null",
+    outcome_summary: "string|null",
+  },
+};
+
 // --- Registro schemi 
 
 /**
@@ -1398,6 +1468,7 @@ const DOCUMENT_TYPE_SCHEMAS = {
   qualifica_14732,
   sal,
   rdp,
+  report_ndt,
 };
 
 /**
