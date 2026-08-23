@@ -16,7 +16,24 @@ import React, { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "../contexts/RouterContext";
 import { useAuth } from "../contexts/AuthContext";
 import apiService from "../services/apiService";
+import { countForRiskStat } from "../utils/risksStatsFilter";
 import "./HomePage.css";
+
+/** Risposta stats: { data } (NC/rischi) oppure oggetto piatto (qualifiche). */
+function unwrapStats(res) {
+  if (!res || typeof res !== "object") return null;
+  if (res.data && typeof res.data === "object" && !Array.isArray(res.data)) return res.data;
+  return res;
+}
+
+function ncOpenCount(stats) {
+  if (!stats) return null;
+  if (stats.open_like != null) return Number(stats.open_like) || 0;
+  return (Number(stats.open) || 0)
+    + (Number(stats.in_progress) || 0)
+    + (Number(stats.resolved) || 0)
+    + (Number(stats.verified) || 0);
+}
 
 // ─── Saluto contestuale ───────────────────────────────────────────────────────
 
@@ -88,11 +105,17 @@ function StatBox({ icon, label, value, subLabel, onClick, locked }) {
 // ─── Pagina principale ────────────────────────────────────────────────────────
 
 function HomePage() {
-  const { user, canWriteModule } = useAuth();
+  const { user, canWriteModule, hasLicensedModule } = useAuth() || {};
   const navigate = useNavigate();
+  const moduleOn = (key) => (typeof hasLicensedModule === "function" ? hasLicensedModule(key) : true);
+  const licensedQual = moduleOn("qualifiche");
+  const licensedRisks = moduleOn("rischi");
+  const licensedNc = moduleOn("nc");
 
   const [docStats, setDocStats] = useState(null);
   const [ncStats, setNcStats] = useState(null);
+  const [qualStats, setQualStats] = useState(null);
+  const [riskStats, setRiskStats] = useState(null);
   const [recentAudits, setRecentAudits] = useState([]);
   const [expiringDocs, setExpiringDocs] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -106,16 +129,26 @@ function HomePage() {
         windowDays = cfg?.alert_days_1 ?? 30;
       } catch { /* default 30 */ }
 
-      const [docRes, ncRes, auditRes, expiringRes, expiredRes] = await Promise.allSettled([
+      const [docRes, ncRes, auditRes, expiringRes, expiredRes, qualRes, riskRes] = await Promise.allSettled([
         apiService.getDocumentStats(),
-        apiService.getNonConformitiesStatistics?.() || Promise.resolve(null),
+        licensedNc
+          ? (apiService.getNonConformitiesStatistics?.() || Promise.resolve(null))
+          : Promise.resolve(null),
         apiService.getAudits?.({ page: 1, limit: 5, sort: "desc" }) || Promise.resolve(null),
         apiService.getDocuments({ expiring_days: windowDays, status: "rilasciato", limit: 10 }),
         apiService.getDocuments({ expired_only: 1, status: "rilasciato", limit: 10 }),
+        licensedQual
+          ? (apiService.getQualificationsStats?.() || Promise.resolve(null))
+          : Promise.resolve(null),
+        licensedRisks
+          ? (apiService.getRisksStats?.() || Promise.resolve(null))
+          : Promise.resolve(null),
       ]);
 
       if (docRes.status === "fulfilled") setDocStats(docRes.value?.data || null);
-      if (ncRes.status === "fulfilled" && ncRes.value) setNcStats(ncRes.value?.data || null);
+      if (ncRes.status === "fulfilled") setNcStats(unwrapStats(ncRes.value));
+      if (qualRes.status === "fulfilled") setQualStats(unwrapStats(qualRes.value));
+      if (riskRes.status === "fulfilled") setRiskStats(unwrapStats(riskRes.value));
       if (auditRes.status === "fulfilled" && auditRes.value) {
         setRecentAudits(auditRes.value?.data || []);
       }
@@ -134,7 +167,7 @@ function HomePage() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [licensedNc, licensedQual, licensedRisks]);
 
   useEffect(() => { loadData(); }, [loadData]);
 
@@ -143,7 +176,16 @@ function HomePage() {
   const expiredDocs = expiringDocs.filter((d) => d.is_expired);
   const soonDocs    = expiringDocs.filter((d) => d.expiring_soon && !d.is_expired);
 
-  const hasAlerts = expiredDocs.length > 0 || (ncStats?.overdue > 0) || (docStats?.scaduti > 0);
+  const hasAlerts = expiredDocs.length > 0
+    || (licensedNc && ncStats?.overdue > 0)
+    || (docStats?.scaduti > 0);
+
+  const qualSub = qualStats?.scadute > 0
+    ? `${qualStats.scadute} scadute`
+    : (qualStats?.in_scadenza_30 > 0 ? `${qualStats.in_scadenza_30} in scadenza` : null);
+  const riskOpen = riskStats ? countForRiskStat(riskStats, "open") : null;
+  const riskHigh = riskStats ? countForRiskStat(riskStats, "high_priority") : 0;
+  const azioniAperte = ncOpenCount(ncStats);
 
   // ─── Render ─────────────────────────────────────────────────────────────
 
@@ -229,22 +271,26 @@ function HomePage() {
             <StatBox
               icon="🎓"
               label="Qualifiche"
-              value="-"
-              locked
+              value={qualStats?.total != null ? qualStats.total : "-"}
+              subLabel={qualSub}
+              onClick={() => navigate("/qualifiche")}
+              locked={!licensedQual}
             />
             <StatBox
               icon="⚠️"
               label="Rischi aperti"
-              value="-"
-              locked
+              value={riskOpen != null ? riskOpen : "-"}
+              subLabel={riskHigh > 0 ? `${riskHigh} alta priorità` : null}
+              onClick={() => navigate("/rischi")}
+              locked={!licensedRisks}
             />
             <StatBox
               icon="✅"
               label="Azioni aperte"
-              value={ncStats?.open != null ? ncStats.open : "-"}
+              value={azioniAperte != null ? azioniAperte : "-"}
               subLabel={ncStats?.overdue > 0 ? `${ncStats.overdue} in ritardo` : null}
-              onClick={ncStats?.open != null ? () => navigate("/nc") : undefined}
-              locked={ncStats == null}
+              onClick={() => navigate("/nc")}
+              locked={!licensedNc}
             />
           </div>
         </section>
