@@ -2,7 +2,7 @@
 
 > **Destinazione**: uno studio (Mason) e l’operatore CND chiudono sul telefono il ciclo **incarico → esecuzione in campo → verbale Word + eventuale NC**, riusando qualifiche ISO 9712, strumenti, commesse, foto e PWA già in produzione. Niente app nativa, niente secondo motore, niente tabelle gemelle.
 > **Spec / ADR**: [ISO 9712:2022](../reference/ISO_9712_2022_NDT_QUALIFICATION.md) · ADR-004 (auth mobile) · ADR-016 (strumenti trasversali, verbali ≠ Welding Book) · [PLAN ISO 3834](PLAN_3834_SLICES.md) (ISO-1b/ISO-7 fatti; **ISO-9** eseguita qui come CND-2)
-> **Brief attivo**: [`DEPUTYTASK.md`](DEPUTYTASK.md) — **CND-1** (Stato: APERTO)
+> **Brief attivi**: [`DEPUTYTASK.md`](DEPUTYTASK.md) — **CND-1** (APERTO) · [`DEPUTYTASK1.md`](DEPUTYTASK1.md) — **CND-11** (APERTO, file disgiunti)
 > **Licenza**: modulo `cnd` (bridge: licenza `saldatura` implica `cnd`)
 > **Schermate oggi**: `/cnd/verbali` (`NdtReportsPage.jsx`) · `/cnd/strumenti` (`EquipmentPage.jsx`) · Qualifiche tab NDT
 
@@ -18,8 +18,8 @@ Il CND **c’è già** (giugno 2026, go-live mobile parziale). Il buco non è «
 | Foto per riga marca, autosave online, NC da difetto R/S | Elenco marche = **tabella larga** (scroll orizzontale): usabile a tavolino, scomodo in officina |
 | Word `VT-verbale.docx` | Nessun template MT/PT/UT; verbale **non** entra nel registro documenti |
 | Commessa opzionale (ISO-7), `company_access` (ISO-1b) | Nessuna **coda lavori** del giorno; si crea il verbale da zero |
-| PWA + voice CND in nav mobile + ADR-004 | Online-first (`useNdtAutoSave`): **niente coda offline** come gli audit |
-| Ingest `cert_ndt` + idoneità visiva | Ingest `report_ndt` (verbali storici) schema sì, flusso operatore no |
+| PWA + voice CND in nav mobile + ADR-004 | Online-first (`useNdtAutoSave.js`): **niente coda offline** come gli audit |
+| Ingest `cert_ndt` + idoneità visiva | Ingest `report_ndt` (verbali storici) schema AI sì, whitelist pipeline no |
 | Qualifiche 9712 in anagrafica | Gate «puoi firmare questo metodo?» assente |
 
 **Non si inventa** una quarta pagina, un agente CND, un IndexedDB gemello degli audit, né tabelle `ndt_mt_*`. Si estende `ndt_reports` + `method_params` JSON + UI già copiata da NC / Qualifiche.
@@ -80,7 +80,7 @@ Risposte qui sbloccano o parcheggiano le slice CND-8…CND-10. **CND-1 e CND-2 p
 - Isolamento azienda = `companyAccess.service.js` (ISO-1b, PR #439)
 - Commessa = `project_id` opzionale (ISO-7, PR #474)
 - Auth mobile = localStorage (ADR-004)
-- Verbali CND = **online-first** + `useNdtAutoSave` (non IndexedDB audit)
+- Verbali CND = **online-first** + `useNdtAutoSave.js` (non IndexedDB audit)
 - RDP Mason = visita ispettiva (Audit id 6), **non** verbale di laboratorio
 - Riuso UI: `status-btn` / `notes-textarea` / `AttachmentSection` / sezioni a fasi come drawer NC — DNA in `app/src/design-system/README.md`
 - Ingest certificati NDT = schema `cert_ndt` esistente; verbali PDF storici = `report_ndt` nello stesso ingest
@@ -90,7 +90,7 @@ Risposte qui sbloccano o parcheggiano le slice CND-8…CND-10. **CND-1 e CND-2 p
 
 | Bisogno | Già in repo | Vietato |
 |---------|-------------|---------|
-| Esito A/R/S | `status-btn` (già parziale su marche come `status-btn`) | Nuovi chip/colori |
+| Esito A/R/S | `status-btn` in `ChecklistModule.css` (le marche usano già `status-btn`: **stessa famiglia**, non una terza classe) | Nuovi chip/colori |
 | Note difetto | `notes-textarea` | Textarea CSS locale nuova |
 | Foto riga | `NdtItemAttachments.jsx` (stesso pattern di `AttachmentSection` / RDP) | Uploader nuovo |
 | NC da difetto | `NcCreateModal.jsx` | Wizard NC parallelo |
@@ -109,7 +109,7 @@ Ogni slice è un **tracciante verticale** (un passaggio del flusso), non «tutto
 | Slice | Tema | Perimetro (file/layer) | Dipende da | Tipo | Parallelo |
 |-------|------|------------------------|------------|------|-----------|
 | **CND-0** | Questa mappa | `PLAN_CND_SLICES.md`, bussola, ISO-9 puntatore | — | AFK docs | *questa sessione* |
-| **CND-1** | Verbale VT usabile in tasca (marche a scheda, non tabella da scroll) | `NdtReportsPage.jsx` / `.css`, riuso `status-btn` + `NdtItemAttachments` | — | AFK | brief in `DEPUTYTASK.md` |
+| **CND-1** | Verbale VT usabile in tasca (marche a scheda, non tabella da scroll) | `NdtReportsPage.jsx` / `.css`, riuso `status-btn` (`ChecklistModule.css`) + `NdtItemAttachments` | — | AFK | brief in `DEPUTYTASK.md` |
 | **CND-2** | Gate ispettore ↔ qualifica 9712 (metodo+livello+scadenza+visione) | `NdtReportsPage.jsx`, `ndtReports.controller.js`, GET qualifiche esistente | CND-1 (stesso JSX) | AFK | = ISO-9; **non** aprire da PLAN 3834 |
 | **CND-3** | Parametri MT/PT nel JSON già previsto (nessuna tabella nuova) | `NdtReportsPage.jsx` sezioni 2, `method_params` | CND-2 (stesso JSX) | AFK | dopo CND-2 |
 | **CND-4** | Word MT/PT clonando `vtWordExport` + template | `vtWordExport.js` (o export condiviso), `app/public/templates/` | CND-3 | AFK | **disgiunto dal JSX** dopo CND-3; in parallelo a CND-5 se CND-3 già mergiata |
@@ -117,9 +117,9 @@ Ogni slice è un **tracciante verticale** (un passaggio del flusso), non «tutto
 | **CND-6** | Foto + NC da marca in campo (hardening mobile del già fatto) | `NdtItemAttachments.jsx`, hint `NcCreateModal` | CND-1 | AFK | dopo CND-1; file allegati **disgiunti** da CND-2 se non si tocca la pagina verbale |
 | **CND-7** | Completa verbale → posa nel registro documenti (`report_ndt` / cartella 9.3) | `ndtReports.controller.js`, pattern posa ingest | CND-4 utile | AFK | overlap controller con CND-2 → **dopo** CND-2 |
 | **CND-8** | Coda «miei verbali / oggi» (filtro lista, niente nuova entità) | lista `NdtReportsPage` + card KPI stile Qualifiche | HITL domanda 6 | HITL | se la risposta è «niente assegnazione», questa slice è solo filtro utente/data — AFK e disgiunta se si tocca **solo** la lista, non il form |
-| **CND-9** | Bozza offline campo | estendere `useNdtAutoSave`, **non** copiare sync audit | HITL domanda 3 | HITL | Alto: tocca persistenza; conferma prima |
+| **CND-9** | Bozza offline campo | estendere `useNdtAutoSave.js`, **non** copiare sync audit | HITL domanda 3 | HITL | Alto: tocca persistenza; conferma prima |
 | **CND-10** | Firma grafica / controfirma L2 | solo se esiste già un pattern firma in repo; altrimenti **discutere** | HITL domanda 4 | HITL | non aprire da soli |
-| **CND-11** | Ingest verbali PDF storici (`report_ndt`) | `documentTypeSchemas.js` + ingest staging (stesso anello qualifiche) | — | AFK | **parallelo a CND-1/CND-2** (file disgiunti) |
+| **CND-11** | Ingest verbali PDF storici (`report_ndt`) | whitelist pipeline + schema FE `documentTypeSchemas.js` (schema AI BE già c’è); **non** crea righe `ndt_reports` | — | AFK | brief in `DEPUTYTASK1.md`; **parallelo a CND-1** |
 | **CND-12** | RT/ET oltre l’etichetta | `method_params` + UI | HITL domanda 2 | HITL | dopo MT/PT/UT se servono |
 
 ### Onde di parallelismo (file disgiunti)

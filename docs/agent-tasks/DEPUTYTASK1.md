@@ -1,43 +1,57 @@
-# DEPUTYTASK1 — IA-17: timeout ingest dalla cartella
+# DEPUTYTASK1 — CND-11: ingest verbali PDF storici (`report_ndt`)
 
-**Stato:** CHIUSO — TEST OK (22/08/2026)  
-**Aperto:** 22/08/2026  
-**Chiuso:** 22/08/2026  
-**PR:** [#536](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/536)  
-**SHA:** `c9c6f9f3` (merge `d1a177d1`)  
-**Piano:** [`PLAN_INGEST_ARCHIVIO_SLICES.md`](PLAN_INGEST_ARCHIVIO_SLICES.md) (follow-up IA-16 mergiata #534)  
-**Rischio:** Medio — FE + nginx in-repo + `setTimeout` socket sul controller norme; niente schema/auth/sync.  
-**Branch feature:** `cursor/ingest-folder-timeout-d492`  
-**Slot:** closeout docs post-merge #536; `DEPUTYTASK.md` IA-16 già CHIUSO.
+**Stato:** APERTO  
+**Aperto:** 23/08/2026  
+**Piano:** [`PLAN_CND_SLICES.md`](PLAN_CND_SLICES.md)  
+**Rischio:** Medio — ingest additivo (stesso anello di `cert_ndt`); niente schema DB, auth, sync, pagina verbali.  
+**Parallelo a:** CND-1 in `DEPUTYTASK.md` (file **disgiunti**: qui niente `NdtReportsPage`)  
+**Slot precedente:** IA-17 CHIUSO [#536](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/536)
 
 ## Perché
 
-Dopo IA-16 le pause (2s/file + 2.5s/batch embed + retry TPM 20–45s) allungano `POST /documents/norms/ingest-from-folder`. Un run era già ~61s. Il client mostrava **«Richiesta timeout»** (`AbortError` in `apiService.request`). Timeout dedicato era **180s**; con 7–20 PDF non basta. Default GET 10–15s resta.
+I verbali CND cartacei/PDF dello studio (Mason in archivio cliente) oggi si caricano a metà: il tipo `report_ndt` è nel menu documenti e ha uno schema AI backend, ma la pipeline ingest li **rifiuta** (`SUPPORTED_DOC_TYPES` senza `report_ndt`) e il form FE non ha lo schema campi. L’operatore non può digitalizzare lo storico con lo stesso HITL delle qualifiche.
+
+Questa slice **non** crea righe in `ndt_reports` (ponte verbale operativo ↔ PDF = da discutere). Solo: PDF → estrazione → revisione umana → posa in registro cartella 9.3.
 
 ## File previsti
 
-- `app/src/services/apiService.js` (+ test timeout)
-- `app/src/components/NormUploadButton.jsx` (+ `normUploadButton.test.jsx`)
-- `backend/src/controllers/normUpload.controller.js` (`req`/`res.setTimeout` 15 min, + test)
-- `backend/config/nginx/sgq-backend.conf` (già in repo: 300s → 900s)
-- `docs/agent-tasks/DEPUTYTASK1.md`
+- `backend/src/services/documentIngestPipeline.service.js` (+ `documentIngestPipeline.test.js`)
+- `backend/src/data/documentTypeSchemas.js` (schema AI `report_ndt` già presente — toccare solo se manca un campo allineato al FE)
+- `app/src/data/documentTypeSchemas.js` (aggiungere schema form `report_ndt`, specchio dei campi AI già in BE)
+- `docs/agent-tasks/DEPUTYTASK1.md` (questo brief, chiusura)
+- `docs/agent-tasks/PLAN_CND_SLICES.md` (spunta CND-11 a slice chiusa)
 
 ## Cosa NON toccare
 
-- Pause IA-16 / `geminiKeyPool`
-- Job async nuovo
-- `contractReview`, `auth.middleware`, `syncService`
-- `DEPUTYTASK.md` (chiusura IA-16 in #535)
-- GUIDA / roadmap (hub dopo merge; chat parallela #535)
-- Deploy VPS / nginx sul server (Cloud non mergia)
+- `NdtReportsPage.jsx` / `.css`, `ndtReports.controller.js`, `useNdtAutoSave.js` (CND-1 / CND-2)
+- `NdtItemAttachments.jsx`, `EquipmentPage.jsx`, Qualifiche, RDP
+- Migrazioni, `auth.middleware`, `syncService`
+- Auto-insert in `ndt_reports` (niente ponte magico PDF → verbale operativo)
+- Nuovo motore OCR / secondo ingest
+- GUIDA / roadmap hub (traccia nel brief; sync dopo merge se c’è parallelo)
+- `DEPUTYTASK.md` (CND-1)
 
-## Slice
+## Riuso obbligatorio
 
-1. Timeout **15 min** solo ingest-from-folder e upload batch norme (stesso client, stessi tetti PDF).
-2. Messaggio UI italiano se ancora timeout (non «Richiesta timeout»).
-3. Socket Node + proxy nginx in-repo allineati a 15 min.
+- Stesso anello di `cert_ndt`: whitelist `SUPPORTED_DOC_TYPES` + schema + HITL staging
+- Cartella registro già mappata: `report_ndt` → `9.3` in `document.controller.js` / `documentTreeProvisioner.service.js`
+- Campi minimi già nello schema AI BE: `report_number`, `ndt_method` (UT|RT|MT|PT|VT), `part_ref`, `test_date`, `inspector_name`, `outcome_summary`
+- UI ingest esistente (coda da completare / screening): niente pagina nuova
+
+## Slice (unica)
+
+1. Aggiungere `report_ndt` a `SUPPORTED_DOC_TYPES` (oggi manca: upload in menu, pipeline dice non supportato — stesso buco storico di `cert_ndt` pre-02/08).
+2. Schema FE `report_ndt` in `app/src/data/documentTypeSchemas.js` allineato ai campi AI BE (niente campi inventati).
+3. Test L1: tipo in whitelist; payload estratto ha le chiavi attese; tipo sconosciuto resta rifiutato.
+4. Posa registro 9.3 invariata (già c’è la mappa). Nessuna riga `ndt_reports`.
 
 ## Acceptance
 
-- L1: Vitest timeout/messaggio + Jest `setTimeout` controller.
-- PR draft, Cloud non mergia, no deploy.
+- L1: test pipeline (`documentIngestPipeline.test.js`) + eventuale test schema FE; `cd app && npm run build` se si tocca `app/`
+- Upload/screening di un PDF classificato `report_ndt` **non** ritorna `UNSUPPORTED_DOC_TYPE`
+- HITL vede i campi estratti; conferma posa in 9.3
+- Zero INSERT su `ndt_reports`
+
+## Comando di lancio
+
+`Leggi docs/agent-tasks/DEPUTYTASK1.md ed eseguilo. Chiudi con TEST OK o FIX NON APPLICABILI.`

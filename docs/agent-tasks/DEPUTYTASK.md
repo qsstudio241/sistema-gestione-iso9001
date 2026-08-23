@@ -30,9 +30,10 @@ Il verbale CND esiste e in officina al tavolo funziona. In campo (telefono, stud
 
 ## Riuso obbligatorio (niente oggetti nuovi)
 
-- Esito A / R / S: classi `status-btn` (o allineare i `status-btn` già in pagina a `status-btn` di `ChecklistModule.css` — **una** famiglia, non una terza)
+- Esito A / R / S: `status-btn` di `ChecklistModule.css` (in pagina oggi c’è `status-btn`: stessa famiglia, **non** una terza classe)
 - Note difetto: `notes-textarea`
-- Foto riga: `NdtItemAttachments` già montato
+- Foto riga: `NdtItemAttachments.jsx` già montato
+- Autosave: `useNdtAutoSave.js` invariato (zero campi nuovi)
 - Sezioni: restano le 5 sezioni collassabili del verbale; non copiare un secondo layout
 - DNA: schermata 3 (scheda a fasi, drawer NC) per la **singola marca** su `max-width: 768px`; desktop può restare tabella
 - Token `:root` di `AppLayout.css` — niente palette nuova
@@ -41,7 +42,7 @@ Il verbale CND esiste e in officina al tavolo funziona. In campo (telefono, stud
 
 1. Sotto `768px`, ogni riga marca è una **scheda** (posizione, pezzo, % , difetto, A/R/S a pollice, foto, note se R/S). Niente `min-width: 720px` come unico modo per compilare.
 2. Desktop (≥768px): tabella attuale invariata nel contenuto (stessi campi, stessi salvataggi).
-3. Stesso payload `PUT` / autosave `useNdtAutoSave` — zero campi nuovi.
+3. Stesso payload `PUT` / autosave `useNdtAutoSave.js` — zero campi nuovi.
 4. Touch: bersagli ≥ ~36px già accennati nel CSS; bottoni A/R/S e foto usabili col pollice.
 5. Hint «scorri le colonne» diventa superfluo sul telefono (le schede non richiedono scroll orizzontale).
 
