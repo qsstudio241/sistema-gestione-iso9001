@@ -273,4 +273,43 @@ describe('runDocumentIngest', () => {
     it('accetta cert_ndt in whitelist (bug produzione 02/08/2026)', () => {
         expect(SUPPORTED_DOC_TYPES.has('cert_ndt')).toBe(true);
     });
+
+    it('accetta report_ndt in whitelist (CND-11 verbali storici)', () => {
+        expect(SUPPORTED_DOC_TYPES.has('report_ndt')).toBe(true);
+    });
+
+    it('produce le chiavi attese per report_ndt senza toccare ndt_reports', async () => {
+        extractPdfText.mockResolvedValue(
+            'Rapporto NDT n. VT-2024-012 metodo VT pezzo P-100 data 15/03/2024 ispettore Mario Rossi esito ACCETTABILE'
+        );
+        getActiveProvider.mockReturnValue('gemini');
+        extractStructuredByDocType.mockResolvedValue({
+            model: 'gemini-1.5-flash',
+            data: {
+                type_specific_data: {
+                    report_number: 'VT-2024-012',
+                    ndt_method: 'VT',
+                    part_ref: 'P-100',
+                    test_date: '2024-03-15',
+                    inspector_name: 'Mario Rossi',
+                    outcome_summary: 'ACCETTABILE',
+                },
+            },
+        });
+
+        const out = await runDocumentIngest({
+            pdfBuffer: Buffer.from('%PDF'),
+            docType: 'report_ndt',
+            fileName: 'verbale-vt-2024-012.pdf',
+            organizationId: 1001,
+        });
+
+        expect(out.fields.report_number).toBe('VT-2024-012');
+        expect(out.fields.ndt_method).toBe('VT');
+        expect(out.fields.part_ref).toBe('P-100');
+        expect(out.fields.test_date).toBe('2024-03-15');
+        expect(out.fields.inspector_name).toBe('Mario Rossi');
+        expect(out.fields.outcome_summary).toBe('ACCETTABILE');
+        expect(out.extractionConfidence).toBeGreaterThan(0);
+    });
 });
