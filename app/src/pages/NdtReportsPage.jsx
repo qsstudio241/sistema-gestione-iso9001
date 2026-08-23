@@ -50,6 +50,30 @@ const EVALUATION_OPTIONS = [
 // Nota certificazione fissa
 const CERTIFICATION_TEXT = "Si certifica che la prova \u00e8 stata eseguita secondo le norme di riferimento indicate e che i risultati sono quelli trascritti.";
 
+const INSTRUMENT_ROLE_OPTIONS = [
+    { value: "gauge",    label: "Calibro" },
+    { value: "luxmeter", label: "Luxmetro" },
+    { value: "lamp",     label: "Lampada" },
+    { value: "other",    label: "Altro" },
+];
+
+/**
+ * Ruolo Word/verbale (celle Calibro / Luxmetro / Lampada) dal nome o sottocategoria.
+ * Esportata per i test L1: un Calibro non deve partire come "Altro".
+ */
+export function inferInstrumentRole(inst) {
+    const blob = `${inst?.asset_subcategory || ""} ${inst?.name || ""}`.toLowerCase();
+    if (/calibro|gauge/.test(blob)) return "gauge";
+    if (/luxmetr|\blux\b|illumin/.test(blob)) return "luxmeter";
+    if (/lampad|\blamp\b|\buv\b/.test(blob)) return "lamp";
+    return "other";
+}
+
+export function resolveInstrumentRole(storedRole, inst) {
+    if (storedRole && storedRole !== "other") return storedRole;
+    return inferInstrumentRole(inst);
+}
+
 // ── Riga Elenco Marche ────────────────────────────────────────────────────────
 const DEFECT_CODES_SELECT = [
     { value: "NESSUNO",     label: "NESSUNO" },
@@ -254,7 +278,10 @@ function NdtReportForm({ report, companies, availableInstruments, onSave, onCanc
     // Ogni elemento: { asset_id, role: 'gauge'|'luxmeter'|'lamp'|'other' }
     const [selectedInstruments, setSelectedInstruments] = useState(() =>
         isEdit && report.instruments
-            ? report.instruments.map(i => ({ asset_id: i.asset_id, role: i.instrument_role || 'other' }))
+            ? report.instruments.map(i => {
+                const inst = availableInstruments.find(a => a.id === i.asset_id);
+                return { asset_id: i.asset_id, role: resolveInstrumentRole(i.instrument_role, inst) };
+            })
             : []
     );
 
@@ -328,10 +355,10 @@ function NdtReportForm({ report, companies, availableInstruments, onSave, onCanc
     const updateMarkRow = (idx, data) => setItems(prev => prev.map((it, i) => i === idx ? data : it));
     const removeMarkRow = (idx) => setItems(prev => prev.filter((_, i) => i !== idx));
 
-    const toggleInstrument = (id) => setSelectedInstruments(prev => {
-        const exists = prev.find(x => x.asset_id === id);
-        if (exists) return prev.filter(x => x.asset_id !== id);
-        return [...prev, { asset_id: id, role: 'other' }];
+    const toggleInstrument = (inst) => setSelectedInstruments(prev => {
+        const exists = prev.find(x => x.asset_id === inst.id);
+        if (exists) return prev.filter(x => x.asset_id !== inst.id);
+        return [...prev, { asset_id: inst.id, role: inferInstrumentRole(inst) }];
     });
 
     const setInstrumentRole = (id, role) => setSelectedInstruments(prev =>
@@ -642,7 +669,7 @@ function NdtReportForm({ report, companies, availableInstruments, onSave, onCanc
                             ) : (
                                 <div className="ndt-instruments-list">
                                     <label className="ndt-instruments-label">
-                                        {"Strumenti disponibili per " + form.report_type + " — seleziona e assegna il ruolo (Calibro / Luxmetro / Lampada)"}
+                                        {"Strumenti disponibili per " + form.report_type + " \u2014 seleziona e assegna il ruolo (Calibro / Luxmetro / Lampada)"}
                                     </label>
                                     <div className="ndt-instruments-grid">
                                         {availableInstruments.map(inst => {
@@ -653,7 +680,7 @@ function NdtReportForm({ report, companies, availableInstruments, onSave, onCanc
                                             return (
                                                 <div key={inst.id} className={`ndt-instrument-card${isSelected ? " ndt-inst-selected" : ""}${isExpired ? " ndt-inst-expired" : isExpiring ? " ndt-inst-expiring" : ""}`}>
                                                     <label className="ndt-inst-check-label">
-                                                        <input type="checkbox" checked={isSelected} onChange={() => toggleInstrument(inst.id)} disabled={inst.status === "calibrating"} />
+                                                        <input type="checkbox" checked={isSelected} onChange={() => toggleInstrument(inst)} disabled={inst.status === "calibrating"} />
                                                         <div className="ndt-inst-info">
                                                             <span className="ndt-inst-name">{inst.name}</span>
                                                             <span className="ndt-inst-detail">{inst.model}{inst.serial_number ? " \u2014 S/N: " + inst.serial_number : ""}</span>
@@ -663,17 +690,19 @@ function NdtReportForm({ report, companies, availableInstruments, onSave, onCanc
                                                         </div>
                                                     </label>
                                                     {isSelected && (
-                                                        <select
-                                                            className="ndt-inst-role-select"
-                                                            value={selEntry.role}
-                                                            onChange={e => setInstrumentRole(inst.id, e.target.value)}
-                                                            title="Ruolo di questo strumento nel verbale"
-                                                        >
-                                                            <option value="gauge">{"Calibro per saldature (Calibro)"}</option>
-                                                            <option value="luxmeter">{"Luxmetro"}</option>
-                                                            <option value="lamp">{"Lampada"}</option>
-                                                            <option value="other">{"Altro strumento"}</option>
-                                                        </select>
+                                                        <label className="ndt-inst-role-wrap">
+                                                            <span className="ndt-inst-role-label">Ruolo nel verbale</span>
+                                                            <select
+                                                                className="ndt-inst-role-select"
+                                                                value={selEntry.role}
+                                                                onChange={e => setInstrumentRole(inst.id, e.target.value)}
+                                                                aria-label={"Ruolo di " + inst.name}
+                                                            >
+                                                                {INSTRUMENT_ROLE_OPTIONS.map(opt => (
+                                                                    <option key={opt.value} value={opt.value}>{opt.label}</option>
+                                                                ))}
+                                                            </select>
+                                                        </label>
                                                     )}
                                                 </div>
                                             );
