@@ -24,6 +24,7 @@ Il verbale CND esiste e in officina al tavolo funziona. In campo (telefono, stud
 - `ndtReports.controller.js`, migrazioni, `auth.middleware`, `syncService`
 - Gate 9712 (è **CND-2** / ISO-9)
 - Parametri MT/PT/UT, ruoli strumenti, Word, registro documenti, ingest `report_ndt`
+- `ReportTemplatesAdminPage.jsx` / `reportTemplate.service.js` (**CND-4**)
 - `NdtItemAttachments.jsx` salvo import/uso già presente (hardening foto = **CND-6**)
 - `EquipmentPage.jsx`, Qualifiche, RDP, Welding Book
 - GUIDA / roadmap hub (questa chat è in parallelo potenziale dopo il merge della mappa: traccia nel brief)
