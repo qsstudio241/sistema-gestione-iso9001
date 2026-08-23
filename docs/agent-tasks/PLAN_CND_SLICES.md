@@ -3,6 +3,7 @@
 > **Destinazione**: uno studio (Mason) e l’operatore CND chiudono sul telefono il ciclo **incarico → esecuzione in campo → verbale Word + eventuale NC**, riusando qualifiche ISO 9712, strumenti, commesse, foto e PWA già in produzione. Niente app nativa, niente secondo motore, niente tabelle gemelle.
 > **Spec / ADR**: [ISO 9712:2022](../reference/ISO_9712_2022_NDT_QUALIFICATION.md) · ADR-004 (auth mobile) · ADR-016 (strumenti trasversali, verbali ≠ Welding Book) · [PLAN ISO 3834](PLAN_3834_SLICES.md) (ISO-1b/ISO-7 fatti; **ISO-9** eseguita qui come CND-2)
 > **Brief attivi**: [`DEPUTYTASK.md`](DEPUTYTASK.md) — **CND-1** · [`DEPUTYTASK1.md`](DEPUTYTASK1.md) — **CND-11** · [`DEPUTYTASK2.md`](DEPUTYTASK2.md) — **CND-4** (template, file disgiunti)
+> **Mappa**: CND-0 chiusa (HITL + estrazione Word 23/08). PR #540 già su `main`; questa revisione completa catalogo flag e strategia report. GUIDA/roadmap hub: non toccati (parallelo PR #543 foto).
 > **Licenza**: modulo `cnd` (bridge: licenza `saldatura` implica `cnd`)
 > **Schermate oggi**: `/cnd/verbali` (`NdtReportsPage.jsx`) · `/cnd/strumenti` (`EquipmentPage.jsx`) · Qualifiche tab NDT
 
@@ -64,7 +65,7 @@ Tracciabilità ISO 3834-3 §8 (personale prove) e §14 (ispezioni): il verbale �
 ## Decisioni HITL 23/08/2026 (committente)
 
 1. **Chi esegue** — Personale **dello studio**, con qualifica 9712 **e** visita medica (idoneità visiva) in corso di validità. Se l’azienda cliente compra la licenza modulo CND, lo **stesso gate** vale sul personale di quell’azienda (`organization_id` / Ambito). Scalabilità: niente anagrafica operatori CND; si riusa Qualifiche + `visionFitness.service.js`.
-2. **Metodi** — VT, MT, PT, UT (ecc.) sono **indipendenti**. Un verbale = un metodo. Nessun “prima il VT”. Modelli Mason PT e MT confermano testate diverse (ISO 3452 / 23277 vs ISO 17638 / 23278).
+2. **Metodi** — VT, MT, PT, UT (ecc.) sono **indipendenti**. Un verbale = un metodo. Nessun “prima il VT”. Word Mason 23/08: PT = UNI EN ISO 3452-1 / accettazione 23277; MT = UNI EN ISO 17638 / accettazione 23278.
 3. **Offline officina** — Serve una **rete di salvataggio**. Standard già in repo: coda IndexedDB `syncQueue` (ADR-008) con tipi `create_ndt_report` / `update_ndt_report` già nello `syncService`; `useNdtAutoSave.js` oggi ferma a `localStorage`. CND-9 = collegare i due, **non** copiare il motore eventi audit.
 4. **Firma grafica** — **No ora**. Basta il **nome**. Firma/controfirma = backlog registrato (CND-10), non questa epic.
 5. **Modelli report** — Gestiti in **Template report** (stesso VPS, `GET /report-templates/:id/file`, scope oggi `audit`|`nc`). CND-4 = terzo scope `cnd` + chiave metodo (`VT`/`MT`/`PT`/`UT`). Mason consegna `.doc`/`.docx`: runtime solo **.docx** (come NC/audit). I flag del Word = checkbox in UI = placeholder nel template.
@@ -72,15 +73,17 @@ Tracciabilità ISO 3834-3 §8 (personale prove) e §14 (ispezioni): il verbale �
 
 ### Report: Word, PDF o HTML in Cursor?
 
-**Scelta di prodotto (CND):** restano i **template Word** nel modulo Template report (come audit e NC). Non si adotta HTML “design mode” come editor di layout per Mason.
+**Conferma post-estrazione Word (23/08):** i due modelli Mason **sono già** report Word con FORMCHECKBOX (PT `.docx` 79 checkbox; MT `.doc` OLE). Layout bilingue, tabelle, testata studio, elenco marche. Stessa famiglia degli export audit/NC.
+
+**Scelta di prodotto (CND):** fonte di verità del layout = **Word + placeholder** nel modulo Template report. Non si adotta HTML “design mode” come filiera report.
 
 | Canale | A cosa serve | Perché sì / no per i CND |
 |--------|----------------|--------------------------|
-| **Word + placeholder** (oggi audit/NC/VT) | Layout dello **studio** (logo, tabella, checkbox, bilingue) | Mason già lavora così; può ritoccare il `.docx` senza sviluppatore. I flag UI riempiono i placeholder. L’auditor ISO rivede l’impaginazione; per un certificato CND il layout è **fisso** e i checkbox devono combaciare 1:1. |
-| **PDF diretto** | Consegna “non modificabile” al cliente | Utile **dopo**, come secondo export dallo **stesso** template compilato (stampa PDF / conversione). Non sostituisce il modello: altrimenti ogni ritocco grafico torna in codice. |
-| **Preview HTML + design mode Cursor → PDF** | Bozza **nostra** di una schermata app | Va bene per disegnare la **UI** del verbale. Non va bene come filiera report: Mason non apre Cursor; due layout (HTML e Word) divergono; i suoi PT/MT sono già Word con FORMCHECKBOX. |
+| **Word + placeholder** (oggi audit/NC/VT) | Layout dello **studio** (logo, tabella, checkbox, bilingue) | Mason ritocca il `.docx` senza sviluppatore. I flag UI 1:1 con i checkbox. Nomi FORMCHECKBOX **non** sono chiavi (`Controllo2`/`Controllo3` riusati): placeholder semantici tipo `{pt_acc_l2}`. |
+| **PDF diretto** | Consegna “non modificabile” al cliente | **Secondo** export dallo **stesso** template compilato, **dopo CND-4**. Non un motore parallelo. |
+| **Preview HTML + design mode Cursor → PDF** | Bozza **nostra** di una schermata app | OK per disegnare la **UI**. No come pipeline report: Mason non usa Cursor; due layout divergono; i suoi PT/MT sono già Word. |
 
-Quindi: **UI = flag**; **modello grafico = Word in Template report**; **PDF = eventuale stampa del Word compilato** (slice dopo CND-4, non al posto). Nessun secondo motore HTML→PDF.
+Quindi: **UI = flag**; **modello grafico = Word in Template report**; **PDF = opzionale dopo CND-4**. Runtime solo `.docx` (convertire il `.doc` MT **una volta** in CND-4).
 
 ## Non ancora specificato (nebbia residua)
 
@@ -98,7 +101,8 @@ Quindi: **UI = flag**; **modello grafico = Word in Template report**; **PDF = ev
 - Verbali CND: bozza locale + coda `syncQueue` (stessi tipi già in `syncService`); `useNdtAutoSave.js` oggi solo `localStorage` — CND-9 allinea allo standard audit **senza** `audit_events`
 - RDP Mason = visita ispettiva (Audit id 6), **non** verbale di laboratorio
 - Gate personale = Qualifiche 9712 + idoneità visiva (`visionFitness.service.js`), tenant studio **o** azienda con licenza CND
-- Template CND = stesso modulo Template report; scope `cnd` da aggiungere (oggi solo `audit` / `nc`)
+- Template CND = stesso modulo Template report; scope `cnd` da aggiungere (oggi solo `audit` / `nc`); placeholder semantici, non nomi FORMCHECKBOX
+- Catalogo flag PT/MT = appendice sotto, estratto dai file Mason 23/08 (non inventato)
 - Riuso UI: `status-btn` / `notes-textarea` / `AttachmentSection` / sezioni a fasi come drawer NC — DNA in `app/src/design-system/README.md`
 - Ingest certificati NDT = schema `cert_ndt` esistente; verbali PDF storici = `report_ndt` nello stesso ingest
 - Skill da riusare (non installarne di nuove): `gap-analysis-normativa` (norme metodo), `pdf-to-json` (procedure scritte / verbali cartacei), Assistente di Ambito (ADR-010) se serve un prompt — **nessun secondo agente**
@@ -187,41 +191,95 @@ Due deputy **mai** sullo stesso `NdtReportsPage.jsx` o sullo stesso controller.
 - Logica normativa (9712, accettazione 5817): L1 verde dello stesso deputy **non** basta — gate Bugbot + Security Review; skill `gap-analysis-normativa` se si toccano soglie.
 - Aggiornare questa tabella a slice chiusa (spunta in Decisioni, non duplicare il diario in GUIDA se c’è parallelo).
 
-## Appendice — campi/flag dai Word Mason (23/08/2026)
+## Appendice — campi/flag dai Word Mason (estratti 23/08/2026)
 
-Fonte: `PT-2026.docx`, `MTxxx-2026.doc` (Andrea Mason). I **flag** Word (FORMCHECKBOX) sono mutuamente esclusivi per gruppo: in UI = `status-btn` o radio; nel template = placeholder `{pt_livello_2}` → ☑/☐. Non sono “on/off liberi”. Testata (oggetto, cliente, ordine, commessa, materiale, disegno) è comune e già sul verbale.
+Fonte file (non inventario a memoria):
 
-### PT — liquidi penetranti (ISO 3452-1, accettazione ISO 23277)
+| File | Formato | Titolo | Norma esame | Accettazione |
+|------|---------|--------|-------------|--------------|
+| `PT-2026.docx` | OOXML, 79 FORMCHECKBOX | RAPPORTO D'ESAME LIQUIDI PENETRANTI | UNI EN ISO 3452-1 | UNI EN ISO 23277 |
+| `MTxxx-2026.doc` | OLE `.doc` (Word 97–2003) | RAPPORTO D'ESAME PARTICELLE MAGNETICHE | UNI EN ISO 17638 | UNI EN ISO 23278 |
 
-| Gruppo flag (un valore) | Opzioni | Placeholder tipo |
-|-------------------------|---------|------------------|
-| Criterio accettazione | livello 1 / 2 / 3 (ISO 23277: lineare/non lineare) | `{pt_acc_l1}` `{pt_acc_l2}` `{pt_acc_l3}` |
-| Condizione superficiale | come saldato / molato / lav. macchina / forgiato | `{pt_sup_*}` |
-| Pulizia | molatura / spazzolatura / sabbiatura | `{pt_pul_*}` |
-| Applicazione | spray / immersione / pennello | `{pt_app_*}` |
-| % controllo | testo (es. 100) | `{inspection_pct}` |
-| Consumabili | penetrante, solvente, rilevatore + lotto | `{pt_pen}`, `{pt_pen_lotto}`, … |
-| Lux / temperatura | numeri | già in `method_params` VT-like |
-| Ogni difetto ISO 6520 | presenza sì\|NA + esito A\|NA\|S | `{d_cricche_si}`, `{d_cricche_A}`, … |
-| Esito finale | SI / NO soddisfacente | `{final_ok}` `{final_ko}` |
-| Date + nomi | controllo, emissione, responsabile, ispettore, cliente | già in testata verbale |
-| Allegato fotografico | foto marche | `NdtItemAttachments` |
+**Chiavi:** i nomi FORMCHECKBOX **non** sono unici. Sul PT: 48 checkbox senza nome, 27 `Controllo2`, 3 `Controllo3`, 1 `Controllo4`. Bookmark solo `Controllo2/3/4`. In UI e nel `.docx` di runtime usare placeholder **semantici** (`{pt_acc_l2}`), mai il nome del controllo Word. Gruppi esclusivi = radio / `status-btn`. Default Word (☑ nel modello) = preset UI, non vincolo.
 
-Difetti elencati nel PT: cricche 100-104, porosità 2017, mancata fusione 401, mancata penetrazione 402, incisione marginale 5011-12, al vertice 5013, sovrametallo 502, convessità 503, eccesso penetrazione 504, sgocciolatura 5041, traboccamento 506, slivellamento 507, avvallamento 509, riempimento incompleto 511, asimmetria 512, insellamento 515, ripresa 517, colpo d’arco 601, spruzzi 602. `A` = accettabile, `S` = scarto; `NA` su esito = non applicabile a quella voce (non è il giudizio R del VT).
+CND-4: convertire **una volta** `MTxxx-2026.doc` → `.docx`; runtime solo `.docx`.
 
-### MT — particelle magnetiche (ISO 17638, accettazione ISO 23278)
+Testata comune (già sul verbale): oggetto, cliente, ordine, commessa, materiale, disegno. Firme = **solo nome** (IL RESPONSABILE / L'ISPETTORE / IL CLIENTE). Firma grafica = CND-10.
 
-| Gruppo flag | Opzioni | Note |
-|-------------|---------|------|
-| Tecnica | secco / umido / fluorescente | mutuamente esclusivo |
-| Magnetizzazione | puntali / giogo / bobina | + diretta / residua |
-| Corrente | tipo (es. CA), intensità, passo poli, campo | testo/numero |
-| Smagnetizzazione | sì / no | |
-| Superficie (*) | S come saldato, U macchina, G grezza, M molato, L laminato | |
-| % controllo | testo | |
-| Difetti (**) ISO 6520 | 1 cricche … 10 altro | presenza, non la griglia A/NA/S del PT |
-| Giudizio (***) | A accettabile / R riparare / S scarto | allineato alle marche VT già in UI |
-| Apparecchio / polveri / lampada | da anagrafica strumenti | ruoli MT (giogo, lampada UV) in CND-5 |
-| Elenco marche | pos, codice, descrizione, parte, superficie, %, difetti, giudizio | stessa tabella CND-1 |
+### PT — liquidi penetranti
 
-PT e MT **non** condividono i flag di tecnica: due blocchi `method_params.pt` e `method_params.mt`. Un verbale ha un solo `report_type`.
+Header: `PT xx/2026` rev. 0 · scheda `S-729P9-01` 09/2002. Consumabili esempio in modello: PENTRIX 100 lotto 3416, METACLEAN 300 lotto 3515, RIVELEX 200 lotto 3030. Illuminamento ~600 lux, temperatura 15 °C, % controllo 100. Pulizia post-test con solvente (testo fisso).
+
+| Gruppo (un valore) | Opzioni (default Word) | Placeholder |
+|--------------------|------------------------|-------------|
+| Accettazione 23277 | L1 ☑ (lin. l≤2 / n.lin. d≤4); L2 (l≤4 / d≤6); L3 (l≤8 / d≤8) | `{pt_acc_l1}` `{pt_acc_l2}` `{pt_acc_l3}` |
+| Superficie | come saldato / molato / lav. macchina / forgiato | `{pt_sup_asw}` `{pt_sup_grd}` `{pt_sup_mac}` `{pt_sup_frg}` |
+| Pulizia | molatura ☑ / spazzolatura ☑ / sabbiatura | `{pt_cln_gr}` `{pt_cln_br}` `{pt_cln_sb}` |
+| Applicazione | spray ☑ / immersione / pennello | `{pt_app_spray}` `{pt_app_dip}` `{pt_app_brush}` |
+| % controllo | testo | `{inspection_pct}` |
+| Consumabili | penetrante, solvente, rilevatore + lotti | `{pt_pen}` `{pt_pen_lot}` `{pt_sol}` `{pt_sol_lot}` `{pt_det}` `{pt_det_lot}` |
+| Lux / °C | numeri | `{pt_lux}` `{pt_temp}` |
+| Esito finale | SI ☑ / NO soddisfacente | `{pt_final_ok}` `{pt_final_ko}` |
+| Date | controllo, emissione | `{pt_date_insp}` `{pt_date_iss}` |
+| Nomi | responsabile, ispettore, cliente | `{pt_name_resp}` `{pt_name_insp}` `{pt_name_cli}` |
+
+**Difetti PT (ISO 6520)** — due sotto-gruppi per riga: presenza `sì`\|`NA`; esito `A`\|`NA`\|`S`. `A` = accettabile, `S` = scarto; `NA` ≠ giudizio R del VT.
+
+| Codice | Voce | Presenza nel modello | Esito nel modello | Placeholder (es.) |
+|--------|------|----------------------|-------------------|-------------------|
+| 100–104 | Cricche | sì / NA | A / NA / S | `{pt_d_100_yn}` `{pt_d_100_a}` … |
+| 2017 | Porosità superficiale | sì / NA | A / NA / S | `{pt_d_2017_*}` |
+| 401 | Mancata fusione | sì / NA | A / NA / S | `{pt_d_401_*}` |
+| 402 | Mancata penetrazione | sì / NA | A / NA / S | `{pt_d_402_*}` |
+| 5011–5012 | Incisione marginale | sì / NA | A / NA / S | `{pt_d_5011_*}` |
+| 5013 | Incisione al vertice | sì / NA | A / NA / S | `{pt_d_5013_*}` |
+| 502 | Sovrametallo eccessivo | **solo NA** | **solo NA** | `{pt_d_502_na}` |
+| 503 | Convessità eccessiva | solo NA | solo NA | `{pt_d_503_na}` |
+| 504 | Eccesso di penetrazione | solo NA | solo NA | `{pt_d_504_na}` |
+| 5041 | Sgocciolamento | solo NA | solo NA | `{pt_d_5041_na}` |
+| 506 | Traboccamento | solo NA | solo NA | `{pt_d_506_na}` |
+| 507 | Slivellamento | solo NA | solo NA | `{pt_d_507_na}` |
+| 509 | Avvallamento | solo NA | solo NA | `{pt_d_509_na}` |
+| 511 | Riempimento incompleto | solo NA | solo NA | `{pt_d_511_na}` |
+| 512 | Asimmetria eccessiva | solo NA | solo NA | `{pt_d_512_na}` |
+| 515 | Insellamento al vertice | solo NA | solo NA | `{pt_d_515_na}` |
+| 517 | Ripresa difettosa | sì / NA | A / NA / S | `{pt_d_517_*}` |
+| 601 | Colpo d’arco | sì / NA | A / NA / S | `{pt_d_601_*}` |
+| 602 | Spruzzi | sì / NA | A / NA / S | `{pt_d_602_*}` |
+
+502–515 nel modello Mason sono **spesso solo NA** (nessun sì/A/S). CND-3: in UI si possono comunque offrire sì/A/S; il template lascia NA se il pezzo non è saldatura a piena penetrazione. Non inventare altri codici.
+
+### MT — particelle magnetiche
+
+Header: `MT xx/2026` rev. 1 · scheda `S-729P9-01` 09/2002. Apparecchio esempio: MAGISCOP YOKE MP S.N.17896; lacca CGM V42 VECOPLAST; veicolo CGM LK35. Giunto esempio: saldatura ad angolo passata singola. Materiali esempio: UNI EN ISO 10025-2, UNI EN ISO 10210 / EN 10219-1.
+
+| Gruppo | Opzioni (default Word) | Placeholder |
+|--------|------------------------|-------------|
+| Tracciante | secco / umido ☑ / fluorescente | `{mt_tr_dry}` `{mt_tr_wet}` `{mt_tr_flu}` |
+| Magnetizzazione | puntali / giogo / bobina | `{mt_mag_prod}` `{mt_mag_yoke}` `{mt_mag_coil}` |
+| Modo | diretta ☑ / residua | `{mt_mag_dir}` `{mt_mag_res}` |
+| Passo poli | testo (es. 150÷180 mm sul giogo) | `{mt_pole_pitch}` |
+| Corrente | tipo (es. CA), intensità, campo Asp/m | `{mt_curr_type}` `{mt_curr_a}` `{mt_field}` |
+| Smagnetizzazione | sì / no ☑ | `{mt_demag_yes}` `{mt_demag_no}` |
+| Superficie (*) | S come saldato, U macchina, G grezza, M molato, L laminato | `{mt_surf}` |
+| % controllo | testo | `{inspection_pct}` |
+| Giudizio (***) | A accettabile / R da riparare / S scarto | `{mt_judg}` — stessa famiglia A/R/S delle marche VT |
+| Nomi / date | responsabile, ispettore, cliente, date | `{mt_name_*}` `{mt_date_*}` |
+
+**Difetti MT (**) UNI EN ISO 6520** — codice sulla marca (presenza), **non** la griglia A/NA/S del PT. Nel modello **manca il codice 8**.
+
+| Codice | Voce IT | EN nel Word |
+|--------|---------|-------------|
+| 1 | cricche affioranti | cracks |
+| 2 | ripiegature | laps |
+| 3 | sfogliature | flakings |
+| 4 | ricalcature / sigillature | upsettings |
+| 5 | porosità / risucchi | porosity |
+| 6 | soffiature | gas inclusion |
+| 7 | incisioni marginali | undercuts |
+| 9 | sfondamento | burn-through |
+| 10 | altro | other |
+
+Elenco marche (stessa idea CND-1): pos, codice, q.tà, descrizione, parte, superficie (es. M/S), % controllo, difetti, giudizio (es. NESSUNO / ACC.).
+
+PT e MT **non** condividono i flag di tecnica: `method_params.pt` vs `method_params.mt`. Un verbale = un `report_type`. UT/RT: nessun Word in questa consegna (nebbia).
