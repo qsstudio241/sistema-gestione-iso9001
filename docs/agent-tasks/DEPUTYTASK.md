@@ -1,47 +1,57 @@
-# DEPUTYTASK — IA-16: throttle ingest cartella + 429 TPM Gemini
+# DEPUTYTASK — CND-1: verbale VT usabile in tasca
 
-**Stato:** CHIUSO — TEST OK (22/08/2026)  
-**Chiuso:** 22/08/2026  
-**PR:** [#534](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/534)  
-**SHA:** `1e418118`  
-**Piano:** [`PLAN_INGEST_ARCHIVIO_SLICES.md`](PLAN_INGEST_ARCHIVIO_SLICES.md) (IA-16; follow-up IA-15 CHIUSO #532)  
-**Rischio:** Medio — backend additivo (classificazione 429 + pause/batch); niente schema/auth/sync.  
-**Branch feature:** `cursor/ingest-gemini-throttle-d492`  
-**Precedente slot:** IA-15 CHIUSO [#532](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/532)
+**Stato:** APERTO  
+**Aperto:** 23/08/2026  
+**Piano:** [`PLAN_CND_SLICES.md`](PLAN_CND_SLICES.md)  
+**Rischio:** Basso — solo frontend (layout marche su `NdtReportsPage`); niente schema, auth, sync, Word, 9712.  
+**Slot precedente:** IA-16 CHIUSO [#534](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/534)
 
 ## Perché
 
-Ingest dalla cartella tratta tutti i PDF in sequenza stretta: embedding Gemini sfora TPM (1M token/min). Un 429 TPM marcava la chiave **esaurita** e spegneva anche Flash (stesso pool).
+Il verbale CND esiste e in officina al tavolo funziona. In campo (telefono, studio Mason dal cliente) l’elenco marche è una **tabella da 10 colonne** con scroll orizzontale: l’operatore non chiude il ciclo pezzo → giudizio → foto. Questa slice è il tracciante «hello world» dell’epic: **stesso verbale VT, stessa API, marche a scheda sul viewport stretto**.
 
 ## File previsti
 
-- `backend/src/services/adapters/geminiKeyPool.js` (+ test)
-- `backend/src/services/adapters/geminiAdapter.js`
-- `backend/src/services/aiProviderAdapter.test.js` (embed 429 TPM)
-- `backend/src/services/normChunker.service.js`
-- `backend/src/services/knowledgeIndexer.service.js` (stesso percorso embed)
-- `backend/src/controllers/normUpload.controller.js` (+ test pausa)
-- `docs/agent-tasks/DEPUTYTASK.md`
+- `app/src/pages/NdtReportsPage.jsx`
+- `app/src/pages/NdtReportsPage.css`
+- `app/src/tests/` — test L1 mirato sul rendering marche (nuovo file solo se serve; preferire test accanto a pattern già usati)
+- `docs/agent-tasks/DEPUTYTASK.md` (questo brief, chiusura)
+- `docs/agent-tasks/PLAN_CND_SLICES.md` (spunta CND-1 a slice chiusa)
 
 ## Cosa NON toccare
 
-- `contractReview`, tetto 20 PDF cartella
-- `auth.middleware`, `syncService`, migrazioni
-- GUIDA / roadmap (hub dopo merge)
-- Schermata ingest nuova (riusa lista risultati + warning)
+- `ndtReports.controller.js`, migrazioni, `auth.middleware`, `syncService`
+- Gate 9712 (è **CND-2** / ISO-9)
+- Parametri MT/PT/UT, ruoli strumenti, Word, registro documenti, ingest `report_ndt`
+- `NdtItemAttachments.jsx` salvo import/uso già presente (hardening foto = **CND-6**)
+- `EquipmentPage.jsx`, Qualifiche, RDP, Welding Book
+- GUIDA / roadmap hub (questa chat è in parallelo potenziale dopo il merge della mappa: traccia nel brief)
+- Nuova pagina `/cnd/...`, nuovo componente «NdtMobileApp», nuova tabella, IndexedDB
 
-## Slice
+## Riuso obbligatorio (niente oggetti nuovi)
 
-1. 429 TPM / rate / resource exhausted transitorio → retry + backoff; **non** `markKeyExhausted`.
-2. `markKeyExhausted` solo 403 o quota giornaliera/billing davvero morta.
-3. Batch embed default 5 + pausa ~2,5s (`GEMINI_EMBED_BATCH` / `GEMINI_EMBED_PAUSE_MS`).
-4. Pausa ~2s tra PDF cartella (`INGEST_FOLDER_PAUSE_MS`). Embed fallito dopo retry → warning, extract Flash già ok resta.
+- Esito A / R / S: classi `status-btn` (o allineare i `status-btn` già in pagina a `status-btn` di `ChecklistModule.css` — **una** famiglia, non una terza)
+- Note difetto: `notes-textarea`
+- Foto riga: `NdtItemAttachments` già montato
+- Sezioni: restano le 5 sezioni collassabili del verbale; non copiare un secondo layout
+- DNA: schermata 3 (scheda a fasi, drawer NC) per la **singola marca** su `max-width: 768px`; desktop può restare tabella
+- Token `:root` di `AppLayout.css` — niente palette nuova
+
+## Slice (unica, questa sessione)
+
+1. Sotto `768px`, ogni riga marca è una **scheda** (posizione, pezzo, % , difetto, A/R/S a pollice, foto, note se R/S). Niente `min-width: 720px` come unico modo per compilare.
+2. Desktop (≥768px): tabella attuale invariata nel contenuto (stessi campi, stessi salvataggi).
+3. Stesso payload `PUT` / autosave `useNdtAutoSave` — zero campi nuovi.
+4. Touch: bersagli ≥ ~36px già accennati nel CSS; bottoni A/R/S e foto usabili col pollice.
+5. Hint «scorri le colonne» diventa superfluo sul telefono (le schede non richiedono scroll orizzontale).
 
 ## Acceptance
 
-- L1: 429 TPM non marca chiave; 403 sì.
-- 7 PDF: Flash non muore per un picco embed al minuto.
+- L1: `cd app && NODE_ENV=test npm run test:run` (mirato se aggiungi test) + `npm run build`
+- Viewport 390×844: si compila una marca VT (codice, giudizio R, nota, si vede il controllo foto) senza scroll orizzontale della tabella
+- Viewport desktop: elenco marche ancora tabellare, salvataggio invariato
+- Nessuna API nuova; Network tab: stessi endpoint verbali
 
-## Esito (22/08/2026) — TEST OK
+## Comando di lancio
 
-Mergiata [#534](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/534) su `main` SHA `1e418118`. 429 TPM / rate / resource exhausted → retry + backoff, **non** `markKeyExhausted`. Esausta solo 403 o quota giornaliera/billing. Batch embed + pausa tra PDF cartella. Deploy VPS in closeout (manifest già copriva i `.js`).
+`Leggi docs/agent-tasks/DEPUTYTASK.md ed eseguilo. Chiudi con TEST OK o FIX NON APPLICABILI.`

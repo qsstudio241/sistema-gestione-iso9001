@@ -115,7 +115,7 @@ Ogni slice è un **tracer verticale** (un processo o un ponte), non «tutto il D
 | **ISO-6** | Ponte NC ↔ commessa | `nc.controller.js` + `NCPage` / drawer: `project_id` opzionale | — | Fatto (PR #465) |
 | **ISO-7** | Ponte RDP/NDT ↔ commessa | FK `project_id` su `rdp_reports` (menu spento) e NDT | ISO-1a/1b | Fatto (PR #474) |
 | **ISO-8** | Ponte offerta → commessa | FK `commercial_case_id` su `projects` o viceversa | ISO-3 utile ma non bloccante | AFK |
-| **ISO-9** | Operatore NDT = qualifica 9712 | `NdtReportsPage` + check copertura | ISO-1b | AFK |
+| **ISO-9** | Operatore NDT = qualifica 9712 | `NdtReportsPage` + check copertura | ISO-1b | AFK — **non aprire da qui**: esecuzione = **CND-2** in [`PLAN_CND_SLICES.md`](PLAN_CND_SLICES.md) |
 | **ISO-10** | Dashboard copertura per processo | `WeldingDashboardPage.jsx`: semaforo §5–18 sul livello azienda | ISO-1* + ISO-2 decisione | AFK |
 | **ISO-11** | Registro subfornitura saldatura | riuso controparti + flag/ruolo, no nuova anagrafica | solo se un cliente lo chiede | HITL |
 | **ISO-12** | *(chiusa come slice 3834)* | Consumabili / 3.1 / PWHT → epic Material Compliance | — | — |
