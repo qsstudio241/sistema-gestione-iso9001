@@ -1,7 +1,8 @@
 # DEPUTYTASK2 — CND-4: Template report scope `cnd`
 
-**Stato:** APERTO  
-**Aperto:** 23/08/2026  
+**Stato:** CHIUSO  
+**Chiuso:** 23/08/2026  
+**Esito:** TEST OK  
 **Piano:** [`PLAN_CND_SLICES.md`](PLAN_CND_SLICES.md) (HITL 23/08 + estrazione Word: layout = Template report scope `cnd`; placeholder semantici `{pt_acc_l2}`; PDF secondo export dopo CND-4; `.doc` MT → `.docx` una volta)  
 **Rischio:** Medio — scope template + eventuale migrazione CHECK; niente auth JWT, niente sync audit, niente `NdtReportsPage`.  
 **Parallelo a:** CND-1 (`DEPUTYTASK.md`) e CND-11 (`DEPUTYTASK1.md`) — file **disgiunti**  
@@ -56,3 +57,17 @@ Mason consegna report PT/MT in Word con checkbox. L’app oggi esporta il VT da 
 ## Comando di lancio
 
 `Leggi docs/agent-tasks/DEPUTYTASK2.md ed eseguilo. Chiudi con TEST OK o FIX NON APPLICABILI.`
+
+## Chiusura (23/08/2026) — TEST OK
+
+- Tab **CND** in Template report; upload `.docx` con metodo VT|MT|PT|UT; `.doc` rifiutato (FE + BE).
+- Resolve `GET /report-templates/resolve?scope=cnd&standard_key=VT|MT|PT|UT` (studio → sistema).
+- Export VT: `loadVtTemplate` prova il VPS, fallback `/templates/VT-verbale.docx`.
+- Migrazione **157** dichiarata: `database/migrations/157_report_templates_scope_cnd.sql` (CHECK + seed). Non eseguita dal Cloud (SQL sul VPS).
+- Slot MT: stub `.docx` con `{mt_tr_wet}` ecc. Il `.doc` Mason non era nel repo; convertire una volta in Word/LibreOffice, non OLE a runtime.
+- Non toccati: `NdtReportsPage`, ingest, sync.
+
+**L1:** Jest service+controller CND (10) + rbac/file (7) verdi; Vitest upload/tab/resolve (24) verdi; `cd app && npm run build` OK.
+
+**Residuo:** applicare 157 sul VPS prima del seed in produzione; PDF cliente = dopo CND-4 (non in questa slice).
+
