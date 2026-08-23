@@ -5,14 +5,15 @@
 
 ## Cosa aprire
 
-**Non usare Simple Browser di Cursor.** Lì l’HTML viene spesso mostrato come sorgente: pagina bianca e checkbox «Pretty-print». Non è un file vuoto.
+**Non è l’app.** `/cnd/verbali` su Netlify non cambia: questo file sta in `docs/`, non nella PWA.
 
-1. **Chrome / Edge / Firefox** (browser esterno): apri
-   `http://127.0.0.1:8000/docs/agent-tasks/spike-cnd-pt-preview.html`
-   (server: `python3 -m http.server 8000` dalla root del repo) **oppure** doppio clic sul file
-   [`spike-cnd-pt-preview.html`](spike-cnd-pt-preview.html).
+**Non usare Simple Browser di Cursor, né la pagina GitHub.** Lì l’HTML è sorgente: pagina bianca o checkbox «Pretty-print». GitHub `raw` arriva come `text/plain` (Chrome mostra il codice, non il foglio). Design Mode **non** modifica il Word Mason.
+
+1. **Chrome / Edge / Firefox** — un clic, senza server locale:
+   [Anteprima HTML PT (htmlpreview)](https://htmlpreview.github.io/?https://github.com/qsstudio241/sistema-gestione-iso9001/blob/main/docs/agent-tasks/spike-cnd-pt-preview.html)
 2. Devi vedere il titolo **RAPPORTO D'ESAME LIQUIDI PENETRANTI**, classe **PT**, e i flag Mason (accettazione, superficie, pulizia, applicazione, griglia difetti).
 3. Word Mason: `PT-2026.docx` (consegna 23/08). Stesso ordine di sezione, **non** stesse pagine al millimetro.
+4. Alternativa sul PC: scarica [`spike-cnd-pt-preview.html`](spike-cnd-pt-preview.html) e fai doppio clic (apre `file://…`).
 
 ## Cosa confrontare
 
