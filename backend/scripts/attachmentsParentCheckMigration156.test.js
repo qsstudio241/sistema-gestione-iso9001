@@ -20,8 +20,8 @@ describe('migration 156 attachments parent check ndt/rdp', () => {
     const sql = fs.readFileSync(SQL_PATH, 'utf8');
     const vps = fs.readFileSync(VPS_PATH, 'utf8');
 
-    it('ha 2 step idempotenti e niente USE/GO', () => {
-        expect(splitIdempotentSteps(sql)).toHaveLength(2);
+    it('ha 4 step idempotenti e niente USE/GO', () => {
+        expect(splitIdempotentSteps(sql)).toHaveLength(4);
         expect(sql).not.toMatch(/^\s*USE\s+/im);
         expect(sql).not.toMatch(/^\s*GO\s*$/im);
         expect(sql).toContain('CHK_attachments_parent');
@@ -40,12 +40,14 @@ describe('migration 156 attachments parent check ndt/rdp', () => {
         expect(sql).not.toMatch(/ON DELETE CASCADE/i);
     });
 
-    it('droppa solo se la definition manca delle colonne nuove', () => {
-        const [dropStep] = splitIdempotentSteps(sql);
+    it('aggiunge le colonne se mancano, poi droppa il CHECK incompleto', () => {
+        const steps = splitIdempotentSteps(sql);
+        expect(steps[0]).toMatch(/ndt_report_item_id/i);
+        expect(steps[1]).toMatch(/rdp_test_id/i);
+        const dropStep = steps.find((s) => /DROP CONSTRAINT CHK_attachments_parent/i.test(s));
         expect(dropStep).toMatch(/^IF EXISTS/i);
-        expect(dropStep).toMatch(/CHARINDEX\('ndt_report_item_id'/i);
-        expect(dropStep).toMatch(/CHARINDEX\('rdp_test_id'/i);
-        expect(dropStep).toMatch(/DROP CONSTRAINT CHK_attachments_parent/i);
+        expect(dropStep).toMatch(/ndt_report_item_id/i);
+        expect(dropStep).toMatch(/rdp_test_id/i);
     });
 
     it('il runner VPS verifica regex su entrambi i campi e accetta TARGET=test', () => {

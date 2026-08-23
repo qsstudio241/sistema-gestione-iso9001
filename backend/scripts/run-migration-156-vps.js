@@ -42,8 +42,8 @@ function resolveSqlPath() {
 async function run() {
   const sqlPath = resolveSqlPath();
   const steps = splitIdempotentSteps(fs.readFileSync(sqlPath, 'utf8'));
-  if (steps.length < 2) {
-    throw new Error(`Attesi 2 step idempotenti, trovati ${steps.length} in ${sqlPath}`);
+  if (steps.length < 4) {
+    throw new Error(`Attesi 4 step idempotenti, trovati ${steps.length} in ${sqlPath}`);
   }
   const pool = await getPool();
   try {

@@ -1,15 +1,33 @@
--- Migration 156 — CHK_attachments_parent include ndt_report_item_id e rdp_test_id
--- Le colonne esistono da 108 (CND) e 127 (RDP); il CHECK di 069 non le ha mai
--- accettate. Upload foto verbale VT CND (solo ndt_report_item_id) falliva con 547.
--- Idempotente. Niente USE / GO.
+-- Migration 156 — CHK_attachments_parent accetta verbale CND e prova RDP
+-- Lezione 069: dopo un nuovo parent sugli allegati va aggiornato il CHECK,
+-- altrimenti INSERT con solo ndt_report_item_id / rdp_test_id fallisce (500).
+-- Le colonne possono già esserci (108 / 127); qui si aggiungono se mancano
+-- così il CHECK non fallisce su ambienti incompleti.
+-- Idempotente. Niente USE / GO (runner Node VPS).
+
+IF NOT EXISTS (
+    SELECT 1 FROM sys.columns
+    WHERE object_id = OBJECT_ID('dbo.attachments') AND name = 'ndt_report_item_id'
+)
+BEGIN
+    ALTER TABLE dbo.attachments ADD ndt_report_item_id INT NULL;
+END
+
+IF NOT EXISTS (
+    SELECT 1 FROM sys.columns
+    WHERE object_id = OBJECT_ID('dbo.attachments') AND name = 'rdp_test_id'
+)
+BEGIN
+    ALTER TABLE dbo.attachments ADD rdp_test_id INT NULL;
+END
 
 IF EXISTS (
     SELECT 1 FROM sys.check_constraints
     WHERE name = 'CHK_attachments_parent'
       AND parent_object_id = OBJECT_ID('dbo.attachments')
       AND (
-          CHARINDEX('ndt_report_item_id', definition) = 0
-          OR CHARINDEX('rdp_test_id', definition) = 0
+        definition NOT LIKE '%ndt_report_item_id%'
+        OR definition NOT LIKE '%rdp_test_id%'
       )
 )
 BEGIN
