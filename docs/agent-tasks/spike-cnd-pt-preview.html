@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>SPIKE — preview flag PT (non produzione)</title>
+  <style>
+    :root { --line: #333; --muted: #555; --bg: #f7f4ea; --warn: #7a3b00; }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: Georgia, "Times New Roman", serif;
+      color: #111;
+      background: #e8e4d8;
+    }
+    .wrap { max-width: 920px; margin: 0 auto; padding: 16px; }
+    .spike {
+      background: #fff3cd;
+      border: 2px solid #b45309;
+      color: var(--warn);
+      padding: 12px 14px;
+      margin-bottom: 16px;
+      font-family: system-ui, sans-serif;
+      font-size: 14px;
+      line-height: 1.45;
+    }
+    .spike strong { color: #7c2d12; }
+    .sheet {
+      background: #fff;
+      border: 1px solid #bbb;
+      padding: 18px 20px 28px;
+    }
+    h1 { font-size: 1.15rem; margin: 0 0 4px; letter-spacing: .02em; }
+    .en { font-size: .8rem; color: var(--muted); font-style: italic; margin: 0 0 12px; }
+    .meta { display: flex; flex-wrap: wrap; gap: 8px 20px; font-size: .85rem; margin-bottom: 14px; }
+    .meta span { white-space: nowrap; }
+    h2 {
+      font-size: .8rem;
+      text-transform: uppercase;
+      letter-spacing: .04em;
+      border-bottom: 1px solid var(--line);
+      margin: 18px 0 8px;
+      padding-bottom: 3px;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 8px 12px;
+    }
+    @media (max-width: 700px) { .grid { grid-template-columns: 1fr; } }
+    label.field { display: flex; flex-direction: column; font-size: .78rem; color: var(--muted); }
+    label.field input[type="text"] {
+      font: inherit;
+      color: #111;
+      border: none;
+      border-bottom: 1px dotted #888;
+      padding: 4px 0;
+      background: transparent;
+    }
+    .flags { display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: .9rem; }
+    .flags label { display: flex; align-items: center; gap: 5px; cursor: pointer; }
+    .note { font-size: .78rem; color: var(--muted); margin: 4px 0 8px; }
+    table { width: 100%; border-collapse: collapse; font-size: .82rem; }
+    th, td { border: 1px solid #999; padding: 4px 6px; vertical-align: middle; }
+    th { background: var(--bg); text-align: left; font-weight: 600; }
+    .code { font-variant-numeric: tabular-nums; white-space: nowrap; }
+    .na-only { color: var(--muted); }
+    .names { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; margin-top: 8px; }
+    @media (max-width: 700px) { .names { grid-template-columns: 1fr; } }
+    .names .box { border-top: 1px solid #888; padding-top: 6px; font-size: .8rem; }
+    .ph { font-family: ui-monospace, monospace; font-size: .72rem; color: #6b4f1d; }
+    .spike-end {
+      margin-top: 16px;
+      font-family: system-ui, sans-serif;
+      font-size: 13px;
+      color: var(--muted);
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <aside class="spike">
+      <strong>SPIKE CND-PREVIEW — non è produzione.</strong>
+      File statico usa-e-getta. Non è un certificato, non è un secondo motore di stampa,
+      non va collegato a PDF né a <code>NdtReportsPage</code>.
+      Scopo: confrontare <em>gruppi campo/flag</em> con il Word Mason <code>PT-2026.docx</code>.
+      Se tenere HTML + Word è doppio lavoro → <strong>abort</strong> (si cancella questo file; resta solo itera Word).
+    </aside>
+
+    <article class="sheet">
+      <h1>RAPPORTO D'ESAME LIQUIDI PENETRANTI</h1>
+      <p class="en">Penetrant testing — anteprima flag, non clone millimetrico</p>
+      <div class="meta">
+        <span>Classe <strong>PT</strong></span>
+        <span>N° <strong>xx/2026</strong></span>
+        <span>Rev. <strong>0</strong></span>
+        <span>Scheda <strong>S-729P9-01</strong> 09/2002</span>
+        <span>Norma <strong>UNI EN ISO 3452-1</strong></span>
+        <span>Accettazione <strong>UNI EN ISO 23277</strong></span>
+      </div>
+
+      <h2>Testata</h2>
+      <div class="grid">
+        <label class="field">Oggetto / Object <input type="text" value="" placeholder="{oggetto}"></label>
+        <label class="field">Cliente / Customer <input type="text" value="" placeholder="{cliente}"></label>
+        <label class="field">Ordine cliente / Customer order <input type="text" value="" placeholder="{ordine}"></label>
+        <label class="field">Commessa / Job <input type="text" value="" placeholder="{commessa}"></label>
+        <label class="field">Materiale base / Base material <input type="text" value="" placeholder="{materiale}"></label>
+        <label class="field">Disegno / Drawing <input type="text" value="" placeholder="{disegno}"></label>
+      </div>
+
+      <h2>Condizioni d'esame — accettazione 23277</h2>
+      <p class="note">Gruppo esclusivo (radio). Default Word: livello 1. Placeholder <span class="ph">{pt_acc_l1}</span> <span class="ph">{pt_acc_l2}</span> <span class="ph">{pt_acc_l3}</span></p>
+      <div class="flags">
+        <label><input type="radio" name="acc" checked> Livello 1 — lin. l≤2 / n.lin. d≤4</label>
+        <label><input type="radio" name="acc"> Livello 2 — l≤4 / d≤6</label>
+        <label><input type="radio" name="acc"> Livello 3 — l≤8 / d≤8</label>
+      </div>
+
+      <h2>Superficie</h2>
+      <p class="note">Gruppo esclusivo. <span class="ph">{pt_sup_asw}</span> <span class="ph">{pt_sup_grd}</span> <span class="ph">{pt_sup_mac}</span> <span class="ph">{pt_sup_frg}</span></p>
+      <div class="flags">
+        <label><input type="radio" name="sup"> Come saldato</label>
+        <label><input type="radio" name="sup"> Molato</label>
+        <label><input type="radio" name="sup"> Lav. macchina</label>
+        <label><input type="radio" name="sup"> Forgiato</label>
+      </div>
+
+      <h2>Pulizia superficiale</h2>
+      <p class="note">Nel Word Mason molatura e spazzolatura sono entrambi ☑ (non un solo radio). Qui checkbox per specchiare il modello. <span class="ph">{pt_cln_gr}</span> <span class="ph">{pt_cln_br}</span> <span class="ph">{pt_cln_sb}</span></p>
+      <div class="flags">
+        <label><input type="checkbox" checked> Molatura / grinding</label>
+        <label><input type="checkbox" checked> Spazzolatura / brushing</label>
+        <label><input type="checkbox"> Sabbiatura / sandblasting</label>
+      </div>
+
+      <h2>Applicazione</h2>
+      <p class="note">Gruppo esclusivo. Default Word: spray. <span class="ph">{pt_app_spray}</span> <span class="ph">{pt_app_dip}</span> <span class="ph">{pt_app_brush}</span></p>
+      <div class="flags">
+        <label><input type="radio" name="app" checked> Spray</label>
+        <label><input type="radio" name="app"> Immersione</label>
+        <label><input type="radio" name="app"> Pennello</label>
+      </div>
+
+      <h2>Consumabili, lotti, condizioni</h2>
+      <div class="grid">
+        <label class="field">Penetrante <input type="text" value="PENTRIX 100" placeholder="{pt_pen}"></label>
+        <label class="field">Lotto penetrante <input type="text" value="3416" placeholder="{pt_pen_lot}"></label>
+        <label class="field">Solvente <input type="text" value="METACLEAN 300" placeholder="{pt_sol}"></label>
+        <label class="field">Lotto solvente <input type="text" value="3515" placeholder="{pt_sol_lot}"></label>
+        <label class="field">Rilevatore <input type="text" value="RIVELEX 200" placeholder="{pt_det}"></label>
+        <label class="field">Lotto rilevatore <input type="text" value="3030" placeholder="{pt_det_lot}"></label>
+        <label class="field">% controllo <input type="text" value="100" placeholder="{inspection_pct}"></label>
+        <label class="field">Illuminamento (lux) <input type="text" value="600" placeholder="{pt_lux}"></label>
+        <label class="field">Temperatura (°C) <input type="text" value="15" placeholder="{pt_temp}"></label>
+      </div>
+      <p class="note">Valori esempio copiati dal modello Word (non dati di un pezzo reale).</p>
+
+      <h2>Risultati — difetti ISO 6520</h2>
+      <p class="note">Due gruppi per riga: presenza sì | NA; esito A | NA | S. A = accettabile, S = scarto. Righe 502–515 nel modello sono spesso solo NA.</p>
+      <table>
+        <thead>
+          <tr>
+            <th>Voce</th>
+            <th>ISO 6520</th>
+            <th>Presenza</th>
+            <th>Esito</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Cricche / Crack</td>
+            <td class="code">100–104</td>
+            <td><label><input type="radio" name="d100yn"> sì</label> <label><input type="radio" name="d100yn"> NA</label></td>
+            <td><label><input type="radio" name="d100es"> A</label> <label><input type="radio" name="d100es"> NA</label> <label><input type="radio" name="d100es"> S</label></td>
+          </tr>
+          <tr>
+            <td>Porosità superficiale / Surface pore</td>
+            <td class="code">2017</td>
+            <td><label><input type="radio" name="d2017yn"> sì</label> <label><input type="radio" name="d2017yn"> NA</label></td>
+            <td><label><input type="radio" name="d2017es"> A</label> <label><input type="radio" name="d2017es"> NA</label> <label><input type="radio" name="d2017es"> S</label></td>
+          </tr>
+          <tr>
+            <td>Mancata fusione / Lack of fusion</td>
+            <td class="code">401</td>
+            <td><label><input type="radio" name="d401yn"> sì</label> <label><input type="radio" name="d401yn"> NA</label></td>
+            <td><label><input type="radio" name="d401es"> A</label> <label><input type="radio" name="d401es"> NA</label> <label><input type="radio" name="d401es"> S</label></td>
+          </tr>
+          <tr>
+            <td>Mancata penetrazione / Incomplete penetration</td>
+            <td class="code">402</td>
+            <td><label><input type="radio" name="d402yn"> sì</label> <label><input type="radio" name="d402yn"> NA</label></td>
+            <td><label><input type="radio" name="d402es"> A</label> <label><input type="radio" name="d402es"> NA</label> <label><input type="radio" name="d402es"> S</label></td>
+          </tr>
+          <tr>
+            <td>Incisione marginale / Undercut</td>
+            <td class="code">5011–5012</td>
+            <td><label><input type="radio" name="d5011yn"> sì</label> <label><input type="radio" name="d5011yn"> NA</label></td>
+            <td><label><input type="radio" name="d5011es"> A</label> <label><input type="radio" name="d5011es"> NA</label> <label><input type="radio" name="d5011es"> S</label></td>
+          </tr>
+          <tr>
+            <td>Incisione al vertice / Shrinkage grooves</td>
+            <td class="code">5013</td>
+            <td><label><input type="radio" name="d5013yn"> sì</label> <label><input type="radio" name="d5013yn"> NA</label></td>
+            <td><label><input type="radio" name="d5013es"> A</label> <label><input type="radio" name="d5013es"> NA</label> <label><input type="radio" name="d5013es"> S</label></td>
+          </tr>
+          <tr class="na-only">
+            <td>Sovrametallo eccessivo</td>
+            <td class="code">502</td>
+            <td colspan="2">Nel modello: solo NA</td>
+          </tr>
+          <tr class="na-only">
+            <td>Convessità eccessiva</td>
+            <td class="code">503</td>
+            <td colspan="2">Nel modello: solo NA</td>
+          </tr>
+          <tr class="na-only">
+            <td>Eccesso di penetrazione</td>
+            <td class="code">504</td>
+            <td colspan="2">Nel modello: solo NA</td>
+          </tr>
+          <tr class="na-only">
+            <td>Sgocciolamento</td>
+            <td class="code">5041</td>
+            <td colspan="2">Nel modello: solo NA</td>
+          </tr>
+          <tr class="na-only">
+            <td>Traboccamento</td>
+            <td class="code">506</td>
+            <td colspan="2">Nel modello: solo NA</td>
+          </tr>
+          <tr class="na-only">
+            <td>Slivellamento</td>
+            <td class="code">507</td>
+            <td colspan="2">Nel modello: solo NA</td>
+          </tr>
+          <tr class="na-only">
+            <td>Avvallamento</td>
+            <td class="code">509</td>
+            <td colspan="2">Nel modello: solo NA</td>
+          </tr>
+          <tr class="na-only">
+            <td>Riempimento incompleto</td>
+            <td class="code">511</td>
+            <td colspan="2">Nel modello: solo NA</td>
+          </tr>
+          <tr class="na-only">
+            <td>Asimmetria eccessiva</td>
+            <td class="code">512</td>
+            <td colspan="2">Nel modello: solo NA</td>
+          </tr>
+          <tr class="na-only">
+            <td>Insellamento al vertice</td>
+            <td class="code">515</td>
+            <td colspan="2">Nel modello: solo NA</td>
+          </tr>
+          <tr>
+            <td>Ripresa difettosa / Poor restart</td>
+            <td class="code">517</td>
+            <td><label><input type="radio" name="d517yn"> sì</label> <label><input type="radio" name="d517yn"> NA</label></td>
+            <td><label><input type="radio" name="d517es"> A</label> <label><input type="radio" name="d517es"> NA</label> <label><input type="radio" name="d517es"> S</label></td>
+          </tr>
+          <tr>
+            <td>Colpo d'arco / Arc strike</td>
+            <td class="code">601</td>
+            <td><label><input type="radio" name="d601yn"> sì</label> <label><input type="radio" name="d601yn"> NA</label></td>
+            <td><label><input type="radio" name="d601es"> A</label> <label><input type="radio" name="d601es"> NA</label> <label><input type="radio" name="d601es"> S</label></td>
+          </tr>
+          <tr>
+            <td>Spruzzi / Spatter</td>
+            <td class="code">602</td>
+            <td><label><input type="radio" name="d602yn"> sì</label> <label><input type="radio" name="d602yn"> NA</label></td>
+            <td><label><input type="radio" name="d602es"> A</label> <label><input type="radio" name="d602es"> NA</label> <label><input type="radio" name="d602es"> S</label></td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h2>Esito finale</h2>
+      <p class="note">Testo fisso Word: dopo il test la superficie è stata pulita con solvente. Default: SI. <span class="ph">{pt_final_ok}</span> <span class="ph">{pt_final_ko}</span></p>
+      <div class="flags">
+        <label><input type="radio" name="final" checked> SI — soddisfacente</label>
+        <label><input type="radio" name="final"> NO — non soddisfacente</label>
+      </div>
+      <div class="grid" style="margin-top:10px">
+        <label class="field">Controllo effettuato il <input type="text" value="xx/xx/2026" placeholder="{pt_date_insp}"></label>
+        <label class="field">Emissione certificato <input type="text" value="xx/xx/2026" placeholder="{pt_date_iss}"></label>
+      </div>
+
+      <h2>Ufficializzazione — solo nomi (niente firma grafica)</h2>
+      <div class="names">
+        <div class="box">
+          IL RESPONSABILE<br>
+          <input type="text" style="width:100%;border:none;border-bottom:1px dotted #888;font:inherit;margin-top:8px" placeholder="{pt_name_resp}">
+        </div>
+        <div class="box">
+          L'ISPETTORE<br>
+          <input type="text" style="width:100%;border:none;border-bottom:1px dotted #888;font:inherit;margin-top:8px" placeholder="{pt_name_insp}">
+        </div>
+        <div class="box">
+          IL CLIENTE<br>
+          <input type="text" style="width:100%;border:none;border-bottom:1px dotted #888;font:inherit;margin-top:8px" placeholder="{pt_name_cli}">
+        </div>
+      </div>
+    </article>
+
+    <p class="spike-end">
+      Fine spike. Prossimo passo produzione: <strong>CND-4</strong> (Template report scope <code>cnd</code>, Word).
+      PDF = stampa/export dal Word compilato, non da questo HTML.
+      Nota operativa: <a href="SPIKE_CND_HTML_PREVIEW.md">SPIKE_CND_HTML_PREVIEW.md</a>.
+    </p>
+  </div>
+</body>
+</html>
