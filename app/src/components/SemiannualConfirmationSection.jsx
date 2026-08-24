@@ -72,7 +72,10 @@ function SemiannualConfirmationSection({
     if (openByDefault) {
       setExpanded(true);
       requestAnimationFrame(() => {
-        sectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+        const el = sectionRef.current;
+        if (el && typeof el.scrollIntoView === "function") {
+          el.scrollIntoView({ behavior: "smooth", block: "start" });
+        }
       });
     }
   }, [openByDefault]);
