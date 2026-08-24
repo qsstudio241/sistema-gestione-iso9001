@@ -960,11 +960,15 @@ async function deleteQualification(req, res) {
  * definitiva è ora l'unica azione di rimozione esposta in UI (oltre alla modifica
  * diretta dello Stato) ed è consentita per QUALSIASI qualifica, purché non abbia
  * legami reali che ne renderebbero pericolosa la cancellazione:
- *  - non ha conferme semestrali registrate (qualification_confirmations);
  *  - non è collegata a un file di import (import_job_files.qualification_id);
  *  - non è la versione "precedente" di un rinnovo (nessun'altra qualifica la referenzia
  *    tramite previous_qualification_id);
  *  - non è assegnata a un WPS (wps_welders), se la tabella esiste.
+ *
+ * Aggiornamento 24/08/2026 (rilievo Mason): le conferme semestrali
+ * (qualification_confirmations) sono figlie della qualifica e vengono eliminate
+ * in cascade esplicito prima del DELETE — non bloccano più l'Elimina (la UI
+ * avvisa che andranno perse insieme al record).
  */
 async function hardDeleteQualification(req, res) {
     try {
@@ -983,21 +987,13 @@ async function hardDeleteQualification(req, res) {
         const writeDenied = await assertMutatingAllowed(req.user, { companyId: row.company_id });
         if (writeDenied) return sendAccessDenied(res, writeDenied);
 
-        const [confirmations, importLinks, renewalRefs] = await Promise.all([
-            pool.request().input('id', id)
-                .query('SELECT COUNT(*) AS cnt FROM qualification_confirmations WHERE qualification_id=@id'),
+        const [importLinks, renewalRefs] = await Promise.all([
             pool.request().input('id', id)
                 .query('SELECT COUNT(*) AS cnt FROM import_job_files WHERE qualification_id=@id'),
             pool.request().input('id', id)
                 .query('SELECT COUNT(*) AS cnt FROM qualifications WHERE previous_qualification_id=@id'),
         ]);
 
-        if (confirmations.recordset[0].cnt > 0) {
-            return res.status(409).json({
-                error: 'Impossibile eliminare: esistono conferme semestrali registrate su questa qualifica.',
-                code: 'HAS_CONFIRMATIONS',
-            });
-        }
         if (importLinks.recordset[0].cnt > 0) {
             return res.status(409).json({
                 error: 'Impossibile eliminare: la qualifica \u00e8 collegata a un documento importato.',
@@ -1024,6 +1020,10 @@ async function hardDeleteQualification(req, res) {
             // Tabella wps_welders assente in alcuni ambienti storici: non blocca l'eliminazione.
             logger.warn('[Qualif] Verifica wps_welders non eseguita:', wpsErr.message);
         }
+
+        // Cascade esplicito: FK senza ON DELETE CASCADE (mig. 094).
+        await pool.request().input('id', id).input('orgId', orgId)
+            .query('DELETE FROM qualification_confirmations WHERE qualification_id=@id AND organization_id=@orgId');
 
         await pool.request().input('id', id).input('orgId', orgId)
             .query('DELETE FROM qualifications WHERE id=@id AND organization_id=@orgId');
@@ -1518,6 +1518,148 @@ async function confirmSemiannual(req, res) {
     }
 }
 
+/**
+ * Ricalcola last_confirmation_date / next_confirmation_due dalla conferma più recente.
+ * Usato dopo PUT/DELETE su una riga dello storico.
+ */
+async function recomputeConfirmationAggregates(txOrPool, { qualId, orgId }) {
+    const latest = await txOrPool.request()
+        .input('qualId', qualId)
+        .input('orgId', orgId)
+        .query(`
+            SELECT TOP 1 confirmed_at
+            FROM qualification_confirmations
+            WHERE qualification_id = @qualId AND organization_id = @orgId
+            ORDER BY confirmed_at DESC, id DESC
+        `);
+    const lastConf = latest.recordset[0]?.confirmed_at
+        ? String(latest.recordset[0].confirmed_at).slice(0, 10)
+        : null;
+    const nextDue = lastConf ? addMonthsIso(lastConf, 6) : null;
+    await txOrPool.request()
+        .input('qualId', qualId)
+        .input('orgId', orgId)
+        .input('lastConf', lastConf)
+        .input('nextDue', nextDue)
+        .query(`
+            UPDATE qualifications
+            SET last_confirmation_date = @lastConf,
+                next_confirmation_due = @nextDue,
+                updated_at = GETDATE()
+            WHERE id = @qualId AND organization_id = @orgId
+        `);
+    return { last_confirmation_date: lastConf, next_confirmation_due: nextDue };
+}
+
+/**
+ * PUT /qualifications/:id/confirmations/:confirmationId — corregge data/note di una
+ * conferma già registrata (rilievo Mason 24/08/2026: date non editabili dopo insert).
+ * Stessi privilegi di POST confirm-semiannual. Dopo l'update ricalcola gli aggregati
+ * sulla qualifica dalla conferma più recente.
+ */
+async function updateConfirmation(req, res) {
+    try {
+        const pool  = await getPool();
+        const orgId = req.user.organization_id;
+        const qualId = parseInt(req.params.id, 10);
+        const confirmationId = parseInt(req.params.confirmationId, 10);
+        const { confirmed_at, notes } = req.body || {};
+
+        if (!Number.isFinite(qualId) || !Number.isFinite(confirmationId)) {
+            return res.status(400).json({ error: 'Identificativi non validi.', code: 'INVALID_ID' });
+        }
+
+        const check = await pool.request()
+            .input('id', qualId)
+            .input('orgId', orgId)
+            .query(`
+                SELECT id, company_id, qualification_type, status
+                FROM qualifications
+                WHERE id=@id AND organization_id=@orgId
+            `);
+        if (!check.recordset.length) return res.status(404).json({ error: 'Non trovata.' });
+
+        const qual = check.recordset[0];
+        if (!requiresSemiannualConfirmation(qual.qualification_type)) {
+            return res.status(400).json({
+                error: 'Tipo qualifica non ammesso per conferma semestrale (solo ISO 9606-1 / ISO 14732).',
+                code: 'NOT_WELDER_9606',
+            });
+        }
+
+        const auth = await canUserConfirmSemiannual(req.user, qual.company_id);
+        if (!auth.allowed) {
+            return res.status(403).json({
+                error: 'Solo il coordinatore responsabile primario o admin/superadmin possono modificare la conferma.',
+                code: 'FORBIDDEN_NOT_PRIMARY',
+                reason: auth.reason,
+            });
+        }
+
+        const existing = await pool.request()
+            .input('cid', confirmationId)
+            .input('qualId', qualId)
+            .input('orgId', orgId)
+            .query(`
+                SELECT id, confirmed_at, notes
+                FROM qualification_confirmations
+                WHERE id = @cid AND qualification_id = @qualId AND organization_id = @orgId
+            `);
+        if (!existing.recordset.length) {
+            return res.status(404).json({ error: 'Conferma non trovata.', code: 'CONFIRMATION_NOT_FOUND' });
+        }
+
+        const current = existing.recordset[0];
+        const confirmedDate = confirmed_at != null
+            ? String(confirmed_at).slice(0, 10)
+            : String(current.confirmed_at).slice(0, 10);
+        if (!/^\d{4}-\d{2}-\d{2}$/.test(confirmedDate)) {
+            return res.status(400).json({ error: 'Data conferma non valida.', code: 'INVALID_DATE' });
+        }
+
+        const notesTrim = notes === undefined
+            ? current.notes
+            : (notes?.trim() ? notes.trim().substring(0, 500) : null);
+
+        const tx = pool.transaction();
+        await tx.begin();
+        try {
+            await tx.request()
+                .input('cid', confirmationId)
+                .input('qualId', qualId)
+                .input('orgId', orgId)
+                .input('confirmedAt', confirmedDate)
+                .input('notes', notesTrim)
+                .query(`
+                    UPDATE qualification_confirmations
+                    SET confirmed_at = @confirmedAt,
+                        notes = @notes
+                    WHERE id = @cid AND qualification_id = @qualId AND organization_id = @orgId
+                `);
+
+            const aggregates = await recomputeConfirmationAggregates(tx, { qualId, orgId });
+            await tx.commit();
+
+            logger.info(`[Qualif] Conferma ${confirmationId} aggiornata su qual=${qualId} data=${confirmedDate}`);
+            res.json({
+                success: true,
+                confirmation: {
+                    id: confirmationId,
+                    confirmed_at: confirmedDate,
+                    notes: notesTrim,
+                },
+                ...aggregates,
+            });
+        } catch (txErr) {
+            await tx.rollback();
+            throw txErr;
+        }
+    } catch (err) {
+        logger.error('updateConfirmation:', err.message);
+        res.status(500).json({ error: err.message });
+    }
+}
+
 /** GET /qualifications/confirmations/export — export Excel registro conferme */
 async function exportConfirmations(req, res) {
     try {
@@ -1627,6 +1769,7 @@ module.exports = {
     getHistory,
     getConfirmations,
     confirmSemiannual,
+    updateConfirmation,
     exportConfirmations,
     // Esportate per test unitari (calcolo semaforo/scadenza effettiva)
     effectiveExpiryDate,

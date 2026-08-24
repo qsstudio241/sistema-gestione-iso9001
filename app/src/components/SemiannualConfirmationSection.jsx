@@ -32,6 +32,10 @@ function SemiannualConfirmationSection({
   const [confirmNotes, setConfirmNotes] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [exporting, setExporting] = useState(false);
+  const [editingId, setEditingId] = useState(null);
+  const [editDate, setEditDate] = useState("");
+  const [editNotes, setEditNotes] = useState("");
+  const [editSaving, setEditSaving] = useState(false);
 
   const visible = approvalStatus === "approvata" && requiresSemiannualConfirmation(qualificationType);
   const sectionLabel = isOperator14732Type(qualificationType)
@@ -72,6 +76,43 @@ function SemiannualConfirmationSection({
       });
     }
   }, [openByDefault]);
+
+  function startEdit(c) {
+    setEditingId(c.id);
+    setEditDate(c.confirmed_at ? String(c.confirmed_at).slice(0, 10) : "");
+    setEditNotes(c.notes || "");
+    setError(null);
+  }
+
+  function cancelEdit() {
+    setEditingId(null);
+    setEditDate("");
+    setEditNotes("");
+  }
+
+  async function handleSaveEdit() {
+    if (!editingId || !editDate) return;
+    setEditSaving(true);
+    setError(null);
+    try {
+      const res = await apiService.updateQualificationConfirmation(qualificationId, editingId, {
+        confirmed_at: editDate,
+        notes: editNotes.trim() || null,
+      });
+      if (res?.last_confirmation_date) setLastConf(String(res.last_confirmation_date).slice(0, 10));
+      if (res?.next_confirmation_due) setNextDue(String(res.next_confirmation_due).slice(0, 10));
+      onDatesUpdated?.({
+        last_confirmation_date: res?.last_confirmation_date || editDate,
+        next_confirmation_due: res?.next_confirmation_due || "",
+      });
+      cancelEdit();
+      await loadConfirmations();
+    } catch (err) {
+      setError(err.message || "Errore salvataggio conferma");
+    } finally {
+      setEditSaving(false);
+    }
+  }
 
   async function handleConfirm() {
     setSubmitting(true);
@@ -156,7 +197,7 @@ function SemiannualConfirmationSection({
 
           {!canConfirm && (
             <p className="qf-info" style={{ fontSize: 13, marginTop: 8 }}>
-              Solo il coordinatore responsabile primario dell&apos;azienda può registrare la conferma.
+              Solo il coordinatore responsabile primario dell&apos;azienda può registrare o correggere le conferme.
             </p>
           )}
 
@@ -169,17 +210,72 @@ function SemiannualConfirmationSection({
                   <th>Data</th>
                   <th>Confermato da</th>
                   <th>Note</th>
+                  {canConfirm && <th>Azioni</th>}
                 </tr>
               </thead>
               <tbody>
                 {confirmations.map((c) => (
                   <tr key={c.id}>
-                    <td>{c.confirmed_at ? formatDate(c.confirmed_at) : "\u2014"}</td>
-                    <td>
-                      {c.confirmer_name || "\u2014"}
-                      {c.confirmer_title ? ` (${c.confirmer_title})` : ""}
-                    </td>
-                    <td>{c.notes || "\u2014"}</td>
+                    {editingId === c.id ? (
+                      <>
+                        <td>
+                          <input
+                            type="date"
+                            value={editDate}
+                            onChange={(e) => setEditDate(e.target.value)}
+                            aria-label="Data conferma da correggere"
+                          />
+                        </td>
+                        <td>
+                          {c.confirmer_name || "\u2014"}
+                          {c.confirmer_title ? ` (${c.confirmer_title})` : ""}
+                        </td>
+                        <td>
+                          <textarea
+                            className="notes-textarea"
+                            rows={2}
+                            value={editNotes}
+                            onChange={(e) => setEditNotes(e.target.value)}
+                            aria-label="Note conferma"
+                          />
+                        </td>
+                        <td>
+                          <div className="qf-confirm-edit-actions">
+                            <button
+                              type="button"
+                              className="qf-btn-save"
+                              onClick={handleSaveEdit}
+                              disabled={editSaving || !editDate}
+                            >
+                              {editSaving ? "Salvataggio..." : "Salva"}
+                            </button>
+                            <button type="button" className="qf-btn-cancel" onClick={cancelEdit} disabled={editSaving}>
+                              Annulla
+                            </button>
+                          </div>
+                        </td>
+                      </>
+                    ) : (
+                      <>
+                        <td>{c.confirmed_at ? formatDate(c.confirmed_at) : "\u2014"}</td>
+                        <td>
+                          {c.confirmer_name || "\u2014"}
+                          {c.confirmer_title ? ` (${c.confirmer_title})` : ""}
+                        </td>
+                        <td>{c.notes || "\u2014"}</td>
+                        {canConfirm && (
+                          <td>
+                            <button
+                              type="button"
+                              className="qf-btn-link"
+                              onClick={() => startEdit(c)}
+                            >
+                              Modifica
+                            </button>
+                          </td>
+                        )}
+                      </>
+                    )}
                   </tr>
                 ))}
               </tbody>

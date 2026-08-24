@@ -10,7 +10,17 @@
 }
 
 .rm03-import__dialog--expanded {
+  width: 100%;
+  max-width: none;
+  max-height: none;
+  height: 100%;
   padding: 0.75rem 1rem 1rem;
+}
+
+.rm03-import__dialog--expanded .ingest-dialog-shell__preview-pane {
+  min-height: 0;
+  max-height: none;
+  height: 100%;
 }
 
 .rm03-import__dialog .ingest-dialog-shell__layout {

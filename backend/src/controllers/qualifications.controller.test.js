@@ -195,8 +195,9 @@ describe('qualifications.controller — listQualifications filtro situazione', (
  * Test L1 — hardDeleteQualification (Elimina reale, unica azione di rimozione
  * esposta in UI dal 28/07/2026 — rimossi Approva/Rifiuta/Revoca manuali, v.
  * header qualifications.controller.js). Verifica i gate di sicurezza rimasti:
- * nessuna dipendenza da approval_status, solo assenza di legami reali (conferme
- * semestrali, import, rinnovo, WPS).
+ * nessuna dipendenza da approval_status, solo assenza di legami reali (import,
+ * rinnovo, WPS). Le conferme semestrali non bloccano più: cascade DELETE
+ * (rilievo Mason 24/08/2026).
  */
 describe('qualifications.controller — hardDeleteQualification', () => {
   function makePool(responses) {
@@ -241,23 +242,26 @@ describe('qualifications.controller — hardDeleteQualification', () => {
     expect(res.statusCode).toBe(404);
   });
 
-  it('409 se esistono conferme semestrali registrate', async () => {
+  it('elimina con successo anche se esistono conferme semestrali (cascade)', async () => {
     getPool.mockResolvedValue(makePool([
       { recordset: [{ id: 1, company_id: 5, approval_status: 'approvata', approved_at: '2026-01-01', certificate_file_url: null }] },
-      { recordset: [{ cnt: 1 }] }, // confirmations
+      { recordset: [{ cnt: 0 }] }, // import links
+      { recordset: [{ cnt: 0 }] }, // renewal refs
+      { recordset: [{ cnt: 0 }] }, // wps_welders
+      { recordset: [] },           // DELETE confirmations
+      { recordset: [] },           // DELETE qualification
     ]));
     const { req, res } = makeReqRes();
 
     await hardDeleteQualification(req, res);
 
-    expect(res.statusCode).toBe(409);
-    expect(res.body.code).toBe('HAS_CONFIRMATIONS');
+    expect(res.statusCode).toBe(200);
+    expect(res.body).toEqual({ success: true });
   });
 
   it('409 se collegata a un documento importato', async () => {
     getPool.mockResolvedValue(makePool([
       { recordset: [{ id: 1, company_id: 5, approval_status: 'approvata', approved_at: '2026-01-01', certificate_file_url: null }] },
-      { recordset: [{ cnt: 0 }] }, // confirmations
       { recordset: [{ cnt: 1 }] }, // import links
     ]));
     const { req, res } = makeReqRes();
@@ -271,7 +275,6 @@ describe('qualifications.controller — hardDeleteQualification', () => {
   it('409 se è la versione precedente di un rinnovo', async () => {
     getPool.mockResolvedValue(makePool([
       { recordset: [{ id: 1, company_id: 5, approval_status: 'approvata', approved_at: '2026-01-01', certificate_file_url: null }] },
-      { recordset: [{ cnt: 0 }] }, // confirmations
       { recordset: [{ cnt: 0 }] }, // import links
       { recordset: [{ cnt: 1 }] }, // renewal refs
     ]));
@@ -298,11 +301,11 @@ describe('qualifications.controller — hardDeleteQualification', () => {
   it('elimina con successo una qualifica attiva (approvata) senza legami — nessun gate su approval_status', async () => {
     getPool.mockResolvedValue(makePool([
       { recordset: [{ id: 1, company_id: 5, approval_status: 'approvata', approved_at: '2026-01-01', certificate_file_url: null }] },
-      { recordset: [{ cnt: 0 }] }, // confirmations
       { recordset: [{ cnt: 0 }] }, // import links
       { recordset: [{ cnt: 0 }] }, // renewal refs
       { recordset: [{ cnt: 0 }] }, // wps_welders
-      { recordset: [] },           // DELETE
+      { recordset: [] },           // DELETE confirmations
+      { recordset: [] },           // DELETE qualification
     ]));
     const { req, res } = makeReqRes();
 
@@ -610,5 +613,116 @@ describe('qualifications.controller — createQualification sempre attiva (no ga
     await createQualification(req, res);
 
     expect(insertReq.input).toHaveBeenCalledWith('approvalStatus', 'approvata');
+  });
+});
+
+/**
+ * Test L1 — updateConfirmation (correzione date/note conferma semestrale, Mason 24/08/2026).
+ */
+const { updateConfirmation } = require('./qualifications.controller');
+
+describe('qualifications.controller — updateConfirmation', () => {
+  function makeTxPool({ qualRow, confRow, latestRow }) {
+    const queries = [];
+    function makeRequest() {
+      return {
+        input: jest.fn().mockReturnThis(),
+        query: jest.fn(async (sql) => {
+          queries.push(sql);
+          if (sql.includes('FROM qualifications') && sql.includes('qualification_type')) {
+            return { recordset: qualRow };
+          }
+          if (sql.includes('FROM qualification_confirmations') && sql.includes('WHERE id = @cid')) {
+            return { recordset: confRow };
+          }
+          if (sql.includes('SELECT TOP 1 confirmed_at')) {
+            return { recordset: latestRow };
+          }
+          return { recordset: [] };
+        }),
+      };
+    }
+    const tx = {
+      begin: jest.fn().mockResolvedValue(undefined),
+      commit: jest.fn().mockResolvedValue(undefined),
+      rollback: jest.fn().mockResolvedValue(undefined),
+      request: jest.fn(makeRequest),
+    };
+    return {
+      pool: {
+        request: jest.fn(makeRequest),
+        transaction: jest.fn(() => tx),
+      },
+      tx,
+      queries,
+    };
+  }
+
+  function makeReqRes() {
+    const req = {
+      params: { id: '10', confirmationId: '77' },
+      body: { confirmed_at: '2026-03-15', notes: 'Corretto' },
+      user: { organization_id: 1, user_id: 42, role: 'admin', email: 'admin@sgq.local' },
+    };
+    const res = {
+      statusCode: 200,
+      body: null,
+      status(code) { this.statusCode = code; return this; },
+      json(payload) { this.body = payload; return this; },
+    };
+    return { req, res };
+  }
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
+  it('aggiorna data/note e ricalcola last/next dalla conferma più recente', async () => {
+    const { pool } = makeTxPool({
+      qualRow: [{ id: 10, company_id: 5, qualification_type: 'Saldatore ISO 9606-1', status: 'valida' }],
+      confRow: [{ id: 77, confirmed_at: '2026-01-10', notes: 'Vecchia' }],
+      latestRow: [{ confirmed_at: '2026-03-15' }],
+    });
+    getPool.mockResolvedValue(pool);
+    const { req, res } = makeReqRes();
+
+    await updateConfirmation(req, res);
+
+    expect(res.statusCode).toBe(200);
+    expect(res.body.success).toBe(true);
+    expect(res.body.confirmation.confirmed_at).toBe('2026-03-15');
+    expect(res.body.last_confirmation_date).toBe('2026-03-15');
+    expect(res.body.next_confirmation_due).toBe('2026-09-15');
+  });
+
+  it('404 se la conferma non appartiene alla qualifica', async () => {
+    const { pool } = makeTxPool({
+      qualRow: [{ id: 10, company_id: 5, qualification_type: 'Saldatore ISO 9606-1', status: 'valida' }],
+      confRow: [],
+      latestRow: [],
+    });
+    getPool.mockResolvedValue(pool);
+    const { req, res } = makeReqRes();
+
+    await updateConfirmation(req, res);
+
+    expect(res.statusCode).toBe(404);
+    expect(res.body.code).toBe('CONFIRMATION_NOT_FOUND');
+  });
+
+  it('400 se data non valida', async () => {
+    const { pool } = makeTxPool({
+      qualRow: [{ id: 10, company_id: 5, qualification_type: 'Saldatore ISO 9606-1', status: 'valida' }],
+      confRow: [{ id: 77, confirmed_at: '2026-01-10', notes: null }],
+      latestRow: [],
+    });
+    getPool.mockResolvedValue(pool);
+    const { req, res } = makeReqRes();
+    req.body.confirmed_at = '15/03/2026';
+
+    await updateConfirmation(req, res);
+
+    expect(res.statusCode).toBe(400);
+    expect(res.body.code).toBe('INVALID_DATE');
   });
 });

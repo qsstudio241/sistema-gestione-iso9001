@@ -161,8 +161,10 @@ export function QualRow({ q, tabKey, onEdit, onHardDelete, onRenew, onHistory, h
         <td className="sq-col-actions">
             {hardDeleteId === q.id ? (
                 <div className="sq-confirm">
-                    <span>Eliminare definitivamente?</span>
-                    <button className="sq-confirm-yes" onClick={() => onHardDelete(q.id)}>S\xec</button>
+                    <span title="Elimina anche le eventuali conferme semestrali registrate">
+                        Eliminare definitivamente? (anche le conferme semestrali)
+                    </span>
+                    <button className="sq-confirm-yes" onClick={() => onHardDelete(q.id)}>{"S\u00EC"}</button>
                     <button className="sq-confirm-no" onClick={() => setHardDeleteId(null)}>No</button>
                 </div>
             ) : (

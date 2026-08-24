@@ -90,14 +90,20 @@ describe("ReprocessProposalDialog — Ingrandisci affiancato (rilievo committent
 
     const expandBtn = await screen.findByText("Ingrandisci affiancato");
     const overlay = document.querySelector(".reprocess-dialog__overlay");
+    const dialog = document.querySelector(".reprocess-dialog");
     expect(overlay).not.toHaveClass("reprocess-dialog__overlay--expanded");
+    expect(dialog).not.toHaveClass("reprocess-dialog--expanded");
 
     fireEvent.click(expandBtn);
     expect(overlay).toHaveClass("reprocess-dialog__overlay--expanded");
+    expect(overlay).toHaveClass("ingest-dialog-shell__overlay--expanded");
+    expect(dialog).toHaveClass("reprocess-dialog--expanded");
+    expect(dialog).toHaveClass("ingest-dialog-shell__dialog--expanded");
     expect(screen.getByText("Riduci")).toBeInTheDocument();
 
     fireEvent.click(screen.getByText("Riduci"));
     expect(overlay).not.toHaveClass("reprocess-dialog__overlay--expanded");
+    expect(dialog).not.toHaveClass("reprocess-dialog--expanded");
   });
 });
 
