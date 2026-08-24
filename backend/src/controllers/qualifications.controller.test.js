@@ -248,7 +248,28 @@ describe('qualifications.controller — hardDeleteQualification', () => {
       { recordset: [{ cnt: 0 }] }, // import links
       { recordset: [{ cnt: 0 }] }, // renewal refs
       { recordset: [{ cnt: 0 }] }, // wps_welders
+      { recordset: [{ cnt: 0 }] }, // project_welders
       { recordset: [] },           // DELETE confirmations
+      { recordset: [] },           // DELETE notification_log
+      { recordset: [] },           // DELETE qualification
+    ]));
+    const { req, res } = makeReqRes();
+
+    await hardDeleteQualification(req, res);
+
+    expect(res.statusCode).toBe(200);
+    expect(res.body).toEqual({ success: true });
+  });
+
+  it('elimina con successo anche con righe in qual_notification_log (cascade, tipico 9606/14732 alertate)', async () => {
+    getPool.mockResolvedValue(makePool([
+      { recordset: [{ id: 1, company_id: 5, approval_status: 'approvata', approved_at: '2026-01-01', certificate_file_url: null }] },
+      { recordset: [{ cnt: 0 }] }, // import
+      { recordset: [{ cnt: 0 }] }, // renewal
+      { recordset: [{ cnt: 0 }] }, // wps
+      { recordset: [{ cnt: 0 }] }, // project
+      { recordset: [] },           // DELETE confirmations
+      { recordset: [] },           // DELETE notification_log
       { recordset: [] },           // DELETE qualification
     ]));
     const { req, res } = makeReqRes();
@@ -286,6 +307,22 @@ describe('qualifications.controller — hardDeleteQualification', () => {
     expect(res.body.code).toBe('HAS_RENEWAL_LINK');
   });
 
+  it('409 se assegnata a una commessa (project_welders)', async () => {
+    getPool.mockResolvedValue(makePool([
+      { recordset: [{ id: 1, company_id: 5, approval_status: 'approvata', approved_at: '2026-01-01', certificate_file_url: null }] },
+      { recordset: [{ cnt: 0 }] }, // import
+      { recordset: [{ cnt: 0 }] }, // renewal
+      { recordset: [{ cnt: 0 }] }, // wps
+      { recordset: [{ cnt: 2 }] }, // project_welders
+    ]));
+    const { req, res } = makeReqRes();
+
+    await hardDeleteQualification(req, res);
+
+    expect(res.statusCode).toBe(409);
+    expect(res.body.code).toBe('HAS_PROJECT_LINK');
+  });
+
   it('403 se l\'utente non ha permesso di scrittura sull\'azienda', async () => {
     getPool.mockResolvedValue(makePool([
       { recordset: [{ id: 1, company_id: 5, approval_status: 'approvata', approved_at: '2026-01-01', certificate_file_url: null }] },
@@ -304,7 +341,9 @@ describe('qualifications.controller — hardDeleteQualification', () => {
       { recordset: [{ cnt: 0 }] }, // import links
       { recordset: [{ cnt: 0 }] }, // renewal refs
       { recordset: [{ cnt: 0 }] }, // wps_welders
+      { recordset: [{ cnt: 0 }] }, // project_welders
       { recordset: [] },           // DELETE confirmations
+      { recordset: [] },           // DELETE notification_log
       { recordset: [] },           // DELETE qualification
     ]));
     const { req, res } = makeReqRes();
