@@ -963,12 +963,13 @@ async function deleteQualification(req, res) {
  *  - non è collegata a un file di import (import_job_files.qualification_id);
  *  - non è la versione "precedente" di un rinnovo (nessun'altra qualifica la referenzia
  *    tramite previous_qualification_id);
- *  - non è assegnata a un WPS (wps_welders), se la tabella esiste.
+ *  - non è assegnata a un WPS (wps_welders) o a una commessa (project_welders).
  *
- * Aggiornamento 24/08/2026 (rilievo Mason): le conferme semestrali
- * (qualification_confirmations) sono figlie della qualifica e vengono eliminate
- * in cascade esplicito prima del DELETE — non bloccano più l'Elimina (la UI
- * avvisa che andranno perse insieme al record).
+ * Figli "logistici" eliminati in cascade esplicito (FK senza ON DELETE CASCADE):
+ *  - qualification_confirmations (rilievo Mason 24/08/2026)
+ *  - qual_notification_log (rilievo Mason 24/08/2026 — tipico su qualifiche
+ *    con conferma semestrale già alertate: alert_kind=confirmation)
+ * ingest_staging.target_qualification_id ha ON DELETE SET NULL (mig. 137).
  */
 async function hardDeleteQualification(req, res) {
     try {
@@ -1021,9 +1022,26 @@ async function hardDeleteQualification(req, res) {
             logger.warn('[Qualif] Verifica wps_welders non eseguita:', wpsErr.message);
         }
 
-        // Cascade esplicito: FK senza ON DELETE CASCADE (mig. 094).
+        try {
+            const projLink = await pool.request().input('id', id)
+                .query('SELECT COUNT(*) AS cnt FROM project_welders WHERE qualification_id=@id');
+            if (projLink.recordset[0].cnt > 0) {
+                return res.status(409).json({
+                    error: 'Impossibile eliminare: la qualifica \u00e8 assegnata a una commessa.',
+                    code: 'HAS_PROJECT_LINK',
+                });
+            }
+        } catch (projErr) {
+            logger.warn('[Qualif] Verifica project_welders non eseguita:', projErr.message);
+        }
+
+        // Cascade esplicito: FK senza ON DELETE CASCADE (mig. 093/094).
+        // Ordine: figli logistici → qualifica. Il log alert (soprattutto
+        // confirmation per 9606/14732) era il blocco visto da Mason in produzione.
         await pool.request().input('id', id).input('orgId', orgId)
             .query('DELETE FROM qualification_confirmations WHERE qualification_id=@id AND organization_id=@orgId');
+        await pool.request().input('id', id).input('orgId', orgId)
+            .query('DELETE FROM qual_notification_log WHERE qualification_id=@id AND organization_id=@orgId');
 
         await pool.request().input('id', id).input('orgId', orgId)
             .query('DELETE FROM qualifications WHERE id=@id AND organization_id=@orgId');
