@@ -2,8 +2,8 @@
 
 > **Destinazione**: uno studio (Mason) e l’operatore CND chiudono sul telefono il ciclo **incarico → esecuzione in campo → verbale Word + eventuale NC**, riusando qualifiche ISO 9712, strumenti, commesse, foto e PWA già in produzione. Niente app nativa, niente secondo motore, niente tabelle gemelle.
 > **Spec / ADR**: [ISO 9712:2022](../reference/ISO_9712_2022_NDT_QUALIFICATION.md) · ADR-004 (auth mobile) · ADR-016 (strumenti trasversali, verbali ≠ Welding Book) · [PLAN ISO 3834](PLAN_3834_SLICES.md) (ISO-1b/ISO-7 fatti; **ISO-9** eseguita qui come CND-2)
-> **Brief attivi**: [`DEPUTYTASK2.md`](DEPUTYTASK2.md) — **CND-4** (template, file disgiunti). **CND-1** chiusa (`DEPUTYTASK.md`, branch `cursor/cnd-1-marche-mobile-d554`). CND-11 chiusa (#546).
-> **Mappa**: CND-0 chiusa (HITL + estrazione Word 23/08, PR #540 su `main`). **Follow-up 23/08**: prova HTML (`CND-PREVIEW`) — se doppio lavoro si abortisce; certificato resta Word. GUIDA/roadmap hub: non toccati (CND-4 aperto; CND-1 e CND-11 chiusi).
+> **Brief attivi**: nessuno su CND. **CND-1** CHIUSO (#549) — non riaprire `NdtReportsPage.jsx`. **CND-4** CHIUSO (#547). **CND-11** CHIUSO (#546).
+> **Mappa**: CND-0 #540 · spike HTML visibile via htmlpreview (#548/#550) · CND-1/4/11 su `main`. Netlify può lag. **Domani = una slice**: CND-2 (gate 9712+visione, dopo CND-1) **oppure** CND-3 (flag PT/MT, stesso JSX). Firma CND-10 parcheggiata.
 > **Licenza**: modulo `cnd` (bridge: licenza `saldatura` implica `cnd`)
 > **Schermate oggi**: `/cnd/verbali` (`NdtReportsPage.jsx`) · `/cnd/strumenti` (`EquipmentPage.jsx`) · Qualifiche tab NDT
 
@@ -90,24 +90,40 @@ Quindi: **UI = flag**; **modello grafico = Word in Template report**; **PDF = st
 
 ### Follow-up HITL 23/08 — prova HTML (`CND-PREVIEW`)
 
-Committente: d’accordo che il PDF esca dal Word. Chiede una **prova**: preview HTML del foglio PT. Se è **doppio lavoro**, si abortisce e si torna a: genera Word → lui stampa/apre e verifica → dice cosa cambiare → si itera il template.
+Committente 23/08 sera: «ottimo così riesco a vedere il modulo html, conserva la lezione imparata e proseguiamo domani».
 
-**Fonte layout certificato = Word** in Template report (**invariata**). **CND-4 non si sostituisce.** Nessun HTML→PDF di produzione; nessuno `vtWordExport` / `NdtReportsPage` in questa prova.
+**Come vederlo (fatto verificato):** Simple Browser di Cursor su HTML statico locale / `127.0.0.1` → vista sorgente «Pretty-print» o pagina bianca. **Non è file vuoto.** Per il committente: **Chrome/Edge** + [htmlpreview PT](https://htmlpreview.github.io/?https://github.com/qsstudio241/sistema-gestione-iso9001/blob/main/docs/agent-tasks/spike-cnd-pt-preview.html) (PR #548/#550). In VM `python` assente → `python3 -m http.server` (solo locale agente, non per il committente).
 
-**Spike timebox, usa-e-getta:** HTML statico che specchia i **gruppi campo/flag** del PT Mason (stesso ordine di sezione), **non** pagine al millimetro. Scopo = vedere se operatore/Mason rivedono i flag nel browser.
+**Cosa non è:** lo spike **non è** `/cnd/verbali`. Flag 1:1 col Word Mason; Design Mode **non** modifica il `.docx`. Certificato = Word Template report (**CND-4**, #547); PDF dal Word. **Abort** se due layout da allineare (HTML+Word).
+
+**Fonte layout certificato = Word** in Template report (**invariata**). Nessun HTML→PDF di produzione.
 
 | Gate | Criterio | Azione |
 |------|----------|--------|
 | **Abort** | Tenere HTML + Word allineati è chiaramente doppio lavoro (due placeholder, due tabelle, due blocchi bilingue) | **CANCELLARE** lo spike; resta solo itera Word («stampo, verifico, ti dico cosa cambiare») |
 | **Successo** | HTML è solo **preview dati/flag** (stessi gruppi radio del Word), non un secondo layout stampabile | Si può tenere più avanti un «riepilogo» leggero in-app — **non** HTML→PDF come pipeline |
 
-Artefatto: [`spike-cnd-pt-preview.html`](spike-cnd-pt-preview.html) · nota [`SPIKE_CND_HTML_PREVIEW.md`](SPIKE_CND_HTML_PREVIEW.md).
+Artefatto: [`spike-cnd-pt-preview.html`](spike-cnd-pt-preview.html) · nota [`SPIKE_CND_HTML_PREVIEW.md`](SPIKE_CND_HTML_PREVIEW.md). Gate abort/successo: ancora HITL dopo confronto col Word; **non** allineare due layout.
+
+### Handoff (sessione interrotta)
+
+- **Obiettivo**: epic CND operatore in campo; questa sessione = lezione HTML + mappa per domani
+- **Stato**: INTERROTTA
+- **Fatto** (file + commit): spike visibile via htmlpreview (#548/#550); CND-1 #549, CND-4 #547, CND-11 #546 su `main`. Committente ha visto il modulo HTML.
+- **Manca** (un solo prossimo passo): dopo deploy Netlify di CND-1 (può lag), **una slice** — CND-2 gate 9712+visione **oppure** CND-3 flag PT/MT (stesso JSX). Non entrambe.
+- **Non toccare**: `NdtReportsPage.jsx` per riaprire CND-1; due layout HTML+Word; firma CND-10; catalogo flag in GUIDA
+- **Test**: L1 già su main per CND-1/4/11; spike = htmlpreview (non Simple Browser)
+- **Rischi / Bugbot**: Netlify lag ≠ codice assente; spike ≠ `/cnd/verbali`
+- **Brief**: nessuno APERTO — non riaprire [`DEPUTYTASK.md`](DEPUTYTASK.md) CND-1
+- **Branch / PR**: `cursor/cnd-lezione-htmlpreview-handoff-d554` (questa PR docs)
+- **Lezione GUIDA**: Simple Browser Pretty-print ≠ file vuoto; Chrome + htmlpreview
+- **Roadmap** (1 riga «sessione più recente»): CND-1/4/11 mergiati; spike visibile via htmlpreview; prossimo una slice CND-2 o CND-3
 
 ## Non ancora specificato (nebbia residua)
 
 - UT / RT: nessun Word Mason in questa consegna — parametri UT restano CND-5 quando arriverà un modello.
-- Esito della prova HTML (`CND-PREVIEW`): abort (cancella spike) vs riepilogo flag leggero — lo dice il committente dopo aver aperto HTML + Word.
-- PDF come bottone «Consegna cliente» accanto a Word: dopo CND-4, se serve (sempre dal Word, non da HTML).
+- Esito prova HTML (`CND-PREVIEW`): committente **vede** lo spike via htmlpreview; abort vs riepilogo flag — dopo confronto HTML + Word, senza allineare due layout.
+- PDF come bottone «Consegna cliente» accanto a Word: CND-4 è su `main`; se serve, sempre dal Word, non da HTML.
 
 ## Decisioni già prese (codice + ADR, non da ridiscutere)
 
@@ -150,31 +166,32 @@ Ogni slice è un **tracciante verticale** (un passaggio del flusso), non «tutto
 |-------|------|------------------------|------------|------|-----------|
 | **CND-0** | Questa mappa | `PLAN_CND_SLICES.md`, bussola, ISO-9 puntatore | — | AFK docs | *chiusa* |
 | **CND-PREVIEW** | Spike HTML specchio flag PT (timebox, usa-e-getta) | `docs/agent-tasks/spike-cnd-pt-preview.html` + `SPIKE_CND_HTML_PREVIEW.md` | — | HITL | **non** sostituisce CND-4; vietato `NdtReportsPage` / `vtWordExport` |
-| **CND-1** | Verbale VT usabile in tasca (marche a scheda, non tabella da scroll) | `NdtReportsPage.jsx` / `.css`, riuso `status-btn` (`ChecklistModule.css`) + `NdtItemAttachments` | — | AFK | *chiusa* (`DEPUTYTASK.md`, branch `cursor/cnd-1-marche-mobile-d554`) |
+| **CND-1** | Verbale VT usabile in tasca (marche a scheda, non tabella da scroll) | `NdtReportsPage.jsx` / `.css`, riuso `status-btn` (`ChecklistModule.css`) + `NdtItemAttachments` | — | AFK | *chiusa* (#549) — **non riaprire** lo stesso JSX |
 | **CND-2** | Gate ispettore: 9712 valida **e** visita medica/visione (`visionFitness.service.js`); stesso codice per studio e per azienda con licenza | `NdtReportsPage.jsx`, `ndtReports.controller.js`, GET qualifiche + gap visione già esistenti | CND-1 (stesso JSX) | AFK | = ISO-9; **non** aprire da PLAN 3834 |
 | **CND-3** | UI flag PT **e** MT da modelli Mason → `method_params` JSON (metodi indipendenti, nessuna tabella nuova) | `NdtReportsPage.jsx` sezioni metodo; catalogo in appendice | CND-1 (stesso JSX) | AFK | dopo CND-1; **non** parallelo a CND-1 |
-| **CND-4** | Scope `cnd` in Template report + upload modelli Mason `.docx` + resolve per `report_type` | `ReportTemplatesAdminPage.jsx`, `reportTemplate.service.js` / controller, `vtWordExport.js` resolve VPS (come NC) | — | ✅ 23/08 | **parallelo a CND-1 e CND-11** (niente `NdtReportsPage`) |
+| **CND-4** | Scope `cnd` in Template report + upload modelli Mason `.docx` + resolve per `report_type` | `ReportTemplatesAdminPage.jsx`, `reportTemplate.service.js` / controller, `vtWordExport.js` resolve VPS (come NC) | — | ✅ 23/08 | *chiusa* (#547) |
 | **CND-5** | Parametri UT + ruoli strumento non-VT (sonda/giogo) su anagrafica esistente | `NdtReportsPage.jsx`, `EquipmentPage.jsx` (etichette ruolo) | CND-3 | AFK | serializzare con CND-3 sullo stesso JSX; EquipmentPage può partire in parallelo a CND-2 se **solo** CSS/etichette ruoli |
 | **CND-6** | Foto + NC da marca in campo (hardening mobile del già fatto) | `NdtItemAttachments.jsx`, hint `NcCreateModal` | CND-1 | AFK | dopo CND-1; file allegati **disgiunti** da CND-2 se non si tocca la pagina verbale |
 | **CND-7** | Completa verbale → posa nel registro documenti (`report_ndt` / cartella 9.3) | `ndtReports.controller.js`, pattern posa ingest | CND-4 utile | AFK | overlap controller con CND-2 → **dopo** CND-2 |
 | **CND-8** | Crea verbale come audit: bozza UUID → form → coda sync (niente nuova entità “incarico”) | `NdtReportsPage` lista + `enqueueNdtReportSync` / create | CND-9 utile | AFK | dopo CND-9 se tocca la stessa coda; filtro «oggi» è lo stesso elenco |
 | **CND-9** | Rete di salvataggio officina: `useNdtAutoSave` → IndexedDB `syncQueue` (tipi NDT **già** in `syncService`) | `useNdtAutoSave.js`, eventuale gancio foto | — | AFK | overlap con CND-1 se si tocca la pagina; **dopo CND-1** oppure solo hook/coda se CND-1 non tocca l’hook |
 | **CND-10** | Firma grafica / controfirma | — | HITL 23/08: **parcheggio** | HITL | non aprire |
-| **CND-11** | Ingest verbali PDF storici (`report_ndt`) | whitelist pipeline + schema FE `documentTypeSchemas.js` (schema AI BE già c’è); **non** crea righe `ndt_reports` | — | AFK | *chiusa* (questa PR, `DEPUTYTASK1.md`) |
+| **CND-11** | Ingest verbali PDF storici (`report_ndt`) | whitelist pipeline + schema FE `documentTypeSchemas.js` (schema AI BE già c’è); **non** crea righe `ndt_reports` | — | AFK | *chiusa* (#546) |
 | **CND-12** | RT/ET oltre l’etichetta | `method_params` + UI | modello Mason assente | HITL | dopo MT/PT/UT se servono |
 
 ### Onde di parallelismo (file disgiunti)
 
 ```
-Ora (dopo merge mappa):
-  CND-1  (NdtReportsPage marche mobile)  ← *chiusa* (branch cursor/cnd-1-marche-mobile-d554)
-  CND-4  (Template report scope cnd)     ← parallelo
-  CND-11 (ingest report_ndt)             ← chiusa (#546)
+Su `main` (23/08 sera):
+  CND-1  *chiusa* #549 — non riaprire `NdtReportsPage.jsx`
+  CND-4  *chiusa* #547
+  CND-11 *chiusa* #546
+  CND-PREVIEW spike visibile via htmlpreview (#548/#550)
 
-Dopo merge CND-1:
-  CND-9  (useNdtAutoSave → syncQueue)    ← hook, dopo CND-1 se CND-1 non tocca l’hook
-  CND-2  (gate 9712+visione, stesso JSX)
-  CND-6  (NdtItemAttachments)            ← parallelo a CND-2 se file disgiunto
+Domani (dopo deploy Netlify; può lag) — **una slice**:
+  CND-2  (gate 9712+visione, stesso JSX)  **oppure**
+  CND-3  (flag PT/MT, stesso JSX)
+  (CND-9 hook / CND-6 allegati: solo se file disgiunti dalla slice scelta)
 
 Dopo merge CND-2:
   CND-3  (flag PT/MT, stesso JSX)
