@@ -31,9 +31,10 @@ const HTML = `<!DOCTYPE html>
 <div id="overlay" class="ingest-dialog-shell__overlay ingest-review__overlay">
   <div id="dialog" class="ingest-dialog-shell__dialog ingest-review__dialog">
     <header class="ingest-dialog-shell__header"><button id="btn" type="button">Ingrandisci affiancato</button></header>
-    <div class="ingest-dialog-shell__layout">
+        <div class="ingest-dialog-shell__layout" style="grid-template-columns: 1fr 6px 1fr; flex:1; min-height:0">
       <aside class="ingest-dialog-shell__preview-pane" style="background:#e2e8f0;min-height:200px">preview</aside>
-      <div class="ingest-dialog-shell__content-pane ingest-review__form-pane">form</div>
+      <div class="ingest-dialog-shell__resizer"></div>
+      <div class="ingest-dialog-shell__content-pane ingest-review__form-pane" style="padding:12px">form campi</div>
     </div>
   </div>
 </div>
