@@ -44,6 +44,33 @@
   box-shadow: none;
 }
 
+/*
+ * Specificità alta (rilievo Mason 24/08/2026): i CSS dei dialog consumatori
+ * (es. .ingest-review__dialog { width: min(1180px) }) hanno la stessa
+ * specificità della regola sopra e, caricandosi dopo, la sovrascrivono —
+ * «Ingrandisci affiancato» togglava la classe ma la finestra restava piccola.
+ * Il selettore sull'overlay espanso batte width/max-height dei consumatori.
+ */
+.ingest-dialog-shell__overlay--expanded .ingest-dialog-shell__dialog {
+  width: 100%;
+  max-width: none;
+  max-height: none;
+  height: 100%;
+  border-radius: 0;
+  box-shadow: none;
+}
+
+.ingest-dialog-shell__overlay--expanded .ingest-dialog-shell__dialog .ingest-dialog-shell__preview-pane {
+  min-height: 0;
+  max-height: none;
+  height: 100%;
+}
+
+.ingest-dialog-shell__overlay--expanded .ingest-dialog-shell__content-pane {
+  max-height: none;
+  min-height: 0;
+}
+
 .ingest-dialog-shell__header-top {
   display: flex;
   align-items: flex-start;

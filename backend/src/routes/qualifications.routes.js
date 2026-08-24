@@ -102,5 +102,6 @@ router.post('/qualifications/:id/certificate',     certUploadMiddleware, ctrl.up
 router.get ('/qualifications/:id/history',         ctrl.getHistory);
 router.get ('/qualifications/:id/confirmations', ctrl.getConfirmations);
 router.post('/qualifications/:id/confirm-semiannual', ctrl.confirmSemiannual);
+router.put ('/qualifications/:id/confirmations/:confirmationId', ctrl.updateConfirmation);
 
 module.exports = router;

@@ -2008,6 +2008,10 @@ class ApiService {
         return this.post(`/qualifications/${id}/confirm-semiannual`, data);
     }
 
+    async updateQualificationConfirmation(qualificationId, confirmationId, data = {}) {
+        return this.put(`/qualifications/${qualificationId}/confirmations/${confirmationId}`, data);
+    }
+
     async downloadQualificationConfirmationsExport(params = {}) {
         const qs = new URLSearchParams(
             Object.entries(params).filter(([, v]) => v != null && v !== '')

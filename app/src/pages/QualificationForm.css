@@ -27,4 +27,21 @@
 .qf-btn-save   { padding:9px 22px; border:none; border-radius:8px; background:#1e3a5f; color:#fff; font-size:14px; font-weight:600; cursor:pointer; }
 .qf-btn-save:hover:not(:disabled) { background:#16304e; }
 .qf-btn-save:disabled { opacity:.6; cursor:not-allowed; }
+.qf-section-toggle {
+  display:flex; align-items:center; justify-content:space-between; width:100%;
+  background:none; border:none; padding:0; cursor:pointer; text-align:left;
+}
+.qf-section-chevron { color:#9ca3af; font-size:12px; }
+.qf-semiannual-section { margin-top:8px; }
+.qf-semiannual-body { margin-top:10px; display:flex; flex-direction:column; gap:10px; }
+.qf-semiannual-actions { display:flex; flex-wrap:wrap; gap:10px; align-items:center; }
+.qf-confirm-table { width:100%; border-collapse:collapse; font-size:13px; }
+.qf-confirm-table th, .qf-confirm-table td { border-bottom:1px solid #e5e7eb; padding:8px 6px; text-align:left; vertical-align:top; }
+.qf-confirm-table th { color:#6b7280; font-size:11px; text-transform:uppercase; letter-spacing:.04em; }
+.qf-confirm-edit-actions { display:flex; flex-wrap:wrap; gap:6px; }
+.qf-confirm-dialog-overlay {
+  position:fixed; inset:0; background:rgba(0,0,0,.4); display:flex; align-items:center; justify-content:center; z-index:1100;
+}
+.qf-confirm-dialog { background:#fff; border-radius:12px; padding:20px; width:min(420px, 94vw); box-shadow:0 16px 40px rgba(0,0,0,.2); }
+.qf-info { color:#6b7280; margin:0; }
 @media (max-width:500px) { .qf-row { flex-direction:column; } }
