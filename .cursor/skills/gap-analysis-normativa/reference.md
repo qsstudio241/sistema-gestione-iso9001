@@ -1,12 +1,12 @@
-# Riferimento — Fonti normative e mapping moduli e mapping moduli e mapping moduli
+# Riferimento — Fonti normative e mapping moduli
 
 ## Catalogo `docs/Normative/`
 
 | File | standard_code (import) | Standard | Note |
 |------|------------------------|----------|------|
-| `UNI EN ISO 9001_2015 Rev. 0.md` | ISO_9001_2015 | ISO 9001:2015 | Checklist ? in produzione |
-| `Normative NORMA_00003_ UNI EN ISO 14001_2015 Rev. 0.md` | ISO_14001_2015 | ISO 14001:2015 | Checklist ? (53 domande) |
-| `Normative NORMA_00002_ UNI ISO 45001_2018 Rev. 0.md` | ISO_45001_2018 | ISO 45001:2018 | Checklist ? backlog |
+| `UNI EN ISO 9001_2015 Rev. 0.md` | ISO_9001_2015 | ISO 9001:2015 | Checklist in produzione (template FE 46 domande; seed backend v3 ~78 — ADR-002) |
+| `Normative NORMA_00003_ UNI EN ISO 14001_2015 Rev. 0.md` | ISO_14001_2015 | ISO 14001:2015 | Checklist in produzione (53 domande, sezioni `14001_c4`…`c10`) |
+| `Normative NORMA_00002_ UNI ISO 45001_2018 Rev. 0.md` | ISO_45001_2018 | ISO 45001:2018 | Checklist in produzione (53 domande, `ISO_45001_TEMPLATE`, ids 276–328) |
 | `Normative NORMA_00005_ UNI EN ISO 3834-1_2021 Rev. 0.md` | ISO_3834_1_2021 | ISO 3834-1 | Criteri scelta livello |
 | `Normative NORMA_00009_ UNI EN ISO 3834-3_2021 Rev. 0.md` | ISO_3834_3_2021 | ISO 3834-3 | Livello intermedio |
 | `Normative NORMA_00008_ UNI EN ISO 3834-5_2021 Rev. 0.md` | ISO_3834_5_2021 | ISO 3834-5 | Documenti e record |
@@ -64,7 +64,7 @@ Template fuori Normative:
 - SAL: `Check List Audit/CLIENTE - SAL documentale iso 14001 - 9001 - 45001.docx`
 - RDP: `Check List Audit/RDP_MSN-260127-01_REV_0.docx`
 
-## Mapping modulo → clausole ? file codice
+## Mapping modulo → clausole → file codice
 
 ### Audit (Scenario 1)
 
@@ -88,7 +88,7 @@ Allineamento normativo checklist: `docs/adr/ADR-002-checklist-alignment-strategy
 |------|----------|------------|
 | Registro NC | 10.2 (9001); equivalenti 14001/45001 | route `/nc`, drawer ISO 10.2 |
 | Workflow CAPA | 10.2 | componenti NC module |
-| Collegamento audit | 10.2 | —Registra — nel modulo NC (S-A6) |
+| Collegamento audit | 10.2 | «Registra NC» nel modulo NC (S-A6) |
 
 Doc: `docs/how-to/MANUALE_UTENTE_NC.md`, sezione NC in `GUIDA_CONSOLIDATA.md`.
 
@@ -100,15 +100,17 @@ Doc: `docs/how-to/MANUALE_UTENTE_NC.md`, sezione NC in `GUIDA_CONSOLIDATA.md`.
 | Riesame requisiti | 8.2 | ADR-010, Sprint 11 |
 | Import norme | — | `import-norms-from-markdown.js`, `norm_requirements` |
 
-### SAL (backlog — Scenario 3)
+### SAL (Scenario 3 — live)
+
+Il motore operativo **non** è `audits.document_type='sal'`: è `requirement_implementation_status` + `gapAnalysis.service.js`. La colonna `document_type` su `audits` esiste (CHECK `audit`/`sal`/`rdp`) per il registro futuro.
 
 | Area | Stato | Riferimenti |
 |------|-------|-------------|
-| document_type `sal` | ? | Roadmap Fase 0.B |
-| UI tracker colori per standard | ? | Template SAL in Check List Audit |
-| Word export SAL | ? | Roadmap |
+| Motore gap + UI `/sal` | Live | `SALModule.jsx`, mig. 117/118, spec `MODULO_SAL_SCOPO_E_ROADMAP.md` §C |
+| Tracker colori per standard | Live (Word) | `wordExportSal.js` — blu 9001, verde 14001, rosso 45001 |
+| Word export SAL | Live | `exportSalTrackerDocx` / `wordExportSal.js` |
 
-### RDP / 3834 (backlog — Scenario 4)
+### RDP / 3834 (Scenario 4)
 
 | Area | Clausole 3834 | Stato |
 |------|---------------|-------|
@@ -120,7 +122,7 @@ Doc: `docs/how-to/MANUALE_UTENTE_NC.md`, sezione NC in `GUIDA_CONSOLIDATA.md`.
 | Gas protezione (supporto) | ISO 14175:2008 | MD+JSON in Normative (NORMA_00012); catalogo RC-3 `shielding_gas` |
 | Temperature saldatura (supporto) | ISO 13916:2025 | MD+JSON (NORMA_00013); estratto RC-9 `preheat_temp` / `interpass_temp` |
 | Contenuto WPS arco/gas (supporto) | ISO 15609-1/-2:2019 | MD+JSON (NORMA_00014/00015); estratto RC-10 `ISO-15609-WPS-contenuto.md` |
-| Modulo RDP + foto | Template cliente | ? backlog |
+| Modulo RDP + foto | Template cliente | Live — `RDPModule.jsx` + `RdpTestAttachments.jsx` (foto obbligatorie, PR #290). Word export: **backlog prodotto** (manca `rdp-mason-report.docx`; non è lacuna normativa — non in `NORME_MANCANTI_BACKLOG`) |
 
 ### CND / NDT
 
@@ -139,7 +141,7 @@ Doc: `docs/how-to/MANUALE_UTENTE_NC.md`, sezione NC in `GUIDA_CONSOLIDATA.md`.
 
 ## Confronto quantitativo 9001 (ADR-002)
 
-| Fonte | Granularit— tipica |
+| Fonte | Granularità tipica |
 |-------|-------------------|
 | Conforma 9001 | ~47 punti auditabili (4–10) |
 | Frontend legacy | 26 domande hardcoded |
