@@ -356,10 +356,11 @@ export default function QualificationUploadButton({
                   const isPending = r.status === "pending_review";
                   const isConfirmed = r.status === "confirmed";
                   const isDup = r.status === "duplicate";
+                  const isWrong = r.status === "wrong_module";
                   const isRejected = r.status === "rejected";
                   return (
                     <li key={i} className={`qual-upload__result-item qual-upload__result-item--${
-                      isConfirmed ? "success" : isPending ? "pending" : isDup ? "duplicate" : isRejected ? "rejected" : "error"
+                      isConfirmed ? "success" : isPending ? "pending" : isDup ? "duplicate" : isWrong ? "wrong-module" : isRejected ? "rejected" : "error"
                     }`}
                     >
                       {isPending ? (
@@ -401,6 +402,16 @@ export default function QualificationUploadButton({
                             <p>Duplicato: qualifica gi{"\u00E0"} presente nel registro.</p>
                           </div>
                         </div>
+                      ) : isWrong ? (
+                        <div className="qual-upload__result-wrong-module">
+                          <span className="qual-upload__result-icon">{"\u26A0\uFE0F"}</span>
+                          <div>
+                            <strong>{r.fileName}</strong>
+                            <p className="qual-upload__wrong-module-msg">
+                              {r.message || r.error || "Documento non compatibile con il tipo scelto."}
+                            </p>
+                          </div>
+                        </div>
                       ) : isRejected ? (
                         <div className="qual-upload__result-rejected">
                           <span className="qual-upload__result-icon">{"\u274C"}</span>
@@ -411,7 +422,7 @@ export default function QualificationUploadButton({
                           <span className="qual-upload__result-icon">{"\u274C"}</span>
                           <div>
                             <strong>{r.fileName || `File ${i + 1}`}</strong>
-                            <p>{r.error || (r.warnings?.[0]) || "Errore sconosciuto"}</p>
+                            <p>{r.error || r.message || (r.warnings?.[0]) || "Errore sconosciuto"}</p>
                           </div>
                         </div>
                       )}
