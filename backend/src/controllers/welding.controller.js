@@ -30,6 +30,8 @@ const WPQR_MANUAL_EDITABLE_FIELDS = [
     'mechanization', 'single_multi_run', 'heat_input_note', 'pwht',
     'thickness_max_unlimited', 'preheat_temp', 'interpass_temp', 'throat_test_mm',
     'product_type', 'rotated_position',
+    'thickness_t1_min', 'thickness_t1_max', 'thickness_t1_max_unlimited',
+    'thickness_t2_min', 'thickness_t2_max', 'thickness_t2_max_unlimited',
 ];
 
 // ?
@@ -505,6 +507,8 @@ async function createWPQR(req, res) {
             // committente, GAP_WPQR_ESTENSIONI_ANNEX_B).
             thickness_max_unlimited, preheat_temp, interpass_temp, throat_test_mm,
             product_type, rotated_position,
+            thickness_t1_min, thickness_t1_max, thickness_t1_max_unlimited,
+            thickness_t2_min, thickness_t2_max, thickness_t2_max_unlimited,
         } = req.body;
 
         if (!wps_id) {
@@ -536,6 +540,8 @@ async function createWPQR(req, res) {
                 mechanization, single_multi_run, heat_input_note, pwht,
                 thickness_max_unlimited, preheat_temp, interpass_temp, throat_test_mm,
                 product_type, rotated_position,
+                thickness_t1_min, thickness_t1_max, thickness_t1_max_unlimited,
+                thickness_t2_min, thickness_t2_max, thickness_t2_max_unlimited,
                 approval_status, status,
                 created_by, created_at, updated_at
             )
@@ -552,6 +558,8 @@ async function createWPQR(req, res) {
                 @mechanization, @single_multi_run, @heat_input_note, @pwht,
                 @thickness_max_unlimited, @preheat_temp, @interpass_temp, @throat_test_mm,
                 @product_type, @rotated_position,
+                @thickness_t1_min, @thickness_t1_max, @thickness_t1_max_unlimited,
+                @thickness_t2_min, @thickness_t2_max, @thickness_t2_max_unlimited,
                 'bozza', 'attiva',
                 @created_by, GETDATE(), GETDATE()
             )
@@ -604,6 +612,12 @@ async function createWPQR(req, res) {
             throat_test_mm:      toNum(throat_test_mm),
             product_type:        product_type || null,
             rotated_position:    toBit(rotated_position),
+            thickness_t1_min:    toNum(thickness_t1_min),
+            thickness_t1_max:    toNum(thickness_t1_max),
+            thickness_t1_max_unlimited: toBit(thickness_t1_max_unlimited),
+            thickness_t2_min:    toNum(thickness_t2_min),
+            thickness_t2_max:    toNum(thickness_t2_max),
+            thickness_t2_max_unlimited: toBit(thickness_t2_max_unlimited),
             created_by:         user_id,
         });
 
@@ -640,8 +654,12 @@ async function updateWPQR(req, res) {
         const numericFields = new Set([
             'wps_id', 'thickness_tested', 'thickness_min', 'thickness_max', 'diameter_min', 'diameter_max',
             'throat_test_mm',
+            'thickness_t1_min', 'thickness_t1_max', 'thickness_t2_min', 'thickness_t2_max',
         ]);
-        const booleanFields = new Set(['pwht', 'thickness_max_unlimited', 'rotated_position']);
+        const booleanFields = new Set([
+            'pwht', 'thickness_max_unlimited', 'rotated_position',
+            'thickness_t1_max_unlimited', 'thickness_t2_max_unlimited',
+        ]);
         for (const field of allowed) {
             if (req.body[field] !== undefined) {
                 updates.push(`${field} = @${field}`);

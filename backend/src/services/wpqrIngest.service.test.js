@@ -325,6 +325,10 @@ describe('round-trip a sentinella — ogni campo aiExpectedSchema sopravvive fin
         // per non produrre un falso positivo (c'è già copertura dedicata sopra).
         const { fields, tokens } = buildSentinelFields(wpqrSchema.aiExpectedSchema, {
             thickness_max_unlimited: false,
+            // Stesso pattern: flag unlimited=true azzera il max del lato t1/t2
+            // in resolveDualThicknessSides (design, non perdita).
+            thickness_t1_max_unlimited: false,
+            thickness_t2_max_unlimited: false,
         });
 
         runDocumentIngest.mockResolvedValue({
