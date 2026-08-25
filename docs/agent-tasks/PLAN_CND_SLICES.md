@@ -2,8 +2,8 @@
 
 > **Destinazione**: uno studio (Mason) e l’operatore CND chiudono sul telefono il ciclo **incarico → esecuzione in campo → verbale Word + eventuale NC**, riusando qualifiche ISO 9712, strumenti, commesse, foto e PWA già in produzione. Niente app nativa, niente secondo motore, niente tabelle gemelle.
 > **Spec / ADR**: [ISO 9712:2022](../reference/ISO_9712_2022_NDT_QUALIFICATION.md) · ADR-004 (auth mobile) · ADR-016 (strumenti trasversali, verbali ≠ Welding Book) · [PLAN ISO 3834](PLAN_3834_SLICES.md) (ISO-1b/ISO-7 fatti; **ISO-9** eseguita qui come CND-2)
-> **Brief attivi**: nessuno su CND. **CND-1** CHIUSO (#549) — non riaprire `NdtReportsPage.jsx`. **CND-4** CHIUSO (#547). **CND-11** CHIUSO (#546).
-> **Mappa**: CND-0 #540 · spike HTML visibile via htmlpreview (#548/#550) · CND-1/4/11 su `main`. Netlify può lag. **Domani = una slice**: CND-2 (gate 9712+visione, dopo CND-1) **oppure** CND-3 (flag PT/MT, stesso JSX). Firma CND-10 parcheggiata.
+> **Brief attivi**: [`DEPUTYTASK1.md`](DEPUTYTASK1.md) **CND-2** (gate 9712+visione). **CND-1** CHIUSO (#549) — non riaprire `NdtReportsPage.jsx` oltre il gate CND-2. **CND-4** CHIUSO (#547). **CND-11** CHIUSO (#546). Parallelo docs: NG-3 su `DEPUTYTASK.md` (file disgiunti).
+> **Mappa**: CND-0 #540 · spike HTML · CND-1/4/11 su `main`. **Prossima codice CND**: **CND-2** (non CND-3 in parallelo sullo stesso JSX oltre il gate).
 > **Licenza**: modulo `cnd` (bridge: licenza `saldatura` implica `cnd`)
 > **Schermate oggi**: `/cnd/verbali` (`NdtReportsPage.jsx`) · `/cnd/strumenti` (`EquipmentPage.jsx`) · Qualifiche tab NDT
 

@@ -110,7 +110,7 @@ Duplicato scartato: `BS ISO 404-2013 + A1-2022 (1).pdf` = stesso hash del file s
 
 ## Inventario fonti Markdown (traccia, non blocco)
 
-Fonte unica per «cosa abbiamo / cosa manca». Aggiornare **qui** dopo ogni `pdf-to-json`, non solo in chat.
+Fonte unica per «cosa abbiamo / cosa manca» **nel perimetro Material Compliance**. Lacune trasversali (9712, Quaderni, altre famiglie): [`NORME_MANCANTI_BACKLOG.md`](NORME_MANCANTI_BACKLOG.md). Aggiornare **qui** dopo ogni `pdf-to-json` MC, non solo in chat.
 
 **Dichiarazione obbligatoria** (skill `pdf-to-json` / `gap-analysis-normativa`, Rule Engine, seed MC-2, prompt ISO-3) — 3 righe in chat, poi si parte:
 
