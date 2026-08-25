@@ -2,13 +2,21 @@
  * @vitest-environment jsdom
  */
 import React from "react";
-import { describe, it, expect, vi } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { describe, it, expect, vi, beforeEach } from "vitest";
+import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import QualificationUploadButton, { suggestedDocTypeFromTab } from "../components/QualificationUploadButton.jsx";
 
-vi.mock("../services/apiService", () => ({ default: {} }));
+vi.mock("../services/apiService", () => ({
+  default: {
+    uploadQualificationsBatch: vi.fn(),
+    confirmIngestStaging: vi.fn(),
+    rejectIngestStaging: vi.fn(),
+  },
+}));
 vi.mock("../components/IngestReviewDialog", () => ({ default: () => null }));
+
+import apiService from "../services/apiService";
 
 describe("suggestedDocTypeFromTab", () => {
   it("suggerisce cert_ndt dalla tab NDT", () => {
@@ -58,5 +66,45 @@ describe("QualificationUploadButton — visibile anche senza azienda", () => {
       <QualificationUploadButton companyId="11" companyName="Altra Srl" onUploadComplete={() => {}} />
     );
     expect(screen.queryByText(/Azienda:/)).not.toBeInTheDocument();
+  });
+});
+
+describe("QualificationUploadButton — wrong_module non è «Errore sconosciuto»", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("mostra il messaggio del backend invece del fallback generico", async () => {
+    const user = userEvent.setup();
+    apiService.uploadQualificationsBatch.mockResolvedValue({
+      results: [
+        {
+          fileName: "25-01341_DEDIC ADIL_14732_121.pdf",
+          status: "wrong_module",
+          detected_type: "wpqr",
+          message:
+            "Questo documento sembra una WPQR/PQR (ISO 15614). Caricarlo nel modulo Saldatura → WPQR.",
+        },
+      ],
+      uploaded: 0,
+      total: 1,
+    });
+
+    render(
+      <QualificationUploadButton companyId="60" companyName="ADA" onUploadComplete={() => {}} activeTab="iso14732" />
+    );
+    await user.click(screen.getByRole("button", { name: /Carica qualifiche \(batch\)/i }));
+    await user.selectOptions(screen.getByRole("combobox"), "qualifica_14732");
+
+    const file = new File(["%PDF"], "25-01341_DEDIC ADIL_14732_121.pdf", { type: "application/pdf" });
+    const input = document.querySelector('input[type="file"]');
+    await user.upload(input, file);
+    await user.click(screen.getByRole("button", { name: /Estrai e rivedi/i }));
+
+    expect(await screen.findByText(/sembra una WPQR/i)).toBeInTheDocument();
+    expect(screen.queryByText(/Errore sconosciuto/i)).toBeNull();
+    await waitFor(() => {
+      expect(apiService.uploadQualificationsBatch).toHaveBeenCalled();
+    });
   });
 });

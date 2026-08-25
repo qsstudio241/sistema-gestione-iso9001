@@ -45,6 +45,10 @@ function classifyDocument(text) {
     // --- Operator qualification signals ---
     if (/\b(iso\s*14732|en\s*iso\s*14732|14732)\b/.test(t)) scores.operator_qual += 4;
     if (/\b(welding operator|operatore)\b/.test(t)) scores.operator_qual += 2;
+    // Titolo tipico certificato TEC-Eurolab / enti: batte i falsi positivi WPQR da §4.1
+    if (/\b(certificat[oa]\s+di\s+qualifica\s+(?:di\s+)?operatore|approval\s+test\s+certificate\s+for\s+welding\s+operator|operator\s+according\s+to)\b/.test(t)) {
+        scores.operator_qual += 5;
+    }
 
     // --- Coordinator signals ---
     if (/\b(iso\s*14731|en\s*iso\s*14731|14731|iwe|iwt|iws|iwip|ewe|ewt|ews)\b/.test(t)) scores.coordinator += 4;
@@ -53,6 +57,24 @@ function classifyDocument(text) {
     // --- NDT signals ---
     if (/\b(iso\s*9712|en\s*iso\s*9712|9712|ndt|vt|pt|mt|ut|rt)\b/.test(t)) scores.ndt += 2;
     if (/\b(non.destructive|non distruttiv|testing personnel|livello\s*[123]|level\s*[123])\b/.test(t)) scores.ndt += 2;
+
+    // ISO 14732 §4.1: i certificati operatore citano WPQR / ISO 15614 / "test pieces"
+    // come *base* della qualifica, non perché siano una WPQR. Stesso schema sui
+    // patentini 9606 che richiamano procedure. Se la norma personale è esplicita,
+    // attutisci i punti WPQR/WPS derivanti da quei riferimenti.
+    const hasExplicitOperatorNorm = /\b14732\b/.test(t) && scores.operator_qual >= 4;
+    const hasExplicitWelderNorm = /\b9606\b/.test(t) && scores.welder_qual >= 4;
+    const citesWpqrAsBasis = /\b(qualificazione\s+basata\s+su|qualification\s+based\s+on)\b/.test(t)
+        || /\bwpqr\s+in\s+(?:accordo|accordance)\b/.test(t)
+        || /\bin\s+accordo\s+con\s+le\s+parti\s+rilevanti\s+della\s+iso\s*15614\b/.test(t);
+    if ((hasExplicitOperatorNorm || hasExplicitWelderNorm) && citesWpqrAsBasis) {
+        scores.wpqr = Math.min(scores.wpqr, 2);
+        scores.wps = Math.min(scores.wps, 1);
+    }
+    if (hasExplicitOperatorNorm && scores.operator_qual >= scores.wpqr) {
+        // Garanzia: norma 14732 + segnale operatore vincono su WPQR residua
+        scores.wpqr = Math.min(scores.wpqr, scores.operator_qual - 1);
+    }
 
     const sorted = Object.entries(scores).sort((a, b) => b[1] - a[1]);
     const [topType, topScore] = sorted[0];
