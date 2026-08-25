@@ -29,7 +29,7 @@ reale scelto, es. `C:\NormeISO_PDF\` oppure una cartella dentro OneDrive):
   altre-norme\                # ASME, DIN, quaderni tecnici, ecc.
 ```
 
-## Stato attuale (verificato 30/07/2026)
+## Stato attuale (verificato 25/08/2026)
 
 | Norma | File `.md`/`.json` in `docs/Normative/` | PDF sorgente atteso | Note |
 |---|---|---|---|
@@ -39,8 +39,10 @@ reale scelto, es. `C:\NormeISO_PDF\` oppure una cartella dentro OneDrive):
 | ISO 3834-1:2021 | `Normative NORMA_00005_...md` | `ISO-3834-saldatura\UNI EN ISO 3834-1_2021.pdf` | |
 | ISO 3834-5:2021 | `Normative NORMA_00008_...md` | `ISO-3834-saldatura\UNI EN ISO 3834-5_2021.pdf` | |
 | ISO 3834-3:2021 | `Normative NORMA_00009_...md` | `ISO-3834-saldatura\UNI EN ISO 3834-3_2021.pdf` | |
-| ISO 3834-2:2006 | `Normative NORMA_00010_...md` | `ISO-3834-saldatura\UNI EN ISO 3834-2_2006.pdf` | Edizione 2006, non 2021 — PDF 2021 non reperito all'epoca dell'import |
-| ISO 3834-4:2006 | `Normative NORMA_00011_...md` | `ISO-3834-saldatura\UNI EN ISO 3834-4_2006.pdf` | Idem |
+| ISO 3834-2:2021 | `Normative NORMA_00029_...md/.json` | `ISO-3834-saldatura\ISO_3834-2-2021.pdf` | Digitalizzata 25/08/2026 (ISO EN). Archivio 2006: `NORMA_00010` |
+| ISO 3834-4:2021 | `Normative NORMA_00030_...md/.json` | `ISO-3834-saldatura\ISO_3834-4-2021.pdf` | Digitalizzata 25/08/2026 (ISO EN). Archivio 2006: `NORMA_00011` |
+| ISO 3834-2:2006 (archivio) | `Normative NORMA_00010_...md` | `ISO-3834-saldatura\UNI EN ISO 3834-2_2006.pdf` | Superata dalla 2021 |
+| ISO 3834-4:2006 (archivio) | `Normative NORMA_00011_...md` | `ISO-3834-saldatura\UNI EN ISO 3834-4_2006.pdf` | Superata dalla 2021 |
 | ISO 14175:2008 | `Normative NORMA_00012_...md/.json` | `ISO-consumabili-parametri\UNI EN ISO 14175_2008.pdf` | |
 | ISO 13916:2025 | `Normative NORMA_00013_...md/.json` | `ISO-consumabili-parametri\BS EN ISO 13916_2025.pdf` | |
 | ISO 15609-1:2019 | `Normative NORMA_00014_...md/.json` | `ISO-156xx-WPS-WPQR\BS EN ISO 15609-1_2019.pdf` | |

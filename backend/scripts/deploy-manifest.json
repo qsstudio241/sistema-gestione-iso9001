@@ -87,6 +87,12 @@
                                  ]
                    },
                    {
+                       "name":  "data-seeds",
+                       "files":  [
+                                     "data/norm_requirements_seed.json"
+                                 ]
+                   },
+                   {
                        "name":  "utils",
                        "files":  [
                                      "src/utils/aiCitations.js",

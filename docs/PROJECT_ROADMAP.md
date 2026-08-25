@@ -8,15 +8,19 @@
 
 > **Risposta standard a «stato di avanzamento del progetto e priorità da affrontare»**: sintetizzare da questa sezione (moduli maturi + sessione più recente + tabella priorità sotto), **non** dal banner storico più sotto (superato, tenuto solo per traccia) né dall'archivio marzo 2026 [`docs/archive/PROJECT_CONTEXT_STATO_FUNZIONALITA_2026-03.md`](archive/PROJECT_CONTEXT_STATO_FUNZIONALITA_2026-03.md). **Aggiornare questa sezione a fine sessione** se emergono nuove priorità o se una priorità elencata viene chiusa (stesso principio delle "Lezioni apprese" in [GUIDA_CONSOLIDATA.md](GUIDA_CONSOLIDATA.md) — sintesi qui, dettaglio linkato).
 
-**Ultimo aggiornamento di questa sezione**: 23/08/2026 (mappa CND operatore in campo, `PLAN_CND_SLICES.md`).
+**Ultimo aggiornamento di questa sezione**: 25/08/2026 (mappa fedeltà normativa, `PLAN_NORM_FIDELITY_SLICES.md`).
 
 ### Moduli maturi (in produzione, uso quotidiano dai clienti Camellini/Mason)
 
 Audit multi-standard (9001/14001/45001) · Non Conformità (workflow ISO 10.2 completo) · Qualifiche Personale saldatori/NDT/coordinatori (ISO 9606-1/14732/14731/9712) · Saldatura (WPQR, generazione WPS da WPQR, Welding Book, Commesse ISO 3834, Dashboard 3834) · SAL (gap analysis requisiti con AI) · Registro Documenti + Scadenzari · Notifiche/Alert (documenti/NC/qualifiche) · Riesame di Direzione · RBAC multi-tenant (`company_access`) · Registro obblighi legali (ambiente + sicurezza) · Assistente AI / Gap Analysis euristica.
 
-### Sessione più recente (23/08/2026)
+### Sessione più recente (25/08/2026)
 
-**CND — mappa operatore in campo (23/08, wayfinder)** — il modulo verbali/strumenti/9712 **c’è**; manca il ciclo incarico → esecuzione in tasca → Word + NC. Piano [`PLAN_CND_SLICES.md`](agent-tasks/PLAN_CND_SLICES.md). Prima slice **CND-1** (marche VT a scheda sul telefono, niente oggetti nuovi) in [`DEPUTYTASK.md`](agent-tasks/DEPUTYTASK.md) **APERTO**. ISO-9 (gate 9712) si esegue come **CND-2**, non da PLAN 3834. Nessun codice applicativo in questa sessione.
+**Fedeltà normativa — loop fonti → skill → moduli (25/08, wayfinder)** — sì al PDCA SGQ e alla tesi «senza testi non si inventa»; no a proliferazione agenti GitHub. Gap + piano [`PLAN_NORM_FIDELITY_SLICES.md`](agent-tasks/PLAN_NORM_FIDELITY_SLICES.md) · report [`GAP_NORM_FIDELITY_STRATEGICA_2026-08-25.md`](gap-reports/GAP_NORM_FIDELITY_STRATEGICA_2026-08-25.md). Prima slice **NG-0** (policy + backlog richieste PDF) in [`DEPUTYTASK.md`](agent-tasks/DEPUTYTASK.md) **APERTO**. **Stesso giorno:** digitalizzate **ISO 3834-2/-4:2021** (`NORMA_00029`/`00030` + seed); PDF non in Git.
+
+### Sessione precedente (23/08/2026)
+
+**CND — mappa operatore in campo (23/08, wayfinder)** — il modulo verbali/strumenti/9712 **c’è**; manca il ciclo incarico → esecuzione in tasca → Word + NC. Piano [`PLAN_CND_SLICES.md`](agent-tasks/PLAN_CND_SLICES.md). CND-1 (marche VT a scheda) **CHIUSO** sullo slot `DEPUTYTASK.md` (poi riusato per NG-0).
 
 ### Sessione precedente (22/08/2026)
 
@@ -282,8 +286,8 @@ Quando emerge un’urgenza (es. modulo **VT** o **MT**):
 | `Normative/...UNI EN ISO 3834-1_2021 Rev. 0.pdf` | ISO 3834-1 | Criteri scelta livello |
 | `Normative/...UNI EN ISO 3834-3_2021 Rev. 0.pdf` | ISO 3834-3 | Requisiti livello intermedio |
 | `Normative/...UNI EN ISO 3834-5_2021 Rev. 0.pdf` | ISO 3834-5 | Documenti e record |
-| `Normative/...UNI EN ISO 3834-2_2006 Rev. 0.pdf` | ISO 3834-2 | Requisiti livello completo — **ora disponibile** (edizione 2006, PDF 2021 non reperito) |
-| `Normative/...UNI EN ISO 3834-4_2006 Rev. 0.pdf` | ISO 3834-4 | Requisiti livello elementare — **ora disponibile** (edizione 2006, PDF 2021 non reperito) |
+| `Normative/...UNI EN ISO 3834-2_2021 Rev. 0.md` (`NORMA_00029`) | ISO 3834-2 | Requisiti livello completo — **edizione 2021** (25/08/2026); 2006 archivio |
+| `Normative/...UNI EN ISO 3834-4_2021 Rev. 0.md` (`NORMA_00030`) | ISO 3834-4 | Requisiti livello elementare — **edizione 2021** (25/08/2026); 2006 archivio |
 
 ### Cosa differenzia i 4 scenari tecnicamente
 
