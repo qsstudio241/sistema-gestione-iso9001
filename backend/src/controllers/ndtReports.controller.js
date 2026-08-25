@@ -16,6 +16,43 @@ const {
     assertMutatingAllowed,
     sendAccessDenied,
 } = require('../services/companyAccess.service');
+const {
+    GATE_CODE,
+    isJudgmentStatus,
+    evaluateNdtInspectorGate,
+} = require('../services/ndtInspectorGate.service');
+
+function sendInspectorGateDenied(res, gate) {
+    const message = (gate.reasons && gate.reasons[0])
+        || 'Ispettore senza patentino ISO 9712 valido e idoneit\u00e0 visiva.';
+    return res.status(409).json({
+        error: message,
+        code: GATE_CODE,
+        reasons: gate.reasons || [],
+        gate: {
+            ok: false,
+            qualification: gate.qualification || null,
+            vision: gate.vision || null,
+            candidates: gate.candidates || [],
+        },
+    });
+}
+
+async function assertInspectorGate({ organizationId, companyId, inspector, reportType, status, user }) {
+    if (!isJudgmentStatus(status)) return null;
+    const accessList = await ensureCompanyAccessLoaded(user);
+    const allowedCompanyIds = hasCompanyAccessRows(accessList)
+        ? accessList.map((a) => a.company_id)
+        : null;
+    const gate = await evaluateNdtInspectorGate({
+        organizationId,
+        companyId,
+        inspectorName: inspector,
+        reportType,
+        allowedCompanyIds,
+    });
+    return gate.ok ? null : gate;
+}
 
 // ── Numerazione automatica ───────────────────────────────────────────────────
 async function allocateReportNumber(pool_query, report_type, report_year, organization_id) {
@@ -221,6 +258,16 @@ async function createNdtReport(req, res) {
         }
         const project_id = projectResolved.skip ? null : projectResolved.value;
 
+        const gateDenied = await assertInspectorGate({
+            organizationId: organization_id,
+            companyId: companyIdVal,
+            inspector: inspector || req.user.full_name || null,
+            reportType: report_type,
+            status,
+            user: req.user,
+        });
+        if (gateDenied) return sendInspectorGateDenied(res, gateDenied);
+
         const year = new Date().getFullYear();
         const report_number = await allocateReportNumber(query, report_type, year, organization_id);
 
@@ -331,7 +378,7 @@ async function updateNdtReport(req, res) {
         const id = parseInt(req.params.id);
 
         const existing = await query(
-            `SELECT id, company_id, project_id FROM ndt_reports WHERE id = @id AND organization_id = @organization_id AND is_deleted = 0`,
+            `SELECT id, company_id, project_id, report_type, inspector FROM ndt_reports WHERE id = @id AND organization_id = @organization_id AND is_deleted = 0`,
             { id, organization_id }
         );
         if (existing.recordset.length === 0) {
@@ -377,6 +424,19 @@ async function updateNdtReport(req, res) {
             }
             nextProjectId = projectResolved.value;
         }
+
+        const nextStatus = status || 'draft';
+        const nextInspector = inspector !== undefined ? inspector : existing.recordset[0].inspector;
+        const nextReportType = existing.recordset[0].report_type;
+        const gateDenied = await assertInspectorGate({
+            organizationId: organization_id,
+            companyId: nextCompanyId,
+            inspector: nextInspector,
+            reportType: nextReportType,
+            status: nextStatus,
+            user: req.user,
+        });
+        if (gateDenied) return sendInspectorGateDenied(res, gateDenied);
 
         await query(`
             UPDATE ndt_reports SET
@@ -499,6 +559,51 @@ async function deleteNdtReport(req, res) {
     }
 }
 
+// ── GET /ndt-reports/inspector-eligibility ────────────────────────────────────
+async function getInspectorEligibility(req, res) {
+    try {
+        const { organization_id } = req.user;
+        const inspector = req.query.inspector || '';
+        const reportType = req.query.report_type || req.query.method || '';
+        const companyId = req.query.company_id ? parseInt(req.query.company_id, 10) : null;
+        const requestedCompanyId = Number.isNaN(companyId) ? null : companyId;
+
+        const accessList = await ensureCompanyAccessLoaded(req.user);
+        let allowedCompanyIds = null;
+        if (hasCompanyAccessRows(accessList)) {
+            if (requestedCompanyId) {
+                const denied = await assertCompanyAccess(req.user, requestedCompanyId, 'read');
+                if (denied) return sendAccessDenied(res, denied);
+                allowedCompanyIds = [requestedCompanyId];
+            } else {
+                allowedCompanyIds = accessList.map((a) => a.company_id);
+            }
+        }
+
+        const gate = await evaluateNdtInspectorGate({
+            organizationId: organization_id,
+            companyId: requestedCompanyId,
+            inspectorName: inspector,
+            reportType,
+            allowedCompanyIds,
+        });
+
+        res.json({
+            success: true,
+            data: {
+                ok: gate.ok,
+                reasons: gate.reasons || [],
+                qualification: gate.qualification || null,
+                vision: gate.vision || null,
+                candidates: gate.candidates || [],
+            },
+        });
+    } catch (err) {
+        logger.error('getInspectorEligibility error', { error: err.message });
+        res.status(500).json({ error: 'Errore verifica ispettore CND', code: 'NDT_INSPECTOR_GATE_ERROR' });
+    }
+}
+
 module.exports = {
     getNdtStats,
     listNdtReports,
@@ -506,4 +611,5 @@ module.exports = {
     createNdtReport,
     updateNdtReport,
     deleteNdtReport,
+    getInspectorEligibility,
 };

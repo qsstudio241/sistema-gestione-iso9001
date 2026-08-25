@@ -2663,6 +2663,14 @@ class ApiService {
     async updateNdtReport(id, data)      { return this.put(`/ndt-reports/${id}`, data); }
     async deleteNdtReport(id)            { return this.delete(`/ndt-reports/${id}`); }
     async getNdtReportStats(params = {}) { const qs = new URLSearchParams(params).toString(); return this.get(`/ndt-reports/stats${qs ? '?' + qs : ''}`); }
+    async getNdtInspectorEligibility(params = {}) {
+        const qs = new URLSearchParams();
+        Object.entries(params).forEach(([k, v]) => {
+            if (v != null && v !== "") qs.set(k, v);
+        });
+        const q = qs.toString();
+        return this.get(`/ndt-reports/inspector-eligibility${q ? `?${q}` : ""}`);
+    }
 
     // ─── Saldatura — RDP (Rapporto di Prova, Scenario 4 — Mason) ────────────
     async getRdpReportList(params = {})  { const qs = new URLSearchParams(params).toString(); return this.get(`/rdp-reports${qs ? '?' + qs : ''}`); }
