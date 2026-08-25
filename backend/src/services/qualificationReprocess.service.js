@@ -72,6 +72,23 @@ function guessDocType(qualificationType) {
 function resolveExtractedReprocessValue(fieldKey, reviewFields = {}, config = {}) {
     if (config.table === 'wpqr_records') {
         const column = config.column || fieldKey;
+        // Bundle t1/t2: restituisce un oggetto colonna→valore (almeno un lato
+        // popolato). I flag unlimited solo se true (come thickness_max_unlimited).
+        if (Array.isArray(config.bundleColumns) && config.bundleColumns.length) {
+            const out = {};
+            for (const col of config.bundleColumns) {
+                const name = typeof col === 'string' ? col : col;
+                if (/_max_unlimited$/.test(name)) {
+                    if (reviewFields[name] === true) out[name] = true;
+                    continue;
+                }
+                const v = reviewFields[name];
+                if (v == null || v === '') continue;
+                out[name] = v;
+            }
+            const hasSide = ['thickness_t1_min', 'thickness_t2_min'].some((k) => out[k] != null);
+            return hasSide ? out : null;
+        }
         if (column === 'thickness_max_unlimited' || column === 'rotated_position') {
             return reviewFields[column] === true ? true : null;
         }
@@ -256,6 +273,12 @@ async function runReprocessForField(fieldKey, { orgId = null, limit = DEFAULT_RU
                 continue;
             }
 
+            const isBundle = extractedValue && typeof extractedValue === 'object' && !Array.isArray(extractedValue)
+                && Array.isArray(fieldDef.bundleColumns) && fieldDef.bundleColumns.length;
+            const bundleSummary = isBundle
+                ? Object.entries(extractedValue).map(([k, v]) => `${k}=${v}`).join('; ')
+                : null;
+
             await createStagingRecord({
                 organizationId: row.organization_id,
                 companyId: row.company_id,
@@ -265,7 +288,8 @@ async function runReprocessForField(fieldKey, { orgId = null, limit = DEFAULT_RU
                 mimeType: 'application/pdf',
                 fileSize: pdfBuffer.length,
                 fields: {
-                    [fieldKey]: extractedValue,
+                    [fieldKey]: isBundle ? bundleSummary : extractedValue,
+                    ...(isBundle ? extractedValue : {}),
                     ...adapter.buildStagingDisplayFields(reviewFields),
                 },
                 fieldConfidence: { [fieldKey]: pipeline.fieldConfidence?.[fieldKey] || (pipeline.aiModel ? 'ai' : 'rule_based') },
