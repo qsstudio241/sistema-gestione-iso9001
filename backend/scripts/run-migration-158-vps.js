@@ -1,5 +1,5 @@
 /**
- * Migration 158 (VPS) — thickness_t1_*/thickness_t2_* su wpqr_records
+ * Migration 158 (VPS) — thickness_t1_min/max e thickness_t2_min/max su wpqr_records
  * (WPQR-T1T2, Mason 25/08/2026).
  * Uso (solo su VPS, via SSH):
  *   node /tmp/run-migration-158-vps.js
