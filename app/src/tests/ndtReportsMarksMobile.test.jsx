@@ -59,6 +59,9 @@ vi.mock("../services/apiService", () => ({
     createNdtReport: vi.fn(),
     updateNdtReport: vi.fn(),
     deleteNdtReport: vi.fn(),
+    getNdtInspectorEligibility: vi.fn().mockResolvedValue({
+      data: { ok: true, reasons: [], candidates: [], qualification: { ndt_method: "VT", ndt_level: 2 }, vision: { state: "ok" } },
+    }),
   },
 }));
 

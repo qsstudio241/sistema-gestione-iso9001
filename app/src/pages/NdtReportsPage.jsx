@@ -88,7 +88,7 @@ const DEFECT_CODES_SELECT = [
     { value: "10 altro",     label: "10 \u2014 Altro" },
 ];
 
-function MarkRow({ item, index, onChange, onRemove, reportId, onRegisterNc }) {
+function MarkRow({ item, index, onChange, onRemove, reportId, onRegisterNc, judgmentLocked, judgmentTitle }) {
     const set = (k, v) => onChange(index, { ...item, [k]: v });
     const hasDefect = item.evaluation === "R" || item.evaluation === "S";
     const attRef = useRef(null);
@@ -129,6 +129,8 @@ function MarkRow({ item, index, onChange, onRemove, reportId, onRegisterNc }) {
                             className={`status-btn ${ev.cls}${item.evaluation === ev.value ? " active" : ""}`}
                             aria-pressed={item.evaluation === ev.value}
                             aria-label={ev.label}
+                            disabled={judgmentLocked}
+                            title={judgmentLocked ? (judgmentTitle || "Serve patentino ISO 9712 valido e idoneit\u00e0 visiva") : ev.label}
                             onClick={() => set("evaluation", ev.value)}>
                             {ev.value}
                         </button>
@@ -330,6 +332,61 @@ function NdtReportForm({ report, companies, availableInstruments, onSave, onCanc
     const [savedAt, setSavedAt] = useState(null);
     const [ncModalOpen, setNcModalOpen]   = useState(false);
     const [ncInitialDesc, setNcInitialDesc] = useState("");
+    const [inspectorGate, setInspectorGate] = useState({
+        loading: true,
+        ok: false,
+        reasons: [],
+        candidates: [],
+        qualification: null,
+        vision: null,
+        error: null,
+    });
+
+    useEffect(() => {
+        let cancelled = false;
+        const timer = setTimeout(() => {
+            setInspectorGate((g) => ({ ...g, loading: true, error: null }));
+            apiService.getNdtInspectorEligibility({
+                inspector: form.inspector || "",
+                report_type: form.report_type,
+                company_id: form.company_id || "",
+            }).then((res) => {
+                if (cancelled) return;
+                const data = res?.data || {};
+                setInspectorGate({
+                    loading: false,
+                    ok: !!data.ok,
+                    reasons: data.reasons || [],
+                    candidates: data.candidates || [],
+                    qualification: data.qualification || null,
+                    vision: data.vision || null,
+                    error: null,
+                });
+            }).catch(() => {
+                if (cancelled) return;
+                setInspectorGate({
+                    loading: false,
+                    ok: false,
+                    reasons: ["Impossibile verificare il patentino (rete). Salva bozza; completa quando sei online."],
+                    candidates: [],
+                    qualification: null,
+                    vision: null,
+                    error: "network",
+                });
+            });
+        }, 300);
+        return () => { cancelled = true; clearTimeout(timer); };
+    }, [form.inspector, form.report_type, form.company_id]);
+
+    const gateReasonsText = (inspectorGate.reasons || []).filter(Boolean).join(" ");
+    const canComplete = !inspectorGate.loading && inspectorGate.ok;
+    const completeTitle = inspectorGate.loading
+        ? "Verifica patentino ISO 9712 in corso\u2026"
+        : (canComplete
+            ? "Completa verbale"
+            : (gateReasonsText || "Serve patentino ISO 9712 valido e idoneit\u00e0 visiva"));
+    const judgmentLocked = !inspectorGate.loading && !inspectorGate.ok;
+    const judgmentTitle = gateReasonsText || "Serve patentino ISO 9712 valido e idoneit\u00e0 visiva";
 
     // Fix P0-2 (ISO 3834 §15) — bridge "Registra NC" da una singola marca R/S del verbale
     const openNcModalForItem = useCallback((item, index) => {
@@ -369,6 +426,10 @@ function NdtReportForm({ report, companies, availableInstruments, onSave, onCanc
 
     const handleSubmit = async (e, targetStatus) => {
         if (e) e.preventDefault();
+        if (targetStatus === "completed" && !canComplete) {
+            setError(completeTitle);
+            return;
+        }
         setSaving(true);
         setError(null);
         try {
@@ -442,7 +503,13 @@ function NdtReportForm({ report, companies, availableInstruments, onSave, onCanc
                         {saving ? "Salvataggio..." : "Salva bozza"}
                     </button>
                     {form.status !== "approved" && (
-                        <button type="button" className="btn btn-primary" onClick={e => handleSubmit(e, "completed")} disabled={saving}>
+                        <button
+                            type="button"
+                            className="btn btn-primary"
+                            onClick={e => handleSubmit(e, "completed")}
+                            disabled={saving || !canComplete}
+                            title={completeTitle}
+                        >
                             Completa verbale
                         </button>
                     )}
@@ -451,6 +518,18 @@ function NdtReportForm({ report, companies, availableInstruments, onSave, onCanc
 
             {savedAt && <div className="ndt-saved-at">{"Salvato alle " + savedAt}</div>}
             {error && <div className="ndt-form-error">{error}</div>}
+            {!inspectorGate.loading && !inspectorGate.ok && (
+                <div className="ndt-form-error" role="alert">
+                    {gateReasonsText || "Completa verbale richiede patentino ISO 9712 valido e idoneit\u00e0 visiva."}
+                </div>
+            )}
+            {!inspectorGate.loading && inspectorGate.ok && inspectorGate.qualification && (
+                <div className="ndt-gate-ok">
+                    {`Patentino ISO 9712 ${inspectorGate.qualification.ndt_method || form.report_type}`
+                        + (inspectorGate.qualification.ndt_level != null ? ` liv.${inspectorGate.qualification.ndt_level}` : "")
+                        + " valido \u00b7 idoneit\u00e0 visiva ok"}
+                </div>
+            )}
 
             <div className="ndt-form-body">
 
@@ -776,7 +855,7 @@ function NdtReportForm({ report, companies, availableInstruments, onSave, onCanc
                                         </tr>
                                     </thead>
                                         {items.map((item, idx) => (
-                                            <MarkRow key={item.id || idx} item={item} index={idx} onChange={updateMarkRow} onRemove={removeMarkRow} reportId={report?.id} onRegisterNc={openNcModalForItem} />
+                                            <MarkRow key={item.id || idx} item={item} index={idx} onChange={updateMarkRow} onRemove={removeMarkRow} reportId={report?.id} onRegisterNc={openNcModalForItem} judgmentLocked={judgmentLocked} judgmentTitle={judgmentTitle} />
                                         ))}
                                 </table>
                             </div>
@@ -920,7 +999,25 @@ function NdtReportForm({ report, companies, availableInstruments, onSave, onCanc
                                             <span className="eq-computed-label"> (utente corrente)</span>
                                         )}
                                     </label>
-                                    <input type="text" value={form.inspector} onChange={e => set("inspector", e.target.value)} placeholder="Nome ispettore" />
+                                    <input
+                                        type="text"
+                                        list="ndt-inspector-candidates"
+                                        value={form.inspector}
+                                        onChange={e => set("inspector", e.target.value)}
+                                        placeholder="Nome ispettore (patentino 9712)"
+                                    />
+                                    <datalist id="ndt-inspector-candidates">
+                                        {(inspectorGate.candidates || []).map((c) => (
+                                            <option key={c.person_name} value={c.person_name}>
+                                                {c.ndt_method ? `${c.ndt_method}${c.ndt_level != null ? ` liv.${c.ndt_level}` : ""}` : ""}
+                                            </option>
+                                        ))}
+                                    </datalist>
+                                    {judgmentLocked && (
+                                        <div className="ndt-notes-warning">
+                                            {gateReasonsText || "Scegli un ispettore con patentino ISO 9712 valido e visita medica visiva in corso."}
+                                        </div>
+                                    )}
                                 </div>
                                 <div className="ndt-form-group">
                                     <label>Il Cliente (rappresentante)</label>

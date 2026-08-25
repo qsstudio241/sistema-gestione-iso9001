@@ -10,8 +10,9 @@ const ctrl = require('../controllers/ndtReports.controller');
 router.use(authenticate);
 router.use(requireLicensedModule('cnd'));
 
-// Stats PRIMA di /:id
+// Stats / eligibility PRIMA di /:id
 router.get('/ndt-reports/stats', ctrl.getNdtStats);
+router.get('/ndt-reports/inspector-eligibility', ctrl.getInspectorEligibility);
 
 // CRUD verbali
 router.get   ('/ndt-reports',     ctrl.listNdtReports);
