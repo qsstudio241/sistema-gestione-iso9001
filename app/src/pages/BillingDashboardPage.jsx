@@ -311,10 +311,10 @@ export default function BillingDashboardPage() {
 
 /**
  * useReprocessTasks — dati + azioni per la sezione "Rielaborazioni disponibili"
- * (28/07/2026). Registro backend in reprocessableFields.js: ogni voce è un
- * campo AI-estraibile che può necessitare backfill su record già presenti in
- * DB (stesso pattern del backfill transfer_mode). Nessuno scheduler
- * automatico (decisione committente): solo conteggio + lancio manuale.
+ * (28/07/2026). Registro backend in reprocessableFields.js: campi AI-estraibili
+ * che possono necessitare backfill su record già in DB dopo cambi schema.
+ * Nessuno scheduler automatico: solo conteggio + lancio manuale. La UI mostra
+ * solo le voci con candidate_count > 0 (controllo backlog, non catalogo).
  */
 function useReprocessTasks(enabled) {
   const [tasks, setTasks] = useState([]);
@@ -362,7 +362,10 @@ function useReprocessTasks(enabled) {
 }
 
 function ReprocessTasksSection({ reprocess }) {
-  const { tasks, loading, error, runningKey, results, run, reload, totalCandidates } = reprocess;
+  const { tasks, loading, error, runningKey, results, run, reload } = reprocess;
+  // Solo campi con lavoro da fare: non è un catalogo di tutti i campi possibili
+  // (28/07/2026 + chiarimento 25/08/2026). A 0 candidati la riga sparisce.
+  const pendingTasks = tasks.filter((t) => (t.candidate_count || 0) > 0);
 
   return (
     <section className="billing-section" aria-labelledby="billing-reprocess-heading">
@@ -388,8 +391,8 @@ function ReprocessTasksSection({ reprocess }) {
 
       {loading ? (
         <p>Caricamento task di rielaborazione…</p>
-      ) : tasks.length === 0 ? (
-        <p className="billing-muted">Nessun campo rielaborabile registrato.</p>
+      ) : pendingTasks.length === 0 ? (
+        <p className="billing-muted">Nessuna rielaborazione in sospeso.</p>
       ) : (
         <div className="billing-table-wrap">
           <table className="billing-table">
@@ -402,7 +405,7 @@ function ReprocessTasksSection({ reprocess }) {
               </tr>
             </thead>
             <tbody>
-              {tasks.map((task) => {
+              {pendingTasks.map((task) => {
                 const result = results[task.key];
                 const isRunning = runningKey === task.key;
                 const anyRunning = !!runningKey;
@@ -411,7 +414,7 @@ function ReprocessTasksSection({ reprocess }) {
                   <tr key={task.key}>
                     <td>{task.label}</td>
                     <td>
-                      <span className={`billing-badge ${task.candidate_count > 0 ? "billing-badge-active" : ""}`}>
+                      <span className="billing-badge billing-badge-active">
                         {task.candidate_count}
                       </span>
                     </td>
@@ -420,7 +423,7 @@ function ReprocessTasksSection({ reprocess }) {
                         type="button"
                         className="btn-primary billing-reprocess-run-btn"
                         onClick={() => run(task.key)}
-                        disabled={task.candidate_count === 0 || anyRunning}
+                        disabled={anyRunning}
                       >
                         {isRunning ? "Rielaborazione in corso…" : "Lancia rielaborazione"}
                       </button>

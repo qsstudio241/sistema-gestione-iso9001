@@ -1,7 +1,6 @@
 /**
  * Test — sezione "Rielaborazioni disponibili" in BillingDashboardPage (28/07/2026).
- * Pannello superadmin per lanciare manualmente il backfill di campi
- * AI-estraibili sulle qualifiche esistenti (registro reprocessableFields.js).
+ * Pannello superadmin: solo voci con candidati > 0 (backlog post-schema, non catalogo).
  */
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen, waitFor } from "@testing-library/react";
@@ -43,11 +42,12 @@ beforeEach(() => {
 });
 
 describe("BillingDashboardPage — Rielaborazioni disponibili", () => {
-  it("mostra l'elenco dei task con il conteggio candidati", async () => {
+  it("mostra solo i task con candidati > 0 (non il catalogo completo)", async () => {
     render(<BillingDashboardPage />);
 
     await waitFor(() => expect(screen.getByText("Metodo di trasferimento")).toBeInTheDocument());
-    expect(screen.getByText("Gas di protezione")).toBeInTheDocument();
+    expect(screen.getByText("Temperatura di preriscaldo")).toBeInTheDocument();
+    expect(screen.queryByText("Gas di protezione")).not.toBeInTheDocument();
     const row = screen.getByText("Metodo di trasferimento").closest("tr");
     expect(row).toHaveTextContent("15");
   });
@@ -67,25 +67,23 @@ describe("BillingDashboardPage — Rielaborazioni disponibili", () => {
     expect(screen.getByRole("alert")).toHaveTextContent("Rielaborazioni disponibili");
   });
 
-  it("non mostra l'alert quando non ci sono candidati", async () => {
+  it("senza candidati: nessun alert e messaggio «Nessuna rielaborazione in sospeso»", async () => {
     mockGetReprocessTasks.mockResolvedValue({
       success: true,
-      tasks: [{ key: "transfer_mode", label: "Metodo di trasferimento", module: "qualifiche", candidate_count: 0 }],
+      tasks: [
+        { key: "transfer_mode", label: "Metodo di trasferimento", module: "qualifiche", candidate_count: 0 },
+        { key: "shielding_gas", label: "Gas di protezione", module: "qualifiche", candidate_count: 0 },
+      ],
       total_candidates: 0,
     });
     render(<BillingDashboardPage />);
 
-    await waitFor(() => expect(screen.getByText("Metodo di trasferimento")).toBeInTheDocument());
+    await waitFor(() =>
+      expect(screen.getByText("Nessuna rielaborazione in sospeso.")).toBeInTheDocument(),
+    );
     expect(screen.queryByRole("alert")).not.toBeInTheDocument();
-  });
-
-  it("disabilita il pulsante quando i candidati sono 0", async () => {
-    render(<BillingDashboardPage />);
-
-    await waitFor(() => expect(screen.getByText("Gas di protezione")).toBeInTheDocument());
-    const row = screen.getByText("Gas di protezione").closest("tr");
-    const button = row.querySelector("button");
-    expect(button).toBeDisabled();
+    expect(screen.queryByText("Metodo di trasferimento")).not.toBeInTheDocument();
+    expect(screen.queryByText("Gas di protezione")).not.toBeInTheDocument();
   });
 
   it("durante un lancio disabilita tutti i pulsanti Lancia (non solo quello in corso)", async () => {
