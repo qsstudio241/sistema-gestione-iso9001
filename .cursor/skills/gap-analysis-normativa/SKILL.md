@@ -63,7 +63,7 @@ Skill di progetto per confrontare **requisiti normativi** e **stato app** (codic
 
 ```
 Progresso gap analysis:
-- [ ] 0. Dichiarare fonti Markdown: coperte / mancanti / si parte su… (mancante = limite documentale, non gap app)
+- [ ] 0. Dichiarare fonti Markdown: coperte / mancanti / si parte su… (mancante = limite documentale, non gap app). Aggiornare [`NORME_MANCANTI_BACKLOG.md`](../../../docs/reference/NORME_MANCANTI_BACKLOG.md) se serve richiesta PDF.
 - [ ] 1. Definire modulo, standard, scope
 - [ ] 2. Leggere fonti normative + Quaderni pertinenti
 - [ ] 3. Leggere roadmap/brief/ADR per stato dichiarato

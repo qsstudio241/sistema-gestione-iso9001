@@ -1,54 +1,39 @@
-# DEPUTYTASK — NG-0: policy fedeltà normativa + template richiesta fonti
+# DEPUTYTASK — NG-3: rafforzare skill gap-analysis (mapping + quando chiedere PDF)
 
 **Stato:** APERTO  
 **Aperto:** 25/08/2026  
-**Branch previsto:** `cursor/ng-0-norm-fidelity-policy-<suffix>` (o riuso dopo merge di questa mappa)  
 **Piano:** [`PLAN_NORM_FIDELITY_SLICES.md`](PLAN_NORM_FIDELITY_SLICES.md)  
-**Gap:** [`GAP_NORM_FIDELITY_STRATEGICA_2026-08-25.md`](../gap-reports/GAP_NORM_FIDELITY_STRATEGICA_2026-08-25.md)  
-**Rischio:** Basso — solo docs/rules; niente schema, auth, sync, codice app.  
-**Slot precedente:** CND-1 CHIUSO  
-**Parallelo:** eventuali epic CND/SB su altri slot — **non** toccare file codice di quelle epic.
+**Dipende da:** NG-0 + NG-1 **CHIUSI** (stessa PR / main)  
+**Rischio:** Basso — solo skill docs; niente app/backend.  
+**Parallelo a:** CND-2 su [`DEPUTYTASK1.md`](DEPUTYTASK1.md) — **non** toccare `NdtReportsPage` / controller NDT.
 
 ## Perché
 
-La tesi del committente è corretta nella direzione (fonti → qualità AI e moduli), ma oggi il gate «dichiara Markdown / non inventare» è **parziale** e la richiesta di PDF manca di un formato ripetibile. NG-0 chiude la **policy** senza implementare runtime.
+NG-0/1 hanno policy + backlog. La skill `gap-analysis-normativa` deve rendere esplicito il percorso «manca MD → backlog → richiesta HITL» e tenere il mapping moduli aggiornato senza creare nuovi agenti GitHub.
 
-## Cosa fare (DoD)
+## DoD
 
-1. Aggiornare `.cursor/rules/sgq-operating-memory.mdc` (sezione Fonti Markdown / nuova sottosezione breve):
-   - gate su slice **norm-touching** (requisiti, checklist, Rule Engine, seed, prompt conformità, gap, export con citazione, campi legati a norma);
-   - se manca testo → **richiesta HITL** con blocco standard (non inventare; non bloccare perimetro già coperto);
-   - chiarire: **non** moltiplicare agenti GitHub; approfondire skill esistenti + `docs/Normative/`.
-2. Creare `docs/reference/NORME_MANCANTI_BACKLOG.md` (tabella: codice norma, impatto modulo, stato richiesta, note) con le lacune già note dal gap report (3834-2/4 2021, Quaderno 1090, 2560/17632/14174, …).
-3. Aggiungere in `docs/agent-tasks/HANDOFF_TEMPLATE.md` (o nota nel PLAN) un blocco copia-incolla «Richiesta norma al committente».
-4. Spuntare NG-0 nel PLAN; **non** aprire NG-1 nella stessa sessione se il contesto si gonfia.
-5. Test: `node backend/scripts/check-utf8-encoding.js` sui file toccati (se disponibile); niente suite FE obbligatoria (solo docs).
+1. In `.cursor/skills/gap-analysis-normativa/SKILL.md`: sezione breve «Quando chiedere PDF» (link backlog + HANDOFF template).
+2. Completare eventuali buchi di mapping in `reference.md` ancora segnati `?` solo se deducibili da roadmap/codice senza inventare; altrimenti lasciare e citare backlog.
+3. Spuntare NG-3 nel PLAN; brief CHIUSO — TEST OK (docs).
+4. UTF-8 check sui file toccati.
 
 ## File previsti
 
-- `.cursor/rules/sgq-operating-memory.mdc`
-- `docs/reference/NORME_MANCANTI_BACKLOG.md` (nuovo)
-- `docs/agent-tasks/HANDOFF_TEMPLATE.md` e/o `docs/agent-tasks/PLAN_NORM_FIDELITY_SLICES.md`
-- `docs/agent-tasks/DEPUTYTASK.md` (questo brief, chiusura)
-- opz. 1 riga in `docs/PROJECT_ROADMAP.md` § Stato attuale se chat sola
+- `.cursor/skills/gap-analysis-normativa/SKILL.md`
+- `.cursor/skills/gap-analysis-normativa/reference.md` (solo se serve)
+- `docs/agent-tasks/PLAN_NORM_FIDELITY_SLICES.md`
+- `docs/agent-tasks/DEPUTYTASK.md` (chiusura)
 
 ## Cosa NON toccare
 
-- `app/**`, `backend/src/**`, migrazioni, auth, sync
-- Altri `PLAN_*` / brief APERTO di altre epic
+- `app/**`, `backend/**`, CND, Second Brain runtime
+- `DEPUTYTASK1.md` (CND-2)
 - Installazione skill GitHub esterne
-- Esecuzione NG-1…NG-5 in questa stessa sessione deputy
+- NG-4/NG-5
 
-## Verifica chiusura
+## Verifica
 
-- [ ] Policy leggibile in operating-memory
-- [ ] Backlog norme mancanti creato con ≥3 righe note
-- [ ] Template richiesta PDF disponibile
-- [ ] PLAN: NG-0 spuntato; Stato brief CHIUSO — TEST OK (docs)
-- [ ] Commit + PR; rischio Basso
-
-## Comando di lancio (per il deputy successivo)
-
-```
-Leggi docs/agent-tasks/DEPUTYTASK.md ed eseguilo. Chiudi con TEST OK o FIX NON APPLICABILI.
-```
+- [ ] Sezione «Quando chiedere PDF» presente
+- [ ] PLAN NG-3 spuntato; brief CHIUSO
+- [ ] Nessun codice app
