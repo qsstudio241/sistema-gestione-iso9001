@@ -41,6 +41,10 @@
  *   default `${column} IS NULL` — necessaria per colonne NOT NULL con default
  *   (es. flag booleani come `thickness_max_unlimited`, dove "manca il dato"
  *   non coincide con "colonna NULL"). Opzionale, default `${column} IS NULL`.
+ * - `bundleColumns` (opzionale, WPQR): elenco colonne scritte insieme in un
+ *   solo passaggio AI / una sola proposta staging (es. t1+t2). Evita N chiamate
+ *   sullo stesso PDF. La whitelist di scrittura espone la stessa chiave con
+ *   `bundleColumns` dettagliate (writeGuard per colonna).
  */
 const { CONTINUOUS_WIRE_ARC_PROCESSES } = require('./weldingQualificationRules9606');
 
@@ -170,6 +174,29 @@ const REPROCESSABLE_FIELD_REGISTRY = {
         table: 'wpqr_records',
         processWhitelist: null,
         candidateWhere: 'thickness_max_unlimited = 0 AND thickness_max IS NULL',
+    },
+    // PR #558 / mig. 158: range duali t1/t2 su FW. Un solo passaggio AI
+    // (bundle) popola fino a 6 colonne — evita 6 chiamate sullo stesso PDF.
+    // Candidati: entrambi i min ancora NULL (mai popolati) + PDF su disco.
+    // jointTypeWhitelist FW: i BW a singolo range restano sul legacy.
+    wpqr_thickness_t1_t2: {
+        key: 'wpqr_thickness_t1_t2',
+        column: 'thickness_t1_min',
+        label: 'Range spessore duali t1/t2 (FW) — WPQR',
+        module: 'saldatura',
+        table: 'wpqr_records',
+        processWhitelist: null,
+        jointTypeWhitelist: ['FW'],
+        candidateWhere: 'thickness_t1_min IS NULL AND thickness_t2_min IS NULL',
+        // Colonne scritte insieme alla conferma (stesso field_scope).
+        bundleColumns: [
+            'thickness_t1_min',
+            'thickness_t1_max',
+            'thickness_t1_max_unlimited',
+            'thickness_t2_min',
+            'thickness_t2_max',
+            'thickness_t2_max_unlimited',
+        ],
     },
 };
 

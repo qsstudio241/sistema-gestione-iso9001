@@ -605,6 +605,21 @@ const WPQR_REPROCESSABLE_FIELDS = {
     // Qualifiche nel registro condiviso reprocessableFields.js (un unico
     // spazio dei nomi a livello di pannello superadmin).
     wpqr_thickness_max_unlimited: { column: 'thickness_max_unlimited', writeGuard: 'thickness_max_unlimited = 0' },
+    // Bundle t1/t2 (mig. 158): una voce registro → più colonne in un UPDATE.
+    // `column` = ancora per candidati/sync test; `bundleColumns` espanso in
+    // applyFieldReprocessUpdate. Flag BIT: writeGuard = ancora al default 0.
+    wpqr_thickness_t1_t2: {
+        column: 'thickness_t1_min',
+        writeGuard: 'thickness_t1_min IS NULL',
+        bundleColumns: [
+            { column: 'thickness_t1_min', writeGuard: 'thickness_t1_min IS NULL' },
+            { column: 'thickness_t1_max', writeGuard: 'thickness_t1_max IS NULL' },
+            { column: 'thickness_t1_max_unlimited', writeGuard: 'thickness_t1_max_unlimited = 0' },
+            { column: 'thickness_t2_min', writeGuard: 'thickness_t2_min IS NULL' },
+            { column: 'thickness_t2_max', writeGuard: 'thickness_t2_max IS NULL' },
+            { column: 'thickness_t2_max_unlimited', writeGuard: 'thickness_t2_max_unlimited = 0' },
+        ],
+    },
 };
 
 /**
@@ -638,6 +653,23 @@ async function applyFieldReprocessUpdate(targetWpqrId, organizationId, fieldScop
     for (const key of scopeFields) {
         const def = WPQR_REPROCESSABLE_FIELDS[key];
         if (!def) continue;
+        if (Array.isArray(def.bundleColumns) && def.bundleColumns.length) {
+            for (const part of def.bundleColumns) {
+                const column = part.column || part;
+                const writeGuard = part.writeGuard || `${column} IS NULL`;
+                // Valore sotto il nome colonna (proposta multi-campo) oppure
+                // sotto la chiave bundle (legacy single-field).
+                let value = fields ? fields[column] : undefined;
+                if (value === undefined && fields && fields[key] != null && typeof fields[key] === 'object' && !Array.isArray(fields[key])) {
+                    value = fields[key][column];
+                }
+                if (value === undefined || value === null || value === '') continue;
+                // Flag BIT: in conferma scrivere solo true (false = default già ok).
+                if (/_max_unlimited$/.test(column) && value !== true && value !== 1 && value !== '1') continue;
+                updatable.push({ key: `${key}:${column}`, column, value, writeGuard });
+            }
+            continue;
+        }
         const value = fields ? fields[key] : undefined;
         if (value === undefined || value === null || value === '') continue;
         updatable.push({ key, column: def.column, value, writeGuard: def.writeGuard || `${def.column} IS NULL` });
@@ -647,23 +679,20 @@ async function applyFieldReprocessUpdate(targetWpqrId, organizationId, fieldScop
         return { wpqr_id: targetWpqrId, updated_fields: [] };
     }
 
-    const setClauses = [];
-    const params = { id: targetWpqrId, orgId: organizationId };
+    // Una UPDATE per colonna (writeGuard indipendente): in un bundle t1/t2
+    // alcune colonne possono già essere valorizzate — non devono far fallire
+    // l'intero gruppo con un AND globale.
     const updatedFields = [];
-    for (const { key, column, value } of updatable) {
-        const paramName = `val_${column}`;
-        params[paramName] = value;
-        setClauses.push(`${column} = @${paramName}`);
-        updatedFields.push(key);
+    for (const { key, column, value, writeGuard } of updatable) {
+        const params = { id: targetWpqrId, orgId: organizationId, val: value };
+        const result = await query(`
+            UPDATE wpqr_records
+            SET ${column} = @val, updated_at = GETDATE()
+            WHERE id = @id AND organization_id = @orgId AND (${writeGuard})
+        `, params);
+        const affected = result?.rowsAffected?.[0] ?? result?.rowsAffected ?? 0;
+        if (affected > 0) updatedFields.push(key);
     }
-
-    const guardClauses = updatable.map(({ writeGuard }) => writeGuard).join(' AND ');
-
-    await query(`
-        UPDATE wpqr_records
-        SET ${setClauses.join(', ')}, updated_at = GETDATE()
-        WHERE id = @id AND organization_id = @orgId AND (${guardClauses})
-    `, params);
 
     logger.info(`[WpqrReprocess] Rielaborazione applicata id=${targetWpqrId} campi=${updatedFields.join(',')}`);
     return { wpqr_id: targetWpqrId, updated_fields: updatedFields };

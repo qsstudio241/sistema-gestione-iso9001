@@ -32,7 +32,7 @@ Mason: FW con t1/t2 distinti persi; alluminio senza 15614-2. PDF consegnati 25/0
 
 - Matrice gruppi alluminio Tabella 4  
 - Regole complete 9606-2 in JS  
-- Reprocess PDF WPQR legacy per popolare t1/t2  
+- Rielaborazione t1/t2: codice su `cursor/wpqr-t1t2-reprocess-887f` (stesso pannello superadmin delle qualifiche) 
 
 ## File toccati
 

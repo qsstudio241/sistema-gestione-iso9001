@@ -56,6 +56,9 @@ function resolveSchemaField(docType, fieldKey) {
 }
 
 function fieldLabel(docType, fieldKey) {
+  if (fieldKey === "wpqr_thickness_t1_t2") {
+    return "Range spessore duali t1/t2 (FW)";
+  }
   const field = resolveSchemaField(docType, fieldKey);
   if (field?.label) return field.label;
   return fieldKey.replace(/^wpqr_/, "").replace(/_/g, " ");
@@ -145,8 +148,19 @@ function ReprocessFieldRow({ item, docType, onDone }) {
     setBusy(true);
     setErr(null);
     try {
-      const coercedValue = coerceFieldValueForSubmit(fieldDef, value);
-      await apiService.confirmIngestStaging(item.id, { [field]: coercedValue });
+      // Bundle t1/t2: la conferma deve spedire le colonne numeriche/flag
+      // già in staging (non solo la stringa riepilogo sotto field_scope).
+      const payload = field === "wpqr_thickness_t1_t2"
+        ? Object.fromEntries(
+          Object.entries(item.fields || {}).filter(([k]) => /^thickness_t[12]_/.test(k))
+        )
+        : { [field]: coerceFieldValueForSubmit(fieldDef, value) };
+      if (field === "wpqr_thickness_t1_t2" && Object.keys(payload).length === 0) {
+        setErr("Nessun valore t1/t2 nella proposta — scarta e rilancia la rielaborazione.");
+        setBusy(false);
+        return;
+      }
+      await apiService.confirmIngestStaging(item.id, payload);
       onDone(item.id);
     } catch (e) {
       setErr(e?.data?.error || e.message || "Conferma fallita");
