@@ -1,5 +1,7 @@
 # Normative Norma 00010  Uni En Iso 3834 2 2006 Rev. 0
 
+> **SUPERATA (25/08/2026)**: edizione 2021 disponibile in `Normative NORMA_00029_ UNI EN ISO 3834-2_2021 Rev. 0.md`. Questo file resta solo come archivio storico.
+
 > Fonte: `UNI EN ISO 3834-2.pdf` (edizione UNI EN ISO 2006) — 26 pagine
 
 > **Nota versione**: nell'archivio norme fornito non era disponibile l'edizione 2021 di questa parte (come per le Parti 1, 3 e 5 già in repository): il testo che segue e' l'edizione UNI EN ISO 2006 (ultima disponibile), da sostituire con l'edizione 2021 quando il PDF sara' reperito.

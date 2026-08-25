@@ -16,7 +16,7 @@ Audit multi-standard (9001/14001/45001) · Non Conformità (workflow ISO 10.2 co
 
 ### Sessione più recente (25/08/2026)
 
-**Fedeltà normativa — loop fonti → skill → moduli (25/08, wayfinder)** — sì al PDCA SGQ e alla tesi «senza testi non si inventa»; no a proliferazione agenti GitHub. Gap + piano [`PLAN_NORM_FIDELITY_SLICES.md`](agent-tasks/PLAN_NORM_FIDELITY_SLICES.md) · report [`GAP_NORM_FIDELITY_STRATEGICA_2026-08-25.md`](gap-reports/GAP_NORM_FIDELITY_STRATEGICA_2026-08-25.md). Prima slice **NG-0** (policy + backlog richieste PDF) in [`DEPUTYTASK.md`](agent-tasks/DEPUTYTASK.md) **APERTO**. Nessun codice applicativo in questa sessione.
+**Fedeltà normativa — loop fonti → skill → moduli (25/08, wayfinder)** — sì al PDCA SGQ e alla tesi «senza testi non si inventa»; no a proliferazione agenti GitHub. Gap + piano [`PLAN_NORM_FIDELITY_SLICES.md`](agent-tasks/PLAN_NORM_FIDELITY_SLICES.md) · report [`GAP_NORM_FIDELITY_STRATEGICA_2026-08-25.md`](gap-reports/GAP_NORM_FIDELITY_STRATEGICA_2026-08-25.md). Prima slice **NG-0** (policy + backlog richieste PDF) in [`DEPUTYTASK.md`](agent-tasks/DEPUTYTASK.md) **APERTO**. **Stesso giorno:** digitalizzate **ISO 3834-2/-4:2021** (`NORMA_00029`/`00030` + seed); PDF non in Git.
 
 ### Sessione precedente (23/08/2026)
 
@@ -286,8 +286,8 @@ Quando emerge un’urgenza (es. modulo **VT** o **MT**):
 | `Normative/...UNI EN ISO 3834-1_2021 Rev. 0.pdf` | ISO 3834-1 | Criteri scelta livello |
 | `Normative/...UNI EN ISO 3834-3_2021 Rev. 0.pdf` | ISO 3834-3 | Requisiti livello intermedio |
 | `Normative/...UNI EN ISO 3834-5_2021 Rev. 0.pdf` | ISO 3834-5 | Documenti e record |
-| `Normative/...UNI EN ISO 3834-2_2006 Rev. 0.pdf` | ISO 3834-2 | Requisiti livello completo — **ora disponibile** (edizione 2006, PDF 2021 non reperito) |
-| `Normative/...UNI EN ISO 3834-4_2006 Rev. 0.pdf` | ISO 3834-4 | Requisiti livello elementare — **ora disponibile** (edizione 2006, PDF 2021 non reperito) |
+| `Normative/...UNI EN ISO 3834-2_2021 Rev. 0.md` (`NORMA_00029`) | ISO 3834-2 | Requisiti livello completo — **edizione 2021** (25/08/2026); 2006 archivio |
+| `Normative/...UNI EN ISO 3834-4_2021 Rev. 0.md` (`NORMA_00030`) | ISO 3834-4 | Requisiti livello elementare — **edizione 2021** (25/08/2026); 2006 archivio |
 
 ### Cosa differenzia i 4 scenari tecnicamente
 

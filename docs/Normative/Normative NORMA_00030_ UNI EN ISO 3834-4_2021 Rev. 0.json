@@ -1,0 +1,194 @@
+[
+  {
+    "standard_code": "ISO_3834_4_2021",
+    "clause_ref": "1",
+    "clause_title": "Scope 1",
+    "requirement_text": "........................................................................................................................................................................................................................................"
+  },
+  {
+    "standard_code": "ISO_3834_4_2021",
+    "clause_ref": "2",
+    "clause_title": "Normative references 1",
+    "requirement_text": "................................................................................................................................................................................................................................."
+  },
+  {
+    "standard_code": "ISO_3834_4_2021",
+    "clause_ref": "3",
+    "clause_title": "Terms and definitions 1",
+    "requirement_text": "......................................................................................................................................................................................"
+  },
+  {
+    "standard_code": "ISO_3834_4_2021",
+    "clause_ref": "4",
+    "clause_title": "Use of this document 1",
+    "requirement_text": "....................................................................................................................................................................................."
+  },
+  {
+    "standard_code": "ISO_3834_4_2021",
+    "clause_ref": "5",
+    "clause_title": "Review of requirements and technical review 1",
+    "requirement_text": "........................................................................................................................................................................................"
+  },
+  {
+    "standard_code": "ISO_3834_4_2021",
+    "clause_ref": "6",
+    "clause_title": "Sub-contracting 2",
+    "requirement_text": "......................................................................................................................"
+  },
+  {
+    "standard_code": "ISO_3834_4_2021",
+    "clause_ref": "7",
+    "clause_title": "Welding personnel 2",
+    "requirement_text": "...................................................................................................................................................................................................... .............................................................................................................................................................................................. 7.1 General ...........................................................................................................................................................................................................2"
+  },
+  {
+    "standard_code": "ISO_3834_4_2021",
+    "clause_ref": "8",
+    "clause_title": "Inspection and testing personnel 2",
+    "requirement_text": "7.2 Welders and welding operators ...............................................................................................................................................2 ....................................................................................................................................................... 8.1 General ...........................................................................................................................................................................................................2"
+  },
+  {
+    "standard_code": "ISO_3834_4_2021",
+    "clause_ref": "9",
+    "clause_title": "Equipment 3",
+    "requirement_text": "8.2 Non-destructive testing personnel ........................................................................................................................................2"
+  },
+  {
+    "standard_code": "ISO_3834_4_2021",
+    "clause_ref": "10",
+    "clause_title": "Welding and related activities 3",
+    "requirement_text": "..................................................................................................................................................................................................................."
+  },
+  {
+    "standard_code": "ISO_3834_4_2021",
+    "clause_ref": "11",
+    "clause_title": "Welding consumables 3",
+    "requirement_text": "................................................................................................................................................................"
+  },
+  {
+    "standard_code": "ISO_3834_4_2021",
+    "clause_ref": "12",
+    "clause_title": "Inspection and testing 3",
+    "requirement_text": "......................................................................................................................................................................................"
+  },
+  {
+    "standard_code": "ISO_3834_4_2021",
+    "clause_ref": "13",
+    "clause_title": "Non-conformance and corrective actions 3",
+    "requirement_text": "...................................................................................................................................................................................."
+  },
+  {
+    "standard_code": "ISO_3834_4_2021",
+    "clause_ref": "14",
+    "clause_title": "Quality records 3",
+    "requirement_text": "................................................................................................................................... ....................................................................................................................................................................................................... © ISO 2021 – All rights reserved iii"
+  },
+  {
+    "standard_code": "ISO_3834_4_2021",
+    "clause_ref": "1",
+    "clause_title": "Scope",
+    "requirement_text": "This document defines elementary quality requirements for fusion welding of metallic materials both in workshops and at field installation sites."
+  },
+  {
+    "standard_code": "ISO_3834_4_2021",
+    "clause_ref": "2",
+    "clause_title": "Normative references",
+    "requirement_text": "The following documents are referred to in the text in such a way that some or all of their content constitutes requirements of this document. For dated references, only the edition cited applies. For undated refeQrueanlciteys r, ethque ilraetmesetn etsd fiotiro fnu soifo tnh we erledfienrge onfc mede tdaolcliuc mmeantet r(iianlcsl —ud Pinagr ta 1n:y C armiteerniad mfoer nthtse) s aeplepcltiieosn. of the appropriate level of quality requirements ISO 3834-1, Quality requirements for fusion welding of metallic materials — Part 5: Documents with which it is necessary to conform to claim conformity to the quality requirements of ISO 3834-2, ISO 3834-3 1) IoSrO IS 3O8 33843-54:-—4 ,"
+  },
+  {
+    "standard_code": "ISO_3834_4_2021",
+    "clause_ref": "3",
+    "clause_title": "Terms and definitions",
+    "requirement_text": "For the purposes of this document, the terms and definitions given in ISO 3834-1 apply. ISO and IEC maintain terminological databases for use in standardization at the following addresses: — ISO Online browsing platform: available at https:// www .iso .org/ obp — IEC Electropedia: available at http:// www .electropedia .org/"
+  },
+  {
+    "standard_code": "ISO_3834_4_2021",
+    "clause_ref": "4",
+    "clause_title": "Use of this document",
+    "requirement_text": "For general information on the use of this document, ISO 3834-1 shall be used. In order to fulfil the quality requirements given in this document, the conformity to relevant documents given in ISO 3834-5 shall be verified. The requirements contained within this document shall be adopted in full."
+  },
+  {
+    "standard_code": "ISO_3834_4_2021",
+    "clause_ref": "5",
+    "clause_title": "Review of requirements and technical review",
+    "requirement_text": "The manufacturer shall review the contractual requirements and any other requirements, together with any technical data provided by the purchaser or in-house data when the construction is designed by the manufacturer. The manufacturer shall establish that all information necessary to carry out the manufacturing operations is complete and available prior to the commencement of the work. The\n\n1) Under preparation. (Stage at the time of publication: ISO/DIS 3834-5:2021). 1\n\n© ISO 2021 – All rights reserved\n\n\nmanufacturer shall affirm its capability to meet all requirements and shall ensure adequate planning of all quality-related activities. The review of requirements shall be carried out by the manufacturer to verify that the work content is within its capability to perform, that sufficient resources are available to achieve delivery schedules and that documentation is clear and unambiguous. The manufacturer shall ensure that any variations between the contract and any previous quotation are identified and the purchaser notified of any programme, cost or engineering changes that can result."
+  },
+  {
+    "standard_code": "ISO_3834_4_2021",
+    "clause_ref": "6",
+    "clause_title": "Sub-contracting",
+    "requirement_text": "When a manufacturer intends to use sub-contracted services or activities (e.g. welding, inspection, nondestructive testing), information necessary to meet applicable requirements shall be supplied by the manufacturer to the sub-contractor. The sub-contractor shall provide such records and documentation of her or his work as can be specified by the manufacturer. A sub-contractor shall work under the order and responsibility of the manufacturer and shall fully comply with the relevant requirements of this document. The manufacturer shall ensure that the subcontractor can comply with the quality requirements as specified."
+  },
+  {
+    "standard_code": "ISO_3834_4_2021",
+    "clause_ref": "7",
+    "clause_title": "Welding personnel",
+    "requirement_text": ""
+  },
+  {
+    "standard_code": "ISO_3834_4_2021",
+    "clause_ref": "7.1",
+    "clause_title": "General",
+    "requirement_text": "The manufacturer shall provide sufficient supervision of the welding production in order to assure that the welding is carried out in a manner compatible with good workmanship."
+  },
+  {
+    "standard_code": "ISO_3834_4_2021",
+    "clause_ref": "7.2",
+    "clause_title": "Welders and welding operators",
+    "requirement_text": "Welders and welding operators shall be qualified by an appropriate test. The documents to which it is required to conform to fulfil the quality requirements are specified in: — ISO 3834-5:—, Table 1, for arc welding, electron-beam welding, laser-beam welding and gas welding; and — ISO 3834-5:—, Table 10, for other fusion welding processes."
+  },
+  {
+    "standard_code": "ISO_3834_4_2021",
+    "clause_ref": "8",
+    "clause_title": "Inspection and testing personnel",
+    "requirement_text": ""
+  },
+  {
+    "standard_code": "ISO_3834_4_2021",
+    "clause_ref": "8.1",
+    "clause_title": "General",
+    "requirement_text": "The manufacturer shall carry out all inspection and testing as specified."
+  },
+  {
+    "standard_code": "ISO_3834_4_2021",
+    "clause_ref": "8.2",
+    "clause_title": "Non-destructive testing personnel",
+    "requirement_text": "The non-destructive testing personnel shall be qualified. For visual testing, a qualification test is not always required. When a qualification test is not required, competence shall be verified by the manufacturer. The ISO documents to which it is required to conform to fulfil the quality requirements are specified in: — ISO 3834-5:—, Table 3, for arc welding, electron-beam welding, laser-beam welding and gas welding; and — ISO 3834-5:—, Table 10, for other fusion welding processes. © ISO 2021 – All rights reserved"
+  },
+  {
+    "standard_code": "ISO_3834_4_2021",
+    "clause_ref": "9",
+    "clause_title": "Equipment",
+    "requirement_text": "Welding equipment shall be available and maintained in proper working order."
+  },
+  {
+    "standard_code": "ISO_3834_4_2021",
+    "clause_ref": "10",
+    "clause_title": "Welding and related activities",
+    "requirement_text": "Welding shall be performed in accordance with an appropriate welding technique."
+  },
+  {
+    "standard_code": "ISO_3834_4_2021",
+    "clause_ref": "11",
+    "clause_title": "Welding consumables",
+    "requirement_text": "The manufacturer shall ensure that appropriate welding consumables are stored and used in accordance with the supplier's recommendations."
+  },
+  {
+    "standard_code": "ISO_3834_4_2021",
+    "clause_ref": "12",
+    "clause_title": "Inspection and testing",
+    "requirement_text": "The manufacturer shall carry out all inspection and testing as specified."
+  },
+  {
+    "standard_code": "ISO_3834_4_2021",
+    "clause_ref": "13",
+    "clause_title": "Non-conformance and corrective actions",
+    "requirement_text": "Measures shall be implemented to control items or activities which do not conform to specified requirements in order to prevent their inadvertent acceptance. Measures shall also be implemented to ensure that conditions adverse to quality of the welded construction are promptly identified and corrected."
+  },
+  {
+    "standard_code": "ISO_3834_4_2021",
+    "clause_ref": "14",
+    "clause_title": "Quality records",
+    "requirement_text": "Quality records shall be retained for a minimum period of five years in the absence of any other specified requirements. © ISO 2021 – All rights reserved"
+  }
+]

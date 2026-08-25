@@ -51,7 +51,7 @@
 
 | Voce mancante | Impatto | Fonte alternativa |
 |---------------|---------|-------------------|
-| ISO 3834-2 / -4 ed. 2021 | Gap RDP/3834 citano edizione 2006 | PDF 2021 da committente |
+| ISO 3834-2 / -4 ed. 2021 | Digitalizzate 25/08/2026 (`NORMA_00029`/`00030`) | — |
 | Quaderno Linea Guida 1090 | File 0 byte | Rigenerare da PDF archivio |
 | ISO 2560 / 17632 / 14174 | MC apporto: chimica/ReH = skip | PDF → pdf-to-json |
 | Norme settoriali oltre 81/152 | Conformità legislativa «per ATECO» incompleta | Elenco HITL + Normattiva |

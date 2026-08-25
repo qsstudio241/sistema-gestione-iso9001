@@ -60,19 +60,17 @@ const NORM_FILES = [
         minMajor: 4,
     },
     {
-        // Edizione 2006 (non 2021): PDF 2021 non reperito in archivio per questa
-        // parte al momento dell'import — vedi nota versione in testa al file .md.
-        file: 'Normative NORMA_00010_ UNI EN ISO 3834-2_2006 Rev. 0.md',
-        standard_code: 'ISO_3834_2_2006',
-        norm_version: '2006',
+        // Edizione 2021 (25/08/2026): sostituisce NORMA_00010 (2006, archivio).
+        file: 'Normative NORMA_00029_ UNI EN ISO 3834-2_2021 Rev. 0.md',
+        standard_code: 'ISO_3834_2_2021',
+        norm_version: '2021',
         minMajor: 4,
     },
     {
-        // Edizione 2006 (non 2021): PDF 2021 non reperito in archivio per questa
-        // parte al momento dell'import — vedi nota versione in testa al file .md.
-        file: 'Normative NORMA_00011_ UNI EN ISO 3834-4_2006 Rev. 0.md',
-        standard_code: 'ISO_3834_4_2006',
-        norm_version: '2006',
+        // Edizione 2021 (25/08/2026): sostituisce NORMA_00011 (2006, archivio).
+        file: 'Normative NORMA_00030_ UNI EN ISO 3834-4_2021 Rev. 0.md',
+        standard_code: 'ISO_3834_4_2021',
+        norm_version: '2021',
         minMajor: 4,
     },
 ];
@@ -93,7 +91,12 @@ function shouldDropLine(raw) {
     const line = raw.trim();
     if (!line) return false;
     if (/^\|/.test(line)) return true;
-    if (/^#{1,6}\s/.test(line)) return true;
+    if (/^#{1,6}\s/.test(line)) {
+        // Formato pdf_to_json: "# 5 Review …" — non scartare se è un header clausola
+        const withoutHash = line.replace(/^#{1,6}\s+/, '');
+        if (CLAUSE_HEADER_RE.test(withoutHash)) return false;
+        return true;
+    }
     if (/^>\s/.test(line)) return true;
     if (/^---+$/.test(line)) return true;
     if (/^Tecnove\s+Spa$/i.test(line)) return true;
@@ -142,11 +145,20 @@ function isBodyStart(line) {
     ) {
         return true;
     }
-    if (/^(NOTA|Nota)(\s+\d+|\s*:|\s)/iu.test(t)) return true;
+    // Testo ISO inglese (pdf_to_json su edizioni ISO EN, es. 3834-2/-4:2021)
+    if (
+        /^(The |This |These |Those |A |An |For |In |When |If |All |Any |Where |It |Its |Manufacturers?\b|Compliance\b|Examples?\b|Items?\b|Quality\b|Welding\b|Inspection\b|Sub-contract|Documents?\b|Personnel\b)/i.test(
+            t,
+        )
+    ) {
+        return true;
+    }
+    if (/\bshall\b/i.test(t) && t.length > 40) return true;
+    if (/^(NOTA|Nota|NOTE|Note)(\s+\d+|\s*:|\s)/iu.test(t)) return true;
     if (/^\*[)\s]/.test(t)) return true;
     if (/^[a-z]\)\s/i.test(t)) return true;
     if (/^\d+\)\s/.test(t)) return true;
-    if (/^-\s/.test(t)) return true;
+    if (/^-\s/.test(t) || /^—\s/.test(t)) return true;
     return false;
 }
 
@@ -184,7 +196,10 @@ function parseMarkdown(content, meta) {
 
     for (const raw of lines) {
         const trimmedLine = raw.trim();
-        const paginaM = trimmedLine.match(/^##\s+Pagina\s+(\d+)/i);
+        // UNI storiche: "## Pagina N" · pdf_to_json: "<!-- Pagina N (motore: …) -->"
+        const paginaM =
+            trimmedLine.match(/^##\s+Pagina\s+(\d+)/i) ||
+            trimmedLine.match(/^<!--\s*Pagina\s+(\d+)/i);
         if (paginaM) {
             const pn = parseInt(paginaM[1], 10);
             if (pn >= 4) allowClauseHeaders = true;
@@ -194,7 +209,7 @@ function parseMarkdown(content, meta) {
         if (shouldDropLine(raw)) continue;
 
         const line = raw.trimEnd();
-        const trimmed = line.trim();
+        const trimmed = line.trim().replace(/^#{1,6}\s+/, '');
 
         if (isEndOfNormativeSection(trimmed) && sawEligibleClause) {
             flush();

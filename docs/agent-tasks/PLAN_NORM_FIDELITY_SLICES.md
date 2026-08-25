@@ -21,7 +21,7 @@
 
 - Quali **skill Cursor aggiuntive** per ambito (es. `conformita-legislativa-45001`, `iso-3834-rdp`) oltre a rafforzare `gap-analysis-normativa` — solo dopo inventario NG-1 e 2–3 PDF reali ricevuti
 - Se il backlog norme mancanti vive solo in Markdown repo o anche come job/alert in-app per lo studio
-- Priorità PDF da richiedere al committente (lista HITL sotto)
+- Priorità PDF restanti da richiedere (9712, apporto 2560/…, Linea guida 1090, leggi settoriali) — **3834-2/-4:2021 ricevute e digitalizzate 25/08/2026**
 - Quando (e se) un «supervisore» runtime in-app orchestra sotto-prompt specializzati (oggi: un LLM + tool/servizi)
 
 ## Decisioni già prese (25/08/2026, analisi Lead + tesi committente)
