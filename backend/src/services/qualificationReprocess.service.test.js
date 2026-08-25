@@ -168,11 +168,15 @@ describe('selectReprocessCandidates — tabella wpqr_records', () => {
                 { id: 2, organization_id: 1001, joint_type: 'BW', certificate_file_url: '/uploads/b.pdf' },
             ],
         });
+        query.mockResolvedValueOnce({ recordset: [] }); // excludeRecordsWithPendingProposal
         const config = getReprocessableField('throat_test_mm');
 
         const rows = await selectReprocessCandidates('throat_test_mm', config, {});
 
         expect(rows.map((r) => r.id)).toEqual([1]);
+        expect(query).toHaveBeenCalledTimes(2);
+        expect(query.mock.calls[1][0]).toMatch(/ingest_staging/);
+        expect(query.mock.calls[1][0]).toMatch(/target_wpqr_id/);
     });
 
     it('rotated_position: usa candidateWhere dedicato (piastra + PF/PA), non "campo IS NULL"', async () => {
@@ -206,6 +210,7 @@ describe('selectReprocessCandidates — tabella wpqr_records', () => {
                 { id: 2, organization_id: 1003, joint_type: 'BW', certificate_file_url: '/uploads/b.pdf' },
             ],
         });
+        query.mockResolvedValueOnce({ recordset: [] }); // excludeRecordsWithPendingProposal
         const config = getReprocessableField('wpqr_thickness_t1_t2');
 
         const rows = await selectReprocessCandidates('wpqr_thickness_t1_t2', config, {});
@@ -213,6 +218,40 @@ describe('selectReprocessCandidates — tabella wpqr_records', () => {
         const [sql] = query.mock.calls[0];
         expect(sql).toMatch(/thickness_t1_min IS NULL AND thickness_t2_min IS NULL/);
         expect(rows.map((r) => r.id)).toEqual([1]);
+    });
+
+    it('candidati con proposta pending sullo stesso field_scope sono esclusi', async () => {
+        query.mockResolvedValueOnce({
+            recordset: [
+                { id: 10, organization_id: 1001, certificate_file_url: '/uploads/a.pdf' },
+                { id: 20, organization_id: 1001, certificate_file_url: '/uploads/b.pdf' },
+            ],
+        });
+        query.mockResolvedValueOnce({
+            recordset: [{ record_id: 10 }],
+        });
+        const config = getReprocessableField('preheat_temp');
+
+        const rows = await selectReprocessCandidates('preheat_temp', config, {});
+
+        expect(rows.map((r) => r.id)).toEqual([20]);
+        expect(query).toHaveBeenCalledTimes(2);
+        const [pendingSql, pendingParams] = query.mock.calls[1];
+        expect(pendingSql).toMatch(/ingest_staging/);
+        expect(pendingSql).toMatch(/field_scope = @field/);
+        expect(pendingSql).toMatch(/review_status = 'pending'/);
+        expect(pendingParams).toEqual(expect.objectContaining({ field: 'preheat_temp', id0: 10, id1: 20 }));
+    });
+
+    it('prima query vuota: non interroga ingest_staging (early return)', async () => {
+        query.mockResolvedValueOnce({ recordset: [] });
+        const config = getReprocessableField('preheat_temp');
+
+        const rows = await selectReprocessCandidates('preheat_temp', config, {});
+
+        expect(rows).toEqual([]);
+        expect(query).toHaveBeenCalledTimes(1);
+        expect(query.mock.calls[0][0]).not.toMatch(/ingest_staging/);
     });
 });
 
@@ -226,7 +265,8 @@ describe('runReprocessForField — end-to-end su wpqr_records', () => {
 
         query.mockResolvedValueOnce({
             recordset: [{ id: 7, organization_id: 1001, company_id: 20, certificate_file_url: '/uploads/wpqr7.pdf' }],
-        });
+        }); // selectReprocessCandidates — candidati
+        query.mockResolvedValueOnce({ recordset: [] }); // excludeRecordsWithPendingProposal
         query.mockResolvedValueOnce({ recordset: [] }); // hasPendingProposal
 
         runDocumentIngest.mockResolvedValue({
