@@ -316,19 +316,34 @@ async function extractQualificationFromPdf(pdfBuffer, fileName, organizationId, 
     const reviewFields = mapPipelineFieldsToReview(pipeline.fields || {}, pipeline.text, fileName);
 
     if (pipeline.text.length > 30) {
-        const docClass = classifyDocument(pipeline.text);
-        logger.info('Qualification doc classification', {
-            fileName,
-            detected_type: docClass.detected_type,
-            confidence: docClass.confidence,
-        });
+        // Includi il nome file nello score: i PDF scansionati spesso hanno 14732/9606
+        // solo nel filename (es. …_DEDIC_ADIL_14732_121.pdf) e OCR può ometterlo.
+        const docClass = classifyDocument(`${pipeline.text}\n${fileName || ''}`);
+        // Winston printf scarta i meta-oggetti: metti i dettagli nel messaggio.
+        logger.info(
+            `Qualification doc classification file=${fileName} detected=${docClass.detected_type}`
+            + ` conf=${docClass.confidence} score=${docClass.score} docType=${docType}`,
+        );
         if (WRONG_MODULE_FOR_QUALIFICATIONS.has(docClass.detected_type) && docClass.confidence === 'high') {
-            return {
-                status: 'wrong_module',
-                detected_type: docClass.detected_type,
-                message: WRONG_MODULE_MESSAGES[docClass.detected_type],
-                suggested_module: SUGGESTED_MODULE[docClass.detected_type],
-            };
+            // L'operatore ha già scelto esplicitamente patentino/14732/NDT nel pannello:
+            // non bloccare (i certificati 14732 citano WPQR/15614 come base §4.1).
+            // Solo warning + procedi con il tipo scelto.
+            const explicitQualType = docType === 'patentino_saldatore'
+                || docType === 'qualifica_14732'
+                || docType === 'cert_ndt';
+            if (explicitQualType) {
+                warnings.push(
+                    `Il testo richiama anche ${docClass.detected_type.toUpperCase()}`
+                    + ` (spesso come base della qualifica). Si procede con il tipo scelto.`
+                );
+            } else {
+                return {
+                    status: 'wrong_module',
+                    detected_type: docClass.detected_type,
+                    message: WRONG_MODULE_MESSAGES[docClass.detected_type],
+                    suggested_module: SUGGESTED_MODULE[docClass.detected_type],
+                };
+            }
         }
     }
 
