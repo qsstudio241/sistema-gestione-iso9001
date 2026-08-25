@@ -2,8 +2,8 @@
 
 > **Destinazione**: uno studio (Mason) e l’operatore CND chiudono sul telefono il ciclo **incarico → esecuzione in campo → verbale Word + eventuale NC**, riusando qualifiche ISO 9712, strumenti, commesse, foto e PWA già in produzione. Niente app nativa, niente secondo motore, niente tabelle gemelle.
 > **Spec / ADR**: [ISO 9712:2022](../reference/ISO_9712_2022_NDT_QUALIFICATION.md) · ADR-004 (auth mobile) · ADR-016 (strumenti trasversali, verbali ≠ Welding Book) · [PLAN ISO 3834](PLAN_3834_SLICES.md) (ISO-1b/ISO-7 fatti; **ISO-9** eseguita qui come CND-2)
-> **Brief attivi**: [`DEPUTYTASK1.md`](DEPUTYTASK1.md) **CND-2 CHIUSO** (gate 9712+visione, questa PR). **CND-1** CHIUSO (#549). **CND-4** CHIUSO (#547). **CND-11** CHIUSO (#546). Parallelo docs: NG-3 su `DEPUTYTASK.md` (file disgiunti).
-> **Mappa**: CND-0 #540 · spike HTML · CND-1/4/11 su `main`. **Prossima codice CND dopo merge CND-2**: **CND-3** (flag PT/MT; stesso JSX — non in parallelo a questa PR).
+> **Brief attivi**: [`DEPUTYTASK1.md`](DEPUTYTASK1.md) **CND-2 CHIUSO** (#561). **CND-1** CHIUSO (#549). **CND-4** CHIUSO (#547). **CND-11** CHIUSO (#546).
+> **Mappa**: CND-0 #540 · spike HTML · CND-1/2/4/11 su `main`. **Prossima codice CND**: **CND-3** (flag PT/MT; stesso JSX — non in parallelo).
 > **Licenza**: modulo `cnd` (bridge: licenza `saldatura` implica `cnd`)
 > **Schermate oggi**: `/cnd/verbali` (`NdtReportsPage.jsx`) · `/cnd/strumenti` (`EquipmentPage.jsx`) · Qualifiche tab NDT
 
@@ -14,14 +14,14 @@ Il CND **c’è già** (giugno 2026, go-live mobile parziale). Il buco non è «
 | Già in produzione | Cosa manca per l’operatore |
 |-------------------|----------------------------|
 | CRUD verbali VT/MT/PT/UT (+ RT in UI) | Parametri di metodo solo per **VT** (`method_params` JSON già previsto per MT/PT/UT) |
-| Numerazione `VT-YYYY-NNN`, stati bozza/completato/approvato | Ispettore = testo libero, **non** legato al patentino 9712 (ISO-9) |
+| Numerazione `VT-YYYY-NNN`, stati bozza/completato/approvato | Gate ispettore 9712 + visione (CND-2 / #561): Completa/firma solo con patentino valido per il metodo |
 | Strumenti + semaforo taratura, ruoli calibro/luxmetro/lampada | Ruoli strumenti restano da **VT**; UT/MT/PT non hanno sonde/giogo/kit |
 | Foto per riga marca, autosave online, NC da difetto R/S | Elenco marche = **tabella larga** (scroll orizzontale): usabile a tavolino, scomodo in officina |
 | Word `VT-verbale.docx` | Nessun template MT/PT/UT; verbale **non** entra nel registro documenti |
 | Commessa opzionale (ISO-7), `company_access` (ISO-1b) | Nessuna **coda lavori** del giorno; si crea il verbale da zero |
 | PWA + voice CND in nav mobile + ADR-004 | `useNdtAutoSave.js` solo localStorage; coda IndexedDB NDT **già** in `syncService` ma non collegata (CND-9) |
 | Ingest `cert_ndt` + idoneità visiva | Ingest `report_ndt` (verbali storici) schema AI sì, whitelist pipeline no |
-| Qualifiche 9712 in anagrafica | Gate «puoi firmare questo metodo?» assente |
+| Qualifiche 9712 in anagrafica | Gate «puoi firmare questo metodo?» **fatto** (CND-2); resta CND-3 flag PT/MT |
 
 **Non si inventa** una quarta pagina, un agente CND, un IndexedDB gemello degli audit, né tabelle `ndt_mt_*`. Si estende `ndt_reports` + `method_params` JSON + UI già copiata da NC / Qualifiche.
 
@@ -208,7 +208,7 @@ Due deputy **mai** sullo stesso `NdtReportsPage.jsx` o sullo stesso controller.
 
 | Passaggio | Gap | Slice |
 |-----------|-----|-------|
-| Input: chi ispeziona | Nome libero; manca gate 9712 + visita medica | CND-2 |
+| Input: chi ispeziona | Gate 9712 + visione **fatto** (#561); match sul nome | CND-2 *chiusa* |
 | Input: cosa ispezionare | Si crea da zero; allineare a bozza-audit | CND-8 |
 | Input: con quali mezzi | Strumenti VT-centrici | CND-5 |
 | Esecuzione: marche in campo | Tabella 10 colonne | CND-1 *chiusa* |

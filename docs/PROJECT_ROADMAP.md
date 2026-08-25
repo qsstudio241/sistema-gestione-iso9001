@@ -8,7 +8,7 @@
 
 > **Risposta standard a «stato di avanzamento del progetto e priorità da affrontare»**: sintetizzare da questa sezione (moduli maturi + sessione più recente + tabella priorità sotto), **non** dal banner storico più sotto (superato, tenuto solo per traccia) né dall'archivio marzo 2026 [`docs/archive/PROJECT_CONTEXT_STATO_FUNZIONALITA_2026-03.md`](archive/PROJECT_CONTEXT_STATO_FUNZIONALITA_2026-03.md). **Aggiornare questa sezione a fine sessione** se emergono nuove priorità o se una priorità elencata viene chiusa (stesso principio delle "Lezioni apprese" in [GUIDA_CONSOLIDATA.md](GUIDA_CONSOLIDATA.md) — sintesi qui, dettaglio linkato).
 
-**Ultimo aggiornamento di questa sezione**: 25/08/2026 (WPQR t1/t2 + 15614-2 #558; parallelo NG-3 + CND-2).
+**Ultimo aggiornamento di questa sezione**: 25/08/2026 (CND-2 #561; NG-3 #560; WPQR t1/t2 #558 + reprocess #563).
 
 ### Moduli maturi (in produzione, uso quotidiano dai clienti Camellini/Mason)
 
@@ -16,9 +16,13 @@ Audit multi-standard (9001/14001/45001) · Non Conformità (workflow ISO 10.2 co
 
 ### Sessione più recente (25/08/2026)
 
-**WPQR t1/t2 + ISO 15614-2 (25/08, mergiata #558)** — Mason: doppi range spessore FW e norma alluminio. Migrazione **158** in PROD, ingest/form/copertura WPS, norme `NORMA_00031`/`00032`, brief [`DEPUTYTASK_WPQR_T1T2.md`](agent-tasks/DEPUTYTASK_WPQR_T1T2.md) **CHIUSO**. Backlog: Tabella 4 gruppi Al, regole 9606-2 complete, reprocess PDF legacy.
+**CND-2 gate ispettore 9712 + idoneità visiva (25/08, mergiata #561)** — sul verbale CND Completa/firma solo con patentino ISO 9712 valido **per il metodo** (livello 2 o 3) **e** visione in corso. Bozza sempre salvabile. Brief [`DEPUTYTASK1.md`](agent-tasks/DEPUTYTASK1.md) **CHIUSO**. Prossima slice CND: **CND-3** (flag PT/MT, stesso JSX). Serve deploy backend (`ndtInspectorGate.service.js`).
 
-**NG-0+NG-1 fedeltà normativa (25/08)** — gate slice norm-touching, template richiesta PDF, backlog [`NORME_MANCANTI_BACKLOG.md`](reference/NORME_MANCANTI_BACKLOG.md). Brief paralleli ancora aperti: **NG-3** [`DEPUTYTASK.md`](agent-tasks/DEPUTYTASK.md) · **CND-2** [`DEPUTYTASK1.md`](agent-tasks/DEPUTYTASK1.md).
+**NG-3 skill gap-analysis (25/08, mergiata #560)** — percorso «manca MD → backlog → HITL» + mapping. Brief [`DEPUTYTASK.md`](agent-tasks/DEPUTYTASK.md) **CHIUSO**.
+
+**WPQR t1/t2 + ISO 15614-2 (25/08, mergiata #558; reprocess #563)** — Mason: doppi range spessore FW e norma alluminio. Migrazione **158** in PROD, ingest/form/copertura WPS, norme `NORMA_00031`/`00032`, brief [`DEPUTYTASK_WPQR_T1T2.md`](agent-tasks/DEPUTYTASK_WPQR_T1T2.md) **CHIUSO**. Reprocess t1/t2 dal pannello superadmin (#563). Backlog: Tabella 4 gruppi Al, regole 9606-2 complete.
+
+**NG-0+NG-1 fedeltà normativa (25/08)** — gate slice norm-touching, template richiesta PDF, backlog [`NORME_MANCANTI_BACKLOG.md`](reference/NORME_MANCANTI_BACKLOG.md), inventario skill aggiornato. **3834-2/-4:2021** già in repo + seed VPS.
 
 ### Sessione precedente (25/08/2026)
 
