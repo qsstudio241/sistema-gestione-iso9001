@@ -123,6 +123,27 @@ describe('resolveExtractedReprocessValue — tabella wpqr_records', () => {
         expect(resolveExtractedReprocessValue('preheat_temp', { preheat_temp: 'min 100 C' }, config)).toBe('min 100 C');
         expect(resolveExtractedReprocessValue('preheat_temp', {}, config)).toBeNull();
     });
+
+    it('wpqr_thickness_t1_t2: bundle — oggetto se almeno un min, unlimited solo se true', () => {
+        const config = getReprocessableField('wpqr_thickness_t1_t2');
+        expect(resolveExtractedReprocessValue('wpqr_thickness_t1_t2', {
+            thickness_t1_min: 5,
+            thickness_t1_max_unlimited: true,
+            thickness_t2_min: 8,
+            thickness_t2_max: 20,
+            thickness_t2_max_unlimited: false,
+        }, config)).toEqual({
+            thickness_t1_min: 5,
+            thickness_t1_max_unlimited: true,
+            thickness_t2_min: 8,
+            thickness_t2_max: 20,
+        });
+        expect(resolveExtractedReprocessValue('wpqr_thickness_t1_t2', {
+            thickness_t1_max: 10,
+            thickness_t1_max_unlimited: false,
+        }, config)).toBeNull();
+        expect(resolveExtractedReprocessValue('wpqr_thickness_t1_t2', {}, config)).toBeNull();
+    });
 });
 
 describe('selectReprocessCandidates — tabella wpqr_records', () => {
@@ -176,6 +197,22 @@ describe('selectReprocessCandidates — tabella wpqr_records', () => {
         // non tenti mai "wpqr_thickness_max_unlimited IS NULL" (colonna inesistente).
         expect(sql).not.toMatch(/wpqr_thickness_max_unlimited/);
         expect(sql).toMatch(/thickness_max_unlimited = 0 AND thickness_max IS NULL/);
+    });
+
+    it('wpqr_thickness_t1_t2: candidateWhere duali NULL + solo giunti FW', async () => {
+        query.mockResolvedValueOnce({
+            recordset: [
+                { id: 1, organization_id: 1003, joint_type: 'FW', certificate_file_url: '/uploads/a.pdf' },
+                { id: 2, organization_id: 1003, joint_type: 'BW', certificate_file_url: '/uploads/b.pdf' },
+            ],
+        });
+        const config = getReprocessableField('wpqr_thickness_t1_t2');
+
+        const rows = await selectReprocessCandidates('wpqr_thickness_t1_t2', config, {});
+
+        const [sql] = query.mock.calls[0];
+        expect(sql).toMatch(/thickness_t1_min IS NULL AND thickness_t2_min IS NULL/);
+        expect(rows.map((r) => r.id)).toEqual([1]);
     });
 });
 
