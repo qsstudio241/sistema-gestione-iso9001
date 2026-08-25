@@ -375,6 +375,9 @@ function ReprocessTasksSection({ reprocess }) {
             manualmente qui e genera proposte da confermare nella pagina del modulo corrispondente
             ("Rielaborazioni in coda").
           </p>
+          <p className="billing-reprocess-hint billing-muted">
+            Dopo «Lancia» i candidati scendono (proposta in coda); tornano a zero solo dopo la conferma nel modulo.
+          </p>
         </div>
         <button type="button" className="btn-secondary" onClick={reload} disabled={loading}>
           Aggiorna
@@ -402,6 +405,8 @@ function ReprocessTasksSection({ reprocess }) {
               {tasks.map((task) => {
                 const result = results[task.key];
                 const isRunning = runningKey === task.key;
+                const anyRunning = !!runningKey;
+                const moduleLabel = task.module === "saldatura" ? "Saldatura" : "Qualifiche";
                 return (
                   <tr key={task.key}>
                     <td>{task.label}</td>
@@ -415,7 +420,7 @@ function ReprocessTasksSection({ reprocess }) {
                         type="button"
                         className="btn-primary billing-reprocess-run-btn"
                         onClick={() => run(task.key)}
-                        disabled={task.candidate_count === 0 || isRunning}
+                        disabled={task.candidate_count === 0 || anyRunning}
                       >
                         {isRunning ? "Rielaborazione in corso…" : "Lancia rielaborazione"}
                       </button>
@@ -423,7 +428,7 @@ function ReprocessTasksSection({ reprocess }) {
                     <td className="billing-reprocess-result">
                       {result?.ok && (
                         <span className="billing-ok">
-                          {result.proposalsCreated} proposte create, disponibili in Qualifiche → Rielaborazioni in coda
+                          {result.proposalsCreated} proposte create, disponibili in {moduleLabel} → Rielaborazioni in coda
                           {result.hasMore ? " (altri candidati restanti, rilancia per continuare)" : ""}.
                         </span>
                       )}

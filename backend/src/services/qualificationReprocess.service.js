@@ -163,7 +163,7 @@ async function selectReprocessCandidates(field, config, { orgId = null } = {}) {
             return config.jointTypeWhitelist.some((code) => jt.includes(String(code).toUpperCase()));
         });
     }
-    return rows;
+    return excludeRecordsWithPendingProposal(rows, field, adapter.targetIdColumn);
 }
 
 async function hasPendingProposal(recordId, field, targetIdColumn) {
@@ -174,6 +174,32 @@ async function hasPendingProposal(recordId, field, targetIdColumn) {
           AND review_status = 'pending'
     `, { recordId, field });
     return r.recordset.length > 0;
+}
+
+/**
+ * Esclude i record che hanno già una proposta pending in ingest_staging per
+ * questo field_scope. Senza questo filtro il conteggio candidati in Fatturazione
+ * restava uguale dopo «Lancia» (il campo in DB è ancora NULL finché non
+ * confermi in Qualifiche/Saldatura) e il pulsante restava attivo.
+ */
+async function excludeRecordsWithPendingProposal(rows, fieldKey, targetIdColumn) {
+    if (!rows.length) return rows;
+    const params = { field: fieldKey };
+    const placeholders = [];
+    rows.forEach((row, i) => {
+        const name = `id${i}`;
+        params[name] = row.id;
+        placeholders.push(`@${name}`);
+    });
+    const r = await query(`
+        SELECT ${targetIdColumn} AS record_id
+        FROM ingest_staging
+        WHERE ${targetIdColumn} IN (${placeholders.join(',')})
+          AND field_scope = @field
+          AND review_status = 'pending'
+    `, params);
+    const pendingIds = new Set((r.recordset || []).map((row) => row.record_id));
+    return rows.filter((row) => !pendingIds.has(row.id));
 }
 
 /**
@@ -323,5 +349,6 @@ module.exports = {
     guessDocType,
     resolveCertificateFilePath,
     hasPendingProposal,
+    excludeRecordsWithPendingProposal,
     DEFAULT_RUN_LIMIT,
 };
