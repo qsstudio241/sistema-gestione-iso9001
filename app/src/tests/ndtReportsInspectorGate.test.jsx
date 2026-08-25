@@ -4,7 +4,7 @@
  */
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import React from "react";
-import { render, screen, waitFor } from "@testing-library/react";
+import { render, screen, waitFor, act } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 
 const scopeState = {
@@ -127,5 +127,40 @@ describe("NdtReportsPage — gate ispettore CND-2", () => {
     expect(completa).not.toBeDisabled();
     const evalA = screen.getAllByRole("button", { name: /A — Accettabile/ })[0];
     expect(evalA).not.toBeDisabled();
+  });
+
+  it("errore rete: Completa disabilitato, A/R/S usabili; retry all'evento online", async () => {
+    eligibilityMock
+      .mockRejectedValueOnce(new Error("network"))
+      .mockResolvedValueOnce({
+        data: {
+          ok: true,
+          reasons: [],
+          candidates: [],
+          qualification: { ndt_method: "VT", ndt_level: 2, person_name: "PS_Admin" },
+          vision: { state: "ok" },
+        },
+      });
+    const user = userEvent.setup();
+    await openNewReport(user);
+
+    await waitFor(() => {
+      expect(screen.getByText(/Impossibile verificare il patentino/)).toBeTruthy();
+    }, { timeout: 2000 });
+
+    expect(screen.getByRole("button", { name: "Completa verbale" })).toBeDisabled();
+    const evalA = screen.getAllByRole("button", { name: /A — Accettabile/ })[0];
+    expect(evalA).toBeVisible();
+    expect(evalA).not.toBeDisabled();
+
+    await act(async () => {
+      window.dispatchEvent(new Event("online"));
+    });
+
+    await waitFor(() => {
+      expect(screen.getByText(/Patentino ISO 9712 VT liv\.2 valido/)).toBeTruthy();
+    }, { timeout: 2000 });
+    expect(screen.getByRole("button", { name: "Completa verbale" })).not.toBeDisabled();
+    expect(eligibilityMock).toHaveBeenCalledTimes(2);
   });
 });

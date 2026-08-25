@@ -341,6 +341,13 @@ function NdtReportForm({ report, companies, availableInstruments, onSave, onCanc
         vision: null,
         error: null,
     });
+    const [eligibilityNonce, setEligibilityNonce] = useState(0);
+
+    useEffect(() => {
+        const onOnline = () => setEligibilityNonce((n) => n + 1);
+        window.addEventListener("online", onOnline);
+        return () => window.removeEventListener("online", onOnline);
+    }, []);
 
     useEffect(() => {
         let cancelled = false;
@@ -376,7 +383,7 @@ function NdtReportForm({ report, companies, availableInstruments, onSave, onCanc
             });
         }, 300);
         return () => { cancelled = true; clearTimeout(timer); };
-    }, [form.inspector, form.report_type, form.company_id]);
+    }, [form.inspector, form.report_type, form.company_id, eligibilityNonce]);
 
     const gateReasonsText = (inspectorGate.reasons || []).filter(Boolean).join(" ");
     const canComplete = !inspectorGate.loading && inspectorGate.ok;
@@ -385,7 +392,8 @@ function NdtReportForm({ report, companies, availableInstruments, onSave, onCanc
         : (canComplete
             ? "Completa verbale"
             : (gateReasonsText || "Serve patentino ISO 9712 valido e idoneit\u00e0 visiva"));
-    const judgmentLocked = !inspectorGate.loading && !inspectorGate.ok;
+    // Errore rete: si può compilare A/R/S in bozza; Completa resta bloccato finché il gate non è verificato.
+    const judgmentLocked = !inspectorGate.loading && !inspectorGate.ok && inspectorGate.error !== "network";
     const judgmentTitle = gateReasonsText || "Serve patentino ISO 9712 valido e idoneit\u00e0 visiva";
 
     // Fix P0-2 (ISO 3834 §15) — bridge "Registra NC" da una singola marca R/S del verbale
