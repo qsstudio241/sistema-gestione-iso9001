@@ -17,6 +17,11 @@
 | `Normative NORMA_00014_ UNI EN ISO 15609-1_2019 Rev. 0.md` | ISO_15609_1_2019 | ISO 15609-1:2019 | **Supporto 3834** — contenuto WPS saldatura ad arco. **Non** in `import-norms`. Estratto: `docs/reference/ISO-15609-WPS-contenuto.md` (RC-10) |
 | `Normative NORMA_00015_ UNI EN ISO 15609-2_2019 Rev. 0.md` | ISO_15609_2_2019 | ISO 15609-2:2019 | **Supporto 3834** — contenuto WPS saldatura a gas. **Non** in `import-norms`. Stesso estratto RC-10 (sezione Parte 2) |
 | `Normative NORMA_00016_ UNI EN ISO 14341_2020 Rev. 0.md` | ISO_14341_2020 | ISO 14341:2020 | **Supporto 3834** — classificazione fili-elettrodo / depositi GMAW acciai non legati e a grano fine. **Non** in `import-norms`. Estratto: `docs/reference/ISO-14341-consumabili-filo.md` + `fillerWire14341.js` (RC-11, solo prompt) |
+| `Normative NORMA_00018_ UNI EN ISO 9606-1_2017 Rev. 0.md` (+ `.json`) | — (non seed SGQ) | ISO 9606-1:2017 | Qualifiche saldatori — estratto range in `docs/reference/ISO-9606-1-range-validita-patentino.md` |
+| `Normative NORMA_00019_ UNI EN ISO 15614-1_2017 Rev. 0.md` (+ `.json`) | — (non seed SGQ) | ISO 15614-1:2017 | WPQR / range — estratto `docs/reference/ISO-15614-1-range-validita-WPQR.md` |
+| `Normative NORMA_00020`…`00028` (+ MTC) | — (non seed SGQ) | EN 10168 / 10204 / 10025-2 / 10210-1 / 10219-1 / … | Material Compliance — inventario [`MATERIAL-COMPLIANCE-NORME-SINTESI.md`](../../../docs/reference/MATERIAL-COMPLIANCE-NORME-SINTESI.md) |
+
+**Backlog lacune (richieste PDF / non digitalizzate)**: [`docs/reference/NORME_MANCANTI_BACKLOG.md`](../../../docs/reference/NORME_MANCANTI_BACKLOG.md) — fonte unica; non duplicare qui le sole righe «mancante».
 
 **Nota versione 3834-2/-4**: dal 25/08/2026 le parti **-2** e **-4** sono in repo in edizione **2021** (`NORMA_00029` / `00030`, testo ISO inglese). I file `NORMA_00010` / `00011` (2006) restano solo archivio. Per gap analysis/RDP citare **ISO 3834-x:2021**.
 
@@ -40,9 +45,9 @@ Script import: `backend/scripts/import-norms-from-markdown.js` (solo i file SGQ 
 | `Quaderno11_Direttiva Atex.txt` | Direttiva 2014/34/UE (ATEX) | Guida pratica sicurezza ATEX (notifiche, abilitazioni) | Non modulo app (sicurezza prodotti/esplosivi) |
 | `Quaderno_9_LG_Iperammortamento_072017.txt` | Contesto fiscale | Iperammortamento Industria 4.0 (L. 232/2016, beni Allegato A/B) | Non modulo app |
 | `Regolamento Accredia 4722_RG_01rev_03.txt` | Accredia / certificazione | RG-01 — accredito organismi certificazione e ispezione | Contesto audit terza parte / accredito |
-| `Quaderno_2_Linea_Guida_1090.txt` | **File vuoto (0 byte)** | Conversione fallita — da rigenerare | — |
+| `Quaderno_2_Linea_Guida_1090.txt` | **File vuoto (0 byte)** | Conversione fallita — da rigenerare | Vedi backlog `NORME_MANCANTI` |
 
-**Nota duplicati**: `Quaderno_2_Linea_Guida_1090.txt` **non —** il duplicato di `Quaderni Qualità 2-...` (contesto/parti interessate): il nome suggerisce una Linea Guida distinta (riferimento «1090»); contenuto non verificabile finch— il file resta vuoto.
+**Nota duplicati**: `Quaderno_2_Linea_Guida_1090.txt` **non è** il duplicato di `Quaderni Qualità 2-...` (contesto/parti interessate): il nome suggerisce una Linea Guida distinta (riferimento «1090»); contenuto non verificabile finché il file resta vuoto.
 
 **Qualità OCR/conversione**: possibili errori di battitura (es. rumore in testa su `Quaderno_6`); incrociare sempre con testo normativo ufficiale in `docs/Normative/`.
 
@@ -116,6 +121,21 @@ Doc: `docs/how-to/MANUALE_UTENTE_NC.md`, sezione NC in `GUIDA_CONSOLIDATA.md`.
 | Temperature saldatura (supporto) | ISO 13916:2025 | MD+JSON (NORMA_00013); estratto RC-9 `preheat_temp` / `interpass_temp` |
 | Contenuto WPS arco/gas (supporto) | ISO 15609-1/-2:2019 | MD+JSON (NORMA_00014/00015); estratto RC-10 `ISO-15609-WPS-contenuto.md` |
 | Modulo RDP + foto | Template cliente | ? backlog |
+
+### CND / NDT
+
+| Area | Fonte | Stato |
+|------|-------|-------|
+| Qualifica operatori | ISO 9712 | Estratto `ISO_9712_2022_NDT_QUALIFICATION.md`; **testo integrale** in [`NORME_MANCANTI_BACKLOG`](../../../docs/reference/NORME_MANCANTI_BACKLOG.md) |
+| Verbali / gate ispettore | PLAN_CND | CND-2 = gate 9712 + visione |
+| Strumenti | ADR-016 | Anagrafica `EquipmentPage` |
+
+### Conformità legislativa
+
+| Area | Fonte | Stato |
+|------|-------|-------|
+| D.Lgs. 81/2008, 152/2006 | `legislation_seed` / Normattiva | Seed piattaforma presente |
+| Profilo azienda | ADR-018 | Campi A/B; obblighi settoriali oltre 81/152 = backlog |
 
 ## Confronto quantitativo 9001 (ADR-002)
 

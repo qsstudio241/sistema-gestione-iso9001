@@ -8,7 +8,7 @@
 
 > **Risposta standard a «stato di avanzamento del progetto e priorità da affrontare»**: sintetizzare da questa sezione (moduli maturi + sessione più recente + tabella priorità sotto), **non** dal banner storico più sotto (superato, tenuto solo per traccia) né dall'archivio marzo 2026 [`docs/archive/PROJECT_CONTEXT_STATO_FUNZIONALITA_2026-03.md`](archive/PROJECT_CONTEXT_STATO_FUNZIONALITA_2026-03.md). **Aggiornare questa sezione a fine sessione** se emergono nuove priorità o se una priorità elencata viene chiusa (stesso principio delle "Lezioni apprese" in [GUIDA_CONSOLIDATA.md](GUIDA_CONSOLIDATA.md) — sintesi qui, dettaglio linkato).
 
-**Ultimo aggiornamento di questa sezione**: 25/08/2026 (mappa fedeltà normativa, `PLAN_NORM_FIDELITY_SLICES.md`).
+**Ultimo aggiornamento di questa sezione**: 25/08/2026 (NG-0+NG-1 fedeltà normativa; parallelo NG-3 + CND-2).
 
 ### Moduli maturi (in produzione, uso quotidiano dai clienti Camellini/Mason)
 
@@ -16,7 +16,11 @@ Audit multi-standard (9001/14001/45001) · Non Conformità (workflow ISO 10.2 co
 
 ### Sessione più recente (25/08/2026)
 
-**Fedeltà normativa — loop fonti → skill → moduli (25/08, wayfinder)** — sì al PDCA SGQ e alla tesi «senza testi non si inventa»; no a proliferazione agenti GitHub. Gap + piano [`PLAN_NORM_FIDELITY_SLICES.md`](agent-tasks/PLAN_NORM_FIDELITY_SLICES.md) · report [`GAP_NORM_FIDELITY_STRATEGICA_2026-08-25.md`](gap-reports/GAP_NORM_FIDELITY_STRATEGICA_2026-08-25.md). Prima slice **NG-0** (policy + backlog richieste PDF) in [`DEPUTYTASK.md`](agent-tasks/DEPUTYTASK.md) **APERTO**. **Stesso giorno:** digitalizzate **ISO 3834-2/-4:2021** (`NORMA_00029`/`00030` + seed); PDF non in Git.
+**NG-0+NG-1 fedeltà normativa (25/08)** — gate slice norm-touching, template richiesta PDF, backlog [`NORME_MANCANTI_BACKLOG.md`](reference/NORME_MANCANTI_BACKLOG.md), inventario skill aggiornato. **3834-2/-4:2021** già in repo + seed VPS. Brief paralleli aperti: **NG-3** [`DEPUTYTASK.md`](agent-tasks/DEPUTYTASK.md) · **CND-2** [`DEPUTYTASK1.md`](agent-tasks/DEPUTYTASK1.md).
+
+### Sessione precedente (25/08/2026)
+
+**Fedeltà normativa — mappa + digitalizzazione 3834-2/-4 (25/08, #554)** — wayfinder + ingest PDF 2021 + seed VPS. Piano [`PLAN_NORM_FIDELITY_SLICES.md`](agent-tasks/PLAN_NORM_FIDELITY_SLICES.md).
 
 ### Sessione precedente (23/08/2026)
 

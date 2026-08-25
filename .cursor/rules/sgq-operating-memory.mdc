@@ -147,11 +147,24 @@ Nuovo campo in `aiExpectedSchema` → stessa chiave in `*_MANUAL_EDITABLE_FIELDS
 
 ## Fonti Markdown prima di seed / Rule Engine / gap normativa
 
-Inventario (presente / mancante): [`docs/reference/MATERIAL-COMPLIANCE-NORME-SINTESI.md`](../../docs/reference/MATERIAL-COMPLIANCE-NORME-SINTESI.md) § Inventario fonti.
+Inventario MC (presente / mancante): [`docs/reference/MATERIAL-COMPLIANCE-NORME-SINTESI.md`](../../docs/reference/MATERIAL-COMPLIANCE-NORME-SINTESI.md) § Inventario fonti.  
+Backlog globale lacune / richieste PDF: [`docs/reference/NORME_MANCANTI_BACKLOG.md`](../../docs/reference/NORME_MANCANTI_BACKLOG.md).
 
-**Prima** di seed soglie, prompt ISO-3, Rule Engine o gap analysis su una norma: dichiarare in chat (3 righe) cosa c’è in Markdown, cosa manca, su cosa si parte. Le lacune si **tracciano**, non bloccano la slice coperta. Vietato inventare numeri. Skill: `pdf-to-json`, `gap-analysis-normativa`.
+### Gate slice norm-touching
+
+Scatta quando la slice tocca: requisiti, checklist, Rule Engine, seed soglie, prompt conformità, gap analysis, export con citazione normativa, campi UI/API legati a una norma.
+
+1. Dichiarare in chat (3 righe): **coperte / mancanti / si parte su…**
+2. Se manca il testo ufficiale utile → **richiesta HITL** al committente (blocco in [`HANDOFF_TEMPLATE.md`](../../docs/agent-tasks/HANDOFF_TEMPLATE.md)); aggiornare `NORME_MANCANTI_BACKLOG.md`. **Non inventare** soglie/clausole.
+3. Il perimetro già coperto dalla fonte presente **non si blocca**.
+4. Fix CSS/typo/deploy/auth non-normativi: **nessun** gate PDF.
+5. Crescita capacità = approfondire skill repo (`gap-analysis-normativa`, `pdf-to-json`) + `docs/Normative/` + servizi prodotto — **non** installare schiere di agenti GitHub.
 
 **Allineamento VPS (piattaforma, non Registro cliente)**: dopo digitalizzare una nuova edizione in `docs/Normative/` e rigenerare `backend/data/norm_requirements_seed.json`, eseguire sul VPS `seed-norm-requirements-from-json-vps.js` così `norm_requirements` resta sull’ultima edizione Markdown. Distinto dalle norme in `document_registry` (proprietà studio/azienda, RAG + validità).
+
+### Checklist brief (dato ↔ norma ↔ UI ↔ API)
+
+Nei `DEPUTYTASK*` norm-touching, elencare in una riga per campo nuovo: **dato** | **clausola/fonte MD** | **UI** | **API/persistenza**. Se manca la fonte MD → riga nel backlog + richiesta HITL, non inventare il vincolo.
 
 ## Chiusura e handoff
 
