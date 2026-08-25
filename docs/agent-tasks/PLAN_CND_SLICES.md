@@ -2,8 +2,8 @@
 
 > **Destinazione**: uno studio (Mason) e l’operatore CND chiudono sul telefono il ciclo **incarico → esecuzione in campo → verbale Word + eventuale NC**, riusando qualifiche ISO 9712, strumenti, commesse, foto e PWA già in produzione. Niente app nativa, niente secondo motore, niente tabelle gemelle.
 > **Spec / ADR**: [ISO 9712:2022](../reference/ISO_9712_2022_NDT_QUALIFICATION.md) · ADR-004 (auth mobile) · ADR-016 (strumenti trasversali, verbali ≠ Welding Book) · [PLAN ISO 3834](PLAN_3834_SLICES.md) (ISO-1b/ISO-7 fatti; **ISO-9** eseguita qui come CND-2)
-> **Brief attivi**: [`DEPUTYTASK1.md`](DEPUTYTASK1.md) **CND-2** (gate 9712+visione). **CND-1** CHIUSO (#549) — non riaprire `NdtReportsPage.jsx` oltre il gate CND-2. **CND-4** CHIUSO (#547). **CND-11** CHIUSO (#546). Parallelo docs: NG-3 su `DEPUTYTASK.md` (file disgiunti).
-> **Mappa**: CND-0 #540 · spike HTML · CND-1/4/11 su `main`. **Prossima codice CND**: **CND-2** (non CND-3 in parallelo sullo stesso JSX oltre il gate).
+> **Brief attivi**: [`DEPUTYTASK1.md`](DEPUTYTASK1.md) **CND-2 CHIUSO** (gate 9712+visione, questa PR). **CND-1** CHIUSO (#549). **CND-4** CHIUSO (#547). **CND-11** CHIUSO (#546). Parallelo docs: NG-3 su `DEPUTYTASK.md` (file disgiunti).
+> **Mappa**: CND-0 #540 · spike HTML · CND-1/4/11 su `main`. **Prossima codice CND dopo merge CND-2**: **CND-3** (flag PT/MT; stesso JSX — non in parallelo a questa PR).
 > **Licenza**: modulo `cnd` (bridge: licenza `saldatura` implica `cnd`)
 > **Schermate oggi**: `/cnd/verbali` (`NdtReportsPage.jsx`) · `/cnd/strumenti` (`EquipmentPage.jsx`) · Qualifiche tab NDT
 
@@ -167,7 +167,7 @@ Ogni slice è un **tracciante verticale** (un passaggio del flusso), non «tutto
 | **CND-0** | Questa mappa | `PLAN_CND_SLICES.md`, bussola, ISO-9 puntatore | — | AFK docs | *chiusa* |
 | **CND-PREVIEW** | Spike HTML specchio flag PT (timebox, usa-e-getta) | `docs/agent-tasks/spike-cnd-pt-preview.html` + `SPIKE_CND_HTML_PREVIEW.md` | — | HITL | **non** sostituisce CND-4; vietato `NdtReportsPage` / `vtWordExport` |
 | **CND-1** | Verbale VT usabile in tasca (marche a scheda, non tabella da scroll) | `NdtReportsPage.jsx` / `.css`, riuso `status-btn` (`ChecklistModule.css`) + `NdtItemAttachments` | — | AFK | *chiusa* (#549) — **non riaprire** lo stesso JSX |
-| **CND-2** | Gate ispettore: 9712 valida **e** visita medica/visione (`visionFitness.service.js`); stesso codice per studio e per azienda con licenza | `NdtReportsPage.jsx`, `ndtReports.controller.js`, GET qualifiche + gap visione già esistenti | CND-1 (stesso JSX) | AFK | = ISO-9; **non** aprire da PLAN 3834 |
+| **CND-2** | Gate ispettore: 9712 valida **e** visita medica/visione (`visionFitness.service.js`); stesso codice per studio e per azienda con licenza | `NdtReportsPage.jsx`, `ndtReports.controller.js`, `ndtInspectorGate.service.js` (GET qualifiche + visione già in DB; **niente** colonna `inspector_qualification_id`) | CND-1 (stesso JSX) | ✅ 25/08 | = ISO-9; **non** aprire da PLAN 3834 |
 | **CND-3** | UI flag PT **e** MT da modelli Mason → `method_params` JSON (metodi indipendenti, nessuna tabella nuova) | `NdtReportsPage.jsx` sezioni metodo; catalogo in appendice | CND-1 (stesso JSX) | AFK | dopo CND-1; **non** parallelo a CND-1 |
 | **CND-4** | Scope `cnd` in Template report + upload modelli Mason `.docx` + resolve per `report_type` | `ReportTemplatesAdminPage.jsx`, `reportTemplate.service.js` / controller, `vtWordExport.js` resolve VPS (come NC) | — | ✅ 23/08 | *chiusa* (#547) |
 | **CND-5** | Parametri UT + ruoli strumento non-VT (sonda/giogo) su anagrafica esistente | `NdtReportsPage.jsx`, `EquipmentPage.jsx` (etichette ruolo) | CND-3 | AFK | serializzare con CND-3 sullo stesso JSX; EquipmentPage può partire in parallelo a CND-2 se **solo** CSS/etichette ruoli |

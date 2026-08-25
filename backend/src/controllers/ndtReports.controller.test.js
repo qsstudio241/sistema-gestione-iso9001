@@ -7,8 +7,16 @@ jest.mock('../config/database', () => ({ query: jest.fn() }));
 jest.mock('../utils/logger', () => ({
   info: jest.fn(), error: jest.fn(), warn: jest.fn(), debug: jest.fn(),
 }));
+jest.mock('../services/ndtInspectorGate.service', () => ({
+  GATE_CODE: 'NDT_INSPECTOR_GATE',
+  isJudgmentStatus: (s) => s === 'completed' || s === 'approved',
+  evaluateNdtInspectorGate: jest.fn().mockResolvedValue({
+    ok: true, reasons: [], qualification: null, vision: { state: 'ok' }, candidates: [],
+  }),
+}));
 
 const { query } = require('../config/database');
+const { evaluateNdtInspectorGate } = require('../services/ndtInspectorGate.service');
 const ctrl = require('./ndtReports.controller');
 
 const ORG_ID = 1001;
@@ -204,7 +212,7 @@ describe('updateNdtReport — company_access', () => {
 
   it('cambio azienda senza project_id: 400 se la commessa resta dell\'altra azienda', async () => {
     query.mockImplementation(async (sql) => {
-      if (sql.includes('SELECT id, company_id, project_id FROM ndt_reports')) {
+      if (sql.includes('FROM ndt_reports WHERE id = @id') && sql.includes('company_id')) {
         return { recordset: [{ id: 5, company_id: 12, project_id: 40 }] };
       }
       if (sql.includes('FROM dbo.projects')) {
@@ -233,5 +241,114 @@ describe('deleteNdtReport — company_access', () => {
     }), res);
     expect(res.status).toHaveBeenCalledWith(403);
     expect(query.mock.calls.length).toBe(1);
+  });
+});
+
+describe('gate ispettore 9712 + visione', () => {
+  beforeEach(() => {
+    evaluateNdtInspectorGate.mockResolvedValue({
+      ok: true, reasons: [], qualification: null, vision: { state: 'ok' }, candidates: [],
+    });
+  });
+
+  it('create bozza: non chiama il gate', async () => {
+    query.mockImplementation(async (sql) => {
+      if (sql.includes('COUNT(*) AS cnt')) return { recordset: [{ cnt: 0 }] };
+      if (sql.includes('INSERT INTO ndt_reports')) {
+        return { recordset: [{ id: 99, company_id: 12, report_number: 'VT-2026-001' }] };
+      }
+      return { recordset: [] };
+    });
+    const res = mockRes();
+    await ctrl.createNdtReport(mockReq({
+      user: studioAdmin,
+      body: { company_id: 12, client: 'Cliente', status: 'draft' },
+    }), res);
+    expect(evaluateNdtInspectorGate).not.toHaveBeenCalled();
+    expect(res.status).toHaveBeenCalledWith(201);
+  });
+
+  it('create completed senza 9712 → 409, nessun INSERT', async () => {
+    evaluateNdtInspectorGate.mockResolvedValue({
+      ok: false,
+      reasons: ['Nessun patentino ISO 9712 in anagrafica per Studio Admin.'],
+      qualification: null,
+      vision: { state: 'missing' },
+      candidates: [],
+    });
+    const res = mockRes();
+    await ctrl.createNdtReport(mockReq({
+      user: studioAdmin,
+      body: { company_id: 12, client: 'Cliente', status: 'completed', inspector: 'Studio Admin', report_type: 'VT' },
+    }), res);
+    expect(res.status).toHaveBeenCalledWith(409);
+    expect(res.json).toHaveBeenCalledWith(expect.objectContaining({ code: 'NDT_INSPECTOR_GATE' }));
+    expect(query.mock.calls.some(([sql]) => String(sql).includes('INSERT INTO ndt_reports'))).toBe(false);
+  });
+
+  it('update completed senza visione → 409', async () => {
+    evaluateNdtInspectorGate.mockResolvedValue({
+      ok: false,
+      reasons: ['Idoneit\u00e0 visiva assente. Caricare il certificato oculistico in Qualifiche.'],
+      qualification: { id: 1, ndt_method: 'VT', ndt_level: 2 },
+      vision: { state: 'missing' },
+      candidates: [],
+    });
+    query.mockResolvedValueOnce({
+      recordset: [{ id: 5, company_id: 12, project_id: null, report_type: 'VT', inspector: 'Mario Rossi' }],
+    });
+    const res = mockRes();
+    await ctrl.updateNdtReport(mockReq({
+      params: { id: '5' },
+      user: studioAdmin,
+      body: { status: 'completed', inspector: 'Mario Rossi' },
+    }), res);
+    expect(res.status).toHaveBeenCalledWith(409);
+    expect(res.json).toHaveBeenCalledWith(expect.objectContaining({
+      code: 'NDT_INSPECTOR_GATE',
+    }));
+  });
+
+  it('GET eligibility restituisce ok + candidati', async () => {
+    evaluateNdtInspectorGate.mockResolvedValue({
+      ok: true,
+      reasons: [],
+      qualification: { id: 1, person_name: 'Mario Rossi', ndt_method: 'VT', ndt_level: 2 },
+      vision: { state: 'ok' },
+      candidates: [{ person_name: 'Mario Rossi', ndt_method: 'VT' }],
+    });
+    const res = mockRes();
+    await ctrl.getInspectorEligibility(mockReq({
+      user: studioAdmin,
+      query: { inspector: 'Mario Rossi', report_type: 'VT', company_id: '12' },
+    }), res);
+    expect(res.json).toHaveBeenCalledWith(expect.objectContaining({
+      success: true,
+      data: expect.objectContaining({ ok: true }),
+    }));
+  });
+
+  it('GET eligibility fuori company_access → 403, non valuta il gate', async () => {
+    const res = mockRes();
+    await ctrl.getInspectorEligibility(mockReq({
+      user: companyWrite11,
+      query: { inspector: 'Mario Rossi', report_type: 'VT', company_id: '12' },
+    }), res);
+    expect(res.status).toHaveBeenCalledWith(403);
+    expect(res.json).toHaveBeenCalledWith(expect.objectContaining({ code: 'FORBIDDEN' }));
+    expect(evaluateNdtInspectorGate).not.toHaveBeenCalled();
+  });
+
+  it('GET eligibility in scope: passa allowedCompanyIds', async () => {
+    const res = mockRes();
+    await ctrl.getInspectorEligibility(mockReq({
+      user: companyWrite11,
+      query: { inspector: 'Mario Rossi', report_type: 'VT', company_id: '11' },
+    }), res);
+    expect(evaluateNdtInspectorGate).toHaveBeenCalledWith(expect.objectContaining({
+      companyId: 11,
+      allowedCompanyIds: [11],
+    }));
+    expect(res.json).toHaveBeenCalledWith(expect.objectContaining({ success: true }));
   });
 });
