@@ -32,7 +32,12 @@ Mason: FW con t1/t2 distinti persi; alluminio senza 15614-2. PDF consegnati 25/0
 
 - Matrice gruppi alluminio Tabella 4  
 - Regole complete 9606-2 in JS  
-- Rielaborazione t1/t2: codice su `cursor/wpqr-t1t2-reprocess-887f` (stesso pannello superadmin delle qualifiche) 
+
+## Rielaborazione t1/t2 (dopo #563)
+
+- Codice mergiato [#563](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/563); backend deploy PROD (PID cambiato, health 200).  
+- Superadmin: **Billing → Rielaborazioni disponibili → «Range spessore duali t1/t2 (FW) — WPQR» → Lancia**.  
+- Poi in **Saldatura**: conferma proposte nel banner. Niente cron automatico. 
 
 ## File toccati
 
