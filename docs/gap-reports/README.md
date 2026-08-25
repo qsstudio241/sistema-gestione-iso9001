@@ -17,6 +17,7 @@ Output persistente delle gap analysis normative (prompt in `docs/agent-tasks/GAP
 | `GAP_EXPORT_WORD_YYYY-MM-DD.md` | Export Word / reportistica |
 | `GAP_SYNC_YYYY-MM-DD.md` | Sync offline / multi-device |
 | `GAP_STRUTTURA_YYYY-MM-DD.md` | Visione d'insieme (coordinatore) |
+| `GAP_NORM_FIDELITY_STRATEGICA_YYYY-MM-DD.md` | Loop fonti → skill → moduli (harness + runtime AI) |
 | `GAP_CONSOLIDATO_YYYY-MM-DD.md` | Merge finale di tutti i report |
 
 I file possono essere versionati su Git per tracciare l'evoluzione della conformità nel tempo.
