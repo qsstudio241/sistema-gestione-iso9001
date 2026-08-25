@@ -2,8 +2,8 @@
 
 > **Destinazione**: agenti di sviluppo e runtime AI dell’app rispettano un **loop chiuso**: (1) prima di toccare logica di conformità, dichiarano le fonti Markdown; (2) se manca il testo, **richiedono** al committente (HITL) senza inventare; (3) il PDF viene ingerito (`pdf-to-json` → `docs/Normative/`); (4) la conoscenza alimenta skill Cursor **mirate** e servizi prodotto (NormBroker, gap, Second Brain) — non una «schiera» di agenti GitHub paralleli.
 > **Spec / ADR**: [ADR-010](../adr/ADR-010-ai-agentic-architecture.md) · [ADR-015](../adr/ADR-015-cursor-lead-deputy-workflow.md) · [ADR-018](../adr/ADR-018-company-profile-conformita-legislativa.md) · skill [`gap-analysis-normativa`](../../.cursor/skills/gap-analysis-normativa/SKILL.md) · [`pdf-to-json`](../../.cursor/skills/pdf-to-json/SKILL.md)
-> **Brief attivi (parallelo)**: [`DEPUTYTASK1.md`](DEPUTYTASK1.md) **CND-2** (file disgiunti). NG-3 **CHIUSO**.
-> **Mappa creata**: 25/08/2026 · **NG-0+NG-1**: 25/08/2026 · **NG-3**: 25/08/2026
+> **Brief attivi (parallelo)**: [`DEPUTYTASK1.md`](DEPUTYTASK1.md) **NG-4 APERTO**; CND-3 su [`DEPUTYTASK.md`](DEPUTYTASK.md) (file disgiunti). NG-3 **CHIUSO**.
+> **Mappa creata**: 25/08/2026 · **NG-0+NG-1**: 25/08/2026 · **NG-3**: 25/08/2026 · **NG-4**: brief aperto 25/08/2026
 > **Gap report**: [`GAP_NORM_FIDELITY_STRATEGICA_2026-08-25.md`](../gap-reports/GAP_NORM_FIDELITY_STRATEGICA_2026-08-25.md)
 > **Backlog lacune**: [`NORME_MANCANTI_BACKLOG.md`](../reference/NORME_MANCANTI_BACKLOG.md)
 
@@ -42,13 +42,13 @@
 | **NG-1** | Inventario fonti globale | skill `reference.md` + backlog | NG-0 | AFK | ✅ |
 | **NG-2** | Runbook ingest PDF → Normative | how-to + GUIDA; `pdf-to-json` | NG-0, PDF HITL | HITL | pending |
 | **NG-3** | Rafforzare skill gap | `.cursor/skills/gap-analysis-normativa/` | NG-1 | AFK | ✅ (`DEPUTYTASK.md`, 25/08/2026) |
-| **NG-4** | Messaggio «norma assente» in chat/gap | normBroker / aiChat / gapAnalysis | NG-1 | AFK | pending |
+| **NG-4** | Messaggio «norma assente» in chat/gap | normBroker / aiChat / gapAnalysis | NG-1 | AFK | **APERTO** (`DEPUTYTASK1.md`) |
 | **NG-5** | Conformità legislativa profilo | ADR-018 + MD leggi | NG-2 + HITL | HITL | pending |
 
-**Parallelo ora**: CND-2 (verbali NDT / gate 9712) su [`DEPUTYTASK1.md`](DEPUTYTASK1.md) — file disgiunti da questa slice già chiusa.
+**Parallelo ora**: CND-3 (flag PT/MT) su [`DEPUTYTASK.md`](DEPUTYTASK.md) — file disgiunti da NG-4.
 
 ## HITL residuo
 
 1. Priorità PDF: 9712, apporto 2560/17632, Quaderno 1090 (vedi backlog)
 2. Conferma perimetro gate: solo norm-touching (default Lead) — ok se non dici altrimenti
-3. Preferenza NG-2 vs NG-4: NG-3 chiuso; CND-2 ancora in parallelo
+3. NG-2 (runbook ingest) resta HITL: dopo NG-4 o quando arrivano PDF prioritari
