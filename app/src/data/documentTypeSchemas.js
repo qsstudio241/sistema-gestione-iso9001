@@ -1031,9 +1031,14 @@ const wpqr = {
     {
       key: "standard_reference",
       label: "Norma riferimento",
-      type: "text",
+      type: "select",
       required: false,
-      hint: "Es. UNI EN ISO 15614-1:2019",
+      options: [
+        { value: "UNI EN ISO 15614-1:2017", label: "UNI EN ISO 15614-1:2017 — Acciai / nichel (WPQR)" },
+        { value: "UNI EN ISO 15614-2:2025", label: "UNI EN ISO 15614-2:2025 — Alluminio e leghe (WPQR)" },
+        { value: "altro", label: "Altro (specificare nelle note o lasciare testo libero dopo conferma)" },
+      ],
+      hint: "Procedura WPQR: 15614-1 acciaio, 15614-2 alluminio. Non usare 9606-2 qui (quella è patentino saldatore).",
     },
     {
       key: "welding_process",
@@ -1100,6 +1105,48 @@ const wpqr = {
       type: "boolean",
       required: false,
       hint: "true SOLO se il verbale dichiara esplicitamente un range aperto (es. \u201C\u2265 5\u201D, \u201C=> 5\u201D, \u201Cno restriction\u201D, \u201Csenza limite superiore\u201D) — frequente su giunti FW/angolo. Se il campo è semplicemente assente dal documento, lasciare null/false",
+    },
+    {
+      key: "thickness_t1_min",
+      label: "Spessore t1 — minimo (mm)",
+      type: "number",
+      required: false,
+      hint: "Solo se il verbale dichiara DUE range (t1 e t2), tipico FW con spessori diversi — ISO 15614-1 Tabella 8 nota (a). Altrimenti lasciare vuoto e usare i campi singolo range sopra.",
+    },
+    {
+      key: "thickness_t1_max",
+      label: "Spessore t1 — massimo (mm)",
+      type: "number",
+      required: false,
+      hint: "Range t1 dichiarato sul verbale (es. 3–50). Se illimitato, usa il flag sotto.",
+    },
+    {
+      key: "thickness_t1_max_unlimited",
+      label: "Spessore t1 — nessun limite superiore",
+      type: "boolean",
+      required: false,
+      hint: "true solo se t1 è dichiarato come range aperto (es. t1 ≥ 5).",
+    },
+    {
+      key: "thickness_t2_min",
+      label: "Spessore t2 — minimo (mm)",
+      type: "number",
+      required: false,
+      hint: "Secondo spessore del provino FW (es. 3–30). Compilare insieme a t1.",
+    },
+    {
+      key: "thickness_t2_max",
+      label: "Spessore t2 — massimo (mm)",
+      type: "number",
+      required: false,
+      hint: "Range t2 dichiarato sul verbale.",
+    },
+    {
+      key: "thickness_t2_max_unlimited",
+      label: "Spessore t2 — nessun limite superiore",
+      type: "boolean",
+      required: false,
+      hint: "true solo se t2 è dichiarato come range aperto.",
     },
     {
       key: "diameter_min",
@@ -1269,14 +1316,16 @@ Estrai TUTTI i seguenti campi in "type_specific_data". Se un campo non è presen
 Campi di copertura (pag.1 RANGE OF QUALIFICATION, priorità alta):
 - wpqr_number: numero certificato/WPQR, accetta suffisso rivisione (es. "24-03390-01")
 - qualification_level: "1" o "2" solo se dichiarato esplicitamente (Level 1/2) — non dedurre
-- standard_reference: norma di riferimento (es. "UNI EN ISO 15614-1:2019")
+- standard_reference: norma di riferimento (es. "UNI EN ISO 15614-1:2017" oppure "UNI EN ISO 15614-2:2025" per alluminio)
 - welding_process: codice ISO 4063 — preferire un codice numerico esplicito nel testo (es. "Welding process: 135") a un alias generico
 - joint_type: "BW", "FW" o "BW+FW"
 - product_type: "P" (piastra) o "T" (tubo) — variabile essenziale ISO 15614-1 §8.3.3 per il diametro. Se il documento non lo specifica esplicitamente ma il "Range of qualification" per il diametro contiene una regola testuale tipo "> 500; > 150 for position PC, PF/PA rotated" (invece di un numero), significa che il provino è stato testato su PIASTRA: imposta product_type: "P" e lascia diameter_min/diameter_max: null (NON trascrivere quella regola testuale come numero)
 - material_group: gruppo materiale ISO/TR 15608, preferire il sottogruppo (es. "1.2") se presente
 - thickness_test_mm: spessore del provino testato (numero)
-- thickness_min / thickness_max: range di spessore DICHIARATO sul verbale (non calcolarlo)
+- thickness_min / thickness_max: range di spessore DICHIARATO sul verbale (non calcolarlo) — se UN solo range
 - thickness_max_unlimited: booleano — true SOLO se il verbale dichiara esplicitamente un range aperto senza limite superiore (simboli "\u2265", "=>", "\u2a7e", oppure testo "no restriction"/"senza limite superiore"), tipico dei giunti ad angolo (Fillet Weld: es. "t1 = => 5 ; t2 => 5"). In questo caso lascia thickness_max: null e imposta thickness_max_unlimited: true. Se il campo è semplicemente assente dal documento (non un range aperto dichiarato), lascia entrambi null/false — NON confondere le due situazioni
+- thickness_t1_min / thickness_t1_max / thickness_t1_max_unlimited: se il verbale dichiara DUE range (t1 e t2), tipico FW con spessori diversi (es. "t1 = FW : from 3,0 to 50,0"), popola t1. Se un solo range, lascia null
+- thickness_t2_min / thickness_t2_max / thickness_t2_max_unlimited: come sopra per t2
 - diameter_min / diameter_max: range diametro tubo se applicabile (SOLO se un numero è dichiarato — vedi nota su product_type sopra per il caso testo/piastra)
 - throat_test_mm: spessore gola (throat) del provino testato, SOLO per giunti d'angolo/FW,
   se dichiarato esplicitamente sul verbale (Tabella 8) — numero, null se non applicabile o assente
@@ -1314,6 +1363,12 @@ IMPORTANTE: non ricalcolare i range con formule — estrarre solo i valori dichi
     thickness_min: "number|null",
     thickness_max: "number|null",
     thickness_max_unlimited: "boolean|null",
+    thickness_t1_min: "number|null",
+    thickness_t1_max: "number|null",
+    thickness_t1_max_unlimited: "boolean|null",
+    thickness_t2_min: "number|null",
+    thickness_t2_max: "number|null",
+    thickness_t2_max_unlimited: "boolean|null",
     diameter_min: "number|null",
     diameter_max: "number|null",
     throat_test_mm: "number|null",

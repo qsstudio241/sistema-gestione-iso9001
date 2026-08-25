@@ -165,6 +165,37 @@ function resolveThicknessRange(f) {
     };
 }
 
+function toUnlimitedBit(v) {
+    return v === true || v === 1 || v === '1' || v === 'true';
+}
+
+/**
+ * Estrae i range duali t1/t2 se dichiarati; altrimenti null.
+ * Se entrambi presenti e thickness_min/max legacy assenti, popola anche il
+ * legacy da t1 (retrocompatibilità liste/UI) senza perdere i due range.
+ */
+function resolveDualThicknessSides(f) {
+    const t1Min = toNumericOrNull(f.thickness_t1_min);
+    const t1Max = toNumericOrNull(f.thickness_t1_max);
+    const t1Unlimited = toUnlimitedBit(f.thickness_t1_max_unlimited);
+    const t2Min = toNumericOrNull(f.thickness_t2_min);
+    const t2Max = toNumericOrNull(f.thickness_t2_max);
+    const t2Unlimited = toUnlimitedBit(f.thickness_t2_max_unlimited);
+
+    const hasT1 = t1Min != null || t1Max != null || t1Unlimited;
+    const hasT2 = t2Min != null || t2Max != null || t2Unlimited;
+
+    return {
+        thickness_t1_min: hasT1 ? t1Min : null,
+        thickness_t1_max: hasT1 && !t1Unlimited ? t1Max : null,
+        thickness_t1_max_unlimited: hasT1 && t1Unlimited,
+        thickness_t2_min: hasT2 ? t2Min : null,
+        thickness_t2_max: hasT2 && !t2Unlimited ? t2Max : null,
+        thickness_t2_max_unlimited: hasT2 && t2Unlimited,
+        hasDual: hasT1 && hasT2,
+    };
+}
+
 async function checkDuplicate(referenceNumber, organizationId, companyId) {
     if (!referenceNumber) return false;
     const result = await query(`
@@ -206,6 +237,18 @@ function mapPipelineFieldsToReview(f, fileName) {
     // Range spessore: vedi resolveThicknessRange per la gestione di range aperti
     // ("senza limite superiore") e giunti FW (gap analysis 07/08/2026).
     const { thickness_min, thickness_max, thickness_max_unlimited } = resolveThicknessRange(f);
+    const dual = resolveDualThicknessSides(f);
+
+    // Retrocompatibilità: se ci sono t1+t2 e manca il range singolo, copia t1
+    // sul legacy (le liste UI storiche leggono thickness_min/max).
+    let legacyMin = thickness_min;
+    let legacyMax = thickness_max;
+    let legacyUnlimited = thickness_max_unlimited;
+    if (dual.hasDual && legacyMin == null && legacyMax == null && !legacyUnlimited) {
+        legacyMin = dual.thickness_t1_min;
+        legacyMax = dual.thickness_t1_max;
+        legacyUnlimited = dual.thickness_t1_max_unlimited;
+    }
 
     return {
         wpqr_number: referenceNumber,
@@ -230,9 +273,15 @@ function mapPipelineFieldsToReview(f, fileName) {
         certificate_number: f.certificate_number || null,
         pwht: f.pwht === true || f.pwht === 1 || f.pwht === '1',
         wps_ref: f.wps_ref || null,
-        thickness_min,
-        thickness_max,
-        thickness_max_unlimited,
+        thickness_min: legacyMin,
+        thickness_max: legacyMax,
+        thickness_max_unlimited: legacyUnlimited,
+        thickness_t1_min: dual.thickness_t1_min,
+        thickness_t1_max: dual.thickness_t1_max,
+        thickness_t1_max_unlimited: dual.thickness_t1_max_unlimited,
+        thickness_t2_min: dual.thickness_t2_min,
+        thickness_t2_max: dual.thickness_t2_max,
+        thickness_t2_max_unlimited: dual.thickness_t2_max_unlimited,
         diameter_min: toNumericOrNull(f.diameter_min),
         diameter_max: toNumericOrNull(f.diameter_max),
         // Gola/throat provino (Tabella 8, giunti FW) — gap analysis 07/08/2026: prima
@@ -268,6 +317,16 @@ function mapReviewFieldsToDb(f, fileName) {
     // Range spessore: vedi resolveThicknessRange per la gestione di range aperti
     // ("senza limite superiore") e giunti FW (gap analysis 07/08/2026).
     const { thickness_min, thickness_max, thickness_max_unlimited } = resolveThicknessRange(f);
+    const dual = resolveDualThicknessSides(f);
+
+    let legacyMin = thickness_min;
+    let legacyMax = thickness_max;
+    let legacyUnlimited = thickness_max_unlimited;
+    if (dual.hasDual && legacyMin == null && legacyMax == null && !legacyUnlimited) {
+        legacyMin = dual.thickness_t1_min;
+        legacyMax = dual.thickness_t1_max;
+        legacyUnlimited = dual.thickness_t1_max_unlimited;
+    }
 
     return {
         reference_number: referenceNumber,
@@ -280,9 +339,15 @@ function mapReviewFieldsToDb(f, fileName) {
         standard_reference: f.standard_reference || null,
         filler_material: f.filler_material || null,
         thickness_tested,
-        thickness_min,
-        thickness_max,
-        thickness_max_unlimited,
+        thickness_min: legacyMin,
+        thickness_max: legacyMax,
+        thickness_max_unlimited: legacyUnlimited,
+        thickness_t1_min: dual.thickness_t1_min,
+        thickness_t1_max: dual.thickness_t1_max,
+        thickness_t1_max_unlimited: dual.thickness_t1_max_unlimited,
+        thickness_t2_min: dual.thickness_t2_min,
+        thickness_t2_max: dual.thickness_t2_max,
+        thickness_t2_max_unlimited: dual.thickness_t2_max_unlimited,
         diameter_min: toNumericOrNull(f.diameter_min),
         diameter_max: toNumericOrNull(f.diameter_max),
         throat_test_mm: toNumericOrNull(f.throat_test_mm),
@@ -402,6 +467,8 @@ async function commitWPQRFromFields(fields, organizationId, companyId, options =
             reference_number, wpqr_code,
             welding_process, base_material_group, filler_material,
             thickness_tested, thickness_min, thickness_max, thickness_max_unlimited,
+            thickness_t1_min, thickness_t1_max, thickness_t1_max_unlimited,
+            thickness_t2_min, thickness_t2_max, thickness_t2_max_unlimited,
             diameter_min, diameter_max, throat_test_mm,
             welding_positions, examiner_body, testing_body,
             welder_name, issue_date, expiry_date,
@@ -419,6 +486,8 @@ async function commitWPQRFromFields(fields, organizationId, companyId, options =
             @reference_number, @reference_number,
             @welding_process, @base_material_group, @filler_material,
             @thickness_tested, @thickness_min, @thickness_max, @thickness_max_unlimited,
+            @thickness_t1_min, @thickness_t1_max, @thickness_t1_max_unlimited,
+            @thickness_t2_min, @thickness_t2_max, @thickness_t2_max_unlimited,
             @diameter_min, @diameter_max, @throat_test_mm,
             @welding_positions, @examiner_body, @examiner_body,
             @welder_name, @issue_date, @expiry_date,
@@ -441,6 +510,12 @@ async function commitWPQRFromFields(fields, organizationId, companyId, options =
         thickness_min: mapped.thickness_min,
         thickness_max: mapped.thickness_max,
         thickness_max_unlimited: mapped.thickness_max_unlimited ? 1 : 0,
+        thickness_t1_min: mapped.thickness_t1_min,
+        thickness_t1_max: mapped.thickness_t1_max,
+        thickness_t1_max_unlimited: mapped.thickness_t1_max_unlimited ? 1 : 0,
+        thickness_t2_min: mapped.thickness_t2_min,
+        thickness_t2_max: mapped.thickness_t2_max,
+        thickness_t2_max_unlimited: mapped.thickness_t2_max_unlimited ? 1 : 0,
         diameter_min: mapped.diameter_min,
         diameter_max: mapped.diameter_max,
         throat_test_mm: mapped.throat_test_mm,
@@ -598,10 +673,12 @@ module.exports = {
     ingestWPQRFromPdf,
     extractWPQRFromPdf,
     commitWPQRFromFields,
-    calcThicknessRange,
-    resolveThicknessRange,
     mapPipelineFieldsToReview,
+    mapReviewFieldsToDb,
+    resolveThicknessRange,
+    resolveDualThicknessSides,
     checkWpqrPlausibility,
     applyFieldReprocessUpdate,
     WPQR_REPROCESSABLE_FIELDS,
+    calcThicknessRange,
 };

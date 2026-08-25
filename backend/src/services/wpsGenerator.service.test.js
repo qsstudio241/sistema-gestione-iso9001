@@ -123,6 +123,51 @@ const WPQR_FW_UNLIMITED = {
     standard_reference: 'ISO 15614-1',
 };
 
+describe('checkThicknessCoverage — range duali t1/t2 (Mason FW)', () => {
+    const WPQR_DUAL = {
+        id: 99,
+        wpqr_code: 'CCF-T1T2',
+        joint_type: 'FW',
+        thickness_t1_min: 3,
+        thickness_t1_max: 50,
+        thickness_t1_max_unlimited: false,
+        thickness_t2_min: 3,
+        thickness_t2_max: 30,
+        thickness_t2_max_unlimited: false,
+        // legacy single range intentionally missing / too tight
+        thickness_min: 3,
+        thickness_max: 30,
+        thickness_max_unlimited: false,
+    };
+
+    test('40mm su t1 e 25mm su t2: coperto (orientamento A=t1 B=t2)', () => {
+        const r = checkThicknessCoverage(WPQR_DUAL, 40, 25);
+        expect(r.ok).toBe(true);
+        expect(r.reason).toMatch(/duali/);
+    });
+
+    test('orientamento scambiato A=t2 B=t1 ancora coperto', () => {
+        const r = checkThicknessCoverage(WPQR_DUAL, 25, 40);
+        expect(r.ok).toBe(true);
+    });
+
+    test('40mm su entrambi: fuori (t2 max 30)', () => {
+        const r = checkThicknessCoverage(WPQR_DUAL, 40, 40);
+        expect(r.ok).toBe(false);
+    });
+
+    test('senza duali resta il comportamento legacy single range', () => {
+        const r = checkThicknessCoverage({
+            ...WPQR_DUAL,
+            thickness_t1_min: null,
+            thickness_t1_max: null,
+            thickness_t2_min: null,
+            thickness_t2_max: null,
+        }, 40, 25);
+        expect(r.ok).toBe(false);
+    });
+});
+
 describe('checkThicknessCoverage — range aperto FW senza limite superiore (WPQR VB0377/23)', () => {
     test('spessori elevati (80mm) risultano coperti, non più rifiutati', () => {
         const r = checkThicknessCoverage(WPQR_FW_UNLIMITED, 80, 80);

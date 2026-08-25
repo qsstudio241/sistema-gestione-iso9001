@@ -595,6 +595,8 @@ function WPQRFormModal({ wpqr, wpsList, defaultCompanyId, onSave, onClose }) {
     wps_id: "", wpqr_code: "", test_date: "", testing_body: "", examiner_body: "",
     welder_name: "", welding_process: "", base_material_group: "", welding_positions: "",
     thickness_tested: "", thickness_min: "", thickness_max: "", thickness_max_unlimited: false,
+    thickness_t1_min: "", thickness_t1_max: "", thickness_t1_max_unlimited: false,
+    thickness_t2_min: "", thickness_t2_max: "", thickness_t2_max_unlimited: false,
     diameter_min: "", diameter_max: "", filler_material: "",
     qualification_level: "", joint_type: "", standard_reference: "", wps_ref: "",
     vt_result: "NA", rt_result: "NA", ut_result: "NA", mt_result: "NA", pt_result: "NA",
@@ -708,7 +710,21 @@ function WPQRFormModal({ wpqr, wpsList, defaultCompanyId, onSave, onClose }) {
             <div className="wp-form-grid">
               <div className="wp-form-group">
                 <label className="wp-form-label">Norma riferimento</label>
-                <input className="wp-form-input" value={form.standard_reference || ""} onChange={(e) => set("standard_reference", e.target.value)} placeholder="es. UNI EN ISO 15614-1:2019" />
+                <select className="wp-form-select" value={form.standard_reference || ""} onChange={(e) => set("standard_reference", e.target.value)}>
+                  <option value="">-- Seleziona --</option>
+                  <option value="UNI EN ISO 15614-1:2017">UNI EN ISO 15614-1:2017 — Acciai / nichel</option>
+                  <option value="UNI EN ISO 15614-2:2025">UNI EN ISO 15614-2:2025 — Alluminio</option>
+                  <option value="altro">Altro</option>
+                </select>
+                {form.standard_reference === "altro" || (form.standard_reference && !["", "UNI EN ISO 15614-1:2017", "UNI EN ISO 15614-2:2025", "altro"].includes(form.standard_reference)) ? (
+                  <input
+                    className="wp-form-input"
+                    style={{ marginTop: 6 }}
+                    value={form.standard_reference === "altro" ? "" : (form.standard_reference || "")}
+                    onChange={(e) => set("standard_reference", e.target.value || "altro")}
+                    placeholder="Es. UNI EN ISO 15614-2:2016"
+                  />
+                ) : null}
               </div>
               <div className="wp-form-group">
                 <label className="wp-form-label">Livello qualifica</label>
@@ -766,6 +782,34 @@ function WPQRFormModal({ wpqr, wpsList, defaultCompanyId, onSave, onClose }) {
                 <label className="wp-form-label">
                   <input type="checkbox" checked={!!form.thickness_max_unlimited} onChange={(e) => set("thickness_max_unlimited", e.target.checked)} />
                   {" "}Nessun limite superiore dichiarato
+                </label>
+              </div>
+              <div className="wp-form-group">
+                <label className="wp-form-label">t1 minimo (mm) — FW spessori diversi</label>
+                <input className="wp-form-input" type="number" step="0.1" min="0" value={form.thickness_t1_min || ""} onChange={(e) => set("thickness_t1_min", e.target.value)} placeholder="es. 3" />
+              </div>
+              <div className="wp-form-group">
+                <label className="wp-form-label">t1 massimo (mm)</label>
+                <input className="wp-form-input" type="number" step="0.1" min="0" value={form.thickness_t1_max || ""} onChange={(e) => set("thickness_t1_max", e.target.value)} disabled={!!form.thickness_t1_max_unlimited} placeholder="es. 50" />
+              </div>
+              <div className="wp-form-group wp-form-checkbox">
+                <label className="wp-form-label">
+                  <input type="checkbox" checked={!!form.thickness_t1_max_unlimited} onChange={(e) => set("thickness_t1_max_unlimited", e.target.checked)} />
+                  {" "}t1 senza limite superiore
+                </label>
+              </div>
+              <div className="wp-form-group">
+                <label className="wp-form-label">t2 minimo (mm)</label>
+                <input className="wp-form-input" type="number" step="0.1" min="0" value={form.thickness_t2_min || ""} onChange={(e) => set("thickness_t2_min", e.target.value)} placeholder="es. 3" />
+              </div>
+              <div className="wp-form-group">
+                <label className="wp-form-label">t2 massimo (mm)</label>
+                <input className="wp-form-input" type="number" step="0.1" min="0" value={form.thickness_t2_max || ""} onChange={(e) => set("thickness_t2_max", e.target.value)} disabled={!!form.thickness_t2_max_unlimited} placeholder="es. 30" />
+              </div>
+              <div className="wp-form-group wp-form-checkbox">
+                <label className="wp-form-label">
+                  <input type="checkbox" checked={!!form.thickness_t2_max_unlimited} onChange={(e) => set("thickness_t2_max_unlimited", e.target.checked)} />
+                  {" "}t2 senza limite superiore
                 </label>
               </div>
               <div className="wp-form-group">

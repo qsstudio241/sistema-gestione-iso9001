@@ -14,6 +14,10 @@ const {
     isDiameterEssentialVariable,
     describePlateCoversPipeDiameterLevel2,
 } = require('../data/weldingQualificationRules15614');
+const {
+    describePlateCoversPipeDiameter15614_2,
+    isIso15614Part2,
+} = require('../data/weldingQualificationRules15614_2');
 
 /** Lazy require: evita process.exit in unit test senza database.json. */
 function getDbQuery() {
@@ -81,17 +85,53 @@ function jointTypeCompatible(wpqr, requested, warnings) {
 }
 
 /**
- * Regola FW P0: entrambi gli spessori genitori devono cadere nel range materiale base.
- * Preferisce thickness_min/max dichiarati sul WPQR; altrimenti suggerisce da Tabella 7 Level 2
- * (o gola Tabella 8 solo come hint) con status partial.
+ * Preferisce thickness_min/max dichiarati; con t1+t2 presenti usa i range duali
+ * (Mason 25/08/2026). Fallback Tabella 7 Level 2 / hint gola come prima.
  *
- * Gap analysis 07/08/2026 (WPQR reale VB0377/23 "ADA", cliente Mason, giunto FW):
- * `thickness_max_unlimited` (migrazione 139) dichiara un range aperto SENZA limite
- * superiore (es. "t1/t2 ≥5") — va rispettato e NON sovrascritto da un massimo
- * calcolato con la formula Tabella 7 (pensata per giunti BW), altrimenti spessori
- * di produzione realmente coperti (es. 80mm) verrebbero rifiutati come "fuori range".
+ * Gap analysis 07/08/2026 (WPQR VB0377/23): thickness_max_unlimited non va
+ * sovrascritto da un massimo calcolato Tabella 7 BW.
  *
- * @returns {{ ok: boolean, partial: boolean, reason?: string, range?: { min: number|null, max: number|null } }}
+ * @returns {{ ok: boolean, partial: boolean, reason?: string, range?: object }}
+ */
+function isTruthyBit(v) {
+    return v === true || v === 1 || v === '1' || v === 'true';
+}
+
+function parseRangeSide(minRaw, maxRaw, unlimitedRaw) {
+    const min = minRaw != null && minRaw !== '' ? Number(minRaw) : null;
+    const max = maxRaw != null && maxRaw !== '' ? Number(maxRaw) : null;
+    const unlimited = isTruthyBit(unlimitedRaw);
+    const has = Number.isFinite(min) || Number.isFinite(max) || unlimited;
+    return {
+        has,
+        min: Number.isFinite(min) ? min : null,
+        max: unlimited ? null : (Number.isFinite(max) ? max : null),
+        unlimited,
+    };
+}
+
+function thicknessInDeclaredRange(t, side) {
+    if (!side || !side.has) return false;
+    if (side.min != null && t < side.min) return false;
+    if (!side.unlimited && side.max != null && t > side.max) return false;
+    // Range aperto solo-min oppure solo-max illimitato: ok se supera i vincoli sopra.
+    if (side.min == null && side.max == null && !side.unlimited) return false;
+    return true;
+}
+
+function formatSide(side) {
+    if (!side || !side.has) return '?';
+    const lo = side.min != null ? side.min : '?';
+    const hi = side.unlimited ? '∞' : (side.max != null ? side.max : '?');
+    return `${lo}-${hi}`;
+}
+
+/**
+ * Copertura spessore genitori.
+ * Gap Mason 25/08/2026 (WPQR-T1T2): i giunti FW con spessori diversi dichiarano
+ * due range (t1 e t2). Se entrambi sono presenti sul WPQR, ciascuno dei due
+ * spessori di produzione deve rientrare in un range (orientamento A↔t1/B↔t2
+ * oppure scambio). Altrimenti si usa il range singolo legacy thickness_min/max.
  */
 function checkThicknessCoverage(wpqr, thicknessA, thicknessB) {
     const tA = Number(thicknessA);
@@ -100,13 +140,33 @@ function checkThicknessCoverage(wpqr, thicknessA, thicknessB) {
         return { ok: false, partial: false, reason: 'Spessori richiesti non validi' };
     }
 
+    const t1 = parseRangeSide(wpqr.thickness_t1_min, wpqr.thickness_t1_max, wpqr.thickness_t1_max_unlimited);
+    const t2 = parseRangeSide(wpqr.thickness_t2_min, wpqr.thickness_t2_max, wpqr.thickness_t2_max_unlimited);
+
+    if (t1.has && t2.has) {
+        const orientOk = thicknessInDeclaredRange(tA, t1) && thicknessInDeclaredRange(tB, t2);
+        const swappedOk = thicknessInDeclaredRange(tA, t2) && thicknessInDeclaredRange(tB, t1);
+        if (orientOk || swappedOk) {
+            return {
+                ok: true,
+                partial: false,
+                reason: `Spessori ${tA}/${tB} mm entro range duali t1[${formatSide(t1)}] / t2[${formatSide(t2)}] mm (dichiarati)`,
+                range: { min: t1.min, max: t1.max, t1, t2 },
+            };
+        }
+        return {
+            ok: false,
+            partial: false,
+            reason: `Spessore fuori range duali WPQR ${wpqr.wpqr_code || wpqr.id}: richiesti ${tA} e ${tB} mm, t1[${formatSide(t1)}] / t2[${formatSide(t2)}] mm`,
+            range: { min: t1.min, max: t1.max, t1, t2 },
+        };
+    }
+
     let min = wpqr.thickness_min != null && wpqr.thickness_min !== ''
         ? Number(wpqr.thickness_min) : null;
     let max = wpqr.thickness_max != null && wpqr.thickness_max !== ''
         ? Number(wpqr.thickness_max) : null;
-    const maxUnlimited = wpqr.thickness_max_unlimited === true
-        || wpqr.thickness_max_unlimited === 1
-        || wpqr.thickness_max_unlimited === '1';
+    const maxUnlimited = isTruthyBit(wpqr.thickness_max_unlimited);
     let partial = false;
     let source = maxUnlimited ? 'dichiarato (range aperto, senza limite superiore)' : 'dichiarato';
 
@@ -220,10 +280,15 @@ function checkDiameterCoverage(wpqr, requiredDiameterMm) {
         const isPlate = String(wpqr.product_type || '').trim().toUpperCase() === 'P';
         if (isPlate) {
             const rotated = wpqr.rotated_position === true || wpqr.rotated_position === 1 || wpqr.rotated_position === '1';
-            const plateRule = describePlateCoversPipeDiameterLevel2({
-                weldingPositions: wpqr.welding_positions,
-                rotatedPosition: rotated,
-            });
+            const plateRule = isIso15614Part2(wpqr.standard_reference)
+                ? describePlateCoversPipeDiameter15614_2({
+                    weldingPositions: wpqr.welding_positions,
+                    rotatedPosition: rotated,
+                })
+                : describePlateCoversPipeDiameterLevel2({
+                    weldingPositions: wpqr.welding_positions,
+                    rotatedPosition: rotated,
+                });
             if (d > plateRule.minMm) {
                 return {
                     ok: true,
