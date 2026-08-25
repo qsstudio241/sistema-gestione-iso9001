@@ -37,7 +37,8 @@ Mason: FW con t1/t2 distinti persi; alluminio senza 15614-2. PDF consegnati 25/0
 
 - Codice mergiato [#563](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/563); backend deploy PROD (PID cambiato, health 200).  
 - Superadmin: **Billing → Rielaborazioni disponibili → «Range spessore duali t1/t2 (FW) — WPQR» → Lancia**.  
-- Poi in **Saldatura**: conferma proposte nel banner. Niente cron automatico. 
+- Poi in **Saldatura**: conferma proposte nel banner. Niente cron automatico.  
+- Polish [#566](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/566): dopo Lancia il conteggio non include più le proposte pending; voci a 0 nascoste. Gate registro [#567](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/567) in `sgq-operating-memory.mdc`. 
 
 ## File toccati
 
