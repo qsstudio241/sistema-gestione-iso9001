@@ -285,7 +285,8 @@ function evaluateInspectorFromRows(opts = {}) {
   };
 }
 
-async function loadNdtQuals(organizationId) {
+async function loadNdtQuals(organizationId, allowedCompanyIds) {
+  const { params, clause } = withCompanyScope(organizationId, allowedCompanyIds);
   const result = await query(`
     SELECT q.id, q.person_name, q.personnel_id, q.qualification_type,
            q.ndt_method, q.ndt_level, q.expiry_date, q.status, q.company_id,
@@ -293,12 +294,14 @@ async function loadNdtQuals(organizationId) {
     FROM qualifications q
     WHERE q.organization_id = @organization_id
       AND q.status NOT IN ('revocata', 'sospesa')
-  `, { organization_id: organizationId });
+      ${clause}
+  `, params);
   return result.recordset || [];
 }
 
-async function loadVisionRows(organizationId) {
+async function loadVisionRows(organizationId, allowedCompanyIds) {
   const visionIn = visionFitnessSqlInList();
+  const { params, clause } = withCompanyScope(organizationId, allowedCompanyIds);
   const result = await query(`
     SELECT q.id, q.person_name, q.personnel_id, q.qualification_type,
            q.expiry_date, q.status, q.company_id
@@ -306,12 +309,29 @@ async function loadVisionRows(organizationId) {
     WHERE q.organization_id = @organization_id
       AND q.status NOT IN ('revocata', 'sospesa')
       AND q.qualification_type IN (${visionIn})
-  `, { organization_id: organizationId });
+      ${clause}
+  `, params);
   return result.recordset || [];
 }
 
+function withCompanyScope(organizationId, allowedCompanyIds) {
+  const params = { organization_id: organizationId };
+  if (!Array.isArray(allowedCompanyIds)) {
+    return { params, clause: '' };
+  }
+  if (allowedCompanyIds.length === 0) {
+    return { params, clause: ' AND 1 = 0' };
+  }
+  const parts = allowedCompanyIds.map((id, i) => {
+    const key = `acq_${i}`;
+    params[key] = id;
+    return `@${key}`;
+  });
+  return { params, clause: ` AND q.company_id IN (${parts.join(', ')})` };
+}
+
 /**
- * @param {{ organizationId: number, companyId?: number|null, inspectorName: string, reportType: string, personnelId?: number|null }} opts
+ * @param {{ organizationId: number, companyId?: number|null, inspectorName: string, reportType: string, personnelId?: number|null, allowedCompanyIds?: number[]|null }} opts
  */
 async function evaluateNdtInspectorGate(opts = {}) {
   const organizationId = opts.organizationId;
@@ -324,9 +344,10 @@ async function evaluateNdtInspectorGate(opts = {}) {
       candidates: [],
     };
   }
+  const allowedCompanyIds = Array.isArray(opts.allowedCompanyIds) ? opts.allowedCompanyIds : null;
   const [ndtQuals, visionRows] = await Promise.all([
-    loadNdtQuals(organizationId),
-    loadVisionRows(organizationId),
+    loadNdtQuals(organizationId, allowedCompanyIds),
+    loadVisionRows(organizationId, allowedCompanyIds),
   ]);
   return evaluateInspectorFromRows({
     inspectorName: opts.inspectorName,

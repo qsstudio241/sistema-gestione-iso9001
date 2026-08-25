@@ -193,4 +193,18 @@ describe('evaluateNdtInspectorGate', () => {
     expect(GATE_CODE).toBe('NDT_INSPECTOR_GATE');
     expect(query).toHaveBeenCalledTimes(2);
   });
+
+  it('filtra le qualifiche sulle aziende consentite (company_access)', async () => {
+    query.mockImplementation(async () => ({ recordset: [] }));
+    await evaluateNdtInspectorGate({
+      organizationId: 1001,
+      inspectorName: 'Mario Rossi',
+      reportType: 'VT',
+      allowedCompanyIds: [11],
+    });
+    const sql = query.mock.calls[0][0];
+    const params = query.mock.calls[0][1];
+    expect(sql).toMatch(/q\.company_id IN \(@acq_0\)/);
+    expect(params.acq_0).toBe(11);
+  });
 });

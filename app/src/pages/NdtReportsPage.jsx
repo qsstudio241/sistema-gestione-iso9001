@@ -553,7 +553,12 @@ function NdtReportForm({ report, companies, availableInstruments, onSave, onCanc
                             <div className="ndt-form-row">
                                 <div className="ndt-form-group">
                                     <label>Tipo metodo</label>
-                                    <select value={form.report_type} onChange={e => set("report_type", e.target.value)}>
+                                    <select
+                                        value={form.report_type}
+                                        onChange={e => set("report_type", e.target.value)}
+                                        disabled={isEdit}
+                                        title={isEdit ? "Il metodo \u00e8 fissato alla creazione (numero verbale)." : undefined}
+                                    >
                                         {REPORT_TYPES.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
                                     </select>
                                 </div>

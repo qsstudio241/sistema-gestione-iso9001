@@ -38,13 +38,18 @@ function sendInspectorGateDenied(res, gate) {
     });
 }
 
-async function assertInspectorGate({ organizationId, companyId, inspector, reportType, status }) {
+async function assertInspectorGate({ organizationId, companyId, inspector, reportType, status, user }) {
     if (!isJudgmentStatus(status)) return null;
+    const accessList = await ensureCompanyAccessLoaded(user);
+    const allowedCompanyIds = hasCompanyAccessRows(accessList)
+        ? accessList.map((a) => a.company_id)
+        : null;
     const gate = await evaluateNdtInspectorGate({
         organizationId,
         companyId,
         inspectorName: inspector,
         reportType,
+        allowedCompanyIds,
     });
     return gate.ok ? null : gate;
 }
@@ -259,6 +264,7 @@ async function createNdtReport(req, res) {
             inspector: inspector || req.user.full_name || null,
             reportType: report_type,
             status,
+            user: req.user,
         });
         if (gateDenied) return sendInspectorGateDenied(res, gateDenied);
 
@@ -428,6 +434,7 @@ async function updateNdtReport(req, res) {
             inspector: nextInspector,
             reportType: nextReportType,
             status: nextStatus,
+            user: req.user,
         });
         if (gateDenied) return sendInspectorGateDenied(res, gateDenied);
 
@@ -559,12 +566,26 @@ async function getInspectorEligibility(req, res) {
         const inspector = req.query.inspector || '';
         const reportType = req.query.report_type || req.query.method || '';
         const companyId = req.query.company_id ? parseInt(req.query.company_id, 10) : null;
+        const requestedCompanyId = Number.isNaN(companyId) ? null : companyId;
+
+        const accessList = await ensureCompanyAccessLoaded(req.user);
+        let allowedCompanyIds = null;
+        if (hasCompanyAccessRows(accessList)) {
+            if (requestedCompanyId) {
+                const denied = await assertCompanyAccess(req.user, requestedCompanyId, 'read');
+                if (denied) return sendAccessDenied(res, denied);
+                allowedCompanyIds = [requestedCompanyId];
+            } else {
+                allowedCompanyIds = accessList.map((a) => a.company_id);
+            }
+        }
 
         const gate = await evaluateNdtInspectorGate({
             organizationId: organization_id,
-            companyId: Number.isNaN(companyId) ? null : companyId,
+            companyId: requestedCompanyId,
             inspectorName: inspector,
             reportType,
+            allowedCompanyIds,
         });
 
         res.json({

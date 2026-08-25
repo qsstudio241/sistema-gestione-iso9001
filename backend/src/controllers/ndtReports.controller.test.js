@@ -327,4 +327,28 @@ describe('gate ispettore 9712 + visione', () => {
       data: expect.objectContaining({ ok: true }),
     }));
   });
+
+  it('GET eligibility fuori company_access → 403, non valuta il gate', async () => {
+    const res = mockRes();
+    await ctrl.getInspectorEligibility(mockReq({
+      user: companyWrite11,
+      query: { inspector: 'Mario Rossi', report_type: 'VT', company_id: '12' },
+    }), res);
+    expect(res.status).toHaveBeenCalledWith(403);
+    expect(res.json).toHaveBeenCalledWith(expect.objectContaining({ code: 'FORBIDDEN' }));
+    expect(evaluateNdtInspectorGate).not.toHaveBeenCalled();
+  });
+
+  it('GET eligibility in scope: passa allowedCompanyIds', async () => {
+    const res = mockRes();
+    await ctrl.getInspectorEligibility(mockReq({
+      user: companyWrite11,
+      query: { inspector: 'Mario Rossi', report_type: 'VT', company_id: '11' },
+    }), res);
+    expect(evaluateNdtInspectorGate).toHaveBeenCalledWith(expect.objectContaining({
+      companyId: 11,
+      allowedCompanyIds: [11],
+    }));
+    expect(res.json).toHaveBeenCalledWith(expect.objectContaining({ success: true }));
+  });
 });
