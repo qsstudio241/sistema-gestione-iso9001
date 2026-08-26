@@ -14,9 +14,13 @@ jest.mock('../services/ndtInspectorGate.service', () => ({
     ok: true, reasons: [], qualification: null, vision: { state: 'ok' }, candidates: [],
   }),
 }));
+jest.mock('../services/ndtReportRegistryPose.service', () => ({
+  poseNdtReportInRegistry: jest.fn().mockResolvedValue(null),
+}));
 
 const { query } = require('../config/database');
 const { evaluateNdtInspectorGate } = require('../services/ndtInspectorGate.service');
+const { poseNdtReportInRegistry } = require('../services/ndtReportRegistryPose.service');
 const ctrl = require('./ndtReports.controller');
 
 const ORG_ID = 1001;
@@ -350,5 +354,93 @@ describe('gate ispettore 9712 + visione', () => {
       allowedCompanyIds: [11],
     }));
     expect(res.json).toHaveBeenCalledWith(expect.objectContaining({ success: true }));
+  });
+});
+
+describe('CND-7 — posa Registro su Completa', () => {
+  beforeEach(() => {
+    evaluateNdtInspectorGate.mockResolvedValue({
+      ok: true, reasons: [], qualification: null, vision: { state: 'ok' }, candidates: [],
+    });
+    poseNdtReportInRegistry.mockResolvedValue(null);
+  });
+
+  it('update completed: chiama pose e include registry_pose nella risposta', async () => {
+    poseNdtReportInRegistry.mockResolvedValue({
+      document_id: 501,
+      created: true,
+      folder_code: '9.3',
+      parent_id: 10,
+      folder_missing: false,
+      message: 'Verbale posato nel Registro Documenti (cartella 9.3).',
+    });
+    query.mockImplementation(async (sql) => {
+      if (sql.includes('FROM ndt_reports WHERE id = @id') && sql.includes('company_id')) {
+        return {
+          recordset: [{
+            id: 5, company_id: 12, project_id: null, report_type: 'VT', inspector: 'Mario Rossi',
+          }],
+        };
+      }
+      if (sql.includes('UPDATE ndt_reports SET')) return { recordset: [] };
+      if (sql.includes('company_name')) {
+        return {
+          recordset: [{
+            id: 5,
+            company_id: 12,
+            report_number: 'VT-2026-001',
+            report_type: 'VT',
+            status: 'completed',
+            inspector: 'Mario Rossi',
+            company_name: 'Cliente',
+          }],
+        };
+      }
+      return { recordset: [] };
+    });
+    const res = mockRes();
+    await ctrl.updateNdtReport(mockReq({
+      params: { id: '5' },
+      user: studioAdmin,
+      body: { status: 'completed', inspector: 'Mario Rossi' },
+    }), res);
+
+    expect(poseNdtReportInRegistry).toHaveBeenCalledWith(expect.objectContaining({
+      organizationId: ORG_ID,
+      report: expect.objectContaining({ id: 5, status: 'completed' }),
+    }));
+    expect(res.json).toHaveBeenCalledWith(expect.objectContaining({
+      success: true,
+      registry_pose: expect.objectContaining({ document_id: 501, folder_missing: false }),
+    }));
+  });
+
+  it('update draft: non chiama pose', async () => {
+    query.mockImplementation(async (sql) => {
+      if (sql.includes('FROM ndt_reports WHERE id = @id') && sql.includes('company_id')) {
+        return {
+          recordset: [{
+            id: 5, company_id: 12, project_id: null, report_type: 'VT', inspector: 'Mario Rossi',
+          }],
+        };
+      }
+      if (sql.includes('company_name')) {
+        return {
+          recordset: [{
+            id: 5, company_id: 12, report_number: 'VT-2026-001', status: 'draft',
+          }],
+        };
+      }
+      return { recordset: [] };
+    });
+    const res = mockRes();
+    await ctrl.updateNdtReport(mockReq({
+      params: { id: '5' },
+      user: studioAdmin,
+      body: { status: 'draft', inspector: 'Mario Rossi' },
+    }), res);
+    expect(poseNdtReportInRegistry).not.toHaveBeenCalled();
+    expect(res.json).toHaveBeenCalledWith(expect.objectContaining({ success: true }));
+    expect(res.json.mock.calls[0][0].registry_pose).toBeUndefined();
   });
 });

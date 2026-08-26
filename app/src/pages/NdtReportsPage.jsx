@@ -770,14 +770,22 @@ function NdtReportForm({ report, companies, availableInstruments, onSave, onCanc
                 items,
                 instrument_ids: selectedInstruments.map(i => ({ asset_id: i.asset_id, instrument_role: i.role })),
             };
+            let saveRes;
             if (isEdit) {
-                await apiService.updateNdtReport(report.id, payload);
+                saveRes = await apiService.updateNdtReport(report.id, payload);
             } else {
-                await apiService.createNdtReport(payload);
+                saveRes = await apiService.createNdtReport(payload);
             }
             setSavedAt(new Date().toLocaleTimeString("it-IT", { hour: "2-digit", minute: "2-digit" }));
             clearDraft(); // rimuove bozza locale dopo salvataggio riuscito
-            onSave();
+            const pose = saveRes?.registry_pose || saveRes?.data?.registry_pose || null;
+            onSave(pose && pose.message
+                ? {
+                    message: pose.message,
+                    folder_missing: !!pose.folder_missing,
+                    error: !!pose.error,
+                }
+                : null);
         } catch (err) {
             setError(err?.message || "Errore salvataggio verbale");
         } finally {
@@ -1443,6 +1451,7 @@ export default function NdtReportsPage() {
 
     const [view, setView] = useState("list"); // "list" | "form"
     const [editingReport, setEditingReport] = useState(null);
+    const [poseFlash, setPoseFlash] = useState(null);
 
     const loadData = useCallback(async () => {
         setLoading(true);
@@ -1476,6 +1485,7 @@ export default function NdtReportsPage() {
             const instResp = await apiService.getEquipmentForReport("VT");
             setAvailableInstruments(instResp.data || []);
         } catch { setAvailableInstruments([]); }
+        setPoseFlash(null);
         setEditingReport(null);
         setView("form");
     };
@@ -1492,10 +1502,16 @@ export default function NdtReportsPage() {
             setEditingReport(report);
             setAvailableInstruments([]);
         }
+        setPoseFlash(null);
         setView("form");
     };
 
-    const handleSaved = () => { setView("list"); setEditingReport(null); loadData(); };
+    const handleSaved = (poseInfo) => {
+        setView("list");
+        setEditingReport(null);
+        setPoseFlash(poseInfo && poseInfo.message ? poseInfo : null);
+        loadData();
+    };
     const handleCancel = () => { setView("list"); setEditingReport(null); };
 
     const handleDelete = async (report) => {
@@ -1527,6 +1543,15 @@ export default function NdtReportsPage() {
                 </div>
                 <button className="btn btn-primary" onClick={openNew}>+ Nuovo verbale</button>
             </div>
+
+            {poseFlash && (
+                <div
+                    className={poseFlash.folder_missing || poseFlash.error ? "ndt-form-error" : "ndt-saved-at"}
+                    role="status"
+                >
+                    {poseFlash.message}
+                </div>
+            )}
 
             {/* Stats */}
             {stats && (
