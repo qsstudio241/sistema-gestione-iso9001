@@ -4,6 +4,8 @@
 > **Autori**: Lead architect (AI), Product owner  
 > **Sostituisce parzialmente**: ADR-002 (offline-first sync), ADR-003 (bidirectional sync), ADR-006 (auto-reconcile)  
 > **Decisione vincolante**: questa architettura è il target di lungo termine. Ogni nuova feature che tocca la sincronizzazione dei dati deve essere progettata in modo compatibile con questo modello.
+>
+> **Multi-tenant (obbligatorio anche offline)**: bozze/code in `localStorage` o IndexedDB vanno keyed o filtrate per `organization_id` (e user se serve); il merge lista server+locale usa lo **stesso scope tenant del GET**. Gate esempio: `ndtDraftsTenantScope.test.js` (hotfix CND-8 leak cross-studio).
 
 ---
 
