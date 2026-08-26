@@ -17,6 +17,33 @@ export function ndtDraftKey(reportId) {
     return NDT_DRAFT_KEY_PREFIX + (reportId || 'new');
 }
 
+/** UUID client stabile per create offline (sopravvive al refresh). */
+export function offlineCreateUuidKey(draftKey) {
+    return (draftKey || ndtDraftKey(null)) + ':client_uuid';
+}
+
+export function getOrCreateOfflineCreateUuid(draftKey) {
+    const key = offlineCreateUuidKey(draftKey);
+    try {
+        const existing = localStorage.getItem(key);
+        if (existing) return existing;
+    } catch (_) { /* ignore */ }
+    const uuid = (typeof crypto !== 'undefined' && crypto.randomUUID)
+        ? crypto.randomUUID()
+        : `ndt-${Date.now()}`;
+    try {
+        localStorage.setItem(key, uuid);
+    } catch (_) { /* ignore */ }
+    return uuid;
+}
+
+export function clearOfflineCreateUuid(draftKey) {
+    if (!draftKey) return;
+    try {
+        localStorage.removeItem(offlineCreateUuidKey(draftKey));
+    } catch (_) { /* ignore */ }
+}
+
 /**
  * True se l'errore di salvataggio è dovuto a rete assente / instabile
  * (non a validazione o gate 9712).
@@ -33,7 +60,7 @@ export function isNdtNetworkSaveError(err) {
     );
 }
 
-/** Rimuove una bozza localStorage per chiave completa. */
+/** Rimuove una bozza localStorage per chiave completa (+ uuid create offline). */
 export function clearNdtDraftByKey(draftKey) {
     if (!draftKey) return;
     try {
@@ -41,6 +68,7 @@ export function clearNdtDraftByKey(draftKey) {
     } catch (e) {
         /* ignore */
     }
+    clearOfflineCreateUuid(draftKey);
 }
 
 /**
@@ -128,6 +156,8 @@ export async function enqueueNdtReportSync(type, payload) {
             : `ndt-${Date.now()}`);
         const enriched = { ...payload, uuid };
         const queueId = await syncService.enqueue(type, enriched);
+        // syncService.enqueue risolve null su quota IDB: non fingere successo
+        if (!queueId) return null;
         try {
             window.dispatchEvent(new CustomEvent('sgq:ndtReportEnqueued', {
                 detail: {
@@ -138,7 +168,7 @@ export async function enqueueNdtReportSync(type, payload) {
                 },
             }));
         } catch (_) { /* ambiente senza window */ }
-        return queueId || uuid;
+        return queueId;
     } catch (e) {
         console.warn('[useNdtAutoSave] enqueueNdtReportSync error:', e);
         return null;

@@ -93,6 +93,27 @@ describe("CND-9 useNdtAutoSave helpers", () => {
     window.removeEventListener("sgq:ndtReportEnqueued", onEnq);
   });
 
+  it("enqueueNdtReportSync ritorna null se la coda non accetta (quota)", async () => {
+    enqueueMock.mockResolvedValueOnce(null);
+    const id = await enqueueNdtReportSync("create_ndt_report", {
+      report_type: "VT",
+      draftKey: ndtDraftKey("new"),
+    });
+    expect(id).toBeNull();
+  });
+
+  it("getOrCreateOfflineCreateUuid è stabile dopo refresh", async () => {
+    const { getOrCreateOfflineCreateUuid, clearOfflineCreateUuid } = await import(
+      "../hooks/useNdtAutoSave.js"
+    );
+    const key = ndtDraftKey("new");
+    clearOfflineCreateUuid(key);
+    const a = getOrCreateOfflineCreateUuid(key);
+    const b = getOrCreateOfflineCreateUuid(key);
+    expect(a).toBe(b);
+    expect(a).toBeTruthy();
+  });
+
   it("enqueueNdtReportSync per update include id verbale", async () => {
     await enqueueNdtReportSync("update_ndt_report", {
       id: 77,
