@@ -7,6 +7,7 @@ const {
     extractQualifica14732Fields,
     extractCertNdtFields,
     extractWpqrFields,
+    extractJointType,
 } = require('./ruleFieldExtractors');
 
 describe('extractQualifica14732Fields (RC-8)', () => {
@@ -80,6 +81,13 @@ describe('extractWpqrFields (DEPUTYTASK1 25/07/2026 — campi copertura pag.1/pa
         expect(out.thickness_min).toBe(3);
         expect(out.thickness_max).toBe(24);
         expect(out.welding_positions).toContain('PA');
+    });
+
+    it('STUD-2: fillet + prigioniero → SW, non FW', () => {
+        expect(extractJointType('FILLET WELD su prigioniero D1=51')).toBe('SW');
+        expect(extractJointType('Arc stud welding ISO 14555')).toBe('SW');
+        expect(extractJointType('Fillet Weld S355J2 ISO 15614-1')).toBe('FW');
+        expect(extractJointType('Butt weld BW Level 2')).toBe('BW');
     });
 
     it('estrae ente TEC Eurolab e data di emissione etichettata', () => {

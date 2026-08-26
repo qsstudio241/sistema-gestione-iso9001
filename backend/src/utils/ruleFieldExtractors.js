@@ -131,6 +131,13 @@ function extractDiameterRangeMm(text) {
 }
 
 function extractJointType(text) {
+    // STUD-2: stud/prigioniero prima di BW/FW — non collassare in fillet.
+    const hasSW = /\bSW\b/.test(text)
+        || /\bstud\s*weld/i.test(text)
+        || /\barc\s*stud/i.test(text)
+        || /ISO\s*14555/i.test(text)
+        || /prigionier/i.test(text);
+    if (hasSW) return 'SW';
     const hasBW = /\bBW\b/.test(text) || /\bbutt\s*weld/i.test(text);
     const hasFW = /\bFW\b/.test(text) || /\bfillet\s*weld/i.test(text);
     if (hasBW && hasFW) return 'BW+FW';

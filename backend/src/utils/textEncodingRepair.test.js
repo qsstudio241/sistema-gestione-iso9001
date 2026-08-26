@@ -28,6 +28,9 @@ describe('textEncodingRepair', () => {
         expect(normalizeJointTypeCode('BW+FW')).toBe('BW+FW');
         expect(normalizeJointTypeCode('SW - Stud / prigioniero')).toBe('SW');
         expect(normalizeJointTypeCode('stud welding')).toBe('SW');
+        expect(normalizeJointTypeCode('saldatura prigionieri')).toBe('SW');
+        expect(normalizeJointTypeCode('butt weld')).toBe('BW');
+        expect(normalizeJointTypeCode('fillet weld')).toBe('FW');
     });
 
     test('normalizeIngestSelectFields su patentino', () => {

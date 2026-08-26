@@ -1347,17 +1347,25 @@ Campi di copertura (pag.1 RANGE OF QUALIFICATION, priorità alta):
 - qualification_level: "1" o "2" solo se dichiarato esplicitamente (Level 1/2) — non dedurre
 - standard_reference: norma di riferimento (es. "UNI EN ISO 15614-1:2017" oppure "UNI EN ISO 15614-2:2025" per alluminio)
 - welding_process: codice ISO 4063 — preferire un codice numerico esplicito nel testo (es. "Welding process: 135") a un alias generico
-- joint_type: "BW", "FW", "BW+FW" oppure "SW" (Stud / prigioniero — tipologia dedicata ≠ FW; non inventare range ISO 14555)
-- product_type: "P" (piastra), "T" (tubo) oppure "P+T" (entrambi) — variabile essenziale ISO 15614-1 §8.3.3 per il diametro. Se il documento non lo specifica esplicitamente ma il "Range of qualification" per il diametro contiene una regola testuale tipo "> 500; > 150 for position PC, PF/PA rotated" (invece di un numero), significa che il provino è stato testato su PIASTRA: imposta product_type: "P" e lascia diameter_min/diameter_max: null (NON trascrivere quella regola testuale come numero)
+- joint_type: "BW", "FW", "BW+FW" oppure "SW" (Stud / prigioniero — tipologia dedicata, distinta da FW).
+  Se il verbale parla di stud welding, prigioniero, arc stud, ISO 14555, oppure il pezzo di prova è un
+  prigioniero/stud (D1, Parent Metal 2 = stud), imposta joint_type: "SW" ANCHE se il giunto è fillet/angolo.
+  NON usare FW per lo stud. NON inventare range di validità ISO 14555 (niente formule, solo numeri scritti).
+- product_type: "P" (piastra), "T" (tubo) oppure "P+T" (entrambi) — variabile essenziale ISO 15614-1 §8.3.3 per il diametro.
+  "P+T" SOLO se il verbale dichiara esplicitamente entrambi (piastra E tubo, "both", "P and T", "entrambi").
+  Un prigioniero cilindrico su piastra NON è P+T: resta SW + diametro prigioniero, product_type di solito "P".
+  Se il documento non lo specifica esplicitamente ma il "Range of qualification" per il diametro contiene una regola testuale tipo "> 500; > 150 for position PC, PF/PA rotated" (invece di un numero), significa che il provino è stato testato su PIASTRA: imposta product_type: "P" e lascia diameter_min/diameter_max: null (NON trascrivere quella regola testuale come numero)
 - material_group: gruppo materiale ISO/TR 15608 del Parent Metal 1 (base), preferire il sottogruppo (es. "1.2") se presente
-- material_group_2: gruppo materiale Parent Metal 2 (es. prigioniero) se il verbale dichiara DUE materiali/gruppi; null se uno solo
-- qualifying_element: "base" | "stud" | "both" — quale elemento si qualifica; null se non dichiarato
+- material_group_2: gruppo materiale Parent Metal 2 (es. prigioniero) se il verbale dichiara DUE materiali/gruppi
+  (Parent Metal 1 + Parent Metal 2); null se uno solo. Copiare il gruppo del PM2, non duplicare a caso il PM1 se il verbale indica un solo gruppo
+- qualifying_element: "base" | "stud" | "both" — quale elemento si qualifica; null se non dichiarato.
+  Sinonimi: piastra/parent metal 1/PM1 → base; prigioniero/pin/stud/parent metal 2/PM2 → stud; entrambi → both
 - thickness_test_mm: spessore del provino testato (numero)
 - thickness_min / thickness_max: range di spessore DICHIARATO sul verbale (non calcolarlo) — se UN solo range
 - thickness_max_unlimited: booleano — true SOLO se il verbale dichiara esplicitamente un range aperto senza limite superiore (simboli "\u2265", "=>", "\u2a7e", oppure testo "no restriction"/"senza limite superiore"), tipico dei giunti ad angolo (Fillet Weld: es. "t1 = => 5 ; t2 => 5"). In questo caso lascia thickness_max: null e imposta thickness_max_unlimited: true. Se il campo è semplicemente assente dal documento (non un range aperto dichiarato), lascia entrambi null/false — NON confondere le due situazioni
 - thickness_t1_min / thickness_t1_max / thickness_t1_max_unlimited: se il verbale dichiara DUE range (t1 e t2), tipico FW con spessori diversi (es. "t1 = FW : from 3,0 to 50,0"), popola t1. Se un solo range, lascia null
 - thickness_t2_min / thickness_t2_max / thickness_t2_max_unlimited: come sopra per t2
-- diameter_min / diameter_max: range diametro tubo (T/P+T) oppure diametro prigioniero se joint_type=SW — SOLO se un numero è dichiarato (vedi nota su product_type sopra per il caso testo/piastra)
+- diameter_min / diameter_max: range diametro tubo (T/P+T) oppure diametro del PRIGIONIERO se joint_type=SW (D1, Ø stud; NON il diametro tubo ISO 15614-1 §8.3.3) — SOLO se un numero è dichiarato (vedi nota su product_type sopra per il caso testo/piastra). Se SW e manca il numero, lascia null: NON calcolare un range ISO 14555
 - throat_test_mm: spessore gola (throat) del provino testato, SOLO per giunti d'angolo/FW,
   se dichiarato esplicitamente sul verbale (Tabella 8) — numero, null se non applicabile o assente
 - welding_positions: array posizioni ISO 6947 (es. ["PA"])
@@ -1382,7 +1390,8 @@ Parametri prova (pag.2, priorità media):
 - preheat_temp: temperatura di preriscaldo (Tp, ISO 13916), es. "min 100 °C"
 - interpass_temp: temperatura interpass (Ti, ISO 13916), es. "max 250 °C"
 
-IMPORTANTE: non ricalcolare i range con formule — estrarre solo i valori dichiarati sul verbale.`,
+IMPORTANTE: non ricalcolare i range con formule — estrarre solo i valori dichiarati sul verbale.
+Vietato inventare soglie o range ISO 14555 (stud): se il verbale non scrive il numero, il campo resta null.`,
   aiExpectedSchema: {
     wpqr_number: "string|null",
     qualification_level: "1|2|null",

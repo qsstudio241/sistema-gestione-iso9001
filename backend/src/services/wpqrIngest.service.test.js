@@ -219,6 +219,158 @@ describe('mapReviewFieldsToDb — STUD-1 campi stud / P+T / doppio materiale', (
     });
 });
 
+/**
+ * STUD-2 — ingest: sinonimi stud/P+T, non forzare FW, non calcolare range 14555.
+ */
+describe('STUD-2 ingest — normalizzazione SW / P+T / PM2', () => {
+    const {
+        mapPipelineFieldsToReview,
+        mapReviewFieldsToDb,
+        normalizeWpqrJointType,
+        normalizeWpqrProductType,
+        extractStudDiameterFromText,
+    } = require('./wpqrIngest.service');
+
+    it('sinonimi stud/prigioniero → SW, non FW', () => {
+        expect(normalizeWpqrJointType('stud welding')).toBe('SW');
+        expect(normalizeWpqrJointType('Saldatura prigionieri')).toBe('SW');
+        expect(normalizeWpqrJointType('arc stud')).toBe('SW');
+        expect(normalizeWpqrJointType('FW', 'FILLET WELD su prigioniero D1=51 ISO 14555')).toBe('SW');
+        expect(normalizeWpqrJointType('fillet weld on stud welding')).toBe('SW');
+    });
+
+    it('regressione BW/FW senza hint stud restano BW/FW', () => {
+        expect(normalizeWpqrJointType('BW')).toBe('BW');
+        expect(normalizeWpqrJointType('butt weld')).toBe('BW');
+        expect(normalizeWpqrJointType('FW')).toBe('FW');
+        expect(normalizeWpqrJointType('FW - angolare')).toBe('FW');
+        expect(normalizeWpqrJointType('BW+FW')).toBe('BW+FW');
+        // BW non viene sovrascritto da una citazione 14555 nel testo
+        expect(normalizeWpqrJointType('BW', 'related ISO 14555')).toBe('BW');
+    });
+
+    it('product_type: entrambi / plate+pipe → P+T; P e T restano P e T', () => {
+        expect(normalizeWpqrProductType('entrambi')).toBe('P+T');
+        expect(normalizeWpqrProductType('P and T')).toBe('P+T');
+        expect(normalizeWpqrProductType('piastra e tubo')).toBe('P+T');
+        expect(normalizeWpqrProductType('P+T')).toBe('P+T');
+        expect(normalizeWpqrProductType('P')).toBe('P');
+        expect(normalizeWpqrProductType('piastra')).toBe('P');
+        expect(normalizeWpqrProductType('T')).toBe('T');
+        expect(normalizeWpqrProductType('tubo')).toBe('T');
+        expect(normalizeWpqrProductType('pipe')).toBe('T');
+    });
+
+    it('caso SW + PM2 (Mason-like): review e DB senza range 14555 inventato', () => {
+        const fields = {
+            wpqr_number: '001P-21',
+            joint_type: 'stud welding',
+            product_type: 'P',
+            qualifying_element: 'prigioniero',
+            material_group: '1.2',
+            material_group_2: '1.2',
+            base_material_spec: 'S355J2',
+            base_material_spec_2: 'S235J2H',
+            diameter_min: 51,
+            diameter_max: 51,
+            thickness_test_mm: 8,
+        };
+        const review = mapPipelineFieldsToReview(fields, '001P-21.pdf');
+        expect(review.joint_type).toBe('SW');
+        expect(review.product_type).toBe('P');
+        expect(review.qualifying_element).toBe('stud');
+        expect(review.material_group_2).toBe('1.2');
+        expect(review.base_material_spec_2).toBe('S235J2H');
+        expect(review.diameter_min).toBe(51);
+        // Nessun fallback Tabella 7 / 14555: SW senza range dichiarato resta null
+        expect(review.thickness_min).toBeNull();
+        expect(review.thickness_max).toBeNull();
+
+        const db = mapReviewFieldsToDb(fields, '001P-21.pdf');
+        expect(db.joint_type).toBe('SW');
+        expect(db.base_material_group_2).toBe('1.2');
+        expect(db.qualifying_element).toBe('stud');
+        expect(db.thickness_min).toBeNull();
+        expect(db.thickness_max).toBeNull();
+    });
+
+    it('caso P+T dichiarato «entrambi» sopravvive fino al mapping DB', () => {
+        const mapped = mapReviewFieldsToDb({
+            wpqr_number: 'WPQR-PT',
+            joint_type: 'BW',
+            product_type: 'entrambi',
+        }, 'pt.pdf');
+        expect(mapped.joint_type).toBe('BW');
+        expect(mapped.product_type).toBe('P+T');
+    });
+
+    it('estrae D1 dichiarato come diametro prigioniero (non calcola 14555)', () => {
+        expect(extractStudDiameterFromText('Parent Metal 1\nD1 = 51\nt1 = 8')).toBe(51);
+        expect(extractStudDiameterFromText('diametro prigioniero 12,5')).toBe(12.5);
+        expect(extractStudDiameterFromText('Fillet weld t=10 no diameter')).toBeNull();
+    });
+});
+
+describe('extractWPQRFromPdf — STUD-2 testo fillet+prigioniero → SW + D1', () => {
+    afterEach(() => jest.clearAllMocks());
+    it('non lascia FW se il verbale parla di prigioniero; prende D1', async () => {
+        runDocumentIngest.mockResolvedValue({
+            text: 'WPQR 001P-21 FILLET WELD processo 135 su prigioniero D1 = 51 Parent Metal 2 S235J2H',
+            fields: {
+                wpqr_number: '001P-21',
+                welding_process: '135',
+                joint_type: 'FW',
+                product_type: 'P',
+                material_group: '1.2',
+                material_group_2: '1.2',
+                base_material_spec: 'S355J2',
+                base_material_spec_2: 'S235J2H',
+                qualifying_element: 'stud',
+            },
+            fieldConfidence: {},
+            extractionConfidence: 75,
+            aiModel: 'gemini-1.5-flash',
+            warnings: [],
+        });
+        query.mockResolvedValueOnce({ recordset: [] });
+
+        const out = await extractWPQRFromPdf(Buffer.from('%PDF'), '001P-21.pdf', 1001, 2001);
+
+        expect(out.status).toBe('pending_review');
+        expect(out.fields.joint_type).toBe('SW');
+        expect(out.fields.product_type).toBe('P');
+        expect(out.fields.qualifying_element).toBe('stud');
+        expect(out.fields.material_group_2).toBe('1.2');
+        expect(out.fields.base_material_spec_2).toBe('S235J2H');
+        expect(out.fields.diameter_min).toBe(51);
+        expect(out.fields.diameter_max).toBe(51);
+        expect(out.fields.thickness_min).toBeNull();
+        expect(out.fields.thickness_max).toBeNull();
+    });
+
+    it('regressione fillet FW senza stud resta FW', async () => {
+        runDocumentIngest.mockResolvedValue({
+            text: 'WPQR VB0377/23 Fillet Weld t1 = >=5 processo 138 ISO 15614-1',
+            fields: {
+                wpqr_number: 'VB0377/23',
+                joint_type: 'FW',
+                product_type: 'P',
+                thickness_min: 5,
+                thickness_max_unlimited: true,
+            },
+            fieldConfidence: {},
+            extractionConfidence: 80,
+            aiModel: 'test',
+            warnings: [],
+        });
+        query.mockResolvedValueOnce({ recordset: [] });
+
+        const out = await extractWPQRFromPdf(Buffer.from('%PDF'), 'VB0377.pdf', 1001, 2001);
+        expect(out.fields.joint_type).toBe('FW');
+        expect(out.fields.product_type).toBe('P');
+    });
+});
+
 describe('checkWpqrPlausibility — warning FW range non calcolabile (gap 07/08/2026)', () => {
     it('segnala verifica manuale per giunto FW senza range dichiarato e senza flag illimitato', () => {
         const warnings = checkWpqrPlausibility({

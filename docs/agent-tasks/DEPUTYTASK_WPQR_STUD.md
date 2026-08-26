@@ -21,7 +21,7 @@ Fonti Markdown:
   ISO 14555:2025 digitalizzata (`NORMA_00033`); estratto range STUD-3-A
   `docs/reference/ISO-14555-2025-range-validita-WPQR.md`
 - Mancanti: processi 4063 stud in catalogo JS; range 14555 **in codice** (STUD-3-B dopo HITL)
-- Si parte su: STUD-2 ingest (slot DEPUTYTASK.md); STUD-3-B solo dopo HITL sull'estratto
+- Si parte su: STUD-2 ingest **CHIUSO** (#590); STUD-3-B solo dopo HITL sull'estratto
 ```
 
 ## Richiesta norma (HITL) — **EVASA** 26/08/2026
@@ -31,7 +31,7 @@ Fonti Markdown:
 - **Serve a**: STUD-3 range; STUD-1 chiuso senza range; STUD-3-A estratto fatto (HITL prima del codice)
 - **Cosa NON inventiamo senza HITL sull'estratto**: soglie ancora GAP (Tabella 1, B.1 formule, §10.2.8.5 a)
 - **Perimetro chiuso in STUD-1**: campi + doppio materiale + P+T su 15614-1 + verbale Mason 001P-21
-- **Prossimo:** HITL estratto 14555; STUD-2 ingest ([`DEPUTYTASK.md`](DEPUTYTASK.md)); STUD-3-B codice dopo OK HITL
+- **Prossimo:** HITL estratto 14555; STUD-3-B codice dopo OK HITL
 
 ## Perché
 
@@ -62,12 +62,12 @@ Segnalazione Mason (post chiusura t1/t2): in inserimento WPQR «Stud Welding» m
 
 **Registro rielaborazioni:** voci `qualifying_element`, `material_group_2`, `base_material_spec_2` (sync whitelist + registry).
 
-**Backlog residuo (26/08 sera — slot paralleli APERTO su `main`):**
+**Backlog residuo (26/08 sera — STUD-2 e STUD-3-A chiusi):**
 
 | Slice | Slot | Scope |
 |-------|------|--------|
-| **STUD-2** | [`DEPUTYTASK.md`](DEPUTYTASK.md) **APERTO** | Ingest AI SW / P+T / PM2 / qualifying_element (no range) |
-| **STUD-3-A** | [`DEPUTYTASK1.md`](DEPUTYTASK1.md) **CHIUSO — TEST OK** | Estratto docs [`ISO-14555-2025-range-validita-WPQR.md`](../reference/ISO-14555-2025-range-validita-WPQR.md) |
+| **STUD-2** | [`DEPUTYTASK.md`](DEPUTYTASK.md) **CHIUSO — TEST OK** [#590](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/590) | Ingest AI SW / P+T / PM2 / qualifying_element (no range) |
+| **STUD-3-A** | [`DEPUTYTASK1.md`](DEPUTYTASK1.md) **CHIUSO — TEST OK** [#589](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/589) | Estratto docs [`ISO-14555-2025-range-validita-WPQR.md`](../reference/ISO-14555-2025-range-validita-WPQR.md) |
 | STUD-3-B | (dopo HITL estratto) | Codifica range + 4063 stud |
 | PT-1 | opzionale | UX range lato P vs T (15614) |
 
