@@ -22,6 +22,78 @@ const {
     checkFilletThicknessRangeNeedsManualVerification,
 } = require('../utils/ingestPlausibilityChecks');
 const { toNumericOrNull } = require('../utils/numericSanitizer');
+const { normalizeJointTypeCode } = require('../utils/textEncodingRepair');
+
+/**
+ * Hint stud/prigioniero (STUD-2). Non usare `\bstud\b` da solo: eviterebbe
+ * "study" ma resterebbe ambiguo; qui solo formule di saldatura prigionieri.
+ * Non calcola range ISO 14555.
+ */
+const STUD_WELD_HINT_RE = /\b(?:stud\s*weld(?:ing)?|arc\s*stud|drawn[\s-]?arc\s*stud|iso\s*14555|saldatura\s+prigionier|prigionier[oi]|joint\s*type\s*[:.]?\s*sw)\b/i;
+
+function looksLikeStudWelding(text) {
+    if (text == null || text === '') return false;
+    return STUD_WELD_HINT_RE.test(String(text));
+}
+
+const KNOWN_WPQR_JOINT_TYPES = new Set(['BW', 'FW', 'BW+FW', 'SW']);
+
+/**
+ * Normalizza joint_type WPQR: sinonimi stud/prigioniero → SW.
+ * Non collassa stud in FW. BW / BW+FW restano invariati anche se il PDF
+ * cita 14555 in una lista norme. Valori non riconosciuti restano originali
+ * (round-trip sentinella / revisione umana).
+ */
+function normalizeWpqrJointType(val, extraText) {
+    if ((val == null || val === '') && (extraText == null || extraText === '')) return null;
+    const fromCode = val != null && val !== '' ? (normalizeJointTypeCode(val) || null) : null;
+    const known = fromCode && KNOWN_WPQR_JOINT_TYPES.has(fromCode) ? fromCode : null;
+    if (known === 'SW') return 'SW';
+    if (known === 'BW' || known === 'BW+FW') return known;
+    const blob = [val, extraText].filter((x) => x != null && x !== '').join(' ');
+    if (looksLikeStudWelding(blob)) return 'SW';
+    if (known) return known;
+    if (val != null && String(val).trim()) return String(val).trim();
+    return null;
+}
+
+/**
+ * Normalizza product_type: P | T | P+T. "entrambi" / plate+pipe → P+T.
+ * Non inferisce P+T da uno stud cilindrico (quello e' SW + diametro prigioniero).
+ */
+function normalizeWpqrProductType(val) {
+    if (val == null || val === '') return null;
+    const s = String(val).trim().toUpperCase().replace(/\s+/g, ' ');
+    if (!s) return null;
+    if (s === 'P+T' || s === 'P/T') return 'P+T';
+    if (/\bP\s*\+\s*T\b/.test(s) || /\bP\s+AND\s+T\b/.test(s) || /\bP\s*\/\s*T\b/.test(s)) return 'P+T';
+    if (/ENTRAMB/.test(s) || (/\bBOTH\b/.test(s) && !/\bSTUD\b/.test(s))) return 'P+T';
+    if (/PIASTRA\s*E\s*TUBO|PLATE\s+AND\s+PIPE|PIPE\s+AND\s+PLATE|TUBE\s+AND\s+PLATE|PIASTRA\s*\+\s*TUBO/.test(s)) {
+        return 'P+T';
+    }
+    if (s === 'P' || /^(PIASTRA|PLATE|SHEET)$/.test(s)) return 'P';
+    if (s === 'T' || /^(TUBO|TUBE|PIPE)$/.test(s)) return 'T';
+    const hasPlate = /\bPIASTRA\b/.test(s) || /\bPLATE\b/.test(s);
+    const hasTube = /\bTUBO\b/.test(s) || /\bPIPE\b/.test(s) || /\bTUBE\b/.test(s);
+    if (hasPlate && hasTube) return 'P+T';
+    if (hasPlate && !hasTube) return 'P';
+    if (hasTube && !hasPlate) return 'T';
+    if (['P', 'T', 'P+T'].includes(s)) return s;
+    return String(val).trim();
+}
+
+/**
+ * Diametro prigioniero dichiarato (D1 / D₁), solo se un numero e' sul verbale.
+ * Non calcola range 14555.
+ */
+function extractStudDiameterFromText(text) {
+    if (!text) return null;
+    const t = String(text);
+    const m = t.match(/\bD\s*[1₁I]\s*[=:]\s*(\d+(?:[.,]\d+)?)/i)
+        || t.match(/diametro\s+prigionier[oaie]*\s*[=:]?\s*(\d+(?:[.,]\d+)?)/i)
+        || t.match(/stud\s*(?:diameter|ø|Ø)\s*[=:]?\s*(\d+(?:[.,]\d+)?)/i);
+    return m ? toNumericOrNull(m[1]) : null;
+}
 
 /**
  * Controlli di plausibilità/coerenza normativa sui campi estratti (warning-only,
@@ -143,7 +215,8 @@ function resolveThicknessRange(f) {
         || f.thickness_max_unlimited === '1'
         || f.thickness_max_unlimited === 'true';
     const isFillet = (() => {
-        const jt = String(f.joint_type || '').trim().toUpperCase();
+        const jtNorm = normalizeWpqrJointType(f.joint_type);
+        const jt = String(jtNorm || '').trim().toUpperCase();
         // SW (stud) ≠ FW, ma non usare formule Tabella 7 BW: lascia dichiarato o null.
         return jt.includes('FW') || jt === 'SW';
     })();
@@ -260,11 +333,11 @@ function mapPipelineFieldsToReview(f, fileName) {
         qualification_level: f.qualification_level || null,
         welding_process: f.welding_process || null,
         material_group: f.material_group || f.base_material_group || null,
-        joint_type: f.joint_type || null,
+        joint_type: normalizeWpqrJointType(f.joint_type),
         // Tipo prodotto testato (piastra/tubo) — gap analysis 08/08/2026: serve a
         // sapere se applicare la regola "piastra copre tubo >500mm (o >150mm in
         // posizione ruotata)" ISO 15614-1 §8.3.3 in wpsGenerator.service.js.
-        product_type: f.product_type || null,
+        product_type: normalizeWpqrProductType(f.product_type),
         rotated_position: f.rotated_position === true || f.rotated_position === 1 || f.rotated_position === '1',
         thickness_test_mm: thickness_tested,
         approval_date: f.approval_date || f.issue_date || null,
@@ -315,9 +388,16 @@ function normalizeQualifyingElement(val) {
     if (val == null || val === '') return null;
     const raw = String(val).trim();
     const s = raw.toLowerCase();
-    if (['base', 'parent', 'piastra', 'base_metal'].includes(s)) return 'base';
-    if (['stud', 'prigioniero', 'pin'].includes(s)) return 'stud';
-    if (['both', 'entrambi', 'all'].includes(s)) return 'both';
+    if (['base', 'parent', 'piastra', 'base_metal', 'parent metal 1', 'pm1', 'parent_metal_1'].includes(s)) {
+        return 'base';
+    }
+    if (['stud', 'prigioniero', 'prigionieri', 'pin', 'parent metal 2', 'pm2', 'parent_metal_2'].includes(s)) {
+        return 'stud';
+    }
+    if (['both', 'entrambi', 'all', 'base+stud', 'base + stud'].includes(s)) return 'both';
+    if (/prigionier/.test(s) || /\bstud\b/.test(s)) return 'stud';
+    if (/\bentramb/.test(s) || /\bboth\b/.test(s)) return 'both';
+    if (/\bpiastra\b/.test(s) || /\bparent\s*metal\s*1\b/.test(s)) return 'base';
     return raw;
 }
 
@@ -351,8 +431,8 @@ function mapReviewFieldsToDb(f, fileName) {
         qualification_level: f.qualification_level || null,
         welding_process: f.welding_process || null,
         base_material_group: f.material_group || f.base_material_group || null,
-        joint_type: f.joint_type || null,
-        product_type: f.product_type || null,
+        joint_type: normalizeWpqrJointType(f.joint_type),
+        product_type: normalizeWpqrProductType(f.product_type),
         rotated_position: f.rotated_position === true || f.rotated_position === 1 || f.rotated_position === '1',
         standard_reference: f.standard_reference || null,
         filler_material: f.filler_material || null,
@@ -401,6 +481,16 @@ async function extractWPQRFromPdf(pdfBuffer, fileName, organizationId, companyId
     });
     const warnings = [...pipeline.warnings];
     const reviewFields = mapPipelineFieldsToReview(pipeline.fields || {}, fileName);
+    // STUD-2: se l'AI/regole hanno messo FW ma il testo parla di stud/prigioniero,
+    // non collassare in FW. BW resta BW (non si sovrascrive un testa a testa).
+    reviewFields.joint_type = normalizeWpqrJointType(reviewFields.joint_type, pipeline.text);
+    if (reviewFields.joint_type === 'SW' && reviewFields.diameter_min == null) {
+        const d1 = extractStudDiameterFromText(pipeline.text);
+        if (d1 != null) {
+            reviewFields.diameter_min = d1;
+            if (reviewFields.diameter_max == null) reviewFields.diameter_max = d1;
+        }
+    }
 
     if (pipeline.text.length > 30) {
         const docClass = classifyDocument(pipeline.text);
@@ -740,4 +830,9 @@ module.exports = {
     applyFieldReprocessUpdate,
     WPQR_REPROCESSABLE_FIELDS,
     calcThicknessRange,
+    normalizeWpqrJointType,
+    normalizeWpqrProductType,
+    normalizeQualifyingElement,
+    looksLikeStudWelding,
+    extractStudDiameterFromText,
 };

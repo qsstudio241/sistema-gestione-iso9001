@@ -195,14 +195,16 @@ function normalizeWeldingProcessCode(val) {
     return m ? m[1] : (s || null);
 }
 
-/** BW | FW */
+/** BW | FW | BW+FW | SW */
 function normalizeJointTypeCode(val) {
     const s = repairTextEncoding(String(val || '')).toUpperCase();
-    // STUD-1: SW dedicato (≠ FW). Stud/prigioniero prima di BW/FW per non collassare.
-    if (/\bSW\b/.test(s) || /\bSTUD\b/.test(s) || /PRIGIONIERO/.test(s)) return 'SW';
-    if (s === 'BW+FW' || /\bBW\s*\+\s*FW\b/.test(s) || (/\bBW\b/.test(s) && /\bFW\b/.test(s))) return 'BW+FW';
-    if (/\bBW\b/.test(s)) return 'BW';
-    if (/\bFW\b/.test(s)) return 'FW';
+    // STUD-1/2: SW dedicato (≠ FW). Stud/prigioniero prima di BW/FW per non collassare.
+    if (/\bSW\b/.test(s) || /\bSTUD\b/.test(s) || /PRIGIONIER/.test(s)) return 'SW';
+    const hasButt = /\bBW\b/.test(s) || /\bBUTT\s*WELD/.test(s);
+    const hasFillet = /\bFW\b/.test(s) || /\bFILLET\s*WELD/.test(s);
+    if (s === 'BW+FW' || /\bBW\s*\+\s*FW\b/.test(s) || (hasButt && hasFillet)) return 'BW+FW';
+    if (hasButt) return 'BW';
+    if (hasFillet) return 'FW';
     return ['BW', 'FW', 'BW+FW', 'SW'].includes(s) ? s : (s || null);
 }
 
