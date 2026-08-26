@@ -8,21 +8,29 @@
 
 > **Risposta standard a «stato di avanzamento del progetto e priorità da affrontare»**: sintetizzare da questa sezione (moduli maturi + sessione più recente + tabella priorità sotto), **non** dal banner storico più sotto (superato, tenuto solo per traccia) né dall'archivio marzo 2026 [`docs/archive/PROJECT_CONTEXT_STATO_FUNZIONALITA_2026-03.md`](archive/PROJECT_CONTEXT_STATO_FUNZIONALITA_2026-03.md). **Aggiornare questa sezione a fine sessione** se emergono nuove priorità o se una priorità elencata viene chiusa (stesso principio delle "Lezioni apprese" in [GUIDA_CONSOLIDATA.md](GUIDA_CONSOLIDATA.md) — sintesi qui, dettaglio linkato).
 
-**Ultimo aggiornamento di questa sezione**: 26/08/2026 (ISO 14555 digitalizzata `NORMA_00033`; CND base chiuso; STUD-1 da lanciare).
+**Ultimo aggiornamento di questa sezione**: 26/08/2026 (ISO 14555 `NORMA_00033` digitalizzata; STUD-1 WPQR stud/P+T chiuso; ciclo CND base chiuso).
 
 ### Moduli maturi (in produzione, uso quotidiano dai clienti Camellini/Mason)
 
-Audit multi-standard (9001/14001/45001) · Non Conformità (workflow ISO 10.2 completo) · Qualifiche Personale saldatori/NDT/coordinatori (ISO 9606-1/14732/14731/9712) · Saldatura (WPQR con range duali t1/t2 FW, generazione WPS, 15614-1/15614-2, Welding Book, Commesse ISO 3834, Dashboard 3834) · SAL (gap analysis requisiti con AI) · Registro Documenti + Scadenzari · Notifiche/Alert (documenti/NC/qualifiche) · Riesame di Direzione · RBAC multi-tenant (`company_access`) · Registro obblighi legali (ambiente + sicurezza) · Assistente AI / Gap Analysis euristica · CND verbali (VT/MT/PT, gate 9712, Word, Registro, offline).
+Audit multi-standard (9001/14001/45001) · Non Conformità (workflow ISO 10.2 completo) · Qualifiche Personale saldatori/NDT/coordinatori (ISO 9606-1/14732/14731/9712) · Saldatura (WPQR con range duali t1/t2 FW, tipologia SW/prigioniero + P+T + doppio materiale, generazione WPS, 15614-1/15614-2, Welding Book, Commesse ISO 3834, Dashboard 3834) · SAL (gap analysis requisiti con AI) · Registro Documenti + Scadenzari · Notifiche/Alert (documenti/NC/qualifiche) · Riesame di Direzione · RBAC multi-tenant (`company_access`) · Registro obblighi legali (ambiente + sicurezza) · Assistente AI / Gap Analysis euristica · CND verbali (VT/MT/PT, gate 9712, Word, Registro, offline).
 
 ### Sessione più recente (26/08/2026)
 
-**ISO 14555:2025 digitalizzata (26/08)** — PDF committente → `NORMA_00033` MD+JSON (PDF non in Git). Brief [`DEPUTYTASK_WPQR_STUD.md`](agent-tasks/DEPUTYTASK_WPQR_STUD.md) **STUD-1 APERTO**: campi senza range; range = STUD-3.
+**ISO 14555:2025 digitalizzata (26/08)** — PDF committente → `NORMA_00033` MD+JSON (PDF non in Git). Range = STUD-3 (estratto revisionato dal MD); non inventare soglie in STUD-1/2.
 
-**CND operatore — ciclo base chiuso** — CND-1…CND-4, CND-5a, CND-6…CND-9, CND-W su `main` (#582/#581…). Residuo CND: UT verbale (HITL modello), firma CND-10, foto offline.
+**WPQR STUD-1 (26/08)** — stream [`DEPUTYTASK_WPQR_STUD.md`](agent-tasks/DEPUTYTASK_WPQR_STUD.md) **CHIUSO — TEST OK**: tipologia `SW`, `qualifying_element`, diametro prigioniero (riuso `diameter_*`), Parent Metal 2, `product_type` `P+T`, mig. **159** in PROD. Nessun range ISO 14555 in STUD-1.
+
+**CND operatore — ciclo base chiuso** — CND-1…CND-4, CND-5a, CND-6…CND-9, CND-W su `main`. Slot [`DEPUTYTASK.md`](agent-tasks/DEPUTYTASK.md) / [`DEPUTYTASK1.md`](agent-tasks/DEPUTYTASK1.md) **CHIUSI**. Residuo CND: UT verbale (HITL modello), firma CND-10, foto offline.
+
+**CND-8 bozza come audit (26/08, mergiata #582)** — Nuovo verbale → UUID subito (`seedNdtLocalDraft`); offline via coda CND-9.
+
+**CND-5a ruoli strumento (26/08, mergiata #581)** — giogo / sonda / kit PT in Equipment (`ndtInstrumentRoles.js`).
+
+**CND-9 / CND-W / CND-7 / CND-6** — già su `main` (#578/#579, #577, #574, #575). Deploy VPS: gate 9712 + posa Registro se non ancora fatti.
 
 **NG-3 skill gap-analysis (25/08, mergiata #560)** — percorso «manca MD → backlog → HITL» + mapping.
 
-**WPQR t1/t2 + ISO 15614-2 (25/08, mergiata #558; reprocess #563; polish #566/#567)** — Mason: doppi range spessore FW e norma alluminio. Migrazione **158** in PROD, ingest/form/copertura WPS, norme `NORMA_00031`/`00032`, brief [`DEPUTYTASK_WPQR_T1T2.md`](agent-tasks/DEPUTYTASK_WPQR_T1T2.md) **CHIUSO**. Reprocess t1/t2 dal pannello superadmin (#563). Fix conteggio: escludi proposte pending + nascondi voci a 0 (#566). Gate registro Rielaborazioni su nuovo campo ingest vincolante in `sgq-operating-memory.mdc` (#567). Backlog: Tabella 4 gruppi Al, regole 9606-2 complete.
+**WPQR t1/t2 + ISO 15614-2 (25/08, mergiata #558; reprocess #563; polish #566/#567)** — Mason: doppi range spessore FW e norma alluminio. Migrazione **158** in PROD. Backlog: Tabella 4 gruppi Al; STUD-2/3 dopo PDF 14555.
 
 **NG-0+NG-1 fedeltà normativa (25/08)** — gate slice norm-touching, template richiesta PDF, backlog [`NORME_MANCANTI_BACKLOG.md`](reference/NORME_MANCANTI_BACKLOG.md), inventario skill aggiornato. **3834-2/-4:2021** già in repo + seed VPS.
 

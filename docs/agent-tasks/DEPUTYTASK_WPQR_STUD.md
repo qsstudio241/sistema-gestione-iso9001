@@ -1,11 +1,13 @@
 # DEPUTYTASK_WPQR_STUD — Stud Welding / prigioniero + Piastra–Tubo «entrambi»
 
-**Stato:** APERTO  
+**Stato:** CHIUSO — TEST OK  
 **Aperto:** 25/08/2026  
-**Branch gap (Lead):** `cursor/gap-wpqr-stud-887f`  
+**Chiuso:** 26/08/2026 — STUD-1  
+**Branch:** `cursor/wpqr-stud-fields-9c6b`  
+**PR:** https://github.com/qsstudio241/sistema-gestione-iso9001/pull/585  
 **Report:** [`docs/gap-reports/GAP_WPQR_STUD_WELDING_PIASTRA_TUBO_2026-08-25.md`](../gap-reports/GAP_WPQR_STUD_WELDING_PIASTRA_TUBO_2026-08-25.md)  
 **Rischio slice codice:** Medio — migrazione additiva nullable + FE/BE WPQR; **niente** auth/sync/breaking distruttivo  
-**Parallelo:** slot `DEPUTYTASK.md` / `DEPUTYTASK1.md` = **CHIUSI** (CND-8 / CND-5a, 26/08) — **liberi**. Questa slice è il **prossimo codice** da eseguire. GUIDA/roadmap: sync in PR docs post-CND o dopo merge STUD.
+**Parallelo:** slot `DEPUTYTASK.md` / `DEPUTYTASK1.md` = **CHIUSI** (CND-8 / CND-5a) — hub GUIDA/roadmap aggiornati in questa PR (unica chat codice aperta).
 
 > **Allineamento Git (autonomo)**: `git fetch origin main` + `git pull origin main` prima di eseguire. **Non** chiedere al committente.
 
@@ -27,10 +29,11 @@ Fonti Markdown:
 
 - **Codice / titolo**: BS EN ISO 14555:2025 (Arc stud welding of metallic materials)
 - **Stato**: `digitalizzata` → `NORMA_00033` (PDF **non** in Git)
-- **Serve a**: STUD-3 (range); STUD-1 resta campi senza range
-- **Cosa NON inventiamo in STUD-1**: soglie, clausole, range di validità stud, variabili essenziali 14555
-- **Perimetro STUD-1**: campi + doppio materiale + P+T su 15614-1 + verbale Mason 001P-21
-- **Dopo STUD-1**: estratto range da `NORMA_00033` → STUD-3 (+ seed VPS se utile)
+- **Serve a**: STUD-3 (range); STUD-1 chiuso senza range
+- **Cosa NON inventiamo senza estratto revisionato**: soglie, clausole, range di validità stud, variabili essenziali 14555
+- **Perimetro chiuso in STUD-1**: campi + doppio materiale + P+T su 15614-1 + verbale Mason 001P-21
+- **Prossimo**: estratto range da `NORMA_00033` → STUD-3 (+ seed VPS se utile)
+
 ## Perché
 
 Segnalazione Mason (post chiusura t1/t2): in inserimento WPQR «Stud Welding» mancano tipologia, componenti (base vs prigioniero), diametro prigioniero, range; su Piastra–Tubo non si selezionano entrambi i tipi prodotto né i range di ognuno. Screenshot verbale 001P-21 vs UI.
@@ -43,55 +46,25 @@ Segnalazione Mason (post chiusura t1/t2): in inserimento WPQR «Stud Welding» m
 
 ---
 
-## Slice 1 (STUD-1) — implementabile subito
+## Esito STUD-1 (26/08/2026)
 
-**Obiettivo**: conservare i dati del verbale senza calcolare range 14555.
+**Scelta tipologia:** opzione dedicata `SW` («Stud / prigioniero»), distinta da FW — non sotto-tipo FW (Stud Welding ≠ FW; BW/FW/BW+FW invariati).
 
-### DoD
+| DoD | Esito |
+|-----|--------|
+| 1. Tipologia SW | OK — form + schema ingest FE/BE |
+| 2. Elemento che si qualifica | OK — `qualifying_element` nullable (`base`/`stud`/`both`) |
+| 3. Diametro prigioniero | OK — riuso `diameter_*` + label contestuale se SW |
+| 4. Doppio materiale | OK — `base_material_group_2` + `base_material_spec_2` |
+| 5. product_type P+T | OK — form/schema; WPS: P+T usa regola piastra→tubo se manca diametro; P/T regressione OK |
+| 6. No range 14555 / no auth-sync / no t1t2 | OK |
+| 7. L1 | OK — backend jest mirati 83 pass; FE vitest 1388; `npm run build` OK |
+| 8. Migrazione 159 | OK — SQL + runner VPS; colonne aggiunte su PROD |
 
-1. Tipologia giunto: aggiungere opzione dedicata (es. `SW` / «Stud / prigioniero») **oppure** sotto-tipo su FW — documentare la scelta nel commit; non rompere BW/FW esistenti.
-2. Campo «elemento che si qualifica» (base / prigioniero / entrambi) — persistenza nullable.
-3. Diametro: se tipologia stud, label e semantica = **diametro prigioniero** (riuso colonne `diameter_*` o colonna dedicata nullable — preferire riuso se non crea ambiguità tubo).
-4. Doppio materiale: `base_material_group` + secondo gruppo/spec (nullable) per Parent Metal 1 e 2; form Modifica + schema ingest FE/BE allineati.
-5. `product_type`: consentire `P+T` (o equivalente) oltre a P/T; aggiornare schema + form; generatore WPS: non regressione su P-only / T-only; regola piastra→tubo esistente resta.
-6. **Vietato**: inventare tabelle range ISO 14555; toccare auth/sync; rifare t1/t2.
-7. L1: test mirati regole/schema + `npm run build` in `app/`.
-8. Migrazione additiva in coda (numero da dichiarare prima di scrivere il file) + runner VPS se serve.
+**Registro rielaborazioni:** voci `qualifying_element`, `material_group_2`, `base_material_spec_2` (sync whitelist + registry).
 
-### File previsti (STUD-1)
+**Backlog residuo:** STUD-2 (prompt ingest raffinato), STUD-3 (range 14555 + processi 4063 stud — blocco PDF), PT-1 se serve UX range lato P vs T.
 
-- `app/src/pages/WeldingProceduresPage.jsx` (+ CSS solo se necessario)
-- `app/src/data/documentTypeSchemas.js` + mirror `backend/src/data/documentTypeSchemas.js`
-- `backend/src/controllers/welding.controller.js` (campi WPQR additivi)
-- `backend/src/services/wpqrIngest.service.js` (+ test)
-- `backend/src/services/wpsGenerator.service.js` (+ test) — solo compatibilità P+T / labels
-- `database/migrations/<N>_wpqr_stud_fields.sql` + `run-migration-*-vps.js` se pattern repo
-- Eventuale `reprocessableFields` / gate registro se i nuovi campi sono vincolanti in ingest (regola operating-memory)
+Cloud Agent **non** dichiara «pronta» senza CI + Bugbot + Security Review letti.
 
-### Cosa NON toccare
-
-- `auth.middleware`, JWT, `syncService`
-- Migrazioni già applicate 158 / 142 (non riscrivere)
-- Slot `DEPUTYTASK.md`, `DEPUTYTASK1.md`, PLAN CND/NG
-- `docs/GUIDA_CONSOLIDATA.md` / `docs/PROJECT_ROADMAP.md` in questa PR di codice se c’è parallelo — bozza sotto, sync post-merge
-- Motore range 14555 (STUD-3)
-- Catalogo processi 4063 stud (opzionale con STUD-3)
-
-### Backlog (dopo STUD-1)
-
-| ID | Contenuto | Blocco |
-|----|-----------|--------|
-| STUD-2 | Prompt ingest: D₁, componenti, doppia spec | — |
-| STUD-3 | Range + regole ISO 14555 + processi 4063 stud | PDF 14555 |
-| PT-1 | Raffinare UX range lato P vs T se non chiuso in STUD-1 | — |
-
----
-
-## Bozza sync hub (dopo merge — non in PR codice se parallelo)
-
-- Roadmap § Sessione: «Gap WPQR Stud Welding + Piastra–Tubo; brief STUD APERTO; HITL 14555».
-- GUIDA lezione 1 riga: Stud Welding ≠ FW; senza 14555 solo campi, niente range inventati.
-
-## Esito atteso chiusura STUD-1
-
-`Stato: CHIUSO — TEST OK` + link PR. Cloud Agent **non** dichiara «pronta» senza CI + Bugbot + Security Review letti.
+> CI rilanciata 26/08 sera: i check required sul commit docs erano in startup_failure (coda runner); push con path `docs/agent-tasks` + `PROJECT_ROADMAP` per rieseguire CI app / harness / smoke.

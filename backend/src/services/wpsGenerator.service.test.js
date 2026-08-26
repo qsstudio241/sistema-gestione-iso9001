@@ -257,13 +257,43 @@ describe('checkDiameterCoverage — Tabella 9 (Level 2 variabile essenziale)', (
         expect(r.reason).toMatch(/non dichiarato/);
     });
 
-    test('WPQR testata su piastra, nessun diametro dichiarato, diametro richiesto >500mm → coperta (regola piastra→tubo generale)', () => {
+    test('WPQR product_type P+T senza diametro, diametro richiesto >500mm → coperta (lato piastra)', () => {
+        const r = checkDiameterCoverage(
+            { ...WPQR_TUBE_LEVEL2, diameter_min: null, diameter_max: null, product_type: 'P+T', welding_positions: 'PA' },
+            600
+        );
+        expect(r.ok).toBe(true);
+        expect(r.range.min).toBe(500);
+    });
+
+    test('WPQR product_type P+T con diametro dichiarato → usa range numerico (lato tubo)', () => {
+        const r = checkDiameterCoverage(
+            { ...WPQR_TUBE_LEVEL2, diameter_min: 50, diameter_max: 200, product_type: 'P+T' },
+            100
+        );
+        expect(r.ok).toBe(true);
+        const out = checkDiameterCoverage(
+            { ...WPQR_TUBE_LEVEL2, diameter_min: 50, diameter_max: 200, product_type: 'P+T' },
+            500
+        );
+        expect(out.ok).toBe(false);
+    });
+
+    test('WPQR product_type P-only senza diametro resta invariato (regressione)', () => {
         const r = checkDiameterCoverage(
             { ...WPQR_TUBE_LEVEL2, diameter_min: null, diameter_max: null, product_type: 'P', welding_positions: 'PA' },
             600
         );
         expect(r.ok).toBe(true);
-        expect(r.range.min).toBe(500);
+    });
+
+    test('WPQR product_type T-only senza diametro resta fail-closed (regressione)', () => {
+        const r = checkDiameterCoverage(
+            { ...WPQR_TUBE_LEVEL2, diameter_min: null, diameter_max: null, product_type: 'T' },
+            100
+        );
+        expect(r.ok).toBe(false);
+        expect(r.reason).toMatch(/non dichiarato/);
     });
 
     test('WPQR testata su piastra, diametro richiesto 500mm esatto (non >500) → NON coperta', () => {

@@ -277,7 +277,12 @@ function checkDiameterCoverage(wpqr, requiredDiameterMm) {
         // (e non deve esserci) un diametro dichiarato — ma la norma qualifica
         // automaticamente tubi di diametro >500mm, o >150mm se saldato in
         // posizione PC, oppure PF/PA con tubo esplicitamente dichiarato ruotato.
-        const isPlate = String(wpqr.product_type || '').trim().toUpperCase() === 'P';
+        const isPlate = (() => {
+            const pt = String(wpqr.product_type || '').trim().toUpperCase();
+            // STUD-1: P+T include copertura piastra → regola §8.3.3 resta applicabile
+            // se manca un diametro numerico dichiarato (lato tubo ancora da dichiarare).
+            return pt === 'P' || pt === 'P+T';
+        })();
         if (isPlate) {
             const rotated = wpqr.rotated_position === true || wpqr.rotated_position === 1 || wpqr.rotated_position === '1';
             const plateRule = isIso15614Part2(wpqr.standard_reference)
