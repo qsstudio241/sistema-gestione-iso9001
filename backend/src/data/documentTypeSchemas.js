@@ -120,13 +120,15 @@ Campi di copertura (pag.1 RANGE OF QUALIFICATION, priorita alta):
 - qualification_level: "1" o "2" solo se dichiarato esplicitamente (Level 1/2) - non dedurre
 - standard_reference: norma di riferimento (es. "UNI EN ISO 15614-1:2017" oppure "UNI EN ISO 15614-2:2025" per alluminio)
 - welding_process: codice ISO 4063 - preferire un codice numerico esplicito nel testo (es. "Welding process: 135") a un alias generico
-- joint_type: "BW", "FW" o "BW+FW"
-- product_type: "P" (piastra) o "T" (tubo) - variabile essenziale ISO 15614-1 par.8.3.3 per il diametro.
+- joint_type: "BW", "FW", "BW+FW" oppure "SW" (Stud / prigioniero — tipologia dedicata ≠ FW; non inventare range ISO 14555)
+- product_type: "P" (piastra), "T" (tubo) oppure "P+T" (entrambi) - variabile essenziale ISO 15614-1 par.8.3.3 per il diametro.
   Se il documento non lo specifica esplicitamente ma il "Range of qualification" per il diametro contiene
   una regola testuale tipo "> 500; > 150 for position PC, PF/PA rotated" (invece di un numero), significa
   che il provino e' stato testato su PIASTRA: imposta product_type: "P" e lascia diameter_min/diameter_max:
   null (NON trascrivere quella regola testuale come numero)
-- material_group: gruppo materiale ISO/TR 15608, preferire il sottogruppo (es. "1.2") se presente
+- material_group: gruppo materiale ISO/TR 15608 del Parent Metal 1 (base), preferire il sottogruppo (es. "1.2") se presente
+- material_group_2: gruppo materiale Parent Metal 2 (es. prigioniero) se il verbale dichiara DUE materiali/gruppi; null se uno solo
+- qualifying_element: "base" | "stud" | "both" — quale elemento si qualifica (base/prigioniero/entrambi); null se non dichiarato
 - thickness_test_mm: spessore del provino testato (numero)
 - thickness_min / thickness_max: range di spessore MATERIALE BASE DICHIARATO sul verbale (non calcolarlo) — se il verbale ha UN solo range
 - thickness_max_unlimited: booleano — true SOLO se il verbale dichiara esplicitamente un range aperto
@@ -139,8 +141,8 @@ Campi di copertura (pag.1 RANGE OF QUALIFICATION, priorita alta):
   distinti (t1 e t2), tipico FW con spessori diversi (es. "t1 = FW : from 3,0 to 50,0" e "t2 = FW : from 3,0 to 30,0"),
   popola questi campi per t1. Se c'è un solo range, lascia null e usa thickness_min/max.
 - thickness_t2_min / thickness_t2_max / thickness_t2_max_unlimited: come sopra per t2
-- diameter_min / diameter_max: range diametro tubo se applicabile (SOLO se un numero e' dichiarato -
-  vedi nota su product_type sopra per il caso testo/piastra)
+- diameter_min / diameter_max: range diametro — per tubo (product_type T/P+T) oppure diametro prigioniero se joint_type=SW
+  (SOLO se un numero e' dichiarato - vedi nota su product_type sopra per il caso testo/piastra)
 - throat_test_mm: spessore gola (throat) del provino testato, SOLO per giunti d'angolo/FW,
   se dichiarato esplicitamente sul verbale (Tabella 8) - numero, null se non applicabile o assente
 - welding_positions: array posizioni ISO 6947 (es. ["PA"])
@@ -154,7 +156,8 @@ Campi di copertura (pag.1 RANGE OF QUALIFICATION, priorita alta):
 - approval_date: data di emissione/approvazione del verbale (YYYY-MM-DD), preferire "Record issued"
 
 Parametri prova (pag.2, priorita media):
-- base_material_spec: specifica materiale base (es. "S355J2+N")
+- base_material_spec: specifica materiale Parent Metal 1 / base (es. "S355J2+N")
+- base_material_spec_2: specifica materiale Parent Metal 2 / prigioniero se presente (es. "S235J2H"); null se uno solo
 - shielding_gas: gas di protezione ISO 14175 (es. "M20", "M21"); se solo in designazione 14341, estrarre il simbolo gas
 - current_type: tipo di corrente (es. "DC-EP")
 - metal_transfer: modalita di trasferimento metallo
@@ -170,9 +173,11 @@ IMPORTANTE: non ricalcolare i range con formule - estrarre solo i valori dichiar
       qualification_level: '1|2|null',
       standard_reference: 'string|null',
       welding_process: 'string|null',
-      joint_type: 'BW|FW|BW+FW|null',
-      product_type: 'P|T|null',
+      joint_type: 'BW|FW|BW+FW|SW|null',
+      product_type: 'P|T|P+T|null',
       material_group: 'string|null',
+      material_group_2: 'string|null',
+      qualifying_element: 'base|stud|both|null',
       thickness_test_mm: 'number|null',
       thickness_min: 'number|null',
       thickness_max: 'number|null',
@@ -195,6 +200,7 @@ IMPORTANTE: non ricalcolare i range con formule - estrarre solo i valori dichiar
       welder_name: 'string|null',
       approval_date: 'YYYY-MM-DD|null',
       base_material_spec: 'string|null',
+      base_material_spec_2: 'string|null',
       shielding_gas: 'string|null',
       current_type: 'string|null',
       metal_transfer: 'string|null',

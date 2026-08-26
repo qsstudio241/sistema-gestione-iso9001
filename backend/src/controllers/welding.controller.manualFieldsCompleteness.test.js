@@ -27,6 +27,7 @@ describe('WPQR — completezza modifica manuale vs schema ingest AI', () => {
         const aliases = {
             wpqr_number: 'wpqr_code', // referenceNumber deriva da wpqr_code lato mapping ingest
             material_group: 'base_material_group',
+            material_group_2: 'base_material_group_2',
             thickness_test_mm: 'thickness_tested', // stesso concetto, nome colonna DB storico diverso
             approval_date: 'issue_date', // mapPipelineFieldsToReview: approval_date || issue_date
         };

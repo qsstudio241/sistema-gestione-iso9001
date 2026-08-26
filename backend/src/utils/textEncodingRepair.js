@@ -198,9 +198,12 @@ function normalizeWeldingProcessCode(val) {
 /** BW | FW */
 function normalizeJointTypeCode(val) {
     const s = repairTextEncoding(String(val || '')).toUpperCase();
+    // STUD-1: SW dedicato (≠ FW). Stud/prigioniero prima di BW/FW per non collassare.
+    if (/\bSW\b/.test(s) || /\bSTUD\b/.test(s) || /PRIGIONIERO/.test(s)) return 'SW';
+    if (s === 'BW+FW' || /\bBW\s*\+\s*FW\b/.test(s) || (/\bBW\b/.test(s) && /\bFW\b/.test(s))) return 'BW+FW';
     if (/\bBW\b/.test(s)) return 'BW';
     if (/\bFW\b/.test(s)) return 'FW';
-    return ['BW', 'FW'].includes(s) ? s : (s || null);
+    return ['BW', 'FW', 'BW+FW', 'SW'].includes(s) ? s : (s || null);
 }
 
 /** Valore select issuing_body */
