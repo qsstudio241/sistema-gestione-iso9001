@@ -13,6 +13,27 @@ import AutoTextarea from "../components/AutoTextarea.jsx";
 import NcCreateModal from "../components/NcCreateModal.jsx";
 import NdtItemAttachments from "../components/NdtItemAttachments.jsx";
 import { useNdtAutoSave } from "../hooks/useNdtAutoSave.js";
+import {
+    defaultMethodParams,
+    defaultPtParams,
+    defaultMtParams,
+    sanitizeMethodParams,
+    PT_ACC_OPTIONS,
+    PT_SURFACE_OPTIONS,
+    PT_CLEANING_OPTIONS,
+    PT_APP_OPTIONS,
+    PT_FINAL_OPTIONS,
+    PT_DEFECTS,
+    PT_PRESENT_OPTIONS,
+    PT_OUTCOME_OPTIONS,
+    MT_TRACER_OPTIONS,
+    MT_MAG_OPTIONS,
+    MT_MAG_MODE_OPTIONS,
+    MT_DEMAG_OPTIONS,
+    MT_SURF_OPTIONS,
+    MT_JUDG_OPTIONS,
+    MT_DEFECTS,
+} from "../utils/ndtMethodParams.js";
 import "./NdtReportsPage.css";
 import "../components/ChecklistModule.css";
 
@@ -72,6 +93,262 @@ export function inferInstrumentRole(inst) {
 export function resolveInstrumentRole(storedRole, inst) {
     if (storedRole && storedRole !== "other") return storedRole;
     return inferInstrumentRole(inst);
+}
+
+/** Gruppi radio / checkbox: stessa famiglia status-btn (etichette testo, come NC). */
+function MethodFlagGroup({ label, options, value, onChange, multi, ariaLabel, hint }) {
+    const selected = multi ? (Array.isArray(value) ? value : []) : value;
+    const isOn = (v) => (multi ? selected.includes(v) : selected === v);
+    const click = (v) => {
+        if (multi) {
+            onChange(isOn(v) ? selected.filter((x) => x !== v) : [...selected, v]);
+        } else {
+            onChange(v);
+        }
+    };
+    return (
+        <div className="ndt-method-group">
+            <span className="ndt-method-group-label">{label}</span>
+            {hint ? <span className="ndt-method-hint">{hint}</span> : null}
+            <div className="ndt-method-btns" role="group" aria-label={ariaLabel || label}>
+                {options.map((opt) => (
+                    <button
+                        key={opt.value}
+                        type="button"
+                        className={`status-btn ${opt.cls || "om"}${isOn(opt.value) ? " active" : ""}`}
+                        aria-pressed={isOn(opt.value)}
+                        onClick={() => click(opt.value)}
+                    >
+                        {opt.label}
+                    </button>
+                ))}
+            </div>
+        </div>
+    );
+}
+
+function PtMethodFields({ pt, onField, onDefect }) {
+    const p = pt || defaultPtParams();
+    return (
+        <div className="ndt-method-fields" data-testid="ndt-pt-method">
+            <p className="ndt-method-norm">
+                {"UNI EN ISO 3452-1 \u2014 accettazione UNI EN ISO 23277"}
+            </p>
+            <MethodFlagGroup
+                label="Accettazione 23277"
+                options={PT_ACC_OPTIONS}
+                value={p.acc}
+                onChange={(v) => onField("acc", v)}
+                ariaLabel="Livello accettazione PT"
+            />
+            <MethodFlagGroup
+                label="Superficie"
+                options={PT_SURFACE_OPTIONS}
+                value={p.surface}
+                onChange={(v) => onField("surface", v)}
+                ariaLabel="Condizione superficie PT"
+            />
+            <MethodFlagGroup
+                label="Pulizia superficiale"
+                options={PT_CLEANING_OPTIONS}
+                value={p.cleaning}
+                onChange={(v) => onField("cleaning", v)}
+                multi
+                hint="Pi\u00f9 scelte (nel modello Mason molatura e spazzolatura possono coesistere)."
+                ariaLabel="Pulizia superficiale PT"
+            />
+            <MethodFlagGroup
+                label="Applicazione"
+                options={PT_APP_OPTIONS}
+                value={p.application}
+                onChange={(v) => onField("application", v)}
+                ariaLabel="Applicazione penetrante"
+            />
+            <div className="ndt-params-grid">
+                <div className="ndt-form-group">
+                    <label htmlFor="pt-insp-pct">{"% controllo"}</label>
+                    <input id="pt-insp-pct" type="text" value={p.inspection_pct || ""} onChange={(e) => onField("inspection_pct", e.target.value)} />
+                </div>
+                <div className="ndt-form-group">
+                    <label htmlFor="pt-lux">Illuminamento (lux)</label>
+                    <input id="pt-lux" type="text" value={p.lux || ""} onChange={(e) => onField("lux", e.target.value)} />
+                </div>
+                <div className="ndt-form-group">
+                    <label htmlFor="pt-temp">{"Temperatura (\u00B0C)"}</label>
+                    <input id="pt-temp" type="text" value={p.temp || ""} onChange={(e) => onField("temp", e.target.value)} />
+                </div>
+                <div className="ndt-form-group">
+                    <label htmlFor="pt-pen">Penetrante</label>
+                    <input id="pt-pen" type="text" value={p.pen || ""} onChange={(e) => onField("pen", e.target.value)} />
+                </div>
+                <div className="ndt-form-group">
+                    <label htmlFor="pt-pen-lot">Lotto penetrante</label>
+                    <input id="pt-pen-lot" type="text" value={p.pen_lot || ""} onChange={(e) => onField("pen_lot", e.target.value)} />
+                </div>
+                <div className="ndt-form-group">
+                    <label htmlFor="pt-sol">Solvente</label>
+                    <input id="pt-sol" type="text" value={p.sol || ""} onChange={(e) => onField("sol", e.target.value)} />
+                </div>
+                <div className="ndt-form-group">
+                    <label htmlFor="pt-sol-lot">Lotto solvente</label>
+                    <input id="pt-sol-lot" type="text" value={p.sol_lot || ""} onChange={(e) => onField("sol_lot", e.target.value)} />
+                </div>
+                <div className="ndt-form-group">
+                    <label htmlFor="pt-det">Rilevatore</label>
+                    <input id="pt-det" type="text" value={p.det || ""} onChange={(e) => onField("det", e.target.value)} />
+                </div>
+                <div className="ndt-form-group">
+                    <label htmlFor="pt-det-lot">Lotto rilevatore</label>
+                    <input id="pt-det-lot" type="text" value={p.det_lot || ""} onChange={(e) => onField("det_lot", e.target.value)} />
+                </div>
+            </div>
+            <MethodFlagGroup
+                label="Esito finale"
+                options={PT_FINAL_OPTIONS}
+                value={p.final}
+                onChange={(v) => onField("final", v)}
+                ariaLabel="Esito finale PT"
+            />
+            <div className="ndt-method-group">
+                <span className="ndt-method-group-label">{"Difetti ISO 6520"}</span>
+                <span className="ndt-method-hint">{"Presenza s\u00ec / NA \u2014 esito A / NA / S (A accettabile, S scarto)."}</span>
+                <ul className="ndt-pt-defects" aria-label="Difetti PT ISO 6520">
+                    {PT_DEFECTS.map((d) => {
+                        const row = (p.defects && p.defects[d.code]) || { present: "", outcome: "" };
+                        return (
+                            <li key={d.code} className="ndt-pt-defect-row">
+                                <span className="ndt-pt-defect-name">
+                                    <span className="ndt-pt-defect-iso">{d.iso}</span>
+                                    {" "}{d.label}
+                                </span>
+                                <div className="ndt-eval-btns" role="group" aria-label={"Presenza " + d.label}>
+                                    {PT_PRESENT_OPTIONS.map((opt) => (
+                                        <button
+                                            key={opt.value}
+                                            type="button"
+                                            className={`status-btn ${opt.cls}${row.present === opt.value ? " active" : ""}`}
+                                            aria-pressed={row.present === opt.value}
+                                            onClick={() => onDefect(d.code, "present", opt.value)}
+                                        >
+                                            {opt.label}
+                                        </button>
+                                    ))}
+                                </div>
+                                <div className="ndt-eval-btns" role="group" aria-label={"Esito " + d.label}>
+                                    {PT_OUTCOME_OPTIONS.map((opt) => (
+                                        <button
+                                            key={opt.value}
+                                            type="button"
+                                            className={`status-btn ${opt.cls}${row.outcome === opt.value ? " active" : ""}`}
+                                            aria-pressed={row.outcome === opt.value}
+                                            onClick={() => onDefect(d.code, "outcome", opt.value)}
+                                        >
+                                            {opt.label}
+                                        </button>
+                                    ))}
+                                </div>
+                            </li>
+                        );
+                    })}
+                </ul>
+            </div>
+        </div>
+    );
+}
+
+function MtMethodFields({ mt, onField, onDefectToggle }) {
+    const m = mt || defaultMtParams();
+    return (
+        <div className="ndt-method-fields" data-testid="ndt-mt-method">
+            <p className="ndt-method-norm">
+                {"UNI EN ISO 17638 \u2014 accettazione UNI EN ISO 23278"}
+            </p>
+            <MethodFlagGroup
+                label="Tracciante"
+                options={MT_TRACER_OPTIONS}
+                value={m.tracer}
+                onChange={(v) => onField("tracer", v)}
+                ariaLabel="Tracciante MT"
+            />
+            <MethodFlagGroup
+                label="Magnetizzazione"
+                options={MT_MAG_OPTIONS}
+                value={m.mag}
+                onChange={(v) => onField("mag", v)}
+                ariaLabel="Magnetizzazione MT"
+            />
+            <MethodFlagGroup
+                label="Modo"
+                options={MT_MAG_MODE_OPTIONS}
+                value={m.mag_mode}
+                onChange={(v) => onField("mag_mode", v)}
+                ariaLabel="Modo magnetizzazione MT"
+            />
+            <div className="ndt-params-grid">
+                <div className="ndt-form-group">
+                    <label htmlFor="mt-pole">Passo poli</label>
+                    <input id="mt-pole" type="text" value={m.pole_pitch || ""} onChange={(e) => onField("pole_pitch", e.target.value)} placeholder="es. 150\u00f7180 mm" />
+                </div>
+                <div className="ndt-form-group">
+                    <label htmlFor="mt-curr-type">Tipo corrente</label>
+                    <input id="mt-curr-type" type="text" value={m.curr_type || ""} onChange={(e) => onField("curr_type", e.target.value)} placeholder="es. CA" />
+                </div>
+                <div className="ndt-form-group">
+                    <label htmlFor="mt-curr-a">Intensit\u00e0</label>
+                    <input id="mt-curr-a" type="text" value={m.curr_a || ""} onChange={(e) => onField("curr_a", e.target.value)} />
+                </div>
+                <div className="ndt-form-group">
+                    <label htmlFor="mt-field">Campo (Asp/m)</label>
+                    <input id="mt-field" type="text" value={m.field || ""} onChange={(e) => onField("field", e.target.value)} />
+                </div>
+                <div className="ndt-form-group">
+                    <label htmlFor="mt-insp-pct">{"% controllo"}</label>
+                    <input id="mt-insp-pct" type="text" value={m.inspection_pct || ""} onChange={(e) => onField("inspection_pct", e.target.value)} />
+                </div>
+            </div>
+            <MethodFlagGroup
+                label="Smagnetizzazione"
+                options={MT_DEMAG_OPTIONS}
+                value={m.demag}
+                onChange={(v) => onField("demag", v)}
+                ariaLabel="Smagnetizzazione MT"
+            />
+            <MethodFlagGroup
+                label="Superficie"
+                options={MT_SURF_OPTIONS}
+                value={m.surf}
+                onChange={(v) => onField("surf", v)}
+                ariaLabel="Superficie MT"
+            />
+            <MethodFlagGroup
+                label="Giudizio"
+                options={MT_JUDG_OPTIONS}
+                value={m.judg}
+                onChange={(v) => onField("judg", v)}
+                ariaLabel="Giudizio MT"
+            />
+            <div className="ndt-method-group">
+                <span className="ndt-method-group-label">{"Difetti ISO 6520 (presenza)"}</span>
+                <span className="ndt-method-hint">{"Codice sulla prova \u2014 il giudizio A/R/S resta sulle marche."}</span>
+                <div className="ndt-method-btns" role="group" aria-label="Difetti MT presenza">
+                    {MT_DEFECTS.map((d) => {
+                        const on = !!(m.defects && m.defects[d.code]);
+                        return (
+                            <button
+                                key={d.code}
+                                type="button"
+                                className={`status-btn om${on ? " active" : ""}`}
+                                aria-pressed={on}
+                                onClick={() => onDefectToggle(d.code)}
+                            >
+                                {d.code}{" \u2014 "}{d.label}
+                            </button>
+                        );
+                    })}
+                </div>
+            </div>
+        </div>
+    );
 }
 
 // ── Riga Elenco Marche ────────────────────────────────────────────────────────
@@ -230,7 +507,7 @@ function NdtReportForm({ report, companies, availableInstruments, onSave, onCanc
         material_standard: "UNI EN ISO 10025-2",
         joint_type: "SALDATURA AD ANGOLO MONO E MULTI PASSATA",
         quality_level: "UNI EN ISO 5817 Lev.C",
-        method_params: { illuminance_min: 350, illuminance_max: 500, illuminance_measured: "", power_w: "", wavelength: "" },
+        method_params: defaultMethodParams("VT"),
         notes: "NULLA DA SEGNALARE, L\u2019ESITO \u00C8 DA RITENERSI SODDISFACENTE.",
         inspection_date: "",
         certificate_date: "",
@@ -255,7 +532,7 @@ function NdtReportForm({ report, companies, availableInstruments, onSave, onCanc
             material_standard:    report.material_standard || "UNI EN ISO 10025-2",
             joint_type:           report.joint_type || "SALDATURA AD ANGOLO MONO E MULTI PASSATA",
             quality_level:        report.quality_level || "UNI EN ISO 5817 Lev.C",
-            method_params:        report.method_params ? (typeof report.method_params === "string" ? JSON.parse(report.method_params) : report.method_params) : emptyForm.method_params,
+            method_params:        sanitizeMethodParams(report.report_type || "VT", report.method_params),
             notes:                report.notes || emptyForm.notes,
             inspection_date:      report.inspection_date ? report.inspection_date.substring(0, 10) : "",
             certificate_date:     report.certificate_date ? report.certificate_date.substring(0, 10) : "",
@@ -294,6 +571,7 @@ function NdtReportForm({ report, companies, availableInstruments, onSave, onCanc
     const [sections, setSections] = useState({
         general:     true,          // sempre aperta: dati essenziali
         instruments: !isMobile,     // chiusa su mobile
+        method:      !isMobile,
         marks:       !isMobile,     // chiusa su mobile
         notes:       !isMobile,
         signatures:  !isMobile,
@@ -416,6 +694,24 @@ function NdtReportForm({ report, companies, availableInstruments, onSave, onCanc
 
     const set = (k, v) => setForm(f => ({ ...f, [k]: v }));
     const setParam = (k, v) => setForm(f => ({ ...f, method_params: { ...f.method_params, [k]: v } }));
+    const setPtField = (k, v) => setForm((f) => ({
+        ...f,
+        method_params: { pt: { ...(f.method_params?.pt || defaultPtParams()), [k]: v } },
+    }));
+    const setPtDefect = (code, field, value) => setForm((f) => {
+        const pt = { ...(f.method_params?.pt || defaultPtParams()) };
+        const row = { ...(pt.defects?.[code] || { present: "", outcome: "" }), [field]: value };
+        return { ...f, method_params: { pt: { ...pt, defects: { ...pt.defects, [code]: row } } } };
+    });
+    const setMtField = (k, v) => setForm((f) => ({
+        ...f,
+        method_params: { mt: { ...(f.method_params?.mt || defaultMtParams()), [k]: v } },
+    }));
+    const toggleMtDefect = (code) => setForm((f) => {
+        const mt = { ...(f.method_params?.mt || defaultMtParams()) };
+        const defects = { ...mt.defects, [code]: !mt.defects?.[code] };
+        return { ...f, method_params: { mt: { ...mt, defects } } };
+    });
     const toggleSection = (k) => setSections(s => ({ ...s, [k]: !s[k] }));
 
     const addMarkRow = () => setItems(prev => [...prev, { ...EMPTY_ITEM }]);
@@ -446,6 +742,7 @@ function NdtReportForm({ report, companies, availableInstruments, onSave, onCanc
                 company_id: form.company_id ? parseInt(form.company_id) : null,
                 project_id: form.project_id ? parseInt(form.project_id, 10) : null,
                 status: targetStatus || form.status,
+                method_params: sanitizeMethodParams(form.report_type, form.method_params),
                 items,
                 instrument_ids: selectedInstruments.map(i => ({ asset_id: i.asset_id, instrument_role: i.role })),
             };
@@ -491,6 +788,8 @@ function NdtReportForm({ report, companies, availableInstruments, onSave, onCanc
 
     const reportTypeLabel = REPORT_TYPES.find(t => t.value === form.report_type)?.label || form.report_type;
     const isVT = form.report_type === "VT";
+    const isPT = form.report_type === "PT";
+    const isMT = form.report_type === "MT";
 
     return (
         <div className="ndt-form-page">
@@ -552,10 +851,18 @@ function NdtReportForm({ report, companies, availableInstruments, onSave, onCanc
                         <div className="ndt-section-body">
                             <div className="ndt-form-row">
                                 <div className="ndt-form-group">
-                                    <label>Tipo metodo</label>
+                                    <label htmlFor="ndt-report-type">Tipo metodo</label>
                                     <select
+                                        id="ndt-report-type"
                                         value={form.report_type}
-                                        onChange={e => set("report_type", e.target.value)}
+                                        onChange={e => {
+                                            const v = e.target.value;
+                                            setForm((f) => ({
+                                                ...f,
+                                                report_type: v,
+                                                method_params: defaultMethodParams(v),
+                                            }));
+                                        }}
                                         disabled={isEdit}
                                         title={isEdit ? "Il metodo \u00e8 fissato alla creazione (numero verbale)." : undefined}
                                     >
@@ -834,10 +1141,41 @@ function NdtReportForm({ report, companies, availableInstruments, onSave, onCanc
                     )}
                 </div>
 
-                {/* ── Sezione 3: Elenco Marche ──────────────────────────────── */}
+                {/* ── Sezione metodo PT/MT (CND-3) ─────────────────────────── */}
+                {(isPT || isMT) && (
+                    <div className="ndt-section">
+                        <button type="button" className="ndt-section-toggle" onClick={() => toggleSection("method")}>
+                            <span className="ndt-section-num">3</span>
+                            <span className="ndt-section-title">
+                                {isPT ? "Parametri metodo PT" : "Parametri metodo MT"}
+                            </span>
+                            <span className="ndt-section-chevron">{sections.method ? "\u25B2" : "\u25BC"}</span>
+                        </button>
+                        {sections.method && (
+                            <div className="ndt-section-body">
+                                {isPT && (
+                                    <PtMethodFields
+                                        pt={form.method_params?.pt}
+                                        onField={setPtField}
+                                        onDefect={setPtDefect}
+                                    />
+                                )}
+                                {isMT && (
+                                    <MtMethodFields
+                                        mt={form.method_params?.mt}
+                                        onField={setMtField}
+                                        onDefectToggle={toggleMtDefect}
+                                    />
+                                )}
+                            </div>
+                        )}
+                    </div>
+                )}
+
+                {/* ── Sezione 3/4: Elenco Marche ───────────────────────────── */}
                 <div className="ndt-section">
                     <button type="button" className="ndt-section-toggle" onClick={() => toggleSection("marks")}>
-                        <span className="ndt-section-num">3</span>
+                        <span className="ndt-section-num">{isPT || isMT ? "4" : "3"}</span>
                         <span className="ndt-section-title">
                             {"Elenco Marche (" + items.length + " righe)"}
                             {defectSummary.hasDefects && (
@@ -880,7 +1218,7 @@ function NdtReportForm({ report, companies, availableInstruments, onSave, onCanc
                 {/* ── Sezione 4: Note e Certificazione ─────────────────────── */}
                 <div className="ndt-section">
                     <button type="button" className="ndt-section-toggle" onClick={() => toggleSection("notes")}>
-                        <span className="ndt-section-num">4</span>
+                        <span className="ndt-section-num">{isPT || isMT ? "5" : "4"}</span>
                         <span className="ndt-section-title">Note e Certificazione</span>
                         <span className="ndt-section-chevron">{sections.notes ? "\u25B2" : "\u25BC"}</span>
                     </button>
@@ -984,7 +1322,7 @@ function NdtReportForm({ report, companies, availableInstruments, onSave, onCanc
                 {/* ── Sezione 5: Ufficializzazione ─────────────────────────── */}
                 <div className="ndt-section">
                     <button type="button" className="ndt-section-toggle" onClick={() => toggleSection("signatures")}>
-                        <span className="ndt-section-num">5</span>
+                        <span className="ndt-section-num">{isPT || isMT ? "6" : "5"}</span>
                         <span className="ndt-section-title">Ufficializzazione e Firme</span>
                         <span className="ndt-section-chevron">{sections.signatures ? "\u25B2" : "\u25BC"}</span>
                     </button>
