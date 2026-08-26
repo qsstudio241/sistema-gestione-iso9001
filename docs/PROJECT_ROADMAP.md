@@ -8,17 +8,19 @@
 
 > **Risposta standard a «stato di avanzamento del progetto e priorità da affrontare»**: sintetizzare da questa sezione (moduli maturi + sessione più recente + tabella priorità sotto), **non** dal banner storico più sotto (superato, tenuto solo per traccia) né dall'archivio marzo 2026 [`docs/archive/PROJECT_CONTEXT_STATO_FUNZIONALITA_2026-03.md`](archive/PROJECT_CONTEXT_STATO_FUNZIONALITA_2026-03.md). **Aggiornare questa sezione a fine sessione** se emergono nuove priorità o se una priorità elencata viene chiusa (stesso principio delle "Lezioni apprese" in [GUIDA_CONSOLIDATA.md](GUIDA_CONSOLIDATA.md) — sintesi qui, dettaglio linkato).
 
-**Ultimo aggiornamento di questa sezione**: 25/08/2026 (CND-2 #561; NG-3 #560; WPQR t1/t2 #558/#563; reprocess polish #566/#567).
+**Ultimo aggiornamento di questa sezione**: 26/08/2026 (brief CND-3 + NG-4 #564; STUD-1 stream #569; reprocess polish #566/#567).
 
 ### Moduli maturi (in produzione, uso quotidiano dai clienti Camellini/Mason)
 
 Audit multi-standard (9001/14001/45001) · Non Conformità (workflow ISO 10.2 completo) · Qualifiche Personale saldatori/NDT/coordinatori (ISO 9606-1/14732/14731/9712) · Saldatura (WPQR con range duali t1/t2 FW, generazione WPS, 15614-1/15614-2, Welding Book, Commesse ISO 3834, Dashboard 3834) · SAL (gap analysis requisiti con AI) · Registro Documenti + Scadenzari · Notifiche/Alert (documenti/NC/qualifiche) · Riesame di Direzione · RBAC multi-tenant (`company_access`) · Registro obblighi legali (ambiente + sicurezza) · Assistente AI / Gap Analysis euristica.
 
-### Sessione più recente (25/08/2026)
+### Sessione più recente (26/08/2026)
 
-**CND-2 gate ispettore 9712 + idoneità visiva (25/08, mergiata #561)** — sul verbale CND Completa/firma solo con patentino ISO 9712 valido **per il metodo** (livello 2 o 3) **e** visione in corso. Bozza sempre salvabile. Brief [`DEPUTYTASK1.md`](agent-tasks/DEPUTYTASK1.md) **CHIUSO**. Prossima slice CND: **CND-3** (flag PT/MT, stesso JSX). Serve deploy backend (`ndtInspectorGate.service.js`).
+**Brief paralleli aperti** — [`DEPUTYTASK.md`](agent-tasks/DEPUTYTASK.md) **CND-3** (flag PT/MT → `method_params`); [`DEPUTYTASK1.md`](agent-tasks/DEPUTYTASK1.md) **NG-4** (messaggio «norma assente» in chat/gap). File disgiunti. Stream [`DEPUTYTASK_WPQR_STUD.md`](agent-tasks/DEPUTYTASK_WPQR_STUD.md) **STUD-1** APERTO (#569 gap) — WPQR prigioniero / P+T; **non** tocca gli slot CND/NG.
 
-**NG-3 skill gap-analysis (25/08, mergiata #560)** — percorso «manca MD → backlog → HITL» + mapping. Brief [`DEPUTYTASK.md`](agent-tasks/DEPUTYTASK.md) **CHIUSO**.
+**CND-2 gate ispettore 9712 + idoneità visiva (25/08, mergiata #561)** — Completa/firma solo con patentino ISO 9712 valido **per il metodo** (livello 2 o 3) **e** visione in corso. Serve ancora deploy backend (`ndtInspectorGate.service.js`) se non fatto.
+
+**NG-3 skill gap-analysis (25/08, mergiata #560)** — percorso «manca MD → backlog → HITL» + mapping.
 
 **WPQR t1/t2 + ISO 15614-2 (25/08, mergiata #558; reprocess #563; polish #566/#567)** — Mason: doppi range spessore FW e norma alluminio. Migrazione **158** in PROD, ingest/form/copertura WPS, norme `NORMA_00031`/`00032`, brief [`DEPUTYTASK_WPQR_T1T2.md`](agent-tasks/DEPUTYTASK_WPQR_T1T2.md) **CHIUSO**. Reprocess t1/t2 dal pannello superadmin (#563). Fix conteggio: escludi proposte pending + nascondi voci a 0 (#566). Gate registro Rielaborazioni su nuovo campo ingest vincolante in `sgq-operating-memory.mdc` (#567). Backlog: Tabella 4 gruppi Al, regole 9606-2 complete.
 

@@ -1,57 +1,49 @@
-# DEPUTYTASK1 — CND-2: gate ispettore 9712 + idoneità visiva
+# DEPUTYTASK1 — NG-4: messaggio «norma assente» in chat / gap
 
-**Stato:** CHIUSO — TEST OK  
+**Stato:** APERTO  
 **Aperto:** 25/08/2026  
-**Chiuso:** 25/08/2026  
-**Piano:** [`PLAN_CND_SLICES.md`](PLAN_CND_SLICES.md) (= ISO-9; **non** da PLAN 3834)  
-**Rischio:** Medio — FE + BE NDT; niente auth/sync/schema distruttivo.  
-**Parallelo a:** NG-3 su [`DEPUTYTASK.md`](DEPUTYTASK.md) — **file disgiunti** (questa slice = verbali NDT).
+**Piano:** [`PLAN_NORM_FIDELITY_SLICES.md`](PLAN_NORM_FIDELITY_SLICES.md)  
+**Dipende da:** NG-0 + NG-1 + NG-3 **CHIUSI**  
+**Rischio:** Medio — BE AI (NormBroker / chat / gap); niente auth JWT, niente sync audit, niente migrazioni.  
+**Parallelo a:** CND-3 su [`DEPUTYTASK.md`](DEPUTYTASK.md) e STUD-1 su [`DEPUTYTASK_WPQR_STUD.md`](DEPUTYTASK_WPQR_STUD.md) — **file disgiunti** (questa slice = AI runtime, non verbali NDT / WPQR).
 
 ## Fonti Markdown
 
-- Coperte: estratto [`ISO_9712_2022_NDT_QUALIFICATION.md`](../reference/ISO_9712_2022_NDT_QUALIFICATION.md); qualifiche NDT in anagrafica; `visionFitness.service.js`
-- Mancanti: testo integrale ISO 9712 in `docs/Normative/` → già in backlog; **non ha bloccato**
-- Si parte su: gate UI/API su verbale usando qualifiche + visione già in DB
+- Coperte: ADR-010 (NormBroker), gap report [`GAP_NORM_FIDELITY_STRATEGICA_2026-08-25.md`](../gap-reports/GAP_NORM_FIDELITY_STRATEGICA_2026-08-25.md), backlog [`NORME_MANCANTI_BACKLOG.md`](../reference/NORME_MANCANTI_BACKLOG.md), pattern già in `salAiSuggest.service.js` (`textAvailable=false` + messaggio onesto)
+- Mancanti: PDF HITL (NG-2) — **non bloccante** per questa slice
+- Si parte su: quando il broker non trova clausola/standard, l’utente vede un messaggio chiaro invece di un’allucinazione
 
 ## Perché
 
-L’operatore può ancora risultare «ispettore» a testo libero senza legame al patentino 9712 e all’idoneità visiva. CND-2 chiude il gate per studio e per azienda con licenza `cnd`/`saldatura`.
+NormBroker già restituisce `null` e logga «not found»; SAL suggest degrada con grazia. Chat Assistente / gap analysis possono ancora rispondere come se il testo ci fosse. NG-4 chiude il loop **prodotto**: «norma assente → dillo e indica cosa fare (Registro / Carica norme / chiedi PDF)», senza inventare clausole.
 
-## DoD (da PLAN_CND)
+## DoD
 
-1. Prima di consentire giudizio/firma sul verbale: verificare qualifica 9712 **valida** per il metodo del verbale **e** visita medica/visione ok (`visionFitness` / pattern già in repo).
-2. Stesso codice per ambito studio e azienda cliente (licenza).
-3. UI: messaggio chiaro se gate fallisce; azioni operative restano visibili (`disabled` + `title` se manca prerequisito).
-4. Test L1 mirati + build `app/`; smoke percorso CND/qualifiche se tocchi API deployata.
-5. Aggiornare PLAN_CND (spuntare CND-2); brief CHIUSO.
+1. Helper o contratto unico (es. su `normBroker` o modulo piccolo riusato) che, se clausola/standard assente, espone un messaggio **stabile** in italiano (UTF-8, accenti corretti) del tipo: testo non in archivio locale → non valutare a caso → indica percorso Registro Documenti / ingest norme / richiesta allo studio.
+2. Collegare il messaggio almeno a **due** punti runtime già esistenti tra: `aiChat` / `aiContextBuilder` / `gapAnalysis` / suggest che usa `getClauseText` — riusare il pattern `salAiSuggest` dove possibile.
+3. **Non** inventare testo normativo di fallback; **non** spegnere la chat intera (graceful: risposta utile + avviso fonte mancante).
+4. Test L1 (Jest) sul caso `getClauseText` → null / standard sconosciuto.
+5. Spuntare NG-4 in PLAN_NORM; brief **CHIUSO** — TEST OK.
+6. Eventuale 1 riga in backlog se emerge lacuna ricorrente (non obbligatorio).
 
-## File toccati
+## File previsti
 
-- `backend/src/services/ndtInspectorGate.service.js` (+ test Jest)
-- `backend/src/controllers/ndtReports.controller.js` (+ test gate 409)
-- `backend/src/routes/ndtReports.routes.js` — `GET /ndt-reports/inspector-eligibility`
-- `backend/scripts/deploy-manifest.json`
-- `app/src/pages/NdtReportsPage.jsx` / `.css`
-- `app/src/services/apiService.js`
-- `app/src/tests/ndtReportsInspectorGate.test.jsx`
-- `docs/agent-tasks/PLAN_CND_SLICES.md`, questo brief
+- `backend/src/services/normBroker.service.js` (+ test se presente / nuovo test mirato)
+- uno o due tra: `backend/src/controllers/aiChat.controller.js`, `backend/src/services/aiContextBuilder.service.js`, `backend/src/services/gapAnalysis.service.js` (solo i punti dove oggi si tace o si inventa)
+- eventuale riuso messaggio già in `salAiSuggest.service.js` (estrarre costante condivisa se evita duplicazione)
+- `docs/agent-tasks/PLAN_NORM_FIDELITY_SLICES.md` + questo brief (chiusura)
 
-Niente migrazione: match per nome ispettore sulle qualifiche esistenti (colonna `inspector_qualification_id` non necessaria).
+## Cosa NON toccare
 
-## Cosa NON toccare (rispettato)
-
-- `DEPUTYTASK.md` / skill gap / `NORME_MANCANTI`
-- CND-3 flag PT/MT
-- Template Word, ingest `report_ndt`, auth, sync, migrazioni distruttive
-- GUIDA / roadmap § Stato attuale (parallelo NG-3 — sync dopo merge)
+- `DEPUTYTASK.md` / CND / `NdtReportsPage` / controller NDT
+- NG-2 runbook ingest (HITL PDF), NG-5 conformità legislativa profilo
+- Scraping UNI Store / nuovi connettori ADR-010
+- Auth, sync, migrazioni, seed VPS
+- Installazione skill GitHub esterne
+- GUIDA / roadmap § Stato attuale (parallelo CND-3 — sync **dopo merge**)
 
 ## Verifica
 
-- [x] Gate 9712 + visione attivo sul flusso verbale (UI + API completed/approved)
-- [x] L1 + build OK (Jest gate/controller; Vitest CND-1/CND-2/strumenti; `app` build)
-- [x] PLAN_CND CND-2 spuntato; brief CHIUSO — TEST OK
-
-## Bozza dopo merge (parallelo NG-3)
-
-- GUIDA: 1 riga lezione — gate verbale CND riusa Qualifiche + `visionFitness`, non una anagrafica operatori; Completa/giudizio restano visibili (`disabled`+`title`).
-- Roadmap § Stato attuale: CND-2 gate 9712+visione sul verbale; prossima codice CND-3 (flag PT/MT).
+- [ ] Con clausola assente: messaggio onesto, nessuna allucinazione di testo norma
+- [ ] Test L1 verdi sul caso null
+- [ ] PLAN NG-4 spuntato; brief CHIUSO — TEST OK

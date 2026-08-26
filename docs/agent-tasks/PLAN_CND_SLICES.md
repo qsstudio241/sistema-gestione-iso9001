@@ -2,8 +2,8 @@
 
 > **Destinazione**: uno studio (Mason) e l’operatore CND chiudono sul telefono il ciclo **incarico → esecuzione in campo → verbale Word + eventuale NC**, riusando qualifiche ISO 9712, strumenti, commesse, foto e PWA già in produzione. Niente app nativa, niente secondo motore, niente tabelle gemelle.
 > **Spec / ADR**: [ISO 9712:2022](../reference/ISO_9712_2022_NDT_QUALIFICATION.md) · ADR-004 (auth mobile) · ADR-016 (strumenti trasversali, verbali ≠ Welding Book) · [PLAN ISO 3834](PLAN_3834_SLICES.md) (ISO-1b/ISO-7 fatti; **ISO-9** eseguita qui come CND-2)
-> **Brief attivi**: [`DEPUTYTASK1.md`](DEPUTYTASK1.md) **CND-2 CHIUSO** (#561). **CND-1** CHIUSO (#549). **CND-4** CHIUSO (#547). **CND-11** CHIUSO (#546).
-> **Mappa**: CND-0 #540 · spike HTML · CND-1/2/4/11 su `main`. **Prossima codice CND**: **CND-3** (flag PT/MT; stesso JSX — non in parallelo).
+> **Brief attivi**: [`DEPUTYTASK.md`](DEPUTYTASK.md) **CND-3 APERTO**. **CND-2** CHIUSO (#561). **CND-1** CHIUSO (#549). **CND-4** CHIUSO (#547). **CND-11** CHIUSO (#546).
+> **Mappa**: CND-0 #540 · spike HTML · CND-1/2/4/11 su `main`. **Ora**: **CND-3** (flag PT/MT) in parallelo a NG-4 (file disgiunti).
 > **Licenza**: modulo `cnd` (bridge: licenza `saldatura` implica `cnd`)
 > **Schermate oggi**: `/cnd/verbali` (`NdtReportsPage.jsx`) · `/cnd/strumenti` (`EquipmentPage.jsx`) · Qualifiche tab NDT
 
@@ -168,7 +168,7 @@ Ogni slice è un **tracciante verticale** (un passaggio del flusso), non «tutto
 | **CND-PREVIEW** | Spike HTML specchio flag PT (timebox, usa-e-getta) | `docs/agent-tasks/spike-cnd-pt-preview.html` + `SPIKE_CND_HTML_PREVIEW.md` | — | HITL | **non** sostituisce CND-4; vietato `NdtReportsPage` / `vtWordExport` |
 | **CND-1** | Verbale VT usabile in tasca (marche a scheda, non tabella da scroll) | `NdtReportsPage.jsx` / `.css`, riuso `status-btn` (`ChecklistModule.css`) + `NdtItemAttachments` | — | AFK | *chiusa* (#549) — **non riaprire** lo stesso JSX |
 | **CND-2** | Gate ispettore: 9712 valida **e** visita medica/visione (`visionFitness.service.js`); stesso codice per studio e per azienda con licenza | `NdtReportsPage.jsx`, `ndtReports.controller.js`, `ndtInspectorGate.service.js` (GET qualifiche + visione già in DB; **niente** colonna `inspector_qualification_id`) | CND-1 (stesso JSX) | ✅ 25/08 | = ISO-9; **non** aprire da PLAN 3834 |
-| **CND-3** | UI flag PT **e** MT da modelli Mason → `method_params` JSON (metodi indipendenti, nessuna tabella nuova) | `NdtReportsPage.jsx` sezioni metodo; catalogo in appendice | CND-1 (stesso JSX) | AFK | dopo CND-1; **non** parallelo a CND-1 |
+| **CND-3** | UI flag PT **e** MT da modelli Mason → `method_params` JSON (metodi indipendenti, nessuna tabella nuova) | `NdtReportsPage.jsx` sezioni metodo; catalogo in appendice | CND-1+CND-2 (stesso JSX) | AFK **APERTO** | [`DEPUTYTASK.md`](DEPUTYTASK.md); parallelo NG-4 (file disgiunti) |
 | **CND-4** | Scope `cnd` in Template report + upload modelli Mason `.docx` + resolve per `report_type` | `ReportTemplatesAdminPage.jsx`, `reportTemplate.service.js` / controller, `vtWordExport.js` resolve VPS (come NC) | — | ✅ 23/08 | *chiusa* (#547) |
 | **CND-5** | Parametri UT + ruoli strumento non-VT (sonda/giogo) su anagrafica esistente | `NdtReportsPage.jsx`, `EquipmentPage.jsx` (etichette ruolo) | CND-3 | AFK | serializzare con CND-3 sullo stesso JSX; EquipmentPage può partire in parallelo a CND-2 se **solo** CSS/etichette ruoli |
 | **CND-6** | Foto + NC da marca in campo (hardening mobile del già fatto) | `NdtItemAttachments.jsx`, hint `NcCreateModal` | CND-1 | AFK | dopo CND-1; file allegati **disgiunti** da CND-2 se non si tocca la pagina verbale |
@@ -188,17 +188,16 @@ Su `main` (23/08 sera):
   CND-11 *chiusa* #546
   CND-PREVIEW spike visibile via htmlpreview (#548/#550)
 
-Domani (dopo deploy Netlify; può lag) — **una slice**:
-  CND-2  (gate 9712+visione, stesso JSX)  **oppure**
-  CND-3  (flag PT/MT, stesso JSX)
-  (CND-9 hook / CND-6 allegati: solo se file disgiunti dalla slice scelta)
+Ora (25/08, post CND-2 #561):
+  CND-3  (flag PT/MT, stesso JSX) — APERTO su DEPUTYTASK.md
+  NG-4  (norma assente chat/gap) — parallelo, file disgiunti
 
-Dopo merge CND-2:
-  CND-3  (flag PT/MT, stesso JSX)
+Dopo merge CND-3:
   CND-7  (posa registro, controller)
+  CND-6 / CND-9 se file liberi
   CND-8  (crea bozza come audit)         ← dopo CND-9
 
-Dopo merge CND-3 + CND-4:
+Dopo merge CND-3 + CND-4 (già chiusa):
   CND-5  (UT quando c’è modello)
 ```
 
