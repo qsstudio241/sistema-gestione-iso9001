@@ -4,6 +4,7 @@
 **Aperto:** 26/08/2026  
 **Chiuso:** 26/08/2026  
 **Branch:** `cursor/wpqr-stud-ingest-166d`  
+**PR:** https://github.com/qsstudio241/sistema-gestione-iso9001/pull/590  
 **Stream:** [`DEPUTYTASK_WPQR_STUD.md`](DEPUTYTASK_WPQR_STUD.md) (STUD-1 **CHIUSO** #585)  
 **Report:** [`docs/gap-reports/GAP_WPQR_STUD_WELDING_PIASTRA_TUBO_2026-08-25.md`](../gap-reports/GAP_WPQR_STUD_WELDING_PIASTRA_TUBO_2026-08-25.md)  
 **Dipende da:** STUD-1 **CHIUSO** (campi DB/FE/schema già in prod, mig. 159)  

@@ -67,7 +67,7 @@ Segnalazione Mason (post chiusura t1/t2): in inserimento WPQR «Stud Welding» m
 
 | Slice | Slot | Scope |
 |-------|------|--------|
-| **STUD-2** | [`DEPUTYTASK.md`](DEPUTYTASK.md) **CHIUSO — TEST OK** | Ingest AI SW / P+T / PM2 / qualifying_element (no range) |
+| **STUD-2** | [`DEPUTYTASK.md`](DEPUTYTASK.md) **CHIUSO — TEST OK** [#590](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/590) | Ingest AI SW / P+T / PM2 / qualifying_element (no range) |
 | **STUD-3-A** | [`DEPUTYTASK1.md`](DEPUTYTASK1.md) **APERTO** | Estratto docs range da `NORMA_00033` (no codice) |
 | STUD-3-B | (dopo HITL estratto) | Codifica range + 4063 stud |
 | PT-1 | opzionale | UX range lato P vs T (15614) |
