@@ -15,6 +15,7 @@
 
 | Codice / titolo | Impatto modulo | Stato | Priorità | Note |
 |-----------------|----------------|-------|----------|------|
+| ISO **14555** (arc stud welding / prigionieri) | WPQR Stud Welding (Mason) | `da_richiedere` | P0 | Solo citazione in `NORMA_00008` (3834-5); gap [`GAP_WPQR_STUD_WELDING_PIASTRA_TUBO_2026-08-25.md`](../gap-reports/GAP_WPQR_STUD_WELDING_PIASTRA_TUBO_2026-08-25.md); slice STUD-1 campi senza range |
 | Quaderno Linea Guida **1090** | Contesto EN 1090 / carpenteria | `da_richiedere` | P1 | `Quaderni/Quaderno_2_Linea_Guida_1090.txt` = **0 byte** — rigenerare da PDF |
 | ISO **2560** (elettrodi rivestiti) | Material Compliance apporto | `da_richiedere` | P1 | Soglie 3.1 lotto; senza MD → skip Rule Engine |
 | ISO **17632** (filo animato) | Material Compliance apporto | `da_richiedere` | P1 | Idem |
