@@ -55,3 +55,5 @@ Fonti Markdown:
 **Backlog residuo:** STUD-2 (prompt ingest raffinato), STUD-3 (range 14555 + processi 4063 stud — blocco PDF), PT-1 se serve UX range lato P vs T.
 
 Cloud Agent **non** dichiara «pronta» senza CI + Bugbot + Security Review letti.
+
+> CI rilanciata 26/08 sera: i check required sul commit docs erano in startup_failure (coda runner); push con path `docs/agent-tasks` + `PROJECT_ROADMAP` per rieseguire CI app / harness / smoke.
