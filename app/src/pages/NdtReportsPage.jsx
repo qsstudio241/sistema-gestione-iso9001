@@ -12,7 +12,7 @@ import { formatDate } from "../utils/dateHelpers";
 import AutoTextarea from "../components/AutoTextarea.jsx";
 import NcCreateModal from "../components/NcCreateModal.jsx";
 import NdtItemAttachments from "../components/NdtItemAttachments.jsx";
-import { useNdtAutoSave } from "../hooks/useNdtAutoSave.js";
+import { useNdtAutoSave, enqueueNdtReportSync, isNdtNetworkSaveError } from "../hooks/useNdtAutoSave.js";
 import {
     defaultMethodParams,
     defaultPtParams,
@@ -632,6 +632,8 @@ function NdtReportForm({ report, companies, availableInstruments, onSave, onCanc
     }, [form.company_id]);
     const [error, setError] = useState(null);
     const [savedAt, setSavedAt] = useState(null);
+    const [pendingOfflineSync, setPendingOfflineSync] = useState(false);
+    const offlineCreateUuidRef = useRef(null);
     const [ncModalOpen, setNcModalOpen]   = useState(false);
     const [ncInitialDesc, setNcInitialDesc] = useState("");
     const [inspectorGate, setInspectorGate] = useState({
@@ -714,7 +716,21 @@ function NdtReportForm({ report, companies, availableInstruments, onSave, onCanc
     }, [form.report_type, form.client, report?.report_number]);
 
     // Fix 3 — auto-save bozza in localStorage mentre si compila in campo
-    const { clearDraft } = useNdtAutoSave(report?.id || null, form, items);
+    const { clearDraft, draftKey } = useNdtAutoSave(report?.id || null, form, items);
+
+    // CND-9: dopo drain coda NDT, togli banner e bozza (clear anche in syncService)
+    useEffect(() => {
+        const onSynced = (e) => {
+            const key = e?.detail?.draftKey;
+            if (key && key === draftKey) {
+                setPendingOfflineSync(false);
+                clearDraft();
+                setSavedAt(new Date().toLocaleTimeString("it-IT", { hour: "2-digit", minute: "2-digit" }));
+            }
+        };
+        window.addEventListener("sgq:ndtReportSynced", onSynced);
+        return () => window.removeEventListener("sgq:ndtReportSynced", onSynced);
+    }, [draftKey, clearDraft]);
 
     const set = (k, v) => setForm(f => ({ ...f, [k]: v }));
     const setParam = (k, v) => setForm(f => ({ ...f, method_params: { ...f.method_params, [k]: v } }));
@@ -760,16 +776,16 @@ function NdtReportForm({ report, companies, availableInstruments, onSave, onCanc
         }
         setSaving(true);
         setError(null);
+        const payload = {
+            ...form,
+            company_id: form.company_id ? parseInt(form.company_id) : null,
+            project_id: form.project_id ? parseInt(form.project_id, 10) : null,
+            status: targetStatus || form.status,
+            method_params: sanitizeMethodParams(form.report_type, form.method_params),
+            items,
+            instrument_ids: selectedInstruments.map(i => ({ asset_id: i.asset_id, instrument_role: i.role })),
+        };
         try {
-            const payload = {
-                ...form,
-                company_id: form.company_id ? parseInt(form.company_id) : null,
-                project_id: form.project_id ? parseInt(form.project_id, 10) : null,
-                status: targetStatus || form.status,
-                method_params: sanitizeMethodParams(form.report_type, form.method_params),
-                items,
-                instrument_ids: selectedInstruments.map(i => ({ asset_id: i.asset_id, instrument_role: i.role })),
-            };
             let saveRes;
             if (isEdit) {
                 saveRes = await apiService.updateNdtReport(report.id, payload);
@@ -778,6 +794,8 @@ function NdtReportForm({ report, companies, availableInstruments, onSave, onCanc
             }
             setSavedAt(new Date().toLocaleTimeString("it-IT", { hour: "2-digit", minute: "2-digit" }));
             clearDraft(); // rimuove bozza locale dopo salvataggio riuscito
+            setPendingOfflineSync(false);
+            offlineCreateUuidRef.current = null;
             const pose = saveRes?.registry_pose || saveRes?.data?.registry_pose || null;
             onSave(pose && pose.message
                 ? {
@@ -787,6 +805,33 @@ function NdtReportForm({ report, companies, availableInstruments, onSave, onCanc
                 }
                 : null);
         } catch (err) {
+            // CND-9: rete assente → coda IndexedDB (tipi già in syncService); localStorage resta backup
+            if (isNdtNetworkSaveError(err)) {
+                const type = isEdit ? "update_ndt_report" : "create_ndt_report";
+                let syncPayload;
+                if (isEdit) {
+                    syncPayload = { id: report.id, ...payload, draftKey };
+                } else {
+                    if (!offlineCreateUuidRef.current) {
+                        offlineCreateUuidRef.current =
+                            (typeof crypto !== "undefined" && crypto.randomUUID)
+                                ? crypto.randomUUID()
+                                : `ndt-${Date.now()}`;
+                    }
+                    syncPayload = {
+                        ...payload,
+                        uuid: offlineCreateUuidRef.current,
+                        draftKey,
+                    };
+                }
+                const queueId = await enqueueNdtReportSync(type, syncPayload);
+                if (queueId) {
+                    setPendingOfflineSync(true);
+                    setError(null);
+                    setSavedAt(new Date().toLocaleTimeString("it-IT", { hour: "2-digit", minute: "2-digit" }));
+                    return;
+                }
+            }
             setError(err?.message || "Errore salvataggio verbale");
         } finally {
             setSaving(false);
@@ -855,7 +900,13 @@ function NdtReportForm({ report, companies, availableInstruments, onSave, onCanc
                 </div>
             </div>
 
-            {savedAt && <div className="ndt-saved-at">{"Salvato alle " + savedAt}</div>}
+            {savedAt && !pendingOfflineSync && <div className="ndt-saved-at">{"Salvato alle " + savedAt}</div>}
+            {pendingOfflineSync && (
+                <div className="ndt-pending-sync" role="status">
+                    {"Senza rete: verbale in coda. Si sincronizza al ripristino della connessione."
+                        + (savedAt ? " (accodato alle " + savedAt + ")" : "")}
+                </div>
+            )}
             {error && <div className="ndt-form-error">{error}</div>}
             {!inspectorGate.loading && !inspectorGate.ok && (
                 <div className="ndt-form-error" role="alert">
