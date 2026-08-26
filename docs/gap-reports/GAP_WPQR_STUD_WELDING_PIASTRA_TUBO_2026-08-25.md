@@ -100,4 +100,4 @@ Conclusione operativa: non basta «mettere FW». Serve una tipologia (o sotto-ti
 - [x] `app/src/pages/WeldingProceduresPage.jsx`, `documentTypeSchemas.js`, `weldingProcesses4063.js`
 - [x] `backend/src/services/wpsGenerator.service.js`, `wpqrIngest.service.js`
 - [x] Gap precedenti: `GAP_WPQR_T1T2_ALLUMINIO_2026-08-25.md`, `GAP_WPQR_ESTENSIONI_ANNEX_B_2026-08-07.md`
-- [ ] ISO 14555 — **assente**
+- [x] ISO 14555 — `NORMA_00033` (26/08) + estratto range [`docs/reference/ISO-14555-2025-range-validita-WPQR.md`](../reference/ISO-14555-2025-range-validita-WPQR.md) (STUD-3-A; codice range = STUD-3-B dopo HITL)

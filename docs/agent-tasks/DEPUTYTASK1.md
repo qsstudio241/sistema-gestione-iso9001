@@ -1,7 +1,8 @@
 # DEPUTYTASK1 — STUD-3-A: estratto range ISO 14555 da NORMA_00033 (solo docs)
 
-**Stato:** APERTO  
+**Stato:** CHIUSO — TEST OK  
 **Aperto:** 26/08/2026  
+**Chiuso:** 26/08/2026  
 **Stream:** [`DEPUTYTASK_WPQR_STUD.md`](DEPUTYTASK_WPQR_STUD.md) (STUD-1 **CHIUSO** #585; PDF 14555 digitalizzato #584 → `NORMA_00033`)  
 **Report:** [`docs/gap-reports/GAP_WPQR_STUD_WELDING_PIASTRA_TUBO_2026-08-25.md`](../gap-reports/GAP_WPQR_STUD_WELDING_PIASTRA_TUBO_2026-08-25.md)  
 **Dipende da:** `NORMA_00033` MD+JSON su `main` (#584)  
@@ -17,7 +18,7 @@
 Fonti Markdown:
 - Coperte: docs/Normative/Normative NORMA_00033_ BS EN ISO 14555_2025 Rev. 0.md (+ .json);
   modello editoriale docs/reference/ISO-15614-1-range-validita-WPQR.md
-- Mancanti: tabella range dedicata in docs/reference/ (QUESTO deliverable);
+- Mancanti: tabella range dedicata in docs/reference/ (QUESTO deliverable — fatto);
   processi 4063 stud in catalogo JS = FUORI (STUD-3-B / slice codice dopo HITL)
 - Si parte su: estrarre SOLO ciò che è leggibile nel MD/JSON; marcare GAP dove l’OCR
   è ambiguo; VIETATO inventare soglie o «ricostruire» numeri non presenti
@@ -56,9 +57,17 @@ STUD-1 non ha range. STUD-3 codice (UI/DB/regole) non parte senza un estratto re
 
 ## Verifica
 
-- [ ] Estratto creato; ogni numero ha citazione/path nel MD fonte o è marcato GAP
-- [ ] Nessun file `app/` o `backend/src/` nel diff
-- [ ] Brief CHIUSO — TEST OK
+- [x] Estratto creato; ogni numero ha citazione/path nel MD fonte o è marcato GAP
+- [x] Nessun file `app/` o `backend/src/` nel diff
+- [x] Brief CHIUSO — TEST OK
+
+## Esito (26/08/2026)
+
+Deliverable: [`docs/reference/ISO-14555-2025-range-validita-WPQR.md`](../reference/ISO-14555-2025-range-validita-WPQR.md).
+
+Regole **OK** (prosa §10.2.8, pdfplumber pag. 21–22): durata/prova annuale; fabbricante; parametri fornitore; materiali simili 1/2 + 13 mm / 8–10 / 2.1; dissimili b–c (100 ms / 10 ms); spessore parent «tutti se pWPS»; through-deck lastra più spessa → più sottili; sezione stud (una prova / due prove); posizioni soglia 100 ms; attrezzatura; preriscaldo; CF/SG/NP.
+
+**GAP** (non inventati, HITL sul PDF): Tabella 1 pag. 20; §4.1 simboli; §10.2.8.5 (a); heading OCR 11.1; §10.2.8.11 numerazione; Tabella B.1 formule 0,25×d e status normativo; definizione through-deck «3 mm»; codici 4063 stud.
 
 ## Dopo questa slice (non ora)
 
