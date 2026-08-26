@@ -1,7 +1,9 @@
 # DEPUTYTASK — CND-3: UI flag PT/MT → method_params JSON
 
-**Stato:** APERTO  
+**Stato:** CHIUSO  
 **Aperto:** 25/08/2026  
+**Chiuso:** 26/08/2026  
+**Esito:** TEST OK  
 **Piano:** [`PLAN_CND_SLICES.md`](PLAN_CND_SLICES.md)  
 **Dipende da:** CND-1 + CND-2 **CHIUSI** (#549 / #561) — stesso JSX ora libero  
 **Rischio:** Medio — FE verbale NDT; niente auth/sync/schema distruttivo.  
@@ -27,6 +29,16 @@ Sul verbale i parametri di metodo esistono solo per **VT** (lux). PT e MT hanno 
 6. Test L1 mirati (Vitest su sezioni PT/MT) + `npm run build` in `app/`.
 7. Spuntare CND-3 in PLAN_CND; brief **CHIUSO** — TEST OK.
 
+## Struttura JSON (chiusura)
+
+Un verbale = un `report_type`. `sanitizeMethodParams` in `app/src/utils/ndtMethodParams.js` tiene un solo namespace.
+
+- **VT** (invariato, piatto): `{ illuminance_min, illuminance_max, illuminance_measured, power_w, wavelength }`
+- **PT**: `{ pt: { acc, surface, cleaning[], application, inspection_pct, pen, pen_lot, sol, sol_lot, det, det_lot, lux, temp, final, defects: { [codice]: { present, outcome } } } }`
+- **MT**: `{ mt: { tracer, mag, mag_mode, pole_pitch, curr_type, curr_a, field, demag, surf, inspection_pct, judg, defects: { [codice]: boolean } } }`
+
+Nomi e date restano sulla testata del verbale (`responsible`, `inspector`, `inspection_date`, …). Placeholder `{pt_acc_l2}` / `{mt_tr_wet}` / `{pt_d_100_yn}` nel helper — export Word = slice successiva.
+
 ## File previsti
 
 - `app/src/pages/NdtReportsPage.jsx` / `.css` (sezioni metodo PT/MT)
@@ -44,7 +56,7 @@ Sul verbale i parametri di metodo esistono solo per **VT** (lux). PT e MT hanno 
 
 ## Verifica
 
-- [ ] Flag PT e MT visibili e salvati in `method_params` sul verbale giusto
-- [ ] VT invariato; nessun merge PT↔MT
-- [ ] L1 + build OK
-- [ ] PLAN CND-3 spuntato; brief CHIUSO — TEST OK
+- [x] Flag PT e MT visibili e salvati in `method_params` sul verbale giusto
+- [x] VT invariato; nessun merge PT↔MT
+- [x] L1 + build OK
+- [x] PLAN CND-3 spuntato; brief CHIUSO — TEST OK

@@ -125,6 +125,51 @@
 }
 .ndt-params-grid .ndt-form-group { min-width: 0; }
 
+/* CND-3 — flag metodo PT/MT (status-btn testo, come NC workflow) */
+.ndt-method-fields { display: flex; flex-direction: column; gap: 14px; }
+.ndt-method-norm { margin: 0; font-size: 0.8rem; color: #6b7280; }
+.ndt-method-group { display: flex; flex-direction: column; gap: 6px; }
+.ndt-method-group-label { font-size: 0.8rem; font-weight: 600; color: #374151; }
+.ndt-method-hint { font-size: 0.75rem; color: #6b7280; }
+.ndt-method-btns {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    width: 100%;
+    box-sizing: border-box;
+}
+.ndt-method-btns .status-btn {
+    width: auto;
+    min-width: 0;
+    height: auto;
+    min-height: 36px;
+    padding: 6px 12px;
+    font-size: 0.78rem;
+    font-weight: 600;
+    white-space: nowrap;
+    flex: 0 1 auto;
+    border-radius: 6px;
+}
+.ndt-method-btns .status-btn:hover { transform: none; }
+.ndt-pt-defects {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+.ndt-pt-defect-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px 12px;
+    padding: 8px 0;
+    border-bottom: 1px solid #f3f4f6;
+}
+.ndt-pt-defect-name { font-size: 0.8rem; color: #1f2937; min-width: 12rem; flex: 1 1 12rem; }
+.ndt-pt-defect-iso { font-variant-numeric: tabular-nums; color: #6b7280; font-weight: 600; }
+
 /* Pulsanti giudizio A/R/S — stili autonomi (non dipendono da ChecklistModule.css) */
 .ndt-eval-btns .status-btn {
     display: inline-flex; align-items: center; justify-content: center;
@@ -232,6 +277,8 @@
     /* Parametri VT: colonna singola */
     .ndt-params-grid { grid-template-columns: 1fr; gap: 10px; }
     .ndt-params-grid .ndt-form-group { min-width: unset; }
+    .ndt-method-btns .status-btn { min-height: 44px; font-size: 0.85rem; }
+    .ndt-pt-defect-name { min-width: 100%; }
 
     /* ── Elenco Marche: schede CND-1, niente min-width 720 ── */
     .ndt-marks-table-wrap {
