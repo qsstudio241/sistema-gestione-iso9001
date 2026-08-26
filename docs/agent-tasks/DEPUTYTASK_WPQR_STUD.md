@@ -4,6 +4,7 @@
 **Aperto:** 25/08/2026  
 **Chiuso:** 26/08/2026 — STUD-1  
 **Branch:** `cursor/wpqr-stud-fields-9c6b`  
+**PR:** https://github.com/qsstudio241/sistema-gestione-iso9001/pull/585  
 **Report:** [`docs/gap-reports/GAP_WPQR_STUD_WELDING_PIASTRA_TUBO_2026-08-25.md`](../gap-reports/GAP_WPQR_STUD_WELDING_PIASTRA_TUBO_2026-08-25.md)  
 **Rischio slice codice:** Medio — migrazione additiva nullable + FE/BE WPQR; **niente** auth/sync/breaking distruttivo  
 **Parallelo:** slot `DEPUTYTASK.md` / `DEPUTYTASK1.md` = **CHIUSI** (CND-8 / CND-5a) — hub GUIDA/roadmap aggiornati in questa PR (unica chat codice aperta).
