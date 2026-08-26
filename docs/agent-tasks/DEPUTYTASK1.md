@@ -1,47 +1,47 @@
-# DEPUTYTASK1 — CND-6: foto + NC da marca in campo (hardening mobile)
+# DEPUTYTASK1 — CND-W: export Word PT/MT da method_params → placeholder
 
-**Stato:** CHIUSO  
+**Stato:** APERTO  
 **Aperto:** 26/08/2026  
-**Chiuso:** 26/08/2026 — TEST OK  
-**Piano:** [`PLAN_CND_SLICES.md`](PLAN_CND_SLICES.md)  
-**Dipende da:** CND-1 **CHIUSO** (#549) — marche a scheda già in tasca  
-**Rischio:** Medio — FE allegati CND + hint NC; niente auth/sync/schema.  
-**Parallelo a:** CND-7 su [`DEPUTYTASK.md`](DEPUTYTASK.md) e STUD-1 su [`DEPUTYTASK_WPQR_STUD.md`](DEPUTYTASK_WPQR_STUD.md) — **file disgiunti**.
+**Piano:** [`PLAN_CND_SLICES.md`](PLAN_CND_SLICES.md) (dopo CND-3 + CND-4)  
+**Dipende da:** CND-3 (#571) + CND-4 (#547) **CHIUSI**  
+**Rischio:** Medio — FE export Word; niente auth/sync/DB.  
+**Parallelo a:** CND-9 su [`DEPUTYTASK.md`](DEPUTYTASK.md) e STUD-1 su [`DEPUTYTASK_WPQR_STUD.md`](DEPUTYTASK_WPQR_STUD.md) — **file disgiunti**.
 
 ## Fonti Markdown
 
-- Coperte: PLAN_CND (evidenza fotografica + NC da difetto); DNA / libreria UI (`AttachmentSection` pattern, `NcCreateModal`)
-- Mancanti: —
-- Si parte su: irrobustire ciò che già esiste in campo (camera/touch), non reinventare uploader
+- Coperte: appendice flag PT/MT in PLAN_CND (placeholder semantici `{pt_acc_l2}`, `{mt_tr_wet}`, …); `ndtMethodParams.js`; scope Template report `cnd`
+- Mancanti: testo integrale 3452/17638 — **non inventare** soglie; solo mappare flag UI → placeholder
+- Si parte su: `vtWordExport.js` oggi espone soprattutto lux VT; PT/MT JSON non popolano i checkbox Word
 
 ## Perché
 
-Foto per riga marca e NC da giudizio R/S ci sono, ma in officina restano scomode (target piccoli, errori poco chiari, flusso NC da marca). CND-6 = hardening mobile del già fatto.
+CND-3 salva i flag; CND-4 risolve il template per metodo. Manca il ponte **dati → Word**: senza CND-W l’operatore compila PT/MT in app e il `.docx` esce incompleto.
 
-## DoD (da PLAN_CND)
+## DoD
 
-1. `NdtItemAttachments`: UX touch/camera più chiara (target tap, feedback upload/errore, read-only coerente) senza secondo uploader parallelo. ✅
-2. Hint / ingresso a `NcCreateModal` da marca con giudizio R o S (precompilazione sensata se già supportata; altrimenti messaggio + open modal) — **non** un wizard NC nuovo. ✅
-3. Riuso: `compressImageFile` / pattern allegati già in repo; `status-btn` invariato. ✅
-4. Non toccare gate 9712 (CND-2) né flag PT/MT (CND-3) né controller posa registro (CND-7). ✅
-5. Test L1 Vitest mirati + `npm run build` in `app/`. ✅
-6. Spuntare CND-6 in PLAN_CND; brief **CHIUSO** — TEST OK. ✅
+1. `buildVtTemplateData` (o helper dedicato) espone chiavi allineate ai placeholder semantici dell’appendice PLAN per `report_type` PT e MT (`method_params.pt` / `.mt`).
+2. Resolve template: riusare percorso CND-4 (VPS Template report / fallback) per VT|MT|PT|UT — **non** hardcodare un quarto motore.
+3. Gruppi esclusivi → un solo placeholder “acceso” coerente col Word (checkbox/radio); niente nomi FORMCHECKBOX come chiavi.
+4. VT lux invariato; regressione export VT coperta da test.
+5. Test L1 (unit su mapping dati + eventuale smoke export) + `npm run build`.
+6. Aggiornare PLAN_CND (nota CND-W / export); brief **CHIUSO** — TEST OK.
 
-## File toccati
+## File previsti
 
-- `app/src/components/NdtItemAttachments.jsx` / `.css`
-- `app/src/pages/NdtReportsPage.jsx` / `.css` (solo hint NC + feedback foto marca)
-- `app/src/tests/ndtItemAttachments.cnd6.test.jsx`
-- `app/src/tests/ndtReportsNcFromMark.cnd6.test.jsx`
+- `app/src/utils/vtWordExport.js` (+ test)
+- eventuale riuso `ndtMethodParams.js` (solo lettura/mapping, non riscrivere UI)
 - `docs/agent-tasks/PLAN_CND_SLICES.md` + questo brief
+
+## Cosa NON toccare
+
+- `DEPUTYTASK.md` / CND-9 / `useNdtAutoSave` / `syncService`
+- `NdtReportsPage.jsx` layout/flag (CND-3) salvo bottone export se già presente
+- posa registro / allegati / STUD / WPQR / auth
+- GUIDA / roadmap § Stato attuale (parallelo — sync **dopo merge**)
 
 ## Verifica
 
-- [x] Foto marca usabile a dito; errori leggibili
-- [x] Percorso NC da R/S chiaro
-- [x] L1 + build OK
-- [x] PLAN CND-6 spuntato; brief CHIUSO — TEST OK
-
-## Esito
-
-TEST OK — Vitest CND-6 (7) + marks mobile regressione + `npm run build`.
+- [ ] Export PT/MT include flag da `method_params`
+- [ ] VT non regredisce
+- [ ] L1 + build OK
+- [ ] Brief CHIUSO — TEST OK

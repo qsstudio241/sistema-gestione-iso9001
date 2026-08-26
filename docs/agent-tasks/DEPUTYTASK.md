@@ -1,58 +1,49 @@
-# DEPUTYTASK — CND-7: Completa verbale → posa nel Registro Documenti
+# DEPUTYTASK — CND-9: rete di salvataggio officina (IndexedDB syncQueue)
 
-**Stato:** CHIUSO — TEST OK  
+**Stato:** APERTO  
 **Aperto:** 26/08/2026  
-**Chiuso:** 26/08/2026  
 **Piano:** [`PLAN_CND_SLICES.md`](PLAN_CND_SLICES.md)  
-**Dipende da:** CND-2 + CND-3 + CND-4 **CHIUSI** (#561 / #571 / #547)  
-**Rischio:** Medio — BE NDT + registro; migrazione solo se strettamente necessaria (preferire riuso); niente auth/sync/breaking.  
-**Parallelo a:** CND-6 su [`DEPUTYTASK1.md`](DEPUTYTASK1.md) e STUD-1 su [`DEPUTYTASK_WPQR_STUD.md`](DEPUTYTASK_WPQR_STUD.md) — **file disgiunti**.
+**Dipende da:** CND-1 **CHIUSO**; tipi `create_ndt_report` / `update_ndt_report` **già** in `syncService`  
+**Rischio:** Medio — FE sync/offline CND; **non** copiare motore `audit_events`; niente auth JWT / migrazioni.  
+**Parallelo a:** CND-W su [`DEPUTYTASK1.md`](DEPUTYTASK1.md) e STUD-1 su [`DEPUTYTASK_WPQR_STUD.md`](DEPUTYTASK_WPQR_STUD.md) — **file disgiunti**.
 
 ## Fonti Markdown
 
-- Coperte: PLAN_CND (output fascicolo SGQ); pattern posa ingest (`documentTreeProvisioner` / `report_ndt` → cartella **9.3**); CND-11 whitelist `report_ndt` (non crea `ndt_reports`)
-- Mancanti: — non serve nuova norma
-- Si parte su: al Completa (o export Word) il verbale operativo entra nel Registro come documento tracciabile
+- Coperte: PLAN_CND (HITL offline officina); ADR-008; commenti in `useNdtAutoSave.js` (enqueue già presente ma non agganciato al flusso save)
+- Mancanti: —
+- Si parte su: collegare autosave/fallimento rete → coda IndexedDB esistente, non un secondo DB
 
 ## Perché
 
-Il verbale CND vive solo in `ndt_reports`. Fuori dal Registro Documenti non c’è fascicolo SGQ (ISO 3834-3 §14 / archivio prove). CND-7 chiude la posa verso cartella **9.3** / tipo `report_ndt`, riusando il pattern già usato dall’ingest.
+In officina senza rete la bozza resta solo in `localStorage`. La coda `syncQueue` e i tipi NDT esistono già: manca il collegamento operativo (CND-9).
 
 ## DoD (da PLAN_CND)
 
-1. Alla transizione a **completato** (o azione esplicita documentata se più sicura): crea/aggiorna riga in `document_registry` (o API documenti esistente) con tipo `report_ndt`, `company_id` del verbale, cartella **9.3** se l’albero azienda c’è (stesso mapping di `documentTreeProvisioner` / controller documenti).
-2. Multi-tenant: scope `organization_id` + `company_access` come il resto NDT.
-3. Idempotenza: secondo Completa non duplica documenti orfani (link stabile verbale ↔ documento, o skip se già posato).
-4. Se manca cartella 9.3: comportamento onesto (messaggio / coda «Cartella mancante» come ingest) — **non** creare albero ISO intero di nascosto.
-5. Test L1 (Jest controller/service) + eventuale Vitest se tocchi FE minimo; deploy-manifest se aggiungi `.js` in `backend/src/`.
-6. Spuntare CND-7 in PLAN_CND; brief **CHIUSO** — TEST OK.
+1. Su create/update verbale fallito per offline/rete: chiamare `enqueueNdtReportSync` (o equivalente già in repo) con payload coerente; al reconnect la coda processa i tipi NDT (verificare che `syncService` li gestisca davvero — se manca handler, aggiungere il minimo).
+2. `useNdtAutoSave` resta backup locale; **non** sostituire con copia di `audit_events`.
+3. Dopo sync riuscito: clear draft localStorage; UX discreta (banner / stato sync) riusando pattern audit/NC se esiste.
+4. Foto allegati: se fuori scope sicuro in questa slice, documentare residuo (non rompere CND-6).
+5. Test L1 mirati (hook / sync tipi NDT) + `npm run build` in `app/`.
+6. Spuntare CND-9 in PLAN_CND; brief **CHIUSO** — TEST OK.
 
 ## File previsti
 
-- `backend/src/controllers/ndtReports.controller.js` (+ test)
-- eventuale helper piccolo in `backend/src/services/` (posa registro) — solo se non basta riusare codice documenti esistente
-- `backend/scripts/deploy-manifest.json` se file nuovo
-- FE minimo solo se serve feedback utente (messaggio posa ok/errore) — **non** riscrivere sezioni metodo PT/MT
-- `docs/agent-tasks/PLAN_CND_SLICES.md` + questo brief (chiusura)
+- `app/src/hooks/useNdtAutoSave.js`
+- eventuale gancio minimo in `NdtReportsPage.jsx` (solo save/offline) — **vietato** riscrivere flag PT/MT, gate 9712, hint NC
+- `app/src/services/syncService.js` (o file dove già vivono i tipi NDT) — solo handler NDT se assente
+- test mirati + `docs/agent-tasks/PLAN_CND_SLICES.md` + questo brief
 
 ## Cosa NON toccare
 
-- `DEPUTYTASK1.md` / CND-6 / `NdtItemAttachments*`
-- `NdtReportsPage.jsx` sezioni flag PT/MT (CND-3) salvo messaggio posa
-- STUD / WPQR / NG / auth / sync / migrazioni distruttive
-- CND-9 coda IndexedDB, CND-5 UT, CND-8 bozza-audit
+- `DEPUTYTASK1.md` / CND-W / `vtWordExport.js` / Template report
+- `ndtReportRegistryPose*` / controller posa (CND-7)
+- `NdtItemAttachments*` (CND-6) salvo nota residuo foto offline
+- STUD / WPQR / auth / JWT / migrazioni / `audit_events` nuovo motore
 - GUIDA / roadmap § Stato attuale (parallelo — sync **dopo merge**)
 
 ## Verifica
 
-- [x] Completa → documento `report_ndt` in 9.3 (o messaggio cartella mancante)
-- [x] Idempotente; scope company ok
-- [x] L1 + manifest
-- [x] PLAN CND-7 spuntato; brief CHIUSO — TEST OK
-
-## Esito
-
-- Service `ndtReportRegistryPose.service.js`: posa `report_ndt` con `type_specific_data.ndt_report_id` (idempotente); cartella 9.3 via `resolveFolderByCode` / `parentIdForExistingFolder`; se assente → `parent_id` null + messaggio Cartella mancante.
-- Hook su create/update quando status `completed`|`approved`; errore posa non blocca il salvataggio verbale.
-- FE: messaggio posa ok / cartella mancante dopo Completa (solo header/save, niente sezioni PT/MT).
-- Manifest aggiornato. Test Jest service + controller CND-7.
+- [ ] Offline → enqueue; online → drain coda NDT
+- [ ] Nessun secondo IndexedDB / audit_events
+- [ ] L1 + build OK
+- [ ] PLAN CND-9 spuntato; brief CHIUSO — TEST OK
