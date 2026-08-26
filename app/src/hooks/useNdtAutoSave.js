@@ -5,14 +5,47 @@
  * create/update fallito per rete/offline → coda IndexedDB `syncQueue`
  * (tipi create_ndt_report / update_ndt_report già in syncService).
  * Non usa il motore audit_events.
+ *
+ * Multi-tenant: ogni bozza porta organization_id; listNdtDrafts filtra lo studio
+ * corrente. Bozze legacy senza org_id non compaiono se l'utente ha un org noto
+ * (evita leak cross-tenant sullo stesso browser). Orfane: cancellabili da
+ * DevTools → Application → Local Storage (chiavi sgq:ndt_draft:*).
  */
 
 import { useEffect, useCallback, useRef } from 'react';
+import apiService from '../services/apiService.js';
 
 export const NDT_DRAFT_KEY_PREFIX = 'sgq:ndt_draft:';
 /** Indice chiavi bozza (jsdom/vitest: localStorage.length/key spesso assenti). */
 export const NDT_DRAFT_INDEX_KEY = 'sgq:ndt_draft_index';
 const DEBOUNCE_MS = 800;
+
+/**
+ * organization_id dello studio corrente (multi-tenant).
+ * @param {string|number|null|undefined} explicitOrgId
+ * @returns {string|number|null}
+ */
+export function resolveNdtDraftOrganizationId(explicitOrgId) {
+    if (explicitOrgId != null && explicitOrgId !== '') return explicitOrgId;
+    try {
+        const u = apiService.getStoredUser?.();
+        if (u?.organization_id != null && u.organization_id !== '') return u.organization_id;
+    } catch (_) { /* ignore */ }
+    return null;
+}
+
+/**
+ * True se la bozza appartiene allo studio corrente.
+ * Bozze legacy senza organization_id: escluse quando currentOrgId è noto.
+ *
+ * @param {object} draft
+ * @param {string|number|null|undefined} currentOrgId
+ */
+export function ndtDraftMatchesOrganization(draft, currentOrgId) {
+    if (currentOrgId == null || currentOrgId === '') return false;
+    if (draft == null || draft.organization_id == null || draft.organization_id === '') return false;
+    return String(draft.organization_id) === String(currentOrgId);
+}
 
 /** Chiave bozza localStorage per un verbale (id o "new"). */
 export function ndtDraftKey(reportId) {
@@ -128,11 +161,13 @@ export function clearNdtDraftByKey(draftKey) {
  * @param {string|null} reportId  - ID verbale esistente (null = nuovo)
  * @param {object}      formData  - dati form correnti
  * @param {Array}       items     - righe Elenco Marche
+ * @param {{ organizationId?: string|number|null }} [options] — studio corrente (persist su save)
  * @returns {{ clearDraft: () => void, loadDraft: () => object|null, draftKey: string }}
  */
-export function useNdtAutoSave(reportId, formData, items) {
+export function useNdtAutoSave(reportId, formData, items, options = {}) {
     const draftKey = ndtDraftKey(reportId);
     const timerRef = useRef(null);
+    const organizationIdOpt = options?.organizationId;
 
     // Salva con debounce
     useEffect(() => {
@@ -146,10 +181,14 @@ export function useNdtAutoSave(reportId, formData, items) {
                 const clientUuid =
                     (prev && prev.client_uuid) ||
                     (reportId && !/^\d+$/.test(String(reportId)) ? String(reportId) : null);
+                const organization_id =
+                    resolveNdtDraftOrganizationId(organizationIdOpt)
+                    ?? (prev && prev.organization_id != null ? prev.organization_id : null);
                 localStorage.setItem(draftKey, JSON.stringify({
                     savedAt: new Date().toISOString(),
                     formData,
                     items,
+                    ...(organization_id != null ? { organization_id } : {}),
                     ...(clientUuid ? { client_uuid: clientUuid } : {}),
                     ...(prev && prev.queued ? { queued: true, queuedAt: prev.queuedAt } : {}),
                 }));
@@ -160,7 +199,7 @@ export function useNdtAutoSave(reportId, formData, items) {
         }, DEBOUNCE_MS);
 
         return () => { if (timerRef.current) clearTimeout(timerRef.current); };
-    }, [draftKey, formData, items]);
+    }, [draftKey, formData, items, organizationIdOpt]);
 
     // Cancella la bozza (chiamare dopo salvataggio riuscito online o dopo sync coda)
     const clearDraft = useCallback(() => {
@@ -229,13 +268,15 @@ export function buildEmptyNdtDraftForm({
 /**
  * CND-8: crea subito una bozza locale con UUID (come createAudit), senza aspettare "Salva".
  * Chiave localStorage = sgq:ndt_draft:<uuid> (più bozze parallele ammesse).
+ * Persiste organization_id per isolare le bozze per studio sullo stesso browser.
  *
- * @returns {{ uuid: string, draftKey: string, formData: object, items: Array, savedAt: string }}
+ * @returns {{ uuid: string, draftKey: string, formData: object, items: Array, savedAt: string, organization_id: string|number|null }}
  */
 export function seedNdtLocalDraft({
     inspector = '',
     companyId = '',
     reportType = 'VT',
+    organizationId = null,
 } = {}) {
     const uuid = (typeof crypto !== 'undefined' && crypto.randomUUID)
         ? crypto.randomUUID()
@@ -244,19 +285,21 @@ export function seedNdtLocalDraft({
     const formData = buildEmptyNdtDraftForm({ inspector, companyId, reportType });
     const items = [{ ...EMPTY_NDT_MARK_ITEM }];
     const savedAt = new Date().toISOString();
+    const organization_id = resolveNdtDraftOrganizationId(organizationId);
     const record = {
         savedAt,
         formData,
         items,
         client_uuid: uuid,
         queued: false,
+        ...(organization_id != null ? { organization_id } : {}),
     };
     try {
         localStorage.setItem(draftKey, JSON.stringify(record));
         localStorage.setItem(offlineCreateUuidKey(draftKey), uuid);
         registerDraftKey(draftKey);
     } catch (_) { /* ignore */ }
-    return { uuid, draftKey, formData, items, savedAt };
+    return { uuid, draftKey, formData, items, savedAt, organization_id };
 }
 
 /** Segna/toglie flag "in coda" su una bozza locale (lista onesta). */
@@ -274,11 +317,15 @@ export function markNdtDraftQueued(draftKey, queued = true) {
 }
 
 /**
- * Recupera tutte le bozze NdtReport salvate in localStorage.
+ * Recupera le bozze NdtReport in localStorage per lo studio corrente.
  * Salta le chiavi companion `:client_uuid` (stringa UUID grezza).
  * Usa indice dedicato (CND-8): in jsdom length/key spesso non funzionano.
+ *
+ * @param {string|number|null|undefined} [organizationId] — default da getStoredUser()
+ * @returns {Array<object>}
  */
-export function listNdtDrafts() {
+export function listNdtDrafts(organizationId) {
+    const currentOrgId = resolveNdtDraftOrganizationId(organizationId);
     const drafts = [];
     try {
         for (const key of collectDraftKeys()) {
@@ -287,6 +334,7 @@ export function listNdtDrafts() {
             try {
                 const data = JSON.parse(localStorage.getItem(key));
                 if (!data || typeof data !== 'object' || !data.formData) continue;
+                if (!ndtDraftMatchesOrganization(data, currentOrgId)) continue;
                 let clientUuid = data.client_uuid || null;
                 if (!clientUuid) {
                     try {

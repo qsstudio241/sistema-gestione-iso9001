@@ -747,7 +747,10 @@ function NdtReportForm({ report, companies, availableInstruments, onSave, onCanc
 
     // Fix 3 — auto-save bozza in localStorage mentre si compila in campo
     // CND-8: draftIdentity = id server OPPURE uuid locale (non più solo "new")
-    const { clearDraft, draftKey } = useNdtAutoSave(draftIdentity, form, items);
+    const storedOrgId = apiService.getStoredUser()?.organization_id ?? null;
+    const { clearDraft, draftKey } = useNdtAutoSave(draftIdentity, form, items, {
+        organizationId: storedOrgId,
+    });
 
     const buildSavePayload = useCallback((targetStatus) => ({
         ...form,
@@ -1576,7 +1579,8 @@ export default function NdtReportsPage() {
     /** CND-8: unisce verbali server + bozze locali/in coda (senza id server). */
     const mergeLocalDraftsIntoList = useCallback((serverRows) => {
         const server = Array.isArray(serverRows) ? serverRows : [];
-        const locals = listNdtDrafts().filter((d) => d._serverIdHint == null);
+        const currentOrgId = apiService.getStoredUser()?.organization_id ?? null;
+        const locals = listNdtDrafts(currentOrgId).filter((d) => d._serverIdHint == null);
         const localRows = locals.map((d) => {
             const fd = d.formData || {};
             const uuid = d.client_uuid
@@ -1646,10 +1650,12 @@ export default function NdtReportsPage() {
         try {
             const user = apiService.getStoredUser();
             const inspector = user ? (user.full_name || user.email || "") : "";
+            const organizationId = user?.organization_id ?? null;
             const seeded = seedNdtLocalDraft({
                 inspector,
                 companyId: filterCompany || "",
                 reportType: "VT",
+                organizationId,
             });
 
             try {

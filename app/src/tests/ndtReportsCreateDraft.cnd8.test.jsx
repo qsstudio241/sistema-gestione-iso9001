@@ -49,7 +49,11 @@ const getNdtReportList = vi.fn();
 
 vi.mock("../services/apiService", () => ({
   default: {
-    getStoredUser: () => ({ full_name: "PS_Admin", email: "admin@sgq.local" }),
+    getStoredUser: () => ({
+      full_name: "PS_Admin",
+      email: "admin@sgq.local",
+      organization_id: 1002,
+    }),
     getNdtReportList: (...args) => getNdtReportList(...args),
     getNdtReportStats: vi.fn().mockResolvedValue({
       data: { total: 0, draft: 0, approved: 0, vt_count: 0, mt_count: 0, pt_count: 0, ut_count: 0 },
@@ -80,6 +84,7 @@ import {
   listNdtDrafts,
   markNdtDraftQueued,
   ndtDraftKey,
+  ndtDraftMatchesOrganization,
 } from "../hooks/useNdtAutoSave.js";
 
 describe("CND-8 seedNdtLocalDraft helpers", () => {
@@ -88,22 +93,64 @@ describe("CND-8 seedNdtLocalDraft helpers", () => {
   });
 
   it("seed crea UUID e bozza in localStorage", () => {
-    const seeded = seedNdtLocalDraft({ inspector: "PS_Admin", companyId: "48" });
+    const seeded = seedNdtLocalDraft({
+      inspector: "PS_Admin",
+      companyId: "48",
+      organizationId: 1002,
+    });
     expect(seeded.uuid).toBeTruthy();
     expect(seeded.draftKey).toBe(ndtDraftKey(seeded.uuid));
     expect(seeded.formData.status).toBe("draft");
     expect(seeded.formData.inspector).toBe("PS_Admin");
-    const drafts = listNdtDrafts();
+    expect(seeded.organization_id).toBe(1002);
+    const drafts = listNdtDrafts(1002);
     expect(drafts.length).toBe(1);
     expect(drafts[0].client_uuid).toBe(seeded.uuid);
+    expect(drafts[0].organization_id).toBe(1002);
     expect(drafts[0]._serverIdHint).toBeNull();
   });
 
   it("markNdtDraftQueued aggiorna flag per lista onesta", () => {
-    const seeded = seedNdtLocalDraft({ inspector: "X" });
+    const seeded = seedNdtLocalDraft({ inspector: "X", organizationId: 1002 });
     markNdtDraftQueued(seeded.draftKey, true);
-    const drafts = listNdtDrafts();
+    const drafts = listNdtDrafts(1002);
     expect(drafts[0].queued).toBe(true);
+  });
+
+  it("listNdtDrafts filtra per organization_id (no leak cross-tenant)", () => {
+    seedNdtLocalDraft({
+      inspector: "Marco Camellini",
+      organizationId: 1001,
+    });
+    seedNdtLocalDraft({
+      inspector: "Andrea Mason",
+      organizationId: 1002,
+    });
+    const mason = listNdtDrafts(1002);
+    expect(mason.length).toBe(1);
+    expect(mason[0].formData.inspector).toBe("Andrea Mason");
+    const camellini = listNdtDrafts(1001);
+    expect(camellini.length).toBe(1);
+    expect(camellini[0].formData.inspector).toBe("Marco Camellini");
+  });
+
+  it("bozze legacy senza organization_id sono escluse se org corrente noto", () => {
+    const key = ndtDraftKey("legacy-orphan");
+    localStorage.setItem(
+      key,
+      JSON.stringify({
+        savedAt: new Date().toISOString(),
+        formData: { inspector: "Marco Camellini", report_type: "VT", status: "draft" },
+        items: [],
+        client_uuid: "legacy-orphan",
+        queued: false,
+      })
+    );
+    localStorage.setItem("sgq:ndt_draft_index", JSON.stringify([key]));
+    expect(listNdtDrafts(1002).length).toBe(0);
+    expect(ndtDraftMatchesOrganization({ organization_id: null }, 1002)).toBe(false);
+    expect(ndtDraftMatchesOrganization({ organization_id: 1002 }, 1002)).toBe(true);
+    expect(ndtDraftMatchesOrganization({ organization_id: 1001 }, 1002)).toBe(false);
   });
 });
 
