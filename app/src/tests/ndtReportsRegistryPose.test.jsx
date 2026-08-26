@@ -26,14 +26,17 @@ vi.mock("../utils/vtWordExport.js", () => ({
   exportVtToWord: vi.fn(),
 }));
 
-vi.mock("../hooks/useNdtAutoSave.js", () => ({
-  useNdtAutoSave: () => ({ clearDraft: vi.fn(), loadDraft: () => null, draftKey: "sgq:ndt_draft:new" }),
-  enqueueNdtReportSync: vi.fn(),
-  isNdtNetworkSaveError: () => false,
-  ndtDraftKey: (id) => "sgq:ndt_draft:" + (id || "new"),
-  getOrCreateOfflineCreateUuid: () => "test-uuid",
-  clearOfflineCreateUuid: vi.fn(),
-}));
+vi.mock("../hooks/useNdtAutoSave.js", async (importOriginal) => {
+  const actual = await importOriginal();
+  return {
+    ...actual,
+    useNdtAutoSave: () => ({ clearDraft: vi.fn(), loadDraft: () => null, draftKey: "sgq:ndt_draft:new" }),
+    enqueueNdtReportSync: vi.fn(),
+    isNdtNetworkSaveError: () => false,
+    getOrCreateOfflineCreateUuid: () => "test-uuid",
+    clearOfflineCreateUuid: vi.fn(),
+  };
+});
 
 vi.mock("../components/NdtItemAttachments.jsx", () => ({
   default: () => null,
@@ -81,14 +84,20 @@ describe("CND-7 posa flash sulla lista", () => {
         vision: { state: "ok" },
       },
     });
-    createNdtReport.mockResolvedValue({
-      success: true,
-      data: { id: 9, report_number: "VT-2026-009", status: "completed" },
-      registry_pose: {
-        document_id: 501,
-        folder_missing: true,
-        message: "Cartella mancante: il verbale \u00e8 nel Registro ma senza cartella 9.3. Inizializza l'albero documentale dell'azienda.",
-      },
+    createNdtReport.mockImplementation(async (payload) => {
+      // CND-8: primo create = bozza vuota da openNew → niente id (resta form create)
+      if (payload?.status === "completed") {
+        return {
+          success: true,
+          data: { id: 9, report_number: "VT-2026-009", status: "completed" },
+          registry_pose: {
+            document_id: 501,
+            folder_missing: true,
+            message: "Cartella mancante: il verbale \u00e8 nel Registro ma senza cartella 9.3. Inizializza l'albero documentale dell'azienda.",
+          },
+        };
+      }
+      return { data: {} };
     });
     Object.defineProperty(window, "innerWidth", { writable: true, configurable: true, value: 1200 });
   });
@@ -97,7 +106,7 @@ describe("CND-7 posa flash sulla lista", () => {
     const user = userEvent.setup();
     render(<NdtReportsPage />);
     await user.click(await screen.findByRole("button", { name: "+ Nuovo verbale" }));
-    await screen.findByRole("heading", { name: "Nuovo verbale CND" });
+    await screen.findByRole("heading", { name: /Nuovo verbale CND|Bozza locale|Bozza in coda|Verbale/i });
 
     await waitFor(() => {
       expect(screen.getByRole("button", { name: "Completa verbale" })).not.toBeDisabled();

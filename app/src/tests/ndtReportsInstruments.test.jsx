@@ -26,14 +26,17 @@ vi.mock("../utils/vtWordExport.js", () => ({
   exportVtToWord: vi.fn(),
 }));
 
-vi.mock("../hooks/useNdtAutoSave.js", () => ({
-  useNdtAutoSave: () => ({ clearDraft: vi.fn(), loadDraft: () => null, draftKey: "sgq:ndt_draft:new" }),
-  enqueueNdtReportSync: vi.fn(),
-  isNdtNetworkSaveError: () => false,
-  ndtDraftKey: (id) => "sgq:ndt_draft:" + (id || "new"),
-  getOrCreateOfflineCreateUuid: () => "test-uuid",
-  clearOfflineCreateUuid: vi.fn(),
-}));
+vi.mock("../hooks/useNdtAutoSave.js", async (importOriginal) => {
+  const actual = await importOriginal();
+  return {
+    ...actual,
+    useNdtAutoSave: () => ({ clearDraft: vi.fn(), loadDraft: () => null, draftKey: "sgq:ndt_draft:new" }),
+    enqueueNdtReportSync: vi.fn(),
+    isNdtNetworkSaveError: () => false,
+    getOrCreateOfflineCreateUuid: () => "test-uuid",
+    clearOfflineCreateUuid: vi.fn(),
+  };
+});
 
 vi.mock("../components/NdtItemAttachments.jsx", () => ({
   default: () => null,
@@ -60,7 +63,7 @@ vi.mock("../services/apiService", () => ({
     getProjects: vi.fn().mockResolvedValue({ data: [] }),
     getWPSList: vi.fn().mockResolvedValue({ data: [] }),
     getNdtReport: vi.fn(),
-    createNdtReport: vi.fn(),
+    createNdtReport: vi.fn().mockResolvedValue({ data: {} }),
     updateNdtReport: vi.fn(),
     deleteNdtReport: vi.fn(),
     getNdtInspectorEligibility: vi.fn().mockResolvedValue({
@@ -112,7 +115,7 @@ describe("NdtReportsPage — sezione strumenti", () => {
     await user.click(nuovo);
 
     expect(apiService.getEquipmentForReport).toBeDefined();
-    await screen.findByRole("heading", { name: "Nuovo verbale CND" });
+    await screen.findByRole("heading", { name: /Nuovo verbale CND|Bozza locale|Bozza in coda|Verbale/i });
     expect(apiService.getEquipmentForReport).toHaveBeenCalled();
 
     const sectionToggle = screen.getByRole("button", { name: /Strumentazione utilizzata/ });
