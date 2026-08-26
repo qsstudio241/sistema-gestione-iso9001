@@ -365,20 +365,34 @@ const DEFECT_CODES_SELECT = [
     { value: "10 altro",     label: "10 \u2014 Altro" },
 ];
 
-function MarkRow({ item, index, onChange, onRemove, reportId, onRegisterNc, judgmentLocked, judgmentTitle }) {
+function MarkRow({ item, index, onChange, onRemove, reportId, onRegisterNc, judgmentLocked, judgmentTitle, attachmentsReadOnly = false }) {
     const set = (k, v) => onChange(index, { ...item, [k]: v });
     const hasDefect = item.evaluation === "R" || item.evaluation === "S";
     const attRef = useRef(null);
     const [photoState, setPhotoState] = useState({ count: 0, uploading: false, error: null });
     const showPhotoPanel = photoState.count > 0 || photoState.uploading || !!photoState.error;
+    const photoLocked = attachmentsReadOnly || !item.id;
 
     const handlePhotoClick = () => {
+        if (attachmentsReadOnly) return;
         if (!item.id) {
             alert("Salva il verbale con 'Salva bozza' per abilitare le foto su questa riga.");
             return;
         }
         attRef.current?.openFilePicker();
     };
+
+    const photoTitle = attachmentsReadOnly
+        ? "Verbale in sola lettura — foto non modificabili"
+        : (item.id
+            ? (photoState.error
+                ? `Errore foto: ${photoState.error}`
+                : (photoState.uploading
+                    ? "Caricamento foto in corso\u2026"
+                    : (photoState.count > 0
+                        ? `Scatta o aggiungi foto (${photoState.count} gi\u00e0 caricate)`
+                        : "Scatta o aggiungi foto (fotocamera posteriore)")))
+            : "Salva prima il verbale per aggiungere foto");
 
     return (
         <tbody className={`ndt-mark-card${hasDefect ? " ndt-mark-card--defect" : ""}`}>
@@ -417,14 +431,18 @@ function MarkRow({ item, index, onChange, onRemove, reportId, onRegisterNc, judg
             <td className="ndt-actions-cell" data-label="Foto">
                 <button
                     type="button"
-                    className={`ndt-photo-row-btn${!item.id ? " ndt-photo-row-btn-disabled" : ""}${photoState.count > 0 ? " ndt-photo-row-btn-has-photos" : ""}`}
+                    className={[
+                        "ndt-photo-row-btn",
+                        photoLocked ? "ndt-photo-row-btn-disabled" : "",
+                        photoState.count > 0 ? "ndt-photo-row-btn-has-photos" : "",
+                        photoState.error ? "ndt-photo-row-btn-error" : "",
+                        photoState.uploading ? "ndt-photo-row-btn-busy" : "",
+                    ].filter(Boolean).join(" ")}
                     onClick={handlePhotoClick}
-                    disabled={photoState.uploading}
-                    title={item.id
-                        ? (photoState.count > 0
-                            ? `Aggiungi o scatta foto (${photoState.count} già caricate)`
-                            : "Scatta o aggiungi foto")
-                        : "Salva prima il verbale per aggiungere foto"}
+                    disabled={photoState.uploading || attachmentsReadOnly}
+                    aria-busy={photoState.uploading ? "true" : undefined}
+                    aria-label={photoTitle}
+                    title={photoTitle}
                 >
                     {"\uD83D\uDCF7"}
                     {photoState.count > 0 && (
@@ -443,6 +461,7 @@ function MarkRow({ item, index, onChange, onRemove, reportId, onRegisterNc, judg
                         ref={attRef}
                         itemId={item.id}
                         reportId={reportId}
+                        readOnly={attachmentsReadOnly}
                         onStateChange={setPhotoState}
                     />
                 </td>
@@ -455,28 +474,33 @@ function MarkRow({ item, index, onChange, onRemove, reportId, onRegisterNc, judg
                 <td className="ndt-mark-skip-cell"></td>
                 <td colSpan={9}>
                     <div className="ndt-defect-notes-wrap">
-                                        <span className="ndt-defect-notes-label">
-                                            {item.evaluation === "R" ? "\u26A0\uFE0F Riparazione richiesta" : "\u274C Scarto"}
-                                            {" \u2014 Descrizione difetto / localizzazione:"}
-                                        </span>
-                                        <AutoTextarea
-                                            className="ndt-input-defect-note notes-textarea"
-                                            value={item.notes || ""}
-                                            onChange={v => set("notes", v)}
-                                            rows={1}
-                                            placeholder={"es. cricca all'attacco del cordone, lato A, 15mm dal bordo..."}
-                                            draftScopeId={`ndt-item-${index}`}
-                                            draftFieldId="defect-notes"
-                                        />
-                                        <button
-                                            type="button"
-                                            className="ndt-defect-nc-link"
-                                            onClick={() => onRegisterNc(item, index)}
-                                            title="Registra questa marca come Non Conformit\u00e0 nel Piano Azioni"
-                                        >
-                                            {"\u2192 Registra NC"}
-                                        </button>
-                                    </div>
+                        <span className="ndt-defect-notes-label">
+                            {item.evaluation === "R" ? "\u26A0\uFE0F Riparazione richiesta" : "\u274C Scarto"}
+                            {" \u2014 Descrizione difetto / localizzazione:"}
+                        </span>
+                        <AutoTextarea
+                            className="ndt-input-defect-note notes-textarea"
+                            value={item.notes || ""}
+                            onChange={v => set("notes", v)}
+                            rows={1}
+                            placeholder={"es. cricca all'attacco del cordone, lato A, 15mm dal bordo..."}
+                            draftScopeId={`ndt-item-${index}`}
+                            draftFieldId="defect-notes"
+                        />
+                        <div className="ndt-defect-nc-hint" data-testid="ndt-defect-nc-hint">
+                            <span className="ndt-defect-nc-hint-text">
+                                {"Giudizio R/S: apri una NC nel Piano Azioni con i dati di questa marca (precompilati)."}
+                            </span>
+                            <button
+                                type="button"
+                                className="ndt-defect-nc-btn"
+                                onClick={() => onRegisterNc(item, index)}
+                                title="Apre il modulo NC con descrizione della marca"
+                            >
+                                {"Registra NC"}
+                            </button>
+                        </div>
+                    </div>
                 </td>
             </tr>
         )}
@@ -1206,7 +1230,18 @@ function NdtReportForm({ report, companies, availableInstruments, onSave, onCanc
                                         </tr>
                                     </thead>
                                         {items.map((item, idx) => (
-                                            <MarkRow key={item.id || idx} item={item} index={idx} onChange={updateMarkRow} onRemove={removeMarkRow} reportId={report?.id} onRegisterNc={openNcModalForItem} judgmentLocked={judgmentLocked} judgmentTitle={judgmentTitle} />
+                                            <MarkRow
+                                                key={item.id || idx}
+                                                item={item}
+                                                index={idx}
+                                                onChange={updateMarkRow}
+                                                onRemove={removeMarkRow}
+                                                reportId={report?.id}
+                                                onRegisterNc={openNcModalForItem}
+                                                judgmentLocked={judgmentLocked}
+                                                judgmentTitle={judgmentTitle}
+                                                attachmentsReadOnly={form.status === "approved"}
+                                            />
                                         ))}
                                 </table>
                             </div>
