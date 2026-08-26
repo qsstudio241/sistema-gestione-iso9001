@@ -8,7 +8,7 @@
 
 > **Risposta standard a «stato di avanzamento del progetto e priorità da affrontare»**: sintetizzare da questa sezione (moduli maturi + sessione più recente + tabella priorità sotto), **non** dal banner storico più sotto (superato, tenuto solo per traccia) né dall'archivio marzo 2026 [`docs/archive/PROJECT_CONTEXT_STATO_FUNZIONALITA_2026-03.md`](archive/PROJECT_CONTEXT_STATO_FUNZIONALITA_2026-03.md). **Aggiornare questa sezione a fine sessione** se emergono nuove priorità o se una priorità elencata viene chiusa (stesso principio delle "Lezioni apprese" in [GUIDA_CONSOLIDATA.md](GUIDA_CONSOLIDATA.md) — sintesi qui, dettaglio linkato).
 
-**Ultimo aggiornamento di questa sezione**: 26/08/2026 (brief CND-3 + NG-4 #564; STUD-1 stream #569; reprocess polish #566/#567).
+**Ultimo aggiornamento di questa sezione**: 26/08/2026 (CND-3 mergiata #571; NG-4 #564; STUD-1 stream #569).
 
 ### Moduli maturi (in produzione, uso quotidiano dai clienti Camellini/Mason)
 
@@ -16,7 +16,9 @@ Audit multi-standard (9001/14001/45001) · Non Conformità (workflow ISO 10.2 co
 
 ### Sessione più recente (26/08/2026)
 
-**Brief paralleli aperti** — [`DEPUTYTASK.md`](agent-tasks/DEPUTYTASK.md) **CND-3** (flag PT/MT → `method_params`); [`DEPUTYTASK1.md`](agent-tasks/DEPUTYTASK1.md) **NG-4** (messaggio «norma assente» in chat/gap). File disgiunti. Stream [`DEPUTYTASK_WPQR_STUD.md`](agent-tasks/DEPUTYTASK_WPQR_STUD.md) **STUD-1** APERTO (#569 gap) — WPQR prigioniero / P+T; **non** tocca gli slot CND/NG.
+**Brief paralleli aperti** — [`DEPUTYTASK.md`](agent-tasks/DEPUTYTASK.md) **CND-3 CHIUSO** (flag PT/MT, #571). Restano [`DEPUTYTASK1.md`](agent-tasks/DEPUTYTASK1.md) **NG-4** (messaggio «norma assente» in chat/gap) e stream [`DEPUTYTASK_WPQR_STUD.md`](agent-tasks/DEPUTYTASK_WPQR_STUD.md) **STUD-1** APERTO (#569 gap) — WPQR prigioniero / P+T.
+
+**CND-3 flag PT/MT (26/08, mergiata #571)** — verbale PT/MT: checkbox Mason in `method_params.pt` / `.mt` (un metodo per verbale, `sanitizeMethodParams`). VT lux invariato. Export Word flag→placeholder = slice successiva. Prossime: CND-7 posa, CND-5 UT se c’è modello.
 
 **CND-2 gate ispettore 9712 + idoneità visiva (25/08, mergiata #561)** — Completa/firma solo con patentino ISO 9712 valido **per il metodo** (livello 2 o 3) **e** visione in corso. Serve ancora deploy backend (`ndtInspectorGate.service.js`) se non fatto.
 
