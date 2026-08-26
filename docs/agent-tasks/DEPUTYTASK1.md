@@ -1,7 +1,8 @@
 # DEPUTYTASK1 — CND-W: export Word PT/MT da method_params → placeholder
 
-**Stato:** APERTO  
+**Stato:** CHIUSO — TEST OK  
 **Aperto:** 26/08/2026  
+**Chiuso:** 26/08/2026  
 **Piano:** [`PLAN_CND_SLICES.md`](PLAN_CND_SLICES.md) (dopo CND-3 + CND-4)  
 **Dipende da:** CND-3 (#571) + CND-4 (#547) **CHIUSI**  
 **Rischio:** Medio — FE export Word; niente auth/sync/DB.  
@@ -39,9 +40,21 @@ CND-3 salva i flag; CND-4 risolve il template per metodo. Manca il ponte **dati 
 - posa registro / allegati / STUD / WPQR / auth
 - GUIDA / roadmap § Stato attuale (parallelo — sync **dopo merge**)
 
+## Esito
+
+- `buildPtMtPlaceholderData` + merge in `buildVtTemplateData`: PT/MT → chiavi PLAN (`pt_acc_l2`, `mt_tr_wet`, …) con ☑/☐ sui gruppi esclusivi; cleaning multi; testi consumabili/campi MT; difetti PT `_yn`/`_a`.
+- Resolve template: invariato (CND-4 `loadVtTemplate`).
+- VT lux invariati (test regressione).
+- L1: `vtWordExport.cndW.placeholders.test.js` + `vtWordExport.cndResolve.test.js` + build.
+
 ## Verifica
 
-- [ ] Export PT/MT include flag da `method_params`
-- [ ] VT non regredisce
-- [ ] L1 + build OK
-- [ ] Brief CHIUSO — TEST OK
+- [x] Export PT/MT include flag da `method_params`
+- [x] VT non regredisce
+- [x] L1 + build OK
+- [x] Brief CHIUSO — TEST OK
+
+## Bozza sync docs (dopo merge — parallelo CND-9 / STUD)
+
+- GUIDA lezioni: riga CND-W — `method_params` → placeholder semantici ☑/☐ in `vtWordExport`; non FORMCHECKBOX.
+- Roadmap § Stato attuale: CND-W chiusa; resta CND-9 + STUD-1.
