@@ -6,6 +6,8 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import React from "react";
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { readFileSync } from "fs";
+import { resolve } from "path";
 
 const scopeState = {
   companyId: "48",
@@ -118,6 +120,9 @@ describe("NdtReportsPage — flag PT/MT CND-3", () => {
   });
 
   it("MT mostra tracciante umido; cambio tipo non mescola PT", async () => {
+    const src = readFileSync(resolve("src/pages/NdtReportsPage.jsx"), "utf8");
+    expect(src).not.toMatch(/>Intensit\\u00e0</);
+    expect(src).toMatch(/\{"Intensit\\u00e0"\}/);
     const user = userEvent.setup();
     await openNewReport(user);
     await user.selectOptions(screen.getByLabelText("Tipo metodo"), "MT");
@@ -127,6 +132,8 @@ describe("NdtReportsPage — flag PT/MT CND-3", () => {
     }
     expect(await screen.findByTestId("ndt-mt-method")).toBeTruthy();
     expect(screen.queryByTestId("ndt-pt-method")).toBeNull();
+    expect(screen.getByLabelText("Intensità")).toBeInTheDocument();
+    expect(screen.queryByText(/Intensit\\u00e0/)).toBeNull();
     const wet = screen.getByRole("button", { name: "Umido" });
     expect(wet).toHaveAttribute("aria-pressed", "true");
 

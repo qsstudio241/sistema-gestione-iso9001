@@ -154,7 +154,7 @@ function PtMethodFields({ pt, onField, onDefect }) {
                 value={p.cleaning}
                 onChange={(v) => onField("cleaning", v)}
                 multi
-                hint="Pi\u00f9 scelte (nel modello Mason molatura e spazzolatura possono coesistere)."
+                hint={"Pi\u00f9 scelte (nel modello Mason molatura e spazzolatura possono coesistere)."}
                 ariaLabel="Pulizia superficiale PT"
             />
             <MethodFlagGroup
@@ -287,14 +287,14 @@ function MtMethodFields({ mt, onField, onDefectToggle }) {
             <div className="ndt-params-grid">
                 <div className="ndt-form-group">
                     <label htmlFor="mt-pole">Passo poli</label>
-                    <input id="mt-pole" type="text" value={m.pole_pitch || ""} onChange={(e) => onField("pole_pitch", e.target.value)} placeholder="es. 150\u00f7180 mm" />
+                    <input id="mt-pole" type="text" value={m.pole_pitch || ""} onChange={(e) => onField("pole_pitch", e.target.value)} placeholder={"es. 150\u00f7180 mm"} />
                 </div>
                 <div className="ndt-form-group">
                     <label htmlFor="mt-curr-type">Tipo corrente</label>
                     <input id="mt-curr-type" type="text" value={m.curr_type || ""} onChange={(e) => onField("curr_type", e.target.value)} placeholder="es. CA" />
                 </div>
                 <div className="ndt-form-group">
-                    <label htmlFor="mt-curr-a">Intensit\u00e0</label>
+                    <label htmlFor="mt-curr-a">{"Intensit\u00e0"}</label>
                     <input id="mt-curr-a" type="text" value={m.curr_a || ""} onChange={(e) => onField("curr_a", e.target.value)} />
                 </div>
                 <div className="ndt-form-group">
