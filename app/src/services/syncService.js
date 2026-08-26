@@ -333,7 +333,7 @@ export class SyncService {
                             continue; // Nessun lock → salta silenziosamente
                         }
                     }
-                    await this.syncItem(item);
+                    const syncResult = await this.syncItem(item);
                     await this.removeFromQueue(item.id);
                     successCount++;
                     console.log(`✅ [SYNC] Completato: ${item.type} (${item.id})`);
@@ -348,6 +348,9 @@ export class SyncService {
                             try {
                                 localStorage.removeItem(draftKey);
                             } catch (_) { /* ignore */ }
+                            try {
+                                localStorage.removeItem(`${draftKey}:client_uuid`);
+                            } catch (_) { /* ignore */ }
                         }
                         try {
                             window.dispatchEvent(
@@ -356,6 +359,7 @@ export class SyncService {
                                         type: item.type,
                                         payload: item.payload,
                                         draftKey: draftKey || null,
+                                        result: syncResult || null,
                                     },
                                 }),
                             );
