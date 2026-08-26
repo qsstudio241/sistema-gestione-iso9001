@@ -2,8 +2,8 @@
 
 > **Destinazione**: agenti di sviluppo e runtime AI dell’app rispettano un **loop chiuso**: (1) prima di toccare logica di conformità, dichiarano le fonti Markdown; (2) se manca il testo, **richiedono** al committente (HITL) senza inventare; (3) il PDF viene ingerito (`pdf-to-json` → `docs/Normative/`); (4) la conoscenza alimenta skill Cursor **mirate** e servizi prodotto (NormBroker, gap, Second Brain) — non una «schiera» di agenti GitHub paralleli.
 > **Spec / ADR**: [ADR-010](../adr/ADR-010-ai-agentic-architecture.md) · [ADR-015](../adr/ADR-015-cursor-lead-deputy-workflow.md) · [ADR-018](../adr/ADR-018-company-profile-conformita-legislativa.md) · skill [`gap-analysis-normativa`](../../.cursor/skills/gap-analysis-normativa/SKILL.md) · [`pdf-to-json`](../../.cursor/skills/pdf-to-json/SKILL.md)
-> **Brief attivi (parallelo)**: [`DEPUTYTASK1.md`](DEPUTYTASK1.md) **NG-4 APERTO**; CND-3 su [`DEPUTYTASK.md`](DEPUTYTASK.md) (file disgiunti). NG-3 **CHIUSO**.
-> **Mappa creata**: 25/08/2026 · **NG-0+NG-1**: 25/08/2026 · **NG-3**: 25/08/2026 · **NG-4**: brief aperto 25/08/2026
+> **Brief attivi (parallelo)**: [`DEPUTYTASK1.md`](DEPUTYTASK1.md) **NG-4 CHIUSO**; CND-3 su [`DEPUTYTASK.md`](DEPUTYTASK.md) (file disgiunti). NG-3 **CHIUSO**.
+> **Mappa creata**: 25/08/2026 · **NG-0+NG-1**: 25/08/2026 · **NG-3**: 25/08/2026 · **NG-4**: 26/08/2026
 > **Gap report**: [`GAP_NORM_FIDELITY_STRATEGICA_2026-08-25.md`](../gap-reports/GAP_NORM_FIDELITY_STRATEGICA_2026-08-25.md)
 > **Backlog lacune**: [`NORME_MANCANTI_BACKLOG.md`](../reference/NORME_MANCANTI_BACKLOG.md)
 
@@ -33,6 +33,7 @@
 - **NG-0 ✅** (25/08/2026) — gate norm-touching + template richiesta + backlog
 - **NG-1 ✅** (25/08/2026) — inventario globale in skill reference + backlog popolato; 3834-2/-4 già digitalizzate
 - **NG-3 ✅** (25/08/2026) — skill `gap-analysis-normativa`: sezione «Quando chiedere PDF» + mapping SAL/RDP/checklist aggiornato
+- **NG-4 ✅** (26/08/2026) — messaggio stabile «norma assente» su NormBroker + chat / gap / context builder (niente testo inventato)
 
 ## Mappa slice
 
@@ -42,7 +43,7 @@
 | **NG-1** | Inventario fonti globale | skill `reference.md` + backlog | NG-0 | AFK | ✅ |
 | **NG-2** | Runbook ingest PDF → Normative | how-to + GUIDA; `pdf-to-json` | NG-0, PDF HITL | HITL | pending |
 | **NG-3** | Rafforzare skill gap | `.cursor/skills/gap-analysis-normativa/` | NG-1 | AFK | ✅ (`DEPUTYTASK.md`, 25/08/2026) |
-| **NG-4** | Messaggio «norma assente» in chat/gap | normBroker / aiChat / gapAnalysis | NG-1 | AFK | **APERTO** (`DEPUTYTASK1.md`) |
+| **NG-4** | Messaggio «norma assente» in chat/gap | normBroker / aiChat / gapAnalysis | NG-1 | AFK | ✅ (`DEPUTYTASK1.md`, 26/08/2026) |
 | **NG-5** | Conformità legislativa profilo | ADR-018 + MD leggi | NG-2 + HITL | HITL | pending |
 
 **Parallelo ora**: CND-3 (flag PT/MT) su [`DEPUTYTASK.md`](DEPUTYTASK.md) — file disgiunti da NG-4.
