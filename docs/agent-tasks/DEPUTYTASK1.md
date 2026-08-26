@@ -1,7 +1,8 @@
 # DEPUTYTASK1 — NG-4: messaggio «norma assente» in chat / gap
 
-**Stato:** APERTO  
+**Stato:** CHIUSO — TEST OK  
 **Aperto:** 25/08/2026  
+**Chiuso:** 26/08/2026  
 **Piano:** [`PLAN_NORM_FIDELITY_SLICES.md`](PLAN_NORM_FIDELITY_SLICES.md)  
 **Dipende da:** NG-0 + NG-1 + NG-3 **CHIUSI**  
 **Rischio:** Medio — BE AI (NormBroker / chat / gap); niente auth JWT, niente sync audit, niente migrazioni.  
@@ -44,6 +45,10 @@ NormBroker già restituisce `null` e logga «not found»; SAL suggest degrada co
 
 ## Verifica
 
-- [ ] Con clausola assente: messaggio onesto, nessuna allucinazione di testo norma
-- [ ] Test L1 verdi sul caso null
-- [ ] PLAN NG-4 spuntato; brief CHIUSO — TEST OK
+- [x] Con clausola assente: messaggio onesto, nessuna allucinazione di testo norma
+- [x] Test L1 verdi sul caso null
+- [x] PLAN NG-4 spuntato; brief CHIUSO — TEST OK
+
+## Esito (26/08/2026)
+
+Contratto unico su `normBroker`: `buildNormAbsentMessage` / `resolveClauseText` / `resolveStandardAbsent` (`NORM_TEXT_ABSENT`). Collegato a **aiChat** (avviso in prompt + prefisso reply, chat resta attiva), **gapAnalysis** (standard sconosciuto → `normAbsent` in JSON + testo in pagina), **aiContextBuilder** (getClauseText null / getFullNorm vuoto: niente testo inventato nel prompt). Jest: `normBroker.service.test.js`, `aiChat.controller.test.js`, `gapAnalysis.service.test.js`, `aiContextBuilder.service.test.js`.

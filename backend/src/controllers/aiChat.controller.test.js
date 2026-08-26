@@ -40,6 +40,10 @@ jest.mock('../services/ambitoFacts.service', () => ({
   loadAmbitoFacts: jest.fn(),
 }));
 
+jest.mock('../services/normBroker.service', () => ({
+  resolveClauseText: jest.fn(),
+}));
+
 const { chat, getActiveProvider } = require('../services/aiProviderAdapter');
 const { searchKnowledge } = require('../services/knowledgeIndexer.service');
 const {
@@ -49,6 +53,7 @@ const {
 } = require('../services/aiStandardContext.service');
 const { resolveAiCompanyScope } = require('../services/aiCompanyScope.service');
 const { loadAmbitoFacts } = require('../services/ambitoFacts.service');
+const { resolveClauseText } = require('../services/normBroker.service');
 const { aiChat, getAmbitoFacts } = require('./aiChat.controller');
 
 function createRes() {
@@ -85,6 +90,12 @@ describe('aiChat.controller — aiChat', () => {
     });
     resolveStandardCodesForFilter.mockReturnValue(['ISO_9001', 'ISO_9001_2015']);
     buildStandardContextBlock.mockReturnValue('\n--- NORMA ATTIVA ---\nISO 9001\n');
+    resolveClauseText.mockResolvedValue({
+      hit: { text: 'Testo clausola in archivio', title: 'Documentazione', source: 'local_db' },
+      textAvailable: true,
+      absentMessage: null,
+      code: null,
+    });
   });
 
   it('passes standardId filter to searchKnowledge when provided', async () => {
@@ -209,6 +220,57 @@ describe('aiChat.controller — aiChat', () => {
       expect.any(Object)
     );
     expect(chat.mock.calls[0][0][0].content).toContain('7.5');
+    expect(resolveClauseText).toHaveBeenCalledWith(
+      'ISO_9001',
+      '7.5',
+      expect.objectContaining({ organizationId: 99 })
+    );
+    expect(res.json.mock.calls[0][0].normAbsent).toBeUndefined();
+  });
+
+  it('con clausola assente: chat resta attiva, avviso onesto, nessuna allucinazione di testo norma', async () => {
+    const absentMsg = 'Il testo di ISO 9712 2022 §8.2 non è presente nell\'archivio locale. Non valuto a caso.';
+    resolveClauseText.mockResolvedValue({
+      hit: null,
+      textAvailable: false,
+      absentMessage: absentMsg,
+      code: 'NORM_TEXT_ABSENT',
+    });
+    chat.mockResolvedValue({
+      content: 'Posso aiutarti sui dati aziendali indicizzati.',
+      model: 'gemini-pro',
+      tokens: { input: 10, output: 20 },
+      cost: 0.0001,
+    });
+
+    const req = {
+      body: {
+        message: 'Cosa dice la clausola 8.2?',
+        clauseRef: '8.2',
+        standardKey: 'ISO_9712_2022',
+      },
+      user: { organization_id: 99, auditor_org_id: 10, user_id: 5 },
+    };
+    const res = createRes();
+
+    await aiChat(req, res);
+
+    const systemContent = chat.mock.calls[0][0][0].content;
+    expect(systemContent).toContain('NORMA ASSENTE');
+    expect(systemContent).toContain(absentMsg);
+    expect(systemContent).toMatch(/NON citare/);
+    expect(chat).toHaveBeenCalled();
+
+    const body = res.json.mock.calls[0][0];
+    expect(body.reply).toContain(absentMsg);
+    expect(body.reply).toContain('Posso aiutarti sui dati aziendali indicizzati.');
+    expect(body.normAbsent).toEqual(expect.objectContaining({
+      code: 'NORM_TEXT_ABSENT',
+      textAvailable: false,
+      clauseRef: '8.2',
+      standardCode: 'ISO_9712_2022',
+    }));
+    expect(body.reply).not.toMatch(/il requisito della clausola 8\.2 è/i);
   });
 
   it('returns 403 when company scope is denied (studio fuori ambito)', async () => {
