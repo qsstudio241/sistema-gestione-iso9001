@@ -8,6 +8,11 @@ import React, { useState, useEffect, useCallback } from "react";
 import apiService from "../services/apiService";
 import { useCompanyScope } from "../contexts/CompanyScopeContext";
 import { formatDate } from "../utils/dateHelpers";
+import {
+    NDT_INSTRUMENT_ROLE_OPTIONS,
+    isKnownInstrumentRole,
+    labelForInstrumentRole,
+} from "../utils/ndtInstrumentRoles";
 import "./EquipmentPage.css";
 
 const ASSET_CATEGORIES = [
@@ -157,8 +162,25 @@ function EquipmentFormModal({ asset, companies = [], onSave, onClose }) {
                         </div>
                         <div className="eq-form-row">
                             <div className="eq-form-group">
-                                <label>Sottocategoria</label>
-                                <input type="text" value={form.asset_subcategory} onChange={e => set("asset_subcategory", e.target.value)} placeholder="es. calibro, luxmetro" />
+                                <label>Ruolo strumento</label>
+                                <select
+                                    value={form.asset_subcategory || ""}
+                                    onChange={e => set("asset_subcategory", e.target.value)}
+                                    aria-label="Ruolo strumento"
+                                >
+                                    <option value="">— Seleziona —</option>
+                                    {NDT_INSTRUMENT_ROLE_OPTIONS.map(r => (
+                                        <option key={r.value} value={r.value}>{r.label}</option>
+                                    ))}
+                                    {/* Valori legacy free-text non in elenco: non perdere il dato in edit */}
+                                    {form.asset_subcategory
+                                        && !isKnownInstrumentRole(form.asset_subcategory)
+                                        && (
+                                            <option value={form.asset_subcategory}>
+                                                {form.asset_subcategory} (personalizzato)
+                                            </option>
+                                        )}
+                                </select>
                             </div>
                             <div className="eq-form-group">
                                 <label>Produttore</label>
@@ -397,6 +419,9 @@ export default function EquipmentPage() {
                                     <tr key={a.id} className="eq-row" onClick={() => handleEdit(a)}>
                                         <td>
                                             <div className="eq-name">{a.name}</div>
+                                            {a.asset_subcategory && (
+                                                <div className="eq-role-tag">{labelForInstrumentRole(a.asset_subcategory)}</div>
+                                            )}
                                             {a.model && <div className="eq-model">{a.manufacturer} {a.model}</div>}
                                         </td>
                                         <td>{ASSET_CATEGORIES.find(c => c.value === a.asset_category)?.label || a.asset_category}</td>
