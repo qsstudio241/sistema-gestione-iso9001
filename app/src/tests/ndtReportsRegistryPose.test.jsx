@@ -30,6 +30,9 @@ vi.mock("../hooks/useNdtAutoSave.js", () => ({
   useNdtAutoSave: () => ({ clearDraft: vi.fn(), loadDraft: () => null, draftKey: "sgq:ndt_draft:new" }),
   enqueueNdtReportSync: vi.fn(),
   isNdtNetworkSaveError: () => false,
+  ndtDraftKey: (id) => "sgq:ndt_draft:" + (id || "new"),
+  getOrCreateOfflineCreateUuid: () => "test-uuid",
+  clearOfflineCreateUuid: vi.fn(),
 }));
 
 vi.mock("../components/NdtItemAttachments.jsx", () => ({

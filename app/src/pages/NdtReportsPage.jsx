@@ -12,7 +12,14 @@ import { formatDate } from "../utils/dateHelpers";
 import AutoTextarea from "../components/AutoTextarea.jsx";
 import NcCreateModal from "../components/NcCreateModal.jsx";
 import NdtItemAttachments from "../components/NdtItemAttachments.jsx";
-import { useNdtAutoSave, enqueueNdtReportSync, isNdtNetworkSaveError } from "../hooks/useNdtAutoSave.js";
+import {
+    useNdtAutoSave,
+    enqueueNdtReportSync,
+    isNdtNetworkSaveError,
+    getOrCreateOfflineCreateUuid,
+    clearOfflineCreateUuid,
+    ndtDraftKey,
+} from "../hooks/useNdtAutoSave.js";
 import {
     defaultMethodParams,
     defaultPtParams,
@@ -510,7 +517,10 @@ function MarkRow({ item, index, onChange, onRemove, reportId, onRegisterNc, judg
 
 // ── Form verbale ─────────────────────────────────────────────────────────────
 function NdtReportForm({ report, companies, availableInstruments, onSave, onCancel }) {
-    const isEdit = !!report;
+    // Dopo sync create offline, leghiamo l'id server senza chiudere il form
+    const [boundReportId, setBoundReportId] = useState(report?.id || null);
+    const reportId = boundReportId || report?.id || null;
+    const isEdit = reportId != null;
 
     // Nome utente loggato per auto-fill ispettore
     const currentUserName = useMemo(() => {
@@ -634,6 +644,7 @@ function NdtReportForm({ report, companies, availableInstruments, onSave, onCanc
     const [savedAt, setSavedAt] = useState(null);
     const [pendingOfflineSync, setPendingOfflineSync] = useState(false);
     const offlineCreateUuidRef = useRef(null);
+    const pendingEnqueueTimerRef = useRef(null);
     const [ncModalOpen, setNcModalOpen]   = useState(false);
     const [ncInitialDesc, setNcInitialDesc] = useState("");
     const [inspectorGate, setInspectorGate] = useState({
@@ -716,21 +727,67 @@ function NdtReportForm({ report, companies, availableInstruments, onSave, onCanc
     }, [form.report_type, form.client, report?.report_number]);
 
     // Fix 3 — auto-save bozza in localStorage mentre si compila in campo
-    const { clearDraft, draftKey } = useNdtAutoSave(report?.id || null, form, items);
+    const { clearDraft, draftKey } = useNdtAutoSave(reportId, form, items);
 
-    // CND-9: dopo drain coda NDT, togli banner e bozza (clear anche in syncService)
+    const buildSavePayload = useCallback((targetStatus) => ({
+        ...form,
+        company_id: form.company_id ? parseInt(form.company_id) : null,
+        project_id: form.project_id ? parseInt(form.project_id, 10) : null,
+        status: targetStatus || form.status,
+        method_params: sanitizeMethodParams(form.report_type, form.method_params),
+        items,
+        instrument_ids: selectedInstruments.map(i => ({ asset_id: i.asset_id, instrument_role: i.role })),
+    }), [form, items, selectedInstruments]);
+
+    const enqueueCurrentOffline = useCallback(async (targetStatus) => {
+        const payload = buildSavePayload(targetStatus);
+        const type = isEdit ? "update_ndt_report" : "create_ndt_report";
+        let syncPayload;
+        if (isEdit) {
+            syncPayload = { id: reportId, ...payload, draftKey };
+        } else {
+            const uuid = offlineCreateUuidRef.current || getOrCreateOfflineCreateUuid(draftKey);
+            offlineCreateUuidRef.current = uuid;
+            syncPayload = { ...payload, uuid, draftKey };
+        }
+        return enqueueNdtReportSync(type, syncPayload);
+    }, [buildSavePayload, isEdit, reportId, draftKey]);
+
+    // CND-9: dopo drain coda NDT — se create, lega id server (niente secondo create)
     useEffect(() => {
         const onSynced = (e) => {
             const key = e?.detail?.draftKey;
-            if (key && key === draftKey) {
-                setPendingOfflineSync(false);
-                clearDraft();
-                setSavedAt(new Date().toLocaleTimeString("it-IT", { hour: "2-digit", minute: "2-digit" }));
+            const syncedNewKey = ndtDraftKey(null);
+            const matches =
+                (key && key === draftKey) ||
+                (!reportId && key === syncedNewKey);
+            if (!matches) return;
+
+            const serverId = e?.detail?.result?.id;
+            if (e?.detail?.type === "create_ndt_report" && serverId) {
+                clearOfflineCreateUuid(syncedNewKey);
+                offlineCreateUuidRef.current = null;
+                setBoundReportId(serverId);
             }
+            setPendingOfflineSync(false);
+            clearDraft();
+            setSavedAt(new Date().toLocaleTimeString("it-IT", { hour: "2-digit", minute: "2-digit" }));
         };
         window.addEventListener("sgq:ndtReportSynced", onSynced);
         return () => window.removeEventListener("sgq:ndtReportSynced", onSynced);
-    }, [draftKey, clearDraft]);
+    }, [draftKey, clearDraft, reportId]);
+
+    // CND-9: mentre è in coda, riallinea la coda all'ultima bozza (dedup uuid/id)
+    useEffect(() => {
+        if (!pendingOfflineSync) return undefined;
+        if (pendingEnqueueTimerRef.current) clearTimeout(pendingEnqueueTimerRef.current);
+        pendingEnqueueTimerRef.current = setTimeout(() => {
+            enqueueCurrentOffline(form.status).catch(() => {});
+        }, 900);
+        return () => {
+            if (pendingEnqueueTimerRef.current) clearTimeout(pendingEnqueueTimerRef.current);
+        };
+    }, [pendingOfflineSync, form, items, selectedInstruments, enqueueCurrentOffline]);
 
     const set = (k, v) => setForm(f => ({ ...f, [k]: v }));
     const setParam = (k, v) => setForm(f => ({ ...f, method_params: { ...f.method_params, [k]: v } }));
@@ -776,19 +833,11 @@ function NdtReportForm({ report, companies, availableInstruments, onSave, onCanc
         }
         setSaving(true);
         setError(null);
-        const payload = {
-            ...form,
-            company_id: form.company_id ? parseInt(form.company_id) : null,
-            project_id: form.project_id ? parseInt(form.project_id, 10) : null,
-            status: targetStatus || form.status,
-            method_params: sanitizeMethodParams(form.report_type, form.method_params),
-            items,
-            instrument_ids: selectedInstruments.map(i => ({ asset_id: i.asset_id, instrument_role: i.role })),
-        };
+        const payload = buildSavePayload(targetStatus);
         try {
             let saveRes;
             if (isEdit) {
-                saveRes = await apiService.updateNdtReport(report.id, payload);
+                saveRes = await apiService.updateNdtReport(reportId, payload);
             } else {
                 saveRes = await apiService.createNdtReport(payload);
             }
@@ -796,6 +845,10 @@ function NdtReportForm({ report, companies, availableInstruments, onSave, onCanc
             clearDraft(); // rimuove bozza locale dopo salvataggio riuscito
             setPendingOfflineSync(false);
             offlineCreateUuidRef.current = null;
+            clearOfflineCreateUuid(ndtDraftKey(null));
+            if (!boundReportId && saveRes?.data?.id) {
+                setBoundReportId(saveRes.data.id);
+            }
             const pose = saveRes?.registry_pose || saveRes?.data?.registry_pose || null;
             onSave(pose && pose.message
                 ? {
@@ -807,30 +860,15 @@ function NdtReportForm({ report, companies, availableInstruments, onSave, onCanc
         } catch (err) {
             // CND-9: rete assente → coda IndexedDB (tipi già in syncService); localStorage resta backup
             if (isNdtNetworkSaveError(err)) {
-                const type = isEdit ? "update_ndt_report" : "create_ndt_report";
-                let syncPayload;
-                if (isEdit) {
-                    syncPayload = { id: report.id, ...payload, draftKey };
-                } else {
-                    if (!offlineCreateUuidRef.current) {
-                        offlineCreateUuidRef.current =
-                            (typeof crypto !== "undefined" && crypto.randomUUID)
-                                ? crypto.randomUUID()
-                                : `ndt-${Date.now()}`;
-                    }
-                    syncPayload = {
-                        ...payload,
-                        uuid: offlineCreateUuidRef.current,
-                        draftKey,
-                    };
-                }
-                const queueId = await enqueueNdtReportSync(type, syncPayload);
+                const queueId = await enqueueCurrentOffline(targetStatus || form.status);
                 if (queueId) {
                     setPendingOfflineSync(true);
                     setError(null);
                     setSavedAt(new Date().toLocaleTimeString("it-IT", { hour: "2-digit", minute: "2-digit" }));
                     return;
                 }
+                setError("Senza rete e coda piena: bozza solo in locale. Riprova tra poco.");
+                return;
             }
             setError(err?.message || "Errore salvataggio verbale");
         } finally {
@@ -874,7 +912,7 @@ function NdtReportForm({ report, companies, availableInstruments, onSave, onCanc
             <div className="ndt-form-header">
                 <div>
                     <h2 className="ndt-form-title">
-                        {isEdit ? `Verbale ${report.report_number || "—"}` : "Nuovo verbale CND"}
+                        {isEdit ? `Verbale ${report?.report_number || "—"}` : "Nuovo verbale CND"}
                     </h2>
                     <span className="ndt-form-subtitle">{reportTypeLabel}</span>
                 </div>
