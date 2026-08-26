@@ -20,6 +20,15 @@
 | `Normative NORMA_00018_ UNI EN ISO 9606-1_2017 Rev. 0.md` (+ `.json`) | — (non seed SGQ) | ISO 9606-1:2017 | Qualifiche saldatori — estratto range in `docs/reference/ISO-9606-1-range-validita-patentino.md` |
 | `Normative NORMA_00019_ UNI EN ISO 15614-1_2017 Rev. 0.md` (+ `.json`) | — (non seed SGQ) | ISO 15614-1:2017 | WPQR / range — estratto `docs/reference/ISO-15614-1-range-validita-WPQR.md` |
 | `Normative NORMA_00033_ BS EN ISO 14555_2025 Rev. 0.md` (+ `.json`) | ISO_14555_2025 | ISO 14555:2025 | Arc stud welding — digitalizzata 26/08/2026; **non** seed SGQ generico; range/WPQR = STUD-3 (estratto dedicato dopo STUD-1) |
+| `Normative NORMA_00034_ ISO 9712_2021 Rev. 0.md` (+ `.json`) | ISO_9712_2021 | ISO 9712:2021 | Qualifica personale NDT — digitalizzata 26/08/2026; **non** seed SGQ; GAP pag. 8/51 |
+| `Normative NORMA_00035_ BS EN ISO 2560_2020 Rev. 0.md` (+ `.json`) | ISO_2560_2020 | ISO 2560:2020 | Consumabili elettrodi — MC apporto; **non** seed SGQ; estratto soglie = backlog |
+| `Normative NORMA_00036_ ISO 17632_2015 Rev. 0.md` (+ `.json`) | ISO_17632_2015 | ISO 17632:2015 | Filo animato — MC; GAP cid fluoride; **non** seed SGQ |
+| `Normative NORMA_00037_ BS EN ISO 14174_2019 Rev. 0.md` (+ `.json`) | ISO_14174_2019 | ISO 14174:2019 | Flussi — MC; **non** seed SGQ |
+| `Normative NORMA_00038_ BS EN ISO 19011_2026 Rev. 0.md` (+ `.json`) | ISO_19011_2026 | ISO 19011:2026 | Linee guida audit SG; **non** seed checklist 4–10 |
+| `Normative NORMA_00039_ ISO 3452-1_2021 Rev. 0.md` (+ `.json`) | ISO_3452_1_2021 | ISO 3452-1:2021 | PT principi generali; CND; GAP pag. 6 |
+| `Normative NORMA_00040_ BS EN ISO 17638_2016 Rev. 0.md` (+ `.json`) | ISO_17638_2016 | ISO 17638:2016 | MT su saldature; CND |
+| `Normative NORMA_00041_ BS EN ISO 23278_2015 Rev. 0.md` (+ `.json`) | ISO_23278_2015 | ISO 23278:2015 | MT acceptance levels; CND |
+| `Normative NORMA_00042_ ISO 23277_2015 Rev. 0.md` (+ `.json`) | ISO_23277_2015 | ISO 23277:2015 | PT acceptance levels; CND; GAP pag. 9 |
 | `Normative NORMA_00020`…`00028` (+ MTC) | — (non seed SGQ) | EN 10168 / 10204 / 10025-2 / 10210-1 / 10219-1 / … | Material Compliance — inventario [`MATERIAL-COMPLIANCE-NORME-SINTESI.md`](../../../docs/reference/MATERIAL-COMPLIANCE-NORME-SINTESI.md) |
 
 **Backlog lacune (richieste PDF / non digitalizzate)**: [`docs/reference/NORME_MANCANTI_BACKLOG.md`](../../../docs/reference/NORME_MANCANTI_BACKLOG.md) — fonte unica; non duplicare qui le sole righe «mancante».
@@ -129,7 +138,7 @@ Il motore operativo **non** è `audits.document_type='sal'`: è `requirement_imp
 
 | Area | Fonte | Stato |
 |------|-------|-------|
-| Qualifica operatori | ISO 9712 | Estratto `ISO_9712_2022_NDT_QUALIFICATION.md`; **testo integrale** in [`NORME_MANCANTI_BACKLOG`](../../../docs/reference/NORME_MANCANTI_BACKLOG.md) |
+| Qualifica operatori | ISO 9712:2021 | `NORMA_00034` MD+JSON + estratto `ISO_9712_2022_NDT_QUALIFICATION.md` |
 | Verbali / gate ispettore | PLAN_CND | CND-2 = gate 9712 + visione |
 | Strumenti | ADR-016 | Anagrafica `EquipmentPage` |
 

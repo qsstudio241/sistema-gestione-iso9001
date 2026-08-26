@@ -1,0 +1,848 @@
+[
+  {
+    "standard_code": "ISO_9712_2021",
+    "clause_ref": "1",
+    "clause_title": "Scope 1",
+    "requirement_text": "............................................................................................................................................................................................................................."
+  },
+  {
+    "standard_code": "ISO_9712_2021",
+    "clause_ref": "2",
+    "clause_title": "Normative references 1",
+    "requirement_text": "................................................................................................................................................................................................................................."
+  },
+  {
+    "standard_code": "ISO_9712_2021",
+    "clause_ref": "3",
+    "clause_title": "Terms and definitions 2",
+    "requirement_text": "....................................................................................................................................................................................."
+  },
+  {
+    "standard_code": "ISO_9712_2021",
+    "clause_ref": "4",
+    "clause_title": "Abbreviated terms 6",
+    "requirement_text": "...................................................................................................................................................................................."
+  },
+  {
+    "standard_code": "ISO_9712_2021",
+    "clause_ref": "5",
+    "clause_title": "Responsibilities 6",
+    "requirement_text": "............................................................................................................................................................................................. ..................................................................................................................................................................................................... 5.1 General ...........................................................................................................................................................................................................6 5.2 Certification body ................................................................................................................................................................................6 5.3 Authorized qualification body ..................................................................................................................................................8 5.4 Examination centre ............................................................................................................................................................................8 5.5 Employer ......................................................................................................................................................................................................8 5.6 Candidate .....................................................................................................................................................................................................9 5.7 Certificate holders ...............................................................................................................................................................................9 5.8 Examiners ................................................................................................................................................................................................10"
+  },
+  {
+    "standard_code": "ISO_9712_2021",
+    "clause_ref": "6",
+    "clause_title": "Levels of certification 10",
+    "requirement_text": "5.9 Referee ........................................................................................................................................................................................................10 .................................................................................................................................................................................. 6.1 Level 1 .........................................................................................................................................................................................................10 6.2 Level 2 .........................................................................................................................................................................................................10"
+  },
+  {
+    "standard_code": "ISO_9712_2021",
+    "clause_ref": "7",
+    "clause_title": "Eligibility 11",
+    "requirement_text": "6.3 Level 3 .........................................................................................................................................................................................................11 ................................................................................................................................................................................................................... 7.1 General ........................................................................................................................................................................................................11 7.2 Training ......................................................................................................................................................................................................11 7.3 Industrial NDT experience........................................................................................................................................................13 7.3.1 General .....................................................................................................................................................................................13 7.3.2 Level 3 .......................................................................................................................................................................................13 7.3.3 Possible reductions .......................................................................................................................................................14 7.4 Vision requirements — all levels ........................................................................................................................................14 7.4.1 General .....................................................................................................................................................................................14 7.4.2 Near vision acuity ...........................................................................................................................................................14 7.4.3 Colour vision .......................................................................................................................................................................14"
+  },
+  {
+    "standard_code": "ISO_9712_2021",
+    "clause_ref": "8",
+    "clause_title": "Examinations 15",
+    "requirement_text": ""
+  },
+  {
+    "standard_code": "ISO_9712_2021",
+    "clause_ref": "7.4.4",
+    "clause_title": "Personnel administering vision tests ...........................................................................................................15",
+    "requirement_text": "........................................................................................................................................................................................................ 8.1 Overview ...................................................................................................................................................................................................15 8.1.1 General .....................................................................................................................................................................................15 8.1.2 Examination elements ................................................................................................................................................15 8.1.3 Examination time ...........................................................................................................................................................16 8.1.4 Examination aids ............................................................................................................................................................16"
+  },
+  {
+    "standard_code": "ISO_9712_2021",
+    "clause_ref": "8.2",
+    "clause_title": "Examination content and grading for Level 1 and Level 2 ...........................................................................16",
+    "requirement_text": "8.2.1 General examination element ..............................................................................................................................16 8.2.2 Specific examination element ..............................................................................................................................16 8.2.3 Practical examination element ...........................................................................................................................16"
+  },
+  {
+    "standard_code": "ISO_9712_2021",
+    "clause_ref": "8.2.4",
+    "clause_title": "NDT instruction writing examination element ...................................................................................17",
+    "requirement_text": ""
+  },
+  {
+    "standard_code": "ISO_9712_2021",
+    "clause_ref": "8.2.5",
+    "clause_title": "Grading of the Level 1 and Level 2 examination .................................................................................17",
+    "requirement_text": ""
+  },
+  {
+    "standard_code": "ISO_9712_2021",
+    "clause_ref": "8.3",
+    "clause_title": "Examination content and grading for Level 3..........................................................................................................18",
+    "requirement_text": "8.3.1 General .....................................................................................................................................................................................18 8.3.2 Basic examination element ....................................................................................................................................18"
+  },
+  {
+    "standard_code": "ISO_9712_2021",
+    "clause_ref": "8.3.3",
+    "clause_title": "Main method examination element ................................................................................................................19",
+    "requirement_text": "8.3.4 Grading of Level 3 examinations .......................................................................................................................19 8.4 Conduct of examinations ............................................................................................................................................................20 8.5 Re-examination ...................................................................................................................................................................................20 © ISO 2021 – All rights reserved iii"
+  },
+  {
+    "standard_code": "ISO_9712_2021",
+    "clause_ref": "9",
+    "clause_title": "Certification 21",
+    "requirement_text": "8.6 Supplementary examinations ................................................................................................................................................21 ........................................................................................................................................................................................................... 9.1 Administration ....................................................................................................................................................................................21 9.2 Certificates ..............................................................................................................................................................................................21 9.3 Conditions of certification .........................................................................................................................................................22 9.3.1 General .....................................................................................................................................................................................22 9.3.2 Granting...................................................................................................................................................................................22 9.3.3 Scope extension ................................................................................................................................................................22 9.3.4 Suspension of certification .....................................................................................................................................22 9.3.5 Withdrawal of certification ...................................................................................................................................22 9.3.6 Certification after withdrawal............................................................................................................................23"
+  },
+  {
+    "standard_code": "ISO_9712_2021",
+    "clause_ref": "9.3.7",
+    "clause_title": "Waiting period prior to certification after withdrawal ...............................................................23",
+    "requirement_text": ""
+  },
+  {
+    "standard_code": "ISO_9712_2021",
+    "clause_ref": "10",
+    "clause_title": "Renewal 23",
+    "requirement_text": ""
+  },
+  {
+    "standard_code": "ISO_9712_2021",
+    "clause_ref": "9.4",
+    "clause_title": "Certificates issued by other certification bodies ..................................................................................................23",
+    "requirement_text": ""
+  },
+  {
+    "standard_code": "ISO_9712_2021",
+    "clause_ref": "11",
+    "clause_title": "Recertification 24",
+    "requirement_text": "...................................................................................................................................................................................................................... ..................................................................................................................................................................................................... 11.1 General ........................................................................................................................................................................................................24 11.2 Levels 1 and 2 .......................................................................................................................................................................................25"
+  },
+  {
+    "standard_code": "ISO_9712_2021",
+    "clause_ref": "12",
+    "clause_title": "Files 26",
+    "requirement_text": "11.3 Level 3 .........................................................................................................................................................................................................25"
+  },
+  {
+    "standard_code": "ISO_9712_2021",
+    "clause_ref": "13",
+    "clause_title": "Transition period 27",
+    "requirement_text": "................................................................................................................................................................................................................................. Annex A Sectors 28 ............................................................................................................................................................................................. Annex B Minimum number and type of specimens for the Level 1 and Level 2 (normative) .................................................................................................................................................................................... practical examination element 30 (normative) Annex C Structured credit system for renewal Level 1, 2 and 3 and for Level 3 .......................................................................................................................................................... recertification 31 (normative) Annex D Grading practical examination elements 35 ...................................................................................................................................................................................................... Annex E Engineering of NDT 37 (normative) ......................................................................................... Annex F Training requirements for techniques 38 (informative) ............................................................................................................................................... Annex G Psychometric principles 41 (informative) ............................................................................................ Bibliography 42 (informative) .................................................................................................................................. ............................................................................................................................................................................................................................. iv © ISO 2021 – All rights reserved"
+  },
+  {
+    "standard_code": "ISO_9712_2021",
+    "clause_ref": "1",
+    "clause_title": "Scope",
+    "requirement_text": "This document specifies requirements for the qualification and certification of personnel who perform industrial non-destructive testing (NDT) in the following methods.\n\na) acoustic emission testing;\n\nb) eddy current testing;\n\nc) leak testing (hydraulic pressure tests excluded);\n\nd) magnetic testing;\n\ne) penetrant testing;\n\nf) radiographic testing;\n\ng) strain gauge testing;\n\nh) thermographic testing;\n\ni) ultrasonic testing;\n\nj) visual testing (direct unaided visual tests and visual tests carried out during the application of\n\nanother NDT method are excluded). The system specified in this document is also applicable to other NDT methods or to NDT techniques within an established NDT method, provided a comprehensive scheme of certification exists and the NDT method or NDT technique is covered by international, regional or national standards or the NDT method or the NDT technique has been demonstrated to be effective to the satisfaction of the certification body. NOTE 1 The term \"industrial\" implies the exclusion of applications in the field of medicine. NOTE 2 CEN/TR 14748 provides guidance on the methodology for qualification of non-destructive tests. NOTE 3 This document specifies requirements for what are, in effect, third party conformity assessment schemes. These requirements do not directly apply to conformity assessment by second or first parties, but relevant parts of this document can be referred to in such arrangements. NOTE 4 The term “direct unaided visual testing” implies where there is an uninterrupted optical path from the observer’s eye to the test area and the observer uses no tools or devices (e.g. mirror, endoscope, fibre optic). NOTE 5 Calculations of strain based on other NDT methods are excluded."
+  },
+  {
+    "standard_code": "ISO_9712_2021",
+    "clause_ref": "2",
+    "clause_title": "Normative references",
+    "requirement_text": "The following documents are referred to in the text in such a way that some or all of their content constitutes requirements of this document. For dated references, only the edition cited applies. For undated references, thCeo nlafotermsti teyd aitsiosens somf tehnet r—ef eGreennecreadl rdeoqcuuirmemenetn (tisn fcolru dbiondgie asn oyp aemraetnindgm ceenrttisf)ic aaptpioline so.f persons ISO/IEC 17024:2012,\n\n\nNon-destructive testing — Evaluation of vision acuity of NDT personnel ISO 18490:2015,"
+  },
+  {
+    "standard_code": "ISO_9712_2021",
+    "clause_ref": "3",
+    "clause_title": "Terms and definitions",
+    "requirement_text": "For the purposes of this document, the following terms and definitions apply. ISO and IEC maintain terminology databases for use in standardization at the following addresses: — ISO Online browsing platform: available at https:// www .iso .org/ obp —3.1 IEC Electropedia: available at https:// www .electropedia .org/ applicant certification process p3e.2rson who has submitted an application to be admitted into the (3.8) authorized qualification body employer certification body examinations body, independent of the (3.11), authorized by the (3.6) to prepare and a3d.3minister (3.12) basic examination element examination candidate’s qualification written (3.12), at Level 3, which demNoDnTst mraettehso dthse (3.4) knowledge of the materials science and process technology and types of discontinuities, the specific (3.33) and certification system, and the basic principles of (3.25) as required for Level 2 Note 1 to entry: For an explanation of the three levels of qualification, see Clause 6. N3.o4te 2 to entry: The qualification and certification system is specified in this document. candidate applicant certification process (3.1) who has fulfilled specified prerequisites and has been admitted to the"
+  },
+  {
+    "standard_code": "ISO_9712_2021",
+    "clause_ref": "3.5",
+    "clause_title": "(3.8)",
+    "requirement_text": "certificate certification body dceorctuifmiceantito inn r tehqeu firoermme onft sa letter, card or other medium (e.g. digital certificate), issued by a (3.6) under the provisions of this document, indicating that the named person has fulfilled the"
+  },
+  {
+    "standard_code": "ISO_9712_2021",
+    "clause_ref": "3.6",
+    "clause_title": "(3.9)",
+    "requirement_text": "certification body b3o.7dy that administers procedures for certification according to specified requirements certification cycle recertification renewal maximum period of time permitted from the date of certification to the date of (3.34) i3n.c8lusive of the (3.36) period certification process certification body certification requirements renewal recertification activities bcye rwtihfiiccaht eas (3.6) determines that a person fulfils (3.9), including application, assessment, decision on certification, (3.36), (3.34) a3n.9d use of (3.5) and logos/marks certification requirements set of specified requirements, including requirements of the scheme to be fulfilled in order to establish or maintain certification\n\n\n3.10 competence a3b.1il1ity to apply knowledge and skills to achieve intended results employer candidate legal entity by whom the (3.4) is employed N3.o1t2e 1 to entry: A candidate may be self-employed. examination candidate's competence mechanism that is part of the assessment which measures a (3.4) (3.10) by one o3r.1 m3ore means examination centre certification body examinations c3e.1n4tre approved by the (3.6) where (3.12) are carried out examination element examination c3o.1m5ponent of an (3.12) examiner examination person competent to conduct and score an (3.12), where the examination requires p3r.1o6fessional judgement general examination element examination NDT method 3w.1ri7tten (3.12), at Level 1 or Level 2, concerned with the principles of an (3.25) higher education formal learning that occurs after completion of secondary education in the field of engineering or s3c.1ie8nce industrial experience work activities supervision NDT method sector qualification (3.46) performed under (3.45), in the (3.25) in the (3.37) c3o.1n9cerned, needed to acquire the skill and knowledge to fulfil the provisions of (3.33) invigilator proctor certification body examination test administcroamtopretence candidate person authorized by the (3.6) who supervises an (3.12), but does not e3v.2a0luate the (3.10) of the (3.4) job-specific training employer certificate NDT procedures training, provided by the spe c(i3fi.1ca1)ti o(onrs their agent) to the (3.5) holder in aosppeercattsi nogf nauotnh-odreisztartuiocntisve testing specific to the employer’s products, NDT equipment, (3.27), and applicable codes, standards, (3.40) and procedures, leading to the award of"
+  },
+  {
+    "standard_code": "ISO_9712_2021",
+    "clause_ref": "3.21",
+    "clause_title": "(3.30)",
+    "requirement_text": "main method examination element examination candidate’s NDT procedures NDT method written (s3e.c1t2o)r,( sa)t Level 3, which demonstrates the (3.4) general and specific knowledge, and the ability to write (3.27) for the (3.25) as applied in the industrial or product (3.37) for which certification is sought\n\n\n3.22 multiple choice examination question wording of a question giving rise to potential replies, only one of which is correct, the remaining being i3n.c2o3rrect or incomplete NDT instruction specification NDT procedure written description of the precise steps to be followed in testing to an established standard, code,"
+  },
+  {
+    "standard_code": "ISO_9712_2021",
+    "clause_ref": "3.24",
+    "clause_title": "(3.40) or (3.27)",
+    "requirement_text": "NDT media testing products used to create visible indications caused by imperfections or flaws E3X.2A5MPLE Magnetic powder, contrast aid paints, colour contrast penetrant, developer. NDT method discipline applying a physical principle in non-destructive testing E3X.2A6MPLE Ultrasonic testing. NDT personnel p3e.2r7sonnel who perform non-destructive testing NDT procedure specification(s) written description of all essential parameters and precautions to be applied when non-destructively 3te.2st8ing products in accordance with standard(s), code(s) or (3.40) NDT technique NDT method 3sp.2e9cific way of utilizing an (3.25) NDT training NDT method certification body process of instruction in theory and practice in the (3.25) in which certification is sought, w3.h3i0ch takes the form of training courses to a syllabus approved by the (3.6) operating authorization employer written statement issued by the (3.11), based upon the scope of certification, authorizing the individual to carry out specified tasks job-specific training N3.o3t1e 1 to entry: Such authorization can be dependent on the provision of (3.20). practical examination element candidate assessment of practical skills, in which the (3.4) demonstrates familiarity with, and the a3b.3il2ity to perform, the test psychometric process examinations statistical process to verify (3.12) are fair, reliable and discriminate between a competent a3n.3d3 non-competent individual qualification demonstrated education, training, and work experience\n\n\n3.34 recertification certificate examination certification body process for revalidation of a (3.5) by (3.12) or by otherwise satisfying the"
+  },
+  {
+    "standard_code": "ISO_9712_2021",
+    "clause_ref": "3.35",
+    "clause_title": "(3.6) that the published criteria for recertification have been met",
+    "requirement_text": "referee candidate’s industrial experience 3in.d3i6vidual that attests the validity of the (3.4) (3.18) renewal recertification examination process for revalidation of a certification at any time up to five years after success in an initial, 3su.3p7plementary or (3.34) (3.12) sector section of industry or technology where specialized NDT practices are used, requiring specific productrelated knowledge, skill, equipment or training Note 1 to entry: A sector can be interpreted to mean a product (welded products, castings) or an industry (3a.e3r8ospace, in-service testing). See Annex A. significant interruption work activity sector(s) absence or change of (3.46) which prevents the certified individual from practising the duties corresponding to the level in the method and the (3.37) within the certified scope, for either a continuous period in excess of one year, or two or more periods for a total time exceeding two years Note 1 to entry: Legal holidays or periods of sickness or training courses of less than 30 days are not taken into a3c.3co9unt when calculating the interruption. specific examination element examination sector(s) swpreictitfeicna tions (3.12), at Level 1 or Level 2, concerned with testing techniques applied in a particular (3.37), including knowledge of the product(s) tested and of codes, standards,"
+  },
+  {
+    "standard_code": "ISO_9712_2021",
+    "clause_ref": "3.40",
+    "clause_title": "(3.40), procedures and acceptance criteria",
+    "requirement_text": "specification d3o.4c1ument stating requirements specimen examinations sector sample used in practical (3.12), possibly including radiographs and data sets, which is representative of products typically tested in the applicable (3.37) N3.o4t2e 1 to entry: A specimen can include more than one area or volume to be tested. specimen master report examination specimen candidate’s model answer, indicating the optimum result for a practical (3.12) given a specified set of conditions (equipment type, settings, technique, (3.41), etc.) against which the (33.4.43) test report is graded structured credit system candidate examination renewal recertification point system based on the NDT activities of the (3.4) used as an alternative to (3.12) for (3.36) or (3.34)\n\n\n3.44 structured experience program"
+  },
+  {
+    "standard_code": "ISO_9712_2021",
+    "clause_ref": "4",
+    "clause_title": "Abbreviated terms",
+    "requirement_text": "For the purposes of this document, the abbreviated terms listed in Table 1 are used to identify NDT methods. Table 1 — Methods and abbreviated terms NDT method Abbreviated terms Acoustic emission testing AT Eddy current testing ET Leak testing LT Magnetic testing MT Penetrant testing PT Radiographic testing RT Strain gauge testing ST Thermographic testing TT Ultrasonic testing UT Visual testing VT"
+  },
+  {
+    "standard_code": "ISO_9712_2021",
+    "clause_ref": "5",
+    "clause_title": "Responsibilities",
+    "requirement_text": ""
+  },
+  {
+    "standard_code": "ISO_9712_2021",
+    "clause_ref": "5.1",
+    "clause_title": "General",
+    "requirement_text": "The certification system, which shall be controlled and administered by a certification body, includes all procedures necessary to demonstrate the qualification and the competence of an individual to carry out tasks in a specific NDT method and product or industrial sector, leading to certification."
+  },
+  {
+    "standard_code": "ISO_9712_2021",
+    "clause_ref": "5.2",
+    "clause_title": "Certification body",
+    "requirement_text": "5.2.1 The certification body shall fulfil the requirements of ISO/IEC 17024. 5.2.2 The certification body:\n\na) shall initiate, promote, maintain and administer the certification scheme according to ISO/IEC 17024\n\nand this document;\n\nb) shall be independent of any single interest;\n\n| NDT method | Abbreviated terms |\n| --- | --- |\n|  |  |\n|  |  |\n| Acoustic emission testing | AT |\n| Eddy current testing | ET |\n| Leak testing | LT |\n| Magnetic testing | MT |\n| Penetrant testing | PT |\n| Radiographic testing | RT |\n| Strain gauge testing | ST |\n| Thermographic testing | TT |\n\n\nc) shall be responsible for the definition of sectors (see Annex A);\n\nd) shall publish information regarding the scope of the certification scheme and a general description\n\nof the certification process;\n\ne) shall provide information for training courses that include the syllabi which embody the content of\n\nrecognized documents; ISO/TS 25107 or equivalent can be used as guidance;\n\nf) shall conduct an initial audit and subsequent periodic surveillance audits of the authorized\n\nqualification body(ies) to ensure their conformity to the specifications;\n\ng) shall monitor, in accordance with a documented procedure, all delegated functions;\n\nh) shall approve properly staffed and equipped examination centres, which it shall monitor on a\n\nperiodic basis;\n\ni) shall administer examinations through approved examination centres;\n\nj) shall bear full responsibilities for examinations conducted on temporary basis at external premises;\n\nk) shall be responsible for ensuring the security of all examination materials (examination specimens,\n\nspecimen master reports, question banks, examination papers, etc.) and shall ensure that these materials are not in use for training purposes;\n\nl) shall be responsible for granting, extension, suspension, withdrawal or revalidation of certification;\n\nm) shall establish an appropriate system for the maintenance of records, which shall be retained for at\n\nleast one certification cycle;\n\nn) shall require all candidates and certificate holders to give a signed or stamped undertaking to\n\nabide by a code of ethics which it shall develop for the purpose and publish;\n\no) may approve training bodies; ISO/TS 25108 can be used as guidance;\n\np) may delegate, under its direct responsibility, the detailed administration of qualification to\n\nauthorized qualification bodies, to which it shall issue specifications and/or procedures covering facilities, personnel, verification and control of NDT equipment, examination materials, specimens, conduct of examinations, examination grading, records, etc.;\n\nq) shall establish a process to authorize examiners;\n\nr) shall establish the conditions for the supervision of work activities, which candidates may claim\n\nexperience under 7.3;\n\ns) shall establish a process for the recognition of higher education;\n\nt) shall establish a process for the approval of non-certified individuals as a referee;\n\nu) shall establish a process for the approval of a structured credit system, where used;\n\nv) may specify a minimum age requirement for candidates under 7.1;\n\nw) shall maintain and update the question bank and the examination specimens along with their\n\nspecimen master report;\n\nx) shall conduct the examination only in the presence of, and under the control of, an authorized\n\ninvigilator of the certification body, to ensure that impartiality is maintained;\n\ny) shall establish a process for the approval of a structured experience program, where used."
+  },
+  {
+    "standard_code": "ISO_9712_2021",
+    "clause_ref": "5.3",
+    "clause_title": "Authorized qualification body",
+    "requirement_text": "Where established, the authorized qualification body shall:\n\na) work under the control of and apply the specifications issued by the certification body;\n\nb) be independent of any single predominant interest;\n\nc) ensure that it is impartial with respect to each candidate seeking qualification, bringing to the\n\nattention of the certification body any actual or potential threat to its impartiality;\n\nd) apply a documented quality management system approved by the certification body;\n\ne) have the resources and expertise necessary to establish, monitor and control examinations centres,\n\nincluding examinations and the verification and control of the equipment;\n\nf) conduct qualification of candidates including review of application and decision on eligibility;\n\ng) prepare, supervise and administer examinations;\n\nh) provide the certification body with the results of qualification needed to make a decision on\n\ncertification by the certification body;\n\ni) maintain appropriate qualification and examination records according to the requirements of the\n\ncertification body."
+  },
+  {
+    "standard_code": "ISO_9712_2021",
+    "clause_ref": "5.4",
+    "clause_title": "Examination centre",
+    "requirement_text": "5.4.1 The examination centre shall:\n\na) work under the control of the certification body or authorized qualification body;\n\nb) apply a documented quality procedure approved by the certification body;\n\nc) have the resources needed to prepare and conduct examinations, including the verification and\n\ncontrol of equipment;\n\nd) have adequate qualified staff, premises and equipment to ensure satisfactory examinations for the\n\nlevels, methods, and sectors concerned; the use of external premises is allowed;\n\ne) prepare and conduct examinations under the responsibility of an examiner authorized by the\n\ncertification body, using only examination questionnaires and specimens established or approved by the certification body for that purpose;\n\nf) maintain appropriate examination documents according to the requirements of the certification\n\nbody. 5.4.2 An examination centre may operate within the certification body; or within an authorized qualification body; or be an independent legal entity or part of a legal entity. An examination centre can be situated at an employer’s premises. In this case, the certification body shall require controls to preserve impartiality and protect confidentiality of the examinations. The examinations shall be conducted only in the presence of, and under the control of, an authorized representative of the certification body."
+  },
+  {
+    "standard_code": "ISO_9712_2021",
+    "clause_ref": "5.5",
+    "clause_title": "Employer",
+    "requirement_text": "5.5.1 The employer shall document the personal information which shall include the declaration of education, training and industrial experience and visual acuity needed to determine the eligibility\n\n\nof the candidate. If the candidate is self-employed, the industrial experience shall be attested to by a referee. All documentation obtained from the employer shall be verified by the certification body. 5.5.2 In respect of certified NDT personnel under their control the employer shall be responsible for:\n\na) all that concerns the authorization to operate, i.e. providing job-specific training (if necessary);\n\nb) issuing the written authorization to operate;\n\nc) the results of NDT activities;\n\nd) ensuring that the annual vision requirements of 7.4 are met;\n\ne) maintaining documentary evidence confirming the continuous application of the NDT method in\n\nthe relevant sector(s) without significant interruption; this action shall be done every 12 months;\n\nf) ensuring that personnel hold valid certification relevant to their tasks within the organization;\n\ng) maintaining appropriate records.\n\nThese responsibilities shall be described in a documented procedure. 5.5.3 A self-employed individual shall assume all responsibilities ascribed to the employer. 5.5.4 Certification to this document provides an attestation of general competence of the certified NDT personnel. It does not represent an authorization to operate, since this remains the responsibility of the employer; and the certified NDT personnel may require additional specialized knowledge of parameters such as equipment, NDT procedures, materials and products specific for the employer. Where required by regulatory requirements and codes, the authorization to operate shall be given in writing by the employer in accordance with a quality procedure that specifies any employer-required job-specific training and examinations designed to verify the certificate holder's knowledge of relevant industry code(s), standard(s), NDT procedures, equipment, and acceptance criteria for the tested products."
+  },
+  {
+    "standard_code": "ISO_9712_2021",
+    "clause_ref": "5.6",
+    "clause_title": "Candidate",
+    "requirement_text": "Candidates shall:\n\na) provide documentary evidence of training in accordance with 7.2;\n\nb) provide documentary evidence that the required experience has been gained under supervision;\n\nc) provide documentary evidence of vision satisfying the requirements of 7.4;\n\nd) abide by a code of ethics published by the certification body;\n\ne) provide other requisites requested by the certification body."
+  },
+  {
+    "standard_code": "ISO_9712_2021",
+    "clause_ref": "5.7",
+    "clause_title": "Certificate holders",
+    "requirement_text": "Certificate holders shall:\n\na) abide by a code of ethics published by the certification body;\n\nb) maintain records demonstrating evidence that vision requirements have been fulfilled in\n\naccordance with 7.4;\n\n\nc) notify the certification body and the employer if the conditions of certification are not maintained\n\n(see 9.3)."
+  },
+  {
+    "standard_code": "ISO_9712_2021",
+    "clause_ref": "5.8",
+    "clause_title": "Examiners",
+    "requirement_text": "5.8.1 Examiners shall: — be authorized by the certification body to conduct, supervise and grade examinations; — be certified to Level 3 in the NDT method in the product and/or industrial sector for which they are authorized. 5.8.2 An examiner shall not be permitted to examine any candidate: — that they have trained for the examination for a period of two years from the date of the conclusion of the training; — who is working (permanently or temporarily) in the same facility as the examiner unless the certification body has established a documented confidentiality and impartiality management procedure for such a situation."
+  },
+  {
+    "standard_code": "ISO_9712_2021",
+    "clause_ref": "5.9",
+    "clause_title": "Referee",
+    "requirement_text": "A referee shall be:\n\na) certified to Level 2 or 3 in any NDT method; or\n\nb) non-certified personnel who, approved by the certification body, possess the knowledge, skill,\n\ntraining and experience required to attest to the candidate’s industrial experience."
+  },
+  {
+    "standard_code": "ISO_9712_2021",
+    "clause_ref": "6",
+    "clause_title": "Levels of certification",
+    "requirement_text": ""
+  },
+  {
+    "standard_code": "ISO_9712_2021",
+    "clause_ref": "6.1",
+    "clause_title": "Level 1",
+    "requirement_text": "6.1.1 An individual certified to Level 1 has demonstrated competence to carry out NDT according to written instructions and under the supervision of Level 2 or Level 3 personnel. Within the scope of the competence specified on the certificate, Level 1 personnel may be authorized by the employer to perform the following in accordance with NDT instructions:\n\na) set up NDT equipment;\n\nb) perform the tests;\n\nc) record and classify the results of the tests according to written criteria;\n\nd) report the results.\n\n6.1.2 Level 1 certified personnel shall neither be responsible for the choice of test method or technique to be used, nor for the interpretation of test results."
+  },
+  {
+    "standard_code": "ISO_9712_2021",
+    "clause_ref": "6.2",
+    "clause_title": "Level 2",
+    "requirement_text": "An individual certified to Level 2 has demonstrated competence to perform NDT according to NDT procedures or NDT instructions. Within the scope of the competence specified on the certificate, Level"
+  },
+  {
+    "standard_code": "ISO_9712_2021",
+    "clause_ref": "2",
+    "clause_title": "personnel may be authorized by the employer to:",
+    "requirement_text": "a) select the NDT technique for the testing method to be used;\n\n\nb) specify the limitations of application of the testing method;\n\nc) translate NDT codes, standards, specifications, and procedures into NDT instructions adapted to\n\nthe actual working conditions;\n\nd) set up and verify equipment settings;\n\ne) perform and supervise tests;\n\nf) interpret and evaluate results according to applicable standards, codes, specifications or\n\nprocedures;\n\ng) carry out and supervise all tasks at or below Level 2;\n\nh) provide guidance and mentoring for personnel at or below Level 2;\n\ni) report the results of NDT."
+  },
+  {
+    "standard_code": "ISO_9712_2021",
+    "clause_ref": "6.3",
+    "clause_title": "Level 3",
+    "requirement_text": "6.3.1 An individual certified to Level 3 has demonstrated competence to perform and direct NDT operations for which they are certified. Level 3 personnel have demonstrated:\n\na) the competence to evaluate and interpret results in terms of existing standards, codes, and\n\nspecifications;\n\nb) sufficient practical knowledge of applicable materials, fabrication, process, and product technology\n\nto select NDT methods, establish NDT techniques, and assist in establishing acceptance criteria where none are otherwise available;\n\nc) a general familiarity with other NDT methods listed in Clause 4.\n\n6.3.2 Within the scope of the competence specified on the certificate, Level 3 personnel may be authorized by the employer to:\n\na) establish, review for editorial and technical correctness, and validate NDT instructions and\n\nprocedures;\n\nb) interpret standards, codes, specifications, and procedures;\n\nc) designate the particular test methods, procedures, and NDT instructions to be used;\n\nd) carry out and supervise all tasks at all levels;\n\ne) provide guidance and mentoring for NDT personnel at all levels."
+  },
+  {
+    "standard_code": "ISO_9712_2021",
+    "clause_ref": "7",
+    "clause_title": "Eligibility",
+    "requirement_text": ""
+  },
+  {
+    "standard_code": "ISO_9712_2021",
+    "clause_ref": "7.1",
+    "clause_title": "General",
+    "requirement_text": "The candidate shall fulfil the minimum requirements of vision and NDT training prior to the examination and shall fulfil the minimum requirements for industrial experience and, where applicable, has reached a minimum age as specified by the certification body prior to certification."
+  },
+  {
+    "standard_code": "ISO_9712_2021",
+    "clause_ref": "7.2",
+    "clause_title": "Training",
+    "requirement_text": "7.2.1 The candidate shall provide documentary evidence, acceptable to the certification body, that he or she has satisfactorily completed NDT training as shown in Table 2 in the method and level for which the certification is sought.\n\n\n7.2.2 For all levels, theoretical training may be delivered in a face-to-face instructor-led format, distance learning format, a self-paced format, or a combination of these formats. Practical training shall be delivered by a face-to-face instructor-led format only. The training for initial certification shall remain valid for a maximum period of ten years from the date of completion. For Level 3, in addition to the minimum training requirements given in Table 2, the preparation for qualification can be completed in different ways dependent on the scientific and technical background of the candidate, including attendance at other training courses, conferences or seminars, studying books, periodicals and other specialized printed or electronic materials. When a distance learning option is utilized, systems shall be established to ensure the entire training syllabus is completed. NOTE Guidelines for NDT personnel training organizations are given in ISO/TS 25108 7.2.3 The minimum duration of training undertaken by the candidate for certification shall impart the skills and knowledge and shall not be less than that specified in 7.2.4 and Table 2 for the applicable NDT method, with the possible reductions specified in 7.2.5. This duration is based upon candidates possessing mathematical skills and prior knowledge of materials and processes that can be confirmed by appropriately screening of completed prior education. If it is not the case, additional training on this matter may be required by the certification body. Training days include both practical and theoretical courses. When creating industrial sectors as specified in Annex A, the certification body shall consider the minimum training requirements in Table 2. 7.2.4 Direct access to Level 2 requires the total days shown in Table 2 for Levels 1 and 2. Direct access to Level 3 requires the total days shown in Table 2 for Levels 1, 2, and 3. When considering the responsibilities of a certified Level 3 (see 6.3) and the content of item C of the basic examination element for Level 3 (see Table 5), additional training about the other NDT methods may be necessary. Table 2 — Minimum training requirements Level 1 Level 2 Level 3 NDT method a a a days days days AT 5 8 5 ET 5 6 6 LT 5 9 6 MT 3 2 4 PT 3 2 3 b RT 5 10 5 ST 2 3 2 TT 5 6 5 UT 8 10 5 VT 3 2 3 a One day duration is at least seven hours, which can be achieved on a single day or by accumulating hours. b For RT, training days does not include radiation safety training. NOTE 1 In the case of specific techniques, see Annex F. 7.2.5 The possible reductions in training duration are as described hereafter, provided that, when several reductions are applicable, the total reduction does not exceed 50 % of the training duration.\n\n| NDT method | Level 1 | Level 2 | Level 3 |\n| --- | --- | --- | --- |\n|  | a | a | a |\n|  | days | days | days |\n| AT | 5 | 8 | 5 |\n| ET | 5 | 6 | 6 |\n| LT | 5 | 9 | 6 |\n| MT | 3 | 2 | 4 |\n| PT b | 3 | 2 | 3 |\n| RT | 5 | 10 | 5 |\n| ST | 2 | 3 | 2 |\n| TT | 5 | 6 | 5 |\n| UT 8 10 5 VT 3 2 3 a One day duration is at least seven hours, which can be achieved on a single day or by accumulating hours. b For RT, training days does not include radiation safety training. |  |  |  |\n\n\nAny reduction requires acceptance by the certification body and shall ensure that competence is maintained.\n\na) For all levels:\n\n— for candidates seeking certification in more than one method (i.e. MT, PT), or for those already certified and seeking certification in another method, when the training syllabus concerned duplicates certain aspects (i.e. product technology), the total number of training days for these methods (i.e. PT, MT, VT) may be reduced in line with the training syllabus; — for candidates who have graduated in a relevant subject from technical college or university, or have completed at least two years of relevant engineering or science study at college or university (or equivalent formal education), the total required training duration may be reduced by up to"
+  },
+  {
+    "standard_code": "ISO_9712_2021",
+    "clause_ref": "50",
+    "clause_title": "%; the certification body shall specify relevant subjects and their qualification.",
+    "requirement_text": "b) For Levels 1 and 2, when the scope of activity is limited in application and/or in technique (and not\n\ncovered in Annex F), the training scope and duration may be reduced by up to 50 %. NOTE Examples of such limitations include those related to application (e.g. automated ET, UT of bar, tube, and rod or normal beam ultrasonic thickness and lamination testing of rolled steel plate) and to technique (e.g. leak testing only using bubble test, yoke for magnetic particle)."
+  },
+  {
+    "standard_code": "ISO_9712_2021",
+    "clause_ref": "7.3",
+    "clause_title": "Industrial NDT experience",
+    "requirement_text": ""
+  },
+  {
+    "standard_code": "ISO_9712_2021",
+    "clause_ref": "7.3.1",
+    "clause_title": "General",
+    "requirement_text": "The minimum duration of industrial experience to be gained in the method where the candidate is seeking certification shall be as given in Table 3, with the possible reductions given in 7.3.3. When the candidate is seeking certification in more than one method, the total time of experience shall be the sum of the experience in each method. For all levels, a minimum period of experience prior to examination shall be specified by certification body (a fraction or percentage of the total requirement in Table 3, as appropriate). In the event that a part of the experience is sought following successful examination, the results of the examination shall remain valid for a maximum of five years. Documentary evidence of experience shall be confirmed by the employer or the referee and submitted to the certification body. Table 3 — Minimum industrial experience Experience in daysa NDT method Level 1 Level 2 Level 3 with direct higher education, direct access with with Level 2 Level 1 access with Level 2 higher education AT, ET, LT, RT,"
+  },
+  {
+    "standard_code": "ISO_9712_2021",
+    "clause_ref": "45",
+    "clause_title": "135 180 270 450 540",
+    "requirement_text": ""
+  },
+  {
+    "standard_code": "ISO_9712_2021",
+    "clause_ref": "7.3.2",
+    "clause_title": "Level 3",
+    "requirement_text": "Level 3 responsibilities require knowledge beyond the technical scope of any specific NDT method. This broad knowledge may be acquired through a variety of combinations of education, training and experience. Table 3 details minimum experience for candidates who have successfully completed higher education, as well as candidates without higher education.\n\n| NDT method | Experience in daysa |  |  |  |  |  |\n| --- | --- | --- | --- | --- | --- | --- |\n|  | Level 1 | Level 2 |  | Level 3 |  |  |\n|  |  | with Level 1 | direct access | higher education, with Level 2 | with Level 2 | direct access with higher education |\n| AT, ET, LT, RT, | 45 | 135 | 180 | 270 | 450 | 540 |\n| TT, UT MT, PT, ST, VT 15 45 60 180 240 360 a |  |  |  |  |  |  |"
+  },
+  {
+    "standard_code": "ISO_9712_2021",
+    "clause_ref": "7.3.3",
+    "clause_title": "Possible reductions",
+    "requirement_text": "7.3.3.1 The possible reductions in duration of experience are as described hereafter. Any reduction shall require acceptance by the certification body. 7.3.3.2 A certified Level 1, 2 or 3 adding an additional method may be permitted a reduction of required experience of 25 % for that additional method. 7.3.3.3 A certified Level 1, 2 or 3 individual changing sector, adding another sector or technique for the same NDT method shall be required to gain additional experience of at least 25 % of the experience required in Table 3; and this shall never be less than 15 days in duration. 7.3.3.4 When the scope of certification sought is limited in application (i.e. thickness measurement or automated testing), experience duration may be reduced by up to 50 % but shall not be less than"
+  },
+  {
+    "standard_code": "ISO_9712_2021",
+    "clause_ref": "15",
+    "clause_title": "days.",
+    "requirement_text": "7.3.3.5 Up to 50 % of the industrial experience time may be achieved by a structured experience program (SEP). One day of attendance at the SEP may be equivalent to a maximum of five days industrial experience. The SEP shall include all typical tasks (see Clause 6) of the level, method and sector concerned. The additional intent is to gain specific product and technique knowledge. The SEP shall be approved in advance by the certification body and shall be available for audit by the certification body."
+  },
+  {
+    "standard_code": "ISO_9712_2021",
+    "clause_ref": "7.4",
+    "clause_title": "Vision requirements — all levels",
+    "requirement_text": ""
+  },
+  {
+    "standard_code": "ISO_9712_2021",
+    "clause_ref": "7.4.1",
+    "clause_title": "General",
+    "requirement_text": "Candidates and certificate holders shall maintain and provide documentary evidence of acceptable vision in accordance 7.4.2 to 7.4.4."
+  },
+  {
+    "standard_code": "ISO_9712_2021",
+    "clause_ref": "7.4.2",
+    "clause_title": "Near vision acuity",
+    "requirement_text": "Prior to certification, and annually thereafter, near vision acuity shall be verified to be in accordance with the requirements of ISO 18490 or shall permit reading a minimum of Jaeger number 1 or Times Roman N4.5 or equivalent letters at not less than 30 cm with one or both eyes, either corrected or uncorrected."
+  },
+  {
+    "standard_code": "ISO_9712_2021",
+    "clause_ref": "7.4.3",
+    "clause_title": "Colour vision",
+    "requirement_text": "Prior to certification, recertification or renewal, the candidate/certificate holder shall demonstrate that a colour vision test has been administered within the previous 5 calendar years. It is required that colour vision and/or grey scale perception be sufficient for the individual to be able to distinguish and differentiate between the colours or shades of grey used in the NDT methods/ techniques concerned as specified by the employer. The colour vision test shall either confirm that the individual has acceptable colour vision without restriction or shall state any limitation(s) on colour perception. Where any limitation in colour perception exists, the employer shall confirm whether or not this condition results in any limitation(s) to method or application specific techniques. NOTE The Ishihara 24 plate test is an example of a suitable colour vision test."
+  },
+  {
+    "standard_code": "ISO_9712_2021",
+    "clause_ref": "7.4.4",
+    "clause_title": "Personnel administering vision tests",
+    "requirement_text": "Near vision acuity testing, colour vision and/or grey scale perception verification(s) shall be administered by a licensed physician, nurse, ophthalmologist or optometrist; or by another trained professional who is approved and documented by a Level 3 personnel acting on behalf of the employer."
+  },
+  {
+    "standard_code": "ISO_9712_2021",
+    "clause_ref": "8",
+    "clause_title": "Examinations",
+    "requirement_text": ""
+  },
+  {
+    "standard_code": "ISO_9712_2021",
+    "clause_ref": "8.1",
+    "clause_title": "Overview",
+    "requirement_text": ""
+  },
+  {
+    "standard_code": "ISO_9712_2021",
+    "clause_ref": "8.1.1",
+    "clause_title": "General",
+    "requirement_text": "The examination shall cover an NDT method, technique, industrial sector and/or product sector as appropriate. The process used for the development and selection of examination questions shall be specified in a procedure prepared by the certification body. It shall ensure the questions are appropriate for the relevant syllabus for the method/technique/sector, and for the level of certification. The process shall be designed to ensure the comparability of results of examinations using methods such as peer group review, input from subject matter experts, statistical comparisons, and, where the size of the examination cohort allows, psychometric principles may be used as specified in Annex G. The certification body shall establish a documented appropriate methodology and procedures to ensure fairness, validity, reliability, and general performance of examinations to maintain an acceptable pass grade of 70 % for all examinations. The processes for preparation and conduct of examinations (see 8.4) shall further be designed to ensure the confidentiality and security of examination questions and examination papers. The practical specimens shall be maintained and monitored to ensure consistency and fairness of examinations using processes adopted by the certification body. The results of examinations shall remain valid for up to five years while the candidate completes any remaining certification requirements."
+  },
+  {
+    "standard_code": "ISO_9712_2021",
+    "clause_ref": "8.1.2",
+    "clause_title": "Examination elements",
+    "requirement_text": "For Level 1 the examination shall consist of the following examination elements: — general examination element; — specific examination element; — practical examination element. For Level 2 the examination shall consist of the following examination elements: — general examination element; — specific examination element; — practical examination element; — NDT instruction writing element. For Level 3 the examination shall consist of the following examination elements: — basic examination element which consists of the following items: — item A technical knowledge; — item B certification body's document knowl edge; 15\n\n\n— item C Level 2 knowledge of methods; — main method examination element which consists of the following items: — item D general examination; — item E specific examination; — item F NDT procedures."
+  },
+  {
+    "standard_code": "ISO_9712_2021",
+    "clause_ref": "8.1.3",
+    "clause_title": "Examination time",
+    "requirement_text": "The certification body shall specify and publish the maximum amount of time allowed for the candidate to complete each examination element, which shall be based upon the following. For Level 1 and Level 2, the total time for the examination elements shall be based on two minutes per multiple choice examination question for general examination element and three minutes per multiple choice examination question for specific examination element. For Level 3, the total time for the examination elements shall be based on three minutes per multiple choice examination question in items B and E and two minutes for items A, C and D. For questions requiring narrative answers, Level 3 item F, NDT instruction writing element, and for the practical examination element, the time allowed shall be determined by the certification body."
+  },
+  {
+    "standard_code": "ISO_9712_2021",
+    "clause_ref": "8.1.4",
+    "clause_title": "Examination aids",
+    "requirement_text": "The use of aids such as codes, standards, specifications, procedures and electronic devices is only permitted if supplied as part of the examination or authorized by the certification body."
+  },
+  {
+    "standard_code": "ISO_9712_2021",
+    "clause_ref": "8.2",
+    "clause_title": "Examination content and grading for Level 1 and Level 2",
+    "requirement_text": ""
+  },
+  {
+    "standard_code": "ISO_9712_2021",
+    "clause_ref": "8.2.1",
+    "clause_title": "General examination element",
+    "requirement_text": "The general examination element shall be a minimum of 40 multiple choice examination questions and shall be selected randomly from the certification body’s or authorized qualification body’s collection of general examination element questions valid at the date of examination. Where not otherwise addressed by national regulations, there may be an additional examination on radiation safety for the radiographic testing method."
+  },
+  {
+    "standard_code": "ISO_9712_2021",
+    "clause_ref": "8.2.2",
+    "clause_title": "Specific examination element",
+    "requirement_text": "The specific examination element shall be a minimum of 20 multiple choice examination questions selected from the certification body’s or authorized qualification body’s collection of specific examination element questions valid at the date of examination. If the specific examination element covers two or more sectors, the minimum number of questions shall be at least 30, taking into account the industrial or product sectors concerned (see Annex A)."
+  },
+  {
+    "standard_code": "ISO_9712_2021",
+    "clause_ref": "8.2.3",
+    "clause_title": "Practical examination element",
+    "requirement_text": "8.2.3.1 The practical examination element shall involve applying the test to prescribed specimens, recording (and, for Level 2 candidates, interpreting) the resulting information to the degree required, and reporting the results in the required format. Specimens used for training purposes shall not be used for examination. 8.2.3.2 Each specimen shall be uniquely identified and have a specimen master report which includes all of the equipment settings (if applicable) used to detect specified discontinuities. Markings shall not\n\n\ninterfere with the practical testing or inspection of the specimen and shall, wherever practicable, be concealed from the candidate while the specimen is being used for examination to prevent potential information correlation by candidates. The specimen master report shall be compiled based upon at least two independent tests, and shall be verified by a Level 3 certificate holder in that method for use in grading examinations. The independent test reports from which the specimen master report is compiled shall be retained as records. 8.2.3.3 Specimens shall be sector (one or more) specific, representing field geometries and shall contain discontinuities representative of those likely to occur during manufacturing or in service. They may be natural or artificial. Data sets, digital radiographic images and/or films can be used instead of physical specimens, but at least one physical specimen shall be examined. Specimens used for adjustment or for determination of thickness, coating or material properties do not need to contain discontinuities. For RT, the specimens to be tested do not need to contain discontinuities if these are exhibited in the data sets or radiographic images for Level 2 interpretation. NOTE Guidelines on discontinuity types in examination specimens can be found in ISO/TS 22809. 8.2.3.4 The certification body shall ensure that the number of specimens to be tested is adequate to the level, NDT method and sector concerned, and that the specimens contain reportable discontinuities. The number of specimens to be tested in the Level 1 and Level 2 practical examinations shall be in accordance with Annex B. 8.2.3.5 The Level 1 candidate shall follow the NDT instruction(s) provided by the examiner. 8.2.3.6 The Level 2 candidate shall select the applicable NDT technique and determine the operating conditions related to a given code, standard or specification. 8.2.3.7 The time allowed for the examination shall be determined by the certification body."
+  },
+  {
+    "standard_code": "ISO_9712_2021",
+    "clause_ref": "8.2.4",
+    "clause_title": "NDT instruction writing examination element",
+    "requirement_text": "8.2.4.1 The NDT instruction writing examination element shall involve the creation of a written NDT instruction by the Level 2 candidate. 8.2.4.2 See Table D.2 for the weighting of the written examination instruction element."
+  },
+  {
+    "standard_code": "ISO_9712_2021",
+    "clause_ref": "8.2.5",
+    "clause_title": "Grading of the Level 1 and Level 2 examination",
+    "requirement_text": "8.2.5.1 The general, specific, practical and NDT instruction writing examination elements shall be graded separately. When conventional pre-prepared paper-based examinations are used, an examiner shall be responsible for the grading of the examinations by comparison with model answers. E-assessment systems that automatically score candidate responses against stored data and grade the completed written examination according to prepared algorithms may be used. Each correct reply scores 1 point and the mark attributed to the tests is the sum of the points obtained. For the final calculation, the mark of each test is expressed as a percentage. 8.2.5.2 The grading of the practical examination element shall be based on items 1 to 3 in Table 4, with the recommended weighting factors in relation to the level and method as applicable.\n\n\nTable 4 — Subjects and weighting factors for grading — Practical examination element Weighting factor Item Subject Level 1 Level 2 % %"
+  },
+  {
+    "standard_code": "ISO_9712_2021",
+    "clause_ref": "1",
+    "clause_title": "Knowledge of NDT equipment and NDT media. 20 10",
+    "requirement_text": ""
+  },
+  {
+    "standard_code": "ISO_9712_2021",
+    "clause_ref": "2",
+    "clause_title": "Application of NDT method 35 26",
+    "requirement_text": ""
+  },
+  {
+    "standard_code": "ISO_9712_2021",
+    "clause_ref": "3",
+    "clause_title": "The detection of indications or discontinuities and reporting 45 64",
+    "requirement_text": "Total 100 100 Table D.1 gives guidance on additional details on each item, to be taken into account, as applicable by the examiner. 8.2.5.3 For the Level 1 candidates to be eligible for certification, they shall obtain a minimum grade of 70 % on each examination element (general, specific and practical). For the practical examination element, a minimum grade of 70 % shall be obtained for each specimen tested. 8.2.5.4 The certification body or authorized qualification body may classify some discontinuities as mandatory to be detected. 8.2.5.5 For the Level 2 candidates to be eligible for certification, they shall obtain a minimum grade of 70 % on each examination element (general, specific, practical and NDT instruction writing). For the practical examination element, a minimum grade of 70 % shall be obtained for each specimen tested and NDT instruction writing element, as applicable. The certification body or authorized qualification body may classify some discontinuities as mandatory to be detected and evaluated as unacceptable. The NDT instruction writing element shall be graded in accordance with Annex D. For AT, the required test instruction may relate to a specimen which is not tested during the practical examination element."
+  },
+  {
+    "standard_code": "ISO_9712_2021",
+    "clause_ref": "8.3",
+    "clause_title": "Examination content and grading for Level 3",
+    "requirement_text": ""
+  },
+  {
+    "standard_code": "ISO_9712_2021",
+    "clause_ref": "8.3.1",
+    "clause_title": "General",
+    "requirement_text": "All candidates for Level 3 certification in any NDT method shall have successfully completed (with a grade of ≥ 70 %) the practical examination element for Level 2 in the relevant sector and method, except for the drafting of NDT instructions for Level 1 (see 8.2.4.1). A candidate who is Level 2 in the same NDT method and product sector or who has successfully passed a Level 2 practical examination element for the NDT method in an industrial sector, as specified in Annex A, is exempt from passing again the Level"
+  },
+  {
+    "standard_code": "ISO_9712_2021",
+    "clause_ref": "2",
+    "clause_title": "practical examination element. This exemption is only valid for the product sectors covered by the",
+    "requirement_text": "industrial sector concerned and, in any other circumstances, the relevant sector is the sector in which the candidate seeks Level 3 certification."
+  },
+  {
+    "standard_code": "ISO_9712_2021",
+    "clause_ref": "8.3.2",
+    "clause_title": "Basic examination element",
+    "requirement_text": "8.3.2.1 This written examination shall assess the candidate’s knowledge of the basic subjects using at least the number of multiple choice examination questions shown in Table 5. Examination questions\n\n| Item | Subject | Weighting factor |  |\n| --- | --- | --- | --- |\n|  |  | Level 1 | Level 2 |\n|  |  |  |  |\n|  |  | % | % |\n| 1 | Knowledge of NDT equipment and NDT media. | 20 | 10 |\n| 2 | Application of NDT method | 35 | 26 |\n| 3 The detection of indications or discontinuities and reporting 45 64 |  |  |  |\n\n\nshall be selected in an unpredictable way from the certification body’s or authorized qualification body’s collection of basic examination element questions valid at the date of examination. Table 5 — Minimum required number of basic examination element questions for Level 3 Number of ques- Item Subject tions A Technical knowledge in materials science and process technology. 25 Knowledge of the certification body’s qualification and certification system B 10 based on this document. This may be an open-book examination. General knowledge of at least four methods as required for Level 2 and cho- 15 a C sen by the candidate from the methods given in Table 1. These four methods for each test method shall include at least one volumetric method (UT or RT). (total 60) a For item C, the certification body may adjust the number of questions per method for methods impacted by evolving technology, increasing methods and techniques being added. 8.3.2.2 It is recommended that the basic examination element be passed first and remain valid, provided that the first main method examination element is passed within five years after passing the basic examination element. A candidate holding a valid Level 3 certificate is exempt from the need to retake the basic examination element."
+  },
+  {
+    "standard_code": "ISO_9712_2021",
+    "clause_ref": "8.3.3",
+    "clause_title": "Main method examination element",
+    "requirement_text": "This written examination shall assess the candidate’s knowledge of the main method subjects using the minimum required number of multiple choice questions shown in Table 6. Examination questions shall be selected in an unpredictable way from the current collection of questions approved by the certification body at the time of the examination. Table 6 — Minimum required number of main method examination element questions Number of ques- Item Subject tions D Level 3 knowledge relating to the NDT test method applied. 30 Application of the NDT method in the sector concerned, including the applicable codes, standards, specifications and procedures. This may be an E 20 open-book examination in relation to codes, standards, specifications and procedures. Drafting of one or more NDT procedures in the relevant sector. The applicable codes, standards, specifications and other procedures shall be available to the candidate. F For a candidate who has already drafted an NDT procedure in a successfully — passed Level 3 examination, the certification body may replace the drafting of a procedure with the critical analysis of an existing NDT procedure covering the relevant method and sector, and containing errors and/or omissions. Applicable aids (8.1.4) shall be specified and communicated to candidates. These aids may be provided by the certification body or authorized qualification body for use in open-book examinations."
+  },
+  {
+    "standard_code": "ISO_9712_2021",
+    "clause_ref": "8.3.4",
+    "clause_title": "Grading of Level 3 examinations",
+    "requirement_text": ""
+  },
+  {
+    "standard_code": "ISO_9712_2021",
+    "clause_ref": "8.3.4.1",
+    "clause_title": "General",
+    "requirement_text": "The grading of the basic and main method examination elements shall be done separately. To be eligible for certification, a candidate shall pass both the basic and main method examination elements. For the three items A, B, and C of the basic examination element and items D and E of the main method examination element, the following requirements apply.\n\n| Item | Subject | Number of ques- tions |\n| --- | --- | --- |\n|  |  |  |\n| A | Technical knowledge in materials science and process technology. | 25 |\n| B a | Knowledge of the certification body’s qualification and certification system based on this document. This may be an open-book examination. General knowledge of at least four methods as required for Level 2 and cho- | 10 15 |\n| C sen by the candidate from the methods given in Table 1. These four methods for each test method shall include at least one volumetric method (UT or RT). (total 60) a |  |  |\n\n| Item | Subject | Number of ques- tions |\n| --- | --- | --- |\n|  |  |  |\n| D E | Level 3 knowledge relating to the NDT test method applied. Application of the NDT method in the sector concerned, including the ap- plicable codes, standards, specifications and procedures. This may be an | 30 20 |\n| F | open-book examination in relation to codes, standards, specifications and procedures. Drafting of one or more NDT procedures in the relevant sector. The applica- ble codes, standards, specifications and other procedures shall be available to the candidate. For a candidate who has already drafted an NDT procedure in a successfully passed Level 3 examination, the certification body may replace the drafting | — |\n| of a procedure with the critical analysis of an existing NDT procedure cover- ing the relevant method and sector, and containing errors and/or omissions. |  |  |\n\n\nWhen conventional pre-prepared paper-based examinations are used, an examiner shall be responsible for the grading of the examinations by comparing the replies given by the candidate against answer keys approved by the certification body. Each correct reply scores 1 point and the mark attributed to the tests is the sum of the points obtained. For the final calculation, the mark of each test is expressed as a percentage. At the option of the certification body, e-assessment systems that automatically score candidate responses against stored data and grade the completed written examination according to prepared algorithms may be used."
+  },
+  {
+    "standard_code": "ISO_9712_2021",
+    "clause_ref": "8.3.4.2",
+    "clause_title": "Basic examination element",
+    "requirement_text": "In order to pass the basic examination, the candidate shall obtain a minimum grade of 70 % in each of parts A, B, and C."
+  },
+  {
+    "standard_code": "ISO_9712_2021",
+    "clause_ref": "8.3.4.3",
+    "clause_title": "Main method examination element",
+    "requirement_text": "In order to pass the main method examination, the candidate shall obtain a minimum grade of 70 % in each of parts D, E, and F. See Table D.3 for the recommended weighting of the written NDT procedure."
+  },
+  {
+    "standard_code": "ISO_9712_2021",
+    "clause_ref": "8.4",
+    "clause_title": "Conduct of examinations",
+    "requirement_text": "8.4.1 All examinations shall be conducted in examination centres established, approved, and monitored by the certification body, either directly or through an authorized qualification body. 8.4.2 At the examination, the candidate shall have in their possession valid proof of identification and an official notification of the examination, which shall be shown to the examiner or invigilator upon demand. 8.4.3 Any candidate who, during the course of the examination, does not abide by the examination rules or who perpetrates, or is an accessory to, fraudulent conduct shall be excluded from all further examinations for a period of at least one year. 8.4.4 Examination questions shall be validated by the certification body. When conventional pre-prepared paper-based examinations are used, the examination papers shall be validated and approved by an examiner, and the grading shall be done in accordance with procedures approved by the certification body (see 8.2.5 and 8.3.4). When e-assessment systems that select questions, present the \"written\" examination to a candidate on a computer and grade the examinations are used, the certification body shall validate and approve the e-assessment system. 8.4.5 Written (whether e-assessment or conventional) and practical examinations shall be invigilated by an examiner or by one or more invigilators placed under a certification body’s responsibility. 8.4.6 With the approval of the certification body, a candidate for a practical examination may use their own equipment. 8.4.7 Candidates shall not be permitted to bring into the examination area personal items, unless specifically authorized to do so by the examiner."
+  },
+  {
+    "standard_code": "ISO_9712_2021",
+    "clause_ref": "8.5",
+    "clause_title": "Re-examination",
+    "requirement_text": "8.5.1 A candidate failing for reasons of unethical behaviour shall wait at least 12 months before reapplying (see 8.4.3).\n\n\n8.5.2 A candidate who fails one or more elements of an examination (i.e. general, specific, practical etc.) may retake the failed examination no more than twice:\n\na) after a minimum time of one month (which may be reduced if further training acceptable to the\n\ncertification body has been satisfactorily completed);\n\nb) no later than two years after the initial examination.\n\n8.5.3 A candidate failing two re-examinations on one or more elements shall complete further training, acceptable to the certification body, and be required to retake all examination elements."
+  },
+  {
+    "standard_code": "ISO_9712_2021",
+    "clause_ref": "8.6",
+    "clause_title": "Supplementary examinations",
+    "requirement_text": "8.6.1 A certified Level 1 or Level 2 individual changing sectors or adding another sector for the same NDT method shall be required to take sector specific and practical examination elements for the new sector. Level 2 shall also be required to write the NDT instruction for the new sector. 8.6.2 A certified Level 3 individual changing sectors or adding another sector for the same NDT method shall be required to take the sector specific items E and F of the main method examination element only (see Table 6)."
+  },
+  {
+    "standard_code": "ISO_9712_2021",
+    "clause_ref": "9",
+    "clause_title": "Certification",
+    "requirement_text": ""
+  },
+  {
+    "standard_code": "ISO_9712_2021",
+    "clause_ref": "9.1",
+    "clause_title": "Administration",
+    "requirement_text": "A candidate fulfilling all certification requirements shall be certified; and evidence of this certification shall be made available by the certification body. This can be achieved with the issue of hard copy certificate(s), digital certificates and/or by electronically uploading and displaying the relevant information on a database on the certification body's website. The certification body may also issue a wallet card that shall include a measure(s) to prevent falsification."
+  },
+  {
+    "standard_code": "ISO_9712_2021",
+    "clause_ref": "9.2",
+    "clause_title": "Certificates",
+    "requirement_text": "Certificates shall include the following information as a minimum:\n\na) the name of the certified individual, and (optional) date of birth of the certified individual;\n\nb) a unique identification (e.g. a photo, or reference to a photo identification by number);\n\nc) the name of the certification body;\n\nd) the scope of the certification, including reference to this document, the NDT method(s) and level of\n\ncertification, and/or applicable techniques and sector(s), including issue date;\n\ne) any limitations to the certification, if applicable;\n\nf) the effective date of certification and date of expiry;\n\ng) the signature and/ or authorization of a designated representative of the certification body;\n\nh) contact information or website address to issuing certification body database for verification\n\npurposes. Where the data listed above can be printed directly from the certification body’s website, the printed output shall include a date of print and a statement that the current certification status can be verified at the relevant website."
+  },
+  {
+    "standard_code": "ISO_9712_2021",
+    "clause_ref": "9.3",
+    "clause_title": "Conditions of certification",
+    "requirement_text": ""
+  },
+  {
+    "standard_code": "ISO_9712_2021",
+    "clause_ref": "9.3.1",
+    "clause_title": "General",
+    "requirement_text": "Certification is granted, extended, suspended, withdrawn or revalidated by the certification body. The maximum period of validity of the certificate is 5 years. To be valid, certificates shall be supported by a current annual verification of acceptable vision as per 7.4."
+  },
+  {
+    "standard_code": "ISO_9712_2021",
+    "clause_ref": "9.3.2",
+    "clause_title": "Granting",
+    "requirement_text": "Certification shall be granted by the certification body when all certification requirements are fulfilled. The period of validity shall commence upon the decision of certification by the certification body."
+  },
+  {
+    "standard_code": "ISO_9712_2021",
+    "clause_ref": "9.3.3",
+    "clause_title": "Scope extension",
+    "requirement_text": "The certification body shall specify requirements for scope extension for situations where an individual seeks extension of their scope of certification for an existing certification (i.e. additional product sector). At the discretion of the certification body:\n\na) the additional scope may be added to the existing certification and the original period of validity\n\nmaintained; or\n\nb) a new certificate with a new period of validity may be issued for the extension to scope only."
+  },
+  {
+    "standard_code": "ISO_9712_2021",
+    "clause_ref": "9.3.4",
+    "clause_title": "Suspension of certification",
+    "requirement_text": "Certification may be suspended by the certification body:\n\na) if the individual becomes temporarily physically incapable of performing their duties;\n\nb) if the individual fails to provide evidence of meeting the visual acuity requirements of this\n\ndocument annually;\n\nc) if a significant interruption takes place in the method for which the individual is certified;\n\nd) at the discretion of the certification body for any other situations.\n\nThe certification body shall specify the conditions for revalidation where an individual’s certification has been suspended."
+  },
+  {
+    "standard_code": "ISO_9712_2021",
+    "clause_ref": "9.3.5",
+    "clause_title": "Withdrawal of certification",
+    "requirement_text": "Certification shall be withdrawn by the certification body:\n\na) at the discretion of the certification body, i.e. after reviewing evidence of behaviour incompatible\n\nwith the certification scheme or failure to abide by a code of ethics;\n\nb) if the individual fails to meet the requirements of renewal, until such time as the individual meets\n\nthe requirements for renewal;\n\nc) if the individual fails recertification, until such time as the individual meets the requirements for\n\nrecertification or certification;\n\nd) at the discretion of the certification body, when verifiable evidence is received from the employer\n\nstating that the individual has become physically incapable of performing their duties."
+  },
+  {
+    "standard_code": "ISO_9712_2021",
+    "clause_ref": "9.3.6",
+    "clause_title": "Certification after withdrawal",
+    "requirement_text": "The certification body shall specify the conditions for certification where an individual’s certification has been withdrawn in the case of 9.3.5 a) and d)."
+  },
+  {
+    "standard_code": "ISO_9712_2021",
+    "clause_ref": "9.3.7",
+    "clause_title": "Waiting period prior to certification after withdrawal",
+    "requirement_text": "In case of 9.3.5 a), the certification can only be granted after a minimum 12 month waiting period. The certification body shall specify the length and conditions of the waiting period."
+  },
+  {
+    "standard_code": "ISO_9712_2021",
+    "clause_ref": "9.4",
+    "clause_title": "Certificates issued by other certification bodies",
+    "requirement_text": "9.4.1 A certification body may consider certification issued by another certification body. If so, the certification body shall do so in accordance with a documented process. Where the certification body takes into account work performed by another body, it shall have appropriate reports, data and records to demonstrate that the results are equivalent and conform to the requirements established by the certification scheme. 9.4.2 This process shall consider the granting of credit for valid certification including a review of education, training, experience, vision and examination requirements of the originating certification body. The review may allow the certification body to recognize the general theory part of a method examination. The review may also allow the certification body to recognize the specific and/or practical examination elements but only when the method/technique, industry/product sector are appropriate. 9.4.3 Where the prior certification is accepted without any additional examination, the expiry of the new certification shall not extend beyond that of the prior certification nor shall extend the scope of certification."
+  },
+  {
+    "standard_code": "ISO_9712_2021",
+    "clause_ref": "10",
+    "clause_title": "Renewal",
+    "requirement_text": "10.1 Prior to the completion of the period of validity following certification and recertification, certification shall be renewed by the certification body for a new period of validity on production of:\n\na) documentary evidence of a satisfactory near vision acuity examination taken within the preceding"
+  },
+  {
+    "standard_code": "ISO_9712_2021",
+    "clause_ref": "12",
+    "clause_title": "months; and",
+    "requirement_text": "b) documentary evidence of a satisfactory colour vision and/or grey scale perception examination\n\ntaken within the preceding 60 months; and\n\nc) verifiable documentary evidence of continued satisfactory work activity without significant\n\ninterruption in the method and sector for which certificate renewal is sought; and either:\n\nd) successful completion of a practical examination element in accordance with 11.2.2 except that it\n\nshall consist of a minimum of 50 % of the examination specimens required by 11.2.2; or\n\ne) successfully meeting the requirements of the structured credit system as given in 10.2 and Annex C.\n\nIf the criterion c) for renewal is not met, the individual shall complete the practical examination elements required by 11.2.2.\n\n\n10.2 Where a candidate elects to use the structured credit system, they shall provide evidence to the certification body to demonstrate achievement of a minimum of 100 points in the 5 year renewal period based on the requirements of Table C.1. 10.2.1 For candidates seeking renewal of Level 1 certificates, a minimum of 75 of the 100 points is required for any combination of activities listed in part A of Table C.1. 10.2.2 For candidates seeking renewal of Level 2 or 3 certificates, a minimum of 50 of the 100 points is required for any combination of activities listed in part A of Table C.1. 10.2.3 Where a certification body has opted to implement a renewal period of less than 5 years, the minimum points required may be prorated accordingly [i.e. a 4 year renewal period would require a minimum of 80 points (100 × 4/5)]. 10.2.4 Where a candidate is seeking renewal for more than one certificate, points granted for a specific activity can be applied to the total points required for each certificate for those activities not specific to a particular method (e.g. “Current individual membership in NDT or NDT related society”). However, candidates shall meet the total number of points required (i.e. 100 points) for each certificate for which renewal is being sought. 10.3 It is the responsibility of the certificate holder to initiate the procedure required for renewal. 10.3.1 The renewal application should be made to the certification body before the date of the expiration of the certification and shall be no later than 12 months after the date of expiration of the certificate. 10.3.2 If the renewal application is received prior to or on the date of expiration of the certificate, the renewal date of the new certificate shall be the same as the date of expiration of the certificate (i.e. no interruption in certification). The date of expiration of the new certificate shall be no more than 5 years from the date of expiration of the original certificate. 10.3.3 If the renewal application is received after the date of expiration of the certificate, the renewal date of the new certificate shall be the date on which all requirements for renewal are met. In this case, there shall have been an interruption in the certification period. The date of expiration of the new certificate shall be no more than 5 years from the date of expiration of the original certificate. 10.4 The maximum period of validity of the certificate at renewal is 5 years. 10.5 Certificate holders at Level 1 and Level 2 not meeting the requirements for renewal shall fulfil the requirements for recertification as specified in 11.2.2. Certificate holders at Level 3 not meeting the requirements for renewal shall fulfil the requirements for recertification, as specified in 11.3.1."
+  },
+  {
+    "standard_code": "ISO_9712_2021",
+    "clause_ref": "11",
+    "clause_title": "Recertification",
+    "requirement_text": ""
+  },
+  {
+    "standard_code": "ISO_9712_2021",
+    "clause_ref": "11.1",
+    "clause_title": "General",
+    "requirement_text": "Prior to the completion of each second period of validity, the certified individual shall be recertified by the certification body for a new period of five years or less, provided the individual meets the criterion for renewal specified in 10.1 a) and 10.1 b) and meets the applicable conditions described in the following. It is the responsibility of certificate holders to initiate the procedures required to obtain recertification. If the recertification is applied for more than 12 months after expiry of the period of validity, a complete\n\n\nexamination (general, specific, and practical) for Level 1 and Level 2 and a main method examination element (Table 6, items D, E and F) for Level 3 shall again be passed successfully."
+  },
+  {
+    "standard_code": "ISO_9712_2021",
+    "clause_ref": "11.2",
+    "clause_title": "Levels 1 and 2",
+    "requirement_text": "11.2.1 Levels 1 and 2 certificate holders seeking recertification shall provide a confirmation issued by the employer of continued satisfactory work activity without significant interruption in the method and sector for which recertification is sought and satisfy 11.2.2. 11.2.2 The individual shall successfully complete the practical examination element which demonstrates continued competence to carry out work within the scope specified on the certificate. This shall include testing specimens (see Annex B) appropriate to the scope of recertification and in addition, for Level 2, the production of a written instruction suitable for the use of Level 1 personnel (see 8.2.4.1). If the individual fails to achieve a grade of at least 70 % for each specimen tested (weighted according to the guidance in Table 4), and, for Level 2, for the instruction, two re-examinations of the recertification examination shall be allowed after at least 7 days and within 12 months of the first attempt at the recertification examination. 11.2.3 In the event of failure in the two allowable re-examinations, the certificate shall be withdrawn. In order to reinstate certification, a candidate shall: — complete further training, acceptable to the certification body; and — retake all examination elements required for initial certification. The date of expiration of the reinstated certificate shall be no more than 5 years from the date of expiration of the original certificate. 11.2.4 If the criterion in 11.2.1 for recertification is not met, the individual shall complete the general, specific and practical examinations required by 11.1."
+  },
+  {
+    "standard_code": "ISO_9712_2021",
+    "clause_ref": "11.3",
+    "clause_title": "Level 3",
+    "requirement_text": "11.3.1 Level 3 certificate holders seeking recertification shall provide a confirmation issued by the employer of continued satisfactory work activity without significant interruption in the method and sector for which recertification is sought and:\n\na) satisfy the Level 3 requirements of 11.3.3 for a written examination; or\n\nb) meet the requirements for a structured credit system, as given in 11.3.2 and Table C.1.\n\nThe individual shall decide between the examination or credit system for recertification. If the credit system is chosen and requires submission of employer’s documents or access to an employer’s premises, the individual shall provide to the certification body a written statement of approval from the employer. In both cases (written examination or credit system), the individual shall either provide appropriate documented evidence, acceptable to the certification body, of their continued practical competence in the method or pass a Level 2 practical examination, as specified in 11.2.2, except for the drafting of NDT instructions.\n\n\n11.3.2 Where a certificate holder elects to use the structured credit system, they shall provide evidence to the certification body to demonstrate achievement of a minimum of 100 points in the 5 year recertification period based on the requirements of Table C.1. For certificate holders seeking recertification of Level 3 certification: — a minimum of 50 and a maximum of 70 of the 100 points is required for any combination of activities listed in item A of Table C.1; and — a minimum of 30 and a maximum of 50 of the 100 points is required for any combination of activities listed in item B of Table C.1. Where a certification body has opted to implement a recertification period of less than 5 years, the minimum points required may be prorated accordingly [(i.e. a 4 year renewal period would require a minimum of 80 points (100 × 4/5)]. 11.3.3 Where a certificate holder elects to take the written examination or does not meet the structured credit system requirements, they shall successfully complete an examination that includes:\n\na) a minimum of 20 multiple-choice questions on the application of the test method in the sector(s)\n\nconcerned which demonstrates an understanding of current NDT techniques, standards, codes or specifications, and applied technology; and\n\nb) a minimum of 10 multiple-choice questions on the requirements of the certification body’s\n\ncertification scheme. 11.3.4 If the individual fails to achieve a grade of at least 70 % in the recertification examination, a maximum of two retests of the recertification examination shall be allowed. The time period within which all tests are to be taken shall be 12 months, unless otherwise extended by the certification body. 11.3.5 In the event of failure in the two allowable re-examinations, the certificate shall be withdrawn. In order to reinstate certification, a candidate shall: — complete further training, acceptable to the certification body; and — retake all main method examination items as required for initial certification. The date of expiration of the reinstated certificate shall be no more than 5 years from the date of expiration of the original certificate. 11.3.6 A candidate who applies for and does not meet the requirements of the credit system shall be recertified in accordance with 11.3.3. In the event of failure at the first attempt at recertification by examination, only one retest of the recertification examination shall be allowed within 12 months of the date of application for recertification via the structured credit system."
+  },
+  {
+    "standard_code": "ISO_9712_2021",
+    "clause_ref": "12",
+    "clause_title": "Files",
+    "requirement_text": "The certification body shall be responsible for the maintenance of:\n\na) an actual list or database of all certified individuals classified according to level, NDT method and\n\nsector;\n\nb) an individual file for each candidate who has not been certified, for at least five years from the date\n\nof application;\n\nc) an individual file(s) for each certified individual and for each individual whose certification has\n\nlapsed containing:"
+  },
+  {
+    "standard_code": "ISO_9712_2021",
+    "clause_ref": "26",
+    "clause_title": "1) a unique personal identifier (e.g. a photo or reference to a photo identification by number);",
+    "requirement_text": "2) application forms;\n\n3) examination records, such as questionnaires, answers, description of specimens, records,\n\nresults of test, NDT procedures, and grade sheets;\n\n4) renewal and recertification documents, including evidence of visual acuity and continuous\n\nwork activity;\n\n5) reason(s) for any withdrawal of certification.\n\nIndividual files shall be kept under suitable conditions of safety and confidentiality for as long as the certificate remains valid and for at least one full certification cycle after the certification has lapsed. NOTE The archiving of specimen, data sets or radiographs is not required."
+  },
+  {
+    "standard_code": "ISO_9712_2021",
+    "clause_ref": "13",
+    "clause_title": "Transition period",
+    "requirement_text": "13.1 The aim of this clause is to permit the initiation of the system when a certification body applies the certification scheme to an NDT method, which is not yet covered within its scheme or when a new sector is created. The certification body may temporarily appoint, for a period not exceeding five years from the date of implementation of the new method or sector, duly qualified personnel as examiners for the purpose of conducting, supervising and grading the examinations. The five year implementation period is not to be used by the certification body as a means to certify candidates who do not meet all the qualification and certification requirements of this document. When new/additional training requirements of the new method or sector are adopted, currently certified personnel shall provide documented evidence of full compliance at the next recertification cycle. 13.2 Duly qualified personnel means that such personnel:\n\na) have the knowledge of the principles of NDT and the specific knowledge in relation to the sector;\n\nb) have industrial experience of the application of the NDT method;\n\nc) have the ability to conduct examinations;\n\nd) be able to interpret the questionnaire and results of examinations.\n\n13.3 Within two years of the date of appointment, these examiners shall have gained certification by satisfying the requirements for recertification as described in 11.3.1."
+  },
+  {
+    "standard_code": "ISO_9712_2021",
+    "clause_ref": "2",
+    "clause_title": "practical examination element",
+    "requirement_text": "a) For all practical examination elements, candidates shall be required to test one or more sector\n\nspecific specimen.\n\nb) If the candidate is required to test more than one specimen, each specimen shall be different in\n\ncharacter, i.e. in product form, material specification, shape, size, or discontinuity type.\n\nc) The evaluation and interpretation of a data set shall be considered as equivalent to testing one\n\nspecimen.\n\nd) For a product sector related practical examination elements:\n\nCandidates shall be required to test a minimum of two specimens and for multiple product sectors, a minimum of one from each product sector.\n\ne) For an industrial sector related practical examination elements:\n\nCandidates shall be required to test at least two specimens, representative of products typically tested in the industrial sector.\n\nf) For RT candidates:\n\nLevel 1 and Level 2 candidates shall radiograph at least two specimens. Level 2 candidates, already certified as Level 1, shall radiograph at least one specimen. In addition to taking radiographs, Level 2 candidates shall interpret a set of at least 10 film images or 10 digital radiographic images. This set shall be considered as one specimen.\n\ng) For LT candidates:\n\nAn examination involving both pressure change and tracer gas technique shall include at least one specimen for each technique.\n\nh) When the certification sought is limited in application, for example, thickness measurement,\n\nradiographic interpretation or automated testing, the minimum number of specimens may be reduced by up to 50 % to one per sector."
+  },
+  {
+    "standard_code": "ISO_9712_2021",
+    "clause_ref": "3",
+    "clause_title": "recertification",
+    "requirement_text": "C.1 General\n\n\n**Nota tecnica:** testo di questa pagina ricostruito con motore alternativo per problema di ordinamento caratteri.\n\nTable C.1 — Structured credit system for renewal Level 1, 2 and 3 and for Level 3 recertification a Level 1 Level 2 Level 3 Item Activity Points granted per activity Maximum number of points per year of activity Maximum number of points over 5 years of activity Points granted per activity Maximum number of points per year of activity Maximum number of points over 5 years of activity Points granted per activity Maximum number of points per year of activity Maximum number of points over 5 years of activity Part A 1 Performance of NDT Activities a"
+  },
+  {
+    "standard_code": "ISO_9712_2021",
+    "clause_ref": "2",
+    "clause_title": "/ day",
+    "requirement_text": "25 95"
+  },
+  {
+    "standard_code": "ISO_9712_2021",
+    "clause_ref": "2",
+    "clause_title": "/ day",
+    "requirement_text": "25 95"
+  },
+  {
+    "standard_code": "ISO_9712_2021",
+    "clause_ref": "2",
+    "clause_title": "/ day",
+    "requirement_text": "25 95 2 Completion of theoretical train­ ing in the method"
+  },
+  {
+    "standard_code": "ISO_9712_2021",
+    "clause_ref": "1",
+    "clause_title": "/ day",
+    "requirement_text": "5 15"
+  },
+  {
+    "standard_code": "ISO_9712_2021",
+    "clause_ref": "1",
+    "clause_title": "/ day",
+    "requirement_text": "5 15"
+  },
+  {
+    "standard_code": "ISO_9712_2021",
+    "clause_ref": "1",
+    "clause_title": "/ day",
+    "requirement_text": "5 15 3 Completion of practical training in the method"
+  },
+  {
+    "standard_code": "ISO_9712_2021",
+    "clause_ref": "2",
+    "clause_title": "/ day",
+    "requirement_text": "10 25"
+  },
+  {
+    "standard_code": "ISO_9712_2021",
+    "clause_ref": "2",
+    "clause_title": "/ day",
+    "requirement_text": "10 25"
+  },
+  {
+    "standard_code": "ISO_9712_2021",
+    "clause_ref": "2",
+    "clause_title": "/ day",
+    "requirement_text": "10 25 4 Delivery of practical or theo­ retical training in NDT in the method considered N/A N/A N/A"
+  },
+  {
+    "standard_code": "ISO_9712_2021",
+    "clause_ref": "1",
+    "clause_title": "/ day",
+    "requirement_text": "15 75"
+  },
+  {
+    "standard_code": "ISO_9712_2021",
+    "clause_ref": "1",
+    "clause_title": "/ day",
+    "requirement_text": "15 75 5 Participation in research activi­ ties in NDT field or for engineer­ ing of NDT (see Annex E)"
+  },
+  {
+    "standard_code": "ISO_9712_2021",
+    "clause_ref": "1",
+    "clause_title": "/ week",
+    "requirement_text": "15 60"
+  },
+  {
+    "standard_code": "ISO_9712_2021",
+    "clause_ref": "1",
+    "clause_title": "/ week",
+    "requirement_text": "15 60"
+  },
+  {
+    "standard_code": "ISO_9712_2021",
+    "clause_ref": "1",
+    "clause_title": "/ week",
+    "requirement_text": "15 60 Part B 6 Participation to a technical seminar/paper in the field of the method or technique"
+  },
+  {
+    "standard_code": "ISO_9712_2021",
+    "clause_ref": "1",
+    "clause_title": "/ day",
+    "requirement_text": "2 10"
+  },
+  {
+    "standard_code": "ISO_9712_2021",
+    "clause_ref": "1",
+    "clause_title": "/ day",
+    "requirement_text": "2 10"
+  },
+  {
+    "standard_code": "ISO_9712_2021",
+    "clause_ref": "1",
+    "clause_title": "/ day",
+    "requirement_text": "2 10 7 Presenting a technical seminar/ paper in the field of the method or technique"
+  },
+  {
+    "standard_code": "ISO_9712_2021",
+    "clause_ref": "1",
+    "clause_title": "/ presenta­",
+    "requirement_text": "tion 3 15"
+  },
+  {
+    "standard_code": "ISO_9712_2021",
+    "clause_ref": "1",
+    "clause_title": "/ presenta­",
+    "requirement_text": "tion 3 15"
+  },
+  {
+    "standard_code": "ISO_9712_2021",
+    "clause_ref": "1",
+    "clause_title": "/ presenta­",
+    "requirement_text": "tion 3 15 8 Current individual membership in NDT or NDT related society"
+  },
+  {
+    "standard_code": "ISO_9712_2021",
+    "clause_ref": "1",
+    "clause_title": "/ member­",
+    "requirement_text": "ship 2 5"
+  },
+  {
+    "standard_code": "ISO_9712_2021",
+    "clause_ref": "1",
+    "clause_title": "/ member­",
+    "requirement_text": "ship 2 5"
+  },
+  {
+    "standard_code": "ISO_9712_2021",
+    "clause_ref": "1",
+    "clause_title": "/ member­",
+    "requirement_text": "ship 2 5 9 Technical oversight and mentor­ ing of NDT personnel/ trainee in the relevant method N/A N/A N/A"
+  },
+  {
+    "standard_code": "ISO_9712_2021",
+    "clause_ref": "2",
+    "clause_title": "/ mentee",
+    "requirement_text": "10 30"
+  },
+  {
+    "standard_code": "ISO_9712_2021",
+    "clause_ref": "2",
+    "clause_title": "/ mentee",
+    "requirement_text": "10 40 10 Participation or convenorship in standardization and technical committees N/A N/A N/A"
+  },
+  {
+    "standard_code": "ISO_9712_2021",
+    "clause_ref": "1",
+    "clause_title": "/ commit­",
+    "requirement_text": "tee 3 15"
+  },
+  {
+    "standard_code": "ISO_9712_2021",
+    "clause_ref": "1",
+    "clause_title": "/ commit­",
+    "requirement_text": "tee 4 20 NOTE Where the term “year(s)” is noted in this table, this is specified as a certification year and not as a calendar year. a See C.2 for specific details of this activity.\n\n| 3 leveL | mumixaM rebmun stniop fo ytivitca 5 revo sraey fo |  |  | 59 | 51 | 52 | 57 06 |  | 01 | 51 |  | 5 04 |  | 02 4 eet 51 .raey 3 radnelac a sa eet ton dna raey A/N noitacifitrec a A/N sa deificeps si A/N siht ,elbat siht ni deton si ”)s(raey“ mret eht erehW ETON |\n| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |\n|  | mumixaM fo rep fo ytivitca rebmun stniop raey |  |  | 52 | 5 | 01 | 51 51 |  | 2 | 3 |  | 2 01 |  |  |\n|  | rep ytivitca stnioP detnarg |  |  | yad / 2 | yad / 1 | yad / 2 | keew yad / / 1 1 |  | yad / 1 | -atneserp / 1 | noit | -rebmem eetnem pihs / / 2 1 | -timmoc / 1 |  |\n| 2 leveL | mumixaM rebmun stniop fo ytivitca 5 revo sraey fo |  |  | 59 | 51 | 52 | 57 06 |  | 01 | 51 |  | 5 03 |  |  |\n|  | mumixaM fo rep fo ytivitca rebmun stniop raey |  |  | 52 | 5 | 01 | 51 51 |  | 2 | 3 |  | 2 01 |  |  |\n|  | rep ytivitca stnioP detnarg |  |  | yad / 2 | yad / 1 | yad / 2 | keew yad / / 1 1 |  | yad / 1 | -atneserp / 1 | noit | -rebmem eetnem pihs / / 2 1 | -timmoc / 1 |  |\n| 1 leveL | mumixaM rebmun stniop fo ytivitca 5 revo sraey fo |  |  | 59 | 51 | 52 | A/N 06 |  | 01 | 51 |  | A/N 5 |  |  |\n|  | mumixaM fo rep fo ytivitca rebmun stniop raey |  |  | 52 | 5 | 01 | A/N 51 |  | 2 | 3 |  | A/N 2 |  |  |\n|  | rep ytivitca stnioP detnarg |  |  | yad / 2 | yad / 1 | yad / 2 | keew A/N / 1 |  | yad / 1 | -atneserp / 1 | noit | -rebmem pihs A/N / 1 |  |  |\n|  | ytivitcA | A traP | seitivitcA TDN fo ecnamrofreP | -aniart laciteroeht dohtem fo noitelpmoC eht ni gni | gniniart lacitcarp fo dohtem noitelpmoC eht ni | -oeht eht ni ro TDN lacitcarp deredisnoc ni gniniart fo yrevileD dohtem laciter | -ivitca -reenigne hcraeser )E rof xennA ro ni dleif ees( noitapicitraP TDN TDN ni fo seit gni | B traP | eht fo lacinhcet dleif eht euqinhcet a ni ot repap/ranimes noitapicitraP ro dohtem | /ranimes dohtem eht lacinhcet fo dleif a eht euqinhcet gnitneserP ni repap ro | pihsrebmem yteicos detaler laudividni TDN ro tnerruC TDN ni | -rotnem ni eeniart dna /lennosrep dohtem thgisrevo tnaveler TDN lacinhceT fo gni eht | ni pihsronevnoc lacinhcet dna ro noitazidradnats noitapicitraP seettimmoc |  |\n|  | metI |  | 1 | 2 | 3 | 4 | 5 |  | 6 | 7 | 8 | 9 | 01 |  |\n\n\n**Nota tecnica:** testo di questa pagina ricostruito con motore alternativo per problema di ordinamento caratteri.\n\nLevel 1 Level 2 Level 3 Item Activity Points granted per activity Maximum number of points per year of activity Maximum number of points over 5 years of activity Points granted per activity Maximum number of points per year of activity Maximum number of points over 5 years of activity Points granted per activity Maximum number of points per year of activity Maximum number of points over 5 years of activity 11 Performing a technical NDT role within a certification body N/A N/A N/A"
+  },
+  {
+    "standard_code": "ISO_9712_2021",
+    "clause_ref": "2",
+    "clause_title": "/ activity",
+    "requirement_text": "10 30"
+  },
+  {
+    "standard_code": "ISO_9712_2021",
+    "clause_ref": "2",
+    "clause_title": "/ activity",
+    "requirement_text": "10 40 NOTE Where the term “year(s)” is noted in this table, this is specified as a certification year and not as a calendar year. a See C.2 for specific details of this activity. Table C.1 (continued)\n\n| 3 leveL | mumixaM rebmun stniop fo ytivitca 5 revo sraey fo |  | 04 01 ytivitca / 2 03 .raey 01 radnelac ytivitca a sa ton / dna 2 raey A/N noitacifitrec a A/N sa deificeps si A/N siht ,elbat siht ni deton si ”)s(raey“ mret eht erehW ETON |\n| --- | --- | --- | --- |\n|  | mumixaM fo rep fo ytivitca rebmun stniop raey |  |  |\n|  | rep ytivitca stnioP detnarg |  |  |\n| 2 leveL | mumixaM rebmun stniop fo ytivitca 5 revo sraey fo |  |  |\n|  | mumixaM fo rep fo ytivitca rebmun stniop raey |  |  |\n|  | rep ytivitca stnioP detnarg |  |  |\n| 1 leveL | mumixaM rebmun stniop fo ytivitca 5 revo sraey fo |  |  |\n|  | mumixaM fo rep fo ytivitca rebmun stniop raey |  |  |\n|  | rep ytivitca stnioP detnarg |  |  |\n|  | ytivitcA | elor TDN ydob lacinhcet noitacifitrec a gnimrofreP a nihtiw |  |\n|  | metI | 11 |  |"
+  },
+  {
+    "standard_code": "ISO_9712_2021",
+    "clause_ref": "15",
+    "clause_title": "18",
+    "requirement_text": "method: type, position, orientation, apparent dimensions, etc.);\n\nc) Level 2 evaluation against code, standard, specification or procedure\n\nn/a 18 criteria; Total 45 64\n\nd) production of the test report. 10 10\n\nTotal items 1, 2 and 3 100 100"
+  }
+]

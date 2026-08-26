@@ -53,6 +53,15 @@ reale scelto, es. `C:\NormeISO_PDF\` oppure una cartella dentro OneDrive):
 | ISO 15614-2:2025 | `Normative NORMA_00031_...md/.json` | PDF committente 25/08/2026 (`BS_EN_ISO_15614-2-2025`) — **non** in Git | Estratto `docs/reference/ISO-15614-2-range-validita-WPQR.md` |
 | ISO 9606-2:2004 | `Normative NORMA_00032_...md/.json` | PDF committente 25/08/2026 — **non** in Git | Patentini Al; regole JS dedicate = backlog |
 | ISO 14555:2025 | `Normative NORMA_00033_...md/.json` | PDF committente 26/08/2026 (`BS_EN_ISO_14555_2025`) — **non** in Git | Arc stud welding; digitalizzata 26/08/2026; estratto range [`docs/reference/ISO-14555-2025-range-validita-WPQR.md`](../reference/ISO-14555-2025-range-validita-WPQR.md) (STUD-3-A); seed VPS + codice = STUD-3-B dopo HITL |
+| ISO 9712:2021 | `Normative NORMA_00034_...md/.json` | PDF committente 26/08/2026 (`ISO_9712-2021`) — **non** in Git | Qualifica personale NDT; GAP pag. 8/51 |
+| ISO 2560:2020 | `Normative NORMA_00035_...md/.json` | PDF committente 26/08/2026 (`BS_EN_ISO_2560-2020`) — **non** in Git | Elettrodi rivestiti; estratto soglie MC = backlog |
+| ISO 17632:2015 | `Normative NORMA_00036_...md/.json` | PDF committente 26/08/2026 (`ISO_17632-2015`) — **non** in Git | Filo animato; GAP cid fluoride in tabelle |
+| ISO 14174:2019 | `Normative NORMA_00037_...md/.json` | PDF committente 26/08/2026 (`BS_EN_ISO_14174-2019`) — **non** in Git | Flussi; estratto soglie MC = backlog |
+| ISO 19011:2026 | `Normative NORMA_00038_...md/.json` | PDF committente 26/08/2026 (`BS_EN_ISO_19011_2026`) — **non** in Git | Linee guida audit SG; supersede 2018 |
+| ISO 3452-1:2021 | `Normative NORMA_00039_...md/.json` | PDF committente 26/08/2026 (`ISO_3452-1-2021`) — **non** in Git | PT principi; PDF troncato riparato pymupdf; GAP pag. 6 |
+| ISO 17638:2016 | `Normative NORMA_00040_...md/.json` | PDF committente 26/08/2026 (`BS_EN_ISO_17638-2016`) — **non** in Git | MT su saldature |
+| ISO 23278:2015 | `Normative NORMA_00041_...md/.json` | PDF committente 26/08/2026 (`BS_EN_ISO_23278-2015`) — **non** in Git | MT acceptance; PDF troncato riparato pymupdf |
+| ISO 23277:2015 | `Normative NORMA_00042_...md/.json` | PDF committente 26/08/2026 (`ISO_23277_2015`) — **non** in Git | PT acceptance; GAP pag. 9 |
 | UNI EN 10168:2005 | `Normative NORMA_00020_...md/.json` | `EN-10204-certificati\UNI EN 10168 Ed.2005 steel docs.pdf` | Digitalizzato 16/08/2026 |
 | EN 10168:2004 (EN) | `Normative NORMA_00021_...md/.json` | `EN-10204-certificati\EN 10168 steel docs.pdf` | Stessa norma, testo BSI inglese |
 | UNI EN 10204:2005 | `Normative NORMA_00022_...md/.json` | `EN-10204-certificati\EN 10204 Ed 2005 (Commented).pdf` | Edizione commentata UNI |
@@ -63,8 +72,8 @@ reale scelto, es. `C:\NormeISO_PDF\` oppure una cartella dentro OneDrive):
 | EN 10025-2:2019 | `Normative NORMA_00026_...md/.json` | `EN-10025-acciai-strutturali\BS EN 10025-2-2019.pdf` | Soglie S235–S500; estratto `docs/reference/EN-10025-2-acciai-strutturali.md` |
 | EN 10210-1:2006 | `Normative NORMA_00027_...md/.json` | `EN-10025-acciai-strutturali\BS EN 10210-1-2006.pdf` | Hollow a caldo; estratto `docs/reference/EN-10210-1-sezioni-cave.md` (17/08/2026) |
 | EN 10219-1:2006 | `Normative NORMA_00028_...md/.json` | `EN-10025-acciai-strutturali\BS EN 10219-1-2006.pdf` | Hollow a freddo; estratto `docs/reference/EN-10219-1-sezioni-cave.md` (17/08/2026) |
-| ISO 9712:2012 | *(nessun `.md` ancora — backlog RC-7)* | `ISO-96xx-patentini\UNI EN ISO 9712_2012.pdf` | **PDF era committato per errore in Git — vedi nota sotto** |
-| ISO 19011:2018 | *(nessun `.md` ancora)* | `ISO-96xx-patentini\UNI EN ISO 19011_2018_ITA.pdf` | **PDF era committato per errore in Git — vedi nota sotto** |
+| ISO 9712:2012 (archivio) | *(sostituita da `NORMA_00034` ed. 2021)* | `ISO-96xx-patentini\UNI EN ISO 9712_2012.pdf` | **PDF era committato per errore in Git — vedi nota sotto**; testo operativo = 2021 |
+| ISO 19011:2018 (archivio) | *(sostituita da `NORMA_00038` ed. 2026)* | `ISO-96xx-patentini\UNI EN ISO 19011_2018_ITA.pdf` | **PDF era committato per errore in Git — vedi nota sotto**; testo operativo = 2026 |
 
 ## Nota — 3 PDF rimossi dal tracking Git (30/07/2026, fix reale applicato 07/08/2026)
 

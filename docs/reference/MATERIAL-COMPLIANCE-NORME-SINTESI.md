@@ -30,7 +30,7 @@ Consegnato ora:
 
 **Ancora assente (non inventare seed):**
 
-- Norme **prodotto** apporto per soglie 3.1 lotto: ISO 2560 (elettrodo), ISO 17632 (filo animato), ISO 14174 (flussi), tabelle chimica ISO 14341 3A/3B (GAP estrazione)
+- Norme **prodotto** apporto: MD integrale ora in `NORMA_00035` (2560), `NORMA_00036` (17632), `NORMA_00037` (14174) — **estratti soglie 3.1 lotto** ancora da fare (non inventare). Tabelle chimica ISO 14341 3A/3B = GAP estrazione rimanente
 - Altre parti 10025 (3/4/5/6) se arrivano certificati fine grain / TM / weathering
 - Requisiti cliente FASSI/CLAAS (`knowledge/.../customers/`)
 - Criteri interni azienda (`companies/<slug>/`)
@@ -136,7 +136,9 @@ Vietato inventare soglie. Vietato rinviare la slice coperta perché manca un’a
 | **EN 10219-1:2006** | NORMA_00028 + `EN-10219-1-sezioni-cave.md` | **presente** | soglie tubi/hollow **a freddo** (`*H`) |
 | ISO/TR 15608 | `ISO-TR-15608-gruppi-materiali.md` | **presente** | gruppi materiale |
 | ISO 14341:2020 | NORMA_00016 + `ISO-14341-consumabili-filo.md` | **presente** (classificazione filo WPS/WPQR; **non** soglie 3.1 lotto) | `filler_designation` |
-| ISO 2560 / 17632 / 14174 | — | **mancante** (traccia) | soglie certificato elettrodo / filo animato / flusso |
+| ISO 2560:2020 | `NORMA_00035` | **presente** (MD/JSON; estratto soglie ancora da fare) | elettrodi rivestiti |
+| ISO 17632:2015 | `NORMA_00036` | **presente** (MD/JSON; GAP cid fluoride; estratto soglie da fare) | filo animato |
+| ISO 14174:2019 | `NORMA_00037` | **presente** (MD/JSON; estratto soglie ancora da fare) | flussi |
 | EN 10025-3/4/5/6 | — | traccia, non ora | fine grain / TM / weathering |
 | EN 10164, 10163, 10160, EN 1011-2 | — | traccia, solo se capitolato | Z, superfici, UT, saldatura |
 | EN ISO 6892-1, 148-1, 377, 14284 | — | non richiesta MVP | metodi di prova |

@@ -1,0 +1,128 @@
+[
+  {
+    "standard_code": "ISO_23277_2015",
+    "clause_ref": "1",
+    "clause_title": "Scope 1",
+    "requirement_text": "........................................................................................................................................................................................................................................"
+  },
+  {
+    "standard_code": "ISO_23277_2015",
+    "clause_ref": "2",
+    "clause_title": "Normative references 1",
+    "requirement_text": "................................................................................................................................................................................................................................."
+  },
+  {
+    "standard_code": "ISO_23277_2015",
+    "clause_ref": "3",
+    "clause_title": "Terms and definitions 1",
+    "requirement_text": "......................................................................................................................................................................................"
+  },
+  {
+    "standard_code": "ISO_23277_2015",
+    "clause_ref": "4",
+    "clause_title": "Testing parameters 2",
+    "requirement_text": "..................................................................................................................................................................................... ............................................................................................................................................................................................ 4.1 General ...........................................................................................................................................................................................................2 4.2 Sensitivity ....................................................................................................................................................................................................2 4.3 Surface condition ..................................................................................................................................................................................2"
+  },
+  {
+    "standard_code": "ISO_23277_2015",
+    "clause_ref": "5",
+    "clause_title": "Acceptance levels 2",
+    "requirement_text": "4.4 Process and technique ......................................................................................................................................................................2 ................................................................................................................................................................................................. 5.1 General ...........................................................................................................................................................................................................2 5.2 Evaluation of indications ................................................................................................................................................................3 Annex A Recommended testing parameters 4 5.3 Removal of imperfections ..............................................................................................................................................................3 (informative) .......................................................................................................... © ISO 2015 – All rights reserved iii"
+  },
+  {
+    "standard_code": "ISO_23277_2015",
+    "clause_ref": "1",
+    "clause_title": "Scope",
+    "requirement_text": "This International Standard specifies acceptance levels for indications from surface breaking imperfections in metallic welds detected by penetrant testing. The acceptance levels are primarily intended for use during manufacture examination, but where appropriate, they can be used for in-service inspection. The acceptance levels in this International Standard are based on detection capabilities that can be expected when using techniques specified in ISO 3452 series and parameters recommended in Annex A. The acceptance levels can be related to welding standards, application standards, specifications, or codes. Such a relationship is shown in ISO 17635 for ISO 5817 and ISO 10042. Acceptance levels for grouped indications are not covered by this International Standard."
+  },
+  {
+    "standard_code": "ISO_23277_2015",
+    "clause_ref": "2",
+    "clause_title": "Normative references",
+    "requirement_text": "The following documents, in whole or in part, are normatively referenced in this document and are indispensable for its application. For dated references, only the edition cited applies. For undated references, tNhoen l-adteessttr eudctitivioen t eosft tinhge —ref Pereennectreadn dt otecsutminegn —t ( iPnacrlut d1i: nGge naenrya al mpreinncdimpleensts) applies. ISO 3452-1, Non-destructive testing — Penetrant testing — Part 2: Testing of penetrant materials ISO 3452-2,W elding — Fusion-welded joints in steel, nickel, titanium and their alloys (beam welding excluded) — Quality levels for imperfections ISO 5817, Welding — Arc-welded joints in aluminium and its alloys — Quality levels for imperfections ISO 10042, Non-destructive testing — Penetrant testing — Vocabulary ISO 12706, Non-destructive testing of welds — General rules for metallic materials ISO 17635, Non-destructive testing — General terms and definitions ISO/TS 18173,"
+  },
+  {
+    "standard_code": "ISO_23277_2015",
+    "clause_ref": "3",
+    "clause_title": "Terms and definitions",
+    "requirement_text": "For the purposes of this document, the terms and definitions given in ISO/TS 18173, ISO 12706, and the f3o.1llowing apply. linear indication i3n.d2ication having a length greater than three times its width non-linear indication indication having a length less than or equal to three times its width © ISO 2015 – All rights reserved"
+  },
+  {
+    "standard_code": "ISO_23277_2015",
+    "clause_ref": "4",
+    "clause_title": "Testing parameters",
+    "requirement_text": ""
+  },
+  {
+    "standard_code": "ISO_23277_2015",
+    "clause_ref": "4.1",
+    "clause_title": "General",
+    "requirement_text": "Many parameters, either individually or in combination, will affect the shape and size of a penetrant indication produced by a weld imperfection. The following items are significant factors that will affect the shape and size of indications."
+  },
+  {
+    "standard_code": "ISO_23277_2015",
+    "clause_ref": "4.2",
+    "clause_title": "Sensitivity",
+    "requirement_text": "Penetrant materials are classified in accordance with ISO 3452-2, including a sensitivity level which relates to the ability to detect small imperfections. Generally, higher sensitivity materials should be used for the detection of small imperfections."
+  },
+  {
+    "standard_code": "ISO_23277_2015",
+    "clause_ref": "4.3",
+    "clause_title": "Surface condition",
+    "requirement_text": "Surface condition is directly related to the minimum detectable imperfection size. Best results are normally achieved when inspecting smooth surfaces. Surface roughness or irregularities (e.g. undercut, spatter) can cause high background and non-relevant indications resulting in a low probability of detection for small imperfections."
+  },
+  {
+    "standard_code": "ISO_23277_2015",
+    "clause_ref": "4.4",
+    "clause_title": "Process and technique",
+    "requirement_text": "Penetrant systems and techniques should be selected according to the test surface condition. In some cases, the choice will have a direct effect on the limits of reliable detection, for example, the removal of excess penetrant by swab cleaning on rough surfaces is not recommended when seeking small imperfections. Guidance on these matters is given in Annex A and in ISO 3452-1."
+  },
+  {
+    "standard_code": "ISO_23277_2015",
+    "clause_ref": "5",
+    "clause_title": "Acceptance levels",
+    "requirement_text": ""
+  },
+  {
+    "standard_code": "ISO_23277_2015",
+    "clause_ref": "5.1",
+    "clause_title": "General",
+    "requirement_text": "The width of the test surface shall include the weld metal and the adjacent parent metal up to a distance of 10 mm on each side. Indications produced by penetrant testing do not usually display the same size and shape characteristics as the imperfection causing that indication. For the purposes of this International Standard, it is the size of the indication which should be assessed against the values shown in Table 1. Indications that are approximately in line, which are separated by less than the length of the smaller indication, shall be considered as a single, continuous indication. Acceptance levels prescribed for linear indications are those corresponding to the evaluation level. Indications lower than this shall not be taken into account. Normally, acceptable indications shall not be recorded. Local grinding can be used to improve the classification of all or part of a test surface when it is required to work to a higher detection limit than that recommended by the existing weld surface condition in Table A.1. NOTE Local grinding is a very often used practice. Acceptance levels for welds in metallic materials are given in Table 1. © ISO 2015 – All rights reserved\n\n\nTable 1 — Acceptance levels for indications Acceptance levelDimensions in millimetres Type of indication"
+  },
+  {
+    "standard_code": "ISO_23277_2015",
+    "clause_ref": "1",
+    "clause_title": "2 a 3",
+    "requirement_text": "l l l l Linear indication ≤ 2 ≤ 4 ≤ 8 = length of indication d d d d Nonlinear indication ≤ 4 ≤ 6 ≤ 8 = major axis dimension a Acceptance levels 2 and 3 can be specified with a suffix, “X”, which denotes that all linear indications detected shall be evaluated to level 1. However, the probability of detection of indications smaller than those denoted by the original acceptance level can be low."
+  },
+  {
+    "standard_code": "ISO_23277_2015",
+    "clause_ref": "5.2",
+    "clause_title": "Evaluation of indications",
+    "requirement_text": "Initial evaluation shall be carried out as described in ISO 3452-1 and final evaluation of indication size shall be carried out after a designated minimum development time has elapsed, and before the indication has degenerated, such that it no longer represents the causing imperfection."
+  },
+  {
+    "standard_code": "ISO_23277_2015",
+    "clause_ref": "5.3",
+    "clause_title": "Removal of imperfections",
+    "requirement_text": "Where the product specification permits, local grinding can be used to reduce or remove imperfections which are the cause of unacceptable indications. All such areas shall be re-tested and evaluated with the same penetrant system and technique. © ISO 2015 – All rights reserved\n\n| Type of indication | Acceptance levelDimensions in millimetres 1 2 a 3 |  |  |\n| --- | --- | --- | --- |\n| l Linear indication | l | l | l |\n| = length of indication d Nonlinear indication | ≤ 2 d | ≤ 4 d | ≤ 8 d |\n| ≤ 4 ≤ 6 ≤ 8 = major axis dimension a Acceptance levels 2 and 3 can be specified with a suffix, “X”, which denotes that all linear indications detected shall |  |  |  |"
+  },
+  {
+    "standard_code": "ISO_23277_2015",
+    "clause_ref": "1",
+    "clause_title": "Fine surface Fluorescent penetrant system, normal",
+    "requirement_text": "sensitivity or higher to ISO 3452-2. Colour contrast penetrant, high sensitivity to ISO 3452-2 b"
+  },
+  {
+    "standard_code": "ISO_23277_2015",
+    "clause_ref": "2",
+    "clause_title": "Smooth surface Any",
+    "requirement_text": "c"
+  },
+  {
+    "standard_code": "ISO_23277_2015",
+    "clause_ref": "3",
+    "clause_title": "General surface Any",
+    "requirement_text": "a The weld cap and parent material offer smooth clean surfaces with negligible undercut, rippling, and spatter. The surface finish is typical of welds made by automatic TIG-welding, submerged arc welding (fully mechanized), and manual metal arc welding process using iron powder electrodes. b The weld cap and parent material offer reasonably smooth surfaces with minimal undercut, rippling, and spatter. The surface finish is typical of welds made by manual metal arc welding vertical downwards and MAG welding using argon rich gas for the capping runs. c The weld cap and parent material are in the as-welded condition. The surface finish is typical of welds produced by the manual metal arc and MAG welding processes in any position. © ISO 2015 – All rights reserved\n\n| Acceptance level | Surface condition | Type of penetrant system |\n| --- | --- | --- |\n| 1 | a Fine surface | Fluorescent penetrant system, normal sensitivity or higher to ISO 3452-2. Col- |\n|  |  | our contrast penetrant, high sensitivity to ISO 3452-2 |\n| 2 | b Smooth surface | Any |\n| c 3 General surface Any a The weld cap and parent material offer smooth clean surfaces with negligible undercut, rippling, and spatter. The surface finish is typical of welds made by automatic TIG-welding, submerged arc welding (fully mechanized), and manual metal arc welding process using iron powder electrodes. b The weld cap and parent material offer reasonably smooth surfaces with minimal undercut, rippling, and spatter. The surface finish is typical of welds made by manual metal arc welding vertical downwards and MAG welding using argon rich gas for the capping runs. c |  |  |"
+  }
+]

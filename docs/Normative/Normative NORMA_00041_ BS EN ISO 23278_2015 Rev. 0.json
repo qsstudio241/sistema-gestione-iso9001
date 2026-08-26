@@ -1,0 +1,92 @@
+[
+  {
+    "standard_code": "ISO_23278_2015",
+    "clause_ref": "1",
+    "clause_title": "Scope 1",
+    "requirement_text": "........................................................................................................................................................................................................................................"
+  },
+  {
+    "standard_code": "ISO_23278_2015",
+    "clause_ref": "2",
+    "clause_title": "Normative references 1",
+    "requirement_text": "................................................................................................................................................................................................................................."
+  },
+  {
+    "standard_code": "ISO_23278_2015",
+    "clause_ref": "3",
+    "clause_title": "Terms and definitions 1",
+    "requirement_text": "......................................................................................................................................................................................"
+  },
+  {
+    "standard_code": "ISO_23278_2015",
+    "clause_ref": "4",
+    "clause_title": "Testing parameters 1",
+    "requirement_text": "....................................................................................................................................................................................."
+  },
+  {
+    "standard_code": "ISO_23278_2015",
+    "clause_ref": "5",
+    "clause_title": "Acceptance levels 2",
+    "requirement_text": "............................................................................................................................................................................................ ................................................................................................................................................................................................. 5.1 General ...........................................................................................................................................................................................................2 Annex A Recommended testing parameters 3 5.2 Removal of imperfections ..............................................................................................................................................................2 Bibliography 4 (informative) .......................................................................................................... ................................................................................................................................................................................................................................ © ISO 2015 – All rights reserved iii"
+  },
+  {
+    "standard_code": "ISO_23278_2015",
+    "clause_ref": "1",
+    "clause_title": "Scope",
+    "requirement_text": "This International Standard specifies acceptance levels for indications from imperfections in ferromagnetic steel welds detected by magnetic particle testing. The acceptance levels are primarily intended for use during manufacture examination. NOTE They can also be used for in-service inspection. The acceptance levels in this International Standard are based on detection capabilities that can be expected when using techniques specified in ISO 17638 and parameters recommended in Annex A. The acceptance levels can be related to welding standards, application standards, specifications or codes. Such a relationship is shown in ISO 17635 for ISO 5817. Acceptance levels for grouped indications are not covered by this International Standard."
+  },
+  {
+    "standard_code": "ISO_23278_2015",
+    "clause_ref": "2",
+    "clause_title": "Normative references",
+    "requirement_text": "The following documents, in whole or in part, are normatively referenced in this document and are indispensable for its application. For dated references, only the edition cited applies. For undated references, theN laotne-sdte esdtriuticotniv oef t tehseti nregf e—re Gnecneedr dalo tceurmmesn atn (din dcelfuidniitnigo nasny amendments) applies. ISO/TS 18173,"
+  },
+  {
+    "standard_code": "ISO_23278_2015",
+    "clause_ref": "3",
+    "clause_title": "Terms and definitions",
+    "requirement_text": "F3o.1r the purposes of this document, the terms and definitions given in ISO/TS 18173 and the following apply. linear indication l i3n.d2ication having a length greater than three times its width non-linear indication d indication having a length less than or equal to three times its width"
+  },
+  {
+    "standard_code": "ISO_23278_2015",
+    "clause_ref": "4",
+    "clause_title": "Testing parameters",
+    "requirement_text": "Many parameters, either individually or in combination, will affect the ability of a technique to detect imperfections of a given size and orientation with respect to the condition of the test surface. Detection of small imperfections is highly dependent on the surface condition of the weld and the detection media used. Examples of the application of these parameters to give a high probability of detection are given in Annex A. © ISO 2015 – All rights reserved"
+  },
+  {
+    "standard_code": "ISO_23278_2015",
+    "clause_ref": "5",
+    "clause_title": "Acceptance levels",
+    "requirement_text": ""
+  },
+  {
+    "standard_code": "ISO_23278_2015",
+    "clause_ref": "5.1",
+    "clause_title": "General",
+    "requirement_text": "The width of the test surface shall include the weld metal and the adjacent parent metal up to a distance of 10 mm on each side. Acceptance levels prescribed for linear indications are those corresponding to the evaluation level. Indications lower than this shall not be taken into account. Acceptable indications do not have to be recorded. Any adjacent indications separated by less than the major dimension of the smaller shall be assessed as a single, continuous indication. Local grinding may be used to improve the classification of all or just part of a test surface, when it is required to work to a higher detection limit than that expected by the existing weld surface condition. Acceptance levels are given in Table 1. Table 1 — Acceptance levels for indications from imperfections Acceptance levelDimensions in millimetres Type of indication a l 1 l 2 l 3 l Linear indication ⩽ 1,5 ⩽ 3 ⩽ 6 = length of indication d d d d Non-linear indication ⩽ 2 ⩽ 3 ⩽ 4 = major axis dimension a Acceptance levels 2 and 3 may be specified with a suffix “X”, which denotes that all linear indications detected shall be assessed to level 1. However, the probability of detection of indications smaller than those denoted by the original acceptance level can be low."
+  },
+  {
+    "standard_code": "ISO_23278_2015",
+    "clause_ref": "5.2",
+    "clause_title": "Removal of imperfections",
+    "requirement_text": "Where the product specification permits, local grinding may be used to reduce or remove imperfections which are the cause of unacceptable indications. All such areas shall be re-tested and evaluated with the same magnetic system and technique. © ISO 2015 – All rights reserved\n\n| Type of indication | Acceptance levelDimensions in millimetres |  |  |\n| --- | --- | --- | --- |\n|  |  | a |  |\n| l Linear indication | l 1 | l 2 | l 3 |\n| = length of indication d Non-linear indication | ⩽ 1,5 d | ⩽ 3 d | ⩽ 6 d |\n| ⩽ 2 ⩽ 3 ⩽ 4 = major axis dimension a Acceptance levels 2 and 3 may be specified with a suffix “X”, which denotes that all linear indications detected shall be |  |  |  |"
+  },
+  {
+    "standard_code": "ISO_23278_2015",
+    "clause_ref": "1",
+    "clause_title": "Fine surface",
+    "requirement_text": "contrast aid b Fluorescent or colour contrast with"
+  },
+  {
+    "standard_code": "ISO_23278_2015",
+    "clause_ref": "2",
+    "clause_title": "Smooth surface",
+    "requirement_text": "contrast aid c Colour contrast with contrast aid or fluo-"
+  },
+  {
+    "standard_code": "ISO_23278_2015",
+    "clause_ref": "3",
+    "clause_title": "General surface",
+    "requirement_text": "rescent with low sensitivity a The weld cap and parent material offer smooth clean surfaces with negligible undercut, rippling and spatter. The surface finish is typical of welds, made by automatic TIG-welding; submerged arc welding (fully mechanized) and manual metal arc welding with iron powder electrodes. b The weld cap and parent material offer reasonably smooth surfaces with minimal undercut, rippling and spatter. The surface finish is typical of welds made by manual metal arc welding vertical downwards and MAG-welding using argon rich gas for the capping runs. c The weld cap and parent material are in the as-welded condition. The surface finish is typical of welds made by manual metal arc welding or MAG-welding in any position. © ISO 2015 – All rights reserved\n\n| Acceptance level | Surface condition | Detection media |\n| --- | --- | --- |\n|  |  |  |\n| 1 | a Fine surface | Fluorescent or colour contrast with contrast aid |\n| 2 | b Smooth surface | Fluorescent or colour contrast with contrast aid |\n| c Colour contrast with contrast aid or fluo- 3 General surface rescent with low sensitivity a The weld cap and parent material offer smooth clean surfaces with negligible undercut, rippling and spatter. The surface finish is typical of welds, made by automatic TIG-welding; submerged arc welding (fully mechanized) and manual metal arc welding with iron powder electrodes. b The weld cap and parent material offer reasonably smooth surfaces with minimal undercut, rippling and spatter. The surface finish is typical of welds made by manual metal arc welding vertical downwards and MAG-welding using argon rich gas for the capping runs. c |  |  |"
+  }
+]
