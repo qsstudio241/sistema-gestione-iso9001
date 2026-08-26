@@ -32,6 +32,8 @@
 .ndt-type-tag { background: #e0f2fe; color: #0369a1; border-radius: 4px; padding: 2px 8px; font-size: 0.75rem; font-weight: 700; }
 .ndt-status { display: inline-block; padding: 2px 8px; border-radius: 12px; font-size: 0.75rem; font-weight: 600; }
 .ndt-status-draft     { background: #f3f4f6; color: #6b7280; }
+.ndt-status-local     { background: #e0e7ff; color: #3730a3; }
+.ndt-status-queued    { background: #ffedd5; color: #c2410c; }
 .ndt-status-completed { background: #fef3c7; color: #d97706; }
 .ndt-status-approved  { background: #dcfce7; color: #15803d; }
 

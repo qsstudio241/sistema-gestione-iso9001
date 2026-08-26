@@ -10,11 +10,63 @@
 import { useEffect, useCallback, useRef } from 'react';
 
 export const NDT_DRAFT_KEY_PREFIX = 'sgq:ndt_draft:';
+/** Indice chiavi bozza (jsdom/vitest: localStorage.length/key spesso assenti). */
+export const NDT_DRAFT_INDEX_KEY = 'sgq:ndt_draft_index';
 const DEBOUNCE_MS = 800;
 
 /** Chiave bozza localStorage per un verbale (id o "new"). */
 export function ndtDraftKey(reportId) {
     return NDT_DRAFT_KEY_PREFIX + (reportId || 'new');
+}
+
+function readDraftIndex() {
+    try {
+        const raw = localStorage.getItem(NDT_DRAFT_INDEX_KEY);
+        if (!raw) return [];
+        const arr = JSON.parse(raw);
+        return Array.isArray(arr) ? arr.filter((k) => typeof k === 'string') : [];
+    } catch (_) {
+        return [];
+    }
+}
+
+function writeDraftIndex(keys) {
+    try {
+        const uniq = [...new Set(keys.filter(Boolean))];
+        localStorage.setItem(NDT_DRAFT_INDEX_KEY, JSON.stringify(uniq));
+    } catch (_) { /* ignore */ }
+}
+
+function registerDraftKey(draftKey) {
+    if (!draftKey || draftKey.endsWith(':client_uuid')) return;
+    const keys = readDraftIndex();
+    if (!keys.includes(draftKey)) {
+        keys.push(draftKey);
+        writeDraftIndex(keys);
+    }
+}
+
+function unregisterDraftKey(draftKey) {
+    if (!draftKey) return;
+    writeDraftIndex(readDraftIndex().filter((k) => k !== draftKey));
+}
+
+/** Elenco chiavi bozza: indice + scan length/key se disponibile. */
+function collectDraftKeys() {
+    const fromIndex = readDraftIndex();
+    const fromScan = [];
+    try {
+        const len = localStorage.length;
+        if (typeof len === 'number' && len > 0) {
+            for (let i = 0; i < len; i++) {
+                const key = localStorage.key(i);
+                if (key && key.startsWith(NDT_DRAFT_KEY_PREFIX) && !key.endsWith(':client_uuid')) {
+                    fromScan.push(key);
+                }
+            }
+        }
+    } catch (_) { /* ignore */ }
+    return [...new Set([...fromIndex, ...fromScan])];
 }
 
 /** UUID client stabile per create offline (sopravvive al refresh). */
@@ -69,6 +121,7 @@ export function clearNdtDraftByKey(draftKey) {
         /* ignore */
     }
     clearOfflineCreateUuid(draftKey);
+    unregisterDraftKey(draftKey);
 }
 
 /**
@@ -86,11 +139,21 @@ export function useNdtAutoSave(reportId, formData, items) {
         if (timerRef.current) clearTimeout(timerRef.current);
         timerRef.current = setTimeout(() => {
             try {
+                let prev = null;
+                try {
+                    prev = JSON.parse(localStorage.getItem(draftKey) || "null");
+                } catch (_) { /* ignore */ }
+                const clientUuid =
+                    (prev && prev.client_uuid) ||
+                    (reportId && !/^\d+$/.test(String(reportId)) ? String(reportId) : null);
                 localStorage.setItem(draftKey, JSON.stringify({
                     savedAt: new Date().toISOString(),
                     formData,
                     items,
+                    ...(clientUuid ? { client_uuid: clientUuid } : {}),
+                    ...(prev && prev.queued ? { queued: true, queuedAt: prev.queuedAt } : {}),
                 }));
+                registerDraftKey(draftKey);
             } catch (e) {
                 // localStorage pieno o non disponibile — ignora silenziosamente
             }
@@ -118,23 +181,129 @@ export function useNdtAutoSave(reportId, formData, items) {
     return { clearDraft, loadDraft, draftKey };
 }
 
+/** Riga Elenco Marche vuota (seed bozza CND-8). */
+export const EMPTY_NDT_MARK_ITEM = {
+    position_code: '',
+    quantity: '1',
+    description: '',
+    examined_part: 'SALDATURA',
+    surface_condition: 'M/S',
+    inspection_percentage: 100,
+    defects: 'NESSUNO',
+    evaluation: 'A',
+    notes: '',
+};
+
+/**
+ * Form minimo di una bozza verbale (status draft) — schema mentale createAudit.
+ */
+export function buildEmptyNdtDraftForm({
+    inspector = '',
+    companyId = '',
+    reportType = 'VT',
+} = {}) {
+    return {
+        company_id: companyId != null && companyId !== '' ? String(companyId) : '',
+        report_type: reportType || 'VT',
+        client: '',
+        supplier_name: '',
+        job_order: '',
+        project_id: '',
+        wps_number: '',
+        wps_id: '',
+        base_material: '',
+        material_standard: 'UNI EN ISO 10025-2',
+        joint_type: 'SALDATURA AD ANGOLO MONO E MULTI PASSATA',
+        quality_level: 'UNI EN ISO 5817 Lev.C',
+        method_params: { lux_min: '' },
+        notes: "NULLA DA SEGNALARE, L\u2019ESITO \u00C8 DA RITENERSI SODDISFACENTE.",
+        inspection_date: '',
+        certificate_date: '',
+        responsible: '',
+        inspector: inspector || '',
+        client_representative: '',
+        status: 'draft',
+    };
+}
+
+/**
+ * CND-8: crea subito una bozza locale con UUID (come createAudit), senza aspettare "Salva".
+ * Chiave localStorage = sgq:ndt_draft:<uuid> (più bozze parallele ammesse).
+ *
+ * @returns {{ uuid: string, draftKey: string, formData: object, items: Array, savedAt: string }}
+ */
+export function seedNdtLocalDraft({
+    inspector = '',
+    companyId = '',
+    reportType = 'VT',
+} = {}) {
+    const uuid = (typeof crypto !== 'undefined' && crypto.randomUUID)
+        ? crypto.randomUUID()
+        : `ndt-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+    const draftKey = ndtDraftKey(uuid);
+    const formData = buildEmptyNdtDraftForm({ inspector, companyId, reportType });
+    const items = [{ ...EMPTY_NDT_MARK_ITEM }];
+    const savedAt = new Date().toISOString();
+    const record = {
+        savedAt,
+        formData,
+        items,
+        client_uuid: uuid,
+        queued: false,
+    };
+    try {
+        localStorage.setItem(draftKey, JSON.stringify(record));
+        localStorage.setItem(offlineCreateUuidKey(draftKey), uuid);
+        registerDraftKey(draftKey);
+    } catch (_) { /* ignore */ }
+    return { uuid, draftKey, formData, items, savedAt };
+}
+
+/** Segna/toglie flag "in coda" su una bozza locale (lista onesta). */
+export function markNdtDraftQueued(draftKey, queued = true) {
+    if (!draftKey) return;
+    try {
+        const raw = localStorage.getItem(draftKey);
+        if (!raw) return;
+        const data = JSON.parse(raw);
+        data.queued = !!queued;
+        if (queued) data.queuedAt = new Date().toISOString();
+        else delete data.queuedAt;
+        localStorage.setItem(draftKey, JSON.stringify(data));
+    } catch (_) { /* ignore */ }
+}
+
 /**
  * Recupera tutte le bozze NdtReport salvate in localStorage.
- * Utile per mostrare un banner "Hai una bozza non salvata" all'apertura.
+ * Salta le chiavi companion `:client_uuid` (stringa UUID grezza).
+ * Usa indice dedicato (CND-8): in jsdom length/key spesso non funzionano.
  */
 export function listNdtDrafts() {
     const drafts = [];
     try {
-        for (let i = 0; i < localStorage.length; i++) {
-            const key = localStorage.key(i);
-            if (key && key.startsWith(NDT_DRAFT_KEY_PREFIX)) {
-                try {
-                    const data = JSON.parse(localStorage.getItem(key));
-                    if (data) drafts.push({ key, ...data });
-                } catch (e) {}
-            }
+        for (const key of collectDraftKeys()) {
+            if (!key || !key.startsWith(NDT_DRAFT_KEY_PREFIX)) continue;
+            if (key.endsWith(':client_uuid')) continue;
+            try {
+                const data = JSON.parse(localStorage.getItem(key));
+                if (!data || typeof data !== 'object' || !data.formData) continue;
+                let clientUuid = data.client_uuid || null;
+                if (!clientUuid) {
+                    try {
+                        clientUuid = localStorage.getItem(offlineCreateUuidKey(key)) || null;
+                    } catch (_) { /* ignore */ }
+                }
+                const suffix = key.slice(NDT_DRAFT_KEY_PREFIX.length);
+                const looksLikeServerId = /^\d+$/.test(suffix);
+                drafts.push({
+                    key,
+                    ...data,
+                    client_uuid: clientUuid,
+                    _serverIdHint: looksLikeServerId ? Number(suffix) : null,
+                });
+            } catch (e) { /* skip */ }
         }
-    } catch (e) {}
+    } catch (e) { /* ignore */ }
     return drafts;
 }
 

@@ -1,7 +1,8 @@
 # DEPUTYTASK — CND-8: crea verbale come audit (bozza UUID → form → coda)
 
-**Stato:** APERTO  
+**Stato:** CHIUSO  
 **Aperto:** 26/08/2026  
+**Chiuso:** 26/08/2026 — **TEST OK**  
 **Piano:** [`PLAN_CND_SLICES.md`](PLAN_CND_SLICES.md)  
 **Dipende da:** CND-9 **CHIUSO** (#578) — coda sync NDT agganciata  
 **Rischio:** Medio — FE lista/crea verbale; riuso `enqueueNdtReportSync` / pattern `createAudit`; niente auth/migrazioni.  
@@ -26,22 +27,28 @@ Oggi si crea il verbale «da zero» senza allineamento chiaro al flusso audit (U
 5. Test L1 + `npm run build` in `app/`.
 6. Spuntare CND-8 in PLAN_CND; brief **CHIUSO** — TEST OK.
 
-## File previsti
+## File toccati
 
-- `app/src/pages/NdtReportsPage.jsx` / `.css` (lista + crea bozza) — tocco mirato
-- riuso `enqueueNdtReportSync` / `useNdtAutoSave` (CND-9) senza riscrivere syncService intero
-- test mirati + `docs/agent-tasks/PLAN_CND_SLICES.md` + questo brief
+- `app/src/pages/NdtReportsPage.jsx` / `.css`
+- `app/src/hooks/useNdtAutoSave.js` (`seedNdtLocalDraft`, indice bozze, `listNdtDrafts`)
+- `app/src/tests/ndtReportsCreateDraft.cnd8.test.jsx` + allineamento mock CND-2/3/7/9
+- `docs/agent-tasks/PLAN_CND_SLICES.md` + questo brief
 
-## Cosa NON toccare
+## Cosa NON toccato
 
 - `DEPUTYTASK1.md` / CND-5a / `EquipmentPage`
-- `vtWordExport.js`, `ndtReportRegistryPose*`, `NdtItemAttachments*` (salvo se crea bozza richiede id item — evitare)
+- `vtWordExport.js`, `ndtReportRegistryPose*`, `NdtItemAttachments*`
 - STUD / WPQR / auth / JWT / migrazioni / CND-10 firma
 - GUIDA / roadmap § Stato attuale (parallelo — sync **dopo merge**)
 
 ## Verifica
 
-- [ ] Nuovo verbale → bozza UUID subito; offline usa coda CND-9
-- [ ] Nessuna entità «incarico» nuova
-- [ ] L1 + build OK
-- [ ] PLAN CND-8 spuntato; brief CHIUSO — TEST OK
+- [x] Nuovo verbale → bozza UUID subito; offline usa coda CND-9
+- [x] Nessuna entità «incarico» nuova
+- [x] L1 + build OK (`ndtReportsCreateDraft.cnd8` + regressioni NDT; `npm run build`)
+- [x] PLAN CND-8 spuntato; brief CHIUSO — **TEST OK**
+
+## Bozza hub (dopo merge, parallelo attivo)
+
+- Roadmap § Stato attuale: riga CND-8 CHIUSO + PR
+- GUIDA: una riga lezione «Nuovo verbale = seed UUID subito come createAudit»

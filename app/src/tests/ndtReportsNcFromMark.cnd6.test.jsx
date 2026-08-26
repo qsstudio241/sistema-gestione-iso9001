@@ -28,14 +28,17 @@ vi.mock("../utils/vtWordExport.js", () => ({
   exportVtToWord: vi.fn(),
 }));
 
-vi.mock("../hooks/useNdtAutoSave.js", () => ({
-  useNdtAutoSave: () => ({ clearDraft: vi.fn(), loadDraft: () => null, draftKey: "sgq:ndt_draft:new" }),
-  enqueueNdtReportSync: vi.fn(),
-  isNdtNetworkSaveError: () => false,
-  ndtDraftKey: (id) => "sgq:ndt_draft:" + (id || "new"),
-  getOrCreateOfflineCreateUuid: () => "test-uuid",
-  clearOfflineCreateUuid: vi.fn(),
-}));
+vi.mock("../hooks/useNdtAutoSave.js", async (importOriginal) => {
+  const actual = await importOriginal();
+  return {
+    ...actual,
+    useNdtAutoSave: () => ({ clearDraft: vi.fn(), loadDraft: () => null, draftKey: "sgq:ndt_draft:new" }),
+    enqueueNdtReportSync: vi.fn(),
+    isNdtNetworkSaveError: () => false,
+    getOrCreateOfflineCreateUuid: () => "test-uuid",
+    clearOfflineCreateUuid: vi.fn(),
+  };
+});
 
 vi.mock("../components/NdtItemAttachments.jsx", () => ({
   default: () => null,
@@ -72,7 +75,7 @@ vi.mock("../services/apiService", () => ({
     getProjects: vi.fn().mockResolvedValue({ data: [] }),
     getWPSList: vi.fn().mockResolvedValue({ data: [] }),
     getNdtReport: vi.fn(),
-    createNdtReport: vi.fn(),
+    createNdtReport: vi.fn().mockResolvedValue({ data: {} }),
     updateNdtReport: vi.fn(),
     deleteNdtReport: vi.fn(),
     getNdtInspectorEligibility: (...args) => eligibilityMock(...args),
@@ -95,7 +98,7 @@ async function openNewVtReport(user) {
   render(<NdtReportsPage />);
   const nuovo = await screen.findByRole("button", { name: "+ Nuovo verbale" });
   await user.click(nuovo);
-  await screen.findByRole("heading", { name: "Nuovo verbale CND" });
+  await screen.findByRole("heading", { name: /Nuovo verbale CND|Bozza locale|Bozza in coda|Verbale/i });
   // Attendi debounce gate 9712 (300ms) prima di interagire — evita .then su mock resettato
   await act(async () => {
     await new Promise((r) => setTimeout(r, 350));

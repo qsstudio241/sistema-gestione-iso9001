@@ -28,14 +28,17 @@ vi.mock("../utils/vtWordExport.js", () => ({
   exportVtToWord: vi.fn(),
 }));
 
-vi.mock("../hooks/useNdtAutoSave.js", () => ({
-  useNdtAutoSave: () => ({ clearDraft: vi.fn(), loadDraft: () => null, draftKey: "sgq:ndt_draft:new" }),
-  enqueueNdtReportSync: vi.fn(),
-  isNdtNetworkSaveError: () => false,
-  ndtDraftKey: (id) => "sgq:ndt_draft:" + (id || "new"),
-  getOrCreateOfflineCreateUuid: () => "test-uuid",
-  clearOfflineCreateUuid: vi.fn(),
-}));
+vi.mock("../hooks/useNdtAutoSave.js", async (importOriginal) => {
+  const actual = await importOriginal();
+  return {
+    ...actual,
+    useNdtAutoSave: () => ({ clearDraft: vi.fn(), loadDraft: () => null, draftKey: "sgq:ndt_draft:new" }),
+    enqueueNdtReportSync: vi.fn(),
+    isNdtNetworkSaveError: () => false,
+    getOrCreateOfflineCreateUuid: () => "test-uuid",
+    clearOfflineCreateUuid: vi.fn(),
+  };
+});
 
 vi.mock("../components/NdtItemAttachments.jsx", () => ({
   default: () => null,
@@ -73,14 +76,15 @@ async function openNewReport(user) {
   render(<NdtReportsPage />);
   const nuovo = await screen.findByRole("button", { name: "+ Nuovo verbale" });
   await user.click(nuovo);
-  await screen.findByRole("heading", { name: "Nuovo verbale CND" });
+  await screen.findByRole("heading", { name: /Nuovo verbale CND|Bozza locale|Bozza in coda|Verbale/i });
 }
 
 describe("NdtReportsPage — flag PT/MT CND-3", () => {
   beforeEach(() => {
     localStorage.clear();
     createNdtReport.mockReset();
-    createNdtReport.mockResolvedValue({ data: { id: 1 } });
+    // CND-8: openNew crea bozza subito; senza id resta form "nuovo" (create, non update)
+    createNdtReport.mockResolvedValue({ data: {} });
     eligibilityMock.mockReset();
     eligibilityMock.mockResolvedValue({
       data: { ok: true, reasons: [], candidates: [], qualification: { ndt_method: "PT", ndt_level: 2 }, vision: { state: "ok" } },
@@ -100,6 +104,7 @@ describe("NdtReportsPage — flag PT/MT CND-3", () => {
   it("PT mostra flag metodo, MT assente; L2 finisce in method_params.pt", async () => {
     const user = userEvent.setup();
     await openNewReport(user);
+    createNdtReport.mockClear();
     await user.selectOptions(screen.getByLabelText("Tipo metodo"), "PT");
     const methodToggle = screen.getByRole("button", { name: /Parametri metodo PT/ });
     if (!document.querySelector("[data-testid='ndt-pt-method']")) {
@@ -130,6 +135,7 @@ describe("NdtReportsPage — flag PT/MT CND-3", () => {
     expect(src).toMatch(/\{"Intensit\\u00e0"\}/);
     const user = userEvent.setup();
     await openNewReport(user);
+    createNdtReport.mockClear();
     await user.selectOptions(screen.getByLabelText("Tipo metodo"), "MT");
     const methodToggle = screen.getByRole("button", { name: /Parametri metodo MT/ });
     if (!document.querySelector("[data-testid='ndt-mt-method']")) {

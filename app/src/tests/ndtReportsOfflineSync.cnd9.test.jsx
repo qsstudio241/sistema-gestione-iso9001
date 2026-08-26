@@ -29,23 +29,25 @@ vi.mock("../utils/vtWordExport.js", () => ({
 const enqueueNdtReportSync = vi.fn();
 const clearDraft = vi.fn();
 
-vi.mock("../hooks/useNdtAutoSave.js", () => ({
-  useNdtAutoSave: () => ({
-    clearDraft,
-    loadDraft: () => null,
-    draftKey: "sgq:ndt_draft:new",
-  }),
-  enqueueNdtReportSync: (...args) => enqueueNdtReportSync(...args),
-  isNdtNetworkSaveError: (err) =>
-    err?.code === "OFFLINE" ||
-    err?.code === "NETWORK_ERROR" ||
-    err?.status === 0 ||
-    (typeof navigator !== "undefined" && navigator.onLine === false),
-  ndtDraftKey: (id) => "sgq:ndt_draft:" + (id || "new"),
-  clearNdtDraftByKey: vi.fn(),
-  getOrCreateOfflineCreateUuid: () => "fixed-offline-uuid",
-  clearOfflineCreateUuid: vi.fn(),
-}));
+vi.mock("../hooks/useNdtAutoSave.js", async (importOriginal) => {
+  const actual = await importOriginal();
+  return {
+    ...actual,
+    useNdtAutoSave: () => ({
+      clearDraft,
+      loadDraft: () => null,
+      draftKey: "sgq:ndt_draft:new",
+    }),
+    enqueueNdtReportSync: (...args) => enqueueNdtReportSync(...args),
+    isNdtNetworkSaveError: (err) =>
+      err?.code === "OFFLINE" ||
+      err?.code === "NETWORK_ERROR" ||
+      err?.status === 0 ||
+      (typeof navigator !== "undefined" && navigator.onLine === false),
+    getOrCreateOfflineCreateUuid: () => "fixed-offline-uuid",
+    clearOfflineCreateUuid: vi.fn(),
+  };
+});
 
 vi.mock("../components/NdtItemAttachments.jsx", () => ({
   default: () => null,
@@ -113,7 +115,11 @@ describe("CND-9 save offline → coda sync", () => {
     const user = userEvent.setup();
     render(<NdtReportsPage />);
     await user.click(await screen.findByRole("button", { name: "+ Nuovo verbale" }));
-    await screen.findByRole("heading", { name: "Nuovo verbale CND" });
+    // CND-8: offline → già enqueue alla creazione bozza
+    await screen.findByRole("heading", { name: /Bozza in coda|Bozza locale|Nuovo verbale/i });
+    await waitFor(() => expect(enqueueNdtReportSync).toHaveBeenCalled());
+    enqueueNdtReportSync.mockClear();
+    createNdtReport.mockClear();
 
     await user.click(screen.getByRole("button", { name: "Salva bozza" }));
 
@@ -126,7 +132,7 @@ describe("CND-9 save offline → coda sync", () => {
 
     const [type, payload] = enqueueNdtReportSync.mock.calls[0];
     expect(type).toBe("create_ndt_report");
-    expect(payload.draftKey).toBe("sgq:ndt_draft:new");
+    expect(payload.draftKey).toBeTruthy();
     expect(payload.uuid).toBeTruthy();
     expect(payload.status).toBe("draft");
     expect(clearDraft).not.toHaveBeenCalled();
@@ -140,16 +146,16 @@ describe("CND-9 save offline → coda sync", () => {
     const user = userEvent.setup();
     render(<NdtReportsPage />);
     await user.click(await screen.findByRole("button", { name: "+ Nuovo verbale" }));
-    await user.click(screen.getByRole("button", { name: "Salva bozza" }));
     await waitFor(() => expect(enqueueNdtReportSync).toHaveBeenCalled());
     expect(enqueueNdtReportSync.mock.calls[0][0]).toBe("create_ndt_report");
+    const draftKeyFromCreate = enqueueNdtReportSync.mock.calls[0][1].draftKey;
 
     await act(async () => {
       window.dispatchEvent(
         new CustomEvent("sgq:ndtReportSynced", {
           detail: {
             type: "create_ndt_report",
-            draftKey: "sgq:ndt_draft:new",
+            draftKey: draftKeyFromCreate || "sgq:ndt_draft:new",
             result: { created: true, id: 99 },
           },
         })
