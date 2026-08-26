@@ -129,7 +129,7 @@ describe("CND-9 syncService tipi NDT", () => {
 
     expect(createNdtReport).toHaveBeenCalled();
     expect(localStorage.getItem(draftKey)).toBeNull();
-    expect(events.some((d) => d.type === "create_ndt_report")).toBe(true);
+    expect(events.some((d) => d.type === "create_ndt_report" && d.result?.id === 10)).toBe(true);
     const store = db.transaction(["syncQueue"]).objectStore("syncQueue");
     expect(store._data.has("q1")).toBe(false);
 
