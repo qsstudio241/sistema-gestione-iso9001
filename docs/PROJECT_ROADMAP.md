@@ -36,7 +36,7 @@ Audit multi-standard (9001/14001/45001) · Non Conformità (workflow ISO 10.2 co
 
 **NG-3 skill gap-analysis (25/08, mergiata #560)** — percorso «manca MD → backlog → HITL» + mapping.
 
-**WPQR t1/t2 + ISO 15614-2 (25/08, mergiata #558; reprocess #563; polish #566/#567)** — Mason: doppi range spessore FW e norma alluminio. Migrazione **158** in PROD. Backlog: Tabella 4 gruppi Al; STUD-2/3 dopo PDF 14555.
+**WPQR t1/t2 + ISO 15614-2 (25/08, mergiata #558; reprocess #563; polish #566/#567)** — Mason: doppi range spessore FW e norma alluminio. Migrazione **158** in PROD. Backlog: Tabella 4 gruppi Al; STUD-2/3-A chiusi (vedi sopra); STUD-3-B dopo HITL.
 
 **NG-0+NG-1 fedeltà normativa (25/08)** — gate slice norm-touching, template richiesta PDF, backlog [`NORME_MANCANTI_BACKLOG.md`](reference/NORME_MANCANTI_BACKLOG.md), inventario skill aggiornato. **3834-2/-4:2021** già in repo + seed VPS.
 
