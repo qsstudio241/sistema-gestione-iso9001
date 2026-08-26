@@ -18,7 +18,12 @@ import {
     isNdtNetworkSaveError,
     getOrCreateOfflineCreateUuid,
     clearOfflineCreateUuid,
+    clearNdtDraftByKey,
     ndtDraftKey,
+    seedNdtLocalDraft,
+    markNdtDraftQueued,
+    listNdtDrafts,
+    EMPTY_NDT_MARK_ITEM,
 } from "../hooks/useNdtAutoSave.js";
 import {
     defaultMethodParams,
@@ -521,6 +526,9 @@ function NdtReportForm({ report, companies, availableInstruments, onSave, onCanc
     const [boundReportId, setBoundReportId] = useState(report?.id || null);
     const reportId = boundReportId || report?.id || null;
     const isEdit = reportId != null;
+    // CND-8: bozza locale con UUID (createAudit) — draft key = uuid finché non c'è id server
+    const clientUuid = report?.client_uuid || null;
+    const draftIdentity = reportId || clientUuid || null;
 
     // Nome utente loggato per auto-fill ispettore
     const currentUserName = useMemo(() => {
@@ -551,8 +559,10 @@ function NdtReportForm({ report, companies, availableInstruments, onSave, onCanc
         status: "draft",
     };
 
+    const hasSeededReport = !!(report && (report.id || report._local || report.client_uuid));
+
     const [form, setForm] = useState(() => {
-        if (!isEdit) return emptyForm;
+        if (!hasSeededReport) return emptyForm;
         return {
             company_id:           report.company_id || "",
             report_type:          report.report_type || "VT",
@@ -568,19 +578,21 @@ function NdtReportForm({ report, companies, availableInstruments, onSave, onCanc
             quality_level:        report.quality_level || "UNI EN ISO 5817 Lev.C",
             method_params:        sanitizeMethodParams(report.report_type || "VT", report.method_params),
             notes:                report.notes || emptyForm.notes,
-            inspection_date:      report.inspection_date ? report.inspection_date.substring(0, 10) : "",
-            certificate_date:     report.certificate_date ? report.certificate_date.substring(0, 10) : "",
+            inspection_date:      report.inspection_date ? String(report.inspection_date).substring(0, 10) : "",
+            certificate_date:     report.certificate_date ? String(report.certificate_date).substring(0, 10) : "",
             responsible:          report.responsible || "",
-            inspector:            report.inspector || "",
+            inspector:            report.inspector || currentUserName || "",
             client_representative: report.client_representative || "",
             status:               report.status || "draft",
         };
     });
 
-    const EMPTY_ITEM = { position_code: "", quantity: "1", description: "", examined_part: "SALDATURA", surface_condition: "M/S", inspection_percentage: 100, defects: "NESSUNO", evaluation: "A", notes: "" };
+    const EMPTY_ITEM = EMPTY_NDT_MARK_ITEM;
 
     const [items, setItems] = useState(() =>
-        isEdit && report.items ? report.items : [{ ...EMPTY_ITEM }]
+        hasSeededReport && Array.isArray(report.items) && report.items.length > 0
+            ? report.items
+            : [{ ...EMPTY_ITEM }]
     );
 
     // Riepilogo difetti calcolato dagli items correnti
@@ -618,15 +630,19 @@ function NdtReportForm({ report, companies, availableInstruments, onSave, onCanc
     const [projects, setProjects] = useState([]);
     useEffect(() => {
         if (!form.company_id) { setSuppliers([]); return; }
-        apiService.getSuppliers({ company_id: form.company_id, limit: 200 })
-            .then(res => setSuppliers(res?.data || []))
-            .catch(() => setSuppliers([]));
+        let cancelled = false;
+        Promise.resolve()
+            .then(() => apiService.getSuppliers({ company_id: form.company_id, limit: 200 }))
+            .then((res) => { if (!cancelled) setSuppliers(res?.data || []); })
+            .catch(() => { if (!cancelled) setSuppliers([]); });
+        return () => { cancelled = true; };
     }, [form.company_id]);
 
     useEffect(() => {
         if (!form.company_id) { setProjects([]); return; }
         let cancelled = false;
-        apiService.getProjects({ company_id: form.company_id, limit: 100 })
+        Promise.resolve()
+            .then(() => apiService.getProjects({ company_id: form.company_id, limit: 100 }))
             .then((res) => { if (!cancelled) setProjects(res?.data || []); })
             .catch(() => { if (!cancelled) setProjects([]); });
         return () => { cancelled = true; };
@@ -636,14 +652,17 @@ function NdtReportForm({ report, companies, availableInstruments, onSave, onCanc
     const [wpsList, setWpsList] = useState([]);
     useEffect(() => {
         if (!form.company_id) { setWpsList([]); return; }
-        apiService.getWPSList({ company_id: form.company_id, limit: 200 })
-            .then(res => setWpsList(res?.data || []))
-            .catch(() => setWpsList([]));
+        let cancelled = false;
+        Promise.resolve()
+            .then(() => apiService.getWPSList({ company_id: form.company_id, limit: 200 }))
+            .then((res) => { if (!cancelled) setWpsList(res?.data || []); })
+            .catch(() => { if (!cancelled) setWpsList([]); });
+        return () => { cancelled = true; };
     }, [form.company_id]);
     const [error, setError] = useState(null);
     const [savedAt, setSavedAt] = useState(null);
-    const [pendingOfflineSync, setPendingOfflineSync] = useState(false);
-    const offlineCreateUuidRef = useRef(null);
+    const [pendingOfflineSync, setPendingOfflineSync] = useState(!!report?._queued);
+    const offlineCreateUuidRef = useRef(clientUuid || null);
     const pendingEnqueueTimerRef = useRef(null);
     const [ncModalOpen, setNcModalOpen]   = useState(false);
     const [ncInitialDesc, setNcInitialDesc] = useState("");
@@ -727,7 +746,8 @@ function NdtReportForm({ report, companies, availableInstruments, onSave, onCanc
     }, [form.report_type, form.client, report?.report_number]);
 
     // Fix 3 — auto-save bozza in localStorage mentre si compila in campo
-    const { clearDraft, draftKey } = useNdtAutoSave(reportId, form, items);
+    // CND-8: draftIdentity = id server OPPURE uuid locale (non più solo "new")
+    const { clearDraft, draftKey } = useNdtAutoSave(draftIdentity, form, items);
 
     const buildSavePayload = useCallback((targetStatus) => ({
         ...form,
@@ -746,26 +766,30 @@ function NdtReportForm({ report, companies, availableInstruments, onSave, onCanc
         if (isEdit) {
             syncPayload = { id: reportId, ...payload, draftKey };
         } else {
-            const uuid = offlineCreateUuidRef.current || getOrCreateOfflineCreateUuid(draftKey);
+            const uuid = offlineCreateUuidRef.current || clientUuid || getOrCreateOfflineCreateUuid(draftKey);
             offlineCreateUuidRef.current = uuid;
             syncPayload = { ...payload, uuid, draftKey };
         }
-        return enqueueNdtReportSync(type, syncPayload);
-    }, [buildSavePayload, isEdit, reportId, draftKey]);
+        const queueId = await enqueueNdtReportSync(type, syncPayload);
+        if (queueId && !isEdit) markNdtDraftQueued(draftKey, true);
+        return queueId;
+    }, [buildSavePayload, isEdit, reportId, draftKey, clientUuid]);
 
     // CND-9: dopo drain coda NDT — se create, lega id server (niente secondo create)
     useEffect(() => {
         const onSynced = (e) => {
             const key = e?.detail?.draftKey;
-            const syncedNewKey = ndtDraftKey(null);
             const matches =
                 (key && key === draftKey) ||
-                (!reportId && key === syncedNewKey);
+                (!!clientUuid && key === ndtDraftKey(clientUuid)) ||
+                (!reportId && !clientUuid && key === ndtDraftKey(null));
             if (!matches) return;
 
             const serverId = e?.detail?.result?.id;
             if (e?.detail?.type === "create_ndt_report" && serverId) {
-                clearOfflineCreateUuid(syncedNewKey);
+                clearOfflineCreateUuid(draftKey);
+                if (clientUuid) clearNdtDraftByKey(ndtDraftKey(clientUuid));
+                clearOfflineCreateUuid(ndtDraftKey(null));
                 offlineCreateUuidRef.current = null;
                 setBoundReportId(serverId);
             }
@@ -775,7 +799,7 @@ function NdtReportForm({ report, companies, availableInstruments, onSave, onCanc
         };
         window.addEventListener("sgq:ndtReportSynced", onSynced);
         return () => window.removeEventListener("sgq:ndtReportSynced", onSynced);
-    }, [draftKey, clearDraft, reportId]);
+    }, [draftKey, clearDraft, reportId, clientUuid]);
 
     // CND-9: mentre è in coda, riallinea la coda all'ultima bozza (dedup uuid/id)
     useEffect(() => {
@@ -845,7 +869,9 @@ function NdtReportForm({ report, companies, availableInstruments, onSave, onCanc
             clearDraft(); // rimuove bozza locale dopo salvataggio riuscito
             setPendingOfflineSync(false);
             offlineCreateUuidRef.current = null;
+            clearOfflineCreateUuid(draftKey);
             clearOfflineCreateUuid(ndtDraftKey(null));
+            if (clientUuid) clearNdtDraftByKey(ndtDraftKey(clientUuid));
             if (!boundReportId && saveRes?.data?.id) {
                 setBoundReportId(saveRes.data.id);
             }
@@ -912,7 +938,11 @@ function NdtReportForm({ report, companies, availableInstruments, onSave, onCanc
             <div className="ndt-form-header">
                 <div>
                     <h2 className="ndt-form-title">
-                        {isEdit ? `Verbale ${report?.report_number || "—"}` : "Nuovo verbale CND"}
+                        {isEdit
+                            ? `Verbale ${report?.report_number || "—"}`
+                            : (report?._local
+                                ? (report._queued ? "Bozza in coda (offline)" : "Bozza locale")
+                                : "Nuovo verbale CND")}
                     </h2>
                     <span className="ndt-form-subtitle">{reportTypeLabel}</span>
                 </div>
@@ -1541,6 +1571,40 @@ export default function NdtReportsPage() {
     const [view, setView] = useState("list"); // "list" | "form"
     const [editingReport, setEditingReport] = useState(null);
     const [poseFlash, setPoseFlash] = useState(null);
+    const [creating, setCreating] = useState(false);
+
+    /** CND-8: unisce verbali server + bozze locali/in coda (senza id server). */
+    const mergeLocalDraftsIntoList = useCallback((serverRows) => {
+        const server = Array.isArray(serverRows) ? serverRows : [];
+        const locals = listNdtDrafts().filter((d) => d._serverIdHint == null);
+        const localRows = locals.map((d) => {
+            const fd = d.formData || {};
+            const uuid = d.client_uuid
+                || (d.key && d.key.startsWith("sgq:ndt_draft:") ? d.key.slice("sgq:ndt_draft:".length) : null)
+                || d.key;
+            return {
+                id: null,
+                _local: true,
+                _queued: !!d.queued,
+                client_uuid: uuid,
+                draft_key: d.key,
+                report_number: null,
+                report_type: fd.report_type || "VT",
+                client: fd.client || "",
+                project_code: null,
+                job_order: fd.job_order || "",
+                inspector: fd.inspector || "",
+                inspection_date: fd.inspection_date || null,
+                items_count: Array.isArray(d.items) ? d.items.length : 0,
+                status: "draft",
+                company_id: fd.company_id || "",
+                ...fd,
+                items: d.items || [{ ...EMPTY_NDT_MARK_ITEM }],
+                method_params: fd.method_params,
+            };
+        });
+        return [...localRows, ...server];
+    }, []);
 
     const loadData = useCallback(async () => {
         setLoading(true);
@@ -1557,29 +1621,115 @@ export default function NdtReportsPage() {
                 apiService.getNdtReportStats(filterCompany ? { company_id: filterCompany } : {}),
             ]);
 
-            setReports(listResp.data || []);
+            setReports(mergeLocalDraftsIntoList(listResp.data || []));
             setStats(statsResp.data || null);
         } catch (err) {
-            setError("Errore caricamento verbali CND");
+            // Offline / rete: mostra comunque bozze locali
+            const locals = mergeLocalDraftsIntoList([]);
+            if (locals.length > 0) {
+                setReports(locals);
+                setError(null);
+            } else {
+                setError("Errore caricamento verbali CND");
+            }
         } finally {
             setLoading(false);
         }
-    }, [filterType, filterStatus, filterCompany, searchText]);
+    }, [filterType, filterStatus, filterCompany, searchText, mergeLocalDraftsIntoList]);
 
     useEffect(() => { loadData(); }, [loadData]);
 
     const openNew = async () => {
-        // Carica strumenti VT per default
-        try {
-            const instResp = await apiService.getEquipmentForReport("VT");
-            setAvailableInstruments(instResp.data || []);
-        } catch { setAvailableInstruments([]); }
+        if (creating) return;
+        setCreating(true);
         setPoseFlash(null);
-        setEditingReport(null);
-        setView("form");
+        try {
+            const user = apiService.getStoredUser();
+            const inspector = user ? (user.full_name || user.email || "") : "";
+            const seeded = seedNdtLocalDraft({
+                inspector,
+                companyId: filterCompany || "",
+                reportType: "VT",
+            });
+
+            try {
+                const instResp = await apiService.getEquipmentForReport("VT");
+                setAvailableInstruments(instResp.data || []);
+            } catch { setAvailableInstruments([]); }
+
+            const payload = {
+                ...seeded.formData,
+                company_id: seeded.formData.company_id
+                    ? parseInt(seeded.formData.company_id, 10)
+                    : null,
+                status: "draft",
+                items: seeded.items,
+                instrument_ids: [],
+                uuid: seeded.uuid,
+                draftKey: seeded.draftKey,
+            };
+
+            let editing = {
+                _local: true,
+                _queued: false,
+                client_uuid: seeded.uuid,
+                draft_key: seeded.draftKey,
+                status: "draft",
+                report_type: "VT",
+                ...seeded.formData,
+                items: seeded.items,
+            };
+
+            const offline = typeof navigator !== "undefined" && navigator.onLine === false;
+            if (offline) {
+                const queueId = await enqueueNdtReportSync("create_ndt_report", payload);
+                if (queueId) {
+                    markNdtDraftQueued(seeded.draftKey, true);
+                    editing = { ...editing, _queued: true };
+                }
+            } else {
+                try {
+                    const res = await apiService.createNdtReport(payload);
+                    if (res?.data?.id) {
+                        clearNdtDraftByKey(seeded.draftKey);
+                        editing = res.data;
+                    }
+                } catch (err) {
+                    if (isNdtNetworkSaveError(err)) {
+                        const queueId = await enqueueNdtReportSync("create_ndt_report", payload);
+                        if (queueId) {
+                            markNdtDraftQueued(seeded.draftKey, true);
+                            editing = { ...editing, _queued: true };
+                        }
+                    }
+                    // altri errori (validazione): resta bozza locale compilabile
+                }
+            }
+
+            setEditingReport(editing);
+            setView("form");
+        } finally {
+            setCreating(false);
+        }
     };
 
     const openEdit = async (report) => {
+        // CND-8: bozza solo locale / in coda
+        if (report?._local || (!report?.id && report?.client_uuid)) {
+            setPoseFlash(null);
+            setEditingReport({
+                ...report,
+                _local: true,
+                client_uuid: report.client_uuid,
+                items: report.items || [{ ...EMPTY_NDT_MARK_ITEM }],
+            });
+            try {
+                const instResp = await apiService.getEquipmentForReport(report.report_type || "VT");
+                setAvailableInstruments(instResp.data || []);
+            } catch { setAvailableInstruments([]); }
+            setView("form");
+            return;
+        }
         try {
             const [reportResp, instResp] = await Promise.all([
                 apiService.getNdtReport(report.id),
@@ -1601,9 +1751,16 @@ export default function NdtReportsPage() {
         setPoseFlash(poseInfo && poseInfo.message ? poseInfo : null);
         loadData();
     };
-    const handleCancel = () => { setView("list"); setEditingReport(null); };
+    const handleCancel = () => { setView("list"); setEditingReport(null); loadData(); };
 
     const handleDelete = async (report) => {
+        if (report?._local || (!report?.id && report?.client_uuid)) {
+            if (!window.confirm("Eliminare la bozza locale?")) return;
+            const key = report.draft_key || (report.client_uuid ? ndtDraftKey(report.client_uuid) : null);
+            if (key) clearNdtDraftByKey(key);
+            loadData();
+            return;
+        }
         if (!window.confirm(`Eliminare il verbale "${report.report_number || "bozza"}"?`)) return;
         try {
             await apiService.deleteNdtReport(report.id);
@@ -1630,7 +1787,9 @@ export default function NdtReportsPage() {
                     <h1 className="ndt-title">Verbali CND</h1>
                     <p className="ndt-subtitle">Esame Visivo (VT), Particelle Magnetiche (MT), Liquidi Penetranti (PT), Ultrasuoni (UT)</p>
                 </div>
-                <button className="btn btn-primary" onClick={openNew}>+ Nuovo verbale</button>
+                <button className="btn btn-primary" onClick={openNew} disabled={creating}>
+                    {creating ? "Creazione\u2026" : "+ Nuovo verbale"}
+                </button>
             </div>
 
             {poseFlash && (
@@ -1692,16 +1851,25 @@ export default function NdtReportsPage() {
                             )}
                             {reports.map(r => {
                                 const st = REPORT_STATUSES.find(s => s.value === r.status) || REPORT_STATUSES[0];
+                                const rowKey = r.id != null ? r.id : `local-${r.client_uuid || r.draft_key}`;
+                                const statusLabel = r._queued
+                                    ? "In coda"
+                                    : (r._local ? "Bozza locale" : st.label);
+                                const statusCls = r._queued
+                                    ? "ndt-status-queued"
+                                    : (r._local ? "ndt-status-local" : st.cls);
                                 return (
-                                    <tr key={r.id} className="ndt-row" onClick={() => openEdit(r)}>
-                                        <td className="ndt-mono">{r.report_number || <em>bozza</em>}</td>
+                                    <tr key={rowKey} className="ndt-row" onClick={() => openEdit(r)}>
+                                        <td className="ndt-mono">
+                                            {r.report_number || (r._local ? <em>bozza locale</em> : <em>bozza</em>)}
+                                        </td>
                                         <td><span className="ndt-type-tag">{r.report_type}</span></td>
                                         <td>{r.client || "—"}</td>
                                         <td>{r.project_code || r.job_order || "—"}</td>
                                         <td>{r.inspector || "—"}</td>
                                         <td>{r.inspection_date ? formatDate(r.inspection_date) : "—"}</td>
-                                        <td className="ndt-center">{r.items_count}</td>
-                                        <td><span className={`ndt-status ${st.cls}`}>{st.label}</span></td>
+                                        <td className="ndt-center">{r.items_count ?? (r.items?.length || 0)}</td>
+                                        <td><span className={`ndt-status ${statusCls}`}>{statusLabel}</span></td>
                                         <td onClick={e => e.stopPropagation()}>
                                             <button className="eq-btn-icon" onClick={() => openEdit(r)} title="Modifica">&#x270E;</button>
                                             <button className="eq-btn-icon eq-btn-danger" onClick={() => handleDelete(r)} title="Elimina">&#x2715;</button>
