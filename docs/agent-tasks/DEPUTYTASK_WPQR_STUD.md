@@ -17,21 +17,32 @@
 
 ```text
 Fonti Markdown:
-- Coperte: ISO 15614-1 (NORMA_00019 + estratto range); citazione 14555 in 3834-5; t1/t2 già in prod (mig. 158)
-- Mancanti: ISO 14555 (testo MD/PDF) → backlog da_richiedere; processi 4063 stud
-- Si parte su: STUD-1 campi UI/DB/schema senza inventare range 14555
+- Coperte: ISO 15614-1 (NORMA_00019 + estratto range); t1/t2 già in prod (mig. 158);
+  ISO 14555:2025 digitalizzata 26/08 (`NORMA_00033` MD+JSON) — testo disponibile per STUD-3
+- Mancanti / non ancora estratti: tabella range 14555 dedicata in docs/reference/ (STUD-3);
+  processi 4063 stud catalogo
+- Si parte su: STUD-1 campi UI/DB/schema **senza** codificare range 14555 (ancora vietato inventare;
+  range solo in STUD-3 dopo estratto revisionato dal MD)
 ```
 
-## Richiesta norma (HITL) — resta aperta per STUD-3
+## Richiesta norma (HITL) — **EVASA** 26/08/2026
 
-- **Codice / titolo**: UNI EN ISO 14555 (Arc stud welding of metallic materials)
-- **Edizione desiderata**: vigente UNI/EN
-- **Serve a** (modulo / slice): WPQR Stud Welding — STUD-3 (range di validità)
-- **Cosa c’è già in repo**: solo citazione in `NORMA_00008` (3834-5); nessun MD/PDF 14555
-- **Cosa NON inventiamo senza PDF**: soglie, clausole, range di validità stud, variabili essenziali 14555
+- **Codice / titolo**: BS EN ISO 14555:2025 (Arc stud welding of metallic materials)
+- **Stato**: `digitalizzata` → `NORMA_00033` (PDF **non** in Git)
+- **Serve a**: STUD-3 (range); STUD-1 chiuso senza range
+- **Cosa NON inventiamo senza estratto revisionato**: soglie, clausole, range di validità stud, variabili essenziali 14555
 - **Perimetro chiuso in STUD-1**: campi + doppio materiale + P+T su 15614-1 + verbale Mason 001P-21
-- **Formato utile**: PDF → skill `pdf-to-json`
-- **Dopo digitalizzazione**: aggiornare `NORME_MANCANTI_BACKLOG.md` → STUD-3
+- **Prossimo**: estratto range da `NORMA_00033` → STUD-3 (+ seed VPS se utile)
+
+## Perché
+
+Segnalazione Mason (post chiusura t1/t2): in inserimento WPQR «Stud Welding» mancano tipologia, componenti (base vs prigioniero), diametro prigioniero, range; su Piastra–Tubo non si selezionano entrambi i tipi prodotto né i range di ognuno. Screenshot verbale 001P-21 vs UI.
+
+## Contesto (non riscrivere)
+
+- t1/t2 FW: **CHIUSO** ([`DEPUTYTASK_WPQR_T1T2.md`](DEPUTYTASK_WPQR_T1T2.md), #558).
+- Stud Welding ≠ FW generico: vedi report gap § «Stud Welding vs FW».
+- Caso 001P-21 = fillet 135 su prigioniero tubolare sotto 15614-1, non necessariamente qualifica 14555.
 
 ---
 

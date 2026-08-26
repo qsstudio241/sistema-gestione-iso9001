@@ -19,6 +19,7 @@
 | `Normative NORMA_00016_ UNI EN ISO 14341_2020 Rev. 0.md` | ISO_14341_2020 | ISO 14341:2020 | **Supporto 3834** — classificazione fili-elettrodo / depositi GMAW acciai non legati e a grano fine. **Non** in `import-norms`. Estratto: `docs/reference/ISO-14341-consumabili-filo.md` + `fillerWire14341.js` (RC-11, solo prompt) |
 | `Normative NORMA_00018_ UNI EN ISO 9606-1_2017 Rev. 0.md` (+ `.json`) | — (non seed SGQ) | ISO 9606-1:2017 | Qualifiche saldatori — estratto range in `docs/reference/ISO-9606-1-range-validita-patentino.md` |
 | `Normative NORMA_00019_ UNI EN ISO 15614-1_2017 Rev. 0.md` (+ `.json`) | — (non seed SGQ) | ISO 15614-1:2017 | WPQR / range — estratto `docs/reference/ISO-15614-1-range-validita-WPQR.md` |
+| `Normative NORMA_00033_ BS EN ISO 14555_2025 Rev. 0.md` (+ `.json`) | ISO_14555_2025 | ISO 14555:2025 | Arc stud welding — digitalizzata 26/08/2026; **non** seed SGQ generico; range/WPQR = STUD-3 (estratto dedicato dopo STUD-1) |
 | `Normative NORMA_00020`…`00028` (+ MTC) | — (non seed SGQ) | EN 10168 / 10204 / 10025-2 / 10210-1 / 10219-1 / … | Material Compliance — inventario [`MATERIAL-COMPLIANCE-NORME-SINTESI.md`](../../../docs/reference/MATERIAL-COMPLIANCE-NORME-SINTESI.md) |
 
 **Backlog lacune (richieste PDF / non digitalizzate)**: [`docs/reference/NORME_MANCANTI_BACKLOG.md`](../../../docs/reference/NORME_MANCANTI_BACKLOG.md) — fonte unica; non duplicare qui le sole righe «mancante».
