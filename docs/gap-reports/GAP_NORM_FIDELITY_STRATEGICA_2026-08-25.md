@@ -24,7 +24,7 @@
 | Contesto prodotto | `PROJECT_CONTEXT.md`, roadmap § Stato attuale | — |
 | Architettura AI | ADR-010, ADR-018, PLAN_SECOND_BRAIN | Connettori UNI Store non operativi come da ADR |
 | Skill Cursor repo | gap-analysis, pdf-to-json, wayfinder-sgq | Nessuna skill «conformità legislativa» dedicata |
-| Normative MD | ~20+ file in `docs/Normative/` (9001…10219, 9606, 15614, …) | 3834-2/-4 solo 2006; Quaderno 1090 vuoto; ISO 2560/17632/14174 assenti (MC) |
+| Normative MD | ~20+ file in `docs/Normative/` (9001…10219, 9606, 15614, …) + Quaderno LG 1090 in `Quaderni/` | ISO 2560/17632/14174 digitalizzate 26/08 (estratto soglie MC = backlog); 3834-2/-4 ed. 2021 in repo |
 | Quaderni | Conforma 9001, Q2–Q6, ATEX, 37001, Accredia, RT-09 | Qualità OCR variabile |
 | Runtime | `normBroker.service.js` (local + publicLaw), `gapAnalysis`, seed legislation 81/152 | ApiConnector / WebScraper ADR-010 non nella cascata attuale |
 | Inventario MC | `MATERIAL-COMPLIANCE-NORME-SINTESI.md` | Non generalizzato ad altri moduli |
@@ -52,7 +52,7 @@
 | Voce mancante | Impatto | Fonte alternativa |
 |---------------|---------|-------------------|
 | ISO 3834-2 / -4 ed. 2021 | Digitalizzate 25/08/2026 (`NORMA_00029`/`00030`) | — |
-| Quaderno Linea Guida 1090 | File 0 byte | Rigenerare da PDF archivio |
+| Quaderno Linea Guida 1090 | **Digitalizzata** 26/08/2026 (`Quaderni/Quaderno_2_Linea_Guida_1090.{md,json,txt}`) | Contesto carpenteria EN 1090; GAP pag. 3 |
 | ISO 2560 / 17632 / 14174 | MC apporto: chimica/ReH = skip | PDF → pdf-to-json |
 | Norme settoriali oltre 81/152 | Conformità legislativa «per ATECO» incompleta | Elenco HITL + Normattiva |
 | Credenziali UNI Store in agent | NormBroker non scarica da store | Ingest manuale PDF (già percorso IA-*) |

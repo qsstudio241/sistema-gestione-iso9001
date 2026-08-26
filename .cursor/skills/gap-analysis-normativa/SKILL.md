@@ -145,7 +145,7 @@ Colonne **Tipo**: `Normativo` | `Funzionale` | `Documentale` (manca fonte in rep
 | Modulo SAL | **Live** (tracker + Word); template storico solo riferimento colori | `SALModule.jsx`, `wordExportSal.js` |
 | Modulo RDP | **Live** (prove + foto); Word = backlog template Mason | `RDPModule.jsx`; `Check List Audit/RDP_MSN-260127-01_REV_0.docx` |
 | Norme committente (audit terza parte) | Per cliente | Non in Normative/ |
-| `Quaderno_2_Linea_Guida_1090.txt` | **Vuoto (0 byte)** — conversione fallita | Rigenerare da PDF archivio |
+| `Quaderno_2_Linea_Guida_1090.{txt,md,json}` | **Digitalizzata** 26/08/2026 (Conforma LG EN 1090); GAP pag. 3 | Contesto carpenteria / marcatura CE |
 
 Segnalare righe con Tipo = `Documentale` quando il gap dipende da testo mancante, non da codice.
 

@@ -22,7 +22,7 @@
 
 - Quali **skill Cursor aggiuntive** per ambito oltre a rafforzare `gap-analysis-normativa` — dopo NG-3 e PDF reali
 - Se il backlog norme mancanti vive anche come job/alert in-app per lo studio
-- Priorità PDF restanti (vedi backlog): 9712, 2560/17632/14174, Quaderno 1090, 19011, leggi settoriali
+- Priorità PDF restanti (vedi backlog): leggi settoriali; estratti soglie MC (2560/17632/14174); Quaderno 1090 **digitalizzato** 26/08
 - Quando (e se) un «supervisore» runtime in-app orchestra sotto-prompt specializzati
 
 ## Decisioni già prese
@@ -50,6 +50,6 @@
 
 ## HITL residuo
 
-1. Priorità PDF: 9712, apporto 2560/17632, Quaderno 1090, ISO 14555 (STUD)
+1. Priorità PDF: leggi settoriali; estratti soglie MC (2560/17632/14174). Quaderno 1090 e ISO 14555/9712/… **già digitalizzati** 26/08
 2. Conferma perimetro gate: solo norm-touching (default Lead)
 3. NG-2 (runbook ingest) resta HITL: quando arrivano PDF prioritari
