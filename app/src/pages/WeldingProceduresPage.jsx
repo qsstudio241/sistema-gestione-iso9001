@@ -610,12 +610,24 @@ function WPQRFormModal({ wpqr, wpsList, defaultCompanyId, onSave, onClose }) {
     preheat_temp: "", interpass_temp: "", pwht: false,
     // Estensioni copertura ISO 15614-1 (throat/piastra-tubo) — stesso motivo.
     throat_test_mm: "", product_type: "", rotated_position: false,
+    // STUD-1: stud/prigioniero + Parent Metal 2
+    qualifying_element: "", base_material_group_2: "", base_material_spec_2: "",
     ...(wpqr || {}),
   });
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
 
   const set = (key, val) => setForm((f) => ({ ...f, [key]: val }));
+  const isStudJoint = String(form.joint_type || "").toUpperCase() === "SW";
+  const diameterLabelMin = isStudJoint
+    ? "Diametro prigioniero - min (mm)"
+    : "Diametro tubo - min (mm)";
+  const diameterLabelMax = isStudJoint
+    ? "Diametro prigioniero - max (mm)"
+    : "Diametro tubo - max (mm)";
+  const diameterPlaceholder = isStudJoint
+    ? "es. 51 (D₁ prigioniero)"
+    : "lascia vuoto se testata su piastra";
 
   function handleThicknessTested(val) {
     const range = calcThicknessRangeUI(val);
@@ -748,11 +760,25 @@ function WPQRFormModal({ wpqr, wpsList, defaultCompanyId, onSave, onClose }) {
                   <option value="BW">BW - Testa a testa</option>
                   <option value="FW">FW - Angolare</option>
                   <option value="BW+FW">BW+FW - Entrambi</option>
+                  <option value="SW">SW - Stud / prigioniero</option>
                 </select>
               </div>
               <div className="wp-form-group">
-                <label className="wp-form-label">Gruppo materiale base (ISO/TR 15608)</label>
+                <label className="wp-form-label">Elemento che si qualifica</label>
+                <select className="wp-form-select" value={form.qualifying_element || ""} onChange={(e) => set("qualifying_element", e.target.value)}>
+                  <option value="">-- Seleziona --</option>
+                  <option value="base">Base (Parent Metal 1)</option>
+                  <option value="stud">Prigioniero / stud</option>
+                  <option value="both">Entrambi</option>
+                </select>
+              </div>
+              <div className="wp-form-group">
+                <label className="wp-form-label">Gruppo materiale Parent Metal 1 (ISO/TR 15608)</label>
                 <input className="wp-form-input" value={form.base_material_group || ""} onChange={(e) => set("base_material_group", e.target.value)} placeholder="es. 1.1, 2, 8" />
+              </div>
+              <div className="wp-form-group">
+                <label className="wp-form-label">Gruppo materiale Parent Metal 2</label>
+                <input className="wp-form-input" value={form.base_material_group_2 || ""} onChange={(e) => set("base_material_group_2", e.target.value)} placeholder="es. 1.2 (prigioniero) — opzionale" />
               </div>
               <div className="wp-form-group">
                 <label className="wp-form-label">Posizioni saldatura (ISO 6947)</label>
@@ -818,15 +844,16 @@ function WPQRFormModal({ wpqr, wpsList, defaultCompanyId, onSave, onClose }) {
                   <option value="">-- Seleziona --</option>
                   <option value="P">P - Piastra</option>
                   <option value="T">T - Tubo</option>
+                  <option value="P+T">P+T - Piastra e tubo (entrambi)</option>
                 </select>
               </div>
               <div className="wp-form-group">
-                <label className="wp-form-label">Diametro tubo - min (mm)</label>
-                <input className="wp-form-input" type="number" step="0.1" min="0" value={form.diameter_min || ""} onChange={(e) => set("diameter_min", e.target.value)} placeholder="lascia vuoto se testata su piastra" />
+                <label className="wp-form-label">{diameterLabelMin}</label>
+                <input className="wp-form-input" type="number" step="0.1" min="0" value={form.diameter_min || ""} onChange={(e) => set("diameter_min", e.target.value)} placeholder={diameterPlaceholder} />
               </div>
               <div className="wp-form-group">
-                <label className="wp-form-label">Diametro tubo - max (mm)</label>
-                <input className="wp-form-input" type="number" step="0.1" min="0" value={form.diameter_max || ""} onChange={(e) => set("diameter_max", e.target.value)} placeholder="lascia vuoto se testata su piastra" />
+                <label className="wp-form-label">{diameterLabelMax}</label>
+                <input className="wp-form-input" type="number" step="0.1" min="0" value={form.diameter_max || ""} onChange={(e) => set("diameter_max", e.target.value)} placeholder={diameterPlaceholder} />
               </div>
               <div className="wp-form-group wp-form-checkbox">
                 <label className="wp-form-label">
@@ -843,8 +870,12 @@ function WPQRFormModal({ wpqr, wpsList, defaultCompanyId, onSave, onClose }) {
             <div className="wp-form-section-title">Parametri prova avanzati (pag.2 verbale)</div>
             <div className="wp-form-grid">
               <div className="wp-form-group">
-                <label className="wp-form-label">Specifica materiale base</label>
+                <label className="wp-form-label">Specifica materiale Parent Metal 1 / base</label>
                 <input className="wp-form-input" value={form.base_material_spec || ""} onChange={(e) => set("base_material_spec", e.target.value)} placeholder="es. S355J2+N" />
+              </div>
+              <div className="wp-form-group">
+                <label className="wp-form-label">Specifica materiale Parent Metal 2 / prigioniero</label>
+                <input className="wp-form-input" value={form.base_material_spec_2 || ""} onChange={(e) => set("base_material_spec_2", e.target.value)} placeholder="es. S235J2H — opzionale" />
               </div>
               <div className="wp-form-group">
                 <label className="wp-form-label">Gas di protezione</label>

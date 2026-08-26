@@ -1057,6 +1057,7 @@ const wpqr = {
         { value: "BW", label: "BW - Giunto testa a testa (Butt Weld)" },
         { value: "FW", label: "FW - Giunto a T / angolare (Fillet Weld)" },
         { value: "BW+FW", label: "BW+FW - Entrambi" },
+        { value: "SW", label: "SW - Stud / prigioniero" },
       ],
     },
     {
@@ -1067,16 +1068,37 @@ const wpqr = {
       options: [
         { value: "P", label: "P - Piastra" },
         { value: "T", label: "T - Tubo" },
+        { value: "P+T", label: "P+T - Piastra e tubo (entrambi)" },
       ],
-      hint: "Piastra o tubo — variabile essenziale ISO 15614-1 §8.3.3 per il diametro. Se testato su PIASTRA, non serve compilare il diametro tubo sotto: il sistema applica automaticamente la regola \u201Cpiastra copre tubo >500mm (o >150mm in posizione ruotata)\u201D quando pertinente, usando le posizioni qualificate dichiarate sotto.",
+      hint: "Piastra, tubo, o entrambi — variabile essenziale ISO 15614-1 §8.3.3 per il diametro. Se testato su PIASTRA (o P+T senza diametro numerico), non serve compilare il diametro tubo sotto: il sistema applica automaticamente la regola \u201Cpiastra copre tubo >500mm (o >150mm in posizione ruotata)\u201D quando pertinente.",
+    },
+    {
+      key: "qualifying_element",
+      label: "Elemento che si qualifica",
+      type: "select",
+      required: false,
+      options: [
+        { value: "base", label: "Base (Parent Metal 1)" },
+        { value: "stud", label: "Prigioniero / stud" },
+        { value: "both", label: "Entrambi" },
+      ],
+      hint: "Utile per giunti stud/prigioniero (SW) o fillet su pezzo cilindrico: quale pezzo si qualifica.",
     },
     {
       key: "material_group",
-      label: "Gruppo materiale base (ISO/TR 15608)",
+      label: "Gruppo materiale base / Parent Metal 1 (ISO/TR 15608)",
       type: "select",
       required: false,
       options: MATERIAL_GROUP_OPTIONS,
       hint: "Preferire il sottogruppo (es. 1.2) se presente sul verbale",
+    },
+    {
+      key: "material_group_2",
+      label: "Gruppo materiale Parent Metal 2 (prigioniero)",
+      type: "select",
+      required: false,
+      options: MATERIAL_GROUP_OPTIONS,
+      hint: "Secondo gruppo se il verbale dichiara due materiali genitori (es. base + prigioniero). Lasciare vuoto se uno solo.",
     },
     {
       key: "thickness_test_mm",
@@ -1150,14 +1172,14 @@ const wpqr = {
     },
     {
       key: "diameter_min",
-      label: "Diametro tubo - minimo (mm)",
+      label: "Diametro (tubo o prigioniero) - minimo (mm)",
       type: "number",
       required: false,
-      hint: "Solo se il verbale dichiara un NUMERO per il range di diametro tubo qualificato. Se invece il verbale riporta qui una regola testuale tipo \u201C> 500; > 150 for position PC, PF/PA rotated\u201D (tipico quando la prova è su PIASTRA, non tubo), NON trascriverla qui: lascia questi due campi vuoti e imposta \u201CTipo prodotto testato\u201D = Piastra — il sistema applica automaticamente quella regola (ISO 15614-1 §8.3.3) quando genera/verifica una WPS su tubo.",
+      hint: "Tubo (product_type T/P+T) oppure diametro prigioniero se joint_type=SW. Solo se il verbale dichiara un NUMERO. Se invece riporta una regola testuale tipo \u201C> 500; > 150 for position PC, PF/PA rotated\u201D (prova su PIASTRA), lascia vuoto e imposta Tipo prodotto = Piastra.",
     },
     {
       key: "diameter_max",
-      label: "Diametro tubo - massimo (mm)",
+      label: "Diametro (tubo o prigioniero) - massimo (mm)",
       type: "number",
       required: false,
       hint: "Vedi nota sul campo minimo — non trascrivere qui la regola testuale piastra→tubo del verbale.",
@@ -1240,10 +1262,17 @@ const wpqr = {
     // --- Parametri prova (pag.2, essenziali) ---
     {
       key: "base_material_spec",
-      label: "Specifica materiale base",
+      label: "Specifica materiale Parent Metal 1 / base",
       type: "text",
       required: false,
       hint: "Es. S355J2+N",
+    },
+    {
+      key: "base_material_spec_2",
+      label: "Specifica materiale Parent Metal 2 / prigioniero",
+      type: "text",
+      required: false,
+      hint: "Es. S235J2H — lasciare vuoto se un solo materiale",
     },
     {
       key: "shielding_gas",
@@ -1318,15 +1347,17 @@ Campi di copertura (pag.1 RANGE OF QUALIFICATION, priorità alta):
 - qualification_level: "1" o "2" solo se dichiarato esplicitamente (Level 1/2) — non dedurre
 - standard_reference: norma di riferimento (es. "UNI EN ISO 15614-1:2017" oppure "UNI EN ISO 15614-2:2025" per alluminio)
 - welding_process: codice ISO 4063 — preferire un codice numerico esplicito nel testo (es. "Welding process: 135") a un alias generico
-- joint_type: "BW", "FW" o "BW+FW"
-- product_type: "P" (piastra) o "T" (tubo) — variabile essenziale ISO 15614-1 §8.3.3 per il diametro. Se il documento non lo specifica esplicitamente ma il "Range of qualification" per il diametro contiene una regola testuale tipo "> 500; > 150 for position PC, PF/PA rotated" (invece di un numero), significa che il provino è stato testato su PIASTRA: imposta product_type: "P" e lascia diameter_min/diameter_max: null (NON trascrivere quella regola testuale come numero)
-- material_group: gruppo materiale ISO/TR 15608, preferire il sottogruppo (es. "1.2") se presente
+- joint_type: "BW", "FW", "BW+FW" oppure "SW" (Stud / prigioniero — tipologia dedicata ≠ FW; non inventare range ISO 14555)
+- product_type: "P" (piastra), "T" (tubo) oppure "P+T" (entrambi) — variabile essenziale ISO 15614-1 §8.3.3 per il diametro. Se il documento non lo specifica esplicitamente ma il "Range of qualification" per il diametro contiene una regola testuale tipo "> 500; > 150 for position PC, PF/PA rotated" (invece di un numero), significa che il provino è stato testato su PIASTRA: imposta product_type: "P" e lascia diameter_min/diameter_max: null (NON trascrivere quella regola testuale come numero)
+- material_group: gruppo materiale ISO/TR 15608 del Parent Metal 1 (base), preferire il sottogruppo (es. "1.2") se presente
+- material_group_2: gruppo materiale Parent Metal 2 (es. prigioniero) se il verbale dichiara DUE materiali/gruppi; null se uno solo
+- qualifying_element: "base" | "stud" | "both" — quale elemento si qualifica; null se non dichiarato
 - thickness_test_mm: spessore del provino testato (numero)
 - thickness_min / thickness_max: range di spessore DICHIARATO sul verbale (non calcolarlo) — se UN solo range
 - thickness_max_unlimited: booleano — true SOLO se il verbale dichiara esplicitamente un range aperto senza limite superiore (simboli "\u2265", "=>", "\u2a7e", oppure testo "no restriction"/"senza limite superiore"), tipico dei giunti ad angolo (Fillet Weld: es. "t1 = => 5 ; t2 => 5"). In questo caso lascia thickness_max: null e imposta thickness_max_unlimited: true. Se il campo è semplicemente assente dal documento (non un range aperto dichiarato), lascia entrambi null/false — NON confondere le due situazioni
 - thickness_t1_min / thickness_t1_max / thickness_t1_max_unlimited: se il verbale dichiara DUE range (t1 e t2), tipico FW con spessori diversi (es. "t1 = FW : from 3,0 to 50,0"), popola t1. Se un solo range, lascia null
 - thickness_t2_min / thickness_t2_max / thickness_t2_max_unlimited: come sopra per t2
-- diameter_min / diameter_max: range diametro tubo se applicabile (SOLO se un numero è dichiarato — vedi nota su product_type sopra per il caso testo/piastra)
+- diameter_min / diameter_max: range diametro tubo (T/P+T) oppure diametro prigioniero se joint_type=SW — SOLO se un numero è dichiarato (vedi nota su product_type sopra per il caso testo/piastra)
 - throat_test_mm: spessore gola (throat) del provino testato, SOLO per giunti d'angolo/FW,
   se dichiarato esplicitamente sul verbale (Tabella 8) — numero, null se non applicabile o assente
 - welding_positions: array posizioni ISO 6947 (es. ["PA"])
@@ -1340,7 +1371,8 @@ Campi di copertura (pag.1 RANGE OF QUALIFICATION, priorità alta):
 - approval_date: data di emissione/approvazione del verbale (YYYY-MM-DD), preferire "Record issued"
 
 Parametri prova (pag.2, priorità media):
-- base_material_spec: specifica materiale base (es. "S355J2+N")
+- base_material_spec: specifica materiale Parent Metal 1 / base (es. "S355J2+N")
+- base_material_spec_2: specifica materiale Parent Metal 2 / prigioniero se presente; null se uno solo
 - shielding_gas: gas di protezione (es. "M20", "Ar 92% CO2 8%")
 - current_type: tipo di corrente (es. "DC-EP")
 - metal_transfer: modalità di trasferimento metallo
@@ -1356,9 +1388,11 @@ IMPORTANTE: non ricalcolare i range con formule — estrarre solo i valori dichi
     qualification_level: "1|2|null",
     standard_reference: "string|null",
     welding_process: "string|null",
-    joint_type: "BW|FW|BW+FW|null",
-    product_type: "P|T|null",
+    joint_type: "BW|FW|BW+FW|SW|null",
+    product_type: "P|T|P+T|null",
     material_group: "string|null",
+    material_group_2: "string|null",
+    qualifying_element: "base|stud|both|null",
     thickness_test_mm: "number|null",
     thickness_min: "number|null",
     thickness_max: "number|null",
@@ -1381,6 +1415,7 @@ IMPORTANTE: non ricalcolare i range con formule — estrarre solo i valori dichi
     welder_name: "string|null",
     approval_date: "YYYY-MM-DD|null",
     base_material_spec: "string|null",
+    base_material_spec_2: "string|null",
     shielding_gas: "string|null",
     current_type: "string|null",
     metal_transfer: "string|null",
