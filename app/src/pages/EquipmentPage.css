@@ -37,6 +37,16 @@
 
 .eq-name  { font-weight: 600; color: #1f2937; }
 .eq-model { font-size: 0.8rem; color: #6b7280; margin-top: 2px; }
+.eq-role-tag {
+    display: inline-block;
+    margin-top: 3px;
+    font-size: 0.7rem;
+    font-weight: 600;
+    color: #1e3a5f;
+    background: #e8eef5;
+    border-radius: 4px;
+    padding: 1px 6px;
+}
 .eq-mono  { font-family: monospace; font-size: 0.8rem; color: #374151; }
 .eq-empty { text-align: center; color: #9ca3af; padding: 32px; font-style: italic; }
 
