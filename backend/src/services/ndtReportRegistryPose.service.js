@@ -42,10 +42,11 @@ function buildTypeSpecificData(report) {
 
 /**
  * Trova documento gi\u00e0 posato per questo verbale (idempotenza).
- * Preferisce type_specific_data.ndt_report_id; fallback doc_code = report_number.
+ * Preferisce type_specific_data.ndt_report_id; fallback doc_code = report_number
+ * nello stesso scope company (mai cross-azienda nello stesso tenant).
  * @returns {Promise<{ id: number, parent_id: number|null }|null>}
  */
-async function findExistingRegistryDoc(organizationId, reportId, reportNumber) {
+async function findExistingRegistryDoc(organizationId, reportId, reportNumber, companyId) {
   const byLink = await query(
     `SELECT TOP 1 id, parent_id
      FROM document_registry
@@ -70,6 +71,19 @@ async function findExistingRegistryDoc(organizationId, reportId, reportNumber) {
 
   if (!reportNumber) return null;
 
+  const params = {
+    orgId: organizationId,
+    docType: DOC_TYPE,
+    reportNumber: String(reportNumber),
+  };
+  let companySql;
+  if (companyId != null) {
+    companySql = 'AND company_id = @companyId';
+    params.companyId = companyId;
+  } else {
+    companySql = 'AND company_id IS NULL';
+  }
+
   const byCode = await query(
     `SELECT TOP 1 id, parent_id
      FROM document_registry
@@ -77,12 +91,9 @@ async function findExistingRegistryDoc(organizationId, reportId, reportNumber) {
        AND doc_type = @docType
        AND status <> 'obsoleto'
        AND doc_code = @reportNumber
+       ${companySql}
      ORDER BY id ASC`,
-    {
-      orgId: organizationId,
-      docType: DOC_TYPE,
-      reportNumber: String(reportNumber),
-    }
+    params
   );
   const row = byCode.recordset[0];
   return row ? { id: row.id, parent_id: row.parent_id ?? null } : null;
@@ -120,11 +131,14 @@ async function poseNdtReportInRegistry({ organizationId, report, userId = null }
   const existing = await findExistingRegistryDoc(
     organizationId,
     report.id,
-    report.report_number
+    report.report_number,
+    companyId
   );
 
   if (existing) {
-    const nextParent = parentId != null ? parentId : existing.parent_id;
+    // Sempre la cartella risolta per l'azienda corrente: non tenere parent di un'altra azienda.
+    const nextParent = parentId;
+    const notes = folderMissing ? FOLDER_MISSING_MSG : null;
     await query(
       `UPDATE document_registry SET
          company_id = @company_id,
@@ -135,6 +149,7 @@ async function poseNdtReportInRegistry({ organizationId, report, userId = null }
          responsible = COALESCE(@responsible, responsible),
          type_specific_data = @type_specific_data,
          content_scope = @content_scope,
+         notes = @notes,
          status = 'vigente',
          updated_at = GETDATE()
        WHERE id = @id AND organization_id = @orgId`,
@@ -149,6 +164,7 @@ async function poseNdtReportInRegistry({ organizationId, report, userId = null }
         responsible,
         type_specific_data: typeSpecific,
         content_scope: contentScope,
+        notes,
       }
     );
 
@@ -167,11 +183,10 @@ async function poseNdtReportInRegistry({ organizationId, report, userId = null }
       }
     }
 
-    const stillMissing = folderMissing || nextParent == null;
     logger.info('[ndtReportRegistryPose] updated', {
       reportId: report.id,
       documentId: existing.id,
-      folderMissing: stillMissing,
+      folderMissing,
     });
 
     return {
@@ -179,8 +194,8 @@ async function poseNdtReportInRegistry({ organizationId, report, userId = null }
       created: false,
       folder_code: folderCode,
       parent_id: nextParent,
-      folder_missing: stillMissing,
-      message: stillMissing
+      folder_missing: folderMissing,
+      message: folderMissing
         ? FOLDER_MISSING_MSG
         : `Documento gi\u00e0 in Registro (cartella ${folderCode}) aggiornato.`,
     };

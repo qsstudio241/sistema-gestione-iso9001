@@ -140,6 +140,67 @@ describe('poseNdtReportInRegistry', () => {
     expect(inserts).toHaveLength(0);
     const updates = query.mock.calls.filter(([sql]) => /UPDATE document_registry SET/i.test(sql));
     expect(updates.length).toBeGreaterThanOrEqual(1);
+    expect(updates[0][1].notes).toBeNull();
+  });
+
+  it('fallback doc_code filtra company_id (no cross-azienda)', async () => {
+    resolveFolderByCode.mockResolvedValue({ id: 10, company_id: 11 });
+    parentIdForExistingFolder.mockReturnValue(10);
+    query
+      .mockResolvedValueOnce({ recordset: [] }) // by link
+      .mockResolvedValueOnce({ recordset: [{ id: 77, parent_id: 10 }] }) // by code scoped
+      .mockResolvedValueOnce({ recordset: [] })
+      .mockResolvedValueOnce({ recordset: [] });
+
+    await poseNdtReportInRegistry({
+      organizationId: ORG,
+      report: baseReport(),
+    });
+
+    const byCodeCall = query.mock.calls.find(
+      ([sql]) => /doc_code = @reportNumber/i.test(sql)
+    );
+    expect(byCodeCall).toBeTruthy();
+    expect(byCodeCall[0]).toMatch(/company_id = @companyId/);
+    expect(byCodeCall[1].companyId).toBe(11);
+  });
+
+  it('UPDATE: company_id tolto → parent_id null (niente cartella azienda precedente)', async () => {
+    parentIdForExistingFolder.mockReturnValue(null);
+    query
+      .mockResolvedValueOnce({ recordset: [{ id: 88, parent_id: 10 }] })
+      .mockResolvedValueOnce({ recordset: [] });
+
+    const out = await poseNdtReportInRegistry({
+      organizationId: ORG,
+      report: baseReport({ company_id: null }),
+    });
+
+    expect(out.parent_id).toBeNull();
+    expect(out.folder_missing).toBe(true);
+    const updateCall = query.mock.calls.find(([sql]) => /UPDATE document_registry SET/i.test(sql));
+    expect(updateCall[1].parent_id).toBeNull();
+    expect(updateCall[1].company_id).toBeNull();
+    expect(updateCall[1].notes).toBe(FOLDER_MISSING_MSG);
+  });
+
+  it('UPDATE: cartella ora presente → notes Cartella mancante azzerate', async () => {
+    resolveFolderByCode.mockResolvedValue({ id: 10, company_id: 11 });
+    parentIdForExistingFolder.mockReturnValue(10);
+    query
+      .mockResolvedValueOnce({ recordset: [{ id: 88, parent_id: null }] })
+      .mockResolvedValueOnce({ recordset: [] })
+      .mockResolvedValueOnce({ recordset: [] });
+
+    const out = await poseNdtReportInRegistry({
+      organizationId: ORG,
+      report: baseReport(),
+    });
+
+    expect(out.folder_missing).toBe(false);
+    const updateCall = query.mock.calls.find(([sql]) => /UPDATE document_registry SET/i.test(sql));
+    expect(updateCall[1].notes).toBeNull();
+    expect(updateCall[1].parent_id).toBe(10);
   });
 
   it('senza company_id: folder_missing, crea comunque con parent_id null', async () => {
@@ -160,5 +221,9 @@ describe('poseNdtReportInRegistry', () => {
     const insertCall = query.mock.calls.find(([sql]) => /INSERT INTO document_registry/i.test(sql));
     expect(insertCall[1].company_id).toBeNull();
     expect(insertCall[1].content_scope).toBe('studio');
+    const byCodeCall = query.mock.calls.find(
+      ([sql]) => /doc_code = @reportNumber/i.test(sql)
+    );
+    expect(byCodeCall[0]).toMatch(/company_id IS NULL/);
   });
 });
