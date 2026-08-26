@@ -2,8 +2,8 @@
 
 > **Destinazione**: uno studio (Mason) e l’operatore CND chiudono sul telefono il ciclo **incarico → esecuzione in campo → verbale Word + eventuale NC**, riusando qualifiche ISO 9712, strumenti, commesse, foto e PWA già in produzione. Niente app nativa, niente secondo motore, niente tabelle gemelle.
 > **Spec / ADR**: [ISO 9712:2022](../reference/ISO_9712_2022_NDT_QUALIFICATION.md) · ADR-004 (auth mobile) · ADR-016 (strumenti trasversali, verbali ≠ Welding Book) · [PLAN ISO 3834](PLAN_3834_SLICES.md) (ISO-1b/ISO-7 fatti; **ISO-9** eseguita qui come CND-2)
-> **Brief attivi**: [`DEPUTYTASK.md`](DEPUTYTASK.md) **CND-8 CHIUSO** (#582); [`DEPUTYTASK1.md`](DEPUTYTASK1.md) **CND-5a CHIUSO** (questa PR). **CND-9** CHIUSO (#578/#579). **CND-W** CHIUSO (#577). **CND-7** CHIUSO (#574). **CND-6** CHIUSO (#575).
-> **Mappa**: CND-0…CND-4/6/7/8/9/11 + CND-W + **CND-5a** su `main` (CND-5a in merge). **Ora**: residuo CND-5 = parametri UT verbale (HITL modello). Stream STUD-1 parallelo (WPQR).
+> **Brief attivi**: nessuno slot CND AFK — **CND-8** CHIUSO (#582); **CND-5a** CHIUSO (#581). Ciclo operatore base **chiuso** (salvo UT/firma/foto-offline).
+> **Mappa**: CND-0…CND-4/5a/6/7/8/9/11 + CND-W su `main`. **Prossimo codice**: stream [`DEPUTYTASK_WPQR_STUD.md`](DEPUTYTASK_WPQR_STUD.md) **STUD-1**. Residuo CND: parametri UT (HITL modello), firma CND-10, foto offline.
 > **Licenza**: modulo `cnd` (bridge: licenza `saldatura` implica `cnd`)
 > **Schermate oggi**: `/cnd/verbali` (`NdtReportsPage.jsx`) · `/cnd/strumenti` (`EquipmentPage.jsx`) · Qualifiche tab NDT
 
@@ -189,16 +189,15 @@ Su `main` (23/08 sera):
   CND-11 *chiusa* #546
   CND-PREVIEW spike visibile via htmlpreview (#548/#550)
 
-Ora (26/08, post CND-8 #582 + CND-5a):
-  CND-8  (bozza come audit) — CHIUSO (#582)
-  CND-5a (ruoli Equipment) — CHIUSO (DEPUTYTASK1.md / questa PR); residuo UT = CND-5 restante
-  STUD-1 (WPQR) — stream APERTO, file disgiunti
+Ora (26/08, post CND-8 #582 + CND-5a #581):
+  Ciclo operatore CND base — CHIUSO su main
+  STUD-1 (WPQR) — stream APERTO ← **prossimo deputy**
+  Slot DEPUTYTASK / DEPUTYTASK1 — CHIUSI (scontrino CND-8 / CND-5a)
 
-Dopo merge CND-8 + CND-5a:
-  (ciclo operatore base chiuso salvo UT/firma/foto-offline)
-
-Dopo modello UT (HITL):
-  CND-5 restante (parametri UT sul verbale)
+Residuo CND (non AFK senza HITL):
+  CND-5 restante — parametri UT (serve modello Mason)
+  CND-10 firma — parcheggiata
+  Foto allegati offline — backlog post CND-9
 ```
 
 Due deputy **mai** sullo stesso `NdtReportsPage.jsx` o sullo stesso controller.
@@ -208,11 +207,11 @@ Due deputy **mai** sullo stesso `NdtReportsPage.jsx` o sullo stesso controller.
 | Passaggio | Gap | Slice |
 |-----------|-----|-------|
 | Input: chi ispeziona | Gate 9712 + visione **fatto** (#561); match sul nome | CND-2 *chiusa* |
-| Input: cosa ispezionare | Si crea da zero; allineare a bozza-audit | CND-8 |
-| Input: con quali mezzi | Strumenti VT-centrici | CND-5 |
+| Input: cosa ispezionare | Bozza UUID subito come audit | CND-8 *chiusa* (#582) |
+| Input: con quali mezzi | Ruoli giogo/sonda/kit PT fatti; UT verbale = HITL | CND-5a *chiusa* (#581); CND-5 UT residuo |
 | Esecuzione: marche in campo | Tabella 10 colonne | CND-1 *chiusa* |
 | Esecuzione: parametri metodo | Solo lux VT; PT/MT da Word Mason | CND-3 *chiusa* |
-| Esecuzione: evidenza fotografica | C’è; touch/camera da irrobustire | CND-6 |
+| Esecuzione: evidenza fotografica | Hardening mobile fatto; foto offline = residuo | CND-6 *chiusa* (#575) |
 | Esecuzione: rete assente | Coda NDT collegata (CND-9); foto allegati offline = residuo | CND-9 *chiusa* (#578); foto = backlog |
 | Output: certificato | Word VT + resolve CND-4; flag PT/MT → placeholder = **CND-W chiusa** | CND-4 *chiusa*; CND-W *chiusa* |
 | Output: fascicolo SGQ | Verbale fuori registro | CND-7 *chiusa* (#574) |

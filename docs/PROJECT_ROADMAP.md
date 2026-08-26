@@ -8,23 +8,23 @@
 
 > **Risposta standard a «stato di avanzamento del progetto e priorità da affrontare»**: sintetizzare da questa sezione (moduli maturi + sessione più recente + tabella priorità sotto), **non** dal banner storico più sotto (superato, tenuto solo per traccia) né dall'archivio marzo 2026 [`docs/archive/PROJECT_CONTEXT_STATO_FUNZIONALITA_2026-03.md`](archive/PROJECT_CONTEXT_STATO_FUNZIONALITA_2026-03.md). **Aggiornare questa sezione a fine sessione** se emergono nuove priorità o se una priorità elencata viene chiusa (stesso principio delle "Lezioni apprese" in [GUIDA_CONSOLIDATA.md](GUIDA_CONSOLIDATA.md) — sintesi qui, dettaglio linkato).
 
-**Ultimo aggiornamento di questa sezione**: 26/08/2026 (CND-9 #578/#579; CND-W #577; brief CND-8+CND-5a; STUD-1 stream).
+**Ultimo aggiornamento di questa sezione**: 26/08/2026 (CND-8 #582; CND-5a #581; ciclo CND base chiuso; prossimo STUD-1).
 
 ### Moduli maturi (in produzione, uso quotidiano dai clienti Camellini/Mason)
 
-Audit multi-standard (9001/14001/45001) · Non Conformità (workflow ISO 10.2 completo) · Qualifiche Personale saldatori/NDT/coordinatori (ISO 9606-1/14732/14731/9712) · Saldatura (WPQR con range duali t1/t2 FW, generazione WPS, 15614-1/15614-2, Welding Book, Commesse ISO 3834, Dashboard 3834) · SAL (gap analysis requisiti con AI) · Registro Documenti + Scadenzari · Notifiche/Alert (documenti/NC/qualifiche) · Riesame di Direzione · RBAC multi-tenant (`company_access`) · Registro obblighi legali (ambiente + sicurezza) · Assistente AI / Gap Analysis euristica.
+Audit multi-standard (9001/14001/45001) · Non Conformità (workflow ISO 10.2 completo) · Qualifiche Personale saldatori/NDT/coordinatori (ISO 9606-1/14732/14731/9712) · Saldatura (WPQR con range duali t1/t2 FW, generazione WPS, 15614-1/15614-2, Welding Book, Commesse ISO 3834, Dashboard 3834) · SAL (gap analysis requisiti con AI) · Registro Documenti + Scadenzari · Notifiche/Alert (documenti/NC/qualifiche) · Riesame di Direzione · RBAC multi-tenant (`company_access`) · Registro obblighi legali (ambiente + sicurezza) · Assistente AI / Gap Analysis euristica · CND verbali (VT/MT/PT, gate 9712, Word, Registro, offline).
 
 ### Sessione più recente (26/08/2026)
 
-**Brief paralleli aperti** — [`DEPUTYTASK.md`](agent-tasks/DEPUTYTASK.md) **CND-8** (crea bozza come audit); [`DEPUTYTASK1.md`](agent-tasks/DEPUTYTASK1.md) **CND-5a** (ruoli strumento non-VT su Equipment). Stream [`DEPUTYTASK_WPQR_STUD.md`](agent-tasks/DEPUTYTASK_WPQR_STUD.md) **STUD-1** ancora APERTO — WPQR prigioniero / P+T.
+**CND operatore — ciclo base chiuso** — CND-1…CND-4, CND-5a, CND-6…CND-9, CND-W su `main`. Slot [`DEPUTYTASK.md`](agent-tasks/DEPUTYTASK.md) / [`DEPUTYTASK1.md`](agent-tasks/DEPUTYTASK1.md) **CHIUSI**. Residuo CND: UT verbale (HITL modello), firma CND-10, foto offline.
 
-**CND-9 rete officina (26/08, mergiata #578; harden #579)** — save offline → `syncQueue` NDT; banner senza rete; residuo: foto allegati offline.
+**Prossimo codice** — stream [`DEPUTYTASK_WPQR_STUD.md`](agent-tasks/DEPUTYTASK_WPQR_STUD.md) **STUD-1 APERTO** (prigioniero / P+T; senza inventare range ISO 14555). HITL: PDF 14555 in backlog.
 
-**CND-W export Word PT/MT (26/08, mergiata #577)** — `buildPtMtPlaceholderData` → placeholder semantici nel `.docx`.
+**CND-8 bozza come audit (26/08, mergiata #582)** — Nuovo verbale → UUID subito (`seedNdtLocalDraft`); offline via coda CND-9.
 
-**CND-7 posa Registro (26/08, mergiata #574)** — Completa → `report_ndt` in 9.3. Serve deploy backend se non fatto.
+**CND-5a ruoli strumento (26/08, mergiata #581)** — giogo / sonda / kit PT in Equipment (`ndtInstrumentRoles.js`).
 
-**CND-6 foto + NC mobile (26/08, mergiata #575)** — allegati touch; NC da R/S.
+**CND-9 / CND-W / CND-7 / CND-6** — già su `main` (#578/#579, #577, #574, #575). Deploy VPS: gate 9712 + posa Registro se non ancora fatti.
 
 **NG-3 skill gap-analysis (25/08, mergiata #560)** — percorso «manca MD → backlog → HITL» + mapping.
 

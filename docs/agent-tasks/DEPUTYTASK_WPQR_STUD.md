@@ -5,7 +5,7 @@
 **Branch gap (Lead):** `cursor/gap-wpqr-stud-887f`  
 **Report:** [`docs/gap-reports/GAP_WPQR_STUD_WELDING_PIASTRA_TUBO_2026-08-25.md`](../gap-reports/GAP_WPQR_STUD_WELDING_PIASTRA_TUBO_2026-08-25.md)  
 **Rischio slice codice:** Medio — migrazione additiva nullable + FE/BE WPQR; **niente** auth/sync/breaking distruttivo  
-**Parallelo:** slot `DEPUTYTASK.md` / `DEPUTYTASK1.md` = **CND-8** / **CND-5a** (aperti 26/08) — **non** toccarli. GUIDA/roadmap: sync **dopo merge** se c’è parallelo.
+**Parallelo:** slot `DEPUTYTASK.md` / `DEPUTYTASK1.md` = **CHIUSI** (CND-8 / CND-5a, 26/08) — **liberi**. Questa slice è il **prossimo codice** da eseguire. GUIDA/roadmap: sync in PR docs post-CND o dopo merge STUD.
 
 > **Allineamento Git (autonomo)**: `git fetch origin main` + `git pull origin main` prima di eseguire. **Non** chiedere al committente.
 
