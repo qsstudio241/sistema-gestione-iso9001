@@ -99,6 +99,17 @@ describe("NdtReportsPage — sezione strumenti", () => {
   beforeEach(() => {
     localStorage.clear();
     Object.defineProperty(window, "innerWidth", { writable: true, configurable: true, value: 1200 });
+    // mockReset (vitest.config) azzera le impl: ripristinare anche eligibility, altrimenti
+    // il debounce 300ms in NdtReportsPage fa .then su undefined → unhandled error in CI.
+    apiService.getNdtInspectorEligibility.mockResolvedValue({
+      data: {
+        ok: true,
+        reasons: [],
+        candidates: [],
+        qualification: { ndt_method: "VT", ndt_level: 2 },
+        vision: { state: "ok" },
+      },
+    });
     apiService.getEquipmentForReport.mockResolvedValue({
       data: [
         { id: 11, name: "Calibro", model: "TWI", serial_number: "C-001", asset_subcategory: "calibro", status: "active", calibration_status: "ok" },
