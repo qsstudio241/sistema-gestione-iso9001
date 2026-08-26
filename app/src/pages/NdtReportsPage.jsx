@@ -746,13 +746,25 @@ function NdtReportForm({ report, companies, availableInstruments, onSave, onCanc
                 items,
                 instrument_ids: selectedInstruments.map(i => ({ asset_id: i.asset_id, instrument_role: i.role })),
             };
+            let saveRes;
             if (isEdit) {
-                await apiService.updateNdtReport(report.id, payload);
+                saveRes = await apiService.updateNdtReport(report.id, payload);
             } else {
-                await apiService.createNdtReport(payload);
+                saveRes = await apiService.createNdtReport(payload);
             }
             setSavedAt(new Date().toLocaleTimeString("it-IT", { hour: "2-digit", minute: "2-digit" }));
             clearDraft(); // rimuove bozza locale dopo salvataggio riuscito
+            const pose = saveRes?.registry_pose || saveRes?.data?.registry_pose;
+            if (pose?.message) {
+                if (pose.folder_missing || pose.error) {
+                    setError(pose.message);
+                } else {
+                    setSavedAt(
+                        new Date().toLocaleTimeString("it-IT", { hour: "2-digit", minute: "2-digit" })
+                        + " \u00b7 " + pose.message
+                    );
+                }
+            }
             onSave();
         } catch (err) {
             setError(err?.message || "Errore salvataggio verbale");

@@ -149,6 +149,7 @@
                                      "src/services/personnelQualificationLink.service.js",
                                      "src/services/visionFitness.service.js",
                                      "src/services/ndtInspectorGate.service.js",
+                                     "src/services/ndtReportRegistryPose.service.js",
                                      "src/services/wpqrIngest.service.js",
                                      "src/services/qualificationIngest.service.js",
                                      "src/services/normIngest.service.js",

@@ -21,6 +21,34 @@ const {
     isJudgmentStatus,
     evaluateNdtInspectorGate,
 } = require('../services/ndtInspectorGate.service');
+const { poseNdtReportInRegistry } = require('../services/ndtReportRegistryPose.service');
+
+/**
+ * CND-7 — posa nel Registro dopo Completa/Approva. Non blocca il salvataggio verbale.
+ * @returns {Promise<object|null>}
+ */
+async function tryPoseRegistry(organizationId, reportRow, userId) {
+    if (!reportRow || !isJudgmentStatus(reportRow.status)) return null;
+    try {
+        return await poseNdtReportInRegistry({
+            organizationId,
+            report: reportRow,
+            userId: userId || null,
+        });
+    } catch (poseErr) {
+        logger.error('ndtReportRegistryPose failed (verbale salvato)', {
+            reportId: reportRow.id,
+            error: poseErr.message,
+        });
+        return {
+            document_id: null,
+            created: false,
+            folder_missing: true,
+            error: true,
+            message: 'Verbale salvato; posa nel Registro non riuscita. Riprova Completa pi\u00f9 tardi.',
+        };
+    }
+}
 
 function sendInspectorGateDenied(res, gate) {
     const message = (gate.reasons && gate.reasons[0])
@@ -364,7 +392,13 @@ async function createNdtReport(req, res) {
             }
         }
 
-        res.status(201).json({ success: true, data: reportResult.recordset[0] });
+        const createdRow = reportResult.recordset[0];
+        const registry_pose = await tryPoseRegistry(organization_id, createdRow, req.user.user_id);
+        res.status(201).json({
+            success: true,
+            data: createdRow,
+            ...(registry_pose ? { registry_pose } : {}),
+        });
     } catch (err) {
         logger.error('createNdtReport error', { error: err.message });
         res.status(500).json({ error: 'Errore creazione verbale CND', code: 'NDT_CREATE_ERROR' });
@@ -527,7 +561,13 @@ async function updateNdtReport(req, res) {
             { id }
         );
 
-        res.json({ success: true, data: updated.recordset[0] });
+        const updatedRow = updated.recordset[0];
+        const registry_pose = await tryPoseRegistry(organization_id, updatedRow, req.user.user_id);
+        res.json({
+            success: true,
+            data: updatedRow,
+            ...(registry_pose ? { registry_pose } : {}),
+        });
     } catch (err) {
         logger.error('updateNdtReport error', { error: err.message });
         res.status(500).json({ error: 'Errore aggiornamento verbale CND', code: 'NDT_UPDATE_ERROR' });

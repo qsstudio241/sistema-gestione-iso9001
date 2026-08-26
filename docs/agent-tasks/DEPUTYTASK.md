@@ -1,7 +1,8 @@
 # DEPUTYTASK — CND-7: Completa verbale → posa nel Registro Documenti
 
-**Stato:** APERTO  
+**Stato:** CHIUSO — TEST OK  
 **Aperto:** 26/08/2026  
+**Chiuso:** 26/08/2026  
 **Piano:** [`PLAN_CND_SLICES.md`](PLAN_CND_SLICES.md)  
 **Dipende da:** CND-2 + CND-3 + CND-4 **CHIUSI** (#561 / #571 / #547)  
 **Rischio:** Medio — BE NDT + registro; migrazione solo se strettamente necessaria (preferire riuso); niente auth/sync/breaking.  
@@ -44,7 +45,14 @@ Il verbale CND vive solo in `ndt_reports`. Fuori dal Registro Documenti non c’
 
 ## Verifica
 
-- [ ] Completa → documento `report_ndt` in 9.3 (o messaggio cartella mancante)
-- [ ] Idempotente; scope company ok
-- [ ] L1 + manifest
-- [ ] PLAN CND-7 spuntato; brief CHIUSO — TEST OK
+- [x] Completa → documento `report_ndt` in 9.3 (o messaggio cartella mancante)
+- [x] Idempotente; scope company ok
+- [x] L1 + manifest
+- [x] PLAN CND-7 spuntato; brief CHIUSO — TEST OK
+
+## Esito
+
+- Service `ndtReportRegistryPose.service.js`: posa `report_ndt` con `type_specific_data.ndt_report_id` (idempotente); cartella 9.3 via `resolveFolderByCode` / `parentIdForExistingFolder`; se assente → `parent_id` null + messaggio Cartella mancante.
+- Hook su create/update quando status `completed`|`approved`; errore posa non blocca il salvataggio verbale.
+- FE: messaggio posa ok / cartella mancante dopo Completa (solo header/save, niente sezioni PT/MT).
+- Manifest aggiornato. Test Jest service + controller CND-7.
