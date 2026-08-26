@@ -52,7 +52,7 @@ reale scelto, es. `C:\NormeISO_PDF\` oppure una cartella dentro OneDrive):
 | ISO 15614-1:2017 | `Normative NORMA_00019_...md/.json` | `ISO-156xx-WPS-WPQR\BS EN ISO 15614-1_2017.pdf` | |
 | ISO 15614-2:2025 | `Normative NORMA_00031_...md/.json` | PDF committente 25/08/2026 (`BS_EN_ISO_15614-2-2025`) — **non** in Git | Estratto `docs/reference/ISO-15614-2-range-validita-WPQR.md` |
 | ISO 9606-2:2004 | `Normative NORMA_00032_...md/.json` | PDF committente 25/08/2026 — **non** in Git | Patentini Al; regole JS dedicate = backlog |
-| ISO 14555:2025 | `Normative NORMA_00033_...md/.json` | PDF committente 26/08/2026 (`BS_EN_ISO_14555_2025`) — **non** in Git | Arc stud welding; digitalizzata 26/08/2026; seed VPS + estratto range = STUD-3 |
+| ISO 14555:2025 | `Normative NORMA_00033_...md/.json` | PDF committente 26/08/2026 (`BS_EN_ISO_14555_2025`) — **non** in Git | Arc stud welding; digitalizzata 26/08/2026; estratto range [`docs/reference/ISO-14555-2025-range-validita-WPQR.md`](../reference/ISO-14555-2025-range-validita-WPQR.md) (STUD-3-A); seed VPS + codice = STUD-3-B dopo HITL |
 | UNI EN 10168:2005 | `Normative NORMA_00020_...md/.json` | `EN-10204-certificati\UNI EN 10168 Ed.2005 steel docs.pdf` | Digitalizzato 16/08/2026 |
 | EN 10168:2004 (EN) | `Normative NORMA_00021_...md/.json` | `EN-10204-certificati\EN 10168 steel docs.pdf` | Stessa norma, testo BSI inglese |
 | UNI EN 10204:2005 | `Normative NORMA_00022_...md/.json` | `EN-10204-certificati\EN 10204 Ed 2005 (Commented).pdf` | Edizione commentata UNI |
