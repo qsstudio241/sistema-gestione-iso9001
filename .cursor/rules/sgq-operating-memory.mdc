@@ -145,6 +145,21 @@ Card statistiche e tendina sulla **stessa** dimensione = ridondanza da togliere.
 
 Nuovo campo in `aiExpectedSchema` → stessa chiave in `*_MANUAL_EDITABLE_FIELDS` del controller **e** nel form React. CI: `manualEditCompletenessCheck.js`.
 
+## Schema/ingest nuovo campo → registro Rielaborazioni (vincolante)
+
+Quando si aggiunge una colonna/campo AI-estraibile a un tipo documento ingest **su record già esistenti** (PDF conservato in `/uploads`), **nella stessa slice** l'agente fa nascere la voce in Fatturazione → Rielaborazioni. Non è opzionale né «dopo». Niente scheduler automatico: basta che la voce compaia con candidati > 0.
+
+| Da fare nella stessa slice | Dove |
+|---|---|
+| Voce registro | `REPROCESSABLE_FIELD_REGISTRY` in `backend/src/data/reprocessableFields.js` |
+| Whitelist scrittura tabella | `REPROCESSABLE_FIELDS` / `WPQR_REPROCESSABLE_FIELDS` (o equivalente del tipo) |
+| Test sync registro ↔ whitelist | `reprocessableFields.test.js` (verde) |
+| Se **nuova** tabella/tipo | adapter in `reprocessTableAdapters.js` + entry in `WRITE_WHITELISTS_BY_TABLE` del test |
+
+**Eccezione (non serve voce Rielaborazioni):** campi non AI / non backfillabili da PDF / solo seed o migrazione SQL senza rilettura AI (es. `revalidation_date` da `expiry_date`).
+
+Complementare a «Ingest AI vs modifica manuale» (form/API): quello copre i **nuovi** record; questo copre il **backfill** dei vecchi. Lezione storica: GUIDA § *Registro rielaborazioni* / *Rielaborazione/backfill su nuovo campo schema*.
+
 ## Fonti Markdown prima di seed / Rule Engine / gap normativa
 
 Inventario MC (presente / mancante): [`docs/reference/MATERIAL-COMPLIANCE-NORME-SINTESI.md`](../../docs/reference/MATERIAL-COMPLIANCE-NORME-SINTESI.md) § Inventario fonti.  

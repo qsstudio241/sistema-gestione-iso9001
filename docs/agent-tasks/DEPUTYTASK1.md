@@ -5,7 +5,7 @@
 **Piano:** [`PLAN_NORM_FIDELITY_SLICES.md`](PLAN_NORM_FIDELITY_SLICES.md)  
 **Dipende da:** NG-0 + NG-1 + NG-3 **CHIUSI**  
 **Rischio:** Medio — BE AI (NormBroker / chat / gap); niente auth JWT, niente sync audit, niente migrazioni.  
-**Parallelo a:** CND-3 su [`DEPUTYTASK.md`](DEPUTYTASK.md) — **file disgiunti** (questa slice = AI runtime, non verbali NDT).
+**Parallelo a:** CND-3 su [`DEPUTYTASK.md`](DEPUTYTASK.md) e STUD-1 su [`DEPUTYTASK_WPQR_STUD.md`](DEPUTYTASK_WPQR_STUD.md) — **file disgiunti** (questa slice = AI runtime, non verbali NDT / WPQR).
 
 ## Fonti Markdown
 

@@ -5,7 +5,7 @@
 **Piano:** [`PLAN_CND_SLICES.md`](PLAN_CND_SLICES.md)  
 **Dipende da:** CND-1 + CND-2 **CHIUSI** (#549 / #561) — stesso JSX ora libero  
 **Rischio:** Medio — FE verbale NDT; niente auth/sync/schema distruttivo.  
-**Parallelo a:** NG-4 su [`DEPUTYTASK1.md`](DEPUTYTASK1.md) — **file disgiunti** (questa slice = solo verbali CND).
+**Parallelo a:** NG-4 su [`DEPUTYTASK1.md`](DEPUTYTASK1.md) e STUD-1 su [`DEPUTYTASK_WPQR_STUD.md`](DEPUTYTASK_WPQR_STUD.md) — **file disgiunti** (questa slice = solo verbali CND).
 
 ## Fonti Markdown
 
