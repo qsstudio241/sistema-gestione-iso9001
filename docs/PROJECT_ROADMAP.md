@@ -8,7 +8,7 @@
 
 > **Risposta standard a «stato di avanzamento del progetto e priorità da affrontare»**: sintetizzare da questa sezione (moduli maturi + sessione più recente + tabella priorità sotto), **non** dal banner storico più sotto (superato, tenuto solo per traccia) né dall'archivio marzo 2026 [`docs/archive/PROJECT_CONTEXT_STATO_FUNZIONALITA_2026-03.md`](archive/PROJECT_CONTEXT_STATO_FUNZIONALITA_2026-03.md). **Aggiornare questa sezione a fine sessione** se emergono nuove priorità o se una priorità elencata viene chiusa (stesso principio delle "Lezioni apprese" in [GUIDA_CONSOLIDATA.md](GUIDA_CONSOLIDATA.md) — sintesi qui, dettaglio linkato).
 
-**Ultimo aggiornamento di questa sezione**: 26/08/2026 (ISO 14555 `NORMA_00033` digitalizzata; STUD-1 WPQR stud/P+T chiuso; ciclo CND base chiuso).
+**Ultimo aggiornamento di questa sezione**: 26/08/2026 (batch `NORMA_00034`–`00042` #591; STUD-2/STUD-3-A chiusi; CND tenant #588; prossimo = HITL estratto 14555 → STUD-3-B).
 
 ### Moduli maturi (in produzione, uso quotidiano dai clienti Camellini/Mason)
 
@@ -16,9 +16,15 @@ Audit multi-standard (9001/14001/45001) · Non Conformità (workflow ISO 10.2 co
 
 ### Sessione più recente (26/08/2026)
 
-**ISO 14555:2025 digitalizzata (26/08)** — PDF committente → `NORMA_00033` MD+JSON (PDF non in Git). Range = STUD-3 (estratto revisionato dal MD); non inventare soglie in STUD-1/2.
+**Batch norme `NORMA_00034`–`00042` (26/08, #591)** — 9712, 2560, 17632, 14174, 19011, 3452-1, 17638, 23278, 23277 → MD+JSON; backlog `digitalizzata`. Nessun seed VPS in quella PR.
 
-**WPQR STUD-1 (26/08)** — stream [`DEPUTYTASK_WPQR_STUD.md`](agent-tasks/DEPUTYTASK_WPQR_STUD.md) **CHIUSO — TEST OK**: tipologia `SW`, `qualifying_element`, diametro prigioniero (riuso `diameter_*`), Parent Metal 2, `product_type` `P+T`, mig. **159** in PROD. Nessun range ISO 14555 in STUD-1.
+**STUD-2 ingest + STUD-3-A estratto 14555 (26/08, #590/#589)** — slot `DEPUTYTASK` / `DEPUTYTASK1` **CHIUSI**. Estratto [`ISO-14555-2025-range-validita-WPQR.md`](reference/ISO-14555-2025-range-validita-WPQR.md) pronto per HITL; **STUD-3-B** (codice range + 4063 stud) solo dopo OK HITL — niente seed VPS finché non richiesto.
+
+**CND bozze locali tenant-scope (26/08, #588)** — `organization_id` su draft localStorage; lezione GUIDA multi-tenant offline.
+
+**ISO 14555:2025 digitalizzata (26/08, #584)** — PDF → `NORMA_00033` MD+JSON (PDF non in Git).
+
+**WPQR STUD-1 (26/08, #585)** — stream [`DEPUTYTASK_WPQR_STUD.md`](agent-tasks/DEPUTYTASK_WPQR_STUD.md) **CHIUSO — TEST OK**: tipologia `SW`, `qualifying_element`, diametro prigioniero (riuso `diameter_*`), Parent Metal 2, `product_type` `P+T`, mig. **159** in PROD.
 
 **CND operatore — ciclo base chiuso** — CND-1…CND-4, CND-5a, CND-6…CND-9, CND-W su `main`. Slot [`DEPUTYTASK.md`](agent-tasks/DEPUTYTASK.md) / [`DEPUTYTASK1.md`](agent-tasks/DEPUTYTASK1.md) **CHIUSI**. Residuo CND: UT verbale (HITL modello), firma CND-10, foto offline.
 
