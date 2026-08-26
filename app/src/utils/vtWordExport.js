@@ -14,8 +14,26 @@ import {
     repairDocxtemplaterFragmentedTags,
 } from './wordExport.js';
 import apiService from '../services/apiService.js';
+import {
+    PT_ACC_OPTIONS,
+    PT_SURFACE_OPTIONS,
+    PT_CLEANING_OPTIONS,
+    PT_APP_OPTIONS,
+    PT_FINAL_OPTIONS,
+    PT_DEFECTS,
+    PT_WORD_NA_ONLY_CODES,
+    MT_TRACER_OPTIONS,
+    MT_MAG_OPTIONS,
+    MT_MAG_MODE_OPTIONS,
+    MT_DEMAG_OPTIONS,
+    ptDefectPlaceholders,
+} from './ndtMethodParams.js';
 
 export const VT_WORD_TEMPLATE_URL = '/templates/VT-verbale.docx';
+
+/** Valori checkbox Word (placeholder semantici, non FORMCHECKBOX). */
+export const WORD_CHECK_ON = '\u2611';
+export const WORD_CHECK_OFF = '\u2610';
 
 const saveAs =
     fileSaverModule.saveAs ||
@@ -42,6 +60,122 @@ function nd(value) {
 function sanitize(value, fallback) {
     fallback = fallback || 'VT';
     return String(value || fallback).replace(/[^a-zA-Z0-9._-]+/g, '_').replace(/_+/g, '_').replace(/^_|_$/g, '') || fallback;
+}
+
+function placeholderKey(ph) {
+    return String(ph || '').replace(/^\{|\}$/g, '');
+}
+
+/** Gruppo esclusivo: un solo placeholder acceso (☑), gli altri ☐. */
+function applyExclusiveChecks(out, options, selectedValue) {
+    (options || []).forEach(function(opt) {
+        var key = placeholderKey(opt.placeholder);
+        if (!key) return;
+        out[key] = opt.value === selectedValue ? WORD_CHECK_ON : WORD_CHECK_OFF;
+    });
+}
+
+/** Multi-scelta (es. pulizia PT): ☑ per ogni valore selezionato. */
+function applyMultiChecks(out, options, selectedValues) {
+    var selected = Array.isArray(selectedValues) ? selectedValues : [];
+    (options || []).forEach(function(opt) {
+        var key = placeholderKey(opt.placeholder);
+        if (!key) return;
+        out[key] = selected.indexOf(opt.value) >= 0 ? WORD_CHECK_ON : WORD_CHECK_OFF;
+    });
+}
+
+function ptPresentLabel(present) {
+    if (present === 'yes') return 's\u00ec';
+    if (present === 'na') return 'NA';
+    return '';
+}
+
+/**
+ * CND-W — method_params.pt / .mt → chiavi semantiche docxtemplater (appendice PLAN).
+ * Nessun nome FORMCHECKBOX. VT non passa di qui (lux già nel payload base).
+ */
+export function buildPtMtPlaceholderData(report, params) {
+    var reportType = String((report && report.report_type) || '').toUpperCase();
+    var root = params || {};
+    if (reportType === 'PT') {
+        return buildPtPlaceholderData(report, root.pt || {});
+    }
+    if (reportType === 'MT') {
+        return buildMtPlaceholderData(report, root.mt || {});
+    }
+    return {};
+}
+
+function buildPtPlaceholderData(report, pt) {
+    var out = {};
+    applyExclusiveChecks(out, PT_ACC_OPTIONS, pt.acc);
+    applyExclusiveChecks(out, PT_SURFACE_OPTIONS, pt.surface);
+    applyMultiChecks(out, PT_CLEANING_OPTIONS, pt.cleaning);
+    applyExclusiveChecks(out, PT_APP_OPTIONS, pt.application);
+    applyExclusiveChecks(out, PT_FINAL_OPTIONS, pt.final);
+
+    out.inspection_pct = pt.inspection_pct != null && String(pt.inspection_pct).trim() !== ''
+        ? String(pt.inspection_pct)
+        : '';
+    out.pt_pen = pt.pen != null ? String(pt.pen) : '';
+    out.pt_pen_lot = pt.pen_lot != null ? String(pt.pen_lot) : '';
+    out.pt_sol = pt.sol != null ? String(pt.sol) : '';
+    out.pt_sol_lot = pt.sol_lot != null ? String(pt.sol_lot) : '';
+    out.pt_det = pt.det != null ? String(pt.det) : '';
+    out.pt_det_lot = pt.det_lot != null ? String(pt.det_lot) : '';
+    out.pt_lux = pt.lux != null ? String(pt.lux) : '';
+    out.pt_temp = pt.temp != null ? String(pt.temp) : '';
+
+    out.pt_date_insp = fmtDate(report && report.inspection_date);
+    out.pt_date_iss = fmtDate(report && report.certificate_date);
+    out.pt_name_resp = nd(report && report.responsible);
+    out.pt_name_insp = nd(report && report.inspector);
+    out.pt_name_cli = nd(report && report.client_representative);
+
+    var defects = (pt.defects && typeof pt.defects === 'object') ? pt.defects : {};
+    PT_DEFECTS.forEach(function(d) {
+        var keys = ptDefectPlaceholders(d.code);
+        var row = defects[d.code] || {};
+        out[placeholderKey(keys.yn)] = ptPresentLabel(row.present);
+        out[placeholderKey(keys.a)] = row.outcome ? String(row.outcome) : '';
+        // Mason Word 502–515: placeholder singolo {pt_d_*_na}, non solo _yn/_a
+        if (keys.na || PT_WORD_NA_ONLY_CODES.indexOf(d.code) >= 0) {
+            var naKey = keys.na ? placeholderKey(keys.na) : ('pt_d_' + d.code + '_na');
+            var isNa = (!row.present && !row.outcome)
+                || row.present === 'na'
+                || row.outcome === 'NA';
+            out[naKey] = isNa ? WORD_CHECK_ON : WORD_CHECK_OFF;
+        }
+    });
+
+    return out;
+}
+
+function buildMtPlaceholderData(report, mt) {
+    var out = {};
+    applyExclusiveChecks(out, MT_TRACER_OPTIONS, mt.tracer);
+    applyExclusiveChecks(out, MT_MAG_OPTIONS, mt.mag);
+    applyExclusiveChecks(out, MT_MAG_MODE_OPTIONS, mt.mag_mode);
+    applyExclusiveChecks(out, MT_DEMAG_OPTIONS, mt.demag);
+
+    out.mt_pole_pitch = mt.pole_pitch != null ? String(mt.pole_pitch) : '';
+    out.mt_curr_type = mt.curr_type != null ? String(mt.curr_type) : '';
+    out.mt_curr_a = mt.curr_a != null ? String(mt.curr_a) : '';
+    out.mt_field = mt.field != null ? String(mt.field) : '';
+    out.mt_surf = mt.surf != null ? String(mt.surf) : '';
+    out.mt_judg = mt.judg != null ? String(mt.judg) : '';
+    out.inspection_pct = mt.inspection_pct != null && String(mt.inspection_pct).trim() !== ''
+        ? String(mt.inspection_pct)
+        : '';
+
+    out.mt_date_insp = fmtDate(report && report.inspection_date);
+    out.mt_date_iss = fmtDate(report && report.certificate_date);
+    out.mt_name_resp = nd(report && report.responsible);
+    out.mt_name_insp = nd(report && report.inspector);
+    out.mt_name_cli = nd(report && report.client_representative);
+
+    return out;
 }
 
 export function buildVtWordFileName(report) {
@@ -83,7 +217,7 @@ export function buildVtTemplateData(report) {
         return acc;
     }, { gauge: 'N/D', gaugeId: 'N/D', luxmeter: 'N/D', luxmeterId: 'N/D', lamp: 'N/D', lampId: 'N/D' });
 
-    return {
+    var base = {
         reportNumber:         nd(report.report_number),
         reportYear:           nd(report.report_year),
         reportType:           nd(report.report_type),
@@ -117,6 +251,12 @@ export function buildVtTemplateData(report) {
         statusLabel:          STATUS_LABELS[report.status] || nd(report.status),
         generatedAt: new Date().toLocaleString('it-IT', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }),
     };
+
+    var methodFields = buildPtMtPlaceholderData(report, params);
+    Object.keys(methodFields).forEach(function(k) {
+        base[k] = methodFields[k];
+    });
+    return base;
 }
 
 export async function loadVtTemplate(templateUrl, options) {

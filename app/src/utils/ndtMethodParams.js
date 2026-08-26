@@ -285,11 +285,20 @@ export function mtPlaceholderFor(group, value) {
     return opt ? opt.placeholder : "";
 }
 
+/** Codici Mason «solo NA» nel Word (appendice PLAN 502–515). */
+export const PT_WORD_NA_ONLY_CODES = [
+    "502", "503", "504", "5041", "506", "507", "509", "511", "512", "515",
+];
+
 export function ptDefectPlaceholders(code) {
-    return {
+    const out = {
         yn: `{pt_d_${code}_yn}`,
         a: `{pt_d_${code}_a}`,
     };
+    if (PT_WORD_NA_ONLY_CODES.includes(String(code))) {
+        out.na = `{pt_d_${code}_na}`;
+    }
+    return out;
 }
 
 export const SEMANTIC_PLACEHOLDERS = [
