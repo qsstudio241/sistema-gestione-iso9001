@@ -204,7 +204,9 @@ export default function GapAnalysisPage() {
 
       {result?.matrix && result.matrix.length === 0 && (
         <p style={{ color: '#78909c', marginTop: '1rem' }}>
-          Nessuna clausola trovata per lo standard selezionato.
+          {result.normAbsent && result.normAbsent.message
+            ? result.normAbsent.message
+            : 'Nessuna clausola trovata per lo standard selezionato.'}
         </p>
       )}
 

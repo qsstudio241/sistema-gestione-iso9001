@@ -71,12 +71,21 @@ describe('gapAnalysis.service — runGapAnalysis', () => {
     expect(docSql).not.toContain('is_current');
   });
 
-  it('restituisce array vuoto se nessuna clausola trovata', async () => {
+  it('restituisce array vuoto se nessuna clausola trovata, con messaggio norma assente', async () => {
     mockQuery.mockReset();
     mockQuery.mockResolvedValueOnce({ recordset: [] }).mockResolvedValueOnce({ recordset: [] });
 
     const matrix = await runGapAnalysis({ organizationId: 1, companyId: 10, standardCode: 'UNKNOWN_STD' });
     expect(matrix).toHaveLength(0);
+    expect(matrix.normAbsent).toEqual(expect.objectContaining({
+      textAvailable: false,
+      code: 'NORM_TEXT_ABSENT',
+      standardCode: 'UNKNOWN_STD',
+    }));
+    expect(matrix.normAbsent.message).toMatch(/UNKNOWN STD/);
+    expect(matrix.normAbsent.message).toMatch(/archivio locale/);
+    expect(matrix.normAbsent.message).toMatch(/Registro Documenti/);
+    expect(matrix.normAbsent.message).not.toMatch(/il requisito è/i);
   });
 
   it('classifica come missing clausole senza documenti correlati', async () => {

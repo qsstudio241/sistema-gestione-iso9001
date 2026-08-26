@@ -38,6 +38,11 @@ async function buildReviewRequirementsContext({
             normContext += `§${c.clause_ref} ${c.clause_title || ''}: ${c.requirement_text.substring(0, 300)}\n`;
           }
         }
+      } else {
+        const absentMsg = typeof normBroker.buildNormAbsentMessage === 'function'
+          ? normBroker.buildNormAbsentMessage({ standardCode: code, kind: 'standard' })
+          : `Lo standard ${String(code).replace(/_/g, ' ')} non è presente nell'archivio locale.`;
+        normContext += `\n\n--- NORMA ASSENTE ---\n${absentMsg}\nNON inventare requisiti di questo standard.\n--- FINE NORMA ASSENTE ---`;
       }
     }
   } catch (err) {
@@ -202,13 +207,17 @@ async function buildAuditConclusionsContext({
       .map(f => ({ ref: f.clauseRef.split('.').slice(0, 2).join('.'), std: f.standardCode }));
 
     const seen = new Set();
+    const missingClauses = [];
     for (const { ref, std } of relevantRefs) {
       const key = `${std}:${ref}`;
       if (seen.has(key)) continue;
       seen.add(key);
-      const clause = await normBroker.getClauseText(std || codes[0], ref);
+      const stdCode = std || codes[0];
+      const clause = await normBroker.getClauseText(stdCode, ref);
       if (clause && clause.text) {
-        normContext += `\n§${ref} (${(std || codes[0]).replace(/_/g, ' ')}): ${clause.text.substring(0, 400)}`;
+        normContext += `\n§${ref} (${stdCode.replace(/_/g, ' ')}): ${clause.text.substring(0, 400)}`;
+      } else {
+        missingClauses.push({ stdCode, ref });
       }
     }
     if (!normContext && codes.length > 0) {
@@ -221,6 +230,13 @@ async function buildAuditConclusionsContext({
           }
         }
       }
+    }
+    if (missingClauses.length && typeof normBroker.buildNormAbsentMessage === 'function') {
+      normContext += '\n\n--- NORMA ASSENTE ---';
+      for (const m of missingClauses) {
+        normContext += `\n${normBroker.buildNormAbsentMessage({ standardCode: m.stdCode, clauseRef: m.ref, kind: 'clause' })}`;
+      }
+      normContext += '\nNON inventare il testo delle clausole assenti. Segnalalo nelle conclusioni.\n--- FINE NORMA ASSENTE ---';
     }
   } catch (err) {
     logger.warn('[AI_CONTEXT] NormBroker enrichment failed for conclusions:', err.message);

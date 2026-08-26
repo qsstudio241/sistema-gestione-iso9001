@@ -71,7 +71,11 @@ async function getGapAnalysis(req, res) {
       total: matrix.length,
     };
 
-    return res.json({ standardCode, companyId, summary, matrix });
+    const payload = { standardCode, companyId, summary, matrix };
+    if (matrix.normAbsent) {
+      payload.normAbsent = matrix.normAbsent;
+    }
+    return res.json(payload);
   } catch (err) {
     logger.error('[GapAnalysis] Error:', err.message);
     return res.status(500).json({ error: err.message, code: 'SERVER_ERROR' });

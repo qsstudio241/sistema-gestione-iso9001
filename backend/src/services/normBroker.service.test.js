@@ -89,6 +89,70 @@ describe('normBroker.service — cascata getClauseText', () => {
     expect(logger.info).toHaveBeenCalledWith(expect.stringContaining('not found in any source'));
   });
 
+  it('resolveClauseText: getClauseText null → textAvailable false e messaggio onesto (niente testo inventato)', async () => {
+    const local = require('./normConnectors/localStoreConnector');
+    local.getClauseText.mockResolvedValue(null);
+    const plc = require('./normConnectors/normativaConnector');
+    plc.getClauseText.mockResolvedValue(null);
+
+    const result = await normBroker.resolveClauseText('ISO_9712_2022', '8.2', { organizationId: 3 });
+
+    expect(result.textAvailable).toBe(false);
+    expect(result.hit).toBeNull();
+    expect(result.code).toBe(normBroker.NORM_ABSENT_CODE);
+    expect(result.absentMessage).toMatch(/ISO 9712 2022/);
+    expect(result.absentMessage).toMatch(/8\.2/);
+    expect(result.absentMessage).toMatch(/archivio locale/);
+    expect(result.absentMessage).toMatch(/Non valuto a caso/);
+    expect(result.absentMessage).toMatch(/Registro Documenti/);
+    expect(result.absentMessage).toMatch(/Carica norme/);
+    expect(result.absentMessage).not.toMatch(/deve|shall|shall not|il requisito è/i);
+  });
+
+  it('resolveClauseText: standard sconosciuto (connettori vuoti) → stesso contratto, nessuna allucinazione', async () => {
+    const local = require('./normConnectors/localStoreConnector');
+    local.getClauseText.mockResolvedValue(null);
+    const plc = require('./normConnectors/normativaConnector');
+    plc.getClauseText.mockResolvedValue(null);
+
+    const result = await normBroker.resolveClauseText('ISO_99999_2099', '1.1');
+
+    expect(result.textAvailable).toBe(false);
+    expect(result.hit).toBeNull();
+    expect(result.absentMessage).toMatch(/ISO 99999 2099/);
+    expect(result.absentMessage).toMatch(/chiedi allo studio/);
+  });
+
+  it('resolveClauseText: hit locale → textAvailable true, absentMessage null', async () => {
+    const local = require('./normConnectors/localStoreConnector');
+    local.getClauseText.mockResolvedValue({ text: '  Testo reale  ', title: 'T', fullRef: '8.1' });
+
+    const result = await normBroker.resolveClauseText('ISO_9001_2015', '8.1');
+
+    expect(result.textAvailable).toBe(true);
+    expect(result.hit).toMatchObject({ text: '  Testo reale  ', source: 'local_db' });
+    expect(result.absentMessage).toBeNull();
+    expect(result.code).toBeNull();
+  });
+
+  it('buildNormAbsentMessage: standard intero, accenti UTF-8, percorso operativo', () => {
+    const msg = normBroker.buildNormAbsentMessage({
+      standardCode: 'ISO_3834_5_2021',
+      kind: 'standard',
+    });
+    expect(msg).toMatch(/Lo standard ISO 3834 5 2021/);
+    expect(msg).not.toMatch(/§/);
+    expect(msg).toMatch(/NORME E LEGGI/);
+    expect(msg).toContain('è');
+    expect(msg).not.toContain('\uFFFD');
+    expect(normBroker.resolveStandardAbsent('ISO_3834_5_2021')).toEqual({
+      textAvailable: false,
+      absentMessage: msg,
+      code: 'NORM_TEXT_ABSENT',
+      standardCode: 'ISO_3834_5_2021',
+    });
+  });
+
   it('logNormAccess degrada gracefully se la tabella non esiste', async () => {
     const db = require('../config/database');
     db.query.mockRejectedValue(new Error("Invalid object name 'norm_access_log'"));

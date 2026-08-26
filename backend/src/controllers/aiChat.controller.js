@@ -21,6 +21,7 @@ const { resolveAiCompanyScope } = require('../services/aiCompanyScope.service');
 const { sendAccessDenied } = require('../services/companyAccess.service');
 const { loadAmbitoFacts } = require('../services/ambitoFacts.service');
 const { buildMaterialGroupPromptSection } = require('../data/materialGroups15608');
+const { resolveClauseText } = require('../services/normBroker.service');
 
 const BASE_SYSTEM_PROMPT = `Sei l'assistente AI del Sistema di Gestione Qualit\u00e0 ISO 9001 di questa organizzazione.
 Rispondi in italiano in modo chiaro, professionale e sintetico.
@@ -209,6 +210,32 @@ async function aiChat(req, res) {
       standardKey: standardKey || null,
     });
 
+    let normAbsent = null;
+    const clauseToResolve = clauseRef && String(clauseRef).trim();
+    const stdForClause = (standardKey && String(standardKey).trim())
+      || (activeStandard && activeStandard.standard_code)
+      || null;
+    if (clauseToResolve && stdForClause) {
+      try {
+        const resolved = await resolveClauseText(stdForClause, clauseToResolve, {
+          organizationId,
+        });
+        if (!resolved.textAvailable) {
+          normAbsent = {
+            code: resolved.code,
+            message: resolved.absentMessage,
+            standardCode: stdForClause,
+            clauseRef: clauseToResolve,
+            textAvailable: false,
+          };
+          systemPrompt += `\n\n--- NORMA ASSENTE ---\n${resolved.absentMessage}\n`;
+          systemPrompt += 'NON citare né parafrasare il testo della clausola assente. Dillo all\'utente e indica il percorso. Continua a rispondere sul resto della domanda con i dati di contesto.\n--- FINE NORMA ASSENTE ---';
+        }
+      } catch (err) {
+        logger.warn('[AI_CHAT] resolveClauseText skipped:', err.message);
+      }
+    }
+
     // Feedback loop: inietta correzioni recenti come preferenze apprese
     try {
       const fbRes = await query(
@@ -287,8 +314,13 @@ async function aiChat(req, res) {
 
     const citations = buildCitationsFromChunks(contextChunks);
 
-    res.json({
-      reply: result.content,
+    let reply = result.content;
+    if (normAbsent && reply && !String(reply).includes(normAbsent.message.slice(0, 48))) {
+      reply = `${normAbsent.message}\n\n${reply}`;
+    }
+
+    const payload = {
+      reply,
       contextUsed: contextChunks.length,
       sourcesCount: citations.length,
       citations,
@@ -299,7 +331,9 @@ async function aiChat(req, res) {
         tokens: result.tokens,
         cost: result.cost,
       },
-    });
+    };
+    if (normAbsent) payload.normAbsent = normAbsent;
+    res.json(payload);
   } catch (err) {
     logger.error('[AI_CHAT] Error:', err.message);
     const status = err.code === 'AI_NOT_CONFIGURED' ? 503 : err.status || 500;

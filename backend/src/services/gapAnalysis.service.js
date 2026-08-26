@@ -7,6 +7,7 @@
  */
 
 const logger = require('../utils/logger');
+const { resolveStandardAbsent } = require('./normBroker.service');
 const { query } = require('../config/database');
 
 /** Stati implementazione SAL (Fase 0) */
@@ -146,8 +147,16 @@ async function runGapAnalysis({ organizationId, companyId, standardCode }) {
   const clauses = clauseRes.recordset;
 
   if (!clauses.length) {
-    logger.warn(`[GapAnalysis] Nessuna clausola trovata per ${standardCode}`);
-    return [];
+    const absent = resolveStandardAbsent(standardCode);
+    logger.warn(`[GapAnalysis] ${absent.absentMessage}`);
+    const matrix = [];
+    matrix.normAbsent = {
+      code: absent.code,
+      message: absent.absentMessage,
+      textAvailable: false,
+      standardCode,
+    };
+    return matrix;
   }
 
   // 2. Carica documenti dell'azienda (titolo + metadati JSON)
