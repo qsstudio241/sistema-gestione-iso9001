@@ -136,6 +136,9 @@ export class SyncService {
             'save_responses': 'auditId',
             'save_custom_checklist_responses': 'auditId',
             'update_audit': 'audit_uuid',
+            // CND-9: coalescenza bozze officina (ultima versione vince)
+            'update_ndt_report': 'id',
+            'create_ndt_report': 'uuid',
         };
         const dedupKey = DEDUP_KEY_BY_TYPE[type];
         if (dedupKey) {
@@ -334,6 +337,30 @@ export class SyncService {
                     await this.removeFromQueue(item.id);
                     successCount++;
                     console.log(`✅ [SYNC] Completato: ${item.type} (${item.id})`);
+                    // CND-9: clear bozza localStorage + notifica UI dopo sync verbale
+                    if (
+                        item.type === 'create_ndt_report' ||
+                        item.type === 'update_ndt_report' ||
+                        item.type === 'delete_ndt_report'
+                    ) {
+                        const draftKey = item.payload?.draftKey;
+                        if (draftKey) {
+                            try {
+                                localStorage.removeItem(draftKey);
+                            } catch (_) { /* ignore */ }
+                        }
+                        try {
+                            window.dispatchEvent(
+                                new CustomEvent('sgq:ndtReportSynced', {
+                                    detail: {
+                                        type: item.type,
+                                        payload: item.payload,
+                                        draftKey: draftKey || null,
+                                    },
+                                }),
+                            );
+                        } catch (_) { /* ambiente senza window */ }
+                    }
                 } catch (error) {
                     const st = error?.status;
                     const code = error?.code;
