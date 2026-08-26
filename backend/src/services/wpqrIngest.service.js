@@ -142,7 +142,11 @@ function resolveThicknessRange(f) {
         || f.thickness_max_unlimited === 1
         || f.thickness_max_unlimited === '1'
         || f.thickness_max_unlimited === 'true';
-    const isFillet = String(f.joint_type || '').trim().toUpperCase().includes('FW');
+    const isFillet = (() => {
+        const jt = String(f.joint_type || '').trim().toUpperCase();
+        // SW (stud) ≠ FW, ma non usare formule Tabella 7 BW: lascia dichiarato o null.
+        return jt.includes('FW') || jt === 'SW';
+    })();
 
     if (thicknessMaxUnlimited) {
         return { thickness_min: thicknessMinSan, thickness_max: null, thickness_max_unlimited: true };
@@ -300,7 +304,21 @@ function mapPipelineFieldsToReview(f, fileName) {
         // il valore estratto dall'AI veniva scartato prima della revisione umana.
         preheat_temp: f.preheat_temp || null,
         interpass_temp: f.interpass_temp || null,
+        // STUD-1: elemento qualificato + Parent Metal 2 (nullable)
+        qualifying_element: normalizeQualifyingElement(f.qualifying_element),
+        material_group_2: f.material_group_2 || f.base_material_group_2 || null,
+        base_material_spec_2: f.base_material_spec_2 || null,
     };
+}
+
+function normalizeQualifyingElement(val) {
+    if (val == null || val === '') return null;
+    const raw = String(val).trim();
+    const s = raw.toLowerCase();
+    if (['base', 'parent', 'piastra', 'base_metal'].includes(s)) return 'base';
+    if (['stud', 'prigioniero', 'pin'].includes(s)) return 'stud';
+    if (['both', 'entrambi', 'all'].includes(s)) return 'both';
+    return raw;
 }
 
 function mapReviewFieldsToDb(f, fileName) {
@@ -368,6 +386,9 @@ function mapReviewFieldsToDb(f, fileName) {
         heat_input_note: f.heat_input_note || null,
         preheat_temp: f.preheat_temp || null,
         interpass_temp: f.interpass_temp || null,
+        qualifying_element: normalizeQualifyingElement(f.qualifying_element),
+        base_material_group_2: f.material_group_2 || f.base_material_group_2 || null,
+        base_material_spec_2: f.base_material_spec_2 || null,
     };
 }
 
@@ -478,6 +499,7 @@ async function commitWPQRFromFields(fields, organizationId, companyId, options =
             base_material_spec, shielding_gas, current_type, metal_transfer,
             mechanization, single_multi_run, heat_input_note,
             preheat_temp, interpass_temp, product_type, rotated_position,
+            qualifying_element, base_material_group_2, base_material_spec_2,
             created_by, created_at, updated_at
         )
         OUTPUT INSERTED.id
@@ -497,6 +519,7 @@ async function commitWPQRFromFields(fields, organizationId, companyId, options =
             @base_material_spec, @shielding_gas, @current_type, @metal_transfer,
             @mechanization, @single_multi_run, @heat_input_note,
             @preheat_temp, @interpass_temp, @product_type, @rotated_position,
+            @qualifying_element, @base_material_group_2, @base_material_spec_2,
             @created_by, GETDATE(), GETDATE()
         )
     `, {
@@ -542,6 +565,9 @@ async function commitWPQRFromFields(fields, organizationId, companyId, options =
         interpass_temp: mapped.interpass_temp,
         product_type: mapped.product_type,
         rotated_position: mapped.rotated_position ? 1 : 0,
+        qualifying_element: mapped.qualifying_element,
+        base_material_group_2: mapped.base_material_group_2,
+        base_material_spec_2: mapped.base_material_spec_2,
         created_by: userId,
     });
 
@@ -620,6 +646,10 @@ const WPQR_REPROCESSABLE_FIELDS = {
             { column: 'thickness_t2_max_unlimited', writeGuard: 'thickness_t2_max_unlimited = 0' },
         ],
     },
+    // STUD-1 (mig. 159): campi stud / Parent Metal 2 — backfill da PDF su record esistenti.
+    qualifying_element: { column: 'qualifying_element' },
+    material_group_2: { column: 'base_material_group_2' },
+    base_material_spec_2: { column: 'base_material_spec_2' },
 };
 
 /**

@@ -32,6 +32,8 @@ const WPQR_MANUAL_EDITABLE_FIELDS = [
     'product_type', 'rotated_position',
     'thickness_t1_min', 'thickness_t1_max', 'thickness_t1_max_unlimited',
     'thickness_t2_min', 'thickness_t2_max', 'thickness_t2_max_unlimited',
+    // STUD-1: stud/prigioniero + Parent Metal 2 (mig. 159)
+    'qualifying_element', 'base_material_group_2', 'base_material_spec_2',
 ];
 
 // ?
@@ -509,6 +511,7 @@ async function createWPQR(req, res) {
             product_type, rotated_position,
             thickness_t1_min, thickness_t1_max, thickness_t1_max_unlimited,
             thickness_t2_min, thickness_t2_max, thickness_t2_max_unlimited,
+            qualifying_element, base_material_group_2, base_material_spec_2,
         } = req.body;
 
         if (!wps_id) {
@@ -542,6 +545,7 @@ async function createWPQR(req, res) {
                 product_type, rotated_position,
                 thickness_t1_min, thickness_t1_max, thickness_t1_max_unlimited,
                 thickness_t2_min, thickness_t2_max, thickness_t2_max_unlimited,
+                qualifying_element, base_material_group_2, base_material_spec_2,
                 approval_status, status,
                 created_by, created_at, updated_at
             )
@@ -560,6 +564,7 @@ async function createWPQR(req, res) {
                 @product_type, @rotated_position,
                 @thickness_t1_min, @thickness_t1_max, @thickness_t1_max_unlimited,
                 @thickness_t2_min, @thickness_t2_max, @thickness_t2_max_unlimited,
+                @qualifying_element, @base_material_group_2, @base_material_spec_2,
                 'bozza', 'attiva',
                 @created_by, GETDATE(), GETDATE()
             )
@@ -618,6 +623,9 @@ async function createWPQR(req, res) {
             thickness_t2_min:    toNum(thickness_t2_min),
             thickness_t2_max:    toNum(thickness_t2_max),
             thickness_t2_max_unlimited: toBit(thickness_t2_max_unlimited),
+            qualifying_element:  qualifying_element || null,
+            base_material_group_2: base_material_group_2 || null,
+            base_material_spec_2:  base_material_spec_2 || null,
             created_by:         user_id,
         });
 

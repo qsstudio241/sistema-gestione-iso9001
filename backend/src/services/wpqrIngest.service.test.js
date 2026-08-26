@@ -171,6 +171,52 @@ describe('resolveThicknessRange — gap FW range aperto (WPQR VB0377/23)', () =>
         expect(out1.thickness_max_unlimited).toBe(true);
         expect(out2.thickness_max_unlimited).toBe(true);
     });
+
+    it('joint_type SW non applica fallback Tabella 7 BW (STUD-1)', () => {
+        const out = resolveThicknessRange({
+            joint_type: 'SW',
+            thickness_test_mm: 10,
+            thickness_min: null,
+            thickness_max: null,
+        });
+        expect(out.thickness_min).toBeNull();
+        expect(out.thickness_max).toBeNull();
+        expect(out.thickness_max_unlimited).toBe(false);
+    });
+});
+
+describe('mapReviewFieldsToDb — STUD-1 campi stud / P+T / doppio materiale', () => {
+    const { mapReviewFieldsToDb } = require('./wpqrIngest.service');
+
+    it('persiste SW, P+T, qualifying_element, Parent Metal 2', () => {
+        const mapped = mapReviewFieldsToDb({
+            wpqr_number: '001P-21',
+            joint_type: 'SW',
+            product_type: 'P+T',
+            qualifying_element: 'both',
+            material_group: '1.2',
+            material_group_2: '1.2',
+            base_material_spec: 'S355J2',
+            base_material_spec_2: 'S235J2H',
+            diameter_min: 51,
+            diameter_max: 51,
+        }, '001P-21.pdf');
+        expect(mapped.joint_type).toBe('SW');
+        expect(mapped.product_type).toBe('P+T');
+        expect(mapped.qualifying_element).toBe('both');
+        expect(mapped.base_material_group).toBe('1.2');
+        expect(mapped.base_material_group_2).toBe('1.2');
+        expect(mapped.base_material_spec_2).toBe('S235J2H');
+        expect(mapped.diameter_min).toBe(51);
+    });
+
+    it('normalizza qualifying_element prigioniero → stud', () => {
+        const mapped = mapReviewFieldsToDb({
+            wpqr_number: 'X',
+            qualifying_element: 'prigioniero',
+        }, 'x.pdf');
+        expect(mapped.qualifying_element).toBe('stud');
+    });
 });
 
 describe('checkWpqrPlausibility — warning FW range non calcolabile (gap 07/08/2026)', () => {

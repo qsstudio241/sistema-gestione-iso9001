@@ -198,6 +198,35 @@ const REPROCESSABLE_FIELD_REGISTRY = {
             'thickness_t2_max_unlimited',
         ],
     },
+    // STUD-1 (mig. 159): backfill elemento qualificato + Parent Metal 2.
+    // Chiavi = schema AI (come product_type), niente prefisso wpqr_ (no collisione).
+    qualifying_element: {
+        key: 'qualifying_element',
+        column: 'qualifying_element',
+        label: 'Elemento che si qualifica (base / prigioniero) — WPQR',
+        module: 'saldatura',
+        table: 'wpqr_records',
+        processWhitelist: null,
+        candidateWhere: 'qualifying_element IS NULL',
+    },
+    material_group_2: {
+        key: 'material_group_2',
+        column: 'base_material_group_2',
+        label: 'Gruppo materiale Parent Metal 2 — WPQR',
+        module: 'saldatura',
+        table: 'wpqr_records',
+        processWhitelist: null,
+        candidateWhere: 'base_material_group_2 IS NULL',
+    },
+    base_material_spec_2: {
+        key: 'base_material_spec_2',
+        column: 'base_material_spec_2',
+        label: 'Specifica materiale Parent Metal 2 — WPQR',
+        module: 'saldatura',
+        table: 'wpqr_records',
+        processWhitelist: null,
+        candidateWhere: 'base_material_spec_2 IS NULL',
+    },
 };
 
 function listReprocessableFields() {

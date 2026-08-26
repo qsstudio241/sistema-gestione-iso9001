@@ -25,6 +25,9 @@ describe('textEncodingRepair', () => {
 
     test('normalizeJointTypeCode', () => {
         expect(normalizeJointTypeCode('FW - angolare')).toBe('FW');
+        expect(normalizeJointTypeCode('BW+FW')).toBe('BW+FW');
+        expect(normalizeJointTypeCode('SW - Stud / prigioniero')).toBe('SW');
+        expect(normalizeJointTypeCode('stud welding')).toBe('SW');
     });
 
     test('normalizeIngestSelectFields su patentino', () => {
