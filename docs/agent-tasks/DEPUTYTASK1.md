@@ -1,60 +1,46 @@
-# DEPUTYTASK1 — CND-W: export Word PT/MT da method_params → placeholder
+# DEPUTYTASK1 — CND-5a: ruoli strumento non-VT (etichette su anagrafica)
 
-**Stato:** CHIUSO — TEST OK  
+**Stato:** APERTO  
 **Aperto:** 26/08/2026  
-**Chiuso:** 26/08/2026  
-**Piano:** [`PLAN_CND_SLICES.md`](PLAN_CND_SLICES.md) (dopo CND-3 + CND-4)  
-**Dipende da:** CND-3 (#571) + CND-4 (#547) **CHIUSI**  
-**Rischio:** Medio — FE export Word; niente auth/sync/DB.  
-**Parallelo a:** CND-9 su [`DEPUTYTASK.md`](DEPUTYTASK.md) e STUD-1 su [`DEPUTYTASK_WPQR_STUD.md`](DEPUTYTASK_WPQR_STUD.md) — **file disgiunti**.
+**Piano:** [`PLAN_CND_SLICES.md`](PLAN_CND_SLICES.md) (parte AFK di CND-5; **senza** parametri UT)  
+**Dipende da:** CND-2/3 chiusi; modello Word UT **assente** → niente UI UT su verbale in questa slice  
+**Rischio:** Basso/Medio — solo `EquipmentPage` (etichette/ruoli); niente `NdtReportsPage`, niente auth/DB.  
+**Parallelo a:** CND-8 su [`DEPUTYTASK.md`](DEPUTYTASK.md) e STUD-1 su [`DEPUTYTASK_WPQR_STUD.md`](DEPUTYTASK_WPQR_STUD.md) — **file disgiunti**.
 
 ## Fonti Markdown
 
-- Coperte: appendice flag PT/MT in PLAN_CND (placeholder semantici `{pt_acc_l2}`, `{mt_tr_wet}`, …); `ndtMethodParams.js`; scope Template report `cnd`
-- Mancanti: testo integrale 3452/17638 — **non inventare** soglie; solo mappare flag UI → placeholder
-- Si parte su: `vtWordExport.js` oggi espone soprattutto lux VT; PT/MT JSON non popolano i checkbox Word
+- Coperte: PLAN_CND (ruoli sonda/giogo); ADR-016 strumenti trasversali
+- Mancanti: modello Mason UT → parametri UT restano backlog CND-5 pieno
+- Si parte su: etichette ruolo in anagrafica strumenti già usata da VT (gauge/luxmeter/lamp)
 
 ## Perché
 
-CND-3 salva i flag; CND-4 risolve il template per metodo. Manca il ponte **dati → Word**: senza CND-W l’operatore compila PT/MT in app e il `.docx` esce incompleto.
+Strumenti restano VT-centrici in UI. CND-5a sblocca etichette/ruoli per MT/PT/UT (giogo, sonda, kit) **senza** aprire parametri UT sul verbale (manca modello).
 
 ## DoD
 
-1. `buildVtTemplateData` (o helper dedicato) espone chiavi allineate ai placeholder semantici dell’appendice PLAN per `report_type` PT e MT (`method_params.pt` / `.mt`).
-2. Resolve template: riusare percorso CND-4 (VPS Template report / fallback) per VT|MT|PT|UT — **non** hardcodare un quarto motore.
-3. Gruppi esclusivi → un solo placeholder “acceso” coerente col Word (checkbox/radio); niente nomi FORMCHECKBOX come chiavi.
-4. VT lux invariato; regressione export VT coperta da test.
-5. Test L1 (unit su mapping dati + eventuale smoke export) + `npm run build`.
-6. Aggiornare PLAN_CND (nota CND-W / export); brief **CHIUSO** — TEST OK.
+1. Su `EquipmentPage` (o selettore ruolo già esistente): aggiungere/mostrare ruoli non-VT utili (es. giogo / sonda / kit PT) riusando il campo ruolo già in DB — **niente** nuova tabella.
+2. Etichette in italiano corrette (UTF-8); DNA design-system; niente card decorative.
+3. **Vietato** toccare `NdtReportsPage.jsx` / `method_params` UT / Word UT.
+4. Test L1 mirato se c’è pattern test Equipment; altrimenti build `app/` + smoke manuale documentato.
+5. Spuntare in PLAN_CND la nota CND-5a (o riga parallelo); brief **CHIUSO** — TEST OK.
+6. Residuo esplicito: parametri UT sul verbale = CND-5 restante (HITL modello).
 
 ## File previsti
 
-- `app/src/utils/vtWordExport.js` (+ test)
-- eventuale riuso `ndtMethodParams.js` (solo lettura/mapping, non riscrivere UI)
+- `app/src/pages/EquipmentPage.jsx` / `.css` (solo etichette/ruoli)
+- eventuale costante ruoli già condivisa con NDT — **non** duplicare se esiste
 - `docs/agent-tasks/PLAN_CND_SLICES.md` + questo brief
 
 ## Cosa NON toccare
 
-- `DEPUTYTASK.md` / CND-9 / `useNdtAutoSave` / `syncService`
-- `NdtReportsPage.jsx` layout/flag (CND-3) salvo bottone export se già presente
-- posa registro / allegati / STUD / WPQR / auth
+- `DEPUTYTASK.md` / CND-8 / `NdtReportsPage*` / `useNdtAutoSave` / `syncService`
+- `vtWordExport`, posa registro, allegati, STUD/WPQR, auth, migrazioni
 - GUIDA / roadmap § Stato attuale (parallelo — sync **dopo merge**)
-
-## Esito
-
-- `buildPtMtPlaceholderData` + merge in `buildVtTemplateData`: PT/MT → chiavi PLAN (`pt_acc_l2`, `mt_tr_wet`, …) con ☑/☐ sui gruppi esclusivi; cleaning multi; testi consumabili/campi MT; difetti PT `_yn`/`_a`.
-- Resolve template: invariato (CND-4 `loadVtTemplate`).
-- VT lux invariati (test regressione).
-- L1: `vtWordExport.cndW.placeholders.test.js` + `vtWordExport.cndResolve.test.js` + build.
 
 ## Verifica
 
-- [x] Export PT/MT include flag da `method_params`
-- [x] VT non regredisce
-- [x] L1 + build OK
-- [x] Brief CHIUSO — TEST OK
-
-## Bozza sync docs (dopo merge — parallelo CND-9 / STUD)
-
-- GUIDA lezioni: riga CND-W — `method_params` → placeholder semantici ☑/☐ in `vtWordExport`; non FORMCHECKBOX.
-- Roadmap § Stato attuale: CND-W chiusa; resta CND-9 + STUD-1.
+- [ ] Ruoli non-VT selezionabili in anagrafica strumenti
+- [ ] Nessun tocco verbale UT
+- [ ] Build OK (+ test se presenti)
+- [ ] Brief CHIUSO — TEST OK; residuo CND-5 UT dichiarato

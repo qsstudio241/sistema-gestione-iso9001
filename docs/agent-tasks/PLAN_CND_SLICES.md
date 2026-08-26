@@ -2,8 +2,8 @@
 
 > **Destinazione**: uno studio (Mason) e l’operatore CND chiudono sul telefono il ciclo **incarico → esecuzione in campo → verbale Word + eventuale NC**, riusando qualifiche ISO 9712, strumenti, commesse, foto e PWA già in produzione. Niente app nativa, niente secondo motore, niente tabelle gemelle.
 > **Spec / ADR**: [ISO 9712:2022](../reference/ISO_9712_2022_NDT_QUALIFICATION.md) · ADR-004 (auth mobile) · ADR-016 (strumenti trasversali, verbali ≠ Welding Book) · [PLAN ISO 3834](PLAN_3834_SLICES.md) (ISO-1b/ISO-7 fatti; **ISO-9** eseguita qui come CND-2)
-> **Brief attivi**: [`DEPUTYTASK.md`](DEPUTYTASK.md) **CND-9 CHIUSO** (#578); [`DEPUTYTASK1.md`](DEPUTYTASK1.md) **CND-W CHIUSO** (export Word PT/MT, questa PR). **CND-7** CHIUSO (#574). **CND-6** CHIUSO (#575). **CND-3** CHIUSO (#571).
-> **Mappa**: CND-0…CND-4/6/7/9/11 + **CND-W** su `main` (dopo merge). **Ora**: CND-8 prossimo. Stream STUD-1 parallelo (WPQR).
+> **Brief attivi**: [`DEPUTYTASK.md`](DEPUTYTASK.md) **CND-8 APERTO**; [`DEPUTYTASK1.md`](DEPUTYTASK1.md) **CND-5a APERTO** (ruoli strumento). **CND-9** CHIUSO (#578/#579). **CND-W** CHIUSO (#577). **CND-7** CHIUSO (#574). **CND-6** CHIUSO (#575).
+> **Mappa**: CND-0…CND-4/6/7/9/11 + CND-W su `main`. **Ora**: CND-8 (bozza come audit) ∥ CND-5a (etichette Equipment). Stream STUD-1 parallelo (WPQR).
 > **Licenza**: modulo `cnd` (bridge: licenza `saldatura` implica `cnd`)
 > **Schermate oggi**: `/cnd/verbali` (`NdtReportsPage.jsx`) · `/cnd/strumenti` (`EquipmentPage.jsx`) · Qualifiche tab NDT
 
@@ -170,12 +170,12 @@ Ogni slice è un **tracciante verticale** (un passaggio del flusso), non «tutto
 | **CND-2** | Gate ispettore: 9712 valida **e** visita medica/visione (`visionFitness.service.js`); stesso codice per studio e per azienda con licenza | `NdtReportsPage.jsx`, `ndtReports.controller.js`, `ndtInspectorGate.service.js` (GET qualifiche + visione già in DB; **niente** colonna `inspector_qualification_id`) | CND-1 (stesso JSX) | ✅ 25/08 | = ISO-9; **non** aprire da PLAN 3834 |
 | **CND-3** | UI flag PT **e** MT da modelli Mason → `method_params` JSON (metodi indipendenti, nessuna tabella nuova) | `NdtReportsPage.jsx` sezioni metodo; catalogo in appendice | CND-1+CND-2 (stesso JSX) | ✅ 26/08 | [`DEPUTYTASK.md`](DEPUTYTASK.md) CHIUSO; parallelo NG-4 (file disgiunti) |
 | **CND-4** | Scope `cnd` in Template report + upload modelli Mason `.docx` + resolve per `report_type` | `ReportTemplatesAdminPage.jsx`, `reportTemplate.service.js` / controller, `vtWordExport.js` resolve VPS (come NC) | — | ✅ 23/08 | *chiusa* (#547) |
-| **CND-5** | Parametri UT + ruoli strumento non-VT (sonda/giogo) su anagrafica esistente | `NdtReportsPage.jsx`, `EquipmentPage.jsx` (etichette ruolo) | CND-3 | AFK | serializzare con CND-3 sullo stesso JSX; EquipmentPage può partire in parallelo a CND-2 se **solo** CSS/etichette ruoli |
+| **CND-5** | Parametri UT + ruoli strumento non-VT (sonda/giogo) su anagrafica esistente | `NdtReportsPage.jsx`, `EquipmentPage.jsx` (etichette ruolo) | CND-3 | AFK parziale | **CND-5a** (solo Equipment) APERTO; UT verbale = HITL modello |
 | **CND-6** | Foto + NC da marca in campo (hardening mobile del già fatto) | `NdtItemAttachments.jsx`, hint `NcCreateModal` | CND-1 | ✅ 26/08 | [`DEPUTYTASK1.md`](DEPUTYTASK1.md) CHIUSO (#575); parallelo CND-7 |
 | **CND-7** | Completa verbale → posa nel registro documenti (`report_ndt` / cartella 9.3) | `ndtReports.controller.js`, pattern posa ingest | CND-4 utile | ✅ 26/08 | [`DEPUTYTASK.md`](DEPUTYTASK.md) CHIUSO (#574); parallelo CND-6 |
-| **CND-8** | Crea verbale come audit: bozza UUID → form → coda sync (niente nuova entità “incarico”) | `NdtReportsPage` lista + `enqueueNdtReportSync` / create | CND-9 utile | AFK | dopo CND-9 se tocca la stessa coda; filtro «oggi» è lo stesso elenco |
-| **CND-9** | Rete di salvataggio officina: `useNdtAutoSave` → IndexedDB `syncQueue` (tipi NDT **già** in `syncService`) | `useNdtAutoSave.js`, gancio save in `NdtReportsPage` | — | ✅ 26/08 | [`DEPUTYTASK.md`](DEPUTYTASK.md) CHIUSO (#578); residuo foto offline (CND-6 messaggio) |
-| **CND-W** | Export Word PT/MT: `method_params` → placeholder semantici (dopo CND-3+CND-4) | `vtWordExport.js` | CND-3+CND-4 | ✅ 26/08 | [`DEPUTYTASK1.md`](DEPUTYTASK1.md) CHIUSO; `buildPtMtPlaceholderData` ☑/☐; resolve CND-4 invariato |
+| **CND-8** | Crea verbale come audit: bozza UUID → form → coda sync (niente nuova entità “incarico”) | `NdtReportsPage` lista + `enqueueNdtReportSync` / create | CND-9 | AFK **APERTO** | [`DEPUTYTASK.md`](DEPUTYTASK.md); dopo CND-9 |
+| **CND-9** | Rete di salvataggio officina: `useNdtAutoSave` → IndexedDB `syncQueue` (tipi NDT **già** in `syncService`) | `useNdtAutoSave.js`, gancio save in `NdtReportsPage` | — | ✅ 26/08 | [`DEPUTYTASK.md`](DEPUTYTASK.md) CHIUSO (#578/#579); residuo foto offline |
+| **CND-W** | Export Word PT/MT: `method_params` → placeholder semantici (dopo CND-3+CND-4) | `vtWordExport.js` | CND-3+CND-4 | ✅ 26/08 | [`DEPUTYTASK1.md`](DEPUTYTASK1.md) CHIUSO (#577); `buildPtMtPlaceholderData` |
 | **CND-10** | Firma grafica / controfirma | — | HITL 23/08: **parcheggio** | HITL | non aprire |
 | **CND-11** | Ingest verbali PDF storici (`report_ndt`) | whitelist pipeline + schema FE `documentTypeSchemas.js` (schema AI BE già c’è); **non** crea righe `ndt_reports` | — | AFK | *chiusa* (#546) |
 | **CND-12** | RT/ET oltre l’etichetta | `method_params` + UI | modello Mason assente | HITL | dopo MT/PT/UT se servono |
@@ -189,14 +189,16 @@ Su `main` (23/08 sera):
   CND-11 *chiusa* #546
   CND-PREVIEW spike visibile via htmlpreview (#548/#550)
 
-Ora (26/08, post CND-9 #578 + CND-W):
-  CND-9  (coda IndexedDB) — CHIUSO su DEPUTYTASK.md (#578)
-  CND-W  (export Word PT/MT) — CHIUSO su DEPUTYTASK1.md (questa PR)
+Ora (26/08, post CND-9 #578/#579 + CND-W #577):
+  CND-8  (bozza come audit) — APERTO su DEPUTYTASK.md
+  CND-5a (ruoli Equipment) — APERTO su DEPUTYTASK1.md
   STUD-1 (WPQR) — stream APERTO, file disgiunti
 
-Dopo CND-9 + CND-W (entrambe chiuse):
-  CND-8  (crea bozza come audit)
-  CND-5  (UT quando c’è modello)
+Dopo merge CND-8:
+  (ciclo operatore base chiuso salvo UT/firma/foto-offline)
+
+Dopo modello UT (HITL):
+  CND-5 restante (parametri UT sul verbale)
 ```
 
 Due deputy **mai** sullo stesso `NdtReportsPage.jsx` o sullo stesso controller.

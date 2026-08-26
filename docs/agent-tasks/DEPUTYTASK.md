@@ -1,64 +1,47 @@
-# DEPUTYTASK — CND-9: rete di salvataggio officina (IndexedDB syncQueue)
+# DEPUTYTASK — CND-8: crea verbale come audit (bozza UUID → form → coda)
 
-**Stato:** CHIUSO  
+**Stato:** APERTO  
 **Aperto:** 26/08/2026  
-**Chiuso:** 26/08/2026 — TEST OK  
 **Piano:** [`PLAN_CND_SLICES.md`](PLAN_CND_SLICES.md)  
-**Dipende da:** CND-1 **CHIUSO**; tipi `create_ndt_report` / `update_ndt_report` **già** in `syncService`  
-**Rischio:** Medio — FE sync/offline CND; **non** copiare motore `audit_events`; niente auth JWT / migrazioni.  
-**Parallelo a:** CND-W su [`DEPUTYTASK1.md`](DEPUTYTASK1.md) e STUD-1 su [`DEPUTYTASK_WPQR_STUD.md`](DEPUTYTASK_WPQR_STUD.md) — **file disgiunti**.
+**Dipende da:** CND-9 **CHIUSO** (#578) — coda sync NDT agganciata  
+**Rischio:** Medio — FE lista/crea verbale; riuso `enqueueNdtReportSync` / pattern `createAudit`; niente auth/migrazioni.  
+**Parallelo a:** CND-5a su [`DEPUTYTASK1.md`](DEPUTYTASK1.md) e STUD-1 su [`DEPUTYTASK_WPQR_STUD.md`](DEPUTYTASK_WPQR_STUD.md) — **file disgiunti**.
 
 ## Fonti Markdown
 
-- Coperte: PLAN_CND (HITL offline officina); ADR-008; commenti in `useNdtAutoSave.js` (enqueue già presente ma non agganciato al flusso save)
+- Coperte: PLAN_CND (HITL creazione bozza come audit); ADR-008; CND-9 già in coda
 - Mancanti: —
-- Si parte su: collegare autosave/fallimento rete → coda IndexedDB esistente, non un secondo DB
+- Si parte su: non un form enorme non salvato; bozza locale subito, poi sync
 
 ## Perché
 
-In officina senza rete la bozza resta solo in `localStorage`. La coda `syncQueue` e i tipi NDT esistono già: manca il collegamento operativo (CND-9).
+Oggi si crea il verbale «da zero» senza allineamento chiaro al flusso audit (UUID bozza → compilazione → coda). CND-8 chiude l’**input** del ciclo operatore: partire subito con una bozza salvabile (anche offline via CND-9).
 
 ## DoD (da PLAN_CND)
 
-1. Su create/update verbale fallito per offline/rete: chiamare `enqueueNdtReportSync` (o equivalente già in repo) con payload coerente; al reconnect la coda processa i tipi NDT (verificare che `syncService` li gestisca davvero — se manca handler, aggiungere il minimo).
-2. `useNdtAutoSave` resta backup locale; **non** sostituire con copia di `audit_events`.
-3. Dopo sync riuscito: clear draft localStorage; UX discreta (banner / stato sync) riusando pattern audit/NC se esiste.
-4. Foto allegati: se fuori scope sicuro in questa slice, documentare residuo (non rompere CND-6).
-5. Test L1 mirati (hook / sync tipi NDT) + `npm run build` in `app/`.
-6. Spuntare CND-9 in PLAN_CND; brief **CHIUSO** — TEST OK.
+1. Azione «Nuovo verbale» (o equivalente): crea bozza con UUID locale (schema mentale `createAudit`), form compilabile subito, persistenza via API online **oppure** enqueue CND-9 se offline — **niente** nuova tabella «incarico».
+2. Lista verbali: bozze locali/in coda visibili in modo onesto (filtro «oggi» opzionale se banale; non obbligatorio se fuori scope minimo).
+3. Non rompere Completa → posa Registro (CND-7), flag PT/MT (CND-3), gate 9712 (CND-2), export Word (CND-W).
+4. Riuso UI DNA / pattern lista NC o Qualifiche dove serve; niente pagina «CND 2.0».
+5. Test L1 + `npm run build` in `app/`.
+6. Spuntare CND-8 in PLAN_CND; brief **CHIUSO** — TEST OK.
 
 ## File previsti
 
-- `app/src/hooks/useNdtAutoSave.js`
-- eventuale gancio minimo in `NdtReportsPage.jsx` (solo save/offline) — **vietato** riscrivere flag PT/MT, gate 9712, hint NC
-- `app/src/services/syncService.js` (o file dove già vivono i tipi NDT) — solo handler NDT se assente
+- `app/src/pages/NdtReportsPage.jsx` / `.css` (lista + crea bozza) — tocco mirato
+- riuso `enqueueNdtReportSync` / `useNdtAutoSave` (CND-9) senza riscrivere syncService intero
 - test mirati + `docs/agent-tasks/PLAN_CND_SLICES.md` + questo brief
 
 ## Cosa NON toccare
 
-- `DEPUTYTASK1.md` / CND-W / `vtWordExport.js` / Template report
-- `ndtReportRegistryPose*` / controller posa (CND-7)
-- `NdtItemAttachments*` (CND-6) salvo nota residuo foto offline
-- STUD / WPQR / auth / JWT / migrazioni / `audit_events` nuovo motore
+- `DEPUTYTASK1.md` / CND-5a / `EquipmentPage`
+- `vtWordExport.js`, `ndtReportRegistryPose*`, `NdtItemAttachments*` (salvo se crea bozza richiede id item — evitare)
+- STUD / WPQR / auth / JWT / migrazioni / CND-10 firma
 - GUIDA / roadmap § Stato attuale (parallelo — sync **dopo merge**)
-
-## Esito
-
-- Offline/rete su Salva/Completa → `enqueueNdtReportSync` → `syncService.enqueue` (tipi già gestiti); dedup create per `uuid`, update per `id`.
-- Banner «Senza rete: verbale in coda»; dopo `sgq:ndtReportSynced` clear draft + banner.
-- localStorage resta backup; nessun secondo IndexedDB / audit_events.
-- **Residuo:** foto allegati offline restano sul messaggio CND-6 in `NdtItemAttachments` (niente blob in `syncQueue` in questa slice).
-- L1: `useNdtAutoSave.cnd9`, `ndtReportsOfflineSync.cnd9`, `syncService.ndt.cnd9` + regressioni NDT; build OK.
-- PLAN CND-9 spuntato; brief CHIUSO — **TEST OK**.
 
 ## Verifica
 
-- [x] Offline → enqueue; online → drain coda NDT
-- [x] Nessun secondo IndexedDB / audit_events
-- [x] L1 + build OK
-- [x] PLAN CND-9 spuntato; brief CHIUSO — TEST OK
-
-## Bozza sync hub (dopo merge — parallelo attivo)
-
-- Roadmap § Sessione: CND-9 coda NDT officina mergiata; residuo foto offline.
-- GUIDA: una riga — CND save offline usa `syncQueue` esistente, non audit_events.
+- [ ] Nuovo verbale → bozza UUID subito; offline usa coda CND-9
+- [ ] Nessuna entità «incarico» nuova
+- [ ] L1 + build OK
+- [ ] PLAN CND-8 spuntato; brief CHIUSO — TEST OK
