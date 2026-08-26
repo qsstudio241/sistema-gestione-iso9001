@@ -1,54 +1,67 @@
-# DEPUTYTASK — CND-8: crea verbale come audit (bozza UUID → form → coda)
+# DEPUTYTASK — STUD-2: ingest AI WPQR stud / P+T / doppio materiale
 
-**Stato:** CHIUSO  
+**Stato:** APERTO  
 **Aperto:** 26/08/2026  
-**Chiuso:** 26/08/2026 — **TEST OK**  
-**Piano:** [`PLAN_CND_SLICES.md`](PLAN_CND_SLICES.md)  
-**Dipende da:** CND-9 **CHIUSO** (#578) — coda sync NDT agganciata  
-**Rischio:** Medio — FE lista/crea verbale; riuso `enqueueNdtReportSync` / pattern `createAudit`; niente auth/migrazioni.  
-**Parallelo a:** CND-5a su [`DEPUTYTASK1.md`](DEPUTYTASK1.md) e STUD-1 su [`DEPUTYTASK_WPQR_STUD.md`](DEPUTYTASK_WPQR_STUD.md) — **file disgiunti**.
+**Stream:** [`DEPUTYTASK_WPQR_STUD.md`](DEPUTYTASK_WPQR_STUD.md) (STUD-1 **CHIUSO** #585)  
+**Report:** [`docs/gap-reports/GAP_WPQR_STUD_WELDING_PIASTRA_TUBO_2026-08-25.md`](../gap-reports/GAP_WPQR_STUD_WELDING_PIASTRA_TUBO_2026-08-25.md)  
+**Dipende da:** STUD-1 **CHIUSO** (campi DB/FE/schema già in prod, mig. 159)  
+**Rischio:** Medio — prompt/schema ingest + mapping review→DB; **niente** auth/sync/migrazioni distruttive / range 14555  
+**Parallelo a:** STUD-3-A su [`DEPUTYTASK1.md`](DEPUTYTASK1.md) — **file disgiunti** (qui solo ingest; lì solo estratto docs).
+
+> **Allineamento Git (autonomo)**: `git fetch origin main` + `git pull origin main` prima di eseguire. **Non** chiedere al committente.  
+> Comando: `Leggi docs/agent-tasks/DEPUTYTASK.md ed eseguilo. Chiudi con TEST OK o FIX NON APPLICABILI.`
 
 ## Fonti Markdown
 
-- Coperte: PLAN_CND (HITL creazione bozza come audit); ADR-008; CND-9 già in coda
-- Mancanti: —
-- Si parte su: non un form enorme non salvato; bozza locale subito, poi sync
+```text
+Fonti Markdown:
+- Coperte: ISO 15614-1 (NORMA_00019 + estratto range); STUD-1 campi (SW, qualifying_element,
+  diameter_*, base_material_*_2, product_type P+T); schema wpqr già esteso in documentTypeSchemas
+- Mancanti per QUESTA slice: niente di bloccante — range 14555 = STUD-3 (altro slot)
+- Si parte su: raffinare prompt + normalizzazione ingest così che da PDF/verbale Mason
+  escano SW, elemento, D prigioniero, PM2, P+T senza inventare soglie 14555
+```
 
 ## Perché
 
-Oggi si crea il verbale «da zero» senza allineamento chiaro al flusso audit (UUID bozza → compilazione → coda). CND-8 chiude l’**input** del ciclo operatore: partire subito con una bozza salvabile (anche offline via CND-9).
+STUD-1 ha i campi in form/DB. L’ingest AI può ancora trattare stud come FW generico, confondere diametro tubo vs prigioniero, o non estrarre Parent Metal 2 / `qualifying_element` / `P+T`. STUD-2 chiude il percorso **PDF → revisione → commit** per quei campi.
 
-## DoD (da PLAN_CND)
+## DoD
 
-1. Azione «Nuovo verbale» (o equivalente): crea bozza con UUID locale (schema mentale `createAudit`), form compilabile subito, persistenza via API online **oppure** enqueue CND-9 se offline — **niente** nuova tabella «incarico».
-2. Lista verbali: bozze locali/in coda visibili in modo onesto (filtro «oggi» opzionale se banale; non obbligatorio se fuori scope minimo).
-3. Non rompere Completa → posa Registro (CND-7), flag PT/MT (CND-3), gate 9712 (CND-2), export Word (CND-W).
-4. Riuso UI DNA / pattern lista NC o Qualifiche dove serve; niente pagina «CND 2.0».
-5. Test L1 + `npm run build` in `app/`.
-6. Spuntare CND-8 in PLAN_CND; brief **CHIUSO** — TEST OK.
+1. Prompt / `aiExpectedSchema` (BE + mirror FE se presente): istruzioni esplicite per `joint_type=SW`, `qualifying_element`, diametro prigioniero se SW, `base_material_group_2` / `base_material_spec_2`, `product_type=P+T` quando dichiarato «entrambi».
+2. `wpqrIngest.service.js`: normalizzazione robusta (sinonimi stud/prigioniero → SW o qualifying_element; non forzare FW; non calcolare range 14555).
+3. Test jest mirati: almeno un caso SW + PM2 e un caso P+T; regressione BW/FW/P/T.
+4. Completeness manual-edit / reprocessable: se aggiungi chiavi AI, allinea whitelist (CI `manualEditCompletenessCheck` / pattern STUD-1).
+5. **Niente** motorino range ISO 14555; **niente** tocco a `WeldingProceduresPage.jsx` salvo bug banale di schema condiviso (preferire solo `documentTypeSchemas` + ingest).
+6. L1: jest mirati backend + eventuale vitest se tocchi FE schema; `npm run build` in `app/` se tocchi `app/`.
+7. Brief **CHIUSO — TEST OK**; spunta backlog in stream STUD.
 
-## File toccati
+## File previsti
 
-- `app/src/pages/NdtReportsPage.jsx` / `.css`
-- `app/src/hooks/useNdtAutoSave.js` (`seedNdtLocalDraft`, indice bozze, `listNdtDrafts`)
-- `app/src/tests/ndtReportsCreateDraft.cnd8.test.jsx` + allineamento mock CND-2/3/7/9
-- `docs/agent-tasks/PLAN_CND_SLICES.md` + questo brief
+- `backend/src/services/wpqrIngest.service.js`
+- `backend/src/services/wpqrIngest.service.test.js`
+- `backend/src/data/documentTypeSchemas.js`
+- `app/src/data/documentTypeSchemas.js` (solo se mirror prompt/schema)
+- `backend/src/data/reprocessableFields.js` / test completeness **solo se** nuove chiavi AI
+- `docs/agent-tasks/DEPUTYTASK.md` (questo brief)
+- `docs/agent-tasks/DEPUTYTASK_WPQR_STUD.md` (riga backlog STUD-2)
 
-## Cosa NON toccato
+## Cosa NON toccare
 
-- `DEPUTYTASK1.md` / CND-5a / `EquipmentPage`
-- `vtWordExport.js`, `ndtReportRegistryPose*`, `NdtItemAttachments*`
-- STUD / WPQR / auth / JWT / migrazioni / CND-10 firma
-- GUIDA / roadmap § Stato attuale (parallelo — sync **dopo merge**)
+- `DEPUTYTASK1.md` / STUD-3-A / `docs/Normative/NORMA_00033*` (scrittura) / nuovo file range 14555 in `docs/reference/`
+- `WeldingProceduresPage.jsx` (form STUD-1 già fatto) — evita conflitto parallelo
+- `wpsGenerator.service.js` / regole range / catalogo `weldingProcesses4063.js` (STUD-3-B o slice dopo estratto)
+- Auth, JWT, sync, migrazioni SQL
+- GUIDA / roadmap § Stato attuale (c’è parallelo STUD-3-A + eventuale fix CND) — bozza hub **dopo merge**
+- CND / NDT
 
 ## Verifica
 
-- [x] Nuovo verbale → bozza UUID subito; offline usa coda CND-9
-- [x] Nessuna entità «incarico» nuova
-- [x] L1 + build OK (`ndtReportsCreateDraft.cnd8` + regressioni NDT; `npm run build`)
-- [x] PLAN CND-8 spuntato; brief CHIUSO — **TEST OK**
+- [ ] Ingest SW: campi stud valorizzati in review/mapping senza inventare range
+- [ ] Regressione BW/FW e product_type P|T
+- [ ] L1 verdi; brief CHIUSO — TEST OK
 
-## Bozza hub (dopo merge, parallelo attivo)
+## Bozza hub (dopo merge, se c’era parallelo)
 
-- Roadmap § Stato attuale: riga CND-8 CHIUSO + PR
-- GUIDA: una riga lezione «Nuovo verbale = seed UUID subito come createAudit»
+- Roadmap: riga STUD-2 CHIUSO + PR
+- GUIDA: una riga «ingest distingue SW ≠ FW; diametro contestuale»

@@ -32,7 +32,7 @@ Fonti Markdown:
 - **Serve a**: STUD-3 (range); STUD-1 chiuso senza range
 - **Cosa NON inventiamo senza estratto revisionato**: soglie, clausole, range di validità stud, variabili essenziali 14555
 - **Perimetro chiuso in STUD-1**: campi + doppio materiale + P+T su 15614-1 + verbale Mason 001P-21
-- **Prossimo**: estratto range da `NORMA_00033` → STUD-3 (+ seed VPS se utile)
+- **Prossimo:** STUD-3-A estratto ([`DEPUTYTASK1.md`](DEPUTYTASK1.md)); STUD-2 ingest ([`DEPUTYTASK.md`](DEPUTYTASK.md)); range in codice solo dopo HITL sull’estratto
 
 ## Perché
 
@@ -63,8 +63,13 @@ Segnalazione Mason (post chiusura t1/t2): in inserimento WPQR «Stud Welding» m
 
 **Registro rielaborazioni:** voci `qualifying_element`, `material_group_2`, `base_material_spec_2` (sync whitelist + registry).
 
-**Backlog residuo:** STUD-2 (prompt ingest raffinato), STUD-3 (range 14555 + processi 4063 stud — blocco PDF), PT-1 se serve UX range lato P vs T.
+**Backlog residuo (26/08 sera — slot paralleli APERTO su `main`):**
+
+| Slice | Slot | Scope |
+|-------|------|--------|
+| **STUD-2** | [`DEPUTYTASK.md`](DEPUTYTASK.md) **APERTO** | Ingest AI SW / P+T / PM2 / qualifying_element (no range) |
+| **STUD-3-A** | [`DEPUTYTASK1.md`](DEPUTYTASK1.md) **APERTO** | Estratto docs range da `NORMA_00033` (no codice) |
+| STUD-3-B | (dopo HITL estratto) | Codifica range + 4063 stud |
+| PT-1 | opzionale | UX range lato P vs T (15614) |
 
 Cloud Agent **non** dichiara «pronta» senza CI + Bugbot + Security Review letti.
-
-> CI rilanciata 26/08 sera: i check required sul commit docs erano in startup_failure (coda runner); push con path `docs/agent-tasks` + `PROJECT_ROADMAP` per rieseguire CI app / harness / smoke.
