@@ -1,62 +1,50 @@
-# DEPUTYTASK — CND-3: UI flag PT/MT → method_params JSON
+# DEPUTYTASK — CND-7: Completa verbale → posa nel Registro Documenti
 
-**Stato:** CHIUSO  
-**Aperto:** 25/08/2026  
-**Chiuso:** 26/08/2026  
-**Esito:** TEST OK  
+**Stato:** APERTO  
+**Aperto:** 26/08/2026  
 **Piano:** [`PLAN_CND_SLICES.md`](PLAN_CND_SLICES.md)  
-**Dipende da:** CND-1 + CND-2 **CHIUSI** (#549 / #561) — stesso JSX ora libero  
-**Rischio:** Medio — FE verbale NDT; niente auth/sync/schema distruttivo.  
-**Parallelo a:** NG-4 su [`DEPUTYTASK1.md`](DEPUTYTASK1.md) e STUD-1 su [`DEPUTYTASK_WPQR_STUD.md`](DEPUTYTASK_WPQR_STUD.md) — **file disgiunti** (questa slice = solo verbali CND).
+**Dipende da:** CND-2 + CND-3 + CND-4 **CHIUSI** (#561 / #571 / #547)  
+**Rischio:** Medio — BE NDT + registro; migrazione solo se strettamente necessaria (preferire riuso); niente auth/sync/breaking.  
+**Parallelo a:** CND-6 su [`DEPUTYTASK1.md`](DEPUTYTASK1.md) e STUD-1 su [`DEPUTYTASK_WPQR_STUD.md`](DEPUTYTASK_WPQR_STUD.md) — **file disgiunti**.
 
 ## Fonti Markdown
 
-- Coperte: catalogo flag in appendice [`PLAN_CND_SLICES.md`](PLAN_CND_SLICES.md) (estratto Word Mason PT/MT 23/08); spike [`spike-cnd-pt-preview.html`](spike-cnd-pt-preview.html) come anteprima gruppi (non layout report)
-- Mancanti: testo integrale ISO 3452-1 / 17638 / 23277 / 23278 in `docs/Normative/` → backlog; **non inventare** soglie oltre i flag del modello
-- Si parte su: UI + JSON `method_params` 1:1 con placeholder semantici già elencati nel PLAN
+- Coperte: PLAN_CND (output fascicolo SGQ); pattern posa ingest (`documentTreeProvisioner` / `report_ndt` → cartella **9.3**); CND-11 whitelist `report_ndt` (non crea `ndt_reports`)
+- Mancanti: — non serve nuova norma
+- Si parte su: al Completa (o export Word) il verbale operativo entra nel Registro come documento tracciabile
 
 ## Perché
 
-Sul verbale i parametri di metodo esistono solo per **VT** (lux). PT e MT hanno già modelli Word Mason e scope Template report (CND-4), ma in UI mancano i flag di tecnica/accettazione/difetti → `method_params`. Senza CND-3 il Word non può essere popolato dai dati operatore.
+Il verbale CND vive solo in `ndt_reports`. Fuori dal Registro Documenti non c’è fascicolo SGQ (ISO 3834-3 §14 / archivio prove). CND-7 chiude la posa verso cartella **9.3** / tipo `report_ndt`, riusando il pattern già usato dall’ingest.
 
 ## DoD (da PLAN_CND)
 
-1. Se `report_type` = **PT**: sezione metodo con gruppi esclusivi (radio / `status-btn`) e campi testo dal catalogo appendice PT → salvataggio in `method_params.pt` (o struttura equivalente documentata nel brief alla chiusura).
-2. Se `report_type` = **MT**: stessa cosa per catalogo MT → `method_params.mt`. VT invariato (lux già presenti).
-3. Un verbale = un metodo: **non** mescolare flag PT e MT. Niente tabelle SQL nuove; riuso colonna JSON già prevista.
-4. Placeholder semantici (`{pt_acc_l2}`, `{mt_tr_wet}`, …) allineati all’appendice — **non** nomi FORMCHECKBOX Word.
-5. Riuso UI: `status-btn`, `notes-textarea`, sezioni come drawer NC / DNA design-system. Niente card decorative.
-6. Test L1 mirati (Vitest su sezioni PT/MT) + `npm run build` in `app/`.
-7. Spuntare CND-3 in PLAN_CND; brief **CHIUSO** — TEST OK.
-
-## Struttura JSON (chiusura)
-
-Un verbale = un `report_type`. `sanitizeMethodParams` in `app/src/utils/ndtMethodParams.js` tiene un solo namespace.
-
-- **VT** (invariato, piatto): `{ illuminance_min, illuminance_max, illuminance_measured, power_w, wavelength }`
-- **PT**: `{ pt: { acc, surface, cleaning[], application, inspection_pct, pen, pen_lot, sol, sol_lot, det, det_lot, lux, temp, final, defects: { [codice]: { present, outcome } } } }`
-- **MT**: `{ mt: { tracer, mag, mag_mode, pole_pitch, curr_type, curr_a, field, demag, surf, inspection_pct, judg, defects: { [codice]: boolean } } }`
-
-Nomi e date restano sulla testata del verbale (`responsible`, `inspector`, `inspection_date`, …). Placeholder `{pt_acc_l2}` / `{mt_tr_wet}` / `{pt_d_100_yn}` nel helper — export Word = slice successiva.
+1. Alla transizione a **completato** (o azione esplicita documentata se più sicura): crea/aggiorna riga in `document_registry` (o API documenti esistente) con tipo `report_ndt`, `company_id` del verbale, cartella **9.3** se l’albero azienda c’è (stesso mapping di `documentTreeProvisioner` / controller documenti).
+2. Multi-tenant: scope `organization_id` + `company_access` come il resto NDT.
+3. Idempotenza: secondo Completa non duplica documenti orfani (link stabile verbale ↔ documento, o skip se già posato).
+4. Se manca cartella 9.3: comportamento onesto (messaggio / coda «Cartella mancante» come ingest) — **non** creare albero ISO intero di nascosto.
+5. Test L1 (Jest controller/service) + eventuale Vitest se tocchi FE minimo; deploy-manifest se aggiungi `.js` in `backend/src/`.
+6. Spuntare CND-7 in PLAN_CND; brief **CHIUSO** — TEST OK.
 
 ## File previsti
 
-- `app/src/pages/NdtReportsPage.jsx` / `.css` (sezioni metodo PT/MT)
-- eventuale helper piccolo riusabile solo se già esiste pattern simile (Ponytail: non creare file se basta JSX)
-- `app/src/tests/` — test mirato CND-3
+- `backend/src/controllers/ndtReports.controller.js` (+ test)
+- eventuale helper piccolo in `backend/src/services/` (posa registro) — solo se non basta riusare codice documenti esistente
+- `backend/scripts/deploy-manifest.json` se file nuovo
+- FE minimo solo se serve feedback utente (messaggio posa ok/errore) — **non** riscrivere sezioni metodo PT/MT
 - `docs/agent-tasks/PLAN_CND_SLICES.md` + questo brief (chiusura)
 
 ## Cosa NON toccare
 
-- `DEPUTYTASK1.md` / NG-4 / `normBroker` / `aiChat` / `gapAnalysis`
-- Template Word / `vtWordExport` / ReportTemplates (CND-4 già chiuso; export flag→Word = slice successiva se serve)
-- CND-5 UT, CND-6 allegati, CND-7 registro, CND-9 sync
-- Auth, JWT, sync audit, migrazioni distruttive
-- GUIDA / roadmap § Stato attuale (parallelo NG-4 — sync **dopo merge**)
+- `DEPUTYTASK1.md` / CND-6 / `NdtItemAttachments*`
+- `NdtReportsPage.jsx` sezioni flag PT/MT (CND-3) salvo messaggio posa
+- STUD / WPQR / NG / auth / sync / migrazioni distruttive
+- CND-9 coda IndexedDB, CND-5 UT, CND-8 bozza-audit
+- GUIDA / roadmap § Stato attuale (parallelo — sync **dopo merge**)
 
 ## Verifica
 
-- [x] Flag PT e MT visibili e salvati in `method_params` sul verbale giusto
-- [x] VT invariato; nessun merge PT↔MT
-- [x] L1 + build OK
-- [x] PLAN CND-3 spuntato; brief CHIUSO — TEST OK
+- [ ] Completa → documento `report_ndt` in 9.3 (o messaggio cartella mancante)
+- [ ] Idempotente; scope company ok
+- [ ] L1 + manifest
+- [ ] PLAN CND-7 spuntato; brief CHIUSO — TEST OK
