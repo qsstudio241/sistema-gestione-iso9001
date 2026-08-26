@@ -2,9 +2,9 @@
  * @vitest-environment jsdom
  * CND-6: hint NC da marca R/S + pulsante touch (precompila NcCreateModal)
  */
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import React from "react";
-import { render, screen } from "@testing-library/react";
+import { render, screen, cleanup, waitFor, act } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { readFileSync } from "fs";
 import { resolve } from "path";
@@ -49,6 +49,8 @@ vi.mock("../components/NcCreateModal.jsx", () => ({
   },
 }));
 
+const eligibilityMock = vi.fn();
+
 vi.mock("../services/apiService", () => ({
   default: {
     getStoredUser: () => ({ full_name: "PS_Admin", email: "admin@sgq.local" }),
@@ -68,19 +70,32 @@ vi.mock("../services/apiService", () => ({
     createNdtReport: vi.fn(),
     updateNdtReport: vi.fn(),
     deleteNdtReport: vi.fn(),
-    getNdtInspectorEligibility: vi.fn().mockResolvedValue({
-      data: { ok: true, reasons: [], candidates: [], qualification: { ndt_method: "VT", ndt_level: 2 }, vision: { state: "ok" } },
-    }),
+    getNdtInspectorEligibility: (...args) => eligibilityMock(...args),
   },
 }));
 
 import NdtReportsPage from "../pages/NdtReportsPage.jsx";
+
+const ELIGIBLE = {
+  data: {
+    ok: true,
+    reasons: [],
+    candidates: [],
+    qualification: { ndt_method: "VT", ndt_level: 2 },
+    vision: { state: "ok" },
+  },
+};
 
 async function openNewVtReport(user) {
   render(<NdtReportsPage />);
   const nuovo = await screen.findByRole("button", { name: "+ Nuovo verbale" });
   await user.click(nuovo);
   await screen.findByRole("heading", { name: "Nuovo verbale CND" });
+  // Attendi debounce gate 9712 (300ms) prima di interagire — evita .then su mock resettato
+  await act(async () => {
+    await new Promise((r) => setTimeout(r, 350));
+  });
+  await waitFor(() => expect(eligibilityMock).toHaveBeenCalled());
   const marksToggle = screen.getByRole("button", { name: /Elenco Marche/ });
   if (!document.querySelector(".ndt-marks-table")) {
     await user.click(marksToggle);
@@ -92,7 +107,13 @@ describe("NdtReportsPage — CND-6 NC da marca", () => {
   beforeEach(() => {
     localStorage.clear();
     ncModalProps.mockClear();
+    eligibilityMock.mockReset();
+    eligibilityMock.mockResolvedValue(ELIGIBLE);
     Object.defineProperty(window, "innerWidth", { writable: true, configurable: true, value: 390 });
+  });
+
+  afterEach(() => {
+    cleanup();
   });
 
   it("con giudizio R mostra hint + Registra NC e apre modal precompilato", async () => {
