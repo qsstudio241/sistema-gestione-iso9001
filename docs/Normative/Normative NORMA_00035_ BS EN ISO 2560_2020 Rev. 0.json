@@ -1,0 +1,740 @@
+[
+  {
+    "standard_code": "ISO_2560_2020",
+    "clause_ref": "1",
+    "clause_title": "Scope 1",
+    "requirement_text": "................................................................................................................................................................................................................................"
+  },
+  {
+    "standard_code": "ISO_2560_2020",
+    "clause_ref": "2",
+    "clause_title": "Normative references 1",
+    "requirement_text": "................................................................................................................................................................................................................................."
+  },
+  {
+    "standard_code": "ISO_2560_2020",
+    "clause_ref": "3",
+    "clause_title": "Terms and definitions 2",
+    "requirement_text": "......................................................................................................................................................................................"
+  },
+  {
+    "standard_code": "ISO_2560_2020",
+    "clause_ref": "4",
+    "clause_title": "Classification 2",
+    "requirement_text": "....................................................................................................................................................................................."
+  },
+  {
+    "standard_code": "ISO_2560_2020",
+    "clause_ref": "5",
+    "clause_title": "Symbols and requirements 3",
+    "requirement_text": "............................................................................................................................................................................................................ ........................................................................................................................................................................ 5.1 Symbol for the product/process ..............................................................................................................................................3"
+  },
+  {
+    "standard_code": "ISO_2560_2020",
+    "clause_ref": "5.2",
+    "clause_title": "Symbols for strength and elongation of all-weld metal .......................................................................................3",
+    "requirement_text": "5.3 Symbol for impact properties of all-weld metal .........................................................................................................5"
+  },
+  {
+    "standard_code": "ISO_2560_2020",
+    "clause_ref": "5.4",
+    "clause_title": "Symbol for the chemical composition of all-weld metal .....................................................................................5",
+    "requirement_text": "5.5 Symbol for type of electrode covering ................................................................................................................................7"
+  },
+  {
+    "standard_code": "ISO_2560_2020",
+    "clause_ref": "5.6",
+    "clause_title": "Symbol for condition of post-weld heat-treatment of all-weld metal .....................................................9",
+    "requirement_text": ""
+  },
+  {
+    "standard_code": "ISO_2560_2020",
+    "clause_ref": "5.7",
+    "clause_title": "Symbol for electrode efficiency and type of current ...........................................................................................10",
+    "requirement_text": "5.8 Symbol for welding position ....................................................................................................................................................10"
+  },
+  {
+    "standard_code": "ISO_2560_2020",
+    "clause_ref": "6",
+    "clause_title": "Mechanical tests 11",
+    "requirement_text": ""
+  },
+  {
+    "standard_code": "ISO_2560_2020",
+    "clause_ref": "5.9",
+    "clause_title": "Symbol for diffusible hydrogen content of deposited metal .........................................................................11",
+    "requirement_text": "................................................................................................................................................................................................. 6.1 Preheating and interpass temperatures ........................................................................................................................12"
+  },
+  {
+    "standard_code": "ISO_2560_2020",
+    "clause_ref": "7",
+    "clause_title": "Chemical analysis 15",
+    "requirement_text": "6.2 Pass sequence .......................................................................................................................................................................................14"
+  },
+  {
+    "standard_code": "ISO_2560_2020",
+    "clause_ref": "8",
+    "clause_title": "Fillet weld test 20",
+    "requirement_text": ".............................................................................................................................................................................................."
+  },
+  {
+    "standard_code": "ISO_2560_2020",
+    "clause_ref": "9",
+    "clause_title": "Rounding procedure 22",
+    "requirement_text": "......................................................................................................................................................................................................"
+  },
+  {
+    "standard_code": "ISO_2560_2020",
+    "clause_ref": "10",
+    "clause_title": "Retests 22",
+    "requirement_text": "......................................................................................................................................................................................"
+  },
+  {
+    "standard_code": "ISO_2560_2020",
+    "clause_ref": "11",
+    "clause_title": "Technical delivery conditions 22",
+    "requirement_text": ".........................................................................................................................................................................................................................."
+  },
+  {
+    "standard_code": "ISO_2560_2020",
+    "clause_ref": "12",
+    "clause_title": "Examples of designation 23",
+    "requirement_text": ".............................................................................................................................................................. Annex A Classification systems 25 ............................................................................................................................................................................ Annex B Description of types of electrode covering — Classification by yield (informative) .......................................................................................................................................... strength and 47 J impact energy 28 (informative) Annex C Description of types of electrode covering — Classification by tensile ....................................................................................................................................................... strength and 27 J impact energy 30 (informative) Annex D Notes on diffusible hydrogen and the avoidance of cold cracking 33 ....................................................................................................................................................... Bibliography 34 (informative) ........................ ............................................................................................................................................................................................................................. This page deliberately left blank © ISO 2020 – All rights reserved iii"
+  },
+  {
+    "standard_code": "ISO_2560_2020",
+    "clause_ref": "1",
+    "clause_title": "Scope 1",
+    "requirement_text": "................................................................................................................................................................................................................................"
+  },
+  {
+    "standard_code": "ISO_2560_2020",
+    "clause_ref": "2",
+    "clause_title": "Normative references 1",
+    "requirement_text": "................................................................................................................................................................................................................................."
+  },
+  {
+    "standard_code": "ISO_2560_2020",
+    "clause_ref": "3",
+    "clause_title": "Terms and definitions 2",
+    "requirement_text": "......................................................................................................................................................................................"
+  },
+  {
+    "standard_code": "ISO_2560_2020",
+    "clause_ref": "4",
+    "clause_title": "Classification 2",
+    "requirement_text": "....................................................................................................................................................................................."
+  },
+  {
+    "standard_code": "ISO_2560_2020",
+    "clause_ref": "5",
+    "clause_title": "Symbols and requirements 3",
+    "requirement_text": "............................................................................................................................................................................................................ ........................................................................................................................................................................ 5.1 Symbol for the product/process ..............................................................................................................................................3"
+  },
+  {
+    "standard_code": "ISO_2560_2020",
+    "clause_ref": "5.2",
+    "clause_title": "Symbols for strength and elongation of all-weld metal .......................................................................................3",
+    "requirement_text": "5.3 Symbol for impact properties of all-weld metal .........................................................................................................5"
+  },
+  {
+    "standard_code": "ISO_2560_2020",
+    "clause_ref": "5.4",
+    "clause_title": "Symbol for the chemical composition of all-weld metal .....................................................................................5",
+    "requirement_text": "5.5 Symbol for type of electrode covering ................................................................................................................................7"
+  },
+  {
+    "standard_code": "ISO_2560_2020",
+    "clause_ref": "5.6",
+    "clause_title": "Symbol for condition of post-weld heat-treatment of all-weld metal .....................................................9",
+    "requirement_text": ""
+  },
+  {
+    "standard_code": "ISO_2560_2020",
+    "clause_ref": "5.7",
+    "clause_title": "Symbol for electrode efficiency and type of current ...........................................................................................10",
+    "requirement_text": "5.8 Symbol for welding position ....................................................................................................................................................10"
+  },
+  {
+    "standard_code": "ISO_2560_2020",
+    "clause_ref": "6",
+    "clause_title": "Mechanical tests 11",
+    "requirement_text": ""
+  },
+  {
+    "standard_code": "ISO_2560_2020",
+    "clause_ref": "5.9",
+    "clause_title": "Symbol for diffusible hydrogen content of deposited metal .........................................................................11",
+    "requirement_text": "................................................................................................................................................................................................. 6.1 Preheating and interpass temperatures ........................................................................................................................12"
+  },
+  {
+    "standard_code": "ISO_2560_2020",
+    "clause_ref": "7",
+    "clause_title": "Chemical analysis 15",
+    "requirement_text": "6.2 Pass sequence .......................................................................................................................................................................................14"
+  },
+  {
+    "standard_code": "ISO_2560_2020",
+    "clause_ref": "8",
+    "clause_title": "Fillet weld test 20",
+    "requirement_text": ".............................................................................................................................................................................................."
+  },
+  {
+    "standard_code": "ISO_2560_2020",
+    "clause_ref": "9",
+    "clause_title": "Rounding procedure 22",
+    "requirement_text": "......................................................................................................................................................................................................"
+  },
+  {
+    "standard_code": "ISO_2560_2020",
+    "clause_ref": "10",
+    "clause_title": "Retests 22",
+    "requirement_text": "......................................................................................................................................................................................"
+  },
+  {
+    "standard_code": "ISO_2560_2020",
+    "clause_ref": "11",
+    "clause_title": "Technical delivery conditions 22",
+    "requirement_text": ".........................................................................................................................................................................................................................."
+  },
+  {
+    "standard_code": "ISO_2560_2020",
+    "clause_ref": "12",
+    "clause_title": "Examples of designation 23",
+    "requirement_text": ".............................................................................................................................................................. Annex A Classification systems 25 ............................................................................................................................................................................ Annex B Description of types of electrode covering — Classification by yield (informative) .......................................................................................................................................... strength and 47 J impact energy 28 (informative) Annex C Description of types of electrode covering — Classification by tensile ....................................................................................................................................................... strength and 27 J impact energy 30 (informative) Annex D Notes on diffusible hydrogen and the avoidance of cold cracking 33 ....................................................................................................................................................... Bibliography 34 (informative) ........................ ............................................................................................................................................................................................................................. © ISO 2020 – All rights reserved iii"
+  },
+  {
+    "standard_code": "ISO_2560_2020",
+    "clause_ref": "1",
+    "clause_title": "Scope",
+    "requirement_text": "This document specifies requirements for the classification of covered electrodes and deposited metal in the as-welded condition and in the post-weld heat-treated condition for manual metal arc welding of non-alloy and fine grain steels with a minimum yield strength of up to 500 MPa or a minimum tensile strength of up to 570 MPa. This document is a combined specification providing for classification utilizing a system based on the yield strength and the average impact energy of 47 J of all-weld metal, or utilizing a system based on the tensile strength and the average impact energy of 27 J of all-weld metal.\n\na) Clauses, subclauses and tables which carry the suffix letter “A” are applicable only to covered\n\nelectrodes classified to the system based on the yield strength and the average impact energy of"
+  },
+  {
+    "standard_code": "ISO_2560_2020",
+    "clause_ref": "47",
+    "clause_title": "J of all weld metal in this document.",
+    "requirement_text": "b) Clauses, subclauses and tables which carry the suffix letter “B” are applicable only to covered\n\nelectrodes classified to the system based on the tensile strength and the average impact energy of"
+  },
+  {
+    "standard_code": "ISO_2560_2020",
+    "clause_ref": "27",
+    "clause_title": "J of all weld metal in this document.",
+    "requirement_text": "c) Clauses, subclauses and tables which do not have either the suffix letter “A” or the suffix letter “B”\n\nare applicable to all covered electrodes classified in this document."
+  },
+  {
+    "standard_code": "ISO_2560_2020",
+    "clause_ref": "2",
+    "clause_title": "Normative references",
+    "requirement_text": "The following documents are referred to in the text in such a way that some or all of their content constitutes requirements of this document. For dated references, only the edition cited applies. For undated rWefeelrdeinngc ecso, nthsuem laatbelsets e —dit Tioenc honf itchael dreeflievreernyc ceodn ddoitciuonmse fnotr ( fiinllcelru dminagte arniayl sa manedn dflmuxeenst s—) a Tpyppleie so.f product, dimensions, tolerances and markings ISO 544, Covered electrodes — Determination of the efficiency, metal recovery and deposition coefficient ISO 2401, Welding and allied processes — Determination of hydrogen content in arc weld metal ISO 3690, Welding consumables — Deposition of a weld metal pad for chemical analysis ISO 6847, Welding and allied processes — Welding positions ISO 6947:20W19el, ding consumables — Procurement of filler materials and fluxes ISO 14344, Welding consumables — Test methods — Part 1: Test methods for all-weld metal test specimens in steel, nickel and nickel alloys ISO 15792-1:2020, Welding consumables — Test methods — Part 3: Classification testing of positional capacity and root penetration of welding consumables in a fillet weld ISO 15792-3:2011, Quantities and units — Part 1: General ISO 80000-1:2009, . Corrected by ISO 80000-1:2009/Cor 1:2011"
+  },
+  {
+    "standard_code": "ISO_2560_2020",
+    "clause_ref": "3",
+    "clause_title": "Terms and definitions",
+    "requirement_text": "No terms and definitions are listed in this document. ISO and IEC maintain terminological databases for use in standardization at the following addresses: — ISO Online browsing platform: available at https:// www .iso .org/ obp — IEC Electropedia: available at http:// www .electropedia .org/"
+  },
+  {
+    "standard_code": "ISO_2560_2020",
+    "clause_ref": "4",
+    "clause_title": "Classification",
+    "requirement_text": "Classification designations are based on two approaches to indicate the tensile properties and the impact properties of the all-weld metal obtained with a given electrode. The two designation approaches include additional designators for some other classification requirements, but not all. In most cases, a given commercial product can be classified in both systems. Then, either or both classification designations can be used for the product. The classification includes all-weld metal properties obtained with a covered electrode as given below. The classification is based on an electrode size of 4,0 mm, with the exception of the symbol for welding position, which is based on ISO 15792-3. Where the defined diameter has not been manufactured, the c4lAos e Cslta dsisaimficeatetrio tno b4,y0 y miemld s shtarlel nbeg tuhs eadn dfo 4r 7a lJl -weld m4eBt a lC tleasstssi.fication by tensile strength and 27 J impact energy impact energy The classification is divided into eight parts: The classification is divided into seven parts:\n\n1) the first part gives a symbol indicating the 1) the first part gives a symbol indicating the\n\nproduct/process to be identified; product/process to be identified;\n\n2) the second part gives a symbol indicating 2) the second part gives a symbol indicating\n\nthe strength and elongation of all-weld metal the tensile strength of all-weld metal (see Table 1A); (see Table 1B);\n\n3) the third part gives a symbol indicating 3) the third part gives a symbol indicating\n\nthe impact properties of all-weld metal the type of electrode covering, the type (see Table 2A); of current, and the welding position (see Table 4B);\n\n4) the fourth part gives a symbol indicating\n\nthe chemical composition of all-weld metal 4) the fourth part gives a symbol indicating (see Table 3A); the chemical composition of all-weld metal (see Table 3B);\n\n5) the fifth part gives a symbol indicating the\n\ntype of electrode covering (see 5.5A); 5) the fifth part gives a symbol indicating the condition of post-weld heat treatment under\n\n6) the sixth part gives a symbol indicating the which the all-weld metal test was conducted\n\nelectrode efficiency and type of current (see 5.6B); (see Table 5A);\n\n6) the sixth part gives a symbol indicating that\n\n7) the seventh part gives a symbol indicating the electrode has satisfied a requirement\n\nthe welding position (see Table 6A); for 47 J impact energy at the temperature normally used for the 27 J requirement;\n\n8) the eighth part gives a symbol indicating the\n\ndiffusible hydrogen content of the deposited 7) the seventh part gives a symbol indicating metal (see Table 7). the diffusible hydrogen content of the deposited metal (see Table 7).\n\n\nIn order to promote the use of this document, In order to promote the use of this document, the classification is split into two sections: the classification is split into two sections:\n\na) Compulsory section a) Compulsory section\n\nThis section includes the symbols for the type of This section includes the symbols for the type product, the strength and elongation, the impact of product, the strength, the type of covering, properties, the chemical composition and the the type of current, the welding position, the type of covering, i.e. the symbols defined in 5.1, chemical composition and the condition of heat 5.2A, 5.3A, 5.4A and 5.5A. treatment, i.e. the symbols defined in 5.1, 5.2B, 5.4B, 5.5B and 5.6B.\n\nb) Optional section b) Optional section\n\nThis section includes the symbols for the elec- This section includes the symbol for the optional trode efficiency, the type of current, the welding supplemental designator for 47 J impact energy, positions for which the electrode is suitable, and i.e. the symbol defined in 5.3B; and the symbol the symbol for diffusible hydrogen content, i.e. for diffusible hydrogen content, i.e., the symbol the symbols defined in 5.7A, 5.8A and 5.9. defined in 5.9. The designation (see Clause 12), compulsory section and any chosen elements of the optional section, shall be used on packages and in the manufacturer's literature and data sheets. Figure A.1 gives a schematic representation of the full designation of electrodes classified by yield strength and"
+  },
+  {
+    "standard_code": "ISO_2560_2020",
+    "clause_ref": "47",
+    "clause_title": "J impact energy (system A). Figure A.2 gives a schematic representation of the full designation of",
+    "requirement_text": "electrodes classified by tensile strength and 27 J impact energy (system B)."
+  },
+  {
+    "standard_code": "ISO_2560_2020",
+    "clause_ref": "5",
+    "clause_title": "Symbols and requirements",
+    "requirement_text": ""
+  },
+  {
+    "standard_code": "ISO_2560_2020",
+    "clause_ref": "5.1",
+    "clause_title": "Symbol for the product/process",
+    "requirement_text": "The symbol for the covered electrode used in the manual metal arc welding process shall be the letter E placed at the beginning of the designation."
+  },
+  {
+    "standard_code": "ISO_2560_2020",
+    "clause_ref": "5.2",
+    "clause_title": "Symbols for strength and elongation of all-weld metal",
+    "requirement_text": "5.2A Classification by yield strength and 47 J 5.2B Classification by tensile strength and impact energy 27 J impact energy The symbols in Table 1A indicate the yield The symbols in Table 1B indicate the tensile strength, tensile strength, and elongation of the strength of the all-weld metal in the as-welded all-weld metal in the as-welded condition, deter- condition or in the post-weld heat-treated conmined in accordance with Clause 6. dition, determined in accordance with Clause 6. The yield strength and elongation requirements depend on the specific chemical composition, heat treatment condition and coating type, as well as on the tensile strength requirements, as given for the complete classification in Table 8B.\n\n\nTable 1A — Symbol for strength and elonga- Table 1B — Symbol for strength of all-weld tion of all-weld metal metal (Classification by yield strength and 47 J (Classification by tensile strength and 27 J Minimimupma ct energy) impact energy) Tensile Minimum Minimum tensile yield strength elongation strength Symbol strength Symbol b a MPa MPa % MPa"
+  },
+  {
+    "standard_code": "ISO_2560_2020",
+    "clause_ref": "35",
+    "clause_title": "355 440 to 570 22 43 430",
+    "requirement_text": ""
+  },
+  {
+    "standard_code": "ISO_2560_2020",
+    "clause_ref": "38",
+    "clause_title": "380 470 to 600 20 49 490",
+    "requirement_text": ""
+  },
+  {
+    "standard_code": "ISO_2560_2020",
+    "clause_ref": "42",
+    "clause_title": "420 500 to 640 20 55 550",
+    "requirement_text": ""
+  },
+  {
+    "standard_code": "ISO_2560_2020",
+    "clause_ref": "46",
+    "clause_title": "460 530 to 680 20 57 570",
+    "requirement_text": ""
+  },
+  {
+    "standard_code": "ISO_2560_2020",
+    "clause_ref": "50",
+    "clause_title": "500 560 to 720 18",
+    "requirement_text": "R a For yield strength, the lower yield sRtrength ( eL) shall be used when yielding occurs. Otherwise, the 0,2 % proof strength ( p0,2) shall be used. b The gauge length is equal to five times the specimen diameter.\n\n| Symbol | Minimimupma c yield strength a MPa | t energy) Tensile strength MPa | Minimum elongation b % |\n| --- | --- | --- | --- |\n|  |  |  |  |\n| 35 | 355 | 440 to 570 | 22 |\n| 38 | 380 | 470 to 600 | 20 |\n| 42 | 420 | 500 to 640 | 20 |\n| 46 | 460 | 530 to 680 | 20 |\n| 50 500 560 to 720 18 R a For yield strength, the lower yield sRtrength ( eL) shall be used when yielding occurs. Otherwise, the 0,2 % proof strength ( p0,2) shall be used. b |  |  |  |\n\n| impact Symbol | energy) Minimum tensile strength MPa |\n| --- | --- |\n|  |  |\n| 43 | 430 |\n| 49 | 490 |\n| 55 | 550 |"
+  },
+  {
+    "standard_code": "ISO_2560_2020",
+    "clause_ref": "5.3",
+    "clause_title": "Symbol for impact properties of all-weld metal",
+    "requirement_text": "5.3A Classification by yield strength and 5.3B Classification by tensile strength and"
+  },
+  {
+    "standard_code": "ISO_2560_2020",
+    "clause_ref": "47",
+    "clause_title": "J impact energy 27 J impact energy",
+    "requirement_text": "The symbols in Table 2A indicate the tempera- There is no specific symbol for impact propture at which an average impact energy of 47 J is erties. The complete classification in Table 8B achieved under the conditions given in Clause 6. determines the temperature at which an impact Three specimens shall be tested. Only one energy of 27 J is achieved in the as-welded conindividual value may be lower than 47 J but not dition or in the post-weld heat-treated condition lower than 32 J. When an all-weld metal has been under the conditions given in Clause 6. Five test classified for a certain temperature, it automati- specimens shall be tested. The lowest and highest caTlalyb lceo v2eAr s— a nSyy mhigbhoel rf oterm impepraacttu prer oinp eTratbilees 2 oAf. values obtained shall be disregarded. Two of the all-weld metal three remaining values shall be greater than the specified 27 J level, one of the three may be lower but shall not be less than 20 J. The average of the (Classification by yield strength and 47 J three remaining values shall be at least 27 J. Timempapcet reanteurrgey )for minimum The addition of the optional symbol U, immedi- Symbol average impact energy of 47 J ately after the symbol for condition of heat treat- °C ment, indicates that the supplemental requirement of 47 J impact energy at the normal 27 J impact test temperature has also been satisfied. For the 47 J impact requirement, the number of Z No requirement specimens tested and values obtained shall meet the requirement of 5.3A. A +20 0 0"
+  },
+  {
+    "standard_code": "ISO_2560_2020",
+    "clause_ref": "2",
+    "clause_title": "−20",
+    "requirement_text": ""
+  },
+  {
+    "standard_code": "ISO_2560_2020",
+    "clause_ref": "3",
+    "clause_title": "−30",
+    "requirement_text": ""
+  },
+  {
+    "standard_code": "ISO_2560_2020",
+    "clause_ref": "4",
+    "clause_title": "−40",
+    "requirement_text": ""
+  },
+  {
+    "standard_code": "ISO_2560_2020",
+    "clause_ref": "5",
+    "clause_title": "−50",
+    "requirement_text": ""
+  },
+  {
+    "standard_code": "ISO_2560_2020",
+    "clause_ref": "6",
+    "clause_title": "−60",
+    "requirement_text": ""
+  },
+  {
+    "standard_code": "ISO_2560_2020",
+    "clause_ref": "5.4",
+    "clause_title": "Symbol for the chemical composition of all-weld metal",
+    "requirement_text": "5.4A Classification by yield strength and 5.4B Classification by tensile strength and"
+  },
+  {
+    "standard_code": "ISO_2560_2020",
+    "clause_ref": "47",
+    "clause_title": "J impact energy 27 J impact energy",
+    "requirement_text": "The symbols in Table 3A indicate the chemical The symbols in Table 3B indicate the principal composition of all-weld metal, determined in alloying elements, and sometimes the nominal accordance with Clause 7. alloy level of the most significant alloy element, of all-weld metal, determined in accordance with Clause 7. The symbol for chemical composition does not immediately follow the symbol for strength but follows the symbol for coating type. The complete classification, given in Table 10B, determines the exact chemical composition requirements for a particular electrode classification.\n\n| Symbol | Timempapcet reanteurrgey )for minimum average impact energy of 47 J °C |\n| --- | --- |\n|  |  |\n| Z | No requirement |\n| A | +20 |\n| 0 | 0 |\n| 2 | −20 |\n| 3 | −30 |\n| 4 | −40 |\n| 5 | −50 |\n\n\nTable 3A — Symbol for chemical Table 3B — Symbol for chemical composition of all-weld metal composition of all-weld metal (Classification by yield strength and 47 J (Classification by tensile strength and 27 J Chemical composition impact energy) impCachte emneicragly )composition Alloy % (by mass) Alloy symbol a,b,c symbol Principal alloy Nominal level Mn Mo Ni element(s) % (by mass) No symbol, −1, No symbol 2,0 — — Mn 1,3 −P1 or −P2 Mo 1,4 0,3 to 0,6 — −1M3 Mo 0,5 Mn 1,5 MnMo 1,4 to 2,0 0,3 to 0,6 — −3M2 Mo 0,4 Mn 1,5 1Ni 1,4 — 0,6 to 1,2 −3M3 Mo 0,5 Mn1Ni 1,4 to 2,0 — 0,6 to 1,2 −N1 Ni 0,5 2Ni 1,4 — 1,8 to 2,6 −N2 Ni 1,0 Mn2Ni 1,4 to 2,0 — 1,2 to 2,6 −N3 Ni 1,5 Mn 1,5 3Ni 1,4 — 2,6 to 3,8 −3N3 Ni 1,5 1NiMo 1,4 0,3 to 0,6 0,6 to 1,2 −N5 Ni 2,5 c Z Any other agreed composition −N7 Ni 3,5 a If not specified, Mo < 0,2; Ni < 0,3; Cr < 0,2; −N13 Ni 6,5 V < 0,05; Nb < 0,05; Cu < 0,3. Ni 1,0 b −N2M3 Single values shown in the table mean Mo 0,5 maximum values. Ni 0,5 c −NC Cu 0,4 Consumables for which the chemical composition is not listed in the table shall be Cr 0,5 −CC symbolized similarly and prefixed by the letter Cu 0,4 Z. The chemical composition ranges are not Ni 0,2 specified and therefore two electrodes with the −NCC Cr 0,6 same Z-classification may not be Cu 0,5 interchangeable. Ni 0,6 −NCC1 Cr 0,6 Cu 0,5 Ni 0,3 −NCC2 Cr 0,2 Cu 0,5 a −G Any other agreed composition a The chemical composition ranges are not specified and therefore two electrodes with the same G-classification may not be interchangeable.\n\n| (Classifi Alloy symbol | cation by yield strength and 47 J Chemical composition impact energy) % (by mass) |  |  |\n| --- | --- | --- | --- |\n|  | Mn | a, Mo | b,c Ni |\n|  |  |  |  |\n| No symbol | 2,0 | — | — |\n| Mo | 1,4 | 0,3 to 0,6 | — |\n| MnMo | 1,4 to 2,0 | 0,3 to 0,6 | — |\n| 1Ni | 1,4 | — | 0,6 to 1,2 |\n|  |  |  |  |\n| Mn1Ni | 1,4 to 2,0 | — | 0,6 to 1,2 |\n| 2Ni Mn2Ni | 1,4 1,4 to 2,0 | — — | 1,8 to 2,6 1,2 to 2,6 |\n| 3Ni | 1,4 | — | 2,6 to 3,8 |\n|  |  |  |  |\n| 1NiMo 1,4 0,3 to 0,6 0,6 to 1,2 c Z Any other agreed composition a If not specified, Mo < 0,2; Ni < 0,3; Cr < 0,2; V < 0,05; Nb < 0,05; Cu < 0,3. b Single values shown in the table mean maximum values. c Consumables for which the chemical composition is not listed in the table shall be symbolized similarly and prefixed by the letter Z. The chemical composition ranges are not specified and therefore two electrodes with the |  |  |  |\n\n| (Classificatio Alloy symbol | n by tensile strength and 27 J impCachte emneicragly )composition |  |\n| --- | --- | --- |\n|  | Principal alloy element(s) | Nominal level % (by mass) |\n|  |  |  |\n| No symbol, −1, | Mn | 1,3 |\n| −P1 or −P2 −1M3 | Mo | 0,5 |\n| −3M2 | Mn Mo | 1,5 0,4 |\n| −3M3 | Mn | 1,5 |\n|  | Mo | 0,5 |\n| −N1 | Ni | 0,5 |\n| −N2 −N3 | Ni Ni | 1,0 1,5 |\n| −3N3 | Mn | 1,5 |\n|  | Ni | 1,5 |\n| −N5 | Ni | 2,5 |\n| −N7 −N13 | Ni Ni | 3,5 6,5 |\n| −N2M3 | Ni Mo | 1,0 0,5 |\n| −NC | Ni Cu | 0,5 0,4 |\n| −CC | Cr Cu Ni | 0,5 0,4 0,2 |\n| −NCC | Cr Cu Ni | 0,6 0,5 0,6 |\n| −NCC1 | Cr Cu Ni | 0,6 0,5 0,3 |\n| −NCC2 | Cr 0,2 |  |\n| Cu 0,5 a −G Any other agreed composition a The chemical composition ranges are not specified and therefore two electrodes with the |  |  |"
+  },
+  {
+    "standard_code": "ISO_2560_2020",
+    "clause_ref": "5.5",
+    "clause_title": "Symbol for type of electrode covering",
+    "requirement_text": "5.5A Classification by yield strength and 5.5B Classification by tensile strength and"
+  },
+  {
+    "standard_code": "ISO_2560_2020",
+    "clause_ref": "47",
+    "clause_title": "J impact energy 27 J impact energy",
+    "requirement_text": "The type of covering of a covered electrode de- The type of covering of a covered electrode depends substantially on the types of slag-forming pends substantially on the types of slag-forming components. The symbols indicating the cover- components. The type of covering also detering type shall be in accordance with Table 4A. mines the positions suitable for welding and the type of current, in accordance with Table 4B.\n\n\nTable 4A — Symbol for type of covering Table 4B — Symbol for type of covering (Classification by yield strength and 47 J (Classification by tensile strength and 27 J Type of Welding Type of Symbol impact enerTgyyp)e of covering Symbol impact energy) covering positions current a b c AC and A Acid covering 03 Rutile basic All DC (±) C Cellulosic covering 10 Cellulosic All DC (+) AC and R Rutile covering 11 Cellulosic All DC (+) c AC and RR Rutile thick covering 12 Rutile All DC (−) Rutile-cellulosic cov- c AC and RC 13 Rutile All ering DC (±) Rutile + c AC and RA Rutile-acid covering 14 All iron powder DC (±) c RB Rutile-basic covering 15 Basic All DC (+) c AC and B Basic covering 16 Basic All DC (+) NOTE A description of the characteristics Basic + iron c AC and of each of the types of covering is given in 18 All powder DC (+) Annex B. c AC and"
+  },
+  {
+    "standard_code": "ISO_2560_2020",
+    "clause_ref": "19",
+    "clause_title": "Ilmenite All",
+    "requirement_text": "DC (±) AC and"
+  },
+  {
+    "standard_code": "ISO_2560_2020",
+    "clause_ref": "20",
+    "clause_title": "Iron oxide PA, PB",
+    "requirement_text": "DC (−) Rutile + AC and"
+  },
+  {
+    "standard_code": "ISO_2560_2020",
+    "clause_ref": "24",
+    "clause_title": "PA, PB",
+    "requirement_text": "iron powder DC (±) Iron oxide + AC and"
+  },
+  {
+    "standard_code": "ISO_2560_2020",
+    "clause_ref": "27",
+    "clause_title": "PA, PB",
+    "requirement_text": "iron powder DC (±) Basic + iron AC and"
+  },
+  {
+    "standard_code": "ISO_2560_2020",
+    "clause_ref": "28",
+    "clause_title": "PA, PB, PC",
+    "requirement_text": "powder DC (+) Not Manufacturer's 40 specified recommendations d"
+  },
+  {
+    "standard_code": "ISO_2560_2020",
+    "clause_ref": "45",
+    "clause_title": "Basic All DC (+)",
+    "requirement_text": "AC and"
+  },
+  {
+    "standard_code": "ISO_2560_2020",
+    "clause_ref": "48",
+    "clause_title": "Basic All",
+    "requirement_text": "DC (+) NOTE A description of the characteristics of each of the types of covering is given in Annex C. a Positions in accordance with ISO 6947:2019. PA = flat, PB = horizontal vertical fillet, PC = horizontal, PG = vertical down. b Alternating current = AC; direct current = DC. c The indication “all positions” may or may not include vertical down welding. This shall be specified in the manufacturer's literature. d Not including PF (vertical up).\n\n| (Classification by yi Symbol impact | eld strength and 47 J enerTgyyp)e of covering |\n| --- | --- |\n|  |  |\n| A | Acid covering |\n| C | Cellulosic covering |\n| R | Rutile covering |\n| RR | Rutile thick covering |\n| RC | Rutile-cellulosic cov- ering |\n| RA | Rutile-acid covering |\n| RB | Rutile-basic covering |\n| B Basic covering NOTE A description of the characteristics |  |\n\n| (Class Symbol | ification by te Type of impac covering | nsile strengt Welding t energy) positions | h and 27 J Type of current |\n| --- | --- | --- | --- |\n|  |  | a | b |\n| 03 | Rutile basic | c All | AC and |\n| 10 | Cellulosic | All | DC (±) DC (+) |\n| 11 | Cellulosic | All | AC and DC (+) |\n| 12 | Rutile | c All | AC and DC (−) |\n| 13 | Rutile | c All | AC and DC (±) |\n| 14 | Rutile + | c All | AC and |\n| 15 | iron powder Basic | c All | DC (±) DC (+) |\n| 16 | Basic Basic + iron | c All c | AC and DC (+) AC and |\n| 18 | powder | All | DC (+) |\n| 19 | Ilmenite | c All | AC and DC (±) |\n| 20 | Iron oxide | PA, PB | AC and DC (−) |\n| 24 | Rutile + iron powder | PA, PB | AC and DC (±) |\n| 27 | Iron oxide + iron powder | PA, PB | AC and DC (±) |\n| 28 | Basic + iron powder | AC and PA, PB, PC DC (+) |  |\n| 40 | Not | Manufa | cturer's |\n| 45 | specified Basic | recomme d All | ndations DC (+) |\n| AC and 48 Basic All DC (+) NOTE A description of the characteristics of each of the types of covering is given in Annex C. a Positions in accordance with ISO 6947:2019. PA = flat, PB = horizontal vertical fillet, PC = horizontal, PG = vertical down. b Alternating current = AC; direct current = DC. c The indication “all positions” may or may not include vertical down welding. This shall be specified in the manufacturer's literature. |  |  |  |"
+  },
+  {
+    "standard_code": "ISO_2560_2020",
+    "clause_ref": "5.6",
+    "clause_title": "Symbol for condition of post-weld heat-treatment of all-weld metal",
+    "requirement_text": "5.6A Classification by yield strength and 5.6B Classification by tensile strength and"
+  },
+  {
+    "standard_code": "ISO_2560_2020",
+    "clause_ref": "47",
+    "clause_title": "J impact energy 27 J impact energy",
+    "requirement_text": "Classification is based on mechanical properties If the electrode has been classified in the of the all-weld metal in the as-welded condition as-welded condition, the symbol A shall be added only. There is no symbol for condition of post- to the classification. If the electrode has been weld heat treatment. classified in the post-weld heat-treated condition, the symbol P shall be added to the classification. When classified in the post-weld heat-treated condition, the temperature of post-weld heat treatment shall be 620 °C ± 15 °C, except for chemical compositions N5 and N7, where the temperature shall be 605 °C ± 15 °C, and chemical composition N1630, w(+1h5e)re the 0 temperature shall be 600 °C ± 15 °C. Post-weld heat treatment time shall be min at temperature. If the electrode has been classified in both conditions, the symbol AP shall be added to the classification. The furnace shall be at a temperature not higher than 300 °C when the test assembly is placed in it. The heating rate, from that point to the specified holding temperature, shall be 85 °C to 275 °C/h. When the holding time has been completed, the assembly shall be allowed to cool in the furnace to a temperature below 300 °C at a rate not exceeding 200 °C/h. The assembly may be removed from the furnace at any temperature below 300 °C and allowed to cool in still air to room temperature."
+  },
+  {
+    "standard_code": "ISO_2560_2020",
+    "clause_ref": "5.7",
+    "clause_title": "Symbol for electrode efficiency and type of current",
+    "requirement_text": "5.7A Classification by yield strength and 5.7B Classification by tensile strength and"
+  },
+  {
+    "standard_code": "ISO_2560_2020",
+    "clause_ref": "47",
+    "clause_title": "J impact energy 27 J impact energy",
+    "requirement_text": "The symbols in Table 5A indicate electrode effi- There is no specific symbol for electrode efciency, determined in accordance with ISO 2401 ficiency and type of current. Type of current with the type of current shown in Table 5A. is included in the symbol for type of covering Table 5A — Symbol for electrode efficiency (Table 4B). Electrode efficiency is not addressed. and type of current (Classification by yield strength and 47 J imEplaecctt ernoedregy) Type of Symbol efficiency, η, % current a,b η η"
+  },
+  {
+    "standard_code": "ISO_2560_2020",
+    "clause_ref": "1",
+    "clause_title": "≤ 105 AC and DC",
+    "requirement_text": ""
+  },
+  {
+    "standard_code": "ISO_2560_2020",
+    "clause_ref": "2",
+    "clause_title": "≤η 105 DC",
+    "requirement_text": "η"
+  },
+  {
+    "standard_code": "ISO_2560_2020",
+    "clause_ref": "3",
+    "clause_title": "105 < ≤ 125 AC and DC",
+    "requirement_text": ""
+  },
+  {
+    "standard_code": "ISO_2560_2020",
+    "clause_ref": "4",
+    "clause_title": "105 < η ≤ 125 DC",
+    "requirement_text": "η"
+  },
+  {
+    "standard_code": "ISO_2560_2020",
+    "clause_ref": "5",
+    "clause_title": "125 < ≤ 160 AC and DC",
+    "requirement_text": ""
+  },
+  {
+    "standard_code": "ISO_2560_2020",
+    "clause_ref": "6",
+    "clause_title": "125η < ≤ 160 DC",
+    "requirement_text": "η"
+  },
+  {
+    "standard_code": "ISO_2560_2020",
+    "clause_ref": "7",
+    "clause_title": "> 160 AC and DC",
+    "requirement_text": ""
+  },
+  {
+    "standard_code": "ISO_2560_2020",
+    "clause_ref": "8",
+    "clause_title": "> 160 DC",
+    "requirement_text": "a If an electrode is suitable for both DC and AC operation, the electrode efficiency shall be based on AC testing only. b Alternating current = AC; direct current = DC."
+  },
+  {
+    "standard_code": "ISO_2560_2020",
+    "clause_ref": "5.8",
+    "clause_title": "Symbol for welding position",
+    "requirement_text": "5.8A Classification by yield strength and 47 J 5.8B Classification by tensile strength and impact energy 27 J impact energy 6A The symbols in Table for welding positions There is no specific symbol for welding position. indicate the positions for which the electrode is The welding position requirements are included tested in accordance with ISO 15792-3. For test- with the symbol for type of covering (Table 4B). ing requirements (see Clause 8).\n\n| Symbol | imEplaecctt ernoedregy) efficiency, η, % | Type of current |\n| --- | --- | --- |\n| 1 | η η ≤ 105 | a,b AC and DC |\n| 2 3 | ≤η 105 η 105 < ≤ 125 | DC AC and DC |\n| 4 5 | 105 < η ≤ 125 η 125 < ≤ 160 | DC AC and DC |\n| 6 7 | 125η < ≤ 160 η > 160 | DC AC and DC |\n| 8 > 160 DC a If an electrode is suitable for both DC and AC operation, the electrode efficiency shall be based on AC testing only. |  |  |\n\n\nTable 6A — Symbol for welding position (Classification by yield strength and 47 J impacWt eenledrignyg) positions in Symbol accordance with"
+  },
+  {
+    "standard_code": "ISO_2560_2020",
+    "clause_ref": "1",
+    "clause_title": "PA, PB, PC, PD, PE, PF, PG",
+    "requirement_text": ""
+  },
+  {
+    "standard_code": "ISO_2560_2020",
+    "clause_ref": "2",
+    "clause_title": "PA, PB, PC, PD, PE, PF",
+    "requirement_text": ""
+  },
+  {
+    "standard_code": "ISO_2560_2020",
+    "clause_ref": "3",
+    "clause_title": "PA, PB",
+    "requirement_text": ""
+  },
+  {
+    "standard_code": "ISO_2560_2020",
+    "clause_ref": "4",
+    "clause_title": "PA",
+    "requirement_text": ""
+  },
+  {
+    "standard_code": "ISO_2560_2020",
+    "clause_ref": "5",
+    "clause_title": "PA, PB, PG",
+    "requirement_text": ""
+  },
+  {
+    "standard_code": "ISO_2560_2020",
+    "clause_ref": "5.9",
+    "clause_title": "Symbol for diffusible hydrogen content of deposited metal",
+    "requirement_text": "The symbols in Table 7 indicate diffusible hydrogen content determined in deposited metal from an electrode of size 4 mm in accordance with the method given in ISO 3690. The current used shall be"
+  },
+  {
+    "standard_code": "ISO_2560_2020",
+    "clause_ref": "70",
+    "clause_title": "% to 90 % of the maximum value recommended by the manufacturer. Electrodes recommended for",
+    "requirement_text": "use with AC and DC shall be tested using AC. Electrodes recommended for DC only shall be tested using DC with electrode positive. The manufacturer shall provide information on the recommended type of current and redrying conditions for achieving the diffusible hydrogen levels. Table 7 — Symbol for diffusible hydrogen content of deposited metal Diffusible hydrogen content Symbol maximum ml/100 g of deposited weld metal H5 5 H10 10 H15 15 Annex D provides additional information about diffusible hydrogen."
+  },
+  {
+    "standard_code": "ISO_2560_2020",
+    "clause_ref": "6",
+    "clause_title": "Mechanical tests",
+    "requirement_text": "6A Classification by yield strength and 47 J 6B Classification by tensile strength and 27 J impact energy impact energy Tensile and impact tests and any required retests Tensile and impact tests and any required retests shall be carried out in the as-welded condition shall be carried out in the as-welded condition using an all-weld metal test assembly type 1.3 in and/or in the post-weld heat-treated condition, accordance with ISO 15792-1:2020 and the weld- using an all-weld metal test assembly type 1.3 in ing conditions described in 6.1 and 6.2. accordance with ISO 15792-1:2020 and the welding conditions described in 6.1 and 6.2. When diffusible hydrogen removal treatment is specified by the manufacturer, it shall be carried out in accordance with ISO 15792-1.\n\n| im Symbol | pacWt eenledrignyg) positions in accordance with ISO 6947:2019 |\n| --- | --- |\n|  |  |\n| 1 | PA, PB, PC, PD, PE, PF, PG |\n| 2 | PA, PB, PC, PD, PE, PF |\n| 3 | PA, PB |\n| 4 | PA |\n\n| Symbol | Diffusible hydrogen content |\n| --- | --- |\n|  | maximum |\n|  | ml/100 g of deposited weld metal |\n| H5 | 5 |"
+  },
+  {
+    "standard_code": "ISO_2560_2020",
+    "clause_ref": "6.1",
+    "clause_title": "Preheating and interpass temperatures",
+    "requirement_text": "The preheating and interpass temperatures shall be measured using temperature indicator crayons, 6su.1rAfa c eC ltahsesrimfiocmateiotenr sb oyr y tiheeldrm storceonugptlehs a (nfodr 4e7x aJm ple,6 i.n1 aBc c Corladsasnicfeic watiitohn I SbOy 1te3n91si6l)e. strength and impact energy 27 J impact energy Preheating is not required; welding may start Preheating and interpass temperature for elecfrom room temperature. The interpass tempera- trodes with no chemical composition symbol ture shall be in the range 90 °C to 175 °C. If, after or with the −1 symbol in Tables 3B and 8B shall any pass, the interpass temperature is exceeded, be 100 °C to 150 °C. Preheating and interpass the test assembly shall be cooled in air to a tem- temperatures for all other compositions shall be perature below that limit. 90 °C to 110 °C. To reach tensile test requirements and impact properties at the same time, it can be necessary to keep the interpass temperature in a small range. Table 8B — Mechanical test requirements (Classification by tensile strength and 27 J imElponacgta etinoenrgy) Impact test Tensile strength Yield strength Classification A a temperature a a b,c 5 MPa MPa % °C E4303 430 330 20 0 E4310 430 330 20 −30 E4311 430 330 20 −30"
+  },
+  {
+    "standard_code": "ISO_2560_2020",
+    "clause_ref": "6.2",
+    "clause_title": "Pass sequence",
+    "requirement_text": "The pass sequence shall be as indicated in Table 9.\n\n| Classification | Tensile strength a | Yield strength a | Elongation A a 5 | Impact test temperature b,c |\n| --- | --- | --- | --- | --- |\n|  | MPa | MPa | % | °C |\n|  |  |  |  |  |\n| E5516-N5 | 550 | 460 | 17 | −60 |\n| E5518-N5 | 550 | 460 | 17 | −60 |\n| E4915-N7 | 490 | 390 | 20 | −100 |\n| E4916-N7 | 490 | 390 | 20 | −100 |\n| E4918-N7 | 490 | 390 | 20 | −100 |\n| E5516-N7 | 550 | 460 | 17 | −75 |\n| E5518-N7 | 550 | 460 | 17 | −75 |\n| E5516-N13 | 550 | 460 | 17 | −100 |\n| E5518-N2M3 | 550 | 460 | 17 | −40 |\n| E4903-NC | 490 | 390 | 20 | 0 |\n| E4916-NC | 490 | 390 | 20 | 0 |\n| E4928-NC | 490 | 390 | 20 | 0 |\n| E5716-NC | 570 | 490 | 16 | 0 |\n| E5728-NC | 570 | 490 | 16 | 0 |\n| E4903-CC | 490 | 390 | 20 | 0 |\n| E4916-CC | 490 | 390 | 20 | 0 |\n| E4928-CC | 490 | 390 | 20 | 0 |\n| E5716-CC | 570 | 490 | 16 | 0 |\n| E5728-CC | 570 | 490 | 16 | 0 |\n| E4903-NCC | 490 | 390 | 20 | 0 |\n| E4916-NCC | 490 | 390 | 20 | 0 |\n| E4928-NCC | 490 | 390 | 20 | 0 |\n| E5716-NCC | 570 | 490 | 16 | 0 |\n| E5728-NCC | 570 | 490 | 16 | 0 |\n| E4903-NCC1 | 490 | 390 | 20 | 0 |\n| E4916-NCC1 | 490 | 390 | 20 | 0 |\n| E4928-NCC1 | 490 | 390 | 20 | 0 |\n| E5516-NCC1 | 550 | 460 | 17 | −20 |\n| E5518-NCC1 | 550 | 460 | 17 | −20 |\n| E5716-NCC1 | 570 | 490 | 16 | 0 |\n| E5728-NCC1 | 570 | 490 | 16 | 0 |\n| E4916-NCC2 | 490 | 420 | 20 | −20 |\n| E4918-NCC2 | 490 | 420 | 20 | −20 |\n| E49XX-G | 490 | 400 | 20 | NR |\n| E55XX-G 550 460 17 NR E57XX-G 570 490 16 NR a Single values are minimum requirements. b NR = impact testing is not required. |  |  |  |  |\n\n\nThe direction of welding to complete a pass shall not vary. Each pass shall be executed with a welding current of 70 % to 90 % of the maximum current recommended by the manufacturer. Regardless of the type of covering, welding shall be performed with AC when both AC or DC are applicable and with DC using the recommended polarity when only DC is claimed. Table 9 — Pass sequence Electrode diameter Split weave a Layer No. Passes per layer Number of layers mm b 4,0 1 to top 2 7 to 9 a For diameters other than 4,0 mm, the pass sequence is to be specified by the manufacturer. b The top two layers may be completed with 3 passes per layer."
+  },
+  {
+    "standard_code": "ISO_2560_2020",
+    "clause_ref": "7",
+    "clause_title": "Chemical analysis",
+    "requirement_text": "Chemical analysis may be performed on any suitable test piece, but in cases of dispute, specimens in accordance with ISO 6847 shall be used. Any analytical technique may be used, but in cases of dispute, r7eAf e rCelnacses isfhicaallt bioen m bayd ye iteol de ssttarbelnisghtehd a pnudb l4is7h Je d meth7oBd s .Classification by tensile strength and 27 J impact energy impact energy The results of the chemical analysis shall fulfil The results of the chemical analysis shall fulfil the requirements given in Table 3A. the requirements given in Table 10B for the classification under test. Table 10B — All-weld metal deposit composition requirements a,b (Classification by tenCsihlee mstirceanl gcothm apnods i2ti7o nJ impact energy) Classification C Mn Si P S Ni Cr Mo V Cu Al % (by mass)"
+  },
+  {
+    "standard_code": "ISO_2560_2020",
+    "clause_ref": "8",
+    "clause_title": "Fillet weld test",
+    "requirement_text": "T8Ahe fCilllaests wifeiclda ttieosnt absys eymiebldly ssthraelnl gbteh a as nshdo 4w7n J in ISO 185B7 9 C2l-a3:s2s0if1i1c,a Ftiigounr bey 1 t.ensile strength and 27 J impact energy impact energy The plate material shall be selected from the The plate material shall be unalloyed steel of range of materials for which the electrode is 0t,30 % (by mass) C maximum. The surfaces to be recommended by the manufactutrer. The surface welded shall be clean. wThe test platel thickness, shall be free of scale, rwust and other contami- , shall be 10 mm to 12 mm in accordance with nants. The test plate tlhickness, , shall be 10 mm Table 11B. The width, , the length, , the test to 12 mm, the width, , shall be 75 mm mini- positions for each coating type, and the required mum and the length, , shall be 300 mm mini- test results are given in Tables 11B and 12B. mum. The electrode sizes to be tested for each coating type, the test positions and the required test results are given in Table 11A. Table 11A — Test requirements for fillet welds a (Classification by yield strength and 47 J impact energy) Symbol of Fillet Coating Test Electrode Leg leDnimgtehnsions in millimetres position for theoretical Convexity type position size difference classificatio n throat a C 4,5 min. 1,5 max. 2,5 max. b"
+  },
+  {
+    "standard_code": "ISO_2560_2020",
+    "clause_ref": "1",
+    "clause_title": "or 2 RX PB 6,0 5,0 min. 2,0 max. 3,0 max.",
+    "requirement_text": "B 5,0 min. 2,0 max. 3,0 max. A"
+  },
+  {
+    "standard_code": "ISO_2560_2020",
+    "clause_ref": "3",
+    "clause_title": "PB 6,0 5,0 min. 2,0 max. 3,0 max.",
+    "requirement_text": "RR R 6,0"
+  },
+  {
+    "standard_code": "ISO_2560_2020",
+    "clause_ref": "5",
+    "clause_title": "PB 4,5 min. 1,5 max. 2,5 max.",
+    "requirement_text": "B 5,0 C 4,5 max. b"
+  },
+  {
+    "standard_code": "ISO_2560_2020",
+    "clause_ref": "1",
+    "clause_title": "or 2 RX PF 4,0 4,5 max. — 2,0 max.",
+    "requirement_text": "B 5,5 max. C 4,5 max. 1,5 max. 2,5 max. b"
+  },
+  {
+    "standard_code": "ISO_2560_2020",
+    "clause_ref": "1",
+    "clause_title": "or 2 RX PD 4,0 4,5 max. 1,5 max. 2,5 max.",
+    "requirement_text": "B 5,5 max. 2,0 max. 3,0 max. c"
+  },
+  {
+    "standard_code": "ISO_2560_2020",
+    "clause_ref": "5",
+    "clause_title": "B PG 4,0 5,0 min. — 1,5 max.",
+    "requirement_text": "a Where the largest size claimed for positional welding is smaller than that specified, use the largest size and adjust criteria pro rata. Otherwise, electrode sizes not shown are not required to be tested. b RX includes R, RC, RA and RB. c Maximum concavity.\n\n| Symbol of position for classificatio n | Coating type | Test position | Electrode size | Fillet theoretical throat | Leg leDnimgtehnsio difference | ns in millimetres Convexity |\n| --- | --- | --- | --- | --- | --- | --- |\n| 1 or 2 | C b RX | PB | a 6,0 | 4,5 min. 5,0 min. | 1,5 max. 2,0 max. | 2,5 max. 3,0 max. |\n|  | B A |  |  | 5,0 min. | 2,0 max. | 3,0 max. |\n| 3 | RR R | PB | 6,0 6,0 | 5,0 min. | 2,0 max. | 3,0 max. |\n| 5 1 or 2 | B C b RX | PB PF | 5,0 4,0 | 4,5 min. 4,5 max. 4,5 max. | 1,5 max. — | 2,5 max. 2,0 max. |\n| 1 or 2 | B C b RX | PD | 4,0 | 5,5 max. 4,5 max. 4,5 max. | 1,5 max. 1,5 max. | 2,5 max. 2,5 max. |\n|  |  |  |  |  |  |  |\n| B 5,5 max. 2,0 max. 3,0 max. c 5 B PG 4,0 5,0 min. — 1,5 max. a Where the largest size claimed for positional welding is smaller than that specified, use the largest size and adjust criteria pro rata. Otherwise, electrode sizes not shown are not required to be tested. b RX includes R, RC, RA and RB. |  |  |  |  |  |  |\n\n\nTable 11B — Test requirements for fillet welds Current(Classification by tensile strength Manindi m27u mJ i mplpaatec t eneMrignyi)mum Fillet Coating Test and Electrode size width plate length weld size type position polarity a w l AC and 5,0 PF, PD 300 10,0 max."
+  },
+  {
+    "standard_code": "ISO_2560_2020",
+    "clause_ref": "03",
+    "clause_title": "75",
+    "requirement_text": "DC (+) 6,0 PB 400 8,0 min. 5,0 PF, PD 300 8,0 max."
+  },
+  {
+    "standard_code": "ISO_2560_2020",
+    "clause_ref": "10",
+    "clause_title": "DC (+) 75",
+    "requirement_text": "6,0 PB 400 6,0 min. AC and 5,0 PF, PD 300 8,0 max."
+  },
+  {
+    "standard_code": "ISO_2560_2020",
+    "clause_ref": "11",
+    "clause_title": "75",
+    "requirement_text": "DC (+) 6,0 PB 400 6,0 min. AC and 5,0 PF, PD 300 10,0 max."
+  },
+  {
+    "standard_code": "ISO_2560_2020",
+    "clause_ref": "12",
+    "clause_title": "75",
+    "requirement_text": "DC (−) 6,0 PB 400 8,0 min. AC, DC (−) 5,0 PF, PD 300 10,0 max."
+  },
+  {
+    "standard_code": "ISO_2560_2020",
+    "clause_ref": "13",
+    "clause_title": "75",
+    "requirement_text": "and DC (+) 6,0 PB 400 8,0 min. AC, DC (−) 4,0 PF, PD 300 8,0 max."
+  },
+  {
+    "standard_code": "ISO_2560_2020",
+    "clause_ref": "14",
+    "clause_title": "75",
+    "requirement_text": "and DC (+) 6,0 PB 400 8,0 min. 4,0 PF, PD 300 8,0 max."
+  },
+  {
+    "standard_code": "ISO_2560_2020",
+    "clause_ref": "15",
+    "clause_title": "DC (+) 75",
+    "requirement_text": "6,0 PB 400 8,0 min. AC and 4,0 PF, PD 300 8,0 max."
+  },
+  {
+    "standard_code": "ISO_2560_2020",
+    "clause_ref": "16",
+    "clause_title": "75",
+    "requirement_text": "DC (+) 6,0 PB 400 8,0 min. AC and 4,0 PF, PD 300 8,0 max."
+  },
+  {
+    "standard_code": "ISO_2560_2020",
+    "clause_ref": "18",
+    "clause_title": "75",
+    "requirement_text": "DC (+) 6,0 PB 400 8,0 min. AC and 5,0 PF, PD 300 10,0 max."
+  },
+  {
+    "standard_code": "ISO_2560_2020",
+    "clause_ref": "19",
+    "clause_title": "75",
+    "requirement_text": "DC (+) 6,0 PB 400 8,0 min. AC and"
+  },
+  {
+    "standard_code": "ISO_2560_2020",
+    "clause_ref": "20",
+    "clause_title": "6,0 PB 75 400 8,0 min.",
+    "requirement_text": "DC (−) AC, DC (−) b"
+  },
+  {
+    "standard_code": "ISO_2560_2020",
+    "clause_ref": "24",
+    "clause_title": "6,0 PB 75 400 or 650 8,0 min.",
+    "requirement_text": "and DC (+) AC and b"
+  },
+  {
+    "standard_code": "ISO_2560_2020",
+    "clause_ref": "27",
+    "clause_title": "6,0 PB 75 400 or 650 8,0 min.",
+    "requirement_text": "DC (−) AC and b"
+  },
+  {
+    "standard_code": "ISO_2560_2020",
+    "clause_ref": "28",
+    "clause_title": "6,0 PB 75 400 or 650 8,0 min.",
+    "requirement_text": "DC (+) c c c c c"
+  },
+  {
+    "standard_code": "ISO_2560_2020",
+    "clause_ref": "40",
+    "clause_title": "NS NS NS 75 NS NS",
+    "requirement_text": "4,0 8,0 max."
+  },
+  {
+    "standard_code": "ISO_2560_2020",
+    "clause_ref": "45",
+    "clause_title": "DC (+) PE, PG 75 300",
+    "requirement_text": "4,5 6,0 min. AC and 4,0 PD, PG 300 8,0 max."
+  },
+  {
+    "standard_code": "ISO_2560_2020",
+    "clause_ref": "48",
+    "clause_title": "75 d",
+    "requirement_text": "DC (+) 5,0 PB, PG 300 or 400 6,5 min. a Where the largest size claimed for positional welding is smaller than that specified, use the largest size and adjust l l criteria pro rata. Otherwise, electrode sizes not shown are not required to be tested. b For 450 mm electrode length, shall be 400 minimum. For 700 mm electrode length, shall be 650 mm minimum. c l l NS = Not specified. Requirements shall be agreed between purchaser and supplier. d For 350 mm electrode length, shall be 300 mm minimum. For 450 mm or 460 mm electrode length, shall be 400 mm minimum.\n\n| Coating type | Current(Cl and polarity | assification by te Electrode size a | nsile strengt Test position | h Manindi m27u mJ i mplpaatec t width w | eneMrignyi)mum plate length l | Fillet weld size |\n| --- | --- | --- | --- | --- | --- | --- |\n|  |  |  |  |  |  |  |\n| 03 | AC and DC (+) | 5,0 6,0 | PF, PD PB | 75 | 300 400 | 10,0 max. 8,0 min. |\n| 10 | DC (+) | 5,0 6,0 | PF, PD PB | 75 | 300 400 | 8,0 max. 6,0 min. |\n| 11 | AC and DC (+) | 5,0 6,0 | PF, PD PB | 75 | 300 400 | 8,0 max. 6,0 min. |\n| 12 | AC and DC (−) | 5,0 6,0 | PF, PD PB | 75 | 300 400 | 10,0 max. 8,0 min. |\n| 13 | AC, DC (−) and DC (+) | 5,0 6,0 | PF, PD PB | 75 | 300 400 | 10,0 max. 8,0 min. |\n| 14 | AC, DC (−) and DC (+) | 4,0 6,0 | PF, PD PB | 75 | 300 400 | 8,0 max. 8,0 min. |\n| 15 | DC (+) | 4,0 6,0 | PF, PD PB | 75 | 300 400 | 8,0 max. 8,0 min. |\n| 16 | AC and DC (+) | 4,0 6,0 | PF, PD PB | 75 | 300 400 | 8,0 max. 8,0 min. |\n| 18 | AC and DC (+) | 4,0 6,0 | PF, PD PB | 75 | 300 400 | 8,0 max. 8,0 min. |\n| 19 | AC and DC (+) | 5,0 6,0 | PF, PD PB | 75 | 300 400 | 10,0 max. 8,0 min. |\n| 20 | AC and DC (−) | 6,0 | PB | 75 | 400 | 8,0 min. |\n| 24 | AC, DC (−) and DC (+) | 6,0 | PB | 75 | b 400 or 650 | 8,0 min. |\n| 27 | AC and DC (−) | 6,0 | PB | 75 | b 400 or 650 | 8,0 min. |\n| 28 | AC and | 6,0 | PB | 75 | b 400 or 650 | 8,0 min. |\n| 40 | DC (+) c NS | c NS | c NS | 75 | c NS | c NS |\n| 45 | DC (+) | 4,0 4,5 | PE, PG | 75 | 300 | 8,0 max. 6,0 min. |\n| AC and 4,0 PD, PG 300 8,0 max. 48 75 d DC (+) 5,0 PB, PG 300 or 400 6,5 min. a Where the largest size claimed for positional welding is smaller than that specified, use the largest size and adjust l l criteria pro rata. Otherwise, electrode sizes not shown are not required to be tested. b For 450 mm electrode length, shall be 400 minimum. For 700 mm electrode length, shall be 650 mm minimum. c l l NS = Not specified. Requirements shall be agreed between purchaser and supplier. d |  |  |  |  |  |  |\n\n\nTable 12B — Allowable leg length difference and maximum convexity Measured fillet weld size Maximum leg length difference Maximum convexity Dimensions in millimetres 4,0 or less 1,0 2,0 4,5 1,5 2,0 5,0 or 5,5 2,0 2,0 6,0 or 6,5 2,5 2,0 7,0, 7,5 or 8,0 3,0 2,5 8,5 3,5 2,5 9,0 or more 4,0 2,5"
+  },
+  {
+    "standard_code": "ISO_2560_2020",
+    "clause_ref": "9",
+    "clause_title": "Rounding procedure",
+    "requirement_text": "Actual test values obtained shall be subject to ISO 80000-1:2009, B.3, Rule A. If the measured values are obtained by equipment calibrated in units other than those of this document, the measured values shall be converted to the units of this document before rounding. If an average value is to be compared to the requirements of this document, rounding shall be done only after calculating the average. The rounded results shall fulfil the requirements of the appropriate table for the classification under test."
+  },
+  {
+    "standard_code": "ISO_2560_2020",
+    "clause_ref": "10",
+    "clause_title": "Retests",
+    "requirement_text": "If any test fails to meet the requirement(s), that test shall be repeated twice. The results of both retests shall meet the requirement. Specimens for the retest may be taken from the original test assembly or sample or from one or two new test assemblies. For chemical analysis, retests are only needed for those specific elements that failed to meet the requirement. If the results of one or both retests fail to meet the requirement, the material under test shall be considered as not meeting the requirements of this document for that classification. In the event that during preparation, or after completion of any test, it is clearly determined that prescribed or proper procedures were not followed in preparing the weld test assembly or sample(s) or test specimen(s), or in conducting the tests, the test shall be considered invalid. This determination is made without regard to whether the test was actually completed, or whether the test results met, or failed to meet, the requirements. That test shall be repeated, following proper prescribed procedures. In this case, the requirement for doubling the number of test specimens does not apply."
+  },
+  {
+    "standard_code": "ISO_2560_2020",
+    "clause_ref": "11",
+    "clause_title": "Technical delivery conditions",
+    "requirement_text": "Technical delivery conditions shall meet the requirements in ISO 544 and in ISO 14344.\n\n| Measured fillet weld size | Maximum leg length difference | Maximum convexity Dimensions in millimetres |\n| --- | --- | --- |\n|  |  |  |\n|  |  |  |\n| 4,0 or less | 1,0 | 2,0 |\n| 4,5 | 1,5 | 2,0 |\n| 5,0 or 5,5 | 2,0 | 2,0 |\n| 6,0 or 6,5 | 2,5 | 2,0 |\n| 7,0, 7,5 or 8,0 | 3,0 | 2,5 |"
+  },
+  {
+    "standard_code": "ISO_2560_2020",
+    "clause_ref": "12",
+    "clause_title": "Examples of designation",
+    "requirement_text": "12A Classification by yield strength and 47 J 12B Classification by tensile strength and impact energy 27 J impact energy The designation of the covered electrode is The designation of the covered electrode is indicated by the suffix letter A given after the indicated by the suffix letter B given after the number of this document and shall follow the number of this document and shall follow the principles given in the example below. principles given in the example below."
+  },
+  {
+    "standard_code": "ISO_2560_2020",
+    "clause_ref": "46",
+    "clause_title": "is the strength and elongation (see 4.1);",
+    "requirement_text": "(see Table 1A);"
+  },
+  {
+    "standard_code": "ISO_2560_2020",
+    "clause_ref": "3",
+    "clause_title": "are the impact properties 55 is the tensile strength (see",
+    "requirement_text": "(see Table 2A); Table 1B);\n\n\nB is the type of electrode cover- 18 is the basic iron powder ing (see Table 4A); coating suitable for AC and DC (+), in all positions except vertical down (see Table 4B);"
+  },
+  {
+    "standard_code": "ISO_2560_2020",
+    "clause_ref": "5",
+    "clause_title": "is the electrode efficiency and",
+    "requirement_text": "type of current (see Table 5A); −N2 is the 1 % (by mass) Ni as the principal alloying element"
+  },
+  {
+    "standard_code": "ISO_2560_2020",
+    "clause_ref": "3",
+    "clause_title": "is the welding position (see (see Table 3B);",
+    "requirement_text": "Table 6A); E5518-N2 A is the complete specification of composition limits H5 is the diffusible hydrogen con- and mechanical property tent (see Table 7). requirements (see Tables 8B and 10B) in the as-welded condition; U is the supplemental impact requirement of 47 J at the basic 27 J impact test temperature; H5 is the diffusible hydrogen content (see Table 7)."
+  }
+]

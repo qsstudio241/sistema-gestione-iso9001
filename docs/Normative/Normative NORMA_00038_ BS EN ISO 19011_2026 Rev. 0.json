@@ -1,0 +1,602 @@
+[
+  {
+    "standard_code": "ISO_19011_2026",
+    "clause_ref": "1",
+    "clause_title": "Scope 1",
+    "requirement_text": "..........................................................................................................................................................................................................................................."
+  },
+  {
+    "standard_code": "ISO_19011_2026",
+    "clause_ref": "2",
+    "clause_title": "Normative references 1",
+    "requirement_text": "............................................................................................................................................................................................................................................."
+  },
+  {
+    "standard_code": "ISO_19011_2026",
+    "clause_ref": "3",
+    "clause_title": "Terms and definitions 1",
+    "requirement_text": "................................................................................................................................................................................................."
+  },
+  {
+    "standard_code": "ISO_19011_2026",
+    "clause_ref": "4",
+    "clause_title": "Principles of auditing 5",
+    "requirement_text": "................................................................................................................................................................................................ .................................................................................................................................................................................................. 4.1 General ........................................................................................................................................................................................................................5 4.2 Integrity .....................................................................................................................................................................................................................5 4.3 Fair presentation ...............................................................................................................................................................................................5 4.4 Due professional care ....................................................................................................................................................................................5 4.5 Confidentiality .....................................................................................................................................................................................................6 4.6 Independence ........................................................................................................................................................................................................6 4.7 Evidence-based approach ..........................................................................................................................................................................6"
+  },
+  {
+    "standard_code": "ISO_19011_2026",
+    "clause_ref": "5",
+    "clause_title": "Managing an audit programme 6",
+    "requirement_text": "4.8 Risk-based approach ......................................................................................................................................................................................6 ........................................................................................................................................................................ 5.1 General ........................................................................................................................................................................................................................6 5.2 Establishing audit programme objectives ..................................................................................................................................9"
+  },
+  {
+    "standard_code": "ISO_19011_2026",
+    "clause_ref": "5.3",
+    "clause_title": "Determining and evaluating audit programme risks and opportunities .......................................................9",
+    "requirement_text": "5.4 Establishing the audit programme .................................................................................................................................................10"
+  },
+  {
+    "standard_code": "ISO_19011_2026",
+    "clause_ref": "5.4.1",
+    "clause_title": "Roles and responsibilities of individual(s) managing the audit programme .........................10",
+    "requirement_text": ""
+  },
+  {
+    "standard_code": "ISO_19011_2026",
+    "clause_ref": "5.4.2",
+    "clause_title": "Competence of individual(s) managing the audit programme ............................................................11",
+    "requirement_text": ""
+  },
+  {
+    "standard_code": "ISO_19011_2026",
+    "clause_ref": "5.4.3",
+    "clause_title": "Establishing the scope of the audit programme ...............................................................................................11",
+    "requirement_text": ""
+  },
+  {
+    "standard_code": "ISO_19011_2026",
+    "clause_ref": "5.4.4",
+    "clause_title": "Determining audit programme resources ............................................................................................................12",
+    "requirement_text": "5.5 Implementing the audit programme ............................................................................................................................................12 5.5.1 General .................................................................................................................................................................................................12"
+  },
+  {
+    "standard_code": "ISO_19011_2026",
+    "clause_ref": "5.5.2",
+    "clause_title": "Defining the objectives, scope and criteria for an individual audit ...............................................13",
+    "requirement_text": ""
+  },
+  {
+    "standard_code": "ISO_19011_2026",
+    "clause_ref": "5.5.3",
+    "clause_title": "Selecting and determining auditing methods ....................................................................................................14",
+    "requirement_text": "5.5.4 Selecting audit team members .........................................................................................................................................14"
+  },
+  {
+    "standard_code": "ISO_19011_2026",
+    "clause_ref": "5.5.5",
+    "clause_title": "Assigning responsibility for an individual audit to the audit team leader ..............................15",
+    "requirement_text": "5.5.6 Managing audit programme results ...........................................................................................................................16 5.5.7 Managing audit related records ......................................................................................................................................16 5.6 Monitoring the audit programme ....................................................................................................................................................17"
+  },
+  {
+    "standard_code": "ISO_19011_2026",
+    "clause_ref": "6",
+    "clause_title": "Conducting an audit 18",
+    "requirement_text": "5.7 Reviewing and improving the audit programme...............................................................................................................17 ................................................................................................................................................................................................... 6.1 General .....................................................................................................................................................................................................................18 6.2 Initiating the audit ........................................................................................................................................................................................18 6.2.1 General ..................................................................................................................................................................................................18 6.2.2 Establishing contact with the auditee .......................................................................................................................18 6.2.3 Determining the feasibility of the audit...................................................................................................................19 6.3 Preparing auditing activities ...............................................................................................................................................................19"
+  },
+  {
+    "standard_code": "ISO_19011_2026",
+    "clause_ref": "6.3.1",
+    "clause_title": "Performing the review of documented information ....................................................................................19",
+    "requirement_text": "6.3.2 Audit planning ................................................................................................................................................................................19 6.3.3 Assigning work to the audit team .................................................................................................................................21"
+  },
+  {
+    "standard_code": "ISO_19011_2026",
+    "clause_ref": "6.3.4",
+    "clause_title": "Preparing documented information for the audit ..........................................................................................21",
+    "requirement_text": "6.4 Conducting auditing activities ............................................................................................................................................................21 6.4.1 General ..................................................................................................................................................................................................21"
+  },
+  {
+    "standard_code": "ISO_19011_2026",
+    "clause_ref": "6.4.2",
+    "clause_title": "Assigning the roles and responsibilities of guides and observers ...................................................21",
+    "requirement_text": "6.4.3 Conducting the opening meeting ..................................................................................................................................22 6.4.4 Communicating during the audit ..................................................................................................................................23 6.4.5 Providing access to audit information .....................................................................................................................23"
+  },
+  {
+    "standard_code": "ISO_19011_2026",
+    "clause_ref": "6.4.6",
+    "clause_title": "Reviewing documented information while conducting the audit ...................................................23",
+    "requirement_text": "6.4.7 Collecting and verifying information.........................................................................................................................24 6.4.8 Generating the audit findings ....... ...................................................................................................................................25 iii\n\n\n6.4.9 Determining the audit conclusions .............................................................................................................................25 6.4.10 Conducting the closing meeting.....................................................................................................................................26 6.5 Preparing and distributing the audit report ..........................................................................................................................27 6.5.1 Preparing the audit report ..................................................................................................................................................27 6.5.2 Distributing the audit report .............................................................................................................................................27 6.6 Completing the audit ..................................................................................................................................................................................28"
+  },
+  {
+    "standard_code": "ISO_19011_2026",
+    "clause_ref": "7",
+    "clause_title": "Competence and evaluation of auditors 28",
+    "requirement_text": "6.7 Conducting the audit follow-up .........................................................................................................................................................28 ............................................................................................................................................... 7.1 General ....................................................................................................................................................................................................................28 7.2 Determining auditor competence ...................................................................................................................................................29 7.2.1 General .................................................................................................................................................................................................29 7.2.2 Personal behaviour ...................................................................................................................................................................29 7.2.3 Knowledge and skills ...............................................................................................................................................................30 7.2.4 Achieving auditor competence ........................................................................................................................................32"
+  },
+  {
+    "standard_code": "ISO_19011_2026",
+    "clause_ref": "7.2.5",
+    "clause_title": "Achieving audit team leader competence .............................................................................................................33",
+    "requirement_text": "7.3 Establishing the auditor evaluation criteria .........................................................................................................................33"
+  },
+  {
+    "standard_code": "ISO_19011_2026",
+    "clause_ref": "7.4",
+    "clause_title": "Selecting the appropriate auditor evaluation method .................................................................................................33",
+    "requirement_text": "7.5 Conducting the auditor evaluation ................................................................................................................................................33 Annex A Additional guidance for auditors for planning and conducting audits 35 7.6 Maintaining and improving auditor competence .............................................................................................................34 Bibliography 46 (informative) .................... ......................................................................................................................................................................................................................................... iv"
+  },
+  {
+    "standard_code": "ISO_19011_2026",
+    "clause_ref": "1",
+    "clause_title": "Scope",
+    "requirement_text": "This document gives guidance on auditing management systems, including the principles of auditing, managing an audit programme and conducting management system audits, as well as guidance on the evaluation of competence of individuals involved in the audit process. These individuals include those managing the audit programme, auditors and audit teams. It is applicable to all organizations that need to plan and conduct audits of management systems or manage an audit programme. The application of this document to other types of audits is possible, provided that special consideration is given to the specific competence needed and the objectives to be achieved."
+  },
+  {
+    "standard_code": "ISO_19011_2026",
+    "clause_ref": "2",
+    "clause_title": "Normative references",
+    "requirement_text": "There are no normative references in this document."
+  },
+  {
+    "standard_code": "ISO_19011_2026",
+    "clause_ref": "3",
+    "clause_title": "Terms and definitions",
+    "requirement_text": "For the purposes of this document, the following terms and definitions apply. ISO and IEC maintain terminology databases for use in standardization at the following addresses: — ISO Online browsing platform: available at https:// www .iso .org/ obp —3.1 IEC Electropedia: available at https:// www .electropedia .org/ audit process objective evidence audit criteria systematic, independent and documented (3.25) for obtaining (3.9) and evaluating it objectively to determine the extent to which the (3.8) are fulfilled Note 1 to entry: Internal audits, sometimes called first-party audits, are conducted by, or on behalf of, the organization itself. Note 2 to entry: External audits include those generally called second and third-party audits. Second-party audits are conducted by pcaorntifeosr mhaitvying an interest in the organization, such as customers, or by other individuals on their behalf. Third-party audits are conducted by independent auditing organizations, such as those providing certification/ registration of (3.21) or governmental agencies and regulatory authorities. [SOURCE: ISO 9000:2026, 3.12.1, modified — “documented and “objective” added to the definition. Notes to e3n.2try replaced.] combined audit audit auditee management systems (3.1) carried out together at a single (3.14) on two or more (3.19) [SOURCE: ISO 9000:2026, 3.12.2, modified — Note 1 to entry deleted.]\n\n\n3.3 joint audit audit auditee (3.1) carried out at a single (3.14) by two or more auditing organizations"
+  },
+  {
+    "standard_code": "ISO_19011_2026",
+    "clause_ref": "4",
+    "clause_title": "Principles of auditing",
+    "requirement_text": ""
+  },
+  {
+    "standard_code": "ISO_19011_2026",
+    "clause_ref": "4.1",
+    "clause_title": "General",
+    "requirement_text": "Auditing is characterized by reliance on a number of principles. These principles should help to make the audit an effective and reliable tool in support of management policies and controls, by providing information on which an organization can act in order to improve its performance. Adherence to these principles is fundamental to provide audit conclusions that are relevant and sufficient, and for enabling auditors, working independently from one another, to reach similar conclusions in similar circumstances. The guidance given in Clauses 5 to 7 is based on the seven principles outlined in 4.2 to 4.8."
+  },
+  {
+    "standard_code": "ISO_19011_2026",
+    "clause_ref": "4.2",
+    "clause_title": "Integrity",
+    "requirement_text": "Integrity is the foundation of professionalism. Auditors and the individual(s) managing an audit programme should:\n\na) perform their work ethically, with honesty and responsibility;\n\nb) only undertake auditing activities if they are competent to do so;\n\nc) perform their work in an impartial manner, i.e. remain fair and unbiased in all their dealings;\n\nd) be sensitive to any influences that can be exerted on their judgement while carrying out an audit."
+  },
+  {
+    "standard_code": "ISO_19011_2026",
+    "clause_ref": "4.3",
+    "clause_title": "Fair presentation",
+    "requirement_text": "Fair presentation is the obligation to report truthfully and accurately. Audit findings, audit conclusions and audit reports should reflect truthfully and accurately the auditing activities. Significant obstacles encountered during the audit and unresolved diverging opinions between the audit team and the auditee should be reported. The communication should be truthful, accurate, objective, timely, clear and complete."
+  },
+  {
+    "standard_code": "ISO_19011_2026",
+    "clause_ref": "4.4",
+    "clause_title": "Due professional care",
+    "requirement_text": "Due professional care is the application of diligence and judgement in auditing. Auditors should exercise due care irrespective of the importance of the task they perform, and the confidence placed in them by the audit client and other interested parties. An important factor in carrying out their work with due professional care is having the ability to make reasoned judgements in all audit situations."
+  },
+  {
+    "standard_code": "ISO_19011_2026",
+    "clause_ref": "4.5",
+    "clause_title": "Confidentiality",
+    "requirement_text": "Confidentiality is security and privacy of information. Auditors should exercise discretion in the use and protection of information acquired in the course of their auditing activities. Audit information should not be used inappropriately for personal gain by the auditor or the audit client, or in a manner detrimental to the legitimate interests of the auditee. This principle includes the proper handling of sensitive or confidential information."
+  },
+  {
+    "standard_code": "ISO_19011_2026",
+    "clause_ref": "4.6",
+    "clause_title": "Independence",
+    "requirement_text": "Independence is the basis for the impartiality of the audit and objectivity of the audit conclusions. Auditors should be independent of the activity being audited wherever practicable and should in all cases act in a manner that is free from bias and conflict of interest. Auditors should maintain objectivity throughout the audit process to ensure that the audit findings and conclusions are based only on the audit evidence. When it is not possible for internal auditors to be independent of the activity being audited, every effort should be made to remove bias and encourage objectivity."
+  },
+  {
+    "standard_code": "ISO_19011_2026",
+    "clause_ref": "4.7",
+    "clause_title": "Evidence-based approach",
+    "requirement_text": "Evidence-based approach is the rational method for reaching reliable and reproducible audit conclusions in a systematic audit process. Audit evidence should be verifiable. It should be based on samples of the information available, since an audit is conducted during a specified duration and with finite resources. An appropriate use of sampling should be applied, since this is closely related to the confidence that can be placed in the audit conclusions."
+  },
+  {
+    "standard_code": "ISO_19011_2026",
+    "clause_ref": "4.8",
+    "clause_title": "Risk-based approach",
+    "requirement_text": "Risk-based approach is an audit approach that considers risks and opportunities. The risk-based approach should substantively influence the planning and implementation of the audit programme, and the planning, conducting and reporting of audits in order to ensure that audits are focused on matters that are significant for the audit client, and for achieving the audit programme objectives."
+  },
+  {
+    "standard_code": "ISO_19011_2026",
+    "clause_ref": "5",
+    "clause_title": "Managing an audit programme",
+    "requirement_text": ""
+  },
+  {
+    "standard_code": "ISO_19011_2026",
+    "clause_ref": "5.1",
+    "clause_title": "General",
+    "requirement_text": "An audit programme should be established. It can include audits addressing one or more management system standards or other requirements, conducted either separately or in combination (combined audit). The extent of an audit programme should be based on the size and nature of the auditee, as well as on the functionality, complexity, the type of risks and opportunities, the scope, and the level of maturity of the management system(s) to be audited. The functionality of the management system can be even more complex in the case of multiple locations or when important functions are sourced externally. Particular attention should be paid to where important decisions are made and to the design, planning and review of the audit programme. The audit programme should be scaled in accordance with the size and complexity of the organization. In order to understand the context of the auditee, the audit programme should take into account the organization’s: — organizational objectives;\n\n\n— relevant external and internal issues; — needs and expectations of relevant interested parties; — application of technology such as digital tools; — information security and confidentiality requirements. When allocating resources and methods to the audit programme, priority should be given to matters in the management system with higher inherent risk and lower levels of performance. Competent individuals should be assigned to manage the audit programme (see 5.4.2). The audit programme should include information and identify resources to enable the audits to be conducted effectively within the specified time frames. The information should include:\n\na) objectives for the audit programme (see 5.2);\n\nb) risks and opportunities associated with the audit programme (see 5.3) and the actions to address them;\n\nc) scope (extent, boundaries, locations) of each audit within the audit programme;\n\nd) schedule (number/duration/frequency) of the audits;\n\ne) audit types, such as internal or external;\n\nf) audit criteria;\n\ng) auditing methods to be employed, including remote auditing methods (see Clause A.16);\n\nh) criteria for selecting the audit team (audit team leader, auditors and, if needed, technical experts);\n\ni) criteria for participation of observers, where relevant;\n\nj) the organization’s context based on external and internal issues;\n\nk) relevant documented information.\n\nSome of this information is not always available until more detailed audit planning is completed. The implementation of the audit programme should be monitored and assessed on an ongoing basis (see 5.6) to ensure its audit programme objectives have been achieved. The audit programme should be reviewed in order to determine the need for changes and possible opportunities for improvements (see 5.7). Figure 1 illustrates the process flow for the management of an audit programme.\n\n\nNOTE 1 This figure illustrates the application of the Plan-Do-Check-Act cycle in this document. NOTE 2 Clause/subclause numbering refers to the relevant clauses/subclauses of this document. NOTE 3 Conducting the audit follow-up (see 6.7) is not always applicable, as illustrated by the dashed lines. Figure 1 — Process flows for managing an audit programme and conducting an audit"
+  },
+  {
+    "standard_code": "ISO_19011_2026",
+    "clause_ref": "5.2",
+    "clause_title": "Establishing audit programme objectives",
+    "requirement_text": "The audit client should ensure that the audit programme objectives are established to direct the planning and conducting of audits and should ensure the audit programme is implemented effectively. Audit programme objectives should be consistent with the audit client’s strategic direction, its context, and support its management system policies and objectives. These objectives can be based on consideration of the following:\n\na) needs and expectations of relevant interested parties, both external and internal;\n\nb) characteristics of and requirements for processes, products, services and projects, and any changes to\n\nthem;\n\nc) management system requirements, including differing specific requirements covered during a combined\n\naudit;\n\nd) need for evaluation of organizations that are part of the supply chain;\n\ne) auditee’s level of performance and level of maturity of the management system(s), as reflected in\n\nrelevant performance indicators, the occurrence of nonconformities or incidents or complaints from interested parties;\n\nf) identified risks and opportunities to the auditee;\n\ng) results of previous audits.\n\nExamples of audit programme objectives can include the following: — identifying opportunities for the improvement of a management system and its performance; — evaluating the capability of the auditee to determine its context; — evaluating the capability of the auditee to determine risks and opportunities and to identify and implement effective actions to address them; — determining the conformance to all relevant requirements (e.g. statutory and regulatory requirements, compliance commitments, requirements for certification to a management system standard); — establishing the level of confidence in the capability of an organization in the supply chain; — determining the continuing suitability, adequacy and effectiveness of the auditee’s management system; — evaluating the compatibility and alignment of the management system objectives with the strategic direction of the organization."
+  },
+  {
+    "standard_code": "ISO_19011_2026",
+    "clause_ref": "5.3",
+    "clause_title": "Determining and evaluating audit programme risks and opportunities",
+    "requirement_text": "There are risks and opportunities related to the context of the auditee that can be associated with an audit programme and can affect the achievement of its objectives. The individual(s) managing the audit programme should identify risks and opportunities and present them to the audit client when developing the audit programme and resource requirements, so that they can be addressed appropriately. Risks can be associated with the following:\n\na) planning (e.g. failure to set relevant and appropriate audit objectives and determine the extent, number,\n\nduration, locations and schedule of the audits);\n\nb) resources (e.g. allowing insufficient time, equipment and/or training for developing the audit programme\n\nor conducting an audit; lack of competent auditors; loss of auditors or availability of auditors);\n\nc) selection of the audit team (e.g. insufficient overall competence to conduct audits effectively, lack of\n\nindependence and impartiality of the auditors);\n\n\nd) selection of the audit method (e.g. on-site, remote, taking into account the capability of the selected\n\nmethod to achieve the defined audit objective) (see Clause A.1, A.15 and A.16);\n\ne) communication (e.g. ineffective communication processes/channels);\n\nf) implementation (e.g. ineffective coordination of the audits within the audit programme, not conducting\n\nthe audits in accordance with the audit programme or not considering information security and confidentiality);\n\ng) control of documented information (e.g. ineffective determination of the necessary documented\n\ninformation required by auditors and relevant interested parties, failure to adequately protect audit records);\n\nh) monitoring, reviewing and improving the audit programme (e.g. ineffective monitoring of audit\n\nprogramme outcomes);\n\ni) sponsorship (e.g. failure to engage leadership to enable an effective audit programme implementation);\n\nj) availability and cooperation of the auditee and availability of evidence to be sampled;\n\nk) security of information communication technology methods (e.g. ineffective or unsecured platform\n\nselection). Opportunities for improving the audit programme can include: — allowing multiple audits to be conducted in a single visit; — minimizing time and distances for the travel to locations; — matching the audit team’s competence to the level required to achieve the audit objectives; — selecting the audit method to be used to align with the capability and availability of information and communication technologies."
+  },
+  {
+    "standard_code": "ISO_19011_2026",
+    "clause_ref": "5.4",
+    "clause_title": "Establishing the audit programme",
+    "requirement_text": ""
+  },
+  {
+    "standard_code": "ISO_19011_2026",
+    "clause_ref": "5.4.1",
+    "clause_title": "Roles and responsibilities of individual(s) managing the audit programme",
+    "requirement_text": "The individual(s) managing the audit programme should:\n\na) ensure that the integrity of the audit programme is maintained and that there is no undue influence\n\nexerted over the audit programme;\n\nb) establish the extent of the audit programme according to the relevant objectives (see 5.2) and any\n\nknown constraints;\n\nc) determine the external and internal issues, and risks and opportunities that can affect the audit\n\nprogramme, and implement actions to address them, integrating these actions in all relevant auditing activities, as appropriate;\n\nd) ensure the selection of audit teams and the overall competence for the auditing activities by assigning\n\nroles, responsibilities and authorities, and supporting leadership, as appropriate;\n\ne) establish all relevant processes including for:\n\n1) the audit objectives, scope(s) and criteria of the audits, determination of auditing methods and\n\nselection of the audit team;\n\n2) the coordination and scheduling of all audits within the audit programme;\n\n3) the evaluation of auditor(s) competence (see 7.2);\n\n4) the external and internal communications, as appropriate;\n\n\n5) the resolution of disputes and handling of complaints;\n\n6) the audit follow-up, if applicable;\n\n7) reporting to the audit client and relevant interested parties, as appropriate;\n\nf) determine and ensure provision of all necessary resources;\n\ng) ensure that appropriate documented information is prepared and maintained, including audit\n\nprogramme records;\n\nh) monitor, review and improve the audit programme;\n\ni) communicate the audit programme to the audit client and, as appropriate, relevant interested parties.\n\nThe individual(s) managing the audit programme should request its approval by the audit client."
+  },
+  {
+    "standard_code": "ISO_19011_2026",
+    "clause_ref": "5.4.2",
+    "clause_title": "Competence of individual(s) managing the audit programme",
+    "requirement_text": "The individual(s) managing the audit programme should have the necessary competence to manage the programme, effectively and efficiently, including knowledge of:\n\na) audit principles (see Clause 4), methods and processes (see Clauses A.1 and A.2);\n\nb) management system standards, other relevant standards and reference/guidance documents;\n\nc) information regarding the auditee and its context (e.g. external/internal issues, relevant interested\n\nparties and their needs and expectations, business activities, products, services and processes of the auditee);\n\nd) applicable statutory and regulatory requirements and other requirements relevant to the business\n\nactivities of the auditee. As appropriate, knowledge of risk management, project and process management, and information and communications technology can be considered. The individual(s) managing the audit programme should be engaged in appropriate continual professional development activities to maintain the necessary competence to manage the audit programme."
+  },
+  {
+    "standard_code": "ISO_19011_2026",
+    "clause_ref": "5.4.3",
+    "clause_title": "Establishing the scope of the audit programme",
+    "requirement_text": "The individual(s) managing the audit programme should determine the scope of the audit programme. This can vary depending on the information provided by the audit client or the auditee regarding its context (see 5.3). NOTE In certain cases, depending on the auditee’s structure or its activities, the audit programme only consists of a single audit. Other factors impacting the scope of an audit programme can include the following:\n\na) the objective, scope and duration of each audit and the number of audits to be conducted, reporting\n\nmethod and, if applicable, audit follow up;\n\nb) the management system standards;\n\nc) the number, importance, complexity, similarity and locations of the activities to be audited;\n\nd) factors influencing the effectiveness of the management system;\n\ne) applicable audit criteria, such as planned arrangements for the relevant management system standards,\n\nstatutory and regulatory requirements and other requirements to which the organization is committed;\n\nf) results of previous internal or external audits and management reviews, if appropriate;\n\n\ng) results of a previous audit programme review;\n\nh) language, cultural and social issues;\n\ni) the concerns of interested parties, such as customer complaints, non-compliance with statutory and\n\nregulatory requirements and other requirements to which the organization is committed, or supply chain issues;\n\nj) significant changes to the auditee’s context or its operations and related risks and opportunities;\n\nk) availability of information and communication technologies (e.g. adequate network bandwidth,\n\ncomputer and network hardware and software) to support auditing activities, in particular the use of remote auditing methods (see Clause A.16);\n\nl) the occurrence of external and internal events (e.g. nonconformities of products or services, or incidents\n\nimpacting information security, health and safety or the environment);\n\nm) business risks and opportunities, including actions to address them."
+  },
+  {
+    "standard_code": "ISO_19011_2026",
+    "clause_ref": "5.4.4",
+    "clause_title": "Determining audit programme resources",
+    "requirement_text": "When determining resources for the audit programme, the individual(s) managing the audit programme should consider:\n\na) the financial and time resources necessary to develop, implement, manage and improve auditing\n\nactivities;\n\nb) auditing methods (see Clause A.1);\n\nc) the individual and overall availability of auditors and technical experts having competence appropriate\n\nto the particular audit programme objectives (e.g. including interpreters);\n\nd) the extent of the audit programme (see 5.4.3) and audit programme risks and opportunities (see 5.3);\n\ne) travel time, travel cost, accommodation and other auditing needs;\n\nf) the impact of different time zones and languages;\n\ng) the availability of information and communication technologies (e.g. technical resources required to set\n\nup an audit using technologies that support remote collaboration);\n\nh) the availability of any tools, technology and equipment required;\n\ni) the availability of necessary documented information, as determined during the establishment of the\n\naudit programme (see Clause A.5);\n\nj) requirements related to the facility, including any security clearances and equipment (e.g. background\n\nchecks, personal protective equipment, ability to wear industry appropriate attire)."
+  },
+  {
+    "standard_code": "ISO_19011_2026",
+    "clause_ref": "5.5",
+    "clause_title": "Implementing the audit programme",
+    "requirement_text": ""
+  },
+  {
+    "standard_code": "ISO_19011_2026",
+    "clause_ref": "5.5.1",
+    "clause_title": "General",
+    "requirement_text": "Once the audit programme has been established (see 5.4.3) and related resources have been determined (see 5.4.4), the operational planning and the coordination of all the activities within the programme should be implemented. The individual(s) managing the audit programme should:\n\na) communicate the relevant parts of the audit programme, including the risks and opportunities involved,\n\nto relevant interested parties and inform them periodically of its progress, using established external and internal communication channels;\n\n\nb) define objectives, scope and criteria for each individual audit;\n\nc) select auditing methods (see Clause A.1);\n\nd) coordinate and schedule audits and other activities relevant to the audit programme;\n\ne) ensure the audit teams have the necessary competence (see 5.5.4);\n\nf) provide necessary individual and overall resources to the audit teams (see 5.4.4);\n\ng) ensure that audits are conducted in accordance with the audit programme, managing operational risks,\n\nopportunities and issues as they arise during the deployment of the programme;\n\nh) ensure relevant documented information regarding the auditing activities is properly managed and\n\nmaintained (see 5.5.7);\n\ni) define and implement the operational controls (see 5.6) necessary for audit programme monitoring;\n\nj) review the audit programme in order to identify opportunities for its improvement (see 5.7)."
+  },
+  {
+    "standard_code": "ISO_19011_2026",
+    "clause_ref": "5.5.2",
+    "clause_title": "Defining the objectives, scope and criteria for an individual audit",
+    "requirement_text": "Each individual audit should be based on defined audit objectives, scope and criteria. These should be consistent with the overall audit programme objectives. The audit objectives define what is to be accomplished by the individual audit and can include the following:\n\na) determination of the extent of conformity of the management system to be audited, or parts of it, with\n\naudit criteria;\n\nb) evaluation of the capability of the management system to assist the organization in meeting relevant\n\nstatutory and regulatory requirements and other requirements to which the organization is committed;\n\nc) evaluation of the effectiveness of the management system in meeting its intended results;\n\nd) finding opportunities for improvement of the management system;\n\ne) evaluation of the suitability and adequacy of the management system with respect to the context and\n\nstrategic direction of the organization;\n\nf) evaluation of the capability of the management system to establish and achieve objectives and effectively\n\naddress risks and opportunities, in a changing context, including the implementation of the related actions;\n\ng) consideration of any sector-specific management system auditing standards.\n\nThe audit scope should be consistent with the audit programme and audit objectives. It includes factors such as locations, functions, activities and processes to be audited, as well as the time period covered by the audit. The audit criteria are used as a reference against which conformity is determined. These can include one or more of the following: applicable policies, processes, procedures, performance criteria including objectives, statutory and regulatory requirements, management system requirements, information regarding the context and the risks and opportunities as determined by the audit client (including relevant external/ internal interested parties requirements), sector codes of conduct or other planned arrangements. In the event of any changes to the audit objectives, scope or criteria, the audit programme should be modified if necessary and communicated to interested parties for approval, if appropriate. When more than one discipline is being audited at the same time, it is important that the audit objectives, scope and criteria are consistent with the relevant audit programmes for each discipline. Some disciplines can have a scope that covers the whole organization and others can have a scope that covers a subset of the whole organization."
+  },
+  {
+    "standard_code": "ISO_19011_2026",
+    "clause_ref": "5.5.3",
+    "clause_title": "Selecting and determining auditing methods",
+    "requirement_text": "The individual(s) managing the audit programme should select and determine the methods for effectively and efficiently conducting an audit, depending on the defined audit objectives, scope and criteria. Audits can be performed on-site, remotely or as a combination. The use of these methods should be suitably balanced, based on, among other things, consideration of associated risks and opportunities. Where two or more auditing organizations conduct a joint audit of the same auditee, the individuals managing the different audit programmes should agree on the auditing methods and consider implications for resourcing and planning the audit, including the impact on the organization. If an auditee operates two or more management systems of different disciplines, combined audits can be included in the audit programme. Annex A provides additional guidance on audit methods. The methods can include interviews, the use of checklists and questionnaires, document review, sampling, observing work, analysing data, and on-site review."
+  },
+  {
+    "standard_code": "ISO_19011_2026",
+    "clause_ref": "5.5.4",
+    "clause_title": "Selecting audit team members",
+    "requirement_text": "The individual(s) managing the audit programme should appoint the members of the audit team, including the audit team leader and any technical experts needed for the specific audit. An audit team should be selected, taking into account the competence needed to achieve the objectives of the individual audit within the defined scope. If there is only one auditor, the auditor should perform all applicable duties of an audit team leader. NOTE Clause 7 contains guidance on determining the competence required for the audit team members and describes the processes for evaluating auditors. To ensure the overall competence of the audit team, the following steps should be performed: — identification of the competence needed to achieve the objectives of the audit; — selection of the audit team members so that the necessary competence is present in the audit team. In deciding the size and composition of the audit team for the specific audit, consideration should be given to the following:\n\na) Determination of the competence needed to achieve the objectives of the audit.\n\nb) The complexity of the audit.\n\nc) Whether the audit is combined or joint.\n\nd) The selected auditing methods.\n\ne) The audit process is carried out in an objective and impartial manner.\n\nf) The ability of the audit team members to work and interact effectively with the representatives of the\n\nauditee and relevant interested parties.\n\ng) The relevant external/internal issues, such as the language of the audit, and the auditee’s social and\n\ncultural characteristics. These issues can be addressed either by the auditor’s own skills or through the support of a technical expert. There can be a need for an interpreter.\n\nh) The type and complexity of the audit (e.g. time zones, number of locations, processes to be audited).\n\ni) Travel permissions (e.g. security clearances, health permits, visas, as applicable).\n\nWhere appropriate, the individual(s) managing the audit programme should consult the audit team leader on the composition of the audit team. If the necessary competence is not covered by the auditors in the audit team, technical experts with complementary competence should be made available to support the team.\n\n\nAuditors-in-training can be included in the audit team but should participate under the direction and guidance of an auditor. Changes to the composition of the audit team can be necessary during the audit (e.g. if a conflict of interest or competence issue arises). If such a situation arises, it should be resolved with the appropriate parties (e.g. audit team leader, the individual(s) managing the audit programme, audit client or auditee) before any changes are made."
+  },
+  {
+    "standard_code": "ISO_19011_2026",
+    "clause_ref": "5.5.5",
+    "clause_title": "Assigning responsibility for an individual audit to the audit team leader",
+    "requirement_text": "The individual(s) managing the audit programme should assign the responsibility for conducting the individual audit to an audit team leader. The assignment should be made in sufficient time before the scheduled date of the audit, in order to ensure the effective planning of the audit. To ensure effective conduct of the individual audit, the following information should be provided to the audit team leader:\n\na) audit objectives;\n\nb) audit criteria and any relevant documented information;\n\nc) audit scope, including identification of the organization and its functions and processes to be audited;\n\nd) audit processes and associated methods;\n\ne) composition of the audit team;\n\nf) contact details of the auditee, and the locations, time frame and duration of the auditing activities to be\n\nconducted;\n\ng) resources necessary to conduct the audit;\n\nh) information needed for evaluating and addressing identified risks and opportunities to the achievement\n\nof the audit objectives;\n\ni) information which supports the audit team leader in their interactions with the auditee for the\n\neffectiveness of the audit programme. The assignment information should also cover the following, as appropriate: — working and reporting language of the audit where this is different from the language of the auditor or the auditee, or both; — audit conclusions required and to whom they are to be distributed; — matters related to confidentiality and information security, as required by the audit programme; — any health, safety and environmental arrangements for the auditors; — requirements for travel or access to remote locations; — any confidentiality, security, access and authorization requirements; — any actions to be reviewed (e.g. follow-up activities from a previous audit); — coordination with other auditing activities (e.g. when different teams are auditing similar or related processes at different locations or in the case of a joint audit). Where a joint audit is conducted, it is important to reach agreement among the organizations conducting the audits, before the audit commences, on the specific responsibilities of each party, particularly with regard to the authority of the audit team leader appointed for the audit."
+  },
+  {
+    "standard_code": "ISO_19011_2026",
+    "clause_ref": "5.5.6",
+    "clause_title": "Managing audit programme results",
+    "requirement_text": "The individual(s) managing the audit programme should ensure that the following activities are performed:\n\na) evaluation of the achievement of the objectives for each audit within the audit programme;\n\nb) review and approval of audit reports regarding the fulfilment of the audit scope and objectives;\n\nc) review of the effectiveness of actions taken to address audit findings;\n\nd) distribution of audit reports to the previously determined parties;\n\ne) determination of the necessity for any follow-up audit.\n\nThe individual managing the audit programme should consider, where appropriate, communicating the audit conclusions and good practices to other areas of the organization."
+  },
+  {
+    "standard_code": "ISO_19011_2026",
+    "clause_ref": "5.5.7",
+    "clause_title": "Managing audit related records",
+    "requirement_text": "The individual(s) managing the audit programme should ensure that audit records are generated, managed and retained to demonstrate the implementation of the audit programme. Processes should be established to ensure that any information security and confidentiality needs associated with the audit records are addressed. Records can include the following:\n\na) Records related to the audit programme, such as:\n\n1) schedule of audits;\n\n2) audit programme objectives and extent;\n\n3) those addressing audit programme risks and opportunities, and relevant external and internal\n\nissues;\n\n4) reviews of the audit programme effectiveness.\n\nb) Records related to each audit, such as:\n\n1) audit plans and audit reports;\n\n2) audit evidence and audit findings;\n\n3) relevant feedback from the auditee, auditor(s) and interested parties;\n\n4) nonconformity reports;\n\n5) corrections and corrective action reports;\n\n6) audit follow-up activities.\n\nc) Records related to the audit team covering topics such as:\n\n1) competence and performance evaluation of the audit team members;\n\n2) criteria for the selection of audit teams and team members and formation of audit teams;\n\n3) maintenance and improvement of competence.\n\nThe form and level of detail of the records should demonstrate that the objectives of the audit programme have been achieved."
+  },
+  {
+    "standard_code": "ISO_19011_2026",
+    "clause_ref": "5.6",
+    "clause_title": "Monitoring the audit programme",
+    "requirement_text": "The individual(s) managing the audit programme should ensure the evaluation of:\n\na) whether audit schedules are being met and audit programme objectives are being achieved;\n\nb) the performance of the audit team members including the audit team leader and the technical experts;\n\nc) the ability of the audit teams to implement the audit plan;\n\nd) feedback from audit clients, auditees, auditors, technical experts and other relevant parties;\n\ne) sufficiency and adequacy of documented information in the audit process.\n\nSome factors can indicate the need to modify the audit programme. These can include changes to: — audit findings; — demonstrated level of the auditee’s management system effectiveness and maturity; — effectiveness of the audit programme; — audit scope or audit programme extent; — the auditee’s management system; — standards and other requirements to which the organization is committed; — organizations that are part of the supply chain; — identified conflicts of interest; — the audit client’s requirements."
+  },
+  {
+    "standard_code": "ISO_19011_2026",
+    "clause_ref": "5.7",
+    "clause_title": "Reviewing and improving the audit programme",
+    "requirement_text": "The individual(s) managing the audit programme and the audit client should review the audit programme to assess whether its objectives have been achieved. Lessons learned from the audit programme review should be used as inputs for the improvement of the programme. The individual(s) managing the audit programme should ensure the following: — review of the overall implementation of the audit programme; — identification of areas with opportunities for improvement; — implementation of changes to the audit programme if necessary; — review of the continual professional development of auditors, in accordance with 7.6; — reporting of the results of the audit programme and review of them with the audit client and relevant interested parties, as appropriate. The audit programme review should consider the following:\n\na) results and trends from audit programme monitoring;\n\nb) conformity to audit programme processes and relevant documented information;\n\nc) evolving needs and expectations of relevant interested parties;\n\nd) audit programme records;\n\ne) alternative or new auditing methods;\n\n\nf) alternative or new methods to evaluate auditors;\n\ng) effectiveness of the actions to address the risks and opportunities, and external and internal issues\n\nassociated with the audit programme;\n\nh) confidentiality and information security issues relating to the audit programme."
+  },
+  {
+    "standard_code": "ISO_19011_2026",
+    "clause_ref": "6",
+    "clause_title": "Conducting an audit",
+    "requirement_text": ""
+  },
+  {
+    "standard_code": "ISO_19011_2026",
+    "clause_ref": "6.1",
+    "clause_title": "General",
+    "requirement_text": "This clause contains guidance on preparing and conducting a specific audit as part of an audit programme. Figure 1 provides an overview of the activities performed in a typical audit. The extent to which the provisions of this clause are applicable depends on the objectives and scope of the specific audit."
+  },
+  {
+    "standard_code": "ISO_19011_2026",
+    "clause_ref": "6.2",
+    "clause_title": "Initiating the audit",
+    "requirement_text": ""
+  },
+  {
+    "standard_code": "ISO_19011_2026",
+    "clause_ref": "6.2.1",
+    "clause_title": "General",
+    "requirement_text": "The responsibility for conducting the audit should remain with the assigned audit team leader (see 5.5.5) until the audit is completed (see 6.6). To initiate an audit, the steps in Figure 1 should be considered; however, the sequence can differ depending on the auditee, processes and specific circumstances of the audit."
+  },
+  {
+    "standard_code": "ISO_19011_2026",
+    "clause_ref": "6.2.2",
+    "clause_title": "Establishing contact with the auditee",
+    "requirement_text": "The audit team leader should ensure that contact is made with the auditee within an appropriate time frame to:\n\na) confirm communication channels with the auditee’s representatives;\n\nb) confirm the authority to conduct the audit;\n\nc) provide relevant information on the audit objectives, scope, criteria, methods and audit team\n\ncomposition, including any technical experts;\n\nd) request access to relevant information for planning purposes, including information on the risks and\n\nopportunities the organization has identified and how they are addressed;\n\ne) confirm applicable statutory and regulatory requirements and other requirements relevant to the\n\nactivities, processes, products and services of the auditee;\n\nf) confirm the agreement with the auditee regarding the extent of the disclosure and the treatment (e.g.\n\nstorage, transfer and release) of confidential information;\n\ng) make arrangements for the audit including the audit plan;\n\nh) determine any location-specific arrangements for access, health and safety, security, confidentiality or\n\nother issues;\n\ni) agree on the attendance of observers and the need for guides or interpreters for the audit team;\n\nj) determine any areas of interest, concern or risks to the auditee in relation to the specific audit;\n\nk) resolve issues regarding composition of the audit team with the auditee or audit client."
+  },
+  {
+    "standard_code": "ISO_19011_2026",
+    "clause_ref": "6.2.3",
+    "clause_title": "Determining the feasibility of the audit",
+    "requirement_text": "The feasibility of the audit should be determined to provide reasonable confidence that the audit objectives can be achieved. The determination of feasibility should take into consideration factors such as the following:\n\na) sufficient and appropriate information for planning and conducting the audit;\n\nb) adequate cooperation from the auditee;\n\nc) adequate time and other resources for conducting the audit;\n\nd) local, regional, or world events or circumstances that would affect the scheduled audit.\n\nNOTE Resources include access to adequate and appropriate information and communication technology. Where the audit is not feasible, an alternative should be proposed to the audit client, in agreement with the auditee."
+  },
+  {
+    "standard_code": "ISO_19011_2026",
+    "clause_ref": "6.3",
+    "clause_title": "Preparing auditing activities",
+    "requirement_text": ""
+  },
+  {
+    "standard_code": "ISO_19011_2026",
+    "clause_ref": "6.3.1",
+    "clause_title": "Performing the review of documented information",
+    "requirement_text": "The documented information for the relevant management system should be reviewed by audit team member(s) to: — gather information to understand the auditee’s operations, inherent risks, and to prepare auditing activities and applicable audit working documents (see 6.3.4) (e.g. on processes or functions); — establish an overview of the extent of the documented information to determine potential conformity to the audit criteria and detect possible areas of concern, such as deficiencies, omissions or conflicts. The documented information should include, but is not limited to, management system documents and records, as well as previous audit reports. The review should take into account the context of the organization, including its size, nature and complexity, and its related risks and opportunities. It should also take into account the audit scope, criteria and objectives. NOTE Guidance on how to verify information is provided in Clause A.5."
+  },
+  {
+    "standard_code": "ISO_19011_2026",
+    "clause_ref": "6.3.2",
+    "clause_title": "Audit planning",
+    "requirement_text": ""
+  },
+  {
+    "standard_code": "ISO_19011_2026",
+    "clause_ref": "6.3.2.1",
+    "clause_title": "Risk-based approach to planning",
+    "requirement_text": "The audit team leader should adopt a risk-based approach to plan the audit based on the information in the audit programme and the documented information provided by the auditee. Planning should facilitate the efficient scheduling and coordination of the auditing activities in order to achieve the objectives effectively. Practical application of the risk-based approach can include prioritizing audit focus based on factors such as product/process complexity, customer complaints, past audit findings, and changes in regulatory or operational environments. The amount of detail provided in the audit plan should reflect the scope and complexity of the audit. In planning the audit, the audit team leader should consider the following:\n\na) the composition of the audit team and its overall competence;\n\nb) the appropriate sampling techniques (see Clause A.6);\n\nc) the risks to achieving the audit objectives created by ineffective audit planning;\n\n\nd) opportunities to improve the effectiveness and efficiency of the auditing activities;\n\ne) the risks to the auditee created by performing the audit.\n\nRisks to the auditee can result from the presence of the audit team members adversely influencing the auditee’s arrangements for health and safety, environment and quality, and its products, services, personnel or infrastructure (e.g. contamination in clean room facilities). For combined audits, particular attention should be given to the interactions between operational processes and any competing objectives and priorities of the various management system requirements. When identifying potential risks in joint audits, particular attention should be given to the coordination of different audit teams, including sampling and audit time arrangement, to ensure the achievement of the audit objectives."
+  },
+  {
+    "standard_code": "ISO_19011_2026",
+    "clause_ref": "6.3.2.2",
+    "clause_title": "Audit planning details",
+    "requirement_text": "Audit planning should consider the risks of the auditing activities on the auditee’s processes and provide the basis for the agreement among the audit client, the audit team and the auditee regarding the conduct of the audit. The scope and content of the audit planning can differ, for example, between initial and subsequent audits, as well as between external and internal audits. Audit planning should be sufficiently flexible to permit changes that can become necessary as the auditing activities progress. Audit planning should address or reference the following:\n\na) the audit objectives;\n\nb) the audit scope, including identification of the organization and its functions, as well as processes to be\n\naudited;\n\nc) the audit criteria and any reference documented information;\n\nd) the locations (physical and virtual), dates, expected time and duration of auditing activities to be\n\nconducted, including meetings with the auditee’s management, breaks and audit team meetings;\n\ne) the need for the audit team to familiarize themselves with the auditee’s facilities and processes (e.g. by\n\nconducting a tour of physical location(s) or reviewing information and communication technology);\n\nf) the auditing methods to be used, including the extent to which audit sampling is needed to obtain\n\nsufficient audit evidence;\n\ng) the roles and responsibilities of the audit team members, as well as guides and observers or interpreters;\n\nh) the allocation of appropriate resources based upon consideration of the risks and opportunities related\n\nto the activities that are to be audited. Audit planning should take into account, as appropriate: — identification of the auditee’s representative(s) for the audit; — the working and reporting language of the audit, where this is different from the language of the auditor or the auditee, or both; — the expected contents of the audit report; — logistics and communications arrangements, including specific arrangements for the locations to be audited; — any specific actions to be taken to address risks to achieving the audit objectives; — any specific actions to be taken to address opportunities arising; — matters related to confidentiality and information security;\n\n\n— any follow-up activities from a previous audit or other source(s) (e.g. lessons learned, project reviews); — any follow-up activities to the planned audit, as required; — coordination with other auditing activities, in the case of a joint audit. Audit plans should be presented to the auditee and the audit client, as required. Any issues with the audit plans should be resolved between the audit team leader, the auditee and, if necessary, the individual(s) managing the audit programme."
+  },
+  {
+    "standard_code": "ISO_19011_2026",
+    "clause_ref": "6.3.3",
+    "clause_title": "Assigning work to the audit team",
+    "requirement_text": "The audit team leader, in consultation with the audit team, should assign to each team member responsibility for auditing specific processes, activities, functions or locations and, as appropriate, authority for decisionmaking. Such assignments should take into account the impartiality and objectivity and competence of auditors and the effective use of resources, as well as the different roles and responsibilities of auditors, auditors-in-training and technical experts. Audit team meetings should be held, as appropriate, by the audit team leader in order to allocate work assignments and decide possible changes. Changes to the work assignments can be made as the audit progresses in order to ensure the achievement of the audit objectives."
+  },
+  {
+    "standard_code": "ISO_19011_2026",
+    "clause_ref": "6.3.4",
+    "clause_title": "Preparing documented information for the audit",
+    "requirement_text": "The audit team members should collect and review the information relevant to their audit assignments and prepare documented information for the audit, using any appropriate media. The documented information for the audit can include, but is not limited to:\n\na) checklists;\n\nb) audit sampling details;\n\nc) audiovisual information.\n\nThe use of these media should not restrict the extent of auditing activities, which can change as a result of information collected during the audit. NOTE Guidance on preparing audit working documents is given in Clause A.13. Documented information prepared for, and resulting from, the audit should be retained at least until audit completion, or as specified in the audit programme. Retention of documented information after audit completion is described in 6.6. Documented information created during the audit process involving confidential or proprietary information, including images and audiovisual recordings, should be suitably safeguarded at all times by the audit team members."
+  },
+  {
+    "standard_code": "ISO_19011_2026",
+    "clause_ref": "6.4",
+    "clause_title": "Conducting auditing activities",
+    "requirement_text": ""
+  },
+  {
+    "standard_code": "ISO_19011_2026",
+    "clause_ref": "6.4.1",
+    "clause_title": "General",
+    "requirement_text": "Auditing activities are normally conducted in a defined sequence as indicated in Figure 1. This sequence can be varied to suit the circumstances of specific audits. Audit activities can be conducted concurrently and can be dependent on the result of previous audit activities."
+  },
+  {
+    "standard_code": "ISO_19011_2026",
+    "clause_ref": "6.4.2",
+    "clause_title": "Assigning the roles and responsibilities of guides and observers",
+    "requirement_text": "Guides and observers can accompany the audit team with approvals from the audit team leader, audit client and/or auditee, if required. They should not influence or interfere with the conduct of the audit. If this cannot be ensured, the audit team leader should have the right to deny observers from being present during certain auditing activities.\n\n\nFor observers, any arrangements for access, health and safety, environmental, security and confidentiality should be managed between the audit client and the auditee. Guides, appointed by the auditee, should assist the audit team and act on the request of the audit team leader or the auditor to whom they have been assigned. Their responsibilities should include the following:\n\na) assisting the auditors in identifying individuals to participate in interviews and confirming timings and\n\nlocations;\n\nb) arranging access to specific locations of the auditee;\n\nc) ensuring that rules concerning location-specific arrangements for access, health and safety,\n\nenvironmental, security, confidentiality and other issues are known and respected by the audit team members and observers and any risks are addressed;\n\nd) witnessing the audit on behalf of the auditee, when appropriate;\n\ne) providing clarification or assisting in collecting information, when needed."
+  },
+  {
+    "standard_code": "ISO_19011_2026",
+    "clause_ref": "6.4.3",
+    "clause_title": "Conducting the opening meeting",
+    "requirement_text": "The purpose of the opening meeting is to:\n\na) confirm the agreement of all participants (e.g. auditee, audit team) to the audit plan;\n\nb) introduce the audit team and their roles;\n\nc) ensure that all planned auditing activities can be performed.\n\nAn opening meeting should be held with the auditee’s management and, where appropriate, those responsible for the functions or processes to be audited. During the meeting, a contingency for asking questions should be provided. The degree of detail should be consistent with the familiarity of the auditee with the audit process. In many instances (e.g. for internal audits in a small organization), the opening meeting can simply consist of communicating that an audit is being conducted and explaining the nature of the audit. For other audit situations, the meeting can be formal and records of attendance should be retained. The meeting should be chaired by the audit team leader. Other participants, including observers, guides, technical experts and interpreters should be introduced and their roles explained. The following items should be confirmed or explained, as appropriate: — the audit objectives, scope and criteria; — the audit plan and other relevant arrangements with the auditee, such as the date and time for the closing meeting, any interim meetings between the audit team and the auditee’s management, and any change(s) needed; — formal communication channels between the audit team and the auditee; — the language to be used during the audit; — the auditing methods to manage risks to the organization which can result from the presence of the audit team members; — audit evidence to be collected through a sampling process; — the auditee being kept informed of audit progress during the audit; — the availability of the resources and facilities needed by the audit team; — matters relating to confidentiality and information security;\n\n\n— relevant access, health and safety, security, emergency and other arrangements for the audit team; — activities on-site that can impact the conduct of the audit. The presentation of information on the following items should be considered, as appropriate: — the method of reporting audit findings including criteria for grading of nonconformities, if any; — conditions under which the audit can be terminated; — how to deal with possible audit findings during the audit; — any plan for feedback from the auditee on the audit findings or conclusions of the audit, including complaints or appeals."
+  },
+  {
+    "standard_code": "ISO_19011_2026",
+    "clause_ref": "6.4.4",
+    "clause_title": "Communicating during the audit",
+    "requirement_text": "During the audit, it can be necessary to make formal arrangements for communication within the audit team, as well as with the auditee, the audit client and potentially with external interested parties (e.g. regulatory authorities), especially where statutory and regulatory requirements require mandatory reporting of nonconformities. The audit team should communicate periodically to exchange information, assess audit progress and reassign work between the audit team members, as needed. During the audit, the audit team leader should periodically communicate the progress, any significant audit findings and any concerns to the organization and, as appropriate, the audit client. Evidence collected during the audit that suggests an immediate and significant risk should be reported without delay to the auditee and, as appropriate, to the audit client and the individual(s) managing the audit programme. Any concern about an issue outside the audit scope should be noted and reported to the audit team leader, for possible communication to the audit client and auditee. Where the available audit evidence indicates that the audit objectives are unattainable, the audit team leader should report the reasons to the audit client, the auditee and the individual(s) managing the audit programme to determine appropriate actions. Such actions can include changes to the audit plan, the audit objectives or audit scope, or termination of the audit. Any need for changes to the audit plan which become apparent as audit activities progress should be reviewed and accepted, as appropriate, by both the individual(s) managing the audit programme and the audit client, and presented to the auditee. These changes should be documented."
+  },
+  {
+    "standard_code": "ISO_19011_2026",
+    "clause_ref": "6.4.5",
+    "clause_title": "Providing access to audit information",
+    "requirement_text": "The auditing methods chosen for an audit depend on the defined audit objectives, scope and criteria, as well as duration and location. The location is where the information needed for the specific audit activity is available to the audit team. This can include physical and virtual locations. Where, when and how to access information is crucial to the audit. This is independent of where the information is created, used and/or stored. Based on these issues, the auditing methods need to be determined (see Clause A.1). The audit can use a mixture of methods. Also, audit circumstances can mean that the methods need to change during the audit."
+  },
+  {
+    "standard_code": "ISO_19011_2026",
+    "clause_ref": "6.4.6",
+    "clause_title": "Reviewing documented information while conducting the audit",
+    "requirement_text": "The auditee’s relevant documented information should be reviewed to: — determine the conformity of the management system, as far as documented, with audit criteria; — gather information to support the auditing activities. NOTE Guidance on how to verify information is provided in Clause A.5.\n\n\nThe review can be combined with the other auditing activities (e.g. interviewing relevant auditee’s personnel, observing auditee’s activities) and can continue throughout the audit, providing this is not detrimental to the effectiveness of the conduct of the audit. If adequate documented information cannot be provided within the time frame given in the audit plan, the audit team leader should inform both the individual(s) managing the audit programme and the auditee. Depending on the audit objectives and scope, a decision should be made as to whether the audit should be continued or suspended until documented information concerns are resolved."
+  },
+  {
+    "standard_code": "ISO_19011_2026",
+    "clause_ref": "6.4.7",
+    "clause_title": "Collecting and verifying information",
+    "requirement_text": "During the audit, information relevant to the audit objectives, scope and criteria, including information relating to interfaces among functions, activities and processes should be collected by means of appropriate sampling and should be verified, as far as practicable. NOTE 1 For verifying information, see Clause A.5. NOTE 2 Guidance on sampling is given in Clause A.6. Only information that can be subject to some degree of verification should be accepted as audit evidence. Where the degree of verification is low, the auditor should use their professional judgement to determine the degree of reliance that can be placed on it as evidence. Audit evidence leading to audit findings should be recorded. If, during the collection of objective evidence, the audit team becomes aware of any new or changed circumstances, or risks or opportunities, these should be addressed by the audit team accordingly. Figure 2 provides an overview of a typical process, from collecting information to reaching audit conclusions. Figure 2 — Overview of collecting and verifying information Methods of collecting information include, but are not limited to, the following: — interviews; — observations;\n\n\n— review of documented information (see Clauses A.5 and A.14). NOTE 3 Guidance on selecting sources of information and observation is given in Clause A.14. NOTE 4 Guidance on visiting the auditee’s location is given in Clause A.15. NOTE 5 Guidance on conducting interviews is given in Clause A.17."
+  },
+  {
+    "standard_code": "ISO_19011_2026",
+    "clause_ref": "6.4.8",
+    "clause_title": "Generating the audit findings",
+    "requirement_text": "Audit evidence should be evaluated against the audit criteria in order to determine audit findings. Audit findings can indicate conformity or nonconformity to the audit criteria. When specified by the audit plan, individual audit findings should include conformity to audit criteria and good practices in the organization along with their supporting evidence, opportunities for improvement, and any recommendations to the auditee, and should be recorded. Nonconformities and their supporting audit evidence should be recorded. Nonconformities can be graded depending on the context of the organization and its risks. This grading can be quantitative (e.g. 1 to 5) or qualitative (e.g. minor, major). When nonconformities are graded, the criteria used by the auditing organization should be defined and communicated. Nonconformities should be reviewed with the auditee in order to obtain acknowledgement that the audit evidence is accurate and that the nonconformities are understood. Every attempt should be made to resolve any diverging opinions concerning the audit evidence or audit findings. Unresolved issues should be recorded in the audit report. The audit team should meet as needed to review the audit findings at appropriate stages during the audit. NOTE Additional guidance on the identification and evaluation of audit findings is given in Clause A.18."
+  },
+  {
+    "standard_code": "ISO_19011_2026",
+    "clause_ref": "6.4.9",
+    "clause_title": "Determining the audit conclusions",
+    "requirement_text": ""
+  },
+  {
+    "standard_code": "ISO_19011_2026",
+    "clause_ref": "6.4.9.1",
+    "clause_title": "Preparing for the closing meeting",
+    "requirement_text": "The audit team should confer prior to the closing meeting in order to:\n\na) review the audit findings, and any other appropriate information collected during the audit, against the\n\naudit objectives;\n\nb) agree on the audit conclusions, taking into account the uncertainty inherent in the audit process;\n\nc) prepare recommendations, if specified by the audit plan;\n\nd) discuss audit follow-up activities, as applicable."
+  },
+  {
+    "standard_code": "ISO_19011_2026",
+    "clause_ref": "6.4.9.2",
+    "clause_title": "Determining the content of the audit conclusions",
+    "requirement_text": "Audit conclusions should address issues such as the following:\n\na) the extent of conformity to the audit criteria and robustness of the management system, including:\n\n1) the effectiveness of the management system in meeting the intended results;\n\n2) the identification of risks;\n\n3) the effectiveness of actions taken by the auditee to address risks;\n\nb) the effective implementation, maintenance and improvement of the management system;\n\nc) achievement of audit objectives, coverage of audit scope and fulfilment of audit criteria;\n\n\nd) similar audit findings made in different areas that were audited or from a joint or previous audit for the\n\npurpose of identifying trends. If specified by the audit plan, audit conclusions can lead to recommendations for improvement or future audit activities. Caution should be used when making recommendations to avoid negative impact on impartiality of audits."
+  },
+  {
+    "standard_code": "ISO_19011_2026",
+    "clause_ref": "6.4.10",
+    "clause_title": "Conducting the closing meeting",
+    "requirement_text": "A closing meeting should be held to present the audit findings and conclusions. The closing meeting should be chaired by the audit team leader and attended by the top management of the auditee and include, as applicable: — those responsible for the functions or processes which have been audited; — representatives from the audit client; — other members of the audit team; — other relevant interested parties as determined by the audit client and/or auditee. If applicable, the audit team leader should advise the auditee of situations encountered during the audit that can decrease the confidence that can be placed in the audit conclusions. If defined in the management system or by agreement with the audit client, the participants should agree on the time frame for an action plan to address audit findings. The degree of detail should take into account the effectiveness of the management system in achieving the auditee’s objectives, including consideration of its context and risks and opportunities. The familiarity of the auditee with the audit process should also be taken into consideration during the closing meeting, to ensure the correct level of detail is provided to participants. For some audit situations, the meeting can be formal and minutes, including records of attendance, should be kept. In other instances, the closing meeting can be less formal and consist solely of communicating the audit findings and audit conclusions. As appropriate, the following should be explained to the auditee in the closing meeting:\n\na) advising that the audit evidence collected was based on a sample of the information available and is not\n\nnecessarily fully representative of the overall effectiveness of the auditee’s processes;\n\nb) the method of reporting;\n\nc) how the audit findings should be addressed based on the agreed process;\n\nd) possible consequences of not adequately addressing the audit findings;\n\ne) presentation of the audit findings and conclusions in such a manner that they are understood and\n\nacknowledged by the auditee’s management;\n\nf) any related audit follow-up activities (e.g. implementation and review of corrective actions, addressing\n\naudit complaints, appeal process). Any diverging opinions regarding the audit findings or conclusions between the audit team and the auditee should be discussed and, if possible, resolved. If not resolved, this should be recorded. If specified by the audit objectives, opportunities for improvement can be presented as recommendations. It should be emphasized that recommendations are not binding."
+  },
+  {
+    "standard_code": "ISO_19011_2026",
+    "clause_ref": "6.5",
+    "clause_title": "Preparing and distributing the audit report",
+    "requirement_text": ""
+  },
+  {
+    "standard_code": "ISO_19011_2026",
+    "clause_ref": "6.5.1",
+    "clause_title": "Preparing the audit report",
+    "requirement_text": "The audit team leader should report the audit conclusions in accordance with the audit programme. The audit report should provide a complete, accurate, concise and clear record of the audit, using specific reporting formats when required, and should include or refer to the following:\n\na) audit objectives;\n\nb) audit scope, particularly identification of the organization (the auditee) and the functions or processes\n\naudited;\n\nc) identification of the audit client;\n\nd) identification of the audit team and auditee’s participants in the audit;\n\ne) dates and locations where the auditing activities were conducted;\n\nf) audit criteria;\n\ng) audit findings and related audit evidence;\n\nh) audit conclusions;\n\ni) a statement on the degree to which the audit criteria have been fulfilled;\n\nj) any unresolved diverging opinions between the audit team and the auditee;\n\nk) a statement that audits by nature are a sampling exercise; as such there is a risk that the audit evidence\n\nexamined is not representative. The audit report can also include or refer to the following, as appropriate: — the audit plan, including the time schedule; — a summary of the audit process, including any obstacles encountered that can decrease the reliability of the audit conclusions; — confirmation that the audit objectives have been achieved within the audit scope in accordance with the audit plan; — any areas within the audit scope that were not covered, including any issues of availability of audit evidence, resources or confidentiality, with related justifications; — any identified auditee’s good practices; — follow-up activities related to agreed action plan, if any; — a statement of the confidential nature of the contents; — any implications for the audit programme or subsequent audits. Nonconformities that have not been presented and discussed during the audit or the closing meeting should not be included in the audit report."
+  },
+  {
+    "standard_code": "ISO_19011_2026",
+    "clause_ref": "6.5.2",
+    "clause_title": "Distributing the audit report",
+    "requirement_text": "The audit report should be issued within an agreed period of time. If it is delayed, the reasons should be communicated to the auditee and the individual(s) managing the audit programme. The audit report should be dated, reviewed and, as appropriate, accepted, in accordance with the audit programme.\n\n\nThe audit report should then be distributed to the relevant interested parties defined in the audit programme or audit plan. When distributing the audit report, appropriate measures to ensure confidentiality should be considered."
+  },
+  {
+    "standard_code": "ISO_19011_2026",
+    "clause_ref": "6.6",
+    "clause_title": "Completing the audit",
+    "requirement_text": "The audit is completed when all planned auditing activities have been carried out, or as otherwise agreed with the audit client (e.g. there is a possibility that an unexpected situation prevents the audit from being completed according to the audit plan). Documented information pertaining to the audit should be retained or disposed of as agreed between the participating parties and in accordance with the audit programme and applicable requirements. The audit team and the individual(s) managing the audit programme should not disclose any information obtained during the audit, or the audit report, to any other party without the explicit approval of the audit client and, where appropriate, the approval of the auditee. If disclosure of the contents of an audit document is required (e.g. by law), the audit client and auditee should be informed as soon as possible. Lessons learned from the audit can identify risks and opportunities for the audit programme and the auditee."
+  },
+  {
+    "standard_code": "ISO_19011_2026",
+    "clause_ref": "6.7",
+    "clause_title": "Conducting the audit follow-up",
+    "requirement_text": "The outcome of the audit can, depending on the audit objectives, indicate the need for corrections, or for corrective actions, or opportunities for improvement. Such actions are usually decided and undertaken by the auditee within an agreed time frame. As appropriate, the auditee should keep the individual(s) managing the audit programme and/or the audit team informed of the status of these actions. The completion and effectiveness of these actions should be verified. This verification can be part of a subsequent audit. Outcomes should be reported to the individual managing the audit programme and reported to the audit client for management review."
+  },
+  {
+    "standard_code": "ISO_19011_2026",
+    "clause_ref": "7",
+    "clause_title": "Competence and evaluation of auditors",
+    "requirement_text": ""
+  },
+  {
+    "standard_code": "ISO_19011_2026",
+    "clause_ref": "7.1",
+    "clause_title": "General",
+    "requirement_text": "Confidence in the audit process and the ability to achieve its objectives depend on the competence of individuals involved, including auditors and audit team leaders. Competence should be evaluated regularly through a process that considers personal behaviour and the ability to apply the knowledge and skills gained through education, work experience, auditor training and audit experience. This process should take into consideration the needs of the audit programme and its objectives. Some of the knowledge and skills described in 7.2.3 are common to auditors of any management system discipline; others are specific to individual management system disciplines. It is not necessary for each auditor in the audit team to have the same competence. However, the overall competence of the audit team should be sufficient to achieve the audit objectives. The evaluation of auditor competence should be planned, implemented and documented to provide an outcome that is objective, consistent, fair and reliable. The evaluation process should include four main steps, as follows:\n\na) determine the required competence to fulfil the needs of the audit programme;\n\nb) establish the evaluation criteria;\n\nc) select the appropriate evaluation method;\n\nd) conduct the evaluation.\n\n\nThe outcome of the evaluation process should provide a basis for the following: — selecting audit team members (as described in 5.5.4); — determining the need for improved competence (e.g. additional training); — conducting ongoing performance evaluations of auditors. Auditors should develop, maintain and improve their competence through continual professional development and regular participation in audits (see 7.6). A process for evaluating auditors and audit team leaders is described in 7.3, 7.4 and 7.5. Auditors and audit team leaders should be evaluated against the criteria established in 7.2.1, 7.2.2 and 7.2.3. The competence required of the individual(s) managing the audit programme is described in 5.4.2."
+  },
+  {
+    "standard_code": "ISO_19011_2026",
+    "clause_ref": "7.2",
+    "clause_title": "Determining auditor competence",
+    "requirement_text": ""
+  },
+  {
+    "standard_code": "ISO_19011_2026",
+    "clause_ref": "7.2.1",
+    "clause_title": "General",
+    "requirement_text": "In determining the necessary competence to perform or participate in an audit, an auditor’s knowledge and skills related to the following should be considered:\n\na) the size, nature and complexity of the organization and its products, services and processes;\n\nb) methods for auditing including the application of emerging technology to facilitate the conducting of the\n\naudit, or to audit emerging technology-based processes;\n\nc) the management system disciplines to be audited;\n\nd) the complexity of the management system(s) to be audited;\n\ne) methods for evaluating risks and opportunities;\n\nf) the objectives and extent of the audit programme;\n\ng) the uncertainty in achieving audit objectives;\n\nh) other requirements, such as those imposed by the audit client or other relevant interested parties,\n\nwhere appropriate. This information should be matched against that listed in 7.2.3."
+  },
+  {
+    "standard_code": "ISO_19011_2026",
+    "clause_ref": "7.2.2",
+    "clause_title": "Personal behaviour",
+    "requirement_text": "Auditors should possess the necessary attributes to enable them to act in accordance with the principles of auditing as described in Clause 4. Auditors should exhibit professional behaviour during the performance of auditing activities. Desired professional behaviours include being:\n\na) ethical, i.e. fair, truthful, sincere, honest and discreet;\n\nb) open-minded, i.e. willing to consider alternative ideas or points of view;\n\nc) diplomatic, i.e. tactful in dealing with individuals;\n\nd) observant, i.e. actively observing physical surroundings and activities;\n\ne) perceptive, i.e. aware of and able to understand situations;\n\nf) versatile, i.e. able to readily adapt to different situations;\n\ng) determined, i.e. persistent and focused on achieving objectives;\n\n\nh) decisive, i.e. able to reach timely conclusions based on logical reasoning and analysis;\n\ni) self-reliant, i.e. able to act and function independently while interacting effectively with others;\n\nj) open to improvement, i.e. willing to learn from situations;\n\nk) culturally sensitive, i.e. observant and respectful to the culture of the auditee;\n\nl) collaborative, i.e. effectively interacting with others, including audit team members and the auditee’s\n\npersonnel."
+  },
+  {
+    "standard_code": "ISO_19011_2026",
+    "clause_ref": "7.2.3",
+    "clause_title": "Knowledge and skills",
+    "requirement_text": ""
+  },
+  {
+    "standard_code": "ISO_19011_2026",
+    "clause_ref": "7.2.3.1",
+    "clause_title": "General",
+    "requirement_text": "Auditors should possess:\n\na) the knowledge and skills necessary to achieve the intended results of the audits they are expected to\n\nperform;\n\nb) generic competence and a level of discipline-specific and sector-specific knowledge and skills.\n\nAudit team leaders should have the additional knowledge and skills necessary to provide leadership to the audit team (refer to 7.2.3.4)."
+  },
+  {
+    "standard_code": "ISO_19011_2026",
+    "clause_ref": "7.2.3.2",
+    "clause_title": "Generic knowledge and skills of management system auditors",
+    "requirement_text": "Auditors should have knowledge and skills in the areas outlined as follows:\n\na) Audit principles, processes and methods: knowledge and skills in this area enable the auditor to ensure\n\naudits are performed in a consistent and systematic manner. An auditor should be able to:\n\n1) understand the types of risks and opportunities associated with auditing and the principles of the\n\nrisk-based approach to auditing;\n\n2) plan and organize the work effectively;\n\n3) conduct the audit within the agreed time schedule;\n\n4) prioritize and focus on matters of significance;\n\n5) communicate effectively, both orally and in writing (either personally, or through the use of\n\ninterpreters);\n\n6) collect information through effective interviewing, listening, observing and reviewing documented\n\ninformation, including records and data;\n\n7) understand the appropriateness and consequences of using sampling techniques for auditing;\n\n8) understand and consider technical experts’ opinions;\n\n9) audit a process from start to finish, including the interrelations with other processes and different\n\nfunctions, where applicable;\n\n10) understand the appropriateness and consequences of using information and communications\n\ntechnology tools, and emerging technology to conduct audits (e.g. artificial-intelligence-based evaluation tools);\n\n11) verify the relevance and accuracy of collected information;\n\n12) confirm the sufficiency and appropriateness of audit evidence to support audit findings and\n\nconclusions;\n\n\n13) assess those factors that can affect the reliability of the audit findings and conclusions;\n\n14) document auditing activities and audit findings, and prepare audit reports;\n\n15) maintain the confidentiality and security of information;\n\n16) achieve the intended results of the audit.\n\nb) Management system standards and other references: knowledge and skills in this area enable the\n\nauditor to understand the audit scope and apply audit criteria. Knowledge and skills should include the following:\n\n1) management system standards or other normative or guidance/supporting documents used to\n\nestablish audit criteria or methods;\n\n2) the application of management system standards by the auditee and other organizations;\n\n3) relationships and interactions between the management system(s) processes;\n\n4) understanding the importance and priority of multiple standards or references;\n\n5) the application of standards or references to different audit situations.\n\nc) The organization and its context: knowledge and skills in this area enable the auditor to understand\n\nthe auditee’s structure, purpose and management practices. Knowledge and skills should include the following:\n\n1) the needs and expectations of relevant interested parties that impact the management system;\n\n2) the type of organization, and its governance, size, structure, functions and relationships;\n\n3) general business and management concepts, processes and related terminology, including planning,\n\nbudgeting and management of individuals;\n\n4) the cultural and social aspects of the auditee.\n\nd) Applicable statutory and regulatory requirements and other requirements: knowledge and skills in this\n\narea enable the auditor to be aware of, and work within, the organization’s requirements. Knowledge and skills specific to the jurisdiction or to the auditee’s activities, processes, products and services should include the following:\n\n1) statutory and regulatory requirements and their governmental agencies and regulatory authorities;\n\n2) basic legal terminology;\n\n3) contracting and liability;\n\n4) data protection and information security.\n\nNOTE Awareness of statutory and regulatory requirements does not imply legal expertise and a management system audit cannot be treated as a legal compliance audit."
+  },
+  {
+    "standard_code": "ISO_19011_2026",
+    "clause_ref": "7.2.3.3",
+    "clause_title": "Discipline-specific and sector-specific competence of auditors",
+    "requirement_text": "Audit teams should have the collective discipline-specific and sector-specific competence appropriate for auditing the particular types of management systems and sectors. The discipline-specific and sector-specific competence of auditors should include the following:\n\na) management system requirements and principles, and their application;\n\nb) fundamentals of the discipline(s) and sector(s) related to the management system standards as applied\n\nby the auditee;\n\n\nc) application of discipline-specific and sector-specific methods, techniques, processes and practices to\n\nenable the audit team to assess conformity within the defined audit scope and generate appropriate audit findings and conclusions;\n\nd) principles, methods and techniques relevant to the discipline and sector, such that the auditor can\n\ndetermine and evaluate the risks and opportunities associated with the audit objectives."
+  },
+  {
+    "standard_code": "ISO_19011_2026",
+    "clause_ref": "7.2.3.4",
+    "clause_title": "Generic competence of the audit team leader",
+    "requirement_text": "In order to facilitate the efficient and effective conduct of the audit, an audit team leader should have the competence to:\n\na) plan the audit and assign audit tasks according to the specific competence of individual audit team\n\nmembers;\n\nb) discuss strategic issues with top management of the auditee to determine whether they have considered\n\nthese issues when evaluating their risks and opportunities;\n\nc) develop and maintain a collaborative working relationship among the audit team members;\n\nd) manage the audit process, including:\n\n1) making effective use of resources during the audit;\n\n2) managing the uncertainty of achieving audit objectives;\n\n3) taking into account the health and safety of the audit team members during the audit, including\n\nensuring that they meet the relevant health, safety and security arrangements;\n\n4) directing the audit team members;\n\n5) providing direction and guidance to auditors-in-training;\n\n6) preventing and resolving conflicts and problems that can occur during the audit, including those\n\nwithin the audit team, as necessary;\n\ne) represent the audit team in communications with the individual(s) managing the audit programme, the\n\naudit client and the auditee;\n\nf) lead the audit team to reach the audit conclusions;\n\ng) prepare and complete the audit report."
+  },
+  {
+    "standard_code": "ISO_19011_2026",
+    "clause_ref": "7.2.3.5",
+    "clause_title": "Knowledge and skills for auditing multiple disciplines",
+    "requirement_text": "When auditing multiple discipline management systems, the audit team member should have an understanding of the interactions and synergy among the different management systems. Audit team leaders should understand the requirements of each of the management system standards being audited and recognize the limits of their competence in each of the disciplines. NOTE Audits of multiple disciplines done simultaneously can be done as a combined audit or as an audit of an integrated management system that covers multiple disciplines."
+  },
+  {
+    "standard_code": "ISO_19011_2026",
+    "clause_ref": "7.2.4",
+    "clause_title": "Achieving auditor competence",
+    "requirement_text": "Auditor competence can be acquired using a combination of the following:\n\na) successfully completing training programmes that cover generic auditor knowledge and skills;\n\nb) experience in a relevant technical, managerial or professional position involving the exercise of\n\njudgement, decision-making, problem solving and communication with managers, professionals, peers, customers and other relevant interested parties;\n\n\nc) education/training and experience in a specific management system discipline and sector;\n\nd) audit experience acquired under the supervision of an auditor competent in the same discipline.\n\nNOTE Successful completion of a training course will depend on the type of course. For courses with an examination component, it can mean successfully passing the examination. For other courses, it can mean participating in and completing the course."
+  },
+  {
+    "standard_code": "ISO_19011_2026",
+    "clause_ref": "7.2.5",
+    "clause_title": "Achieving audit team leader competence",
+    "requirement_text": "An audit team leader should have acquired additional audit experience to develop the competence described in 7.2.3.4. This additional experience should have been gained by working under the direction and guidance of a different audit team leader."
+  },
+  {
+    "standard_code": "ISO_19011_2026",
+    "clause_ref": "7.3",
+    "clause_title": "Establishing the auditor evaluation criteria",
+    "requirement_text": "The criteria used to evaluate auditors should be qualitative (e.g. demonstrating desired behaviour, knowledge or the performance of skills, in training or in the workplace) and quantitative (e.g. years of work experience and education, number of audits conducted, hours of audit training)."
+  },
+  {
+    "standard_code": "ISO_19011_2026",
+    "clause_ref": "7.4",
+    "clause_title": "Selecting the appropriate auditor evaluation method",
+    "requirement_text": "The evaluation should be conducted using two or more of the methods given in Table 2. When using Table 2, the following should be noted:\n\na) the methods outlined represent a range of options and do not always apply in all situations;\n\nb) the various methods outlined can differ in their reliability;\n\nc) a combination of methods should be used to ensure an outcome that is objective, consistent, fair and\n\nreliable. Table 2 — Auditor evaluation methods Evaluation method Objectives Examples Review of records To verify the background of the auditor Analysis of records of education, training, employment, professional credentials and auditing experience Feedback To provide information about how the Surveys, questionnaires, personal references, performance of the auditor is perceived testimonials, complaints, performance evaluation, peer review Interview To evaluate desired professional behaviour Personal interviews and communication skills, to verify information and test knowledge and to acquire additional information Observation To evaluate desired professional behaviour Role playing, witnessed audits, on-the-job and the ability to apply knowledge and skills performance Testing To evaluate desired professional behaviour Oral and written exams, psychometric testing and knowledge and skills and their application Post-audit review To provide information on the auditor’s Review of the audit report, interviews with performance during the auditing activities, the audit team leader, the audit team and, if identifying strengths and opportunities for appropriate, feedback from the auditee improvement"
+  },
+  {
+    "standard_code": "ISO_19011_2026",
+    "clause_ref": "7.5",
+    "clause_title": "Conducting the auditor evaluation",
+    "requirement_text": "The information collected about the auditor under evaluation should be compared against the criteria set in 7.2.3. When an auditor under evaluation who is expected to participate in the audit programme does not\n\n| Evaluation method | Objectives | Examples |\n| --- | --- | --- |\n| Review of records | To verify the background of the auditor | Analysis of records of education, training, |\n| Feedback | To provide information about how the | employment, professional credentials and auditing experience Surveys, questionnaires, personal references, |\n| Interview | performance of the auditor is perceived To evaluate desired professional behaviour and communication skills, to verify | testimonials, complaints, performance evaluation, peer review Personal interviews |\n|  | information and test knowledge and to acquire additional information |  |\n| Observation Testing | To evaluate desired professional behaviour and the ability to apply knowledge and skills To evaluate desired professional behaviour | Role playing, witnessed audits, on-the-job performance Oral and written exams, psychometric testing |\n| Post-audit review | and knowledge and skills and their application To provide information on the auditor’s performance during the auditing activities, | Review of the audit report, interviews with the audit team leader, the audit team and, if |\n\n\nfulfil the criteria, additional training, work or audit experience should be undertaken and a subsequent reevaluation should be performed."
+  },
+  {
+    "standard_code": "ISO_19011_2026",
+    "clause_ref": "7.6",
+    "clause_title": "Maintaining and improving auditor competence",
+    "requirement_text": "Auditors and audit team leaders should continually improve their competence. Auditors should maintain their auditing competence through regular participation in management system audits and continual professional development. This can be achieved through means such as additional work experience, training, personal study, coaching, attendance at meetings, seminars and conferences, or other relevant activities. The individual(s) managing the audit programme should establish suitable mechanisms for the continual evaluation of the performance of the auditors and audit team leaders. The continual professional development activities should take into account the following:\n\na) changes in the needs of the individual and the organization responsible for the conduct of the audit;\n\nb) developments in the practice of auditing including the use of technology;\n\nc) relevant standards including guidance/supporting documents and other requirements;\n\nd) changes in disciplines or sectors;\n\ne) analysis of feedback from auditees and stakeholders."
+  }
+]

@@ -1,0 +1,272 @@
+[
+  {
+    "standard_code": "ISO_17638_2016",
+    "clause_ref": "1",
+    "clause_title": "Scope 1",
+    "requirement_text": "........................................................................................................................................................................................................................................"
+  },
+  {
+    "standard_code": "ISO_17638_2016",
+    "clause_ref": "2",
+    "clause_title": "Normative references 1",
+    "requirement_text": "................................................................................................................................................................................................................................."
+  },
+  {
+    "standard_code": "ISO_17638_2016",
+    "clause_ref": "3",
+    "clause_title": "Terms and definitions 1",
+    "requirement_text": "......................................................................................................................................................................................"
+  },
+  {
+    "standard_code": "ISO_17638_2016",
+    "clause_ref": "4",
+    "clause_title": "Safety precautions 1",
+    "requirement_text": "....................................................................................................................................................................................."
+  },
+  {
+    "standard_code": "ISO_17638_2016",
+    "clause_ref": "5",
+    "clause_title": "General 1",
+    "requirement_text": ".............................................................................................................................................................................................. ............................................................................................................................................................................................................................ 5.1 Information required prior to testing .................................................................................................................................1 5.2 Additional pre-test information ...............................................................................................................................................2 5.3 Personnel qualification ....................................................................................................................................................................2 5.4 Surface conditions and preparation .....................................................................................................................................2 5.5 Magnetizing ...............................................................................................................................................................................................2 5.5.1 Magnetizing equipment .............................................................................................................................................2 5.5.2 Verification of magnetization ................................................................................................................................3 5.6 Application techniques ....................................................................................................................................................................3 5.6.1 Field directions and testing area ........................................................................................................................3"
+  },
+  {
+    "standard_code": "ISO_17638_2016",
+    "clause_ref": "5.6.2",
+    "clause_title": "Typical magnetic testing techniques ..............................................................................................................6",
+    "requirement_text": "5.7 Detection media .....................................................................................................................................................................................9 5.7.1 General......................................................................................................................................................................................9"
+  },
+  {
+    "standard_code": "ISO_17638_2016",
+    "clause_ref": "5.7.2",
+    "clause_title": "Verification of detection media performance .........................................................................................9",
+    "requirement_text": "5.8 Viewing conditions ...........................................................................................................................................................................10 5.9 Application of detection media ..............................................................................................................................................10 5.10 Overall performance test .............................................................................................................................................................10 5.11 False indications .................................................................................................................................................................................10 5.12 Recording of indications ..............................................................................................................................................................10 5.13 Demagnetization ................................................................................................................................................................................11 Annex A Variables affecting the sensitivity of magnetic particle testing 13 5.14 Test report ................................................................................................................................................................................................11 Bibliography 15 (informative) ............................... ............................................................................................................................................................................................................................. © ISO 2016 – All rights reserved iii"
+  },
+  {
+    "standard_code": "ISO_17638_2016",
+    "clause_ref": "1",
+    "clause_title": "Scope",
+    "requirement_text": "This document specifies techniques for detection of surface imperfections in welds in ferromagnetic materials, including the heat affected zones, by means of magnetic particle testing. The techniques are suitable for most welding processes and joint configurations. Variations in the basic techniques that will provide a higher or lower test sensitivity are described in Annex A. This document does not specify acceptance levels of the indications. Further information on acceptance levels for indications may be found in ISO 23278 or in product or application standards."
+  },
+  {
+    "standard_code": "ISO_17638_2016",
+    "clause_ref": "2",
+    "clause_title": "Normative references",
+    "requirement_text": "The following documents are referred to in the text in such a way that some or all of their content constitutes requirements of this document. For dated references, only the edition cited applies. For undated rNefoenr-ednecsetsr,u tchteiv lea tteesstti nedg i—tio Pne onfe tthraen rte tfeesrteinncge adn ddo mcuagmneenttic ( pinacrltuicdlien tge astniny ga m—e Vnidemweinngt sc)o anpdpitliioenss. ISO 3059, Non-destructive testing — Magnetic particle testing — Part 1: General principles ISO 9934-1:2N0o1n5-,d estructive testing — Magnetic particle testing — Part 2: Detection media ISO 9934-2, Non-destructive testing — Magnetic particle testing — Part 3: Equipment ISO 9934-3,"
+  },
+  {
+    "standard_code": "ISO_17638_2016",
+    "clause_ref": "3",
+    "clause_title": "Terms and definitions",
+    "requirement_text": "For the purposes of this document, the terms and definitions given in ISO 12707 and ISO 17635 apply. ISO and IEC maintain terminological databases for use in standardization at the following addresses: — IEC Electropedia: available at http://www.electropedia.org/ — ISO Online browsing platform: available at http://www.iso.org/obp"
+  },
+  {
+    "standard_code": "ISO_17638_2016",
+    "clause_ref": "4",
+    "clause_title": "Safety precautions",
+    "requirement_text": "Special consideration shall be given to toxic, inflammable and/or volatile materials, electrical safety and unfiltered UV radiation. Magnetic particle testing often creates high magnetic fields close to the object under test and the magnetising equipment. Items sensitive to these fields should be excluded from such areas."
+  },
+  {
+    "standard_code": "ISO_17638_2016",
+    "clause_ref": "5",
+    "clause_title": "General",
+    "requirement_text": ""
+  },
+  {
+    "standard_code": "ISO_17638_2016",
+    "clause_ref": "5.1",
+    "clause_title": "Information required prior to testing",
+    "requirement_text": "Prior to testing, the following items shall be specified (where applicable):\n\na) specific test procedure;\n\nb) certification requirements for NDT personnel;\n\n\nc) extent of coverage;\n\nd) state of manufacture;\n\ne) testing techniques to be used;\n\nf) overall performance test;\n\ng) any demagnetization;\n\nh) acceptance level;\n\ni) action necessary for unacceptable indications."
+  },
+  {
+    "standard_code": "ISO_17638_2016",
+    "clause_ref": "5.2",
+    "clause_title": "Additional pre-test information",
+    "requirement_text": "Prior to testing, the following additional information can also be required:\n\na) type and designation of the parent and weld materials;\n\nb) welding process;\n\nc) location and extent of welds to be tested;\n\nd) joint preparation and dimensions;\n\ne) location and extent of any repairs;\n\nf) post-weld treatment (if any);\n\ng) surface conditions.\n\nOperators may ask for further information that could be helpful in determining the nature of any indications detected."
+  },
+  {
+    "standard_code": "ISO_17638_2016",
+    "clause_ref": "5.3",
+    "clause_title": "Personnel qualification",
+    "requirement_text": "Magnetic particle testing of welds and the evaluation of results for final acceptance shall be performed by qualified and capable personnel. It is recommended that personnel be qualified in accordance with ISO 9712 or an equivalent standard at an appropriate level in the relevant industry sector."
+  },
+  {
+    "standard_code": "ISO_17638_2016",
+    "clause_ref": "5.4",
+    "clause_title": "Surface conditions and preparation",
+    "requirement_text": "Areas to be tested shall be dry unless appropriate products for wet surfaces are used. It may be necessary to improve the surface condition, e.g. by use of abrasive paper or local grinding to permit accurate interpretation of indications. Any cleaning or surface preparation shall not be detrimental to the material, the surface finish or the magnetic testing media. Detection media shall be used within the temperature range limitations set by the manufacturer."
+  },
+  {
+    "standard_code": "ISO_17638_2016",
+    "clause_ref": "5.5",
+    "clause_title": "Magnetizing",
+    "requirement_text": ""
+  },
+  {
+    "standard_code": "ISO_17638_2016",
+    "clause_ref": "5.5.1",
+    "clause_title": "Magnetizing equipment",
+    "requirement_text": "General magnetization requirements shall be in accordance with ISO 9934-1:2015, Clause 8. Unless otherwise specified, for example, in an application standard, the following types of alternating current-magnetizing equipment shall be used:\n\na) electromagnetic yokes;\n\n\nb) current flow equipment with prods;\n\nc) adjacent or threading conductors or coil techniques.\n\nDC electromagnets and permanent magnets may only be used by agreement at the time of enquiry and order. The magnetizing equipment shall conform to ISO 9934-3. Where prods are used, precautions shall be taken to minimize overheating, burning or arcing at the contact tips. Removal of arc burns shall be carried out where necessary. The affected area shall be tested by a suitable method to ensure the integrity of the surface."
+  },
+  {
+    "standard_code": "ISO_17638_2016",
+    "clause_ref": "5.5.2",
+    "clause_title": "Verification of magnetization",
+    "requirement_text": "For the verification of magnetization, see ISO 9934-1:2015, 8.2. For structural steels in welds, a tangential field between 2 kA/m to 6 kA/m (r.m.s.) is recommended. The adequacy of the surface flux density shall be established by one or more of the following methods:\n\na) by testing a representative component containing fine natural or artificial discontinuities in the\n\nleast favourable locations;\n\nb) measurement of the tangential field strength as close as possible to the surface using a Hall effect\n\nprobe; the appropriate tangential field strength can be difficult to measure close to abrupt changes in the shape of a component or where flux leaves the surface of a component;\n\nc) calculation of the approximate current value in order to achieve the recommended tangential field\n\nstrength; the calculation can be based on the current values specified in Figure 5 and Figure 6;\n\nd) by the use of other methods based on established principles.\n\nFlux indicators (i.e. shim-type) placed in contact with the surface under test provide a guide to the magnitude and direction of the tangential field strength, but should not be used to verify that the tangential field strength is acceptable. NOTE Information on b) is given in ISO 9934-3."
+  },
+  {
+    "standard_code": "ISO_17638_2016",
+    "clause_ref": "5.6",
+    "clause_title": "Application techniques",
+    "requirement_text": ""
+  },
+  {
+    "standard_code": "ISO_17638_2016",
+    "clause_ref": "5.6.1",
+    "clause_title": "Field directions and testing area",
+    "requirement_text": "The detectability of an imperfection depends on the angle of its major axis with respect to the direction of the magnetic field. This is explained for one direction of magnetization in Figure 1.\n\n\nKey α α"
+  },
+  {
+    "standard_code": "ISO_17638_2016",
+    "clause_ref": "1",
+    "clause_title": "magnetic field direction angle between the magnetic field and the direction of the imperfection",
+    "requirement_text": "α"
+  },
+  {
+    "standard_code": "ISO_17638_2016",
+    "clause_ref": "2",
+    "clause_title": "optimum sensitivity min minimum angle for imperfection detection",
+    "requirement_text": ""
+  },
+  {
+    "standard_code": "ISO_17638_2016",
+    "clause_ref": "3",
+    "clause_title": "reducing sensitivity i example of imperfection orientation",
+    "requirement_text": ""
+  },
+  {
+    "standard_code": "ISO_17638_2016",
+    "clause_ref": "4",
+    "clause_title": "insufficient sensitivity",
+    "requirement_text": "Figure 1 — Directions of detectable imperfections To ensure detection of imperfections in all orientations, the welds shall be magnetized in two directions approximately perpendicular to each other with a maximum deviation of 30°. This can be achieved using one or more magnetization methods. Testing in only one field direction is not recommended but may be carried out if specified, for example, in an application standard. When using yokes or prods, there will be an area of the component in the vicinity of each pole piece or tip that will be impossible to test due to excessive magnetic field strength. This is usually seen as furring of particles. Care shall be taken to ensure adequate overlap of the testing areas as shown in Figure 2 and Figure 3.\n\n\nDimensions in millimetres Key d separation between the poles (yoke/prod ) Figure 2 — Examples of effective testing area (shaded) for magnetizing with yokes and prods\n\n\nKey"
+  },
+  {
+    "standard_code": "ISO_17638_2016",
+    "clause_ref": "1",
+    "clause_title": "effective area",
+    "requirement_text": ""
+  },
+  {
+    "standard_code": "ISO_17638_2016",
+    "clause_ref": "2",
+    "clause_title": "overlap",
+    "requirement_text": "Figure 3 — Overlap of effective areas"
+  },
+  {
+    "standard_code": "ISO_17638_2016",
+    "clause_ref": "5.6.2",
+    "clause_title": "Typical magnetic testing techniques",
+    "requirement_text": "Magnetic particle testing techniques for common weld joint configurations are shown in Figure 4, Figure 5 and Figure 6. Values are given for guidance purposes only. Where possible, the same directions of magnetization and field overlaps shdould be used for other weld geometries to be tested. The width of the flux current (in case of flux current technique) or of the magnetic flow (in case of magnetic flow technique) path in the material, , shall be greater than or equal to the width of the weld and the heat affected zone +50 mm and in all cases, the weld and the heat affected zone shall be included in the effective area. The direction of magnetization with respect to the orientation of the weld shall be specified.\n\n\nDimensions in millimetres d d b d b d b 1 d≥ 75 β ≥ 75 d1 ≤ 1/2 ≤ /2"
+  },
+  {
+    "standard_code": "ISO_17638_2016",
+    "clause_ref": "2",
+    "clause_title": "≤ 2 – 50",
+    "requirement_text": "≈ 90º"
+  },
+  {
+    "standard_code": "ISO_17638_2016",
+    "clause_ref": "2",
+    "clause_title": "≥ 75",
+    "requirement_text": "d d d d b 1 ≥d 75 b 1 ≥d 75 b 2 d≥ 75 b 2 d> 75"
+  },
+  {
+    "standard_code": "ISO_17638_2016",
+    "clause_ref": "1",
+    "clause_title": "≤ 1/2 1 ≤ 1/2",
+    "requirement_text": "Key 2 ≤ 2 − 50 2 ≤ 2 − 50"
+  },
+  {
+    "standard_code": "ISO_17638_2016",
+    "clause_ref": "1",
+    "clause_title": "longitudinal cracks",
+    "requirement_text": ""
+  },
+  {
+    "standard_code": "ISO_17638_2016",
+    "clause_ref": "2",
+    "clause_title": "transverse cracks",
+    "requirement_text": "Figure 4 — Typical magnetizing techniques for yokes\n\n\nDimensions in millimetres d d b d b d β ≥ 75 ≥ 75 ≤ /2 ≤ /2 ≈ 90º d d b d b d ≥ 75 ≥ 75 ≤ /2 ≤ /2 Figure 5 — Typical magnetizing techniques for prods, using a magnetizing current prod spacing\n\n\nDimensions in millimetres a a"
+  },
+  {
+    "standard_code": "ISO_17638_2016",
+    "clause_ref": "20",
+    "clause_title": "≤ ≤ 50 20 ≤ ≤ 50",
+    "requirement_text": "≥ 8 ≥ 8 a N·I"
+  },
+  {
+    "standard_code": "ISO_17638_2016",
+    "clause_ref": "20",
+    "clause_title": "≤ ≤ 50",
+    "requirement_text": "Key ≥ 8D N I number of turns a current (r.m.s) distance between weld and coil or cable Figure 6 — Typical magnetizing techniques for flexible cables or coils (for longitudinal cracks)"
+  },
+  {
+    "standard_code": "ISO_17638_2016",
+    "clause_ref": "5.7",
+    "clause_title": "Detection media",
+    "requirement_text": ""
+  },
+  {
+    "standard_code": "ISO_17638_2016",
+    "clause_ref": "5.7.1",
+    "clause_title": "General",
+    "requirement_text": "Detection media may be either in dry powder form or magnetic inks in accordance with ISO 9934-2."
+  },
+  {
+    "standard_code": "ISO_17638_2016",
+    "clause_ref": "5.7.2",
+    "clause_title": "Verification of detection media performance",
+    "requirement_text": "The detection media used shall fulfil the requirements of ISO 9934-2.\n\n\nIndications obtained with the medium to be verified shall be compared against those obtained from a medium having a known and acceptable performance. For this purpose, the reference indications may be — real imperfections, — photograph(s), and — replica(s)."
+  },
+  {
+    "standard_code": "ISO_17638_2016",
+    "clause_ref": "5.8",
+    "clause_title": "Viewing conditions",
+    "requirement_text": "The viewing conditions shall be in accordance with ISO 3059."
+  },
+  {
+    "standard_code": "ISO_17638_2016",
+    "clause_ref": "5.9",
+    "clause_title": "Application of detection media",
+    "requirement_text": "After the object has been prepared for testing, the detection medium shall be applied by spraying, flooding or dusting immediately prior to and during the magnetization. Following this, time shall be allowed for indications to form before removal of the magnetic field. When magnetic suspensions are used, the magnetic field shall be maintained within the object until the majority of the suspension carrier liquid has drained away from the test surface. This will prevent any indications being washed away. Depending on the material being tested, its surface condition and magnetic permeability, indications will normally remain on the surface even after removal of the magnetic field due to residual magnetism within the part (mainly at the location of the poles). However, the presence of residual magnetism shall not be presumed and post evaluation techniques after removal of the prime magnetic field source are only permitted when a component has been proven by an overall performance test to retain magnetic indications."
+  },
+  {
+    "standard_code": "ISO_17638_2016",
+    "clause_ref": "5.10",
+    "clause_title": "Overall performance test",
+    "requirement_text": "When specified, an overall performance test of the system sensitivity for each procedure shall be carried out on site. The performance test shall be designed to ensure a proper functioning of the entire chain of parameters including the equipment, the magnetic field strength and direction, surface characteristics, detection media and illumination. The most reliable test is to use representative test pieces containing real imperfections of known type, location, size and size-distribution. Where these are not available, fabricated test pieces with artificial imperfections or flux shunting indicators of the cross or disc or shim-type may be used. The test pieces shall be demagnetized and free from indications resulting from previous tests. NOTE It can be necessary to perform an overall performance test of the system sensitivity for each specific procedure on site."
+  },
+  {
+    "standard_code": "ISO_17638_2016",
+    "clause_ref": "5.11",
+    "clause_title": "False indications",
+    "requirement_text": "False indications which may mask relevant indications can arise for many reasons, such as changes in magnetic permeability, very important geometry variation in, for example, the heat affected zone. Where masking is suspected, the test surface shall be dressed or alternative test methods should be used."
+  },
+  {
+    "standard_code": "ISO_17638_2016",
+    "clause_ref": "5.12",
+    "clause_title": "Recording of indications",
+    "requirement_text": "Indications can be recorded in one or more of the following ways by using:\n\na) description in writing;\n\nb) sketches;\n\n\nc) photography;\n\nd) transparent adhesive tape;\n\ne) transparent varnish for “freezing” the indication on the surface tested;\n\nf) peelable contrast coating;\n\ng) video recording;\n\nh) magnetic particle dispersion in an epoxy curable resin;\n\ni) magnetic tapes;\n\nj) electronic scanning."
+  },
+  {
+    "standard_code": "ISO_17638_2016",
+    "clause_ref": "5.13",
+    "clause_title": "Demagnetization",
+    "requirement_text": "After testing welds with alternating current, residual magnetization will normally be low and there will generally be no need for demagnetization of the object under test. If demagnetization is required, it shall be carried out using a defined mHethod and to a predefined level. For metal cutting processes, a typical residual field strength value of < 0,4 kA/m is recommended."
+  },
+  {
+    "standard_code": "ISO_17638_2016",
+    "clause_ref": "5.14",
+    "clause_title": "Test report",
+    "requirement_text": "A test report shall be prepared. The report should contain at least the following:\n\na) name of the company carrying out the test;\n\nb) the object tested;\n\nc) date of testing;\n\nd) parent and weld materials;\n\ne) any post weld heat treatment;\n\nf) type of joint;\n\ng) material thickness;\n\nh) welding process(es);\n\ni) temperature of the test object and the detection media (when using media in circulation)\n\nthroughout testing duration;\n\nj) identity of the test procedure and description of the parameters used, including the following:\n\n— type of magnetization; — type of current; — detection media; — viewing conditions;\n\nk) details and results of the overall performance test, where applicable;\n\nl) acceptance levels;\n\n\nm) description and location of all recordable indications;\n\nn) test results with reference to acceptance levels;\n\no) names, relevant qualification and signatures of personnel who carried out the test."
+  }
+]

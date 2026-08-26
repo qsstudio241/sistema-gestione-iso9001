@@ -1,0 +1,428 @@
+[
+  {
+    "standard_code": "ISO_3452_1_2021",
+    "clause_ref": "1",
+    "clause_title": "Scope 1",
+    "requirement_text": ".........................................................................................................................................................................................................................................."
+  },
+  {
+    "standard_code": "ISO_3452_1_2021",
+    "clause_ref": "2",
+    "clause_title": "Normative references 1",
+    "requirement_text": "................................................................................................................................................................................................................................."
+  },
+  {
+    "standard_code": "ISO_3452_1_2021",
+    "clause_ref": "3",
+    "clause_title": "Terms and definitions 1",
+    "requirement_text": "......................................................................................................................................................................................"
+  },
+  {
+    "standard_code": "ISO_3452_1_2021",
+    "clause_ref": "4",
+    "clause_title": "Safety precautions 2",
+    "requirement_text": "....................................................................................................................................................................................."
+  },
+  {
+    "standard_code": "ISO_3452_1_2021",
+    "clause_ref": "5",
+    "clause_title": "General principles 2",
+    "requirement_text": ".............................................................................................................................................................................................. ............................................................................................................................................................................................... 5.1 Personnel .....................................................................................................................................................................................................2 5.2 Description of the method ............................................................................................................................................................2 5.3 Process sequence ..................................................................................................................................................................................2 5.4 Equipment ...................................................................................................................................................................................................3"
+  },
+  {
+    "standard_code": "ISO_3452_1_2021",
+    "clause_ref": "6",
+    "clause_title": "Products, sensitivity and designation 3",
+    "requirement_text": "5.5 Effectiveness .............................................................................................................................................................................................3 ............................................................................................................................................ 6.1 Product family .........................................................................................................................................................................................3 6.2 Testing products ....................................................................................................................................................................................3 6.3 Sensitivity ....................................................................................................................................................................................................3"
+  },
+  {
+    "standard_code": "ISO_3452_1_2021",
+    "clause_ref": "7",
+    "clause_title": "Compatibility 4",
+    "requirement_text": "6.4 Designation ................................................................................................................................................................................................4 ............................................................................................................................................................................................................ 7.1 General ...........................................................................................................................................................................................................4 7.2 Compatibility of penetrant testing products .................................................................................................................4"
+  },
+  {
+    "standard_code": "ISO_3452_1_2021",
+    "clause_ref": "8",
+    "clause_title": "Test procedure 5",
+    "requirement_text": ""
+  },
+  {
+    "standard_code": "ISO_3452_1_2021",
+    "clause_ref": "7.3",
+    "clause_title": "Compatibility of penetrant testing products and the material to be tested .......................................4",
+    "requirement_text": "........................................................................................................................................................................................................ 8.1 Written test procedure .....................................................................................................................................................................5 8.2 Precleaning .................................................................................................................................................................................................5 8.2.1 General......................................................................................................................................................................................5 8.2.2 Mechanical precleaning .............................................................................................................................................5 8.2.3 Chemical precleaning ...................................................................................................................................................5 8.2.4 Drying ........................................................................................................................................................................................5 8.3 Temperature ..............................................................................................................................................................................................5 8.4 Application of penetrant .................................................................................................................................................................6 8.4.1 Methods of application ...............................................................................................................................................6 8.4.2 Penetration time ..............................................................................................................................................................6 8.5 Excess penetrant removal .............................................................................................................................................................6 8.5.1 General......................................................................................................................................................................................6 8.5.2 Water ..........................................................................................................................................................................................6 8.5.3 Solvents ....................................................................................................................................................................................6 8.5.4 Emulsifier ...............................................................................................................................................................................6 8.5.5 Water and solvent ...........................................................................................................................................................7 8.5.6 Excess penetrant removal check ........................................................................................................................7"
+  },
+  {
+    "standard_code": "ISO_3452_1_2021",
+    "clause_ref": "8.5.7",
+    "clause_title": "Drying after excess penetrant removal.........................................................................................................7",
+    "requirement_text": "8.6 Developing ..................................................................................................................................................................................................7 8.6.1 General......................................................................................................................................................................................7 8.6.2 Dry developer .....................................................................................................................................................................8 8.6.3 Water-suspendable developer .............................................................................................................................8 8.6.4 Solvent-based developer ...........................................................................................................................................8 8.6.5 Water soluble developer ...........................................................................................................................................8"
+  },
+  {
+    "standard_code": "ISO_3452_1_2021",
+    "clause_ref": "8.6.6",
+    "clause_title": "Water- or solvent-based for special application (e.g. peelable developer) ...................8",
+    "requirement_text": "8.6.7 No developer (type I only) .......................................................................................................................................8 8.7 Inspection ....................................................................................................................................................................................................9 8.7.1 General......................................................................................................................................................................................9 8.7.2 Viewing conditions ........................................................................................................................................................9 8.7.3 Wipe-off technique.........................................................................................................................................................9 8.7.4 Recording ............................................... .............................................................................................................................10 © ISO 2021 – All rights reserved iii\n\n\n8.8 Post cleaning and corrosion protection..........................................................................................................................10 8.8.1 Post cleaning.....................................................................................................................................................................10 8.8.2 Corrosion protection .................................................................................................................................................10"
+  },
+  {
+    "standard_code": "ISO_3452_1_2021",
+    "clause_ref": "9",
+    "clause_title": "Test report 10",
+    "requirement_text": "8.9 Retesting ....................................................................................................................................................................................................10 Annex A Main stages of standard penetrant examination 12 ................................................................................................................................................................................................................ Annex B Process and control tests 14 (normative) ........................................................................ Annex C Example test report 22 (normative) ..................................................................................................................................... Bibliography 23 (informative) ................................................................................................................................................ ............................................................................................................................................................................................................................. iv © ISO 2021 – All rights reserved"
+  },
+  {
+    "standard_code": "ISO_3452_1_2021",
+    "clause_ref": "1",
+    "clause_title": "Scope",
+    "requirement_text": "This document specifies a method of penetrant testing used to detect discontinuities, e.g. cracks, laps, folds, porosity and lack of fusion, which are open to the surface of the material to be tested using white light or UV-A (365 nm) radiation. It is mainly applied to metallic materials, but can also be performed on other materials, provided that they are inert to the test media and not excessively porous (castings, forgings, welds, ceramics, etc.) This document also includes requirements for process and control testing, but is not intended to be used for acceptance criteria. It gives neither information relating to the suitability of individual test systems for specific applications nor requirements for test equipment. NOTE 1 Methods for determining and monitoring the essential properties of penetrant testing products to be used are specified in ISO 3452-2 and ISO 3452-3. NOTE 2 The term \"discontinuity\" is used in this document in the sense that no evaluation concerning acceptability or non-acceptability is included. NOTE 3 CEN/TR 16638 addresses penetrant testing using actinic blue light."
+  },
+  {
+    "standard_code": "ISO_3452_1_2021",
+    "clause_ref": "2",
+    "clause_title": "Normative references",
+    "requirement_text": "The following documents are referred to in the text in such a way that some or all of their content constitutes requirements of this document. For dated references, only the edition cited applies. For undated rNefoenr-ednecsetsr,u tchteiv lea tteesstti nedg i—tio Pne onfe tthraen rte tfeesrteinncge adn ddo mcuagmneenttic ( pinacrltuicdlien tge astniny ga m—e Vnidemweinngt sc)o anpdpitliioenss. ISO 3059, Non-destructive testing — Penetrant testing — Part 2: Testing of penetrant materials ISO 3452-2, Non-destructive testing — Penetrant testing — Part 3: Reference test blocks ISO 3452-3, Non-destructive testing — Penetrant testing — Part 4: Equipment ISO 3452-4, Non-destructive testing — Penetrant testing — Part 5: Penetrant testing at temperatures higher than 50 degrees C ISO 3452-5, Non-destructive testing — Penetrant testing — Part 6: Penetrant testing at temperatures lower than 10 degrees C ISO 3452-6, Non-destructive testing — Penetrant testing — Vocabulary ISO 12706,"
+  },
+  {
+    "standard_code": "ISO_3452_1_2021",
+    "clause_ref": "3",
+    "clause_title": "Terms and definitions",
+    "requirement_text": "For the purposes of this document, the terms and definitions given in ISO 12706 apply. ISO and IEC maintain terminological databases for use in standardization at the following addresses: — ISO Online browsing platform: available at https:// www .iso .org/ obp\n\n\n— IEC Electropedia: available at http:// www .electropedia .org/"
+  },
+  {
+    "standard_code": "ISO_3452_1_2021",
+    "clause_ref": "4",
+    "clause_title": "Safety precautions",
+    "requirement_text": "As penetrant inspection techniques often require the use of harmful, flammable and/or volatile materials, safety regulations (e.g. optical radiation legislation) shall be taken into account. Prolonged or repeated contact of these materials with the skin or any mucous membrane should be avoided. Working areas shall be adequately ventilated and sited away from sources of heat, sparks or naked flames, taking into account all applicable safety regulations. The penetrant testing products and equipment shall be used with care and always in compliance with the instructions supplied by the manufacturer. UV-A sources shall always be maintained in a good condition. Care shall be taken to ensure the safe implementation of the method."
+  },
+  {
+    "standard_code": "ISO_3452_1_2021",
+    "clause_ref": "5",
+    "clause_title": "General principles",
+    "requirement_text": ""
+  },
+  {
+    "standard_code": "ISO_3452_1_2021",
+    "clause_ref": "5.1",
+    "clause_title": "Personnel",
+    "requirement_text": "Testing shall be carried out by proficient, suitably trained and qualified personnel and, where applicable, shall be supervised by competent personnel nominated by the employer or, by delegation of the employer to the inspection company in charge of testing. To demonstrate appropriate qualification, it is recommended that personnel be certified according to ISO 9712 or an equivalent formalized system. Penetrant testing operations, unless otherwise agreed, shall be authorized by a competent supervisory individual (Level 3 or equivalent) approved by the employer."
+  },
+  {
+    "standard_code": "ISO_3452_1_2021",
+    "clause_ref": "5.2",
+    "clause_title": "Description of the method",
+    "requirement_text": "Prior to penetrant testing, the surface to be inspected shall be clean and dry. Suitable penetrant is then applied to the test area and enter discontinuities open to the surface. After the appropriate penetration time has elapsed, the excess penetrant is removed from the surface and the developer applied. The developer absorbs the penetrant that has entered and remains in the discontinuities and may give a clearly visible enhanced indication of the discontinuity. Should complementary non-destructive testing (NDT) be required, it is preferable that the penetrant inspection be performed first, so as not to introduce contaminants into open discontinuities. If penetrant inspection is used following another NDT technique or method, the surface shall be cleaned carefully to remove contaminants before application."
+  },
+  {
+    "standard_code": "ISO_3452_1_2021",
+    "clause_ref": "5.3",
+    "clause_title": "Process sequence",
+    "requirement_text": "The penetrant process shall be continuous with no undue delays between the stages. If process parameters are not met, surfaces shall be cleaned and reprocessed. Testing generally proceeds through the following stages:\n\na) preparation and precleaning (see 8.2);\n\nb) application of penetrant (see 8.4);\n\nc) excess penetrant removal (see 8.5);\n\nd) application of developer (see 8.6);\n\ne) inspection (see 8.7);\n\n\nf) postcleaning and corrosion protection (see 8.8).\n\nThe process shall be as given in Annex A."
+  },
+  {
+    "standard_code": "ISO_3452_1_2021",
+    "clause_ref": "5.4",
+    "clause_title": "Equipment",
+    "requirement_text": "The equipment used for carrying out penetrant testing depends on the number, size, weight and shape of the parts to be tested. The equipment shall be as specified in ISO 3452-4."
+  },
+  {
+    "standard_code": "ISO_3452_1_2021",
+    "clause_ref": "5.5",
+    "clause_title": "Effectiveness",
+    "requirement_text": "The effectiveness of the penetrant testing depends upon many factors, including\n\na) types of penetrant materials and testing equipment;\n\nb) surface preparation and condition;\n\nc) material under examination and expected discontinuities;\n\nd) temperature of the test surface;\n\ne) penetration and development time;\n\nf) viewing conditions.\n\nControl checks shall be carried out to demonstrate that the correct testing parameters are used in accordance with Annex B."
+  },
+  {
+    "standard_code": "ISO_3452_1_2021",
+    "clause_ref": "6",
+    "clause_title": "Products, sensitivity and designation",
+    "requirement_text": ""
+  },
+  {
+    "standard_code": "ISO_3452_1_2021",
+    "clause_ref": "6.1",
+    "clause_title": "Product family",
+    "requirement_text": "Various test systems exist in penetrant testing. The penetrant system and the product family shall be selected according to the application. Various factors have an impact on the effectiveness and sensitivity of the process, e.g. the surface roughness and condition, size and shape of the parts to be tested and the sensitivity level of the product family. For example, using a high sensitivity penetrant on a rough surface may result in a less sensitive test than using a lower sensitive penetrant. A product family is understood as a combination of the following penetrant testing materials: penetrant, excess penetrant remover (except method A) and developer. A product family may be defined by the manufacturer, user or inspection authority and the testing materials do not necessarily have to be from the same manufacturer, but shall be type tested in accordance with ISO 3452-2."
+  },
+  {
+    "standard_code": "ISO_3452_1_2021",
+    "clause_ref": "6.2",
+    "clause_title": "Testing products",
+    "requirement_text": "The products used for testing are given in Table 1."
+  },
+  {
+    "standard_code": "ISO_3452_1_2021",
+    "clause_ref": "6.3",
+    "clause_title": "Sensitivity",
+    "requirement_text": "Sensitivity levels shall be determined according to ISO 3452-2. By using specific product families, different sensitivity levels may be achieved. ISO 3452-2 describes penetrant baseline sensitivity and product family sensitivity."
+  },
+  {
+    "standard_code": "ISO_3452_1_2021",
+    "clause_ref": "6.4",
+    "clause_title": "Designation",
+    "requirement_text": "The product family to be used for penetrant testing is given a designation comprising the type, the method and the form for the testing products, and a figure which indicates the sensitivity level achieved by testing according to ISO 3452-2. EXAMPLE A product family comprising a fluorescent penetrant (I), water as the excess penetrant remover (A), and a dry-powder developer (a), and having a system sensitivity of level 2 gives the following penetrant testing system designation when using ISO 3452-1 and ISO 3452-2: product family ISO 3452-2, IAa Level 2. Table 1 — Testing products/procedures Penetrant Excess penetrant remover Developer Type Denomination Method Denomination Form Denomination I Fluorescent A Water a Dry II Colour contrast B Lipophilic emulsifier b Water-soluble III Dual purpose (fluo- C Solvent c Water-suspendable rescent and colour D Hydrophilic emulsifier d Solvent-based (non-aquecontrast) ous for type I) a E Water and solvent e Solvent-based (non-aqueous for Types II and III) f Special application b g No developer (type I only) NOTE For specific cases, it is necessary to use penetrant testing products complying with particular requirements with regards to flammability, sulfur, halogen and sodium content and other contaminants. See ISO 3452-2. a Method E relates to the use of two products, both water and solvent. Penetrant materials qualified for method A are also considered qualified for method E. b For form g, development time is required, see 8.6.1."
+  },
+  {
+    "standard_code": "ISO_3452_1_2021",
+    "clause_ref": "7",
+    "clause_title": "Compatibility",
+    "requirement_text": ""
+  },
+  {
+    "standard_code": "ISO_3452_1_2021",
+    "clause_ref": "7.1",
+    "clause_title": "General",
+    "requirement_text": "The penetrant testing products shall be compatible with each other and the material to be tested. The use for which the part or parts is designed shall also be considered."
+  },
+  {
+    "standard_code": "ISO_3452_1_2021",
+    "clause_ref": "7.2",
+    "clause_title": "Compatibility of penetrant testing products",
+    "requirement_text": "Drag-out losses shall be replaced with the same product, which may be from a different batch."
+  },
+  {
+    "standard_code": "ISO_3452_1_2021",
+    "clause_ref": "7.3",
+    "clause_title": "Compatibility of penetrant testing products and the material to be tested",
+    "requirement_text": "7.3.1 In most cases the compatibility can be assessed prior to use by means of the corrosion tests detailed in ISO 3452-2. 7.3.2 The wettability of the test surface using the selected penetrant testing product shall be established before testing. When parts are not visible during penetrant application (e.g. automated systems), the wettability of the penetrant on the test surface shall be visually checked before testing on a representative sample. 7.3.3 The chemical or physical properties of some non-metallic materials can be adversely affected by the penetrant testing products; their compatibility shall be established before inspecting parts manufactured from, and assemblies that include, such materials.\n\n| Penetrant |  | Excess penetrant remover |  | Developer |  |\n| --- | --- | --- | --- | --- | --- |\n| Type | Denomination | Method | Denomination | Form | Denomination |\n|  |  |  |  |  |  |\n|  |  |  |  |  |  |\n| I II III | Fluorescent Colour contrast Dual purpose (fluo- rescent and colour contrast) | A | Water | a | Dry |\n|  |  | B C | Lipophilic emulsifier Solvent | b c | Water-soluble Water-suspendable |\n|  |  | D a E | Hydrophilic emulsifier Water and solvent | d | Solvent-based (non-aque- ous for type I) |\n|  |  |  |  | e | Solvent-based (non-aque- |\n|  |  |  |  |  | ous for Types II and III) |\n| f Special application b g No developer (type I only) NOTE For specific cases, it is necessary to use penetrant testing products complying with particular requirements with regards to flammability, sulfur, halogen and sodium content and other contaminants. See ISO 3452-2. a Method E relates to the use of two products, both water and solvent. Penetrant materials qualified for method A are also considered qualified for method E. |  |  |  |  |  |\n\n\n7.3.4 In situations where contamination can occur, it is essential to ensure that the penetrant testing products do not have a deleterious effect on fuels, lubricants, hydraulic fluids, etc. 7.3.5 For parts associated with peroxide rocket fuel, explosive stores (these include all items containing explosive propellant, initiating or pyrotechnic materials), oxygen equipment or nuclear applications, the compatibility of penetrant testing products shall be given special consideration."
+  },
+  {
+    "standard_code": "ISO_3452_1_2021",
+    "clause_ref": "8",
+    "clause_title": "Test procedure",
+    "requirement_text": ""
+  },
+  {
+    "standard_code": "ISO_3452_1_2021",
+    "clause_ref": "8.1",
+    "clause_title": "Written test procedure",
+    "requirement_text": "All testing shall be performed in accordance with an approved written documentation, either specifically prepared or included in the relevant product standard. The written test procedure shall also include all relevant parameters for testing, e.g. temperatures, times, pressures. When generating test procedures, the product manufacturer's recommendations shall be taken into account."
+  },
+  {
+    "standard_code": "ISO_3452_1_2021",
+    "clause_ref": "8.2",
+    "clause_title": "Precleaning",
+    "requirement_text": ""
+  },
+  {
+    "standard_code": "ISO_3452_1_2021",
+    "clause_ref": "8.2.1",
+    "clause_title": "General",
+    "requirement_text": "Contaminants such as scale, rust, oil, grease, paint and water shall be removed — if necessary using mechanical or chemical methods, or a combination of these. Precleaning shall ensure that the test surface is free from residues and that it allows the penetrant to enter any discontinuity. The cleaned area shall be large enough to prevent interference from areas adjacent to the actual test surface."
+  },
+  {
+    "standard_code": "ISO_3452_1_2021",
+    "clause_ref": "8.2.2",
+    "clause_title": "Mechanical precleaning",
+    "requirement_text": "Scale, slag, rust, etc. shall be removed using suitable methods such as brushing, rubbing, abrasion, blasting or high-pressure blasting (water or ice pellets). These methods remove contaminants from the surface and generally are incapable of removing contaminants from within surface discontinuities. In all cases care shall be taken to ensure that the discontinuities are not masked by plastic deformation or clogging from abrasive materials. If necessary to ensure that discontinuities are open to the surface, subsequent etching treatment shall be carried out, followed by adequate rinsing and drying."
+  },
+  {
+    "standard_code": "ISO_3452_1_2021",
+    "clause_ref": "8.2.3",
+    "clause_title": "Chemical precleaning",
+    "requirement_text": "Chemical precleaning shall be carried out, using suitable chemical cleaning agents, to remove residues such as grease, oil, paint or etching materials. Residues from chemical precleaning processes can react with a penetrant and greatly reduce its sensitivity. Therefore, chemical agents shall be removed from the surface under examination, after the cleaning process, using suitable cleaning methods."
+  },
+  {
+    "standard_code": "ISO_3452_1_2021",
+    "clause_ref": "8.2.4",
+    "clause_title": "Drying",
+    "requirement_text": "As the final stage of precleaning, the parts to be tested shall be thoroughly dried, so that neither water nor solvent remains on the test surface and in the discontinuities."
+  },
+  {
+    "standard_code": "ISO_3452_1_2021",
+    "clause_ref": "8.3",
+    "clause_title": "Temperature",
+    "requirement_text": "The testing materials, the test surface and the ambient temperature shall be within the range from"
+  },
+  {
+    "standard_code": "ISO_3452_1_2021",
+    "clause_ref": "10",
+    "clause_title": "°C to 50 °C, except for the drying process (8.2.4). Rapid temperature changes can cause condensation,",
+    "requirement_text": "which may interfere with the process and should be avoided. For temperatures outside the range from 10 °C to 50 °C, inspection shall be carried out in accordance with ISO 3452-5 or ISO 3452-6, as applicable."
+  },
+  {
+    "standard_code": "ISO_3452_1_2021",
+    "clause_ref": "8.4",
+    "clause_title": "Application of penetrant",
+    "requirement_text": ""
+  },
+  {
+    "standard_code": "ISO_3452_1_2021",
+    "clause_ref": "8.4.1",
+    "clause_title": "Methods of application",
+    "requirement_text": "Penetrant can be applied to the part to be tested by spraying, brushing, flooding, dipping or immersion. Penetrant shall remain on the test surface throughout the entire penetration time."
+  },
+  {
+    "standard_code": "ISO_3452_1_2021",
+    "clause_ref": "8.4.2",
+    "clause_title": "Penetration time",
+    "requirement_text": "The appropriate penetration time depends on the properties of the penetrant, the application temperature, the material of the part to be tested and the discontinuities to be detected. The penetration time shall be between 5 min and 60 min and shall not be less than the manufacturer's recommended time for the required sensitivity. The penetration time shall be defined in the written test procedure."
+  },
+  {
+    "standard_code": "ISO_3452_1_2021",
+    "clause_ref": "8.5",
+    "clause_title": "Excess penetrant removal",
+    "requirement_text": ""
+  },
+  {
+    "standard_code": "ISO_3452_1_2021",
+    "clause_ref": "8.5.1",
+    "clause_title": "General",
+    "requirement_text": "The excess penetrant removal shall be such that penetrant remains in the discontinuities."
+  },
+  {
+    "standard_code": "ISO_3452_1_2021",
+    "clause_ref": "8.5.2",
+    "clause_title": "Water",
+    "requirement_text": "When water is used for removal it shall be applied by wiping, immersion or spray. Care shall be exercised to avoid overwashing for example by the use of high-pressure spray, excessive time or excessive mechanical action. When wiping is used, excess penetrant shall be removed first by using a suitable clean lint-free cloth or absorbent paper and subsequently by cleaning with a clean lint-free cloth lightly moistened with water."
+  },
+  {
+    "standard_code": "ISO_3452_1_2021",
+    "clause_ref": "8.5.3",
+    "clause_title": "Solvents",
+    "requirement_text": "Excess penetrant shall be removed first by using a suitable clean lint-free cloth or absorbent paper and subsequently by using a clean lint-free cloth lightly moistened with solvent. Any other removal technique shall be technically approved for adequacy and agreed by the contracting parties, particularly when the solvent remover is sprayed directly onto the part to be tested."
+  },
+  {
+    "standard_code": "ISO_3452_1_2021",
+    "clause_ref": "8.5.4",
+    "clause_title": "Emulsifier",
+    "requirement_text": ""
+  },
+  {
+    "standard_code": "ISO_3452_1_2021",
+    "clause_ref": "8.5.4.1",
+    "clause_title": "Hydrophilic (water-dilutable)",
+    "requirement_text": "To allow the post-emulsifiable penetrant to be removed from the test surface, it shall be rendered waterrinsable by application of an emulsifier. Before the application of the emulsifier, a water wash shall be performed in order to remove the bulk of the excess penetrant from the test surface and facilitate a uniform action of the hydrophilic emulsifier that will be applied subsequently. The emulsifier shall be applied by immersion or by foam equipment. The concentration and the contact time of the emulsifier shall be determined by the user through pre-tests. After emulsification, a final wash shall be carried out in accordance with 8.5.2."
+  },
+  {
+    "standard_code": "ISO_3452_1_2021",
+    "clause_ref": "8.5.4.2",
+    "clause_title": "Lipophilic (oil-based)",
+    "requirement_text": "To allow the post-emulsifiable penetrant to be removed from the test surface, it shall be rendered waterrinsable by application of an emulsifier. This can only be done by immersion. The emulsifier contact time shall be evaluated by the user through pre-tests according to the manufacturer's instructions.\n\n\nThis time shall be sufficient to allow only the excess penetrant to be removed from the test surface during the subsequent water wash. The emulsifying time given by the manufacturer shall not be exceeded. Immediately after emulsification, a water wash shall be carried out in accordance with 8.5.2."
+  },
+  {
+    "standard_code": "ISO_3452_1_2021",
+    "clause_ref": "8.5.5",
+    "clause_title": "Water and solvent",
+    "requirement_text": "First, the excess water-washable penetrant shall be removed using water (see 8.5.2). Subsequently the surface shall be wiped with a clean lint-free cloth, lightly moistened with solvent."
+  },
+  {
+    "standard_code": "ISO_3452_1_2021",
+    "clause_ref": "8.5.6",
+    "clause_title": "Excess penetrant removal check",
+    "requirement_text": "During excess penetrant removal, the test surface shall be checked for penetrant residues that may affect interpretation. Excess penetrant removal shall be carried out under the conditions specified in ISO 3059 to confirm correct removal."
+  },
+  {
+    "standard_code": "ISO_3452_1_2021",
+    "clause_ref": "8.5.7",
+    "clause_title": "Drying after excess penetrant removal",
+    "requirement_text": "In order to facilitate rapid drying of excess water, any droplets and puddles of water shall be removed from the part. Except when using water-based developer, the test surface shall be dried as quickly as possible after excess penetrant removal, using one of the following methods:\n\na) wiping with a clean, dry, lint-free cloth;\n\nb) evaporation at ambient temperature after hot water dip;\n\nc) evaporation at elevated temperature;\n\nd) forced air circulation;\n\ne) a combination of methods a) to d).\n\nIf compressed air is used, particular care shall be taken to ensure that it is clean and does not affect any penetrant bleed-back that may already have started. It is recommended that a maximum pressure of 200 kPa (2 bar) is used and a distance of around 300 mm or more is allowed between the nozzle and the test surface. If forced air circulation or a drier is used for drying, the air temperature shall not exceed 70 °C. The drying time shall not lead to a surface temperature higher than 50 °C. The method of drying the part to be tested shall be carried out such that the penetrant remaining in the discontinuities does not dry."
+  },
+  {
+    "standard_code": "ISO_3452_1_2021",
+    "clause_ref": "8.6",
+    "clause_title": "Developing",
+    "requirement_text": ""
+  },
+  {
+    "standard_code": "ISO_3452_1_2021",
+    "clause_ref": "8.6.1",
+    "clause_title": "General",
+    "requirement_text": "The developer shall be maintained in a uniform condition during use and shall be evenly applied to the test surface. The application of the developer shall be carried out as soon as possible after the removal of excess penetrant. Care shall be exercised when using water-based developers with water-washable penetrants to avoid removing further penetrant from the discontinuities. The development time shall be defined in the written test procedure. The development times shall be selected according to the application. The developm ent time shall not be less than 10 min. 7\n\n\nThe development time begins — immediately after application, when dry developer is applied, — immediately after drying of the developer layer, when a wet developer is applied, or — immediately after drying of the test surface, when no developer is used."
+  },
+  {
+    "standard_code": "ISO_3452_1_2021",
+    "clause_ref": "8.6.2",
+    "clause_title": "Dry developer",
+    "requirement_text": "Dry developer may only be used with fluorescent penetrants. The developer shall be uniformly applied to the test surface by one of the following techniques: dust storm, electrostatic spraying, flock gun, fluidized bed or storm cabinet. The test surface shall be thinly covered by the developer; local agglomerations are not permitted."
+  },
+  {
+    "standard_code": "ISO_3452_1_2021",
+    "clause_ref": "8.6.3",
+    "clause_title": "Water-suspendable developer",
+    "requirement_text": "A thin, uniform application of the developer shall be carried out by immersion in agitated suspension or by spraying with suitable equipment in accordance with the approved procedure. The immersion time and temperature of the developer shall be determined by the user through pre-tests according to the manufacturer's instructions. The immersion time shall be as short as possible to ensure optimum results. The part shall be dried by evaporation and/or by the use of a forced-air circulation."
+  },
+  {
+    "standard_code": "ISO_3452_1_2021",
+    "clause_ref": "8.6.4",
+    "clause_title": "Solvent-based developer",
+    "requirement_text": "The developer shall be applied by spraying uniformly. The spray shall be such that the developer arrives slightly wet on the surface, giving a thin, uniform layer."
+  },
+  {
+    "standard_code": "ISO_3452_1_2021",
+    "clause_ref": "8.6.5",
+    "clause_title": "Water soluble developer",
+    "requirement_text": "A uniform application of the developer shall be carried out by immersion or by spraying with suitable equipment in accordance with the approved procedure. The immersion time and temperature of the developer shall be determined by the user through pre-tests according to the manufacturer's instructions. The immersion time should be as short as possible to ensure an optimum result. The part shall be dried by evaporation and/or by the use of a drying oven."
+  },
+  {
+    "standard_code": "ISO_3452_1_2021",
+    "clause_ref": "8.6.6",
+    "clause_title": "Water- or solvent-based for special application (e.g. peelable developer)",
+    "requirement_text": "When an indication that needs to be recorded is shown with the penetrant inspection process the following steps should be used: — Wipe off the developer with a clean, dry, lint-free cloth. — Apply the same penetrant by any convenient means, then follow exactly the same process as initially used, up to application of the developer. — After excess penetrant removal and drying of the part, apply the peelable developer as recommended by the manufacturer. — When the recommended development time has elapsed, carefully peel off the developer coating. Indication(s) appear(s) on the face of the coating in direct contact with the part."
+  },
+  {
+    "standard_code": "ISO_3452_1_2021",
+    "clause_ref": "8.6.7",
+    "clause_title": "No developer (type I only)",
+    "requirement_text": "Penetrant testing without a developer shall only be performed with specific agreement between contracting parties. The sensitivity shall also be agreed on by the contracting parties and may be based on the baseline sensitivity of the penetrant used."
+  },
+  {
+    "standard_code": "ISO_3452_1_2021",
+    "clause_ref": "8.7",
+    "clause_title": "Inspection",
+    "requirement_text": ""
+  },
+  {
+    "standard_code": "ISO_3452_1_2021",
+    "clause_ref": "8.7.1",
+    "clause_title": "General",
+    "requirement_text": "Indications produced by the penetrant method may provide limited information on the shape, depth and dimension of discontinuities. In some cases, it may be advantageous to carry out the first examination just after the application of the developer or as soon as the developer is dry. This facilitates a better evaluation of indications. Care should be taken to differentiate between true indications and spurious or false indications, such as scratches or changes of section. The operator shall carry out any necessary testing and observations to identify and, if possible, to eliminate the reason for such false indications. All indications which cannot be confidently discounted as false shall be classified as linear or non-linear and shall be recorded as required by the product standard. Inspection shall be carried out when the development time has elapsed. The final evaluation and the indication sizing shall be performed at the end of the development time. Inspection aids such as magnification instruments or mirrors can be used. Assessment by the wipe-off technique (see 8.7.3) may assist the inspection."
+  },
+  {
+    "standard_code": "ISO_3452_1_2021",
+    "clause_ref": "8.7.2",
+    "clause_title": "Viewing conditions",
+    "requirement_text": "Viewing conditions shall conform to ISO 3059. Additionally, for fluorescent techniques, sufficient time shall be allowed for the operator's eyes to become dark-adapted in the inspection area, at least 1 min before inspection commences."
+  },
+  {
+    "standard_code": "ISO_3452_1_2021",
+    "clause_ref": "8.7.3",
+    "clause_title": "Wipe-off technique",
+    "requirement_text": "This technique is used to assist in the assessment of the nature of a discontinuity causing an indication and consists of the removal of the initial indication followed by a further development process. It shall not be used to remedy general inspection process irregularities such as inadequate removal. The exact process may be the subject of a specific agreement between the contracting parties or included within relevant acceptance criteria. Unless otherwise agreed, repeating the procedure is not permitted. Where no indication redevelops, this shall not be the sole evidence for assessing an indication as spurious or non-relevant but can be used to demonstrate that the initial interpretation is correct (e.g. water mark or surface contamination) or to allow the inspector to obtain additional beneficial information by witnessing the growth of the indication during the redevelopment time. The process is as follows:\n\na) using a small, clean, lint-free swab lightly moistened with fast-drying solvent, wipe across the\n\nsurface where the indication is present to remove that indication in a manner that further bleed out will occur if a discontinuity is present;\n\nb) view the area under inspection conditions to ensure the penetrant materials have been completely\n\nremoved;\n\nc) apply further developer — use a light coating of wet solvent-based (non-aqueous) developer, applied\n\nfrom a distance where the material dries almost immediately on contact, unless otherwise agreed;\n\nd) inspect the area immediately after the application of the developer;\n\ne) inspect again at intervals and at the final development time of 10 min."
+  },
+  {
+    "standard_code": "ISO_3452_1_2021",
+    "clause_ref": "8.7.4",
+    "clause_title": "Recording",
+    "requirement_text": "Recording may be done by any adequate method, e.g. written description, sketch, peel technique or photograph."
+  },
+  {
+    "standard_code": "ISO_3452_1_2021",
+    "clause_ref": "8.8",
+    "clause_title": "Post cleaning and corrosion protection",
+    "requirement_text": ""
+  },
+  {
+    "standard_code": "ISO_3452_1_2021",
+    "clause_ref": "8.8.1",
+    "clause_title": "Post cleaning",
+    "requirement_text": "After final inspection, post cleaning of the part is necessary only in those cases where the penetrant testing products can interfere with subsequent processing, testing or service requirements."
+  },
+  {
+    "standard_code": "ISO_3452_1_2021",
+    "clause_ref": "8.8.2",
+    "clause_title": "Corrosion protection",
+    "requirement_text": "If required, a suitable corrosion protection shall be applied."
+  },
+  {
+    "standard_code": "ISO_3452_1_2021",
+    "clause_ref": "8.9",
+    "clause_title": "Retesting",
+    "requirement_text": "If retesting is necessary, e.g. because no unambiguous evaluation of indications is possible, the entire test procedure, starting with the precleaning, shall be repeated. If necessary, more favourable test conditions shall be chosen for this procedure. The use of a different type of penetrant or a penetrant of the same type from a different manufacturer is not allowed."
+  },
+  {
+    "standard_code": "ISO_3452_1_2021",
+    "clause_ref": "9",
+    "clause_title": "Test report",
+    "requirement_text": "The test report shall contain the following information, in reference to this document:\n\na) information on the part tested:\n\n1) designation;\n\n2) dimensions;\n\n3) material;\n\n4) surface condition;\n\n5) production stage;\n\nb) purpose of testing;\n\nc) designation of the penetrant system used, as specified in 6.4, giving the manufacturer's name and\n\nproduct designation as well as the batch number; Note Type III penetrants are recorded according to their use. That means a type III penetrant used as colour contrast penetrant is recorded as type II. A type III penetrant used as a fluorescent penetrant (UV-A is used) is recorded similar to type I.\n\nd) test procedure;\n\ne) deviations (if any) from the test procedure;\n\nf) viewing conditions;\n\ng) test temperatures;\n\nh) test results (description of discontinuities detected);\n\ni) test location, date of testing, name of the operator;\n\n\nj) name, qualification status and signature of the test supervisor.\n\nThe layout of a form that can be used for the test report is given in Annex C. It shall include all the details relating to the method which are important for the evaluation of the test results, as well as additional information relating to the parts to be tested, although this data should be modified, as appropriate, depending on the type of part. If another form is used it shall contain all the information detailed in items a) to j)."
+  }
+]

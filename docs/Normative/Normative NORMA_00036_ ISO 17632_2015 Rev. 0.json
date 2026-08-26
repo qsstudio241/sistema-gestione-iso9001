@@ -1,0 +1,596 @@
+[
+  {
+    "standard_code": "ISO_17632_2015",
+    "clause_ref": "1",
+    "clause_title": "Scope 1",
+    "requirement_text": ".................................................................................................................................................................................................................................."
+  },
+  {
+    "standard_code": "ISO_17632_2015",
+    "clause_ref": "2",
+    "clause_title": "Normative references 1",
+    "requirement_text": "................................................................................................................................................................................................................................."
+  },
+  {
+    "standard_code": "ISO_17632_2015",
+    "clause_ref": "3",
+    "clause_title": "Classification 2",
+    "requirement_text": "......................................................................................................................................................................................"
+  },
+  {
+    "standard_code": "ISO_17632_2015",
+    "clause_ref": "4",
+    "clause_title": "Symbols and requirements 3",
+    "requirement_text": "............................................................................................................................................................................................................ ........................................................................................................................................................................ 4.1 Symbol for the product/process ..............................................................................................................................................3"
+  },
+  {
+    "standard_code": "ISO_17632_2015",
+    "clause_ref": "4.2",
+    "clause_title": "Symbol for tensile properties of all-weld metal or welded joint .................................................................4",
+    "requirement_text": "4.2.1 Multi-run technique ......................................................................................................................................................4 4.2.2 Single-run technique ....................................................................................................................................................4"
+  },
+  {
+    "standard_code": "ISO_17632_2015",
+    "clause_ref": "4.3",
+    "clause_title": "Symbol for impact properties of all-weld metal or welded joint .................................................................5",
+    "requirement_text": ""
+  },
+  {
+    "standard_code": "ISO_17632_2015",
+    "clause_ref": "4.4",
+    "clause_title": "Symbol for chemical composition of all-weld metal...............................................................................................6",
+    "requirement_text": ""
+  },
+  {
+    "standard_code": "ISO_17632_2015",
+    "clause_ref": "4.5",
+    "clause_title": "Symbol for type of electrode core or for the usability characteristics of the electrode ...........9",
+    "requirement_text": "4.6 Symbol for shielding gas .................................................................................................................................................................9 4.7 Symbol for welding position ....................................................................................................................................................12"
+  },
+  {
+    "standard_code": "ISO_17632_2015",
+    "clause_ref": "4.8",
+    "clause_title": "Symbol for hydrogen content of deposited metal ..................................................................................................12",
+    "requirement_text": ""
+  },
+  {
+    "standard_code": "ISO_17632_2015",
+    "clause_ref": "5",
+    "clause_title": "Mechanical tests 13",
+    "requirement_text": ""
+  },
+  {
+    "standard_code": "ISO_17632_2015",
+    "clause_ref": "4.9",
+    "clause_title": "Symbol for condition of postweld heat treatment of all-weld metal .....................................................13",
+    "requirement_text": "................................................................................................................................................................................................. 5.1 Multi-run technique .........................................................................................................................................................................13"
+  },
+  {
+    "standard_code": "ISO_17632_2015",
+    "clause_ref": "5.1.1",
+    "clause_title": "Preheating and interpass temperatures ...................................................................................................13",
+    "requirement_text": ""
+  },
+  {
+    "standard_code": "ISO_17632_2015",
+    "clause_ref": "5.1.2",
+    "clause_title": "Procedure requirements for welding multi-run test assemblies ........................................14",
+    "requirement_text": ""
+  },
+  {
+    "standard_code": "ISO_17632_2015",
+    "clause_ref": "5.1.3",
+    "clause_title": "Post-weld heat treatment (PWHT) condition ......................................................................................15",
+    "requirement_text": ""
+  },
+  {
+    "standard_code": "ISO_17632_2015",
+    "clause_ref": "6",
+    "clause_title": "Chemical analysis 15",
+    "requirement_text": "5.2 Single-run technique .......................................................................................................................................................................15"
+  },
+  {
+    "standard_code": "ISO_17632_2015",
+    "clause_ref": "7",
+    "clause_title": "Rounding procedure 15",
+    "requirement_text": ".............................................................................................................................................................................................."
+  },
+  {
+    "standard_code": "ISO_17632_2015",
+    "clause_ref": "8",
+    "clause_title": "Fillet weld test 15",
+    "requirement_text": "......................................................................................................................................................................................"
+  },
+  {
+    "standard_code": "ISO_17632_2015",
+    "clause_ref": "9",
+    "clause_title": "Retests 16",
+    "requirement_text": "......................................................................................................................................................................................................"
+  },
+  {
+    "standard_code": "ISO_17632_2015",
+    "clause_ref": "10",
+    "clause_title": "Technical delivery conditions 17",
+    "requirement_text": ".........................................................................................................................................................................................................................."
+  },
+  {
+    "standard_code": "ISO_17632_2015",
+    "clause_ref": "11",
+    "clause_title": "Examples of designation 17",
+    "requirement_text": ".............................................................................................................................................................. Annex A Classification systems 21 ............................................................................................................................................................................ Annex B Description of types of electrode core in the classification system (informative) .......................................................................................................................................... based upon yield strength and average impact energy of 47 J 24 (informative) Annex C Description of types of usability characteristics in the classification .......................................................................... system based upon tensile strength and average impact energy of 27 J 26 (informative) Annex D Notes on hydrogen content 29 ................................................. (informative) ............................................................................................................................ © ISO 2015 – All rights reserved iii"
+  },
+  {
+    "standard_code": "ISO_17632_2015",
+    "clause_ref": "1",
+    "clause_title": "Scope",
+    "requirement_text": "This International Standard specifies requirements for classification of tubular cored electrodes with or without a gas shield for metal arc welding of non-alloy and fine grain steels in the as-welded condition or in the post-weld heat-treated condition with a minimum yield strength of up to 500 MPa or a minimum tensile strength of up to 570 MPa. One tubular cored electrode can be tested and classified with different shielding gases, if any. This International Standard is a combined specification providing classification utilizing a system based upon the yield strength and the average impact energy of 47 J of all-weld metal or utilizing a system based upon the tensile strength and the average impact energy of 27 J of all-weld metal.\n\n1) Paragraphs and tables which carry the suffix letter “A” are applicable only to tubular cored\n\nelectrodes classified to the system based upon the yield strength and the average impact energy of"
+  },
+  {
+    "standard_code": "ISO_17632_2015",
+    "clause_ref": "47",
+    "clause_title": "J of all-weld metal in accordance with this International Standard.",
+    "requirement_text": "2) Paragraphs and tables which carry the suffix letter “B” are applicable only to tubular cored\n\nelectrodes classified to the system based upon the tensile strength and the average impact energy of 27 J of all-weld metal in accordance with this International Standard.\n\n3) Paragraphs and tables which have neither the suffix letter “A” nor the suffix letter “B” are applicable\n\nto all tubular cored electrodes classified in accordance with this International Standard. It is recognized that the operating characteristics of tubular cored electrodes can be modified by the use of pulsed current, but for the purposes of this International Standard, pulsed current is not permitted for determining the electrode classification."
+  },
+  {
+    "standard_code": "ISO_17632_2015",
+    "clause_ref": "2",
+    "clause_title": "Normative references",
+    "requirement_text": "The following referenced documents, in whole or in part, are normatively referenced in this document and are indispensable for its application. For dated references, only the edition cited applies. For undated rWefeelrdeinngc ecso, nthsuem laatbelsets e —dit Tioenc honf itchael dreeflievreernyc ceodn ddoitciuonmse fnotr ( fiinllcelru dminagte arniayl sa manedn dflmuxeenst s—) a Tpyppliee so.f product, dimensions, tolerances and markings ISO 544, Welding and allied processes — Determination of hydrogen content in arc weld metal ISO 3690, Welding consumables — Deposition of a weld metal pad for chemical analysis ISO 6847, Welding and allied processes — Welding positions ISO 6947:20W11e,l ding — Guidance on the measurement of preheating temperature, interpass temperature and preheat maintenance temperature ISO 13916, Welding consumables — Gases and gas mixtures for fusion welding and allied processes ISO 14175, Welding consumables — Procurement of filler materials and fluxes ISO 14344, Welding consumables — Test methods — Part 1: Test methods for all-weld metal test specimens in steel, nickel and nickel alloys ISO 15792-1:2000, . Amended by ISO 15792-1:2000/Amd 1:2011\n\n\nWelding consumables — Test methods — Part 2: Preparation of single-run and two-run technique test specimens in steel ISO 15792-2:2000, Welding consumables — Test methods — Part 3: Classification testing of positional capacity and root penetration of welding consumables in a fillet weld ISO 15792-3, Quantities and units — Part 1: General. ISO 80000-1:2009, Corrected by ISO 80000-1:2009/Cor 1:2011"
+  },
+  {
+    "standard_code": "ISO_17632_2015",
+    "clause_ref": "3",
+    "clause_title": "Classification",
+    "requirement_text": "Classification designations are based upon two approaches to indicate the tensile properties and the impact properties of the all-weld metal obtained with a given electrode. The two designation approaches include additional designators for some other classification requirements, but not all as will be clear from the following. In most cases, a given commercial product can be classified in both systems. Then, either or both classification designations can be used for the product (see Annex A). The classification includes all-weld metal properties obtained with a tubular cored electrode and appropriate shielding gas combination as given below. With the exception of the symbol for welding position which is based on ISO 15792-3, the classification of gas shielded tubular cored electrodes is based on the 1,2 mm electrode size or if this size is not manufactured, the next larger diameter manufactured. The classification of self-shielded tubular cored electrodes is based on the 2,4 mm d3i.1amA e tCelra ossr itfhicea ltairogne sbty d yiaiemldet setrr menagntuhfa acntudr ed if less 3th.1aBn 2 C,4la mssmif.ication by tensile strength and"
+  },
+  {
+    "standard_code": "ISO_17632_2015",
+    "clause_ref": "47",
+    "clause_title": "J impact energy 27 J impact energy",
+    "requirement_text": "The classification is divided into eight parts. The classification is divided into nine parts.\n\n1) The first part (T) indicates a tubular cored 1) The first part (T) indicates a tubular cored\n\nelectrode. electrode.\n\n2) The second part gives a symbol indicating 2) The second part gives a symbol indicating\n\nthe yield strength and elongation of all-weld the tensile strength and elongation of all-weld metal for multi-run technique or the strength metal for multi-run technique or the strength of the parent material used in classification for of the parent material used in classification for the single-run technique (see Table 1A or the single-run technique (see Table 1B or Table 2A). Table 2B).\n\n3) The third part gives a symbol indicating the 3) The third part gives a symbol indicating\n\nimpact properties of all-weld metal or welded the impact properties of all-weld metal (see joint (see Table 3). Table 3). The symbol “U” added as an optional supplemental designator at or near the end of the complete tubular cored electrode designation indicates that the deposit meets an average optional requirement of 47 J at the designated Charpy test temperature.\n\n4) The fourth part gives a symbol indicating 4) The fourth part gives a symbol indicating\n\nthe chemical composition of all-weld metal the usability characteristics of the electrode (see Table 4A). (see Table 5B).\n\n5) The fifth part gives a symbol indicating the 5) The fifth part gives a symbol indicating the\n\ntype of electrode core (see Table 5A). welding position (see Table 6B).\n\n6) The sixth part gives a symbol indicating the 6) The sixth part gives a symbol indicating the\n\nshielding gas (see 4.6). shielding gas (see 4.6). The letter “S” added to this designator indicates that the electrode is classified for single-pass welding.\n\n\n7) The seventh part gives a symbol indicating 7) The seventh part gives a symbol indicating\n\nthe welding position (see Table 6A); whether the classification tests were conducted in the as-welded (A) or post-weld heat-treated condition (P). If the electrode has been classified in both conditions, the symbol AP shall be added to the classification. This designator is omitted in the classification for single-pass welding electrodes as these are tested only in the as-welded condition;\n\n8) The eighth part gives a symbol indicating 8) The eighth part gives a symbol indicating\n\nthe hydrogen content of deposited metal (see the chemical composition of all-weld metal Table 7). (see Table 4B). The symbol is omitted for weld deposits conforming to the “No symbol” in Table 4B.\n\n9) The ninth part gives a symbol indicating the\n\nhydrogen content of deposited metal (see Table 7). Electrodes can be classified under any number of classifications for either or both the as-welded and post-weld heat-treated condition. In both systems, the electrode classification shall include all compulsory sections and can include o3p.2tiAo n Calo smecptuiolsnosr ays aonudtl ionpetdi obnealolw se. ctions in 3.2B Compulsory and optional sections in the classification by yield strength and 47 J the classification by tensile strength and impact energy 27 J impact energy\n\na) Compulsory section a) Compulsory section\n\nThis section includes the symbols for type of This section includes the symbols for type of product, strength and elongation, impact product, strength and elongation in the properties, chemical composition, type of as-welded condition or post-weld heat-treated electrode core, and shielding gas, i.e. the condition, welding positions for which the symbols defined in 4.1, 4.2.1A, 4.2.2, 4.3A, 4.4, electrode is suitable, usability characteristics, 4.5A, and 4.6. shielding gas, impact properties, and chemical composition, i.e. the symbols defined in 4.1, 4.2.1B, 4.2.2, 4.3B, 4.4, 4.5B, 4.6, 4.7, and 4.9B.\n\nb) Optional section b) Optional section\n\nThis section includes the symbols for the This section includes the symbol “U” to indicate welding positions for which the electrode is that the weld metal has an average of 47 J suitable and the symbol for hydrogen content, impact energy at the classification test i.e. the symbols defined in 4.7 and 4.8. temperature and the symbol for hydrogen content, i.e. the symbol “U” defined in 4.3B and the symbols defined in 4.8. The full designation shall comprise the compulsory symbols and can include optional symbols chosen by the manufacturer. The full designation (see Clause 10) shall be used on packages and in the manufacturer’s literature and data sheets."
+  },
+  {
+    "standard_code": "ISO_17632_2015",
+    "clause_ref": "4",
+    "clause_title": "Symbols and requirements",
+    "requirement_text": ""
+  },
+  {
+    "standard_code": "ISO_17632_2015",
+    "clause_ref": "4.1",
+    "clause_title": "Symbol for the product/process",
+    "requirement_text": "The symbol for the tubular cored electrode used in the metal arc welding process is the letter T. 3"
+  },
+  {
+    "standard_code": "ISO_17632_2015",
+    "clause_ref": "4.2",
+    "clause_title": "Symbol for tensile properties of all-weld metal or welded joint",
+    "requirement_text": ""
+  },
+  {
+    "standard_code": "ISO_17632_2015",
+    "clause_ref": "4.2.1",
+    "clause_title": "Multi-run technique",
+    "requirement_text": "4.2.1A Classification by yield strength and 4.2.1B Classification by tensile strength"
+  },
+  {
+    "standard_code": "ISO_17632_2015",
+    "clause_ref": "47",
+    "clause_title": "J impact energy and 27 J impact energy",
+    "requirement_text": "For products suitable for single- and multi-run For electrodes suitable for single- and welding, the symbol in Table 1A indicates yield multi-run welding, the symbol in Table 1B strength, tensile strength, and elongation of the indicates yield strength, tensile strength, and all-weld metal in the as-welded condition elongation of the all-weld metal in the determined in accordance with 5.1A. as-welded condition or in the post-weld heat-treated condition determined in accordance with 5.1B. Classification of products suitable for both single- and multi-run welding does not require the singleruTna tbeslet o1fA 5 —.2. Symbol for tensile properties Table 1B — Symbol for tensile properties by multi-run technique (classification by by multi-run technique (classification by yield strength and 47 J impact energy) tensile strength and 27 J impact energy) Minimum Minimum Tensile Minimum Tensile Minimum yield yield strength elongationb Symbol strengtha strength elongationb Symbol strengtha MPa MPa % MPa MPa %"
+  },
+  {
+    "standard_code": "ISO_17632_2015",
+    "clause_ref": "35",
+    "clause_title": "355 440 to 570 22 43 330 430 to 600 20",
+    "requirement_text": ""
+  },
+  {
+    "standard_code": "ISO_17632_2015",
+    "clause_ref": "38",
+    "clause_title": "380 470 to 600 20 49 390 490 to 670 18",
+    "requirement_text": ""
+  },
+  {
+    "standard_code": "ISO_17632_2015",
+    "clause_ref": "42",
+    "clause_title": "420 500 to 640 20 55 460 550 to 740 17",
+    "requirement_text": ""
+  },
+  {
+    "standard_code": "ISO_17632_2015",
+    "clause_ref": "46",
+    "clause_title": "460 530 to 680 20",
+    "requirement_text": "R 57 490 570 to 770R 17"
+  },
+  {
+    "standard_code": "ISO_17632_2015",
+    "clause_ref": "50",
+    "clause_title": "500 560 to 720 18",
+    "requirement_text": "a a For yielRd strength, the lower yield, eL, is used For yielRd strength, the lower yield, eL, is used when yielding occurs. Otherwise, the 0,2 % proof when yielding occurs. Otherwise, the 0,2 % proof strength, p0,2, is used. strength, p0,2, is used. b b Gauge length is equal to five times the test speci- Gauge length is equal to five times the test specimen diameter. men diameter."
+  },
+  {
+    "standard_code": "ISO_17632_2015",
+    "clause_ref": "4.2.2",
+    "clause_title": "Single-run technique",
+    "requirement_text": "For tubular cored electrodes suitable for single-run welding only, the symbol in Table 2A or Table 2B indicates strength of the welded joint in the as-welded condition in relation to the parent material used in single-run tests satisfactorily completed in accordance with 5.2.\n\n| Symbol | Minimum yield strengtha | Tensile strength | Minimum elongationb |\n| --- | --- | --- | --- |\n|  |  |  |  |\n| 35 38 42 46 | MPa 355 380 420 460 | MPa 440 to 570 470 to 600 500 to 640 530 to 680 | % 22 20 20 20 |\n| R 50 500 560 to 720 18 a For yielRd strength, the lower yield, eL, is used when yielding occurs. Otherwise, the 0,2 % proof strength, p0,2, is used. b |  |  |  |\n\n| Symbol | Minimum yield strengtha | Tensile strength | Minimum elongationb |\n| --- | --- | --- | --- |\n|  |  |  |  |\n|  | MPa | MPa | % |\n| 43 | 330 | 430 to 600 | 20 |\n| 49 | 390 | 490 to 670 | 18 |\n| 55 | 460 | 550 to 740 | 17 |\n| 57 490 570 to 770R 17 a For yielRd strength, the lower yield, eL, is used when yielding occurs. Otherwise, the 0,2 % proof strength, p0,2, is used. b |  |  |  |\n\n\nTable 2A — Symbol for tensile properties Table 2B — Symbol for tensile properties by single-run technique (classification by by single-run technique (classification by yield strength and 47 J impact energy) tensile strength and 27 J impact energy) Minimum parent Minimum tensile Minimum tensile strength of the material yield strength of the Symbol strength welded joint Symbol parent metal and of the welded joint MPa MPa MPa 3T 355 470 43 430 4T 420 520 49 490"
+  },
+  {
+    "standard_code": "ISO_17632_2015",
+    "clause_ref": "55",
+    "clause_title": "550",
+    "requirement_text": "5T 500 600"
+  },
+  {
+    "standard_code": "ISO_17632_2015",
+    "clause_ref": "57",
+    "clause_title": "570",
+    "requirement_text": ""
+  },
+  {
+    "standard_code": "ISO_17632_2015",
+    "clause_ref": "4.3",
+    "clause_title": "Symbol for impact properties of all-weld metal or welded joint",
+    "requirement_text": "4.3A Classification by yield strength and 4.3B Classification by tensile strength and"
+  },
+  {
+    "standard_code": "ISO_17632_2015",
+    "clause_ref": "47",
+    "clause_title": "J impact energy 27 J impact energy",
+    "requirement_text": "The symbol in Table 3 indicates the The symbol in Table 3 indicates the temperature at which an impact energy of 47 J temperature at which an impact energy of 27 J is achieved under the conditions given in 5.1A is achieved in the as-welded condition or in the or 5.2. Three test specimens shall be tested. post-weld heat-treated condition under the Only one individual value can be lower than conditions given in 5.1B or 5.2. Five test"
+  },
+  {
+    "standard_code": "ISO_17632_2015",
+    "clause_ref": "47",
+    "clause_title": "J, but not lower than 32 J. specimens shall be tested. The lowest and",
+    "requirement_text": "highest values obtained shall be disregarded. Two of the three remaining values shall be greater than the specified 27 J level. One of the three can be lower, but shall be no less than"
+  },
+  {
+    "standard_code": "ISO_17632_2015",
+    "clause_ref": "20",
+    "clause_title": "J. The average of the three remaining values",
+    "requirement_text": "shall be at least 27 J. Three test specimens shall be tested when the optional supplemental designator “U” is used to indicate that the weld deposit will meet a minimum impact energy of"
+  },
+  {
+    "standard_code": "ISO_17632_2015",
+    "clause_ref": "47",
+    "clause_title": "J at the test temperature. The impact value",
+    "requirement_text": "shall be determined by the average of the three test specimens. The average of three values shall be 47 J or greater. Only one individual value can be lower than 47 J, but not lower than"
+  },
+  {
+    "standard_code": "ISO_17632_2015",
+    "clause_ref": "32",
+    "clause_title": "J.",
+    "requirement_text": "When an all-weld metal has been classified for a certain temperature, it automatically covers any higher temperature listed in Table 3. NOTE Impact testing is not required to classify electrodes for the single-run technique.\n\n| Symbol | Minimum parent material yield strength | Minimum tensile strength of the welded joint |\n| --- | --- | --- |\n|  |  |  |\n| 3T 4T | MPa 355 420 | MPa 470 520 |\n\n| Symbol | Minimum tensile strength of the parent metal and of the welded joint |\n| --- | --- |\n|  |  |\n| 43 49 55 | MPa 430 490 550 |\n\n\nTable 3 — Symbol for impact properties of all-weld metal or welded joint Temperature for minimum average Symbol impact energy of 47 Ja, b or 27 Jc °C a Z No requirements b c A or Y +20 0 0"
+  },
+  {
+    "standard_code": "ISO_17632_2015",
+    "clause_ref": "2",
+    "clause_title": "−20",
+    "requirement_text": ""
+  },
+  {
+    "standard_code": "ISO_17632_2015",
+    "clause_ref": "3",
+    "clause_title": "−30",
+    "requirement_text": ""
+  },
+  {
+    "standard_code": "ISO_17632_2015",
+    "clause_ref": "4",
+    "clause_title": "−40",
+    "requirement_text": ""
+  },
+  {
+    "standard_code": "ISO_17632_2015",
+    "clause_ref": "5",
+    "clause_title": "−50",
+    "requirement_text": ""
+  },
+  {
+    "standard_code": "ISO_17632_2015",
+    "clause_ref": "6",
+    "clause_title": "−60",
+    "requirement_text": ""
+  },
+  {
+    "standard_code": "ISO_17632_2015",
+    "clause_ref": "7",
+    "clause_title": "−70",
+    "requirement_text": ""
+  },
+  {
+    "standard_code": "ISO_17632_2015",
+    "clause_ref": "8",
+    "clause_title": "−80",
+    "requirement_text": ""
+  },
+  {
+    "standard_code": "ISO_17632_2015",
+    "clause_ref": "9",
+    "clause_title": "−90",
+    "requirement_text": ""
+  },
+  {
+    "standard_code": "ISO_17632_2015",
+    "clause_ref": "10",
+    "clause_title": "−100",
+    "requirement_text": "a Only the symbol Z is used for electrodes for the single-run technique. b Classification by yield strength and 47 J impact energy. c Classification by tensile strength and 27 J impact energy."
+  },
+  {
+    "standard_code": "ISO_17632_2015",
+    "clause_ref": "4.4",
+    "clause_title": "Symbol for chemical composition of all-weld metal",
+    "requirement_text": "The symbol in Table 4A or Table 4B indicates the chemical composition of all-weld metal determined in accordance with Clause 6.\n\n| Symbol | Temperature for minimum average impact energy of 47 Ja, b or 27 Jc |\n| --- | --- |\n| a Z b c A or Y 0 2 3 4 5 6 7 8 9 | °C No requirements +20 0 −20 −30 −40 −50 −60 −70 −80 −90 |\n| 10 −100 a Only the symbol Z is used for electrodes for the single-run technique. b Classification by yield strength and 47 J impact energy. |  |"
+  },
+  {
+    "standard_code": "ISO_17632_2015",
+    "clause_ref": "4.5",
+    "clause_title": "Symbol for type of electrode core or for the usability characteristics of the electrode",
+    "requirement_text": ""
+  },
+  {
+    "standard_code": "ISO_17632_2015",
+    "clause_ref": "47",
+    "clause_title": "J impact energy 27 J impact energy",
+    "requirement_text": ""
+  },
+  {
+    "standard_code": "ISO_17632_2015",
+    "clause_ref": "47",
+    "clause_title": "J impact energy)",
+    "requirement_text": "Types of Shielding Symbol Characteristics weld gas Single and Rutile, slow- R multiple Required freezing slag pass Single and Rutile, fast- P multiple Required freezing slag pass Single and B Basic multiple Required pass Single and M Metal powder multiple Required pass Rutile or Single Not V basic/(cid:31)luoride pass required Basic/(cid:31)luoride, Single and Not W slow-freezing multiple required slag pass Basic/(cid:31)luoride, Single and Not Y fast-freezing multiple required slag pass Z Other types NOTE A description of the characteristics of each of the types of core is given in Annex B."
+  },
+  {
+    "standard_code": "ISO_17632_2015",
+    "clause_ref": "4.6",
+    "clause_title": "Symbol for shielding gas",
+    "requirement_text": ""
+  },
+  {
+    "standard_code": "ISO_17632_2015",
+    "clause_ref": "4.7",
+    "clause_title": "Symbol for welding position",
+    "requirement_text": "The symbols in Table 6A or Table 6B indicate the positions for which the electrode is suitable for classification to ISO 17632-A or ISO 17632-B in accordance with ISO 15792-3 (see Clause 7 for testing requirements). Table 6A — Symbol for welding position Table 6B — Symbol for welding position (classification by yield strength and 47 J (classification by tensile strength and 27 J impact energy) impact energy) Symbol Welding positionsa Symbol Welding positionsa"
+  },
+  {
+    "standard_code": "ISO_17632_2015",
+    "clause_ref": "1",
+    "clause_title": "PA, PB, PC, PD, PE, PF, PG 0 PA, PB",
+    "requirement_text": ""
+  },
+  {
+    "standard_code": "ISO_17632_2015",
+    "clause_ref": "2",
+    "clause_title": "PA, PB, PC, PD, PE, PF 1",
+    "requirement_text": "(PF or PG) or (PF and PG) a"
+  },
+  {
+    "standard_code": "ISO_17632_2015",
+    "clause_ref": "3",
+    "clause_title": "PA, PB PA = Flat position",
+    "requirement_text": ""
+  },
+  {
+    "standard_code": "ISO_17632_2015",
+    "clause_ref": "4",
+    "clause_title": "PA PB = Horizontal vertical position",
+    "requirement_text": ""
+  },
+  {
+    "standard_code": "ISO_17632_2015",
+    "clause_ref": "5",
+    "clause_title": "PA, PB, PG PC = Horizontal position",
+    "requirement_text": "a PA = Flat position PD = Horizontal overhead position PB = Horizontal vertical position PE = Overhead position PC = Horizontal position PF = Vertical up position PD = Horizontal overhead position PG = Vertical down position PE = Overhead position In accordance with ISO 6947:2011. PF = Vertical up position PG = Vertical down position In accordance with ISO 6947:2011."
+  },
+  {
+    "standard_code": "ISO_17632_2015",
+    "clause_ref": "4.8",
+    "clause_title": "Symbol for hydrogen content of deposited metal",
+    "requirement_text": "The symbols in Table 7 indicate the hydrogen content determined in accordance with the method given in ISO 3690. Table 7 — Symbol for hydrogen content of deposited metal Hydrogen content Symbol ml/100 g deposited metal max. H5 5 H10 10 H15 15 When the symbol for hydrogen content in accordance with Table 7 is included in the classification, the manufacturer shall state in their literature what restrictions need to be placed on the conditions of storage and on current, arc voltage, electrode extension, polarity, and shielding gas to remain within the required limit.\n\n| Symbol | Welding positionsa |\n| --- | --- |\n|  |  |\n| 1 | PA, PB, PC, PD, PE, PF, PG |\n| 2 | PA, PB, PC, PD, PE, PF |\n| 3 | PA, PB |\n| 4 | PA |\n| 5 PA, PB, PG a PA = Flat position PB = Horizontal vertical position PC = Horizontal position PD = Horizontal overhead position PE = Overhead position PF = Vertical up position PG = Vertical down position |  |\n\n| Symbol | Welding positionsa |\n| --- | --- |\n|  |  |\n| 0 | PA, PB |\n| PA, PB, PC, PD, PE 1 (PF or PG) or (PF and PG) a PA = Flat position PB = Horizontal vertical position PC = Horizontal position PD = Horizontal overhead position PE = Overhead position PF = Vertical up position PG = Vertical down position |  |\n\n|  | Hydrogen content |\n| --- | --- |\n| Symbol H5 H10 | ml/100 g deposited metal max. 5 10 |"
+  },
+  {
+    "standard_code": "ISO_17632_2015",
+    "clause_ref": "4.9",
+    "clause_title": "Symbol for condition of postweld heat treatment of all-weld metal",
+    "requirement_text": "4.9A Classification by yield strength and 4.9B Classification by tensile strength and"
+  },
+  {
+    "standard_code": "ISO_17632_2015",
+    "clause_ref": "47",
+    "clause_title": "J impact energy 27 J impact energy",
+    "requirement_text": "Classification is based upon mechanical If the electrode has been classified in the properties of the all-weld metal in the as-welded condition, the symbol A shall be as-welded condition only. No symbol is used to added to the classification. If the electrode has indicate this. been classified in the post-weld heat-treated condition, the condition of post-weld heat treatment shall be as specified in 5.1.3B and the symbol P shall be added to the classification. If the electrode has been classified in both conditions, the symbol AP shall be added to the classification."
+  },
+  {
+    "standard_code": "ISO_17632_2015",
+    "clause_ref": "5",
+    "clause_title": "Mechanical tests",
+    "requirement_text": ""
+  },
+  {
+    "standard_code": "ISO_17632_2015",
+    "clause_ref": "5.1",
+    "clause_title": "Multi-run technique",
+    "requirement_text": "5.1A Classification by yield strength and 5.1B Classification by tensile strength and"
+  },
+  {
+    "standard_code": "ISO_17632_2015",
+    "clause_ref": "47",
+    "clause_title": "J impact energy 27 J impact energy",
+    "requirement_text": "Tensile and impact tests and any required Tensile and impact tests shall be carried out on retests shall be carried out on weld metal weld metal prepared as described in 5.1.1B, prepared as described in 5.1.1A and 5.1.2, in 5.1.2, and 5.1.3B in the as-welded condition the as-welded condition using an all-weld and/or in the post-weld heat-treated condition metal, test assembly type 1.3 in accordance using an all-weld metal test assembly type 1.3 with ISO 15792-1:2000 using in accordance with 1,2 mm for gas shielded electrodes or, if this ISO 15792-1:2000 using 1,2 mm size is not manufactured, the next larger for gas shielded electrodes or if this size is not diameter manufactured, and 2,4 mm for manufactured, the closest diameter self-shielded electrodes, or the largest size manufactured and 2,4 mm for self-shielded manufactured if less than 2,4 mm. electrodes or the closest size manufactured. When the manufacturer specifies hydrogen removal treatment for tensile test specimen, it should be done in accordance with ISO 15792-1:2000."
+  },
+  {
+    "standard_code": "ISO_17632_2015",
+    "clause_ref": "5.1.1",
+    "clause_title": "Preheating and interpass temperatures",
+    "requirement_text": "5.1.1A Classification by yield strength and 5.1.1B Classification by tensile strength"
+  },
+  {
+    "standard_code": "ISO_17632_2015",
+    "clause_ref": "47",
+    "clause_title": "J impact energy and 27 J impact energy",
+    "requirement_text": "Preheating is not required. Welding can start Preheating and interpass temperatures shall be from room temperature. The interpass selected for the appropriate weld metal type temperature shall be measured using from Table 8B. The preheating and interpass temperature indicator crayons, surface temperature shall be measured using thermometers, or thermocouples (see temperature indicator crayons, surface ISO 13916). thermometers, or thermocouples (see ISO 13916). The interpass temperature shall not exceed The interpass temperature shall not exceed the 250 °C. If after any pass this interpass maximum temperature indicated in Table 8B. temperature is exceeded, the test assembly If after any pass this interpass temperature is shall be cooled in air to a temperature below exceeded, the test assembly shall be cooled in that limit. air to a temperature within that range. If below interpass, reheat into interpass range.\n\n\nTable 8B — Preheating and interpass temperatures (classification by tensile strength and 27 J impact energy) Preheat Interpass Composition temperature temperature designation °C °C Room No symbol, K temperature"
+  },
+  {
+    "standard_code": "ISO_17632_2015",
+    "clause_ref": "5.1.2",
+    "clause_title": "Procedure requirements for welding multi-run test assemblies",
+    "requirement_text": "The procedures used for the welding of multi-run test assemblies shall conform to the requirements given in Table 9A or Table 9B. Table 9A — Pass and layer sequence for Table 9B — Pass and layer sequence for multi-run electrode classifications multi-run electrode classifications (classification by yield strength and 47 J (classification by tensile strength and 27 J impact energy) impact energy) Passes per layer Required Passes per layer Number Diameter Number Diameter average First layer l O ay t e h r e s r a of layers heat input l F a i y r e s r t l O ay t e h r e s r a lay o e f rs mm mm kJ/mm 0,8 0,8"
+  },
+  {
+    "standard_code": "ISO_17632_2015",
+    "clause_ref": "1",
+    "clause_title": "or 2 2 or 3 6 to 9 0,8 to 1,6 1 or 2 2 or 3 6 to 9",
+    "requirement_text": "0,9 0,9 1,0 1,0"
+  },
+  {
+    "standard_code": "ISO_17632_2015",
+    "clause_ref": "1",
+    "clause_title": "or 2 2 or 3 6 to 9 1,0 to 2,0 1 or 2 2 or 3 6 to 9",
+    "requirement_text": "1,2 1,2 1,4 1,4"
+  },
+  {
+    "standard_code": "ISO_17632_2015",
+    "clause_ref": "1",
+    "clause_title": "or 2 2 or 3 5 to 8 1,0 to 2,2 1 or 2 2 or 3 5 to 8",
+    "requirement_text": "1,6 1,6 2,0 1 or 2 2 or 3 5 to 8 2,0 1,4 to 2,6 1 or 2 2 or 3 5 to 8 2,4 1 or 2 2 or 3 4 to 8 2,4 1,6 to 2,6 1 or 2 2 or 3 4 to 8 2,8 1 or 2 2 or 3 4 to 7 2,8 2,0 to 2,8 1 or 2 2 or 3 4 to 7 3,2 1 or 2 2 4 to 7 3,2 2,2 to 3,0 1 or 2 2 4 to 7 4,0 1 2 4 to 7 4,0 2,6 to 3,3 1 2 4 to 7 a a The final layer can have four passes. The final layer can have four passes.\n\n| Composition designation | Preheat temperature °C | Interpass temperature °C |\n| --- | --- | --- |\n| No symbol, K | Room temperature | 150 ± 15 |\n| 2M3, 3M2, N1, N2, N3, N5, N7, CC, NCC, NCC1, N1M2, N2M2, N3M2 | 100 min. |  |\n\n| Diameter | Passes per layer |  | Number of layers |\n| --- | --- | --- | --- |\n|  | First layer | Other layersa |  |\n| mm |  |  |  |\n| 0,8 0,9 | 1 or 2 | 2 or 3 | 6 to 9 |\n| 1,0 1,2 | 1 or 2 | 2 or 3 | 6 to 9 |\n| 1,4 1,6 | 1 or 2 | 2 or 3 | 5 to 8 |\n| 2,0 | 1 or 2 | 2 or 3 | 5 to 8 |\n| 2,4 | 1 or 2 | 2 or 3 | 4 to 8 |\n| 2,8 | 1 or 2 | 2 or 3 | 4 to 7 |\n| 3,2 | 1 or 2 | 2 | 4 to 7 |\n| 4,0 1 2 4 to 7 |  |  |  |\n\n| Diameter | Required average heat input | Passes per layer |  | Number of layers |\n| --- | --- | --- | --- | --- |\n|  |  | First layer | Other layersa |  |\n| mm | kJ/mm |  |  |  |\n| 0,8 0,9 | 0,8 to 1,6 | 1 or 2 | 2 or 3 | 6 to 9 |\n| 1,0 1,2 | 1,0 to 2,0 | 1 or 2 | 2 or 3 | 6 to 9 |\n| 1,4 1,6 | 1,0 to 2,2 | 1 or 2 | 2 or 3 | 5 to 8 |\n| 2,0 | 1,4 to 2,6 | 1 or 2 | 2 or 3 | 5 to 8 |\n| 2,4 | 1,6 to 2,6 | 1 or 2 | 2 or 3 | 4 to 8 |\n| 2,8 | 2,0 to 2,8 | 1 or 2 | 2 or 3 | 4 to 7 |\n| 3,2 | 2,2 to 3,0 | 1 or 2 | 2 | 4 to 7 |\n| 4,0 2,6 to 3,3 1 2 4 to 7 |  |  |  |  |"
+  },
+  {
+    "standard_code": "ISO_17632_2015",
+    "clause_ref": "5.1.3",
+    "clause_title": "Post-weld heat treatment (PWHT) condition",
+    "requirement_text": "5.1.3A Classification by yield strength and 5.1.3B Classification by tensile strength"
+  },
+  {
+    "standard_code": "ISO_17632_2015",
+    "clause_ref": "47",
+    "clause_title": "J impact energy and 27 J impact energy",
+    "requirement_text": "No PWHT condition is used in this specification. Test assemblies made w+1it5h electrodes classified 0 in the PWHT condition shall be heat treated at 620 °C ± 15 °C for 1 h ( min). The furnace shall be at a temperature no higher than 315 °C when the test assembly is placed in it. The heating rate from that point to the 620 °C ± 15 °C holding temperature shall not exceed 220 °C/h. When the holding time has been completed, the assembly shall be allowed to cool in the furnace to a temperature below 315 °C at a rate not exceeding 195 °C/h. The assembly can be removed from the furnace at any temperature below 315 °C and allowed to cool in still air to room temperature."
+  },
+  {
+    "standard_code": "ISO_17632_2015",
+    "clause_ref": "5.2",
+    "clause_title": "Single-run technique",
+    "requirement_text": "Tensile tests shall be carried out in the as-welded condition using a test assembly type 2.1 or 2.3 in accordance with ISO 15792-2:2000. Impact testing is not required for single-run technique. Test assembly and welding conditions shall correspond to the range recommended by the manufacturer and shall be recorded to demonstrate compliance with this International Standard."
+  },
+  {
+    "standard_code": "ISO_17632_2015",
+    "clause_ref": "6",
+    "clause_title": "Chemical analysis",
+    "requirement_text": "Chemical analysis is performed on any suitable all-weld metal test specimen. The reference method is that described in ISO 6847. Any analytical technique can be used, but in case of dispute, reference shall be made to established published methods."
+  },
+  {
+    "standard_code": "ISO_17632_2015",
+    "clause_ref": "7",
+    "clause_title": "Rounding procedure",
+    "requirement_text": "For the purposes of determining compliance with the requirements of this International Standard, the actual test values obtained shall be subject to ISO 80000-1:2009, B.3, Rule A. If the measured values are obtained by equipment calibrated in units other than those of this International Standard, the measured values shall be converted to the units of this International Standard before rounding. If an arithmetic average value is to be compared to the requirements of this International Standard, rounding shall be done only after calculating the arithmetic average. If the test method cited in Clause 2 contains instructions for rounding that conflict with the instructions of this International Standard, the rounding requirements of the test method standard shall apply. The rounded results shall fulfil the requirements of the appropriate table for the classification under test."
+  },
+  {
+    "standard_code": "ISO_17632_2015",
+    "clause_ref": "8",
+    "clause_title": "Fillet weld test",
+    "requirement_text": "The fillet weld test assembly shall be as shown in ISO 15792-3.\n\n\n8A Classification by yield strength and 47 J 8B Classification by tensile strength and impact energy 27 J impact energy The plate material shall be selected from the For the electrodes classified as symbol 0 in range of materials for which the electrode is Table 6B, the fillet weld test shall be recommended by the manufacturer or shall be performed in the PB position. For the unalloyed steel of 0,30 % C maximum. The fillet electrodes classified as symbol 1 in Table 6B, welds shall be deposited as a single run using the fillet weld test shall be performed in the the diameter of electrode and welding position PE and PF or PG positions. shown in Table 10A. Throat thickness, leg The plate material shall be unalloyed steel of length, and convexity shall conform to the 0,30 % C maximum. The welding procedure requirements of Table 10A. and the size of the electrode to be tested shall be as selected by the manufacturer. The fillet Table 10A — Test requirements for fillet welds shall be deposited as a single pass. welds (classification by yield strength and"
+  },
+  {
+    "standard_code": "ISO_17632_2015",
+    "clause_ref": "47",
+    "clause_title": "J impact energy) The maximum convexity and leg length",
+    "requirement_text": "difference shall conform to the following Symbol of Maximum Test Electrode Throat Maximum dimensional requirements: position for position sizea thickness leg length convexity classi(cid:15)ication difference\n\na) maximum convexity\n\nmm mm mm mm 2,0 mm for < 7,0 mm in measured fillet"
+  },
+  {
+    "standard_code": "ISO_17632_2015",
+    "clause_ref": "1",
+    "clause_title": "or 2 PB 2,4 5,5 min. 2,0 3,0",
+    "requirement_text": "weld size;"
+  },
+  {
+    "standard_code": "ISO_17632_2015",
+    "clause_ref": "3",
+    "clause_title": "PB 2,4 5,5 min. 2,0 3,0",
+    "requirement_text": "2,5 mm for ≥ 7,0 mm in measured fillet"
+  },
+  {
+    "standard_code": "ISO_17632_2015",
+    "clause_ref": "5",
+    "clause_title": "PB 2,4 b 5,5 min. 2,0 3,0",
+    "requirement_text": "weld size;"
+  },
+  {
+    "standard_code": "ISO_17632_2015",
+    "clause_ref": "1",
+    "clause_title": "or 2 PF 2,4 c 7,0 max. – 2,0",
+    "requirement_text": "b) maximum leg length difference (mm)\n\n1, 2 or 5 PD 1,2 d 4,5 max. 1,5 2,5 = 0,5 × [fillet weld size (mm)] − 0,5."
+  },
+  {
+    "standard_code": "ISO_17632_2015",
+    "clause_ref": "1",
+    "clause_title": "or 5 PG 1,2 d 4,5 max. – 1, 5 e",
+    "requirement_text": "Incomplete fusion at the root of the weld a Where the largest size claimed for positional welding is smaller than shall not exceed 20 % of the total length of that speci(cid:143)ied, use the largest size and adjust criteria pro rata. the weld. b Or largest size made up to 2,4 mm. c Maximum size for which positional classi(cid:143)ication is sought. d Or as recommended by the manufacturer. e Maximum concavity."
+  },
+  {
+    "standard_code": "ISO_17632_2015",
+    "clause_ref": "9",
+    "clause_title": "Retests",
+    "requirement_text": "If any test fails to meet the requirement, that test shall be repeated twice. The results of both retests shall meet the requirement. Specimens for the retest could be taken from the original test assembly or from a new test assembly. For chemical analysis, retesting need be only for those specific elements that failed to meet their test requirement. If the results of one or both retests fail to meet the requirement, the material under test shall be considered as not meeting the requirements of this specification for that classification. In the event that during preparation or after completion of any test it is clearly determined that prescribed or proper procedures were not followed in preparing the weld test assembly or test specimen(s) or in conducting the tests, the test shall be considered invalid without regard to whether the test was actually completed or whether the test results met or failed to meet the requirement. That test shall be repeated following proper prescribed procedures. In this case, the requirement for doubling the number of test specimens does not apply.\n\n| Symbol of position for classi(cid:15)ication | Test position | Electrode sizea mm | Throat thickness mm | Maximum leg length difference mm | Maximum convexity mm |\n| --- | --- | --- | --- | --- | --- |\n| 1 or 2 | PB | 2,4 | 5,5 min. | 2,0 | 3,0 |\n| 3 | PB | 2,4 | 5,5 min. | 2,0 | 3,0 |\n| 5 | PB | 2,4 b | 5,5 min. | 2,0 | 3,0 |\n| 1 or 2 | PF | 2,4 c | 7,0 max. | – | 2,0 |\n| 1, 2 or 5 | PD | 1,2 d | 4,5 max. | 1,5 | 2,5 |\n| 1 or 5 | PG | 1,2 d | 4,5 max. | – | 1, 5 e |\n| a Where the largest size claimed for positional welding is smaller than that speci(cid:143)ied, use the largest size and adjust criteria pro rata. b Or largest size made up to 2,4 mm. c Maximum size for which positional classi(cid:143)ication is sought. d Or as recommended by the manufacturer. e Maximum concavity. |  |  |  |  |  |"
+  },
+  {
+    "standard_code": "ISO_17632_2015",
+    "clause_ref": "10",
+    "clause_title": "Technical delivery conditions",
+    "requirement_text": "Technical delivery conditions shall meet the requirements given in ISO 544 and ISO 14344."
+  },
+  {
+    "standard_code": "ISO_17632_2015",
+    "clause_ref": "11",
+    "clause_title": "Examples of designation",
+    "requirement_text": "T11heA d eCsliagsnsaitfiiocnat oiof nth bey t uybieullda rs ctorerendg tehle acntrdo de shall fo1ll1oBw t Chlea psrsiinficciaptleio gniv beyn tienn tshiele e xstarmepnlgetsh b aenlodw ."
+  },
+  {
+    "standard_code": "ISO_17632_2015",
+    "clause_ref": "47",
+    "clause_title": "J impact energy 27 J impact energy",
+    "requirement_text": ""
+  },
+  {
+    "standard_code": "ISO_17632_2015",
+    "clause_ref": "46",
+    "clause_title": "represents the tensile properties 55 represents the tensile properties",
+    "requirement_text": "(see Table 1A); (see Table 1B);"
+  },
+  {
+    "standard_code": "ISO_17632_2015",
+    "clause_ref": "3",
+    "clause_title": "indicates impact properties of 47 J 4 indicates impact properties of",
+    "requirement_text": "minimum (see Table 3); 27 J minimum (see Table 3);\n\n\n1Ni is the chemical composition of T5 is the usability designator all-weld (see Table 5B); metal (see Table 4A); B is the type of electrode core (see 1 is the welding position Table 5A); (see Table 6B); M21 is the shielding gas (see 4.6); M21 is the shielding gas (see 4.6);"
+  },
+  {
+    "standard_code": "ISO_17632_2015",
+    "clause_ref": "1",
+    "clause_title": "is the welding position (see A indicates tested in the as-welded",
+    "requirement_text": "Table 6A); condition; H5 is the hydrogen content (see N2 is the chemical composition of Table 7). all-weld metal (see Table 4B); U indicates (optional designator) that the weld deposit in the as-welded condition will have impact properties of 47 J minimum at the classification test temperature; H5 is the hydrogen content (see Table 7)."
+  },
+  {
+    "standard_code": "ISO_17632_2015",
+    "clause_ref": "3",
+    "clause_title": "is the welding position (see S indicates classification is for",
+    "requirement_text": "Table 6A); single-run technique; H10 is the hydrogen content (see Table 7)."
+  },
+  {
+    "standard_code": "ISO_17632_2015",
+    "clause_ref": "46",
+    "clause_title": "represents the tensile properties",
+    "requirement_text": "(see Table 1A); A indicates impact properties of"
+  },
+  {
+    "standard_code": "ISO_17632_2015",
+    "clause_ref": "47",
+    "clause_title": "J, minimum (see Table 3);",
+    "requirement_text": "Z is the chemical composition of all-weld metal (see Table 4A); M is the type of electrode core (see Table 5A); M21 is the shielding gas (see 4.6);"
+  },
+  {
+    "standard_code": "ISO_17632_2015",
+    "clause_ref": "1",
+    "clause_title": "is the welding position",
+    "requirement_text": "(see Table 6A); H5 is the hydrogen content (see Table 7)."
+  }
+]

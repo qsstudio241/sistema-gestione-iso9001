@@ -1,0 +1,392 @@
+[
+  {
+    "standard_code": "ISO_14174_2019",
+    "clause_ref": "1",
+    "clause_title": "Scope 1",
+    "requirement_text": "........................................................................................................................................................................................................................................"
+  },
+  {
+    "standard_code": "ISO_14174_2019",
+    "clause_ref": "2",
+    "clause_title": "Normative references 1",
+    "requirement_text": "................................................................................................................................................................................................................................."
+  },
+  {
+    "standard_code": "ISO_14174_2019",
+    "clause_ref": "3",
+    "clause_title": "Terms and definitions 1",
+    "requirement_text": "......................................................................................................................................................................................"
+  },
+  {
+    "standard_code": "ISO_14174_2019",
+    "clause_ref": "4",
+    "clause_title": "Classification 1",
+    "requirement_text": "....................................................................................................................................................................................."
+  },
+  {
+    "standard_code": "ISO_14174_2019",
+    "clause_ref": "5",
+    "clause_title": "Symbols 2",
+    "requirement_text": "............................................................................................................................................................................................................ .......................................................................................................................................................................................................................... 5.1 Symbol for the product/process ..............................................................................................................................................2 5.2 Symbol for method of manufacture ......................................................................................................................................2"
+  },
+  {
+    "standard_code": "ISO_14174_2019",
+    "clause_ref": "5.3",
+    "clause_title": "Symbol for type of flux, characteristic chemical constituents ........................................................................2",
+    "requirement_text": "5.4 Symbol for applications, flux class .........................................................................................................................................2 5.4.1 General......................................................................................................................................................................................2 5.4.2 Flux class 1 ............................................................................................................................................................................3 5.4.3 Flux classes 2 and 2B ...................................................................................................................................................3 5.4.4 Flux class 3 ............................................................................................................................................................................3 5.4.5 Flux class 4 ............................................................................................................................................................................3 5.5 Symbol for metallurgical behaviour .....................................................................................................................................5 5.5.1 General......................................................................................................................................................................................5"
+  },
+  {
+    "standard_code": "ISO_14174_2019",
+    "clause_ref": "5.5.2",
+    "clause_title": "Metallurgical behaviour, flux class 1 ...............................................................................................................5",
+    "requirement_text": ""
+  },
+  {
+    "standard_code": "ISO_14174_2019",
+    "clause_ref": "5.5.3",
+    "clause_title": "Metallurgical behaviour, flux classes 2 and 2B ......................................................................................5",
+    "requirement_text": ""
+  },
+  {
+    "standard_code": "ISO_14174_2019",
+    "clause_ref": "5.5.4",
+    "clause_title": "Metallurgical behaviour, flux class 3 ...............................................................................................................6",
+    "requirement_text": ""
+  },
+  {
+    "standard_code": "ISO_14174_2019",
+    "clause_ref": "5.5.5",
+    "clause_title": "Metallurgical behaviour, flux class 4 ...............................................................................................................6",
+    "requirement_text": ""
+  },
+  {
+    "standard_code": "ISO_14174_2019",
+    "clause_ref": "5.5.6",
+    "clause_title": "Determination of symbols for metallurgical behaviour .................................................................6",
+    "requirement_text": "5.6 Symbol for type of current ............................................................................................................................................................7"
+  },
+  {
+    "standard_code": "ISO_14174_2019",
+    "clause_ref": "6",
+    "clause_title": "Particle size range 8",
+    "requirement_text": ""
+  },
+  {
+    "standard_code": "ISO_14174_2019",
+    "clause_ref": "5.7",
+    "clause_title": "Symbol for diffusible hydrogen content in deposited weld metal (class 1 fluxes only) ...........7",
+    "requirement_text": ""
+  },
+  {
+    "standard_code": "ISO_14174_2019",
+    "clause_ref": "7",
+    "clause_title": "Rounding procedure 8",
+    "requirement_text": "..............................................................................................................................................................................................."
+  },
+  {
+    "standard_code": "ISO_14174_2019",
+    "clause_ref": "8",
+    "clause_title": "Retest 8",
+    "requirement_text": "........................................................................................................................................................................................."
+  },
+  {
+    "standard_code": "ISO_14174_2019",
+    "clause_ref": "9",
+    "clause_title": "Technical delivery conditions 9",
+    "requirement_text": "................................................................................................................................................................................................................................"
+  },
+  {
+    "standard_code": "ISO_14174_2019",
+    "clause_ref": "10",
+    "clause_title": "Marking 9",
+    "requirement_text": "................................................................................................................................................................."
+  },
+  {
+    "standard_code": "ISO_14174_2019",
+    "clause_ref": "11",
+    "clause_title": "Designation 9",
+    "requirement_text": ".......................................................................................................................................................................................................................... Annex A Characteristic chemical constituents of flux — Example of ................................................................................................................................................................................................................ determination from elemental analysis 11 (informative) Annex B Description of flux types 13 .................................................................................................................................... Bibliography 16 (informative) ................................................................................................................................... ............................................................................................................................................................................................................................. © ISO 2019 – All rights reserved iii"
+  },
+  {
+    "standard_code": "ISO_14174_2019",
+    "clause_ref": "1",
+    "clause_title": "Scope",
+    "requirement_text": "This document specifies requirements for classification of fluxes for submerged arc welding and electroslag welding for joining and overlay welding using wire electrodes, tubular cored electrodes, and strip electrodes. NOTE This document was based on EN 760:1996."
+  },
+  {
+    "standard_code": "ISO_14174_2019",
+    "clause_ref": "2",
+    "clause_title": "Normative references",
+    "requirement_text": "The following documents are referred to in the text in such a way that some or all of their content constitutes requirements of this document. For dated references, only the edition cited applies. For undated reWfeerldeinncge sa,n tdh ea lllaietde sptr eodcietsisoens o—f t Dheet reerfmerineantcieodn doof chuydmreongte n(i ncoclnutdenint gin a naryc a wmeeldn dmmeteanlts) applies. ISO 3690, Welding consumables — Solid wire electrodes, tubular cored electrodes and electrode/flux combinations for submerged arc welding of non alloy and fine grain steels — Classification ISO 14171, Welding consumables — Wire electrodes, strip electrodes, wires and rods for arc welding of stainless and heat resisting steels — Classification ISO 14343, Welding consumables — Solid wire electrodes, solid strip electrodes, solid wires and solid rods for fusion welding of nickel and nickel alloys — Classification ISO 18274, Quantities and units — Part 1: General ISO 80000-1:2009, Corrected by ISO 80000-1:2009/Cor 1:2011"
+  },
+  {
+    "standard_code": "ISO_14174_2019",
+    "clause_ref": "3",
+    "clause_title": "Terms and definitions",
+    "requirement_text": "No terms and definitions are listed in this document. ISO and IEC maintain terminological databases for use in standardization at the following addresses: — ISO Online browsing platform: available at https: //www .iso .org/obp — IEC Electropedia: available at http: //www .electropedia .org/"
+  },
+  {
+    "standard_code": "ISO_14174_2019",
+    "clause_ref": "4",
+    "clause_title": "Classification",
+    "requirement_text": "Fluxes for submerged arc welding and electroslag welding for joining and overlay welding are granular, fusible products of mainly mineral origin, which are manufactured by various methods. Fluxes influence the chemical composition and the mechanical properties of the weld metal. The classification of the fluxes is divided into seven parts:\n\n1) the first part gives a symbol indicating the product/process (see 5.1);\n\n2) the second part gives a symbol indicating the method of manufacture (see 5.2);\n\n3) the third part gives a symbol indicating the type of flux, characteristic chemical constituents\n\n(see Table 1);\n\n\n4) the fourth part gives a symbol indicating the applications, flux class (see 5.4);\n\n5) the fifth part gives a symbol indicating the metallurgical behaviour (see 5.5);\n\n6) the sixth part gives a symbol indicating the type of current (see 5.6);\n\n7) the seventh part gives a symbol indicating the diffusible hydrogen content of deposited weld metal\n\n(see Table 6) — only applicable for class 1 fluxes. The classification is divided into two sections.\n\na) the compulsory section, which includes the symbols for process, method of manufacture,\n\ncharacteristic chemical constituents, and applications, i.e. the symbols defined in 5.1, 5.2, 5.3 and 5.4.\n\nb) the optional section, which includes the symbols for the metallurgical behaviour, type of current,\n\nand diffusible hydrogen, i.e. the symbols defined in 5.5, 5.6 and 5.7."
+  },
+  {
+    "standard_code": "ISO_14174_2019",
+    "clause_ref": "5",
+    "clause_title": "Symbols",
+    "requirement_text": ""
+  },
+  {
+    "standard_code": "ISO_14174_2019",
+    "clause_ref": "5.1",
+    "clause_title": "Symbol for the product/process",
+    "requirement_text": "The symbol for the flux used in submerged arc welding for joining and overlay welding shall be the letter S and for the flux used in electroslag welding for joining and overlay welding shall be the letters ES."
+  },
+  {
+    "standard_code": "ISO_14174_2019",
+    "clause_ref": "5.2",
+    "clause_title": "Symbol for method of manufacture",
+    "requirement_text": "The symbol below indicates the method of manufacture: — F: fused flux; — A: agglomerated flux; — M: mixed flux. Fused fluxes are made by melting and granulating. Agglomerated fluxes are bound, granular mixtures of finer raw materials. Mixed fluxes comprise all fluxes which, after fusing or agglomerating, are mixed with one or more additional components or fluxes. For particle size requirements in marking, see Clause 6."
+  },
+  {
+    "standard_code": "ISO_14174_2019",
+    "clause_ref": "5.3",
+    "clause_title": "Symbol for type of flux, characteristic chemical constituents",
+    "requirement_text": "The symbols in Table 1 indicate the type of flux in accordance with the characteristic chemical constituents. Elemental analysis shall be performed on representative samples of the flux. Any suitable analytical technique may be used, but in cases of dispute reference shall be made to established methods. Based on the elemental analysis of the flux, the characteristic chemical constituents of the flux can be determined. Examples of such determinations are shown in Annex A and descriptions of flux types are given in Annex B."
+  },
+  {
+    "standard_code": "ISO_14174_2019",
+    "clause_ref": "5.4",
+    "clause_title": "Symbol for applications, flux class",
+    "requirement_text": ""
+  },
+  {
+    "standard_code": "ISO_14174_2019",
+    "clause_ref": "5.4.1",
+    "clause_title": "General",
+    "requirement_text": "A given flux may carry more than one class as specified in 5.4.2 to 5.4.5."
+  },
+  {
+    "standard_code": "ISO_14174_2019",
+    "clause_ref": "5.4.2",
+    "clause_title": "Flux class 1",
+    "requirement_text": "These are fluxes for submerged arc welding of non-alloy and fine grain steels, high-strength steels, creep-resisting steels, and atmospheric corrosion-resisting steels. In general, the fluxes do not contain alloying elements, other than Mn and Si, thus the weld metal analysis is predominantly influenced by the composition of the wire/strip electrode and metallurgical reactions. The fluxes are suitable for joint welding and/or overlay welding. In the case of joint welding, some fluxes can be applied for both multi-run and single-run and/or two-run technique. In the flux designation, the digit 1 indicates class 1."
+  },
+  {
+    "standard_code": "ISO_14174_2019",
+    "clause_ref": "5.4.3",
+    "clause_title": "Flux classes 2 and 2B",
+    "requirement_text": "These are fluxes for joint welding of stainless and heat-resisting steels and/or nickel and nickel alloys 1) and corrosion-resistant overlay welding . Fluxes of these classes can contain alloying elements compensating for the burn-out (elements lost to the slag). In the flux designation, the digit 2 is used to indicate class 2 fluxes mainly suited for joint welding, but which can also be used for strip cladding. 2B is used for fluxes especially designed for strip cladding."
+  },
+  {
+    "standard_code": "ISO_14174_2019",
+    "clause_ref": "5.4.4",
+    "clause_title": "Flux class 3",
+    "requirement_text": "These are fluxes mainly for hard-facing overlay welding by transfer of alloying elements from the flux, such as C, Cr or Mo. In the flux designation, the digit 3 indicates class 3."
+  },
+  {
+    "standard_code": "ISO_14174_2019",
+    "clause_ref": "5.4.5",
+    "clause_title": "Flux class 4",
+    "requirement_text": "These are other fluxes for which classes 1 to 3 are not applicable, e.g. fluxes for copper alloys. In the flux designation, the digit 4 indicates class 4. Table 1 — Symbol for type of flux, characteristic chemical constituents a,b Symbol Characteristic chemical Limit of constituent (description) constituents % (by mass) MS MnO + SiO2 ≥50 (Manganese-silicate) CaO ≤15 CS CaO + MgO + SiO2 ≥55 (Calcium-silicate) CaO + MgO ≥15 CG CaO + MgO 5 to 50 (Calcium-magnesium) CO2 ≥2 Fe ≤10 CB CaO + MgO 30 to 80 (Calcium-magnesium basic) CO2 ≥2 Fe ≤10 a Calculations can be made as shown in Annex A. b A description of the characteristics of each of the types of flux is given in Annex B. c Fluxes for which the chemical composition is not listed shall be symbolized by the letter Z. The chemical composition ranges are not specified and it is possible that two fluxes with the same Z classification are not interchangeable.\n\n1) Not all fluxes suitable for use with stainless steel filler metal are also suitable for nickel and nickel alloy filler\n\nmetal. 3\n\n| Symbol (description) | Characteristic chemical constituents | a,b Limit of constituent % (by mass) |\n| --- | --- | --- |\n| MS | MnO + SiO2 | ≥50 |\n| (Manganese-silicate) CS | CaO CaO + MgO + SiO2 | ≤15 ≥55 |\n| (Calcium-silicate) CG (Calcium-magnesium) | CaO + MgO CaO + MgO CO2 | ≥15 5 to 50 ≥2 |\n| CB (Calcium-magnesium basic) | Fe CaO + MgO CO2 | ≤10 30 to 80 ≥2 |\n| Fe ≤10 a Calculations can be made as shown in Annex A. b A description of the characteristics of each of the types of flux is given in Annex B. c Fluxes for which the chemical composition is not listed shall be symbolized by the letter Z. The chemical |  |  |\n\n\nTable 1 (continued) Symbol Characteristic chemical Limit of constituent (description) constituents % (by mass) CG-I CaO + MgO 5 to 45 (Calcium-magnesium with iron) CO2 ≥2 Fe 15 to 60 CB-I CaO + MgO 10 to 70 (Calcium-magnesium basic CO2 ≥2 with iron) Fe 15 to 60 GS MgO + SiO2 ≥42 (Magnesium-silicate) Al2O3 ≤20 CaO + CaF2 ≤14 ZS ZrO2 + SiO2 + MnO ≥45 (Zirconium-silicate) ZrO2 ≥15 RS TiO2 + SiO2 ≥50 (Rutile-silicate) TiO2 ≥20 AR Al2O3 + TiO2 ≥40 (Aluminate-rutile) BA Al2O3 + CaF2 + SiO2 ≥55 (Basic-alumina) CaO ≥8 SiO2 ≤20 AAS Al2O3 + SiO2 ≥50 (Acid-aluminium-silicate) CaF2 + MgO ≥20 AB Al2O3 + CaO + MgO ≥40 (Aluminate-basic) Al2O3 ≥20 CaF2 ≤22 AS Al2O3 + SiO2 + ZrO2 ≥40 (Aluminate-silicate) CaF2 + MgO ≥30 ZrO2 ≥5 AF Al2O3 + CaF2 ≥70 (Aluminate-fluoride-basic) FB CaO + MgO + CaF2 + MnO ≥50 (Fluoride-basic) SiO2 ≤20 CaF2 ≥15 c Z Any other agreed composition a Calculations can be made as shown in Annex A. b A description of the characteristics of each of the types of flux is given in Annex B. c Fluxes for which the chemical composition is not listed shall be symbolized by the letter Z. The chemical composition ranges are not specified and it is possible that two fluxes with the same Z classification are not interchangeable.\n\n| Symbol (description) | Characteristic chemical constituents | Limit of constituent % (by mass) |\n| --- | --- | --- |\n| CG-I (Calcium-magnesium with iron) | CaO + MgO CO2 | 5 to 45 ≥2 |\n| CB-I (Calcium-magnesium basic | Fe CaO + MgO CO2 | 15 to 60 10 to 70 ≥2 |\n| with iron) GS (Magnesium-silicate) | Fe MgO + SiO2 Al2O3 | 15 to 60 ≥42 ≤20 |\n| ZS | CaO + CaF2 ZrO2 + SiO2 + MnO | ≤14 ≥45 |\n| (Zirconium-silicate) RS | ZrO2 TiO2 + SiO2 | ≥15 ≥50 |\n| (Rutile-silicate) AR | TiO2 Al2O3 + TiO2 | ≥20 ≥40 |\n| (Aluminate-rutile) BA (Basic-alumina) | Al2O3 + CaF2 + SiO2 CaO | ≥55 ≥8 |\n| AAS | SiO2 Al2O3 + SiO2 | ≤20 ≥50 |\n| (Acid-aluminium-silicate) AB (Aluminate-basic) | CaF2 + MgO Al2O3 + CaO + MgO Al2O3 | ≥20 ≥40 ≥20 |\n| AS (Aluminate-silicate) | CaF2 Al2O3 + SiO2 + ZrO2 CaF2 + MgO | ≤22 ≥40 ≥30 |\n| AF | ZrO2 Al2O3 + CaF2 | ≥5 ≥70 |\n| (Aluminate-fluoride-basic) FB (Fluoride-basic) | CaO + MgO + CaF2 + MnO SiO2 | ≥50 ≤20 |\n|  | 2 |  |\n| CaF ≥15 c Z Any other agreed composition a Calculations can be made as shown in Annex A. b A description of the characteristics of each of the types of flux is given in Annex B. c Fluxes for which the chemical composition is not listed shall be symbolized by the letter Z. The chemical |  |  |"
+  },
+  {
+    "standard_code": "ISO_14174_2019",
+    "clause_ref": "5.5",
+    "clause_title": "Symbol for metallurgical behaviour",
+    "requirement_text": ""
+  },
+  {
+    "standard_code": "ISO_14174_2019",
+    "clause_ref": "5.5.1",
+    "clause_title": "General",
+    "requirement_text": "The metallurgical behaviour of a flux is characterized by the contribution (pick-up and/or burn-out) of alloying elements. Concerning fluxes for joining, the contribution is the difference between the chemical composition of the all-weld metal deposit and the composition of the specified electrode. Concerning fluxes for overlay welding, the contribution is the difference between the chemical composition of the deposited weld metal of the last bead/layer and the chemical composition of the specified wire/strip electrode."
+  },
+  {
+    "standard_code": "ISO_14174_2019",
+    "clause_ref": "5.5.2",
+    "clause_title": "Metallurgical behaviour, flux class 1",
+    "requirement_text": "For determining the pick-up and burn-out behaviour, a wire electrode ISO 14171-A – S2 or ISO 14171-B – SU22 shall be used in accordance with 5.5.6. The pick-up or burn-out of the elements Si and Mn shall be stated in this sequence. The symbols in Table 2 indicate the metallurgical behaviour of a welding flux class 1. Table 2 — Symbol for metallurgical behaviour of class 1 fluxes Contribution from flux on all-weld metal Metallurgical behaviour Symbol % (by mass)"
+  },
+  {
+    "standard_code": "ISO_14174_2019",
+    "clause_ref": "1",
+    "clause_title": ">0,7",
+    "requirement_text": "a 2 0,5 to 0,7 Burn-out"
+  },
+  {
+    "standard_code": "ISO_14174_2019",
+    "clause_ref": "3",
+    "clause_title": "0,3 to 0,5",
+    "requirement_text": ""
+  },
+  {
+    "standard_code": "ISO_14174_2019",
+    "clause_ref": "4",
+    "clause_title": "0,1 to 0,3",
+    "requirement_text": "Neutral 5 0,0 to 0,1"
+  },
+  {
+    "standard_code": "ISO_14174_2019",
+    "clause_ref": "6",
+    "clause_title": "0,1 to 0,3",
+    "requirement_text": ""
+  },
+  {
+    "standard_code": "ISO_14174_2019",
+    "clause_ref": "7",
+    "clause_title": "0,3 to 0,5",
+    "requirement_text": "Pick-up"
+  },
+  {
+    "standard_code": "ISO_14174_2019",
+    "clause_ref": "8",
+    "clause_title": "0,5 to 0,7",
+    "requirement_text": ""
+  },
+  {
+    "standard_code": "ISO_14174_2019",
+    "clause_ref": "9",
+    "clause_title": ">0,7",
+    "requirement_text": "a For Si, symbols 1, 2, 3 and 4 are not used."
+  },
+  {
+    "standard_code": "ISO_14174_2019",
+    "clause_ref": "5.5.3",
+    "clause_title": "Metallurgical behaviour, flux classes 2 and 2B",
+    "requirement_text": "For determining the pick-up or burn-out behaviour, wire or strip electrodes shall be selected in accordance with Table 3 and shall be used in accordance with 5.5.6. The pick-up or burn-out of the elements C, Si, Cr, and Nb shall be stated in this sequence. If the flux adds other elements, these shall be indicated by stating the corresponding chemical symbols (e.g. Ni, Mo) immediately after the symbols for C, Si, Cr, and Nb. The symbols in Table 4 indicate the metallurgical behaviour for class 2 and class 2B fluxes.\n\n| Metallurgical behaviour | Symbol | Contribution from flux on all-weld metal % (by mass) |\n| --- | --- | --- |\n| a Burn-out |  |  |\n|  |  |  |\n|  | 1 | >0,7 |\n|  | 2 | 0,5 to 0,7 |\n|  | 3 | 0,3 to 0,5 |\n| Neutral Pick-up | 4 | 0,1 to 0,3 |\n|  | 5 | 0,0 to 0,1 |\n|  | 6 | 0,1 to 0,3 |\n|  | 7 | 0,3 to 0,5 |\n| 8 0,5 to 0,7 |  |  |\n\n\nTable 3 — Electrodes used for determination of metallurgical behaviour for class 2 and class 2B fluxes Electrode to be used Product/ Class ISO 18274 ISO 18274 process ISO 14343-A ISO 14343-B (numerical) (chemical) a a"
+  },
+  {
+    "standard_code": "ISO_14174_2019",
+    "clause_ref": "5.5.4",
+    "clause_title": "Metallurgical behaviour, flux class 3",
+    "requirement_text": "The pick-up of alloying elements shall be indicated by stating the corresponding chemical symbols (e.g. C, Cr, Mo) and approximate amount without the % symbol. For determining the pick-up behaviour a wire electrode, ISO 14171-A – S2 or ISO 14171-B – SU22, shall be used in accordance with 5.5.6."
+  },
+  {
+    "standard_code": "ISO_14174_2019",
+    "clause_ref": "5.5.5",
+    "clause_title": "Metallurgical behaviour, flux class 4",
+    "requirement_text": "The pick-up of alloying elements shall be indicated by stating the corresponding chemical symbols. Table 4 — Symbols for metallurgical behaviour for class 2 and class 2B fluxes Contribution from flux on all-weld metal Metallurgical Symbol % (by mass) behaviour C Si Cr Nb"
+  },
+  {
+    "standard_code": "ISO_14174_2019",
+    "clause_ref": "1",
+    "clause_title": ">0,020 >0,7 >2,0 >0,20",
+    "requirement_text": ""
+  },
+  {
+    "standard_code": "ISO_14174_2019",
+    "clause_ref": "2",
+    "clause_title": "symbol not used 0,5 to 0,7 1,5 to 2,0 0,15 to 0,20",
+    "requirement_text": "Burn-out"
+  },
+  {
+    "standard_code": "ISO_14174_2019",
+    "clause_ref": "3",
+    "clause_title": "0,010 to 0,020 0,3 to 0,5 1,0 to 1,5 0,10 to 0,15",
+    "requirement_text": ""
+  },
+  {
+    "standard_code": "ISO_14174_2019",
+    "clause_ref": "4",
+    "clause_title": "symbol not used 0,1 to 0,3 0,5 to 1,0 0,05 to 0,10",
+    "requirement_text": "Neutral 5 0,000 to 0,010 0,0 to 0,1 0,0 to 0,5 0,00 to 0,05"
+  },
+  {
+    "standard_code": "ISO_14174_2019",
+    "clause_ref": "6",
+    "clause_title": "symbol not used 0,1 to 0,3 0,5 to 1,0 0,05 to 0,10",
+    "requirement_text": ""
+  },
+  {
+    "standard_code": "ISO_14174_2019",
+    "clause_ref": "7",
+    "clause_title": "0,010 to 0,020 0,3 to 0,5 1,0 to 1,5 0,10 to 0,15",
+    "requirement_text": "Pick-up"
+  },
+  {
+    "standard_code": "ISO_14174_2019",
+    "clause_ref": "8",
+    "clause_title": "symbol not used 0,5 to 0,7 1,5 to 2,0 0,15 to 0,20",
+    "requirement_text": ""
+  },
+  {
+    "standard_code": "ISO_14174_2019",
+    "clause_ref": "9",
+    "clause_title": ">0,020 >0,7 >2,0 >0,20",
+    "requirement_text": ""
+  },
+  {
+    "standard_code": "ISO_14174_2019",
+    "clause_ref": "5.5.6",
+    "clause_title": "Determination of symbols for metallurgical behaviour",
+    "requirement_text": "For the determination of symbols for class 1 and 2 fluxes, a weld metal pad shall be prepared in accordance with Table 5. For class 3 and 4 fluxes, the weld pad shall be prepared as recommended by the manufacturer. The surface oxide on the sampling portion of the specimen for chemical analysis shall be removed by machining or grinding. When taking chips from a milling, a shaping or a drilling machine, the use of cutting fluid shall be avoided. The specimen for chemical analysis shall be taken from the weld metal of the highest layer. The specimen shall not include the start or the crater.\n\n| Product/ process | Class | Electrode to be used |  |  |  |\n| --- | --- | --- | --- | --- | --- |\n|  |  | ISO 14343-A | ISO 14343-B | ISO 18274 (numerical) | ISO 18274 (chemical) |\n|  |  | a | a |  |  |\n|  |  |  |  |  |  |\n| S | 2 | S 19 9 L | SS308L | N/A | N/A |\n| ES | 2 | S 19 9 L | SS308L | N/A | N/A |\n| S | 2B | B 19 9 L | BS 308L | N/A | N/A |\n| ES | 2B | B 19 9 L | BS 308L | N/A | N/A |\n| S | 2 | N/A | N/A | S Ni 6625 | S NiCr22Mo9Nb |\n| ES | 2 | N/A | N/A | S Ni 6625 | S NiCr22Mo9Nb |\n| S 2B N/A N/A B Ni 6625 S NiCr22Mo9Nb ES 2B N/A N/A B Ni 6625 S NiCr22Mo9Nb a To determine carbon burn-out, electrodes with minimum 0,04 % (by mass) C shall be used. To determine niobium burn-out, 19 9 Nb/347 electrodes shall be used. |  |  |  |  |  |\n\n| Metallurgical behaviour | Symbol | Contribution from flux on all-weld metal % (by mass) |  |  |  |\n| --- | --- | --- | --- | --- | --- |\n|  |  | C | Si | Cr | Nb |\n| Burn-out |  |  |  |  |  |\n|  |  |  |  |  |  |\n|  | 1 | >0,020 | >0,7 | >2,0 | >0,20 |\n|  | 2 | symbol not used | 0,5 to 0,7 | 1,5 to 2,0 | 0,15 to 0,20 |\n|  | 3 | 0,010 to 0,020 | 0,3 to 0,5 | 1,0 to 1,5 | 0,10 to 0,15 |\n| Neutral Pick-up | 4 | symbol not used | 0,1 to 0,3 | 0,5 to 1,0 | 0,05 to 0,10 |\n|  | 5 | 0,000 to 0,010 | 0,0 to 0,1 | 0,0 to 0,5 | 0,00 to 0,05 |\n|  | 6 | symbol not used | 0,1 to 0,3 | 0,5 to 1,0 | 0,05 to 0,10 |\n|  | 7 | 0,010 to 0,020 | 0,3 to 0,5 | 1,0 to 1,5 | 0,10 to 0,15 |\n\n\nAny suitable analytical technique may be used, but in cases of dispute reference shall be made to established methods. Table 5 — Welding conditions for preparation of a weld metal pad Product/process S ES Flux class 1 2 2B 2B Electrode dimension, mm 4,0 3,0 60 × 0,5 60 × 0,5 Runs per layer 2 1 Number of layers 8 3 2 Length of weld deposit, mm ≥200 Electrode extension, mm 30 ± 5 27 ± 3 a Type of current Direct current electrode positive (DCEP) Welding current, A 580 ± 20 480 ± 20 750 ± 25 1 250 ± 30 Welding voltage, V 29 ± 2 29 ± 2 28 ± 2 25 ± 2 Welding speed, mm/min 550 ± 50 500 ± 50 120 ± 10 160 ± 15 Interpass temperature, °C 150 ± 50 ≤150 a If AC only or AC and DC operations are claimed, the test welding shall be carried out using AC only (AC = alternating current; DC = direct current)."
+  },
+  {
+    "standard_code": "ISO_14174_2019",
+    "clause_ref": "5.6",
+    "clause_title": "Symbol for type of current",
+    "requirement_text": "The symbols below indicate the type of current (alternating or direct) for which the flux is suitable: — DC is the symbol for direct current; — AC is the symbol for alternating current. Suitability for use with alternating current (AC) generally also implies suitability for use with direct current (DC)."
+  },
+  {
+    "standard_code": "ISO_14174_2019",
+    "clause_ref": "5.7",
+    "clause_title": "Symbol for diffusible hydrogen content in deposited weld metal (class 1 fluxes only)",
+    "requirement_text": "The symbols in Table 6 indicate the diffusible hydrogen content in deposited weld metal determined in accordance with the method specified in ISO 3690 using a wire electrode ISO 14171-A – S2 or ISO 14171- B – SU22. Other methods of collection and measurement of the diffusible hydrogen can be used for testing provided they possess equal reproducibility with, and are calibrated against, the method specified in ISO 3690. In cases of dispute, the method specified in ISO 3690 shall be used. Table 6 — Symbol for diffusible hydrogen content in deposited weld metal Diffusible hydrogen content Symbol ml/100 g deposited weld metal maximum H2 2 H4 4 H5 5 H10 10 If a diffusible hydrogen symbol is indicated, the manufacturer shall provide information on the recommended type of current and redrying conditions for achieving that hydrogen limit.\n\n| Product/process | S |  |  | ES |\n| --- | --- | --- | --- | --- |\n| Flux class | 1 | 2 | 2B | 2B |\n|  |  |  |  |  |\n|  |  |  |  |  |\n| Electrode dimension, mm | 4,0 3,0 |  | 60 × 0,5 | 60 × 0,5 |\n| Runs per layer | 2 1 |  |  |  |\n| Number of layers |  | 8 3 2 |  |  |\n| Length of weld deposit, mm | ≥200 |  |  |  |\n| Electrode extension, mm a | 30 ± 5 |  | 27 ± 3 |  |\n| Type of current | Direc | t current electr | ode positive (D | CEP) |\n| Welding current, A | 580 ± 20 | 480 ± 20 | 750 ± 25 | 1 250 ± 30 |\n| Welding voltage, V | 29 ± 2 | 29 ± 2 28 ± 2 25 ± 2 |  |  |\n| Welding speed, mm/min 550 ± 50 500 ± 50 120 ± 10 160 ± 15 Interpass temperature, °C 150 ± 50 ≤150 a |  |  |  |  |\n\n| Symbol | Diffusible hydrogen content ml/100 g deposited weld metal maximum |\n| --- | --- |\n| H2 H4 H5 | 2 4 5 |"
+  },
+  {
+    "standard_code": "ISO_14174_2019",
+    "clause_ref": "6",
+    "clause_title": "Particle size range",
+    "requirement_text": "The particle category is not a part of the flux designation, but shall be used for information in the marking of packaging units. The particle size range shall be indicated by the symbol for the smallest and largest particle size in accordance with Table 7 or directly expressed in millimetres. Table 7 — Particle size Particle size Symbol mm 2,5 25 2,0 20 1,6 16 1,4 14 1,25 12 0,8 8 0,5 5 0,4 4 0,315 3 0,2 2 0,1 1 <0,1 0 The particle size range shall be measured by a suitable technique. The size range to be stated on the packaging shall be the range of particle diameters that includes minimum 90 % (by mass) of the flux. An example of a typical symbol for particle range is 2 to 16 or 0,2 mm to 1,6 mm."
+  },
+  {
+    "standard_code": "ISO_14174_2019",
+    "clause_ref": "7",
+    "clause_title": "Rounding procedure",
+    "requirement_text": "Actual test values obtained shall be subject to ISO 80000-1:2009, B.3, Rule A. If the measured values are obtained by equipment calibrated in units other than those of this document, the measured values shall be converted to the units of this document before rounding. If an average value is to be compared to the requirements of this document, rounding shall be done only after calculating the average. The rounded results shall fulfil the requirements of the appropriate table for the classification under test."
+  },
+  {
+    "standard_code": "ISO_14174_2019",
+    "clause_ref": "8",
+    "clause_title": "Retest",
+    "requirement_text": "If any test fails to meet the requirement(s), that test shall be repeated twice. The results of both retests shall meet the requirement. Specimens for the retest may be taken from the original test assembly or sample or from one or two new test assemblies. For chemical analysis, retests need only be for those specific elements that failed to meet the requirement. If the results of one or both retests fail to meet the requirement, the material under test shall be considered as not meeting the requirements of this document for that classification. In the event that during preparation, or after completion of any test, it is clearly determined that prescribed or proper procedures were not followed in preparing the weld test assembly or sample(s) or test specimen(s), or in conducting the tests, the test shall be considered invalid. This determination is made without regard to whether the test was actually completed, or whether the test results met, or failed to meet, the requirements. That test shall be repeated, following proper prescribed procedures. In this case, the requirement for doubling the number of test specimens does not apply.\n\n| Particle size | Symbol |\n| --- | --- |\n|  |  |\n| mm |  |\n| 2,5 | 25 |\n| 2,0 | 20 |\n| 1,6 | 16 |\n| 1,4 | 14 |\n| 1,25 | 12 |\n| 0,8 | 8 |\n| 0,5 | 5 |\n| 0,4 | 4 |\n| 0,315 | 3 |\n| 0,2 | 2 |"
+  },
+  {
+    "standard_code": "ISO_14174_2019",
+    "clause_ref": "9",
+    "clause_title": "Technical delivery conditions",
+    "requirement_text": "The flux shall be granular and so constituted that it can be conveyed freely by the flux feed system. The particle size distribution shall be uniform and consistent in the different packaging units. The fluxes can be obtainable in different particle size distributions. The fluxes shall be supplied packaged. Subject to proper transportation and storage, the packaging shall be sufficiently robust to provide the contents with a high standard of protection against damage."
+  },
+  {
+    "standard_code": "ISO_14174_2019",
+    "clause_ref": "10",
+    "clause_title": "Marking",
+    "requirement_text": "The packaging shall be clearly marked with the following details:\n\na) trade name;\n\nb) classification in accordance with this document (see Clause 4);\n\nc) production lot number;\n\nd) net mass;\n\ne) manufacturer or supplier;\n\nf) particle size range in accordance with Clause 6;\n\ng) health and safety warnings as required."
+  },
+  {
+    "standard_code": "ISO_14174_2019",
+    "clause_ref": "11",
+    "clause_title": "Designation",
+    "requirement_text": "The designation of a flux shall follow the principle of the examples given below. EXAMPLE 1 A flux for submerged-arc welding (S) manufactured by fusion (F), calcium-silicate-type (CS) for class 1 applications (1), with pick-up 0,2 % (by mass) for Si (6) and 0,4 % (by mass) for Mn (7), usable with AC or DC (AC) and producing a weld metal with a maximum of 10 ml diffusible hydrogen in 100 g deposited weld metal (ISHO1 01)4 i1s7 d4e s—ig nS aFt eCdS a1s 6fo7l lAoCw Hs:10 aISnOd 1th4e1 7co4m —p uSl sFo CrSy s1ection: where ISO 14174 represents the number of this document; S represents the flux for submerged arc welding (see 5.1); F represents the fused flux (see 5.2); CS represents the type of flux (see Table 1);"
+  },
+  {
+    "standard_code": "ISO_14174_2019",
+    "clause_ref": "1",
+    "clause_title": "represents the application, flux class (see 5.4);",
+    "requirement_text": ""
+  },
+  {
+    "standard_code": "ISO_14174_2019",
+    "clause_ref": "67",
+    "clause_title": "represents the metallurgical behaviour (see 5.5);",
+    "requirement_text": "AC represents the type of current (see 5.6); H10 represents the hydrogen content (see Table 6). EXAMPLE 2 A flux for submerged-arc welding (S) manufactured by agglomeration (A), aluminium-fluoride type (AF) for class 2 applications (2), with pick-up 0,008 % (by mass) for C (5), pick-up 0,2 % (by mass) for Si (6), burn-out 0,7 % (by mass) for Cr (4), burn-out 0,08 % (by mass) for Nb (4) and usable with DC (DC) is designated aISsO fo 1ll4o1w7s4: — S A AF 2 56 44 DC and the compulsory section:"
+  },
+  {
+    "standard_code": "ISO_14174_2019",
+    "clause_ref": "16",
+    "clause_title": "This page deliberately left blank",
+    "requirement_text": ""
+  }
+]
