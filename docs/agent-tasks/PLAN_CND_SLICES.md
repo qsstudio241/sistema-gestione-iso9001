@@ -2,8 +2,8 @@
 
 > **Destinazione**: uno studio (Mason) e l’operatore CND chiudono sul telefono il ciclo **incarico → esecuzione in campo → verbale Word + eventuale NC**, riusando qualifiche ISO 9712, strumenti, commesse, foto e PWA già in produzione. Niente app nativa, niente secondo motore, niente tabelle gemelle.
 > **Spec / ADR**: [ISO 9712:2022](../reference/ISO_9712_2022_NDT_QUALIFICATION.md) · ADR-004 (auth mobile) · ADR-016 (strumenti trasversali, verbali ≠ Welding Book) · [PLAN ISO 3834](PLAN_3834_SLICES.md) (ISO-1b/ISO-7 fatti; **ISO-9** eseguita qui come CND-2)
-> **Brief attivi**: [`DEPUTYTASK.md`](DEPUTYTASK.md) **CND-9 APERTO**; [`DEPUTYTASK1.md`](DEPUTYTASK1.md) **CND-W APERTO** (export Word PT/MT). **CND-7** CHIUSO (#574). **CND-6** CHIUSO (#575). **CND-3** CHIUSO (#571).
-> **Mappa**: CND-0…CND-4/6/7/11 su `main`. **Ora**: CND-9 (coda IndexedDB) ∥ CND-W (Word flag). Stream STUD-1 parallelo (WPQR).
+> **Brief attivi**: [`DEPUTYTASK1.md`](DEPUTYTASK1.md) **CND-W APERTO** (export Word PT/MT). [`DEPUTYTASK.md`](DEPUTYTASK.md) **CND-9 CHIUSO** (questa PR). **CND-7** CHIUSO (#574). **CND-6** CHIUSO (#575). **CND-3** CHIUSO (#571).
+> **Mappa**: CND-0…CND-4/6/7/9/11 su `main` (CND-9 in merge). **Ora**: CND-W (Word flag). Prossimo dopo CND-9: CND-8. Stream STUD-1 parallelo (WPQR).
 > **Licenza**: modulo `cnd` (bridge: licenza `saldatura` implica `cnd`)
 > **Schermate oggi**: `/cnd/verbali` (`NdtReportsPage.jsx`) · `/cnd/strumenti` (`EquipmentPage.jsx`) · Qualifiche tab NDT
 
@@ -19,7 +19,7 @@ Il CND **c’è già** (giugno 2026, go-live mobile parziale). Il buco non è «
 | Foto per riga marca, autosave online, NC da difetto R/S | Elenco marche = **tabella larga** (scroll orizzontale): usabile a tavolino, scomodo in officina |
 | Word `VT-verbale.docx` | Nessun template MT/PT/UT; verbale **non** entra nel registro documenti |
 | Commessa opzionale (ISO-7), `company_access` (ISO-1b) | Nessuna **coda lavori** del giorno; si crea il verbale da zero |
-| PWA + voice CND in nav mobile + ADR-004 | `useNdtAutoSave.js` solo localStorage; coda IndexedDB NDT **già** in `syncService` ma non collegata (CND-9) |
+| PWA + voice CND in nav mobile + ADR-004 | CND-9: save offline → `syncQueue` (tipi NDT); localStorage resta backup; **foto allegati offline** ancora solo messaggio CND-6 (niente blob in coda) |
 | Ingest `cert_ndt` + idoneità visiva | Ingest `report_ndt` (verbali storici) schema AI sì, whitelist pipeline no |
 | Qualifiche 9712 in anagrafica | Gate «puoi firmare questo metodo?» **fatto** (CND-2); flag PT/MT **fatti** (CND-3) |
 
@@ -174,7 +174,7 @@ Ogni slice è un **tracciante verticale** (un passaggio del flusso), non «tutto
 | **CND-6** | Foto + NC da marca in campo (hardening mobile del già fatto) | `NdtItemAttachments.jsx`, hint `NcCreateModal` | CND-1 | ✅ 26/08 | [`DEPUTYTASK1.md`](DEPUTYTASK1.md) CHIUSO (#575); parallelo CND-7 |
 | **CND-7** | Completa verbale → posa nel registro documenti (`report_ndt` / cartella 9.3) | `ndtReports.controller.js`, pattern posa ingest | CND-4 utile | ✅ 26/08 | [`DEPUTYTASK.md`](DEPUTYTASK.md) CHIUSO (#574); parallelo CND-6 |
 | **CND-8** | Crea verbale come audit: bozza UUID → form → coda sync (niente nuova entità “incarico”) | `NdtReportsPage` lista + `enqueueNdtReportSync` / create | CND-9 utile | AFK | dopo CND-9 se tocca la stessa coda; filtro «oggi» è lo stesso elenco |
-| **CND-9** | Rete di salvataggio officina: `useNdtAutoSave` → IndexedDB `syncQueue` (tipi NDT **già** in `syncService`) | `useNdtAutoSave.js`, eventuale gancio foto | — | AFK **APERTO** | [`DEPUTYTASK.md`](DEPUTYTASK.md); parallelo CND-W |
+| **CND-9** | Rete di salvataggio officina: `useNdtAutoSave` → IndexedDB `syncQueue` (tipi NDT **già** in `syncService`) | `useNdtAutoSave.js`, gancio save in `NdtReportsPage` | — | ✅ 26/08 | [`DEPUTYTASK.md`](DEPUTYTASK.md) CHIUSO; residuo foto offline (CND-6 messaggio) |
 | **CND-W** | Export Word PT/MT: `method_params` → placeholder semantici (dopo CND-3+CND-4) | `vtWordExport.js` | CND-3+CND-4 | AFK **APERTO** | [`DEPUTYTASK1.md`](DEPUTYTASK1.md); file disgiunti da CND-9 |
 | **CND-10** | Firma grafica / controfirma | — | HITL 23/08: **parcheggio** | HITL | non aprire |
 | **CND-11** | Ingest verbali PDF storici (`report_ndt`) | whitelist pipeline + schema FE `documentTypeSchemas.js` (schema AI BE già c’è); **non** crea righe `ndt_reports` | — | AFK | *chiusa* (#546) |
@@ -189,12 +189,11 @@ Su `main` (23/08 sera):
   CND-11 *chiusa* #546
   CND-PREVIEW spike visibile via htmlpreview (#548/#550)
 
-Ora (26/08, post CND-6 #575 + CND-7 #574):
-  CND-9  (coda IndexedDB) — APERTO su DEPUTYTASK.md
+Ora (26/08, post CND-9):
   CND-W  (export Word PT/MT) — APERTO su DEPUTYTASK1.md
   STUD-1 (WPQR) — stream APERTO, file disgiunti
 
-Dopo merge CND-9:
+Dopo merge CND-9 (questa PR):
   CND-8  (crea bozza come audit)
 
 Dopo merge CND-3 + CND-4 (già chiuse) + CND-W:
@@ -213,7 +212,7 @@ Due deputy **mai** sullo stesso `NdtReportsPage.jsx` o sullo stesso controller.
 | Esecuzione: marche in campo | Tabella 10 colonne | CND-1 *chiusa* |
 | Esecuzione: parametri metodo | Solo lux VT; PT/MT da Word Mason | CND-3 *chiusa* |
 | Esecuzione: evidenza fotografica | C’è; touch/camera da irrobustire | CND-6 |
-| Esecuzione: rete assente | localStorage; coda NDT non agganciata | CND-9 |
+| Esecuzione: rete assente | Coda NDT collegata (CND-9); foto allegati offline = residuo | CND-9 *chiusa*; foto = backlog |
 | Output: certificato | Solo Word VT in `public/templates` + resolve CND-4; flag PT/MT → Word = CND-W | CND-4 *chiusa*; **CND-W** |
 | Output: fascicolo SGQ | Verbale fuori registro | CND-7 *chiusa* (#574) |
 | Output: difetto | NC già collegabile | CND-6 *chiusa* (#575) |

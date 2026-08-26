@@ -1,7 +1,8 @@
 # DEPUTYTASK — CND-9: rete di salvataggio officina (IndexedDB syncQueue)
 
-**Stato:** APERTO  
+**Stato:** CHIUSO  
 **Aperto:** 26/08/2026  
+**Chiuso:** 26/08/2026 — TEST OK  
 **Piano:** [`PLAN_CND_SLICES.md`](PLAN_CND_SLICES.md)  
 **Dipende da:** CND-1 **CHIUSO**; tipi `create_ndt_report` / `update_ndt_report` **già** in `syncService`  
 **Rischio:** Medio — FE sync/offline CND; **non** copiare motore `audit_events`; niente auth JWT / migrazioni.  
@@ -41,9 +42,23 @@ In officina senza rete la bozza resta solo in `localStorage`. La coda `syncQueue
 - STUD / WPQR / auth / JWT / migrazioni / `audit_events` nuovo motore
 - GUIDA / roadmap § Stato attuale (parallelo — sync **dopo merge**)
 
+## Esito
+
+- Offline/rete su Salva/Completa → `enqueueNdtReportSync` → `syncService.enqueue` (tipi già gestiti); dedup create per `uuid`, update per `id`.
+- Banner «Senza rete: verbale in coda»; dopo `sgq:ndtReportSynced` clear draft + banner.
+- localStorage resta backup; nessun secondo IndexedDB / audit_events.
+- **Residuo:** foto allegati offline restano sul messaggio CND-6 in `NdtItemAttachments` (niente blob in `syncQueue` in questa slice).
+- L1: `useNdtAutoSave.cnd9`, `ndtReportsOfflineSync.cnd9`, `syncService.ndt.cnd9` + regressioni NDT; build OK.
+- PLAN CND-9 spuntato; brief CHIUSO — **TEST OK**.
+
 ## Verifica
 
-- [ ] Offline → enqueue; online → drain coda NDT
-- [ ] Nessun secondo IndexedDB / audit_events
-- [ ] L1 + build OK
-- [ ] PLAN CND-9 spuntato; brief CHIUSO — TEST OK
+- [x] Offline → enqueue; online → drain coda NDT
+- [x] Nessun secondo IndexedDB / audit_events
+- [x] L1 + build OK
+- [x] PLAN CND-9 spuntato; brief CHIUSO — TEST OK
+
+## Bozza sync hub (dopo merge — parallelo attivo)
+
+- Roadmap § Sessione: CND-9 coda NDT officina mergiata; residuo foto offline.
+- GUIDA: una riga — CND save offline usa `syncQueue` esistente, non audit_events.

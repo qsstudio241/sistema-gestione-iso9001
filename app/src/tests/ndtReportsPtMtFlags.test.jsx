@@ -29,7 +29,9 @@ vi.mock("../utils/vtWordExport.js", () => ({
 }));
 
 vi.mock("../hooks/useNdtAutoSave.js", () => ({
-  useNdtAutoSave: () => ({ clearDraft: vi.fn(), loadDraft: () => null }),
+  useNdtAutoSave: () => ({ clearDraft: vi.fn(), loadDraft: () => null, draftKey: "sgq:ndt_draft:new" }),
+  enqueueNdtReportSync: vi.fn(),
+  isNdtNetworkSaveError: () => false,
 }));
 
 vi.mock("../components/NdtItemAttachments.jsx", () => ({

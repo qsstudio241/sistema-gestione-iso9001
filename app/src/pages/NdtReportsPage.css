@@ -51,6 +51,7 @@
 .ndt-form-header-actions { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
 
 .ndt-saved-at { font-size: 0.8rem; color: #16a34a; margin-bottom: 12px; }
+.ndt-pending-sync { font-size: 0.8rem; color: #92400e; background: #fef3c7; padding: 8px 12px; border-radius: 6px; margin-bottom: 12px; }
 .ndt-gate-ok { font-size: 0.8rem; color: #15803d; background: #dcfce7; padding: 8px 12px; border-radius: 6px; margin-bottom: 12px; }
 .ndt-form-error { color: #dc2626; background: #fee2e2; padding: 8px 12px; border-radius: 6px; font-size: 0.875rem; margin-bottom: 12px; }
 
