@@ -2,8 +2,8 @@
 
 > **Destinazione**: uno studio (Mason) e l’operatore CND chiudono sul telefono il ciclo **incarico → esecuzione in campo → verbale Word + eventuale NC**, riusando qualifiche ISO 9712, strumenti, commesse, foto e PWA già in produzione. Niente app nativa, niente secondo motore, niente tabelle gemelle.
 > **Spec / ADR**: [ISO 9712:2022](../reference/ISO_9712_2022_NDT_QUALIFICATION.md) · ADR-004 (auth mobile) · ADR-016 (strumenti trasversali, verbali ≠ Welding Book) · [PLAN ISO 3834](PLAN_3834_SLICES.md) (ISO-1b/ISO-7 fatti; **ISO-9** eseguita qui come CND-2)
-> **Brief attivi**: [`DEPUTYTASK.md`](DEPUTYTASK.md) **CND-7 APERTO**; [`DEPUTYTASK1.md`](DEPUTYTASK1.md) **CND-6 APERTO**. **CND-3** CHIUSO (#571). **CND-2** CHIUSO (#561). **CND-1** CHIUSO (#549). **CND-4** CHIUSO (#547). **CND-11** CHIUSO (#546).
-> **Mappa**: CND-0…CND-4/11 su `main`. **Ora**: CND-7 (posa registro) ∥ CND-6 (foto/NC mobile) — file disgiunti. Stream STUD-1 parallelo (WPQR).
+> **Brief attivi**: [`DEPUTYTASK.md`](DEPUTYTASK.md) **CND-7 APERTO**; [`DEPUTYTASK1.md`](DEPUTYTASK1.md) **CND-6 CHIUSO** (questa PR). **CND-3** CHIUSO (#571). **CND-2** CHIUSO (#561). **CND-1** CHIUSO (#549). **CND-4** CHIUSO (#547). **CND-11** CHIUSO (#546).
+> **Mappa**: CND-0…CND-4/11 su `main`. **Ora**: CND-7 (posa registro) ∥ CND-6 (foto/NC mobile) chiusa in PR. Stream STUD-1 parallelo (WPQR).
 > **Licenza**: modulo `cnd` (bridge: licenza `saldatura` implica `cnd`)
 > **Schermate oggi**: `/cnd/verbali` (`NdtReportsPage.jsx`) · `/cnd/strumenti` (`EquipmentPage.jsx`) · Qualifiche tab NDT
 
@@ -171,7 +171,7 @@ Ogni slice è un **tracciante verticale** (un passaggio del flusso), non «tutto
 | **CND-3** | UI flag PT **e** MT da modelli Mason → `method_params` JSON (metodi indipendenti, nessuna tabella nuova) | `NdtReportsPage.jsx` sezioni metodo; catalogo in appendice | CND-1+CND-2 (stesso JSX) | ✅ 26/08 | [`DEPUTYTASK.md`](DEPUTYTASK.md) CHIUSO; parallelo NG-4 (file disgiunti) |
 | **CND-4** | Scope `cnd` in Template report + upload modelli Mason `.docx` + resolve per `report_type` | `ReportTemplatesAdminPage.jsx`, `reportTemplate.service.js` / controller, `vtWordExport.js` resolve VPS (come NC) | — | ✅ 23/08 | *chiusa* (#547) |
 | **CND-5** | Parametri UT + ruoli strumento non-VT (sonda/giogo) su anagrafica esistente | `NdtReportsPage.jsx`, `EquipmentPage.jsx` (etichette ruolo) | CND-3 | AFK | serializzare con CND-3 sullo stesso JSX; EquipmentPage può partire in parallelo a CND-2 se **solo** CSS/etichette ruoli |
-| **CND-6** | Foto + NC da marca in campo (hardening mobile del già fatto) | `NdtItemAttachments.jsx`, hint `NcCreateModal` | CND-1 | AFK **APERTO** | [`DEPUTYTASK1.md`](DEPUTYTASK1.md); parallelo CND-7 |
+| **CND-6** | Foto + NC da marca in campo (hardening mobile del già fatto) | `NdtItemAttachments.jsx`, hint `NcCreateModal` | CND-1 | AFK **CHIUSO** | [`DEPUTYTASK1.md`](DEPUTYTASK1.md); parallelo CND-7 |
 | **CND-7** | Completa verbale → posa nel registro documenti (`report_ndt` / cartella 9.3) | `ndtReports.controller.js`, pattern posa ingest | CND-4 utile | AFK **APERTO** | [`DEPUTYTASK.md`](DEPUTYTASK.md); dopo CND-2/3 |
 | **CND-8** | Crea verbale come audit: bozza UUID → form → coda sync (niente nuova entità “incarico”) | `NdtReportsPage` lista + `enqueueNdtReportSync` / create | CND-9 utile | AFK | dopo CND-9 se tocca la stessa coda; filtro «oggi» è lo stesso elenco |
 | **CND-9** | Rete di salvataggio officina: `useNdtAutoSave` → IndexedDB `syncQueue` (tipi NDT **già** in `syncService`) | `useNdtAutoSave.js`, eventuale gancio foto | — | AFK | overlap con CND-1 se si tocca la pagina; **dopo CND-1** oppure solo hook/coda se CND-1 non tocca l’hook |
@@ -190,7 +190,7 @@ Su `main` (23/08 sera):
 
 Ora (26/08, post CND-3 #571 + NG-4 #570):
   CND-7  (posa registro) — APERTO su DEPUTYTASK.md
-  CND-6  (foto/NC mobile) — APERTO su DEPUTYTASK1.md
+  CND-6  (foto/NC mobile) — CHIUSO su DEPUTYTASK1.md (questa PR)
   STUD-1 (WPQR) — stream APERTO, file disgiunti
 
 Dopo merge CND-7 / CND-6:
