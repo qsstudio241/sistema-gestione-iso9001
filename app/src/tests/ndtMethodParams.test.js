@@ -22,6 +22,11 @@ describe("ndtMethodParams CND-3", () => {
         expect(ptPlaceholderFor("acc", "l2")).toBe("{pt_acc_l2}");
         expect(mtPlaceholderFor("tracer", "wet")).toBe("{mt_tr_wet}");
         expect(ptDefectPlaceholders("100")).toEqual({ yn: "{pt_d_100_yn}", a: "{pt_d_100_a}" });
+        expect(ptDefectPlaceholders("502")).toEqual({
+            yn: "{pt_d_502_yn}",
+            a: "{pt_d_502_a}",
+            na: "{pt_d_502_na}",
+        });
     });
 
     it("default PT e MT restano nei rispettivi namespace", () => {

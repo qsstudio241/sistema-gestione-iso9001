@@ -21,6 +21,7 @@ import {
     PT_APP_OPTIONS,
     PT_FINAL_OPTIONS,
     PT_DEFECTS,
+    PT_WORD_NA_ONLY_CODES,
     MT_TRACER_OPTIONS,
     MT_MAG_OPTIONS,
     MT_MAG_MODE_OPTIONS,
@@ -138,6 +139,14 @@ function buildPtPlaceholderData(report, pt) {
         var row = defects[d.code] || {};
         out[placeholderKey(keys.yn)] = ptPresentLabel(row.present);
         out[placeholderKey(keys.a)] = row.outcome ? String(row.outcome) : '';
+        // Mason Word 502–515: placeholder singolo {pt_d_*_na}, non solo _yn/_a
+        if (keys.na || PT_WORD_NA_ONLY_CODES.indexOf(d.code) >= 0) {
+            var naKey = keys.na ? placeholderKey(keys.na) : ('pt_d_' + d.code + '_na');
+            var isNa = (!row.present && !row.outcome)
+                || row.present === 'na'
+                || row.outcome === 'NA';
+            out[naKey] = isNa ? WORD_CHECK_ON : WORD_CHECK_OFF;
+        }
     });
 
     return out;

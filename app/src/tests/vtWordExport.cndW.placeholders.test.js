@@ -38,6 +38,8 @@ describe("vtWordExport CND-W placeholders", () => {
                     defects: {
                         "100": { present: "yes", outcome: "A" },
                         "2017": { present: "na", outcome: "NA" },
+                        "502": { present: "na", outcome: "NA" },
+                        "503": { present: "yes", outcome: "S" },
                     },
                 },
             },
@@ -63,6 +65,9 @@ describe("vtWordExport CND-W placeholders", () => {
         expect(data.pt_d_100_yn).toBe("sì");
         expect(data.pt_d_100_a).toBe("A");
         expect(data.pt_d_2017_yn).toBe("NA");
+        expect(data.pt_d_502_na).toBe(WORD_CHECK_ON);
+        expect(data.pt_d_503_na).toBe(WORD_CHECK_OFF);
+        expect(data.pt_d_515_na).toBe(WORD_CHECK_ON);
         expect(data.pt_name_resp).toBe("Rossi");
         expect(Object.keys(data).some((k) => /Controllo\d/i.test(k))).toBe(false);
     });
