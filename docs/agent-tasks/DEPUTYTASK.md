@@ -1,7 +1,9 @@
 # DEPUTYTASK — STUD-2: ingest AI WPQR stud / P+T / doppio materiale
 
-**Stato:** APERTO  
+**Stato:** CHIUSO — TEST OK  
 **Aperto:** 26/08/2026  
+**Chiuso:** 26/08/2026  
+**Branch:** `cursor/wpqr-stud-ingest-166d`  
 **Stream:** [`DEPUTYTASK_WPQR_STUD.md`](DEPUTYTASK_WPQR_STUD.md) (STUD-1 **CHIUSO** #585)  
 **Report:** [`docs/gap-reports/GAP_WPQR_STUD_WELDING_PIASTRA_TUBO_2026-08-25.md`](../gap-reports/GAP_WPQR_STUD_WELDING_PIASTRA_TUBO_2026-08-25.md)  
 **Dipende da:** STUD-1 **CHIUSO** (campi DB/FE/schema già in prod, mig. 159)  
@@ -57,9 +59,19 @@ STUD-1 ha i campi in form/DB. L’ingest AI può ancora trattare stud come FW ge
 
 ## Verifica
 
-- [ ] Ingest SW: campi stud valorizzati in review/mapping senza inventare range
-- [ ] Regressione BW/FW e product_type P|T
-- [ ] L1 verdi; brief CHIUSO — TEST OK
+- [x] Ingest SW: campi stud valorizzati in review/mapping senza inventare range
+- [x] Regressione BW/FW e product_type P|T
+- [x] L1 verdi; brief CHIUSO — TEST OK
+
+## Esito (26/08/2026)
+
+Prompt FE+BE: SW ≠ FW, D1 = diametro prigioniero, PM2, P+T solo se dichiarato «entrambi», vietato inventare range 14555.
+
+Normalizzazione ingest (`wpqrIngest.service.js`): sinonimi stud/prigioniero → SW (anche se l'AI ha messo FW); `entrambi`/`piastra e tubo` → P+T; D1 dal testo se manca il diametro; SW non usa Tabella 7 BW. Fallback regole: `extractJointType` riconosce SW prima di FW.
+
+Nessuna chiave AI nuova (whitelist STUD-1 già ok). Nessun motorino 14555. `WeldingProceduresPage.jsx` non toccato. GUIDA/roadmap: sync **dopo merge** (parallelo STUD-3-A).
+
+**L1:** jest 58 pass (`wpqrIngest` + extractors + encoding repair + completeness); `npm run build` in `app/` OK.
 
 ## Bozza hub (dopo merge, se c’era parallelo)
 
