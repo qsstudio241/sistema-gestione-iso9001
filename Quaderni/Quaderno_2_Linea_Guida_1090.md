@@ -1,3 +1,9 @@
+<!-- Digitalizzato da PDF Conforma Quaderno n.2 Linea Guida EN 1090 (Rev. 0 - Settembre 2015). Schema: generic. Motore preferito: pymupdf (pdfplumber produceva raddoppio caratteri su titoli). Legature fi/fl ricostruite in revisione. PDF non versionato. Revisione agente 26/08/2026. -->
+
+<!-- Pagina 1 (motore: pymupdf) -->
+
+**Nota tecnica:** testo di questa pagina ricostruito con motore alternativo per problema di ordinamento caratteri.
+
 ## Applicazione delle norme
 
 ## della serie EN 1090
@@ -14,7 +20,13 @@ Rev. 0 - Settembre 2015
 
 ## I QUADERNI DI CONFORMA
 
+<!-- Pagina 2 (motore: pymupdf) -->
+
 La riproduzione totale o parziale con qualunque mezzo di questo documento deve essere autorizzata da CONFORMA che detiene tutti i diritti.
+
+<!-- Pagina 3 (motore: pymupdf) -- GAP: pagina senza testo estraibile (probabile solo grafica/bianca); non inventato -->
+
+<!-- Pagina 4 (motore: pymupdf) -->
 
 La presente Linea Guida nasce come progetto del Gruppo di Lavoro CPR di Conforma al quale aderiscono i seguenti Soci:
 
@@ -82,6 +94,8 @@ Matteo ZILIOTTO
 
 ## CSI
 
+<!-- Pagina 5 (motore: pymupdf) -->
+
 ## Sommario
 
 Premessa ............................................................................................................................... 6 2 Obbligatorietà dell’applicazione delle norme della serie EN 1090 in Italia .............. 7 3 Responsabilità degli operatori della filiera di costruzione di componenti
@@ -100,11 +114,15 @@ ove obbligatoria ...............................................................
 
 Allegato 1 ............................................................................................................................ 15
 
+<!-- Pagina 6 (motore: pymupdf) -->
+
 ## Premessa
 
 Le norme EN 1090 costituiscono un riferimento di base per la fornitura di componenti per strutture metalliche, dalla loro progettazione alla loro installazione. Attualmente la serie è costruita da 3 Parti. La Parte 1 (EN 1090-1) definisce i requisiti da applicare per assicurare che i componenti strutturali sono fabbricati in modo sistematico a “regola d’arte”. La Parte 2 (EN 1090-2) e la Parte 3 (EN 1090-3) stabiliscono i criteri e le modalità operative di dettaglio da applicare nella costruzione di tali componenti rispettivamente in acciaio e in alluminio, a partire dai materiali, dalla loro lavorazione (taglio, sagomatura foratura, saldatura, ecc.), fino all’installazione. Le norme della serie EN 1090 hanno carattere volontario, cioè costituiscono le “best practices” cioè le regole di buona prassi e quindi un utile riferimento per chi opera nel campo delle costruzioni metalliche.
 
 La norma EN 1090 parte 1 è diventata “norma armonizzata” secondo il Regolamento europeo 305/2011 pertanto a partire dal 1 luglio 2014 nei casi previsti (vedi oltre) si deve applicare l’allegato ZA della norma stessa che stabilisce l’obbligatorietà del rispetto di una parte dei requisiti della norma stessa per consentire, con ciò di soddisfare i requisiti del Regolamento 305. Questo consente la commercializzazione dei prodotti di carpenteria metallica strutturale nel territorio dell’Unione Europea. Attenzione: le regole per la commercializzazione previste dal Regolamento 305 si applicano in tutti i paesi della UE, non solo per gli scambi da un paese all’altro, quindi anche un prodotto fabbricato in Italia e destinato all’Italia deve rispettare questi requisiti.
+
+<!-- Pagina 7 (motore: pymupdf) -->
 
 ## Obbligatorietà dell’applicazione delle norme della
 
@@ -124,7 +142,11 @@ Quando un prodotto di carpenteria metallica viene usato in una costruzione (edif
 
 Quando un prodotto di
 
+<!-- Pagina 8 (motore: pymupdf) -->
+
 Tutti i prodotti di carpenteria strutturale che sono coperti da altre norme armonizzate secondo il regolamento 305 vanno marcati CE con riferimento a quelle norme e non alla EN 1090, vedi allegato 1. Tutti i prodotti di carpenteria metallica che non sono inquadrati come “prodotti da costruzione” ai sensi del Regolamento 305 vanno marcati CE solo se soggetti ad altri regolamenti e direttive ed in conformità a tali regolamenti o direttive. È questo il caso delle parti di macchine, delle attrezzature in pressione ecc. che hanno funzione strutturale nella macchina ma non sono elementi strutturali dell’edificio che contiene la macchina stessa. Le torri che sostengono le turbine eoliche, i castelletti di caldaie o di ascensori, in quanto parte integrante della macchina, non sono prodotti da costruzione e pertanto non vanno marcati CE secondo EN 1090. Fa eccezione il caso in cui la struttura della macchina sia collaborante con quella dell’edificio ed allora si applica la marcatura CE. Questo può essere il caso di castelletti di ascensori inglobati nella struttura portante dell’edificio o di scaffalature industriali che sorreggono le pareti ed il tetto del magazzino. Un prodotto di carpenteria incorporato nella struttura dell’opera ma non considerato prodotto da costruzione e per il quale pertanto non è applicabile la marcatura CE secondo la EN 1090 in abbinamento con il Regolamento UE 305/2011, potrebbe comunque essere soggetto alle Norme Tecniche sulle Costruzioni in Italia: è questo il caso di ringhiere a parapetti che devono essere calcolati da un professionista, ma non marcati CE secondo EN 1090.
+
+<!-- Pagina 9 (motore: pymupdf) -->
 
 ## Responsabilità degli operatori della filiera di
 
@@ -173,6 +195,8 @@ Art. 11 ‘OBBLIGHI DEI FABBRICANTI’ I fabbricanti:
 ## la marcat
 
 Si illustrano qui di seguit
+
+<!-- Pagina 10 (motore: pymupdf) -->
 
 # 2 conservano la documentazione tecnica e la dichiarazione di prestazione per un periodo di dieci anni
 
@@ -224,6 +248,8 @@ c) garanzia che la dichiarazione di prestazione potrà essere consultata dai ben
 
 per dieci anni dopo la commercializzazione del prodotto da costruzione o per un periodo diverso, stabilito ai sensi dell’articolo 11, paragrafo 2, secondo comma, del regolamento (UE) n. 305/2011;
 
+<!-- Pagina 11 (motore: pymupdf) -->
+
 # 4 collaborano con le Autorità di sorveglianza ove richiesto e adottano le misure correttive necessarie
 
 qualora il prodotto presentasse difformità rispetto alle prestazioni dichiarate. Il Regolamento prevede inoltre il caso in cui al Distributore vengano assegnati gli obblighi del fabbricante. Art. 15 Un distributore che immette un prodotto sul mercato con il proprio nome o marchio o modifica un prodotto da costruzione già immesso sul mercato in misura tale da poterne influenzare la conformità alla dichiarazione di prestazione, è considerato alla stregua di un fabbricante ai fini del presente regolamento ed è soggetto agli obblighi del fabbricante a norma dell’articolo. Vediamo ora come ricondurre i tre operatori economici tipici del panorama produttivo italiano alla legislazione europea. In Italia si parla di:
@@ -239,6 +265,8 @@ qualora il prodotto presentasse difformità rispetto alle prestazioni dichiarate
 ## cui va applicate la marcatura CE secondo la norma EN 1090-1
 
 L’OFFICINA DI CARPENTERIA in conformità al Regolamento UE 305/2011, si configura quale ‘Fabbricante’ e ne assume gli obblighi come previsto dall’art.11. L’OFFICINA DI CARPENTERIA è tenuta a fornire ai Committenti che hanno fatto esplicita richiesta di marcatura CE: prodotti fabbricati in accordo alle specifiche fornite dai Committenti e/o concordate con essi, la Dichiarazione di prestazione (DoP) e la marcatura CE secondo EN 1090-1. Per poter rilasciare la Dichiarazione di prestazioni e la corrispondente marcatura CE, l’OFFICINA DI CARPENTERIA deve operare in conformità a quanto prescritto dalla norma EN 1090-1 applicando le procedure cui all’allegato ZA della norma EN 1090-1 e descritte al punto 4. Le lavorazioni devono essere eseguite in accordo a quanto previsto nelle parti applicabili delle norme della serie EN 1090.
+
+<!-- Pagina 12 (motore: pymupdf) -->
 
 ## 3.2 DISTRIBUTORE di prodotti metallici utilizzati per la costruzione
 
@@ -272,7 +300,11 @@ Il CENTRO DI SERVIZIO è tenuto a fornire ai Committenti che hanno fatto esplici
 
 10088-5, EN 10343, EN 15088.
 
+<!-- Pagina 13 (motore: pymupdf) -->
+
 Per poter rilasciare la Dichiarazione di prestazioni e apporre la corrispondente marcatura CE, il CENTRO DI SERVIZIO deve operare in conformità a quanto prescritto dalla norma EN 1090-1 applicando quanto previsto nell’allegato ZA della norma EN 1090-1 e descritte al punto 4. Le lavorazioni devono essere eseguite in accordo a quanto previsto nelle parti applicabili delle norme della serie EN 1090. In particolare deve dare evidenza che lavorazioni eseguite sui prodotto forniti dai fabbricanti, non alterano le caratteristiche meccaniche originarie. Relativamente alla gestione di materiali dei fabbricanti si suggerisce di considerare quanto indicato ai punti a) e b) del punto 3.1 relativo ai DISTRIBUTORI. Per i prodotti forniti ai propri clienti così come pervenuti dai fabbricanti si applica invece quanto previsto al punto 3.2 per i DISTRIBUTORI (CPR art. 2 punto 2).
+
+<!-- Pagina 14 (motore: pymupdf) -->
 
 ## Come si dà evidenza dell’applicazione delle norme
 
@@ -320,6 +352,8 @@ prestazionali applicabili di cui alla tabella ZA. 1 della norma UNI EN 1090-1.
 
 a. Eseguire la visita iniziale dell’azienda per accertare la disponibilità degli impianti e delle risorse ed eseguire la verifica del FPC, in relazione alle caratteristiche prestazionali applicabili cui alla tabella ZA.1 della norma UNI EN 1090-1. b. Approvare il sistema di controllo di produzione di fabbrica ed eseguire la sorveglianza continua del suo mantenimento con particolare riferimento alle caratteristiche prestazionali applicabili cui alla tabella ZA.1 della norma UNI EN 1090-1.
 
+<!-- Pagina 15 (motore: pymupdf) -->
+
 ## Allegato 1
 
 ## Frequently Asked Questions on the Construction Products Regulation (CPR)5
@@ -363,6 +397,8 @@ harmonised EN, or an European Technical Approval Guideline (ETAG) or an European
 # 5 http://ec.europa.eu/enterprise/sectors/construction/faq/index_en.htm#Q2-15
 
 # 6 An appropriate consultation among CEN members in still ongoing.
+
+<!-- Pagina 16 (motore: pymupdf) -->
 
 • Circulation fixtures except sign gantry and cantilevers
 
@@ -435,6 +471,8 @@ to EN 13241-1
 • Pedestrian door sets, industrial, commercial, garage doors and openable windows - Product standard,
 
 performance characteristics - Fire resistance and/or smoke control characteristics according prEN 16034
+
+<!-- Pagina 17 (motore: pymupdf) -->
 
 • Piles if non-fabricated
 
@@ -510,6 +548,8 @@ boxes, bicycle racks, fences)
 
 • Timber dowel–type fasteners according to EN 14592.
 
+<!-- Pagina 18 (motore: pymupdf) -->
+
 ## CONFORMA
 
 CONFORMA - Associazione Organismi Certificazione Ispezione Prove Taratura, opera nel settore TIC (Testing, Inspection, Certification), ovvero nel settore della Valutazione della Conformità intesa come l’insieme delle attività, generalmente svolte in regime di accreditamento e/o su autorizzazione dei Ministeri competenti, in ambito volontario o cogente, di attività di certificazione di sistemi di gestione, prodotto, personale e servizi, ispezioni, marcatura CE e prove di laboratorio e taratura. Costituita nel 2012 da alcune fra le più importanti Organizzazioni a livello nazionale ed internazionale nel settore della Valutazione della Conformità di parte terza indipendente, ha sede nel centro di Milano ed è strutturata in 4 settori tecnici: Certificazione, Ispezione, Prove e Taratura Sono Soci di CONFORMA:
@@ -525,6 +565,12 @@ ICIM S.P.A. ICMQ S.P.A.
 ## IGQ
 
 IMQ S.P.A. INARCHECK S.P.A. ISTITUTO ITALIANO DEI PLASTICI S.R.L. MCJ S.R.L. RINA SERVICES S.P.A. SGS ITALIA S.P.A. TECNOPROVE S.R.L. UL INTERNATIONAL ITALIA S.R.L.
+
+<!-- Pagina 19 (motore: pymupdf) -->
+
+<!-- Pagina 20 (motore: pymupdf) -->
+
+**Nota tecnica:** testo di questa pagina ricostruito con motore alternativo per problema di ordinamento caratteri.
 
 Piazzale R. Morandi 2, 20121 Milano - Telefono 02.77790408 - 02.77790409 info@associazioneconforma.eu - c.f. e p. iva 07671900962 www.associazioneconforma.eu Elaborazione grafica: www.andreanobilio.com
 

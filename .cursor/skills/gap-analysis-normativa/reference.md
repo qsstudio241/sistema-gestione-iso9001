@@ -55,9 +55,9 @@ Script import: `backend/scripts/import-norms-from-markdown.js` (solo i file SGQ 
 | `Quaderno11_Direttiva Atex.txt` | Direttiva 2014/34/UE (ATEX) | Guida pratica sicurezza ATEX (notifiche, abilitazioni) | Non modulo app (sicurezza prodotti/esplosivi) |
 | `Quaderno_9_LG_Iperammortamento_072017.txt` | Contesto fiscale | Iperammortamento Industria 4.0 (L. 232/2016, beni Allegato A/B) | Non modulo app |
 | `Regolamento Accredia 4722_RG_01rev_03.txt` | Accredia / certificazione | RG-01 — accredito organismi certificazione e ispezione | Contesto audit terza parte / accredito |
-| `Quaderno_2_Linea_Guida_1090.txt` | **File vuoto (0 byte)** | Conversione fallita — da rigenerare | Vedi backlog `NORME_MANCANTI` |
+| `Quaderno_2_Linea_Guida_1090.txt` (+ `.md` / `.json`) | EN 1090 / carpenteria strutturale | Linea Guida Conforma n.2 Rev.0 Set 2015 — applicazione serie EN 1090, marcatura CE, operatori filiera | Contesto EN 1090 (non seed SGQ 4–10); GAP pag. 3 |
 
-**Nota duplicati**: `Quaderno_2_Linea_Guida_1090.txt` **non è** il duplicato di `Quaderni Qualità 2-...` (contesto/parti interessate): il nome suggerisce una Linea Guida distinta (riferimento «1090»); contenuto non verificabile finché il file resta vuoto.
+**Nota duplicati**: `Quaderno_2_Linea_Guida_1090.*` **non è** il duplicato di `Quaderni Qualità 2-...` (contesto/parti interessate): è la Linea Guida Conforma sull’applicazione della serie EN 1090 (digitalizzata 26/08/2026).
 
 **Qualità OCR/conversione**: possibili errori di battitura (es. rumore in testa su `Quaderno_6`); incrociare sempre con testo normativo ufficiale in `docs/Normative/`.
 

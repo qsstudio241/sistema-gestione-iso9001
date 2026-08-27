@@ -207,7 +207,7 @@
 |---------------|---------|-------------------|
 | `checklistInitializer.js` (legacy 26 domande) | **Rimosso/assente** - ADR-002 riferisce file obsoleto | `checklistTemplates.js`  la fonte FE attuale |
 | Allineamento quantitativo Conforma automatizzato | Gap analysis manuale | Parsing `Quaderni/Linea Guida Conforma 9001_2015.txt` (ADR-002 Opzione A non completata) |
-| `Quaderno_2_Linea_Guida_1090.txt` | File vuoto (0 byte) | Non impatta ISO 9001 cl. 4-10 |
+| `Quaderno_2_Linea_Guida_1090.txt` (+ md/json) | Digitalizzata 26/08/2026 | Non impatta ISO 9001 cl. 4-10 (contesto EN 1090) |
 | Tabella `norm_requirements` vs checklist UI | Due livelli distinti (ADR-010) | Seed `import-norms-from-markdown.js` - non equivale a copertura checklist |
 | `clauseRef` solo frontend | DB non ha colonna `clause_ref` per ISO 9001 (migration 042) | Mapping in `checklistTemplates.js` |
 

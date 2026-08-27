@@ -72,6 +72,7 @@ reale scelto, es. `C:\NormeISO_PDF\` oppure una cartella dentro OneDrive):
 | EN 10025-2:2019 | `Normative NORMA_00026_...md/.json` | `EN-10025-acciai-strutturali\BS EN 10025-2-2019.pdf` | Soglie S235–S500; estratto `docs/reference/EN-10025-2-acciai-strutturali.md` |
 | EN 10210-1:2006 | `Normative NORMA_00027_...md/.json` | `EN-10025-acciai-strutturali\BS EN 10210-1-2006.pdf` | Hollow a caldo; estratto `docs/reference/EN-10210-1-sezioni-cave.md` (17/08/2026) |
 | EN 10219-1:2006 | `Normative NORMA_00028_...md/.json` | `EN-10025-acciai-strutturali\BS EN 10219-1-2006.pdf` | Hollow a freddo; estratto `docs/reference/EN-10219-1-sezioni-cave.md` (17/08/2026) |
+| Quaderno 2 LG EN 1090 (Conforma) | `Quaderni/Quaderno_2_Linea_Guida_1090.{md,json,txt}` | `altre-norme\Quaderno_2_Linea_Guida_1090.pdf` | Digitalizzata 26/08/2026; guida Conforma Rev.0 Set 2015; schema `generic`; GAP pag. 3; **non** seed `norm_requirements` |
 | ISO 9712:2012 (archivio) | *(sostituita da `NORMA_00034` ed. 2021)* | `ISO-96xx-patentini\UNI EN ISO 9712_2012.pdf` | **PDF era committato per errore in Git — vedi nota sotto**; testo operativo = 2021 |
 | ISO 19011:2018 (archivio) | *(sostituita da `NORMA_00038` ed. 2026)* | `ISO-96xx-patentini\UNI EN ISO 19011_2018_ITA.pdf` | **PDF era committato per errore in Git — vedi nota sotto**; testo operativo = 2026 |
 
