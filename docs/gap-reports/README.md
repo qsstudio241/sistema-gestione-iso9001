@@ -21,5 +21,6 @@ Output persistente delle gap analysis normative (prompt in `docs/agent-tasks/GAP
 | `GAP_WPQR_T1T2_ALLUMINIO_YYYY-MM-DD.md` | WPQR: doppi range spessore FW (t1/t2) + norma alluminio (15614-2 / 9606-2) |
 | `GAP_WPQR_STUD_WELDING_PIASTRA_TUBO_YYYY-MM-DD.md` | WPQR: Stud Welding / prigioniero + Piastra–Tubo «entrambi» (campi vs ISO 14555) |
 | `GAP_CONSOLIDATO_YYYY-MM-DD.md` | Merge finale di tutti i report |
+| `AUDIT_PRODOTTO_E_PRIORITA_AI_YYYY-MM-DD.md` | Relazioni sessione: chiusura/gap review + priorità affidabilità AI + valutazione audit prodotto (non gap normativa formale) |
 
 I file possono essere versionati su Git per tracciare l'evoluzione della conformità nel tempo.
