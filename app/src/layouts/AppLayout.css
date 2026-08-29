@@ -510,10 +510,71 @@
 .bottom-nav-icon--text { font-size: 0.88rem; font-weight: 800; letter-spacing: 0.04em; }
 .bottom-nav-label { line-height: 1; font-weight: 500; }
 
+/* Hamburger: solo mobile (Gestione / Libreria e resto voci sidebar) */
+.layout-menu-btn {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  margin-right: 4px;
+  padding: 0;
+  border: none;
+  border-radius: var(--radius);
+  background: transparent;
+  color: var(--color-primary);
+  font-size: 1.35rem;
+  line-height: 1;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.layout-menu-btn:hover {
+  background: var(--color-active-bg);
+  color: var(--color-active-text);
+}
+
+.sidebar-mobile-backdrop {
+  display: none;
+}
+
 /* ─── Responsive ───────────────────────────────────────────────────────────── */
 
 @media (max-width: 768px) {
-  .sidebar { display: none; }
+  .layout-menu-btn { display: inline-flex; }
+
+  .sidebar {
+    display: flex;
+    flex-direction: column;
+    position: fixed;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    z-index: 400;
+    width: min(var(--sidebar-width), 86vw);
+    max-width: 280px;
+    transform: translateX(-105%);
+    transition: transform 0.2s ease;
+    box-shadow: none;
+  }
+
+  .sidebar.sidebar-mobile-open {
+    transform: translateX(0);
+    box-shadow: var(--shadow-md);
+  }
+
+  .sidebar-mobile-backdrop {
+    display: block;
+    position: fixed;
+    inset: 0;
+    z-index: 350;
+    border: none;
+    padding: 0;
+    margin: 0;
+    background: rgba(15, 23, 42, 0.45);
+    cursor: pointer;
+  }
+
   .bottom-nav { display: flex; }
 
   .layout-main {

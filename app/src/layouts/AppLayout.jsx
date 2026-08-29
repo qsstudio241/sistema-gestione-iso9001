@@ -100,6 +100,7 @@ function buildNavItems(user, alerts = {}) {
           { to: "/settings/users",    icon: "👥", label: "Utenti" },
           { to: "/settings/licenses", icon: "🔑", label: "Licenze moduli" },
           ...(isSuperadmin ? [{ to: "/settings/billing", icon: "💳", label: "Fatturazione" }] : []),
+          { to: "/settings/libreria", icon: "\uD83D\uDCDA", label: "Libreria" },
           { to: "/settings/import-jobs", icon: "📥", label: "Import PDF", licenseKey: "ai_import" },
           { to: "/settings/checklist",icon: "📋", label: "Checklist" },
         ] : []),
@@ -187,12 +188,27 @@ function BottomNav({ user, alerts }) {
 
 // ─── Sidebar (desktop) ────────────────────────────────────────────────────────
 
-function Sidebar({ navGroups, collapsed, onToggle, orgLogoDataUrl, orgName }) {
+function Sidebar({
+  navGroups,
+  collapsed,
+  onToggle,
+  orgLogoDataUrl,
+  orgName,
+  mobileOpen = false,
+  onNavigate,
+  onMobileClose,
+}) {
+  const showLabels = !collapsed || mobileOpen;
+
   return (
-    <aside className={`sidebar${collapsed ? " sidebar-collapsed" : ""}`} aria-label="Menu laterale">
+    <aside
+      className={`sidebar${collapsed && !mobileOpen ? " sidebar-collapsed" : ""}${mobileOpen ? " sidebar-mobile-open" : ""}`}
+      aria-label="Menu laterale"
+      id="app-sidebar"
+    >
       {/* Logo / titolo */}
       <div className="sidebar-logo">
-        {!collapsed && (
+        {showLabels && (
           <>
             {orgLogoDataUrl ? (
               <img src={orgLogoDataUrl} alt="" className="sidebar-org-logo" width={32} height={32} />
@@ -204,21 +220,33 @@ function Sidebar({ navGroups, collapsed, onToggle, orgLogoDataUrl, orgName }) {
             </span>
           </>
         )}
-        <button
-          className="sidebar-toggle"
-          onClick={onToggle}
-          title={collapsed ? "Espandi menu" : "Comprimi menu"}
-          aria-label={collapsed ? "Espandi menu" : "Comprimi menu"}
-        >
-          {collapsed ? "▶" : "◀"}
-        </button>
+        {mobileOpen ? (
+          <button
+            type="button"
+            className="sidebar-toggle sidebar-toggle-close"
+            onClick={onMobileClose}
+            title="Chiudi menu"
+            aria-label="Chiudi menu"
+          >
+            {"\u2715"}
+          </button>
+        ) : (
+          <button
+            className="sidebar-toggle"
+            onClick={onToggle}
+            title={collapsed ? "Espandi menu" : "Comprimi menu"}
+            aria-label={collapsed ? "Espandi menu" : "Comprimi menu"}
+          >
+            {collapsed ? "▶" : "◀"}
+          </button>
+        )}
       </div>
 
       {/* Gruppi di navigazione */}
       <nav className="sidebar-nav">
         {navGroups.map((group, gi) => (
           <div key={gi} className="sidebar-group">
-            {group.group && !collapsed && (
+            {group.group && showLabels && (
               <span className="sidebar-group-label">{group.group}</span>
             )}
             {group.items.map((item) => (
@@ -228,9 +256,10 @@ function Sidebar({ navGroups, collapsed, onToggle, orgLogoDataUrl, orgName }) {
                 exact={item.exact}
                 className={`sidebar-item${item.locked ? " sidebar-item-locked" : ""}`}
                 activeClassName="active"
+                onClick={onNavigate}
               >
                 <span className="sidebar-item-icon">{item.icon}</span>
-                {!collapsed && (
+                {showLabels && (
                   <>
                     <span className="sidebar-item-label">{item.label}</span>
                     {item.badge && (
@@ -239,10 +268,10 @@ function Sidebar({ navGroups, collapsed, onToggle, orgLogoDataUrl, orgName }) {
                     {item.locked && <span className="sidebar-lock">🔒</span>}
                   </>
                 )}
-                {collapsed && item.badge && (
+                {!showLabels && item.badge && (
                   <span className="sidebar-badge-sm">{item.badge > 9 ? "9+" : item.badge}</span>
                 )}
-                {collapsed && item.locked && (
+                {!showLabels && item.locked && (
                   <span className="sidebar-lock-sm">🔒</span>
                 )}
               </NavLink>
@@ -250,7 +279,7 @@ function Sidebar({ navGroups, collapsed, onToggle, orgLogoDataUrl, orgName }) {
           </div>
         ))}
       </nav>
-      {collapsed && orgLogoDataUrl ? (
+      {!showLabels && orgLogoDataUrl ? (
         <div className="sidebar-collapsed-brand" aria-hidden>
           <img src={orgLogoDataUrl} alt="" className="sidebar-org-logo-sm" width={28} height={28} />
         </div>
@@ -265,8 +294,11 @@ function AppLayoutInner({ children }) {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const [alerts, setAlerts] = useState({ documents: 0, complaints: 0 });
   const [orgLogoDataUrl, setOrgLogoDataUrl] = useState(null);
+
+  const closeMobileNav = useCallback(() => setMobileNavOpen(false), []);
 
   useEffect(() => {
     let cancelled = false;
@@ -333,14 +365,25 @@ function AppLayoutInner({ children }) {
   const navGroups = buildNavItems(user, alerts);
 
   return (
-    <div className={`app-layout${sidebarCollapsed ? " sidebar-is-collapsed" : ""}`}>
-      {/* Sidebar desktop */}
+    <div className={`app-layout${sidebarCollapsed ? " sidebar-is-collapsed" : ""}${mobileNavOpen ? " mobile-nav-open" : ""}`}>
+      {mobileNavOpen && (
+        <button
+          type="button"
+          className="sidebar-mobile-backdrop"
+          aria-label="Chiudi overlay menu"
+          onClick={closeMobileNav}
+        />
+      )}
+      {/* Sidebar desktop + drawer mobile (Gestione → Libreria e resto menu) */}
       <Sidebar
         navGroups={navGroups}
         collapsed={sidebarCollapsed}
         onToggle={() => setSidebarCollapsed((v) => !v)}
         orgLogoDataUrl={orgLogoDataUrl}
         orgName={user?.organization_name || ""}
+        mobileOpen={mobileNavOpen}
+        onNavigate={closeMobileNav}
+        onMobileClose={closeMobileNav}
       />
 
       {/* Area destra: header + contenuto + footer */}
@@ -348,6 +391,17 @@ function AppLayoutInner({ children }) {
         {/* Header */}
         <header className="layout-header">
           <div className="layout-header-left">
+            <button
+              type="button"
+              className="layout-menu-btn"
+              onClick={() => setMobileNavOpen(true)}
+              title="Apri menu"
+              aria-label="Apri menu"
+              aria-expanded={mobileNavOpen}
+              aria-controls="app-sidebar"
+            >
+              {"\u2630"}
+            </button>
             {orgLogoDataUrl ? (
               <img src={orgLogoDataUrl} alt="" className="layout-header-org-logo" width={36} height={36} />
             ) : null}

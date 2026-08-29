@@ -147,7 +147,7 @@ export function Link({ to, children, className, style, ...props }) {
 /**
  * <NavLink> — come Link ma aggiunge className "active" se il path corrisponde.
  */
-export function NavLink({ to, children, className = "", activeClassName = "active", exact = false, ...props }) {
+export function NavLink({ to, children, className = "", activeClassName = "active", exact = false, onClick, ...props }) {
   const { path } = useRouter();
   const { navigate } = useRouter();
   const isActive = exact ? pathnameOnly(path) === pathnameOnly(to) : pathMatchesRoute(path, to);
@@ -156,6 +156,7 @@ export function NavLink({ to, children, className = "", activeClassName = "activ
   const handleClick = (e) => {
     e.preventDefault();
     navigate(to);
+    if (typeof onClick === "function") onClick(e);
   };
   return (
     <a href={to} onClick={handleClick} className={fullClass} {...props}>

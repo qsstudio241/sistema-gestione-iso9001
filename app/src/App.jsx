@@ -37,6 +37,7 @@ const LicensesSettingsPage = React.lazy(() => import("./pages/LicensesSettingsPa
 const BillingDashboardPage = React.lazy(() => import("./pages/BillingDashboardPage"));
 const StudioSettingsPage = React.lazy(() => import("./pages/StudioSettingsPage"));
 const ImportJobsPage = React.lazy(() => import("./pages/ImportJobsPage"));
+const NormLibraryPage = React.lazy(() => import("./pages/NormLibraryPage"));
 const AnagrafichePage = React.lazy(() => import("./pages/AnagrafichePage"));
 const ContractReviewPage = React.lazy(() => import("./pages/ContractReviewPage"));
 const GapAnalysisPage = React.lazy(() => import("./pages/GapAnalysisPage"));
@@ -300,6 +301,14 @@ function AppContent() {
                 <ImportJobsPage />
               </BackWrapper>
             </LicensedRoute>
+          }
+        />
+        <Route
+          path="/settings/libreria"
+          element={
+            <BackWrapper>
+              <NormLibraryPage />
+            </BackWrapper>
           }
         />
       </Routes>
