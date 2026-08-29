@@ -141,31 +141,7 @@
     "standard_code": "ISO_14555_2025",
     "clause_ref": "3",
     "clause_title": "Terms and definitions",
-    "requirement_text": "For the purposes of this document, the terms and definitions given in ISO 3834-1, ISO 4063, ISO 14731, ISO 14732, ISO 15607 and ISO/TR 25901-3 and the following apply. ISO and IEC maintain terminological databases for use in standardization at the following addresses: — ISO Online browsing platform: available at https:// www .iso .org/ obp —3.1 IEC Electropedia: available at https:// www .electropedia .org/ stud f3a.s2tener to be attached by stud welding auxiliary material c3e.3ramic ferrules and shielding gases stud-welding operator operating personnel for stud-welding equipment Note 1 to entry: In special cases (e.g. mass production at the manufacturer’s factory), the welding can be carried out by s3u.4itable auxiliary personnel, appropriately trained and supervised. stud diameter d stud (3.1) nominal diameter Note 1 to entry: See ISO 13918. N3.o5te 2 to entry: For non-round studs, the cross-section can be converted to an equivalent diameter. welding diameter d w diameter of the stud at the base before welding N3.o6te 1 to entry: For non-round studs, the cross-section can be converted to an equivalent diameter. weld zone j3o.i7ning zone in the area of the nominal stud cross-section current intensity I root-mean-square (RMS) value of the welding current in the steady state during the burning time of the arc Note 1 to entry: Current intensity is not applicable to capacitor discharge.\n\n\n3.8 welding time t w t3i.m9e difference between the ignition and the final extinction of the main arc lift L distance between the stud tip and the work piece surface with the stud-lifting mechanism in position and activated N3.o1t0e 1 to entry: For tip ignition, this definition applies to the ignition gap. plunge stud axial movement of the (3.1) into the workpiece-side melt, measured from the top of the workpiece before the start of the welding process, i.e. plunge equals axial travel of the piston at the end of the welding p3r.1o1cess minus lift protrusion P stud <unregulated lifting mechanism> distance between the tip of the (3.1) and the face of the support device before contact with the work piece N3.o1t2e 1 to entry: A spring-loaded lifting mechanism is an unregulated lifting mechanism. arc blow stud m3.1ag3netic deflection of the arc from the axial direction of the (3.1) fatigue loading set of typical load events described by the positions or movements of loads, their variation in intensity and t3h.1e4ir frequency and sequence of occurrence through-deck stud-welding application where shear connectors are welded to a steel structure through thin steel sheet with a thickness o3f.1 le5ss than 3 mm weld pool protection u3s.1e6 of either ceramic ferrules or shielding gas to protect the weld pool from the atmosphere wetted welding u3s.1e7d of wetting agents to improve the visual appearance of the weld magnetic equipment magnetic device by using an external magnetic field to influence the motion of the arc"
-  },
-  {
-    "standard_code": "ISO_14555_2025",
-    "clause_ref": "4",
-    "clause_title": "Symbols and abbreviated terms",
-    "requirement_text": ""
-  },
-  {
-    "standard_code": "ISO_14555_2025",
-    "clause_ref": "4.1",
-    "clause_title": "Symbols",
-    "requirement_text": "For the purposes of this document, the following symbols apply.\n\n\nC d capacitance (expressed in mF) d stud diameter (expressed in mm) hw welding diameter (expressed in mm) I length of the threaded part of the nut L current intensity (expressed in A) P lift t protrusion t thickness of plate Tw welding time (expressed in ms or s) U torque (expressed in Nm) E charging voltage (expressed in V) α charging energy (expressed in Ws) bending angle (expressed in °)"
-  },
-  {
-    "standard_code": "ISO_14555_2025",
-    "clause_ref": "4.2",
-    "clause_title": "Abbreviated terms",
-    "requirement_text": "For the purposes of this document, the following abbreviated terms apply. CF ceramic ferrule HAZ heat-affected zone NP no protection PA flat welding position PC horizontal welding position PE overhead welding position pWPS preliminary welding procedure specification SG shielding gas WPS welding procedure specification WPQR welding procedure qualification record"
-  },
-  {
-    "standard_code": "ISO_14555_2025",
-    "clause_ref": "5",
-    "clause_title": "Technical review",
-    "requirement_text": "When a technical review is required by an application standard, by specification or by use of ISO 3834-2, ISO 3834-3 or ISO 3834-4, the manufacturer shall check, as appropriate, the following aspects:\n\na) the accessibility and welding position of the stud weld;\n\nb) the nature of the surface and the collar shape of the welded joint;\n\nc) materials and combinations of materials including decking material where the through-deck technique\n\nis being proposed;\n\n\nd) the ratio of stud diameter to parent material thickness (avoidance of damage on the reverse side of the\n\nparent material);\n\ne) dimensions and details of the weld preparation and of the finished weld, including the nature of the stud\n\nand parent-metal surfaces, positional and angular accuracy and the length tolerance of the welded stud;\n\nf) the use of special techniques to avoid damage to the reverse side of the parent material;\n\ng) techniques to assure the angular position of the welded stud.\n\nNOTE Consideration is paid to the multi-axial stress state arising from localized heating/cooling. This stress concentration reduces the fatigue strength of a component with welded studs."
+    "requirement_text": "For the purposes of this document, the terms and definitions given in ISO 3834-1, ISO 4063, ISO 14731, ISO 14732, ISO 15607 and ISO/TR 25901-3 and the following apply. ISO and IEC maintain terminological databases for use in standardization at the following addresses: — ISO Online browsing platform: available at https:// www .iso .org/ obp —3.1 IEC Electropedia: available at https:// www .electropedia .org/ stud f3a.s2tener to be attached by stud welding auxiliary material c3e.3ramic ferrules and shielding gases stud-welding operator operating personnel for stud-welding equipment Note 1 to entry: In special cases (e.g. mass production at the manufacturer’s factory), the welding can be carried out by s3u.4itable auxiliary personnel, appropriately trained and supervised. stud diameter d stud (3.1) nominal diameter Note 1 to entry: See ISO 13918. N3.o5te 2 to entry: For non-round studs, the cross-section can be converted to an equivalent diameter. welding diameter d w diameter of the stud at the base before welding N3.o6te 1 to entry: For non-round studs, the cross-section can be converted to an equivalent diameter. weld zone j3o.i7ning zone in the area of the nominal stud cross-section current intensity I root-mean-square (RMS) value of the welding current in the steady state during the burning time of the arc Note 1 to entry: Current intensity is not applicable to capacitor discharge.\n\n\n3.8\nwelding time\ntw\ntime difference between the ignition and the final extinction of the main arc\n3.9\nlift\nL\ndistance between the stud tip and the work piece surface with the stud-lifting mechanism in position and\nactivated\nNote 1 to entry: For tip ignition, this definition applies to the ignition gap.\n3.10\nplunge\naxial movement of the stud (3.1) into the workpiece-side melt, measured from the top of the workpiece\nbefore the start of the welding process, i.e. plunge equals axial travel of the piston at the end of the welding\nprocess minus lift\n3.11\nprotrusion\nP\n<unregulated lifting mechanism> distance between the tip of the stud (3.1) and the face of the support\ndevice before contact with the work piece\nNote 1 to entry: A spring-loaded lifting mechanism is an unregulated lifting mechanism.\n3.12\narc blow\nmagnetic deflection of the arc from the axial direction of the stud (3.1)\n3.13\nfatigue loading\nset of typical load events described by the positions or movements of loads, their variation in intensity and\ntheir frequency and sequence of occurrence\n3.14\nthrough-deck stud-welding\napplication where shear connectors are welded to a steel structure through thin steel sheet with a thickness\nof less than 3 mm\n3.15\nweld pool protection\nuse of either ceramic ferrules or shielding gas to protect the weld pool from the atmosphere\n3.16\nwetted welding\nused of wetting agents to improve the visual appearance of the weld\n3.17\nmagnetic equipment\nmagnetic device by using an external magnetic field to influence the motion of the arc\n4\t Symbols and abbreviated terms\n4.1\t Symbols\nFor the purposes of this document, the following symbols apply.\nBS EN ISO 14555:2025\n\n\nC\ncapacitance (expressed in mF)\nd\nstud diameter (expressed in mm)\ndw\nwelding diameter (expressed in mm)\nh\nlength of the threaded part of the nut\nI\ncurrent intensity (expressed in A)\nL\nlift\nP\nprotrusion\nt\nthickness of plate\ntw\nwelding time (expressed in ms or s)\nT\ntorque (expressed in Nm)\nU\ncharging voltage (expressed in V)\nE\ncharging energy (expressed in Ws)\nα\nbending angle (expressed in °)\n4.2\t Abbreviated terms\nFor the purposes of this document, the following abbreviated terms apply.\nCF\nceramic ferrule\nHAZ\nheat-affected zone\nNP\nno protection\nPA\nflat welding position\nPC\nhorizontal welding position\nPE\noverhead welding position\npWPS\npreliminary welding procedure specification\nSG\nshielding gas\nWPS\nwelding procedure specification\nWPQR\nwelding procedure qualification record\n5\t Technical review\nWhen a technical review is required by an application standard, by specification or by use of ISO 3834-2,\nISO 3834-3 or ISO 3834-4, the manufacturer shall check, as appropriate, the following aspects:\na)\t the accessibility and welding position of the stud weld;\nb)\t the nature of the surface and the collar shape of the welded joint;\nc)\nmaterials and combinations of materials including decking material where the through-deck technique\nis being proposed;\n﻿\nBS EN ISO 14555:2025\n\n\nd) the ratio of stud diameter to parent material thickness (avoidance of damage on the reverse side of the\n\nparent material);\n\ne) dimensions and details of the weld preparation and of the finished weld, including the nature of the stud\n\nand parent-metal surfaces, positional and angular accuracy and the length tolerance of the welded stud;\n\nf) the use of special techniques to avoid damage to the reverse side of the parent material;\n\ng) techniques to assure the angular position of the welded stud.\n\nNOTE Consideration is paid to the multi-axial stress state arising from localized heating/cooling. This stress concentration reduces the fatigue strength of a component with welded studs."
   },
   {
     "standard_code": "ISO_14555_2025",
@@ -453,19 +429,7 @@
     "standard_code": "ISO_14555_2025",
     "clause_ref": "10.2.6",
     "clause_title": "Acceptance criteria",
-    "requirement_text": "The acceptance criteria described in Clause 12 shall be fulfilled unless otherwise specified.\n\n\n**Nota tecnica:** testo di questa pagina ricostruito con motore alternativo per problema di ordinamento caratteri."
-  },
-  {
-    "standard_code": "ISO_14555_2025",
-    "clause_ref": "5",
-    "clause_title": "(optional instead",
-    "requirement_text": "of tensile testing) — — — Macro examination (off-set 90° through the centre of the stud) — 2 - 2 2a — Total number of studs to be tested 10"
-  },
-  {
-    "standard_code": "ISO_14555_2025",
-    "clause_ref": "5",
-    "clause_title": "(12a)",
-    "requirement_text": "30 10 a Only when welding boiler pins on pipes intended for pressure loading."
+    "requirement_text": "The acceptance criteria described in Clause 12 shall be fulfilled unless otherwise specified.\n\n\n**Nota tecnica:** Tabella 1 ricostruita con pymupdf (2° passaggio). La tabella markdown invertita del 1° passaggio è stata rimossa.\n\nTable 1 — Examination and testing of test pieces\nType of test\nExamination and testing of test pieces welded with weld pool protection\nExamination and testing of test pieces\nwelded without weld pool protection\nNumber of studs to be tested\nApplication ≤ 100 °C\nComprehensive quality\nrequirements in accordance with\nISO 3834-2\nApplication ≤ 100 °C\nStandard and elementa-\nry quality\n requirements in accord-\nance with ISO 3834-3 and\nISO 3834-4\nApplication > 100 °C\nAll quality\nrequirements\nin accordance with\nISO 3834-2,\nISO 3834-3 and\nISO 3834-4\nApplication ≤ 100 °C\nComprehensive\nquality\nrequirements in\naccordance with\nISO 3834-2\nApplication ≤ 100 °C\nStandard and ele-\nmentary quality\nrequirements in\naccordance with\nISO 3834-3 and ISO\n3834-4\ndw ≤ 12 mm\ndw > 12 mm\ndw ≤ 12 mm\ndw > 12 mm\nAll diameters (dw)\nAll diameters (dw)\nVisual examination\nAll\nBend testing\n[see Figure 2 a), b) or c)]\n10\n(60° bending angle)\n5\n(60° bending angle)\n10\n(60° bending angle)\n5\n(30° bending angle)\n20\n(60° bending angle)\n10\n(30° bending angle)\nBend testing by means of torque\nwrench (see Figure 3, applies to\nboiler pins only)\nNot applied\n10\nNot applied\nTensile testing\n(see Figures 4 or 5 )\n—\n5\n—\n—\n10\n—\nRadiographic examination\nNot applied\n5 (optional instead\nof tensile testing)\n—\n—\n—\nMacro examination (off-set 90°\nthrough the centre of the stud)\n—\n2\n-\n2\n2a\n—\nTotal number of studs to be tested\n10\n10\n5 (12a)\n30\n10\na\nOnly when welding boiler pins on pipes intended for pressure loading.\n﻿\nBS EN ISO 14555:2025"
   },
   {
     "standard_code": "ISO_14555_2025",
@@ -501,31 +465,13 @@
     "standard_code": "ISO_14555_2025",
     "clause_ref": "10.2.8.4",
     "clause_title": "Conditions related to the materials in use (for similar materials of parent metal and stud)",
-    "requirement_text": "Qualification by welding procedure tests carried on parent metal of the material group 1 or 2, in accordance with ISO/TR 15608, covers the steels with the same or lower specified yield strength. Welding procedure tests cover all materials of the same material group in accordance with ISO/TR 15608 with the following addition.\n\na) Up to 13 mm stud diameter (or equivalent cross section), material groups 8 or 10 cover material group 1\n\nand sub group 2.1 and vice versa.\n\nb) For specified welding time below 10 ms, material group 8 covers material groups 1 to 6 and sub group"
-  },
-  {
-    "standard_code": "ISO_14555_2025",
-    "clause_ref": "11.1",
-    "clause_title": "and vice versa.",
-    "requirement_text": ""
+    "requirement_text": "Qualification by welding procedure tests carried on parent metal of the material group 1 or 2, in accordance with ISO/TR 15608, covers the steels with the same or lower specified yield strength. Welding procedure tests cover all materials of the same material group in accordance with ISO/TR 15608 with the following addition.\n\na) Up to 13 mm stud diameter (or equivalent cross section), material groups 8 or 10 cover material group 1 and sub group 2.1 and vice versa.\n\nb) For specified welding time below 10 ms, material group 8 covers material groups 1 to 6 and sub group 11.1 and vice versa."
   },
   {
     "standard_code": "ISO_14555_2025",
     "clause_ref": "10.2.8.5",
     "clause_title": "Conditions related to the materials in use (for dissimilar materials of parent metal and stud)",
-    "requirement_text": "a) A qualification for specified welding time beyond 100 ms is required.\n\nb) For specified welding time up to 100 ms, material group 8 or 10 covers material groups 1 and sub group"
-  },
-  {
-    "standard_code": "ISO_14555_2025",
-    "clause_ref": "2.1",
-    "clause_title": "and vice versa.",
-    "requirement_text": "c) For specified welding time below 10 ms, material group 8 covers material groups 1 to 6 and sub group"
-  },
-  {
-    "standard_code": "ISO_14555_2025",
-    "clause_ref": "11.1",
-    "clause_title": "and vice versa.",
-    "requirement_text": "The risk of hardening effects should be taken into account."
+    "requirement_text": "a) A qualification for specified welding time beyond 100 ms is required.\n\nb) For specified welding time up to 100 ms, material group 8 or 10 covers material groups 1 and sub group 2.1 and vice versa.\n\nc) For specified welding time below 10 ms, material group 8 covers material groups 1 to 6 and sub group 11.1 and vice versa.\n\n\nThe risk of hardening effects should be taken into account."
   },
   {
     "standard_code": "ISO_14555_2025",
@@ -559,8 +505,8 @@
   },
   {
     "standard_code": "ISO_14555_2025",
-    "clause_ref": "10.2.8.1",
-    "clause_title": "1 Preheating",
+    "clause_ref": "10.2.8.11",
+    "clause_title": "Preheating",
     "requirement_text": "Welding procedure specifications that have been qualified by a welding procedure test without preheating are also valid for those for welding with preheating, but not vice versa."
   },
   {
@@ -922,24 +868,6 @@
     "clause_ref": "14.8",
     "clause_title": "Calibration of the measuring and testing equipment",
     "requirement_text": "In the case of comprehensive quality requirements in accordance with ISO 3834-2 or with standard quality requirements in accordance with ISO 3834-3, the manufacturer shall be responsible for the appropriate calibration of inspection, measuring and testing equipment. All equipment shall be suitably controlled and shall be calibrated at specified intervals (see ISO 17662). See also Annex A. NOTE In the case of arc stud-welding processes with welding time setting beyond 10 ms, this applies particularly to current intensity, welding time measurement and proper function of the welding gun (lift and plunge movement)."
-  },
-  {
-    "standard_code": "ISO_14555_2025",
-    "clause_ref": "3",
-    "clause_title": "to 25 PA",
-    "requirement_text": "Welding with ceramic c"
-  },
-  {
-    "standard_code": "ISO_14555_2025",
-    "clause_ref": "3",
-    "clause_title": "to 20 PE 0,25 , but not less than 1 mm",
-    "requirement_text": "ferrule (CF) e"
-  },
-  {
-    "standard_code": "ISO_14555_2025",
-    "clause_ref": "3",
-    "clause_title": "to 16 (19 ) PC d",
-    "requirement_text": "Welding with shielding 3 to 16 PA c d 0,125 , but not less than 1 mm gas (SG) 3 to 10 PC d Welding without weld 3 to 10 PA a d 0,1 , but not less than approximately 0,5 mm pool protection (NP) 3 to 10, all welding positions a The welding time should not exceed 100 ms. b In accordance with ISO 6947. c The minimum parent material thickness avoids the risk of burning through the parent material. Other application requirements may call for greater thicknesses. d Provided the welding time does not exceed approximately 50 ms. e With special ceramic ferrules only.\n\n| Kind of weld pool protection | Welding diameter, d , and welding positionsb mm | Minimum parent metal thickness |\n| --- | --- | --- |\n| Welding with ceramic | w 3 to 25 PA | mm d c |\n| ferrule (CF) | 3 to 20 PE e 3 to 16 (19 ) PC | 0,25 , but not less than 1 mm d |\n| Welding with shielding gas (SG) | 3 to 16 PA d 3 to 10 PC | c 0,125 , but not less than 1 mm d |\n| Welding without weld 3 to 10 PA a d 0,1 , but not less than approximately 0,5 mm pool protection (NP) 3 to 10, all welding positions a The welding time should not exceed 100 ms. b In accordance with ISO 6947. c The minimum parent material thickness avoids the risk of burning through the parent material. Other application requirements may call for greater thicknesses. d Provided the welding time does not exceed approximately 50 ms. |  |  |"
   },
   {
     "standard_code": "ISO_14555_2025",

@@ -69,12 +69,13 @@ Regole **OK** (prosa §10.2.8, pdfplumber pag. 21–22): durata/prova annuale; f
 
 **GAP** (non inventati, HITL sul PDF): Tabella 1 pag. 20; §4.1 simboli; §10.2.8.5 (a); heading OCR 11.1; §10.2.8.11 numerazione; Tabella B.1 formule 0,25×d e status normativo; definizione through-deck «3 mm»; codici 4063 stud.
 
-## Dopo questa slice (non ora)
+## Dopo questa slice
 
-- HITL revisione estratto (committente/Mason)
-- STUD-3-B: codifica range + eventuali processi 4063 stud (brief nuovo, dopo OK HITL)
+- HITL estratto **chiuso** 29/08/2026 (2° passaggio OCR + Dubbi 1–3: §10.2.8.5 a, 4063, **Tabella 2**).
+- **Prossimo codice: STUD-3-B include Table 2** (accettazione boiler pins 8→40 / 10→60 / 12→85 Nm + range §10.2.8). Brief nuovo su slot libero quando si lancia il deputy — non backlog permanente.
+- 4063: solo indicazione processo; niente 78x inventati.
 
 ## Bozza hub (dopo merge)
 
-- Roadmap: «estratto 14555 STUD-3-A pronto; range codice dopo HITL»
-- Backlog stream STUD: STUD-3-A fatto; STUD-3-B in coda
+- Roadmap: «HITL 14555 chiuso (Tabella 2 inclusa); prossimo = STUD-3-B codice»
+- Backlog stream STUD: STUD-3-A fatto; STUD-3-B = prossimo (include Tabella 2)
