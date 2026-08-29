@@ -1,15 +1,13 @@
-# DEPUTYTASK — STUD-2: ingest AI WPQR stud / P+T / doppio materiale
+# DEPUTYTASK — STUD-3-B: range WPQR stud ISO 14555 + accettazione Tabella 2 boiler pins
 
-**Stato:** CHIUSO — TEST OK  
-**Aperto:** 26/08/2026  
-**Chiuso:** 26/08/2026  
-**Branch:** `cursor/wpqr-stud-ingest-166d`  
-**PR:** https://github.com/qsstudio241/sistema-gestione-iso9001/pull/590  
-**Stream:** [`DEPUTYTASK_WPQR_STUD.md`](DEPUTYTASK_WPQR_STUD.md) (STUD-1 **CHIUSO** #585)  
+**Stato:** APERTO  
+**Aperto:** 29/08/2026  
+**Stream:** [`DEPUTYTASK_WPQR_STUD.md`](DEPUTYTASK_WPQR_STUD.md) (STUD-1 #585, STUD-2 #590, STUD-3-A #589 **CHIUSI**)  
 **Report:** [`docs/gap-reports/GAP_WPQR_STUD_WELDING_PIASTRA_TUBO_2026-08-25.md`](../gap-reports/GAP_WPQR_STUD_WELDING_PIASTRA_TUBO_2026-08-25.md)  
-**Dipende da:** STUD-1 **CHIUSO** (campi DB/FE/schema già in prod, mig. 159)  
-**Rischio:** Medio — prompt/schema ingest + mapping review→DB; **niente** auth/sync/migrazioni distruttive / range 14555  
-**Parallelo a:** STUD-3-A su [`DEPUTYTASK1.md`](DEPUTYTASK1.md) — **file disgiunti** (qui solo ingest; lì solo estratto docs).
+**Estratto (HITL chiuso 29/08):** [`docs/reference/ISO-14555-2025-range-validita-WPQR.md`](../reference/ISO-14555-2025-range-validita-WPQR.md)  
+**Dipende da:** STUD-3-A + HITL extract/Tabella 2 **chiusi**; PR second pass #596 allineata su `main`  
+**Rischio:** Medio — motorino regole additivo FE/BE + wiring minimo WPQR; **niente** auth/sync/migrazioni distruttive; **niente** codici 4063 inventati  
+**Slot precedente:** STUD-2 CHIUSO (ingest)
 
 > **Allineamento Git (autonomo)**: `git fetch origin main` + `git pull origin main` prima di eseguire. **Non** chiedere al committente.  
 > Comando: `Leggi docs/agent-tasks/DEPUTYTASK.md ed eseguilo. Chiudi con TEST OK o FIX NON APPLICABILI.`
@@ -18,63 +16,69 @@
 
 ```text
 Fonti Markdown:
-- Coperte: ISO 15614-1 (NORMA_00019 + estratto range); STUD-1 campi (SW, qualifying_element,
-  diameter_*, base_material_*_2, product_type P+T); schema wpqr già esteso in documentTypeSchemas
-- Mancanti per QUESTA slice: niente di bloccante — range 14555 = STUD-3 (altro slot)
-- Si parte su: raffinare prompt + normalizzazione ingest così che da PDF/verbale Mason
-  escano SW, elemento, D prigioniero, PM2, P+T senza inventare soglie 14555
+- Coperte: ISO-14555-2025-range-validita-WPQR.md (§10.2.8.1–12, Tabella 2 HITL:
+  ø 8→40 Nm, 10→60 Nm, 12→85 Nm; criterio §12.3 OR Table 2); NORMA_00033;
+  pattern weldingQualificationRules15614*.js
+- Mancanti: catalogo ISO 4063 stud (78x) — FUORI scope (HITL: solo indicazione processo)
+- Si parte su: motorino range §10.2.8 + accettazione Tabella 2; VIETATO inventare 783/784/785
 ```
 
 ## Perché
 
-STUD-1 ha i campi in form/DB. L’ingest AI può ancora trattare stud come FW generico, confondere diametro tubo vs prigioniero, o non estrarre Parent Metal 2 / `qualifying_element` / `P+T`. STUD-2 chiude il percorso **PDF → revisione → commit** per quei campi.
+STUD-3-A ha l’estratto; HITL ha chiuso GAP e Tabella 2. Manca il codice: oggi UI/WPS applicano ancora logica 15614 (Tabella 7/9) anche dove non compete a uno stud 14555. STUD-3-B codifica le regole validate.
+
+## Obiettivo
+
+Motorino `weldingQualificationRules14555` (FE + mirror BE) da estratto già validato:
+
+1. **Sezione stud** (§10.2.8.8): una prova → solo quella sezione; due prove → intervallo tra le sezioni (+ tutte le forme).
+2. **Spessore parent** (§10.2.8.6): tutti gli spessori se pWPS applicabile — **non** Tabella 7 15614.
+3. **Posizione** (§10.2.8.9): ramo `tw > 100 ms` vs `tw ≤ 100 ms`.
+4. **Protezione bagno** (§10.2.8.12): CF / SG / NP (NP copre SG, non il contrario).
+5. **Materiali** (§10.2.8.4 / 10.2.8.5 a–c) come da HITL (per **a** dissimili: `tw > 100 ms` → qualifica dedicata, nessuna matrice inventata).
+6. **Through-deck** (§10.2.8.7 + §3.14): lastra più spessa copre più sottili; soglia lastra **&lt; 3 mm**.
+7. **Accettazione boiler pins Tabella 2**: 8→40, 10→60, 12→85 Nm; criterio **§12.3 OR Table 2** (salvo diversa specifica).
+
+Wiring minimo: non applicare range 15614 quando norma = 14555 (e tipicamente `joint_type=SW`); opzione norma 14555 in form WPQR se manca.
 
 ## DoD
 
-1. Prompt / `aiExpectedSchema` (BE + mirror FE se presente): istruzioni esplicite per `joint_type=SW`, `qualifying_element`, diametro prigioniero se SW, `base_material_group_2` / `base_material_spec_2`, `product_type=P+T` quando dichiarato «entrambi».
-2. `wpqrIngest.service.js`: normalizzazione robusta (sinonimi stud/prigioniero → SW o qualifying_element; non forzare FW; non calcolare range 14555).
-3. Test jest mirati: almeno un caso SW + PM2 e un caso P+T; regressione BW/FW/P/T.
-4. Completeness manual-edit / reprocessable: se aggiungi chiavi AI, allinea whitelist (CI `manualEditCompletenessCheck` / pattern STUD-1).
-5. **Niente** motorino range ISO 14555; **niente** tocco a `WeldingProceduresPage.jsx` salvo bug banale di schema condiviso (preferire solo `documentTypeSchemas` + ingest).
-6. L1: jest mirati backend + eventuale vitest se tocchi FE schema; `npm run build` in `app/` se tocchi `app/`.
-7. Brief **CHIUSO — TEST OK**; spunta backlog in stream STUD.
+1. File regole FE+BE sincronizzati + test L1 (FE vitest mirato e/o BE jest) verdi.
+2. Nessun codice 4063 stud inventato in `weldingProcesses4063.js`.
+3. `deploy-manifest.json` aggiornato se nuovo `.js` in `backend/src/data/`.
+4. Build `app/` OK se tocchi FE.
+5. Brief **CHIUSO — TEST OK** (o handoff se non chiudi).
 
 ## File previsti
 
-- `backend/src/services/wpqrIngest.service.js`
-- `backend/src/services/wpqrIngest.service.test.js`
-- `backend/src/data/documentTypeSchemas.js`
-- `app/src/data/documentTypeSchemas.js` (solo se mirror prompt/schema)
-- `backend/src/data/reprocessableFields.js` / test completeness **solo se** nuove chiavi AI
+- `app/src/data/weldingQualificationRules14555.js` (**nuovo**)
+- `backend/src/data/weldingQualificationRules14555.js` (**nuovo**, mirror)
+- `app/src/tests/weldingQualificationRules14555.test.js` (**nuovo**)
+- `backend/src/data/weldingQualificationRules14555.test.js` (**nuovo**, opzionale se pattern BE)
+- `backend/scripts/deploy-manifest.json` (riga data)
+- `app/src/pages/WeldingProceduresPage.jsx` (opzione norma 14555 + non applicare calc 15614 su 14555)
+- eventuale `backend/src/services/wpsGenerator.service.js` (ramo spessore 14555, minimo)
 - `docs/agent-tasks/DEPUTYTASK.md` (questo brief)
-- `docs/agent-tasks/DEPUTYTASK_WPQR_STUD.md` (riga backlog STUD-2)
+- `docs/agent-tasks/DEPUTYTASK_WPQR_STUD.md` (riga STUD-3-B)
 
 ## Cosa NON toccare
 
-- `DEPUTYTASK1.md` / STUD-3-A / `docs/Normative/NORMA_00033*` (scrittura) / nuovo file range 14555 in `docs/reference/`
-- `WeldingProceduresPage.jsx` (form STUD-1 già fatto) — evita conflitto parallelo
-- `wpsGenerator.service.js` / regole range / catalogo `weldingProcesses4063.js` (STUD-3-B o slice dopo estratto)
-- Auth, JWT, sync, migrazioni SQL
-- GUIDA / roadmap § Stato attuale (c’è parallelo STUD-3-A + eventuale fix CND) — bozza hub **dopo merge**
-- CND / NDT
+- Inventare famiglia 78x in `weldingProcesses4063.js`
+- Auth / sync / JWT / migrazioni distruttive
+- Seed VPS `norm_requirements` (non richiesto)
+- CND / NC / Qualifiche / Material Compliance
+- Usare Annex B (informative) come range validità al posto di §10.2.8
+- GUIDA / roadmap § Stato attuale se parallelo (bozza nel brief; sync dopo merge)
+- `DEPUTYTASK1.md`… (altri slot)
 
 ## Verifica
 
-- [x] Ingest SW: campi stud valorizzati in review/mapping senza inventare range
-- [x] Regressione BW/FW e product_type P|T
-- [x] L1 verdi; brief CHIUSO — TEST OK
+- [ ] Test regole: sezione 1/2 prove; spessore «tutti»; posizioni tw; CF/SG/NP; materiali a–c; through-deck; Tabella 2 8/10/12
+- [ ] Nessun 783/784/785 nuovo nel catalogo
+- [ ] L1 + build se FE
+- [ ] PR codice; brief chiuso
 
-## Esito (26/08/2026)
+## Bozza hub (dopo merge se parallelo)
 
-Prompt FE+BE: SW ≠ FW, D1 = diametro prigioniero, PM2, P+T solo se dichiarato «entrambi», vietato inventare range 14555.
-
-Normalizzazione ingest (`wpqrIngest.service.js`): sinonimi stud/prigioniero → SW (anche se l'AI ha messo FW); `entrambi`/`piastra e tubo` → P+T; D1 dal testo se manca il diametro; SW non usa Tabella 7 BW. Fallback regole: `extractJointType` riconosce SW prima di FW.
-
-Nessuna chiave AI nuova (whitelist STUD-1 già ok). Nessun motorino 14555. `WeldingProceduresPage.jsx` non toccato. GUIDA/roadmap: sync **dopo merge** (parallelo STUD-3-A).
-
-**L1:** jest 58 pass (`wpqrIngest` + extractors + encoding repair + completeness); `npm run build` in `app/` OK.
-
-## Bozza hub (dopo merge, se c’era parallelo)
-
-- Roadmap: riga STUD-2 CHIUSO + PR
-- GUIDA: una riga «ingest distingue SW ≠ FW; diametro contestuale»
+- Roadmap: «STUD-3-B range 14555 + Tabella 2 in codice»
+- Stream STUD: STUD-3-B CHIUSO
