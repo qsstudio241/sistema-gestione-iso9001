@@ -61,6 +61,7 @@ Deploy/SSH: [how-to/deploy.md](docs/how-to/deploy.md) + [ACCESSO_DEPLOY_AGENTS.m
 | Anagrafiche aziende | `backend/src/controllers/company.controller.js`, `app/src/pages/AnagrafichePage.jsx`, `app/src/pages/CompanyDetailPage.jsx` |
 | Personale azienda | `backend/src/controllers/companyPersonnel.controller.js`, `docs/adr/ADR-012-company-personnel-anagrafica.md` |
 | Registro documenti / scadenze | `backend/src/controllers/document.controller.js`, `app/src/components/DocumentRegistry.jsx`, `app/src/pages/DeadlinesPage.jsx` |
+| Libreria (Gestione — fonti riferimento AI) | `app/src/pages/NormLibraryPage.jsx`, `docs/agent-tasks/PLAN_LIBRERIA_NORME_SLICES.md` |
 | Riesame di direzione | `backend/src/controllers/managementReviews.controller.js`, `app/src/pages/ManagementReviewsPage.jsx` |
 | Riesame requisiti / contratto | `backend/src/controllers/contractReview.controller.js`, `app/src/pages/ContractReviewPage.jsx` |
 | Ingest AI / import PDF | `backend/src/controllers/ingestStaging.controller.js`, `backend/src/data/documentTypeSchemas.js`, `app/src/data/documentTypeSchemas.js` |

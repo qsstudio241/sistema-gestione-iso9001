@@ -100,6 +100,7 @@ function buildNavItems(user, alerts = {}) {
           { to: "/settings/users",    icon: "👥", label: "Utenti" },
           { to: "/settings/licenses", icon: "🔑", label: "Licenze moduli" },
           ...(isSuperadmin ? [{ to: "/settings/billing", icon: "💳", label: "Fatturazione" }] : []),
+          { to: "/settings/libreria", icon: "\uD83D\uDCDA", label: "Libreria" },
           { to: "/settings/import-jobs", icon: "📥", label: "Import PDF", licenseKey: "ai_import" },
           { to: "/settings/checklist",icon: "📋", label: "Checklist" },
         ] : []),
