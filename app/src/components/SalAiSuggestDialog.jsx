@@ -1,17 +1,22 @@
 /**
- * SalAiSuggestDialog - SAL Fase 5-A
+ * SalAiSuggestDialog - SAL Fase 5-A + S2b
  * Mostra le proposte di stato generate dall'AI dalle evidenze collegate e chiede
  * conferma umana (Accetta / Modifica / Rifiuta). L'AI NON scrive mai lo stato:
  * la scrittura avviene solo su "Accetta" tramite upsertStatus (updateGapStatus).
+ *
+ * S2b: se manca evidenza, mostra tipo tipico + candidati (collega / carica / ignora).
+ * Nessuna write su evidence_document_ids senza click Collega.
  *
  * Riuso confidenza adattiva del pattern IngestReviewDialog:
  *  - confidenza alta  -> valore readonly con spunta + pulsante Modifica
  *  - confidenza media/bassa -> select stato subito editabile ed evidenziato
  */
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { ConfidenceBadge } from './IngestReviewDialog';
 import AiDisclaimer from './AiDisclaimer';
+import { Link } from '../contexts/RouterContext';
+import { buildDocumentRegistryPath } from '../utils/documentRegistryUrl';
 import {
   SAL_STATUS_OPTIONS,
   SAL_STATUS_LABEL,
@@ -32,17 +37,115 @@ function CoverageBadge({ level }) {
   return <span className={`sal-ai-coverage ${meta.className}`}>{meta.label}</span>;
 }
 
-function initItemState(suggestions) {
+function suggestionHideKey(suggestion) {
+  return suggestion?.normRequirementId ?? suggestion?.clauseRef ?? null;
+}
+
+function initItemState(suggestions, hiddenMissingKeys) {
   const state = {};
   for (const s of suggestions) {
     const highConfidence = s.confidence === 'high' && s.suggestedStatus;
+    const hideKey = suggestionHideKey(s);
     state[s.normRequirementId] = {
       status: s.suggestedStatus || 'discussed',
       editing: !highConfidence, // media/bassa -> subito editabile
       dismissed: false,
+      missingHidden: hideKey != null && hiddenMissingKeys?.has(hideKey) === true,
     };
   }
   return state;
+}
+
+/** Contratto S2a: oggetto = mostra blocco; null / non-oggetto = niente. */
+export function getMissingEvidenceSuggestion(suggestion) {
+  const raw = suggestion?.missingEvidenceSuggestion;
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return null;
+  return raw;
+}
+
+function MissingEvidenceHitl({
+  suggestion,
+  companyId,
+  busy,
+  linking,
+  onLink,
+  onIgnore,
+}) {
+  const mes = getMissingEvidenceSuggestion(suggestion);
+  if (!mes) return null;
+
+  const candidates = Array.isArray(mes.candidates) ? mes.candidates : [];
+  const registryHref = buildDocumentRegistryPath({
+    tab: 'catalog',
+    companyId: companyId ?? undefined,
+  });
+
+  return (
+    <div className="sal-ai-missing" data-testid="sal-ai-missing-evidence">
+      <p className="sal-ai-axis-title">{'Documento mancante'}</p>
+      {mes.typicalDocTypeLabel && (
+        <p className="sal-ai-missing-type">
+          <span className="sal-ai-label">{'Tipo tipico'}</span>
+          {' '}
+          <span className="sal-ai-evidence-chip sal-ai-evidence-chip--used">
+            {mes.typicalDocTypeLabel}
+          </span>
+        </p>
+      )}
+      {mes.reason && <p className="sal-ai-rationale">{mes.reason}</p>}
+      {candidates.length > 0 ? (
+        <ul className="sal-ai-missing-list">
+          {candidates.map((c) => {
+            const title = c.doc_code
+              ? `${c.doc_code} \u2014 ${c.title}`
+              : (c.title || `Documento #${c.id}`);
+            const selectHref = buildDocumentRegistryPath({
+              selectId: c.id,
+              companyId: companyId ?? undefined,
+            });
+            return (
+              <li key={c.id} className="sal-ai-missing-item">
+                <span className="sal-ai-missing-title" title={title}>{title}</span>
+                <Link
+                  to={selectHref}
+                  className="sal-evidence-item-link"
+                  title="Apri in registro"
+                >
+                  {'Apri'}
+                </Link>
+                <button
+                  type="button"
+                  className="sal-btn sal-btn-secondary"
+                  disabled={busy || linking || !onLink}
+                  aria-label={`Collega ${title}`}
+                  onClick={() => onLink?.(suggestion, c)}
+                >
+                  {linking ? 'Collegamento\u2026' : 'Collega'}
+                </button>
+              </li>
+            );
+          })}
+        </ul>
+      ) : (
+        <p className="sal-ai-missing-empty">
+          {'Nessun candidato nel registro per questo tipo.'}
+        </p>
+      )}
+      <div className="sal-ai-missing-actions">
+        <Link to={registryHref} className="sal-evidence-registry-link">
+          {'Carica nel registro'}
+        </Link>
+        <button
+          type="button"
+          className="sal-ai-linkbtn"
+          disabled={busy || linking}
+          onClick={() => onIgnore?.(suggestion)}
+        >
+          {'Ignora'}
+        </button>
+      </div>
+    </div>
+  );
 }
 
 export default function SalAiSuggestDialog({
@@ -50,22 +153,55 @@ export default function SalAiSuggestDialog({
   suggestions = [],
   busy = false,
   savingId = null,
+  companyId = null,
   onAccept,
   onReject,
+  onLinkCandidate,
   onClose,
 }) {
   // Init sincrono: se items parte vuoto, Accetta passa status undefined e
   // handleAiAccept fa early-return (race CI: findByTitle → click prima di useEffect).
   const [items, setItems] = useState(() => initItemState(suggestions));
+  const [linkingKey, setLinkingKey] = useState(null);
+  // Collega/Ignora per clausola: non azzerare quando cambia l'array (es. Rifiuta).
+  const hiddenMissingKeysRef = useRef(new Set());
+  const wasOpenRef = useRef(false);
 
   useEffect(() => {
-    if (open) setItems(initItemState(suggestions));
+    if (open) {
+      if (!wasOpenRef.current) {
+        hiddenMissingKeysRef.current = new Set();
+      }
+      setItems(initItemState(suggestions, hiddenMissingKeysRef.current));
+      setLinkingKey(null);
+    }
+    wasOpenRef.current = open;
   }, [open, suggestions]);
 
   if (!open) return null;
 
   function patchItem(id, patch) {
     setItems((prev) => ({ ...prev, [id]: { ...prev[id], ...patch } }));
+  }
+
+  function hideMissingFor(suggestion) {
+    const hideKey = suggestionHideKey(suggestion);
+    if (hideKey != null) hiddenMissingKeysRef.current.add(hideKey);
+    if (suggestion?.normRequirementId != null) {
+      patchItem(suggestion.normRequirementId, { missingHidden: true });
+    }
+  }
+
+  async function handleLinkCandidate(suggestion, candidate) {
+    if (!onLinkCandidate || candidate?.id == null) return;
+    const key = `${suggestion.normRequirementId}:${candidate.id}`;
+    setLinkingKey(key);
+    try {
+      const ok = await onLinkCandidate(suggestion, candidate);
+      if (ok) hideMissingFor(suggestion);
+    } finally {
+      setLinkingKey(null);
+    }
   }
 
   const visible = suggestions.filter((s) => !items[s.normRequirementId]?.dismissed);
@@ -96,6 +232,9 @@ export default function SalAiSuggestDialog({
             const showEditable = st.editing || !highConfidence;
             const noProposal = !s.suggestedStatus && !s.aiUsed;
             const rowSaving = savingId === s.normRequirementId;
+            const rowLinking = linkingKey != null
+              && String(linkingKey).startsWith(`${s.normRequirementId}:`);
+            const rowBusy = rowSaving || rowLinking;
             const acceptStatus = st.status || s.suggestedStatus;
             const legalArticles = Array.isArray(s.legal?.articles) ? s.legal.articles : [];
             const hasLegal = legalArticles.length > 0;
@@ -126,7 +265,7 @@ export default function SalAiSuggestDialog({
                         <select
                           className={`sal-status-select sal-status-select--${st.status || 'discussed'}`}
                           value={st.status || 'discussed'}
-                          disabled={rowSaving || busy}
+                          disabled={rowBusy || busy}
                           onChange={(e) => patchItem(s.normRequirementId, { status: e.target.value })}
                           aria-label={`Stato proposto clausola ${s.clauseRef}`}
                         >
@@ -179,6 +318,17 @@ export default function SalAiSuggestDialog({
                     </div>
                   )}
 
+                  {!st.missingHidden && getMissingEvidenceSuggestion(s) && (
+                    <MissingEvidenceHitl
+                      suggestion={s}
+                      companyId={companyId}
+                      busy={busy || rowSaving}
+                      linking={rowLinking}
+                      onLink={onLinkCandidate ? handleLinkCandidate : undefined}
+                      onIgnore={() => hideMissingFor(s)}
+                    />
+                  )}
+
                   {hasLegal && (
                     <div className="sal-ai-legal">
                       <div className="sal-ai-legal-head">
@@ -226,7 +376,7 @@ export default function SalAiSuggestDialog({
                   <button
                     type="button"
                     className="sal-btn sal-btn-primary"
-                    disabled={rowSaving || busy || noProposal || !acceptStatus}
+                    disabled={rowBusy || busy || noProposal || !acceptStatus}
                     onClick={() => onAccept?.(s, acceptStatus)}
                   >
                     {rowSaving ? 'Salvataggio\u2026' : 'Accetta'}
@@ -234,7 +384,7 @@ export default function SalAiSuggestDialog({
                   <button
                     type="button"
                     className="sal-btn sal-btn-secondary"
-                    disabled={rowSaving || busy}
+                    disabled={rowBusy || busy}
                     onClick={() => onReject?.(s)}
                   >
                     Rifiuta
