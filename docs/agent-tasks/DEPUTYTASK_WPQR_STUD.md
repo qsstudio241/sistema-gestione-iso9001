@@ -20,9 +20,9 @@ Fonti Markdown:
 - Coperte: ISO 15614-1 (NORMA_00019 + estratto range); t1/t2 già in prod (mig. 158);
   ISO 14555:2025 digitalizzata (`NORMA_00033`); estratto range STUD-3-A
   `docs/reference/ISO-14555-2025-range-validita-WPQR.md`
-- Mancanti (temporaneo → STUD-3-B): range 14555 **in codice** + accettazione boiler pins Tabella 2;
+- Mancanti (temporaneo → STUD-3-B in corso): range 14555 **in codice** + accettazione boiler pins Tabella 2;
   catalogo 4063 stud solo se arriva fonte (HITL: niente 78x inventati; 4063 = indicazione processo)
-- Si parte su: STUD-2/3-A **CHIUSI**; HITL extract + Tabella 2 **chiusi** (29/08); prossimo = STUD-3-B codice
+- Si parte su: STUD-2/3-A **CHIUSI**; HITL extract + Tabella 2 **chiusi** (29/08); STUD-3-B APERTO su DEPUTYTASK.md
 ```
 
 ## Richiesta norma (HITL) — **EVASA** 26/08/2026
@@ -69,7 +69,7 @@ Segnalazione Mason (post chiusura t1/t2): in inserimento WPQR «Stud Welding» m
 |-------|------|--------|
 | **STUD-2** | [`DEPUTYTASK.md`](DEPUTYTASK.md) **CHIUSO — TEST OK** [#590](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/590) | Ingest AI SW / P+T / PM2 / qualifying_element (no range) |
 | **STUD-3-A** | [`DEPUTYTASK1.md`](DEPUTYTASK1.md) **CHIUSO — TEST OK** [#589](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/589) | Estratto docs [`ISO-14555-2025-range-validita-WPQR.md`](../reference/ISO-14555-2025-range-validita-WPQR.md) |
-| STUD-3-B | (HITL OK 29/08 — brief da aprire) | Codifica range §10.2.8 + **accettazione boiler pins Tabella 2** (8→40, 10→60, 12→85 Nm; §12.3 OR Table 2). 4063 = solo indicazione processo (niente 78x inventati) |
+| **STUD-3-B** | [`DEPUTYTASK.md`](DEPUTYTASK.md) **APERTO** 29/08 | Codifica range §10.2.8 + **accettazione boiler pins Tabella 2** (8→40, 10→60, 12→85 Nm; §12.3 OR Table 2). 4063 = solo indicazione processo (niente 78x inventati) |
 | PT-1 | opzionale | UX range lato P vs T (15614) |
 
 Cloud Agent **non** dichiara «pronta» senza CI + Bugbot + Security Review letti.
