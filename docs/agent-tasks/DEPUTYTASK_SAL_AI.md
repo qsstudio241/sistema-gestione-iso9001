@@ -6,7 +6,8 @@
 **Stream:** SAL AI evidenze — piano [`PLAN_SAL_AI_EVIDENCE_SLICES.md`](PLAN_SAL_AI_EVIDENCE_SLICES.md)  
 **S1a:** CHIUSO (PR [#471](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/471))  
 **Rischio:** Medio — service backend additivo (OCR su buffer immagine); niente auth/sync/migrazioni  
-**Branch:** `cursor/sal-ai-s1b-ocr-immagini-b42c`
+**Branch:** `cursor/sal-ai-s1b-ocr-immagini-b42c` (pushata su origin)  
+**PR:** da aprire draft su `main` — compare https://github.com/qsstudio241/sistema-gestione-iso9001/compare/main...cursor/sal-ai-s1b-ocr-immagini-b42c?expand=1
 
 > **Allineamento Git (autonomo)**: `git fetch origin main` + `git pull origin main` prima di eseguire. **Non** chiedere al committente.  
 > Comando: `Leggi docs/agent-tasks/DEPUTYTASK_SAL_AI.md ed eseguilo. Chiudi con TEST OK o FIX NON APPLICABILI.`
