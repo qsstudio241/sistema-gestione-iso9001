@@ -294,7 +294,7 @@ export default function SALModule() {
   }, []);
 
   const saveStatus = useCallback(async (row, payload) => {
-    if (!companyScope || !row?.normRequirementId) return;
+    if (!companyScope || !row?.normRequirementId) return false;
     setSavingId(row.normRequirementId);
     setError(null);
     try {
@@ -308,8 +308,10 @@ export default function SALModule() {
       });
       setEditRow(null);
       await loadMatrix();
+      return true;
     } catch (err) {
       setError(err?.message || 'Errore aggiornamento stato');
+      return false;
     } finally {
       setSavingId(null);
     }
@@ -461,6 +463,24 @@ export default function SALModule() {
 
   function handleAiReject(suggestion) {
     dismissAiSuggestion(suggestion.normRequirementId);
+  }
+
+  async function handleAiLinkCandidate(suggestion, candidate) {
+    const row = rows.find((r) => r.normRequirementId === suggestion.normRequirementId);
+    if (!row || candidate?.id == null) return false;
+    const existing = Array.isArray(row.evidenceDocumentIds)
+      ? row.evidenceDocumentIds.map(Number).filter((n) => !Number.isNaN(n))
+      : [];
+    const newId = Number(candidate.id);
+    if (Number.isNaN(newId)) return false;
+    if (existing.includes(newId)) return true;
+    return saveStatus(row, {
+      status: row.status || 'discussed',
+      notes: row.notes,
+      responsible: row.responsible,
+      dueDate: row.dueDate,
+      evidenceDocumentIds: [...existing, newId],
+    });
   }
 
   function renderCell(row, col) {
@@ -692,8 +712,10 @@ export default function SALModule() {
           suggestions={aiSuggestions}
           busy={aiLoading}
           savingId={savingId}
+          companyId={companyScope ? Number(companyScope) : null}
           onAccept={handleAiAccept}
           onReject={handleAiReject}
+          onLinkCandidate={handleAiLinkCandidate}
           onClose={() => setAiSuggestOpen(false)}
         />
       )}

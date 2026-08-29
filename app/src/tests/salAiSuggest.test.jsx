@@ -33,6 +33,9 @@ vi.mock('../services/apiService', () => ({
 
 import apiService from '../services/apiService';
 import SALModule from '../pages/SALModule';
+import SalAiSuggestDialog, {
+  getMissingEvidenceSuggestion,
+} from '../components/SalAiSuggestDialog';
 
 const MATRIX_ROW = {
   normRequirementId: 101,
@@ -66,6 +69,25 @@ const SUGGESTION = {
   rationale: 'La procedura acquisti copre il controllo dei fornitori esterni.',
   evidenceRefs: [{ documentId: 42, title: 'Procedura acquisti', used: true }],
   aiUsed: true,
+  missingEvidenceSuggestion: null,
+};
+
+const MISSING_EVIDENCE = {
+  typicalDocType: 'procedura',
+  typicalDocTypeLabel: 'Procedura',
+  candidates: [
+    { id: 10, title: 'PG-07 Acquisti', doc_type: 'procedura', doc_code: 'PG-07' },
+  ],
+  reason: 'Nessuna evidenza collegata alla clausola 8.4. Tipo tipico: Procedura.',
+};
+
+const SUGGESTION_MISSING = {
+  ...SUGGESTION,
+  suggestedStatus: 'discussed',
+  confidence: 'low',
+  rationale: 'Collega i documenti al requisito prima di valutare la clausola.',
+  evidenceRefs: [],
+  missingEvidenceSuggestion: MISSING_EVIDENCE,
 };
 
 /** Suggerimento con asse legislativo valorizzato (SAL 5-B). */
@@ -99,9 +121,13 @@ const SUGGESTION_LEGAL = {
   },
 };
 
-async function renderSalWithCompany() {
+async function renderSalWithCompany(rowOverrides = {}) {
+  const row = { ...MATRIX_ROW, ...rowOverrides };
   apiService.getCompanies.mockResolvedValue({ data: [{ id: 1, name: 'Acme Srl' }] });
-  apiService.getGapMatrix.mockResolvedValue(MATRIX_RESPONSE);
+  apiService.getGapMatrix.mockResolvedValue({
+    success: true,
+    data: { ...MATRIX_RESPONSE.data, rows: [row] },
+  });
   apiService.updateGapStatus.mockResolvedValue({ success: true, data: {} });
   apiService.getGapStatusHistory.mockResolvedValue({ data: { history: [] } });
   apiService.getDocuments.mockResolvedValue({ data: { items: [] } });
@@ -110,6 +136,19 @@ async function renderSalWithCompany() {
   await act(async () => {
     render(<RouterProvider>{withCompanyScope(<SALModule />, '1')}</RouterProvider>);
   });
+}
+
+function renderDialog(props = {}) {
+  return render(
+    <RouterProvider>
+      <SalAiSuggestDialog
+        open
+        suggestions={[SUGGESTION]}
+        companyId={1}
+        {...props}
+      />
+    </RouterProvider>,
+  );
 }
 
 describe('SALModule - suggeritore stato AI (Fase 5-A)', () => {
@@ -216,5 +255,94 @@ describe('SALModule - suggeritore stato AI (Fase 5-A)', () => {
     await waitFor(() => {
       expect(screen.queryByText('Suggerimenti stato (AI)')).not.toBeInTheDocument();
     });
+  });
+});
+
+describe('SalAiSuggestDialog - S2b documento mancante HITL', () => {
+  it('getMissingEvidenceSuggestion: oggetto sì, null/assente no', () => {
+    expect(getMissingEvidenceSuggestion({ missingEvidenceSuggestion: MISSING_EVIDENCE })).toBe(MISSING_EVIDENCE);
+    expect(getMissingEvidenceSuggestion({ missingEvidenceSuggestion: null })).toBeNull();
+    expect(getMissingEvidenceSuggestion({})).toBeNull();
+    expect(getMissingEvidenceSuggestion({ missingEvidenceSuggestion: 'x' })).toBeNull();
+  });
+
+  it('mostra tipo tipico, reason e candidati se missingEvidenceSuggestion e oggetto', () => {
+    renderDialog({ suggestions: [SUGGESTION_MISSING] });
+    const block = screen.getByTestId('sal-ai-missing-evidence');
+    expect(within(block).getByText('Documento mancante')).toBeInTheDocument();
+    expect(within(block).getByText('Procedura')).toBeInTheDocument();
+    expect(within(block).getByText(/Nessuna evidenza collegata alla clausola 8.4/)).toBeInTheDocument();
+    expect(within(block).getByText(/PG-07 Acquisti/)).toBeInTheDocument();
+    expect(within(block).getByRole('button', { name: /Collega/ })).toBeInTheDocument();
+    expect(within(block).getByRole('link', { name: 'Carica nel registro' })).toHaveAttribute(
+      'href',
+      '/documents?tab=catalog&company_id=1',
+    );
+    expect(screen.getByText(/supervisione di un professionista/)).toBeInTheDocument();
+  });
+
+  it('non mostra il blocco se missingEvidenceSuggestion e null', () => {
+    renderDialog({ suggestions: [SUGGESTION] });
+    expect(screen.queryByTestId('sal-ai-missing-evidence')).not.toBeInTheDocument();
+    expect(screen.queryByText('Documento mancante')).not.toBeInTheDocument();
+  });
+
+  it('Ignora nasconde il blocco senza chiamare onLinkCandidate', () => {
+    const onLinkCandidate = vi.fn();
+    renderDialog({ suggestions: [SUGGESTION_MISSING], onLinkCandidate });
+    fireEvent.click(screen.getByRole('button', { name: 'Ignora' }));
+    expect(screen.queryByTestId('sal-ai-missing-evidence')).not.toBeInTheDocument();
+    expect(onLinkCandidate).not.toHaveBeenCalled();
+  });
+
+  it('Collega chiama onLinkCandidate solo al click; apertura dialog zero write', async () => {
+    const onLinkCandidate = vi.fn().mockResolvedValue(true);
+    renderDialog({ suggestions: [SUGGESTION_MISSING], onLinkCandidate });
+    expect(onLinkCandidate).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole('button', { name: /Collega PG-07/ }));
+    expect(onLinkCandidate).toHaveBeenCalledTimes(1);
+    expect(onLinkCandidate).toHaveBeenCalledWith(
+      SUGGESTION_MISSING,
+      MISSING_EVIDENCE.candidates[0],
+    );
+    await waitFor(() => {
+      expect(screen.queryByTestId('sal-ai-missing-evidence')).not.toBeInTheDocument();
+    });
+  });
+});
+
+describe('SALModule - S2b collega candidato (PATCH evidenze)', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    window.localStorage.clear();
+  });
+
+  it('Collega scrive solo evidenceDocumentIds, non lo stato AI, e solo dopo il click', async () => {
+    apiService.suggestSalGapStatus.mockResolvedValue({
+      success: true,
+      data: { aiAvailable: true, suggestions: [SUGGESTION_MISSING] },
+    });
+
+    await renderSalWithCompany({ evidenceDocumentIds: [], status: 'discussed' });
+    await waitFor(() => expect(screen.getByText('8.4')).toBeInTheDocument());
+    fireEvent.click(screen.getByRole('button', { name: /Suggerisci stato \(AI\)/ }));
+    const dialog = await screen.findByRole('dialog', { name: /Suggerimenti stato/ });
+
+    expect(apiService.updateGapStatus).not.toHaveBeenCalled();
+    expect(within(dialog).getByTestId('sal-ai-missing-evidence')).toBeInTheDocument();
+
+    fireEvent.click(within(dialog).getByRole('button', { name: /Collega PG-07/ }));
+
+    await waitFor(() => {
+      expect(apiService.updateGapStatus).toHaveBeenCalledWith(
+        '1',
+        101,
+        expect.objectContaining({
+          status: 'discussed',
+          evidenceDocumentIds: [10],
+        }),
+      );
+    });
+    expect(apiService.updateGapStatus).toHaveBeenCalledTimes(1);
   });
 });

@@ -276,3 +276,83 @@
   padding-top: 0.75rem;
   border-top: 1px solid #eceff1;
 }
+
+/* S2b — documento mancante (HITL collega / carica / ignora) */
+.sal-ai-missing {
+  border-top: 1px dashed #cfd8dc;
+  padding-top: 0.55rem;
+  margin-top: 0.2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+}
+
+.sal-ai-missing-type {
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  flex-wrap: wrap;
+}
+
+.sal-ai-missing-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.sal-ai-missing-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: #fff;
+  border: 1px solid #e0e0e0;
+  border-radius: 6px;
+  padding: 0.45rem 0.6rem;
+}
+
+.sal-ai-missing-title {
+  flex: 1 1 auto;
+  font-size: 0.85rem;
+  color: #263238;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sal-ai-missing-empty {
+  margin: 0;
+  font-size: 0.82rem;
+  font-style: italic;
+  color: #90a4ae;
+}
+
+.sal-ai-missing-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  flex-wrap: wrap;
+}
+
+.sal-ai-missing .sal-btn {
+  padding: 0.25rem 0.7rem;
+  font-size: 0.78rem;
+}
+
+.sal-ai-missing .sal-evidence-registry-link {
+  font-size: 0.82rem;
+  color: #1565c0;
+  font-weight: 600;
+  text-decoration: underline;
+}
+
+.sal-ai-missing .sal-evidence-item-link {
+  font-size: 0.78rem;
+  color: #1565c0;
+  text-decoration: underline;
+  flex-shrink: 0;
+}
