@@ -18,6 +18,10 @@ const {
     describePlateCoversPipeDiameter15614_2,
     isIso15614Part2,
 } = require('../data/weldingQualificationRules15614_2');
+const {
+    isIso14555,
+    describeQualifiedParentThicknessRange14555,
+} = require('../data/weldingQualificationRules14555');
 
 /** Lazy require: evita process.exit in unit test senza database.json. */
 function getDbQuery() {
@@ -171,6 +175,25 @@ function checkThicknessCoverage(wpqr, thicknessA, thicknessB) {
     let source = maxUnlimited ? 'dichiarato (range aperto, senza limite superiore)' : 'dichiarato';
 
     if (!Number.isFinite(min) || (!Number.isFinite(max) && !maxUnlimited)) {
+        // STUD-3-B: ISO 14555 §10.2.8.6 — tutti gli spessori se pWPS applicabile.
+        // Non calcolare Tabella 7 15614 su WPQR stud 14555.
+        if (isIso14555(wpqr.standard_reference)) {
+            const range14555 = describeQualifiedParentThicknessRange14555({ pWpsApplies: true });
+            if (range14555.allThicknesses) {
+                return {
+                    ok: true,
+                    partial: true,
+                    reason: `Spessori ok su range ISO 14555 §10.2.8.6 (tutti gli spessori se pWPS applicabile)`,
+                    range: { min: null, max: null, allThicknesses: true },
+                };
+            }
+            return {
+                ok: false,
+                partial: false,
+                reason: `WPQR ${wpqr.wpqr_code || wpqr.id}: ISO 14555 ma pWPS non applicabile — range spessore non automatico`,
+            };
+        }
+
         const tested = wpqr.thickness_tested != null
             ? Number(wpqr.thickness_tested)
             : null;

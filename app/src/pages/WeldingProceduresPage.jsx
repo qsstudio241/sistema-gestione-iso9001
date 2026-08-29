@@ -22,7 +22,18 @@ import {
 } from "../utils/aiAssistantContext";
 import { exportWpsAnnexADocx } from "../utils/wordExportWps";
 import { resolveBackendUploadUrl } from "../utils/resolveBackendUploadUrl";
+import {
+  isIso14555,
+  describeQualifiedParentThicknessRange14555,
+} from "../data/weldingQualificationRules14555";
 import "./WeldingProceduresPage.css";
+
+/** Valori select norma WPQR (più «altro» free-text). */
+const WPQR_STANDARD_OPTIONS = [
+  "UNI EN ISO 15614-1:2017",
+  "UNI EN ISO 15614-2:2025",
+  "UNI EN ISO 14555:2025",
+];
 
 const WELDING_PROCESSES = [
   { value: "111", label: "111 - SMAW" },
@@ -590,6 +601,25 @@ function calcThicknessRangeUI(t) {
   };
 }
 
+/**
+ * STUD-3-B: su ISO 14555 non applicare Tabella 7 / calc 15614.
+ * §10.2.8.6 — tutti gli spessori se pWPS applicabile → range aperto.
+ */
+function calcThicknessRangeForStandard(t, standardReference) {
+  if (isIso14555(standardReference)) {
+    const r = describeQualifiedParentThicknessRange14555({ pWpsApplies: true });
+    if (r.allThicknesses) {
+      return {
+        thickness_min: "",
+        thickness_max: "",
+        thickness_max_unlimited: true,
+      };
+    }
+    return { thickness_min: "", thickness_max: "", thickness_max_unlimited: false };
+  }
+  return { ...calcThicknessRangeUI(t), thickness_max_unlimited: false };
+}
+
 function WPQRFormModal({ wpqr, wpsList, defaultCompanyId, onSave, onClose }) {
   const [form, setForm] = useState({
     wps_id: "", wpqr_code: "", test_date: "", testing_body: "", examiner_body: "",
@@ -630,14 +660,30 @@ function WPQRFormModal({ wpqr, wpsList, defaultCompanyId, onSave, onClose }) {
     : "lascia vuoto se testata su piastra";
 
   function handleThicknessTested(val) {
-    const range = calcThicknessRangeUI(val);
-    setForm((f) => ({
-      ...f,
-      thickness_tested: val,
-      thickness_min: range.thickness_min !== "" ? range.thickness_min : f.thickness_min,
-      thickness_max: range.thickness_max !== "" ? range.thickness_max : f.thickness_max,
-    }));
+    setForm((f) => {
+      const range = calcThicknessRangeForStandard(val, f.standard_reference);
+      if (isIso14555(f.standard_reference)) {
+        return {
+          ...f,
+          thickness_tested: val,
+          thickness_min: range.thickness_min,
+          thickness_max: range.thickness_max,
+          thickness_max_unlimited: !!range.thickness_max_unlimited,
+        };
+      }
+      return {
+        ...f,
+        thickness_tested: val,
+        thickness_min: range.thickness_min !== "" ? range.thickness_min : f.thickness_min,
+        thickness_max: range.thickness_max !== "" ? range.thickness_max : f.thickness_max,
+      };
+    });
   }
+
+  const uses14555 = isIso14555(form.standard_reference);
+  const thicknessRangeLabel = uses14555
+    ? "ISO 14555 \u00A710.2.8.6 (tutti gli spessori)"
+    : "ISO 15614";
 
   async function handleSubmit(e) {
     e.preventDefault();
@@ -722,13 +768,40 @@ function WPQRFormModal({ wpqr, wpsList, defaultCompanyId, onSave, onClose }) {
             <div className="wp-form-grid">
               <div className="wp-form-group">
                 <label className="wp-form-label">Norma riferimento</label>
-                <select className="wp-form-select" value={form.standard_reference || ""} onChange={(e) => set("standard_reference", e.target.value)}>
+                <select
+                  className="wp-form-select"
+                  value={
+                    !form.standard_reference
+                      ? ""
+                      : WPQR_STANDARD_OPTIONS.includes(form.standard_reference)
+                        ? form.standard_reference
+                        : form.standard_reference === "altro"
+                          ? "altro"
+                          : "altro"
+                  }
+                  onChange={(e) => {
+                    const v = e.target.value;
+                    if (v === "UNI EN ISO 14555:2025") {
+                      const range = calcThicknessRangeForStandard(form.thickness_tested, v);
+                      setForm((f) => ({
+                        ...f,
+                        standard_reference: v,
+                        thickness_min: range.thickness_min,
+                        thickness_max: range.thickness_max,
+                        thickness_max_unlimited: !!range.thickness_max_unlimited,
+                      }));
+                      return;
+                    }
+                    set("standard_reference", v);
+                  }}
+                >
                   <option value="">-- Seleziona --</option>
                   <option value="UNI EN ISO 15614-1:2017">UNI EN ISO 15614-1:2017 — Acciai / nichel</option>
                   <option value="UNI EN ISO 15614-2:2025">UNI EN ISO 15614-2:2025 — Alluminio</option>
+                  <option value="UNI EN ISO 14555:2025">UNI EN ISO 14555:2025 — Stud welding</option>
                   <option value="altro">Altro</option>
                 </select>
-                {form.standard_reference === "altro" || (form.standard_reference && !["", "UNI EN ISO 15614-1:2017", "UNI EN ISO 15614-2:2025", "altro"].includes(form.standard_reference)) ? (
+                {form.standard_reference === "altro" || (form.standard_reference && !["", ...WPQR_STANDARD_OPTIONS, "altro"].includes(form.standard_reference)) ? (
                   <input
                     className="wp-form-input"
                     style={{ marginTop: 6 }}
@@ -797,12 +870,29 @@ function WPQRFormModal({ wpqr, wpsList, defaultCompanyId, onSave, onClose }) {
                 <input className="wp-form-input" type="number" step="0.1" min="0" value={form.thickness_tested || ""} onChange={(e) => handleThicknessTested(e.target.value)} placeholder="es. 10" />
               </div>
               <div className="wp-form-group">
-                <label className="wp-form-label">Range min (mm) — ISO 15614</label>
-                <input className="wp-form-input" type="number" step="0.1" min="0" value={form.thickness_min || ""} onChange={(e) => set("thickness_min", e.target.value)} placeholder="calcolato automaticamente" />
+                <label className="wp-form-label">{`Range min (mm) — ${thicknessRangeLabel}`}</label>
+                <input
+                  className="wp-form-input"
+                  type="number"
+                  step="0.1"
+                  min="0"
+                  value={form.thickness_min || ""}
+                  onChange={(e) => set("thickness_min", e.target.value)}
+                  placeholder={uses14555 ? "tutti (14555 §10.2.8.6)" : "calcolato automaticamente"}
+                />
               </div>
               <div className="wp-form-group">
-                <label className="wp-form-label">Range max (mm) — ISO 15614</label>
-                <input className="wp-form-input" type="number" step="0.1" min="0" value={form.thickness_max || ""} onChange={(e) => set("thickness_max", e.target.value)} placeholder="calcolato automaticamente" disabled={!!form.thickness_max_unlimited} />
+                <label className="wp-form-label">{`Range max (mm) — ${thicknessRangeLabel}`}</label>
+                <input
+                  className="wp-form-input"
+                  type="number"
+                  step="0.1"
+                  min="0"
+                  value={form.thickness_max || ""}
+                  onChange={(e) => set("thickness_max", e.target.value)}
+                  placeholder={uses14555 ? "illimitato se pWPS applica" : "calcolato automaticamente"}
+                  disabled={!!form.thickness_max_unlimited}
+                />
               </div>
               <div className="wp-form-group wp-form-checkbox">
                 <label className="wp-form-label">
