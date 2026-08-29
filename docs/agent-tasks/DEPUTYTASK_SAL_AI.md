@@ -8,7 +8,8 @@
 **S1b:** CHIUSO (PR [#603](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/603))  
 **S2a:** CHIUSO (PR [#605](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/605))  
 **Rischio:** Medio — UI additiva sul dialog AI + wiring PATCH evidenze già esistente; niente auth/sync/migrazioni  
-**Branch:** `cursor/sal-ai-s2b-ui-evidenze-b42c`
+**Branch:** `cursor/sal-ai-s2b-ui-evidenze-b42c`  
+**PR:** draft da aprire su `main` — compare https://github.com/qsstudio241/sistema-gestione-iso9001/compare/main...cursor/sal-ai-s2b-ui-evidenze-b42c?expand=1
 
 > **Allineamento Git (autonomo)**: `git fetch origin main` + `git pull origin main` prima di eseguire. **Non** chiedere al committente.  
 > Comando: `Leggi docs/agent-tasks/DEPUTYTASK_SAL_AI.md ed eseguilo. Chiudi con TEST OK o FIX NON APPLICABILI.`
