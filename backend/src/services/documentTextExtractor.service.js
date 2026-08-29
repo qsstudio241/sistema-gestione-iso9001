@@ -3,14 +3,14 @@
  * Estrazione difensiva del testo dai file allegati ai documenti del registro.
  *
  * Supporta: PDF (strato testo, con fallback OCR se vuoto o sotto soglia),
- * DOCX, e file di testo semplice (txt/csv/md).
- * Formati non supportati o non leggibili (immagini raster — slice S1b,
- * .doc legacy, file mancanti) vengono SALTATI senza bloccare la pipeline:
- * la funzione restituisce { text: null, reason }.
+ * immagini raster PNG/JPEG/WebP (OCR diretto sul buffer), DOCX, e file di
+ * testo semplice (txt/csv/md).
+ * Formati non supportati o non leggibili (.doc legacy, GIF, file mancanti)
+ * vengono SALTATI senza bloccare la pipeline: { text: null, reason }.
  *
- * OCR PDF: riusa `ocrExtractor.extractTextWithOCR` (stesso stack dell'ingest:
- * pdf2pic + tesseract.js). Fallimento → reason `ocr_unavailable` / `ocr_failed`,
- * mai throw verso il chiamante (SAL AI, Material Certificates, knowledge indexer).
+ * OCR: riusa `ocrExtractor` (PDF: pdf2pic + tesseract; foto: solo tesseract).
+ * Fallimento → reason `ocr_unavailable` / `ocr_failed`, mai throw verso il
+ * chiamante (SAL AI, Material Certificates, knowledge indexer).
  */
 
 const fs = require('fs').promises;
@@ -19,10 +19,14 @@ const logger = require('../utils/logger');
 const { extractPdfText } = require('../utils/importPdfText');
 
 let extractTextWithOCR = null;
+let extractTextFromImageBuffer = null;
 try {
-  extractTextWithOCR = require('../utils/ocrExtractor').extractTextWithOCR;
+  const ocr = require('../utils/ocrExtractor');
+  extractTextWithOCR = ocr.extractTextWithOCR;
+  extractTextFromImageBuffer = ocr.extractTextFromImageBuffer;
 } catch (_) {
   extractTextWithOCR = null;
+  extractTextFromImageBuffer = null;
 }
 
 /** Allineata a ingest (`INGEST_OCR_MIN_CHARS`, default 50). */
@@ -33,6 +37,12 @@ const PLAIN_TEXT_EXTS = new Set(['.txt', '.csv', '.md', '.log']);
 
 const PDF_EXTS = new Set(['.pdf']);
 const DOCX_EXTS = new Set(['.docx']);
+const IMAGE_EXTS = new Set(['.png', '.jpg', '.jpeg', '.webp']);
+const IMAGE_MIMES = new Set(['image/png', 'image/jpeg', 'image/jpg', 'image/webp']);
+
+function isRasterImageAttachment(ext, mime) {
+  return IMAGE_EXTS.has(ext) || IMAGE_MIMES.has(mime);
+}
 
 /**
  * Normalizza spazi/newline ridondanti mantenendo i paragrafi.
@@ -82,6 +92,34 @@ async function tryExtractPdfOcr(buffer, storagePath) {
     const reason = classifyOcrReason(ocrErr);
     logger.warn(
       `[DocTextExtractor] OCR ${reason} (${storagePath}): ${ocrErr && ocrErr.message ? ocrErr.message : ocrErr}`
+    );
+    return { text: null, reason };
+  }
+}
+
+/**
+ * Tenta OCR su buffer PNG/JPEG/WebP. Non lancia: testo normalizzato o reason.
+ * Non richiede Ghostscript/ImageMagick (solo tesseract.js).
+ * @param {Buffer} buffer
+ * @param {string} storagePath
+ * @returns {Promise<{ text: string, reason: string }|{ text: null, reason: string }>}
+ */
+async function tryExtractImageOcr(buffer, storagePath) {
+  if (typeof extractTextFromImageBuffer !== 'function') {
+    logger.warn(`[DocTextExtractor] OCR immagini non disponibile (${storagePath})`);
+    return { text: null, reason: 'ocr_unavailable' };
+  }
+  try {
+    const ocrRaw = await extractTextFromImageBuffer(buffer, { lang: 'ita+eng' });
+    const ocrNorm = normalizeWhitespace(ocrRaw);
+    if (!ocrNorm) {
+      return { text: null, reason: 'ocr_failed' };
+    }
+    return { text: ocrNorm, reason: 'ocr_ok' };
+  } catch (ocrErr) {
+    const reason = classifyOcrReason(ocrErr);
+    logger.warn(
+      `[DocTextExtractor] OCR immagine ${reason} (${storagePath}): ${ocrErr && ocrErr.message ? ocrErr.message : ocrErr}`
     );
     return { text: null, reason };
   }
@@ -169,7 +207,12 @@ async function extractDocumentText(storagePath, mimeType, fileName) {
     }
   }
 
-  // --- Formato non supportato (immagini, .doc legacy, archivi, ecc.) ---
+  // --- Immagini raster (S1b): Tesseract sul buffer, senza pdf2pic ---
+  if (isRasterImageAttachment(ext, mime)) {
+    return tryExtractImageOcr(buffer, storagePath);
+  }
+
+  // --- Formato non supportato (.doc legacy, GIF, archivi, ecc.) ---
   return { text: null, reason: 'unsupported_format' };
 }
 
@@ -188,7 +231,8 @@ function isExtractable(fileName, mimeType) {
     PLAIN_TEXT_EXTS.has(ext) ||
     mime === 'application/pdf' ||
     mime === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' ||
-    mime.startsWith('text/')
+    mime.startsWith('text/') ||
+    isRasterImageAttachment(ext, mime)
   );
 }
 
