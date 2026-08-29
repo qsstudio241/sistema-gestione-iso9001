@@ -1,11 +1,11 @@
 # ISO 14555:2025 — Range di validità WPQR stud / prigioniero (riferimento operativo SGQ)
 
-> **Uso**: HITL (Human In The Loop) committente/Mason prima di qualsiasi motorino range; ingest WPQR stud; slice STUD-3-B (codice) **solo dopo OK HITL**.
+> **Uso**: HITL (Human In The Loop) committente/Mason prima di qualsiasi motorino range; ingest WPQR stud; slice STUD-3-B (codice) — **HITL extract chiuso 29/08/2026** (inclusa Tabella 2); manca solo il codice.
 > **Fonte**: BS EN ISO 14555:2025 "Welding — Arc stud welding of metallic materials". Testo integrale nel Patrimonio Studio — **qui solo tabelle/regole sintetiche**, mai testo normativo copiato.
 > **Digitalizzazione**: `docs/Normative/Normative NORMA_00033_ BS EN ISO 14555_2025 Rev. 0.md` (+ `.json`). PDF **non** in Git (indice: `docs/Normative/SOURCE_PDF_INDEX.md`).
-> **2° passaggio HITL (29/08/2026)**: stesso PDF riconsegnato; CLI `pdf_to_json` + lettura **pymupdf diretta** sulle pagine critiche (11, 12, 20–22, 36) per chiudere GAP OCR del 1° passaggio. Vietato inventare soglie.
+> **2° passaggio HITL (29/08/2026)**: stesso PDF riconsegnato; CLI `pdf_to_json` + lettura **pymupdf diretta** sulle pagine critiche (11, 12, 20–22, 36) per chiudere GAP OCR del 1° passaggio; Tabella 2 validata da screenshot PDF. Vietato inventare soglie.
 > **Modello editoriale**: `docs/reference/ISO-15614-1-range-validita-WPQR.md`.
-> **Codice**: **nessuno** in questa slice. Vietato seedare `norm_requirements` e vietato toccare `weldingQualificationRules*` finché l’estratto non è revisionato.
+> **Codice**: **nessuno** in questa slice documentale. Vietato seedare `norm_requirements` e vietato toccare `weldingQualificationRules*` finché non parte STUD-3-B.
 
 **Non confondere** con ISO 15614-1 (qualifica procedura arco/gas su acciaio: BW/FW, tabelle 7/8/9 spessore/diametro tubo). Lo stud welding 14555 ha **regole di validità diverse** (sezione trasversale del prigioniero, tempo di saldatura `tw`, protezione bagno CF/SG/NP). Il verbale Mason 001P-21 (fillet 135 su prigioniero tubolare, norma dichiarata 15614-1) **non** è automaticamente una qualifica 14555.
 
@@ -13,11 +13,11 @@
 
 ```text
 Fonti Markdown:
-- Coperte: NORMA_00033 MD+JSON (#584); estratto operativo (STUD-3-A #589); modello ISO-15614-1-range-validita-WPQR.md
-- Mancanti / residuali: codici ISO 4063 famiglia stud (assenti dal testo 14555); interpretazione §10.2.8.5 (a);
-  Tabella 2 (boiler pins) fuori scope WPQR Mason / ancora non ricostruita
-- Si parte su: PDF upload 2° passaggio + pymupdf pagine critiche; chiudere GAP OCR dove leggibile;
-  GAP onesto dove resta illeggibile; VIETATO inventare soglie
+- Coperte: NORMA_00033 MD+JSON (#584); estratto operativo (STUD-3-A #589); modello ISO-15614-1-range-validita-WPQR.md;
+  Tabella 2 boiler pins (HITL PDF 29/08/2026: ø 8→40 Nm, 10→60 Nm, 12→85 Nm)
+- Mancanti per codice (temporaneo fino a STUD-3-B): motorino range in JS; catalogo 4063 stud
+  (HITL: 4063 = solo indicazione processo in WPS, range da §10.2.8 — niente 78x inventati)
+- Si parte su: PDF 2° passaggio + HITL Tabella 2 / dubbi 1–3 chiusi; VIETATO inventare altre soglie
 ```
 
 ## Nota sulla fonte (qualità estrazione)
@@ -29,10 +29,10 @@ Fonti Markdown:
 | §4.1 Simboli (pag. 12) | pymupdf diretto | **OK** — elenco lineare (non più intercalato) |
 | Tabella 1 esame/prove (pag. 20) | pymupdf diretto | **OK** — matrice ricostruibile (vedi sotto); MD auto ancora ha tabella pdfplumber invertita in coda |
 | Annex B Tabella B.1 (pag. 36) | pymupdf diretto | **OK** — allegato **(informative)**; formule `0,25 d` / `0,125 d` / `0,1 d`; `16 (19 e)` |
-| Tabella 2 momenti piega boiler pins | — | **GAP** residuo (fuori scope WPQR Mason) |
-| Codici ISO 4063 stud | testo 14555 | **GAP** — §9.4 rinvia a 4063 senza elencare 78x |
+| Tabella 2 momenti piega boiler pins | HITL PDF (screenshot Tabella 2) | **OK** — in scope Studio Mason (3834 + coordinatori); valori sotto |
+| Codici ISO 4063 stud | testo 14555 + HITL | **Chiuso HITL** — §9.4 chiede indicazione processo 4063; **non** elencare/inventare 78x; range validità = §10.2.8 |
 
-**Conclusione qualità**: le regole §10.2.8 + Tabella 1 + Annex B (informative) sono usabili per HITL numerico. Non esiste in 14555 una tabella spessore tipo 15614-1 Tabella 7. **Non** usare Annex B come sostituto di §10.2.8.8.
+**Conclusione qualità**: le regole §10.2.8 + Tabella 1 + Tabella 2 + Annex B (informative) sono usabili per HITL numerico. Non esiste in 14555 una tabella spessore tipo 15614-1 Tabella 7. **Non** usare Annex B come sostituto di §10.2.8.8.
 
 ### GAP chiusi in questo 2° passaggio (vs HITL del 1°)
 
@@ -44,6 +44,12 @@ Fonti Markdown:
 6. Annex B: status **informative** (pagina allegato; TOC diceva «normative» — prevale il cartiglio dell’allegato)
 7. Annex B: spessore min. = **coefficiente × d** (simbolo corsivo diametro stud; non mm fissi): `0,25 × d` / `0,125 × d` / `0,1 × d` — distinto dalla footnote *(d)* (≤ ~50 ms)
 8. Annex B: **16 (19)** mm PC → 19 solo con footnote **(e)** ferrule speciali
+
+### HITL chiusi (29/08/2026 — Passo 2 / residuali)
+
+1. **§10.2.8.5 (a)** materiali dissimili / tempo di saldatura — chiuso HITL (nessuna matrice gruppi inventata; vale il testo: per `tw` oltre 100 ms serve qualifica dedicata al tempo specificato).
+2. **ISO 4063** — chiuso HITL: in WPS/WPQR è **solo indicazione di processo**; i range di validità restano da **§10.2.8**. **Vietato** inventare codici famiglia 78x nel catalogo finché non c’è fonte 4063.
+3. **Tabella 2** (boiler pins) — chiuso HITL su PDF: valori minimi momento di piega sotto; **in scope** Mason (non «fuori Studio»).
 
 ---
 
@@ -105,7 +111,7 @@ La qualifica resta valida per variazioni di parametri **entro le raccomandazioni
 
 | Regola | Stato |
 |---|---|
-| **(a)** «A qualification for specified welding time **beyond 100 ms** is required.» | **GAP interpretazione** (non OCR): frase isolata, **non** elenca coperture automatiche di gruppo. Non inventare una matrice. HITL: conferma se significa «serve prova dedicata, nessuna estensione gruppi» |
+| **(a)** «A qualification for specified welding time **beyond 100 ms** is required.» | **OK HITL** — per dissimili con `tw` **oltre 100 ms** serve qualifica dedicata al tempo specificato; **nessuna** copertura automatica di gruppi (il testo non elenca una matrice) |
 | **(b)** Tempo specificato **fino a 100 ms**: gruppo **8 o 10** copre gruppi **1** e sottogruppo **2.1**, e viceversa | OK |
 | **(c)** Tempo specificato **sotto 10 ms**: gruppo **8** copre gruppi **1–6** e sottogruppo **11.1**, e viceversa | OK |
 | Tenere conto del rischio di incrudimento / *hardening* | nota, non soglia |
@@ -191,7 +197,7 @@ Elenco **di campi**, non di range. Path: §9.3–9.10.
 
 | Campo | Fonte 14555 | Campo app oggi (STUD-1) |
 |---|---|---|
-| Processo ISO 4063 | §9.4 | catalogo `weldingProcesses4063.js` **senza** famiglie stud → **STUD-3-B / GAP** |
+| Processo ISO 4063 | §9.4 | indicazione processo (HITL); catalogo JS **senza** 78x inventati → eventuale STUD-3-B solo se arriva fonte 4063 |
 | Parent: identità, rivestimento, gruppo 15608 | §9.3.1 | `base_material_*` (+ `_2` se due genitori) |
 | Spessore parent (o range) | §9.3.2 | `thickness_*` — **non** applicare Tabella 7 15614 |
 | Through-deck: spessore/configurazione lastra | §9.3.2 | **non modellato** |
@@ -263,15 +269,32 @@ Fonte: render + pymupdf pag. 20 (paginazione norma «12»). Il totale è il nume
 
 Nota *(a)*: solo quando si saldano boiler pins su tubi destinati a carico di pressione (totale 12 invece di 5 nella colonna >100 °C).
 
-§11.3 (prosa): piega **60°** per 3834-2/3834-3 e applicazioni **≤ 100 °C**; **30°** per 3834-4 oppure stud welding e applicazioni **> 100 °C**.  
-Tabella 2 (momenti di piega boiler pins) resta **GAP** / fuori scope WPQR Mason.
+§11.3 (prosa): piega **60°** per 3834-2/3834-3 e applicazioni **≤ 100 °C**; **30°** per 3834-4 oppure stud welding e applicazioni **> 100 °C**.
+
+Criterio di accettazione (prosa norma, HITL): i criteri in **§12.3** **oppure** **Tabella 2** devono essere soddisfatti, salvo diversa specifica.
 
 ---
 
-## Processi ISO 4063 stud — **non in questo testo**
+## Tabella 2 — momenti minimi di piega (boiler pins only) — HITL OK
+
+Fonte: PDF BS EN ISO 14555:2025, **Table 2 — Minimum values of required bending moments (applies to boiler pins only)** (screenshot committente 29/08/2026).
+
+**Ambito prodotto**: Studio Mason = consulenza ISO 3834 + coordinatori di saldatura → Tabella 2 è **in scope** (non «fuori Mason»). Si applica ai **boiler pins**; non è un range di validità WPQR generico (§10.2.8), ma criterio di accettazione prova di piega a momento (§12.3 **o** questa tabella, salvo diversa specifica).
+
+| Diametro stud *d* (mm) | Momento di piega minimo (Nm) |
+|---|---|
+| **8** | **40** |
+| **10** | **60** |
+| **12** | **85** |
+
+**Prossimo codice (temporaneo, non «mai»)**: implementare accettazione boiler pins Tabella 2 in **STUD-3-B** insieme al motorino range §10.2.8. Finché STUD-3-B non è eseguito, i valori restano solo in questo estratto.
+
+---
+
+## Processi ISO 4063 stud — indicazione, non range inventato
 
 §9.4: la WPS deve indicare il processo **secondo ISO 4063**. Il testo `NORMA_00033` / PDF 14555 **non elenca** i numeri (es. famiglia 78x).  
-**Vietato** inventare 783/784/785. Catalogo JS e STUD-3-B restano **dopo HITL** + eventuale estratto 4063.
+**HITL chiuso**: 4063 = **solo indicazione di processo**; i range di validità vengono da **§10.2.8**. **Vietato** inventare 783/784/785. Catalogo JS: nessuna famiglia stud finché non c’è fonte 4063 dedicata (eventuale sotto-task in STUD-3-B, non bloccante per i range §10.2.8 / Tabella 2).
 
 ---
 
@@ -291,30 +314,30 @@ Caso Mason 001P-21: se il verbale cita **15614-1**, i range restano quelli 15614
 
 ## Non ancora codificato in JS / non seedare
 
-**Vietato finché HITL non dà OK su residui + STUD-3-B:**
+**Vietato finché non parte STUD-3-B** (HITL extract chiuso 29/08/2026; codice ancora da fare):
 
 - `weldingQualificationRules*` / mirror backend — nessuna funzione 14555;
-- `weldingProcesses4063.js` — nessun codice stud;
-- seed VPS `norm_requirements` da questo estratto;
+- `weldingProcesses4063.js` — nessun codice stud inventato;
+- seed VPS `norm_requirements` da questo estratto senza richiesta;
 - calcolare in UI/ingest range spessore o diametro «stile 15614» quando `joint_type=SW` e norma 14555;
 - usare Annex B (informative) come soglie di validità WPQR al posto di §10.2.8.
 
-**STUD-3-B (dopo HITL), candidati codice solo se confermati:**
+**STUD-3-B — perimetro codice (HITL OK; da implementare, non permanente backlog):**
 
 1. Sezione stud: una prova → solo quella sezione; due prove → intervallo (§10.2.8.8).
 2. Spessore parent: «tutti gli spessori se pWPS applica» (§10.2.8.6) — con flag esplicito, non Tabella 7.
 3. Posizione: ramo `tw > 100 ms` vs `tw ≤ 100 ms` (§10.2.8.9).
 4. Protezione bagno CF/SG/NP (§10.2.8.12).
-5. Materiali: celle OK di §10.2.8.4 / 10.2.8.5 b–c; **non** 10.2.8.5 a finché HITL interpretazione.
+5. Materiali: §10.2.8.4 / 10.2.8.5 **a–c** come da HITL (per **a**: `tw > 100 ms` → qualifica dedicata, niente matrice inventata).
 6. Through-deck lastra: più spessa copre più sottili (§10.2.8.7); definizione lastra **&lt; 3 mm** (§3.14).
+7. **Accettazione boiler pins Tabella 2** (ø 8/10/12 → 40/60/85 Nm) + rinvio criteri **§12.3 OR Table 2** (salvo diversa specifica).
 
 ---
 
-## HITL — dubbi residui (dopo 2° passaggio)
+## HITL — residuali
 
-1. §10.2.8.5 **(a)** — significato esatto per dissimili con `tw > 100 ms` (frase senza matrice di gruppi).
-2. Codici **ISO 4063** da stampare in WPS (assenti da 14555; serve fonte 4063 o HITL Mason).
-3. Tabella **2** (boiler pins) — ancora non ricostruita; fuori scope WPQR Mason tipico.
+**Nessun dubbio HITL aperto** sull’estratto (Passo 2 chiuso 29/08/2026).  
+Prossimo passo operativo: **aprire ed eseguire STUD-3-B** (codice range + accettazione Tabella 2). Eventuale catalogo 4063 stud solo se arriva fonte dedicata — non inventare 78x.
 
 ---
 
@@ -327,4 +350,5 @@ Caso Mason 001P-21: se il verbale cita **15614-1**, i range restano quelli 15614
 | Spessore | Estrarre il dichiarato; **non** applicare Tabella 7/8 15614 a uno SW 14555 |
 | Sezione / forma | Non inventare un intervallo: una misura in prova = quella sezione (§10.2.8.8) |
 | Posizione / `tw` / CF-SG-NP | Estrarre se presenti sul verbale; non defaultare coperture |
-| Processi 4063 stud | Non mappare a 78x finché assenti da catalogo/HITL |
+| Processi 4063 stud | Non mappare a 78x inventati; 4063 = indicazione processo (HITL) |
+| Boiler pins / momento piega | Se applicabile: confrontare con Tabella 2 (8→40, 10→60, 12→85 Nm) o §12.3 — **solo dopo** STUD-3-B in codice |
