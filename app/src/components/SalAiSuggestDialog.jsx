@@ -12,7 +12,7 @@
  *  - confidenza media/bassa -> select stato subito editabile ed evidenziato
  */
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { ConfidenceBadge } from './IngestReviewDialog';
 import AiDisclaimer from './AiDisclaimer';
 import { Link } from '../contexts/RouterContext';
@@ -37,15 +37,20 @@ function CoverageBadge({ level }) {
   return <span className={`sal-ai-coverage ${meta.className}`}>{meta.label}</span>;
 }
 
-function initItemState(suggestions) {
+function suggestionHideKey(suggestion) {
+  return suggestion?.normRequirementId ?? suggestion?.clauseRef ?? null;
+}
+
+function initItemState(suggestions, hiddenMissingKeys) {
   const state = {};
   for (const s of suggestions) {
     const highConfidence = s.confidence === 'high' && s.suggestedStatus;
+    const hideKey = suggestionHideKey(s);
     state[s.normRequirementId] = {
       status: s.suggestedStatus || 'discussed',
       editing: !highConfidence, // media/bassa -> subito editabile
       dismissed: false,
-      missingHidden: false,
+      missingHidden: hideKey != null && hiddenMissingKeys?.has(hideKey) === true,
     };
   }
   return state;
@@ -158,12 +163,19 @@ export default function SalAiSuggestDialog({
   // handleAiAccept fa early-return (race CI: findByTitle → click prima di useEffect).
   const [items, setItems] = useState(() => initItemState(suggestions));
   const [linkingKey, setLinkingKey] = useState(null);
+  // Collega/Ignora per clausola: non azzerare quando cambia l'array (es. Rifiuta).
+  const hiddenMissingKeysRef = useRef(new Set());
+  const wasOpenRef = useRef(false);
 
   useEffect(() => {
     if (open) {
-      setItems(initItemState(suggestions));
+      if (!wasOpenRef.current) {
+        hiddenMissingKeysRef.current = new Set();
+      }
+      setItems(initItemState(suggestions, hiddenMissingKeysRef.current));
       setLinkingKey(null);
     }
+    wasOpenRef.current = open;
   }, [open, suggestions]);
 
   if (!open) return null;
@@ -172,13 +184,21 @@ export default function SalAiSuggestDialog({
     setItems((prev) => ({ ...prev, [id]: { ...prev[id], ...patch } }));
   }
 
+  function hideMissingFor(suggestion) {
+    const hideKey = suggestionHideKey(suggestion);
+    if (hideKey != null) hiddenMissingKeysRef.current.add(hideKey);
+    if (suggestion?.normRequirementId != null) {
+      patchItem(suggestion.normRequirementId, { missingHidden: true });
+    }
+  }
+
   async function handleLinkCandidate(suggestion, candidate) {
     if (!onLinkCandidate || candidate?.id == null) return;
     const key = `${suggestion.normRequirementId}:${candidate.id}`;
     setLinkingKey(key);
     try {
       const ok = await onLinkCandidate(suggestion, candidate);
-      if (ok) patchItem(suggestion.normRequirementId, { missingHidden: true });
+      if (ok) hideMissingFor(suggestion);
     } finally {
       setLinkingKey(null);
     }
@@ -305,7 +325,7 @@ export default function SalAiSuggestDialog({
                       busy={busy || rowSaving}
                       linking={rowLinking}
                       onLink={onLinkCandidate ? handleLinkCandidate : undefined}
-                      onIgnore={() => patchItem(s.normRequirementId, { missingHidden: true })}
+                      onIgnore={() => hideMissingFor(s)}
                     />
                   )}
 

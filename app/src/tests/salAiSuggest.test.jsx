@@ -309,6 +309,70 @@ describe('SalAiSuggestDialog - S2b documento mancante HITL', () => {
       expect(screen.queryByTestId('sal-ai-missing-evidence')).not.toBeInTheDocument();
     });
   });
+
+  it('dopo Collega il blocco resta nascosto se suggestions cambia (Rifiuta altra clausola)', async () => {
+    const clauseA = {
+      ...SUGGESTION_MISSING,
+      normRequirementId: 101,
+      clauseRef: '8.4',
+      clauseTitle: 'Controllo fornitori',
+    };
+    const clauseB = {
+      ...SUGGESTION_MISSING,
+      normRequirementId: 202,
+      clauseRef: '8.5',
+      clauseTitle: 'Produzione ed erogazione',
+      rationale: 'Collega i documenti al requisito prima di valutare la clausola.',
+      missingEvidenceSuggestion: {
+        ...MISSING_EVIDENCE,
+        reason: 'Nessuna evidenza collegata alla clausola 8.5. Tipo tipico: Procedura.',
+        candidates: [
+          { id: 20, title: 'PG-08 Produzione', doc_type: 'procedura', doc_code: 'PG-08' },
+        ],
+      },
+    };
+
+    function BatchHarness() {
+      const [list, setList] = React.useState([clauseA, clauseB]);
+      return (
+        <SalAiSuggestDialog
+          open
+          suggestions={list}
+          companyId={1}
+          onLinkCandidate={async () => true}
+          onReject={(s) => {
+            setList((prev) => prev.filter((x) => x.normRequirementId !== s.normRequirementId));
+          }}
+        />
+      );
+    }
+
+    render(
+      <RouterProvider>
+        <BatchHarness />
+      </RouterProvider>,
+    );
+
+    expect(screen.getAllByTestId('sal-ai-missing-evidence')).toHaveLength(2);
+    fireEvent.click(screen.getByRole('button', { name: /Collega PG-07/ }));
+    await waitFor(() => {
+      expect(screen.getAllByTestId('sal-ai-missing-evidence')).toHaveLength(1);
+    });
+    expect(screen.getByText(/PG-08 Produzione/)).toBeInTheDocument();
+    expect(screen.queryByText(/PG-07 Acquisti/)).not.toBeInTheDocument();
+
+    const items = screen.getAllByRole('listitem');
+    const rowB = items.find((el) => el.textContent.includes('8.5'));
+    expect(rowB).toBeTruthy();
+    fireEvent.click(within(rowB).getByRole('button', { name: 'Rifiuta' }));
+
+    await waitFor(() => {
+      expect(screen.queryByText('8.5')).not.toBeInTheDocument();
+    });
+    expect(screen.getByText('8.4')).toBeInTheDocument();
+    expect(screen.queryByTestId('sal-ai-missing-evidence')).not.toBeInTheDocument();
+    expect(screen.queryByText('Documento mancante')).not.toBeInTheDocument();
+  });
 });
 
 describe('SALModule - S2b collega candidato (PATCH evidenze)', () => {
