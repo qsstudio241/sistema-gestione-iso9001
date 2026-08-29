@@ -8,13 +8,15 @@
 
 > **Risposta standard a «stato di avanzamento del progetto e priorità da affrontare»**: sintetizzare da questa sezione (moduli maturi + sessione più recente + tabella priorità sotto), **non** dal banner storico più sotto (superato, tenuto solo per traccia) né dall'archivio marzo 2026 [`docs/archive/PROJECT_CONTEXT_STATO_FUNZIONALITA_2026-03.md`](archive/PROJECT_CONTEXT_STATO_FUNZIONALITA_2026-03.md). **Aggiornare questa sezione a fine sessione** se emergono nuove priorità o se una priorità elencata viene chiusa (stesso principio delle "Lezioni apprese" in [GUIDA_CONSOLIDATA.md](GUIDA_CONSOLIDATA.md) — sintesi qui, dettaglio linkato).
 
-**Ultimo aggiornamento di questa sezione**: 26/08/2026 (batch `NORMA_00034`–`00042` #591; STUD-2/STUD-3-A chiusi; CND tenant #588; prossimo = HITL estratto 14555 → STUD-3-B).
+**Ultimo aggiornamento di questa sezione**: 29/08/2026 (Passo 1 tenant locale #595; prossimo = HITL estratto 14555 → STUD-3-B).
 
 ### Moduli maturi (in produzione, uso quotidiano dai clienti Camellini/Mason)
 
 Audit multi-standard (9001/14001/45001) · Non Conformità (workflow ISO 10.2 completo) · Qualifiche Personale saldatori/NDT/coordinatori (ISO 9606-1/14732/14731/9712) · Saldatura (WPQR con range duali t1/t2 FW, tipologia SW/prigioniero + P+T + doppio materiale, generazione WPS, 15614-1/15614-2, Welding Book, Commesse ISO 3834, Dashboard 3834) · SAL (gap analysis requisiti con AI) · Registro Documenti + Scadenzari · Notifiche/Alert (documenti/NC/qualifiche) · Riesame di Direzione · RBAC multi-tenant (`company_access`) · Registro obblighi legali (ambiente + sicurezza) · Assistente AI / Gap Analysis euristica · CND verbali (VT/MT/PT, gate 9712, Word, Registro, offline).
 
-### Sessione più recente (26/08/2026)
+### Sessione più recente (29/08/2026)
+
+**Passo 1 isolamento tenant locale (29/08, #595)** — `organization_id` su bozze Welding Book, storico testo NC, bozze audit IndexedDB + filtro load; pattern CND. Opzionali dopo (non bloccanti): sessionStorage AI qual/intent WPS; clear coda sync a cambio utente senza logout. **Prossimo:** HITL estratto ISO 14555 → STUD-3-B (nessun brief codice ora).
 
 **Batch norme `NORMA_00034`–`00042` (26/08, #591)** — 9712, 2560, 17632, 14174, 19011, 3452-1, 17638, 23278, 23277 → MD+JSON; backlog `digitalizzata`. Nessun seed VPS in quella PR.
 
