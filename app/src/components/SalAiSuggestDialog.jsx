@@ -54,7 +54,9 @@ export default function SalAiSuggestDialog({
   onReject,
   onClose,
 }) {
-  const [items, setItems] = useState({});
+  // Init sincrono: se items parte vuoto, Accetta passa status undefined e
+  // handleAiAccept fa early-return (race CI: findByTitle → click prima di useEffect).
+  const [items, setItems] = useState(() => initItemState(suggestions));
 
   useEffect(() => {
     if (open) setItems(initItemState(suggestions));
@@ -94,6 +96,7 @@ export default function SalAiSuggestDialog({
             const showEditable = st.editing || !highConfidence;
             const noProposal = !s.suggestedStatus && !s.aiUsed;
             const rowSaving = savingId === s.normRequirementId;
+            const acceptStatus = st.status || s.suggestedStatus;
             const legalArticles = Array.isArray(s.legal?.articles) ? s.legal.articles : [];
             const hasLegal = legalArticles.length > 0;
             return (
@@ -223,8 +226,8 @@ export default function SalAiSuggestDialog({
                   <button
                     type="button"
                     className="sal-btn sal-btn-primary"
-                    disabled={rowSaving || busy || noProposal}
-                    onClick={() => onAccept?.(s, st.status)}
+                    disabled={rowSaving || busy || noProposal || !acceptStatus}
+                    onClick={() => onAccept?.(s, acceptStatus)}
                   >
                     {rowSaving ? 'Salvataggio\u2026' : 'Accetta'}
                   </button>
