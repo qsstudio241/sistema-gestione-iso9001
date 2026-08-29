@@ -43,6 +43,34 @@ const {
 /** Numero massimo di clausole per richiesta batch. */
 const MAX_BATCH = 25;
 
+/** Candidati registro per «documento mancante» (S2a). */
+const MAX_MISSING_EVIDENCE_CANDIDATES = 8;
+
+/**
+ * Etichette allineate a app/src/data/documentTypes.js (sottoinsieme).
+ * Nessun doc_type nuovo: solo valori già in catalogo.
+ */
+const TYPICAL_DOC_TYPE_LABELS = Object.freeze({
+  procedura: 'Procedura',
+  istruzione: 'Istruzione operativa',
+  modulo: 'Modulo / Registrazione',
+  manuale: 'Manuale',
+  altro: 'Altro',
+});
+
+/**
+ * Euristica statica piccola (S2a): prefisso clause_ref → tipo catalogo.
+ * Non è un obbligo di norma — solo etichetta tipica per HITL.
+ * Prefissi più lunghi prima (10.2 prima di 10).
+ */
+const CLAUSE_TYPICAL_DOC_TYPE = Object.freeze([
+  { prefix: '10.2', docType: 'modulo' },
+  { prefix: '9.3', docType: 'modulo' },
+  { prefix: '8.4', docType: 'procedura' },
+  { prefix: '7.5', docType: 'procedura' },
+  { prefix: '5.2', docType: 'manuale' },
+]);
+
 const CONFIDENCE_VALUES = Object.freeze(['high', 'medium', 'low']);
 
 /** Valori di copertura conformita' legislativa (per articolo). */
@@ -244,6 +272,83 @@ async function loadLinkedEvidenceDocuments(organizationId, companyId, normRequir
     mimeType: d.mime_type || null,
     fileName: d.file_name || null,
   }));
+}
+
+/**
+ * Tipo documento tipico da prefisso clausola (euristica statica, non AI).
+ * @param {string|null|undefined} clauseRef
+ * @returns {{ typicalDocType: string, typicalDocTypeLabel: string }}
+ */
+function resolveTypicalDocType(clauseRef) {
+  const ref = String(clauseRef || '').trim();
+  const hit = CLAUSE_TYPICAL_DOC_TYPE.find((row) => (
+    ref === row.prefix
+    || ref.startsWith(`${row.prefix}.`)
+    || ref.startsWith(`${row.prefix} `)
+  ));
+  const typicalDocType = (hit && TYPICAL_DOC_TYPE_LABELS[hit.docType])
+    ? hit.docType
+    : 'altro';
+  return {
+    typicalDocType,
+    typicalDocTypeLabel: TYPICAL_DOC_TYPE_LABELS[typicalDocType],
+  };
+}
+
+/**
+ * Candidati dal registro, scoped org + azienda. Tipo tipico in testa.
+ * @returns {Promise<Array<{id:number,title:string,doc_type:string,doc_code:string|null}>>}
+ */
+async function loadMissingEvidenceCandidates(organizationId, companyId, typicalDocType) {
+  const res = await query(
+    `SELECT TOP ${MAX_MISSING_EVIDENCE_CANDIDATES} dr.id, dr.title, dr.doc_type, dr.doc_code
+     FROM document_registry dr
+     WHERE dr.organization_id = @orgId
+       AND dr.company_id = @companyId
+       AND dr.status <> 'obsoleto'
+       AND (dr.doc_type IS NULL OR dr.doc_type <> 'folder')
+     ORDER BY
+       CASE WHEN dr.doc_type = @typicalType THEN 0 ELSE 1 END,
+       dr.title ASC`,
+    { orgId: organizationId, companyId, typicalType: typicalDocType },
+  );
+  return (res.recordset || []).map((d) => ({
+    id: d.id,
+    title: d.title || `Documento #${d.id}`,
+    doc_type: d.doc_type || 'altro',
+    doc_code: d.doc_code || null,
+  }));
+}
+
+/**
+ * Proposta strutturata «documento mancante» (S2a). Mai scrive su DB.
+ * @returns {Promise<{typicalDocType:string,typicalDocTypeLabel:string,candidates:Array,reason:string}>}
+ */
+async function buildMissingEvidenceSuggestion(organizationId, companyId, clause) {
+  const { typicalDocType, typicalDocTypeLabel } = resolveTypicalDocType(
+    clause && clause.clause_ref,
+  );
+  let candidates = [];
+  try {
+    candidates = await loadMissingEvidenceCandidates(
+      organizationId,
+      companyId,
+      typicalDocType,
+    );
+  } catch (err) {
+    logger.warn(`[SalAiSuggest] candidati registro falliti: ${err.message}`);
+    candidates = [];
+  }
+  const clauseRef = (clause && clause.clause_ref) || '?';
+  const reason = typicalDocType === 'altro'
+    ? `Nessuna evidenza collegata alla clausola ${clauseRef}. Tipo documento tipico non mappato: usa «Altro» o scegli dal registro.`
+    : `Nessuna evidenza collegata alla clausola ${clauseRef}. Tipo tipico: ${typicalDocTypeLabel}.`;
+  return {
+    typicalDocType,
+    typicalDocTypeLabel,
+    candidates,
+    reason,
+  };
 }
 
 /**
@@ -479,6 +584,11 @@ async function suggestForClause(organizationId, companyId, normRequirementId, le
   const withText = evidences.filter((e) => e.text && e.text.trim().length > 0);
   const legalWithText = legislation.filter((a) => a.textAvailable);
 
+  // S2a: proposta documento mancante solo se coverage evidenze vuota (HITL, no write).
+  const missingEvidenceSuggestion = evidences.length
+    ? null
+    : await buildMissingEvidenceSuggestion(organizationId, companyId, clause);
+
   // Nessun testo estraibile -> nessuna chiamata AI (graceful, zero token spesi).
   if (!withText.length) {
     return {
@@ -495,6 +605,7 @@ async function suggestForClause(organizationId, companyId, normRequirementId, le
         used: false,
         reason: e.reason,
       })),
+      missingEvidenceSuggestion,
       aiUsed: false,
     };
   }
@@ -517,6 +628,7 @@ async function suggestForClause(organizationId, companyId, normRequirementId, le
       confidence: 'low',
       rationale: 'Servizio AI non raggiungibile al momento. Riprova piu\u2019 tardi o valuta manualmente.',
       evidenceRefs: withText.map((e) => ({ documentId: e.documentId, title: e.title, used: false })),
+      missingEvidenceSuggestion: null,
       aiUsed: false,
       aiError: err.code || 'AI_ERROR',
     };
@@ -558,6 +670,7 @@ async function suggestForClause(organizationId, companyId, normRequirementId, le
     confidence,
     rationale,
     evidenceRefs,
+    missingEvidenceSuggestion: null,
     ...(legal ? { legal } : {}),
     aiUsed: true,
     model: result.model || null,
@@ -664,6 +777,8 @@ module.exports = {
   suggestSalStatus,
   suggestForClause,
   buildClauseContext,
+  buildMissingEvidenceSuggestion,
+  resolveTypicalDocType,
   loadLegislationArticles,
   parseLinkedLegislation,
   decreeLabelToStandardCode,
@@ -672,4 +787,5 @@ module.exports = {
   normalizeCoverage,
   MAX_BATCH,
   MAX_LEGAL_ARTICLES,
+  MAX_MISSING_EVIDENCE_CANDIDATES,
 };
