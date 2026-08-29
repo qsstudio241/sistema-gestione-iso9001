@@ -8,7 +8,7 @@
 **S1b:** CHIUSO (PR [#603](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/603))  
 **Rischio:** Medio — service backend additivo (campo JSON su `gap-ai-suggest`); niente auth/sync/migrazioni  
 **Branch:** `cursor/sal-ai-s2a-doc-mancante-b42c`  
-**PR:** draft su `main` (link in Esito)
+**PR:** da aprire draft su `main` — compare https://github.com/qsstudio241/sistema-gestione-iso9001/compare/main...cursor/sal-ai-s2a-doc-mancante-b42c?expand=1
 
 > **Allineamento Git (autonomo)**: `git fetch origin main` + `git pull origin main` prima di eseguire. **Non** chiedere al committente.  
 > Comando: `Leggi docs/agent-tasks/DEPUTYTASK_SAL_AI.md ed eseguilo. Chiudi con TEST OK o FIX NON APPLICABILI.`
@@ -106,6 +106,7 @@ Provider AI assente: contratto 5-A invariato (`aiAvailable: false`, `suggestions
 - Euristica statica (non AI) + candidati `document_registry` scoped
 - Zero write HITL
 - L1: 39/39 Jest
+- Compare PR: https://github.com/qsstudio241/sistema-gestione-iso9001/compare/main...cursor/sal-ai-s2a-doc-mancante-b42c?expand=1
 - Prossimo: **S2b** UI collega / carica / ignora
 
 ## Bozza hub (dopo merge, non in questa PR)
