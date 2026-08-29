@@ -1,95 +1,92 @@
-# DEPUTYTASK — STUD-3-B: range WPQR stud ISO 14555 + accettazione Tabella 2 boiler pins
+# DEPUTYTASK — LN-1: Gestione → Libreria (catalogo norme + richieste mancanti)
 
-**Stato:** CHIUSO — TEST OK  
+**Stato:** APERTO  
 **Aperto:** 29/08/2026  
-**Chiuso:** 29/08/2026  
-**Stream:** [`DEPUTYTASK_WPQR_STUD.md`](DEPUTYTASK_WPQR_STUD.md) (STUD-1 #585, STUD-2 #590, STUD-3-A #589 **CHIUSI**)  
-**Report:** [`docs/gap-reports/GAP_WPQR_STUD_WELDING_PIASTRA_TUBO_2026-08-25.md`](../gap-reports/GAP_WPQR_STUD_WELDING_PIASTRA_TUBO_2026-08-25.md)  
-**Estratto (HITL chiuso 29/08):** [`docs/reference/ISO-14555-2025-range-validita-WPQR.md`](../reference/ISO-14555-2025-range-validita-WPQR.md)  
-**Dipende da:** STUD-3-A + HITL extract/Tabella 2 **chiusi**; PR second pass #596 allineata su `main`  
-**Rischio:** Medio — motorino regole additivo FE/BE + wiring minimo WPQR; **niente** auth/sync/migrazioni distruttive; **niente** codici 4063 inventati  
-**Slot precedente:** STUD-2 CHIUSO (ingest)
+**Piano:** [`PLAN_LIBRERIA_NORME_SLICES.md`](PLAN_LIBRERIA_NORME_SLICES.md)  
+**Rischio:** Medio — FE additivo (pagina + voce menu) + eventuale endpoint read-only leggero; **niente** auth/sync/migrazioni distruttive; **niente** secondo inventario DB  
+**Origine:** Committente — punto 3 Quaderno / vigore norme; UI (1) elenco ingerite+validità (2) richieste mancanti; ipotesi Gestione → Libreria  
+**Parallelo:** slot 1–5 CHIUSI su `main`; PR #600 solo docs roadmap/GUIDA — file **disgiunti**
 
 > **Allineamento Git (autonomo)**: `git fetch origin main` + `git pull origin main` prima di eseguire. **Non** chiedere al committente.  
 > Comando: `Leggi docs/agent-tasks/DEPUTYTASK.md ed eseguilo. Chiudi con TEST OK o FIX NON APPLICABILI.`
 
-## Fonti Markdown
+## Decisione proposta (HITL solo sul nome)
 
-```text
-Fonti Markdown:
-- Coperte: ISO-14555-2025-range-validita-WPQR.md (§10.2.8.1–12, Tabella 2 HITL:
-  ø 8→40 Nm, 10→60 Nm, 12→85 Nm; criterio §12.3 OR Table 2); NORMA_00033;
-  pattern weldingQualificationRules15614*.js
-- Mancanti: catalogo ISO 4063 stud (78x) — FUORI scope (HITL: solo indicazione processo)
-- Si parte su: motorino range §10.2.8 + accettazione Tabella 2; VIETATO inventare 783/784/785
-```
+| Voce | Decisione Lead | Serve click umano? |
+|------|----------------|--------------------|
+| Dove | **Gestione → Libreria** (admin/studio), non sotto SGQ Documenti | No (default) — Documenti resta SoT operativo multi-tipo |
+| Nome | **Libreria** | **Sì se preferisci altro** — alternativa: **Catalogo norme** (evita omonimia con doc `LIBRERIA_UI_SGQ.md`) |
+| Catalogo | Solo lettura da `document_registry` `doc_type=norma` + `validity_status` | No |
+| Richieste | Solo lettura da `NORME_MANCANTI_BACKLOG.md` | No in LN-1; PDF = HITL fuori UI |
+| Alternativa scartata | Solo deep-link Documenti `?doc_type=norma` | Meno chiaro per «qualità fonti AI»; Knowledge Health è KPI chunk, non vigore |
 
-## Perché
+Se al merge del brief non c’è veto sul nome → deputy usa **Libreria**.
 
-STUD-3-A ha l’estratto; HITL ha chiuso GAP e Tabella 2. Manca il codice: oggi UI/WPS applicano ancora logica 15614 (Tabella 7/9) anche dove non compete a uno stud 14555. STUD-3-B codifica le regole validate.
+## Obiettivo verificabile (LN-1)
 
-## Obiettivo
+Pagina accessibile da menu **Gestione** con **due sezioni**:
 
-Motorino `weldingQualificationRules14555` (FE + mirror BE) da estratto già validato:
+1. **Catalogo ingerito** — tabella/lista norme dal Registro con codice, titolo, anno e badge vigore (riuso `StatusBadge` / classi già usate in DocumentRegistry).
+2. **Richieste mancanti** — tabella/lista dal backlog Markdown (stato + priorità + impatto), sola lettura, testo che spiega «per aumentare affidabilità risposte / non inventare soglie».
 
-1. **Sezione stud** (§10.2.8.8): una prova → solo quella sezione; due prove → intervallo tra le sezioni (+ tutte le forme).
-2. **Spessore parent** (§10.2.8.6): tutti gli spessori se pWPS applicabile — **non** Tabella 7 15614.
-3. **Posizione** (§10.2.8.9): ramo `tw > 100 ms` vs `tw ≤ 100 ms`.
-4. **Protezione bagno** (§10.2.8.12): CF / SG / NP (NP copre SG, non il contrario).
-5. **Materiali** (§10.2.8.4 / 10.2.8.5 a–c) come da HITL (per **a** dissimili: `tw > 100 ms` → qualifica dedicata, nessuna matrice inventata).
-6. **Through-deck** (§10.2.8.7 + §3.14): lastra più spessa copre più sottili; soglia lastra **&lt; 3 mm**.
-7. **Accettazione boiler pins Tabella 2**: 8→40, 10→60, 12→85 Nm; criterio **§12.3 OR Table 2** (salvo diversa specifica).
-
-Wiring minimo: non applicare range 15614 quando norma = 14555 (e tipicamente `joint_type=SW`); opzione norma 14555 in form WPQR se manca.
-
-## DoD
-
-1. File regole FE+BE sincronizzati + test L1 (FE vitest mirato e/o BE jest) verdi.
-2. Nessun codice 4063 stud inventato in `weldingProcesses4063.js`.
-3. `deploy-manifest.json` aggiornato se nuovo `.js` in `backend/src/data/`.
-4. Build `app/` OK se tocchi FE.
-5. Brief **CHIUSO — TEST OK** (o handoff se non chiudi).
+Smoke: login admin → Gestione → Libreria → entrambe le sezioni popolabili (anche con zero righe = empty state chiaro). Link «Apri in Documenti» su almeno una riga catalogo (o CTA globale) se i dati ci sono.
 
 ## File previsti
 
-- `app/src/data/weldingQualificationRules14555.js` (**nuovo**)
-- `backend/src/data/weldingQualificationRules14555.js` (**nuovo**, mirror)
-- `app/src/tests/weldingQualificationRules14555.test.js` (**nuovo**)
-- `backend/src/data/weldingQualificationRules14555.test.js` (**nuovo**, opzionale se pattern BE)
-- `backend/scripts/deploy-manifest.json` (riga data)
-- `app/src/pages/WeldingProceduresPage.jsx` (opzione norma 14555 + non applicare calc 15614 su 14555)
-- eventuale `backend/src/services/wpsGenerator.service.js` (ramo spessore 14555, minimo)
-- `docs/agent-tasks/DEPUTYTASK.md` (questo brief)
-- `docs/agent-tasks/DEPUTYTASK_WPQR_STUD.md` (riga STUD-3-B)
+| Path | Perché |
+|------|--------|
+| `docs/agent-tasks/DEPUTYTASK.md` | Questo brief (stato) |
+| `docs/agent-tasks/PLAN_LIBRERIA_NORME_SLICES.md` | Mappa epic |
+| `app/src/pages/NormLibraryPage.jsx` (nome file ok anche `LibraryNormsPage.jsx`) | Pagina 2 sezioni |
+| `app/src/pages/NormLibraryPage.css` | Stile minimo, DNA Documenti/Knowledge Health — **non** look nuovo |
+| `app/src/layouts/AppLayout.jsx` | Voce menu Gestione |
+| `app/src/App.jsx` | Route lazy (es. `/settings/libreria` o `/settings/norme`) |
+| `app/src/services/apiService.js` | Solo se serve wrapper su GET documenti già esistente (filtro norma) |
+| `app/src/tests/normLibraryPage.test.jsx` (o equivalente) | L1: render 2 sezioni + empty/mock |
+| Opz. `backend/src/controllers/...` + route | **Solo se** serve endpoint read-only backlog; preferire FE che legge asset/JSON statico generato dal MD **oppure** riuso `GET /documents` senza BE nuovo |
+| Opz. `docs/reference/norme-mancanti-backlog.json` | Snapshot parse del MD per FE (se evita parser MD in browser) — aggiornare insieme al MD |
 
 ## Cosa NON toccare
 
-- Inventare famiglia 78x in `weldingProcesses4063.js`
-- Auth / sync / JWT / migrazioni distruttive
-- Seed VPS `norm_requirements` (non richiesto)
-- CND / NC / Qualifiche / Material Compliance
-- Usare Annex B (informative) come range validità al posto di §10.2.8
-- GUIDA / roadmap § Stato attuale se parallelo (bozza nel brief; sync dopo merge)
-- `DEPUTYTASK1.md`… (altri slot)
+- `document_registry` schema / migrazioni / `documentRegistryNorm.service.js` (SoT già OK)
+- `syncService`, `auth.middleware`, JWT
+- `DocumentRegistry.jsx` refactor ampio (solo link verso di esso)
+- `KnowledgeHealthPage.jsx` (resta KPI chunk)
+- `NORME_MANCANTI_BACKLOG.md` **contenuto** (LN-1 non riscrive priorità; al più genera JSON mirror)
+- `docs/GUIDA_CONSOLIDATA.md` / `PROJECT_ROADMAP.md` § Stato attuale **nella PR codice se c’è parallelo** — bozza 2 righe qui sotto; sync dopo merge
+- Altri `DEPUTYTASK1…5.md` / stream epic non LN
 
-## Verifica
+## Riuso obbligatorio (Gate Ponytail)
 
-- [x] Test regole: sezione 1/2 prove; spessore «tutti»; posizioni tw; CF/SG/NP; materiali a–c; through-deck; Tabella 2 8/10/12
-- [x] Nessun 783/784/785 nuovo nel catalogo
-- [x] L1 + build se FE
-- [x] PR codice; brief chiuso
+- SoT metadati: ADR-011 + `document_registry` `doc_type=norma`
+- Badge: `StatusBadge` / pattern `norm-validity-inline` già in DocumentRegistry
+- Upload/scheda: **non** ricopiare `NormUploadButton` in Libreria in LN-1 — link a `/documents`
+- Layout: copia DNA `app/src/design-system/README.md` + schermata tipo Knowledge Health / Documenti lista
+- Backlog: unica fonte testuale `docs/reference/NORME_MANCANTI_BACKLOG.md`
 
+## Test L1
 
+```bash
+cd app && NODE_ENV=test npm run test:run -- src/tests/normLibraryPage.test.jsx
+cd app && npm run build
+```
 
-## Esito
+Smoke post-merge (percorso Gestione): login admin → `/settings/libreria` (o path scelto) → sezioni visibili.
 
-**Branch:** `cursor/stud3b-range-wpqr-9166`  
-**Motorino:** `weldingQualificationRules14555` FE+BE (§10.2.8.4–12, §3.14, Tabella 2).  
-**Wiring:** form WPQR opzione `UNI EN ISO 14555:2025` + niente calc Tabella 7 su 14555; `wpsGenerator` ramo spessore 14555.  
-**4063 stud:** non inventati (HITL).  
-**Hub:** bozza roadmap dopo merge — «STUD-3-B range 14555 + Tabella 2 in codice».
+## Criteri chiusura
 
-## Bozza hub (dopo merge se parallelo)
+- [ ] Voce Gestione → Libreria (o nome confermato) visibile ad admin
+- [ ] Sezione Catalogo: dati da API documenti norma + validity
+- [ ] Sezione Richieste: dati da backlog (MD/JSON) read-only
+- [ ] Nessuna migrazione; nessun secondo SoT
+- [ ] Test L1 + build verdi; PR; **un** Bugbot a slice chiusa
+- [ ] Stato brief → CHIUSO — TEST OK + link PR
 
-- Roadmap: «STUD-3-B range 14555 + Tabella 2 in codice»
-- Stream STUD: STUD-3-B CHIUSO
+## Bozza post-merge (hub — dopo merge se parallelo)
+
+- Roadmap § Stato attuale: 1 riga «LN-1 Libreria norme Gestione (catalogo+richieste read-only)»
+- GUIDA: lezione «Libreria ≠ Documenti; SoT resta registro; backlog MD = richieste HITL»
+
+## Handoff
+
+_(compilare solo se slice interrotta — template `HANDOFF_TEMPLATE.md`)_
