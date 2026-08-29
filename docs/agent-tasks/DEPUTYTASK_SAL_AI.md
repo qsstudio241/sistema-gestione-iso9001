@@ -1,24 +1,25 @@
 # DEPUTYTASK_SAL_AI — S2a: Backend suggest documento mancante (HITL)
 
-**Stato:** APERTO  
+**Stato:** CHIUSO — TEST OK  
 **Aperto:** 29/08/2026  
+**Chiuso:** 29/08/2026  
 **Stream:** SAL AI evidenze — piano [`PLAN_SAL_AI_EVIDENCE_SLICES.md`](PLAN_SAL_AI_EVIDENCE_SLICES.md)  
 **S1a:** CHIUSO (PR [#471](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/471))  
 **S1b:** CHIUSO (PR [#603](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/603))  
 **Rischio:** Medio — service backend additivo (campo JSON su `gap-ai-suggest`); niente auth/sync/migrazioni  
 **Branch:** `cursor/sal-ai-s2a-doc-mancante-b42c`  
-**PR:** da aprire draft su `main`
+**PR:** draft su `main` (link in Esito)
 
 > **Allineamento Git (autonomo)**: `git fetch origin main` + `git pull origin main` prima di eseguire. **Non** chiedere al committente.  
 > Comando: `Leggi docs/agent-tasks/DEPUTYTASK_SAL_AI.md ed eseguilo. Chiudi con TEST OK o FIX NON APPLICABILI.`
 
 ## Perché
 
-S1a/S1b fanno leggere PDF scansionati e foto. Se la clausola **non ha** evidenze collegate, il suggeritore dice solo «collega prima» e il consulente deve cercare a mano nel registro. S2a propone tipo tipico + candidati scoped, **senza scrivere** FK (HITL / ADR-010). La UI collega/carica/ignora è **S2b**.
+S1a/S1b fanno leggere PDF scansionati e foto. Se la clausola **non ha** evidenze collegate, il suggeritore diceva solo «collega prima». S2a propone tipo tipico + candidati scoped, **senza scrivere** FK (HITL / ADR-010). La UI collega/carica/ignora è **S2b**.
 
 ## Nebbia chiusa in S2a — mapping clausola → tipo documento
 
-**Decisione:** euristica **statica piccola** (prefissi 3–5) + fallback `altro`. Non prompt AI, non ibrido.
+**Decisione:** euristica **statica piccola** (prefissi 5) + fallback `altro`. Non prompt AI, non ibrido.
 
 Non sono obblighi di norma: solo etichette già in `app/src/data/documentTypes.js`. Nessun `doc_type` nuovo.
 
@@ -35,10 +36,10 @@ Match: `clause_ref` uguale al prefisso, oppure inizia con `prefisso.` / `prefiss
 
 ## Contratto JSON stabile (FE S2b)
 
-Campo **sempre** presente su ogni elemento di `data.suggestions` (mai assente):
+Campo **sempre** presente su ogni elemento di `data.suggestions` (mai assente), tranne `CLAUSE_NOT_FOUND`:
 
 - evidenze già collegate (lista IDs risolta non vuota) → `missingEvidenceSuggestion: null`
-- nessuna evidenza (o IDs assenti/vuoti / coverage missing = zero doc risolti) → oggetto sotto
+- nessuna evidenza (IDs assenti/vuoti / coverage missing = zero doc risolti) → oggetto sotto
 
 ```json
 {
@@ -66,49 +67,48 @@ Campo **sempre** presente su ogni elemento di `data.suggestions` (mai assente):
 
 HITL: **nessun** `UPDATE`/`INSERT` su `requirement_implementation_status` né su `evidence_document_ids`.
 
-Provider AI assente: contratto 5-A invariato (`aiAvailable: false`, `suggestions: []`) — la suggestion documento manca finché non c’è un elemento in `suggestions` (S2b resta sul dialog AI).
-
-## Obiettivo
-
-`POST .../gap-ai-suggest` include `missingEvidenceSuggestion` strutturata quando la clausola non ha evidenze; se la lista è piena → `null`. Zero mutazioni DB.
+Provider AI assente: contratto 5-A invariato (`aiAvailable: false`, `suggestions: []`).
 
 ## DoD
 
-- [ ] Contratto JSON documentato (questa sezione)
-- [ ] Query registro scoped org+azienda; limite 8
-- [ ] Test L1 sul service
-- [ ] HITL: nessun UPDATE a `requirement_implementation_status`
+- [x] Contratto JSON documentato (questa sezione)
+- [x] Query registro scoped org+azienda; limite 8
+- [x] Test L1 sul service
+- [x] HITL: nessun UPDATE a `requirement_implementation_status`
 
-## File previsti
+## File toccati
 
-- `backend/src/services/salAiSuggest.service.js` (euristica + query candidati + campo sul payload)
+- `backend/src/services/salAiSuggest.service.js`
 - `backend/src/services/salAiSuggest.service.test.js`
-- `docs/agent-tasks/DEPUTYTASK_SAL_AI.md` (questo brief)
-- `docs/agent-tasks/PLAN_SAL_AI_EVIDENCE_SLICES.md` (checkbox S2a)
+- `docs/agent-tasks/DEPUTYTASK_SAL_AI.md`
+- `docs/agent-tasks/PLAN_SAL_AI_EVIDENCE_SLICES.md`
 
-`deploy-manifest.json`: `salAiSuggest.service.js` **già listato** — nessun `.js` nuovo.
+`deploy-manifest.json` invariato (`salAiSuggest.service.js` già listato).
 
-## Cosa NON toccare
+## Cosa NON toccato
 
-- `docs/agent-tasks/DEPUTYTASK.md` (slot principale; LN-1 Libreria APERTO)
+- `DEPUTYTASK.md` (LN-1 Libreria)
 - UI SAL (`SALModule.jsx`, `SalAiSuggestDialog`, `SalEvidenceSection`) — **S2b**
-- `app/src/data/documentTypes.js` (nessun tipo nuovo)
-- Pipeline ingest; auth, sync, JWT, migrazioni
-- GUIDA / roadmap § Stato attuale (chat LN-1 aperta — bozza sotto; sync dopo merge)
+- `documentTypes.js`; ingest; auth/sync/migrazioni
+- GUIDA / roadmap (parallelo LN-1 — bozza sotto)
 
-## Riuso (Gate Ponytail)
+## Verifica
 
-- Estendere `salAiSuggest` (niente service nuovo)
-- Query `document_registry` come `loadLinkedEvidenceDocuments` (org + azienda + non obsoleto)
-- Etichette = sottoinsieme di `DOC_TYPE_OPTIONS`
+- [x] Jest: `salAiSuggest.service.test.js` — 39/39 verdi
+- [x] Euristica: `5.2` manuale, `7.5`/`8.4` procedura, `9.3`/`10.2` modulo; `5.20` e `4.1` → `altro`
+- [x] Lista evidenze piena → `missingEvidenceSuggestion: null`, nessuna query candidati
+- [x] Query candidati: `@orgId` + `@companyId` + `TOP 8`; zero INSERT/UPDATE
+- [x] Errore query candidati → `candidates: []`, nessun throw
 
-## Test L1
+## Esito
 
-```bash
-cd backend && npx jest src/services/salAiSuggest.service.test.js --no-coverage
-```
+- Campo `missingEvidenceSuggestion` su ogni suggestion `gap-ai-suggest`
+- Euristica statica (non AI) + candidati `document_registry` scoped
+- Zero write HITL
+- L1: 39/39 Jest
+- Prossimo: **S2b** UI collega / carica / ignora
 
 ## Bozza hub (dopo merge, non in questa PR)
 
 - **GUIDA**: una riga — `gap-ai-suggest` propone tipo tipico + candidati registro se manca evidenza; zero write (HITL); UI in S2b.
-- **Roadmap**: S1b #603 in main; S2a backend documento mancante; prossimo S2b UI collega/carica/ignora.
+- **Roadmap**: S1b #603 + S2a backend documento mancante; prossimo S2b UI collega/carica/ignora.
