@@ -78,6 +78,7 @@ export function backendToFrontend(backendAudit) {
             auditNumber: backendAudit.audit_number || '',
             clientName: backendAudit.client_name || '',
             companyId: backendAudit.company_id ?? null,
+            organizationId: backendAudit.organization_id ?? null,
             auditPartyType: backendAudit.audit_party_type || extraData.auditPartyType || 'first_party',
             fornitoreName: backendAudit.fornitore_name || extraData.fornitoreName || '',
             fornitoreSupplierId: extraData.fornitoreSupplierId ?? null,

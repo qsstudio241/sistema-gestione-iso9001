@@ -25,6 +25,11 @@ import { syncService } from "../services/syncService";
 import apiService, { setAuditLockTokensForAudit, clearAllAuditLockTokens } from "../services/apiService";
 import { hasAnyDraftForAudit } from "../utils/draftFieldRegistry";
 import {
+  auditMatchesOrganization,
+  filterAuditsByOrganization,
+  resolveAuditOrganizationId,
+} from "../utils/auditLocalTenantFilter";
+import {
   applyServerResponsesPreservingLocalNotes,
   mergeCustomEvidenceResponses,
   resolveMergedChecklistForReconcile,
@@ -217,10 +222,19 @@ function dedupeAudits(audits = []) {
  * Dopo GET /audits: audit in IndexedDB non inclusi nel merge server.
  * Non reinserire audit gia persistiti (metadata.auditId) se il server non li ha restituiti:
  * altrimenti il menu mostra audit di altri tenant/studio esclusi da RBAC (lista locale obsoleta).
- * Restano solo bozze senza audit_id server (offline-first create non ancora sincronizzato).
+ * Restano solo bozze senza audit_id server (offline-first create non ancora sincronizzato)
+ * e appartenenti allo studio corrente (organization_id).
+ *
+ * @param {Array} localAudits
+ * @param {Array} mergedFromServer
+ * @param {string|number|null|undefined} [currentOrgId]
  */
-function filterLocalAuditsAfterServerFetch(localAudits, mergedFromServer) {
+function filterLocalAuditsAfterServerFetch(localAudits, mergedFromServer, currentOrgId) {
   if (!Array.isArray(localAudits) || !Array.isArray(mergedFromServer)) return [];
+  const orgId =
+    currentOrgId !== undefined
+      ? currentOrgId
+      : resolveAuditOrganizationId(null, apiService.getStoredUser?.() || null);
   const mergedIds = new Set(
     mergedFromServer
       .map((a) => a.metadata?.id || a.id || a?.metadata?.audit_uuid || a?.audit_uuid)
@@ -261,6 +275,9 @@ function filterLocalAuditsAfterServerFetch(localAudits, mergedFromServer) {
     // Bozze/residui da sessioni precedenti senza flag vengono rimossi al reconcile successivo,
     // impedendo che test/LOCK-* tornino a comparire indefinitamente.
     if (la.metadata?.isIntentionalDraft !== true) return false;
+
+    // Multi-tenant: niente leak bozze di un altro studio sullo stesso browser.
+    if (!auditMatchesOrganization(la, orgId)) return false;
 
     return true;
   });
@@ -1349,7 +1366,10 @@ export function StorageProvider({ children, useMockData = false }) {
               return merged;
             })
           : !navigator.onLine || !apiService.getToken()
-            ? localAudits
+            ? filterAuditsByOrganization(
+                localAudits,
+                resolveAuditOrganizationId(null, apiService.getStoredUser?.() || null),
+              )
             : [];
 
         // Includi audit solo locali (non ancora sul server) nella lista finale.
@@ -1904,7 +1924,14 @@ export function StorageProvider({ children, useMockData = false }) {
    */
   const createAudit = useCallback((metadata) => {
     try {
-      const newAudit = createNewAudit(metadata);
+      const organizationId = resolveAuditOrganizationId(
+        metadata?.organizationId ?? metadata?.organization_id,
+        apiService.getStoredUser?.() || null,
+      );
+      const newAudit = createNewAudit({
+        ...metadata,
+        ...(organizationId != null ? { organizationId } : {}),
+      });
 
       setAudits((prevAudits) => [...prevAudits, newAudit]);
       setCurrentAuditId(newAudit.metadata.id);

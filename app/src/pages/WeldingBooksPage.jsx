@@ -120,7 +120,14 @@ function WeldingBookForm({ book, onSave, onCancel }) {
     const [error, setError] = useState(null);
     const [savedAt, setSavedAt] = useState(null);
 
-    const { clearDraft } = useWeldingBookAutoSave(book?.id || null, form, equipment, welds);
+    const organizationId = apiService.getStoredUser?.()?.organization_id ?? null;
+    const { clearDraft } = useWeldingBookAutoSave(
+        book?.id || null,
+        form,
+        equipment,
+        welds,
+        organizationId,
+    );
 
     const set = (k, v) => setForm((f) => ({ ...f, [k]: v }));
 

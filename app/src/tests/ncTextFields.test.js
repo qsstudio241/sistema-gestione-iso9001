@@ -49,10 +49,10 @@ describe('textFieldHistory', () => {
   });
 
   it('appendTextFieldHistory evita duplicati consecutivi', () => {
-    appendTextFieldHistory('nc:7', 'description', 'Prima versione');
-    appendTextFieldHistory('nc:7', 'description', 'Prima versione');
-    appendTextFieldHistory('nc:7', 'description', 'Seconda versione');
-    const hist = getTextFieldHistory('nc:7', 'description');
+    appendTextFieldHistory(1001, 'nc:7', 'description', 'Prima versione');
+    appendTextFieldHistory(1001, 'nc:7', 'description', 'Prima versione');
+    appendTextFieldHistory(1001, 'nc:7', 'description', 'Seconda versione');
+    const hist = getTextFieldHistory(1001, 'nc:7', 'description');
     expect(hist).toHaveLength(2);
     expect(hist[0].text).toBe('Seconda versione');
     expect(hist[1].text).toBe('Prima versione');

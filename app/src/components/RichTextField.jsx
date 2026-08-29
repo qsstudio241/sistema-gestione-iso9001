@@ -47,12 +47,12 @@ function RichTextField({
   const [historyEntries, setHistoryEntries] = useState([]);
 
   const refreshHistory = useCallback(() => {
-    if (!showHistory || !scopeId || !draftFieldId) {
+    if (!showHistory || !organizationId || !scopeId || !draftFieldId) {
       setHistoryEntries([]);
       return;
     }
-    setHistoryEntries(getTextFieldHistory(scopeId, draftFieldId));
-  }, [showHistory, scopeId, draftFieldId]);
+    setHistoryEntries(getTextFieldHistory(organizationId, scopeId, draftFieldId));
+  }, [showHistory, organizationId, scopeId, draftFieldId]);
 
   useEffect(() => {
     refreshHistory();
@@ -90,8 +90,12 @@ function RichTextField({
     const current = e?.target?.value ?? value;
     if (scopeId && draftFieldId) {
       scheduleClearDraft(scopeId, draftFieldId, 2000);
-      if (showHistory && String(current).trim() !== String(lastHistoryRef.current).trim()) {
-        appendTextFieldHistory(scopeId, draftFieldId, current);
+      if (
+        showHistory &&
+        organizationId &&
+        String(current).trim() !== String(lastHistoryRef.current).trim()
+      ) {
+        appendTextFieldHistory(organizationId, scopeId, draftFieldId, current);
         lastHistoryRef.current = current;
         refreshHistory();
       }
@@ -115,7 +119,8 @@ function RichTextField({
   // la sua comparsa sposterebbe verso il basso i controlli che seguono e il
   // mouseup del click che ha causato il blur cadrebbe fuori dal pulsante
   // (primo "Salva" ignorato). Lo spazio viene quindi riservato sempre.
-  const historySlotVisible = showHistory && !!scopeId && !!draftFieldId && !isDisabled;
+  const historySlotVisible =
+    showHistory && !!organizationId && !!scopeId && !!draftFieldId && !isDisabled;
 
   return (
     <div className="rich-text-field">

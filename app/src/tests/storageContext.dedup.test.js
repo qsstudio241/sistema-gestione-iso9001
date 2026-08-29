@@ -60,7 +60,7 @@ function isInTombstone(auditId) {
     }
 }
 
-function filterLocalAuditsAfterServerFetch(localAudits, mergedFromServer) {
+function filterLocalAuditsAfterServerFetch(localAudits, mergedFromServer, currentOrgId) {
     if (!Array.isArray(localAudits) || !Array.isArray(mergedFromServer)) return [];
     const mergedIds = new Set(
         mergedFromServer
@@ -94,6 +94,11 @@ function filterLocalAuditsAfterServerFetch(localAudits, mergedFromServer) {
         // Bozza solo-locale: conserva SOLO se contrassegnata come intenzionale.
         // Flag isIntentionalDraft=true è aggiunto da createNewAudit da aprile 2026.
         if (la.metadata?.isIntentionalDraft !== true) return false;
+        // Multi-tenant: niente leak bozze di un altro studio (Passo 1).
+        if (currentOrgId != null && currentOrgId !== '') {
+            const oid = la.metadata?.organizationId ?? la.metadata?.organization_id ?? null;
+            if (oid == null || oid === '' || String(oid) !== String(currentOrgId)) return false;
+        }
         return true;
     });
 }
@@ -170,6 +175,39 @@ describe('filterLocalAuditsAfterServerFetch', () => {
         const result = filterLocalAuditsAfterServerFetch([draft], [serverAudit]);
         expect(result).toHaveLength(1);
         expect(result[0].metadata.id).toBe('local-only-uuid');
+    });
+
+    test('bozza org A NON mantenuta quando currentOrgId è org B', () => {
+        const draftA = {
+            metadata: {
+                id: 'local-org-a',
+                isIntentionalDraft: true,
+                organizationId: 1002,
+            },
+        };
+        const draftB = {
+            metadata: {
+                id: 'local-org-b',
+                isIntentionalDraft: true,
+                organizationId: 1003,
+            },
+        };
+        const result = filterLocalAuditsAfterServerFetch(
+            [draftA, draftB],
+            [serverAudit],
+            1003,
+        );
+        expect(result).toHaveLength(1);
+        expect(result[0].metadata.id).toBe('local-org-b');
+    });
+
+    test('bozza legacy senza organizationId esclusa se currentOrgId noto', () => {
+        const legacy = {
+            metadata: { id: 'legacy-no-org', isIntentionalDraft: true },
+        };
+        expect(
+            filterLocalAuditsAfterServerFetch([legacy], [serverAudit], 1002),
+        ).toHaveLength(0);
     });
 
     test('bozza locale senza isIntentionalDraft → rimossa (residuo stantio/LOCK audit)', () => {
