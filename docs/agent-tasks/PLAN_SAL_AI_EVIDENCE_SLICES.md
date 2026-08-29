@@ -2,7 +2,7 @@
 
 > **Destinazione**: il suggeritore SAL AI (Fase 5-A/5-B) legge anche PDF scansionati e immagini (OCR riusabile), e quando manca evidenza per una clausola propone tipo documento tipico + candidati dal registro e chiede all’utente se collegare/caricare — **mai** auto-collegamento senza conferma (HITL).
 > **Spec / ADR**: [`MODULO_SAL_SCOPO_E_ROADMAP.md`](../specs/MODULO_SAL_SCOPO_E_ROADMAP.md) §C.1/C.2 · [ADR-010](../adr/ADR-010-ai-agentic-architecture.md) (human-in-the-loop)
-> **Brief attivo**: [`DEPUTYTASK_SAL_AI.md`](DEPUTYTASK_SAL_AI.md) — slice **S2a** (CHIUSO — TEST OK). S1a [#471](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/471) · S1b [#603](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/603). Prossima: **S2b** (UI collega/carica/ignora). **Non** usare `DEPUTYTASK.md` (altro slot).
+> **Epic chiusa** (29/08/2026): S1a [#471](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/471) · S1b [#603](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/603) · S2a [#605](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/605) · **S2b** UI HITL. Stream [`DEPUTYTASK_SAL_AI.md`](DEPUTYTASK_SAL_AI.md) **CHIUSO**. **S1c** (`.doc`) solo su richiesta. **Non** usare `DEPUTYTASK.md` (altro slot).
 > **Mappa creata**: 15/08/2026 (Lead wayfinder A — Chart the map; nessuna implementazione in questa sessione)
 
 ---
@@ -35,7 +35,7 @@
 - **Solo evidenze già collegate**: `loadEvidenceDocuments` legge `evidence_document_ids`; se lista vuota → `confidence: low` + messaggio «Collega i documenti…»; se testo non estraibile → messaggio su PDF immagine / formato non supportato
 - **Estrattore SAL**: `documentTextExtractor.service.js` supporta PDF testo, DOCX, `text/*`; **S1a**: PDF vuoto/sotto soglia ingest → `extractTextWithOCR`; fallimento → `ocr_unavailable` / `ocr_failed`. **S1b**: PNG/JPEG/WebP → `extractTextFromImageBuffer` (Tesseract sul buffer); stesso fallback reason; GIF/.doc restano `unsupported_format`
 - **OCR PDF riusato da SAL (S1a)**: `ocrExtractor.js` (`pdf2pic` + `tesseract.js`) è agganciato sia a ingest sia a `documentTextExtractor`; prerequisiti VPS: Ghostscript + GraphicsMagick/ImageMagick
-- **UI evidenze**: `SalEvidenceSection.jsx` elenca/collega dal registro (`apiService.getDocuments`); link «Apri registro» / «Aggiungi nel registro» — nessun flusso «tipo tipico + candidati + upload guidato» dal dialog AI
+- **UI evidenze**: `SalEvidenceSection.jsx` elenca/collega dal registro (`apiService.getDocuments`); link «Apri registro» / «Aggiungi nel registro». **S2b**: dal dialog AI, se `missingEvidenceSuggestion` è oggetto → tipo tipico + candidati + Collega / Carica nel registro / Ignora (HITL)
 - **Tipi documento**: catalogo FE `app/src/data/documentTypes.js` (`procedura`, `istruzione`, `manuale`, …) — riuso per etichette, non inventare nuovi `doc_type` senza seed
 - **Isolamento multi-tenant**: ogni scan registro resta scoped `organization_id` + `company_id` (stesso pattern di `salAiSuggest`)
 
@@ -49,7 +49,7 @@
 | Immagini (PNG/JPEG/WebP) allegate al doc | **S1b fatto** — OCR via `extractTextFromImageBuffer`; `ocr_unavailable` / `ocr_failed` se Tesseract assente/fallisce | Fatto | **S1b** |
 | Formato `.doc` legacy | `unsupported_format` | Decisione prodotto (nebbia); almeno messaggio UX chiaro | Nebbia / eventuale **S1c** |
 | Clausola senza evidenze | **S2a fatto** — `missingEvidenceSuggestion` su `gap-ai-suggest` (no write) | Fatto | **S2a** |
-| Conferma utente su candidati | N/A | UI: collega esistente / carica nuovo / ignora; zero write senza conferma | **S2b** |
+| Conferma utente su candidati | **S2b fatto** — collega / carica registro / ignora; PATCH solo su Collega | Fatto | **S2b** |
 | Auto-link AI | Vietato (e assente) | Resta vietato | — (vincolo) |
 
 ---
@@ -65,7 +65,7 @@
 | **S2b** | UI proposta collega / carica / ignora | `SalAiSuggestDialog` + riuso `SalEvidenceSection` / upload registro esistente; conferma esplicita prima di PATCH evidenze | S2a | AFK |
 
 **Ordine**: S1a → S1b → (S1c se deciso) → S2a → S2b.  
-**Parallelo**: S1a/S1b/S2a chiusi. **S2b** (UI) è la prossima slice — non tocca il service suggest.
+**Parallelo**: S1a/S1b/S2a/S2b chiusi. Residuo solo **S1c** (HITL, su richiesta).
 
 ---
 
@@ -120,9 +120,9 @@
 
 **DoD**
 
-- [ ] Riuso DNA/`SalEvidenceSection` / link registro — gate Ponytail
-- [ ] Test Vitest mirato dialog
-- [ ] Disclaimer AI invariato (`AiDisclaimer` se già presente)
+- [x] Riuso DNA/`SalEvidenceSection` / link registro — gate Ponytail
+- [x] Test Vitest mirato dialog
+- [x] Disclaimer AI invariato (`AiDisclaimer` se già presente)
 
 ---
 
