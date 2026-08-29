@@ -45,6 +45,8 @@ const {
   normalizeSuggestedStatus,
   normalizeConfidence,
   normalizeCoverage,
+  resolveTypicalDocType,
+  MAX_MISSING_EVIDENCE_CANDIDATES,
 } = require('./salAiSuggest.service');
 
 const CLAUSE_ROW = {
@@ -195,6 +197,7 @@ describe('salAiSuggest.service', () => {
       expect(out.confidence).toBe('high');
       expect(out.aiUsed).toBe(true);
       expect(out.clauseRef).toBe('8.4');
+      expect(out.missingEvidenceSuggestion).toBeNull();
       expect(out.evidenceRefs).toEqual([
         expect.objectContaining({ documentId: 10, used: true }),
       ]);
@@ -252,6 +255,11 @@ describe('salAiSuggest.service', () => {
       expect(out.aiUsed).toBe(false);
       expect(out.evidenceRefs).toEqual([]);
       expect(out.rationale).toMatch(/Nessuna evidenza/i);
+      expect(out.missingEvidenceSuggestion).toEqual(expect.objectContaining({
+        typicalDocType: 'procedura',
+        typicalDocTypeLabel: 'Procedura',
+        candidates: [],
+      }));
       expect(chat).not.toHaveBeenCalled();
     });
   });
@@ -524,6 +532,178 @@ describe('salAiSuggest.service', () => {
       const res = await suggestSalStatus({ organizationId: 1, companyId: 42, normRequirementId: 610 });
       expect(res.meta.contextSummary).toMatch(/conformita legislativa/i);
       expect(res.data.suggestions[0].legal.evaluated).toBe(true);
+    });
+  });
+
+  // ---------------------------------------------------------------------------
+  // S2a: documento mancante (euristica statica + candidati registro, no write)
+  // ---------------------------------------------------------------------------
+
+  describe('resolveTypicalDocType - euristica statica', () => {
+    test('prefissi tipici → tipo catalogo', () => {
+      expect(resolveTypicalDocType('5.2')).toEqual({
+        typicalDocType: 'manuale',
+        typicalDocTypeLabel: 'Manuale',
+      });
+      expect(resolveTypicalDocType('7.5.3')).toEqual({
+        typicalDocType: 'procedura',
+        typicalDocTypeLabel: 'Procedura',
+      });
+      expect(resolveTypicalDocType('8.4')).toEqual({
+        typicalDocType: 'procedura',
+        typicalDocTypeLabel: 'Procedura',
+      });
+      expect(resolveTypicalDocType('9.3')).toEqual({
+        typicalDocType: 'modulo',
+        typicalDocTypeLabel: 'Modulo / Registrazione',
+      });
+      expect(resolveTypicalDocType('10.2.1')).toEqual({
+        typicalDocType: 'modulo',
+        typicalDocTypeLabel: 'Modulo / Registrazione',
+      });
+    });
+
+    test('5.20 non matcha 5.2; fallback altro', () => {
+      expect(resolveTypicalDocType('5.20')).toEqual({
+        typicalDocType: 'altro',
+        typicalDocTypeLabel: 'Altro',
+      });
+      expect(resolveTypicalDocType('4.1')).toEqual({
+        typicalDocType: 'altro',
+        typicalDocTypeLabel: 'Altro',
+      });
+      expect(resolveTypicalDocType(null)).toEqual({
+        typicalDocType: 'altro',
+        typicalDocTypeLabel: 'Altro',
+      });
+    });
+  });
+
+  describe('suggestForClause - missingEvidenceSuggestion (S2a)', () => {
+    function mockQueryMissingEvidence({ clause = CLAUSE_ROW, candidates = [] } = {}) {
+      query.mockImplementation((sqlText) => {
+        if (/FROM norm_requirements\s+WHERE id = @id/.test(sqlText)) {
+          return { recordset: [clause] };
+        }
+        if (/SELECT evidence_document_ids/.test(sqlText)) {
+          return { recordset: [{ evidence_document_ids: null }] };
+        }
+        if (/dr\.doc_code/.test(sqlText) && /FROM document_registry dr/.test(sqlText)) {
+          return { recordset: candidates };
+        }
+        return { recordset: [] };
+      });
+    }
+
+    test('senza evidenze: proposta tipo + candidati scoped, senza scrivere DB', async () => {
+      mockQueryMissingEvidence({
+        candidates: [
+          { id: 21, title: 'PG-07 Acquisti', doc_type: 'procedura', doc_code: 'PG-07' },
+          { id: 22, title: 'Manuale SGQ', doc_type: 'manuale', doc_code: 'MQ-01' },
+        ],
+      });
+
+      const out = await suggestForClause(1, 42, 501);
+
+      expect(out.missingEvidenceSuggestion).toEqual({
+        typicalDocType: 'procedura',
+        typicalDocTypeLabel: 'Procedura',
+        candidates: [
+          { id: 21, title: 'PG-07 Acquisti', doc_type: 'procedura', doc_code: 'PG-07' },
+          { id: 22, title: 'Manuale SGQ', doc_type: 'manuale', doc_code: 'MQ-01' },
+        ],
+        reason: expect.stringMatching(/8\.4/),
+      });
+      expect(out.missingEvidenceSuggestion.reason).toMatch(/Procedura/);
+      expect(chat).not.toHaveBeenCalled();
+
+      const candidateSql = query.mock.calls.find(([sql]) => /dr\.doc_code/.test(sql));
+      expect(candidateSql).toBeDefined();
+      expect(candidateSql[0]).toMatch(/organization_id = @orgId/);
+      expect(candidateSql[0]).toMatch(/company_id = @companyId/);
+      expect(candidateSql[0]).toMatch(new RegExp(`TOP ${MAX_MISSING_EVIDENCE_CANDIDATES}`));
+      expect(candidateSql[1]).toEqual(expect.objectContaining({
+        orgId: 1,
+        companyId: 42,
+        typicalType: 'procedura',
+      }));
+
+      const writeCalls = query.mock.calls.filter(([sql]) => /INSERT INTO|UPDATE /.test(sql));
+      expect(writeCalls).toHaveLength(0);
+    });
+
+    test('lista evidenze piena → missingEvidenceSuggestion null (nessuna query candidati)', async () => {
+      mockQueryHappyPath();
+      extractDocumentText.mockResolvedValue({ text: 'Procedura acquisti valida.' });
+      chat.mockResolvedValue({
+        content: JSON.stringify({
+          suggestedStatus: 'completed',
+          confidence: 'high',
+          rationale: 'ok',
+          evidenceRefs: [10],
+        }),
+        model: 'gemini',
+        tokens: { input: 10, output: 5 },
+      });
+
+      const out = await suggestForClause(1, 42, 501);
+      expect(out.missingEvidenceSuggestion).toBeNull();
+      const candidateCalls = query.mock.calls.filter(([sql]) => /dr\.doc_code/.test(sql));
+      expect(candidateCalls).toHaveLength(0);
+    });
+
+    test('evidenze collegate senza testo: lista piena → suggestion null', async () => {
+      mockQueryHappyPath();
+      extractDocumentText.mockResolvedValue({ text: null, reason: 'pdf_no_text_layer' });
+
+      const out = await suggestForClause(1, 42, 501);
+      expect(out.missingEvidenceSuggestion).toBeNull();
+      expect(out.evidenceRefs.length).toBeGreaterThan(0);
+    });
+
+    test('clausola 5.2 senza evidenze → typicalDocType manuale', async () => {
+      mockQueryMissingEvidence({
+        clause: { ...CLAUSE_ROW, id: 502, clause_ref: '5.2', clause_title: 'Politica' },
+        candidates: [],
+      });
+
+      const out = await suggestForClause(1, 42, 502);
+      expect(out.missingEvidenceSuggestion.typicalDocType).toBe('manuale');
+      expect(out.missingEvidenceSuggestion.typicalDocTypeLabel).toBe('Manuale');
+    });
+
+    test('clausola non mappata → fallback altro', async () => {
+      mockQueryMissingEvidence({
+        clause: { ...CLAUSE_ROW, id: 503, clause_ref: '4.1', clause_title: 'Contesto' },
+        candidates: [],
+      });
+
+      const out = await suggestForClause(1, 42, 503);
+      expect(out.missingEvidenceSuggestion.typicalDocType).toBe('altro');
+      expect(out.missingEvidenceSuggestion.typicalDocTypeLabel).toBe('Altro');
+      expect(out.missingEvidenceSuggestion.reason).toMatch(/non mappato/i);
+    });
+
+    test('errore query candidati: suggestion resta strutturata, candidates []', async () => {
+      query.mockImplementation((sqlText) => {
+        if (/FROM norm_requirements\s+WHERE id = @id/.test(sqlText)) {
+          return { recordset: [CLAUSE_ROW] };
+        }
+        if (/SELECT evidence_document_ids/.test(sqlText)) {
+          return { recordset: [] };
+        }
+        if (/dr\.doc_code/.test(sqlText)) {
+          return Promise.reject(new Error('DB timeout'));
+        }
+        return { recordset: [] };
+      });
+
+      const out = await suggestForClause(1, 42, 501);
+      expect(out.missingEvidenceSuggestion).toEqual(expect.objectContaining({
+        typicalDocType: 'procedura',
+        candidates: [],
+      }));
+      expect(out.error).toBeUndefined();
     });
   });
 });

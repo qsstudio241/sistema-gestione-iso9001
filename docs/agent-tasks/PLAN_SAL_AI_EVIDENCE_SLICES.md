@@ -2,7 +2,7 @@
 
 > **Destinazione**: il suggeritore SAL AI (Fase 5-A/5-B) legge anche PDF scansionati e immagini (OCR riusabile), e quando manca evidenza per una clausola propone tipo documento tipico + candidati dal registro e chiede all’utente se collegare/caricare — **mai** auto-collegamento senza conferma (HITL).
 > **Spec / ADR**: [`MODULO_SAL_SCOPO_E_ROADMAP.md`](../specs/MODULO_SAL_SCOPO_E_ROADMAP.md) §C.1/C.2 · [ADR-010](../adr/ADR-010-ai-agentic-architecture.md) (human-in-the-loop)
-> **Brief attivo**: [`DEPUTYTASK_SAL_AI.md`](DEPUTYTASK_SAL_AI.md) — slice **S1b** (CHIUSO — TEST OK). S1a CHIUSO (PR [#471](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/471)). Prossima: **S2a** (documento mancante HITL). **Non** usare `DEPUTYTASK.md` (altro slot).
+> **Brief attivo**: [`DEPUTYTASK_SAL_AI.md`](DEPUTYTASK_SAL_AI.md) — slice **S2a** (CHIUSO — TEST OK). S1a [#471](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/471) · S1b [#603](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/603). Prossima: **S2b** (UI collega/carica/ignora). **Non** usare `DEPUTYTASK.md` (altro slot).
 > **Mappa creata**: 15/08/2026 (Lead wayfinder A — Chart the map; nessuna implementazione in questa sessione)
 
 ---
@@ -20,7 +20,7 @@
 
 ## Non ancora specificato (nebbia)
 
-- Mapping definitivo **clausola → tipo documento tipico**: tabella euristica statica vs prompt AI vs ibrido (decidere in S2a dopo prova su 3–5 clausole reali)
+- Mapping **clausola → tipo documento tipico**: deciso in S2a — euristica statica piccola (`5.2` manuale, `7.5`/`8.4` procedura, `9.3`/`10.2` modulo) + fallback `altro`; non prompt AI. Ibrido solo se S2b mostra troppi miss.
 - Supporto **`.doc` legacy** (Word binario): mammoth non lo legge; LibreOffice headless sul VPS vs «non supportato + messaggio chiaro» — prodotto/HITL se emerge domanda reale
 - Soglia qualità OCR (caratteri minimi / confidence) per alzare la confidenza SAL da `low` a `medium`
 - Estendere lo stesso «documento mancante» al suggeritore welding 3834 (`weldingAiSuggest`) — solo dopo S2b stabile su SAL
@@ -48,7 +48,7 @@
 | PDF scansionato (no text layer) | **S1a fatto** — OCR via `ocrExtractor`; `ocr_unavailable` / `ocr_failed` se motore assente | Fatto | **S1a** |
 | Immagini (PNG/JPEG/WebP) allegate al doc | **S1b fatto** — OCR via `extractTextFromImageBuffer`; `ocr_unavailable` / `ocr_failed` se Tesseract assente/fallisce | Fatto | **S1b** |
 | Formato `.doc` legacy | `unsupported_format` | Decisione prodotto (nebbia); almeno messaggio UX chiaro | Nebbia / eventuale **S1c** |
-| Clausola senza evidenze | Solo messaggio «collega prima» | Suggerire tipo documento tipico + candidati registro | **S2a** |
+| Clausola senza evidenze | **S2a fatto** — `missingEvidenceSuggestion` su `gap-ai-suggest` (no write) | Fatto | **S2a** |
 | Conferma utente su candidati | N/A | UI: collega esistente / carica nuovo / ignora; zero write senza conferma | **S2b** |
 | Auto-link AI | Vietato (e assente) | Resta vietato | — (vincolo) |
 
@@ -65,7 +65,7 @@
 | **S2b** | UI proposta collega / carica / ignora | `SalAiSuggestDialog` + riuso `SalEvidenceSection` / upload registro esistente; conferma esplicita prima di PATCH evidenze | S2a | AFK |
 
 **Ordine**: S1a → S1b → (S1c se deciso) → S2a → S2b.  
-**Parallelo**: S1a/S1b chiusi sullo stesso estrattore. **S2a** (backend documento mancante) è la prossima slice — non tocca `documentTextExtractor`.
+**Parallelo**: S1a/S1b/S2a chiusi. **S2b** (UI) è la prossima slice — non tocca il service suggest.
 
 ---
 
@@ -107,10 +107,10 @@
 
 **DoD**
 
-- [ ] Contratto JSON documentato nel brief (campi stabili per FE)
-- [ ] Query registro scoped org+azienda; limite risultati
-- [ ] Test L1 service
-- [ ] HITL: nessun UPDATE a `requirement_implementation_status`
+- [x] Contratto JSON documentato nel brief (campi stabili per FE)
+- [x] Query registro scoped org+azienda; limite risultati
+- [x] Test L1 service
+- [x] HITL: nessun UPDATE a `requirement_implementation_status`
 
 ---
 
