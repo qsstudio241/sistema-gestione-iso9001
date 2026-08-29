@@ -2,7 +2,7 @@
 
 > **Destinazione**: il suggeritore SAL AI (Fase 5-A/5-B) legge anche PDF scansionati e immagini (OCR riusabile), e quando manca evidenza per una clausola propone tipo documento tipico + candidati dal registro e chiede all’utente se collegare/caricare — **mai** auto-collegamento senza conferma (HITL).
 > **Spec / ADR**: [`MODULO_SAL_SCOPO_E_ROADMAP.md`](../specs/MODULO_SAL_SCOPO_E_ROADMAP.md) §C.1/C.2 · [ADR-010](../adr/ADR-010-ai-agentic-architecture.md) (human-in-the-loop)
-> **Brief attivo**: [`DEPUTYTASK.md`](DEPUTYTASK.md) — slice **S1a** (CHIUSO, PR [#471](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/471)). Prossima: **S1b** (OCR immagini).
+> **Brief attivo**: [`DEPUTYTASK_SAL_AI.md`](DEPUTYTASK_SAL_AI.md) — slice **S1b** (CHIUSO — TEST OK). S1a CHIUSO (PR [#471](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/471)). Prossima: **S2a** (documento mancante HITL). **Non** usare `DEPUTYTASK.md` (altro slot).
 > **Mappa creata**: 15/08/2026 (Lead wayfinder A — Chart the map; nessuna implementazione in questa sessione)
 
 ---
@@ -33,7 +33,7 @@
 - **Fase 5-A ✅**: `salAiSuggest.service.js` propone stato + confidenza + motivazione; UI `SalAiSuggestDialog` conferma/modifica/scarta; nessuna scrittura automatica
 - **Fase 5-B ✅**: conformità legislativa su `linked_legislation` + `normBroker.getClauseText`; capability `SAL_LEGAL_CONFORMITY`
 - **Solo evidenze già collegate**: `loadEvidenceDocuments` legge `evidence_document_ids`; se lista vuota → `confidence: low` + messaggio «Collega i documenti…»; se testo non estraibile → messaggio su PDF immagine / formato non supportato
-- **Estrattore SAL**: `documentTextExtractor.service.js` supporta PDF testo, DOCX, `text/*`; **S1a**: PDF vuoto/sotto soglia ingest → `extractTextWithOCR`; fallimento → `ocr_unavailable` / `ocr_failed`. Immagini → `unsupported_format` (S1b)
+- **Estrattore SAL**: `documentTextExtractor.service.js` supporta PDF testo, DOCX, `text/*`; **S1a**: PDF vuoto/sotto soglia ingest → `extractTextWithOCR`; fallimento → `ocr_unavailable` / `ocr_failed`. **S1b**: PNG/JPEG/WebP → `extractTextFromImageBuffer` (Tesseract sul buffer); stesso fallback reason; GIF/.doc restano `unsupported_format`
 - **OCR PDF riusato da SAL (S1a)**: `ocrExtractor.js` (`pdf2pic` + `tesseract.js`) è agganciato sia a ingest sia a `documentTextExtractor`; prerequisiti VPS: Ghostscript + GraphicsMagick/ImageMagick
 - **UI evidenze**: `SalEvidenceSection.jsx` elenca/collega dal registro (`apiService.getDocuments`); link «Apri registro» / «Aggiungi nel registro» — nessun flusso «tipo tipico + candidati + upload guidato» dal dialog AI
 - **Tipi documento**: catalogo FE `app/src/data/documentTypes.js` (`procedura`, `istruzione`, `manuale`, …) — riuso per etichette, non inventare nuovi `doc_type` senza seed
@@ -46,7 +46,7 @@
 | Aspetto | Oggi | Atteso | Slice |
 |---------|------|--------|-------|
 | PDF scansionato (no text layer) | **S1a fatto** — OCR via `ocrExtractor`; `ocr_unavailable` / `ocr_failed` se motore assente | Fatto | **S1a** |
-| Immagini (PNG/JPEG) allegate al doc | `unsupported_format` | OCR diretto su buffer immagine (Tesseract, senza pdf2pic) | **S1b** |
+| Immagini (PNG/JPEG/WebP) allegate al doc | **S1b fatto** — OCR via `extractTextFromImageBuffer`; `ocr_unavailable` / `ocr_failed` se Tesseract assente/fallisce | Fatto | **S1b** |
 | Formato `.doc` legacy | `unsupported_format` | Decisione prodotto (nebbia); almeno messaggio UX chiaro | Nebbia / eventuale **S1c** |
 | Clausola senza evidenze | Solo messaggio «collega prima» | Suggerire tipo documento tipico + candidati registro | **S2a** |
 | Conferma utente su candidati | N/A | UI: collega esistente / carica nuovo / ignora; zero write senza conferma | **S2b** |
@@ -65,7 +65,7 @@
 | **S2b** | UI proposta collega / carica / ignora | `SalAiSuggestDialog` + riuso `SalEvidenceSection` / upload registro esistente; conferma esplicita prima di PATCH evidenze | S2a | AFK |
 
 **Ordine**: S1a → S1b → (S1c se deciso) → S2a → S2b.  
-**Parallelo**: no su `documentTextExtractor` (S1a/S1b sequenziali). S2a può partire dopo S1a se il brief S1b non è aperto.
+**Parallelo**: S1a/S1b chiusi sullo stesso estrattore. **S2a** (backend documento mancante) è la prossima slice — non tocca `documentTextExtractor`.
 
 ---
 
@@ -93,9 +93,9 @@
 
 **DoD**
 
-- [ ] Ramo immagini in `documentTextExtractor` (riuso worker Tesseract; evitare duplicare tutta la pipeline PDF se possibile — helper sottile o export da `ocrExtractor`)
-- [ ] Test L1 con buffer minima / mock
-- [ ] `isExtractable` true per immagini raster supportate
+- [x] Ramo immagini in `documentTextExtractor` (riuso worker Tesseract; evitare duplicare tutta la pipeline PDF se possibile — helper sottile o export da `ocrExtractor`)
+- [x] Test L1 con buffer minima / mock
+- [x] `isExtractable` true per immagini raster supportate
 
 **Cosa NON toccare**: UI; `.doc`; S2.
 

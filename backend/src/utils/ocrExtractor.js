@@ -1,7 +1,8 @@
 /**
  * ocrExtractor.js
- * OCR fallback per PDF scansionati (immagini fotografate/scannerizzate).
- * Pipeline: pdf2pic (conversione pagine -> PNG) + tesseract.js (OCR).
+ * OCR fallback per PDF scansionati e per immagini raster (PNG/JPEG/WebP).
+ * PDF: pdf2pic (pagine -> PNG) + tesseract.js.
+ * Immagine: tesseract.js diretto sul buffer (niente Ghostscript / pdf2pic).
  *
  * Prerequisito sul server: Ghostscript + un motore di rendering immagini,
  * ovvero GraphicsMagick (`gm`) OPPURE ImageMagick (`convert`/`magick`).
@@ -54,6 +55,8 @@ function _detectMagickEngine() {
 
 const _PNG_MAGIC = Buffer.from([0x89, 0x50, 0x4e, 0x47]);   // \x89PNG
 const _JPEG_MAGIC = Buffer.from([0xff, 0xd8, 0xff]);
+const _WEBP_RIFF = Buffer.from('RIFF');
+const _WEBP_WEBP = Buffer.from('WEBP');
 
 /**
  * Verifica che un buffer sia davvero un'immagine raster (PNG/JPEG).
@@ -70,6 +73,80 @@ function _isRasterImage(buf) {
     if (buf.subarray(0, 4).equals(_PNG_MAGIC)) return true;
     if (buf.subarray(0, 3).equals(_JPEG_MAGIC)) return true;
     return false;
+}
+
+/**
+ * WebP: RIFF....WEBP (Tesseract/leptonica lo accettano; pdf2pic non lo produce).
+ * @param {Buffer} buf
+ * @returns {boolean}
+ * @private
+ */
+function _isWebP(buf) {
+    if (!Buffer.isBuffer(buf) || buf.length < 12) return false;
+    return buf.subarray(0, 4).equals(_WEBP_RIFF) && buf.subarray(8, 12).equals(_WEBP_WEBP);
+}
+
+/**
+ * Buffer accettato da OCR diretto (PNG/JPEG da pdf2pic o foto; WebP da allegati).
+ * @param {Buffer} buf
+ * @returns {boolean}
+ */
+function _isOcrableImage(buf) {
+    return _isRasterImage(buf) || _isWebP(buf);
+}
+
+/**
+ * Worker Tesseract condiviso (PDF pagine e foto singola).
+ * @param {string} lang
+ * @returns {Promise<object>}
+ * @private
+ */
+async function _createTesseractWorker(lang) {
+    const { createWorker } = require('tesseract.js');
+    const worker = await createWorker(lang, 1, {
+        // Disabilita log Tesseract in produzione per ridurre rumore console
+        logger: () => {},
+        errorHandler: () => {},
+    });
+
+    // PSM 3 = Fully automatic page segmentation (no OSD).
+    // Il default di tesseract.js su questi PDF scansionati si comporta come
+    // PSM 6 (blocco uniforme) e salta titoli/nomi grandi centrati — visto su
+    // certificato TEC-Eurolab UT Level II: "LUIGI LA FORGIA" assente con default,
+    // presente con PSM 3/4 (02/08/2026).
+    const pageSegMode = String(process.env.OCR_PSM || '3');
+    try {
+        await worker.setParameters({ tessedit_pageseg_mode: pageSegMode });
+    } catch (_) { /* parametri non critici: prosegui con default worker */ }
+    return worker;
+}
+
+/**
+ * OCR su un buffer immagine (PNG/JPEG/WebP). Non usa pdf2pic.
+ * Testo vuoto o buffer non raster: throw (il chiamante classifica reason).
+ *
+ * @param {Buffer} imageBuffer
+ * @param {object} [options]
+ * @param {string} [options.lang='ita+eng']
+ * @returns {Promise<string>}
+ */
+async function extractTextFromImageBuffer(imageBuffer, options = {}) {
+    const { lang = 'ita+eng' } = options;
+    if (!_isOcrableImage(imageBuffer)) {
+        throw new Error('[OCR] Buffer immagine non valido (serve PNG, JPEG o WebP)');
+    }
+
+    const worker = await _createTesseractWorker(lang);
+    try {
+        const { data: { text } } = await worker.recognize(imageBuffer);
+        const trimmed = text && String(text).trim();
+        if (!trimmed) {
+            throw new Error('[OCR] Tesseract non ha estratto testo utilizzabile');
+        }
+        return trimmed;
+    } finally {
+        await worker.terminate();
+    }
 }
 
 /**
@@ -91,22 +168,7 @@ async function extractTextWithOCR(pdfBuffer, options = {}) {
         throw new Error('[OCR] Nessuna immagine estratta dal PDF');
     }
 
-    const { createWorker } = require('tesseract.js');
-    const worker = await createWorker(lang, 1, {
-        // Disabilita log Tesseract in produzione per ridurre rumore console
-        logger: () => {},
-        errorHandler: () => {},
-    });
-
-    // PSM 3 = Fully automatic page segmentation (no OSD).
-    // Il default di tesseract.js su questi PDF scansionati si comporta come
-    // PSM 6 (blocco uniforme) e salta titoli/nomi grandi centrati — visto su
-    // certificato TEC-Eurolab UT Level II: "LUIGI LA FORGIA" assente con default,
-    // presente con PSM 3/4 (02/08/2026).
-    const pageSegMode = String(process.env.OCR_PSM || '3');
-    try {
-        await worker.setParameters({ tessedit_pageseg_mode: pageSegMode });
-    } catch (_) { /* parametri non critici: prosegui con default worker */ }
+    const worker = await _createTesseractWorker(lang);
 
     const textParts = [];
     let lastRecErr = null;
@@ -220,4 +282,10 @@ async function _convertPdfToImages(pdfBuffer, maxPages) {
     return buffers;
 }
 
-module.exports = { extractTextWithOCR, _detectMagickEngine, _isRasterImage };
+module.exports = {
+    extractTextWithOCR,
+    extractTextFromImageBuffer,
+    _detectMagickEngine,
+    _isRasterImage,
+    _isOcrableImage,
+};

@@ -2,8 +2,8 @@
  * @jest-environment node
  *
  * Test L1 — documentTextExtractor.service
- * Copre: estrazione PDF, fallback OCR (ok / fail / unavailable), DOCX,
- * testo semplice, formati non supportati, file mancante.
+ * Copre: estrazione PDF, fallback OCR (ok / fail / unavailable), immagini
+ * raster (S1b), DOCX, testo semplice, formati non supportati, file mancante.
  */
 
 jest.mock('fs', () => ({
@@ -14,6 +14,7 @@ jest.mock('../utils/importPdfText', () => ({
 }));
 jest.mock('../utils/ocrExtractor', () => ({
   extractTextWithOCR: jest.fn(),
+  extractTextFromImageBuffer: jest.fn(),
 }));
 jest.mock('mammoth', () => ({
   extractRawText: jest.fn(),
@@ -27,7 +28,7 @@ jest.mock('../utils/logger', () => ({
 
 const fs = require('fs').promises;
 const { extractPdfText } = require('../utils/importPdfText');
-const { extractTextWithOCR } = require('../utils/ocrExtractor');
+const { extractTextWithOCR, extractTextFromImageBuffer } = require('../utils/ocrExtractor');
 const mammoth = require('mammoth');
 const { extractDocumentText, isExtractable, normalizeWhitespace } = require('./documentTextExtractor.service');
 
@@ -147,10 +148,68 @@ describe('extractDocumentText', () => {
     expect(out.text).toBe('riga uno\nriga due');
   });
 
-  test('formato non supportato (immagine) → skip', async () => {
+  test('PNG: OCR ok → testo senza throw', async () => {
+    extractTextFromImageBuffer.mockResolvedValue('Testo da  foto scansione');
+    const out = await extractDocumentText('/x/foto.png', 'image/png', 'foto.png');
+    expect(out.text).toBe('Testo da foto scansione');
+    expect(out.reason).toBe('ocr_ok');
+    expect(extractTextFromImageBuffer).toHaveBeenCalledTimes(1);
+    expect(extractTextWithOCR).not.toHaveBeenCalled();
+  });
+
+  test('JPEG da mime senza estensione → OCR', async () => {
+    extractTextFromImageBuffer.mockResolvedValue('Etichetta ISO 9001');
+    const out = await extractDocumentText('/x/blob', 'image/jpeg', 'blob');
+    expect(out.text).toBe('Etichetta ISO 9001');
+    expect(out.reason).toBe('ocr_ok');
+  });
+
+  test('WebP: OCR ok', async () => {
+    extractTextFromImageBuffer.mockResolvedValue('Verbale fotografato');
+    const out = await extractDocumentText('/x/shot.webp', 'image/webp', 'shot.webp');
+    expect(out.text).toBe('Verbale fotografato');
+    expect(out.reason).toBe('ocr_ok');
+  });
+
+  test('immagine: Tesseract throw → ocr_failed senza lanciare', async () => {
+    extractTextFromImageBuffer.mockRejectedValue(
+      new Error('[OCR] Tesseract non ha estratto testo utilizzabile')
+    );
     const out = await extractDocumentText('/x/foto.png', 'image/png', 'foto.png');
     expect(out.text).toBeNull();
+    expect(out.reason).toBe('ocr_failed');
+  });
+
+  test('immagine: tesseract.js assente → ocr_unavailable', async () => {
+    extractTextFromImageBuffer.mockRejectedValue(
+      new Error("Cannot find module 'tesseract.js'")
+    );
+    const out = await extractDocumentText('/x/foto.jpg', 'image/jpeg', 'foto.jpg');
+    expect(out.text).toBeNull();
+    expect(out.reason).toBe('ocr_unavailable');
+  });
+
+  test('immagine: OCR restituisce solo spazi → ocr_failed', async () => {
+    extractTextFromImageBuffer.mockResolvedValue('  \n  ');
+    const out = await extractDocumentText('/x/foto.png', 'image/png', 'foto.png');
+    expect(out.text).toBeNull();
+    expect(out.reason).toBe('ocr_failed');
+  });
+
+  test('immagine: buffer non raster → ocr_failed', async () => {
+    extractTextFromImageBuffer.mockRejectedValue(
+      new Error('[OCR] Buffer immagine non valido (serve PNG, JPEG o WebP)')
+    );
+    const out = await extractDocumentText('/x/foto.png', 'image/png', 'foto.png');
+    expect(out.text).toBeNull();
+    expect(out.reason).toBe('ocr_failed');
+  });
+
+  test('GIF non è raster supportato → unsupported_format', async () => {
+    const out = await extractDocumentText('/x/anim.gif', 'image/gif', 'anim.gif');
+    expect(out.text).toBeNull();
     expect(out.reason).toBe('unsupported_format');
+    expect(extractTextFromImageBuffer).not.toHaveBeenCalled();
   });
 
   test('.doc legacy non supportato → skip', async () => {
@@ -174,14 +233,18 @@ describe('extractDocumentText', () => {
 });
 
 describe('isExtractable', () => {
-  test('riconosce pdf/docx/txt', () => {
+  test('riconosce pdf/docx/txt e raster png/jpeg/webp', () => {
     expect(isExtractable('a.pdf')).toBe(true);
     expect(isExtractable('a.docx')).toBe(true);
     expect(isExtractable('a.txt')).toBe(true);
+    expect(isExtractable('a.png', 'image/png')).toBe(true);
+    expect(isExtractable('foto.jpg')).toBe(true);
+    expect(isExtractable('blob', 'image/webp')).toBe(true);
   });
-  test('rifiuta immagini e archivi', () => {
-    expect(isExtractable('a.png', 'image/png')).toBe(false);
+  test('rifiuta GIF, archivi e .doc', () => {
+    expect(isExtractable('a.gif', 'image/gif')).toBe(false);
     expect(isExtractable('a.zip')).toBe(false);
+    expect(isExtractable('old.doc', 'application/msword')).toBe(false);
   });
 });
 
