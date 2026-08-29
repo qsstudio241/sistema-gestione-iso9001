@@ -8,6 +8,9 @@ import NormLibraryPage, {
   LIBRARY_REFERENCE_DOC_TYPES,
   resolveValidityStatus,
   resolvePublicationDate,
+  resolveTextQuality,
+  resolveHasChunks,
+  resolveLastValidityCheck,
 } from "../pages/NormLibraryPage";
 
 const mockGetDocuments = vi.fn();
@@ -35,6 +38,14 @@ vi.mock("../components/NormUploadButton", () => ({
     <button type="button" data-testid="norm-upload-btn" onClick={() => onUploadComplete?.()}>
       Carica norme PDF
     </button>
+  ),
+}));
+
+vi.mock("../components/StatusBadge", () => ({
+  default: ({ type, status }) => (
+    <span data-testid="status-badge" data-type={type} data-status={status}>
+      {status}
+    </span>
   ),
 }));
 
@@ -76,6 +87,9 @@ describe("NormLibraryPage", () => {
               doc_code: "ISO-9001",
               title: "ISO 9001:2015",
               norm_validity_status: "vigente",
+              norm_text_quality: "good",
+              has_chunks: 1,
+              norm_last_check: "2026-08-01T10:00:00.000Z",
             },
           ],
         });
@@ -139,6 +153,23 @@ describe("NormLibraryPage", () => {
     expect(screen.getByTestId("norm-upload-btn")).toBeTruthy();
     const ctaDocs = screen.getByRole("link", { name: "Apri Documenti" });
     expect(ctaDocs.getAttribute("href")).toContain("/documents");
+  });
+
+  it("LN-3: qualità testo, chunk RAG e ultimo check", async () => {
+    expect(resolveTextQuality({ norm_text_quality: "partial" })).toBe("partial");
+    expect(resolveHasChunks({ has_chunks: 1 })).toBe(true);
+    expect(resolveHasChunks({ has_chunks: 0 })).toBe(false);
+    expect(resolveLastValidityCheck({ norm_last_check: "2026-08-01" })).toBe("2026-08-01");
+
+    render(<NormLibraryPage />);
+    await waitFor(() => {
+      expect(screen.getByText("ISO 9001:2015")).toBeTruthy();
+    });
+    const badge = screen.getByTestId("status-badge");
+    expect(badge.getAttribute("data-type")).toBe("norm_quality");
+    expect(badge.getAttribute("data-status")).toBe("good");
+    expect(screen.getByText("Sì")).toBeTruthy();
+    expect(screen.getByText("01/08/2026")).toBeTruthy();
   });
 
   it("mostra empty state catalogo se API senza righe", async () => {

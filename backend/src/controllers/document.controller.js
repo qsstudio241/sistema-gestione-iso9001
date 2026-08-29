@@ -188,6 +188,17 @@ async function listDocuments(req, res) {
                 u.email       AS created_by_email,
                 JSON_VALUE(dr.type_specific_data, '$.validity_status')     AS norm_validity_status,
                 JSON_VALUE(dr.type_specific_data, '$.last_validity_check') AS norm_last_check,
+                nds.text_quality AS norm_text_quality,
+                CASE
+                    WHEN EXISTS (
+                        SELECT 1
+                        FROM knowledge_chunks kc
+                        WHERE kc.organization_id = dr.organization_id
+                          AND kc.entity_type = 'document'
+                          AND kc.entity_id = dr.id
+                          AND (kc.is_stale IS NULL OR kc.is_stale = 0)
+                    ) THEN 1 ELSE 0
+                END AS has_chunks,
                 CASE
                     WHEN dr.expiry_date IS NOT NULL
                          AND dr.expiry_date < CAST(GETDATE() AS DATE)
@@ -209,6 +220,9 @@ async function listDocuments(req, res) {
             LEFT JOIN standards     s ON dr.standard_id  = s.standard_id
             LEFT JOIN users         u ON dr.created_by   = u.user_id
             LEFT JOIN notifications_config nc_cfg ON nc_cfg.organization_id = dr.organization_id
+            LEFT JOIN norm_document_sources nds
+                ON nds.document_id = dr.id
+               AND nds.organization_id = dr.organization_id
             ${buildCurrentFileApplySql('dr')}
             WHERE ${where}
             ORDER BY

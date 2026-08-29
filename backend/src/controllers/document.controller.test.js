@@ -81,6 +81,24 @@ describe('listDocuments', () => {
         expect(listSql).toMatch(/nc_cfg\.alert_days_1/i);
     });
 
+    it('LN-3: include norm_text_quality e has_chunks (sola lettura qualità agenti)', async () => {
+        query
+            .mockResolvedValueOnce({ recordset: [] })
+            .mockResolvedValueOnce({ recordset: [{ total: 0 }] });
+
+        const req = mockReq({ query: { page: 1, limit: 10 } });
+        const res = mockRes();
+        await ctrl.listDocuments(req, res);
+
+        const listSql = query.mock.calls[0][0];
+        expect(listSql).toMatch(/nds\.text_quality AS norm_text_quality/i);
+        expect(listSql).toMatch(/LEFT JOIN norm_document_sources nds/i);
+        expect(listSql).toMatch(/has_chunks/i);
+        expect(listSql).toMatch(/knowledge_chunks kc/i);
+        expect(listSql).toMatch(/entity_type = 'document'/i);
+        expect(listSql).toMatch(/norm_last_check/i);
+    });
+
     it('expired_only filtra documenti scaduti', async () => {
         query
             .mockResolvedValueOnce({ recordset: [] })

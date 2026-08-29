@@ -1,7 +1,6 @@
 /**
- * NormLibraryPage — Gestione → Libreria (LN-1 + LN-2)
- * Due sezioni: catalogo fonti ingerite + richieste mancanti (backlog).
- * LN-2: deep-link riga → Documenti + CTA NormUpload (riuso).
+ * NormLibraryPage — Gestione → Libreria (LN-1…LN-3)
+ * Catalogo fonti + richieste mancanti; LN-2 deep-link/NormUpload; LN-3 qualità sola lettura.
  * SoT = document_registry via GET /documents; niente colonne/doc_type nuovi.
  */
 
@@ -17,6 +16,7 @@ import {
 } from "../utils/documentRegistryUrl";
 import SgqDataGrid from "../components/SgqDataGrid";
 import NormUploadButton from "../components/NormUploadButton";
+import StatusBadge from "../components/StatusBadge";
 import backlogSnapshot from "../data/normeMancantiBacklog.json";
 import "./NormLibraryPage.css";
 
@@ -60,6 +60,35 @@ function resolvePublicationDate(doc) {
   return null;
 }
 
+/** Qualità testo da list API (`norm_text_quality`) o TSD — sola lettura LN-3. */
+function resolveTextQuality(doc) {
+  if (!doc) return null;
+  const raw =
+    doc.norm_text_quality ||
+    doc.text_quality ||
+    doc.type_specific_data?.text_quality ||
+    null;
+  if (raw == null || String(raw).trim() === "") return null;
+  return String(raw).trim();
+}
+
+function resolveHasChunks(doc) {
+  if (!doc) return false;
+  const v = doc.has_chunks;
+  return v === true || v === 1 || v === "1";
+}
+
+function resolveLastValidityCheck(doc) {
+  if (!doc) return null;
+  const raw =
+    doc.norm_last_check ||
+    doc.last_validity_check ||
+    doc.type_specific_data?.last_validity_check ||
+    null;
+  if (raw == null || String(raw).trim() === "") return null;
+  return raw;
+}
+
 function ValidityBadge({ status }) {
   if (!status) {
     return <span className="nl-muted">{"\u2014"}</span>;
@@ -73,11 +102,14 @@ function ValidityBadge({ status }) {
 }
 
 const CATALOG_COLUMNS = [
-  { id: "doc_code", label: "Codice", width: "120px", sortable: true },
+  { id: "doc_code", label: "Codice", width: "110px", sortable: true },
   { id: "title", label: "Titolo", width: "1fr", sortable: true },
-  { id: "doc_type", label: "Tipo", width: "120px", sortable: true },
-  { id: "meta", label: "Vigore / data pubbl.", width: "150px", sortable: false },
-  { id: "actions", label: "", width: "130px", sortable: false },
+  { id: "doc_type", label: "Tipo", width: "110px", sortable: true },
+  { id: "meta", label: "Vigore / data pubbl.", width: "140px", sortable: false },
+  { id: "quality", label: "Qualità testo", width: "110px", sortable: false },
+  { id: "chunks", label: "Chunk RAG", width: "90px", sortable: false },
+  { id: "last_check", label: "Ultimo check", width: "110px", sortable: false },
+  { id: "actions", label: "", width: "120px", sortable: false },
 ];
 
 const BACKLOG_COLUMNS = [
@@ -168,6 +200,22 @@ export function NormLibraryPage() {
       const pub = resolvePublicationDate(row);
       return pub ? formatDate(pub) : <span className="nl-muted">{"\u2014"}</span>;
     }
+    if (colId === "quality") {
+      const q = resolveTextQuality(row);
+      if (!q) return <span className="nl-muted">{"\u2014"}</span>;
+      return <StatusBadge type="norm_quality" status={q} size="small" />;
+    }
+    if (colId === "chunks") {
+      return resolveHasChunks(row) ? (
+        <span className="nl-chunk nl-chunk--yes">Sì</span>
+      ) : (
+        <span className="nl-muted">No</span>
+      );
+    }
+    if (colId === "last_check") {
+      const d = resolveLastValidityCheck(row);
+      return d ? formatDate(d) : <span className="nl-muted">{"\u2014"}</span>;
+    }
     if (colId === "actions") {
       return (
         <Link to={deepLink} className="nl-link">
@@ -229,6 +277,8 @@ export function NormLibraryPage() {
           <p>
             Dati dal Registro Documenti (tipi già tipizzati). Norme: stato di vigore.
             Non-norma: data di pubblicazione (<code>issue_date</code>) se presente.
+            Qualità testo / chunk RAG / ultimo check vigore: sola lettura per affidabilità agenti
+            (distinto da Knowledge Health KPI aggregati).
           </p>
         </div>
         {error && (
@@ -283,5 +333,8 @@ export default NormLibraryPage;
 export {
   resolveValidityStatus,
   resolvePublicationDate,
+  resolveTextQuality,
+  resolveHasChunks,
+  resolveLastValidityCheck,
   VALIDITY_LABELS,
 };

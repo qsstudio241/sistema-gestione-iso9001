@@ -218,6 +218,16 @@
   background: #e2e8f0;
 }
 
+.nl-chunk--yes {
+  display: inline-block;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 999px;
+  color: #15803d;
+  background: #dcfce7;
+}
+
 .nl-grid {
   margin-top: 4px;
 }
