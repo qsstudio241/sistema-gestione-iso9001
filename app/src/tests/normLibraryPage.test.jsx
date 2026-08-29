@@ -6,11 +6,13 @@ import React from "react";
 import { render, screen, waitFor } from "@testing-library/react";
 import NormLibraryPage, {
   LIBRARY_REFERENCE_DOC_TYPES,
+  LIBRARY_DOC_TYPE_LABELS,
   resolveValidityStatus,
   resolvePublicationDate,
   resolveTextQuality,
   resolveHasChunks,
   resolveLastValidityCheck,
+  libraryDocTypeLabel,
 } from "../pages/NormLibraryPage";
 
 const mockGetDocuments = vi.fn();
@@ -126,6 +128,7 @@ describe("NormLibraryPage", () => {
     expect(screen.getByText("Vigente")).toBeTruthy();
     expect(screen.getByText("Manuale qualità")).toBeTruthy();
     expect(screen.getByText("15/03/2019")).toBeTruthy();
+    expect(screen.getByText("Manuale / libro")).toBeTruthy();
     expect(screen.getAllByText("Apri in Documenti").length).toBeGreaterThan(0);
 
     // backlog snapshot presente
@@ -170,6 +173,14 @@ describe("NormLibraryPage", () => {
     expect(badge.getAttribute("data-status")).toBe("good");
     expect(screen.getByText("Sì")).toBeTruthy();
     expect(screen.getByText("01/08/2026")).toBeTruthy();
+  });
+
+  it("LN-4: label Libreria Manuale/libro e Altro/quaderno senza nuovi doc_type", () => {
+    expect(LIBRARY_DOC_TYPE_LABELS.manuale).toBe("Manuale / libro");
+    expect(LIBRARY_DOC_TYPE_LABELS.altro).toBe("Altro / quaderno");
+    expect(libraryDocTypeLabel("manuale")).toBe("Manuale / libro");
+    expect(libraryDocTypeLabel("altro")).toBe("Altro / quaderno");
+    expect(LIBRARY_REFERENCE_DOC_TYPES).toEqual(["norma", "manuale", "altro"]);
   });
 
   it("mostra empty state catalogo se API senza righe", async () => {

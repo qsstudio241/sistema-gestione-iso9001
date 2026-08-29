@@ -1,39 +1,24 @@
-# DEPUTYTASK — LN-3: Libreria qualità info agenti (sola lettura)
+# DEPUTYTASK — LN-4: Tipi riferimento libro/quaderno (label UI, senza enum nuovi)
 
 **Stato:** APERTO  
 **Aperto:** 29/08/2026  
 **Piano:** [`PLAN_LIBRERIA_NORME_SLICES.md`](PLAN_LIBRERIA_NORME_SLICES.md)  
-**Rischio:** Medio — FE colonne/badge + SELECT list documenti **additivo** (`text_quality`, `has_chunks`, riuso `norm_last_check`); niente auth/sync/breaking schema  
-**Origine:** Piano Libreria dopo LN-2; «esaurire» ramo fonti  
-**Branch:** `cursor/ln3-libreria-quality-0b72` (basato su LN-2)  
-**Dipende da:** LN-1 CHIUSO; LN-2 su branch (non ancora su main)
+**Rischio:** Basso — solo label FE in Libreria; **niente** nuovi `doc_type` / migrazioni / CHECK  
+**Branch:** `cursor/ln4-libreria-tipi-0b72`  
+**Decisione prodotto (sicura senza HITL):** libri/quaderni restano tipizzati come `manuale` / `altro` già in registry; in Libreria label esplicite «Manuale / libro» e «Altro / quaderno». Enum dedicati = solo se HITL futuro + ADR-011.
 
-> Comando: `Leggi docs/agent-tasks/DEPUTYTASK.md ed eseguilo. Chiudi con TEST OK o FIX NON APPLICABILI.`
+> Comando: `Leggi docs/agent-tasks/DEPUTYTASK.md ed eseguilo.`
 
 ## Obiettivo
 
-Catalogo Libreria mostra, sola lettura:
-
-1. **Qualità testo** (`text_quality` da `norm_document_sources`) via `StatusBadge` type `norm_quality`
-2. **Chunk RAG** presenza (`knowledge_chunks` entity_type=`document`)
-3. **Ultimo check vigore** (`norm_last_check` già in list API)
-
-Niente inventare soglie. Niente Knowledge Health rewrite.
+Catalogo Libreria mostra tipi con label che chiariscono scope libri/quaderni **senza** inventare `doc_type=libro|quaderno` né migrazione.
 
 ## File previsti
 
-| Path | Perché |
-|------|--------|
-| `docs/agent-tasks/DEPUTYTASK.md` | Brief |
-| `docs/agent-tasks/PLAN_LIBRERIA_NORME_SLICES.md` | Spunta |
-| `backend/src/controllers/document.controller.js` | LEFT JOIN nds + EXISTS chunks |
-| `backend/src/controllers/document.controller.test.js` | Assert SELECT |
-| `app/src/pages/NormLibraryPage.jsx` (+ CSS) | Colonne qualità |
-| `app/src/tests/normLibraryPage.test.jsx` | L1 badge/colonne |
+- `docs/agent-tasks/DEPUTYTASK.md`, `PLAN_LIBRERIA_NORME_SLICES.md`
+- `app/src/pages/NormLibraryPage.jsx` (+ test)
 
 ## Cosa NON toccare
 
-- Migrazioni nuove / CHECK doc_type
-- sync/auth/JWT
-- Knowledge Health page rewrite
-- Backlog scrivibile (LN-5)
+- `documentTypes.js` enum globale (evita breaking form Documenti)
+- Migrazioni / CHECK / ADR-011 rewrite

@@ -23,6 +23,25 @@ import "./NormLibraryPage.css";
 /** Tipi già tipizzati usati come fonti di riferimento (LN-1 — niente libro/quaderno nuovi). */
 export const LIBRARY_REFERENCE_DOC_TYPES = ["norma", "manuale", "altro"];
 
+/**
+ * Label Libreria (LN-4): chiarisce libri/quaderni senza nuovi doc_type.
+ * Documenti / form globali restano su DOC_TYPE_LABELS.
+ */
+export const LIBRARY_DOC_TYPE_LABELS = {
+  norma: "Norma tecnica",
+  manuale: "Manuale / libro",
+  altro: "Altro / quaderno",
+};
+
+function libraryDocTypeLabel(docType) {
+  if (!docType) return "\u2014";
+  return (
+    LIBRARY_DOC_TYPE_LABELS[docType] ||
+    DOC_TYPE_LABELS[docType] ||
+    docType
+  );
+}
+
 const VALIDITY_LABELS = {
   vigente: "Vigente",
   superata: "Superata",
@@ -191,7 +210,7 @@ export function NormLibraryPage() {
       );
     }
     if (colId === "doc_type") {
-      return DOC_TYPE_LABELS[row.doc_type] || row.doc_type || "\u2014";
+      return libraryDocTypeLabel(row.doc_type);
     }
     if (colId === "meta") {
       if (row.doc_type === "norma") {
@@ -277,8 +296,10 @@ export function NormLibraryPage() {
           <p>
             Dati dal Registro Documenti (tipi già tipizzati). Norme: stato di vigore.
             Non-norma: data di pubblicazione (<code>issue_date</code>) se presente.
-            Qualità testo / chunk RAG / ultimo check vigore: sola lettura per affidabilità agenti
-            (distinto da Knowledge Health KPI aggregati).
+            Libri e quaderni: tipizzare in Documenti come <strong>Manuale</strong> o{" "}
+            <strong>Altro</strong> (niente enum <code>libro</code>/<code>quaderno</code> finché
+            non c&apos;è gate ADR-011). Qualità testo / chunk RAG / ultimo check vigore: sola
+            lettura per affidabilità agenti (distinto da Knowledge Health KPI aggregati).
           </p>
         </div>
         {error && (
@@ -336,5 +357,6 @@ export {
   resolveTextQuality,
   resolveHasChunks,
   resolveLastValidityCheck,
+  libraryDocTypeLabel,
   VALIDITY_LABELS,
 };
