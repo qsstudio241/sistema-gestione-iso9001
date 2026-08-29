@@ -250,6 +250,7 @@ export function createNewAudit(metadata) {
             id: crypto.randomUUID(),
             clientName: metadata.clientName || '',
             companyId: metadata.companyId ?? null,
+            organizationId: metadata.organizationId ?? metadata.organization_id ?? null,
             auditPartyType: metadata.auditPartyType || 'first_party',
             fornitoreName: metadata.fornitoreName || '',
             fornitoreSupplierId: metadata.fornitoreSupplierId ?? null,
