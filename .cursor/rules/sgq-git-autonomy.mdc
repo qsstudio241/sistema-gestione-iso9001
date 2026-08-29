@@ -78,10 +78,40 @@ Quando **tutti** i criteri sono veri:
 4. `git status` post-commit
 5. `git pull origin main` se necessario, poi `git push origin main`
 
+## Aggiornare il branch della PR rispetto a `origin/main` (vincolante)
+
+**Sì** — l'agente aggiorna **autonomamente** il branch feature della PR con `origin/main`.  
+**No** — l'agente non mergia la PR su `main` (resta click umano; vedi vincolo Cloud Agent sopra).  
+**No** — non chiedere al committente `git pull`, «Update branch», o altri comandi meccanici di allineamento.
+
+Obbligatorio in questi casi (ogni chat / ogni PR che lo prevede):
+
+1. Prima di dichiarare blocco «branch indietro» / «out of date» / conflitti con `main`.
+2. Prima di chiedere al committente di fare merge (o di dichiarare la PR «pronta»).
+3. Quando la CI fallisce per conflitti, «branch behind», o mergeability GitHub `CONFLICTING` / `BEHIND`.
+
+Procedura preferita (branch già su GitHub / PR aperta):
+
+```bash
+git fetch origin main
+git merge origin/main
+# risolvi conflitti se ci sono, commit del merge, poi:
+git push origin HEAD
+```
+
+- Preferisci **merge** `origin/main` → branch feature. Evita rebase su branch pubblicata (force-push).
+- **Mai** force-push su `main`.
+- Force-with-lease **solo** sul feature branch, e solo se un rebase era già in uso ed è strettamente necessario.
+- Working tree sporco: stash/commit/worktree — niente reset distruttivo.
+- Se i conflitti non sono risolvibili senza scelta di business: handoff al committente con i file in conflitto, **dopo** aver già tentato il merge.
+
+Allineamento a inizio sessione su `main`: resta in [`sgq-operating-memory.mdc`](sgq-operating-memory.mdc) § Allineamento Git.
+
 ## Protocollo "pronto al click" PR (livello Medio, dopo gate doppio)
 
 Il merge resta sempre un'azione del committente (vedi vincolo sopra) — l'obiettivo è arrivarci senza altre soste intermedie:
 
+0. Branch aggiornato rispetto a `origin/main` (sezione sopra) — **prima** di dichiarare «pronta».
 1. CI verde (`get_ci_status` = **SUCCESS** sui check del job app). **Vietato** dire «pronta» dopo i soli test locali (PR #401).
 2. Leggere **Bugbot** e **Security Review** su quella revisione (gate sopra). Se uno è ancora in corso: aspettare, non anticipare.
 3. Aggiornare la PR con i tre esiti. Nessun rilievo critico → «pronta per il merge». Rilievo non banale → NON proporre il merge.

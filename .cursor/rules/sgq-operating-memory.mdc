@@ -30,6 +30,8 @@ git show origin/main:docs/agent-tasks/DEPUTYTASK.md | head -20
 
 Working tree sporco: niente reset distruttivo; stash/commit/worktree. Mai force-push su `main`.
 
+**Branch PR vs `main`:** aggiorna da solo il feature branch con `origin/main` (merge preferito) se la PR è indietro, CI in conflitto, o prima di chiedere merge — **non** chiedere «Update branch» al committente; **non** mergiare la PR su `main`. Dettaglio: [`sgq-git-autonomy.mdc`](sgq-git-autonomy.mdc) § Aggiornare il branch della PR.
+
 ## Parallelo, conflitti PR, costo Bugbot (vincolante)
 
 Sì, più chat in parallelo. No, non sullo stesso foglio. Dettaglio: [`sgq-workflow-method.mdc`](sgq-workflow-method.mdc).
