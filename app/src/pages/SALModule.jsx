@@ -443,13 +443,14 @@ export default function SALModule() {
 
   async function handleAiAccept(suggestion, finalStatus) {
     const row = rows.find((r) => r.normRequirementId === suggestion.normRequirementId);
-    if (!row || !finalStatus) return;
+    const status = finalStatus || suggestion?.suggestedStatus;
+    if (!row || !status) return;
     // Tracciabilita' ISO 7.5: se non ci sono note, registra l'origine AI del cambio stato.
     const aiNote = suggestion.rationale
       ? `Proposto da AI (confidenza ${suggestion.confidence || 'n/d'}): ${suggestion.rationale}`
       : null;
     await saveStatus(row, {
-      status: finalStatus,
+      status,
       notes: row.notes || aiNote || null,
       responsible: row.responsible,
       dueDate: row.dueDate,

@@ -3,7 +3,7 @@
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import React from 'react';
-import { render, screen, fireEvent, waitFor, act } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor, act, within } from '@testing-library/react';
 import { RouterProvider } from '../contexts/RouterContext';
 import { withCompanyScope } from './helpers/withCompanyScope';
 
@@ -153,9 +153,12 @@ describe('SALModule - suggeritore stato AI (Fase 5-A)', () => {
     await renderSalWithCompany();
     await waitFor(() => expect(screen.getByText('8.4')).toBeInTheDocument());
     fireEvent.click(screen.getByRole('button', { name: /Suggerisci stato \(AI\)/ }));
-    await screen.findByText('Suggerimenti stato (AI)');
+    const dialog = await screen.findByRole('dialog', { name: /Suggerimenti stato/ });
+    // Attendi lo stato proposto nel dialog (items sync) prima di Accetta.
+    // Non usare screen.getByText('Completato'): è già nelle option della griglia.
+    expect(within(dialog).getByText(/Completato/)).toBeInTheDocument();
 
-    fireEvent.click(screen.getByRole('button', { name: 'Accetta' }));
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Accetta' }));
 
     await waitFor(() => {
       expect(apiService.updateGapStatus).toHaveBeenCalledWith(
@@ -165,7 +168,6 @@ describe('SALModule - suggeritore stato AI (Fase 5-A)', () => {
       );
     });
   });
-
   it('mostra la sezione Conformita legislativa quando il suggerimento ha legal', async () => {
     apiService.suggestSalGapStatus.mockResolvedValue({
       success: true,
