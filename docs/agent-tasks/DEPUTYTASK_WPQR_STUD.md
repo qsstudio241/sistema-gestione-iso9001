@@ -20,9 +20,9 @@ Fonti Markdown:
 - Coperte: ISO 15614-1 (NORMA_00019 + estratto range); t1/t2 già in prod (mig. 158);
   ISO 14555:2025 digitalizzata (`NORMA_00033`); estratto range STUD-3-A
   `docs/reference/ISO-14555-2025-range-validita-WPQR.md`
-- Mancanti (temporaneo → STUD-3-B in corso): range 14555 **in codice** + accettazione boiler pins Tabella 2;
-  catalogo 4063 stud solo se arriva fonte (HITL: niente 78x inventati; 4063 = indicazione processo)
-- Si parte su: STUD-2/3-A **CHIUSI**; HITL extract + Tabella 2 **chiusi** (29/08); STUD-3-B APERTO su DEPUTYTASK.md
+- Mancanti: catalogo 4063 stud solo se arriva fonte (HITL: niente 78x inventati; 4063 = indicazione processo)
+- Coperte in codice: range §10.2.8 + Tabella 2 (STUD-3-B CHIUSO)
+- Si parte su: STUD-2/3-A/3-B **CHIUSI**
 ```
 
 ## Richiesta norma (HITL) — **EVASA** 26/08/2026
@@ -32,7 +32,7 @@ Fonti Markdown:
 - **Serve a**: STUD-3 range; STUD-1 chiuso senza range; STUD-3-A estratto fatto (HITL prima del codice)
 - **Cosa NON inventiamo senza HITL sull'estratto**: soglie ancora GAP (Tabella 1, B.1 formule, §10.2.8.5 a)
 - **Perimetro chiuso in STUD-1**: campi + doppio materiale + P+T su 15614-1 + verbale Mason 001P-21
-- **Prossimo:** aprire/eseguire **STUD-3-B** (range §10.2.8 + accettazione boiler pins Tabella 2 8/40, 10/60, 12/85 Nm). HITL extract chiuso.
+- **STUD-3-B:** eseguito 29/08 — range §10.2.8 + Tabella 2 in codice (`weldingQualificationRules14555`).
 
 ## Perché
 
@@ -63,13 +63,13 @@ Segnalazione Mason (post chiusura t1/t2): in inserimento WPQR «Stud Welding» m
 
 **Registro rielaborazioni:** voci `qualifying_element`, `material_group_2`, `base_material_spec_2` (sync whitelist + registry).
 
-**Backlog residuo (26/08 sera — STUD-2 e STUD-3-A chiusi):**
+**Backlog residuo (29/08 — STUD-3-B CHIUSO):**
 
 | Slice | Slot | Scope |
 |-------|------|--------|
 | **STUD-2** | [`DEPUTYTASK.md`](DEPUTYTASK.md) **CHIUSO — TEST OK** [#590](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/590) | Ingest AI SW / P+T / PM2 / qualifying_element (no range) |
 | **STUD-3-A** | [`DEPUTYTASK1.md`](DEPUTYTASK1.md) **CHIUSO — TEST OK** [#589](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/589) | Estratto docs [`ISO-14555-2025-range-validita-WPQR.md`](../reference/ISO-14555-2025-range-validita-WPQR.md) |
-| **STUD-3-B** | [`DEPUTYTASK.md`](DEPUTYTASK.md) **APERTO** 29/08 | Codifica range §10.2.8 + **accettazione boiler pins Tabella 2** (8→40, 10→60, 12→85 Nm; §12.3 OR Table 2). 4063 = solo indicazione processo (niente 78x inventati) |
+| **STUD-3-B** | [`DEPUTYTASK.md`](DEPUTYTASK.md) **CHIUSO — TEST OK** 29/08 | Codifica range §10.2.8 + accettazione boiler pins Tabella 2 (8→40, 10→60, 12→85 Nm; §12.3 OR Table 2). 4063 = solo indicazione processo (niente 78x inventati) |
 | PT-1 | opzionale | UX range lato P vs T (15614) |
 
 Cloud Agent **non** dichiara «pronta» senza CI + Bugbot + Security Review letti.

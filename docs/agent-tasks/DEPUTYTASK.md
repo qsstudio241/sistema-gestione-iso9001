@@ -1,7 +1,8 @@
 # DEPUTYTASK — STUD-3-B: range WPQR stud ISO 14555 + accettazione Tabella 2 boiler pins
 
-**Stato:** APERTO  
+**Stato:** CHIUSO — TEST OK  
 **Aperto:** 29/08/2026  
+**Chiuso:** 29/08/2026  
 **Stream:** [`DEPUTYTASK_WPQR_STUD.md`](DEPUTYTASK_WPQR_STUD.md) (STUD-1 #585, STUD-2 #590, STUD-3-A #589 **CHIUSI**)  
 **Report:** [`docs/gap-reports/GAP_WPQR_STUD_WELDING_PIASTRA_TUBO_2026-08-25.md`](../gap-reports/GAP_WPQR_STUD_WELDING_PIASTRA_TUBO_2026-08-25.md)  
 **Estratto (HITL chiuso 29/08):** [`docs/reference/ISO-14555-2025-range-validita-WPQR.md`](../reference/ISO-14555-2025-range-validita-WPQR.md)  
@@ -73,10 +74,20 @@ Wiring minimo: non applicare range 15614 quando norma = 14555 (e tipicamente `jo
 
 ## Verifica
 
-- [ ] Test regole: sezione 1/2 prove; spessore «tutti»; posizioni tw; CF/SG/NP; materiali a–c; through-deck; Tabella 2 8/10/12
-- [ ] Nessun 783/784/785 nuovo nel catalogo
-- [ ] L1 + build se FE
-- [ ] PR codice; brief chiuso
+- [x] Test regole: sezione 1/2 prove; spessore «tutti»; posizioni tw; CF/SG/NP; materiali a–c; through-deck; Tabella 2 8/10/12
+- [x] Nessun 783/784/785 nuovo nel catalogo
+- [x] L1 + build se FE
+- [x] PR codice; brief chiuso
+
+
+
+## Esito
+
+**Branch:** `cursor/stud3b-range-wpqr-9166`  
+**Motorino:** `weldingQualificationRules14555` FE+BE (§10.2.8.4–12, §3.14, Tabella 2).  
+**Wiring:** form WPQR opzione `UNI EN ISO 14555:2025` + niente calc Tabella 7 su 14555; `wpsGenerator` ramo spessore 14555.  
+**4063 stud:** non inventati (HITL).  
+**Hub:** bozza roadmap dopo merge — «STUD-3-B range 14555 + Tabella 2 in codice».
 
 ## Bozza hub (dopo merge se parallelo)
 
