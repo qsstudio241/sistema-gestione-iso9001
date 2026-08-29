@@ -8,7 +8,7 @@
 
 > **Risposta standard a «stato di avanzamento del progetto e priorità da affrontare»**: sintetizzare da questa sezione (moduli maturi + sessione più recente + tabella priorità sotto), **non** dal banner storico più sotto (superato, tenuto solo per traccia) né dall'archivio marzo 2026 [`docs/archive/PROJECT_CONTEXT_STATO_FUNZIONALITA_2026-03.md`](archive/PROJECT_CONTEXT_STATO_FUNZIONALITA_2026-03.md). **Aggiornare questa sezione a fine sessione** se emergono nuove priorità o se una priorità elencata viene chiusa (stesso principio delle "Lezioni apprese" in [GUIDA_CONSOLIDATA.md](GUIDA_CONSOLIDATA.md) — sintesi qui, dettaglio linkato).
 
-**Ultimo aggiornamento di questa sezione**: 29/08/2026 (SAL AI evidenze S1b+S2a+S2b chiusi; LN-1 Libreria + hamburger #604; STUD-3-B #599).
+**Ultimo aggiornamento di questa sezione**: 29/08/2026 (Libreria LN-2…LN-5 piano COMPLETATO su branch; SAL AI evidenze chiusi; LN-1 #604; STUD-3-B #599).
 
 ### Moduli maturi (in produzione, uso quotidiano dai clienti Camellini/Mason)
 
@@ -16,9 +16,11 @@ Audit multi-standard (9001/14001/45001) · Non Conformità (workflow ISO 10.2 co
 
 ### Sessione più recente (29/08/2026)
 
+**Libreria epic LN-2…LN-5 (29/08, branch stacked — merge in ordine LN-2→LN-5)** — piano [`PLAN_LIBRERIA_NORME_SLICES.md`](agent-tasks/PLAN_LIBRERIA_NORME_SLICES.md) **COMPLETATO**: LN-2 deep-link+NormUpload; LN-3 qualità testo/chunk/last_check (SELECT additivo); LN-4 label Manuale/libro·Altro/quaderno senza enum; LN-5 form richieste studio (localStorage + Copia MD). Slot [`DEPUTYTASK.md`](agent-tasks/DEPUTYTASK.md) **CHIUSO**. Residuo HITL opzionale: enum dedicati ADR-011 + persistenza server richieste.
+
 **SAL AI evidenze chiuso (29/08, S1b [#603](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/603), S2a [#605](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/605), S2b UI)** — OCR immagini; `missingEvidenceSuggestion` zero write; dialog collega/carica/ignora HITL. Piano [`PLAN_SAL_AI_EVIDENCE_SLICES.md`](agent-tasks/PLAN_SAL_AI_EVIDENCE_SLICES.md) **chiuso** (S1c `.doc` solo su richiesta). Stream [`DEPUTYTASK_SAL_AI.md`](agent-tasks/DEPUTYTASK_SAL_AI.md) **CHIUSO**.
 
-**LN-1 Libreria Gestione (29/08, [#604](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/604) mergiata)** — in codice su `main`: pagina `/settings/libreria` (Gestione → Libreria): catalogo fonti da `document_registry` (vigore solo `norma`; `issue_date` per non-norma) + richieste mancanti read-only da snapshot backlog. **Menu mobile**: hamburger apre drawer con tutte le voci sidebar (incluso Gestione → Libreria; prima la bottom nav non esponeva settings). Piano [`PLAN_LIBRERIA_NORME_SLICES.md`](agent-tasks/PLAN_LIBRERIA_NORME_SLICES.md). Slot [`DEPUTYTASK.md`](agent-tasks/DEPUTYTASK.md) **CHIUSO**. Prossima slice epic: **LN-2** (deep-link / azioni minime verso Documenti).
+**LN-1 Libreria Gestione (29/08, [#604](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/604) mergiata)** — in codice su `main`: pagina `/settings/libreria` (Gestione → Libreria): catalogo fonti da `document_registry` (vigore solo `norma`; `issue_date` per non-norma) + richieste mancanti read-only da snapshot backlog. **Menu mobile**: hamburger apre drawer con tutte le voci sidebar (incluso Gestione → Libreria).
 
 **STUD-3-B range ISO 14555 + Tabella 2 (29/08, #599)** — motorino `weldingQualificationRules14555` FE+BE (§10.2.8 + accettazione boiler pins Tabella 2 HITL); wiring form WPQR norma 14555 senza calc Tabella 7 15614. Slot [`DEPUTYTASK.md`](agent-tasks/DEPUTYTASK.md) **CHIUSO** (poi riaperto LN-1). Stream [`DEPUTYTASK_WPQR_STUD.md`](agent-tasks/DEPUTYTASK_WPQR_STUD.md): STUD-1…3-B **CHIUSI**. Residuo opzionale: PT-1 UX range P vs T (15614). Niente 4063 stud 78x inventati.
 
