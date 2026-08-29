@@ -18,6 +18,8 @@
 | Nome | **Libreria** (confermato) — non «Catalogo norme»: le fonti di riferimento possono essere **norme, libri, quaderni, altri riferimenti**, non solo norme | No (chiuso) |
 | Scope catalogo | Fonti di riferimento per **qualità/affidabilità agenti** ingerite nel Registro — non solo `doc_type=norma` a regime | No — vedi filtro LN-1 sotto |
 | Catalogo LN-1 | Filtro iniziale = tipizzazioni **già** in `document_registry` / `DOC_TYPE_OPTIONS` utili come riferimenti (partenza: `norma`; se presenti e pertinenti, anche tipi già esistenti tipo `manuale` / `altro` usati come riferimento — **senza** inventare `libro`/`quaderno`) | No |
+| UI catalogo per tipo (HITL 29/08) | **Norma** → stato **validità/vigore** (`validity_status` / badge già in DocumentRegistry). **Libro / quaderno / non-norma** → **niente** colonna vigori; mostra **data di pubblicazione** se già presente nel registry, altrimenti vuoto/placeholder (slice successiva solo se manca campo utile) | No (chiuso) |
+| Campi data non-norma (LN-1) | **Riuso**, niente colonne DB nuove: preferire `issue_date` (colonna registry già usata) e, se utile in scheda, eventuali date già in `type_specific_data`. Se assente → «—» / placeholder UI; **non** inventare `publication_date` in LN-1 | No |
 | Estensione tipi | Nuovi `doc_type` (es. libro, quaderno) **solo** con gate prodotto + ADR-011 / registry — **non** in LN-1 | Sì, slice successiva se serve |
 | Richieste | Solo lettura da `NORME_MANCANTI_BACKLOG.md` (lacune fonti, non solo «norme» strette) | No in LN-1; PDF = HITL fuori UI |
 | Alternativa scartata | Solo deep-link Documenti `?doc_type=norma` | Meno chiaro per «qualità fonti AI»; Knowledge Health è KPI chunk, non vigore |
@@ -26,7 +28,10 @@
 
 Pagina accessibile da menu **Gestione → Libreria** con **due sezioni**:
 
-1. **Catalogo ingerito** — tabella/lista fonti di riferimento dal Registro (codice/titolo/anno dove applicabile + badge vigore per le norme) con riuso `StatusBadge` / classi già usate in DocumentRegistry. Filtro iniziale: tipi già tipizzati nel registry (vedi tabella sopra); non nuovo SoT.
+1. **Catalogo ingerito** — tabella/lista fonti di riferimento dal Registro (codice/titolo + metadato **per tipo**):
+   - `doc_type=norma` → badge **vigore** (`validity_status`, riuso `StatusBadge` / `norm-validity-inline`);
+   - non-norma (libro/quaderno/manuale/altro riferimento) → **data pubblicazione** se presente (`issue_date` o equivalente già in registry); se manca → «—»/placeholder, **senza** migrazione né `validity_status` finto.
+   Filtro iniziale: tipi già tipizzati (vedi tabella); non nuovo SoT.
 2. **Richieste mancanti** — tabella/lista dal backlog Markdown (stato + priorità + impatto), sola lettura, testo che spiega «per aumentare affidabilità risposte / non inventare soglie».
 
 Smoke: login admin → Gestione → Libreria → entrambe le sezioni popolabili (anche con zero righe = empty state chiaro). Link «Apri in Documenti» su almeno una riga catalogo (o CTA globale) se i dati ci sono.
@@ -48,7 +53,7 @@ Smoke: login admin → Gestione → Libreria → entrambe le sezioni popolabili 
 
 ## Cosa NON toccare
 
-- `document_registry` schema / migrazioni / `documentRegistryNorm.service.js` (SoT già OK) — **niente** nuovi `doc_type` senza gate
+- `document_registry` schema / migrazioni / `documentRegistryNorm.service.js` (SoT già OK) — **niente** nuovi `doc_type` senza gate; **niente** colonna `publication_date` / vigori su non-norma in LN-1
 - `syncService`, `auth.middleware`, JWT
 - `DocumentRegistry.jsx` refactor ampio (solo link verso di esso)
 - `KnowledgeHealthPage.jsx` (resta KPI chunk)
@@ -59,8 +64,9 @@ Smoke: login admin → Gestione → Libreria → entrambe le sezioni popolabili 
 
 ## Riuso obbligatorio (Gate Ponytail)
 
-- SoT metadati: ADR-011 + `document_registry` (tipi già tipizzati; metadati vigore su `doc_type=norma` via `type_specific_data`)
-- Badge: `StatusBadge` / pattern `norm-validity-inline` già in DocumentRegistry
+- SoT metadati: ADR-011 + `document_registry` (tipi già tipizzati; **vigore solo su norma** via `validity_status` in `type_specific_data`)
+- Badge vigore: `StatusBadge` / pattern `norm-validity-inline` — **solo** righe `norma`
+- Data non-norma: riuso `issue_date` (o campo già esposto dall’API documenti); niente colonna/migrazione nuova in LN-1
 - Upload/scheda: **non** ricopiare `NormUploadButton` in Libreria in LN-1 — link a `/documents`
 - Layout: copia DNA `app/src/design-system/README.md` + schermata tipo Knowledge Health / Documenti lista
 - Backlog: unica fonte testuale `docs/reference/NORME_MANCANTI_BACKLOG.md`
@@ -78,9 +84,9 @@ Smoke post-merge (percorso Gestione): login admin → `/settings/libreria` (o pa
 ## Criteri chiusura
 
 - [ ] Voce Gestione → **Libreria** visibile ad admin
-- [ ] Sezione Catalogo: dati da API documenti (filtro tipi riferimento già tipizzati) + validity dove applicabile
+- [ ] Sezione Catalogo: dati da API documenti (filtro tipi riferimento già tipizzati); UI differenziata — vigore solo norme; data pubblicazione (se presente) per non-norma
 - [ ] Sezione Richieste: dati da backlog (MD/JSON) read-only
-- [ ] Nessuna migrazione; nessun secondo SoT; nessun `doc_type` nuovo
+- [ ] Nessuna migrazione / colonna nuova; nessun secondo SoT; nessun `doc_type` nuovo; niente `validity_status` su libri
 - [ ] Test L1 + build verdi; PR; **un** Bugbot a slice chiusa
 - [ ] Stato brief → CHIUSO — TEST OK + link PR
 
