@@ -3,7 +3,7 @@
  */
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import React from "react";
-import { render, screen, waitFor } from "@testing-library/react";
+import { render, screen, waitFor, fireEvent } from "@testing-library/react";
 import NormLibraryPage, {
   LIBRARY_REFERENCE_DOC_TYPES,
   LIBRARY_DOC_TYPE_LABELS,
@@ -78,6 +78,7 @@ describe("resolveValidityStatus / resolvePublicationDate", () => {
 
 describe("NormLibraryPage", () => {
   beforeEach(() => {
+    localStorage.clear();
     mockGetDocuments.mockReset();
     mockGetDocuments.mockImplementation(({ doc_type }) => {
       if (doc_type === "norma") {
@@ -181,6 +182,24 @@ describe("NormLibraryPage", () => {
     expect(libraryDocTypeLabel("manuale")).toBe("Manuale / libro");
     expect(libraryDocTypeLabel("altro")).toBe("Altro / quaderno");
     expect(LIBRARY_REFERENCE_DOC_TYPES).toEqual(["norma", "manuale", "altro"]);
+  });
+
+  it("LN-5: form aggiunge richiesta studio al backlog", async () => {
+    render(<NormLibraryPage />);
+    await waitFor(() => {
+      expect(screen.getByText("ISO 9001:2015")).toBeTruthy();
+    });
+    const codeInput = screen.getByPlaceholderText(/ISO 17660-1/i);
+    fireEvent.change(codeInput, { target: { value: "ISO TEST-LN5" } });
+    fireEvent.change(screen.getByPlaceholderText(/WPQR \/ MC/i), {
+      target: { value: "Test modulo" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: /Aggiungi richiesta studio/i }));
+    await waitFor(() => {
+      expect(screen.getByText("ISO TEST-LN5")).toBeTruthy();
+    });
+    expect(screen.getByText("Studio")).toBeTruthy();
+    expect(screen.getByText("Test modulo")).toBeTruthy();
   });
 
   it("mostra empty state catalogo se API senza righe", async () => {

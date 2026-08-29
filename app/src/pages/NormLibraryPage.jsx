@@ -18,6 +18,13 @@ import SgqDataGrid from "../components/SgqDataGrid";
 import NormUploadButton from "../components/NormUploadButton";
 import StatusBadge from "../components/StatusBadge";
 import backlogSnapshot from "../data/normeMancantiBacklog.json";
+import {
+  addLibraryRequest,
+  formatLibraryRequestMarkdownRow,
+  loadLibraryRequests,
+  mergeBacklogRows,
+  removeLibraryRequest,
+} from "../utils/libraryBacklogRequests";
 import "./NormLibraryPage.css";
 
 /** Tipi già tipizzati usati come fonti di riferimento (LN-1 — niente libro/quaderno nuovi). */
@@ -136,21 +143,46 @@ const BACKLOG_COLUMNS = [
   { id: "impact", label: "Impatto", width: "1fr", sortable: true },
   { id: "status", label: "Stato", width: "120px", sortable: true },
   { id: "priority", label: "Priorità", width: "80px", sortable: true },
-  { id: "notes", label: "Note", width: "1.2fr", sortable: false },
+  { id: "source", label: "Fonte", width: "100px", sortable: true },
+  { id: "notes", label: "Note", width: "1.1fr", sortable: false },
+  { id: "studio_actions", label: "", width: "150px", sortable: false },
 ];
+
+const EMPTY_REQUEST_FORM = {
+  code: "",
+  impact: "",
+  status: "da_richiedere",
+  priority: "P2",
+  notes: "",
+};
 
 export function NormLibraryPage() {
   const { user } = useAuth();
   const isAdmin = user?.role === "admin" || user?.role === "superadmin";
+  const orgId = user?.organization_id;
 
   const [docs, setDocs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [studioRequests, setStudioRequests] = useState([]);
+  const [requestForm, setRequestForm] = useState(EMPTY_REQUEST_FORM);
+  const [requestError, setRequestError] = useState(null);
+  const [copyFeedback, setCopyFeedback] = useState(null);
 
-  const backlogItems = useMemo(
+  const platformBacklog = useMemo(
     () => (Array.isArray(backlogSnapshot?.items) ? backlogSnapshot.items : []),
     []
   );
+
+  const backlogItems = useMemo(
+    () => mergeBacklogRows(platformBacklog, studioRequests),
+    [platformBacklog, studioRequests]
+  );
+
+  useEffect(() => {
+    if (!isAdmin) return;
+    setStudioRequests(loadLibraryRequests(orgId));
+  }, [isAdmin, orgId]);
 
   const loadCatalog = useCallback(async () => {
     setLoading(true);
@@ -255,11 +287,69 @@ export function NormLibraryPage() {
         </span>
       );
     }
+    if (colId === "source") {
+      if (row.source === "studio") {
+        return <span className="nl-source nl-source--studio">Studio</span>;
+      }
+      return <span className="nl-source nl-source--plat">Piattaforma</span>;
+    }
     if (colId === "notes") {
       return <span className="nl-notes">{row.notes || "\u2014"}</span>;
     }
+    if (colId === "studio_actions") {
+      if (row.source !== "studio") return null;
+      return (
+        <div className="nl-studio-actions">
+          <button
+            type="button"
+            className="nl-link-btn"
+            onClick={async () => {
+              const md = formatLibraryRequestMarkdownRow(row);
+              try {
+                if (navigator?.clipboard?.writeText) {
+                  await navigator.clipboard.writeText(md);
+                  setCopyFeedback(`Copiata riga Markdown per «${row.code}»`);
+                } else {
+                  setCopyFeedback(md);
+                }
+              } catch {
+                setCopyFeedback(md);
+              }
+            }}
+          >
+            Copia MD
+          </button>
+          <button
+            type="button"
+            className="nl-link-btn nl-link-btn--danger"
+            onClick={() => {
+              const next = removeLibraryRequest(orgId, row.id);
+              setStudioRequests(next);
+            }}
+          >
+            Rimuovi
+          </button>
+        </div>
+      );
+    }
     return row[colId] ?? "\u2014";
-  }, []);
+  }, [orgId]);
+
+  const handleAddRequest = useCallback(
+    (e) => {
+      e.preventDefault();
+      setRequestError(null);
+      setCopyFeedback(null);
+      try {
+        addLibraryRequest(orgId, requestForm);
+        setStudioRequests(loadLibraryRequests(orgId));
+        setRequestForm(EMPTY_REQUEST_FORM);
+      } catch (err) {
+        setRequestError(err.message || "Impossibile salvare la richiesta");
+      }
+    },
+    [orgId, requestForm]
+  );
 
   if (!isAdmin) {
     return (
@@ -327,10 +417,91 @@ export function NormLibraryPage() {
           <h3 id="nl-backlog-heading">2. Richieste mancanti</h3>
           <p>
             Lacune da colmare per aumentare l&apos;affidabilità delle risposte e
-            non inventare soglie/clausole. Sola lettura dal backlog piattaforma;
-            i PDF restano una richiesta HITL al committente.
+            non inventare soglie/clausole. Snapshot piattaforma + richieste studio
+            (locale al browser). I PDF restano HITL; «Copia MD» prepara la riga per{" "}
+            <code>NORME_MANCANTI_BACKLOG.md</code>. Persistenza server = decisione storage futura.
           </p>
         </div>
+
+        <form className="nl-request-form" onSubmit={handleAddRequest}>
+          <div className="nl-request-form__row">
+            <label>
+              Codice / titolo
+              <input
+                type="text"
+                value={requestForm.code}
+                onChange={(e) =>
+                  setRequestForm((f) => ({ ...f, code: e.target.value }))
+                }
+                required
+                placeholder="es. ISO 17660-1"
+              />
+            </label>
+            <label>
+              Impatto modulo
+              <input
+                type="text"
+                value={requestForm.impact}
+                onChange={(e) =>
+                  setRequestForm((f) => ({ ...f, impact: e.target.value }))
+                }
+                placeholder="es. WPQR / MC"
+              />
+            </label>
+            <label>
+              Priorità
+              <select
+                value={requestForm.priority}
+                onChange={(e) =>
+                  setRequestForm((f) => ({ ...f, priority: e.target.value }))
+                }
+              >
+                <option value="P0">P0</option>
+                <option value="P1">P1</option>
+                <option value="P2">P2</option>
+              </select>
+            </label>
+            <label>
+              Stato
+              <select
+                value={requestForm.status}
+                onChange={(e) =>
+                  setRequestForm((f) => ({ ...f, status: e.target.value }))
+                }
+              >
+                <option value="da_richiedere">Da richiedere</option>
+                <option value="pdf_ricevuto">PDF ricevuto</option>
+                <option value="parcheggio">Parcheggio</option>
+                <option value="digitalizzata">Digitalizzata</option>
+              </select>
+            </label>
+          </div>
+          <label className="nl-request-form__notes">
+            Note
+            <input
+              type="text"
+              value={requestForm.notes}
+              onChange={(e) =>
+                setRequestForm((f) => ({ ...f, notes: e.target.value }))
+              }
+              placeholder="Perché serve / dove manca"
+            />
+          </label>
+          {requestError && (
+            <p className="nl-request-form__error" role="alert">
+              {requestError}
+            </p>
+          )}
+          {copyFeedback && (
+            <p className="nl-request-form__ok" role="status">
+              {copyFeedback}
+            </p>
+          )}
+          <button type="submit" className="btn-primary">
+            Aggiungi richiesta studio
+          </button>
+        </form>
+
         <SgqDataGrid
           rows={backlogItems}
           columns={BACKLOG_COLUMNS}
@@ -338,7 +509,7 @@ export function NormLibraryPage() {
           emptyMessage="Nessuna richiesta nel backlog."
           theme="plain"
           renderCell={renderBacklogCell}
-          getRowKey={(row, idx) => row.code || String(idx)}
+          getRowKey={(row, idx) => row.id || row.code || String(idx)}
           className="nl-grid"
           initialSortCol="priority"
           initialSortDir="asc"

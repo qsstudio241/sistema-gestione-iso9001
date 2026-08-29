@@ -22,9 +22,9 @@
 
 ## Non ancora specificato
 
-- Se/quando introdurre `doc_type` dedicati per libri/quaderni (oggi tipizzazioni utili già in registry: `norma`, eventualmente `manuale` / `altro` come riferimento) — **dopo** LN-1, con gate
+- Se/quando introdurre `doc_type` dedicati `libro`/`quaderno` (oggi: label Libreria su `manuale`/`altro` — LN-4 chiuso senza enum) — solo con gate ADR-011
 - Se `issue_date` non basta come «data pubblicazione» per libri/quaderni tipizzati in futuro — eventuale campo dedicato **solo** in slice successiva (non LN-1)
-- Se le richieste mancanti diventano CRUD in-app (oggi = Markdown HITL) — dopo LN-1
+- Se le richieste mancanti diventano persistenza server (oggi LN-5 = form + localStorage studio + export Markdown HITL) — tabella/API se HITL storage
 - Collegamento automatico «fonte MD digitalizzata ↔ riga registro» — slice successiva
 
 ## Decisioni già prese (Lead + committente 29/08/2026)
@@ -55,6 +55,6 @@
 | **LN-2** | Deep-link / azioni minime | Link riga catalogo → Documenti scheda; CTA «Apri Documenti» / NormUpload già esistenti | LN-1 | AFK | **CHIUSO** — TEST OK (29/08/2026, `cursor/ln2-libreria-deeplink-0b72`) |
 | **LN-3** | Qualità info agenti | Colonne/badge da `text_quality` / presenza chunk / last_validity_check (solo lettura) | LN-1 | AFK | **CHIUSO** — TEST OK (29/08/2026, `cursor/ln3-libreria-quality-0b72`) |
 | **LN-4** | Tipi riferimento più ampi (opz.) | Se serve: gate + eventuale `doc_type` libro/quaderno in registry/ADR; altrimenti regole su tipi esistenti | LN-1 + decisione prodotto | HITL | **CHIUSO** — TEST OK (29/08/2026): label UI su `manuale`/`altro`, **niente** enum nuovi (`cursor/ln4-libreria-tipi-0b72`) |
-| **LN-5** | Richieste scrivibili (opz.) | Form «aggiungi richiesta» → aggiorna backlog o tabella leggera; alert studio | LN-1 + decisione prodotto | HITL | fog |
+| **LN-5** | Richieste scrivibili (opz.) | Form «aggiungi richiesta» → aggiorna backlog o tabella leggera; alert studio | LN-1 + decisione prodotto | HITL | **CHIUSO** — TEST OK (29/08/2026): form + localStorage org + Copia MD; server storage = HITL futuro (`cursor/ln5-libreria-richieste-0b72`) |
 
-**Parallelo**: nessun altro `DEPUTYTASK*` APERTO su questi file al momento dell’apertura brief (29/08). PR docs #600 (roadmap/GUIDA) non tocca brief/codice LN.
+**Stato piano:** **COMPLETATO** (29/08/2026) — LN-1 su `main` (#604); LN-2…LN-5 su branch stacked (merge in ordine LN-2→LN-5). Residuo solo HITL opzionale: enum `libro`/`quaderno` (ADR-011) e persistenza server richieste.

@@ -1,24 +1,20 @@
-# DEPUTYTASK — LN-4: Tipi riferimento libro/quaderno (label UI, senza enum nuovi)
+# DEPUTYTASK — LN-5: Richieste Libreria scrivibili (minimo sicuro)
 
-**Stato:** APERTO  
+**Stato:** CHIUSO — TEST OK  
 **Aperto:** 29/08/2026  
+**Chiuso:** 29/08/2026  
 **Piano:** [`PLAN_LIBRERIA_NORME_SLICES.md`](PLAN_LIBRERIA_NORME_SLICES.md)  
-**Rischio:** Basso — solo label FE in Libreria; **niente** nuovi `doc_type` / migrazioni / CHECK  
-**Branch:** `cursor/ln4-libreria-tipi-0b72`  
-**Decisione prodotto (sicura senza HITL):** libri/quaderni restano tipizzati come `manuale` / `altro` già in registry; in Libreria label esplicite «Manuale / libro» e «Altro / quaderno». Enum dedicati = solo se HITL futuro + ADR-011.
+**Rischio:** Basso — FE form + localStorage per org; niente migrazione/auth/sync  
+**Branch:** `cursor/ln5-libreria-richieste-0b72`  
+**Esito:** TEST OK — Vitest util + page (11) + build
 
-> Comando: `Leggi docs/agent-tasks/DEPUTYTASK.md ed eseguilo.`
+## Esito
 
-## Obiettivo
+- Form «Aggiungi richiesta studio» → localStorage `sgq_library_requests_v1_<orgId>`
+- Merge con snapshot piattaforma; badge Fonte Studio/Piattaforma
+- «Copia MD» per paste HITL in `NORME_MANCANTI_BACKLOG.md`
+- **Manca (2 righe HITL storage):** persistenza server (tabella/`library_source_requests` o API) se serve multi-device; oggi intenzionalmente file-local browser
 
-Catalogo Libreria mostra tipi con label che chiariscono scope libri/quaderni **senza** inventare `doc_type=libro|quaderno` né migrazione.
+## Piano
 
-## File previsti
-
-- `docs/agent-tasks/DEPUTYTASK.md`, `PLAN_LIBRERIA_NORME_SLICES.md`
-- `app/src/pages/NormLibraryPage.jsx` (+ test)
-
-## Cosa NON toccare
-
-- `documentTypes.js` enum globale (evita breaking form Documenti)
-- Migrazioni / CHECK / ADR-011 rewrite
+LN-2…LN-5 chiuse in sessione; PLAN marcato completato.
