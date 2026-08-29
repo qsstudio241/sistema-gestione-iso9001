@@ -1,5 +1,5 @@
 /**
- * Test L1 — NormLibraryPage (LN-1 Libreria)
+ * Test L1 — NormLibraryPage (LN-1 + LN-2 Libreria)
  */
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import React from "react";
@@ -23,10 +23,18 @@ vi.mock("../contexts/AuthContext", () => ({
 }));
 
 vi.mock("../contexts/RouterContext", () => ({
-  Link: ({ to, children, className }) => (
-    <a href={to} className={className}>
+  Link: ({ to, children, className, title }) => (
+    <a href={to} className={className} title={title}>
       {children}
     </a>
+  ),
+}));
+
+vi.mock("../components/NormUploadButton", () => ({
+  default: ({ onUploadComplete }) => (
+    <button type="button" data-testid="norm-upload-btn" onClick={() => onUploadComplete?.()}>
+      Carica norme PDF
+    </button>
   ),
 }));
 
@@ -110,6 +118,27 @@ describe("NormLibraryPage", () => {
     expect(screen.getByText(/ISO 14555/)).toBeTruthy();
     expect(LIBRARY_REFERENCE_DOC_TYPES).toEqual(["norma", "manuale", "altro"]);
     expect(mockGetDocuments).toHaveBeenCalled();
+  });
+
+  it("LN-2: deep-link titolo/codice e CTA NormUpload + Apri Documenti", async () => {
+    render(<NormLibraryPage />);
+    await waitFor(() => {
+      expect(screen.getByText("ISO 9001:2015")).toBeTruthy();
+    });
+
+    const titleLink = screen.getByText("ISO 9001:2015").closest("a");
+    expect(titleLink).toBeTruthy();
+    expect(titleLink.getAttribute("href")).toBe("/documents?tab=tree&select=11");
+
+    const codeLink = screen.getByText("ISO-9001").closest("a");
+    expect(codeLink.getAttribute("href")).toBe("/documents?tab=tree&select=11");
+
+    const manualLink = screen.getByText("Manuale qualità").closest("a");
+    expect(manualLink.getAttribute("href")).toBe("/documents?tab=tree&select=22");
+
+    expect(screen.getByTestId("norm-upload-btn")).toBeTruthy();
+    const ctaDocs = screen.getByRole("link", { name: "Apri Documenti" });
+    expect(ctaDocs.getAttribute("href")).toContain("/documents");
   });
 
   it("mostra empty state catalogo se API senza righe", async () => {

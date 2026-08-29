@@ -33,9 +33,16 @@
   line-height: 1.45;
 }
 
-.nl-header-cta {
+.nl-header-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
   flex-shrink: 0;
   align-self: center;
+}
+
+.nl-header-cta {
   background: #fff;
   color: #1e3a5f;
   border: none;
@@ -48,6 +55,10 @@
 
 .nl-header-cta:hover {
   background: #e2e8f0;
+}
+
+.nl-header-actions .norm-upload {
+  color: #1e3a5f;
 }
 
 .nl-section {
@@ -87,6 +98,15 @@
   font-size: 13px;
   font-weight: 500;
   text-decoration: none;
+}
+
+.nl-link--title {
+  font-weight: 600;
+  color: #1e3a5f;
+}
+
+.nl-link--code {
+  font-variant-numeric: tabular-nums;
 }
 
 .nl-link:hover {

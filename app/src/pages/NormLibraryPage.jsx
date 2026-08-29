@@ -1,6 +1,7 @@
 /**
- * NormLibraryPage — Gestione → Libreria (LN-1)
- * Due sezioni read-only: catalogo fonti ingerite + richieste mancanti (backlog).
+ * NormLibraryPage — Gestione → Libreria (LN-1 + LN-2)
+ * Due sezioni: catalogo fonti ingerite + richieste mancanti (backlog).
+ * LN-2: deep-link riga → Documenti + CTA NormUpload (riuso).
  * SoT = document_registry via GET /documents; niente colonne/doc_type nuovi.
  */
 
@@ -15,6 +16,7 @@ import {
   buildDocumentRegistryPath,
 } from "../utils/documentRegistryUrl";
 import SgqDataGrid from "../components/SgqDataGrid";
+import NormUploadButton from "../components/NormUploadButton";
 import backlogSnapshot from "../data/normeMancantiBacklog.json";
 import "./NormLibraryPage.css";
 
@@ -137,10 +139,25 @@ export function NormLibraryPage() {
 
   const renderCatalogCell = useCallback((row, col) => {
     const colId = col?.id;
+    const deepLink = buildDocumentDeepLink(row.id);
     if (colId === "doc_code") {
-      return row.doc_code || row.standard_code || "\u2014";
+      const code = row.doc_code || row.standard_code || "\u2014";
+      if (!row.id) return code;
+      return (
+        <Link to={deepLink} className="nl-link nl-link--code" title="Apri scheda in Documenti">
+          {code}
+        </Link>
+      );
     }
-    if (colId === "title") return row.title || "\u2014";
+    if (colId === "title") {
+      const title = row.title || "\u2014";
+      if (!row.id) return title;
+      return (
+        <Link to={deepLink} className="nl-link nl-link--title" title="Apri scheda in Documenti">
+          {title}
+        </Link>
+      );
+    }
     if (colId === "doc_type") {
       return DOC_TYPE_LABELS[row.doc_type] || row.doc_type || "\u2014";
     }
@@ -153,10 +170,7 @@ export function NormLibraryPage() {
     }
     if (colId === "actions") {
       return (
-        <Link
-          to={buildDocumentDeepLink(row.id)}
-          className="nl-link"
-        >
+        <Link to={deepLink} className="nl-link">
           Apri in Documenti
         </Link>
       );
@@ -201,9 +215,12 @@ export function NormLibraryPage() {
             riferimenti) — distinta da Documenti operativi e da Knowledge Health (KPI chunk).
           </p>
         </div>
-        <Link to={documentsCatalogHref} className="btn-secondary nl-header-cta">
-          Apri Documenti
-        </Link>
+        <div className="nl-header-actions">
+          <NormUploadButton onUploadComplete={loadCatalog} />
+          <Link to={documentsCatalogHref} className="btn-secondary nl-header-cta">
+            Apri Documenti
+          </Link>
+        </div>
       </header>
 
       <section className="nl-section" aria-labelledby="nl-catalog-heading">

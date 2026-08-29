@@ -52,7 +52,7 @@
 | Slice | Tema | Perimetro | Dipende da | Tipo | Stato |
 |-------|------|-----------|------------|------|-------|
 | **LN-1** | Shell Gestione → **Libreria** + 2 sezioni read-only | FE: pagina + voce menu; riuso API documenti filtro tipi già tipizzati; catalogo UI: vigore solo norme, data pubbl. (`issue_date` se presente) per non-norma; render backlog (MD/JSON); **niente** migrazioni/colonne nuove | Nome + HITL vigore/data | AFK | **CHIUSO** — TEST OK (29/08/2026, branch `cursor/ln1-libreria-ui-e0cc`) |
-| **LN-2** | Deep-link / azioni minime | Link riga catalogo → Documenti scheda; CTA «Apri Documenti» / NormUpload già esistenti | LN-1 | AFK | pending |
+| **LN-2** | Deep-link / azioni minime | Link riga catalogo → Documenti scheda; CTA «Apri Documenti» / NormUpload già esistenti | LN-1 | AFK | **CHIUSO** — TEST OK (29/08/2026, `cursor/ln2-libreria-deeplink-0b72`) |
 | **LN-3** | Qualità info agenti | Colonne/badge da `text_quality` / presenza chunk / last_validity_check (solo lettura) | LN-1 | AFK | pending |
 | **LN-4** | Tipi riferimento più ampi (opz.) | Se serve: gate + eventuale `doc_type` libro/quaderno in registry/ADR; altrimenti regole su tipi esistenti | LN-1 + decisione prodotto | HITL | fog |
 | **LN-5** | Richieste scrivibili (opz.) | Form «aggiungi richiesta» → aggiorna backlog o tabella leggera; alert studio | LN-1 + decisione prodotto | HITL | fog |
