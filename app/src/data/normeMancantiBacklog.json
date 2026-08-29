@@ -1,0 +1,98 @@
+{
+  "source": "docs/reference/NORME_MANCANTI_BACKLOG.md",
+  "updated": "2026-08-29",
+  "note": "Snapshot read-only per UI Libreria (LN-1). Aggiornare insieme al Markdown.",
+  "items": [
+    {
+      "code": "ISO 14555:2025 (arc stud welding / prigionieri)",
+      "impact": "WPQR Stud Welding (Mason)",
+      "status": "digitalizzata",
+      "priority": "P0",
+      "notes": "NORMA_00033 MD+JSON; PDF non in Git. STUD-3-A estratto range; STUD-3-B codice dopo HITL."
+    },
+    {
+      "code": "Quaderno Linea Guida 1090",
+      "impact": "Contesto EN 1090 / carpenteria",
+      "status": "digitalizzata",
+      "priority": "P1",
+      "notes": "Quaderni/Quaderno_2_Linea_Guida_1090; schema generic; PDF non in Git."
+    },
+    {
+      "code": "ISO 2560:2020 (elettrodi rivestiti)",
+      "impact": "Material Compliance apporto",
+      "status": "digitalizzata",
+      "priority": "P1",
+      "notes": "NORMA_00035 MD+JSON; estratto soglie = slice successiva."
+    },
+    {
+      "code": "ISO 17632:2015 (filo animato)",
+      "impact": "Material Compliance apporto",
+      "status": "digitalizzata",
+      "priority": "P1",
+      "notes": "NORMA_00036 MD+JSON; estratto soglie = slice successiva."
+    },
+    {
+      "code": "ISO 14174:2019 (flussi)",
+      "impact": "Material Compliance apporto",
+      "status": "digitalizzata",
+      "priority": "P2",
+      "notes": "NORMA_00037 MD+JSON; estratto soglie = slice successiva."
+    },
+    {
+      "code": "ISO 9712:2021 (testo integrale)",
+      "impact": "CND / qualifiche NDT (CND-2)",
+      "status": "digitalizzata",
+      "priority": "P1",
+      "notes": "NORMA_00034 MD+JSON; GAP pagine 8/51 vuote."
+    },
+    {
+      "code": "ISO 19011:2026",
+      "impact": "Audit / metodologia",
+      "status": "digitalizzata",
+      "priority": "P2",
+      "notes": "NORMA_00038 MD+JSON (ed. 2026 supersede 2018)."
+    },
+    {
+      "code": "ISO 3452-1:2021 (PT principi)",
+      "impact": "CND penetranti",
+      "status": "digitalizzata",
+      "priority": "P1",
+      "notes": "NORMA_00039; GAP pagina 6."
+    },
+    {
+      "code": "ISO 17638:2016 (MT saldature)",
+      "impact": "CND magnetoscopico",
+      "status": "digitalizzata",
+      "priority": "P1",
+      "notes": "NORMA_00040 MD+JSON."
+    },
+    {
+      "code": "ISO 23278:2015 (MT acceptance)",
+      "impact": "CND magnetoscopico",
+      "status": "digitalizzata",
+      "priority": "P1",
+      "notes": "NORMA_00041."
+    },
+    {
+      "code": "ISO 23277:2015 (PT acceptance)",
+      "impact": "CND penetranti",
+      "status": "digitalizzata",
+      "priority": "P1",
+      "notes": "NORMA_00042; GAP pagina 9 vuota."
+    },
+    {
+      "code": "EN 10025-3/4/5/6",
+      "impact": "MC fine grain / weathering",
+      "status": "parcheggio",
+      "priority": "P2",
+      "notes": "Traccia MC; non bloccano MVP lamiere 10025-2."
+    },
+    {
+      "code": "Leggi settoriali oltre D.Lgs. 81 / 152",
+      "impact": "Conformità legislativa / ADR-018",
+      "status": "parcheggio",
+      "priority": "P2",
+      "notes": "Seed 81/152 già in piattaforma; settoriali = HITL."
+    }
+  ]
+}

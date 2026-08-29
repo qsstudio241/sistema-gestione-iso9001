@@ -8,7 +8,7 @@
 
 > **Risposta standard a «stato di avanzamento del progetto e priorità da affrontare»**: sintetizzare da questa sezione (moduli maturi + sessione più recente + tabella priorità sotto), **non** dal banner storico più sotto (superato, tenuto solo per traccia) né dall'archivio marzo 2026 [`docs/archive/PROJECT_CONTEXT_STATO_FUNZIONALITA_2026-03.md`](archive/PROJECT_CONTEXT_STATO_FUNZIONALITA_2026-03.md). **Aggiornare questa sezione a fine sessione** se emergono nuove priorità o se una priorità elencata viene chiusa (stesso principio delle "Lezioni apprese" in [GUIDA_CONSOLIDATA.md](GUIDA_CONSOLIDATA.md) — sintesi qui, dettaglio linkato).
 
-**Ultimo aggiornamento di questa sezione**: 29/08/2026 (STUD-3-B range 14555 + Tabella 2 in codice #599; fix SAL Accetta AI #598; stream STUD chiuso).
+**Ultimo aggiornamento di questa sezione**: 29/08/2026 (LN-1 Libreria Gestione; STUD-3-B #599; fix SAL Accetta AI #598).
 
 ### Moduli maturi (in produzione, uso quotidiano dai clienti Camellini/Mason)
 
@@ -16,7 +16,9 @@ Audit multi-standard (9001/14001/45001) · Non Conformità (workflow ISO 10.2 co
 
 ### Sessione più recente (29/08/2026)
 
-**STUD-3-B range ISO 14555 + Tabella 2 (29/08, #599)** — motorino `weldingQualificationRules14555` FE+BE (§10.2.8 + accettazione boiler pins Tabella 2 HITL); wiring form WPQR norma 14555 senza calc Tabella 7 15614. Slot [`DEPUTYTASK.md`](agent-tasks/DEPUTYTASK.md) **CHIUSO**. Stream [`DEPUTYTASK_WPQR_STUD.md`](agent-tasks/DEPUTYTASK_WPQR_STUD.md): STUD-1…3-B **CHIUSI**. Residuo opzionale: PT-1 UX range P vs T (15614). Niente 4063 stud 78x inventati.
+**LN-1 Libreria Gestione (29/08)** — pagina `/settings/libreria` (Gestione → Libreria): catalogo fonti da `document_registry` (vigore solo `norma`; `issue_date` per non-norma) + richieste mancanti read-only da snapshot backlog. Piano [`PLAN_LIBRERIA_NORME_SLICES.md`](agent-tasks/PLAN_LIBRERIA_NORME_SLICES.md). Slot [`DEPUTYTASK.md`](agent-tasks/DEPUTYTASK.md) **CHIUSO**.
+
+**STUD-3-B range ISO 14555 + Tabella 2 (29/08, #599)** — motorino `weldingQualificationRules14555` FE+BE (§10.2.8 + accettazione boiler pins Tabella 2 HITL); wiring form WPQR norma 14555 senza calc Tabella 7 15614. Slot [`DEPUTYTASK.md`](agent-tasks/DEPUTYTASK.md) **CHIUSO** (poi riaperto LN-1). Stream [`DEPUTYTASK_WPQR_STUD.md`](agent-tasks/DEPUTYTASK_WPQR_STUD.md): STUD-1…3-B **CHIUSI**. Residuo opzionale: PT-1 UX range P vs T (15614). Niente 4063 stud 78x inventati.
 
 **Fix SAL Accetta AI → `updateGapStatus` (29/08, #598)** — race `items` solo post-`useEffect`: Accetta scriveva `undefined` e early-return. Init stato da `suggestions` al mount. Slot [`DEPUTYTASK1.md`](agent-tasks/DEPUTYTASK1.md) **CHIUSO**.
 

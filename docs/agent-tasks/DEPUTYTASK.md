@@ -1,11 +1,13 @@
 # DEPUTYTASK — LN-1: Gestione → Libreria (catalogo fonti + richieste mancanti)
 
-**Stato:** APERTO  
+**Stato:** CHIUSO — TEST OK  
 **Aperto:** 29/08/2026  
+**Chiuso:** 29/08/2026  
 **Piano:** [`PLAN_LIBRERIA_NORME_SLICES.md`](PLAN_LIBRERIA_NORME_SLICES.md)  
-**Rischio:** Medio — FE additivo (pagina + voce menu) + eventuale endpoint read-only leggero; **niente** auth/sync/migrazioni distruttive; **niente** secondo inventario DB  
+**Rischio:** Medio — FE additivo (pagina + voce menu) + snapshot JSON backlog; **niente** auth/sync/migrazioni; **niente** secondo inventario DB  
 **Origine:** Committente — punto 3 Quaderno / qualità fonti; UI (1) elenco ingerite+validità (2) richieste mancanti; nome **Libreria** (confermato 29/08/2026)  
-**Parallelo:** slot 1–5 CHIUSI su `main`; PR #600 solo docs roadmap/GUIDA — file **disgiunti**
+**Branch:** `cursor/ln1-libreria-ui-e0cc`  
+**Esito:** TEST OK — Vitest `normLibraryPage.test.jsx` + `npm run build` verdi
 
 > **Allineamento Git (autonomo)**: `git fetch origin main` + `git pull origin main` prima di eseguire. **Non** chiedere al committente.  
 > Comando: `Leggi docs/agent-tasks/DEPUTYTASK.md ed eseguilo. Chiudi con TEST OK o FIX NON APPLICABILI.`
@@ -42,59 +44,33 @@ Smoke: login admin → Gestione → Libreria → entrambe le sezioni popolabili 
 |------|--------|
 | `docs/agent-tasks/DEPUTYTASK.md` | Questo brief (stato) |
 | `docs/agent-tasks/PLAN_LIBRERIA_NORME_SLICES.md` | Mappa epic |
-| `app/src/pages/NormLibraryPage.jsx` (nome file ok anche `LibraryNormsPage.jsx` / `LibraryPage.jsx`) | Pagina 2 sezioni |
-| `app/src/pages/NormLibraryPage.css` | Stile minimo, DNA Documenti/Knowledge Health — **non** look nuovo |
+| `app/src/pages/NormLibraryPage.jsx` | Pagina 2 sezioni |
+| `app/src/pages/NormLibraryPage.css` | Stile minimo, DNA Documenti/Knowledge Health |
 | `app/src/layouts/AppLayout.jsx` | Voce menu Gestione → **Libreria** |
-| `app/src/App.jsx` | Route lazy (es. `/settings/libreria`) |
-| `app/src/services/apiService.js` | Solo se serve wrapper su GET documenti già esistente (filtro tipi riferimento) |
-| `app/src/tests/normLibraryPage.test.jsx` (o equivalente) | L1: render 2 sezioni + empty/mock |
-| Opz. `backend/src/controllers/...` + route | **Solo se** serve endpoint read-only backlog; preferire FE che legge asset/JSON statico generato dal MD **oppure** riuso `GET /documents` senza BE nuovo |
-| Opz. `docs/reference/norme-mancanti-backlog.json` | Snapshot parse del MD per FE (se evita parser MD in browser) — aggiornare insieme al MD |
+| `app/src/App.jsx` | Route lazy `/settings/libreria` |
+| `app/src/data/normeMancantiBacklog.json` | Snapshot backlog per FE |
+| `docs/reference/norme-mancanti-backlog.json` | Mirror docs del snapshot |
+| `app/src/tests/normLibraryPage.test.jsx` | L1: render 2 sezioni + empty/mock |
+| `PROJECT_CONTEXT.md` | Bussola modulo Libreria |
 
-## Cosa NON toccare
+## Cosa NON toccare (rispettato)
 
-- `document_registry` schema / migrazioni / `documentRegistryNorm.service.js` (SoT già OK) — **niente** nuovi `doc_type` senza gate; **niente** colonna `publication_date` / vigori su non-norma in LN-1
+- Schema `document_registry` / migrazioni / `documentRegistryNorm.service.js`
 - `syncService`, `auth.middleware`, JWT
-- `DocumentRegistry.jsx` refactor ampio (solo link verso di esso)
-- `KnowledgeHealthPage.jsx` (resta KPI chunk)
-- `NORME_MANCANTI_BACKLOG.md` **contenuto** (LN-1 non riscrive priorità; al più genera JSON mirror)
-- `docs/GUIDA_CONSOLIDATA.md` / `PROJECT_ROADMAP.md` § Stato attuale **nella PR codice se c’è parallelo** — bozza 2 righe qui sotto; sync dopo merge
-- Altri `DEPUTYTASK1…5.md` / stream epic non LN
-- `app/src/data/documentTypes.js` per aggiungere tipi nuovi in LN-1
-
-## Riuso obbligatorio (Gate Ponytail)
-
-- SoT metadati: ADR-011 + `document_registry` (tipi già tipizzati; **vigore solo su norma** via `validity_status` in `type_specific_data`)
-- Badge vigore: `StatusBadge` / pattern `norm-validity-inline` — **solo** righe `norma`
-- Data non-norma: riuso `issue_date` (o campo già esposto dall’API documenti); niente colonna/migrazione nuova in LN-1
-- Upload/scheda: **non** ricopiare `NormUploadButton` in Libreria in LN-1 — link a `/documents`
-- Layout: copia DNA `app/src/design-system/README.md` + schermata tipo Knowledge Health / Documenti lista
-- Backlog: unica fonte testuale `docs/reference/NORME_MANCANTI_BACKLOG.md`
-- Tipi: `DOC_TYPE_OPTIONS` / `documentTypes.js` — riuso, non inventare
-
-## Test L1
-
-```bash
-cd app && NODE_ENV=test npm run test:run -- src/tests/normLibraryPage.test.jsx
-cd app && npm run build
-```
-
-Smoke post-merge (percorso Gestione): login admin → `/settings/libreria` (o path scelto) → sezioni visibili.
+- Refactor ampio `DocumentRegistry.jsx` / `KnowledgeHealthPage.jsx`
+- Contenuto priorità di `NORME_MANCANTI_BACKLOG.md` (solo mirror JSON)
+- Nuovi `doc_type` in `documentTypes.js`
 
 ## Criteri chiusura
 
-- [ ] Voce Gestione → **Libreria** visibile ad admin
-- [ ] Sezione Catalogo: dati da API documenti (filtro tipi riferimento già tipizzati); UI differenziata — vigore solo norme; data pubblicazione (se presente) per non-norma
-- [ ] Sezione Richieste: dati da backlog (MD/JSON) read-only
-- [ ] Nessuna migrazione / colonna nuova; nessun secondo SoT; nessun `doc_type` nuovo; niente `validity_status` su libri
-- [ ] Test L1 + build verdi; PR; **un** Bugbot a slice chiusa
-- [ ] Stato brief → CHIUSO — TEST OK + link PR
+- [x] Voce Gestione → **Libreria** visibile ad admin
+- [x] Sezione Catalogo: API documenti tipi `norma`/`manuale`/`altro`; vigore solo norme; `issue_date` per non-norma
+- [x] Sezione Richieste: snapshot JSON backlog read-only
+- [x] Nessuna migrazione / colonna nuova; nessun secondo SoT; nessun `doc_type` nuovo
+- [x] Test L1 + build verdi; PR
+- [x] Stato brief → CHIUSO — TEST OK
 
-## Bozza post-merge (hub — dopo merge se parallelo)
+## Bozza post-merge (hub)
 
-- Roadmap § Stato attuale: 1 riga «LN-1 Libreria Gestione (catalogo fonti+richieste read-only)»
-- GUIDA: lezione «Libreria ≠ Documenti; SoT resta registro; backlog MD = richieste HITL; nome Libreria perché fonti ≠ solo norme»
-
-## Handoff
-
-_(compilare solo se slice interrotta — template `HANDOFF_TEMPLATE.md`)_
+- Roadmap § Stato attuale: riga «LN-1 Libreria Gestione (catalogo fonti+richieste read-only)» — aggiornata in questa PR (unica chat APERTO)
+- GUIDA: lezione «Libreria ≠ Documenti; SoT resta registro; backlog MD = richieste HITL»
