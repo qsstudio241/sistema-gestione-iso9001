@@ -22,13 +22,19 @@ const { sendAccessDenied } = require('../services/companyAccess.service');
 const { loadAmbitoFacts } = require('../services/ambitoFacts.service');
 const { buildMaterialGroupPromptSection } = require('../data/materialGroups15608');
 const { resolveClauseText } = require('../services/normBroker.service');
+const {
+  parseSourceGapsFromReply,
+  SOURCE_GAPS_PROMPT_BLOCK,
+} = require('../utils/parseSourceGaps');
+const { processGapsFromChat } = require('../services/librarySourceRequest.service');
 
 const BASE_SYSTEM_PROMPT = `Sei l'assistente AI del Sistema di Gestione Qualit\u00e0 ISO 9001 di questa organizzazione.
 Rispondi in italiano in modo chiaro, professionale e sintetico.
 Basati ESCLUSIVAMENTE sui dati forniti nel contesto. Se non hai informazioni sufficienti per rispondere, dillo chiaramente.
 Non inventare dati, numeri o riferimenti non presenti nel contesto.
 Quando citi dati specifici (audit, NC, documenti, rischi), indica il riferimento (numero, codice, data) per permettere all'utente di verificare.
-Formatta le risposte in modo leggibile: usa elenchi puntati per liste, grassetto per i punti chiave.`;
+Formatta le risposte in modo leggibile: usa elenchi puntati per liste, grassetto per i punti chiave.
+${SOURCE_GAPS_PROMPT_BLOCK}`;
 
 /**
  * Blocco opzionale: audit aperto + clausola/domanda checklist attiva.
@@ -319,12 +325,65 @@ async function aiChat(req, res) {
       reply = `${normAbsent.message}\n\n${reply}`;
     }
 
+    // LG-1: estrai gap strutturati, pulisci reply, persisti + email superadmin (platform)
+    const { cleanReply, gaps: parsedGaps } = parseSourceGapsFromReply(reply);
+    reply = cleanReply;
+    const gapsToPersist = [...parsedGaps];
+    if (normAbsent) {
+      gapsToPersist.push({
+        code: normAbsent.standardCode || normAbsent.code || 'NORMA_ASSENTE',
+        title: normAbsent.clauseRef
+          ? `Clausola ${normAbsent.clauseRef}`
+          : null,
+        reason: normAbsent.message,
+        qualityNotes:
+          'Testo normativo non disponibile in archivio locale — verificare digitalizzazione / Registro.',
+        closurePath: 'platform',
+      });
+    }
+
+    let sourceGaps = [];
+    if (gapsToPersist.length > 0) {
+      try {
+        const persisted = await processGapsFromChat(gapsToPersist, {
+          organizationId,
+          userId,
+          companyId: parsedCompanyId,
+          messagePreview: message.trim(),
+        });
+        sourceGaps = persisted.map((p) => ({
+          id: p.row.id,
+          code: p.row.source_code,
+          title: p.row.source_title,
+          reason: p.row.reason,
+          qualityNotes: p.row.quality_notes,
+          closurePath: p.row.closure_path,
+          status: p.row.status,
+          created: p.created,
+          emailed: p.emailed,
+        }));
+      } catch (err) {
+        logger.warn('[AI_CHAT] processGapsFromChat failed:', err.message);
+        sourceGaps = gapsToPersist.map((g) => ({
+          code: g.code,
+          title: g.title || null,
+          reason: g.reason || null,
+          qualityNotes: g.qualityNotes || null,
+          closurePath: g.closurePath || 'platform',
+          status: 'open',
+          created: false,
+          emailed: false,
+        }));
+      }
+    }
+
     const payload = {
       reply,
       contextUsed: contextChunks.length,
       sourcesCount: citations.length,
       citations,
       standardId: activeStandard ? parsedStandardId : null,
+      sourceGaps,
       _aiMeta: {
         provider,
         model: result.model,

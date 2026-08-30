@@ -241,6 +241,11 @@
   background: #dbeafe;
 }
 
+.nl-source--ai {
+  color: #c2410c;
+  background: #ffedd5;
+}
+
 .nl-source--plat {
   color: #475569;
   background: #e2e8f0;

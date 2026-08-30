@@ -44,6 +44,10 @@ jest.mock('../services/normBroker.service', () => ({
   resolveClauseText: jest.fn(),
 }));
 
+jest.mock('../services/librarySourceRequest.service', () => ({
+  processGapsFromChat: jest.fn(async () => []),
+}));
+
 const { chat, getActiveProvider } = require('../services/aiProviderAdapter');
 const { searchKnowledge } = require('../services/knowledgeIndexer.service');
 const {
@@ -54,6 +58,7 @@ const {
 const { resolveAiCompanyScope } = require('../services/aiCompanyScope.service');
 const { loadAmbitoFacts } = require('../services/ambitoFacts.service');
 const { resolveClauseText } = require('../services/normBroker.service');
+const { processGapsFromChat } = require('../services/librarySourceRequest.service');
 const { aiChat, getAmbitoFacts } = require('./aiChat.controller');
 
 function createRes() {
@@ -271,6 +276,61 @@ describe('aiChat.controller — aiChat', () => {
       standardCode: 'ISO_9712_2022',
     }));
     expect(body.reply).not.toMatch(/il requisito della clausola 8\.2 è/i);
+  });
+
+  it('LG-1: estrae blocco SGQ_SOURCE_GAPS, pulisce reply e persiste', async () => {
+    chat.mockResolvedValue({
+      content: `Serve la ISO 14555 per i range.
+
+<<<SGQ_SOURCE_GAPS
+[{"code":"ISO 14555:2025","title":"Stud welding","reason":"range piega","qualityNotes":"verificare Tabella 2","closurePath":"platform"}]
+SGQ_SOURCE_GAPS>>>`,
+      model: 'gemini-pro',
+      tokens: { input: 10, output: 20 },
+      cost: 0.0001,
+    });
+    processGapsFromChat.mockResolvedValue([
+      {
+        created: true,
+        emailed: true,
+        row: {
+          id: 42,
+          source_code: 'ISO 14555:2025',
+          source_title: 'Stud welding',
+          reason: 'range piega',
+          quality_notes: 'verificare Tabella 2',
+          closure_path: 'platform',
+          status: 'open',
+        },
+      },
+    ]);
+
+    const req = {
+      body: { message: 'Range stud welding?' },
+      user: { organization_id: 99, auditor_org_id: 10, user_id: 5 },
+    };
+    const res = createRes();
+    await aiChat(req, res);
+
+    const body = res.json.mock.calls[0][0];
+    expect(body.reply).toContain('Serve la ISO 14555');
+    expect(body.reply).not.toContain('SGQ_SOURCE_GAPS');
+    expect(processGapsFromChat).toHaveBeenCalledWith(
+      [
+        expect.objectContaining({
+          code: 'ISO 14555:2025',
+          closurePath: 'platform',
+        }),
+      ],
+      expect.objectContaining({ organizationId: 99, userId: 5 })
+    );
+    expect(body.sourceGaps).toEqual([
+      expect.objectContaining({
+        id: 42,
+        code: 'ISO 14555:2025',
+        emailed: true,
+      }),
+    ]);
   });
 
   it('returns 403 when company scope is denied (studio fuori ambito)', async () => {

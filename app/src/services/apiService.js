@@ -2495,6 +2495,18 @@ class ApiService {
         return this.post('/ai/chat', body, { timeout: 120000 });
     }
 
+    /** LG-1 — richieste gap fonti (Libreria, persistenza server) */
+    async getLibrarySourceRequests(params = {}) {
+        const qs = new URLSearchParams();
+        if (params.status) qs.set('status', params.status);
+        const query = qs.toString();
+        return this.get(`/library/source-requests${query ? '?' + query : ''}`);
+    }
+
+    async createLibrarySourceRequest(body) {
+        return this.post('/library/source-requests', body);
+    }
+
     async getGapAnalysis({ companyId, standardCode = 'ISO_9001_2015' } = {}) {
         const qs = new URLSearchParams();
         if (companyId) qs.set('companyId', String(companyId));
