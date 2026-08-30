@@ -57,4 +57,6 @@
 | **LN-4** | Tipi riferimento più ampi (opz.) | Se serve: gate + eventuale `doc_type` libro/quaderno in registry/ADR; altrimenti regole su tipi esistenti | LN-1 + decisione prodotto | HITL | **CHIUSO** — TEST OK (29/08/2026): label UI su `manuale`/`altro`, **niente** enum nuovi (`cursor/ln4-libreria-tipi-0b72`) |
 | **LN-5** | Richieste scrivibili (opz.) | Form «aggiungi richiesta» → aggiorna backlog o tabella leggera; alert studio | LN-1 + decisione prodotto | HITL | **CHIUSO** — TEST OK (29/08/2026): form + localStorage org + Copia MD; server storage = HITL futuro (`cursor/ln5-libreria-richieste-0b72`) |
 
-**Stato piano:** **COMPLETATO** (29/08/2026) — LN-1 su `main` (#604); LN-2…LN-5 su branch stacked (merge in ordine LN-2→LN-5). Residuo solo HITL opzionale: enum `libro`/`quaderno` (ADR-011) e persistenza server richieste.
+**Stato piano:** **COMPLETATO** (29/08/2026) — LN-1…LN-5 su `main` (#604 + #608). Residuo HITL opzionale: enum `libro`/`quaderno` (ADR-011).
+
+**Sequel (30/08/2026):** gap rilevato dall’assistente Gemini → Libreria + email superadmin — [`PLAN_LIBRERIA_GAP_SLICES.md`](PLAN_LIBRERIA_GAP_SLICES.md) (LG-1 APERTO).
