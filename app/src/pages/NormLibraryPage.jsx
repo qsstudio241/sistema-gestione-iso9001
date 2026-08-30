@@ -63,7 +63,40 @@ const BACKLOG_STATUS_LABELS = {
   pdf_ricevuto: "PDF ricevuto",
   digitalizzata: "Digitalizzata",
   parcheggio: "Parcheggio",
+  open: "Aperta (assistente)",
+  in_progress: "In corso",
+  digitized: "Digitalizzata",
+  closed: "Chiusa",
 };
+
+/** Mappa riga API library_source_requests → griglia backlog Libreria */
+function mapServerRequestToBacklogRow(row) {
+  if (!row) return null;
+  const reason = row.reason || "";
+  const quality = row.quality_notes || row.qualityNotes || "";
+  const notes = [reason, quality ? `Qualità: ${quality}` : ""]
+    .filter(Boolean)
+    .join(" — ");
+  const statusMap = {
+    open: "da_richiedere",
+    in_progress: "pdf_ricevuto",
+    digitized: "digitalizzata",
+    closed: "digitalizzata",
+  };
+  return {
+    id: `srv-${row.id}`,
+    serverId: row.id,
+    code: row.source_code || row.code,
+    impact:
+      row.closure_path === "tenant"
+        ? "Via tenant (ingest Libreria)"
+        : "Via piattaforma (superadmin / Cursor)",
+    status: statusMap[row.status] || row.status || "da_richiedere",
+    priority: "P1",
+    notes: notes || "—",
+    source: "assistente",
+  };
+}
 
 function resolveValidityStatus(doc) {
   if (!doc || doc.doc_type !== "norma") return null;
@@ -165,6 +198,7 @@ export function NormLibraryPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [studioRequests, setStudioRequests] = useState([]);
+  const [serverRequests, setServerRequests] = useState([]);
   const [requestForm, setRequestForm] = useState(EMPTY_REQUEST_FORM);
   const [requestError, setRequestError] = useState(null);
   const [copyFeedback, setCopyFeedback] = useState(null);
@@ -174,15 +208,34 @@ export function NormLibraryPage() {
     []
   );
 
-  const backlogItems = useMemo(
-    () => mergeBacklogRows(platformBacklog, studioRequests),
-    [platformBacklog, studioRequests]
-  );
+  const backlogItems = useMemo(() => {
+    const mappedServer = (serverRequests || [])
+      .map(mapServerRequestToBacklogRow)
+      .filter(Boolean);
+    const base = mergeBacklogRows(platformBacklog, studioRequests);
+    // Server (assistente) in testa; evita duplicare stesso codice già in studio locale
+    const codes = new Set(mappedServer.map((r) => String(r.code || "").toLowerCase()));
+    const filteredBase = base.filter(
+      (r) => !codes.has(String(r.code || "").toLowerCase())
+    );
+    return [...mappedServer, ...filteredBase];
+  }, [platformBacklog, studioRequests, serverRequests]);
+
+  const loadServerRequests = useCallback(async () => {
+    try {
+      const res = await apiService.getLibrarySourceRequests();
+      const items = res?.items || res?.data?.items || [];
+      setServerRequests(Array.isArray(items) ? items : []);
+    } catch {
+      setServerRequests([]);
+    }
+  }, []);
 
   useEffect(() => {
     if (!isAdmin) return;
     setStudioRequests(loadLibraryRequests(orgId));
-  }, [isAdmin, orgId]);
+    loadServerRequests();
+  }, [isAdmin, orgId, loadServerRequests]);
 
   const loadCatalog = useCallback(async () => {
     setLoading(true);
@@ -291,6 +344,9 @@ export function NormLibraryPage() {
       if (row.source === "studio") {
         return <span className="nl-source nl-source--studio">Studio</span>;
       }
+      if (row.source === "assistente") {
+        return <span className="nl-source nl-source--ai">Assistente</span>;
+      }
       return <span className="nl-source nl-source--plat">Piattaforma</span>;
     }
     if (colId === "notes") {
@@ -336,19 +392,31 @@ export function NormLibraryPage() {
   }, [orgId]);
 
   const handleAddRequest = useCallback(
-    (e) => {
+    async (e) => {
       e.preventDefault();
       setRequestError(null);
       setCopyFeedback(null);
       try {
+        // Persistenza server (LG-1) + mirror locale LN-5
+        await apiService.createLibrarySourceRequest({
+          code: requestForm.code,
+          title: requestForm.code,
+          reason: requestForm.impact
+            ? `Impatto: ${requestForm.impact}`
+            : undefined,
+          qualityNotes: requestForm.notes || undefined,
+          closurePath: "platform",
+        });
         addLibraryRequest(orgId, requestForm);
         setStudioRequests(loadLibraryRequests(orgId));
+        await loadServerRequests();
         setRequestForm(EMPTY_REQUEST_FORM);
+        setCopyFeedback("Richiesta salvata (server). Superadmin notificati se via piattaforma.");
       } catch (err) {
         setRequestError(err.message || "Impossibile salvare la richiesta");
       }
     },
-    [orgId, requestForm]
+    [orgId, requestForm, loadServerRequests]
   );
 
   if (!isAdmin) {
@@ -417,9 +485,12 @@ export function NormLibraryPage() {
           <h3 id="nl-backlog-heading">2. Richieste mancanti</h3>
           <p>
             Lacune da colmare per aumentare l&apos;affidabilità delle risposte e
-            non inventare soglie/clausole. Snapshot piattaforma + richieste studio
-            (locale al browser). I PDF restano HITL; «Copia MD» prepara la riga per{" "}
-            <code>NORME_MANCANTI_BACKLOG.md</code>. Persistenza server = decisione storage futura.
+            non inventare soglie/clausole. Include richieste dall&apos;assistente AI
+            (server) e snapshot piattaforma. Il campo note deve spiegare{" "}
+            <strong>perché serve</strong> e eventuali{" "}
+            <strong>dubbi di qualità</strong> (secondo passaggio, OCR incerto, tabella
+            mancante) — non gergo interno di sviluppo. I PDF per la via piattaforma
+            restano HITL del superadmin in Cursor (niente pdf-to-json automatico).
           </p>
         </div>
 
@@ -477,14 +548,14 @@ export function NormLibraryPage() {
             </label>
           </div>
           <label className="nl-request-form__notes">
-            Note
+            Note (perché serve / dubbi qualità)
             <input
               type="text"
               value={requestForm.notes}
               onChange={(e) =>
                 setRequestForm((f) => ({ ...f, notes: e.target.value }))
               }
-              placeholder="Perché serve / dove manca"
+              placeholder="Es. Serve per range piega; OCR tab. 2 da verificare"
             />
           </label>
           {requestError && (
@@ -529,5 +600,6 @@ export {
   resolveHasChunks,
   resolveLastValidityCheck,
   libraryDocTypeLabel,
+  mapServerRequestToBacklogRow,
   VALIDITY_LABELS,
 };

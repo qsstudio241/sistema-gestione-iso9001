@@ -16,10 +16,14 @@ import NormLibraryPage, {
 } from "../pages/NormLibraryPage";
 
 const mockGetDocuments = vi.fn();
+const mockGetLibrarySourceRequests = vi.fn();
+const mockCreateLibrarySourceRequest = vi.fn();
 
 vi.mock("../services/apiService", () => ({
   default: {
     getDocuments: (...args) => mockGetDocuments(...args),
+    getLibrarySourceRequests: (...args) => mockGetLibrarySourceRequests(...args),
+    createLibrarySourceRequest: (...args) => mockCreateLibrarySourceRequest(...args),
   },
 }));
 
@@ -80,6 +84,14 @@ describe("NormLibraryPage", () => {
   beforeEach(() => {
     localStorage.clear();
     mockGetDocuments.mockReset();
+    mockGetLibrarySourceRequests.mockReset();
+    mockCreateLibrarySourceRequest.mockReset();
+    mockGetLibrarySourceRequests.mockResolvedValue({ items: [] });
+    mockCreateLibrarySourceRequest.mockResolvedValue({
+      created: true,
+      emailed: false,
+      item: { id: 1, source_code: "ISO TEST-LN5" },
+    });
     mockGetDocuments.mockImplementation(({ doc_type }) => {
       if (doc_type === "norma") {
         return Promise.resolve({
