@@ -25,6 +25,10 @@ import {
   mergeBacklogRows,
   removeLibraryRequest,
 } from "../utils/libraryBacklogRequests";
+import {
+  libraryGapCodesMatch,
+  parseLibraryGapSearch,
+} from "../utils/libraryGapDeepLink";
 import "./NormLibraryPage.css";
 
 /** Tipi già tipizzati usati come fonti di riferimento (LN-1 — niente libro/quaderno nuovi). */
@@ -202,6 +206,11 @@ export function NormLibraryPage() {
   const [requestForm, setRequestForm] = useState(EMPTY_REQUEST_FORM);
   const [requestError, setRequestError] = useState(null);
   const [copyFeedback, setCopyFeedback] = useState(null);
+  const [gapDeepLink, setGapDeepLink] = useState(() =>
+    typeof window !== "undefined"
+      ? parseLibraryGapSearch(window.location.search)
+      : { highlight: null, path: null, prefill: false }
+  );
 
   const platformBacklog = useMemo(
     () => (Array.isArray(backlogSnapshot?.items) ? backlogSnapshot.items : []),
@@ -236,6 +245,43 @@ export function NormLibraryPage() {
     setStudioRequests(loadLibraryRequests(orgId));
     loadServerRequests();
   }, [isAdmin, orgId, loadServerRequests]);
+
+  // LG-2: deep-link da Assistente (?highlight=&path=&prefill=)
+  useEffect(() => {
+    if (!isAdmin) return;
+    const parsed = parseLibraryGapSearch(
+      typeof window !== "undefined" ? window.location.search : ""
+    );
+    setGapDeepLink(parsed);
+    if (parsed.prefill && parsed.highlight) {
+      setRequestForm((f) => ({
+        ...f,
+        code: parsed.highlight,
+        impact:
+          f.impact ||
+          (parsed.path === "tenant"
+            ? "Via tenant (ingest Libreria)"
+            : parsed.path === "platform"
+              ? "Via piattaforma (superadmin / Cursor)"
+              : f.impact),
+        notes:
+          f.notes ||
+          (parsed.path === "tenant"
+            ? "Caricare documento in Libreria / Registro del tenant"
+            : f.notes),
+      }));
+    }
+  }, [isAdmin]);
+
+  useEffect(() => {
+    if (!gapDeepLink?.highlight) return;
+    const t = window.setTimeout(() => {
+      document
+        .getElementById("nl-backlog-heading")
+        ?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }, 120);
+    return () => window.clearTimeout(t);
+  }, [gapDeepLink?.highlight, backlogItems.length]);
 
   const loadCatalog = useCallback(async () => {
     setLoading(true);
@@ -419,6 +465,16 @@ export function NormLibraryPage() {
     [orgId, requestForm, loadServerRequests]
   );
 
+  const highlightCode = gapDeepLink?.highlight || null;
+  const backlogRowClassName = useCallback(
+    (row) =>
+      highlightCode && libraryGapCodesMatch(row?.code, highlightCode)
+        ? "nl-row-highlight"
+        : "",
+    [highlightCode]
+  );
+  const documentsCatalogHref = buildDocumentRegistryPath({ tab: "catalog" });
+
   if (!isAdmin) {
     return (
       <div className="nl-access-denied">
@@ -427,8 +483,6 @@ export function NormLibraryPage() {
       </div>
     );
   }
-
-  const documentsCatalogHref = buildDocumentRegistryPath({ tab: "catalog" });
 
   return (
     <div className="nl-page">
@@ -447,6 +501,29 @@ export function NormLibraryPage() {
           </Link>
         </div>
       </header>
+
+      {highlightCode ? (
+        <div className="nl-deeplink-banner" role="status">
+          {gapDeepLink.path === "tenant" ? (
+            <>
+              Arrivi dall&apos;Assistente: colma{" "}
+              <strong>{highlightCode}</strong> caricando il documento in Libreria
+              (via tenant / ingest). Form precompilato sotto se richiesto.
+            </>
+          ) : gapDeepLink.path === "platform" ? (
+            <>
+              Arrivi dall&apos;Assistente: richiesta piattaforma per{" "}
+              <strong>{highlightCode}</strong> — vedi riga evidenziata nelle
+              richieste mancanti (superadmin / Cursor, niente pdf-to-json automatico).
+            </>
+          ) : (
+            <>
+              Arrivi dall&apos;Assistente: evidenziata la richiesta{" "}
+              <strong>{highlightCode}</strong>.
+            </>
+          )}
+        </div>
+      ) : null}
 
       <section className="nl-section" aria-labelledby="nl-catalog-heading">
         <div className="nl-section-head">
@@ -584,6 +661,7 @@ export function NormLibraryPage() {
           className="nl-grid"
           initialSortCol="priority"
           initialSortDir="asc"
+          rowClassName={backlogRowClassName}
         />
       </section>
     </div>
