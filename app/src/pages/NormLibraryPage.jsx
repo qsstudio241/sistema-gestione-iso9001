@@ -1,6 +1,6 @@
 /**
- * NormLibraryPage — Gestione → Libreria (LN-1)
- * Due sezioni read-only: catalogo fonti ingerite + richieste mancanti (backlog).
+ * NormLibraryPage — Gestione → Libreria (LN-1…LN-3)
+ * Catalogo fonti + richieste mancanti; LN-2 deep-link/NormUpload; LN-3 qualità sola lettura.
  * SoT = document_registry via GET /documents; niente colonne/doc_type nuovi.
  */
 
@@ -15,11 +15,39 @@ import {
   buildDocumentRegistryPath,
 } from "../utils/documentRegistryUrl";
 import SgqDataGrid from "../components/SgqDataGrid";
+import NormUploadButton from "../components/NormUploadButton";
+import StatusBadge from "../components/StatusBadge";
 import backlogSnapshot from "../data/normeMancantiBacklog.json";
+import {
+  addLibraryRequest,
+  formatLibraryRequestMarkdownRow,
+  loadLibraryRequests,
+  mergeBacklogRows,
+  removeLibraryRequest,
+} from "../utils/libraryBacklogRequests";
 import "./NormLibraryPage.css";
 
 /** Tipi già tipizzati usati come fonti di riferimento (LN-1 — niente libro/quaderno nuovi). */
 export const LIBRARY_REFERENCE_DOC_TYPES = ["norma", "manuale", "altro"];
+
+/**
+ * Label Libreria (LN-4): chiarisce libri/quaderni senza nuovi doc_type.
+ * Documenti / form globali restano su DOC_TYPE_LABELS.
+ */
+export const LIBRARY_DOC_TYPE_LABELS = {
+  norma: "Norma tecnica",
+  manuale: "Manuale / libro",
+  altro: "Altro / quaderno",
+};
+
+function libraryDocTypeLabel(docType) {
+  if (!docType) return "\u2014";
+  return (
+    LIBRARY_DOC_TYPE_LABELS[docType] ||
+    DOC_TYPE_LABELS[docType] ||
+    docType
+  );
+}
 
 const VALIDITY_LABELS = {
   vigente: "Vigente",
@@ -58,6 +86,35 @@ function resolvePublicationDate(doc) {
   return null;
 }
 
+/** Qualità testo da list API (`norm_text_quality`) o TSD — sola lettura LN-3. */
+function resolveTextQuality(doc) {
+  if (!doc) return null;
+  const raw =
+    doc.norm_text_quality ||
+    doc.text_quality ||
+    doc.type_specific_data?.text_quality ||
+    null;
+  if (raw == null || String(raw).trim() === "") return null;
+  return String(raw).trim();
+}
+
+function resolveHasChunks(doc) {
+  if (!doc) return false;
+  const v = doc.has_chunks;
+  return v === true || v === 1 || v === "1";
+}
+
+function resolveLastValidityCheck(doc) {
+  if (!doc) return null;
+  const raw =
+    doc.norm_last_check ||
+    doc.last_validity_check ||
+    doc.type_specific_data?.last_validity_check ||
+    null;
+  if (raw == null || String(raw).trim() === "") return null;
+  return raw;
+}
+
 function ValidityBadge({ status }) {
   if (!status) {
     return <span className="nl-muted">{"\u2014"}</span>;
@@ -71,11 +128,14 @@ function ValidityBadge({ status }) {
 }
 
 const CATALOG_COLUMNS = [
-  { id: "doc_code", label: "Codice", width: "120px", sortable: true },
+  { id: "doc_code", label: "Codice", width: "110px", sortable: true },
   { id: "title", label: "Titolo", width: "1fr", sortable: true },
-  { id: "doc_type", label: "Tipo", width: "120px", sortable: true },
-  { id: "meta", label: "Vigore / data pubbl.", width: "150px", sortable: false },
-  { id: "actions", label: "", width: "130px", sortable: false },
+  { id: "doc_type", label: "Tipo", width: "110px", sortable: true },
+  { id: "meta", label: "Vigore / data pubbl.", width: "140px", sortable: false },
+  { id: "quality", label: "Qualità testo", width: "110px", sortable: false },
+  { id: "chunks", label: "Chunk RAG", width: "90px", sortable: false },
+  { id: "last_check", label: "Ultimo check", width: "110px", sortable: false },
+  { id: "actions", label: "", width: "120px", sortable: false },
 ];
 
 const BACKLOG_COLUMNS = [
@@ -83,21 +143,46 @@ const BACKLOG_COLUMNS = [
   { id: "impact", label: "Impatto", width: "1fr", sortable: true },
   { id: "status", label: "Stato", width: "120px", sortable: true },
   { id: "priority", label: "Priorità", width: "80px", sortable: true },
-  { id: "notes", label: "Note", width: "1.2fr", sortable: false },
+  { id: "source", label: "Fonte", width: "100px", sortable: true },
+  { id: "notes", label: "Note", width: "1.1fr", sortable: false },
+  { id: "studio_actions", label: "", width: "150px", sortable: false },
 ];
+
+const EMPTY_REQUEST_FORM = {
+  code: "",
+  impact: "",
+  status: "da_richiedere",
+  priority: "P2",
+  notes: "",
+};
 
 export function NormLibraryPage() {
   const { user } = useAuth();
   const isAdmin = user?.role === "admin" || user?.role === "superadmin";
+  const orgId = user?.organization_id;
 
   const [docs, setDocs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [studioRequests, setStudioRequests] = useState([]);
+  const [requestForm, setRequestForm] = useState(EMPTY_REQUEST_FORM);
+  const [requestError, setRequestError] = useState(null);
+  const [copyFeedback, setCopyFeedback] = useState(null);
 
-  const backlogItems = useMemo(
+  const platformBacklog = useMemo(
     () => (Array.isArray(backlogSnapshot?.items) ? backlogSnapshot.items : []),
     []
   );
+
+  const backlogItems = useMemo(
+    () => mergeBacklogRows(platformBacklog, studioRequests),
+    [platformBacklog, studioRequests]
+  );
+
+  useEffect(() => {
+    if (!isAdmin) return;
+    setStudioRequests(loadLibraryRequests(orgId));
+  }, [isAdmin, orgId]);
 
   const loadCatalog = useCallback(async () => {
     setLoading(true);
@@ -137,12 +222,27 @@ export function NormLibraryPage() {
 
   const renderCatalogCell = useCallback((row, col) => {
     const colId = col?.id;
+    const deepLink = buildDocumentDeepLink(row.id);
     if (colId === "doc_code") {
-      return row.doc_code || row.standard_code || "\u2014";
+      const code = row.doc_code || row.standard_code || "\u2014";
+      if (!row.id) return code;
+      return (
+        <Link to={deepLink} className="nl-link nl-link--code" title="Apri scheda in Documenti">
+          {code}
+        </Link>
+      );
     }
-    if (colId === "title") return row.title || "\u2014";
+    if (colId === "title") {
+      const title = row.title || "\u2014";
+      if (!row.id) return title;
+      return (
+        <Link to={deepLink} className="nl-link nl-link--title" title="Apri scheda in Documenti">
+          {title}
+        </Link>
+      );
+    }
     if (colId === "doc_type") {
-      return DOC_TYPE_LABELS[row.doc_type] || row.doc_type || "\u2014";
+      return libraryDocTypeLabel(row.doc_type);
     }
     if (colId === "meta") {
       if (row.doc_type === "norma") {
@@ -151,12 +251,25 @@ export function NormLibraryPage() {
       const pub = resolvePublicationDate(row);
       return pub ? formatDate(pub) : <span className="nl-muted">{"\u2014"}</span>;
     }
+    if (colId === "quality") {
+      const q = resolveTextQuality(row);
+      if (!q) return <span className="nl-muted">{"\u2014"}</span>;
+      return <StatusBadge type="norm_quality" status={q} size="small" />;
+    }
+    if (colId === "chunks") {
+      return resolveHasChunks(row) ? (
+        <span className="nl-chunk nl-chunk--yes">Sì</span>
+      ) : (
+        <span className="nl-muted">No</span>
+      );
+    }
+    if (colId === "last_check") {
+      const d = resolveLastValidityCheck(row);
+      return d ? formatDate(d) : <span className="nl-muted">{"\u2014"}</span>;
+    }
     if (colId === "actions") {
       return (
-        <Link
-          to={buildDocumentDeepLink(row.id)}
-          className="nl-link"
-        >
+        <Link to={deepLink} className="nl-link">
           Apri in Documenti
         </Link>
       );
@@ -174,11 +287,69 @@ export function NormLibraryPage() {
         </span>
       );
     }
+    if (colId === "source") {
+      if (row.source === "studio") {
+        return <span className="nl-source nl-source--studio">Studio</span>;
+      }
+      return <span className="nl-source nl-source--plat">Piattaforma</span>;
+    }
     if (colId === "notes") {
       return <span className="nl-notes">{row.notes || "\u2014"}</span>;
     }
+    if (colId === "studio_actions") {
+      if (row.source !== "studio") return null;
+      return (
+        <div className="nl-studio-actions">
+          <button
+            type="button"
+            className="nl-link-btn"
+            onClick={async () => {
+              const md = formatLibraryRequestMarkdownRow(row);
+              try {
+                if (navigator?.clipboard?.writeText) {
+                  await navigator.clipboard.writeText(md);
+                  setCopyFeedback(`Copiata riga Markdown per «${row.code}»`);
+                } else {
+                  setCopyFeedback(md);
+                }
+              } catch {
+                setCopyFeedback(md);
+              }
+            }}
+          >
+            Copia MD
+          </button>
+          <button
+            type="button"
+            className="nl-link-btn nl-link-btn--danger"
+            onClick={() => {
+              const next = removeLibraryRequest(orgId, row.id);
+              setStudioRequests(next);
+            }}
+          >
+            Rimuovi
+          </button>
+        </div>
+      );
+    }
     return row[colId] ?? "\u2014";
-  }, []);
+  }, [orgId]);
+
+  const handleAddRequest = useCallback(
+    (e) => {
+      e.preventDefault();
+      setRequestError(null);
+      setCopyFeedback(null);
+      try {
+        addLibraryRequest(orgId, requestForm);
+        setStudioRequests(loadLibraryRequests(orgId));
+        setRequestForm(EMPTY_REQUEST_FORM);
+      } catch (err) {
+        setRequestError(err.message || "Impossibile salvare la richiesta");
+      }
+    },
+    [orgId, requestForm]
+  );
 
   if (!isAdmin) {
     return (
@@ -201,9 +372,12 @@ export function NormLibraryPage() {
             riferimenti) — distinta da Documenti operativi e da Knowledge Health (KPI chunk).
           </p>
         </div>
-        <Link to={documentsCatalogHref} className="btn-secondary nl-header-cta">
-          Apri Documenti
-        </Link>
+        <div className="nl-header-actions">
+          <NormUploadButton onUploadComplete={loadCatalog} />
+          <Link to={documentsCatalogHref} className="btn-secondary nl-header-cta">
+            Apri Documenti
+          </Link>
+        </div>
       </header>
 
       <section className="nl-section" aria-labelledby="nl-catalog-heading">
@@ -212,6 +386,10 @@ export function NormLibraryPage() {
           <p>
             Dati dal Registro Documenti (tipi già tipizzati). Norme: stato di vigore.
             Non-norma: data di pubblicazione (<code>issue_date</code>) se presente.
+            Libri e quaderni: tipizzare in Documenti come <strong>Manuale</strong> o{" "}
+            <strong>Altro</strong> (niente enum <code>libro</code>/<code>quaderno</code> finché
+            non c&apos;è gate ADR-011). Qualità testo / chunk RAG / ultimo check vigore: sola
+            lettura per affidabilità agenti (distinto da Knowledge Health KPI aggregati).
           </p>
         </div>
         {error && (
@@ -239,10 +417,91 @@ export function NormLibraryPage() {
           <h3 id="nl-backlog-heading">2. Richieste mancanti</h3>
           <p>
             Lacune da colmare per aumentare l&apos;affidabilità delle risposte e
-            non inventare soglie/clausole. Sola lettura dal backlog piattaforma;
-            i PDF restano una richiesta HITL al committente.
+            non inventare soglie/clausole. Snapshot piattaforma + richieste studio
+            (locale al browser). I PDF restano HITL; «Copia MD» prepara la riga per{" "}
+            <code>NORME_MANCANTI_BACKLOG.md</code>. Persistenza server = decisione storage futura.
           </p>
         </div>
+
+        <form className="nl-request-form" onSubmit={handleAddRequest}>
+          <div className="nl-request-form__row">
+            <label>
+              Codice / titolo
+              <input
+                type="text"
+                value={requestForm.code}
+                onChange={(e) =>
+                  setRequestForm((f) => ({ ...f, code: e.target.value }))
+                }
+                required
+                placeholder="es. ISO 17660-1"
+              />
+            </label>
+            <label>
+              Impatto modulo
+              <input
+                type="text"
+                value={requestForm.impact}
+                onChange={(e) =>
+                  setRequestForm((f) => ({ ...f, impact: e.target.value }))
+                }
+                placeholder="es. WPQR / MC"
+              />
+            </label>
+            <label>
+              Priorità
+              <select
+                value={requestForm.priority}
+                onChange={(e) =>
+                  setRequestForm((f) => ({ ...f, priority: e.target.value }))
+                }
+              >
+                <option value="P0">P0</option>
+                <option value="P1">P1</option>
+                <option value="P2">P2</option>
+              </select>
+            </label>
+            <label>
+              Stato
+              <select
+                value={requestForm.status}
+                onChange={(e) =>
+                  setRequestForm((f) => ({ ...f, status: e.target.value }))
+                }
+              >
+                <option value="da_richiedere">Da richiedere</option>
+                <option value="pdf_ricevuto">PDF ricevuto</option>
+                <option value="parcheggio">Parcheggio</option>
+                <option value="digitalizzata">Digitalizzata</option>
+              </select>
+            </label>
+          </div>
+          <label className="nl-request-form__notes">
+            Note
+            <input
+              type="text"
+              value={requestForm.notes}
+              onChange={(e) =>
+                setRequestForm((f) => ({ ...f, notes: e.target.value }))
+              }
+              placeholder="Perché serve / dove manca"
+            />
+          </label>
+          {requestError && (
+            <p className="nl-request-form__error" role="alert">
+              {requestError}
+            </p>
+          )}
+          {copyFeedback && (
+            <p className="nl-request-form__ok" role="status">
+              {copyFeedback}
+            </p>
+          )}
+          <button type="submit" className="btn-primary">
+            Aggiungi richiesta studio
+          </button>
+        </form>
+
         <SgqDataGrid
           rows={backlogItems}
           columns={BACKLOG_COLUMNS}
@@ -250,7 +509,7 @@ export function NormLibraryPage() {
           emptyMessage="Nessuna richiesta nel backlog."
           theme="plain"
           renderCell={renderBacklogCell}
-          getRowKey={(row, idx) => row.code || String(idx)}
+          getRowKey={(row, idx) => row.id || row.code || String(idx)}
           className="nl-grid"
           initialSortCol="priority"
           initialSortDir="asc"
@@ -266,5 +525,9 @@ export default NormLibraryPage;
 export {
   resolveValidityStatus,
   resolvePublicationDate,
+  resolveTextQuality,
+  resolveHasChunks,
+  resolveLastValidityCheck,
+  libraryDocTypeLabel,
   VALIDITY_LABELS,
 };
