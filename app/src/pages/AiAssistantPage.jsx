@@ -23,6 +23,7 @@ import {
   toGenerateWpsApiPayload,
 } from "../utils/aiAssistantContext";
 import AiAssistantCitations from "../components/AiAssistantCitations";
+import AiAssistantSourceGaps from "../components/AiAssistantSourceGaps";
 import AmbitoFactsBar from "../components/AmbitoFactsBar";
 import {
   buildChatStorageKey,
@@ -586,6 +587,7 @@ function AiAssistantPage() {
           sourcesCount: data.sourcesCount ?? citations.length,
           citations,
           figures,
+          sourceGaps: Array.isArray(data.sourceGaps) ? data.sourceGaps : [],
         },
       ]);
     } catch (err) {
@@ -931,6 +933,9 @@ function AiAssistantPage() {
                     contextUsed={msg.contextUsed}
                     figures={msg.figures}
                   />
+                )}
+                {msg.role === "assistant" && (
+                  <AiAssistantSourceGaps gaps={msg.sourceGaps} />
                 )}
               </div>
             </div>

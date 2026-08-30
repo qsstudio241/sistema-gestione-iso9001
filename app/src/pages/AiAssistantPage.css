@@ -700,3 +700,47 @@
     min-width: min(100%, 280px);
   }
 }
+
+/* LG-1 — gap fonti in risposta assistente */
+.ai-source-gaps {
+  margin-top: 10px;
+  padding: 10px 12px;
+  border: 1px solid #f0c36d;
+  background: #fff8e8;
+  border-radius: 8px;
+  font-size: 0.88rem;
+}
+
+.ai-source-gaps__title {
+  margin: 0 0 8px;
+  font-weight: 600;
+  color: #7a4e00;
+}
+
+.ai-source-gaps__list {
+  margin: 0 0 8px;
+  padding-left: 1.1rem;
+}
+
+.ai-source-gaps__item {
+  margin-bottom: 8px;
+}
+
+.ai-source-gaps__reason,
+.ai-source-gaps__quality,
+.ai-source-gaps__path {
+  margin-top: 2px;
+  color: #555;
+}
+
+.ai-source-gaps__quality {
+  font-style: italic;
+}
+
+.ai-source-gaps__cta {
+  display: inline-block;
+  margin-top: 4px;
+  color: #1e3a5f;
+  font-weight: 600;
+  text-decoration: underline;
+}
