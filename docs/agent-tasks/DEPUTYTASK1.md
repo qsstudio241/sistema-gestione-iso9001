@@ -36,6 +36,7 @@ Verificare / completare pulizia al logout secondo ADR-007 e pattern già in repo
 
 - `docs/agent-tasks/DEPUTYTASK1.md` (questo brief)
 - `docs/adr/ADR-007-logout-offline-backup-e-mirror-cartella-pc.md` (checklist Fase A)
+- `docs/adr/README.md` (stato ADR → Parziale)
 - `app/src/tests/syncService.logoutClear.test.js` (regressione L1)
 
 ## Cosa NON toccare
