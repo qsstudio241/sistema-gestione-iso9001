@@ -1,10 +1,10 @@
 # ADR-007: Logout senza perdita del lavoro solo-locale + backup / mirror su cartella PC
 
 **Data**: 2026-04-18  
-**Stato**: **Proposto** (da validare in roadmap; non ancora implementazione completa)  
+**Stato**: **Parziale** — Fase A in produzione (SYNC-4 + clear sessione); Fase B (mirror PC) ancora aperta  
 **Autori**: Team SGQ (evidenza da sessione split-tenant / offline)  
 **Dipendenze**: [ADR-002-offline-first-sync](./ADR-002-offline-first-sync.md), [ADR-006-auto-reconcile-cache-sync](./ADR-006-auto-reconcile-cache-sync.md)  
-**Correlato**: modifica attuale `StorageContext` + `syncService.clearSessionStoresOnLogout()` (pulizia a logout per sicurezza multi-tenant)  
+**Correlato**: `StorageContext` + `syncService.clearSessionStoresOnLogout()` (pulizia a logout) + `LogoutSyncGuard` (gate)  
 **Memoria trasversale (indice sintesi)**: [PROJECT_ROADMAP.md](../PROJECT_ROADMAP.md) — sezione *Open points e memoria trasversale* (aggiornare la tabella quando cambia lo stato di questo ADR).
 
 ---
@@ -81,7 +81,7 @@ Prima di eseguire la pulizia sessione:
 | Alternativa | Pro | Contro | Nota |
 |-------------|-----|--------|------|
 | Non svuotare mai la cache al logout | Zero perdita locale | Violazione isolamento multi-tenant | Scartata |
-| Svuotare senza avviso (stato attuale dopo clear sessione) | Isolamento forte | Perdita silenziosa bozze | Da superare con Fase A |
+| Svuotare senza avviso (pre–SYNC-4) | Isolamento forte | Perdita silenziosa bozze | Superato da Fase A (`LogoutSyncGuard`) |
 | Solo server come unico storage | Coerenza assoluta | Richiede rete continua | Contraddice ADR-002 |
 
 ---
@@ -112,15 +112,18 @@ Prima di eseguire la pulizia sessione:
 
 ## Stato implementazione (checklist)
 
-- [ ] Fase A: rilevamento pendenti + modale logout + tentativo sync / export / conferma perdita  
+- [x] Fase A: rilevamento pendenti (`getActiveQueueSize`) + modale logout (`LogoutSyncGuard`) + tentativo sync / conferma perdita («Esci comunque» / «Annulla») — **SYNC-4** (29/04/2026); clear post-logout: `clearAuditsStore` + `clearSessionStoresOnLogout`  
+- [ ] Fase A residuo opzionale: export «Scarica pacchetto di recupero» (non richiesto dal gate minimo; oggi sync + esci comunque + annulla)  
 - [ ] Fase B: opt-in mirror cartella PC + formato snapshot definito  
-- [ ] Test: logout con coda piena offline → nessuna perdita senza conferma  
-- [ ] Documentazione operativa: `docs/GUIDA_CONSOLIDATA.md` (sezione utente finale)
+- [x] Test: coda attiva → guard non lascia passare senza conferma; `clearSessionStoresOnLogout` svuota queue/metadata/allegati (`syncService.stall.test.js`, `syncService.logoutClear.test.js`)  
+- [ ] Documentazione operativa: `docs/GUIDA_CONSOLIDATA.md` (sezione utente finale) — sync hub dopo merge se parallelo
 
 ---
 
 ## Collegamenti codice attuale (riferimento)
 
 - `app/src/contexts/StorageContext.jsx` — listener `sgq:userLoggedOut`, `reconcileAuditsFromServer`, `filterLocalAuditsAfterServerFetch`  
-- `app/src/services/syncService.js` — `clearSessionStoresOnLogout`, coda `syncQueue`  
+- `app/src/contexts/AuthContext.jsx` — `logout()` emette `sgq:logoutRequested` / attende conferma, poi `sgq:userLoggedOut`  
+- `app/src/components/LogoutSyncGuard.jsx` — modale Fase A (montato in `App.jsx`)  
+- `app/src/services/syncService.js` — `clearSessionStoresOnLogout`, `getActiveQueueSize`, coda `syncQueue`  
 - `app/src/services/storageAdapter.js` — scelta provider IndexedDB

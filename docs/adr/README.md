@@ -65,7 +65,7 @@ Rinumerazione sequenziale univoca: backlog doc Fase 3 (vedi [INDICE_DOCUMENTAZIO
 | [ADR-004-mobile-auth-localstorage](./ADR-004-mobile-auth-localstorage.md) | Auth mobile (localStorage JWT) | Accettato |
 | [ADR-005-attachment-storage-strategy](./ADR-005-attachment-storage-strategy.md) | Strategia storage allegati | Accettato |
 | [ADR-006-auto-reconcile-cache-sync](./ADR-006-auto-reconcile-cache-sync.md) | Auto-reconcile cache / multi-device | Proposta approvata |
-| [ADR-007-logout-offline-backup-e-mirror-cartella-pc](./ADR-007-logout-offline-backup-e-mirror-cartella-pc.md) | Logout senza perdita lavoro locale + backup PC | Proposto |
+| [ADR-007-logout-offline-backup-e-mirror-cartella-pc](./ADR-007-logout-offline-backup-e-mirror-cartella-pc.md) | Logout senza perdita lavoro locale + backup PC | Parziale (Fase A ok; Fase B aperta) |
 | [ADR-008-event-sourcing-sync](./ADR-008-event-sourcing-sync.md) | Event-Sourced Sync (sostituisce parzialmente 002/003/006) | Accettato |
 | [ADR-009-multi-standard-architettura-per-norma](./ADR-009-multi-standard-architettura-per-norma.md) | Multi-standard / AI-ready per norma | Accettato |
 | [ADR-010-ai-agentic-architecture](./ADR-010-ai-agentic-architecture.md) | AI agentica: NormBroker, RAG, licenze | Accettato |
