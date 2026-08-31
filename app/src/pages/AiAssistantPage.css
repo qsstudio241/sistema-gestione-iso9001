@@ -712,18 +712,53 @@
 }
 
 .ai-source-gaps__title {
-  margin: 0 0 8px;
+  margin: 0 0 4px;
   font-weight: 600;
   color: #7a4e00;
 }
 
-.ai-source-gaps__list {
+.ai-source-gaps__confirm {
   margin: 0 0 8px;
+  font-size: 0.82rem;
+  color: #5c4a1a;
+}
+
+.ai-source-gaps__list {
+  margin: 0;
   padding-left: 1.1rem;
+  list-style: disc;
 }
 
 .ai-source-gaps__item {
-  margin-bottom: 8px;
+  margin-bottom: 10px;
+}
+
+.ai-source-gaps__item-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 6px 8px;
+}
+
+.ai-source-gaps__badge {
+  display: inline-block;
+  font-size: 0.72rem;
+  font-weight: 600;
+  padding: 1px 6px;
+  border-radius: var(--radius-sm, 4px);
+  border: 1px solid transparent;
+}
+
+.ai-source-gaps__badge--tenant {
+  color: #1e3a5f;
+  background: #e8f0fe;
+  border-color: #bfdbfe;
+}
+
+.ai-source-gaps__badge--platform {
+  color: #7a4e00;
+  background: #fff3cd;
+  border-color: #f0c36d;
 }
 
 .ai-source-gaps__reason,
@@ -739,8 +774,8 @@
 
 .ai-source-gaps__cta {
   display: inline-block;
-  margin-top: 4px;
-  color: #1e3a5f;
+  margin-top: 6px;
+  color: var(--color-primary, #1e3a5f);
   font-weight: 600;
   text-decoration: underline;
 }

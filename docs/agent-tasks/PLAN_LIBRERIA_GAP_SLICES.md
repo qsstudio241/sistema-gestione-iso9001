@@ -47,14 +47,14 @@
 
 | Slice | Tema | Perimetro | Dipende da | Tipo | Stato |
 |-------|------|-----------|------------|------|-------|
-| **LG-1** | Gap in risposta Gemini + persistenza richiesta + email superadmin | BE: rilevamento/estrazione gap da `/ai/chat` (o post-process); persistenza server richiesta; `alertMail` → email a `role=superadmin`; FE: blocco gap in `AiAssistantPage` + riga in Libreria; test L1/BE | Decisioni HITL | AFK | **CHIUSO** — TEST OK (30/08/2026, `cursor/lg1-libreria-gap-9166`) |
-| **LG-2** | UX conferma tenant + deep-link Libreria | FE: CTA «Vai in Libreria» / prefill; distinguere richiesta *tenant ingest* vs *piattaforma*; alert in-app già nella risposta | LG-1 | AFK | da fare |
+| **LG-1** | Gap in risposta Gemini + persistenza richiesta + email superadmin | BE: rilevamento/estrazione gap da `/ai/chat` (o post-process); persistenza server richiesta; `alertMail` → email a `role=superadmin`; FE: blocco gap in `AiAssistantPage` + riga in Libreria; test L1/BE | Decisioni HITL | AFK | **CHIUSO** — TEST OK (30/08/2026, `cursor/lg1-libreria-gap-9166`, PR #610) |
+| **LG-2** | UX conferma tenant + deep-link Libreria | FE: CTA «Vai in Libreria» / prefill; distinguere richiesta *tenant ingest* vs *piattaforma*; alert in-app già nella risposta | LG-1 | AFK | **CHIUSO** — TEST OK (30/08/2026, `cursor/lg2-libreria-gap-ux-7143`) |
 | **LG-3** | Coda superadmin (sola lettura/azioni leggere) | FE/BE: lista gap piattaforma aperti (filtro via 2); link a Libreria Gestione; niente pdf-to-json | LG-1 | AFK | da fare |
 | **LG-4** | Chiusura via 1 (tenant) | Quando ingest tenant copre il codice richiesto → stato richiesta aggiornato; niente tocco know-how piattaforma | LG-1 | AFK | da fare |
 | **LG-5** | Chiusura via 2 (superadmin post-Cursor) | Azione «segna digitalizzata piattaforma» + note qualità; opz. email/ack al tenant richiedente | LG-3 | AFK | da fare |
 | **LG-6** | Push mobile (opz.) | Solo se prodotto lo chiede dopo email stabile | LG-1 | HITL | nebbia / fuori priorità |
 
-**Stato piano:** IN CORSO — LG-1 CHIUSO; prossima **LG-2**.
+**Stato piano:** IN CORSO — LG-1…LG-2 CHIUSI; prossima **LG-3**.
 
 ## Decisioni già prese (aggiunte LG-1)
 

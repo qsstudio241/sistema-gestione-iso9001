@@ -214,6 +214,38 @@ describe("NormLibraryPage", () => {
     expect(screen.getByText("Test modulo")).toBeTruthy();
   });
 
+  it("LG-2: deep-link highlight + prefill form da query", async () => {
+    const prev = window.location.search;
+    window.history.pushState(
+      {},
+      "",
+      "/settings/libreria?highlight=ISO%2014555%3A2025&path=platform&prefill=1"
+    );
+    mockGetLibrarySourceRequests.mockResolvedValue({
+      items: [
+        {
+          id: 42,
+          source_code: "ISO 14555:2025",
+          reason: "range stud",
+          quality_notes: "OCR",
+          closure_path: "platform",
+          status: "open",
+        },
+      ],
+    });
+    render(<NormLibraryPage />);
+    await waitFor(() => {
+      expect(screen.getByText(/Arrivi dall/i)).toBeTruthy();
+    });
+    expect(screen.getByText(/richiesta piattaforma/i)).toBeTruthy();
+    const codeInput = screen.getByPlaceholderText(/ISO 17660-1/i);
+    expect(codeInput.value).toBe("ISO 14555:2025");
+    await waitFor(() => {
+      expect(screen.getByText("Assistente")).toBeTruthy();
+    });
+    window.history.pushState({}, "", prev || "/");
+  });
+
   it("mostra empty state catalogo se API senza righe", async () => {
     mockGetDocuments.mockResolvedValue({ data: [] });
     render(<NormLibraryPage />);

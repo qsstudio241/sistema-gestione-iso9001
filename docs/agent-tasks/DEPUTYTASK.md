@@ -1,32 +1,30 @@
-# DEPUTYTASK — LG-1: Gap fonti in risposta Gemini + Libreria + email superadmin
+# DEPUTYTASK — LG-2: UX conferma tenant + deep-link Libreria
 
 **Stato:** CHIUSO — TEST OK  
 **Aperto:** 30/08/2026  
 **Chiuso:** 30/08/2026  
 **Piano:** [`PLAN_LIBRERIA_GAP_SLICES.md`](PLAN_LIBRERIA_GAP_SLICES.md)  
-**Rischio:** Medio — BE additivo (`/ai/chat`, persistenza, email); migrazione 160 additive  
-**Branch:** `cursor/lg1-libreria-gap-9166`  
-**Esito:** TEST OK — Jest BE 22 · Vitest FE 11 · build OK
+**Rischio:** Basso–Medio — solo FE  
+**Branch:** `cursor/lg2-libreria-gap-ux-7143`  
+**Esito:** TEST OK — Vitest 15 · build OK
 
 ## Esito
 
-- Prompt Gemini + blocco `<<<SGQ_SOURCE_GAPS>>>`; reply pulita + `sourceGaps` in JSON
-- Tabella `library_source_requests` (mig. 160) + API GET/POST `/library/source-requests`
-- Email superadmin via `alertMail` (solo `closurePath=platform`); dedupe 7gg
-- FE: blocco gap in Assistente + link Libreria; Libreria elenca richieste server (fonte Assistente)
-- Note = perché serve + dubbi qualità (non gergo STUD)
-- **Niente** pdf-to-json automatico
+- CTA per-gap «Vai in Libreria — …» con query `?highlight=&path=tenant|platform&prefill=1`
+- Badge distinti Via tenant (ingest) vs Via piattaforma + conferma in risposta
+- Libreria: banner arrivo + prefill form + highlight riga backlog (`rowClassName`)
+- Util `libraryGapDeepLink.js` (contratto query, pathname invariato)
+- Niente BE / pdf-to-json
 
 ## DoD
 
-- [x] Gap in UI assistente (tenant richiedente)
-- [x] Persistenza server + lista Libreria
-- [x] Email superadmin (o skip log se SMTP assente)
-- [x] Note qualità
-- [x] Test + build
-- [x] Brief CHIUSO
+- [x] CTA deep-link
+- [x] Distinzione tenant vs piattaforma
+- [x] Prefill + highlight Libreria
+- [x] Test L1 + build
+- [x] PLAN LG-2 CHIUSO; brief CHIUSO
 
-## Post-merge operativo
+## Post-merge
 
-1. Deploy backend + `node /tmp/run-migration-160-vps.js` sul VPS  
-2. Verificare SMTP env per email reali
+- FE Netlify da `main` (nessun deploy BE aggiuntivo per LG-2)
+- Prossima slice: **LG-3** coda superadmin
