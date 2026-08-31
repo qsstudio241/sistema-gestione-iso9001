@@ -1,30 +1,39 @@
-# DEPUTYTASK — LG-2: UX conferma tenant + deep-link Libreria
+# DEPUTYTASK — LG-3: Coda superadmin gap piattaforma
 
-**Stato:** CHIUSO — TEST OK  
-**Aperto:** 30/08/2026  
-**Chiuso:** 30/08/2026  
+**Stato:** APERTO  
+**Aperto:** 31/08/2026  
 **Piano:** [`PLAN_LIBRERIA_GAP_SLICES.md`](PLAN_LIBRERIA_GAP_SLICES.md)  
-**Rischio:** Basso–Medio — solo FE  
-**Branch:** `cursor/lg2-libreria-gap-ux-7143`  
-**Esito:** TEST OK — Vitest 15 · build OK
+**Rischio:** Medio — FE + BE additivo (endpoint superadmin, niente schema breaking)  
+**Branch:** `cursor/lg3-superadmin-gap-queue-9166`  
+**Dipende da:** LG-1 (MERGED #610), LG-2 (MERGED #612)
 
-## Esito
+## Obiettivo
 
-- CTA per-gap «Vai in Libreria — …» con query `?highlight=&path=tenant|platform&prefill=1`
-- Badge distinti Via tenant (ingest) vs Via piattaforma + conferma in risposta
-- Libreria: banner arrivo + prefill form + highlight riga backlog (`rowClassName`)
-- Util `libraryGapDeepLink.js` (contratto query, pathname invariato)
-- Niente BE / pdf-to-json
+Coda **sola lettura / azioni leggere** per superadmin: elenco gap `closure_path=platform` aperti (`open` / `in_progress`) cross-tenant; link a Libreria Gestione; **niente** pdf-to-json / digitalizzazione (LG-5).
+
+## File previsti
+
+- `backend/src/services/librarySourceRequest.service.js` (+ test)
+- `backend/src/controllers/librarySourceRequest.controller.js`
+- `backend/src/routes/librarySourceRequest.routes.js`
+- `app/src/services/apiService.js`
+- `app/src/pages/NormLibraryPage.jsx` (+ CSS minimo)
+- `app/src/tests/normLibraryPage.test.jsx`
+- `docs/agent-tasks/PLAN_LIBRERIA_GAP_SLICES.md` (stato LG-3)
+- `docs/agent-tasks/DEPUTYTASK.md` (questo brief)
+
+## Cosa NON toccare
+
+- `aiChat.controller.js` / `parseSourceGaps.js` / migrazioni
+- pdf-to-json / pipeline Cursor
+- Chiusura «digitalizzata» (LG-5)
+- Auth middleware / sync / JWT
+- `DEPUTYTASK1.md`… altri slot
 
 ## DoD
 
-- [x] CTA deep-link
-- [x] Distinzione tenant vs piattaforma
-- [x] Prefill + highlight Libreria
-- [x] Test L1 + build
-- [x] PLAN LG-2 CHIUSO; brief CHIUSO
-
-## Post-merge
-
-- FE Netlify da `main` (nessun deploy BE aggiuntivo per LG-2)
-- Prossima slice: **LG-3** coda superadmin
+- [ ] GET platform-queue (solo superadmin) + JOIN org name
+- [ ] Azione leggera acknowledge → `in_progress` (solo superadmin)
+- [ ] Sezione UI coda in Libreria (solo superadmin) + link highlight
+- [ ] Test L1 + build
+- [ ] PLAN LG-3 CHIUSO; brief CHIUSO

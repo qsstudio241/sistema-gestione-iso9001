@@ -14,6 +14,8 @@ const { sendAlertEmail } = require('./alertMail.service');
 const {
   upsertGapRequest,
   processGapsFromChat,
+  listPlatformQueue,
+  acknowledgePlatformRequest,
 } = require('./librarySourceRequest.service');
 
 describe('librarySourceRequest.service', () => {
@@ -94,5 +96,51 @@ describe('librarySourceRequest.service', () => {
     );
     expect(results).toHaveLength(1);
     expect(sendAlertEmail).not.toHaveBeenCalled();
+  });
+
+  it('listPlatformQueue filtra closure_path=platform e status aperti', async () => {
+    query.mockResolvedValueOnce({
+      recordset: [
+        {
+          id: 3,
+          source_code: 'ISO X',
+          closure_path: 'platform',
+          status: 'open',
+          requesting_organization_name: 'Studio A',
+        },
+      ],
+    });
+    const rows = await listPlatformQueue();
+    expect(rows).toHaveLength(1);
+    expect(query).toHaveBeenCalledWith(
+      expect.stringMatching(/closure_path = N'platform'/),
+      {}
+    );
+    expect(query.mock.calls[0][0]).toMatch(/status IN \(N'open', N'in_progress'\)/);
+  });
+
+  it('acknowledgePlatformRequest: open → in_progress', async () => {
+    query
+      .mockResolvedValueOnce({
+        recordset: [
+          { id: 5, closure_path: 'platform', status: 'open', source_code: 'ISO Y' },
+        ],
+      })
+      .mockResolvedValueOnce({
+        recordset: [
+          { id: 5, closure_path: 'platform', status: 'in_progress', source_code: 'ISO Y' },
+        ],
+      });
+    const r = await acknowledgePlatformRequest(5);
+    expect(r.changed).toBe(true);
+    expect(r.row.status).toBe('in_progress');
+  });
+
+  it('acknowledgePlatformRequest: rifiuta non-platform', async () => {
+    query.mockResolvedValueOnce({
+      recordset: [{ id: 6, closure_path: 'tenant', status: 'open' }],
+    });
+    const r = await acknowledgePlatformRequest(6);
+    expect(r.error).toBe('not_platform');
   });
 });

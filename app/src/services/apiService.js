@@ -2507,6 +2507,21 @@ class ApiService {
         return this.post('/library/source-requests', body);
     }
 
+    /** LG-3 — coda superadmin gap piattaforma (cross-tenant) */
+    async getLibraryPlatformQueue(params = {}) {
+        const qs = new URLSearchParams();
+        if (params.status) qs.set('status', params.status);
+        const query = qs.toString();
+        return this.get(
+            `/library/source-requests/platform-queue${query ? '?' + query : ''}`
+        );
+    }
+
+    /** LG-3 — presa in carico (open → in_progress); niente digitalizzazione */
+    async acknowledgeLibrarySourceRequest(id) {
+        return this.patch(`/library/source-requests/${id}/acknowledge`, {});
+    }
+
     async getGapAnalysis({ companyId, standardCode = 'ISO_9001_2015' } = {}) {
         const qs = new URLSearchParams();
         if (companyId) qs.set('companyId', String(companyId));

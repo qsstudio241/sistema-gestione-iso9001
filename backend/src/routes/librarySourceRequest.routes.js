@@ -5,6 +5,21 @@ const router = express.Router();
 const { authenticate, authorize } = require('../middleware/auth.middleware');
 const ctrl = require('../controllers/librarySourceRequest.controller');
 
+const superadminOnly = [authenticate, authorize('superadmin')];
+
+// LG-3 — coda cross-tenant (prima di eventuali :id)
+router.get(
+  '/library/source-requests/platform-queue',
+  ...superadminOnly,
+  ctrl.listPlatformQueueHandler
+);
+
+router.patch(
+  '/library/source-requests/:id/acknowledge',
+  ...superadminOnly,
+  ctrl.acknowledgeSourceRequest
+);
+
 // Studio admin (e superadmin via authorize) — allineato a Libreria UI
 router.get(
   '/library/source-requests',

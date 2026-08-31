@@ -1,5 +1,5 @@
 /**
- * Test L1 — NormLibraryPage (LN-1 + LN-2 Libreria)
+ * Test L1 — NormLibraryPage (LN-1 + LN-2 Libreria + LG-3 coda superadmin)
  */
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import React from "react";
@@ -18,17 +18,24 @@ import NormLibraryPage, {
 const mockGetDocuments = vi.fn();
 const mockGetLibrarySourceRequests = vi.fn();
 const mockCreateLibrarySourceRequest = vi.fn();
+const mockGetLibraryPlatformQueue = vi.fn();
+const mockAcknowledgeLibrarySourceRequest = vi.fn();
 
 vi.mock("../services/apiService", () => ({
   default: {
     getDocuments: (...args) => mockGetDocuments(...args),
     getLibrarySourceRequests: (...args) => mockGetLibrarySourceRequests(...args),
     createLibrarySourceRequest: (...args) => mockCreateLibrarySourceRequest(...args),
+    getLibraryPlatformQueue: (...args) => mockGetLibraryPlatformQueue(...args),
+    acknowledgeLibrarySourceRequest: (...args) =>
+      mockAcknowledgeLibrarySourceRequest(...args),
   },
 }));
 
+let mockAuthUser = { role: "admin", organization_id: 1001 };
+
 vi.mock("../contexts/AuthContext", () => ({
-  useAuth: () => ({ user: { role: "admin", organization_id: 1001 } }),
+  useAuth: () => ({ user: mockAuthUser }),
 }));
 
 vi.mock("../contexts/RouterContext", () => ({
@@ -83,10 +90,14 @@ describe("resolveValidityStatus / resolvePublicationDate", () => {
 describe("NormLibraryPage", () => {
   beforeEach(() => {
     localStorage.clear();
+    mockAuthUser = { role: "admin", organization_id: 1001 };
     mockGetDocuments.mockReset();
     mockGetLibrarySourceRequests.mockReset();
     mockCreateLibrarySourceRequest.mockReset();
+    mockGetLibraryPlatformQueue.mockReset();
+    mockAcknowledgeLibrarySourceRequest.mockReset();
     mockGetLibrarySourceRequests.mockResolvedValue({ items: [] });
+    mockGetLibraryPlatformQueue.mockResolvedValue({ items: [] });
     mockCreateLibrarySourceRequest.mockResolvedValue({
       created: true,
       emailed: false,
@@ -253,6 +264,64 @@ describe("NormLibraryPage", () => {
       expect(
         screen.getByText(/Nessuna fonte di riferimento nel Registro/i)
       ).toBeTruthy();
+    });
+  });
+
+  it("admin: non mostra coda gap piattaforma", async () => {
+    render(<NormLibraryPage />);
+    await waitFor(() => {
+      expect(screen.getByText("ISO 9001:2015")).toBeTruthy();
+    });
+    expect(screen.queryByText(/Coda gap piattaforma/i)).toBeNull();
+    expect(mockGetLibraryPlatformQueue).not.toHaveBeenCalled();
+  });
+});
+
+describe("NormLibraryPage — LG-3 coda superadmin", () => {
+  beforeEach(() => {
+    localStorage.clear();
+    mockAuthUser = { role: "superadmin", organization_id: 1001 };
+    mockGetDocuments.mockReset();
+    mockGetLibrarySourceRequests.mockReset();
+    mockGetLibraryPlatformQueue.mockReset();
+    mockAcknowledgeLibrarySourceRequest.mockReset();
+    mockGetLibrarySourceRequests.mockResolvedValue({ items: [] });
+    mockGetDocuments.mockResolvedValue({ data: [] });
+    mockGetLibraryPlatformQueue.mockResolvedValue({
+      items: [
+        {
+          id: 77,
+          source_code: "ISO 14555:2025",
+          reason: "range stud",
+          quality_notes: "OCR",
+          closure_path: "platform",
+          status: "open",
+          requesting_organization_id: 1002,
+          requesting_organization_name: "Studio Beta",
+          created_at: "2026-08-30T10:00:00Z",
+        },
+      ],
+    });
+    mockAcknowledgeLibrarySourceRequest.mockResolvedValue({
+      item: { id: 77, status: "in_progress" },
+      changed: true,
+    });
+  });
+
+  it("mostra coda cross-tenant con link Libreria e Segna in corso", async () => {
+    render(<NormLibraryPage />);
+    await waitFor(() => {
+      expect(screen.getByText(/Coda gap piattaforma/i)).toBeTruthy();
+    });
+    expect(mockGetLibraryPlatformQueue).toHaveBeenCalled();
+    expect(screen.getByText("ISO 14555:2025")).toBeTruthy();
+    expect(screen.getByText("Studio Beta")).toBeTruthy();
+    const link = screen.getByRole("link", { name: /Apri in Libreria/i });
+    expect(link.getAttribute("href")).toContain("highlight=ISO");
+    expect(link.getAttribute("href")).toContain("path=platform");
+    fireEvent.click(screen.getByRole("button", { name: /Segna in corso/i }));
+    await waitFor(() => {
+      expect(mockAcknowledgeLibrarySourceRequest).toHaveBeenCalledWith(77);
     });
   });
 });
