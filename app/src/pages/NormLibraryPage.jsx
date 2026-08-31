@@ -71,7 +71,7 @@ const BACKLOG_STATUS_LABELS = {
   open: "Aperta (assistente)",
   in_progress: "In corso",
   digitized: "Digitalizzata",
-  closed: "Chiusa",
+  closed: "Chiusa (ingest tenant)",
 };
 
 /** Mappa riga API library_source_requests → griglia backlog Libreria */
@@ -86,7 +86,7 @@ function mapServerRequestToBacklogRow(row) {
     open: "da_richiedere",
     in_progress: "pdf_ricevuto",
     digitized: "digitalizzata",
-    closed: "digitalizzata",
+    closed: "closed",
   };
   return {
     id: `srv-${row.id}`,
@@ -615,7 +615,12 @@ export function NormLibraryPage() {
           </p>
         </div>
         <div className="nl-header-actions">
-          <NormUploadButton onUploadComplete={loadCatalog} />
+          <NormUploadButton
+            onUploadComplete={() => {
+              loadCatalog();
+              loadServerRequests();
+            }}
+          />
           <Link to={documentsCatalogHref} className="btn-secondary nl-header-cta">
             Apri Documenti
           </Link>

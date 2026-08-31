@@ -6,6 +6,9 @@
 
 jest.mock('../config/database', () => ({ query: jest.fn() }));
 jest.mock('./normCatalogLookup.service', () => ({ lookupNormStatus: jest.fn() }));
+jest.mock('./librarySourceRequest.service', () => ({
+  tryCloseTenantRequestsAfterIngest: jest.fn().mockResolvedValue({ closed: [], count: 0 }),
+}));
 jest.mock('../utils/logger', () => ({
   info: jest.fn(),
   warn: jest.fn(),
@@ -15,6 +18,7 @@ jest.mock('../utils/logger', () => ({
 
 const { query } = require('../config/database');
 const normCatalog = require('./normCatalogLookup.service');
+const { tryCloseTenantRequestsAfterIngest } = require('./librarySourceRequest.service');
 const {
   parseCodeLines,
   inferIssuingBody,
@@ -109,6 +113,11 @@ describe('importNormCodes', () => {
     expect(params.typeSpecificData).toContain('"standard_code":"D.Lgs. 81/2008"');
     expect(params.typeSpecificData).toContain('"validity_status":"vigente"');
     expect(params.typeSpecificData).toContain('"validity_check_url"');
+    expect(tryCloseTenantRequestsAfterIngest).toHaveBeenCalledWith(
+      ORG_ID,
+      'D.Lgs. 81/2008',
+      { documentId: 5001 }
+    );
   });
 
   it('salta duplicati per standard_code nella stessa organizzazione', async () => {

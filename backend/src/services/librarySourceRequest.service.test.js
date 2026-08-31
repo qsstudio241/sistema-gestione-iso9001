@@ -16,11 +16,21 @@ const {
   processGapsFromChat,
   listPlatformQueue,
   acknowledgePlatformRequest,
+  closeTenantRequestsCoveredByCode,
+  tryCloseTenantRequestsAfterIngest,
+  sourceCodesMatch,
 } = require('./librarySourceRequest.service');
 
 describe('librarySourceRequest.service', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+  });
+
+  it('sourceCodesMatch: case-insensitive e prefisso', () => {
+    expect(sourceCodesMatch('ISO 1', 'iso 1')).toBe(true);
+    expect(sourceCodesMatch('ISO 14555:2025', 'ISO 14555:2025 (arc stud)')).toBe(true);
+    expect(sourceCodesMatch('a', 'b')).toBe(false);
+    expect(sourceCodesMatch('', 'x')).toBe(false);
   });
 
   it('dedupe: non reinserisce se open recente', async () => {
@@ -142,5 +152,68 @@ describe('librarySourceRequest.service', () => {
     });
     const r = await acknowledgePlatformRequest(6);
     expect(r.error).toBe('not_platform');
+  });
+
+  it('closeTenantRequestsCoveredByCode: chiude solo tenant open/in_progress', async () => {
+    query
+      .mockResolvedValueOnce({
+        recordset: [
+          {
+            id: 11,
+            source_code: 'ISO 14555:2025',
+            status: 'open',
+            closure_path: 'tenant',
+            requesting_organization_id: 1001,
+          },
+          {
+            id: 12,
+            source_code: 'ISO OTHER',
+            status: 'open',
+            closure_path: 'tenant',
+            requesting_organization_id: 1001,
+          },
+        ],
+      })
+      .mockResolvedValueOnce({
+        recordset: [
+          {
+            id: 11,
+            source_code: 'ISO 14555:2025',
+            status: 'closed',
+            closure_path: 'tenant',
+          },
+        ],
+      });
+    const r = await closeTenantRequestsCoveredByCode(1001, 'ISO 14555:2025 (arc)', {
+      documentId: 99,
+    });
+    expect(r.count).toBe(1);
+    expect(r.closed[0].id).toBe(11);
+    expect(r.closed[0].status).toBe('closed');
+    expect(query.mock.calls[1][0]).toMatch(/status = N'closed'/);
+    expect(query.mock.calls[1][0]).toMatch(/closure_path = N'tenant'/);
+  });
+
+  it('closeTenantRequestsCoveredByCode: nessuna match → count 0', async () => {
+    query.mockResolvedValueOnce({
+      recordset: [
+        {
+          id: 20,
+          source_code: 'ISO X',
+          status: 'open',
+          closure_path: 'tenant',
+        },
+      ],
+    });
+    const r = await closeTenantRequestsCoveredByCode(1001, 'ISO Y');
+    expect(r.count).toBe(0);
+    expect(query).toHaveBeenCalledTimes(1);
+  });
+
+  it('tryCloseTenantRequestsAfterIngest: non propaga errori', async () => {
+    query.mockRejectedValueOnce(new Error('db down'));
+    const r = await tryCloseTenantRequestsAfterIngest(1001, 'ISO Z');
+    expect(r.count).toBe(0);
+    expect(r.error).toMatch(/db down/);
   });
 });

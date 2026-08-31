@@ -34,6 +34,10 @@ jest.mock('./companyAccess.service', () => ({
   assertMutatingAllowed: jest.fn().mockResolvedValue(null),
 }));
 
+jest.mock('./librarySourceRequest.service', () => ({
+  tryCloseTenantRequestsAfterIngest: jest.fn().mockResolvedValue({ closed: [], count: 0 }),
+}));
+
 const { runDocumentIngest } = require('./documentIngestPipeline.service');
 const normCatalog = require('./normCatalogLookup.service');
 const { query } = require('../config/database');
@@ -41,6 +45,7 @@ const { resolveNormFolderId } = require('./normCodesImport.service');
 const { calculatePathCache } = require('./documentTreeProvisioner.service');
 const { ingestFiguresFromPdf } = require('./figureIngest.service');
 const { assertMutatingAllowed } = require('./companyAccess.service');
+const { tryCloseTenantRequestsAfterIngest } = require('./librarySourceRequest.service');
 const {
   enrichNormFields,
   extractNormFromPdf,
@@ -247,6 +252,11 @@ describe('normIngest.service (IG-N)', () => {
       companyId: 8,
       pdfPath: '/tmp/norma-test.pdf',
     });
+    expect(tryCloseTenantRequestsAfterIngest).toHaveBeenCalledWith(
+      1001,
+      'ISO 9001:2015',
+      { documentId: 501 }
+    );
   });
 
   it('commitNormFromFields resta ok se ingestFiguresFromPdf throw', async () => {
