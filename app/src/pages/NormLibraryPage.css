@@ -474,7 +474,8 @@
   .nl-section {
     padding: 14px 12px 8px;
     border-radius: var(--radius, 8px);
-    overflow: hidden;
+    /* non clippare lo scroll orizzontale delle griglie */
+    overflow: visible;
   }
 
   .nl-section-head h3 {
@@ -501,11 +502,19 @@
     grid-template-columns: 1fr;
   }
 
-  .nl-request-form input,
+  .nl-request-form input:not([type="checkbox"]):not([type="radio"]),
   .nl-request-form select {
     width: 100%;
     box-sizing: border-box;
     min-height: 44px;
+  }
+
+  .nl-request-form input[type="checkbox"],
+  .nl-request-form input[type="radio"] {
+    width: auto;
+    min-height: 0;
+    flex-shrink: 0;
+    margin-top: 2px;
   }
 
   .nl-request-form .btn-primary {
