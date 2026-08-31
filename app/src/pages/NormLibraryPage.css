@@ -250,6 +250,22 @@
   background: #e2e8f0;
 }
 
+.nl-backlog-status--open {
+  color: #b45309;
+  background: #fef3c7;
+}
+
+.nl-backlog-status--in_progress {
+  color: #1d4ed8;
+  background: #dbeafe;
+}
+
+.nl-backlog-status--digitized,
+.nl-backlog-status--closed {
+  color: #15803d;
+  background: #dcfce7;
+}
+
 .nl-chunk--yes {
   display: inline-block;
   font-size: 12px;
