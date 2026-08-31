@@ -20,6 +20,7 @@ const mockGetLibrarySourceRequests = vi.fn();
 const mockCreateLibrarySourceRequest = vi.fn();
 const mockGetLibraryPlatformQueue = vi.fn();
 const mockAcknowledgeLibrarySourceRequest = vi.fn();
+const mockMarkLibrarySourceDigitized = vi.fn();
 
 vi.mock("../services/apiService", () => ({
   default: {
@@ -29,6 +30,8 @@ vi.mock("../services/apiService", () => ({
     getLibraryPlatformQueue: (...args) => mockGetLibraryPlatformQueue(...args),
     acknowledgeLibrarySourceRequest: (...args) =>
       mockAcknowledgeLibrarySourceRequest(...args),
+    markLibrarySourceDigitized: (...args) =>
+      mockMarkLibrarySourceDigitized(...args),
   },
 }));
 
@@ -96,12 +99,18 @@ describe("NormLibraryPage", () => {
     mockCreateLibrarySourceRequest.mockReset();
     mockGetLibraryPlatformQueue.mockReset();
     mockAcknowledgeLibrarySourceRequest.mockReset();
+    mockMarkLibrarySourceDigitized.mockReset();
     mockGetLibrarySourceRequests.mockResolvedValue({ items: [] });
     mockGetLibraryPlatformQueue.mockResolvedValue({ items: [] });
     mockCreateLibrarySourceRequest.mockResolvedValue({
       created: true,
       emailed: false,
       item: { id: 1, source_code: "ISO TEST-LN5" },
+    });
+    mockMarkLibrarySourceDigitized.mockResolvedValue({
+      item: { id: 1, status: "digitized" },
+      changed: true,
+      tenantEmailed: false,
     });
     mockGetDocuments.mockImplementation(({ doc_type }) => {
       if (doc_type === "norma") {
@@ -304,6 +313,7 @@ describe("NormLibraryPage — LG-3 coda superadmin", () => {
     mockGetLibrarySourceRequests.mockReset();
     mockGetLibraryPlatformQueue.mockReset();
     mockAcknowledgeLibrarySourceRequest.mockReset();
+    mockMarkLibrarySourceDigitized.mockReset();
     mockGetLibrarySourceRequests.mockResolvedValue({ items: [] });
     mockGetDocuments.mockResolvedValue({ data: [] });
     mockGetLibraryPlatformQueue.mockResolvedValue({
@@ -325,6 +335,11 @@ describe("NormLibraryPage — LG-3 coda superadmin", () => {
       item: { id: 77, status: "in_progress" },
       changed: true,
     });
+    mockMarkLibrarySourceDigitized.mockResolvedValue({
+      item: { id: 77, status: "digitized" },
+      changed: true,
+      tenantEmailed: true,
+    });
   });
 
   it("mostra coda cross-tenant con link Libreria e Segna in corso", async () => {
@@ -341,6 +356,30 @@ describe("NormLibraryPage — LG-3 coda superadmin", () => {
     fireEvent.click(screen.getByRole("button", { name: /Segna in corso/i }));
     await waitFor(() => {
       expect(mockAcknowledgeLibrarySourceRequest).toHaveBeenCalledWith(77);
+    });
+  });
+
+  it("LG-5: Segna digitalizzata apre form e invia mark-digitized", async () => {
+    render(<NormLibraryPage />);
+    await waitFor(() => {
+      expect(screen.getByText(/Coda gap piattaforma/i)).toBeTruthy();
+    });
+    fireEvent.click(screen.getByRole("button", { name: /Segna digitalizzata/i }));
+    await waitFor(() => {
+      expect(
+        screen.getByLabelText(/Segna digitalizzata piattaforma/i)
+      ).toBeTruthy();
+    });
+    fireEvent.change(screen.getByPlaceholderText(/MD ok/i), {
+      target: { value: "MD ok, chunk allineati" },
+    });
+    fireEvent.click(screen.getByLabelText(/Invia ack email al tenant/i));
+    fireEvent.click(screen.getByRole("button", { name: /Conferma digitalizzata/i }));
+    await waitFor(() => {
+      expect(mockMarkLibrarySourceDigitized).toHaveBeenCalledWith(77, {
+        qualityNotes: "MD ok, chunk allineati",
+        notifyTenant: true,
+      });
     });
   });
 });

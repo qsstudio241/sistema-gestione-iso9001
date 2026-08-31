@@ -16,6 +16,7 @@ const {
   processGapsFromChat,
   listPlatformQueue,
   acknowledgePlatformRequest,
+  markPlatformDigitized,
   closeTenantRequestsCoveredByCode,
   tryCloseTenantRequestsAfterIngest,
   sourceCodesMatch,
@@ -151,6 +152,101 @@ describe('librarySourceRequest.service', () => {
       recordset: [{ id: 6, closure_path: 'tenant', status: 'open' }],
     });
     const r = await acknowledgePlatformRequest(6);
+    expect(r.error).toBe('not_platform');
+  });
+
+  it('markPlatformDigitized: open → digitized con note qualità', async () => {
+    query
+      .mockResolvedValueOnce({
+        recordset: [
+          {
+            id: 8,
+            closure_path: 'platform',
+            status: 'open',
+            source_code: 'ISO Z',
+            quality_notes: 'OCR debole',
+            requesting_organization_id: 1002,
+            requesting_user_id: 4,
+          },
+        ],
+      })
+      .mockResolvedValueOnce({
+        recordset: [
+          {
+            id: 8,
+            closure_path: 'platform',
+            status: 'digitized',
+            source_code: 'ISO Z',
+            quality_notes: 'OCR debole\nChiusura piattaforma: MD ok, secondo passaggio non serve',
+            requesting_organization_id: 1002,
+            requesting_user_id: 4,
+          },
+        ],
+      });
+    const r = await markPlatformDigitized(8, {
+      qualityNotes: 'MD ok, secondo passaggio non serve',
+      notifyTenant: false,
+    });
+    expect(r.changed).toBe(true);
+    expect(r.row.status).toBe('digitized');
+    expect(r.tenantEmailed).toBe(false);
+    expect(query.mock.calls[1][0]).toMatch(/status = N'digitized'/);
+    expect(query.mock.calls[1][1].notes).toMatch(/Chiusura piattaforma/);
+    expect(sendAlertEmail).not.toHaveBeenCalled();
+  });
+
+  it('markPlatformDigitized: notifyTenant emaila richiedente', async () => {
+    query
+      .mockResolvedValueOnce({
+        recordset: [
+          {
+            id: 9,
+            closure_path: 'platform',
+            status: 'in_progress',
+            source_code: 'ISO ACK',
+            quality_notes: null,
+            requesting_organization_id: 1003,
+            requesting_user_id: 11,
+            source_title: 'Ack test',
+          },
+        ],
+      })
+      .mockResolvedValueOnce({
+        recordset: [
+          {
+            id: 9,
+            closure_path: 'platform',
+            status: 'digitized',
+            source_code: 'ISO ACK',
+            quality_notes: 'Chiusura piattaforma: QA ok',
+            requesting_organization_id: 1003,
+            requesting_user_id: 11,
+            source_title: 'Ack test',
+          },
+        ],
+      })
+      .mockResolvedValueOnce({
+        recordset: [{ email: 'tenant@studio.it' }],
+      });
+    sendAlertEmail.mockResolvedValue(true);
+    const r = await markPlatformDigitized(9, {
+      qualityNotes: 'QA ok',
+      notifyTenant: true,
+    });
+    expect(r.changed).toBe(true);
+    expect(r.tenantEmailed).toBe(true);
+    expect(sendAlertEmail).toHaveBeenCalledWith(
+      'tenant@studio.it',
+      expect.stringContaining('ISO ACK'),
+      expect.stringContaining('digitalizzata')
+    );
+  });
+
+  it('markPlatformDigitized: rifiuta non-platform', async () => {
+    query.mockResolvedValueOnce({
+      recordset: [{ id: 10, closure_path: 'tenant', status: 'open' }],
+    });
+    const r = await markPlatformDigitized(10, { qualityNotes: 'x' });
     expect(r.error).toBe('not_platform');
   });
 

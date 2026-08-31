@@ -20,6 +20,13 @@ router.patch(
   ctrl.acknowledgeSourceRequest
 );
 
+// LG-5 — segna digitalizzata piattaforma (niente pdf-to-json automatico)
+router.patch(
+  '/library/source-requests/:id/mark-digitized',
+  ...superadminOnly,
+  ctrl.markDigitizedSourceRequest
+);
+
 // Studio admin (e superadmin via authorize) — allineato a Libreria UI
 router.get(
   '/library/source-requests',

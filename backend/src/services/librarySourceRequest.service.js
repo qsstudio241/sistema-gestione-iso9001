@@ -321,12 +321,150 @@ async function acknowledgePlatformRequest(id) {
   return { row: updated, changed: true };
 }
 
+/**
+ * Email di ack al tenant richiedente (user o admin dell'org).
+ * Non fallisce la chiusura se SMTP assente.
+ */
+async function notifyRequestingTenant(row, closureNotes) {
+  const emails = [];
+  if (row.requesting_user_id) {
+    try {
+      const u = await query(
+        `SELECT email FROM users
+         WHERE user_id = @uid AND is_active = 1
+           AND email IS NOT NULL AND LEN(LTRIM(RTRIM(email))) > 3`,
+        { uid: row.requesting_user_id }
+      );
+      const e = String((u.recordset || [])[0]?.email || '').trim();
+      if (e.includes('@')) emails.push(e);
+    } catch (err) {
+      logger.warn('[LibrarySourceRequest] lookup requesting user failed:', err.message);
+    }
+  }
+  if (!emails.length && row.requesting_organization_id) {
+    try {
+      const admins = await query(
+        `SELECT email FROM users
+         WHERE organization_id = @orgId
+           AND role IN (N'admin', N'superadmin')
+           AND is_active = 1
+           AND email IS NOT NULL AND LEN(LTRIM(RTRIM(email))) > 3`,
+        { orgId: row.requesting_organization_id }
+      );
+      for (const r of admins.recordset || []) {
+        const e = String(r.email || '').trim();
+        if (e.includes('@')) emails.push(e);
+      }
+    } catch (err) {
+      logger.warn('[LibrarySourceRequest] lookup org admins failed:', err.message);
+    }
+  }
+  const unique = [...new Set(emails)];
+  if (!unique.length) {
+    logger.warn('[LibrarySourceRequest] nessun email tenant per ack — skip');
+    return false;
+  }
+  const html = `
+    <p>La fonte richiesta &egrave; stata <strong>digitalizzata sulla piattaforma</strong>
+    (know-how condiviso). Nessun automatismo PDF&rarr;JSON: verifica qualit&agrave; a cura del superadmin.</p>
+    <ul>
+      <li><strong>Codice:</strong> ${escapeHtml(row.source_code)}</li>
+      <li><strong>Titolo:</strong> ${escapeHtml(row.source_title || '—')}</li>
+      <li><strong>Note qualit&agrave; chiusura:</strong> ${escapeHtml(closureNotes || row.quality_notes || '—')}</li>
+    </ul>
+    <p>Puoi riusare la fonte dall&apos;Assistente AI / Libreria Gestione.</p>
+  `;
+  try {
+    const ok = await sendAlertEmail(
+      unique.join(','),
+      `[SGQ Libreria] Fonte digitalizzata: ${row.source_code}`,
+      html
+    );
+    return !!ok;
+  } catch (err) {
+    logger.warn('[LibrarySourceRequest] tenant ack email failed:', err.message);
+    return false;
+  }
+}
+
+/**
+ * LG-5 — chiusura via 2: superadmin marca «digitalizzata piattaforma» dopo Cursor.
+ * Solo closure_path=platform, status open|in_progress → digitized.
+ * Opz. aggiorna quality_notes e ack email al tenant richiedente.
+ * Niente avvio pdf-to-json.
+ */
+async function markPlatformDigitized(id, opts = {}) {
+  const idNum = Number(id);
+  if (!Number.isFinite(idNum) || idNum < 1) {
+    return { row: null, error: 'invalid_id' };
+  }
+  const qualityNotes =
+    opts.qualityNotes != null ? String(opts.qualityNotes).trim() : '';
+  const notifyTenant = !!opts.notifyTenant;
+
+  const existing = await query(
+    `SELECT TOP 1 * FROM library_source_requests WHERE id = @id`,
+    { id: idNum }
+  );
+  const row = (existing.recordset || [])[0];
+  if (!row) return { row: null, error: 'not_found' };
+  if (row.closure_path !== 'platform') {
+    return { row: null, error: 'not_platform' };
+  }
+  if (row.status === 'digitized') {
+    return { row, changed: false, tenantEmailed: false };
+  }
+  if (row.status !== 'open' && row.status !== 'in_progress') {
+    return { row: null, error: 'bad_status' };
+  }
+
+  let mergedNotes = row.quality_notes || null;
+  if (qualityNotes) {
+    const prior = String(row.quality_notes || '').trim();
+    mergedNotes = prior
+      ? `${prior}\nChiusura piattaforma: ${qualityNotes}`
+      : `Chiusura piattaforma: ${qualityNotes}`;
+  }
+
+  const upd = await query(
+    `UPDATE library_source_requests
+     SET status = N'digitized',
+         quality_notes = @notes,
+         updated_at = SYSUTCDATETIME()
+     OUTPUT INSERTED.*
+     WHERE id = @id
+       AND closure_path = N'platform'
+       AND status IN (N'open', N'in_progress')`,
+    { id: idNum, notes: mergedNotes }
+  );
+  const updated = (upd.recordset || [])[0];
+  if (!updated) {
+    return { row: null, error: 'bad_status' };
+  }
+
+  let tenantEmailed = false;
+  if (notifyTenant) {
+    tenantEmailed = await notifyRequestingTenant(updated, qualityNotes || mergedNotes);
+  }
+
+  logger.info('[LibrarySourceRequest] LG-5 digitalizzata piattaforma', {
+    id: idNum,
+    sourceCode: updated.source_code,
+    tenantEmailed,
+    notifyTenant,
+  });
+
+  return { row: updated, changed: true, tenantEmailed };
+}
+
 module.exports = {
   upsertGapRequest,
   processGapsFromChat,
   listForOrganization,
   listPlatformQueue,
   acknowledgePlatformRequest,
+  markPlatformDigitized,
+  notifyRequestingTenant,
   closeTenantRequestsCoveredByCode,
   tryCloseTenantRequestsAfterIngest,
   sourceCodesMatch,

@@ -377,6 +377,36 @@
   align-self: flex-start;
 }
 
+/* LG-5 — form chiusura digitalizzata in coda superadmin */
+.nl-digitize-form {
+  margin-bottom: 12px;
+  border: 1px solid #cbd5e1;
+  background: #f8fafc;
+}
+
+.nl-digitize-form__intro {
+  margin: 0;
+  font-size: 13px;
+  color: #334155;
+  line-height: 1.45;
+}
+
+.nl-digitize-form__ack {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: #1e293b;
+  font-weight: 500;
+}
+
+.nl-digitize-form__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+}
+
 @media (max-width: 720px) {
   .nl-header {
     padding: 16px 18px;
