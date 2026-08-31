@@ -4,6 +4,8 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import React from "react";
 import { render, screen, waitFor, fireEvent } from "@testing-library/react";
+import { readFileSync } from "fs";
+import { resolve } from "path";
 import NormLibraryPage, {
   LIBRARY_REFERENCE_DOC_TYPES,
   LIBRARY_DOC_TYPE_LABELS,
@@ -381,5 +383,38 @@ describe("NormLibraryPage — LG-3 coda superadmin", () => {
         notifyTenant: true,
       });
     });
+  });
+});
+
+describe("NormLibraryPage mobile layout contract", () => {
+  it("CSS ha media ≤768px con stack colonna (header, form, azioni)", () => {
+    const text = readFileSync(
+      resolve("src/pages/NormLibraryPage.css"),
+      "utf8"
+    );
+    expect(text).toMatch(/@media\s*\(max-width:\s*768px\)/);
+    expect(text).toMatch(/\.nl-header\s*\{[^}]*flex-direction:\s*column/s);
+    expect(text).toMatch(
+      /\.nl-request-form__row\s*\{[^}]*grid-template-columns:\s*1fr/s
+    );
+    expect(text).toMatch(
+      /\.nl-digitize-form__actions\s*\{[^}]*flex-direction:\s*column/s
+    );
+    expect(text).toMatch(/-webkit-overflow-scrolling:\s*touch/);
+  });
+
+  it("form Aggiungi richiesta espone classi stack + btn-primary", async () => {
+    mockAuthUser = { role: "admin", organization_id: 1001 };
+    mockGetDocuments.mockResolvedValue({ documents: [] });
+    mockGetLibrarySourceRequests.mockResolvedValue({ items: [] });
+    render(<NormLibraryPage />);
+    await waitFor(() => {
+      expect(screen.getByText(/Richieste mancanti/i)).toBeTruthy();
+    });
+    const form = document.querySelector("form.nl-request-form");
+    expect(form).toBeTruthy();
+    expect(form.querySelector(".nl-request-form__row")).toBeTruthy();
+    expect(form.querySelector("button.btn-primary")).toBeTruthy();
+    expect(document.querySelector(".nl-header-actions")).toBeTruthy();
   });
 });
