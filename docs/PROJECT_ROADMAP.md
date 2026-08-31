@@ -16,7 +16,7 @@ Audit multi-standard (9001/14001/45001) · Non Conformità (workflow ISO 10.2 co
 
 ### Sessione più recente (31/08/2026)
 
-**Libreria gap LG-1…LG-5 (31/08)** — piano [`PLAN_LIBRERIA_GAP_SLICES.md`](agent-tasks/PLAN_LIBRERIA_GAP_SLICES.md) **COMPLETATO** (LG-6 push mobile resta nebbia): gap in risposta Assistente + persistenza + email SA; UX deep-link; coda superadmin; chiusura via ingest tenant; chiusura «segna digitalizzata» + note qualità + ack tenant opz. Slot [`DEPUTYTASK.md`](agent-tasks/DEPUTYTASK.md) **CHIUSO** su LG-5. Sequel di LN-1…LN-5 (UI shell).
+**Libreria gap LG-1…LG-5 (31/08, [#615](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/615) mergiata)** — piano [`PLAN_LIBRERIA_GAP_SLICES.md`](agent-tasks/PLAN_LIBRERIA_GAP_SLICES.md) **COMPLETATO** (LG-6 push mobile resta nebbia): gap in risposta Assistente + persistenza + email SA; UX deep-link; coda superadmin; chiusura via ingest tenant; chiusura «segna digitalizzata» + note qualità + ack tenant opz. Slot [`DEPUTYTASK.md`](agent-tasks/DEPUTYTASK.md) **CHIUSO** su LG-5. Sequel di LN-1…LN-5 (UI shell).
 
 ### Sessione precedente (29/08/2026)
 
