@@ -15,6 +15,7 @@ const {
   buildNormTypeSpecificData,
   serializeNormTypeSpecificData,
 } = require('./documentRegistryNorm.service');
+const { tryCloseTenantRequestsAfterIngest } = require('./librarySourceRequest.service');
 
 const MAX_CODES_PER_REQUEST = 50;
 
@@ -260,6 +261,8 @@ async function importNormCodes(orgId, userId, codes, options = {}) {
       }
       created += 1;
       results.push(entry);
+
+      await tryCloseTenantRequestsAfterIngest(orgId, code, { documentId });
 
       logger.info('[NormCodesImport] Norma creata da codice', {
         organization_id: orgId,

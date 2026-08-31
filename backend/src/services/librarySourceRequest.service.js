@@ -205,6 +205,88 @@ async function listPlatformQueue({ status } = {}) {
 }
 
 /**
+ * Match codice gap ↔ codice ingest (allineato a libraryGapCodesMatch FE).
+ * Uguaglianza case-insensitive o prefisso (es. «ISO 14555:2025» vs «ISO 14555:2025 (arc…)»).
+ */
+function sourceCodesMatch(a, b) {
+  const x = String(a || '')
+    .trim()
+    .toLowerCase();
+  const y = String(b || '')
+    .trim()
+    .toLowerCase();
+  if (!x || !y) return false;
+  if (x === y) return true;
+  return x.startsWith(y) || y.startsWith(x);
+}
+
+/**
+ * LG-4 — chiusura via 1 (tenant): quando ingest copre il codice richiesto.
+ * Solo closure_path=tenant, status open|in_progress → closed.
+ * Non tocca richieste platform (know-how piattaforma = LG-5).
+ * @returns {Promise<{ closed: object[], count: number }>}
+ */
+async function closeTenantRequestsCoveredByCode(organizationId, sourceCode, _meta = {}) {
+  const orgId = Number(organizationId);
+  const code = String(sourceCode || '').trim();
+  if (!Number.isFinite(orgId) || orgId < 1 || !code) {
+    return { closed: [], count: 0 };
+  }
+
+  const openRes = await query(
+    `SELECT id, source_code, status, closure_path, requesting_organization_id
+     FROM library_source_requests
+     WHERE requesting_organization_id = @orgId
+       AND closure_path = N'tenant'
+       AND status IN (N'open', N'in_progress')`,
+    { orgId }
+  );
+  const candidates = (openRes.recordset || []).filter((row) =>
+    sourceCodesMatch(row.source_code, code)
+  );
+  if (!candidates.length) {
+    return { closed: [], count: 0 };
+  }
+
+  const closed = [];
+  for (const row of candidates) {
+    const upd = await query(
+      `UPDATE library_source_requests
+       SET status = N'closed', updated_at = SYSUTCDATETIME()
+       OUTPUT INSERTED.*
+       WHERE id = @id
+         AND requesting_organization_id = @orgId
+         AND closure_path = N'tenant'
+         AND status IN (N'open', N'in_progress')`,
+      { id: row.id, orgId }
+    );
+    const updated = (upd.recordset || [])[0];
+    if (updated) closed.push(updated);
+  }
+  if (closed.length) {
+    logger.info('[LibrarySourceRequest] LG-4 chiusura tenant', {
+      organizationId: orgId,
+      sourceCode: code,
+      closedIds: closed.map((r) => r.id),
+      documentId: _meta.documentId || null,
+    });
+  }
+  return { closed, count: closed.length };
+}
+
+/**
+ * Fire-and-forget: errori di chiusura non devono far fallire l'ingest.
+ */
+async function tryCloseTenantRequestsAfterIngest(organizationId, sourceCode, meta = {}) {
+  try {
+    return await closeTenantRequestsCoveredByCode(organizationId, sourceCode, meta);
+  } catch (err) {
+    logger.warn('[LibrarySourceRequest] LG-4 close after ingest failed:', err.message);
+    return { closed: [], count: 0, error: err.message };
+  }
+}
+
+/**
  * LG-3 — azione leggera: open → in_progress (presa in carico).
  * Non digitalizza (LG-5). Solo righe platform.
  */
@@ -245,6 +327,9 @@ module.exports = {
   listForOrganization,
   listPlatformQueue,
   acknowledgePlatformRequest,
+  closeTenantRequestsCoveredByCode,
+  tryCloseTenantRequestsAfterIngest,
+  sourceCodesMatch,
   listSuperadminEmails,
   notifySuperadmins,
   findOpenDuplicate,

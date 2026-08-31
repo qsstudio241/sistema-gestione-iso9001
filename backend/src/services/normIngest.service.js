@@ -26,6 +26,7 @@ const {
   normFamilyKey,
   editionYearFromCode,
 } = require('./standardCodeNormalizer.service');
+const { tryCloseTenantRequestsAfterIngest } = require('./librarySourceRequest.service');
 
 const REVIEW_CONFIDENCE_THRESHOLD = Number(process.env.INGEST_NORM_REVIEW_CONFIDENCE) || 55;
 
@@ -572,6 +573,11 @@ async function commitNormFromFields(fields, organizationId, options = {}) {
     supersededIds = await markOlderEditionsSuperseded(organizationId, dupCheck, documentId);
   }
 
+  // LG-4: chiusura gap tenant se il codice copre una richiesta open/in_progress
+  await tryCloseTenantRequestsAfterIngest(organizationId, normTsd.standard_code, {
+    documentId,
+  });
+
   return {
     document_id: documentId,
     attachment_id: attachmentId,
@@ -873,6 +879,11 @@ async function applyNormToExistingDocument(documentId, fields, organizationId, o
   if (dupCheck.newer) {
     supersededIds = await markOlderEditionsSuperseded(organizationId, dupCheck, docId);
   }
+
+  // LG-4: chiusura gap tenant se il codice copre una richiesta open/in_progress
+  await tryCloseTenantRequestsAfterIngest(organizationId, normTsd.standard_code, {
+    documentId: docId,
+  });
 
   return {
     document_id: docId,

@@ -275,6 +275,25 @@ describe("NormLibraryPage", () => {
     expect(screen.queryByText(/Coda gap piattaforma/i)).toBeNull();
     expect(mockGetLibraryPlatformQueue).not.toHaveBeenCalled();
   });
+
+  it("LG-4: richiesta tenant closed mostra label Chiusa (ingest tenant)", async () => {
+    mockGetLibrarySourceRequests.mockResolvedValue({
+      items: [
+        {
+          id: 88,
+          source_code: "ISO TENANT-CLOSE",
+          reason: "coprire con ingest",
+          closure_path: "tenant",
+          status: "closed",
+        },
+      ],
+    });
+    render(<NormLibraryPage />);
+    await waitFor(() => {
+      expect(screen.getByText("ISO TENANT-CLOSE")).toBeTruthy();
+    });
+    expect(screen.getByText(/Chiusa \(ingest tenant\)/i)).toBeTruthy();
+  });
 });
 
 describe("NormLibraryPage — LG-3 coda superadmin", () => {
