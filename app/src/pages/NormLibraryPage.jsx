@@ -70,7 +70,7 @@ const BACKLOG_STATUS_LABELS = {
   parcheggio: "Parcheggio",
   open: "Aperta (assistente)",
   in_progress: "In corso",
-  digitized: "Digitalizzata",
+  digitized: "Digitalizzata (piattaforma)",
   closed: "Chiusa (ingest tenant)",
 };
 
@@ -193,7 +193,7 @@ const PLATFORM_QUEUE_COLUMNS = [
   { id: "status", label: "Stato", width: "110px", sortable: true },
   { id: "reason", label: "Perché serve", width: "1.4fr", sortable: false },
   { id: "created_at", label: "Creata", width: "110px", sortable: true },
-  { id: "queue_actions", label: "", width: "200px", sortable: false },
+  { id: "queue_actions", label: "", width: "260px", sortable: false },
 ];
 
 const EMPTY_REQUEST_FORM = {
@@ -219,6 +219,9 @@ export function NormLibraryPage() {
   const [platformQueueLoading, setPlatformQueueLoading] = useState(false);
   const [platformQueueError, setPlatformQueueError] = useState(null);
   const [ackBusyId, setAckBusyId] = useState(null);
+  const [digitizeDraft, setDigitizeDraft] = useState(null);
+  /** { id, code, notes, notifyTenant } | null */
+  const [digitizeBusy, setDigitizeBusy] = useState(false);
   const [requestForm, setRequestForm] = useState(EMPTY_REQUEST_FORM);
   const [requestError, setRequestError] = useState(null);
   const [copyFeedback, setCopyFeedback] = useState(null);
@@ -484,7 +487,7 @@ export function NormLibraryPage() {
         await apiService.acknowledgeLibrarySourceRequest(row.id);
         await loadPlatformQueue();
         setCopyFeedback(
-          `Presa in carico «${row.source_code || row.id}» (in corso). Digitalizzazione: Cursor (LG-5).`
+          `Presa in carico «${row.source_code || row.id}» (in corso). Poi digitalizza in Cursor e segna digitalizzata.`
         );
       } catch (err) {
         setPlatformQueueError(
@@ -495,6 +498,45 @@ export function NormLibraryPage() {
       }
     },
     [loadPlatformQueue]
+  );
+
+  const openDigitizeDraft = useCallback((row) => {
+    if (!row?.id) return;
+    setDigitizeDraft({
+      id: row.id,
+      code: row.source_code || String(row.id),
+      notes: "",
+      notifyTenant: false,
+    });
+    setPlatformQueueError(null);
+  }, []);
+
+  const handleMarkDigitized = useCallback(
+    async (e) => {
+      e?.preventDefault?.();
+      if (!digitizeDraft?.id) return;
+      setDigitizeBusy(true);
+      setPlatformQueueError(null);
+      try {
+        const res = await apiService.markLibrarySourceDigitized(digitizeDraft.id, {
+          qualityNotes: digitizeDraft.notes || undefined,
+          notifyTenant: !!digitizeDraft.notifyTenant,
+        });
+        await loadPlatformQueue();
+        const emailed = res?.tenantEmailed ? " — ack inviato al tenant" : "";
+        setCopyFeedback(
+          `«${digitizeDraft.code}» segnata digitalizzata piattaforma${emailed}.`
+        );
+        setDigitizeDraft(null);
+      } catch (err) {
+        setPlatformQueueError(
+          err?.message || "Chiusura digitalizzata non riuscita"
+        );
+      } finally {
+        setDigitizeBusy(false);
+      }
+    },
+    [digitizeDraft, loadPlatformQueue]
   );
 
   const renderPlatformQueueCell = useCallback(
@@ -534,6 +576,8 @@ export function NormLibraryPage() {
           closurePath: "platform",
           prefill: false,
         });
+        const canDigitize =
+          row.status === "open" || row.status === "in_progress";
         return (
           <div className="nl-studio-actions">
             <Link to={href} className="nl-link" title="Evidenzia in Libreria">
@@ -543,10 +587,21 @@ export function NormLibraryPage() {
               <button
                 type="button"
                 className="nl-link-btn"
-                disabled={ackBusyId === row.id}
+                disabled={ackBusyId === row.id || digitizeBusy}
                 onClick={() => handleAcknowledge(row)}
               >
                 {ackBusyId === row.id ? "…" : "Segna in corso"}
+              </button>
+            ) : null}
+            {canDigitize ? (
+              <button
+                type="button"
+                className="nl-link-btn"
+                disabled={digitizeBusy}
+                onClick={() => openDigitizeDraft(row)}
+                title="Dopo Cursor: marca digitalizzata (niente pdf-to-json automatico)"
+              >
+                Segna digitalizzata
               </button>
             ) : null}
           </div>
@@ -554,7 +609,7 @@ export function NormLibraryPage() {
       }
       return row[colId] ?? "\u2014";
     },
-    [ackBusyId, handleAcknowledge]
+    [ackBusyId, digitizeBusy, handleAcknowledge, openDigitizeDraft]
   );
 
   const handleAddRequest = useCallback(
@@ -659,8 +714,8 @@ export function NormLibraryPage() {
             </h3>
             <p>
               Richieste via 2 (know-how piattaforma) aperte o in corso, da tutti gli
-              studi. Sola lettura e presa in carico leggera — digitalizzazione in
-              Cursor (niente pdf-to-json automatico; chiusura LG-5).
+              studi. Presa in carico leggera, poi digitalizzazione in Cursor e
+              «Segna digitalizzata» con note qualità (niente pdf-to-json automatico).
             </p>
           </div>
           {platformQueueError ? (
@@ -674,6 +729,60 @@ export function NormLibraryPage() {
                 Riprova
               </button>
             </div>
+          ) : null}
+          {digitizeDraft ? (
+            <form
+              className="nl-request-form nl-digitize-form"
+              onSubmit={handleMarkDigitized}
+              aria-label="Segna digitalizzata piattaforma"
+            >
+              <p className="nl-digitize-form__intro">
+                Chiudi «{digitizeDraft.code}» come digitalizzata piattaforma (dopo
+                Cursor). Nessun avvio automatico PDF→JSON.
+              </p>
+              <label className="nl-request-form__notes">
+                Note qualità chiusura
+                <input
+                  type="text"
+                  value={digitizeDraft.notes}
+                  onChange={(e) =>
+                    setDigitizeDraft((d) =>
+                      d ? { ...d, notes: e.target.value } : d
+                    )
+                  }
+                  placeholder="Es. MD ok; OCR tab. 2 verificato; chunk RAG allineati"
+                />
+              </label>
+              <label className="nl-digitize-form__ack">
+                <input
+                  type="checkbox"
+                  checked={!!digitizeDraft.notifyTenant}
+                  onChange={(e) =>
+                    setDigitizeDraft((d) =>
+                      d ? { ...d, notifyTenant: e.target.checked } : d
+                    )
+                  }
+                />{" "}
+                Invia ack email al tenant richiedente
+              </label>
+              <div className="nl-digitize-form__actions">
+                <button
+                  type="submit"
+                  className="btn-primary"
+                  disabled={digitizeBusy}
+                >
+                  {digitizeBusy ? "…" : "Conferma digitalizzata"}
+                </button>
+                <button
+                  type="button"
+                  className="btn-secondary"
+                  disabled={digitizeBusy}
+                  onClick={() => setDigitizeDraft(null)}
+                >
+                  Annulla
+                </button>
+              </div>
+            </form>
           ) : null}
           <SgqDataGrid
             rows={platformQueue}

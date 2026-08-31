@@ -5,6 +5,7 @@ const {
   listForOrganization,
   listPlatformQueue,
   acknowledgePlatformRequest,
+  markPlatformDigitized,
   upsertGapRequest,
 } = require('../services/librarySourceRequest.service');
 
@@ -78,6 +79,50 @@ async function acknowledgeSourceRequest(req, res) {
 }
 
 /**
+ * PATCH /library/source-requests/:id/mark-digitized
+ * LG-5 — segna digitalizzata piattaforma + note qualità; opz. ack tenant.
+ * Niente avvio pdf-to-json.
+ */
+async function markDigitizedSourceRequest(req, res) {
+  try {
+    const body = req.body || {};
+    const result = await markPlatformDigitized(req.params.id, {
+      qualityNotes: body.qualityNotes || body.quality_notes || '',
+      notifyTenant: !!(body.notifyTenant ?? body.notify_tenant),
+    });
+    if (result.error === 'invalid_id') {
+      return res.status(400).json({ error: 'Id non valido.', code: 'LSR_INVALID_ID' });
+    }
+    if (result.error === 'not_found') {
+      return res.status(404).json({ error: 'Richiesta non trovata.', code: 'LSR_NOT_FOUND' });
+    }
+    if (result.error === 'not_platform') {
+      return res.status(400).json({
+        error: 'Solo richieste via piattaforma.',
+        code: 'LSR_NOT_PLATFORM',
+      });
+    }
+    if (result.error === 'bad_status') {
+      return res.status(409).json({
+        error: 'Stato non ammette digitalizzazione (solo open / in_progress).',
+        code: 'LSR_BAD_STATUS',
+      });
+    }
+    res.json({
+      item: result.row,
+      changed: !!result.changed,
+      tenantEmailed: !!result.tenantEmailed,
+    });
+  } catch (err) {
+    logger.error('[LibrarySourceRequest] mark-digitized failed:', err.message);
+    res.status(500).json({
+      error: 'Errore chiusura digitalizzata piattaforma.',
+      code: 'LSR_DIGITIZED_ERROR',
+    });
+  }
+}
+
+/**
  * POST /library/source-requests
  * Creazione manuale da Libreria (stesso modello delle gap AI).
  */
@@ -119,5 +164,6 @@ module.exports = {
   listSourceRequests,
   listPlatformQueueHandler,
   acknowledgeSourceRequest,
+  markDigitizedSourceRequest,
   createSourceRequest,
 };

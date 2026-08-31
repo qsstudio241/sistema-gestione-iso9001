@@ -2522,6 +2522,11 @@ class ApiService {
         return this.patch(`/library/source-requests/${id}/acknowledge`, {});
     }
 
+    /** LG-5 — segna digitalizzata piattaforma + note; opz. ack tenant (niente pdf-to-json) */
+    async markLibrarySourceDigitized(id, body = {}) {
+        return this.patch(`/library/source-requests/${id}/mark-digitized`, body);
+    }
+
     async getGapAnalysis({ companyId, standardCode = 'ISO_9001_2015' } = {}) {
         const qs = new URLSearchParams();
         if (companyId) qs.set('companyId', String(companyId));

@@ -8,13 +8,17 @@
 
 > **Risposta standard a «stato di avanzamento del progetto e priorità da affrontare»**: sintetizzare da questa sezione (moduli maturi + sessione più recente + tabella priorità sotto), **non** dal banner storico più sotto (superato, tenuto solo per traccia) né dall'archivio marzo 2026 [`docs/archive/PROJECT_CONTEXT_STATO_FUNZIONALITA_2026-03.md`](archive/PROJECT_CONTEXT_STATO_FUNZIONALITA_2026-03.md). **Aggiornare questa sezione a fine sessione** se emergono nuove priorità o se una priorità elencata viene chiusa (stesso principio delle "Lezioni apprese" in [GUIDA_CONSOLIDATA.md](GUIDA_CONSOLIDATA.md) — sintesi qui, dettaglio linkato).
 
-**Ultimo aggiornamento di questa sezione**: 29/08/2026 (Libreria LN-2…LN-5 piano COMPLETATO su branch; SAL AI evidenze chiusi; LN-1 #604; STUD-3-B #599).
+**Ultimo aggiornamento di questa sezione**: 31/08/2026 (Libreria gap LG-1…LG-5 piano COMPLETATO; LG-6 push fuori).
 
 ### Moduli maturi (in produzione, uso quotidiano dai clienti Camellini/Mason)
 
-Audit multi-standard (9001/14001/45001) · Non Conformità (workflow ISO 10.2 completo) · Qualifiche Personale saldatori/NDT/coordinatori (ISO 9606-1/14732/14731/9712) · Saldatura (WPQR con range duali t1/t2 FW, tipologia SW/prigioniero + P+T + doppio materiale, range ISO 14555 §10.2.8 + Tabella 2 boiler pins, generazione WPS, 15614-1/15614-2, Welding Book, Commesse ISO 3834, Dashboard 3834) · SAL (gap analysis requisiti con AI) · Registro Documenti + Scadenzari · Notifiche/Alert (documenti/NC/qualifiche) · Riesame di Direzione · RBAC multi-tenant (`company_access`) · Registro obblighi legali (ambiente + sicurezza) · Assistente AI / Gap Analysis euristica · CND verbali (VT/MT/PT, gate 9712, Word, Registro, offline) · Libreria fonti (Gestione, studio admin).
+Audit multi-standard (9001/14001/45001) · Non Conformità (workflow ISO 10.2 completo) · Qualifiche Personale saldatori/NDT/coordinatori (ISO 9606-1/14732/14731/9712) · Saldatura (WPQR con range duali t1/t2 FW, tipologia SW/prigioniero + P+T + doppio materiale, range ISO 14555 §10.2.8 + Tabella 2 boiler pins, generazione WPS, 15614-1/15614-2, Welding Book, Commesse ISO 3834, Dashboard 3834) · SAL (gap analysis requisiti con AI) · Registro Documenti + Scadenzari · Notifiche/Alert (documenti/NC/qualifiche) · Riesame di Direzione · RBAC multi-tenant (`company_access`) · Registro obblighi legali (ambiente + sicurezza) · Assistente AI / Gap Analysis euristica · CND verbali (VT/MT/PT, gate 9712, Word, Registro, offline) · Libreria fonti (Gestione, studio admin) · Gap fonti Libreria (email SA, coda via 2, chiusura tenant/piattaforma).
 
-### Sessione più recente (29/08/2026)
+### Sessione più recente (31/08/2026)
+
+**Libreria gap LG-1…LG-5 (31/08)** — piano [`PLAN_LIBRERIA_GAP_SLICES.md`](agent-tasks/PLAN_LIBRERIA_GAP_SLICES.md) **COMPLETATO** (LG-6 push mobile resta nebbia): gap in risposta Assistente + persistenza + email SA; UX deep-link; coda superadmin; chiusura via ingest tenant; chiusura «segna digitalizzata» + note qualità + ack tenant opz. Slot [`DEPUTYTASK.md`](agent-tasks/DEPUTYTASK.md) **CHIUSO** su LG-5. Sequel di LN-1…LN-5 (UI shell).
+
+### Sessione precedente (29/08/2026)
 
 **Libreria epic LN-2…LN-5 (29/08, branch stacked — merge in ordine LN-2→LN-5)** — piano [`PLAN_LIBRERIA_NORME_SLICES.md`](agent-tasks/PLAN_LIBRERIA_NORME_SLICES.md) **COMPLETATO**: LN-2 deep-link+NormUpload; LN-3 qualità testo/chunk/last_check (SELECT additivo); LN-4 label Manuale/libro·Altro/quaderno senza enum; LN-5 form richieste studio (localStorage + Copia MD). Slot [`DEPUTYTASK.md`](agent-tasks/DEPUTYTASK.md) **CHIUSO**. Residuo HITL opzionale: enum dedicati ADR-011 + persistenza server richieste.
 

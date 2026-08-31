@@ -51,10 +51,10 @@
 | **LG-2** | UX conferma tenant + deep-link Libreria | FE: CTA «Vai in Libreria» / prefill; distinguere richiesta *tenant ingest* vs *piattaforma*; alert in-app già nella risposta | LG-1 | AFK | **CHIUSO** — TEST OK (30/08/2026, `cursor/lg2-libreria-gap-ux-7143`) |
 | **LG-3** | Coda superadmin (sola lettura/azioni leggere) | FE/BE: lista gap piattaforma aperti (filtro via 2); link a Libreria Gestione; niente pdf-to-json | LG-1 | AFK | **CHIUSO** — TEST OK (31/08/2026, `cursor/lg3-superadmin-gap-queue-9166`) |
 | **LG-4** | Chiusura via 1 (tenant) | Quando ingest tenant copre il codice richiesto → stato richiesta aggiornato; niente tocco know-how piattaforma | LG-1 | AFK | **CHIUSO** — TEST OK (31/08/2026, `cursor/lg4-tenant-gap-close-9166`) |
-| **LG-5** | Chiusura via 2 (superadmin post-Cursor) | Azione «segna digitalizzata piattaforma» + note qualità; opz. email/ack al tenant richiedente | LG-3 | AFK | da fare |
+| **LG-5** | Chiusura via 2 (superadmin post-Cursor) | Azione «segna digitalizzata piattaforma» + note qualità; opz. email/ack al tenant richiedente | LG-3 | AFK | **CHIUSO** — TEST OK (31/08/2026, `cursor/lg5-platform-gap-close-9166`) |
 | **LG-6** | Push mobile (opz.) | Solo se prodotto lo chiede dopo email stabile | LG-1 | HITL | nebbia / fuori priorità |
 
-**Stato piano:** IN CORSO — LG-1…LG-4 CHIUSI; prossima **LG-5**.
+**Stato piano:** COMPLETATO — LG-1…LG-5 CHIUSI; LG-6 resta nebbia/fuori.
 
 ## Decisioni già prese (aggiunte LG-1)
 
