@@ -28,6 +28,7 @@ import {
 import {
   libraryGapCodesMatch,
   parseLibraryGapSearch,
+  buildLibraryGapPath,
 } from "../utils/libraryGapDeepLink";
 import "./NormLibraryPage.css";
 
@@ -185,6 +186,16 @@ const BACKLOG_COLUMNS = [
   { id: "studio_actions", label: "", width: "150px", sortable: false },
 ];
 
+/** LG-3 — coda superadmin gap piattaforma (cross-tenant) */
+const PLATFORM_QUEUE_COLUMNS = [
+  { id: "source_code", label: "Codice", width: "1.2fr", sortable: true },
+  { id: "org", label: "Studio richiedente", width: "1fr", sortable: true },
+  { id: "status", label: "Stato", width: "110px", sortable: true },
+  { id: "reason", label: "Perché serve", width: "1.4fr", sortable: false },
+  { id: "created_at", label: "Creata", width: "110px", sortable: true },
+  { id: "queue_actions", label: "", width: "200px", sortable: false },
+];
+
 const EMPTY_REQUEST_FORM = {
   code: "",
   impact: "",
@@ -196,6 +207,7 @@ const EMPTY_REQUEST_FORM = {
 export function NormLibraryPage() {
   const { user } = useAuth();
   const isAdmin = user?.role === "admin" || user?.role === "superadmin";
+  const isSuperadmin = user?.role === "superadmin";
   const orgId = user?.organization_id;
 
   const [docs, setDocs] = useState([]);
@@ -203,6 +215,10 @@ export function NormLibraryPage() {
   const [error, setError] = useState(null);
   const [studioRequests, setStudioRequests] = useState([]);
   const [serverRequests, setServerRequests] = useState([]);
+  const [platformQueue, setPlatformQueue] = useState([]);
+  const [platformQueueLoading, setPlatformQueueLoading] = useState(false);
+  const [platformQueueError, setPlatformQueueError] = useState(null);
+  const [ackBusyId, setAckBusyId] = useState(null);
   const [requestForm, setRequestForm] = useState(EMPTY_REQUEST_FORM);
   const [requestError, setRequestError] = useState(null);
   const [copyFeedback, setCopyFeedback] = useState(null);
@@ -240,11 +256,33 @@ export function NormLibraryPage() {
     }
   }, []);
 
+  const loadPlatformQueue = useCallback(async () => {
+    if (!isSuperadmin) return;
+    setPlatformQueueLoading(true);
+    setPlatformQueueError(null);
+    try {
+      const res = await apiService.getLibraryPlatformQueue();
+      const items = res?.items || res?.data?.items || [];
+      setPlatformQueue(Array.isArray(items) ? items : []);
+    } catch (err) {
+      setPlatformQueue([]);
+      setPlatformQueueError(
+        err?.message || "Errore lettura coda gap piattaforma"
+      );
+    } finally {
+      setPlatformQueueLoading(false);
+    }
+  }, [isSuperadmin]);
+
   useEffect(() => {
     if (!isAdmin) return;
     setStudioRequests(loadLibraryRequests(orgId));
     loadServerRequests();
   }, [isAdmin, orgId, loadServerRequests]);
+
+  useEffect(() => {
+    if (isSuperadmin) loadPlatformQueue();
+  }, [isSuperadmin, loadPlatformQueue]);
 
   // LG-2: deep-link da Assistente (?highlight=&path=&prefill=)
   useEffect(() => {
@@ -437,6 +475,88 @@ export function NormLibraryPage() {
     return row[colId] ?? "\u2014";
   }, [orgId]);
 
+  const handleAcknowledge = useCallback(
+    async (row) => {
+      if (!row?.id) return;
+      setAckBusyId(row.id);
+      setPlatformQueueError(null);
+      try {
+        await apiService.acknowledgeLibrarySourceRequest(row.id);
+        await loadPlatformQueue();
+        setCopyFeedback(
+          `Presa in carico «${row.source_code || row.id}» (in corso). Digitalizzazione: Cursor (LG-5).`
+        );
+      } catch (err) {
+        setPlatformQueueError(
+          err?.message || "Presa in carico non riuscita"
+        );
+      } finally {
+        setAckBusyId(null);
+      }
+    },
+    [loadPlatformQueue]
+  );
+
+  const renderPlatformQueueCell = useCallback(
+    (row, col) => {
+      const colId = col?.id;
+      if (colId === "source_code") {
+        return row.source_code || row.source_title || "\u2014";
+      }
+      if (colId === "org") {
+        return (
+          row.requesting_organization_name ||
+          (row.requesting_organization_id
+            ? `Org ${row.requesting_organization_id}`
+            : "\u2014")
+        );
+      }
+      if (colId === "status") {
+        const st = row.status || "";
+        return (
+          <span className={`nl-backlog-status nl-backlog-status--${st}`}>
+            {BACKLOG_STATUS_LABELS[st] || st || "\u2014"}
+          </span>
+        );
+      }
+      if (colId === "reason") {
+        const notes = [row.reason, row.quality_notes]
+          .filter(Boolean)
+          .join(" — ");
+        return <span className="nl-notes">{notes || "\u2014"}</span>;
+      }
+      if (colId === "created_at") {
+        return row.created_at ? formatDate(row.created_at) : "\u2014";
+      }
+      if (colId === "queue_actions") {
+        const href = buildLibraryGapPath({
+          code: row.source_code,
+          closurePath: "platform",
+          prefill: false,
+        });
+        return (
+          <div className="nl-studio-actions">
+            <Link to={href} className="nl-link" title="Evidenzia in Libreria">
+              Apri in Libreria
+            </Link>
+            {row.status === "open" ? (
+              <button
+                type="button"
+                className="nl-link-btn"
+                disabled={ackBusyId === row.id}
+                onClick={() => handleAcknowledge(row)}
+              >
+                {ackBusyId === row.id ? "…" : "Segna in corso"}
+              </button>
+            ) : null}
+          </div>
+        );
+      }
+      return row[colId] ?? "\u2014";
+    },
+    [ackBusyId, handleAcknowledge]
+  );
+
   const handleAddRequest = useCallback(
     async (e) => {
       e.preventDefault();
@@ -523,6 +643,46 @@ export function NormLibraryPage() {
             </>
           )}
         </div>
+      ) : null}
+
+      {isSuperadmin ? (
+        <section className="nl-section" aria-labelledby="nl-platform-queue-heading">
+          <div className="nl-section-head">
+            <h3 id="nl-platform-queue-heading">
+              Coda gap piattaforma{" "}
+              <span className="nl-sa-badge">superadmin</span>
+            </h3>
+            <p>
+              Richieste via 2 (know-how piattaforma) aperte o in corso, da tutti gli
+              studi. Sola lettura e presa in carico leggera — digitalizzazione in
+              Cursor (niente pdf-to-json automatico; chiusura LG-5).
+            </p>
+          </div>
+          {platformQueueError ? (
+            <div className="nl-error" role="alert">
+              <p>{platformQueueError}</p>
+              <button
+                type="button"
+                className="btn-secondary"
+                onClick={loadPlatformQueue}
+              >
+                Riprova
+              </button>
+            </div>
+          ) : null}
+          <SgqDataGrid
+            rows={platformQueue}
+            columns={PLATFORM_QUEUE_COLUMNS}
+            loading={platformQueueLoading}
+            emptyMessage="Nessun gap piattaforma aperto."
+            theme="plain"
+            renderCell={renderPlatformQueueCell}
+            getRowKey={(row) => row.id}
+            className="nl-grid"
+            initialSortCol="created_at"
+            initialSortDir="desc"
+          />
+        </section>
       ) : null}
 
       <section className="nl-section" aria-labelledby="nl-catalog-heading">

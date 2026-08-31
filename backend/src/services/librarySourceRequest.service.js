@@ -179,10 +179,72 @@ async function listForOrganization(organizationId, { status } = {}) {
   return res.recordset || [];
 }
 
+/**
+ * LG-3 — coda superadmin: gap via piattaforma aperti (cross-tenant).
+ * Default: status open + in_progress. Opz. filtro status singolo.
+ */
+async function listPlatformQueue({ status } = {}) {
+  let sql = `
+    SELECT r.id, r.requesting_organization_id, r.requesting_user_id, r.company_id,
+           r.source_code, r.source_title, r.reason, r.quality_notes, r.closure_path, r.status,
+           r.chat_message_preview, r.email_notified_at, r.created_at, r.updated_at,
+           o.organization_name AS requesting_organization_name
+    FROM library_source_requests r
+    LEFT JOIN organizations o ON o.organization_id = r.requesting_organization_id
+    WHERE r.closure_path = N'platform'`;
+  const params = {};
+  if (status) {
+    sql += ' AND r.status = @status';
+    params.status = status;
+  } else {
+    sql += ` AND r.status IN (N'open', N'in_progress')`;
+  }
+  sql += ' ORDER BY r.created_at DESC';
+  const res = await query(sql, params);
+  return res.recordset || [];
+}
+
+/**
+ * LG-3 — azione leggera: open → in_progress (presa in carico).
+ * Non digitalizza (LG-5). Solo righe platform.
+ */
+async function acknowledgePlatformRequest(id) {
+  const idNum = Number(id);
+  if (!Number.isFinite(idNum) || idNum < 1) {
+    return { row: null, error: 'invalid_id' };
+  }
+  const existing = await query(
+    `SELECT TOP 1 * FROM library_source_requests WHERE id = @id`,
+    { id: idNum }
+  );
+  const row = (existing.recordset || [])[0];
+  if (!row) return { row: null, error: 'not_found' };
+  if (row.closure_path !== 'platform') {
+    return { row: null, error: 'not_platform' };
+  }
+  if (row.status === 'in_progress') {
+    return { row, changed: false };
+  }
+  if (row.status !== 'open') {
+    return { row: null, error: 'bad_status' };
+  }
+  const upd = await query(
+    `UPDATE library_source_requests
+     SET status = N'in_progress', updated_at = SYSUTCDATETIME()
+     OUTPUT INSERTED.*
+     WHERE id = @id AND status = N'open' AND closure_path = N'platform'`,
+    { id: idNum }
+  );
+  const updated = (upd.recordset || [])[0] || row;
+  return { row: updated, changed: true };
+}
+
 module.exports = {
   upsertGapRequest,
   processGapsFromChat,
   listForOrganization,
+  listPlatformQueue,
+  acknowledgePlatformRequest,
   listSuperadminEmails,
   notifySuperadmins,
   findOpenDuplicate,
