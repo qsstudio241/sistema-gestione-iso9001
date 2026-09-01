@@ -27,6 +27,14 @@ jest.mock('./aiProviderAdapter', () => ({
     getActiveProvider: jest.fn(() => 'gemini'),
 }));
 
+jest.mock('./caseCapabilityGapReport.service', () => ({
+    maybeRefreshCapabilityGapReport: jest.fn(async () => ({
+        refreshed: false,
+        skipped: true,
+        reason: 'no_company',
+    })),
+}));
+
 jest.mock('../utils/logger', () => ({
     error: jest.fn(),
     info: jest.fn(),

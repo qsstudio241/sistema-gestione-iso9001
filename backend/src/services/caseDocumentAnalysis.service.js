@@ -18,6 +18,7 @@ const logger = require('../utils/logger');
 const drawingExtractionService = require('./drawingExtraction.service');
 const caseTextAnalysisService = require('./caseTextAnalysis.service');
 const { getActiveProvider } = require('./aiProviderAdapter');
+const caseCapabilityGapReportService = require('./caseCapabilityGapReport.service');
 
 /** Ruoli ammessi in catalogazione allegati caso (VC-2). */
 const CATALOG_DOC_ROLES = Object.freeze([
@@ -206,12 +207,18 @@ async function analyzeAttachment({
                 attachmentId,
                 count: (out.requirements || []).length,
             });
+            // VC-3: refresh snapshot report studio (best-effort; non blocca l'analisi)
+            const reportRefresh = await caseCapabilityGapReportService.maybeRefreshCapabilityGapReport({
+                caseId,
+                organizationId,
+            });
             return {
                 attachment_id: attachmentId,
                 extraction_id: extractionId,
                 source,
                 status: 'done',
                 requirements_count: (out.requirements || []).length,
+                report_refresh: reportRefresh,
             };
         } catch (err) {
             await markExtractionError(extractionId, err);
