@@ -1,7 +1,8 @@
 # DEPUTYTASK — VC-2: Catalogazione docs cliente sul caso (ruoli + lista)
 
-**Stato:** APERTO  
+**Stato:** CHIUSO — TEST OK  
 **Aperto:** 01/09/2026  
+**Chiuso:** 01/09/2026  
 **Piano:** [`PLAN_VALUTAZIONE_COMMESSE_SLICES.md`](PLAN_VALUTAZIONE_COMMESSE_SLICES.md) § VC-2  
 **Rischio:** Medio — BE additivo (PATCH ruolo allegato) + FE catalogo; niente migrazione; niente auth/sync breaking  
 **Branch:** `cursor/vc2-case-doc-catalog-1c5d`  
@@ -9,6 +10,23 @@
 
 > **Allineamento Git (autonomo)**: `git fetch origin main` + `git pull origin main` prima di eseguire. **Non** chiedere al committente.  
 > Comando: `Leggi docs/agent-tasks/DEPUTYTASK.md ed eseguilo. Chiudi con TEST OK o FIX NON APPLICABILI.`
+
+---
+
+## Esito deputy
+
+**TEST OK** — catalogazione allegati per ruolo + gate Analizza sui soli catalogati analizzabili.
+
+| Voce | Dettaglio |
+|------|-----------|
+| API | `PATCH /contract-reviews/:id/attachments/:attachmentId` (`doc_role` whitelist) |
+| Analyze | skip `non catalogato (ruolo mancante)`; FE passa solo `attachment_ids` analizzabili |
+| UI | «Catalogo allegati (per ruolo)» in slide Documenti; select ruolo inline; DNA `.cr-*` |
+| Helper FE | `app/src/utils/caseDocCatalog.js` (+ Vitest) |
+| Test L1 | BE: service + controller (55); FE: caseDocCatalog (5) + `npm run build` OK |
+| Migrazione | nessuna (VC-2); post-merge VC-1: mig. **161** OK su VPS prod |
+
+**Prossima slice:** VC-3 (pipeline catalogo → analisi → refresh report).
 
 ---
 
@@ -26,23 +44,24 @@ Su un caso con allegati (upload multi o da `import-from-job`):
 
 ## DoD
 
-- [ ] `PATCH /contract-reviews/:id/attachments/:attachmentId` aggiorna `commercial_doc_role` (scope org/caso)
-- [ ] UI catalogo in slide Documenti (`ContractReviewPage`) — DNA `.cr-*`, niente look nuovo
-- [ ] Gate Analizza: solo catalogati analizzabili; upload multi + Import→caso intatti
-- [ ] Test L1 BE (controller/service) + `npm run build` FE
-- [ ] `deploy-manifest.json` aggiornato se nuovo `.js` in `backend/src/`
-- [ ] Nessuna migrazione; VC-3+ non toccati
+- [x] `PATCH /contract-reviews/:id/attachments/:attachmentId` aggiorna `commercial_doc_role` (scope org/caso)
+- [x] UI catalogo in slide Documenti (`ContractReviewPage`) — DNA `.cr-*`, niente look nuovo
+- [x] Gate Analizza: solo catalogati analizzabili; upload multi + Import→caso intatti
+- [x] Test L1 BE (controller/service) + `npm run build` FE
+- [x] Nessun nuovo `.js` manifest (file già in deploy-manifest)
+- [x] Nessuna migrazione; VC-3+ non toccati
 
-## File previsti
+## File previsti / toccati
 
 | Layer | Path |
 |-------|------|
 | BE | `backend/src/controllers/contractReview.controller.js` (+ test) |
 | BE | `backend/src/routes/contractReview.routes.js` |
-| BE | eventuale helper riuso in `caseDocumentAnalysis.service.js` (ruoli catalogati / analizzabili) |
-| FE | `app/src/pages/ContractReviewPage.jsx` (+ CSS minimo se serve) |
+| BE | `backend/src/services/caseDocumentAnalysis.service.js` (+ test) |
+| FE | `app/src/pages/ContractReviewPage.jsx` + CSS |
 | FE | `app/src/services/apiService.js` |
-| Doc | questo brief; spunta VC-2 su `PLAN_VALUTAZIONE_COMMESSE_SLICES.md` a chiusura |
+| FE | `app/src/utils/caseDocCatalog.js` (+ test) |
+| Doc | questo brief; spunta VC-2 su `PLAN_VALUTAZIONE_COMMESSE_SLICES.md` |
 
 ## Cosa NON toccare
 
@@ -51,7 +70,3 @@ Su un caso con allegati (upload multi o da `import-from-job`):
 - `caseCapabilityGapReport.service.js` (VC-1 chiuso) salvo lettura catalogo già presente
 - SAL / `gapAnalysis.service.js`, nuovo storage file, seconda pipeline OCR
 - Altri `DEPUTYTASK*` / moduli non in tabella
-
-## Gate parallelo
-
-Nessun altro `DEPUTYTASK*` APERTO su `origin/main`. Nessuna PR aperta in conflitto su questi file al momento dell’apertura.
