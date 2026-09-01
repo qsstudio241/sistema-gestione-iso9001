@@ -6,7 +6,8 @@
 **Piano:** [`PLAN_VALUTAZIONE_COMMESSE_SLICES.md`](PLAN_VALUTAZIONE_COMMESSE_SLICES.md) § VC-1  
 **Rischio:** Medio — BE additivo (snapshot report) + FE pannello minimo; migrazione **161** nullable/additiva  
 **Branch:** `cursor/vc1-capability-gap-report-1c5d`  
-**PR:** (da aggiornare al push — link sotto Esito)
+**PR:** draft non creabile da Cloud Agent (`gh` GraphQL Resource not accessible) — compare: https://github.com/qsstudio241/sistema-gestione-iso9001/compare/main...cursor/vc1-capability-gap-report-1c5d?expand=1  
+**Push:** branch remoto aggiornato (`origin/cursor/vc1-capability-gap-report-1c5d`)
 
 > **Allineamento Git (autonomo)**: `git fetch origin main` + `git pull origin main` prima di eseguire. **Non** chiedere al committente.  
 > Comando: `Leggi docs/agent-tasks/DEPUTYTASK.md ed eseguilo. Chiudi con TEST OK o FIX NON APPLICABILI.`
