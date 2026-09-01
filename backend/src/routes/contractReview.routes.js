@@ -41,6 +41,9 @@ router.post('/contract-reviews/:id/attachments/upload', ...guard, multerSingle, 
 
 router.post('/contract-reviews/:id/ai/analyze-requirements', ...guard, logAiInteraction('review'), ctrl.analyzeRequirements);
 
+router.get('/contract-reviews/:id/capability-gap-report', ...guard, ctrl.getCapabilityGapReport);
+router.post('/contract-reviews/:id/capability-gap-report', ...guard, ctrl.regenerateCapabilityGapReport);
+
 router.get('/contract-reviews/:id', ...guard, ctrl.getCase);
 router.put('/contract-reviews/:id', ...guard, ctrl.updateCase);
 router.post('/contract-reviews/:id/transition', ...guard, ctrl.transitionStatus);

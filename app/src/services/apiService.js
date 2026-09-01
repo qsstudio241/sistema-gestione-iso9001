@@ -2437,6 +2437,16 @@ class ApiService {
         return this.get(`/cases/${caseId}/extracted-coverage?project_id=${encodeURIComponent(projectId)}`);
     }
 
+    /** VC-1 — ultimo snapshot report gap capacità (null se mai generato). */
+    async getCapabilityGapReport(caseId) {
+        return this.get(`/contract-reviews/${caseId}/capability-gap-report`);
+    }
+
+    /** VC-1 — ricalcola e persiste lo snapshot (project_id opzionale). */
+    async regenerateCapabilityGapReport(caseId, body = {}) {
+        return this.post(`/contract-reviews/${caseId}/capability-gap-report`, body, { timeout: 60000 });
+    }
+
     async reviewExtractedRequirement(reqId, patch) {
         return this.patch(`/extracted-requirements/${reqId}`, patch);
     }

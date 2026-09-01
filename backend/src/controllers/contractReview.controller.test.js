@@ -61,8 +61,16 @@ jest.mock('../services/aiOrganizationContext.service', () => ({
   enrichSystemPromptWithOrganization: jest.fn(async (p) => p),
 }));
 
+jest.mock('../services/caseCapabilityGapReport.service', () => ({
+  COMPANY_ID_REQUIRED_MSG:
+    "Associa un'azienda SGQ (capacità) al caso prima di generare il report.",
+  getPersistedCapabilityGapReport: jest.fn(),
+  regenerateAndPersistCapabilityGapReport: jest.fn(),
+}));
+
 const { query, getPool, sql } = require('../config/database');
 const { chat, getActiveProvider } = require('../services/aiProviderAdapter');
+const caseCapabilityGapReportService = require('../services/caseCapabilityGapReport.service');
 const ctrl = require('./contractReview.controller');
 
 const ORG_ID = 42;
@@ -877,5 +885,65 @@ describe('getCase — text_analysis', () => {
 
     const body = res.json.mock.calls[0][0];
     expect(body.text_analysis).toBeNull();
+  });
+});
+
+// ─── capability-gap-report (VC-1) ────────────────────────────────────────────
+describe('getCapabilityGapReport / regenerateCapabilityGapReport', () => {
+  it('GET restituisce report null se mai generato', async () => {
+    caseCapabilityGapReportService.getPersistedCapabilityGapReport.mockResolvedValueOnce(null);
+    const req = mockReq({ params: { id: '12' } });
+    const res = mockRes();
+    await ctrl.getCapabilityGapReport(req, res);
+    expect(caseCapabilityGapReportService.getPersistedCapabilityGapReport).toHaveBeenCalledWith({
+      caseId: 12,
+      organizationId: ORG_ID,
+    });
+    expect(res.json).toHaveBeenCalledWith({ report: null });
+  });
+
+  it('GET 404 se caso assente', async () => {
+    const err = new Error('Caso non trovato');
+    err.code = 'NOT_FOUND';
+    caseCapabilityGapReportService.getPersistedCapabilityGapReport.mockRejectedValueOnce(err);
+    const req = mockReq({ params: { id: '99' } });
+    const res = mockRes();
+    await ctrl.getCapabilityGapReport(req, res);
+    expect(res.status).toHaveBeenCalledWith(404);
+  });
+
+  it('POST ricalcola e restituisce summary + gaps', async () => {
+    const report = {
+      version: 1,
+      generated_at: '2026-09-01T12:00:00.000Z',
+      summary: { status: 'gap', gaps_count: 1 },
+      gaps: [{ code: 'WPS_UNCOVERED', severity: 'gap', message: 'gap' }],
+    };
+    caseCapabilityGapReportService.regenerateAndPersistCapabilityGapReport.mockResolvedValueOnce(report);
+    const req = mockReq({ params: { id: '12' }, body: { project_id: 5 } });
+    const res = mockRes();
+    await ctrl.regenerateCapabilityGapReport(req, res);
+    expect(caseCapabilityGapReportService.regenerateAndPersistCapabilityGapReport).toHaveBeenCalledWith({
+      caseId: 12,
+      organizationId: ORG_ID,
+      projectId: 5,
+    });
+    expect(res.json).toHaveBeenCalledWith({ report });
+    expect(report.summary.status).toBe('gap');
+    expect(report.gaps).toHaveLength(1);
+  });
+
+  it('POST senza company_id → 400 COMPANY_ID_REQUIRED', async () => {
+    const err = new Error(caseCapabilityGapReportService.COMPANY_ID_REQUIRED_MSG);
+    err.code = 'COMPANY_ID_REQUIRED';
+    err.httpStatus = 400;
+    caseCapabilityGapReportService.regenerateAndPersistCapabilityGapReport.mockRejectedValueOnce(err);
+    const req = mockReq({ params: { id: '12' }, body: {} });
+    const res = mockRes();
+    await ctrl.regenerateCapabilityGapReport(req, res);
+    expect(res.status).toHaveBeenCalledWith(400);
+    expect(res.json).toHaveBeenCalledWith(
+      expect.objectContaining({ code: 'COMPANY_ID_REQUIRED' }),
+    );
   });
 });

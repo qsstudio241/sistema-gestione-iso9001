@@ -33,6 +33,137 @@ const DOC_ROLE_OPTIONS = [
 ];
 
 /**
+ * StudioReportPanel (VC-1) — snapshot report gap capacità persistito per lo studio.
+ * DNA: stesso guscio .cr-panel del dettaglio caso; non sostituisce CoveragePanel live.
+ */
+function StudioReportPanel({ caseId, companyId }) {
+  const [report, setReport] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [generating, setGenerating] = useState(false);
+  const [error, setError] = useState(null);
+
+  const loadReport = useCallback(async () => {
+    if (!caseId) return;
+    setLoading(true);
+    setError(null);
+    try {
+      const data = await apiService.getCapabilityGapReport(caseId);
+      setReport(data?.report ?? null);
+    } catch (e) {
+      setError(e.message || 'Errore lettura report');
+      setReport(null);
+    } finally {
+      setLoading(false);
+    }
+  }, [caseId]);
+
+  useEffect(() => {
+    loadReport();
+  }, [loadReport]);
+
+  async function handleGenerate() {
+    if (!caseId) return;
+    if (companyId == null) {
+      setError("Associa un\u2019azienda SGQ (capacit\u00e0) al caso prima di generare il report.");
+      return;
+    }
+    setGenerating(true);
+    setError(null);
+    try {
+      const data = await apiService.regenerateCapabilityGapReport(caseId);
+      setReport(data?.report ?? null);
+    } catch (e) {
+      setError(e.message || 'Errore generazione report');
+    } finally {
+      setGenerating(false);
+    }
+  }
+
+  function statusLabel(status) {
+    if (status === 'ok') return 'OK — capacit\u00e0 adeguata';
+    if (status === 'gap') return 'Gap rispetto alla capacit\u00e0';
+    if (status === 'need_input') return 'Dati incompleti';
+    return 'Non generato';
+  }
+
+  function statusClass(status) {
+    if (status === 'ok') return 'cr-studio-status-ok';
+    if (status === 'gap') return 'cr-studio-status-gap';
+    if (status === 'need_input') return 'cr-studio-status-need';
+    return 'cr-studio-status-empty';
+  }
+
+  const summary = report?.summary;
+  const generatedAt = report?.generated_at
+    ? new Date(report.generated_at).toLocaleString('it-IT')
+    : null;
+
+  return (
+    <div className="cr-panel">
+      <h2>Report studio</h2>
+      <p className="cr-muted" style={{ marginTop: 0 }}>
+        Snapshot gap capacit\u00e0 persistito (requisiti cliente \u00d7 azienda appaltatrice).
+        Diverso dalla verifica live sotto: qui resta l&apos;ultimo report generato.
+      </p>
+      {loading ? (
+        <p className="cr-muted">Caricamento report...</p>
+      ) : (
+        <>
+          <div className={`cr-studio-status ${statusClass(summary?.status)}`}>
+            <strong>{statusLabel(summary?.status)}</strong>
+            {generatedAt ? (
+              <span className="cr-muted"> Generato il {generatedAt}</span>
+            ) : (
+              <span className="cr-muted"> Nessuno snapshot salvato</span>
+            )}
+          </div>
+          {summary && (
+            <ul className="cr-studio-meta">
+              <li>Gap segnalati: {summary.gaps_count ?? 0}</li>
+              <li>Requisiti usati: {summary.requirements_count ?? 0}</li>
+              {summary.coverage ? (
+                <li>
+                  WPS: {summary.coverage.covered}/{summary.coverage.total} coperte
+                  {summary.coverage.uncovered
+                    ? ` (${summary.coverage.uncovered} scoperte)`
+                    : ''}
+                </li>
+              ) : null}
+            </ul>
+          )}
+          {Array.isArray(report?.gaps) && report.gaps.length > 0 && (
+            <ul className="cr-studio-gaps">
+              {report.gaps.slice(0, 8).map((g, idx) => (
+                <li key={`${g.code || 'g'}-${idx}`}>{g.message || g.code}</li>
+              ))}
+              {report.gaps.length > 8 ? (
+                <li className="cr-muted">+ altri {report.gaps.length - 8} gap</li>
+              ) : null}
+            </ul>
+          )}
+        </>
+      )}
+      {error && <div className="cr-error" style={{ marginTop: 8 }}>{error}</div>}
+      <div className="cr-transition-row" style={{ marginTop: 12 }}>
+        <button
+          type="button"
+          className="cr-btn cr-btn-primary"
+          onClick={handleGenerate}
+          disabled={generating || companyId == null}
+          title={
+            companyId == null
+              ? "Seleziona l\u2019azienda SGQ (capacit\u00e0) nei dati caso"
+              : 'Ricalcola e salva lo snapshot'
+          }
+        >
+          {generating ? 'Generazione...' : report ? 'Ricalcola report' : 'Genera report'}
+        </button>
+      </div>
+    </div>
+  );
+}
+
+/**
  * CoveragePanel — verifica copertura saldatori per una commessa collegata al riesame.
  * Mostra un selettore di progetto + tabella di copertura WPS/qualifiche.
  */
@@ -1534,6 +1665,10 @@ export default function ContractReviewPage() {
               </div>
 
               {/* P5 — advisory WPQR/visione disponibile in ogni stato (non solo APPROVED) */}
+              <StudioReportPanel
+                caseId={detail.case.id}
+                companyId={detail.case.company_id}
+              />
               <div className="cr-panel">
                 <h2>Copertura saldatori e idoneità</h2>
                 <p className="cr-muted" style={{ marginTop: 0 }}>

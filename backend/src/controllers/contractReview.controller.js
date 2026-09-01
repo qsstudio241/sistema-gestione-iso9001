@@ -19,6 +19,7 @@ const {
     CASE_FROM_SQL,
 } = require('../services/commercialCustomerCounterparty.service');
 const caseDocumentAnalysisService = require('../services/caseDocumentAnalysis.service');
+const caseCapabilityGapReportService = require('../services/caseCapabilityGapReport.service');
 
 const CASE_STATUSES = workflow.CASE_STATUSES;
 const TERMINAL_FROM_STATUSES = new Set(['APPROVED', 'CANCELLED', 'REJECTED']);
@@ -1660,6 +1661,67 @@ async function registerHandoff(req, res) {
     }
 }
 
+/**
+ * GET /contract-reviews/:id/capability-gap-report
+ * Ultimo snapshot report gap capacità persistito (null se mai generato).
+ */
+async function getCapabilityGapReport(req, res) {
+    try {
+        const organizationId = req.user.organization_id;
+        const caseId = parseCaseId(req.params.id);
+        if (!caseId) {
+            return sendErr(res, 400, 'ID caso non valido', 'VALIDATION_ERROR');
+        }
+
+        const report = await caseCapabilityGapReportService.getPersistedCapabilityGapReport({
+            caseId,
+            organizationId,
+        });
+        return res.json({ report });
+    } catch (err) {
+        if (err.code === 'NOT_FOUND') {
+            return sendErr(res, 404, err.message, 'NOT_FOUND');
+        }
+        logger.error('getCapabilityGapReport', err.message);
+        return sendErr(res, 500, err.message, 'SERVER_ERROR');
+    }
+}
+
+/**
+ * POST /contract-reviews/:id/capability-gap-report
+ * Ricalcola e persiste lo snapshot (body opzionale: { project_id }).
+ */
+async function regenerateCapabilityGapReport(req, res) {
+    try {
+        const organizationId = req.user.organization_id;
+        const caseId = parseCaseId(req.params.id);
+        if (!caseId) {
+            return sendErr(res, 400, 'ID caso non valido', 'VALIDATION_ERROR');
+        }
+
+        const projectId =
+            req.body && req.body.project_id != null && req.body.project_id !== ''
+                ? req.body.project_id
+                : null;
+
+        const report = await caseCapabilityGapReportService.regenerateAndPersistCapabilityGapReport({
+            caseId,
+            organizationId,
+            projectId,
+        });
+        return res.json({ report });
+    } catch (err) {
+        if (err.code === 'COMPANY_ID_REQUIRED' || err.code === 'VALIDATION_ERROR') {
+            return sendErr(res, err.httpStatus || 400, err.message, err.code);
+        }
+        if (err.code === 'NOT_FOUND') {
+            return sendErr(res, 404, err.message, 'NOT_FOUND');
+        }
+        logger.error('regenerateCapabilityGapReport', err.message);
+        return sendErr(res, 500, err.message, 'SERVER_ERROR');
+    }
+}
+
 module.exports = {
     listCases,
     getCase,
@@ -1682,6 +1744,8 @@ module.exports = {
     analyzeRequirements,
     importFromJob,
     registerHandoff,
+    getCapabilityGapReport,
+    regenerateCapabilityGapReport,
     isTransitionAllowed: workflow.isTransitionAllowed,
     requiresTransitionReason: workflow.requiresTransitionReason,
 };
