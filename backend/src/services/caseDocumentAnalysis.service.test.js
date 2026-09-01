@@ -87,11 +87,15 @@ describe('caseDocumentAnalysis.service', () => {
     });
 
     describe('analyzeAttachment sync — ordine done vs report refresh (VC-3 Bugbot)', () => {
-        test('marca status done SOLO dopo maybeRefreshCapabilityGapReport', async () => {
+        test('refresh con includeExtractionId PRIMA di status done (requisiti job corrente nel snapshot)', async () => {
             const callOrder = [];
             caseCapabilityGapReportService.maybeRefreshCapabilityGapReport.mockImplementation(async () => {
                 callOrder.push('refresh');
-                return { refreshed: true, skipped: false };
+                return {
+                    refreshed: true,
+                    skipped: false,
+                    report: { summary: { requirements_count: 1 } },
+                };
             });
             fs.readFile.mockResolvedValue(Buffer.from('png'));
             drawingExtractionService.extractFromFile.mockResolvedValue({
@@ -137,9 +141,15 @@ describe('caseDocumentAnalysis.service', () => {
 
             expect(result.status).toBe('done');
             expect(result.report_refresh?.refreshed).toBe(true);
+            expect(result.report_refresh?.report?.summary?.requirements_count).toBe(1);
+            // Senza includeExtractionId il load (solo e.status=done) escludeva i requisiti appena inseriti.
             expect(callOrder).toEqual(['insert_req', 'refresh', 'done']);
             expect(caseCapabilityGapReportService.maybeRefreshCapabilityGapReport)
-                .toHaveBeenCalledWith({ caseId: 5, organizationId: 1 });
+                .toHaveBeenCalledWith({
+                    caseId: 5,
+                    organizationId: 1,
+                    includeExtractionId: 55,
+                });
         });
     });
 

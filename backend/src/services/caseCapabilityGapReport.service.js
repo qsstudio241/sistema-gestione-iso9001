@@ -212,7 +212,12 @@ async function resolveLinkedProjectId(caseId, organizationId, explicitProjectId)
  * @param {object} params
  * @returns {Promise<object>}
  */
-async function buildCapabilityGapReport({ caseId, organizationId, projectId = null }) {
+async function buildCapabilityGapReport({
+    caseId,
+    organizationId,
+    projectId = null,
+    includeExtractionId = null,
+}) {
     const caseRow = await loadCaseForReport(caseId, organizationId);
     if (!caseRow) {
         throw makeError('Caso non trovato', 'NOT_FOUND', 404);
@@ -221,7 +226,9 @@ async function buildCapabilityGapReport({ caseId, organizationId, projectId = nu
         throw makeError(COMPANY_ID_REQUIRED_MSG, 'COMPANY_ID_REQUIRED', 400);
     }
 
-    const requirements = await loadExtractedRequirements(caseId, organizationId);
+    const requirements = await loadExtractedRequirements(caseId, organizationId, {
+        includeExtractionId,
+    });
     const extractedProfile = buildTechnicalProfile(requirements);
     const profileActive = profileHasTechnicalData(extractedProfile);
 
@@ -347,8 +354,14 @@ async function regenerateAndPersistCapabilityGapReport({
     caseId,
     organizationId,
     projectId = null,
+    includeExtractionId = null,
 }) {
-    const report = await buildCapabilityGapReport({ caseId, organizationId, projectId });
+    const report = await buildCapabilityGapReport({
+        caseId,
+        organizationId,
+        projectId,
+        includeExtractionId,
+    });
     const json = JSON.stringify(report);
 
     const upd = await query(
@@ -383,12 +396,14 @@ async function maybeRefreshCapabilityGapReport({
     caseId,
     organizationId,
     projectId = null,
+    includeExtractionId = null,
 }) {
     try {
         const report = await regenerateAndPersistCapabilityGapReport({
             caseId,
             organizationId,
             projectId,
+            includeExtractionId,
         });
         return { refreshed: true, report };
     } catch (err) {

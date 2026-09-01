@@ -250,4 +250,43 @@ describe('maybeRefreshCapabilityGapReport (VC-3)', () => {
     expect(out.refreshed).toBe(true);
     expect(out.report?.summary?.status).toBe('need_input');
   });
+
+  test('includeExtractionId propagato a loadExtractedRequirements (job ancora processing)', async () => {
+    query
+      .mockResolvedValueOnce({
+        recordset: [{ id: 9, organization_id: 42, company_id: 178, title: 'Caso' }],
+      })
+      .mockResolvedValueOnce({ recordset: [] })
+      .mockResolvedValueOnce({
+        recordset: [{ id: 9, capability_gap_report_at: new Date('2026-09-01T12:00:00Z') }],
+      });
+    // Requisiti del job corrente (ancora processing) — senza includeExtractionId sarebbero assenti
+    loadExtractedRequirements.mockResolvedValue([
+      {
+        req_type: 'dim',
+        field_key: 'L',
+        value_text: '10',
+        unit: 'mm',
+        confidence: 0.95,
+        review_status: 'extracted',
+        source: 'drawing',
+      },
+    ]);
+    buildTechnicalProfile.mockReturnValue({ length_mm: 10 });
+    profileHasTechnicalData.mockReturnValue(true);
+    buildCaseCoverageAdvisory.mockResolvedValue({
+      blocking: false,
+      wpqr_joints: { joints: [], summary: { total: 0, ok: 0, partial: 0, not_possible: 0, need_input: 0, skipped: 0 } },
+      vision_fitness: { gaps: [], summary: { persons_requiring: 0, missing: 0, expired: 0, ok: 0 } },
+    });
+
+    const out = await maybeRefreshCapabilityGapReport({
+      caseId: 9,
+      organizationId: 42,
+      includeExtractionId: 55,
+    });
+    expect(out.refreshed).toBe(true);
+    expect(out.report?.summary?.requirements_count).toBe(1);
+    expect(loadExtractedRequirements).toHaveBeenCalledWith(9, 42, { includeExtractionId: 55 });
+  });
 });

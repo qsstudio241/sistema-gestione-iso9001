@@ -210,10 +210,13 @@ async function analyzeAttachment({
                 attachmentId,
                 count: (out.requirements || []).length,
             });
-            // VC-3: refresh snapshot PRIMA di status done (FE polling non deve GET report stale)
+            // VC-3: refresh PRIMA di status done (FE polling non GET report prima dello snapshot).
+            // includeExtractionId: i requisiti sono già in DB ma e.status è ancora processing;
+            // senza questo il load (solo done) esclude l'estrazione corrente → report stale.
             const reportRefresh = await caseCapabilityGapReportService.maybeRefreshCapabilityGapReport({
                 caseId,
                 organizationId,
+                includeExtractionId: extractionId,
             });
             await markExtractionDone(extractionId, out.raw);
             return {
