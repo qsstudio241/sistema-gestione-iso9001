@@ -105,7 +105,12 @@ async function runExtractionPipeline({ extractionId, buffer, mimeType, source })
     }
 
     await insertRequirements(extractionId, out.requirements || []);
+    // VC-3: non marcare 'done' qui. Il FE polling ricarica il Report studio allo status done;
+    // done solo dopo maybeRefreshCapabilityGapReport (vedi markExtractionDone in execute).
+    return out;
+}
 
+async function markExtractionDone(extractionId, raw) {
     await query(
         `
         UPDATE commercial_case_drawing_extractions
@@ -114,11 +119,9 @@ async function runExtractionPipeline({ extractionId, buffer, mimeType, source })
         `,
         {
             extractionId,
-            raw: out.raw != null ? String(out.raw).substring(0, 1000000) : null,
+            raw: raw != null ? String(raw).substring(0, 1000000) : null,
         },
     );
-
-    return out;
 }
 
 async function markExtractionError(extractionId, err) {
@@ -207,11 +210,12 @@ async function analyzeAttachment({
                 attachmentId,
                 count: (out.requirements || []).length,
             });
-            // VC-3: refresh snapshot report studio (best-effort; non blocca l'analisi)
+            // VC-3: refresh snapshot PRIMA di status done (FE polling non deve GET report stale)
             const reportRefresh = await caseCapabilityGapReportService.maybeRefreshCapabilityGapReport({
                 caseId,
                 organizationId,
             });
+            await markExtractionDone(extractionId, out.raw);
             return {
                 attachment_id: attachmentId,
                 extraction_id: extractionId,

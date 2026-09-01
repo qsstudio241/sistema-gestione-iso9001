@@ -21,6 +21,10 @@ import {
 } from '../utils/contractReviewLabels';
 import { hydrateDrawingRequirements } from '../utils/drawingExtractionHydrate';
 import {
+  collectPollingExtractionIds,
+  resolveAnalysisPollTick,
+} from '../utils/analysisJobPolling';
+import {
   DOC_ROLE_OPTIONS,
   groupAttachmentsByCatalogRole,
   isCatalogedDocRole,
@@ -530,7 +534,7 @@ export default function ContractReviewPage() {
   // Multi-file upload: progresso e errori parziali (SLICE C)
   const [uploadProgress, setUploadProgress] = useState(null); // { current, total, fileName } | null
   const [uploadPartialErrors, setUploadPartialErrors] = useState([]); // [{ fileName, error }]
-  // Polling auto-estrazione: { extractionId: number, attempts: number } | null
+  // Polling auto-estrazione: { extractionIds: number[], attempts: number } | null
   const [analysisPolling, setAnalysisPolling] = useState(null);
   // Banner completamento polling: 'done' | 'error' | null
   const [pollingBanner, setPollingBanner] = useState(null);
@@ -762,33 +766,50 @@ export default function ContractReviewPage() {
       .finally(() => setCreateCounterpartiesLoading(false));
   }, [createOpen, createForm.company_id]);
 
-  // Polling auto-estrazione AI: si attiva quando upload restituisce analysis_job_id.
-  // Massimo 10 tentativi (30 secondi totali); si ferma appena status !== 'processing'.
+  // Polling auto-estrazione AI (anche multi-job): upload / Analizza tutti.
+  // Massimo 10 tick (~30s); per ogni job done (dopo refresh BE) bumpa reloadKey.
   useEffect(() => {
     if (!analysisPolling || !caseId) return;
-    const { extractionId, attempts } = analysisPolling;
+    const { extractionIds, attempts } = analysisPolling;
+    if (!Array.isArray(extractionIds) || extractionIds.length === 0) {
+      setAnalysisPolling(null);
+      return;
+    }
     if (attempts >= 10) {
       setAnalysisPolling(null);
       return;
     }
     const timerId = setTimeout(async () => {
       try {
-        const data = await apiService.getDrawingExtraction(caseId, extractionId);
-        if (data.status !== 'processing') {
-          setAnalysisPolling(null);
-          setPollingBanner(data.status === 'done' ? 'done' : 'error');
-          setTimeout(() => setPollingBanner(null), 8000);
+        const settled = await Promise.all(
+          extractionIds.map(async (id) => {
+            try {
+              const data = await apiService.getDrawingExtraction(caseId, id);
+              return { id, status: data?.status ?? null, networkError: false };
+            } catch {
+              return { id, status: null, networkError: true };
+            }
+          }),
+        );
+        const tick = resolveAnalysisPollTick(settled);
+        if (tick.newlyDoneCount > 0) {
           await loadDetail(caseId);
-          // VC-3: BE ha già refreshato lo snapshot; ricarica il pannello Report studio
-          if (data.status === 'done') {
-            setStudioReportReloadKey((k) => k + 1);
+          setStudioReportReloadKey((k) => k + tick.newlyDoneCount);
+        }
+        if (tick.allTerminal) {
+          setAnalysisPolling(null);
+          if (tick.banner) {
+            setPollingBanner(tick.banner);
+            setTimeout(() => setPollingBanner(null), 8000);
           }
         } else {
-          setAnalysisPolling(prev => prev ? { ...prev, attempts: prev.attempts + 1 } : null);
+          setAnalysisPolling({
+            extractionIds: tick.remainingIds,
+            attempts: attempts + 1,
+          });
         }
       } catch {
-        // In caso di errore di rete, continua a ritentare fino al limite
-        setAnalysisPolling(prev => prev ? { ...prev, attempts: prev.attempts + 1 } : null);
+        setAnalysisPolling((prev) => (prev ? { ...prev, attempts: prev.attempts + 1 } : null));
       }
     }, 3000);
     pollingTimerRef.current = timerId;
@@ -988,7 +1009,7 @@ export default function ContractReviewPage() {
     setAttachAnalysisStarted(false);
     setUploadPartialErrors([]);
     let anyAnalysis = false;
-    let lastAnalysisJobId = null;
+    const analysisJobIds = [];
     const partialErrors = [];
     for (let i = 0; i < files.length; i++) {
       const file = files[i];
@@ -1001,7 +1022,8 @@ export default function ContractReviewPage() {
         });
         if (result?.analysis_job_id != null) {
           anyAnalysis = true;
-          lastAnalysisJobId = result.analysis_job_id;
+          const jobId = parseInt(String(result.analysis_job_id), 10);
+          if (Number.isFinite(jobId) && jobId > 0) analysisJobIds.push(jobId);
         }
       } catch (err) {
         partialErrors.push({
@@ -1021,8 +1043,8 @@ export default function ContractReviewPage() {
       setAttachAnalysisStarted(true);
       setTimeout(() => setAttachAnalysisStarted(false), 6000);
       setPollingBanner(null);
-      if (lastAnalysisJobId != null) {
-        setAnalysisPolling({ extractionId: lastAnalysisJobId, attempts: 0 });
+      if (analysisJobIds.length) {
+        setAnalysisPolling({ extractionIds: analysisJobIds, attempts: 0 });
       }
     }
     await loadDetail(caseId);
@@ -1174,12 +1196,12 @@ export default function ContractReviewPage() {
       setAnalyzeDocsResult(result);
       setAttachAnalysisStarted(true);
       setTimeout(() => setAttachAnalysisStarted(false), 8000);
-      const firstJob = result?.jobs?.[0];
-      if (firstJob?.extraction_id != null) {
+      const pollIds = collectPollingExtractionIds(result?.jobs);
+      if (pollIds.length) {
         setPollingBanner(null);
-        setAnalysisPolling({ extractionId: firstJob.extraction_id, attempts: 0 });
+        setAnalysisPolling({ extractionIds: pollIds, attempts: 0 });
       }
-      // VC-3: se mode sync ha già chiuso job done, ricarica subito il report
+      // VC-3: se mode sync ha già chiuso job done (refresh già eseguito BE), ricarica subito
       if ((result?.jobs || []).some((j) => j && j.status === 'done')) {
         setStudioReportReloadKey((k) => k + 1);
       }
@@ -2124,7 +2146,10 @@ export default function ContractReviewPage() {
                   disabled={TERMINAL_STATUSES.has(detail.case.status)}
                   pollingActive={analysisPolling != null}
                   pollingBanner={pollingBanner}
-                  onStartPolling={(extractionId) => setAnalysisPolling({ extractionId, attempts: 0 })}
+                  onStartPolling={(extractionId) => setAnalysisPolling({
+                    extractionIds: [extractionId].filter((id) => id != null),
+                    attempts: 0,
+                  })}
                   onReportDirty={() => setStudioReportReloadKey((k) => k + 1)}
                 />
               )}
