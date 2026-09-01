@@ -34,6 +34,30 @@ Audit multi-standard (9001/14001/45001) · Non Conformità (workflow ISO 10.2 co
 
 **Fix SAL Accetta AI → `updateGapStatus` (29/08, #598)** — race `items` solo post-`useEffect`: Accetta scriveva `undefined` e early-return. Init stato da `suggestions` al mount. Slot [`DEPUTYTASK1.md`](agent-tasks/DEPUTYTASK1.md) **CHIUSO**.
 
+### Priorità aperte ORA (ordine indicativo, non rigido — verificare col committente prima di iniziare una sessione dedicata)
+
+| # | Priorità | Perché | Dove riprendere |
+|---|---|---|---|
+| 1 | **Valutazione commesse — ingest docs cliente + gap capacità + output studio** | Priorità assoluta prodotto (01/09): catalogazione documenti cliente e gap vs capacità azienda appaltatrice; report persistito per lo studio. Offerta/PPAP dopo | [PLAN](agent-tasks/PLAN_VALUTAZIONE_COMMESSE_SLICES.md) · brief **VC-1** [APERTO](agent-tasks/DEPUTYTASK.md) |
+| 2 | **Modulo Notifiche/Alert — destinatario allerte qualifiche non è una scelta esplicita in anagrafica** | Oggi risolto da un algoritmo a cascata, non da una scelta visibile in UI | `qualificationAlert.service.js` (`resolveWeldingCoordinatorRecipients`) |
+| 3 | **Shell dialog di revisione ingest — markup/CSS duplicato** (non urgente, basso rischio) | `IngestReviewDialog.jsx` vs dialog interno `ReprocessQueueBanner.jsx`: guscio overlay duplicato (~60-80 righe); pattern sistemico su molti altri modal nel progetto | Vedi backlog sotto per dettaglio |
+| 4 | **Pagina Impostazioni → Organizzazione (P.IVA + logo tenant)** | PR #10 aperta da aprile 2026, 180 file in conflitto — richiede ricostruzione, non merge | Vedi riga dedicata nel backlog sotto |
+| 5 | **Material Compliance AI — ingest certificati (base e apporto)** | MC-0…MC-5 + MC-I0 + MC-I1 + MC-B (#476) + MC-I2 (#481) + **MC-I3** (DDT ≠ mill). Prossima: **MC-I4** busta 1→N | [PLAN](agent-tasks/PLAN_MATERIAL_COMPLIANCE_SLICES.md) · brief [MC-I3 CHIUSO](agent-tasks/DEPUTYTASK_MC_INGEST.md) |
+| 6 | **Rischi — ingest / data riesame (ROO-18, HITL)** | Lista riesami ambito c’è (ROO-17, verificata su TEST); data riesame esplicita e ingest→review solo dopo conferma | [PLAN §7](agent-tasks/PLAN_RISCHI_OPPORTUNITA_OBIETTIVI_SLICES.md) |
+| 7 | **SAL AI evidenze — OCR + documento mancante (HITL)** | **Chiuso** S1a–S2b (#471/#603/#605 + UI collega/carica/ignora). Residuo **S1c** `.doc` solo su richiesta | [PLAN](agent-tasks/PLAN_SAL_AI_EVIDENCE_SLICES.md) · stream [CHIUSO](agent-tasks/DEPUTYTASK_SAL_AI.md) |
+| 8 | **ISO 3834 — completezza per processi (RBAC + ponti + report)** | ISO-1*…ISO-3 + ISO-6/7 mergiate. Menu `/saldatura/rdp` spento. Prossima: **ISO-4** Word visita Mason **da Audit ISO 3834-2** (id 6), layout check list 27/01. Scala 1–6 = ISO-4b (HITL). ISO-5 Word Welding Book indipendente | [PLAN](agent-tasks/PLAN_3834_SLICES.md) · [gap 19/08](gap-reports/GAP_RDP_DUE_DOCUMENTI_MASON_2026-08-19.md) · PR [architettura #486](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/486) |
+| 9 | **Second Brain — Assistente di Ambito (SB-1 fatti, zero LLM)** | Studio + clienti paganti: fatti dell'Ambito in app, non AIOS Claude. Chat dopo i numeri veri | [PLAN](agent-tasks/PLAN_SECOND_BRAIN_SLICES.md) · brief [SB-1](agent-tasks/DEPUTYTASK2.md) |
+| 10 | **Multimodal RAG — figure normative in locale** | MR-0…**MR-5** mergiati (#464/#469/#475/#484/#489/#492). Prossima: **FW-0** hook ingest norma PDF → CLIP (brief PRONTO, non APERTO) | [PLAN figure](agent-tasks/PLAN_FIGURE_WPQR_SLICES.md) · [PLAN MR](agent-tasks/PLAN_MULTIMODAL_RAG_SLICES.md) |
+
+> Nota: **Modulo NC — card statistiche duplicate da due tendine** (era riga 1) è stato chiuso da PR #374 (10/08/2026) — riga rimossa da questa tabella, non ancora aggiornata al momento in cui è stata scritta DEPUTYTASK4.
+
+Elenco completo (voci meno urgenti, decisioni di prodotto in attesa, task parcheggiati con motivo): tabella [Backlog parcheggiato](#backlog-parcheggiato-task-futuri--fonte-unica) più sotto.
+
+---
+
+<details>
+<summary>Cronologia sessioni 10/08–26/08/2026 (fuori dieta avvio — dettaglio storico)</summary>
+
 ### Sessione precedente (26/08/2026)
 
 **Batch norme `NORMA_00034`–`00042` (26/08, #591)** — 9712, 2560, 17632, 14174, 19011, 3452-1, 17638, 23278, 23277 → MD+JSON; backlog `digitalizzata`. Nessun seed VPS in quella PR.
@@ -210,26 +234,7 @@ Harness (stesso giorno): handoff se la slice non chiude ([`HANDOFF_TEMPLATE.md`]
 
 Sessione prodotto precedente (10/08/2026): fix filtri dashboard duplicati (Qualifiche PR #368, Scadenzari #371, NC #374, Saldatura DEPUTYTASK4) + bug `daysUntilDue` / alert email (PR #369).
 
-### Priorità aperte ORA (ordine indicativo, non rigido — verificare col committente prima di iniziare una sessione dedicata)
-
-| # | Priorità | Perché | Dove riprendere |
-|---|---|---|---|
-| 1 | **Valutazione commesse — ingest docs cliente + gap capacità + output studio** | Priorità assoluta prodotto (01/09): catalogazione documenti cliente e gap vs capacità azienda appaltatrice; report persistito per lo studio. Offerta/PPAP dopo | [PLAN](agent-tasks/PLAN_VALUTAZIONE_COMMESSE_SLICES.md) · brief **VC-1** [APERTO](agent-tasks/DEPUTYTASK.md) |
-| 2 | **Modulo Notifiche/Alert — destinatario allerte qualifiche non è una scelta esplicita in anagrafica** | Oggi risolto da un algoritmo a cascata, non da una scelta visibile in UI | `qualificationAlert.service.js` (`resolveWeldingCoordinatorRecipients`) |
-| 3 | **Shell dialog di revisione ingest — markup/CSS duplicato** (non urgente, basso rischio) | `IngestReviewDialog.jsx` vs dialog interno `ReprocessQueueBanner.jsx`: guscio overlay duplicato (~60-80 righe); pattern sistemico su molti altri modal nel progetto | Vedi backlog sotto per dettaglio |
-| 4 | **Pagina Impostazioni → Organizzazione (P.IVA + logo tenant)** | PR #10 aperta da aprile 2026, 180 file in conflitto — richiede ricostruzione, non merge | Vedi riga dedicata nel backlog sotto |
-| 5 | **Material Compliance AI — ingest certificati (base e apporto)** | MC-0…MC-5 + MC-I0 + MC-I1 + MC-B (#476) + MC-I2 (#481) + **MC-I3** (DDT ≠ mill). Prossima: **MC-I4** busta 1→N | [PLAN](agent-tasks/PLAN_MATERIAL_COMPLIANCE_SLICES.md) · brief [MC-I3 CHIUSO](agent-tasks/DEPUTYTASK_MC_INGEST.md) |
-| 6 | **Rischi — ingest / data riesame (ROO-18, HITL)** | Lista riesami ambito c’è (ROO-17, verificata su TEST); data riesame esplicita e ingest→review solo dopo conferma | [PLAN §7](agent-tasks/PLAN_RISCHI_OPPORTUNITA_OBIETTIVI_SLICES.md) |
-| 7 | **SAL AI evidenze — OCR + documento mancante (HITL)** | **Chiuso** S1a–S2b (#471/#603/#605 + UI collega/carica/ignora). Residuo **S1c** `.doc` solo su richiesta | [PLAN](agent-tasks/PLAN_SAL_AI_EVIDENCE_SLICES.md) · stream [CHIUSO](agent-tasks/DEPUTYTASK_SAL_AI.md) |
-| 8 | **ISO 3834 — completezza per processi (RBAC + ponti + report)** | ISO-1*…ISO-3 + ISO-6/7 mergiate. Menu `/saldatura/rdp` spento. Prossima: **ISO-4** Word visita Mason **da Audit ISO 3834-2** (id 6), layout check list 27/01. Scala 1–6 = ISO-4b (HITL). ISO-5 Word Welding Book indipendente | [PLAN](agent-tasks/PLAN_3834_SLICES.md) · [gap 19/08](gap-reports/GAP_RDP_DUE_DOCUMENTI_MASON_2026-08-19.md) · PR [architettura #486](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/486) |
-| 9 | **Second Brain — Assistente di Ambito (SB-1 fatti, zero LLM)** | Studio + clienti paganti: fatti dell'Ambito in app, non AIOS Claude. Chat dopo i numeri veri | [PLAN](agent-tasks/PLAN_SECOND_BRAIN_SLICES.md) · brief [SB-1](agent-tasks/DEPUTYTASK2.md) |
-| 10 | **Multimodal RAG — figure normative in locale** | MR-0…**MR-5** mergiati (#464/#469/#475/#484/#489/#492). Prossima: **FW-0** hook ingest norma PDF → CLIP (brief PRONTO, non APERTO) | [PLAN figure](agent-tasks/PLAN_FIGURE_WPQR_SLICES.md) · [PLAN MR](agent-tasks/PLAN_MULTIMODAL_RAG_SLICES.md) |
-
-> Nota: **Modulo NC — card statistiche duplicate da due tendine** (era riga 1) è stato chiuso da PR #374 (10/08/2026) — riga rimossa da questa tabella, non ancora aggiornata al momento in cui è stata scritta DEPUTYTASK4.
-
-Elenco completo (voci meno urgenti, decisioni di prodotto in attesa, task parcheggiati con motivo): tabella [Backlog parcheggiato](#backlog-parcheggiato-task-futuri--fonte-unica) più sotto.
-
----
+</details>
 
 <details>
 <summary>Banner storico pre-10/08/2026 (superato — non usarlo per "a che punto siamo", tenuto solo come traccia cronologica)</summary>
