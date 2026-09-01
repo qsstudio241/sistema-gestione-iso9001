@@ -947,3 +947,73 @@ describe('getCapabilityGapReport / regenerateCapabilityGapReport', () => {
     );
   });
 });
+
+// ─── updateCaseAttachment (VC-2 catalogazione) ───────────────────────────────
+describe('updateCaseAttachment', () => {
+  const CASE_ID = 12;
+  const ATT_ID = 55;
+
+  it('aggiorna commercial_doc_role (200)', async () => {
+    const updated = {
+      attachment_id: ATT_ID,
+      attachment_uuid: 'u-1',
+      file_name: 'cap.pdf',
+      mime_type: 'application/pdf',
+      commercial_doc_role: 'capitolato',
+      commercial_direction: 'in',
+      commercial_counterparty: 'customer',
+    };
+    query
+      .mockResolvedValueOnce({ recordset: [{ id: CASE_ID, organization_id: ORG_ID }] })
+      .mockResolvedValueOnce({ recordset: [{ attachment_id: ATT_ID }] })
+      .mockResolvedValueOnce({ recordset: [updated] });
+
+    const req = mockReq({
+      params: { id: String(CASE_ID), attachmentId: String(ATT_ID) },
+      body: { doc_role: 'capitolato' },
+    });
+    const res = mockRes();
+    await ctrl.updateCaseAttachment(req, res);
+
+    expect(res.json).toHaveBeenCalledWith(updated);
+    const updCall = query.mock.calls[2];
+    expect(updCall[0]).toMatch(/commercial_doc_role\s*=\s*@docRole/);
+    expect(updCall[1]).toMatchObject({ docRole: 'capitolato', attachmentId: ATT_ID, caseId: CASE_ID });
+  });
+
+  it('doc_role mancante → 400', async () => {
+    query.mockResolvedValueOnce({ recordset: [{ id: CASE_ID, organization_id: ORG_ID }] });
+    const req = mockReq({
+      params: { id: String(CASE_ID), attachmentId: String(ATT_ID) },
+      body: {},
+    });
+    const res = mockRes();
+    await ctrl.updateCaseAttachment(req, res);
+    expect(res.status).toHaveBeenCalledWith(400);
+    expect(res.json).toHaveBeenCalledWith(expect.objectContaining({ code: 'VALIDATION_ERROR' }));
+  });
+
+  it('doc_role non in whitelist → 400', async () => {
+    query.mockResolvedValueOnce({ recordset: [{ id: CASE_ID, organization_id: ORG_ID }] });
+    const req = mockReq({
+      params: { id: String(CASE_ID), attachmentId: String(ATT_ID) },
+      body: { doc_role: 'nonsense' },
+    });
+    const res = mockRes();
+    await ctrl.updateCaseAttachment(req, res);
+    expect(res.status).toHaveBeenCalledWith(400);
+  });
+
+  it('allegato assente → 404', async () => {
+    query
+      .mockResolvedValueOnce({ recordset: [{ id: CASE_ID, organization_id: ORG_ID }] })
+      .mockResolvedValueOnce({ recordset: [] });
+    const req = mockReq({
+      params: { id: String(CASE_ID), attachmentId: String(ATT_ID) },
+      body: { doc_role: 'drawing' },
+    });
+    const res = mockRes();
+    await ctrl.updateCaseAttachment(req, res);
+    expect(res.status).toHaveBeenCalledWith(404);
+  });
+});

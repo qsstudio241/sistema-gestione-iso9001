@@ -7,6 +7,7 @@
 const {
     resolveAnalysisSource,
     analyzeAllCaseDocuments,
+    isCatalogedDocRole,
 } = require('./caseDocumentAnalysis.service');
 
 jest.mock('../config/database', () => ({
@@ -57,6 +58,20 @@ describe('caseDocumentAnalysis.service', () => {
         test('other role → null', () => {
             expect(resolveAnalysisSource('quote', 'application/pdf')).toBeNull();
         });
+
+        test('ruolo non catalogato → null', () => {
+            expect(resolveAnalysisSource(null, 'application/pdf')).toBeNull();
+            expect(resolveAnalysisSource('', 'image/png')).toBeNull();
+        });
+    });
+
+    describe('isCatalogedDocRole', () => {
+        test('whitelist e vuoto', () => {
+            expect(isCatalogedDocRole('drawing')).toBe(true);
+            expect(isCatalogedDocRole('ORDER')).toBe(true);
+            expect(isCatalogedDocRole(null)).toBe(false);
+            expect(isCatalogedDocRole('xyz')).toBe(false);
+        });
     });
 
     describe('analyzeAllCaseDocuments', () => {
@@ -103,6 +118,31 @@ describe('caseDocumentAnalysis.service', () => {
             expect(result.skipped).toBe(1);
             expect(result.jobs).toHaveLength(2);
             expect(result.skipped_attachments[0].attachment_id).toBe(2);
+        });
+
+        test('salta allegati non catalogati con reason dedicato', async () => {
+            query.mockImplementation((sqlText) => {
+                if (/FROM commercial_cases WHERE id/.test(sqlText)) {
+                    return { recordset: [{ id: 5 }] };
+                }
+                if (/FROM attachments\s+WHERE commercial_case_id/.test(sqlText)) {
+                    return {
+                        recordset: [
+                            { attachment_id: 9, file_name: 'x.pdf', mime_type: 'application/pdf', commercial_doc_role: null },
+                        ],
+                    };
+                }
+                return { recordset: [] };
+            });
+
+            const result = await analyzeAllCaseDocuments({
+                caseId: 5,
+                organizationId: 1,
+                userId: 7,
+            });
+            expect(result.started).toBe(0);
+            expect(result.skipped).toBe(1);
+            expect(result.skipped_attachments[0].reason).toMatch(/non catalogato/);
         });
 
         test('NOT_FOUND se caso assente', async () => {

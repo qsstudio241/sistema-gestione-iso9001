@@ -38,6 +38,7 @@ router.delete('/contract-reviews/:id/documents/:linkId', ...guard, ctrl.unlinkDo
 
 router.get('/contract-reviews/:id/attachments', ...guard, ctrl.listCaseAttachments);
 router.post('/contract-reviews/:id/attachments/upload', ...guard, multerSingle, ctrl.uploadCaseAttachment);
+router.patch('/contract-reviews/:id/attachments/:attachmentId', ...guard, ctrl.updateCaseAttachment);
 
 router.post('/contract-reviews/:id/ai/analyze-requirements', ...guard, logAiInteraction('review'), ctrl.analyzeRequirements);
 
