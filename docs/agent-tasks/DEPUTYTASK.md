@@ -1,91 +1,57 @@
-# DEPUTYTASK — VC-1: Report gap capacità v0 (output studio)
+# DEPUTYTASK — VC-2: Catalogazione docs cliente sul caso (ruoli + lista)
 
-**Stato:** CHIUSO — TEST OK  
+**Stato:** APERTO  
 **Aperto:** 01/09/2026  
-**Chiuso:** 01/09/2026  
-**Piano:** [`PLAN_VALUTAZIONE_COMMESSE_SLICES.md`](PLAN_VALUTAZIONE_COMMESSE_SLICES.md) § VC-1  
-**Rischio:** Medio — BE additivo (snapshot report) + FE pannello minimo; migrazione **161** nullable/additiva  
-**Branch:** `cursor/vc1-capability-gap-report-1c5d`  
-**PR:** draft non creabile da Cloud Agent (`gh` GraphQL Resource not accessible) — compare: https://github.com/qsstudio241/sistema-gestione-iso9001/compare/main...cursor/vc1-capability-gap-report-1c5d?expand=1  
-**Push:** branch remoto aggiornato (`origin/cursor/vc1-capability-gap-report-1c5d`)
+**Piano:** [`PLAN_VALUTAZIONE_COMMESSE_SLICES.md`](PLAN_VALUTAZIONE_COMMESSE_SLICES.md) § VC-2  
+**Rischio:** Medio — BE additivo (PATCH ruolo allegato) + FE catalogo; niente migrazione; niente auth/sync breaking  
+**Branch:** `cursor/vc2-case-doc-catalog-1c5d`  
+**Dipende da:** VC-1 (mergiata #619; mig. 161 applicata su VPS)
 
 > **Allineamento Git (autonomo)**: `git fetch origin main` + `git pull origin main` prima di eseguire. **Non** chiedere al committente.  
 > Comando: `Leggi docs/agent-tasks/DEPUTYTASK.md ed eseguilo. Chiudi con TEST OK o FIX NON APPLICABILI.`
 
 ---
 
-## Esito deputy
-
-**TEST OK** — report gap capacità persistito end-to-end (service + GET/POST + UI «Report studio»).
-
-| Voce | Dettaglio |
-|------|-----------|
-| Persistenza | mig. **161**: `commercial_cases.capability_gap_report_json` + `capability_gap_report_at` (nullable) |
-| Service | `caseCapabilityGapReport.service.js` riusa `loadExtractedRequirements` / `computeCaseProjectCoverage` / `buildCaseCoverageAdvisory` |
-| API | `GET/POST /contract-reviews/:id/capability-gap-report` (stesso guard `ai_review`) |
-| UI | pannello «Report studio» in `ContractReviewPage` (`.cr-panel`), CoveragePanel intatto |
-| Test L1 | BE: service + controller + migration uniqueness; FE: `npm run build` OK |
-| Deploy | `deploy-manifest.json` aggiornato; runner `run-migration-161-vps.js` |
-
-**Prossima slice:** VC-2 (dopo merge PR + migrazione VPS).
-
----
-
 ## Perché (prodotto)
 
-Lo studio riceve documenti cliente, li collega al caso con **azienda appaltatrice** (capacità), ma oggi la copertura è solo **vista live** (CoveragePanel / advisory). Manca un **artefatto report persistito** riusabile come output della gap analysis. VC-1 è l’hello world end-to-end più piccolo: aggregare ciò che già esiste e salvarlo sul caso.
+Lo studio carica / importa documenti cliente sul caso, ma l’elenco allegati è piatto e non guida la **catalogazione per ruolo**. Senza ruolo chiaro, «Analizza documenti» salta file o parte su materiale non catalogato. VC-2 rafforza il **catalogo** (lista per ruolo + assegnazione ruolo) e **gating** dell’analisi sui soli allegati catalogati. Riuso upload multi e Import→caso; nessun nuovo storage.
 
 ## Obiettivo
 
-Su un `commercial_case` con `company_id` (azienda SGQ capacità) e, se presenti, requisiti estratti / copertura calcolabile:
+Su un caso con allegati (upload multi o da `import-from-job`):
 
-1. Generare uno **snapshot report gap capacità** (JSON strutturato) riusando i servizi già in repo.
-2. **Persistere** lo snapshot sul caso (colonna JSON nullable **oppure** tabella sottile dedicata — Gate Ponytail: preferire estensione minima; dichiarare N migrazione **prima** di creare il file in `database/migrations/`).
-3. Esporre **GET** (leggi ultimo snapshot) + **POST** (ricalcola e salva) sotto le route `contract-reviews` esistenti (stesso guard/RBAC/org scope).
-4. UI minima in `ContractReviewPage`: pannello «Report studio» con esito sintetico (ok / gap / need_input) e data generazione — DNA esistente (`.cr-panel`), niente look nuovo.
-5. Test L1 BE (e Vitest FE se tocchi logica UI non banale) + `npm run build` in `app/`.
+1. Elenco **catalogo** raggruppato per `commercial_doc_role` (incluso gruppo «Da catalogare» se ruolo assente).
+2. Possibilità di **assegnare/correggere** il ruolo su un allegato esistente (PATCH).
+3. Pulsante **Analizza documenti** abilitato solo se esiste almeno un allegato **catalogato e analizzabile** (ruolo drawing / capitolato|order+PDF); altrimenti `disabled` + `title` esplicativo. L’analisi processa solo i catalogati.
 
 ## DoD
 
-- [x] Service aggregatore (`caseCapabilityGapReport.service.js`) chiama in lettura i mattoni esistenti — **non** duplicare algoritmi di match
-- [x] Persistenza multi-tenant; senza `company_id` → 400 chiaro
-- [x] Endpoint GET + POST documentati nel test; response stabile (summary + lista gap)
-- [x] Pannello UI visibile sul dettaglio caso; non rompe CoveragePanel esistente
-- [x] `deploy-manifest.json` aggiornato
-- [x] Test L1 verdi; PLAN VC-1 spuntato
-- [x] Nessuna modifica a auth/sync; nessuna riscrittura ingest/SAL
+- [ ] `PATCH /contract-reviews/:id/attachments/:attachmentId` aggiorna `commercial_doc_role` (scope org/caso)
+- [ ] UI catalogo in slide Documenti (`ContractReviewPage`) — DNA `.cr-*`, niente look nuovo
+- [ ] Gate Analizza: solo catalogati analizzabili; upload multi + Import→caso intatti
+- [ ] Test L1 BE (controller/service) + `npm run build` FE
+- [ ] `deploy-manifest.json` aggiornato se nuovo `.js` in `backend/src/`
+- [ ] Nessuna migrazione; VC-3+ non toccati
 
-## File previsti / toccati
+## File previsti
 
-- `backend/src/services/caseCapabilityGapReport.service.js` (+ `.test.js`)
-- `backend/src/controllers/contractReview.controller.js` (+ test)
-- `backend/src/routes/contractReview.routes.js`
-- `database/migrations/161_commercial_cases_capability_gap_report.sql` + `run-migration-161-vps.js`
-- `app/src/pages/ContractReviewPage.jsx` (+ CSS)
-- `app/src/services/apiService.js`
-- `backend/scripts/deploy-manifest.json`
-- `docs/agent-tasks/PLAN_VALUTAZIONE_COMMESSE_SLICES.md`
-- questo brief → CHIUSO
+| Layer | Path |
+|-------|------|
+| BE | `backend/src/controllers/contractReview.controller.js` (+ test) |
+| BE | `backend/src/routes/contractReview.routes.js` |
+| BE | eventuale helper riuso in `caseDocumentAnalysis.service.js` (ruoli catalogati / analizzabili) |
+| FE | `app/src/pages/ContractReviewPage.jsx` (+ CSS minimo se serve) |
+| FE | `app/src/services/apiService.js` |
+| Doc | questo brief; spunta VC-2 su `PLAN_VALUTAZIONE_COMMESSE_SLICES.md` a chiusura |
 
 ## Cosa NON toccare
 
-- `gapAnalysis.service.js` / `SALModule.jsx` (SAL ≠ questo report)
-- `documentIngestPipeline` / pipeline Material Compliance / WPQR ingest
-- `auth.middleware.js`, `syncService.js`, JWT
-- Offerta, chiarimenti automatici, PPAP, ordini fornitori (VC-5+)
-- `ProjectsPage` / CRUD commesse 3834 salvo link read-only già usato da coverage
-- Altri `DEPUTYTASK*` / PLAN di altri epic
-- GUIDA intera (lezione breve solo a slice chiusa se unica chat)
+- VC-3+ (orchestrazione analyze→report, export Word, chiarimenti, offerta, PPAP)
+- Auth/JWT, `syncService`, breaking schema / migrazioni
+- `caseCapabilityGapReport.service.js` (VC-1 chiuso) salvo lettura catalogo già presente
+- SAL / `gapAnalysis.service.js`, nuovo storage file, seconda pipeline OCR
+- Altri `DEPUTYTASK*` / moduli non in tabella
 
-## Criteri
+## Gate parallelo
 
-| Esito | Quando |
-|-------|--------|
-| **TEST OK** | DoD soddisfatto; L1 verdi; snapshot ricalcolabile e riletto dopo refresh |
-| **FIX NON APPLICABILI** | Su `main` esiste già report persistito equivalente end-to-end (documentare path + PR); oppure manca prerequisito prodotto bloccante non aggirabile (es. assenza totale tabelle caso — improbabile) |
-
-## Note per il deputy
-
-- Charting Lead **non** ha implementato codice applicativo: solo PLAN + questo brief.
-- Preferire tante slice sottili: **non** aggiungere export Word/PDF in VC-1 (è VC-4).
-- Se CoveragePanel già mostra tutto ma senza persistenza, VC-1 resta **applicabile** (la persistenza è il DoD).
+Nessun altro `DEPUTYTASK*` APERTO su `origin/main`. Nessuna PR aperta in conflitto su questi file al momento dell’apertura.
