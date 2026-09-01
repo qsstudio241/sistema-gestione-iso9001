@@ -71,7 +71,7 @@
 
 | Slice | Tema | Perimetro (file/layer) | Dipende da | Tipo |
 |-------|------|------------------------|------------|------|
-| **VC-1** | Hello world: report gap capacità persistito + UI minima studio | BE: service aggregatore (riuso `caseExtractedCoverage` / `caseCoverageAdvisory`) + endpoint GET/POST su caso + mig. additiva nullable (snapshot JSON o tabella sottile); FE: pannello «Report studio» in `ContractReviewPage` (DNA esistente); test L1 | — | AFK |
+| **VC-1** | Hello world: report gap capacità persistito + UI minima studio | BE: service aggregatore (riuso `caseExtractedCoverage` / `caseCoverageAdvisory`) + endpoint GET/POST su caso + mig. additiva nullable (snapshot JSON o tabella sottile); FE: pannello «Report studio» in `ContractReviewPage` (DNA esistente); test L1 | — | AFK ✅ CHIUSO |
 | **VC-2** | Catalogazione docs cliente sul caso (ruoli + lista catalogo) | FE/BE: rafforzare elenco allegati per ruolo/tipo, gate «analizza» solo su catalogati; riuso upload multi + Import→caso; niente nuovo storage | VC-1 consigliato (report legge catalogo) | AFK |
 | **VC-3** | Pipeline catalogo → analisi → refresh report (un click studio) | Orchestrazione sottile: dopo `analyze-documents` (o conferma requisiti) aggiorna snapshot report; test L1 | VC-1, VC-2 | AFK |
 | **VC-4** | Export report studio (Word o PDF) | Export da snapshot; riuso pattern Word NC/SAL dove possibile | VC-1; HITL formato se non deciso | HITL→AFK |
@@ -81,7 +81,7 @@
 | **VC-8** | Ordini fornitori a corredo | Documenti `counterparty=supplier` + link anagrafica | VC-7; dettagli in nebbia | HITL |
 | **VC-9** | Sessione PPAP | Solo dopo decisione prodotto (in-ciclo vs modulo) | — | HITL / nebbia |
 
-**Stato piano:** APERTO — solo mappa; **VC-1** brief aperto, non eseguita in charting.
+**Stato piano:** APERTO — **VC-1** eseguita (TEST OK); prossime VC-2…
 
 ### Dipendenze e parallelo futuro
 
