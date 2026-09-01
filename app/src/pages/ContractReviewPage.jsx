@@ -33,8 +33,9 @@ import './ContractReviewPage.css';
 /**
  * StudioReportPanel (VC-1) — snapshot report gap capacità persistito per lo studio.
  * DNA: stesso guscio .cr-panel del dettaglio caso; non sostituisce CoveragePanel live.
+ * VC-3: `reloadKey` forza un GET dopo analisi / conferma requisiti.
  */
-function StudioReportPanel({ caseId, companyId }) {
+function StudioReportPanel({ caseId, companyId, reloadKey = 0 }) {
   const [report, setReport] = useState(null);
   const [loading, setLoading] = useState(false);
   const [generating, setGenerating] = useState(false);
@@ -57,7 +58,7 @@ function StudioReportPanel({ caseId, companyId }) {
 
   useEffect(() => {
     loadReport();
-  }, [loadReport]);
+  }, [loadReport, reloadKey]);
 
   async function handleGenerate() {
     if (!caseId) return;
@@ -102,6 +103,7 @@ function StudioReportPanel({ caseId, companyId }) {
       <p className="cr-muted" style={{ marginTop: 0 }}>
         Snapshot gap capacit\u00e0 persistito (requisiti cliente \u00d7 azienda appaltatrice).
         Diverso dalla verifica live sotto: qui resta l&apos;ultimo report generato.
+        Si aggiorna anche dopo &laquo;Analizza documenti&raquo; o conferma requisiti (se l&apos;azienda capacit\u00e0 \u00e8 associata).
       </p>
       {loading ? (
         <p className="cr-muted">Caricamento report...</p>
@@ -532,6 +534,8 @@ export default function ContractReviewPage() {
   const [analysisPolling, setAnalysisPolling] = useState(null);
   // Banner completamento polling: 'done' | 'error' | null
   const [pollingBanner, setPollingBanner] = useState(null);
+  // VC-3: bump per ricaricare StudioReportPanel dopo analisi / HITL requisiti
+  const [studioReportReloadKey, setStudioReportReloadKey] = useState(0);
   const pollingTimerRef = useRef(null);
   const [suppliers, setSuppliers] = useState([]);
   const [suppliersLoadFailed, setSuppliersLoadFailed] = useState(false);
@@ -775,6 +779,10 @@ export default function ContractReviewPage() {
           setPollingBanner(data.status === 'done' ? 'done' : 'error');
           setTimeout(() => setPollingBanner(null), 8000);
           await loadDetail(caseId);
+          // VC-3: BE ha già refreshato lo snapshot; ricarica il pannello Report studio
+          if (data.status === 'done') {
+            setStudioReportReloadKey((k) => k + 1);
+          }
         } else {
           setAnalysisPolling(prev => prev ? { ...prev, attempts: prev.attempts + 1 } : null);
         }
@@ -1170,6 +1178,10 @@ export default function ContractReviewPage() {
       if (firstJob?.extraction_id != null) {
         setPollingBanner(null);
         setAnalysisPolling({ extractionId: firstJob.extraction_id, attempts: 0 });
+      }
+      // VC-3: se mode sync ha già chiuso job done, ricarica subito il report
+      if ((result?.jobs || []).some((j) => j && j.status === 'done')) {
+        setStudioReportReloadKey((k) => k + 1);
       }
       if (aiDocPanelExpanded) {
         await handleLoadAiDocSummary();
@@ -1690,6 +1702,7 @@ export default function ContractReviewPage() {
               <StudioReportPanel
                 caseId={detail.case.id}
                 companyId={detail.case.company_id}
+                reloadKey={studioReportReloadKey}
               />
               <div className="cr-panel">
                 <h2>Copertura saldatori e idoneità</h2>
@@ -2112,6 +2125,7 @@ export default function ContractReviewPage() {
                   pollingActive={analysisPolling != null}
                   pollingBanner={pollingBanner}
                   onStartPolling={(extractionId) => setAnalysisPolling({ extractionId, attempts: 0 })}
+                  onReportDirty={() => setStudioReportReloadKey((k) => k + 1)}
                 />
               )}
 
@@ -2720,7 +2734,15 @@ function AiDocSuggestionsPanel({ expanded, loading, error, summary, applyBusy, h
  * DrawingRequirementsPanel — Estrazione AI requisiti tecnici da un disegno di commessa.
  * Riusa l'integrazione Gemini lato server (provider-agnostic). MVP demo investitori.
  */
-function DrawingRequirementsPanel({ caseId, attachments, disabled, pollingActive, pollingBanner, onStartPolling }) {
+function DrawingRequirementsPanel({
+  caseId,
+  attachments,
+  disabled,
+  pollingActive,
+  pollingBanner,
+  onStartPolling,
+  onReportDirty,
+}) {
   const drawings = useMemo(
     () => (attachments || []).filter((a) => a.commercial_doc_role === 'drawing'),
     [attachments],
@@ -2799,6 +2821,11 @@ function DrawingRequirementsPanel({ caseId, attachments, disabled, pollingActive
     try {
       const updated = await apiService.reviewExtractedRequirement(reqId, patch);
       setReqs((rs) => rs.map((r) => (r.id === updated.id ? { ...r, ...updated } : r)));
+      // VC-3: BE refresh snapshot su confirmed/edited/rejected → ricarica pannello studio
+      const st = String(patch?.review_status || updated?.review_status || '').toLowerCase();
+      if (st === 'confirmed' || st === 'edited' || st === 'rejected') {
+        onReportDirty?.();
+      }
     } catch (e) {
       setError(e instanceof ApiError ? e.message : e.message || 'Aggiornamento fallito');
     }
