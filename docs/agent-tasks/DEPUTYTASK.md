@@ -6,6 +6,8 @@
 **Piano:** [`PLAN_VALUTAZIONE_COMMESSE_SLICES.md`](PLAN_VALUTAZIONE_COMMESSE_SLICES.md) § VC-2  
 **Rischio:** Medio — BE additivo (PATCH ruolo allegato) + FE catalogo; niente migrazione; niente auth/sync breaking  
 **Branch:** `cursor/vc2-case-doc-catalog-1c5d`  
+**PR:** draft non creabile da Cloud Agent (`gh` GraphQL Resource not accessible) — compare: https://github.com/qsstudio241/sistema-gestione-iso9001/compare/main...cursor/vc2-case-doc-catalog-1c5d?expand=1  
+**Push:** branch remoto aggiornato (`origin/cursor/vc2-case-doc-catalog-1c5d`)  
 **Dipende da:** VC-1 (mergiata #619; mig. 161 applicata su VPS)
 
 > **Allineamento Git (autonomo)**: `git fetch origin main` + `git pull origin main` prima di eseguire. **Non** chiedere al committente.  
