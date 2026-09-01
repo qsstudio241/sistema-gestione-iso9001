@@ -8,15 +8,19 @@
 
 > **Risposta standard a «stato di avanzamento del progetto e priorità da affrontare»**: sintetizzare da questa sezione (moduli maturi + sessione più recente + tabella priorità sotto), **non** dal banner storico più sotto (superato, tenuto solo per traccia) né dall'archivio marzo 2026 [`docs/archive/PROJECT_CONTEXT_STATO_FUNZIONALITA_2026-03.md`](archive/PROJECT_CONTEXT_STATO_FUNZIONALITA_2026-03.md). **Aggiornare questa sezione a fine sessione** se emergono nuove priorità o se una priorità elencata viene chiusa (stesso principio delle "Lezioni apprese" in [GUIDA_CONSOLIDATA.md](GUIDA_CONSOLIDATA.md) — sintesi qui, dettaglio linkato).
 
-**Ultimo aggiornamento di questa sezione**: 31/08/2026 (Libreria gap LG-1…LG-5 piano COMPLETATO; LG-6 push fuori).
+**Ultimo aggiornamento di questa sezione**: 01/09/2026 (wayfinder Valutazione commesse — mappa + brief VC-1; nessuna implementazione applicativa).
 
 ### Moduli maturi (in produzione, uso quotidiano dai clienti Camellini/Mason)
 
 Audit multi-standard (9001/14001/45001) · Non Conformità (workflow ISO 10.2 completo) · Qualifiche Personale saldatori/NDT/coordinatori (ISO 9606-1/14732/14731/9712) · Saldatura (WPQR con range duali t1/t2 FW, tipologia SW/prigioniero + P+T + doppio materiale, range ISO 14555 §10.2.8 + Tabella 2 boiler pins, generazione WPS, 15614-1/15614-2, Welding Book, Commesse ISO 3834, Dashboard 3834) · SAL (gap analysis requisiti con AI) · Registro Documenti + Scadenzari · Notifiche/Alert (documenti/NC/qualifiche) · Riesame di Direzione · RBAC multi-tenant (`company_access`) · Registro obblighi legali (ambiente + sicurezza) · Assistente AI / Gap Analysis euristica · CND verbali (VT/MT/PT, gate 9712, Word, Registro, offline) · Libreria fonti (Gestione, studio admin) · Gap fonti Libreria (email SA, coda via 2, chiusura tenant/piattaforma).
 
-### Sessione più recente (31/08/2026)
+### Sessione più recente (01/09/2026)
 
-**Libreria gap LG-1…LG-5 (31/08, [#615](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/615) mergiata)** — piano [`PLAN_LIBRERIA_GAP_SLICES.md`](agent-tasks/PLAN_LIBRERIA_GAP_SLICES.md) **COMPLETATO** (LG-6 push mobile resta nebbia): gap in risposta Assistente + persistenza + email SA; UX deep-link; coda superadmin; chiusura via ingest tenant; chiusura «segna digitalizzata» + note qualità + ack tenant opz. Slot [`DEPUTYTASK.md`](agent-tasks/DEPUTYTASK.md) **CHIUSO** su LG-5. Sequel di LN-1…LN-5 (UI shell).
+**Wayfinder Valutazione commesse (capacità + output studio)** — creato [`PLAN_VALUTAZIONE_COMMESSE_SLICES.md`](agent-tasks/PLAN_VALUTAZIONE_COMMESSE_SLICES.md). Priorità: ingest/catalog docs cliente + gap vs capacità azienda appaltatrice + report persistito per lo studio (riuso Import PDF + coverage già in Riesame requisiti). Brief [`DEPUTYTASK.md`](agent-tasks/DEPUTYTASK.md) **APERTO** su **VC-1** (hello world report). Offerta/PPAP/ordini fornitori in nebbia o slice successive. **Nessun codice applicativo** nella sessione di mappa.
+
+### Sessione precedente (31/08/2026)
+
+**Libreria gap LG-1…LG-5 (31/08, [#615](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/615) mergiata)** — piano [`PLAN_LIBRERIA_GAP_SLICES.md`](agent-tasks/PLAN_LIBRERIA_GAP_SLICES.md) **COMPLETATO** (LG-6 push mobile resta nebbia): gap in risposta Assistente + persistenza + email SA; UX deep-link; coda superadmin; chiusura via ingest tenant; chiusura «segna digitalizzata» + note qualità + ack tenant opz. Slot [`DEPUTYTASK.md`](agent-tasks/DEPUTYTASK.md) **CHIUSO** su LG-5 (poi riaperto VC-1). Sequel di LN-1…LN-5 (UI shell).
 
 ### Sessione precedente (29/08/2026)
 
@@ -210,15 +214,16 @@ Sessione prodotto precedente (10/08/2026): fix filtri dashboard duplicati (Quali
 
 | # | Priorità | Perché | Dove riprendere |
 |---|---|---|---|
-| 1 | **Modulo Notifiche/Alert — destinatario allerte qualifiche non è una scelta esplicita in anagrafica** | Oggi risolto da un algoritmo a cascata, non da una scelta visibile in UI | `qualificationAlert.service.js` (`resolveWeldingCoordinatorRecipients`) |
-| 2 | **Shell dialog di revisione ingest — markup/CSS duplicato** (non urgente, basso rischio) | `IngestReviewDialog.jsx` vs dialog interno `ReprocessQueueBanner.jsx`: guscio overlay duplicato (~60-80 righe); pattern sistemico su molti altri modal nel progetto | Vedi backlog sotto per dettaglio |
-| 3 | **Pagina Impostazioni → Organizzazione (P.IVA + logo tenant)** | PR #10 aperta da aprile 2026, 180 file in conflitto — richiede ricostruzione, non merge | Vedi riga dedicata nel backlog sotto |
-| 4 | **Material Compliance AI — ingest certificati (base e apporto)** | MC-0…MC-5 + MC-I0 + MC-I1 + MC-B (#476) + MC-I2 (#481) + **MC-I3** (DDT ≠ mill). Prossima: **MC-I4** busta 1→N | [PLAN](agent-tasks/PLAN_MATERIAL_COMPLIANCE_SLICES.md) · brief [MC-I3 CHIUSO](agent-tasks/DEPUTYTASK_MC_INGEST.md) |
-| 5 | **Rischi — ingest / data riesame (ROO-18, HITL)** | Lista riesami ambito c’è (ROO-17, verificata su TEST); data riesame esplicita e ingest→review solo dopo conferma | [PLAN §7](agent-tasks/PLAN_RISCHI_OPPORTUNITA_OBIETTIVI_SLICES.md) |
-| 6 | **SAL AI evidenze — OCR + documento mancante (HITL)** | **Chiuso** S1a–S2b (#471/#603/#605 + UI collega/carica/ignora). Residuo **S1c** `.doc` solo su richiesta | [PLAN](agent-tasks/PLAN_SAL_AI_EVIDENCE_SLICES.md) · stream [CHIUSO](agent-tasks/DEPUTYTASK_SAL_AI.md) |
-| 7 | **ISO 3834 — completezza per processi (RBAC + ponti + report)** | ISO-1*…ISO-3 + ISO-6/7 mergiate. Menu `/saldatura/rdp` spento. Prossima: **ISO-4** Word visita Mason **da Audit ISO 3834-2** (id 6), layout check list 27/01. Scala 1–6 = ISO-4b (HITL). ISO-5 Word Welding Book indipendente | [PLAN](agent-tasks/PLAN_3834_SLICES.md) · [gap 19/08](gap-reports/GAP_RDP_DUE_DOCUMENTI_MASON_2026-08-19.md) · PR [architettura #486](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/486) |
-| 8 | **Second Brain — Assistente di Ambito (SB-1 fatti, zero LLM)** | Studio + clienti paganti: fatti dell'Ambito in app, non AIOS Claude. Chat dopo i numeri veri | [PLAN](agent-tasks/PLAN_SECOND_BRAIN_SLICES.md) · brief [SB-1](agent-tasks/DEPUTYTASK2.md) |
-| 9 | **Multimodal RAG — figure normative in locale** | MR-0…**MR-5** mergiati (#464/#469/#475/#484/#489/#492). Prossima: **FW-0** hook ingest norma PDF → CLIP (brief PRONTO, non APERTO) | [PLAN figure](agent-tasks/PLAN_FIGURE_WPQR_SLICES.md) · [PLAN MR](agent-tasks/PLAN_MULTIMODAL_RAG_SLICES.md) |
+| 1 | **Valutazione commesse — ingest docs cliente + gap capacità + output studio** | Priorità assoluta prodotto (01/09): catalogazione documenti cliente e gap vs capacità azienda appaltatrice; report persistito per lo studio. Offerta/PPAP dopo | [PLAN](agent-tasks/PLAN_VALUTAZIONE_COMMESSE_SLICES.md) · brief **VC-1** [APERTO](agent-tasks/DEPUTYTASK.md) |
+| 2 | **Modulo Notifiche/Alert — destinatario allerte qualifiche non è una scelta esplicita in anagrafica** | Oggi risolto da un algoritmo a cascata, non da una scelta visibile in UI | `qualificationAlert.service.js` (`resolveWeldingCoordinatorRecipients`) |
+| 3 | **Shell dialog di revisione ingest — markup/CSS duplicato** (non urgente, basso rischio) | `IngestReviewDialog.jsx` vs dialog interno `ReprocessQueueBanner.jsx`: guscio overlay duplicato (~60-80 righe); pattern sistemico su molti altri modal nel progetto | Vedi backlog sotto per dettaglio |
+| 4 | **Pagina Impostazioni → Organizzazione (P.IVA + logo tenant)** | PR #10 aperta da aprile 2026, 180 file in conflitto — richiede ricostruzione, non merge | Vedi riga dedicata nel backlog sotto |
+| 5 | **Material Compliance AI — ingest certificati (base e apporto)** | MC-0…MC-5 + MC-I0 + MC-I1 + MC-B (#476) + MC-I2 (#481) + **MC-I3** (DDT ≠ mill). Prossima: **MC-I4** busta 1→N | [PLAN](agent-tasks/PLAN_MATERIAL_COMPLIANCE_SLICES.md) · brief [MC-I3 CHIUSO](agent-tasks/DEPUTYTASK_MC_INGEST.md) |
+| 6 | **Rischi — ingest / data riesame (ROO-18, HITL)** | Lista riesami ambito c’è (ROO-17, verificata su TEST); data riesame esplicita e ingest→review solo dopo conferma | [PLAN §7](agent-tasks/PLAN_RISCHI_OPPORTUNITA_OBIETTIVI_SLICES.md) |
+| 7 | **SAL AI evidenze — OCR + documento mancante (HITL)** | **Chiuso** S1a–S2b (#471/#603/#605 + UI collega/carica/ignora). Residuo **S1c** `.doc` solo su richiesta | [PLAN](agent-tasks/PLAN_SAL_AI_EVIDENCE_SLICES.md) · stream [CHIUSO](agent-tasks/DEPUTYTASK_SAL_AI.md) |
+| 8 | **ISO 3834 — completezza per processi (RBAC + ponti + report)** | ISO-1*…ISO-3 + ISO-6/7 mergiate. Menu `/saldatura/rdp` spento. Prossima: **ISO-4** Word visita Mason **da Audit ISO 3834-2** (id 6), layout check list 27/01. Scala 1–6 = ISO-4b (HITL). ISO-5 Word Welding Book indipendente | [PLAN](agent-tasks/PLAN_3834_SLICES.md) · [gap 19/08](gap-reports/GAP_RDP_DUE_DOCUMENTI_MASON_2026-08-19.md) · PR [architettura #486](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/486) |
+| 9 | **Second Brain — Assistente di Ambito (SB-1 fatti, zero LLM)** | Studio + clienti paganti: fatti dell'Ambito in app, non AIOS Claude. Chat dopo i numeri veri | [PLAN](agent-tasks/PLAN_SECOND_BRAIN_SLICES.md) · brief [SB-1](agent-tasks/DEPUTYTASK2.md) |
+| 10 | **Multimodal RAG — figure normative in locale** | MR-0…**MR-5** mergiati (#464/#469/#475/#484/#489/#492). Prossima: **FW-0** hook ingest norma PDF → CLIP (brief PRONTO, non APERTO) | [PLAN figure](agent-tasks/PLAN_FIGURE_WPQR_SLICES.md) · [PLAN MR](agent-tasks/PLAN_MULTIMODAL_RAG_SLICES.md) |
 
 > Nota: **Modulo NC — card statistiche duplicate da due tendine** (era riga 1) è stato chiuso da PR #374 (10/08/2026) — riga rimossa da questa tabella, non ancora aggiornata al momento in cui è stata scritta DEPUTYTASK4.
 
