@@ -6,7 +6,8 @@
 **Piano:** [`PLAN_VALUTAZIONE_COMMESSE_SLICES.md`](PLAN_VALUTAZIONE_COMMESSE_SLICES.md) § VC-3  
 **Rischio:** Medio — BE additivo (hook refresh dopo analyze / conferma requisiti) + FE reload report; niente migrazione; niente auth/sync breaking  
 **Branch:** `cursor/vc3-catalog-analyze-refresh-1c5d`  
-**PR:** (da aggiornare dopo push)  
+**PR:** draft non creabile da Cloud Agent (`gh` GraphQL Resource not accessible) — compare: https://github.com/qsstudio241/sistema-gestione-iso9001/compare/main...cursor/vc3-catalog-analyze-refresh-1c5d?expand=1  
+**Push:** branch remoto aggiornato (`origin/cursor/vc3-catalog-analyze-refresh-1c5d`)  
 **Dipende da:** VC-1 (#619) + VC-2 (#620)
 
 > **Allineamento Git (autonomo)**: `git fetch origin main` + `git pull origin main` prima di eseguire. **Non** chiedere al committente.  
