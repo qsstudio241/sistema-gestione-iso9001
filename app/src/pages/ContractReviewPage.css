@@ -559,3 +559,56 @@
 @keyframes spin {
   to { transform: rotate(360deg); }
 }
+
+/* VC-1 — Report studio (snapshot gap capacità) */
+.cr-muted {
+  color: #78909c;
+  font-size: 0.86rem;
+}
+
+.cr-error {
+  color: #dc2626;
+  font-size: 0.86rem;
+}
+
+.cr-studio-status {
+  padding: 0.55rem 0.75rem;
+  border-radius: 6px;
+  border: 1px solid #e0e0e0;
+  font-size: 0.9rem;
+  margin-bottom: 0.65rem;
+}
+
+.cr-studio-status-ok {
+  background: #f0fdf4;
+  border-color: #bbf7d0;
+  color: #166534;
+}
+
+.cr-studio-status-gap {
+  background: #fef2f2;
+  border-color: #fecaca;
+  color: #991b1b;
+}
+
+.cr-studio-status-need {
+  background: #fffbeb;
+  border-color: #fde68a;
+  color: #92400e;
+}
+
+.cr-studio-status-empty {
+  background: #f8fafc;
+  color: #475569;
+}
+
+.cr-studio-meta,
+.cr-studio-gaps {
+  margin: 0 0 0.65rem;
+  padding-left: 1.1rem;
+  font-size: 0.86rem;
+}
+
+.cr-studio-gaps li {
+  margin-bottom: 0.25rem;
+}
