@@ -20,17 +20,15 @@ import {
   formatCommercialDocMetaBadge,
 } from '../utils/contractReviewLabels';
 import { hydrateDrawingRequirements } from '../utils/drawingExtractionHydrate';
+import {
+  DOC_ROLE_OPTIONS,
+  groupAttachmentsByCatalogRole,
+  isCatalogedDocRole,
+  listAnalyzableCatalogAttachmentIds,
+} from '../utils/caseDocCatalog';
 import './ContractReviewPage.css';
 
-// Ruoli documento di commessa (riusati dal form "Collega da registro" e da "Carica allegato caso").
-const DOC_ROLE_OPTIONS = [
-  { value: 'order', label: 'Ordine' },
-  { value: 'rfq', label: 'RFQ' },
-  { value: 'capitolato', label: 'Capitolato' },
-  { value: 'quote', label: 'Offerta' },
-  { value: 'drawing', label: 'Disegno' },
-  { value: 'other', label: 'Altro' },
-];
+// DOC_ROLE_OPTIONS importati da caseDocCatalog (VC-2) — unica fonte FE.
 
 /**
  * StudioReportPanel (VC-1) — snapshot report gap capacità persistito per lo studio.
@@ -1151,11 +1149,20 @@ export default function ContractReviewPage() {
 
   async function handleAnalyzeAllDocuments() {
     if (!caseId) return;
+    const analyzableIds = listAnalyzableCatalogAttachmentIds(detail?.attachments);
+    if (!analyzableIds.length) {
+      setError(
+        'Nessun allegato catalogato analizzabile. Assegna un ruolo (Disegno / Capitolato / Ordine PDF) nel catalogo.',
+      );
+      return;
+    }
     setAnalyzeDocsBusy(true);
     setError(null);
     setAnalyzeDocsResult(null);
     try {
-      const result = await apiService.analyzeCaseDocuments(caseId);
+      const result = await apiService.analyzeCaseDocuments(caseId, {
+        attachment_ids: analyzableIds,
+      });
       setAnalyzeDocsResult(result);
       setAttachAnalysisStarted(true);
       setTimeout(() => setAttachAnalysisStarted(false), 8000);
@@ -1171,6 +1178,21 @@ export default function ContractReviewPage() {
       setError(err instanceof ApiError ? err.message : err.message || 'Analisi documenti fallita');
     } finally {
       setAnalyzeDocsBusy(false);
+    }
+  }
+
+  async function handleCatalogRoleChange(attachmentId, nextRole) {
+    if (!caseId || !attachmentId) return;
+    setError(null);
+    try {
+      await apiService.updateContractReviewAttachment(caseId, attachmentId, {
+        doc_role: nextRole,
+      });
+      await loadDetail(caseId);
+    } catch (err) {
+      setError(
+        err instanceof ApiError ? err.message : err.message || 'Aggiornamento ruolo allegato fallito',
+      );
     }
   }
 
@@ -1952,19 +1974,43 @@ export default function ContractReviewPage() {
                       )}
                       {(detail.attachments || []).length > 0 && !TERMINAL_STATUSES.has(detail.case.status) && (
                         <div className="cr-form-row" style={{ marginTop: '0.75rem' }}>
-                          <button
-                            type="button"
-                            className="cr-btn cr-btn-primary"
-                            disabled={analyzeDocsBusy}
-                            onClick={() => handleAnalyzeAllDocuments()}
-                          >
-                            {analyzeDocsBusy ? 'Analisi in corso\u2026' : 'Analizza documenti commessa'}
-                          </button>
+                          {(() => {
+                            const analyzableIds = listAnalyzableCatalogAttachmentIds(detail.attachments);
+                            const uncataloged = (detail.attachments || []).filter(
+                              (a) => !isCatalogedDocRole(a.commercial_doc_role),
+                            ).length;
+                            const analyzeDisabled = analyzeDocsBusy || analyzableIds.length === 0;
+                            const analyzeTitle = analyzableIds.length === 0
+                              ? uncataloged > 0
+                                ? 'Cataloga almeno un allegato con ruolo Disegno, Capitolato o Ordine (PDF) prima di analizzare'
+                                : 'Nessun allegato catalogato analizzabile (Disegno / Capitolato PDF / Ordine PDF)'
+                              : undefined;
+                            return (
+                              <>
+                                <button
+                                  type="button"
+                                  className="cr-btn cr-btn-primary"
+                                  disabled={analyzeDisabled}
+                                  title={analyzeTitle}
+                                  onClick={() => handleAnalyzeAllDocuments()}
+                                >
+                                  {analyzeDocsBusy ? 'Analisi in corso\u2026' : 'Analizza documenti commessa'}
+                                </button>
+                                {analyzableIds.length === 0 && (
+                                  <p className="contract-review-intro" style={{ marginTop: '0.4rem', marginBottom: 0 }}>
+                                    {uncataloged > 0
+                                      ? `Assegna un ruolo nel catalogo sotto (${uncataloged} da catalogare). L\u2019analisi parte solo sui catalogati analizzabili.`
+                                      : 'Cataloga allegati con ruolo Disegno, Capitolato o Ordine (PDF) per abilitare l\u2019analisi.'}
+                                  </p>
+                                )}
+                              </>
+                            );
+                          })()}
                           {analyzeDocsResult && (
                             <p className="contract-review-intro" style={{ marginTop: '0.4rem', marginBottom: 0 }}>
                               Avviati {analyzeDocsResult.started} job
                               {analyzeDocsResult.skipped > 0
-                                ? ` (${analyzeDocsResult.skipped} allegati saltati: ruolo/formato non analizzabile)`
+                                ? ` (${analyzeDocsResult.skipped} allegati saltati: non catalogati o non analizzabili)`
                                 : ''}.
                             </p>
                           )}
@@ -1991,22 +2037,69 @@ export default function ContractReviewPage() {
                     ))}
                   </ul>
                 )}
-                <h3 style={{ fontSize: '0.95rem' }}>Allegati file</h3>
+                <h3 style={{ fontSize: '0.95rem' }}>Catalogo allegati (per ruolo)</h3>
+                <p className="contract-review-intro" style={{ marginTop: 0 }}>
+                  Assegna o correggi il ruolo di ogni file cliente. Batch da Import PDF → caso resta disponibile
+                  da Impostazioni / Import jobs (ponte esistente).
+                </p>
                 {(detail.attachments || []).length === 0 ? (
                   <p className="contract-review-intro">Nessun allegato.</p>
                 ) : (
-                  <ul className="cr-doc-list">
-                    {detail.attachments.map((a) => (
-                      <li key={a.attachment_id}>
-                        {a.file_name}
-                        {a.commercial_doc_role ? ` (${a.commercial_doc_role})` : ''}
-                        <CommercialDocMetaBadge
-                          counterparty={a.commercial_counterparty}
-                          direction={a.commercial_direction}
-                        />
-                      </li>
+                  <div className="cr-catalog">
+                    {groupAttachmentsByCatalogRole(detail.attachments).map((group) => (
+                      <div key={group.key} className="cr-catalog-group">
+                        <h4 className="cr-catalog-group-title">
+                          {group.label}
+                          <span className="cr-catalog-count">{group.items.length}</span>
+                          {group.key === '__uncataloged__' ? (
+                            <span className="cr-catalog-badge cr-catalog-badge-warn">da catalogare</span>
+                          ) : null}
+                        </h4>
+                        <ul className="cr-doc-list cr-catalog-list">
+                          {group.items.map((a) => (
+                            <li key={a.attachment_id} className="cr-catalog-item">
+                              <span className="cr-catalog-name">{a.file_name}</span>
+                              <CommercialDocMetaBadge
+                                counterparty={a.commercial_counterparty}
+                                direction={a.commercial_direction}
+                              />
+                              {!TERMINAL_STATUSES.has(detail.case.status) ? (
+                                <select
+                                  className="cr-catalog-role-select"
+                                  aria-label={`Ruolo catalogo per ${a.file_name}`}
+                                  value={
+                                    isCatalogedDocRole(a.commercial_doc_role)
+                                      ? String(a.commercial_doc_role).trim().toLowerCase()
+                                      : ''
+                                  }
+                                  onChange={(e) => {
+                                    const next = e.target.value;
+                                    if (!next) return;
+                                    handleCatalogRoleChange(a.attachment_id, next);
+                                  }}
+                                >
+                                  {!isCatalogedDocRole(a.commercial_doc_role) ? (
+                                    <option value="">— Scegli ruolo —</option>
+                                  ) : null}
+                                  {DOC_ROLE_OPTIONS.map((opt) => (
+                                    <option key={opt.value} value={opt.value}>
+                                      {opt.label}
+                                    </option>
+                                  ))}
+                                </select>
+                              ) : (
+                                <span className="cr-muted">
+                                  {isCatalogedDocRole(a.commercial_doc_role)
+                                    ? ` (${a.commercial_doc_role})`
+                                    : ' (non catalogato)'}
+                                </span>
+                              )}
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
                     ))}
-                  </ul>
+                  </div>
                 )}
               </div>
               )}

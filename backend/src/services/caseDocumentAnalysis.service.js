@@ -19,12 +19,34 @@ const drawingExtractionService = require('./drawingExtraction.service');
 const caseTextAnalysisService = require('./caseTextAnalysis.service');
 const { getActiveProvider } = require('./aiProviderAdapter');
 
+/** Ruoli ammessi in catalogazione allegati caso (VC-2). */
+const CATALOG_DOC_ROLES = Object.freeze([
+    'order',
+    'rfq',
+    'capitolato',
+    'quote',
+    'drawing',
+    'other',
+]);
+const CATALOG_DOC_ROLE_SET = new Set(CATALOG_DOC_ROLES);
+
+/**
+ * Allegato catalogato = ruolo non vuoto e nella whitelist.
+ * @param {string|null|undefined} docRole
+ * @returns {boolean}
+ */
+function isCatalogedDocRole(docRole) {
+    const role = String(docRole || '').trim().toLowerCase();
+    return role.length > 0 && CATALOG_DOC_ROLE_SET.has(role);
+}
+
 /**
  * @param {string|null|undefined} docRole
  * @param {string|null|undefined} mimeType
  * @returns {'drawing'|'text'|null}
  */
 function resolveAnalysisSource(docRole, mimeType) {
+    if (!isCatalogedDocRole(docRole)) return null;
     const mime = String(mimeType || '').toLowerCase();
     const role = String(docRole || '').trim().toLowerCase();
     if (role === 'drawing') return 'drawing';
@@ -268,6 +290,14 @@ async function analyzeAllCaseDocuments({
     const skipped = [];
 
     for (const att of attachments) {
+        if (!isCatalogedDocRole(att.commercial_doc_role)) {
+            skipped.push({
+                attachment_id: att.attachment_id,
+                file_name: att.file_name,
+                reason: 'non catalogato (ruolo mancante)',
+            });
+            continue;
+        }
         const source = resolveAnalysisSource(att.commercial_doc_role, att.mime_type);
         if (!source) {
             skipped.push({
@@ -299,6 +329,8 @@ async function analyzeAllCaseDocuments({
 }
 
 module.exports = {
+    CATALOG_DOC_ROLES,
+    isCatalogedDocRole,
     resolveAnalysisSource,
     analyzeAttachment,
     analyzeAllCaseDocuments,

@@ -1021,6 +1021,94 @@ async function listCaseAttachments(req, res) {
 }
 
 /**
+ * VC-2 — aggiorna catalogazione allegato caso (ruolo + meta commerciali).
+ * Niente nuovo storage: UPDATE su attachments già collegato al caso.
+ */
+async function updateCaseAttachment(req, res) {
+    try {
+        const organizationId = req.user.organization_id;
+        const caseId = parseCaseId(req.params.id);
+        const attachmentId = parseInt(String(req.params.attachmentId), 10);
+        if (!caseId) return sendErr(res, 400, 'ID caso non valido', 'VALIDATION_ERROR');
+        if (!Number.isFinite(attachmentId) || attachmentId <= 0) {
+            return sendErr(res, 400, 'ID allegato non valido', 'VALIDATION_ERROR');
+        }
+        if (!(await fetchCaseRow(caseId, organizationId))) {
+            return sendErr(res, 404, 'Caso non trovato', 'NOT_FOUND');
+        }
+
+        const body = req.body || {};
+        const rawRole = body.doc_role != null ? body.doc_role : body.commercial_doc_role;
+        if (rawRole === undefined) {
+            return sendErr(res, 400, 'doc_role obbligatorio', 'VALIDATION_ERROR');
+        }
+        const docRole = String(rawRole || '').trim().toLowerCase().substring(0, 30);
+        if (!caseDocumentAnalysisService.isCatalogedDocRole(docRole)) {
+            return sendErr(
+                res,
+                400,
+                `doc_role non valido (ammessi: ${caseDocumentAnalysisService.CATALOG_DOC_ROLES.join(', ')})`,
+                'VALIDATION_ERROR',
+            );
+        }
+
+        let direction;
+        if (body.direction !== undefined) {
+            direction = body.direction === 'out' ? 'out' : 'in';
+        }
+        let counterparty;
+        if (body.counterparty !== undefined) {
+            counterparty =
+                body.counterparty === 'supplier' || body.counterparty === 'internal'
+                    ? body.counterparty
+                    : 'customer';
+        }
+
+        const existing = await query(
+            `
+            SELECT a.attachment_id
+            FROM attachments a
+            INNER JOIN commercial_cases c ON c.id = a.commercial_case_id
+            WHERE a.attachment_id = @attachmentId
+              AND a.commercial_case_id = @caseId
+              AND c.organization_id = @organizationId
+            `,
+            { attachmentId, caseId, organizationId },
+        );
+        if (!existing.recordset.length) {
+            return sendErr(res, 404, 'Allegato non trovato', 'NOT_FOUND');
+        }
+
+        const sets = ['commercial_doc_role = @docRole'];
+        const params = { attachmentId, caseId, docRole };
+        if (direction !== undefined) {
+            sets.push('commercial_direction = @direction');
+            params.direction = direction;
+        }
+        if (counterparty !== undefined) {
+            sets.push('commercial_counterparty = @counterparty');
+            params.counterparty = counterparty;
+        }
+
+        const upd = await query(
+            `
+            UPDATE attachments
+            SET ${sets.join(', ')}
+            OUTPUT INSERTED.attachment_id, INSERTED.attachment_uuid, INSERTED.file_name,
+                   INSERTED.mime_type, INSERTED.commercial_doc_role,
+                   INSERTED.commercial_direction, INSERTED.commercial_counterparty
+            WHERE attachment_id = @attachmentId AND commercial_case_id = @caseId
+            `,
+            params,
+        );
+        return res.json(upd.recordset[0]);
+    } catch (err) {
+        logger.error('updateCaseAttachment', err.message);
+        return sendErr(res, 500, err.message, 'SERVER_ERROR');
+    }
+}
+
+/**
  * Avvia in background (fire-and-forget) l'estrazione AI appropriata per un allegato.
  * Delega a caseDocumentAnalysis.service (slice #5).
  *
@@ -1741,6 +1829,7 @@ module.exports = {
     unlinkDocument,
     listCaseAttachments,
     uploadCaseAttachment,
+    updateCaseAttachment,
     analyzeRequirements,
     importFromJob,
     registerHandoff,

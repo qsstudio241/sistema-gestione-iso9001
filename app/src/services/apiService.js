@@ -2375,6 +2375,11 @@ class ApiService {
         return this.get(`/contract-reviews/${caseId}/attachments`);
     }
 
+    /** VC-2 — aggiorna catalogazione (ruolo) di un allegato sul caso. */
+    async updateContractReviewAttachment(caseId, attachmentId, body = {}) {
+        return this.patch(`/contract-reviews/${caseId}/attachments/${attachmentId}`, body);
+    }
+
     async uploadContractReviewAttachment(caseId, file, options = {}) {
         const formData = new FormData();
         formData.append('file', file);
