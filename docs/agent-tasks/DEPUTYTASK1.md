@@ -1,57 +1,69 @@
-# DEPUTYTASK1 — Logout / pulizia sessione (ADR-007)
+# DEPUTYTASK1 — ING-4: Template checklist Riesame requisiti personalizzabile (studio)
 
-**Stato:** CHIUSO — FIX NON APPLICABILI  
-**Aperto:** 30/08/2026  
-**Chiuso:** 30/08/2026  
-**Rischio:** Medio/Alto se si tocca `auth.middleware`/JWT in profondità — perimetro richiesto: solo clear storage al logout (passo correttivo storico)  
-**Parallelo a:** LG-1 su [`DEPUTYTASK.md`](DEPUTYTASK.md) / PR #610 — **file disgiunti** (non toccare aiChat, librarySourceRequest, NormLibraryPage, AiAssistantSourceGaps, mig 160, parseSourceGaps).  
-**Branch:** `cursor/logout-session-clear-9166`  
-**ADR:** [`docs/adr/ADR-007-logout-offline-backup-e-mirror-cartella-pc.md`](../adr/ADR-007-logout-offline-backup-e-mirror-cartella-pc.md)
+**Stato:** CHIUSO — TEST OK  
+**Aperto:** 02/09/2026  
+**Chiuso:** 02/09/2026  
+**Piano:** [`PLAN_VALUTAZIONE_COMMESSE_SLICES.md`](PLAN_VALUTAZIONE_COMMESSE_SLICES.md) § ING-4  
+**Rischio:** Medio — migrazione additiva 162 + API template + hook snapshot in `generateChecklist`; niente auth/sync breaking  
+**Branch:** `cursor/ing4-checklist-templates-1c5d`  
+**Parallelo a:** ING-1 su [`DEPUTYTASK.md`](DEPUTYTASK.md) — **file disgiunti** (non toccare catalogo allegati / `ContractReviewPage` HITL batch)  
+**Migrazione prenotata:** `162_commercial_checklist_templates.sql`
 
 > **Allineamento Git (autonomo)**: `git fetch origin main` + `git pull origin main` prima di eseguire. **Non** chiedere al committente.  
 > Comando: `Leggi docs/agent-tasks/DEPUTYTASK1.md ed eseguilo. Chiudi con TEST OK o FIX NON APPLICABILI.`
 
-## Obiettivo (richiesto)
+## Obiettivo verificabile
 
-Verificare / completare pulizia al logout secondo ADR-007 e pattern già in repo (IndexedDB audit, sync queue/metadata/allegati offline, localStorage tenant-scoped se previsto). Gate Ponytail. Non inventare. Non toccare auth.middleware/JWT in profondità.
+Lo studio gestisce **template checklist** Riesame requisiti (voci P/F) associabili a un cliente (`company_id`) o default org. All’applicazione su un caso: **snapshot** in `commercial_case_checklist` (INSERT solo se ref assente) — non sovrascrive checklist già compilate. Fedeltà ISO §8.2: core P1–P10 / F1–F6 sempre presenti; personalizzazione = variante testo core e/o voci extra, non bypass norma.
 
-## Diagnosi (evidenza codice su `main`)
+## File previsti
 
-| Requisito ADR-007 / passo storico | Stato | Dove |
-|---|---|---|
-| Svuotare IndexedDB audit al logout | **Già presente** | `StorageContext.jsx` listener `sgq:userLoggedOut` → `fsProvider.clearAuditsStore()` |
-| Svuotare sync queue + metadata + allegati offline | **Già presente** | `syncService.clearSessionStoresOnLogout()` (`syncQueue`, `sync_metadata`, `attachments_offline`) |
-| Gate pre-logout se coda attiva (Fase A) | **Già presente** (SYNC-4, 29/04/2026) | `AuthContext.logout` + `LogoutSyncGuard` montato in `App.jsx`: sync / esci comunque / annulla |
-| Conta solo item attivi (non stalled / update_audit senza lock) | **Già presente** | `syncService.getActiveQueueSize()` + test in `syncService.stall.test.js` |
-| Clear JWT / lock token al logout | **Già presente** | `apiService.logout()` + `clearAllAuditLockTokens()` (ordine: `sgq:userLoggedOut` **prima** di `clearToken`) |
-| Chat AI sessionStorage | **Già presente** | `AiAssistantPage.jsx` su `sgq:userLoggedOut` |
-| Isolamento localStorage tenant-scoped (bozze CND/WB/NC, storico testo) | **Già coperto da pattern org_id** (#588/#595) — non clear-on-logout (evita perdita dati ADR-007) | `useNdtAutoSave`, `textFieldHistory`, `ncFieldDraftStorage`, … |
-| Fase B mirror cartella PC | **Fuori scope** di questa slice (opt-in desktop, ADR ancora aperto) | ADR-007 Fase B |
-
-## Esito
-
-**FIX NON APPLICABILI** — niente nuovo codice di prodotto: il passo correttivo storico (clear IndexedDB + store sessione sync al logout) e la Fase A (gate + sync/conferma) sono già in `main`. Aggiornata checklist ADR-007 (Fase A) + test L1 di regressione sul contratto `clearSessionStoresOnLogout`.
-
-## File toccati (questa PR)
-
+- `database/migrations/162_commercial_checklist_templates.sql` + `backend/scripts/run-migration-162-vps.js`
+- `backend/src/data/commercialChecklistDefaults.js`
+- `backend/src/services/commercialChecklistTemplate.service.js` (+ test Jest)
+- `backend/src/controllers/commercialChecklistTemplate.controller.js`
+- `backend/src/routes/commercialChecklistTemplate.routes.js`
+- `backend/src/server.js` (mount route)
+- `backend/src/controllers/contractReview.controller.js` (solo resolve items in generateChecklist + seed import)
+- `backend/scripts/deploy-manifest.json`
+- `app/src/data/commercialChecklistDefaults.js` (+ test Vitest)
+- `app/src/pages/ContractChecklistTemplatesPage.jsx` (+ CSS minimo token esistenti)
+- `app/src/App.jsx` / `app/src/layouts/AppLayout.jsx` / `app/src/services/apiService.js`
 - `docs/agent-tasks/DEPUTYTASK1.md` (questo brief)
-- `docs/adr/ADR-007-logout-offline-backup-e-mirror-cartella-pc.md` (checklist Fase A)
-- `docs/adr/README.md` (stato ADR → Parziale)
-- `app/src/tests/syncService.logoutClear.test.js` (regressione L1)
+- PLAN: solo riga ING-4 se sicuro; altrimenti nota qui (parallelo PR #623 / ING-1)
 
 ## Cosa NON toccare
 
-- File LG-1 / PR #610 (`aiChat.*`, `librarySourceRequest.*`, `NormLibraryPage.*`, `AiAssistantSourceGaps.*`, mig 160, `parseSourceGaps.*`)
-- `auth.middleware.js`, JWT deep changes
-- Fase B mirror PC (nuova feature, HITL/product)
+- `docs/agent-tasks/DEPUTYTASK.md` (slot ING-1)
+- `ContractReviewPage.jsx` / CSS HITL batch / `caseDocCatalog*`
+- `importJobs*`, ingest staging, auth/JWT, sync
+- Export Word VC-4 (`wordExportContractReviewChecklist.js`) — legge già lo snapshot caso
 
-## Test
+## Come lo studio personalizza (UX)
 
-```bash
-cd app && NODE_ENV=test npx vitest run src/tests/syncService.logoutClear.test.js
-```
+1. Gestione → **Template checklist riesame** (`/settings/contract-checklist-templates`)
+2. Crea template (seed automatico core §8.2) → opzionale associa azienda cliente
+3. Aggiunge voci extra (es. `P11`) o modifica testo variante core
+4. Su caso: «Genera preliminare/finale» usa template azienda se attivo, altrimenti default org, altrimenti solo core — snapshot additivo
 
-## Residuo (non in questa slice)
+## Criteri chiusura
 
-- ADR-007 **Fase B** (mirror cartella PC) resta aperta — solo su richiesta esplicita.
-- Roadmap Open points «Logout vs lavoro solo locale»: aggiornare **dopo merge** (parallelo LG-1: non toccare GUIDA/roadmap in questa PR).
+- [x] Resolve: core sempre; extras da template; snapshot NOT EXISTS
+- [x] UI CRUD minima + test L1 + build
+- [x] PR/compare; DEPUTYTASK1 CHIUSO TEST OK
+
+
+## Esito deputy
+
+**TEST OK**
+
+| Voce | Dettaglio |
+|------|-----------|
+| Migrazione | `162_commercial_checklist_templates.sql` (+ runner VPS) |
+| Resolve | core P/F sempre; variante testo + extras; preferenza company → org default → solo core |
+| Snapshot | `generateChecklist` / seed import: INSERT `NOT EXISTS` su `item_ref` |
+| UI | `/settings/contract-checklist-templates` (Gestione) |
+| Test L1 | Vitest 4/4 · Jest template+controller 51 · mig uniqueness · build OK |
+| PR | compare (gh createPullRequest non accessibile): https://github.com/qsstudio241/sistema-gestione-iso9001/compare/main...cursor/ing4-checklist-templates-1c5d?expand=1 |
+| PLAN | Non toccato (parallelo PR #623 / ING-1) — spuntare ING-4 in sync post-merge |
+

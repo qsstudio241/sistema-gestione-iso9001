@@ -20,31 +20,13 @@ const {
 } = require('../services/commercialCustomerCounterparty.service');
 const caseDocumentAnalysisService = require('../services/caseDocumentAnalysis.service');
 const caseCapabilityGapReportService = require('../services/caseCapabilityGapReport.service');
+const commercialChecklistTemplateService = require('../services/commercialChecklistTemplate.service');
+const {
+    PRELIMINARY_ITEMS,
+} = require('../data/commercialChecklistDefaults');
 
 const CASE_STATUSES = workflow.CASE_STATUSES;
 const TERMINAL_FROM_STATUSES = new Set(['APPROVED', 'CANCELLED', 'REJECTED']);
-
-const PRELIMINARY_ITEMS = [
-    { ref: 'P1', text: 'Requisiti tecnici del cliente chiaramente identificati' },
-    { ref: 'P2', text: 'Norme e standard applicabili identificati' },
-    { ref: 'P3', text: 'Capacità produttiva adeguata ai requisiti' },
-    { ref: 'P4', text: 'Competenze e qualifiche del personale disponibili' },
-    { ref: 'P5', text: 'Attrezzature e strumenti necessari disponibili' },
-    { ref: 'P6', text: 'Documentazione di sistema applicabile aggiornata' },
-    { ref: 'P7', text: 'Requisiti di consegna e tempistiche realizzabili' },
-    { ref: 'P8', text: 'Requisiti legali e cogenti applicabili identificati' },
-    { ref: 'P9', text: 'Subforniture necessarie identificate' },
-    { ref: 'P10', text: 'Rischi contrattuali valutati' },
-];
-
-const FINAL_ITEMS = [
-    { ref: 'F1', text: "Ordine conforme all'offerta inviata" },
-    { ref: 'F2', text: 'Variazioni rispetto all\'offerta documentate' },
-    { ref: 'F3', text: 'Capacità confermata alla data dell\'ordine' },
-    { ref: 'F4', text: 'Qualifiche personale ancora valide per la commessa' },
-    { ref: 'F5', text: 'Piano qualità/controlli definito' },
-    { ref: 'F6', text: 'Responsabile commessa assegnato' },
-];
 
 const CHECKLIST_ANSWERS = new Set(['yes', 'no', 'na', 'partial']);
 
@@ -680,7 +662,15 @@ async function generateChecklist(req, res) {
             return sendErr(res, 400, 'phase deve essere preliminary o final', 'VALIDATION_ERROR');
         }
 
-        const items = phase === 'preliminary' ? PRELIMINARY_ITEMS : FINAL_ITEMS;
+        const resolved = await commercialChecklistTemplateService.resolveItemsForCase({
+            organizationId,
+            companyId: existing.company_id != null ? Number(existing.company_id) : null,
+            phase,
+        });
+        if (!resolved.ok) {
+            return sendErr(res, 400, resolved.error || 'Template checklist non risolvibile', 'VALIDATION_ERROR');
+        }
+        const items = resolved.items;
 
         await transaction.begin();
 
@@ -718,6 +708,8 @@ async function generateChecklist(req, res) {
         return res.status(201).json({
             phase,
             insertedCount: inserted,
+            template_id: resolved.template_id,
+            template_name: resolved.template_name,
             checklist: listRes.recordset,
         });
     } catch (err) {
@@ -1427,6 +1419,16 @@ async function importFromJob(req, res) {
         }
         const notesVal = buildNotesPrefill(body.notes, job.notes, files);
 
+        const prelimResolved = await commercialChecklistTemplateService.resolveItemsForCase({
+            organizationId,
+            companyId: companyIdVal != null ? Number(companyIdVal) : null,
+            phase: 'preliminary',
+        });
+        const prelimItems = prelimResolved.ok ? prelimResolved.items : PRELIMINARY_ITEMS.map((i) => ({
+            ref: i.ref,
+            text: i.text,
+        }));
+
         await transaction.begin();
 
         const insertReq = new sql.Request(transaction);
@@ -1465,7 +1467,7 @@ async function importFromJob(req, res) {
             VALUES (@caseId, NULL, 'DRAFT', @userId, 'Creato da import job')
         `);
 
-        for (const item of PRELIMINARY_ITEMS) {
+        for (const item of prelimItems) {
             const chkReq = new sql.Request(transaction);
             chkReq.input('caseId', newCaseId);
             chkReq.input('phase', 'preliminary');

@@ -106,6 +106,7 @@ function buildNavItems(user, alerts = {}) {
         ] : []),
         { to: "/settings/templates",        icon: "📝", label: "Template report" },
         { to: "/settings/custom-checklists",icon: "📋", label: "Checklist personalizzate" },
+        { to: "/settings/contract-checklist-templates", icon: "\uD83D\uDCCB", label: "Template checklist riesame", licenseKey: "ai_review" },
         ...(isAdmin ? [
           { to: "/settings/notifications",  icon: "🔔", label: "Notifiche", licenseKey: "notifications" },
         ] : []),

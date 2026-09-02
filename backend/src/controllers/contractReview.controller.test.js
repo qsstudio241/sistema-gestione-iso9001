@@ -68,6 +68,18 @@ jest.mock('../services/caseCapabilityGapReport.service', () => ({
   regenerateAndPersistCapabilityGapReport: jest.fn(),
 }));
 
+jest.mock('../services/commercialChecklistTemplate.service', () => ({
+  resolveItemsForCase: jest.fn().mockImplementation(async ({ phase }) => ({
+    ok: true,
+    phase,
+    template_id: null,
+    template_name: null,
+    items: phase === 'final'
+      ? [{ ref: 'F1', text: 'Ordine conforme', is_core: true, sort_order: 0 }]
+      : [{ ref: 'P1', text: 'Req.tecnici', is_core: true, sort_order: 0 }],
+  })),
+}));
+
 const { query, getPool, sql } = require('../config/database');
 const { chat, getActiveProvider } = require('../services/aiProviderAdapter');
 const caseCapabilityGapReportService = require('../services/caseCapabilityGapReport.service');
