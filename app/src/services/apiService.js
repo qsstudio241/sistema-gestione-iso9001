@@ -2330,6 +2330,38 @@ class ApiService {
         return this.post(`/contract-reviews/${id}/generate-checklist`, { phase });
     }
 
+    async listCommercialChecklistTemplates(params = {}) {
+        const qs = new URLSearchParams();
+        if (params.company_id != null && params.company_id !== '') qs.set('company_id', String(params.company_id));
+        if (params.active_only) qs.set('active_only', '1');
+        const q = qs.toString();
+        return this.get(`/commercial-checklist-templates${q ? `?${q}` : ''}`);
+    }
+
+    async getCommercialChecklistTemplate(id) {
+        return this.get(`/commercial-checklist-templates/${id}`);
+    }
+
+    async createCommercialChecklistTemplate(data) {
+        return this.post('/commercial-checklist-templates', data);
+    }
+
+    async updateCommercialChecklistTemplate(id, data) {
+        return this.put(`/commercial-checklist-templates/${id}`, data);
+    }
+
+    async deleteCommercialChecklistTemplate(id) {
+        return this.delete(`/commercial-checklist-templates/${id}`);
+    }
+
+    async resolveCommercialChecklistTemplate(params = {}) {
+        const qs = new URLSearchParams();
+        if (params.phase) qs.set('phase', params.phase);
+        if (params.company_id != null && params.company_id !== '') qs.set('company_id', String(params.company_id));
+        const q = qs.toString();
+        return this.get(`/commercial-checklist-templates/resolve${q ? `?${q}` : ''}`);
+    }
+
     async saveChecklistAnswer(caseId, itemId, data) {
         return this.put(`/contract-reviews/${caseId}/checklist/${itemId}`, data);
     }

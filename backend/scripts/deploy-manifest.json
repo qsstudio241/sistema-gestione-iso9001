@@ -69,6 +69,7 @@
                        "name":  "data",
                        "files":  [
                                      "src/data/documentTypeSchemas.js",
+                                     "src/data/commercialChecklistDefaults.js",
                                      "src/data/materialGroups15608.js",
                                      "src/data/weldingProcesses4063.js",
                                      "src/data/weldingPositions6947.js",
@@ -139,6 +140,7 @@
                                      "src/services/auditLock.service.js",
                                      "src/services/auditNumberAllocation.service.js",
                                      "src/services/customChecklist.service.js",
+                                     "src/services/commercialChecklistTemplate.service.js",
                                      "src/services/reportTemplate.service.js",
                                      "src/services/billing.service.js",
                                      "src/services/unifiedSearch.service.js",
@@ -252,6 +254,7 @@
                                      "src/controllers/normUpload.controller.js",
                                      "src/controllers/importJobs.controller.js",
                                      "src/controllers/customChecklist.controller.js",
+                                     "src/controllers/commercialChecklistTemplate.controller.js",
                                      "src/controllers/admin.controller.js",
                                      "src/controllers/invite.controller.js",
                                      "src/controllers/passwordReset.controller.js",
@@ -299,6 +302,7 @@
                        "files":  [
                                      "src/routes/audit.routes.js",
                                      "src/routes/customChecklist.routes.js",
+                                     "src/routes/commercialChecklistTemplate.routes.js",
                                      "src/routes/admin.routes.js",
                                      "src/routes/invite.routes.js",
                                      "src/routes/passwordReset.routes.js",
