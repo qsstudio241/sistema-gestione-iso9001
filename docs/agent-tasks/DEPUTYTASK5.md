@@ -1,7 +1,8 @@
 # DEPUTYTASK5 — CONS-5: Coda `update_audit` senza lock e senza wipe
 
-**Stato:** APERTO  
+**Stato:** CHIUSO — TEST OK  
 **Aperto:** 02/09/2026  
+**Chiuso:** 02/09/2026  
 **Piano:** [`PLAN_AUDIT_CONSERVAZIONE_SLICES.md`](PLAN_AUDIT_CONSERVAZIONE_SLICES.md) § CONS-5  
 **Rischio:** Alto — coda sync / ADR-008; PR, non push su `main`. Non dire «pronta» senza CI + Bugbot + Security su quello SHA.  
 **Branch:** `cursor/cons5-update-audit-queue-2271`  
@@ -47,8 +48,23 @@ Lock sul server è solo UX (T5): le write non devono dipendere dal lucchetto.
 
 ## DoD
 
-- [ ] `update_audit` senza lock token viene inviato da `processQueue`
-- [ ] `clearQueueForServerAudits` non cancella `update_audit` non stalled / mai inviato (anche se UUID ha mapping server)
-- [ ] `create_audit` già sul server resta pulibile
-- [ ] Test L1 verdi + build `app/`
-- [ ] CONS-3 / CONS-4 / ING-5 / GUIDA non toccati
+- [x] `update_audit` senza lock token viene inviato da `processQueue`
+- [x] `clearQueueForServerAudits` non cancella `update_audit` non stalled / mai inviato (anche se UUID ha mapping server)
+- [x] `create_audit` già sul server resta pulibile
+- [x] Test L1 verdi + build `app/`
+- [x] CONS-3 / CONS-4 / ING-5 / GUIDA non toccati
+
+---
+
+## Esito deputy
+
+**TEST OK** — `processQueue` invia `update_audit` anche senza lock token (lock = UX, ADR-008 T5). `clearQueueForServerAudits` non tratta il mapping uuid→audit_id come «già sync»: tiene `update_audit` non stalled mai inviato; `create_audit` già sul server e `update_audit` stalled restano pulibili. `getActiveQueueSize` conta gli update non stalled (logout non ignora coda intestazione). Non toccati `StorageContext.jsx`, `DEPUTYTASK.md`, `DEPUTYTASK3.md`, `DEPUTYTASK4.md`, GUIDA.
+
+| Voce | Dettaglio |
+|------|-----------|
+| processQueue | rimosso skip `hasAuditLockToken` su `update_audit` |
+| clearQueue | `update_audit` non stalled tenuto; mapping server non implica successo |
+| Logout | `getActiveQueueSize` = item non stalled (anche senza lock) |
+| Test L1 | `syncService.updateAuditQueue.test.js` 2/2; `syncService.stall.test.js` 9/9; suite sync+CONS-3/4 63/63 |
+| Build | `cd app && npm run build` OK |
+| PR | draft su `main` (rischio Alto: non «pronta» senza CI+Bugbot+Security) |
