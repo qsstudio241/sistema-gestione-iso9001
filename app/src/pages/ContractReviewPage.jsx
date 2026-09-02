@@ -35,10 +35,90 @@ import {
   listAnalyzableCatalogAttachmentIds,
   suggestCommercialDocRole,
 } from '../utils/caseDocCatalog';
+import {
+  deriveOrderEvadibilitySignal,
+  evadibilityStatusClass,
+  parseCapabilityGapReport,
+} from '../utils/orderEvadibilitySignal';
 import { exportContractReviewChecklistDocx } from '../utils/wordExportContractReviewChecklist';
 import './ContractReviewPage.css';
 
 // DOC_ROLE_OPTIONS importati da caseDocCatalog (VC-2) — unica fonte FE.
+
+/**
+ * ING-3 — segnale sintetico evadibilità (catalogo + report VC-1 + checklist).
+ * DNA: stesso guscio .cr-panel / .cr-studio-status* del Report studio.
+ */
+function EvadibilitySignalPanel({
+  caseId,
+  attachments,
+  checklist,
+  caseGapJson,
+  caseGapAt,
+  reloadKey = 0,
+}) {
+  const [liveReport, setLiveReport] = useState(null);
+  const [loading, setLoading] = useState(false);
+
+  const loadReport = useCallback(async () => {
+    if (!caseId) return;
+    setLoading(true);
+    try {
+      const data = await apiService.getCapabilityGapReport(caseId);
+      setLiveReport(data?.report ?? null);
+    } catch {
+      setLiveReport(null);
+    } finally {
+      setLoading(false);
+    }
+  }, [caseId]);
+
+  useEffect(() => {
+    loadReport();
+  }, [loadReport, reloadKey]);
+
+  const gapFromCase = useMemo(
+    () => parseCapabilityGapReport(caseGapJson, caseGapAt),
+    [caseGapJson, caseGapAt],
+  );
+  const gapReport = liveReport || gapFromCase;
+
+  const signal = useMemo(
+    () =>
+      deriveOrderEvadibilitySignal({
+        attachments,
+        gapReport,
+        checklist,
+      }),
+    [attachments, gapReport, checklist],
+  );
+
+  return (
+    <div className="cr-panel cr-evadibility-panel" data-testid="cr-evadibility-signal">
+      <h2>Evadibilità ordine</h2>
+      <p className="cr-muted" style={{ marginTop: 0 }}>
+        Segnale sintetico da documenti catalogati, report capacità e checklist §8.2.
+        Non sostituisce il giudizio dello studio né inventa requisiti normativi.
+      </p>
+      {loading && !gapReport ? (
+        <p className="cr-muted">Valutazione in corso...</p>
+      ) : (
+        <>
+          <div className={`cr-studio-status ${evadibilityStatusClass(signal.status)}`}>
+            <strong>{signal.label}</strong>
+          </div>
+          {signal.reasons.length > 0 ? (
+            <ul className="cr-studio-meta">
+              {signal.reasons.slice(0, 6).map((r) => (
+                <li key={r}>{r}</li>
+              ))}
+            </ul>
+          ) : null}
+        </>
+      )}
+    </div>
+  );
+}
 
 /**
  * StudioReportPanel (VC-1) — snapshot report gap capacità persistito per lo studio.
@@ -1823,6 +1903,15 @@ export default function ContractReviewPage() {
                 </ul>
               </div>
 
+              {/* ING-3 — segnale evadibilità (prima del report dettagliato) */}
+              <EvadibilitySignalPanel
+                caseId={detail.case.id}
+                attachments={detail.attachments}
+                checklist={detail.checklist}
+                caseGapJson={detail.case.capability_gap_report_json}
+                caseGapAt={detail.case.capability_gap_report_at}
+                reloadKey={studioReportReloadKey}
+              />
               {/* P5 — advisory WPQR/visione disponibile in ogni stato (non solo APPROVED) */}
               <StudioReportPanel
                 caseId={detail.case.id}

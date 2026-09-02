@@ -10,7 +10,7 @@
 > - SAL gap ≠ questo epic: [`MODULO_SAL_SCOPO_E_ROADMAP.md`](../specs/MODULO_SAL_SCOPO_E_ROADMAP.md)
 > - Mattoni già in codice: `importJobs` + `ImportJobsPage`, `contractReview.*`, `caseDocumentAnalysis.service.js`, `caseExtractedCoverage.service.js`, `caseCoverageAdvisory.service.js`, `qualificationCoverage.js`, CoveragePanel in `ContractReviewPage.jsx`, export Word checklist (`wordExportContractReviewChecklist.js`)
 >
-> **Brief attivo**: [`DEPUTYTASK.md`](DEPUTYTASK.md) — **ING-2** CHIUSO (matching confidence + gate Analizza). Prossima: ING-3; ING-4 parallelo (#625) se ancora aperta.
+> **Brief attivo**: [`DEPUTYTASK.md`](DEPUTYTASK.md) — **ING-3** CHIUSO (segnale evadibilità). Prossima: ING-5 solo wayfinder / ponte gap.
 > **Mappa creata**: 01/09/2026 · Lead wayfinder · **riorientata 02/09/2026** post-merge VC-4 (priorità ingest)
 > **Branch base**: `main`
 
@@ -101,7 +101,7 @@
 | **VC-8** | Ordini fornitori a corredo | Documenti `counterparty=supplier` + link anagrafica | VC-7; nebbia | HITL |
 | **VC-9** | Sessione PPAP | Solo dopo decisione prodotto | — | HITL / nebbia |
 
-**Stato piano:** APERTO — **VC-1…VC-4** CHIUSI; **ING-1** CHIUSO; **ING-2** CHIUSO (matching + gate Analizza); prossima **ING-3** (o ING-4 se #625 non mergiata); VC-5 non di default.
+**Stato piano:** APERTO — **VC-1…VC-4** CHIUSI; **ING-1…ING-4** CHIUSI (ING-3 in chiusura su questa PR); prossima **ING-5** solo con wayfinder (non monolite); VC-5 non di default.
 
 ### Bozza slice ingest / organizzazione (post VC-4 — da confermare Lead)
 
@@ -111,7 +111,7 @@
 |-------|------|---------------------|------------|------|
 | **ING-1** ✅ | Classificazione / riordino allegati in batch | Riuso catalogo VC-2 + euristiche nome (pattern Import PDF); HITL conferma; niente secondo storage | Import PDF / VC-2 | CHIUSO 02/09 |
 | **ING-2** ✅ | Matching docs → ruoli catalogo caso | Auto-proposta `commercial_doc_role` da nome/cartella/MIME + confidence; gate Analizza (estende VC-2/ING-1) | ING-1 | CHIUSO 02/09 |
-| **ING-3** | Gap **evadibilità** da docs organizzati | Dato catalogo ordinato: segnale «ordine evadibile / da chiarire» (riuso coverage + checklist); non inventare norme | ING-2, VC-1 | AFK/HITL |
+| **ING-3** ✅ | Gap **evadibilità** da docs organizzati | Dato catalogo ordinato: segnale «ordine evadibile / da chiarire» (riuso coverage + checklist); non inventare norme | ING-2, VC-1 | CHIUSO 02/09 |
 | **ING-4** | Template checklist personalizzabile studio | Template per cliente/tenant; voci P/F editabili; export VC-4 legge template attivo | HITL prodotto | HITL + AFK |
 | **ING-5** | Agente «triage documenti» (se mattoni Import PDF) | Slice sottile: classifica + coda HITL; **non** monolite multi-agente | ING-1…2; wayfinder agenti | HITL / wayfinder |
 

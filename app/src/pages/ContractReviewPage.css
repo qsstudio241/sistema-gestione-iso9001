@@ -769,6 +769,10 @@
   color: #475569;
 }
 
+.cr-evadibility-panel h2 {
+  margin-bottom: 0.35rem;
+}
+
 .cr-studio-meta,
 .cr-studio-gaps {
   margin: 0 0 0.65rem;
