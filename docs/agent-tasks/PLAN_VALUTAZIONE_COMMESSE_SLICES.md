@@ -10,7 +10,7 @@
 > - SAL gap ≠ questo epic: [`MODULO_SAL_SCOPO_E_ROADMAP.md`](../specs/MODULO_SAL_SCOPO_E_ROADMAP.md)
 > - Mattoni già in codice: `importJobs` + `ImportJobsPage`, `contractReview.*`, `caseDocumentAnalysis.service.js`, `caseExtractedCoverage.service.js`, `caseCoverageAdvisory.service.js`, `qualificationCoverage.js`, CoveragePanel in `ContractReviewPage.jsx`
 >
-> **Brief attivo**: [`DEPUTYTASK.md`](DEPUTYTASK.md) — **VC-3** (CHIUSO — TEST OK); prossima **VC-4**
+> **Brief attivo**: [`DEPUTYTASK.md`](DEPUTYTASK.md) — **VC-4** CHIUSO (HITL B); prossima **VC-5**
 > **Mappa creata**: 01/09/2026 · Lead wayfinder (solo Chart the map — nessuna implementazione in questa sessione)
 > **Branch base**: `main`
 
@@ -48,21 +48,24 @@
 
 ## Non ancora specificato
 
-- Formato export definitivo del report studio (Word vs PDF vs solo in-app) — default VC-1 = **in-app + snapshot JSON persistito**; export = slice successiva dopo HITL leggero se serve
 - Estensione gap oltre stack saldatura/NDT già in advisory (macchinari, verniciatura, trattamenti, …) — solo dopo MVP saldatura stabile
 - Sessione **PPAP**: nel ciclo `commercial_cases` vs modulo dedicato
 - Ordini verso fornitori post-acquisizione: riuso `commercial_case_documents` + `supplier_id` vs nuovo workflow
 - Quanto dell’offerta «in prima battuta» è generazione testo assistita vs solo checklist/chiarimenti già nel workflow
+- Ponte gap → checklist / costellazione agenti specializzati (nebbia o slice successive post VC-4)
 
 ---
 
-## Decisioni già prese (Lead 01/09/2026, da codice + HITL prodotto)
+## Decisioni già prese (Lead 01/09/2026 + HITL prodotto 02/09/2026)
 
-- Priorità assoluta = **ingest/catalog docs cliente + gap vs capacità azienda appaltatrice + output per lo studio**
+- **Priorità assoluta (strategica, oltre VC-4)**: ingestione / organizzazione / elaborazione di **mole di file cliente disordinati** → capire se l’ordine è **evadibile**. Obiettivo lungo termine: costellazione di agenti specializzati a supporto del processo.
+- Priorità MVP report = ingest/catalog docs cliente + gap vs capacità azienda appaltatrice + output per lo studio
 - Riuso obbligatorio: pattern Import PDF + SAL (motore gap/evidenze) **dove scalabili**, senza fondere i moduli
 - MVP capacità = stack già calcolabile (requisiti estratti × qualifiche/WPS/WPQR advisory / visione) sull’`company_id` del caso
 - Report studio = **artefatto persistito** sul caso (non solo CoveragePanel live)
-- Offerta/chiarimenti, riesame completo post-ordine, ordini fornitori, PPAP = **dopo** VC-1…VC-3 (o restano nebbia se non formulabili)
+- **VC-4 (HITL 02/09) = opzione B**: export Word della **checklist Riesame requisiti** (P1–P10 / F1–F6, esiti + note). Gap capacità = appendice sintetica opzionale o follow-up. **NON** è Riesame di direzione. Fedeltà: voci = checklist caso (§8.2 driver verbale); non inventare voci.
+- WIP `cursor/vc4-export-report-studio-1c5d` (solo gap) **superseduto** — non aprire PR confuse in parallelo
+- Offerta/chiarimenti, riesame completo post-ordine, ordini fornitori, PPAP = **dopo** VC-1…VC-4 (o restano nebbia se non formulabili)
 - Prima slice = hello world end-to-end più piccolo: **snapshot report** da dati già presenti, senza nuovo ingest engine
 
 ---
@@ -74,19 +77,19 @@
 | **VC-1** | Hello world: report gap capacità persistito + UI minima studio | BE: service aggregatore (riuso `caseExtractedCoverage` / `caseCoverageAdvisory`) + endpoint GET/POST su caso + mig. additiva nullable (snapshot JSON o tabella sottile); FE: pannello «Report studio» in `ContractReviewPage` (DNA esistente); test L1 | — | AFK ✅ CHIUSO |
 | **VC-2** | Catalogazione docs cliente sul caso (ruoli + lista catalogo) | FE/BE: rafforzare elenco allegati per ruolo/tipo, gate «analizza» solo su catalogati; riuso upload multi + Import→caso; niente nuovo storage | VC-1 consigliato (report legge catalogo) | AFK ✅ CHIUSO |
 | **VC-3** | Pipeline catalogo → analisi → refresh report (un click studio) | Orchestrazione sottile: dopo `analyze-documents` (o conferma requisiti) aggiorna snapshot report; test L1 | VC-1, VC-2 | AFK ✅ CHIUSO |
-| **VC-4** | Export report studio (Word o PDF) | Export da snapshot; riuso pattern Word NC/SAL dove possibile | VC-1; HITL formato se non deciso | HITL→AFK |
+| **VC-4** | Export Word checklist Riesame requisiti (HITL B) | FE Word da `commercial_case_checklist` (P/F + note); appendice gap opzionale; UI download zona Checklist; pattern NC/SAL | VC-1…VC-3; HITL B 02/09 | AFK ✅ CHIUSO |
 | **VC-5** | Chiarimenti da gap report → workflow `CLARIFICATION` | Collega gap a `commercial_case_clarifications` esistenti; UI minima | VC-1 | AFK |
 | **VC-6** | Offerta in prima battuta (bozza assistita) | Solo se prodotto chiarisce perimetro; altrimenti resta nebbia | VC-5 | HITL |
 | **VC-7** | Riesame completo post-acquisizione (riuso analisi) | Checklist finale F* + confronto ordine↔offerta↔capacità da snapshot | VC-1, VC-3 | AFK (dopo stabilizzazione) |
 | **VC-8** | Ordini fornitori a corredo | Documenti `counterparty=supplier` + link anagrafica | VC-7; dettagli in nebbia | HITL |
 | **VC-9** | Sessione PPAP | Solo dopo decisione prodotto (in-ciclo vs modulo) | — | HITL / nebbia |
 
-**Stato piano:** APERTO — **VC-1…VC-3** eseguite (TEST OK); prossime VC-4…
+**Stato piano:** APERTO — **VC-1…VC-4** CHIUSI (HITL B checklist); prossime VC-5…
 
 ### Dipendenze e parallelo futuro
 
 ```text
-VC-1 → VC-2 → VC-3 → VC-4
+VC-1 → VC-2 → VC-3 → VC-4 (checklist Word B)
               ↘ VC-5 → VC-6 (HITL)
 VC-3 → VC-7 → VC-8 (HITL)
 VC-9 indipendente / nebbia
@@ -102,6 +105,7 @@ File disgiunti se parallelo: VC-4 (export) può partire dopo VC-1 su file export
 | Motore gap / evidenze (idea SAL) | Snapshot stato + note; **non** tabella `requirement_implementation_status` |
 | Coverage tecnico | `qualificationCoverage` / `caseExtractedCoverage` / advisory |
 | UI | `ContractReviewPage` / pannelli `.cr-*` — niente look nuovo |
+| Export Word | `wordExportSal` / `wordExportTechnicalReview` / NC — programmatico `docx` FE |
 
 ---
 
