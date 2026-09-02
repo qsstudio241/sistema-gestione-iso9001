@@ -1,10 +1,12 @@
 # DEPUTYTASK — CONS-1: Persistenza audit su disco prima della chiusura
 
-**Stato:** APERTO  
+**Stato:** CHIUSO — TEST OK  
 **Aperto:** 02/09/2026  
+**Chiuso:** 02/09/2026  
+**Esito:** TEST OK  
 **Piano:** [`PLAN_AUDIT_CONSERVAZIONE_SLICES.md`](PLAN_AUDIT_CONSERVAZIONE_SLICES.md) § CONS-1  
 **Rischio:** Medio — solo hook autosave IndexedDB + test; niente auth, niente `syncService`, niente login/hydrate, niente migrazione  
-**Branch prevista:** `cursor/cons1-autosave-flush-2271` (o equivalente; il deputy crea il proprio branch)
+**Branch:** `cursor/cons1-autosave-flush-2271`
 
 > **Allineamento Git (autonomo)**: `git fetch origin main` + `git pull origin main` prima di eseguire. **Non** chiedere al committente.  
 > Comando: `Leggi docs/agent-tasks/DEPUTYTASK.md ed eseguilo. Chiudi con TEST OK o FIX NON APPLICABILI.`  

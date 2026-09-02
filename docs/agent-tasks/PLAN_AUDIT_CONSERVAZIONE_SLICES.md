@@ -72,6 +72,12 @@ Ogni slice = un percorso stretto verificabile. **Una sessione = una slice.** Non
 
 **DoD:** test flush verde + `npm run build` in `app/`.
 
+- [x] Unmount prima del delay → `saveAudit` (`app/src/tests/useAutoSave.flush.test.js`)
+- [x] Dati identici → nessun save
+- [x] `pagehide` / `visibilitychange` hidden con pending → `saveAudit`
+- [x] Debounce 2s invariato (niente write a ogni tasto)
+- [x] `npm run build` in `app/` (02/09/2026)
+
 ---
 
 ## CONS-2 — Avviso «non aprire da PC»
