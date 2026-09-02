@@ -3,8 +3,14 @@
  * Debounce 2s resta: niente write a ogni tasto.
  */
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { renderHook, act } from "@testing-library/react";
+import { renderHook, act, waitFor } from "@testing-library/react";
 import { useAutoSave } from "../hooks/useAutoSave";
+
+async function flushMicrotasks() {
+  await Promise.resolve();
+  await Promise.resolve();
+  await Promise.resolve();
+}
 
 function makeAudit(overrides = {}) {
   return {
@@ -81,28 +87,30 @@ describe("useAutoSave flush (CONS-1)", () => {
     expect(saveAudit).toHaveBeenCalledTimes(1);
   });
 
-  it("pagehide con pending chiama saveAudit", () => {
+  it("pagehide con pending chiama saveAudit", async () => {
     const saveAudit = vi.fn().mockResolvedValue(undefined);
     renderHook(() => useAutoSave(makeAudit(), { saveAudit }, "audit", 2000));
 
     expect(saveAudit).not.toHaveBeenCalled();
 
-    act(() => {
+    await act(async () => {
       window.dispatchEvent(new Event("pagehide"));
+      await flushMicrotasks();
     });
 
     expect(saveAudit).toHaveBeenCalledTimes(1);
   });
 
-  it("visibilitychange hidden con pending chiama saveAudit", () => {
+  it("visibilitychange hidden con pending chiama saveAudit", async () => {
     const saveAudit = vi.fn().mockResolvedValue(undefined);
     renderHook(() => useAutoSave(makeAudit(), { saveAudit }, "audit", 2000));
 
     expect(saveAudit).not.toHaveBeenCalled();
 
-    act(() => {
+    await act(async () => {
       visibilityState = "hidden";
       document.dispatchEvent(new Event("visibilitychange"));
+      await flushMicrotasks();
     });
 
     expect(saveAudit).toHaveBeenCalledTimes(1);
@@ -132,16 +140,22 @@ describe("useAutoSave flush (CONS-1)", () => {
   });
 
   it("errore saveAudit (quota) imposta error e non lancia", async () => {
+    vi.useRealTimers();
     const saveAudit = vi.fn().mockRejectedValue(new Error("QuotaExceededError"));
+    const audit = makeAudit();
+    const provider = { saveAudit };
     const { result } = renderHook(() =>
-      useAutoSave(makeAudit(), { saveAudit }, "audit", 2000)
+      useAutoSave(audit, provider, "audit", 60_000)
     );
 
     await act(async () => {
-      window.dispatchEvent(new Event("pagehide"));
-      await Promise.resolve();
+      expect(() => {
+        window.dispatchEvent(new Event("pagehide"));
+      }).not.toThrow();
     });
 
-    expect(result.current).toBe("error");
+    await waitFor(() => {
+      expect(result.current).toBe("error");
+    });
   });
 });

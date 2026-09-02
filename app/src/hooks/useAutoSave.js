@@ -39,7 +39,6 @@ export function useAutoSave(data, storageProvider, entityType, delay = 2000) {
     const previousDataRef = useRef(null);
     /** Snapshot in attesa di debounce: sopravvive al clearTimeout del cleanup effect. */
     const pendingRef = useRef(null);
-    const mountedRef = useRef(true);
 
     const runPersist = (pending) => {
         if (!pending) {
@@ -49,15 +48,11 @@ export function useAutoSave(data, storageProvider, entityType, delay = 2000) {
         persistAuditSnapshot(provider, type, snapshot)
             .then(() => {
                 previousDataRef.current = dataString;
-                if (mountedRef.current) {
-                    setSaveStatus('saved');
-                }
+                setSaveStatus('saved');
             })
             .catch((error) => {
                 console.error('❌ Auto-save error (IndexedDB):', error);
-                if (mountedRef.current) {
-                    setSaveStatus('error');
-                }
+                setSaveStatus('error');
             });
     };
 
@@ -76,13 +71,6 @@ export function useAutoSave(data, storageProvider, entityType, delay = 2000) {
 
     const flushPendingRef = useRef(flushPending);
     flushPendingRef.current = flushPending;
-
-    useEffect(() => {
-        mountedRef.current = true;
-        return () => {
-            mountedRef.current = false;
-        };
-    }, []);
 
     useEffect(() => {
         // Skip se dati non forniti o provider non pronto
