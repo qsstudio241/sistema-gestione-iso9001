@@ -1,11 +1,12 @@
 # DEPUTYTASK4 — CONS-4: Hydrate non copre il locale se la coda è pendente
 
-**Stato:** APERTO  
+**Stato:** CHIUSO — TEST OK  
 **Aperto:** 02/09/2026  
+**Chiuso:** 02/09/2026  
 **Piano:** [`PLAN_AUDIT_CONSERVAZIONE_SLICES.md`](PLAN_AUDIT_CONSERVAZIONE_SLICES.md) § CONS-4  
 **Rischio:** Alto — hydrate/reconcile server-wins; PR, non push su `main`. Non dire «pronta» senza CI + Bugbot + Security su quello SHA.  
 **Branch:** `cursor/cons4-hydrate-pending-queue-2271`  
-**Base:** CONS-3 (`cursor/cons3-login-no-wipe-2271`) già mergiata in questo branch  
+**Base:** CONS-3 (`cursor/cons3-login-no-wipe-2271`) già nel branch  
 **Slot precedente:** filtri WPS/WPQR CHIUSO (10/08) — sovrascrittura consentita  
 **Parallelo:** `DEPUTYTASK.md` = ING-5 APERTO — **non toccato**. `DEPUTYTASK3.md` CONS-3 — **non toccato**.
 
@@ -24,7 +25,7 @@ All’apertura audit, `fetchAndApplyServerResponses` applica gli esiti **server*
 - `app/src/utils/pendingAuditQueue.js` (nuovo helper puro)
 - `app/src/tests/pendingAuditQueue.test.js` (nuovo)
 - `app/src/contexts/StorageContext.jsx` — solo `fetchAndApplyServerResponses` / reconcile hydrate
-- `app/src/services/syncService.js` — **solo** getter read `getQueueItems()` se manca
+- `app/src/services/syncService.js` — **solo** getter read `getQueueItems()`
 - `docs/agent-tasks/DEPUTYTASK4.md` (questo brief)
 
 ## Cosa NON toccare
@@ -47,8 +48,24 @@ All’apertura audit, `fetchAndApplyServerResponses` applica gli esiti **server*
 
 ## DoD
 
-- [ ] Coda attiva per UUID → non si applicano esiti server
-- [ ] Item stalled o altro UUID → hydrate invariato
-- [ ] Dopo processQueue ok (coda vuota per UUID) → hydrate consentito
-- [ ] Test L1 verdi + build `app/`
-- [ ] CONS-3 / ING-5 / GUIDA non toccati
+- [x] Coda attiva per UUID → non si applicano esiti server
+- [x] Item stalled o altro UUID → hydrate invariato
+- [x] Dopo processQueue ok (coda vuota per UUID) → hydrate consentito
+- [x] Test L1 verdi + build `app/`
+- [x] CONS-3 / ING-5 / GUIDA non toccati
+
+---
+
+## Esito deputy
+
+**TEST OK** — se `syncQueue` ha item attivi (non stalled) `save_responses` / `save_custom_checklist_responses` / `update_audit` / `send_audit_event` per l’UUID, `fetchAndApplyServerResponses` e il merge reconcile non applicano gli esiti server. Dopo `processQueue` ok (coda vuota per UUID) l’hydrate riprende. Helper puro `shouldSkipServerHydrate`. Riusati `resolveMergedChecklistForReconcile` / `applyServerResponsesPreservingLocalNotes`. CONS-3 no-wipe invariato. Non toccati `DEPUTYTASK.md`, `DEPUTYTASK3.md`, `useAutoSave.js`, `AuthContext.jsx`, GUIDA.
+
+| Voce | Dettaglio |
+|------|-----------|
+| Helper | `pendingAuditQueue.js` — `shouldSkipServerHydrate`, `resolveChecklistHydrateWithPendingQueue` |
+| Getter | `syncService.getQueueItems()` sola lettura |
+| Hydrate | `fetchAndApplyServerResponses`: processQueue → skip se coda attiva |
+| Reconcile | checklist + customResponses locali se skip |
+| Test L1 | `pendingAuditQueue.test.js` 16/16; loginNoWipe 11/11; checklistTextMerge 8/8 |
+| Build | `cd app && npm run build` OK |
+| PR | draft su `main` (rischio Alto: non «pronta» senza CI+Bugbot+Security) |
