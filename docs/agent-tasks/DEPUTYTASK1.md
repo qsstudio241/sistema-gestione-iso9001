@@ -1,7 +1,8 @@
 # DEPUTYTASK1 — CONS-2: Avviso offline «non aprire lo stesso audit dal PC»
 
-**Stato:** APERTO  
+**Stato:** CHIUSO — TEST OK  
 **Aperto:** 02/09/2026  
+**Chiuso:** 02/09/2026  
 **Piano:** [`PLAN_AUDIT_CONSERVAZIONE_SLICES.md`](PLAN_AUDIT_CONSERVAZIONE_SLICES.md) § CONS-2  
 **Rischio:** Basso — solo testo banner `offline` + test L1; niente StorageContext, sync, auth, backend  
 **Branch:** `cursor/cons2-offline-pc-warning-2271`  
@@ -46,4 +47,14 @@ Riuso: stesso `AuditLockBanner` montato in `App.jsx`. Nessun secondo alert.
 
 ## Esito deputy
 
-_(da compilare a chiusura)_
+**TEST OK** — banner `mode === 'offline'` integra lock-non-attivo + avviso PC/telefono. Nessun secondo alert. StorageContext non toccato.
+
+| Voce | Dettaglio |
+|------|-----------|
+| UI | `AuditLockBanner.jsx` — `buildOfflineBannerMessage` + `OFFLINE_PC_WARNING` |
+| CSS | invariato |
+| Storage | nessuno |
+| Test L1 | `auditLockBanner.offlinePc.test.jsx` 4/4 + `npm run build` OK |
+| Ops | solo FE; Netlify da `main` dopo merge umano |
+
+**Prossima slice:** CONS-3 (login senza wipe) è Alto e tocca `StorageContext.jsx` — seriale, non in questa PR. CONS-6 può restare parallela (file disgiunti).
