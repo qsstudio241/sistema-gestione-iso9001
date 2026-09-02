@@ -10,7 +10,7 @@
 > - SAL gap ≠ questo epic: [`MODULO_SAL_SCOPO_E_ROADMAP.md`](../specs/MODULO_SAL_SCOPO_E_ROADMAP.md)
 > - Mattoni già in codice: `importJobs` + `ImportJobsPage`, `contractReview.*`, `caseDocumentAnalysis.service.js`, `caseExtractedCoverage.service.js`, `caseCoverageAdvisory.service.js`, `qualificationCoverage.js`, CoveragePanel in `ContractReviewPage.jsx`, export Word checklist (`wordExportContractReviewChecklist.js`)
 >
-> **Brief attivo**: [`DEPUTYTASK.md`](DEPUTYTASK.md) — **VC-4** CHIUSO (HITL B, PR #622). **Nessun DEPUTYTASK APERTO** su VC-5 o ingest senza conferma Lead.
+> **Brief attivo**: [`DEPUTYTASK.md`](DEPUTYTASK.md) — **ING-1** CHIUSO (classificazione batch HITL). Prossima: ING-2 o parallelo ING-4 su slot disgiunto.
 > **Mappa creata**: 01/09/2026 · Lead wayfinder · **riorientata 02/09/2026** post-merge VC-4 (priorità ingest)
 > **Branch base**: `main`
 
@@ -101,15 +101,15 @@
 | **VC-8** | Ordini fornitori a corredo | Documenti `counterparty=supplier` + link anagrafica | VC-7; nebbia | HITL |
 | **VC-9** | Sessione PPAP | Solo dopo decisione prodotto | — | HITL / nebbia |
 
-**Stato piano:** APERTO — **VC-1…VC-4** CHIUSI; **prossima priorità = ING-*** (ingest mole), non VC-5 di default.
+**Stato piano:** APERTO — **VC-1…VC-4** CHIUSI; **ING-1** CHIUSO (batch classify HITL); prossima priorità **ING-2** (o ING-4 parallelo file-disgiunti); VC-5 non di default.
 
 ### Bozza slice ingest / organizzazione (post VC-4 — da confermare Lead)
 
-> Numerazione **ING-*** separata da VC-* per non mischiare report MVP e mole file. Una slice = una sessione. **Nessun DEPUTYTASK APERTO** finché Lead non conferma quale ING-1 partire.
+> Numerazione **ING-*** separata da VC-* per non mischiare report MVP e mole file. Una slice = una sessione.
 
 | Slice | Tema | Perimetro suggerito | Dipende da | Tipo |
 |-------|------|---------------------|------------|------|
-| **ING-1** | Classificazione / riordino allegati in batch | Riuso `importJobs` + suggerimento ruolo/tipo su batch; HITL conferma; niente secondo storage | Import PDF esistente | AFK/HITL |
+| **ING-1** ✅ | Classificazione / riordino allegati in batch | Riuso catalogo VC-2 + euristiche nome (pattern Import PDF); HITL conferma; niente secondo storage | Import PDF / VC-2 | CHIUSO 02/09 |
 | **ING-2** | Matching docs → ruoli catalogo caso | Auto-proposta `commercial_doc_role` da nome/testo; gate prima di Analizza (estende VC-2) | ING-1 o VC-2 | AFK |
 | **ING-3** | Gap **evadibilità** da docs organizzati | Dato catalogo ordinato: segnale «ordine evadibile / da chiarire» (riuso coverage + checklist); non inventare norme | ING-2, VC-1 | AFK/HITL |
 | **ING-4** | Template checklist personalizzabile studio | Template per cliente/tenant; voci P/F editabili; export VC-4 legge template attivo | HITL prodotto | HITL + AFK |
