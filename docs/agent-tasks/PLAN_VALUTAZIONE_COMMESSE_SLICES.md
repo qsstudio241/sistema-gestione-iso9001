@@ -117,6 +117,8 @@
 
 #### ING-5 — domande HITL (bloccanti codice)
 
+> Scenario narrativo + opzioni in concorrenza (committente): [`SCENARIO_ING5_TRIAGE_OPZIONI.md`](SCENARIO_ING5_TRIAGE_OPZIONI.md).
+
 Già su `main`: `buildBatchRoleSuggestions` + UI «Classificazione batch — conferma HITL» + confidence ING-2. Un «agente triage» senza risposta a queste domande rischia un secondo monolite o un duplicato:
 
 1. **Delta prodotto**: cosa deve fare l’agente che la batch HITL attuale *non* fa? (es. LLM sul contenuto PDF, priorità mole Import Jobs, triage cross-caso studio, …)
