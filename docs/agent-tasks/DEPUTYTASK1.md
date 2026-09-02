@@ -1,69 +1,49 @@
-# DEPUTYTASK1 — ING-4: Template checklist Riesame requisiti personalizzabile (studio)
+# DEPUTYTASK1 — CONS-2: Avviso offline «non aprire lo stesso audit dal PC»
 
-**Stato:** CHIUSO — TEST OK  
+**Stato:** APERTO  
 **Aperto:** 02/09/2026  
-**Chiuso:** 02/09/2026  
-**Piano:** [`PLAN_VALUTAZIONE_COMMESSE_SLICES.md`](PLAN_VALUTAZIONE_COMMESSE_SLICES.md) § ING-4  
-**Rischio:** Medio — migrazione additiva 162 + API template + hook snapshot in `generateChecklist`; niente auth/sync breaking  
-**Branch:** `cursor/ing4-checklist-templates-1c5d`  
-**Parallelo a:** ING-1 su [`DEPUTYTASK.md`](DEPUTYTASK.md) — **file disgiunti** (non toccare catalogo allegati / `ContractReviewPage` HITL batch)  
-**Migrazione prenotata:** `162_commercial_checklist_templates.sql`
+**Piano:** [`PLAN_AUDIT_CONSERVAZIONE_SLICES.md`](PLAN_AUDIT_CONSERVAZIONE_SLICES.md) § CONS-2  
+**Rischio:** Basso — solo testo banner `offline` + test L1; niente StorageContext, sync, auth, backend  
+**Branch:** `cursor/cons2-offline-pc-warning-2271`  
+**Parallelo a:** CONS-1 su [`DEPUTYTASK.md`](DEPUTYTASK.md) — **file disgiunti** (`useAutoSave.js` vs `AuditLockBanner.jsx`)  
+**Slot precedente:** ING-4 CHIUSO su `origin/main` (sovrascrittura consentita)
 
 > **Allineamento Git (autonomo)**: `git fetch origin main` + `git pull origin main` prima di eseguire. **Non** chiedere al committente.  
-> Comando: `Leggi docs/agent-tasks/DEPUTYTASK1.md ed eseguilo. Chiudi con TEST OK o FIX NON APPLICABILI.`
+> Comando: `Leggi docs/agent-tasks/DEPUTYTASK1.md ed eseguilo. Chiudi con TEST OK o FIX NON APPLICABILI.`  
+> Brief da eseguire solo se su questo branch / `origin/main` questo file ha **Stato: APERTO** e titolo CONS-2.
 
-## Obiettivo verificabile
+---
 
-Lo studio gestisce **template checklist** Riesame requisiti (voci P/F) associabili a un cliente (`company_id`) o default org. All’applicazione su un caso: **snapshot** in `commercial_case_checklist` (INSERT solo se ref assente) — non sovrascrive checklist già compilate. Fedeltà ISO §8.2: core P1–P10 / F1–F6 sempre presenti; personalizzazione = variante testo core e/o voci extra, non bypass norma.
+## Perché
+
+In offline il banner lock c’è già (`mode === 'offline'`, mostra `auditLock.message`: lock non attivo). Manca l’avviso deciso dal committente: il lavoro resta su **questo telefono**; **non** aprire lo stesso audit dal PC finché non torna la rete e la sync è completata.
+
+Riuso: stesso `AuditLockBanner` montato in `App.jsx`. Nessun secondo alert.
 
 ## File previsti
 
-- `database/migrations/162_commercial_checklist_templates.sql` + `backend/scripts/run-migration-162-vps.js`
-- `backend/src/data/commercialChecklistDefaults.js`
-- `backend/src/services/commercialChecklistTemplate.service.js` (+ test Jest)
-- `backend/src/controllers/commercialChecklistTemplate.controller.js`
-- `backend/src/routes/commercialChecklistTemplate.routes.js`
-- `backend/src/server.js` (mount route)
-- `backend/src/controllers/contractReview.controller.js` (solo resolve items in generateChecklist + seed import)
-- `backend/scripts/deploy-manifest.json`
-- `app/src/data/commercialChecklistDefaults.js` (+ test Vitest)
-- `app/src/pages/ContractChecklistTemplatesPage.jsx` (+ CSS minimo token esistenti)
-- `app/src/App.jsx` / `app/src/layouts/AppLayout.jsx` / `app/src/services/apiService.js`
+- `app/src/components/AuditLockBanner.jsx`
+- `app/src/components/AuditLockBanner.css` solo se serve
+- `app/src/tests/auditLockBanner.offlinePc.test.jsx` (nuovo)
 - `docs/agent-tasks/DEPUTYTASK1.md` (questo brief)
-- PLAN: solo riga ING-4 se sicuro; altrimenti nota qui (parallelo PR #623 / ING-1)
 
 ## Cosa NON toccare
 
-- `docs/agent-tasks/DEPUTYTASK.md` (slot ING-1)
-- `ContractReviewPage.jsx` / CSS HITL batch / `caseDocCatalog*`
-- `importJobs*`, ingest staging, auth/JWT, sync
-- Export Word VC-4 (`wordExportContractReviewChecklist.js`) — legge già lo snapshot caso
-
-## Come lo studio personalizza (UX)
-
-1. Gestione → **Template checklist riesame** (`/settings/contract-checklist-templates`)
-2. Crea template (seed automatico core §8.2) → opzionale associa azienda cliente
-3. Aggiunge voci extra (es. `P11`) o modifica testo variante core
-4. Su caso: «Genera preliminare/finale» usa template azienda se attivo, altrimenti default org, altrimenti solo core — snapshot additivo
+- `app/src/hooks/useAutoSave.js` (CONS-1)
+- `app/src/contexts/StorageContext.jsx` (CONS-3/4)
+- `app/src/services/syncService.js` (import read-only OK; CONS-5)
+- `app/src/contexts/AuthContext.jsx`
+- Backend, migrazioni, GUIDA, PLAN, `DEPUTYTASK.md`, `DEPUTYTASK2.md`
 
 ## Criteri chiusura
 
-- [x] Resolve: core sempre; extras da template; snapshot NOT EXISTS
-- [x] UI CRUD minima + test L1 + build
-- [x] PR/compare; DEPUTYTASK1 CHIUSO TEST OK
-
+1. `mode === 'offline'`: testo italiano (accenti UTF-8) che integra il messaggio attuale (lock non attivo) + avviso PC/telefono.
+2. Solo offline — altri mode invariati.
+3. Emoji solo in stringa JS, mai JSX grezzo.
+4. Stesso look del banner. Nessuna schermata nuova.
+5. Test L1: testo PC visibile in mode offline.
+6. `cd app && NODE_ENV=test npm run test:run` sul test nuovo + `cd app && npm run build`.
 
 ## Esito deputy
 
-**TEST OK**
-
-| Voce | Dettaglio |
-|------|-----------|
-| Migrazione | `162_commercial_checklist_templates.sql` (+ runner VPS) |
-| Resolve | core P/F sempre; variante testo + extras; preferenza company → org default → solo core |
-| Snapshot | `generateChecklist` / seed import: INSERT `NOT EXISTS` su `item_ref` |
-| UI | `/settings/contract-checklist-templates` (Gestione) |
-| Test L1 | Vitest 4/4 · Jest template+controller 51 · mig uniqueness · build OK |
-| PR | compare (gh createPullRequest non accessibile): https://github.com/qsstudio241/sistema-gestione-iso9001/compare/main...cursor/ing4-checklist-templates-1c5d?expand=1 |
-| PLAN | Non toccato (parallelo PR #623 / ING-1) — spuntare ING-4 in sync post-merge |
-
+_(da compilare a chiusura)_
