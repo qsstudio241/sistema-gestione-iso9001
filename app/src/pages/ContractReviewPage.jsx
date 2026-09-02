@@ -30,6 +30,7 @@ import {
   isCatalogedDocRole,
   listAnalyzableCatalogAttachmentIds,
 } from '../utils/caseDocCatalog';
+import { exportCapabilityGapReportDocx } from '../utils/wordExportCapabilityGapReport';
 import './ContractReviewPage.css';
 
 // DOC_ROLE_OPTIONS importati da caseDocCatalog (VC-2) — unica fonte FE.
@@ -38,11 +39,13 @@ import './ContractReviewPage.css';
  * StudioReportPanel (VC-1) — snapshot report gap capacità persistito per lo studio.
  * DNA: stesso guscio .cr-panel del dettaglio caso; non sostituisce CoveragePanel live.
  * VC-3: `reloadKey` forza un GET dopo analisi / conferma requisiti.
+ * VC-4: download Word dallo snapshot (pattern SAL/NC, client-side docx).
  */
-function StudioReportPanel({ caseId, companyId, reloadKey = 0 }) {
+function StudioReportPanel({ caseId, companyId, caseTitle = '', reloadKey = 0 }) {
   const [report, setReport] = useState(null);
   const [loading, setLoading] = useState(false);
   const [generating, setGenerating] = useState(false);
+  const [exporting, setExporting] = useState(false);
   const [error, setError] = useState(null);
 
   const loadReport = useCallback(async () => {
@@ -79,6 +82,27 @@ function StudioReportPanel({ caseId, companyId, reloadKey = 0 }) {
       setError(e.message || 'Errore generazione report');
     } finally {
       setGenerating(false);
+    }
+  }
+
+  async function handleExportWord() {
+    if (!report) {
+      setError('Nessuno snapshot salvato: genera il report prima di esportare.');
+      return;
+    }
+    setExporting(true);
+    setError(null);
+    try {
+      await exportCapabilityGapReportDocx({
+        report,
+        caseTitle: caseTitle || undefined,
+        companyLabel:
+          report.company_id != null ? `ID ${report.company_id}` : undefined,
+      });
+    } catch (e) {
+      setError(e.message || 'Errore export Word');
+    } finally {
+      setExporting(false);
     }
   }
 
@@ -161,6 +185,19 @@ function StudioReportPanel({ caseId, companyId, reloadKey = 0 }) {
           }
         >
           {generating ? 'Generazione...' : report ? 'Ricalcola report' : 'Genera report'}
+        </button>
+        <button
+          type="button"
+          className="cr-btn"
+          onClick={handleExportWord}
+          disabled={exporting || !report || loading}
+          title={
+            !report
+              ? 'Genera o ricarica lo snapshot prima di scaricare il Word'
+              : 'Scarica lo snapshot come documento Word'
+          }
+        >
+          {exporting ? 'Preparazione Word...' : 'Scarica Word'}
         </button>
       </div>
     </div>
@@ -1724,6 +1761,7 @@ export default function ContractReviewPage() {
               <StudioReportPanel
                 caseId={detail.case.id}
                 companyId={detail.case.company_id}
+                caseTitle={detail.case.title || ''}
                 reloadKey={studioReportReloadKey}
               />
               <div className="cr-panel">
