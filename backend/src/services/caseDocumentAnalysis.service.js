@@ -18,6 +18,7 @@ const logger = require('../utils/logger');
 const drawingExtractionService = require('./drawingExtraction.service');
 const caseTextAnalysisService = require('./caseTextAnalysis.service');
 const { getActiveProvider } = require('./aiProviderAdapter');
+const caseCapabilityGapReportService = require('./caseCapabilityGapReport.service');
 
 /** Ruoli ammessi in catalogazione allegati caso (VC-2). */
 const CATALOG_DOC_ROLES = Object.freeze([
@@ -104,7 +105,12 @@ async function runExtractionPipeline({ extractionId, buffer, mimeType, source })
     }
 
     await insertRequirements(extractionId, out.requirements || []);
+    // VC-3: non marcare 'done' qui. Il FE polling ricarica il Report studio allo status done;
+    // done solo dopo maybeRefreshCapabilityGapReport (vedi markExtractionDone in execute).
+    return out;
+}
 
+async function markExtractionDone(extractionId, raw) {
     await query(
         `
         UPDATE commercial_case_drawing_extractions
@@ -113,11 +119,9 @@ async function runExtractionPipeline({ extractionId, buffer, mimeType, source })
         `,
         {
             extractionId,
-            raw: out.raw != null ? String(out.raw).substring(0, 1000000) : null,
+            raw: raw != null ? String(raw).substring(0, 1000000) : null,
         },
     );
-
-    return out;
 }
 
 async function markExtractionError(extractionId, err) {
@@ -206,12 +210,22 @@ async function analyzeAttachment({
                 attachmentId,
                 count: (out.requirements || []).length,
             });
+            // VC-3: refresh PRIMA di status done (FE polling non GET report prima dello snapshot).
+            // includeExtractionId: i requisiti sono già in DB ma e.status è ancora processing;
+            // senza questo il load (solo done) esclude l'estrazione corrente → report stale.
+            const reportRefresh = await caseCapabilityGapReportService.maybeRefreshCapabilityGapReport({
+                caseId,
+                organizationId,
+                includeExtractionId: extractionId,
+            });
+            await markExtractionDone(extractionId, out.raw);
             return {
                 attachment_id: attachmentId,
                 extraction_id: extractionId,
                 source,
                 status: 'done',
                 requirements_count: (out.requirements || []).length,
+                report_refresh: reportRefresh,
             };
         } catch (err) {
             await markExtractionError(extractionId, err);

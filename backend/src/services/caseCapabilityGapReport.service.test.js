@@ -6,6 +6,12 @@ jest.mock('../config/database', () => ({
   query: jest.fn(),
 }));
 
+jest.mock('../utils/logger', () => ({
+  error: jest.fn(),
+  warn: jest.fn(),
+  info: jest.fn(),
+}));
+
 jest.mock('./caseExtractedCoverage.service', () => ({
   loadExtractedRequirements: jest.fn(),
   computeCaseProjectCoverage: jest.fn(),
@@ -37,6 +43,7 @@ const {
   buildCapabilityGapReport,
   getPersistedCapabilityGapReport,
   regenerateAndPersistCapabilityGapReport,
+  maybeRefreshCapabilityGapReport,
 } = require('./caseCapabilityGapReport.service');
 
 describe('caseCapabilityGapReport.service (VC-1)', () => {
@@ -201,5 +208,85 @@ describe('caseCapabilityGapReport.service (VC-1)', () => {
     const updateCall = query.mock.calls[2];
     expect(updateCall[0]).toMatch(/capability_gap_report_json/);
     expect(JSON.parse(updateCall[1].json).summary.status).toBe('need_input');
+  });
+});
+
+describe('maybeRefreshCapabilityGapReport (VC-3)', () => {
+  beforeEach(() => jest.clearAllMocks());
+
+  test('skip no_company senza lanciare', async () => {
+    query.mockResolvedValueOnce({
+      recordset: [{ id: 9, organization_id: 42, company_id: null, title: 'Caso' }],
+    });
+    const out = await maybeRefreshCapabilityGapReport({ caseId: 9, organizationId: 42 });
+    expect(out).toEqual({ refreshed: false, skipped: true, reason: 'no_company' });
+  });
+
+  test('skip not_found', async () => {
+    query.mockResolvedValueOnce({ recordset: [] });
+    const out = await maybeRefreshCapabilityGapReport({ caseId: 99, organizationId: 1 });
+    expect(out).toEqual({ refreshed: false, skipped: true, reason: 'not_found' });
+  });
+
+  test('refreshed true quando company presente', async () => {
+    query
+      .mockResolvedValueOnce({
+        recordset: [{ id: 9, organization_id: 42, company_id: 178, title: 'Caso' }],
+      })
+      .mockResolvedValueOnce({ recordset: [] })
+      .mockResolvedValueOnce({
+        recordset: [{ id: 9, capability_gap_report_at: new Date('2026-09-01T12:00:00Z') }],
+      });
+    loadExtractedRequirements.mockResolvedValue([]);
+    buildTechnicalProfile.mockReturnValue({});
+    profileHasTechnicalData.mockReturnValue(false);
+    buildCaseCoverageAdvisory.mockResolvedValue({
+      blocking: false,
+      wpqr_joints: { joints: [], summary: { total: 0, ok: 0, partial: 0, not_possible: 0, need_input: 0, skipped: 0 } },
+      vision_fitness: { gaps: [], summary: { persons_requiring: 0, missing: 0, expired: 0, ok: 0 } },
+    });
+
+    const out = await maybeRefreshCapabilityGapReport({ caseId: 9, organizationId: 42 });
+    expect(out.refreshed).toBe(true);
+    expect(out.report?.summary?.status).toBe('need_input');
+  });
+
+  test('includeExtractionId propagato a loadExtractedRequirements (job ancora processing)', async () => {
+    query
+      .mockResolvedValueOnce({
+        recordset: [{ id: 9, organization_id: 42, company_id: 178, title: 'Caso' }],
+      })
+      .mockResolvedValueOnce({ recordset: [] })
+      .mockResolvedValueOnce({
+        recordset: [{ id: 9, capability_gap_report_at: new Date('2026-09-01T12:00:00Z') }],
+      });
+    // Requisiti del job corrente (ancora processing) — senza includeExtractionId sarebbero assenti
+    loadExtractedRequirements.mockResolvedValue([
+      {
+        req_type: 'dim',
+        field_key: 'L',
+        value_text: '10',
+        unit: 'mm',
+        confidence: 0.95,
+        review_status: 'extracted',
+        source: 'drawing',
+      },
+    ]);
+    buildTechnicalProfile.mockReturnValue({ length_mm: 10 });
+    profileHasTechnicalData.mockReturnValue(true);
+    buildCaseCoverageAdvisory.mockResolvedValue({
+      blocking: false,
+      wpqr_joints: { joints: [], summary: { total: 0, ok: 0, partial: 0, not_possible: 0, need_input: 0, skipped: 0 } },
+      vision_fitness: { gaps: [], summary: { persons_requiring: 0, missing: 0, expired: 0, ok: 0 } },
+    });
+
+    const out = await maybeRefreshCapabilityGapReport({
+      caseId: 9,
+      organizationId: 42,
+      includeExtractionId: 55,
+    });
+    expect(out.refreshed).toBe(true);
+    expect(out.report?.summary?.requirements_count).toBe(1);
+    expect(loadExtractedRequirements).toHaveBeenCalledWith(9, 42, { includeExtractionId: 55 });
   });
 });

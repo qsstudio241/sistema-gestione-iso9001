@@ -7,6 +7,7 @@
 const {
     resolveAnalysisSource,
     analyzeAllCaseDocuments,
+    analyzeAttachment,
     isCatalogedDocRole,
 } = require('./caseDocumentAnalysis.service');
 
@@ -27,6 +28,14 @@ jest.mock('./aiProviderAdapter', () => ({
     getActiveProvider: jest.fn(() => 'gemini'),
 }));
 
+jest.mock('./caseCapabilityGapReport.service', () => ({
+    maybeRefreshCapabilityGapReport: jest.fn(async () => ({
+        refreshed: false,
+        skipped: true,
+        reason: 'no_company',
+    })),
+}));
+
 jest.mock('../utils/logger', () => ({
     error: jest.fn(),
     info: jest.fn(),
@@ -38,6 +47,9 @@ jest.mock('fs', () => ({
 }));
 
 const { query } = require('../config/database');
+const { promises: fs } = require('fs');
+const drawingExtractionService = require('./drawingExtraction.service');
+const caseCapabilityGapReportService = require('./caseCapabilityGapReport.service');
 
 describe('caseDocumentAnalysis.service', () => {
     beforeEach(() => jest.clearAllMocks());
@@ -71,6 +83,73 @@ describe('caseDocumentAnalysis.service', () => {
             expect(isCatalogedDocRole('ORDER')).toBe(true);
             expect(isCatalogedDocRole(null)).toBe(false);
             expect(isCatalogedDocRole('xyz')).toBe(false);
+        });
+    });
+
+    describe('analyzeAttachment sync — ordine done vs report refresh (VC-3 Bugbot)', () => {
+        test('refresh con includeExtractionId PRIMA di status done (requisiti job corrente nel snapshot)', async () => {
+            const callOrder = [];
+            caseCapabilityGapReportService.maybeRefreshCapabilityGapReport.mockImplementation(async () => {
+                callOrder.push('refresh');
+                return {
+                    refreshed: true,
+                    skipped: false,
+                    report: { summary: { requirements_count: 1 } },
+                };
+            });
+            fs.readFile.mockResolvedValue(Buffer.from('png'));
+            drawingExtractionService.extractFromFile.mockResolvedValue({
+                requirements: [{ req_type: 'dim', field_key: 'L', value_text: '10' }],
+                raw: '{"ok":1}',
+            });
+
+            query.mockImplementation((sqlText) => {
+                if (/FROM attachments a\s+INNER JOIN commercial_cases/.test(sqlText)) {
+                    return {
+                        recordset: [{
+                            attachment_id: 1,
+                            storage_path: '/tmp/d.png',
+                            mime_type: 'image/png',
+                            file_name: 'd.png',
+                            commercial_doc_role: 'drawing',
+                        }],
+                    };
+                }
+                if (/DELETE/.test(sqlText)) return { recordset: [] };
+                if (/INSERT INTO commercial_case_drawing_extractions/.test(sqlText)) {
+                    return { recordset: [{ id: 55 }] };
+                }
+                if (/INSERT INTO commercial_case_extracted_requirements/.test(sqlText)) {
+                    callOrder.push('insert_req');
+                    return { recordset: [] };
+                }
+                if (/UPDATE commercial_case_drawing_extractions/.test(sqlText)
+                    && /status = 'done'/.test(sqlText)) {
+                    callOrder.push('done');
+                    return { recordset: [] };
+                }
+                return { recordset: [] };
+            });
+
+            const result = await analyzeAttachment({
+                caseId: 5,
+                attachmentId: 1,
+                organizationId: 1,
+                userId: 7,
+                mode: 'sync',
+            });
+
+            expect(result.status).toBe('done');
+            expect(result.report_refresh?.refreshed).toBe(true);
+            expect(result.report_refresh?.report?.summary?.requirements_count).toBe(1);
+            // Senza includeExtractionId il load (solo e.status=done) escludeva i requisiti appena inseriti.
+            expect(callOrder).toEqual(['insert_req', 'refresh', 'done']);
+            expect(caseCapabilityGapReportService.maybeRefreshCapabilityGapReport)
+                .toHaveBeenCalledWith({
+                    caseId: 5,
+                    organizationId: 1,
+                    includeExtractionId: 55,
+                });
         });
     });
 

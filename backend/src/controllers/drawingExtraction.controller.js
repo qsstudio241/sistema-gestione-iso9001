@@ -17,8 +17,10 @@ const logger = require('../utils/logger');
 const extractionService = require('../services/drawingExtraction.service');
 const caseDocumentAnalysisService = require('../services/caseDocumentAnalysis.service');
 const caseExtractedCoverageService = require('../services/caseExtractedCoverage.service');
+const caseCapabilityGapReportService = require('../services/caseCapabilityGapReport.service');
 
 const REVIEW_STATUSES = new Set(['extracted', 'confirmed', 'rejected', 'edited']);
+const REVIEW_STATUSES_REFRESH_REPORT = new Set(['confirmed', 'edited', 'rejected']);
 
 function sendErr(res, httpStatus, message, code) {
     return res.status(httpStatus).json({ error: message, code });
@@ -276,7 +278,7 @@ async function reviewRequirement(req, res) {
         // Scope: requisito -> estrazione -> commessa -> organizzazione
         const ownRes = await query(
             `
-            SELECT r.id
+            SELECT r.id, e.case_id
             FROM commercial_case_extracted_requirements r
             INNER JOIN commercial_case_drawing_extractions e ON e.id = r.extraction_id
             INNER JOIN commercial_cases c ON c.id = e.case_id
@@ -287,6 +289,7 @@ async function reviewRequirement(req, res) {
         if (!ownRes.recordset.length) {
             return sendErr(res, 404, 'Requisito non trovato', 'NOT_FOUND');
         }
+        const caseId = ownRes.recordset[0].case_id;
 
         // In modifica si possono aggiornare anche i valori; altrimenti solo lo stato.
         const isEdit = reviewStatus === 'edited';
@@ -317,7 +320,18 @@ async function reviewRequirement(req, res) {
             `,
             params,
         );
-        return res.json(upd.recordset[0]);
+        const row = upd.recordset[0];
+
+        // VC-3: dopo conferma/modifica/rifiuto HITL, refresh snapshot report (best-effort)
+        let reportRefresh = null;
+        if (REVIEW_STATUSES_REFRESH_REPORT.has(reviewStatus) && caseId) {
+            reportRefresh = await caseCapabilityGapReportService.maybeRefreshCapabilityGapReport({
+                caseId,
+                organizationId,
+            });
+        }
+
+        return res.json(reportRefresh ? { ...row, report_refresh: reportRefresh } : row);
     } catch (err) {
         logger.error('reviewRequirement', err.message);
         return sendErr(res, 500, err.message, 'SERVER_ERROR');

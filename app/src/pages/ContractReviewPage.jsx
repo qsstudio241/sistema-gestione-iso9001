@@ -21,6 +21,10 @@ import {
 } from '../utils/contractReviewLabels';
 import { hydrateDrawingRequirements } from '../utils/drawingExtractionHydrate';
 import {
+  collectPollingExtractionIds,
+  resolveAnalysisPollTick,
+} from '../utils/analysisJobPolling';
+import {
   DOC_ROLE_OPTIONS,
   groupAttachmentsByCatalogRole,
   isCatalogedDocRole,
@@ -33,8 +37,9 @@ import './ContractReviewPage.css';
 /**
  * StudioReportPanel (VC-1) — snapshot report gap capacità persistito per lo studio.
  * DNA: stesso guscio .cr-panel del dettaglio caso; non sostituisce CoveragePanel live.
+ * VC-3: `reloadKey` forza un GET dopo analisi / conferma requisiti.
  */
-function StudioReportPanel({ caseId, companyId }) {
+function StudioReportPanel({ caseId, companyId, reloadKey = 0 }) {
   const [report, setReport] = useState(null);
   const [loading, setLoading] = useState(false);
   const [generating, setGenerating] = useState(false);
@@ -57,7 +62,7 @@ function StudioReportPanel({ caseId, companyId }) {
 
   useEffect(() => {
     loadReport();
-  }, [loadReport]);
+  }, [loadReport, reloadKey]);
 
   async function handleGenerate() {
     if (!caseId) return;
@@ -102,6 +107,7 @@ function StudioReportPanel({ caseId, companyId }) {
       <p className="cr-muted" style={{ marginTop: 0 }}>
         Snapshot gap capacit\u00e0 persistito (requisiti cliente \u00d7 azienda appaltatrice).
         Diverso dalla verifica live sotto: qui resta l&apos;ultimo report generato.
+        Si aggiorna anche dopo &laquo;Analizza documenti&raquo; o conferma requisiti (se l&apos;azienda capacit\u00e0 \u00e8 associata).
       </p>
       {loading ? (
         <p className="cr-muted">Caricamento report...</p>
@@ -528,10 +534,12 @@ export default function ContractReviewPage() {
   // Multi-file upload: progresso e errori parziali (SLICE C)
   const [uploadProgress, setUploadProgress] = useState(null); // { current, total, fileName } | null
   const [uploadPartialErrors, setUploadPartialErrors] = useState([]); // [{ fileName, error }]
-  // Polling auto-estrazione: { extractionId: number, attempts: number } | null
+  // Polling auto-estrazione: { extractionIds: number[], attempts: number } | null
   const [analysisPolling, setAnalysisPolling] = useState(null);
   // Banner completamento polling: 'done' | 'error' | null
   const [pollingBanner, setPollingBanner] = useState(null);
+  // VC-3: bump per ricaricare StudioReportPanel dopo analisi / HITL requisiti
+  const [studioReportReloadKey, setStudioReportReloadKey] = useState(0);
   const pollingTimerRef = useRef(null);
   const [suppliers, setSuppliers] = useState([]);
   const [suppliersLoadFailed, setSuppliersLoadFailed] = useState(false);
@@ -758,29 +766,50 @@ export default function ContractReviewPage() {
       .finally(() => setCreateCounterpartiesLoading(false));
   }, [createOpen, createForm.company_id]);
 
-  // Polling auto-estrazione AI: si attiva quando upload restituisce analysis_job_id.
-  // Massimo 10 tentativi (30 secondi totali); si ferma appena status !== 'processing'.
+  // Polling auto-estrazione AI (anche multi-job): upload / Analizza tutti.
+  // Massimo 10 tick (~30s); per ogni job done (dopo refresh BE) bumpa reloadKey.
   useEffect(() => {
     if (!analysisPolling || !caseId) return;
-    const { extractionId, attempts } = analysisPolling;
+    const { extractionIds, attempts } = analysisPolling;
+    if (!Array.isArray(extractionIds) || extractionIds.length === 0) {
+      setAnalysisPolling(null);
+      return;
+    }
     if (attempts >= 10) {
       setAnalysisPolling(null);
       return;
     }
     const timerId = setTimeout(async () => {
       try {
-        const data = await apiService.getDrawingExtraction(caseId, extractionId);
-        if (data.status !== 'processing') {
-          setAnalysisPolling(null);
-          setPollingBanner(data.status === 'done' ? 'done' : 'error');
-          setTimeout(() => setPollingBanner(null), 8000);
+        const settled = await Promise.all(
+          extractionIds.map(async (id) => {
+            try {
+              const data = await apiService.getDrawingExtraction(caseId, id);
+              return { id, status: data?.status ?? null, networkError: false };
+            } catch {
+              return { id, status: null, networkError: true };
+            }
+          }),
+        );
+        const tick = resolveAnalysisPollTick(settled);
+        if (tick.newlyDoneCount > 0) {
           await loadDetail(caseId);
+          setStudioReportReloadKey((k) => k + tick.newlyDoneCount);
+        }
+        if (tick.allTerminal) {
+          setAnalysisPolling(null);
+          if (tick.banner) {
+            setPollingBanner(tick.banner);
+            setTimeout(() => setPollingBanner(null), 8000);
+          }
         } else {
-          setAnalysisPolling(prev => prev ? { ...prev, attempts: prev.attempts + 1 } : null);
+          setAnalysisPolling({
+            extractionIds: tick.remainingIds,
+            attempts: attempts + 1,
+          });
         }
       } catch {
-        // In caso di errore di rete, continua a ritentare fino al limite
-        setAnalysisPolling(prev => prev ? { ...prev, attempts: prev.attempts + 1 } : null);
+        setAnalysisPolling((prev) => (prev ? { ...prev, attempts: prev.attempts + 1 } : null));
       }
     }, 3000);
     pollingTimerRef.current = timerId;
@@ -980,7 +1009,7 @@ export default function ContractReviewPage() {
     setAttachAnalysisStarted(false);
     setUploadPartialErrors([]);
     let anyAnalysis = false;
-    let lastAnalysisJobId = null;
+    const analysisJobIds = [];
     const partialErrors = [];
     for (let i = 0; i < files.length; i++) {
       const file = files[i];
@@ -993,7 +1022,8 @@ export default function ContractReviewPage() {
         });
         if (result?.analysis_job_id != null) {
           anyAnalysis = true;
-          lastAnalysisJobId = result.analysis_job_id;
+          const jobId = parseInt(String(result.analysis_job_id), 10);
+          if (Number.isFinite(jobId) && jobId > 0) analysisJobIds.push(jobId);
         }
       } catch (err) {
         partialErrors.push({
@@ -1013,8 +1043,8 @@ export default function ContractReviewPage() {
       setAttachAnalysisStarted(true);
       setTimeout(() => setAttachAnalysisStarted(false), 6000);
       setPollingBanner(null);
-      if (lastAnalysisJobId != null) {
-        setAnalysisPolling({ extractionId: lastAnalysisJobId, attempts: 0 });
+      if (analysisJobIds.length) {
+        setAnalysisPolling({ extractionIds: analysisJobIds, attempts: 0 });
       }
     }
     await loadDetail(caseId);
@@ -1166,10 +1196,14 @@ export default function ContractReviewPage() {
       setAnalyzeDocsResult(result);
       setAttachAnalysisStarted(true);
       setTimeout(() => setAttachAnalysisStarted(false), 8000);
-      const firstJob = result?.jobs?.[0];
-      if (firstJob?.extraction_id != null) {
+      const pollIds = collectPollingExtractionIds(result?.jobs);
+      if (pollIds.length) {
         setPollingBanner(null);
-        setAnalysisPolling({ extractionId: firstJob.extraction_id, attempts: 0 });
+        setAnalysisPolling({ extractionIds: pollIds, attempts: 0 });
+      }
+      // VC-3: se mode sync ha già chiuso job done (refresh già eseguito BE), ricarica subito
+      if ((result?.jobs || []).some((j) => j && j.status === 'done')) {
+        setStudioReportReloadKey((k) => k + 1);
       }
       if (aiDocPanelExpanded) {
         await handleLoadAiDocSummary();
@@ -1690,6 +1724,7 @@ export default function ContractReviewPage() {
               <StudioReportPanel
                 caseId={detail.case.id}
                 companyId={detail.case.company_id}
+                reloadKey={studioReportReloadKey}
               />
               <div className="cr-panel">
                 <h2>Copertura saldatori e idoneità</h2>
@@ -2111,7 +2146,11 @@ export default function ContractReviewPage() {
                   disabled={TERMINAL_STATUSES.has(detail.case.status)}
                   pollingActive={analysisPolling != null}
                   pollingBanner={pollingBanner}
-                  onStartPolling={(extractionId) => setAnalysisPolling({ extractionId, attempts: 0 })}
+                  onStartPolling={(extractionId) => setAnalysisPolling({
+                    extractionIds: [extractionId].filter((id) => id != null),
+                    attempts: 0,
+                  })}
+                  onReportDirty={() => setStudioReportReloadKey((k) => k + 1)}
                 />
               )}
 
@@ -2720,7 +2759,15 @@ function AiDocSuggestionsPanel({ expanded, loading, error, summary, applyBusy, h
  * DrawingRequirementsPanel — Estrazione AI requisiti tecnici da un disegno di commessa.
  * Riusa l'integrazione Gemini lato server (provider-agnostic). MVP demo investitori.
  */
-function DrawingRequirementsPanel({ caseId, attachments, disabled, pollingActive, pollingBanner, onStartPolling }) {
+function DrawingRequirementsPanel({
+  caseId,
+  attachments,
+  disabled,
+  pollingActive,
+  pollingBanner,
+  onStartPolling,
+  onReportDirty,
+}) {
   const drawings = useMemo(
     () => (attachments || []).filter((a) => a.commercial_doc_role === 'drawing'),
     [attachments],
@@ -2799,6 +2846,11 @@ function DrawingRequirementsPanel({ caseId, attachments, disabled, pollingActive
     try {
       const updated = await apiService.reviewExtractedRequirement(reqId, patch);
       setReqs((rs) => rs.map((r) => (r.id === updated.id ? { ...r, ...updated } : r)));
+      // VC-3: BE refresh snapshot su confirmed/edited/rejected → ricarica pannello studio
+      const st = String(patch?.review_status || updated?.review_status || '').toLowerCase();
+      if (st === 'confirmed' || st === 'edited' || st === 'rejected') {
+        onReportDirty?.();
+      }
     } catch (e) {
       setError(e instanceof ApiError ? e.message : e.message || 'Aggiornamento fallito');
     }

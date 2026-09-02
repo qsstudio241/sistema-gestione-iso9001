@@ -29,7 +29,25 @@ function semaforoExpiry(expiryDate, status) {
     return 'verde';
 }
 
-async function loadExtractedRequirements(caseId, organizationId) {
+/**
+ * Carica requisiti da estrazioni `done`.
+ * @param {number} caseId
+ * @param {number} organizationId
+ * @param {{ includeExtractionId?: number|null }} [opts]
+ *   VC-3: include anche un job ancora `processing` (requisiti già in DB) così il refresh
+ *   snapshot dopo analyze non resta stale mentre lo status resta processing fino a fine refresh.
+ */
+async function loadExtractedRequirements(caseId, organizationId, opts = {}) {
+    const includeExtractionId = opts && opts.includeExtractionId != null
+        ? Number(opts.includeExtractionId)
+        : null;
+    const includeClause = Number.isFinite(includeExtractionId) && includeExtractionId > 0
+        ? 'AND (e.status = \'done\' OR e.id = @includeExtractionId)'
+        : 'AND e.status = \'done\'';
+    const params = { caseId, organizationId };
+    if (Number.isFinite(includeExtractionId) && includeExtractionId > 0) {
+        params.includeExtractionId = includeExtractionId;
+    }
     const result = await query(
         `
         SELECT
@@ -45,11 +63,11 @@ async function loadExtractedRequirements(caseId, organizationId) {
         INNER JOIN commercial_cases c ON c.id = e.case_id
         WHERE c.id = @caseId
           AND c.organization_id = @organizationId
-          AND e.status = 'done'
+          ${includeClause}
           AND r.review_status IN ('extracted', 'confirmed', 'edited')
         ORDER BY r.confidence DESC, r.id ASC
         `,
-        { caseId, organizationId },
+        params,
     );
     return result.recordset || [];
 }

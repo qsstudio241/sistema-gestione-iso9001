@@ -1,12 +1,14 @@
 /**
- * caseCapabilityGapReport.service.js — VC-1
+ * caseCapabilityGapReport.service.js — VC-1 (+ VC-3 refresh pipeline)
  * Aggrega uno snapshot report gap capacità (studio) riusando i mattoni esistenti.
  * Non duplica algoritmi di match: chiama caseExtractedCoverage / caseCoverageAdvisory.
+ * VC-3: maybeRefresh* aggiorna lo snapshot in best-effort dopo analisi / HITL.
  */
 
 'use strict';
 
 const { query } = require('../config/database');
+const logger = require('../utils/logger');
 const {
     loadExtractedRequirements,
     computeCaseProjectCoverage,
@@ -210,7 +212,12 @@ async function resolveLinkedProjectId(caseId, organizationId, explicitProjectId)
  * @param {object} params
  * @returns {Promise<object>}
  */
-async function buildCapabilityGapReport({ caseId, organizationId, projectId = null }) {
+async function buildCapabilityGapReport({
+    caseId,
+    organizationId,
+    projectId = null,
+    includeExtractionId = null,
+}) {
     const caseRow = await loadCaseForReport(caseId, organizationId);
     if (!caseRow) {
         throw makeError('Caso non trovato', 'NOT_FOUND', 404);
@@ -219,7 +226,9 @@ async function buildCapabilityGapReport({ caseId, organizationId, projectId = nu
         throw makeError(COMPANY_ID_REQUIRED_MSG, 'COMPANY_ID_REQUIRED', 400);
     }
 
-    const requirements = await loadExtractedRequirements(caseId, organizationId);
+    const requirements = await loadExtractedRequirements(caseId, organizationId, {
+        includeExtractionId,
+    });
     const extractedProfile = buildTechnicalProfile(requirements);
     const profileActive = profileHasTechnicalData(extractedProfile);
 
@@ -345,8 +354,14 @@ async function regenerateAndPersistCapabilityGapReport({
     caseId,
     organizationId,
     projectId = null,
+    includeExtractionId = null,
 }) {
-    const report = await buildCapabilityGapReport({ caseId, organizationId, projectId });
+    const report = await buildCapabilityGapReport({
+        caseId,
+        organizationId,
+        projectId,
+        includeExtractionId,
+    });
     const json = JSON.stringify(report);
 
     const upd = await query(
@@ -372,6 +387,47 @@ async function regenerateAndPersistCapabilityGapReport({
     return report;
 }
 
+/**
+ * VC-3 — refresh best-effort dello snapshot dopo analisi docs / conferma requisiti.
+ * Non lancia: skip se manca company_id / caso assente; errori di regenerate → log warn.
+ * @returns {Promise<{ refreshed: boolean, skipped?: boolean, reason?: string, report?: object }>}
+ */
+async function maybeRefreshCapabilityGapReport({
+    caseId,
+    organizationId,
+    projectId = null,
+    includeExtractionId = null,
+}) {
+    try {
+        const report = await regenerateAndPersistCapabilityGapReport({
+            caseId,
+            organizationId,
+            projectId,
+            includeExtractionId,
+        });
+        return { refreshed: true, report };
+    } catch (err) {
+        if (err && err.code === 'COMPANY_ID_REQUIRED') {
+            return { refreshed: false, skipped: true, reason: 'no_company' };
+        }
+        if (err && err.code === 'NOT_FOUND') {
+            return { refreshed: false, skipped: true, reason: 'not_found' };
+        }
+        logger.warn('maybeRefreshCapabilityGapReport', {
+            caseId,
+            organizationId,
+            msg: err && err.message,
+            code: err && err.code,
+        });
+        return {
+            refreshed: false,
+            skipped: true,
+            reason: 'error',
+            error: err && err.message,
+        };
+    }
+}
+
 module.exports = {
     COMPANY_ID_REQUIRED_MSG,
     deriveReportStatus,
@@ -379,4 +435,5 @@ module.exports = {
     buildCapabilityGapReport,
     getPersistedCapabilityGapReport,
     regenerateAndPersistCapabilityGapReport,
+    maybeRefreshCapabilityGapReport,
 };

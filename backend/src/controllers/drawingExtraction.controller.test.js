@@ -19,12 +19,20 @@ jest.mock('../utils/logger', () => ({
     info: jest.fn(),
 }));
 
+jest.mock('../services/caseCapabilityGapReport.service', () => ({
+    maybeRefreshCapabilityGapReport: jest.fn(async () => ({
+        refreshed: true,
+        report: { summary: { status: 'ok' } },
+    })),
+}));
+
 jest.mock('fs', () => ({
     promises: { readFile: jest.fn() },
 }));
 
 const { query } = require('../config/database');
 const service = require('../services/drawingExtraction.service');
+const caseCapabilityGapReportService = require('../services/caseCapabilityGapReport.service');
 const fs = require('fs').promises;
 const ctrl = require('./drawingExtraction.controller');
 
@@ -54,7 +62,9 @@ function installQueryMock({ caseRows, attRows, headRow, reqRows, updatedReq }) {
         if (/UPDATE commercial_case_drawing_extractions/.test(sqlText)) return { recordset: [] };
         if (/FROM commercial_case_drawing_extractions e/.test(sqlText)) return { recordset: headRow ? [headRow] : [] };
         if (/FROM commercial_case_extracted_requirements\s+WHERE extraction_id/.test(sqlText)) return { recordset: reqRows || [] };
-        if (/FROM commercial_case_extracted_requirements r/.test(sqlText)) return { recordset: caseRows.length ? [{ id: 1 }] : [] };
+        if (/FROM commercial_case_extracted_requirements r/.test(sqlText)) {
+            return { recordset: caseRows.length ? [{ id: 1, case_id: 5 }] : [] };
+        }
         if (/UPDATE commercial_case_extracted_requirements/.test(sqlText)) return { recordset: [updatedReq] };
         return { recordset: [] };
     });
@@ -244,5 +254,20 @@ describe('drawingExtraction.controller — reviewRequirement', () => {
         expect(upd).toBeTruthy();
         expect(upd[1].valueText).toBe('S355J2');
         expect(res.body.value_text).toBe('S355J2');
+        expect(caseCapabilityGapReportService.maybeRefreshCapabilityGapReport).toHaveBeenCalledWith(
+            expect.objectContaining({ caseId: 5, organizationId: 1 }),
+        );
+        expect(res.body.report_refresh?.refreshed).toBe(true);
+    });
+
+    test('confirmed: trigger refresh report VC-3', async () => {
+        installQueryMock({
+            caseRows: [{ id: 1 }],
+            updatedReq: { id: 3, req_type: 'material', value_text: 'S355', review_status: 'confirmed', reviewed_by: 7 },
+        });
+        const res = createRes();
+        await ctrl.reviewRequirement(baseReq({ id: '3' }, { review_status: 'confirmed' }), res);
+        expect(res.body.review_status).toBe('confirmed');
+        expect(caseCapabilityGapReportService.maybeRefreshCapabilityGapReport).toHaveBeenCalled();
     });
 });
