@@ -1,7 +1,8 @@
 # Scenario narrativo — Riesame requisiti / Valutazione commesse (VC-1…4 + ING-1…4) e decisioni ING-5
 
 > Per il committente (non tecnico). Solo comportamenti **già su `main`** fino a ING-4; ING-5 = punto di decisione, **nessun codice**.  
-> Piano: [`PLAN_VALUTAZIONE_COMMESSE_SLICES.md`](PLAN_VALUTAZIONE_COMMESSE_SLICES.md) · Brief HITL: [`DEPUTYTASK.md`](DEPUTYTASK.md) (ING-5).
+> Piano: [`PLAN_VALUTAZIONE_COMMESSE_SLICES.md`](PLAN_VALUTAZIONE_COMMESSE_SLICES.md) · Brief HITL: [`DEPUTYTASK.md`](DEPUTYTASK.md) (ING-5).  
+> Walkthrough admin (moduli/pulsanti passi 1–10): [`WALKTHROUGH_ADMIN_RIESAME_PASSI.md`](WALKTHROUGH_ADMIN_RIESAME_PASSI.md).
 
 ---
 
