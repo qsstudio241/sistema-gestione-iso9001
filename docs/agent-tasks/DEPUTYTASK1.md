@@ -1,7 +1,8 @@
 # DEPUTYTASK1 — ING-4: Template checklist Riesame requisiti personalizzabile (studio)
 
-**Stato:** APERTO  
+**Stato:** CHIUSO — TEST OK  
 **Aperto:** 02/09/2026  
+**Chiuso:** 02/09/2026  
 **Piano:** [`PLAN_VALUTAZIONE_COMMESSE_SLICES.md`](PLAN_VALUTAZIONE_COMMESSE_SLICES.md) § ING-4  
 **Rischio:** Medio — migrazione additiva 162 + API template + hook snapshot in `generateChecklist`; niente auth/sync breaking  
 **Branch:** `cursor/ing4-checklist-templates-1c5d`  
@@ -47,6 +48,22 @@ Lo studio gestisce **template checklist** Riesame requisiti (voci P/F) associabi
 
 ## Criteri chiusura
 
-- [ ] Resolve: core sempre; extras da template; snapshot NOT EXISTS
-- [ ] UI CRUD minima + test L1 + build
-- [ ] PR/compare; DEPUTYTASK1 CHIUSO TEST OK
+- [x] Resolve: core sempre; extras da template; snapshot NOT EXISTS
+- [x] UI CRUD minima + test L1 + build
+- [x] PR/compare; DEPUTYTASK1 CHIUSO TEST OK
+
+
+## Esito deputy
+
+**TEST OK**
+
+| Voce | Dettaglio |
+|------|-----------|
+| Migrazione | `162_commercial_checklist_templates.sql` (+ runner VPS) |
+| Resolve | core P/F sempre; variante testo + extras; preferenza company → org default → solo core |
+| Snapshot | `generateChecklist` / seed import: INSERT `NOT EXISTS` su `item_ref` |
+| UI | `/settings/contract-checklist-templates` (Gestione) |
+| Test L1 | Vitest 4/4 · Jest template+controller 51 · mig uniqueness · build OK |
+| PR | compare (gh createPullRequest non accessibile): https://github.com/qsstudio241/sistema-gestione-iso9001/compare/main...cursor/ing4-checklist-templates-1c5d?expand=1 |
+| PLAN | Non toccato (parallelo PR #623 / ING-1) — spuntare ING-4 in sync post-merge |
+
