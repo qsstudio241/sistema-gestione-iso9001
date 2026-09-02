@@ -26,11 +26,14 @@ import {
 } from '../utils/analysisJobPolling';
 import {
   DOC_ROLE_OPTIONS,
+  applyBatchSelectionMode,
   buildBatchRoleSuggestions,
+  getCatalogAnalyzeGate,
   groupAttachmentsByCatalogRole,
   honestSuggestLabel,
   isCatalogedDocRole,
   listAnalyzableCatalogAttachmentIds,
+  suggestCommercialDocRole,
 } from '../utils/caseDocCatalog';
 import { exportContractReviewChecklistDocx } from '../utils/wordExportContractReviewChecklist';
 import './ContractReviewPage.css';
@@ -2126,32 +2129,53 @@ export default function ContractReviewPage() {
                       {(detail.attachments || []).length > 0 && !TERMINAL_STATUSES.has(detail.case.status) && (
                         <div className="cr-form-row" style={{ marginTop: '0.75rem' }}>
                           {(() => {
-                            const analyzableIds = listAnalyzableCatalogAttachmentIds(detail.attachments);
-                            const uncataloged = (detail.attachments || []).filter(
-                              (a) => !isCatalogedDocRole(a.commercial_doc_role),
-                            ).length;
-                            const analyzeDisabled = analyzeDocsBusy || analyzableIds.length === 0;
-                            const analyzeTitle = analyzableIds.length === 0
-                              ? uncataloged > 0
-                                ? 'Cataloga almeno un allegato con ruolo Disegno, Capitolato o Ordine (PDF) prima di analizzare'
-                                : 'Nessun allegato catalogato analizzabile (Disegno / Capitolato PDF / Ordine PDF)'
-                              : undefined;
+                            const gate = getCatalogAnalyzeGate(detail.attachments);
+                            const analyzeDisabled = analyzeDocsBusy || !gate.canAnalyze;
                             return (
                               <>
                                 <button
                                   type="button"
                                   className="cr-btn cr-btn-primary"
                                   disabled={analyzeDisabled}
-                                  title={analyzeTitle}
+                                  title={gate.blockedReason || undefined}
                                   onClick={() => handleAnalyzeAllDocuments()}
                                 >
                                   {analyzeDocsBusy ? 'Analisi in corso\u2026' : 'Analizza documenti commessa'}
                                 </button>
-                                {analyzableIds.length === 0 && (
+                                {!gate.canAnalyze && (
                                   <p className="contract-review-intro" style={{ marginTop: '0.4rem', marginBottom: 0 }}>
-                                    {uncataloged > 0
-                                      ? `Assegna un ruolo nel catalogo sotto (${uncataloged} da catalogare). L\u2019analisi parte solo sui catalogati analizzabili.`
-                                      : 'Cataloga allegati con ruolo Disegno, Capitolato o Ordine (PDF) per abilitare l\u2019analisi.'}
+                                    {gate.blockedReason}
+                                    {gate.suggestBatchCta && !batchSuggestOpen ? (
+                                      <>
+                                        {' '}
+                                        <button
+                                          type="button"
+                                          className="cr-btn cr-btn-link"
+                                          disabled={batchSuggestBusy}
+                                          onClick={openBatchRoleSuggestions}
+                                        >
+                                          Suggerisci ruoli (batch)
+                                        </button>
+                                      </>
+                                    ) : null}
+                                  </p>
+                                )}
+                                {gate.softWarnUncataloged && (
+                                  <p className="contract-review-intro cr-gate-soft-warn" style={{ marginTop: '0.4rem', marginBottom: 0 }}>
+                                    {`Analisi su ${gate.analyzableCount} catalogat${gate.analyzableCount === 1 ? 'o' : 'i'}: restano ${gate.uncatalogedCount} da catalogare (non inclusi).`}
+                                    {!batchSuggestOpen && (gate.highHintCount > 0 || gate.mediumHintCount > 0) ? (
+                                      <>
+                                        {' '}
+                                        <button
+                                          type="button"
+                                          className="cr-btn cr-btn-link"
+                                          disabled={batchSuggestBusy}
+                                          onClick={openBatchRoleSuggestions}
+                                        >
+                                          Completa catalogo
+                                        </button>
+                                      </>
+                                    ) : null}
                                   </p>
                                 )}
                               </>
@@ -2190,9 +2214,9 @@ export default function ContractReviewPage() {
                 )}
                 <h3 style={{ fontSize: '0.95rem' }}>Catalogo allegati (per ruolo)</h3>
                 <p className="contract-review-intro" style={{ marginTop: 0 }}>
-                  Assegna o correggi il ruolo di ogni file cliente. Batch da Import PDF → caso resta disponibile
-                  da Impostazioni / Import jobs (ponte esistente). Con mole disordinata: suggerisci ruoli dal nome,
-                  conferma HITL, poi analizza.
+                  Assegna o correggi il ruolo di ogni file cliente. Matching da nome, cartella e tipo file
+                  (senza AI); conferma HITL, poi Analizza. Batch Import PDF → caso resta da Impostazioni /
+                  Import jobs.
                 </p>
                 {(detail.attachments || []).length > 0
                   && !TERMINAL_STATUSES.has(detail.case.status)
@@ -2203,7 +2227,7 @@ export default function ContractReviewPage() {
                       className="cr-btn"
                       disabled={batchSuggestBusy}
                       onClick={openBatchRoleSuggestions}
-                      title="Propone ruoli da nome/path (senza AI); confermi prima di salvare"
+                      title="Propone ruoli da nome/cartella/tipo file (senza AI); confermi prima di salvare"
                     >
                       Suggerisci ruoli (batch)
                     </button>
@@ -2215,57 +2239,81 @@ export default function ContractReviewPage() {
                       Classificazione batch — conferma HITL
                     </h4>
                     <p className="contract-review-intro" style={{ marginTop: 0 }}>
-                      Indizi dal nome file (come Import PDF). Niente black-box: spunta, correggi il ruolo,
-                      applica solo i selezionati. HITL: indicare case_id di prova se serve seed dedicato.
+                      Indizi forti (nome/cartella) già spuntati; indizi deboli (solo tipo file) da confermare.
+                      Correggi il ruolo e applica solo i selezionati.
                     </p>
                     {batchSuggestRows.length === 0 ? (
                       <p className="contract-review-intro">
                         Nessun allegato da catalogare: tutti hanno già un ruolo, oppure la lista è vuota.
                       </p>
                     ) : (
-                      <ul className="cr-doc-list cr-batch-suggest-list">
-                        {batchSuggestRows.map((row) => (
-                          <li key={row.attachmentId} className="cr-catalog-item cr-batch-suggest-item">
-                            <label className="cr-batch-suggest-check">
-                              <input
-                                type="checkbox"
-                                checked={Boolean(row.selected)}
+                      <>
+                        <div className="cr-batch-suggest-toolbar">
+                          <button
+                            type="button"
+                            className="cr-btn"
+                            disabled={batchSuggestBusy}
+                            onClick={() =>
+                              setBatchSuggestRows((prev) => applyBatchSelectionMode(prev, 'high'))
+                            }
+                          >
+                            Seleziona indizi forti
+                          </button>
+                          <button
+                            type="button"
+                            className="cr-btn"
+                            disabled={batchSuggestBusy}
+                            onClick={() =>
+                              setBatchSuggestRows((prev) => applyBatchSelectionMode(prev, 'any'))
+                            }
+                          >
+                            Seleziona tutte le proposte
+                          </button>
+                        </div>
+                        <ul className="cr-doc-list cr-batch-suggest-list">
+                          {batchSuggestRows.map((row) => (
+                            <li key={row.attachmentId} className="cr-catalog-item cr-batch-suggest-item">
+                              <label className="cr-batch-suggest-check">
+                                <input
+                                  type="checkbox"
+                                  checked={Boolean(row.selected)}
+                                  disabled={batchSuggestBusy}
+                                  onChange={(e) =>
+                                    patchBatchSuggestRow(row.attachmentId, {
+                                      selected: e.target.checked,
+                                    })
+                                  }
+                                  aria-label={`Includi ${row.fileName}`}
+                                />
+                                <span className="cr-catalog-name">{row.fileName}</span>
+                              </label>
+                              <span className="cr-batch-suggest-hint">
+                                {honestSuggestLabel(row.suggestedRole, row.reason, row.confidence)}
+                              </span>
+                              <select
+                                className="cr-catalog-role-select"
+                                aria-label={`Ruolo proposto per ${row.fileName}`}
+                                value={row.draftRole || ''}
                                 disabled={batchSuggestBusy}
-                                onChange={(e) =>
+                                onChange={(e) => {
+                                  const next = e.target.value;
                                   patchBatchSuggestRow(row.attachmentId, {
-                                    selected: e.target.checked,
-                                  })
-                                }
-                                aria-label={`Includi ${row.fileName}`}
-                              />
-                              <span className="cr-catalog-name">{row.fileName}</span>
-                            </label>
-                            <span className="cr-batch-suggest-hint">
-                              {honestSuggestLabel(row.suggestedRole, row.reason)}
-                            </span>
-                            <select
-                              className="cr-catalog-role-select"
-                              aria-label={`Ruolo proposto per ${row.fileName}`}
-                              value={row.draftRole || ''}
-                              disabled={batchSuggestBusy}
-                              onChange={(e) => {
-                                const next = e.target.value;
-                                patchBatchSuggestRow(row.attachmentId, {
-                                  draftRole: next,
-                                  selected: next ? true : row.selected,
-                                });
-                              }}
-                            >
-                              <option value="">— Scegli ruolo —</option>
-                              {DOC_ROLE_OPTIONS.map((opt) => (
-                                <option key={opt.value} value={opt.value}>
-                                  {opt.label}
-                                </option>
-                              ))}
-                            </select>
-                          </li>
-                        ))}
-                      </ul>
+                                    draftRole: next,
+                                    selected: next ? true : row.selected,
+                                  });
+                                }}
+                              >
+                                <option value="">— Scegli ruolo —</option>
+                                {DOC_ROLE_OPTIONS.map((opt) => (
+                                  <option key={opt.value} value={opt.value}>
+                                    {opt.label}
+                                  </option>
+                                ))}
+                              </select>
+                            </li>
+                          ))}
+                        </ul>
+                      </>
                     )}
                     <div className="cr-batch-suggest-actions">
                       <button
@@ -2306,13 +2354,27 @@ export default function ContractReviewPage() {
                           ) : null}
                         </h4>
                         <ul className="cr-doc-list cr-catalog-list">
-                          {group.items.map((a) => (
+                          {group.items.map((a) => {
+                            const inlineHint =
+                              group.key === '__uncataloged__'
+                                ? suggestCommercialDocRole(a)
+                                : null;
+                            return (
                             <li key={a.attachment_id} className="cr-catalog-item">
                               <span className="cr-catalog-name">{a.file_name}</span>
                               <CommercialDocMetaBadge
                                 counterparty={a.commercial_counterparty}
                                 direction={a.commercial_direction}
                               />
+                              {inlineHint?.role ? (
+                                <span className="cr-catalog-inline-hint">
+                                  {honestSuggestLabel(
+                                    inlineHint.role,
+                                    inlineHint.reason,
+                                    inlineHint.confidence,
+                                  )}
+                                </span>
+                              ) : null}
                               {!TERMINAL_STATUSES.has(detail.case.status) ? (
                                 <select
                                   className="cr-catalog-role-select"
@@ -2345,7 +2407,8 @@ export default function ContractReviewPage() {
                                 </span>
                               )}
                             </li>
-                          ))}
+                            );
+                          })}
                         </ul>
                       </div>
                     ))}

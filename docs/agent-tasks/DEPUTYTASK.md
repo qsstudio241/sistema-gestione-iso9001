@@ -1,38 +1,43 @@
-# DEPUTYTASK — ING-1: Classificazione / riordino allegati batch (caso commerciale)
+# DEPUTYTASK — ING-2: Matching docs → ruoli catalogo / gate Analizza
 
-**Stato:** CHIUSO — TEST OK  
+**Stato:** APERTO  
 **Aperto:** 02/09/2026  
-**Chiuso:** 02/09/2026  
-**Piano:** [`PLAN_VALUTAZIONE_COMMESSE_SLICES.md`](PLAN_VALUTAZIONE_COMMESSE_SLICES.md) § ING-1  
-**Rischio:** Medio — FE util + UI HITL su catalogo VC-2; riuso PATCH allegato esistente; niente migrazione; niente auth/sync breaking  
-**Branch:** `cursor/ing1-batch-doc-classify-1c5d`  
-**PR:** compare https://github.com/qsstudio241/sistema-gestione-iso9001/compare/main...cursor/ing1-batch-doc-classify-1c5d?expand=1  
-**Dipende da:** VC-2 catalogo ruoli su `main`; PLAN ING-* (#623 allineato nel branch)
+**Piano:** [`PLAN_VALUTAZIONE_COMMESSE_SLICES.md`](PLAN_VALUTAZIONE_COMMESSE_SLICES.md) § ING-2  
+**Rischio:** Medio — FE util + UI su catalogo VC-2/ING-1; riuso PATCH allegato; niente migrazione; niente auth/sync  
+**Branch:** `cursor/ing2-catalog-role-matching-1c5d`  
+**Dipende da:** ING-1 su `main` (#624)  
+**Parallelo:** ING-4 PR #625 — **file disgiunti** (non toccare template checklist / mig 162)
 
 > **Allineamento Git (autonomo)**: `git fetch origin main` + `git pull origin main` prima di eseguire. **Non** chiedere al committente.  
 > Comando: `Leggi docs/agent-tasks/DEPUTYTASK.md ed eseguilo. Chiudi con TEST OK o FIX NON APPLICABILI.`
 
 ---
 
-## Esito deputy
+## Obiettivo
 
-**TEST OK** — suggerimenti ruolo batch da nome/path + pannello HITL su catalogo allegati caso.
+Estendere il matching auto → `commercial_doc_role` oltre le euristiche nome di ING-1 (MIME/path/confidence + conferma bulk più smart) e rafforzare il gate **Analizza documenti** con readiness + CTA verso batch HITL. Nessun secondo storage; niente LLM.
 
-| Voce | Dettaglio |
-|------|-----------|
-| Util | `suggestCommercialDocRoleFromName` + `buildBatchRoleSuggestions` in `caseDocCatalog.js` (whitelist VC-2, senza LLM) |
-| UI | Bottone «Suggerisci ruoli (batch)» → checkbox/select → «Applica selezionati» (PATCH esistente) |
-| Storage | Nessuno nuovo — riuso `commercial_doc_role` / `updateContractReviewAttachment` |
-| Test L1 | `caseDocCatalog.test.js` 9/9 + `npm run build` OK |
-| Caso golden | Generico su qualsiasi caso; HITL: indicare `case_id` di prova (tenant ERAM 1004 noto per smoke coverage, non vincolante) |
+## File previsti
 
-**Prossima slice:** ING-2 (matching auto → ruoli catalogo / gate Analizza) o ING-4 in parallelo su slot disgiunto.
+- `app/src/utils/caseDocCatalog.js` (+ test)
+- `app/src/pages/ContractReviewPage.jsx` (+ CSS minimo se serve)
+- `docs/agent-tasks/DEPUTYTASK.md` (questo)
+- `docs/agent-tasks/PLAN_VALUTAZIONE_COMMESSE_SLICES.md` (spunta ING-2 a chiusura)
 
----
+## Cosa NON toccare
 
-## Cosa fa l'utente in UI
+- Template checklist ING-4: `commercialChecklistTemplate*`, `ContractChecklistTemplatesPage*`, `commercialChecklistDefaults*`, mig `162_*`, `run-migration-162*`
+- Auth/JWT, sync, migrazioni nuove
+- Duplicare pannello batch ING-1 (estendere, non rifare)
 
-1. Apri Riesame requisiti → caso con allegati → slide Documenti.
-2. Clicca **Suggerisci ruoli (batch)**.
-3. Rivedi indizi «dal nome», correggi select, spunta/deseleziona.
-4. **Applica selezionati** → catalogo aggiornato → poi Analizza documenti se pronto.
+## Criteri di accettazione
+
+1. Matcher con confidence (`high`/`medium`) da nome/path + MIME/estensione
+2. Batch: auto-seleziona solo indizi forti; azioni Seleziona indizi forti / tutte le proposte
+3. Gate Analizza: readiness + soft-warn se restano da catalogare; CTA batch se bloccato con indizi
+4. Test L1 `caseDocCatalog.test.js` + build OK
+5. Nota chiusura: mig 162 dopo merge #625 (PR ancora aperta)
+
+## Handoff (se interrotto)
+
+Vedi [`HANDOFF_TEMPLATE.md`](HANDOFF_TEMPLATE.md).

@@ -1,13 +1,16 @@
 import { describe, expect, it } from 'vitest';
 import {
   DOC_ROLE_OPTIONS,
+  applyBatchSelectionMode,
   buildBatchRoleSuggestions,
+  getCatalogAnalyzeGate,
   groupAttachmentsByCatalogRole,
   honestSuggestLabel,
   isAnalyzableCatalogAttachment,
   isCatalogedDocRole,
   listAnalyzableCatalogAttachmentIds,
   roleLabel,
+  suggestCommercialDocRole,
   suggestCommercialDocRoleFromName,
 } from './caseDocCatalog';
 
@@ -94,7 +97,7 @@ describe('caseDocCatalog (ING-1 batch suggest)', () => {
     ).toBe('drawing');
   });
 
-  it('buildBatchRoleSuggestions: solo non catalogati, riordino, HITL selected', () => {
+  it('buildBatchRoleSuggestions: solo non catalogati, riordino, HITL selected high', () => {
     const rows = buildBatchRoleSuggestions([
       { attachment_id: 10, commercial_doc_role: 'drawing', file_name: 'già_ok.png' },
       { attachment_id: 11, commercial_doc_role: null, file_name: 'Disegno_assieme.png' },
@@ -103,9 +106,11 @@ describe('caseDocCatalog (ING-1 batch suggest)', () => {
     ]);
     expect(rows.map((r) => r.attachmentId)).toEqual([13, 11, 12]);
     expect(rows[0].suggestedRole).toBe('capitolato');
+    expect(rows[0].confidence).toBe('high');
     expect(rows[0].selected).toBe(true);
     expect(rows[0].draftRole).toBe('capitolato');
     expect(rows[1].suggestedRole).toBe('drawing');
+    expect(rows[1].confidence).toBe('high');
     expect(rows[2].suggestedRole).toBe(null);
     expect(rows[2].selected).toBe(false);
     expect(honestSuggestLabel(null)).toMatch(/scegli tu/i);
@@ -118,5 +123,73 @@ describe('caseDocCatalog (ING-1 batch suggest)', () => {
     );
     expect(rows).toHaveLength(1);
     expect(rows[0].currentRole).toBe('order');
+  });
+});
+
+describe('caseDocCatalog (ING-2 matching + gate)', () => {
+  it('suggestCommercialDocRole: cartella path → high', () => {
+    const hit = suggestCommercialDocRole({
+      file_name: 'Cliente/Disegni/pezzo_01.pdf',
+      mime_type: 'application/pdf',
+    });
+    expect(hit.role).toBe('drawing');
+    expect(hit.confidence).toBe('high');
+    expect(hit.reason).toBe('da cartella');
+  });
+
+  it('suggestCommercialDocRole: sola estensione/MIME → medium, non auto-select', () => {
+    const hit = suggestCommercialDocRole({
+      file_name: 'scan_sconosciuto.png',
+      mime_type: 'image/png',
+    });
+    expect(hit.role).toBe('drawing');
+    expect(hit.confidence).toBe('medium');
+
+    const rows = buildBatchRoleSuggestions([
+      { attachment_id: 1, commercial_doc_role: null, file_name: 'scan_sconosciuto.png', mime_type: 'image/png' },
+    ]);
+    expect(rows[0].selected).toBe(false);
+    expect(rows[0].confidence).toBe('medium');
+  });
+
+  it('applyBatchSelectionMode: high vs any', () => {
+    const base = buildBatchRoleSuggestions([
+      { attachment_id: 1, commercial_doc_role: null, file_name: 'Capitolato_x.pdf' },
+      { attachment_id: 2, commercial_doc_role: null, file_name: 'foto.png', mime_type: 'image/png' },
+      { attachment_id: 3, commercial_doc_role: null, file_name: 'misc.pdf' },
+    ]);
+    const onlyHigh = applyBatchSelectionMode(base, 'high');
+    expect(onlyHigh.filter((r) => r.selected).map((r) => r.attachmentId)).toEqual([1]);
+    const any = applyBatchSelectionMode(base, 'any');
+    expect(any.filter((r) => r.selected).map((r) => r.attachmentId)).toEqual([1, 2]);
+  });
+
+  it('getCatalogAnalyzeGate: blocco + CTA batch con indizi', () => {
+    const gate = getCatalogAnalyzeGate([
+      { attachment_id: 1, commercial_doc_role: null, file_name: 'Ordine_PO1.pdf', mime_type: 'application/pdf' },
+      { attachment_id: 2, commercial_doc_role: null, file_name: 'misc.pdf', mime_type: 'application/pdf' },
+    ]);
+    expect(gate.canAnalyze).toBe(false);
+    expect(gate.uncatalogedCount).toBe(2);
+    expect(gate.highHintCount).toBe(1);
+    expect(gate.suggestBatchCta).toBe(true);
+    expect(gate.blockedReason).toMatch(/indizi/i);
+  });
+
+  it('getCatalogAnalyzeGate: soft-warn se analizzabili ma restano da catalogare', () => {
+    const gate = getCatalogAnalyzeGate([
+      { attachment_id: 1, commercial_doc_role: 'drawing', file_name: 'ok.png', mime_type: 'image/png' },
+      { attachment_id: 2, commercial_doc_role: null, file_name: 'altro.pdf', mime_type: 'application/pdf' },
+    ]);
+    expect(gate.canAnalyze).toBe(true);
+    expect(gate.analyzableCount).toBe(1);
+    expect(gate.softWarnUncataloged).toBe(true);
+    expect(gate.uncatalogedCount).toBe(1);
+    expect(gate.blockedReason).toBe(null);
+  });
+
+  it('honestSuggestLabel: confidence in etichetta', () => {
+    expect(honestSuggestLabel('drawing', 'da tipo file', 'medium')).toMatch(/indizio debole/i);
+    expect(honestSuggestLabel('order', 'dal nome', 'high')).toMatch(/indizio forte/i);
   });
 });

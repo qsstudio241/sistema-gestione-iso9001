@@ -77,6 +77,32 @@
   background: #ffebee;
 }
 
+.cr-btn-link {
+  display: inline;
+  padding: 0;
+  margin: 0;
+  border: none;
+  background: transparent;
+  color: #2563eb;
+  font: inherit;
+  font-size: inherit;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.cr-btn-link:hover:not(:disabled) {
+  color: #1d4ed8;
+}
+
+.cr-btn-link:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.cr-gate-soft-warn {
+  color: #92400e;
+}
+
 .cr-table-wrap {
   overflow-x: auto;
   border: 1px solid #e0e0e0;
@@ -665,6 +691,19 @@
 .cr-batch-suggest-hint {
   flex: 1 1 140px;
   font-size: 0.78rem;
+  color: #64748b;
+}
+
+.cr-batch-suggest-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+  margin: 0.35rem 0 0.5rem;
+}
+
+.cr-catalog-inline-hint {
+  flex: 1 1 140px;
+  font-size: 0.75rem;
   color: #64748b;
 }
 
