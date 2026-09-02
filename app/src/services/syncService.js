@@ -9,7 +9,7 @@
  */
 
 import { getDatabase } from './IndexedDBProvider';
-import apiService, { hasAuditLockToken } from './apiService';
+import apiService from './apiService';
 import { toNumericChecklistQuestionId } from '../utils/attachmentQuestionId';
 
 const SYNC_QUEUE_STORE = 'syncQueue';
@@ -323,16 +323,9 @@ export class SyncService {
                     continue;
                 }
                 try {
-                    // Guard: update_audit richiede un lock attivo sul server.
-                    // Se non c'è token in memoria, non tentare la rete — evita 423 a raffica
-                    // (es. migrazione dati ricchi al login prima che l'utente apra l'audit).
-                    // L'item resta in coda e verrà riprovato quando il lock sarà acquisito.
-                    if (item.type === 'update_audit') {
-                        const uuid = item.payload?.audit_uuid;
-                        if (uuid && !hasAuditLockToken(uuid)) {
-                            continue; // Nessun lock → salta silenziosamente
-                        }
-                    }
+                    // CONS-5 / ADR-008 T5: il lock è solo UX. update_audit si invia
+                    // anche senza token in memoria — il server accetta senza lucchetto.
+                    // Saltare qui lasciava obiettivo / generalData / conclusioni solo locali.
                     const syncResult = await this.syncItem(item);
                     await this.removeFromQueue(item.id);
                     successCount++;
@@ -1651,21 +1644,27 @@ export class SyncService {
                 const uuid = item.payload?.audit_uuid;
                 if (!uuid || !uuidSet.has(uuid)) continue;
 
-                // Rimuovi se:
-                // (a) già confermato dal server (sync_metadata presente) — l'update è ormai stantio
-                // (b) in stallo per lock scaduto — il server ha già i dati più recenti
-                //     (la riconciliazione appena finita ha scaricato lo stato server)
+                const isLockStall =
+                    item.isStalled ||
+                    /AUDIT_LOCK_REQUIRED|sessione di lock/i.test(String(item.lastError || ''));
+
+                // CONS-5: mapping uuid→audit_id significa solo che l'audit esiste sul server,
+                // non che QUESTO item è stato inviato con successo. update_audit non stalled
+                // (mai processato o ancora in volo) non si tocca — altrimenti obiettivo /
+                // generalData / conclusioni restano solo locali e spariscono al login.
+                if (item.type === 'update_audit' && !isLockStall) {
+                    continue;
+                }
+
+                // create_audit: se già sul server la create è stantia.
+                // update_audit stalled (lock / max-retry): il payload non partirà più.
                 const mappedServerId = await this.getAuditIdForUuid(uuid);
                 const hasServerMapping =
                     mappedServerId != null &&
                     Number.isFinite(Number(mappedServerId)) &&
                     Number(mappedServerId) > 0;
-                const isLockStall =
-                    item.isStalled ||
-                    /AUDIT_LOCK_REQUIRED|sessione di lock/i.test(String(item.lastError || ''));
 
-                if (!hasServerMapping && !isLockStall) {
-                    // Update non ancora mai sincronizzato e non in lock stall: mantieni
+                if (item.type === 'create_audit' && !hasServerMapping && !isLockStall) {
                     continue;
                 }
                 await this.removeFromQueue(item.id);
@@ -1849,8 +1848,8 @@ export class SyncService {
      * Conta solo item ATTIVI (non stalled) — usato dal guard di logout.
      * Item in stallo permanente (isStalled: true) non possono essere recuperati
      * e non devono bloccare l'uscita dell'utente.
-     * Item update_audit senza lock attivo sono "in pausa" (non verranno inviati finché
-     * l'utente non riapre l'audit) e non devono bloccare il logout.
+     * CONS-5: update_audit parte anche senza lock token — conta come attivo
+     * così il logout non svuota obiettivo / generalData ancora in coda.
      */
     async getActiveQueueSize() {
         const db = await this.init();
@@ -1863,15 +1862,7 @@ export class SyncService {
             request.onerror = () => reject(request.error);
         });
 
-        return items.filter((it) => {
-            if (it.isStalled) return false;
-            // update_audit senza lock attivo: in attesa di riapertura audit — non blocca logout
-            if (it.type === 'update_audit') {
-                const uuid = it.payload?.audit_uuid;
-                if (uuid && !hasAuditLockToken(uuid)) return false;
-            }
-            return true;
-        }).length;
+        return items.filter((it) => !it.isStalled).length;
     }
 
     /**
