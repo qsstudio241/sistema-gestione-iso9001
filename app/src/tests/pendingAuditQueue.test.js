@@ -123,16 +123,27 @@ describe("resolveChecklistHydrateWithPendingQueue", () => {
     expect(result.ISO_9001_2015["4.1"].questions[0].status).toBe("NC");
   });
 
-  it("coda vuota → riusa resolveMergedChecklistForReconcile (locale più ricco o merge)", () => {
+  it("coda vuota → riusa resolveMergedChecklistForReconcile (locale più ricco)", () => {
+    const localRicher = {
+      ISO_9001_2015: {
+        "4.1": {
+          questions: [
+            { questionId: "q1", status: "NC", notes: "Lavoro telefono" },
+            { questionId: "q2", status: "OSS", notes: "Seconda" },
+          ],
+        },
+      },
+    };
     const result = resolveChecklistHydrateWithPendingQueue(
-      localChecklist,
+      localRicher,
       serverChecklist,
       [],
       AUDIT_UUID,
     );
-    expect(result).not.toBe(localChecklist);
+    expect(result).not.toBe(localRicher);
     expect(result.ISO_9001_2015["4.1"].questions[0].status).toBe("NC");
     expect(result.ISO_9001_2015["4.1"].questions[0].notes).toBe("Lavoro telefono");
+    expect(result.ISO_9001_2015["4.1"].questions.some((q) => q.questionId === "q2")).toBe(true);
   });
 
   it("coda attiva ma senza checklist locale → lascia il server", () => {
