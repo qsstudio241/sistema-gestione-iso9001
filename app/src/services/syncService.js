@@ -1813,6 +1813,24 @@ export class SyncService {
     }
 
     /**
+     * Lettura sola: tutti gli item in coda (inclusi stalled). CONS-4 hydrate.
+     * Non modifica la coda.
+     * @returns {Promise<object[]>}
+     */
+    async getQueueItems() {
+        const db = await this.init();
+        const transaction = db.transaction([SYNC_QUEUE_STORE], 'readonly');
+        const store = transaction.objectStore(SYNC_QUEUE_STORE);
+
+        const items = await new Promise((resolve, reject) => {
+            const request = store.getAll();
+            request.onsuccess = () => resolve(request.result);
+            request.onerror = () => reject(request.error);
+        });
+        return Array.isArray(items) ? items : [];
+    }
+
+    /**
      * Conta item in queue (tutti, inclusi stalled).
      */
     async getQueueSize() {

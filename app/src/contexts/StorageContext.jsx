@@ -34,6 +34,28 @@ import {
   mergeCustomEvidenceResponses,
   resolveMergedChecklistForReconcile,
 } from "../utils/checklistTextMerge";
+import {
+  resolveChecklistHydrateWithPendingQueue,
+  shouldSkipServerHydrate,
+} from "../utils/pendingAuditQueue";
+
+/** Lettura coda sync: fallimento → [] (hydrate procede, non blocca). */
+async function readSyncQueueItemsSafe() {
+  try {
+    if (typeof syncService.getQueueItems !== "function") return [];
+    const items = await syncService.getQueueItems();
+    return Array.isArray(items) ? items : [];
+  } catch {
+    return [];
+  }
+}
+
+function extraHydrateRefs(audit, numericAuditId) {
+  const refs = [];
+  const n = numericAuditId ?? audit?.metadata?.auditId ?? audit?.audit_id;
+  if (n != null && n !== "") refs.push(n);
+  return refs;
+}
 
 /** Audit locale per merge: memoria React (testo in digitazione) prima di IndexedDB. */
 function pickLocalAuditForMerge(sid, localAuditsFromIdb, memoryAudits) {
@@ -1114,6 +1136,9 @@ export function StorageProvider({ children, useMockData = false }) {
         await syncService.processQueue();
       }
 
+      // CONS-4: leggere la coda PRIMA di clearQueueForServerAudits (CONS-5).
+      const pendingQueueItems = await readSyncQueueItemsSafe();
+
       const localAudits = await fsProvider.loadAllAudits();
       const serverAudits = await fetchAllServerAudits();
 
@@ -1229,12 +1254,20 @@ export function StorageProvider({ children, useMockData = false }) {
         }
 
         // Eccezione 4: checklist — merge intelligente (norme vuote, draft, note locali più ricche).
+        // CONS-4: se la coda di questo UUID è ancora attiva, non coprire gli esiti locali.
         const localChecklist = localAudit?.checklist;
+        const skipServerOutcomes = shouldSkipServerHydrate(
+          pendingQueueItems,
+          sid,
+          extraHydrateRefs(localAudit ?? serverAudit),
+        );
         if (localChecklist) {
-          merged.checklist = resolveMergedChecklistForReconcile(
+          merged.checklist = resolveChecklistHydrateWithPendingQueue(
             localChecklist,
             merged.checklist ?? serverAudit?.checklist,
+            pendingQueueItems,
             sid,
+            extraHydrateRefs(localAudit ?? serverAudit),
           );
         }
 
@@ -1247,7 +1280,9 @@ export function StorageProvider({ children, useMockData = false }) {
         const localCustomResponses = localAudit?.customResponses;
         const hasLocalCustomResponses = localCustomResponses && Object.keys(localCustomResponses).length > 0;
         const serverHasCustomResponses = merged?.customResponses && Object.keys(merged.customResponses).length > 0;
-        if (hasLocalCustomResponses && !serverHasCustomResponses) {
+        if (skipServerOutcomes && hasLocalCustomResponses) {
+          merged.customResponses = localCustomResponses;
+        } else if (hasLocalCustomResponses && !serverHasCustomResponses) {
           merged.customResponses = localCustomResponses;
         } else if (hasLocalCustomResponses && serverHasCustomResponses) {
           merged.customResponses = mergeCustomEvidenceResponses(
@@ -1387,7 +1422,9 @@ export function StorageProvider({ children, useMockData = false }) {
 
         // CARICAMENTO: Leggi da IndexedDB (cache locale)
         const localAudits = await fsProvider.loadAllAudits();
-        
+        // CONS-4: snapshot coda prima di clearQueueForServerAudits (CONS-5).
+        const pendingQueueItems = await readSyncQueueItemsSafe();
+
         // DOWNLOAD DAL SERVER: stessa pipeline della riconciliazione (tutte le pagine).
         // Il backend default limit=50 su GET /audits senza query: senza paginazione il menu
         // risultava troncato fino al prossimo reconcile/login (ambiguità desktop vs mobile).
@@ -1490,12 +1527,20 @@ export function StorageProvider({ children, useMockData = false }) {
               }
 
               // Eccezione 4 (loadAuditsFromIndexedDB) — stesso merge checklist di reconcile.
+              // CONS-4: coda attiva per questo UUID → non coprire gli esiti locali.
               const localChecklist = localAudit?.checklist;
+              const skipServerOutcomes = shouldSkipServerHydrate(
+                pendingQueueItems,
+                sid,
+                extraHydrateRefs(localAudit ?? serverAudit),
+              );
               if (localChecklist) {
-                merged.checklist = resolveMergedChecklistForReconcile(
+                merged.checklist = resolveChecklistHydrateWithPendingQueue(
                   localChecklist,
                   merged.checklist ?? serverAudit?.checklist,
+                  pendingQueueItems,
                   sid,
+                  extraHydrateRefs(localAudit ?? serverAudit),
                 );
               }
 
@@ -1508,7 +1553,9 @@ export function StorageProvider({ children, useMockData = false }) {
               const localCustomResponses = localAudit?.customResponses;
               const hasLocalCustomResponses = localCustomResponses && Object.keys(localCustomResponses).length > 0;
               const serverHasCustomResponses = merged?.customResponses && Object.keys(merged.customResponses).length > 0;
-              if (hasLocalCustomResponses && !serverHasCustomResponses) {
+              if (skipServerOutcomes && hasLocalCustomResponses) {
+                merged.customResponses = localCustomResponses;
+              } else if (hasLocalCustomResponses && !serverHasCustomResponses) {
                 merged.customResponses = localCustomResponses;
               } else if (hasLocalCustomResponses && serverHasCustomResponses) {
                 merged.customResponses = mergeCustomEvidenceResponses(
@@ -2573,6 +2620,33 @@ export function StorageProvider({ children, useMockData = false }) {
           auditsRef.current.find(
             (a) => (a.metadata?.id || a.id) === currentAuditIdRef.current,
           );
+        const hydrateUuidEarly =
+          auditForHydrate?.metadata?.id ||
+          auditForHydrate?.id ||
+          currentAuditIdRef.current ||
+          null;
+
+        // CONS-4: dopo processQueue ok si hydrata; se resta coda attiva, skip esiti server.
+        try {
+          await syncService.processQueue();
+        } catch {
+          /* coda resta: lo skip decide sotto */
+        }
+        const pendingQueueItems = await readSyncQueueItemsSafe();
+        if (
+          shouldSkipServerHydrate(
+            pendingQueueItems,
+            hydrateUuidEarly,
+            extraHydrateRefs(auditForHydrate, numericAuditId),
+          )
+        ) {
+          console.log(
+            `⏭️ [HYDRATE] Coda attiva per audit ${hydrateUuidEarly || numericAuditId} — non applico esiti server (CONS-4)`,
+          );
+          setServerDataStatus("ready");
+          return;
+        }
+
         const customChecklistId =
           auditForHydrate?.metadata?.customChecklistId ??
           auditForHydrate?.custom_checklist_id ??
