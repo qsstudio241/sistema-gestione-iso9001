@@ -1,60 +1,67 @@
-# DEPUTYTASK3 — Shell dialog di revisione ingest: consolidare il guscio duplicato
+# DEPUTYTASK3 — CONS-3: Login non svuota IndexedDB (stesso utente)
 
-**Stato:** CHIUSO — TEST OK (10/08/2026, PR [#377](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/377) — Bugbot: nessun rilievo critico, pronta per il merge umano)
-**Priorità:** P2 — debito tecnico, nessun bug funzionale, basso rischio
-**Branch base:** `main`
-**Creato da:** Lead 10/08/2026
-**Spec:** nessun ADR dedicato — contesto completo in [`docs/PROJECT_ROADMAP.md` § Backlog parcheggiato](../PROJECT_ROADMAP.md#backlog-parcheggiato-task-futuri--fonte-unica) (riga "Shell dialog di revisione ingest") e [`docs/GUIDA_CONSOLIDATA.md` § Lezioni apprese](../GUIDA_CONSOLIDATA.md#lezioni-apprese-consolidate-fonte-unica)
+**Stato:** CHIUSO — TEST OK  
+**Aperto:** 02/09/2026  
+**Chiuso:** 02/09/2026  
+**Piano:** [`PLAN_AUDIT_CONSERVAZIONE_SLICES.md`](PLAN_AUDIT_CONSERVAZIONE_SLICES.md) § CONS-3  
+**Rischio:** Alto — `StorageContext` / sync locale; PR, non push su `main`. Non dire «pronta» senza CI + Bugbot + Security su quello SHA.  
+**Branch:** `cursor/cons3-login-no-wipe-2271`  
+**Slot precedente:** shell dialog ingest CHIUSO (10/08, #377) — sovrascrittura consentita  
+**Parallelo:** `DEPUTYTASK.md` = ING-5 APERTO — **non toccato**. CONS-1/2/6 già su `main`.
 
-> **Allineamento Git (autonomo)**: prima di leggere questo brief eseguire `git fetch origin main` e `git pull origin main`. **Non** chiedere al committente di farlo.
+> **Allineamento Git (autonomo)**: `git fetch origin main` + `git pull origin main` prima di eseguire. **Non** chiedere al committente.  
+> Comando: `Leggi docs/agent-tasks/DEPUTYTASK3.md ed eseguilo. Chiudi con TEST OK o FIX NON APPLICABILI.`  
+> Brief da eseguire solo se su questo branch / `origin/main` questo file ha **Stato: APERTO** e titolo CONS-3.
 
 ---
 
-## Contesto (leggere prima)
+## Perché
 
-Il committente ha segnalato (10/08/2026) di ricordare una duplicazione tra il dialog di revisione ingest iniziale e quello della coda di rielaborazione. Verificato nel codice — la sostanza:
+In `StorageContext.jsx` l’handler `auth:login` faceva `processQueue` → `clearAuditsStore()` → `reconcileAuditsFromServer`. Se la rete è ancora instabile, l’archivio locale sparisce e il server è vecchio. Il lavoro della giornata di audit si perde.
 
-- `app/src/components/IngestReviewDialog.jsx` e il dialog interno `ReprocessGroupDialog` (dentro `app/src/components/ReprocessQueueBanner.jsx`) **condividono già** `IngestSourcePreview`, `FieldInput` (importato da `IngestReviewDialog.jsx`) e l'hook `useIngestReviewSplit` — riuso reale, fatto in una sessione precedente (09/08/2026, vedi header di `ReprocessQueueBanner.jsx`).
-- Resta duplicato solo il **guscio visivo**: overlay fullscreen (`role="dialog"`, `aria-modal`), header con pulsante "Ingrandisci affiancato"/"Riduci", grid preview+resizer+contenuto, gestione Escape. CSS quasi clone: `.ingest-review__*` (`IngestReviewDialog.css`) vs `.reprocess-dialog__*` (`ReprocessQueueBanner.css`) — circa 60-80 righe di markup/CSS ripetute.
-- **Non è lo stesso componente riducibile a uno**: `IngestReviewDialog` gestisce un intero documento con logica di confidenza adattiva (readonly/editable, "Modifica"/"Annulla modifica") e azioni batch (Conferma tutto/Scarta); `ReprocessGroupDialog` gestisce N campi in rielaborazione sullo stesso documento con conferma/scarto **per campo**, via API staging diversa. Il dominio resta distinto — **non fondere i due flussi**.
-- **Nota di scala**: il pattern "ogni dialog reinventa il proprio overlay CSS" è sistemico su molti altri modal del progetto (`NcCreateModal.jsx`, `RisksPage.jsx`, `QualificationForm.jsx`, `DeadlineImportDialog.jsx`, …) — **questo slice NON affronta quel problema più ampio**, tocca solo il guscio dei due dialog ingest. Se in futuro si vuole un `Modal.jsx`/`Dialog.jsx` di base condiviso da tutto il progetto, serve una sessione dedicata separata (stima più ampia, non uno slice).
+## File previsti
 
-## Obiettivo dello slice
+- `app/src/contexts/StorageContext.jsx` (handler login + helper merge/decisione)
+- `app/src/tests/storageContext.loginNoWipe.test.js` (nuovo)
+- `docs/agent-tasks/DEPUTYTASK3.md` (questo brief)
+- Opzionale: 1 riga DoD CONS-3 su `PLAN_AUDIT_CONSERVAZIONE_SLICES.md`
 
-Estrarre il guscio comune (overlay + header con expand + layout preview/resizer/contenuto + gestione Escape) in un componente condiviso, usato da **entrambi** `IngestReviewDialog.jsx` e `ReprocessQueueBanner.jsx`, senza cambiare il comportamento visibile né la logica di business di nessuno dei due.
+## Cosa NON toccare
 
-**Approccio consigliato** (non prescrittivo — il deputy può proporre un'alternativa se più pulita):
-1. Leggere per intero entrambi i file (`IngestReviewDialog.jsx`, `ReprocessQueueBanner.jsx`) e i rispettivi CSS, elencando riga per riga cosa è identico e cosa differisce (props necessarie: titolo, contenuto preview, contenuto centrale, footer/azioni — quelli restano specifici di ciascun dialog, passati come children/props).
-2. Creare `app/src/components/IngestDialogShell.jsx` (nome indicativo) che accetta: `title`, `onClose`, `previewSlot` (o props per `IngestSourcePreview`), `contentSlot`, `footerSlot`, e gestisce internamente overlay/expand/resizer/Escape (riusando `useIngestReviewSplit`).
-3. Un solo file CSS condiviso (es. `IngestDialogShell.css`) con le classi base (`.ingest-dialog-shell__*`), sostituendo `.ingest-review__*`/`.reprocess-dialog__*` dove sono puro guscio (le classi specifiche di contenuto restano nei rispettivi file).
-4. Riscrivere `IngestReviewDialog.jsx` e `ReprocessGroupDialog` (in `ReprocessQueueBanner.jsx`) per usare la shell condivisa, mantenendo intatta la logica di campi/conferma/scarto di ciascuno.
+- `docs/agent-tasks/DEPUTYTASK.md` (ING-5 APERTO)
+- `DEPUTYTASK1.md` / `DEPUTYTASK2.md` (CONS-2/6 CHIUSI)
+- `useAutoSave.js` (CONS-1)
+- `AuditLockBanner.jsx` (CONS-2)
+- `auditRecoveryExport.js` / `AuditAccordionLayout.jsx` (CONS-6)
+- `syncService.js` (CONS-5) — solo chiamate esistenti `processQueue`
+- `AuthContext.jsx`, JWT, backend, migrazioni, GUIDA
 
-**Se durante l'analisi risulta che l'estrazione forza un'API scomoda o rischia di introdurre regressioni sottili** (es. il resizer o l'expand hanno comportamenti leggermente diversi tra i due dialog che non è ovvio unificare), fermarsi e chiudere con **FIX NON APPLICABILI**, motivando con dettaglio — non forzare un'astrazione se il costo supera il beneficio (debito basso, non c'è un bug da risolvere).
+## Cosa fare
+
+1. Mai `clearAuditsStore` al login dello **stesso** utente.
+2. Ordine: `processQueue` → merge locale più ricco + server (`hasRichContent` / `resolveMergedChecklistForReconcile`) → persist.
+3. Wipe IndexedDB audit + coda resta **solo** al logout (`sgq:userLoggedOut` / `LogoutSyncGuard`).
+4. Test L1: al login stesso utente NON si chiama `clearAuditsStore`; dati locali ricchi restano se il server è vuoto/vecchio.
+5. `cd app && NODE_ENV=test npm run test:run -- src/tests/storageContext.loginNoWipe.test.js` + `cd app && npm run build`.
+6. Commit, push, PR base `main` (draft). Cloud Agent non mergia.
 
 ## DoD
 
-- Nessuna regressione visiva o funzionale su entrambi i dialog (screenshot prima/dopo se possibile via `computerUse`, o quantomeno verifica manuale che espandi/riduci, resizer, conferma/scarto funzionino identici a prima).
-- Test esistenti che coprono `IngestReviewDialog`/`ReprocessQueueBanner` continuano a passare senza modifiche forzate al loro comportamento osservabile.
-- Diff CSS: eliminazione delle righe duplicate identificate, non semplice aggiunta di ulteriore codice sopra l'esistente.
-
-**Test L1 mirato:**
-```bash
-cd app && NODE_ENV=test npx vitest run src/tests/reprocessQueueBanner.test.jsx src/tests/ingestReviewDialog.test.jsx src/tests/useIngestReviewSplit.test.js
-cd app && npm run build
-```
+- [x] Stesso utente: nessun wipe pre-merge al login
+- [x] Server vuoto/vecchio: locale ricco persistito
+- [x] Test L1 verdi + build `app/`
+- [x] Wipe logout invariato (`sgq:userLoggedOut`)
 
 ---
 
-## Verifica di chiusura (gate)
+## Esito deputy
 
-Suite Vitest completa (`NODE_ENV=test npm run test:run`) + `npm run build` verdi prima di apire la PR. Nessuna migrazione, nessun backend coinvolto in questo slice.
+**TEST OK** — al login dello stesso utente non si chiama `clearAuditsStore`. Ordine: `processQueue` → merge (`hasRichContent` / `resolveMergedChecklistForReconcile`) → persist. Se il server è vuoto o vecchio, il locale ricco resta (`preserveLocalIfServerEmpty` + `resolveAuditsAfterLogin`). Wipe IndexedDB resta solo su `sgq:userLoggedOut`. Non toccati `DEPUTYTASK.md`, `syncService.js`, `AuthContext.jsx`, GUIDA.
 
-Chiudere con **TEST OK** o **FIX NON APPLICABILI** (motivare in dettaglio se l'estrazione non risulta pulita — vedi nota sopra).
-
----
-
-## Comando deputy
-
-```
-Leggi docs/agent-tasks/DEPUTYTASK3.md ed eseguilo. Chiudi con TEST OK o FIX NON APPLICABILI.
-```
+| Voce | Dettaglio |
+|------|-----------|
+| Handler | `StorageContext.jsx` — `auth:login` senza wipe stesso utente |
+| Helper | `shouldClearAuditsStoreOnLogin`, `runLoginAuditHydrate`, `resolveAuditsAfterLogin` |
+| Test L1 | `storageContext.loginNoWipe.test.js` 11/11 |
+| Build | `cd app && npm run build` OK |
+| PR | draft su `main` (rischio Alto: non «pronta» senza CI+Bugbot+Security) |
