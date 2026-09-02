@@ -1,77 +1,76 @@
-# DEPUTYTASK — CONS-1: Persistenza audit su disco prima della chiusura
+# DEPUTYTASK — ING-5: Agente triage documenti (HITL / wayfinder)
 
-**Stato:** APERTO  
+**Stato:** APERTO — HITL (nessun codice applicativo in questa sessione)  
 **Aperto:** 02/09/2026  
-**Piano:** [`PLAN_AUDIT_CONSERVAZIONE_SLICES.md`](PLAN_AUDIT_CONSERVAZIONE_SLICES.md) § CONS-1  
-**Rischio:** Medio — solo hook autosave IndexedDB + test; niente auth, niente `syncService`, niente login/hydrate, niente migrazione  
-**Branch prevista:** `cursor/cons1-autosave-flush-2271` (o equivalente; il deputy crea il proprio branch)
+**Piano:** [`PLAN_VALUTAZIONE_COMMESSE_SLICES.md`](PLAN_VALUTAZIONE_COMMESSE_SLICES.md) § ING-5  
+**Rischio:** — (solo docs / brief; implementazione = Medio dopo risposte HITL)  
+**Branch:** `cursor/ing5-doc-triage-agent-3c54`  
+**Dipende da:** ING-1 (#624) + ING-2 (#626) su `main` (mattoni classifica + confidence già presenti)
 
 > **Allineamento Git (autonomo)**: `git fetch origin main` + `git pull origin main` prima di eseguire. **Non** chiedere al committente.  
 > Comando: `Leggi docs/agent-tasks/DEPUTYTASK.md ed eseguilo. Chiudi con TEST OK o FIX NON APPLICABILI.`  
-> Brief da eseguire solo se su `origin/main` questo file ha **Stato: APERTO** e titolo CONS-1.
+> **Questa apertura**: deputy **non** implementa — raccoglie HITL. Se le risposte arrivano e il delta è AFK sottile, nuova sessione con file list aggiornata.
 
 ---
 
-## Perché
+## Perché HITL (non FIX NON APPLICABILI, non TEST OK codice)
 
-Il lavoro della giornata di audit deve restare sul telefono anche se si chiude l’app o cade la scheda **prima** che passino i 2 secondi di debounce.
+Su `main` dopo #624/#626 esiste già:
 
-Oggi `useAutoSave` programma `saveAudit` dopo 2000 ms; il cleanup dell’effect **cancella il timer** all’unmount. Chiusura PWA / cambio scheda = ultime C/NC/OSS e note solo in RAM → perse.
+| Mattone | Dove |
+|---------|------|
+| Euristica ruolo da nome/MIME + confidence | `app/src/utils/caseDocCatalog.js` (`suggestCommercialDocRole`, `buildBatchRoleSuggestions`) |
+| UI batch + conferma HITL | `ContractReviewPage.jsx` («Classificazione batch — conferma HITL») |
+| Gate Analizza catalogo | stesso util + pannello catalogo |
 
-La coda `syncService` è un altro magazzino (CONS-3…5). CONS-1 sistema **solo** lo store `audits`.
+Il PLAN descriveva ING-5 come «classifica + coda HITL» — **già coperto**. Senza delta prodotto si crea duplicato o monolite multi-agente (vietato).
 
-## File previsti
+## Domande al committente (copia risposte in chat / aggiorna PLAN)
 
-- `app/src/hooks/useAutoSave.js`
-- `app/src/tests/useAutoSave.flush.test.js` (nuovo)
-- `docs/agent-tasks/PLAN_AUDIT_CONSERVAZIONE_SLICES.md` (spunta DoD CONS-1)
-- `docs/agent-tasks/DEPUTYTASK.md` (chiusura)
+1. **Delta**: cosa deve fare l’«agente triage» oltre la batch HITL attuale?
+2. **Trigger**: upload, bottone, Import Jobs, cron?
+3. **Coda**: solo UI vs persistenza (`import_jobs` / staging / nuova tabella)?
+4. **Costellazione**: elenco slice-agente successive (una riga ciascuna) dopo triage?
+5. **Priorità alternativa**: saltare ING-5 e fare **ponte gap→checklist** (prio #3) oppure **VC-5** (solo Lead)?
 
-## Cosa NON toccare
+## File previsti (dopo HITL — bozza, da riscrivere)
 
-- `app/src/services/syncService.js`
-- `app/src/contexts/StorageContext.jsx` (login, reconcile, hydrate, lock)
-- `app/src/contexts/AuthContext.jsx`
-- `app/src/components/AuditLockBanner.jsx` (CONS-2)
-- `app/src/components/LogoutSyncGuard.jsx`
-- `app/src/hooks/useNdtAutoSave.js` / Welding Book autosave
-- Backend, migrazioni, JWT, GUIDA
-- `DEPUTYTASK1.md` / altri slot
+- TBD in base alle risposte (gate Ponytail: riuso `caseDocCatalog` / Import Jobs / ADR-010 — niente secondo storage né auth/sync)
+- `docs/agent-tasks/PLAN_VALUTAZIONE_COMMESSE_SLICES.md` (spunta / sotto-slice)
+- `docs/agent-tasks/DEPUTYTASK.md` (questo brief)
 
-## Riuso obbligatorio
+## Cosa NON toccare (anche dopo sblocco)
 
-- Stesso `storageProvider.saveAudit` già usato
-- **Tenere** il debounce mentre si digita (niente write a ogni tasto)
-- Nessun secondo IndexedDB, nessuna libreria nuova
+- `auth.middleware`, JWT, `syncService`, ADR-008
+- Monolite multi-agente / orchestratore unico in una PR
+- SAL `gapAnalysis.service.js` come motore di questo flusso
+- VC-5 senza conferma Lead
+- Rifare ING-1/ING-2 senza delta esplicito
 
-## Slice (unica)
+## Ops già fatti (sessione 02/09 — post audit Camellini)
 
-1. Se c’è un salvataggio in attesa, **flush immediato** su:
-   - `pagehide`
-   - `visibilitychange` con `document.visibilityState === 'hidden'`
-   - unmount del hook (invece di solo `clearTimeout`)
-2. Dopo flush: aggiornare `previousDataRef` così non si riscrive lo stesso snapshot.
-3. Errori `saveAudit` (quota): `saveStatus = 'error'`; non lanciare in UI.
-4. Test L1:
-   - dati cambiati + unmount prima dello scadere del delay → `saveAudit` chiamato almeno una volta
-   - dati identici → nessun save
-   - `pagehide` o `visibilitychange` hidden con pending → `saveAudit` chiamato
-5. `cd app && NODE_ENV=test npm run test:run -- src/tests/useAutoSave.flush.test.js` e `cd app && npm run build`
+| Voce | Esito |
+|------|--------|
+| Merge | ING-1 #624, ING-4 #625, ING-2 #626, ING-3 #627, docs #623 — tutti MERGED |
+| Health VPS | `healthy` + DB OK |
+| Mig **162** | Idempotente OK — tabelle `commercial_checklist_templates` + `_items` presenti |
+| Deploy BE #625 | Routes/controller template già su VPS; `GET .../commercial-checklist-templates` → 401 (auth); MainPID attivo — **nessun redeploy** |
+| Smoke | Login API 200 OK |
 
-## Acceptance
+## Esito atteso questa PR docs
 
-- Chiudere l’app / cambiare scheda **non** butta via l’ultimo audit in modifica: è su IndexedDB.
-- Digitare una nota non genera una write per tasto (debounce resta).
-- Nessun cambio al comportamento della coda o del login.
+- PLAN: ING-1…ING-4 spuntati; ING-5 domande HITL esplicite
+- Brief APERTO su slot `DEPUTYTASK.md` (sovrascrive ING-3 CHIUSO)
+- **Niente** implementazione codice → chiusura codice = N/A; handoff sotto
 
-## Fuori da questa slice
+## Handoff (sessione docs / HITL)
 
-- Avviso «non aprire da PC» → CONS-2
-- Login che svuota IndexedDB → CONS-3
-- Hydrate server-wins → CONS-4
-- Coda `update_audit` → CONS-5
-- Export recupero → CONS-6
-
-## Prossima slice (non eseguire in questa sessione)
-
-CONS-2 sul PLAN (banner), oppure CONS-3 se CONS-1 e CONS-2 sono già su `main` e si accetta il livello Alto.
+- **Obiettivo**: sbloccare ING-5 o scegliere alternativa AFK (ponte gap / VC-5 Lead)
+- **Stato**: BLOCCATA — attesa HITL
+- **Fatto**: ops VPS (mig162, health, login); PLAN allineato; brief ING-5 APERTO
+- **Manca**: risposte HITL § domande; poi nuova sessione implementazione **una** slice sottile
+- **Non toccare**: auth/sync; duplicare batch HITL
+- **Test**: ops smoke OK; L1 codice N/A
+- **Brief**: `docs/agent-tasks/DEPUTYTASK.md`
+- **Branch / PR**: `cursor/ing5-doc-triage-agent-3c54`
+- **Roadmap**: aggiornare «sessione più recente» dopo merge di questa PR docs

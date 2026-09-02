@@ -8,7 +8,7 @@
 
 > **Risposta standard a «stato di avanzamento del progetto e priorità da affrontare»**: sintetizzare da questa sezione (moduli maturi + sessione più recente + tabella priorità sotto), **non** dal banner storico più sotto (superato, tenuto solo per traccia) né dall'archivio marzo 2026 [`docs/archive/PROJECT_CONTEXT_STATO_FUNZIONALITA_2026-03.md`](archive/PROJECT_CONTEXT_STATO_FUNZIONALITA_2026-03.md). **Aggiornare questa sezione a fine sessione** se emergono nuove priorità o se una priorità elencata viene chiusa (stesso principio delle "Lezioni apprese" in [GUIDA_CONSOLIDATA.md](GUIDA_CONSOLIDATA.md) — sintesi qui, dettaglio linkato).
 
-**Ultimo aggiornamento di questa sezione**: 02/09/2026 (wayfinder conservazione dati audit — CONS-1 APERTO).
+**Ultimo aggiornamento di questa sezione**: 02/09/2026 (post-merge ING-1…ING-4 #624–#627; ops mig162+VPS OK; ING-5 HITL; wayfinder conservazione audit CONS-1).
 
 ### Moduli maturi (in produzione, uso quotidiano dai clienti Camellini/Mason)
 
@@ -16,9 +16,11 @@ Audit multi-standard (9001/14001/45001) · Non Conformità (workflow ISO 10.2 co
 
 ### Sessione più recente (02/09/2026)
 
-**Wayfinder conservazione dati audit (offline / caduta server)** — mappa [`PLAN_AUDIT_CONSERVAZIONE_SLICES.md`](agent-tasks/PLAN_AUDIT_CONSERVAZIONE_SLICES.md). Destinazione: il lavoro della giornata non si perde per rete, chiusura app o login; avviso «non aprire da PC» (CONS-2). Prima slice **CONS-1** (flush autosave) in [`DEPUTYTASK.md`](agent-tasks/DEPUTYTASK.md) **APERTO**. Nessun codice applicativo in questa sessione. CONS-3…5 = Alto, seriali.
+**ING-1…ING-4 CHIUSE** (#624 classificazione batch, #625 template checklist+mig162, #626 matching ruoli, #627 segnale evadibilità). Ops post-audit Camellini: health VPS OK, mig **162** verificata, routes template già sul BE. **ING-5** (agente triage) = **HITL/wayfinder** — brief APERTO senza codice (delta vs batch HITL ING-1/2 non definito). **VC-5 non aperto** senza Lead. Alternativa AFK candidata: ponte gap→checklist (prio #3 PLAN). Piano: [`PLAN_VALUTAZIONE_COMMESSE_SLICES.md`](agent-tasks/PLAN_VALUTAZIONE_COMMESSE_SLICES.md).
 
-**Valutazione commesse VC-1…VC-4 CHIUSE** — report studio + catalogo + refresh + export Word checklist Riesame requisiti (HITL B) mergiati (#619–#622). Post-merge: piano riorientato su **ingest mole file cliente** (bozza ING-1…ING-5 in [`PLAN_VALUTAZIONE_COMMESSE_SLICES.md`](agent-tasks/PLAN_VALUTAZIONE_COMMESSE_SLICES.md)). **VC-5 / ING-5** solo con Lead. Nessun deploy BE da quella catena (export FE-only).
+**Wayfinder conservazione dati audit (offline / caduta server)** — mappa [`PLAN_AUDIT_CONSERVAZIONE_SLICES.md`](agent-tasks/PLAN_AUDIT_CONSERVAZIONE_SLICES.md). Destinazione: il lavoro della giornata non si perde per rete, chiusura app o login; avviso «non aprire da PC» (CONS-2). Prima slice **CONS-1** (flush autosave) — brief su slot parallelo / dopo chiusura ING-5 HITL (vedi PLAN). Nessun codice applicativo in quella sessione docs. CONS-3…5 = Alto, seriali.
+
+**Valutazione commesse VC-1…VC-4 CHIUSE** — report studio + catalogo + refresh + export Word checklist Riesame requisiti (HITL B) mergiati (#619–#622). Post-merge: piano riorientato su **ingest mole file cliente** (ING-1…ING-5). Nessun deploy BE da quella catena (export FE-only).
 
 ### Sessione precedente (01/09/2026)
 
@@ -44,8 +46,8 @@ Audit multi-standard (9001/14001/45001) · Non Conformità (workflow ISO 10.2 co
 
 | # | Priorità | Perché | Dove riprendere |
 |---|---|---|---|
-| 1 | **Conservazione dati audit (offline / caduta server)** | Lavoro giornata non garantito: autosave 2s senza flush, login svuota IDB, hydrate server-wins, PC sullo stesso audit. Committente 02/09: colmare subito | [PLAN](agent-tasks/PLAN_AUDIT_CONSERVAZIONE_SLICES.md) · brief [CONS-1 APERTO](agent-tasks/DEPUTYTASK.md) |
-| 2 | **Valutazione commesse — mole file cliente (evadibilità) + checklist template + ponte gap** | VC-1…VC-4 CHIUSE (#622). Priorità post-HITL: ING ingest/organizzazione → checklist personalizzabile studio → ponte gap/chiarimenti → agenti. VC-5 solo con Lead | [PLAN](agent-tasks/PLAN_VALUTAZIONE_COMMESSE_SLICES.md) |
+| 1 | **Conservazione dati audit (offline / caduta server)** | Lavoro giornata non garantito: autosave 2s senza flush, login svuota IDB, hydrate server-wins, PC sullo stesso audit. Committente 02/09: colmare subito | [PLAN](agent-tasks/PLAN_AUDIT_CONSERVAZIONE_SLICES.md) · CONS-1 (slot dopo ING-5 HITL o parallelo) |
+| 2 | **Valutazione commesse — ING-5 HITL / ponte gap / VC-5 Lead** | ING-1…4 CHIUSE (#624–#627). ING-5 bloccata su domande prodotto (vs batch HITL già live). Ops mig162 OK. Ponte gap/chiarimenti dopo. VC-5 solo con Lead | [PLAN](agent-tasks/PLAN_VALUTAZIONE_COMMESSE_SLICES.md) · brief [ING-5 HITL](agent-tasks/DEPUTYTASK.md) |
 | 3 | **Modulo Notifiche/Alert — destinatario allerte qualifiche non è una scelta esplicita in anagrafica** | Oggi risolto da un algoritmo a cascata, non da una scelta visibile in UI | `qualificationAlert.service.js` (`resolveWeldingCoordinatorRecipients`) |
 | 4 | **Shell dialog di revisione ingest — markup/CSS duplicato** (non urgente, basso rischio) | `IngestReviewDialog.jsx` vs dialog interno `ReprocessQueueBanner.jsx`: guscio overlay duplicato (~60-80 righe); pattern sistemico su molti altri modal nel progetto | Vedi backlog sotto per dettaglio |
 | 5 | **Pagina Impostazioni → Organizzazione (P.IVA + logo tenant)** | PR #10 aperta da aprile 2026, 180 file in conflitto — richiede ricostruzione, non merge | Vedi riga dedicata nel backlog sotto |
