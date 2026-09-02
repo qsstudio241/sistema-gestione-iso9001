@@ -28,7 +28,7 @@
 | Test L1 | `wordExportContractReviewChecklist.test.js` 4/4 + `npm run build` OK |
 | Migrazione | nessuna |
 
-**Prossima slice:** VC-5 (chiarimenti da gap) o priorità strategica ingest mole file (PLAN).
+**Prossima slice:** priorità prodotto = **ING-*** (ingest mole file) per PLAN post-merge; **VC-5 non aprire** senza conferma Lead.
 
 ---
 

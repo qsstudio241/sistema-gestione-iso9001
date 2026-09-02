@@ -8,15 +8,19 @@
 
 > **Risposta standard a «stato di avanzamento del progetto e priorità da affrontare»**: sintetizzare da questa sezione (moduli maturi + sessione più recente + tabella priorità sotto), **non** dal banner storico più sotto (superato, tenuto solo per traccia) né dall'archivio marzo 2026 [`docs/archive/PROJECT_CONTEXT_STATO_FUNZIONALITA_2026-03.md`](archive/PROJECT_CONTEXT_STATO_FUNZIONALITA_2026-03.md). **Aggiornare questa sezione a fine sessione** se emergono nuove priorità o se una priorità elencata viene chiusa (stesso principio delle "Lezioni apprese" in [GUIDA_CONSOLIDATA.md](GUIDA_CONSOLIDATA.md) — sintesi qui, dettaglio linkato).
 
-**Ultimo aggiornamento di questa sezione**: 01/09/2026 (wayfinder Valutazione commesse — mappa + brief VC-1; nessuna implementazione applicativa).
+**Ultimo aggiornamento di questa sezione**: 02/09/2026 (post-merge VC-4 #622 — priorità ingest mole file; nessun brief VC-5 aperto).
 
 ### Moduli maturi (in produzione, uso quotidiano dai clienti Camellini/Mason)
 
 Audit multi-standard (9001/14001/45001) · Non Conformità (workflow ISO 10.2 completo) · Qualifiche Personale saldatori/NDT/coordinatori (ISO 9606-1/14732/14731/9712) · Saldatura (WPQR con range duali t1/t2 FW, tipologia SW/prigioniero + P+T + doppio materiale, range ISO 14555 §10.2.8 + Tabella 2 boiler pins, generazione WPS, 15614-1/15614-2, Welding Book, Commesse ISO 3834, Dashboard 3834) · SAL (gap analysis requisiti con AI) · Registro Documenti + Scadenzari · Notifiche/Alert (documenti/NC/qualifiche) · Riesame di Direzione · RBAC multi-tenant (`company_access`) · Registro obblighi legali (ambiente + sicurezza) · Assistente AI / Gap Analysis euristica · CND verbali (VT/MT/PT, gate 9712, Word, Registro, offline) · Libreria fonti (Gestione, studio admin) · Gap fonti Libreria (email SA, coda via 2, chiusura tenant/piattaforma).
 
-### Sessione più recente (01/09/2026)
+### Sessione più recente (02/09/2026)
 
-**Wayfinder Valutazione commesse (capacità + output studio)** — creato [`PLAN_VALUTAZIONE_COMMESSE_SLICES.md`](agent-tasks/PLAN_VALUTAZIONE_COMMESSE_SLICES.md). Priorità: ingest/catalog docs cliente + gap vs capacità azienda appaltatrice + report persistito per lo studio (riuso Import PDF + coverage già in Riesame requisiti). Brief [`DEPUTYTASK.md`](agent-tasks/DEPUTYTASK.md) **APERTO** su **VC-1** (hello world report). Offerta/PPAP/ordini fornitori in nebbia o slice successive. **Nessun codice applicativo** nella sessione di mappa.
+**Valutazione commesse VC-1…VC-4 CHIUSE** — report studio + catalogo + refresh + export Word checklist Riesame requisiti (HITL B) mergiati (#619–#622). Post-merge: piano riorientato su **ingest mole file cliente** (bozza ING-1…ING-5 in [`PLAN_VALUTAZIONE_COMMESSE_SLICES.md`](agent-tasks/PLAN_VALUTAZIONE_COMMESSE_SLICES.md)). Slot [`DEPUTYTASK.md`](agent-tasks/DEPUTYTASK.md) **CHIUSO** (VC-4). **VC-5 non aperto** senza Lead. Nessun deploy BE (export FE-only; Netlify da `main`).
+
+### Sessione precedente (01/09/2026)
+
+**Wayfinder Valutazione commesse (capacità + output studio)** — creato [`PLAN_VALUTAZIONE_COMMESSE_SLICES.md`](agent-tasks/PLAN_VALUTAZIONE_COMMESSE_SLICES.md). Priorità: ingest/catalog docs cliente + gap vs capacità + report studio. Brief VC-1 poi eseguito e chiuso nella catena #619–#622.
 
 ### Sessione precedente (31/08/2026)
 
@@ -38,7 +42,7 @@ Audit multi-standard (9001/14001/45001) · Non Conformità (workflow ISO 10.2 co
 
 | # | Priorità | Perché | Dove riprendere |
 |---|---|---|---|
-| 1 | **Valutazione commesse — ingest docs cliente + gap capacità + output studio** | Priorità assoluta prodotto (01/09): catalogazione documenti cliente e gap vs capacità azienda appaltatrice; report persistito per lo studio. Offerta/PPAP dopo | [PLAN](agent-tasks/PLAN_VALUTAZIONE_COMMESSE_SLICES.md) · brief **VC-1** [APERTO](agent-tasks/DEPUTYTASK.md) |
+| 1 | **Valutazione commesse — mole file cliente (evadibilità) + checklist template + ponte gap** | VC-1…VC-4 CHIUSE (#622). Priorità post-HITL: ING ingest/organizzazione → checklist personalizzabile studio → ponte gap/chiarimenti → agenti. VC-5 solo con Lead | [PLAN](agent-tasks/PLAN_VALUTAZIONE_COMMESSE_SLICES.md) · brief [VC-4 CHIUSO](agent-tasks/DEPUTYTASK.md) |
 | 2 | **Modulo Notifiche/Alert — destinatario allerte qualifiche non è una scelta esplicita in anagrafica** | Oggi risolto da un algoritmo a cascata, non da una scelta visibile in UI | `qualificationAlert.service.js` (`resolveWeldingCoordinatorRecipients`) |
 | 3 | **Shell dialog di revisione ingest — markup/CSS duplicato** (non urgente, basso rischio) | `IngestReviewDialog.jsx` vs dialog interno `ReprocessQueueBanner.jsx`: guscio overlay duplicato (~60-80 righe); pattern sistemico su molti altri modal nel progetto | Vedi backlog sotto per dettaglio |
 | 4 | **Pagina Impostazioni → Organizzazione (P.IVA + logo tenant)** | PR #10 aperta da aprile 2026, 180 file in conflitto — richiede ricostruzione, non merge | Vedi riga dedicata nel backlog sotto |
