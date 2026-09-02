@@ -10,7 +10,7 @@
 > - SAL gap ≠ questo epic: [`MODULO_SAL_SCOPO_E_ROADMAP.md`](../specs/MODULO_SAL_SCOPO_E_ROADMAP.md)
 > - Mattoni già in codice: `importJobs` + `ImportJobsPage`, `contractReview.*`, `caseDocumentAnalysis.service.js`, `caseExtractedCoverage.service.js`, `caseCoverageAdvisory.service.js`, `qualificationCoverage.js`, CoveragePanel in `ContractReviewPage.jsx`, export Word checklist (`wordExportContractReviewChecklist.js`)
 >
-> **Brief attivo**: [`DEPUTYTASK.md`](DEPUTYTASK.md) — **ING-3** CHIUSO (segnale evadibilità). Prossima: ING-5 solo wayfinder / ponte gap.
+> **Brief attivo**: [`DEPUTYTASK.md`](DEPUTYTASK.md) — **ING-5** APERTO (HITL / wayfinder — niente codice finché risposte). Ops 02/09: mig162 + routes template su VPS OK.
 > **Mappa creata**: 01/09/2026 · Lead wayfinder · **riorientata 02/09/2026** post-merge VC-4 (priorità ingest)
 > **Branch base**: `main`
 
@@ -55,8 +55,8 @@
 - Sessione **PPAP**: nel ciclo `commercial_cases` vs modulo dedicato
 - Ordini verso fornitori post-acquisizione: riuso `commercial_case_documents` + `supplier_id` vs nuovo workflow
 - Quanto dell’offerta «in prima battuta» è generazione testo assistita vs solo checklist/chiarimenti già nel workflow
-- **Template checklist personalizzabile** dallo studio (per cliente): schema dati, scope tenant, UX
-- Confini esatti della **costellazione agenti** (quali agenti, quali tool, quale orchestrazione) — solo mappa slice sottili, non monolite
+- **ING-5 / costellazione agenti** (02/09 — blocco implementazione): vedi domande sotto § ING-5; ING-1+ING-2 hanno già euristica batch + HITL in `ContractReviewPage` / `caseDocCatalog.js` — non rifare «classifica + coda» senza delta prodotto
+- Ponte gap capacità → checklist / chiarimenti (priorità #3): perimetro AFK vs VC-5 (Lead)
 
 ---
 
@@ -101,19 +101,29 @@
 | **VC-8** | Ordini fornitori a corredo | Documenti `counterparty=supplier` + link anagrafica | VC-7; nebbia | HITL |
 | **VC-9** | Sessione PPAP | Solo dopo decisione prodotto | — | HITL / nebbia |
 
-**Stato piano:** APERTO — **VC-1…VC-4** CHIUSI; **ING-1…ING-4** CHIUSI (ING-3 in chiusura su questa PR); prossima **ING-5** solo con wayfinder (non monolite); VC-5 non di default.
+**Stato piano:** APERTO — **VC-1…VC-4** CHIUSI; **ING-1…ING-4** CHIUSI (#624–#627); **ING-5** brief HITL APERTO (niente codice); VC-5 non di default.
 
-### Bozza slice ingest / organizzazione (post VC-4 — da confermare Lead)
+### Bozza slice ingest / organizzazione (post VC-4 — Lead)
 
 > Numerazione **ING-*** separata da VC-* per non mischiare report MVP e mole file. Una slice = una sessione.
 
 | Slice | Tema | Perimetro suggerito | Dipende da | Tipo |
 |-------|------|---------------------|------------|------|
-| **ING-1** ✅ | Classificazione / riordino allegati in batch | Riuso catalogo VC-2 + euristiche nome (pattern Import PDF); HITL conferma; niente secondo storage | Import PDF / VC-2 | CHIUSO 02/09 |
-| **ING-2** ✅ | Matching docs → ruoli catalogo caso | Auto-proposta `commercial_doc_role` da nome/cartella/MIME + confidence; gate Analizza (estende VC-2/ING-1) | ING-1 | CHIUSO 02/09 |
-| **ING-3** ✅ | Gap **evadibilità** da docs organizzati | Dato catalogo ordinato: segnale «ordine evadibile / da chiarire» (riuso coverage + checklist); non inventare norme | ING-2, VC-1 | CHIUSO 02/09 |
-| **ING-4** | Template checklist personalizzabile studio | Template per cliente/tenant; voci P/F editabili; export VC-4 legge template attivo | HITL prodotto | HITL + AFK |
-| **ING-5** | Agente «triage documenti» (se mattoni Import PDF) | Slice sottile: classifica + coda HITL; **non** monolite multi-agente | ING-1…2; wayfinder agenti | HITL / wayfinder |
+| **ING-1** ✅ | Classificazione / riordino allegati in batch | Riuso catalogo VC-2 + euristiche nome (pattern Import PDF); HITL conferma; niente secondo storage | Import PDF / VC-2 | CHIUSO 02/09 (#624) |
+| **ING-2** ✅ | Matching docs → ruoli catalogo caso | Auto-proposta `commercial_doc_role` da nome/cartella/MIME + confidence; gate Analizza (estende VC-2/ING-1) | ING-1 | CHIUSO 02/09 (#626) |
+| **ING-3** ✅ | Gap **evadibilità** da docs organizzati | Dato catalogo ordinato: segnale «ordine evadibile / da chiarire» (riuso coverage + checklist); non inventare norme | ING-2, VC-1 | CHIUSO 02/09 (#627) |
+| **ING-4** ✅ | Template checklist personalizzabile studio | Template per cliente/tenant; voci P/F editabili; export VC-4 legge template attivo; mig **162** | ING prodotto | CHIUSO 02/09 (#625) |
+| **ING-5** | Agente «triage documenti» | **Nebbia / HITL** — non implementare finché il delta vs ING-1/2 non è chiaro; mappa agenti sottile | ING-1…2 | HITL / wayfinder |
+
+#### ING-5 — domande HITL (bloccanti codice)
+
+Già su `main`: `buildBatchRoleSuggestions` + UI «Classificazione batch — conferma HITL» + confidence ING-2. Un «agente triage» senza risposta a queste domande rischia un secondo monolite o un duplicato:
+
+1. **Delta prodotto**: cosa deve fare l’agente che la batch HITL attuale *non* fa? (es. LLM sul contenuto PDF, priorità mole Import Jobs, triage cross-caso studio, …)
+2. **Trigger**: on-upload / bottone / coda Import PDF / cron?
+3. **Persistenza coda**: solo UI sessione (come oggi) vs tabella/staging vs riuso `import_jobs`?
+4. **Costellazione**: dopo triage, quali slice-agente successive (estrazione, gap, chiarimenti) e in che ordine — una riga ciascuna, non un orchestratore unico?
+5. **Alternativa AFK ora**: saltare ING-5 e aprire **ponte gap→checklist** (priorità #3) o **VC-5** solo con Lead?
 
 ### Dipendenze e parallelo futuro
 

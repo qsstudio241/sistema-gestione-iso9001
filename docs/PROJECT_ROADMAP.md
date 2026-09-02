@@ -8,7 +8,7 @@
 
 > **Risposta standard a «stato di avanzamento del progetto e priorità da affrontare»**: sintetizzare da questa sezione (moduli maturi + sessione più recente + tabella priorità sotto), **non** dal banner storico più sotto (superato, tenuto solo per traccia) né dall'archivio marzo 2026 [`docs/archive/PROJECT_CONTEXT_STATO_FUNZIONALITA_2026-03.md`](archive/PROJECT_CONTEXT_STATO_FUNZIONALITA_2026-03.md). **Aggiornare questa sezione a fine sessione** se emergono nuove priorità o se una priorità elencata viene chiusa (stesso principio delle "Lezioni apprese" in [GUIDA_CONSOLIDATA.md](GUIDA_CONSOLIDATA.md) — sintesi qui, dettaglio linkato).
 
-**Ultimo aggiornamento di questa sezione**: 02/09/2026 (post-merge VC-4 #622 — priorità ingest mole file; nessun brief VC-5 aperto).
+**Ultimo aggiornamento di questa sezione**: 02/09/2026 (post-merge ING-1…ING-4 #624–#627; ops mig162+VPS OK; ING-5 HITL).
 
 ### Moduli maturi (in produzione, uso quotidiano dai clienti Camellini/Mason)
 
@@ -16,7 +16,7 @@ Audit multi-standard (9001/14001/45001) · Non Conformità (workflow ISO 10.2 co
 
 ### Sessione più recente (02/09/2026)
 
-**Valutazione commesse VC-1…VC-4 CHIUSE** — report studio + catalogo + refresh + export Word checklist Riesame requisiti (HITL B) mergiati (#619–#622). Post-merge: piano riorientato su **ingest mole file cliente** (bozza ING-1…ING-5 in [`PLAN_VALUTAZIONE_COMMESSE_SLICES.md`](agent-tasks/PLAN_VALUTAZIONE_COMMESSE_SLICES.md)). Slot [`DEPUTYTASK.md`](agent-tasks/DEPUTYTASK.md) **CHIUSO** (VC-4). **VC-5 non aperto** senza Lead. Nessun deploy BE (export FE-only; Netlify da `main`).
+**ING-1…ING-4 CHIUSE** (#624 classificazione batch, #625 template checklist+mig162, #626 matching ruoli, #627 segnale evadibilità). Ops post-audit Camellini: health VPS OK, mig **162** verificata, routes template già sul BE. **ING-5** (agente triage) = **HITL/wayfinder** — brief APERTO senza codice (delta vs batch HITL ING-1/2 non definito). **VC-5 non aperto** senza Lead. Alternativa AFK candidata: ponte gap→checklist (prio #3 PLAN).
 
 ### Sessione precedente (01/09/2026)
 
