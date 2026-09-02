@@ -1,16 +1,32 @@
 /**
  * Banner lock audit: avvisa quando un altro utente ha il lock o in attesa server.
+ * CONS-2: in offline integra l'avviso di non aprire lo stesso audit dal PC.
  */
 
 import React from "react";
 import { useStorage } from "../contexts/StorageContext";
 import "./AuditLockBanner.css";
 
+/** Avviso CONS-2: il lavoro resta su questo dispositivo finché la sync non è fatta. */
+export const OFFLINE_PC_WARNING =
+  "Il lavoro resta su QUESTO telefono. NON aprire lo stesso audit dal PC finché non torna la rete e la sincronizzazione è completata.";
+
+export function buildOfflineBannerMessage(serverMessage) {
+  const base = typeof serverMessage === "string" ? serverMessage.trim() : "";
+  if (base.includes("stesso audit dal PC")) {
+    return base;
+  }
+  return [base, OFFLINE_PC_WARNING].filter(Boolean).join(" ");
+}
+
 export default function AuditLockBanner() {
   const { auditLock, refreshAuditLock, currentAudit } = useStorage();
 
   if (!currentAudit) return null;
   if (auditLock.mode === "none" || auditLock.mode === "owner") return null;
+
+  const lockIcon =
+    auditLock.mode === "foreign" ? "\uD83D\uDD12" : "\u23F3";
 
   return (
     <div
@@ -20,7 +36,7 @@ export default function AuditLockBanner() {
     >
       <div className="audit-lock-banner-inner">
         <span className="audit-lock-banner-icon" aria-hidden>
-          {auditLock.mode === "foreign" ? "🔒" : "⏳"}
+          {lockIcon}
         </span>
         <div className="audit-lock-banner-text">
           {auditLock.mode === "foreign" && (
@@ -42,7 +58,7 @@ export default function AuditLockBanner() {
           {auditLock.mode === "offline" && (
             <>
               <strong>Offline</strong>
-              <p>{auditLock.message}</p>
+              <p>{buildOfflineBannerMessage(auditLock.message)}</p>
             </>
           )}
           {auditLock.mode === "error" && (
