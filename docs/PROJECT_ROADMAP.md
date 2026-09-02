@@ -42,7 +42,7 @@ Audit multi-standard (9001/14001/45001) · Non Conformità (workflow ISO 10.2 co
 
 | # | Priorità | Perché | Dove riprendere |
 |---|---|---|---|
-| 1 | **Valutazione commesse — mole file cliente (evadibilità) + checklist template + ponte gap** | VC-1…VC-4 CHIUSE (#622). Priorità post-HITL: ING ingest/organizzazione → checklist personalizzabile studio → ponte gap/chiarimenti → agenti. VC-5 solo con Lead | [PLAN](agent-tasks/PLAN_VALUTAZIONE_COMMESSE_SLICES.md) · brief [VC-4 CHIUSO](agent-tasks/DEPUTYTASK.md) |
+| 1 | **Valutazione commesse — ING-5 HITL / ponte gap / VC-5 Lead** | ING-1…4 CHIUSE (#624–#627). ING-5 bloccata su domande prodotto (vs batch HITL già live). Ops mig162 OK. | [PLAN](agent-tasks/PLAN_VALUTAZIONE_COMMESSE_SLICES.md) · brief [ING-5 HITL](agent-tasks/DEPUTYTASK.md) |
 | 2 | **Modulo Notifiche/Alert — destinatario allerte qualifiche non è una scelta esplicita in anagrafica** | Oggi risolto da un algoritmo a cascata, non da una scelta visibile in UI | `qualificationAlert.service.js` (`resolveWeldingCoordinatorRecipients`) |
 | 3 | **Shell dialog di revisione ingest — markup/CSS duplicato** (non urgente, basso rischio) | `IngestReviewDialog.jsx` vs dialog interno `ReprocessQueueBanner.jsx`: guscio overlay duplicato (~60-80 righe); pattern sistemico su molti altri modal nel progetto | Vedi backlog sotto per dettaglio |
 | 4 | **Pagina Impostazioni → Organizzazione (P.IVA + logo tenant)** | PR #10 aperta da aprile 2026, 180 file in conflitto — richiede ricostruzione, non merge | Vedi riga dedicata nel backlog sotto |
