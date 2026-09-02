@@ -30,6 +30,7 @@ import {
   isCatalogedDocRole,
   listAnalyzableCatalogAttachmentIds,
 } from '../utils/caseDocCatalog';
+import { exportContractReviewChecklistDocx } from '../utils/wordExportContractReviewChecklist';
 import './ContractReviewPage.css';
 
 // DOC_ROLE_OPTIONS importati da caseDocCatalog (VC-2) — unica fonte FE.
@@ -540,6 +541,8 @@ export default function ContractReviewPage() {
   const [pollingBanner, setPollingBanner] = useState(null);
   // VC-3: bump per ricaricare StudioReportPanel dopo analisi / HITL requisiti
   const [studioReportReloadKey, setStudioReportReloadKey] = useState(0);
+  // VC-4: export Word checklist §8.2
+  const [checklistExporting, setChecklistExporting] = useState(false);
   const pollingTimerRef = useRef(null);
   const [suppliers, setSuppliers] = useState([]);
   const [suppliersLoadFailed, setSuppliersLoadFailed] = useState(false);
@@ -1066,6 +1069,38 @@ export default function ContractReviewPage() {
       await loadDetail(caseId);
     } catch (err) {
       setError(err instanceof ApiError ? err.message : err.message || 'Generazione checklist fallita');
+    }
+  }
+
+  async function handleExportChecklistWord() {
+    if (!caseId || !detail?.checklist?.length) return;
+    setChecklistExporting(true);
+    setError(null);
+    try {
+      let gapReport = null;
+      try {
+        const gapRes = await apiService.getCapabilityGapReport(caseId);
+        gapReport = gapRes?.report ?? null;
+      } catch {
+        gapReport = null;
+      }
+      const c = detail.case || {};
+      await exportContractReviewChecklistDocx({
+        caseMeta: {
+          id: c.id || caseId,
+          title: c.title,
+          external_ref: c.external_ref,
+          status: c.status,
+          commercial_customer_name: c.commercial_customer_name,
+          company_name: companyLabel(c.company_id, companiesById) || '',
+        },
+        checklist: detail.checklist,
+        gapReport,
+      });
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : err.message || 'Export Word checklist fallito');
+    } finally {
+      setChecklistExporting(false);
     }
   }
 
@@ -1810,6 +1845,22 @@ export default function ContractReviewPage() {
                     onClick={() => handleGenerateChecklist('final')}
                   >
                     Genera finale
+                  </button>
+                  <button
+                    type="button"
+                    className="cr-btn cr-btn-primary"
+                    disabled={
+                      checklistExporting
+                      || !(checklistPreliminary.length > 0 || checklistFinal.length > 0)
+                    }
+                    title={
+                      checklistPreliminary.length > 0 || checklistFinal.length > 0
+                        ? 'Scarica la checklist §8.2 compilata (Word)'
+                        : 'Genera almeno una checklist prima di esportare'
+                    }
+                    onClick={handleExportChecklistWord}
+                  >
+                    {checklistExporting ? 'Preparazione Word…' : 'Scarica Word checklist'}
                   </button>
                 </div>
 
