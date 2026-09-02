@@ -6,7 +6,8 @@
  *  - dopo >5 tentativi l'item viene marcato isStalled = true
  *  - viene emesso l'evento custom sgq:syncQueueStalled
  *  - retryCount non supera 5 (capped)
- *  - clearQueueForServerAudits rimuove solo item con audit_id confermato dal server
+ *  - clearQueueForServerAudits rimuove create_audit confermati / update_audit stalled,
+ *    non update_audit mai inviato (CONS-5)
  */
 
 import { SyncService } from '../services/syncService.js';
@@ -168,6 +169,36 @@ describe('SyncService.clearQueueForServerAudits', () => {
         expect(store._data.has('q-lock')).toBe(false);  // rimosso: stallo lock
         expect(store._data.has('q-fresh')).toBe(true);  // mantenuto: update non ancora sync'd
     });
+
+    test('CONS-5: non rimuove update_audit non stalled anche con mapping server', async () => {
+        const pendingHeader = makeQueueItem({
+            id: 'q-header',
+            type: 'update_audit',
+            payload: {
+                audit_uuid: 'uuid-on-server',
+                auditObjective: 'Verificare processo saldatura',
+                generalData: { conclusions: 'Chiudere NC aperte' },
+            },
+        });
+        const createAlreadyOnServer = makeQueueItem({
+            id: 'q-create',
+            type: 'create_audit',
+            payload: { audit_uuid: 'uuid-on-server' },
+        });
+        const { svc, db } = makeService([pendingHeader, createAlreadyOnServer]);
+        const store = db.transaction(['syncQueue'], 'readwrite').objectStore('syncQueue');
+
+        // Mapping presente: l'audit esiste sul server (download / create precedente).
+        // Non significa che questo update_audit sia mai partito.
+        svc.getAuditIdForUuid = async (uuid) => (uuid === 'uuid-on-server' ? 77 : null);
+        svc.removeFromQueue = async (id) => { store._data.delete(id); };
+
+        const removed = await svc.clearQueueForServerAudits(['uuid-on-server']);
+
+        expect(store._data.has('q-header')).toBe(true);
+        expect(store._data.has('q-create')).toBe(false);
+        expect(removed).toBe(1);
+    });
 });
 
 describe('SyncService.clearQueueForStaleAudits', () => {
@@ -194,8 +225,8 @@ describe('SyncService.clearQueueForStaleAudits', () => {
 });
 
 describe('SyncService.getActiveQueueSize', () => {
-    test('update_audit senza lock non conta come item attivo (non blocca logout)', async () => {
-        const deferredUpdate = makeQueueItem({
+    test('CONS-5: update_audit non stalled conta come attivo anche senza lock', async () => {
+        const pendingUpdate = makeQueueItem({
             id: 'u1',
             type: 'update_audit',
             payload: { audit_uuid: 'uuid-no-lock' },
@@ -206,16 +237,10 @@ describe('SyncService.getActiveQueueSize', () => {
             type: 'save_responses',
             payload: { auditId: 'other-uuid' },
         });
-        const { svc } = makeService([deferredUpdate, stalledItem, saveResp]);
+        const { svc } = makeService([pendingUpdate, stalledItem, saveResp]);
 
-        // Nessun lock token attivo
-        svc.hasAuditLockToken = () => false;
-        // Override diretto per test: monkey-patch hasAuditLockToken via modulo non possibile in unit test,
-        // quindi verifichiamo la logica via comportamento atteso del filter interno.
-        // Il test documenta il contratto: item deferred + stalled non devono essere contati.
         const activeCount = await svc.getActiveQueueSize();
-        // u1 (deferred, no lock) → non conta; u2 (stalled) → non conta; u3 (save_responses) → conta
-        // Nota: in questo test hasAuditLockToken usa il vero modulo (nessun token → false per update_audit)
-        expect(activeCount).toBeLessThanOrEqual(1); // al più save_responses
+        // u1 (update_audit non stalled) → conta; u2 (stalled) → no; u3 (save_responses) → conta
+        expect(activeCount).toBe(2);
     });
 });
