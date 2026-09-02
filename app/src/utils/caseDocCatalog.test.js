@@ -1,11 +1,14 @@
 import { describe, expect, it } from 'vitest';
 import {
   DOC_ROLE_OPTIONS,
+  buildBatchRoleSuggestions,
   groupAttachmentsByCatalogRole,
+  honestSuggestLabel,
   isAnalyzableCatalogAttachment,
   isCatalogedDocRole,
   listAnalyzableCatalogAttachmentIds,
   roleLabel,
+  suggestCommercialDocRoleFromName,
 } from './caseDocCatalog';
 
 describe('caseDocCatalog (VC-2)', () => {
@@ -70,5 +73,50 @@ describe('caseDocCatalog (VC-2)', () => {
     expect(DOC_ROLE_OPTIONS.length).toBeGreaterThanOrEqual(5);
     expect(roleLabel('capitolato')).toBe('Capitolato');
     expect(roleLabel(null)).toBe('Da catalogare');
+  });
+});
+
+describe('caseDocCatalog (ING-1 batch suggest)', () => {
+  it('suggestCommercialDocRoleFromName: ruoli da path/nome', () => {
+    expect(suggestCommercialDocRoleFromName('Cliente/Capitolati/CAP_rev2.pdf').role).toBe(
+      'capitolato',
+    );
+    expect(suggestCommercialDocRoleFromName('ordine_PO-123.pdf').role).toBe('order');
+    expect(suggestCommercialDocRoleFromName('RFQ_LMCO.pdf').role).toBe('rfq');
+    expect(suggestCommercialDocRoleFromName('Offerta_commerciale.pdf').role).toBe('quote');
+    expect(suggestCommercialDocRoleFromName('Tavola_A1.dwg').role).toBe('drawing');
+    expect(suggestCommercialDocRoleFromName('scan_sconosciuto.pdf').role).toBe(null);
+  });
+
+  it('suggestCommercialDocRoleFromName: mime immagine → drawing', () => {
+    expect(
+      suggestCommercialDocRoleFromName('foto_pezzo.bin', { mimeType: 'image/jpeg' }).role,
+    ).toBe('drawing');
+  });
+
+  it('buildBatchRoleSuggestions: solo non catalogati, riordino, HITL selected', () => {
+    const rows = buildBatchRoleSuggestions([
+      { attachment_id: 10, commercial_doc_role: 'drawing', file_name: 'già_ok.png' },
+      { attachment_id: 11, commercial_doc_role: null, file_name: 'Disegno_assieme.png' },
+      { attachment_id: 12, commercial_doc_role: null, file_name: 'misc.pdf' },
+      { attachment_id: 13, commercial_doc_role: null, file_name: 'Capitolato_cliente.pdf' },
+    ]);
+    expect(rows.map((r) => r.attachmentId)).toEqual([13, 11, 12]);
+    expect(rows[0].suggestedRole).toBe('capitolato');
+    expect(rows[0].selected).toBe(true);
+    expect(rows[0].draftRole).toBe('capitolato');
+    expect(rows[1].suggestedRole).toBe('drawing');
+    expect(rows[2].suggestedRole).toBe(null);
+    expect(rows[2].selected).toBe(false);
+    expect(honestSuggestLabel(null)).toMatch(/scegli tu/i);
+  });
+
+  it('buildBatchRoleSuggestions: onlyUncataloged false include già catalogati', () => {
+    const rows = buildBatchRoleSuggestions(
+      [{ attachment_id: 1, commercial_doc_role: 'order', file_name: 'x.pdf' }],
+      { onlyUncataloged: false },
+    );
+    expect(rows).toHaveLength(1);
+    expect(rows[0].currentRole).toBe('order');
   });
 });

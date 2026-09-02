@@ -26,7 +26,9 @@ import {
 } from '../utils/analysisJobPolling';
 import {
   DOC_ROLE_OPTIONS,
+  buildBatchRoleSuggestions,
   groupAttachmentsByCatalogRole,
+  honestSuggestLabel,
   isCatalogedDocRole,
   listAnalyzableCatalogAttachmentIds,
 } from '../utils/caseDocCatalog';
@@ -587,6 +589,10 @@ export default function ContractReviewPage() {
   const [applyExtractedBusy, setApplyExtractedBusy] = useState(false);
   const [analyzeDocsBusy, setAnalyzeDocsBusy] = useState(false);
   const [analyzeDocsResult, setAnalyzeDocsResult] = useState(null);
+  // ING-1: classificazione batch HITL (suggerimenti da nome → conferma)
+  const [batchSuggestOpen, setBatchSuggestOpen] = useState(false);
+  const [batchSuggestRows, setBatchSuggestRows] = useState([]);
+  const [batchSuggestBusy, setBatchSuggestBusy] = useState(false);
 
   // Stato locale AI analisi requisiti (percorso canonico POST /contract-reviews/:id/ai/analyze-requirements)
   const [aiSuggestion, setAiSuggestion] = useState(null);
@@ -1262,6 +1268,65 @@ export default function ContractReviewPage() {
       setError(
         err instanceof ApiError ? err.message : err.message || 'Aggiornamento ruolo allegato fallito',
       );
+    }
+  }
+
+  function openBatchRoleSuggestions() {
+    const rows = buildBatchRoleSuggestions(detail?.attachments || [], {
+      onlyUncataloged: true,
+    });
+    setBatchSuggestRows(rows);
+    setBatchSuggestOpen(true);
+    setError(null);
+  }
+
+  function closeBatchRoleSuggestions() {
+    setBatchSuggestOpen(false);
+    setBatchSuggestRows([]);
+  }
+
+  function patchBatchSuggestRow(attachmentId, patch) {
+    setBatchSuggestRows((prev) =>
+      prev.map((r) => (r.attachmentId === attachmentId ? { ...r, ...patch } : r)),
+    );
+  }
+
+  async function handleApplyBatchRoleSuggestions() {
+    if (!caseId || batchSuggestBusy) return;
+    const toApply = batchSuggestRows.filter(
+      (r) => r.selected && isCatalogedDocRole(r.draftRole),
+    );
+    if (!toApply.length) {
+      setError('Seleziona almeno un allegato con un ruolo valido da applicare.');
+      return;
+    }
+    setBatchSuggestBusy(true);
+    setError(null);
+    const failures = [];
+    try {
+      for (const row of toApply) {
+        try {
+          await apiService.updateContractReviewAttachment(caseId, row.attachmentId, {
+            doc_role: row.draftRole,
+          });
+        } catch (err) {
+          failures.push({
+            fileName: row.fileName,
+            error: err instanceof ApiError ? err.message : err.message || 'errore',
+          });
+        }
+      }
+      await loadDetail(caseId);
+      if (failures.length) {
+        setError(
+          `Applicati ${toApply.length - failures.length}/${toApply.length}. Errori: ${failures
+            .map((f) => `${f.fileName}: ${f.error}`)
+            .join('; ')}`,
+        );
+      }
+      closeBatchRoleSuggestions();
+    } finally {
+      setBatchSuggestBusy(false);
     }
   }
 
@@ -2126,8 +2191,107 @@ export default function ContractReviewPage() {
                 <h3 style={{ fontSize: '0.95rem' }}>Catalogo allegati (per ruolo)</h3>
                 <p className="contract-review-intro" style={{ marginTop: 0 }}>
                   Assegna o correggi il ruolo di ogni file cliente. Batch da Import PDF → caso resta disponibile
-                  da Impostazioni / Import jobs (ponte esistente).
+                  da Impostazioni / Import jobs (ponte esistente). Con mole disordinata: suggerisci ruoli dal nome,
+                  conferma HITL, poi analizza.
                 </p>
+                {(detail.attachments || []).length > 0
+                  && !TERMINAL_STATUSES.has(detail.case.status)
+                  && !batchSuggestOpen && (
+                  <div className="cr-form-row" style={{ marginBottom: '0.65rem' }}>
+                    <button
+                      type="button"
+                      className="cr-btn"
+                      disabled={batchSuggestBusy}
+                      onClick={openBatchRoleSuggestions}
+                      title="Propone ruoli da nome/path (senza AI); confermi prima di salvare"
+                    >
+                      Suggerisci ruoli (batch)
+                    </button>
+                  </div>
+                )}
+                {batchSuggestOpen && (
+                  <div className="cr-batch-suggest" role="region" aria-label="Suggerimenti ruolo batch">
+                    <h4 className="cr-batch-suggest-title">
+                      Classificazione batch — conferma HITL
+                    </h4>
+                    <p className="contract-review-intro" style={{ marginTop: 0 }}>
+                      Indizi dal nome file (come Import PDF). Niente black-box: spunta, correggi il ruolo,
+                      applica solo i selezionati. HITL: indicare case_id di prova se serve seed dedicato.
+                    </p>
+                    {batchSuggestRows.length === 0 ? (
+                      <p className="contract-review-intro">
+                        Nessun allegato da catalogare: tutti hanno già un ruolo, oppure la lista è vuota.
+                      </p>
+                    ) : (
+                      <ul className="cr-doc-list cr-batch-suggest-list">
+                        {batchSuggestRows.map((row) => (
+                          <li key={row.attachmentId} className="cr-catalog-item cr-batch-suggest-item">
+                            <label className="cr-batch-suggest-check">
+                              <input
+                                type="checkbox"
+                                checked={Boolean(row.selected)}
+                                disabled={batchSuggestBusy}
+                                onChange={(e) =>
+                                  patchBatchSuggestRow(row.attachmentId, {
+                                    selected: e.target.checked,
+                                  })
+                                }
+                                aria-label={`Includi ${row.fileName}`}
+                              />
+                              <span className="cr-catalog-name">{row.fileName}</span>
+                            </label>
+                            <span className="cr-batch-suggest-hint">
+                              {honestSuggestLabel(row.suggestedRole, row.reason)}
+                            </span>
+                            <select
+                              className="cr-catalog-role-select"
+                              aria-label={`Ruolo proposto per ${row.fileName}`}
+                              value={row.draftRole || ''}
+                              disabled={batchSuggestBusy}
+                              onChange={(e) => {
+                                const next = e.target.value;
+                                patchBatchSuggestRow(row.attachmentId, {
+                                  draftRole: next,
+                                  selected: next ? true : row.selected,
+                                });
+                              }}
+                            >
+                              <option value="">— Scegli ruolo —</option>
+                              {DOC_ROLE_OPTIONS.map((opt) => (
+                                <option key={opt.value} value={opt.value}>
+                                  {opt.label}
+                                </option>
+                              ))}
+                            </select>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                    <div className="cr-batch-suggest-actions">
+                      <button
+                        type="button"
+                        className="cr-btn cr-btn-primary"
+                        disabled={
+                          batchSuggestBusy
+                          || !batchSuggestRows.some(
+                            (r) => r.selected && isCatalogedDocRole(r.draftRole),
+                          )
+                        }
+                        onClick={handleApplyBatchRoleSuggestions}
+                      >
+                        {batchSuggestBusy ? 'Applicazione\u2026' : 'Applica selezionati'}
+                      </button>
+                      <button
+                        type="button"
+                        className="cr-btn"
+                        disabled={batchSuggestBusy}
+                        onClick={closeBatchRoleSuggestions}
+                      >
+                        Annulla
+                      </button>
+                    </div>
+                  </div>
+                )}
                 {(detail.attachments || []).length === 0 ? (
                   <p className="contract-review-intro">Nessun allegato.</p>
                 ) : (
