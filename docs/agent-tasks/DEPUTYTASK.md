@@ -6,6 +6,8 @@
 **Piano:** [`PLAN_VALUTAZIONE_COMMESSE_SLICES.md`](PLAN_VALUTAZIONE_COMMESSE_SLICES.md) § VC-4  
 **Rischio:** Medio — FE export Word da snapshot persistito + UI download; riuso pattern SAL/NC; niente migrazione; niente auth/sync breaking  
 **Branch:** `cursor/vc4-export-report-studio-1c5d`  
+**PR:** draft non creabile da Cloud Agent (`gh` GraphQL Resource not accessible) — compare: https://github.com/qsstudio241/sistema-gestione-iso9001/compare/main...cursor/vc4-export-report-studio-1c5d?expand=1  
+**Push:** branch remoto aggiornato (`origin/cursor/vc4-export-report-studio-1c5d`)  
 **Dipende da:** VC-1 (#619) + VC-3 (#621) mergiate; deploy VPS VC-3 OK (PID 1647143→1698905, health 200)
 
 > **Allineamento Git (autonomo)**: `git fetch origin main` + `git pull origin main` prima di eseguire. **Non** chiedere al committente.  
