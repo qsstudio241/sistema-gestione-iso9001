@@ -1,7 +1,8 @@
 # DEPUTYTASK2 — CONS-6: Pacchetto di recupero audit (export JSON)
 
-**Stato:** APERTO  
+**Stato:** CHIUSO — TEST OK  
 **Aperto:** 02/09/2026  
+**Chiuso:** 02/09/2026  
 **Piano:** [`PLAN_AUDIT_CONSERVAZIONE_SLICES.md`](PLAN_AUDIT_CONSERVAZIONE_SLICES.md) § CONS-6  
 **Rischio:** Medio — util FE pura + un pulsante UI; niente auth, niente edit `syncService` / `StorageContext` / `useAutoSave` / `LogoutSyncGuard`  
 **Branch:** `cursor/cons6-audit-recovery-export-2271`  
@@ -48,3 +49,17 @@ Se la rete non torna per giorni, l’auditor deve poter scaricare **audit aperto
 - File JSON scaricabile dal header audit (anche offline)
 - Coda di altri UUID esclusa; token/jwt/password assenti dal JSON
 - Test L1 verdi + build `app/`
+
+---
+
+## Esito deputy
+
+**TEST OK** — pacchetto `{ version, exportedAt, auditUuid, audit, queueItems }` filtrato per UUID; scope `organization_id` se presente; token/jwt/password omessi; download `sgq-audit-recupero-<uuid-corto>-<data>.json`. Pulsante «Scarica copia di recupero» in header audit (disabled senza audit). Non CONS-1…5. Non toccati `LogoutSyncGuard` / `syncService` / GUIDA / PLAN.
+
+| Voce | Dettaglio |
+|------|-----------|
+| Util | `app/src/utils/auditRecoveryExport.js` |
+| UI | `AuditAccordionLayout.jsx` — un pulsante, classi esistenti |
+| Test L1 | `auditRecoveryExport.test.js` 8/8 |
+| Build | `cd app && npm run build` OK |
+| PR | da aprire su `main` (gate Medio: non «pronta» senza CI+Bugbot+Security) |
