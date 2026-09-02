@@ -1,51 +1,41 @@
-# DEPUTYTASK — VC-4: Export Word checklist Riesame requisiti (opzione B)
+# DEPUTYTASK — ING-1: Classificazione / riordino allegati batch (caso commerciale)
 
-**Stato:** CHIUSO — TEST OK  
+**Stato:** APERTO  
 **Aperto:** 02/09/2026  
-**Chiuso:** 02/09/2026  
-**Piano:** [`PLAN_VALUTAZIONE_COMMESSE_SLICES.md`](PLAN_VALUTAZIONE_COMMESSE_SLICES.md) § VC-4  
-**Rischio:** Medio — FE export Word da `commercial_case_checklist` già caricata (RBAC contract-reviews) + UI download; riuso pattern SAL/NC/riesame tecnico; niente migrazione; niente auth/sync breaking  
-**Branch:** `cursor/vc4-export-checklist-a5ea`  
-**PR:** draft non creabile da Cloud Agent se `gh` GraphQL bloccato — compare: https://github.com/qsstudio241/sistema-gestione-iso9001/compare/main...cursor/vc4-export-checklist-a5ea?expand=1  
-**Supersede:** branch `cursor/vc4-export-report-studio-1c5d` (WIP opzione A — solo gap) **non** mergiare  
-**Dipende da:** VC-1…VC-3 mergiate (#619/#620/#621); deploy VC-3 già fatto in sessione precedente
+**Piano:** [`PLAN_VALUTAZIONE_COMMESSE_SLICES.md`](PLAN_VALUTAZIONE_COMMESSE_SLICES.md) § ING-1  
+**Rischio:** Medio — FE util + UI HITL su catalogo VC-2; riuso PATCH allegato esistente; niente migrazione; niente auth/sync breaking  
+**Branch:** `cursor/ing1-batch-doc-classify-1c5d`  
+**Dipende da:** VC-2 catalogo ruoli su `main`; PLAN ING-* (branch docs #623 allineato)  
+**Parallelo:** se ING-4 su `DEPUTYTASK1` — file disgiunti (non toccare template checklist)
 
 > **Allineamento Git (autonomo)**: `git fetch origin main` + `git pull origin main` prima di eseguire. **Non** chiedere al committente.  
 > Comando: `Leggi docs/agent-tasks/DEPUTYTASK.md ed eseguilo. Chiudi con TEST OK o FIX NON APPLICABILI.`
 
 ---
 
-## Esito deputy
+## Obiettivo verificabile
 
-**TEST OK** — export Word checklist §8.2 (P1–P10 / F1–F6, esiti + note) + appendice gap sintetica opzionale.
+Su un caso `commercial_cases` con mole di allegati poco ordinata: **suggerimenti ruolo/tipo in batch** (euristiche da nome/path, pattern Import PDF) → pannello HITL (checkbox + select) → conferma applica via PATCH catalogo VC-2. Niente secondo storage, niente black-box totale.
 
-| Voce | Dettaglio |
-|------|-----------|
-| Formato | Word programmatico (`docx` FE) — pattern SAL / riesame tecnico; **non** Riesame di direzione |
-| Dati | Checklist già in dettaglio caso (`GET contract-reviews/:id`, stesso RBAC); gap via `GET .../capability-gap-report` best-effort |
-| UI | Bottone «Scarica Word checklist» nella slide Checklist, accanto a Genera preliminare/finale |
-| Appendice | Se snapshot gap presente: stato + conteggi + prime 8 voci; altrimenti omessa |
-| Test L1 | `wordExportContractReviewChecklist.test.js` 4/4 + `npm run build` OK |
-| Migrazione | nessuna |
+## File previsti
 
-**Prossima slice:** priorità prodotto = **ING-*** (ingest mole file) per PLAN post-merge; **VC-5 non aprire** senza conferma Lead.
-
----
-
-## HITL prodotto (02/09/2026)
-
-- **Export VC-4 = opzione B**: checklist Riesame requisiti compilata sul caso.
-- Gap capacità: appendice sintetica in coda (incluso perché a basso costo).
-- Formato Word. **NON** è Riesame di direzione.
-- Fedeltà: voci = checklist caso (§8.2); non inventare voci.
-
-## File previsti (toccati)
-
-- `app/src/utils/wordExportContractReviewChecklist.js` (+ test)
-- `app/src/pages/ContractReviewPage.jsx`
-- `docs/agent-tasks/DEPUTYTASK.md` / `PLAN_VALUTAZIONE_COMMESSE_SLICES.md`
+- `app/src/utils/caseDocCatalog.js` (+ test) — suggerimento ruolo + build batch
+- `app/src/pages/ContractReviewPage.jsx` (+ CSS minimo `.cr-*`) — UI HITL batch
+- `docs/agent-tasks/DEPUTYTASK.md` / `PLAN_VALUTAZIONE_COMMESSE_SLICES.md` — brief + spunta ING-1
 
 ## Cosa NON toccare
 
-- Auth/JWT, sync, migrazioni, SAL engine, Import Jobs, Riesame di direzione (`wordExportReview.js`)
-- Ponte gap→checklist / agenti (nebbia / slice successive)
+- ING-2+ (matching auto pre-Analizza), VC-5 chiarimenti
+- `importJobs.controller`, auth/JWT, sync, migrazioni
+- Secondo storage allegati / nuovo motore OCR
+
+## Caso golden path
+
+Caso reale committente: se `case_id` non indicato → implementazione generica su qualsiasi caso aperto. HITL: indicare `case_id` di prova. Tenant prova noto: ERAM org 1004 (smoke coverage) — non vincolante per questa slice.
+
+## Criteri chiusura
+
+- [ ] Util suggerisce ruoli whitelist VC-2 da nome/mime (senza LLM)
+- [ ] UI batch HITL: suggerisci → correggi → applica selezionati
+- [ ] Test L1 util + build FE
+- [ ] PR draft / compare URL; DEPUTYTASK CHIUSO TEST OK; PLAN ING-1 spuntato
