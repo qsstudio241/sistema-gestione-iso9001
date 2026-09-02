@@ -36,6 +36,7 @@ const ComplaintsPage = React.lazy(() => import("./pages/ComplaintsPage"));
 const LicensesSettingsPage = React.lazy(() => import("./pages/LicensesSettingsPage"));
 const BillingDashboardPage = React.lazy(() => import("./pages/BillingDashboardPage"));
 const StudioSettingsPage = React.lazy(() => import("./pages/StudioSettingsPage"));
+const ContractChecklistTemplatesPage = React.lazy(() => import("./pages/ContractChecklistTemplatesPage"));
 const ImportJobsPage = React.lazy(() => import("./pages/ImportJobsPage"));
 const NormLibraryPage = React.lazy(() => import("./pages/NormLibraryPage"));
 const AnagrafichePage = React.lazy(() => import("./pages/AnagrafichePage"));
@@ -264,6 +265,14 @@ function AppContent() {
           element={
             <BackWrapper>
               <CustomChecklistsPage />
+            </BackWrapper>
+          }
+        />
+        <Route
+          path="/settings/contract-checklist-templates"
+          element={
+            <BackWrapper>
+              <ContractChecklistTemplatesPage />
             </BackWrapper>
           }
         />

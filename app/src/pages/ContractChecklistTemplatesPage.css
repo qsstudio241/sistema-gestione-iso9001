@@ -1,0 +1,178 @@
+/* Template checklist riesame — token AppLayout, pattern elenco + scheda */
+.cct-page {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 1rem 1.25rem 2rem;
+}
+
+.cct-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.cct-header h1 {
+  margin: 0 0 0.35rem;
+  font-size: 1.35rem;
+  color: var(--color-primary, #1e3a5f);
+}
+
+.cct-intro {
+  margin: 0;
+  max-width: 42rem;
+  color: var(--color-text-muted, #64748b);
+  font-size: 0.92rem;
+  line-height: 1.45;
+}
+
+.cct-muted {
+  color: var(--color-text-muted, #64748b);
+}
+
+.cct-error {
+  background: #fef2f2;
+  color: #991b1b;
+  border: 1px solid #fecaca;
+  border-radius: var(--radius, 6px);
+  padding: 0.65rem 0.85rem;
+  margin-bottom: 0.75rem;
+}
+
+.cct-row-actions {
+  display: inline-flex;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+}
+
+.cct-cell-actions {
+  white-space: nowrap;
+}
+
+.cct-editor {
+  margin-top: 1.25rem;
+  padding: 1rem;
+  background: var(--color-bg, #f8fafc);
+  border: 1px solid var(--color-border, #e2e8f0);
+  border-radius: var(--radius, 6px);
+}
+
+.cct-editor h2 {
+  margin: 0 0 0.75rem;
+  font-size: 1.1rem;
+  color: var(--color-primary, #1e3a5f);
+}
+
+.cct-form-row {
+  display: grid;
+  grid-template-columns: 1.4fr 1.2fr auto;
+  gap: 0.75rem;
+  align-items: end;
+  margin-bottom: 0.85rem;
+}
+
+.cct-form-row label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  font-size: 0.85rem;
+  color: var(--color-text-muted, #64748b);
+}
+
+.cct-form-row input[type="text"],
+.cct-form-row select {
+  padding: 0.45rem 0.55rem;
+  border: 1px solid var(--color-border, #e2e8f0);
+  border-radius: var(--radius, 6px);
+  font: inherit;
+  background: #fff;
+}
+
+.cct-check {
+  flex-direction: row !important;
+  align-items: center;
+  gap: 0.4rem !important;
+  padding-bottom: 0.4rem;
+}
+
+.cct-phase-tabs {
+  display: flex;
+  gap: 0.35rem;
+  margin-bottom: 0.65rem;
+}
+
+.cct-phase-tabs button {
+  border: 1px solid var(--color-border, #e2e8f0);
+  background: #fff;
+  border-radius: var(--radius, 6px);
+  padding: 0.4rem 0.75rem;
+  cursor: pointer;
+  font: inherit;
+  color: var(--color-primary, #1e3a5f);
+}
+
+.cct-phase-tabs button.active {
+  background: var(--color-primary, #1e3a5f);
+  color: #fff;
+  border-color: var(--color-primary, #1e3a5f);
+}
+
+.cct-item-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+  max-height: 420px;
+  overflow: auto;
+}
+
+.cct-item-list li {
+  display: grid;
+  grid-template-columns: 110px 1fr auto;
+  gap: 0.45rem;
+  align-items: center;
+}
+
+.cct-ref {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--color-primary, #1e3a5f);
+}
+
+.cct-item-extra .cct-ref {
+  color: #0369a1;
+}
+
+.cct-item-text {
+  min-height: 2.2rem;
+  resize: vertical;
+}
+
+.cct-editor-actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.75rem;
+  margin-top: 0.85rem;
+  flex-wrap: wrap;
+}
+
+.cct-editor-actions-right {
+  display: flex;
+  gap: 0.45rem;
+}
+
+@media (max-width: 768px) {
+  .cct-header {
+    flex-direction: column;
+  }
+  .cct-form-row {
+    grid-template-columns: 1fr;
+  }
+  .cct-item-list li {
+    grid-template-columns: 1fr;
+  }
+}
