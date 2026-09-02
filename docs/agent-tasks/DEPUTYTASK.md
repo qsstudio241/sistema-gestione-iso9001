@@ -1,14 +1,13 @@
-# DEPUTYTASK — VC-4: Export Word checklist Riesame requisiti (opzione B)
+# DEPUTYTASK — ING-1: Classificazione / riordino allegati batch (caso commerciale)
 
 **Stato:** CHIUSO — TEST OK  
 **Aperto:** 02/09/2026  
 **Chiuso:** 02/09/2026  
-**Piano:** [`PLAN_VALUTAZIONE_COMMESSE_SLICES.md`](PLAN_VALUTAZIONE_COMMESSE_SLICES.md) § VC-4  
-**Rischio:** Medio — FE export Word da `commercial_case_checklist` già caricata (RBAC contract-reviews) + UI download; riuso pattern SAL/NC/riesame tecnico; niente migrazione; niente auth/sync breaking  
-**Branch:** `cursor/vc4-export-checklist-a5ea`  
-**PR:** draft non creabile da Cloud Agent se `gh` GraphQL bloccato — compare: https://github.com/qsstudio241/sistema-gestione-iso9001/compare/main...cursor/vc4-export-checklist-a5ea?expand=1  
-**Supersede:** branch `cursor/vc4-export-report-studio-1c5d` (WIP opzione A — solo gap) **non** mergiare  
-**Dipende da:** VC-1…VC-3 mergiate (#619/#620/#621); deploy VC-3 già fatto in sessione precedente
+**Piano:** [`PLAN_VALUTAZIONE_COMMESSE_SLICES.md`](PLAN_VALUTAZIONE_COMMESSE_SLICES.md) § ING-1  
+**Rischio:** Medio — FE util + UI HITL su catalogo VC-2; riuso PATCH allegato esistente; niente migrazione; niente auth/sync breaking  
+**Branch:** `cursor/ing1-batch-doc-classify-1c5d`  
+**PR:** compare https://github.com/qsstudio241/sistema-gestione-iso9001/compare/main...cursor/ing1-batch-doc-classify-1c5d?expand=1  
+**Dipende da:** VC-2 catalogo ruoli su `main`; PLAN ING-* (#623 allineato nel branch)
 
 > **Allineamento Git (autonomo)**: `git fetch origin main` + `git pull origin main` prima di eseguire. **Non** chiedere al committente.  
 > Comando: `Leggi docs/agent-tasks/DEPUTYTASK.md ed eseguilo. Chiudi con TEST OK o FIX NON APPLICABILI.`
@@ -17,35 +16,23 @@
 
 ## Esito deputy
 
-**TEST OK** — export Word checklist §8.2 (P1–P10 / F1–F6, esiti + note) + appendice gap sintetica opzionale.
+**TEST OK** — suggerimenti ruolo batch da nome/path + pannello HITL su catalogo allegati caso.
 
 | Voce | Dettaglio |
 |------|-----------|
-| Formato | Word programmatico (`docx` FE) — pattern SAL / riesame tecnico; **non** Riesame di direzione |
-| Dati | Checklist già in dettaglio caso (`GET contract-reviews/:id`, stesso RBAC); gap via `GET .../capability-gap-report` best-effort |
-| UI | Bottone «Scarica Word checklist» nella slide Checklist, accanto a Genera preliminare/finale |
-| Appendice | Se snapshot gap presente: stato + conteggi + prime 8 voci; altrimenti omessa |
-| Test L1 | `wordExportContractReviewChecklist.test.js` 4/4 + `npm run build` OK |
-| Migrazione | nessuna |
+| Util | `suggestCommercialDocRoleFromName` + `buildBatchRoleSuggestions` in `caseDocCatalog.js` (whitelist VC-2, senza LLM) |
+| UI | Bottone «Suggerisci ruoli (batch)» → checkbox/select → «Applica selezionati» (PATCH esistente) |
+| Storage | Nessuno nuovo — riuso `commercial_doc_role` / `updateContractReviewAttachment` |
+| Test L1 | `caseDocCatalog.test.js` 9/9 + `npm run build` OK |
+| Caso golden | Generico su qualsiasi caso; HITL: indicare `case_id` di prova (tenant ERAM 1004 noto per smoke coverage, non vincolante) |
 
-**Prossima slice:** VC-5 (chiarimenti da gap) o priorità strategica ingest mole file (PLAN).
+**Prossima slice:** ING-2 (matching auto → ruoli catalogo / gate Analizza) o ING-4 in parallelo su slot disgiunto.
 
 ---
 
-## HITL prodotto (02/09/2026)
+## Cosa fa l'utente in UI
 
-- **Export VC-4 = opzione B**: checklist Riesame requisiti compilata sul caso.
-- Gap capacità: appendice sintetica in coda (incluso perché a basso costo).
-- Formato Word. **NON** è Riesame di direzione.
-- Fedeltà: voci = checklist caso (§8.2); non inventare voci.
-
-## File previsti (toccati)
-
-- `app/src/utils/wordExportContractReviewChecklist.js` (+ test)
-- `app/src/pages/ContractReviewPage.jsx`
-- `docs/agent-tasks/DEPUTYTASK.md` / `PLAN_VALUTAZIONE_COMMESSE_SLICES.md`
-
-## Cosa NON toccare
-
-- Auth/JWT, sync, migrazioni, SAL engine, Import Jobs, Riesame di direzione (`wordExportReview.js`)
-- Ponte gap→checklist / agenti (nebbia / slice successive)
+1. Apri Riesame requisiti → caso con allegati → slide Documenti.
+2. Clicca **Suggerisci ruoli (batch)**.
+3. Rivedi indizi «dal nome», correggi select, spunta/deseleziona.
+4. **Applica selezionati** → catalogo aggiornato → poi Analizza documenti se pronto.

@@ -623,6 +623,58 @@
   max-width: 160px;
 }
 
+/* ING-1 — pannello HITL classificazione batch */
+.cr-batch-suggest {
+  border: 1px solid #bfdbfe;
+  border-radius: 6px;
+  background: #f8fafc;
+  padding: 0.65rem 0.8rem 0.75rem;
+  margin-bottom: 0.85rem;
+}
+
+.cr-batch-suggest-title {
+  margin: 0 0 0.35rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #1e3a5f;
+}
+
+.cr-batch-suggest-list {
+  list-style: none;
+  padding-left: 0;
+  margin: 0.4rem 0 0.65rem;
+}
+
+.cr-batch-suggest-item {
+  align-items: flex-start;
+}
+
+.cr-batch-suggest-check {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.45rem;
+  flex: 1 1 160px;
+  min-width: 0;
+  cursor: pointer;
+}
+
+.cr-batch-suggest-check input {
+  margin-top: 0.2rem;
+}
+
+.cr-batch-suggest-hint {
+  flex: 1 1 140px;
+  font-size: 0.78rem;
+  color: #64748b;
+}
+
+.cr-batch-suggest-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.25rem;
+}
+
 .cr-server-ai-json {
   max-height: 240px;
   overflow: auto;
