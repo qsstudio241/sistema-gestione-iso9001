@@ -14,6 +14,7 @@ import {
   applyPrunedChecklist,
   pruneUnansweredDeselectedChecklist,
 } from "../utils/activeAuditChecklist";
+import { downloadAuditRecoveryCopy } from "../utils/auditRecoveryExport";
 import "./AuditAccordionLayout.css";
 
 // Import sezioni
@@ -87,6 +88,7 @@ function AuditAccordionLayout({ currentAudit, onUpdate, onBack, isSaving, allSav
   // Calcolato a livello top del componente (PRIMA del guard `if (!currentAudit)`)
   // Stato per gestire quali sezioni sono aperte
   const [checklistExpandTrigger, setChecklistExpandTrigger] = useState(0);
+  const [recoveryBusy, setRecoveryBusy] = useState(false);
 
   const [openSections, setOpenSections] = useState({
     "general-data": false,
@@ -340,6 +342,37 @@ function AuditAccordionLayout({ currentAudit, onUpdate, onBack, isSaving, allSav
     }
   };
 
+  const handleDownloadRecovery = useCallback(async () => {
+    if (!currentAudit || recoveryBusy) return;
+    setRecoveryBusy(true);
+    try {
+      const userOrg = apiService.getStoredUser?.()?.organization_id ?? null;
+      await downloadAuditRecoveryCopy(currentAudit, {
+        organizationId: userOrg,
+      });
+    } catch (err) {
+      console.warn("[CONS-6] Export recupero:", err?.message || err);
+    } finally {
+      setRecoveryBusy(false);
+    }
+  }, [currentAudit, recoveryBusy]);
+
+  const recoveryButton = (
+    <button
+      type="button"
+      className="btn-back-to-list"
+      onClick={handleDownloadRecovery}
+      disabled={!currentAudit || recoveryBusy}
+      title={
+        !currentAudit
+          ? "Nessun audit aperto: impossibile scaricare la copia di recupero"
+          : "Scarica una copia JSON di recupero (audit e coda locale), anche senza rete"
+      }
+    >
+      {recoveryBusy ? "Preparazione in corso" : "Scarica copia di recupero"}
+    </button>
+  );
+
   // Guardia: se currentAudit è null, mostra messaggio
   if (!currentAudit) {
     return (
@@ -347,6 +380,7 @@ function AuditAccordionLayout({ currentAudit, onUpdate, onBack, isSaving, allSav
         <div className="no-audit-message">
           <h2>⚠️ Nessun audit selezionato</h2>
           <p>Seleziona un audit dalla lista o creane uno nuovo.</p>
+          {recoveryButton}
         </div>
       </div>
     );
@@ -414,6 +448,7 @@ function AuditAccordionLayout({ currentAudit, onUpdate, onBack, isSaving, allSav
                 "it-IT"
               )}
             </span>
+            {recoveryButton}
           </div>
         </div>
       </div>
