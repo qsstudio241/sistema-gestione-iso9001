@@ -1,9 +1,9 @@
 # UX — Ponte checklist ↔ allegati (Riesame requisiti)
 
-> Proposta **solo documentazione** (03/09/2026). **Niente codice** finché il committente non conferma layout A o B.  
+> Proposta UX (03/09/2026). **HITL confermato layout A** (03/09/2026) — implementazione PONTE-1 su branch codice.  
 > HITL: ponte checklist↔allegati (non viste-per-ente); obbligatorietà = **flag**.  
 > Piano: [`PLAN_VALUTAZIONE_COMMESSE_SLICES.md`](PLAN_VALUTAZIONE_COMMESSE_SLICES.md) · Brief: [`DEPUTYTASK.md`](DEPUTYTASK.md).  
-> DNA: `.cr-*` su `ContractReviewPage`, `AttachmentSection` dove già esiste; niente secondo DMS / look nuovo.
+> DNA: `.cr-*` su `ContractReviewPage`; niente secondo DMS / look nuovo.
 
 ---
 

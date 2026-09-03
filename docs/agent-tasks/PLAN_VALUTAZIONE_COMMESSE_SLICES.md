@@ -10,7 +10,7 @@
 > - SAL gap ≠ questo epic: [`MODULO_SAL_SCOPO_E_ROADMAP.md`](../specs/MODULO_SAL_SCOPO_E_ROADMAP.md)
 > - Mattoni già in codice: `importJobs` + `ImportJobsPage`, `contractReview.*`, `caseDocumentAnalysis.service.js`, `caseExtractedCoverage.service.js`, `caseCoverageAdvisory.service.js`, `qualificationCoverage.js`, CoveragePanel in `ContractReviewPage.jsx`, export Word checklist (`wordExportContractReviewChecklist.js`)
 >
-> **Brief attivo**: [`DEPUTYTASK.md`](DEPUTYTASK.md) — **Ponte checklist↔allegati** APERTO (solo docs/UX; niente codice finché conferma layout). **ING-5** triage = dopo/nebbia. Ops 02/09: mig162 + routes template su VPS OK. UX: [`UX_PONTE_CHECKLIST_ALLEGATI.md`](UX_PONTE_CHECKLIST_ALLEGATI.md).
+> **Brief attivo**: [`DEPUTYTASK.md`](DEPUTYTASK.md) — **PONTE-1** layout A (HITL 03/09) in chiusura / CHIUSO su branch implementazione. **ING-5** triage = dopo/nebbia. Ops: mig **163** via `run-migration-163-vps.js`. UX: [`UX_PONTE_CHECKLIST_ALLEGATI.md`](UX_PONTE_CHECKLIST_ALLEGATI.md).
 > **Mappa creata**: 01/09/2026 · Lead wayfinder · **riorientata 02/09/2026** post-merge VC-4 (priorità ingest)
 > **Branch base**: `main`
 
@@ -102,7 +102,7 @@
 | **VC-8** | Ordini fornitori a corredo | Documenti `counterparty=supplier` + link anagrafica | VC-7; nebbia | HITL |
 | **VC-9** | Sessione PPAP | Solo dopo decisione prodotto | — | HITL / nebbia |
 
-**Stato piano:** APERTO — **VC-1…VC-4** CHIUSI; **ING-1…ING-4** CHIUSI (#624–#627); **ING-5** dopo/nebbia (HITL 03/09: saltato per ora); **ponte checklist↔allegati** brief UX APERTO (niente codice finché conferma A/B); VC-5 non di default.
+**Stato piano:** APERTO — **VC-1…VC-4** CHIUSI; **ING-1…ING-4** CHIUSI (#624–#627); **ING-5** dopo/nebbia (HITL 03/09); **PONTE-1** layout A implementato (mig 163); VC-5 non di default.
 
 ### Bozza slice ingest / organizzazione (post VC-4 — Lead)
 
@@ -115,7 +115,7 @@
 | **ING-3** ✅ | Gap **evadibilità** da docs organizzati | Dato catalogo ordinato: segnale «ordine evadibile / da chiarire» (riuso coverage + checklist); non inventare norme | ING-2, VC-1 | CHIUSO 02/09 (#627) |
 | **ING-4** ✅ | Template checklist personalizzabile studio | Template per cliente/tenant; voci P/F editabili; export VC-4 legge template attivo; mig **162** | ING prodotto | CHIUSO 02/09 (#625) |
 | **ING-5** | Agente «triage documenti» | **Dopo / nebbia** (HITL 03/09: saltato; priorità = ponte checklist↔allegati) | ING-1…2 | HITL / wayfinder — non aprire codice |
-| **PONTE-1** | Checklist ↔ allegati + flag required | Collegare voci P/F agli allegati del caso; flag obbligatorio su template ING-4; gate soft salvataggio / hard su Avanza stato. **No** viste-per-ente in questa slice. | ING-4, VC-2 | HITL UX → poi AFK |
+| **PONTE-1** ✅ | Checklist ↔ allegati + flag required | Layout **A** HITL 03/09: zona Allegati collegati sotto ogni voce; flag template; soft save/export · hard Avanza stato. Mig **163**. | ING-4, VC-2 | CHIUSO 03/09 |
 
 #### HITL 03/09 — decisione registrata (ponte)
 
@@ -124,7 +124,7 @@
 | Priorità AFK ora | **Ponte checklist ↔ allegati** (non viste-per-ente come prima slice) |
 | Obbligatorietà allegato | **Flag** (alcuni allegati possono non essere presenti/previsti) |
 | ING-5 triage | Resta **nebbia / dopo** |
-| Preoccupazione | Usabilità FE → proposta in [`UX_PONTE_CHECKLIST_ALLEGATI.md`](UX_PONTE_CHECKLIST_ALLEGATI.md) — **conferma A o B prima del codice** |
+| Preoccupazione | Usabilità FE → [`UX_PONTE_CHECKLIST_ALLEGATI.md`](UX_PONTE_CHECKLIST_ALLEGATI.md) — **layout A confermato** 03/09; implementato mig **163** |
 
 #### ING-5 — domande HITL (archivio; codice ancora bloccato)
 

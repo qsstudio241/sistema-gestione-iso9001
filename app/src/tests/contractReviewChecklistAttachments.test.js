@@ -1,5 +1,5 @@
 /**
- * @vitest-environment node
+ * Vitest — helper puri ponte checklist ↔ allegati (PONTE-1)
  */
 import { describe, expect, it } from 'vitest';
 import {
