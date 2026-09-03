@@ -39,7 +39,7 @@ Non usare `.github/agents/` (legacy Copilot). Policy anti-disallineamento: `.cur
 - Segreti: solo **Cursor Dashboard → Cloud Agents → Secrets** (mai in Git). Elenco: [docs/how-to/ACCESSO_DEPLOY_AGENTS.md](docs/how-to/ACCESSO_DEPLOY_AGENTS.md).
 - SQL Server **non** raggiungibile dal Cloud Agent (DNS): migrazioni via SCP + `node` sul VPS (`run-migration-*-vps.js`).
 - Deploy backend: `bash backend/scripts/deploy-to-vps.sh` + verifica PID/`health`.
-- **Branch PR:** se la PR è dietro `main` / CI per conflitti / prima di chiedere merge → aggiorna il branch con `origin/main` in autonomia (merge preferito). **Non** mergiare su `main`; **non** chiedere al committente `git pull` / Update branch. Fonte: [`.cursor/rules/sgq-git-autonomy.mdc`](.cursor/rules/sgq-git-autonomy.mdc) § Aggiornare il branch della PR.
+- **Branch PR:** prima di ogni `git push` sul feature branch e prima di create_pr/update_pr: `git fetch origin main` + `git merge origin/main`. Se `main` è avanti, allinea **ora** (anche gli OPEN restanti dopo un merge nello stack); vietato push/PR «e poi si allinea». **Non** mergiare su `main`; **non** chiedere al committente `git pull` / «Update branch». Fonte: [`.cursor/rules/sgq-git-autonomy.mdc`](.cursor/rules/sgq-git-autonomy.mdc) § Aggiornare il branch della PR.
 
 ### Context window e costo (policy vincolante)
 
