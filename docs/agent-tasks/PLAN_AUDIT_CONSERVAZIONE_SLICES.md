@@ -1,19 +1,19 @@
 # Piano slice — Conservazione dati audit (offline / caduta server)
 
 > **Destinazione**: il lavoro di una giornata di audit **non si perde** per interruzione di rete, caduta del server, chiusura app o nuovo login sullo stesso telefono. Resta sul dispositivo finché il server non ha **confermato** la ricezione. Allineamento da un secondo dispositivo (PC) non cancella il lavoro non ancora inviato.
-> **Spec / ADR**: [ADR-008](../adr/ADR-008-event-sourcing-sync.md) (event store = target lungo; questa epic **non** riscrive il motore) · [ADR-007](../adr/ADR-007-logout-offline-backup-e-mirror-cartella-pc.md) (gate logout già in produzione; export recupero ancora aperto) · [ADR-002](../adr/ADR-002-offline-first-sync.md) · [ADR-004](../adr/ADR-004-mobile-auth-localstorage.md)
-> **Brief attivi CONS:** nessuno. Slot [`DEPUTYTASK.md`](DEPUTYTASK.md) su `main` = **ING-5 HITL APERTO** (altra epic — non riusare). CONS-1…4 e CONS-6: brief CHIUSI (`DEPUTYTASK1`…`4`). CONS-5: codice **non** su `main` — PR [#636](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/636) ancora **OPEN draft**.
+> **Spec / ADR**: [ADR-008](../adr/ADR-008-event-sourcing-sync.md) (event store = target lungo; questa epic **non** riscrive il motore) · [ADR-007](../adr/ADR-007-logout-offline-backup-e-mirror-cartella-pc.md) (gate logout già in produzione; export recupero = CONS-6) · [ADR-002](../adr/ADR-002-offline-first-sync.md) · [ADR-004](../adr/ADR-004-mobile-auth-localstorage.md)
+> **Brief attivi CONS:** nessuno. CONS-1…6 **tutte su `origin/main`**. Slot [`DEPUTYTASK.md`](DEPUTYTASK.md) su `main` = **PONTE-1 HITL UX APERTO** (altra epic — non riusare; non toccato in questa passata). Brief CONS CHIUSI: `DEPUTYTASK1`…`5`.
 > **Autorizzazione committente**: 02/09/2026 — colmare subito il gap di conservazione; avviso mobile «non aprire lo stesso audit dal PC finché la sync non è fatta».
-> **Verifica post-merge (03/09/2026):** «mergiato» = CONS-1…4 + CONS-6 su `origin/main`. **Manca CONS-5.** GUIDA / roadmap § Stato attuale **non** aggiornati in questa passata (ING-5 APERTO sui hub). Bozza in fondo.
+> **Verifica post-merge (03/09/2026, secondo «mergiato»):** CONS-5 [#636](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/636) **MERGED** (`823dfeb3`, 15:36Z) + docs [#637](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/637) **MERGED** (`9aed1424`, 16:44Z; #637 diceva ancora «manca CONS-5»). Skip `Nessun lock → salta silenziosamente` **assente** su `origin/main`. `update_audit` parte senza lock token (ADR-008 T5). **Epic CONS-1…6 chiusa.** GUIDA / roadmap § Stato attuale **non** in questa PR (PONTE-1 APERTO). Bozza hub in fondo.
 
 **Garanzia operativa (non 100% matematico):** telefono non formattato, dati sito non cancellati dall’utente, disco non pieno. Quello che **si deve** poter dire al cliente: *non lo perdiamo più per sync, login o apertura da PC.*
 
 ## Perché questa mappa (e non un unico fix)
 
-Due magazzini sul telefono, tre momenti di perdita:
+Due magazzini sul telefono, tre momenti di perdita (chiusi da CONS-1…6):
 
-| Magazzino | Cosa tiene | Buco oggi |
-|-----------|------------|-----------|
+| Magazzino | Cosa tiene | Buco (prima delle slice) |
+|-----------|------------|--------------------------|
 | `SGQ_ISO9001_Storage` / store `audits` | Audit completo (domande, note, esiti) | Autosave **debounce 2s**; all’unmount il timer **si cancella senza scrivere** (`useAutoSave.js`) |
 | `SGQ_ISO9001_DB` / `syncQueue` + `attachments_offline` | Coda verso il server + foto | Accorpamento ok; `update_audit` saltato senza lock; al login la coda create/update può essere pulita |
 | Server | Fonte dopo sync | All’apertura **server-wins**; login faceva `processQueue` → **svuota IndexedDB** → riscarica |
@@ -34,7 +34,7 @@ Logout: `LogoutSyncGuard` avvisa già se la coda non è vuota (ADR-007 Fase A). 
 
 ## Non ancora specificato
 
-- Schermata login offline se il token è scaduto/assente (ADR-004): si può rientrare senza password? Tocca auth — non spezzare prima di CONS-1…CONS-5
+- Schermata login offline se il token è scaduto/assente (ADR-004): si può rientrare senza password? Tocca auth — CONS-7 nebbia
 - Eviction storage Chrome/Android (il browser cancella IndexedDB): mitigabile con export CONS-6, non eliminabile in PWA
 - Foto/allegati: quota disco; CONS-6 può includerle; non aprire un motore blob nuovo
 - Estendere flush/banner a verbali CND (`useNdtAutoSave`) — dopo CONS-1 se il pattern è stabile
@@ -61,7 +61,7 @@ Logout: `LogoutSyncGuard` avvisa già se la coda non è vuota (ADR-007 Fase A). 
 
 Ogni slice = un percorso stretto verificabile. **Una sessione = una slice.** Non aprire CONS-3 e CONS-4 in parallelo (stesso `StorageContext.jsx`).
 
-### Stato PR su `origin/main` (03/09/2026, `gh pr view` + SHA `98801caf`)
+### Stato PR su `origin/main` (03/09/2026, `gh pr view` + SHA `9aed1424`)
 
 | Slice | PR | Stato | Codice atteso su `main` |
 |-------|-----|-------|-------------------------|
@@ -69,8 +69,10 @@ Ogni slice = un percorso stretto verificabile. **Una sessione = una slice.** Non
 | CONS-2 | [#630](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/630) | **MERGED** 02/09 | `AuditLockBanner.jsx` `OFFLINE_PC_WARNING` |
 | CONS-3 | [#634](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/634) | **MERGED** 03/09 | `StorageContext.jsx` `shouldClearAuditsStoreOnLogin` — stesso utente no wipe |
 | CONS-4 | [#635](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/635) | **MERGED** 03/09 | `pendingAuditQueue.js` + `shouldSkipServerHydrate` |
-| CONS-5 | [#636](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/636) | **OPEN draft** | **Assente.** Su `main` resta lo skip lock `update_audit` in `syncService.js` |
+| CONS-5 | [#636](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/636) | **MERGED** 03/09 15:36Z | `syncService.js`: niente skip lock; `update_audit` via `syncItem` senza token; `clearQueueForServerAudits` non toglie update non stalled |
 | CONS-6 | [#631](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/631) | **MERGED** 02/09 | `auditRecoveryExport.js` |
+
+**Epic CONS-1…6: CHIUSA** su `origin/main`.
 
 ---
 
@@ -132,14 +134,14 @@ All’apertura audit: se `syncQueue` ha `save_responses` / `update_audit` / even
 
 ## CONS-5 — Coda intestazione audit
 
-`update_audit` oggi si salta senza token di lock (client) e può essere rimosso da `clearQueueForServerAudits` anche se non è mai partito. Obiettivo / dati generali / conclusioni restano solo locali → persi al wipe CONS-3 se CONS-5 non è fatta. CONS-5 **dopo** CONS-3.
+`update_audit` si saltava senza token di lock (client) e poteva essere rimosso da `clearQueueForServerAudits` anche se non era mai partito. Obiettivo / dati generali / conclusioni restavano solo locali.
 
-**DoD (03/09/2026 — NON su `main`):**
+**DoD / main (PR #636, 03/09/2026 15:36Z, SHA merge `823dfeb3`):**
 
-- [ ] Niente skip lock su `update_audit` in `processQueue` (`syncService.js`)
-- [ ] `clearQueueForServerAudits` non toglie `update_audit` mai inviato
-- [ ] Test `syncService.updateAuditQueue.test.js`
-- [ ] PR [#636](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/636) mergiata (oggi **draft**, CI verde, rischio **Alto**)
+- [x] Niente skip lock su `update_audit` in `processQueue` (`syncService.js`) — commento CONS-5 / ADR-008 T5; `syncItem` senza token
+- [x] `clearQueueForServerAudits` non toglie `update_audit` mai inviato (solo stalled / lock)
+- [x] Test `syncService.updateAuditQueue.test.js`
+- [x] PR [#636](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/636) **MERGED**; brief [`DEPUTYTASK5.md`](DEPUTYTASK5.md) CHIUSO
 
 ---
 
@@ -162,14 +164,20 @@ CONS-1 (disco) ──► CONS-2 (avviso, può slittare di una sessione)
        └──► CONS-6 (export, dopo CONS-1, anche in parallelo a CONS-2 se file disgiunti)
 ```
 
-Residuo **ora**: solo **CONS-5** ([#636](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/636) draft). CONS-1…4 e CONS-6 sono su `main`.
+Residuo **ora**: nessuno in questa epic. CONS-1…6 su `main`. Nebbia: CONS-7 (auth/login offline), mirror cartella PC, stessa garanzia su NC/CND/Qualifiche/SAL.
 
 ---
 
-## Bozza hub (non applicata — ING-5 APERTO)
+## Bozza hub (non applicata — PONTE-1 APERTO)
 
-Da copiare **dopo** merge CONS-5 **e** quando nessun altro `DEPUTYTASK*` APERTO tocca i hub.
+Da copiare **quando** nessun altro `DEPUTYTASK*` APERTO tocca i hub (oggi [`DEPUTYTASK.md`](DEPUTYTASK.md) = PONTE-1 HITL UX).
 
-**Roadmap § Stato attuale — 1 riga sessione:** 03/09/2026 — CONS-1…4+6 su `main` (#632/#630/#634/#635/#631). CONS-5 (#636) residuo Alto (`syncService` `update_audit` senza skip lock). Priorità #1 conservazione: spostare a «residuo CONS-5» oppure chiudere la riga solo a #636 mergiata.
+**Roadmap § Stato attuale — 5 righe:**
 
-**GUIDA tabella lezioni — 1 riga:** 03/09/2026 — Conservazione audit: «mergiato» ≠ epic chiusa. Verificare `gh pr view` CONS-5 prima di spuntare il PLAN / aggiornare priorità. Flush + no-wipe + skip hydrate + export sono su `main`; la coda `update_audit` senza lock no.
+1. Sessione 03/09/2026: epic conservazione audit **CONS-1…6 CHIUSA** su `main` (#632/#630/#634/#635/#636/#631).
+2. CONS-5: skip lock `update_audit` rimosso; coda parte senza token (ADR-008 T5).
+3. Priorità #1 tabella: chiudere o spostare a «smoke prod + hard-refresh Netlify» (non più «colmare gap codice»).
+4. PONTE-1 resta APERTO sullo slot `DEPUTYTASK.md` — non sovrascrivere.
+5. Smoke committente: login + obiettivo offline; Ctrl+Shift+R dopo deploy Netlify.
+
+**GUIDA tabella lezioni — 1 riga:** 03/09/2026 — Conservazione audit: secondo «mergiato» = CONS-5+#637 su `main`. Verificare `gh pr view` **e** lo skip in `syncService.js` prima di chiudere l’epic. #637 mergiata dopo #636 lasciava il PLAN che diceva «manca CONS-5».
