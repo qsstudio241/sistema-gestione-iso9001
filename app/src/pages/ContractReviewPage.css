@@ -309,12 +309,86 @@
 .cr-notes-textarea {
   width: 100%;
   min-height: 52px;
+  margin-top: 0.35rem;
   padding: 0.45rem 0.55rem;
   border-radius: 6px;
   border: 1px solid #ccc;
   font-size: 0.85rem;
   resize: vertical;
   box-sizing: border-box;
+}
+
+.cr-badge-attach-missing {
+  background: #fef3c7;
+  color: #92400e;
+  border: 1px solid #f59e0b;
+  margin-left: 0.35rem;
+}
+
+.cr-attach-soft-warn {
+  margin: 0 0 0.75rem;
+  padding: 0.55rem 0.75rem;
+  background: #fffbeb;
+  border: 1px solid #f59e0b;
+  border-radius: 6px;
+  color: #92400e;
+  font-size: 0.85rem;
+}
+
+.cr-item-attachments {
+  margin-top: 0.55rem;
+  padding-top: 0.45rem;
+  border-top: 1px dashed #e5e7eb;
+}
+
+.cr-item-attachments-title {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #475569;
+  margin-bottom: 0.35rem;
+}
+
+.cr-item-attachments-empty {
+  margin: 0 0 0.4rem;
+  font-size: 0.8rem;
+  color: #64748b;
+}
+
+.cr-item-attachments-list {
+  list-style: none;
+  margin: 0 0 0.45rem;
+  padding: 0;
+}
+
+.cr-item-attachments-list li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.35rem;
+  padding: 0.2rem 0;
+  font-size: 0.82rem;
+}
+
+.cr-item-attachments-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  align-items: center;
+}
+
+.cr-item-attachments-picker {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  align-items: center;
+}
+
+.cr-item-attachments-picker select {
+  min-width: 12rem;
+  max-width: 100%;
+  padding: 0.25rem 0.4rem;
+  font-size: 0.82rem;
 }
 
 .cr-ai-textarea {

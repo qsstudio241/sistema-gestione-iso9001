@@ -51,5 +51,16 @@ router.post('/contract-reviews/:id/transition', ...guard, ctrl.transitionStatus)
 router.post('/contract-reviews/:id/handoff', ...guard, ctrl.registerHandoff);
 router.post('/contract-reviews/:id/generate-checklist', ...guard, ctrl.generateChecklist);
 router.put('/contract-reviews/:id/checklist/:itemId', ...guard, ctrl.saveChecklistAnswer);
+router.get('/contract-reviews/:id/checklist-attachments', ...guard, ctrl.listChecklistAttachmentLinks);
+router.post(
+    '/contract-reviews/:id/checklist/:itemId/attachments',
+    ...guard,
+    ctrl.linkChecklistAttachment,
+);
+router.delete(
+    '/contract-reviews/:id/checklist/:itemId/attachments/:attachmentId',
+    ...guard,
+    ctrl.unlinkChecklistAttachment,
+);
 
 module.exports = router;

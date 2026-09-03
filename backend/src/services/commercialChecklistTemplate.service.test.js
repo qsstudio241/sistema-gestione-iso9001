@@ -38,6 +38,16 @@ describe('commercialChecklistDefaults — ISO §8.2 fidelity', () => {
     expect(items.filter((i) => i.is_core)).toHaveLength(FINAL_ITEMS.length);
   });
 
+  it('merge propaga attachment_required dal template (default OFF)', () => {
+    const items = mergeTemplateWithDefaults('preliminary', [
+      { item_ref: 'P3', item_text: 'Capacità', is_core: 1, attachment_required: 1 },
+    ]);
+    const p3 = items.find((i) => i.ref === 'P3');
+    const p1 = items.find((i) => i.ref === 'P1');
+    expect(p3.attachment_required).toBe(true);
+    expect(p1.attachment_required).toBe(false);
+  });
+
   it('assertCoreCoverage segnala bypass norma', () => {
     const missing = assertCoreCoverage([
       { phase: 'preliminary', item_ref: 'P1', item_text: 'solo P1' },

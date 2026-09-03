@@ -141,6 +141,7 @@
                                      "src/services/auditNumberAllocation.service.js",
                                      "src/services/customChecklist.service.js",
                                      "src/services/commercialChecklistTemplate.service.js",
+                                     "src/services/commercialChecklistAttachment.service.js",
                                      "src/services/reportTemplate.service.js",
                                      "src/services/billing.service.js",
                                      "src/services/unifiedSearch.service.js",
