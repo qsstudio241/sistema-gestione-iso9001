@@ -80,30 +80,31 @@ Quando **tutti** i criteri sono veri:
 
 ## Aggiornare il branch della PR rispetto a `origin/main` (vincolante)
 
-**Sì** — l'agente aggiorna **autonomamente** il branch feature della PR con `origin/main`.  
+**Sì** — l'agente allinea **autonomamente** il feature branch con `origin/main` (merge preferito).  
 **No** — l'agente non mergia la PR su `main` (resta click umano; vedi vincolo Cloud Agent sopra).  
 **No** — non chiedere al committente `git pull`, «Update branch», o altri comandi meccanici di allineamento.
 
-Obbligatorio in questi casi (ogni chat / ogni PR che lo prevede):
+**Perché il gate precedente falliva:** scattava solo prima di dichiarare la PR «pronta» / se la CI era behind; i Cloud deputy aprono la PR al primo push, non dicono mai «pronta», impilano branch e finiscono — il committente deve cliccare «Update branch».
 
-1. Prima di dichiarare blocco «branch indietro» / «out of date» / conflitti con `main`.
-2. Prima di chiedere al committente di fare merge (o di dichiarare la PR «pronta»).
-3. Quando la CI fallisce per conflitti, «branch behind», o mergeability GitHub `CONFLICTING` / `BEHIND`.
-
-Procedura preferita (branch già su GitHub / PR aperta):
+### Gate prima di ogni `git push` su un feature branch e prima di create_pr / update_pr
 
 ```bash
 git fetch origin main
 git merge origin/main
-# risolvi conflitti se ci sono, commit del merge, poi:
+# conflitti: risolvi o handoff; poi
 git push origin HEAD
 ```
 
-- Preferisci **merge** `origin/main` → branch feature. Evita rebase su branch pubblicata (force-push).
-- **Mai** force-push su `main`.
+- Se `origin/main` è avanti: **vietato** push/PR «e poi si allinea». Allinea **ora**.
+- Dopo che un'altra PR è mergiata su `main` (stack tipo CONS-3→4→5): allinea **subito** i branch OPEN rimanenti, senza aspettare il committente.
+- Vietato chiedere «Update branch» / `git pull` al committente.
+- Vietato mergiare la PR su `main` (resta click umano).
+- Merge preferito: `origin/main` → feature branch. Niente rebase su branch già pubblicata (force-push). **Mai** force-push su `main`.
 - Force-with-lease **solo** sul feature branch, e solo se un rebase era già in uso ed è strettamente necessario.
 - Working tree sporco: stash/commit/worktree — niente reset distruttivo.
-- Se i conflitti non sono risolvibili senza scelta di business: handoff al committente con i file in conflitto, **dopo** aver già tentato il merge.
+- Conflitti non risolvibili senza scelta di business: handoff al committente con i file in conflitto, **dopo** aver già tentato il merge.
+
+I casi «CI behind / CONFLICTING / prima di dire pronta» restano coperti da questo gate (è più precoce, non un elenco sostitutivo).
 
 Allineamento a inizio sessione su `main`: resta in [`sgq-operating-memory.mdc`](sgq-operating-memory.mdc) § Allineamento Git.
 

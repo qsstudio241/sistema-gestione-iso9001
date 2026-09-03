@@ -30,7 +30,7 @@ git show origin/main:docs/agent-tasks/DEPUTYTASK.md | head -20
 
 Working tree sporco: niente reset distruttivo; stash/commit/worktree. Mai force-push su `main`.
 
-**Branch PR vs `main`:** aggiorna da solo il feature branch con `origin/main` (merge preferito) se la PR è indietro, CI in conflitto, o prima di chiedere merge — **non** chiedere «Update branch» al committente; **non** mergiare la PR su `main`. Dettaglio: [`sgq-git-autonomy.mdc`](sgq-git-autonomy.mdc) § Aggiornare il branch della PR.
+**Branch PR vs `main`:** prima di ogni `git push` sul feature branch e prima di create_pr/update_pr: `git fetch origin main` + `git merge origin/main`. Se `main` è avanti, allinea **ora** (anche i branch OPEN dopo un merge nello stack); vietato push/PR «e poi si allinea» e vietato chiedere «Update branch» / `git pull` al committente. Non mergiare la PR su `main`. Dettaglio: [`sgq-git-autonomy.mdc`](sgq-git-autonomy.mdc) § Aggiornare il branch della PR.
 
 ## Parallelo, conflitti PR, costo Bugbot (vincolante)
 
