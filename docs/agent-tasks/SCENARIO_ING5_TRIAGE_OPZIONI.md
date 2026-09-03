@@ -1,7 +1,7 @@
-# Scenario narrativo — Riesame requisiti / Valutazione commesse (VC-1…4 + ING-1…4) e decisioni ING-5
+# Scenario narrativo — Riesame requisiti / Valutazione commesse (VC-1…4 + ING-1…4) e decisioni ING-5 / ponte
 
-> Per il committente (non tecnico). Solo comportamenti **già su `main`** fino a ING-4; ING-5 = punto di decisione, **nessun codice**.  
-> Piano: [`PLAN_VALUTAZIONE_COMMESSE_SLICES.md`](PLAN_VALUTAZIONE_COMMESSE_SLICES.md) · Brief HITL: [`DEPUTYTASK.md`](DEPUTYTASK.md) (ING-5).  
+> Per il committente (non tecnico). Solo comportamenti **già su `main`** fino a ING-4; ING-5 = dopo/nebbia; **ponte checklist↔allegati** = prossima slice (UX in conferma).  
+> Piano: [`PLAN_VALUTAZIONE_COMMESSE_SLICES.md`](PLAN_VALUTAZIONE_COMMESSE_SLICES.md) · Brief: [`DEPUTYTASK.md`](DEPUTYTASK.md) · UX ponte: [`UX_PONTE_CHECKLIST_ALLEGATI.md`](UX_PONTE_CHECKLIST_ALLEGATI.md).  
 > Walkthrough admin (moduli/pulsanti passi 1–10): [`WALKTHROUGH_ADMIN_RIESAME_PASSI.md`](WALKTHROUGH_ADMIN_RIESAME_PASSI.md).
 
 ---
@@ -29,11 +29,12 @@ Pagina **Riesame requisiti** (`ContractReviewPage`), sezioni: Workflow · Checkl
 
 ---
 
-## Punto di decisione ING-5
+## Punto di decisione ING-5 — **risposta HITL 03/09**
 
 Dopo il passo 3–4 oggi c’è già un umano che conferma i ruoli.  
-**Qui entra (o no) l’«agente triage»**: un pezzo in più *prima*, *durante* o *al posto* di quella batch — oppure si salta e si lavora altrove (ponte gap→checklist / VC-5).  
-Senza rispondere alle 5 domande sotto si rischia di rifare ING-1/2 o di costruire un monolite agenti.
+**Decisione 03/09:** **non** aprire ora l’«agente triage» (ING-5 resta **dopo / nebbia**). Priorità = **ponte checklist ↔ allegati** (collegare voci P/F ai file del caso + flag «obbligatorio»), **non** viste-per-ente come prima slice. Obbligatorietà = flag (alcuni file possono non esserci). Proposta UI: [`UX_PONTE_CHECKLIST_ALLEGATI.md`](UX_PONTE_CHECKLIST_ALLEGATI.md) — conferma layout A o B **prima** del codice.
+
+Le 5 domande sotto restano utili se/quando si riprende ING-5; la Q5 è chiusa (opzione B raffinata → ponte checklist↔allegati).
 
 ---
 
@@ -71,13 +72,15 @@ Senza rispondere alle 5 domande sotto si rischia di rifare ING-1/2 o di costruir
 | **B** | Sequenza AFK: triage → estrazione → refresh report → segnale evadibilità (bottoni/agenti separati) | Copre il percorso Caso X end-to-end a pezzi | Più sessioni; coordinare file |
 | **C** | Un **orchestratore unico** «fai tutto sul Caso X» | Sembra magico in demo | Vietato dal piano (monolite); difficile da correggere |
 
-### 5. Alternativa AFK ora — saltare ING-5?
+### 5. Alternativa AFK ora — saltare ING-5? — **CHIUSA 03/09**
 
 | | Opzione | Pro | Contro |
 |---|---------|-----|--------|
 | **A** | **Fare ING-5** (con delta chiaro da Q1–Q4) prima di altro | Chiude il tema «mole disordinata» | Blocca altre priorità finché non si decide |
-| **B** | **Saltare** → **ponte gap→checklist** (prio #3 piano): i gap del Report Y diventano voci/note in checklist | Valore immediato sullo studio dopo Analizza | La mole `scan001` resta dolorosa |
+| **B** ✅ | **Saltare** → **ponte checklist ↔ allegati** (prio #3): voci P/F collegate ai file del caso + flag required | Valore immediato in compilazione checklist; riuso catalogo | La mole `scan001` resta dolorosa (ING-5 dopo) |
 | **C** | **Saltare** → **VC-5 chiarimenti** (solo con Lead): gap → richieste al cliente | Utile quando l’ordine non è evadibile | Richiede Lead; non risolve il riordino file |
+
+**Scelta committente (03/09):** **B** (ponte checklist↔allegati + flag; non viste-per-ente). ING-5 = dopo.
 
 ---
 
@@ -95,4 +98,7 @@ Senza rispondere alle 5 domande sotto si rischia di rifare ING-1/2 o di costruir
 
 - **PPAP** / sessione qualità fornitore (**VC-9**): nebbia, non nel percorso Caso X di oggi.
 - **Offerta in prima battuta** (**VC-6**): stati workflow sì, bozza assistita no.
-- **VC-5 chiarimenti automatici da gap** e ponte gap→checklist: scheda Chiarimenti esiste; il collegamento automatico dal Report studio **non** è implementato.
+- **VC-5 chiarimenti automatici da gap**: scheda Chiarimenti esiste; il collegamento automatico dal Report studio **non** è implementato.
+- **Ponte checklist ↔ allegati** (PONTE-1): deciso come prossima priorità; UI in conferma ([`UX_PONTE_CHECKLIST_ALLEGATI.md`](UX_PONTE_CHECKLIST_ALLEGATI.md)); codice **non** ancora.
+- **Viste allegati per ente**: esplicitamente **non** prima slice (HITL 03/09).
+- **ING-5 agente triage**: dopo / nebbia.

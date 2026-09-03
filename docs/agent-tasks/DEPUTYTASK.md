@@ -1,76 +1,82 @@
-# DEPUTYTASK — ING-5: Agente triage documenti (HITL / wayfinder)
+# DEPUTYTASK — PONTE-1: Checklist ↔ allegati + flag required (HITL UX)
 
-**Stato:** APERTO — HITL (nessun codice applicativo in questa sessione)  
-**Aperto:** 02/09/2026  
-**Piano:** [`PLAN_VALUTAZIONE_COMMESSE_SLICES.md`](PLAN_VALUTAZIONE_COMMESSE_SLICES.md) § ING-5  
-**Rischio:** — (solo docs / brief; implementazione = Medio dopo risposte HITL)  
-**Branch:** `cursor/ing5-doc-triage-agent-3c54`  
-**Dipende da:** ING-1 (#624) + ING-2 (#626) su `main` (mattoni classifica + confidence già presenti)
+**Stato:** APERTO — HITL UX (nessun codice applicativo finché conferma layout A/B)  
+**Aperto:** 03/09/2026  
+**Piano:** [`PLAN_VALUTAZIONE_COMMESSE_SLICES.md`](PLAN_VALUTAZIONE_COMMESSE_SLICES.md) § PONTE-1 / priorità #3  
+**UX:** [`UX_PONTE_CHECKLIST_ALLEGATI.md`](UX_PONTE_CHECKLIST_ALLEGATI.md)  
+**Scenario:** [`SCENARIO_ING5_TRIAGE_OPZIONI.md`](SCENARIO_ING5_TRIAGE_OPZIONI.md) (Q5 chiusa)  
+**Rischio:** — (solo docs / brief; implementazione = Medio dopo conferma UX)  
+**Branch:** `cursor/ponte-checklist-allegati-ux-1c5d`  
+**Slot precedente:** ING-5 HITL — HITL 03/09 ha scelto ponte; ING-5 resta dopo/nebbia (sovrascrittura slot consentita: stesso file, nuovo titolo APERTO)
 
 > **Allineamento Git (autonomo)**: `git fetch origin main` + `git pull origin main` prima di eseguire. **Non** chiedere al committente.  
 > Comando: `Leggi docs/agent-tasks/DEPUTYTASK.md ed eseguilo. Chiudi con TEST OK o FIX NON APPLICABILI.`  
-> **Questa apertura**: deputy **non** implementa — raccoglie HITL. Se le risposte arrivano e il delta è AFK sottile, nuova sessione con file list aggiornata.
+> **Questa apertura**: deputy **non** implementa FE/BE — propone UX e lascia brief pronto. Codice solo dopo «Confermi A o B?».
 
 ---
 
-## Perché HITL (non FIX NON APPLICABILI, non TEST OK codice)
+## HITL registrato (03/09/2026)
 
-Su `main` dopo #624/#626 esiste già:
+| Voce | Decisione |
+|------|-----------|
+| Priorità | **Ponte checklist ↔ allegati** (non viste-per-ente come prima slice) |
+| Obbligatorietà | **Flag** (alcuni allegati possono non essere presenti/previsti) |
+| ING-5 triage | **Dopo / nebbia** |
+| Preoccupazione | Usabilità FE → proposta concreta in `UX_PONTE_CHECKLIST_ALLEGATI.md` |
 
-| Mattone | Dove |
-|---------|------|
-| Euristica ruolo da nome/MIME + confidence | `app/src/utils/caseDocCatalog.js` (`suggestCommercialDocRole`, `buildBatchRoleSuggestions`) |
-| UI batch + conferma HITL | `ContractReviewPage.jsx` («Classificazione batch — conferma HITL») |
-| Gate Analizza catalogo | stesso util + pannello catalogo |
+---
 
-Il PLAN descriveva ING-5 come «classifica + coda HITL» — **già coperto**. Senza delta prodotto si crea duplicato o monolite multi-agente (vietato).
+## Obiettivo questa sessione (docs)
 
-## Domande al committente (copia risposte in chat / aggiorna PLAN)
+1. Allineare PLAN + scenario alla decisione HITL.
+2. Scrivere proposta UX (~60–100 righe) con **una** raccomandazione Lead (layout A) + alternativa B.
+3. Brief APERTO pronto per la slice codice **dopo** conferma A/B.
+4. **Zero** codice FE/BE.
 
-1. **Delta**: cosa deve fare l’«agente triage» oltre la batch HITL attuale?
-2. **Trigger**: upload, bottone, Import Jobs, cron?
-3. **Coda**: solo UI vs persistenza (`import_jobs` / staging / nuova tabella)?
-4. **Costellazione**: elenco slice-agente successive (una riga ciascuna) dopo triage?
-5. **Priorità alternativa**: saltare ING-5 e fare **ponte gap→checklist** (prio #3) oppure **VC-5** (solo Lead)?
+## Domanda unica al committente
 
-## File previsti (dopo HITL — bozza, da riscrivere)
+**Confermi questa UI (A) o preferisci B?** — vedi wireframe in [`UX_PONTE_CHECKLIST_ALLEGATI.md`](UX_PONTE_CHECKLIST_ALLEGATI.md).
 
-- TBD in base alle risposte (gate Ponytail: riuso `caseDocCatalog` / Import Jobs / ADR-010 — niente secondo storage né auth/sync)
-- `docs/agent-tasks/PLAN_VALUTAZIONE_COMMESSE_SLICES.md` (spunta / sotto-slice)
+---
+
+## File previsti (questa PR docs)
+
+- `docs/agent-tasks/UX_PONTE_CHECKLIST_ALLEGATI.md` (nuovo)
+- `docs/agent-tasks/PLAN_VALUTAZIONE_COMMESSE_SLICES.md`
+- `docs/agent-tasks/SCENARIO_ING5_TRIAGE_OPZIONI.md`
 - `docs/agent-tasks/DEPUTYTASK.md` (questo brief)
 
-## Cosa NON toccare (anche dopo sblocco)
+## File previsti (dopo conferma UX — bozza codice, da riscrivere)
+
+- Template: `ContractChecklistTemplatesPage.jsx` (+ colonna/flag `attachment_required` su item template — mig additiva TBD)
+- Caso: `ContractReviewPage.jsx` (`ChecklistItemRow` + zona Allegati collegati / drawer B)
+- Riuso: allegati caso esistenti + pattern `AttachmentSection` se applicabile — **niente** secondo DMS
+- Test L1 mirati FE (+ BE se endpoint link item↔attachment)
+
+## Cosa NON toccare
 
 - `auth.middleware`, JWT, `syncService`, ADR-008
-- Monolite multi-agente / orchestratore unico in una PR
+- Viste-per-ente (slice successiva solo se utile)
+- ING-5 / monolite agenti
+- VC-5 senza Lead
 - SAL `gapAnalysis.service.js` come motore di questo flusso
-- VC-5 senza conferma Lead
-- Rifare ING-1/ING-2 senza delta esplicito
-
-## Ops già fatti (sessione 02/09 — post audit Camellini)
-
-| Voce | Esito |
-|------|--------|
-| Merge | ING-1 #624, ING-4 #625, ING-2 #626, ING-3 #627, docs #623 — tutti MERGED |
-| Health VPS | `healthy` + DB OK |
-| Mig **162** | Idempotente OK — tabelle `commercial_checklist_templates` + `_items` presenti |
-| Deploy BE #625 | Routes/controller template già su VPS; `GET .../commercial-checklist-templates` → 401 (auth); MainPID attivo — **nessun redeploy** |
-| Smoke | Login API 200 OK |
+- Look UI nuovo (solo `.cr-*` / libreria esistente)
 
 ## Esito atteso questa PR docs
 
-- PLAN: ING-1…ING-4 spuntati; ING-5 domande HITL esplicite
-- Brief APERTO su slot `DEPUTYTASK.md` (sovrascrive ING-3 CHIUSO)
-- **Niente** implementazione codice → chiusura codice = N/A; handoff sotto
+- PLAN: PONTE-1 + HITL 03/09; ING-5 = dopo
+- Scenario: Q5 chiusa su ponte checklist↔allegati
+- UX proposta A (raccomandata) + B
+- Brief APERTO; **niente** implementazione → chiusura codice = N/A
 
-## Handoff (sessione docs / HITL)
+## Handoff
 
-- **Obiettivo**: sbloccare ING-5 o scegliere alternativa AFK (ponte gap / VC-5 Lead)
-- **Stato**: BLOCCATA — attesa HITL
-- **Fatto**: ops VPS (mig162, health, login); PLAN allineato; brief ING-5 APERTO; scenario opzioni [`SCENARIO_ING5_TRIAGE_OPZIONI.md`](SCENARIO_ING5_TRIAGE_OPZIONI.md)
-- **Manca**: risposte HITL § domande (leggere lo scenario); poi nuova sessione implementazione **una** slice sottile
-- **Non toccare**: auth/sync; duplicare batch HITL
-- **Test**: ops smoke OK; L1 codice N/A
+- **Obiettivo**: conferma layout A o B → poi nuova sessione implementazione PONTE-1
+- **Stato**: BLOCCATA — attesa conferma UX
+- **Fatto**: PLAN/scenario/brief aggiornati; `UX_PONTE_CHECKLIST_ALLEGATI.md` scritto
+- **Manca**: risposta «A o B?»; poi file list codice + mig se serve
+- **Non toccare**: auth/sync; secondo DMS; viste-per-ente; ING-5
+- **Test**: N/A (solo docs)
 - **Brief**: `docs/agent-tasks/DEPUTYTASK.md`
-- **Branch / PR**: `cursor/ing5-doc-triage-agent-3c54` (#629 MERGED docs HITL; follow-up scenario)
-- **Roadmap**: aggiornare «sessione più recente» dopo merge della PR scenario
+- **Branch / PR**: `cursor/ponte-checklist-allegati-ux-1c5d`
+- **Roadmap**: aggiornare «sessione più recente» dopo merge (o se chat sola)
