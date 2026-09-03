@@ -3,6 +3,9 @@
  */
 
 const { query } = require('../config/database');
+const {
+    listMissingRequiredAttachmentRefs,
+} = require('./commercialChecklistAttachment.service');
 
 const CASE_STATUSES = new Set([
     'DRAFT',
@@ -119,6 +122,12 @@ async function evaluateTransitionBlockers(caseId, fromStatus, toStatus) {
             if (unanswered > 0) {
                 missing.push(`Completare tutte le voci della checklist preliminare (${unanswered} senza risposta)`);
             }
+            const missingAtt = await listMissingRequiredAttachmentRefs(caseId, 'preliminary');
+            if (missingAtt.length > 0) {
+                missing.push(
+                    `Collegare allegati obbligatori alla checklist preliminare (${missingAtt.join(', ')})`,
+                );
+            }
         }
     }
 
@@ -137,6 +146,12 @@ async function evaluateTransitionBlockers(caseId, fromStatus, toStatus) {
             const unanswered = await countUnansweredChecklist(caseId, 'final');
             if (unanswered > 0) {
                 missing.push(`Completare tutte le voci della checklist finale (${unanswered} senza risposta)`);
+            }
+            const missingAtt = await listMissingRequiredAttachmentRefs(caseId, 'final');
+            if (missingAtt.length > 0) {
+                missing.push(
+                    `Collegare allegati obbligatori alla checklist finale (${missingAtt.join(', ')})`,
+                );
             }
         }
     }

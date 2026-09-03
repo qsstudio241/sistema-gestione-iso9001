@@ -41,6 +41,8 @@ function normalizeItemPayload(rawItems) {
       item_text: text,
       sort_order: sortOrder,
       is_core: isCoreRef(phase, ref) ? 1 : raw.is_core === true || raw.is_core === 1 ? 1 : 0,
+      attachment_required:
+        raw.attachment_required === true || raw.attachment_required === 1 ? 1 : 0,
     });
   }
   const missing = assertCoreCoverage(items);
@@ -94,7 +96,7 @@ async function getTemplateWithItems(templateId, organizationId) {
   if (!template) return null;
   const items = await query(
     `
-    SELECT id, template_id, phase, item_ref, item_text, sort_order, is_core
+    SELECT id, template_id, phase, item_ref, item_text, sort_order, is_core, attachment_required
     FROM commercial_checklist_template_items
     WHERE template_id = @templateId
     ORDER BY phase ASC, sort_order ASC, item_ref ASC
@@ -130,9 +132,9 @@ async function replaceItems(templateId, items) {
     await query(
       `
       INSERT INTO commercial_checklist_template_items
-        (template_id, phase, item_ref, item_text, sort_order, is_core)
+        (template_id, phase, item_ref, item_text, sort_order, is_core, attachment_required)
       VALUES
-        (@templateId, @phase, @itemRef, @itemText, @sortOrder, @isCore)
+        (@templateId, @phase, @itemRef, @itemText, @sortOrder, @isCore, @attachmentRequired)
       `,
       {
         templateId,
@@ -141,6 +143,7 @@ async function replaceItems(templateId, items) {
         itemText: item.item_text,
         sortOrder: item.sort_order,
         isCore: item.is_core ? 1 : 0,
+        attachmentRequired: item.attachment_required ? 1 : 0,
       }
     );
   }
@@ -320,7 +323,7 @@ async function resolveItemsForCase({ organizationId, companyId, phase }) {
   if (templateRow) {
     const itemRes = await query(
       `
-      SELECT phase, item_ref, item_text, sort_order, is_core
+      SELECT phase, item_ref, item_text, sort_order, is_core, attachment_required
       FROM commercial_checklist_template_items
       WHERE template_id = @templateId AND phase = @phase
       ORDER BY sort_order ASC, item_ref ASC

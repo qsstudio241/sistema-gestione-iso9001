@@ -21,6 +21,7 @@ const {
 const caseDocumentAnalysisService = require('../services/caseDocumentAnalysis.service');
 const caseCapabilityGapReportService = require('../services/caseCapabilityGapReport.service');
 const commercialChecklistTemplateService = require('../services/commercialChecklistTemplate.service');
+const commercialChecklistAttachmentService = require('../services/commercialChecklistAttachment.service');
 const {
     PRELIMINARY_ITEMS,
 } = require('../data/commercialChecklistDefaults');
@@ -227,10 +228,30 @@ async function getCase(req, res) {
             textAnalysis = { id: taRow.id, created_at: taRow.created_at, suggestion };
         }
 
+        let checklist = checklistRes.recordset || [];
+        try {
+            const links = await commercialChecklistAttachmentService.listLinksForCase(
+                caseId,
+                organizationId,
+            );
+            const byItem = commercialChecklistAttachmentService.groupLinksByItemId(links);
+            checklist = checklist.map((row) => ({
+                ...row,
+                linked_attachments: byItem.get(row.id) || [],
+            }));
+        } catch (linkErr) {
+            // Schema 163 non ancora applicato: non rompere il dettaglio caso.
+            logger.warn('getCase checklist links', linkErr.message);
+            checklist = checklist.map((row) => ({
+                ...row,
+                linked_attachments: row.linked_attachments || [],
+            }));
+        }
+
         return res.json({
             case: caseRow,
             history: historyRes.recordset,
-            checklist: checklistRes.recordset,
+            checklist,
             clarifications: clarRes.recordset,
             documents: docRes.recordset,
             attachments: attRes.recordset,
@@ -681,9 +702,11 @@ async function generateChecklist(req, res) {
             insReq.input('phase', phase);
             insReq.input('itemRef', item.ref);
             insReq.input('itemText', item.text);
+            insReq.input('attachmentRequired', item.attachment_required ? 1 : 0);
             const ins = await insReq.query(`
-                INSERT INTO commercial_case_checklist (case_id, phase, item_ref, item_text)
-                SELECT @caseId, @phase, @itemRef, @itemText
+                INSERT INTO commercial_case_checklist
+                  (case_id, phase, item_ref, item_text, attachment_required)
+                SELECT @caseId, @phase, @itemRef, @itemText, @attachmentRequired
                 WHERE NOT EXISTS (
                     SELECT 1 FROM commercial_case_checklist
                     WHERE case_id = @caseId AND phase = @phase AND item_ref = @itemRef
@@ -1777,6 +1800,101 @@ async function getCapabilityGapReport(req, res) {
     }
 }
 
+async function listChecklistAttachmentLinks(req, res) {
+    try {
+        const organizationId = req.user.organization_id;
+        const caseId = parseCaseId(req.params.id);
+        if (!caseId) {
+            return sendErr(res, 400, 'ID caso non valido', 'VALIDATION_ERROR');
+        }
+        const existing = await fetchCaseRow(caseId, organizationId);
+        if (!existing) {
+            return sendErr(res, 404, 'Caso non trovato', 'NOT_FOUND');
+        }
+        const links = await commercialChecklistAttachmentService.listLinksForCase(
+            caseId,
+            organizationId,
+        );
+        return res.json({ links });
+    } catch (err) {
+        logger.error('listChecklistAttachmentLinks', err.message);
+        return sendErr(res, 500, err.message, 'SERVER_ERROR');
+    }
+}
+
+async function linkChecklistAttachment(req, res) {
+    try {
+        const organizationId = req.user.organization_id;
+        const userId = req.user.user_id;
+        const caseId = parseCaseId(req.params.id);
+        const itemId = parseItemId(req.params.itemId);
+        const attachmentId = commercialChecklistAttachmentService.parsePositiveInt(
+            (req.body || {}).attachment_id,
+        );
+        if (!caseId || !itemId) {
+            return sendErr(res, 400, 'ID caso o voce non valido', 'VALIDATION_ERROR');
+        }
+        if (!attachmentId) {
+            return sendErr(res, 400, 'attachment_id obbligatorio', 'VALIDATION_ERROR');
+        }
+        const existing = await fetchCaseRow(caseId, organizationId);
+        if (!existing) {
+            return sendErr(res, 404, 'Caso non trovato', 'NOT_FOUND');
+        }
+        if (TERMINAL_FROM_STATUSES.has(existing.status)) {
+            return sendErr(res, 409, 'Caso in stato terminale', 'CONFLICT');
+        }
+        const result = await commercialChecklistAttachmentService.linkAttachment({
+            caseId,
+            organizationId,
+            itemId,
+            attachmentId,
+            userId,
+        });
+        if (!result.ok) {
+            return sendErr(res, result.status, result.error, result.code);
+        }
+        return res.status(result.already ? 200 : 201).json({ link: result.link, already: !!result.already });
+    } catch (err) {
+        logger.error('linkChecklistAttachment', err.message);
+        return sendErr(res, 500, err.message, 'SERVER_ERROR');
+    }
+}
+
+async function unlinkChecklistAttachment(req, res) {
+    try {
+        const organizationId = req.user.organization_id;
+        const caseId = parseCaseId(req.params.id);
+        const itemId = parseItemId(req.params.itemId);
+        const attachmentId = commercialChecklistAttachmentService.parsePositiveInt(
+            req.params.attachmentId,
+        );
+        if (!caseId || !itemId || !attachmentId) {
+            return sendErr(res, 400, 'Parametri non validi', 'VALIDATION_ERROR');
+        }
+        const existing = await fetchCaseRow(caseId, organizationId);
+        if (!existing) {
+            return sendErr(res, 404, 'Caso non trovato', 'NOT_FOUND');
+        }
+        if (TERMINAL_FROM_STATUSES.has(existing.status)) {
+            return sendErr(res, 409, 'Caso in stato terminale', 'CONFLICT');
+        }
+        const result = await commercialChecklistAttachmentService.unlinkAttachment({
+            caseId,
+            organizationId,
+            itemId,
+            attachmentId,
+        });
+        if (!result.ok) {
+            return sendErr(res, result.status, result.error, result.code);
+        }
+        return res.json({ success: true, deleted: result.deleted });
+    } catch (err) {
+        logger.error('unlinkChecklistAttachment', err.message);
+        return sendErr(res, 500, err.message, 'SERVER_ERROR');
+    }
+}
+
 /**
  * POST /contract-reviews/:id/capability-gap-report
  * Ricalcola e persiste lo snapshot (body opzionale: { project_id }).
@@ -1837,6 +1955,9 @@ module.exports = {
     registerHandoff,
     getCapabilityGapReport,
     regenerateCapabilityGapReport,
+    listChecklistAttachmentLinks,
+    linkChecklistAttachment,
+    unlinkChecklistAttachment,
     isTransitionAllowed: workflow.isTransitionAllowed,
     requiresTransitionReason: workflow.requiresTransitionReason,
 };
