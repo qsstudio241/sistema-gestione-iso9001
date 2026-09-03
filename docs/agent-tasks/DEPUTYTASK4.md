@@ -1,86 +1,71 @@
-# DEPUTYTASK4 — Modulo Saldatura (Procedure WPS/WPQR): regola "Filtri, singola fonte di verità"
+# DEPUTYTASK4 — CONS-4: Hydrate non copre il locale se la coda è pendente
 
-**Stato:** CHIUSO — TEST OK (10/08/2026)
-**Priorità:** P2 — stessa classe di bug UX già corretta in Qualifiche (PR #368), Scadenzari (PR #371/#375), NC (PR #374) — non urgente, nessun dato invisibile noto finché non verificato
-**Branch base:** `main`
-**Creato da:** Lead 10/08/2026
-**Spec:** [`.cursor/rules/sgq-operating-memory.mdc` § Filtri: singola fonte di verità](../../.cursor/rules/sgq-operating-memory.mdc) — leggere per intero la regola e i 3 precedenti già risolti prima di iniziare
+**Stato:** CHIUSO — TEST OK  
+**Aperto:** 02/09/2026  
+**Chiuso:** 02/09/2026  
+**Piano:** [`PLAN_AUDIT_CONSERVAZIONE_SLICES.md`](PLAN_AUDIT_CONSERVAZIONE_SLICES.md) § CONS-4  
+**Rischio:** Alto — hydrate/reconcile server-wins; PR, non push su `main`. Non dire «pronta» senza CI + Bugbot + Security su quello SHA.  
+**Branch:** `cursor/cons4-hydrate-pending-queue-2271`  
+**Base:** CONS-3 (`cursor/cons3-login-no-wipe-2271`) già nel branch  
+**Slot precedente:** filtri WPS/WPQR CHIUSO (10/08) — sovrascrittura consentita  
+**Parallelo:** `DEPUTYTASK.md` = ING-5 APERTO — **non toccato**. `DEPUTYTASK3.md` CONS-3 — **non toccato**.
 
-> **Allineamento Git (autonomo)**: prima di leggere questo brief eseguire `git fetch origin main` e `git pull origin main`. **Non** chiedere al committente di farlo.
+> **Allineamento Git (autonomo)**: `git fetch origin main` + `git fetch origin cursor/cons3-login-no-wipe-2271`. Parti da CONS-3, crea questo branch, merge `origin/main` se serve (no rebase). **Non** chiedere al committente.  
+> Comando: `Leggi docs/agent-tasks/DEPUTYTASK4.md ed eseguilo. Chiudi con TEST OK o FIX NON APPLICABILI.`  
+> Brief da eseguire solo se su questo branch questo file ha **Stato: APERTO** e titolo CONS-4.
 
 ---
 
-## Contesto (leggere prima)
+## Perché
 
-Il committente ha segnalato (10/08/2026, screenshot pagina "Procedure di Saldatura") lo stesso pattern di card statistiche duplicate da tendine di filtro, già risolto in tre moduli in questa stessa sessione:
+All’apertura audit, `fetchAndApplyServerResponses` applica gli esiti **server** (server-wins). Se sul telefono c’è ancora coda (`save_responses` / `update_audit` / eventi) per quello UUID, il server è vecchio: l’UI mostra lì e un tap può accodare lo stato vuoto al posto del lavoro buono.
 
-- **Qualifiche** (PR #368): card "Non attiva" aggiunta, tendina "Filtra per situazione" rimossa.
-- **Scadenzari** (PR #371 + #375): card "Archiviate"/"Prese in carico" aggiunte, tendina "Stato" rimossa, azioni mancanti per raggiungere quegli stati aggiunte in un secondo giro di audit.
-- **Non Conformità** (PR #374): card "Chiuse" aggiunta, due tendine ridondanti rimosse.
+## File previsti
 
-**Questo modulo NON è mai stato toccato** in nessuna delle sessioni precedenti — è un caso nuovo, non una regressione.
+- `app/src/utils/pendingAuditQueue.js` (nuovo helper puro)
+- `app/src/tests/pendingAuditQueue.test.js` (nuovo)
+- `app/src/contexts/StorageContext.jsx` — solo `fetchAndApplyServerResponses` / reconcile hydrate
+- `app/src/services/syncService.js` — **solo** getter read `getQueueItems()`
+- `docs/agent-tasks/DEPUTYTASK4.md` (questo brief)
 
-## Cosa verificare (file: `app/src/pages/WeldingProceduresPage.jsx`)
+## Cosa NON toccare
 
-Il modulo ha **due sotto-tab distinti** (WPS e WPQR), ognuno con i propri filtri — la card statistica in alto (`Valide`/`Scad. 60 gg`/`Scad. 30 gg`/`Scadute`/`Da approvare`, righe ~1155-1159) sembra condivisa/adiacente a entrambi i tab. **Prima cosa da fare**: capire a quale tab (o a entrambi) si applicano davvero quelle 5 card, leggendo dove viene popolato l'oggetto `stats` e da quale chiamata API.
+- `docs/agent-tasks/DEPUTYTASK.md` (ING-5 APERTO)
+- `DEPUTYTASK3.md` (CONS-3)
+- `useAutoSave.js` (CONS-1)
+- `AuditLockBanner.jsx` (CONS-2)
+- `AuthContext.jsx`, JWT, backend, migrazioni, GUIDA
+- Logica CONS-3 (login no-wipe) già sul branch base
+- `syncService.js` oltre al getter read
 
-Punti già individuati (verificarli, non assumerli):
+## Cosa fare
 
-1. **Tab WPS** (righe ~1281-1294): dropdown `wpsFilters.status` con opzioni da `WPS_STATUSES` (riga ~41) + dropdown `wpsFilters.welding_process` ("Tutti i processi"). Il secondo filtro (processo) è una **dimensione diversa** dallo stato — non è ridondante, non toccarlo. Verificare se le opzioni di `WPS_STATUSES` coincidono con le 5 card o hanno valori extra (come "sospesa"/"revocata" lo erano per Qualifiche prima del fix).
-2. **Tab WPQR** (righe ~1421-1427): dropdown `wpqrFilters.approval_status` con opzioni hardcoded `bozza`/`approvata`/`rifiutata` — verificare se questi 3 valori corrispondono (in tutto o in parte) alla card "Da approvare", o se rappresentano una dimensione a sé (workflow di approvazione) distinta dal semaforo scadenza (`Valide`/`Scad. 60/30`/`Scadute`).
-3. Verificare se le card sono già cliccabili/filtranti (come negli altri 3 moduli corretti) o sono solo contatori statici — se sono solo contatori, valutare se renderle cliccabili fa parte di questo slice o è fuori scope (decidere in base a quanto trovato, documentare la scelta).
-
-## Come procedere (stesso metodo degli slice precedenti — non copiare la soluzione alla cieca)
-
-1. Elencare ESATTAMENTE tutti i valori distinti gestiti da ciascuna card e da ciascuna tendina (per entrambi i tab WPS e WPQR separatamente).
-2. Se una tendina ha opzioni **non** coperte da nessuna card, **non limitarsi a rimuoverla** — valutare se aggiungere la card mancante (pattern "Non attiva"/"Archiviate"+"Prese in carico"/"Chiuse" già usato) o se lasciare quella tendina perché rappresenta davvero una dimensione distinta (come "processo" per WPS).
-3. Solo dopo questa mappatura completa, decidere cosa consolidare. Se il risultato dell'analisi è "qui le tendine non sono ridondanti, sono dimensioni diverse" — è un esito legittimo: chiudere con **FIX NON APPLICABILI** e documentare perché (non forzare una rimozione se l'analisi non la giustifica).
-4. Se si interviene sul backend (`backend/src/controllers/welding.controller.js`), verificare se esistono già bug analoghi a quelli trovati negli altri moduli (es. calcolo card basato su una data diversa da quella del semaforo per-riga, valori di stato "orfani" non riconosciuti in UI) — stesso tipo di verifica incrociata fatta per Scadenzari/Qualifiche.
+1. Helper `shouldSkipServerHydrate(queueItems, auditUuid)`: item attivi (non stalled) dei tipi `save_responses`, `save_custom_checklist_responses`, `update_audit`, `send_audit_event` per quello UUID → skip.
+2. `fetchAndApplyServerResponses`: se skip, non applicare esiti server (ISO + custom). Dopo `processQueue` ok si può hydratare.
+3. Reconcile hydrate: stessa regola — non coprire checklist/esiti locali se la coda di quell’UUID è pendente. Riusa `resolveMergedChecklistForReconcile` / `applyServerResponsesPreservingLocalNotes` / draft registry.
+4. Test L1 + `cd app && npm run build`.
+5. Commit, push, PR base `main` (draft). Cloud Agent non mergia. Non dire «pronta».
 
 ## DoD
 
-- Nessuna funzionalità di filtro persa rispetto a oggi.
-- Se si tocca il backend: nuovi test L1 di regressione (pattern già usato: `qualifications.controller.test.js`, `deadlines.controller.test.js`).
-- Se si tocca il frontend: nuovo test per il comportamento delle card (pattern già usato: `ncPage.filterCards.test.jsx`, `deadlinesPage.filterCards.test.jsx`).
-- Aggiornare `docs/GUIDA_CONSOLIDATA.md` (sintesi) e la tabella priorità in `docs/PROJECT_ROADMAP.md § Stato attuale e priorità` (rimuovere o chiudere la riga corrispondente).
-
-**Test L1 mirato (adattare al modulo reale trovato):**
-```bash
-cd app && NODE_ENV=test npx vitest run src/tests/weldingProcesses4063.test.js src/tests/weldingProceduresP2bLegacyUpload.test.jsx
-cd backend && npx jest welding.controller --silent
-```
+- [x] Coda attiva per UUID → non si applicano esiti server
+- [x] Item stalled o altro UUID → hydrate invariato
+- [x] Dopo processQueue ok (coda vuota per UUID) → hydrate consentito
+- [x] Test L1 verdi + build `app/`
+- [x] CONS-3 / ING-5 / GUIDA non toccati
 
 ---
 
-## Verifica di chiusura (gate)
+## Esito deputy
 
-Suite Vitest completa (`NODE_ENV=test npm run test:run`) + suite Jest backend + `npm run build` verdi prima di aprire la PR. Se si tocca il backend: deploy VPS (`bash backend/scripts/deploy-to-vps.sh`) dopo il merge, con verifica PID/health — o segnalare al committente/Lead che serve.
+**TEST OK** — se `syncQueue` ha item attivi (non stalled) `save_responses` / `save_custom_checklist_responses` / `update_audit` / `send_audit_event` per l’UUID, `fetchAndApplyServerResponses` e il merge reconcile non applicano gli esiti server. Dopo `processQueue` ok (coda vuota per UUID) l’hydrate riprende. Helper puro `shouldSkipServerHydrate`. Riusati `resolveMergedChecklistForReconcile` / `applyServerResponsesPreservingLocalNotes`. CONS-3 no-wipe invariato. Non toccati `DEPUTYTASK.md`, `DEPUTYTASK3.md`, `useAutoSave.js`, `AuthContext.jsx`, GUIDA.
 
-Chiudere con **TEST OK** o **FIX NON APPLICABILI** (motivare con la mappatura fatta al punto 1-3 sopra).
-
----
-
-## Esito (10/08/2026) — TEST OK
-
-**Mappatura (punti 1-3)**:
-- Le 5 card (Valide/Scad.60/Scad.30/Scadute/Da approvare) sono calcolate **solo** su `wpqr_records` (`getWPQRStats`) — nessun legame con il tab WPS. Erano però mostrate sempre, anche fuori contesto (fix: gate `activeTab === "wpqr"`).
-- Tab WPS: `status` (`WPS_STATUSES`: attiva/bozza/sospesa/revocata) e `welding_process` sono due dimensioni distinte tra loro e **non correlate** alle card WPQR — nessuna card le duplica, nessuna azione necessaria. Confermato: non è una regressione, è un caso realmente diverso dai 3 precedenti.
-- Tab WPQR: tendina `approval_status` (bozza/approvata/rifiutata) duplicava **esattamente** la card "Da approvare" (bozza); "rifiutata" era un valore **orfano** invisibile in ogni card (stesso gap di "Sospesa"/"Revocata" in Qualifiche); "approvata" non aveva una card 1:1 (unione di Valide+Scad.60+Scad.30+Scadute).
-- Bug trovato in aggiunta (punto 4 del brief): il bucket SQL "scadute" non filtrava per `approval_status='approvata'` a differenza degli altri 3 bucket — un WPQR bozza/rifiutata scaduto finiva contato in "Scadute" (rosso) mentre a riga il semaforo lo mostra grigio "Non approvata".
-
-**Fix applicati**:
-1. Backend (`welding.controller.js`, `getWPQRStats`): bucket "scadute" ora richiede `approval_status='approvata'`; aggiunti bucket "rifiutate" e "approvate".
-2. Frontend (`WeldingProceduresPage.jsx`): barra statistiche mostrata solo su `activeTab==="wpqr"`; tendina `approval_status` rimossa, sostituita da 3 card cliccabili con toggle (Da approvare/Approvate/Rifiutate); le 4 card semaforo scadenza restano informative (nessuna tendina le duplicava — introdurre filtri backend per bucket di scadenza è fuori scope minimo di questa slice, non c'è perdita di funzionalità rispetto a oggi).
-3. Nessuna funzionalità di filtro persa: tutti i valori prima raggiungibili solo dalla tendina (bozza/approvata/rifiutata) restano raggiungibili dalle nuove card.
-
-**Test**: `welding.controller.wpqrStats.test.js` (4 test, backend) + `weldingProceduresPage.filterCards.test.jsx` (5 test, frontend) + suite Vitest completa (1044 test) + suite Jest `welding.controller*` (10 test) + `npm run build` verdi. Suite Jest backend completa: 8 suite falliscono per cause **preesistenti su `main`, non correlate** (config `database.json` assente nel Cloud Agent + bug preesistente in `customChecklist.legislativoSicurezza.test.js`, verificato con `git stash` sul commit base).
-
-**Doc aggiornata**: `GUIDA_CONSOLIDATA.md` (nuova riga lezioni apprese) + `PROJECT_ROADMAP.md` § Stato attuale e priorità (chiusa anche la riga NC, già risolta da PR #374 ma non ancora rimossa dalla tabella).
-
----
-
-## Comando deputy
-
-```
-Leggi docs/agent-tasks/DEPUTYTASK4.md ed eseguilo. Chiudi con TEST OK o FIX NON APPLICABILI.
-```
+| Voce | Dettaglio |
+|------|-----------|
+| Helper | `pendingAuditQueue.js` — `shouldSkipServerHydrate`, `resolveChecklistHydrateWithPendingQueue` |
+| Getter | `syncService.getQueueItems()` sola lettura |
+| Hydrate | `fetchAndApplyServerResponses`: processQueue → skip se coda attiva |
+| Reconcile | checklist + customResponses locali se skip |
+| Test L1 | `pendingAuditQueue.test.js` 16/16; loginNoWipe 11/11; checklistTextMerge 8/8 |
+| Build | `cd app && npm run build` OK |
+| PR | draft su `main` (rischio Alto: non «pronta» senza CI+Bugbot+Security) |
