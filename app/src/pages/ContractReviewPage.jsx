@@ -45,6 +45,7 @@ import {
   catalogRoleLabel,
   listMissingRequiredAttachmentRefs,
   missingRequiredAttachment,
+  normalizeChecklistRow,
 } from '../utils/contractReviewChecklistAttachments';
 import './ContractReviewPage.css';
 
@@ -522,14 +523,7 @@ function filterCommittenteCounterparties(rawList) {
 }
 
 function rowCheck(row) {
-  return {
-    id: row.id,
-    phase: row.phase,
-    item_ref: row.item_ref ?? row.itemRef,
-    item_text: row.item_text ?? row.itemText,
-    answer: row.answer,
-    notes: row.notes ?? '',
-  };
+  return normalizeChecklistRow(row);
 }
 
 function statusBadgeClass(status) {
