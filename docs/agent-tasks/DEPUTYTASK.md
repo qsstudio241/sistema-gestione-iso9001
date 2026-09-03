@@ -67,10 +67,10 @@ Il PLAN descriveva ING-5 come «classifica + coda HITL» — **già coperto**. S
 
 - **Obiettivo**: sbloccare ING-5 o scegliere alternativa AFK (ponte gap / VC-5 Lead)
 - **Stato**: BLOCCATA — attesa HITL
-- **Fatto**: ops VPS (mig162, health, login); PLAN allineato; brief ING-5 APERTO
-- **Manca**: risposte HITL § domande; poi nuova sessione implementazione **una** slice sottile
+- **Fatto**: ops VPS (mig162, health, login); PLAN allineato; brief ING-5 APERTO; scenario opzioni [`SCENARIO_ING5_TRIAGE_OPZIONI.md`](SCENARIO_ING5_TRIAGE_OPZIONI.md)
+- **Manca**: risposte HITL § domande (leggere lo scenario); poi nuova sessione implementazione **una** slice sottile
 - **Non toccare**: auth/sync; duplicare batch HITL
 - **Test**: ops smoke OK; L1 codice N/A
 - **Brief**: `docs/agent-tasks/DEPUTYTASK.md`
-- **Branch / PR**: `cursor/ing5-doc-triage-agent-3c54`
-- **Roadmap**: aggiornare «sessione più recente» dopo merge di questa PR docs
+- **Branch / PR**: `cursor/ing5-doc-triage-agent-3c54` (#629 MERGED docs HITL; follow-up scenario)
+- **Roadmap**: aggiornare «sessione più recente» dopo merge della PR scenario
