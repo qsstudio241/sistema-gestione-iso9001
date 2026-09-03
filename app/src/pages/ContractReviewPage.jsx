@@ -41,6 +41,11 @@ import {
   parseCapabilityGapReport,
 } from '../utils/orderEvadibilitySignal';
 import { exportContractReviewChecklistDocx } from '../utils/wordExportContractReviewChecklist';
+import {
+  catalogRoleLabel,
+  listMissingRequiredAttachmentRefs,
+  missingRequiredAttachment,
+} from '../utils/contractReviewChecklistAttachments';
 import './ContractReviewPage.css';
 
 // DOC_ROLE_OPTIONS importati da caseDocCatalog (VC-2) — unica fonte FE.
@@ -1204,6 +1209,52 @@ export default function ContractReviewPage() {
     }
   }
 
+  async function handleLinkChecklistAttachment(itemId, attachmentId) {
+    if (!caseId || !itemId || !attachmentId) return;
+    setError(null);
+    try {
+      await apiService.linkContractReviewChecklistAttachment(caseId, itemId, attachmentId);
+      await loadDetail(caseId);
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : err.message || 'Collegamento allegato fallito');
+    }
+  }
+
+  async function handleUnlinkChecklistAttachment(itemId, attachmentId) {
+    if (!caseId || !itemId || !attachmentId) return;
+    setError(null);
+    try {
+      await apiService.unlinkContractReviewChecklistAttachment(caseId, itemId, attachmentId);
+      await loadDetail(caseId);
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : err.message || 'Scollegamento allegato fallito');
+    }
+  }
+
+  async function handleUploadAndLinkChecklistAttachment(itemId, fileList) {
+    if (!caseId || !itemId) return;
+    const files = Array.from(fileList || []);
+    if (!files.length) return;
+    setError(null);
+    try {
+      for (const file of files) {
+        const result = await apiService.uploadContractReviewAttachment(caseId, file, {
+          doc_role: 'other',
+        });
+        const attachmentId =
+          result?.attachment_id ?? result?.attachment?.attachment_id ?? result?.data?.attachment_id;
+        if (attachmentId) {
+          await apiService.linkContractReviewChecklistAttachment(caseId, itemId, attachmentId);
+        }
+      }
+      await loadDetail(caseId);
+    } catch (err) {
+      setError(
+        err instanceof ApiError ? err.message : err.message || 'Carica e collega allegato fallito',
+      );
+    }
+  }
+
   async function handleRunAiAnalysis() {
     const text = capitolatoText.trim();
     if (!text) {
@@ -1480,6 +1531,8 @@ export default function ContractReviewPage() {
 
   const checklistPreliminary = detail?.checklist?.filter((c) => c.phase === 'preliminary') || [];
   const checklistFinal = detail?.checklist?.filter((c) => c.phase === 'final') || [];
+  const missingAttachmentRefs = listMissingRequiredAttachmentRefs(detail?.checklist || []);
+  const caseAttachments = detail?.attachments || [];
 
   const hasSupplierDocs = useMemo(() => {
     if (!detail) return false;
@@ -2037,6 +2090,13 @@ export default function ContractReviewPage() {
                   onApply={handleApplyExtractedToChecklist}
                 />
 
+                {missingAttachmentRefs.length > 0 ? (
+                  <p className="cr-attach-soft-warn" role="status">
+                    Allegato obbligatorio mancante su: {missingAttachmentRefs.join(', ')}.
+                    Salvataggio ed export restano consentiti; «Avanza stato» richiede i file collegati.
+                  </p>
+                ) : null}
+
                 <div className="cr-checklist-phase">
                   <h3 style={{ fontSize: '0.95rem', margin: '0 0 0.5rem' }}>Preliminare</h3>
                   {checklistPreliminary.length === 0 ? (
@@ -2048,7 +2108,15 @@ export default function ContractReviewPage() {
                         item={item}
                         disabled={TERMINAL_STATUSES.has(detail.case.status)}
                         highlightSubforniture={hasSupplierDocs}
+                        caseAttachments={caseAttachments}
                         onSave={(patch) => handleSaveChecklistItem(item.id, patch)}
+                        onLink={(attachmentId) => handleLinkChecklistAttachment(item.id, attachmentId)}
+                        onUnlink={(attachmentId) =>
+                          handleUnlinkChecklistAttachment(item.id, attachmentId)
+                        }
+                        onUploadAndLink={(files) =>
+                          handleUploadAndLinkChecklistAttachment(item.id, files)
+                        }
                       />
                     ))
                   )}
@@ -2064,7 +2132,15 @@ export default function ContractReviewPage() {
                         key={item.id}
                         item={item}
                         disabled={TERMINAL_STATUSES.has(detail.case.status)}
+                        caseAttachments={caseAttachments}
                         onSave={(patch) => handleSaveChecklistItem(item.id, patch)}
+                        onLink={(attachmentId) => handleLinkChecklistAttachment(item.id, attachmentId)}
+                        onUnlink={(attachmentId) =>
+                          handleUnlinkChecklistAttachment(item.id, attachmentId)
+                        }
+                        onUploadAndLink={(files) =>
+                          handleUploadAndLinkChecklistAttachment(item.id, files)
+                        }
                       />
                     ))
                   )}
@@ -2931,20 +3007,49 @@ function ClarificationReplyRow({ onSave }) {
   );
 }
 
-function ChecklistItemRow({ item, disabled, onSave, highlightSubforniture }) {
+function ChecklistItemRow({
+  item,
+  disabled,
+  onSave,
+  highlightSubforniture,
+  caseAttachments = [],
+  onLink,
+  onUnlink,
+  onUploadAndLink,
+}) {
   const [notes, setNotes] = useState(item.notes || '');
+  const [pickerOpen, setPickerOpen] = useState(false);
+  const [selectedAttId, setSelectedAttId] = useState('');
+  const uploadRef = useRef(null);
   useEffect(() => {
     setNotes(item.notes || '');
   }, [item.id, item.notes]);
 
   const ans = item.answer;
   const p9Highlight = item.item_ref === 'P9' && highlightSubforniture;
+  const required = item.attachment_required === true || item.attachment_required === 1;
+  const linked = Array.isArray(item.linked_attachments) ? item.linked_attachments : [];
+  const missing = missingRequiredAttachment(item);
+  const linkedIds = new Set(linked.map((l) => Number(l.attachment_id)));
+  const availableToLink = (caseAttachments || []).filter(
+    (a) => !linkedIds.has(Number(a.attachment_id)),
+  );
 
   return (
     <div className={`cr-checklist-item${p9Highlight ? ' cr-checklist-item--supplier-evidence' : ''}`}>
       <div>
         <span className="cr-checklist-ref">{item.item_ref}</span>
         {item.item_text}
+        {required ? (
+          <span className="cr-badge cr-badge-doc-meta" title="Flag template: allegato obbligatorio">
+            Allegato richiesto
+          </span>
+        ) : null}
+        {missing ? (
+          <span className="cr-badge cr-badge-attach-missing" role="status">
+            Manca allegato
+          </span>
+        ) : null}
         {p9Highlight ? (
           <span className="cr-checklist-hint">
             {' '}
@@ -2980,6 +3085,112 @@ function ChecklistItemRow({ item, disabled, onSave, highlightSubforniture }) {
           if ((item.notes || '') !== notes) onSave({ notes });
         }}
       />
+
+      <div className="cr-item-attachments">
+        <div className="cr-item-attachments-title">Allegati collegati</div>
+        {linked.length === 0 ? (
+          <p className="cr-item-attachments-empty">Nessun allegato collegato a questa voce.</p>
+        ) : (
+          <ul className="cr-item-attachments-list">
+            {linked.map((link) => (
+              <li key={`${link.checklist_item_id}-${link.attachment_id}`}>
+                <span>
+                  {link.file_name || `Allegato #${link.attachment_id}`}
+                  {link.commercial_doc_role
+                    ? ` (${catalogRoleLabel(link.commercial_doc_role, DOC_ROLE_OPTIONS)})`
+                    : ''}
+                </span>
+                {!disabled ? (
+                  <button
+                    type="button"
+                    className="cr-btn"
+                    onClick={() => onUnlink?.(link.attachment_id)}
+                  >
+                    Scollega
+                  </button>
+                ) : null}
+              </li>
+            ))}
+          </ul>
+        )}
+        {!disabled ? (
+          <div className="cr-item-attachments-actions">
+            {!pickerOpen ? (
+              <button
+                type="button"
+                className="cr-btn"
+                onClick={() => setPickerOpen(true)}
+                disabled={!availableToLink.length}
+                title={
+                  availableToLink.length
+                    ? 'Scegli tra gli allegati già sul caso'
+                    : 'Carica prima un allegato sul caso (tab Documenti) oppure usa Carica e collega'
+                }
+              >
+                Collega allegato
+              </button>
+            ) : (
+              <div className="cr-item-attachments-picker">
+                <select
+                  value={selectedAttId}
+                  onChange={(e) => setSelectedAttId(e.target.value)}
+                  aria-label={`Seleziona allegato per ${item.item_ref}`}
+                >
+                  <option value="">— scegli allegato del caso —</option>
+                  {availableToLink.map((a) => (
+                    <option key={a.attachment_id} value={a.attachment_id}>
+                      {a.file_name || `#${a.attachment_id}`}
+                      {a.commercial_doc_role
+                        ? ` (${catalogRoleLabel(a.commercial_doc_role, DOC_ROLE_OPTIONS)})`
+                        : ''}
+                    </option>
+                  ))}
+                </select>
+                <button
+                  type="button"
+                  className="cr-btn cr-btn-primary"
+                  disabled={!selectedAttId}
+                  onClick={() => {
+                    if (!selectedAttId) return;
+                    onLink?.(Number(selectedAttId));
+                    setSelectedAttId('');
+                    setPickerOpen(false);
+                  }}
+                >
+                  Conferma
+                </button>
+                <button
+                  type="button"
+                  className="cr-btn"
+                  onClick={() => {
+                    setPickerOpen(false);
+                    setSelectedAttId('');
+                  }}
+                >
+                  Annulla
+                </button>
+              </div>
+            )}
+            <button
+              type="button"
+              className="cr-btn"
+              onClick={() => uploadRef.current?.click()}
+            >
+              Carica e collega
+            </button>
+            <input
+              ref={uploadRef}
+              type="file"
+              hidden
+              onChange={(e) => {
+                const files = e.target.files;
+                e.target.value = '';
+                if (files?.length) onUploadAndLink?.(files);
+              }}
+            />
+          </div>
+        ) : null}
+      </div>
     </div>
   );
 }

@@ -30,6 +30,7 @@ function toEditorItems(items) {
       item_text: it.item_text,
       sort_order: it.sort_order ?? idx,
       is_core: !!(it.is_core === true || it.is_core === 1 || isCoreRef(it.phase, it.item_ref)),
+      attachment_required: !!(it.attachment_required === true || it.attachment_required === 1),
     }));
   }
   return buildSeedItemsFromDefaults();
@@ -112,6 +113,17 @@ export default function ContractChecklistTemplatesPage() {
     }));
   };
 
+  const toggleAttachmentRequired = (ref, checked) => {
+    setEditor((prev) => ({
+      ...prev,
+      items: prev.items.map((it) =>
+        it.phase === prev.phaseTab && it.item_ref === ref
+          ? { ...it, attachment_required: !!checked }
+          : it
+      ),
+    }));
+  };
+
   const addExtra = () => {
     setEditor((prev) => {
       const phase = prev.phaseTab;
@@ -132,6 +144,7 @@ export default function ContractChecklistTemplatesPage() {
             item_text: "",
             sort_order: prev.items.filter((i) => i.phase === phase).length,
             is_core: false,
+            attachment_required: false,
           },
         ],
       };
@@ -165,6 +178,7 @@ export default function ContractChecklistTemplatesPage() {
           item_text: it.item_text,
           sort_order: it.sort_order ?? idx,
           is_core: !!it.is_core,
+          attachment_required: !!it.attachment_required,
         })),
       };
       if (editor.mode === "create") {
@@ -307,6 +321,14 @@ export default function ContractChecklistTemplatesPage() {
                   onChange={(e) => updateItemText(it.item_ref, e.target.value)}
                   maxLength={500}
                 />
+                <label className="cct-check cct-attach-req" title="Flag template: sul caso l'operatore vede il badge, non lo modifica">
+                  <input
+                    type="checkbox"
+                    checked={!!it.attachment_required}
+                    onChange={(e) => toggleAttachmentRequired(it.item_ref, e.target.checked)}
+                  />
+                  Allegato obbligatorio
+                </label>
                 {!it.is_core && (
                   <button type="button" className="btn-secondary" onClick={() => removeExtra(it.item_ref)}>
                     Rimuovi
