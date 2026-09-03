@@ -92,6 +92,12 @@ Oggi: `processQueue` → `clearAuditsStore` → reconcile. Se la rete è ancora 
 
 Regola: **mai** `clearAuditsStore` al login dello **stesso** utente. Coda prima; poi merge (già `hasRichContent` / checklist più ricca); persist. Wipe solo al logout (altro utente / isolamento tenant), dopo `LogoutSyncGuard`.
 
+**DoD (02/09/2026):**
+
+- [x] Stesso utente: nessun `clearAuditsStore` pre-merge al `auth:login` (`storageContext.loginNoWipe.test.js`)
+- [x] Server vuoto/vecchio: locale ricco resta (`resolveAuditsAfterLogin` / `runLoginAuditHydrate`)
+- [x] Wipe resta su `sgq:userLoggedOut`
+
 ---
 
 ## CONS-4 — Server-wins solo se non c’è lavoro locale in volo
