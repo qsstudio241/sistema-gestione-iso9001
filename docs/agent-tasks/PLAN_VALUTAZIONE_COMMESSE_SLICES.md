@@ -81,7 +81,7 @@
 |---|------|------|------|
 | **1** | **Ingestione / organizzazione / elaborazione mole file cliente disordinati** | Capire se l’ordine è **evadibile**; riuso Import PDF + catalogo VC-2; bozza slice ING-* sotto | AFK/HITL |
 | **2** | Checklist **personalizzabile** dallo studio (template per cliente) | Slice dedicata; non mischiare con export VC-4 | HITL + AFK |
-| **3** | Ponte checklist ↔ allegati (+ gap→checklist/chiarimenti) | **HITL 03/09**: prima slice = collegare voci P/F agli allegati caso + flag `required` (template ING-4); **non** viste-per-ente. Gap→chiarimenti (ex VC-5) resta Lead. UX in conferma. | AFK / HITL UX |
+| **3** | Ponte checklist ↔ allegati (+ gap→checklist/chiarimenti) | **PONTE-1** layout A CHIUSO (mig 163). Gap→chiarimenti (ex VC-5) resta Lead. | AFK ✅ / Lead |
 | **4** | Costellazione **agenti specializzati** a supporto | Wayfinder: mappa slice sottili, **non** un monolite; mattoni Import PDF / triage | HITL / wayfinder |
 
 **VC-5** (chiarimenti) e **VC-6…VC-9** restano nella mappa sotto ma **non** sono la prossima priorità di default. **Non** aprire `DEPUTYTASK` APERTO su VC-5 senza conferma Lead.
