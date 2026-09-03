@@ -10,7 +10,7 @@
 > - SAL gap ≠ questo epic: [`MODULO_SAL_SCOPO_E_ROADMAP.md`](../specs/MODULO_SAL_SCOPO_E_ROADMAP.md)
 > - Mattoni già in codice: `importJobs` + `ImportJobsPage`, `contractReview.*`, `caseDocumentAnalysis.service.js`, `caseExtractedCoverage.service.js`, `caseCoverageAdvisory.service.js`, `qualificationCoverage.js`, CoveragePanel in `ContractReviewPage.jsx`, export Word checklist (`wordExportContractReviewChecklist.js`)
 >
-> **Brief attivo**: [`DEPUTYTASK.md`](DEPUTYTASK.md) — **ING-5** APERTO (HITL / wayfinder — niente codice finché risposte). Ops 02/09: mig162 + routes template su VPS OK.
+> **Brief attivo**: [`DEPUTYTASK.md`](DEPUTYTASK.md) — **Ponte checklist↔allegati** APERTO (solo docs/UX; niente codice finché conferma layout). **ING-5** triage = dopo/nebbia. Ops 02/09: mig162 + routes template su VPS OK. UX: [`UX_PONTE_CHECKLIST_ALLEGATI.md`](UX_PONTE_CHECKLIST_ALLEGATI.md).
 > **Mappa creata**: 01/09/2026 · Lead wayfinder · **riorientata 02/09/2026** post-merge VC-4 (priorità ingest)
 > **Branch base**: `main`
 
@@ -55,8 +55,9 @@
 - Sessione **PPAP**: nel ciclo `commercial_cases` vs modulo dedicato
 - Ordini verso fornitori post-acquisizione: riuso `commercial_case_documents` + `supplier_id` vs nuovo workflow
 - Quanto dell’offerta «in prima battuta» è generazione testo assistita vs solo checklist/chiarimenti già nel workflow
-- **ING-5 / costellazione agenti** (02/09 — blocco implementazione): vedi domande sotto § ING-5; ING-1+ING-2 hanno già euristica batch + HITL in `ContractReviewPage` / `caseDocCatalog.js` — non rifare «classifica + coda» senza delta prodotto
+- **ING-5 / costellazione agenti** (02/09 — blocco; **03/09 HITL**: resta **dopo/nebbia**): domande sotto § ING-5; ING-1+ING-2 hanno già euristica batch + HITL — non rifare «classifica + coda» senza delta prodotto
 - Ponte gap capacità → checklist / chiarimenti (priorità #3): perimetro AFK vs VC-5 (Lead)
+- **HITL 03/09 — ponte checklist ↔ allegati** (prima slice priorità #3, **non** viste-per-ente): obbligatorio = **flag** template; proposta UX [`UX_PONTE_CHECKLIST_ALLEGATI.md`](UX_PONTE_CHECKLIST_ALLEGATI.md) — conferma layout A/B prima del codice
 
 ---
 
@@ -80,7 +81,7 @@
 |---|------|------|------|
 | **1** | **Ingestione / organizzazione / elaborazione mole file cliente disordinati** | Capire se l’ordine è **evadibile**; riuso Import PDF + catalogo VC-2; bozza slice ING-* sotto | AFK/HITL |
 | **2** | Checklist **personalizzabile** dallo studio (template per cliente) | Slice dedicata; non mischiare con export VC-4 | HITL + AFK |
-| **3** | Ponte gap capacità → checklist / chiarimenti | Include ex VC-5 se confermato Lead; dopo o parallelo file-disgiunti | AFK |
+| **3** | Ponte checklist ↔ allegati (+ gap→checklist/chiarimenti) | **HITL 03/09**: prima slice = collegare voci P/F agli allegati caso + flag `required` (template ING-4); **non** viste-per-ente. Gap→chiarimenti (ex VC-5) resta Lead. UX in conferma. | AFK / HITL UX |
 | **4** | Costellazione **agenti specializzati** a supporto | Wayfinder: mappa slice sottili, **non** un monolite; mattoni Import PDF / triage | HITL / wayfinder |
 
 **VC-5** (chiarimenti) e **VC-6…VC-9** restano nella mappa sotto ma **non** sono la prossima priorità di default. **Non** aprire `DEPUTYTASK` APERTO su VC-5 senza conferma Lead.
@@ -101,7 +102,7 @@
 | **VC-8** | Ordini fornitori a corredo | Documenti `counterparty=supplier` + link anagrafica | VC-7; nebbia | HITL |
 | **VC-9** | Sessione PPAP | Solo dopo decisione prodotto | — | HITL / nebbia |
 
-**Stato piano:** APERTO — **VC-1…VC-4** CHIUSI; **ING-1…ING-4** CHIUSI (#624–#627); **ING-5** brief HITL APERTO (niente codice); VC-5 non di default.
+**Stato piano:** APERTO — **VC-1…VC-4** CHIUSI; **ING-1…ING-4** CHIUSI (#624–#627); **ING-5** dopo/nebbia (HITL 03/09: saltato per ora); **ponte checklist↔allegati** brief UX APERTO (niente codice finché conferma A/B); VC-5 non di default.
 
 ### Bozza slice ingest / organizzazione (post VC-4 — Lead)
 
@@ -113,28 +114,37 @@
 | **ING-2** ✅ | Matching docs → ruoli catalogo caso | Auto-proposta `commercial_doc_role` da nome/cartella/MIME + confidence; gate Analizza (estende VC-2/ING-1) | ING-1 | CHIUSO 02/09 (#626) |
 | **ING-3** ✅ | Gap **evadibilità** da docs organizzati | Dato catalogo ordinato: segnale «ordine evadibile / da chiarire» (riuso coverage + checklist); non inventare norme | ING-2, VC-1 | CHIUSO 02/09 (#627) |
 | **ING-4** ✅ | Template checklist personalizzabile studio | Template per cliente/tenant; voci P/F editabili; export VC-4 legge template attivo; mig **162** | ING prodotto | CHIUSO 02/09 (#625) |
-| **ING-5** | Agente «triage documenti» | **Nebbia / HITL** — non implementare finché il delta vs ING-1/2 non è chiaro; mappa agenti sottile | ING-1…2 | HITL / wayfinder |
+| **ING-5** | Agente «triage documenti» | **Dopo / nebbia** (HITL 03/09: saltato; priorità = ponte checklist↔allegati) | ING-1…2 | HITL / wayfinder — non aprire codice |
+| **PONTE-1** | Checklist ↔ allegati + flag required | Collegare voci P/F agli allegati del caso; flag obbligatorio su template ING-4; gate soft salvataggio / hard su Avanza stato. **No** viste-per-ente in questa slice. | ING-4, VC-2 | HITL UX → poi AFK |
 
-#### ING-5 — domande HITL (bloccanti codice)
+#### HITL 03/09 — decisione registrata (ponte)
 
-> Scenario narrativo + opzioni in concorrenza (committente): [`SCENARIO_ING5_TRIAGE_OPZIONI.md`](SCENARIO_ING5_TRIAGE_OPZIONI.md).
+| Domanda | Risposta committente |
+|---------|----------------------|
+| Priorità AFK ora | **Ponte checklist ↔ allegati** (non viste-per-ente come prima slice) |
+| Obbligatorietà allegato | **Flag** (alcuni allegati possono non essere presenti/previsti) |
+| ING-5 triage | Resta **nebbia / dopo** |
+| Preoccupazione | Usabilità FE → proposta in [`UX_PONTE_CHECKLIST_ALLEGATI.md`](UX_PONTE_CHECKLIST_ALLEGATI.md) — **conferma A o B prima del codice** |
 
-Già su `main`: `buildBatchRoleSuggestions` + UI «Classificazione batch — conferma HITL» + confidence ING-2. Un «agente triage» senza risposta a queste domande rischia un secondo monolite o un duplicato:
+#### ING-5 — domande HITL (archivio; codice ancora bloccato)
 
-1. **Delta prodotto**: cosa deve fare l’agente che la batch HITL attuale *non* fa? (es. LLM sul contenuto PDF, priorità mole Import Jobs, triage cross-caso studio, …)
+> Scenario: [`SCENARIO_ING5_TRIAGE_OPZIONI.md`](SCENARIO_ING5_TRIAGE_OPZIONI.md). Q5 risolta 03/09 → ponte; Q1–Q4 restano aperte se/quando si riprende ING-5.
+
+1. **Delta prodotto**: cosa deve fare l’agente che la batch HITL attuale *non* fa?
 2. **Trigger**: on-upload / bottone / coda Import PDF / cron?
-3. **Persistenza coda**: solo UI sessione (come oggi) vs tabella/staging vs riuso `import_jobs`?
-4. **Costellazione**: dopo triage, quali slice-agente successive (estrazione, gap, chiarimenti) e in che ordine — una riga ciascuna, non un orchestratore unico?
-5. **Alternativa AFK ora**: saltare ING-5 e aprire **ponte gap→checklist** (priorità #3) o **VC-5** solo con Lead?
+3. **Persistenza coda**: solo UI sessione vs staging / `import_jobs`?
+4. **Costellazione**: slice-agente successive (una riga ciascuna)?
+5. **Alternativa AFK** — **RISPOSTA 03/09**: saltare ING-5 → **ponte checklist↔allegati** (prio #3 raffinato; non VC-5).
 
 ### Dipendenze e parallelo futuro
 
 ```text
 VC-1 → VC-2 → VC-3 → VC-4 ✅
-                    ↘ priorità prodotto: ING-1 → ING-2 → ING-3
-                                      ↘ ING-4 (checklist template)
-                                      ↘ ING-5 / costellazione agenti (wayfinder)
-VC-5 → VC-6 (HITL)  — dopo ING o parallelo solo file-disgiunti
+                    ↘ ING-1 → ING-2 → ING-3 ✅
+                                      ↘ ING-4 (checklist template) ✅
+                                      ↘ PONTE-1 checklist↔allegati (HITL UX 03/09 → poi codice)
+                                      ↘ ING-5 / costellazione agenti (dopo / nebbia)
+VC-5 → VC-6 (HITL)  — dopo ING/PONTE o parallelo solo file-disgiunti
 VC-3 → VC-7 → VC-8 (HITL)
 VC-9 indipendente / nebbia
 ```
