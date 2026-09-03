@@ -113,6 +113,132 @@ function hasRichContent(obj) {
 }
 
 /**
+ * Chiave stabile per confrontare l’identità al login (stesso utente vs altro tenant).
+ * Usa i campi già presenti su `auth:login` / user API (`user_id`, `organization_id`, `email`).
+ */
+export function loginUserKeyFromUser(user) {
+  if (!user || typeof user !== "object") return null;
+  const id = user.user_id ?? user.id ?? null;
+  const org = user.organization_id ?? user.organizationId ?? null;
+  const email = typeof user.email === "string" ? user.email.trim().toLowerCase() : "";
+  if (id == null && !email) return null;
+  return `${org ?? ""}::${id ?? ""}::${email}`;
+}
+
+/**
+ * CONS-3: mai `clearAuditsStore` al login dello stesso utente.
+ * Wipe IndexedDB audit resta solo al logout (`sgq:userLoggedOut`) per isolamento tenant.
+ * Se manca l’identità precedente (reload / primo login) non si svuota: conservazione > wipe.
+ */
+export function shouldClearAuditsStoreOnLogin({ previousUserKey, incomingUserKey } = {}) {
+  if (previousUserKey == null || previousUserKey === "") return false;
+  if (incomingUserKey == null || incomingUserKey === "") return false;
+  return String(previousUserKey) !== String(incomingUserKey);
+}
+
+/**
+ * Merge per-audit al login: locale più ricco vince se il server è vuoto/vecchio
+ * (`hasRichContent` + `resolveMergedChecklistForReconcile` già usati in reconcile).
+ */
+export function mergeAuditPreferringRichLocal(localAudit, serverAudit) {
+  if (!serverAudit) return localAudit || null;
+  if (!localAudit) return serverAudit;
+  const sid =
+    serverAudit.metadata?.id ||
+    serverAudit.id ||
+    localAudit.metadata?.id ||
+    localAudit.id;
+  let merged = { ...serverAudit };
+  const serverGD = serverAudit?.generalData ?? serverAudit?.metadata?.generalData;
+  const serverAO = serverAudit?.auditObjective ?? serverAudit?.metadata?.auditObjective;
+  const serverAOut = serverAudit?.auditOutcome ?? serverAudit?.metadata?.auditOutcome;
+  const localGD = localAudit?.metadata?.generalData ?? localAudit?.generalData;
+  const localAO = localAudit?.metadata?.auditObjective ?? localAudit?.auditObjective;
+  const localAOut = localAudit?.metadata?.auditOutcome ?? localAudit?.auditOutcome;
+  const patchMeta = {};
+  if (!hasRichContent(serverGD) && hasRichContent(localGD)) patchMeta.generalData = localGD;
+  if (!hasRichContent(serverAO) && hasRichContent(localAO)) patchMeta.auditObjective = localAO;
+  if (!hasRichContent(serverAOut) && hasRichContent(localAOut)) patchMeta.auditOutcome = localAOut;
+  if (Object.keys(patchMeta).length > 0) {
+    merged.metadata = { ...(merged.metadata || {}), ...patchMeta };
+  }
+  const localChecklist = localAudit?.checklist;
+  if (localChecklist) {
+    merged.checklist = resolveMergedChecklistForReconcile(
+      localChecklist,
+      merged.checklist ?? serverAudit?.checklist,
+      sid,
+    );
+  }
+  if (localAudit?.attachments?.length > 0 && !(serverAudit?.attachments?.length > 0)) {
+    merged.attachments = localAudit.attachments;
+  }
+  return merged;
+}
+
+/**
+ * Dopo login: se il server è vuoto si tiene il locale; se è vecchio si fa merge campo-per-campo.
+ * Gli audit solo-locali con contenuto ricco restano (lista server parziale/instabile).
+ */
+export function resolveAuditsAfterLogin(localAudits = [], serverAudits = []) {
+  const local = Array.isArray(localAudits) ? localAudits : [];
+  const server = Array.isArray(serverAudits) ? serverAudits : [];
+  if (server.length === 0) return local;
+  const merged = server.map((sa) => {
+    const sid = sa.metadata?.id || sa.id;
+    const loc = pickLocalAuditForMerge(sid, local, []);
+    return mergeAuditPreferringRichLocal(loc, sa);
+  });
+  const mergedIds = new Set(merged.map((a) => a.metadata?.id || a.id).filter(Boolean));
+  const localOnlyRich = local.filter((la) => {
+    const id = la.metadata?.id || la.id;
+    if (id && mergedIds.has(id)) return false;
+    return (
+      hasRichContent(la.checklist) ||
+      hasRichContent(la.metadata?.generalData ?? la.generalData) ||
+      hasRichContent(la.metadata?.auditObjective ?? la.auditObjective) ||
+      hasRichContent(la.metadata?.auditOutcome ?? la.auditOutcome)
+    );
+  });
+  return [...merged, ...localOnlyRich];
+}
+
+/**
+ * Flusso login testabile: processQueue → (wipe solo se cambia utente) → merge → persist.
+ * Il wipe pre-merge NON avviene per lo stesso utente.
+ */
+export async function runLoginAuditHydrate({
+  processQueue,
+  clearAuditsStore,
+  loadLocalAudits,
+  fetchServerAudits,
+  persistAudits,
+  previousUserKey,
+  incomingUserKey,
+} = {}) {
+  if (typeof processQueue === "function") {
+    await processQueue();
+  }
+  const shouldWipe = shouldClearAuditsStoreOnLogin({ previousUserKey, incomingUserKey });
+  if (shouldWipe && typeof clearAuditsStore === "function") {
+    await clearAuditsStore();
+  }
+  const localAudits = typeof loadLocalAudits === "function" ? await loadLocalAudits() : [];
+  let serverAudits = [];
+  try {
+    const fetched = typeof fetchServerAudits === "function" ? await fetchServerAudits() : [];
+    serverAudits = Array.isArray(fetched) ? fetched : [];
+  } catch {
+    serverAudits = [];
+  }
+  const merged = resolveAuditsAfterLogin(shouldWipe ? [] : localAudits || [], serverAudits);
+  if (typeof persistAudits === "function") {
+    await persistAudits(merged);
+  }
+  return { clearedAuditsStore: shouldWipe, audits: merged };
+}
+
+/**
  * Helper: normalizza status checklist per compatibilità
  * Assicura che tutti gli status siano in formato stringa corretto
  */
@@ -783,6 +909,7 @@ export function StorageProvider({ children, useMockData = false }) {
           }
           setAudits([]);
           setCurrentAuditId(null);
+          lastLoginUserKeyRef.current = null;
           // Reset flag di inizializzazione: garantisce che al prossimo login
           // (stesso browser, senza page-refresh) loadAuditsFromIndexedDB
           // venga rieseguito per il nuovo utente invece di usare la cache vuota.
@@ -934,6 +1061,8 @@ export function StorageProvider({ children, useMockData = false }) {
   const isReconcilingRef = useRef(false);
   /** True mentre logout sta svuotando IDB: reconcile deve attendere (evita race login→lettura 11 audit vecchi). */
   const sessionResetInProgressRef = useRef(false);
+  /** Ultimo utente per cui è stato fatto hydrate login (CONS-3: wipe solo se cambia identità). */
+  const lastLoginUserKeyRef = useRef(null);
 
   /**
    * Scarica TUTTI gli audit server (paginazione completa).
@@ -964,7 +1093,10 @@ export function StorageProvider({ children, useMockData = false }) {
    * Riconciliazione robusta multi-device:
    * processQueue -> download server -> merge deterministico -> replace cache.
    */
-  const reconcileAuditsFromServer = useCallback(async ({ processQueueFirst = true } = {}) => {
+  const reconcileAuditsFromServer = useCallback(async ({
+    processQueueFirst = true,
+    preserveLocalIfServerEmpty = false,
+  } = {}) => {
     if (!fsProvider || !navigator.onLine) return { success: false, reason: "offline_or_no_provider" };
     if (isReconcilingRef.current) return { success: false, reason: "already_running" };
 
@@ -986,6 +1118,29 @@ export function StorageProvider({ children, useMockData = false }) {
       const serverAudits = await fetchAllServerAudits();
 
       if (serverAudits.length === 0) {
+        if (preserveLocalIfServerEmpty) {
+          console.log(
+            "🔄 [RECONCILE] Server lista vuota al login — si conserva il locale ricco (CONS-3)",
+          );
+          let finalAudits = dedupeAudits(localAudits);
+          const tombstoneKeep = getTombstone();
+          if (Object.keys(tombstoneKeep).length > 0) {
+            finalAudits = finalAudits.filter((a) => !tombstoneKeep[auditUuid(a)]);
+          }
+          if (recentlyDeletedRef.current.size > 0) {
+            finalAudits = finalAudits.filter(
+              (a) => !recentlyDeletedRef.current.has(auditUuid(a)),
+            );
+          }
+          await persistFinalAuditsToIndexedDB(fsProvider, finalAudits);
+          setAudits(finalAudits);
+          setCurrentAuditId((prev) => {
+            if (!prev) return prev;
+            if (recentlyDeletedRef.current.has(prev) || isInTombstone(prev)) return null;
+            return finalAudits.some((a) => auditUuid(a) === prev) ? prev : null;
+          });
+          return { success: true, count: finalAudits.length, serverEmpty: true, preservedLocal: true };
+        }
         console.log(
           "🧹 [RECONCILE] Server lista vuota — purge cache locale (solo bozze isIntentionalDraft)",
         );
@@ -1543,15 +1698,26 @@ export function StorageProvider({ children, useMockData = false }) {
   }, [fsProvider, useMockData, fetchAllServerAudits, authReloadNonce]); // authReloadNonce: dopo login forza reload lista
 
   // === RELOAD AUDIT DOPO LOGIN ===
+  // CONS-3: stesso utente → processQueue + merge, mai clearAuditsStore.
+  // Wipe IndexedDB resta solo su sgq:userLoggedOut (isolamento tenant).
   useEffect(() => {
-    const handleLoginSuccess = async () => {
-      console.log("🔄 [LOGIN] Purge server-first (queue → clear IDB → reconcile)...");
+    const handleLoginSuccess = async (event) => {
+      console.log("🔄 [LOGIN] Coda → merge (senza wipe stesso utente)...");
       if (fsProvider) {
         await syncService.processQueue().catch(() => {});
-        if (typeof fsProvider.clearAuditsStore === "function") {
+        const incomingUserKey = loginUserKeyFromUser(event?.detail);
+        const previousUserKey = lastLoginUserKeyRef.current;
+        if (
+          shouldClearAuditsStoreOnLogin({ previousUserKey, incomingUserKey }) &&
+          typeof fsProvider.clearAuditsStore === "function"
+        ) {
           await fsProvider.clearAuditsStore();
         }
-        await reconcileAuditsFromServer({ processQueueFirst: false });
+        await reconcileAuditsFromServer({
+          processQueueFirst: false,
+          preserveLocalIfServerEmpty: true,
+        });
+        if (incomingUserKey) lastLoginUserKeyRef.current = incomingUserKey;
       }
       // Sempre: dopo logout hasInitialized=false ma l'effect di load non riparte da solo;
       // incrementando authReloadNonce si rifà il download/merge come al primo avvio.

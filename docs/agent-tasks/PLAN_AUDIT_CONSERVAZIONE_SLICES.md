@@ -72,6 +72,12 @@ Ogni slice = un percorso stretto verificabile. **Una sessione = una slice.** Non
 
 **DoD:** test flush verde + `npm run build` in `app/`.
 
+- [x] Unmount prima del delay → `saveAudit` (`app/src/tests/useAutoSave.flush.test.js`)
+- [x] Dati identici → nessun save
+- [x] `pagehide` / `visibilitychange` hidden con pending → `saveAudit`
+- [x] Debounce 2s invariato (niente write a ogni tasto)
+- [x] `npm run build` in `app/` (02/09/2026)
+
 ---
 
 ## CONS-2 — Avviso «non aprire da PC»
@@ -85,6 +91,12 @@ Estendere il banner lock già usato in offline (`AuditLockBanner` + `auditLock.m
 Oggi: `processQueue` → `clearAuditsStore` → reconcile. Se la rete è ancora instabile, l’archivio locale sparisce e il server è vecchio.
 
 Regola: **mai** `clearAuditsStore` al login dello **stesso** utente. Coda prima; poi merge (già `hasRichContent` / checklist più ricca); persist. Wipe solo al logout (altro utente / isolamento tenant), dopo `LogoutSyncGuard`.
+
+**DoD (02/09/2026):**
+
+- [x] Stesso utente: nessun `clearAuditsStore` pre-merge al `auth:login` (`storageContext.loginNoWipe.test.js`)
+- [x] Server vuoto/vecchio: locale ricco resta (`resolveAuditsAfterLogin` / `runLoginAuditHydrate`)
+- [x] Wipe resta su `sgq:userLoggedOut`
 
 ---
 
