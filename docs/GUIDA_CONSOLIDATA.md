@@ -19,6 +19,7 @@
 | [Piano qualità / test](archive/sessions/GUIDA_DIARIO_2026.md#piano-qualità-fasi-di-sviluppo-e-test-di-robustezza) | DoD, piramide L1–L5, smoke |
 | [Procedura chiusura autonoma](archive/sessions/GUIDA_DIARIO_2026.md#procedura-chiusura-autonoma) | Ciclo slice agente: fix, test, smoke, doc, limiti |
 | [Sync ADR-008](archive/sessions/GUIDA_DIARIO_2026.md#architettura-target-sync--event-sourced-adr-008) | Event-sourcing, regole sync |
+| [**Audit in campo — SOP copertura**](#audit-in-campo--sop-copertura) | Prima di zona morta: login + aprire l’audit; poi offline |
 | [**A** — Checklist, sync, deploy](#a-checklist-custom-sync-deploy-vps) | Procedure operative principali |
 | [**B** — Word Verbale](#b-report-word--checklist-custom-verbale) | Export OOXML / template |
 | [**C** — Database e repro](#c-database-e-repro) | Script SQL, repro bug |
