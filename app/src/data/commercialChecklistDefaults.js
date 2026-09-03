@@ -42,6 +42,7 @@ export function buildSeedItemsFromDefaults() {
       item_text: item.text,
       sort_order: idx,
       is_core: true,
+      attachment_required: false,
     })),
     ...FINAL_ITEMS.map((item, idx) => ({
       phase: "final",
@@ -49,6 +50,7 @@ export function buildSeedItemsFromDefaults() {
       item_text: item.text,
       sort_order: idx,
       is_core: true,
+      attachment_required: false,
     })),
   ];
 }

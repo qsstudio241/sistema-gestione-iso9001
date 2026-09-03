@@ -2366,6 +2366,22 @@ class ApiService {
         return this.put(`/contract-reviews/${caseId}/checklist/${itemId}`, data);
     }
 
+    async listContractReviewChecklistAttachments(caseId) {
+        return this.get(`/contract-reviews/${caseId}/checklist-attachments`);
+    }
+
+    async linkContractReviewChecklistAttachment(caseId, itemId, attachmentId) {
+        return this.post(`/contract-reviews/${caseId}/checklist/${itemId}/attachments`, {
+            attachment_id: attachmentId,
+        });
+    }
+
+    async unlinkContractReviewChecklistAttachment(caseId, itemId, attachmentId) {
+        return this.delete(
+            `/contract-reviews/${caseId}/checklist/${itemId}/attachments/${attachmentId}`,
+        );
+    }
+
     async getContractReviewSummary() {
         return this.get('/contract-reviews/summary');
     }

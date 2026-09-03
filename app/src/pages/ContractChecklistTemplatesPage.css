@@ -131,9 +131,15 @@
 
 .cct-item-list li {
   display: grid;
-  grid-template-columns: 110px 1fr auto;
+  grid-template-columns: 110px 1fr auto auto;
   gap: 0.45rem;
   align-items: center;
+}
+
+.cct-attach-req {
+  font-size: 0.78rem;
+  white-space: nowrap;
+  color: var(--color-text-muted, #64748b);
 }
 
 .cct-ref {

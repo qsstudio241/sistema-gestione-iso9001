@@ -46,8 +46,8 @@ function isCoreRef(phase, ref) {
  * Non omette mai un ref core. Gli extras sono voci template non-core.
  *
  * @param {'preliminary'|'final'} phase
- * @param {Array<{ item_ref?: string, ref?: string, item_text?: string, text?: string, sort_order?: number, is_core?: boolean|number }>} templateItems
- * @returns {Array<{ ref: string, text: string, is_core: boolean, sort_order: number }>}
+ * @param {Array<{ item_ref?: string, ref?: string, item_text?: string, text?: string, sort_order?: number, is_core?: boolean|number, attachment_required?: boolean|number }>} templateItems
+ * @returns {Array<{ ref: string, text: string, is_core: boolean, sort_order: number, attachment_required: boolean }>}
  */
 function mergeTemplateWithDefaults(phase, templateItems) {
   const defaults = getDefaultItems(phase);
@@ -64,6 +64,7 @@ function mergeTemplateWithDefaults(phase, templateItems) {
       text: text.substring(0, 500),
       sort_order: Number.isFinite(Number(raw.sort_order)) ? Number(raw.sort_order) : 0,
       is_core: !!(raw.is_core === true || raw.is_core === 1 || isCoreRef(phase, ref)),
+      attachment_required: !!(raw.attachment_required === true || raw.attachment_required === 1),
     });
   }
 
@@ -75,6 +76,7 @@ function mergeTemplateWithDefaults(phase, templateItems) {
       text: override ? override.text : d.text,
       is_core: true,
       sort_order: override && Number.isFinite(override.sort_order) ? override.sort_order : idx,
+      attachment_required: override ? !!override.attachment_required : false,
     });
     byRef.delete(d.ref);
   });
@@ -89,6 +91,7 @@ function mergeTemplateWithDefaults(phase, templateItems) {
       text: item.text,
       is_core: false,
       sort_order: Number.isFinite(item.sort_order) ? item.sort_order : defaults.length + i,
+      attachment_required: !!item.attachment_required,
     });
   });
 
@@ -105,6 +108,7 @@ function buildSeedItemsFromDefaults() {
       item_text: item.text,
       sort_order: idx,
       is_core: true,
+      attachment_required: false,
     });
   });
   FINAL_ITEMS.forEach((item, idx) => {
@@ -114,6 +118,7 @@ function buildSeedItemsFromDefaults() {
       item_text: item.text,
       sort_order: idx,
       is_core: true,
+      attachment_required: false,
     });
   });
   return items;

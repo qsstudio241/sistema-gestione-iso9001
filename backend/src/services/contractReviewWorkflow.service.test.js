@@ -28,10 +28,21 @@ describe('contractReviewWorkflow', () => {
     it('evaluateTransitionBlockers — checklist preliminare incompleta', async () => {
         query
             .mockResolvedValueOnce({ recordset: [{ cnt: 2 }] })
-            .mockResolvedValueOnce({ recordset: [{ cnt: 1 }] });
+            .mockResolvedValueOnce({ recordset: [{ cnt: 1 }] })
+            .mockResolvedValueOnce({ recordset: [] });
         const gate = await workflow.evaluateTransitionBlockers(1, 'INTAKE_REVIEW', 'QUOTE_PREP');
         expect(gate.blocked).toBe(true);
         expect(gate.missing[0]).toMatch(/preliminare/i);
+    });
+
+    it('evaluateTransitionBlockers — allegato obbligatorio mancante', async () => {
+        query
+            .mockResolvedValueOnce({ recordset: [{ cnt: 2 }] })
+            .mockResolvedValueOnce({ recordset: [{ cnt: 0 }] })
+            .mockResolvedValueOnce({ recordset: [{ item_ref: 'P3' }] });
+        const gate = await workflow.evaluateTransitionBlockers(1, 'INTAKE_REVIEW', 'QUOTE_PREP');
+        expect(gate.blocked).toBe(true);
+        expect(gate.missing.some((m) => /allegati obbligatori/i.test(m) && /P3/.test(m))).toBe(true);
     });
 
     it('evaluateTransitionBlockers — ordine mancante', async () => {
