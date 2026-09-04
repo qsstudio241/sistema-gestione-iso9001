@@ -2,11 +2,25 @@
 
 > **Destinazione**: il lavoro di una giornata di audit **non si perde** per interruzione di rete, caduta del server, chiusura app o nuovo login sullo stesso telefono. Resta sul dispositivo finché il server non ha **confermato** la ricezione. Allineamento da un secondo dispositivo (PC) non cancella il lavoro non ancora inviato.
 > **Spec / ADR**: [ADR-008](../adr/ADR-008-event-sourcing-sync.md) (event store = target lungo; questa epic **non** riscrive il motore) · [ADR-007](../adr/ADR-007-logout-offline-backup-e-mirror-cartella-pc.md) (gate logout già in produzione; export recupero = CONS-6) · [ADR-002](../adr/ADR-002-offline-first-sync.md) · [ADR-004](../adr/ADR-004-mobile-auth-localstorage.md)
-> **Brief attivi CONS:** nessuno. CONS-1…6 **tutte su `origin/main`**. Slot [`DEPUTYTASK.md`](DEPUTYTASK.md) su `main` = **PONTE-1 HITL UX APERTO** (altra epic — non riusare; non toccato in questa passata). Brief CONS CHIUSI: `DEPUTYTASK1`…`5`.
+> **Brief attivi CONS:** nessuno. CONS-1…6 **tutte su `origin/main`**. Slot [`DEPUTYTASK.md`](DEPUTYTASK.md) = **PONTE-1 CHIUSO** (altra epic). Brief CONS CHIUSI: `DEPUTYTASK1`…`5`.
 > **Autorizzazione committente**: 02/09/2026 — colmare subito il gap di conservazione; avviso mobile «non aprire lo stesso audit dal PC finché la sync non è fatta».
-> **Verifica post-merge (03/09/2026, secondo «mergiato»):** CONS-5 [#636](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/636) **MERGED** (`823dfeb3`, 15:36Z) + docs [#637](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/637) **MERGED** (`9aed1424`, 16:44Z; #637 diceva ancora «manca CONS-5»). Skip `Nessun lock → salta silenziosamente` **assente** su `origin/main`. `update_audit` parte senza lock token (ADR-008 T5). **Epic CONS-1…6 chiusa.** GUIDA / roadmap § Stato attuale **non** in questa PR (PONTE-1 APERTO). Bozza hub in fondo.
+> **Chiusura sessione (03/09/2026):** epic CONS-1…6 chiusa. SOP operativa [sotto](#come-operare-senza-copertura-sop): login + aprire l’audit **prima** di lasciare la copertura; in campo si lavora offline; al ritorno della rete la coda parte. Starlink non richiesto. GUIDA + roadmap § Stato aggiornati nella stessa PR di questa nota.
 
 **Garanzia operativa (non 100% matematico):** telefono non formattato, dati sito non cancellati dall’utente, disco non pieno. Quello che **si deve** poter dire al cliente: *non lo perdiamo più per sync, login o apertura da PC.*
+
+## Come operare senza copertura (SOP)
+
+Nota di chiusura sessione 03/09/2026 (committente). Non è un requisito di satellite: è **preparare il telefono mentre c’è rete**.
+
+| Momento | Cosa fare |
+|---------|-----------|
+| **Prima di lasciare la copertura** | Sul telefono: aprire l’app → accedere → **aprire l’audit** da compilare. Sessione e checklist restano sul dispositivo. |
+| **In campo (niente rete)** | Compilare C/NC/OSS, note, foto checklist. Non serve internet. **Non** aprire lo stesso audit dal PC. **Non** cancellare i dati del sito. |
+| **Quando torna la rete** | Riaprire l’app: la coda parte da sola. Solo dopo si guarda lo stesso audit dal PC. |
+
+**Già in zona morta non si può:** primo login / password; aprire un audit **mai** aperto su quel telefono; foto verbali CND in coda. Se la sessione è **già scaduta** in zona morta, non si rientra senza rete (CONS-7, auth Alto — non aperto).
+
+Dettaglio in GUIDA: [Audit in campo — SOP copertura](../GUIDA_CONSOLIDATA.md#audit-in-campo--sop-copertura).
 
 ## Perché questa mappa (e non un unico fix)
 
@@ -168,16 +182,10 @@ Residuo **ora**: nessuno in questa epic. CONS-1…6 su `main`. Nebbia: CONS-7 (a
 
 ---
 
-## Bozza hub (non applicata — PONTE-1 APERTO)
+## Hub (applicato 03/09/2026, chiusura sessione)
 
-Da copiare **quando** nessun altro `DEPUTYTASK*` APERTO tocca i hub (oggi [`DEPUTYTASK.md`](DEPUTYTASK.md) = PONTE-1 HITL UX).
+Nessun `DEPUTYTASK*` APERTO. GUIDA (riga Sync + § SOP) e roadmap § Stato aggiornati nella stessa PR.
 
-**Roadmap § Stato attuale — 5 righe:**
+**Roadmap § Stato:** epic CONS-1…6 CHIUSA; priorità #1 = SOP campo + smoke prod (hard-refresh Netlify), non più «colmare gap codice». CONS-7 (login già in zona morta) resta nebbia.
 
-1. Sessione 03/09/2026: epic conservazione audit **CONS-1…6 CHIUSA** su `main` (#632/#630/#634/#635/#636/#631).
-2. CONS-5: skip lock `update_audit` rimosso; coda parte senza token (ADR-008 T5).
-3. Priorità #1 tabella: chiudere o spostare a «smoke prod + hard-refresh Netlify» (non più «colmare gap codice»).
-4. PONTE-1 resta APERTO sullo slot `DEPUTYTASK.md` — non sovrascrivere.
-5. Smoke committente: login + obiettivo offline; Ctrl+Shift+R dopo deploy Netlify.
-
-**GUIDA tabella lezioni — 1 riga:** 03/09/2026 — Conservazione audit: secondo «mergiato» = CONS-5+#637 su `main`. Verificare `gh pr view` **e** lo skip in `syncService.js` prima di chiudere l’epic. #637 mergiata dopo #636 lasciava il PLAN che diceva «manca CONS-5».
+**GUIDA:** riga Sync 03/09 + sezione [Audit in campo — SOP copertura](../GUIDA_CONSOLIDATA.md#audit-in-campo--sop-copertura).

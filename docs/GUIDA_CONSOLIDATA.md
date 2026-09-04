@@ -19,6 +19,7 @@
 | [Piano qualità / test](archive/sessions/GUIDA_DIARIO_2026.md#piano-qualità-fasi-di-sviluppo-e-test-di-robustezza) | DoD, piramide L1–L5, smoke |
 | [Procedura chiusura autonoma](archive/sessions/GUIDA_DIARIO_2026.md#procedura-chiusura-autonoma) | Ciclo slice agente: fix, test, smoke, doc, limiti |
 | [Sync ADR-008](archive/sessions/GUIDA_DIARIO_2026.md#architettura-target-sync--event-sourced-adr-008) | Event-sourcing, regole sync |
+| [**Audit in campo — SOP copertura**](#audit-in-campo--sop-copertura) | Prima di zona morta: login + aprire l’audit; poi offline |
 | [**A** — Checklist, sync, deploy](#a-checklist-custom-sync-deploy-vps) | Procedure operative principali |
 | [**B** — Word Verbale](#b-report-word--checklist-custom-verbale) | Export OOXML / template |
 | [**C** — Database e repro](#c-database-e-repro) | Script SQL, repro bug |
@@ -388,6 +389,17 @@ Configurazione **versionata nel repo** (priorità massima rispetto all'ambiente 
 | Lezione | Regola da applicare | Dettaglio |
 |---------|--------------------|-----------|
 | **Sync event-sourced (ADR-008)** | Nessuna nuova feature di sync può inviare lo **«stato corrente intero»**: ogni campo → evento atomico con `idempotency_key`. Server-wins all'apertura; debounce hydrate resettato al cambio audit. | [§ Architettura target sync — ADR-008](archive/sessions/GUIDA_DIARIO_2026.md#architettura-target-sync--event-sourced-adr-008) |
+| **Audit in campo senza copertura (03/09/2026, chiusura CONS)** — in zona morta **non** si fa il primo login e **non** si apre un audit mai visto su quel telefono. Starlink / satellite non è la soluzione. | **Prima** di lasciare la rete: aprire l’app, accedere, aprire l’audit. In campo: compilare offline. Al ritorno della rete: la coda parte da sola; solo allora aprire lo stesso audit dal PC. Token+utente già in `localStorage`; JWT tipico 24h. Enigma residuo = sessione scaduta già in zona morta (CONS-7 nebbia, auth Alto). | [§ Audit in campo — SOP copertura](#audit-in-campo--sop-copertura) · [PLAN CONS](agent-tasks/PLAN_AUDIT_CONSERVAZIONE_SLICES.md#come-operare-senza-copertura-sop) |
+
+### Audit in campo — SOP copertura
+
+Procedura operativa (committente, 03/09/2026). Il codice CONS-1…6 è su `main`; questa è **come si usa** in officina / cantiere.
+
+1. **Prima di uscire dalla copertura** (casa, ufficio, parcheggio con rete): sul telefono aprire l’app, **accedere**, **aprire l’audit** che si compilerà. Così checklist e sessione restano sul dispositivo.
+2. **In campo senza rete**: compilare C/NC/OSS, note, foto checklist. Non serve internet né satellite. Non aprire lo stesso audit dal PC. Non cancellare i dati del sito dal browser.
+3. **Quando torna la rete**: riaprire l’app; la coda verso il server parte da sola. Solo dopo la sync il lavoro è visibile sul PC.
+
+**Non si può fare già in zona morta:** primo accesso / password (serve rete); aprire un audit **mai** aperto su quel telefono; foto verbali CND in coda (servono rete). Se la sessione è già scaduta in zona morta: non si rientra senza rete — non è un buco di sync, è login (CONS-7).
 
 ---
 
@@ -2326,7 +2338,7 @@ Use case tipico: import anagrafiche personale / elenco qualifiche / elenco WPS d
 ### Mobile vs Desktop (policy operativa)
 
 - **Mobile (primario)**:
-  - audit sul campo (checklist + note + foto)
+  - audit sul campo (checklist + note + foto) — **prima** login + aprire l’audit in zona con rete, poi compilare offline; [SOP copertura](#audit-in-campo--sop-copertura)
   - consultazione rapida (elenchi + scadenze)
   - upload “leggero” (foto/camera) quando supportato e stabile
 - **Desktop (primario)**:

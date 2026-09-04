@@ -8,19 +8,23 @@
 
 > **Risposta standard a «stato di avanzamento del progetto e priorità da affrontare»**: sintetizzare da questa sezione (moduli maturi + sessione più recente + tabella priorità sotto), **non** dal banner storico più sotto (superato, tenuto solo per traccia) né dall'archivio marzo 2026 [`docs/archive/PROJECT_CONTEXT_STATO_FUNZIONALITA_2026-03.md`](archive/PROJECT_CONTEXT_STATO_FUNZIONALITA_2026-03.md). **Aggiornare questa sezione a fine sessione** se emergono nuove priorità o se una priorità elencata viene chiusa (stesso principio delle "Lezioni apprese" in [GUIDA_CONSOLIDATA.md](GUIDA_CONSOLIDATA.md) — sintesi qui, dettaglio linkato).
 
-**Ultimo aggiornamento di questa sezione**: 02/09/2026 (post-merge ING-1…ING-4 #624–#627; ops mig162+VPS OK; ING-5 HITL; wayfinder conservazione audit CONS-1).
+**Ultimo aggiornamento di questa sezione**: 03/09/2026 (chiusura sessione CONS: SOP campo senza copertura; epic CONS-1…6 già su `main`).
 
 ### Moduli maturi (in produzione, uso quotidiano dai clienti Camellini/Mason)
 
 Audit multi-standard (9001/14001/45001) · Non Conformità (workflow ISO 10.2 completo) · Qualifiche Personale saldatori/NDT/coordinatori (ISO 9606-1/14732/14731/9712) · Saldatura (WPQR con range duali t1/t2 FW, tipologia SW/prigioniero + P+T + doppio materiale, range ISO 14555 §10.2.8 + Tabella 2 boiler pins, generazione WPS, 15614-1/15614-2, Welding Book, Commesse ISO 3834, Dashboard 3834) · SAL (gap analysis requisiti con AI) · Registro Documenti + Scadenzari · Notifiche/Alert (documenti/NC/qualifiche) · Riesame di Direzione · RBAC multi-tenant (`company_access`) · Registro obblighi legali (ambiente + sicurezza) · Assistente AI / Gap Analysis euristica · CND verbali (VT/MT/PT, gate 9712, Word, Registro, offline) · Libreria fonti (Gestione, studio admin) · Gap fonti Libreria (email SA, coda via 2, chiusura tenant/piattaforma).
 
-### Sessione più recente (02/09/2026)
+### Sessione più recente (03/09/2026)
 
-**ING-1…ING-4 CHIUSE** (#624 classificazione batch, #625 template checklist+mig162, #626 matching ruoli, #627 segnale evadibilità). Ops post-audit Camellini: health VPS OK, mig **162** verificata, routes template già sul BE. **ING-5** (agente triage) = **HITL/wayfinder** — brief APERTO senza codice (delta vs batch HITL ING-1/2 non definito). **VC-5 non aperto** senza Lead. Alternativa AFK candidata: ponte gap→checklist (prio #3 PLAN). Piano: [`PLAN_VALUTAZIONE_COMMESSE_SLICES.md`](agent-tasks/PLAN_VALUTAZIONE_COMMESSE_SLICES.md).
+**Conservazione audit CONS-1…6 CHIUSA** su `main` (#632 flush, #630 avviso PC, #634 login no-wipe, #635 hydrate, #636 coda `update_audit`, #631 export). **SOP campo** (chiusura sessione): prima di lasciare la copertura, sul telefono **accedere e aprire l’audit**; in zona morta si compila offline (niente Starlink); al ritorno della rete la coda parte; solo allora aprire lo stesso audit dal PC. Dettaglio: [PLAN § SOP](agent-tasks/PLAN_AUDIT_CONSERVAZIONE_SLICES.md#come-operare-senza-copertura-sop) · [GUIDA](GUIDA_CONSOLIDATA.md#audit-in-campo--sop-copertura). Residuo nebbia: CONS-7 (login già scaduto in zona morta). Smoke: hard-refresh Netlify + obiettivo offline.
 
-**Wayfinder conservazione dati audit (offline / caduta server)** — mappa [`PLAN_AUDIT_CONSERVAZIONE_SLICES.md`](agent-tasks/PLAN_AUDIT_CONSERVAZIONE_SLICES.md). Destinazione: il lavoro della giornata non si perde per rete, chiusura app o login; avviso «non aprire da PC» (CONS-2). Prima slice **CONS-1** (flush autosave) — brief su slot parallelo / dopo chiusura ING-5 HITL (vedi PLAN). Nessun codice applicativo in quella sessione docs. CONS-3…5 = Alto, seriali.
+### Sessione precedente (02/09/2026)
 
-**Valutazione commesse VC-1…VC-4 CHIUSE** — report studio + catalogo + refresh + export Word checklist Riesame requisiti (HITL B) mergiati (#619–#622). Post-merge: piano riorientato su **ingest mole file cliente** (ING-1…ING-5). Nessun deploy BE da quella catena (export FE-only).
+**ING-1…ING-4 CHIUSE** (#624 classificazione batch, #625 template checklist+mig162, #626 matching ruoli, #627 segnale evadibilità). Ops post-audit Camellini: health VPS OK, mig **162** verificata, routes template già sul BE. **ING-5** (agente triage) = **HITL/wayfinder**. **VC-5 non aperto** senza Lead. Piano: [`PLAN_VALUTAZIONE_COMMESSE_SLICES.md`](agent-tasks/PLAN_VALUTAZIONE_COMMESSE_SLICES.md).
+
+**Wayfinder conservazione audit** — mappa [`PLAN_AUDIT_CONSERVAZIONE_SLICES.md`](agent-tasks/PLAN_AUDIT_CONSERVAZIONE_SLICES.md); codice CONS poi chiuso il 03/09 (vedi sessione sopra).
+
+**Valutazione commesse VC-1…VC-4 CHIUSE** — report studio + catalogo + refresh + export Word checklist Riesame requisiti (HITL B) mergiati (#619–#622). Post-merge: piano riorientato su **ingest mole file cliente** (ING-1…ING-5).
 
 ### Sessione precedente (01/09/2026)
 
@@ -46,7 +50,7 @@ Audit multi-standard (9001/14001/45001) · Non Conformità (workflow ISO 10.2 co
 
 | # | Priorità | Perché | Dove riprendere |
 |---|---|---|---|
-| 1 | **Conservazione dati audit (offline / caduta server)** | Lavoro giornata non garantito: autosave 2s senza flush, login svuota IDB, hydrate server-wins, PC sullo stesso audit. Committente 02/09: colmare subito | [PLAN](agent-tasks/PLAN_AUDIT_CONSERVAZIONE_SLICES.md) · CONS-1 (slot dopo ING-5 HITL o parallelo) |
+| 1 | **Audit in campo — SOP copertura + smoke prod** | Codice CONS-1…6 su `main`. Operare: login + aprire l’audit **prima** di lasciare la rete; offline in campo; sync al ritorno. Smoke: hard-refresh Netlify + obiettivo offline. CONS-7 (login già in zona morta) = nebbia Alto, non aperto | [PLAN § SOP](agent-tasks/PLAN_AUDIT_CONSERVAZIONE_SLICES.md#come-operare-senza-copertura-sop) · [GUIDA](GUIDA_CONSOLIDATA.md#audit-in-campo--sop-copertura) |
 | 2 | **Valutazione commesse — ING-5 HITL / ponte gap / VC-5 Lead** | ING-1…4 CHIUSE (#624–#627). ING-5 bloccata su domande prodotto (vs batch HITL già live). Ops mig162 OK. Ponte gap/chiarimenti dopo. VC-5 solo con Lead | [PLAN](agent-tasks/PLAN_VALUTAZIONE_COMMESSE_SLICES.md) · brief [ING-5 HITL](agent-tasks/DEPUTYTASK.md) |
 | 3 | **Modulo Notifiche/Alert — destinatario allerte qualifiche non è una scelta esplicita in anagrafica** | Oggi risolto da un algoritmo a cascata, non da una scelta visibile in UI | `qualificationAlert.service.js` (`resolveWeldingCoordinatorRecipients`) |
 | 4 | **Shell dialog di revisione ingest — markup/CSS duplicato** (non urgente, basso rischio) | `IngestReviewDialog.jsx` vs dialog interno `ReprocessQueueBanner.jsx`: guscio overlay duplicato (~60-80 righe); pattern sistemico su molti altri modal nel progetto | Vedi backlog sotto per dettaglio |
