@@ -5,7 +5,7 @@
 **Chiuso:** 04/09/2026  
 **Rischio:** Medio — UI additiva viewer + regola/docs; niente auth/sync/DB  
 **Branch:** `cursor/doc-viewer-chrome-std-b42c`  
-**PR:** draft da aprire su `main`
+**PR:** compare https://github.com/qsstudio241/sistema-gestione-iso9001/compare/main...cursor/doc-viewer-chrome-std-b42c?expand=1 (gh create 403 in questa run; aprire draft da qui)
 
 > **Allineamento Git (autonomo)**: `git fetch origin main` + `git pull origin main` prima di eseguire. **Non** chiedere al committente.  
 > Comando: `Leggi docs/agent-tasks/DEPUTYTASK_VIEWER_CHROME.md ed eseguilo. Chiudi con TEST OK o FIX NON APPLICABILI.`
