@@ -16,6 +16,12 @@ vi.mock("../services/apiService", () => ({
 
 describe("DocumentPdfViewer chrome", () => {
   beforeEach(() => {
+    window.matchMedia = vi.fn(() => ({
+      matches: false,
+      media: "",
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
+    }));
     mockGetDocFileBlob.mockReset();
     mockGetDocFileBlob.mockResolvedValue(new Blob(["%PDF"], { type: "application/pdf" }));
   });
