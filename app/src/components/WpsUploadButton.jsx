@@ -118,16 +118,14 @@ export default function WpsUploadButton({ companyId, companyName, onUploadComple
   if (!isValidCompany) {
     return (
       <div className="wps-upload">
-        <button
-          type="button"
-          className="wps-upload__btn"
+        <FileDropzone
+          variant="compact"
           disabled
+          label="Seleziona PDF WPS"
+          ariaLabel="Seleziona PDF WPS. Seleziona un'azienda nell'Ambito in alto."
           title="Seleziona un'azienda nell'Ambito in alto per caricare i WPS"
-          aria-label="Seleziona PDF WPS. Seleziona un'azienda nell'Ambito in alto."
-        >
-          <span className="wps-upload__icon" role="img" aria-label="upload">{"\u2795"}</span>
-          Seleziona PDF WPS
-        </button>
+          hint="Seleziona un'azienda in Ambito"
+        />
       </div>
     );
   }

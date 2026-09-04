@@ -192,16 +192,14 @@ export default function QualificationUploadButton({
   if (!isValidCompany) {
     return (
       <div className="qual-upload">
-        <button
-          type="button"
-          className="qual-upload__btn"
+        <FileDropzone
+          variant="compact"
           disabled
+          label="Carica qualifiche (batch)"
+          ariaLabel="Carica qualifiche (batch). Seleziona un'azienda nell'Ambito in alto."
           title="Seleziona un'azienda nell'Ambito in alto per caricare le qualifiche"
-          aria-label="Carica qualifiche (batch). Seleziona un'azienda nell'Ambito in alto."
-        >
-          <span className="qual-upload__icon" role="img" aria-label="upload">{"\u2795"}</span>
-          Carica qualifiche (batch)
-        </button>
+          hint="Seleziona un'azienda in Ambito"
+        />
       </div>
     );
   }

@@ -44,7 +44,7 @@ describe("QualificationUploadButton — visibile anche senza azienda", () => {
     render(<QualificationUploadButton companyId="" companyName="" onUploadComplete={() => {}} />);
     const btn = screen.getByRole("button", { name: /Carica qualifiche \(batch\)/i });
     expect(btn).toBeInTheDocument();
-    expect(btn).toBeDisabled();
+    expect(btn).toHaveAttribute("aria-disabled", "true");
   });
 
   it("resta cliccabile quando l'azienda e' valida", () => {

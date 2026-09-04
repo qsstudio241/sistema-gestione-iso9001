@@ -118,16 +118,14 @@ export default function WpqrUploadButton({ companyId, companyName, onUploadCompl
   if (!isValidCompany) {
     return (
       <div className="wpqr-upload">
-        <button
-          type="button"
-          className="wpqr-upload__btn"
+        <FileDropzone
+          variant="compact"
           disabled
+          label="Carica WPQR (batch)"
+          ariaLabel="Carica WPQR (batch). Seleziona un'azienda nell'Ambito in alto."
           title="Seleziona un'azienda nell'Ambito in alto per caricare i WPQR"
-          aria-label="Carica WPQR (batch). Seleziona un'azienda nell'Ambito in alto."
-        >
-          <span className="wpqr-upload__icon" role="img" aria-label="upload">{"\u2795"}</span>
-          Carica WPQR (batch)
-        </button>
+          hint="Seleziona un'azienda in Ambito"
+        />
       </div>
     );
   }
