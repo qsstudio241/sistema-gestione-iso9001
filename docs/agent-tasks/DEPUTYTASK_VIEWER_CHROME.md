@@ -1,9 +1,11 @@
 # DEPUTYTASK_VIEWER_CHROME — Chrome unico anteprima documenti
 
-**Stato:** APERTO  
+**Stato:** CHIUSO — TEST OK  
 **Aperto:** 04/09/2026  
+**Chiuso:** 04/09/2026  
 **Rischio:** Medio — UI additiva viewer + regola/docs; niente auth/sync/DB  
-**Branch:** `cursor/doc-viewer-chrome-std-b42c`
+**Branch:** `cursor/doc-viewer-chrome-std-b42c`  
+**PR:** draft da aprire su `main`
 
 > **Allineamento Git (autonomo)**: `git fetch origin main` + `git pull origin main` prima di eseguire. **Non** chiedere al committente.  
 > Comando: `Leggi docs/agent-tasks/DEPUTYTASK_VIEWER_CHROME.md ed eseguilo. Chiudi con TEST OK o FIX NON APPLICABILI.`
@@ -14,12 +16,12 @@ Word ha già «Schermo intero»; PDF e Excel restano stretti. Il committente vuo
 
 ## DoD
 
-- [ ] PDF, Word, Excel: Chiudi + Scarica (se previsto) + Schermo intero / Riduci
-- [ ] Schermo intero = overlay viewport (classe CSS), non Fullscreen API, non finestra Windows
-- [ ] Nessun look OS (─ □ ✕)
-- [ ] `DocFileDialog` e `IngestDialogShell` non convertiti a fullscreen viewer
-- [ ] Regola Cursor + riga in `LIBRERIA_UI_SGQ.md`
-- [ ] Test L1 sul toggle/classe fullscreen
+- [x] PDF, Word, Excel: Chiudi + Scarica (se previsto) + Schermo intero / Riduci
+- [x] Schermo intero = overlay viewport (classe CSS), non Fullscreen API, non finestra Windows
+- [x] Nessun look OS (─ □ ✕)
+- [x] `DocFileDialog` e `IngestDialogShell` non convertiti a fullscreen viewer
+- [x] Regola Cursor + riga in `LIBRERIA_UI_SGQ.md`
+- [x] Test L1 sul toggle/classe fullscreen (22/22) + build Vite OK + smoke UI PDF
 
 ## File previsti
 
