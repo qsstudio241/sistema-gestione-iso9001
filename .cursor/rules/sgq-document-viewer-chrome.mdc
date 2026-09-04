@@ -1,0 +1,36 @@
+---
+description: Chrome unico dei visualizzatori documenti in-app (PDF, Word, Excel). Standardizzazione sempre quando possibile.
+globs: "app/src/components/**/*Viewer*.{jsx,js,css}, app/src/components/DocumentViewerChrome.jsx, app/src/components/DocFileDialog.jsx"
+alwaysApply: false
+---
+
+# Visualizzatori documenti — chrome unico
+
+**Standardizzazione sempre quando possibile.** Un nuovo visualizzatore in-app riusa lo stesso chrome: non un terzo layout.
+
+## Cosa usare
+
+- Componente: `app/src/components/DocumentViewerChrome.jsx`
+- Catalogo: `docs/reference/LIBRERIA_UI_SGQ.md` (riga overlay visualizzatore)
+- Modello storico: `DocumentDocxViewer.jsx` (zoom extra nello slot, chrome condiviso)
+
+## Chrome obbligatorio
+
+| Azione | Sempre | Note |
+|---|---|---|
+| Chiudi | sì | Pulsante testo dell'app (`title="Chiudi"`), non il ✕ di Windows |
+| Scarica | se già previsto | Stesso posto e stile; se il download non c'è, non inventarlo |
+| Schermo intero / Riduci | sì (overlay) | Toggle **CSS** sul viewport dell'app, come Word. Non Fullscreen API del browser. Non nuova finestra Windows |
+
+## Vietato
+
+- Imitare i pulsanti OS (─ □ ✕ / caption bar Windows)
+- Un header diverso per PDF, Word, Excel o per il prossimo formato
+- `DocFileDialog` in schermo intero: è il **form file**, non il viewer
+- Toccare `IngestDialogShell` per questo chrome: ha già il suo expand
+
+## Prima di un overlay nuovo
+
+1. Esiste già un chrome? Riusa `DocumentViewerChrome` (o `IngestDialogShell` se è ingest/split-view).
+2. Non copiare un quarto header.
+3. Accenti italiani corretti; `\u` solo in stringhe JS.

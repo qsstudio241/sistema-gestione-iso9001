@@ -27,6 +27,7 @@
 | Card contenitore | `Card` da `SharedComponents.jsx` | Per KPI cliccabili: `.sq-stat` / `.dl-stat`, non `Card` |
 | Griglia dati | `SgqDataGrid.jsx` | Liste modulo (Qualifiche, Scadenzari, SAL, …) |
 | Overlay dialog ingest / split-view | `IngestDialogShell.jsx` | Guscio unico (PR #377); CSS specifico nel dialog figlio. Anche import Excel M03 (`RiskM03ImportDialog`) |
+| Overlay visualizzatore documenti (PDF / Word / Excel) | `DocumentViewerChrome.jsx` | Chrome unico: **Chiudi** + **Scarica** (se già previsto) + **Schermo intero / Riduci**. Toggle CSS sul viewport dell'app (non Fullscreen API, non finestra Windows). Vietato imitare ─ □ ✕ di sistema. `DocFileDialog` resta il form file. |
 | Cerca azienda nel registro | `CompanyRegistrySearch.jsx` | Lista da spuntare (classi `did-*`); non salva da sola |
 | Conteggio NC/OSS/OM (Sezione 11) | `calculateFindingsMetrics` + `calculateCustomFindingsMetrics` (`metricsCalculator.js`) via `AuditOutcomeSection.jsx` | — |
 | Stato salvato/errore form | `custom-checklist-form-error`, `custom-checklist-saving` | `CustomChecklistAuditView.css` |
