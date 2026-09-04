@@ -6,6 +6,7 @@
 import React, { useState, useEffect, useCallback } from "react";
 import apiService from "../services/apiService";
 import { useCompanyScope } from "../contexts/CompanyScopeContext";
+import FileDropzone from "../components/FileDropzone";
 import { formatDate } from "../utils/dateHelpers";
 import { riskScore, riskScoreLevel, scoreColor, displayFurtherActions, residualScoreFromRisk, normalizePgMax, pgOptions } from "../utils/riskScore";
 import { appendCatalogLine, formatContextFactorLine, formatInterestedPartyLine } from "../utils/catalogTextAppend";
@@ -649,9 +650,8 @@ function RisksTab({ companies = [], filterCompany = "", reloadCompanies }) {
     }
   }
 
-  async function handlePickExcel(e) {
-    const file = e.target.files?.[0];
-    e.target.value = "";
+  async function handlePickExcel(files) {
+    const file = files?.[0];
     if (!file) return;
     if (!filterCompany) {
       setImportError("Seleziona un'azienda nell'Ambito in alto.");
@@ -812,15 +812,16 @@ function RisksTab({ companies = [], filterCompany = "", reloadCompanies }) {
         ) : (
           <span className="studio-hint">Scala 1–3. Seleziona un&apos;azienda in header per 1–4 o 1–5.</span>
         )}
-        <button
-          type="button"
-          className="btn-secondary"
+        <FileDropzone
+          variant="compact"
+          accept=".xlsx,.xls"
           disabled={detecting || !filterCompany}
-          title={!filterCompany ? "Seleziona un'azienda nell'Ambito in alto" : ""}
-          onClick={() => document.getElementById("risks-m03-file")?.click()}
-        >
-          {detecting ? "Analisi Excel..." : "Importa Excel"}
-        </button>
+          onFiles={handlePickExcel}
+          label={detecting ? "Analisi Excel..." : "Importa Excel"}
+          ariaLabel="Importa Excel"
+          title={!filterCompany ? "Seleziona un'azienda nell'Ambito in alto" : "Trascina il foglio o clicca"}
+          id="risks-m03-file"
+        />
         <button
           type="button"
           className="btn-secondary"
@@ -828,14 +829,6 @@ function RisksTab({ companies = [], filterCompany = "", reloadCompanies }) {
         >
           Scarica modello
         </button>
-        <input
-          id="risks-m03-file"
-          type="file"
-          accept=".xlsx,.xls"
-          hidden
-          disabled={!filterCompany}
-          onChange={handlePickExcel}
-        />
       </div>
       {importError && <p className="form-error">{importError}</p>}
       {listError && <p className="form-error">{listError}</p>}

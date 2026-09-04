@@ -5,6 +5,7 @@
 
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import apiService from "../services/apiService";
+import FileDropzone from "./FileDropzone";
 import "./AttachmentSection.css";
 
 function formatSize(bytes) {
@@ -45,15 +46,14 @@ export default function NcAttachmentsSection({ ncId, readOnly = false }) {
     load();
   }, [load]);
 
-  async function handleFilesSelected(e) {
-    const files = Array.from(e.target.files || []);
-    e.target.value = "";
-    if (!files.length || readOnly) return;
+  async function handleFilesSelected(files) {
+    const list = Array.from(files || []);
+    if (!list.length || readOnly) return;
 
     setUploading(true);
     setError(null);
     try {
-      for (const file of files) {
+      for (const file of list) {
         await apiService.uploadAttachment(file, {
           ncId,
           category: "evidence",
@@ -133,22 +133,17 @@ export default function NcAttachmentsSection({ ncId, readOnly = false }) {
 
       {!readOnly && (
         <div className="nc-attachments-actions">
-          <input
-            ref={fileInputRef}
-            type="file"
+          <FileDropzone
             multiple
             accept="*/*"
-            className="nc-file-input-hidden"
-            onChange={handleFilesSelected}
-          />
-          <button
-            type="button"
-            className="btn-secondary"
             disabled={uploading}
-            onClick={() => fileInputRef.current?.click()}
-          >
-            {uploading ? "Caricamento..." : "+ Aggiungi allegato"}
-          </button>
+            onFiles={handleFilesSelected}
+            label={uploading ? "Caricamento..." : "Trascina qui i file o clicca per selezionare"}
+            ariaLabel="+ Aggiungi allegato"
+            hint="Evidenze NC — qualsiasi formato"
+            inputRef={fileInputRef}
+            inputClassName="nc-file-input-hidden"
+          />
         </div>
       )}
     </div>

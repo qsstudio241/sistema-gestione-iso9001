@@ -13,6 +13,7 @@
 import React, { useState, useRef, useCallback } from "react";
 import "./AttachmentSection.css";
 import PhotoEditModal from "./PhotoEditModal";
+import FileDropzone from "./FileDropzone";
 
 function AttachmentSection({ questionId, attachmentManager, onUploadSuccess, customItemId = null }) {
   const [showUploadMenu, setShowUploadMenu] = useState(false);
@@ -73,6 +74,32 @@ function AttachmentSection({ questionId, attachmentManager, onUploadSuccess, cus
       onUploadSuccess(questionId);
     }
   };
+
+  const handleDroppedFiles = useCallback(async (files) => {
+    const list = Array.from(files || []);
+    if (!list.length) return;
+    const allImages = list.every((f) => (f.type || "").startsWith("image/"));
+    if (allImages) {
+      setPhotoEditQueue(list);
+      return;
+    }
+    const result = await attachmentManager.addAttachments(
+      questionId,
+      "documenti",
+      list,
+      customItemId ? { customItemId } : {}
+    );
+    if (!result.success) {
+      alert(`Errore: ${result.error}`);
+      return;
+    }
+    if (result.partial) {
+      alert(`Upload parziale:\n${result.uploaded} caricati\n${result.failed} falliti`);
+    }
+    if (result.success && onUploadSuccess) {
+      onUploadSuccess(questionId);
+    }
+  }, [attachmentManager, questionId, customItemId, onUploadSuccess]);
 
   /** Input change per le foto (hidden input ref) -> apre l'editor opzionale */
   const handlePhotoInputChange = useCallback((e) => {
@@ -186,6 +213,13 @@ function AttachmentSection({ questionId, attachmentManager, onUploadSuccess, cus
           onCancel={handlePhotoEditCancel}
         />
       )}
+
+      <FileDropzone
+        multiple
+        accept="image/*,application/pdf,.pdf,.doc,.docx,.xls,.xlsx"
+        onFiles={handleDroppedFiles}
+        hint="Foto, PDF, Word, Excel. Fotocamera: usa il menu sotto."
+      />
 
       {/* Upload buttons con stats inline */}
       <div className="attachment-actions">

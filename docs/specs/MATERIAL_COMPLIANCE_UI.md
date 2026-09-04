@@ -66,7 +66,7 @@ Regola operativa: il controllo prerequisito si toglie; **i pulsanti restano visi
 
 Niente secondo selettore azienda accanto al pulsante.
 
-Upload: input file PDF (anche scansione). Dopo upload → riga `received` e, quando l’extract è pronto, si entra in revisione. Riusare flusso ingest (`IngestDialogShell`), non un dropzone nuovo.
+Upload: `FileDropzone` (PDF, anche scansione). Dopo upload → riga `received` e, quando l’extract è pronto, si entra in revisione. Riusare flusso ingest (`IngestDialogShell`) e la zona unica `FileDropzone`, non un dropzone locale.
 
 ### Card KPI — due dimensioni, una fonte ciascuna
 

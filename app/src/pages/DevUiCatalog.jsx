@@ -9,6 +9,7 @@ import React, { useState } from "react";
 import StatusBadge from "../components/StatusBadge";
 import { LoadingSpinner, Toast, Badge, Card, Tabs, EmptyState, ProgressBar } from "../components/SharedComponents";
 import TagChip from "../components/TagChip";
+import FileDropzone from "../components/FileDropzone";
 import "./DevUiCatalog.css";
 
 function Section({ title, children }) {
@@ -242,6 +243,13 @@ export default function DevUiCatalog() {
               activeTab="a"
               onChange={() => {}}
             />
+          </SubSection>
+
+          <SubSection title="FileDropzone (trascina o clicca)">
+            <div style={{ display: "flex", flexDirection: "column", gap: 12, maxWidth: 480 }}>
+              <FileDropzone onFiles={() => {}} hint="PDF, Word, Excel — esempio zona form" />
+              <FileDropzone variant="compact" onFiles={() => {}} label="Carica PDF" hint="Variante toolbar" />
+            </div>
           </SubSection>
 
           <SubSection title="Variabili CSS disponibili">

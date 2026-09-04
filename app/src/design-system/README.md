@@ -72,6 +72,7 @@ Questi sono i pattern che i modelli inventano da soli. Da noi sono un difetto, n
 | Tendina + card KPI sulla stessa dimensione | Bug reali (Qualifiche, Scadenzari, NC, WPQR) | Solo le card; vedi regola filtri |
 | Form unico alfabetico o un solo `<form>` enorme | Committente: UI guida il flusso | Sezioni operative come drawer NC |
 | Overlay/dialog copiato e adattato | Guscio duplicato (ingest) | `IngestDialogShell` + CSS discendente |
+| `input type="file"` nudo o dropzone copiata | Due modi di caricare, look diverso | `FileDropzone` (`zone` / `compact`) |
 | Emoji decorative in JSX grezzo dopo `>` | Encoding + look da landing | SVG inline (`ICONS.md`) o `\u` **dentro stringa JS** |
 | Skill/theme esterne (“Midnight”, “Editorial”, …) | Conflitto con ADR-015 e con questo DNA | Questo file |
 
@@ -145,6 +146,14 @@ Struttura:
 - Textarea auto-espandibile: `AutoTextarea.jsx`
 - Input con validazione: validare su blur/cambio stato, mai su keystroke
 - Select custom: pattern `NcResponsibleSelect.jsx`
+- **Caricamento file**: sempre `FileDropzone` (`zone` in form, `compact` in toolbar). Trascina e clicca. Non un `input type="file"` nudo. Fotocamera e picker cartella restano pulsanti dedicati.
+
+```jsx
+import FileDropzone from "../components/FileDropzone";
+
+<FileDropzone accept="application/pdf,.pdf" onFiles={(files) => setFile(files[0])} hint="PDF — max 50 MB" />
+<FileDropzone variant="compact" multiple accept=".pdf" onFiles={setFiles} label="Carica PDF" />
+```
 
 ### Tag / Chip
 

@@ -115,11 +115,11 @@ describe("ImportJobsPage — gate azienda cliente", () => {
     await user.click(screen.getByText("Job senza azienda"));
     await waitFor(() => expect(screen.getByText("Job #7")).toBeInTheDocument());
 
-    const pdfLabel = screen.getByText("Carica PDF").closest("label");
+    const pdfZone = screen.getByRole("button", { name: "Carica PDF" });
     const folderLabel = screen.getByText("Carica cartella").closest("label");
-    expect(pdfLabel).toHaveAttribute("title", COMPANY_REQUIRED_UPLOAD_TITLE);
+    expect(pdfZone).toHaveAttribute("title", COMPANY_REQUIRED_UPLOAD_TITLE);
     expect(folderLabel).toHaveAttribute("title", COMPANY_REQUIRED_UPLOAD_TITLE);
-    expect(pdfLabel.querySelector("input")).toBeDisabled();
+    expect(pdfZone.querySelector("input")).toBeDisabled();
     expect(folderLabel.querySelector("input")).toBeDisabled();
 
     const estrai = screen.getByRole("button", { name: "Estrai testo" });
@@ -147,8 +147,8 @@ describe("ImportJobsPage — gate azienda cliente", () => {
     await user.click(screen.getByText("Job Mason"));
     await waitFor(() => expect(screen.getByText("Job #8")).toBeInTheDocument());
 
-    const pdfLabel = screen.getByText("Carica PDF").closest("label");
-    expect(pdfLabel.querySelector("input")).not.toBeDisabled();
+    const pdfZone = screen.getByRole("button", { name: "Carica PDF" });
+    expect(pdfZone.querySelector("input")).not.toBeDisabled();
     expect(screen.getByRole("button", { name: "Estrai testo" })).not.toBeDisabled();
     expect(screen.getByRole("button", { name: "Screening e posa" })).not.toBeDisabled();
     expect(screen.getByRole("button", { name: "Annulla caricamento" })).toBeInTheDocument();
@@ -167,9 +167,9 @@ describe("ImportJobsPage — gate azienda cliente", () => {
     await waitFor(() => expect(screen.getByText("Job Mason")).toBeInTheDocument());
     await user.click(screen.getByText("Job Mason"));
     await waitFor(() => expect(screen.getByText("Job #8")).toBeInTheDocument());
-    const pdfLabel = screen.getByText("Carica PDF").closest("label");
-    expect(pdfLabel.querySelector("input")).toBeDisabled();
-    expect(pdfLabel).toHaveAttribute("title", COMPANY_REQUIRED_UPLOAD_TITLE);
+    const pdfZone = screen.getByRole("button", { name: "Carica PDF" });
+    expect(pdfZone.querySelector("input")).toBeDisabled();
+    expect(pdfZone).toHaveAttribute("title", COMPANY_REQUIRED_UPLOAD_TITLE);
     expect(screen.getByText("Carica cartella").closest("label").querySelector("input")).toBeDisabled();
 
     await user.click(createBtn);
@@ -193,7 +193,7 @@ describe("ImportJobsPage — gate azienda cliente", () => {
     await waitFor(() => expect(screen.getByText("Job Mason")).toBeInTheDocument());
     await user.click(screen.getByText("Job Mason"));
     await waitFor(() => expect(screen.getByText("Job #8")).toBeInTheDocument());
-    expect(screen.getByText("Carica PDF").closest("label").querySelector("input")).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Carica PDF" }).querySelector("input")).toBeDisabled();
     await user.click(createBtn);
     expect(apiService.createImportJob).not.toHaveBeenCalled();
   });
@@ -232,9 +232,9 @@ describe("ImportJobsPage — gate azienda cliente", () => {
     await waitFor(() => expect(screen.getByText("Job #9")).toBeInTheDocument());
 
     expect(screen.getByText(AMBITO_JOB_MISMATCH_TITLE)).toBeInTheDocument();
-    const pdfLabel = screen.getByText("Carica PDF").closest("label");
-    expect(pdfLabel.querySelector("input")).toBeDisabled();
-    expect(pdfLabel).toHaveAttribute("title", AMBITO_JOB_MISMATCH_TITLE);
+    const pdfZone = screen.getByRole("button", { name: "Carica PDF" });
+    expect(pdfZone.querySelector("input")).toBeDisabled();
+    expect(pdfZone).toHaveAttribute("title", AMBITO_JOB_MISMATCH_TITLE);
     expect(screen.getByText("Carica cartella").closest("label").querySelector("input")).toBeDisabled();
     expect(screen.getByRole("button", { name: "Estrai testo" })).not.toBeDisabled();
     expectNoJobCompanySelect();

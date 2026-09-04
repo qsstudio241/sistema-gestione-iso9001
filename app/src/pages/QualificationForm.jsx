@@ -10,6 +10,7 @@ import { getApplicableWelderFields } from "../data/weldingQualificationRules9606
 import { NDT_SECTOR_OPTIONS } from "../data/documentTypeSchemas";
 import { resolveBackendUploadUrl } from "../utils/resolveBackendUploadUrl";
 import SemiannualConfirmationSection from "../components/SemiannualConfirmationSection";
+import FileDropzone from "../components/FileDropzone";
 import "./QualificationForm.css";
 
 const QUAL_TYPES = [
@@ -750,8 +751,12 @@ function QualificationForm({ qualification, onSave, onClose, defaultCompanyId, c
               )}
               <div className="qf-field">
                 <label>Allega / sostituisci certificato</label>
-                <input ref={certInputRef} type="file" accept="application/pdf,.pdf,image/jpeg,.jpg,.jpeg,image/png,.png"
-                  onChange={e => setCertFile(e.target.files?.[0] || null)} />
+                <FileDropzone
+                  accept="application/pdf,.pdf,image/jpeg,.jpg,.jpeg,image/png,.png"
+                  onFiles={(files) => setCertFile(files[0] || null)}
+                  hint="PDF o immagine"
+                  inputRef={certInputRef}
+                />
                 {certFile && <span style={{fontSize:12, color:"#555"}}>{certFile.name}</span>}
               </div>
             </div>

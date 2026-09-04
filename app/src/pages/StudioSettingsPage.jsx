@@ -8,6 +8,7 @@ import { Link } from "../contexts/RouterContext";
 import { useAuth } from "../contexts/AuthContext";
 import apiService from "../services/apiService";
 import NotificationContactsPanel from "../components/NotificationContactsPanel";
+import FileDropzone from "../components/FileDropzone";
 import SgqDataGrid from "../components/SgqDataGrid";
 import { DOC_TYPE_OPTIONS, DOC_TYPE_LABELS } from "../data/documentTypes";
 import "./StudioSettingsPage.css";
@@ -122,8 +123,8 @@ function TabAnagrafica() {
     }
   };
 
-  const handleLogoUpload = async (e) => {
-    const file = e.target.files?.[0];
+  const handleLogoUpload = async (files) => {
+    const file = files?.[0];
     if (!file) return;
     if (file.size > 2 * 1024 * 1024) {
       setLogoError("Il file supera il limite di 2 MB.");
@@ -204,20 +205,16 @@ function TabAnagrafica() {
             )}
           </div>
           <div className="studio-logo-actions">
-            <input
-              ref={fileInputRef}
-              type="file"
+            <FileDropzone
+              variant="compact"
               accept="image/png,image/jpeg,image/svg+xml"
-              style={{ display: "none" }}
-              onChange={handleLogoUpload}
-            />
-            <button
-              className="btn-studio-secondary"
-              onClick={() => fileInputRef.current?.click()}
               disabled={uploadingLogo}
-            >
-              {uploadingLogo ? "Caricamento..." : "Carica logo"}
-            </button>
+              onFiles={handleLogoUpload}
+              label={uploadingLogo ? "Caricamento..." : "Carica logo"}
+              ariaLabel="Carica logo"
+              hint="PNG, JPG, SVG — max 2 MB"
+              inputRef={fileInputRef}
+            />
             {org?.logo_url && (
               <button
                 className="btn-studio-danger"

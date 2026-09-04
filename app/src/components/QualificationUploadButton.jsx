@@ -6,6 +6,7 @@
 import React, { useState, useRef, useCallback, useEffect } from "react";
 import apiService from "../services/apiService";
 import IngestReviewDialog from "./IngestReviewDialog";
+import FileDropzone from "./FileDropzone";
 import "./QualificationUploadButton.css";
 
 const MAX_FILE_SIZE = 50 * 1024 * 1024;
@@ -86,20 +87,15 @@ export default function QualificationUploadButton({
     setResults(null);
   };
 
-  const handleChooseFiles = () => {
+  const handleFileChange = (files) => {
     if (!docType) {
       setValidationErr("Seleziona prima il tipo di qualifica che stai per caricare.");
       return;
     }
+    const list = Array.from(files || []);
+    if (list.length === 0) return;
     setValidationErr(null);
-    inputRef.current?.click();
-  };
-
-  const handleFileChange = (e) => {
-    const files = Array.from(e.target.files || []);
-    if (files.length === 0) return;
-    setValidationErr(null);
-    setSelectedFiles(files);
+    setSelectedFiles(list);
     setResults(null);
     setPanelOpen(true);
   };
@@ -217,15 +213,6 @@ export default function QualificationUploadButton({
         Carica qualifiche (batch)
       </button>
 
-      <input
-        ref={inputRef}
-        type="file"
-        multiple
-        accept="application/pdf,.pdf,image/jpeg,.jpg,.jpeg,image/png,.png"
-        className="qual-upload__input-hidden"
-        onChange={handleFileChange}
-      />
-
       {showPanel && (
         <div className="qual-upload__panel">
           <div className="qual-upload__company-context">
@@ -305,16 +292,22 @@ export default function QualificationUploadButton({
                 <div className="qual-upload__validation-error">{"\u26A0\uFE0F"} {validationErr}</div>
               )}
 
+              <FileDropzone
+                variant="zone"
+                multiple
+                accept="application/pdf,.pdf,image/jpeg,.jpg,.jpeg,image/png,.png"
+                disabled={uploading || !docType}
+                onFiles={handleFileChange}
+                label={selectedFiles.length > 0
+                  ? "Trascina altri file o clicca per selezionare"
+                  : "Trascina qui i file o clicca per selezionare"}
+                hint={!docType ? "Seleziona prima il tipo di qualifica" : "PDF o immagini — max 50 MB"}
+                title={!docType ? "Seleziona prima il tipo di qualifica" : "Scegli PDF o immagini"}
+                inputRef={inputRef}
+                inputClassName="qual-upload__input-hidden"
+              />
+
               <div className="qual-upload__actions">
-                <button
-                  type="button"
-                  className="qual-upload__action-btn qual-upload__action-btn--secondary"
-                  onClick={handleChooseFiles}
-                  disabled={uploading || !docType}
-                  title={!docType ? "Seleziona prima il tipo di qualifica" : "Scegli PDF o immagini"}
-                >
-                  {selectedFiles.length > 0 ? "Cambia file…" : "Scegli file…"}
-                </button>
                 <button
                   type="button"
                   className="qual-upload__action-btn qual-upload__action-btn--primary"

@@ -13,6 +13,7 @@ import CompanyRegistrySearch from "./CompanyRegistrySearch";
 import { useCompanyLogoUrl } from "../hooks/useCompanyLogoUrl";
 import SgqDataGrid from "./SgqDataGrid";
 import PencilIcon from "./icons/PencilIcon";
+import FileDropzone from "./FileDropzone";
 import TrashIcon from "./icons/TrashIcon";
 import "./CompaniesPage.css";
 
@@ -155,8 +156,8 @@ function CompaniesPage({ onBack }) {
     setLogoPreview(null);
   };
 
-  const handleLogoChange = (e) => {
-    const file = e.target.files[0];
+  const handleLogoChange = (files) => {
+    const file = files?.[0];
     if (!file) return;
     setLogoFile(file);
     const reader = new FileReader();
@@ -386,15 +387,13 @@ function CompaniesPage({ onBack }) {
                       <button type="button" className="btn-remove-logo" onClick={handleRemoveLogo} title="Rimuovi logo">✕</button>
                     </div>
                   )}
-                  <label className="btn-upload-logo">
-                    {displayLogo ? "Cambia logo" : "Carica logo"}
-                    <input
-                      type="file"
-                      accept="image/*"
-                      style={{ display: "none" }}
-                      onChange={handleLogoChange}
-                    />
-                  </label>
+                  <FileDropzone
+                    variant="compact"
+                    accept="image/*"
+                    onFiles={handleLogoChange}
+                    label={displayLogo ? "Cambia logo" : "Carica logo"}
+                    hint="JPG, PNG, SVG - max 2 MB"
+                  />
                   <span className="logo-hint">JPG, PNG, SVG - max 2 MB</span>
                 </div>
               </div>

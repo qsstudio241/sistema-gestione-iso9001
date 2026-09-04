@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect, useCallback, useMemo } from "react";
 import apiService from "../services/apiService";
 import AiDisclaimer from "../components/AiDisclaimer";
+import FileDropzone from "../components/FileDropzone";
 import { useAuth } from "../contexts/AuthContext";
 import { useStorage } from "../contexts/StorageContext";
 import {
@@ -973,26 +974,19 @@ function AiAssistantPage() {
           rows={1}
           disabled={loading}
         />
-        <input
-          ref={cropInputRef}
-          type="file"
+        <FileDropzone
+          variant="compact"
           accept="image/png,image/jpeg,image/webp"
-          hidden
-          onChange={(e) => {
-            const file = e.target.files && e.target.files[0];
-            e.target.value = "";
-            if (file) handleCropSearch(file);
-          }}
-        />
-        <button
-          type="button"
-          className="ai-assistant-send-btn"
-          onClick={() => cropInputRef.current && cropInputRef.current.click()}
           disabled={loading}
+          onFiles={(files) => {
+            if (files[0]) handleCropSearch(files[0]);
+          }}
+          ariaLabel="Cerca da ritaglio"
           title="Cerca da ritaglio"
+          inputRef={cropInputRef}
         >
-          {"\u25A3"}
-        </button>
+          <span className="ai-assistant-send-btn" aria-hidden="true">{"\u25A3"}</span>
+        </FileDropzone>
         <button
           type="button"
           className="ai-assistant-send-btn"

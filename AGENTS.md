@@ -79,7 +79,7 @@ PR di livello Medio: gate **Bugbot** prima di dichiararla pronta (`sgq-git-auton
 ## Regole repo da rispettare
 
 - Multi-tenant: scope `organization_id` / pattern RBAC esistenti.
-- Riuso UI: `QuestionCard`, `status-btn`, `notes-textarea`, `AttachmentSection`, `AiDisclaimer` — vedi `docs/reference/LIBRERIA_UI_SGQ.md`. DNA visivo: `app/src/design-system/README.md`.
+- Riuso UI: `QuestionCard`, `status-btn`, `notes-textarea`, `AttachmentSection`, `FileDropzone`, `AiDisclaimer` — vedi `docs/reference/LIBRERIA_UI_SGQ.md`. DNA visivo: `app/src/design-system/README.md`.
 - **Prima di codice nuovo** (file/componente/CSS/endpoint): deve esistere? esiste già? libreria già in repo? una riga basta? altrimenti il minimo. Dettaglio: `.cursor/rules/sgq-operating-memory.mdc` § Gate Ponytail.
 - Encoding UTF-8, accenti italiani corretti (regola `sgq-encoding-quality`).
 - Zero segreti in file versionati o chat.

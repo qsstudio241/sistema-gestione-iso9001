@@ -10,6 +10,7 @@ import DocumentPdfViewer from "./DocumentPdfViewer";
 import DocumentDocxViewer from "./DocumentDocxViewer";
 import SpreadsheetViewer from "./SpreadsheetViewer";
 import DeadlineImportDialog from "./DeadlineImportDialog";
+import FileDropzone from "./FileDropzone";
 import {
   isPdfFile,
   buildDocumentUpdateFromAiMetadata,
@@ -158,18 +159,16 @@ function DocFileDialog({ doc, onClose, onDocumentUpdated }) {
     }
   }
 
-  function handleFileChange(ev) {
-    const f = ev.target.files[0];
+  function handleFileChange(files) {
+    const f = files?.[0];
     if (!f) return;
     if (isBlocked(f.name)) {
       const ext = getExt(f.name) || f.name;
       setUploadErr(`Formato non consentito per sicurezza: ${ext}`);
-      ev.target.value = "";
       return;
     }
     if (f.size > MAX_FILE_SIZE) {
       setUploadErr(`Il file supera il limite di 50 MB (${(f.size / 1024 / 1024).toFixed(1)} MB)`);
-      ev.target.value = "";
       return;
     }
     setFileObj(f);
@@ -566,12 +565,11 @@ function DocFileDialog({ doc, onClose, onDocumentUpdated }) {
               <div className="docfile-upload-form">
                 <div className="docfile-upload-row">
                   <label className="docfile-label">File</label>
-                  <input
-                    type="file"
-                    ref={fileInputRef}
-                    onChange={handleFileChange}
-                    className="docfile-file-input"
+                  <FileDropzone
                     accept="*/*"
+                    onFiles={handleFileChange}
+                    hint="Qualsiasi file — max 50 MB"
+                    inputRef={fileInputRef}
                   />
                 </div>
                 <div className="docfile-upload-row">
