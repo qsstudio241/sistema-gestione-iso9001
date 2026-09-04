@@ -37,6 +37,18 @@
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
 }
 
+/* Stesso toggle viewport di DocumentViewerChrome / PDF / Word */
+.spreadsheet-viewer-overlay--fullscreen {
+  padding: 0;
+}
+
+.spreadsheet-viewer-container--fullscreen {
+  max-width: none;
+  width: 100%;
+  height: 100%;
+  border-radius: 0;
+}
+
 /* Header */
 
 .spreadsheet-viewer-header {
