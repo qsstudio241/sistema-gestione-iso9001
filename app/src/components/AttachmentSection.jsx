@@ -15,6 +15,20 @@ import "./AttachmentSection.css";
 import PhotoEditModal from "./PhotoEditModal";
 import FileDropzone from "./FileDropzone";
 
+/** Separa immagini e altri file in un drop misto (stesso taglio del menu Foto / Documenti). */
+export function splitDroppedAttachmentFiles(files) {
+  const images = [];
+  const documents = [];
+  for (const file of Array.from(files || [])) {
+    if ((file.type || "").startsWith("image/")) {
+      images.push(file);
+    } else {
+      documents.push(file);
+    }
+  }
+  return { images, documents };
+}
+
 function AttachmentSection({ questionId, attachmentManager, onUploadSuccess, customItemId = null }) {
   const [showUploadMenu, setShowUploadMenu] = useState(false);
 
@@ -76,17 +90,16 @@ function AttachmentSection({ questionId, attachmentManager, onUploadSuccess, cus
   };
 
   const handleDroppedFiles = useCallback(async (files) => {
-    const list = Array.from(files || []);
-    if (!list.length) return;
-    const allImages = list.every((f) => (f.type || "").startsWith("image/"));
-    if (allImages) {
-      setPhotoEditQueue(list);
-      return;
+    const { images, documents } = splitDroppedAttachmentFiles(files);
+    if (!images.length && !documents.length) return;
+    if (images.length) {
+      setPhotoEditQueue(images);
     }
+    if (!documents.length) return;
     const result = await attachmentManager.addAttachments(
       questionId,
       "documenti",
-      list,
+      documents,
       customItemId ? { customItemId } : {}
     );
     if (!result.success) {
