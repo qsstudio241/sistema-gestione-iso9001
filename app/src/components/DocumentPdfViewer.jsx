@@ -10,6 +10,7 @@
  */
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import apiService from "../services/apiService";
+import DocumentViewerChrome from "./DocumentViewerChrome";
 import "./DocumentPdfViewer.css";
 
 /** Touch / viewport stretto: iframe PDF blob inaffidabile (Chrome Android). */
@@ -57,6 +58,7 @@ export default function DocumentPdfViewer({ docId, attachmentId, fileName, onClo
   const [loadError, setLoadError] = useState(false);
   const [loading, setLoading] = useState(true);
   const [opening, setOpening] = useState(false);
+  const [fullscreen, setFullscreen] = useState(false);
   const revokeRef = useRef(null);
   const blobRef = useRef(null);
   const useMobileLayout = prefersMobilePdfFallback();
@@ -117,34 +119,15 @@ export default function DocumentPdfViewer({ docId, attachmentId, fileName, onClo
   if (!docId) return null;
 
   return (
-    <div className="pdf-viewer-overlay" onClick={onClose}>
-      <div className="pdf-viewer-container" onClick={(e) => e.stopPropagation()}>
-        <div className="pdf-viewer-header">
-          <div className="pdf-viewer-header__info">
-            <span className="pdf-viewer-header__icon" aria-hidden>{"\u{1F4C4}"}</span>
-            <span className="pdf-viewer-header__title">{fileName || "Documento PDF"}</span>
-          </div>
-          <div className="pdf-viewer-header__actions">
-            <button
-              type="button"
-              className="pdf-viewer-btn pdf-viewer-btn--download"
-              onClick={handleDownload}
-              disabled={!blobUrl}
-              title="Scarica file"
-            >
-              {"\u{1F4BE}"} Scarica
-            </button>
-            <button
-              type="button"
-              className="pdf-viewer-btn pdf-viewer-btn--close"
-              onClick={onClose}
-              title="Chiudi"
-            >
-              {"\u{00D7}"}
-            </button>
-          </div>
-        </div>
-
+    <DocumentViewerChrome
+      title={fileName || "Documento PDF"}
+      icon={"\u{1F4C4}"}
+      onClose={onClose}
+      onDownload={handleDownload}
+      downloadDisabled={!blobUrl}
+      fullscreen={fullscreen}
+      onToggleFullscreen={() => setFullscreen((f) => !f)}
+    >
         <div className="pdf-viewer-body">
           {loading && (
             <div className="pdf-viewer-fallback">
@@ -194,7 +177,6 @@ export default function DocumentPdfViewer({ docId, attachmentId, fileName, onClo
             />
           )}
         </div>
-      </div>
-    </div>
+    </DocumentViewerChrome>
   );
 }

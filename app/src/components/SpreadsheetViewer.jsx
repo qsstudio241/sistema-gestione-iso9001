@@ -8,6 +8,7 @@
 import React, { useState, useEffect, useMemo, useCallback } from "react";
 import * as XLSX from "xlsx";
 import apiService from "../services/apiService";
+import DocumentViewerChrome from "./DocumentViewerChrome";
 import "./SpreadsheetViewer.css";
 
 const MAX_ROWS_INITIAL = 500;
@@ -28,6 +29,7 @@ export default function SpreadsheetViewer({
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [showAll, setShowAll] = useState(false);
+  const [fullscreen, setFullscreen] = useState(false);
   const hasFile = file instanceof Blob;
   const hasDoc = Boolean(docId);
 
@@ -206,39 +208,18 @@ export default function SpreadsheetViewer({
   }
 
   return (
-    <div className="spreadsheet-viewer-overlay" onClick={onClose}>
-      <div className="spreadsheet-viewer-container" onClick={(e) => e.stopPropagation()}>
-        <div className="spreadsheet-viewer-header">
-          <div className="spreadsheet-viewer-header__info">
-            <span className="spreadsheet-viewer-header__icon" aria-hidden>{"\u{1F4CA}"}</span>
-            <span className="spreadsheet-viewer-header__title">
-              {fileName || "Documento Excel"}
-            </span>
-          </div>
-          <div className="spreadsheet-viewer-header__actions">
-            {downloadUrl && (
-              <a
-                href={downloadUrl}
-                className="spreadsheet-viewer-btn spreadsheet-viewer-btn--download"
-                download
-                title="Scarica file"
-              >
-                {"\u{1F4BE}"} Scarica
-              </a>
-            )}
-            <button
-              type="button"
-              className="spreadsheet-viewer-btn spreadsheet-viewer-btn--close"
-              onClick={onClose}
-              title="Chiudi"
-            >
-              {"\u{00D7}"}
-            </button>
-          </div>
-        </div>
-        {sheetTabs}
-        {body}
-      </div>
-    </div>
+    <DocumentViewerChrome
+      title={fileName || "Documento Excel"}
+      icon={"\u{1F4CA}"}
+      onClose={onClose}
+      downloadHref={downloadUrl || undefined}
+      fullscreen={fullscreen}
+      onToggleFullscreen={() => setFullscreen((f) => !f)}
+      overlayClassName="spreadsheet-viewer-overlay"
+      containerClassName="spreadsheet-viewer-container"
+    >
+      {sheetTabs}
+      {body}
+    </DocumentViewerChrome>
   );
 }

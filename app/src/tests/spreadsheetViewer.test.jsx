@@ -211,5 +211,27 @@ describe("SpreadsheetViewer", () => {
     expect(mockGetDocFileBlob).not.toHaveBeenCalled();
     expect(screen.getByTestId("spreadsheet-embedded")).toBeInTheDocument();
     expect(document.querySelector(".spreadsheet-viewer-overlay")).toBeNull();
+    expect(screen.queryByTitle("Schermo intero")).toBeNull();
+  });
+
+  it("toggla Schermo intero sul viewport in-app (non embedded)", async () => {
+    const { container } = render(
+      <SpreadsheetViewer docId={1} fileName="Budget_2025.xlsx" onClose={() => {}} />
+    );
+
+    await waitFor(() => {
+      expect(screen.getByTitle("Schermo intero")).toBeInTheDocument();
+    });
+
+    const overlay = container.querySelector(".spreadsheet-viewer-overlay");
+    expect(overlay.classList.contains("spreadsheet-viewer-overlay--fullscreen")).toBe(false);
+
+    fireEvent.click(screen.getByTitle("Schermo intero"));
+    expect(overlay.classList.contains("spreadsheet-viewer-overlay--fullscreen")).toBe(true);
+    expect(container.querySelector(".spreadsheet-viewer-container--fullscreen")).toBeTruthy();
+    expect(screen.getByTitle("Riduci")).toBeInTheDocument();
+
+    fireEvent.click(screen.getByTitle("Riduci"));
+    expect(overlay.classList.contains("spreadsheet-viewer-overlay--fullscreen")).toBe(false);
   });
 });

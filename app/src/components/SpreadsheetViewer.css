@@ -37,6 +37,18 @@
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
 }
 
+/* Stesso toggle viewport di DocumentViewerChrome / PDF / Word */
+.spreadsheet-viewer-overlay--fullscreen {
+  padding: 0;
+}
+
+.spreadsheet-viewer-container--fullscreen {
+  max-width: none;
+  width: 100%;
+  height: 100%;
+  border-radius: 0;
+}
+
 /* Header */
 
 .spreadsheet-viewer-header {
@@ -313,5 +325,22 @@
   .spreadsheet-viewer-table th,
   .spreadsheet-viewer-table td {
     padding: 4px 6px;
+  }
+
+  /*
+   * --fullscreen deve vincere sul compact mobile (stessa specificità
+   * di overlay/container, ma quelle regole arrivano qui dopo).
+   * Allineato a DocumentPdfViewer.css (PDF + Word).
+   */
+  .spreadsheet-viewer-overlay.spreadsheet-viewer-overlay--fullscreen {
+    padding: 0;
+    width: 100vw;
+    height: 100vh;
+  }
+  .spreadsheet-viewer-container.spreadsheet-viewer-container--fullscreen {
+    max-width: none;
+    width: 100vw;
+    height: 100vh;
+    border-radius: 0;
   }
 }

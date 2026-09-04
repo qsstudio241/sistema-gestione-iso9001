@@ -56,7 +56,7 @@ Quando un deputy (o il Lead) costruisce o sistema una pagina, **parte da una di 
 - Sezioni `.nc-drawer-section` collassabili; gate sulle fasi non ancora rilevanti.
 - Per un modulo nuovo con “scheda lunga”: stesso scheletro (sezioni numerate), non un wall of inputs.
 
-**Dialog / overlay** (complemento, non quarta schermata): guscio unico `IngestDialogShell.jsx` (PR #377). Nuovi modal di revisione/split-view riusano la shell; dimensioni specifiche restano nel CSS del dialog figlio.
+**Dialog / overlay** (complemento, non quarta schermata): guscio unico `IngestDialogShell.jsx` (PR #377). Nuovi modal di revisione/split-view riusano la shell; dimensioni specifiche restano nel CSS del dialog figlio. **Visualizzatori documenti** (PDF / Word / Excel): chrome unico `DocumentViewerChrome` (Chiudi + Scarica + Schermo intero). Non è `IngestDialogShell`; `DocFileDialog` resta il form file.
 
 ## Anti-pattern visivi (AI slop adattato al gestionale)
 
