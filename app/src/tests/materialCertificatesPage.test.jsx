@@ -67,7 +67,7 @@ describe("MaterialCertificatesPage (MC-5)", () => {
   it("Carica certificato resta visibile ma disabled senza azienda in Ambito", async () => {
     render(<MaterialCertificatesPage />);
     const btn = await screen.findByRole("button", { name: "Carica certificato" });
-    expect(btn).toBeDisabled();
+    expect(btn).toHaveAttribute("aria-disabled", "true");
     expect(btn).toHaveAttribute("title", "Seleziona un\u2019azienda in Ambito");
   });
 
@@ -89,7 +89,7 @@ describe("MaterialCertificatesPage (MC-5)", () => {
     apiService.createMaterialCertificate.mockResolvedValue({ data: { id: 12 } });
     const { container } = render(<MaterialCertificatesPage />);
     await screen.findByRole("button", { name: "Carica certificato" });
-    const input = container.querySelector('input[aria-label="File PDF certificato"]');
+    const input = container.querySelector('input[type="file"]');
     const file = new File(["%PDF-1.4"], "lamiera.pdf", { type: "application/pdf" });
     await userEvent.upload(input, file);
     await waitFor(() => {
@@ -114,7 +114,7 @@ describe("MaterialCertificatesPage (MC-5)", () => {
     await userEvent.click(screen.getByRole("radio", { name: "Apporto" }));
     expect(screen.getByRole("radio", { name: "Apporto" })).toHaveAttribute("aria-checked", "true");
 
-    const input = container.querySelector('input[aria-label="File PDF certificato"]');
+    const input = container.querySelector('input[type="file"]');
     const file = new File(["%PDF-1.4"], "filo.pdf", { type: "application/pdf" });
     await userEvent.upload(input, file);
     await waitFor(() => {

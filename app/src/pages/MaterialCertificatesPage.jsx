@@ -11,6 +11,7 @@ import StatusBadge from "../components/StatusBadge";
 import AiDisclaimer from "../components/AiDisclaimer";
 import { formatDate } from "../utils/dateHelpers";
 import { resolveBackendUploadUrl } from "../utils/resolveBackendUploadUrl";
+import FileDropzone from "../components/FileDropzone";
 import {
   OUTCOME_LABELS,
   ROLE_LABELS,
@@ -143,9 +144,8 @@ export default function MaterialCertificatesPage() {
     setRole((prev) => (prev === key ? "" : key));
   }
 
-  async function onUpload(ev) {
-    const file = ev.target.files && ev.target.files[0];
-    ev.target.value = "";
+  async function onUpload(files) {
+    const file = files?.[0];
     if (!file || !companyId) return;
     setBusy("upload");
     setError("");
@@ -226,23 +226,18 @@ export default function MaterialCertificatesPage() {
               </button>
             ))}
           </div>
-          <input
-            ref={fileRef}
-            className="mc-hidden"
-            type="file"
+          <FileDropzone
+            variant="compact"
             accept="application/pdf,.pdf"
-            aria-label="File PDF certificato"
-            onChange={onUpload}
-          />
-          <button
-            type="button"
-            className="sq-btn-new"
             disabled={!uploadEnabled || busy === "upload"}
+            onFiles={onUpload}
+            label="Carica certificato"
+            ariaLabel="Carica certificato"
+            hint="Trascina il PDF o clicca"
             title={uploadEnabled ? "Carica un PDF" : "Seleziona un\u2019azienda in Ambito"}
-            onClick={() => fileRef.current && fileRef.current.click()}
-          >
-            Carica certificato
-          </button>
+            inputRef={fileRef}
+            inputClassName="mc-hidden"
+          />
         </div>
       </header>
 

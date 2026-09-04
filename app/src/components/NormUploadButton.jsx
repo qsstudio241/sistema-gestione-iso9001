@@ -12,6 +12,7 @@ import {
 import IngestReviewDialog from "./IngestReviewDialog";
 import StatusBadge from "./StatusBadge";
 import AiDisclaimer from "./AiDisclaimer";
+import FileDropzone from "./FileDropzone";
 import "./NormUploadButton.css";
 
 const MAX_FILE_SIZE = 50 * 1024 * 1024;
@@ -34,13 +35,11 @@ export default function NormUploadButton({ folderId, onUploadComplete }) {
   const inputRef = useRef(null);
   const canIngestFolder = folderId != null && folderId !== "";
 
-  const handleClick = () => inputRef.current?.click();
-
-  const handleFileChange = (e) => {
-    const files = Array.from(e.target.files || []);
-    if (files.length === 0) return;
+  const handleFileChange = (files) => {
+    const list = Array.from(files || []);
+    if (list.length === 0) return;
     setValidationErr(null);
-    setSelectedFiles(files);
+    setSelectedFiles(list);
     setResults(null);
   };
 
@@ -181,10 +180,18 @@ export default function NormUploadButton({ folderId, onUploadComplete }) {
   return (
     <div className="norm-upload">
       <div className="norm-upload__triggers">
-        <button className="norm-upload__btn" onClick={handleClick} disabled={uploading}>
-          <span className="norm-upload__icon" role="img" aria-label="upload">{"\u2795"}</span>
-          Carica norme (batch)
-        </button>
+        <FileDropzone
+          variant="compact"
+          multiple
+          accept=".pdf,application/pdf"
+          disabled={uploading}
+          onFiles={handleFileChange}
+          label="Carica norme (batch)"
+          ariaLabel="Carica norme (batch)"
+          hint="Trascina i PDF o clicca"
+          inputRef={inputRef}
+          inputClassName="norm-upload__input-hidden"
+        />
         <button
           type="button"
           className="norm-upload__btn"
@@ -198,15 +205,6 @@ export default function NormUploadButton({ folderId, onUploadComplete }) {
           Ingest dalla cartella
         </button>
       </div>
-
-      <input
-        ref={inputRef}
-        type="file"
-        multiple
-        accept=".pdf,application/pdf"
-        className="norm-upload__input-hidden"
-        onChange={handleFileChange}
-      />
 
       {showPanel && (
         <div className="norm-upload__panel">

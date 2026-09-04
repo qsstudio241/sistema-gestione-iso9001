@@ -4,6 +4,7 @@
 import React, { useState, useRef, useCallback, useEffect } from "react";
 import apiService from "../services/apiService";
 import IngestReviewDialog from "./IngestReviewDialog";
+import FileDropzone from "./FileDropzone";
 import "./WpqrUploadButton.css";
 
 const MAX_FILE_SIZE = 50 * 1024 * 1024;
@@ -32,13 +33,11 @@ export default function WpqrUploadButton({ companyId, companyName, onUploadCompl
     if (inputRef.current) inputRef.current.value = "";
   }, [scopeKey]);
 
-  const handleClick = () => inputRef.current?.click();
-
-  const handleFileChange = (e) => {
-    const files = Array.from(e.target.files || []);
-    if (files.length === 0) return;
+  const handleFileChange = (files) => {
+    const list = Array.from(files || []);
+    if (list.length === 0) return;
     setValidationErr(null);
-    setSelectedFiles(files);
+    setSelectedFiles(list);
     setResults(null);
   };
 
@@ -119,16 +118,14 @@ export default function WpqrUploadButton({ companyId, companyName, onUploadCompl
   if (!isValidCompany) {
     return (
       <div className="wpqr-upload">
-        <button
-          type="button"
-          className="wpqr-upload__btn"
+        <FileDropzone
+          variant="compact"
           disabled
+          label="Carica WPQR (batch)"
+          ariaLabel="Carica WPQR (batch). Seleziona un'azienda nell'Ambito in alto."
           title="Seleziona un'azienda nell'Ambito in alto per caricare i WPQR"
-          aria-label="Carica WPQR (batch). Seleziona un'azienda nell'Ambito in alto."
-        >
-          <span className="wpqr-upload__icon" role="img" aria-label="upload">{"\u2795"}</span>
-          Carica WPQR (batch)
-        </button>
+          hint="Seleziona un'azienda in Ambito"
+        />
       </div>
     );
   }
@@ -139,18 +136,17 @@ export default function WpqrUploadButton({ companyId, companyName, onUploadCompl
 
   return (
     <div className="wpqr-upload">
-      <button className="wpqr-upload__btn" onClick={handleClick} disabled={uploading}>
-        <span className="wpqr-upload__icon" role="img" aria-label="upload">{"\u2795"}</span>
-        Carica WPQR (batch)
-      </button>
-
-      <input
-        ref={inputRef}
-        type="file"
+      <FileDropzone
+        variant="compact"
         multiple
         accept="application/pdf,.pdf,image/jpeg,.jpg,.jpeg,image/png,.png"
-        className="wpqr-upload__input-hidden"
-        onChange={handleFileChange}
+        disabled={uploading}
+        onFiles={handleFileChange}
+        label="Carica WPQR (batch)"
+        ariaLabel="Carica WPQR (batch)"
+        hint="Trascina i PDF o clicca"
+        inputRef={inputRef}
+        inputClassName="wpqr-upload__input-hidden"
       />
 
       {showPanel && (

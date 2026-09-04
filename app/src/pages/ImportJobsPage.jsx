@@ -36,6 +36,7 @@ import {
   lotDocumentTypeHint,
 } from "../utils/importFolderPlan";
 import StatusBadge from "../components/StatusBadge";
+import FileDropzone from "../components/FileDropzone";
 import "./ImportJobsPage.css";
 import "../components/DocumentForm.css";
 
@@ -670,8 +671,8 @@ export default function ImportJobsPage() {
     }
   }
 
-  async function handleFiles(e) {
-    await uploadPickedFiles(e.target.files, e.target);
+  async function handleFiles(files) {
+    await uploadPickedFiles(files);
   }
 
   function resetFolderInput() {
@@ -1259,23 +1260,21 @@ export default function ImportJobsPage() {
                 <p>Caricamento dettaglio…</p>
               )}
               <div className="import-jobs-actions">
-                <label
-                  className={canUploadForJob ? "btn-file" : "btn-file is-disabled"}
+                <FileDropzone
+                  variant="compact"
+                  multiple
+                  accept="application/pdf,.pdf"
+                  disabled={busy || !canUploadForJob}
+                  onFiles={handleFiles}
+                  label="Carica PDF"
+                  ariaLabel="Carica PDF"
+                  hint="Trascina i PDF o clicca"
                   title={
                     canUploadForJob
                       ? "Carica uno o più PDF"
                       : uploadGateTitle
                   }
-                >
-                  Carica PDF
-                  <input
-                    type="file"
-                    accept="application/pdf,.pdf"
-                    multiple
-                    onChange={handleFiles}
-                    disabled={busy || !canUploadForJob}
-                  />
-                </label>
+                />
                 <label
                   className={canUploadForJob ? "btn-file" : "btn-file is-disabled"}
                   title={

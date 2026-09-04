@@ -59,8 +59,8 @@ const NdtItemAttachments = forwardRef(function NdtItemAttachments(
         },
     }), [readOnly, uploading]);
 
-    const handleFileSelect = async (e) => {
-        const files = Array.from(e.target.files || []);
+    const handleFileSelect = async (eOrFiles) => {
+        const files = Array.from(eOrFiles?.target?.files || eOrFiles || []);
         if (!files.length) return;
         if (readOnly) {
             if (inputRef.current) inputRef.current.value = "";
@@ -154,6 +154,15 @@ const NdtItemAttachments = forwardRef(function NdtItemAttachments(
         <div
             className={`ndt-att-root${hasContent ? "" : " ndt-att-root-hidden"}${readOnly ? " ndt-att-root-readonly" : ""}`}
             data-testid="ndt-item-attachments"
+            onDragOver={(e) => {
+                if (readOnly || uploading) return;
+                e.preventDefault();
+            }}
+            onDrop={(e) => {
+                e.preventDefault();
+                if (readOnly || uploading) return;
+                handleFileSelect(e.dataTransfer?.files);
+            }}
         >
             <input
                 ref={inputRef}

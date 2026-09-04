@@ -49,7 +49,7 @@ describe("RisksPage — create/import richiedono Ambito azienda", () => {
     const nuovo = await screen.findByRole("button", { name: "+ Nuovo rischio" });
     const importa = screen.getByRole("button", { name: "Importa Excel" });
     expect(nuovo).toBeDisabled();
-    expect(importa).toBeDisabled();
+    expect(importa).toHaveAttribute("aria-disabled", "true");
     expect(nuovo).toHaveAttribute("title", "Seleziona un'azienda nell'Ambito in alto");
     expect(screen.getByRole("button", { name: "Storico riesami" })).toBeDisabled();
     await waitFor(() => {

@@ -45,8 +45,8 @@ const RdpTestAttachments = forwardRef(function RdpTestAttachments(
         },
     }), [readOnly]);
 
-    const handleFileSelect = async (e) => {
-        const files = Array.from(e.target.files || []);
+    const handleFileSelect = async (eOrFiles) => {
+        const files = Array.from(eOrFiles?.target?.files || eOrFiles || []);
         if (!files.length) return;
         setError(null);
         setUploading(true);
@@ -117,7 +117,18 @@ const RdpTestAttachments = forwardRef(function RdpTestAttachments(
     const hasContent = attachments.length > 0 || uploading || !!error;
 
     return (
-        <div className={`rdp-att-root${hasContent ? "" : " rdp-att-root-hidden"}`}>
+        <div
+            className={`rdp-att-root${hasContent ? "" : " rdp-att-root-hidden"}`}
+            onDragOver={(e) => {
+                if (readOnly || uploading) return;
+                e.preventDefault();
+            }}
+            onDrop={(e) => {
+                e.preventDefault();
+                if (readOnly || uploading) return;
+                handleFileSelect(e.dataTransfer?.files);
+            }}
+        >
             <input
                 ref={inputRef}
                 type="file"

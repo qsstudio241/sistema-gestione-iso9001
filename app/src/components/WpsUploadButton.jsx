@@ -4,6 +4,7 @@
 import React, { useState, useRef, useCallback, useEffect } from "react";
 import apiService from "../services/apiService";
 import IngestReviewDialog from "./IngestReviewDialog";
+import FileDropzone from "./FileDropzone";
 import "./WpsUploadButton.css";
 
 const MAX_FILE_SIZE = 50 * 1024 * 1024;
@@ -32,13 +33,11 @@ export default function WpsUploadButton({ companyId, companyName, onUploadComple
     if (inputRef.current) inputRef.current.value = "";
   }, [scopeKey]);
 
-  const handleClick = () => inputRef.current?.click();
-
-  const handleFileChange = (e) => {
-    const files = Array.from(e.target.files || []);
-    if (files.length === 0) return;
+  const handleFileChange = (files) => {
+    const list = Array.from(files || []);
+    if (list.length === 0) return;
     setValidationErr(null);
-    setSelectedFiles(files);
+    setSelectedFiles(list);
     setResults(null);
   };
 
@@ -119,16 +118,14 @@ export default function WpsUploadButton({ companyId, companyName, onUploadComple
   if (!isValidCompany) {
     return (
       <div className="wps-upload">
-        <button
-          type="button"
-          className="wps-upload__btn"
+        <FileDropzone
+          variant="compact"
           disabled
+          label="Seleziona PDF WPS"
+          ariaLabel="Seleziona PDF WPS. Seleziona un'azienda nell'Ambito in alto."
           title="Seleziona un'azienda nell'Ambito in alto per caricare i WPS"
-          aria-label="Seleziona PDF WPS. Seleziona un'azienda nell'Ambito in alto."
-        >
-          <span className="wps-upload__icon" role="img" aria-label="upload">{"\u2795"}</span>
-          Seleziona PDF WPS
-        </button>
+          hint="Seleziona un'azienda in Ambito"
+        />
       </div>
     );
   }
@@ -139,18 +136,17 @@ export default function WpsUploadButton({ companyId, companyName, onUploadComple
 
   return (
     <div className="wps-upload">
-      <button className="wps-upload__btn" onClick={handleClick} disabled={uploading}>
-        <span className="wps-upload__icon" role="img" aria-label="upload">{"\u2795"}</span>
-        Seleziona PDF WPS
-      </button>
-
-      <input
-        ref={inputRef}
-        type="file"
+      <FileDropzone
+        variant="compact"
         multiple
         accept="application/pdf,.pdf,image/jpeg,.jpg,.jpeg,image/png,.png"
-        className="wps-upload__input-hidden"
-        onChange={handleFileChange}
+        disabled={uploading}
+        onFiles={handleFileChange}
+        label="Seleziona PDF WPS"
+        ariaLabel="Seleziona PDF WPS"
+        hint="Trascina i PDF o clicca"
+        inputRef={inputRef}
+        inputClassName="wps-upload__input-hidden"
       />
 
       {showPanel && (

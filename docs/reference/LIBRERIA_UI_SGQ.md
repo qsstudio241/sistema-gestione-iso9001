@@ -21,7 +21,8 @@
 | Pulsanti esito C/NC/OSS/OM/NA/NV | `status-btn compliant/non-compliant/partial/om/not-applicable/not-verified` + `.active` | `ChecklistModule.css` |
 | Textarea note/evidenze | `className="notes-textarea"` | `ChecklistModule.css` |
 | **Domanda checklist (qualsiasi tipo)** | **`QuestionCard.jsx`** | Props: `question`, `onStatusChange`, `onNotesChange`, `attachmentManager`, `auditId`, `customItemId`, `statusOptions` (opzionale — sottoinsieme pulsanti, default 6 standard); slot `children` per contenuto extra. Usare per ISO, custom e qualsiasi futuro tipo di domanda. |
-| Caricamento allegati | `AttachmentSection.jsx` + `useAttachmentManager` hook | Supporta `customItemId` (migration 047) |
+| Caricamento file (trascina o clicca) | `FileDropzone.jsx` | Standard per ogni upload. Variante `zone` (form) o `compact` (toolbar). Eccezioni: fotocamera/`capture`, cartella `webkitdirectory`. Regola: [`.cursor/rules/sgq-file-dropzone.mdc`](../../.cursor/rules/sgq-file-dropzone.mdc) |
+| Caricamento allegati | `AttachmentSection.jsx` + `useAttachmentManager` hook | Supporta `customItemId` (migration 047). Drop file via `FileDropzone` |
 | Preview allegati server | `AttachmentPreview.jsx` | Supporta `questionId` (ISO) e `customItemId` (custom) |
 | Badge di stato (documenti, NC, audit, …) | `StatusBadge.jsx` | Non creare un badge CSS locale |
 | Card contenitore | `Card` da `SharedComponents.jsx` | Per KPI cliccabili: `.sq-stat` / `.dl-stat`, non `Card` |

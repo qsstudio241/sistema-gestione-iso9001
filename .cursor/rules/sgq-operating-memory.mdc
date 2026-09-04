@@ -129,6 +129,7 @@ Tavola: [`docs/reference/LIBRERIA_UI_SGQ.md`](../../docs/reference/LIBRERIA_UI_S
 | Note | `notes-textarea` |
 | Domanda | `QuestionCard.jsx` |
 | Allegati | `AttachmentSection.jsx` |
+| Caricamento file | `FileDropzone.jsx` (trascina o clicca; non un `input` nudo) |
 | Disclaimer AI | `AiDisclaimer.jsx` |
 
 Layout = ordine operativo reale (sezioni/gate), non form alfabetico.

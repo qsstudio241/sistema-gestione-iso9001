@@ -1,0 +1,43 @@
+---
+description: Caricamento file — zona unica «trascina o clicca». Standardizzazione sempre quando possibile.
+globs: "app/src/**/*.{jsx,js,css}"
+alwaysApply: false
+---
+
+# Caricamento file — FileDropzone
+
+**Standardizzazione sempre quando possibile.** Ogni punto in cui l'utente carica un file riusa `FileDropzone`: non un secondo dropzone e non un `input type="file"` nudo.
+
+## Cosa usare
+
+- Componente: `app/src/components/FileDropzone.jsx`
+- Catalogo: `docs/reference/LIBRERIA_UI_SGQ.md` (riga caricamento file)
+- Variante **zone** (default): form, dialog, scheda — testo «Trascina qui il file o clicca per selezionare»
+- Variante **compact**: toolbar / riga azioni — stesso gesto, meno spazio
+
+## Obbligatorio
+
+| Azione | Sempre | Note |
+|---|---|---|
+| Trascina e rilascia | sì | HTML5 `dataTransfer.files`, nessuna libreria DnD |
+| Clicca / tap per selezionare | sì | Su telefono il picker resta il percorso principale |
+| `input type="file"` nel DOM | sì | Nascosto, per accessibilità e test |
+
+## Eccezioni (non sostituire con la zona)
+
+- **Fotocamera / microfono** (`capture="environment"` / `capture="user"`) — restano pulsanti dispositivo
+- **Cartella intera** (`webkitdirectory`) — resta il picker cartella; i file singoli usano `FileDropzone`
+- **Picker programmatico** senza UI visibile (`useAttachmentManager.openFilePicker`, `fileSystemService`)
+
+## Vietato
+
+- Una zona di drop nuova copiata da `DocumentForm` o CSS locale `*-dropzone`
+- Solo «Scegli file» senza poter trascinare, se il controllo è un caricamento file
+- Librerie `dnd-kit` / `react-beautiful-dnd` per upload file
+- Riordino liste con drag (Kanban) — è un altro problema, non questo standard
+
+## Prima di un upload nuovo
+
+1. Esiste già `FileDropzone`? Usalo.
+2. Scegli `zone` o `compact`. Non inventare un terzo look.
+3. Accenti italiani corretti; `\u` solo in stringhe JS.

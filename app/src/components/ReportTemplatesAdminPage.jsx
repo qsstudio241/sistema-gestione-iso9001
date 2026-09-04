@@ -4,6 +4,7 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import apiService from "../services/apiService";
 import SgqDataGrid from "./SgqDataGrid";
+import FileDropzone from "./FileDropzone";
 import {
   validateDocxFile,
   stripDocxExtension,
@@ -149,8 +150,8 @@ const ReportTemplatesAdminPage = ({ onBack }) => {
     if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
-  const handleFileChange = async (e) => {
-    const file = e.target.files?.[0];
+  const handleFileChange = async (files) => {
+    const file = files?.[0];
     setUploadFeedback(null);
     setMarkerWarning(null);
     if (!file) {
@@ -161,7 +162,6 @@ const ReportTemplatesAdminPage = ({ onBack }) => {
     if (validationErr) {
       setUploadFile(null);
       setUploadFeedback({ type: "error", message: validationErr });
-      e.target.value = "";
       return;
     }
     setUploadFile(file);
@@ -449,12 +449,12 @@ const ReportTemplatesAdminPage = ({ onBack }) => {
             <form className="rt-upload-form" onSubmit={handleUpload}>
               <label className="rt-field-label">
                 File .docx
-                <input
-                  ref={fileInputRef}
-                  type="file"
+                <FileDropzone
                   accept=".docx,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-                  onChange={handleFileChange}
                   disabled={uploading}
+                  onFiles={handleFileChange}
+                  hint="Solo .docx"
+                  inputRef={fileInputRef}
                 />
               </label>
               <label className="rt-field-label">

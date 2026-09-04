@@ -10,6 +10,7 @@ import { getSelectedStandardEntries } from '../data/standardsRegistry';
 import { useRouter, useNavigate } from '../contexts/RouterContext';
 import AiSuggestionInline from '../components/AiSuggestionInline';
 import AiDisclaimer from '../components/AiDisclaimer';
+import FileDropzone from '../components/FileDropzone';
 import {
   STATUS_LABELS,
   TERMINAL_STATUSES,
@@ -1093,9 +1094,9 @@ export default function ContractReviewPage() {
     }
   }
 
-  async function handleUploadAttachment(e) {
-    const files = Array.from(e.target.files || []);
-    if (!caseId || !files.length) return;
+  async function handleUploadAttachment(files) {
+    const list = Array.from(files || []);
+    if (!caseId || !list.length) return;
     setError(null);
     setAttachAnalysisStarted(false);
     setUploadPartialErrors([]);
@@ -1145,7 +1146,6 @@ export default function ContractReviewPage() {
     } catch {
       /* ignore */
     }
-    e.target.value = '';
   }
 
 
@@ -1500,8 +1500,8 @@ export default function ContractReviewPage() {
     }
   }
 
-  function handleCapitolatoFile(e) {
-    const file = e.target.files?.[0];
+  function handleCapitolatoFile(files) {
+    const file = files?.[0];
     if (!file) return;
     const reader = new FileReader();
     reader.onload = () => {
@@ -1509,7 +1509,6 @@ export default function ContractReviewPage() {
       setCapitolatoText(t);
     };
     reader.readAsText(file);
-    e.target.value = '';
   }
 
   const transitionTargets = useMemo(() => {
@@ -2258,12 +2257,12 @@ export default function ContractReviewPage() {
                           suppliers={suppliers}
                           suppliersLoadFailed={suppliersLoadFailed}
                         />
-                        <input
-                          type="file"
-                          accept="*/*"
+                        <FileDropzone
                           multiple
+                          accept="*/*"
                           disabled={uploadProgress != null}
-                          onChange={handleUploadAttachment}
+                          onFiles={handleUploadAttachment}
+                          hint="Trascina gli allegati o clicca"
                         />
                       </div>
                       {uploadProgress && (
@@ -2640,10 +2639,14 @@ export default function ContractReviewPage() {
                   onChange={(e) => setCapitolatoText(e.target.value)}
                 />
                 <div className="cr-transition-row">
-                  <label className="cr-btn" style={{ cursor: 'pointer', margin: 0 }}>
-                    Carica file testo
-                    <input type="file" accept=".txt,text/plain" hidden onChange={handleCapitolatoFile} />
-                  </label>
+                  <FileDropzone
+                    variant="compact"
+                    accept=".txt,text/plain"
+                    onFiles={handleCapitolatoFile}
+                    label="Carica file testo"
+                    ariaLabel="Carica file testo"
+                    hint="Trascina un .txt o clicca"
+                  />
                   <button
                     type="button"
                     className="cr-btn cr-btn-primary"
@@ -3165,22 +3168,14 @@ function ChecklistItemRow({
                 </button>
               </div>
             )}
-            <button
-              type="button"
-              className="cr-btn"
-              onClick={() => uploadRef.current?.click()}
-            >
-              Carica e collega
-            </button>
-            <input
-              ref={uploadRef}
-              type="file"
-              hidden
-              onChange={(e) => {
-                const files = e.target.files;
-                e.target.value = '';
+            <FileDropzone
+              variant="compact"
+              onFiles={(files) => {
                 if (files?.length) onUploadAndLink?.(files);
               }}
+              label="Carica e collega"
+              ariaLabel="Carica e collega"
+              inputRef={uploadRef}
             />
           </div>
         ) : null}

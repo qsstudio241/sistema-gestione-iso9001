@@ -13,6 +13,7 @@ import { useCompanyLogoUrl } from "../hooks/useCompanyLogoUrl";
 import CompanyPersonnelPanel from "../components/CompanyPersonnelPanel";
 import CompanyCounterpartiesPanel from "../components/CompanyCounterpartiesPanel";
 import CompanyProfilePanel from "../components/CompanyProfilePanel";
+import FileDropzone from "../components/FileDropzone";
 import CompanyRegistrySearch from "../components/CompanyRegistrySearch";
 import "./CompanyDetailPage.css";
 import "./StudioSettingsPage.css";
@@ -90,8 +91,8 @@ function TabAnagrafica({ company, onSaved, auditorOrgId, canEdit, canSearchRegis
     setLogoPreview(null);
   }, [company]);
 
-  const handleLogoChange = (e) => {
-    const file = e.target.files[0];
+  const handleLogoChange = (files) => {
+    const file = files?.[0];
     if (!file) return;
     setLogoFile(file);
     const reader = new FileReader();
@@ -203,15 +204,13 @@ function TabAnagrafica({ company, onSaved, auditorOrgId, canEdit, canSearchRegis
               {displayLogo && (
                 <img src={displayLogo} alt="Logo" className="company-detail-logo-preview" />
               )}
-              <label className="btn-upload-logo">
-                {displayLogo ? "Cambia logo" : "Carica logo"}
-                <input
-                  type="file"
-                  accept="image/*"
-                  style={{ display: "none" }}
-                  onChange={handleLogoChange}
-                />
-              </label>
+              <FileDropzone
+                variant="compact"
+                accept="image/*"
+                onFiles={handleLogoChange}
+                label={displayLogo ? "Cambia logo" : "Carica logo"}
+                hint="JPG, PNG, SVG"
+              />
             </div>
           </div>
         )}

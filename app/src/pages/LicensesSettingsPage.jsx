@@ -6,6 +6,7 @@ import React, { useState, useEffect, useCallback } from "react";
 import apiService from "../services/apiService";
 import { useAuth } from "../contexts/AuthContext";
 import StatusBadge from "../components/StatusBadge";
+import FileDropzone from "../components/FileDropzone";
 import "./LicensesSettingsPage.css";
 
 export default function LicensesSettingsPage() {
@@ -197,9 +198,8 @@ export default function LicensesSettingsPage() {
     }
   }
 
-  async function handleOrgLogoChange(ev) {
-    const file = ev.target.files?.[0];
-    ev.target.value = "";
+  async function handleOrgLogoChange(files) {
+    const file = files?.[0];
     if (!file) return;
     setOrgSaving(true);
     setOrgMessage(null);
@@ -337,10 +337,15 @@ export default function LicensesSettingsPage() {
               )}
             </div>
             <div className="licenses-org-logo-actions">
-              <label className="btn-secondary licenses-file-label">
-                Carica immagine
-                <input type="file" accept="image/jpeg,image/png,image/gif,image/webp" onChange={handleOrgLogoChange} disabled={orgSaving} hidden />
-              </label>
+              <FileDropzone
+                variant="compact"
+                accept="image/jpeg,image/png,image/gif,image/webp"
+                disabled={orgSaving}
+                onFiles={handleOrgLogoChange}
+                label="Carica immagine"
+                ariaLabel="Carica immagine"
+                hint="JPG, PNG, GIF, WebP"
+              />
               {user?.organization_logo_url ? (
                 <button type="button" className="btn-secondary" onClick={handleDeleteOrgLogo} disabled={orgSaving}>
                   Rimuovi logo

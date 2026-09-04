@@ -7,6 +7,7 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import apiService from "../services/apiService";
 import CompanyProfileImportDialog from "./CompanyProfileImportDialog";
 import StatusBadge from "./StatusBadge";
+import FileDropzone from "./FileDropzone";
 import "../pages/CompanyDetailPage.css";
 import "../pages/StudioSettingsPage.css";
 import "../components/ChecklistModule.css";
@@ -284,9 +285,8 @@ function CompanyProfilePanel({ companyId, auditorOrgId, canEdit, onUnavailable, 
     }
   };
 
-  const handlePickExcel = async (e) => {
-    const file = e.target.files?.[0];
-    e.target.value = "";
+  const handlePickExcel = async (files) => {
+    const file = files?.[0];
     if (!file || !companyId) return;
     setDetecting(true);
     setError(null);
@@ -442,14 +442,16 @@ function CompanyProfilePanel({ companyId, auditorOrgId, canEdit, onUnavailable, 
           >
             Scarica modello Excel
           </button>
-          <button
-            type="button"
-            className="btn-studio-secondary"
-            onClick={() => fileInputRef.current?.click()}
+          <FileDropzone
+            variant="compact"
+            accept=".xlsx,.xls,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
             disabled={detecting || importing || lookingUp}
-          >
-            {detecting ? "Analisi file..." : "Importa modello Excel"}
-          </button>
+            onFiles={handlePickExcel}
+            label={detecting ? "Analisi file..." : "Importa modello Excel"}
+            ariaLabel="Importa modello Excel"
+            inputRef={fileInputRef}
+            inputTestId="company-profile-excel-input"
+          />
           <button
             type="button"
             className="btn-studio-secondary"
@@ -458,14 +460,6 @@ function CompanyProfilePanel({ companyId, auditorOrgId, canEdit, onUnavailable, 
           >
             {lookingUp ? "Interrogazione registro..." : "Recupera da registro"}
           </button>
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept=".xlsx,.xls,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-            hidden
-            onChange={handlePickExcel}
-            data-testid="company-profile-excel-input"
-          />
           <p className="studio-hint">
             Excel: scarica il foglio, compilalo e reimportalo. Registro: usa la P.IVA del profilo (anteprima, poi conferma). Vale solo per questa azienda.
           </p>

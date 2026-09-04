@@ -242,8 +242,8 @@ describe('NormUploadButton — flusso upload norme', () => {
       fireEvent.click(screen.getByText('Estrai e rivedi'));
     });
 
-    const mainBtn = screen.getByText(/Carica norme/);
-    expect(mainBtn.disabled).toBe(true);
+    const mainBtn = screen.getByRole("button", { name: /Carica norme \(batch\)/i });
+    expect(mainBtn).toHaveAttribute("aria-disabled", "true");
 
     await act(async () => {
       resolveUpload({ results: [{ status: 'confirmed', documentId: 1 }] });

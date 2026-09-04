@@ -7,6 +7,7 @@
 import React, { useState } from "react";
 import { useStorage } from "../contexts/StorageContext";
 import { EVIDENCE_CATEGORY } from "../data/auditDataModel";
+import FileDropzone from "./FileDropzone";
 import "./EvidenceManager.css";
 
 function EvidenceManager() {
@@ -182,8 +183,8 @@ function AddEvidenceModal({ onClose, onSave }) {
   });
   const [previewUrl, setPreviewUrl] = useState(null);
 
-  const handleFileSelect = (e) => {
-    const file = e.target.files?.[0];
+  const handleFileSelect = (filesOrEvent) => {
+    const file = filesOrEvent?.target?.files?.[0] ?? filesOrEvent?.[0];
     if (!file) return;
 
     // Aggiorna nome file se vuoto
@@ -263,15 +264,12 @@ function AddEvidenceModal({ onClose, onSave }) {
           <div className="form-group">
             <label>📎 Carica File / Foto</label>
             <div className="file-upload-actions">
-              <label className="btn btn-secondary file-upload-btn">
-                📁 Scegli File
-                <input
-                  type="file"
-                  onChange={handleFileSelect}
-                  accept="image/*,audio/*,video/*,application/pdf,.doc,.docx,.xls,.xlsx"
-                  style={{ display: "none" }}
-                />
-              </label>
+              <FileDropzone
+                accept="image/*,audio/*,video/*,application/pdf,.doc,.docx,.xls,.xlsx"
+                onFiles={handleFileSelect}
+                label="Trascina qui il file o clicca per selezionare"
+                hint="Foto, PDF, Word, Excel, audio, video"
+              />
 
               <label className="btn btn-primary file-upload-btn">
                 📷 Fotocamera

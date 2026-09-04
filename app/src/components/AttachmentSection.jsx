@@ -13,6 +13,21 @@
 import React, { useState, useRef, useCallback } from "react";
 import "./AttachmentSection.css";
 import PhotoEditModal from "./PhotoEditModal";
+import FileDropzone from "./FileDropzone";
+
+/** Separa immagini e altri file in un drop misto (stesso taglio del menu Foto / Documenti). */
+export function splitDroppedAttachmentFiles(files) {
+  const images = [];
+  const documents = [];
+  for (const file of Array.from(files || [])) {
+    if ((file.type || "").startsWith("image/")) {
+      images.push(file);
+    } else {
+      documents.push(file);
+    }
+  }
+  return { images, documents };
+}
 
 function AttachmentSection({ questionId, attachmentManager, onUploadSuccess, customItemId = null }) {
   const [showUploadMenu, setShowUploadMenu] = useState(false);
@@ -73,6 +88,31 @@ function AttachmentSection({ questionId, attachmentManager, onUploadSuccess, cus
       onUploadSuccess(questionId);
     }
   };
+
+  const handleDroppedFiles = useCallback(async (files) => {
+    const { images, documents } = splitDroppedAttachmentFiles(files);
+    if (!images.length && !documents.length) return;
+    if (images.length) {
+      setPhotoEditQueue(images);
+    }
+    if (!documents.length) return;
+    const result = await attachmentManager.addAttachments(
+      questionId,
+      "documenti",
+      documents,
+      customItemId ? { customItemId } : {}
+    );
+    if (!result.success) {
+      alert(`Errore: ${result.error}`);
+      return;
+    }
+    if (result.partial) {
+      alert(`Upload parziale:\n${result.uploaded} caricati\n${result.failed} falliti`);
+    }
+    if (result.success && onUploadSuccess) {
+      onUploadSuccess(questionId);
+    }
+  }, [attachmentManager, questionId, customItemId, onUploadSuccess]);
 
   /** Input change per le foto (hidden input ref) -> apre l'editor opzionale */
   const handlePhotoInputChange = useCallback((e) => {
@@ -186,6 +226,13 @@ function AttachmentSection({ questionId, attachmentManager, onUploadSuccess, cus
           onCancel={handlePhotoEditCancel}
         />
       )}
+
+      <FileDropzone
+        multiple
+        accept="image/*,application/pdf,.pdf,.doc,.docx,.xls,.xlsx"
+        onFiles={handleDroppedFiles}
+        hint="Foto, PDF, Word, Excel. Fotocamera: usa il menu sotto."
+      />
 
       {/* Upload buttons con stats inline */}
       <div className="attachment-actions">

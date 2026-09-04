@@ -25,6 +25,7 @@ import {
   isDocumentFolder,
 } from "../utils/documentValidity";
 import { buildDocumentUpdateFromAiMetadata, isPdfFile } from "../utils/documentMetadataExtraction";
+import FileDropzone from "./FileDropzone";
 import "./DocumentForm.css";
 
 const DOC_TYPES = DOC_TYPE_OPTIONS;
@@ -192,7 +193,6 @@ function DocumentForm({
   const [selectedFile, setSelectedFile] = useState(null);
   const [fileError, setFileError] = useState(null);
   const [fileSizeWarning, setFileSizeWarning] = useState(null);
-  const [dragOver, setDragOver] = useState(false);
   const fileInputRef = useRef(null);
 
   // ─── AI pre-estrazione ────────────────────────────────────────────
@@ -509,16 +509,6 @@ function DocumentForm({
     }
   };
 
-  const handleFileBrowse = () => {
-    fileInputRef.current?.click();
-  };
-
-  const handleFileInputChange = (e) => {
-    const f = e.target.files?.[0];
-    if (f) validateAndSetFile(f);
-    e.target.value = "";
-  };
-
   const handleRemoveFile = () => {
     setSelectedFile(null);
     setFileError(null);
@@ -528,26 +518,6 @@ function DocumentForm({
     setAiExtracted(false);
     setAiExtractError(null);
     setAiFilledFields(new Set());
-  };
-
-  const handleDragOver = (e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setDragOver(true);
-  };
-
-  const handleDragLeave = (e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setDragOver(false);
-  };
-
-  const handleDrop = (e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setDragOver(false);
-    const f = e.dataTransfer?.files?.[0];
-    if (f) validateAndSetFile(f);
   };
 
   // ─── Folder handler ───────────────────────────────────────────────
@@ -937,30 +907,11 @@ function DocumentForm({
 
       {!selectedFile ? (
         <>
-          <div
-            className={`docform-dropzone ${dragOver ? 'docform-dropzone-active' : ''}`}
-            onDragOver={handleDragOver}
-            onDragLeave={handleDragLeave}
-            onDrop={handleDrop}
-            onClick={handleFileBrowse}
-            role="button"
-            tabIndex={0}
-            onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') handleFileBrowse(); }}
-          >
-            <span className="docform-dropzone-icon">{'\u{1F4C2}'}</span>
-            <span className="docform-dropzone-text">
-              Trascina qui il file o <strong>clicca per selezionare</strong>
-            </span>
-            <span className="docform-dropzone-hint">
-              PDF, DOCX, XLSX, immagini — max 200 MB
-            </span>
-          </div>
-          <input
-            type="file"
-            ref={fileInputRef}
-            onChange={handleFileInputChange}
+          <FileDropzone
             accept={ACCEPT_STRING}
-            style={{ display: 'none' }}
+            onFiles={(files) => validateAndSetFile(files[0])}
+            hint="PDF, DOCX, XLSX, immagini — max 200 MB"
+            inputRef={fileInputRef}
           />
           {selectedFile === null && !form.doc_type && (
             <span className="docform-file-suggestion">

@@ -8,13 +8,17 @@
 
 > **Risposta standard a «stato di avanzamento del progetto e priorità da affrontare»**: sintetizzare da questa sezione (moduli maturi + sessione più recente + tabella priorità sotto), **non** dal banner storico più sotto (superato, tenuto solo per traccia) né dall'archivio marzo 2026 [`docs/archive/PROJECT_CONTEXT_STATO_FUNZIONALITA_2026-03.md`](archive/PROJECT_CONTEXT_STATO_FUNZIONALITA_2026-03.md). **Aggiornare questa sezione a fine sessione** se emergono nuove priorità o se una priorità elencata viene chiusa (stesso principio delle "Lezioni apprese" in [GUIDA_CONSOLIDATA.md](GUIDA_CONSOLIDATA.md) — sintesi qui, dettaglio linkato).
 
-**Ultimo aggiornamento di questa sezione**: 04/09/2026 (chrome unico anteprima documenti PDF/Word/Excel).
+**Ultimo aggiornamento di questa sezione**: 04/09/2026 (FileDropzone: trascina o clicca su tutti i caricamenti).
 
 ### Moduli maturi (in produzione, uso quotidiano dai clienti Camellini/Mason)
 
 Audit multi-standard (9001/14001/45001) · Non Conformità (workflow ISO 10.2 completo) · Qualifiche Personale saldatori/NDT/coordinatori (ISO 9606-1/14732/14731/9712) · Saldatura (WPQR con range duali t1/t2 FW, tipologia SW/prigioniero + P+T + doppio materiale, range ISO 14555 §10.2.8 + Tabella 2 boiler pins, generazione WPS, 15614-1/15614-2, Welding Book, Commesse ISO 3834, Dashboard 3834) · SAL (gap analysis requisiti con AI) · Registro Documenti + Scadenzari · Notifiche/Alert (documenti/NC/qualifiche) · Riesame di Direzione · RBAC multi-tenant (`company_access`) · Registro obblighi legali (ambiente + sicurezza) · Assistente AI / Gap Analysis euristica · CND verbali (VT/MT/PT, gate 9712, Word, Registro, offline) · Libreria fonti (Gestione, studio admin) · Gap fonti Libreria (email SA, coda via 2, chiusura tenant/piattaforma).
 
 ### Sessione più recente (04/09/2026)
+
+**Caricamento file unico (`FileDropzone`)** — ogni upload visibile: trascina o clicca. Componente `app/src/components/FileDropzone.jsx`, regola [`.cursor/rules/sgq-file-dropzone.mdc`](../.cursor/rules/sgq-file-dropzone.mdc). Eccezioni: fotocamera e picker cartella. Branch `cursor/file-dropzone-std-5de8`.
+
+### Sessione precedente (04/09/2026)
 
 **Chrome unico viewer documenti** — PDF, Word ed Excel: Chiudi + Scarica + Schermo intero (overlay nell'app, non finestra Windows). Branch `cursor/doc-viewer-chrome-std-b42c`. Brief [`DEPUTYTASK_VIEWER_CHROME.md`](agent-tasks/DEPUTYTASK_VIEWER_CHROME.md) CHIUSO TEST OK.
 
