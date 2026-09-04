@@ -8,7 +8,11 @@
 import React from "react";
 import "./DocumentPdfViewer.css";
 
-/** Aggiunge `base--fullscreen` a ogni classe di `baseClassName`. */
+/**
+ * Aggiunge `base--fullscreen` a ogni classe di `baseClassName`.
+ * In CSS, `--fullscreen` deve vincere anche in @media ≤640px (selettore
+ * doppio dopo il compact — DocumentPdfViewer.css / SpreadsheetViewer.css).
+ */
 export function withFullscreenClass(baseClassName, fullscreen) {
   if (!baseClassName) return "";
   const parts = String(baseClassName).split(/\s+/).filter(Boolean);

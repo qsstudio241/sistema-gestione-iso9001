@@ -326,4 +326,21 @@
   .spreadsheet-viewer-table td {
     padding: 4px 6px;
   }
+
+  /*
+   * --fullscreen deve vincere sul compact mobile (stessa specificità
+   * di overlay/container, ma quelle regole arrivano qui dopo).
+   * Allineato a DocumentPdfViewer.css (PDF + Word).
+   */
+  .spreadsheet-viewer-overlay.spreadsheet-viewer-overlay--fullscreen {
+    padding: 0;
+    width: 100vw;
+    height: 100vh;
+  }
+  .spreadsheet-viewer-container.spreadsheet-viewer-container--fullscreen {
+    max-width: none;
+    width: 100vw;
+    height: 100vh;
+    border-radius: 0;
+  }
 }

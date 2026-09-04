@@ -272,4 +272,22 @@
     height: 95vh;
     border-radius: 8px;
   }
+
+  /*
+   * --fullscreen deve vincere sul compact mobile (stessa specificità
+   * di overlay/container, ma quelle regole arrivano qui dopo).
+   * Selettore doppio + 100vh/100vw: niente padding/radius che rimpicciolisce.
+   * Word riusa queste classi via DocumentViewerChrome.
+   */
+  .pdf-viewer-overlay.pdf-viewer-overlay--fullscreen {
+    padding: 0;
+    width: 100vw;
+    height: 100vh;
+  }
+  .pdf-viewer-container.pdf-viewer-container--fullscreen {
+    max-width: none;
+    width: 100vw;
+    height: 100vh;
+    border-radius: 0;
+  }
 }
