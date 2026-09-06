@@ -1,7 +1,10 @@
 /* NormLibraryPage — DNA Gestione / Knowledge Health (token AppLayout) */
 
+/* LUX-A: piena larghezza viewport utile (griglie al 100% del layout app) */
 .nl-page {
-  max-width: 1100px;
+  max-width: none;
+  width: 100%;
+  box-sizing: border-box;
   margin: 0 auto;
   padding: 0 8px 32px;
 }
