@@ -1,8 +1,15 @@
 {
   "source": "docs/reference/NORME_MANCANTI_BACKLOG.md",
-  "updated": "2026-08-29",
+  "updated": "2026-09-06",
   "note": "Snapshot read-only per UI Libreria (LN-1). Aggiornare insieme al Markdown.",
   "items": [
+    {
+      "code": "ISO 15614-1:2017+A1:2019 (WPQR acciaio/nichel)",
+      "impact": "WPQR / range procedura",
+      "status": "digitalizzata",
+      "priority": "P0",
+      "notes": "NORMA_00043 MD+JSON; PDF non in Git. Archivio senza A1 = NORMA_00019. Non seed SGQ. Delta A1: eliminate §8.5.2.3.1–.4."
+    },
     {
       "code": "ISO 14555:2025 (arc stud welding / prigionieri)",
       "impact": "WPQR Stud Welding (Mason)",
