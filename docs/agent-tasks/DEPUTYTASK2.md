@@ -3,7 +3,7 @@
 **Stato:** CHIUSO — TEST OK  
 **Aperto:** 06/09/2026  
 **Chiuso:** 06/09/2026  
-**PR:** (draft) branch `cursor/lux-b-libreria-gap-badge-1afa` — link dopo create  
+**PR:** branch pushato `cursor/lux-b-libreria-gap-badge-1afa` — `gh pr create` 403 (token Cloud); ManagePullRequest non disponibile in questo run. Compare: https://github.com/qsstudio241/sistema-gestione-iso9001/compare/main...cursor/lux-b-libreria-gap-badge-1afa?expand=1  
 **Piano:** [`PLAN_LIBRERIA_UX_SLICES.md`](PLAN_LIBRERIA_UX_SLICES.md) § LUX-B  
 **Rischio:** Medio — FE menu + endpoint count additivo; niente auth middleware rewrite, niente migrazioni, niente form richiesta umana  
 **Branch:** `cursor/lux-b-libreria-gap-badge-1afa`  
