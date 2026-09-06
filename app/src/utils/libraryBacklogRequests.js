@@ -5,7 +5,6 @@
 
 import { libraryGapCodesMatch } from "./libraryGapDeepLink";
 
-const OPENISH = new Set(["da_richiedere", "pdf_ricevuto", "open", "in_progress"]);
 const DIGITIZED = new Set(["digitalizzata", "digitized"]);
 
 /**
@@ -30,8 +29,9 @@ export function mergeAiAndPlatformBacklog(platformItems, serverRows) {
   const server = (Array.isArray(serverRows) ? serverRows : []).filter(Boolean);
 
   const visibleServer = server.filter((row) => {
-    const st = String(row.status || "").toLowerCase();
-    if (OPENISH.has(st) && isSatisfiedByPlatformDigitized(platform, row.code)) {
+    // Se lo snapshot piattaforma ha già digitalizzato lo stesso codice
+    // (anche con edizione/A1 diverso), non mostrare il gap AI — aperto o chiuso.
+    if (isSatisfiedByPlatformDigitized(platform, row.code)) {
       return false;
     }
     return true;

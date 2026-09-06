@@ -24,7 +24,7 @@ describe("libraryBacklogRequests", () => {
     );
   });
 
-  it("nasconde gap Assistente aperti già coperti da digitalizzata", () => {
+  it("nasconde gap Assistente (aperti o chiusi) già coperti da digitalizzata", () => {
     const platform = [
       {
         code: "ISO 15614-1:2017+A1:2019 (WPQR)",
@@ -46,16 +46,24 @@ describe("libraryBacklogRequests", () => {
         source: "assistente",
         notes: "gap AI",
       },
+      {
+        id: "srv-2",
+        code: "ISO 15614-1:2017",
+        status: "digitalizzata",
+        source: "assistente",
+        notes: "già chiusa DB",
+      },
     ];
     const merged = mergeAiAndPlatformBacklog(platform, server);
-    expect(merged.some((r) => /15614-1:2017$/.test(String(r.code)))).toBe(
-      false
+    expect(merged.filter((r) => String(r.code).includes("15614")).length).toBe(
+      1
     );
     expect(
       merged.some(
         (r) =>
           String(r.code).includes("15614-1:2017+A1") &&
-          r.status === "digitalizzata"
+          r.status === "digitalizzata" &&
+          r.source === "piattaforma"
       )
     ).toBe(true);
     expect(merged.some((r) => r.code === "EN 10025-3")).toBe(true);
