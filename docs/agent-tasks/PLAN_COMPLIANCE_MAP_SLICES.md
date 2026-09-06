@@ -2,8 +2,8 @@
 
 > **Destinazione**: mappa multi-tenant **requisito cliente → norma/legge → evidenza → gap**, persistita in SQL (traduzione del metodo LLM-Wiki **nel DB**, non vault file).
 > **Spec / ADR**: [ADR-010](../adr/ADR-010-ai-agentic-architecture.md) §4–5 · [MINI_SPEC_RIESAME](../specs/MINI_SPEC_RIESAME_REQUISITI_CONTRATTO.md) · SAL gap [MODULO_SAL](../specs/MODULO_SAL_SCOPO_E_ROADMAP.md)
-> **Brief eseguibile**: [`DEPUTYTASK_COMPLIANCE_MAP.md`](DEPUTYTASK_COMPLIANCE_MAP.md)
-> **Mappa**: 06/09/2026 (Lead docs-only; parallelo SB-4 codice — file disgiunti)
+> **Brief eseguibile**: [`DEPUTYTASK_COMPLIANCE_MAP.md`](DEPUTYTASK_COMPLIANCE_MAP.md) — su `main` (#652)
+> **Mappa**: 06/09/2026 · **Stato:** piano/brief ✅ · **CM-1 codice** in attesa merge SB-4 ([#653](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/653))
 
 ---
 

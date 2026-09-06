@@ -1,17 +1,24 @@
 # DEPUTYTASK_COMPLIANCE_MAP — CM-1: schema + API indice + HITL stub
 
-**Stato:** APERTO  
-**Aperto:** 06/09/2026 (Lead docs-only)  
+**Stato:** APERTO — gate SB-4 (sessione 06/09: **FIX NON APPLICABILI** codice)  
+**Aperto:** 06/09/2026 (Lead docs-only) · brief su `main` via [#652](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/652)  
 **Piano:** [`PLAN_COMPLIANCE_MAP_SLICES.md`](PLAN_COMPLIANCE_MAP_SLICES.md)  
 **Rischio:** Medio — migrazione additiva + API nuove; PR, non push su `main`. Non dire «pronta» senza CI + Bugbot + Security su quello SHA.  
-**Branch codice (prossima sessione):** `cursor/cm1-compliance-map-schema-<suffix>` da `main` **dopo merge SB-4**  
+**Branch codice (prossima sessione):** `cursor/cm1-compliance-map-schema-8269` da `main` **dopo merge SB-4**  
 **Stream:** `DEPUTYTASK_COMPLIANCE_MAP.md` — epic Compliance Map; non riusare per altro modulo.  
-**Parallelo ora:** SB-4 codice — **NON toccare** `AmbitoFactsBar`, `aiChat`, `ambitoFacts.service`, pagine NC / Qualifiche / Deadlines.
+**Gate SB-4:** [#653](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/653) ready for review (allineata a `main` post-#652). **NON toccare** `AmbitoFactsBar`, `aiChat`, `ambitoFacts.service`, pagine NC / Qualifiche / Deadlines.
 
 > **Allineamento Git (autonomo)**: `git fetch origin main` + `git pull origin main` prima di eseguire.  
 > Comando: `Leggi docs/agent-tasks/DEPUTYTASK_COMPLIANCE_MAP.md ed eseguilo. Chiudi con TEST OK o FIX NON APPLICABILI.`  
 > Eseguire **solo se** su `origin/main` questo file ha **Stato: APERTO** e titolo CM-1.  
 > **Gate dipendenza:** se SB-4 non è ancora su `main` → **FIX NON APPLICABILI** (non iniziare codice CM).
+
+### Esito sessione «mergiato» (06/09/2026)
+
+- Mergiato su `main`: **#652** (questo brief + piano). **Non** mergiato: SB-4 (**#653**).
+- Codice CM-1 **non** avviato (gate). Hub sync: roadmap § Stato + 1 riga GUIDA (questa PR docs).
+- Prossima mossa dopo click merge su #653: branch `cursor/cm1-compliance-map-schema-8269` → DoD sotto.
+- **Bussola** `PROJECT_CONTEXT.md`: oggi a tetto 80 path — aggiungere riga Compliance Map **in CM-1** quando esistono `complianceMap.service.js` / routes (non ora).
 
 ---
 

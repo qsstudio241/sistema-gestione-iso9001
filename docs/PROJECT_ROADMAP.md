@@ -6,7 +6,7 @@
 
 > Avvio: Read con **`limit: 45`** (questa sezione deve entrarci). Resto del file = backlog/cronologia — **non** iniettare. Epic → `PLAN_*_SLICES.md`. Lezioni → [GUIDA](GUIDA_CONSOLIDATA.md) **a sezioni**. Archivio marzo 2026: [archive](archive/PROJECT_CONTEXT_STATO_FUNZIONALITA_2026-03.md).
 
-**Ultimo aggiornamento**: 06/09/2026 (dieta token doc progetto · SB-3/SB-5).
+**Ultimo aggiornamento**: 06/09/2026 (brief Compliance Map #652 · gate CM-1 = SB-4).
 
 ### Moduli maturi
 
@@ -14,14 +14,14 @@ Audit multi-standard · NC · Qualifiche · Saldatura (WPQR/WPS/3834/Welding Boo
 
 ### Sessione più recente (06/09/2026)
 
-**Dieta token doc (#651)** — harness + § Stato snello; KB prodotto = DB; no vault Obsidian in-app.  
-**Second Brain** — SB-1/SB-3/SB-5 bozza ✅; prossima prodotto **SB-4**. Piano [`PLAN_SECOND_BRAIN_SLICES.md`](agent-tasks/PLAN_SECOND_BRAIN_SLICES.md).
+**Compliance Map** — brief + piano su `main` (#652). **CM-1** (schema/API) parte **dopo** merge SB-4. [`PLAN_COMPLIANCE_MAP_SLICES.md`](agent-tasks/PLAN_COMPLIANCE_MAP_SLICES.md).  
+**Second Brain** — SB-1/SB-3/SB-5 bozza ✅; **SB-4** in [#653](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/653) (ready). Hub SB-4 dopo quel merge.
 
 ### Sessioni recenti (pointer — dettaglio in `<details>` sotto)
 
 | Data | Esito | Piano |
 |------|-------|-------|
-| 06/09 | LUX-A/B Libreria UX CHIUSE | [`PLAN_LIBRERIA_UX`](agent-tasks/PLAN_LIBRERIA_UX_SLICES.md) |
+| 06/09 | Dieta token doc #651 · LUX-A/B CHIUSE | harness · [`PLAN_LIBRERIA_UX`](agent-tasks/PLAN_LIBRERIA_UX_SLICES.md) |
 | 04/09 | `FileDropzone` + chrome viewer PDF/Word/Excel | regole `.cursor` · `DEPUTYTASK_VIEWER_CHROME` |
 | 03/09 | CONS-1…6 CHIUSE + SOP campo | [`PLAN_AUDIT_CONSERVAZIONE`](agent-tasks/PLAN_AUDIT_CONSERVAZIONE_SLICES.md) · [GUIDA SOP](GUIDA_CONSOLIDATA.md#audit-in-campo--sop-copertura) |
 | 02/09 | ING-1…4 CHIUSE; ING-5 HITL; VC-1…4 CHIUSE | [`PLAN_VALUTAZIONE_COMMESSE`](agent-tasks/PLAN_VALUTAZIONE_COMMESSE_SLICES.md) |
@@ -31,17 +31,17 @@ Audit multi-standard · NC · Qualifiche · Saldatura (WPQR/WPS/3834/Welding Boo
 
 | # | Priorità | Perché | Dove |
 |---|---|---|---|
-| 1 | **Audit campo — SOP + smoke** | CONS-1…6 su `main`; CONS-7 = nebbia Alto | [PLAN SOP](agent-tasks/PLAN_AUDIT_CONSERVAZIONE_SLICES.md#come-operare-senza-copertura-sop) |
-| 2 | **Commesse — ING-5 / VC-5** | ING-1…4 CHIUSE; ING-5 HITL; VC-5 solo Lead | [PLAN](agent-tasks/PLAN_VALUTAZIONE_COMMESSE_SLICES.md) |
-| 3 | **Alert qualifiche — destinatario UI** | Oggi solo cascata in servizio | `qualificationAlert.service.js` |
-| 4 | **Shell dialog ingest duplicato** | Basso rischio, non urgente | backlog sotto |
-| 5 | **Impostazioni org (P.IVA + logo)** | PR #10 conflict — ricostruire | backlog sotto |
+| 1 | **Second Brain — SB-4** | Aggregati studio; sblocca CM-1 | [#653](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/653) · [PLAN](agent-tasks/PLAN_SECOND_BRAIN_SLICES.md) |
+| 2 | **Compliance Map — CM-1** | Brief #652 su `main`; gate = SB-4 mergiato | [PLAN](agent-tasks/PLAN_COMPLIANCE_MAP_SLICES.md) · [`DEPUTYTASK_COMPLIANCE_MAP`](agent-tasks/DEPUTYTASK_COMPLIANCE_MAP.md) |
+| 3 | **Audit campo — SOP + smoke** | CONS-1…6 su `main`; CONS-7 = nebbia Alto | [PLAN SOP](agent-tasks/PLAN_AUDIT_CONSERVAZIONE_SLICES.md#come-operare-senza-copertura-sop) |
+| 4 | **Commesse — ING-5 / VC-5** | ING-1…4 CHIUSE; ING-5 HITL; VC-5 solo Lead | [PLAN](agent-tasks/PLAN_VALUTAZIONE_COMMESSE_SLICES.md) |
+| 5 | **Alert qualifiche — destinatario UI** | Oggi solo cascata in servizio | `qualificationAlert.service.js` |
 | 6 | **Material Compliance — MC-I4** | MC-I3 CHIUSA; prossima busta 1→N | [PLAN](agent-tasks/PLAN_MATERIAL_COMPLIANCE_SLICES.md) |
 | 7 | **Rischi ROO-18 HITL** | ROO-17 OK; ingest/data riesame dopo conferma | [PLAN §7](agent-tasks/PLAN_RISCHI_OPPORTUNITA_OBIETTIVI_SLICES.md) |
 | 8 | **SAL AI — S1c `.doc`** | S1a–S2b CHIUSE; S1c solo su richiesta | [PLAN](agent-tasks/PLAN_SAL_AI_EVIDENCE_SLICES.md) |
 | 9 | **ISO 3834 — ISO-4 Word** | ISO-1…3/6/7 OK; next Word visita Mason | [PLAN](agent-tasks/PLAN_3834_SLICES.md) |
-| 10 | **Second Brain — SB-4** | Fatti/prompt/nav OK; aggregati studio | [PLAN](agent-tasks/PLAN_SECOND_BRAIN_SLICES.md) |
-| 11 | **Multimodal RAG — FW-0** | MR-0…5 OK; hook ingest→CLIP | [PLAN MR](agent-tasks/PLAN_MULTIMODAL_RAG_SLICES.md) |
+| 10 | **Multimodal RAG — FW-0** | MR-0…5 OK; hook ingest→CLIP | [PLAN MR](agent-tasks/PLAN_MULTIMODAL_RAG_SLICES.md) |
+| 11 | **Shell dialog ingest / Impostazioni org** | Basso rischio / PR #10 conflict | backlog sotto |
 
 Backlog completo: [Backlog parcheggiato](#backlog-parcheggiato-task-futuri--fonte-unica).
 
