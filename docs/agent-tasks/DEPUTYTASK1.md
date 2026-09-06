@@ -6,7 +6,7 @@
 **Piano:** [`PLAN_LIBRERIA_UX_SLICES.md`](PLAN_LIBRERIA_UX_SLICES.md) § LUX-A  
 **Rischio:** Basso — solo CSS pagina (+ test L1 CSS); niente backend, auth, sync, `SgqDataGrid` globale  
 **Branch:** `cursor/lux-a-libreria-fullwidth-1afa`  
-**PR:** (da compilare al push)  
+**PR:** draft — `gh` createPullRequest 403 (token Cloud senza permesso PR); ManagePullRequest non esposto a questo run. Compare: https://github.com/qsstudio241/sistema-gestione-iso9001/compare/main...cursor/lux-a-libreria-fullwidth-1afa?expand=1  
 **Parallelo a:** LUX-B su [`DEPUTYTASK2.md`](DEPUTYTASK2.md) — **file disgiunti** (CSS vs menu/API)  
 **Slot precedente:** CONS-2 CHIUSO su `origin/main` (sovrascrittura consentita)
 
