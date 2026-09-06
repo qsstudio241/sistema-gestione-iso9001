@@ -1,65 +1,60 @@
-# DEPUTYTASK2 — CONS-6: Pacchetto di recupero audit (export JSON)
+# DEPUTYTASK2 — LUX-B: Badge/alert in-app gap piattaforma (superadmin)
 
-**Stato:** CHIUSO — TEST OK  
-**Aperto:** 02/09/2026  
-**Chiuso:** 02/09/2026  
-**Piano:** [`PLAN_AUDIT_CONSERVAZIONE_SLICES.md`](PLAN_AUDIT_CONSERVAZIONE_SLICES.md) § CONS-6  
-**Rischio:** Medio — util FE pura + un pulsante UI; niente auth, niente edit `syncService` / `StorageContext` / `useAutoSave` / `LogoutSyncGuard`  
-**Branch:** `cursor/cons6-audit-recovery-export-2271`  
-**Parallelo a:** CONS-1 su [`DEPUTYTASK.md`](DEPUTYTASK.md) — **file disgiunti** (CONS-1 = `useAutoSave.js`)  
-**Slot precedente:** CND-4 CHIUSO (23/08)
+**Stato:** APERTO  
+**Aperto:** 06/09/2026  
+**Piano:** [`PLAN_LIBRERIA_UX_SLICES.md`](PLAN_LIBRERIA_UX_SLICES.md) § LUX-B  
+**Rischio:** Medio — FE menu + endpoint count additivo; niente auth middleware rewrite, niente migrazioni, niente form richiesta umana  
+**Branch suggerito:** `cursor/lux-b-libreria-gap-badge-1afa`  
+**Parallelo a:** LUX-A su [`DEPUTYTASK1.md`](DEPUTYTASK1.md) — **file disgiunti**  
+**Slot precedente:** CONS-6 CHIUSO su `origin/main` (sovrascrittura consentita)  
+**Prerequisito prodotto:** LG-1…LG-5 già in `main` (email SA + coda `platform-queue`)
 
 > **Allineamento Git (autonomo)**: `git fetch origin main` + `git pull origin main` prima di eseguire. **Non** chiedere al committente.  
 > Comando: `Leggi docs/agent-tasks/DEPUTYTASK2.md ed eseguilo. Chiudi con TEST OK o FIX NON APPLICABILI.`  
-> Brief da eseguire solo se su `origin/main` questo file ha **Stato: APERTO** e titolo CONS-6.  
-> Questa esecuzione parte dal comando Cloud (branch da `origin/main`); lo slot su `main` era CND-4 CHIUSO, quindi sovrascrivibile.
+> Brief da eseguire solo se su `origin/main` questo file ha **Stato: APERTO** e titolo **LUX-B**.
 
 ---
 
 ## Perché
 
-Se la rete non torna per giorni, l’auditor deve poter scaricare **audit aperto + item coda di quell’UUID** sul telefono. Non sostituisce CONS-1…5. Niente mirror cartella PC (ADR-007 Fase B). Niente modifica a `LogoutSyncGuard`.
+I superadmin ricevono già **email** sui gap piattaforma (`closure_path=platform`). Manca un segnale **in-app** sulla voce menu **Libreria** (e/o conteggio in coda) così il gap non dipende solo dalla casella di posta. Riuso: `sidebar-badge` già usato per Documenti/Reclami in `AppLayout`.
 
 ## File previsti
 
-- `app/src/utils/auditRecoveryExport.js` (nuovo)
-- `app/src/tests/auditRecoveryExport.test.js` (nuovo)
-- `app/src/components/AuditAccordionLayout.jsx` (un solo file UI: pulsante)
-- `docs/agent-tasks/DEPUTYTASK2.md` (questo brief)
+- `backend/src/services/librarySourceRequest.service.js` — helper `countOpenPlatformGaps()` (o equivalente): `closure_path=platform` + `status IN ('open','in_progress')` → `COUNT`; **preferire COUNT** rispetto a scaricare tutta la coda ogni poll
+- `backend/src/controllers/librarySourceRequest.controller.js` — handler count (o estensione minima della queue se il Lead deputy dimostra che `count` dalla list è accettabile **e** documenta il costo)
+- `backend/src/routes/librarySourceRequest.routes.js` — route superadmin-only, **prima** di `:id` se path parametrizzato (stesso ordine di `platform-queue`)
+- `backend/src/services/librarySourceRequest.service.test.js` — test count / filtro status
+- `app/src/services/apiService.js` — metodo client per il count (o riuso documentato di `getLibraryPlatformQueue` **solo** se si evita payload pesante in poll)
+- `app/src/layouts/AppLayout.jsx` — per `role === 'superadmin'`: poll (stesso intervallo alert ~5 min) + `badge` sulla voce `{ to: "/settings/libreria", … }`
+- `app/src/layouts/AppLayout.css` — **solo** se il badge esistente non basta (preferire riuso `.sidebar-badge`)
+- `app/src/tests/appLayoutLibraryGapBadge.test.jsx` (**nuovo**) — superadmin vede badge con N>0; non-superadmin no; N=0 nessun badge
+- Opz.: `app/src/pages/NormLibraryPage.jsx` — conteggio numerico sull’header sezione coda SA (dati già caricati / stesso count); **non** toccare `NormLibraryPage.css`
+- `docs/agent-tasks/DEPUTYTASK2.md` (chiusura) + checkbox PLAN
+
+Se aggiungi file `.js` nuovi sotto `backend/src/`: aggiorna `backend/scripts/deploy-manifest.json`.
 
 ## Cosa NON toccare
 
-- `useAutoSave.js`, `AuditLockBanner.jsx`, `StorageContext.jsx`
-- `syncService.js` (niente edit; import/lettura store via `getDatabase` OK)
-- `AuthContext.jsx`, `LogoutSyncGuard.jsx`
-- backend, GUIDA, PLAN, `DEPUTYTASK.md`, `DEPUTYTASK1.md`
+- `app/src/pages/NormLibraryPage.css` (LUX-A)
+- `app/src/tests/normLibraryPage.fullWidth.test.js` / contract full-width
+- Form richiesta umana, Ambito, banner→pulsante SA
+- `auth.middleware.js`, JWT, sync, migrazioni SQL
+- Push mobile (LG-6)
+- `SgqDataGrid` globale
+- `DEPUTYTASK1.md` (slot parallelo)
 
-## Cosa fare
+## Criteri TEST OK
 
-1. Funzione pura: audit + coda → JSON `{ version, exportedAt, auditUuid, audit, queueItems }` filtrato per UUID. Scope `organization_id` se c’è. Niente token.
-2. Download Blob + `a[download]` nome `sgq-audit-recupero-<uuid-corto>-<data>.json`.
-3. Test L1: filtra coda per UUID; senza coda; no token.
-4. Pulsante «Scarica copia di recupero» sull’audit aperto, anche offline; `disabled` se manca audit. DNA esistente, italiano accentato, niente emoji JSX nuovi.
-5. `cd app && NODE_ENV=test npm run test:run -- src/tests/auditRecoveryExport.test.js` + `cd app && npm run build`.
-6. Commit, push, PR base `main`.
-7. Rischio Medio. Non dire «pronta» senza CI + Bugbot + Security su quello SHA.
+1. Superadmin con ≥1 gap piattaforma open/in_progress: badge numerico sulla voce **Libreria** (cap 99+ come gli altri badge).
+2. Superadmin con 0 gap aperti: nessun badge (o non visibile).
+3. Admin/non-superadmin: nessun badge gap (endpoint count resta superadmin-only).
+4. Email esistente invariata (non rimuovere né sostituire il canale mail).
+5. Test BE service count verde; test L1 AppLayout badge verde.
+6. `cd app && NODE_ENV=test npm run test:run -- src/tests/appLayoutLibraryGapBadge.test.jsx` + `cd app && npm run build`.
+7. Backend: test mirato `librarySourceRequest.service.test.js` (o suite BE equivalente già usata dal modulo).
+8. PR: gate Medio — non dire «pronta» senza CI + Bugbot + Security Review su quello SHA. **Non** mergiare.
 
-## DoD
+## Comando chiusura
 
-- File JSON scaricabile dal header audit (anche offline)
-- Coda di altri UUID esclusa; token/jwt/password assenti dal JSON
-- Test L1 verdi + build `app/`
-
----
-
-## Esito deputy
-
-**TEST OK** — pacchetto `{ version, exportedAt, auditUuid, audit, queueItems }` filtrato per UUID; scope `organization_id` se presente; token/jwt/password omessi; download `sgq-audit-recupero-<uuid-corto>-<data>.json`. Pulsante «Scarica copia di recupero» in header audit (disabled senza audit). Non CONS-1…5. Non toccati `LogoutSyncGuard` / `syncService` / GUIDA / PLAN.
-
-| Voce | Dettaglio |
-|------|-----------|
-| Util | `app/src/utils/auditRecoveryExport.js` |
-| UI | `AuditAccordionLayout.jsx` — un pulsante, classi esistenti |
-| Test L1 | `auditRecoveryExport.test.js` 8/8 |
-| Build | `cd app && npm run build` OK |
-| PR | da aprire su `main` (gate Medio: non «pronta» senza CI+Bugbot+Security) |
+`Leggi docs/agent-tasks/DEPUTYTASK2.md ed eseguilo. Chiudi con TEST OK o FIX NON APPLICABILI.`
