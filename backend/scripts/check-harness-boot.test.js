@@ -13,6 +13,7 @@ const {
   roadmapStatoSliceFromText,
   checkAgentsDiet,
   checkSelfLearningNotAlwaysOn,
+  checkGitAutonomyMainMergeGate,
   checkCompassPathsExist,
   runScenarioPure,
   checkMandatoryBytes,
@@ -146,6 +147,24 @@ describe('check-harness-boot — logica pura (mutazione)', () => {
     it('FALLISCE se sgq-self-learning torna alwaysApply: true (regressione peso avvio)', () => {
       const errors = checkSelfLearningNotAlwaysOn('description: x\nalwaysApply: true');
       expect(errors.length).toBe(1);
+    });
+  });
+
+  describe('checkGitAutonomyMainMergeGate', () => {
+    const healthy = 'Gate: git merge origin/main prima di push. Vietato «Update branch».';
+
+    it('passa quando gate merge origin/main e Update branch sono presenti', () => {
+      expect(checkGitAutonomyMainMergeGate(healthy)).toEqual([]);
+    });
+
+    it('FALLISCE se manca merge origin/main (regressione no Update branch)', () => {
+      const errors = checkGitAutonomyMainMergeGate('Vietato Update branch senza comando merge');
+      expect(errors.some((e) => /merge origin\/main/.test(e))).toBe(true);
+    });
+
+    it('FALLISCE se manca il divieto Update branch', () => {
+      const errors = checkGitAutonomyMainMergeGate('Sempre fare git merge origin/main');
+      expect(errors.some((e) => /Update branch/.test(e))).toBe(true);
     });
   });
 
