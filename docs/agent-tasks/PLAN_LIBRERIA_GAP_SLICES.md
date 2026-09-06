@@ -56,6 +56,8 @@
 
 **Stato piano:** COMPLETATO — LG-1…LG-5 CHIUSI; LG-6 resta nebbia/fuori.
 
+**Sequel UX (06/09/2026):** full-width griglie + badge in-app gap SA — [`PLAN_LIBRERIA_UX_SLICES.md`](PLAN_LIBRERIA_UX_SLICES.md) (LUX-A / LUX-B).
+
 ## Decisioni già prese (aggiunte LG-1)
 
 - Blocco macchina `<<<SGQ_SOURCE_GAPS ... SGQ_SOURCE_GAPS>>>` nella reply Gemini; strip lato server

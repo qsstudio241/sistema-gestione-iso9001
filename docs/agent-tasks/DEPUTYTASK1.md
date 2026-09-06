@@ -1,60 +1,52 @@
-# DEPUTYTASK1 — CONS-2: Avviso offline «non aprire lo stesso audit dal PC»
+# DEPUTYTASK1 — LUX-A: Griglie Libreria full-width
 
-**Stato:** CHIUSO — TEST OK  
-**Aperto:** 02/09/2026  
-**Chiuso:** 02/09/2026  
-**Piano:** [`PLAN_AUDIT_CONSERVAZIONE_SLICES.md`](PLAN_AUDIT_CONSERVAZIONE_SLICES.md) § CONS-2  
-**Rischio:** Basso — solo testo banner `offline` + test L1; niente StorageContext, sync, auth, backend  
-**Branch:** `cursor/cons2-offline-pc-warning-2271`  
-**Parallelo a:** CONS-1 su [`DEPUTYTASK.md`](DEPUTYTASK.md) — **file disgiunti** (`useAutoSave.js` vs `AuditLockBanner.jsx`)  
-**Slot precedente:** ING-4 CHIUSO su `origin/main` (sovrascrittura consentita)
+**Stato:** APERTO  
+**Aperto:** 06/09/2026  
+**Piano:** [`PLAN_LIBRERIA_UX_SLICES.md`](PLAN_LIBRERIA_UX_SLICES.md) § LUX-A  
+**Rischio:** Basso — solo CSS pagina (+ test L1 CSS); niente backend, auth, sync, `SgqDataGrid` globale  
+**Branch suggerito:** `cursor/lux-a-libreria-fullwidth-1afa` (o `cursor/<desc>-1afa` secondo policy Cloud)  
+**Parallelo a:** LUX-B su [`DEPUTYTASK2.md`](DEPUTYTASK2.md) — **file disgiunti** (CSS vs menu/API)  
+**Slot precedente:** CONS-2 CHIUSO su `origin/main` (sovrascrittura consentita)
 
 > **Allineamento Git (autonomo)**: `git fetch origin main` + `git pull origin main` prima di eseguire. **Non** chiedere al committente.  
 > Comando: `Leggi docs/agent-tasks/DEPUTYTASK1.md ed eseguilo. Chiudi con TEST OK o FIX NON APPLICABILI.`  
-> Brief da eseguire solo se su questo branch / `origin/main` questo file ha **Stato: APERTO** e titolo CONS-2.
+> Brief da eseguire solo se su `origin/main` questo file ha **Stato: APERTO** e titolo **LUX-A**.
 
 ---
 
 ## Perché
 
-In offline il banner lock c’è già (`mode === 'offline'`, mostra `auditLock.message`: lock non attivo). Manca l’avviso deciso dal committente: il lavoro resta su **questo telefono**; **non** aprire lo stesso audit dal PC finché non torna la rete e la sync è completata.
-
-Riuso: stesso `AuditLockBanner` montato in `App.jsx`. Nessun secondo alert.
+Oggi `.nl-page { max-width: 1100px }` comprime catalogo e griglie. Decisione prodotto: Libreria a **piena larghezza** viewport utile; le griglie `SgqDataGrid` restano `width: 100%` del contenitore. Mobile già gestito (`@media ≤768px`): non rompere lo stack.
 
 ## File previsti
 
-- `app/src/components/AuditLockBanner.jsx`
-- `app/src/components/AuditLockBanner.css` solo se serve
-- `app/src/tests/auditLockBanner.offlinePc.test.jsx` (nuovo)
-- `docs/agent-tasks/DEPUTYTASK1.md` (questo brief)
+- `app/src/pages/NormLibraryPage.css` — alza/rimuovi `max-width: 1100px` su `.nl-page` (desktop); mantieni padding/responsive; **non** allargare forzatamente elementi che devono restare stretti (es. form digitize `max-width: 480px`, testo header `52rem` se ancora leggibile)
+- `app/src/tests/normLibraryPage.fullWidth.test.js` (**nuovo**) — assert CSS: `.nl-page` senza cap 1100px desktop (o con max-width ≥ viewport / `none` / `100%` secondo scelta minima); media mobile ancora OK
+- `docs/agent-tasks/DEPUTYTASK1.md` (questo brief — chiusura)
+- Opz. aggiornamento checkbox in [`PLAN_LIBRERIA_UX_SLICES.md`](PLAN_LIBRERIA_UX_SLICES.md) a slice chiusa
+
+**JSX:** toccare `NormLibraryPage.jsx` **solo** se un wrapper di layout è strettamente necessario e documentato; default = **solo CSS**.
 
 ## Cosa NON toccare
 
-- `app/src/hooks/useAutoSave.js` (CONS-1)
-- `app/src/contexts/StorageContext.jsx` (CONS-3/4)
-- `app/src/services/syncService.js` (import read-only OK; CONS-5)
-- `app/src/contexts/AuthContext.jsx`
-- Backend, migrazioni, GUIDA, PLAN, `DEPUTYTASK.md`, `DEPUTYTASK2.md`
+- `app/src/pages/NormLibraryPage.jsx` (salvo eccezione sopra)
+- `app/src/layouts/AppLayout.jsx` / `AppLayout.css` (LUX-B)
+- `app/src/services/apiService.js`
+- Qualsiasi `backend/**`
+- Componenti `SgqDataGrid` / grid globale
+- Form «Aggiungi richiesta», Ambito, banner→pulsante SA
+- `DEPUTYTASK2.md`, GUIDA, roadmap (in parallelo: bozza nel brief; sync hub dopo merge se serve)
 
-## Criteri chiusura
+## Criteri TEST OK
 
-1. `mode === 'offline'`: testo italiano (accenti UTF-8) che integra il messaggio attuale (lock non attivo) + avviso PC/telefono.
-2. Solo offline — altri mode invariati.
-3. Emoji solo in stringa JS, mai JSX grezzo.
-4. Stesso look del banner. Nessuna schermata nuova.
-5. Test L1: testo PC visibile in mode offline.
-6. `cd app && NODE_ENV=test npm run test:run` sul test nuovo + `cd app && npm run build`.
+1. Desktop: `.nl-page` non è più limitato a `1100px`; contenuto/griglie usano la larghezza del layout app.
+2. Mobile (≤768px): layout a colonna / scroll touch invariati (regressione CSS).
+3. `cd app && NODE_ENV=test npm run test:run -- src/tests/normLibraryPage.fullWidth.test.js` verde (+ eventuale contract mobile già esistente se aggiornato).
+4. `cd app && npm run build` OK.
+5. Encoding UTF-8; niente tocco BE/deploy.
 
-## Esito deputy
+## Comando chiusura
 
-**TEST OK** — banner `mode === 'offline'` integra lock-non-attivo + avviso PC/telefono. Nessun secondo alert. StorageContext non toccato.
+`Leggi docs/agent-tasks/DEPUTYTASK1.md ed eseguilo. Chiudi con TEST OK o FIX NON APPLICABILI.`
 
-| Voce | Dettaglio |
-|------|-----------|
-| UI | `AuditLockBanner.jsx` — `buildOfflineBannerMessage` + `OFFLINE_PC_WARNING` |
-| CSS | invariato |
-| Storage | nessuno |
-| Test L1 | `auditLockBanner.offlinePc.test.jsx` 4/4 + `npm run build` OK |
-| Ops | solo FE; Netlify da `main` dopo merge umano |
-
-**Prossima slice:** CONS-3 (login senza wipe) è Alto e tocca `StorageContext.jsx` — seriale, non in questa PR. CONS-6 può restare parallela (file disgiunti).
+Al termine: Stato **CHIUSO — TEST OK** (o FIX NON APPLICABILI), PR se Medio/basso FE, **non** mergiare su `main`.
