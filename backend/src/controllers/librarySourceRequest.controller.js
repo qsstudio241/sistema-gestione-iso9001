@@ -4,6 +4,7 @@ const logger = require('../utils/logger');
 const {
   listForOrganization,
   listPlatformQueue,
+  countOpenPlatformGaps,
   acknowledgePlatformRequest,
   markPlatformDigitized,
   upsertGapRequest,
@@ -39,6 +40,23 @@ async function listPlatformQueueHandler(req, res) {
     res.status(500).json({
       error: 'Errore lettura coda gap piattaforma.',
       code: 'LSR_PLATFORM_QUEUE_ERROR',
+    });
+  }
+}
+
+/**
+ * GET /library/source-requests/platform-gap-count
+ * LUX-B — COUNT gap piattaforma open/in_progress (badge menu; solo superadmin).
+ */
+async function countPlatformGapsHandler(req, res) {
+  try {
+    const count = await countOpenPlatformGaps();
+    res.json({ count });
+  } catch (err) {
+    logger.error('[LibrarySourceRequest] platform-gap-count failed:', err.message);
+    res.status(500).json({
+      error: 'Errore conteggio gap piattaforma.',
+      code: 'LSR_PLATFORM_GAP_COUNT_ERROR',
     });
   }
 }
@@ -163,6 +181,7 @@ async function createSourceRequest(req, res) {
 module.exports = {
   listSourceRequests,
   listPlatformQueueHandler,
+  countPlatformGapsHandler,
   acknowledgeSourceRequest,
   markDigitizedSourceRequest,
   createSourceRequest,

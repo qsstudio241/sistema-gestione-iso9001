@@ -1,12 +1,14 @@
 # DEPUTYTASK2 — LUX-B: Badge/alert in-app gap piattaforma (superadmin)
 
-**Stato:** APERTO  
+**Stato:** CHIUSO — TEST OK  
 **Aperto:** 06/09/2026  
+**Chiuso:** 06/09/2026  
+**PR:** [#649](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/649) (draft) — branch `cursor/lux-b-libreria-gap-badge-1afa`; merge conflict con `main` risolto 06/09/2026 (allineamento post LUX-A #648).  
+
 **Piano:** [`PLAN_LIBRERIA_UX_SLICES.md`](PLAN_LIBRERIA_UX_SLICES.md) § LUX-B  
 **Rischio:** Medio — FE menu + endpoint count additivo; niente auth middleware rewrite, niente migrazioni, niente form richiesta umana  
-**Branch suggerito:** `cursor/lux-b-libreria-gap-badge-1afa`  
-**Parallelo a:** LUX-A su [`DEPUTYTASK1.md`](DEPUTYTASK1.md) — **file disgiunti**  
-**Slot precedente:** CONS-6 CHIUSO su `origin/main` (sovrascrittura consentita)  
+**Branch:** `cursor/lux-b-libreria-gap-badge-1afa`  
+**Parallelo a:** LUX-A su [`DEPUTYTASK1.md`](DEPUTYTASK1.md) — **file disgiunti** (non toccato)  
 **Prerequisito prodotto:** LG-1…LG-5 già in `main` (email SA + coda `platform-queue`)
 
 > **Allineamento Git (autonomo)**: `git fetch origin main` + `git pull origin main` prima di eseguire. **Non** chiedere al committente.  
@@ -14,6 +16,16 @@
 > Brief da eseguire solo se su `origin/main` questo file ha **Stato: APERTO** e titolo **LUX-B**.
 
 ---
+
+## Esito
+
+**TEST OK**
+
+- BE: `countOpenPlatformGaps()` → `GET /library/source-requests/platform-gap-count` (superadmin-only, prima di `:id`)
+- FE: poll 5 min in `AppLayout` solo `role === 'superadmin'` + `sidebar-badge` su voce Libreria (cap 99+)
+- Email SA invariata (canale mail non toccato)
+- L1: BE service 15/15; FE `appLayoutLibraryGapBadge.test.jsx` 4/4; `npm run build` OK
+- Non toccati: `NormLibraryPage.css`, form richiesta umana, Ambito, `DEPUTYTASK1`
 
 ## Perché
 

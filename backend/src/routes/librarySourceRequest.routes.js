@@ -14,6 +14,13 @@ router.get(
   ctrl.listPlatformQueueHandler
 );
 
+// LUX-B — COUNT gap aperti (prima di :id; stesso gate superadmin)
+router.get(
+  '/library/source-requests/platform-gap-count',
+  ...superadminOnly,
+  ctrl.countPlatformGapsHandler
+);
+
 router.patch(
   '/library/source-requests/:id/acknowledge',
   ...superadminOnly,

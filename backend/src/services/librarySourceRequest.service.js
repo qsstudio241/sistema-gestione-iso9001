@@ -205,6 +205,23 @@ async function listPlatformQueue({ status } = {}) {
 }
 
 /**
+ * LUX-B — conteggio leggero gap piattaforma aperti (badge menu SA).
+ * COUNT invece di listPlatformQueue: evita payload pesante sul poll 5 min.
+ * Stesso filtro: closure_path=platform + status open|in_progress.
+ */
+async function countOpenPlatformGaps() {
+  const res = await query(
+    `SELECT COUNT_BIG(*) AS cnt
+     FROM library_source_requests
+     WHERE closure_path = N'platform'
+       AND status IN (N'open', N'in_progress')`
+  );
+  const raw = (res.recordset || [])[0]?.cnt;
+  const n = Number(raw);
+  return Number.isFinite(n) && n > 0 ? n : 0;
+}
+
+/**
  * Match codice gap ↔ codice ingest (allineato a libraryGapCodesMatch FE).
  * Uguaglianza case-insensitive o prefisso (es. «ISO 14555:2025» vs «ISO 14555:2025 (arc…)»).
  */
@@ -462,6 +479,7 @@ module.exports = {
   processGapsFromChat,
   listForOrganization,
   listPlatformQueue,
+  countOpenPlatformGaps,
   acknowledgePlatformRequest,
   markPlatformDigitized,
   notifyRequestingTenant,

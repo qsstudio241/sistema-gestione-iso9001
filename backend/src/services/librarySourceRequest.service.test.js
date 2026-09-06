@@ -15,6 +15,7 @@ const {
   upsertGapRequest,
   processGapsFromChat,
   listPlatformQueue,
+  countOpenPlatformGaps,
   acknowledgePlatformRequest,
   markPlatformDigitized,
   closeTenantRequestsCoveredByCode,
@@ -128,6 +129,22 @@ describe('librarySourceRequest.service', () => {
       {}
     );
     expect(query.mock.calls[0][0]).toMatch(/status IN \(N'open', N'in_progress'\)/);
+  });
+
+  it('countOpenPlatformGaps: COUNT su platform open/in_progress', async () => {
+    query.mockResolvedValueOnce({ recordset: [{ cnt: 4 }] });
+    const n = await countOpenPlatformGaps();
+    expect(n).toBe(4);
+    expect(query).toHaveBeenCalledWith(
+      expect.stringMatching(/COUNT_BIG\(\*\)/)
+    );
+    expect(query.mock.calls[0][0]).toMatch(/closure_path = N'platform'/);
+    expect(query.mock.calls[0][0]).toMatch(/status IN \(N'open', N'in_progress'\)/);
+  });
+
+  it('countOpenPlatformGaps: 0 se nessun gap', async () => {
+    query.mockResolvedValueOnce({ recordset: [{ cnt: 0 }] });
+    expect(await countOpenPlatformGaps()).toBe(0);
   });
 
   it('acknowledgePlatformRequest: open → in_progress', async () => {
