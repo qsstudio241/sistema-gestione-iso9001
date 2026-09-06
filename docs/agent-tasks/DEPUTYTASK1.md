@@ -5,6 +5,7 @@
 **Chiuso:** 06/09/2026  
 **Rischio:** Basso — solo docs/rules (+ check harness documentale); niente codice prodotto  
 **Branch:** `cursor/git-rule-no-update-branch-8269`  
+**PR:** draft bloccata da `gh` 403 (token Cloud senza createPullRequest); Github MCP error. Compare: https://github.com/qsstudio241/sistema-gestione-iso9001/compare/main...cursor/git-rule-no-update-branch-8269?expand=1  
 **Slot precedente:** dieta token doc CHIUSO su `origin/main` (sovrascrittura consentita)  
 **Parallelo:** `DEPUTYTASK_COMPLIANCE_MAP.md` CM-1 APERTO — **NON toccato** AmbitoFacts / aiChat / codice CM.
 
