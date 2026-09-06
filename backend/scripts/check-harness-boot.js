@@ -147,6 +147,26 @@ function checkSelfLearningNotAlwaysOn(raw) {
 }
 
 /**
+ * Gate hard «no Update branch»: la rule deve citare esplicitamente merge origin/main
+ * (lezione 06/09/2026 — policy narrativa senza comando = PR left behind).
+ * @param {string} raw contenuto di sgq-git-autonomy.mdc
+ */
+function checkGitAutonomyMainMergeGate(raw) {
+  const errors = [];
+  if (!/merge origin\/main/.test(raw)) {
+    errors.push(
+      'sgq-git-autonomy.mdc deve contenere il gate «merge origin/main» prima di push/PR (no Update branch)'
+    );
+  }
+  if (!/Update branch/i.test(raw)) {
+    errors.push(
+      'sgq-git-autonomy.mdc deve vietare esplicitamente «Update branch» al committente'
+    );
+  }
+  return errors;
+}
+
+/**
  * @param {string[]} compassPaths
  * @param {(p: string) => boolean} existsFn
  */
@@ -239,6 +259,7 @@ function main() {
   errors.push(...checkCompassPathsExist(compassPaths, existsInRepo));
   errors.push(...checkAgentsDiet(agentsMd));
   errors.push(...checkSelfLearningNotAlwaysOn(readRepoFile('.cursor/rules/sgq-self-learning.mdc')));
+  errors.push(...checkGitAutonomyMainMergeGate(readRepoFile('.cursor/rules/sgq-git-autonomy.mdc')));
 
   const stato = roadmapStatoSliceFromText(readRepoFile('docs/PROJECT_ROADMAP.md'));
   let mandatoryBytes = stato.bytes + repoFileBytes('AGENTS.md') + repoFileBytes('PROJECT_CONTEXT.md');
@@ -286,6 +307,7 @@ module.exports = {
   roadmapStatoSliceFromText,
   checkAgentsDiet,
   checkSelfLearningNotAlwaysOn,
+  checkGitAutonomyMainMergeGate,
   checkCompassPathsExist,
   runScenarioPure,
   checkMandatoryBytes,
