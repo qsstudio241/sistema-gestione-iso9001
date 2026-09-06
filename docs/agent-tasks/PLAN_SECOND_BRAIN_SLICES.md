@@ -2,7 +2,7 @@
 
 > **Destinazione**: in app, l’utente vede e interroga **i fatti del solo Ambito attivo** (NC, scadenze, gap). La chat (`/ai-assistant`) consuma quei fatti; non è un cervello parallelo.
 > **Spec**: [ADR-010](../adr/ADR-010-ai-agentic-architecture.md) · [SAL §K](../specs/MODULO_SAL_SCOPO_E_ROADMAP.md) · Ambito (`CompanyScopeSelect`)
-> **Stato (06/09/2026):** SB-1 ✅ · SB-3 ✅ · SB-5 bozza ✅ (nav HITL). **Prossima prodotto: SB-4** (aggregati studio). Brief slot: riusa uno `DEPUTYTASK*.md` CHIUSO con file disgiunti.
+> **Stato (06/09/2026):** SB-1 ✅ · SB-3 ✅ · SB-4 ✅ · SB-5 bozza ✅ (nav HITL). **Prossima prodotto: SB-2** (header Ambito unico) o SB-6. Brief slot: riusa uno `DEPUTYTASK*.md` CHIUSO con file disgiunti.
 > **Mappa:** 16/08/2026 (wayfinder). Intuizione AIOS: livelli contesto/dati/intelligence **dentro** il prodotto, non cartella Claude parallela.
 
 ---
@@ -32,10 +32,11 @@
 
 - **SB-1 ✅** — `GET /ai/ambito-facts` + card; zero LLM; isolamento `company_id`
 - **SB-3 ✅** — `POST /ai/chat` inietta `loadAmbitoFacts` (org+company)
+- **SB-4 ✅** — `companyId` null → aggregati studio + top urgenze; RAG `studioSafeOverview` (no chunk client misti)
 - **SB-5 bozza ✅** — nav NC/Qualifiche/Scadenze da `AmbitoFactsBar`; no write autonoma
 - In-app, N cervelli (`organization_id` + `company_id`); prima i fatti, poi la chat
-- Studio su «Tutto lo studio» = solo aggregati → **SB-4**
-- Collare ADR-010; nessuna migrazione per SB-1…SB-3
+- Studio su «Tutto lo studio» = solo aggregati → **SB-4** ✅
+- Collare ADR-010; nessuna migrazione per SB-1…SB-4
 - Contesto scritto (`ai_context_notes` / profilo) ≠ fatti live SQL — non fonderli
 - Wizard contesto + due rubriche (studio ≠ azienda); email/Drive opt-in dopo CTX-3
 
@@ -47,7 +48,7 @@
 |---------|------|--------|-------|
 | Fatti Ambito | Snapshot SQL + card | (fatto) | **SB-1** ✅ |
 | Chat usa gli stessi numeri | Blocco fatti in prompt | (fatto) | **SB-3** ✅ |
-| «Tutto lo studio» | `companyId` null → rischio mescolanza RAG | Solo totali + urgenze per azienda | **SB-4** |
+| «Tutto lo studio» | Aggregati + top urgenze; RAG studio-safe | (fatto) | **SB-4** ✅ |
 | Automazioni da bottone | Nav HITL da card | (bozza fatta; write autonoma vietata) | **SB-5** |
 | Contesto studio/azienda | Textarea / profilo | Wizard + score vs rubrica | **CTX-0…3** |
 | Email / Drive | Assente | Opt-in Alto | **CTX-4** |
@@ -61,7 +62,7 @@
 | **SB-1** ✅ | Snapshot fatti Ambito | `ambitoFacts.service` + GET + card AI | — | AFK |
 | **SB-2** | Ambito header = unico input | Card/GET seguono `CompanyScopeContext` | SB-1 | AFK |
 | **SB-3** ✅ | Chat consuma snapshot | `aiChat.controller` + stesso service | SB-1 | AFK |
-| **SB-4** | Vista studio aggregata | GET `companyId` null: totali + top urgenze | SB-2 | AFK |
+| **SB-4** ✅ | Vista studio aggregata | GET `companyId` null: totali + top urgenze | SB-2 | AFK |
 | **SB-5** | Pulsanti operativi | Nav moduli con Ambito; gated se manca azienda | SB-2 | AFK |
 | **SB-6** | Fatti SAL (opz.) | Riuso `gapAnalysis.service` | SB-3 | AFK |
 | **CTX-0…3** | Rubrica + wizard + web | File disgiunti dalla chat SB | ordine CTX | AFK |
