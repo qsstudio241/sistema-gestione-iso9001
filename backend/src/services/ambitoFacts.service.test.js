@@ -10,7 +10,10 @@ jest.mock('../utils/logger', () => ({
 }));
 
 const { query } = require('../config/database');
-const { loadAmbitoFacts } = require('./ambitoFacts.service');
+const {
+  loadAmbitoFacts,
+  formatAmbitoFactsPromptBlock,
+} = require('./ambitoFacts.service');
 
 const user = { organization_id: 99, auditor_org_id: 10, user_id: 5 };
 
@@ -55,5 +58,22 @@ describe('ambitoFacts.service', () => {
     expect(b.counts.ncOpen).toBe(0);
     expect(query.mock.calls.some((c) => c[1].companyId === 22)).toBe(true);
     expect(query.mock.calls.every((c) => c[1].companyId !== 11)).toBe(true);
+  });
+
+  it('formatAmbitoFactsPromptBlock include i conteggi solo se ready', () => {
+    expect(formatAmbitoFactsPromptBlock(null)).toBe('');
+    expect(formatAmbitoFactsPromptBlock({ ready: false })).toBe('');
+    const block = formatAmbitoFactsPromptBlock({
+      ready: true,
+      companyId: 11,
+      companyName: 'Mason',
+      counts: { ncOpen: 3, qualsExpiring30: 1, docsExpiring30: 4 },
+    });
+    expect(block).toContain('FATTI AMBITO');
+    expect(block).toContain('Mason');
+    expect(block).toContain('company_id=11');
+    expect(block).toContain('NC aperte: 3');
+    expect(block).toContain('Qualifiche in scadenza entro 30 giorni: 1');
+    expect(block).toContain('Documenti in scadenza entro 30 giorni: 4');
   });
 });

@@ -36,9 +36,13 @@ jest.mock('../utils/logger', () => ({
   debug: jest.fn(),
 }));
 
-jest.mock('../services/ambitoFacts.service', () => ({
-  loadAmbitoFacts: jest.fn(),
-}));
+jest.mock('../services/ambitoFacts.service', () => {
+  const actual = jest.requireActual('../services/ambitoFacts.service');
+  return {
+    ...actual,
+    loadAmbitoFacts: jest.fn(),
+  };
+});
 
 jest.mock('../services/normBroker.service', () => ({
   resolveClauseText: jest.fn(),
@@ -486,5 +490,75 @@ describe('aiChat.controller — getAmbitoFacts', () => {
       success: true,
       data: expect.objectContaining({ ready: true, companyId: 11 }),
     });
+  });
+});
+
+describe('aiChat.controller — SB-3 fatti Ambito nel prompt', () => {
+  const { query } = require('../config/database');
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+    resolveAiCompanyScope.mockResolvedValue({ companyId: null, denied: null });
+    getActiveProvider.mockReturnValue('gemini');
+    searchKnowledge.mockResolvedValue([]);
+    chat.mockResolvedValue({
+      content: 'Risposta',
+      model: 'gemini-pro',
+      tokens: { input: 1, output: 2 },
+      cost: 0,
+    });
+    loadStandardProfile.mockResolvedValue(null);
+    resolveStandardCodesForFilter.mockReturnValue([]);
+    buildStandardContextBlock.mockReturnValue('');
+    resolveClauseText.mockResolvedValue({
+      hit: null,
+      textAvailable: true,
+      absentMessage: null,
+      code: null,
+    });
+    query.mockResolvedValue({ recordset: [] });
+  });
+
+  it('con companyId inietta i fatti SQL nel system prompt (Mason non Camellini)', async () => {
+    resolveAiCompanyScope.mockResolvedValue({ companyId: 11, denied: null });
+    query.mockResolvedValueOnce({
+      recordset: [{ name: 'Mason', vat_number: null, sector: null, address: null }],
+    });
+    loadAmbitoFacts.mockResolvedValue({
+      ready: true,
+      companyId: 11,
+      companyName: 'Mason',
+      counts: { ncOpen: 5, qualsExpiring30: 2, docsExpiring30: 1 },
+    });
+
+    const req = {
+      body: { message: 'Quante NC aperte?', companyId: 11 },
+      user: { organization_id: 99, auditor_org_id: 10, user_id: 5 },
+    };
+    const res = createRes();
+    await aiChat(req, res);
+
+    expect(loadAmbitoFacts).toHaveBeenCalledWith(req.user, 11);
+    const systemContent = chat.mock.calls[0][0][0].content;
+    expect(systemContent).toContain('FATTI AMBITO');
+    expect(systemContent).toContain('company_id=11');
+    expect(systemContent).toContain('NC aperte: 5');
+    expect(systemContent).toContain('Mason');
+    expect(systemContent).not.toContain('Camellini');
+    expect(systemContent).not.toContain('company_id=22');
+  });
+
+  it('senza companyId non chiama loadAmbitoFacts e non inietta il blocco', async () => {
+    resolveAiCompanyScope.mockResolvedValue({ companyId: null, denied: null });
+    const req = {
+      body: { message: 'Ciao' },
+      user: { organization_id: 99, auditor_org_id: 10, user_id: 5 },
+    };
+    const res = createRes();
+    await aiChat(req, res);
+
+    expect(loadAmbitoFacts).not.toHaveBeenCalled();
+    const systemContent = chat.mock.calls[0][0][0].content;
+    expect(systemContent).not.toContain('FATTI AMBITO');
   });
 });

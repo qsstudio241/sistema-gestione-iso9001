@@ -40,6 +40,8 @@
 ## Decisioni già prese (16/08/2026, committente + Lead)
 
 - **SB-1 ✅** — `GET /ai/ambito-facts` + card in Assistente AI; zero LLM; isolamento per `company_id`. Brief CHIUSO.
+- **SB-3 ✅** — `POST /ai/chat` inietta blocco fatti dallo stesso `loadAmbitoFacts` (scoped org+company).
+- **SB-5 bozza ✅** — pulsanti nav NC/Qualifiche/Scadenze da `AmbitoFactsBar` (HITL, disabled senza Ambito); niente write autonoma.
 
 - **In-app, non Claude**: l’AIOS è il prodotto venduto a studio e clienti paganti
 - **N cervelli, non uno**: isolamento obbligatorio `organization_id` + `company_id` (Ambito). Vietato un ricordo unico «studio + tutti i clienti»
@@ -62,9 +64,9 @@
 |---------|------|--------|-------|
 | Fatti operativi per Ambito | Chat RAG su chunk; le domande «quante NC aperte?» dipendono dall’indice, non dai conteggi live | Snapshot SQL vivo: NC aperte, qualifiche ≤30gg, documenti ≤30gg | **SB-1** |
 | UI «il sistema ricorda questa azienda» | Chip contesto + suggerimenti testuali | Card KPI (pattern Qualifiche `.sq-stat`) sopra la chat, legate all’Ambito | **SB-1** |
-| Chat usa gli stessi numeri | System prompt = profilo + chunk, senza i tre conteggi | Blocco fatti iniettato in `POST /ai/chat` (stesso service) | **SB-3** |
+| Chat usa gli stessi numeri | System prompt = profilo + chunk, senza i tre conteggi | Blocco fatti iniettato in `POST /ai/chat` (stesso service) | **SB-3** ✅ |
 | «Tutto lo studio» | `companyId` null → RAG org-wide (rischio mescolanza) | Solo totali + elenco urgenze per azienda (nome + conteggio), zero testi cliente | **SB-4** |
-| Automazioni da bottone | Chip suggerimento → l’utente digita | Pulsanti che aprono il modulo giusto (NC, Qualifiche, Scadenze) con filtro già applicato | **SB-5** |
+| Automazioni da bottone | Chip suggerimento → l’utente digita | Pulsanti che aprono il modulo giusto (NC, Qualifiche, Scadenze) con filtro già applicato | **SB-5** (bozza ✅ nav; write autonoma vietata) |
 | Meeting / second brain narrativo | Assente | Nebbia — non spezzare ora | — |
 | Contesto studio | Textarea `ai_context_notes` (2000 car., admin) già in prompt AI; nessun punteggio né intervista | Wizard in **Il mio Studio**: domande + score vs rubrica studio | **CTX-1** |
 | Contesto azienda | Anagrafica minima + profilo ADR-018 + registro P.IVA; `profile_completeness` grezzo | Stesso wizard sulla scheda azienda; rubrica = catalogo A/B già in spec | **CTX-2** |

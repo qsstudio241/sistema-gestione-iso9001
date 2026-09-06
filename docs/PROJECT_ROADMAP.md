@@ -8,7 +8,7 @@
 
 > **Risposta standard a «stato di avanzamento del progetto e priorità da affrontare»**: sintetizzare da questa sezione (moduli maturi + sessione più recente + tabella priorità sotto), **non** dal banner storico più sotto (superato, tenuto solo per traccia) né dall'archivio marzo 2026 [`docs/archive/PROJECT_CONTEXT_STATO_FUNZIONALITA_2026-03.md`](archive/PROJECT_CONTEXT_STATO_FUNZIONALITA_2026-03.md). **Aggiornare questa sezione a fine sessione** se emergono nuove priorità o se una priorità elencata viene chiusa (stesso principio delle "Lezioni apprese" in [GUIDA_CONSOLIDATA.md](GUIDA_CONSOLIDATA.md) — sintesi qui, dettaglio linkato).
 
-**Ultimo aggiornamento di questa sezione**: 06/09/2026 (Libreria UX: wayfinder LUX-A/B paralleli).
+**Ultimo aggiornamento di questa sezione**: 06/09/2026 (Second Brain SB-3 fatti prompt + bozza SB-5 nav).
 
 ### Moduli maturi (in produzione, uso quotidiano dai clienti Camellini/Mason)
 
@@ -16,7 +16,11 @@ Audit multi-standard (9001/14001/45001) · Non Conformità (workflow ISO 10.2 co
 
 ### Sessione più recente (06/09/2026)
 
-**Wayfinder Libreria UX** — mappa [`PLAN_LIBRERIA_UX_SLICES.md`](agent-tasks/PLAN_LIBRERIA_UX_SLICES.md): **LUX-A** full-width griglie ([`DEPUTYTASK1.md`](agent-tasks/DEPUTYTASK1.md) APERTO) ∥ **LUX-B** badge in-app gap SA ([`DEPUTYTASK2.md`](agent-tasks/DEPUTYTASK2.md) APERTO). Fuori tornata: Ambito hide, banner→pulsante SA. Niente codice in sessione Lead.
+**Second Brain SB-3 + bozza SB-5** — fatti Ambito (NC/qualifiche/documenti ≤30gg) iniettati in `POST /ai/chat`; pulsanti nav HITL da `AmbitoFactsBar` verso NC/Qualifiche/Scadenze (no write autonoma). Branch `cursor/sb3-fatti-prompt-sb5-nav-8269`. Piano [`PLAN_SECOND_BRAIN_SLICES.md`](agent-tasks/PLAN_SECOND_BRAIN_SLICES.md).
+
+### Sessione precedente (06/09/2026)
+
+**Wayfinder Libreria UX** — mappa [`PLAN_LIBRERIA_UX_SLICES.md`](agent-tasks/PLAN_LIBRERIA_UX_SLICES.md): **LUX-A** full-width griglie · **LUX-B** badge in-app gap SA (CHIUSE).
 
 ### Sessione precedente (04/09/2026)
 
