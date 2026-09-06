@@ -564,6 +564,8 @@ function cosineSimilarity(a, b) {
  * @param {number} [options.topK=15]
  * @param {number} [options.minScore=0.25]
  * @param {number|null} [options.companyId=null] - filtra chunk per azienda
+ * @param {boolean} [options.studioSafeOverview=false] - SB-4: senza Ambito azienda
+ *   limita ai chunk org-level (company_id IS NULL), niente testi clienti mescolati
  * @param {number|null} [options.standardId=null] - filtra chunk per norma
  * @param {string[]} [options.standardCodes=[]] - codici norma per filtrare norm_chunks
  * @returns {Promise<Array<{entity_type, entity_id, chunk_text, score}>>}
@@ -573,6 +575,7 @@ async function searchKnowledge(queryText, organizationId, options = {}) {
     topK = 15,
     minScore = 0.25,
     companyId = null,
+    studioSafeOverview = false,
     standardId = null,
     standardCodes = [],
   } = options;
@@ -590,6 +593,9 @@ async function searchKnowledge(queryText, organizationId, options = {}) {
   if (companyId) {
     kcSql += ' AND company_id = @compId';
     kcParams.compId = companyId;
+  } else if (studioSafeOverview) {
+    // SB-4: overview studio — solo know-how studio/reference, mai chunk client misti
+    kcSql += ' AND company_id IS NULL';
   }
 
   if (standardId) {

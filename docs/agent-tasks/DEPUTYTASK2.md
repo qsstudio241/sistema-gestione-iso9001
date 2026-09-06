@@ -1,14 +1,14 @@
-# DEPUTYTASK2 — SB-3 fatti Ambito nel prompt + bozza SB-5 navigazione
+# DEPUTYTASK2 — SB-4: aggregati «Tutto lo studio»
 
 **Stato:** CHIUSO — TEST OK  
 **Aperto:** 06/09/2026  
 **Chiuso:** 06/09/2026  
-**Piano:** [`PLAN_SECOND_BRAIN_SLICES.md`](PLAN_SECOND_BRAIN_SLICES.md) § SB-3 + bozza SB-5  
-**Rischio:** Medio — endpoint/controller additivi, UI nav senza write autonome  
-**Branch:** `cursor/sb3-fatti-prompt-sb5-nav-8269`  
-**PR:** draft bloccata da `gh` 403 (token Cloud senza createPullRequest); ManagePullRequest/GitHub MCP non disponibili in questo run. Compare: https://github.com/qsstudio241/sistema-gestione-iso9001/compare/main...cursor/sb3-fatti-prompt-sb5-nav-8269?expand=1  
-**Slot precedente:** LUX-B CHIUSO su `origin/main` (sovrascrittura consentita)  
-**Prerequisito:** SB-1 già in `main` (`ambitoFacts.service`, GET `/ai/ambito-facts`, `AmbitoFactsBar`)
+**Piano:** [`PLAN_SECOND_BRAIN_SLICES.md`](PLAN_SECOND_BRAIN_SLICES.md) § SB-4  
+**Rischio:** Medio — service/controller additivi, UI Assistente; niente auth/sync/migrazioni  
+**Branch:** `cursor/sb4-studio-aggregates-8269`  
+**PR:** draft bloccata da `gh` 403 (token Cloud senza createPullRequest); ManagePullRequest/GitHub MCP non disponibili. Compare: https://github.com/qsstudio241/sistema-gestione-iso9001/compare/main...cursor/sb4-studio-aggregates-8269?expand=1  
+**Slot precedente:** SB-3 + SB-5 bozza CHIUSO su `origin/main` (sovrascrittura consentita)  
+**Parallelo:** agent Compliance Map §8.2 — GUIDA/roadmap **non** aggiornati in questa PR (bozza sotto).
 
 ---
 
@@ -16,21 +16,31 @@
 
 **TEST OK**
 
-- **SB-3:** `formatAmbitoFactsPromptBlock` + inject in `POST /ai/chat` via `loadAmbitoFacts` (solo se `companyId` Ambito); isolamento org+company; senza Ambito nessun blocco.
-- **SB-5 bozza:** pulsanti Apri NC / Qualifiche 30gg / Scadenze 30gg in `AmbitoFactsBar`; `disabled`+`title` senza azienda; navigate con query `status`/`situazione`/`due`; deep-link lettura su NC/Qualifiche/Deadlines. **Nessuna write autonoma.**
-- L1 BE: `ambitoFacts.service.test` + `aiChat.controller.test` (20) verdi
-- L1 FE: `AmbitoFactsBar.test.jsx` (4) + `npm run build` OK
-
-## Gap residui
-
-- SB-4 (vista studio aggregata) non in questa slice
-- SB-5 completo: nessun tool create/update; solo nav HITL (come richiesto)
+- `loadAmbitoFacts(null)` → `scope: 'studio'`: totali NC/qualifiche/docs + `topCompanies` (urgenza), filtro `organization_id` + `auditor_org_id`
+- `formatAmbitoFactsPromptBlock` studio: blocco FATTI STUDIO (solo aggregati/ranking)
+- `POST /ai/chat` senza Ambito: inject aggregati; `searchKnowledge(..., studioSafeOverview: true)` → `company_id IS NULL` (no mescolanza testi clienti)
+- `AmbitoFactsBar`: card non vuota su «Tutto lo studio»; ranking; nav deep-link liste filtrate studio-safe
+- L1 BE: `ambitoFacts.service.test` + `aiChat.controller.test` (21) verdi
+- L1 FE: `AmbitoFactsBar.test.jsx` (5) + `npm run build` OK
 
 ## File toccati
 
 - `backend/src/services/ambitoFacts.service.js` (+ test)
 - `backend/src/controllers/aiChat.controller.js` (+ test)
+- `backend/src/services/knowledgeIndexer.service.js`
 - `app/src/components/AmbitoFactsBar.jsx` (+ test)
 - `app/src/pages/AiAssistantPage.css`
-- `app/src/pages/NCPage.jsx`, `QualificationsPage.jsx`, `DeadlinesPage.jsx` (solo deep-link query)
-- `docs/agent-tasks/DEPUTYTASK2.md`, `PLAN_SECOND_BRAIN_SLICES.md`
+- `docs/agent-tasks/PLAN_SECOND_BRAIN_SLICES.md`
+- `docs/agent-tasks/DEPUTYTASK2.md`
+
+## Cosa NON toccato
+
+- Compliance Map / wiki / GUIDA / roadmap
+- Auth / sync
+- Dashboard 3834 / Home
+- Write autonome NC
+
+## Bozza hub (dopo merge — parallelo Compliance Map)
+
+**Roadmap § Stato:** Second Brain SB-4 ✅; prossima SB-2 o SB-6. Priorità #10 aggiornare a SB-2/SB-6.  
+**GUIDA:** nessuna lezione nuova (L1 verde; RAG studio-safe già documentabile in una riga se serve).

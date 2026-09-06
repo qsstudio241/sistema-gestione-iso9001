@@ -217,6 +217,14 @@ async function aiChat(req, res) {
       } catch (err) {
         logger.warn('[AI_CHAT] Ambito facts injection skipped:', err.message);
       }
+    } else {
+      // SB-4: Ambito «Tutto lo studio» — solo aggregati sicuri (niente profilo azienda)
+      try {
+        const ambitoFacts = await loadAmbitoFacts(req.user, null);
+        systemPrompt += formatAmbitoFactsPromptBlock(ambitoFacts);
+      } catch (err) {
+        logger.warn('[AI_CHAT] Studio aggregates injection skipped:', err.message);
+      }
     }
 
     systemPrompt += buildAuditFocusBlock({
@@ -289,6 +297,8 @@ async function aiChat(req, res) {
         topK: 15,
         minScore: 0.2,
         companyId: parsedCompanyId,
+        // SB-4: senza azienda → solo chunk org-level (no mescolanza testi clienti)
+        studioSafeOverview: !parsedCompanyId,
         standardId: activeStandard ? parsedStandardId : null,
         standardCodes,
       });
