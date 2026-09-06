@@ -2,8 +2,8 @@
 
 > **Destinazione**: mappa multi-tenant **requisito cliente → norma/legge → evidenza → gap**, persistita in SQL (traduzione del metodo LLM-Wiki **nel DB**, non vault file).
 > **Spec / ADR**: [ADR-010](../adr/ADR-010-ai-agentic-architecture.md) §4–5 · [MINI_SPEC_RIESAME](../specs/MINI_SPEC_RIESAME_REQUISITI_CONTRATTO.md) · SAL gap [MODULO_SAL](../specs/MODULO_SAL_SCOPO_E_ROADMAP.md)
-> **Brief eseguibile**: [`DEPUTYTASK_COMPLIANCE_MAP.md`](DEPUTYTASK_COMPLIANCE_MAP.md)
-> **Mappa**: 06/09/2026 (Lead docs-only; parallelo SB-4 codice — file disgiunti)
+> **Brief eseguibile**: [`DEPUTYTASK_COMPLIANCE_MAP.md`](DEPUTYTASK_COMPLIANCE_MAP.md)  
+> **Mappa**: 06/09/2026 · **Stato:** CM-1 ✅ (schema/API/HITL stub, mig. 164). **Prossima:** CM-2 ∥ CM-3.
 
 ---
 
@@ -78,7 +78,7 @@ Indici: `(organization_id, company_id)`, `(map_id, req_key)`, unique `(map_id, m
 
 | Slice | Tema | Perimetro | Dipende | Tipo |
 |-------|------|-----------|---------|------|
-| **CM-1** | Schema + API indice + HITL stub | migrazione + service/controller GET list/detail + PATCH hitl item + events; **no** UI piena; **no** Gemini compile | SB-4 mergiato | AFK |
+| **CM-1** | Schema + API indice + HITL stub | migrazione + service/controller GET list/detail + PATCH hitl item + events; **no** UI piena; **no** Gemini compile | SB-4 mergiato | ✅ 06/09/2026 |
 | **CM-2** | Compilatore da caso commerciale | Seed items da `caseDocumentAnalysis` / allegati caso → items `proposed` | CM-1 | AFK |
 | **CM-3** | Gemini link norma/legge | NormBroker + propose coverage; licenza `ai_norms` o riuso esistente | CM-1 | AFK |
 | **CM-4** | UI mappa (read + HITL) | pagina/drawer DNA SGQ; gated senza Ambito/company | CM-1 | AFK |
