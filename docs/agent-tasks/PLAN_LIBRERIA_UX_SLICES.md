@@ -37,9 +37,9 @@
 | Slice | Tema | Perimetro (file/layer) | Dipende da | Tipo | Stato |
 |-------|------|------------------------|------------|------|-------|
 | **LUX-A** | Griglie Libreria full-width | FE CSS: `NormLibraryPage.css` (togli/alza max-width `.nl-page`); test L1 CSS contract; **no** `SgqDataGrid` globale; **no** JSX salvo wrapper minimo comprovato necessario | — | AFK | **APERTO** → [`DEPUTYTASK1.md`](DEPUTYTASK1.md) |
-| **LUX-B** | Badge/alert in-app gap SA | FE: `AppLayout` badge su voce Libreria (pattern `sidebar-badge` già usato Documenti/Reclami); BE: count gap piattaforma aperti (`librarySourceRequest.*` + route); `apiService`; test L1 + BE; opz. conteggio header coda in `NormLibraryPage.jsx` **senza** toccare CSS | LG-1…3 già in main | AFK | **APERTO** → [`DEPUTYTASK2.md`](DEPUTYTASK2.md) |
+| **LUX-B** | Badge/alert in-app gap SA | FE: `AppLayout` badge su voce Libreria (pattern `sidebar-badge` già usato Documenti/Reclami); BE: count gap piattaforma aperti (`librarySourceRequest.*` + route); `apiService`; test L1 + BE; opz. conteggio header coda in `NormLibraryPage.jsx` **senza** toccare CSS | LG-1…3 già in main | AFK | **CHIUSO TEST OK** → [`DEPUTYTASK2.md`](DEPUTYTASK2.md) · branch `cursor/lux-b-libreria-gap-badge-1afa` |
 
-**Stato piano:** LUX-A + LUX-B aperti in parallelo (06/09/2026).
+**Stato piano:** LUX-A ancora APERTO; LUX-B CHIUSO TEST OK (06/09/2026).
 
 ## Disgiunzione file (prova overlap)
 
