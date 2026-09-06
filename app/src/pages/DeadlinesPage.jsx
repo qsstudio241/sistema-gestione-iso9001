@@ -78,7 +78,11 @@ function DeadlinesPage() {
   const [error,     setError]     = useState(null);
 
   const [filterStatus,  setFilterStatus]  = useState('active');
-  const [filterDue,     setFilterDue]     = useState('');
+  const [filterDue,     setFilterDue]     = useState(() => {
+    if (typeof window === 'undefined') return '';
+    const due = new URLSearchParams(window.location.search).get('due');
+    return due === 'soon' || due === 'expired' ? due : '';
+  });
   const [filterSource,  setFilterSource]  = useState('');
 
   // Stato azioni inline

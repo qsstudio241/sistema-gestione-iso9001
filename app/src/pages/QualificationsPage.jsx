@@ -15,6 +15,7 @@ import AskAiButton from "../components/AskAiButton";
 import { saveQualContext } from "../utils/aiAssistantContext";
 import { requiresSemiannualConfirmation } from "../utils/weldingConfirmationRules";
 import {
+    QUALIFICATION_SITUAZIONI,
     STATS_TO_SITUAZIONE,
     toggleSituazione,
     situazioneLabel,
@@ -350,8 +351,13 @@ function QualificationsPage() {
     const [page,       setPage]       = useState(1);
     const LIMIT = 30;
 
-    const [filters, setFiltersState] = useState({
-        search: "", situazione: "",
+    const [filters, setFiltersState] = useState(() => {
+        const params = typeof window !== "undefined"
+            ? new URLSearchParams(window.location.search)
+            : null;
+        const raw = params?.get("situazione") || "";
+        const allowed = QUALIFICATION_SITUAZIONI.some((o) => o.value === raw);
+        return { search: "", situazione: allowed ? raw : "" };
     });
 
     const [formOpen,    setFormOpen]    = useState(false);

@@ -107,6 +107,11 @@ export default function NCPage() {
         setViewMode("nc");
       }
     }
+    // Deep-link filtro stato (es. Assistente AI → /nc?status=open)
+    const status = params.get("status");
+    if (status === "open" || status === "closed") {
+      setFilters((f) => ({ ...f, status, overdue: "", due_within_days: "" }));
+    }
   }, []);
 
   const loadNc = useCallback(async () => {
