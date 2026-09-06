@@ -100,7 +100,12 @@ function buildNavItems(user, alerts = {}) {
           { to: "/settings/users",    icon: "👥", label: "Utenti" },
           { to: "/settings/licenses", icon: "🔑", label: "Licenze moduli" },
           ...(isSuperadmin ? [{ to: "/settings/billing", icon: "💳", label: "Fatturazione" }] : []),
-          { to: "/settings/libreria", icon: "\uD83D\uDCDA", label: "Libreria" },
+          {
+            to: "/settings/libreria",
+            icon: "\uD83D\uDCDA",
+            label: "Libreria",
+            badge: alerts.libraryGaps > 0 ? alerts.libraryGaps : null,
+          },
           { to: "/settings/import-jobs", icon: "📥", label: "Import PDF", licenseKey: "ai_import" },
           { to: "/settings/checklist",icon: "📋", label: "Checklist" },
         ] : []),
@@ -296,7 +301,7 @@ function AppLayoutInner({ children }) {
   const navigate = useNavigate();
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
-  const [alerts, setAlerts] = useState({ documents: 0, complaints: 0 });
+  const [alerts, setAlerts] = useState({ documents: 0, complaints: 0, libraryGaps: 0 });
   const [orgLogoDataUrl, setOrgLogoDataUrl] = useState(null);
 
   const closeMobileNav = useCallback(() => setMobileNavOpen(false), []);
@@ -333,29 +338,36 @@ function AppLayoutInner({ children }) {
     };
   }, [user?.organization_id, user?.organization_logo_url]);
 
-  // Polling badge alert ogni 5 minuti
+  // Polling badge alert ogni 5 minuti (+ LUX-B gap Libreria solo superadmin)
   const loadAlerts = useCallback(async () => {
     try {
       const modules = user?.licensed_modules;
       const hasReclami =
         !modules || !Array.isArray(modules) || modules.length === 0 || modules.includes("reclami");
+      const isSuperadmin = user?.role === "superadmin";
       const compPromise = hasReclami
         ? apiService.getComplaintsStats()
         : Promise.resolve({ data: {} });
-      const [docsRes, compRes] = await Promise.all([
+      const gapPromise = isSuperadmin
+        ? apiService.getLibraryPlatformGapCount()
+        : Promise.resolve({ count: 0 });
+      const [docsRes, compRes, gapRes] = await Promise.all([
         apiService.getAlertCount(),
         compPromise,
+        gapPromise,
       ]);
       const overdue =
         compRes?.data?.overdue_30_days ?? compRes?.overdue_30_days ?? 0;
+      const libraryGaps = Number(gapRes?.count ?? gapRes?.data?.count ?? 0) || 0;
       setAlerts({
         documents: docsRes.total || 0,
         complaints: overdue,
+        libraryGaps: isSuperadmin ? libraryGaps : 0,
       });
     } catch {
       // non bloccante
     }
-  }, [user?.licensed_modules]);
+  }, [user?.licensed_modules, user?.role]);
 
   useEffect(() => {
     loadAlerts();

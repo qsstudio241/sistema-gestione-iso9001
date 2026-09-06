@@ -2580,6 +2580,11 @@ class ApiService {
         );
     }
 
+    /** LUX-B — COUNT gap piattaforma aperti (badge menu SA; payload leggero) */
+    async getLibraryPlatformGapCount() {
+        return this.get('/library/source-requests/platform-gap-count');
+    }
+
     /** LG-3 — presa in carico (open → in_progress); niente digitalizzazione */
     async acknowledgeLibrarySourceRequest(id) {
         return this.patch(`/library/source-requests/${id}/acknowledge`, {});
