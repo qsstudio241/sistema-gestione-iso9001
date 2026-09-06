@@ -1,10 +1,12 @@
 # DEPUTYTASK1 — LUX-A: Griglie Libreria full-width
 
-**Stato:** APERTO  
+**Stato:** CHIUSO — TEST OK  
 **Aperto:** 06/09/2026  
+**Chiuso:** 06/09/2026  
 **Piano:** [`PLAN_LIBRERIA_UX_SLICES.md`](PLAN_LIBRERIA_UX_SLICES.md) § LUX-A  
 **Rischio:** Basso — solo CSS pagina (+ test L1 CSS); niente backend, auth, sync, `SgqDataGrid` globale  
-**Branch suggerito:** `cursor/lux-a-libreria-fullwidth-1afa` (o `cursor/<desc>-1afa` secondo policy Cloud)  
+**Branch:** `cursor/lux-a-libreria-fullwidth-1afa`  
+**PR:** draft — `gh` createPullRequest 403 (token Cloud senza permesso PR); ManagePullRequest non esposto a questo run. Compare: https://github.com/qsstudio241/sistema-gestione-iso9001/compare/main...cursor/lux-a-libreria-fullwidth-1afa?expand=1  
 **Parallelo a:** LUX-B su [`DEPUTYTASK2.md`](DEPUTYTASK2.md) — **file disgiunti** (CSS vs menu/API)  
 **Slot precedente:** CONS-2 CHIUSO su `origin/main` (sovrascrittura consentita)
 
@@ -44,6 +46,12 @@ Oggi `.nl-page { max-width: 1100px }` comprime catalogo e griglie. Decisione pro
 3. `cd app && NODE_ENV=test npm run test:run -- src/tests/normLibraryPage.fullWidth.test.js` verde (+ eventuale contract mobile già esistente se aggiornato).
 4. `cd app && npm run build` OK.
 5. Encoding UTF-8; niente tocco BE/deploy.
+
+## Esito
+
+- `.nl-page` desktop: `max-width: none` + `width: 100%` (rimosso cap `1100px`); header `p` resta `52rem`; form digitize non forzato full-bleed.
+- Test L1 `normLibraryPage.fullWidth.test.js` 3/3 verde; contract mobile esistente OK; `npm run build` OK.
+- Nessun tocco a JSX, AppLayout, backend, DEPUTYTASK2 / LUX-B.
 
 ## Comando chiusura
 
