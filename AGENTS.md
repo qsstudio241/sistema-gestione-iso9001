@@ -36,7 +36,11 @@ Fonte: [`.cursor/rules/sgq-cloud-agent-env.mdc`](.cursor/rules/sgq-cloud-agent-e
 - Install: `.cursor/environment.json` → `cloud-install.sh` (`app/` + `backend/`).
 - SQL Server non raggiungibile dal Cloud (DNS): migrazioni SCP + `run-migration-*-vps.js` sul VPS.
 - Context: Deputy = default/basso; **non** 1M di default; epic → skill `wayfinder-sgq`.
-- Prima di ogni `git push` sul feature branch: `git fetch origin main` + `git merge origin/main`. Non mergiare su `main`.
+- **Gate hard branch PR** (prima di OGNI `git push` feature **e** prima di create/update PR / ManagePullRequest):
+  ```bash
+  git fetch origin main && git merge origin/main
+  ```
+  Vietato chiedere «Update branch» / `git pull` al committente; vietato push/PR «e poi si allinea». Se PR fallisce o `main` è avanti → merge **prima** di riprovare. Dopo merge di un'altra PR dello stack → allinea subito i branch OPEN. L'agente **non** mergia su `main`.
 - L1 FE: `cd app && NODE_ENV=test npm run test:run` + `npm run build`. Smoke autenticato: `node backend/scripts/smoke-percorsi-critici.mjs` (Chromium da `cloud-install`, non `/tmp`).
 
 ## Regole repo (puntatori)

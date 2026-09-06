@@ -105,6 +105,10 @@
 - [ ] Dopo ogni fix si rilanciano i test/smoke pertinenti.
 - [ ] I fix non applicabili sono elencati con motivo chiaro e prossimo passo operativo.
 
+## 7) Branch PR allineato (no «Update branch»)
+
+- [ ] Branch allineato a `origin/main` (merge fatto **ora**, prima dell'ultimo push/PR) — vedi `sgq-git-autonomy.mdc` § Aggiornare il branch.
+
 ---
 
 ## Esito finale (da compilare)
