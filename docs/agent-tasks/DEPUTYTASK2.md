@@ -6,7 +6,7 @@
 **Piano:** [`PLAN_SECOND_BRAIN_SLICES.md`](PLAN_SECOND_BRAIN_SLICES.md) § SB-4  
 **Rischio:** Medio — service/controller additivi, UI Assistente; niente auth/sync/migrazioni  
 **Branch:** `cursor/sb4-studio-aggregates-8269`  
-**PR:** draft (vedi compare / ManagePullRequest)  
+**PR:** draft bloccata da `gh` 403 (token Cloud senza createPullRequest); ManagePullRequest/GitHub MCP non disponibili. Compare: https://github.com/qsstudio241/sistema-gestione-iso9001/compare/main...cursor/sb4-studio-aggregates-8269?expand=1  
 **Slot precedente:** SB-3 + SB-5 bozza CHIUSO su `origin/main` (sovrascrittura consentita)  
 **Parallelo:** agent Compliance Map §8.2 — GUIDA/roadmap **non** aggiornati in questa PR (bozza sotto).
 
