@@ -19,7 +19,6 @@ import NormLibraryPage, {
 
 const mockGetDocuments = vi.fn();
 const mockGetLibrarySourceRequests = vi.fn();
-const mockCreateLibrarySourceRequest = vi.fn();
 const mockGetLibraryPlatformQueue = vi.fn();
 const mockAcknowledgeLibrarySourceRequest = vi.fn();
 const mockMarkLibrarySourceDigitized = vi.fn();
@@ -28,7 +27,6 @@ vi.mock("../services/apiService", () => ({
   default: {
     getDocuments: (...args) => mockGetDocuments(...args),
     getLibrarySourceRequests: (...args) => mockGetLibrarySourceRequests(...args),
-    createLibrarySourceRequest: (...args) => mockCreateLibrarySourceRequest(...args),
     getLibraryPlatformQueue: (...args) => mockGetLibraryPlatformQueue(...args),
     acknowledgeLibrarySourceRequest: (...args) =>
       mockAcknowledgeLibrarySourceRequest(...args),
@@ -98,17 +96,11 @@ describe("NormLibraryPage", () => {
     mockAuthUser = { role: "admin", organization_id: 1001 };
     mockGetDocuments.mockReset();
     mockGetLibrarySourceRequests.mockReset();
-    mockCreateLibrarySourceRequest.mockReset();
     mockGetLibraryPlatformQueue.mockReset();
     mockAcknowledgeLibrarySourceRequest.mockReset();
     mockMarkLibrarySourceDigitized.mockReset();
     mockGetLibrarySourceRequests.mockResolvedValue({ items: [] });
     mockGetLibraryPlatformQueue.mockResolvedValue({ items: [] });
-    mockCreateLibrarySourceRequest.mockResolvedValue({
-      created: true,
-      emailed: false,
-      item: { id: 1, source_code: "ISO TEST-LN5" },
-    });
     mockMarkLibrarySourceDigitized.mockResolvedValue({
       item: { id: 1, status: "digitized" },
       changed: true,
@@ -154,7 +146,7 @@ describe("NormLibraryPage", () => {
     expect(screen.getByRole("heading", { name: /1\. Catalogo ingerito/ })).toBeTruthy();
     expect(screen.getByRole("heading", { name: /2\. Richieste mancanti/ })).toBeTruthy();
     expect(
-      screen.getByText(/non inventare soglie/i)
+      screen.getByText(/solo dall/i)
     ).toBeTruthy();
 
     await waitFor(() => {
@@ -218,36 +210,50 @@ describe("NormLibraryPage", () => {
     expect(LIBRARY_REFERENCE_DOC_TYPES).toEqual(["norma", "manuale", "altro"]);
   });
 
-  it("LN-5: form aggiunge richiesta studio al backlog", async () => {
+  it("niente form Aggiungi richiesta studio (solo AI)", async () => {
     render(<NormLibraryPage />);
     await waitFor(() => {
       expect(screen.getByText("ISO 9001:2015")).toBeTruthy();
     });
-    const codeInput = screen.getByPlaceholderText(/ISO 17660-1/i);
-    fireEvent.change(codeInput, { target: { value: "ISO TEST-LN5" } });
-    fireEvent.change(screen.getByPlaceholderText(/WPQR \/ MC/i), {
-      target: { value: "Test modulo" },
-    });
-    fireEvent.click(screen.getByRole("button", { name: /Aggiungi richiesta studio/i }));
-    await waitFor(() => {
-      expect(screen.getByText("ISO TEST-LN5")).toBeTruthy();
-    });
-    expect(screen.getByText("Studio")).toBeTruthy();
-    expect(screen.getByText("Test modulo")).toBeTruthy();
+    expect(
+      screen.queryByRole("button", { name: /Aggiungi richiesta studio/i })
+    ).toBeNull();
+    expect(screen.queryByPlaceholderText(/ISO 17660-1/i)).toBeNull();
   });
 
-  it("LG-2: deep-link highlight + prefill form da query", async () => {
+  it("nasconde gap Assistente 15614 se snapshot già digitalizzata", async () => {
+    mockGetLibrarySourceRequests.mockResolvedValue({
+      items: [
+        {
+          id: 99,
+          source_code: "ISO 15614-1:2017",
+          reason: "range S355",
+          closure_path: "platform",
+          status: "open",
+        },
+      ],
+    });
+    render(<NormLibraryPage />);
+    await waitFor(() => {
+      expect(screen.getByText(/ISO 15614-1:2017\+A1/i)).toBeTruthy();
+    });
+    expect(screen.queryByText("Assistente")).toBeNull();
+    const daRichiedere = screen.queryAllByText("Da richiedere");
+    expect(daRichiedere).toHaveLength(0);
+  });
+
+  it("LG-2: deep-link highlight da query (niente prefill form)", async () => {
     const prev = window.location.search;
     window.history.pushState(
       {},
       "",
-      "/settings/libreria?highlight=ISO%2014555%3A2025&path=platform&prefill=1"
+      "/settings/libreria?highlight=ISO%2014555%3A2025&path=platform"
     );
     mockGetLibrarySourceRequests.mockResolvedValue({
       items: [
         {
           id: 42,
-          source_code: "ISO 14555:2025",
+          source_code: "ISO 99999:2099 UNIQUE-GAP",
           reason: "range stud",
           quality_notes: "OCR",
           closure_path: "platform",
@@ -260,8 +266,7 @@ describe("NormLibraryPage", () => {
       expect(screen.getByText(/Arrivi dall/i)).toBeTruthy();
     });
     expect(screen.getByText(/richiesta piattaforma/i)).toBeTruthy();
-    const codeInput = screen.getByPlaceholderText(/ISO 17660-1/i);
-    expect(codeInput.value).toBe("ISO 14555:2025");
+    expect(screen.queryByPlaceholderText(/ISO 17660-1/i)).toBeNull();
     await waitFor(() => {
       expect(screen.getByText("Assistente")).toBeTruthy();
     });
@@ -387,7 +392,7 @@ describe("NormLibraryPage — LG-3 coda superadmin", () => {
 });
 
 describe("NormLibraryPage mobile layout contract", () => {
-  it("CSS ha media ≤768px con stack colonna (header, form, azioni)", () => {
+  it("CSS ha media ≤768px con stack colonna (header, digitize form, azioni)", () => {
     const text = readFileSync(
       resolve("src/pages/NormLibraryPage.css"),
       "utf8"
@@ -403,7 +408,7 @@ describe("NormLibraryPage mobile layout contract", () => {
     expect(text).toMatch(/-webkit-overflow-scrolling:\s*touch/);
   });
 
-  it("form Aggiungi richiesta espone classi stack + btn-primary", async () => {
+  it("niente form Aggiungi richiesta; header actions presenti", async () => {
     mockAuthUser = { role: "admin", organization_id: 1001 };
     mockGetDocuments.mockResolvedValue({ documents: [] });
     mockGetLibrarySourceRequests.mockResolvedValue({ items: [] });
@@ -411,10 +416,10 @@ describe("NormLibraryPage mobile layout contract", () => {
     await waitFor(() => {
       expect(screen.getByText(/Richieste mancanti/i)).toBeTruthy();
     });
-    const form = document.querySelector("form.nl-request-form");
-    expect(form).toBeTruthy();
-    expect(form.querySelector(".nl-request-form__row")).toBeTruthy();
-    expect(form.querySelector("button.btn-primary")).toBeTruthy();
+    expect(document.querySelector("form.nl-request-form")).toBeNull();
+    expect(
+      screen.queryByRole("button", { name: /Aggiungi richiesta studio/i })
+    ).toBeNull();
     expect(document.querySelector(".nl-header-actions")).toBeTruthy();
   });
 });

@@ -29,7 +29,7 @@ export function parseLibraryGapSearch(search) {
  * @param {{ code?: string|null, closurePath?: string|null, prefill?: boolean }} opts
  * @returns {string}
  */
-export function buildLibraryGapPath({ code, closurePath, prefill = true } = {}) {
+export function buildLibraryGapPath({ code, closurePath, prefill = false } = {}) {
   const params = new URLSearchParams();
   const c = String(code || "").trim();
   if (c) params.set("highlight", c);
