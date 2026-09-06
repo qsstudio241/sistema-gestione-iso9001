@@ -1,11 +1,12 @@
 
-# ISO 15614-1:2017 — Livelli, range di qualificazione e campi WPQR (riferimento operativo SGQ)
+# ISO 15614-1:2017+A1:2019 — Livelli, range di qualificazione e campi WPQR (riferimento operativo SGQ)
 
 > **Uso**: assistente AI, ingest WPQR, modulo 3834.
-> **Fonte**: estratto operativo da BS EN ISO 15614-1:2017 "Specification and qualification of welding procedures for metallic materials — Welding procedure test — Part 1: Arc and gas welding of steels and arc welding of nickel and nickel alloys". Testo integrale nel Patrimonio Studio — **qui solo tabelle/regole sintetiche**, mai testo normativo copiato.
-> **Digitalizzazione**: `docs/Normative/Normative NORMA_00019_ UNI EN ISO 15614-1_2017 Rev. 0.md` (+ `.json`).
+> **Fonte**: estratto operativo da BS EN ISO 15614-1:2017+A1:2019 "Specification and qualification of welding procedures for metallic materials — Welding procedure test — Part 1: Arc and gas welding of steels and arc welding of nickel and nickel alloys". Testo integrale nel Patrimonio Studio — **qui solo tabelle/regole sintetiche**, mai testo normativo copiato.
+> **Digitalizzazione**: edizione operativa `docs/Normative/Normative NORMA_00043_ BS EN ISO 15614-1_2017_A1_2019 Rev. 0.md` (+ `.json`); archivio senza A1 `NORMA_00019`.
 > **Cataloghi collegati**: `materialGroups15608.js`, `weldingProcesses4063.js`, `weldingPositions6947.js`.
 > **Codice**: `weldingQualificationRules15614.js` (app + backend mirror).
+> **Delta A1:2019 (06/09/2026)**: eliminate le sotto-clausole §8.5.2.3.1–8.5.2.3.4 (General / Waveform controlled / Pulsed / without pulsed) — resta solo il paragrafo Transfer mode su solid/metal cored wires. Le regole JS su range Tabella 7/8/9 **non** cambiano in questa slice (nessuna soglia inventata).
 
 ## Nota sulla fonte di questo estratto (qualità estrazione — aggiornata 26/07/2026)
 

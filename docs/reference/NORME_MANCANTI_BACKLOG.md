@@ -26,6 +26,7 @@
 | ISO **17638**:2016 (MT saldature) | CND magnetoscopico | `digitalizzata` | P1 | `NORMA_00040` MD+JSON |
 | ISO **23278**:2015 (MT acceptance) | CND magnetoscopico | `digitalizzata` | P1 | `NORMA_00041`; PDF upload troncato riparato pymupdf |
 | ISO **23277**:2015 (PT acceptance) | CND penetranti | `digitalizzata` | P1 | `NORMA_00042`; GAP pagina 9 vuota |
+| ISO **15614-1**:2017+A1:2019 (WPQR acciaio/nichel) | WPQR / range procedura | `digitalizzata` | P0 | `NORMA_00043` MD+JSON (06/09/2026); PDF **non** in Git. Archivio ed. 2017 senza A1 = `NORMA_00019`. Non seed SGQ. Delta A1: eliminate §8.5.2.3.1–.4 (waveform/pulsed). Estratto operativo già in [`ISO-15614-1-range-validita-WPQR.md`](ISO-15614-1-range-validita-WPQR.md) |
 | EN **10025-3/4/5/6** | MC fine grain / weathering | `parcheggio` | P2 | Traccia MC; non bloccano MVP lamiere 10025-2 |
 | Leggi settoriali oltre D.Lgs. **81**/ **152** | Conformità legislativa / ADR-018 | `parcheggio` | P2 | Seed 81/152 già in piattaforma; settoriali = HITL |
 
@@ -33,6 +34,7 @@
 
 | Codice | Stato | Data | Dove |
 |--------|-------|------|------|
+| ISO 15614-1:2017+A1:2019 | `digitalizzata` | 06/09/2026 | `NORMA_00043` MD+JSON; `NORMA_00019` resta archivio senza A1 |
 | ISO 3834-2:2021 | `digitalizzata` | 25/08/2026 | `NORMA_00029` + seed VPS `ISO_3834_2_2021` |
 | ISO 3834-4:2021 | `digitalizzata` | 25/08/2026 | `NORMA_00030` + seed VPS `ISO_3834_4_2021` |
 | ISO 14555:2025 | `digitalizzata` | 26/08/2026 | `NORMA_00033` MD+JSON; estratto range STUD-3-A [`ISO-14555-2025-range-validita-WPQR.md`](ISO-14555-2025-range-validita-WPQR.md); seed VPS + codice range = STUD-3-B dopo HITL |

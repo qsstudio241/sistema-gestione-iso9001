@@ -49,7 +49,8 @@ reale scelto, es. `C:\NormeISO_PDF\` oppure una cartella dentro OneDrive):
 | ISO 15609-2:2019 | `Normative NORMA_00015_...md/.json` | `ISO-156xx-WPS-WPQR\BS EN ISO 15609-2_2019.pdf` | |
 | ISO 14341:2020 | `Normative NORMA_00016_...md/.json` | `ISO-consumabili-parametri\UNI EN ISO 14341_2020.pdf` | |
 | ISO 9606-1:2017 | `Normative NORMA_00018_...md/.json` | `ISO-96xx-patentini\BS EN ISO 9606-1_2017.pdf` | Numero 00017 saltato (collisione due agenti paralleli, sessione 26/07/2026) |
-| ISO 15614-1:2017 | `Normative NORMA_00019_...md/.json` | `ISO-156xx-WPS-WPQR\BS EN ISO 15614-1_2017.pdf` | |
+| ISO 15614-1:2017+A1:2019 | `Normative NORMA_00043_...md/.json` | PDF committente 06/09/2026 (`BS_EN_ISO_15614-1-2017_A1-2019`) — **non** in Git | Edizione operativa (A1); estratto `docs/reference/ISO-15614-1-range-validita-WPQR.md`; delta A1: eliminate §8.5.2.3.1–.4 |
+| ISO 15614-1:2017 (archivio, senza A1) | `Normative NORMA_00019_...md/.json` | `ISO-156xx-WPS-WPQR\BS EN ISO 15614-1_2017.pdf` | Superata da `NORMA_00043` (2017+A1:2019) |
 | ISO 15614-2:2025 | `Normative NORMA_00031_...md/.json` | PDF committente 25/08/2026 (`BS_EN_ISO_15614-2-2025`) — **non** in Git | Estratto `docs/reference/ISO-15614-2-range-validita-WPQR.md` |
 | ISO 9606-2:2004 | `Normative NORMA_00032_...md/.json` | PDF committente 25/08/2026 — **non** in Git | Patentini Al; regole JS dedicate = backlog |
 | ISO 14555:2025 | `Normative NORMA_00033_...md/.json` | PDF committente 26/08/2026 + 2° passaggio HITL 29/08/2026 (`BS_EN_ISO_14555_2025`) — **non** in Git | Arc stud welding; digitalizzata 26/08/2026; 2° passaggio chiude GAP OCR + HITL Tabella 2 (8→40 / 10→60 / 12→85 Nm) e residuali; estratto [`docs/reference/ISO-14555-2025-range-validita-WPQR.md`](../reference/ISO-14555-2025-range-validita-WPQR.md); codice = STUD-3-B (include Tabella 2) |
