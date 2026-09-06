@@ -32,6 +32,7 @@ describe("AmbitoFactsBar", () => {
     mockGetAmbitoFacts.mockResolvedValue({
       data: {
         ready: true,
+        scope: "company",
         companyId: 11,
         companyName: "Mason",
         counts: { ncOpen: 3, qualsExpiring30: 1, docsExpiring30: 4 },
@@ -47,31 +48,65 @@ describe("AmbitoFactsBar", () => {
     expect(mockGetAmbitoFacts).toHaveBeenCalledWith(11);
   });
 
-  it("senza azienda in Ambito mostra il messaggio, senza chiamare API", () => {
+  it("SB-4: senza azienda mostra aggregati studio e top aziende", async () => {
     scopeState.companyId = "";
+    mockGetAmbitoFacts.mockResolvedValue({
+      data: {
+        ready: true,
+        scope: "studio",
+        companyId: null,
+        counts: { ncOpen: 7, qualsExpiring30: 2, docsExpiring30: 1 },
+        topCompanies: [
+          { companyId: 11, companyName: "Mason", ncOpen: 4, qualsExpiring30: 0, docsExpiring30: 1 },
+          { companyId: 22, companyName: "Camellini", ncOpen: 3, qualsExpiring30: 2, docsExpiring30: 0 },
+        ],
+      },
+    });
     render(<AmbitoFactsBar />);
-    expect(screen.getByText(/Seleziona un'azienda nell'Ambito/)).toBeTruthy();
-    expect(mockGetAmbitoFacts).not.toHaveBeenCalled();
+    await waitFor(() => expect(screen.getByText("7")).toBeTruthy());
+    expect(screen.getByText("2")).toBeTruthy();
+    expect(screen.getByText("1")).toBeTruthy();
+    expect(screen.getByText(/Aggregati studio/)).toBeTruthy();
+    expect(screen.getByText("Mason")).toBeTruthy();
+    expect(screen.getByText("Camellini")).toBeTruthy();
+    expect(mockGetAmbitoFacts).toHaveBeenCalledWith(null);
   });
 
-  it("SB-5: senza Ambito i pulsanti restano visibili ma disabled", () => {
+  it("SB-5: in caricamento i pulsanti restano disabled", () => {
     scopeState.companyId = "";
+    mockGetAmbitoFacts.mockReturnValue(new Promise(() => {}));
     render(<AmbitoFactsBar />);
     const ncBtn = screen.getByRole("button", { name: "Apri NC" });
-    const qualBtn = screen.getByRole("button", { name: "Qualifiche 30gg" });
-    const dlBtn = screen.getByRole("button", { name: "Scadenze 30gg" });
     expect(ncBtn.disabled).toBe(true);
-    expect(qualBtn.disabled).toBe(true);
-    expect(dlBtn.disabled).toBe(true);
     expect(ncBtn.getAttribute("title")).toMatch(/Seleziona un'azienda/);
     fireEvent.click(ncBtn);
     expect(mockNavigate).not.toHaveBeenCalled();
+  });
+
+  it("SB-4: studio ready → nav deep-link liste filtrate studio-safe", async () => {
+    scopeState.companyId = "";
+    mockGetAmbitoFacts.mockResolvedValue({
+      data: {
+        ready: true,
+        scope: "studio",
+        companyId: null,
+        counts: { ncOpen: 1, qualsExpiring30: 0, docsExpiring30: 0 },
+        topCompanies: [],
+      },
+    });
+    render(<AmbitoFactsBar />);
+    await waitFor(() => expect(screen.getByText("1")).toBeTruthy());
+    const ncBtn = screen.getByRole("button", { name: "Apri NC" });
+    expect(ncBtn.disabled).toBe(false);
+    fireEvent.click(ncBtn);
+    expect(mockNavigate).toHaveBeenCalledWith("/nc?status=open");
   });
 
   it("SB-5: con Ambito naviga ai moduli con query filtro", async () => {
     mockGetAmbitoFacts.mockResolvedValue({
       data: {
         ready: true,
+        scope: "company",
         companyId: 11,
         companyName: "Mason",
         counts: { ncOpen: 1, qualsExpiring30: 0, docsExpiring30: 0 },

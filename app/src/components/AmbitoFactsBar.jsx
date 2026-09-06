@@ -34,17 +34,17 @@ export default function AmbitoFactsBar() {
   const scopedId = parseScopeCompanyId(companyId);
   const [facts, setFacts] = useState(null);
   const [error, setError] = useState(null);
-  const hasAmbito = scopedId != null;
+  const isStudioScope = scopedId == null;
+  const studioReady = facts?.ready === true && (facts.scope === "studio" || facts.companyId == null);
+  const companyReady = facts?.ready === true && facts.companyId != null;
+  const navEnabled = companyReady || studioReady;
   const gatedTitle = "Seleziona un'azienda nell'Ambito";
+  const studioNavTitle = "Apri lista filtrata (tutto lo studio)";
 
   useEffect(() => {
     let active = true;
-    if (scopedId == null) {
-      setFacts({ ready: false, reason: "seleziona_azienda" });
-      setError(null);
-      return undefined;
-    }
     setFacts(null);
+    setError(null);
     apiService
       .getAmbitoFacts(scopedId)
       .then((res) => {
@@ -69,10 +69,10 @@ export default function AmbitoFactsBar() {
           key={action.key}
           type="button"
           className="af-nav-btn"
-          disabled={!hasAmbito}
-          title={hasAmbito ? `Vai a ${action.label}` : gatedTitle}
+          disabled={!navEnabled}
+          title={navEnabled ? (isStudioScope ? studioNavTitle : `Vai a ${action.label}`) : gatedTitle}
           onClick={() => {
-            if (!hasAmbito) return;
+            if (!navEnabled) return;
             navigate(action.buildPath());
           }}
         >
@@ -93,7 +93,29 @@ export default function AmbitoFactsBar() {
     );
   }
 
-  if (!facts || facts.ready === false) {
+  if (!facts) {
+    return (
+      <div>
+        <div className="sq-stats-bar" role="status" aria-busy="true">
+          <div className="sq-stat sq-stat-grigio" aria-disabled="true">
+            <span className="sq-stat-num">{"\u2014"}</span>
+            <span className="sq-stat-lbl">NC aperte</span>
+          </div>
+          <div className="sq-stat sq-stat-grigio" aria-disabled="true">
+            <span className="sq-stat-num">{"\u2014"}</span>
+            <span className="sq-stat-lbl">Qualifiche 30gg</span>
+          </div>
+          <div className="sq-stat sq-stat-grigio" aria-disabled="true">
+            <span className="sq-stat-num">{"\u2014"}</span>
+            <span className="sq-stat-lbl">Documenti 30gg</span>
+          </div>
+        </div>
+        {navRow}
+      </div>
+    );
+  }
+
+  if (facts.ready === false) {
     return (
       <div>
         <div className="sq-stats-bar" role="status">
@@ -119,7 +141,11 @@ export default function AmbitoFactsBar() {
   }
 
   const c = facts.counts || {};
-  const label = facts.companyName || scopeCompanyName || "Azienda";
+  const isStudio = facts.scope === "studio" || facts.companyId == null;
+  const label = isStudio
+    ? "Tutto lo studio"
+    : facts.companyName || scopeCompanyName || "Azienda";
+  const top = Array.isArray(facts.topCompanies) ? facts.topCompanies : [];
 
   return (
     <div>
@@ -137,6 +163,21 @@ export default function AmbitoFactsBar() {
           <span className="sq-stat-lbl">Documenti 30gg</span>
         </div>
       </div>
+      {isStudio && (
+        <p className="sq-scope-hint" style={{ margin: "0 0 8px" }}>
+          Aggregati studio (solo conteggi, senza testi clienti)
+        </p>
+      )}
+      {isStudio && top.length > 0 && (
+        <ul className="af-top-companies" aria-label="Top aziende per urgenza">
+          {top.map((row) => (
+            <li key={row.companyId}>
+              <strong>{row.companyName || `Azienda #${row.companyId}`}</strong>
+              {` — NC ${row.ncOpen ?? 0}, Qual ${row.qualsExpiring30 ?? 0}, Doc ${row.docsExpiring30 ?? 0}`}
+            </li>
+          ))}
+        </ul>
+      )}
       {navRow}
     </div>
   );

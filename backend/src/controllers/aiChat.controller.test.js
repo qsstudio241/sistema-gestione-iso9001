@@ -548,8 +548,17 @@ describe('aiChat.controller — SB-3 fatti Ambito nel prompt', () => {
     expect(systemContent).not.toContain('company_id=22');
   });
 
-  it('senza companyId non chiama loadAmbitoFacts e non inietta il blocco', async () => {
+  it('senza companyId chiama loadAmbitoFacts(null) e inietta FATTI STUDIO', async () => {
     resolveAiCompanyScope.mockResolvedValue({ companyId: null, denied: null });
+    loadAmbitoFacts.mockResolvedValue({
+      ready: true,
+      scope: 'studio',
+      companyId: null,
+      counts: { ncOpen: 7, qualsExpiring30: 1, docsExpiring30: 2 },
+      topCompanies: [
+        { companyId: 11, companyName: 'Mason', ncOpen: 4, qualsExpiring30: 0, docsExpiring30: 1 },
+      ],
+    });
     const req = {
       body: { message: 'Ciao' },
       user: { organization_id: 99, auditor_org_id: 10, user_id: 5 },
@@ -557,8 +566,17 @@ describe('aiChat.controller — SB-3 fatti Ambito nel prompt', () => {
     const res = createRes();
     await aiChat(req, res);
 
-    expect(loadAmbitoFacts).not.toHaveBeenCalled();
+    expect(loadAmbitoFacts).toHaveBeenCalledWith(req.user, null);
     const systemContent = chat.mock.calls[0][0][0].content;
+    expect(systemContent).toContain('FATTI STUDIO');
+    expect(systemContent).toContain('Tutto lo studio');
+    expect(systemContent).toContain('NC aperte (totale studio): 7');
+    expect(systemContent).toContain('Mason');
     expect(systemContent).not.toContain('FATTI AMBITO');
+    expect(searchKnowledge).toHaveBeenCalledWith(
+      'Ciao',
+      99,
+      expect.objectContaining({ companyId: null, studioSafeOverview: true })
+    );
   });
 });
