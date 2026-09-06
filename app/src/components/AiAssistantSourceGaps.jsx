@@ -25,7 +25,7 @@ export default function AiAssistantSourceGaps({ gaps }) {
           const href = buildLibraryGapPath({
             code: g.code,
             closurePath: isTenant ? "tenant" : "platform",
-            prefill: true,
+            prefill: false,
           });
           const ctaLabel = isTenant
             ? "Vai in Libreria — carica documento"

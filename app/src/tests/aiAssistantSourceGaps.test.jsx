@@ -17,7 +17,7 @@ vi.mock("../contexts/RouterContext", () => ({
 }));
 
 describe("libraryGapDeepLink", () => {
-  it("buildLibraryGapPath include highlight, path e prefill", () => {
+  it("buildLibraryGapPath include highlight e path (prefill opzionale)", () => {
     expect(
       buildLibraryGapPath({
         code: "ISO 14555:2025",
@@ -29,7 +29,7 @@ describe("libraryGapDeepLink", () => {
     );
     expect(
       buildLibraryGapPath({ code: "X", closurePath: "tenant" })
-    ).toContain("path=tenant");
+    ).toBe("/settings/libreria?highlight=X&path=tenant");
   });
 
   it("parseLibraryGapSearch legge query", () => {
@@ -87,7 +87,7 @@ describe("LG-2 AiAssistantSourceGaps", () => {
     });
     expect(platformCta.getAttribute("href")).toContain("highlight=ISO");
     expect(platformCta.getAttribute("href")).toContain("path=platform");
-    expect(platformCta.getAttribute("href")).toContain("prefill=1");
+    expect(platformCta.getAttribute("href")).not.toContain("prefill=1");
 
     const tenantCta = screen.getByRole("link", {
       name: /Vai in Libreria — carica documento/i,

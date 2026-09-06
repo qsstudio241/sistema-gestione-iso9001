@@ -1,55 +1,80 @@
 /**
- * Test L1 — libraryBacklogRequests (LN-5)
+ * Test L1 — libraryBacklogRequests (merge AI + piattaforma)
  */
-import { describe, it, expect, beforeEach } from "vitest";
+import { describe, it, expect } from "vitest";
 import {
-  addLibraryRequest,
-  formatLibraryRequestMarkdownRow,
-  libraryRequestsStorageKey,
-  loadLibraryRequests,
+  isSatisfiedByPlatformDigitized,
+  mergeAiAndPlatformBacklog,
   mergeBacklogRows,
-  normalizeLibraryRequestDraft,
-  removeLibraryRequest,
-  saveLibraryRequests,
 } from "../utils/libraryBacklogRequests";
 
 describe("libraryBacklogRequests", () => {
-  beforeEach(() => {
-    localStorage.clear();
+  it("riconosce digitalizzata piattaforma con codice correlato (15614)", () => {
+    const platform = [
+      {
+        code: "ISO 15614-1:2017+A1:2019 (WPQR acciaio/nichel)",
+        status: "digitalizzata",
+      },
+    ];
+    expect(
+      isSatisfiedByPlatformDigitized(platform, "ISO 15614-1:2017")
+    ).toBe(true);
+    expect(isSatisfiedByPlatformDigitized(platform, "ISO 14555:2025")).toBe(
+      false
+    );
   });
 
-  it("normalizza draft e rifiuta codice vuoto", () => {
-    expect(() => normalizeLibraryRequestDraft({ code: "  " })).toThrow(/obbligatorio/i);
-    const row = normalizeLibraryRequestDraft({
-      code: " ISO X ",
-      impact: "MC",
-      priority: "P1",
-    });
-    expect(row.code).toBe("ISO X");
-    expect(row.impact).toBe("MC");
-    expect(row.status).toBe("da_richiedere");
-    expect(row.source).toBe("studio");
+  it("nasconde gap Assistente (aperti o chiusi) già coperti da digitalizzata", () => {
+    const platform = [
+      {
+        code: "ISO 15614-1:2017+A1:2019 (WPQR)",
+        status: "digitalizzata",
+        priority: "P0",
+        notes: "NORMA_00043",
+      },
+      {
+        code: "EN 10025-3",
+        status: "parcheggio",
+        priority: "P2",
+      },
+    ];
+    const server = [
+      {
+        id: "srv-1",
+        code: "ISO 15614-1:2017",
+        status: "da_richiedere",
+        source: "assistente",
+        notes: "gap AI",
+      },
+      {
+        id: "srv-2",
+        code: "ISO 15614-1:2017",
+        status: "digitalizzata",
+        source: "assistente",
+        notes: "già chiusa DB",
+      },
+    ];
+    const merged = mergeAiAndPlatformBacklog(platform, server);
+    expect(merged.filter((r) => String(r.code).includes("15614")).length).toBe(
+      1
+    );
+    expect(
+      merged.some(
+        (r) =>
+          String(r.code).includes("15614-1:2017+A1") &&
+          r.status === "digitalizzata" &&
+          r.source === "piattaforma"
+      )
+    ).toBe(true);
+    expect(merged.some((r) => r.code === "EN 10025-3")).toBe(true);
   });
 
-  it("persiste su localStorage per organization_id", () => {
-    expect(libraryRequestsStorageKey(1001)).toBe("sgq_library_requests_v1_1001");
-    addLibraryRequest(1001, { code: "ISO 999", notes: "serve" });
-    const loaded = loadLibraryRequests(1001);
-    expect(loaded).toHaveLength(1);
-    expect(loaded[0].code).toBe("ISO 999");
-    expect(loadLibraryRequests(1002)).toHaveLength(0);
-  });
-
-  it("formatta riga Markdown e fa merge piattaforma+studio", () => {
-    const studio = addLibraryRequest(7, { code: "Q-1", impact: "CND", priority: "P0" });
-    const md = formatLibraryRequestMarkdownRow(studio);
-    expect(md).toContain("| Q-1 |");
-    expect(md).toContain("`da_richiedere`");
-    const merged = mergeBacklogRows([{ code: "PLAT", status: "parcheggio" }], [studio]);
-    expect(merged[0].source).toBe("studio");
-    expect(merged[1].source).toBe("piattaforma");
-    removeLibraryRequest(7, studio.id);
-    expect(loadLibraryRequests(7)).toHaveLength(0);
-    saveLibraryRequests(7, []);
+  it("mergeBacklogRows legacy resta solo piattaforma", () => {
+    const merged = mergeBacklogRows(
+      [{ code: "PLAT", status: "parcheggio" }],
+      [{ code: "ignored-studio" }]
+    );
+    expect(merged).toHaveLength(1);
+    expect(merged[0].source).toBe("piattaforma");
   });
 });
