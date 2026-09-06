@@ -1,8 +1,10 @@
 # Architecture Decision Records (ADR)
 
+> Indice — apri **solo** l’ADR del task (bussola in `PROJECT_CONTEXT.md`). Non iniettare tutta la cartella in avvio.
+
 ## Cos'è un ADR?
 
-Un **Architecture Decision Record** documenta decisioni architetturali significative prese durante lo sviluppo del progetto, seguendo il principio di tracciabilità richiesto dalla **ISO 9001:2015 punto 7.5** (Informazioni documentate).
+Documenta decisioni architetturali significative (tracciabilità ISO 9001:2015 §7.5).
 
 ## Struttura ADR
 

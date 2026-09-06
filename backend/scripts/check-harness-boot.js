@@ -263,7 +263,7 @@ function main() {
     console.log(`Avvio obbligatorio: ${mandatoryBytes} B (AGENTS + PROJECT_CONTEXT + roadmap § Stato, ${stato.lines} righe)`);
     console.log(`Baseline pre-dieta: ${BASELINE_MANDATORY_BYTES} B (includeva GUIDA+roadmap intere)`);
     console.log(`Risparmio: ${saved} B (~${pct}%)`);
-    console.log(`Regole alwaysApply kernel: ${alwaysBytes} B (${ALWAYS_APPLY_RULES.length} file)`);
+    console.log(`Regole alwaysApply kernel: ${alwaysBytes} B (${ALWAYS_APPLY_RULES.length} file) — fuori dal tetto 50 KB ma contano nei token di sistema`);
     console.log(`Bussola: ${rows.length} moduli, ${compassPaths.length} path`);
     for (const r of scenarioReports) {
       console.log(`Scenario company_profile — riga: «${r.row || '?'}»`);

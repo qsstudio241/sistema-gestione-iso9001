@@ -1,7 +1,8 @@
 # Indice e convenzioni documentazione
 
-> Punto di ingresso per capire dove si trova cosa. Aggiornato: 2026-06-07.  
-> **TOC interno guida operativa**: [GUIDA_CONSOLIDATA.md](GUIDA_CONSOLIDATA.md#indice-rapido-navigazione).
+> Catalogo «dove si trova cosa» — **non** caricare questo file intero in avvio agente.  
+> Avvio: [AGENTS.md](../AGENTS.md) · bussola [PROJECT_CONTEXT.md](../PROJECT_CONTEXT.md) · roadmap **solo** [§ Stato](PROJECT_ROADMAP.md#stato-attuale-e-priorità-fonte-unica) (`limit: 45`).  
+> TOC GUIDA: [GUIDA_CONSOLIDATA.md](GUIDA_CONSOLIDATA.md#indice-rapido-navigazione) (sezioni, non intera).
 
 ---
 
@@ -23,8 +24,8 @@
 |-----|------|------|
 | attivo | [AGENTS.md](../AGENTS.md) | Avvio dieta: CONTEXT + roadmap **solo** § Stato; GUIDA a sezioni |
 | attivo | [PROJECT_CONTEXT.md](../PROJECT_CONTEXT.md) | Stack, bussola moduli, regole critiche |
-| attivo | [PROJECT_ROADMAP.md](PROJECT_ROADMAP.md) | In avvio: **solo** § Stato attuale e priorità |
-| attivo | [GUIDA_CONSOLIDATA.md](GUIDA_CONSOLIDATA.md) | Esperienza operativa **a sezioni** (non intera in avvio) |
+| attivo | [PROJECT_ROADMAP.md](PROJECT_ROADMAP.md) | In avvio: **solo** § Stato (`limit: 45`); backlog sotto = on demand |
+| attivo | [GUIDA_CONSOLIDATA.md](GUIDA_CONSOLIDATA.md) | **A sezioni** se deploy/Word/sync/lezione citata — mai intera in avvio |
 | attivo | [HANDOFF_TEMPLATE.md](agent-tasks/HANDOFF_TEMPLATE.md) | Slice non chiusa: copiare nel DEPUTYTASK attivo |
 | attivo | [INDICE_DOCUMENTAZIONE.md](INDICE_DOCUMENTAZIONE.md) | Questo file |
 | attivo | [README.md](README.md) | Mappa cartelle how-to / reference / specs |

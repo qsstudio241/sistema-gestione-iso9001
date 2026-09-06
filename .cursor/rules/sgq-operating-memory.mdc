@@ -6,43 +6,17 @@ alwaysApply: true
 
 # SGQ Operating Memory
 
-## Avvio sessione (dieta — allineato ad AGENTS.md)
+## Avvio e Git (fonte corta)
 
-- **Allinea Git subito** (sezione sotto) prima di brief/codice/deploy.
-- Leggi `PROJECT_CONTEXT.md` (bussola moduli). `docs/PROJECT_ROADMAP.md` (>900 righe): **Read con `limit: 45`**, mai il file intero — è § Stato attuale. **Non** leggere `docs/GUIDA_CONSOLIDATA.md` per intero.
-- Brief: `docs/agent-tasks/DEPUTYTASK*.md`. Poi i 2–4 file della bussola.
-- GUIDA **solo se** deploy / Word / sync / encoding / lezione citata nel brief — una sezione, non il file.
-- **Non** creare `docs/sessions/SESSION_NOTES_*.md`. Traccia della slice = il `DEPUTYTASK*.md` di quella chat. GUIDA + roadmap § Stato attuale: stessa PR se sei **l'unica** chat aperta; se c'è parallelo, **dopo il merge** (bozza nel brief). Dettaglio: [`sgq-workflow-method.mdc`](sgq-workflow-method.mdc) § File di traccia.
-- Italiano, operativo. Comandi meccanici: eseguili tu. Chiedi al committente solo password, login terzi, scelte di business.
+**Avvio obbligatorio:** [`AGENTS.md`](../../AGENTS.md) § Avvio sessione (dieta ≤50 KB; roadmap con `limit: 45`; GUIDA solo se citata). Qui non si ripete l’elenco.
 
-## Allineamento Git autonomo (vincolante)
+Ogni agente con terminale **allinea da solo** (`git fetch` / `git pull origin main`). Vietato delegare al committente. Obbligatorio prima di brief/codice/branch/PR. Working tree sporco: stash/commit/worktree — mai force-push su `main`.
 
-Ogni agente con terminale **allinea da solo**. Vietato delegare `git pull` / `git fetch`.
+**Branch PR:** prima di ogni push e di create/update PR → `git fetch origin main` + `git merge origin/main`. Dettaglio: [`sgq-git-autonomy.mdc`](sgq-git-autonomy.mdc).
 
-Obbligatorio: avvio su codice/brief; prima di leggere/eseguire o scrivere `DEPUTYTASK*.md`; prima di branch da `main` / PR; dopo push di un altro agente.
+**Parallelo / hub / Bugbot:** file di codice disgiunti tra `DEPUTYTASK*` APERTO; GUIDA/roadmap in parallelo solo dopo merge; 1 Bugbot run/PR; «pronta» solo dopo CI+Bugbot+Security letti. Dettaglio: [`sgq-workflow-method.mdc`](sgq-workflow-method.mdc) · gate merge: [`sgq-git-autonomy.mdc`](sgq-git-autonomy.mdc).
 
-```bash
-git fetch origin main
-# su main, se il working tree lo consente:
-git pull origin main
-git show origin/main:docs/agent-tasks/DEPUTYTASK.md | head -20
-```
-
-Working tree sporco: niente reset distruttivo; stash/commit/worktree. Mai force-push su `main`.
-
-**Branch PR vs `main`:** prima di ogni `git push` sul feature branch e prima di create_pr/update_pr: `git fetch origin main` + `git merge origin/main`. Se `main` è avanti, allinea **ora** (anche i branch OPEN dopo un merge nello stack); vietato push/PR «e poi si allinea» e vietato chiedere «Update branch» / `git pull` al committente. Non mergiare la PR su `main`. Dettaglio: [`sgq-git-autonomy.mdc`](sgq-git-autonomy.mdc) § Aggiornare il branch della PR.
-
-## Parallelo, conflitti PR, costo Bugbot (vincolante)
-
-Sì, più chat in parallelo. No, non sullo stesso foglio. Dettaglio: [`sgq-workflow-method.mdc`](sgq-workflow-method.mdc).
-
-- **Prima di scrivere codice:** elenca i file che toccherai. Se un altro `DEPUTYTASK*` APERTO o una PR aperta tocca gli stessi file di codice, **fermati**.
-- **Diari condivisi (GUIDA, roadmap § Stato attuale):** non nella PR di codice se un'altra chat è aperta. Traccia nel proprio `DEPUTYTASK*.md`; sync hub **dopo il merge**. Chat sola = puoi aggiornarli nella stessa PR (come prima).
-- **Altri hub:** `PROJECT_CONTEXT.md` solo se nasce/si rinomina un modulo (una chat). `DEPUTYTASK.md` solo il deputy di quel brief (i paralleli usano `DEPUTYTASK1.md`, …). `deploy-manifest.json` non è un diario: se due PR aggiungono file diversi, in merge si tengono **entrambe** le righe.
-- **Desktop:** worktree + nuova finestra Cursor. Vietato due finestre sulla stessa cartella.
-- **Bugbot:** 1 run a pagamento per PR. Policy Dashboard «Run only when mentioned» + un `bugbot run` a slice chiusa.
-- **«Pronta / mergiabile»:** solo dopo aver **letto** su quella revisione CI + Bugbot + Security Review. Vietato dirlo dopo la sola CI (lezione 20/08/2026, PR #507). Doppio check **non** autorizza il Cloud Agent a mergiare; l'auto-merge è solo GitHub, attivato dal committente. Dettaglio: [`sgq-git-autonomy.mdc`](sgq-git-autonomy.mdc).
-
+Italiano, operativo. Comandi meccanici: eseguili tu. Chiedi al committente solo password, login terzi, scelte di business. **Non** creare `SESSION_NOTES_*`.
 ## Convenzione DEPUTYTASK
 
 Il **nome del file non è il modulo**. Evita le sovrapposizioni l'elenco «File previsti» + «Cosa NON toccare», più `Stato: APERTO` su `origin/main`. Due tipi di file:
