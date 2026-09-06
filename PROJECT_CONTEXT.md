@@ -70,9 +70,10 @@ Deploy/SSH: [deploy.md](docs/how-to/deploy.md) + [ACCESSO_DEPLOY_AGENTS.md](docs
 | Export Word verbale audit | `app/src/utils/wordExport.js`, `app/src/utils/wordExportHelpers.js` |
 | UI / design system | `app/src/design-system/README.md`, `docs/reference/LIBRERIA_UI_SGQ.md` |
 | Deploy VPS | `docs/how-to/deploy.md`, `backend/scripts/deploy-to-vps.sh`, `docs/how-to/ACCESSO_DEPLOY_AGENTS.md` |
-| Material Compliance (epic) | `docs/specs/MODULO_MATERIAL_COMPLIANCE_AI.md`, `docs/specs/MATERIAL_COMPLIANCE_DATA_MODEL.md`, `backend/src/services/materialKbLoader.service.js`, `backend/src/services/materialComplianceRuleEngine.service.js`, `backend/src/controllers/materialCertificates.controller.js`, `app/src/pages/MaterialCertificatesPage.jsx` |
+| Material Compliance (epic) | `docs/specs/MODULO_MATERIAL_COMPLIANCE_AI.md`, `docs/specs/MATERIAL_COMPLIANCE_DATA_MODEL.md`, `backend/src/controllers/materialCertificates.controller.js`, `app/src/pages/MaterialCertificatesPage.jsx` |
 | Rischi / opportunità / obiettivi | `app/src/pages/RisksPage.jsx`, `backend/src/controllers/risks.controller.js`, `docs/specs/PROCESSO_ANALISI_RISCHI_OPPORTUNITA.md`, `docs/specs/M03_ANALISI_RISCHI_OPPORTUNITA.md`, `docs/agent-tasks/PLAN_RISCHI_OPPORTUNITA_OBIETTIVI_SLICES.md` |
-| Second Brain / Assistente di Ambito | `docs/agent-tasks/PLAN_SECOND_BRAIN_SLICES.md`, `app/src/pages/AiAssistantPage.jsx`, `app/src/pages/StudioSettingsPage.jsx`, `backend/src/controllers/aiChat.controller.js`, `backend/src/services/aiCompanyScope.service.js`, `backend/src/controllers/figureKnowledge.controller.js`, `docs/adr/ADR-010-ai-agentic-architecture.md` |
+| Second Brain / Assistente di Ambito | `docs/agent-tasks/PLAN_SECOND_BRAIN_SLICES.md`, `app/src/pages/AiAssistantPage.jsx`, `backend/src/controllers/aiChat.controller.js`, `docs/adr/ADR-010-ai-agentic-architecture.md` |
+| Compliance Map (§8.2 grafo requisito↔norma) | `docs/agent-tasks/PLAN_COMPLIANCE_MAP_SLICES.md`, `backend/src/services/complianceMap.service.js`, `backend/src/controllers/complianceMap.controller.js` |
 
 <!-- MODULE_COMPASS_END -->
 
