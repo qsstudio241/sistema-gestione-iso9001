@@ -6,6 +6,7 @@
 **Piano:** [`PLAN_SECOND_BRAIN_SLICES.md`](PLAN_SECOND_BRAIN_SLICES.md) § SB-3 + bozza SB-5  
 **Rischio:** Medio — endpoint/controller additivi, UI nav senza write autonome  
 **Branch:** `cursor/sb3-fatti-prompt-sb5-nav-8269`  
+**PR:** draft bloccata da `gh` 403 (token Cloud senza createPullRequest); ManagePullRequest/GitHub MCP non disponibili in questo run. Compare: https://github.com/qsstudio241/sistema-gestione-iso9001/compare/main...cursor/sb3-fatti-prompt-sb5-nav-8269?expand=1  
 **Slot precedente:** LUX-B CHIUSO su `origin/main` (sovrascrittura consentita)  
 **Prerequisito:** SB-1 già in `main` (`ambitoFacts.service`, GET `/ai/ambito-facts`, `AmbitoFactsBar`)
 
