@@ -229,7 +229,7 @@ Configurazione **versionata nel repo** (priorità massima rispetto all'ambiente 
 
 **Nota operativa una tantum (dashboard):** impostare modello default Cloud su standard/fast e context **non** 1M; alzare solo per run Lead espliciti. Spend limit: [Dashboard → Spending](https://cursor.com/dashboard/spending).
 
-**Dieta avvio (13/08/2026):** non leggere GUIDA né la roadmap per intero all'avvio — saturano la smart zone. Protocollo in `AGENTS.md`; bussola in `PROJECT_CONTEXT.md`; misura `node backend/scripts/check-harness-boot.js`.
+**Dieta avvio (13/08/2026, rafforzata 06/09):** non leggere GUIDA né la roadmap per intero — saturano la smart zone. Protocollo `AGENTS.md`; bussola `PROJECT_CONTEXT.md`; § Stato snello (`limit: 45`); misura `check-harness-boot.js`. KB prodotto = DB; no vault Obsidian in-app (lezione tabella sopra).
 
 **Una sessione = una slice.** Se non chiudi: handoff in [`HANDOFF_TEMPLATE.md`](agent-tasks/HANDOFF_TEMPLATE.md) nel brief attivo. Gate codice nuovo: Ponytail in `sgq-operating-memory.mdc`. Smoke UI: `backend/scripts/smoke-percorsi-critici.mjs`.
 

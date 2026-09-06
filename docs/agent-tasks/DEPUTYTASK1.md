@@ -1,45 +1,46 @@
-# DEPUTYTASK1 — Dieta token harness (doc only)
+# DEPUTYTASK1 — Dieta token doc (harness + progetto)
 
 **Stato:** CHIUSO — TEST OK  
 **Aperto:** 06/09/2026  
-**Chiuso:** 06/09/2026  
+**Chiuso:** 06/09/2026 (pass 2 incluso)  
 **Rischio:** Basso — solo Markdown / rules; niente codice prodotto  
 **Branch:** `cursor/doc-token-diet-harness-8269`  
-**PR:** draft bloccata da `gh` 403 (token Cloud senza `createPullRequest`). Compare: https://github.com/qsstudio241/sistema-gestione-iso9001/compare/main...cursor/doc-token-diet-harness-8269?expand=1  
+**PR:** [#651](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/651) (draft)  
 **Slot precedente:** LUX-A CHIUSO su `origin/main` (sovrascrittura consentita)
 
 ## Perché
 
-Video LLM Wiki / Engram: **nessun vault Obsidian in prodotto**. Revisione harness Cursor per meno token all’avvio.
+Video LLM Wiki / Engram: **nessun vault Obsidian in prodotto**. Dieta token su harness Cursor **e** documentazione di progetto (avvio agente).
 
-## File toccati
+## Pass 1 — harness (già su branch)
 
-- `AGENTS.md` (−3.3 KB): Cloud/regole → puntatori alle rules
-- `PROJECT_CONTEXT.md` (+0.2 KB): principio KB/Wiki/Engram
-- `.cursor/rules/sgq-operating-memory.mdc` (−2.3 KB): avvio/git/parallelo → link
-- `.cursor/rules/sgq-cloud-agent-env.mdc` (−0.6 KB)
-- `docs/agent-tasks/PLAN_SECOND_BRAIN_SLICES.md` (−7.5 KB): stale 16/08 + status SB
-- `docs/GUIDA_CONSOLIDATA.md`: 1 riga lezione
-- `backend/scripts/check-harness-boot.js`: messaggio alwaysApply
+- `AGENTS.md` (−3.3 KB), rules operating-memory/cloud-env, `PLAN_SECOND_BRAIN` (−7.5 KB)
+- `PROJECT_CONTEXT` principio KB/Wiki/Engram; GUIDA 1 riga lezione
+
+## Pass 2 — doc di progetto
+
+- `docs/PROJECT_ROADMAP.md` § Stato: **82 → 45 righe** (~12 KB → ~3.3 KB); priorità entro `limit: 45`; sessioni verbose in `<details>`; riga SB → **SB-4**
+- `docs/README.md` + `INDICE_DOCUMENTAZIONE.md` + `adr/README.md`: banner dieta / no inject intero
+- `GUIDA`: rafforzata riga «Dieta avvio» (sezione già aperta, non file intero)
+- `PLAN_SECOND_BRAIN`: non reinflazionato
+
+## Misure avvio obbligatorio (`check-harness-boot`)
+
+| Momento | Bytes |
+|---------|------:|
+| Prima pass 1 | 28638 |
+| Dopo pass 1 | 25595 |
+| Dopo pass 2 | **16993** |
 
 ## Cosa NON toccato
 
-Codice prodotto AI (chat, AmbitoFactsBar, SB-4), auth/sync/migrazioni, GUIDA/roadmap intere, `sgq-git-autonomy.mdc`.
-
-## Misure
-
-| Metrica | Prima | Dopo |
-|---------|-------|------|
-| Avvio obbligatorio (check) | 28638 B | 25595 B |
-| alwaysApply kernel (4 file) | 28670 B | 25733 B |
-| Somma file tagliati (5) | 44660 B | 31219 B (−13.4 KB) |
+Codice prodotto AI, auth/sync/migrazioni, GUIDA/roadmap **intere** (solo § Stato + 1 nota GUIDA), `sgq-git-autonomy.mdc`.
 
 ## Test
 
-- `node backend/scripts/check-harness-boot.js` OK
-- `npm test -- --testPathPattern=check-harness-boot` → 21/21
-- `check-utf8-encoding.js` → 0 issues
+- `node backend/scripts/check-harness-boot.js` OK (49 righe boot slice)
+- UTF-8 OK
 
 ## Esito
 
-**TEST OK** — dieta rafforzata senza cambio architetturale prodotto.
+**TEST OK** — pass 1 harness + pass 2 doc progetto; KB=DB; no Obsidian in-app.

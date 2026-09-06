@@ -4,88 +4,77 @@
 
 ## Stato attuale e priorità (fonte unica)
 
-> Leggere questa sezione **prima** di tutto il resto del file.
+> Avvio: Read con **`limit: 45`** (questa sezione deve entrarci). Resto del file = backlog/cronologia — **non** iniettare. Epic → `PLAN_*_SLICES.md`. Lezioni → [GUIDA](GUIDA_CONSOLIDATA.md) **a sezioni**. Archivio marzo 2026: [archive](archive/PROJECT_CONTEXT_STATO_FUNZIONALITA_2026-03.md).
 
-> **Risposta standard a «stato di avanzamento del progetto e priorità da affrontare»**: sintetizzare da questa sezione (moduli maturi + sessione più recente + tabella priorità sotto), **non** dal banner storico più sotto (superato, tenuto solo per traccia) né dall'archivio marzo 2026 [`docs/archive/PROJECT_CONTEXT_STATO_FUNZIONALITA_2026-03.md`](archive/PROJECT_CONTEXT_STATO_FUNZIONALITA_2026-03.md). **Aggiornare questa sezione a fine sessione** se emergono nuove priorità o se una priorità elencata viene chiusa (stesso principio delle "Lezioni apprese" in [GUIDA_CONSOLIDATA.md](GUIDA_CONSOLIDATA.md) — sintesi qui, dettaglio linkato).
+**Ultimo aggiornamento**: 06/09/2026 (dieta token doc progetto · SB-3/SB-5).
 
-**Ultimo aggiornamento di questa sezione**: 06/09/2026 (Second Brain SB-3 fatti prompt + bozza SB-5 nav).
+### Moduli maturi
 
-### Moduli maturi (in produzione, uso quotidiano dai clienti Camellini/Mason)
-
-Audit multi-standard (9001/14001/45001) · Non Conformità (workflow ISO 10.2 completo) · Qualifiche Personale saldatori/NDT/coordinatori (ISO 9606-1/14732/14731/9712) · Saldatura (WPQR con range duali t1/t2 FW, tipologia SW/prigioniero + P+T + doppio materiale, range ISO 14555 §10.2.8 + Tabella 2 boiler pins, generazione WPS, 15614-1/15614-2, Welding Book, Commesse ISO 3834, Dashboard 3834) · SAL (gap analysis requisiti con AI) · Registro Documenti + Scadenzari · Notifiche/Alert (documenti/NC/qualifiche) · Riesame di Direzione · RBAC multi-tenant (`company_access`) · Registro obblighi legali (ambiente + sicurezza) · Assistente AI / Gap Analysis euristica · CND verbali (VT/MT/PT, gate 9712, Word, Registro, offline) · Libreria fonti (Gestione, studio admin) · Gap fonti Libreria (email SA, coda via 2, chiusura tenant/piattaforma).
+Audit multi-standard · NC · Qualifiche · Saldatura (WPQR/WPS/3834/Welding Book) · SAL · Registro + Scadenzari · Alert · Riesame · RBAC · Obblighi legali · Assistente AI / Gap · CND · Libreria fonti (+ gap SA).
 
 ### Sessione più recente (06/09/2026)
 
-**Second Brain SB-3 + bozza SB-5** — fatti Ambito (NC/qualifiche/documenti ≤30gg) iniettati in `POST /ai/chat`; pulsanti nav HITL da `AmbitoFactsBar` verso NC/Qualifiche/Scadenze (no write autonoma). Branch `cursor/sb3-fatti-prompt-sb5-nav-8269`. Piano [`PLAN_SECOND_BRAIN_SLICES.md`](agent-tasks/PLAN_SECOND_BRAIN_SLICES.md).
+**Dieta token doc (#651)** — harness + § Stato snello; KB prodotto = DB; no vault Obsidian in-app.  
+**Second Brain** — SB-1/SB-3/SB-5 bozza ✅; prossima prodotto **SB-4**. Piano [`PLAN_SECOND_BRAIN_SLICES.md`](agent-tasks/PLAN_SECOND_BRAIN_SLICES.md).
 
-### Sessione precedente (06/09/2026)
+### Sessioni recenti (pointer — dettaglio in `<details>` sotto)
 
-**Wayfinder Libreria UX** — mappa [`PLAN_LIBRERIA_UX_SLICES.md`](agent-tasks/PLAN_LIBRERIA_UX_SLICES.md): **LUX-A** full-width griglie · **LUX-B** badge in-app gap SA (CHIUSE).
+| Data | Esito | Piano |
+|------|-------|-------|
+| 06/09 | LUX-A/B Libreria UX CHIUSE | [`PLAN_LIBRERIA_UX`](agent-tasks/PLAN_LIBRERIA_UX_SLICES.md) |
+| 04/09 | `FileDropzone` + chrome viewer PDF/Word/Excel | regole `.cursor` · `DEPUTYTASK_VIEWER_CHROME` |
+| 03/09 | CONS-1…6 CHIUSE + SOP campo | [`PLAN_AUDIT_CONSERVAZIONE`](agent-tasks/PLAN_AUDIT_CONSERVAZIONE_SLICES.md) · [GUIDA SOP](GUIDA_CONSOLIDATA.md#audit-in-campo--sop-copertura) |
+| 02/09 | ING-1…4 CHIUSE; ING-5 HITL; VC-1…4 CHIUSE | [`PLAN_VALUTAZIONE_COMMESSE`](agent-tasks/PLAN_VALUTAZIONE_COMMESSE_SLICES.md) |
+| 29–31/08 | Libreria LN/LG · SAL AI S1b–S2b · STUD-3-B | vedi `<details>` sotto |
 
-### Sessione precedente (04/09/2026)
+### Priorità aperte ORA
 
-**Caricamento file unico (`FileDropzone`)** — ogni upload visibile: trascina o clicca. Componente `app/src/components/FileDropzone.jsx`, regola [`.cursor/rules/sgq-file-dropzone.mdc`](../.cursor/rules/sgq-file-dropzone.mdc). Eccezioni: fotocamera e picker cartella. Branch `cursor/file-dropzone-std-5de8`.
-
-### Sessione precedente (04/09/2026)
-
-**Chrome unico viewer documenti** — PDF, Word ed Excel: Chiudi + Scarica + Schermo intero (overlay nell'app, non finestra Windows). Branch `cursor/doc-viewer-chrome-std-b42c`. Brief [`DEPUTYTASK_VIEWER_CHROME.md`](agent-tasks/DEPUTYTASK_VIEWER_CHROME.md) CHIUSO TEST OK.
-
-### Sessione precedente (03/09/2026)
-
-**Conservazione audit CONS-1…6 CHIUSA** su `main` (#632 flush, #630 avviso PC, #634 login no-wipe, #635 hydrate, #636 coda `update_audit`, #631 export). **SOP campo** (chiusura sessione): prima di lasciare la copertura, sul telefono **accedere e aprire l’audit**; in zona morta si compila offline (niente Starlink); al ritorno della rete la coda parte; solo allora aprire lo stesso audit dal PC. Dettaglio: [PLAN § SOP](agent-tasks/PLAN_AUDIT_CONSERVAZIONE_SLICES.md#come-operare-senza-copertura-sop) · [GUIDA](GUIDA_CONSOLIDATA.md#audit-in-campo--sop-copertura). Residuo nebbia: CONS-7 (login già scaduto in zona morta). Smoke: hard-refresh Netlify + obiettivo offline.
-
-### Sessione precedente (02/09/2026)
-
-**ING-1…ING-4 CHIUSE** (#624 classificazione batch, #625 template checklist+mig162, #626 matching ruoli, #627 segnale evadibilità). Ops post-audit Camellini: health VPS OK, mig **162** verificata, routes template già sul BE. **ING-5** (agente triage) = **HITL/wayfinder**. **VC-5 non aperto** senza Lead. Piano: [`PLAN_VALUTAZIONE_COMMESSE_SLICES.md`](agent-tasks/PLAN_VALUTAZIONE_COMMESSE_SLICES.md).
-
-**Wayfinder conservazione audit** — mappa [`PLAN_AUDIT_CONSERVAZIONE_SLICES.md`](agent-tasks/PLAN_AUDIT_CONSERVAZIONE_SLICES.md); codice CONS poi chiuso il 03/09 (vedi sessione sopra).
-
-**Valutazione commesse VC-1…VC-4 CHIUSE** — report studio + catalogo + refresh + export Word checklist Riesame requisiti (HITL B) mergiati (#619–#622). Post-merge: piano riorientato su **ingest mole file cliente** (ING-1…ING-5).
-
-### Sessione precedente (01/09/2026)
-
-**Wayfinder Valutazione commesse (capacità + output studio)** — creato [`PLAN_VALUTAZIONE_COMMESSE_SLICES.md`](agent-tasks/PLAN_VALUTAZIONE_COMMESSE_SLICES.md). Priorità: ingest/catalog docs cliente + gap vs capacità + report studio. Brief VC-1 poi eseguito e chiuso nella catena #619–#622.
-
-### Sessione precedente (31/08/2026)
-
-**Libreria gap LG-1…LG-5 (31/08, [#615](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/615) mergiata)** — piano [`PLAN_LIBRERIA_GAP_SLICES.md`](agent-tasks/PLAN_LIBRERIA_GAP_SLICES.md) **COMPLETATO** (LG-6 push mobile resta nebbia): gap in risposta Assistente + persistenza + email SA; UX deep-link; coda superadmin; chiusura via ingest tenant; chiusura «segna digitalizzata» + note qualità + ack tenant opz. Slot [`DEPUTYTASK.md`](agent-tasks/DEPUTYTASK.md) **CHIUSO** su LG-5 (poi riaperto VC-1). Sequel di LN-1…LN-5 (UI shell).
-
-### Sessione precedente (29/08/2026)
-
-**Libreria epic LN-2…LN-5 (29/08, branch stacked — merge in ordine LN-2→LN-5)** — piano [`PLAN_LIBRERIA_NORME_SLICES.md`](agent-tasks/PLAN_LIBRERIA_NORME_SLICES.md) **COMPLETATO**: LN-2 deep-link+NormUpload; LN-3 qualità testo/chunk/last_check (SELECT additivo); LN-4 label Manuale/libro·Altro/quaderno senza enum; LN-5 form richieste studio (localStorage + Copia MD). Slot [`DEPUTYTASK.md`](agent-tasks/DEPUTYTASK.md) **CHIUSO**. Residuo HITL opzionale: enum dedicati ADR-011 + persistenza server richieste.
-
-**SAL AI evidenze chiuso (29/08, S1b [#603](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/603), S2a [#605](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/605), S2b UI)** — OCR immagini; `missingEvidenceSuggestion` zero write; dialog collega/carica/ignora HITL. Piano [`PLAN_SAL_AI_EVIDENCE_SLICES.md`](agent-tasks/PLAN_SAL_AI_EVIDENCE_SLICES.md) **chiuso** (S1c `.doc` solo su richiesta). Stream [`DEPUTYTASK_SAL_AI.md`](agent-tasks/DEPUTYTASK_SAL_AI.md) **CHIUSO**.
-
-**LN-1 Libreria Gestione (29/08, [#604](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/604) mergiata)** — in codice su `main`: pagina `/settings/libreria` (Gestione → Libreria): catalogo fonti da `document_registry` (vigore solo `norma`; `issue_date` per non-norma) + richieste mancanti read-only da snapshot backlog. **Menu mobile**: hamburger apre drawer con tutte le voci sidebar (incluso Gestione → Libreria).
-
-**STUD-3-B range ISO 14555 + Tabella 2 (29/08, #599)** — motorino `weldingQualificationRules14555` FE+BE (§10.2.8 + accettazione boiler pins Tabella 2 HITL); wiring form WPQR norma 14555 senza calc Tabella 7 15614. Slot [`DEPUTYTASK.md`](agent-tasks/DEPUTYTASK.md) **CHIUSO** (poi riaperto LN-1). Stream [`DEPUTYTASK_WPQR_STUD.md`](agent-tasks/DEPUTYTASK_WPQR_STUD.md): STUD-1…3-B **CHIUSI**. Residuo opzionale: PT-1 UX range P vs T (15614). Niente 4063 stud 78x inventati.
-
-**Fix SAL Accetta AI → `updateGapStatus` (29/08, #598)** — race `items` solo post-`useEffect`: Accetta scriveva `undefined` e early-return. Init stato da `suggestions` al mount. Slot [`DEPUTYTASK1.md`](agent-tasks/DEPUTYTASK1.md) **CHIUSO**.
-
-### Priorità aperte ORA (ordine indicativo, non rigido — verificare col committente prima di iniziare una sessione dedicata)
-
-| # | Priorità | Perché | Dove riprendere |
+| # | Priorità | Perché | Dove |
 |---|---|---|---|
-| 1 | **Audit in campo — SOP copertura + smoke prod** | Codice CONS-1…6 su `main`. Operare: login + aprire l’audit **prima** di lasciare la rete; offline in campo; sync al ritorno. Smoke: hard-refresh Netlify + obiettivo offline. CONS-7 (login già in zona morta) = nebbia Alto, non aperto | [PLAN § SOP](agent-tasks/PLAN_AUDIT_CONSERVAZIONE_SLICES.md#come-operare-senza-copertura-sop) · [GUIDA](GUIDA_CONSOLIDATA.md#audit-in-campo--sop-copertura) |
-| 2 | **Valutazione commesse — ING-5 HITL / ponte gap / VC-5 Lead** | ING-1…4 CHIUSE (#624–#627). ING-5 bloccata su domande prodotto (vs batch HITL già live). Ops mig162 OK. Ponte gap/chiarimenti dopo. VC-5 solo con Lead | [PLAN](agent-tasks/PLAN_VALUTAZIONE_COMMESSE_SLICES.md) · brief [ING-5 HITL](agent-tasks/DEPUTYTASK.md) |
-| 3 | **Modulo Notifiche/Alert — destinatario allerte qualifiche non è una scelta esplicita in anagrafica** | Oggi risolto da un algoritmo a cascata, non da una scelta visibile in UI | `qualificationAlert.service.js` (`resolveWeldingCoordinatorRecipients`) |
-| 4 | **Shell dialog di revisione ingest — markup/CSS duplicato** (non urgente, basso rischio) | `IngestReviewDialog.jsx` vs dialog interno `ReprocessQueueBanner.jsx`: guscio overlay duplicato (~60-80 righe); pattern sistemico su molti altri modal nel progetto | Vedi backlog sotto per dettaglio |
-| 5 | **Pagina Impostazioni → Organizzazione (P.IVA + logo tenant)** | PR #10 aperta da aprile 2026, 180 file in conflitto — richiede ricostruzione, non merge | Vedi riga dedicata nel backlog sotto |
-| 6 | **Material Compliance AI — ingest certificati (base e apporto)** | MC-0…MC-5 + MC-I0 + MC-I1 + MC-B (#476) + MC-I2 (#481) + **MC-I3** (DDT ≠ mill). Prossima: **MC-I4** busta 1→N | [PLAN](agent-tasks/PLAN_MATERIAL_COMPLIANCE_SLICES.md) · brief [MC-I3 CHIUSO](agent-tasks/DEPUTYTASK_MC_INGEST.md) |
-| 7 | **Rischi — ingest / data riesame (ROO-18, HITL)** | Lista riesami ambito c’è (ROO-17, verificata su TEST); data riesame esplicita e ingest→review solo dopo conferma | [PLAN §7](agent-tasks/PLAN_RISCHI_OPPORTUNITA_OBIETTIVI_SLICES.md) |
-| 8 | **SAL AI evidenze — OCR + documento mancante (HITL)** | **Chiuso** S1a–S2b (#471/#603/#605 + UI collega/carica/ignora). Residuo **S1c** `.doc` solo su richiesta | [PLAN](agent-tasks/PLAN_SAL_AI_EVIDENCE_SLICES.md) · stream [CHIUSO](agent-tasks/DEPUTYTASK_SAL_AI.md) |
-| 9 | **ISO 3834 — completezza per processi (RBAC + ponti + report)** | ISO-1*…ISO-3 + ISO-6/7 mergiate. Menu `/saldatura/rdp` spento. Prossima: **ISO-4** Word visita Mason **da Audit ISO 3834-2** (id 6), layout check list 27/01. Scala 1–6 = ISO-4b (HITL). ISO-5 Word Welding Book indipendente | [PLAN](agent-tasks/PLAN_3834_SLICES.md) · [gap 19/08](gap-reports/GAP_RDP_DUE_DOCUMENTI_MASON_2026-08-19.md) · PR [architettura #486](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/486) |
-| 10 | **Second Brain — Assistente di Ambito (SB-1 fatti, zero LLM)** | Studio + clienti paganti: fatti dell'Ambito in app, non AIOS Claude. Chat dopo i numeri veri | [PLAN](agent-tasks/PLAN_SECOND_BRAIN_SLICES.md) · brief [SB-1](agent-tasks/DEPUTYTASK2.md) |
-| 11 | **Multimodal RAG — figure normative in locale** | MR-0…**MR-5** mergiati (#464/#469/#475/#484/#489/#492). Prossima: **FW-0** hook ingest norma PDF → CLIP (brief PRONTO, non APERTO) | [PLAN figure](agent-tasks/PLAN_FIGURE_WPQR_SLICES.md) · [PLAN MR](agent-tasks/PLAN_MULTIMODAL_RAG_SLICES.md) |
+| 1 | **Audit campo — SOP + smoke** | CONS-1…6 su `main`; CONS-7 = nebbia Alto | [PLAN SOP](agent-tasks/PLAN_AUDIT_CONSERVAZIONE_SLICES.md#come-operare-senza-copertura-sop) |
+| 2 | **Commesse — ING-5 / VC-5** | ING-1…4 CHIUSE; ING-5 HITL; VC-5 solo Lead | [PLAN](agent-tasks/PLAN_VALUTAZIONE_COMMESSE_SLICES.md) |
+| 3 | **Alert qualifiche — destinatario UI** | Oggi solo cascata in servizio | `qualificationAlert.service.js` |
+| 4 | **Shell dialog ingest duplicato** | Basso rischio, non urgente | backlog sotto |
+| 5 | **Impostazioni org (P.IVA + logo)** | PR #10 conflict — ricostruire | backlog sotto |
+| 6 | **Material Compliance — MC-I4** | MC-I3 CHIUSA; prossima busta 1→N | [PLAN](agent-tasks/PLAN_MATERIAL_COMPLIANCE_SLICES.md) |
+| 7 | **Rischi ROO-18 HITL** | ROO-17 OK; ingest/data riesame dopo conferma | [PLAN §7](agent-tasks/PLAN_RISCHI_OPPORTUNITA_OBIETTIVI_SLICES.md) |
+| 8 | **SAL AI — S1c `.doc`** | S1a–S2b CHIUSE; S1c solo su richiesta | [PLAN](agent-tasks/PLAN_SAL_AI_EVIDENCE_SLICES.md) |
+| 9 | **ISO 3834 — ISO-4 Word** | ISO-1…3/6/7 OK; next Word visita Mason | [PLAN](agent-tasks/PLAN_3834_SLICES.md) |
+| 10 | **Second Brain — SB-4** | Fatti/prompt/nav OK; aggregati studio | [PLAN](agent-tasks/PLAN_SECOND_BRAIN_SLICES.md) |
+| 11 | **Multimodal RAG — FW-0** | MR-0…5 OK; hook ingest→CLIP | [PLAN MR](agent-tasks/PLAN_MULTIMODAL_RAG_SLICES.md) |
 
-> Nota: **Modulo NC — card statistiche duplicate da due tendine** (era riga 1) è stato chiuso da PR #374 (10/08/2026) — riga rimossa da questa tabella, non ancora aggiornata al momento in cui è stata scritta DEPUTYTASK4.
-
-Elenco completo (voci meno urgenti, decisioni di prodotto in attesa, task parcheggiati con motivo): tabella [Backlog parcheggiato](#backlog-parcheggiato-task-futuri--fonte-unica) più sotto.
+Backlog completo: [Backlog parcheggiato](#backlog-parcheggiato-task-futuri--fonte-unica).
 
 ---
 
 <details>
-<summary>Cronologia sessioni 10/08–26/08/2026 (fuori dieta avvio — dettaglio storico)</summary>
+<summary>Cronologia sessioni 29/08–04/09 e 10/08–26/08/2026 (fuori dieta avvio)</summary>
+
+### Sessione (04/09/2026)
+
+**Caricamento file unico (`FileDropzone`)** — trascina o clicca; regola [`.cursor/rules/sgq-file-dropzone.mdc`](../.cursor/rules/sgq-file-dropzone.mdc). Branch `cursor/file-dropzone-std-5de8`.
+
+**Chrome unico viewer** — PDF/Word/Excel: Chiudi + Scarica + Schermo intero. Brief [`DEPUTYTASK_VIEWER_CHROME.md`](agent-tasks/DEPUTYTASK_VIEWER_CHROME.md) CHIUSO.
+
+### Sessione (03/09/2026)
+
+**CONS-1…6 CHIUSA** (#632/#630/#634/#635/#636/#631). SOP: login+apri audit prima di lasciare rete; offline in campo; sync al ritorno. Residuo CONS-7. [PLAN SOP](agent-tasks/PLAN_AUDIT_CONSERVAZIONE_SLICES.md#come-operare-senza-copertura-sop).
+
+### Sessione (02/09/2026)
+
+**ING-1…4 CHIUSE** (#624–#627); **ING-5** HITL; VC-1…4 CHIUSE (#619–#622). Piano [`PLAN_VALUTAZIONE_COMMESSE_SLICES.md`](agent-tasks/PLAN_VALUTAZIONE_COMMESSE_SLICES.md).
+
+### Sessione (01/09/2026)
+
+Wayfinder Valutazione commesse — creato PLAN; VC-1…4 poi chiusi in catena #619–#622.
+
+### Sessione (31/08/2026)
+
+**LG-1…LG-5** [#615] — [`PLAN_LIBRERIA_GAP_SLICES.md`](agent-tasks/PLAN_LIBRERIA_GAP_SLICES.md) COMPLETATO (LG-6 nebbia).
+
+### Sessione (29/08/2026)
+
+**LN-2…LN-5** COMPLETATO · **SAL AI** S1b–S2b CHIUSE · **LN-1** [#604] · **STUD-3-B** #599 · fix SAL Accetta AI #598.
 
 ### Sessione precedente (26/08/2026)
 
