@@ -18,7 +18,7 @@ Istruzioni operative per agenti Cursor (desktop e Cloud). Fonte di governance: [
 
 Rispondi in **italiano**, operativo e sintetico.
 
-**Domanda tipo «stato di avanzamento del progetto e priorità da affrontare»**: rispondi sintetizzando da [`docs/PROJECT_ROADMAP.md` § Stato attuale e priorità](docs/PROJECT_ROADMAP.md#stato-attuale-e-priorità-fonte-unica) (moduli maturi + sessione più recente + tabella priorità) — è la fonte unica pensata apposta per questa domanda, non il banner storico più sotto nello stesso file né l'archivio marzo 2026 in [`docs/archive/PROJECT_CONTEXT_STATO_FUNZIONALITA_2026-03.md`](docs/archive/PROJECT_CONTEXT_STATO_FUNZIONALITA_2026-03.md). **Aggiorna quella sezione a fine sessione** se emergono nuove priorità o se una priorità elencata viene chiusa. In **parallelo** (altra chat/`DEPUTYTASK*` aperto): non nella PR di codice — bozza nel proprio brief, sync dopo merge ([`sgq-workflow-method.mdc`](.cursor/rules/sgq-workflow-method.mdc) § File di traccia).
+**Stato / priorità:** sintetizzare da [`docs/PROJECT_ROADMAP.md` § Stato attuale](docs/PROJECT_ROADMAP.md#stato-attuale-e-priorità-fonte-unica) (`limit: 45`). Aggiornare quella sezione a fine sessione se cambiano priorità. In parallelo: bozza nel brief, sync hub dopo merge ([`sgq-workflow-method.mdc`](.cursor/rules/sgq-workflow-method.mdc) § File di traccia).
 
 ## Workflow Lead / Deputy
 
@@ -27,75 +27,33 @@ Rispondi in **italiano**, operativo e sintetico.
 | **Lead** | Piano, architettura, brief in `DEPUTYTASK*.md` (anche più file in parallelo). Epic grandi: skill `wayfinder-sgq` prima del brief. |
 | **Deputy** | Allinea Git → slice verticali, commit atomici, test L1, PR |
 
-**Una sessione = una slice.** Se non chiudi: compila l'handoff nel `DEPUTYTASK*.md` attivo ([template](docs/agent-tasks/HANDOFF_TEMPLATE.md)) e ferma — nuova sessione, contesto pulito. Non installare skill GitHub (Ponytail, Caveman, Impeccable, wiki Obsidian): i gate sono sotto.
+**Una sessione = una slice.** Se non chiudi: handoff ([template](docs/agent-tasks/HANDOFF_TEMPLATE.md)) nel brief attivo e ferma. Non installare skill GitHub (Ponytail, Caveman, Impeccable, wiki Obsidian): i gate sono sotto. Non usare `.github/agents/` (legacy). Git: [`.cursor/rules/sgq-operating-memory.mdc`](.cursor/rules/sgq-operating-memory.mdc) + [`sgq-git-autonomy.mdc`](.cursor/rules/sgq-git-autonomy.mdc).
 
-Non usare `.github/agents/` (legacy Copilot). Policy anti-disallineamento: `.cursor/rules/sgq-operating-memory.mdc` (sezione *Allineamento Git autonomo*).
+## Cursor Cloud (sintesi — dettaglio nelle rules)
 
-## Cursor Cloud specific instructions
+Fonte: [`.cursor/rules/sgq-cloud-agent-env.mdc`](.cursor/rules/sgq-cloud-agent-env.mdc) · branch PR: [`sgq-git-autonomy.mdc`](.cursor/rules/sgq-git-autonomy.mdc) § Aggiornare il branch · secrets/deploy: [ACCESSO_DEPLOY_AGENTS.md](docs/how-to/ACCESSO_DEPLOY_AGENTS.md).
 
-### Ambiente VM
+- Install: `.cursor/environment.json` → `cloud-install.sh` (`app/` + `backend/`).
+- SQL Server non raggiungibile dal Cloud (DNS): migrazioni SCP + `run-migration-*-vps.js` sul VPS.
+- Context: Deputy = default/basso; **non** 1M di default; epic → skill `wayfinder-sgq`.
+- Prima di ogni `git push` sul feature branch: `git fetch origin main` + `git merge origin/main`. Non mergiare su `main`.
+- L1 FE: `cd app && NODE_ENV=test npm run test:run` + `npm run build`. Smoke autenticato: `node backend/scripts/smoke-percorsi-critici.mjs` (Chromium da `cloud-install`, non `/tmp`).
 
-- Config repo: `.cursor/environment.json` → install idempotente via `.cursor/scripts/cloud-install.sh` (`app/` + `backend/`).
-- Segreti: solo **Cursor Dashboard → Cloud Agents → Secrets** (mai in Git). Elenco: [docs/how-to/ACCESSO_DEPLOY_AGENTS.md](docs/how-to/ACCESSO_DEPLOY_AGENTS.md).
-- SQL Server **non** raggiungibile dal Cloud Agent (DNS): migrazioni via SCP + `node` sul VPS (`run-migration-*-vps.js`).
-- Deploy backend: `bash backend/scripts/deploy-to-vps.sh` + verifica PID/`health`.
-- **Branch PR:** prima di ogni `git push` sul feature branch e prima di create_pr/update_pr: `git fetch origin main` + `git merge origin/main`. Se `main` è avanti, allinea **ora** (anche gli OPEN restanti dopo un merge nello stack); vietato push/PR «e poi si allinea». **Non** mergiare su `main`; **non** chiedere al committente `git pull` / «Update branch». Fonte: [`.cursor/rules/sgq-git-autonomy.mdc`](.cursor/rules/sgq-git-autonomy.mdc) § Aggiornare il branch della PR.
+## Regole repo (puntatori)
 
-### Context window e costo (policy vincolante)
-
-Su [cursor.com/agents](https://cursor.com/agents) usa **Edit** accanto al modello per bilanciare capability/cost.
-
-| Tipo run | Context window | Modello tipico |
-|----------|----------------|----------------|
-| **Deputy** (task da `DEPUTYTASK.md`, 1–3 file, fix UI, test L1) | **Default / basso** | fast / standard |
-| **Lead** (audit ampio, sync, RBAC, multi-modulo) | **Alto / 1M solo se serve** | high |
-| Esplorazione lunga con rischio compaction | Alto | high |
-
-**Non** usare 1M di default: era il comportamento costoso precedente. Preferire brief mirati + regole repo + ricerca file mirata. L'avvio non deve saturare la smart zone (~100k) con GUIDA+roadmap intere.
-
-Lavoro più grande di una sessione: skill **wayfinder-sgq** (mappa `PLAN_*_SLICES.md` + un `DEPUTYTASK` per run). Non installare il pacchetto intero `mattpocock/skills` (conflitto con ADR-015).
-
-### Test L1 (frontend)
-
-```bash
-cd app && NODE_ENV=test npm run test:run
-cd app && npm run build
-```
-
-Per fix a basso rischio (1–2 file, no sync/DB): accettabile affidarsi a CI Netlify dopo push.
-
-### Smoke UI autenticato (percorsi critici)
-
-Dopo deploy o PR che tocca questi flussi, eseguire **il percorso toccato** (non tutti). Login: script Node + `SGQ_APP_EMAIL` / `SGQ_APP_PASSWORD` — **non** MCP Playwright (non legge le env; non è collegato in Cloud). Playwright+Chromium arrivano da `cloud-install.sh` (devDependency `backend/`): **non** reinstallare in `/tmp`. Template: `sgq-bug-fix-methodology.mdc` Fase 6.
-
-| Percorso | Come |
-|----------|------|
-| Login + NC + Qualifiche + SAL + WPS/WPQR | `node backend/scripts/smoke-percorsi-critici.mjs` (`SGQ_SMOKE_PATHS` per filtrare) |
-| Ingest WPQR (API test) | `node backend/scripts/smoke-ingest-e2e-test.js` |
-| Copertura ERAM (tenant 1004) | `node backend/scripts/smoke-eram-coverage-ui.js` |
-
-PR di livello Medio: gate **Bugbot** prima di dichiararla pronta (`sgq-git-autonomy.mdc`). Su logica normativa lo stesso deputy non è verificatore di se stesso.
-
-## Regole repo da rispettare
-
-- Multi-tenant: scope `organization_id` / pattern RBAC esistenti.
-- Riuso UI: `QuestionCard`, `status-btn`, `notes-textarea`, `AttachmentSection`, `FileDropzone`, `AiDisclaimer` — vedi `docs/reference/LIBRERIA_UI_SGQ.md`. DNA visivo: `app/src/design-system/README.md`.
-- **Prima di codice nuovo** (file/componente/CSS/endpoint): deve esistere? esiste già? libreria già in repo? una riga basta? altrimenti il minimo. Dettaglio: `.cursor/rules/sgq-operating-memory.mdc` § Gate Ponytail.
-- Encoding UTF-8, accenti italiani corretti (regola `sgq-encoding-quality`).
-- Zero segreti in file versionati o chat.
-- Doc operativa: aggiorna `docs/GUIDA_CONSOLIDATA.md` (non creare `SESSION_NOTES_*`). In parallelo: GUIDA/roadmap **dopo il merge**, non nella PR di codice.
+- Multi-tenant / RBAC: pattern esistenti su `organization_id`.
+- UI: blocco unico + DNA — `LIBRERIA_UI_SGQ.md` · `app/src/design-system/README.md`. Gate Ponytail: `sgq-operating-memory.mdc`.
+- Encoding: `sgq-encoding-quality.mdc`. Zero segreti in Git/chat.
+- Doc: aggiorna GUIDA **a sezioni** (no `SESSION_NOTES_*`). In parallelo: hub dopo merge.
 
 ## Riferimenti rapidi
 
 | Tema | Path |
 |------|------|
-| Bussola moduli | `PROJECT_CONTEXT.md` (tabella «Se lavori su…») |
+| Bussola moduli | `PROJECT_CONTEXT.md` |
 | Deploy / SSH / Secrets | `docs/how-to/ACCESSO_DEPLOY_AGENTS.md` |
-| Esperienza operativa | `docs/GUIDA_CONSOLIDATA.md` (a sezioni, non intera) |
-| Libreria UI | `docs/reference/LIBRERIA_UI_SGQ.md` |
-| DNA visivo UI | [`app/src/design-system/README.md`](app/src/design-system/README.md) |
-| Memoria operativa | `.cursor/rules/sgq-operating-memory.mdc` |
-| Metodo slice | `.cursor/rules/sgq-workflow-method.mdc` |
-| Policy Cloud / context | `.cursor/rules/sgq-cloud-agent-env.mdc` |
-| Epic > 1 sessione (smart zone) | [`.cursor/skills/wayfinder-sgq/SKILL.md`](.cursor/skills/wayfinder-sgq/SKILL.md) |
-| Handoff sessione interrotta | [`docs/agent-tasks/HANDOFF_TEMPLATE.md`](docs/agent-tasks/HANDOFF_TEMPLATE.md) |
+| Esperienza operativa | `docs/GUIDA_CONSOLIDATA.md` (a sezioni) |
+| Libreria UI / DNA | `docs/reference/LIBRERIA_UI_SGQ.md` · `app/src/design-system/README.md` |
+| Memoria / metodo / git / Cloud | `sgq-operating-memory.mdc` · `sgq-workflow-method.mdc` · `sgq-git-autonomy.mdc` · `sgq-cloud-agent-env.mdc` |
+| Epic > 1 sessione | [`.cursor/skills/wayfinder-sgq/SKILL.md`](.cursor/skills/wayfinder-sgq/SKILL.md) |
+| Handoff | [`docs/agent-tasks/HANDOFF_TEMPLATE.md`](docs/agent-tasks/HANDOFF_TEMPLATE.md) |

@@ -14,13 +14,13 @@
 Epic > 1 sessione: [`.cursor/skills/wayfinder-sgq/SKILL.md`](.cursor/skills/wayfinder-sgq/SKILL.md). Slice non chiusa: [`HANDOFF_TEMPLATE.md`](docs/agent-tasks/HANDOFF_TEMPLATE.md).
 AI runtime prodotto: [ADR-010](docs/adr/ADR-010-ai-agentic-architecture.md). UI: [`app/src/design-system/README.md`](app/src/design-system/README.md).
 
+**KB / Wiki / Engram (06/09/2026):** la knowledge base **prodotto** vive nel **DB** (SQL + moduli già in app: Libreria, Registro, `ambitoFacts`, RAG indexer). Un vault **Obsidian / LLM Wiki** è metodo di lavoro umano o esterno — **non** architettura in-app. Il principio Engram (fatti operativi fuori dal prompt lungo) è già coperto da Second Brain (`PLAN_SECOND_BRAIN_SLICES.md`): snapshot SQL Ambito, non un secondo cervello file-based. Non installare skill wiki Obsidian sul repo.
+
 ---
 
 ## Cos'è il progetto
 
-PWA offline-first per audit e SGQ ISO 9001:2015 (PMI italiane, multi-tenant su `organization_id`). Standard attivi: 9001 / 14001 / 45001; saldatura ISO 3834 in produzione.
-
-**Checkout locale:** preferire disco reale (`C:\Dev\ProgettoISO` se c'è). Evitare Google Drive streaming (letture tool vs git disallineate). Fonte Git: `origin/main`. Dettaglio percorsi in [GUIDA](docs/GUIDA_CONSOLIDATA.md).
+PWA offline-first per audit e SGQ ISO 9001:2015 (PMI italiane, multi-tenant su `organization_id`). Standard attivi: 9001 / 14001 / 45001; saldatura ISO 3834 in produzione. Checkout: preferire disco reale (non Google Drive streaming). Git: `origin/main`.
 
 ---
 
@@ -29,14 +29,14 @@ PWA offline-first per audit e SGQ ISO 9001:2015 (PMI italiane, multi-tenant su `
 | Layer | Tecnologia |
 |---|---|
 | Frontend | React 18, Vite, PWA → Netlify da `main` |
-| Offline | IndexedDB; sync `server-wins` su campi critici ([ADR-008](docs/adr/ADR-008-event-sourcing-sync.md)) |
-| Backend | Node 20, Express; VPS `sistemi.fr-busato.it` porta 3000 → HTTPS 8443 |
+| Offline | IndexedDB; sync `server-wins` ([ADR-008](docs/adr/ADR-008-event-sourcing-sync.md)) |
+| Backend | Node 20, Express; VPS `sistemi.fr-busato.it` :3000 → HTTPS :8443 |
 | DB | SQL Server `SGQ_ISO9001` |
 | Auth | JWT cookie httpOnly; mobile localStorage ([ADR-004](docs/adr/ADR-004-mobile-auth-localstorage.md)) |
 | HTTP | solo Axios `withCredentials` — vietato `fetch` diretto |
 | GitHub | `qsstudio241/sistema-gestione-iso9001` |
 
-Deploy/SSH: [how-to/deploy.md](docs/how-to/deploy.md) + [ACCESSO_DEPLOY_AGENTS.md](docs/how-to/ACCESSO_DEPLOY_AGENTS.md). Backend sul VPS: `/var/www/sgq-backend` (copia, non clone). Restart: script `deploy-to-vps.sh` / `deploy-controllers-to-vps.ps1` + verifica PID.
+Deploy/SSH: [deploy.md](docs/how-to/deploy.md) + [ACCESSO_DEPLOY_AGENTS.md](docs/how-to/ACCESSO_DEPLOY_AGENTS.md). VPS app: `/var/www/sgq-backend` (copia). Restart + verifica PID.
 
 ---
 

@@ -5,31 +5,24 @@ alwaysApply: true
 
 # Cloud Agent — ambiente e costi (ProgettoISO)
 
-## Config effettiva dal repo
-- Ambiente VM: `.cursor/environment.json` (install idempotente `.cursor/scripts/cloud-install.sh`).
-- Istruzioni Cloud: sezione *Cursor Cloud specific instructions* in `AGENTS.md`.
-- Deploy/SSH/Secrets: `docs/how-to/ACCESSO_DEPLOY_AGENTS.md`.
+## Config
+- VM: `.cursor/environment.json` → `.cursor/scripts/cloud-install.sh` (`app/` + `backend/`).
+- Avvio/dieta: [`AGENTS.md`](../../AGENTS.md). Secrets/deploy: [ACCESSO_DEPLOY_AGENTS.md](../../docs/how-to/ACCESSO_DEPLOY_AGENTS.md).
+- Branch PR: [`sgq-git-autonomy.mdc`](sgq-git-autonomy.mdc) § Aggiornare il branch.
 
-## Context window (capability vs cost)
-Su cursor.com/agents → **Edit** accanto al modello:
+## Context window
+| Run | Context |
+|-----|---------|
+| Deputy / fix 1–2 file | **Default o basso** (non 1M) |
+| Lead multi-modulo | Alto; **1M solo se necessario** |
 
-| Run | Context | Nota |
-|-----|---------|------|
-| Deputy / slice da `DEPUTYTASK.md` | **Default o basso** | Non usare 1M |
-| Lead / audit multi-modulo / sync | Alto o **1M solo se necessario** | Preferire brief mirato |
-| Fix 1–2 file | Default | Affidarsi a CI se basso rischio |
+Epic > 1 sessione: skill [`wayfinder-sgq`](../skills/wayfinder-sgq/SKILL.md). Una sessione = una slice; handoff nel brief se non chiudi. Non installare wiki Obsidian / skill GitHub di design.
 
-**Vietato** ripristinare 1M come default su tutti i run (costo inutile: Cursor lo ha reso opzionale).
+Avvio: `PROJECT_CONTEXT.md` + roadmap § Stato (`limit: 45`). **Non** iniettare GUIDA o roadmap intere.
 
-Epic più grandi di una sessione: skill [`wayfinder-sgq`](../skills/wayfinder-sgq/SKILL.md) (smart zone ~100k; mappa in `PLAN_*_SLICES.md`, una slice per run). Non alzare il context «perché il lavoro è grosso».
-
-**Una sessione = una slice.** Se non chiudi: handoff nel brief ([`HANDOFF_TEMPLATE.md`](../../docs/agent-tasks/HANDOFF_TEMPLATE.md)). Non installare wiki Obsidian / skill GitHub di design o Ponytail.
-
-Avvio: `PROJECT_CONTEXT.md` (bussola) + roadmap § Stato attuale. **Non** iniettare GUIDA o roadmap intere — saturano la smart zone prima del codice.
-
-## Operatività Cloud
-- Secrets solo da Dashboard Cloud Agents (`SGQ_SSH_KEY_B64`, `SGQ_SUDO_PASSWORD`, `SGQ_APP_EMAIL`, `SGQ_APP_PASSWORD`, …).
-- Migrazioni DB: pattern VPS (`run-migration-*-vps.js`), non SQL diretto dal cloud.
-- Test FE: `cd app && NODE_ENV=test npm run test:run` + `npm run build` dopo `cloud-install`.
-- Smoke UI autenticato: `node backend/scripts/smoke-percorsi-critici.mjs` (Playwright+Chromium da `cloud-install.sh`, non `/tmp`).
+## Operatività
+- Secrets Dashboard: `SGQ_SSH_KEY_B64`, `SGQ_SUDO_PASSWORD`, `SGQ_APP_EMAIL`, `SGQ_APP_PASSWORD`, …
+- Migrazioni: `run-migration-*-vps.js` via SCP+SSH (no SQL diretto dal cloud).
+- L1 FE: `cd app && NODE_ENV=test npm run test:run` + `npm run build`.
+- Smoke: `node backend/scripts/smoke-percorsi-critici.mjs` (Chromium da `cloud-install`, non `/tmp`).
 - Non chiedere al committente comandi meccanici eseguibili dall'agente.
