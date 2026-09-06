@@ -6,6 +6,7 @@
 **Piano:** [`PLAN_COMPLIANCE_MAP_SLICES.md`](PLAN_COMPLIANCE_MAP_SLICES.md)  
 **Rischio:** Medio — migrazione additiva + API nuove; PR, non push su `main`. Non dire «pronta» senza CI + Bugbot + Security su quello SHA.  
 **Branch:** `cursor/cm1-compliance-map-schema-8269`  
+**PR:** draft — `gh` create 403; compare https://github.com/qsstudio241/sistema-gestione-iso9001/compare/main...cursor/cm1-compliance-map-schema-8269?expand=1  
 **Migrazione:** **164** (`164_compliance_maps.sql` + `run-migration-164-vps.js`)  
 **Stream:** `DEPUTYTASK_COMPLIANCE_MAP.md` — prossima slice **CM-2** (compilatore da caso) o **CM-3** (Gemini link).
 
