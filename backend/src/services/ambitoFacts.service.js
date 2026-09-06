@@ -124,7 +124,33 @@ async function loadAmbitoFacts(user, companyId) {
   };
 }
 
+/**
+ * Blocco testo da iniettare nel system prompt della chat (SB-3).
+ * Zero inventiva: solo i conteggi già calcolati da loadAmbitoFacts.
+ * @param {object|null|undefined} facts
+ * @returns {string} vuoto se non ready
+ */
+function formatAmbitoFactsPromptBlock(facts) {
+  if (!facts || facts.ready !== true || !facts.counts) return '';
+  const c = facts.counts;
+  const name = facts.companyName || `Azienda #${facts.companyId}`;
+  const lines = [
+    '',
+    '',
+    '--- FATTI AMBITO (SQL vivo, non RAG) ---',
+    `Azienda attiva: ${name} (company_id=${facts.companyId})`,
+    `NC aperte: ${Number(c.ncOpen) || 0}`,
+    `Qualifiche in scadenza entro 30 giorni: ${Number(c.qualsExpiring30) || 0}`,
+    `Documenti in scadenza entro 30 giorni: ${Number(c.docsExpiring30) || 0}`,
+    'Usa ESCLUSIVAMENTE questi numeri per conteggi su NC / qualifiche / documenti di questa azienda.',
+    'Non mescolare dati di altre aziende. Se la domanda non riguarda questi fatti, ignora il blocco.',
+    '--- FINE FATTI AMBITO ---',
+  ];
+  return lines.join('\n');
+}
+
 module.exports = {
   loadAmbitoFacts,
   emptyNotReady,
+  formatAmbitoFactsPromptBlock,
 };

@@ -19,7 +19,10 @@ const {
 const { buildCitationsFromChunks } = require('../utils/aiCitations');
 const { resolveAiCompanyScope } = require('../services/aiCompanyScope.service');
 const { sendAccessDenied } = require('../services/companyAccess.service');
-const { loadAmbitoFacts } = require('../services/ambitoFacts.service');
+const {
+  loadAmbitoFacts,
+  formatAmbitoFactsPromptBlock,
+} = require('../services/ambitoFacts.service');
 const { buildMaterialGroupPromptSection } = require('../data/materialGroups15608');
 const { resolveClauseText } = require('../services/normBroker.service');
 const {
@@ -205,6 +208,14 @@ async function aiChat(req, res) {
         companyLines.push(`--- FINE CONTESTO AZIENDA ---`);
         companyLines.push(`Le domande dell'utente si riferiscono specificamente a questa azienda. Filtra le risposte di conseguenza.`);
         systemPrompt += companyLines.join('\n');
+      }
+
+      // SB-3: fatti SQL vivi (stesso service della card Ambito) — isolamento company_id
+      try {
+        const ambitoFacts = await loadAmbitoFacts(req.user, parsedCompanyId);
+        systemPrompt += formatAmbitoFactsPromptBlock(ambitoFacts);
+      } catch (err) {
+        logger.warn('[AI_CHAT] Ambito facts injection skipped:', err.message);
       }
     }
 
