@@ -5,6 +5,7 @@
 **Chiuso:** 06/09/2026  
 **Rischio:** Basso — solo Markdown / rules; niente codice prodotto  
 **Branch:** `cursor/doc-token-diet-harness-8269`  
+**PR:** draft bloccata da `gh` 403 (token Cloud senza `createPullRequest`). Compare: https://github.com/qsstudio241/sistema-gestione-iso9001/compare/main...cursor/doc-token-diet-harness-8269?expand=1  
 **Slot precedente:** LUX-A CHIUSO su `origin/main` (sovrascrittura consentita)
 
 ## Perché
