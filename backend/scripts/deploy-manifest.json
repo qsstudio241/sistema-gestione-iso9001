@@ -169,6 +169,7 @@
                                      "src/services/normBroker.service.js",
                                      "src/services/librarySourceRequest.service.js",
                                      "src/services/gapAnalysis.service.js",
+                                     "src/services/complianceMap.service.js",
                                      "src/services/materialKbLoader.service.js",
                                      "src/services/materialComplianceRuleEngine.service.js"
                                  ]
@@ -295,7 +296,8 @@
                                      "src/controllers/weldingBooks.controller.js",
                                      "src/controllers/rdp.controller.js",
                                      "src/controllers/weldingAiSuggest.controller.js",
-                                     "src/controllers/materialCertificates.controller.js"
+                                     "src/controllers/materialCertificates.controller.js",
+                                     "src/controllers/complianceMap.controller.js"
                                  ]
                    },
                    {
@@ -334,6 +336,7 @@
                                      "src/routes/ingestStaging.routes.js",
                                      "src/routes/normBroker.routes.js",
                                      "src/routes/gapAnalysis.routes.js",
+                                     "src/routes/complianceMap.routes.js",
                                      "src/routes/aiAssist.routes.js",
                                      "src/routes/aiChat.routes.js",
                                      "src/routes/librarySourceRequest.routes.js",
