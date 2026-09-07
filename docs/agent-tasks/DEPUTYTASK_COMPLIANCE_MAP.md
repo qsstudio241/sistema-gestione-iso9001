@@ -6,6 +6,7 @@
 **Piano:** [`PLAN_COMPLIANCE_MAP_SLICES.md`](PLAN_COMPLIANCE_MAP_SLICES.md)  
 **Rischio:** Medio — UI + apiService; PR, non push su `main`. Non dire «pronta» senza CI + Bugbot + Security su quello SHA.  
 **Branch:** `cursor/cm4-compliance-hitl-ui-8269`  
+**PR:** create bloccata da `gh` 403 (token Cloud senza createPullRequest). Compare: https://github.com/qsstudio241/sistema-gestione-iso9001/compare/main...cursor/cm4-compliance-hitl-ui-8269?expand=1  
 **Migrazione:** nessuna  
 **Stream:** `DEPUTYTASK_COMPLIANCE_MAP.md`
 
