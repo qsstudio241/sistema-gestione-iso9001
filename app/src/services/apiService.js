@@ -2602,6 +2602,34 @@ class ApiService {
         return this.get(`/gap-analysis?${qs.toString()}`);
     }
 
+    // ─── Compliance Map (§8.2 grafo requisito↔norma, CM-1…CM-4) ───────────
+    async listComplianceMaps(companyId) {
+        return this.get(`/companies/${companyId}/compliance-maps`);
+    }
+
+    async getComplianceMap(companyId, mapId) {
+        return this.get(`/companies/${companyId}/compliance-maps/${mapId}`);
+    }
+
+    async createComplianceMap(companyId, body) {
+        return this.post(`/companies/${companyId}/compliance-maps`, body || {});
+    }
+
+    async compileComplianceMap(companyId, body) {
+        return this.post(`/companies/${companyId}/compliance-maps/compile`, body || {});
+    }
+
+    async proposeComplianceMapLinks(companyId, mapId, body = {}) {
+        return this.post(`/companies/${companyId}/compliance-maps/${mapId}/propose-links`, body);
+    }
+
+    async patchComplianceMapItemHitl(companyId, mapId, itemId, body) {
+        return this.patch(
+            `/companies/${companyId}/compliance-maps/${mapId}/items/${itemId}/hitl`,
+            body || {}
+        );
+    }
+
     // ─── SAL — Stato Avanzamento Lavori (motore gap operativo, licenza sal) ──
 
     async getGapMatrix(companyId, { standardCode, dateFrom } = {}) {

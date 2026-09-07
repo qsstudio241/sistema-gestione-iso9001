@@ -42,6 +42,7 @@ const NormLibraryPage = React.lazy(() => import("./pages/NormLibraryPage"));
 const AnagrafichePage = React.lazy(() => import("./pages/AnagrafichePage"));
 const ContractReviewPage = React.lazy(() => import("./pages/ContractReviewPage"));
 const GapAnalysisPage = React.lazy(() => import("./pages/GapAnalysisPage"));
+const ComplianceMapsPage = React.lazy(() => import("./pages/ComplianceMapsPage"));
 const AiAssistantPage = React.lazy(() => import("./pages/AiAssistantPage"));
 const KnowledgeHealthPage = React.lazy(() => import("./pages/KnowledgeHealthPage"));
 const SearchPage = React.lazy(() => import("./pages/SearchPage"));
@@ -189,6 +190,7 @@ function AppContent() {
         <Route path="/anagrafiche"      element={<LicensedRoute moduleKey="reclami"><AnagrafichePage /></LicensedRoute>} />
         <Route path="/contract-reviews" element={<LicensedRoute moduleKey="ai_review"><ContractReviewPage /></LicensedRoute>} />
         <Route path="/gap-analysis" element={<LicensedRoute moduleKey="ai_norms"><GapAnalysisPage /></LicensedRoute>} />
+        <Route path="/compliance-maps" element={<LicensedRoute moduleKey="ai_norms"><ComplianceMapsPage /></LicensedRoute>} />
         <Route path="/ai-assistant"     element={<LicensedRoute moduleKey="ai_chat"><AiAssistantPage /></LicensedRoute>} />
         <Route path="/ai-knowledge-health" element={<LicensedRoute moduleKey="ai_chat"><KnowledgeHealthPage /></LicensedRoute>} />
         <Route path="/search"          element={<SearchPage />} />

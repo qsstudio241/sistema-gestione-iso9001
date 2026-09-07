@@ -63,6 +63,7 @@ function buildNavItems(user, alerts = {}) {
         { to: "/anagrafiche",      icon: "🗂️",  label: "Anagrafiche",        licenseKey: "reclami" },
         { to: "/contract-reviews", icon: "📑", label: "Riesame Requisiti",   licenseKey: "ai_review" },
         { to: "/gap-analysis",      icon: "📊", label: "Gap Analysis",        licenseKey: "ai_norms" },
+        { to: "/compliance-maps",   icon: "\uD83D\uDDFA\uFE0F", label: "Mappa conformità",  licenseKey: "ai_norms" },
         { to: "/ai-assistant",     icon: "🤖", label: "Assistente AI",      licenseKey: "ai_chat" },
         ...(isAdmin ? [{ to: "/ai-knowledge-health", icon: "🩺", label: "Knowledge Health", licenseKey: "ai_chat" }] : []),
         { to: "/sal",              icon: "📊", label: "SAL", licenseKey: "sal" },

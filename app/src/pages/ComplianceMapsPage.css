@@ -1,0 +1,130 @@
+/* ComplianceMapsPage — DNA SGQ (token AppLayout / pattern Qualifiche) */
+
+.cm-page {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 1.25rem 1.5rem 2rem;
+}
+
+.cm-page-header {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 0.75rem 1.5rem;
+  margin-bottom: 1rem;
+}
+
+.cm-page-title {
+  margin: 0 0 0.25rem;
+  font-size: 1.35rem;
+  color: var(--color-primary, #1e3a5f);
+}
+
+.cm-page-sub {
+  margin: 0;
+  color: var(--color-text-muted, #64748b);
+  font-size: 0.9rem;
+}
+
+.cm-ambito {
+  margin: 0;
+  font-size: 0.9rem;
+  color: var(--color-text-muted, #64748b);
+  align-self: center;
+}
+
+.cm-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  align-items: flex-end;
+  margin-bottom: 1rem;
+  padding: 0.75rem 1rem;
+  background: var(--color-surface, #fff);
+  border: 1px solid var(--color-border, #e2e8f0);
+  border-radius: var(--radius, 8px);
+}
+
+.cm-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  min-width: 220px;
+  flex: 1;
+}
+
+.cm-field span {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--color-text, #1e293b);
+}
+
+.cm-field select {
+  padding: 0.45rem 0.65rem;
+  border: 1px solid var(--color-border, #e2e8f0);
+  border-radius: var(--radius, 8px);
+  font: inherit;
+  background: #fff;
+}
+
+.cm-banner {
+  padding: 0.65rem 0.9rem;
+  border-radius: var(--radius, 8px);
+  margin-bottom: 0.75rem;
+  font-size: 0.9rem;
+}
+
+.cm-banner-error {
+  background: #fef2f2;
+  color: #b91c1c;
+  border: 1px solid #fecaca;
+}
+
+.cm-banner-info {
+  background: #eff6ff;
+  color: #1d4ed8;
+  border: 1px solid #bfdbfe;
+}
+
+.cm-banner-warn {
+  background: #fffbeb;
+  color: #92400e;
+  border: 1px solid #fde68a;
+}
+
+.cm-section-title {
+  margin: 0 0 0.75rem;
+  font-size: 1.05rem;
+  color: var(--color-primary, #1e3a5f);
+}
+
+.cm-maps-section,
+.cm-items-section {
+  margin-bottom: 1.5rem;
+}
+
+.cm-muted {
+  color: var(--color-text-muted, #64748b);
+  font-weight: 400;
+  font-size: 0.9rem;
+}
+
+.cm-item-actions {
+  display: flex;
+  gap: 0.35rem;
+  flex-wrap: wrap;
+}
+
+.cm-btn-sm {
+  padding: 0.28rem 0.65rem !important;
+  font-size: 0.8rem !important;
+}
+
+.cm-map-row-selected {
+  background: var(--color-active-bg, #dbeafe) !important;
+}
+
+.sq-row-verde td { box-shadow: inset 3px 0 0 #16a34a; }
+.sq-row-giallo td { box-shadow: inset 3px 0 0 #d97706; }
+.sq-row-rosso td { box-shadow: inset 3px 0 0 #dc2626; }
+.sq-row-grigio td { box-shadow: inset 3px 0 0 #94a3b8; }
