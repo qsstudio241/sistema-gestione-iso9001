@@ -12,6 +12,10 @@ jest.mock('../services/complianceMapCompile.service', () => ({
   compileFromCommercialCase: jest.fn(),
 }));
 
+jest.mock('../services/complianceMapProposeLinks.service', () => ({
+  proposeLinksForMap: jest.fn(),
+}));
+
 jest.mock('../services/companyAccess.service', () => ({
   assertCompanyRead: jest.fn(),
   assertMutatingAllowed: jest.fn(),
@@ -32,6 +36,7 @@ jest.mock('../utils/logger', () => ({
 
 const svc = require('../services/complianceMap.service');
 const compileSvc = require('../services/complianceMapCompile.service');
+const proposeSvc = require('../services/complianceMapProposeLinks.service');
 const { assertCompanyRead, assertMutatingAllowed } = require('../services/companyAccess.service');
 const ctrl = require('./complianceMap.controller');
 
@@ -186,6 +191,49 @@ describe('complianceMap.controller — access scope', () => {
     const res = mockRes();
     await ctrl.compileComplianceMap(req, res);
     expect(compileSvc.compileFromCommercialCase).not.toHaveBeenCalled();
+    expect(res.status).toHaveBeenCalledWith(403);
+  });
+
+  it('propose-links: write gate + proposed_only', async () => {
+    assertMutatingAllowed.mockResolvedValueOnce(null);
+    proposeSvc.proposeLinksForMap.mockResolvedValueOnce({
+      companyId: 10,
+      map: { id: 5, status: 'draft' },
+      items: [{ id: 11, hitl_status: 'proposed', standard_code: 'ISO_9001_2015' }],
+      meta: { hitl: 'proposed_only', proposed_by: 'gemini', provider: 'gemini' },
+    });
+    const req = {
+      params: { companyId: '10', mapId: '5' },
+      body: {},
+      user: { organization_id: 1001, user_id: 5 },
+    };
+    const res = mockRes();
+    await ctrl.proposeComplianceMapLinks(req, res);
+    expect(proposeSvc.proposeLinksForMap).toHaveBeenCalledWith(1001, 10, '5', {}, 5);
+    expect(res.json).toHaveBeenCalledWith(
+      expect.objectContaining({
+        success: true,
+        data: expect.objectContaining({
+          meta: expect.objectContaining({ hitl: 'proposed_only' }),
+        }),
+      })
+    );
+  });
+
+  it('propose-links: 403 write negata', async () => {
+    assertMutatingAllowed.mockResolvedValueOnce({
+      status: 403,
+      code: 'ACCESS_DENIED',
+      message: 'no',
+    });
+    const req = {
+      params: { companyId: '10', mapId: '5' },
+      body: {},
+      user: { organization_id: 1001, user_id: 5 },
+    };
+    const res = mockRes();
+    await ctrl.proposeComplianceMapLinks(req, res);
+    expect(proposeSvc.proposeLinksForMap).not.toHaveBeenCalled();
     expect(res.status).toHaveBeenCalledWith(403);
   });
 });

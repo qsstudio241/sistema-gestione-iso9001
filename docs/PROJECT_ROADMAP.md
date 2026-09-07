@@ -6,7 +6,7 @@
 
 > Avvio: Read con **`limit: 45`** (questa sezione deve entrarci). Resto del file = backlog/cronologia — **non** iniettare. Epic → `PLAN_*_SLICES.md`. Lezioni → [GUIDA](GUIDA_CONSOLIDATA.md) **a sezioni**. Archivio marzo 2026: [archive](archive/PROJECT_CONTEXT_STATO_FUNZIONALITA_2026-03.md).
 
-**Ultimo aggiornamento**: 07/09/2026 (CM-2 compile APERTO · CM-1 #655 + VPS mig 164).
+**Ultimo aggiornamento**: 07/09/2026 (CM-3 propose-links · CM-2 #656 in main + VPS).
 
 ### Moduli maturi
 
@@ -14,9 +14,9 @@ Audit multi-standard · NC · Qualifiche · Saldatura (WPQR/WPS/3834/Welding Boo
 
 ### Sessione più recente (07/09/2026)
 
-**CM-2 Compliance Map** — compilatore caso→items `proposed` (HITL, Gemini). Branch `cursor/cm2-compliance-compile-8269`.  
-**CM-1** ✅ (#655) — schema/API + VPS mig. **164** applicata.  
-**SB-4** ✅ (#653).
+**CM-3 Compliance Map** — propose link norma/legge + coverage (HITL, NormBroker, `ai_norms`). Branch `cursor/cm3-norm-links-propose-8269`.  
+**CM-2** ✅ (#656) — compile → items proposed; VPS checksum allineato.  
+**CM-1** ✅ (#655) — schema/API + mig. **164**.
 
 ### Sessioni recenti (pointer — dettaglio in `<details>` sotto)
 
@@ -32,7 +32,7 @@ Audit multi-standard · NC · Qualifiche · Saldatura (WPQR/WPS/3834/Welding Boo
 
 | # | Priorità | Perché | Dove |
 |---|---|---|---|
-| 1 | **Compliance Map — CM-3/CM-4** | CM-2 compile proposed OK; link norma / UI | [PLAN](agent-tasks/PLAN_COMPLIANCE_MAP_SLICES.md) |
+| 1 | **Compliance Map — CM-4 UI** | CM-3 link norma OK; manca UI HITL | [PLAN](agent-tasks/PLAN_COMPLIANCE_MAP_SLICES.md) |
 | 2 | **Audit campo — SOP + smoke** | CONS-1…6 su `main`; CONS-7 = nebbia Alto | [PLAN SOP](agent-tasks/PLAN_AUDIT_CONSERVAZIONE_SLICES.md#come-operare-senza-copertura-sop) |
 | 3 | **Commesse — ING-5 / VC-5** | ING-1…4 CHIUSE; ING-5 HITL; VC-5 solo Lead | [PLAN](agent-tasks/PLAN_VALUTAZIONE_COMMESSE_SLICES.md) |
 | 4 | **Alert qualifiche — destinatario UI** | Oggi solo cascata in servizio | `qualificationAlert.service.js` |

@@ -1,7 +1,7 @@
 'use strict';
 
 /**
- * complianceMap.controller.js — CM-1/CM-2 API indice/dettaglio + HITL + compile
+ * complianceMap.controller.js — CM-1/CM-2/CM-3 API + HITL + compile + propose-links
  */
 
 const logger = require('../utils/logger');
@@ -13,6 +13,7 @@ const {
   updateItemHitl,
 } = require('../services/complianceMap.service');
 const { compileFromCommercialCase } = require('../services/complianceMapCompile.service');
+const { proposeLinksForMap } = require('../services/complianceMapProposeLinks.service');
 const {
   assertCompanyRead,
   assertMutatingAllowed,
@@ -159,6 +160,45 @@ async function createComplianceMapItem(req, res) {
   }
 }
 
+/** CM-3: propose link norma/legge + coverage (HITL, solo proposed). */
+async function proposeComplianceMapLinks(req, res) {
+  try {
+    const scope = await resolveCompanyAccess(req, res, { write: true });
+    if (!scope) return undefined;
+
+    const result = await proposeLinksForMap(
+      scope.organizationId,
+      scope.companyId,
+      req.params.mapId,
+      req.body || {},
+      scope.userId
+    );
+    if (!result) {
+      return res.status(404).json({ error: 'Azienda non trovata', code: 'NOT_FOUND' });
+    }
+    if (result.notFound) {
+      return res.status(404).json({ error: 'Mappa non trovata', code: 'NOT_FOUND' });
+    }
+    if (result.conflict) {
+      return res.status(409).json({ error: result.conflict, code: 'CONFLICT' });
+    }
+    if (result.validationError) {
+      return res.status(400).json({ error: result.validationError, code: 'VALIDATION_ERROR' });
+    }
+    return res.json({
+      success: true,
+      data: result,
+      _aiMeta: {
+        provider: result.meta?.provider || 'unknown',
+        feature: 'compliance_map_propose_links',
+      },
+    });
+  } catch (err) {
+    logger.error('[ComplianceMap] propose-links error:', err.message);
+    return res.status(500).json({ error: err.message, code: 'SERVER_ERROR' });
+  }
+}
+
 async function patchComplianceMapItemHitl(req, res) {
   try {
     const scope = await resolveCompanyAccess(req, res, { write: true });
@@ -197,5 +237,6 @@ module.exports = {
   createComplianceMap,
   compileComplianceMap,
   createComplianceMapItem,
+  proposeComplianceMapLinks,
   patchComplianceMapItemHitl,
 };
