@@ -4,14 +4,14 @@
 
 const ENTITY_TYPE_LABELS = {
   audit_conclusion: 'Audit',
-  non_conformity: 'Non conformità',
+  non_conformity: 'Non conformit\u00e0',
   nc_action: 'Azione NC',
   complaint: 'Reclamo',
   qualification: 'Qualifica',
   risk: 'Rischio',
   document: 'Documento',
   norm_content: 'Contenuto norma',
-  compliance_map_item: 'Mappa conformità',
+  compliance_map_item: 'Mappa conformit\u00e0',
 };
 
 /**
@@ -32,7 +32,7 @@ function extractCitationLabel(entityType, chunkText) {
 }
 
 /**
- * Deduplica per entity_type + entity_id, mantiene lo score più alto.
+ * Deduplica per entity_type + entity_id, mantiene lo score piÃ¹ alto.
  * @param {Array<{id?, entity_type, entity_id, chunk_text, score}>} chunks
  * @returns {Array<{entityType: string, entityId: string, label: string, score: number}>}
  */
