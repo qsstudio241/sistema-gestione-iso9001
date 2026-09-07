@@ -164,6 +164,8 @@ describe('searchCompanies', () => {
         expect(r.results).toHaveLength(1);
         expect(r.results[0].legal_name).toBe('TECNOVE S.P.A.');
         expect(r.results[0].city).toBe('NOVELLARA');
+        expect(r.results[0].source).toBe('IT-advanced');
+        expect(r.results[0].source_url).toContain('01548970357');
         expect(fetchFn.mock.calls.some((c) => String(c[0]).includes('IT-search'))).toBe(false);
     });
 
@@ -189,7 +191,32 @@ describe('searchCompanies', () => {
         expect(r.results).toHaveLength(2);
         expect(r.results[0].legal_name).toBe('TECNOVE S.P.A.');
         expect(r.results[0].city).toBe('NOVELLARA');
+        expect(r.results[0].source).toBe('IT-search');
+        expect(r.results[0].source_url).toContain('registroimprese.it');
         expect(formatCandidateAddress(r.results[0])).toBe('NOVELLARA, RE');
+    });
+
+    it('CTX-3: P.IVA con ATECO espone sector + source_url citabile', async () => {
+        const fetchFn = jest.fn(async () => ({
+            status: 200,
+            json: {
+                data: {
+                    companyName: 'TECNOVE S.P.A.',
+                    vatCode: '01548970357',
+                    atecoClassification: {
+                        ateco: { code: '25.11.00', description: 'Strutture metalliche' },
+                    },
+                    address: { registeredOffice: { town: 'NOVELLARA', province: 'RE' } },
+                },
+            },
+        }));
+        const r = await searchCompanies(
+            { vatNumber: '01548970357' },
+            { token: 't', fetchFn, baseUrl: 'https://example.test' }
+        );
+        expect(r.ok).toBe(true);
+        expect(r.results[0].sector).toBe('Strutture metalliche');
+        expect(r.results[0].source_url).toContain('01548970357');
     });
 
     it('buildSearchQuery aggiunge * solo su una parola', () => {

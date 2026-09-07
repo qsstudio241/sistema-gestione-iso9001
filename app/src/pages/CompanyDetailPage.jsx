@@ -196,12 +196,14 @@ function TabAnagrafica({ company, onSaved, auditorOrgId, canEdit, canSearchRegis
           <CompanyRegistrySearch
             name={form.name}
             vatNumber={form.vat_number}
+            currentValues={form}
             auditorOrgId={auditorOrgId}
             onPick={(picked) => setForm((prev) => ({
               ...prev,
-              name: picked.name || prev.name,
-              vat_number: picked.vat_number || prev.vat_number,
-              address: picked.address || prev.address,
+              ...(picked.name !== undefined ? { name: picked.name } : {}),
+              ...(picked.vat_number !== undefined ? { vat_number: picked.vat_number } : {}),
+              ...(picked.address !== undefined ? { address: picked.address } : {}),
+              ...(picked.sector !== undefined ? { sector: picked.sector } : {}),
             }))}
           />
         )}
