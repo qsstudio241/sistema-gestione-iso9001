@@ -1,40 +1,43 @@
-# DEPUTYTASK2 — CTX-1: Badge % + wizard contesto studio (Il mio Studio)
+# DEPUTYTASK2 — CTX-2: Badge % + wizard contesto azienda (CompanyDetail)
 
-**Stato:** CHIUSO — TEST OK  
-**Aperto:** 07/09/2026 (post-merge CTX-0 #663)  
-**Chiuso:** 07/09/2026  
-**Piano:** [`PLAN_SECOND_BRAIN_SLICES.md`](PLAN_SECOND_BRAIN_SLICES.md) § CTX-1  
-**Rischio:** Medio — API additiva su `organizations/me` + UI Studio; niente auth/sync/migrazioni  
-**Branch:** `cursor/ctx1-badge-wizard-studio-8269`  
-**Slot precedente:** CTX-0 CHIUSO su `origin/main` (sovrascrittura consentita)  
-**Parallelo:** `DEPUTYTASK.md` Alert #3 HITL APERTO — **NON toccato**
+**Stato:** APERTO  
+**Aperto:** 07/09/2026 (post-merge CTX-1 #664)  
+**Piano:** [`PLAN_SECOND_BRAIN_SLICES.md`](PLAN_SECOND_BRAIN_SLICES.md) § CTX-2  
+**Rischio:** Medio — API additiva su GET/PUT companies + UI CompanyDetail; niente auth/sync/migrazioni  
+**Branch:** `cursor/ctx2-badge-wizard-company-8269`  
+**Slot precedente:** CTX-1 CHIUSO su `origin/main` (sovrascrittura consentita)  
+**Parallelo:** `DEPUTYTASK.md` Alert #3 HITL APERTO — **NON toccare**
 
 ---
 
-## Esito
+## Obiettivo
 
-**TEST OK**
+Su **scheda azienda** (Anagrafica) mostrare score contesto AI vs rubrica `company-v1` e checklist campi mancanti. Zero LLM. Nessuna migrazione. HITL: salvataggio solo su «Salva anagrafica» (niente auto-save). Riuso UI da CTX-1 (`StatusBadge`, classi `studio-ai-context-*`).
 
-- GET/PATCH `/organizations/me` include `ai_context` (`scoreStudioContext`, studio-v1)
-- Badge % + livello + checklist missing su Il mio Studio → Contesto Assistente AI
-- Anteprima live via mirror FE `app/src/data/aiContextRubrics.js`
-- HITL: salvataggio solo su «Salva personalizzazioni»
-- L1: Jest org controller + rubriche; Vitest FE (6) + build OK
-- Alert #3 non toccato
+## File previsti
 
-## File toccati
-
-- `backend/src/controllers/organization.controller.js` (+ test aiContext)
-- `app/src/pages/StudioSettingsPage.jsx` / `.css`
-- `app/src/data/aiContextRubrics.js` (+ test)
-- `app/src/tests/studioAiContextWizard.test.jsx`
+- `backend/src/controllers/company.controller.js` (+ test `company.controller.aiContext.test.js`)
+- `app/src/data/aiContextRubrics.js` (+ test company-v1)
+- `app/src/pages/CompanyDetailPage.jsx` (badge + wizard in TabAnagrafica)
+- `app/src/tests/companyAiContextWizard.test.jsx`
 - `docs/agent-tasks/PLAN_SECOND_BRAIN_SLICES.md`
 - `docs/agent-tasks/DEPUTYTASK2.md`
 
-## Cosa NON toccato
+## Cosa NON toccare
 
-- `qualificationAlert.service.js` / Alert UI (HITL)
+- `qualificationAlert.service.js` / Alert UI / `DEPUTYTASK.md` (HITL #3)
 - Auth / sync / JWT / migrazioni
-- `computeProfileCompleteness` / ADR-018
-- Wizard azienda `company-v1` / CTX-2…4
-- OAuth
+- `computeProfileCompleteness` / ADR-018 (profilo legale ≠ contesto AI)
+- Studio `studio-v1` / CTX-1 già chiuso
+- Persistenza JSON strutturata / enrichment web / OAuth (outline successivo)
+- `StudioSettingsPage` salvo riuso classi CSS già presenti
+
+## DoD
+
+- [ ] GET/PUT company include `ai_context` (`scoreCompanyContext`, company-v1)
+- [ ] Badge % + livello + checklist missing su CompanyDetail → Anagrafica
+- [ ] Anteprima live via mirror FE `company-v1`
+- [ ] HITL: salvataggio solo su «Salva anagrafica»
+- [ ] Test L1 FE + Jest controller; build FE
+- [ ] Deploy VPS controller (se modificato)
+- [ ] Alert #3 non toccato

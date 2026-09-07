@@ -18,6 +18,7 @@ const {
     assertMutatingAllowed,
     sendAccessDenied,
 } = require('../services/companyAccess.service');
+const { scoreCompanyContext } = require('../services/aiContextScore.service');
 const path = require('path');
 const fs = require('fs').promises;
 const fsSync = require('fs');
@@ -33,6 +34,35 @@ function normalizeIso3834Level(raw) {
     if (raw === null || raw === '') return null;
     const val = String(raw).trim();
     return ISO3834_LEVELS.includes(val) ? val : null;
+}
+
+/**
+ * Contesto AI azienda (CTX-2): score zero-LLM vs rubrica company-v1.
+ * Non fondere con computeProfileCompleteness (ADR-018).
+ */
+function buildCompanyAiContext(row) {
+    const scored = scoreCompanyContext({
+        name: row && row.name,
+        vat_number: row && row.vat_number,
+        sector: row && row.sector,
+        address: row && row.address,
+    });
+    return {
+        score: scored.score,
+        level: scored.level,
+        version: scored.version,
+        scope: scored.scope,
+        missing: scored.missing,
+        blocks: scored.blocks,
+    };
+}
+
+function serializeCompany(row) {
+    if (!row) return row;
+    return {
+        ...row,
+        ai_context: buildCompanyAiContext(row),
+    };
 }
 
 /**
@@ -151,7 +181,7 @@ async function getCompanyById(req, res) {
                 return res.status(404).json({ error: 'Azienda non trovata', code: 'NOT_FOUND' });
             }
 
-            return res.json({ success: true, data: result.recordset[0] });
+            return res.json({ success: true, data: serializeCompany(result.recordset[0]) });
         }
 
         const auditorOrgId = resolveAuditorOrgId(req);
@@ -169,7 +199,7 @@ async function getCompanyById(req, res) {
             return res.status(404).json({ error: 'Azienda non trovata', code: 'NOT_FOUND' });
         }
 
-        res.json({ success: true, data: result.recordset[0] });
+        res.json({ success: true, data: serializeCompany(result.recordset[0]) });
     } catch (error) {
         logger.error('[COMPANIES] getById error:', error);
         res.status(500).json({ error: 'Errore recupero azienda', code: 'SERVER_ERROR' });
@@ -292,7 +322,7 @@ async function createCompany(req, res) {
         }
 
         logger.info('[COMPANIES] Created:', companyId);
-        res.status(201).json({ success: true, data: newCompany });
+        res.status(201).json({ success: true, data: serializeCompany(newCompany) });
     } catch (error) {
         logger.error('[COMPANIES] create error:', error);
         res.status(500).json({ error: 'Errore creazione azienda', code: 'SERVER_ERROR' });
@@ -338,7 +368,7 @@ async function updateCompany(req, res) {
 
             if (updates.length === 0) {
                 const current = await query('SELECT * FROM companies WHERE id = @id', { id });
-                return res.json({ success: true, data: current.recordset[0] });
+                return res.json({ success: true, data: serializeCompany(current.recordset[0]) });
             }
 
             updates.push('updated_at = GETDATE()');
@@ -352,7 +382,7 @@ async function updateCompany(req, res) {
             FROM companies WHERE id = @id
         `, { id });
 
-            return res.json({ success: true, data: updated.recordset[0] });
+            return res.json({ success: true, data: serializeCompany(updated.recordset[0]) });
         }
 
         const auditorOrgId = resolveAuditorOrgId(req);
@@ -383,7 +413,7 @@ async function updateCompany(req, res) {
 
         if (updates.length === 0) {
             const current = await query('SELECT * FROM companies WHERE id = @id', { id });
-            return res.json({ success: true, data: current.recordset[0] });
+            return res.json({ success: true, data: serializeCompany(current.recordset[0]) });
         }
 
         updates.push('updated_at = GETDATE()');
@@ -422,7 +452,7 @@ async function updateCompany(req, res) {
             }
         }
 
-        res.json({ success: true, data: updated.recordset[0] });
+        res.json({ success: true, data: serializeCompany(updated.recordset[0]) });
     } catch (error) {
         logger.error('[COMPANIES] update error:', error);
         res.status(500).json({ error: 'Errore aggiornamento azienda', code: 'SERVER_ERROR' });

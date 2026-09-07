@@ -1,7 +1,7 @@
 /**
- * Mirror FE della rubrica contesto AI studio (CTX-1).
- * Fonte canonica backend: backend/src/data/aiContextRubrics.js (studio-v1).
- * Solo anteprima live in Il mio Studio — il GET/PATCH /organizations/me resta fonte API.
+ * Mirror FE della rubrica contesto AI (CTX-1 studio / CTX-2 azienda).
+ * Fonte canonica backend: backend/src/data/aiContextRubrics.js.
+ * Solo anteprima live — GET/PUT restano fonte API.
  */
 
 /** @typedef {{ key: string, weight?: number, minLength?: number, label?: string }} RubricItem */
@@ -45,10 +45,47 @@ export const STUDIO_CONTEXT_RUBRIC_V1 = Object.freeze({
   ]),
 });
 
+export const COMPANY_CONTEXT_RUBRIC_V1 = Object.freeze({
+  version: 'company-v1',
+  scope: 'company',
+  blocks: Object.freeze([
+    Object.freeze({
+      id: 'identity',
+      weight: 50,
+      label: 'Identità azienda',
+      items: Object.freeze([
+        Object.freeze({ key: 'name', label: 'Ragione sociale', weight: 2 }),
+        Object.freeze({ key: 'vat_number', label: 'P.IVA', weight: 1 }),
+        Object.freeze({ key: 'sector', label: 'Settore', weight: 1 }),
+      ]),
+    }),
+    Object.freeze({
+      id: 'location',
+      weight: 50,
+      label: 'Sede / indirizzo',
+      items: Object.freeze([
+        Object.freeze({ key: 'address', label: 'Indirizzo', weight: 1, minLength: 8 }),
+      ]),
+    }),
+  ]),
+});
+
 /** @type {Record<string, string>} */
 export const STUDIO_FIELD_LABELS = Object.freeze(
   Object.fromEntries(
     STUDIO_CONTEXT_RUBRIC_V1.blocks.flatMap((b) =>
+      b.items.map((item) => {
+        const minHint = item.minLength ? ` (\u2265${item.minLength} caratteri)` : '';
+        return [item.key, `${item.label}${minHint}`];
+      })
+    )
+  )
+);
+
+/** @type {Record<string, string>} */
+export const COMPANY_FIELD_LABELS = Object.freeze(
+  Object.fromEntries(
+    COMPANY_CONTEXT_RUBRIC_V1.blocks.flatMap((b) =>
       b.items.map((item) => {
         const minHint = item.minLength ? ` (\u2265${item.minLength} caratteri)` : '';
         return [item.key, `${item.label}${minHint}`];
@@ -145,4 +182,8 @@ export function scoreAgainstRubric(rubric, values) {
 
 export function scoreStudioContext(orgProfile) {
   return scoreAgainstRubric(STUDIO_CONTEXT_RUBRIC_V1, orgProfile || {});
+}
+
+export function scoreCompanyContext(company) {
+  return scoreAgainstRubric(COMPANY_CONTEXT_RUBRIC_V1, company || {});
 }
