@@ -2,7 +2,7 @@
 
 > **Destinazione**: in app, l’utente vede e interroga **i fatti del solo Ambito attivo** (NC, scadenze, gap). La chat (`/ai-assistant`) consuma quei fatti; non è un cervello parallelo.
 > **Spec**: [ADR-010](../adr/ADR-010-ai-agentic-architecture.md) · [SAL §K](../specs/MODULO_SAL_SCOPO_E_ROADMAP.md) · Ambito (`CompanyScopeSelect`)
-> **Stato (07/09/2026):** SB-1 ✅ · SB-2 ✅ · SB-3 ✅ · SB-4 ✅ · SB-5 bozza ✅ · **SB-6 ✅** · **CTX-0 ✅** · **CTX-1 ✅** · **CTX-2 ✅** · **CTX-3** in corso (enrich citato). Brief Alert HITL: [`DEPUTYTASK.md`](DEPUTYTASK.md) (no codice). **Prossima:** CTX-4 Email/Drive (HITL Alto).  
+> **Stato (07/09/2026):** SB-1 ✅ · SB-2 ✅ · SB-3 ✅ · SB-4 ✅ · SB-5 bozza ✅ · **SB-6 ✅** · **CTX-0 ✅** · **CTX-1 ✅** · **CTX-2 ✅** · **CTX-3 ✅** (enrich citato HITL). Brief Alert HITL: [`DEPUTYTASK.md`](DEPUTYTASK.md) (no codice). **Prossima:** CTX-4 Email/Drive (HITL Alto).  
 > **Mappa:** 16/08/2026 (wayfinder). Intuizione AIOS: livelli contesto/dati/intelligence **dentro** il prodotto, non cartella Claude parallela.
 
 ---
@@ -109,10 +109,10 @@ Badge: `incompleto` (<50) / `parziale` (50–79) / `pronto` (≥80) — stesse s
 
 ### DoD CTX-3
 
-- [ ] Candidati OpenAPI: `sector` (ATECO), `source`, `source_url`
-- [ ] `aiContextEnrichment` JSON: `buildCitedProposals` / `applySelectedProposals`
-- [ ] UI `CompanyRegistrySearch`: step review + link URL + apply selezionati
-- [ ] Test L1 BE+FE + build; deploy VPS se BE
+- [x] Candidati OpenAPI: `sector` (ATECO), `source`, `source_url`
+- [x] `aiContextEnrichment` JSON: `buildCitedProposals` / `applySelectedProposals`
+- [x] UI `CompanyRegistrySearch`: step review + link URL + apply selezionati
+- [x] Test L1 BE+FE + build; deploy VPS se BE
 - [ ] **Fuori slice:** OAuth email/Drive (CTX-4), Alert #3, auto-save
 
 ### CTX-4 (outline — non aprire ora)
@@ -136,7 +136,7 @@ Badge: `incompleto` (<50) / `parziale` (50–79) / `pronto` (≥80) — stesse s
 | **CTX-0** ✅ | Rubrica + score % | `aiContextRubrics` + `aiContextScore.service` | — | AFK |
 | **CTX-1** ✅ | Badge + wizard Studio | `organizations/me` + `StudioSettingsPage` | CTX-0 | AFK |
 | **CTX-2** ✅ | Badge + wizard Azienda | `companies/:id` + `CompanyDetailPage` | CTX-1 | AFK |
-| **CTX-3** | Enrich / JSON citato | registro + proposte URL + HITL | CTX-2 | AFK |
+| **CTX-3** ✅ | Enrich / JSON citato | registro + proposte URL + HITL | CTX-2 | AFK |
 | **CTX-4** | Email/Drive | OAuth Alto + HITL | CTX-3 | HITL |
 
 **Ordine fatti:** SB-1 → SB-2 → SB-3 → SB-4 → SB-5. **Contesto** parallelo (file ≠ chat): CTX-0 → … → CTX-3.
