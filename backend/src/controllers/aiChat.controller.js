@@ -23,6 +23,11 @@ const {
   loadAmbitoFacts,
   formatAmbitoFactsPromptBlock,
 } = require('../services/ambitoFacts.service');
+const {
+  loadApprovedMapForChat,
+  formatComplianceMapPromptBlock,
+  buildComplianceMapCitations,
+} = require('../services/complianceMapChat.service');
 const { buildMaterialGroupPromptSection } = require('../data/materialGroups15608');
 const { resolveClauseText } = require('../services/normBroker.service');
 const {
@@ -197,6 +202,8 @@ async function aiChat(req, res) {
       systemPrompt += `\n\n${buildMaterialGroupPromptSection({ families: ['steel', 'aluminium'], maxLines: 35 })}`;
     }
 
+    let complianceMapSnap = null;
+
     if (parsedCompanyId) {
       const company = await loadCompanyProfile(parsedCompanyId, req.user);
       if (company) {
@@ -216,6 +223,14 @@ async function aiChat(req, res) {
         systemPrompt += formatAmbitoFactsPromptBlock(ambitoFacts);
       } catch (err) {
         logger.warn('[AI_CHAT] Ambito facts injection skipped:', err.message);
+      }
+
+      // CM-5: mappa conformità approved + HITL confermati (non NC live)
+      try {
+        complianceMapSnap = await loadApprovedMapForChat(organizationId, parsedCompanyId);
+        systemPrompt += formatComplianceMapPromptBlock(complianceMapSnap);
+      } catch (err) {
+        logger.warn('[AI_CHAT] Compliance map injection skipped:', err.message);
       }
     } else {
       // SB-4: Ambito «Tutto lo studio» — solo aggregati sicuri (niente profilo azienda)
@@ -340,6 +355,11 @@ async function aiChat(req, res) {
     }).catch(err => logger.warn('[AI_CHAT] Usage log failed:', err.message));
 
     const citations = buildCitationsFromChunks(contextChunks);
+    const mapCites = buildComplianceMapCitations(complianceMapSnap);
+    if (mapCites.length > 0) {
+      // Mappa prima delle citazioni RAG (HITL confermati = fonte primaria requisiti)
+      citations.unshift(...mapCites);
+    }
 
     let reply = result.content;
     if (normAbsent && reply && !String(reply).includes(normAbsent.message.slice(0, 48))) {

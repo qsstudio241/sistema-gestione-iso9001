@@ -1,12 +1,12 @@
-# DEPUTYTASK_COMPLIANCE_MAP — CM-4: UI mappa read + HITL
+# DEPUTYTASK_COMPLIANCE_MAP — CM-5: export + citazioni Assistente
 
 **Stato:** CHIUSO — TEST OK  
-**Aperto:** 07/09/2026 (post-merge CM-3 #657 + deploy VPS)  
+**Aperto:** 07/09/2026 (post-merge CM-4 #658)  
 **Chiuso:** 07/09/2026  
 **Piano:** [`PLAN_COMPLIANCE_MAP_SLICES.md`](PLAN_COMPLIANCE_MAP_SLICES.md)  
-**Rischio:** Medio — UI + apiService; PR, non push su `main`. Non dire «pronta» senza CI + Bugbot + Security su quello SHA.  
-**Branch:** `cursor/cm4-compliance-hitl-ui-8269`  
-**PR:** create bloccata da `gh` 403 (token Cloud senza createPullRequest). Compare: https://github.com/qsstudio241/sistema-gestione-iso9001/compare/main...cursor/cm4-compliance-hitl-ui-8269?expand=1  
+**Rischio:** Medio — BE chat injection + export API + FE; PR, non push su `main`. Non dire «pronta» senza CI + Bugbot + Security su quello SHA.  
+**Branch:** `cursor/cm5-export-chat-citations-8269`  
+**PR:** create bloccata da `gh` 403 (token Cloud senza createPullRequest). Compare: https://github.com/qsstudio241/sistema-gestione-iso9001/compare/main...cursor/cm5-export-chat-citations-8269?expand=1  
 **Migrazione:** nessuna  
 **Stream:** `DEPUTYTASK_COMPLIANCE_MAP.md`
 
@@ -14,41 +14,42 @@
 
 ## Contesto
 
-CM-1…CM-3 in `main` (#655–#657). API list/detail/HITL/compile/propose-links attive sul VPS.  
-Questa slice: **UI** lista mappe + items, Accetta/Rifiuta (niente auto-confirm), trigger compile e propose-links con gate Ambito `company_id`.
+CM-1…CM-4 in `main` (#655–#658). UI HITL OK; VPS health 200 (CM-4 solo FE).  
+Slice CM-5: blocco prompt da mappa `approved` (HITL `accepted|edited`) + citazioni Assistente + export JSON/MD.
 
 ## Fonti Markdown
 
 ```text
 Fonti Markdown:
-- Coperte: nessuna soglia nuova; UI su API già in repo
+- Coperte: nessuna soglia nuova
 - Mancanti: —
-- Si parte su: pagina HITL DNA SGQ (schermata 2 + dettaglio)
+- Si parte su: prompt/citazioni/export HITL-safe
 ```
 
-## Esito CM-4
+## Esito CM-5
 
-- Pagina `/compliance-maps` (licenza `ai_norms`) + voce sidebar
-- Lista mappe + items (`SgqDataGrid`), KPI HITL cliccabili, Ambito `company_id`
-- Accetta / Rifiuta solo su `proposed` + mappa mutabile; pulsanti sempre visibili con `disabled` + `title`
-- Trigger **Compila da caso** + **Propone link norma** (gate prerequisiti)
-- `AiDisclaimer`; apiService metodi compliance-maps
-- L1: 8 test FE verdi + build
+- Service `complianceMapChat.service.js`: load approved + format prompt + citations + export
+- `aiChat`: inject blocco mappa (solo companyId) + merge citazioni `compliance_map_item`
+- GET `…/compliance-maps/:mapId/export?format=json|markdown` — solo accepted|edited
+- UI: pulsante **Esporta JSON** (disabled + title se prerequisiti mancanti); deep link `?select=&highlight=`
+- FE path citazioni → `/compliance-maps?select=&highlight=`
+- deploy-manifest: nuovo service
 
 ## DoD
 
-- [x] Lista mappe scoped `company_id` (Ambito); senza Ambito pulsanti visibili `disabled` + `title`
-- [x] Dettaglio items + Accetta / Rifiuta solo su `proposed` (niente auto-confirm)
-- [x] Trigger compile (caso commerciale) e propose-links se mappa mutabile + prerequisiti
-- [x] `AiDisclaimer` dove c’è azione AI
-- [x] Test FE L1 + build
-- [x] Brief CHIUSO — TEST OK
+- [x] System prompt: mappa approved + solo HITL confermati (non NC live / non proposed)
+- [x] Citazioni `compliance_map_item` con node_id / clausola
+- [x] Export multi-tenant JSON|MD solo confermati
+- [x] UI Esporta visibile, gated
+- [x] Test BE (26) + FE (13) + build OK
+- [x] Brief CHIUSO — TEST OK; piano CM-5 ✅; epic chiusa in roadmap
 
 ## Non toccato
 
-`AmbitoFactsBar` / `ambitoFacts` / `aiChat` / NC / Qualifiche / Deadlines / `gapAnalysis` rewrite / auth / sync / migrazioni / CM-5 export chat.
+auth / sync / migrazioni / AmbitoFactsBar rewrite / NC / Qualifiche / Deadlines / gapAnalysis rewrite.
 
-## Post-merge CM-3 (fatto in questa sessione)
+## Post-merge CM-4
 
-1. Deploy VPS CM-3 — MainPID 79480→93969, health 200, checksum propose-links allineato
-2. CM-4 UI (questa PR)
+1. #658 in main — `ComplianceMapsPage` + route `/compliance-maps`
+2. Health VPS 200 — nessun deploy BE per CM-4
+3. **Post-merge CM-5:** deploy VPS BE obbligatorio (`complianceMapChat.service.js` + aiChat + export route)

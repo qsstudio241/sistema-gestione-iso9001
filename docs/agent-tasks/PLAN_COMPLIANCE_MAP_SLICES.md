@@ -3,7 +3,7 @@
 > **Destinazione**: mappa multi-tenant **requisito cliente → norma/legge → evidenza → gap**, persistita in SQL (traduzione del metodo LLM-Wiki **nel DB**, non vault file).
 > **Spec / ADR**: [ADR-010](../adr/ADR-010-ai-agentic-architecture.md) §4–5 · [MINI_SPEC_RIESAME](../specs/MINI_SPEC_RIESAME_REQUISITI_CONTRATTO.md) · SAL gap [MODULO_SAL](../specs/MODULO_SAL_SCOPO_E_ROADMAP.md)
 > **Brief eseguibile**: [`DEPUTYTASK_COMPLIANCE_MAP.md`](DEPUTYTASK_COMPLIANCE_MAP.md)  
-> **Mappa**: 07/09/2026 · **Stato:** CM-1 ✅ · CM-2 ✅ · CM-3 ✅ · CM-4 ✅ (UI HITL). **Prossima:** CM-5.
+> **Mappa**: 07/09/2026 · **Stato:** CM-1…CM-5 ✅ — epic Compliance Map **CHIUSA**.
 
 ---
 
@@ -82,8 +82,8 @@ Indici: `(organization_id, company_id)`, `(map_id, req_key)`, unique `(map_id, m
 | **CM-2** | Compilatore da caso commerciale | Seed items da `caseDocumentAnalysis` / allegati caso → items `proposed` (Gemini + HITL) | CM-1 | ✅ 07/09/2026 |
 | **CM-3** | Gemini link norma/legge | NormBroker + propose coverage; licenza `ai_norms` o riuso esistente | CM-1 | ✅ 07/09/2026 |
 | **CM-4** | UI mappa (read + HITL) | pagina/drawer DNA SGQ; gated senza Ambito/company | CM-1 | ✅ 07/09/2026 |
-| **CM-5** | Export / citazioni in chat | blocco prompt da mappa approvata (non da NC live) | CM-3+CM-4 | nebbia |
+| **CM-5** | Export / citazioni in chat | blocco prompt da mappa approvata (non da NC live) | CM-3+CM-4 | ✅ 07/09/2026 |
 
-**Ordine**: CM-1 → CM-2 → CM-3 → CM-4 → CM-5.
+**Ordine**: CM-1 → CM-2 → CM-3 → CM-4 → CM-5. **Epic chiusa** dopo CM-5.
 
 **Rischio CM-1**: Medio (migrazione additiva + API nuove) — PR, gate CI+Bugbot+Security. Non Alto se niente auth/JWT rewrite.

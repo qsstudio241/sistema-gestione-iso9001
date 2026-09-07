@@ -12,6 +12,12 @@ describe('aiCitations', () => {
     expect(getCitationPath({ entityType: 'non_conformity', entityId: '' })).toBe('/nc');
     expect(getCitationPath({ entityType: 'complaint', entityId: '' })).toBe('/reclami');
     expect(getCitationPath({ entityType: 'document', entityId: 'abc' })).toBe('/documents');
+    expect(getCitationPath({ entityType: 'compliance_map_item', entityId: '101', mapId: '7' })).toBe(
+      '/compliance-maps?select=7&highlight=101'
+    );
+    expect(getCitationPath({ entityType: 'compliance_map_item', entityId: '101' })).toBe(
+      '/compliance-maps?highlight=101'
+    );
   });
 
   it('buildSourcesFootnote distinguishes sources vs empty', () => {

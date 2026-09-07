@@ -33,6 +33,31 @@ export const COVERAGE_LABELS = {
 
 export const MUTABLE_MAP_STATUSES = new Set(['draft', 'in_review']);
 
+/** Export citabile: solo items HITL accepted|edited. */
+export function countConfirmedHitl(items) {
+  let n = 0;
+  for (const row of items || []) {
+    const st = String(row?.hitl_status || '').toLowerCase();
+    if (st === 'accepted' || st === 'edited') n += 1;
+  }
+  return n;
+}
+
+export function canExportMap({ companyId, map, items, busy } = {}) {
+  if (busy) return false;
+  if (!companyId) return false;
+  if (!map) return false;
+  return countConfirmedHitl(items) > 0;
+}
+
+export function exportMapTitle({ companyId, map, items } = {}) {
+  if (!companyId) return "Seleziona un'azienda nell'Ambito in alto";
+  if (!map) return 'Seleziona una mappa';
+  const n = countConfirmedHitl(items);
+  if (n === 0) return 'Nessun item accepted/edited da esportare';
+  return `Esporta ${n} nodi confermati (JSON)`;
+}
+
 export function countByHitl(items) {
   const c = { proposed: 0, accepted: 0, edited: 0, rejected: 0 };
   for (const row of items || []) {
