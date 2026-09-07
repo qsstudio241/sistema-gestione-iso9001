@@ -2,7 +2,7 @@
 
 > **Destinazione**: in app, l’utente vede e interroga **i fatti del solo Ambito attivo** (NC, scadenze, gap). La chat (`/ai-assistant`) consuma quei fatti; non è un cervello parallelo.
 > **Spec**: [ADR-010](../adr/ADR-010-ai-agentic-architecture.md) · [SAL §K](../specs/MODULO_SAL_SCOPO_E_ROADMAP.md) · Ambito (`CompanyScopeSelect`)
-> **Stato (07/09/2026):** SB-1 ✅ · SB-2 ✅ · SB-3 ✅ · SB-4 ✅ · SB-5 bozza ✅ · **SB-6 ✅**. Brief Alert HITL: [`DEPUTYTASK.md`](DEPUTYTASK.md) (no codice). **Prossima:** CTX-0.
+> **Stato (07/09/2026):** SB-1 ✅ · SB-2 ✅ · SB-3 ✅ · SB-4 ✅ · SB-5 bozza ✅ · **SB-6 ✅** · **CTX-0 ✅** (rubrica+score). Brief Alert HITL: [`DEPUTYTASK.md`](DEPUTYTASK.md) (no codice). **Prossima:** CTX-1 (badge/wizard UI).  
 > **Mappa:** 16/08/2026 (wayfinder). Intuizione AIOS: livelli contesto/dati/intelligence **dentro** il prodotto, non cartella Claude parallela.
 
 ---
@@ -55,6 +55,38 @@
 
 ---
 
+## CTX-0 — Rubrica + score (DoD)
+
+**Obiettivo:** score contesto % da rubrica **versionata** (studio ≠ azienda), **zero LLM**. Nessun wizard UI (→ CTX-1). Nessuna migrazione.
+
+### Rubriche canoniche (codice)
+
+| Scope | Version | File | Campi (già in DB) | Pesi |
+|-------|---------|------|-------------------|------|
+| Studio | `studio-v1` | `backend/src/data/aiContextRubrics.js` | `organization_name`+`vat_number` · `ai_context_notes` (≥40 char) · `audit_report_prefix` | 30 · 50 · 20 |
+| Azienda | `company-v1` | stesso | `name`+`vat_number`+`sector` · `address` (≥8) | 50 · 50 |
+
+Badge: `incompleto` (<50) / `parziale` (50–79) / `pronto` (≥80) — stesse soglie di `company_profile` completeness; **non** fonderli (profilo legale ADR-018 ≠ contesto AI).
+
+### DoD CTX-0
+
+- [x] Rubriche `studio-v1` / `company-v1` versionate e congelate in data module
+- [x] `scoreAgainstRubric` + wrapper `aiContextScore.service` (puro, zero LLM)
+- [x] Test L1: vuoto / parziale / pieno / minLength
+- [x] Manifest deploy aggiornato se file nuovi in `src/data` / `src/services`
+- [ ] **Fuori slice:** UI badge, wizard, endpoint nuovo, migrazioni, merge con `computeProfileCompleteness`
+
+### CTX-1…3 (outline — non aprire ora)
+
+| Slice | Tema | Note |
+|-------|------|------|
+| **CTX-1** | Badge % + wizard UI | Legge rubrica; mostra missing; riuso DNA UI; no OAuth |
+| **CTX-2** | Persistenza strutturata | Solo se textarea non basta — eventuale JSON additivo + HITL se breaking |
+| **CTX-3** | Enrichment web | Opt-in; dopo CTX-1 stabile |
+| **CTX-4** | Email/Drive | Alto + HITL (già in mappa) |
+
+---
+
 ## Mappa slice
 
 | Slice | Tema | Perimetro | Dipende | Tipo |
@@ -65,19 +97,20 @@
 | **SB-4** ✅ | Vista studio aggregata | GET `companyId` null: totali + top urgenze | SB-2 | AFK |
 | **SB-5** | Pulsanti operativi | Nav moduli con Ambito; gated se manca azienda | SB-2 | AFK |
 | **SB-6** ✅ | Fatti SAL | `getSalSummary` → counts Ambito + card/nav `/sal` | SB-3 | AFK |
-| **CTX-0…3** | Rubrica + wizard + web | File disgiunti dalla chat SB | ordine CTX | AFK |
+| **CTX-0** ✅ | Rubrica + score % | `aiContextRubrics` + `aiContextScore.service` | — | AFK |
+| **CTX-1…3** | Wizard + web | UI / persist / enrich — file disgiunti da SB | CTX-0 | AFK |
 | **CTX-4** | Email/Drive | OAuth Alto + HITL | CTX-3 | HITL |
 
 **Ordine fatti:** SB-1 → SB-2 → SB-3 → SB-4 → SB-5. **Contesto** parallelo (file ≠ chat): CTX-0 → … → CTX-3.
 
-**Rischio SB-1…SB-5:** Medio (additivo, no schema/auth nuovo) — PR + Bugbot. Non Alto.
+**Rischio SB-1…SB-5 / CTX-0:** Medio (additivo, no schema/auth nuovo) — PR + Bugbot. Non Alto.
 
 ---
 
 ## Hello world (riferimento)
 
 - **SB-1:** tre numeri veri (NC / qualifiche 30gg / documenti 30gg) per Ambito, zero LLM — brief storico `DEPUTYTASK2.md`.
-- **CTX-0:** score contesto % da rubrica versionata, zero LLM — aprire solo con file disgiunti da SB.
+- **CTX-0:** score contesto % da rubrica versionata, zero LLM — brief `DEPUTYTASK2.md` (slot post SB-6).
 
 ---
 
@@ -85,7 +118,7 @@
 
 | Livello | Artefatto | Slice |
 |---|---|---|
-| Contesto | Rubrica + wizard Studio/azienda | CTX-0…3 |
+| Contesto | Rubrica + score (CTX-0 ✅) → wizard Studio/azienda | CTX-0…3 |
 | Dati | Snapshot SQL `ambitoFacts` | SB-1, SB-4, SB-6 |
 | Intelligence | Moduli esistenti; meeting = nebbia | — |
 | Automazioni | Pulsanti → moduli, HITL | SB-5 |
