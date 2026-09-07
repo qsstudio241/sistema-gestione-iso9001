@@ -2,7 +2,7 @@
 
 > **Destinazione**: in app, l’utente vede e interroga **i fatti del solo Ambito attivo** (NC, scadenze, gap). La chat (`/ai-assistant`) consuma quei fatti; non è un cervello parallelo.
 > **Spec**: [ADR-010](../adr/ADR-010-ai-agentic-architecture.md) · [SAL §K](../specs/MODULO_SAL_SCOPO_E_ROADMAP.md) · Ambito (`CompanyScopeSelect`)
-> **Stato (06/09/2026):** SB-1 ✅ · SB-3 ✅ · SB-4 ✅ · SB-5 bozza ✅ (nav HITL). **Prossima prodotto: SB-2** (header Ambito unico) o SB-6. Brief slot: riusa uno `DEPUTYTASK*.md` CHIUSO con file disgiunti.
+> **Stato (07/09/2026):** SB-1 ✅ · **SB-2 ✅** · SB-3 ✅ · SB-4 ✅ · SB-5 bozza ✅. **Prossima:** SB-6 o CTX-0. Brief Alert HITL: [`DEPUTYTASK.md`](DEPUTYTASK.md).
 > **Mappa:** 16/08/2026 (wayfinder). Intuizione AIOS: livelli contesto/dati/intelligence **dentro** il prodotto, non cartella Claude parallela.
 
 ---
@@ -60,7 +60,7 @@
 | Slice | Tema | Perimetro | Dipende | Tipo |
 |-------|------|-----------|---------|------|
 | **SB-1** ✅ | Snapshot fatti Ambito | `ambitoFacts.service` + GET + card AI | — | AFK |
-| **SB-2** | Ambito header = unico input | Card/GET seguono `CompanyScopeContext` | SB-1 | AFK |
+| **SB-2** ✅ | Ambito header = unico input | Card/GET + chat seguono `CompanyScopeContext`; chip locale read-only | SB-1 | AFK |
 | **SB-3** ✅ | Chat consuma snapshot | `aiChat.controller` + stesso service | SB-1 | AFK |
 | **SB-4** ✅ | Vista studio aggregata | GET `companyId` null: totali + top urgenze | SB-2 | AFK |
 | **SB-5** | Pulsanti operativi | Nav moduli con Ambito; gated se manca azienda | SB-2 | AFK |

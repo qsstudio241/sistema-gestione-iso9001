@@ -140,6 +140,22 @@
   border-color: rgba(99, 179, 237, 0.5);
 }
 
+/* SB-2: mirror Ambito header — non cliccabile (unico input = CompanyScopeSelect) */
+.ai-context-chip--readonly {
+  cursor: default;
+  pointer-events: none;
+}
+
+.ai-context-chip--readonly:hover {
+  background: rgba(255, 255, 255, 0.12);
+  border-color: rgba(255, 255, 255, 0.25);
+}
+
+.ai-context-chip--readonly.ai-context-chip--company:hover {
+  background: rgba(99, 179, 237, 0.25);
+  border-color: rgba(99, 179, 237, 0.5);
+}
+
 .ai-context-chip--standard-active {
   background: rgba(237, 137, 54, 0.25);
   border-color: rgba(237, 137, 54, 0.55);

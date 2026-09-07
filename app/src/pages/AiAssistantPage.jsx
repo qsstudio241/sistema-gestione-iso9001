@@ -26,6 +26,7 @@ import {
 import AiAssistantCitations from "../components/AiAssistantCitations";
 import AiAssistantSourceGaps from "../components/AiAssistantSourceGaps";
 import AmbitoFactsBar from "../components/AmbitoFactsBar";
+import { useCompanyScope } from "../contexts/CompanyScopeContext";
 import {
   buildChatStorageKey,
   loadChatMessages,
@@ -33,6 +34,12 @@ import {
   clearChatMessages,
 } from "../utils/aiAssistantChatPersist";
 import "./AiAssistantPage.css";
+
+/** SB-2: Ambito header → companyId numerico o null (studio-wide). */
+function parseScopeCompanyId(companyId) {
+  const n = parseInt(companyId, 10);
+  return Number.isFinite(n) ? n : null;
+}
 
 const SUGGESTIONS_GENERIC = [
   "Quante NC aperte ci sono?",
@@ -187,6 +194,14 @@ function formatAiText(text) {
 function AiAssistantPage() {
   const { user } = useAuth();
   const { currentAudit, currentAuditId } = useStorage();
+  // SB-2: unico input Ambito = header AppLayout (CompanyScopeContext)
+  const {
+    companyId: scopeCompanyId,
+    scopeCompanyName,
+    companies,
+    scopeReady,
+    locked: scopeLocked,
+  } = useCompanyScope();
   const chatStorageKey = useMemo(
     () => buildChatStorageKey(user?.organization_id, user?.id ?? user?.user_id),
     [user?.organization_id, user?.id, user?.user_id]
@@ -201,37 +216,22 @@ function AiAssistantPage() {
   const textareaRef = useRef(null);
   const cropInputRef = useRef(null);
   const prevAuditIdRef = useRef(null);
+  const prevScopeCompanyIdRef = useRef(undefined);
   const saveTimerRef = useRef(null);
   const isAdmin = user?.role === "admin" || user?.role === "superadmin";
-  // Utente azienda cliente: selettore azienda bloccato sulla propria anagrafica.
-  const isCompanyClient =
-    !!user?.is_company_client ||
-    (Array.isArray(user?.company_access) && user.company_access.length > 0);
-  // Anagrafica primaria del cliente = company_id piu' basso (coerente col backend).
-  const clientPrimaryCompanyId = useMemo(() => {
-    if (!isCompanyClient) return null;
-    const ids = (user?.company_access || [])
-      .map((a) => a.company_id)
-      .filter((n) => Number.isFinite(n));
-    return ids.length ? Math.min(...ids) : null;
-  }, [isCompanyClient, user?.company_access]);
 
-  // --- Contesto azienda ---
-  const [companies, setCompanies] = useState([]);
-  const [companiesLoaded, setCompaniesLoaded] = useState(false);
-  const [dropdownOpen, setDropdownOpen] = useState(false);
-  const dropdownRef = useRef(null);
-
-  // --- Contesto norma ---
+  // --- Contesto norma (resta locale; Ambito azienda = solo header) ---
   const [standardDropdownOpen, setStandardDropdownOpen] = useState(false);
   const standardDropdownRef = useRef(null);
 
-  // companyContext: { companyId, companyName, source: 'auto'|'manual' }
-  const [companyContext, setCompanyContext] = useState({
-    companyId: null,
-    companyName: null,
-    source: "auto",
-  });
+  const companyContext = useMemo(() => {
+    const id = parseScopeCompanyId(scopeCompanyId);
+    return {
+      companyId: id,
+      companyName: id != null ? scopeCompanyName : null,
+      source: scopeLocked ? "locked" : "scope",
+    };
+  }, [scopeCompanyId, scopeCompanyName, scopeLocked]);
 
   // standardContext: { standardId, label, source: 'auto'|'manual' }
   const [standardContext, setStandardContext] = useState({
@@ -271,60 +271,29 @@ function AiAssistantPage() {
     return () => window.removeEventListener("sgq:userLoggedOut", onLogout);
   }, [chatStorageKey]);
 
-  // Carica lista aziende una volta
+  // SB-2: separatore chat quando cambia Ambito header
   useEffect(() => {
-    let cancelled = false;
-    apiService.getCompanies().then((res) => {
-      if (cancelled) return;
-      const list = res?.data || res?.companies || res || [];
-      setCompanies(Array.isArray(list) ? list : []);
-      setCompaniesLoaded(true);
-    }).catch(() => {
-      if (!cancelled) setCompaniesLoaded(true);
-    });
-    return () => { cancelled = true; };
-  }, []);
-
-  // Inferenza automatica dal currentAudit (solo se source === 'auto')
-  const autoCompany = useMemo(
-    () => resolveAutoCompanyFromAudit(currentAudit, companies),
-    [currentAudit, companies]
-  );
-  const autoCompanyId = autoCompany.companyId;
-  const autoCompanyName = autoCompany.companyName;
-
-  useEffect(() => {
-    // Cliente azienda: il contesto e' bloccato sulla propria anagrafica, mai auto.
-    if (isCompanyClient) return;
-    if (companyContext.source === "auto") {
-      setCompanyContext({
-        companyId: autoCompanyId,
-        companyName: autoCompanyName,
-        source: "auto",
-      });
+    if (!scopeReady) return;
+    const prev = prevScopeCompanyIdRef.current;
+    const next = companyContext.companyId;
+    if (prev === undefined) {
+      prevScopeCompanyIdRef.current = next;
+      return;
     }
-  }, [autoCompanyId, autoCompanyName, companyContext.source, isCompanyClient]);
-
-  // Cliente azienda: forza il contesto sulla propria azienda primaria (fisso).
-  useEffect(() => {
-    if (!isCompanyClient || !companiesLoaded) return;
-    const primary = companies.find(
-      (c) => (c.id || c.company_id) === clientPrimaryCompanyId
-    );
-    const lockedName = primary?.name || user?.organization_name || "La tua azienda";
-    setCompanyContext((prev) => {
-      if (prev.companyId === clientPrimaryCompanyId && prev.source === "locked") {
-        return prev;
-      }
-      return { companyId: clientPrimaryCompanyId, companyName: lockedName, source: "locked" };
+    if (prev === next) return;
+    prevScopeCompanyIdRef.current = next;
+    const label = companyContext.companyName || "Vista complessiva";
+    setMessages((prevMsgs) => {
+      const separator = {
+        role: "context-separator",
+        text: `Contesto: ${label}`,
+        time: new Date(),
+      };
+      const nextMsgs = [...prevMsgs, separator];
+      setContextSeparatorIndex(nextMsgs.length - 1);
+      return nextMsgs;
     });
-  }, [
-    isCompanyClient,
-    companiesLoaded,
-    companies,
-    clientPrimaryCompanyId,
-    user?.organization_name,
-  ]);
+  }, [scopeReady, companyContext.companyId, companyContext.companyName]);
 
   const standardsForUser = useMemo(
     () => filterStandardsForUser(user?.allowed_standard_ids),
@@ -351,19 +320,20 @@ function AiAssistantPage() {
     [currentAudit]
   );
 
-  // Separatore chat quando cambia audit aperto
+  // Separatore chat quando cambia audit aperto (non cambia Ambito — SB-2)
   useEffect(() => {
     const auditUuid = currentAudit?.metadata?.id || currentAudit?.id || null;
-    if (!auditUuid || !companiesLoaded) return;
+    if (!auditUuid || !scopeReady) return;
 
     if (prevAuditIdRef.current && prevAuditIdRef.current !== auditUuid) {
+      const autoCompany = resolveAutoCompanyFromAudit(currentAudit, companies);
       const auditNumber =
         currentAudit?.metadata?.auditNumber ||
         currentAudit?.metadata?.generalData?.auditNumber ||
         auditUuid.slice(0, 8);
       const separatorText = buildAuditContextSeparatorLabel({
         auditLabel: auditNumber,
-        companyName: autoCompanyName,
+        companyName: companyContext.companyName || autoCompany.companyName,
         standardLabel: autoStandard?.label,
         focus: checklistFocus,
       });
@@ -377,13 +347,6 @@ function AiAssistantPage() {
         setContextSeparatorIndex(nextMsgs.length - 1);
         return nextMsgs;
       });
-      if (!isCompanyClient) {
-        setCompanyContext({
-          companyId: autoCompanyId,
-          companyName: autoCompanyName,
-          source: "auto",
-        });
-      }
       setStandardContext({
         standardId: autoStandard?.standardId ?? null,
         label: autoStandard?.label ?? null,
@@ -394,19 +357,16 @@ function AiAssistantPage() {
   }, [
     currentAuditId,
     currentAudit,
-    companiesLoaded,
-    autoCompanyId,
-    autoCompanyName,
+    scopeReady,
+    companies,
+    companyContext.companyName,
     autoStandard,
     checklistFocus,
   ]);
 
-  // Chiudi dropdown al click fuori
+  // Chiudi dropdown norma al click fuori
   useEffect(() => {
     const handler = (e) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
-        setDropdownOpen(false);
-      }
       if (standardDropdownRef.current && !standardDropdownRef.current.contains(e.target)) {
         setStandardDropdownOpen(false);
       }
@@ -431,31 +391,6 @@ function AiAssistantPage() {
     }
   }, []);
 
-  // Cambio contesto azienda (manuale o reset)
-  const handleContextChange = useCallback((newCompanyId, newCompanyName, source) => {
-    const prev = companyContext;
-    if (prev.companyId === newCompanyId) {
-      setDropdownOpen(false);
-      return;
-    }
-
-    setCompanyContext({ companyId: newCompanyId, companyName: newCompanyName, source });
-
-    // Inserisci separatore visivo nella chat
-    const label = newCompanyName || "Vista complessiva";
-    setMessages((prevMsgs) => {
-      const separator = {
-        role: "context-separator",
-        text: `Contesto: ${label}`,
-        time: new Date(),
-      };
-      const nextMsgs = [...prevMsgs, separator];
-      setContextSeparatorIndex(nextMsgs.length - 1);
-      return nextMsgs;
-    });
-    setDropdownOpen(false);
-  }, [companyContext]);
-
   const handleStandardChange = useCallback((newStandardId, newLabel, source) => {
     if (standardContext.standardId === newStandardId) {
       setStandardDropdownOpen(false);
@@ -478,25 +413,18 @@ function AiAssistantPage() {
     setStandardDropdownOpen(false);
   }, [standardContext]);
 
-  // Nuova conversazione — reset stato + sessionStorage
+  // Nuova conversazione — reset chat + norma; Ambito resta sull'header
   const handleClear = useCallback(() => {
     clearChatMessages(chatStorageKey);
     setMessages([]);
     setContextSeparatorIndex(-1);
     setWpsPending(null);
-    if (!isCompanyClient) {
-      setCompanyContext({
-        companyId: autoCompanyId,
-        companyName: autoCompanyName,
-        source: "auto",
-      });
-    }
     setStandardContext({
       standardId: autoStandard?.standardId ?? null,
       label: autoStandard?.label ?? null,
       source: "auto",
     });
-  }, [chatStorageKey, autoCompanyId, autoCompanyName, autoStandard, isCompanyClient]);
+  }, [chatStorageKey, autoStandard]);
 
   /**
    * P4 — orchestrazione FE: generateWPS → need_input (domande) oppure esito 15614.
@@ -725,55 +653,25 @@ function AiAssistantPage() {
           </div>
         </div>
         <div className="ai-assistant-header-actions">
-          {/* Chip contesto azienda */}
-          <div className="ai-context-chip-wrapper" ref={dropdownRef}>
-            <button
-              className={`ai-context-chip ${contextIsCompany ? "ai-context-chip--company" : ""} ${isCompanyClient ? "ai-context-chip--locked" : ""}`}
-              onClick={() => { if (!isCompanyClient) setDropdownOpen((v) => !v); }}
-              disabled={isCompanyClient}
-              aria-disabled={isCompanyClient}
-              title={isCompanyClient ? "Ambito fissato sulla tua azienda" : "Cambia contesto azienda"}
-            >
-              <svg className="ai-context-chip-icon" viewBox="0 0 20 20" fill="currentColor" width="14" height="14">
-                {contextIsCompany ? (
-                  <path d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm1 2h10v2H5V5zm0 4h6v2H5V9zm0 4h8v2H5v-2z" />
-                ) : (
-                  <path d="M10 2a8 8 0 100 16 8 8 0 000-16zm1 11H9v-2h2v2zm0-4H9V5h2v4z" />
-                )}
-              </svg>
-              <span className="ai-context-chip-label">{contextLabel}</span>
-              {!isCompanyClient && (
-                <svg className="ai-context-chip-arrow" viewBox="0 0 12 12" width="10" height="10" fill="currentColor">
-                  <path d="M3 4.5L6 7.5L9 4.5" stroke="currentColor" strokeWidth="1.5" fill="none" strokeLinecap="round" />
-                </svg>
+          {/* SB-2: Ambito azienda solo da header AppLayout — chip locale rimosso */}
+          <span
+            className={`ai-context-chip ai-context-chip--readonly ${contextIsCompany ? "ai-context-chip--company" : ""} ${scopeLocked ? "ai-context-chip--locked" : ""}`}
+            title={
+              scopeLocked
+                ? "Ambito fissato sulla tua azienda"
+                : "Cambia Ambito dal selettore in alto nella pagina"
+            }
+            aria-label={contextLabel}
+          >
+            <svg className="ai-context-chip-icon" viewBox="0 0 20 20" fill="currentColor" width="14" height="14" aria-hidden="true">
+              {contextIsCompany ? (
+                <path d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm1 2h10v2H5V5zm0 4h6v2H5V9zm0 4h8v2H5v-2z" />
+              ) : (
+                <path d="M10 2a8 8 0 100 16 8 8 0 000-16zm1 11H9v-2h2v2zm0-4H9V5h2v4z" />
               )}
-            </button>
-            {!isCompanyClient && dropdownOpen && (
-              <div className="ai-context-dropdown">
-                <button
-                  className={`ai-context-dropdown-item ${!companyContext.companyId ? "active" : ""}`}
-                  onClick={() => handleContextChange(null, null, "manual")}
-                >
-                  <span className="ai-context-dropdown-icon">{"\uD83C\uDF10"}</span>
-                  Vista complessiva
-                </button>
-                {companies.map((c) => {
-                  const cId = c.id || c.company_id;
-                  const cName = c.name;
-                  return (
-                    <button
-                      key={cId}
-                      className={`ai-context-dropdown-item ${companyContext.companyId === cId ? "active" : ""}`}
-                      onClick={() => handleContextChange(cId, cName, "manual")}
-                    >
-                      <span className="ai-context-dropdown-icon">{"\uD83C\uDFE2"}</span>
-                      {cName}
-                    </button>
-                  );
-                })}
-              </div>
-            )}
-          </div>
+            </svg>
+            <span className="ai-context-chip-label">{contextLabel}</span>
+          </span>
 
           {/* Chip contesto norma */}
           <div className="ai-context-chip-wrapper" ref={standardDropdownRef}>
