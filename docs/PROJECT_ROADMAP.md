@@ -6,22 +6,23 @@
 
 > Avvio: Read con **`limit: 45`** (questa sezione deve entrarci). Resto del file = backlog/cronologia — **non** iniettare. Epic → `PLAN_*_SLICES.md`. Lezioni → [GUIDA](GUIDA_CONSOLIDATA.md) **a sezioni**. Archivio marzo 2026: [archive](archive/PROJECT_CONTEXT_STATO_FUNZIONALITA_2026-03.md).
 
-**Ultimo aggiornamento**: 07/09/2026 (SB-2 ✅ #660 · SB-6 fatti SAL avviato · Alert #3 HITL in attesa).
+**Ultimo aggiornamento**: 07/09/2026 (SB-6 ✅ #661 · smoke Assistente SAL · Alert #3 HITL · CTX-0 senza brief DoD).
 
 ### Moduli maturi
 
-Audit multi-standard · NC · Qualifiche · Saldatura (WPQR/WPS/3834/Welding Book) · SAL · Registro + Scadenzari · Alert · Riesame · RBAC · Obblighi legali · Assistente AI / Gap · CND · Libreria fonti (+ gap SA) · Second Brain Ambito (SB-4) · Compliance Map (§8.2).
+Audit multi-standard · NC · Qualifiche · Saldatura (WPQR/WPS/3834/Welding Book) · SAL · Registro + Scadenzari · Alert · Riesame · RBAC · Obblighi legali · Assistente AI / Gap · CND · Libreria fonti (+ gap SA) · Second Brain Ambito (SB-4 + SB-6) · Compliance Map (§8.2).
 
 ### Sessione più recente (07/09/2026)
 
-**Post SB-2 (#660):** Ambito header = unico input Assistente (FE Netlify). Smoke Assistente: chip Ambito read-only OK.  
-**Next avviato:** **SB-6** fatti SAL nello snapshot Ambito (`cursor/sb6-fatti-sal-8269`).  
-**HITL bloccato:** Alert qualifiche destinatario UI → [`DEPUTYTASK.md`](agent-tasks/DEPUTYTASK.md) APERTO (no codice senza risposte). Epic CM CHIUSA.
+**Post SB-6 (#661):** fatti SAL in `ambito-facts` (`salOpenGaps` / `salToValidate`) + card/nav Assistente. VPS già allineato (hash match); Netlify card «SAL aperti» + «Apri SAL» OK su Ambito azienda.  
+**Stop codice:** nessuna slice Media con DoD chiaro eseguibile ora — **CTX-0** (prossima SB) senza rubrica/DoD in piano; Alert #3 HITL senza risposte.  
+**HITL bloccati:** Alert destinatario → [`DEPUTYTASK.md`](agent-tasks/DEPUTYTASK.md); ING-5; ROO-18; MC-I4 nebbia split; S1c solo su richiesta.
 
 ### Sessioni recenti (pointer — dettaglio in `<details>` sotto)
 
 | Data | Esito | Piano |
 |------|-------|-------|
+| 07/09 | SB-6 ✅ #661 · smoke API+Assistente · hub sync | [`PLAN_SECOND_BRAIN`](agent-tasks/PLAN_SECOND_BRAIN_SLICES.md) |
 | 07/09 | SB-2 ✅ #660 · smoke Assistente | [`PLAN_SECOND_BRAIN`](agent-tasks/PLAN_SECOND_BRAIN_SLICES.md) |
 | 07/09 | CM-5 ✅ #659 · deploy + smoke | [`PLAN_COMPLIANCE_MAP`](agent-tasks/PLAN_COMPLIANCE_MAP_SLICES.md) |
 | 06/09 | Dieta token #651 · LUX-A/B CHIUSE | harness · [`PLAN_LIBRERIA_UX`](agent-tasks/PLAN_LIBRERIA_UX_SLICES.md) |
@@ -34,16 +35,15 @@ Audit multi-standard · NC · Qualifiche · Saldatura (WPQR/WPS/3834/Welding Boo
 
 | # | Priorità | Perché | Dove |
 |---|---|---|---|
-| 1 | **SB-6 Fatti SAL** (in PR) | Media AFK post SB-2; Alert HITL | [PLAN SB](agent-tasks/PLAN_SECOND_BRAIN_SLICES.md) · `DEPUTYTASK2` |
+| 1 | **Second Brain — CTX-0** | dopo SB-6; serve brief Lead con rubrica+DoD | [PLAN SB](agent-tasks/PLAN_SECOND_BRAIN_SLICES.md) |
 | 2 | **Alert qualifiche — destinatario UI** | Cascata solo in servizio; brief HITL APERTO | `DEPUTYTASK.md` · `qualificationAlert.service.js` |
 | 3 | **Commesse — ING-5 / VC-5** | ING-5 HITL; VC-5 solo Lead | [PLAN](agent-tasks/PLAN_VALUTAZIONE_COMMESSE_SLICES.md) |
 | 4 | **Material Compliance — MC-I4** | MC-I3 CHIUSA; busta 1→N (nebbia split) | [PLAN](agent-tasks/PLAN_MATERIAL_COMPLIANCE_SLICES.md) |
 | 5 | **Rischi ROO-18 HITL** | ROO-17 OK; ingest/data riesame dopo conferma | [PLAN §7](agent-tasks/PLAN_RISCHI_OPPORTUNITA_OBIETTIVI_SLICES.md) |
 | 6 | **SAL AI — S1c `.doc`** | S1a–S2b CHIUSE; S1c solo su richiesta | [PLAN](agent-tasks/PLAN_SAL_AI_EVIDENCE_SLICES.md) |
 | 7 | **ISO 3834 — ISO-4 Word** | ISO-1…3/6/7 OK; next Word visita Mason | [PLAN](agent-tasks/PLAN_3834_SLICES.md) |
-| 8 | **Second Brain — CTX-0** | dopo SB-6; rubrica contesto | [PLAN](agent-tasks/PLAN_SECOND_BRAIN_SLICES.md) |
-| 9 | **Multimodal RAG — FW-0** | MR-0…5 OK; hook ingest→CLIP | [PLAN MR](agent-tasks/PLAN_MULTIMODAL_RAG_SLICES.md) |
-| 10 | **Shell dialog ingest / Impostazioni org** | Basso rischio / PR #10 conflict | backlog sotto |
+| 8 | **Multimodal RAG — FW-0** | MR-0…5 OK; hook ingest→CLIP | [PLAN MR](agent-tasks/PLAN_MULTIMODAL_RAG_SLICES.md) |
+| 9 | **Shell dialog ingest / Impostazioni org** | Basso rischio / PR #10 conflict | backlog sotto |
 
 Backlog completo: [Backlog parcheggiato](#backlog-parcheggiato-task-futuri--fonte-unica).
 
