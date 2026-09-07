@@ -11,9 +11,12 @@ import {
   compileTitle,
   canProposeLinks,
   proposeLinksTitle,
+  countConfirmedHitl,
+  canExportMap,
+  exportMapTitle,
 } from '../utils/complianceMapHitl';
 
-describe('complianceMapHitl — CM-4', () => {
+describe('complianceMapHitl — CM-4/CM-5', () => {
   const mapDraft = { id: 1, status: 'draft' };
   const mapApproved = { id: 2, status: 'approved' };
   const proposed = { id: 10, hitl_status: 'proposed' };
@@ -57,5 +60,13 @@ describe('complianceMapHitl — CM-4', () => {
     expect(canProposeLinks({ companyId: 1, map: mapDraft, items: [accepted] })).toBe(false);
     expect(canProposeLinks({ companyId: 1, map: mapApproved, items: [proposed] })).toBe(false);
     expect(proposeLinksTitle({ companyId: 1, map: mapDraft, items: [] })).toMatch(/Nessun item/);
+  });
+
+  it('CM-5 canExportMap: solo se esistono accepted|edited', () => {
+    expect(countConfirmedHitl([proposed, accepted])).toBe(1);
+    expect(canExportMap({ companyId: 1, map: mapDraft, items: [accepted] })).toBe(true);
+    expect(canExportMap({ companyId: 1, map: mapDraft, items: [proposed] })).toBe(false);
+    expect(canExportMap({ companyId: null, map: mapDraft, items: [accepted] })).toBe(false);
+    expect(exportMapTitle({ companyId: 1, map: mapDraft, items: [] })).toMatch(/Nessun item/);
   });
 });

@@ -13,14 +13,15 @@ const MODULE_ROUTES = {
   risk: '/rischi',
   document: '/documents',
   norm_content: '/documents',
+  compliance_map_item: '/compliance-maps',
 };
 
 /**
  * Path navigabile per una citazione.
- * @param {{ entityType: string, entityId: string }} citation
+ * @param {{ entityType: string, entityId: string, mapId?: string }} citation
  * @returns {string|null}
  */
-export function getCitationPath({ entityType, entityId }) {
+export function getCitationPath({ entityType, entityId, mapId }) {
   const base = MODULE_ROUTES[entityType];
   if (!base) return null;
 
@@ -31,6 +32,14 @@ export function getCitationPath({ entityType, entityId }) {
 
   if ((entityType === 'document' || entityType === 'norm_content') && entityId) {
     return buildDocumentDeepLink(entityId);
+  }
+
+  if (entityType === 'compliance_map_item') {
+    const qs = new URLSearchParams();
+    if (mapId) qs.set('select', String(mapId));
+    if (entityId) qs.set('highlight', String(entityId));
+    const q = qs.toString();
+    return q ? `${base}?${q}` : base;
   }
 
   return base;

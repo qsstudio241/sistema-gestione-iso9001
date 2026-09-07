@@ -2602,7 +2602,7 @@ class ApiService {
         return this.get(`/gap-analysis?${qs.toString()}`);
     }
 
-    // ─── Compliance Map (§8.2 grafo requisito↔norma, CM-1…CM-4) ───────────
+    // ─── Compliance Map (§8.2 grafo requisito↔norma, CM-1…CM-5) ───────────
     async listComplianceMaps(companyId) {
         return this.get(`/companies/${companyId}/compliance-maps`);
     }
@@ -2628,6 +2628,12 @@ class ApiService {
             `/companies/${companyId}/compliance-maps/${mapId}/items/${itemId}/hitl`,
             body || {}
         );
+    }
+
+    /** CM-5: export JSON (default) o markdown — solo HITL accepted|edited. */
+    async exportComplianceMap(companyId, mapId, { format = 'json' } = {}) {
+        const qs = format && format !== 'json' ? `?format=${encodeURIComponent(format)}` : '';
+        return this.get(`/companies/${companyId}/compliance-maps/${mapId}/export${qs}`);
     }
 
     // ─── SAL — Stato Avanzamento Lavori (motore gap operativo, licenza sal) ──

@@ -124,6 +124,10 @@
   background: var(--color-active-bg, #dbeafe) !important;
 }
 
+.cm-item-row-highlight td {
+  background: var(--color-active-bg, #dbeafe) !important;
+}
+
 .sq-row-verde td { box-shadow: inset 3px 0 0 #16a34a; }
 .sq-row-giallo td { box-shadow: inset 3px 0 0 #d97706; }
 .sq-row-rosso td { box-shadow: inset 3px 0 0 #dc2626; }

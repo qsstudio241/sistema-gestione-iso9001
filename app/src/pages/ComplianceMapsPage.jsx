@@ -1,5 +1,5 @@
 /**
- * ComplianceMapsPage — CM-4 UI mappa requisito↔norma (read + HITL).
+ * ComplianceMapsPage — CM-4/CM-5 UI mappa requisito↔norma (read + HITL + export).
  * Schermata 2 (KPI + lista) + dettaglio items. Ambito = company_id.
  * Niente auto-confirm: Accetta/Rifiuta solo su azione utente.
  */
@@ -22,6 +22,8 @@ import {
   compileTitle,
   canProposeLinks,
   proposeLinksTitle,
+  canExportMap,
+  exportMapTitle,
   MUTABLE_MAP_STATUSES,
 } from '../utils/complianceMapHitl';
 import './QualificationsPage.css';
@@ -90,6 +92,20 @@ export default function ComplianceMapsPage() {
   const [info, setInfo] = useState(null);
   const [cases, setCases] = useState([]);
   const [caseId, setCaseId] = useState('');
+  const [highlightItemId, setHighlightItemId] = useState(null);
+
+  // Deep link citazioni Assistente: ?select=mapId&highlight=itemId
+  useEffect(() => {
+    try {
+      const qs = new URLSearchParams(window.location.search || '');
+      const sel = qs.get('select');
+      const hi = qs.get('highlight');
+      if (sel) setSelectedMapId(Number.isFinite(parseInt(sel, 10)) ? parseInt(sel, 10) : sel);
+      if (hi) setHighlightItemId(hi);
+    } catch {
+      /* ignore */
+    }
+  }, []);
 
   const loadMaps = useCallback(async () => {
     if (!companyId) {
@@ -182,6 +198,7 @@ export default function ComplianceMapsPage() {
 
   const compileOk = canCompile({ companyId, commercialCaseId: caseId, busy });
   const proposeOk = canProposeLinks({ companyId, map: detailMap, items, busy });
+  const exportOk = canExportMap({ companyId, map: detailMap, items, busy });
 
   async function handleCompile() {
     if (!compileOk) return;
@@ -242,6 +259,38 @@ export default function ComplianceMapsPage() {
       await loadDetail(selectedMapId);
     } catch (err) {
       setError(err.message || 'Errore HITL');
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function handleExport() {
+    if (!exportOk || !selectedMapId) return;
+    setBusy(true);
+    setError(null);
+    setInfo(null);
+    try {
+      const res = await apiService.exportComplianceMap(companyId, selectedMapId, {
+        format: 'json',
+      });
+      const payload = res?.data ?? res;
+      const blob = new Blob([JSON.stringify(payload, null, 2)], {
+        type: 'application/json;charset=utf-8',
+      });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      const safe = String(detailMap?.title || `map-${selectedMapId}`)
+        .replace(/[^\w\-]+/g, '_')
+        .slice(0, 60);
+      a.href = url;
+      a.download = `compliance-map-${safe}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+      setInfo(
+        `Export: ${payload?.itemCount ?? 0} nodi confermati (accepted/edited).`
+      );
+    } catch (err) {
+      setError(err.message || 'Errore export');
     } finally {
       setBusy(false);
     }
@@ -316,6 +365,16 @@ export default function ComplianceMapsPage() {
           data-testid="cm-propose-links-btn"
         >
           Propone link norma
+        </button>
+        <button
+          type="button"
+          className="btn-secondary"
+          disabled={!exportOk}
+          title={exportMapTitle({ companyId, map: detailMap, items })}
+          onClick={handleExport}
+          data-testid="cm-export-btn"
+        >
+          Esporta JSON
         </button>
       </section>
 
@@ -419,7 +478,16 @@ export default function ComplianceMapsPage() {
           <SgqDataGrid
             columns={ITEM_COLUMNS}
             rows={filteredItems}
-            rowClassName={(row) => hitlRowClass(row.hitl_status)}
+            rowClassName={(row) => {
+              const hitl = hitlRowClass(row.hitl_status);
+              if (
+                highlightItemId != null &&
+                String(row.id) === String(highlightItemId)
+              ) {
+                return `${hitl} cm-item-row-highlight`.trim();
+              }
+              return hitl;
+            }}
             emptyMessage={
               detailMap
                 ? hitlFilter

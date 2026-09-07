@@ -44,6 +44,14 @@ jest.mock('../services/ambitoFacts.service', () => {
   };
 });
 
+jest.mock('../services/complianceMapChat.service', () => {
+  const actual = jest.requireActual('../services/complianceMapChat.service');
+  return {
+    ...actual,
+    loadApprovedMapForChat: jest.fn(),
+  };
+});
+
 jest.mock('../services/normBroker.service', () => ({
   resolveClauseText: jest.fn(),
 }));
@@ -61,6 +69,7 @@ const {
 } = require('../services/aiStandardContext.service');
 const { resolveAiCompanyScope } = require('../services/aiCompanyScope.service');
 const { loadAmbitoFacts } = require('../services/ambitoFacts.service');
+const { loadApprovedMapForChat } = require('../services/complianceMapChat.service');
 const { resolveClauseText } = require('../services/normBroker.service');
 const { processGapsFromChat } = require('../services/librarySourceRequest.service');
 const { aiChat, getAmbitoFacts } = require('./aiChat.controller');
@@ -82,6 +91,7 @@ describe('aiChat.controller — aiChat', () => {
     jest.clearAllMocks();
     resolveAiCompanyScope.mockResolvedValue({ companyId: null, denied: null });
     getActiveProvider.mockReturnValue('gemini');
+    loadApprovedMapForChat.mockResolvedValue({ companyId: null, map: null, items: [] });
     searchKnowledge.mockResolvedValue([
       { id: 1, entity_type: 'audit_conclusion', entity_id: 1, chunk_text: 'Audit 2024-01 del 2024-01-15', score: 0.9 },
     ]);
@@ -546,6 +556,66 @@ describe('aiChat.controller — SB-3 fatti Ambito nel prompt', () => {
     expect(systemContent).toContain('Mason');
     expect(systemContent).not.toContain('Camellini');
     expect(systemContent).not.toContain('company_id=22');
+  });
+
+  it('CM-5: con companyId inietta blocco mappa approved e citazioni node_id', async () => {
+    resolveAiCompanyScope.mockResolvedValue({ companyId: 11, denied: null });
+    query.mockResolvedValueOnce({
+      recordset: [{ name: 'Mason', vat_number: null, sector: null, address: null }],
+    });
+    loadAmbitoFacts.mockResolvedValue({
+      ready: true,
+      companyId: 11,
+      companyName: 'Mason',
+      counts: { ncOpen: 0, qualsExpiring30: 0, docsExpiring30: 0 },
+    });
+    loadApprovedMapForChat.mockResolvedValue({
+      companyId: 11,
+      map: {
+        id: 7,
+        title: 'Capitolato v3',
+        status: 'approved',
+        map_version: 1,
+        source_label: 'Ordine',
+      },
+      items: [
+        {
+          id: 101,
+          req_key: 'REQ-A',
+          req_text: 'Saldatura ISO 3834',
+          standard_code: 'ISO_3834',
+          clause_ref: '5.2',
+          coverage: 'covered',
+          hitl_status: 'accepted',
+        },
+        {
+          id: 102,
+          req_key: 'SKIP',
+          hitl_status: 'proposed',
+        },
+      ],
+    });
+
+    const req = {
+      body: { message: 'Quali requisiti saldatura?', companyId: 11 },
+      user: { organization_id: 99, auditor_org_id: 10, user_id: 5 },
+    };
+    const res = createRes();
+    await aiChat(req, res);
+
+    expect(loadApprovedMapForChat).toHaveBeenCalledWith(99, 11);
+    const systemContent = chat.mock.calls[0][0][0].content;
+    expect(systemContent).toContain('MAPPA CONFORMITÀ');
+    expect(systemContent).toContain('node_id=101');
+    expect(systemContent).toContain('ISO_3834 5.2');
+    expect(systemContent).not.toContain('node_id=102');
+
+    const payload = res.json.mock.calls[0][0];
+    expect(payload.citations[0]).toMatchObject({
+      entityType: 'compliance_map_item',
+      entityId: '101',
+      mapId: '7',
+    });
   });
 
   it('senza companyId chiama loadAmbitoFacts(null) e inietta FATTI STUDIO', async () => {

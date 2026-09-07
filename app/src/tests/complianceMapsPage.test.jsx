@@ -32,6 +32,7 @@ vi.mock('../services/apiService', () => ({
     compileComplianceMap: vi.fn(),
     proposeComplianceMapLinks: vi.fn(),
     patchComplianceMapItemHitl: vi.fn(),
+    exportComplianceMap: vi.fn(),
     getContractReviews: vi.fn(),
   },
 }));
@@ -71,7 +72,7 @@ vi.mock('../components/AiDisclaimer', () => ({
 import apiService from '../services/apiService';
 import ComplianceMapsPage from '../pages/ComplianceMapsPage.jsx';
 
-describe('ComplianceMapsPage — CM-4 gate + HITL', () => {
+describe('ComplianceMapsPage — CM-4/CM-5 gate + HITL + export', () => {
   beforeEach(() => {
     scopeState.companyId = '';
     scopeState.isStudioWide = true;
@@ -81,20 +82,24 @@ describe('ComplianceMapsPage — CM-4 gate + HITL', () => {
     apiService.compileComplianceMap.mockReset();
     apiService.proposeComplianceMapLinks.mockReset();
     apiService.patchComplianceMapItemHitl.mockReset();
+    apiService.exportComplianceMap.mockReset();
     apiService.getContractReviews.mockReset();
     apiService.getContractReviews.mockResolvedValue({ data: [] });
     apiService.listComplianceMaps.mockResolvedValue({ data: { maps: [] } });
     apiService.getComplianceMap.mockResolvedValue({ data: { map: null, items: [] } });
   });
 
-  it('senza Ambito: Compila e Propone link disabled + title Ambito', async () => {
+  it('senza Ambito: Compila, Propone link ed Esporta disabled + title Ambito', async () => {
     render(<ComplianceMapsPage />);
     const compileBtn = await screen.findByTestId('cm-compile-btn');
     const proposeBtn = screen.getByTestId('cm-propose-links-btn');
+    const exportBtn = screen.getByTestId('cm-export-btn');
     expect(compileBtn).toBeDisabled();
     expect(proposeBtn).toBeDisabled();
+    expect(exportBtn).toBeDisabled();
     expect(compileBtn.getAttribute('title')).toMatch(/Ambito/i);
     expect(proposeBtn.getAttribute('title')).toMatch(/Ambito/i);
+    expect(exportBtn.getAttribute('title')).toMatch(/Ambito/i);
     expect(apiService.listComplianceMaps).not.toHaveBeenCalled();
     expect(screen.getByTestId('ai-disclaimer')).toBeInTheDocument();
   });
@@ -209,5 +214,44 @@ describe('ComplianceMapsPage — CM-4 gate + HITL', () => {
       // dopo compile la UI seleziona la nuova mappa (id 9)
       expect(apiService.proposeComplianceMapLinks).toHaveBeenCalledWith('11', 9, {});
     });
+  });
+
+  it('CM-5: Esporta JSON abilitato con item accepted e chiama export', async () => {
+    scopeState.companyId = '11';
+    scopeState.isStudioWide = false;
+    apiService.getContractReviews.mockResolvedValue({ data: [] });
+    apiService.listComplianceMaps.mockResolvedValue({
+      data: { maps: [{ id: 5, title: 'Mappa A', status: 'approved', map_version: 1 }] },
+    });
+    apiService.getComplianceMap.mockResolvedValue({
+      data: {
+        map: { id: 5, title: 'Mappa A', status: 'approved' },
+        items: [
+          { id: 101, req_key: 'R1', req_text: 'ok', hitl_status: 'accepted', coverage: 'covered' },
+          { id: 102, req_key: 'R2', req_text: 'no', hitl_status: 'proposed' },
+        ],
+      },
+    });
+    apiService.exportComplianceMap.mockResolvedValue({
+      data: { itemCount: 1, items: [{ node_id: 101 }], map: { id: 5 } },
+    });
+
+    const createObjectURL = vi.fn(() => 'blob:mock');
+    const revokeObjectURL = vi.fn();
+    global.URL.createObjectURL = createObjectURL;
+    global.URL.revokeObjectURL = revokeObjectURL;
+    const clickSpy = vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(() => {});
+
+    const user = userEvent.setup();
+    render(<ComplianceMapsPage />);
+
+    const exportBtn = await screen.findByTestId('cm-export-btn');
+    await waitFor(() => expect(exportBtn).not.toBeDisabled());
+    await user.click(exportBtn);
+    await waitFor(() => {
+      expect(apiService.exportComplianceMap).toHaveBeenCalledWith('11', 5, { format: 'json' });
+    });
+
+    clickSpy.mockRestore();
   });
 });

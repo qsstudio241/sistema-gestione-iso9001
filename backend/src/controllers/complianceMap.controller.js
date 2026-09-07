@@ -1,7 +1,7 @@
 'use strict';
 
 /**
- * complianceMap.controller.js — CM-1/CM-2/CM-3 API + HITL + compile + propose-links
+ * complianceMap.controller.js — CM-1…CM-5 API + HITL + compile + propose-links + export
  */
 
 const logger = require('../utils/logger');
@@ -14,6 +14,11 @@ const {
 } = require('../services/complianceMap.service');
 const { compileFromCommercialCase } = require('../services/complianceMapCompile.service');
 const { proposeLinksForMap } = require('../services/complianceMapProposeLinks.service');
+const {
+  loadMapExport,
+  buildExportPayload,
+  buildExportMarkdown,
+} = require('../services/complianceMapChat.service');
 const {
   assertCompanyRead,
   assertMutatingAllowed,
@@ -231,6 +236,49 @@ async function patchComplianceMapItemHitl(req, res) {
   }
 }
 
+/**
+ * CM-5: export JSON o Markdown — solo items HITL accepted|edited.
+ * Query: ?format=json|markdown (default json).
+ */
+async function exportComplianceMap(req, res) {
+  try {
+    const scope = await resolveCompanyAccess(req, res);
+    if (!scope) return undefined;
+
+    const result = await loadMapExport(
+      scope.organizationId,
+      scope.companyId,
+      req.params.mapId
+    );
+    if (!result) {
+      return res.status(404).json({ error: 'Azienda non trovata', code: 'NOT_FOUND' });
+    }
+    if (result.notFound) {
+      return res.status(404).json({ error: 'Mappa non trovata', code: 'NOT_FOUND' });
+    }
+
+    const format = String(req.query.format || 'json').toLowerCase();
+    if (format === 'markdown' || format === 'md') {
+      const md = buildExportMarkdown(result);
+      const safeTitle = String(result.map.title || `map-${result.map.id}`)
+        .replace(/[^\w\-]+/g, '_')
+        .slice(0, 60);
+      res.setHeader('Content-Type', 'text/markdown; charset=utf-8');
+      res.setHeader(
+        'Content-Disposition',
+        `attachment; filename="compliance-map-${safeTitle}.md"`
+      );
+      return res.send(md);
+    }
+
+    const payload = buildExportPayload(result);
+    return res.json({ success: true, data: payload });
+  } catch (err) {
+    logger.error('[ComplianceMap] export error:', err.message);
+    return res.status(500).json({ error: err.message, code: 'SERVER_ERROR' });
+  }
+}
+
 module.exports = {
   listComplianceMaps,
   getComplianceMap,
@@ -239,4 +287,5 @@ module.exports = {
   createComplianceMapItem,
   proposeComplianceMapLinks,
   patchComplianceMapItemHitl,
+  exportComplianceMap,
 };
