@@ -15,6 +15,8 @@ import CompanyCounterpartiesPanel from "../components/CompanyCounterpartiesPanel
 import CompanyProfilePanel from "../components/CompanyProfilePanel";
 import FileDropzone from "../components/FileDropzone";
 import CompanyRegistrySearch from "../components/CompanyRegistrySearch";
+import StatusBadge from "../components/StatusBadge";
+import { scoreCompanyContext, COMPANY_FIELD_LABELS } from "../data/aiContextRubrics";
 import "./CompanyDetailPage.css";
 import "./StudioSettingsPage.css";
 
@@ -25,6 +27,13 @@ const TABS = [
 ];
 
 const PROFILE_TAB = { id: "profilo", label: "Profilo conformit\u00e0" };
+
+/** Stesse soglie company_profile completeness — non fondere i due score. */
+const AI_CONTEXT_BADGE = {
+  pronto: { status: "active", label: "Pronto" },
+  parziale: { status: "orphan", label: "Parziale" },
+  incompleto: { status: "inactive", label: "Incompleto" },
+};
 
 function visibleTabs(showProfile) {
   if (!showProfile) return TABS;
@@ -91,6 +100,18 @@ function TabAnagrafica({ company, onSaved, auditorOrgId, canEdit, canSearchRegis
     setLogoPreview(null);
   }, [company]);
 
+  const liveContext = useMemo(
+    () =>
+      scoreCompanyContext({
+        name: form.name,
+        vat_number: form.vat_number,
+        sector: form.sector,
+        address: form.address,
+      }),
+    [form.name, form.vat_number, form.sector, form.address]
+  );
+  const badgeCfg = AI_CONTEXT_BADGE[liveContext.level] || AI_CONTEXT_BADGE.incompleto;
+
   const handleLogoChange = (files) => {
     const file = files?.[0];
     if (!file) return;
@@ -126,9 +147,34 @@ function TabAnagrafica({ company, onSaved, auditorOrgId, canEdit, canSearchRegis
     <div className="studio-tab-content company-detail-anagrafica">
       {error && <div className="studio-warning-banner">{error}</div>}
       <form className="studio-card" onSubmit={handleSubmit}>
+        <div className="studio-ai-context-score" data-testid="company-ai-context-score">
+          <StatusBadge
+            type="user"
+            status={badgeCfg.status}
+            label={`${liveContext.score}% \u2014 ${badgeCfg.label}`}
+          />
+          <span className="studio-hint">
+            Completezza contesto AI (rubrica {liveContext.version}) — distinta dal profilo legale.
+          </span>
+        </div>
+
+        {liveContext.missing.length > 0 && (
+          <div className="studio-ai-context-wizard" data-testid="company-ai-context-wizard">
+            <p className="studio-ai-context-wizard-title">
+              Per alzare lo score contesto AI, completa:
+            </p>
+            <ul className="studio-ai-context-missing">
+              {liveContext.missing.map((key) => (
+                <li key={key}>{COMPANY_FIELD_LABELS[key] || key}</li>
+              ))}
+            </ul>
+          </div>
+        )}
+
         <div className="form-group">
-          <label>Nome *</label>
+          <label htmlFor="company-name">Nome *</label>
           <input
+            id="company-name"
             type="text"
             value={form.name}
             onChange={(e) => setForm({ ...form, name: e.target.value })}
@@ -137,8 +183,9 @@ function TabAnagrafica({ company, onSaved, auditorOrgId, canEdit, canSearchRegis
           />
         </div>
         <div className="form-group">
-          <label>P.IVA</label>
+          <label htmlFor="company-vat">P.IVA</label>
           <input
+            id="company-vat"
             type="text"
             value={form.vat_number}
             onChange={(e) => setForm({ ...form, vat_number: e.target.value })}
@@ -159,8 +206,9 @@ function TabAnagrafica({ company, onSaved, auditorOrgId, canEdit, canSearchRegis
           />
         )}
         <div className="form-group">
-          <label>Settore</label>
+          <label htmlFor="company-sector">Settore</label>
           <input
+            id="company-sector"
             type="text"
             value={form.sector}
             onChange={(e) => setForm({ ...form, sector: e.target.value })}
@@ -168,13 +216,18 @@ function TabAnagrafica({ company, onSaved, auditorOrgId, canEdit, canSearchRegis
           />
         </div>
         <div className="form-group">
-          <label>Indirizzo</label>
+          <label htmlFor="company-address">Indirizzo</label>
           <textarea
+            id="company-address"
+            className="notes-textarea"
             value={form.address}
             onChange={(e) => setForm({ ...form, address: e.target.value })}
             rows={2}
             disabled={!canEdit}
           />
+          <span className="studio-hint">
+            Almeno 8 caratteri per lo score pieno. Salvataggio solo con «Salva anagrafica».
+          </span>
         </div>
         <div className="form-group">
           <label>Livello ISO 3834 dichiarato</label>
@@ -379,4 +432,4 @@ function CompanyDetailPage() {
 }
 
 export default CompanyDetailPage;
-export { parseCompanyId, TABS, PROFILE_TAB, visibleTabs };
+export { parseCompanyId, TABS, PROFILE_TAB, visibleTabs, TabAnagrafica, AI_CONTEXT_BADGE };
