@@ -172,6 +172,28 @@ describe('ComplianceMapsPage — CM-4/CM-5 gate + HITL + export', () => {
     expect(apiService.patchComplianceMapItemHitl).toHaveBeenCalledTimes(1);
   });
 
+  it('esclude casi con company_id null (allineato a compile BE)', async () => {
+    scopeState.companyId = '179';
+    scopeState.isStudioWide = false;
+    scopeState.scopeCompanyName = 'ADA';
+    apiService.getContractReviews.mockResolvedValue({
+      data: [
+        { id: 7, title: 'Riesame smoke null company', company_id: null },
+        { id: 3, title: 'Caso Mason', company_id: 11 },
+      ],
+    });
+    apiService.listComplianceMaps.mockResolvedValue({ data: { maps: [] } });
+
+    render(<ComplianceMapsPage />);
+
+    const select = await screen.findByTestId('cm-case-select');
+    await waitFor(() => expect(select).toBeDisabled());
+    expect(select).toHaveAttribute('title', expect.stringMatching(/Nessun caso/i));
+    expect(select.querySelectorAll('option')).toHaveLength(1);
+    expect(select.querySelector('option')?.textContent).toMatch(/Nessun caso/i);
+    expect(screen.queryByText(/Riesame smoke/i)).not.toBeInTheDocument();
+  });
+
   it('Compila da caso abilitato con Ambito + caso; propose-links con proposed', async () => {
     scopeState.companyId = '11';
     scopeState.isStudioWide = false;

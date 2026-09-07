@@ -751,8 +751,9 @@ function AiAssistantPage() {
             <span className="ai-assistant-empty-icon">{"\uD83D\uDCA1"}</span>
             <h3>Come posso aiutarti?</h3>
             <p>
-              Fai una domanda su audit, non conformit\u00E0, reclami, rischi,
-              qualifiche, documenti o norme del tuo Sistema di Gestione Qualit\u00E0.
+              {
+                "Fai una domanda su audit, non conformit\u00e0, reclami, rischi, qualifiche, documenti o norme del tuo Sistema di Gestione Qualit\u00e0."
+              }
             </p>
             {contextIsCompany && (
               <p className="ai-assistant-empty-context">
