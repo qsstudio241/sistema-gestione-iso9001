@@ -8,7 +8,7 @@
 **Branch:** `cursor/iso4-word-visita-mason-8269`  
 **Compare:** https://github.com/qsstudio241/sistema-gestione-iso9001/compare/main...cursor/iso4-word-visita-mason-8269?expand=1  
 **Slot precedente:** gate merge CHIUSO su `origin/main` (sovrascrittura consentita)  
-**Parallelo:** `DEPUTYTASK.md` Alert HITL APERTO — **NON toccato**. Hub-sync PR #667 OPEN — **NON toccati** roadmap/GUIDA (bozza hub sotto).
+**Parallelo:** `DEPUTYTASK.md` Alert HITL APERTO — **NON toccato**. Hub-sync #667 **MERGIATO** — roadmap/GUIDA aggiornate in questa PR.
 
 ---
 
@@ -34,10 +34,8 @@
 ## Cosa NON toccato
 
 - `qualificationAlert.service.js` / `DEPUTYTASK.md`
-- `docs/PROJECT_ROADMAP.md` / `docs/GUIDA_CONSOLIDATA.md` (hub-sync #667 OPEN)
 - Auth / sync / JWT / migrazioni / ISO-4b / `RDPModule`
 
-## Bozza hub (dopo merge #667 + questa PR)
+## Hub sync
 
-Roadmap § Stato attuale: ISO-4 ✅ Word visita Mason; priorità Medio next = ISO-5 WB o altro AFK.  
-GUIDA: Word visita 3834 = colonne Quesito/Evidenze/Esito (C/NC), non layout 9001.
+Roadmap § Stato attuale + GUIDA lezione ISO-4 aggiornati dopo merge #667.
