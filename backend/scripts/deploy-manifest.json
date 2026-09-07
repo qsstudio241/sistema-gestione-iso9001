@@ -87,7 +87,8 @@
                                      "src/data/reprocessableFields.js",
                                      "src/data/reprocessTableAdapters.js",
                                      "src/data/companyProfileFields.js",
-                                     "src/data/aiContextRubrics.js"
+                                     "src/data/aiContextRubrics.js",
+                                     "src/data/aiContextEnrichment.js"
                                  ]
                    },
                    {

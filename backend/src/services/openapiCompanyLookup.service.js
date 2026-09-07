@@ -7,6 +7,7 @@
 'use strict';
 
 const { pickEditableFields } = require('../data/companyProfileFields');
+const { buildPublicSourceUrl } = require('../data/aiContextEnrichment');
 
 const DEFAULT_BASE = 'https://company.openapi.com';
 
@@ -188,34 +189,51 @@ async function lookupCompanyByVat(vatRaw, options = {}) {
 const SEARCH_LIMIT = 8;
 const MIN_NAME_LEN = 3;
 
-function mapSearchHit(row) {
+function mapSearchHit(row, meta = {}) {
     if (!row || typeof row !== 'object') return null;
     const office = row.address?.registeredOffice || row.address || {};
+    const ateco = pickAteco(row.atecoClassification || row.ateco || {});
+    const legal_name = row.companyName || null;
+    const vat_number = row.vatCode || null;
+    const source = meta.source || 'IT-search';
     return {
         registry_id: row.id || null,
-        legal_name: row.companyName || null,
-        vat_number: row.vatCode || null,
+        legal_name,
+        vat_number,
         fiscal_code: row.taxCode || null,
         city: office.town || null,
         street: composeStreet(office),
         cap: office.zipCode || null,
         province: office.province ? String(office.province).trim().slice(0, 2).toUpperCase() : null,
         status: row.activityStatus || null,
+        sector: ateco.ateco_primary_desc || null,
+        ateco_primary: ateco.ateco_primary || null,
+        ateco_primary_desc: ateco.ateco_primary_desc || null,
+        source,
+        source_url: meta.source_url || buildPublicSourceUrl({ vat_number, legal_name }),
     };
 }
 
 function fieldsToCandidate(fields, extra = {}) {
     const src = fields && typeof fields === 'object' ? fields : {};
+    const legal_name = src.legal_name || null;
+    const vat_number = src.vat_number || extra.vat || null;
+    const source = extra.source || null;
     return {
         registry_id: extra.registry_id || null,
-        legal_name: src.legal_name || null,
-        vat_number: src.vat_number || extra.vat || null,
+        legal_name,
+        vat_number,
         fiscal_code: src.fiscal_code || null,
         city: src.registered_city || null,
         street: src.registered_street || null,
         cap: src.registered_cap || null,
         province: src.registered_province || null,
         status: src.company_status || null,
+        sector: src.ateco_primary_desc || null,
+        ateco_primary: src.ateco_primary || null,
+        ateco_primary_desc: src.ateco_primary_desc || null,
+        source,
+        source_url: extra.source_url || buildPublicSourceUrl({ vat_number, legal_name }),
     };
 }
 
@@ -264,10 +282,18 @@ async function searchCompanies(query = {}, options = {}) {
     if (vat) {
         const byVat = await lookupCompanyByVat(vat, { token, fetchFn, baseUrl });
         if (byVat.ok) {
+            const source = byVat.endpoint;
             return {
                 ok: true,
-                source: byVat.endpoint,
-                results: [fieldsToCandidate(byVat.fields, { vat: byVat.vat })],
+                source,
+                results: [fieldsToCandidate(byVat.fields, {
+                    vat: byVat.vat,
+                    source,
+                    source_url: buildPublicSourceUrl({
+                        vat_number: byVat.vat,
+                        legal_name: byVat.fields?.legal_name,
+                    }),
+                })],
                 warning: byVat.warning || null,
             };
         }
@@ -309,7 +335,7 @@ async function searchCompanies(query = {}, options = {}) {
     const raw = res.json;
     const list = Array.isArray(raw?.data) ? raw.data : (Array.isArray(raw) ? raw : []);
     const results = list
-        .map(mapSearchHit)
+        .map((row) => mapSearchHit(row, { source: 'IT-search' }))
         .filter((c) => c && (c.legal_name || c.vat_number))
         .slice(0, SEARCH_LIMIT);
 
