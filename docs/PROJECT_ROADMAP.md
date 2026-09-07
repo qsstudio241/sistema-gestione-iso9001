@@ -32,7 +32,7 @@ Audit multi-standard · NC · Qualifiche · Saldatura (WPQR/WPS/3834/Welding Boo
 
 | # | Priorità | Perché | Dove |
 |---|---|---|---|
-| 1 | **Compliance Map — CM-2/CM-3** | CM-1 schema/API OK; compilatore / Gemini link | [PLAN](agent-tasks/PLAN_COMPLIANCE_MAP_SLICES.md) |
+| 1 | **Compliance Map — CM-3/CM-4** | CM-2 compile proposed OK; link norma / UI | [PLAN](agent-tasks/PLAN_COMPLIANCE_MAP_SLICES.md) |
 | 2 | **Audit campo — SOP + smoke** | CONS-1…6 su `main`; CONS-7 = nebbia Alto | [PLAN SOP](agent-tasks/PLAN_AUDIT_CONSERVAZIONE_SLICES.md#come-operare-senza-copertura-sop) |
 | 3 | **Commesse — ING-5 / VC-5** | ING-1…4 CHIUSE; ING-5 HITL; VC-5 solo Lead | [PLAN](agent-tasks/PLAN_VALUTAZIONE_COMMESSE_SLICES.md) |
 | 4 | **Alert qualifiche — destinatario UI** | Oggi solo cascata in servizio | `qualificationAlert.service.js` |
