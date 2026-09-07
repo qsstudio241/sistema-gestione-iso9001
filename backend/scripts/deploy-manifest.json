@@ -86,7 +86,8 @@
                                      "src/data/legislativoSicurezzaTemplate.js",
                                      "src/data/reprocessableFields.js",
                                      "src/data/reprocessTableAdapters.js",
-                                     "src/data/companyProfileFields.js"
+                                     "src/data/companyProfileFields.js",
+                                     "src/data/aiContextRubrics.js"
                                  ]
                    },
                    {
@@ -212,6 +213,7 @@
                                      "src/services/commercialCustomerCounterparty.service.js",
                                      "src/services/drawingExtraction.service.js",
                                      "src/services/aiOrganizationContext.service.js",
+                                     "src/services/aiContextScore.service.js",
                                      "src/services/ambitoFacts.service.js",
                                      "src/services/figureEmbed.service.js",
                                      "src/services/figureKnowledge.service.js",
