@@ -2,7 +2,7 @@
 
 > **Destinazione**: in app, l’utente vede e interroga **i fatti del solo Ambito attivo** (NC, scadenze, gap). La chat (`/ai-assistant`) consuma quei fatti; non è un cervello parallelo.
 > **Spec**: [ADR-010](../adr/ADR-010-ai-agentic-architecture.md) · [SAL §K](../specs/MODULO_SAL_SCOPO_E_ROADMAP.md) · Ambito (`CompanyScopeSelect`)
-> **Stato (07/09/2026):** SB-1 ✅ · SB-2 ✅ · SB-3 ✅ · SB-4 ✅ · SB-5 bozza ✅ · **SB-6 in corso**. Brief Alert HITL: [`DEPUTYTASK.md`](DEPUTYTASK.md) (no codice).
+> **Stato (07/09/2026):** SB-1 ✅ · SB-2 ✅ · SB-3 ✅ · SB-4 ✅ · SB-5 bozza ✅ · **SB-6 ✅**. Brief Alert HITL: [`DEPUTYTASK.md`](DEPUTYTASK.md) (no codice). **Prossima:** CTX-0.
 > **Mappa:** 16/08/2026 (wayfinder). Intuizione AIOS: livelli contesto/dati/intelligence **dentro** il prodotto, non cartella Claude parallela.
 
 ---
@@ -64,7 +64,7 @@
 | **SB-3** ✅ | Chat consuma snapshot | `aiChat.controller` + stesso service | SB-1 | AFK |
 | **SB-4** ✅ | Vista studio aggregata | GET `companyId` null: totali + top urgenze | SB-2 | AFK |
 | **SB-5** | Pulsanti operativi | Nav moduli con Ambito; gated se manca azienda | SB-2 | AFK |
-| **SB-6** | Fatti SAL | `getSalSummary` → counts Ambito + card/nav `/sal` | SB-3 | AFK |
+| **SB-6** ✅ | Fatti SAL | `getSalSummary` → counts Ambito + card/nav `/sal` | SB-3 | AFK |
 | **CTX-0…3** | Rubrica + wizard + web | File disgiunti dalla chat SB | ordine CTX | AFK |
 | **CTX-4** | Email/Drive | OAuth Alto + HITL | CTX-3 | HITL |
 

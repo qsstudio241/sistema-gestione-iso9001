@@ -1,7 +1,8 @@
 # DEPUTYTASK2 — SB-6: Fatti SAL nello snapshot Ambito
 
-**Stato:** APERTO  
+**Stato:** CHIUSO — TEST OK  
 **Aperto:** 07/09/2026 (post-merge SB-2 #660; Alert #3 HITL senza risposte → skip Alert)  
+**Chiuso:** 07/09/2026  
 **Piano:** [`PLAN_SECOND_BRAIN_SLICES.md`](PLAN_SECOND_BRAIN_SLICES.md) § SB-6  
 **Rischio:** Medio — BE additivo `ambitoFacts` + UI card/nav; riuso `gapAnalysis`; niente auth/sync/migrazioni  
 **Branch:** `cursor/sb6-fatti-sal-8269`  
@@ -9,27 +10,18 @@
 
 ---
 
-## Perché
+## Esito
 
-Lo snapshot Ambito (SB-1/SB-4) espone NC / qualifiche / documenti. La destinazione Second Brain include anche i **gap SAL**. SB-2 chiuso (#660): Ambito header unico. Prossima slice AFK: fatti SAL senza nuovo LLM.
+**TEST OK**
 
-## Cosa fare
+- `getSalSummary` in `gapAnalysis.service` (matrice macro senza enrich evidenze) + export `buildSalSummary`
+- `loadAmbitoFacts` company: `salOpenGaps` (= discussed+in_progress), `salToValidate`; studio = null
+- Prompt chat: righe SAL se presenti; studio dichiara non aggregato
+- UI: card «SAL aperti» + nav «Apri SAL» → `/sal` (solo azienda ready)
+- L1 BE: ambitoFacts + gapAnalysis (31) · FE: AmbitoFactsBar (6) + SB-2 (3) · `npm run build` OK
+- Alert HITL non toccato (`DEPUTYTASK.md` resta APERTO)
 
-1. `getSalSummary(org, companyId)` in `gapAnalysis.service` — stessa matrice macro di `getGapMatrix`, **senza** `enrichRowsWithEvidence`; riusa `buildSalSummary`
-2. `loadAmbitoFacts` (solo scope azienda): aggiunge `counts.salOpenGaps` (= discussed + in_progress) e `counts.salToValidate`; studio = null (SAL per-azienda)
-3. `formatAmbitoFactsPromptBlock`: righe SAL se presenti
-4. `AmbitoFactsBar`: card «SAL aperti» + nav «Apri SAL» → `/sal` (gated come gli altri; solo con azienda ready)
-5. Test L1 BE + FE; build `app/`
-
-## DoD
-
-- [ ] Company Ambito: API fatti include conteggi SAL coerenti con summary gapAnalysis
-- [ ] Studio Ambito: niente conteggi SAL inventati
-- [ ] Prompt chat include i numeri SAL solo se ready + company
-- [ ] UI: card + nav; test Vitest aggiornati
-- [ ] PR Medio; Alert HITL non toccato
-
-## File previsti
+## File toccati
 
 - `backend/src/services/gapAnalysis.service.js` (+ test)
 - `backend/src/services/ambitoFacts.service.js` (+ test)
@@ -37,11 +29,11 @@ Lo snapshot Ambito (SB-1/SB-4) espone NC / qualifiche / documenti. La destinazio
 - `app/src/tests/AmbitoFactsBar.test.jsx`
 - `docs/agent-tasks/PLAN_SECOND_BRAIN_SLICES.md`
 - `docs/agent-tasks/DEPUTYTASK2.md`
-- `docs/PROJECT_ROADMAP.md` § Stato
+- `docs/PROJECT_ROADMAP.md`
 
-## Cosa NON toccare
+## Cosa NON toccato
 
-- `DEPUTYTASK.md` / Alert / `qualificationAlert.service.js` (HITL aperto)
+- `qualificationAlert.service.js` / Alert UI (HITL)
 - Auth / sync / JWT / migrazioni
-- MC-I4 / ING-5 / VC-5 / Compliance Map
-- `getGapMatrix` comportamento API pubblico (solo riuso + helper leggero)
+- MC-I4 / ING-5 / Compliance Map
+- Comportamento API `getGapMatrix` (refactor interno condiviso `loadSalMacroRows`)
