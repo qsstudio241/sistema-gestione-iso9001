@@ -267,9 +267,11 @@ async function assertCompanyInOrganization(organizationId, companyId) {
 }
 
 /**
- * Matrice SAL: clausole macro N.N + stato persistito (LEFT JOIN).
+ * Carica righe matrice SAL (macro N.N) senza enrichment evidenze.
+ * Condiviso da getGapMatrix e getSalSummary (SB-6 snapshot Ambito).
+ * @returns {Promise<{ companyId: number, rows: object[] }|null>}
  */
-async function getGapMatrix(organizationId, companyId, { standardCode, dateFrom } = {}) {
+async function loadSalMacroRows(organizationId, companyId, { standardCode, dateFrom } = {}) {
   const scoped = await assertCompanyInOrganization(organizationId, companyId);
   if (!scoped) return null;
 
@@ -320,20 +322,42 @@ async function getGapMatrix(organizationId, companyId, { standardCode, dateFrom 
     ORDER BY nr.standard_code, nr.clause_ref
   `, params);
 
-  const rows = (res.recordset || []).map(mapStatusRow);
-  const summary = buildSalSummary(rows);
+  return {
+    companyId: scoped.companyId,
+    rows: (res.recordset || []).map(mapStatusRow),
+  };
+}
+
+/**
+ * Matrice SAL: clausole macro N.N + stato persistito (LEFT JOIN).
+ */
+async function getGapMatrix(organizationId, companyId, { standardCode, dateFrom } = {}) {
+  const loaded = await loadSalMacroRows(organizationId, companyId, { standardCode, dateFrom });
+  if (!loaded) return null;
+
+  const summary = buildSalSummary(loaded.rows);
   const rowsWithEvidence = await enrichRowsWithEvidence(
     organizationId,
-    scoped.companyId,
-    rows,
+    loaded.companyId,
+    loaded.rows,
   );
 
   return {
-    companyId: scoped.companyId,
+    companyId: loaded.companyId,
     standardCode: standardCode || null,
     rows: rowsWithEvidence,
     summary,
   };
+}
+
+/**
+ * SB-6: solo summary SAL per Ambito (zero LLM, senza enrich evidenze).
+ * @returns {Promise<object|null>} buildSalSummary o null se azienda fuori scope
+ */
+async function getSalSummary(organizationId, companyId, opts = {}) {
+  const loaded = await loadSalMacroRows(organizationId, companyId, opts);
+  if (!loaded) return null;
+  return buildSalSummary(loaded.rows);
 }
 
 /**
@@ -933,6 +957,8 @@ module.exports = {
   extractSalMacroClauseRef,
   mapSalStatusToGapCoverage,
   getGapMatrix,
+  getSalSummary,
+  buildSalSummary,
   listStatuses,
   upsertStatus,
   seedForCompany,
