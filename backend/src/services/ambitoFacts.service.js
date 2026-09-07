@@ -1,12 +1,14 @@
 /**
- * Snapshot fatti operativi per Ambito (Second Brain SB-1 / SB-4).
- * Zero LLM: solo conteggi SQL allineati alle card NC / Qualifiche / Scadenze.
+ * Snapshot fatti operativi per Ambito (Second Brain SB-1 / SB-4 / SB-6).
+ * Zero LLM: solo conteggi SQL allineati alle card NC / Qualifiche / Scadenze / SAL.
  * companyId valorizzato → azienda; null → aggregati «Tutto lo studio» (SB-4).
+ * SAL (SB-6): solo scope azienda, via getSalSummary (gapAnalysis).
  */
 
 const { query } = require('../config/database');
 const { RELEASED_STATUS_SQL_IN } = require('../constants/documentStatus');
 const logger = require('../utils/logger');
+const { getSalSummary } = require('./gapAnalysis.service');
 
 const TOP_COMPANIES_LIMIT = 5;
 
@@ -226,9 +228,26 @@ async function loadStudioAggregates(user) {
     reason: null,
     companyId: null,
     companyName: null,
-    counts: { ncOpen, qualsExpiring30, docsExpiring30 },
+    counts: {
+      ncOpen,
+      qualsExpiring30,
+      docsExpiring30,
+      salOpenGaps: null,
+      salToValidate: null,
+    },
     topCompanies,
     generatedAt: new Date().toISOString(),
+  };
+}
+
+/** Deriva conteggi card da summary SAL (discussed + in_progress = aperti). */
+function salCountsFromSummary(summary) {
+  if (!summary) {
+    return { salOpenGaps: null, salToValidate: null };
+  }
+  return {
+    salOpenGaps: Number(summary.discussed || 0) + Number(summary.in_progress || 0),
+    salToValidate: Number(summary.to_validate || 0),
   };
 }
 
@@ -306,13 +325,26 @@ async function loadAmbitoFacts(user, companyId) {
   const qualsExpiring30 = Number((qualRes.recordset || [])[0]?.quals_expiring_30 || 0);
   const docsExpiring30 = Number((docRes.recordset || [])[0]?.docs_expiring_30 || 0);
 
+  let salOpenGaps = null;
+  let salToValidate = null;
+  if (organizationId != null) {
+    try {
+      const salSummary = await getSalSummary(organizationId, cid);
+      const derived = salCountsFromSummary(salSummary);
+      salOpenGaps = derived.salOpenGaps;
+      salToValidate = derived.salToValidate;
+    } catch (err) {
+      logger.warn('[AMBITO_FACTS] SAL summary:', err.message);
+    }
+  }
+
   return {
     ready: true,
     scope: 'company',
     reason: null,
     companyId: cid,
     companyName,
-    counts: { ncOpen, qualsExpiring30, docsExpiring30 },
+    counts: { ncOpen, qualsExpiring30, docsExpiring30, salOpenGaps, salToValidate },
     topCompanies: null,
     generatedAt: new Date().toISOString(),
   };
@@ -337,6 +369,7 @@ function formatAmbitoFactsPromptBlock(facts) {
       `NC aperte (totale studio): ${Number(c.ncOpen) || 0}`,
       `Qualifiche in scadenza entro 30 giorni (totale): ${Number(c.qualsExpiring30) || 0}`,
       `Documenti in scadenza entro 30 giorni (totale): ${Number(c.docsExpiring30) || 0}`,
+      'SAL / gap: non aggregati a livello studio — seleziona un\'azienda nell\'Ambito.',
     ];
     const top = Array.isArray(facts.topCompanies) ? facts.topCompanies : [];
     if (top.length > 0) {
@@ -364,10 +397,18 @@ function formatAmbitoFactsPromptBlock(facts) {
     `NC aperte: ${Number(c.ncOpen) || 0}`,
     `Qualifiche in scadenza entro 30 giorni: ${Number(c.qualsExpiring30) || 0}`,
     `Documenti in scadenza entro 30 giorni: ${Number(c.docsExpiring30) || 0}`,
-    'Usa ESCLUSIVAMENTE questi numeri per conteggi su NC / qualifiche / documenti di questa azienda.',
-    'Non mescolare dati di altre aziende. Se la domanda non riguarda questi fatti, ignora il blocco.',
-    '--- FINE FATTI AMBITO ---',
   ];
+  if (c.salOpenGaps != null || c.salToValidate != null) {
+    lines.push(
+      `SAL clausole aperte (discussed+in_progress): ${Number(c.salOpenGaps) || 0}`,
+      `SAL da validare: ${Number(c.salToValidate) || 0}`
+    );
+  }
+  lines.push(
+    'Usa ESCLUSIVAMENTE questi numeri per conteggi su NC / qualifiche / documenti / SAL di questa azienda.',
+    'Non mescolare dati di altre aziende. Se la domanda non riguarda questi fatti, ignora il blocco.',
+    '--- FINE FATTI AMBITO ---'
+  );
   return lines.join('\n');
 }
 
@@ -376,5 +417,6 @@ module.exports = {
   loadStudioAggregates,
   emptyNotReady,
   formatAmbitoFactsPromptBlock,
+  salCountsFromSummary,
   TOP_COMPANIES_LIMIT,
 };

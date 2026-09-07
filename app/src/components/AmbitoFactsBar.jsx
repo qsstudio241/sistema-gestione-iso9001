@@ -9,22 +9,31 @@ function parseScopeCompanyId(companyId) {
   return Number.isFinite(n) ? n : null;
 }
 
-/** Destinazioni SB-5: solo navigazione HITL, nessuna write. Ambito resta nel CompanyScope. */
+/** Destinazioni SB-5 / SB-6: solo navigazione HITL, nessuna write. Ambito resta nel CompanyScope. */
 const NAV_ACTIONS = [
   {
     key: "nc",
     label: "Apri NC",
     buildPath: () => "/nc?status=open",
+    companyOnly: false,
   },
   {
     key: "qual",
     label: "Qualifiche 30gg",
     buildPath: () => "/qualifiche?situazione=urgenti_30",
+    companyOnly: false,
   },
   {
     key: "deadlines",
     label: "Scadenze 30gg",
     buildPath: () => "/deadlines?due=soon",
+    companyOnly: false,
+  },
+  {
+    key: "sal",
+    label: "Apri SAL",
+    buildPath: () => "/sal",
+    companyOnly: true,
   },
 ];
 
@@ -64,21 +73,32 @@ export default function AmbitoFactsBar() {
 
   const navRow = (
     <div className="af-nav-actions" role="group" aria-label="Apri moduli collegati">
-      {NAV_ACTIONS.map((action) => (
-        <button
-          key={action.key}
-          type="button"
-          className="af-nav-btn"
-          disabled={!navEnabled}
-          title={navEnabled ? (isStudioScope ? studioNavTitle : `Vai a ${action.label}`) : gatedTitle}
-          onClick={() => {
-            if (!navEnabled) return;
-            navigate(action.buildPath());
-          }}
-        >
-          {action.label}
-        </button>
-      ))}
+      {NAV_ACTIONS.filter((action) => !action.companyOnly || companyReady).map((action) => {
+        const enabled = action.companyOnly ? companyReady : navEnabled;
+        return (
+          <button
+            key={action.key}
+            type="button"
+            className="af-nav-btn"
+            disabled={!enabled}
+            title={
+              enabled
+                ? action.companyOnly
+                  ? "Vai al modulo SAL"
+                  : isStudioScope
+                    ? studioNavTitle
+                    : `Vai a ${action.label}`
+                : gatedTitle
+            }
+            onClick={() => {
+              if (!enabled) return;
+              navigate(action.buildPath());
+            }}
+          >
+            {action.label}
+          </button>
+        );
+      })}
     </div>
   );
 
@@ -146,6 +166,7 @@ export default function AmbitoFactsBar() {
     ? "Tutto lo studio"
     : facts.companyName || scopeCompanyName || "Azienda";
   const top = Array.isArray(facts.topCompanies) ? facts.topCompanies : [];
+  const showSal = !isStudio && c.salOpenGaps != null;
 
   return (
     <div>
@@ -162,6 +183,12 @@ export default function AmbitoFactsBar() {
           <span className="sq-stat-num">{c.docsExpiring30 ?? 0}</span>
           <span className="sq-stat-lbl">Documenti 30gg</span>
         </div>
+        {showSal && (
+          <div className="sq-stat sq-stat-rosso" title={`Da validare: ${c.salToValidate ?? 0}`}>
+            <span className="sq-stat-num">{c.salOpenGaps ?? 0}</span>
+            <span className="sq-stat-lbl">SAL aperti</span>
+          </div>
+        )}
       </div>
       {isStudio && (
         <p className="sq-scope-hint" style={{ margin: "0 0 8px" }}>

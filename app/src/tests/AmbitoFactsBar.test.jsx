@@ -35,7 +35,7 @@ describe("AmbitoFactsBar", () => {
         scope: "company",
         companyId: 11,
         companyName: "Mason",
-        counts: { ncOpen: 3, qualsExpiring30: 1, docsExpiring30: 4 },
+        counts: { ncOpen: 3, qualsExpiring30: 1, docsExpiring30: 4, salOpenGaps: null, salToValidate: null },
       },
     });
     render(<AmbitoFactsBar />);
@@ -45,7 +45,33 @@ describe("AmbitoFactsBar", () => {
     expect(screen.getByText("1")).toBeTruthy();
     expect(screen.getByText("4")).toBeTruthy();
     expect(screen.getByText("NC aperte")).toBeTruthy();
+    expect(screen.queryByText("SAL aperti")).toBeNull();
     expect(mockGetAmbitoFacts).toHaveBeenCalledWith(11);
+  });
+
+  it("SB-6: con SAL mostra card e nav Apri SAL", async () => {
+    mockGetAmbitoFacts.mockResolvedValue({
+      data: {
+        ready: true,
+        scope: "company",
+        companyId: 11,
+        companyName: "Mason",
+        counts: {
+          ncOpen: 1,
+          qualsExpiring30: 0,
+          docsExpiring30: 0,
+          salOpenGaps: 5,
+          salToValidate: 2,
+        },
+      },
+    });
+    render(<AmbitoFactsBar />);
+    await waitFor(() => expect(screen.getByText("SAL aperti")).toBeTruthy());
+    expect(screen.getByText("5")).toBeTruthy();
+    const salBtn = screen.getByRole("button", { name: "Apri SAL" });
+    expect(salBtn.disabled).toBe(false);
+    fireEvent.click(salBtn);
+    expect(mockNavigate).toHaveBeenCalledWith("/sal");
   });
 
   it("SB-4: senza azienda mostra aggregati studio e top aziende", async () => {
@@ -55,7 +81,7 @@ describe("AmbitoFactsBar", () => {
         ready: true,
         scope: "studio",
         companyId: null,
-        counts: { ncOpen: 7, qualsExpiring30: 2, docsExpiring30: 1 },
+        counts: { ncOpen: 7, qualsExpiring30: 2, docsExpiring30: 1, salOpenGaps: null, salToValidate: null },
         topCompanies: [
           { companyId: 11, companyName: "Mason", ncOpen: 4, qualsExpiring30: 0, docsExpiring30: 1 },
           { companyId: 22, companyName: "Camellini", ncOpen: 3, qualsExpiring30: 2, docsExpiring30: 0 },
@@ -69,6 +95,8 @@ describe("AmbitoFactsBar", () => {
     expect(screen.getByText(/Aggregati studio/)).toBeTruthy();
     expect(screen.getByText("Mason")).toBeTruthy();
     expect(screen.getByText("Camellini")).toBeTruthy();
+    expect(screen.queryByText("SAL aperti")).toBeNull();
+    expect(screen.queryByRole("button", { name: "Apri SAL" })).toBeNull();
     expect(mockGetAmbitoFacts).toHaveBeenCalledWith(null);
   });
 

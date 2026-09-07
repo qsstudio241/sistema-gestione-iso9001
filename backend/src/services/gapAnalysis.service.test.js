@@ -10,6 +10,8 @@ jest.mock('../config/database', () => ({ query: mockQuery }));
 const {
   runGapAnalysis,
   getGapMatrix,
+  getSalSummary,
+  buildSalSummary,
   listStatuses,
   upsertStatus,
   seedForCompany,
@@ -229,6 +231,77 @@ describe('gapAnalysis.service — SAL Fase 0', () => {
     const sql = mockQuery.mock.calls[1][0];
     expect(sql).toContain('nr.standard_code = @standardCode');
     expect(sql).toContain('organization_id = @orgId');
+  });
+
+  it('SB-6: getSalSummary senza enrich evidenze', async () => {
+    mockQuery
+      .mockResolvedValueOnce({ recordset: [{ id: 10 }] })
+      .mockResolvedValueOnce({
+        recordset: [
+          {
+            norm_requirement_id: 5,
+            standard_code: 'ISO_9001_2015',
+            clause_ref: '4.1',
+            clause_title: 'Contesto',
+            status_id: 1,
+            status: 'discussed',
+            conformity_hint: null,
+            notes: null,
+            responsible: null,
+            due_date: null,
+            evidence_document_ids: null,
+            updated_at: null,
+            updated_by: null,
+          },
+          {
+            norm_requirement_id: 6,
+            standard_code: 'ISO_9001_2015',
+            clause_ref: '4.2',
+            clause_title: 'Parti',
+            status_id: 2,
+            status: 'in_progress',
+            conformity_hint: null,
+            notes: null,
+            responsible: null,
+            due_date: null,
+            evidence_document_ids: null,
+            updated_at: null,
+            updated_by: null,
+          },
+          {
+            norm_requirement_id: 7,
+            standard_code: 'ISO_9001_2015',
+            clause_ref: '5.1',
+            clause_title: 'Leadership',
+            status_id: null,
+            status: null,
+            conformity_hint: null,
+            notes: null,
+            responsible: null,
+            due_date: null,
+            evidence_document_ids: null,
+            updated_at: null,
+            updated_by: null,
+          },
+        ],
+      });
+
+    const summary = await getSalSummary(1, 10, { standardCode: 'ISO_9001_2015' });
+    expect(summary).toEqual({
+      discussed: 1,
+      in_progress: 1,
+      to_validate: 0,
+      completed: 0,
+      na: 0,
+      not_seeded: 1,
+      total: 3,
+    });
+    expect(mockQuery).toHaveBeenCalledTimes(2);
+    expect(buildSalSummary([{ status: 'discussed' }, { status: 'completed' }])).toMatchObject({
+      discussed: 1,
+      completed: 1,
+      total: 2,
+    });
   });
 
   it('listStatuses restituisce solo righe persistite', async () => {
