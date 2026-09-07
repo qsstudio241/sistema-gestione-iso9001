@@ -8,6 +8,7 @@ const fsSync = require('fs');
 const { query } = require('../config/database');
 const logger = require('../utils/logger');
 const { normalizeDocType, normalizeDocTypeConfigRows } = require('../utils/docTypeConfigHelpers');
+const { scoreStudioContext } = require('../services/aiContextScore.service');
 
 const LOGO_DIR_ORG = path.join(process.env.UPLOAD_DIR || './uploads', 'org-logos');
 if (!fsSync.existsSync(LOGO_DIR_ORG)) fsSync.mkdirSync(LOGO_DIR_ORG, { recursive: true });
@@ -18,6 +19,41 @@ function isOrgAdmin(role) {
 // Personalizzazioni leggere (audit_report_prefix) accessibili a tutti i membri org
 function isOrgMember(role) {
     return role === 'admin' || role === 'superadmin' || role === 'auditor';
+}
+
+/**
+ * Contesto AI studio (CTX-1): score zero-LLM vs rubrica studio-v1.
+ * Non fondere con computeProfileCompleteness (ADR-018).
+ */
+function buildAiContextPayload(row) {
+    const scored = scoreStudioContext({
+        organization_name: row.organization_name,
+        vat_number: row.vat_number,
+        ai_context_notes: row.ai_context_notes,
+        audit_report_prefix: row.audit_report_prefix,
+    });
+    return {
+        score: scored.score,
+        level: scored.level,
+        version: scored.version,
+        scope: scored.scope,
+        missing: scored.missing,
+        blocks: scored.blocks,
+    };
+}
+
+function serializeOrganization(row) {
+    return {
+        organization_id: row.organization_id,
+        organization_code: row.organization_code,
+        organization_name: row.organization_name,
+        vat_number: row.vat_number || '',
+        logo_url: row.logo_url || null,
+        is_active: !!row.is_active,
+        audit_report_prefix: row.audit_report_prefix || null,
+        ai_context_notes: row.ai_context_notes || '',
+        ai_context: buildAiContextPayload(row),
+    };
 }
 
 /**
@@ -42,16 +78,7 @@ async function getMyOrganization(req, res) {
         const row = result.recordset[0];
         res.json({
             success: true,
-            data: {
-                organization_id: row.organization_id,
-                organization_code: row.organization_code,
-                organization_name: row.organization_name,
-                vat_number: row.vat_number || '',
-                logo_url: row.logo_url || null,
-                is_active: !!row.is_active,
-                audit_report_prefix: row.audit_report_prefix || null,
-                ai_context_notes: row.ai_context_notes || '',
-            },
+            data: serializeOrganization(row),
         });
     } catch (error) {
         logger.error('[ORG] getMyOrganization error:', error);
@@ -116,16 +143,7 @@ async function patchMyOrganization(req, res) {
         const row = refreshed.recordset[0];
         res.json({
             success: true,
-            data: {
-                organization_id: row.organization_id,
-                organization_code: row.organization_code,
-                organization_name: row.organization_name,
-                vat_number: row.vat_number || '',
-                logo_url: row.logo_url || null,
-                is_active: !!row.is_active,
-                audit_report_prefix: row.audit_report_prefix || null,
-                ai_context_notes: row.ai_context_notes || '',
-            },
+            data: serializeOrganization(row),
         });
     } catch (error) {
         logger.error('[ORG] patchMyOrganization error:', error);
