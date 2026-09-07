@@ -2,7 +2,7 @@
 
 > **Destinazione**: in app, l’utente vede e interroga **i fatti del solo Ambito attivo** (NC, scadenze, gap). La chat (`/ai-assistant`) consuma quei fatti; non è un cervello parallelo.
 > **Spec**: [ADR-010](../adr/ADR-010-ai-agentic-architecture.md) · [SAL §K](../specs/MODULO_SAL_SCOPO_E_ROADMAP.md) · Ambito (`CompanyScopeSelect`)
-> **Stato (07/09/2026):** SB-1 ✅ · SB-2 ✅ · SB-3 ✅ · SB-4 ✅ · SB-5 bozza ✅ · **SB-6 ✅** · **CTX-0 ✅** · **CTX-1 ✅** · **CTX-2 ✅** · **CTX-3 ✅** (enrich citato HITL). Brief Alert HITL: [`DEPUTYTASK.md`](DEPUTYTASK.md) (no codice). **Prossima:** CTX-4 Email/Drive (HITL Alto).  
+> **Stato (07/09/2026):** SB-1 ✅ · SB-2 ✅ · SB-3 ✅ · SB-4 ✅ · SB-5 bozza ✅ · **SB-6 ✅** · **CTX-0…3 ✅** (#663–#666). Brief Alert HITL: [`DEPUTYTASK.md`](DEPUTYTASK.md) (no codice). **Prossima:** CTX-4 Email/Drive — **Alto + HITL** (checklist sotto; **non implementare** senza DoD).  
 > **Mappa:** 16/08/2026 (wayfinder). Intuizione AIOS: livelli contesto/dati/intelligence **dentro** il prodotto, non cartella Claude parallela.
 
 ---
@@ -115,11 +115,26 @@ Badge: `incompleto` (<50) / `parziale` (50–79) / `pronto` (≥80) — stesse s
 - [x] Test L1 BE+FE + build; deploy VPS se BE
 - [ ] **Fuori slice:** OAuth email/Drive (CTX-4), Alert #3, auto-save
 
-### CTX-4 (outline — non aprire ora)
+### CTX-4 — Email / Drive (HITL Alto — non aprire codice)
 
-| Slice | Tema | Note |
-|-------|------|------|
-| **CTX-4** | Email/Drive | Alto + HITL (già in mappa) |
+**Obiettivo (futuro):** opt-in OAuth Gmail/Drive per arricchire contesto studio/azienda da fonti private dell’utente. **Rischio Alto** (auth OAuth, token, retention, cross-tenant). Vietato implementare senza DoD HITL chiuso dal committente.
+
+#### HITL (blocca codice)
+
+1. Provider: solo Google (Gmail + Drive) in v1, o anche Microsoft Graph?
+2. Scope minimo: sola lettura metadati/testo? Quali cartelle/label? Niente write verso inbox/Drive?
+3. Dove vivono i token: solo VPS (encrypted), refresh policy, revoke da UI?
+4. Retention: quanto restano snippet/allegati in DB? Soft-delete al revoke?
+5. HITL prodotto: ogni documento proposto → conferma admin campo-per-campo (come CTX-3), mai auto-save?
+6. Licenza: riuso `ai_chat` o nuova chiave?
+
+#### DoD (dopo HITL — bozza)
+
+- Opt-in esplicito per org; revoke; zero segreti in Git
+- Nessuna scrittura NC/anagrafica senza conferma
+- Test L1 + smoke; PR Alto solo con conferma committente
+
+**Fuori slice finché HITL aperto:** qualsiasi OAuth, secret Google/MS, migrazioni token.
 
 ---
 
@@ -139,9 +154,9 @@ Badge: `incompleto` (<50) / `parziale` (50–79) / `pronto` (≥80) — stesse s
 | **CTX-3** ✅ | Enrich / JSON citato | registro + proposte URL + HITL | CTX-2 | AFK |
 | **CTX-4** | Email/Drive | OAuth Alto + HITL | CTX-3 | HITL |
 
-**Ordine fatti:** SB-1 → SB-2 → SB-3 → SB-4 → SB-5. **Contesto** parallelo (file ≠ chat): CTX-0 → … → CTX-3.
+**Ordine fatti:** SB-1 → SB-2 → SB-3 → SB-4 → SB-5. **Contesto** parallelo (file ≠ chat): CTX-0 → … → CTX-3 ✅; **CTX-4** = HITL Alto (no codice senza DoD).
 
-**Rischio SB-1…SB-5 / CTX-0:** Medio (additivo, no schema/auth nuovo) — PR + Bugbot. Non Alto.
+**Rischio SB-1…SB-5 / CTX-0…3:** Medio (additivo, no schema/auth nuovo) — PR + Bugbot. **CTX-4:** Alto (OAuth) — solo dopo HITL.
 
 ---
 
@@ -159,7 +174,7 @@ Badge: `incompleto` (<50) / `parziale` (50–79) / `pronto` (≥80) — stesse s
 
 | Livello | Artefatto | Slice |
 |---|---|---|
-| Contesto | Rubrica + score (CTX-0 ✅) + wizard Studio (CTX-1 ✅) + wizard Azienda (CTX-2 ✅) + enrich citato (CTX-3) → email | CTX-0…4 |
+| Contesto | Rubrica + score (CTX-0 ✅) + wizard Studio (CTX-1 ✅) + wizard Azienda (CTX-2 ✅) + enrich citato (CTX-3 ✅) → email/Drive | CTX-0…4 (CTX-4 HITL Alto) |
 | Dati | Snapshot SQL `ambitoFacts` | SB-1, SB-4, SB-6 |
 | Intelligence | Moduli esistenti; meeting = nebbia | — |
 | Automazioni | Pulsanti → moduli, HITL | SB-5 |

@@ -1,47 +1,45 @@
-# DEPUTYTASK2 — CTX-3: Enrichment fonti pubbliche + proposte citate (HITL)
+# DEPUTYTASK2 — Hub sync post CTX-0…3 (#663–#666)
 
 **Stato:** CHIUSO — TEST OK  
-**Aperto:** 07/09/2026 (post-merge CTX-2 #665)  
+**Aperto:** 07/09/2026 (post-merge CTX-3 #666)  
 **Chiuso:** 07/09/2026  
-**Piano:** [`PLAN_SECOND_BRAIN_SLICES.md`](PLAN_SECOND_BRAIN_SLICES.md) § CTX-3  
-**Rischio:** Medio — API search registry additiva (sector/source_url) + UI HITL; niente auth/sync/migrazioni  
-**Branch:** `cursor/ctx3-enrich-cited-proposals-8269`  
-**Compare:** https://github.com/qsstudio241/sistema-gestione-iso9001/compare/main...cursor/ctx3-enrich-cited-proposals-8269?expand=1  
-**Slot precedente:** CTX-2 CHIUSO su `origin/main` (sovrascrittura consentita)  
-**Parallelo:** `DEPUTYTASK.md` Alert #3 HITL APERTO — **NON toccato**
+**Piano:** roadmap § Stato attuale · [`PLAN_SECOND_BRAIN_SLICES.md`](PLAN_SECOND_BRAIN_SLICES.md) § CTX-4 HITL  
+**Rischio:** Basso — solo docs (roadmap, GUIDA, PLAN, questo brief); niente codice prodotto  
+**Branch:** `cursor/hub-sync-post-ctx3-8269`  
+**Compare:** https://github.com/qsstudio241/sistema-gestione-iso9001/compare/main...cursor/hub-sync-post-ctx3-8269?expand=1  
+**Slot precedente:** CTX-3 CHIUSO su `origin/main` (sovrascrittura consentita)  
+**Parallelo:** `DEPUTYTASK.md` Alert #3 HITL APERTO — **NON toccato** (no codice Alert)
 
 ---
 
 ## Esito
 
-**TEST OK**
+**TEST OK** (docs)
 
-- Candidati OpenAPI: `sector` (ATECO), `source`, `source_url` citabile (Registro Imprese)
-- `aiContextEnrichment`: `buildCitedProposals` / `applySelectedProposals` — conflict → defaultSelected false
-- UI `CompanyRegistrySearch`: step review + checkbox + link URL; applica solo selezionati; Salva resta HITL
-- L1: Jest enrichment+openapi (18) + Vitest enrichment+registry+regressione (15) + build FE OK
-- Deploy VPS OK (PID 139295→153430, health 200); smoke modulo enrichment su VPS
-- Alert #3 non toccato
+- Roadmap: CTX-0…3 ✅ #663–#666; priorità #1 = CTX-4 HITL Alto; ISO-4 come Medio actionable
+- GUIDA: lezione proposte registro = checkbox, mai overwrite
+- PLAN SB: checklist HITL CTX-4 (blocca OAuth senza DoD)
+- `check-harness-boot.js` OK; UTF-8 OK
 - PR create 403 → compare URL sopra
 
 ## File toccati
 
-- `backend/src/data/aiContextEnrichment.js` (+ test)
-- `backend/src/services/openapiCompanyLookup.service.js` (+ test)
-- `backend/scripts/deploy-manifest.json`
-- `app/src/data/aiContextEnrichment.js` (+ test)
-- `app/src/components/CompanyRegistrySearch.jsx` (+ test)
-- `app/src/pages/CompanyDetailPage.jsx`
+- `docs/PROJECT_ROADMAP.md`
+- `docs/GUIDA_CONSOLIDATA.md`
 - `docs/agent-tasks/PLAN_SECOND_BRAIN_SLICES.md`
 - `docs/agent-tasks/DEPUTYTASK2.md`
 
 ## Cosa NON toccato
 
-- `qualificationAlert.service.js` / Alert UI / `DEPUTYTASK.md` (HITL #3)
-- Auth / sync / JWT / migrazioni / OAuth (CTX-4)
-- `computeProfileCompleteness` / tab Profilo ADR-018
+- `qualificationAlert.service.js` / Alert UI / `DEPUTYTASK.md`
+- Auth / OAuth / JWT / sync / migrazioni / codice FE-BE
 
-## Bozza hub (parallelo HITL — sync dopo merge)
+## Bloccanti next (no codice senza HITL)
 
-Roadmap § Stato attuale: priorità #1 → CTX-3 ✅ / next CTX-4 HITL; sessione «CTX-3 enrich citato HITL».  
-GUIDA: lezione breve — proposte da registro = checkbox per conflitti, mai overwrite silenzioso.
+| Voce | Motivo |
+|------|--------|
+| CTX-4 Email/Drive | Alto + HITL (checklist in PLAN) |
+| Alert #3 destinatario | HITL in `DEPUTYTASK.md` |
+| ING-5 / ROO-18 / MC-I4 / S1c | HITL o solo su richiesta |
+
+**Next Medio senza HITL (se serve codice):** ISO-4 Word visita Mason.
