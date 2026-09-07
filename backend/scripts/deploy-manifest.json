@@ -170,6 +170,7 @@
                                      "src/services/librarySourceRequest.service.js",
                                      "src/services/gapAnalysis.service.js",
                                      "src/services/complianceMap.service.js",
+                                     "src/services/complianceMapCompile.service.js",
                                      "src/services/materialKbLoader.service.js",
                                      "src/services/materialComplianceRuleEngine.service.js"
                                  ]

@@ -8,6 +8,10 @@ jest.mock('../services/complianceMap.service', () => ({
   updateItemHitl: jest.fn(),
 }));
 
+jest.mock('../services/complianceMapCompile.service', () => ({
+  compileFromCommercialCase: jest.fn(),
+}));
+
 jest.mock('../services/companyAccess.service', () => ({
   assertCompanyRead: jest.fn(),
   assertMutatingAllowed: jest.fn(),
@@ -27,6 +31,7 @@ jest.mock('../utils/logger', () => ({
 }));
 
 const svc = require('../services/complianceMap.service');
+const compileSvc = require('../services/complianceMapCompile.service');
 const { assertCompanyRead, assertMutatingAllowed } = require('../services/companyAccess.service');
 const ctrl = require('./complianceMap.controller');
 
@@ -141,5 +146,46 @@ describe('complianceMap.controller — access scope', () => {
       success: true,
       data: { companyId: 10, item: { id: 2, hitl_status: 'accepted' } },
     });
+  });
+
+  it('compile: write gate + 201 proposed_only', async () => {
+    assertMutatingAllowed.mockResolvedValueOnce(null);
+    compileSvc.compileFromCommercialCase.mockResolvedValueOnce({
+      companyId: 10,
+      map: { id: 3, status: 'draft' },
+      items: [{ id: 1, hitl_status: 'proposed' }],
+      meta: { hitl: 'proposed_only', proposed_by: 'gemini' },
+    });
+    const req = {
+      params: { companyId: '10' },
+      body: { commercial_case_id: 7 },
+      user: { organization_id: 1001, user_id: 5 },
+    };
+    const res = mockRes();
+    await ctrl.compileComplianceMap(req, res);
+    expect(compileSvc.compileFromCommercialCase).toHaveBeenCalledWith(
+      1001,
+      10,
+      { commercial_case_id: 7 },
+      5
+    );
+    expect(res.status).toHaveBeenCalledWith(201);
+  });
+
+  it('compile: 403 write negata', async () => {
+    assertMutatingAllowed.mockResolvedValueOnce({
+      status: 403,
+      code: 'ACCESS_DENIED',
+      message: 'no',
+    });
+    const req = {
+      params: { companyId: '10' },
+      body: { commercial_case_id: 7 },
+      user: { organization_id: 1001, user_id: 5 },
+    };
+    const res = mockRes();
+    await ctrl.compileComplianceMap(req, res);
+    expect(compileSvc.compileFromCommercialCase).not.toHaveBeenCalled();
+    expect(res.status).toHaveBeenCalledWith(403);
   });
 });

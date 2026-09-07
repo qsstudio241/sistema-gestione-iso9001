@@ -1,7 +1,7 @@
 'use strict';
 
 /**
- * complianceMap.routes.js — CM-1
+ * complianceMap.routes.js — CM-1/CM-2
  * /api/v1/companies/:companyId/compliance-maps...
  */
 
@@ -15,6 +15,7 @@ companyRouter.use(authenticate);
 
 companyRouter.get('/compliance-maps', ctrl.listComplianceMaps);
 companyRouter.post('/compliance-maps', ctrl.createComplianceMap);
+companyRouter.post('/compliance-maps/compile', ctrl.compileComplianceMap);
 companyRouter.get('/compliance-maps/:mapId', ctrl.getComplianceMap);
 companyRouter.post('/compliance-maps/:mapId/items', ctrl.createComplianceMapItem);
 companyRouter.patch(

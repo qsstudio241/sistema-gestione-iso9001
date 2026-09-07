@@ -1,7 +1,7 @@
 'use strict';
 
 /**
- * complianceMap.controller.js — CM-1 API indice/dettaglio + HITL stub
+ * complianceMap.controller.js — CM-1/CM-2 API indice/dettaglio + HITL + compile
  */
 
 const logger = require('../utils/logger');
@@ -12,6 +12,7 @@ const {
   addItem,
   updateItemHitl,
 } = require('../services/complianceMap.service');
+const { compileFromCommercialCase } = require('../services/complianceMapCompile.service');
 const {
   assertCompanyRead,
   assertMutatingAllowed,
@@ -96,6 +97,37 @@ async function createComplianceMap(req, res) {
   }
 }
 
+/** CM-2: compile da caso commerciale → items solo hitl proposed (HITL). */
+async function compileComplianceMap(req, res) {
+  try {
+    const scope = await resolveCompanyAccess(req, res, { write: true });
+    if (!scope) return undefined;
+
+    const result = await compileFromCommercialCase(
+      scope.organizationId,
+      scope.companyId,
+      req.body || {},
+      scope.userId
+    );
+    if (!result) {
+      return res.status(404).json({ error: 'Azienda non trovata', code: 'NOT_FOUND' });
+    }
+    if (result.notFound) {
+      return res.status(404).json({
+        error: 'Caso commerciale non trovato in questo ambito',
+        code: 'NOT_FOUND',
+      });
+    }
+    if (result.validationError) {
+      return res.status(400).json({ error: result.validationError, code: 'VALIDATION_ERROR' });
+    }
+    return res.status(201).json({ success: true, data: result });
+  } catch (err) {
+    logger.error('[ComplianceMap] compile error:', err.message);
+    return res.status(500).json({ error: err.message, code: 'SERVER_ERROR' });
+  }
+}
+
 async function createComplianceMapItem(req, res) {
   try {
     const scope = await resolveCompanyAccess(req, res, { write: true });
@@ -163,6 +195,7 @@ module.exports = {
   listComplianceMaps,
   getComplianceMap,
   createComplianceMap,
+  compileComplianceMap,
   createComplianceMapItem,
   patchComplianceMapItemHitl,
 };

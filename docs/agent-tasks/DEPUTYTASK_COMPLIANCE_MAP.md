@@ -1,49 +1,42 @@
-# DEPUTYTASK_COMPLIANCE_MAP — CM-1: schema + API indice + HITL stub
+# DEPUTYTASK_COMPLIANCE_MAP — CM-2: compilatore caso → items proposed (HITL)
 
 **Stato:** CHIUSO — TEST OK  
-**Aperto:** 06/09/2026 (Lead docs-only) · brief su `main` [#652](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/652)  
-**Chiuso:** 06/09/2026 (dopo merge SB-4 [#653](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/653))  
+**Aperto:** 07/09/2026 (post-merge CM-1 #655)  
+**Chiuso:** 07/09/2026  
 **Piano:** [`PLAN_COMPLIANCE_MAP_SLICES.md`](PLAN_COMPLIANCE_MAP_SLICES.md)  
-**Rischio:** Medio — migrazione additiva + API nuove; PR, non push su `main`. Non dire «pronta» senza CI + Bugbot + Security su quello SHA.  
-**Branch:** `cursor/cm1-compliance-map-schema-8269`  
-**PR:** [#655](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/655) (draft, MERGEABLE; allineata a `main` post-#654)  
-**Migrazione:** **164** (`164_compliance_maps.sql` + `run-migration-164-vps.js`)  
-**Stream:** `DEPUTYTASK_COMPLIANCE_MAP.md` — **CM-2 non avviata** finché #655 non è su `main`.
-
-> Gate SB-4 soddisfatto (#653 su `main`). Rules anti-Update-branch #654 su `main`. CM-1 codice **non** ancora su `main`.
+**Rischio:** Medio — service/API additive + AI propose; PR, non push su `main`. Non dire «pronta» senza CI + Bugbot + Security su quello SHA.  
+**Branch:** `cursor/cm2-compliance-compile-8269`  
+**PR:** create bloccata da `gh` 403 (token Cloud senza createPullRequest). Compare: https://github.com/qsstudio241/sistema-gestione-iso9001/compare/main...cursor/cm2-compliance-compile-8269?expand=1  
+**Migrazione:** nessuna (usa 164 già su VPS)  
+**Stream:** `DEPUTYTASK_COMPLIANCE_MAP.md`
 
 ---
 
-## Esito CM-1
+## Esito CM-2
 
-- Tabelle `compliance_maps` / `compliance_map_items` / `compliance_map_events` (idempotenti)
-- API: GET lista, GET dettaglio, POST mappa, POST item, PATCH HITL — scope `organization_id` + `company_id`
-- Event log su create/HITL; niente Gemini compile; niente UI
-- Test L1 service + controller (isolamento multi-tenant)
-- `deploy-manifest.json` + wire `server.js`
-- Hub: roadmap § Stato + lezione GUIDA; bussola aggiornata (swap path)
+- `POST /companies/:companyId/compliance-maps/compile` — mappa draft da `commercial_case_id`
+- Gemini via `aiProviderAdapter` → items `hitl_status=proposed` (`proposed_by=gemini`); fallback seed `compiler` se AI assente
+- **Niente** auto-confirm (HITL obbligatorio)
+- Scope `organization_id` + `company_id` su caso ed estratti
+- Evento `compile_proposed`
+- L1: 24 test complianceMap verdi
+- `deploy-manifest.json` + VPS mig 164 già applicata (PROD+TEST) + deploy CM-1
 
 ## DoD
 
-- [x] Migrazione idempotente + runner VPS  
-- [x] GET/POST/PATCH L1 Jest  
-- [x] Isolamento org/company  
-- [x] Eventi HITL  
-- [x] deploy-manifest  
-- [x] Brief CHIUSO — TEST OK  
+- [x] POST compile → mappa draft + items `proposed`
+- [x] Gemini via `aiProviderAdapter`; niente auto-accept
+- [x] Isolamento org/company
+- [x] Evento `compile_proposed`
+- [x] Test L1 service + controller
+- [x] deploy-manifest
+- [x] Brief CHIUSO — TEST OK
 
 ## Non toccato
 
-`AmbitoFactsBar` / `ambitoFacts` / `aiChat` / NC / Qualifiche / Deadlines / `gapAnalysis` rewrite / NormBroker cascata.
+`AmbitoFactsBar` / `ambitoFacts` / `aiChat` / NC / Qualifiche / Deadlines / `gapAnalysis` rewrite / NormBroker cascata / UI piena (CM-4).
 
-## Post-merge #655 (prossima chat)
+## Post-merge CM-2
 
-1. `git pull origin main` — verificare mig. 164 + `complianceMap.*` su `main`.
-2. **VPS migrazione 164** (secrets SSH disponibili in Cloud):
-   ```bash
-   # da repo allineato; pattern ACCESSO_DEPLOY_AGENTS — SCP runner+SQL, poi:
-   node backend/scripts/run-migration-164-vps.js
-   # se restart backend: verificare MainPID prima/dopo
-   ```
-3. Aprire brief **CM-2** su questo stream (compilatore → items `proposed` + HITL stub) — branch `cursor/cm2-compliance-compile-8269`.
-4. Prima di ogni push: `git fetch origin main && git merge origin/main`.
+1. Deploy backend (nuovo `complianceMapCompile.service.js`)
+2. Aprire CM-3 (link norma/legge NormBroker) o CM-4 UI
