@@ -3,14 +3,16 @@
  * Route: /settings/studio
  */
 
-import React, { useState, useEffect, useCallback, useRef } from "react";
+import React, { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import { Link } from "../contexts/RouterContext";
 import { useAuth } from "../contexts/AuthContext";
 import apiService from "../services/apiService";
 import NotificationContactsPanel from "../components/NotificationContactsPanel";
 import FileDropzone from "../components/FileDropzone";
 import SgqDataGrid from "../components/SgqDataGrid";
+import StatusBadge from "../components/StatusBadge";
 import { DOC_TYPE_OPTIONS, DOC_TYPE_LABELS } from "../data/documentTypes";
+import { scoreStudioContext, STUDIO_FIELD_LABELS } from "../data/aiContextRubrics";
 import "./StudioSettingsPage.css";
 import "./NotificationsSettingsPage.css";
 
@@ -19,6 +21,13 @@ function hasNotificationsLicense(user) {
   if (!list || !Array.isArray(list) || list.length === 0) return true;
   return list.includes("notifications");
 }
+
+/** Stesse soglie company_profile completeness — non fondere i due score. */
+const AI_CONTEXT_BADGE = {
+  pronto: { status: "active", label: "Pronto" },
+  parziale: { status: "orphan", label: "Parziale" },
+  incompleto: { status: "inactive", label: "Incompleto" },
+};
 
 // --- Tab Anagrafica ---
 
@@ -92,6 +101,19 @@ function TabAnagrafica() {
   }, []);
 
   useEffect(() => { loadOrg(); }, [loadOrg]);
+
+  const liveContext = useMemo(
+    () =>
+      scoreStudioContext({
+        organization_name: org?.organization_name || "",
+        vat_number: form.vat_number,
+        ai_context_notes: form.ai_context_notes,
+        audit_report_prefix: form.audit_report_prefix,
+      }),
+    [org?.organization_name, form.vat_number, form.ai_context_notes, form.audit_report_prefix]
+  );
+
+  const badgeCfg = AI_CONTEXT_BADGE[liveContext.level] || AI_CONTEXT_BADGE.incompleto;
 
   const handleChange = (field) => (e) => {
     let val = e.target.value;
@@ -307,12 +329,42 @@ function TabAnagrafica() {
           Queste note vengono incluse automaticamente in ogni risposta dell&apos;assistente AI
           (chat globale, conclusioni audit, riesame requisiti).
         </p>
+
+        <div className="studio-ai-context-score" data-testid="ai-context-score">
+          <StatusBadge
+            type="user"
+            status={badgeCfg.status}
+            label={`${liveContext.score}% \u2014 ${badgeCfg.label}`}
+          />
+          <span className="studio-hint">
+            Completezza contesto AI (rubrica {liveContext.version}) — distinta dal profilo legale azienda.
+          </span>
+        </div>
+
+        {liveContext.missing.length > 0 && (
+          <div className="studio-ai-context-wizard" data-testid="ai-context-wizard">
+            <p className="studio-ai-context-wizard-title">
+              Per alzare lo score, completa:
+            </p>
+            <ul className="studio-ai-context-missing">
+              {liveContext.missing.map((key) => (
+                <li key={key}>
+                  {STUDIO_FIELD_LABELS[key] || key}
+                  {key === "organization_name" ? (
+                    <span className="studio-hint"> — gestito dal superadmin</span>
+                  ) : null}
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+
         {isAdmin ? (
           <div className="studio-field">
             <label htmlFor="ai-context-notes">Note di contesto studio</label>
             <textarea
               id="ai-context-notes"
-              className="studio-textarea"
+              className="studio-textarea notes-textarea"
               value={form.ai_context_notes}
               onChange={handleChange("ai_context_notes")}
               placeholder={"Es.: Studio di consulenza ISO con focus metalmeccanica e saldatura.\nPreferire risposte sintetiche con riferimenti a clausola e codice documento."}
@@ -320,7 +372,7 @@ function TabAnagrafica() {
               maxLength={2000}
             />
             <span className="studio-hint">
-              Max 2000 caratteri — visibile solo agli amministratori dello studio
+              Max 2000 caratteri — almeno 40 per lo score pieno. Salvataggio solo con «Salva personalizzazioni».
             </span>
           </div>
         ) : (
@@ -617,3 +669,4 @@ function StudioSettingsPage() {
 }
 
 export default StudioSettingsPage;
+export { TabAnagrafica, AI_CONTEXT_BADGE };
