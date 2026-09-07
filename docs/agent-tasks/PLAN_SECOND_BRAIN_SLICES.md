@@ -2,7 +2,7 @@
 
 > **Destinazione**: in app, l’utente vede e interroga **i fatti del solo Ambito attivo** (NC, scadenze, gap). La chat (`/ai-assistant`) consuma quei fatti; non è un cervello parallelo.
 > **Spec**: [ADR-010](../adr/ADR-010-ai-agentic-architecture.md) · [SAL §K](../specs/MODULO_SAL_SCOPO_E_ROADMAP.md) · Ambito (`CompanyScopeSelect`)
-> **Stato (07/09/2026):** SB-1 ✅ · SB-2 ✅ · SB-3 ✅ · SB-4 ✅ · SB-5 bozza ✅ · **SB-6 ✅** · **CTX-0 ✅** · **CTX-1 ✅** · **CTX-2** in corso (badge/wizard azienda). Brief Alert HITL: [`DEPUTYTASK.md`](DEPUTYTASK.md) (no codice). **Prossima:** CTX-3 enrichment / JSON se serve.  
+> **Stato (07/09/2026):** SB-1 ✅ · SB-2 ✅ · SB-3 ✅ · SB-4 ✅ · SB-5 bozza ✅ · **SB-6 ✅** · **CTX-0 ✅** · **CTX-1 ✅** · **CTX-2 ✅** (badge/wizard azienda). Brief Alert HITL: [`DEPUTYTASK.md`](DEPUTYTASK.md) (no codice). **Prossima:** CTX-3 enrichment / JSON se serve.  
 > **Mappa:** 16/08/2026 (wayfinder). Intuizione AIOS: livelli contesto/dati/intelligence **dentro** il prodotto, non cartella Claude parallela.
 
 ---
@@ -96,11 +96,11 @@ Badge: `incompleto` (<50) / `parziale` (50–79) / `pronto` (≥80) — stesse s
 
 ### DoD CTX-2
 
-- [ ] GET/PUT `/companies/:id` include `ai_context` (`scoreCompanyContext`)
-- [ ] Badge % + livello su Anagrafica (`StatusBadge`, pattern Studio)
-- [ ] Checklist missing con label rubrica; anteprima live (mirror FE `company-v1`)
-- [ ] HITL: nessun auto-save anagrafica
-- [ ] Test L1 FE + Jest controller; build FE; deploy VPS se controller
+- [x] GET/PUT `/companies/:id` include `ai_context` (`scoreCompanyContext`)
+- [x] Badge % + livello su Anagrafica (`StatusBadge`, pattern Studio)
+- [x] Checklist missing con label rubrica; anteprima live (mirror FE `company-v1`)
+- [x] HITL: nessun auto-save anagrafica
+- [x] Test L1 FE + Jest controller; build FE; deploy VPS se controller
 - [ ] **Fuori slice:** JSON strutturato, enrichment web, Alert #3, OAuth
 
 ### CTX-3…4 (outline — non aprire ora)
@@ -124,7 +124,7 @@ Badge: `incompleto` (<50) / `parziale` (50–79) / `pronto` (≥80) — stesse s
 | **SB-6** ✅ | Fatti SAL | `getSalSummary` → counts Ambito + card/nav `/sal` | SB-3 | AFK |
 | **CTX-0** ✅ | Rubrica + score % | `aiContextRubrics` + `aiContextScore.service` | — | AFK |
 | **CTX-1** ✅ | Badge + wizard Studio | `organizations/me` + `StudioSettingsPage` | CTX-0 | AFK |
-| **CTX-2** | Badge + wizard Azienda | `companies/:id` + `CompanyDetailPage` | CTX-1 | AFK |
+| **CTX-2** ✅ | Badge + wizard Azienda | `companies/:id` + `CompanyDetailPage` | CTX-1 | AFK |
 | **CTX-3** | Enrich / JSON | web / JSON — file disgiunti | CTX-2 | AFK |
 | **CTX-4** | Email/Drive | OAuth Alto + HITL | CTX-3 | HITL |
 
@@ -147,7 +147,7 @@ Badge: `incompleto` (<50) / `parziale` (50–79) / `pronto` (≥80) — stesse s
 
 | Livello | Artefatto | Slice |
 |---|---|---|
-| Contesto | Rubrica + score (CTX-0 ✅) + wizard Studio (CTX-1 ✅) + wizard Azienda (CTX-2) → enrich | CTX-0…3 |
+| Contesto | Rubrica + score (CTX-0 ✅) + wizard Studio (CTX-1 ✅) + wizard Azienda (CTX-2 ✅) → enrich | CTX-0…3 |
 | Dati | Snapshot SQL `ambitoFacts` | SB-1, SB-4, SB-6 |
 | Intelligence | Moduli esistenti; meeting = nebbia | — |
 | Automazioni | Pulsanti → moduli, HITL | SB-5 |
