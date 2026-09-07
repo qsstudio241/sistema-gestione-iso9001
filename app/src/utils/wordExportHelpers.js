@@ -644,6 +644,152 @@ function buildNormExcerptRow(excerptText, colWidths) {
     ]);
 }
 
+/**
+ * Standard visita ispettiva saldatura (Audit ISO 3834-2 id 6 + sistema id 7).
+ * Layout Mason 27/01: Quesito | Evidenze | Esito (C/NC) — non le colonne ISO 9001.
+ * Scala voto 1–6 = ISO-4b (HITL), fuori da questa funzione.
+ */
+export function isIso3834VisitStandard(stdKey) {
+    const k = String(stdKey || '');
+    return k.includes('3834') || k === 'RDP_MSN' || k.startsWith('RDP_MSN');
+}
+
+/** Colonne DXA visita Mason: Quesito | Evidenze | Esito */
+const MASON_VISIT_COL_DXA = [4200, 4200, 2073];
+
+/**
+ * OOXML allegato per colonna Evidenze (visita 3834) — stesso pattern preview/link della tabella 9001.
+ */
+function attachmentFragmentForEvidence(a, getViewUrl, options, imageRegistry) {
+    const name = a.fileName || a.name || 'File';
+    const aId = a.serverAttachmentId ?? a.attachment_id ?? a.id;
+    const url = (getViewUrl && aId) ? getViewUrl(aId) : null;
+    const usePreview = options.photoMode === 'preview';
+    const effectiveMime = normalizeMimeType(a.imageMimeType || a.mimeType || '');
+    const hasValidImage = IMAGE_MIME_TYPES.has(effectiveMime)
+        && typeof a.imageBase64 === 'string'
+        && a.imageBase64.startsWith('data:image/');
+
+    if (usePreview && hasValidImage && imageRegistry) {
+        const imgIdx = imageRegistry.length;
+        const rId = `rId${100 + imgIdx}`;
+        const imgId = 100 + imgIdx;
+        const ext = IMAGE_EXTS[effectiveMime] || 'jpg';
+        imageRegistry.push({ rId, imgId, base64: a.imageBase64, mimeType: effectiveMime, ext });
+        const { cx, cy } = embeddedImageEmuFromBase64(a.imageBase64, effectiveMime);
+        const imgXml = xmlImageOoxml(rId, imgId, cx, cy);
+        const linkRow = url
+            ? xmlHyperlinkPara(url, '\uD83D\uDD17 ' + name, { color: '1E40AF', size: 18 })
+            : xmlPara(xmlRun(escXml('\uD83D\uDD17 ' + name), { color: '1E40AF', size: 18 }), { sa: 0 });
+        return `<w:p><w:pPr><w:jc w:val="left"/></w:pPr>${imgXml}</w:p>` + linkRow;
+    }
+    if (url) {
+        return xmlHyperlinkPara(url, '\uD83D\uDCCE ' + name, { color: '1E40AF', size: 18 });
+    }
+    return xmlPara(xmlRun(escXml('\uD83D\uDCCE ' + name), { color: '1E40AF', size: 18 }), { sa: 0 });
+}
+
+/**
+ * Tabella quesito/evidenze/esito (layout check list visita Mason 27/01, esito C/NC).
+ */
+function buildMasonVisitQuestionTableOoxml(questions = [], auditAttachments = [], getViewUrl = null, options = {}, imageRegistry = null) {
+    const C = MASON_VISIT_COL_DXA;
+    const headerRow = xmlRow([
+        xmlCell(xmlPara(xmlRun('Quesito', { bold: true }), { align: 'center' }), { fill: 'E5E7EB', dxa: C[0] }),
+        xmlCell(xmlPara(xmlRun('Evidenze (eventuali foto)', { bold: true }), { align: 'center' }), { fill: 'E5E7EB', dxa: C[1] }),
+        xmlCell(xmlPara(xmlRun('Esito', { bold: true }), { align: 'center' }), { fill: 'E5E7EB', dxa: C[2] }),
+    ], { header: true });
+
+    if (!questions.length) {
+        return xmlTable([
+            headerRow,
+            xmlRow([xmlCell(xmlPara('Nessuna domanda presente.', { ital: true }), { span: 3 })]),
+        ], C, 100, true);
+    }
+
+    const allRows = [headerRow];
+
+    questions.forEach((q) => {
+        const cfg = STATUS_CFG[q.status] || STATUS_CFG.NOT_ANSWERED;
+        const qRef = q.clauseRef || '';
+        const qTxt = q.question || q.text || 'Domanda non definita';
+        const full = escXml(qRef ? qRef + ' - ' + qTxt : qTxt);
+
+        const satNote = q.satisfied_by_standard
+            ? escXml(`[SAT ${q.satisfied_by_standard}${q.satisfied_by_clause ? ' \u00A7' + q.satisfied_by_clause : ''}${q.satisfied_by_doc_ref ? ' - ' + q.satisfied_by_doc_ref : ''}]`)
+            : '';
+        const notesRaw = (q.notes && q.notes.trim()) ? escXml(q.notes.trim()) : '';
+
+        let evidenceBody = '';
+        if (satNote) {
+            evidenceBody += xmlPara(xmlRun(satNote, { bold: true, size: 18 }), { sa: 40, sb: 0 });
+        }
+        if (notesRaw) {
+            evidenceBody += xmlPara(notesRaw, { sa: 40, sb: 0 });
+        }
+
+        const qId = q.questionId != null ? q.questionId : q.id;
+        const qAtts = qId != null
+            ? (auditAttachments || []).filter((a) => Number(a.questionId) === Number(qId))
+            : [];
+        qAtts.forEach((a) => {
+            evidenceBody += attachmentFragmentForEvidence(a, getViewUrl, options, imageRegistry);
+        });
+
+        if (!evidenceBody) {
+            evidenceBody = xmlPara('-', { sa: 0 });
+        }
+
+        allRows.push(xmlRow([
+            xmlCell(xmlPara(full, { sa: 0 }), { dxa: C[0], va: 'top' }),
+            xmlCell(evidenceBody, { dxa: C[1], va: 'top' }),
+            xmlCell(
+                xmlPara(xmlRun(cfg.label, { bold: true, color: cfg.text }), { align: 'center' }),
+                { fill: cfg.fill, dxa: C[2], va: 'center' }
+            ),
+        ]));
+    });
+
+    return xmlTable(allRows, C, 100, true);
+}
+
+/**
+ * Checklist visita ISO 3834 / RDP_MSN: sezioni + tabella Mason, senza cap. Rilievi pendenti 9001.
+ */
+function buildIso3834VisitChecklistOoxml(stdKey, normData, auditAttachments, getViewUrl, options, imageRegistry) {
+    let xml = '';
+    const stdLabel = STANDARD_LABELS[stdKey] || stdKey;
+    xml += xmlPara(
+        xmlRun(stdLabel, { bold: true, size: 24, color: '1A3A5C' }),
+        { style: 'Titolo1', pageBreak: false, sb: 200, sa: 200 }
+    );
+
+    Object.entries(normData)
+        .sort(([a], [b]) =>
+            (parseInt(extractSectionNum(a), 10) || 0) -
+            (parseInt(extractSectionNum(b), 10) || 0)
+        )
+        .forEach(([clauseKey, clause]) => {
+            if (!clause || typeof clause !== 'object') return;
+            const title = (clause.title || '').replace(/^\d+\.?\s*[-–]\s*/, '');
+            const heading = (title || extractSectionNum(clauseKey) || clauseKey).toUpperCase();
+            xml += xmlPara(
+                xmlRun(heading, { bold: true, size: 22, color: '2C5F8A' }),
+                { style: 'Titolo2', pageBreak: false, sb: 300, sa: 150 }
+            );
+            xml += buildMasonVisitQuestionTableOoxml(
+                clause.questions || [],
+                auditAttachments,
+                getViewUrl,
+                options,
+                imageRegistry
+            );
+            xml += xmlPara('', { sa: 200 });
+        });
+
+    return xml;
+}
+
 function buildClauseTableOoxml(questions = [], auditAttachments = [], getViewUrl = null, options = {}, imageRegistry = null, normExcerpts = {}) {
     const C = CLAUSE_COL_DXA;
 
@@ -884,6 +1030,20 @@ export function buildChecklistSectionOoxml(checklist, auditAttachments = [], pen
         if (stdKey.includes('14001')) {
             xml += buildISO14001Ooxml(normData, auditAttachments, pendingIssues, getViewUrl, options, imageRegistry, certFindings, normExcerpts);
             return; // già gestito dentro buildISO14001Ooxml
+        }
+
+        // ── Visita ISO 3834 / Mason (Audit id 6–7): Quesito | Evidenze | Esito ─
+        // Niente cap. Rilievi pendenti 9001: il verbale visita non li usa (ISO-4).
+        if (isIso3834VisitStandard(stdKey)) {
+            xml += buildIso3834VisitChecklistOoxml(
+                stdKey,
+                normData,
+                auditAttachments,
+                getViewUrl,
+                options,
+                imageRegistry
+            );
+            return;
         }
 
         // ── Rendering standard (ISO 9001, ISO 45001, ecc.) ───────────────────

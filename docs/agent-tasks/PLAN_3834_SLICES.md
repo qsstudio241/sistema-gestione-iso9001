@@ -91,7 +91,7 @@ Registro documenti ← ingest WPS/WPQR/qualifiche; RDP/WB ancora fuori
 | WPS | Genera da WPQR; PDF legacy | Word Annex A 15609-1 | Feedback Mason |
 | Commessa / §5.3 | Checklist + timbro + Word (ISO-2). Capitolato: persistenza mig. 116 + chiavi 10204/apporto (ISO-3) | — | ISO-8 ponte offerta |
 | RDP modulo prove (`/saldatura/rdp`) | Menu spento 19/08 (zero record vivi in prod) | Assente | Parcheggiato: eventuale resoconto visita 23/02 |
-| Audit ISO 3834-2 (id 6) visita | Checklist 22 quesiti (Word Mason 27/01) | Word `ISO3834-audit-report.docx` (C/NC) | **ISO-4** layout check list 27/01 |
+| Audit ISO 3834-2 (id 6) visita | Checklist 22 quesiti (Word Mason 27/01) | Word `ISO3834-audit-report.docx` layout Quesito/Evidenze/Esito (C/NC) | **ISO-4** ✅ · **ISO-4b** scala 1–6 HITL |
 | Audit id 7 (`RDP_MSN`) | 36 clausole sistema; etichette UI senza «RDP» | stesso template 3834 | non è la check list Manitou |
 | Verbali NDT | Manuale + foto | Word VT | — |
 | Welding Book | Manuale | **Assente** (hint in UI: Fase 2–3) | ISO-5 |
@@ -109,7 +109,7 @@ Ogni slice è un **tracer verticale** (un processo o un ponte), non «tutto il D
 | **ISO-1d** | RBAC su Welding Book | `weldingBooks.controller.js` | ISO-1a | Fatto (PR #442) |
 | **ISO-2** | Riesame §5.3: data/utente + Word (niente blocco) | `projects.controller.js`, `ProjectsPage.jsx`, mini-export Word | — | Fatto (PR #443) |
 | **ISO-3** | Chiavi certificato nel prompt capitolato | `caseTextAnalysis.service.js` + `aiContextBuilder.service.js` | norme 16/08 | Fatto |
-| **ISO-4** | Export Word visita Mason **da Audit ISO 3834-2 (id 6)** | `wordExport.js` / `ISO3834-audit-report.docx`: layout check list 27/01 (quesito / evidenza / esito C/NC). **Non** `RDPModule`. Menu `/saldatura/rdp` spento | architettura 19/08 (PR #486) | AFK (pronta) |
+| **ISO-4** | Export Word visita Mason **da Audit ISO 3834-2 (id 6)** | `wordExport.js` / `ISO3834-audit-report.docx`: layout check list 27/01 (quesito / evidenza / esito C/NC). **Non** `RDPModule`. Menu `/saldatura/rdp` spento | architettura 19/08 (PR #486) | Fatto (branch `cursor/iso4-word-visita-mason-8269`) |
 | **ISO-4b** | Scala voto 1–6 Mason (invece di C/NC/OSS) | checklist Audit id 6 + export Word | ISO-4 + HITL | HITL |
 | **ISO-5** | Export Word Welding Book + foto cordone | `WeldingBooksPage.jsx`, `wordExport` (pattern VT/WPS), allegati | ADR-016 Fase 2–3 | AFK |
 | **ISO-6** | Ponte NC ↔ commessa | `nc.controller.js` + `NCPage` / drawer: `project_id` opzionale | — | Fatto (PR #465) |
@@ -129,7 +129,7 @@ Ogni slice è un **tracer verticale** (un processo o un ponte), non «tutto il D
 
 | Ora | Aspettare |
 |-----|-----------|
-| **ISO-4** Word visita Mason da **Audit** id 6 | architettura chiusa (menu spento, etichette, file in git) — [PR #486](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/486) |
+| **ISO-4** Word visita Mason da **Audit** id 6 | **Fatto** — layout Quesito/Evidenze/Esito (C/NC) in `wordExportHelpers` |
 | **ISO-5** Word Welding Book | indipendente da ISO-4 (file disgiunti) |
 | **ISO-4b** scala 1–6 | HITL: oggi l'audit usa C/NC/OSS |
 | **ISO-8** ponte offerta → commessa | file disgiunti da ISO-4/5 |

@@ -214,7 +214,7 @@ describe("Export Word ISO_3834_2 — pipeline end-to-end (template reale)", () =
         expect(bodyText).toContain("saldatore è qualificato secondo ISO 9606");
     });
 
-    it("(c) inietta correttamente le tabelle checklist (stati C/NC/OSS/OM/NA/NV) senza eccezioni", async () => {
+    it("(c) inietta correttamente le tabelle checklist visita Mason (Quesito/Evidenze/Esito C/NC)", async () => {
         const audit = makeIso3834Audit();
         const getViewUrl = (id) => `https://api.example.test/attachments/${id}/view?token=TOK`;
 
@@ -222,8 +222,17 @@ describe("Export Word ISO_3834_2 — pipeline end-to-end (template reale)", () =
         const arrayBuffer = await blobToArrayBuffer(blob);
         const zip = new PizZip(arrayBuffer);
         const documentXml = zip.files["word/document.xml"].asText();
+        const bodyText = Array.from(documentXml.matchAll(/<w:t[^>]*>([^<]*)<\/w:t>/g)).map((m) => m[1]).join("");
 
-        // Tabelle checklist con celle colorate per stato (STATUS_CFG in wordExportHelpers.js)
+        // Layout check list 27/01 (ISO-4) — non colonne ISO 9001
+        expect(bodyText).toContain("Quesito");
+        expect(bodyText).toContain("Evidenze (eventuali foto)");
+        expect(bodyText).toContain("Esito");
+        expect(bodyText).not.toContain("Attivit\u00e0/processo");
+        expect(bodyText).not.toContain("Valutazione di efficacia");
+        expect(bodyText).not.toContain("RILIEVI PENDENTI");
+
+        // Esiti C/NC/OSS/OM/NA/NV (STATUS_CFG) — non scala 1–6
         expect(documentXml).toContain("Conforme");
         expect(documentXml).toContain("Non Conforme");
         expect(documentXml).toContain("Osservazione");
