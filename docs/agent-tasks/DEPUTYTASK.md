@@ -1,41 +1,43 @@
-# DEPUTYTASK — PONTE-1: Checklist ↔ allegati layout A
+# DEPUTYTASK — Alert qualifiche: destinatario UI (HITL)
 
-**Stato:** CHIUSO — TEST OK  
-**Aperto:** 03/09/2026 (HITL UX) · **Implementato / chiuso:** 03/09/2026  
-**Piano:** [`PLAN_VALUTAZIONE_COMMESSE_SLICES.md`](PLAN_VALUTAZIONE_COMMESSE_SLICES.md) § PONTE-1  
-**UX:** [`UX_PONTE_CHECKLIST_ALLEGATI.md`](UX_PONTE_CHECKLIST_ALLEGATI.md) — layout **A** confermato HITL  
-**Rischio:** Medio  
-**Branch:** `cursor/ponte-checklist-allegati-a-1c5d`  
-**Migrazione:** **163** (`163_commercial_checklist_attachment_bridge.sql` + `run-migration-163-vps.js`)
+**Stato:** APERTO  
+**Aperto:** 07/09/2026 (post CM-5; priorità roadmap #3)  
+**Rischio:** Medio se UI+API additiva; Alto se tocca auth/RBAC email cross-tenant  
+**Piano:** roadmap § Priorità #3 · backlog «Modulo Notifiche/Alert — destinatario allerte qualifiche»  
+**Dipende:** conferma HITL sotto — **non aprire codice** senza DoD chiuso
 
 ---
 
-## HITL
+## Perché
 
-| Voce | Decisione |
-|------|-----------|
-| Layout | **A** |
-| Flag | Template studio, default OFF; caso read-only badge |
-| Soft | salva/export OK + badge ambra |
-| Hard | Avanza stato bloccato se required senza file |
+Oggi il destinatario email allerte qualifiche è solo cascata in `resolveWeldingCoordinatorRecipients` (`qualificationAlert.service.js`). Il flag anagrafica «Coordinatore saldatura responsabile (primario)» autorizza la conferma semestrale, **non** gli alert. Il committente (10/08/2026) ha chiesto una sessione dedicata Notifiche/Alert.
 
-## Esito
+## HITL (blocca codice)
 
-- Schema link `commercial_case_checklist_attachments` + `attachment_required` template/caso
-- API GET/POST/DELETE link; generate checklist snapshotta il flag
-- FE tab Checklist zona Allegati collegati; template checkbox
-- Gate workflow preliminare/finale
-- L1 BE (attachment + workflow + template defaults) + Vitest FE + build app OK
-- `deploy-manifest.json` aggiornato (`commercialChecklistAttachment.service.js`)
+1. Destinatario = scelta esplicita in anagrafica azienda (rubrica `notification_contacts` / personale), oppure override opzionale sopra la cascata attuale?
+2. Stesso meccanismo anche per documenti/NC, o solo qualifiche in questa slice?
+3. Un solo destinatario primario o lista?
+4. Fallback se vuoto: tenere cascata attuale sì/no?
 
-## Come prova l’utente
+## DoD (dopo HITL)
 
-1. Ops: applicare mig **163** su VPS (`run-migration-163-vps.js`), deploy BE
-2. Gestione → Template checklist: spunta «Allegato obbligatorio» su una voce → Salva
-3. Caso riesame → Genera checklist → badge «Allegato richiesto»; senza file → «Manca allegato» (salva comunque)
-4. Collega / Carica e collega da allegati del caso
-5. Avanza stato: blocco se manca allegato required
+- UI anagrafica: campo/selettore destinatario alert qualifiche visibile
+- Servizio: usa la scelta se presente; altrimenti fallback definito
+- Test L1 BE + FE; niente segreti; PR Medio + Bugbot
 
-## Cosa NON toccato
+## File previsti (dopo HITL — bozza)
 
-auth/sync · viste-per-ente · ING-5 · secondo DMS · SAL gap engine
+- `backend/src/services/qualificationAlert.service.js` (+ test)
+- UI anagrafica / Notifiche (path da confermare: `CompanyDetailPage` vs `NotificationsSettingsPage`)
+- eventuale migrazione nullable additiva se serve colonna
+
+## Cosa NON toccare
+
+- CONS-7 / auth offline
+- ING-5 / VC-5 / Compliance Map
+- SB-2 (slot `DEPUTYTASK2`)
+- Scheduler cron nuovi senza conferma costo
+
+## Note
+
+Slice **non** eseguibile finché le 4 domande HITL non hanno risposta. Questo brief è il posto APERTO per la priorità #3; codice solo dopo DoD.
