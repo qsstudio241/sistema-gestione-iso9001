@@ -2,7 +2,7 @@
 
 > **Destinazione**: in app, l’utente vede e interroga **i fatti del solo Ambito attivo** (NC, scadenze, gap). La chat (`/ai-assistant`) consuma quei fatti; non è un cervello parallelo.
 > **Spec**: [ADR-010](../adr/ADR-010-ai-agentic-architecture.md) · [SAL §K](../specs/MODULO_SAL_SCOPO_E_ROADMAP.md) · Ambito (`CompanyScopeSelect`)
-> **Stato (07/09/2026):** SB-1 ✅ · SB-2 ✅ · SB-3 ✅ · SB-4 ✅ · SB-5 bozza ✅ · **SB-6 ✅** · **CTX-0 ✅** · **CTX-1** in corso (badge/wizard Studio). Brief Alert HITL: [`DEPUTYTASK.md`](DEPUTYTASK.md) (no codice).  
+> **Stato (07/09/2026):** SB-1 ✅ · SB-2 ✅ · SB-3 ✅ · SB-4 ✅ · SB-5 bozza ✅ · **SB-6 ✅** · **CTX-0 ✅** · **CTX-1 ✅** (badge/wizard Studio). Brief Alert HITL: [`DEPUTYTASK.md`](DEPUTYTASK.md) (no codice). **Prossima:** CTX-2 se serve JSON, altrimenti backlog.  
 > **Mappa:** 16/08/2026 (wayfinder). Intuizione AIOS: livelli contesto/dati/intelligence **dentro** il prodotto, non cartella Claude parallela.
 
 ---
@@ -82,11 +82,11 @@ Badge: `incompleto` (<50) / `parziale` (50–79) / `pronto` (≥80) — stesse s
 
 ### DoD CTX-1
 
-- [ ] GET/PATCH `/organizations/me` include `ai_context` (`scoreStudioContext`)
-- [ ] Badge % + livello su Contesto Assistente AI (`StatusBadge`, pattern profilo)
-- [ ] Checklist missing con label rubrica; anteprima live (mirror FE `app/src/data/aiContextRubrics.js`)
-- [ ] HITL: nessun auto-save note/profilo
-- [ ] Test L1 FE + Jest controller; build FE
+- [x] GET/PATCH `/organizations/me` include `ai_context` (`scoreStudioContext`)
+- [x] Badge % + livello su Contesto Assistente AI (`StatusBadge`, pattern profilo)
+- [x] Checklist missing con label rubrica; anteprima live (mirror FE `app/src/data/aiContextRubrics.js`)
+- [x] HITL: nessun auto-save note/profilo
+- [x] Test L1 FE + Jest controller; build FE
 - [ ] **Fuori slice:** wizard azienda `company-v1`, CTX-2 JSON, enrichment web, Alert #3
 
 ### CTX-2…4 (outline — non aprire ora)
@@ -110,7 +110,7 @@ Badge: `incompleto` (<50) / `parziale` (50–79) / `pronto` (≥80) — stesse s
 | **SB-5** | Pulsanti operativi | Nav moduli con Ambito; gated se manca azienda | SB-2 | AFK |
 | **SB-6** ✅ | Fatti SAL | `getSalSummary` → counts Ambito + card/nav `/sal` | SB-3 | AFK |
 | **CTX-0** ✅ | Rubrica + score % | `aiContextRubrics` + `aiContextScore.service` | — | AFK |
-| **CTX-1** | Badge + wizard Studio | `organizations/me` + `StudioSettingsPage` | CTX-0 | AFK |
+| **CTX-1** ✅ | Badge + wizard Studio | `organizations/me` + `StudioSettingsPage` | CTX-0 | AFK |
 | **CTX-2…3** | Persist / enrich | JSON / web — file disgiunti | CTX-1 | AFK |
 | **CTX-4** | Email/Drive | OAuth Alto + HITL | CTX-3 | HITL |
 
@@ -124,6 +124,7 @@ Badge: `incompleto` (<50) / `parziale` (50–79) / `pronto` (≥80) — stesse s
 
 - **SB-1:** tre numeri veri (NC / qualifiche 30gg / documenti 30gg) per Ambito, zero LLM — brief storico `DEPUTYTASK2.md`.
 - **CTX-0:** score contesto % da rubrica versionata, zero LLM — brief `DEPUTYTASK2.md` (slot post SB-6).
+- **CTX-1:** badge % + checklist missing su Il mio Studio — brief `DEPUTYTASK2.md` (slot post CTX-0).
 
 ---
 
@@ -131,7 +132,7 @@ Badge: `incompleto` (<50) / `parziale` (50–79) / `pronto` (≥80) — stesse s
 
 | Livello | Artefatto | Slice |
 |---|---|---|
-| Contesto | Rubrica + score (CTX-0 ✅) → wizard Studio/azienda | CTX-0…3 |
+| Contesto | Rubrica + score (CTX-0 ✅) + wizard Studio (CTX-1 ✅) → azienda/enrich | CTX-0…3 |
 | Dati | Snapshot SQL `ambitoFacts` | SB-1, SB-4, SB-6 |
 | Intelligence | Moduli esistenti; meeting = nebbia | — |
 | Automazioni | Pulsanti → moduli, HITL | SB-5 |

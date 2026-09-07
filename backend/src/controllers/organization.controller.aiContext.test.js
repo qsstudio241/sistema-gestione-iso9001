@@ -1,5 +1,8 @@
 /**
  * @jest-environment node
+ */
+
+/**
  * L1 — organization.controller allega ai_context (CTX-1)
  */
 jest.mock('../config/database', () => ({
