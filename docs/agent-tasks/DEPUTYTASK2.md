@@ -6,6 +6,7 @@
 **Piano:** [`PLAN_SECOND_BRAIN_SLICES.md`](PLAN_SECOND_BRAIN_SLICES.md) § SB-6  
 **Rischio:** Medio — BE additivo `ambitoFacts` + UI card/nav; riuso `gapAnalysis`; niente auth/sync/migrazioni  
 **Branch:** `cursor/sb6-fatti-sal-8269`  
+**PR:** create bloccato 403 — apri compare: https://github.com/qsstudio241/sistema-gestione-iso9001/compare/main...cursor/sb6-fatti-sal-8269?expand=1  
 **Slot precedente:** SB-2 CHIUSO su `origin/main` (sovrascrittura consentita)
 
 ---
