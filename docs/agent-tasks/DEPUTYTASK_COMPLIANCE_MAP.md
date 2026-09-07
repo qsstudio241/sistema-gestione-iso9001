@@ -6,7 +6,7 @@
 **Piano:** [`PLAN_COMPLIANCE_MAP_SLICES.md`](PLAN_COMPLIANCE_MAP_SLICES.md)  
 **Rischio:** Medio — BE chat injection + export API + FE; PR, non push su `main`. Non dire «pronta» senza CI + Bugbot + Security su quello SHA.  
 **Branch:** `cursor/cm5-export-chat-citations-8269`  
-**PR:** (compare se create 403)  
+**PR:** create bloccata da `gh` 403 (token Cloud senza createPullRequest). Compare: https://github.com/qsstudio241/sistema-gestione-iso9001/compare/main...cursor/cm5-export-chat-citations-8269?expand=1  
 **Migrazione:** nessuna  
 **Stream:** `DEPUTYTASK_COMPLIANCE_MAP.md`
 
