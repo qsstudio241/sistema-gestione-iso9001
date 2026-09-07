@@ -164,9 +164,9 @@ export default function ComplianceMapsPage() {
     try {
       const res = await apiService.getContractReviews();
       const all = unwrapCases(res);
-      const scoped = all.filter(
-        (c) => c.company_id == null || String(c.company_id) === String(companyId)
-      );
+      // Solo casi legati all'Ambito: company_id null passa il filtro UI ma
+      // compile richiede company_id = Ambito → 404 «non trovato in questo ambito».
+      const scoped = all.filter((c) => String(c.company_id) === String(companyId));
       setCases(scoped);
       setCaseId((prev) => {
         if (prev && scoped.some((c) => String(c.id) === String(prev))) return prev;
