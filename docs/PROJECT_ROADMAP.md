@@ -6,17 +6,17 @@
 
 > Avvio: Read con **`limit: 45`** (questa sezione deve entrarci). Resto del file = backlog/cronologia — **non** iniettare. Epic → `PLAN_*_SLICES.md`. Lezioni → [GUIDA](GUIDA_CONSOLIDATA.md) **a sezioni**. Archivio marzo 2026: [archive](archive/PROJECT_CONTEXT_STATO_FUNZIONALITA_2026-03.md).
 
-**Ultimo aggiornamento**: 06/09/2026 (CM-1 Compliance Map · SB-4 mergiato #653).
+**Ultimo aggiornamento**: 07/09/2026 (CM-2 compile APERTO · CM-1 #655 + VPS mig 164).
 
 ### Moduli maturi
 
 Audit multi-standard · NC · Qualifiche · Saldatura (WPQR/WPS/3834/Welding Book) · SAL · Registro + Scadenzari · Alert · Riesame · RBAC · Obblighi legali · Assistente AI / Gap · CND · Libreria fonti (+ gap SA) · Second Brain Ambito (SB-4).
 
-### Sessione più recente (06/09/2026)
+### Sessione più recente (07/09/2026)
 
-**CM-1 Compliance Map** — schema SQL + API indice/dettaglio + HITL stub (mig. **164**). Piano [`PLAN_COMPLIANCE_MAP_SLICES.md`](agent-tasks/PLAN_COMPLIANCE_MAP_SLICES.md). Prossima: CM-2/CM-3.  
-**SB-4** ✅ (#653) — aggregati «Tutto lo studio»; hub sync qui.  
-**Brief CM** ✅ (#652).
+**CM-2 Compliance Map** — compilatore caso→items `proposed` (HITL, Gemini). Branch `cursor/cm2-compliance-compile-8269`.  
+**CM-1** ✅ (#655) — schema/API + VPS mig. **164** applicata.  
+**SB-4** ✅ (#653).
 
 ### Sessioni recenti (pointer — dettaglio in `<details>` sotto)
 
