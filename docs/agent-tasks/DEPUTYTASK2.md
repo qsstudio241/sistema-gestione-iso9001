@@ -1,41 +1,40 @@
 # DEPUTYTASK2 — Hub sync post CTX-0…3 (#663–#666)
 
-**Stato:** APERTO  
+**Stato:** CHIUSO — TEST OK  
 **Aperto:** 07/09/2026 (post-merge CTX-3 #666)  
+**Chiuso:** 07/09/2026  
 **Piano:** roadmap § Stato attuale · [`PLAN_SECOND_BRAIN_SLICES.md`](PLAN_SECOND_BRAIN_SLICES.md) § CTX-4 HITL  
 **Rischio:** Basso — solo docs (roadmap, GUIDA, PLAN, questo brief); niente codice prodotto  
 **Branch:** `cursor/hub-sync-post-ctx3-8269`  
+**Compare:** https://github.com/qsstudio241/sistema-gestione-iso9001/compare/main...cursor/hub-sync-post-ctx3-8269?expand=1  
 **Slot precedente:** CTX-3 CHIUSO su `origin/main` (sovrascrittura consentita)  
 **Parallelo:** `DEPUTYTASK.md` Alert #3 HITL APERTO — **NON toccato** (no codice Alert)
 
 ---
 
-## Perché
+## Esito
 
-Dopo lo stack CTX-0…3 mergiato, allineare hub (roadmap § Stato attuale + lezione GUIDA + checklist HITL CTX-4). CTX-4 OAuth = Alto → **non implementare**. Alert #3 resta HITL senza risposte.
+**TEST OK** (docs)
 
-## DoD
+- Roadmap: CTX-0…3 ✅ #663–#666; priorità #1 = CTX-4 HITL Alto; ISO-4 come Medio actionable
+- GUIDA: lezione proposte registro = checkbox, mai overwrite
+- PLAN SB: checklist HITL CTX-4 (blocca OAuth senza DoD)
+- `check-harness-boot.js` OK; UTF-8 OK
+- PR create 403 → compare URL sopra
 
-- [x] Roadmap: moduli maturi CTX-0…3; sessione hub sync; priorità #1 = CTX-4 HITL Alto; ISO-4 come Medio actionable
-- [x] GUIDA: lezione CTX-3 proposte registro = checkbox, mai overwrite
-- [x] PLAN SB: checklist HITL CTX-4 (blocca codice)
-- [x] Nessun file prodotto / Alert / OAuth
-- [ ] PR docs + push (branch allineato a `origin/main`)
+## File toccati
 
-## File previsti
+- `docs/PROJECT_ROADMAP.md`
+- `docs/GUIDA_CONSOLIDATA.md`
+- `docs/agent-tasks/PLAN_SECOND_BRAIN_SLICES.md`
+- `docs/agent-tasks/DEPUTYTASK2.md`
 
-- `docs/PROJECT_ROADMAP.md` (§ Stato attuale)
-- `docs/GUIDA_CONSOLIDATA.md` (una riga lezioni)
-- `docs/agent-tasks/PLAN_SECOND_BRAIN_SLICES.md` (§ CTX-4 HITL)
-- `docs/agent-tasks/DEPUTYTASK2.md` (questo)
-
-## Cosa NON toccare
+## Cosa NON toccato
 
 - `qualificationAlert.service.js` / Alert UI / `DEPUTYTASK.md`
-- Auth / OAuth / JWT / sync / migrazioni
-- Codice FE/BE Second Brain (già in main)
+- Auth / OAuth / JWT / sync / migrazioni / codice FE-BE
 
-## Bloccanti next (no codice questa slice)
+## Bloccanti next (no codice senza HITL)
 
 | Voce | Motivo |
 |------|--------|
