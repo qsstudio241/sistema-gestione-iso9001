@@ -1,9 +1,9 @@
 # DEPUTYTASK — Alert qualifiche: destinatario UI (HITL)
 
 **Stato:** APERTO  
-**Aperto:** 07/09/2026 (post CM-5; priorità roadmap #3)  
+**Aperto:** 07/09/2026 (post CM-5; priorità roadmap #2 post ISO-5b)  
 **Rischio:** Medio se UI+API additiva; Alto se tocca auth/RBAC email cross-tenant  
-**Piano:** roadmap § Priorità #3 · backlog «Modulo Notifiche/Alert — destinatario allerte qualifiche»  
+**Piano:** roadmap § Priorità #2 · backlog «Modulo Notifiche/Alert — destinatario allerte qualifiche»  
 **Dipende:** conferma HITL sotto — **non aprire codice** senza DoD chiuso
 
 ---
