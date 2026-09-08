@@ -7,6 +7,7 @@ import React, { useState, useEffect, useMemo, useCallback } from "react";
 import apiService from "../services/apiService";
 import { formatDate } from "../utils/dateHelpers";
 import { useWeldingBookAutoSave } from "../hooks/useWeldingBookAutoSave.js";
+import { exportWeldingBookDocx } from "../utils/wordExportWeldingBook.js";
 import "./WeldingBooksPage.css";
 
 const BOOK_STATUSES = [
@@ -117,6 +118,7 @@ function WeldingBookForm({ book, onSave, onCancel }) {
     const [welders, setWelders] = useState([]);
     const [availableAssets, setAvailableAssets] = useState([]);
     const [saving, setSaving] = useState(false);
+    const [exportingWord, setExportingWord] = useState(false);
     const [error, setError] = useState(null);
     const [savedAt, setSavedAt] = useState(null);
 
@@ -220,6 +222,28 @@ function WeldingBookForm({ book, onSave, onCancel }) {
         }));
     };
 
+    const handleExportWord = async () => {
+        setExportingWord(true);
+        setError(null);
+        try {
+            const assetsById = Object.fromEntries(
+                (availableAssets || []).map((a) => [String(a.id), a])
+            );
+            await exportWeldingBookDocx(
+                {
+                    ...form,
+                    book_number: book?.book_number || form.product_code || "WB",
+                    company_name: companies.find((c) => String(c.id) === String(form.company_id))?.name || "",
+                },
+                { equipment, welds, assetsById }
+            );
+        } catch (err) {
+            setError(err?.message || "Errore export Word Welding Book");
+        } finally {
+            setExportingWord(false);
+        }
+    };
+
     const handleSave = async () => {
         if (!form.product_code?.trim() && !form.product_description?.trim()) {
             setError("Inserire almeno codice o descrizione prodotto.");
@@ -284,6 +308,15 @@ function WeldingBookForm({ book, onSave, onCancel }) {
                 </div>
                 <div className="wb-form-actions">
                     <button type="button" className="btn-secondary" onClick={onCancel}>Annulla</button>
+                    <button
+                        type="button"
+                        className="btn-secondary"
+                        onClick={handleExportWord}
+                        disabled={exportingWord}
+                        title="Scarica Welding Book IOF in Word"
+                    >
+                        {exportingWord ? "Preparazione Word..." : "Scarica Word"}
+                    </button>
                     <button type="button" className="btn-primary" onClick={handleSave} disabled={saving}>
                         {saving ? "Salvataggio..." : "Salva bozza"}
                     </button>
@@ -533,7 +566,7 @@ function WeldingBookForm({ book, onSave, onCancel }) {
                 <button type="button" className="btn-secondary wb-add-row" onClick={() => setWelds([...welds, { ...EMPTY_WELD, weld_params: { ...EMPTY_WELD_PARAMS, filler: form.filler_material || "", gas: "" } }])}>
                     + Aggiungi saldatura
                 </button>
-                <p className="wb-hint">Foto cordone e export Word: slice Fase 2–3 (ADR-016).</p>
+                <p className="wb-hint">Export Word IOF disponibile. Allegati foto cordone persistiti: slice successiva (ADR-016 §3).</p>
             </section>
         </div>
     );
