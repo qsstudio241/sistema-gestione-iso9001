@@ -6,22 +6,23 @@
 
 > Avvio: Read con **`limit: 45`** (questa sezione deve entrarci). Resto del file = backlog/cronologia — **non** iniettare. Epic → `PLAN_*_SLICES.md`. Lezioni → [GUIDA](GUIDA_CONSOLIDATA.md) **a sezioni**. Archivio marzo 2026: [archive](archive/PROJECT_CONTEXT_STATO_FUNZIONALITA_2026-03.md).
 
-**Ultimo aggiornamento**: 07/09/2026 (ISO-4 Word visita Mason · hub sync #667 · CTX-0…3 ✅ · Alert/CTX-4 HITL).
+**Ultimo aggiornamento**: 08/09/2026 (ISO-5 Word Welding Book · ISO-4 #668 mergiato · Alert/CTX-4 HITL).
 
 ### Moduli maturi
 
 Audit multi-standard · NC · Qualifiche · Saldatura (WPQR/WPS/3834/Welding Book) · SAL · Registro + Scadenzari · Alert · Riesame · RBAC · Obblighi legali · Assistente AI / Gap · CND · Libreria fonti (+ gap SA) · Second Brain Ambito (SB-4 + SB-6 + CTX-0…3) · Compliance Map (§8.2).
 
-### Sessione più recente (07/09/2026)
+### Sessione più recente (08/09/2026)
 
-**ISO-4 Word visita Mason:** export Audit ISO 3834-2 (id 6) = layout **Quesito | Evidenze | Esito** (C/NC); niente capitolo Rilievi pendenti 9001; `RDPModule` invariato. Scala 1–6 = ISO-4b HITL. Branch `cursor/iso4-word-visita-mason-8269`.  
-**Hub sync #667** mergiato (post CTX-0…3). **HITL bloccati:** CTX-4 · Alert destinatario → [`DEPUTYTASK.md`](agent-tasks/DEPUTYTASK.md) · ING-5 · ROO-18 · MC-I4 · S1c.
+**ISO-5 Word Welding Book:** export IOF programmatico (testata + attrezzature + sequenza + parametri); pulsante «Scarica Word» in form WB; foto cordone persistite = **ISO-5b**. Branch `cursor/iso5-word-welding-book-8269`.  
+**ISO-4** mergiato [#668](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/668) + Netlify (chunk `wordExport` con Quesito/Evidenze). **HITL bloccati:** CTX-4 · Alert destinatario → [`DEPUTYTASK.md`](agent-tasks/DEPUTYTASK.md) · ING-5 · ROO-18 · MC-I4 · S1c.
 
 ### Sessioni recenti (pointer — dettaglio in `<details>` sotto)
 
 | Data | Esito | Piano |
 |------|-------|-------|
-| 07/09 | ISO-4 Word visita Mason (Quesito/Evidenze/Esito) | [`PLAN_3834`](agent-tasks/PLAN_3834_SLICES.md) |
+| 08/09 | ISO-5 Word Welding Book IOF | [`PLAN_3834`](agent-tasks/PLAN_3834_SLICES.md) |
+| 07/09 | ISO-4 Word visita Mason (Quesito/Evidenze/Esito) · #668 | [`PLAN_3834`](agent-tasks/PLAN_3834_SLICES.md) |
 | 07/09 | CTX-3 ✅ #666 · hub sync post CTX-0…3 #667 | [`PLAN_SECOND_BRAIN`](agent-tasks/PLAN_SECOND_BRAIN_SLICES.md) |
 | 07/09 | CTX-2 ✅ #665 badge+wizard azienda | [`PLAN_SECOND_BRAIN`](agent-tasks/PLAN_SECOND_BRAIN_SLICES.md) |
 | 07/09 | CTX-1 ✅ #664 badge+wizard Studio | [`PLAN_SECOND_BRAIN`](agent-tasks/PLAN_SECOND_BRAIN_SLICES.md) |
@@ -41,7 +42,7 @@ Audit multi-standard · NC · Qualifiche · Saldatura (WPQR/WPS/3834/Welding Boo
 |---|---|---|---|
 | 1 | **Second Brain — CTX-4 Email/Drive** | OAuth Alto; **no codice** senza DoD HITL | [PLAN SB](agent-tasks/PLAN_SECOND_BRAIN_SLICES.md) § CTX-4 |
 | 2 | **Alert qualifiche — destinatario UI** | Cascata solo in servizio; brief HITL APERTO | `DEPUTYTASK.md` · `qualificationAlert.service.js` |
-| 3 | **ISO 3834 — ISO-5 Word Welding Book** | ISO-4 ✅; next AFK senza HITL | [PLAN](agent-tasks/PLAN_3834_SLICES.md) |
+| 3 | **ISO 3834 — ISO-5b foto cordone** | ISO-5 Word ✅; allegati riga WB + embed | [PLAN](agent-tasks/PLAN_3834_SLICES.md) |
 | 4 | **Commesse — ING-5 / VC-5** | ING-5 HITL; VC-5 solo Lead | [PLAN](agent-tasks/PLAN_VALUTAZIONE_COMMESSE_SLICES.md) |
 | 5 | **Material Compliance — MC-I4** | MC-I3 CHIUSA; busta 1→N (nebbia split) | [PLAN](agent-tasks/PLAN_MATERIAL_COMPLIANCE_SLICES.md) |
 | 6 | **Rischi ROO-18 HITL** | ROO-17 OK; ingest/data riesame dopo conferma | [PLAN §7](agent-tasks/PLAN_RISCHI_OPPORTUNITA_OBIETTIVI_SLICES.md) |
