@@ -1,39 +1,44 @@
-# DEPUTYTASK1 — ISO-5: Word Welding Book (IOF)
+# DEPUTYTASK1 — ISO-5b: foto cordone Welding Book
 
-**Stato:** CHIUSO — TEST OK  
-**Aperto:** 08/09/2026 (post-merge ISO-4 #668; priorità roadmap #3)  
-**Chiuso:** 08/09/2026  
-**Rischio:** Medio — solo FE Word (`wordExportWeldingBook` + `WeldingBooksPage`); niente auth/sync/DB  
-**Piano:** [`PLAN_3834_SLICES.md`](PLAN_3834_SLICES.md) § ISO-5  
-**Branch:** `cursor/iso5-word-welding-book-8269`  
-**Compare:** https://github.com/qsstudio241/sistema-gestione-iso9001/compare/main...cursor/iso5-word-welding-book-8269?expand=1  
-**Slot precedente:** ISO-4 CHIUSO su `origin/main` (sovrascrittura consentita)  
-**Parallelo:** `DEPUTYTASK.md` Alert HITL APERTO — **NON toccato**.
+**Stato:** APERTO  
+**Aperto:** 08/09/2026 (post-merge ISO-5 #670; priorità roadmap #3)  
+**Rischio:** Medio — migrazione additiva `attachments` + attachment controller + upsert welds + FE; niente auth/JWT/sync  
+**Piano:** [`PLAN_3834_SLICES.md`](PLAN_3834_SLICES.md) § ISO-5b · ADR-016 § foto cordone  
+**Branch:** `cursor/iso5b-foto-cordone-8269`  
+**Slot precedente:** ISO-5 CHIUSO su `origin/main` (sovrascrittura consentita)  
+**Parallelo:** `DEPUTYTASK.md` Alert HITL APERTO — **NON toccato**. GUIDA/roadmap hub sync dopo merge (parallelo HITL).
 
 ---
 
-## Esito
+## DoD
 
-**TEST OK**
+- [x] Migrazione `165` colonna `attachments.welding_book_weld_id` + `CHK_attachments_parent` (idempotente)
+- [x] Upload/list allegati con `welding_book_weld_id` (org via `welding_books`)
+- [x] Upsert-by-id su `welding_book_welds` (niente DELETE all che orfana le foto)
+- [x] UI foto per riga sequenza (pattern RDP/NDT) + salvataggio resta in form per ottenere `id`
+- [x] Export Word IOF embed foto cordone (`ImageRun`)
+- [ ] L1 FE + BE verdi; migrazione VPS test+prod; deploy BE se serve
+- [ ] PR/compare
 
-- `wordExportWeldingBook.js`: IOF programmatico (testata + attrezzature + sequenza + parametri)
-- Pulsante «Scarica Word» in form WB; hint foto = ISO-5b
-- Niente esiti C/NC; colonna Foto placeholder
-- L1: 4 test Vitest + `npm run build` OK
-- Smoke ISO-4 post-merge #668: Netlify chunk `wordExport` con Quesito/Evidenze
+## File previsti
 
-## File toccati
-
-- `app/src/utils/wordExportWeldingBook.js`
-- `app/src/tests/wordExportWeldingBook.test.js`
-- `app/src/pages/WeldingBooksPage.jsx`
+- `database/migrations/165_attachments_welding_book_weld.sql`
+- `backend/scripts/run-migration-165-vps.js`
+- `backend/src/controllers/attachment.controller.js` (+ test)
+- `backend/src/controllers/weldingBooks.controller.js` (+ test upsert)
+- `app/src/components/WbWeldAttachments.jsx`
+- `app/src/pages/WeldingBooksPage.jsx` / `.css`
+- `app/src/utils/wordExportWeldingBook.js` (+ test)
 - `docs/agent-tasks/PLAN_3834_SLICES.md`
 - `docs/agent-tasks/DEPUTYTASK1.md`
-- `docs/PROJECT_ROADMAP.md`
-- `docs/GUIDA_CONSOLIDATA.md`
 
-## Cosa NON toccato
+## Cosa NON toccare
 
-- `qualificationAlert.service.js` / `DEPUTYTASK.md`
-- Auth / sync / JWT / migrazioni / ISO-4b / `wordExportHelpers.js`
-- Attachment controller (ISO-5b)
+- `qualificationAlert.service.js` / `DEPUTYTASK.md` Alert HITL
+- Auth / sync / JWT / ISO-4b / CTX-4
+- `wordExportHelpers.js` / template audit
+
+## Bozza hub (dopo merge)
+
+- Roadmap: ISO-5b ✅; priorità successiva Medio actionable
+- GUIDA: lezione upsert welds prima degli allegati riga (pattern RDP)

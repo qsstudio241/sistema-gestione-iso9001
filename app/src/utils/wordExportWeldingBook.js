@@ -17,6 +17,7 @@ import {
   AlignmentType,
   BorderStyle,
   VerticalAlign,
+  ImageRun,
 } from 'docx';
 
 const saveAs =
@@ -127,7 +128,7 @@ function resolveRoleLabel(role) {
 /**
  * Mapping Welding Book (testata + griglie) → campi IOF per Word.
  * @param {object} book
- * @param {{ equipment?: object[], welds?: object[], assetsById?: Record<string, object>, exportDate?: string }} [options]
+ * @param {{ equipment?: object[], welds?: object[], assetsById?: Record<string, object>, weldPhotosById?: Record<string, object[]>, exportDate?: string }} [options]
  */
 export function mapWeldingBookToIofFields(book = {}, options = {}) {
   const equipment = Array.isArray(options.equipment)
@@ -137,6 +138,7 @@ export function mapWeldingBookToIofFields(book = {}, options = {}) {
     ? options.welds
     : (Array.isArray(book.welds) ? book.welds : []);
   const assetsById = options.assetsById || {};
+  const weldPhotosById = options.weldPhotosById || {};
 
   return {
     bookNumber: s(book.book_number),
@@ -165,7 +167,10 @@ export function mapWeldingBookToIofFields(book = {}, options = {}) {
       })),
     weldRows: welds.map((row, idx) => {
       const params = row.weld_params && typeof row.weld_params === 'object' ? row.weld_params : {};
+      const photos = weldPhotosById[String(row.id)] || row.photos || [];
+      const photoCount = Array.isArray(photos) ? photos.length : 0;
       return {
+        id: row.id || null,
         sequenceNo: s(row.sequence_no) || String(idx + 1),
         jointCode: s(row.joint_code),
         jointDescription: s(row.joint_description),
@@ -180,8 +185,11 @@ export function mapWeldingBookToIofFields(book = {}, options = {}) {
         filler: s(params.filler || book.filler_material),
         gas: s(params.gas),
         notes: s(row.notes),
-        /** Placeholder: allegati persistiti = slice successiva (ADR-016 §3). */
-        photoNote: s(row.photo_note) || (row.notes && /foto/i.test(row.notes) ? s(row.notes) : ''),
+        photoCount,
+        photoNote: photoCount > 0
+          ? `${photoCount} foto`
+          : (s(row.photo_note) || (row.notes && /foto/i.test(row.notes) ? s(row.notes) : '')),
+        photos: Array.isArray(photos) ? photos : [],
       };
     }),
   };
@@ -270,6 +278,58 @@ function buildParamsDetailTable(rows) {
   });
 }
 
+function imageTypeFromMime(mime) {
+  const m = String(mime || '').toLowerCase();
+  if (m.includes('png')) return 'png';
+  if (m.includes('gif')) return 'gif';
+  if (m.includes('bmp')) return 'bmp';
+  return 'jpg';
+}
+
+function buildPhotoSectionChildren(weldRows) {
+  const withPhotos = (weldRows || []).filter((row) => Array.isArray(row.photos) && row.photos.length > 0);
+  if (!withPhotos.length) return [];
+
+  const children = [sectionTitle('6. Foto cordone')];
+  for (const row of withPhotos) {
+    children.push(new Paragraph({
+      spacing: { before: 120, after: 60 },
+      children: [
+        new TextRun({
+          text: `Giunto ${row.sequenceNo || ''}${row.jointCode ? ` (${row.jointCode})` : ''} — ${row.photos.length} foto`,
+          bold: true,
+          size: 18,
+        }),
+      ],
+    }));
+    for (const photo of row.photos) {
+      if (!photo?.data) continue;
+      try {
+        children.push(new Paragraph({
+          spacing: { after: 80 },
+          children: [
+            new ImageRun({
+              type: imageTypeFromMime(photo.mimeType),
+              data: photo.data,
+              transformation: { width: 280, height: 210 },
+              altText: {
+                title: photo.fileName || 'Foto cordone',
+                description: 'Foto cordone Welding Book',
+                name: photo.fileName || 'foto-cordone',
+              },
+            }),
+          ],
+        }));
+      } catch {
+        children.push(new Paragraph({
+          children: [new TextRun({ text: `[Foto non incorporabile: ${photo.fileName || 'n/d'}]`, italics: true, size: 14 })],
+        }));
+      }
+    }
+  }
+  return children;
+}
+
 /**
  * Costruisce il Document docx IOF (senza download).
  */
@@ -325,6 +385,9 @@ export function buildWeldingBookDocument(book, options = {}) {
     borders: BORDERS,
   });
 
+  const photoChildren = buildPhotoSectionChildren(f.weldRows);
+  const hasPhotos = photoChildren.length > 0;
+
   return new Document({
     sections: [{
       properties: {
@@ -375,11 +438,14 @@ export function buildWeldingBookDocument(book, options = {}) {
           : []),
         sectionTitle('5. Approvazione'),
         signatureTable,
+        ...photoChildren,
         new Paragraph({
           spacing: { before: 280 },
           children: [
             new TextRun({
-              text: 'Nota: colonna Foto = placeholder; allegati foto cordone persistiti = slice successiva (ADR-016). Nessun campo esito/ispezione (IOF, non verbale).',
+              text: hasPhotos
+                ? 'Nota: foto cordone incorporate dalla sezione allegati per riga. Nessun campo esito/ispezione (IOF, non verbale).'
+                : 'Nota: nessuna foto cordone allegata alle righe. Nessun campo esito/ispezione (IOF, non verbale).',
               italics: true,
               size: 14,
               color: '666666',

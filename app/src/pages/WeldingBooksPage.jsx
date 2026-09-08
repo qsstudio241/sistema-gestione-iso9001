@@ -3,11 +3,12 @@
  * Fase 1: select WPS/WPQR/commessa/saldatori + precompilazione da anagrafica.
  */
 
-import React, { useState, useEffect, useMemo, useCallback } from "react";
+import React, { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import apiService from "../services/apiService";
 import { formatDate } from "../utils/dateHelpers";
 import { useWeldingBookAutoSave } from "../hooks/useWeldingBookAutoSave.js";
 import { exportWeldingBookDocx } from "../utils/wordExportWeldingBook.js";
+import WbWeldAttachments from "../components/WbWeldAttachments.jsx";
 import "./WeldingBooksPage.css";
 
 const BOOK_STATUSES = [
@@ -45,6 +46,102 @@ const EMPTY_EQUIPMENT = {
 function isWelderQualification(q) {
     const t = String(q.qualification_type || "").toLowerCase();
     return t.includes("9606") || t.includes("saldator");
+}
+
+function WeldSequenceRow({
+    row,
+    idx,
+    welders,
+    updateWeld,
+    updateWeldParam,
+    onRemove,
+    attachmentsReadOnly,
+}) {
+    const attRef = useRef(null);
+    const [photoState, setPhotoState] = useState({ count: 0, uploading: false, error: null });
+    const showPhotoPanel = photoState.count > 0 || photoState.uploading || !!photoState.error;
+    const photoLocked = attachmentsReadOnly || !row.id;
+
+    const handlePhotoClick = () => {
+        if (attachmentsReadOnly) return;
+        if (!row.id) {
+            window.alert("Salva il Welding Book per abilitare le foto cordone su questa riga.");
+            return;
+        }
+        attRef.current?.openFilePicker();
+    };
+
+    const photoTitle = attachmentsReadOnly
+        ? "Documento in sola lettura — foto non modificabili"
+        : (row.id
+            ? (photoState.error
+                ? `Errore foto: ${photoState.error}`
+                : (photoState.uploading
+                    ? "Caricamento foto in corso\u2026"
+                    : (photoState.count > 0
+                        ? `Scatta o aggiungi foto cordone (${photoState.count} gi\u00e0 caricate)`
+                        : "Scatta o aggiungi foto cordone")))
+            : "Salva prima il documento per aggiungere foto cordone");
+
+    return (
+        <>
+            <tr>
+                <td><input value={row.sequence_no || ""} onChange={(e) => updateWeld(idx, { sequence_no: e.target.value })} placeholder="S01" /></td>
+                <td><input value={row.joint_code || ""} onChange={(e) => updateWeld(idx, { joint_code: e.target.value })} /></td>
+                <td><input value={row.joint_description || ""} onChange={(e) => updateWeld(idx, { joint_description: e.target.value })} /></td>
+                <td>
+                    <select value={row.welder_name || ""} onChange={(e) => updateWeld(idx, { welder_name: e.target.value })}>
+                        <option value="">—</option>
+                        {welders.map((q) => (
+                            <option key={q.id} value={q.person_name}>{q.person_name}</option>
+                        ))}
+                    </select>
+                </td>
+                <td><input type="date" value={row.weld_date ? row.weld_date.substring(0, 10) : ""} onChange={(e) => updateWeld(idx, { weld_date: e.target.value })} /></td>
+                <td><input value={row.weld_params?.current_a || ""} onChange={(e) => updateWeldParam(idx, "current_a", e.target.value)} /></td>
+                <td><input value={row.weld_params?.voltage_v || ""} onChange={(e) => updateWeldParam(idx, "voltage_v", e.target.value)} /></td>
+                <td><input value={row.weld_params?.travel_speed || ""} onChange={(e) => updateWeldParam(idx, "travel_speed", e.target.value)} /></td>
+                <td><input value={row.weld_params?.passes || ""} onChange={(e) => updateWeldParam(idx, "passes", e.target.value)} /></td>
+                <td><input value={row.weld_params?.preheat_c || ""} onChange={(e) => updateWeldParam(idx, "preheat_c", e.target.value)} /></td>
+                <td><input value={row.weld_params?.interpass_c || ""} onChange={(e) => updateWeldParam(idx, "interpass_c", e.target.value)} /></td>
+                <td className="wb-weld-actions">
+                    <button
+                        type="button"
+                        className={[
+                            "wb-photo-row-btn",
+                            photoLocked ? "wb-photo-row-btn-disabled" : "",
+                            photoState.count > 0 ? "wb-photo-row-btn-has-photos" : "",
+                            photoState.error ? "wb-photo-row-btn-error" : "",
+                            photoState.uploading ? "wb-photo-row-btn-busy" : "",
+                        ].filter(Boolean).join(" ")}
+                        onClick={handlePhotoClick}
+                        disabled={photoState.uploading || attachmentsReadOnly}
+                        aria-busy={photoState.uploading ? "true" : undefined}
+                        aria-label={photoTitle}
+                        title={photoTitle}
+                    >
+                        {"\uD83D\uDCF7"}
+                        {photoState.count > 0 && (
+                            <span className="wb-photo-count">{photoState.count}</span>
+                        )}
+                    </button>
+                    <button type="button" className="wb-row-remove" onClick={() => onRemove(idx)} title="Rimuovi">&times;</button>
+                </td>
+            </tr>
+            {row.id ? (
+                <tr className={`wb-weld-photos-row${showPhotoPanel ? "" : " wb-weld-photos-row-collapsed"}`}>
+                    <td colSpan={12}>
+                        <WbWeldAttachments
+                            ref={attRef}
+                            weldId={row.id}
+                            readOnly={attachmentsReadOnly}
+                            onStateChange={setPhotoState}
+                        />
+                    </td>
+                </tr>
+            ) : null}
+        </>
+    );
 }
 
 function buildFormFromBook(book) {
@@ -95,7 +192,7 @@ function buildFormFromBook(book) {
     };
 }
 
-function WeldingBookForm({ book, onSave, onCancel }) {
+function WeldingBookForm({ book, onSave, onCancel, onBookPersisted }) {
     const isEdit = !!book;
     const [form, setForm] = useState(() => buildFormFromBook(book));
     const [equipment, setEquipment] = useState(
@@ -110,6 +207,7 @@ function WeldingBookForm({ book, onSave, onCancel }) {
         }
         return [{ ...EMPTY_WELD, weld_params: { ...EMPTY_WELD_PARAMS } }];
     });
+    const [bookMeta, setBookMeta] = useState(() => (book ? { id: book.id, book_number: book.book_number } : null));
 
     const [companies, setCompanies] = useState([]);
     const [projects, setProjects] = useState([]);
@@ -124,7 +222,7 @@ function WeldingBookForm({ book, onSave, onCancel }) {
 
     const organizationId = apiService.getStoredUser?.()?.organization_id ?? null;
     const { clearDraft } = useWeldingBookAutoSave(
-        book?.id || null,
+        bookMeta?.id || book?.id || null,
         form,
         equipment,
         welds,
@@ -229,13 +327,51 @@ function WeldingBookForm({ book, onSave, onCancel }) {
             const assetsById = Object.fromEntries(
                 (availableAssets || []).map((a) => [String(a.id), a])
             );
+            const weldPhotosById = {};
+            await Promise.all(
+                (welds || [])
+                    .filter((w) => w.id)
+                    .map(async (w) => {
+                        try {
+                            const res = await apiService.get(`/attachments?welding_book_weld_id=${w.id}`);
+                            const atts = res?.data || res?.attachments || [];
+                            const photos = [];
+                            for (const att of atts) {
+                                if (!att.attachment_id) continue;
+                                const mime = String(att.mime_type || "").toLowerCase();
+                                if (mime && !mime.startsWith("image/")) continue;
+                                try {
+                                    const url = `${apiService.baseUrl}/attachments/${att.attachment_id}/download`;
+                                    const token = apiService.getToken?.();
+                                    const resp = await fetch(token ? `${url}?token=${encodeURIComponent(token)}` : url, {
+                                        credentials: "include",
+                                        headers: token ? { Authorization: `Bearer ${token}` } : {},
+                                    });
+                                    if (!resp.ok) continue;
+                                    const blob = await resp.blob();
+                                    const buf = await blob.arrayBuffer();
+                                    photos.push({
+                                        data: new Uint8Array(buf),
+                                        mimeType: blob.type || att.mime_type || "image/jpeg",
+                                        fileName: att.file_name,
+                                    });
+                                } catch {
+                                    /* skip singola foto */
+                                }
+                            }
+                            if (photos.length) weldPhotosById[String(w.id)] = photos;
+                        } catch {
+                            /* skip riga */
+                        }
+                    })
+            );
             await exportWeldingBookDocx(
                 {
                     ...form,
-                    book_number: book?.book_number || form.product_code || "WB",
+                    book_number: bookMeta?.book_number || book?.book_number || form.product_code || "WB",
                     company_name: companies.find((c) => String(c.id) === String(form.company_id))?.name || "",
                 },
-                { equipment, welds, assetsById }
+                { equipment, welds, assetsById, weldPhotosById }
             );
         } catch (err) {
             setError(err?.message || "Errore export Word Welding Book");
@@ -272,14 +408,27 @@ function WeldingBookForm({ book, onSave, onCancel }) {
                     wps_id: w.wps_id || (form.wps_id ? parseInt(form.wps_id, 10) : null),
                 })),
             };
-            if (isEdit) {
-                await apiService.updateWeldingBook(book.id, payload);
-            } else {
-                await apiService.createWeldingBook(payload);
-            }
+            const bookId = bookMeta?.id || book?.id;
+            const res = bookId
+                ? await apiService.updateWeldingBook(bookId, payload)
+                : await apiService.createWeldingBook(payload);
+            const saved = res?.data || res;
             clearDraft();
             setSavedAt(new Date().toLocaleTimeString("it-IT", { hour: "2-digit", minute: "2-digit" }));
-            onSave();
+            if (saved?.id) {
+                setBookMeta({ id: saved.id, book_number: saved.book_number });
+                onBookPersisted?.(saved);
+            }
+            if (Array.isArray(saved?.welds)) {
+                setWelds(saved.welds.map((w) => ({
+                    ...w,
+                    weld_params: { ...EMPTY_WELD_PARAMS, ...(w.weld_params || {}) },
+                })));
+            }
+            if (Array.isArray(saved?.equipment) && saved.equipment.length) {
+                setEquipment(saved.equipment);
+            }
+            onSave?.(saved);
         } catch (err) {
             setError(err.message || "Errore salvataggio");
         } finally {
@@ -303,7 +452,7 @@ function WeldingBookForm({ book, onSave, onCancel }) {
         <div className="wb-form-panel">
             <div className="wb-form-header">
                 <div>
-                    <h2>{isEdit ? `Modifica ${book.book_number || "Welding Book"}` : "Nuovo Welding Book"}</h2>
+                    <h2>{(bookMeta?.id || isEdit) ? `Modifica ${bookMeta?.book_number || book?.book_number || "Welding Book"}` : "Nuovo Welding Book"}</h2>
                     {savedAt && <span className="wb-saved-at">Salvato alle {savedAt}</span>}
                 </div>
                 <div className="wb-form-actions">
@@ -533,32 +682,21 @@ function WeldingBookForm({ book, onSave, onCancel }) {
                                 <th>Pass.</th>
                                 <th>T pre</th>
                                 <th>T int</th>
-                                <th></th>
+                                <th>Foto</th>
                             </tr>
                         </thead>
                         <tbody>
                             {welds.map((row, idx) => (
-                                <tr key={idx}>
-                                    <td><input value={row.sequence_no || ""} onChange={(e) => updateWeld(idx, { sequence_no: e.target.value })} placeholder="S01" /></td>
-                                    <td><input value={row.joint_code || ""} onChange={(e) => updateWeld(idx, { joint_code: e.target.value })} /></td>
-                                    <td><input value={row.joint_description || ""} onChange={(e) => updateWeld(idx, { joint_description: e.target.value })} /></td>
-                                    <td>
-                                        <select value={row.welder_name || ""} onChange={(e) => updateWeld(idx, { welder_name: e.target.value })}>
-                                            <option value="">—</option>
-                                            {welders.map((q) => (
-                                                <option key={q.id} value={q.person_name}>{q.person_name}</option>
-                                            ))}
-                                        </select>
-                                    </td>
-                                    <td><input type="date" value={row.weld_date ? row.weld_date.substring(0, 10) : ""} onChange={(e) => updateWeld(idx, { weld_date: e.target.value })} /></td>
-                                    <td><input value={row.weld_params?.current_a || ""} onChange={(e) => updateWeldParam(idx, "current_a", e.target.value)} /></td>
-                                    <td><input value={row.weld_params?.voltage_v || ""} onChange={(e) => updateWeldParam(idx, "voltage_v", e.target.value)} /></td>
-                                    <td><input value={row.weld_params?.travel_speed || ""} onChange={(e) => updateWeldParam(idx, "travel_speed", e.target.value)} /></td>
-                                    <td><input value={row.weld_params?.passes || ""} onChange={(e) => updateWeldParam(idx, "passes", e.target.value)} /></td>
-                                    <td><input value={row.weld_params?.preheat_c || ""} onChange={(e) => updateWeldParam(idx, "preheat_c", e.target.value)} /></td>
-                                    <td><input value={row.weld_params?.interpass_c || ""} onChange={(e) => updateWeldParam(idx, "interpass_c", e.target.value)} /></td>
-                                    <td><button type="button" className="wb-row-remove" onClick={() => setWelds(welds.filter((_, i) => i !== idx))}>&times;</button></td>
-                                </tr>
+                                <WeldSequenceRow
+                                    key={row.id || `new-${idx}`}
+                                    row={row}
+                                    idx={idx}
+                                    welders={welders}
+                                    updateWeld={updateWeld}
+                                    updateWeldParam={updateWeldParam}
+                                    onRemove={(i) => setWelds(welds.filter((_, j) => j !== i))}
+                                    attachmentsReadOnly={form.status === "released"}
+                                />
                             ))}
                         </tbody>
                     </table>
@@ -566,7 +704,7 @@ function WeldingBookForm({ book, onSave, onCancel }) {
                 <button type="button" className="btn-secondary wb-add-row" onClick={() => setWelds([...welds, { ...EMPTY_WELD, weld_params: { ...EMPTY_WELD_PARAMS, filler: form.filler_material || "", gas: "" } }])}>
                     + Aggiungi saldatura
                 </button>
-                <p className="wb-hint">Export Word IOF disponibile. Allegati foto cordone persistiti: slice successiva (ADR-016 §3).</p>
+                <p className="wb-hint">Foto cordone: salva il documento per abilitare l&apos;upload per riga; le foto entrano anche nell&apos;export Word.</p>
             </section>
         </div>
     );
@@ -607,9 +745,14 @@ export default function WeldingBooksPage() {
     if (view === "form") {
         return (
             <WeldingBookForm
+                key={selected?.id || "new"}
                 book={selected}
-                onSave={() => { setView("list"); setSelected(null); loadBooks(); }}
-                onCancel={() => { setView("list"); setSelected(null); }}
+                onBookPersisted={(saved) => {
+                    setSelected(saved);
+                    loadBooks();
+                }}
+                onSave={() => { /* resta in form: foto cordone richiedono id riga */ }}
+                onCancel={() => { setView("list"); setSelected(null); loadBooks(); }}
             />
         );
     }

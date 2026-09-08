@@ -232,19 +232,18 @@ async function replaceEquipment(bookId, equipment = []) {
 }
 
 async function replaceWelds(bookId, welds = []) {
-    await query(`DELETE FROM welding_book_welds WHERE book_id = @book_id`, { book_id: bookId });
+    // Upsert-by-id (pattern RDP): preserva id esistenti così le foto cordone
+    // su attachments.welding_book_weld_id non diventano orfane a ogni salvataggio.
+    const existingResult = await query(
+        `SELECT id FROM welding_book_welds WHERE book_id = @book_id`,
+        { book_id: bookId }
+    );
+    const existingIds = new Set(existingResult.recordset.map((r) => r.id));
+    const keptIds = new Set();
+
     for (let i = 0; i < welds.length; i++) {
         const row = welds[i];
-        await query(`
-            INSERT INTO welding_book_welds (
-                book_id, sort_order, sequence_no, joint_code, joint_description,
-                wps_id, welder_name, weld_date, weld_params, notes
-            )
-            VALUES (
-                @book_id, @sort_order, @sequence_no, @joint_code, @joint_description,
-                @wps_id, @welder_name, @weld_date, @weld_params, @notes
-            )
-        `, {
+        const params = {
             book_id: bookId,
             sort_order: row.sort_order != null ? row.sort_order : i,
             sequence_no: row.sequence_no || null,
@@ -255,7 +254,52 @@ async function replaceWelds(bookId, welds = []) {
             weld_date: row.weld_date || null,
             weld_params: parseJsonField(row.weld_params),
             notes: row.notes || null,
-        });
+        };
+        let weldId = row.id ? parseInt(row.id, 10) : null;
+
+        if (weldId && existingIds.has(weldId)) {
+            await query(`
+                UPDATE welding_book_welds SET
+                    sort_order = @sort_order,
+                    sequence_no = @sequence_no,
+                    joint_code = @joint_code,
+                    joint_description = @joint_description,
+                    wps_id = @wps_id,
+                    welder_name = @welder_name,
+                    weld_date = @weld_date,
+                    weld_params = @weld_params,
+                    notes = @notes,
+                    updated_at = GETDATE()
+                WHERE id = @id AND book_id = @book_id
+            `, { ...params, id: weldId });
+        } else {
+            const insertResult = await query(`
+                INSERT INTO welding_book_welds (
+                    book_id, sort_order, sequence_no, joint_code, joint_description,
+                    wps_id, welder_name, weld_date, weld_params, notes
+                )
+                OUTPUT INSERTED.id
+                VALUES (
+                    @book_id, @sort_order, @sequence_no, @joint_code, @joint_description,
+                    @wps_id, @welder_name, @weld_date, @weld_params, @notes
+                )
+            `, params);
+            weldId = insertResult.recordset[0].id;
+        }
+        keptIds.add(weldId);
+    }
+
+    const toRemove = [...existingIds].filter((id) => !keptIds.has(id));
+    for (const weldId of toRemove) {
+        const attCheck = await query(
+            `SELECT COUNT(*) AS cnt FROM attachments WHERE welding_book_weld_id = @weld_id`,
+            { weld_id: weldId }
+        );
+        if (attCheck.recordset[0].cnt > 0) {
+            logger.warn('weldingBooks: riga non rimossa perche\' ha foto cordone allegate', { weldId });
+            continue;
+        }
+        await query(`DELETE FROM welding_book_welds WHERE id = @weld_id`, { weld_id: weldId });
     }
 }
 

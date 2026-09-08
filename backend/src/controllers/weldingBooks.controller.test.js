@@ -179,6 +179,43 @@ describe('updateWeldingBook — company_access', () => {
     expect(res.json).toHaveBeenCalledWith(expect.objectContaining({ code: 'FORBIDDEN' }));
     expect(query.mock.calls.length).toBe(1);
   });
+
+  it('ISO-5b: aggiorna riga esistente (UPDATE) invece di DELETE+INSERT', async () => {
+    const sqlLog = [];
+    query.mockImplementation(async (sql, params) => {
+      sqlLog.push({ sql, params });
+      if (sql.includes('SELECT id, company_id FROM welding_books')) {
+        return { recordset: [{ id: 5, company_id: 11 }] };
+      }
+      if (sql.includes('SELECT id FROM welding_book_welds')) {
+        return { recordset: [{ id: 77 }] };
+      }
+      if (sql.includes('UPDATE welding_book_welds')) {
+        return { recordset: [] };
+      }
+      if (sql.includes('SELECT * FROM welding_books WHERE id')) {
+        return { recordset: [{ id: 5, company_id: 11, book_number: 'WB-1' }] };
+      }
+      if (sql.includes('FROM welding_book_equipment') || sql.includes('FROM welding_book_welds')) {
+        return { recordset: [{ id: 77, sequence_no: 'S01', weld_params: '{}' }] };
+      }
+      return { recordset: [] };
+    });
+
+    const res = mockRes();
+    await ctrl.updateWeldingBook(mockReq({
+      params: { id: '5' },
+      user: companyWrite11,
+      body: {
+        product_code: 'P1',
+        welds: [{ id: 77, sequence_no: 'S01', welder_name: 'Rossi' }],
+      },
+    }), res);
+
+    expect(res.json).toHaveBeenCalledWith(expect.objectContaining({ success: true }));
+    expect(sqlLog.some((c) => /DELETE FROM welding_book_welds WHERE book_id/.test(c.sql))).toBe(false);
+    expect(sqlLog.some((c) => /UPDATE welding_book_welds/.test(c.sql))).toBe(true);
+  });
 });
 
 describe('deleteWeldingBook — company_access', () => {
