@@ -80,7 +80,23 @@ describe('listAttachments — RBAC studio', () => {
 
         const listSql = query.mock.calls[0][0];
         expect(listSql).toContain('att.ndt_report_item_id = @ndt_report_item_id');
-        expect(listSql).toContain('COALESCE(a.organization_id, nc.organization_id, ndt_r.organization_id, rdp_r.organization_id)');
+        expect(listSql).toContain('COALESCE(a.organization_id, nc.organization_id, ndt_r.organization_id, rdp_r.organization_id, wb.organization_id)');
+        expect(res.json).toHaveBeenCalledWith(expect.objectContaining({ success: true }));
+    });
+
+    it('supporta filtro welding_book_weld_id con scope org via welding_books', async () => {
+        query
+            .mockResolvedValueOnce({ recordset: [{ attachment_id: 2 }] })
+            .mockResolvedValueOnce({ recordset: [{ total: 1 }] });
+
+        const req = mockReq({ query: { welding_book_weld_id: '9', page: 1, limit: 50 } });
+        const res = mockRes();
+        await ctrl.listAttachments(req, res);
+
+        const listSql = query.mock.calls[0][0];
+        expect(listSql).toContain('att.welding_book_weld_id = @welding_book_weld_id');
+        expect(listSql).toContain('welding_book_welds');
+        expect(listSql).toContain('welding_books');
         expect(res.json).toHaveBeenCalledWith(expect.objectContaining({ success: true }));
     });
 });
@@ -138,6 +154,44 @@ describe('uploadAttachment — NDT', () => {
         expect(res.json).toHaveBeenCalledWith(expect.objectContaining({
             code: 'ATTACHMENT_PARENT_REQUIRED',
         }));
+    });
+});
+
+describe('uploadAttachment — Welding Book (ISO-5b)', () => {
+    it('accetta upload con welding_book_weld_id senza audit_id', async () => {
+        query
+            .mockResolvedValueOnce({ recordset: [{ id: 9 }] })
+            .mockResolvedValueOnce({
+                recordset: [{ attachment_id: 11, attachment_uuid: 'uuid-wb' }],
+            });
+
+        const req = mockReq({
+            file: { path: '/tmp/cordone.jpg', originalname: 'cordone.jpg', size: 200, mimetype: 'image/jpeg' },
+            body: { welding_book_weld_id: '9', category: 'photo' },
+        });
+        const res = mockRes();
+        await ctrl.uploadAttachment(req, res);
+
+        expect(query.mock.calls[0][0]).toContain('welding_book_welds');
+        expect(query.mock.calls[0][0]).toContain('welding_books');
+        const insertSql = query.mock.calls[1][0];
+        expect(insertSql).toContain('welding_book_weld_id');
+        expect(query.mock.calls[1][1]).toMatchObject({ welding_book_weld_id: 9 });
+        expect(res.status).toHaveBeenCalledWith(201);
+    });
+
+    it('404 se riga Welding Book fuori org', async () => {
+        query.mockResolvedValueOnce({ recordset: [] });
+
+        const req = mockReq({
+            file: { path: '/tmp/cordone.jpg', originalname: 'cordone.jpg', size: 200, mimetype: 'image/jpeg' },
+            body: { welding_book_weld_id: '99', category: 'photo' },
+        });
+        const res = mockRes();
+        await ctrl.uploadAttachment(req, res);
+
+        expect(res.status).toHaveBeenCalledWith(404);
+        expect(res.json).toHaveBeenCalledWith(expect.objectContaining({ code: 'WB_WELD_NOT_FOUND' }));
     });
 });
 

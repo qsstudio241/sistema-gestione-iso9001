@@ -15,24 +15,26 @@ const path = require('path');
 const fs = require('fs').promises;
 const fsSync = require('fs');
 
-/** Join contesto audit/NC, verbale CND o rapporto RDP + predicato scope studio. */
+/** Join contesto audit/NC, verbale CND, rapporto RDP o riga Welding Book + predicato scope studio. */
 function attachmentScope(reqUser) {
     const auditScope = studioScopeClause(reqUser, 'a');
     const ndtScope = studioScopeClause(reqUser, 'ndt_r');
     const rdpScope = studioScopeClause(reqUser, 'rdp_r');
+    const wbScope = studioScopeClause(reqUser, 'wb');
 
-    // Ogni allegato appartiene a UNA sola fonte (audit/NC, verbale CND, rapporto RDP).
+    // Ogni allegato appartiene a UNA sola fonte (audit/NC, verbale CND, RDP, Welding Book).
     // Il branch "audit" e' quello di default (nessuno degli id specialistici impostato).
     // Sul branch audit lo scope studio si applica solo se esiste un audit collegato:
     // le NC non-audit (audit_id NULL) non hanno riga in `audits` e verrebbero escluse.
     const branches = [
         {
-            nullCheck: 'att.ndt_report_item_id IS NULL AND att.rdp_test_id IS NULL',
+            nullCheck: 'att.ndt_report_item_id IS NULL AND att.rdp_test_id IS NULL AND att.welding_book_weld_id IS NULL',
             scope: auditScope,
             scopeGuard: 'COALESCE(att.audit_id, nc.audit_id) IS NULL',
         },
         { nullCheck: 'att.ndt_report_item_id IS NOT NULL', scope: ndtScope },
         { nullCheck: 'att.rdp_test_id IS NOT NULL', scope: rdpScope },
+        { nullCheck: 'att.welding_book_weld_id IS NOT NULL', scope: wbScope },
     ];
     const hasAnyScope = branches.some((b) => b.scope.clause);
     let rbacClause = '';
@@ -56,11 +58,13 @@ function attachmentScope(reqUser) {
       LEFT JOIN rdp_tests rdp_t ON att.rdp_test_id = rdp_t.id
       LEFT JOIN rdp_sections rdp_s ON rdp_t.section_id = rdp_s.id
       LEFT JOIN rdp_reports rdp_r ON rdp_s.report_id = rdp_r.id AND rdp_r.is_deleted = 0
+      LEFT JOIN welding_book_welds wb_weld ON att.welding_book_weld_id = wb_weld.id
+      LEFT JOIN welding_books wb ON wb_weld.book_id = wb.id AND wb.is_deleted = 0
     `,
         // nc.organization_id copre le NC non-audit (nessuna riga in `audits`)
-        orgClause: 'COALESCE(a.organization_id, nc.organization_id, ndt_r.organization_id, rdp_r.organization_id) = @organization_id',
+        orgClause: 'COALESCE(a.organization_id, nc.organization_id, ndt_r.organization_id, rdp_r.organization_id, wb.organization_id) = @organization_id',
         rbacClause,
-        scopeParams: { ...auditScope.params, ...ndtScope.params, ...rdpScope.params },
+        scopeParams: { ...auditScope.params, ...ndtScope.params, ...rdpScope.params, ...wbScope.params },
     };
 }
 
@@ -134,6 +138,10 @@ async function listAttachments(req, res) {
         if (req.query.rdp_test_id) {
             whereConditions.push('att.rdp_test_id = @rdp_test_id');
             params.rdp_test_id = parseInt(req.query.rdp_test_id);
+        }
+        if (req.query.welding_book_weld_id) {
+            whereConditions.push('att.welding_book_weld_id = @welding_book_weld_id');
+            params.welding_book_weld_id = parseInt(req.query.welding_book_weld_id);
         }
 
         if (category) {
@@ -258,7 +266,17 @@ async function getAttachmentById(req, res) {
 async function uploadAttachment(req, res) {
     try {
         const { user_id, organization_id } = req.user;
-        const { audit_id, nc_id, question_id, custom_item_id, ndt_report_item_id, rdp_test_id, category = 'evidence', description } = req.body;
+        const {
+            audit_id,
+            nc_id,
+            question_id,
+            custom_item_id,
+            ndt_report_item_id,
+            rdp_test_id,
+            welding_book_weld_id,
+            category = 'evidence',
+            description,
+        } = req.body;
 
         // Validazione: deve avere file
         if (!req.file) {
@@ -292,6 +310,17 @@ async function uploadAttachment(req, res) {
             if (testCheck.recordset.length === 0) {
                 await fs.unlink(req.file.path).catch(() => { });
                 return res.status(404).json({ error: 'Prova RDP non trovata', code: 'RDP_TEST_NOT_FOUND' });
+            }
+        } else if (welding_book_weld_id) {
+            // Foto cordone Welding Book (ISO-5b): ownership via testata welding_books
+            const weldCheck = await query(`
+                SELECT w.id FROM welding_book_welds w
+                JOIN welding_books b ON b.id = w.book_id
+                WHERE w.id = @weld_id AND b.organization_id = @organization_id AND b.is_deleted = 0
+            `, { weld_id: parseInt(welding_book_weld_id), organization_id });
+            if (weldCheck.recordset.length === 0) {
+                await fs.unlink(req.file.path).catch(() => { });
+                return res.status(404).json({ error: 'Riga Welding Book non trovata', code: 'WB_WELD_NOT_FOUND' });
             }
         } else if ((!audit_id && !nc_id) || (audit_id && nc_id)) {
             // Validazione standard: deve avere audit_id o nc_id (ma non entrambi)
@@ -425,6 +454,7 @@ async function uploadAttachment(req, res) {
         custom_item_id,
         ndt_report_item_id,
         rdp_test_id,
+        welding_book_weld_id,
         file_name,
         file_type,
         file_size,
@@ -443,6 +473,7 @@ async function uploadAttachment(req, res) {
         @custom_item_id,
         @ndt_report_item_id,
         @rdp_test_id,
+        @welding_book_weld_id,
         @file_name,
         @file_type,
         @file_size,
@@ -460,6 +491,7 @@ async function uploadAttachment(req, res) {
             custom_item_id: custom_item_id ? parseInt(custom_item_id) : null,
             ndt_report_item_id: ndt_report_item_id ? parseInt(ndt_report_item_id) : null,
             rdp_test_id: rdp_test_id ? parseInt(rdp_test_id) : null,
+            welding_book_weld_id: welding_book_weld_id ? parseInt(welding_book_weld_id) : null,
             file_name: req.file.originalname,
             file_type: path.extname(req.file.originalname).toLowerCase(),
             file_size: req.file.size,
@@ -503,7 +535,7 @@ async function uploadAttachment(req, res) {
             && /CHK_attachments_parent/i.test(error.message || '');
         if (parentCheckFailed) {
             return res.status(400).json({
-                error: 'Allegato senza elemento padre valido (audit, NC, documento, verbale CND o prova RDP).',
+                error: 'Allegato senza elemento padre valido (audit, NC, documento, verbale CND, prova RDP o riga Welding Book).',
                 code: 'ATTACHMENT_PARENT_REQUIRED'
             });
         }
@@ -527,7 +559,7 @@ async function downloadAttachment(req, res) {
         const { joinSql, orgClause, rbacClause, scopeParams } = attachmentScope(req.user);
 
         const result = await query(`
-      SELECT att.*, COALESCE(a.organization_id, ndt_r.organization_id, rdp_r.organization_id) AS audit_org_id
+      SELECT att.*, COALESCE(a.organization_id, ndt_r.organization_id, rdp_r.organization_id, wb.organization_id) AS audit_org_id
       FROM attachments att
       ${joinSql}
       WHERE att.attachment_id = @id 
@@ -589,7 +621,7 @@ async function deleteAttachment(req, res) {
         const { joinSql, orgClause, rbacClause, scopeParams } = attachmentScope(req.user);
 
         const result = await query(`
-      SELECT att.*, COALESCE(a.organization_id, ndt_r.organization_id, rdp_r.organization_id) AS audit_org_id
+      SELECT att.*, COALESCE(a.organization_id, ndt_r.organization_id, rdp_r.organization_id, wb.organization_id) AS audit_org_id
       FROM attachments att
       ${joinSql}
       WHERE att.attachment_id = @id 
@@ -657,7 +689,7 @@ async function viewAttachment(req, res) {
         const { joinSql, orgClause, rbacClause, scopeParams } = attachmentScope(req.user);
 
         const result = await query(`
-      SELECT att.*, COALESCE(a.organization_id, ndt_r.organization_id, rdp_r.organization_id) AS audit_org_id
+      SELECT att.*, COALESCE(a.organization_id, ndt_r.organization_id, rdp_r.organization_id, wb.organization_id) AS audit_org_id
       FROM attachments att
       ${joinSql}
       WHERE att.attachment_id = @id 
