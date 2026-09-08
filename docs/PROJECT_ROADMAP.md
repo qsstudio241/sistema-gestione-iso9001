@@ -6,22 +6,23 @@
 
 > Avvio: Read con **`limit: 45`** (questa sezione deve entrarci). Resto del file = backlog/cronologia — **non** iniettare. Epic → `PLAN_*_SLICES.md`. Lezioni → [GUIDA](GUIDA_CONSOLIDATA.md) **a sezioni**. Archivio marzo 2026: [archive](archive/PROJECT_CONTEXT_STATO_FUNZIONALITA_2026-03.md).
 
-**Ultimo aggiornamento**: 08/09/2026 (ISO-5 Word Welding Book · ISO-4 #668 mergiato · Alert/CTX-4 HITL).
+**Ultimo aggiornamento**: 08/09/2026 (ISO-5b #671 mergiato · sessione chiusa · next HITL).
 
 ### Moduli maturi
 
-Audit multi-standard · NC · Qualifiche · Saldatura (WPQR/WPS/3834/Welding Book) · SAL · Registro + Scadenzari · Alert · Riesame · RBAC · Obblighi legali · Assistente AI / Gap · CND · Libreria fonti (+ gap SA) · Second Brain Ambito (SB-4 + SB-6 + CTX-0…3) · Compliance Map (§8.2).
+Audit multi-standard · NC · Qualifiche · Saldatura (WPQR/WPS/3834/Welding Book + foto cordone) · SAL · Registro + Scadenzari · Alert · Riesame · RBAC · Obblighi legali · Assistente AI / Gap · CND · Libreria fonti (+ gap SA) · Second Brain Ambito (SB-4 + SB-6 + CTX-0…3) · Compliance Map (§8.2).
 
 ### Sessione più recente (08/09/2026)
 
-**ISO-5 Word Welding Book:** export IOF programmatico (testata + attrezzature + sequenza + parametri); pulsante «Scarica Word» in form WB; foto cordone persistite = **ISO-5b**. Branch `cursor/iso5-word-welding-book-8269`.  
-**ISO-4** mergiato [#668](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/668) + Netlify (chunk `wordExport` con Quesito/Evidenze). **HITL bloccati:** CTX-4 · Alert destinatario → [`DEPUTYTASK.md`](agent-tasks/DEPUTYTASK.md) · ING-5 · ROO-18 · MC-I4 · S1c.
+**ISO-5 + ISO-5b CHIUSE:** Word Welding Book IOF ([#670](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/670)) + foto cordone per riga (`attachments.welding_book_weld_id`, mig. **165**, UI `WbWeldAttachments`, embed Word `ImageRun`) [#671](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/671). Smoke Netlify+VPS OK post-merge. **Sessione sviluppo chiusa.**  
+**Next = HITL (no codice senza DoD):** CTX-4 Email/Drive · Alert destinatario qualifiche → [`DEPUTYTASK.md`](agent-tasks/DEPUTYTASK.md) · ING-5 · ROO-18 · MC-I4 · S1c · ISO-4b.
 
 ### Sessioni recenti (pointer — dettaglio in `<details>` sotto)
 
 | Data | Esito | Piano |
 |------|-------|-------|
-| 08/09 | ISO-5 Word Welding Book IOF | [`PLAN_3834`](agent-tasks/PLAN_3834_SLICES.md) |
+| 08/09 | ISO-5b foto cordone WB · #671 · sessione chiusa | [`PLAN_3834`](agent-tasks/PLAN_3834_SLICES.md) |
+| 08/09 | ISO-5 Word Welding Book IOF · #670 | [`PLAN_3834`](agent-tasks/PLAN_3834_SLICES.md) |
 | 07/09 | ISO-4 Word visita Mason (Quesito/Evidenze/Esito) · #668 | [`PLAN_3834`](agent-tasks/PLAN_3834_SLICES.md) |
 | 07/09 | CTX-3 ✅ #666 · hub sync post CTX-0…3 #667 | [`PLAN_SECOND_BRAIN`](agent-tasks/PLAN_SECOND_BRAIN_SLICES.md) |
 | 07/09 | CTX-2 ✅ #665 badge+wizard azienda | [`PLAN_SECOND_BRAIN`](agent-tasks/PLAN_SECOND_BRAIN_SLICES.md) |
@@ -42,11 +43,11 @@ Audit multi-standard · NC · Qualifiche · Saldatura (WPQR/WPS/3834/Welding Boo
 |---|---|---|---|
 | 1 | **Second Brain — CTX-4 Email/Drive** | OAuth Alto; **no codice** senza DoD HITL | [PLAN SB](agent-tasks/PLAN_SECOND_BRAIN_SLICES.md) § CTX-4 |
 | 2 | **Alert qualifiche — destinatario UI** | Cascata solo in servizio; brief HITL APERTO | `DEPUTYTASK.md` · `qualificationAlert.service.js` |
-| 3 | **ISO 3834 — ISO-5b foto cordone** | ISO-5 Word ✅; allegati riga WB + embed | [PLAN](agent-tasks/PLAN_3834_SLICES.md) |
-| 4 | **Commesse — ING-5 / VC-5** | ING-5 HITL; VC-5 solo Lead | [PLAN](agent-tasks/PLAN_VALUTAZIONE_COMMESSE_SLICES.md) |
-| 5 | **Material Compliance — MC-I4** | MC-I3 CHIUSA; busta 1→N (nebbia split) | [PLAN](agent-tasks/PLAN_MATERIAL_COMPLIANCE_SLICES.md) |
-| 6 | **Rischi ROO-18 HITL** | ROO-17 OK; ingest/data riesame dopo conferma | [PLAN §7](agent-tasks/PLAN_RISCHI_OPPORTUNITA_OBIETTIVI_SLICES.md) |
-| 7 | **SAL AI — S1c `.doc`** | S1a–S2b CHIUSE; S1c solo su richiesta | [PLAN](agent-tasks/PLAN_SAL_AI_EVIDENCE_SLICES.md) |
+| 3 | **Commesse — ING-5 / VC-5** | ING-5 HITL; VC-5 solo Lead | [PLAN](agent-tasks/PLAN_VALUTAZIONE_COMMESSE_SLICES.md) |
+| 4 | **Material Compliance — MC-I4** | MC-I3 CHIUSA; busta 1→N (nebbia split) | [PLAN](agent-tasks/PLAN_MATERIAL_COMPLIANCE_SLICES.md) |
+| 5 | **Rischi ROO-18 HITL** | ROO-17 OK; ingest/data riesame dopo conferma | [PLAN §7](agent-tasks/PLAN_RISCHI_OPPORTUNITA_OBIETTIVI_SLICES.md) |
+| 6 | **SAL AI — S1c `.doc`** | S1a–S2b CHIUSE; S1c solo su richiesta | [PLAN](agent-tasks/PLAN_SAL_AI_EVIDENCE_SLICES.md) |
+| 7 | **ISO 3834 — ISO-4b / ISO-8…** | ISO-5+5b ✅; scala 1–6 / ponti AFK | [PLAN](agent-tasks/PLAN_3834_SLICES.md) |
 | 8 | **Multimodal RAG — FW-0** | MR-0…5 OK; hook ingest→CLIP | [PLAN MR](agent-tasks/PLAN_MULTIMODAL_RAG_SLICES.md) |
 | 9 | **Shell dialog ingest / Impostazioni org** | Basso rischio / PR #10 conflict | backlog sotto |
 

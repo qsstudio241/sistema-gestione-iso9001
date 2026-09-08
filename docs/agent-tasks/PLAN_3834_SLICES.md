@@ -112,7 +112,7 @@ Ogni slice è un **tracer verticale** (un processo o un ponte), non «tutto il D
 | **ISO-4** | Export Word visita Mason **da Audit ISO 3834-2 (id 6)** | `wordExport.js` / `ISO3834-audit-report.docx`: layout check list 27/01 (quesito / evidenza / esito C/NC). **Non** `RDPModule`. Menu `/saldatura/rdp` spento | architettura 19/08 (PR #486) | Fatto (branch `cursor/iso4-word-visita-mason-8269`) |
 | **ISO-4b** | Scala voto 1–6 Mason (invece di C/NC/OSS) | checklist Audit id 6 + export Word | ISO-4 + HITL | HITL |
 | **ISO-5** | Export Word Welding Book (IOF) | `WeldingBooksPage.jsx`, `wordExportWeldingBook.js` (pattern WPS) | ADR-016 Fase 2–3 | Fatto (PR #670) |
-| **ISO-5b** | Allegati foto cordone per riga saldatura + embed Word | `attachments.welding_book_weld_id` + UI riga WB + upsert welds | ISO-5 | Fatto (branch `cursor/iso5b-foto-cordone-8269`) |
+| **ISO-5b** | Allegati foto cordone per riga saldatura + embed Word | `attachments.welding_book_weld_id` + UI riga WB + upsert welds | ISO-5 | Fatto (PR #671) |
 | **ISO-6** | Ponte NC ↔ commessa | `nc.controller.js` + `NCPage` / drawer: `project_id` opzionale | — | Fatto (PR #465) |
 | **ISO-7** | Ponte RDP/NDT ↔ commessa | FK `project_id` su `rdp_reports` (menu spento) e NDT | ISO-1a/1b | Fatto (PR #474) |
 | **ISO-8** | Ponte offerta → commessa | FK `commercial_case_id` su `projects` o viceversa | ISO-3 utile ma non bloccante | AFK |
