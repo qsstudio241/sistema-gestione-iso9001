@@ -8,7 +8,7 @@ import { fileURLToPath } from "url";
 import PizZip from "pizzip";
 import Docxtemplater from "docxtemplater";
 import { repairDocxtemplaterFragmentedTags } from "../utils/wordExport.js";
-import { buildChecklistSectionOoxml, buildCustomChecklistSectionOoxml } from "../utils/wordExportHelpers.js";
+import { buildChecklistSectionOoxml, buildCustomChecklistSectionOoxml, isIso3834VisitStandard } from "../utils/wordExportHelpers.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const tmplPath = path.join(__dirname, "../../public/templates/ISO9001-audit-report.docx");
@@ -346,5 +346,67 @@ describe("repairDocxtemplaterFragmentedTags + ISO9001 template", () => {
         const rIds   = imageRegistry.map((r) => r.rId);
         expect(new Set(imgIds).size).toBe(imgIds.length);
         expect(new Set(rIds).size).toBe(rIds.length);
+    });
+
+    it("ISO-4 visita 3834: colonne Quesito/Evidenze/Esito senza Rilievi pendenti 9001", () => {
+        expect(isIso3834VisitStandard("ISO_3834_2")).toBe(true);
+        expect(isIso3834VisitStandard("RDP_MSN")).toBe(true);
+        expect(isIso3834VisitStandard("ISO_9001")).toBe(false);
+
+        const xml3834 = buildChecklistSectionOoxml(
+            {
+                ISO_3834_2: {
+                    s1: {
+                        title: "Gestione qualita",
+                        questions: [
+                            {
+                                questionId: 601,
+                                status: "C",
+                                text: "Il fornitore ha certificazione ISO 9001?",
+                                notes: "Certificato visto in sede.",
+                            },
+                        ],
+                    },
+                },
+            },
+            [],
+            [{ description: "rilievo vecchio" }],
+            null,
+            {},
+            null,
+            [],
+            {}
+        );
+        const plain3834 = allWText(xml3834);
+        expect(plain3834).toContain("Quesito");
+        expect(plain3834).toContain("Evidenze (eventuali foto)");
+        expect(plain3834).toContain("Esito");
+        expect(plain3834).toContain("Conforme");
+        expect(plain3834).toContain("Certificato visto in sede");
+        expect(plain3834).not.toContain("RILIEVI PENDENTI");
+        expect(plain3834).not.toContain("Attivit");
+        expect(plain3834).not.toContain("Valutazione di efficacia");
+
+        const xml9001 = buildChecklistSectionOoxml(
+            {
+                ISO_9001: {
+                    s1: {
+                        title: "Contesto",
+                        questions: [{ questionId: 1, status: "C", text: "Domanda 9001" }],
+                    },
+                },
+            },
+            [],
+            [],
+            null,
+            {},
+            null,
+            [],
+            {}
+        );
+        const plain9001 = allWText(xml9001);
+        expect(plain9001).toContain("RILIEVI PENDENTI");
+        expect(plain9001).toContain("Attivit");
+        expect(plain9001).not.toContain("Evidenze (eventuali foto)");
     });
 });
