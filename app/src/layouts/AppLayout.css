@@ -407,6 +407,8 @@
   white-space: nowrap;
 }
 
+.layout-title-short { display: none; }
+
 /* User chip */
 .user-chip {
   display: flex;
@@ -545,13 +547,13 @@
 
   .app-layout {
     min-height: 100dvh;
-    overflow-x: hidden;
+    overflow-x: clip;
   }
 
   .layout-right {
     min-width: 0;
     min-height: 100dvh;
-    overflow-x: hidden;
+    overflow-x: clip;
   }
 
   .sidebar {
@@ -597,35 +599,33 @@
 
   .layout-main {
     padding-bottom: calc(var(--bottom-nav-height) + env(safe-area-inset-bottom, 0px) + 16px);
-    overflow-x: hidden;
+    overflow-x: clip;
   }
 
   .layout-header {
-    padding: 0 12px;
-    height: auto;
-    min-height: var(--header-height);
-    flex-wrap: wrap;
-    row-gap: 6px;
-    column-gap: 8px;
+    padding: 0 10px;
+    height: var(--header-height);
+    flex-wrap: nowrap;
+    gap: 8px;
   }
 
   .layout-header-left,
   .layout-header-right {
     min-width: 0;
+    flex-wrap: nowrap;
   }
 
   .layout-header-left { flex: 1 1 auto; }
+  .layout-header-right { flex-shrink: 0; }
 
-  .layout-title {
-    font-size: 0.85rem;
-    max-width: min(46vw, 180px);
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
+  .layout-title-full { display: none; }
+  .layout-title-short { display: inline; }
+  .layout-title { font-size: 0.95rem; max-width: none; }
 
+  .layout-search-label { display: none; }
   .layout-search-btn {
     padding: 5px 8px;
-    font-size: 0.75rem;
+    font-size: 0.95rem;
   }
 
   .layout-org-banner {
@@ -659,10 +659,6 @@
 
 @media (max-width: 480px) {
   .user-chip-role { display: none; }
-
-  .layout-title {
-    max-width: min(40vw, 140px);
-  }
 
   .btn-logout {
     padding: 6px 8px;

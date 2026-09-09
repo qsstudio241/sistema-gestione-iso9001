@@ -146,13 +146,19 @@
   .sq-col-cert, .sq-col-cert th { display:none; }
   .sq-stats-bar {
     display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
     gap: 8px;
   }
   .sq-stat { min-width: 0; width: 100%; padding: 10px 8px; }
   .sq-toolbar { flex-direction: column; align-items: stretch; }
   .sq-search { min-width: 0; width: 100%; }
   .sq-select { width: 100%; }
+  .sq-tabs {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  .sq-tab { flex-shrink: 0; }
 }
 
 .sq-qual-detail { font-size:11px; color:#6b7280; margin-top:1px; }

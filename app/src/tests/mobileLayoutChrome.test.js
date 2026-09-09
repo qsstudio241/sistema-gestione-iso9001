@@ -1,6 +1,4 @@
 /**
- * @vitest-environment node
- *
  * jsdom non valuta le media query: si legge il CSS e si verifica che il blocco
  * mobile (≤768px) eviti overflow/sovrapposizioni su header, footer e Assistente.
  */
@@ -38,7 +36,9 @@ describe("Chrome mobile — scroll e spazio", () => {
     expect(media).toMatch(/padding-bottom:\s*calc\(var\(--bottom-nav-height\)/);
     expect(media).toContain("safe-area-inset-bottom");
     expect(media).toMatch(/\.layout-scope-select[\s\S]*min-width:\s*0/);
-    expect(media).toMatch(/overflow-x:\s*hidden/);
+    expect(media).toMatch(/overflow-x:\s*clip/);
+    expect(media).toMatch(/\.layout-title-short\s*\{\s*display:\s*inline/);
+    expect(media).toMatch(/flex-wrap:\s*nowrap/);
   });
 
   it("Assistente AI non usa più un'altezza calc(100vh) sul mobile", () => {
@@ -56,9 +56,10 @@ describe("Chrome mobile — scroll e spazio", () => {
     const sq = firstMedia(readCss("src/pages/QualificationsPage.css"), "@media (max-width:700px)");
     const nc = firstMedia(readCss("src/pages/NCPage.css"), "@media (max-width: 640px)");
     const dl = firstMedia(readCss("src/pages/DeadlinesPage.css"));
-    expect(sq).toMatch(/\.sq-stats-bar[\s\S]*grid-template-columns:\s*repeat\(2/);
-    expect(nc).toMatch(/\.nc-stats-bar[\s\S]*grid-template-columns:\s*repeat\(2/);
-    expect(dl).toMatch(/\.dl-stats-bar[\s\S]*grid-template-columns:\s*repeat\(2/);
+    expect(sq).toMatch(/\.sq-stats-bar[\s\S]*grid-template-columns:\s*repeat\(auto-fit/);
+    expect(nc).toMatch(/\.nc-stats-bar[\s\S]*grid-template-columns:\s*repeat\(auto-fit/);
+    expect(dl).toMatch(/\.dl-stats-bar[\s\S]*grid-template-columns:\s*repeat\(auto-fit/);
+    expect(sq).toMatch(/\.sq-tabs[\s\S]*overflow-x:\s*auto/);
   });
 
   it("tab in-page restano scrollabili in orizzontale", () => {
