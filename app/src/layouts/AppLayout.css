@@ -407,6 +407,8 @@
   white-space: nowrap;
 }
 
+.layout-title-short { display: none; }
+
 /* User chip */
 .user-chip {
   display: flex;
@@ -543,6 +545,17 @@
 @media (max-width: 768px) {
   .layout-menu-btn { display: inline-flex; }
 
+  .app-layout {
+    min-height: 100dvh;
+    overflow-x: clip;
+  }
+
+  .layout-right {
+    min-width: 0;
+    min-height: 100dvh;
+    overflow-x: clip;
+  }
+
   .sidebar {
     display: flex;
     flex-direction: column;
@@ -575,20 +588,80 @@
     cursor: pointer;
   }
 
-  .bottom-nav { display: flex; }
+  .bottom-nav {
+    display: flex;
+    height: calc(var(--bottom-nav-height) + env(safe-area-inset-bottom, 0px));
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+
+  /* Il copyright desktop si sovrapponeva alla bottom nav e toglieva spazio utile. */
+  .layout-footer { display: none; }
 
   .layout-main {
-    padding-bottom: var(--bottom-nav-height);
+    padding-bottom: calc(var(--bottom-nav-height) + env(safe-area-inset-bottom, 0px) + 16px);
+    overflow-x: clip;
   }
 
   .layout-header {
-    padding: 0 16px;
+    padding: 0 10px;
+    height: var(--header-height);
+    flex-wrap: nowrap;
+    gap: 8px;
   }
 
-  .layout-title { font-size: 0.9rem; }
+  .layout-header-left,
+  .layout-header-right {
+    min-width: 0;
+    flex-wrap: nowrap;
+  }
+
+  .layout-header-left { flex: 1 1 auto; }
+  .layout-header-right { flex-shrink: 0; }
+
+  .layout-title-full { display: none; }
+  .layout-title-short { display: inline; }
+  .layout-title { font-size: 0.95rem; max-width: none; }
+
+  .layout-search-label { display: none; }
+  .layout-search-btn {
+    padding: 5px 8px;
+    font-size: 0.95rem;
+  }
+
+  .layout-org-banner {
+    padding: 8px 12px;
+  }
+
+  .layout-scope {
+    width: 100%;
+    min-width: 0;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  .layout-scope-combo,
+  .layout-scope-select {
+    min-width: 0;
+    max-width: none;
+    width: 100%;
+    flex: 1 1 auto;
+  }
+
+  .layout-scope-locked {
+    min-width: 0;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
   .user-chip-name { display: none; }
 }
 
 @media (max-width: 480px) {
   .user-chip-role { display: none; }
+
+  .btn-logout {
+    padding: 6px 8px;
+    font-size: 0.78rem;
+  }
 }

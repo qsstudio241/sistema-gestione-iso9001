@@ -420,7 +420,8 @@ function AppLayoutInner({ children }) {
               <img src={orgLogoDataUrl} alt="" className="layout-header-org-logo" width={36} height={36} />
             ) : null}
             <h1 className="layout-title" onClick={() => navigate("/")} style={{ cursor: "pointer" }}>
-              SGQ - Sistema di Gestione
+              <span className="layout-title-full">SGQ - Sistema di Gestione</span>
+              <span className="layout-title-short">SGQ</span>
             </h1>
             <button
               type="button"
@@ -429,7 +430,8 @@ function AppLayoutInner({ children }) {
               title="Ricerca globale"
               aria-label="Ricerca globale"
             >
-              {"\uD83D\uDD0D"} Ricerca
+              {"\uD83D\uDD0D"}
+              <span className="layout-search-label"> Ricerca</span>
             </button>
           </div>
           <div className="layout-header-right">

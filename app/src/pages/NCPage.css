@@ -885,6 +885,9 @@ body.sgq-nc-drawer-resizing * {
 }
 
 @media (max-width: 768px) {
+  .nc-shortcuts-bar { gap: 10px; }
+  .nc-shortcut-btn { padding: 8px 12px; }
+
   .nc-detail-drawer {
     width: 100% !important;
     max-width: 100vw !important;
@@ -897,7 +900,12 @@ body.sgq-nc-drawer-resizing * {
 
 @media (max-width: 640px) {
   .nc-page { padding: 16px; }
-  .nc-stats-bar { gap: 8px; }
+  .nc-stats-bar {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
+    gap: 8px;
+  }
+  .nc-stat { min-width: 0; width: 100%; padding: 10px 8px; }
   .nc-filters { flex-direction: column; }
   .nc-filters select { width: 100%; }
   .nc-form-row-2col,
