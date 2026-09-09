@@ -543,6 +543,17 @@
 @media (max-width: 768px) {
   .layout-menu-btn { display: inline-flex; }
 
+  .app-layout {
+    min-height: 100dvh;
+    overflow-x: hidden;
+  }
+
+  .layout-right {
+    min-width: 0;
+    min-height: 100dvh;
+    overflow-x: hidden;
+  }
+
   .sidebar {
     display: flex;
     flex-direction: column;
@@ -575,20 +586,86 @@
     cursor: pointer;
   }
 
-  .bottom-nav { display: flex; }
+  .bottom-nav {
+    display: flex;
+    height: calc(var(--bottom-nav-height) + env(safe-area-inset-bottom, 0px));
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+
+  /* Il copyright desktop si sovrapponeva alla bottom nav e toglieva spazio utile. */
+  .layout-footer { display: none; }
 
   .layout-main {
-    padding-bottom: var(--bottom-nav-height);
+    padding-bottom: calc(var(--bottom-nav-height) + env(safe-area-inset-bottom, 0px) + 16px);
+    overflow-x: hidden;
   }
 
   .layout-header {
-    padding: 0 16px;
+    padding: 0 12px;
+    height: auto;
+    min-height: var(--header-height);
+    flex-wrap: wrap;
+    row-gap: 6px;
+    column-gap: 8px;
   }
 
-  .layout-title { font-size: 0.9rem; }
+  .layout-header-left,
+  .layout-header-right {
+    min-width: 0;
+  }
+
+  .layout-header-left { flex: 1 1 auto; }
+
+  .layout-title {
+    font-size: 0.85rem;
+    max-width: min(46vw, 180px);
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .layout-search-btn {
+    padding: 5px 8px;
+    font-size: 0.75rem;
+  }
+
+  .layout-org-banner {
+    padding: 8px 12px;
+  }
+
+  .layout-scope {
+    width: 100%;
+    min-width: 0;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  .layout-scope-combo,
+  .layout-scope-select {
+    min-width: 0;
+    max-width: none;
+    width: 100%;
+    flex: 1 1 auto;
+  }
+
+  .layout-scope-locked {
+    min-width: 0;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
   .user-chip-name { display: none; }
 }
 
 @media (max-width: 480px) {
   .user-chip-role { display: none; }
+
+  .layout-title {
+    max-width: min(40vw, 140px);
+  }
+
+  .btn-logout {
+    padding: 6px 8px;
+    font-size: 0.78rem;
+  }
 }

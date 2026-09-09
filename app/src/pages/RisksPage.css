@@ -31,13 +31,15 @@
 .risks-page-sub { margin: 0 0 20px; color: #718096; font-size: 0.875rem; }
 
 /* Tabs */
-.risks-tabs { display: flex; gap: 4px; margin-bottom: 20px; border-bottom: 2px solid #e2e8f0; }
+.risks-tabs { display: flex; gap: 4px; margin-bottom: 20px; border-bottom: 2px solid #e2e8f0; overflow-x: auto; -webkit-overflow-scrolling: touch; }
 .risks-tab-btn {
   padding: 10px 20px;
   border: none;
   background: transparent;
   font-size: 0.9rem;
   font-weight: 500;
+  flex-shrink: 0;
+  white-space: nowrap;
   color: #718096;
   cursor: pointer;
   border-bottom: 2px solid transparent;
@@ -442,7 +444,13 @@
 
 @media (max-width: 640px) {
   .risks-page { padding: 12px; }
-  .stats-bar { gap: 8px; }
+  .stats-bar {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+  }
+  .tab-toolbar { flex-direction: column; align-items: stretch; }
+  .tab-toolbar select { width: 100%; }
   .form-row-2col, .form-row-3col { grid-template-columns: 1fr; }
   .risk-card-top { flex-direction: column; }
 }

@@ -82,4 +82,9 @@
   .file-dropzone {
     padding: 18px 12px;
   }
+
+  .file-dropzone--compact {
+    padding: 8px 10px;
+    min-width: 0;
+  }
 }

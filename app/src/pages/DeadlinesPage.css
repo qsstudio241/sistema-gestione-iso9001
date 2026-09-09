@@ -173,4 +173,10 @@
 @media (max-width: 768px) {
   .dl-page { padding: 14px; }
   .dl-page-title { font-size: 1.2rem; }
+  .dl-stats-bar {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+  }
+  .dl-stat { min-width: 0; width: 100%; padding: 10px 8px; }
 }

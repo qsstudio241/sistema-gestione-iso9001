@@ -144,8 +144,15 @@
 @media (max-width:700px) {
   .sq-page { padding:14px; }
   .sq-col-cert, .sq-col-cert th { display:none; }
-  .sq-stats-bar { gap:8px; }
-  .sq-stat { min-width:60px; padding:8px; }
+  .sq-stats-bar {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+  }
+  .sq-stat { min-width: 0; width: 100%; padding: 10px 8px; }
+  .sq-toolbar { flex-direction: column; align-items: stretch; }
+  .sq-search { min-width: 0; width: 100%; }
+  .sq-select { width: 100%; }
 }
 
 .sq-qual-detail { font-size:11px; color:#6b7280; margin-top:1px; }

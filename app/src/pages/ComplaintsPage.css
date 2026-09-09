@@ -257,7 +257,17 @@
 }
 .form-row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: .75rem; }
 .form-row-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: .75rem; }
-@media (max-width: 500px) { .form-row-2, .form-row-3 { grid-template-columns: 1fr; } }
+@media (max-width: 500px) {
+  .complaints-page { padding: 1rem; }
+  .page-header { flex-direction: column; align-items: stretch; }
+  .stats-bar {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+  }
+  .stat-chip { min-width: 0; width: 100%; }
+  .form-row-2, .form-row-3 { grid-template-columns: 1fr; }
+}
 .field-hint { color: #888; font-size: .78rem; margin-top: .1rem; }
 .form-error {
   color: #c62828;
