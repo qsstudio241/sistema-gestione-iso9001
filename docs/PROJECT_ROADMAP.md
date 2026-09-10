@@ -6,21 +6,22 @@
 
 > Avvio: Read con **`limit: 45`** (questa sezione deve entrarci). Resto del file = backlog/cronologia — **non** iniettare. Epic → `PLAN_*_SLICES.md`. Lezioni → [GUIDA](GUIDA_CONSOLIDATA.md) **a sezioni**. Archivio marzo 2026: [archive](archive/PROJECT_CONTEXT_STATO_FUNZIONALITA_2026-03.md).
 
-**Ultimo aggiornamento**: 08/09/2026 (ISO-5b #671 mergiato · sessione chiusa · next HITL).
+**Ultimo aggiornamento**: 09/09/2026 (layout mobile #673 mergiato · hub sync · next HITL).
 
 ### Moduli maturi
 
 Audit multi-standard · NC · Qualifiche · Saldatura (WPQR/WPS/3834/Welding Book + foto cordone) · SAL · Registro + Scadenzari · Alert · Riesame · RBAC · Obblighi legali · Assistente AI / Gap · CND · Libreria fonti (+ gap SA) · Second Brain Ambito (SB-4 + SB-6 + CTX-0…3) · Compliance Map (§8.2).
 
-### Sessione più recente (08/09/2026)
+### Sessione più recente (09/09/2026)
 
-**ISO-5 + ISO-5b CHIUSE:** Word Welding Book IOF ([#670](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/670)) + foto cordone per riga (`attachments.welding_book_weld_id`, mig. **165**, UI `WbWeldAttachments`, embed Word `ImageRun`) [#671](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/671). Smoke Netlify+VPS OK post-merge. **Sessione sviluppo chiusa.**  
-**Next = HITL (no codice senza DoD):** CTX-4 Email/Drive · Alert destinatario qualifiche → [`DEPUTYTASK.md`](agent-tasks/DEPUTYTASK.md) · ING-5 · ROO-18 · MC-I4 · S1c · ISO-4b.
+**Layout mobile #673 mergiato:** shell `AppLayout` (footer nascosto, scroll, titolo «SGQ») + Assistente senza `100vh` + linguette/KPI su Home, NC, Qualifiche, Scadenzari, Rischi, Reclami, SAL. Refresh forte sul telefono (PWA). **Sessione UI chiusa.**  
+**Next = HITL (no codice senza DoD):** CTX-4 Email/Drive · Alert destinatario qualifiche → [`DEPUTYTASK.md`](agent-tasks/DEPUTYTASK.md) · ING-5 · ROO-18 · MC-I4 · S1c · ISO-4b. ISO-5+5b restano chiuse (#670/#671).
 
 ### Sessioni recenti (pointer — dettaglio in `<details>` sotto)
 
 | Data | Esito | Piano |
 |------|-------|-------|
+| 09/09 | Layout mobile scroll/wrapping · #673 | `AppLayout.css` · `AiAssistantPage.css` |
 | 08/09 | ISO-5b foto cordone WB · #671 · sessione chiusa | [`PLAN_3834`](agent-tasks/PLAN_3834_SLICES.md) |
 | 08/09 | ISO-5 Word Welding Book IOF · #670 | [`PLAN_3834`](agent-tasks/PLAN_3834_SLICES.md) |
 | 07/09 | ISO-4 Word visita Mason (Quesito/Evidenze/Esito) · #668 | [`PLAN_3834`](agent-tasks/PLAN_3834_SLICES.md) |

@@ -40,6 +40,7 @@ Quando un deputy (o il Lead) costruisce o sistema una pagina, **parte da una di 
 - Sidebar navy, contenuto chiaro, header 56px, bottom nav su mobile.
 - Token in `:root` (tabella sotto): `--color-primary`, `--color-bg`, `--radius`, `--shadow-sm`, ecc.
 - Vietato un secondo chrome (altra sidebar, altro header, dark theme inventato).
+- Mobile (≤768px): footer copyright nascosto; il contenuto scorre; niente `height: calc(100vh)` nelle pagine dentro `layout-main` (PR #673).
 
 ### 2 — Elenco + filtri (`QualificationsPage`)
 
