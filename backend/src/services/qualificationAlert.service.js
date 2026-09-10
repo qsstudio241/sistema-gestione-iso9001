@@ -108,9 +108,35 @@ function buildQualAlertHtml(orgName, recipientName, items) {
 
 /**
  * Risolve destinatari coordinatore saldatura per azienda.
- * Ordine: notification_contacts (company) → company_personnel (job coordinatore) → user_company_access → fallback org.
+ * Ordine: personnel_roles QUAL_ALERT_RECIPIENT → notification_contacts (company) → company_personnel (job coordinatore) → user_company_access → fallback org.
  */
 async function resolveWeldingCoordinatorRecipients(pool, orgId, companyId, orgFallbackEmail) {
+  // STEP 0: destinatari espliciti da personnel_roles (opzione A, Alert #3)
+  const rolesRes = await pool.request()
+    .input('orgId', orgId)
+    .input('compId', companyId)
+    .query(`
+      SELECT cp.name, cp.email
+      FROM personnel_roles pr
+      INNER JOIN company_personnel cp ON cp.id = pr.personnel_id
+      WHERE pr.organization_id = @orgId
+        AND pr.company_id = @compId
+        AND pr.role_code = 'QUAL_ALERT_RECIPIENT'
+        AND pr.active = 1
+        AND cp.active = 1
+        AND cp.email IS NOT NULL
+        AND LTRIM(RTRIM(cp.email)) <> ''
+      ORDER BY pr.id ASC
+    `);
+  const roleContacts = (rolesRes.recordset || []).filter((r) => validEmail(r.email));
+  if (roleContacts.length > 0) {
+    return {
+      primary: { email: roleContacts[0].email.trim().toLowerCase(), name: roleContacts[0].name },
+      cc: uniqueEmails(roleContacts.slice(1).map((c) => c.email)),
+      source: 'personnel_roles',
+    };
+  }
+
   const nc = await pool.request()
     .input('orgId', orgId)
     .input('compId', companyId)

@@ -1,9 +1,10 @@
 /**
  * CompanyPersonnelPanel — griglia CRUD personale per singola azienda (slice S5)
  * Collegamento qualifiche: import, link, pannello certificati (slice D)
+ * Alert #3: badge ruoli funzionali (personnel_roles) e azioni inline.
  */
 
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import apiService from "../services/apiService";
 import SgqDataGrid from "./SgqDataGrid";
 import { Badge } from "./SharedComponents";
@@ -12,19 +13,25 @@ import "../pages/NotificationsSettingsPage.css";
 
 const GRID_COLUMNS = [
   { id: "name", label: "Nome", sortable: true, width: "18%" },
-  { id: "job_title", label: "Mansione", sortable: true, width: "16%" },
-  { id: "email", label: "Email", sortable: true, width: "20%", cellClassName: "notif-col-email" },
-  { id: "active", label: "Stato", sortable: true, width: "9%" },
-  { id: "flags", label: "Att./Ver.", sortable: false, width: "10%" },
+  { id: "job_title", label: "Mansione", sortable: true, width: "15%" },
+  { id: "email", label: "Email", sortable: true, width: "18%", cellClassName: "notif-col-email" },
+  { id: "active", label: "Stato", sortable: true, width: "8%" },
+  { id: "flags", label: "Att./Ver.", sortable: false, width: "9%" },
+  { id: "roles", label: "Ruoli", sortable: false, width: "15%" },
   {
     id: "actions",
     label: "Azioni",
     sortable: false,
-    width: "120px",
+    width: "130px",
     headerClassName: "notif-col-actions",
     cellClassName: "notif-col-actions",
   },
 ];
+
+// Etichette UI per i role_code supportati
+const ROLE_LABELS = {
+  QUAL_ALERT_RECIPIENT: { label: "Alert qualifiche", tooltip: "Questa persona riceve le email di alert scadenza qualifiche per questa azienda" },
+};
 
 const EMPTY_FORM = {
   name: "",
@@ -249,6 +256,180 @@ function isPersonActive(row) {
   return row.active !== false && row.active !== 0;
 }
 
+/**
+ * Badge ruoli con azione rimozione inline (X) e dropdown per aggiungere ruolo.
+ */
+function PersonnelRolesBadges({ row, companyId, auditorOrgId, canEdit, onRolesChanged }) {
+  const [roles, setRoles] = useState(null); // null = non ancora caricati
+  const [loading, setLoading] = useState(false);
+  const [showDropdown, setShowDropdown] = useState(false);
+  const [addBusy, setAddBusy] = useState(false);
+  const dropdownRef = useRef(null);
+
+  const apiParams = auditorOrgId ? { auditor_org_id: auditorOrgId } : {};
+
+  // Carica ruoli on demand (alla prima visualizzazione della colonna)
+  useEffect(() => {
+    if (!companyId || !row.id) return;
+    let cancelled = false;
+    setLoading(true);
+    apiService.getPersonnelRoles(companyId, row.id, apiParams)
+      .then((res) => { if (!cancelled) setRoles(res?.data || []); })
+      .catch(() => { if (!cancelled) setRoles([]); })
+      .finally(() => { if (!cancelled) setLoading(false); });
+    return () => { cancelled = true; };
+  }, [companyId, row.id, auditorOrgId]);
+
+  // Chiude il dropdown cliccando fuori
+  useEffect(() => {
+    if (!showDropdown) return;
+    function handleOutside(e) {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
+        setShowDropdown(false);
+      }
+    }
+    document.addEventListener("mousedown", handleOutside);
+    return () => document.removeEventListener("mousedown", handleOutside);
+  }, [showDropdown]);
+
+  async function handleAdd(roleCode) {
+    setShowDropdown(false);
+    setAddBusy(true);
+    try {
+      await apiService.addPersonnelRole(companyId, row.id, { role_code: roleCode }, apiParams);
+      const res = await apiService.getPersonnelRoles(companyId, row.id, apiParams);
+      setRoles(res?.data || []);
+      if (onRolesChanged) onRolesChanged();
+    } catch (err) {
+      alert(err.message || "Errore aggiunta ruolo.");
+    } finally {
+      setAddBusy(false);
+    }
+  }
+
+  async function handleRemove(roleId, roleLabel) {
+    if (!window.confirm(`Rimuovere il ruolo "${roleLabel}" da ${row.name}?`)) return;
+    try {
+      await apiService.removePersonnelRole(companyId, row.id, roleId, apiParams);
+      setRoles((prev) => prev.filter((r) => r.id !== roleId));
+      if (onRolesChanged) onRolesChanged();
+    } catch (err) {
+      alert(err.message || "Errore rimozione ruolo.");
+    }
+  }
+
+  if (loading) return <span className="notif-hint" style={{ fontSize: 11 }}>...</span>;
+  if (!roles) return null;
+
+  const activeRoleCodes = new Set((roles || []).map((r) => r.role_code));
+
+  return (
+    <div style={{ display: "flex", flexWrap: "wrap", gap: 4, alignItems: "center" }}>
+      {(roles || []).map((r) => {
+        const meta = ROLE_LABELS[r.role_code];
+        const label = meta?.label || r.role_code;
+        const tip = meta?.tooltip || "";
+        return (
+          <span
+            key={r.id}
+            className="badge badge-primary"
+            title={tip}
+            style={{ display: "inline-flex", alignItems: "center", gap: 3, fontSize: 11, paddingRight: 2 }}
+          >
+            {label}
+            {canEdit && (
+              <button
+                type="button"
+                title={`Rimuovi ruolo ${label}`}
+                aria-label={`Rimuovi ruolo ${label} da ${row.name}`}
+                onClick={() => handleRemove(r.id, label)}
+                style={{
+                  background: "none",
+                  border: "none",
+                  cursor: "pointer",
+                  color: "inherit",
+                  padding: "0 2px",
+                  fontSize: 12,
+                  lineHeight: 1,
+                }}
+              >
+                {"\u00d7"}
+              </button>
+            )}
+          </span>
+        );
+      })}
+      {canEdit && (
+        <div style={{ position: "relative" }} ref={dropdownRef}>
+          <button
+            type="button"
+            className="btn-test"
+            title="Aggiungi ruolo"
+            aria-label={`Aggiungi ruolo a ${row.name}`}
+            disabled={addBusy}
+            onClick={() => setShowDropdown((v) => !v)}
+            style={{ fontSize: 11, padding: "2px 6px", lineHeight: 1.4 }}
+          >
+            {addBusy ? "..." : "+ Ruolo"}
+          </button>
+          {showDropdown && (
+            <div
+              role="listbox"
+              aria-label="Seleziona ruolo"
+              style={{
+                position: "absolute",
+                top: "100%",
+                left: 0,
+                zIndex: 200,
+                background: "var(--color-surface)",
+                border: "1px solid var(--color-border)",
+                borderRadius: "var(--radius)",
+                boxShadow: "var(--shadow-md)",
+                minWidth: 220,
+                marginTop: 2,
+              }}
+            >
+              <div style={{ padding: "6px 10px 4px", fontSize: 11, color: "var(--color-text-muted)", borderBottom: "1px solid var(--color-border)" }}>
+                Seleziona ruolo da assegnare
+              </div>
+              <button
+                type="button"
+                role="option"
+                aria-selected={activeRoleCodes.has("QUAL_ALERT_RECIPIENT")}
+                disabled={activeRoleCodes.has("QUAL_ALERT_RECIPIENT")}
+                title={activeRoleCodes.has("QUAL_ALERT_RECIPIENT") ? "Ruolo già assegnato" : "Questa persona riceverà le email di alert scadenza qualifiche per questa azienda"}
+                onClick={() => handleAdd("QUAL_ALERT_RECIPIENT")}
+                style={{
+                  display: "block",
+                  width: "100%",
+                  padding: "8px 12px",
+                  textAlign: "left",
+                  background: "none",
+                  border: "none",
+                  cursor: activeRoleCodes.has("QUAL_ALERT_RECIPIENT") ? "default" : "pointer",
+                  opacity: activeRoleCodes.has("QUAL_ALERT_RECIPIENT") ? 0.5 : 1,
+                  fontSize: 13,
+                  color: "var(--color-text)",
+                }}
+              >
+                Alert qualifiche
+                <span style={{ display: "block", fontSize: 11, color: "var(--color-text-muted)" }}>
+                  Riceve email alert scadenza qualifiche
+                </span>
+              </button>
+              <div style={{ borderTop: "1px solid var(--color-border)", padding: "6px 12px 6px" }}>
+                <span style={{ fontSize: 11, color: "var(--color-text-muted)", fontStyle: "italic" }}>
+                  {"Altri ruoli disponibili in futuro"}
+                </span>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function CompanyPersonnelPanel({ companyId, auditorOrgId, canEdit = true }) {
   const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -256,6 +437,8 @@ export default function CompanyPersonnelPanel({ companyId, auditorOrgId, canEdit
   const [qualsModal, setQualsModal] = useState(null);
   const [linkBusy, setLinkBusy] = useState(false);
   const [statusMsg, setStatusMsg] = useState(null);
+  // rolesRefreshTick forza il re-render dei badge ruoli dopo modifiche
+  const [rolesRefreshTick, setRolesRefreshTick] = useState(0);
 
   const apiParams = auditorOrgId ? { auditor_org_id: auditorOrgId } : {};
 
@@ -344,6 +527,17 @@ export default function CompanyPersonnelPanel({ companyId, auditorOrgId, canEdit
         if (row.can_verify) parts.push("Ver.");
         return parts.length ? parts.join(" / ") : "\u2014";
       }
+      case "roles":
+        return (
+          <PersonnelRolesBadges
+            key={`${row.id}-${rolesRefreshTick}`}
+            row={row}
+            companyId={companyId}
+            auditorOrgId={auditorOrgId}
+            canEdit={canEdit}
+            onRolesChanged={() => setRolesRefreshTick((t) => t + 1)}
+          />
+        );
       case "actions":
         return (
           <div className="sgq-datagrid-row-actions">
