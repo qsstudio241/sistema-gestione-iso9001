@@ -79,6 +79,10 @@ router.get('/companies/:companyId/personnel/:id/qualifications', companyPersonne
 router.post('/companies/:companyId/personnel', companyPersonnelController.createPersonnel);
 router.put('/companies/:companyId/personnel/:id', companyPersonnelController.updatePersonnel);
 router.delete('/companies/:companyId/personnel/:id', companyPersonnelController.deletePersonnel);
+// Ruoli funzionali (personnel_roles)
+router.get('/companies/:companyId/personnel/:id/roles', companyPersonnelController.listPersonnelRoles);
+router.post('/companies/:companyId/personnel/:id/roles', companyPersonnelController.addPersonnelRole);
+router.delete('/companies/:companyId/personnel/:id/roles/:roleId', companyPersonnelController.removePersonnelRole);
 
 // Controparti azienda (PR1 — anagrafica customer/end_customer/supplier)
 router.get('/companies/:companyId/counterparties', companyCounterpartiesController.listCounterparties);

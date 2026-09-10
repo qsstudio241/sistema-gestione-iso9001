@@ -6,21 +6,24 @@
 
 > Avvio: Read con **`limit: 45`** (questa sezione deve entrarci). Resto del file = backlog/cronologia — **non** iniettare. Epic → `PLAN_*_SLICES.md`. Lezioni → [GUIDA](GUIDA_CONSOLIDATA.md) **a sezioni**. Archivio marzo 2026: [archive](archive/PROJECT_CONTEXT_STATO_FUNZIONALITA_2026-03.md).
 
-**Ultimo aggiornamento**: 09/09/2026 (layout mobile #673 mergiato · hub sync · next HITL).
+**Ultimo aggiornamento**: 10/09/2026 (Alert #3 destinatario qualifiche · personnel_roles mig. 166 · PR aperta).
 
 ### Moduli maturi
 
 Audit multi-standard · NC · Qualifiche · Saldatura (WPQR/WPS/3834/Welding Book + foto cordone) · SAL · Registro + Scadenzari · Alert · Riesame · RBAC · Obblighi legali · Assistente AI / Gap · CND · Libreria fonti (+ gap SA) · Second Brain Ambito (SB-4 + SB-6 + CTX-0…3) · Compliance Map (§8.2).
 
-### Sessione più recente (09/09/2026)
+### Sessione più recente (10/09/2026)
 
-**Layout mobile #673 mergiato:** shell `AppLayout` (footer nascosto, scroll, titolo «SGQ») + Assistente senza `100vh` + linguette/KPI su Home, NC, Qualifiche, Scadenzari, Rischi, Reclami, SAL. Refresh forte sul telefono (PWA). **Sessione UI chiusa.**  
-**Next = HITL (no codice senza DoD):** CTX-4 Email/Drive · Alert destinatario qualifiche → [`DEPUTYTASK.md`](agent-tasks/DEPUTYTASK.md) · ING-5 · ROO-18 · MC-I4 · S1c · ISO-4b. ISO-5+5b restano chiuse (#670/#671).
+**Alert #3 CHIUSO:** `personnel_roles` (mig. 166), CRUD ruoli backend, STEP 0 `qualificationAlert.service.js` (destinatario esplicito prima della cascata), badge UI "Alert qualifiche" in `CompanyPersonnelPanel`. TEST OK 1629/1629. PR `cursor/alert-personnel-roles-717c` aperta.
+
+**Sessione precedente (09/09/2026):** Layout mobile #673 mergiato · sessione UI chiusa.  
+**Next = HITL:** CTX-4 Email/Drive · ING-5 · ROO-18 · MC-I4 · S1c · ISO-4b.
 
 ### Sessioni recenti (pointer — dettaglio in `<details>` sotto)
 
 | Data | Esito | Piano |
 |------|-------|-------|
+| 10/09 | Alert #3 personnel_roles + UI badge · PR aperta | `DEPUTYTASK.md` · `qualificationAlert.service.js` |
 | 09/09 | Layout mobile scroll/wrapping · #673 | `AppLayout.css` · `AiAssistantPage.css` |
 | 08/09 | ISO-5b foto cordone WB · #671 · sessione chiusa | [`PLAN_3834`](agent-tasks/PLAN_3834_SLICES.md) |
 | 08/09 | ISO-5 Word Welding Book IOF · #670 | [`PLAN_3834`](agent-tasks/PLAN_3834_SLICES.md) |
@@ -43,7 +46,7 @@ Audit multi-standard · NC · Qualifiche · Saldatura (WPQR/WPS/3834/Welding Boo
 | # | Priorità | Perché | Dove |
 |---|---|---|---|
 | 1 | **Second Brain — CTX-4 Email/Drive** | OAuth Alto; **no codice** senza DoD HITL | [PLAN SB](agent-tasks/PLAN_SECOND_BRAIN_SLICES.md) § CTX-4 |
-| 2 | **Alert qualifiche — destinatario UI** | Cascata solo in servizio; brief HITL APERTO | `DEPUTYTASK.md` · `qualificationAlert.service.js` |
+| 2 | **Alert qualifiche — destinatario UI** | ~~Cascata solo in servizio~~ · **CHIUSO** — PR aperta | `DEPUTYTASK.md` · `qualificationAlert.service.js` |
 | 3 | **Commesse — ING-5 / VC-5** | ING-5 HITL; VC-5 solo Lead | [PLAN](agent-tasks/PLAN_VALUTAZIONE_COMMESSE_SLICES.md) |
 | 4 | **Material Compliance — MC-I4** | MC-I3 CHIUSA; busta 1→N (nebbia split) | [PLAN](agent-tasks/PLAN_MATERIAL_COMPLIANCE_SLICES.md) |
 | 5 | **Rischi ROO-18 HITL** | ROO-17 OK; ingest/data riesame dopo conferma | [PLAN §7](agent-tasks/PLAN_RISCHI_OPPORTUNITA_OBIETTIVI_SLICES.md) |

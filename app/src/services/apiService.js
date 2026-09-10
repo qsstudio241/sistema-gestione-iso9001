@@ -686,6 +686,21 @@ class ApiService {
         return this.get(`/companies/${companyId}/personnel/${personnelId}/qualifications${query ? '?' + query : ''}`);
     }
 
+    async getPersonnelRoles(companyId, personnelId, params = {}) {
+        const query = new URLSearchParams(params).toString();
+        return this.get(`/companies/${companyId}/personnel/${personnelId}/roles${query ? '?' + query : ''}`);
+    }
+
+    async addPersonnelRole(companyId, personnelId, data, params = {}) {
+        const query = new URLSearchParams(params).toString();
+        return this.post(`/companies/${companyId}/personnel/${personnelId}/roles${query ? '?' + query : ''}`, data);
+    }
+
+    async removePersonnelRole(companyId, personnelId, roleId, params = {}) {
+        const query = new URLSearchParams(params).toString();
+        return this.delete(`/companies/${companyId}/personnel/${personnelId}/roles/${roleId}${query ? '?' + query : ''}`);
+    }
+
     async getCompanyCounterparties(companyId, params = {}) {
         const query = new URLSearchParams(params).toString();
         return this.get(`/companies/${companyId}/counterparties${query ? '?' + query : ''}`);

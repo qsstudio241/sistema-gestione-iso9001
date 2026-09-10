@@ -518,6 +518,176 @@ async function getPersonnelQualifications(req, res) {
   }
 }
 
+// ---------------------------------------------------------------------------
+// Ruoli funzionali (personnel_roles) — CRUD
+// Supporta role_code aperto; unica opzione attiva per la UI: QUAL_ALERT_RECIPIENT.
+// ---------------------------------------------------------------------------
+
+const VALID_ROLE_CODES = new Set([
+  'QUAL_ALERT_RECIPIENT',
+  'WELDING_COORDINATOR',
+  'RSPP',
+  'MEDICO_COMPETENTE',
+  'RLS',
+  'TRAINING_MANAGER',
+]);
+
+/**
+ * GET /companies/:companyId/personnel/:id/roles
+ */
+async function listPersonnelRoles(req, res) {
+  try {
+    const companyId = parseInt(req.params.companyId, 10);
+    const personnelId = parseInt(req.params.id, 10);
+
+    const { scope, denied } = await resolvePersonnelScope(req, companyId, 'read');
+    if (denied) return sendAccessDenied(res, denied);
+
+    const check = await query(
+      `SELECT id FROM company_personnel
+       WHERE id = @id AND company_id = @company_id AND organization_id = @organization_id`,
+      { id: personnelId, company_id: companyId, organization_id: scope.organization_id },
+    );
+    if (check.recordset.length === 0) {
+      return res.status(404).json({ error: 'Personale non trovato', code: 'NOT_FOUND' });
+    }
+
+    const result = await query(
+      `SELECT id, role_code, active, notes, created_at, updated_at
+       FROM personnel_roles
+       WHERE personnel_id = @personnel_id
+         AND organization_id = @organization_id
+         AND company_id = @company_id
+         AND active = 1
+       ORDER BY id ASC`,
+      { personnel_id: personnelId, organization_id: scope.organization_id, company_id: companyId },
+    );
+
+    res.json({ success: true, data: result.recordset });
+  } catch (err) {
+    logger.error('[COMPANY_PERSONNEL] listRoles error:', err.message);
+    res.status(500).json({ error: 'Errore recupero ruoli', code: 'SERVER_ERROR' });
+  }
+}
+
+/**
+ * POST /companies/:companyId/personnel/:id/roles
+ * Body: { role_code, notes? }
+ * Idempotente: se già attivo, restituisce 200 con il record esistente.
+ */
+async function addPersonnelRole(req, res) {
+  try {
+    const companyId = parseInt(req.params.companyId, 10);
+    const personnelId = parseInt(req.params.id, 10);
+
+    const writeDenied = await assertCompanyWriteAccess(req.user, companyId);
+    if (writeDenied) return sendAccessDenied(res, writeDenied);
+
+    const { scope, denied } = await resolvePersonnelScope(req, companyId, 'write');
+    if (denied) return sendAccessDenied(res, denied);
+
+    const check = await query(
+      `SELECT id FROM company_personnel
+       WHERE id = @id AND company_id = @company_id AND organization_id = @organization_id`,
+      { id: personnelId, company_id: companyId, organization_id: scope.organization_id },
+    );
+    if (check.recordset.length === 0) {
+      return res.status(404).json({ error: 'Personale non trovato', code: 'NOT_FOUND' });
+    }
+
+    const { role_code, notes } = req.body;
+    if (!role_code || !String(role_code).trim()) {
+      return res.status(400).json({ error: 'role_code obbligatorio', code: 'MISSING_ROLE_CODE' });
+    }
+    const cleanCode = String(role_code).trim().toUpperCase();
+
+    // idempotente: se esiste già active=1, ritorna il record esistente
+    const existing = await query(
+      `SELECT id, role_code, active, notes, created_at, updated_at
+       FROM personnel_roles
+       WHERE personnel_id = @personnel_id
+         AND organization_id = @organization_id
+         AND company_id = @company_id
+         AND role_code = @role_code
+         AND active = 1`,
+      {
+        personnel_id: personnelId,
+        organization_id: scope.organization_id,
+        company_id: companyId,
+        role_code: cleanCode,
+      },
+    );
+    if (existing.recordset.length > 0) {
+      return res.json({ success: true, data: existing.recordset[0] });
+    }
+
+    const result = await query(
+      `INSERT INTO personnel_roles
+         (organization_id, company_id, personnel_id, role_code, active, notes, updated_at)
+       OUTPUT INSERTED.*
+       VALUES (@organization_id, @company_id, @personnel_id, @role_code, 1, @notes, GETDATE())`,
+      {
+        organization_id: scope.organization_id,
+        company_id: companyId,
+        personnel_id: personnelId,
+        role_code: cleanCode,
+        notes: notes ? String(notes).trim() : null,
+      },
+    );
+
+    res.status(201).json({ success: true, data: result.recordset[0] });
+  } catch (err) {
+    logger.error('[COMPANY_PERSONNEL] addRole error:', err.message);
+    res.status(500).json({ error: 'Errore aggiunta ruolo', code: 'SERVER_ERROR' });
+  }
+}
+
+/**
+ * DELETE /companies/:companyId/personnel/:id/roles/:roleId
+ * Disattiva il ruolo (active = 0), non elimina fisicamente.
+ */
+async function removePersonnelRole(req, res) {
+  try {
+    const companyId = parseInt(req.params.companyId, 10);
+    const personnelId = parseInt(req.params.id, 10);
+    const roleId = parseInt(req.params.roleId, 10);
+
+    const writeDenied = await assertCompanyWriteAccess(req.user, companyId);
+    if (writeDenied) return sendAccessDenied(res, writeDenied);
+
+    const { scope, denied } = await resolvePersonnelScope(req, companyId, 'write');
+    if (denied) return sendAccessDenied(res, denied);
+
+    const row = await query(
+      `SELECT id FROM personnel_roles
+       WHERE id = @id
+         AND personnel_id = @personnel_id
+         AND organization_id = @organization_id
+         AND company_id = @company_id
+         AND active = 1`,
+      {
+        id: roleId,
+        personnel_id: personnelId,
+        organization_id: scope.organization_id,
+        company_id: companyId,
+      },
+    );
+    if (row.recordset.length === 0) {
+      return res.status(404).json({ error: 'Ruolo non trovato', code: 'NOT_FOUND' });
+    }
+
+    await query(
+      `UPDATE personnel_roles SET active = 0, updated_at = GETDATE() WHERE id = @id`,
+      { id: roleId },
+    );
+
+    res.json({ success: true, message: 'Ruolo rimosso' });
+  } catch (err) {
+    logger.error('[COMPANY_PERSONNEL] removeRole error:', err.message);
+    res.status(500).json({ error: 'Errore rimozione ruolo', code: 'SERVER_ERROR' });
+  }
+}
+
 module.exports = {
   listPersonnelStudio,
   listPersonnel,
@@ -527,10 +697,14 @@ module.exports = {
   importFromQualifications,
   linkQualifications,
   getPersonnelQualifications,
+  listPersonnelRoles,
+  addPersonnelRole,
+  removePersonnelRole,
   resolvePersonnelScope,
   resolveCompanyScope,
   resolveAuditorOrgId,
   validateEmail,
   assertCompanyWriteRole,
   COMPANY_WRITE_ROLES,
+  VALID_ROLE_CODES,
 };
