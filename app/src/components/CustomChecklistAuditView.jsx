@@ -16,7 +16,12 @@ import { useStorage } from "../contexts/StorageContext";
 import { useAttachmentManager } from "../hooks/useAttachmentManager";
 import { QuestionCard, STATUS_BUTTONS } from "./QuestionCard";
 import AskAiButton from "./AskAiButton";
-import { saveChecklistFocus } from "../utils/aiAssistantContext";
+import {
+  saveChecklistFocus,
+  buildChecklistAskAiFocus,
+  inferLegalChecklistStandardKey,
+  inferStandardKeyFromAudit,
+} from "../utils/aiAssistantContext";
 import "./CustomChecklistAuditView.css";
 
 /**
@@ -429,12 +434,23 @@ function CustomChecklistAuditView({ audit, onUpdate, readOnly = false }) {
                   <AskAiButton
                     label={`Chiedi all'AI \u2014 ${item.code}`}
                     onBeforeNavigate={() =>
-                      saveChecklistFocus(auditUuid, {
-                        standardKey: null,
-                        clauseRef: item.code,
-                        questionId: String(item.id),
-                        questionText: item.title || null,
-                      })
+                      saveChecklistFocus(
+                        auditUuid,
+                        buildChecklistAskAiFocus({
+                          audit,
+                          standardKey:
+                            inferLegalChecklistStandardKey(checklist) ||
+                            inferStandardKeyFromAudit(audit),
+                          clauseRef: item.code,
+                          questionId: String(item.id),
+                          questionText: item.title || null,
+                          customItemId: item.id,
+                          legalFocus:
+                            item.response_type === "legal_check" ||
+                            !!inferLegalChecklistStandardKey(checklist),
+                          referenceText: sec.reference_text || null,
+                        })
+                      )
                     }
                   />
                 )}

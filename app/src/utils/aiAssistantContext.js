@@ -4,6 +4,158 @@
 import { getStandardByCode, STANDARDS_LIST, CODE_TO_KEY } from "../data/standardsRegistry";
 
 const CHECKLIST_FOCUS_KEY = "sgq_ai_checklist_focus";
+const MAX_FOCUS_ATTACHMENTS = 12;
+
+/**
+ * True se la norma/checklist è 14001, 45001 (45000 = 45001) o registro legislativo.
+ * @param {string|null|undefined} standardKey
+ */
+export function isLegalComplianceStandard(standardKey) {
+  const key = String(standardKey || "").toUpperCase();
+  if (!key) return false;
+  return (
+    key.includes("14001") ||
+    key.includes("45001") ||
+    key.includes("45000") ||
+    key.includes("LEG_AMBIENTE") ||
+    key.includes("LEG_SICUREZZA")
+  );
+}
+
+/**
+ * Inferisce la norma da marker checklist custom (registro obblighi legali).
+ * @param {object|null|undefined} checklist
+ * @returns {string|null}
+ */
+export function inferLegalChecklistStandardKey(checklist) {
+  const desc = String(checklist?.description || "");
+  if (desc.includes("[SGQ_TEMPLATE:LEG_AMBIENTE_152]")) return "ISO_14001";
+  if (desc.includes("[SGQ_TEMPLATE:LEG_SICUREZZA_81]")) return "ISO_45001";
+  return null;
+}
+
+/**
+ * Prima norma 14001/45001 selezionata sull'audit (fallback registro legale).
+ * @param {object|null|undefined} audit
+ * @returns {string|null}
+ */
+export function inferStandardKeyFromAudit(audit) {
+  const selected = audit?.metadata?.selectedStandards || [];
+  if (!Array.isArray(selected)) return null;
+  if (selected.some((s) => /14001/i.test(String(s)))) return "ISO_14001";
+  if (selected.some((s) => /45001|45000/i.test(String(s)))) return "ISO_45001";
+  return null;
+}
+
+function attachmentId(att) {
+  const raw = att?.serverAttachmentId ?? att?.attachment_id ?? att?.id ?? null;
+  if (raw == null || raw === "") return null;
+  const asNum = Number(raw);
+  return Number.isFinite(asNum) && asNum > 0 ? asNum : raw;
+}
+
+function attachmentName(att) {
+  return (
+    att?.name ||
+    att?.fileName ||
+    att?.file_name ||
+    att?.storedName ||
+    att?.original_name ||
+    "allegato"
+  );
+}
+
+/**
+ * @param {object} att
+ * @param {{ questionId?: string|number|null, numericQuestionId?: string|number|null, customItemId?: string|number|null }} ids
+ */
+export function attachmentBelongsToQuestion(att, ids = {}) {
+  if (!att) return false;
+  const { questionId, numericQuestionId, customItemId } = ids;
+  if (customItemId != null && customItemId !== "") {
+    const cid = att.customItemId ?? att.custom_item_id;
+    if (cid != null && String(cid) === String(customItemId)) return true;
+  }
+  const qid = att.questionId ?? att.question_id;
+  const qref = att.questionRef ?? att.question_ref;
+  const candidates = [questionId, numericQuestionId].filter((v) => v != null && v !== "");
+  for (const cand of candidates) {
+    if (qid != null && String(qid) === String(cand)) return true;
+    if (qref != null && String(qref) === String(cand)) return true;
+    const bare = String(cand).replace(/^q/i, "");
+    if (bare && qid != null && String(qid) === bare) return true;
+  }
+  return false;
+}
+
+/**
+ * Normalizza un allegato checklist per il payload AI (solo metadati, niente binario).
+ * @param {object} att
+ */
+export function normalizeChecklistAttachmentRef(att) {
+  return {
+    id: attachmentId(att),
+    name: String(attachmentName(att)).slice(0, 240),
+    category: att?.category || null,
+    mimeType: att?.mimeType || att?.mime_type || att?.type || null,
+  };
+}
+
+/**
+ * Allegati dell'item checklist (locale audit.attachments).
+ * @param {object|null|undefined} audit
+ * @param {{ questionId?: string|number|null, numericQuestionId?: string|number|null, customItemId?: string|number|null }} ids
+ */
+export function collectQuestionAttachments(audit, ids = {}) {
+  const list = Array.isArray(audit?.attachments) ? audit.attachments : [];
+  const matched = list.filter((att) => attachmentBelongsToQuestion(att, ids));
+  const seen = new Set();
+  const out = [];
+  for (const att of matched) {
+    const ref = normalizeChecklistAttachmentRef(att);
+    const key = `${ref.id ?? ""}|${ref.name}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    out.push(ref);
+    if (out.length >= MAX_FOCUS_ATTACHMENTS) break;
+  }
+  return out;
+}
+
+/**
+ * Payload focus da salvare prima di navigare a /ai-assistant.
+ */
+export function buildChecklistAskAiFocus({
+  audit,
+  standardKey,
+  clauseRef,
+  questionId,
+  questionText,
+  numericQuestionId = null,
+  customItemId = null,
+  legalFocus = false,
+  referenceText = null,
+} = {}) {
+  const attachments = collectQuestionAttachments(audit, {
+    questionId,
+    numericQuestionId,
+    customItemId,
+  });
+  const inferredLegal = legalFocus || isLegalComplianceStandard(standardKey);
+  return {
+    standardKey: standardKey || null,
+    clauseRef: clauseRef || null,
+    questionId: questionId != null && questionId !== "" ? String(questionId) : null,
+    questionText: questionText || null,
+    numericQuestionId: numericQuestionId != null && numericQuestionId !== ""
+      ? numericQuestionId
+      : null,
+    customItemId: customItemId != null && customItemId !== "" ? customItemId : null,
+    legalFocus: !!inferredLegal,
+    referenceText: referenceText ? String(referenceText).slice(0, 2000) : null,
+    attachments,
+  };
+}
 
 /**
  * @param {number[]|undefined|null} allowedStandardIds - da user.allowed_standard_ids
@@ -54,7 +206,7 @@ export function resolveAutoCompanyFromAudit(currentAudit, companies = []) {
 /**
  * Salva la domanda checklist attiva (sessionStorage, per audit corrente).
  * @param {string|null|undefined} auditUuid
- * @param {{ standardKey?: string, clauseRef?: string, questionId?: string, questionText?: string }|null} focus
+ * @param {object|null} focus
  */
 export function saveChecklistFocus(auditUuid, focus) {
   if (!auditUuid || typeof sessionStorage === "undefined") return;
@@ -63,6 +215,9 @@ export function saveChecklistFocus(auditUuid, focus) {
       sessionStorage.removeItem(`${CHECKLIST_FOCUS_KEY}:${auditUuid}`);
       return;
     }
+    const attachments = Array.isArray(focus.attachments)
+      ? focus.attachments.slice(0, MAX_FOCUS_ATTACHMENTS).map(normalizeChecklistAttachmentRef)
+      : [];
     sessionStorage.setItem(
       `${CHECKLIST_FOCUS_KEY}:${auditUuid}`,
       JSON.stringify({
@@ -70,6 +225,11 @@ export function saveChecklistFocus(auditUuid, focus) {
         clauseRef: focus.clauseRef,
         questionId: focus.questionId || null,
         questionText: focus.questionText || null,
+        numericQuestionId: focus.numericQuestionId ?? null,
+        customItemId: focus.customItemId ?? null,
+        legalFocus: !!focus.legalFocus,
+        referenceText: focus.referenceText || null,
+        attachments,
         updatedAt: Date.now(),
       })
     );
@@ -93,21 +253,42 @@ export function loadChecklistFocus(auditUuid) {
   }
 }
 
+function hydrateFocusAttachments(currentAudit, focus) {
+  if (!focus) return focus;
+  const storedAtts = Array.isArray(focus.attachments) ? focus.attachments : [];
+  if (storedAtts.length > 0) {
+    return { ...focus, attachments: storedAtts.map(normalizeChecklistAttachmentRef) };
+  }
+  return {
+    ...focus,
+    attachments: collectQuestionAttachments(currentAudit, {
+      questionId: focus.questionId,
+      numericQuestionId: focus.numericQuestionId,
+      customItemId: focus.customItemId,
+    }),
+  };
+}
+
 /**
  * Focus checklist: sessionStorage se presente, altrimenti prima domanda con rilievo.
  * @param {object|null|undefined} currentAudit
- * @returns {{ standardKey: string, clauseRef: string, questionId: string, questionText: string|null }|null}
+ * @returns {object|null}
  */
 export function resolveActiveChecklistFocus(currentAudit) {
   const auditUuid = currentAudit?.metadata?.id || currentAudit?.id;
   const stored = loadChecklistFocus(auditUuid);
   if (stored?.clauseRef) {
-    return {
+    return hydrateFocusAttachments(currentAudit, {
       standardKey: stored.standardKey || null,
       clauseRef: stored.clauseRef,
       questionId: stored.questionId || null,
       questionText: stored.questionText || null,
-    };
+      numericQuestionId: stored.numericQuestionId ?? null,
+      customItemId: stored.customItemId ?? null,
+      legalFocus: !!stored.legalFocus,
+      referenceText: stored.referenceText || null,
+      attachments: stored.attachments || [],
+    });
   }
 
   const checklist = currentAudit?.checklist;
@@ -136,12 +317,17 @@ export function resolveActiveChecklistFocus(currentAudit) {
             clauseRef,
             questionId: q.id != null ? String(q.id) : null,
             questionText: q.text || q.title || q.questionText || null,
+            numericQuestionId: q.questionId ?? null,
+            customItemId: q.customItemId ?? q.custom_item_id ?? null,
+            legalFocus: isLegalComplianceStandard(standardKey),
+            referenceText: null,
+            attachments: [],
           };
         }
       }
     }
   }
-  return best;
+  return hydrateFocusAttachments(currentAudit, best);
 }
 
 /**
@@ -458,12 +644,15 @@ export function buildAiChatContextPayload(currentAudit, companies = []) {
   const focus = resolveActiveChecklistFocus(currentAudit);
   const auditUuid = currentAudit?.metadata?.id || currentAudit?.id || null;
 
+  const attachments = Array.isArray(focus?.attachments) ? focus.attachments : [];
   return {
     companyId,
     companyName,
     standardId: autoStandard?.standardId ?? null,
     standardLabel: autoStandard?.label ?? null,
     auditId: auditUuid,
+    auditNumericId:
+      currentAudit?.metadata?.auditId || currentAudit?.audit_id || null,
     auditNumber:
       currentAudit?.metadata?.auditNumber ||
       currentAudit?.metadata?.generalData?.auditNumber ||
@@ -472,5 +661,10 @@ export function buildAiChatContextPayload(currentAudit, companies = []) {
     questionId: focus?.questionId || null,
     questionText: focus?.questionText || null,
     standardKey: focus?.standardKey || autoStandard?.key || null,
+    numericQuestionId: focus?.numericQuestionId ?? null,
+    customItemId: focus?.customItemId ?? null,
+    legalFocus: !!focus?.legalFocus || isLegalComplianceStandard(focus?.standardKey || autoStandard?.key),
+    referenceText: focus?.referenceText || null,
+    attachments,
   };
 }

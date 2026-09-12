@@ -8,6 +8,11 @@ import {
   resolveActiveChecklistFocus,
   buildAuditContextSeparatorLabel,
   buildAiChatContextPayload,
+  collectQuestionAttachments,
+  buildChecklistAskAiFocus,
+  isLegalComplianceStandard,
+  inferLegalChecklistStandardKey,
+  inferStandardKeyFromAudit,
   isWpsCoverageRequest,
   extractWpsRequestFromText,
   applyWpsAnswersToRequest,
@@ -116,6 +121,103 @@ describe("aiAssistantContext", () => {
     expect(payload.standardId).toBe(1);
     expect(payload.companyId).toBe(10);
     expect(payload.auditId).toBe("uuid-99");
+    expect(payload.attachments).toEqual([]);
+  });
+
+  it("collectQuestionAttachments filtra per domanda e custom item", () => {
+    const audit = {
+      attachments: [
+        { questionId: 135, name: "AUA_2024.pdf", category: "documenti", serverAttachmentId: 77, mimeType: "application/pdf" },
+        { questionId: 99, name: "altro.pdf", serverAttachmentId: 78 },
+        { customItemId: 20, name: "DVR.pdf", category: "documenti", serverAttachmentId: 79 },
+      ],
+    };
+    expect(collectQuestionAttachments(audit, { numericQuestionId: 135 })).toEqual([
+      { id: 77, name: "AUA_2024.pdf", category: "documenti", mimeType: "application/pdf" },
+    ]);
+    expect(collectQuestionAttachments(audit, { questionId: "q135", numericQuestionId: 135 })[0].name).toBe("AUA_2024.pdf");
+    expect(collectQuestionAttachments(audit, { customItemId: 20 })[0].name).toBe("DVR.pdf");
+    expect(collectQuestionAttachments(audit, { questionId: "manca" })).toEqual([]);
+  });
+
+  it("saveChecklistFocus persiste allegati e legalFocus 14001", () => {
+    saveChecklistFocus("audit-leg", {
+      standardKey: "ISO_14001",
+      clauseRef: "16",
+      questionId: "q136",
+      questionText: "AIA e IPPC",
+      numericQuestionId: 136,
+      legalFocus: true,
+      attachments: [{ id: 77, name: "AUA_2024.pdf", category: "documenti" }],
+    });
+    expect(loadChecklistFocus("audit-leg")).toMatchObject({
+      clauseRef: "16",
+      legalFocus: true,
+      numericQuestionId: 136,
+      attachments: [expect.objectContaining({ name: "AUA_2024.pdf", id: 77 })],
+    });
+  });
+
+  it("buildChecklistAskAiFocus e payload includono clausola + allegati", () => {
+    const audit = {
+      id: "a-14001",
+      metadata: {
+        id: "a-14001",
+        auditId: 55,
+        selectedStandards: ["ISO_14001_2015"],
+        companyId: 10,
+      },
+      attachments: [
+        { questionId: 136, name: "AUA_2024.pdf", serverAttachmentId: 77, category: "documenti" },
+      ],
+      checklist: {},
+    };
+    const focus = buildChecklistAskAiFocus({
+      audit,
+      standardKey: "ISO_14001",
+      clauseRef: "16",
+      questionId: "q136",
+      questionText: "AIA e IPPC",
+      numericQuestionId: 136,
+    });
+    expect(focus.legalFocus).toBe(true);
+    expect(focus.attachments).toHaveLength(1);
+    saveChecklistFocus("a-14001", focus);
+    const payload = buildAiChatContextPayload(audit, [{ id: 10, name: "Cliente X" }]);
+    expect(payload.clauseRef).toBe("16");
+    expect(payload.standardKey).toBe("ISO_14001");
+    expect(payload.attachments[0].name).toBe("AUA_2024.pdf");
+    expect(payload.legalFocus).toBe(true);
+    expect(payload.auditNumericId).toBe(55);
+  });
+
+  it("Ask AI senza allegati: payload resta valido (niente evidenze inventate)", () => {
+    saveChecklistFocus("a-empty", {
+      standardKey: "ISO_9001",
+      clauseRef: "7.5",
+      questionId: "q1",
+      questionText: "Documentazione",
+    });
+    const audit = { id: "a-empty", metadata: { id: "a-empty" }, checklist: {}, attachments: [] };
+    const payload = buildAiChatContextPayload(audit, []);
+    expect(payload.clauseRef).toBe("7.5");
+    expect(payload.attachments).toEqual([]);
+    expect(payload.legalFocus).toBe(false);
+  });
+
+  it("isLegalComplianceStandard e marker registro legale", () => {
+    expect(isLegalComplianceStandard("ISO_45001")).toBe(true);
+    expect(isLegalComplianceStandard("ISO_45000")).toBe(true);
+    expect(isLegalComplianceStandard("ISO_9001")).toBe(false);
+    expect(inferLegalChecklistStandardKey({
+      description: "[SGQ_TEMPLATE:LEG_AMBIENTE_152] matrice",
+    })).toBe("ISO_14001");
+    expect(inferLegalChecklistStandardKey({
+      description: "[SGQ_TEMPLATE:LEG_SICUREZZA_81] registro",
+    })).toBe("ISO_45001");
+    expect(inferStandardKeyFromAudit({
+      metadata: { selectedStandards: ["ISO_45001_2018"] },
+    })).toBe("ISO_45001");
   });
 });
 
