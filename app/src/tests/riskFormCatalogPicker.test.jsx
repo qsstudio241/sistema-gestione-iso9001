@@ -115,7 +115,8 @@ describe("RiskForm picker catalogo ROO-8", () => {
     );
     await waitFor(() => expect(apiService.getContextFactors).toHaveBeenCalled());
     expect(screen.getByLabelText("Azienda")).toBeInTheDocument();
-    fireEvent.click(screen.getByRole("button", { name: "Salva" }));
+    // Modal permanente: niente tasto Salva; il guard azienda resta sul submit del form.
+    fireEvent.submit(document.querySelector("form.risk-form"));
     expect(onSave).not.toHaveBeenCalled();
     expect(screen.getByText(/Seleziona un'azienda in Ambito/)).toBeInTheDocument();
   });
@@ -131,7 +132,7 @@ describe("RiskForm picker catalogo ROO-8", () => {
       />,
     );
     await waitFor(() => expect(apiService.getContextFactors).toHaveBeenCalled());
-    fireEvent.click(screen.getByRole("button", { name: "Salva" }));
+    fireEvent.submit(document.querySelector("form.risk-form"));
     await waitFor(() => expect(onSave).toHaveBeenCalled());
     expect(onSave.mock.calls[0][0].company_id).toBe("48");
   });
