@@ -3,7 +3,7 @@
  * Superficie: matrice SgqDataGrid (ordine M03). Click riga → form.
  */
 
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import apiService from "../services/apiService";
 import { useCompanyScope } from "../contexts/CompanyScopeContext";
 import FileDropzone from "../components/FileDropzone";
@@ -113,7 +113,7 @@ function clipCell(text) {
   return <span className="risks-grid-cell-clip" title={s}>{s}</span>;
 }
 
-function RiskForm({ initial, onSave, onClose, companies = [], pgMax = 3, filterCompany = "" }) {
+function RiskForm({ initial, onSave, onClose, onSaved, companies = [], pgMax = 3, filterCompany = "" }) {
   const [form, setForm] = useState(() => ({
     ...EMPTY_RISK,
     ...initial,
@@ -128,6 +128,10 @@ function RiskForm({ initial, onSave, onClose, companies = [], pgMax = 3, filterC
   }));
   const [saving, setSaving] = useState(false);
   const [error, setError]   = useState(null);
+  const [autoSaveStatus, setAutoSaveStatus] = useState(null); // null | 'saving' | 'saved' | 'error'
+  const savedIdRef    = useRef(initial?.risk_id || null);
+  const isFirstRender = useRef(true);
+  const autoSaveTimer = useRef(null);
   const [factors, setFactors] = useState([]);
   const [parties, setParties] = useState([]);
   const [reviews, setReviews] = useState([]);
@@ -171,6 +175,37 @@ function RiskForm({ initial, onSave, onClose, companies = [], pgMax = 3, filterC
     return () => { cancelled = true; };
   }, [initial?.risk_id]);
 
+  // Auto-save con debounce 800ms
+  useEffect(() => {
+    if (isFirstRender.current) { isFirstRender.current = false; return; }
+    const companyId = filterCompany || form.company_id;
+    if (!form.title?.trim() || !companyId) return;
+    if (autoSaveTimer.current) clearTimeout(autoSaveTimer.current);
+    autoSaveTimer.current = setTimeout(async () => {
+      setSaving(true);
+      setAutoSaveStatus('saving');
+      setError(null);
+      try {
+        const payload = { ...form, company_id: companyId };
+        if (savedIdRef.current) {
+          await apiService.updateRisk(savedIdRef.current, payload);
+        } else {
+          const res = await apiService.createRisk(payload);
+          savedIdRef.current = res?.data?.risk_id || null;
+        }
+        setAutoSaveStatus('saved');
+        onSaved?.();
+      } catch (err) {
+        setAutoSaveStatus('error');
+        setError(err?.message || "Errore durante il salvataggio.");
+      } finally {
+        setSaving(false);
+      }
+    }, 800);
+    return () => { if (autoSaveTimer.current) clearTimeout(autoSaveTimer.current); };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [form]);
+
   function upd(k, v) { setForm(f => ({ ...f, [k]: v })); }
 
   function appendFromCatalog(field, line) {
@@ -192,10 +227,13 @@ function RiskForm({ initial, onSave, onClose, companies = [], pgMax = 3, filterC
   }
 
   return (
-    <div className="modal-overlay" onClick={onClose}>
+    <div className="modal-overlay">
       <div className="modal-box" onClick={e => e.stopPropagation()}>
         <div className="modal-header">
           <h3>{initial?.risk_id ? "Modifica rischio" : "Nuovo rischio"}</h3>
+          {autoSaveStatus === 'saving' && <span className="autosave-status saving">{"Salvataggio\u2026"}</span>}
+          {autoSaveStatus === 'saved'  && <span className="autosave-status saved">{"\u2713 Salvato"}</span>}
+          {autoSaveStatus === 'error'  && <span className="autosave-status error">{"\u26A0 Errore salvataggio"}</span>}
           <button type="button" className="modal-close" onClick={onClose} aria-label="Chiudi">{"\u2715"}</button>
         </div>
         <form className="risk-form" onSubmit={submit}>
@@ -442,8 +480,9 @@ function RiskForm({ initial, onSave, onClose, companies = [], pgMax = 3, filterC
           )}
           {error && <p className="form-error">{error}</p>}
           <div className="form-footer">
-            <button type="button" className="btn-secondary" onClick={onClose}>Annulla</button>
-            <button type="submit" className="btn-primary" disabled={saving}>{saving ? "Salvataggio..." : "Salva"}</button>
+            <button type="button" className="btn-primary" onClick={onClose} disabled={saving}>
+              {saving ? "Salvataggio\u2026" : "Chiudi"}
+            </button>
           </div>
         </form>
       </div>
@@ -968,7 +1007,8 @@ function RisksTab({ companies = [], filterCompany = "", reloadCompanies }) {
         <RiskForm
           initial={modal.data}
           onSave={handleSave}
-          onClose={() => setModal(null)}
+          onClose={() => { setModal(null); load(); }}
+          onSaved={load}
           companies={companies}
           filterCompany={filterCompany}
           pgMax={normalizePgMax(modal.data?.risk_pg_max || pgMax)}
