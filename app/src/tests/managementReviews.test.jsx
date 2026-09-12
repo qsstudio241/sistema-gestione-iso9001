@@ -153,11 +153,14 @@ describe('ManagementReviewsPage — parsing partecipanti', () => {
     await waitFor(() => expect(screen.getByText('RD-2026-001')).toBeInTheDocument());
     fireEvent.click(screen.getByTitle('Modifica'));
 
+    // Il pulsante "Aggiorna" è stato rimosso: il salvataggio avviene via auto-save
+    // (debounce 800 ms). Trigger: modifica un campo per avviare il timer.
     await act(async () => {
-      fireEvent.click(screen.getByRole('button', { name: /Aggiorna/ }));
+      const chairField = screen.getByPlaceholderText('es. Direttore Qualità');
+      fireEvent.change(chairField, { target: { value: 'Test' } });
     });
 
-    await waitFor(() => expect(apiService.put).toHaveBeenCalled());
+    await waitFor(() => expect(apiService.put).toHaveBeenCalled(), { timeout: 2000 });
     const [path, payload] = apiService.put.mock.calls[0];
     expect(path).toBe('/management-reviews/5');
     expect(typeof payload.participants).toBe('string');

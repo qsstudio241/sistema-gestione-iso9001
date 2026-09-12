@@ -4,7 +4,7 @@
  * Pattern: WeldingProceduresPage + NCPage.
  */
 
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import apiService from "../services/apiService";
 import { useCompanyScope } from "../contexts/CompanyScopeContext";
 import { formatDate } from "../utils/dateHelpers";
@@ -54,8 +54,12 @@ function StatusBadge({ status }) {
 }
 
 // ── Form modale crea/modifica strumento ───────────────────────────────────────
-function EquipmentFormModal({ asset, companies = [], onSave, onClose }) {
+function EquipmentFormModal({ asset, companies = [], onSave, onClose, onSaved }) {
     const isEdit = !!asset;
+    const [autoSaveStatus, setAutoSaveStatus] = useState(null); // null | 'saving' | 'saved' | 'error'
+    const savedIdRef    = useRef(asset?.id || null);
+    const isFirstRender = useRef(true);
+    const autoSaveTimer = useRef(null);
     const [form, setForm] = useState({
         company_id:                  asset?.company_id || "",
         asset_category:              asset?.asset_category || "measuring_instrument",
@@ -109,41 +113,58 @@ function EquipmentFormModal({ asset, companies = [], onSave, onClose }) {
         }));
     };
 
+    // Auto-save con debounce 800ms
+    useEffect(() => {
+        if (isFirstRender.current) { isFirstRender.current = false; return; }
+        if (!form.name?.trim()) return;
+        if (autoSaveTimer.current) clearTimeout(autoSaveTimer.current);
+        autoSaveTimer.current = setTimeout(async () => {
+            setSaving(true);
+            setAutoSaveStatus('saving');
+            setError(null);
+            try {
+                const payload = {
+                    ...form,
+                    company_id: form.company_id ? parseInt(form.company_id) : null,
+                    calibration_frequency_months: form.calibration_frequency_months ? parseInt(form.calibration_frequency_months) : null,
+                    last_calibration_date: form.last_calibration_date || null,
+                    next_calibration_date: form.next_calibration_date || null,
+                    purchase_date: form.purchase_date || null,
+                };
+                if (savedIdRef.current) {
+                    await apiService.updateEquipment(savedIdRef.current, payload);
+                } else {
+                    const res = await apiService.createEquipment(payload);
+                    savedIdRef.current = res?.data?.id || null;
+                }
+                setAutoSaveStatus('saved');
+                onSaved?.();
+            } catch (err) {
+                setAutoSaveStatus('error');
+                setError(err?.message || "Errore salvataggio");
+            } finally {
+                setSaving(false);
+            }
+        }, 800);
+        return () => { if (autoSaveTimer.current) clearTimeout(autoSaveTimer.current); };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [form]);
+
     const handleSubmit = async (e) => {
         e.preventDefault();
-        if (!form.name.trim()) { setError("Il nome \u00e8 obbligatorio"); return; }
-        setSaving(true);
-        setError(null);
-        try {
-            const payload = {
-                ...form,
-                company_id: form.company_id ? parseInt(form.company_id) : null,
-                calibration_frequency_months: form.calibration_frequency_months ? parseInt(form.calibration_frequency_months) : null,
-                last_calibration_date: form.last_calibration_date || null,
-                next_calibration_date: form.next_calibration_date || null,
-                purchase_date: form.purchase_date || null,
-            };
-            if (isEdit) {
-                await apiService.updateEquipment(asset.id, payload);
-            } else {
-                await apiService.createEquipment(payload);
-            }
-            onSave();
-        } catch (err) {
-            setError(err?.message || "Errore salvataggio");
-        } finally {
-            setSaving(false);
-        }
     };
 
     return (
-        <div className="eq-modal-overlay" onClick={onClose}>
+        <div className="eq-modal-overlay">
             <div className="eq-modal" onClick={e => e.stopPropagation()}>
                 <div className="eq-modal-header">
                     <h2>{isEdit ? "Modifica strumento" : "Nuovo strumento"}</h2>
+                    {autoSaveStatus === 'saving' && <span className="autosave-status saving">{"Salvataggio\u2026"}</span>}
+                    {autoSaveStatus === 'saved'  && <span className="autosave-status saved">{"\u2713 Salvato"}</span>}
+                    {autoSaveStatus === 'error'  && <span className="autosave-status error">{"\u26A0 Errore salvataggio"}</span>}
                     <button type="button" className="eq-modal-close" onClick={onClose}>&times;</button>
                 </div>
-                <form onSubmit={handleSubmit} className="eq-modal-body">
+                <form onSubmit={e => e.preventDefault()} className="eq-modal-body">
 
                     {/* Sezione 1 - Dati identificativi */}
                     <fieldset className="eq-fieldset">
@@ -283,9 +304,8 @@ function EquipmentFormModal({ asset, companies = [], onSave, onClose }) {
                     {error && <div className="eq-form-error">{error}</div>}
 
                     <div className="eq-modal-actions">
-                        <button type="button" className="btn" onClick={onClose} disabled={saving}>Annulla</button>
-                        <button type="submit" className="btn btn-primary" disabled={saving}>
-                            {saving ? "Salvataggio..." : isEdit ? "Salva modifiche" : "Crea strumento"}
+                        <button type="button" className="btn btn-primary" onClick={onClose} disabled={saving}>
+                            {saving ? "Salvataggio\u2026" : "Chiudi"}
                         </button>
                     </div>
                 </form>
@@ -454,6 +474,7 @@ export default function EquipmentPage() {
                     asset={editingAsset}
                     companies={companies}
                     onSave={handleSaved}
+                    onSaved={loadData}
                     onClose={() => { setShowModal(false); setEditingAsset(null); }}
                 />
             )}

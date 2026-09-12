@@ -172,3 +172,9 @@
     .eq-stat { min-width: 44px; padding: 6px 6px; }
     .eq-stat-n { font-size: 0.95rem; }
 }
+
+/* Auto-save status badge */
+.autosave-status { font-size: 0.78rem; font-weight: 500; padding: 2px 8px; border-radius: 10px; margin-right: 8px; }
+.autosave-status.saving { color: #805ad5; background: #f3e8ff; }
+.autosave-status.saved  { color: #276749; background: #c6f6d5; }
+.autosave-status.error  { color: #c53030; background: #fed7d7; }

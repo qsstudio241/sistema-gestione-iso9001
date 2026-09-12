@@ -5,7 +5,7 @@
  * Pattern "Ambito" (company scope) identico a QualificationsPage e DocumentRegistry.
  */
 
-import React, { useState, useEffect, useCallback, useMemo } from "react";
+import React, { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import apiService from "../services/apiService";
 import { useCompanyScope } from "../contexts/CompanyScopeContext";
 import ParticipantsList from "../components/ParticipantsList";
@@ -715,7 +715,7 @@ function parseParticipants(raw) {
   return [];
 }
 
-function ReviewForm({ initial, onSave, onClose, companies = [], companyScope = "", scopeCompanyName = "" }) {
+function ReviewForm({ initial, onSave, onClose, onSaved, companies = [], companyScope = "", scopeCompanyName = "" }) {
   const [form, setForm] = useState(() => {
     const base = { ...EMPTY_FORM, ...initial };
     return { ...base, participants: parseParticipants(base.participants) };
@@ -724,8 +724,47 @@ function ReviewForm({ initial, onSave, onClose, companies = [], companyScope = "
   const [error, setError] = useState(null);
   const [showNcModal, setShowNcModal] = useState(false);
   const [ncCreatedMsg, setNcCreatedMsg] = useState(null);
+  const [autoSaveStatus, setAutoSaveStatus] = useState(null); // null | 'saving' | 'saved' | 'error'
+  const savedIdRef    = useRef(initial?.id || null);
+  const isFirstRender = useRef(true);
+  const autoSaveTimer = useRef(null);
 
   function upd(k, v) { setForm((f) => ({ ...f, [k]: v })); }
+
+  // Auto-save con debounce 800ms
+  useEffect(() => {
+    if (isFirstRender.current) { isFirstRender.current = false; return; }
+    if (!form.review_date) return;
+    if (autoSaveTimer.current) clearTimeout(autoSaveTimer.current);
+    autoSaveTimer.current = setTimeout(async () => {
+      setSaving(true);
+      setAutoSaveStatus('saving');
+      setError(null);
+      try {
+        const payload = {
+          ...form,
+          participants: Array.isArray(form.participants)
+            ? JSON.stringify(form.participants)
+            : (form.participants || ""),
+        };
+        if (savedIdRef.current) {
+          await apiService.put(`/management-reviews/${savedIdRef.current}`, payload);
+        } else {
+          const res = await apiService.post("/management-reviews", payload);
+          savedIdRef.current = res?.data?.id || null;
+        }
+        setAutoSaveStatus('saved');
+        onSaved?.();
+      } catch (err) {
+        setAutoSaveStatus('error');
+        setError(err?.message || "Errore durante il salvataggio.");
+      } finally {
+        setSaving(false);
+      }
+    }, 800);
+    return () => { if (autoSaveTimer.current) clearTimeout(autoSaveTimer.current); };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [form]);
 
   // Compone una descrizione azione a partire dagli output §9.3.3 compilati
   function buildActionDescriptionFromOutputs() {
@@ -771,7 +810,7 @@ function ReviewForm({ initial, onSave, onClose, companies = [], companyScope = "
   }
 
   return (
-    <div className="modal-overlay" onClick={onClose}>
+    <div className="modal-overlay">
       <div className="modal-box mr-modal-box" onClick={(e) => e.stopPropagation()}>
         <div className="modal-header">
           <h3>
@@ -779,12 +818,15 @@ function ReviewForm({ initial, onSave, onClose, companies = [], companyScope = "
               ? `Modifica riesame ${initial.review_number}`
               : "Nuovo riesame di direzione"}
           </h3>
+          {autoSaveStatus === 'saving' && <span className="autosave-status saving">{"Salvataggio\u2026"}</span>}
+          {autoSaveStatus === 'saved'  && <span className="autosave-status saved">{"\u2713 Salvato"}</span>}
+          {autoSaveStatus === 'error'  && <span className="autosave-status error">{"\u26A0 Errore salvataggio"}</span>}
           <button type="button" className="modal-close" onClick={onClose} aria-label="Chiudi">
             {"\u2715"}
           </button>
         </div>
 
-        <form className="mr-form" onSubmit={submit}>
+        <form className="mr-form" onSubmit={e => e.preventDefault()}>
           {/* 1. Intestazione */}
           <CollapsibleSection title="1 — Intestazione" defaultOpen>
             <div className="form-row">
@@ -947,11 +989,8 @@ function ReviewForm({ initial, onSave, onClose, companies = [], companyScope = "
           {error && <p className="mr-form-error">{error}</p>}
 
           <div className="mr-form-actions">
-            <button type="button" className="btn-secondary" onClick={onClose} disabled={saving}>
-              Annulla
-            </button>
-            <button type="submit" className="btn-primary" disabled={saving || !form.review_date}>
-              {saving ? "Salvataggio…" : initial?.id ? "Aggiorna" : "Crea riesame"}
+            <button type="button" className="btn-primary" onClick={onClose} disabled={saving}>
+              {saving ? "Salvataggio\u2026" : "Chiudi"}
             </button>
           </div>
         </form>
@@ -1201,6 +1240,7 @@ export default function ManagementReviewsPage() {
             : { company_id: companyScope || "" }
           }
           onSave={handleSave}
+          onSaved={fetchReviews}
           onClose={() => setShowForm(false)}
           companies={companies}
           companyScope={companyScope}
