@@ -2,7 +2,7 @@
  * CompanyCounterpartiesPanel — master-detail controparti per singola azienda (PR1)
  */
 
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import { Link } from "../contexts/RouterContext";
 import apiService from "../services/apiService";
 import PencilIcon from "./icons/PencilIcon";
@@ -76,7 +76,11 @@ const EMPTY_FORM = {
   is_active: true,
 };
 
-function CounterpartyFormModal({ item, onSave, onClose }) {
+function CounterpartyFormModal({ item, onSave, onClose, onSaved, companyId }) {
+  const [autoSaveStatus, setAutoSaveStatus] = useState(null); // null | 'saving' | 'saved' | 'error'
+  const savedIdRef    = useRef(item?.id || null);
+  const isFirstRender = useRef(true);
+  const autoSaveTimer = useRef(null);
   const [form, setForm] = useState(
     item
       ? {
@@ -128,16 +132,60 @@ function CounterpartyFormModal({ item, onSave, onClose }) {
     }
   }
 
+  // Auto-save con debounce 800ms
+  useEffect(() => {
+    if (isFirstRender.current) { isFirstRender.current = false; return; }
+    if (!form.name?.trim() || !companyId) return;
+    if (autoSaveTimer.current) clearTimeout(autoSaveTimer.current);
+    autoSaveTimer.current = setTimeout(async () => {
+      setSaving(true);
+      setAutoSaveStatus('saving');
+      setError(null);
+      try {
+        const data = {
+          name: form.name.trim(),
+          vat_number: form.vat_number.trim() || null,
+          external_ref: form.external_ref.trim() || null,
+          role: form.role,
+          contact_person: form.contact_person.trim() || null,
+          email: form.email.trim() || null,
+          phone: form.phone.trim() || null,
+          address: form.address.trim() || null,
+          notes: form.notes.trim() || null,
+          is_active: form.is_active,
+        };
+        if (savedIdRef.current) {
+          await apiService.updateCompanyCounterparty(companyId, savedIdRef.current, data, {});
+        } else {
+          const res = await apiService.createCompanyCounterparty(companyId, data, {});
+          savedIdRef.current = res?.data?.id || null;
+        }
+        setAutoSaveStatus('saved');
+        onSaved?.();
+      } catch (err) {
+        setAutoSaveStatus('error');
+        setError(err?.message || "Errore salvataggio.");
+      } finally {
+        setSaving(false);
+      }
+    }, 800);
+    return () => { if (autoSaveTimer.current) clearTimeout(autoSaveTimer.current); };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [form]);
+
   return (
-    <div className="modal-overlay" onClick={onClose}>
+    <div className="modal-overlay">
       <div className="modal-box" onClick={(e) => e.stopPropagation()}>
         <div className="modal-header">
           <h2>{item ? "Modifica controparte" : "Nuova controparte"}</h2>
+          {autoSaveStatus === 'saving' && <span className="autosave-status saving">{"Salvataggio\u2026"}</span>}
+          {autoSaveStatus === 'saved'  && <span className="autosave-status saved">{"\u2713 Salvato"}</span>}
+          {autoSaveStatus === 'error'  && <span className="autosave-status error">{"\u26A0 Errore salvataggio"}</span>}
           <button type="button" className="modal-close" onClick={onClose} aria-label="Chiudi">
             {"\u2715"}
           </button>
         </div>
-        <form onSubmit={handleSubmit} className="modal-form">
+        <form onSubmit={e => e.preventDefault()} className="modal-form">
           {error && <div className="form-error">{error}</div>}
           <div className="form-group">
             <label>Nome *</label>
@@ -236,11 +284,8 @@ function CounterpartyFormModal({ item, onSave, onClose }) {
             </label>
           )}
           <div className="modal-footer">
-            <button type="button" className="btn-secondary" onClick={onClose}>
-              Annulla
-            </button>
-            <button type="submit" className="btn-primary" disabled={saving}>
-              {saving ? "Salvataggio..." : "Salva"}
+            <button type="button" className="btn-primary" onClick={onClose} disabled={saving}>
+              {saving ? "Salvataggio\u2026" : "Chiudi"}
             </button>
           </div>
         </form>
@@ -476,11 +521,13 @@ export default function CompanyCounterpartiesPanel({
       {showForm && canEdit && (
         <CounterpartyFormModal
           item={editItem}
+          companyId={companyId}
           onClose={() => {
             setShowForm(false);
             setEditItem(null);
           }}
           onSave={handleSave}
+          onSaved={load}
         />
       )}
     </div>

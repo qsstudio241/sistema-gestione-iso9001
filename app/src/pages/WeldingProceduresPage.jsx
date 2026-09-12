@@ -7,7 +7,7 @@
  * Company scope, stats semaphore, approval workflow, batch upload WPQR.
  */
 
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import apiService from "../services/apiService";
 import { useCompanyScope } from "../contexts/CompanyScopeContext";
 import { formatDate } from "../utils/dateHelpers";
@@ -99,7 +99,7 @@ function TestBadge({ value }) {
 // WPS Form Modal
 // ?
 
-function WPSFormModal({ wps, defaultCompanyId, onSave, onClose }) {
+function WPSFormModal({ wps, defaultCompanyId, onSave, onClose, onSaved }) {
   const [form, setForm] = useState({
     wps_code: "", revision: "", welding_process: "", material_group: "",
     filler_material: "", shielding_gas: "", joint_type: "", position: "",
@@ -112,35 +112,57 @@ function WPSFormModal({ wps, defaultCompanyId, onSave, onClose }) {
   });
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
+  const [autoSaveStatus, setAutoSaveStatus] = useState(null); // null | 'saving' | 'saved' | 'error'
+  const savedIdRef    = useRef(wps?.id || null);
+  const isFirstRender = useRef(true);
+  const autoSaveTimer = useRef(null);
 
   const set = (key, val) => setForm((f) => ({ ...f, [key]: val }));
 
+  // Auto-save con debounce 800ms
+  useEffect(() => {
+    if (isFirstRender.current) { isFirstRender.current = false; return; }
+    if (!form.wps_code?.trim()) return;
+    if (autoSaveTimer.current) clearTimeout(autoSaveTimer.current);
+    autoSaveTimer.current = setTimeout(async () => {
+      setSaving(true);
+      setAutoSaveStatus('saving');
+      setError(null);
+      try {
+        if (savedIdRef.current) {
+          await apiService.updateWPS(savedIdRef.current, form);
+        } else {
+          const res = await apiService.createWPS(form);
+          savedIdRef.current = res?.data?.id || null;
+        }
+        setAutoSaveStatus('saved');
+        onSaved?.();
+      } catch (err) {
+        setAutoSaveStatus('error');
+        setError(err?.message || "Errore salvataggio.");
+      } finally {
+        setSaving(false);
+      }
+    }, 800);
+    return () => { if (autoSaveTimer.current) clearTimeout(autoSaveTimer.current); };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [form]);
+
   async function handleSubmit(e) {
     e.preventDefault();
-    setSaving(true);
-    setError(null);
-    try {
-      if (wps?.id) {
-        await apiService.updateWPS(wps.id, form);
-      } else {
-        await apiService.createWPS(form);
-      }
-      onSave();
-    } catch (err) {
-      setError(err.message);
-    } finally {
-      setSaving(false);
-    }
   }
 
   return (
-    <div className="wp-modal-overlay" onClick={onClose}>
+    <div className="wp-modal-overlay">
       <div className="wp-modal" onClick={(e) => e.stopPropagation()}>
         <div className="wp-modal-header">
           <h3>{wps?.id ? "Modifica WPS" : "Nuova WPS"}</h3>
+          {autoSaveStatus === 'saving' && <span className="autosave-status saving">{"Salvataggio\u2026"}</span>}
+          {autoSaveStatus === 'saved'  && <span className="autosave-status saved">{"\u2713 Salvato"}</span>}
+          {autoSaveStatus === 'error'  && <span className="autosave-status error">{"\u26A0 Errore salvataggio"}</span>}
           <button className="wp-modal-close" onClick={onClose}>&times;</button>
         </div>
-        <form onSubmit={handleSubmit}>
+        <form onSubmit={e => e.preventDefault()}>
           <div className="wp-modal-body">
             {error && <div className="wp-error">{error}</div>}
             {!form.company_id && !wps?.id && (
@@ -229,8 +251,9 @@ function WPSFormModal({ wps, defaultCompanyId, onSave, onClose }) {
             </div>
           </div>
           <div className="wp-modal-footer">
-            <button type="button" className="wp-btn-cancel" onClick={onClose}>Annulla</button>
-            <button type="submit" className="wp-btn-save" disabled={saving}>{saving ? "Salvataggio..." : "Salva"}</button>
+            <button type="button" className="wp-btn-save" onClick={onClose} disabled={saving}>
+              {saving ? "Salvataggio\u2026" : "Chiudi"}
+            </button>
           </div>
         </form>
       </div>
@@ -620,7 +643,11 @@ function calcThicknessRangeForStandard(t, standardReference) {
   return { ...calcThicknessRangeUI(t), thickness_max_unlimited: false };
 }
 
-function WPQRFormModal({ wpqr, wpsList, defaultCompanyId, onSave, onClose }) {
+function WPQRFormModal({ wpqr, wpsList, defaultCompanyId, onSave, onClose, onSaved }) {
+  const [autoSaveStatus, setAutoSaveStatus] = useState(null); // null | 'saving' | 'saved' | 'error'
+  const savedIdRef    = useRef(wpqr?.id || null);
+  const isFirstRender = useRef(true);
+  const autoSaveTimer = useRef(null);
   const [form, setForm] = useState({
     wps_id: "", wpqr_code: "", test_date: "", testing_body: "", examiner_body: "",
     welder_name: "", welding_process: "", base_material_group: "", welding_positions: "",
@@ -685,22 +712,37 @@ function WPQRFormModal({ wpqr, wpsList, defaultCompanyId, onSave, onClose }) {
     ? "ISO 14555 \u00A710.2.8.6 (tutti gli spessori)"
     : "ISO 15614";
 
+  // Auto-save con debounce 800ms
+  useEffect(() => {
+    if (isFirstRender.current) { isFirstRender.current = false; return; }
+    if (!form.wpqr_code?.trim()) return;
+    if (autoSaveTimer.current) clearTimeout(autoSaveTimer.current);
+    autoSaveTimer.current = setTimeout(async () => {
+      setSaving(true);
+      setAutoSaveStatus('saving');
+      setError(null);
+      try {
+        if (savedIdRef.current) {
+          await apiService.updateWPQR(savedIdRef.current, form);
+        } else {
+          const res = await apiService.createWPQR(form);
+          savedIdRef.current = res?.data?.id || null;
+        }
+        setAutoSaveStatus('saved');
+        onSaved?.();
+      } catch (err) {
+        setAutoSaveStatus('error');
+        setError(err?.message || "Errore salvataggio.");
+      } finally {
+        setSaving(false);
+      }
+    }, 800);
+    return () => { if (autoSaveTimer.current) clearTimeout(autoSaveTimer.current); };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [form]);
+
   async function handleSubmit(e) {
     e.preventDefault();
-    setSaving(true);
-    setError(null);
-    try {
-      if (wpqr?.id) {
-        await apiService.updateWPQR(wpqr.id, form);
-      } else {
-        await apiService.createWPQR(form);
-      }
-      onSave();
-    } catch (err) {
-      setError(err.message);
-    } finally {
-      setSaving(false);
-    }
   }
 
   const testFields = [
@@ -717,13 +759,16 @@ function WPQRFormModal({ wpqr, wpsList, defaultCompanyId, onSave, onClose }) {
   ];
 
   return (
-    <div className="wp-modal-overlay" onClick={onClose}>
+    <div className="wp-modal-overlay">
       <div className="wp-modal" onClick={(e) => e.stopPropagation()}>
         <div className="wp-modal-header">
           <h3>{wpqr?.id ? "Modifica WPQR" : "Nuovo WPQR"}</h3>
+          {autoSaveStatus === 'saving' && <span className="autosave-status saving">{"Salvataggio\u2026"}</span>}
+          {autoSaveStatus === 'saved'  && <span className="autosave-status saved">{"\u2713 Salvato"}</span>}
+          {autoSaveStatus === 'error'  && <span className="autosave-status error">{"\u26A0 Errore salvataggio"}</span>}
           <button className="wp-modal-close" onClick={onClose}>&times;</button>
         </div>
-        <form onSubmit={handleSubmit}>
+        <form onSubmit={e => e.preventDefault()}>
           <div className="wp-modal-body">
             {error && <div className="wp-error">{error}</div>}
             <div className="wp-form-grid">
@@ -1035,8 +1080,9 @@ function WPQRFormModal({ wpqr, wpsList, defaultCompanyId, onSave, onClose }) {
             </div>
           </div>
           <div className="wp-modal-footer">
-            <button type="button" className="wp-btn-cancel" onClick={onClose}>Annulla</button>
-            <button type="submit" className="wp-btn-save" disabled={saving}>{saving ? "Salvataggio..." : "Salva"}</button>
+            <button type="button" className="wp-btn-save" onClick={onClose} disabled={saving}>
+              {saving ? "Salvataggio\u2026" : "Chiudi"}
+            </button>
           </div>
         </form>
       </div>
@@ -1677,6 +1723,7 @@ function WeldingProceduresPage() {
           wps={editingWps}
           defaultCompanyId={companyScopeId || null}
           onSave={handleWpsSaved}
+          onSaved={() => { loadWPS(); loadAllWps(); }}
           onClose={() => { setWpsFormOpen(false); setEditingWps(null); }}
         />
       )}
@@ -1694,6 +1741,7 @@ function WeldingProceduresPage() {
           wpsList={allWps}
           defaultCompanyId={companyScopeId || null}
           onSave={handleWpqrSaved}
+          onSaved={() => { loadWPQR(); loadWPS(); loadWPQRStats(); }}
           onClose={() => { setWpqrFormOpen(false); setEditingWpqr(null); }}
         />
       )}

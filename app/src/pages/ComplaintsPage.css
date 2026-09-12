@@ -1,4 +1,4 @@
-/* ComplaintsPage — Registro Reclami */
+﻿/* ComplaintsPage â€” Registro Reclami */
 
 .complaints-page {
   padding: 1.5rem;
@@ -6,7 +6,7 @@
   margin: 0 auto;
 }
 
-/* ── Header ── */
+/* â”€â”€ Header â”€â”€ */
 .page-header {
   display: flex;
   justify-content: space-between;
@@ -17,7 +17,7 @@
 .page-header h1 { font-size: 1.6rem; margin: 0 0 .2rem; }
 .page-sub { color: var(--text-secondary, #666); font-size: .82rem; margin: 0; }
 
-/* ── Stats bar ── */
+/* â”€â”€ Stats bar â”€â”€ */
 .stats-bar {
   display: flex;
   gap: .6rem;
@@ -40,7 +40,7 @@
 .stat-chip.stat-overdue { border-color: #ffcc80; background: #fffde7; }
 .stat-chip.stat-high    { border-color: #ef9a9a; background: #fff5f5; }
 
-/* ── Filter bar ── */
+/* â”€â”€ Filter bar â”€â”€ */
 .filter-bar {
   display: flex;
   gap: .5rem;
@@ -65,7 +65,7 @@
 }
 .btn-reset:hover { background: #f5f5f5; }
 
-/* ── Complaints list ── */
+/* â”€â”€ Complaints list â”€â”€ */
 .complaints-list { display: flex; flex-direction: column; gap: .5rem; }
 .complaint-card {
   border: 1px solid #ddd;
@@ -132,7 +132,7 @@
   font-size: .82rem;
 }
 
-/* ── Body actions ── */
+/* â”€â”€ Body actions â”€â”€ */
 .body-actions {
   display: flex;
   gap: .5rem;
@@ -172,7 +172,7 @@
 }
 .btn-promote:hover { background: #ffebee; }
 
-/* ── Type / Severity / Status tags ── */
+/* â”€â”€ Type / Severity / Status tags â”€â”€ */
 .ctype-tag, .sev-tag, .cst-tag {
   border-radius: 4px;
   padding: .1rem .45rem;
@@ -195,7 +195,7 @@
 .st-closed    { background: #f5f5f5; color: #616161; }
 .st-rejected  { background: #fce4ec; color: #880e4f; }
 
-/* ── Modal ── */
+/* â”€â”€ Modal â”€â”€ */
 .modal-overlay {
   position: fixed; inset: 0;
   background: rgba(0,0,0,.4);
@@ -236,7 +236,7 @@
 .modal-form { padding: 1.25rem; display: flex; flex-direction: column; gap: .75rem; }
 .modal-footer { display: flex; justify-content: flex-end; gap: .75rem; padding-top: .5rem; border-top: 1px solid #eee; }
 
-/* ── Form helpers ── */
+/* â”€â”€ Form helpers â”€â”€ */
 .form-group { display: flex; flex-direction: column; gap: .3rem; }
 .form-group label { font-size: .8rem; font-weight: 600; color: #555; }
 .form-group label small { font-weight: 400; color: #888; }
@@ -277,7 +277,7 @@
   font-size: .85rem;
 }
 
-/* ── Buttons ── */
+/* â”€â”€ Buttons â”€â”€ */
 .btn-primary {
   padding: .5rem 1rem;
   background: var(--primary, #1976d2);
@@ -308,3 +308,10 @@
   color: #999;
   font-size: .9rem;
 }
+
+/* Auto-save status badge */
+.autosave-status { font-size: 0.78rem; font-weight: 500; padding: 2px 8px; border-radius: 10px; margin-right: 8px; }
+.autosave-status.saving { color: #805ad5; background: #f3e8ff; }
+.autosave-status.saved  { color: #276749; background: #c6f6d5; }
+.autosave-status.error  { color: #c53030; background: #fed7d7; }
+

@@ -3,7 +3,7 @@
  * Pattern CRUD identico a WeldingProceduresPage.
  */
 
-import React, { useState, useEffect, useCallback, useMemo } from "react";
+import React, { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import apiService from "../services/apiService";
 import { useAuth } from "../contexts/AuthContext";
 import { useCompanyScope } from "../contexts/CompanyScopeContext";
@@ -43,11 +43,16 @@ const STATUSES_REQUIRING_TECHNICAL_REVIEW = ["aperta"];
 
 //  Form modale commessa 
 
-function ProjectFormModal({ project, companies, defaultCompanyId, wpsList, qualifications, onSave, onClose }) {
+function ProjectFormModal({ project, companies, defaultCompanyId, wpsList, qualifications, onSave, onClose, onSaved }) {
   // Prepopola welder_ids dai welders già assegnati al progetto
   const existingWelderIds = Array.isArray(project?.welders)
     ? project.welders.map(w => w.qualification_id)
     : [];
+  const [autoSaveStatus, setAutoSaveStatus] = useState(null); // null | 'saving' | 'saved' | 'error'
+  const savedIdRef          = useRef(project?.id || null);
+  const isFirstRender       = useRef(true);
+  const autoSaveTimer       = useRef(null);
+  const lastSyncedWelderIds = useRef([...existingWelderIds]);
 
   const [form, setForm] = useState({
     company_id: defaultCompanyId || "",
@@ -139,6 +144,56 @@ function ProjectFormModal({ project, companies, defaultCompanyId, wpsList, quali
 
   const set = (key, val) => setForm((f) => ({ ...f, [key]: val }));
 
+  // Auto-save con debounce 800ms (salva progetto + sync welders)
+  useEffect(() => {
+    if (isFirstRender.current) { isFirstRender.current = false; return; }
+    if (!form.project_code?.trim()) return;
+    if (autoSaveTimer.current) clearTimeout(autoSaveTimer.current);
+    autoSaveTimer.current = setTimeout(async () => {
+      setSaving(true);
+      setAutoSaveStatus('saving');
+      setError(null);
+      try {
+        const payload = {
+          ...form,
+          applicable_wps_ids: JSON.stringify(form.applicable_wps_ids || []),
+          technical_review_checklist: JSON.stringify(
+            applyTechnicalReviewCompletionStamp(technicalReviewChecklist || {}, user)
+          ),
+        };
+        let savedProjectId = savedIdRef.current;
+        if (savedIdRef.current) {
+          await apiService.updateProject(savedIdRef.current, payload);
+        } else {
+          const res = await apiService.createProject(payload);
+          savedProjectId = res?.data?.id || res?.id;
+          savedIdRef.current = savedProjectId;
+        }
+        // Sincronizza welders diff dall'ultima sincronizzazione
+        if (savedProjectId) {
+          const newIds = Array.isArray(form.welder_ids) ? form.welder_ids : [];
+          const oldIds = lastSyncedWelderIds.current;
+          const toAdd    = newIds.filter(id => !oldIds.includes(id));
+          const toRemove = oldIds.filter(id => !newIds.includes(id));
+          await Promise.all([
+            ...toAdd.map(qid => apiService.addProjectWelder(savedProjectId, { qualification_id: qid }).catch(() => {})),
+            ...toRemove.map(qid => apiService.removeProjectWelder(savedProjectId, qid).catch(() => {})),
+          ]);
+          lastSyncedWelderIds.current = [...newIds];
+        }
+        setAutoSaveStatus('saved');
+        onSaved?.();
+      } catch (err) {
+        setAutoSaveStatus('error');
+        setError(err?.message || "Errore salvataggio.");
+      } finally {
+        setSaving(false);
+      }
+    }, 800);
+    return () => { if (autoSaveTimer.current) clearTimeout(autoSaveTimer.current); };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [form, technicalReviewChecklist]);
+
   function toggleWps(wpsId) {
     setForm((f) => {
       const ids = Array.isArray(f.applicable_wps_ids) ? [...f.applicable_wps_ids] : [];
@@ -194,13 +249,16 @@ function ProjectFormModal({ project, companies, defaultCompanyId, wpsList, quali
   const wpsIds = Array.isArray(form.applicable_wps_ids) ? form.applicable_wps_ids : [];
 
   return (
-    <div className="pj-modal-overlay" onClick={onClose}>
+    <div className="pj-modal-overlay">
       <div className="pj-modal pj-modal-large" onClick={(e) => e.stopPropagation()}>
         <div className="pj-modal-header">
           <h3>{project?.id ? "Modifica commessa" : "Nuova commessa"}</h3>
+          {autoSaveStatus === 'saving' && <span className="autosave-status saving">{"Salvataggio\u2026"}</span>}
+          {autoSaveStatus === 'saved'  && <span className="autosave-status saved">{"\u2713 Salvato"}</span>}
+          {autoSaveStatus === 'error'  && <span className="autosave-status error">{"\u26A0 Errore salvataggio"}</span>}
           <button className="pj-modal-close" onClick={onClose}>&times;</button>
         </div>
-        <form onSubmit={handleSubmit}>
+        <form onSubmit={e => e.preventDefault()}>
           <div className="pj-modal-body">
             {error && <div className="pj-error">{error}</div>}
             <div className="pj-form-grid">
@@ -491,8 +549,9 @@ function ProjectFormModal({ project, companies, defaultCompanyId, wpsList, quali
             )}
           </div>
           <div className="pj-modal-footer">
-            <button type="button" className="pj-btn-cancel" onClick={onClose}>Annulla</button>
-            <button type="submit" className="pj-btn-save" disabled={saving}>{saving ? "Salvataggio..." : "Salva"}</button>
+            <button type="button" className="pj-btn-save" onClick={onClose} disabled={saving}>
+              {saving ? "Salvataggio\u2026" : "Chiudi"}
+            </button>
           </div>
         </form>
       </div>
@@ -810,6 +869,7 @@ function ProjectsPage() {
           wpsList={wpsList}
           qualifications={qualifications}
           onSave={handleSaved}
+          onSaved={loadData}
           onClose={() => { setFormOpen(false); setEditingProject(null); }}
         />
       )}

@@ -142,3 +142,9 @@
   .pj-technical-review-item { flex-wrap:wrap; }
   .pj-technical-review-note { max-width:100%; margin-left:0; }
 }
+
+/* Auto-save status badge */
+.autosave-status { font-size: 0.78rem; font-weight: 500; padding: 2px 8px; border-radius: 10px; margin-right: 8px; }
+.autosave-status.saving { color: #805ad5; background: #f3e8ff; }
+.autosave-status.saved  { color: #276749; background: #c6f6d5; }
+.autosave-status.error  { color: #c53030; background: #fed7d7; }

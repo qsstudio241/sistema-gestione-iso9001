@@ -12,7 +12,7 @@
  * Scalabilità: questa sezione accoglierà futuri registri (clienti, impianti, attrezzature).
  */
 
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import apiService from "../services/apiService";
 import { useAuth } from "../contexts/AuthContext";
 import { formatDate } from "../utils/dateHelpers";
@@ -221,7 +221,7 @@ function SuppliersTab() {
         <SupplierForm
           item={editItem}
           onClose={() => setShowForm(false)}
-          onSaved={handleSave}
+          onSaved={load}
         />
       )}
     </div>
@@ -354,6 +354,12 @@ function SupplierForm({ item, onClose, onSaved }) {
   const { user } = useAuth();
   const [companies, setCompanies] = useState([]);
   const [companiesLoading, setCompaniesLoading] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState(null);
+  const [autoSaveStatus, setAutoSaveStatus] = useState(null); // null | 'saving' | 'saved' | 'error'
+  const savedIdRef    = useRef(item?.id || null);
+  const isFirstRender = useRef(true);
+  const autoSaveTimer = useRef(null);
   const [form, setForm] = useState({
     name:           item?.name           || "",
     supplier_type:  item?.supplier_type  || "external",
@@ -386,22 +392,48 @@ function SupplierForm({ item, onClose, onSaved }) {
 
   useEffect(() => { loadCompanies(); }, [loadCompanies]);
 
-  function handleSubmit(e) {
-    e.preventDefault();
-    onSaved({
-      ...form,
-      company_id: form.company_id ? parseInt(form.company_id, 10) : null,
-    });
-  }
+  // Auto-save con debounce 800ms
+  useEffect(() => {
+    if (isFirstRender.current) { isFirstRender.current = false; return; }
+    if (!form.name?.trim()) return;
+    if (autoSaveTimer.current) clearTimeout(autoSaveTimer.current);
+    autoSaveTimer.current = setTimeout(async () => {
+      setSaving(true);
+      setAutoSaveStatus('saving');
+      setError(null);
+      try {
+        const payload = { ...form, company_id: form.company_id ? parseInt(form.company_id, 10) : null };
+        if (savedIdRef.current) {
+          await apiService.updateSupplier(savedIdRef.current, payload);
+        } else {
+          const res = await apiService.createSupplier(payload);
+          savedIdRef.current = res?.data?.id || null;
+        }
+        setAutoSaveStatus('saved');
+        onSaved?.();
+      } catch (err) {
+        setAutoSaveStatus('error');
+        setError(err?.message || "Errore durante il salvataggio.");
+      } finally {
+        setSaving(false);
+      }
+    }, 800);
+    return () => { if (autoSaveTimer.current) clearTimeout(autoSaveTimer.current); };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [form]);
 
   return (
-    <div className="modal-overlay" onClick={onClose}>
+    <div className="modal-overlay">
       <div className="modal-box" onClick={e => e.stopPropagation()}>
         <div className="modal-header">
           <h2>{item ? "Modifica Fornitore" : "Nuovo Fornitore"}</h2>
+          {autoSaveStatus === 'saving' && <span className="autosave-status saving">{"Salvataggio\u2026"}</span>}
+          {autoSaveStatus === 'saved'  && <span className="autosave-status saved">{"\u2713 Salvato"}</span>}
+          {autoSaveStatus === 'error'  && <span className="autosave-status error">{"\u26A0 Errore salvataggio"}</span>}
           <button className="modal-close" onClick={onClose}>✕</button>
         </div>
-        <form onSubmit={handleSubmit} className="modal-form">
+        <form onSubmit={e => e.preventDefault()} className="modal-form">
+          {error && <div className="form-error">{error}</div>}
           <div className="form-row-2">
             <div className="form-group">
               <label>Tipo *</label>
@@ -497,8 +529,9 @@ function SupplierForm({ item, onClose, onSaved }) {
           </div>
 
           <div className="modal-footer">
-            <button type="button" className="btn-secondary" onClick={onClose}>Annulla</button>
-            <button type="submit" className="btn-primary">Salva</button>
+            <button type="button" className="btn-primary" onClick={onClose} disabled={saving}>
+              {saving ? "Salvataggio\u2026" : "Chiudi"}
+            </button>
           </div>
         </form>
       </div>
@@ -648,7 +681,7 @@ function DepartmentsTab() {
           item={editItem}
           parentOptions={items}
           onClose={() => setShowForm(false)}
-          onSaved={handleSave}
+          onSaved={load}
         />
       )}
     </div>
@@ -658,6 +691,12 @@ function DepartmentsTab() {
 // ─── Form Reparto ─────────────────────────────────────────────────────────────
 
 function DepartmentForm({ item, parentOptions, onClose, onSaved }) {
+  const [saving, setSaving] = useState(false);
+  const [error, setError]   = useState(null);
+  const [autoSaveStatus, setAutoSaveStatus] = useState(null); // null | 'saving' | 'saved' | 'error'
+  const savedIdRef    = useRef(item?.id || null);
+  const isFirstRender = useRef(true);
+  const autoSaveTimer = useRef(null);
   const [form, setForm] = useState({
     name:         item?.name         || "",
     code:         item?.code         || "",
@@ -669,20 +708,48 @@ function DepartmentForm({ item, parentOptions, onClose, onSaved }) {
   });
   const set = (k, v) => setForm(f => ({ ...f, [k]: v }));
 
+  // Auto-save con debounce 800ms
+  useEffect(() => {
+    if (isFirstRender.current) { isFirstRender.current = false; return; }
+    if (!form.name?.trim()) return;
+    if (autoSaveTimer.current) clearTimeout(autoSaveTimer.current);
+    autoSaveTimer.current = setTimeout(async () => {
+      setSaving(true);
+      setAutoSaveStatus('saving');
+      setError(null);
+      try {
+        const payload = { ...form, parent_id: form.parent_id ? parseInt(form.parent_id) : null };
+        if (savedIdRef.current) {
+          await apiService.updateDepartment(savedIdRef.current, payload);
+        } else {
+          const res = await apiService.createDepartment(payload);
+          savedIdRef.current = res?.data?.id || null;
+        }
+        setAutoSaveStatus('saved');
+        onSaved?.();
+      } catch (err) {
+        setAutoSaveStatus('error');
+        setError(err?.message || "Errore durante il salvataggio.");
+      } finally {
+        setSaving(false);
+      }
+    }, 800);
+    return () => { if (autoSaveTimer.current) clearTimeout(autoSaveTimer.current); };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [form]);
+
   return (
-    <div className="modal-overlay" onClick={onClose}>
+    <div className="modal-overlay">
       <div className="modal-box" onClick={e => e.stopPropagation()}>
         <div className="modal-header">
           <h2>{item ? "Modifica Reparto" : "Nuovo Reparto"}</h2>
+          {autoSaveStatus === 'saving' && <span className="autosave-status saving">{"Salvataggio\u2026"}</span>}
+          {autoSaveStatus === 'saved'  && <span className="autosave-status saved">{"\u2713 Salvato"}</span>}
+          {autoSaveStatus === 'error'  && <span className="autosave-status error">{"\u26A0 Errore salvataggio"}</span>}
           <button className="modal-close" onClick={onClose}>✕</button>
         </div>
-        <form
-          onSubmit={e => {
-            e.preventDefault();
-            onSaved({ ...form, parent_id: form.parent_id ? parseInt(form.parent_id) : null });
-          }}
-          className="modal-form"
-        >
+        <form onSubmit={e => e.preventDefault()} className="modal-form">
+          {error && <div className="form-error">{error}</div>}
           <div className="form-row-2">
             <div className="form-group">
               <label>Nome Reparto *</label>
@@ -748,8 +815,9 @@ function DepartmentForm({ item, parentOptions, onClose, onSaved }) {
           </div>
 
           <div className="modal-footer">
-            <button type="button" className="btn-secondary" onClick={onClose}>Annulla</button>
-            <button type="submit" className="btn-primary">Salva</button>
+            <button type="button" className="btn-primary" onClick={onClose} disabled={saving}>
+              {saving ? "Salvataggio\u2026" : "Chiudi"}
+            </button>
           </div>
         </form>
       </div>

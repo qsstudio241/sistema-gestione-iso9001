@@ -109,9 +109,9 @@ describe("ProjectsPage — Cliente dall'anagrafica aziende", () => {
     const clientSelect = getFieldByLabel(container, "Cliente");
     fireEvent.change(clientSelect, { target: { value: "3" } });
 
-    fireEvent.click(screen.getByText("Salva"));
-
-    await waitFor(() => expect(mockCreateProject).toHaveBeenCalled());
+    // Il pulsante "Salva" è stato rimosso: il salvataggio avviene via auto-save
+    // (debounce 800 ms). Aspettiamo che il timer scatti dopo l'ultima modifica.
+    await waitFor(() => expect(mockCreateProject).toHaveBeenCalled(), { timeout: 2000 });
     const payload = mockCreateProject.mock.calls[0][0];
     expect(payload.end_customer_id).toBe("3");
     expect(payload.client_name).toBe("PT.MAIDO");
