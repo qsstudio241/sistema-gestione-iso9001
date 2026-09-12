@@ -113,6 +113,32 @@ describe('SALModule — griglia e cambio stato', () => {
     });
   });
 
+  it('le note in griglia vanno a capo nella cella dedicata', async () => {
+    const longNotes = 'Nota lunga da andare a capo senza allargare le colonne della griglia SAL';
+    apiService.getCompanies.mockResolvedValue({
+      data: [{ id: 1, name: 'Acme Srl' }],
+    });
+    apiService.getGapMatrix.mockResolvedValue({
+      ...MATRIX_RESPONSE,
+      data: {
+        ...MATRIX_RESPONSE.data,
+        rows: [{ ...MATRIX_ROW, notes: longNotes }],
+      },
+    });
+    apiService.updateGapStatus.mockResolvedValue({ success: true, data: {} });
+    apiService.getGapStatusHistory.mockResolvedValue({ data: { history: [] } });
+    apiService.getDocuments.mockResolvedValue({ data: { items: [] } });
+    apiService.syncSalAuditHints.mockResolvedValue({ data: { updated: 0 } });
+
+    await act(async () => {
+      renderSal(withCompanyScope(<SALModule />, '1'));
+    });
+
+    const preview = await screen.findByText(longNotes);
+    expect(preview).toHaveClass('sal-notes-preview');
+    expect(preview.closest('td')).toHaveClass('sal-notes-cell');
+  });
+
   it('mostra prompt selezione azienda se ambito vuoto', async () => {
     apiService.getCompanies.mockResolvedValue({
       data: [{ id: 1, name: 'Acme Srl' }],

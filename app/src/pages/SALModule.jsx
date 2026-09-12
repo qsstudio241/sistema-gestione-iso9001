@@ -34,7 +34,7 @@ const GRID_COLUMNS = [
   { id: 'standardCode', label: 'Standard', sortable: true, width: '110px' },
   { id: 'status', label: 'Stato', sortable: true, width: '150px' },
   { id: 'conformityHint', label: 'Hint audit', sortable: true, width: '100px' },
-  { id: 'notes', label: 'Note', sortable: false },
+  { id: 'notes', label: 'Note', sortable: false, width: '200px', cellClassName: 'sal-notes-cell' },
   { id: 'responsible', label: 'Responsabile', sortable: true, width: '130px' },
   { id: 'dueDate', label: 'Scadenza', sortable: true, width: '110px' },
   { id: '_actions', label: '', sortable: false, width: '150px' },
