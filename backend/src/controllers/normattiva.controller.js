@@ -56,14 +56,20 @@ async function searchNormattiva(req, res) {
 
     const results = await normattivaApi.searchNorm(searchQuery.trim());
 
-    res.json({
+    logger.info('[DEBUG] searchNormattiva() results from searchNorm(): ' + results.length + ' items');
+    
+    const response = {
       success: true,
       results: results.map(r => ({
         urn: r.urn,
         title: r.title,
         vigenza: r.vigenza,
       })),
-    });
+    };
+    
+    logger.info('[DEBUG] searchNormattiva() sending response: ' + JSON.stringify(response));
+    res.json(response);
+    logger.info('[DEBUG] searchNormattiva() response sent');
   } catch (err) {
     logger.error('[Normattiva] Errore search:', err.message);
     
