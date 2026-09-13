@@ -5,7 +5,7 @@
 
 const express = require('express');
 const router = express.Router();
-const { authenticateJWT } = require('../middleware/auth.middleware');
+const { authenticate } = require('../middleware/auth.middleware');
 const normattivaController = require('../controllers/normattiva.controller');
 
 /**
@@ -14,7 +14,7 @@ const normattivaController = require('../controllers/normattiva.controller');
  * Body: { query: "D.Lgs. 81/2008" }
  * Access: admin, superadmin
  */
-router.post('/search', authenticateJWT, normattivaController.searchNormattiva);
+router.post('/search', authenticate, normattivaController.searchNormattiva);
 
 /**
  * POST /api/v1/normattiva/import
@@ -22,6 +22,6 @@ router.post('/search', authenticateJWT, normattivaController.searchNormattiva);
  * Body: { urn: "urn:nir:...", organizationId?: number }
  * Access: admin, superadmin
  */
-router.post('/import', authenticateJWT, normattivaController.importNormattiva);
+router.post('/import', authenticate, normattivaController.importNormattiva);
 
 module.exports = router;
