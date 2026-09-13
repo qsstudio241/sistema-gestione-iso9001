@@ -237,8 +237,9 @@
                                      "src/services/caseExtractedCoverage.service.js",
                                      "src/services/caseCoverageAdvisory.service.js",
                                      "src/services/caseCapabilityGapReport.service.js",
-                                     "src/services/salAiSuggest.service.js",
-                                     "src/services/weldingAiSuggest.service.js"
+                                    "src/services/salAiSuggest.service.js",
+                                    "src/services/weldingAiSuggest.service.js",
+                                    "src/services/questionAssistantPrompts.service.js"
                                  ]
                    },
                    {
@@ -302,8 +303,9 @@
                                      "src/controllers/weldingBooks.controller.js",
                                      "src/controllers/rdp.controller.js",
                                      "src/controllers/weldingAiSuggest.controller.js",
-                                     "src/controllers/materialCertificates.controller.js",
-                                     "src/controllers/complianceMap.controller.js"
+                                    "src/controllers/materialCertificates.controller.js",
+                                    "src/controllers/complianceMap.controller.js",
+                                    "src/controllers/questionAssistant.controller.js"
                                  ]
                    },
                    {
@@ -344,8 +346,9 @@
                                      "src/routes/gapAnalysis.routes.js",
                                      "src/routes/complianceMap.routes.js",
                                      "src/routes/aiAssist.routes.js",
-                                     "src/routes/aiChat.routes.js",
-                                     "src/routes/librarySourceRequest.routes.js",
+                                    "src/routes/aiChat.routes.js",
+                                    "src/routes/questionAssistant.routes.js",
+                                    "src/routes/librarySourceRequest.routes.js",
                                      "src/routes/risks.routes.js",
                                      "src/routes/auditorOrg.routes.js"
                                  ]

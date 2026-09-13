@@ -21,6 +21,9 @@ import React, { useState } from "react";
 import AttachmentSection from "./AttachmentSection";
 import AttachmentPreview from "./AttachmentPreview";
 import AutoTextarea from "./AutoTextarea";
+import QuestionAiPanel from "./QuestionAiPanel";
+import { useAuth } from "../contexts/AuthContext";
+import { hasLicensedModule } from "../utils/licenseUtils";
 import "./ChecklistModule.css";
 
 export const STATUS_BUTTONS = [
@@ -31,6 +34,46 @@ export const STATUS_BUTTONS = [
   { code: "NA",  className: "not-applicable",   label: "Non Applicabile" },
   { code: "NV",  className: "not-verified",     label: "Non Verificato" },
 ];
+
+/**
+ * Wrapper per AI Panel con accesso a AuthContext
+ * Safe per test: se AuthProvider non è disponibile, ritorna null silenziosamente
+ */
+function QuestionAiPanelWrapper({
+  question,
+  attachments,
+  auditContext,
+  onNotesChange,
+  onStatusChange,
+  readOnly,
+}) {
+  let user = null;
+  
+  try {
+    const auth = useAuth();
+    user = auth.user;
+  } catch (error) {
+    // AuthProvider non disponibile (es. test senza wrapper) — silenzioso
+    return null;
+  }
+  
+  if (readOnly || !user) {
+    return null;
+  }
+
+  const hasLicense = hasLicensedModule(user, 'ai_chat');
+
+  return (
+    <QuestionAiPanel
+      question={question}
+      attachments={attachments}
+      auditContext={auditContext}
+      onNotesChange={onNotesChange}
+      onStatusChange={onStatusChange}
+      hasLicense={hasLicense}
+    />
+  );
+}
 
 export function QuestionCard({
   question,
@@ -200,6 +243,16 @@ export function QuestionCard({
             refreshKey={attachmentRefreshKey}
           />
         )}
+
+        {/* AI Assistant Panel */}
+        <QuestionAiPanelWrapper
+          question={question}
+          attachments={attachmentManager?.files || []}
+          auditContext={{ auditId, companyId: null }}
+          onNotesChange={onNotesChange}
+          onStatusChange={onStatusChange}
+          readOnly={readOnly}
+        />
       </div>
     </div>
   );
