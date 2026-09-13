@@ -28,7 +28,7 @@
 | ISO **23277**:2015 (PT acceptance) | CND penetranti | `digitalizzata` | P1 | `NORMA_00042`; GAP pagina 9 vuota |
 | ISO **15614-1**:2017+A1:2019 (WPQR acciaio/nichel) | WPQR / range procedura | `digitalizzata` | P0 | `NORMA_00043` MD+JSON (06/09/2026); PDF **non** in Git. Archivio ed. 2017 senza A1 = `NORMA_00019`. Non seed SGQ. Delta A1: eliminate §8.5.2.3.1–.4 (waveform/pulsed). Estratto operativo già in [`ISO-15614-1-range-validita-WPQR.md`](ISO-15614-1-range-validita-WPQR.md) |
 | EN **10025-3/4/5/6** | MC fine grain / weathering | `parcheggio` | P2 | Traccia MC; non bloccano MVP lamiere 10025-2 |
-| Leggi settoriali oltre D.Lgs. **81**/ **152** | Conformità legislativa / ADR-018 | `parcheggio` | P2 | Seed 81/152 già in piattaforma; settoriali = HITL |
+| Leggi settoriali oltre D.Lgs. **81**/ **152** | Conformità legislativa / ADR-018 | `digitalizzabile via Normattiva` | P1 → P0 | **81/2008** (sicurezza) e **152/2006** (ambiente) ora disponibili via ingest automatico Normattiva.it (settembre 2026). Settoriali specifici = HITL. Verifica validità automatica tramite Normattiva |
 
 ## Chiusure recenti (non riaprire)
 

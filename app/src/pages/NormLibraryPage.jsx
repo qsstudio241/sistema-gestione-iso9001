@@ -16,6 +16,7 @@ import {
 } from "../utils/documentRegistryUrl";
 import SgqDataGrid from "../components/SgqDataGrid";
 import NormUploadButton from "../components/NormUploadButton";
+import NormattivaSearchModal from "../components/NormattivaSearchModal";
 import StatusBadge from "../components/StatusBadge";
 import backlogSnapshot from "../data/normeMancantiBacklog.json";
 import { mergeAiAndPlatformBacklog } from "../utils/libraryBacklogRequests";
@@ -206,6 +207,7 @@ export function NormLibraryPage() {
   /** { id, code, notes, notifyTenant } | null */
   const [digitizeBusy, setDigitizeBusy] = useState(false);
   const [copyFeedback, setCopyFeedback] = useState(null);
+  const [normattivaModalOpen, setNormattivaModalOpen] = useState(false);
   const [gapDeepLink, setGapDeepLink] = useState(() =>
     typeof window !== "undefined"
       ? parseLibraryGapSearch(window.location.search)
@@ -565,6 +567,15 @@ export function NormLibraryPage() {
               loadServerRequests();
             }}
           />
+          {isAdmin && (
+            <button
+              type="button"
+              className="btn-primary"
+              onClick={() => setNormattivaModalOpen(true)}
+            >
+              🔍 Cerca su Normattiva
+            </button>
+          )}
           <Link to={documentsCatalogHref} className="btn-secondary nl-header-cta">
             Apri Documenti
           </Link>
@@ -754,6 +765,15 @@ export function NormLibraryPage() {
           rowClassName={backlogRowClassName}
         />
       </section>
+
+      <NormattivaSearchModal
+        isOpen={normattivaModalOpen}
+        onClose={() => setNormattivaModalOpen(false)}
+        onImportSuccess={() => {
+          loadCatalog();
+          loadServerRequests();
+        }}
+      />
     </div>
   );
 }
