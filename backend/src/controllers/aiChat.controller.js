@@ -824,4 +824,56 @@ async function knowledgeHealth(req, res) {
   }
 }
 
-module.exports = { aiChat, aiReindex, knowledgeHealth, getAmbitoFacts, buildAuditFocusBlock };
+/**
+ * Helper: Verifica disponibilità fonte normativa ufficiale per standard_code
+ * @param {string} standardCode - es. 'ISO_9001_2015'
+ * @param {number} organizationId
+ * @returns {Promise<Object|null>} { title, edition, upload_date, has_chunks } o null
+ */
+async function checkNormSourceAvailability(standardCode, organizationId) {
+  try {
+    const result = await query(
+      `SELECT TOP 1 
+         dr.title, 
+         dr.edition, 
+         dr.upload_date,
+         CASE WHEN nc.id IS NOT NULL THEN 1 ELSE 0 END AS has_chunks
+       FROM document_registry dr
+       LEFT JOIN norm_chunks nc ON nc.organization_id = dr.organization_id 
+         AND nc.standard_code = dr.standard_code
+       WHERE dr.organization_id = @orgId
+         AND dr.standard_code = @stdCode
+         AND dr.validity_status = 'active'
+         AND dr.document_type = 'norm_source'
+       ORDER BY dr.upload_date DESC`,
+      {
+        orgId: organizationId,
+        stdCode: standardCode,
+      }
+    );
+
+    if (!result.recordset || result.recordset.length === 0) {
+      return null;
+    }
+
+    const row = result.recordset[0];
+    return {
+      title: row.title,
+      edition: row.edition,
+      upload_date: row.upload_date,
+      has_chunks: row.has_chunks === 1,
+    };
+  } catch (err) {
+    logger.error('[checkNormSourceAvailability] Errore query:', err);
+    return null;
+  }
+}
+
+module.exports = { 
+  aiChat, 
+  aiReindex, 
+  knowledgeHealth, 
+  getAmbitoFacts, 
+  buildAuditFocusBlock,
+  checkNormSourceAvailability,
+};
