@@ -9,6 +9,7 @@ const mockGetAttachments = vi.hoisted(() => vi.fn());
 const mockUploadAttachment = vi.hoisted(() => vi.fn());
 const mockDeleteAttachment = vi.hoisted(() => vi.fn());
 const mockGetDownloadUrl = vi.hoisted(() => vi.fn());
+const mockFetchAttachmentBlob = vi.hoisted(() => vi.fn());
 
 vi.mock('../services/apiService', () => ({
   default: {
@@ -16,8 +17,16 @@ vi.mock('../services/apiService', () => ({
     uploadAttachment: (...args) => mockUploadAttachment(...args),
     deleteAttachment: (...args) => mockDeleteAttachment(...args),
     getAttachmentDownloadUrl: (...args) => mockGetDownloadUrl(...args),
+    fetchAttachmentBlob: (...args) => mockFetchAttachmentBlob(...args),
   },
 }));
+
+vi.mock('../components/InAppOfficeViewer', () => {
+  const { createElement } = require('react');
+  return {
+    default: ({ fileName }) => createElement('div', { 'data-testid': 'office-viewer' }, fileName),
+  };
+});
 
 vi.mock('../components/AttachmentSection.css', () => ({}));
 
@@ -32,6 +41,7 @@ describe('NcAttachmentsSection', () => {
       ],
     });
     mockGetDownloadUrl.mockReturnValue('https://example.test/download/1');
+    mockFetchAttachmentBlob.mockResolvedValue({ blob: new Blob(['PK']) });
     window.open = vi.fn();
     window.confirm = vi.fn(() => true);
   });
@@ -76,5 +86,26 @@ describe('NcAttachmentsSection', () => {
         description: 'Evidenza NC',
       });
     });
+  });
+
+  it('Word/Excel: apre il viewer in-app invece di window.open', async () => {
+    mockGetAttachments.mockResolvedValue({
+      data: [
+        { attachment_id: 9, file_name: 'verbale.docx', file_size: 1200, mime_type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' },
+      ],
+    });
+
+    render(React.createElement(NcAttachmentsSection, { ncId: 3 }));
+    await waitFor(() => {
+      expect(screen.getByText('verbale.docx')).toBeInTheDocument();
+    });
+
+    fireEvent.click(screen.getByText('verbale.docx'));
+
+    await waitFor(() => {
+      expect(mockFetchAttachmentBlob).toHaveBeenCalledWith(9, 'download');
+      expect(screen.getByTestId('office-viewer')).toHaveTextContent('verbale.docx');
+    });
+    expect(window.open).not.toHaveBeenCalled();
   });
 });
