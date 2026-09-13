@@ -39,10 +39,10 @@ function NormattivaSearchModal({ isOpen, onClose, onImportSuccess }) {
         query: searchQuery.trim(),
       });
 
-      if (response.data?.success) {
-        setResults(response.data.results || []);
+      if (response?.success) {
+        setResults(response.results || []);
         
-        if (response.data.results.length === 0) {
+        if (response.results.length === 0) {
           showToast('Nessun risultato trovato. Verifica la sintassi (es. "D.Lgs. 81/2008")', 'info');
         }
       } else {
@@ -74,8 +74,8 @@ function NormattivaSearchModal({ isOpen, onClose, onImportSuccess }) {
     try {
       const response = await apiService.post('/normattiva/import', { urn });
 
-      if (response.data?.success) {
-        const { title: importedTitle, chunkCount } = response.data.data;
+      if (response?.success) {
+        const { title: importedTitle, chunkCount } = response.data;
         showToast(`✅ Decreto importato con successo: ${chunkCount} chunks generati`, 'success');
         
         // Chiudi modal dopo 2 secondi e notifica parent
