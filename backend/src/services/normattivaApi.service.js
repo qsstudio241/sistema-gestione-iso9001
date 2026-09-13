@@ -7,6 +7,7 @@
  */
 
 const logger = require('../utils/logger');
+const COMMON_DECREE_DATES = require('../data/commonDecreeDates');
 
 const NORMATTIVA_BASE = 'https://www.normattiva.it';
 const FETCH_TIMEOUT_MS = 15000;
@@ -79,9 +80,9 @@ function parseQueryToUrn(query) {
   if (dlgsMatch) {
     const [, numero, anno] = dlgsMatch;
     // URN standard: urn:nir:stato:decreto.legislativo:YYYY-MM-DD;numero
-    // Normattiva usa date fittizie per alcuni decreti, serve data esatta
-    // Per semplicità: YYYY-01-01 come placeholder (verifica dopo)
-    const urn = `urn:nir:stato:decreto.legislativo:${anno};${numero}`;
+    const key = `${numero}/${anno}`;
+    const date = COMMON_DECREE_DATES['decreto.legislativo'][key] || `${anno}-01-01`;
+    const urn = `urn:nir:stato:decreto.legislativo:${date};${numero}`;
     results.push({
       urn,
       title: `D.Lgs. ${numero}/${anno}`,
@@ -93,7 +94,9 @@ function parseQueryToUrn(query) {
   const dlMatch = query.match(/D\.?\s*L\.?\s*(\d+)\s*\/\s*(\d{4})/i);
   if (dlMatch) {
     const [, numero, anno] = dlMatch;
-    const urn = `urn:nir:stato:decreto.legge:${anno};${numero}`;
+    const key = `${numero}/${anno}`;
+    const date = COMMON_DECREE_DATES['decreto.legge'][key] || `${anno}-01-01`;
+    const urn = `urn:nir:stato:decreto.legge:${date};${numero}`;
     results.push({
       urn,
       title: `D.L. ${numero}/${anno}`,
@@ -105,7 +108,9 @@ function parseQueryToUrn(query) {
   const leggeMatch = query.match(/Legge\s+(\d+)\s*\/\s*(\d{4})/i);
   if (leggeMatch) {
     const [, numero, anno] = leggeMatch;
-    const urn = `urn:nir:stato:legge:${anno};${numero}`;
+    const key = `${numero}/${anno}`;
+    const date = COMMON_DECREE_DATES['legge'][key] || `${anno}-01-01`;
+    const urn = `urn:nir:stato:legge:${date};${numero}`;
     results.push({
       urn,
       title: `Legge ${numero}/${anno}`,
