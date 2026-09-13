@@ -7,8 +7,7 @@
 
 import React, { useState } from 'react';
 import apiService from '../services/apiService';
-import LoadingSpinner from '../components/LoadingSpinner';
-import Toast from '../components/Toast';
+import { LoadingSpinner, Toast } from './SharedComponents';
 import './NormattivaSearchModal.css';
 
 function NormattivaSearchModal({ isOpen, onClose, onImportSuccess }) {
