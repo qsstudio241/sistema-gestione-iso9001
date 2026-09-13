@@ -39,7 +39,7 @@ function NormattivaSearchModal({ isOpen, onClose, onImportSuccess }) {
         query: searchQuery.trim(),
       });
 
-      if (response.data.success) {
+      if (response.data?.success) {
         setResults(response.data.results || []);
         
         if (response.data.results.length === 0) {
@@ -51,7 +51,9 @@ function NormattivaSearchModal({ isOpen, onClose, onImportSuccess }) {
     } catch (err) {
       console.error('[NormattivaSearchModal] Errore search:', err);
       
-      if (err.response?.status === 503) {
+      if (err.response?.status === 401) {
+        showToast('Sessione scaduta. Effettua il login e riprova.', 'error');
+      } else if (err.response?.status === 503) {
         showToast('Servizio Normattiva temporaneamente non disponibile. Riprova tra qualche minuto.', 'error');
       } else {
         showToast(err.response?.data?.error || 'Errore durante la ricerca', 'error');
@@ -72,7 +74,7 @@ function NormattivaSearchModal({ isOpen, onClose, onImportSuccess }) {
     try {
       const response = await apiService.post('/normattiva/import', { urn });
 
-      if (response.data.success) {
+      if (response.data?.success) {
         const { title: importedTitle, chunkCount } = response.data.data;
         showToast(`✅ Decreto importato con successo: ${chunkCount} chunks generati`, 'success');
         
@@ -89,7 +91,9 @@ function NormattivaSearchModal({ isOpen, onClose, onImportSuccess }) {
     } catch (err) {
       console.error('[NormattivaSearchModal] Errore import:', err);
       
-      if (err.response?.status === 503) {
+      if (err.response?.status === 401) {
+        showToast('Sessione scaduta. Effettua il login e riprova.', 'error');
+      } else if (err.response?.status === 503) {
         showToast('Servizio Normattiva temporaneamente non disponibile. Riprova tra qualche minuto.', 'error');
       } else {
         showToast(err.response?.data?.error || 'Errore durante l\'importazione', 'error');
