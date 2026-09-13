@@ -65,11 +65,11 @@ describe('POST /ai/question-assistant', () => {
     // Cleanup test data
     try {
       await query(
-        `DELETE FROM ai_usage_log WHERE organization_id = @orgId`,
+        `DELETE FROM ai_assistant_usage WHERE organization_id = @orgId`,
         { orgId: testOrgId }
       );
       await query(
-        `DELETE FROM ai_usage_notifications WHERE organization_id = @orgId`,
+        `DELETE FROM ai_assistant_notifications WHERE organization_id = @orgId`,
         { orgId: testOrgId }
       );
       await query(
@@ -85,11 +85,11 @@ describe('POST /ai/question-assistant', () => {
     // Cleanup after tests
     try {
       await query(
-        `DELETE FROM ai_usage_log WHERE organization_id = @orgId`,
+        `DELETE FROM ai_assistant_usage WHERE organization_id = @orgId`,
         { orgId: testOrgId }
       );
       await query(
-        `DELETE FROM ai_usage_notifications WHERE organization_id = @orgId`,
+        `DELETE FROM ai_assistant_notifications WHERE organization_id = @orgId`,
         { orgId: testOrgId }
       );
       await query(
@@ -174,7 +174,7 @@ describe('POST /ai/question-assistant', () => {
 
     // Rimuovi notifiche precedenti per test pulito
     await query(
-      `DELETE FROM ai_usage_notifications 
+      `DELETE FROM ai_assistant_notifications 
        WHERE organization_id = @orgId AND standard_code = @stdCode`,
       { orgId: testOrgId, stdCode: testStandardNoSource }
     );
@@ -227,13 +227,13 @@ describe('POST /ai/question-assistant', () => {
     // Seed notifica già presente oggi
     const today = new Date().toISOString().split('T')[0];
     await query(
-      `DELETE FROM ai_usage_notifications 
+      `DELETE FROM ai_assistant_notifications 
        WHERE organization_id = @orgId AND standard_code = @stdCode`,
       { orgId: testOrgId, stdCode: testStandardNoSource }
     );
 
     await query(
-      `INSERT INTO ai_usage_notifications 
+      `INSERT INTO ai_assistant_notifications 
         (organization_id, standard_code, notification_date)
        VALUES (@orgId, @stdCode, @today)`,
       { orgId: testOrgId, stdCode: testStandardNoSource, today }

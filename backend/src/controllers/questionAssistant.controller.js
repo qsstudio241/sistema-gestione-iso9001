@@ -88,7 +88,7 @@ function extractCitations(aiResponse, normSource) {
 async function logAiUsageWithoutSource(organizationId, userId, standardCode) {
   try {
     await query(
-      `INSERT INTO ai_usage_log 
+      `INSERT INTO ai_assistant_usage 
         (organization_id, user_id, feature, standard_code, has_source, logged_at)
        VALUES (@orgId, @userId, 'question_assistant', @stdCode, 0, GETDATE())`,
       { orgId: organizationId, userId, stdCode: standardCode }
@@ -106,7 +106,7 @@ async function maybeNotifyAdminNoSource(organizationId, standardCode) {
     // Check se già notificato oggi
     const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
     const checkRes = await query(
-      `SELECT id FROM ai_usage_notifications
+      `SELECT id FROM ai_assistant_notifications
        WHERE organization_id = @orgId 
          AND standard_code = @stdCode 
          AND notification_date = @today`,
@@ -120,7 +120,7 @@ async function maybeNotifyAdminNoSource(organizationId, standardCode) {
 
     // Registra notifica
     await query(
-      `INSERT INTO ai_usage_notifications 
+      `INSERT INTO ai_assistant_notifications 
         (organization_id, standard_code, notification_date, created_at)
        VALUES (@orgId, @stdCode, @today, GETDATE())`,
       { orgId: organizationId, stdCode: standardCode, today }

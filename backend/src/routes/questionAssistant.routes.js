@@ -4,8 +4,8 @@
 
 const express = require('express');
 const router = express.Router();
-const { handleQuestionAssistant } = require('../controllers/questionAssistant.controller');
-const { verifyToken } = require('../middleware/auth.middleware');
+const qac = require('../controllers/questionAssistant.controller');
+const { authenticate } = require('../middleware/auth.middleware');
 
 /**
  * POST /ai/question-assistant
@@ -13,6 +13,6 @@ const { verifyToken } = require('../middleware/auth.middleware');
  * Auth: JWT token required
  * License: ai_chat module required
  */
-router.post('/question-assistant', verifyToken, handleQuestionAssistant);
+router.post('/question-assistant', authenticate, qac.handleQuestionAssistant);
 
 module.exports = router;

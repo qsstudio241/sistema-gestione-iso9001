@@ -6,6 +6,9 @@
 const jwt = require('jsonwebtoken');
 const logger = require('../utils/logger');
 
+// Carica .env prima di controllare JWT_SECRET (idempotente se già caricato da server.js)
+require('dotenv').config();
+
 // Fail-fast: il server NON deve avviarsi con un secret debole o assente.
 // In sviluppo locale impostare JWT_SECRET nel .env (mai in chiaro nel repo).
 const MIN_JWT_SECRET_LENGTH = 32;
