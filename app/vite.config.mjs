@@ -67,15 +67,16 @@ return {
         rollupOptions: {
             // Evita che Rollup emetta un fileName assoluto su Windows+symlink.
             input: 'index.html',
-            // docx-preview: importato dinamicamente con try-catch — fallisce
-            // gracefully con messaggio "Anteprima non disponibile" se assente.
             // react-easy-crop: importato staticamente → DEVE essere bundlato (non external).
-                            external: (id) => id === 'docx-preview',
+            // docx-preview: MAI external. Se resta lo specifier nudo `import("docx-preview")`
+            // il browser in produzione non risolve il pacchetto e Visualizza Word
+            // finisce sempre su "Anteprima non disponibile" (verificato 13/09/2026).
             output: {
                 manualChunks(id) {
                     if (!id.includes('node_modules')) return;
                     if (id.includes('react-dom') || id.includes('scheduler')) return 'vendor-react';
                     if (id.includes('/react/') || id.includes('\\react\\')) return 'vendor-react';
+                    if (id.includes('docx-preview')) return 'vendor-docx-preview';
                     if (
                         id.includes('docxtemplater') ||
                         id.includes('pizzip') ||

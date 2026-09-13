@@ -14,12 +14,13 @@ Audit multi-standard · NC · Qualifiche · Saldatura (WPQR/WPS/3834/Welding Boo
 
 ### Sessione più recente (13/09/2026)
 
-**Cruscotto + AI quesiti #678.** Alert #3 mergiata [#675](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/675). **Next = HITL:** CTX-4 · ING-5 · ROO-18 · MC-I4 · S1c · ISO-4b.
+**Viewer Word/Excel:** Visualizza in produzione era rotto (`docx-preview` external in Vite). Fix + `InAppOfficeViewer` sugli allegati. **Next = HITL:** CTX-4 · ING-5 · ROO-18 · MC-I4 · S1c · ISO-4b.
 
 ### Sessioni recenti (pointer — dettaglio in `<details>` sotto)
 
 | Data | Esito | Piano |
 |------|-------|-------|
+| 13/09 | Viewer Word: bundling `docx-preview` + allegati in-app | `vite.config.mjs` · `InAppOfficeViewer.jsx` |
 | 13/09 | Cruscotto stato in app · AI quesiti #678 | `/settings/stato-sviluppo` · `statoSviluppo.js` |
 | 10/09 | Alert #3 personnel_roles + UI badge · #675 | `DEPUTYTASK.md` · `qualificationAlert.service.js` |
 | 09/09 | Layout mobile scroll/wrapping · #673 | `AppLayout.css` · `AiAssistantPage.css` |

@@ -1089,8 +1089,9 @@ Implementato lifecycle ISO 9001 §7.5 sul registro documenti:
 - Controlli viewer: zoom 50%-250%, fullscreen toggle, scarica.
 - Routing pulsante "Visualizza":
   - `.pdf` → `DocumentPdfViewer` (iframe nativo browser)
-  - `.docx`/`.doc` → `DocumentDocxViewer` (docx-preview)
-  - `.xlsx` → `SpreadsheetViewer` (SheetJS in-app, PR #93)
+  - `.docx`/`.docm` → `DocumentDocxViewer` (docx-preview). **Non** `.doc`/`.rtf` binari.
+  - `.xlsx`/`.xls`/`.xlsm` → `SpreadsheetViewer` (SheetJS in-app, PR #93)
+- **Lezione 13/09/2026 — `docx-preview` mai `external` in Vite.** In `vite.config.mjs` lo specifier nudo `import("docx-preview")` restava nel bundle Netlify: il file scaricava (HTTP 200, ZIP valido) ma Visualizza andava sempre su «Anteprima non disponibile». Chunk corretto: `vendor-docx-preview`. Allegati checklist/NC: `InAppOfficeViewer` (stesso chrome + schermo intero).
 
 #### DocumentDetailPanel (slide-in dettaglio documento)
 Bug: il pannello slide-in da albero/catalogo mostrava sempre "Nessun file allegato"

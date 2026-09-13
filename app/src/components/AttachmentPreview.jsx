@@ -11,17 +11,22 @@
  * Pattern blob lazy (fetch solo al click, non al mount):
  *  - Immagini / PDF / testo: fetch blob -> URL.createObjectURL -> window.open(newTab)
  *    Blob in RAM (nessun file su disco). Revocato dopo 10s.
- *  - Word / Excel / altri:   fetch blob -> <a download> -> cartella Download browser
- *    Revocato subito (il browser ha gia copiato i byte nel file di destinazione).
+ *  - Word / Excel previewabili: fetch blob -> InAppOfficeViewer (chrome + schermo intero)
+ *  - Altri Office / sconosciuti: fetch blob -> <a download> -> cartella Download browser
  */
 
 import React, { useEffect, useState, useCallback } from "react";
 import apiService from "../services/apiService";
+import InAppOfficeViewer from "./InAppOfficeViewer";
+import { officePreviewKind } from "../utils/officePreviewKind";
 import "./AttachmentPreview.css";
 
 // ---- helpers ----------------------------------------------------------------
 
-function getFileInfo(mimeType) {
+function getFileInfo(fileName, mimeType) {
+  const kind = officePreviewKind(fileName, mimeType);
+  if (kind === "word") return { icon: "📝", action: "preview", kind };
+  if (kind === "excel") return { icon: "📊", action: "preview", kind };
   if (!mimeType) return { icon: "📎", action: "download" };
   if (mimeType.startsWith("image/")) return { icon: "🖼️", action: "open" };
   if (mimeType === "application/pdf") return { icon: "📄", action: "open" };
@@ -49,6 +54,7 @@ function AttachmentPreview({ auditId, questionId, refreshKey = 0, customItemId =
   const [loading, setLoading] = useState(false);
   const [opening, setOpening] = useState(null);
   const [replacing, setReplacing] = useState(null);
+  const [officeViewer, setOfficeViewer] = useState(null);
 
   const fetchAttachments = useCallback(async () => {
     // Richiede auditId e almeno uno tra questionId e customItemId
@@ -74,16 +80,23 @@ function AttachmentPreview({ auditId, questionId, refreshKey = 0, customItemId =
 
   /**
    * Lazy blob fetch al click.
+   * - preview (Word/Excel): blob -> overlay in-app (schermo intero).
    * - open (img/PDF/testo): blob in RAM -> nuova scheda. Revocato dopo 10s.
-   * - download (Word/Excel/...): blob -> <a download> -> Downloads. Revocato subito.
+   * - download (altri): blob -> <a download> -> Downloads. Revocato subito.
    */
   const handleOpen = useCallback(async (att) => {
     setOpening(att.attachment_id);
     try {
-      const { action } = getFileInfo(att.mime_type);
+      const { action, kind } = getFileInfo(att.file_name, att.mime_type);
 
       const endpoint = action === "open" ? "view" : "download";
       const { blob } = await apiService.fetchAttachmentBlob(att.attachment_id, endpoint);
+
+      if (action === "preview" && kind) {
+        setOfficeViewer({ kind, file: blob, fileName: att.file_name });
+        return;
+      }
+
       const blobUrl = URL.createObjectURL(blob);
 
       if (action === "open") {
@@ -166,7 +179,7 @@ function AttachmentPreview({ auditId, questionId, refreshKey = 0, customItemId =
       <div className="preview-list">
         {attachments.map((att) => {
           const id = att.attachment_id;
-          const { icon, action } = getFileInfo(att.mime_type);
+          const { icon, action } = getFileInfo(att.file_name, att.mime_type);
           const isOpening = opening === id;
           const isReplacing = replacing === id;
 
@@ -177,7 +190,13 @@ function AttachmentPreview({ auditId, questionId, refreshKey = 0, customItemId =
                 className={`preview-file-banner${isOpening ? " loading" : ""}`}
                 onClick={() => !isOpening && handleOpen(att)}
                 disabled={isOpening}
-                title={action === "open" ? `Apri ${att.file_name}` : `Scarica ${att.file_name}`}
+                title={
+                  action === "preview"
+                    ? `Visualizza ${att.file_name}`
+                    : action === "open"
+                      ? `Apri ${att.file_name}`
+                      : `Scarica ${att.file_name}`
+                }
               >
                 <span className="pf-icon">
                   {isOpening
@@ -193,6 +212,8 @@ function AttachmentPreview({ auditId, questionId, refreshKey = 0, customItemId =
                 <span className="pf-cta">
                   {isOpening
                     ? "Caricamento..."
+                    : action === "preview"
+                    ? "Visualizza"
                     : action === "open"
                     ? "↗ Apri"
                     : "⬇ Scarica"}
@@ -222,6 +243,14 @@ function AttachmentPreview({ auditId, questionId, refreshKey = 0, customItemId =
           );
         })}
       </div>
+      {officeViewer && (
+        <InAppOfficeViewer
+          kind={officeViewer.kind}
+          file={officeViewer.file}
+          fileName={officeViewer.fileName}
+          onClose={() => setOfficeViewer(null)}
+        />
+      )}
     </div>
   );
 }

@@ -6,6 +6,8 @@
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import apiService from "../services/apiService";
 import FileDropzone from "./FileDropzone";
+import InAppOfficeViewer from "./InAppOfficeViewer";
+import { officePreviewKind } from "../utils/officePreviewKind";
 import "./AttachmentSection.css";
 
 function formatSize(bytes) {
@@ -25,6 +27,8 @@ export default function NcAttachmentsSection({ ncId, readOnly = false }) {
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState(null);
+  const [openingId, setOpeningId] = useState(null);
+  const [officeViewer, setOfficeViewer] = useState(null);
   const fileInputRef = useRef(null);
 
   const load = useCallback(async () => {
@@ -84,7 +88,22 @@ export default function NcAttachmentsSection({ ncId, readOnly = false }) {
     }
   }
 
-  function handleDownload(att) {
+  async function handleOpen(att) {
+    const kind = officePreviewKind(att.file_name, att.mime_type);
+    if (kind) {
+      setOpeningId(att.attachment_id);
+      try {
+        const { blob } = await apiService.fetchAttachmentBlob(att.attachment_id, "download");
+        setOfficeViewer({ kind, file: blob, fileName: att.file_name });
+      } catch (err) {
+        setError(err?.message
+          ? `Impossibile aprire "${att.file_name}": ${err.message}`
+          : "Impossibile aprire l'allegato.");
+      } finally {
+        setOpeningId(null);
+      }
+      return;
+    }
     const url = apiService.getAttachmentDownloadUrl(att.attachment_id);
     window.open(url, "_blank", "noopener,noreferrer");
   }
@@ -106,7 +125,8 @@ export default function NcAttachmentsSection({ ncId, readOnly = false }) {
               <button
                 type="button"
                 className="nc-attachment-link"
-                onClick={() => handleDownload(att)}
+                onClick={() => handleOpen(att)}
+                disabled={openingId === att.attachment_id}
               >
                 {att.file_name}
               </button>
@@ -145,6 +165,14 @@ export default function NcAttachmentsSection({ ncId, readOnly = false }) {
             inputClassName="nc-file-input-hidden"
           />
         </div>
+      )}
+      {officeViewer && (
+        <InAppOfficeViewer
+          kind={officeViewer.kind}
+          file={officeViewer.file}
+          fileName={officeViewer.fileName}
+          onClose={() => setOfficeViewer(null)}
+        />
       )}
     </div>
   );
