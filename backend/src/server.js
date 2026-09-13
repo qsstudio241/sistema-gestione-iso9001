@@ -319,7 +319,7 @@ app.use(API_BASE, drawingExtractionRoutes);
 app.use(API_BASE, aiAssistRoutes);
 app.use(API_BASE, aiChatRoutes);
 app.use(API_BASE, questionAssistantRoutes);
-app.use(API_BASE, normattivaRoutes);
+app.use(`${API_BASE}/normattiva`, normattivaRoutes);
 app.use(API_BASE, librarySourceRequestRoutes);
 app.use(API_BASE, weldingRoutes);
 app.use(API_BASE, projectsRoutes);
