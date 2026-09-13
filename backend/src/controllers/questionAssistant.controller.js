@@ -58,7 +58,8 @@ function buildSourceDisclaimer(normSource) {
 }
 
 /**
- * Estrae citazioni dalla risposta AI (solo se fonte ufficiale)
+ * Estrae citazioni dalla risposta AI (solo se fonte ufficiale).
+ * Supporta pattern ISO (§X.Y) e decreti (Art. X comma Y).
  */
 function extractCitations(aiResponse, normSource) {
   if (!normSource || !normSource.has_chunks) {
@@ -67,16 +68,39 @@ function extractCitations(aiResponse, normSource) {
 
   const text = String(aiResponse || '');
   const citations = [];
-
-  // Pattern: §X.Y o §X.Y.Z
-  const matches = text.matchAll(/§\s*(\d+\.\d+(?:\.\d+)?)/g);
-  for (const match of matches) {
-    const clause = match[1];
-    citations.push({
-      text: `§${clause}`,
-      source: normSource.title || 'Norma ufficiale',
-      page: null, // TODO: recuperare da norm_chunks se disponibile
-    });
+  
+  // Determina se è un decreto (D.Lgs., D.L., Legge) o norma tecnica ISO/UNI
+  const isDecreto = normSource.standard_code?.startsWith('D_Lgs_') || 
+                    normSource.standard_code?.startsWith('D_L_') ||
+                    normSource.standard_code?.startsWith('Legge_') ||
+                    normSource.doc_type === 'decreto';
+  
+  if (isDecreto) {
+    // Pattern decreti: Art. 1, Art. 2 comma 3, Art. 15 comma 1 lettera a
+    const matches = text.matchAll(/Art\.\s*(\d+)(?:\s+comma\s+(\d+))?(?:\s+lettera\s+([a-z]))?/gi);
+    for (const match of matches) {
+      const [fullMatch, articolo, comma, lettera] = match;
+      let citationText = `Art. ${articolo}`;
+      if (comma) citationText += ` comma ${comma}`;
+      if (lettera) citationText += ` lettera ${lettera}`;
+      
+      citations.push({
+        text: citationText,
+        source: normSource.title || 'Decreto',
+        page: null, // TODO: recuperare da norm_chunks se disponibile
+      });
+    }
+  } else {
+    // Pattern ISO/UNI: §X.Y o §X.Y.Z
+    const matches = text.matchAll(/§\s*(\d+\.\d+(?:\.\d+)?)/g);
+    for (const match of matches) {
+      const clause = match[1];
+      citations.push({
+        text: `§${clause}`,
+        source: normSource.title || 'Norma ufficiale',
+        page: null,
+      });
+    }
   }
 
   return citations;
