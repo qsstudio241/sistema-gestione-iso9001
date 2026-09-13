@@ -1,71 +1,93 @@
 -- Migrazione 167: Audit trail utilizzo AI senza fonte ufficiale
 -- Data: 13/09/2026
 -- Scopo: Tracciare utilizzo AI assistant + throttling notifiche admin
+-- Pattern: CREATE TABLE → ADD CONSTRAINT separati (SQL Server)
 
--- Tabella principale: log ogni richiesta AI
-IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'ai_usage_log')
+-- Tabella principale: log ogni richiesta AI assistant (question assistant)
+-- NOTA: Rinominata in ai_assistant_usage per evitare conflitto con ai_usage_log esistente (AI chat)
+IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'ai_assistant_usage')
 BEGIN
-  CREATE TABLE ai_usage_log (
+  CREATE TABLE ai_assistant_usage (
     id               INT IDENTITY(1,1) PRIMARY KEY,
     organization_id  INT NOT NULL,
     user_id          INT NOT NULL,
-    feature          NVARCHAR(50) NOT NULL,  -- 'question_assistant', 'ai_chat', ecc.
-    standard_code    NVARCHAR(50) NULL,      -- es. 'ISO_9001_2015'
-    has_source       BIT NOT NULL,           -- 1 se norm_chunks presente, 0 altrimenti
-    logged_at        DATETIME2 DEFAULT GETDATE(),
-    
-    CONSTRAINT FK_ai_usage_log_org FOREIGN KEY (organization_id) 
-      REFERENCES organizations(id) ON DELETE CASCADE,
-    CONSTRAINT FK_ai_usage_log_user FOREIGN KEY (user_id) 
-      REFERENCES users(id) ON DELETE CASCADE
+    feature          NVARCHAR(50) NOT NULL,
+    standard_code    NVARCHAR(50) NULL,
+    has_source       BIT NOT NULL,
+    logged_at        DATETIME2 DEFAULT GETDATE()
   );
-  
-  PRINT 'Tabella ai_usage_log creata con successo.';
-END
-ELSE
-BEGIN
-  PRINT 'Tabella ai_usage_log già esistente.';
+  PRINT 'Tabella ai_assistant_usage creata.';
 END
 GO
 
--- Indice per query performance (filtrare per org + data)
-IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name = 'IX_ai_usage_org_date')
+-- FK per ai_assistant_usage (dopo CREATE TABLE)
+IF NOT EXISTS (SELECT * FROM sys.foreign_keys WHERE name = 'FK_ai_assistant_usage_org')
 BEGIN
-  CREATE INDEX IX_ai_usage_org_date 
-    ON ai_usage_log(organization_id, logged_at);
-  PRINT 'Indice IX_ai_usage_org_date creato.';
+  ALTER TABLE ai_assistant_usage
+    ADD CONSTRAINT FK_ai_assistant_usage_org FOREIGN KEY (organization_id) 
+      REFERENCES organizations(id) ON DELETE CASCADE;
+  PRINT 'FK FK_ai_assistant_usage_org aggiunta.';
 END
 GO
 
--- Tabella throttling: registro notifiche inviate (1/giorno per org+standard)
-IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'ai_usage_notifications')
+IF NOT EXISTS (SELECT * FROM sys.foreign_keys WHERE name = 'FK_ai_assistant_usage_user')
 BEGIN
-  CREATE TABLE ai_usage_notifications (
+  ALTER TABLE ai_assistant_usage
+    ADD CONSTRAINT FK_ai_assistant_usage_user FOREIGN KEY (user_id) 
+      REFERENCES users(id) ON DELETE CASCADE;
+  PRINT 'FK FK_ai_assistant_usage_user aggiunta.';
+END
+GO
+
+-- Indice per query performance
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name = 'IX_ai_assistant_usage_org_date')
+BEGIN
+  CREATE INDEX IX_ai_assistant_usage_org_date 
+    ON ai_assistant_usage(organization_id, logged_at);
+  PRINT 'Indice IX_ai_assistant_usage_org_date creato.';
+END
+GO
+
+-- Tabella throttling notifiche
+IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'ai_assistant_notifications')
+BEGIN
+  CREATE TABLE ai_assistant_notifications (
     id               INT IDENTITY(1,1) PRIMARY KEY,
     organization_id  INT NOT NULL,
     standard_code    NVARCHAR(50) NOT NULL,
-    notification_date DATE NOT NULL,          -- Solo la data (no ora)
-    created_at       DATETIME2 DEFAULT GETDATE(),
-    
-    CONSTRAINT FK_ai_notif_org FOREIGN KEY (organization_id) 
-      REFERENCES organizations(id) ON DELETE CASCADE,
-    CONSTRAINT UQ_ai_notif_org_std_date UNIQUE (organization_id, standard_code, notification_date)
+    notification_date DATE NOT NULL,
+    created_at       DATETIME2 DEFAULT GETDATE()
   );
-  
-  PRINT 'Tabella ai_usage_notifications creata con successo.';
-END
-ELSE
-BEGIN
-  PRINT 'Tabella ai_usage_notifications già esistente.';
+  PRINT 'Tabella ai_assistant_notifications creata.';
 END
 GO
 
--- Indice per lookup rapido throttling
-IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name = 'IX_ai_notif_org_std_date')
+-- FK per ai_assistant_notifications
+IF NOT EXISTS (SELECT * FROM sys.foreign_keys WHERE name = 'FK_ai_assistant_notif_org')
 BEGIN
-  CREATE INDEX IX_ai_notif_org_std_date 
-    ON ai_usage_notifications(organization_id, standard_code, notification_date);
-  PRINT 'Indice IX_ai_notif_org_std_date creato.';
+  ALTER TABLE ai_assistant_notifications
+    ADD CONSTRAINT FK_ai_assistant_notif_org FOREIGN KEY (organization_id) 
+      REFERENCES organizations(id) ON DELETE CASCADE;
+  PRINT 'FK FK_ai_assistant_notif_org aggiunta.';
+END
+GO
+
+-- Unique constraint
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name = 'UQ_ai_assistant_notif_org_std_date')
+BEGIN
+  ALTER TABLE ai_assistant_notifications
+    ADD CONSTRAINT UQ_ai_assistant_notif_org_std_date 
+      UNIQUE (organization_id, standard_code, notification_date);
+  PRINT 'Constraint UQ_ai_assistant_notif_org_std_date aggiunto.';
+END
+GO
+
+-- Indice per lookup throttling
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name = 'IX_ai_assistant_notif_org_std_date')
+BEGIN
+  CREATE INDEX IX_ai_assistant_notif_org_std_date 
+    ON ai_assistant_notifications(organization_id, standard_code, notification_date);
+  PRINT 'Indice IX_ai_assistant_notif_org_std_date creato.';
 END
 GO
 
