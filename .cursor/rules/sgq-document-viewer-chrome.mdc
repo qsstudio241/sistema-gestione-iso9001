@@ -11,6 +11,7 @@ alwaysApply: false
 ## Cosa usare
 
 - Componente: `app/src/components/DocumentViewerChrome.jsx`
+- Allegati Word/Excel (blob): `InAppOfficeViewer.jsx` → stesso chrome
 - Catalogo: `docs/reference/LIBRERIA_UI_SGQ.md` (riga overlay visualizzatore)
 - Modello storico: `DocumentDocxViewer.jsx` (zoom extra nello slot, chrome condiviso)
 
