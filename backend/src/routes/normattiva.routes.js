@@ -14,10 +14,7 @@ const normattivaController = require('../controllers/normattiva.controller');
  * Body: { query: "D.Lgs. 81/2008" }
  * Access: admin, superadmin
  */
-router.post('/search', authenticate, normattivaController.searchNormattiva);
-
-// TEMP DEBUG: test con path completamente diverso
-router.post('/decreto-search-test', authenticate, normattivaController.searchNormattiva);
+router.post('/normattiva/search', authenticate, normattivaController.searchNormattiva);
 
 /**
  * POST /api/v1/normattiva/import
@@ -25,6 +22,6 @@ router.post('/decreto-search-test', authenticate, normattivaController.searchNor
  * Body: { urn: "urn:nir:...", organizationId?: number }
  * Access: admin, superadmin
  */
-router.post('/import', authenticate, normattivaController.importNormattiva);
+router.post('/normattiva/import', authenticate, normattivaController.importNormattiva);
 
 module.exports = router;
