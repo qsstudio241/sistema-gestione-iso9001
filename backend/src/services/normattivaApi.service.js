@@ -23,13 +23,13 @@ const CACHE_TTL_MS = 5 * 60 * 1000;
  * @returns {Promise<Array<{urn: string, title: string, vigenza: string}>>}
  */
 async function searchNorm(query) {
-  console.log('[DEBUG] searchNorm() START, query:', query);
+  logger.info('[DEBUG] searchNorm() START, query: ' + query);
   
   const cacheKey = `search:${query.toLowerCase()}`;
   const cached = searchCache.get(cacheKey);
   if (cached && (Date.now() - cached.ts) < CACHE_TTL_MS) {
     logger.debug(`[NormattivaAPI] Cache hit per query: ${query}`);
-    console.log('[DEBUG] Cache HIT, returning:', cached.results.length, 'results');
+    logger.info('[DEBUG] Cache HIT, returning: ' + cached.results.length + ' results');
     return cached.results;
   }
 
@@ -47,26 +47,26 @@ async function searchNorm(query) {
     // Legge → legge
     
     const results = parseQueryToUrn(query);
-    console.log('[DEBUG] parseQueryToUrn() returned:', JSON.stringify(results));
+    logger.info('[DEBUG] parseQueryToUrn() returned: ' + JSON.stringify(results));
     
     if (results.length === 0) {
       logger.warn(`[NormattivaAPI] Nessun risultato per: ${query}`);
-      console.log('[DEBUG] No pattern match, returning []');
+      logger.info('[DEBUG] No pattern match, returning []');
       return [];
     }
 
     // Verifica esistenza URN
     const verified = [];
     for (const result of results) {
-      console.log('[DEBUG] Verifico URN:', result.urn);
+      logger.info('[DEBUG] Verifico URN: ' + result.urn);
       const exists = await checkUrnExists(result.urn);
-      console.log('[DEBUG] checkUrnExists() returned:', exists);
+      logger.info('[DEBUG] checkUrnExists() returned: ' + exists);
       if (exists) {
         verified.push(result);
       }
     }
 
-    console.log('[DEBUG] verified.length:', verified.length);
+    logger.info('[DEBUG] verified.length: ' + verified.length);
     searchCache.set(cacheKey, { results: verified, ts: Date.now() });
     return verified;
   } catch (err) {
@@ -138,7 +138,7 @@ async function checkUrnExists(urn) {
   try {
     // Usa /do/atto/export che è l'endpoint pubblico stabile per verificare URN
     const url = `${NORMATTIVA_BASE}/do/atto/export?urn=${encodeURIComponent(urn)}`;
-    console.log('[NormattivaAPI DEBUG] checkUrnExists() URL:', url);
+    logger.info('[DEBUG] checkUrnExists() URL: ' + url);
     
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
@@ -150,7 +150,7 @@ async function checkUrnExists(urn) {
         signal: controller.signal,
         headers: { 'User-Agent': USER_AGENT },
       });
-      console.log('[NormattivaAPI DEBUG] Fetch response status:', response.status, 'ok:', response.ok);
+      logger.info('[DEBUG] Fetch response status: ' + response.status + ' ok: ' + response.ok);
     } finally {
       clearTimeout(timeout);
     }
@@ -158,7 +158,7 @@ async function checkUrnExists(urn) {
     return response.ok;
   } catch (err) {
     logger.debug(`[NormattivaAPI] URN ${urn} non verificato:`, err.message);
-    console.log('[NormattivaAPI DEBUG] checkUrnExists() ERROR:', err.message);
+    logger.info('[DEBUG] checkUrnExists() ERROR: ' + err.message);
     return false;
   }
 }
