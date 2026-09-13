@@ -23,6 +23,10 @@
 .qf-btn-link { background:none; border:none; color:#1e3a5f; font-size:12px; cursor:pointer; text-decoration:underline; white-space:nowrap; }
 .qf-error  { margin:0 24px 12px; padding:10px 14px; background:#fef2f2; border:1px solid #fecaca; border-radius:8px; color:#dc2626; font-size:13px; }
 .qf-footer { display:flex; justify-content:flex-end; gap:10px; padding:16px 24px; border-top:1px solid #e5e7eb; }
+.autosave-status { font-size:0.78rem; font-weight:500; padding:2px 8px; border-radius:10px; margin-right:8px; }
+.autosave-status.saving { color:#805ad5; background:#f3e8ff; }
+.autosave-status.saved  { color:#276749; background:#c6f6d5; }
+.autosave-status.error  { color:#c53030; background:#fed7d7; }
 .qf-btn-cancel { padding:9px 20px; border:1.5px solid #d1d5db; border-radius:8px; background:#fff; color:#374151; font-size:14px; cursor:pointer; }
 .qf-btn-save   { padding:9px 22px; border:none; border-radius:8px; background:#1e3a5f; color:#fff; font-size:14px; font-weight:600; cursor:pointer; }
 .qf-btn-save:hover:not(:disabled) { background:#16304e; }

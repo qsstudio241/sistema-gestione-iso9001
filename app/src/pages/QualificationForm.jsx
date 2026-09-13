@@ -73,19 +73,21 @@ const WELDER_REQUIRED = {
   expiry_date: "La data di scadenza \u00e8 obbligatoria.",
 };
 
-function QualificationForm({ qualification, onSave, onClose, defaultCompanyId, companyName, openSection }) {
+function QualificationForm({ qualification, onSave, onClose, onSaved, defaultCompanyId, companyName, openSection }) {
   const isEdit  = !!qualification;
   const isRenew = !!qualification?._renew;
   const [form,    setForm]    = useState(EMPTY);
   const [saving,  setSaving]  = useState(false);
   const [error,   setError]   = useState(null);
+  const [autoSaveStatus, setAutoSaveStatus] = useState(null); // null | 'saving' | 'saved' | 'error'
+  const savedIdRef    = useRef(isRenew ? null : (qualification?.id || null));
+  const isFirstRender = useRef(true);
+  const autoSaveTimer = useRef(null);
   const [companies, setCompanies] = useState([]);
   const [personnelList, setPersonnelList] = useState([]);
   const [certFile, setCertFile] = useState(null);
   const [uploadMsg, setUploadMsg] = useState(null);
   const certInputRef = useRef(null);
-  // Timestamp di mount: previene ghost-click mobile che chiuderebbe l'overlay
-  const openTimeRef = useRef(Date.now());
   const [customType, setCustomType] = useState(false);
   const [fieldErrors, setFieldErrors] = useState({});
 
@@ -190,6 +192,43 @@ function QualificationForm({ qualification, onSave, onClose, defaultCompanyId, c
       .catch(() => setPersonnelList([]));
   }, [form.company_id]);
 
+  // Auto-save con debounce 800ms
+  useEffect(() => {
+    if (isFirstRender.current) { isFirstRender.current = false; return; }
+    if (!form.person_name?.trim() || !form.company_id) return;
+    if (autoSaveTimer.current) clearTimeout(autoSaveTimer.current);
+    autoSaveTimer.current = setTimeout(async () => {
+      setSaving(true);
+      setAutoSaveStatus('saving');
+      setError(null);
+      try {
+        const payload = {
+          ...form,
+          company_id: parseInt(form.company_id, 10),
+          personnel_id: form.personnel_id ? parseInt(form.personnel_id, 10) : null,
+        };
+        if (savedIdRef.current) {
+          await apiService.updateQualification(savedIdRef.current, payload);
+        } else if (isRenew) {
+          const res = await apiService.renewQualification(qualification.id, payload);
+          savedIdRef.current = res?.id || res?.data?.id || null;
+        } else {
+          const res = await apiService.createQualification(payload);
+          savedIdRef.current = res?.id || res?.data?.id || null;
+        }
+        setAutoSaveStatus('saved');
+        onSaved?.();
+      } catch (err) {
+        setAutoSaveStatus('error');
+        setError(err?.message || "Errore durante il salvataggio.");
+      } finally {
+        setSaving(false);
+      }
+    }, 800);
+    return () => { if (autoSaveTimer.current) clearTimeout(autoSaveTimer.current); };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [form]);
+
   function handle(field) {
     return (e) => {
       const value = e.target.type === "checkbox" ? e.target.checked : e.target.value;
@@ -202,69 +241,30 @@ function QualificationForm({ qualification, onSave, onClose, defaultCompanyId, c
     || companies.find((c) => String(c.id) === String(form.company_id))?.name
     || (form.company_id ? `Azienda #${form.company_id}` : "\u2014");
 
-  async function handleSave() {
-    if (!form.person_name.trim()) { setError("Il nome della persona \u00e8 obbligatorio."); return; }
-    if (!form.qualification_type.trim()) { setError("Il tipo di qualifica \u00e8 obbligatorio."); return; }
-    if (!form.company_id) { setError("L'azienda cliente \u00e8 obbligatoria."); return; }
-    // Validazione campi obbligatori saldatore (solo su submit, non a ogni keystroke).
-    if (isWelder9606) {
-      const errs = {};
-      Object.keys(WELDER_REQUIRED).forEach((field) => {
-        const msg = validateWelderField(field, form[field]);
-        if (msg) errs[field] = msg;
-      });
-      if (Object.keys(errs).length) {
-        setFieldErrors(errs);
-        setError("Completa i campi obbligatori della saldatura evidenziati.");
-        return;
-      }
+  // Upload manuale certificato PDF (separato dall'auto-save)
+  async function handleUploadCert() {
+    const idToUse = savedIdRef.current || qualification?.id;
+    if (!certFile || !idToUse) {
+      setUploadMsg("\u26A0\uFE0F Salva prima la qualifica, poi allega il certificato.");
+      return;
     }
-    setSaving(true);
-    setError(null);
     setUploadMsg(null);
     try {
-      const data = {
-        ...form,
-        company_id: parseInt(form.company_id, 10),
-        personnel_id: form.personnel_id ? parseInt(form.personnel_id, 10) : null,
-      };
-      let savedId = qualification?.id;
-      if (isRenew) {
-        const res = await apiService.renewQualification(qualification.id, data);
-        savedId = res?.id || res?.data?.id || null;
-      } else if (isEdit) {
-        await apiService.updateQualification(qualification.id, data);
-        savedId = qualification.id;
-      } else {
-        const res = await apiService.createQualification(data);
-        savedId = res?.id || res?.data?.id || null;
-      }
-      // Upload certificato PDF se selezionato
-      if (certFile && savedId) {
-        try {
-          await apiService.uploadQualificationCertificate(savedId, certFile);
-          setUploadMsg("Certificato allegato con successo.");
-        } catch (uploadErr) {
-          setUploadMsg("\u26A0\uFE0F Qualifica salvata, ma upload certificato fallito: " + uploadErr.message);
-        }
-      }
-      onSave();
-    } catch (err) {
-      setError(err.message);
-    } finally {
-      setSaving(false);
+      await apiService.uploadQualificationCertificate(idToUse, certFile);
+      setUploadMsg("Certificato allegato con successo.");
+    } catch (uploadErr) {
+      setUploadMsg("\u26A0\uFE0F Upload certificato fallito: " + uploadErr.message);
     }
   }
 
   return (
-    <div className="qf-overlay" onClick={e => {
-      if (e.target !== e.currentTarget) return;
-      if (Date.now() - openTimeRef.current < 350) return;
-      onClose();
-    }}>
+    <div className="qf-overlay">
       <div className="qf-modal">
         <div className="qf-header">
           <h3 className="qf-title">{isRenew ? "\u267B\uFE0F Rinnova qualifica" : isEdit ? "\u270F\uFE0F Modifica qualifica" : "+ Nuova qualifica"}</h3>
+          {autoSaveStatus === 'saving' && <span className="autosave-status saving">{"Salvataggio\u2026"}</span>}
+          {autoSaveStatus === 'saved'  && <span className="autosave-status saved">{"\u2713 Salvato"}</span>}
+          {autoSaveStatus === 'error'  && <span className="autosave-status error">{"\u26A0 Errore salvataggio"}</span>}
           <button className="qf-close" onClick={onClose}>&#x2715;</button>
         </div>
 
@@ -757,7 +757,12 @@ function QualificationForm({ qualification, onSave, onClose, defaultCompanyId, c
                   hint="PDF o immagine"
                   inputRef={certInputRef}
                 />
-                {certFile && <span style={{fontSize:12, color:"#555"}}>{certFile.name}</span>}
+                {certFile && (
+                  <div style={{display:"flex", alignItems:"center", gap:8, marginTop:4}}>
+                    <span style={{fontSize:12, color:"#555"}}>{certFile.name}</span>
+                    <button type="button" className="qf-btn-link" onClick={handleUploadCert}>Allega</button>
+                  </div>
+                )}
               </div>
             </div>
           )}
@@ -780,10 +785,7 @@ function QualificationForm({ qualification, onSave, onClose, defaultCompanyId, c
         {error && <div className="qf-error">{"\u26A0\uFE0F "}{error}</div>}
 
         <div className="qf-footer">
-          <button className="qf-btn-cancel" onClick={onClose}>Annulla</button>
-          <button className="qf-btn-save" onClick={handleSave} disabled={saving}>
-            {saving ? "Salvataggio..." : isRenew ? "Crea rinnovo" : isEdit ? "Salva modifiche" : "Crea qualifica"}
-          </button>
+          <button className="qf-btn-cancel" onClick={onClose} disabled={saving}>Chiudi</button>
         </div>
       </div>
     </div>

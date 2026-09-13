@@ -631,6 +631,7 @@ function QualificationsPage() {
                         || (!editingQual && companyScope ? scopeCompanyName : undefined)
                     }
                     onSave={handleSaved}
+                    onSaved={handleSaved}
                     onClose={() => { setFormOpen(false); setEditingQual(null); }}
                 />
             )}
