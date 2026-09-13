@@ -12,6 +12,7 @@
 | **Indice completo con tag** | [INDICE_DOCUMENTAZIONE.md](INDICE_DOCUMENTAZIONE.md) |
 | **Procedure e lezioni** (a sezioni) | [GUIDA_CONSOLIDATA.md](GUIDA_CONSOLIDATA.md) |
 | **Priorità** (solo § Stato in avvio) | [PROJECT_ROADMAP.md](PROJECT_ROADMAP.md#stato-attuale-e-priorità-fonte-unica) |
+| **Cruscotto stato (in app)** | Dopo login **superadmin**: menu Gestione → **Stato sviluppo** (`/settings/stato-sviluppo`) |
 | **Deploy release** | [how-to/deploy.md](how-to/deploy.md) |
 | **Schema DB / API** | [reference/](reference/) |
 | **Mini-spec feature** | [specs/](specs/) |

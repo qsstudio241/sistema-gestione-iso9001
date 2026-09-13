@@ -35,6 +35,7 @@ const RisksPage = React.lazy(() => import("./pages/RisksPage"));
 const ComplaintsPage = React.lazy(() => import("./pages/ComplaintsPage"));
 const LicensesSettingsPage = React.lazy(() => import("./pages/LicensesSettingsPage"));
 const BillingDashboardPage = React.lazy(() => import("./pages/BillingDashboardPage"));
+const StatoSviluppoPage = React.lazy(() => import("./pages/StatoSviluppoPage"));
 const StudioSettingsPage = React.lazy(() => import("./pages/StudioSettingsPage"));
 const ContractChecklistTemplatesPage = React.lazy(() => import("./pages/ContractChecklistTemplatesPage"));
 const ImportJobsPage = React.lazy(() => import("./pages/ImportJobsPage"));
@@ -301,6 +302,14 @@ function AppContent() {
           element={
             <BackWrapper>
               <BillingDashboardPage />
+            </BackWrapper>
+          }
+        />
+        <Route
+          path="/settings/stato-sviluppo"
+          element={
+            <BackWrapper>
+              <StatoSviluppoPage />
             </BackWrapper>
           }
         />
