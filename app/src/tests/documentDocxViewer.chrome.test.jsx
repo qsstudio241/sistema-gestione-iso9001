@@ -24,6 +24,19 @@ describe("DocumentDocxViewer chrome", () => {
     mockGetDocFileBlob.mockResolvedValue(new Blob(["PK"], { type: "application/vnd.openxmlformats-officedocument.wordprocessingml.document" }));
   });
 
+  it("con File locale non chiama getDocFileBlob e mostra Schermo intero", async () => {
+    const file = new File([new Uint8Array([0x50, 0x4b])], "locale.docx", {
+      type: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    });
+    render(<DocumentDocxViewer file={file} fileName="locale.docx" onClose={() => {}} />);
+
+    await waitFor(() => {
+      expect(screen.getByTitle("Schermo intero")).toBeInTheDocument();
+    });
+    expect(mockGetDocFileBlob).not.toHaveBeenCalled();
+    expect(screen.getByText("locale.docx")).toBeInTheDocument();
+  });
+
   it("toggla Schermo intero sul viewport in-app", async () => {
     const { container } = render(
       <DocumentDocxViewer docId={1} fileName="verbale.docx" onClose={() => {}} />

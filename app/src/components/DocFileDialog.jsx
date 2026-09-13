@@ -34,6 +34,7 @@ function isBlocked(filename) {
 }
 
 const OFFICE_WORD_EXTS  = ['.docx', '.doc', '.docm', '.rtf'];
+const OFFICE_WORD_PREVIEW_EXTS = ['.docx', '.docm'];
 const OFFICE_EXCEL_EXTS = ['.xlsx', '.xls', '.xlsm'];
 
 function getExt(filename) {
@@ -392,7 +393,7 @@ function DocFileDialog({ doc, onClose, onDocumentUpdated }) {
                   )}
 
                   {/* Visualizzazione browser nativa Word: docx-preview (sola lettura) */}
-                  {OFFICE_WORD_EXTS.includes(getExt(currentFile.file_name)) && (
+                  {OFFICE_WORD_PREVIEW_EXTS.includes(getExt(currentFile.file_name)) && (
                     <button
                       className="btn-docfile-office btn-docfile-office-view"
                       onClick={() => {

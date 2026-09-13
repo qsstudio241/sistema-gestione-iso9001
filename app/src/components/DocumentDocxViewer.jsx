@@ -20,22 +20,32 @@ const ZOOM_MIN = 0.5;
 const ZOOM_MAX = 2.5;
 const ZOOM_STEP = 0.1;
 
-export default function DocumentDocxViewer({ docId, attachmentId, fileName, onClose }) {
+export default function DocumentDocxViewer({
+  docId,
+  attachmentId,
+  fileName,
+  onClose,
+  file = null,
+}) {
   const [loading,    setLoading]    = useState(true);
   const [loadError,  setLoadError]  = useState(null);
   const [zoom,       setZoom]       = useState(1);
   const [fullscreen, setFullscreen] = useState(false);
   const containerRef = useRef(null);
+  const hasFile = file instanceof Blob;
+  const hasDoc = Boolean(docId);
 
   useEffect(() => {
-    if (!docId) return;
+    if (!hasFile && !hasDoc) return;
     let cancelled = false;
     setLoading(true);
     setLoadError(null);
 
     (async () => {
       try {
-        const blob = await apiService.getDocFileBlob(docId, attachmentId || null);
+        const blob = hasFile
+          ? file
+          : await apiService.getDocFileBlob(docId, attachmentId || null);
         if (cancelled) return;
 
         const { renderAsync } = await import("docx-preview");
@@ -59,11 +69,13 @@ export default function DocumentDocxViewer({ docId, attachmentId, fileName, onCl
     })();
 
     return () => { cancelled = true; };
-  }, [docId, attachmentId]);
+  }, [docId, attachmentId, file, hasFile, hasDoc]);
 
-  const downloadUrl = apiService.getDocFileDownloadUrl(docId, attachmentId || null, false);
+  const downloadUrl = hasDoc
+    ? apiService.getDocFileDownloadUrl(docId, attachmentId || null, false)
+    : undefined;
 
-  if (!docId) return null;
+  if (!hasFile && !hasDoc) return null;
 
   const zoomIn   = () => setZoom(z => Math.min(ZOOM_MAX, +(z + ZOOM_STEP).toFixed(2)));
   const zoomOut  = () => setZoom(z => Math.max(ZOOM_MIN, +(z - ZOOM_STEP).toFixed(2)));
@@ -123,9 +135,12 @@ export default function DocumentDocxViewer({ docId, attachmentId, fileName, onCl
         {!loading && loadError && (
           <div className="pdf-viewer-fallback">
             <p>Anteprima non disponibile per questo file.</p>
-            <a href={downloadUrl} className="pdf-viewer-btn pdf-viewer-btn--download" download>
-              {"\u{1F4BE}"} Scarica per visualizzarlo in Word
-            </a>
+            <p className="pdf-viewer-mobile__hint">{loadError}</p>
+            {downloadUrl && (
+              <a href={downloadUrl} className="pdf-viewer-btn pdf-viewer-btn--download" download>
+                {"\u{1F4BE}"} Scarica per visualizzarlo in Word
+              </a>
+            )}
           </div>
         )}
         <div
