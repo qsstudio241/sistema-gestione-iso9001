@@ -217,6 +217,10 @@
 }
 .modal-box.modal-lg { max-width: 700px; }
 .modal-header {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background: #fff;
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -234,7 +238,7 @@
   padding: .2rem .5rem;
 }
 .modal-form { padding: 1.25rem; display: flex; flex-direction: column; gap: .75rem; }
-.modal-footer { display: flex; justify-content: flex-end; gap: .75rem; padding-top: .5rem; border-top: 1px solid #eee; }
+.modal-footer { position: sticky; bottom: 0; z-index: 10; background: #fff; display: flex; justify-content: flex-end; gap: .75rem; padding-top: .5rem; border-top: 1px solid #eee; }
 
 /* â”€â”€ Form helpers â”€â”€ */
 .form-group { display: flex; flex-direction: column; gap: .3rem; }

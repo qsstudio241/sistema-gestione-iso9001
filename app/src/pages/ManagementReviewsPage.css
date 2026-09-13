@@ -260,10 +260,14 @@
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
   display: flex;
   flex-direction: column;
-  overflow: hidden;
+  overflow-y: auto;
 }
 
 .modal-header {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background: #fff;
   display: flex;
   align-items: center;
   justify-content: space-between;

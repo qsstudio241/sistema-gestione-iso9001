@@ -320,6 +320,10 @@
   box-shadow: 0 20px 60px rgba(0,0,0,.2);
 }
 .modal-header {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background: #fff;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -370,7 +374,7 @@
 .score-preview { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; }
 .score-preview label { display: block; font-size: 0.8rem; font-weight: 600; color: #4a5568; }
 .form-error { color: #c53030; font-size: 0.85rem; margin: 6px 0; }
-.form-footer { display: flex; justify-content: flex-end; gap: 10px; margin-top: 16px; padding-top: 12px; border-top: 1px solid #f0f4f8; }
+.form-footer { position: sticky; bottom: 0; z-index: 10; background: #fff; display: flex; justify-content: flex-end; gap: 10px; margin-top: 16px; padding-top: 12px; border-top: 1px solid #f0f4f8; }
 
 /* Lists */
 .risk-list, .obj-list { display: flex; flex-direction: column; }
