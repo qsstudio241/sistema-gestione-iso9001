@@ -100,7 +100,10 @@ function buildNavItems(user, alerts = {}) {
         ...(isAdmin && !isCompanyClient ? [
           { to: "/settings/users",    icon: "👥", label: "Utenti" },
           { to: "/settings/licenses", icon: "🔑", label: "Licenze moduli" },
-          ...(isSuperadmin ? [{ to: "/settings/billing", icon: "💳", label: "Fatturazione" }] : []),
+          ...(isSuperadmin ? [
+            { to: "/settings/billing", icon: "💳", label: "Fatturazione" },
+            { to: "/settings/stato-sviluppo", icon: "\uD83D\uDCCA", label: "Stato sviluppo" },
+          ] : []),
           {
             to: "/settings/libreria",
             icon: "\uD83D\uDCDA",
