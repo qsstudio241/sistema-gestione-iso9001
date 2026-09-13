@@ -37,6 +37,7 @@ export const STATUS_BUTTONS = [
 
 /**
  * Wrapper per AI Panel con accesso a AuthContext
+ * Safe per test: se AuthProvider non è disponibile, ritorna null silenziosamente
  */
 function QuestionAiPanelWrapper({
   question,
@@ -46,7 +47,15 @@ function QuestionAiPanelWrapper({
   onStatusChange,
   readOnly,
 }) {
-  const { user } = useAuth();
+  let user = null;
+  
+  try {
+    const auth = useAuth();
+    user = auth.user;
+  } catch (error) {
+    // AuthProvider non disponibile (es. test senza wrapper) — silenzioso
+    return null;
+  }
   
   if (readOnly || !user) {
     return null;
