@@ -96,6 +96,7 @@ const searchRoutes           = require('./routes/search.routes');
 const deadlinesRoutes            = require('./routes/deadlines.routes');
 const managementReviewsRoutes    = require('./routes/managementReviews.routes');
 const smokeRoutes                = require('./routes/smoke.routes');
+const normattivaRoutes           = require('./routes/normattiva.routes');
 
 const app = express();
 const PORT = process.env.PORT || 10443;
@@ -318,6 +319,7 @@ app.use(API_BASE, drawingExtractionRoutes);
 app.use(API_BASE, aiAssistRoutes);
 app.use(API_BASE, aiChatRoutes);
 app.use(API_BASE, questionAssistantRoutes);
+app.use(API_BASE, normattivaRoutes);
 app.use(API_BASE, librarySourceRequestRoutes);
 app.use(API_BASE, weldingRoutes);
 app.use(API_BASE, projectsRoutes);
