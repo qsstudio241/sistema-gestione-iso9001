@@ -23,11 +23,14 @@ const DECRETI_FOLDER = path.resolve(__dirname, '../../../docs/Normative/Decreti'
  * Response: { success: true, results: [{ urn, title, vigenza }] }
  */
 async function searchNormattiva(req, res) {
+  logger.info('[DEBUG] searchNormattiva() ENTRY - body: ' + JSON.stringify(req.body) + ', user: ' + (req.user ? req.user.user_id : 'NULL'));
+  
   try {
     const { query: searchQuery } = req.body;
     const user = req.user;
 
     if (!user || !user.organization_id) {
+      logger.info('[DEBUG] searchNormattiva() AUTH FAILED - no user/org');
       return res.status(401).json({ 
         error: 'Autenticazione richiesta', 
         code: 'AUTH_REQUIRED' 
