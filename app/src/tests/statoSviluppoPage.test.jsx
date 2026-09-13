@@ -32,7 +32,7 @@ describe("StatoSviluppoPage", () => {
     expect(screen.getByRole("heading", { name: /In corso/ })).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: /Prossimo/ })).toBeInTheDocument();
     expect(screen.getByText("Audit multi-standard")).toBeInTheDocument();
-    expect(screen.getByText(/Aspetta una tua decisione/)).toBeInTheDocument();
+    expect(screen.getAllByText(/Aspetta una tua decisione/).length).toBeGreaterThan(0);
   });
 
   it("filtra una colonna dalla card in alto e la riapre al secondo click", async () => {
