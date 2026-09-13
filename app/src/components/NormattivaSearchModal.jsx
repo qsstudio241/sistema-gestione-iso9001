@@ -35,7 +35,8 @@ function NormattivaSearchModal({ isOpen, onClose, onImportSuccess }) {
     setResults([]);
 
     try {
-      const response = await apiService.post('/normattiva/search', {
+      // TEMP FIX: usa path vecchio /search che funziona invece di /normattiva/search
+      const response = await apiService.post('/search', {
         query: searchQuery.trim(),
       });
 
@@ -70,7 +71,8 @@ function NormattivaSearchModal({ isOpen, onClose, onImportSuccess }) {
     setImportingUrn(urn);
 
     try {
-      const response = await apiService.post('/normattiva/import', { urn });
+      // TEMP FIX: usa path vecchio /import che funziona invece di /normattiva/import  
+      const response = await apiService.post('/import', { urn });
 
       if (response.data.success) {
         const { title: importedTitle, chunkCount } = response.data.data;

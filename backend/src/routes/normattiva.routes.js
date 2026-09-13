@@ -16,6 +16,9 @@ const normattivaController = require('../controllers/normattiva.controller');
  */
 router.post('/search', authenticate, normattivaController.searchNormattiva);
 
+// TEMP DEBUG: test con path completamente diverso
+router.post('/decreto-search-test', authenticate, normattivaController.searchNormattiva);
+
 /**
  * POST /api/v1/normattiva/import
  * Importa un decreto nel second brain.
