@@ -42,9 +42,12 @@ const JWT_SECRET = process.env.JWT_SECRET;
  * - organization_id
  */
 function authenticate(req, res, next) {
+    logger.info('[DEBUG] authenticate() ENTRY - path: ' + req.path + ', method: ' + req.method);
+    
     try {
         // Estrai token da header Authorization
         const authHeader = req.headers.authorization;
+        logger.info('[DEBUG] authenticate() authHeader: ' + (authHeader ? 'present' : 'MISSING'));
 
         if (!authHeader || !authHeader.startsWith('Bearer ')) {
             logger.warn('Auth: Token mancante', {
