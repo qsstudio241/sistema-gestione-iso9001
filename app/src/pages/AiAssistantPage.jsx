@@ -108,9 +108,14 @@ function buildContextualSuggestions({ checklistFocus, companyContext, standardCo
 
   if (clauseRef) {
     const normPart = stdLabel ? ` di ${stdLabel}` : "";
+    const hasAtts = Array.isArray(checklistFocus?.attachments) && checklistFocus.attachments.length > 0;
     suggestions.push(`Cosa chiede il \u00A7${clauseRef}${normPart}?`);
     suggestions.push(`Cosa devo verificare concretamente per il \u00A7${clauseRef}?`);
-    suggestions.push(`Quali documenti coprono il requisito \u00A7${clauseRef}?`);
+    if (hasAtts) {
+      suggestions.push(`Cosa dicono gli allegati di questo punto rispetto al \u00A7${clauseRef}?`);
+    } else {
+      suggestions.push(`Quali documenti coprono il requisito \u00A7${clauseRef}?`);
+    }
     if (auditNum) suggestions.push(`Cosa manca per chiudere l\u2019audit ${auditNum}?`);
   } else if (qualCtx?.qualType) {
     const qCompany = qualCtx.companyName || company;
@@ -497,10 +502,16 @@ function AiAssistantPage() {
           companyId: companyContext.companyId,
           standardId: standardContext.standardId,
           auditId: chatCtx.auditId,
+          auditNumericId: chatCtx.auditNumericId,
           clauseRef: chatCtx.clauseRef,
           questionId: chatCtx.questionId,
           questionText: chatCtx.questionText,
           standardKey: chatCtx.standardKey,
+          numericQuestionId: chatCtx.numericQuestionId,
+          customItemId: chatCtx.customItemId,
+          legalFocus: chatCtx.legalFocus,
+          referenceText: chatCtx.referenceText,
+          attachments: chatCtx.attachments,
         }),
         fetchCitedFigures(msg, companyContext.companyId),
       ]);
@@ -772,6 +783,9 @@ function AiAssistantPage() {
               <p className="ai-assistant-empty-context">
                 Clausola attiva: <strong>{"\u00A7"}{checklistFocus.clauseRef}</strong>
                 {checklistFocus.questionId ? ` \u2014 dom. ${checklistFocus.questionId}` : ""}
+                {Array.isArray(checklistFocus.attachments) && checklistFocus.attachments.length > 0
+                  ? ` \u2014 ${checklistFocus.attachments.length} allegat${checklistFocus.attachments.length === 1 ? "o" : "i"} sul punto`
+                  : ""}
               </p>
             )}
             <div className="ai-assistant-suggestions">

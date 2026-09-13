@@ -60,6 +60,10 @@ jest.mock('../services/librarySourceRequest.service', () => ({
   processGapsFromChat: jest.fn(async () => []),
 }));
 
+jest.mock('../services/documentTextExtractor.service', () => ({
+  extractDocumentText: jest.fn(async () => ({ text: null, reason: 'skipped' })),
+}));
+
 const { chat, getActiveProvider } = require('../services/aiProviderAdapter');
 const { searchKnowledge } = require('../services/knowledgeIndexer.service');
 const {
@@ -72,7 +76,9 @@ const { loadAmbitoFacts } = require('../services/ambitoFacts.service');
 const { loadApprovedMapForChat } = require('../services/complianceMapChat.service');
 const { resolveClauseText } = require('../services/normBroker.service');
 const { processGapsFromChat } = require('../services/librarySourceRequest.service');
-const { aiChat, getAmbitoFacts } = require('./aiChat.controller');
+const { extractDocumentText } = require('../services/documentTextExtractor.service');
+const { query } = require('../config/database');
+const { aiChat, getAmbitoFacts, buildAuditFocusBlock } = require('./aiChat.controller');
 
 function createRes() {
   const res = { statusCode: 200 };
@@ -89,6 +95,10 @@ function createRes() {
 describe('aiChat.controller — aiChat', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    query.mockReset();
+    query.mockResolvedValue({ recordset: [] });
+    extractDocumentText.mockReset();
+    extractDocumentText.mockResolvedValue({ text: null, reason: 'skipped' });
     resolveAiCompanyScope.mockResolvedValue({ companyId: null, denied: null });
     getActiveProvider.mockReturnValue('gemini');
     loadApprovedMapForChat.mockResolvedValue({ companyId: null, map: null, items: [] });
@@ -245,6 +255,77 @@ describe('aiChat.controller — aiChat', () => {
       expect.objectContaining({ organizationId: 99 })
     );
     expect(res.json.mock.calls[0][0].normAbsent).toBeUndefined();
+    expect(chat.mock.calls[0][0][0].content).toContain('Allegati su questo punto: nessuno');
+    expect(chat.mock.calls[0][0][0].content).toMatch(/Human-in-the-loop/i);
+    expect(res.json.mock.calls[0][0].attachmentsUsed).toEqual([]);
+  });
+
+  it('include allegati checklist + estratto nel prompt (14001 legale)', async () => {
+    query.mockImplementation(async (sql) => {
+      if (String(sql).includes('FROM attachments')) {
+        return {
+          recordset: [
+            {
+              attachment_id: 77,
+              file_name: 'AUA_2024.pdf',
+              mime_type: 'application/pdf',
+              category: 'document',
+              storage_path: '/uploads/AUA_2024.pdf',
+            },
+          ],
+        };
+      }
+      return { recordset: [] };
+    });
+    extractDocumentText.mockResolvedValue({
+      text: 'Autorizzazione Unica Ambientale rilasciata per lo stabilimento. Scarichi idrici autorizzati.',
+      reason: 'ok',
+    });
+
+    const req = {
+      body: {
+        message: 'Questo allegato copre il punto?',
+        auditId: 'uuid-14001',
+        auditNumericId: 55,
+        clauseRef: '16',
+        questionId: 'q136',
+        questionText: 'AIA e IPPC',
+        standardKey: 'ISO_14001',
+        numericQuestionId: 136,
+        legalFocus: true,
+        attachments: [{ id: 77, name: 'AUA_2024.pdf', category: 'documenti' }],
+      },
+      user: { organization_id: 99, auditor_org_id: 10, user_id: 5 },
+    };
+    const res = createRes();
+    await aiChat(req, res);
+
+    const systemContent = chat.mock.calls[0][0][0].content;
+    expect(systemContent).toContain('CONTESTO AUDIT APERTO');
+    expect(systemContent).toContain('16');
+    expect(systemContent).toContain('AUA_2024.pdf');
+    expect(systemContent).toContain('Autorizzazione Unica Ambientale');
+    expect(systemContent).toMatch(/14001|legislativa/i);
+    expect(systemContent).toMatch(/NON certificare/i);
+    expect(res.json.mock.calls[0][0].attachmentsUsed).toEqual([
+      expect.objectContaining({ id: 77, name: 'AUA_2024.pdf', hasExtractedText: true }),
+    ]);
+  });
+
+  it('buildAuditFocusBlock senza allegati non inventa evidenze', () => {
+    const block = buildAuditFocusBlock({
+      auditId: 'u1',
+      clauseRef: '6.1.2',
+      questionId: 'q1',
+      questionText: 'Rischi',
+      standardKey: 'ISO_45001',
+      attachments: [],
+      legalFocus: true,
+    });
+    expect(block).toContain('6.1.2');
+    expect(block).toContain('Allegati su questo punto: nessuno');
+    expect(block).not.toMatch(/Estratto:/);
+    expect(block).toMatch(/NON certificare/i);
   });
 
   it('con clausola assente: chat resta attiva, avviso onesto, nessuna allucinazione di testo norma', async () => {

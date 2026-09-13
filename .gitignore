@@ -103,3 +103,7 @@ backend/scripts/patch-test-db-config-vps.js
 .cursor/*-result.json
 .cursor/_pr-body-*.md
 
+# Checkout git annidati finiti per errore come gitlink (niente .gitmodules)
+/RiesmeDeiRequisiti
+/sistema-gestione-iso9001
+

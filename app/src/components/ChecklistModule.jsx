@@ -13,7 +13,7 @@ import { getStandardByKey } from "../data/standardsRegistry";
 import apiService from "../services/apiService";
 import { syncService } from "../services/syncService";
 import { QuestionCard as UniversalQuestionCard } from "./QuestionCard";
-import { saveChecklistFocus } from "../utils/aiAssistantContext";
+import { saveChecklistFocus, buildChecklistAskAiFocus } from "../utils/aiAssistantContext";
 import AskAiButton from "./AskAiButton";
 import "./ChecklistModule.css";
 
@@ -313,12 +313,17 @@ function ChecklistModule({ defaultNorm = "ISO_9001", readOnly = false, forceExpa
     const clauseForFocus = currentAudit?.checklist?.[checklistKey]?.[clauseId];
     const questionForFocus = clauseForFocus?.questions?.find((q) => q.id === questionId);
     if (auditUuidForFocus && (field === "status" || field === "notes")) {
-      saveChecklistFocus(auditUuidForFocus, {
-        standardKey: checklistKey,
-        clauseRef: questionForFocus?.clauseRef || clauseForFocus?.clauseRef || clauseId,
-        questionId: String(questionId),
-        questionText: questionForFocus?.text || questionForFocus?.title || null,
-      });
+      saveChecklistFocus(
+        auditUuidForFocus,
+        buildChecklistAskAiFocus({
+          audit: currentAudit,
+          standardKey: checklistKey,
+          clauseRef: questionForFocus?.clauseRef || clauseForFocus?.clauseRef || clauseId,
+          questionId: String(questionId),
+          questionText: questionForFocus?.text || questionForFocus?.title || null,
+          numericQuestionId: questionForFocus?.questionId ?? null,
+        })
+      );
     }
 
     // Percorso event-based (T3): attivo solo con VITE_SYNC_MODE=events.
@@ -578,6 +583,7 @@ function ChecklistModule({ defaultNorm = "ISO_9001", readOnly = false, forceExpa
               onToggle={() => toggleClause(clauseId)}
               onQuestionUpdate={handleQuestionUpdate}
               attachmentManager={attachments}
+              audit={currentAudit}
               auditId={auditId}
               auditUuid={auditUuid}
               readOnly={readOnly}
@@ -601,6 +607,7 @@ function ClauseAccordion({
   onToggle,
   onQuestionUpdate,
   attachmentManager,
+  audit = null,
   auditId,
   auditUuid = null,
   readOnly = false,
@@ -658,6 +665,7 @@ function ClauseAccordion({
               checklistKey={checklistKey}
               onUpdate={onQuestionUpdate}
               attachmentManager={attachmentManager}
+              audit={audit}
               auditId={auditId}
               auditUuid={auditUuid}
               readOnly={readOnly}
@@ -674,7 +682,7 @@ function ClauseAccordion({
 // === QUESTION CARD — wrapper ISO che delega al componente universale ===
 // Mantiene l'interfaccia (clauseId, onUpdate) per compatibilità con ClauseAccordion.
 
-function QuestionCard({ clauseId, question, checklistKey, onUpdate, attachmentManager, auditId, auditUuid = null, readOnly = false, showSatButton = false, onSatisfiedByChange }) {
+function QuestionCard({ clauseId, question, checklistKey, onUpdate, attachmentManager, audit = null, auditId, auditUuid = null, readOnly = false, showSatButton = false, onSatisfiedByChange }) {
   const isSimpleNumbering = ['ISO_3834_2', 'RDP_MSN'].includes(checklistKey);
   const displayRef = isSimpleNumbering && question.displayOrder != null
     ? String(question.displayOrder)
@@ -707,12 +715,17 @@ function QuestionCard({ clauseId, question, checklistKey, onUpdate, attachmentMa
         <AskAiButton
           label={aiLabel}
           onBeforeNavigate={() =>
-            saveChecklistFocus(auditUuid, {
-              standardKey: checklistKey,
-              clauseRef,
-              questionId: String(question.id),
-              questionText: question.text || question.title || null,
-            })
+            saveChecklistFocus(
+              auditUuid,
+              buildChecklistAskAiFocus({
+                audit,
+                standardKey: checklistKey,
+                clauseRef,
+                questionId: String(question.id),
+                questionText: question.text || question.title || null,
+                numericQuestionId: question.questionId ?? null,
+              })
+            )
           }
         />
       )}

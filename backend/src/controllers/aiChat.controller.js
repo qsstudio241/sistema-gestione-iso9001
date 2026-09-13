@@ -35,6 +35,11 @@ const {
   SOURCE_GAPS_PROMPT_BLOCK,
 } = require('../utils/parseSourceGaps');
 const { processGapsFromChat } = require('../services/librarySourceRequest.service');
+const { extractDocumentText } = require('../services/documentTextExtractor.service');
+
+const MAX_CHAT_ATTACHMENTS = 8;
+const MAX_EXTRACT_FILES = 4;
+const MAX_EXTRACT_CHARS = 1800;
 
 const BASE_SYSTEM_PROMPT = `Sei l'assistente AI del Sistema di Gestione Qualit\u00e0 ISO 9001 di questa organizzazione.
 Rispondi in italiano in modo chiaro, professionale e sintetico.
@@ -44,10 +49,70 @@ Quando citi dati specifici (audit, NC, documenti, rischi), indica il riferimento
 Formatta le risposte in modo leggibile: usa elenchi puntati per liste, grassetto per i punti chiave.
 ${SOURCE_GAPS_PROMPT_BLOCK}`;
 
+function isLegalComplianceStandardKey(standardKey, legalFocus) {
+  if (legalFocus) return true;
+  const key = String(standardKey || '').toUpperCase();
+  return (
+    key.includes('14001') ||
+    key.includes('45001') ||
+    key.includes('45000') ||
+    key.includes('LEG_AMBIENTE') ||
+    key.includes('LEG_SICUREZZA')
+  );
+}
+
+function isTextExtractableAttachment(name, mimeType) {
+  const n = String(name || '').toLowerCase();
+  const mime = String(mimeType || '').toLowerCase();
+  return (
+    n.endsWith('.pdf') ||
+    n.endsWith('.docx') ||
+    n.endsWith('.txt') ||
+    mime === 'application/pdf' ||
+    mime.includes('wordprocessingml') ||
+    mime.startsWith('text/')
+  );
+}
+
+function normalizeClientAttachments(raw) {
+  if (!Array.isArray(raw)) return [];
+  return raw.slice(0, MAX_CHAT_ATTACHMENTS).map((att) => ({
+    id: att && (att.id ?? att.attachment_id) != null ? att.id ?? att.attachment_id : null,
+    name: String((att && (att.name || att.file_name)) || 'allegato').slice(0, 240),
+    category: (att && att.category) || null,
+    mimeType: (att && (att.mimeType || att.mime_type)) || null,
+    storagePath: null,
+    extractedText: null,
+  }));
+}
+
+function mergeAttachmentLists(serverRows, clientRows) {
+  const out = [];
+  const seen = new Set();
+  for (const row of [...(serverRows || []), ...(clientRows || [])]) {
+    if (!row) continue;
+    const key = `${row.id ?? ''}|${row.name || ''}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    out.push(row);
+    if (out.length >= MAX_CHAT_ATTACHMENTS) break;
+  }
+  return out;
+}
+
 /**
- * Blocco opzionale: audit aperto + clausola/domanda checklist attiva.
+ * Blocco opzionale: audit aperto + clausola/domanda checklist attiva + allegati del punto.
  */
-function buildAuditFocusBlock({ auditId, clauseRef, questionId, questionText, standardKey }) {
+function buildAuditFocusBlock({
+  auditId,
+  clauseRef,
+  questionId,
+  questionText,
+  standardKey,
+  attachments,
+  legalFocus,
+  referenceText,
+}) {
   if (!auditId && !clauseRef) return '';
   const lines = ['\n\n--- CONTESTO AUDIT APERTO ---'];
   if (auditId) lines.push(`Audit (UUID): ${auditId}`);
@@ -57,11 +122,118 @@ function buildAuditFocusBlock({ auditId, clauseRef, questionId, questionText, st
     const qText = questionText ? ` \u2014 ${String(questionText).substring(0, 200)}` : '';
     lines.push(`Domanda checklist: ${questionId}${qText}`);
   }
+  if (referenceText && String(referenceText).trim()) {
+    lines.push(`Riferimenti normativi del punto: ${String(referenceText).substring(0, 1200)}`);
+  }
+  const atts = Array.isArray(attachments) ? attachments : [];
+  if (atts.length === 0) {
+    lines.push('Allegati su questo punto: nessuno. Non inventare evidenze documentali.');
+  } else {
+    lines.push('Allegati collegati a questo punto (ancora la risposta a questi file + al punto norma, non a un contesto generico):');
+    for (const att of atts) {
+      const meta = [att.name || 'allegato'];
+      if (att.category) meta.push(att.category);
+      if (att.id != null) meta.push(`id ${att.id}`);
+      lines.push(`- ${meta.join(' \u00B7 ')}`);
+      if (att.extractedText) {
+        lines.push(`  Estratto: ${String(att.extractedText).substring(0, MAX_EXTRACT_CHARS)}`);
+      }
+    }
+  }
   lines.push('--- FINE CONTESTO AUDIT ---');
   lines.push(
-    'Prioritizza risposte su questa clausola e sui rilievi collegati quando pertinenti.'
+    'Prioritizza risposte su questa clausola, sui rilievi collegati e sugli allegati del punto quando pertinenti.'
   );
+  lines.push(
+    'Human-in-the-loop: proponi osservazioni per l\'auditor. NON certificare conformit\u00e0 e NON scrivere esiti C/NC al posto dell\'auditor.'
+  );
+  if (isLegalComplianceStandardKey(standardKey, legalFocus)) {
+    lines.push(
+      'Contesto ISO 14001 / ISO 45001 o conformit\u00e0 legislativa: ancora la risposta agli allegati di questo punto e al requisito; se manca un\'evidenza, dillo senza inventarla.'
+    );
+  }
   return lines.join('\n');
+}
+
+async function loadChecklistAttachmentsForChat({
+  organizationId,
+  auditId,
+  auditNumericId,
+  numericQuestionId,
+  customItemId,
+}) {
+  const qid = numericQuestionId != null ? parseInt(numericQuestionId, 10) : NaN;
+  const cid = customItemId != null ? parseInt(customItemId, 10) : NaN;
+  const hasQ = Number.isFinite(qid) && qid > 0;
+  const hasC = Number.isFinite(cid) && cid > 0;
+  if (!hasQ && !hasC) return [];
+
+  const numericAudit = auditNumericId != null ? parseInt(auditNumericId, 10) : NaN;
+  const hasNumericAudit = Number.isFinite(numericAudit) && numericAudit > 0;
+  if (!hasNumericAudit && !auditId) return [];
+
+  try {
+    const params = { orgId: organizationId };
+    const where = ['a.organization_id = @orgId'];
+    if (hasNumericAudit) {
+      where.push('att.audit_id = @auditNumericId');
+      params.auditNumericId = numericAudit;
+    } else {
+      where.push('a.audit_uuid = @auditUuid');
+      params.auditUuid = String(auditId);
+    }
+    if (hasQ && hasC) {
+      where.push('(att.question_id = @qid OR att.custom_item_id = @cid)');
+      params.qid = qid;
+      params.cid = cid;
+    } else if (hasQ) {
+      where.push('att.question_id = @qid');
+      params.qid = qid;
+    } else {
+      where.push('att.custom_item_id = @cid');
+      params.cid = cid;
+    }
+
+    const result = await query(
+      `SELECT TOP (${MAX_CHAT_ATTACHMENTS})
+         att.attachment_id, att.file_name, att.mime_type, att.category, att.storage_path
+       FROM attachments att
+       INNER JOIN audits a ON a.audit_id = att.audit_id
+       WHERE ${where.join(' AND ')}
+       ORDER BY att.attachment_id DESC`,
+      params
+    );
+    return (result.recordset || []).map((row) => ({
+      id: row.attachment_id,
+      name: row.file_name,
+      category: row.category,
+      mimeType: row.mime_type,
+      storagePath: row.storage_path,
+      extractedText: null,
+    }));
+  } catch (err) {
+    logger.warn('[AI_CHAT] load checklist attachments skipped:', err.message);
+    return [];
+  }
+}
+
+async function enrichAttachmentsWithExtractedText(rows) {
+  let extracted = 0;
+  for (const row of rows || []) {
+    if (extracted >= MAX_EXTRACT_FILES) break;
+    if (!row.storagePath || !isTextExtractableAttachment(row.name, row.mimeType)) continue;
+    try {
+      const result = await extractDocumentText(row.storagePath, row.mimeType, row.name);
+      const text = result && result.text ? String(result.text).trim() : '';
+      if (text.length >= 40) {
+        row.extractedText = text.slice(0, MAX_EXTRACT_CHARS);
+        extracted += 1;
+      }
+    } catch (err) {
+      logger.debug('[AI_CHAT] attachment extract skipped:', err.message);
+    }
+  }
+  return rows;
 }
 
 /**
@@ -166,7 +338,22 @@ async function aiChat(req, res) {
       });
     }
 
-    const { message, companyId, standardId, auditId, clauseRef, questionId, questionText, standardKey } = req.body;
+    const {
+      message,
+      companyId,
+      standardId,
+      auditId,
+      auditNumericId,
+      clauseRef,
+      questionId,
+      questionText,
+      standardKey,
+      numericQuestionId,
+      customItemId,
+      legalFocus,
+      referenceText,
+      attachments: clientAttachmentsRaw,
+    } = req.body;
     if (!message || typeof message !== 'string' || message.trim().length === 0) {
       return res.status(400).json({
         error: 'Il campo "message" \u00e8 obbligatorio.',
@@ -242,12 +429,34 @@ async function aiChat(req, res) {
       }
     }
 
+    const parsedNumericQuestionId = numericQuestionId != null
+      ? numericQuestionId
+      : (questionId != null && /^\d+$/.test(String(questionId).trim()) ? questionId : null);
+    const clientAttachments = normalizeClientAttachments(clientAttachmentsRaw);
+    let checklistAttachments = clientAttachments;
+    try {
+      const serverAttachments = await loadChecklistAttachmentsForChat({
+        organizationId,
+        auditId: auditId || null,
+        auditNumericId: auditNumericId || null,
+        numericQuestionId: parsedNumericQuestionId,
+        customItemId,
+      });
+      checklistAttachments = mergeAttachmentLists(serverAttachments, clientAttachments);
+      await enrichAttachmentsWithExtractedText(checklistAttachments);
+    } catch (err) {
+      logger.warn('[AI_CHAT] checklist attachments enrich skipped:', err.message);
+    }
+
     systemPrompt += buildAuditFocusBlock({
       auditId: auditId || null,
       clauseRef: clauseRef || null,
       questionId: questionId || null,
       questionText: questionText || null,
       standardKey: standardKey || null,
+      attachments: checklistAttachments,
+      legalFocus: !!legalFocus,
+      referenceText: referenceText || null,
     });
 
     let normAbsent = null;
@@ -424,6 +633,11 @@ async function aiChat(req, res) {
       sourcesCount: citations.length,
       citations,
       standardId: activeStandard ? parsedStandardId : null,
+      attachmentsUsed: (checklistAttachments || []).map((att) => ({
+        id: att.id ?? null,
+        name: att.name || null,
+        hasExtractedText: Boolean(att.extractedText),
+      })),
       sourceGaps,
       _aiMeta: {
         provider,
@@ -610,4 +824,4 @@ async function knowledgeHealth(req, res) {
   }
 }
 
-module.exports = { aiChat, aiReindex, knowledgeHealth, getAmbitoFacts };
+module.exports = { aiChat, aiReindex, knowledgeHealth, getAmbitoFacts, buildAuditFocusBlock };

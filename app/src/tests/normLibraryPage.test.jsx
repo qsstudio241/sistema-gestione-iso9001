@@ -355,7 +355,8 @@ describe("NormLibraryPage — LG-3 coda superadmin", () => {
       expect(screen.getByText(/Coda gap piattaforma/i)).toBeTruthy();
     });
     expect(mockGetLibraryPlatformQueue).toHaveBeenCalled();
-    expect(screen.getByText("ISO 14555:2025")).toBeTruthy();
+    // La coda è async: il titolo della sezione compare prima delle righe.
+    expect(await screen.findByText("ISO 14555:2025")).toBeTruthy();
     expect(screen.getByText("Studio Beta")).toBeTruthy();
     const link = screen.getByRole("link", { name: /Apri in Libreria/i });
     expect(link.getAttribute("href")).toContain("highlight=ISO");
@@ -371,7 +372,7 @@ describe("NormLibraryPage — LG-3 coda superadmin", () => {
     await waitFor(() => {
       expect(screen.getByText(/Coda gap piattaforma/i)).toBeTruthy();
     });
-    fireEvent.click(screen.getByRole("button", { name: /Segna digitalizzata/i }));
+    fireEvent.click(await screen.findByRole("button", { name: /Segna digitalizzata/i }));
     await waitFor(() => {
       expect(
         screen.getByLabelText(/Segna digitalizzata piattaforma/i)

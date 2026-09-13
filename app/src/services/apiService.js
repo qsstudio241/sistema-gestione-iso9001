@@ -2566,10 +2566,18 @@ class ApiService {
         if (opts.companyId) body.companyId = opts.companyId;
         if (opts.standardId) body.standardId = opts.standardId;
         if (opts.auditId) body.auditId = opts.auditId;
+        if (opts.auditNumericId) body.auditNumericId = opts.auditNumericId;
         if (opts.clauseRef) body.clauseRef = opts.clauseRef;
         if (opts.questionId) body.questionId = opts.questionId;
         if (opts.questionText) body.questionText = opts.questionText;
         if (opts.standardKey) body.standardKey = opts.standardKey;
+        if (opts.numericQuestionId != null) body.numericQuestionId = opts.numericQuestionId;
+        if (opts.customItemId != null) body.customItemId = opts.customItemId;
+        if (opts.legalFocus) body.legalFocus = true;
+        if (opts.referenceText) body.referenceText = opts.referenceText;
+        if (Array.isArray(opts.attachments) && opts.attachments.length > 0) {
+            body.attachments = opts.attachments;
+        }
         return this.post('/ai/chat', body, { timeout: 120000 });
     }
 
