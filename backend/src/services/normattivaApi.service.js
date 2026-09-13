@@ -128,7 +128,8 @@ function parseQueryToUrn(query) {
  */
 async function checkUrnExists(urn) {
   try {
-    const url = `${NORMATTIVA_BASE}/uri-res/N2Ls?${encodeURIComponent(urn)}`;
+    // Usa /do/atto/export che è l'endpoint pubblico stabile per verificare URN
+    const url = `${NORMATTIVA_BASE}/do/atto/export?urn=${encodeURIComponent(urn)}`;
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
 
