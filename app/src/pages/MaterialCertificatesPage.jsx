@@ -22,6 +22,7 @@ import {
   canHitl,
   hitlTitle,
   isDeliveryNote,
+  splitCandidatesFromRow,
 } from "../utils/materialCertificateFilters";
 import "./QualificationsPage.css";
 import "./MaterialCertificatesPage.css";
@@ -169,7 +170,14 @@ export default function MaterialCertificatesPage() {
     setBusy(name);
     setError("");
     try {
-      await fn();
+      const result = await fn();
+      if (name === "split") {
+        const created = result?.data?.created || [];
+        const nextId = created[0]?.id || detail.id;
+        await loadList();
+        navigate(`/saldatura/materiali/${nextId}`);
+        return;
+      }
       const res = await apiService.getMaterialCertificate(detail.id);
       setDetail(res.data);
       setDraft(jsonOf(res.data));
@@ -191,8 +199,16 @@ export default function MaterialCertificatesPage() {
   const pdfUrl = resolveBackendUploadUrl(detail?.file_url, apiService.baseUrl);
   const hitlReady = Boolean(detail && selectedId && detail.id === selectedId);
   const deliveryNote = isDeliveryNote(detail);
+  const splitCandidates = splitCandidatesFromRow(detail);
   function hitlDisabled(action) {
     if (action === "evaluate" && deliveryNote) return true;
+    if (action === "split") {
+      return !hitlReady
+        || deliveryNote
+        || splitCandidates.length < 2
+        || !canHitl("split", status)
+        || Boolean(busy);
+    }
     return !hitlReady || !canHitl(action, status) || Boolean(busy);
   }
 
@@ -397,6 +413,23 @@ export default function MaterialCertificatesPage() {
                 onClick={() => runAction("extract", () => apiService.extractMaterialCertificate(detail.id))}
               >
                 Estrai
+              </button>
+              <button
+                type="button"
+                className="btn-secondary"
+                data-testid="mc-split"
+                disabled={hitlDisabled("split")}
+                title={hitlTitle("split", status, {
+                  deliveryNote,
+                  splitCount: splitCandidates.length,
+                }) || `Crea ${splitCandidates.length} righe (una per colata)`}
+                onClick={() => runAction("split", () => apiService.splitMaterialCertificate(detail.id, {
+                  heats: splitCandidates.map((c) => c.heat_or_lot_no),
+                }))}
+              >
+                {splitCandidates.length >= 2
+                  ? `Dividi in ${splitCandidates.length} righe`
+                  : "Dividi busta"}
               </button>
               <button
                 type="button"

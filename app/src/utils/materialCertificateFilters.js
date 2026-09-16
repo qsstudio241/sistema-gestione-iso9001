@@ -94,6 +94,16 @@ export function canHitl(action, workflowStatus) {
   if (action === "extract") {
     return ["received", "text_ready", "extracted", "ocr_running"].includes(workflowStatus);
   }
+  if (action === "split") {
+    return [
+      "received",
+      "text_ready",
+      "extracted",
+      "pending_review",
+      "non_compliant",
+      "ocr_running",
+    ].includes(workflowStatus);
+  }
   if (action === "patch") {
     return workflowStatus !== "compliant" && workflowStatus !== "archived";
   }
@@ -112,9 +122,45 @@ export function isDeliveryNote(row) {
   return kind === "delivery_note" || kind === "ddt" || kind === "bolla";
 }
 
+/** MC-I4: candidati split per colata (≥2). */
+export function splitCandidatesFromRow(row) {
+  if (isDeliveryNote(row)) return [];
+  const corrected = row?.corrected_json && typeof row.corrected_json === "object"
+    ? row.corrected_json
+    : {};
+  const extracted = row?.extracted_json && typeof row.extracted_json === "object"
+    ? row.extracted_json
+    : {};
+  const raw = Array.isArray(corrected.split_candidates)
+    ? corrected.split_candidates
+    : Array.isArray(extracted.split_candidates)
+      ? extracted.split_candidates
+      : [];
+  const seen = new Set();
+  const out = [];
+  for (const item of raw) {
+    const heat = String(
+      item && typeof item === "object" ? (item.heat_or_lot_no || "") : (item || "")
+    ).trim();
+    if (heat.length < 3 || heat.length > 40) continue;
+    const key = heat.toUpperCase();
+    if (seen.has(key)) continue;
+    seen.add(key);
+    out.push({ heat_or_lot_no: heat });
+  }
+  return out.length >= 2 ? out : [];
+}
+
 export function hitlTitle(action, workflowStatus, extras = {}) {
   if (action === "evaluate" && extras.deliveryNote) {
     return "Valutazione non applicabile: questo è un DDT, non un certificato 3.1";
+  }
+  if (action === "split") {
+    if (extras.deliveryNote) return "Divisione non applicabile: questo è un DDT";
+    if ((extras.splitCount || 0) < 2) {
+      return "Dopo Estrai, se compaiono almeno due colate puoi dividere la busta";
+    }
+    return "";
   }
   if (canHitl(action, workflowStatus)) return "";
   if (action === "approve") return "Approva solo da In revisione o Non conforme";

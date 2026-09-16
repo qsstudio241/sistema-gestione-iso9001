@@ -5,6 +5,7 @@
  * MC-B: OCR via documentTextExtractor (reason ocr_ok); mapTextReason non collassa unavailable in skipped.
  * MC-I2: alias AI (heat_number/colata/B07, ddt, norma) → colonne griglia; DDT ≠ A07.
  * MC-I3: DDT ≠ mill; document_kind delivery_note non copia colata/norma; Valuta 409.
+ * MC-I4: busta 1 PDF → N righe: split per colata + HITL (mai split pagine automatico).
 
  * workflow_status=compliant solo da HITL approve, mai da AI o dal motore.
  */
@@ -237,25 +238,97 @@ function canonicalizeExtractedJson(raw) {
   return json;
 }
 
+const HEAT_LABEL_PATTERNS = [
+  /\bB07\s*[:.\-]?\s*([A-Z0-9][A-Z0-9./\-]{2,40})/gi,
+  /\bColata\s*(?:n[°ºo.]?\s*)?[:.\-]?\s*([A-Z0-9][A-Z0-9./\-]{2,40})/gi,
+  /\bHeat\s*(?:No\.?|Number|#)?\s*[:.\-]?\s*([A-Z0-9][A-Z0-9./\-]{2,40})/gi,
+  /\bCast\s*(?:No\.?|Number|#)?\s*[:.\-]?\s*([A-Z0-9][A-Z0-9./\-]{2,40})/gi,
+  /\bLotto\s*(?:n[°ºo.]?\s*)?[:.\-]?\s*([A-Z0-9][A-Z0-9./\-]{2,40})/gi,
+];
+
+function normalizeHeatToken(raw) {
+  const v = String(raw || '').replace(/[.,;:]+$/, '').trim();
+  if (v.length < 3 || v.length > 40) return null;
+  return v;
+}
+
 /** Fallback etichettato: Colata / Heat No / B07. Non cattura NNNN/YYYY isolato. */
 function fallbackHeatFromText(text) {
-  const t = String(text || '');
-  if (!t.trim()) return null;
-  const patterns = [
-    /\bB07\s*[:.\-]?\s*([A-Z0-9][A-Z0-9./\-]{2,40})/i,
-    /\bColata\s*(?:n[°ºo.]?\s*)?[:.\-]?\s*([A-Z0-9][A-Z0-9./\-]{2,40})/i,
-    /\bHeat\s*(?:No\.?|Number|#)?\s*[:.\-]?\s*([A-Z0-9][A-Z0-9./\-]{2,40})/i,
-    /\bCast\s*(?:No\.?|Number|#)?\s*[:.\-]?\s*([A-Z0-9][A-Z0-9./\-]{2,40})/i,
-    /\bLotto\s*(?:n[°ºo.]?\s*)?[:.\-]?\s*([A-Z0-9][A-Z0-9./\-]{2,40})/i,
-  ];
-  for (const re of patterns) {
-    const m = t.match(re);
-    if (!m || !m[1]) continue;
-    const v = String(m[1]).replace(/[.,;:]+$/, '').trim();
-    if (v.length >= 3 && v.length <= 40) return v;
-  }
-  return null;
+  const all = detectAllHeatsFromText(text);
+  return all.length ? all[0] : null;
 }
+
+/**
+ * MC-I4: tutte le colate etichettate nel testo (ordine di apparizione, dedup case-insensitive).
+ * Non usa numeri NNNN/YYYY senza etichetta (stesso vincolo di MC-I2).
+ */
+function detectAllHeatsFromText(text) {
+  const t = String(text || '');
+  if (!t.trim()) return [];
+  const matches = [];
+  for (const re of HEAT_LABEL_PATTERNS) {
+    re.lastIndex = 0;
+    let m;
+    while ((m = re.exec(t)) !== null) {
+      const v = normalizeHeatToken(m[1]);
+      if (!v) continue;
+      matches.push({ v, index: m.index });
+    }
+  }
+  matches.sort((a, b) => a.index - b.index);
+  const seen = new Set();
+  const out = [];
+  for (const { v } of matches) {
+    const key = v.toUpperCase();
+    if (seen.has(key)) continue;
+    seen.add(key);
+    out.push(v);
+  }
+  return out;
+}
+
+function uniqueHeats(list) {
+  const seen = new Set();
+  const out = [];
+  for (const raw of list || []) {
+    const v = normalizeHeatToken(raw);
+    if (!v) continue;
+    const key = v.toUpperCase();
+    if (seen.has(key)) continue;
+    seen.add(key);
+    out.push(v);
+  }
+  return out;
+}
+
+/**
+ * Candidati split: testo etichettato + eventuali certificate_segments dall'AI.
+ * Decisione MC-I4: split per colata (non per pagina PDF).
+ */
+function buildSplitCandidates(text, extractedJson) {
+  const fromText = detectAllHeatsFromText(text);
+  const segments = Array.isArray(extractedJson?.certificate_segments)
+    ? extractedJson.certificate_segments
+    : [];
+  const fromAi = [];
+  for (const seg of segments) {
+    if (!seg || typeof seg !== 'object') continue;
+    const heat = firstNonEmpty(seg, HEAT_ALIASES);
+    if (heat) fromAi.push(heat);
+  }
+  const heats = uniqueHeats([...fromText, ...fromAi]);
+  if (heats.length < 2) return [];
+  return heats.map((heat_or_lot_no) => ({ heat_or_lot_no }));
+}
+
+const SPLITABLE = new Set([
+  'received',
+  'text_ready',
+  'extracted',
+  'pending_review',
+  'non_compliant',
+  'ocr_running',
+]);
 
 const MILL_JSON_KEYS = [
   'heat_or_lot_no', 'certificate_no', 'inspection_document_type',
@@ -964,9 +1037,22 @@ async function extractCertificate(req, res) {
         const fromText = fallbackHeatFromText(text);
         if (fromText) extractedJson.heat_or_lot_no = fromText;
       }
+      const splitCandidates = buildSplitCandidates(text, extractedJson);
+      if (splitCandidates.length >= 2) {
+        extractedJson.split_candidates = splitCandidates;
+        if (!emptyToNull(extractedJson.heat_or_lot_no)) {
+          extractedJson.heat_or_lot_no = splitCandidates[0].heat_or_lot_no;
+        }
+      } else {
+        delete extractedJson.split_candidates;
+      }
     }
+    if (clearMill) delete extractedJson.split_candidates;
     const ana = applyAnagraficaFromJson(extractedJson, row.material_role);
     const model = clip(aiResult.model, 80);
+    const splitCandidatesOut = Array.isArray(extractedJson.split_candidates)
+      ? extractedJson.split_candidates
+      : [];
 
     const saved = await query(
       `UPDATE dbo.material_certificates
@@ -1023,6 +1109,7 @@ async function extractCertificate(req, res) {
         workflow_status: 'extracted',
         text_extract_reason: reason,
         extracted_json: extractedJson,
+        split_candidates: splitCandidatesOut,
       },
       _aiMeta: {
         provider: 'import',
@@ -1033,6 +1120,181 @@ async function extractCertificate(req, res) {
   } catch (err) {
     logger.error('extractCertificate', err);
     res.status(500).json({ error: 'Errore durante l\'estrazione del certificato' });
+  }
+}
+
+/**
+ * MC-I4 HITL: dalla busta crea N-1 righe sorelle (stesso PDF), una colata ciascuna.
+ * Non spezza il file in pagine: riusa storage_path / import_job.
+ */
+async function splitCertificate(req, res) {
+  try {
+    const id = parseId(req.params.id);
+    if (!id) return res.status(400).json({ error: 'Id non valido' });
+    const row = await loadCertificate(req, id);
+    if (!row) return res.status(404).json({ error: 'Certificato non trovato' });
+    if (await denyIfCannotWrite(req, res, row.company_id)) return;
+    if (!SPLITABLE.has(row.workflow_status)) {
+      return res.status(409).json({
+        error: 'Divisione non consentita in questo stato',
+        code: 'ILLEGAL_TRANSITION',
+        workflow_status: row.workflow_status,
+      });
+    }
+    if (!row.storage_path) {
+      return res.status(400).json({ error: 'PDF assente sulla riga', code: 'NO_STORAGE' });
+    }
+
+    const extractedJson = parseJsonField(row.extracted_json) || {};
+    const correctedJson = parseJsonField(row.corrected_json);
+    if (isDeliveryNotePayload(correctedJson, extractedJson)) {
+      return res.status(409).json({
+        error: 'Un DDT non si divide in certificati mill',
+        code: 'NOT_A_CERTIFICATE',
+      });
+    }
+
+    let heats = [];
+    if (Array.isArray(req.body?.heats)) {
+      heats = uniqueHeats(req.body.heats);
+    }
+    if (heats.length < 2 && Array.isArray(extractedJson.split_candidates)) {
+      heats = uniqueHeats(
+        extractedJson.split_candidates.map((c) => (c && typeof c === 'object' ? c.heat_or_lot_no : c))
+      );
+    }
+    if (heats.length < 2) {
+      heats = uniqueHeats(detectAllHeatsFromText(row.extracted_text));
+    }
+    if (heats.length < 2) {
+      return res.status(400).json({
+        error: 'Servono almeno due colate distinte per dividere la busta',
+        code: 'SPLIT_NEEDS_HEATS',
+      });
+    }
+
+    const siblings = await query(
+      `SELECT id, heat_or_lot_no FROM dbo.material_certificates
+       WHERE organization_id = @organization_id
+         AND storage_path = @storage_path
+         AND id <> @id`,
+      {
+        organization_id: req.user.organization_id,
+        storage_path: row.storage_path,
+        id,
+      }
+    );
+    if ((siblings.recordset || []).length > 0) {
+      return res.status(409).json({
+        error: 'Questa busta è già stata divisa in più righe',
+        code: 'ALREADY_SPLIT',
+        data: { existing: siblings.recordset },
+      });
+    }
+
+    const [firstHeat, ...restHeats] = heats;
+    const baseJson = {
+      ...extractedJson,
+      document_kind: 'mill_certificate',
+      split_from_id: id,
+    };
+    delete baseJson.certificate_segments;
+    delete baseJson.split_candidates;
+
+    const pool = await getPool();
+    const tx = pool.transaction();
+    await tx.begin();
+    const created = [];
+    try {
+      const parentJson = {
+        ...baseJson,
+        heat_or_lot_no: firstHeat,
+        split_index: 1,
+        split_total: heats.length,
+      };
+      await txQuery(tx, `
+        UPDATE dbo.material_certificates
+        SET heat_or_lot_no = @heat_or_lot_no,
+            extracted_json = @extracted_json,
+            corrected_json = NULL,
+            evaluate_result_json = NULL,
+            workflow_status = CASE
+              WHEN workflow_status IN ('compliant', 'archived') THEN workflow_status
+              ELSE 'extracted'
+            END,
+            updated_at = SYSUTCDATETIME()
+        WHERE id = @id AND organization_id = @organization_id`, {
+        id,
+        organization_id: req.user.organization_id,
+        heat_or_lot_no: clip(firstHeat, 80),
+        extracted_json: JSON.stringify(parentJson),
+      });
+
+      for (let i = 0; i < restHeats.length; i += 1) {
+        const heat = restHeats[i];
+        const childJson = {
+          ...baseJson,
+          heat_or_lot_no: heat,
+          split_index: i + 2,
+          split_total: heats.length,
+        };
+        const ana = applyAnagraficaFromJson(childJson, row.material_role || 'base');
+        const ins = await txQuery(tx, `
+          INSERT INTO dbo.material_certificates
+            (organization_id, company_id, import_job_id, import_job_file_id, storage_path,
+             ddt_no, ddt_date, certificate_no, material_role, designation, heat_or_lot_no,
+             product_form, dimensions, material_standard, manufacturer_works,
+             inspection_document_type, workflow_status, extracted_text, text_extract_reason,
+             extracted_json, ai_model, created_by)
+          OUTPUT INSERTED.id, INSERTED.heat_or_lot_no, INSERTED.workflow_status
+          VALUES
+            (@organization_id, @company_id, @import_job_id, @import_job_file_id, @storage_path,
+             @ddt_no, @ddt_date, @certificate_no, @material_role, @designation, @heat_or_lot_no,
+             @product_form, @dimensions, @material_standard, @manufacturer_works,
+             @inspection_document_type, 'extracted', @extracted_text, @text_extract_reason,
+             @extracted_json, @ai_model, @created_by)`, {
+          organization_id: req.user.organization_id,
+          company_id: row.company_id,
+          import_job_id: row.import_job_id || null,
+          import_job_file_id: row.import_job_file_id || null,
+          storage_path: row.storage_path,
+          ddt_no: clip(emptyToNull(ana.ddt_no) || emptyToNull(row.ddt_no), 80),
+          ddt_date: emptyToNull(ana.ddt_date) || emptyToNull(row.ddt_date),
+          certificate_no: clip(ana.certificate_no || row.certificate_no, 120),
+          material_role: ana.material_role || row.material_role || 'base',
+          designation: clip(ana.designation || row.designation, 200),
+          heat_or_lot_no: clip(heat, 80),
+          product_form: clip(ana.product_form || row.product_form, 40),
+          dimensions: clip(ana.dimensions || row.dimensions, 120),
+          material_standard: clip(ana.material_standard || row.material_standard, 80),
+          manufacturer_works: clip(ana.manufacturer_works || row.manufacturer_works, 200),
+          inspection_document_type: ana.inspection_document_type || row.inspection_document_type || null,
+          extracted_text: row.extracted_text || null,
+          text_extract_reason: row.text_extract_reason || null,
+          extracted_json: JSON.stringify(childJson),
+          ai_model: clip(row.ai_model, 80),
+          created_by: req.user.user_id || null,
+        });
+        created.push(ins.recordset[0]);
+      }
+      await tx.commit();
+    } catch (txErr) {
+      try { await tx.rollback(); } catch (_) { /* ignore */ }
+      throw txErr;
+    }
+
+    res.status(201).json({
+      success: true,
+      data: {
+        parent_id: id,
+        heats,
+        created,
+        total_rows: heats.length,
+      },
+    });
+  } catch (err) {
+    logger.error('splitCertificate', err);
+    res.status(500).json({ error: 'Errore durante la divisione della busta' });
   }
 }
 
@@ -1192,6 +1454,7 @@ module.exports = {
   createCertificate,
   patchCertificate,
   extractCertificate,
+  splitCertificate,
   evaluateCertificate,
   approveCertificate,
   rejectCertificate,
@@ -1200,6 +1463,8 @@ module.exports = {
   canonicalizeExtractedJson,
   applyAnagraficaFromJson,
   fallbackHeatFromText,
+  detectAllHeatsFromText,
+  buildSplitCandidates,
   detectSourceDocumentKind,
   applyDeliveryNoteExtract,
   fallbackDdtFromFilename,

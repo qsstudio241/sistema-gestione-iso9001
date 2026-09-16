@@ -3,7 +3,7 @@
 > **Destinazione (ingest)**: da PDF reali (3.1, DDT scansionato, busta con più mill) si arriva a righe in Materiali con DDT / colata / norma compilati, **Valuta** che gira, HITL che decide. L’agente impara dalle correzioni con lo **stesso anello ADR-017** di qualifiche/WPQR. Nessun secondo motore OCR.  
 > **Spec**: [`MODULO_MATERIAL_COMPLIANCE_AI.md`](../specs/MODULO_MATERIAL_COMPLIANCE_AI.md)  
 > **ADR**: 020–024 · apprendimento ingest: [ADR-017](../adr/ADR-017-ingest-reference-network.md)  
-> **Brief ingest attivo**: [`DEPUTYTASK_MC_INGEST.md`](DEPUTYTASK_MC_INGEST.md) — **MC-I3 CHIUSO** (PR [#488](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/488)). Prossima: **MC-I4**.  
+> **Brief ingest attivo**: [`DEPUTYTASK_MC_INGEST.md`](DEPUTYTASK_MC_INGEST.md) — **MC-I4 CHIUSO** (questa PR). Prossima: **MC-7**.  
 > **Brief SAL**: [`DEPUTYTASK.md`](DEPUTYTASK.md) **CHIUSO** su S1a ([#471](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/471)) — **non sovrascriverlo**  
 > **Brief fondazione (MC-0)**: [`DEPUTYTASK_MATERIAL_COMPLIANCE_AI_FOUNDATION.md`](DEPUTYTASK_MATERIAL_COMPLIANCE_AI_FOUNDATION.md)  
 > **Spec tecniche MC-0**: [`MATERIAL_COMPLIANCE_DATA_MODEL.md`](../specs/MATERIAL_COMPLIANCE_DATA_MODEL.md) · [`MATERIAL_COMPLIANCE_UI.md`](../specs/MATERIAL_COMPLIANCE_UI.md) · [`MATERIAL_COMPLIANCE_API.md`](../specs/MATERIAL_COMPLIANCE_API.md)  
@@ -65,7 +65,7 @@ Linea 3834 **non** continua l’ingest: ISO-4 (Word RDP) resta sull’altro PLAN
 
 ## Non ancora specificato (nebbia in-scope)
 
-- Come spezzare un PDF-busta in N righe: split pagine vs split per colata vs HITL «crea riga da questa pagina» — si decide in **MC-I4**, non prima
+- Come spezzare un PDF-busta in N righe: **deciso in MC-I4** — split per **colata** + HITL «Dividi in N righe» (stesso PDF, N righe). Non split pagine automatico.
 - Preprocessing testo specchiato (26DDT06266) vs basta OCR + prompt: dipende da MC-B / MC-I2
 - Commit riga certificato nel Document Registry (era accorpato a MC-7): l’apprendimento è ADR-017; il registry è un ponte successivo
 - S1a mergiata [#471](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/471): `extractDocumentText` ha già l’OCR. MC-B riusa quello — non copiare `ocrExtractor` nel controller MC
@@ -123,7 +123,7 @@ MC-0/MC-1/MC-5 devono prevedere questi campi (DDT era assente dalla lista spec d
 | **MC-B** | OCR scan (riuso estrattore, non un secondo motore) | `extractCertificate` + `mapTextReason`; **non** nuovo OCR | MC-I0, SAL **S1a** | AFK (chiusa, [#476](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/476)) |
 | **MC-I2** | 3.1 singolo: colata / DDT / norma | schema `material_certificate` + mapping anagrafica | MC-I0 | AFK (chiusa, [#481](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/481)) |
 | **MC-I3** | DDT ≠ 3.1 (classifica tipo) | extract + UI: DDT non è un mill | MC-I2, MC-B | AFK (chiusa, [#488](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/488)) |
-| **MC-I4** | 1 PDF → N certificati (busta mill) | split/HITL; 26DDT06266 | MC-I2, MC-I3 | AFK (nebbia split: vedi sopra) |
+| **MC-I4** | 1 PDF → N certificati (busta mill) | split/HITL; 26DDT06266 | MC-I2, MC-I3 | AFK (chiusa) |
 | **MC-7** | Feedback ADR-017 (recordFeedback → few-shot) | PATCH/approve MC → `ingestFeedback.service` | MC-I2 (c’è qualcosa da correggere) | AFK |
 | **MC-6** | Licenza + audit AI | seam + `logAiInteraction` | MC-4/5 | AFK — **non ingest** |
 
@@ -325,9 +325,15 @@ Prossima ingest: **MC-I4** (1 PDF → N mill).
 
 ### MC-I4 — 1 PDF → N certificati (busta)
 
-`Certificati_26DDT06266.pdf`: busta + più mill, testo specchiato, JSON quasi vuoto. Nebbia: come spezzare (pagine / colate / HITL). Si decide **in questa slice**, non prima.
+`Certificati_26DDT06266.pdf`: busta + più mill, testo specchiato, JSON quasi vuoto.
 
-Demoable: un upload → N righe in Materiali (o HITL esplicito «crea riga»), ciascuna con colata propria.
+**Decisione:** split per **colata** (etichette Colata/Heat/B07 + `certificate_segments` AI se presenti) con **HITL esplicito**. Non spezzare il PDF in pagine.
+
+**Chiusa 16/09/2026** — Estrai salva `split_candidates` (≥2); `POST .../split` crea sorelle con stesso `storage_path`; UI «Dividi in N righe». DDT e buste già divise → 409.
+
+Demoable: Estrai su busta multi-colata → click Dividi → N righe in Materiali, ciascuna con colata propria.
+
+Prossima ingest: **MC-7** (feedback ADR-017).
 
 ### MC-7 — Apprendimento ADR-017 (obbligatoria, non prima)
 

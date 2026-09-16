@@ -10,6 +10,7 @@ import {
   canHitl,
   isDeliveryNote,
   hitlTitle,
+  splitCandidatesFromRow,
 } from "../utils/materialCertificateFilters";
 
 const rows = [
@@ -58,5 +59,22 @@ describe("materialCertificateFilters", () => {
     expect(isDeliveryNote({ extracted_json: { document_kind: "mill_certificate" } })).toBe(false);
     expect(canHitl("evaluate", "extracted")).toBe(true);
     expect(hitlTitle("evaluate", "extracted", { deliveryNote: true })).toMatch(/DDT/);
+  });
+
+  it("MC-I4 splitCandidatesFromRow richiede ≥2 colate e ignora DDT", () => {
+    expect(splitCandidatesFromRow({
+      extracted_json: {
+        document_kind: "mill_certificate",
+        split_candidates: [{ heat_or_lot_no: "HEAT-A1" }, { heat_or_lot_no: "HEAT-B2" }],
+      },
+    })).toEqual([{ heat_or_lot_no: "HEAT-A1" }, { heat_or_lot_no: "HEAT-B2" }]);
+    expect(splitCandidatesFromRow({
+      extracted_json: {
+        document_kind: "delivery_note",
+        split_candidates: [{ heat_or_lot_no: "HEAT-A1" }, { heat_or_lot_no: "HEAT-B2" }],
+      },
+    })).toEqual([]);
+    expect(canHitl("split", "extracted")).toBe(true);
+    expect(hitlTitle("split", "extracted", { splitCount: 0 })).toMatch(/due colate/);
   });
 });

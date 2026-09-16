@@ -1,12 +1,12 @@
-# DEPUTYTASK — Material Compliance ingest (MC-I3)
+# DEPUTYTASK — Material Compliance ingest (MC-I4)
 
 **Stato:** CHIUSO — TEST OK  
-**Aperto:** 19/08/2026 (dopo merge hub MC-I2 [#487](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/487))  
-**Chiuso:** 19/08/2026 — PR [#488](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/488)  
-**Piano:** [`PLAN_MATERIAL_COMPLIANCE_SLICES.md`](PLAN_MATERIAL_COMPLIANCE_SLICES.md) § MC-I3  
-**Spec:** [`MATERIAL_COMPLIANCE_DATA_MODEL.md`](../specs/MATERIAL_COMPLIANCE_DATA_MODEL.md) — DDT = colonne sul certificato, niente anagrafica DDT  
-**Rischio:** Medio — classifica extract + gate Valuta; nessuna migrazione; Cloud **non** mergia  
-**Stream:** stesso file epic ingest. **Non** sovrascrivere `DEPUTYTASK.md` (SAL S1a CHIUSO).
+**Aperto:** 16/09/2026 (dopo hub; MC-I3 CHIUSO [#488](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/488))  
+**Chiuso:** 16/09/2026  
+**Piano:** [`PLAN_MATERIAL_COMPLIANCE_SLICES.md`](PLAN_MATERIAL_COMPLIANCE_SLICES.md) § MC-I4  
+**Rischio:** Medio — extract + endpoint split + UI HITL; nessuna migrazione; Cloud **non** mergia  
+**Stream:** stesso file epic ingest. **Non** sovrascrivere `DEPUTYTASK.md`.  
+**Parallelo:** ISO-4b / shell dialog — file disgiunti (solo Materiali).
 
 ---
 
@@ -14,33 +14,48 @@
 
 ```text
 Fonti Markdown:
-- Coperte: EN 10168 = layout del certificato mill; ddt_no/ddt_date già colonne; DDT non è un codice 10168
-- Mancanti: schema normativo del DDT (non serve: è bolla, non 3.1)
-- Si parte su: classificare il PDF (DDT vs mill) + non copiare colata/norma dal testo della merce; skip split (MC-I4), skip few-shot
+- Coperte: EN 10168 B07 (colata/lotto) già in extract MC-I2; DDT ≠ mill MC-I3
+- Mancanti: nessuna soglia normativa nuova (split è meccanica PDF→righe)
+- Si parte su: split per colata + HITL esplicito (non split pagine PDF)
 ```
 
-## Slice unica: MC-I3 — DDT ≠ 3.1
+## Slice unica: MC-I4 — 1 PDF → N certificati (busta)
 
-### Obiettivo
+### Decisione (nebbia chiusa)
 
-Un DDT non è un certificato 3.1. Demo: upload/Estrai su `D.D.T._n._000775RE_…pdf` → n. DDT in colonna, **JSON mill vuoto** (niente colata/norma inventate). Valuta non parte sul DDT.
-
-### Esito
-
-- `document_kind` in JSON (`delivery_note` | `mill_certificate`); filename `D.D.T.`/`bolla` vince sull'AI; `CERTIFICATO`/`3.1` nel nome resta mill
-- Sanitize mill a NULL + SQL `SET` se DDT (non solo `COALESCE`)
-- Valuta HTTP 409 `NOT_A_CERTIFICATE`; UI: pulsante Valuta visibile, `disabled` + title
-- L1: controller 38, filtri + pagina Materiali
-
-### Non toccare (invariato)
-
-- Split busta (MC-I4), `ocrExtractor`, Rule Engine soglie, ISO-4, `DEPUTYTASK.md`
-- Niente tabella DDT; il ponte verso le righe mill resta `ddt_no` quando il 3.1 lo stampa (MC-I2)
+- **Split per colata** (etichette Colata/Heat/B07/Lotto + eventuali `certificate_segments` AI)
+- **HITL esplicito**: Estrai propone `split_candidates`; l’operatore clicca «Dividi in N righe»
+- **Non** spezzare il PDF in pagine (testo specchiato / OCR inaffidabile sui confini)
+- Righe sorelle condividono lo stesso `storage_path` / job; ciascuna ha la propria `heat_or_lot_no`
 
 ### DoD
 
-- [x] L1 verdi
-- [x] Brief CHIUSO TEST OK
-- [x] PR draft; Cloud non mergia
+- [x] Extract mill con ≥2 colate etichettate → `split_candidates` in JSON + risposta
+- [x] `POST /material-certificates/:id/split` crea N−1 sorelle; parent tiene la prima colata
+- [x] DDT / già divisa → 409; meno di 2 colate → 400
+- [x] UI: pulsante «Dividi in N righe» (visibile; disabled se <2 candidati)
+- [x] L1 BE + Vitest FE + build
+- [x] Brief CHIUSO TEST OK; PR draft; Cloud non mergia
 
-**Dopo merge:** deploy backend, poi Estrai di nuovo su azienda 179 **id 7** (DDT `000775RE`), non id 6. Prossima ingest: **MC-I4**.
+### File toccati
+
+- `backend/src/controllers/materialCertificates.controller.js` (+ test)
+- `backend/src/routes/materialCertificates.routes.js`
+- `backend/src/data/documentTypeSchemas.js`
+- `app/src/data/documentTypeSchemas.js`
+- `app/src/services/apiService.js`
+- `app/src/pages/MaterialCertificatesPage.jsx`
+- `app/src/utils/materialCertificateFilters.js` (+ test)
+- `app/src/tests/materialCertificatesPage.test.jsx`
+- `docs/agent-tasks/PLAN_MATERIAL_COMPLIANCE_SLICES.md`
+- `docs/agent-tasks/DEPUTYTASK_MC_INGEST.md`
+
+### Cosa NON toccare
+
+- OCR / `ocrExtractor`, Rule Engine soglie, MC-7 feedback, ISO-4 / Word RDP
+- Auth / JWT / sync / migrazioni
+- `IngestDialogShell` / shell dialog
+
+### Prossima ingest
+
+**MC-7** (recordFeedback → few-shot ADR-017).

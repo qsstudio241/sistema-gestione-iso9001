@@ -81,6 +81,7 @@ router.post(
   logAiInteraction('import'),
   ctrl.extractCertificate
 );
+router.post('/material-certificates/:id/split', ctrl.splitCertificate);
 router.post('/material-certificates/:id/evaluate', ctrl.evaluateCertificate);
 router.post('/material-certificates/:id/approve', ctrl.approveCertificate);
 router.post('/material-certificates/:id/reject', ctrl.rejectCertificate);

@@ -33,6 +33,7 @@ vi.mock("../services/apiService", () => ({
     getMaterialCertificate: vi.fn(),
     createMaterialCertificate: vi.fn(),
     extractMaterialCertificate: vi.fn(),
+    splitMaterialCertificate: vi.fn(),
     evaluateMaterialCertificate: vi.fn(),
     approveMaterialCertificate: vi.fn(),
     rejectMaterialCertificate: vi.fn(),
@@ -144,6 +145,37 @@ describe("MaterialCertificatesPage (MC-5)", () => {
     expect(valuta).toBeVisible();
     expect(valuta).toBeDisabled();
     expect(valuta).toHaveAttribute("title", expect.stringMatching(/DDT/));
+  });
+
+  it("MC-I4 Dividi in N righe chiama split con le colate", async () => {
+    routerState.path = "/saldatura/materiali/11";
+    apiService.getMaterialCertificate.mockResolvedValue({
+      data: {
+        ...ROW,
+        workflow_status: "extracted",
+        extracted_json: {
+          document_kind: "mill_certificate",
+          split_candidates: [
+            { heat_or_lot_no: "12174/2026" },
+            { heat_or_lot_no: "99887/2025" },
+          ],
+        },
+      },
+    });
+    apiService.splitMaterialCertificate.mockResolvedValue({
+      data: { parent_id: 11, created: [{ id: 21 }], total_rows: 2 },
+    });
+    render(<MaterialCertificatesPage />);
+    const splitBtn = await screen.findByTestId("mc-split");
+    expect(splitBtn).toBeEnabled();
+    expect(splitBtn).toHaveTextContent("Dividi in 2 righe");
+    await userEvent.click(splitBtn);
+    await waitFor(() => {
+      expect(apiService.splitMaterialCertificate).toHaveBeenCalledWith(11, {
+        heats: ["12174/2026", "99887/2025"],
+      });
+    });
+    expect(routerState.navigate).toHaveBeenCalledWith("/saldatura/materiali/21");
   });
 
   it("anteprima PDF usa file_url web, non il path disco", async () => {
