@@ -419,7 +419,9 @@ function QualificationsPage() {
         setFormOpen(true);
     }
     function handleEdit(q) { setEditingQual(q);    setFormOpen(true); }
-    function handleSaved() { setFormOpen(false); setEditingQual(null); loadData(); }
+    // onSaved = solo ricarica lista. Chiudere qui richiudeva la finestra
+    // pochi secondi dopo l'apertura (auto-save). Stesso contratto di
+    // ProjectsPage / EquipmentPage: chiude solo X / Chiudi.
 
     async function handleConfirmHardDelete(id) {
         try {
@@ -630,8 +632,7 @@ function QualificationsPage() {
                         editingQual?.company_name
                         || (!editingQual && companyScope ? scopeCompanyName : undefined)
                     }
-                    onSave={handleSaved}
-                    onSaved={handleSaved}
+                    onSaved={loadData}
                     onClose={() => { setFormOpen(false); setEditingQual(null); }}
                 />
             )}
