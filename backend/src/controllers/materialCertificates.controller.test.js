@@ -791,6 +791,130 @@ describe('materialCertificates.controller (MC-4)', () => {
     expect(stored.heat_or_lot_no).toBeNull();
   });
 
+  it('MC-I4 detectAllHeatsFromText trova colate multiple etichettate', () => {
+    const text = 'Colata 11111/2026 ... Heat No. 22222/2026 ... B07: 33333/2026';
+    expect(ctrl.detectAllHeatsFromText(text)).toEqual([
+      '11111/2026',
+      '22222/2026',
+      '33333/2026',
+    ]);
+    expect(ctrl.buildSplitCandidates(text, {})).toEqual([
+      { heat_or_lot_no: '11111/2026' },
+      { heat_or_lot_no: '22222/2026' },
+      { heat_or_lot_no: '33333/2026' },
+    ]);
+    expect(ctrl.buildSplitCandidates('solo una Colata 11111/2026', {})).toEqual([]);
+  });
+
+  it('MC-I4 extract mill con due colate salva split_candidates', async () => {
+    const text = 'Certificato mill. Colata 12174/2026. Secondo mill Colata 99887/2025. '.repeat(3);
+    query.mockResolvedValueOnce({
+      recordset: [{ ...CERT, workflow_status: 'received', storage_path: '/tmp/busta.pdf' }],
+    });
+    extractDocumentText.mockResolvedValue({ text, reason: 'text_layer' });
+    extractStructuredByDocType.mockResolvedValue({
+      model: 'test',
+      data: {
+        type_specific_data: {
+          document_kind: 'mill_certificate',
+          steel_designation: 'S355J2',
+          material_role: 'base',
+        },
+      },
+    });
+    query.mockResolvedValueOnce({ recordset: [{ id: 11 }] });
+    const res = mockRes();
+    await ctrl.extractCertificate(mockReq({ params: { id: '11' } }), res);
+    expect(res.json).toHaveBeenCalled();
+    const body = res.json.mock.calls[0][0];
+    expect(body.data.split_candidates).toEqual([
+      { heat_or_lot_no: '12174/2026' },
+      { heat_or_lot_no: '99887/2025' },
+    ]);
+    expect(body.data.extracted_json.split_candidates).toHaveLength(2);
+    const upd = query.mock.calls.find((c) => /extracted_json = @extracted_json/.test(sqlOf(c)));
+    const stored = JSON.parse(upd[1].extracted_json);
+    expect(stored.split_candidates).toHaveLength(2);
+  });
+
+  it('MC-I4 split crea N-1 sorelle con stesso storage_path', async () => {
+    query.mockResolvedValueOnce({
+      recordset: [{
+        ...CERT,
+        workflow_status: 'extracted',
+        storage_path: '/uploads/busta.pdf',
+        extracted_text: 'Colata A111 ... Colata B222',
+        extracted_json: JSON.stringify({
+          document_kind: 'mill_certificate',
+          split_candidates: [
+            { heat_or_lot_no: 'A111' },
+            { heat_or_lot_no: 'B222' },
+            { heat_or_lot_no: 'C333' },
+          ],
+        }),
+        ddt_no: '26DDT06266',
+        import_job_id: 9,
+        import_job_file_id: 10,
+      }],
+    });
+    query.mockResolvedValueOnce({ recordset: [] });
+    const { queryMock, tx } = mockTx();
+    queryMock
+      .mockResolvedValueOnce({ recordset: [{ id: 11 }] })
+      .mockResolvedValueOnce({ recordset: [{ id: 21, heat_or_lot_no: 'B222', workflow_status: 'extracted' }] })
+      .mockResolvedValueOnce({ recordset: [{ id: 22, heat_or_lot_no: 'C333', workflow_status: 'extracted' }] });
+    const res = mockRes();
+    await ctrl.splitCertificate(mockReq({
+      params: { id: '11' },
+      body: { heats: ['A111', 'B222', 'C333'] },
+    }), res);
+    expect(res.status).toHaveBeenCalledWith(201);
+    const body = res.json.mock.calls[0][0];
+    expect(body.data.total_rows).toBe(3);
+    expect(body.data.created).toHaveLength(2);
+    expect(body.data.heats).toEqual(['A111', 'B222', 'C333']);
+    expect(tx.commit).toHaveBeenCalled();
+    const insertCalls = queryMock.mock.calls.filter((c) => /INSERT INTO dbo\.material_certificates/.test(String(c[0])));
+    expect(insertCalls).toHaveLength(2);
+    expect(String(insertCalls[0][0])).toMatch(/storage_path/);
+    expect(String(insertCalls[0][0])).toMatch(/heat_or_lot_no/);
+  });
+
+  it('MC-I4 split DDT → 409 NOT_A_CERTIFICATE', async () => {
+    query.mockResolvedValueOnce({
+      recordset: [{
+        ...CERT,
+        storage_path: '/uploads/ddt.pdf',
+        extracted_json: JSON.stringify({ document_kind: 'delivery_note', ddt_no: '000775RE' }),
+      }],
+    });
+    const res = mockRes();
+    await ctrl.splitCertificate(mockReq({ params: { id: '11' }, body: { heats: ['1', '2'] } }), res);
+    expect(res.status).toHaveBeenCalledWith(409);
+    expect(res.json.mock.calls[0][0].code).toBe('NOT_A_CERTIFICATE');
+  });
+
+  it('MC-I4 split già divisa → 409 ALREADY_SPLIT', async () => {
+    query.mockResolvedValueOnce({
+      recordset: [{
+        ...CERT,
+        storage_path: '/uploads/busta.pdf',
+        extracted_json: JSON.stringify({
+          document_kind: 'mill_certificate',
+          split_candidates: [{ heat_or_lot_no: 'HEAT-A1' }, { heat_or_lot_no: 'HEAT-B2' }],
+        }),
+      }],
+    });
+    query.mockResolvedValueOnce({ recordset: [{ id: 99, heat_or_lot_no: 'HEAT-B2' }] });
+    const res = mockRes();
+    await ctrl.splitCertificate(mockReq({
+      params: { id: '11' },
+      body: { heats: ['HEAT-A1', 'HEAT-B2'] },
+    }), res);
+    expect(res.status).toHaveBeenCalledWith(409);
+    expect(res.json.mock.calls[0][0].code).toBe('ALREADY_SPLIT');
+  });
+
   it('routes: authenticate + capability AND, extract con logAiInteraction', () => {
     const src = fs.readFileSync(
       path.join(__dirname, '../routes/materialCertificates.routes.js'),
@@ -800,5 +924,6 @@ describe('materialCertificates.controller (MC-4)', () => {
     expect(src).toMatch(/requireMaterialComplianceCapability/);
     expect(src).toMatch(/logAiInteraction\('import'\)/);
     expect(src).toMatch(/\/evaluate/);
+    expect(src).toMatch(/\/split/);
   });
 });

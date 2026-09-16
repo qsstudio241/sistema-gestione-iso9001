@@ -1913,6 +1913,10 @@ class ApiService {
         return this.post(`/material-certificates/${id}/extract`, {}, { timeout: 120000 });
     }
 
+    async splitMaterialCertificate(id, body = {}) {
+        return this.post(`/material-certificates/${id}/split`, body);
+    }
+
     async evaluateMaterialCertificate(id) {
         return this.post(`/material-certificates/${id}/evaluate`, {});
     }

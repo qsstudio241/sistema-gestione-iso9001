@@ -290,7 +290,9 @@ Campi comuni (codici EN 10168 dove applicabili):
 Solo base: steel_designation (B02, es. S355J2)
 Solo filler: filler_designation (es. G 42 4 M21 3Si1), filler_standard (ISO 14341 / 2560 / ...), filler_diameter_mm, hydrogen_class (H5/H10 se stampato)
 
-Non inventare soglie, numeri di colata o valori di laboratorio assenti.`,
+Non inventare soglie, numeri di colata o valori di laboratorio assenti.
+
+Se il PDF è una BUSTA con più certificati mill (più Colata/Heat/B07 distinti), elenca in certificate_segments un oggetto per ogni mill con almeno heat_or_lot_no (e certificate_no/designation se chiari). heat_or_lot_no del root = la prima colata. Non inventare colate assenti.`,
     aiExpectedSchema: {
       document_kind: 'mill_certificate|delivery_note|null',
       inspection_document_type: '2.1|2.2|3.1|3.2|null',
