@@ -80,9 +80,9 @@ function QualificationForm({ qualification, onSave, onClose, onSaved, defaultCom
   const [saving,  setSaving]  = useState(false);
   const [error,   setError]   = useState(null);
   const [autoSaveStatus, setAutoSaveStatus] = useState(null); // null | 'saving' | 'saved' | 'error'
-  const savedIdRef    = useRef(isRenew ? null : (qualification?.id || null));
-  const isFirstRender = useRef(true);
-  const autoSaveTimer = useRef(null);
+  const savedIdRef     = useRef(isRenew ? null : (qualification?.id || null));
+  const userEditedRef  = useRef(false);
+  const autoSaveTimer  = useRef(null);
   const [companies, setCompanies] = useState([]);
   const [personnelList, setPersonnelList] = useState([]);
   const [certFile, setCertFile] = useState(null);
@@ -192,9 +192,16 @@ function QualificationForm({ qualification, onSave, onClose, onSaved, defaultCom
       .catch(() => setPersonnelList([]));
   }, [form.company_id]);
 
-  // Auto-save con debounce 800ms
+  function markUserEdit() {
+    userEditedRef.current = true;
+  }
+
+  // Auto-save con debounce 800ms — solo dopo una modifica dell'utente.
+  // isFirstRender non basta: il form parte da EMPTY e l'idratazione da
+  // `qualification` è un secondo setForm, che altrimenti sparava un PUT
+  // e onSaved() pochi secondi dopo l'apertura (finestra che si richiude).
   useEffect(() => {
-    if (isFirstRender.current) { isFirstRender.current = false; return; }
+    if (!userEditedRef.current) return;
     if (!form.person_name?.trim() || !form.company_id) return;
     if (autoSaveTimer.current) clearTimeout(autoSaveTimer.current);
     autoSaveTimer.current = setTimeout(async () => {
@@ -231,6 +238,7 @@ function QualificationForm({ qualification, onSave, onClose, onSaved, defaultCom
 
   function handle(field) {
     return (e) => {
+      markUserEdit();
       const value = e.target.type === "checkbox" ? e.target.checked : e.target.value;
       setForm((f) => ({ ...f, [field]: value }));
     };
@@ -278,6 +286,7 @@ function QualificationForm({ qualification, onSave, onClose, onSaved, defaultCom
                 id="qf-personnel"
                 value={form.personnel_id}
                 onChange={(e) => {
+                  markUserEdit();
                   const pid = e.target.value;
                   if (!pid) {
                     setForm((f) => ({ ...f, personnel_id: "" }));
@@ -311,6 +320,7 @@ function QualificationForm({ qualification, onSave, onClose, onSaved, defaultCom
                 type="text"
                 value={form.person_name}
                 onChange={(e) => {
+                  markUserEdit();
                   const newName = e.target.value;
                   setForm((f) => {
                     const linked = f.personnel_id
@@ -353,6 +363,7 @@ function QualificationForm({ qualification, onSave, onClose, onSaved, defaultCom
               <label>Tipo qualifica <span className="req">*</span></label>
               {!customType ? (
                 <select value={form.qualification_type} onChange={e => {
+                  markUserEdit();
                   if (e.target.value === "__custom__") { setCustomType(true); setForm(f => ({...f, qualification_type: ""})); }
                   else handle("qualification_type")(e);
                 }}>
@@ -363,7 +374,7 @@ function QualificationForm({ qualification, onSave, onClose, onSaved, defaultCom
               ) : (
                 <div style={{display:"flex",gap:8}}>
                   <input type="text" value={form.qualification_type} onChange={handle("qualification_type")} placeholder="Tipo qualifica personalizzato" style={{flex:1}} />
-                  <button type="button" className="qf-btn-link" onClick={() => { setCustomType(false); setForm(f => ({...f, qualification_type: ""})); }}>lista</button>
+                  <button type="button" className="qf-btn-link" onClick={() => { markUserEdit(); setCustomType(false); setForm(f => ({...f, qualification_type: ""})); }}>lista</button>
                 </div>
               )}
             </div>
@@ -471,6 +482,7 @@ function QualificationForm({ qualification, onSave, onClose, onSaved, defaultCom
                       type="checkbox"
                       checked={!!form.thickness_max_unlimited}
                       onChange={(e) => {
+                        markUserEdit();
                         const checked = e.target.checked;
                         setForm((f) => ({
                           ...f,
@@ -777,7 +789,7 @@ function QualificationForm({ qualification, onSave, onClose, onSaved, defaultCom
               nextConfirmationDue={form.next_confirmation_due}
               companyId={form.company_id ? parseInt(form.company_id, 10) : null}
               openByDefault={openSection === "conferma"}
-              onDatesUpdated={(dates) => setForm((f) => ({ ...f, ...dates }))}
+              onDatesUpdated={(dates) => { markUserEdit(); setForm((f) => ({ ...f, ...dates })); }}
             />
           )}
         </div>
