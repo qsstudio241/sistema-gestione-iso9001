@@ -453,19 +453,42 @@ function hydrateRow(row) {
 }
 
 /**
+ * Griglia/PATCH usano `designation`; lo schema extract usa steel_/filler_designation.
+ * Allinea i payload così recordFeedback / few-shot insegnano le chiavi AI.
+ */
+function alignMcFeedbackPayload(payload, roleHint) {
+  if (!payload || typeof payload !== 'object' || Array.isArray(payload)) return {};
+  const out = { ...payload };
+  const role = parseRole(out.material_role, roleHint) || roleHint || 'base';
+  const fromGrid = emptyToNull(out.designation);
+  if (fromGrid) {
+    if (role === 'filler') out.filler_designation = fromGrid;
+    else out.steel_designation = fromGrid;
+  }
+  delete out.designation;
+  return out;
+}
+
+/**
  * MC-7 — stesso anello ADR-017 di WPQR/qualifiche.
  * Livello B (pattern federati) resta filtrato da REFERENCE_PATTERN_ALLOWLIST
  * (no heat/certificate_no/PII). Few-shot (livello C) resta scoped per org.
  * Non blocca PATCH/approve se il feedback fallisce.
  */
 async function safeRecordMcFeedback({ req, row, humanPayload }) {
-  const aiPayload = parseJsonField(row.extracted_json);
-  if (!aiPayload || typeof aiPayload !== 'object' || !Object.keys(aiPayload).length) {
+  const aiRaw = parseJsonField(row.extracted_json);
+  if (!aiRaw || typeof aiRaw !== 'object' || !Object.keys(aiRaw).length) {
     return null;
   }
-  const human = (humanPayload && typeof humanPayload === 'object')
+  const humanRaw = (humanPayload && typeof humanPayload === 'object')
     ? humanPayload
-    : (parseJsonField(row.corrected_json) || aiPayload);
+    : (parseJsonField(row.corrected_json) || aiRaw);
+  const role = parseRole(
+    humanRaw.material_role || row.material_role || aiRaw.material_role,
+    row.material_role || 'base'
+  ) || 'base';
+  const aiPayload = alignMcFeedbackPayload(aiRaw, role);
+  const human = alignMcFeedbackPayload(humanRaw, role);
   try {
     return await recordFeedback({
       organizationId: req.user.organization_id,
@@ -1516,6 +1539,7 @@ module.exports = {
   detectSourceDocumentKind,
   applyDeliveryNoteExtract,
   safeRecordMcFeedback,
+  alignMcFeedbackPayload,
   fallbackDdtFromFilename,
   isDeliveryNotePayload,
 };

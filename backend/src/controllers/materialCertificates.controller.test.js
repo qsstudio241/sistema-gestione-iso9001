@@ -963,6 +963,46 @@ describe('materialCertificates.controller (MC-4)', () => {
     }));
   });
 
+  it('MC-7 PATCH Materiale (designation) → feedback su steel_designation, non designation', async () => {
+    query.mockResolvedValueOnce({
+      recordset: [{
+        ...CERT,
+        workflow_status: 'extracted',
+        material_role: 'base',
+        extracted_json: JSON.stringify({
+          material_role: 'base',
+          steel_designation: 'S355J2',
+          heat_or_lot_no: 'H1',
+        }),
+      }],
+    });
+    query.mockResolvedValueOnce({
+      recordset: [{ id: 11, workflow_status: 'extracted', material_role: 'base' }],
+    });
+    const res = mockRes();
+    await ctrl.patchCertificate(mockReq({
+      params: { id: '11' },
+      body: { designation: 'S275JR' },
+    }), res);
+    expect(res.json).toHaveBeenCalledWith(expect.objectContaining({ success: true }));
+    expect(recordFeedback).toHaveBeenCalledTimes(1);
+    const fb = recordFeedback.mock.calls[0][0];
+    expect(fb.aiPayload.steel_designation).toBe('S355J2');
+    expect(fb.aiPayload).not.toHaveProperty('designation');
+    expect(fb.humanPayload.steel_designation).toBe('S275JR');
+    expect(fb.humanPayload).not.toHaveProperty('designation');
+  });
+
+  it('MC-7 alignMcFeedbackPayload: filler designation → filler_designation', () => {
+    const aligned = ctrl.alignMcFeedbackPayload({
+      material_role: 'filler',
+      designation: 'G 42 4 M21 3Si1',
+      filler_designation: 'OLD',
+    }, 'filler');
+    expect(aligned.filler_designation).toBe('G 42 4 M21 3Si1');
+    expect(aligned).not.toHaveProperty('designation');
+  });
+
   it('MC-7 PATCH senza extracted_json non chiama recordFeedback', async () => {
     query.mockResolvedValueOnce({
       recordset: [{
