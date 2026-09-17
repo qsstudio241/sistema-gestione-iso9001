@@ -3,7 +3,7 @@
 > **Destinazione (ingest)**: da PDF reali (3.1, DDT scansionato, busta con più mill) si arriva a righe in Materiali con DDT / colata / norma compilati, **Valuta** che gira, HITL che decide. L’agente impara dalle correzioni con lo **stesso anello ADR-017** di qualifiche/WPQR. Nessun secondo motore OCR.  
 > **Spec**: [`MODULO_MATERIAL_COMPLIANCE_AI.md`](../specs/MODULO_MATERIAL_COMPLIANCE_AI.md)  
 > **ADR**: 020–024 · apprendimento ingest: [ADR-017](../adr/ADR-017-ingest-reference-network.md)  
-> **Brief ingest attivo**: [`DEPUTYTASK_MC_INGEST.md`](DEPUTYTASK_MC_INGEST.md) — **MC-I4 CHIUSO** (questa PR). Prossima: **MC-7**.  
+> **Brief ingest attivo**: [`DEPUTYTASK_MC_INGEST.md`](DEPUTYTASK_MC_INGEST.md) — **MC-7 CHIUSO** (questa PR). Registry documenti = nebbia.  
 > **Brief SAL**: [`DEPUTYTASK.md`](DEPUTYTASK.md) **CHIUSO** su S1a ([#471](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/471)) — **non sovrascriverlo**  
 > **Brief fondazione (MC-0)**: [`DEPUTYTASK_MATERIAL_COMPLIANCE_AI_FOUNDATION.md`](DEPUTYTASK_MATERIAL_COMPLIANCE_AI_FOUNDATION.md)  
 > **Spec tecniche MC-0**: [`MATERIAL_COMPLIANCE_DATA_MODEL.md`](../specs/MATERIAL_COMPLIANCE_DATA_MODEL.md) · [`MATERIAL_COMPLIANCE_UI.md`](../specs/MATERIAL_COMPLIANCE_UI.md) · [`MATERIAL_COMPLIANCE_API.md`](../specs/MATERIAL_COMPLIANCE_API.md)  
@@ -124,7 +124,7 @@ MC-0/MC-1/MC-5 devono prevedere questi campi (DDT era assente dalla lista spec d
 | **MC-I2** | 3.1 singolo: colata / DDT / norma | schema `material_certificate` + mapping anagrafica | MC-I0 | AFK (chiusa, [#481](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/481)) |
 | **MC-I3** | DDT ≠ 3.1 (classifica tipo) | extract + UI: DDT non è un mill | MC-I2, MC-B | AFK (chiusa, [#488](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/488)) |
 | **MC-I4** | 1 PDF → N certificati (busta mill) | split/HITL; 26DDT06266 | MC-I2, MC-I3 | AFK (chiusa) |
-| **MC-7** | Feedback ADR-017 (recordFeedback → few-shot) | PATCH/approve MC → `ingestFeedback.service` | MC-I2 (c’è qualcosa da correggere) | AFK |
+| **MC-7** | Feedback ADR-017 (recordFeedback → few-shot) | PATCH/approve MC → `ingestFeedback.service` | MC-I2 (c’è qualcosa da correggere) | ✅ 17/09 |
 | **MC-6** | Licenza + audit AI | seam + `logAiInteraction` | MC-4/5 | AFK — **non ingest** |
 
 ---
@@ -333,9 +333,9 @@ Prossima ingest: **MC-I4** (1 PDF → N mill).
 
 Demoable: Estrai su busta multi-colata → click Dividi → N righe in Materiali, ciascuna con colata propria.
 
-Prossima ingest: **MC-7** (feedback ADR-017).
+Prossima ingest: registry documenti (nebbia) — **MC-7 CHIUSA** 17/09/2026.
 
-### MC-7 — Apprendimento ADR-017 (obbligatoria, non prima)
+### MC-7 — Apprendimento ADR-017 (obbligatoria, non prima) ✅
 
 Stesso anello di WPQR/qualifiche. **Niente** secondo store `lessons/`, niente fine-tuning.
 
@@ -346,6 +346,8 @@ HITL corregge (PATCH) o accetta
   → buildIngestLearningPromptSection
   → extractStructuredByDocType (già riceve organizationId)
 ```
+
+**Chiusa 17/09/2026** — `safeRecordMcFeedback` su PATCH (se c’è `extracted_json`) e su approve; `doc_type=material_certificate`, `source=material`; errore feedback non blocca HITL. PII heat/certificate_no fuori allowlist livello B.
 
 Demoable: correggi colata sul 3.1 → secondo Estrai sullo stesso tipo/org usa il few-shot (campo corretto, non PII vietata da ADR-017 livello B).
 

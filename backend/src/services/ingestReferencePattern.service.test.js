@@ -32,6 +32,8 @@ describe('ingestReferencePattern', () => {
 
   it('allowlist esclude PII', () => {
     expect(REFERENCE_PATTERN_ALLOWLIST.has('person_name')).toBe(false);
+    expect(REFERENCE_PATTERN_ALLOWLIST.has('certificate_number')).toBe(false);
+    expect(REFERENCE_PATTERN_ALLOWLIST.has('heat_or_lot_no')).toBe(false);
     expect(REFERENCE_PATTERN_ALLOWLIST.has('standard_code')).toBe(true);
   });
 });

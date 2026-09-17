@@ -6,20 +6,21 @@
 
 > Avvio: Read con **`limit: 45`** (questa sezione deve entrarci). Resto del file = backlog/cronologia — **non** iniettare. Epic → `PLAN_*_SLICES.md`. Lezioni → [GUIDA](GUIDA_CONSOLIDATA.md) **a sezioni**. Archivio marzo 2026: [archive](archive/PROJECT_CONTEXT_STATO_FUNZIONALITA_2026-03.md).
 
-**Ultimo aggiornamento**: 16/09/2026. Vista committente: **Gestione → Stato sviluppo** (`/settings/stato-sviluppo`, superadmin).
+**Ultimo aggiornamento**: 17/09/2026. Vista committente: **Gestione → Stato sviluppo** (`/settings/stato-sviluppo`, superadmin).
 
 ### Moduli maturi
 
 Audit multi-standard · NC · Qualifiche · Saldatura (WPQR/WPS/3834/Welding Book + foto cordone) · SAL · Registro + Scadenzari · Alert · Riesame · RBAC · Obblighi legali · Assistente AI / Gap · CND · Libreria fonti (+ gap SA) · Second Brain Ambito (SB-4 + SB-6 + CTX-0…3) · Compliance Map (§8.2).
 
-### Sessione più recente (16/09/2026)
+### Sessione più recente (17/09/2026)
 
-**Qualifiche:** la finestra modifica si richiudeva da sola (auto-save → `onSaved` chiudeva il modal). Fix: `onSaved={loadData}` + auto-save solo dopo edit utente. **Next = HITL:** CTX-4 · ING-5 · ROO-18 · MC-I4 · S1c · ISO-4b.
+**Material Compliance MC-7:** PATCH/approve certificato → `recordFeedback` (ADR-017) → few-shot al prossimo extract. Nessuna migrazione. **Next = HITL:** CTX-4 · ING-5 · ROO-18 · S1c · ISO-4b · registry MC (nebbia).
 
 ### Sessioni recenti (pointer — dettaglio in `<details>` sotto)
 
 | Data | Esito | Piano |
 |------|-------|-------|
+| 17/09 | MC-7 feedback ADR-017 su PATCH/approve Materiali | [`PLAN_MATERIAL_COMPLIANCE`](agent-tasks/PLAN_MATERIAL_COMPLIANCE_SLICES.md) |
 | 16/09 | Qualifiche: finestra modifica non si richiude più da sola | `QualificationForm.jsx` · `QualificationsPage.jsx` |
 | 13/09 | Viewer Word: bundling `docx-preview` + allegati in-app | `vite.config.mjs` · `InAppOfficeViewer.jsx` |
 | 13/09 | Cruscotto stato in app · AI quesiti #678 | `/settings/stato-sviluppo` · `statoSviluppo.js` |
@@ -48,7 +49,7 @@ Audit multi-standard · NC · Qualifiche · Saldatura (WPQR/WPS/3834/Welding Boo
 | 1 | **Second Brain — CTX-4 Email/Drive** | OAuth Alto; **no codice** senza DoD HITL | [PLAN SB](agent-tasks/PLAN_SECOND_BRAIN_SLICES.md) § CTX-4 |
 | 2 | **Alert qualifiche — destinatario UI** | **CHIUSO** — mergiata [#675](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/675) | `DEPUTYTASK.md` · `qualificationAlert.service.js` |
 | 3 | **Commesse — ING-5 / VC-5** | ING-5 HITL; VC-5 solo Lead | [PLAN](agent-tasks/PLAN_VALUTAZIONE_COMMESSE_SLICES.md) |
-| 4 | **Material Compliance — MC-I4** | MC-I3 CHIUSA; busta 1→N (nebbia split) | [PLAN](agent-tasks/PLAN_MATERIAL_COMPLIANCE_SLICES.md) |
+| 4 | **Material Compliance — registry (nebbia)** | MC-7 ✅ feedback ADR-017; ponte Document Registry | [PLAN](agent-tasks/PLAN_MATERIAL_COMPLIANCE_SLICES.md) |
 | 5 | **Rischi ROO-18 HITL** | ROO-17 OK; ingest/data riesame dopo conferma | [PLAN §7](agent-tasks/PLAN_RISCHI_OPPORTUNITA_OBIETTIVI_SLICES.md) |
 | 6 | **SAL AI — S1c `.doc`** | S1a–S2b CHIUSE; S1c solo su richiesta | [PLAN](agent-tasks/PLAN_SAL_AI_EVIDENCE_SLICES.md) |
 | 7 | **ISO 3834 — ISO-4b / ISO-8…** | ISO-5+5b ✅; scala 1–6 / ponti AFK | [PLAN](agent-tasks/PLAN_3834_SLICES.md) |
