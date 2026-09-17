@@ -460,6 +460,7 @@ function alignMcFeedbackPayload(payload, roleHint) {
   if (!payload || typeof payload !== 'object' || Array.isArray(payload)) return {};
   const out = { ...payload };
   const role = parseRole(out.material_role, roleHint) || roleHint || 'base';
+  out.material_role = role;
   const fromGrid = emptyToNull(out.designation);
   if (fromGrid) {
     if (role === 'filler') out.filler_designation = fromGrid;

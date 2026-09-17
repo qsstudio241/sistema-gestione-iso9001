@@ -13,14 +13,40 @@ const {
 const MIN_EXAMPLES = Number(process.env.INGEST_FEWSHOT_MIN_EXAMPLES) || 1;
 const DEFAULT_LIMIT = Number(process.env.INGEST_FEWSHOT_LIMIT) || 3;
 
+/**
+ * Campi sufficienti per accettare un esempio few-shot MC.
+ * document_kind / inspection_document_type sono le prime chiavi dello schema
+ * ma spesso null (DDT, mill senza A02) — non possono essere requisiti hard.
+ */
+const MC_FEWSHOT_SIGNAL_KEYS = [
+    'material_role',
+    'document_kind',
+    'steel_designation',
+    'filler_designation',
+    'heat_or_lot_no',
+    'ddt_no',
+    'certificate_no',
+    'inspection_document_type',
+    'material_standard',
+];
+
+function hasNonEmpty(payload, key) {
+    const v = payload?.[key];
+    return v != null && String(v).trim() !== '';
+}
+
 function humanPayloadComplete(humanPayload, docType) {
+    if (!humanPayload || typeof humanPayload !== 'object') return false;
+
+    // MC: ADR-017 livello C — basta un segnale operativo (non le prime 2 chiavi schema).
+    if (docType === 'material_certificate') {
+        return MC_FEWSHOT_SIGNAL_KEYS.some((k) => hasNonEmpty(humanPayload, k));
+    }
+
     const schema = getSchemaForDocType(docType);
     if (!schema?.aiExpectedSchema) return true;
     const requiredKeys = Object.keys(schema.aiExpectedSchema).slice(0, 2);
-    return requiredKeys.every((k) => {
-        const v = humanPayload?.[k];
-        return v != null && String(v).trim() !== '';
-    });
+    return requiredKeys.every((k) => hasNonEmpty(humanPayload, k));
 }
 
 /**
