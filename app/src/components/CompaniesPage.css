@@ -2,9 +2,12 @@
  * CompaniesPage Styles - Anagrafica Aziende Fase 1
  */
 
+/* Elenco operativo full-width (stesso principio di .sq-page / LUX-A) */
 .companies-page {
+  max-width: none;
+  width: 100%;
+  box-sizing: border-box;
   padding: 24px;
-  max-width: 1100px;
   margin: 0 auto;
 }
 

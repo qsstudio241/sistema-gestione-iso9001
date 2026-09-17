@@ -32,7 +32,7 @@ Quando un deputy (o il Lead) costruisce o sistema una pagina, **parte da una di 
 | # | Tipo di schermata | Copia da | Quando usarla |
 |---|-------------------|----------|---------------|
 | 1 | **Shell applicazione** | `app/src/layouts/AppLayout.jsx` + `AppLayout.css` | Layout, sidebar, header mobile, colori, raggio, ombre. È l'unica fonte dei token `:root`. |
-| 2 | **Elenco operativo + filtri** | `QualificationsPage.jsx` (stesso pattern in `DeadlinesPage.jsx`) | Lista con card KPI cliccabili, **Ambito unico in AppLayout** (non in pagina), griglia `SgqDataGrid`. Una sola fonte di filtro per dimensione (niente tendina duplicata). |
+| 2 | **Elenco operativo + filtri** | `QualificationsPage.jsx` (stesso pattern in `DeadlinesPage.jsx`) | Lista con card KPI cliccabili, **Ambito unico in AppLayout** (non in pagina), griglia `SgqDataGrid`. Una sola fonte di filtro per dimensione (niente tendina duplicata). **Full-width**: il contenitore pagina (`.sq-page` / gemelli) non ha cap `max-width: 1100px` — la griglia usa lo spazio del main (regola da LUX-A Libreria). |
 | 3 | **Scheda operativa a fasi** | Drawer NC: `NCPage.jsx` + `.nc-drawer-section` + `useNcDrawerWidth.js` | Dettaglio/edit di un record con flusso ISO. Sezioni numerate collassabili, non un form unico alfabetico. |
 
 ### 1 — Shell (`AppLayout`)
@@ -48,6 +48,7 @@ Quando un deputy (o il Lead) costruisce o sistema una pagina, **parte da una di 
 - Card = filtro (toggle). Stessa funzione di conteggio e di colore riga (una sola regola condivisa).
 - Header: selettore **Ambito** azienda (`*CompanyScope.js`), non dropdown azienda in toolbar.
 - Corpo lista: `SgqDataGrid` dove c'è una tabella; non reinventare `<table>` con CSS locale.
+- **Larghezza:** elenco operativo = full-width (`max-width: none` su `.sq-page` e gemelli NC/Scadenzari/…). Form/dettaglio stretti restano con il proprio max-width. Non inventare un cap locale sulla sola griglia.
 - Dettaglio: `DeadlinesPage.jsx` (card Attive / Scadute / In scadenza / Completate / Archiviate / Prese in carico). Regola filtri: `sgq-operating-memory.mdc` § *Filtri: singola fonte di verità*.
 
 ### 3 — Scheda a fasi (drawer NC)

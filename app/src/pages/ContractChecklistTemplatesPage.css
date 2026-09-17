@@ -1,6 +1,9 @@
 /* Template checklist riesame — token AppLayout, pattern elenco + scheda */
+/* Elenco operativo full-width (stesso principio di .sq-page / LUX-A) */
 .cct-page {
-  max-width: 1100px;
+  max-width: none;
+  width: 100%;
+  box-sizing: border-box;
   margin: 0 auto;
   padding: 1rem 1.25rem 2rem;
 }
