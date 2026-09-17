@@ -1,8 +1,11 @@
 /* DeadlinesPage */
 
+/* Elenco operativo full-width (schermata 2 DNA; allineato a .sq-page) */
 .dl-page {
+  max-width: none;
+  width: 100%;
+  box-sizing: border-box;
   padding: 24px;
-  max-width: 1400px;
   margin: 0 auto;
   display: flex;
   flex-direction: column;

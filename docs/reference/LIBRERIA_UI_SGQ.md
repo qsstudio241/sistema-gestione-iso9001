@@ -11,7 +11,7 @@
 | Tipo | Copia da | Note |
 |------|----------|------|
 | Shell (sidebar, token `:root`) | `AppLayout.jsx` + `AppLayout.css` | Unica fonte colori/raggi/ombre |
-| Elenco + filtri KPI | `QualificationsPage.jsx` (anche `DeadlinesPage.jsx`) | Card cliccabili = unico filtro per dimensione; `SgqDataGrid` |
+| Elenco + filtri KPI | `QualificationsPage.jsx` (anche `DeadlinesPage.jsx`) | Card cliccabili = unico filtro per dimensione; `SgqDataGrid`; contenitore full-width (no cap 1100px) |
 | Scheda a fasi | Drawer NC (`NCPage.jsx`, `.nc-drawer-section`) | Ordine operativo, sezioni collassabili |
 
 ## Componenti collaudati
