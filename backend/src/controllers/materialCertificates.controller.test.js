@@ -29,6 +29,9 @@ jest.mock('../services/importAiExtraction.service', () => ({
 jest.mock('../services/materialComplianceRuleEngine.service', () => ({
   evaluateMaterialCertificate: jest.fn(),
 }));
+jest.mock('../services/ingestFeedback.service', () => ({
+  recordFeedback: jest.fn().mockResolvedValue({ action: 'accepted', field_diffs: {} }),
+}));
 
 const fs = require('fs');
 const path = require('path');
@@ -38,6 +41,7 @@ const { companyBelongsToOrg } = require('../services/qualificationCompany.servic
 const { extractDocumentText } = require('../services/documentTextExtractor.service');
 const { extractStructuredByDocType } = require('../services/importAiExtraction.service');
 const { evaluateMaterialCertificate } = require('../services/materialComplianceRuleEngine.service');
+const { recordFeedback } = require('../services/ingestFeedback.service');
 const { DOCUMENT_TYPE_SCHEMAS } = require('../data/documentTypeSchemas');
 const { findIngestFieldsMissingFromManualEdit } = require('../utils/manualEditCompletenessCheck');
 const ctrl = require('./materialCertificates.controller');
@@ -544,6 +548,13 @@ describe('materialCertificates.controller (MC-4)', () => {
     const res = mockRes();
     await ctrl.approveCertificate(mockReq({ params: { id: '11' } }), res);
     expect(res.json.mock.calls[0][0].data.workflow_status).toBe('compliant');
+    expect(recordFeedback).toHaveBeenCalledWith(expect.objectContaining({
+      organizationId: 1001,
+      companyId: 3,
+      docType: 'material_certificate',
+      source: 'material',
+      aiPayload: expect.objectContaining({ steel_designation: 'S355J2' }),
+    }));
   });
 
   it('reject da compliant → 409 (solo archive)', async () => {
@@ -913,6 +924,133 @@ describe('materialCertificates.controller (MC-4)', () => {
     }), res);
     expect(res.status).toHaveBeenCalledWith(409);
     expect(res.json.mock.calls[0][0].code).toBe('ALREADY_SPLIT');
+  });
+
+  it('MC-7 PATCH con correzione colata → recordFeedback (doc_type material_certificate)', async () => {
+    query.mockResolvedValueOnce({
+      recordset: [{
+        ...CERT,
+        workflow_status: 'extracted',
+        storage_path: '/uploads/mtc-heat.pdf',
+        ai_model: 'gemini-test',
+        extracted_json: JSON.stringify({
+          material_role: 'base',
+          heat_or_lot_no: 'WRONG',
+          steel_designation: 'S355J2',
+        }),
+      }],
+    });
+    query.mockResolvedValueOnce({
+      recordset: [{ id: 11, workflow_status: 'extracted', material_role: 'base' }],
+    });
+    const res = mockRes();
+    await ctrl.patchCertificate(mockReq({
+      params: { id: '11' },
+      body: { heat_or_lot_no: 'HEAT-OK' },
+    }), res);
+    expect(res.json).toHaveBeenCalledWith(expect.objectContaining({ success: true }));
+    expect(recordFeedback).toHaveBeenCalledTimes(1);
+    expect(recordFeedback).toHaveBeenCalledWith(expect.objectContaining({
+      organizationId: 1001,
+      companyId: 3,
+      docType: ctrl.MC_FEEDBACK_DOC_TYPE,
+      source: ctrl.MC_FEEDBACK_SOURCE,
+      aiPayload: expect.objectContaining({ heat_or_lot_no: 'WRONG' }),
+      humanPayload: expect.objectContaining({ heat_or_lot_no: 'HEAT-OK' }),
+      fileName: 'mtc-heat.pdf',
+      modelUsed: 'gemini-test',
+      createdBy: 7,
+    }));
+  });
+
+  it('MC-7 PATCH Materiale (designation) → feedback su steel_designation, non designation', async () => {
+    query.mockResolvedValueOnce({
+      recordset: [{
+        ...CERT,
+        workflow_status: 'extracted',
+        material_role: 'base',
+        extracted_json: JSON.stringify({
+          material_role: 'base',
+          steel_designation: 'S355J2',
+          heat_or_lot_no: 'H1',
+        }),
+      }],
+    });
+    query.mockResolvedValueOnce({
+      recordset: [{ id: 11, workflow_status: 'extracted', material_role: 'base' }],
+    });
+    const res = mockRes();
+    await ctrl.patchCertificate(mockReq({
+      params: { id: '11' },
+      body: { designation: 'S275JR' },
+    }), res);
+    expect(res.json).toHaveBeenCalledWith(expect.objectContaining({ success: true }));
+    expect(recordFeedback).toHaveBeenCalledTimes(1);
+    const fb = recordFeedback.mock.calls[0][0];
+    expect(fb.aiPayload.steel_designation).toBe('S355J2');
+    expect(fb.aiPayload).not.toHaveProperty('designation');
+    expect(fb.humanPayload.steel_designation).toBe('S275JR');
+    expect(fb.humanPayload).not.toHaveProperty('designation');
+  });
+
+  it('MC-7 alignMcFeedbackPayload: filler designation → filler_designation', () => {
+    const aligned = ctrl.alignMcFeedbackPayload({
+      material_role: 'filler',
+      designation: 'G 42 4 M21 3Si1',
+      filler_designation: 'OLD',
+    }, 'filler');
+    expect(aligned.filler_designation).toBe('G 42 4 M21 3Si1');
+    expect(aligned).not.toHaveProperty('designation');
+  });
+
+  it('MC-7 PATCH senza extracted_json non chiama recordFeedback', async () => {
+    query.mockResolvedValueOnce({
+      recordset: [{
+        ...CERT,
+        workflow_status: 'received',
+        extracted_json: null,
+      }],
+    });
+    query.mockResolvedValueOnce({
+      recordset: [{ id: 11, workflow_status: 'received', material_role: 'base' }],
+    });
+    const res = mockRes();
+    await ctrl.patchCertificate(mockReq({
+      params: { id: '11' },
+      body: { designation: 'S275' },
+    }), res);
+    expect(res.json).toHaveBeenCalledWith(expect.objectContaining({ success: true }));
+    expect(recordFeedback).not.toHaveBeenCalled();
+  });
+
+  it('MC-7 approve con corrected_json → humanPayload dalla correzione', async () => {
+    query
+      .mockResolvedValueOnce({
+        recordset: [{
+          ...CERT,
+          workflow_status: 'pending_review',
+          extracted_json: JSON.stringify({ heat_or_lot_no: 'AI-BAD', material_role: 'base' }),
+          corrected_json: JSON.stringify({ heat_or_lot_no: 'HITL-OK', material_role: 'base' }),
+        }],
+      })
+      .mockResolvedValueOnce({ recordset: [{ id: 11, workflow_status: 'compliant' }] });
+    const res = mockRes();
+    await ctrl.approveCertificate(mockReq({ params: { id: '11' } }), res);
+    expect(recordFeedback).toHaveBeenCalledWith(expect.objectContaining({
+      aiPayload: expect.objectContaining({ heat_or_lot_no: 'AI-BAD' }),
+      humanPayload: expect.objectContaining({ heat_or_lot_no: 'HITL-OK' }),
+    }));
+  });
+
+  it('MC-7 feedback fallito non blocca approve', async () => {
+    recordFeedback.mockRejectedValueOnce(new Error('DB feedback down'));
+    query
+      .mockResolvedValueOnce({ recordset: [{ ...CERT, workflow_status: 'pending_review' }] })
+      .mockResolvedValueOnce({ recordset: [{ id: 11, workflow_status: 'compliant' }] });
+    const res = mockRes();
+    await ctrl.approveCertificate(mockReq({ params: { id: '11' } }), res);
+    expect(res.json.mock.calls[0][0].data.workflow_status).toBe('compliant');
+    expect(res.status).not.toHaveBeenCalledWith(500);
   });
 
   it('routes: authenticate + capability AND, extract con logAiInteraction', () => {

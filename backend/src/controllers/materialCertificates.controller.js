@@ -6,6 +6,7 @@
  * MC-I2: alias AI (heat_number/colata/B07, ddt, norma) → colonne griglia; DDT ≠ A07.
  * MC-I3: DDT ≠ mill; document_kind delivery_note non copia colata/norma; Valuta 409.
  * MC-I4: busta 1 PDF → N righe: split per colata + HITL (mai split pagine automatico).
+ * MC-7: PATCH/approve → recordFeedback (ADR-017) → few-shot al prossimo extract.
 
  * workflow_status=compliant solo da HITL approve, mai da AI o dal motore.
  */
@@ -25,7 +26,11 @@ const { companyBelongsToOrg } = require('../services/qualificationCompany.servic
 const { extractDocumentText } = require('../services/documentTextExtractor.service');
 const { extractStructuredByDocType } = require('../services/importAiExtraction.service');
 const { evaluateMaterialCertificate } = require('../services/materialComplianceRuleEngine.service');
+const { recordFeedback } = require('../services/ingestFeedback.service');
 const { describeIngestFileError } = require('../utils/ingestErrorMessage');
+
+const MC_FEEDBACK_DOC_TYPE = 'material_certificate';
+const MC_FEEDBACK_SOURCE = 'material';
 
 const GRID_STATUSES = new Set([
   'received',
@@ -445,6 +450,63 @@ function hydrateRow(row) {
     evaluate_result_json: parseJsonField(row.evaluate_result_json) || row.evaluate_result_json || null,
     file_url: buildFileUrl(row.storage_path),
   };
+}
+
+/**
+ * Griglia/PATCH usano `designation`; lo schema extract usa steel_/filler_designation.
+ * Allinea i payload così recordFeedback / few-shot insegnano le chiavi AI.
+ */
+function alignMcFeedbackPayload(payload, roleHint) {
+  if (!payload || typeof payload !== 'object' || Array.isArray(payload)) return {};
+  const out = { ...payload };
+  const role = parseRole(out.material_role, roleHint) || roleHint || 'base';
+  out.material_role = role;
+  const fromGrid = emptyToNull(out.designation);
+  if (fromGrid) {
+    if (role === 'filler') out.filler_designation = fromGrid;
+    else out.steel_designation = fromGrid;
+  }
+  delete out.designation;
+  return out;
+}
+
+/**
+ * MC-7 — stesso anello ADR-017 di WPQR/qualifiche.
+ * Livello B (pattern federati) resta filtrato da REFERENCE_PATTERN_ALLOWLIST
+ * (no heat/certificate_no/PII). Few-shot (livello C) resta scoped per org.
+ * Non blocca PATCH/approve se il feedback fallisce.
+ */
+async function safeRecordMcFeedback({ req, row, humanPayload }) {
+  const aiRaw = parseJsonField(row.extracted_json);
+  if (!aiRaw || typeof aiRaw !== 'object' || !Object.keys(aiRaw).length) {
+    return null;
+  }
+  const humanRaw = (humanPayload && typeof humanPayload === 'object')
+    ? humanPayload
+    : (parseJsonField(row.corrected_json) || aiRaw);
+  const role = parseRole(
+    humanRaw.material_role || row.material_role || aiRaw.material_role,
+    row.material_role || 'base'
+  ) || 'base';
+  const aiPayload = alignMcFeedbackPayload(aiRaw, role);
+  const human = alignMcFeedbackPayload(humanRaw, role);
+  try {
+    return await recordFeedback({
+      organizationId: req.user.organization_id,
+      companyId: row.company_id || null,
+      docType: MC_FEEDBACK_DOC_TYPE,
+      source: MC_FEEDBACK_SOURCE,
+      action: 'accepted',
+      aiPayload,
+      humanPayload: human,
+      fileName: row.storage_path ? path.basename(String(row.storage_path)) : null,
+      modelUsed: row.ai_model || null,
+      createdBy: req.user.user_id || null,
+    });
+  } catch (err) {
+    logger.warn('[MC] Feedback non salvato', { error: err.message, id: row.id });
+    return null;
+  }
 }
 
 async function scopedCompanyFilter(req) {
@@ -908,6 +970,7 @@ async function patchCertificate(req, res) {
         code: 'ILLEGAL_TRANSITION',
       });
     }
+    await safeRecordMcFeedback({ req, row, humanPayload: corrected });
     res.json({ success: true, data: updated.recordset[0] });
   } catch (err) {
     logger.error('patchCertificate', err);
@@ -1361,7 +1424,7 @@ async function evaluateCertificate(req, res) {
   }
 }
 
-async function transitionHitl(req, res, { nextStatus, allowed, notesRequired }) {
+async function transitionHitl(req, res, { nextStatus, allowed, notesRequired, recordLearning = false }) {
   const id = parseId(req.params.id);
   if (!id) return res.status(400).json({ error: 'Id non valido' });
   const row = await loadCertificate(req, id);
@@ -1404,6 +1467,12 @@ async function transitionHitl(req, res, { nextStatus, allowed, notesRequired }) 
       code: 'ILLEGAL_TRANSITION',
     });
   }
+  if (recordLearning) {
+    const humanPayload = parseJsonField(row.corrected_json)
+      || parseJsonField(row.extracted_json)
+      || {};
+    await safeRecordMcFeedback({ req, row, humanPayload });
+  }
   return res.json({ success: true, data: updated.recordset[0] });
 }
 
@@ -1413,6 +1482,7 @@ async function approveCertificate(req, res) {
       nextStatus: 'compliant',
       allowed: APPROVABLE,
       notesRequired: false,
+      recordLearning: true,
     });
   } catch (err) {
     logger.error('approveCertificate', err);
@@ -1448,6 +1518,8 @@ async function archiveCertificate(req, res) {
 
 module.exports = {
   MATERIAL_CERTIFICATE_MANUAL_EDITABLE_FIELDS,
+  MC_FEEDBACK_DOC_TYPE,
+  MC_FEEDBACK_SOURCE,
   listCertificates,
   getStats,
   getCertificate,
@@ -1467,6 +1539,8 @@ module.exports = {
   buildSplitCandidates,
   detectSourceDocumentKind,
   applyDeliveryNoteExtract,
+  safeRecordMcFeedback,
+  alignMcFeedbackPayload,
   fallbackDdtFromFilename,
   isDeliveryNotePayload,
 };
