@@ -113,17 +113,18 @@ describe('HomePage - panoramica moduli', () => {
   it('mostra conteggi qualifiche e rischi dalle API', async () => {
     render(React.createElement(HomePage));
 
+    // Attendi il render post-loading (non solo la chiamata mock: in CI il re-render
+    // dopo Promise.all può arrivare dopo il primo tick).
     await waitFor(() => {
       expect(mockGetQualificationsStats).toHaveBeenCalledTimes(1);
       expect(mockGetRisksStats).toHaveBeenCalledTimes(1);
+      expect(screen.getByText('Qualifiche')).toBeInTheDocument();
+      expect(screen.getByText('12')).toBeInTheDocument();
+      expect(screen.getByText('1 scadute')).toBeInTheDocument();
+      expect(screen.getByText('Rischi aperti')).toBeInTheDocument();
+      expect(screen.getByText('3')).toBeInTheDocument();
+      expect(screen.getByText('2 alta priorità')).toBeInTheDocument();
     });
-
-    expect(screen.getByText('Qualifiche')).toBeInTheDocument();
-    expect(screen.getByText('12')).toBeInTheDocument();
-    expect(screen.getByText('1 scadute')).toBeInTheDocument();
-    expect(screen.getByText('Rischi aperti')).toBeInTheDocument();
-    expect(screen.getByText('3')).toBeInTheDocument();
-    expect(screen.getByText('2 alta priorità')).toBeInTheDocument();
   });
 
   it('blocca solo i moduli non licenziati e non chiama le loro API', async () => {
