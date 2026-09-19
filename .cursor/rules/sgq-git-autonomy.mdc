@@ -1,5 +1,5 @@
 ---
-description: Policy commit/push/merge autonomi ProgettoISO — 3 livelli di rischio, quando procedere senza chiedere e quando fermarsi. Gate doppio (Bugbot + Security Review) prima di dire che una PR è mergiabile.
+description: Policy commit/push/merge autonomi ProgettoISO — 3 livelli di rischio. Cloud Agent non mergia; bot ProgettoISO può mergiare sotto gate. CI+Bugbot(+Security se presente) prima di «pronta / mergiabile».
 alwaysApply: true
 ---
 
@@ -25,15 +25,15 @@ Prima di quelle parole l'agente deve **aver letto** i tre check su **quella revi
 
 1. **CI** — `test-and-build` (e gli altri check required del job app) = **SUCCESS**. In CI possono fallire flake invisibili in locale (13/08/2026, PR #401).
 2. **Cursor Bugbot** — check **concluso**, nessun rilievo critico/bloccante. **Un solo run fatturabile per PR** ([`sgq-workflow-method.mdc`](sgq-workflow-method.mdc) § 4). Attendere il check GitHub se già partito. Subagente **`bugbot`** (Diff: "branch changes") **solo se** GitHub non ha prodotto il check entro ~10 minuti. Non commentare `bugbot run` se un run è già in corso o completato.
-3. **Cursor Security Agent: Security Reviewer** — check **concluso**, nessun rilievo critico/bloccante. Se è `IN_PROGRESS` / assente da pochi minuti: **non è pronta**. Non inventare l'esito.
+3. **Cursor Security Agent: Security Reviewer** — se il check è **presente**: **concluso**, nessun rilievo critico/bloccante. Se è `IN_PROGRESS` / appena comparso: **non è pronta**. Non inventare l'esito. Se il check **non compare affatto** (piano Ultra individuale: Security Review Context non disponibile): **non** bloccare indefinitamente dopo CI + Bugbot ok — vedi gate merge bot sotto.
 
 Se Bugbot o Security Review segnalano anche un solo problema non banale: **non proporre il merge**, fix o handoff al committente. Secondo run Bugbot solo dopo il fix reale.
 
 Registrare nella descrizione PR l'esito dei **tre** (es. "CI SUCCESS · Bugbot: nessun rilievo critico · Security Review: nessun rilievo critico").
 
-Questo gate **non sostituisce** il livello di rischio: un task Alto resta bloccato. **Non** fa mergiare il Cloud Agent (vedi sotto).
+Questo gate **non sostituisce** il livello di rischio: un task Alto resta bloccato. **Non** fa mergiare il Cloud Agent (vedi sotto). Il merge operativo, se non c'è eccezione, è del bot ProgettoISO sotto i gate della sezione dedicata.
 
-**Logica normativa (ISO 3834/15614/9606 e simili):** L1 verde dello stesso deputy non basta. Se Bugbot o Security Review non sono leggibili, non dichiarare la PR «pronta» — segnalarlo. Lo stesso agente che ha scritto codice e test non è verificatore di se stesso.
+**Logica normativa (ISO 3834/15614/9606 e simili):** L1 verde dello stesso deputy non basta. Se Bugbot o Security Review (**quando presenti**) non sono leggibili, non dichiarare la PR «pronta» — segnalarlo. Lo stesso agente che ha scritto codice e test non è verificatore di se stesso.
 
 Dopo deploy su flussi critici (login, NC, Qualifiche, SAL, WPS/WPQR, ingest): smoke del **percorso toccato** — `backend/scripts/smoke-percorsi-critici.mjs` o gli script in `AGENTS.md` § Smoke. Non un plugin Playwright nuovo.
 
@@ -41,16 +41,51 @@ Dopo deploy su flussi critici (login, NC, Qualifiche, SAL, WPS/WPQR, ingest): sm
 
 Verificato con `cursor-guide` (documentazione ufficiale, non ipotesi): Cursor dichiara esplicitamente **"Agents open draft pull requests. Nothing merges until a person reviews the change."** ([`cursor.com/docs/cloud-agent/security`](https://cursor.com/docs/cloud-agent/security)). Non esiste un permesso/toggle Cursor per abilitare il merge autonomo dei Cloud Agent — non è un permesso mancante da configurare, è una scelta di sicurezza del prodotto. La GitHub App di Cursor richiede solo "Pull requests: create PR e commenti di review", non l'azione di merge; il permesso "Administration" è di sola lettura (serve solo a leggere le regole di branch protection per capire se una PR è mergeable). Anche con una diversa configurazione dei permessi, resta comunque bloccante la Branch Protection Rule su `main` ("Changes must be made through a pull request").
 
-**Quindi il gate doppio (Bugbot + Security Review) NON fa mergiare il Cloud Agent.** Prepara la PR **pronta per un click umano**, con i tre esiti già in descrizione. L'agente si ferma lì.
+**Quindi il gate doppio (Bugbot + Security Review) NON fa mergiare il Cloud Agent.** Prepara la PR **pronta / mergiabile**, con gli esiti già in descrizione. Il Cloud Agent si ferma lì. Il merge, se non c'è eccezione, è del bot ProgettoISO sotto gate (o click/consenso del committente).
 
 **Sbagliato (20/08/2026):** «se ho due check verdi, passo al merge automatico io». Il Cloud Agent **non** ha l'azione merge (vincolo prodotto sopra). Doppio check ≠ permesso di mergiare.
 
-**Giusto:** il doppio check è il requisito per dire «pronta». L'unico merge automatico possibile è **GitHub auto-merge nativo** (click del committente «Enable auto-merge» sulla PR, o default del repo): GitHub mergia quando i check *required* sono verdi. Per usarlo in sicurezza i required checks su `main` devono includere CI + Bugbot + Security Review. Lo attiva **solo il committente** su GitHub. L'agente **non** lancia `gh pr merge --auto` se non glielo chiedi esplicitamente in quel turno.
+**Giusto:** il doppio check è il requisito per dire «pronta». Il Cloud Agent **non** lancia `gh pr merge` né `--auto` (vincolo prodotto sopra). L'attore autorizzato al merge operativo è il **bot Grok «ProgettoISO»** (fuori dalla VM Cloud, via `gh`) sotto i gate della sezione sotto. GitHub **auto-merge nativo** resta un'opzione alternativa del committente.
 
 **Percorsi alternativi per ridurre l'attesa** (da valutare con il committente, non eseguibili di default):
-- GitHub **auto-merge nativo** (sopra) — un click umano per PR, poi GitHub finisce da solo a check verdi.
+- GitHub **auto-merge nativo** — un click del committente «Enable auto-merge» sulla PR (o default del repo); GitHub finisce da solo a check *required* verdi. Non sostituisce i gate del bot ProgettoISO.
 - Automation Cursor dedicata **"PR Routing & Approval"** (approva PR a basso rischio, non mergia) combinata con auto-merge nativo GitHub — **verificata 13/08/2026** su documentazione ufficiale ([`cursor.com/docs/approval-agents`](https://cursor.com/docs/approval-agents)): esiste con questo nome esatto, legge segnali Bugbot + `APPROVAL_POLICY.md`/`.cursor/approval-policies/ROUTING.md` dal repo (regole custom Bugbot in [`.cursor/BUGBOT.md`](../BUGBOT.md)). Policy e guida di attivazione pronte in [`docs/how-to/SETUP_PR_ROUTING_APPROVAL.md`](../../docs/how-to/SETUP_PR_ROUTING_APPROVAL.md) — attivazione finale richiede Dashboard Cursor (solo il committente può farlo). **Nota piano Ultra individuale (confermato)**: Bugbot "runs only on PRs you author" — da verificare se le PR aperte da Cloud Agent contano come "tue"; Security Review Context non disponibile (richiede Team/Enterprise); scope automation solo Private.
 - Un Personal Access Token del committente inserito come Secret, usato esplicitamente su richiesta puntuale per bypassare la GitHub App di Cursor — **flusso non ufficialmente supportato da Cursor per il merge**, da usare solo se il committente lo richiede esplicitamente conoscendone il rischio.
+
+## Merge da bot ProgettoISO (Grok) — decisione 2026-09-19
+
+**Due attori, due vincoli (non confonderli):**
+
+| Attore | Dove | Merge su `main` |
+|---|---|---|
+| **Cloud Agent Cursor** (nella VM Cloud) | apre/aggiorna PR | **Mai** — vincolo prodotto Cursor (sezione sopra). Resta. |
+| **Bot Grok «ProgettoISO»** (fuori dalla VM Cloud, via `gh`) | standing permission del committente (`qsstudio241`) | **Sì**, solo sotto i gate sotto e **senza eccezioni** |
+
+Ownership unica: `qsstudio241`. Review umana del codice **non** è richiesta di default (il committente non ha competenze di code review). I livelli Basso / Medio / Alto **non** si allentano.
+
+GitHub **auto-merge nativo** resta un'opzione alternativa del committente. Non sostituisce i gate sotto.
+
+### Gate prima del merge automatico del bot
+
+Allineati alle lezioni PR #401, #507, 08/08 e 20/08/2026. Tutti devono essere veri:
+
+1. PR **non draft**
+2. `mergeable` / nessun conflitto / branch **non behind** `main`
+3. CI verde: `test-and-build` + smoke + eventuali required checks
+4. Se il check **Bugbot** è presente: **concluso**, nessun rilievo critico/bloccante
+5. Se il check **Security Review** è presente: **concluso**, nessun critico. Se **assente** (nota piano Ultra individuale già in repo: Security Review Context non disponibile): **non** bloccare indefinitamente dopo CI + Bugbot ok
+6. Nessun review «changes requested»
+
+Se un gate fallisce: nessun merge. Fix o consenso esplicito del committente.
+
+### Eccezioni — mai automerge, sempre consenso esplicito del committente
+
+Anche con tutti i gate verdi, il bot **non** mergia e serve consenso esplicito se la PR:
+
+- è di livello **Alto** (`auth.middleware`, JWT, `syncService`, migrazioni distruttive, compliance/normativa non ancora validata)
+- tocca `database/migrations/**`, script `run-migration*`, deploy VPS, rischio interruzione servizio utenti / cutover / restart obbligatorio
+- modifica `.cursor/rules/sgq-git-autonomy.mdc` o la sezione Allineamento Git di `sgq-operating-memory.mdc` (governance — già in [`.cursor/rules/APPROVAL_POLICY.md`](APPROVAL_POLICY.md))
+- applica migrazioni in **PROD** (es. 154): resta sempre sì esplicito
 
 ## Commit + push diretto SENZA chiedere conferma (livello Basso)
 
@@ -81,7 +116,7 @@ Quando **tutti** i criteri sono veri:
 ## Aggiornare il branch della PR rispetto a `origin/main` (vincolante — gate hard)
 
 **Sì** — l'agente allinea **autonomamente** il feature branch con `origin/main` (merge preferito).  
-**No** — l'agente non mergia la PR su `main` (resta click umano; vedi vincolo Cloud Agent sopra).  
+**No** — il Cloud Agent non mergia la PR su `main` (vincolo prodotto; vedi sopra). Il merge operativo, se non c'è eccezione, è del bot ProgettoISO sotto gate.  
 **No** — non chiedere al committente `git pull`, «Update branch», o altri comandi meccanici di allineamento.
 
 **Causa del «Update branch» su GitHub (da non ripetere):** gli agent aprono la PR al primo push; poi `main` avanza (merge del committente o di altre PR). Se il feature branch non ha mergiato `origin/main`, GitHub mostra «Update branch». Non è un bug di GitHub: è il branch left behind. La policy «allinea prima di dire pronta» **non basta** — i Cloud deputy spesso non dicono mai «pronta» e finiscono dietro.
@@ -118,13 +153,13 @@ I casi «CI behind / CONFLICTING / prima di dire pronta» restano coperti da que
 
 Allineamento a inizio sessione su `main`: resta in [`sgq-operating-memory.mdc`](sgq-operating-memory.mdc) § Allineamento Git.
 
-## Protocollo "pronto al click" PR (livello Medio, dopo gate doppio)
+## Protocollo «pronta / mergiabile» PR (livello Medio, dopo i gate)
 
-Il merge resta sempre un'azione del committente (vedi vincolo sopra) — l'obiettivo è arrivarci senza altre soste intermedie:
+Il Cloud Agent **non** mergia (vincolo prodotto sopra). «Pronta / mergiabile» (dopo i gate) **può** portare al merge del **bot ProgettoISO** se **non** c'è un'eccezione. In presenza di eccezione (Alto, migrazioni, deploy VPS, governance): resta click / consenso esplicito del committente. GitHub auto-merge nativo resta opzione alternativa del committente.
 
 0. Branch aggiornato rispetto a `origin/main` (sezione sopra) — **prima** di dichiarare «pronta».
-1. CI verde (`get_ci_status` = **SUCCESS** sui check del job app). **Vietato** dire «pronta» dopo i soli test locali (PR #401).
-2. Leggere **Bugbot** e **Security Review** su quella revisione (gate sopra). Se uno è ancora in corso: aspettare, non anticipare.
-3. Aggiornare la PR con i tre esiti. Nessun rilievo critico → «pronta per il merge». Rilievo non banale → NON proporre il merge.
-4. Comunicare il link — **senza** merge/auto-merge se non richiesti esplicitamente in quel turno.
-5. Dopo che il committente mergia (via GitHub): `git pull origin main`. Chiudere il `DEPUTYTASK*.md` **di quella chat**. GUIDA + roadmap § Stato attuale: nella stessa PR solo se eri l'unica chat; se c'era parallelo, sync **ora** (dopo merge), tenendo tutte le righe nuove — vedi `sgq-workflow-method.mdc` § File di traccia.
+1. CI verde (`get_ci_status` = **SUCCESS** sui check del job app, incluso smoke se required). **Vietato** dire «pronta» dopo i soli test locali (PR #401).
+2. Leggere **Bugbot** (se presente) e **Security Review** (se presente) su quella revisione. Se un check è `IN_PROGRESS`: aspettare, non anticipare. Se Security Review **non compare** (piano Ultra individuale): non bloccare indefinitamente dopo CI + Bugbot ok.
+3. Aggiornare la PR con gli esiti. Nessun rilievo critico e nessuna eccezione → «pronta / mergiabile» (il bot ProgettoISO può mergiare). Rilievo non banale o eccezione → NON proporre automerge; consenso esplicito del committente.
+4. Cloud Agent: comunicare il link — **senza** `gh pr merge` (vincolo prodotto). Bot ProgettoISO: merge via `gh` solo se tutti i gate sono veri e non c'è eccezione.
+5. Dopo il merge su `main`: `git pull origin main`. Chiudere il `DEPUTYTASK*.md` **di quella chat**. GUIDA + roadmap § Stato attuale: nella stessa PR solo se eri l'unica chat; se c'era parallelo, sync **ora** (dopo merge), tenendo tutte le righe nuove — vedi `sgq-workflow-method.mdc` § File di traccia.

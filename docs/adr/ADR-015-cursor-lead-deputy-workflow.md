@@ -67,6 +67,16 @@ I vecchi percorsi `.github/agents/` e le istruzioni Copilot (`copilot-instructio
 
 ---
 
+## Decision update 2026-09-19 — attore merge
+
+Ownership unica `qsstudio241`. Review umana del codice non richiesta di default.
+
+- I **Cloud Agent Cursor non mergiano mai** su `main` (vincolo prodotto Cursor; resta in `sgq-git-autonomy.mdc`).
+- Attore autorizzato al merge operativo: **bot Grok «ProgettoISO»** (fuori dalla VM Cloud, via `gh`), sotto i gate e con le eccezioni di quella rule (Alto, migrazioni, deploy VPS, governance = sempre consenso esplicito).
+- GitHub auto-merge nativo resta opzione alternativa del committente.
+
+Fonte operativa: [`.cursor/rules/sgq-git-autonomy.mdc`](../../.cursor/rules/sgq-git-autonomy.mdc) § Merge da bot ProgettoISO.
+
 ## Riferimenti
 
 - [ADR-001-multi-agent-workflow.md](ADR-001-multi-agent-workflow.md) — **Superato da questo ADR**
