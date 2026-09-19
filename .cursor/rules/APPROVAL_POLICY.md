@@ -18,4 +18,5 @@ Consentita solo se:
 Se il diff tocca [`sgq-git-autonomy.mdc`](sgq-git-autonomy.mdc) o la sezione *Allineamento Git
 autonomo* di [`sgq-operating-memory.mdc`](sgq-operating-memory.mdc): un classificatore automatico non
 ha modo affidabile di distinguere "rafforza una regola di sicurezza" da "la allenta" — trattare sempre
-come richiede review umana.
+come richiede review umana. Merge operativo (bot ProgettoISO vs Cloud Agent): vedi `sgq-git-autonomy.mdc`
+§ Merge da bot ProgettoISO — questa policy resta: mai approvazione/automerge automatici su quei due file.

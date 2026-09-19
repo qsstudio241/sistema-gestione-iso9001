@@ -40,7 +40,8 @@ Fonte: [`.cursor/rules/sgq-cloud-agent-env.mdc`](.cursor/rules/sgq-cloud-agent-e
   ```bash
   git fetch origin main && git merge origin/main
   ```
-  Vietato chiedere «Update branch» / `git pull` al committente; vietato push/PR «e poi si allinea». Se PR fallisce o `main` è avanti → merge **prima** di riprovare. Dopo merge di un'altra PR dello stack → allinea subito i branch OPEN. L'agente **non** mergia su `main`.
+  Vietato chiedere «Update branch» / `git pull` al committente; vietato push/PR «e poi si allinea». Se PR fallisce o `main` è avanti → merge **prima** di riprovare. Dopo merge di un'altra PR dello stack → allinea subito i branch OPEN. Il Cloud Agent **non** mergia su `main` (vincolo prodotto Cursor).
+- **Merge operativo:** bot Grok «ProgettoISO» (fuori dalla VM Cloud, via `gh`) sotto i gate in [`sgq-git-autonomy.mdc`](.cursor/rules/sgq-git-autonomy.mdc) § Merge da bot ProgettoISO. Eccezioni (Alto, migrazioni, deploy VPS, governance): consenso esplicito del committente. GitHub auto-merge nativo resta opzione alternativa.
 - L1 FE: `cd app && NODE_ENV=test npm run test:run` + `npm run build`. Smoke autenticato: `node backend/scripts/smoke-percorsi-critici.mjs` (Chromium da `cloud-install`, non `/tmp`).
 
 ## Regole repo (puntatori)

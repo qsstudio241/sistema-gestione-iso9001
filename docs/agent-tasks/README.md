@@ -8,7 +8,7 @@ Allineare **due sessioni** (es. desktop e web) **senza** un canale diretto tra g
 
 1. **Chi prepara il task** (di solito sessione desktop): crea o aggiorna un file `CASE_STUDY_*.md` o `TASK_*.md` in questa cartella con obiettivo, vincoli, criteri di completamento e branch suggerito. Esempio numerazione audit Mason: `TASK_AUDIT_NUMBER_MASON_FORMAT.md`.
 2. **Chi delega su Cursor web** (solo quando serve): incolla un prompt breve che **punta al file** (vedi sezione “Prompt pronto” dentro ogni case study).
-3. **Restituzione risultati**: commit sul branch indicato + **PR verso `main`** (mai push forzato su `main` senza review consapevole).
+3. **Restituzione risultati**: commit sul branch indicato + **PR verso `main`** (mai push forzato su `main`). Cloud Agent: non mergia. Merge: bot Grok «ProgettoISO» sotto gate, o consenso esplicito del committente su Alto / migrazioni / deploy VPS / governance (`sgq-git-autonomy.mdc`).
 4. **Brief attivi**: slot **`DEPUTYTASK.md`** (principale) e **`DEPUTYTASK1.md`**, **`2`**, … per paralleli *una tantum*; epic lunghe: **`DEPUTYTASK_<EPIC>.md`**. Il numero non è il modulo — titolo + elenco file. **Non cancellare i CHIUSI** (scontrino PR/file). Sovrascrivere uno slot solo se `Stato: CHIUSO` su `origin/main`. Task vecchio stile `TASK_*` → [archive/agent-tasks/](../archive/agent-tasks/).
 5. **Allineamento Git (obbligatorio, autonomo)**: ogni agente che legge/esegue un `DEPUTYTASK*` fa subito `git fetch origin main` + `git pull origin main` (o parte da `origin/main` aggiornato). **Non** chiedere al committente di fare pull. Dettaglio in `.cursor/rules/sgq-operating-memory.mdc`.
 6. **Slice non chiusa**: copiare [`HANDOFF_TEMPLATE.md`](HANDOFF_TEMPLATE.md) nel brief attivo. La sessione successiva parte da lì.
@@ -17,7 +17,7 @@ Allineare **due sessioni** (es. desktop e web) **senza** un canale diretto tra g
 ## Stabilità del progetto
 
 - Non introdurre segreti nel repo.
-- Preferire **PR** per modifiche non banali; merge su `main` solo con CI verde (o rischio documentato).
+- Preferire **PR** per modifiche non banali. **Chi mergia:** bot Grok «ProgettoISO» (via `gh`, sotto gate in `sgq-git-autonomy.mdc`) se non c'è eccezione; consenso esplicito del committente su Alto, `database/migrations/**` / `run-migration*`, deploy VPS, governance. I Cloud Agent Cursor **non** mergiano.
 - Backend/VPS: deploy separato; l’agente web non sostituisce operazioni che richiedono credenziali server.
 
 ## Checklist rapida deputy
