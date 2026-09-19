@@ -36,6 +36,7 @@ const {
 } = require('../utils/parseSourceGaps');
 const { processGapsFromChat } = require('../services/librarySourceRequest.service');
 const { extractDocumentText } = require('../services/documentTextExtractor.service');
+const { expandLookupCodes } = require('../utils/publicLawStandardCode');
 
 const MAX_CHAT_ATTACHMENTS = 8;
 const MAX_EXTRACT_FILES = 4;
@@ -831,25 +832,67 @@ async function knowledgeHealth(req, res) {
  * @returns {Promise<Object|null>} { title, edition, upload_date, has_chunks } o null
  */
 async function checkNormSourceAvailability(standardCode, organizationId) {
+  const codes = expandLookupCodes(standardCode);
+  if (!codes.length || !organizationId) return null;
+
+  const params = { orgId: organizationId };
+  const placeholders = codes.map((code, index) => {
+    params[`c${index}`] = code;
+    return `@c${index}`;
+  });
+  const inList = placeholders.join(', ');
+
   try {
     const result = await query(
-      `SELECT TOP 1 
-         dr.title, 
-         dr.edition, 
-         dr.upload_date,
-         CASE WHEN nc.id IS NOT NULL THEN 1 ELSE 0 END AS has_chunks
-       FROM document_registry dr
-       LEFT JOIN norm_chunks nc ON nc.organization_id = dr.organization_id 
-         AND nc.standard_code = dr.standard_code
-       WHERE dr.organization_id = @orgId
-         AND dr.standard_code = @stdCode
-         AND dr.validity_status = 'active'
-         AND dr.document_type = 'norm_source'
-       ORDER BY dr.upload_date DESC`,
-      {
-        orgId: organizationId,
-        stdCode: standardCode,
-      }
+      `SELECT TOP 1 title, edition, upload_date, standard_code, doc_type, has_chunks
+       FROM (
+         SELECT
+           dr.title AS title,
+           COALESCE(
+             JSON_VALUE(dr.type_specific_data, '$.vigenza'),
+             JSON_VALUE(dr.type_specific_data, '$.dataInizioVigore')
+           ) AS edition,
+           dr.created_at AS upload_date,
+           COALESCE(
+             NULLIF(LTRIM(RTRIM(dr.doc_code)), ''),
+             NULLIF(LTRIM(RTRIM(JSON_VALUE(dr.type_specific_data, '$.standard_code'))), '')
+           ) AS standard_code,
+           dr.doc_type AS doc_type,
+           CASE WHEN EXISTS (
+             SELECT 1 FROM norm_chunks nc
+             WHERE nc.organization_id = dr.organization_id
+               AND nc.standard_code IN (${inList})
+           ) OR EXISTS (
+             SELECT 1
+             FROM norm_document_sources nds
+             INNER JOIN norm_chunks nc2 ON nc2.document_source_id = nds.id
+             WHERE nds.document_id = dr.id
+               AND nds.organization_id = dr.organization_id
+           ) THEN 1 ELSE 0 END AS has_chunks,
+           0 AS src_rank
+         FROM document_registry dr
+         WHERE dr.organization_id = @orgId
+           AND ISNULL(dr.doc_type, '') <> 'folder'
+           AND ISNULL(dr.status, '') <> 'obsoleto'
+           AND (
+             dr.doc_code IN (${inList})
+             OR JSON_VALUE(dr.type_specific_data, '$.standard_code') IN (${inList})
+           )
+         UNION ALL
+         SELECT
+           nc.standard_code AS title,
+           NULL AS edition,
+           NULL AS upload_date,
+           nc.standard_code AS standard_code,
+           NULL AS doc_type,
+           1 AS has_chunks,
+           1 AS src_rank
+         FROM norm_chunks nc
+         WHERE nc.organization_id = @orgId
+           AND nc.standard_code IN (${inList})
+       ) src
+       ORDER BY src_rank ASC, has_chunks DESC`,
+      params
     );
 
     if (!result.recordset || result.recordset.length === 0) {
@@ -861,7 +904,9 @@ async function checkNormSourceAvailability(standardCode, organizationId) {
       title: row.title,
       edition: row.edition,
       upload_date: row.upload_date,
-      has_chunks: row.has_chunks === 1,
+      has_chunks: row.has_chunks === 1 || row.has_chunks === true,
+      standard_code: row.standard_code,
+      doc_type: row.doc_type,
     };
   } catch (err) {
     logger.error('[checkNormSourceAvailability] Errore query:', err);

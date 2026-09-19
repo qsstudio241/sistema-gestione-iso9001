@@ -160,7 +160,7 @@ describe("NormLibraryPage", () => {
 
     // backlog snapshot presente
     expect(screen.getByText(/ISO 14555/)).toBeTruthy();
-    expect(LIBRARY_REFERENCE_DOC_TYPES).toEqual(["norma", "manuale", "altro"]);
+    expect(LIBRARY_REFERENCE_DOC_TYPES).toEqual(["norma", "manuale", "altro", "decreto"]);
     expect(mockGetDocuments).toHaveBeenCalled();
   });
 
@@ -207,7 +207,36 @@ describe("NormLibraryPage", () => {
     expect(LIBRARY_DOC_TYPE_LABELS.altro).toBe("Altro / quaderno");
     expect(libraryDocTypeLabel("manuale")).toBe("Manuale / libro");
     expect(libraryDocTypeLabel("altro")).toBe("Altro / quaderno");
-    expect(LIBRARY_REFERENCE_DOC_TYPES).toEqual(["norma", "manuale", "altro"]);
+    expect(libraryDocTypeLabel("decreto")).toBe("Decreto / legge");
+    expect(LIBRARY_REFERENCE_DOC_TYPES).toEqual(["norma", "manuale", "altro", "decreto"]);
+  });
+
+  it("catalogo ingerito mostra i decreti importati", async () => {
+    mockGetDocuments.mockImplementation(({ doc_type }) => {
+      if (doc_type === "decreto") {
+        return Promise.resolve({
+          data: [
+            {
+              id: 81,
+              doc_type: "decreto",
+              doc_code: "DLgs_81_2008",
+              title: "D.Lgs. 81/2008",
+            },
+          ],
+        });
+      }
+      return Promise.resolve({ data: [] });
+    });
+
+    render(<NormLibraryPage />);
+    await waitFor(() => {
+      expect(screen.getByText("D.Lgs. 81/2008")).toBeTruthy();
+    });
+    expect(screen.getByText("DLgs_81_2008")).toBeTruthy();
+    expect(screen.getByText("Decreto / legge")).toBeTruthy();
+    expect(mockGetDocuments).toHaveBeenCalledWith(
+      expect.objectContaining({ doc_type: "decreto" })
+    );
   });
 
   it("niente form Aggiungi richiesta studio (solo AI)", async () => {
