@@ -27,8 +27,8 @@ import {
 } from "../utils/libraryGapDeepLink";
 import "./NormLibraryPage.css";
 
-/** Tipi già tipizzati usati come fonti di riferimento (LN-1 — niente libro/quaderno nuovi). */
-export const LIBRARY_REFERENCE_DOC_TYPES = ["norma", "manuale", "altro"];
+/** Tipi già tipizzati usati come fonti di riferimento (LN-1 + decreti importati da Normattiva). */
+export const LIBRARY_REFERENCE_DOC_TYPES = ["norma", "manuale", "altro", "decreto"];
 
 /**
  * Label Libreria (LN-4): chiarisce libri/quaderni senza nuovi doc_type.
@@ -38,6 +38,7 @@ export const LIBRARY_DOC_TYPE_LABELS = {
   norma: "Norma tecnica",
   manuale: "Manuale / libro",
   altro: "Altro / quaderno",
+  decreto: "Decreto / legge",
 };
 
 function libraryDocTypeLabel(docType) {
@@ -723,7 +724,7 @@ export function NormLibraryPage() {
           rows={docs}
           columns={CATALOG_COLUMNS}
           loading={loading}
-          emptyMessage="Nessuna fonte di riferimento nel Registro per i tipi norma / manuale / altro. Caricale da Documenti."
+          emptyMessage="Nessuna fonte di riferimento nel Registro per i tipi norma / manuale / altro / decreto. Caricale da Documenti."
           theme="plain"
           renderCell={renderCatalogCell}
           getRowKey={(row) => row.id}

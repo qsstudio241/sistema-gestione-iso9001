@@ -70,10 +70,11 @@ function extractCitations(aiResponse, normSource) {
   const citations = [];
   
   // Determina se è un decreto (D.Lgs., D.L., Legge) o norma tecnica ISO/UNI
-  const isDecreto = normSource.standard_code?.startsWith('D_Lgs_') || 
-                    normSource.standard_code?.startsWith('D_L_') ||
-                    normSource.standard_code?.startsWith('Legge_') ||
-                    normSource.doc_type === 'decreto';
+  const isDecreto = normSource.doc_type === 'decreto'
+                    || normSource.standard_code?.startsWith('DLgs_')
+                    || normSource.standard_code?.startsWith('D_Lgs_')
+                    || normSource.standard_code?.startsWith('D_L_')
+                    || normSource.standard_code?.startsWith('Legge_');
   
   if (isDecreto) {
     // Pattern decreti: Art. 1, Art. 2 comma 3, Art. 15 comma 1 lettera a

@@ -11,6 +11,7 @@ const { query } = require('../config/database');
 const normattivaApi = require('../services/normattivaApi.service');
 const normattivaToMarkdown = require('../services/normattivaToMarkdown.service');
 const { indexDocument } = require('../services/normChunker.service');
+const { generateStandardCode } = require('../utils/publicLawStandardCode');
 const fs = require('fs/promises');
 const path = require('path');
 
@@ -239,7 +240,7 @@ async function importNormattiva(req, res) {
         docCode: standardCode,
         parentId: legislazioneId,
         typeData: typeSpecificData,
-        userId: user.id,
+        userId: user.user_id || user.id,
       }
     );
 
@@ -317,34 +318,8 @@ async function importNormattiva(req, res) {
   }
 }
 
-/**
- * Genera standard_code da URN (es. D_Lgs_81_08 da decreto.legislativo:2008;81).
- * @param {string} urn
- * @returns {string}
- */
-function generateStandardCode(urn) {
-  const match = urn.match(/:(decreto\.legislativo|decreto\.legge|legge):(\d+);(\d+)/i);
-  
-  if (!match) {
-    // Fallback: usa URN grezzo
-    return urn.replace(/[^a-zA-Z0-9_]/g, '_');
-  }
-  
-  const [, tipo, anno, numero] = match;
-  const annoShort = anno.substring(2); // 2008 → 08
-  
-  if (tipo === 'decreto.legislativo') {
-    return `D_Lgs_${numero}_${annoShort}`;
-  } else if (tipo === 'decreto.legge') {
-    return `D_L_${numero}_${annoShort}`;
-  } else if (tipo === 'legge') {
-    return `Legge_${numero}_${annoShort}`;
-  }
-  
-  return `Decreto_${numero}_${annoShort}`;
-}
-
 module.exports = {
   searchNormattiva,
   importNormattiva,
+  generateStandardCode,
 };

@@ -78,7 +78,7 @@ const { resolveClauseText } = require('../services/normBroker.service');
 const { processGapsFromChat } = require('../services/librarySourceRequest.service');
 const { extractDocumentText } = require('../services/documentTextExtractor.service');
 const { query } = require('../config/database');
-const { aiChat, getAmbitoFacts, buildAuditFocusBlock } = require('./aiChat.controller');
+const { aiChat, getAmbitoFacts, buildAuditFocusBlock, checkNormSourceAvailability } = require('./aiChat.controller');
 
 function createRes() {
   const res = { statusCode: 200 };
@@ -729,5 +729,53 @@ describe('aiChat.controller — SB-3 fatti Ambito nel prompt', () => {
       99,
       expect.objectContaining({ companyId: null, studioSafeOverview: true })
     );
+  });
+});
+
+describe('checkNormSourceAvailability', () => {
+  beforeEach(() => {
+    query.mockReset();
+  });
+
+  it('vede import attuale su document_registry e norm_chunks, non lo schema norm_source', async () => {
+    query.mockResolvedValue({
+      recordset: [{
+        title: 'D.Lgs. 81/2008',
+        edition: 'Vigente',
+        upload_date: '2026-09-01',
+        standard_code: 'DLgs_81_2008',
+        doc_type: 'decreto',
+        has_chunks: 1,
+      }],
+    });
+
+    const row = await checkNormSourceAvailability('DLgs_81_2008', 42);
+    const sql = query.mock.calls[0][0];
+    const params = query.mock.calls[0][1];
+
+    expect(sql).not.toMatch(/document_type\s*=\s*'norm_source'/);
+    expect(sql).not.toMatch(/validity_status\s*=\s*'active'/);
+    expect(sql).toContain('FROM document_registry');
+    expect(sql).toContain('FROM norm_chunks');
+    expect(Object.values(params)).toEqual(expect.arrayContaining([
+      42,
+      'DLgs_81_2008',
+      'D_Lgs_81_08',
+    ]));
+    expect(row).toEqual(expect.objectContaining({
+      title: 'D.Lgs. 81/2008',
+      has_chunks: true,
+      doc_type: 'decreto',
+      standard_code: 'DLgs_81_2008',
+    }));
+  });
+
+  it('una ISO non allarga la ricerca a tutti i decreti', async () => {
+    query.mockResolvedValue({ recordset: [] });
+    await checkNormSourceAvailability('ISO_9001_2015', 7);
+    const params = query.mock.calls[0][1];
+    const values = Object.values(params);
+    expect(values).toEqual(expect.arrayContaining(['ISO_9001_2015', 'ISO_9001']));
+    expect(values.some((value) => String(value).startsWith('DLgs_'))).toBe(false);
   });
 });

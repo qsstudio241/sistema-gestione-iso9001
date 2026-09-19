@@ -10,6 +10,7 @@ const { chunkText } = require('./normChunker.service');
 const { extractDocumentText } = require('./documentTextExtractor.service');
 const { getGeminiEmbedBatch, getGeminiEmbedPauseMs, pause } = require('./adapters/geminiKeyPool');
 const logger = require('../utils/logger');
+const { publicLawSqlLikePatterns } = require('../utils/publicLawStandardCode');
 
 // Tipo chunk dedicato al contenuto testuale dei documenti allegati.
 // Distinto da 'document' (solo metadati) per consentire prune/dedup mirati.
@@ -548,6 +549,45 @@ function vecNorm(a) {
   return Math.sqrt(s);
 }
 
+/**
+ * Filtro norm_chunks quando una ISO è attiva.
+ * La norma selezionata resta lo scope principale; un decreto/legge già
+ * importato (stessa org) non viene scartato solo perché il codice non è ISO.
+ * Non include le altre norme tecniche (UNI/ISO diverse da quella attiva).
+ * @param {string[]} standardCodes
+ * @returns {{ sql: string, params: object }}
+ */
+function buildNormChunkScopeClause(standardCodes) {
+  if (!standardCodes || standardCodes.length === 0) {
+    return { sql: '', params: {} };
+  }
+
+  const params = {};
+  const placeholders = standardCodes.map((code, index) => {
+    params[`sc${index}`] = code;
+    return `@sc${index}`;
+  });
+  const lawLikes = publicLawSqlLikePatterns()
+    .map((pattern) => `standard_code LIKE '${pattern}'`)
+    .join('\n        OR ');
+
+  const sql = ` AND (
+      standard_code IN (${placeholders.join(', ')})
+      OR standard_code IS NULL
+      OR ${lawLikes}
+      OR EXISTS (
+        SELECT 1
+        FROM norm_document_sources nds
+        INNER JOIN document_registry dr ON dr.id = nds.document_id
+        WHERE nds.id = norm_chunks.document_source_id
+          AND dr.organization_id = @orgId
+          AND dr.doc_type IN ('decreto', 'legge')
+      )
+    )`;
+
+  return { sql, params };
+}
+
 function cosineSimilarity(a, b) {
   const d = dot(a, b);
   const na = vecNorm(a);
@@ -615,13 +655,9 @@ async function searchKnowledge(queryText, organizationId, options = {}) {
     const ncParams = { orgId: organizationId };
 
     if (standardCodes.length > 0) {
-      const codeParams = {};
-      const placeholders = standardCodes.map((code, i) => {
-        codeParams[`sc${i}`] = code;
-        return `@sc${i}`;
-      });
-      ncSql += ` AND (standard_code IN (${placeholders.join(', ')}) OR standard_code IS NULL)`;
-      Object.assign(ncParams, codeParams);
+      const scope = buildNormChunkScopeClause(standardCodes);
+      ncSql += scope.sql;
+      Object.assign(ncParams, scope.params);
     }
 
     const ncResult = await query(ncSql, ncParams);
@@ -775,6 +811,7 @@ module.exports = {
   indexAllEntities,
   indexDocumentContents,
   searchKnowledge,
+  buildNormChunkScopeClause,
   processFeedbackChunks,
   companyIdForContentScope,
   INDEXABLE_ENTITIES,
