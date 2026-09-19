@@ -3,17 +3,14 @@
  * Test L1 per servizi Normattiva (con mock).
  */
 
-const { describe, it, expect, beforeEach, vi } = require('vitest');
-
-// Mock fetch globale
-global.fetch = vi.fn();
+global.fetch = jest.fn();
 
 const normattivaApi = require('../src/services/normattivaApi.service');
 const normattivaToMarkdown = require('../src/services/normattivaToMarkdown.service');
 
 describe('NormattivaApi Service', () => {
   beforeEach(() => {
-    vi.clearAllMocks();
+    jest.clearAllMocks();
     normattivaApi.clearCache();
   });
 
@@ -71,24 +68,67 @@ describe('NormattivaApi Service', () => {
   });
 
   describe('downloadNormXml', () => {
-    it('dovrebbe scaricare XML da URN valido', async () => {
-      const mockXml = '<nir><articolo><num>1</num><comma>Testo articolo</comma></articolo></nir>';
+    const pageHtml = '<html><a href="/do/atto/caricaAKN?dataGU=20080430&amp;codiceRedaz=008G0104&amp;dataVigenza=20260919">XML</a></html>';
+    const pageHeaders = {
+      getSetCookie: () => ['JSESSIONID=abc; Path=/; HttpOnly'],
+      get: () => null,
+    };
 
-      global.fetch.mockResolvedValueOnce({
-        ok: true,
-        text: async () => mockXml,
-      });
+    it('dovrebbe scaricare XML ufficiale Akoma, non la pagina !vig=', async () => {
+      const mockXml = '<?xml version="1.0"?><akomaNtoso><article eId="art_1"><num>Art. 1.</num><heading>Ambito</heading><paragraph><num>1.</num><content><p>Testo articolo ufficiale abbastanza lungo per superare la soglia.</p></content></paragraph></article></akomaNtoso>';
 
-      const xml = await normattivaApi.downloadNormXml('urn:nir:stato:decreto.legislativo:2008;81');
+      global.fetch
+        .mockResolvedValueOnce({
+          ok: true,
+          status: 200,
+          headers: pageHeaders,
+          text: async () => pageHtml,
+        })
+        .mockResolvedValueOnce({
+          ok: true,
+          status: 200,
+          headers: { getSetCookie: () => [], get: () => 'text/xml' },
+          text: async () => mockXml,
+        });
+
+      const xml = await normattivaApi.downloadNormXml('urn:nir:stato:decreto.legislativo:2008-04-09;81');
 
       expect(xml).toBe(mockXml);
       expect(xml.length).toBeGreaterThan(50);
+      const firstUrl = global.fetch.mock.calls[0][0];
+      const secondUrl = global.fetch.mock.calls[1][0];
+      expect(firstUrl).not.toContain('!vig=');
+      expect(secondUrl).toContain('/do/atto/caricaAKN');
+      expect(secondUrl).toContain('codiceRedaz=008G0104');
+      expect(global.fetch.mock.calls[1][1].headers.Cookie).toContain('JSESSIONID=abc');
+      expect(global.fetch.mock.calls[1][1].headers.Referer).toContain('uri-res/N2Ls');
+    });
+
+    it('dovrebbe rifiutare HTML al posto dell XML', async () => {
+      global.fetch
+        .mockResolvedValueOnce({
+          ok: true,
+          status: 200,
+          headers: pageHeaders,
+          text: async () => pageHtml,
+        })
+        .mockResolvedValueOnce({
+          ok: true,
+          status: 200,
+          headers: { getSetCookie: () => [], get: () => 'text/html' },
+          text: async () => '<!DOCTYPE html><html><body>menu portale</body></html>',
+        });
+
+      await expect(
+        normattivaApi.downloadNormXml('urn:nir:stato:decreto.legislativo:2008-04-09;81')
+      ).rejects.toThrow('non ha restituito XML');
     });
 
     it('dovrebbe lanciare errore per HTTP error', async () => {
       global.fetch.mockResolvedValueOnce({
         ok: false,
         status: 404,
+        headers: { getSetCookie: () => [], get: () => null },
       });
 
       await expect(
@@ -98,9 +138,7 @@ describe('NormattivaApi Service', () => {
 
     it('dovrebbe lanciare errore per timeout', async () => {
       global.fetch.mockImplementationOnce(() =>
-        new Promise((_, reject) =>
-          setTimeout(() => reject({ name: 'AbortError' }), 20000)
-        )
+        Promise.reject({ name: 'AbortError' })
       );
 
       await expect(
@@ -142,6 +180,30 @@ describe('NormattivaToMarkdown Service', () => {
       expect(markdown).toContain('### Art. 1 — Ambito di applicazione');
       expect(markdown).toContain('### Art. 2 — Definizioni');
       expect(markdown).toContain('Il presente decreto si applica');
+    });
+
+    it('dovrebbe convertire XML Akoma Ntoso (article/paragraph)', () => {
+      const xml = `<?xml version="1.0"?><akomaNtoso>
+        <article eId="art_28">
+          <num>Art. 28.</num>
+          <heading> Oggetto della valutazione dei rischi</heading>
+          <paragraph eId="art_28__para_1">
+            <num>1.</num>
+            <content><p>La valutazione di cui all'articolo 17 deve riguardare tutti i rischi.</p></content>
+          </paragraph>
+        </article>
+      </akomaNtoso>`;
+
+      const markdown = normattivaToMarkdown.convertXmlToMarkdown(xml, {
+        urn: 'urn:nir:stato:decreto.legislativo:2008-04-09;81',
+        title: 'D.Lgs. 81/2008',
+        vigenza: 'Vigente',
+      });
+
+      expect(markdown).toContain('### Art. 28 — Oggetto della valutazione dei rischi');
+      expect(markdown).toContain('tutti i rischi');
+      expect(markdown).not.toContain('## Testo completo');
+      expect(markdown).not.toContain('<article');
     });
 
     it('dovrebbe gestire XML senza articoli strutturati (fallback testo grezzo)', () => {
@@ -239,13 +301,19 @@ describe('Integration mock', () => {
         </articolo>
       </nir>
     `;
+    const pageHtml = '<html><a href="/do/atto/caricaAKN?dataGU=20080430&amp;codiceRedaz=008G0104&amp;dataVigenza=20260919">XML</a></html>';
 
-    // Mock checkUrnExists
-    global.fetch.mockResolvedValueOnce({ ok: true });
-
-    // Mock downloadNormXml
+    global.fetch.mockResolvedValueOnce({ ok: true, status: 200, headers: { getSetCookie: () => [], get: () => null } });
     global.fetch.mockResolvedValueOnce({
       ok: true,
+      status: 200,
+      headers: { getSetCookie: () => [], get: () => null },
+      text: async () => pageHtml,
+    });
+    global.fetch.mockResolvedValueOnce({
+      ok: true,
+      status: 200,
+      headers: { getSetCookie: () => [], get: () => 'text/xml' },
       text: async () => mockXml,
     });
 

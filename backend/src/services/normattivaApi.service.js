@@ -3,7 +3,8 @@
  * Wrapper API pubblica Normattiva.it per ricerca e download decreti/leggi.
  * 
  * Rate limiting: ~100 req/giorno su Normattiva (cache locale risultati)
- * Endpoint pubblici: https://www.normattiva.it/do/atto/export
+ * Endpoint XML: GET /do/atto/caricaAKN (Akoma Ntoso), dopo la pagina pubblica dell'atto.
+ * Il POST nudo su /do/atto/export senza il form completo restituisce HTML di errore, non XML.
  */
 
 const logger = require('../utils/logger');
@@ -11,6 +12,8 @@ const COMMON_DECREE_DATES = require('../data/commonDecreeDates');
 
 const NORMATTIVA_BASE = 'https://www.normattiva.it';
 const FETCH_TIMEOUT_MS = 15000;
+const PAGE_TIMEOUT_MS = 25000;
+const XML_TIMEOUT_MS = 90000;
 const USER_AGENT = 'SGQ-NormIngest/1.0';
 
 // Cache risultati search in memoria (5 min TTL)
@@ -214,36 +217,150 @@ async function getNormDetails(urn) {
 }
 
 /**
- * Scarica il testo consolidato (XML) di un decreto.
+ * Permalink pubblico dell'atto (pagina da cui Normattiva espone il link XML).
  * @param {string} urn
- * @returns {Promise<string>} Testo XML
+ * @returns {string}
  */
-async function downloadNormXml(urn) {
-  try {
-    logger.info(`[NormattivaAPI] Download XML per URN: ${urn}`);
-    
-    // URL per testo consolidato
-    const url = `${NORMATTIVA_BASE}/uri-res/N2Ls?${encodeURIComponent(urn)}!vig=`;
-    
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
+function buildActPageUrl(urn) {
+  return `${NORMATTIVA_BASE}/uri-res/N2Ls?${urn}`;
+}
 
+/**
+ * Link ufficiale export Akoma Ntoso (`/do/atto/caricaAKN`) presente nella pagina atto.
+ * Il POST nudo su `/do/atto/export` senza il form completo restituisce HTML di errore.
+ * @param {string} html
+ * @returns {string|null}
+ */
+function extractOfficialXmlUrl(html) {
+  const match = String(html || '').match(/href="([^"]*\/do\/atto\/caricaAKN\?[^"]+)"/i);
+  if (!match) return null;
+  let href = match[1].replace(/&amp;/g, '&');
+  if (href.startsWith('https://') || href.startsWith('http://')) return href;
+  if (!href.startsWith('/')) href = `/${href}`;
+  return `${NORMATTIVA_BASE}${href}`;
+}
+
+/**
+ * Vero XML (dichiarazione o radice NIR/Akoma), non la shell HTML del portale.
+ * @param {string} text
+ * @returns {boolean}
+ */
+function isOfficialXml(text) {
+  const head = String(text || '').replace(/^\uFEFF/, '').trimStart().slice(0, 1200);
+  if (/^<!DOCTYPE\s+html/i.test(head) || /^<html[\s>]/i.test(head)) return false;
+  if (/captcha|recaptcha/i.test(head)) return false;
+  return /^<\?xml/i.test(head)
+    || /<akomaNtoso[\s>]/i.test(head)
+    || /<(?:nir|articolo|article)\b/i.test(head);
+}
+
+function readSetCookies(headers) {
+  if (!headers || typeof headers.getSetCookie !== 'function') return [];
+  try {
+    return headers.getSetCookie() || [];
+  } catch {
+    return [];
+  }
+}
+
+function mergeCookies(existing, setCookieHeaders) {
+  const jar = new Map();
+  for (const part of String(existing || '').split(';')) {
+    const trimmed = part.trim();
+    const eq = trimmed.indexOf('=');
+    if (eq > 0) jar.set(trimmed.slice(0, eq).trim(), trimmed.slice(eq + 1).trim());
+  }
+  for (const raw of setCookieHeaders || []) {
+    const pair = String(raw).split(';')[0];
+    const eq = pair.indexOf('=');
+    if (eq > 0) jar.set(pair.slice(0, eq).trim(), pair.slice(eq + 1).trim());
+  }
+  return [...jar.entries()].map(([name, value]) => `${name}=${value}`).join('; ');
+}
+
+/**
+ * Fetch con cookie di sessione. Normattiva consegna il file XML solo dopo la pagina atto.
+ * @param {string} url
+ * @param {{ timeoutMs?: number, cookie?: string, headers?: object, method?: string }} [opts]
+ */
+async function fetchWithSession(url, opts = {}) {
+  const timeoutMs = opts.timeoutMs || FETCH_TIMEOUT_MS;
+  let current = url;
+  let cookie = opts.cookie || '';
+
+  for (let hop = 0; hop < 6; hop += 1) {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), timeoutMs);
     let response;
     try {
-      response = await fetch(url, {
+      response = await fetch(current, {
+        method: opts.method || 'GET',
+        redirect: 'manual',
         signal: controller.signal,
-        headers: { 'User-Agent': USER_AGENT },
+        headers: {
+          'User-Agent': USER_AGENT,
+          Accept: 'application/xml,text/xml,text/html;q=0.8,*/*;q=0.5',
+          ...(cookie ? { Cookie: cookie } : {}),
+          ...(opts.headers || {}),
+        },
       });
     } finally {
       clearTimeout(timeout);
     }
 
-    if (!response.ok) {
-      throw new Error(`HTTP ${response.status} per URN ${urn}`);
+    cookie = mergeCookies(cookie, readSetCookies(response.headers));
+    const status = response.status || 0;
+    if (status >= 300 && status < 400) {
+      const location = response.headers && typeof response.headers.get === 'function'
+        ? response.headers.get('location')
+        : null;
+      if (!location) break;
+      current = new URL(location, current).href;
+      continue;
     }
 
-    const xml = await response.text();
-    
+    const text = response.ok && typeof response.text === 'function' ? await response.text() : '';
+    return { response, text, cookie };
+  }
+
+  throw new Error('Troppi redirect Normattiva');
+}
+
+/**
+ * Scarica il testo consolidato XML (Akoma Ntoso) di un decreto.
+ * Non usa la pagina HTML `!vig=`: quella non contiene gli articoli.
+ * @param {string} urn
+ * @returns {Promise<string>} Testo XML
+ */
+async function downloadNormXml(urn) {
+  try {
+    logger.info(`[NormattivaAPI] Download XML ufficiale per URN: ${urn}`);
+    const pageUrl = buildActPageUrl(urn);
+    const page = await fetchWithSession(pageUrl, { timeoutMs: PAGE_TIMEOUT_MS });
+
+    if (!page.response.ok) {
+      throw new Error(`HTTP ${page.response.status} per URN ${urn}`);
+    }
+
+    const xmlUrl = extractOfficialXmlUrl(page.text);
+    if (!xmlUrl) {
+      throw new Error('Export XML ufficiale non trovato (caricaAKN assente)');
+    }
+
+    const xmlRes = await fetchWithSession(xmlUrl, {
+      timeoutMs: XML_TIMEOUT_MS,
+      cookie: page.cookie,
+      headers: { Referer: pageUrl, Accept: 'application/xml,text/xml,*/*' },
+    });
+
+    if (!xmlRes.response.ok) {
+      throw new Error(`HTTP ${xmlRes.response.status} export XML per URN ${urn}`);
+    }
+
+    const xml = xmlRes.text;
+    if (!isOfficialXml(xml)) {
+      throw new Error('Export ufficiale non ha restituito XML');
+    }
     if (!xml || xml.length < 100) {
       throw new Error('Testo XML troppo corto o vuoto');
     }
@@ -252,11 +369,11 @@ async function downloadNormXml(urn) {
     return xml;
   } catch (err) {
     logger.error('[NormattivaAPI] Errore download XML:', err.message);
-    
+
     if (err.name === 'AbortError') {
       throw new Error('Timeout connessione Normattiva (15s)');
     }
-    
+
     throw new Error(`Impossibile scaricare testo per URN ${urn}: ${err.message}`);
   }
 }
@@ -274,4 +391,7 @@ module.exports = {
   getNormDetails,
   downloadNormXml,
   clearCache,
+  buildActPageUrl,
+  extractOfficialXmlUrl,
+  isOfficialXml,
 };
