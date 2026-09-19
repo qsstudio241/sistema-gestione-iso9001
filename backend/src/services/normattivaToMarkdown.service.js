@@ -14,8 +14,25 @@
 
 const logger = require('../utils/logger');
 
+function normalizeArticleNumber(raw) {
+  const cleaned = String(raw || '')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .replace(/^art(?:icolo)?\.?\s*/i, '')
+    .replace(/\.$/, '')
+    .trim();
+  return cleaned || '?';
+}
+
+function tagInner(xml, tagNames) {
+  const names = tagNames.join('|');
+  const match = String(xml || '').match(new RegExp(`<(?:${names})\\b[^>]*>([\\s\\S]*?)<\\/(?:${names})>`, 'i'));
+  return match ? cleanXmlTags(match[1]) : '';
+}
+
 /**
  * Converte XML Normattiva in Markdown strutturato.
+ * Accetta NIR (`articolo`/`comma`) e Akoma Ntoso (`article`/`paragraph`).
  * @param {string} xmlText - XML completo del decreto
  * @param {object} metadata - { urn, title, vigenza, dataInizioVigore, dataFineVigore }
  * @returns {string} Markdown strutturato
@@ -23,80 +40,65 @@ const logger = require('../utils/logger');
 function convertXmlToMarkdown(xmlText, metadata) {
   try {
     logger.info(`[NormattivaToMarkdown] Conversione in corso per: ${metadata.title}`);
-    
-    // Parsing XML basilare (in produzione: xmldom o xml2js)
-    // Per MVP: estrazione testuale con regex
-    
+
     const lines = [];
-    
-    // Header
+
     lines.push(`# ${metadata.title || 'Decreto Legislativo'}`);
     lines.push('');
     lines.push('**Fonte**: Normattiva (testo consolidato)');
     lines.push(`**URN**: ${metadata.urn || 'N/D'}`);
-    
+
     if (metadata.vigenza) {
       lines.push(`**Stato**: ${metadata.vigenza}`);
     }
-    
+
     if (metadata.dataInizioVigore) {
       lines.push(`**Vigore dal**: ${metadata.dataInizioVigore}`);
     }
-    
+
     if (metadata.dataFineVigore) {
       lines.push(`**Vigore fino al**: ${metadata.dataFineVigore}`);
     }
-    
+
     lines.push('');
     lines.push('---');
     lines.push('');
-    
-    // Parsing articoli
-    // Pattern tipico XML Normattiva: <articolo id="..."><num>1</num><rubrica>Ambito</rubrica><comma>...</comma></articolo>
-    
-    const articoloRegex = /<articolo[^>]*>([\s\S]*?)<\/articolo>/gi;
+
+    const articoloRegex = /<(articolo|article)\b[^>]*>([\s\S]*?)<\/\1>/gi;
     const articoli = [];
-    
+
     let match;
     while ((match = articoloRegex.exec(xmlText)) !== null) {
-      const articoloXml = match[1];
-      
-      // Estrai numero articolo
-      const numMatch = articoloXml.match(/<num>([^<]+)<\/num>/i);
-      const numero = numMatch ? numMatch[1].trim() : '?';
-      
-      // Estrai rubrica (titolo articolo)
-      const rubricaMatch = articoloXml.match(/<rubrica>([^<]+)<\/rubrica>/i);
-      const rubrica = rubricaMatch ? rubricaMatch[1].trim() : '';
-      
-      // Estrai commi
-      const commaRegex = /<comma[^>]*>([\s\S]*?)<\/comma>/gi;
+      const articoloXml = match[2];
+      const numero = normalizeArticleNumber(tagInner(articoloXml, ['num']));
+      const rubrica = tagInner(articoloXml, ['rubrica', 'heading']);
+
+      const commaRegex = /<(comma|paragraph)\b[^>]*>([\s\S]*?)<\/\1>/gi;
       const commi = [];
-      
+
       let commaMatch;
       while ((commaMatch = commaRegex.exec(articoloXml)) !== null) {
-        const commaText = cleanXmlTags(commaMatch[1]);
+        const body = commaMatch[2].replace(/<num\b[^>]*>[\s\S]*?<\/num>/i, '');
+        const commaText = cleanXmlTags(body);
         if (commaText.trim()) {
           commi.push(commaText.trim());
         }
       }
-      
-      // Se nessun comma esplicito, prendi tutto il testo dell'articolo
+
       if (commi.length === 0) {
         const cleanText = cleanXmlTags(articoloXml);
         if (cleanText.trim()) {
           commi.push(cleanText.trim());
         }
       }
-      
+
       articoli.push({
         numero,
         rubrica,
         commi,
       });
     }
-    
-    // Se non troviamo articoli strutturati, fallback: estrai tutto il testo
+
     if (articoli.length === 0) {
       logger.warn('[NormattivaToMarkdown] Nessun articolo strutturato trovato, fallback testo grezzo');
       const cleanText = cleanXmlTags(xmlText);
@@ -105,29 +107,26 @@ function convertXmlToMarkdown(xmlText, metadata) {
       lines.push(cleanText);
       return lines.join('\n');
     }
-    
-    // Genera Markdown da articoli
+
     for (const art of articoli) {
       lines.push(`### Art. ${art.numero}${art.rubrica ? ` — ${art.rubrica}` : ''}`);
       lines.push('');
-      
+
       if (art.commi.length === 1) {
-        // Un solo comma: paragrafo semplice
         lines.push(art.commi[0]);
       } else {
-        // Più commi: lista numerata
         for (let i = 0; i < art.commi.length; i++) {
           lines.push(`${i + 1}. ${art.commi[i]}`);
           lines.push('');
         }
       }
-      
+
       lines.push('');
     }
-    
+
     const markdown = lines.join('\n');
     logger.info(`[NormattivaToMarkdown] Conversione completata: ${articoli.length} articoli, ${markdown.length} caratteri`);
-    
+
     return markdown;
   } catch (err) {
     logger.error('[NormattivaToMarkdown] Errore conversione:', err.message);
