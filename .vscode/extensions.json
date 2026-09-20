@@ -1,0 +1,9 @@
+{
+  "recommendations": [
+    "vitest.explorer",
+    "github.vscode-pull-request-github",
+    "ms-mssql.mssql",
+    "EditorConfig.EditorConfig",
+    "anysphere.remote-ssh"
+  ]
+}

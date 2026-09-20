@@ -1,0 +1,21 @@
+{
+  "files.exclude": {
+    "**/node_modules": true
+  },
+  "search.exclude": {
+    "**/node_modules": true,
+    "**/dist": true,
+    "**/.git": true,
+    "**/coverage": true
+  },
+  "files.watcherExclude": {
+    "**/node_modules/**": true,
+    "**/dist/**": true,
+    "**/.git/objects/**": true,
+    "**/.git/subtree-cache/**": true,
+    "**/coverage/**": true
+  },
+  "vitest.rootConfig": "./app/vitest.config.mjs",
+  "vitest.vitestPackagePath": "./app/node_modules/vitest/vitest.mjs",
+  "vitest.enable": true
+}
