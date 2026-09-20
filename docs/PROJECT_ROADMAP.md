@@ -6,20 +6,21 @@
 
 > Avvio: Read con **`limit: 45`** (questa sezione deve entrarci). Resto del file = backlog/cronologia — **non** iniettare. Epic → `PLAN_*_SLICES.md`. Lezioni → [GUIDA](GUIDA_CONSOLIDATA.md) **a sezioni**. Archivio marzo 2026: [archive](archive/PROJECT_CONTEXT_STATO_FUNZIONALITA_2026-03.md).
 
-**Ultimo aggiornamento**: 17/09/2026. Vista committente: **Gestione → Stato sviluppo** (`/settings/stato-sviluppo`, superadmin).
+**Ultimo aggiornamento**: 20/09/2026. Vista committente: **Gestione → Stato sviluppo** (`/settings/stato-sviluppo`, superadmin).
 
 ### Moduli maturi
 
-Audit multi-standard · NC · Qualifiche · Saldatura (WPQR/WPS/3834/Welding Book + foto cordone) · SAL · Registro + Scadenzari · Alert · Riesame · RBAC · Obblighi legali · Assistente AI / Gap · CND · Libreria fonti (+ gap SA) · Second Brain Ambito (SB-4 + SB-6 + CTX-0…3) · Compliance Map (§8.2).
+Audit multi-standard · NC · Qualifiche · Saldatura (WPQR/WPS/3834/Welding Book + foto cordone) · SAL · Registro + Scadenzari · Alert · Riesame · RBAC · Obblighi legali · Assistente AI / Gap · CND · Libreria fonti (+ gap SA; import decreti Normattiva XML → agenti) · Second Brain Ambito (SB-4 + SB-6 + CTX-0…3) · Compliance Map (§8.2).
 
-### Sessione più recente (17/09/2026)
+### Sessione più recente (20/09/2026)
 
-**Material Compliance MC-7:** PATCH/approve certificato → `recordFeedback` (ADR-017) → few-shot al prossimo extract. Nessuna migrazione. **Next = HITL:** CTX-4 · ING-5 · ROO-18 · S1c · ISO-4b · registry MC (nebbia).
+**Documenti pubblici → agenti (chiusa in prod):** #688 XML Akoma Ntoso (`caricaAKN`); #689 codice=seed + catalogo `decreto` + quesiti/`norm_chunks` + chat ISO non droppa diritto pubblico; #690 `publicLawStandardCode` nel manifest. Lezioni in GUIDA (sezione Harness). **Next = HITL:** CTX-4 · ING-5 · ROO-18 · S1c · ISO-4b · registry MC (nebbia).
 
 ### Sessioni recenti (pointer — dettaglio in `<details>` sotto)
 
 | Data | Esito | Piano |
 |------|-------|-------|
+| 20/09 | Doc pubblici→agenti CHIUSA (#688–#690) + lezioni GUIDA | GUIDA · Libreria / Normattiva |
 | 17/09 | MC-7 feedback ADR-017 su PATCH/approve Materiali | [`PLAN_MATERIAL_COMPLIANCE`](agent-tasks/PLAN_MATERIAL_COMPLIANCE_SLICES.md) |
 | 16/09 | Qualifiche: finestra modifica non si richiude più da sola | `QualificationForm.jsx` · `QualificationsPage.jsx` |
 | 13/09 | Viewer Word: bundling `docx-preview` + allegati in-app | `vite.config.mjs` · `InAppOfficeViewer.jsx` |
