@@ -12,7 +12,7 @@ Allineare **due sessioni** (es. desktop e web) **senza** un canale diretto tra g
 4. **Brief attivi**: slot **`DEPUTYTASK.md`** (principale) e **`DEPUTYTASK1.md`**, **`2`**, … per paralleli *una tantum*; epic lunghe: **`DEPUTYTASK_<EPIC>.md`**. Il numero non è il modulo — titolo + elenco file. **Non cancellare i CHIUSI** (scontrino PR/file). Sovrascrivere uno slot solo se `Stato: CHIUSO` su `origin/main`. Task vecchio stile `TASK_*` → [archive/agent-tasks/](../archive/agent-tasks/).
 5. **Allineamento Git (obbligatorio, autonomo)**: ogni agente che legge/esegue un `DEPUTYTASK*` fa subito `git fetch origin main` + `git pull origin main` (o parte da `origin/main` aggiornato). **Non** chiedere al committente di fare pull. Dettaglio in `.cursor/rules/sgq-operating-memory.mdc`.
 6. **Slice non chiusa**: copiare [`HANDOFF_TEMPLATE.md`](HANDOFF_TEMPLATE.md) nel brief attivo. La sessione successiva parte da lì.
-7. **Verifica**: tab **Checks** sulla PR — workflow `.github/workflows/ci-app-pr.yml` (test + build `app/`). Netlify Deploy Preview è complementare. PR Medio: Bugbot. Smoke UI: `backend/scripts/smoke-percorsi-critici.mjs`.
+7. **Verifica**: tab **Checks** sulla PR — workflow `.github/workflows/ci-app-pr.yml` (test + build `app/`). Netlify Deploy Preview è complementare. PR Medio: commento `bugbot run` a slice chiusa (Dashboard **Manual Only**, 2026-09-20) + check OK prima di «pronta». Smoke UI: `backend/scripts/smoke-percorsi-critici.mjs`.
 
 ## Stabilità del progetto
 

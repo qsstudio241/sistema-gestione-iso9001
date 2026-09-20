@@ -109,6 +109,10 @@
 
 - [ ] Branch allineato a `origin/main` (merge fatto **ora**, prima dell'ultimo push/PR) — vedi `sgq-git-autonomy.mdc` § Aggiornare il branch.
 
+## 8) Bugbot (Manual Only)
+
+- [ ] `bugbot run` fatto **una volta** a slice chiusa (commento `bugbot run` o `@cursor review`) + check concluso senza rilievi critici. Secondo run solo dopo un fix reale.
+
 ---
 
 ## Esito finale (da compilare)

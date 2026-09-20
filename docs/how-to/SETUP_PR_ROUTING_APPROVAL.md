@@ -4,6 +4,10 @@
 13/08/2026). Attivazione finale richiede accesso al **Dashboard Cursor** (cursor.com), non eseguibile
 da un Cloud Agent — nessun agente ha credenziali/permessi admin sull'account.
 
+**Stato account (confermato 2026-09-20):** Bugbot **Manual Only** (non always-on). PR Routing
+**Enabled** — Approve **ON**, Request Reviewers **OFF**. Senza commento `bugbot run` spesso manca
+il Bugbot Review Context (PR Router / bot ProgettoISO).
+
 **Fonti verificate** (13/08/2026, tramite subagent `cursor-guide` sulla documentazione ufficiale, non
 per deduzione):
 
@@ -53,6 +57,9 @@ meccanismo non gira automaticamente sulle PR dei Cloud Agent col tuo piano, e se
 commentare `bugbot run` (o `cursor review`) all'agente stesso come ultimo passo prima di chiedere la
 tua revisione — un passo in più ma ancora molto meno lavoro del gate manuale attuale.
 
+**Aggiornamento 2026-09-20:** con Manual Only questo fallback è il percorso normale: il Cloud Agent
+commenta `bugbot run` a slice chiusa; senza quel commento il Review Context spesso manca.
+
 ## Costo (usage-based billing, dati reali non stimati)
 
 - Ogni run Bugbot costa in media **$1.00–$1.50**, secondo dimensione/complessità della PR.
@@ -60,9 +67,9 @@ tua revisione — un passo in più ma ancora molto meno lavoro del gate manuale 
   disabilitato, Bugbot si ferma finché non rinnovi il ciclo di fatturazione** (non fallisce in modo
   silenzioso, semplicemente non gira più).
 - Monitora il consumo reale su `cursor.com/dashboard/spending` dopo la prima settimana.
-- **Policy repo (18/08/2026):** impostare Bugbot su **Run only when mentioned**, non always-on.
-  I Cloud Agent aprono la PR presto e pushano spesso: l'automatico addebita ogni push (~$1.00–$1.50).
-  Con «only when mentioned» si paga **un** `bugbot run` a slice chiusa. Dettaglio metodo:
+- **Policy account (confermata 2026-09-20):** Bugbot è **Manual Only** (*Run only when mentioned*),
+  scelta intenzionale per costo. Non riattivare always-on. I Cloud Agent commentano **un**
+  `bugbot run` a slice chiusa. Dettaglio metodo:
   [`sgq-workflow-method.mdc` § 4](../../.cursor/rules/sgq-workflow-method.mdc).
 
 ## Cosa fa davvero PR Routing & Approval (e cosa non fa)
@@ -72,7 +79,8 @@ tua revisione — un passo in più ma ancora molto meno lavoro del gate manuale 
 - Legge questi segnali: risk score, `APPROVAL_POLICY.md` (nella directory più prossima ai file
   modificati), `.cursor/approval-policies/ROUTING.md`, Bugbot Review Context.
 - **Non sostituisce mai una code review completa** ("It does not replace a full code review" — doc
-  ufficiale) e **non mergia mai**: il merge resta sempre un click umano.
+  ufficiale) e **non mergia mai**: il merge operativo è del bot ProgettoISO sotto gate
+  (`sgq-git-autonomy.mdc`); il Cloud Agent **non** mergia.
 
 ## Cosa è già pronto nel repo
 
@@ -105,8 +113,8 @@ Questo conferma due cose insieme: (a) il meccanismo automatico funziona ed è gi
 
 1. Collega il repo su `cursor.com/dashboard/integrations` se non è già collegato.
 2. Vai su [cursor.com/automations/from-cursor/bugbot](https://cursor.com/automations/from-cursor/bugbot).
-3. Abilita Bugbot sul repository `sistema-gestione-iso9001` (lascia **disattivato** "Run only when
-   mentioned" per avere il comportamento always-on di default — attivalo dopo se il costo preoccupa).
+3. Abilita Bugbot sul repository `sistema-gestione-iso9001`. *(Storico 13/08: la guida consigliava
+   always-on di default. **Superato 2026-09-20:** account su **Manual Only**; non riattivare always-on.)*
 4. Fai la verifica pratica descritta sopra (PR Cloud Agent → Bugbot gira da solo?).
 
 ### Passo 2 — Attiva PR Routing & Approval
@@ -160,8 +168,8 @@ Comportamento richiesto:
 2. ~~Rollout~~ → **Approve PR attivato** (13/08/2026), dopo una scoperta pratica che ha cambiato il
    piano: vedi sotto § "Request Reviewers non utilizzabile".
 3. **Auto-merge nativo GitHub**: resta fuori scope, non richiesto.
-4. **Costo Bugbot**: lasciato always-on (default), nessun problema di costo osservato nella prima
-   giornata di uso (11 run).
+4. **Costo Bugbot**: in prima giornata (13/08) era always-on. **Dal 2026-09-20:** **Manual Only**
+   (scelta intenzionale per costo). Non tornare ad always-on.
 
 ## Scoperta pratica: "Request Reviewers" non è utilizzabile su questo repo
 
@@ -179,8 +187,8 @@ configurazione — non un'alternativa più aggressiva, ma l'unica che funziona d
   per-directory, più granulare di uno score generico — **se in futuro si accende "Use Risk Score"**,
   cambiare prima "Maximum Risk for Approval" da `Medium` a un valore più conservativo, altrimenti si
   permetterebbe l'auto-approvazione su rischio Medio contro `sgq-git-autonomy.mdc`).
-- Tools: **Approve Pull Request** acceso, **Request Reviewers** lasciato acceso (inerte per il motivo
-  sopra, nessun danno a lasciarlo).
+- Tools: **Approve Pull Request** acceso; **Request Reviewers** **OFF** (confermato 2026-09-20 —
+  inerte su questo repo, vedi § Request Reviewers).
 - Custom Prompt: testo di questa guida incollato (rinforzo esplicito sulla regola di declassamento e
   sull'elenco dei servizi di logica normativa AI, in aggiunta ai file di policy nel repo).
 

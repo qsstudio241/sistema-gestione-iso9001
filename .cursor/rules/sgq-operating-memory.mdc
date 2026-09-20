@@ -14,7 +14,7 @@ Ogni agente con terminale **allinea da solo** (`git fetch` / `git pull origin ma
 
 **Branch PR:** prima di ogni push e di create/update PR → `git fetch origin main` + `git merge origin/main`. Dettaglio: [`sgq-git-autonomy.mdc`](sgq-git-autonomy.mdc).
 
-**Parallelo / hub / Bugbot:** file di codice disgiunti tra `DEPUTYTASK*` APERTO; GUIDA/roadmap in parallelo solo dopo merge; 1 Bugbot run/PR; «pronta» solo dopo CI+Bugbot+Security letti. Dettaglio: [`sgq-workflow-method.mdc`](sgq-workflow-method.mdc) · gate merge: [`sgq-git-autonomy.mdc`](sgq-git-autonomy.mdc).
+**Parallelo / hub / Bugbot:** file di codice disgiunti tra `DEPUTYTASK*` APERTO; GUIDA/roadmap in parallelo solo dopo merge; 1 Bugbot run/PR (Dashboard **Manual Only**; Cloud: commento `bugbot run` a slice chiusa); «pronta» solo dopo CI+Bugbot+Security letti. Dettaglio: [`sgq-workflow-method.mdc`](sgq-workflow-method.mdc) · gate merge: [`sgq-git-autonomy.mdc`](sgq-git-autonomy.mdc).
 
 Italiano, operativo. Comandi meccanici: eseguili tu. Chiedi al committente solo password, login terzi, scelte di business. **Non** creare `SESSION_NOTES_*`.
 ## Convenzione DEPUTYTASK
