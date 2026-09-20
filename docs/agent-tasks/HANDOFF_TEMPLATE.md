@@ -16,6 +16,7 @@
 - **Brief**: `docs/agent-tasks/DEPUTYTASK.md`
 - **Branch / PR**:
 - [ ] **Branch allineato a origin/main** (merge fatto ora, prima di push/PR — no «Update branch»)
+- [ ] **bugbot run** fatto + check OK (se pendente: commentare `bugbot run` a slice chiusa; Dashboard Manual Only)
 - **Lezione GUIDA** (bozza da copiare dopo merge se c'era parallelo):
 - **Roadmap** (1 riga «sessione più recente», stessa regola):
 ```

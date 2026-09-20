@@ -1,6 +1,7 @@
 # Regole custom Bugbot — ProgettoISO
 
-> Letto da Bugbot durante la code review automatica su ogni PR. Non sostituisce le regole agente in
+> Letto da Bugbot durante la code review su ogni PR **quando viene invocato** (Dashboard **Manual Only**,
+> confermato 2026-09-20 — non always-on). Non sostituisce le regole agente in
 > `.cursor/rules/**` (quelle guidano chi scrive il codice) — questo file guida chi lo **rilegge**.
 > Fonte dei criteri: [`sgq-operating-memory.mdc`](rules/sgq-operating-memory.mdc) e
 > [`sgq-git-autonomy.mdc`](rules/sgq-git-autonomy.mdc).
