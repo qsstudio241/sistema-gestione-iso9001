@@ -45,6 +45,12 @@ ssh -p 1122 spascarella@sistemi.fr-busato.it
 
 Login e password SQL stanno solo in **`backend/config/database.json`** (gitignored) o in variabili `DB_*` sul PC. Vedi [DATABASE.md](../reference/DATABASE.md).
 
+**Firewall porta SQL (dal 03/10/2026).** SQL Server gira sullo stesso VPS del backend (dietro router NAT). La porta `11043` è **chiusa a Internet** da `ufw`: aperta solo per l'IP pubblico del committente (Management Studio) e per la rete locale `192.168.99.0/24`; il backend usa `127.0.0.1` e non è toccato. Login `sa` **disabilitato**: in Management Studio usare il login dell'app (`pascarella`, sysadmin). `max server memory` = 1536 MB (`/var/opt/mssql/mssql.conf`).
+
+- Il committente cambia IP (Management Studio non si collega più, SSH funziona): da SSH `sudo ufw status numbered`, poi `sudo ufw delete <n>` sulla vecchia regola `11043/tcp ALLOW IN <ip>` e `sudo ufw allow from <nuovo-ip> to any port 11043 proto tcp comment 'SQL Server - SSMS committente'`.
+- Non aprire `11043` a `Anywhere`; non riabilitare `sa`. Nel firewall contano le porte **interne** (SSH = 22), non quelle del router (1122).
+- Script Node sul VPS: SQL può rispondere «insufficient system memory» in modo transitorio → retry per singola query.
+
 ---
 
 ## Come l'assistente AI può operare "in autonomia"
