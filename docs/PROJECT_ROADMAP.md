@@ -14,7 +14,7 @@ Audit multi-standard · NC · Qualifiche · Saldatura (WPQR/WPS/3834/Welding Boo
 
 ### Sessione più recente (04/10/2026)
 
-**Norme qualifiche + ISO 14555 (doc, draft):** 3° confronto PDF BS EN ISO 14555:2025 vs `NORMA_00033` — stessa edizione, Markdown HITL tenuto (CLI reintrodurrebbe Tabella 1 invertita; PDF non in Git). Audit Markdown 9606/14732/15614/15609/4063 + mappa ingest patentini e proposta JEV (non implementata). HITL aperto: testo integrale ISO 4063 per 783/784/785. Dettaglio: [`AUDIT_NORME_QUALIFICHE_PDF_2026-10-04.md`](reference/AUDIT_NORME_QUALIFICHE_PDF_2026-10-04.md). Punto 1 piano riunione 3/10 (spessori 9606/14732, BV/FV) **non** toccato.
+**Norme qualifiche + ISO 14555 (doc, draft) + ISO 4063:2023:** 3° confronto PDF 14555 vs `NORMA_00033` tenuto. HITL 4063 **chiuso**: `NORMA_00044` (schema generic), famiglia **783–786** nel testo, catalogo JS aggiornato. Nessuna regola WPS/qualifiche 78x. Dettaglio: [`AUDIT_NORME_QUALIFICHE_PDF_2026-10-04.md`](reference/AUDIT_NORME_QUALIFICHE_PDF_2026-10-04.md). Punto 1 piano 3/10 **non** toccato.
 
 **03/10/2026 — VPS SQL Server + HITL ingest ([#694](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/694), solo doc):** incidente SQL risolto sul VPS (memoria limitata a 1536 MB, `sa` disabilitato, `ufw` sulla sola 11043); analisi dataset `import_extraction_feedback` (296 record, 1 tenant) → **nessun classificatore locale** ora. Prossimi passi: `reject_reason` obbligatorio + log esito suggerito/finale nell'assistente quesiti, confidenza più fine in `pickMergedValue`. Lezioni in GUIDA § A · [ACCESSO_DEPLOY_AGENTS](how-to/ACCESSO_DEPLOY_AGENTS.md) § SQL Server.
 

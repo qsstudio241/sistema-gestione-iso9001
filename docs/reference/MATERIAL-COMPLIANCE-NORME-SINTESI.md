@@ -147,6 +147,8 @@ Vietato inventare soglie. Vietato rinviare la slice coperta perché manca un’a
 
 Dettaglio: 10025-2 **non** copre tubi. EN 10210-1 (hot) e EN 10219-1 (cold) sono in Markdown: si valuta solo se il certificato/ordine cita la norma giusta (stesso `S355J2H` ha soglie diverse). Senza citazione → skip, non fail.
 
+**Fuori perimetro MC (04/10/2026):** ISO **4063:2023** digitalizzata come `NORMA_00044` (catalogo processi, non soglie 3.1). Traccia: [`NORME_MANCANTI_BACKLOG.md`](NORME_MANCANTI_BACKLOG.md) + [`SOURCE_PDF_INDEX.md`](../Normative/SOURCE_PDF_INDEX.md).
+
 ## Prossimi passi consigliati
 
 1. **ISO-3** (capitolato): ✅ prompt `caseTextAnalysis` / `aiContextBuilder` + merge norme citate nel testo. Persistenza mig. 116.

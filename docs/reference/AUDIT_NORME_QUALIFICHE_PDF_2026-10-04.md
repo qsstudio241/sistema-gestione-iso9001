@@ -1,14 +1,14 @@
 # Audit norme + ingest qualifiche (04/10/2026)
 
-> Slice deputy: confronto PDF ISO 14555, qualità Markdown per interpretare certificati, mappa pipeline patentini, fattibilità JEV. **Nessun codice applicativo** (né JEV, né generatore WPS, né 783/784/785, né punto 1 piano riunione 3/10). Piano: [`PLAN_RIUNIONE_2026-10-03.md`](../agent-tasks/PLAN_RIUNIONE_2026-10-03.md).
+> Slice deputy: confronto PDF ISO 14555, qualità Markdown per interpretare certificati, mappa pipeline patentini, fattibilità JEV. Piano: [`PLAN_RIUNIONE_2026-10-03.md`](../agent-tasks/PLAN_RIUNIONE_2026-10-03.md). **04/10 sera:** ISO 4063:2023 digitalizzata (`NORMA_00044`); 783–786 nel testo ufficiale; catalogo JS aggiornato. Nessuna regola applicativa 78x su WPS/qualifiche in questa fetta.
 
 ## Gate fonti (norm-touching)
 
 ```text
 Fonti Markdown:
-- Coperte: ISO 9606-1 (NORMA_00018 + estratto range); ISO 9606-2 (NORMA_00032, Al); ISO 14732 (solo estratto); ISO 15614-1+A1 (NORMA_00043 + estratto); ISO 15614-2 (NORMA_00031); ISO 15609-1/-2 (NORMA_00014/00015 + estratto contenuto WPS); ISO 14555:2025 (NORMA_00033 HITL + estratto STUD-3-A/B); catalogo 4063 parziale (processi arco/gas frequenti).
-- Mancanti (non bloccano questa slice): testo integrale ISO 4063 (famiglia stud 78x); NORMA_00xxx di 14732 in docs/Normative/; PDF 4063/14732 in Git (policy: PDF mai in Git).
-- Si parte su: confronto PDF 14555 vs NORMA_00033 già digitalizzata; inventario; mappa ingest; decisione JEV senza vocabolario in codice.
+- Coperte: ISO 9606-1 (NORMA_00018 + estratto range); ISO 9606-2 (NORMA_00032, Al); ISO 14732 (solo estratto); ISO 15614-1+A1 (NORMA_00043 + estratto); ISO 15614-2 (NORMA_00031); ISO 15609-1/-2 (NORMA_00014/00015 + estratto contenuto WPS); ISO 14555:2025 (NORMA_00033 HITL + estratto STUD-3-A/B); ISO 4063:2023 (NORMA_00044 + estratto + catalogo JS con 783–786).
+- Mancanti (non bloccano): NORMA_00xxx di 14732 in docs/Normative/; PDF mai in Git.
+- Si parte su (fetta 4063): testo ufficiale processi, famiglia 78 corrente.
 ```
 
 ## Esito ISO 14555:2025
@@ -32,7 +32,7 @@ Fonti Markdown:
 | ISO 15614-2 | `NORMA_00031` + estratto | 2025 Al | Presente | **Sì** per WPQR alluminio |
 | ISO 14555 | `NORMA_00033` HITL + `ISO-14555-2025-range-validita-WPQR.md` + `weldingQualificationRules14555.js` | 2025 | §10.2.8 usabile; Tabella 1/2 HITL; CLI grezzo non fidato sulla matrice pag. 20 | **Sì** per WPQR stud. **Non** per patentino 9606 |
 | ISO 15609-1/-2 | `NORMA_00014`/`00015`; `ISO-15609-WPS-contenuto.md` | 2019 | TOC/Annex celle fuse; clausole §4.2–4.5 ok. Non seed SGQ | **Sì/parziale** per contenuto WPS, non per range patentino |
-| ISO 4063 | `ISO-4063-processi-saldatura.md` + `weldingProcesses4063.js` | estratto, edizione PDF **assente** in Normative | Elenco 111…311. **Nessun** 783/784/785 | **Parziale.** **HITL** testo ufficiale prima di famiglia stud |
+| ISO 4063 | `NORMA_00044` + `ISO-4063-processi-saldatura.md` + `weldingProcesses4063.js` | 2023 (quinta ed.) | Elenco §5 ricostruito pymupdf; pag. 23 vuota. **783–786 nel testo** | **Sì** per codice processo. Range stud = 14555, non 4063 |
 
 Altre citate da ingest qualifiche (`documentTypeSchemas.js`): ISO 6947 (posizioni, catalogo JS), ISO/TR 15608 (gruppi), ISO 14175 (gas), ISO 13916 (temperature WPS/WPQR), ISO 14341 (filo), ISO 9712 (`cert_ndt`), ISO 14731 (coordinatore). Non ri-digitalizzate in questa slice.
 
@@ -76,10 +76,10 @@ Già presenti, da riusare prima di un vocabolario nuovo:
 
 ## Cosa questa slice non ha fatto
 
-Punto 1 qualifiche (spessori 9606 vs 14732, BV/FV, T1/T2, scheda). Generatore WPS. Catalogo 783/784/785. Acrobat. Seed VPS. Bugbot (slice doc, draft). Merge. Implementazione JEV.
+Punto 1 qualifiche (spessori 9606 vs 14732, BV/FV, T1/T2, scheda). Generatore WPS. **Regole applicative** 78x su copertura/WPS (il testo 4063 c’è; il piano 3/10 dice prima il testo, poi le regole). Acrobat. Seed VPS. Bugbot. Merge. Implementazione JEV.
 
 ## HITL committente
 
-1. **ISO 4063 testo ufficiale** (PDF) che elenca 783/784/785 — blocco regole stud-processo.
+1. ~~ISO 4063 testo ufficiale~~ **chiuso 04/10/2026** — `NORMA_00044`; 783–786 nel testo; catalogo JS aggiornato.
 2. Eventuale `NORMA_00xxx` per 14732 se si vuole RAG sul testo integrale (non necessario per l’estratto operativo).
 3. Diagnosi su **certificati stud già caricati** (14555 vs 15614 Level 2): serve campione PDF, non un’altra digitalizzazione 14555.
