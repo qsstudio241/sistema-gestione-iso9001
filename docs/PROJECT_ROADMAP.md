@@ -6,15 +6,15 @@
 
 > Avvio: Read con **`limit: 45`** (questa sezione deve entrarci). Resto del file = backlog/cronologia — **non** iniettare. Epic → `PLAN_*_SLICES.md`. Lezioni → [GUIDA](GUIDA_CONSOLIDATA.md) **a sezioni**. Archivio marzo 2026: [archive](archive/PROJECT_CONTEXT_STATO_FUNZIONALITA_2026-03.md).
 
-**Ultimo aggiornamento**: 20/09/2026. Vista committente: **Gestione → Stato sviluppo** (`/settings/stato-sviluppo`, superadmin).
+**Ultimo aggiornamento**: 04/10/2026. Vista committente: **Gestione → Stato sviluppo** (`/settings/stato-sviluppo`, superadmin).
 
 ### Moduli maturi
 
 Audit multi-standard · NC · Qualifiche · Saldatura (WPQR/WPS/3834/Welding Book + foto cordone) · SAL · Registro + Scadenzari · Alert · Riesame · RBAC · Obblighi legali · Assistente AI / Gap · CND · Libreria fonti (+ gap SA; import decreti Normattiva XML → agenti) · Second Brain Ambito (SB-4 + SB-6 + CTX-0…3) · Compliance Map (§8.2).
 
-### Sessione più recente (20/09/2026)
+### Sessione più recente (04/10/2026)
 
-**Documenti pubblici → agenti (chiusa in prod):** #688 XML Akoma Ntoso (`caricaAKN`); #689 codice=seed + catalogo `decreto` + quesiti/`norm_chunks` + chat ISO non droppa diritto pubblico; #690 `publicLawStandardCode` nel manifest. Lezioni in GUIDA (sezione Harness). **Next = HITL:** CTX-4 · ING-5 · ROO-18 · S1c · ISO-4b · registry MC (nebbia).
+**Norme qualifiche + ISO 14555 (doc, draft):** 3° confronto PDF BS EN ISO 14555:2025 vs `NORMA_00033` — stessa edizione, Markdown HITL tenuto (CLI reintrodurrebbe Tabella 1 invertita; PDF non in Git). Audit Markdown 9606/14732/15614/15609/4063 + mappa ingest patentini e proposta JEV (non implementata). HITL aperto: testo integrale ISO 4063 per 783/784/785. Dettaglio: [`AUDIT_NORME_QUALIFICHE_PDF_2026-10-04.md`](reference/AUDIT_NORME_QUALIFICHE_PDF_2026-10-04.md). Punto 1 piano riunione 3/10 (spessori 9606/14732, BV/FV) **non** toccato.
 
 **03/10/2026 — VPS SQL Server + HITL ingest ([#694](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/694), solo doc):** incidente SQL risolto sul VPS (memoria limitata a 1536 MB, `sa` disabilitato, `ufw` sulla sola 11043); analisi dataset `import_extraction_feedback` (296 record, 1 tenant) → **nessun classificatore locale** ora. Prossimi passi: `reject_reason` obbligatorio + log esito suggerito/finale nell'assistente quesiti, confidenza più fine in `pickMergedValue`. Lezioni in GUIDA § A · [ACCESSO_DEPLOY_AGENTS](how-to/ACCESSO_DEPLOY_AGENTS.md) § SQL Server.
 
@@ -22,6 +22,7 @@ Audit multi-standard · NC · Qualifiche · Saldatura (WPQR/WPS/3834/Welding Boo
 
 | Data | Esito | Piano |
 |------|-------|-------|
+| 04/10 | Audit Markdown qualifiche + confronto PDF 14555 (NORMA_00033 tenuto) · JEV non in codice | [`AUDIT_NORME_QUALIFICHE_PDF_2026-10-04.md`](reference/AUDIT_NORME_QUALIFICHE_PDF_2026-10-04.md) |
 | 03/10 | Incidente SQL VPS risolto + analisi HITL ingest (no classificatore) · #694 | GUIDA § A · `ACCESSO_DEPLOY_AGENTS.md` § SQL Server |
 | 20/09 | Doc pubblici→agenti CHIUSA (#688–#690) + lezioni GUIDA | GUIDA · Libreria / Normattiva |
 | 17/09 | MC-7 feedback ADR-017 su PATCH/approve Materiali | [`PLAN_MATERIAL_COMPLIANCE`](agent-tasks/PLAN_MATERIAL_COMPLIANCE_SLICES.md) |

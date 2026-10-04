@@ -15,7 +15,9 @@
 
 | Codice / titolo | Impatto modulo | Stato | Priorità | Note |
 |-----------------|----------------|-------|----------|------|
-| ISO **14555**:2025 (arc stud welding / prigionieri) | WPQR Stud Welding (Mason) | `digitalizzata` | P0 | `NORMA_00033` MD+JSON (26/08/2026); PDF **non** in Git. STUD-1 = campi senza range; **STUD-3-A** estratto range [`ISO-14555-2025-range-validita-WPQR.md`](ISO-14555-2025-range-validita-WPQR.md) (26/08). STUD-3-B codice **dopo HITL**. Qualità: ~161 clausole; Tabella 1 pag. 20 = GAP pymupdf |
+| ISO **14555**:2025 (arc stud welding / prigionieri) | WPQR Stud Welding (Mason) | `digitalizzata` | P0 | `NORMA_00033` MD+JSON (26/08 + HITL Tabella 1/2 29/08). 3° confronto PDF 04/10: stessa edizione, **file in Git non sostituito** (CLI reintrodurrebbe Tabella 1 invertita). PDF **non** in Git. Estratto [`ISO-14555-2025-range-validita-WPQR.md`](ISO-14555-2025-range-validita-WPQR.md). Codice range = STUD-3-B. Confusione ingest 14555↔15614 Level 2 = diagnosi certificati, non lacuna PDF. |
+| ISO **4063** (testo integrale processi, famiglia stud 78x) | Ingest WPQR/WPS/qualifiche; catalogo `weldingProcesses4063.js` | `da_richiedere` | P0 | Estratto operativo [`ISO-4063-processi-saldatura.md`](ISO-4063-processi-saldatura.md) **senza** 783/784/785. **HITL:** serve PDF ufficiale ISO 4063 che elenchi quei numeri. Vietato inventarli. Range stud restano ISO 14555 §10.2.8. |
+| ISO **14732**:2013 (testo integrale in `docs/Normative/`) | Qualifiche operatore | `parcheggio` | P1 | Estratto [`ISO-14732-operatori-saldatura.md`](ISO-14732-operatori-saldatura.md) usabile (OCR 28/28). **Nessun** `NORMA_00xxx` in Git. Non blocca ingest `qualifica_14732`. Digitalizzare il PDF integrale solo se serve RAG/seed, non per le tabelle spessore 9606. |
 | Quaderno Linea Guida **1090** | Contesto EN 1090 / carpenteria | `digitalizzata` | P1 | Conforma Quaderno n.2 Rev.0 Set 2015 — `Quaderni/Quaderno_2_Linea_Guida_1090.{md,json,txt}` (26/08/2026); schema `generic`; GAP pag. 3 vuota; PDF **non** in Git |
 | ISO **2560**:2020 (elettrodi rivestiti) | Material Compliance apporto | `digitalizzata` | P1 | `NORMA_00035` MD+JSON (26/08/2026); PDF **non** in Git. Estratto soglie 3.1 lotto = slice successiva (non inventare) |
 | ISO **17632**:2015 (filo animato) | Material Compliance apporto | `digitalizzata` | P1 | `NORMA_00036` MD+JSON; GAP cid su alcuni simboli fluoride in tabelle — non inventare. Estratto soglie = slice successiva |
@@ -37,7 +39,7 @@
 | ISO 15614-1:2017+A1:2019 | `digitalizzata` | 06/09/2026 | `NORMA_00043` MD+JSON; `NORMA_00019` resta archivio senza A1 |
 | ISO 3834-2:2021 | `digitalizzata` | 25/08/2026 | `NORMA_00029` + seed VPS `ISO_3834_2_2021` |
 | ISO 3834-4:2021 | `digitalizzata` | 25/08/2026 | `NORMA_00030` + seed VPS `ISO_3834_4_2021` |
-| ISO 14555:2025 | `digitalizzata` | 26/08/2026 | `NORMA_00033` MD+JSON; estratto range STUD-3-A [`ISO-14555-2025-range-validita-WPQR.md`](ISO-14555-2025-range-validita-WPQR.md); seed VPS + codice range = STUD-3-B dopo HITL |
+| ISO 14555:2025 | `digitalizzata` | 26/08/2026; confronto 04/10/2026 | `NORMA_00033` tenuto (HITL); 3° CLI non applicato; estratto range + STUD-3-B già in repo |
 | ISO 9712:2021 … 23277:2015 (batch 9) | `digitalizzata` | 26/08/2026 | `NORMA_00034`–`00042` MD+JSON; vedi backlog sopra per GAP per-norma |
 | Quaderno LG 1090 (Conforma n.2) | `digitalizzata` | 26/08/2026 | `Quaderni/Quaderno_2_Linea_Guida_1090.{md,json,txt}`; non seed SGQ |
 

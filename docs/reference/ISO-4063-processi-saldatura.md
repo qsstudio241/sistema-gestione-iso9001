@@ -1,8 +1,8 @@
 # ISO 4063 — Processi di saldatura (riferimento operativo SGQ)
 
 > **Uso**: ingest patentini/WPQR/WPS, modulo 3834.  
-> **Fonte**: estratto operativo da ISO 4063 (designazioni processo). Testo integrale nel Patrimonio Studio.  
-> **Catalogo codice**: `app/src/data/weldingProcesses4063.js` (fonte unica per UI e normalizzazione).
+> **Fonte**: estratto operativo da ISO 4063 (designazioni processo). Testo integrale **non** in `docs/Normative/` (04/10/2026: HITL PDF ufficiale).  
+> **Catalogo codice**: `app/src/data/weldingProcesses4063.js` (fonte unica per UI e normalizzazione). **Non** contiene 783/784/785 — vietato inventarli.
 
 ## Scopo
 
