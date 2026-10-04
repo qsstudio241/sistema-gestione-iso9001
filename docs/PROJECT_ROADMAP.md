@@ -16,10 +16,13 @@ Audit multi-standard · NC · Qualifiche · Saldatura (WPQR/WPS/3834/Welding Boo
 
 **Documenti pubblici → agenti (chiusa in prod):** #688 XML Akoma Ntoso (`caricaAKN`); #689 codice=seed + catalogo `decreto` + quesiti/`norm_chunks` + chat ISO non droppa diritto pubblico; #690 `publicLawStandardCode` nel manifest. Lezioni in GUIDA (sezione Harness). **Next = HITL:** CTX-4 · ING-5 · ROO-18 · S1c · ISO-4b · registry MC (nebbia).
 
+**03/10/2026 — VPS SQL Server + HITL ingest ([#694](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/694), solo doc):** incidente SQL risolto sul VPS (memoria limitata a 1536 MB, `sa` disabilitato, `ufw` sulla sola 11043); analisi dataset `import_extraction_feedback` (296 record, 1 tenant) → **nessun classificatore locale** ora. Prossimi passi: `reject_reason` obbligatorio + log esito suggerito/finale nell'assistente quesiti, confidenza più fine in `pickMergedValue`. Lezioni in GUIDA § A · [ACCESSO_DEPLOY_AGENTS](how-to/ACCESSO_DEPLOY_AGENTS.md) § SQL Server.
+
 ### Sessioni recenti (pointer — dettaglio in `<details>` sotto)
 
 | Data | Esito | Piano |
 |------|-------|-------|
+| 03/10 | Incidente SQL VPS risolto + analisi HITL ingest (no classificatore) · #694 | GUIDA § A · `ACCESSO_DEPLOY_AGENTS.md` § SQL Server |
 | 20/09 | Doc pubblici→agenti CHIUSA (#688–#690) + lezioni GUIDA | GUIDA · Libreria / Normattiva |
 | 17/09 | MC-7 feedback ADR-017 su PATCH/approve Materiali | [`PLAN_MATERIAL_COMPLIANCE`](agent-tasks/PLAN_MATERIAL_COMPLIANCE_SLICES.md) |
 | 16/09 | Qualifiche: finestra modifica non si richiude più da sola | `QualificationForm.jsx` · `QualificationsPage.jsx` |
@@ -56,6 +59,7 @@ Audit multi-standard · NC · Qualifiche · Saldatura (WPQR/WPS/3834/Welding Boo
 | 7 | **ISO 3834 — ISO-4b / ISO-8…** | ISO-5+5b ✅; scala 1–6 / ponti AFK | [PLAN](agent-tasks/PLAN_3834_SLICES.md) |
 | 8 | **Multimodal RAG — FW-0** | MR-0…5 OK; hook ingest→CLIP | [PLAN MR](agent-tasks/PLAN_MULTIMODAL_RAG_SLICES.md) |
 | 9 | **Shell dialog ingest / Impostazioni org** | Basso rischio / PR #10 conflict | backlog sotto |
+| 10 | **Ingest: raccolta etichette mancanti** (`reject_reason`, esito quesiti) | Prima di qualsiasi modello tipizzato (analisi 03/10, #694) | GUIDA § A · `pickMergedValue` |
 
 Backlog completo: [Backlog parcheggiato](#backlog-parcheggiato-task-futuri--fonte-unica).
 
