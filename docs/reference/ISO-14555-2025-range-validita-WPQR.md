@@ -4,6 +4,7 @@
 > **Fonte**: BS EN ISO 14555:2025 "Welding — Arc stud welding of metallic materials". Testo integrale nel Patrimonio Studio — **qui solo tabelle/regole sintetiche**, mai testo normativo copiato.
 > **Digitalizzazione**: `docs/Normative/Normative NORMA_00033_ BS EN ISO 14555_2025 Rev. 0.md` (+ `.json`). PDF **non** in Git (indice: `docs/Normative/SOURCE_PDF_INDEX.md`).
 > **2° passaggio HITL (29/08/2026)**: stesso PDF riconsegnato; CLI `pdf_to_json` + lettura **pymupdf diretta** sulle pagine critiche (11, 12, 20–22, 36) per chiudere GAP OCR del 1° passaggio; Tabella 2 validata da screenshot PDF. Vietato inventare soglie.
+> **3° confronto PDF (04/10/2026)**: stesso BS EN ISO 14555:2025; CLI locale 48/48 pagine, Tabella 2 invariata. **Non** sovrascrivere `NORMA_00033`: il re-run reintroduce Tabella 1 invertita. Nessun seed VPS. Audit: [`AUDIT_NORME_QUALIFICHE_PDF_2026-10-04.md`](AUDIT_NORME_QUALIFICHE_PDF_2026-10-04.md).
 > **Modello editoriale**: `docs/reference/ISO-15614-1-range-validita-WPQR.md`.
 > **Codice**: **nessuno** in questa slice documentale. Vietato seedare `norm_requirements` e vietato toccare `weldingQualificationRules*` finché non parte STUD-3-B.
 

@@ -1,0 +1,958 @@
+{
+  "title": "ISO 4063:2023",
+  "level": 0,
+  "path": null,
+  "content": "> **Ruolo SGQ**: catalogo di **classificazione processi** (ISO 4063:2023, quinta edizione). Non è una norma di sistema a clausole 4–10: **non** va in `import-norms-from-markdown.js` / seed `norm_requirements`.\n> **Schema CLI**: `generic` (albero sezioni) — le liste processi non sono clausole SGQ; `norm-clause` spezzerebbe i numeri di processo come se fossero `clause_ref`.\n> **Qualità estrazione (04/10/2026)**: 24 pagine PDF, 23 con testo utile (pdfplumber). Pagina 23 vuota (`ATTENZIONE` font / nessuna informazione tecnica — copertina/verso). Pagine 6–14: elenco processi **ricostruito con pymupdf** (pdfplumber intercalava due colonne: es. `11124`, `77583`). Annex A–C restano dall’estrazione pdfplumber (tabelle).\n> **Famiglia 78 (pag. 11, pymupdf)**: 78 Arc stud welding; **783** Drawn arc stud welding with ceramic ferrule or shielding gas; **784** Short-cycle drawn arc stud welding; **785** Capacitor discharge drawn arc stud welding; **786** Capacitor discharge stud welding with tip ignition. Obsoleti (Annex B): 781, 787 — non sono i numeri correnti.\n> **PDF**: non in Git. Estratto operativo: `docs/reference/ISO-4063-processi-saldatura.md`. Catalogo JS: `weldingProcesses4063.js` (frequenti + 78x). Seed VPS: non applicabile.",
+  "children": [
+    {
+      "title": "ISO",
+      "level": 2,
+      "path": null,
+      "content": "",
+      "children": []
+    },
+    {
+      "title": "INTERNATIONAL",
+      "level": 2,
+      "path": null,
+      "content": "",
+      "children": []
+    },
+    {
+      "title": "STANDARD",
+      "level": 2,
+      "path": null,
+      "content": "Fifth edition 2023-03",
+      "children": []
+    },
+    {
+      "title": "Welding, brazing, soldering and",
+      "level": 2,
+      "path": null,
+      "content": "",
+      "children": []
+    },
+    {
+      "title": "cutting — Nomenclature of processes",
+      "level": 2,
+      "path": null,
+      "content": "",
+      "children": []
+    },
+    {
+      "title": "and reference numbers",
+      "level": 2,
+      "path": null,
+      "content": "Soudage, brasage et coupage — Nomenclature et numérotation des procédés Reference number",
+      "children": []
+    },
+    {
+      "title": "© ISO 2023",
+      "level": 2,
+      "path": null,
+      "content": "",
+      "children": []
+    },
+    {
+      "title": "COPYRIGHT PROTECTED DOCUMENT",
+      "level": 2,
+      "path": null,
+      "content": "",
+      "children": []
+    },
+    {
+      "title": "© ISO 2023",
+      "level": 2,
+      "path": null,
+      "content": "All rights reserved. Unless otherwise specified, or required in the context of its implementation, no part of this publication may be reproduced or utilized otherwise in any form or by any means, electronic or mechanical, including photocopying, or posting on the internet or an intranet, without prior written permission. Permission can be requested from either ISO at the address below or ISO’s member body in the country of the requester. ISO copyright office CP 401 • Ch. de Blandonnet 8 CH-1214 Vernier, Geneva Phone: +41 22 749 01 11 Email: copyright@iso.org Website: www.iso.org Published in Switzerland ii © ISO 2023 – All rights reserved",
+      "children": []
+    },
+    {
+      "title": "Contents",
+      "level": 2,
+      "path": null,
+      "content": "Page Foreword iv",
+      "children": []
+    },
+    {
+      "title": "Scope 1",
+      "level": 1,
+      "path": "1",
+      "content": "........................................................................................................................................................................................................................................",
+      "children": []
+    },
+    {
+      "title": "Normative references 1",
+      "level": 1,
+      "path": "2",
+      "content": ".................................................................................................................................................................................................................................",
+      "children": []
+    },
+    {
+      "title": "Terms and definitions 1",
+      "level": 1,
+      "path": "3",
+      "content": ".....................................................................................................................................................................................",
+      "children": []
+    },
+    {
+      "title": "Designation 1",
+      "level": 1,
+      "path": "4",
+      "content": ".................................................................................................................................................................................... ................................................................................................................................................................................................................ 4.1 General ...........................................................................................................................................................................................................1",
+      "children": []
+    },
+    {
+      "title": "List of processes and reference numbers 2",
+      "level": 1,
+      "path": "5",
+      "content": "4.2 Hybrid joining processes ...............................................................................................................................................................2 .................................................................................................................................. 5.1 General ...........................................................................................................................................................................................................2 5.2 Welding ..........................................................................................................................................................................................................2 5.3 Thermal cutting .....................................................................................................................................................................................7 Annex A Process variants 11 5.4 Brazing and soldering ......................................................................................................................................................................8 Annex B Replaced and obsolete processes 13 (informative) ...................................................................................................................................................... Annex C Acronyms for welding and allied processes used in the United States (informative) .......................................................................................................... of America 14 (informative) Bibliography 18 ................................................................................................................................................................................................................ ............................................................................................................................................................................................................................. © ISO 2023 – All rights reserved iii",
+      "children": [
+        {
+          "title": "Foreword",
+          "level": 2,
+          "path": null,
+          "content": "ISO (the International Organization for Standardization) is a worldwide federation of national standards bodies (ISO member bodies). The work of preparing International Standards is normally carried out through ISO technical committees. Each member body interested in a subject for which a technical committee has been established has the right to be represented on that committee. International organizations, governmental and non-governmental, in liaison with ISO, also take part in the work. ISO collaborates closely with the International Electrotechnical Commission (IEC) on all matters of electrotechnical standardization. The procedures used to develop this document and those intended for its further maintenance are described in the ISO/IEC Directives, Part 1. In particular, the different approval criteria needed for the different types of ISO documents should be noted. This document was drafted in accordance with the editorial rules of the ISO/IEC Directives, Part 2 (see www.iso.org/directives). Attention is drawn to the possibility that some of the elements of this document may be the subject of patent rights. ISO shall not be held responsible for identifying any or all such patent rights. Details of any patent rights identified during the development of the document will be in the Introduction and/or on the ISO list of patent declarations received (see www.iso.org/patents). Any trade name used in this document is information given for the convenience of users and does not constitute an endorsement. For an explanation of the voluntary nature of standards, the meaning of ISO specific terms and expressions related to conformity assessment, as well as information about ISO's adherence to the World Trade Organization (WTO) principles in the Technical Barriers to Trade (TBT), see www.iso.org/iso/foreword.html. Welding and allied processes Representation and terms This document was prepared by Technical Committee WISeOl/dTinCg a4n4d, allied processes , Subcommittee SC 7, , in collaboration with the European Committee for Standardization (CEN) Technical Committee CEN/TC 121, , in accordance with the Agreement on technical cooperation between ISO and CEN (Vienna Agreement). This fifth edition cancels and replaces the fourth edition (ISO 4063:2009), which has been technically revised. The main changes are as follows: — incorporation of processes and reference numbers for welding and thermal joining of plastics. Any feedback or questions on this document should be directed to the user’s national standards body. A complete listing of these bodies can be found at www.iso.org/members.html. Official interpretations of ISO/TC 44 documents, where they exist, are available from this page: https://committee.iso.org/sites/tc44/home/interpretation.html. iv © ISO 2023 – All rights reserved",
+          "children": []
+        },
+        {
+          "title": "INTERNATIONAL STANDARD ISO 4063:2023(E)",
+          "level": 2,
+          "path": null,
+          "content": "",
+          "children": []
+        },
+        {
+          "title": "Welding, brazing, soldering and cutting — Nomenclature of",
+          "level": 2,
+          "path": null,
+          "content": "",
+          "children": []
+        },
+        {
+          "title": "processes and reference numbers",
+          "level": 2,
+          "path": null,
+          "content": "",
+          "children": []
+        }
+      ]
+    },
+    {
+      "title": "Scope",
+      "level": 1,
+      "path": "1",
+      "content": "This document establishes a nomenclature for: — welding; — brazing, soldering and weld brazing; — thermal cutting; with each process identified by a reference number. It covers the main processes (one digit), groups (two digits) and sub-groups (three digits). The reference number for any process has a maximum of three digits. This system is intended as an aid in computerization and the drafting of, for example, drawings, working papers and welding procedure specifications, and enables the uniform international designation of the processes. This document does not cover all process variants. The process numbers can be supplemented with additional information for variants not listed.",
+      "children": []
+    },
+    {
+      "title": "Normative references",
+      "level": 1,
+      "path": "2",
+      "content": "There are no normative references in this document.",
+      "children": []
+    },
+    {
+      "title": "Terms and definitions",
+      "level": 1,
+      "path": "3",
+      "content": "No terms and definitions are listed in this document. ISO and IEC maintain terminology databases for use in standardization at the following addresses: — ISO Online browsing platform: available at https:// www .iso .org/ obp — IEC Electropedia: available at https:// www .electropedia .org/",
+      "children": []
+    },
+    {
+      "title": "Designation",
+      "level": 1,
+      "path": "4",
+      "content": "",
+      "children": [
+        {
+          "title": "General",
+          "level": 2,
+          "path": "4.1",
+          "content": "Where a full designation is required for a joining process, it shall have the following structure: the number of this document (i.e. “ISO 4063”), separated by a dash from the reference number of the process, as shown in these examples. EXAMPLE 1 Process “Cold pressure welding” with reference number 48 is designated as:",
+          "children": []
+        },
+        {
+          "title": "ISO 4063 – 48",
+          "level": 2,
+          "path": null,
+          "content": "EXAMPLE 2 Process “Radio frequency welding” with reference number 62 is designated as:",
+          "children": []
+        },
+        {
+          "title": "ISO 4063 – 62",
+          "level": 2,
+          "path": null,
+          "content": "EXAMPLE 3 Process “Heated wedge welding with hot gas” with reference number 662-A is designated as:\n\n\nISO 4063 – 662-A\n4.2\t Hybrid joining processes\nWhen multiple processes are used simultaneously in one process area, the processes shall be described\nusing the designations for each process separated by the symbol “+”.\nEXAMPLE\nProcess “Gas laser welding” (reference number 522) together with process “Plasma arc welding”\n(reference number 15) is designated as:\nISO 4063 – 522 + 15\n5\t List of processes and reference numbers\n5.1\t General\nThe first designation listed is the preferred one and any subsequent designations are synonyms. Terms\nused in the United States of America (USA) are shown for information where there are differences.\nAnnex A provides supplementary options for process variants.\nAnnex B provides an overview for replaced and obsolete processes.\nAnnex C provides a list of commonly used acronyms and abbreviations for the welding processes in the\nUnited States of America included in this document.\n5.2\t Welding\nArc welding\nMetal arc welding without gas protection\n111\nManual metal arc welding\nShielded metal arc welding, USA\n112\nGravity welding\nGravity arc welding with covered electrode\nGravity feed welding, USA\n114\nSelf-shielded tubular cored arc welding\nSubmerged arc welding\n121\nSubmerged arc welding with solid wire electrode\n122 Submerged arc welding with strip electrode\n124 Submerged arc welding with metal powder addition\n125 Submerged arc welding with tubular cored electrode\n126 Submerged arc welding with cored strip electrode\nGas-shielded metal arc welding\nMetal inert gas (MIG) welding/Metal active gas (MAG) welding\nGas metal arc welding (GMAW), USA\n﻿\b\n\b\n﻿\n\n\n131\nMIG welding with solid wire electrode\nGMAW using inert gas and solid wire electrode, USA\n132\nMIG welding with flux cored electrode\nGas shielded flux cored arc welding, USA\n133 MIG welding with metal cored electrode\nGMAW using inert gas and metal cored wire, USA\n135 MAG welding with solid wire electrode\nGMAW using active gas with solid wire electrode, USA\n136 MAG welding with flux cored electrode\nGMAW using active gas and flux cored electrode, USA\n138 MAG welding with metal cored electrode\nGMAW using active gas and metal cored electrode, USA\nGas-shielded arc welding with non-consumable tungsten electrode\nTungsten inert gas (TIG) welding/Tungsten active gas (TAG) welding\nGas tungsten arc welding (GTAW), USA\n141\nTIG welding with solid filler material\nGTAW using inert gas and solid filler material, USA\n142\nAutogenous TIG welding\nAutogenous gas tungsten arc welding using inert gas, USA\n143\nTIG welding with tubular cored filler material\nGTAW using inert gas and tubular cored filler material, USA\n145\nTIG welding using reducing gas and solid filler material\nGTAW using inert gas plus reducing gas additions and solid filler material, USA\n146\nTIG welding using reducing gas and tubular cored filler material\nGTAW using inert gas plus reducing gas additions and tubular cored filler material, USA\n147\nGas-shielded arc welding with non-consumable tungsten electrode using active gas\nTAG welding\nGTAW using active gas, USA\nPlasma arc welding\n151\nPlasma MIG welding\n152\nPowder plasma arc welding\n153 Plasma welding with transferred arc\n154 Plasma arc welding with non-transferred arc\n155 Plasma arc welding with partially transferred arc\n﻿\n﻿\n\n\nOther arc welding processes\n185\nMagnetically impelled arc welding\nResistance welding\n21\nResistance spot welding\n211\nIndirect spot welding\n212\nDirect spot welding\n22\nResistance seam welding\n221\nLap seam welding\n222 Mash seam welding\n223 Prep-lap seam welding\n224\nWire seam welding\n225 Foil butt-seam welding\n226 Seam welding with strip\n23\nProjection welding\n231\nIndirect projection welding\n232\nDirect projection welding\n24\nFlash welding\n241\nFlash welding with preheating\n242\nFlash welding without preheating\n25\nResistance butt welding\nUpset welding, USA\n26\nResistance stud welding\n27\nHF resistance welding\nHigh-frequency resistance welding\nHigh-frequency upset welding, USA\n29\nOther resistance welding processes\nGas welding\nOxyfuel gas welding, USA\n31\nOxyfuel gas welding\n311\nOxyacetylene welding\n312\nOxypropane welding\n313\nOxyhydrogen welding\n﻿\b\n\b\n﻿\n\n\nWelding with pressure\n41\nUltrasonic welding\n411\nUltrasonic hot welding\n412\nUltrasonic spot welding\n413\nUltrasonic seam welding\n414\nUltrasonic torsion welding\n42\nFriction welding\n421\nDirect drive friction welding\n422\nInertia friction welding\n423\nFriction stud welding\n424\nLinear friction welding (generally referred to as “vibration welding” when the base materials are\nplastics)\n425\nRadial friction welding\n426\nOrbital friction welding\n43\nFriction stir welding\n431\nFriction stir spot welding\n432\nRefill friction stir spot welding\n433\nStitch friction stir spot welding\n434 Swept friction stir spot welding\n435\nSwing friction stir spot welding\n44\nImpact welding (referred to as shock welding in ISO/TR 25901-3:2016, 2.2.1.6.10)\n441 Explosion welding\n442 Magnetic pulse welding\n45\nDiffusion welding\n451\nHot isostatic pressure welding\n47\nOxyfuel gas pressure welding\nPressure gas welding, USA\n48\nCold pressure welding\nCold welding, USA\n481 Cold pressure extrusion welding\n49\nHot pressure welding\n491 Hot nozzle welding\n﻿\n﻿\n\n\n492 Nail head welding\n493 Coextrusion welding\nBeam welding\n51\nElectron beam welding\n511\nElectron beam welding in vacuum\n512\nElectron beam welding in atmosphere\n513\nElectron beam welding with addition of shielding gases\n52\nLaser welding\nLaser beam welding, USA\n521\nSolid state laser welding\n522\nGas laser welding\n523\nDiode laser welding\nSemi-conductor laser welding, USA\nPlastics-specific welding processes\n61\nResistive implant welding\n611\nElectrofusion welding\n62\nRadio frequency welding\nHigh-frequency welding\nDielectric welding\n63\nSolvent welding\n631 Solvent cement welding\n64\nHot gas welding\n641 Hot gas speed welding\n642 Hot gas round nozzle welding\n643 Hot gas manual welding without welding rod\n644 Hot gas machine welding without welding rod\n645 Hot gas machine welding with welding rod\n646 Hot gas convection welding\n647 Extrusion welding\n65\nHeat sealing\n651\nImpulse welding\n652 Hot bar welding\n﻿\b\n\b\n﻿\n\n\n66\nHeated tool welding\n661\nHot plate welding\n662 Heated wedge welding\n663 Socket fusion welding\n664 Saddle fusion welding\n67\nFlash-free welding\n671\nFlow fusion welding\n69\nOther plastics-specific welding processes\n691\nMicrowave welding\n692 Staking\nOther welding processes\n71\nAluminothermic welding\nThermite welding, USA\n72\nElectroslag welding\n721 Electroslag welding with strip electrode\n722 Electroslag welding with wire electrode\n73\nElectrogas welding\n74\nInduction welding\n741\nInduction butt welding\nInduction upset welding, USA\n742\nInduction seam welding\n743\nHigh frequency induction welding\n75\nLight radiation welding\n753 Infrared welding\n78\nArc stud welding\n783 Drawn arc stud welding with ceramic ferrule or shielding gas\n784 Short-cycle drawn arc stud welding\n785 Capacitor discharge drawn arc stud welding\n786 Capacitor discharge stud welding with tip ignition\n5.3\t Thermal cutting\nCutting and gouging\n﻿\n﻿\n\n\n81\nFlame cutting\nOxygen cutting\nOxyfuel cutting, USA\n82\nArc cutting\n821\nAir arc cutting\nAir carbon arc cutting, USA\n822 Oxygen arc cutting\n83\nPlasma cutting\nPlasma arc cutting, USA\n831 Plasma cutting with oxidising gas\n832 Plasma cutting without oxidising gas\n833 Air plasma cutting\n834 High-tolerance plasma cutting\n84\nLaser cutting\nLaser beam cutting, USA\n86\nFlame gouging\nThermal gouging, USA\n87\nArc gouging\n871\nAir arc gouging\nAir carbon arc cutting, USA\n872 Oxygen arc gouging\nOxygen gouging, USA\n88\nPlasma gouging\n5.4\t Brazing and soldering\nBrazing and soldering\n91\nBrazing with local heating\n911\nInfrared brazing\n912 Flame brazing\nTorch brazing, USA\n913\nLaser beam brazing\n914\nElectron beam brazing\n916\nInduction brazing\n﻿\b\n\b\n﻿\n\n\n918\nResistance brazing\n919\nDiffusion brazing\n92\nBrazing with global heating\n921\nFurnace brazing\n922 Vacuum brazing\n923 Dip-bath brazing\n924\nSalt-bath brazing\n925 Flux-bath brazing\n926 Immersion brazing\n93\nOther brazing processes\n94\nSoldering with local heating\n941\nInfrared soldering\n942 Flame soldering\nTorch soldering, USA\n943 Soldering with soldering iron\n944 Drag soldering\n945 Laser soldering\n946 Induction soldering\n947\nUltrasonic soldering\n948 Resistance soldering\n949 Diffusion soldering\n95\nSoldering with global heating\n951\nWave soldering\n953 Furnace soldering\n954 Vacuum soldering\n955 Dip soldering\n957\nSalt-bath soldering\n96\nOther soldering processes\n97\nWeld brazing\nBraze welding, USA\n971\nGas weld brazing\nGas braze welding, USA\n﻿\n﻿\n\n\n972 Arc weld brazing\nArc braze welding, USA\n973 Gas metal arc weld brazing\nGas metal arc braze welding, USA\n974\nGas tungsten arc weld brazing\nGas tungsten arc braze welding, USA\n975 Plasma arc weld brazing\nPlasma arc braze welding, USA\n976\nLaser weld brazing\nLaser braze welding, USA\n977 Electron beam weld brazing\nElectron beam braze welding, USA\n﻿\b\n\b\n﻿",
+          "children": []
+        },
+        {
+          "title": "Annex A",
+          "level": 2,
+          "path": null,
+          "content": "",
+          "children": []
+        },
+        {
+          "title": "Pr(oincefosrsm vaatriivaen) ts",
+          "level": 2,
+          "path": null,
+          "content": "",
+          "children": []
+        },
+        {
+          "title": "A.1 Transfer modes",
+          "level": 2,
+          "path": null,
+          "content": "For welding processes where different modes are possible, the mode can be indicated by a letter in accordance with Table A.1 and as shown in the example. Table A.1 — Transfer modes Mode Term B Buried-arc transfer Short-circuit transfer D (dip transfer) G Globular transfer S Spray transfer a P Pulsed transfer a Referred to as “pulsed current” in ISO/TR 25901-4. EXAMPLE MIG welding with solid wire electrode using short-circuit transfer is designated as:",
+          "children": []
+        },
+        {
+          "title": "ISO 4063 – 131-D",
+          "level": 2,
+          "path": null,
+          "content": "",
+          "children": []
+        },
+        {
+          "title": "A.2 Number of electrodes",
+          "level": 2,
+          "path": null,
+          "content": "If more than one electrode is used, it can be indicated by an additional number as shown in the example. EXAMPLE MIG welding with two solid wire electrodes is designated as:",
+          "children": []
+        },
+        {
+          "title": "ISO 4063 – 131 – 2",
+          "level": 2,
+          "path": null,
+          "content": "",
+          "children": []
+        },
+        {
+          "title": "A.3 Additional items",
+          "level": 2,
+          "path": null,
+          "content": "If additional filler material is used, the option hot wire/cold wire can be indicated in accordance with Table A.2 and as shown in the example. Table A.2 — Additional items Mode Term C Cold wire H Hot wire EXAMPLE Submerged arc welding with a solid wire electrode and an additional cold wire is designated as:",
+          "children": []
+        },
+        {
+          "title": "ISO 4063 – 121-C",
+          "level": 2,
+          "path": null,
+          "content": "| Mode | Term |\n| --- | --- |\n|  |  |\n| B | Buried-arc transfer |\n| D | Short-circuit transfer |\n|  | (dip transfer) |\n| G | Globular transfer |\n| S Spray transfer a |  |\n\n| Mode | Term |\n| --- | --- |\n|  |  |\n|  |  |",
+          "children": []
+        },
+        {
+          "title": "A.4 Plastics joining",
+          "level": 2,
+          "path": null,
+          "content": "Additional process variants for plastics joining can be identified in accordance with Table A.3 and as shown in the example. Table A.3 — Additional processes Reference Term number Transmission laser welding – contour 52-A Transmission laser welding – quasi-simultaneous 52-B Transmission laser welding – simultaneous 52-C Transmission laser welding – scan 52-D Transmission laser welding – mask 52-E Direct laser welding 52-F Vibration welding with IR pre-heat 424-A Heated wedge welding with hot gas 662-A Heated wedge welding (electric) 662-B EXAMPLE Heated wedge welding with hot gas is designated as:",
+          "children": []
+        },
+        {
+          "title": "ISO 4063 – 662-A",
+          "level": 2,
+          "path": null,
+          "content": "",
+          "children": []
+        },
+        {
+          "title": "A.5 Staking",
+          "level": 2,
+          "path": null,
+          "content": "Staking process variants can be identified in accordance with Table A.4 and as shown in the example. Table A.4 — Staking processes Reference Term number Electrical E Hot air H Infrared I Ultrasonic U EXAMPLE Staking with hot air is designated as:",
+          "children": []
+        },
+        {
+          "title": "ISO 4063 – 692-H",
+          "level": 2,
+          "path": null,
+          "content": "| Term | Reference number |\n| --- | --- |\n|  |  |\n|  |  |\n| Transmission laser welding – contour | 52-A |\n| Transmission laser welding – quasi-simultaneous | 52-B |\n| Transmission laser welding – simultaneous | 52-C |\n| Transmission laser welding – scan | 52-D |\n| Transmission laser welding – mask | 52-E |\n| Direct laser welding | 52-F |\n| Vibration welding with IR pre-heat | 424-A |\n\n| Term | Reference number |\n| --- | --- |\n|  |  |\n|  |  |\n| Electrical | E |\n| Hot air | H |",
+          "children": []
+        },
+        {
+          "title": "Annex B",
+          "level": 2,
+          "path": null,
+          "content": "",
+          "children": []
+        },
+        {
+          "title": "Replaced a(nindfo orbmsaotlievtee) processes",
+          "level": 2,
+          "path": null,
+          "content": "Table B.1 presents a list of processes included in previous editions of this document which have been replaced or have become obsolete. They may be used retrospectively or in special cases but shall then be designated as shown in the last column. Table B.1 — Designation if replaced and obsolete processes Former designa- Process Designation to use tion 113 Bare wire metal arc welding ISO 4063:1990–113 Bare metal arc welding, USA 115 Coated wire metal arc welding ISO 4063:1990–115 118 Firecracker welding ISO 4063:1990–118 137 Tubular cored metal arc welding with inert gas ISO 4063:1990–137 shield Flux cored arc welding, USA 149 Atomic-hydrogen welding ISO 4063:1990–149",
+          "children": []
+        }
+      ]
+    },
+    {
+      "title": "Air-fuel gas welding",
+      "level": 1,
+      "path": "32",
+      "content": "181 Carbon-arc welding ISO 4063:1990–181",
+      "children": [
+        {
+          "title": "ISO 4063:1990–32",
+          "level": 2,
+          "path": null,
+          "content": "321 Air-acetylene welding ISO 4063:1990–321 Air acetylene welding, USA",
+          "children": []
+        }
+      ]
+    },
+    {
+      "title": "Forge welding",
+      "level": 1,
+      "path": "43",
+      "content": "322 Air-propane welding ISO 4063:1990–322",
+      "children": [
+        {
+          "title": "ISO 4063:1990–43",
+          "level": 2,
+          "path": null,
+          "content": "",
+          "children": []
+        }
+      ]
+    },
+    {
+      "title": "Percussion welding",
+      "level": 1,
+      "path": "77",
+      "content": "752 Arc image welding ISO 4063:1990–752",
+      "children": [
+        {
+          "title": "ISO 4063:1990–77",
+          "level": 2,
+          "path": null,
+          "content": "781 Arc stud welding ISO 4063:1990–781 787 Drawn arc stud welding with fusible collar ISO 4063:1998–787 917 Ultrasonic brazing ISO 4063:1990–917 923 Friction brazing ISO 4063:1990–923 953 Abrasion soldering ISO 4063:1990–953\n\n| Former designa- tion | Process | Designation to use |\n| --- | --- | --- |\n| 113 | Bare wire metal arc welding | ISO 4063:1990–113 |\n|  |  |  |\n|  | Bare metal arc welding, USA |  |\n| 115 118 137 | Coated wire metal arc welding Firecracker welding Tubular cored metal arc welding with inert gas shield | ISO 4063:1990–115 ISO 4063:1990–118 ISO 4063:1990–137 |\n|  |  |  |\n|  | Flux cored arc welding, USA |  |\n| 149 32 | Atomic-hydrogen welding Air-fuel gas welding | ISO 4063:1990–149 |\n| 181 321 | Carbon-arc welding Air-acetylene welding | ISO 4063:1990–181 ISO 4063:1990–32 ISO 4063:1990–321 |\n|  |  |  |\n| 43 | Air acetylene welding, USA Forge welding |  |\n| 322 | Air-propane welding | ISO 4063:1990–322 |\n| 77 | Percussion welding | ISO 4063:1990–43 |\n| 752 | Arc image welding | ISO 4063:1990–752 |\n|  |  | ISO 4063:1990–77 |\n| 781 | Arc stud welding | ISO 4063:1990–781 |\n| 787 | Drawn arc stud welding with fusible collar | ISO 4063:1998–787 |\n| 917 | Ultrasonic brazing | ISO 4063:1990–917 |",
+          "children": []
+        },
+        {
+          "title": "Annex C",
+          "level": 2,
+          "path": null,
+          "content": "",
+          "children": []
+        },
+        {
+          "title": "Acronyms for welding an(din afollrimeda tpivreo)c esses used in the United",
+          "level": 2,
+          "path": null,
+          "content": "",
+          "children": []
+        },
+        {
+          "title": "States of America",
+          "level": 2,
+          "path": null,
+          "content": "Tables C.1 to C.4 present acronyms for welding and allied processes used in the United States of 1) America. These are given together with corresponding reference numbers in this document, where such numbers exist. A dash signifies that no equivalent or corresponding reference number can be given. Table C.1 — Commonly used US acronyms for welding US acronym Corresponding reference number in this document b",
+          "children": []
+        },
+        {
+          "title": "AAW 321",
+          "level": 2,
+          "path": null,
+          "content": "b",
+          "children": []
+        },
+        {
+          "title": "AHW 149",
+          "level": 2,
+          "path": null,
+          "content": "AW 1 b",
+          "children": []
+        },
+        {
+          "title": "BMAW 113",
+          "level": 2,
+          "path": null,
+          "content": "b",
+          "children": []
+        },
+        {
+          "title": "CAW-G 181",
+          "level": 2,
+          "path": null,
+          "content": "b",
+          "children": []
+        },
+        {
+          "title": "CAW-S 181",
+          "level": 2,
+          "path": null,
+          "content": "b",
+          "children": []
+        },
+        {
+          "title": "CAW-T 181",
+          "level": 2,
+          "path": null,
+          "content": "",
+          "children": []
+        },
+        {
+          "title": "CEW 493",
+          "level": 2,
+          "path": null,
+          "content": "CW 48",
+          "children": []
+        },
+        {
+          "title": "DFW 45",
+          "level": 2,
+          "path": null,
+          "content": "",
+          "children": []
+        },
+        {
+          "title": "EBW 51",
+          "level": 2,
+          "path": null,
+          "content": "",
+          "children": []
+        },
+        {
+          "title": "EBW-HV 511",
+          "level": 2,
+          "path": null,
+          "content": "",
+          "children": []
+        },
+        {
+          "title": "EBW-MV 511",
+          "level": 2,
+          "path": null,
+          "content": "",
+          "children": []
+        },
+        {
+          "title": "EBW-NV 512",
+          "level": 2,
+          "path": null,
+          "content": "",
+          "children": []
+        },
+        {
+          "title": "EGW 73",
+          "level": 2,
+          "path": null,
+          "content": "",
+          "children": []
+        },
+        {
+          "title": "ESW 72",
+          "level": 2,
+          "path": null,
+          "content": "a",
+          "children": []
+        },
+        {
+          "title": "ESW-CG 72",
+          "level": 2,
+          "path": null,
+          "content": "",
+          "children": []
+        },
+        {
+          "title": "EXW 441",
+          "level": 2,
+          "path": null,
+          "content": "",
+          "children": []
+        },
+        {
+          "title": "FCAW 114, 136",
+          "level": 2,
+          "path": null,
+          "content": "",
+          "children": []
+        },
+        {
+          "title": "FCAW-G 136",
+          "level": 2,
+          "path": null,
+          "content": "",
+          "children": []
+        },
+        {
+          "title": "FCAW-S 114",
+          "level": 2,
+          "path": null,
+          "content": "b",
+          "children": []
+        },
+        {
+          "title": "FOW 43",
+          "level": 2,
+          "path": null,
+          "content": "",
+          "children": []
+        },
+        {
+          "title": "FRW 42",
+          "level": 2,
+          "path": null,
+          "content": "",
+          "children": []
+        },
+        {
+          "title": "FRW-DD 421",
+          "level": 2,
+          "path": null,
+          "content": "",
+          "children": []
+        },
+        {
+          "title": "FRW-I 422",
+          "level": 2,
+          "path": null,
+          "content": "",
+          "children": []
+        },
+        {
+          "title": "FSW 43",
+          "level": 2,
+          "path": null,
+          "content": "FW 24 a Not exactly equivalent. b See Annex B. 11)4 According to the American Welding Society (AWS).\n\n| US acronym | Corresponding reference number in this document |\n| --- | --- |\n|  |  |\n|  | b |\n| AAW | 321 b |\n| AHW | 149 |\n| AW | 1 b |\n| BMAW | 113 b |\n| CAW-G | 181 b |\n| CAW-S | 181 b |\n| CAW-T | 181 |\n| CEW | 493 |\n| CW | 48 |\n| DFW | 45 |\n| EBW | 51 |\n| EBW-HV | 511 |\n| EBW-MV | 511 |\n| EBW-NV | 512 |\n| EGW | 73 |\n| ESW | 72 a |\n| ESW-CG | 72 |\n| EXW | 441 |\n| FCAW | 114, 136 |\n| FCAW-G | 136 |\n| FCAW-S | 114 b |\n| FOW | 43 |\n| FRW | 42 |\n| FRW-DD | 421 |\n| FRW-I FSW | 422 43 |\n| FW 24 a Not exactly equivalent. |  |\n\n\nTTaabbllee CC..11 ((ccoonnttiinnuueedd)) US acronym Corresponding reference number in this document",
+          "children": []
+        },
+        {
+          "title": "GMAW 13",
+          "level": 2,
+          "path": null,
+          "content": "",
+          "children": []
+        },
+        {
+          "title": "GMAW-P 13-P",
+          "level": 2,
+          "path": null,
+          "content": "",
+          "children": []
+        },
+        {
+          "title": "GMAW-S 13-D",
+          "level": 2,
+          "path": null,
+          "content": "",
+          "children": []
+        },
+        {
+          "title": "GTAW 14",
+          "level": 2,
+          "path": null,
+          "content": "",
+          "children": []
+        },
+        {
+          "title": "GTAW-P 14-P",
+          "level": 2,
+          "path": null,
+          "content": "",
+          "children": []
+        },
+        {
+          "title": "HIPW 451",
+          "level": 2,
+          "path": null,
+          "content": "",
+          "children": []
+        },
+        {
+          "title": "HPW 49",
+          "level": 2,
+          "path": null,
+          "content": "IW 74",
+          "children": []
+        },
+        {
+          "title": "LBW 52",
+          "level": 2,
+          "path": null,
+          "content": "",
+          "children": []
+        },
+        {
+          "title": "MIAW 185",
+          "level": 2,
+          "path": null,
+          "content": "",
+          "children": []
+        },
+        {
+          "title": "OAW 311",
+          "level": 2,
+          "path": null,
+          "content": "",
+          "children": []
+        },
+        {
+          "title": "OFW 31",
+          "level": 2,
+          "path": null,
+          "content": "",
+          "children": []
+        },
+        {
+          "title": "OHW 313",
+          "level": 2,
+          "path": null,
+          "content": "",
+          "children": []
+        },
+        {
+          "title": "PAW 15",
+          "level": 2,
+          "path": null,
+          "content": "b",
+          "children": []
+        },
+        {
+          "title": "PEW 77",
+          "level": 2,
+          "path": null,
+          "content": "",
+          "children": []
+        },
+        {
+          "title": "PGW 47",
+          "level": 2,
+          "path": null,
+          "content": "PW 23 a",
+          "children": []
+        },
+        {
+          "title": "ROW 27",
+          "level": 2,
+          "path": null,
+          "content": "",
+          "children": []
+        },
+        {
+          "title": "RSEW 22",
+          "level": 2,
+          "path": null,
+          "content": "a",
+          "children": []
+        },
+        {
+          "title": "RSEW-HF 22",
+          "level": 2,
+          "path": null,
+          "content": "",
+          "children": []
+        },
+        {
+          "title": "RSEW-I 742",
+          "level": 2,
+          "path": null,
+          "content": "",
+          "children": []
+        },
+        {
+          "title": "RSEW-MS 222",
+          "level": 2,
+          "path": null,
+          "content": "",
+          "children": []
+        },
+        {
+          "title": "RSW 21",
+          "level": 2,
+          "path": null,
+          "content": "RW 2",
+          "children": []
+        },
+        {
+          "title": "RW-PC 2",
+          "level": 2,
+          "path": null,
+          "content": "",
+          "children": []
+        },
+        {
+          "title": "SAW 12",
+          "level": 2,
+          "path": null,
+          "content": "a",
+          "children": []
+        },
+        {
+          "title": "SAW-S 12",
+          "level": 2,
+          "path": null,
+          "content": "",
+          "children": []
+        },
+        {
+          "title": "SMAW 111",
+          "level": 2,
+          "path": null,
+          "content": "",
+          "children": []
+        },
+        {
+          "title": "SSW 4",
+          "level": 2,
+          "path": null,
+          "content": "SW 783/785/786 TW 71",
+          "children": []
+        },
+        {
+          "title": "USW 41",
+          "level": 2,
+          "path": null,
+          "content": "UW 25 a",
+          "children": []
+        },
+        {
+          "title": "UW-HF 27",
+          "level": 2,
+          "path": null,
+          "content": "",
+          "children": []
+        },
+        {
+          "title": "UW-I 741",
+          "level": 2,
+          "path": null,
+          "content": "a Not exactly equivalent. b See Annex B.\n\n| US acronym | Corresponding reference number in this document |\n| --- | --- |\n|  |  |\n|  |  |\n| GMAW | 13 |\n| GMAW-P | 13-P |\n| GMAW-S | 13-D |\n| GTAW | 14 |\n| GTAW-P | 14-P |\n| HIPW | 451 |\n| HPW | 49 |\n| IW | 74 |\n| LBW | 52 |\n| MIAW | 185 |\n| OAW | 311 |\n| OFW | 31 |\n| OHW | 313 |\n| PAW | 15 b |\n| PEW | 77 |\n| PGW | 47 |\n| PW | 23 a |\n| ROW | 27 |\n| RSEW | 22 a |\n| RSEW-HF | 22 |\n| RSEW-I | 742 |\n| RSEW-MS | 222 |\n| RSW | 21 |\n| RW | 2 |\n| RW-PC | 2 |\n| SAW | 12 a |\n| SAW-S | 12 |\n| SMAW | 111 |\n| SSW | 4 |\n| SW | 783/785/786 |\n| TW | 71 |\n| USW | 41 |\n| UW | 25 a |\n| UW-HF 27 UW-I 741 a Not exactly equivalent. |  |\n\n\nTable C.2 — Commonly used US acronyms for brazing US acronym Corresponding reference number in this document",
+          "children": []
+        },
+        {
+          "title": "ABW 972",
+          "level": 2,
+          "path": null,
+          "content": "B 9 BW 97 DB 923",
+          "children": []
+        },
+        {
+          "title": "DFB 919",
+          "level": 2,
+          "path": null,
+          "content": "",
+          "children": []
+        },
+        {
+          "title": "EBBW 977",
+          "level": 2,
+          "path": null,
+          "content": "",
+          "children": []
+        },
+        {
+          "title": "EXB 93",
+          "level": 2,
+          "path": null,
+          "content": "a",
+          "children": []
+        },
+        {
+          "title": "EXBW 97",
+          "level": 2,
+          "path": null,
+          "content": "FB 921 IB 916",
+          "children": []
+        },
+        {
+          "title": "IRB 911",
+          "level": 2,
+          "path": null,
+          "content": "",
+          "children": []
+        },
+        {
+          "title": "LBBW 913",
+          "level": 2,
+          "path": null,
+          "content": "RB 918 TB 912 a Not exactly equivalent. Table C.3 — Commonly used US acronyms for soldering US acronym Corresponding reference number in this document DS 955 FS 953",
+          "children": []
+        },
+        {
+          "title": "IRS 941",
+          "level": 2,
+          "path": null,
+          "content": "IS 946 RS 948 TS 942",
+          "children": []
+        },
+        {
+          "title": "USS 947",
+          "level": 2,
+          "path": null,
+          "content": "WS 951 Table C.4 — Commonly used US acronyms for cutting US acronym Corresponding reference number in this document AC 82 a",
+          "children": []
+        },
+        {
+          "title": "CAC 82",
+          "level": 2,
+          "path": null,
+          "content": "",
+          "children": []
+        },
+        {
+          "title": "CAC-A 821/871",
+          "level": 2,
+          "path": null,
+          "content": "",
+          "children": []
+        },
+        {
+          "title": "EBC —",
+          "level": 2,
+          "path": null,
+          "content": "",
+          "children": []
+        },
+        {
+          "title": "GMAC 82",
+          "level": 2,
+          "path": null,
+          "content": "",
+          "children": []
+        },
+        {
+          "title": "GTAC 82",
+          "level": 2,
+          "path": null,
+          "content": "a",
+          "children": []
+        },
+        {
+          "title": "HEBC 84",
+          "level": 2,
+          "path": null,
+          "content": "",
+          "children": []
+        },
+        {
+          "title": "LBC 84",
+          "level": 2,
+          "path": null,
+          "content": "",
+          "children": []
+        },
+        {
+          "title": "LBC-A 84",
+          "level": 2,
+          "path": null,
+          "content": "",
+          "children": []
+        },
+        {
+          "title": "LBC-EV 84",
+          "level": 2,
+          "path": null,
+          "content": "",
+          "children": []
+        },
+        {
+          "title": "LBC-IG 84",
+          "level": 2,
+          "path": null,
+          "content": "a Not exactly equivalent.\n\n| US acronym | Corresponding reference number in this document |\n| --- | --- |\n|  |  |\n|  |  |\n| ABW | 972 |\n| B | 9 |\n| BW | 97 |\n| DB | 923 |\n| DFB | 919 |\n| EBBW | 977 |\n| EXB | 93 a |\n| EXBW | 97 |\n| FB | 921 |\n| IB | 916 |\n| IRB | 911 |\n| LBBW | 913 |\n| RB 918 |  |\n\n| US acronym | Corresponding reference number in this document |\n| --- | --- |\n|  |  |\n|  |  |\n| DS | 955 |\n| FS | 953 |\n| IRS | 941 |\n| IS | 946 |\n| RS | 948 |\n| TS | 942 |\n\n| US acronym | Corresponding reference number in this document |\n| --- | --- |\n|  |  |\n|  |  |\n| AC | 82 a |\n| CAC | 82 |\n| CAC-A | 821/871 |\n| EBC | — |\n| GMAC | 82 |\n| GTAC | 82 a |\n| HEBC | 84 |\n| LBC | 84 |\n| LBC-A LBC-EV | 84 84 |\n|  |  |\n\n\nTTaabbllee CC..44 ((ccoonnttiinnuueedd)) US acronym Corresponding reference number in this document",
+          "children": []
+        },
+        {
+          "title": "LBC-O 84",
+          "level": 2,
+          "path": null,
+          "content": "",
+          "children": []
+        },
+        {
+          "title": "OAC 822",
+          "level": 2,
+          "path": null,
+          "content": "OC 81",
+          "children": []
+        },
+        {
+          "title": "OC-P 81",
+          "level": 2,
+          "path": null,
+          "content": "",
+          "children": []
+        },
+        {
+          "title": "OFC 81",
+          "level": 2,
+          "path": null,
+          "content": "",
+          "children": []
+        },
+        {
+          "title": "OFC-A 81",
+          "level": 2,
+          "path": null,
+          "content": "",
+          "children": []
+        },
+        {
+          "title": "OFC-F 81",
+          "level": 2,
+          "path": null,
+          "content": "",
+          "children": []
+        },
+        {
+          "title": "OFC-H 81",
+          "level": 2,
+          "path": null,
+          "content": "",
+          "children": []
+        },
+        {
+          "title": "OFC-N 81",
+          "level": 2,
+          "path": null,
+          "content": "",
+          "children": []
+        },
+        {
+          "title": "OFC-P 81",
+          "level": 2,
+          "path": null,
+          "content": "OG 872",
+          "children": []
+        },
+        {
+          "title": "OLC 822",
+          "level": 2,
+          "path": null,
+          "content": "",
+          "children": []
+        },
+        {
+          "title": "PAC 83",
+          "level": 2,
+          "path": null,
+          "content": "",
+          "children": []
+        },
+        {
+          "title": "SMAC 82",
+          "level": 2,
+          "path": null,
+          "content": "TC 8 a Not exactly equivalent.\n\n| US acronym | Corresponding reference number in this document |\n| --- | --- |\n|  |  |\n|  |  |\n| LBC-O | 84 |\n| OAC | 822 |\n| OC | 81 |\n| OC-P | 81 |\n| OFC | 81 |\n| OFC-A | 81 |\n| OFC-F | 81 |\n| OFC-H | 81 |\n| OFC-N | 81 |\n| OFC-P | 81 |\n| OG | 872 |\n| OLC | 822 |\n| PAC | 83 |\n| SMAC 82 |  |",
+          "children": []
+        },
+        {
+          "title": "Bibliography",
+          "level": 2,
+          "path": null,
+          "content": "Welding and allied processes — Vocabulary — Part 3: Welding processes [1] ISO/TR 25901-3, Welding and allied processes — Vocabulary — Part 4: Arc welding [2] ISO/TR 25901-4,\n\n\n*Pagina 23: vuota nel PDF (non elenco processi).*",
+          "children": []
+        },
+        {
+          "title": "ICS 01.040.25; 25.160.01",
+          "level": 2,
+          "path": null,
+          "content": "Price based on 18 pages",
+          "children": []
+        }
+      ]
+    }
+  ]
+}

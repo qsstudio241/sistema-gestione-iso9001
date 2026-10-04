@@ -1,3 +1,5 @@
+> **Qualità / 3° confronto PDF (04/10/2026):** stessa edizione BS EN ISO 14555:2025 (48 pagine, `standard_code` `ISO_14555_2025`). CLI `pdf_to_json` su PDF committente (`BS_EN_ISO_14555_2025_Welding_Arc_stud_welding_…pdf`, **non** in Git): 48/48 testo utile, 0 `ATTENZIONE`, 1 `Nota tecnica` (pag. 20 pymupdf). Tabella 2 confermata (ø 8→40 / 10→60 / 12→85 Nm). Il JSON auto ha 161 clausole vs 149 del file HITL: più heading spezzati, non più contenuto normativo. **Non sostituito** questo MD/JSON: il 2° passaggio HITL (29/08) ha già rimosso la Tabella 1 markdown invertita; un re-run 04/10 la reintrodurrebbe e spezzerebbe `10.2.8.11` in `10.2.8.1 1`. Norma di processo/range WPQR, **non** seed `import-norms-from-markdown.js`. Seed VPS: non richiesto (nessuna nuova edizione).
+
 <!-- Pagina 1 (motore: pdfplumber) -->
 
 BSI Standards Publication Welding — Arc stud welding of metallic materials

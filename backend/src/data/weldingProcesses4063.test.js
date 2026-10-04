@@ -25,4 +25,10 @@ Diametro elettrodo/filo d'apporto: 1.2 mm`;
     const text = `Verbale di prova - processo 135 - diametro elettrodo 1.2 mm`;
     expect(inferWeldingProcessFromText(text)).toBe('135');
   });
+
+  test('ISO 4063:2023 — 783/784 stud (testo ufficiale, non inventati)', () => {
+    expect(normalizeWeldingProcessCode('783')).toBe('783');
+    expect(inferWeldingProcessFromText('Welding process: 783')).toBe('783');
+    expect(normalizeWeldingProcessCode('784')).toBe('784');
+  });
 });
