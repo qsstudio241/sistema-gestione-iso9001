@@ -1,25 +1,35 @@
 'use strict';
 
 /**
- * Catalogo processi di saldatura ISO 4063 — fonte unica per UI, ingest e AI.
- * Mantenere sincronizzato con app/src/data/weldingProcesses4063.js
+ * Catalogo processi di saldatura ISO 4063:2023 — fonte unica per UI, ingest e AI.
+ * Elenco frequente (non l'intera norma). Mantenere sincronizzato con
+ * app/src/data/weldingProcesses4063.js. Fonte: NORMA_00044 + estratto ISO-4063.
  */
 
 const ISO_4063_PROCESSES = [
   { code: '111', labelIt: 'Elettrodo rivestito (MMA/SMAW)', labelEn: 'Manual metal arc welding', aliases: ['mma', 'smaw', 'elettrodo', 'stick', 'arco elettrico manuale'] },
-  { code: '114', labelIt: 'Elettrodo con polvere di ferro', labelEn: 'MMA with iron powder', aliases: ['114'] },
-  { code: '121', labelIt: 'Arco sommerso filo (SAW)', labelEn: 'Submerged arc welding', aliases: ['saw', 'sommerso', 'submerged'] },
-  { code: '122', labelIt: 'Arco sommerso nastro', labelEn: 'SAW with strip', aliases: [] },
-  { code: '131', labelIt: 'MIG filo solido (GMAW)', labelEn: 'MIG solid wire', aliases: ['mig', 'gmaw', '131 mig'] },
-  { code: '135', labelIt: 'MAG filo solido (GMAW)', labelEn: 'MAG solid wire', aliases: ['mag', '135 mag', 'co2', 'mig mag'] },
-  { code: '136', labelIt: 'MAG filo animato (FCAW)', labelEn: 'MAG flux cored wire', aliases: ['fcaw', 'filo animato', 'tubolare'] },
-  { code: '138', labelIt: 'MAG filo animato metallico (MCAW)', labelEn: 'Metal cored arc welding', aliases: ['mcaw', 'metal cored'] },
-  { code: '141', labelIt: 'TIG elettrodo tungsteno (GTAW)', labelEn: 'TIG / GTAW', aliases: ['tig', 'gtaw', 'wolframio', 'tungsten'] },
-  { code: '142', labelIt: 'TIG filo tubolare', labelEn: 'TIG with tubular wire', aliases: [] },
-  { code: '145', labelIt: 'TIG + filo freddo', labelEn: 'TIG with cold wire feed', aliases: ['tig cw', 'filo freddo'] },
+  { code: '112', labelIt: 'Gravity welding', labelEn: 'Gravity welding', aliases: ['gravity'] },
+  { code: '114', labelIt: 'Filo animato auto-protetto', labelEn: 'Self-shielded tubular cored arc welding', aliases: ['self-shielded', '114'] },
+  { code: '121', labelIt: 'Arco sommerso filo (SAW)', labelEn: 'Submerged arc welding with solid wire electrode', aliases: ['saw', 'sommerso', 'submerged'] },
+  { code: '122', labelIt: 'Arco sommerso nastro', labelEn: 'Submerged arc welding with strip electrode', aliases: [] },
+  { code: '125', labelIt: 'Arco sommerso filo animato', labelEn: 'Submerged arc welding with tubular cored electrode', aliases: [] },
+  { code: '131', labelIt: 'MIG filo solido (GMAW)', labelEn: 'MIG welding with solid wire electrode', aliases: ['mig', 'gmaw', '131 mig'] },
+  { code: '132', labelIt: 'MIG filo animato', labelEn: 'MIG welding with flux cored electrode', aliases: [] },
+  { code: '133', labelIt: 'MIG filo animato metallico', labelEn: 'MIG welding with metal cored electrode', aliases: [] },
+  { code: '135', labelIt: 'MAG filo solido (GMAW)', labelEn: 'MAG welding with solid wire electrode', aliases: ['mag', '135 mag', 'co2', 'mig mag'] },
+  { code: '136', labelIt: 'MAG filo animato (FCAW)', labelEn: 'MAG welding with flux cored electrode', aliases: ['fcaw', 'filo animato', 'tubolare'] },
+  { code: '138', labelIt: 'MAG filo animato metallico (MCAW)', labelEn: 'MAG welding with metal cored electrode', aliases: ['mcaw', 'metal cored'] },
+  { code: '141', labelIt: 'TIG con apporto solido (GTAW)', labelEn: 'TIG welding with solid filler material', aliases: ['tig', 'gtaw', 'wolframio', 'tungsten'] },
+  { code: '142', labelIt: 'TIG autogeno', labelEn: 'Autogenous TIG welding', aliases: ['tig autogeno'] },
+  { code: '143', labelIt: 'TIG con apporto tubolare', labelEn: 'TIG welding with tubular cored filler material', aliases: [] },
+  { code: '145', labelIt: 'TIG con gas riducente e apporto solido', labelEn: 'TIG welding using reducing gas and solid filler material', aliases: ['tig cw'] },
   { code: '15', labelIt: 'Saldatura al plasma', labelEn: 'Plasma arc welding', aliases: ['paw', 'plasma'] },
-  { code: '311', labelIt: 'Ossiacetilenica (OAW)', labelEn: 'Oxy-fuel gas welding', aliases: ['oaw', 'ossiacetilenica', 'ossigas'] },
-  { code: '312', labelIt: 'Ossigas con filo', labelEn: 'Oxy-fuel with wire', aliases: [] },
+  { code: '311', labelIt: 'Ossiacetilenica (OAW)', labelEn: 'Oxyacetylene welding', aliases: ['oaw', 'ossiacetilenica', 'ossigas'] },
+  { code: '312', labelIt: 'Ossipropano', labelEn: 'Oxypropane welding', aliases: [] },
+  { code: '783', labelIt: 'Stud ad arco trainato (ferrule o gas)', labelEn: 'Drawn arc stud welding with ceramic ferrule or shielding gas', aliases: ['drawn arc stud', 'prigionieri', 'arc stud'] },
+  { code: '784', labelIt: 'Stud ad arco ciclo corto', labelEn: 'Short-cycle drawn arc stud welding', aliases: ['short-cycle stud'] },
+  { code: '785', labelIt: 'Stud a scarica di condensatore (arco)', labelEn: 'Capacitor discharge drawn arc stud welding', aliases: [] },
+  { code: '786', labelIt: 'Stud a scarica di condensatore (punta)', labelEn: 'Capacitor discharge stud welding with tip ignition', aliases: [] },
 ];
 
 const CODE_MAP = new Map(ISO_4063_PROCESSES.map((p) => [p.code, p]));
@@ -93,6 +103,7 @@ Regole:
 - Restituisci il codice ISO 4063 (es. "135", "141"), non il nome commerciale.
 - MIG/MAG con filo solido → 135; filo animato → 136; TIG → 141; MMA/elettrodo → 111; SAW → 121.
 - Se il certificato indica solo "MAG" senza dettaglio, preferisci 135 salvo evidenza di filo animato (136).
+- Stud/prigionieri (ISO 4063:2023): 783 ferrule/gas, 784 ciclo corto, 785 CD arco, 786 CD punta. Non usare 781 né 787 (obsoleti). Se manca il numero, lascia null.
 Codici principali:
 ${lines.join('\n')}${more}
 --- FINE PROCESSI ISO 4063 ---`.trim();

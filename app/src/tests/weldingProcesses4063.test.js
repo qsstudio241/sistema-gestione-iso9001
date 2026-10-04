@@ -18,9 +18,9 @@ describe('weldingProcesses4063', () => {
     expect(inferWeldingProcessFromText('Processo MAG filo solido ISO 4063')).toBe('135');
   });
 
-  it('prompt section contiene codici', () => {
-    const section = buildWeldingProcessPromptSection();
-    expect(section).toContain('135');
-    expect(section).toContain('ISO 4063');
+  it('prompt section contiene 783 e vieta 781/787 obsoleti', () => {
+    const section = buildWeldingProcessPromptSection({ maxLines: 30 });
+    expect(section).toContain('783');
+    expect(section).toMatch(/non usare 781/i);
   });
 });
