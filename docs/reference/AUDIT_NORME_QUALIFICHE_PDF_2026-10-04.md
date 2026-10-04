@@ -6,9 +6,9 @@
 
 ```text
 Fonti Markdown:
-- Coperte: ISO 9606-1 (NORMA_00018 + estratto range); ISO 9606-2 (NORMA_00032, Al); ISO 14732 (solo estratto); ISO 15614-1+A1 (NORMA_00043 + estratto); ISO 15614-2 (NORMA_00031); ISO 15609-1/-2 (NORMA_00014/00015 + estratto contenuto WPS); ISO 14555:2025 (NORMA_00033 HITL + estratto STUD-3-A/B); ISO 4063:2023 (NORMA_00044 + estratto + catalogo JS con 783–786).
+- Coperte: ISO 9606-1 (NORMA_00018 + estratto range); ISO 9606-2 (NORMA_00032, Al); ISO 14732 (solo estratto); ISO 15614-1+A1 (NORMA_00043 + estratto); ISO 15614-2 (NORMA_00031); ISO 15609-1/-2 (NORMA_00014/00015 + estratto contenuto WPS); ISO 14555:2025 (NORMA_00033 HITL + estratto STUD-3-A/B); ISO 4063:2023 (NORMA_00044 + estratto + catalogo JS con 783–786); ISO 15613:2025 (NORMA_00045 + estratto pre-produzione).
 - Mancanti (non bloccano): NORMA_00xxx di 14732 in docs/Normative/; PDF mai in Git.
-- Si parte su (fetta 4063): testo ufficiale processi, famiglia 78 corrente.
+- Si parte su (fetta 15613): digitalizzazione BS EN ISO 15613:2025; 4063 resta dell’altro deputy.
 ```
 
 ## Esito ISO 14555:2025
@@ -33,6 +33,7 @@ Fonti Markdown:
 | ISO 14555 | `NORMA_00033` HITL + `ISO-14555-2025-range-validita-WPQR.md` + `weldingQualificationRules14555.js` | 2025 | §10.2.8 usabile; Tabella 1/2 HITL; CLI grezzo non fidato sulla matrice pag. 20 | **Sì** per WPQR stud. **Non** per patentino 9606 |
 | ISO 15609-1/-2 | `NORMA_00014`/`00015`; `ISO-15609-WPS-contenuto.md` | 2019 | TOC/Annex celle fuse; clausole §4.2–4.5 ok. Non seed SGQ | **Sì/parziale** per contenuto WPS, non per range patentino |
 | ISO 4063 | `NORMA_00044` + `ISO-4063-processi-saldatura.md` + `weldingProcesses4063.js` | 2023 (quinta ed.) | Elenco §5 ricostruito pymupdf; pag. 23 vuota. **783–786 nel testo** | **Sì** per codice processo. Range stud = 14555, non 4063 |
+| ISO 15613 | `NORMA_00045` + `ISO-15613-qualifica-pre-produzione.md` | 2025 (2ª ed., supersede 2004) | 22 pag.; ATTENZIONE solo p. 4 vuota; Tab. 1–2 HITL dal testo; §7.1 default Level 2 se rif. 15614-1 | **Sì/parziale** per WPQR da prova di pre-produzione. Range tabellari = 15614 richiamata, non una tabella 15613. Stud in Scope ma **non** in Tabella 2 (14555 resta la norma dedicata) |
 
 Altre citate da ingest qualifiche (`documentTypeSchemas.js`): ISO 6947 (posizioni, catalogo JS), ISO/TR 15608 (gruppi), ISO 14175 (gas), ISO 13916 (temperature WPS/WPQR), ISO 14341 (filo), ISO 9712 (`cert_ndt`), ISO 14731 (coordinatore). Non ri-digitalizzate in questa slice.
 

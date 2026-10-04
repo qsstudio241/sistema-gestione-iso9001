@@ -1,0 +1,86 @@
+[
+  {
+    "standard_code": "ISO_15613_2025",
+    "clause_ref": "1",
+    "clause_title": "Scope",
+    "requirement_text": "This document specifies how a preliminary welding procedure specification is qualified based on a preproduction welding test. This document is applicable to arc welding, gas welding, beam welding, resistance welding, stud welding and friction welding of metallic materials."
+  },
+  {
+    "standard_code": "ISO_15613_2025",
+    "clause_ref": "2",
+    "clause_title": "Normative references",
+    "requirement_text": "The following documents are referred to in the text in such a way that some or all of their content constitutes requirements of this document. For dated references, only the edition cited applies. For undated references, the latest edition of the referenced document (including any amendments) applies. Specification and qualification of welding procedures for metallic materials — General rules ISO 15607, Specification and qualification of welding procedures for metallic materials — Welding procedure specification — Part 1: Arc welding ISO 15609-1, Specification and qualification of welding procedures for metallic materials — Welding procedure specification — Part 2: Gas welding ISO 15609-2, Specification and qualification of welding procedures for metallic materials — Welding procedure specification — Part 3: Electron beam welding ISO 15609-3, Specification and qualification of welding procedures for metallic materials — Welding procedure specification — Part 4: Laser beam welding ISO 15609-4, Specification and qualification of welding procedures for metallic materials — Welding procedure specification — Part 5: Resistance welding ISO 15609-5, Specification and qualification of welding procedures for metallic materials — Welding procedure specification — Part 6: Laser-arc hybrid welding ISO 15609-6, Specification and qualification of welding procedures for metallic materials — Welding procedure test — Part 1: Arc and gas welding of steels and arc welding of nickel and nickel alloys ISO 15614-1, Specification and qualification of welding procedures for metallic materials — Welding procedure test — Part 2: Arc welding of aluminium and its alloys ISO 15614-2, Specification and qualification of welding procedures for metallic materials — Welding procedure test — Part 3: Fusion welding of non-alloyed and low-alloyed cast irons ISO 15614-3, Specification and qualification of welding procedures for metallic materials — Welding procedure test — Part 5: Arc welding of titanium, zirconium and their alloys ISO 15614-5, Specification and qualification of welding procedures for metallic materials — Welding procedure test — Part 6: Arc and gas welding of copper and its alloys ISO 15614-6, © ISO 2025 – All rights reserved\n\n\nISO 15613:2025(en) Specification and qualification of welding procedures for metallic materials — Welding procedure test — Part 8: Welding of tubes to tube-plate joints ISO 15614-8, Specification and qualification of welding procedures for metallic materials — Welding procedure test — Part 10: Hyperbaric dry welding ISO 15614-10, Specification and qualification of welding procedures for metallic materials — Welding procedure test — Part 11: Electron and laser beam welding ISO 15614-11, Specification and qualification of welding procedures for metallic materials — Welding procedure test — Part 12: Spot, seam and projection welding ISO 15614-12, Specification and qualification of welding procedures for metallic materials — Welding procedure test — Part 13: Upset (resistance butt) and flash welding ISO 15614-13, Specification and qualification of welding procedures for metallic materials — Welding procedure test — Part 14: Laser-arc hybrid welding of steels, nickel and nickel alloys ISO 15614-14, Welding and allied processes — Vocabulary ISO 25901 (all parts),"
+  },
+  {
+    "standard_code": "ISO_15613_2025",
+    "clause_ref": "3",
+    "clause_title": "Terms and definitions",
+    "requirement_text": "For the purposes of this document, the terms and definitions given in ISO 15607 and the ISO 25901 series apply. ISO and IEC maintain terminology databases for use in standardization at the following addresses: — ISO Online browsing platform: available at https:// www .iso .org/ obp — IEC Electropedia: available at https:// www .electropedia .org/"
+  },
+  {
+    "standard_code": "ISO_15613_2025",
+    "clause_ref": "4",
+    "clause_title": "Preliminary welding procedure specification (pWPS)",
+    "requirement_text": "A preliminary welding procedure specification shall be prepared in accordance with the appropriate standard given in Table 1: Table 1 — Welding procedure specification standards ISO standard Welding process ISO 15609-1 Arc welding ISO 15609-2 Gas welding ISO 15609-3 Electron beam welding ISO 15609-4 Laser beam welding ISO 15609-5 Resistance welding ISO 15609-6 Laser-arc hybrid welding\n\n**Tabella 1 — Welding procedure specification standards (ricostruita dal testo §4, HITL 04/10/2026)**\n\n| ISO standard | Welding process |\n| --- | --- |\n| ISO 15609-1 | Arc welding |\n| ISO 15609-2 | Gas welding |\n| ISO 15609-3 | Electron beam welding |\n| ISO 15609-4 | Laser beam welding |\n| ISO 15609-5 | Resistance welding |\n| ISO 15609-6 | Laser-arc hybrid welding |\n\n> **Nota HITL Tabella 1:** la griglia pdfplumber della pagina 18 era incompleta (solo 15609-1…4). Completata dal paragrafo immediatamente precedente, stesso contenuto."
+  },
+  {
+    "standard_code": "ISO_15613_2025",
+    "clause_ref": "5",
+    "clause_title": "Qualification of the welding procedure",
+    "requirement_text": "Qualification of the welding procedure shall be carried out by an examiner or examining body in accordance with the relevant standard given in Table 2. © ISO 2025 – All rights reserved\n\n| ISO standard | Welding process |\n| --- | --- |\n|  |  |\n|  |  |\n| ISO 15609-1 | Arc welding |\n| ISO 15609-2 | Gas welding |\n| ISO 15609-3 | Electron beam welding |\n| ISO 15609-4 | Laser beam welding |\n\n\nISO 15613:2025(en) Table 2 — Welding procedure test standards ISO standard Welding process ISO 15614-1 Arc and gas welding of steels and arc welding of nickel and nickel alloys ISO 15614-2 Arc welding of aluminium and its alloys ISO 15614-3 Fusion welding of non-alloyed and low-alloyed cast irons ISO 15614-5 Arc welding of titanium, zirconium and their alloys ISO 15614-6 Arc and gas welding of copper and its alloys ISO 15614-8 Welding of tubes to tube-plate joints ISO 15614-10 Hyperbaric dry welding ISO 15614-11 Electron and laser beam welding ISO 15614-12 Spot, seam and projection welding ISO 15614-13 Upset (resistance butt) and flash welding ISO 15614-14 Laser-arc hybrid welding of steels, nickel and nickel alloys\n\n**Tabella 2 — Welding procedure test standards (ricostruita dal testo §5, HITL 04/10/2026)**\n\n| ISO standard | Welding process |\n| --- | --- |\n| ISO 15614-1 | Arc and gas welding of steels and arc welding of nickel and nickel alloys |\n| ISO 15614-2 | Arc welding of aluminium and its alloys |\n| ISO 15614-3 | Fusion welding of non-alloyed and low-alloyed cast irons |\n| ISO 15614-5 | Arc welding of titanium, zirconium and their alloys |\n| ISO 15614-6 | Arc and gas welding of copper and its alloys |\n| ISO 15614-8 | Welding of tubes to tube-plate joints |\n| ISO 15614-10 | Hyperbaric dry welding |\n| ISO 15614-11 | Electron and laser beam welding |\n| ISO 15614-12 | Spot, seam and projection welding |\n| ISO 15614-13 | Upset (resistance butt) and flash welding |\n| ISO 15614-14 | Laser-arc hybrid welding of steels, nickel and nickel alloys |\n\n> **Nota HITL Tabella 2:** **non** compare ISO 14555. La griglia pdfplumber di pagina 19 avvolgeva le celle (15614-1 spezzato su due righe). Ricostruzione dal paragrafo elenco, non da numeri inventati. ISO 15614-4 assente anche nel testo (come nelle altre parti 15614 del repo: salto di numerazione della serie)."
+  },
+  {
+    "standard_code": "ISO_15613_2025",
+    "clause_ref": "6",
+    "clause_title": "Welding of test pieces",
+    "requirement_text": "Preparation and welding of the test pieces shall be carried out under the general conditions of production welding, which they shall represent with shapes and dimensions of the test piece simulating the actual welding conditions of the structure. This includes welding positions and other essential items, for example stress conditions, heating effects, limited access and edge condition. When actual components are used, jigs and fixtures shall be those which will be used in production. If tack welds are to be fused into the final joint, they shall be included in the test piece."
+  },
+  {
+    "standard_code": "ISO_15613_2025",
+    "clause_ref": "7",
+    "clause_title": "Testing",
+    "requirement_text": ""
+  },
+  {
+    "standard_code": "ISO_15613_2025",
+    "clause_ref": "7.1",
+    "clause_title": "Fusion welding",
+    "requirement_text": "As far as technically possible, test pieces shall be tested in accordance with appropriate standard given in Table 2. Where ISO 15614-1 is the reference standard, and unless otherwise specified, level 2 shall be the default."
+  },
+  {
+    "standard_code": "ISO_15613_2025",
+    "clause_ref": "7.2",
+    "clause_title": "Resistance welding",
+    "requirement_text": ""
+  },
+  {
+    "standard_code": "ISO_15613_2025",
+    "clause_ref": "7.2.1",
+    "clause_title": "Spot, seam and projection welding",
+    "requirement_text": "Actual components shall be used for the pre-production test. As far as technically possible, test pieces shall be tested in accordance with ISO 15614-12."
+  },
+  {
+    "standard_code": "ISO_15613_2025",
+    "clause_ref": "7.2.2",
+    "clause_title": "Upset (resistance butt) and flash welding",
+    "requirement_text": "Actual components shall be used for the pre-production test. As far as technically possible, test pieces shall be tested in accordance with ISO 15614-13."
+  },
+  {
+    "standard_code": "ISO_15613_2025",
+    "clause_ref": "8",
+    "clause_title": "Range of qualification",
+    "requirement_text": "Any qualification issued under this document shall be limited to the type of joint used in the pre-production test. © ISO 2025 – All rights reserved\n\n| ISO standard | Welding process |\n| --- | --- |\n|  |  |\n| ISO 15614-1 | Arc and gas welding of steels and arc welding of nick- |\n| ISO 15614-2 | el and nickel alloys Arc welding of aluminium and its alloys |\n| ISO 15614-3 | Fusion welding of non-alloyed and low-alloyed cast |\n|  | irons |\n| ISO 15614-5 | Arc welding of titanium, zirconium and their alloys |\n| ISO 15614-6 | Arc and gas welding of copper and its alloys |\n| ISO 15614-8 | Welding of tubes to tube-plate joints |\n| ISO 15614-10 | Hyperbaric dry welding |\n| ISO 15614-11 | Electron and laser beam welding |\n| ISO 15614-12 ISO 15614-13 | Spot, seam and projection welding Upset (resistance butt) and flash welding |\n\n\nISO 15613:2025(en) As far as technically possible, the range of qualification shall be in accordance with the relevant standard given in Table 2. However, the range of qualification for thickness shall be applied to each component in the joint, as well as weld thickness. For resistance welding, the qualification range shall be limited to the pre-production test piece which was tested. However, if available, other welding procedure qualification records (WPQRs) can be taken into consideration if all conditions are sufficiently comparable, for example equipment, electrodes, material (type, surface, thickness) and welding parameters."
+  },
+  {
+    "standard_code": "ISO_15613_2025",
+    "clause_ref": "9",
+    "clause_title": "Validity",
+    "requirement_text": "A qualified welding procedure based on pre-production weld testing is valid if production welding is carried out within the specified range in accordance with clause 8."
+  },
+  {
+    "standard_code": "ISO_15613_2025",
+    "clause_ref": "10",
+    "clause_title": "Welding procedure qualification record (WPQR)",
+    "requirement_text": "The WPQR shall contain the results of assessing the pre-production test piece, including re-tests. The relevant items listed for the WPS in the standards given in Table 1 shall be included in the WPQR, together with details of any features that do not conform to the requirements of Clause 7. If no non-conforming features or unacceptable test results are found, a WPQR detailing the welding procedure test piece results is qualified and shall be signed and dated by the examiner or the examining body. A WPQR form shall be used to record details for the welding procedure and the test results, in order to facilitate uniform presentation and assessment of the data. © ISO 2025 – All rights reserved"
+  }
+]

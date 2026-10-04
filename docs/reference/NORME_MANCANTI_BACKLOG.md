@@ -29,6 +29,7 @@
 | ISO **23278**:2015 (MT acceptance) | CND magnetoscopico | `digitalizzata` | P1 | `NORMA_00041`; PDF upload troncato riparato pymupdf |
 | ISO **23277**:2015 (PT acceptance) | CND penetranti | `digitalizzata` | P1 | `NORMA_00042`; GAP pagina 9 vuota |
 | ISO **15614-1**:2017+A1:2019 (WPQR acciaio/nichel) | WPQR / range procedura | `digitalizzata` | P0 | `NORMA_00043` MD+JSON (06/09/2026); PDF **non** in Git. Archivio ed. 2017 senza A1 = `NORMA_00019`. Non seed SGQ. Delta A1: eliminate §8.5.2.3.1–.4 (waveform/pulsed). Estratto operativo già in [`ISO-15614-1-range-validita-WPQR.md`](ISO-15614-1-range-validita-WPQR.md) |
+| ISO **15613**:2025 (prova di pre-produzione WPS) | WPQR/WPS/fattibilità quando il coupon 15614 non rappresenta il giunto | `digitalizzata` | P0 | `NORMA_00045` MD+JSON (04/10/2026), schema `norm-clause` `ISO_15613_2025`. PDF **non** in Git. Estratto [`ISO-15613-qualifica-pre-produzione.md`](ISO-15613-qualifica-pre-produzione.md). **Non** seed SGQ. **Non** catalogo JS. Tabella 2 = parti 15614, **non** 14555. |
 | EN **10025-3/4/5/6** | MC fine grain / weathering | `parcheggio` | P2 | Traccia MC; non bloccano MVP lamiere 10025-2 |
 | Leggi settoriali oltre D.Lgs. **81**/ **152** | Conformità legislativa / ADR-018 | `digitalizzabile via Normattiva` | P1 → P0 | **81/2008** (sicurezza) e **152/2006** (ambiente) ora disponibili via ingest automatico Normattiva.it (settembre 2026). Settoriali specifici = HITL. Verifica validità automatica tramite Normattiva |
 
@@ -41,6 +42,7 @@
 | ISO 3834-4:2021 | `digitalizzata` | 25/08/2026 | `NORMA_00030` + seed VPS `ISO_3834_4_2021` |
 | ISO 14555:2025 | `digitalizzata` | 26/08/2026; confronto 04/10/2026 | `NORMA_00033` tenuto (HITL); 3° CLI non applicato; estratto range + STUD-3-B già in repo |
 | ISO 4063:2023 | `digitalizzata` | 04/10/2026 | `NORMA_00044` MD+JSON; 783–786 nel testo; catalogo JS aggiornato; non seed SGQ |
+| ISO 15613:2025 | `digitalizzata` | 04/10/2026 | `NORMA_00045` MD+JSON; estratto pre-produzione vs 15614/14555; non seed SGQ |
 | ISO 9712:2021 … 23277:2015 (batch 9) | `digitalizzata` | 26/08/2026 | `NORMA_00034`–`00042` MD+JSON; vedi backlog sopra per GAP per-norma |
 | Quaderno LG 1090 (Conforma n.2) | `digitalizzata` | 26/08/2026 | `Quaderni/Quaderno_2_Linea_Guida_1090.{md,json,txt}`; non seed SGQ |
 
