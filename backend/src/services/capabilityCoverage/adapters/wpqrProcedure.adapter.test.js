@@ -192,6 +192,23 @@ describe('wpqr_procedure adapter (COV-2)', () => {
         expect(otherGroup.reasons.join(' ')).toMatch(/14555/);
     });
 
+    it('stud 14555 con product_type P: diametro non coperto dalla regola piastra->tubo 15614', () => {
+        const m = matchWpqrCapability({
+            id: 8, standard_reference: 'ISO 14555', joint_type: 'SW', product_type: 'P', welding_positions: 'PA',
+        }, { diameter_mm: 600 });
+        expect(m.detail.diameter).toBe('partial');
+        expect(m.status).toBe(MATCH_STATUS.PARTIAL);
+    });
+
+    it('spessore fuori range calcolato (Tabella 7, senza min/max dichiarati) e no_match, non partial', () => {
+        const wpqr = { id: 7, standard_reference: 'ISO 15614-1', joint_type: 'BW', thickness_tested: 10 };
+        const inside = matchWpqrCapability(wpqr, { thickness_mm: 10 });
+        expect(inside.detail.thickness).toBe('partial');
+        const outside = matchWpqrCapability(wpqr, { thickness_mm: 100 });
+        expect(outside.detail.thickness).toBe('fail');
+        expect(outside.status).toBe(MATCH_STATUS.NO_MATCH);
+    });
+
     it('SW stud 14555 con range spessore dichiarato: fuori range no_match', () => {
         const m = matchWpqrCapability({
             id: 4, standard_reference: 'ISO 14555', joint_type: 'SW', thickness_min: 2, thickness_max: 8,

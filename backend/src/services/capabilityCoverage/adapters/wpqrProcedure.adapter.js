@@ -243,6 +243,8 @@ function checkMaterial(wpqr, basis, criteria) {
         : { result: CHECK.FAIL, reason: mat.reason };
 }
 
+const OUT_OF_RANGE_RE = /fuori range/i;
+
 function positiveNumberOrNull(v) {
     if (isBlank(v)) return null;
     const n = Number(v);
@@ -250,8 +252,9 @@ function positiveNumberOrNull(v) {
 }
 
 /**
- * Per ISO 15613 le funzioni riusate non devono ricadere nelle tabelle 15614:
- * si lasciano valere solo i range dichiarati sul record.
+ * Per ISO 15613 e 14555 le funzioni riusate non devono ricadere nelle tabelle
+ * 15614 (Tabella 7 da thickness_tested, regola piastra→tubo): valgono solo i
+ * range dichiarati sul record (14555 ha il proprio ramo spessore §10.2.8.6).
  */
 function declaredOnlyRecord(wpqr) {
     return {
@@ -278,10 +281,12 @@ function checkThickness(wpqr, criteria) {
             ? { result: CHECK.PARTIAL, reason: th.reason }
             : { result: CHECK.OK, reason: th.reason };
     }
-    if (th.partial || !th.range) {
-        return { result: CHECK.PARTIAL, reason: th.reason };
+    // `partial` + range puo' essere sia fuori range calcolato (Tabella 7) sia il solo
+    // hint gola senza range materiale: il primo e' un fallimento, il secondo no.
+    if (OUT_OF_RANGE_RE.test(th.reason || '')) {
+        return { result: CHECK.FAIL, reason: th.reason };
     }
-    return { result: CHECK.FAIL, reason: th.reason };
+    return { result: CHECK.PARTIAL, reason: th.reason };
 }
 
 /** @returns {{ result: string, reason?: string }} */
@@ -355,7 +360,8 @@ function summarizeWpqr(wpqr, basis) {
  */
 function matchWpqrCapability(wpqr, criteria = {}) {
     const basis = resolveQualificationBasis(wpqr);
-    const checked = basis === BASIS.ISO_15613 ? declaredOnlyRecord(wpqr) : wpqr;
+    const declaredOnly = basis === BASIS.ISO_15613 || basis === BASIS.ISO_14555;
+    const checked = declaredOnly ? declaredOnlyRecord(wpqr) : wpqr;
 
     const checks = {
         process: checkProcess(wpqr, criteria.welding_process),

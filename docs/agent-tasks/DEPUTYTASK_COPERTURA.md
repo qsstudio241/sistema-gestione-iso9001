@@ -86,7 +86,8 @@ Su `origin/main` **nessun** `DEPUTYTASK*` è APERTO eccetto questo (verificato 0
 - 15614-2 e gruppi >11: combinazione materiali non codificata → `partial` (verifica manuale), stesso gruppo → ok.
 - `requirementFields`: aggiunti `thickness_b_mm`, `diameter_mm`, `throat_mm`, `material_group_b`.
 - Nessuna WPQR: `matches: []` + `message` (nuovo campo opzionale `emptyMessage` adapter → `verifyCoverage`); FE mostra `result.message` (3 righe in `CoverageVerifyPanel.jsx` + test).
-- Test: Jest `capabilityCoverage` 36/36; Vitest `coverageVerifyPanel` 4/4; `npm run build` OK; `check-harness-boot` OK; `check-utf8-encoding` OK.
+- Fix post-Bugbot: spessore fuori range calcolato Tabella 7 = `no_match` (non `partial`); 14555 come 15613 usa solo i range dichiarati per diametro (niente regola piastra→tubo 15614).
+- Test: Jest `capabilityCoverage` 38/38; Vitest `coverageVerifyPanel` 4/4; `npm run build` OK; `check-harness-boot` OK; `check-utf8-encoding` OK.
 
 **File toccati:** `wpqrProcedure.adapter.js`, `wpqrProcedure.adapter.test.js` (nuovo), `coverageEngine.service.js` (campo `message`), `coverageEngine.service.test.js`, `CoverageVerifyPanel.jsx`, `coverageVerifyPanel.test.jsx`, `PLAN_COPERTURA_SCALABILE_SLICES.md`, questo brief, `PROJECT_ROADMAP.md` (una riga). Non toccati: `wpsGenerator.service.js`, `weldingQualificationRules*.js`, controller/routes, migrazioni, `deploy-manifest.json`.
 
