@@ -106,15 +106,25 @@ describe('welder_9606 match puro', () => {
     });
 });
 
-describe('wpqr_procedure stub', () => {
-    it('restituisce not_implemented tipizzato', async () => {
+describe('wpqr_procedure (COV-2: non piu stub)', () => {
+    it('e implementato e non restituisce not_implemented', async () => {
+        const { query } = require('../../config/database');
+        query.mockResolvedValueOnce({ recordset: [] });
         const result = await verifyCoverage(
             { domain: COVERAGE_DOMAINS.WPQR_PROCEDURE, criteria: { welding_process: '135' } },
             { organizationId: 1, pool: null }
         );
-        expect(result.implemented).toBe(false);
-        expect(result.matches[0].status).toBe(MATCH_STATUS.NOT_IMPLEMENTED);
-        expect(result.summary.not_implemented).toBe(1);
+        expect(result.implemented).toBe(true);
+        expect(result.maturity).toBe('full');
+        expect(result.summary.not_implemented).toBe(0);
+        expect(result.matches).toEqual([]);
+        expect(result.message).toEqual(expect.stringContaining('Nessuna WPQR'));
+    });
+
+    it('listCoverageDomains lo espone come implementato', () => {
+        const meta = listCoverageDomains().find((d) => d.domain === COVERAGE_DOMAINS.WPQR_PROCEDURE);
+        expect(meta.implemented).toBe(true);
+        expect(meta.maturity).toBe('full');
     });
 });
 
