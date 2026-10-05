@@ -191,6 +191,9 @@ export default function CoverageVerifyPanel({ companyId = null, companyName = ""
                     : ""}
                 </p>
               )}
+              {result.message && (
+                <p className="sq-cov-hint" data-testid="cov-message">{result.message}</p>
+              )}
               <table className="sq-cov-table">
                 <thead>
                   <tr>
