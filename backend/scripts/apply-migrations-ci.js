@@ -5,6 +5,7 @@
  * Uso:
  *   DB_SERVER=localhost DB_USER=sa DB_PASSWORD=... DB_DATABASE=SGQ_ISO9001 \
  *     node backend/scripts/apply-migrations-ci.js
+ *   SGQ_MIGRATIONS_DIR=/tmp/fixture  (solo test L1: cartella al posto di database/migrations/)
  *
  * Apply-on-empty (scelta A, issue #699): salta lo storico < 169 (nessuna baseline).
  * Applica + seed + verify solo da 169 in poi. Senza 169+: skip anche seed/verify, esce 0.
@@ -14,16 +15,18 @@ const fs = require('fs');
 const path = require('path');
 const sql = require('mssql');
 const {
-  MIGRATIONS_DIR,
   HEADER_FROM_NUMBER,
   listSqlFilenames,
+  resolveMigrationsDir,
   selectForEmptyDbApply,
   planEmptyDbApply,
   splitSqlBatches,
   collectVerifyFailures,
 } = require('./migrationContract');
 
-const SEED_PATH = path.resolve(MIGRATIONS_DIR, 'ci/seed_anonymous.sql');
+function seedPathFor(dir) {
+  return path.resolve(dir, 'ci/seed_anonymous.sql');
+}
 
 function envConfig() {
   const database = process.env.DB_DATABASE || 'SGQ_ISO9001';
@@ -107,9 +110,9 @@ function writeGithubSummary({ skipped, apply, verifies, outcome }) {
   }
 }
 
-async function applySelected(pool, files) {
+async function applySelected(pool, files, migrationsDir) {
   for (const filename of files) {
-    const full = path.join(MIGRATIONS_DIR, filename);
+    const full = path.join(migrationsDir, filename);
     console.log(`[ci-mig] APPLY ${filename}`);
     try {
       await runBatches(pool, fs.readFileSync(full, 'utf8'), filename);
@@ -121,16 +124,16 @@ async function applySelected(pool, files) {
   }
 }
 
-async function applySeed(pool) {
-  if (!fs.existsSync(SEED_PATH)) {
-    throw new Error(`Seed anonimo mancante: ${SEED_PATH}`);
+async function applySeed(pool, seedPath) {
+  if (!fs.existsSync(seedPath)) {
+    throw new Error(`Seed anonimo mancante: ${seedPath}`);
   }
   console.log('[ci-mig] SEED database/migrations/ci/seed_anonymous.sql');
-  await runBatches(pool, fs.readFileSync(SEED_PATH, 'utf8'), 'seed');
+  await runBatches(pool, fs.readFileSync(seedPath, 'utf8'), 'seed');
   console.log('[ci-mig] OK   seed anonimo');
 }
 
-async function runVerifyFiles(pool, companions) {
+async function runVerifyFiles(pool, companions, migrationsDir) {
   if (companions.length === 0) {
     console.log(`[ci-mig] VERIFY: nessun NNN_verify.sql >= ${HEADER_FROM_NUMBER} (ok)`);
     return;
@@ -138,7 +141,7 @@ async function runVerifyFiles(pool, companions) {
 
   let failed = 0;
   for (const filename of companions) {
-    const full = path.join(MIGRATIONS_DIR, filename);
+    const full = path.join(migrationsDir, filename);
     console.log(`[ci-mig] VERIFY ${filename}`);
     const recordsets = await runBatches(pool, fs.readFileSync(full, 'utf8'), filename);
     for (const rs of recordsets) {
@@ -160,7 +163,8 @@ async function runVerifyFiles(pool, companions) {
 }
 
 async function main() {
-  const selection = selectForEmptyDbApply(listSqlFilenames(MIGRATIONS_DIR));
+  const migrationsDir = resolveMigrationsDir();
+  const selection = selectForEmptyDbApply(listSqlFilenames(migrationsDir));
   console.log(
     `[ci-mig] skip storico < ${selection.fromNumber}: ${selection.skipped.length} file (gap noto, issue #699)`
   );
@@ -195,12 +199,12 @@ async function main() {
   await ensureDatabase(config);
   const pool = await sql.connect(config);
   try {
-    await applySelected(pool, selection.apply);
+    await applySelected(pool, selection.apply, migrationsDir);
     if (plan.seed) {
-      await applySeed(pool);
+      await applySeed(pool, seedPathFor(migrationsDir));
     }
     if (plan.verify) {
-      await runVerifyFiles(pool, selection.verifies);
+      await runVerifyFiles(pool, selection.verifies, migrationsDir);
     }
     console.log('[ci-mig] COMPLETATO');
     writeGithubSummary({ ...selection, outcome: 'VERDE' });
@@ -213,7 +217,7 @@ main().catch((err) => {
   console.error('[ci-mig] ESITO: FALLITO');
   console.error(err && err.message ? err.message : err);
   try {
-    const selection = selectForEmptyDbApply(listSqlFilenames(MIGRATIONS_DIR));
+    const selection = selectForEmptyDbApply(listSqlFilenames(resolveMigrationsDir()));
     writeGithubSummary({ ...selection, outcome: 'ROSSO (regressione 169+)' });
   } catch (_) {
     /* summary best-effort */

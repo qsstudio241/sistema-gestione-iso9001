@@ -8,6 +8,14 @@ const path = require('path');
 
 const MIGRATIONS_DIR = path.resolve(__dirname, '../../database/migrations');
 const HEADER_FROM_NUMBER = 169;
+
+/** Override per test L1: SGQ_MIGRATIONS_DIR punta a una fixture, non al tree reale. */
+function resolveMigrationsDir(explicitDir) {
+  if (explicitDir) return path.resolve(explicitDir);
+  const fromEnv = process.env.SGQ_MIGRATIONS_DIR;
+  if (fromEnv && String(fromEnv).trim()) return path.resolve(String(fromEnv).trim());
+  return MIGRATIONS_DIR;
+}
 const TYPE_VALUES = ['additive', 'transform', 'destructive'];
 const BACKFILL_VALUES = ['none', 'SQL', 'Rielaborazioni'];
 
@@ -206,6 +214,7 @@ function collectVerifyFailures(recordsets) {
 
 module.exports = {
   MIGRATIONS_DIR,
+  resolveMigrationsDir,
   HEADER_FROM_NUMBER,
   TYPE_VALUES,
   BACKFILL_VALUES,
