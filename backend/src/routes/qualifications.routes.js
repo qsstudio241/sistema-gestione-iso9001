@@ -80,6 +80,8 @@ router.use(requireLicensedModule('qualifiche'));
 
 // Stats, batch e coverage prima di /:id per evitare conflitti di routing
 router.get ('/qualifications/stats',               ctrl.getStats);
+router.get ('/qualifications/coverage/domains',    ctrl.listCoverageDomains);
+router.post('/qualifications/coverage/verify',     ctrl.verifyCoverageRequirement);
 router.get ('/qualifications/coverage',            ctrl.getCoverage);
 router.get ('/qualifications/vision-fitness-gaps', ctrl.getVisionFitnessGaps);
 router.get ('/qualifications/confirmations/export', ctrl.exportConfirmations);
