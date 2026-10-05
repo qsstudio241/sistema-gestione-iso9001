@@ -5,8 +5,13 @@
 import React, { useState, useEffect, useRef } from "react";
 import apiService from "../services/apiService";
 import { OCCUPATIONAL_QUALIFICATION_TYPES } from "../data/occupationalQualificationTypes";
-import { buildWelderDesignation } from "../utils/weldingDesignation";
+import { buildWelderDesignation, resolvePrintedDesignation } from "../utils/weldingDesignation";
 import { getApplicableWelderFields } from "../data/weldingQualificationRules9606";
+import {
+  getJointTypeProfile,
+  getVisibleFieldKeys,
+  uses9606DimensionalBlock,
+} from "../data/jointTypeProfiles";
 import { NDT_SECTOR_OPTIONS } from "../data/documentTypeSchemas";
 import { resolveBackendUploadUrl } from "../utils/resolveBackendUploadUrl";
 import SemiannualConfirmationSection from "../components/SemiannualConfirmationSection";
@@ -61,6 +66,8 @@ const EMPTY = {
   pipe_diameter_min_mm: "", pipe_diameter_max_mm: "",
   exam_date: "", last_confirmation_date: "", next_confirmation_due: "",
   revalidation_date: "", qualification_designation: "",
+  welding_process_test: "", welding_processes_validity: "", welding_position_test: "",
+  thickness_s_test_mm: "", thickness_t_test_mm: "", pipe_diameter_test_mm: "",
   // Operatore ISO 14732 (saldatura automatica/meccanizzata)
   welding_type: "", single_multi_run: "", qualification_method: "",
 };
@@ -93,6 +100,13 @@ function QualificationForm({ qualification, onSave, onClose, onSaved, defaultCom
 
   const isWelder9606 = (form.qualification_type || "").includes("9606");
   const isOperator14732 = (form.qualification_type || "").includes("14732");
+  const show9606Dimensions = uses9606DimensionalBlock(form.qualification_type);
+  const jointProfile = getJointTypeProfile(form.joint_type);
+  const profileVisibility = getVisibleFieldKeys({
+    jointType: form.joint_type,
+    productType: form.product_type,
+    qualificationType: form.qualification_type,
+  });
   // ISO 9606-1 (saldatori manuali) e ISO 14732 (operatori automatica/meccanizzata) condividono
   // lo stesso obbligo di conferma semestrale — vedi weldingCoordinatorAuth.service.js (backend).
   const requiresConfirmation = isWelder9606 || isOperator14732;
@@ -109,7 +123,7 @@ function QualificationForm({ qualification, onSave, onClose, onSaved, defaultCom
   // filo continuo (131/135/136/138) — vedi getApplicableWelderFields.
   const applicableFields = getApplicableWelderFields({
     productType: form.product_type,
-    weldingProcessCode: form.welding_process,
+    weldingProcessCode: form.welding_process_test || form.welding_process,
   });
 
   useEffect(() => {
@@ -166,6 +180,12 @@ function QualificationForm({ qualification, onSave, onClose, onSaved, defaultCom
       // Alias ingest/review → colonna DB usata dal select del form.
       if (!d.filler_material && d.filler_material_group) {
         d.filler_material = d.filler_material_group;
+      }
+      if (!d.welding_process_test && d.welding_process) {
+        d.welding_process_test = d.welding_process;
+      }
+      if (!d.welding_processes_validity && d.welding_process) {
+        d.welding_processes_validity = d.welding_process;
       }
       // Diametro singolo da revisione AI (pipe_diameter_mm) → min del form.
       if ((d.pipe_diameter_min_mm == null || d.pipe_diameter_min_mm === "")
@@ -404,8 +424,16 @@ function QualificationForm({ qualification, onSave, onClose, onSaved, defaultCom
               <div className="qf-section-title" style={{marginTop: 16}}>Dettagli saldatura</div>
               <div className="qf-row">
                 <div className="qf-field">
-                  <label>Processo (ISO 4063){isWelder9606 && <span className="req"> *</span>}</label>
-                  <select value={form.welding_process} onChange={handle("welding_process")} onBlur={handleBlur("welding_process")}>
+                  <label>Processo prova (ISO 4063){isWelder9606 && <span className="req"> *</span>}</label>
+                  <select
+                    value={form.welding_process_test || form.welding_process}
+                    onChange={(e) => {
+                      markUserEdit();
+                      const v = e.target.value;
+                      setForm((f) => ({ ...f, welding_process_test: v, welding_process: v }));
+                    }}
+                    onBlur={handleBlur("welding_process")}
+                  >
                     <option value="">-- seleziona --</option>
                     <option value="111">111 — Elettrodo rivestito (MMA)</option>
                     <option value="121">121 — Arco sommerso (SAW)</option>
@@ -421,21 +449,51 @@ function QualificationForm({ qualification, onSave, onClose, onSaved, defaultCom
                   </select>
                   {fieldErrors.welding_process && <span className="qf-field-err">{fieldErrors.welding_process}</span>}
                 </div>
+                {show9606Dimensions && (
+                  <div className="qf-field">
+                    <label>Processi validità (ISO 4063)</label>
+                    <input
+                      type="text"
+                      value={form.welding_processes_validity}
+                      onChange={handle("welding_processes_validity")}
+                      placeholder="es. 135, 138"
+                    />
+                  </div>
+                )}
                 <div className="qf-field">
                   <label>Gruppo materiale (ISO/TR 15608){isWelder9606 && <span className="req"> *</span>}</label>
                   <input type="text" value={form.material_group} onChange={handle("material_group")} onBlur={handleBlur("material_group")} placeholder="es. 1.1, 2, 3" />
                   {fieldErrors.material_group && <span className="qf-field-err">{fieldErrors.material_group}</span>}
                 </div>
               </div>
-              <div className="qf-field">
-                <label>Posizioni qualificate{isWelder9606 && <span className="req"> *</span>}</label>
-                <input type="text" value={form.position_range} onChange={handle("position_range")} onBlur={handleBlur("position_range")} placeholder="es. PA, PB, PF, H-L045" />
-                {fieldErrors.position_range && <span className="qf-field-err">{fieldErrors.position_range}</span>}
-              </div>
+              {show9606Dimensions && (
+                <div className="qf-row">
+                  <div className="qf-field">
+                    <label>Posizione prova</label>
+                    <input type="text" value={form.welding_position_test} onChange={handle("welding_position_test")} placeholder="es. PB" />
+                  </div>
+                  <div className="qf-field">
+                    <label>Posizioni validità{isWelder9606 && <span className="req"> *</span>}</label>
+                    <input type="text" value={form.position_range} onChange={handle("position_range")} onBlur={handleBlur("position_range")} placeholder="es. PA, PB, PF, H-L045" />
+                    {fieldErrors.position_range && <span className="qf-field-err">{fieldErrors.position_range}</span>}
+                  </div>
+                </div>
+              )}
+              {!show9606Dimensions && (
+                <div className="qf-field">
+                  <label>Posizioni qualificate{isWelder9606 && <span className="req"> *</span>}</label>
+                  <input type="text" value={form.position_range} onChange={handle("position_range")} onBlur={handleBlur("position_range")} placeholder="es. PA, PB, PF, H-L045" />
+                  {fieldErrors.position_range && <span className="qf-field-err">{fieldErrors.position_range}</span>}
+                </div>
+              )}
               <div className="qf-row">
                 <div className="qf-field">
                   <label>Tipo giunto</label>
-                  <select value={form.joint_type} onChange={handle("joint_type")}>
+                  <select
+                    value={form.joint_type}
+                    onChange={handle("joint_type")}
+                    title={!form.joint_type && show9606Dimensions ? "Seleziona BW o FW per sbloccare i campi dimensionali 9606" : undefined}
+                  >
                     <option value="">-- seleziona --</option>
                     <option value="BW">BW — Testa a testa</option>
                     <option value="FW">FW — Angolare</option>
@@ -463,60 +521,110 @@ function QualificationForm({ qualification, onSave, onClose, onSaved, defaultCom
                   </select>
                 </div>
               </div>
-              <div className="qf-row">
-                <div className="qf-field">
-                  <label>Spessore min (mm)</label>
-                  <input type="number" step="0.1" min="0" value={form.thickness_min_mm} onChange={handle("thickness_min_mm")} placeholder="es. 3" />
-                </div>
-                <div className="qf-field">
-                  <label>Spessore max (mm)</label>
-                  <input
-                    type="number" step="0.1" min="0"
-                    value={form.thickness_max_mm}
-                    onChange={handle("thickness_max_mm")}
-                    placeholder={form.thickness_max_unlimited ? "senza limite superiore" : "es. 20"}
-                    disabled={!!form.thickness_max_unlimited}
-                  />
-                  <label style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 4, fontSize: 12, fontWeight: 400, color: "#475569" }}>
-                    <input
-                      type="checkbox"
-                      checked={!!form.thickness_max_unlimited}
-                      onChange={(e) => {
-                        markUserEdit();
-                        const checked = e.target.checked;
-                        setForm((f) => ({
-                          ...f,
-                          thickness_max_unlimited: checked,
-                          thickness_max_mm: checked ? "" : f.thickness_max_mm,
-                        }));
-                      }}
-                    />
-                    Nessun limite superiore dichiarato
-                  </label>
-                  <span style={{ fontSize: 11, color: "#94a3b8" }}>
-                    {"Seleziona solo se il certificato dichiara esplicitamente un range aperto (es. \u2265 5mm)"}
-                  </span>
-                </div>
-                {applicableFields.pipeDiameterApplicable ? (
-                  <>
+              {show9606Dimensions && (
+                <>
+                  <div className="qf-row">
+                    {jointProfile?.key === "BW" && (
+                      <div className="qf-field">
+                        <label>{jointProfile.testThicknessLabel}</label>
+                        <input type="number" step="0.1" min="0" value={form.thickness_s_test_mm} onChange={handle("thickness_s_test_mm")} placeholder="es. 12" />
+                        <span style={{ fontSize: 11, color: "#94a3b8" }}>{jointProfile.testThicknessHint}</span>
+                      </div>
+                    )}
+                    {jointProfile?.key === "FW" && (
+                      <div className="qf-field">
+                        <label>{jointProfile.testThicknessLabel}</label>
+                        <input type="number" step="0.1" min="0" value={form.thickness_t_test_mm} onChange={handle("thickness_t_test_mm")} placeholder="es. 8" />
+                        <span style={{ fontSize: 11, color: "#94a3b8" }}>{jointProfile.testThicknessHint}</span>
+                      </div>
+                    )}
+                    {!jointProfile && (
+                      <div className="qf-field qf-flex2">
+                        <label>Spessori 9606 (prova / validità)</label>
+                        <button type="button" className="qf-btn-link" disabled title="Seleziona tipo giunto BW o FW">
+                          Blocco dimensionale disabilitato — manca il profilo giunto
+                        </button>
+                      </div>
+                    )}
                     <div className="qf-field">
-                      <label>Diametro tubo min (mm)</label>
-                      <input type="number" step="0.1" min="0" value={form.pipe_diameter_min_mm} onChange={handle("pipe_diameter_min_mm")} placeholder="vuoto = solo lamiera" />
+                      <label>Spessore validità min (mm)</label>
+                      <input
+                        type="number" step="0.1" min="0"
+                        value={form.thickness_min_mm}
+                        onChange={handle("thickness_min_mm")}
+                        placeholder="es. 3"
+                        disabled={!profileVisibility.dimensionalEnabled}
+                        title={!profileVisibility.dimensionalEnabled ? "Seleziona tipo giunto BW o FW" : undefined}
+                      />
                     </div>
                     <div className="qf-field">
-                      <label>Diametro tubo max (mm)</label>
-                      <input type="number" step="0.1" min="0" value={form.pipe_diameter_max_mm} onChange={handle("pipe_diameter_max_mm")} placeholder="vuoto = solo lamiera" />
+                      <label>Spessore validità max (mm)</label>
+                      <input
+                        type="number" step="0.1" min="0"
+                        value={form.thickness_max_mm}
+                        onChange={handle("thickness_max_mm")}
+                        placeholder={form.thickness_max_unlimited ? "senza limite superiore" : "es. 20"}
+                        disabled={!!form.thickness_max_unlimited || !profileVisibility.dimensionalEnabled}
+                        title={!profileVisibility.dimensionalEnabled ? "Seleziona tipo giunto BW o FW" : undefined}
+                      />
+                      <label style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 4, fontSize: 12, fontWeight: 400, color: "#475569" }}>
+                        <input
+                          type="checkbox"
+                          checked={!!form.thickness_max_unlimited}
+                          disabled={!profileVisibility.dimensionalEnabled}
+                          onChange={(e) => {
+                            markUserEdit();
+                            const checked = e.target.checked;
+                            setForm((f) => ({
+                              ...f,
+                              thickness_max_unlimited: checked,
+                              thickness_max_mm: checked ? "" : f.thickness_max_mm,
+                            }));
+                          }}
+                        />
+                        Nessun limite superiore dichiarato
+                      </label>
                     </div>
-                  </>
-                ) : (
-                  <div className="qf-field qf-flex2">
-                    <label style={{color:"#94a3b8"}}>Diametro tubo</label>
-                    <span style={{fontSize:13, color:"#64748b", fontStyle:"italic", padding:"0.5rem 0"}}>
-                      Non applicabile — prodotto: Piastra
-                    </span>
                   </div>
-                )}
-              </div>
+                  <div className="qf-row">
+                    {applicableFields.pipeDiameterApplicable ? (
+                      <>
+                        <div className="qf-field">
+                          <label>Diametro tubo prova (mm)</label>
+                          <input type="number" step="0.1" min="0" value={form.pipe_diameter_test_mm} onChange={handle("pipe_diameter_test_mm")} placeholder="D della prova" />
+                        </div>
+                        <div className="qf-field">
+                          <label>Diametro tubo validità min (mm)</label>
+                          <input type="number" step="0.1" min="0" value={form.pipe_diameter_min_mm} onChange={handle("pipe_diameter_min_mm")} placeholder="vuoto = solo lamiera" />
+                        </div>
+                        <div className="qf-field">
+                          <label>Diametro tubo validità max (mm)</label>
+                          <input type="number" step="0.1" min="0" value={form.pipe_diameter_max_mm} onChange={handle("pipe_diameter_max_mm")} placeholder="vuoto = solo lamiera" />
+                        </div>
+                      </>
+                    ) : (
+                      <div className="qf-field qf-flex2">
+                        <label style={{color:"#94a3b8"}}>Diametro tubo</label>
+                        <span style={{fontSize:13, color:"#64748b", fontStyle:"italic", padding:"0.5rem 0"}}>
+                          Non applicabile — prodotto: Piastra
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                </>
+              )}
+              {!show9606Dimensions && form.qualification_type.includes("15614") && (
+                <div className="qf-row">
+                  <div className="qf-field">
+                    <label>Spessore min (mm)</label>
+                    <input type="number" step="0.1" min="0" value={form.thickness_min_mm} onChange={handle("thickness_min_mm")} placeholder="es. 3" />
+                  </div>
+                  <div className="qf-field">
+                    <label>Spessore max (mm)</label>
+                    <input type="number" step="0.1" min="0" value={form.thickness_max_mm} onChange={handle("thickness_max_mm")} placeholder="es. 20" />
+                  </div>
+                </div>
+              )}
               <div className="qf-row">
                 <div className="qf-field">
                   <label>Gas di protezione</label>
@@ -581,42 +689,29 @@ function QualificationForm({ qualification, onSave, onClose, onSaved, defaultCom
               )}
               {isWelder9606 && (
                 <div className="qf-field">
-                  <label>Designazione qualifica (calcolata)</label>
-                  <input type="text" value={buildWelderDesignation(form)} readOnly tabIndex={-1}
-                    style={{background:"#f3f4f6", color:"#374151", fontFamily:"monospace"}}
-                    placeholder="Compila processo, giunto, spessore, posizioni..." />
-                </div>
-              )}
-              {requiresConfirmation && !isApproved && (
-                <div className="qf-row">
-                  <div className="qf-field">
-                    <label>Data esame</label>
-                    <input type="date" value={form.exam_date} onChange={handle("exam_date")} />
-                  </div>
-                  <div className="qf-field">
-                    <label>Ultima conferma semestrale</label>
-                    <input type="date" value={form.last_confirmation_date} onChange={handle("last_confirmation_date")} />
-                  </div>
-                  <div className="qf-field">
-                    <label>Prossima conferma entro</label>
-                    <input type="date" value={form.next_confirmation_due} onChange={handle("next_confirmation_due")} />
-                  </div>
-                  <div className="qf-field">
-                    <label>{revalidationLabel}</label>
-                    <input type="date" value={form.revalidation_date} onChange={handle("revalidation_date")} />
-                  </div>
-                </div>
-              )}
-              {requiresConfirmation && isApproved && (
-                <div className="qf-row">
-                  <div className="qf-field">
-                    <label>Data esame</label>
-                    <input type="date" value={form.exam_date} onChange={handle("exam_date")} />
-                  </div>
-                  <div className="qf-field">
-                    <label>{revalidationLabel}</label>
-                    <input type="date" value={form.revalidation_date} onChange={handle("revalidation_date")} />
-                  </div>
+                  <label>Designazione stampata (ISO 9606-1)</label>
+                  <input
+                    type="text"
+                    value={form.qualification_designation}
+                    onChange={handle("qualification_designation")}
+                    placeholder="es. ISO 9606-1: 135 P FW FM1 t8 PB ss mb"
+                    style={{fontFamily:"monospace"}}
+                  />
+                  <span style={{ fontSize: 11, color: "#94a3b8" }}>
+                    {"Anteprima ricalcolo (non sovrascrive): "}
+                    {resolvePrintedDesignation("", {
+                      welding_process: form.welding_process_test || form.welding_process,
+                      product_type: form.product_type,
+                      joint_type: form.joint_type,
+                      filler_material: form.filler_material,
+                      thickness_min_mm: form.thickness_min_mm,
+                      thickness_max_mm: form.thickness_max_mm,
+                      pipe_diameter_min_mm: form.pipe_diameter_min_mm,
+                      pipe_diameter_max_mm: form.pipe_diameter_max_mm,
+                      welding_positions: form.position_range,
+                      weld_details: form.weld_details,
+                    }) || buildWelderDesignation(form)}
+                  </span>
                 </div>
               )}
             </>
@@ -711,9 +806,13 @@ function QualificationForm({ qualification, onSave, onClose, onSaved, defaultCom
             </>
           )}
 
-          {/* Date */}
-          <div className="qf-section-title" style={{marginTop: 16}}>Date</div>
+          {/* Date — sempre in coda, indipendenti dal profilo BW/FW */}
+          <div className="qf-section-title" style={{marginTop: 16}} data-testid="qf-dates-section">Date</div>
           <div className="qf-row">
+            <div className="qf-field">
+              <label>Data esame</label>
+              <input type="date" value={form.exam_date} onChange={handle("exam_date")} />
+            </div>
             <div className="qf-field">
               <label>Data emissione</label>
               <input type="date" value={form.issue_date} onChange={handle("issue_date")} />
@@ -728,6 +827,22 @@ function QualificationForm({ qualification, onSave, onClose, onSaved, defaultCom
               <input type="date" value={form.last_renewal_date} onChange={handle("last_renewal_date")} />
             </div>
           </div>
+          {requiresConfirmation && (
+            <div className="qf-row">
+              <div className="qf-field">
+                <label>Ultima conferma semestrale (9.2)</label>
+                <input type="date" value={form.last_confirmation_date} onChange={handle("last_confirmation_date")} />
+              </div>
+              <div className="qf-field">
+                <label>Prossima conferma entro (next-due)</label>
+                <input type="date" value={form.next_confirmation_due} onChange={handle("next_confirmation_due")} />
+              </div>
+              <div className="qf-field">
+                <label>{revalidationLabel}</label>
+                <input type="date" value={form.revalidation_date} onChange={handle("revalidation_date")} />
+              </div>
+            </div>
+          )}
 
           {/* Stato */}
           <div className="qf-row" style={{marginTop: 12}}>
