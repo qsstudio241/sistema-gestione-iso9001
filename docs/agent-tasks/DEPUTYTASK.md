@@ -1,41 +1,57 @@
-# DEPUTYTASK — Alert qualifiche: destinatario UI (Alert #3)
+# DEPUTYTASK — COV-1: Chassis copertura scalabile + adapter welder_9606
 
-**Stato:** CHIUSO
-**Aperto:** 07/09/2026 (post CM-5; priorità roadmap #2 post ISO-5b)
-**Chiuso:** 10/09/2026 — PR [cursor/alert-personnel-roles-717c]
-**Rischio:** Medio (UI+API additiva, nessun tocco a auth/RBAC/sync)
+**Stato:** APERTO  
+**Aperto:** 05/10/2026  
+**Piano:** [`PLAN_COPERTURA_SCALABILE_SLICES.md`](PLAN_COPERTURA_SCALABILE_SLICES.md) § COV-1  
+**Rischio:** Medio — BE additivo + UI minimale; niente auth/JWT/sync; nessuna migrazione  
+**Branch:** `cursor/copertura-scalabile-fetta2-098a`  
+**Slot precedente:** Alert #3 CHIUSO su `origin/main` — sovrascrittura consentita  
+**Parallelo:** nessun altro `DEPUTYTASK*` APERTO su `origin/main` al lancio
 
----
-
-## Decisioni HITL applicate
-
-1. **Destinatario esplicito** (opzione A): picker nella scheda personale azienda.
-2. **Scope:** solo qualifiche in questa slice.
-3. **Lista:** flag `QUAL_ALERT_RECIPIENT` in `personnel_roles`; tutte ricevono (prima come To, altre in CC).
-4. **Fallback:** cascata attuale `resolveWeldingCoordinatorRecipients` se nessun record attivo.
-5. **Tabella `personnel_roles`**: additiva, nessuna FK SQL esterna.
+> **Allineamento Git (autonomo)**: `git fetch origin main` + `git pull origin main` prima di eseguire. **Non** chiedere al committente.  
+> Comando: `Leggi docs/agent-tasks/DEPUTYTASK.md ed eseguilo. Chiudi con TEST OK o FIX NON APPLICABILI.`
 
 ---
 
-## File toccati
+## Perché
 
-| File | Tipo modifica |
-|------|--------------|
-| `database/migrations/166_personnel_roles.sql` | NUOVO — CREATE TABLE idempotente + 2 indici |
-| `backend/src/controllers/companyPersonnel.controller.js` | ADD — listPersonnelRoles, addPersonnelRole, removePersonnelRole |
-| `backend/src/routes/company.routes.js` | ADD — 3 route GET/POST/DELETE roles |
-| `backend/src/services/qualificationAlert.service.js` | MOD — STEP 0 personnel_roles prima della cascata |
-| `app/src/services/apiService.js` | ADD — getPersonnelRoles, addPersonnelRole, removePersonnelRole |
-| `app/src/components/CompanyPersonnelPanel.jsx` | MOD — colonna Ruoli, badge blue, dropdown, rimozione inline |
+Il committente conferma copertura a **spettro ampio** (9606 + WPQR + CND 9712). Serve un motore plug-in per dominio, non logica saldatori sparsa. COV-1 consegna lo chassis e il primo adapter completo sulla colonna **validità**.
 
-## Cosa NON toccare (invariato)
+## Obiettivo verificabile
 
-- CONS-7 / auth offline
-- ING-5 / VC-5 / Compliance Map
-- SB-2 (slot DEPUTYTASK2)
-- Scheduler cron nuovi
-- Migrazioni esistenti (165 e precedenti)
+1. Chassis: `Requirement`, `CapabilityMatch`, `DomainAdapter` + registry
+2. Adapter `welder_9606` completo (validità)
+3. Hook/stub `wpqr_procedure` e `cnd_9712` registrati
+4. API + UI minimale «Verifica copertura» su Qualifiche
+5. Test L1: match/no-match welder; registry ≥3; FE campi per dominio
 
-## Esito
+## File previsti
 
-TEST OK — 247 file, 1629 test verdi · build Vite OK
+- `docs/agent-tasks/PLAN_COPERTURA_SCALABILE_SLICES.md`
+- `docs/agent-tasks/DEPUTYTASK.md` (questo)
+- `backend/src/services/capabilityCoverage/**`
+- `backend/src/controllers/qualifications.controller.js` (endpoint additivi)
+- `backend/src/routes/qualifications.routes.js`
+- `backend/scripts/deploy-manifest.json`
+- `app/src/components/CoverageVerifyPanel.jsx` (+ CSS se serve, preferire classi `sq-*`)
+- `app/src/pages/QualificationsPage.jsx` (montaggio pannello)
+- `app/src/services/apiService.js` (client API)
+- `PROJECT_CONTEXT.md` (riga bussola se nasce modulo)
+- test L1 BE/FE collegati
+
+## Cosa NON toccare
+
+- Generatore WPS, ingest, migrazioni SQL, auth/sync
+- `jointTypeProfiles` (solo riuso)
+- Altri `DEPUTYTASK*` CHIUSI / epic parallele
+- Acrobat / JEV / regole 78x
+
+## DoD
+
+- [ ] Registry ≥3 domini
+- [ ] welder match + no-match testati
+- [ ] Stub WPQR/CND con status tipizzato
+- [ ] UI mostra/nasconde campi per dominio
+- [ ] L1 FE + build; Jest coverage chassis
+- [ ] PR draft; nessuna migration VPS
+- [ ] `bugbot run` una volta a slice chiusa
