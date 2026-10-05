@@ -1,0 +1,147 @@
+# Contratto file migrazioni (required di questo workflow) + prova apply su SQL Server vuoto.
+# L'apply-on-empty dello storico NON è required: le migrazioni 003–168 sono state
+# scritte su un DB già esistente (la 003 fa RAISERROR se manca audit_responses.notes).
+# Non si falsifica l'esito: lo script esce 1 se fallisce; continue-on-error evita
+# di rompere test-and-build / smoke. Dettaglio: docs/reference/DATABASE.md § Apply-on-empty.
+name: CI migrazioni
+
+on:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'database/migrations/**'
+      - 'backend/scripts/migrationContract.js'
+      - 'backend/scripts/migrationHeaderContract.test.js'
+      - 'backend/scripts/migrationNumberUniqueness.test.js'
+      - 'backend/scripts/apply-migrations-ci.js'
+      - '.github/workflows/ci-migrations.yml'
+  push:
+    branches:
+      - main
+    paths:
+      - 'database/migrations/**'
+      - 'backend/scripts/migrationContract.js'
+      - 'backend/scripts/migrationHeaderContract.test.js'
+      - 'backend/scripts/migrationNumberUniqueness.test.js'
+      - 'backend/scripts/apply-migrations-ci.js'
+      - '.github/workflows/ci-migrations.yml'
+  workflow_dispatch:
+
+jobs:
+  migration-contract:
+    name: Contratto intestazione + numerazione (L1)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+          cache-dependency-path: backend/package-lock.json
+
+      - name: Install dipendenze backend
+        working-directory: backend
+        run: npm ci
+
+      - name: Test L1 contratto e unicità numeri
+        working-directory: backend
+        run: >
+          npx jest
+          scripts/migrationNumberUniqueness.test.js
+          scripts/migrationHeaderContract.test.js
+          --coverage=false
+
+  migration-apply-empty-db:
+    name: Apply storico su SQL Server vuoto (non-required)
+    runs-on: ubuntu-latest
+    # Job non-required: fallimento atteso finché manca una baseline schema.
+    # continue-on-error tiene verdi test-and-build e smoke; il log resta FAIL onesto.
+    continue-on-error: true
+    services:
+      mssql:
+        image: mcr.microsoft.com/mssql/server:2022-latest
+        env:
+          ACCEPT_EULA: Y
+          MSSQL_SA_PASSWORD: SgqCi_Mig2026!Aa
+        ports:
+          - 1433:1433
+        options: >-
+          --health-cmd="echo >&2"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=20
+          --health-start-period=30s
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+          cache-dependency-path: backend/package-lock.json
+
+      - name: Install dipendenze backend
+        working-directory: backend
+        run: npm ci
+
+      - name: Attendi SQL Server
+        working-directory: backend
+        env:
+          DB_SERVER: localhost
+          DB_PORT: '1433'
+          DB_USER: sa
+          DB_PASSWORD: SgqCi_Mig2026!Aa
+          DB_DATABASE: master
+        run: |
+          node -e "
+          const sql = require('mssql');
+          const cfg = {
+            user: process.env.DB_USER,
+            password: process.env.DB_PASSWORD,
+            server: process.env.DB_SERVER,
+            port: Number(process.env.DB_PORT),
+            database: 'master',
+            options: { encrypt: true, trustServerCertificate: true },
+            connectionTimeout: 5000
+          };
+          (async () => {
+            for (let i = 1; i <= 40; i++) {
+              try {
+                const p = await sql.connect(cfg);
+                await p.request().query('SELECT 1 AS ok');
+                await p.close();
+                console.log('SQL Server pronto al tentativo', i);
+                process.exit(0);
+              } catch (e) {
+                console.log('attesa', i, e.message);
+                await new Promise((r) => setTimeout(r, 3000));
+              }
+            }
+            console.error('SQL Server non risponde');
+            process.exit(1);
+          })();
+          "
+
+      - name: Applica migrazioni + seed + verify
+        working-directory: .
+        env:
+          DB_SERVER: localhost
+          DB_PORT: '1433'
+          DB_USER: sa
+          DB_PASSWORD: SgqCi_Mig2026!Aa
+          DB_DATABASE: SGQ_ISO9001
+        run: node backend/scripts/apply-migrations-ci.js
+
+      - name: Annota esito onesto
+        if: always()
+        run: |
+          echo "## Apply-on-empty" >> "$GITHUB_STEP_SUMMARY"
+          echo "Questo job è **non-required** (continue-on-error)." >> "$GITHUB_STEP_SUMMARY"
+          echo "Se lo script è uscito 1, l'esito reale è FALLITO: non è un via libera a mergiare una transform senza prova su copia." >> "$GITHUB_STEP_SUMMARY"
+          echo "Tracciamento: issue https://github.com/qsstudio241/sistema-gestione-iso9001/issues/699" >> "$GITHUB_STEP_SUMMARY"

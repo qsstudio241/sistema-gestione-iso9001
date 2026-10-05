@@ -6,19 +6,14 @@
  * Due file 149_*.sql (MC-1 vs ROO-15) sono passati al merge: Git non confligge
  * se i nomi differiscono. Questo test blocca la collisione da 100 in poi.
  */
-const fs = require('fs');
-const path = require('path');
+const { listMainMigrationSql, numericPrefix } = require('./migrationContract');
 
-const DIR = path.resolve(__dirname, '../../database/migrations');
+const DIR = require('path').resolve(__dirname, '../../database/migrations');
 const FROM_NUMBER = 100;
 
 function listNumberedSql() {
-  return fs.readdirSync(DIR).filter((f) => /^\d+[a-z]?_.*\.sql$/i.test(f));
-}
-
-function numericPrefix(filename) {
-  const m = filename.match(/^(\d+)/);
-  return m ? parseInt(m[1], 10) : NaN;
+  // Esclude NNN_verify.sql / NNN_rollback.sql (companion, stesso prefisso).
+  return listMainMigrationSql(DIR);
 }
 
 describe('numerazione migrazioni', () => {
