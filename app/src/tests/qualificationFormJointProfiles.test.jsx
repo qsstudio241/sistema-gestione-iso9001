@@ -1,7 +1,7 @@
 /**
  * Test L1 — QualificationForm profili BW/FW (fetta 1) e date in coda.
  */
-import { describe, it, expect, beforeEach } from "vitest";
+import { describe, it, expect, beforeEach, vi } from "vitest";
 import React from "react";
 import { render, screen, act, fireEvent } from "@testing-library/react";
 
@@ -125,17 +125,19 @@ describe("QualificationForm — profili BW/FW e date in fondo", () => {
       product_type: "P",
       approval_status: "bozza",
     });
+    vi.useFakeTimers();
     fireEvent.change(screen.getByTestId("qf-welding-process-test"), { target: { value: "135" } });
     expect(screen.getByTestId("qf-welding-process-test").value).toBe("135");
     fireEvent.blur(screen.getByTestId("qf-welding-process-test"));
     expect(screen.queryByText(/processo di saldatura/i)).not.toBeInTheDocument();
     await act(async () => {
-      await new Promise((r) => setTimeout(r, 900));
+      await vi.advanceTimersByTimeAsync(1600);
     });
     expect(apiService.updateQualification).toHaveBeenCalled();
     const payload = apiService.updateQualification.mock.calls.at(-1)[1];
     expect(payload.welding_process_test).toBe("135");
     expect(payload.welding_process).toBe("135");
+    vi.useRealTimers();
   });
 
   it("scelta 135 non copia 138 di validità sulla colonna prova", async () => {
@@ -149,15 +151,17 @@ describe("QualificationForm — profili BW/FW e date in fondo", () => {
       welding_processes_validity: "135, 138",
       approval_status: "bozza",
     });
+    vi.useFakeTimers();
     expect(screen.getByTestId("qf-welding-process-test").value).toBe("");
     fireEvent.change(screen.getByTestId("qf-welding-process-test"), { target: { value: "135" } });
     await act(async () => {
-      await new Promise((r) => setTimeout(r, 900));
+      await vi.advanceTimersByTimeAsync(1600);
     });
     const payload = apiService.updateQualification.mock.calls.at(-1)[1];
     expect(payload.welding_process_test).toBe("135");
     expect(payload.welding_process).toBe("135");
     expect(payload.welding_processes_validity).toBe("135, 138");
+    vi.useRealTimers();
   });
 
   it("riempie welding_process_test solo dalla designazione stampata", async () => {
