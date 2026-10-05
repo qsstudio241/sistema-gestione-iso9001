@@ -1,57 +1,46 @@
 # DEPUTYTASK — COV-1: Chassis copertura scalabile + adapter welder_9606
 
-**Stato:** APERTO  
+**Stato:** CHIUSO — TEST OK  
 **Aperto:** 05/10/2026  
+**Chiuso:** 05/10/2026  
 **Piano:** [`PLAN_COPERTURA_SCALABILE_SLICES.md`](PLAN_COPERTURA_SCALABILE_SLICES.md) § COV-1  
-**Rischio:** Medio — BE additivo + UI minimale; niente auth/JWT/sync; nessuna migrazione  
+**Rischio:** Medio — BE/FE additivo; nessuna migrazione  
 **Branch:** `cursor/copertura-scalabile-fetta2-098a`  
-**Slot precedente:** Alert #3 CHIUSO su `origin/main` — sovrascrittura consentita  
-**Parallelo:** nessun altro `DEPUTYTASK*` APERTO su `origin/main` al lancio
-
-> **Allineamento Git (autonomo)**: `git fetch origin main` + `git pull origin main` prima di eseguire. **Non** chiedere al committente.  
-> Comando: `Leggi docs/agent-tasks/DEPUTYTASK.md ed eseguilo. Chiudi con TEST OK o FIX NON APPLICABILI.`
+**PR:** https://github.com/qsstudio241/sistema-gestione-iso9001/pull/702 (draft)  
+**Slot precedente:** Alert #3 CHIUSO — sovrascrittura consentita  
 
 ---
 
-## Perché
+## Esito
 
-Il committente conferma copertura a **spettro ampio** (9606 + WPQR + CND 9712). Serve un motore plug-in per dominio, non logica saldatori sparsa. COV-1 consegna lo chassis e il primo adapter completo sulla colonna **validità**.
+**TEST OK**
 
-## Obiettivo verificabile
+- Chassis `backend/src/services/capabilityCoverage/` (nome ≠ `coverage/` per `.gitignore` Jest)
+- Adapter `welder_9606` completo su validità; stub `wpqr_procedure`; match minimo `cnd_9712`
+- API `GET …/coverage/domains` + `POST …/coverage/verify`
+- UI `CoverageVerifyPanel` su Qualifiche
+- Jest 13/13 · Vitest 3/3 · `npm run build` OK · harness boot OK
+- **Nessuna migration VPS**
 
-1. Chassis: `Requirement`, `CapabilityMatch`, `DomainAdapter` + registry
-2. Adapter `welder_9606` completo (validità)
-3. Hook/stub `wpqr_procedure` e `cnd_9712` registrati
-4. API + UI minimale «Verifica copertura» su Qualifiche
-5. Test L1: match/no-match welder; registry ≥3; FE campi per dominio
-
-## File previsti
+## File toccati
 
 - `docs/agent-tasks/PLAN_COPERTURA_SCALABILE_SLICES.md`
-- `docs/agent-tasks/DEPUTYTASK.md` (questo)
+- `docs/agent-tasks/DEPUTYTASK.md`
 - `backend/src/services/capabilityCoverage/**`
-- `backend/src/controllers/qualifications.controller.js` (endpoint additivi)
+- `backend/src/controllers/qualifications.controller.js`
 - `backend/src/routes/qualifications.routes.js`
 - `backend/scripts/deploy-manifest.json`
-- `app/src/components/CoverageVerifyPanel.jsx` (+ CSS se serve, preferire classi `sq-*`)
-- `app/src/pages/QualificationsPage.jsx` (montaggio pannello)
-- `app/src/services/apiService.js` (client API)
-- `PROJECT_CONTEXT.md` (riga bussola se nasce modulo)
-- test L1 BE/FE collegati
+- `app/src/components/CoverageVerifyPanel.jsx`
+- `app/src/tests/coverageVerifyPanel.test.jsx`
+- `app/src/pages/QualificationsPage.jsx` / `.css`
+- `app/src/services/apiService.js`
+- `docs/reference/LIBRERIA_UI_SGQ.md`
+- `PROJECT_CONTEXT.md` · `docs/PROJECT_ROADMAP.md`
 
-## Cosa NON toccare
+## Cosa NON toccato
 
-- Generatore WPS, ingest, migrazioni SQL, auth/sync
-- `jointTypeProfiles` (solo riuso)
-- Altri `DEPUTYTASK*` CHIUSI / epic parallele
-- Acrobat / JEV / regole 78x
+- Generatore WPS, ingest, auth/sync, migrazioni SQL, JEV, Acrobat
 
-## DoD
+## Prossime fette
 
-- [ ] Registry ≥3 domini
-- [ ] welder match + no-match testati
-- [ ] Stub WPQR/CND con status tipizzato
-- [ ] UI mostra/nasconde campi per dominio
-- [ ] L1 FE + build; Jest coverage chassis
-- [ ] PR draft; nessuna migration VPS
-- [ ] `bugbot run` una volta a slice chiusa
+- COV-2 WPQR pieno · COV-3 CND pieno · COV-4/5 ponte commessa/UI
