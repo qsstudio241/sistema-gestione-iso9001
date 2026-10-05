@@ -1,6 +1,6 @@
 # DEPUTYTASK_COPERTURA — COV-2: adapter `wpqr_procedure` pieno (15614 · 14555 stud · 15613)
 
-**Stato:** APERTO  
+**Stato:** CHIUSO — TEST OK (06/10/2026)  
 **Aperto:** 05/10/2026  
 **Piano:** [`PLAN_COPERTURA_SCALABILE_SLICES.md`](PLAN_COPERTURA_SCALABILE_SLICES.md) § COV-2  
 **Dipende da:** COV-1 CHIUSO (PR #702, su `main`) — scontrino in [`DEPUTYTASK.md`](DEPUTYTASK.md)  
@@ -69,13 +69,27 @@ Su `origin/main` **nessun** `DEPUTYTASK*` è APERTO eccetto questo (verificato 0
 
 ## DoD
 
-- [ ] `GET /qualifications/coverage/domains` mostra `wpqr_procedure` come implementato
-- [ ] `POST /qualifications/coverage/verify` con `domain: wpqr_procedure` restituisce match/partial/no_match reali
-- [ ] Nessuna soglia 15613 inventata; 15613 solo come etichetta
-- [ ] Jest mirato verde (`cd backend && npx jest src/services/capabilityCoverage`)
-- [ ] Se toccato FE: `cd app && NODE_ENV=test npm run test:run -- coverageVerifyPanel` + `npm run build`
-- [ ] `node backend/scripts/check-harness-boot.js` OK
-- [ ] Branch allineato a `origin/main` prima di push/PR; `bugbot run` una sola volta a slice chiusa
+- [x] `GET /qualifications/coverage/domains` mostra `wpqr_procedure` come implementato
+- [x] `POST /qualifications/coverage/verify` con `domain: wpqr_procedure` restituisce match/partial/no_match reali
+- [x] Nessuna soglia 15613 inventata; 15613 solo come etichetta
+- [x] Jest mirato verde (`cd backend && npx jest src/services/capabilityCoverage`)
+- [x] Se toccato FE: `cd app && NODE_ENV=test npm run test:run -- coverageVerifyPanel` + `npm run build`
+- [x] `node backend/scripts/check-harness-boot.js` OK
+- [x] Branch allineato a `origin/main` prima di push/PR; `bugbot run` una sola volta a slice chiusa
+
+## Esito (CHIUSO — TEST OK)
+
+- Adapter `wpqr_procedure` pieno: `implemented: true`, `maturity: 'full'`. Check riusati: `jointTypeCompatible`, `checkThicknessCoverage` (t1/t2 + B), `checkDiameterCoverage`, `checkThroatCoverage`, `isParentMaterialCombinationCovered` / `resolveSteelGradeToGroup` (15614-1), `isSimilarMaterialsCovered14555` (14555, solo stesso gruppo). Processo: confronto token locale (nessuna funzione esistente).
+- Aggregazione: qualunque fail → `no_match`; altrimenti qualunque dato mancante/non verificabile → `partial`; altrimenti `match`. Ordinamento match → partial → no_match.
+- Base di qualifica in `capability.qualification_basis` (15614-1 / 15614-2 / 14555 / 15613). 15613: nessuna soglia; le funzioni riusate ricevono una copia del record senza `thickness_tested`/`product_type` così non ricadono nelle tabelle 15614; materiale e gola restano `partial`.
+- 14555 stud: spessore = §10.2.8.6 (partial), gola non applicabile (no_match), sezione/posizione/atmosfera non verificate (nessuna colonna WPQR) → `detail.stud_scope`.
+- 15614-2 e gruppi >11: combinazione materiali non codificata → `partial` (verifica manuale), stesso gruppo → ok.
+- `requirementFields`: aggiunti `thickness_b_mm`, `diameter_mm`, `throat_mm`, `material_group_b`.
+- Nessuna WPQR: `matches: []` + `message` (nuovo campo opzionale `emptyMessage` adapter → `verifyCoverage`); FE mostra `result.message` (3 righe in `CoverageVerifyPanel.jsx` + test).
+- Fix post-Bugbot: spessore fuori range calcolato Tabella 7 = `no_match` (non `partial`); 14555 come 15613 usa solo i range dichiarati per diametro (niente regola piastra→tubo 15614).
+- Test: Jest `capabilityCoverage` 38/38; Vitest `coverageVerifyPanel` 4/4; `npm run build` OK; `check-harness-boot` OK; `check-utf8-encoding` OK.
+
+**File toccati:** `wpqrProcedure.adapter.js`, `wpqrProcedure.adapter.test.js` (nuovo), `coverageEngine.service.js` (campo `message`), `coverageEngine.service.test.js`, `CoverageVerifyPanel.jsx`, `coverageVerifyPanel.test.jsx`, `PLAN_COPERTURA_SCALABILE_SLICES.md`, questo brief, `PROJECT_ROADMAP.md` (una riga). Non toccati: `wpsGenerator.service.js`, `weldingQualificationRules*.js`, controller/routes, migrazioni, `deploy-manifest.json`.
 
 ## Comando di avvio
 

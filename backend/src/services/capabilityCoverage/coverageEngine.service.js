@@ -46,6 +46,7 @@ async function verifyCoverage(body, ctx) {
     });
 
     const summary = summarizeMatches(matches);
+    const message = summary.total === 0 && adapter.emptyMessage ? adapter.emptyMessage : null;
     return {
         domain: adapter.domain,
         label: adapter.label,
@@ -58,6 +59,7 @@ async function verifyCoverage(body, ctx) {
         },
         matches,
         summary,
+        ...(message ? { message } : {}),
     };
 }
 

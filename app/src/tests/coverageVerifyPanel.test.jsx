@@ -29,7 +29,7 @@ const DOMAINS = [
   {
     domain: "wpqr_procedure",
     label: "Processi / WPQR",
-    implemented: false,
+    implemented: true,
     requirementFields: [
       { key: "welding_process", label: "Processo", type: "text" },
       { key: "material_group", label: "Gruppo materiale", type: "text" },
@@ -104,5 +104,23 @@ describe("CoverageVerifyPanel", () => {
     const btn = screen.getByTestId("cov-verify");
     expect(btn).toBeTruthy();
     expect(btn.disabled).toBe(false);
+  });
+
+  it("mostra il messaggio del motore quando non ci sono WPQR", async () => {
+    apiService.verifyCoverageRequirement.mockResolvedValue({
+      domain: "wpqr_procedure",
+      implemented: true,
+      summary: { total: 0, match: 0, partial: 0, no_match: 0, not_implemented: 0 },
+      matches: [],
+      message: "Nessuna WPQR registrata per l'ambito selezionato",
+    });
+    render(<CoverageVerifyPanel companyId={10} companyName="ADA" />);
+    fireEvent.click(screen.getByRole("button", { name: /Verifica copertura/i }));
+    await waitFor(() => expect(screen.getByTestId("cov-domain")).toBeTruthy());
+    fireEvent.change(screen.getByTestId("cov-domain"), { target: { value: "wpqr_procedure" } });
+    fireEvent.click(screen.getByTestId("cov-verify"));
+    await waitFor(() => expect(screen.getByTestId("cov-message")).toBeTruthy());
+    expect(screen.getByTestId("cov-message").textContent).toMatch(/Nessuna WPQR/);
+    expect(screen.queryByText(/match completo in una fetta successiva/)).toBeNull();
   });
 });
