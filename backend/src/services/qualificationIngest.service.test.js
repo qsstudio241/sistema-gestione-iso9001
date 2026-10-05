@@ -97,6 +97,24 @@ describe('mapPipelineFieldsToReview — date conferma semestrale', () => {
         );
         expect(fields.next_confirmation_due).toBe('2024-04-15');
     });
+
+    it('non copia welding_process legacy su welding_process_test', () => {
+        const fields = mapPipelineFieldsToReview(
+            { ...BASE, welding_process: '138', welding_process_test: null },
+            'ISO 9606-1', 'patentino.pdf'
+        );
+        expect(fields.welding_process).toBe('138');
+        expect(fields.welding_process_test).toBeNull();
+    });
+
+    it('tiene welding_process_test solo se esplicito (designazione/campo prova)', () => {
+        const fields = mapPipelineFieldsToReview(
+            { ...BASE, welding_process: '138', welding_process_test: '135' },
+            'ISO 9606-1', 'patentino.pdf'
+        );
+        expect(fields.welding_process).toBe('138');
+        expect(fields.welding_process_test).toBe('135');
+    });
 });
 
 describe('classifyQualificationType', () => {

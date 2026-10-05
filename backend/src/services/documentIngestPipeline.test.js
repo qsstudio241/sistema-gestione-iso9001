@@ -140,7 +140,7 @@ describe('extractFieldsByRules', () => {
 });
 
 describe('mergeExtractions', () => {
-    it('non fa vincere le regole 138 sulla prova se l\'AI ha 135', () => {
+    it('non copia il processo prova sulla colonna legacy welding_process', () => {
         const { pickMergedValue } = require('./documentIngestPipeline.service');
         const out = pickMergedValue(
             'welding_process_test',
@@ -152,9 +152,10 @@ describe('mergeExtractions', () => {
         const legacy = pickMergedValue(
             'welding_process',
             { welding_process: '138' },
-            { welding_process_test: '135', welding_process: '135' },
+            { welding_process_test: '135' },
         );
-        expect(legacy.value).toBe('135');
+        expect(legacy.value).toBe('138');
+        expect(legacy.source).toBe('rules');
     });
 
     it('preferisce AI e marca high se coincide con regole', () => {

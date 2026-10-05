@@ -5,7 +5,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import apiService from "../services/apiService";
 import { OCCUPATIONAL_QUALIFICATION_TYPES } from "../data/occupationalQualificationTypes";
-import { buildWelderDesignation, resolvePrintedDesignation } from "../utils/weldingDesignation";
+import { buildWelderDesignation, parseWelderQualificationDesignation, resolvePrintedDesignation } from "../utils/weldingDesignation";
 import { getApplicableWelderFields } from "../data/weldingQualificationRules9606";
 import {
   getJointTypeProfile,
@@ -183,8 +183,13 @@ function QualificationForm({ qualification, onSave, onClose, onSaved, defaultCom
       if (!d.filler_material && d.filler_material_group) {
         d.filler_material = d.filler_material_group;
       }
-      if (!d.welding_process_test && d.welding_process) {
-        d.welding_process_test = d.welding_process;
+      // welding_process è la validità piatta storica: non copiarlo sulla colonna
+      // prova. Solo evidenza esplicita (campo già valorizzato o riga stampata).
+      if (!d.welding_process_test && d.qualification_designation) {
+        const fromPrinted = parseWelderQualificationDesignation(d.qualification_designation);
+        if (fromPrinted?.welding_process_test) {
+          d.welding_process_test = fromPrinted.welding_process_test;
+        }
       }
       // Non copiare welding_processes_validity dal processo prova: se AI/utente
       // ha già un range (o il campo è vuoto) resta così; rielaborazione può riempirlo.
@@ -427,11 +432,12 @@ function QualificationForm({ qualification, onSave, onClose, onSaved, defaultCom
                 <div className="qf-field">
                   <label>Processo prova (ISO 4063){isWelder9606 && <span className="req"> *</span>}</label>
                   <select
-                    value={form.welding_process_test || form.welding_process}
+                    data-testid="qf-welding-process-test"
+                    value={form.welding_process_test || ""}
                     onChange={(e) => {
                       markUserEdit();
                       const v = e.target.value;
-                      setForm((f) => ({ ...f, welding_process_test: v, welding_process: v }));
+                      setForm((f) => ({ ...f, welding_process_test: v }));
                     }}
                     onBlur={handleBlur("welding_process")}
                   >
@@ -853,14 +859,18 @@ function QualificationForm({ qualification, onSave, onClose, onSaved, defaultCom
           </div>
           {requiresConfirmation && (
             <div className="qf-row">
-              <div className="qf-field">
-                <label>Ultima conferma semestrale (9.2)</label>
-                <input type="date" value={form.last_confirmation_date} onChange={handle("last_confirmation_date")} />
-              </div>
-              <div className="qf-field">
-                <label>Prossima conferma entro (next-due)</label>
-                <input type="date" value={form.next_confirmation_due} onChange={handle("next_confirmation_due")} />
-              </div>
+              {!isApproved && (
+                <>
+                  <div className="qf-field">
+                    <label>Ultima conferma semestrale (9.2)</label>
+                    <input type="date" value={form.last_confirmation_date} onChange={handle("last_confirmation_date")} />
+                  </div>
+                  <div className="qf-field">
+                    <label>Prossima conferma entro (next-due)</label>
+                    <input type="date" value={form.next_confirmation_due} onChange={handle("next_confirmation_due")} />
+                  </div>
+                </>
+              )}
               <div className="qf-field">
                 <label>{revalidationLabel}</label>
                 <input type="date" value={form.revalidation_date} onChange={handle("revalidation_date")} />

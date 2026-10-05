@@ -97,5 +97,7 @@ describe('parseWelderQualificationDesignation (FE)', () => {
     expect(parsed.welding_process_test).toBe('135');
     expect(parsed.qualification_designation).toMatch(/135S P FW/);
     expect(parsed.qualification_designation).not.toMatch(/2017/);
+    expect(parsed.weld_details).toBe('ml');
+    expect(parsed.transfer_mode).toBe('S');
   });
 });

@@ -95,6 +95,52 @@ describe("QualificationForm — profili BW/FW e date in fondo", () => {
     expect(validity.value).toBe("");
   });
 
+  it("non copia welding_process legacy (138) su welding_process_test", async () => {
+    await renderForm({
+      id: 6,
+      qualification_type: "Saldatore ISO 9606-1",
+      person_name: "Mario Rossi",
+      company_id: 1,
+      joint_type: "FW",
+      welding_process: "138",
+      welding_processes_validity: "135, 138",
+      approval_status: "bozza",
+    });
+    const processSelect = screen.getByTestId("qf-welding-process-test");
+    expect(processSelect.value).toBe("");
+    expect(screen.getByPlaceholderText("es. 135, 138").value).toBe("135, 138");
+  });
+
+  it("riempie welding_process_test solo dalla designazione stampata", async () => {
+    await renderForm({
+      id: 7,
+      qualification_type: "Saldatore ISO 9606-1",
+      person_name: "Mario Rossi",
+      company_id: 1,
+      joint_type: "FW",
+      welding_process: "138",
+      qualification_designation: "ISO 9606-1: 135 P FW FM1 t8 PB ss mb",
+      approval_status: "bozza",
+    });
+    expect(screen.getByTestId("qf-welding-process-test").value).toBe("135");
+  });
+
+  it("su approvata non rende editabili le date conferma §9.2 nel form", async () => {
+    await renderForm({
+      id: 8,
+      qualification_type: "Saldatore ISO 9606-1",
+      person_name: "Mario Rossi",
+      company_id: 1,
+      joint_type: "FW",
+      approval_status: "approvata",
+      last_confirmation_date: "2026-01-10",
+      next_confirmation_due: "2026-07-10",
+    });
+    expect(screen.queryByText(/Ultima conferma semestrale/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/Prossima conferma entro/)).not.toBeInTheDocument();
+    expect(screen.getByText(/Revalidazione/)).toBeInTheDocument();
+  });
+
   it("EN 15614 con prodotto T mostra diametro tubo min/max", async () => {
     await renderForm({
       id: 5,

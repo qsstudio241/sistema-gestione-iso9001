@@ -242,14 +242,6 @@ function pickMergedValue(key, ruleFields, aiFields) {
         if (ruleVal == null && ruleFields[k] != null) ruleVal = normalizeFieldValue(ruleFields[k]);
     }
 
-    if (key === 'welding_process') {
-        const testAi = normalizeFieldValue(aiFields.welding_process_test);
-        if (testAi != null) {
-            const same = ruleVal != null && String(testAi).toLowerCase() === String(ruleVal).toLowerCase();
-            return { value: testAi, confidence: same ? 'high' : 'medium', source: 'ai' };
-        }
-    }
-
     if (aiVal != null && ruleVal != null) {
         const same = String(aiVal).toLowerCase() === String(ruleVal).toLowerCase();
         return { value: aiVal, confidence: same ? 'high' : 'medium', source: same ? 'ai+rules' : 'ai' };

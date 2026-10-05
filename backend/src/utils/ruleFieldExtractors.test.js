@@ -199,7 +199,7 @@ describe('extractFieldsByRules — dispatch per docType', () => {
         expect(out.thickness_t_test_mm).toBe(8);
         expect(out.thickness_s_test_mm).toBeNull();
         expect(out.qualification_designation).toMatch(/135 P FW FM1 t8/);
-        expect(out.welding_process).toBe('135');
+        expect(out.welding_process).toBe('138');
     });
 
     it('patentino: testata ISO 9606-1:2017 + riga §11 Mason — non prende l\'edizione', () => {

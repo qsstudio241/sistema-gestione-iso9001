@@ -216,7 +216,7 @@ function mapPipelineFieldsToReview(f, pipelineText, fileName) {
         person_name,
         certificate_number: f.certificate_number || null,
         issuing_body: f.issuing_body || null,
-        welding_process: f.welding_process || f.welding_process_test || null,
+        welding_process: f.welding_process || null,
         // material_group (base ISO/TR 15608) e filler (FM1–FM6) restano SEPARATI.
         material_group: f.material_group || null,
         filler_material_group: fillerGroup,
@@ -257,7 +257,7 @@ function mapPipelineFieldsToReview(f, pipelineText, fileName) {
         // per processi ad arco con filo continuo 131/135/136/138) — richiesta
         // committente 28/07/2026, prima assente da schema/ingest/form.
         transfer_mode: f.transfer_mode || null,
-        welding_process_test: f.welding_process_test || f.welding_process || null,
+        welding_process_test: f.welding_process_test || null,
         welding_processes_validity: f.welding_processes_validity || null,
         welding_position_test: f.welding_position_test || null,
         thickness_s_test_mm: toNumericOrNull(f.thickness_s_test_mm),
@@ -418,7 +418,7 @@ async function commitQualificationFromFields(fields, organizationId, companyId, 
     const expiry_date = normalizeDate(f.expiry_date);
     const issuing_body = f.issuing_body || null;
     const standard_ref = f.standard_reference || f.standard_ref || null;
-    const welding_process = f.welding_process || f.welding_process_test || null;
+    const welding_process = f.welding_process || null;
     // material_group (base) e filler FM restano separati — vedi normalizeFillerMaterialGroup.
     const material_group = f.material_group || null;
     const filler_material = normalizeFillerMaterialGroup(
@@ -554,7 +554,7 @@ async function commitQualificationFromFields(fields, organizationId, companyId, 
         .input('productType', product_type || null)
         .input('weldDetails', weld_details || null)
         .input('transferMode', transfer_mode || null)
-        .input('weldProcTest', f.welding_process_test || welding_process || null)
+        .input('weldProcTest', f.welding_process_test || null)
         .input('weldProcValidity', f.welding_processes_validity || null)
         .input('posTest', f.welding_position_test || null)
         .input('thickSTest', toNumericOrNull(f.thickness_s_test_mm))

@@ -73,6 +73,7 @@ describe('parseWelderQualificationDesignation', () => {
         expect(parsed.qualification_designation).toMatch(/135 P FW FM1 t8 PB/);
         const fields = designationFieldsToIngest(parsed);
         expect(fields.welding_process_test).toBe('135');
+        expect(fields.welding_process).toBeUndefined();
         expect(fields.thickness_min_mm).toBeUndefined();
     });
 
@@ -112,6 +113,8 @@ describe('parseWelderQualificationDesignation', () => {
         expect(parsed.thickness_t_test_mm).toBe(12);
         expect(parsed.filler_material_group).toBe('FM1');
         expect(parsed.welding_position_test).toBe('PB');
+        expect(parsed.weld_details).toBe('ml');
+        expect(parsed.transfer_mode).toBe('S');
     });
 });
 

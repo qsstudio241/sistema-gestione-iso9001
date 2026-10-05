@@ -146,6 +146,7 @@ export function parseWelderQualificationDesignation(text) {
     pipe_diameter_test_mm: null,
     welding_position_test: null,
     weld_details: null,
+    transfer_mode: null,
     tokens,
   };
 
@@ -154,6 +155,8 @@ export function parseWelderQualificationDesignation(text) {
     if (!parsed.welding_process_test && PROCESS_TOKEN_RE.test(tok)) {
       const digits = String(tok).match(/^(\d{2,3})/i);
       parsed.welding_process_test = digits ? digits[1] : tok;
+      const suffix = String(tok).slice(String(parsed.welding_process_test).length).toUpperCase();
+      if (suffix === "S" || suffix === "D") parsed.transfer_mode = suffix;
       continue;
     }
     const up = tok.toUpperCase();
@@ -186,6 +189,10 @@ export function parseWelderQualificationDesignation(text) {
     }
     if (!parsed.welding_position_test && POSITION_TOKEN_RE.test(up)) {
       parsed.welding_position_test = up;
+      continue;
+    }
+    if (up === "S" || up === "D") {
+      if (!parsed.transfer_mode) parsed.transfer_mode = up;
       continue;
     }
     leftover.push(tok);

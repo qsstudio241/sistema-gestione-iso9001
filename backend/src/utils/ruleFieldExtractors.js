@@ -322,7 +322,7 @@ function extractPatentinoFields(text, fileName) {
         certificate_number: extractCertificateNumber(text) || extractReferenceFromFileName(fileName),
         issuing_body: extractIssuingBody(text),
         welding_process_test: processTest,
-        welding_process: processTest || processFromText,
+        welding_process: processFromText || null,
         welding_processes_validity: fromDesignation.welding_processes_validity || null,
         material_group: extractMaterialGroup(text),
         welding_positions: positions.length ? positions : null,

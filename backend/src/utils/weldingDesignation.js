@@ -182,6 +182,7 @@ function parseWelderQualificationDesignation(text) {
         pipe_diameter_test_mm: null,
         welding_position_test: null,
         weld_details: null,
+        transfer_mode: null,
         tokens,
     };
 
@@ -190,6 +191,8 @@ function parseWelderQualificationDesignation(text) {
         if (!parsed.welding_process_test && PROCESS_TOKEN_RE.test(tok)) {
             const digits = String(tok).match(/^(\d{2,3})/i);
             parsed.welding_process_test = digits ? digits[1] : tok;
+            const suffix = String(tok).slice(String(parsed.welding_process_test).length).toUpperCase();
+            if (suffix === 'S' || suffix === 'D') parsed.transfer_mode = suffix;
             continue;
         }
         const up = tok.toUpperCase();
@@ -224,6 +227,11 @@ function parseWelderQualificationDesignation(text) {
             parsed.welding_position_test = up;
             continue;
         }
+        // Suffisso trasferimento ISO 9606-1 (S/D): non è ss/bs/nb/mb/sl/ml.
+        if (up === 'S' || up === 'D') {
+            if (!parsed.transfer_mode) parsed.transfer_mode = up;
+            continue;
+        }
         leftover.push(tok);
     }
 
@@ -243,8 +251,8 @@ function designationFieldsToIngest(parsed) {
     if (parsed.qualification_designation) out.qualification_designation = parsed.qualification_designation;
     if (parsed.welding_process_test) {
         out.welding_process_test = parsed.welding_process_test;
-        out.welding_process = parsed.welding_process_test;
     }
+    if (parsed.transfer_mode) out.transfer_mode = parsed.transfer_mode;
     if (parsed.product_type) out.product_type = parsed.product_type;
     if (parsed.joint_type) out.joint_type = parsed.joint_type;
     if (parsed.filler_material_group) out.filler_material_group = parsed.filler_material_group;
