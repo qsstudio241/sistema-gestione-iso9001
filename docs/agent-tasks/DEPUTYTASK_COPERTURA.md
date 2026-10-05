@@ -75,7 +75,7 @@ Su `origin/main` **nessun** `DEPUTYTASK*` è APERTO eccetto questo (verificato 0
 - [x] Jest mirato verde (`cd backend && npx jest src/services/capabilityCoverage`)
 - [x] Se toccato FE: `cd app && NODE_ENV=test npm run test:run -- coverageVerifyPanel` + `npm run build`
 - [x] `node backend/scripts/check-harness-boot.js` OK
-- [ ] Branch allineato a `origin/main` prima di push/PR; `bugbot run` una sola volta a slice chiusa
+- [x] Branch allineato a `origin/main` prima di push/PR; `bugbot run` una sola volta a slice chiusa
 
 ## Esito (CHIUSO — TEST OK)
 
