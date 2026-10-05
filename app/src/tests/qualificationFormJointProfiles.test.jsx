@@ -3,13 +3,15 @@
  */
 import { describe, it, expect, beforeEach } from "vitest";
 import React from "react";
-import { render, screen, act } from "@testing-library/react";
+import { render, screen, act, fireEvent } from "@testing-library/react";
 
 vi.mock("../services/apiService", () => ({
   default: {
     getCompanies: vi.fn(),
     getCompanyPersonnel: vi.fn(),
     getQualificationConfirmations: vi.fn(),
+    updateQualification: vi.fn(),
+    createQualification: vi.fn(),
   },
 }));
 
@@ -20,6 +22,8 @@ beforeEach(() => {
   apiService.getCompanies.mockResolvedValue({ data: [{ id: 1, name: "Acme Srl" }] });
   apiService.getCompanyPersonnel.mockResolvedValue({ data: [] });
   apiService.getQualificationConfirmations.mockResolvedValue({ confirmations: [], can_confirm: false });
+  apiService.updateQualification.mockResolvedValue({ id: 1 });
+  apiService.createQualification.mockResolvedValue({ id: 99 });
 });
 
 async function renderForm(qualification) {
@@ -109,6 +113,51 @@ describe("QualificationForm — profili BW/FW e date in fondo", () => {
     const processSelect = screen.getByTestId("qf-welding-process-test");
     expect(processSelect.value).toBe("");
     expect(screen.getByPlaceholderText("es. 135, 138").value).toBe("135, 138");
+  });
+
+  it("scelta processo scrive welding_process_test e welding_process legacy", async () => {
+    await renderForm({
+      id: 10,
+      qualification_type: "Saldatore ISO 9606-1",
+      person_name: "Mario Rossi",
+      company_id: 1,
+      joint_type: "FW",
+      product_type: "P",
+      approval_status: "bozza",
+    });
+    fireEvent.change(screen.getByTestId("qf-welding-process-test"), { target: { value: "135" } });
+    expect(screen.getByTestId("qf-welding-process-test").value).toBe("135");
+    fireEvent.blur(screen.getByTestId("qf-welding-process-test"));
+    expect(screen.queryByText(/processo di saldatura/i)).not.toBeInTheDocument();
+    await act(async () => {
+      await new Promise((r) => setTimeout(r, 900));
+    });
+    expect(apiService.updateQualification).toHaveBeenCalled();
+    const payload = apiService.updateQualification.mock.calls.at(-1)[1];
+    expect(payload.welding_process_test).toBe("135");
+    expect(payload.welding_process).toBe("135");
+  });
+
+  it("scelta 135 non copia 138 di validità sulla colonna prova", async () => {
+    await renderForm({
+      id: 11,
+      qualification_type: "Saldatore ISO 9606-1",
+      person_name: "Mario Rossi",
+      company_id: 1,
+      joint_type: "FW",
+      welding_process: "138",
+      welding_processes_validity: "135, 138",
+      approval_status: "bozza",
+    });
+    expect(screen.getByTestId("qf-welding-process-test").value).toBe("");
+    fireEvent.change(screen.getByTestId("qf-welding-process-test"), { target: { value: "135" } });
+    await act(async () => {
+      await new Promise((r) => setTimeout(r, 900));
+    });
+    const payload = apiService.updateQualification.mock.calls.at(-1)[1];
+    expect(payload.welding_process_test).toBe("135");
+    expect(payload.welding_process).toBe("135");
+    expect(payload.welding_processes_validity).toBe("135, 138");
   });
 
   it("riempie welding_process_test solo dalla designazione stampata", async () => {

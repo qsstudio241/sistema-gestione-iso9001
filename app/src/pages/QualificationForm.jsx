@@ -148,8 +148,13 @@ function QualificationForm({ qualification, onSave, onClose, onSaved, defaultCom
   }
 
   function handleBlur(field) {
-    return () => {
-      const msg = validateWelderField(field, form[field]);
+    return (e) => {
+      // Il select processo è bound a welding_process_test; la validazione
+      // legacy legge ancora welding_process. Usare il valore del controllo.
+      const value = field === "welding_process"
+        ? (e?.target?.value || form.welding_process_test || form.welding_process)
+        : form[field];
+      const msg = validateWelderField(field, value);
       setFieldErrors((errs) => {
         const next = { ...errs };
         if (msg) next[field] = msg; else delete next[field];
@@ -437,7 +442,19 @@ function QualificationForm({ qualification, onSave, onClose, onSaved, defaultCom
                     onChange={(e) => {
                       markUserEdit();
                       const v = e.target.value;
-                      setForm((f) => ({ ...f, welding_process_test: v }));
+                      // Prova = codice scelto. Legacy resta obbligatoria per validazione
+                      // ed elenchi: stesso codice se non c'è un range distinto sulla prova.
+                      // Non copiare welding_processes_validity (es. 138) sulla colonna prova.
+                      setForm((f) => ({
+                        ...f,
+                        welding_process_test: v,
+                        welding_process: v,
+                      }));
+                      setFieldErrors((errs) => {
+                        const next = { ...errs };
+                        if (v) delete next.welding_process;
+                        return next;
+                      });
                     }}
                     onBlur={handleBlur("welding_process")}
                   >
