@@ -16,6 +16,8 @@
  *   GET    /qualifications              → lista con semaforo + filtri tipo
  *   GET    /qualifications/stats        → conteggi stato
  *   GET    /qualifications/coverage     → copertura commessa (?project_id=X)
+ *   GET    /qualifications/coverage/domains → registry domini copertura (COV-1)
+ *   POST   /qualifications/coverage/verify → verifica requisito↔capacità per dominio
  *   GET    /qualifications/vision-fitness-gaps → gap idoneità visiva NDT/VT
  *   GET    /qualifications/:id          → dettaglio
  *   POST   /qualifications              → crea (sempre attiva, approval_status=approvata)
@@ -1798,10 +1800,45 @@ async function exportConfirmations(req, res) {
     }
 }
 
+/** GET /qualifications/coverage/domains — registry plug-in (COV-1). */
+async function listCoverageDomains(req, res) {
+    try {
+        const { listCoverageDomains: listDomains } = require('../services/capabilityCoverage');
+        res.json({ domains: listDomains() });
+    } catch (err) {
+        logger.error('listCoverageDomains:', err.message);
+        res.status(500).json({ error: err.message });
+    }
+}
+
+/**
+ * POST /qualifications/coverage/verify
+ * Body: { domain, company_id?, criteria: { … } }
+ */
+async function verifyCoverageRequirement(req, res) {
+    try {
+        const { verifyCoverage } = require('../services/capabilityCoverage');
+        const pool = await getPool();
+        const orgId = req.user.organization_id;
+        const result = await verifyCoverage(req.body || {}, {
+            organizationId: orgId,
+            companyId: req.body?.company_id != null ? Number(req.body.company_id) : null,
+            pool,
+        });
+        res.json(result);
+    } catch (err) {
+        const status = err.httpStatus || 500;
+        if (status >= 500) logger.error('verifyCoverageRequirement:', err.message);
+        res.status(status).json({ error: err.message, code: err.code || undefined });
+    }
+}
+
 module.exports = {
     listQualifications,
     getStats,
     getCoverage,
+    listCoverageDomains,
+    verifyCoverageRequirement,
     getVisionFitnessGaps,
     getOne,
     createQualification,

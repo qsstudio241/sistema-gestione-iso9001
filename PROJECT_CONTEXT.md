@@ -50,7 +50,7 @@ Deploy/SSH: [deploy.md](docs/how-to/deploy.md) + [ACCESSO_DEPLOY_AGENTS.md](docs
 |---|---|
 | Audit / checklist / sync | `backend/src/controllers/audit.controller.js`, `app/src/services/syncService.js`, `app/src/contexts/StorageContext.jsx`, `docs/adr/ADR-008-event-sourcing-sync.md` |
 | Non conformità | `backend/src/controllers/nc.controller.js`, `app/src/pages/NCPage.jsx`, `app/src/components/NcDetailPanel.jsx` |
-| Qualifiche / alert patentini | `backend/src/controllers/qualifications.controller.js`, `backend/src/services/qualificationAlert.service.js`, `app/src/pages/QualificationsPage.jsx`, `app/src/pages/QualificationForm.jsx` |
+| Qualifiche / alert / copertura | `backend/src/controllers/qualifications.controller.js`, `backend/src/services/capabilityCoverage/coverageEngine.service.js`, `app/src/pages/QualificationsPage.jsx`, `app/src/components/CoverageVerifyPanel.jsx` |
 | Saldatura WPQR / WPS | `backend/src/controllers/welding.controller.js`, `backend/src/services/wpsGenerator.service.js`, `app/src/pages/WeldingProceduresPage.jsx` |
 | Welding Book | `backend/src/controllers/weldingBooks.controller.js`, `app/src/pages/WeldingBooksPage.jsx` |
 | Commesse ISO 3834 | `backend/src/controllers/projects.controller.js`, `app/src/pages/ProjectsPage.jsx` |

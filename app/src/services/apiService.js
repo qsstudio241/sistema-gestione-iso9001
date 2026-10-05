@@ -1867,6 +1867,16 @@ class ApiService {
         return this.get(`/qualifications/coverage?project_id=${project_id}`);
     }
 
+    /** Registry domini copertura scalabile (COV-1). */
+    async getCoverageDomains() {
+        return this.get('/qualifications/coverage/domains');
+    }
+
+    /** Verifica requisito↔capacità per dominio (COV-1). */
+    async verifyCoverageRequirement(body) {
+        return this.post('/qualifications/coverage/verify', body);
+    }
+
     /** Gap idoneità visiva (NDT/VT senza certificato oculistico valido). */
     async getVisionFitnessGaps(params = {}) {
         const qs = new URLSearchParams(params).toString();
