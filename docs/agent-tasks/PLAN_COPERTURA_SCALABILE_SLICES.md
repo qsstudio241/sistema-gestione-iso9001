@@ -4,7 +4,7 @@
 > (`welder_9606`, `wpqr_procedure`, `cnd_9712`, …), riusabile da Qualifiche /
 > Riesame / Commesse, senza `if (welder) else` sparsi.
 > **Spirito**: stesso registry di `jointTypeProfiles`.
-> **Brief attivo**: [`DEPUTYTASK.md`](DEPUTYTASK.md) — COV-1
+> **Brief attivo**: [`DEPUTYTASK_COPERTURA.md`](DEPUTYTASK_COPERTURA.md) — COV-2 (COV-1 chiuso: [`DEPUTYTASK.md`](DEPUTYTASK.md))
 > **Conferma committente (05/10/2026)**: copertura a spettro ampio (9606 + WPQR + CND 9712), non solo patentini.
 
 ## Fuori scope
