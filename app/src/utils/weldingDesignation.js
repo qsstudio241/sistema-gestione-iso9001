@@ -67,4 +67,105 @@ export function buildWelderDesignation(f = {}) {
   return tokens.join(" ").substring(0, 200);
 }
 
+export function resolvePrintedDesignation(printed, computeFields = {}) {
+  const p = printed != null ? String(printed).trim() : "";
+  if (p) return p.substring(0, 200);
+  return buildWelderDesignation(computeFields);
+}
+
+const POSITION_TOKEN_RE = /^(PA|PB|PC|PD|PE|PF|PG|PH|PJ|H-L045|J-L045)$/i;
+const PROCESS_TOKEN_RE = /^\d{2,3}$/;
+
+function parseNumberToken(raw) {
+  if (raw == null || raw === "") return null;
+  const n = Number(String(raw).replace(",", "."));
+  return Number.isFinite(n) ? n : null;
+}
+
+export function parseWelderQualificationDesignation(text) {
+  const body = String(text || "");
+  if (!body.trim()) return null;
+
+  let rawLine = null;
+  let tokenSource = null;
+  const labeled = body.match(/ISO\s*9606-1\s*[:.\-]?\s*([^\n\r]+)/i);
+  if (labeled) {
+    rawLine = labeled[0].replace(/\s+/g, " ").trim();
+    tokenSource = labeled[1];
+  } else {
+    const compact = body.replace(/\s+/g, " ").trim();
+    if (!PROCESS_TOKEN_RE.test(compact.split(/\s+/)[0] || "")) return null;
+    if (!/\b(BW|FW)\b/i.test(compact)) return null;
+    tokenSource = compact;
+    rawLine = compact;
+  }
+
+  const tokens = String(tokenSource || "")
+    .replace(/[;,]+/g, " ")
+    .split(/\s+/)
+    .map((t) => t.trim())
+    .filter(Boolean);
+
+  const parsed = {
+    qualification_designation: rawLine ? String(rawLine).substring(0, 200) : null,
+    welding_process_test: null,
+    product_type: null,
+    joint_type: null,
+    filler_material_group: null,
+    thickness_s_test_mm: null,
+    thickness_t_test_mm: null,
+    pipe_diameter_test_mm: null,
+    welding_position_test: null,
+    weld_details: null,
+    tokens,
+  };
+
+  const leftover = [];
+  for (const tok of tokens) {
+    if (!parsed.welding_process_test && PROCESS_TOKEN_RE.test(tok)) {
+      parsed.welding_process_test = tok;
+      continue;
+    }
+    const up = tok.toUpperCase();
+    if (!parsed.product_type && (up === "P" || up === "T")) {
+      parsed.product_type = up;
+      continue;
+    }
+    if (!parsed.joint_type && (up === "BW" || up === "FW")) {
+      parsed.joint_type = up;
+      continue;
+    }
+    if (!parsed.filler_material_group && /^FM\d$/i.test(tok)) {
+      parsed.filler_material_group = up;
+      continue;
+    }
+    const sTok = tok.match(/^s\s*=?\s*(\d+(?:[.,]\d+)?)$/i);
+    if (sTok) {
+      parsed.thickness_s_test_mm = parseNumberToken(sTok[1]);
+      continue;
+    }
+    const tTok = tok.match(/^t\s*=?\s*(\d+(?:[.,]\d+)?)$/i);
+    if (tTok) {
+      parsed.thickness_t_test_mm = parseNumberToken(tTok[1]);
+      continue;
+    }
+    const dTok = tok.match(/^D\s*=?\s*(\d+(?:[.,]\d+)?)$/i);
+    if (dTok) {
+      parsed.pipe_diameter_test_mm = parseNumberToken(dTok[1]);
+      continue;
+    }
+    if (!parsed.welding_position_test && POSITION_TOKEN_RE.test(up)) {
+      parsed.welding_position_test = up;
+      continue;
+    }
+    leftover.push(tok);
+  }
+
+  if (leftover.length) parsed.weld_details = leftover.join(" ");
+
+  const hasCore = parsed.welding_process_test || parsed.joint_type || parsed.qualification_designation;
+  if (!hasCore) return null;
+  return parsed;
+}
+
 export default buildWelderDesignation;

@@ -3,7 +3,7 @@
  * backend/src/utils/weldingDesignation.test.js).
  */
 import { describe, it, expect } from 'vitest';
-import { buildWelderDesignation } from '../utils/weldingDesignation.js';
+import { buildWelderDesignation, parseWelderQualificationDesignation, resolvePrintedDesignation } from '../utils/weldingDesignation.js';
 
 describe('buildWelderDesignation', () => {
   it('compone la designazione completa con spessore singolo e tubo', () => {
@@ -66,5 +66,21 @@ describe('buildWelderDesignation', () => {
       weld_details: 'ss nb',
     });
     expect(out).toBe('135 T BW FM1 t3-14.22 PA/PC ss nb');
+  });
+});
+
+describe('parseWelderQualificationDesignation (FE)', () => {
+  it('distingue FW t-prova da BW s-prova', () => {
+    const fw = parseWelderQualificationDesignation('ISO 9606-1: 135 P FW FM1 t8 PB ss mb');
+    expect(fw.joint_type).toBe('FW');
+    expect(fw.thickness_t_test_mm).toBe(8);
+    const bw = parseWelderQualificationDesignation('ISO 9606-1: 141 P BW FM1 s10 PA ss nb');
+    expect(bw.joint_type).toBe('BW');
+    expect(bw.thickness_s_test_mm).toBe(10);
+  });
+
+  it('resolvePrintedDesignation conserva la riga certificato', () => {
+    expect(resolvePrintedDesignation('ISO 9606-1: 135 P FW FM1 t8 PB', { welding_process: '138' }))
+      .toBe('ISO 9606-1: 135 P FW FM1 t8 PB');
   });
 });
