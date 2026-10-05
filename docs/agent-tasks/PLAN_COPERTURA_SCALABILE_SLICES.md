@@ -4,7 +4,7 @@
 > (`welder_9606`, `wpqr_procedure`, `cnd_9712`, …), riusabile da Qualifiche /
 > Riesame / Commesse, senza `if (welder) else` sparsi.
 > **Spirito**: stesso registry di `jointTypeProfiles`.
-> **Brief attivo**: [`DEPUTYTASK_COPERTURA.md`](DEPUTYTASK_COPERTURA.md) — COV-2 (COV-1 chiuso: [`DEPUTYTASK.md`](DEPUTYTASK.md))
+> **Brief attivo**: [`DEPUTYTASK_COPERTURA.md`](DEPUTYTASK_COPERTURA.md) — COV-2 **CHIUSO** (TEST OK); prossima COV-3 (COV-1 chiuso: [`DEPUTYTASK.md`](DEPUTYTASK.md))
 > **Conferma committente (05/10/2026)**: copertura a spettro ampio (9606 + WPQR + CND 9712), non solo patentini.
 
 ## Fuori scope
@@ -19,7 +19,8 @@
 
 - Se/come unificare GET `/qualifications/coverage` (WPS↔saldatori) col nuovo motore
 - UI fattibilità multi-dominio su Projects (oltre il pannello Qualifiche)
-- Estensioni 15614/14555/15613 complete nel dominio WPQR
+- Soglie ISO 15613 nel dominio WPQR (nessun catalogo JS: solo etichetta di base finché non c'è fonte MD)
+- Stud 14555: sezione/posizione/atmosfera non hanno colonne su `wpqr_records` (non verificate dal match)
 - Settore industriale / schema ISO 9712 nel dominio CND oltre method+level
 
 ## Decisioni già prese
@@ -28,6 +29,7 @@
 - Fetta 1 designazione/validità 9606 già su `main` (`jointTypeProfiles` + colonne prova/validità)
 - Nessuna migrazione in COV-1: query su tabelle esistenti
 - Riuso `qualificationCoverage.js` (thickness/positions/process) e `isQualificationOperationallyActive`
+- COV-2 — adapter `wpqr_procedure` pieno: riuso `wpsGenerator` (`checkThicknessCoverage` / `checkDiameterCoverage` / `checkThroatCoverage` / `jointTypeCompatible`) + regole 15614/14555; dato mancante = `partial`, mai `match` silenzioso; 15613 = etichetta, nessuna soglia (branch `cursor/cov-2-wpqr-adapter-7169`)
 - COV-1 — chassis + `welder_9606` + stub WPQR + match minimo CND + UI Qualifiche (branch `cursor/copertura-scalabile-fetta2-098a`)
 
 ## Mappa slice
@@ -50,3 +52,12 @@
 - [x] Test L1 verdi; nessuna migration
 
 **Nota path:** il motore vive in `backend/src/services/capabilityCoverage/` (non `coverage/`: quella cartella è in `.gitignore` per i report Jest).
+
+### COV-2 — DoD
+
+- [x] `GET /qualifications/coverage/domains` mostra `wpqr_procedure` implementato (`maturity: full`)
+- [x] `POST /qualifications/coverage/verify` con `domain: wpqr_procedure`: match / partial / no_match reali, ordinati match → partial → no_match
+- [x] Riuso `wpsGenerator.service.js` + `weldingQualificationRules*.js`; nessuna soglia 15613 inventata (15613 solo etichetta)
+- [x] `requirementFields` estesi (spessore B, diametro, gola, gruppo B) senza rompere COV-1
+- [x] Nessuna WPQR → lista vuota + `message` (FE lo mostra)
+- [x] Jest mirato verde (`npx jest src/services/capabilityCoverage`), Vitest `coverageVerifyPanel` + build, `check-harness-boot` OK; nessuna migrazione

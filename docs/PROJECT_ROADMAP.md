@@ -14,7 +14,7 @@ Audit multi-standard · NC · Qualifiche · Saldatura (WPQR/WPS/3834/Welding Boo
 
 ### Sessione più recente (05/10/2026)
 
-**Copertura scalabile COV-1 (in corso / PR):** chassis registry domini `welder_9606` + stub `wpqr_procedure` / match minimo `cnd_9712` + pannello Qualifiche. Piano: [`PLAN_COPERTURA_SCALABILE_SLICES.md`](agent-tasks/PLAN_COPERTURA_SCALABILE_SLICES.md). Spettro ampio confermato (9606 + WPQR + CND). Prossime: COV-2/3 adapter pieni.
+**Copertura scalabile COV-1 ✅ (#702) · COV-2 (PR):** adapter `wpqr_procedure` pieno (match/partial/no_match su 15614-1/-2 e 14555 stud; 15613 solo etichetta, nessuna soglia inventata; nessuna migrazione). chassis registry domini `welder_9606` + stub `wpqr_procedure` / match minimo `cnd_9712` + pannello Qualifiche. Piano: [`PLAN_COPERTURA_SCALABILE_SLICES.md`](agent-tasks/PLAN_COPERTURA_SCALABILE_SLICES.md). Spettro ampio confermato (9606 + WPQR + CND). Prossime: COV-3 adapter `cnd_9712` pieno, poi COV-4/5.
 
 **04/10/2026 — Norme qualifiche + ISO 14555 (doc) + ISO 4063:2023:** 3° confronto PDF 14555 vs `NORMA_00033` tenuto. HITL 4063 **chiuso**: `NORMA_00044`. Dettaglio: [`AUDIT_NORME_QUALIFICHE_PDF_2026-10-04.md`](reference/AUDIT_NORME_QUALIFICHE_PDF_2026-10-04.md).
 
