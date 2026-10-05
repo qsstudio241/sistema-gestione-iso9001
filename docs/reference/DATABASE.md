@@ -259,12 +259,12 @@ Procedura pre-VPS: [`docs/how-to/database-migrations.md`](../how-to/database-mig
 
 | Voce | Stato (05/10/2026) |
 |---|---|
-| Ultimo `NNN` su `origin/main` | **167** (`167_ai_usage_log.sql`) |
-| Prossimo libero da riservare | **169** (la **168** è in PR #698 qualifiche 9606 — non riusarla) |
+| Ultimo `NNN` su `origin/main` | **168** (`168_qualifications_test_validity_9606.sql`) |
+| Prossimo libero da riservare | **169** |
 | Gate intestazione + companion | Obbligatorio da **≥ 169**. Storico grandfathered. |
 | Unicità prefisso | L1 `migrationNumberUniqueness.test.js` da 100 in poi (esclusi `NNN_verify.sql` / `NNN_rollback.sql`) |
 | Intestazione | L1 `migrationHeaderContract.test.js` |
-| CI apply su DB vuoto | Job **non-required** (vedi sotto) |
+| CI apply su DB vuoto | Apply **da 169** (vedi sotto). Gap pre-169 = verde, non rosso. |
 
 Prime voci storiche (il file era fermo qui a marzo 2026):
 
@@ -276,13 +276,21 @@ Prime voci storiche (il file era fermo qui a marzo 2026):
 
 L'elenco completo è la cartella `database/migrations/*.sql`, non questa tabella.
 
-### Apply-on-empty (CI) — limitazione nota
+### Apply-on-empty (CI)
 
-Le migrazioni **non** sono uno schema-from-scratch. La 003 fa `RAISERROR` se manca `audit_responses.notes`. Non esiste dump baseline versionato.
+Le migrazioni **non** sono uno schema-from-scratch. Lo storico **003–168** è stato scritto su un DB già esistente (la 003 fa `RAISERROR` / errore di sintassi se manca `audit_responses.notes`). Non esiste dump baseline versionato: una baseline completa sarebbe grande e fragile.
 
-Il job `Apply storico su SQL Server vuoto` in [`.github/workflows/ci-migrations.yml`](../../.github/workflows/ci-migrations.yml) applica tutte le main migration + seed anonimo (`database/migrations/ci/seed_anonymous.sql`) + `NNN_verify.sql`. **Lo script esce 1 se fallisce** (esito onesto). Il job è `continue-on-error` / non-required così non falsifica `test-and-build` e smoke.
+**Scelta A (issue [#699](https://github.com/qsstudio241/sistema-gestione-iso9001/issues/699)):** su SQL Server vuoto lo script [`apply-migrations-ci.js`](../../backend/scripts/apply-migrations-ci.js) **salta** le main migration con numero **< 169**, poi applica + seed anonimo (`database/migrations/ci/seed_anonymous.sql`) + `NNN_verify.sql` **da 169 in poi**.
 
-Tracciamento: issue [#699](https://github.com/qsstudio241/sistema-gestione-iso9001/issues/699). Finché non c'è una baseline idempotente, quel job resta informativo.
+| Situazione | Esito job `Apply da 169 su SQL Server vuoto` |
+|---|---|
+| Solo file < 169 (stato attuale di `main`) | **Verde** — skip apply, seed e verify (DB vuoto non ha `organizations`) |
+| 169+ applicate, seed e verify PASS | **Verde** |
+| Una 169+, il seed o il verify fallisce | **Rosso** — regressione reale (niente `continue-on-error`) |
+
+Le nuove 169+ devono tollerare un DB vuoto: `IF OBJECT_ID` / `IF NOT EXISTS` sulla **tabella** (non solo sulla colonna). Un `ALTER` nudo su tabella assente è rosso e si corregge nella SQL, non con un check «atteso failed».
+
+Il seed è già difensivo (INSERT solo se la tabella esiste). Nessun dato di produzione.
 
 ---
 
@@ -302,4 +310,4 @@ audit_responses ──< attachments (via question_id)
 
 ---
 
-*Aggiornato: 2026-10-05 — sequenza main 167; gate intestazione da 169; apply-on-empty non-required*
+*Aggiornato: 2026-10-05 — sequenza main 168; gate intestazione da 169; apply-on-empty salta pre-169 (#699)*

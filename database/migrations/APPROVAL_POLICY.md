@@ -46,4 +46,4 @@ Nessun Cloud Agent applica migrazioni su VPS in questa governance senza richiest
 ## CI
 
 - **Required per i file:** job `Contratto intestazione + numerazione (L1)` in `.github/workflows/ci-migrations.yml`
-- **Non-required:** job apply su SQL Server vuoto — lo storico non ha baseline; il fallimento è onesto (script esce 1). Non usarlo come via libera. Issue [#699](https://github.com/qsstudio241/sistema-gestione-iso9001/issues/699).
+- **Apply-on-empty:** job `Apply da 169 su SQL Server vuoto` — salta lo storico < 169 (nessuna baseline). Verde se resta solo quel gap; rosso solo se una 169+ o il suo verify fallisce. Issue [#699](https://github.com/qsstudio241/sistema-gestione-iso9001/issues/699).

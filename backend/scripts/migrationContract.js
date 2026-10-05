@@ -8,6 +8,14 @@ const path = require('path');
 
 const MIGRATIONS_DIR = path.resolve(__dirname, '../../database/migrations');
 const HEADER_FROM_NUMBER = 169;
+
+/** Override per test L1: SGQ_MIGRATIONS_DIR punta a una fixture, non al tree reale. */
+function resolveMigrationsDir(explicitDir) {
+  if (explicitDir) return path.resolve(explicitDir);
+  const fromEnv = process.env.SGQ_MIGRATIONS_DIR;
+  if (fromEnv && String(fromEnv).trim()) return path.resolve(String(fromEnv).trim());
+  return MIGRATIONS_DIR;
+}
 const TYPE_VALUES = ['additive', 'transform', 'destructive'];
 const BACKFILL_VALUES = ['none', 'SQL', 'Rielaborazioni'];
 
@@ -43,15 +51,56 @@ function listSqlFilenames(dir = MIGRATIONS_DIR) {
   return fs.readdirSync(dir).filter((f) => f.toLowerCase().endsWith('.sql'));
 }
 
+function compareNumberedSql(a, b) {
+  const na = numericPrefix(a);
+  const nb = numericPrefix(b);
+  if (na !== nb) return na - nb;
+  return a.localeCompare(b);
+}
+
 function listMainMigrationSql(dir = MIGRATIONS_DIR) {
   return listSqlFilenames(dir)
     .filter(isMainMigrationSql)
-    .sort((a, b) => {
-      const na = numericPrefix(a);
-      const nb = numericPrefix(b);
-      if (na !== nb) return na - nb;
-      return a.localeCompare(b);
-    });
+    .sort(compareNumberedSql);
+}
+
+/**
+ * Apply-on-empty: lo storico < HEADER_FROM_NUMBER non ha baseline su SQL vuoto.
+ * Si applica e si verifica solo da 169 in poi. Il gap pre-169 è atteso, non un rosso.
+ */
+function selectForEmptyDbApply(filenames, fromNumber = HEADER_FROM_NUMBER) {
+  const names = Array.isArray(filenames) ? filenames : [];
+  const mains = names.filter(isMainMigrationSql);
+  const skipped = mains
+    .filter((f) => {
+      const n = numericPrefix(f);
+      return Number.isFinite(n) && n < fromNumber;
+    })
+    .sort(compareNumberedSql);
+  const apply = mains
+    .filter((f) => {
+      const n = numericPrefix(f);
+      return Number.isFinite(n) && n >= fromNumber;
+    })
+    .sort(compareNumberedSql);
+  const verifies = names
+    .filter((f) => isCompanionSql(f) && /_verify\.sql$/i.test(f))
+    .filter((f) => {
+      const n = numericPrefix(f);
+      return Number.isFinite(n) && n >= fromNumber;
+    })
+    .sort(compareNumberedSql);
+  return { skipped, apply, verifies, fromNumber };
+}
+
+/** Seed e verify solo se c'è almeno una 169+ da applicare. Altrimenti gap noto → verde. */
+function planEmptyDbApply(selection) {
+  const hasModern = Boolean(selection && Array.isArray(selection.apply) && selection.apply.length > 0);
+  return {
+    apply: hasModern,
+    seed: hasModern,
+    verify: hasModern,
+  };
 }
 
 function parseMigrationHeader(sqlText) {
@@ -165,6 +214,7 @@ function collectVerifyFailures(recordsets) {
 
 module.exports = {
   MIGRATIONS_DIR,
+  resolveMigrationsDir,
   HEADER_FROM_NUMBER,
   TYPE_VALUES,
   BACKFILL_VALUES,
@@ -176,6 +226,9 @@ module.exports = {
   companionName,
   listSqlFilenames,
   listMainMigrationSql,
+  compareNumberedSql,
+  selectForEmptyDbApply,
+  planEmptyDbApply,
   parseMigrationHeader,
   checkMigrationContract,
   checkRepoMigrationContracts,

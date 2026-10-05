@@ -5,15 +5,20 @@
  * Se TYPE ≠ additive servono NNN_verify.sql e NNN_rollback.sql.
  * Lo storico resta grandfathered (nessuna riscrittura dei file già in produzione).
  */
+const { spawnSync } = require('child_process');
 const fs = require('fs');
 const os = require('os');
 const path = require('path');
 const {
   HEADER_FROM_NUMBER,
   MIGRATIONS_DIR,
+  resolveMigrationsDir,
   isCompanionSql,
   isMainMigrationSql,
   listMainMigrationSql,
+  numericPrefix,
+  selectForEmptyDbApply,
+  planEmptyDbApply,
   parseMigrationHeader,
   checkMigrationContract,
   checkRepoMigrationContracts,
@@ -177,5 +182,112 @@ describe('contratto intestazione migrazioni', () => {
     expect(isMainMigrationSql('169_new_col.sql')).toBe(true);
     const mains = listMainMigrationSql(MIGRATIONS_DIR);
     expect(mains.every((f) => !isCompanionSql(f))).toBe(true);
+  });
+
+  it('apply-on-empty salta lo storico < 169 e tiene main + verify da 169', () => {
+    const sel = selectForEmptyDbApply([
+      '003_align_schema_backend.sql',
+      '168_qualifications_test_validity_9606.sql',
+      '169_new_col.sql',
+      '169_verify.sql',
+      '169_rollback.sql',
+      '170_other.sql',
+      '168_verify.sql',
+      'seed.sql',
+    ]);
+    expect(sel.fromNumber).toBe(HEADER_FROM_NUMBER);
+    expect(sel.skipped).toEqual([
+      '003_align_schema_backend.sql',
+      '168_qualifications_test_validity_9606.sql',
+    ]);
+    expect(sel.apply).toEqual(['169_new_col.sql', '170_other.sql']);
+    expect(sel.verifies).toEqual(['169_verify.sql']);
+    expect(sel.verifies).not.toContain('168_verify.sql');
+  });
+
+  it('sul repo reale, apply-on-empty non include main < 169', () => {
+    const sel = selectForEmptyDbApply(
+      fs.readdirSync(MIGRATIONS_DIR).filter((f) => f.toLowerCase().endsWith('.sql'))
+    );
+    expect(sel.skipped.length).toBeGreaterThan(0);
+    expect(sel.skipped.every((f) => numericPrefix(f) < HEADER_FROM_NUMBER)).toBe(true);
+    expect(sel.apply.every((f) => numericPrefix(f) >= HEADER_FROM_NUMBER)).toBe(true);
+    expect(sel.verifies.every((f) => numericPrefix(f) >= HEADER_FROM_NUMBER)).toBe(true);
+    expect(sel.apply.every((f) => isMainMigrationSql(f))).toBe(true);
+  });
+
+  it('senza 169+ non si eseguono seed né verify (solo gap pre-169)', () => {
+    const emptyModern = selectForEmptyDbApply([
+      '003_align_schema_backend.sql',
+      '168_qualifications_test_validity_9606.sql',
+      '168_verify.sql',
+    ]);
+    expect(emptyModern.apply).toEqual([]);
+    expect(planEmptyDbApply(emptyModern)).toEqual({
+      apply: false,
+      seed: false,
+      verify: false,
+    });
+    const withModern = selectForEmptyDbApply(['169_new_col.sql']);
+    expect(planEmptyDbApply(withModern)).toEqual({
+      apply: true,
+      seed: true,
+      verify: true,
+    });
+  });
+
+  it('resolveMigrationsDir usa SGQ_MIGRATIONS_DIR (fixture), non il tree reale', () => {
+    const prev = process.env.SGQ_MIGRATIONS_DIR;
+    const fixture = path.join(os.tmpdir(), 'sgq-mig-resolve-fixture');
+    try {
+      expect(resolveMigrationsDir()).toBe(MIGRATIONS_DIR);
+      process.env.SGQ_MIGRATIONS_DIR = fixture;
+      expect(resolveMigrationsDir()).toBe(path.resolve(fixture));
+      expect(resolveMigrationsDir('/tmp/explicit-dir')).toBe(path.resolve('/tmp/explicit-dir'));
+    } finally {
+      if (prev === undefined) delete process.env.SGQ_MIGRATIONS_DIR;
+      else process.env.SGQ_MIGRATIONS_DIR = prev;
+    }
+  });
+
+  it('apply-migrations-ci esce 0 senza SQL su fixture senza 169+', () => {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'sgq-mig-empty-'));
+    try {
+      writeFixture(dir, '003_old.sql', 'SELECT 1;');
+      writeFixture(dir, '168_old.sql', 'SELECT 1;');
+      const script = path.join(__dirname, 'apply-migrations-ci.js');
+      const env = { ...process.env, SGQ_MIGRATIONS_DIR: dir };
+      delete env.DB_PASSWORD;
+      const r = spawnSync(process.execPath, [script], {
+        encoding: 'utf8',
+        env,
+      });
+      expect(r.status).toBe(0);
+      expect(r.stdout).toMatch(/skip apply, seed e verify/);
+      expect(r.stdout).toMatch(/COMPLETATO/);
+      expect(r.stderr || '').not.toMatch(/Invalid object name/);
+    } finally {
+      fs.rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  it('apply-migrations-ci con fixture 169+ non skippa: senza DB_PASSWORD esce 1', () => {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'sgq-mig-modern-'));
+    try {
+      writeFixture(dir, '169_new.sql', `${ADDITIVE_HEADER}\n`);
+      const script = path.join(__dirname, 'apply-migrations-ci.js');
+      const env = { ...process.env, SGQ_MIGRATIONS_DIR: dir };
+      delete env.DB_PASSWORD;
+      const r = spawnSync(process.execPath, [script], {
+        encoding: 'utf8',
+        env,
+      });
+      expect(r.status).toBe(1);
+      const combined = `${r.stdout || ''}\n${r.stderr || ''}`;
+      expect(combined).toMatch(/DB_PASSWORD mancante/);
+      expect(r.stdout).not.toMatch(/skip apply, seed e verify/);
+    } finally {
+      fs.rmSync(dir, { recursive: true, force: true });
+    }
   });
 });
