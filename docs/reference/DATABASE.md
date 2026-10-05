@@ -253,17 +253,36 @@ created_at           DATETIME2
 
 ## Migration history
 
-| ID | File | Descrizione | Stato |
-|---|---|---|---|
-| 003 | align_schema_backend | Fix campi backend (notes, answered_at) | ✅ |
-| 006 | create_response_options | Opzioni risposta (v1, deprecated) | ✅ |
-| 007 | fix_conformity_status | Fix constraint status | ✅ |
-| 008 | create_response_options | Versione con colonne UI | ✅ |
-| 008b | alter_response_options | Aggiunti campi UI (icon, color) | ✅ |
-| 009 | create_audit_standards | Multi-standard support | ✅ |
-| 010 | update_iso9001_35questions | Riduce da 78 a 35 domande | ⏳ DA ESEGUIRE |
-| 017 | attachments_question_id | Aggiunto `question_id` + `attachment_uuid` | ✅ |
-| 018 | pending_issues | Tabella rilievi pendenti | ✅ |
+Cartella canonica: [`database/migrations/`](../../database/migrations/) (non `backend/database/migrations/`, cartella morta).
+Policy: [`database/migrations/APPROVAL_POLICY.md`](../../database/migrations/APPROVAL_POLICY.md).
+Procedura pre-VPS: [`docs/how-to/database-migrations.md`](../how-to/database-migrations.md).
+
+| Voce | Stato (05/10/2026) |
+|---|---|
+| Ultimo `NNN` su `origin/main` | **167** (`167_ai_usage_log.sql`) |
+| Prossimo libero da riservare | **169** (la **168** è in PR #698 qualifiche 9606 — non riusarla) |
+| Gate intestazione + companion | Obbligatorio da **≥ 169**. Storico grandfathered. |
+| Unicità prefisso | L1 `migrationNumberUniqueness.test.js` da 100 in poi (esclusi `NNN_verify.sql` / `NNN_rollback.sql`) |
+| Intestazione | L1 `migrationHeaderContract.test.js` |
+| CI apply su DB vuoto | Job **non-required** (vedi sotto) |
+
+Prime voci storiche (il file era fermo qui a marzo 2026):
+
+| ID | File | Descrizione |
+|---|---|---|
+| 003 | align_schema_backend | Fix campi backend (notes, answered_at) — assume schema già presente |
+| 006–009 | response_options / audit_standards | Incremental su DB esistente |
+| 018 | pending_issues | Tabella rilievi pendenti |
+
+L'elenco completo è la cartella `database/migrations/*.sql`, non questa tabella.
+
+### Apply-on-empty (CI) — limitazione nota
+
+Le migrazioni **non** sono uno schema-from-scratch. La 003 fa `RAISERROR` se manca `audit_responses.notes`. Non esiste dump baseline versionato.
+
+Il job `Apply storico su SQL Server vuoto` in [`.github/workflows/ci-migrations.yml`](../../.github/workflows/ci-migrations.yml) applica tutte le main migration + seed anonimo (`database/migrations/ci/seed_anonymous.sql`) + `NNN_verify.sql`. **Lo script esce 1 se fallisce** (esito onesto). Il job è `continue-on-error` / non-required così non falsifica `test-and-build` e smoke.
+
+Tracciamento: issue [#699](https://github.com/qsstudio241/sistema-gestione-iso9001/issues/699). Finché non c'è una baseline idempotente, quel job resta informativo.
 
 ---
 
@@ -283,4 +302,4 @@ audit_responses ──< attachments (via question_id)
 
 ---
 
-*Aggiornato: 2026-03-01 — Schema v1.12 (pending_issues migration 018)*
+*Aggiornato: 2026-10-05 — sequenza main 167; gate intestazione da 169; apply-on-empty non-required*
