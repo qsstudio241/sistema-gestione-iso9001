@@ -11,6 +11,7 @@ const { confidenceFromTextLength, extractPdfText } = require('../utils/importPdf
 const { extractFieldsByRules } = require('../utils/ruleFieldExtractors');
 const { getSchemaForDocType } = require('../data/documentTypeSchemas');
 const { extractStructuredByDocType } = require('./importAiExtraction.service');
+const { buildProfilePromptSection } = require('../data/jointTypeProfiles');
 const { getActiveProvider, chat } = require('./aiProviderAdapter');
 const { parseJsonWithRepair } = require('../utils/jsonRepair');
 const {
@@ -112,7 +113,7 @@ async function extractDocumentText(pdfBuffer, options = {}) {
  * @param {string} fileName
  * @returns {Promise<{ fields: object, model: string|null, warnings: string[] }>}
  */
-async function extractFieldsByAi(text, docType, fileName, organizationId = null) {
+async function extractFieldsByAi(text, docType, fileName, organizationId = null, options = {}) {
     const warnings = [];
     if (!getActiveProvider()) {
         warnings.push('AI non configurata — solo estrazione regole');
@@ -123,8 +124,16 @@ async function extractFieldsByAi(text, docType, fileName, organizationId = null)
         return { fields: {}, model: null, warnings };
     }
 
+    const { designationOnly = false, promptAddon = '' } = options;
+
     try {
-        const result = await extractStructuredByDocType({ text, docType, organizationId });
+        const result = await extractStructuredByDocType({
+            text,
+            docType,
+            organizationId: designationOnly ? null : organizationId,
+            promptAddon,
+            designationOnly,
+        });
         const specific = result.data?.type_specific_data || {};
         const flat = { ...specific };
         if (result.data?.title && !flat.title) flat.title = result.data.title;
@@ -195,6 +204,17 @@ function getSchemaKeys(docType) {
     return Object.keys(schema.aiExpectedSchema);
 }
 
+/** Chiavi prova: l'AI (o il parser designazione) vince sulle regole 138/range. */
+const TEST_SLOT_KEYS = new Set([
+    'welding_process_test',
+    'welding_processes_validity',
+    'welding_position_test',
+    'thickness_s_test_mm',
+    'thickness_t_test_mm',
+    'pipe_diameter_test_mm',
+    'qualification_designation',
+]);
+
 function pickMergedValue(key, ruleFields, aiFields) {
     const aliases = [key, ...(FIELD_ALIASES[key] || [])];
     let aiVal = null;
@@ -205,12 +225,20 @@ function pickMergedValue(key, ruleFields, aiFields) {
         if (ruleVal == null && ruleFields[k] != null) ruleVal = normalizeFieldValue(ruleFields[k]);
     }
 
+    if (key === 'welding_process') {
+        const testAi = normalizeFieldValue(aiFields.welding_process_test);
+        if (testAi != null) {
+            const same = ruleVal != null && String(testAi).toLowerCase() === String(ruleVal).toLowerCase();
+            return { value: testAi, confidence: same ? 'high' : 'medium', source: 'ai' };
+        }
+    }
+
     if (aiVal != null && ruleVal != null) {
         const same = String(aiVal).toLowerCase() === String(ruleVal).toLowerCase();
         return { value: aiVal, confidence: same ? 'high' : 'medium', source: same ? 'ai+rules' : 'ai' };
     }
     if (aiVal != null) {
-        return { value: aiVal, confidence: 'medium', source: 'ai' };
+        return { value: aiVal, confidence: TEST_SLOT_KEYS.has(key) ? 'high' : 'medium', source: 'ai' };
     }
     if (ruleVal != null) {
         return { value: ruleVal, confidence: 'medium', source: 'rules' };
@@ -283,8 +311,23 @@ async function runDocumentIngest({
     }
 
     const ruleFields = extractFieldsByRules(text, docType, fileName);
+    let profileKey = ruleFields.joint_type || null;
+
+    if (docType === 'patentino_saldatore' && !profileKey) {
+        const { fields: designationAi, warnings: desWarnings } = await extractFieldsByAi(
+            text, docType, fileName, organizationId, { designationOnly: true },
+        );
+        warnings.push(...desWarnings);
+        Object.assign(ruleFields, designationAi);
+        profileKey = designationAi.joint_type || ruleFields.joint_type || null;
+    }
+
+    const promptAddon = docType === 'patentino_saldatore'
+        ? buildProfilePromptSection(profileKey)
+        : '';
+
     const { fields: aiFields, model, warnings: aiWarnings } = await extractFieldsByAi(
-        text, docType, fileName, organizationId,
+        text, docType, fileName, organizationId, { promptAddon },
     );
     warnings.push(...aiWarnings);
 
@@ -336,5 +379,6 @@ module.exports = {
     extractDocumentText,
     extractFieldsByAi,
     mergeExtractions,
+    pickMergedValue,
     SUPPORTED_DOC_TYPES,
 };

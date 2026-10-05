@@ -140,6 +140,23 @@ describe('extractFieldsByRules', () => {
 });
 
 describe('mergeExtractions', () => {
+    it('non fa vincere le regole 138 sulla prova se l\'AI ha 135', () => {
+        const { pickMergedValue } = require('./documentIngestPipeline.service');
+        const out = pickMergedValue(
+            'welding_process_test',
+            { welding_process_test: '138', welding_process: '138' },
+            { welding_process_test: '135' },
+        );
+        expect(out.value).toBe('135');
+        expect(out.source).toBe('ai');
+        const legacy = pickMergedValue(
+            'welding_process',
+            { welding_process: '138' },
+            { welding_process_test: '135', welding_process: '135' },
+        );
+        expect(legacy.value).toBe('135');
+    });
+
     it('preferisce AI e marca high se coincide con regole', () => {
         const { fields, fieldConfidence, fieldSources } = mergeExtractions(
             { welding_process: '135', wpqr_number: '21-02906' },

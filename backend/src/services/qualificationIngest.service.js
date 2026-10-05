@@ -8,7 +8,7 @@ const logger = require('../utils/logger');
 const { getPool } = require('../config/database');
 const { resolvePersonnelForQualification } = require('./personnelQualificationLink.service');
 const { runDocumentIngest } = require('./documentIngestPipeline.service');
-const { buildWelderQualificationDesignation } = require('../utils/weldingDesignation');
+const { resolvePrintedDesignation } = require('../utils/weldingDesignation');
 const {
     classifyDocument,
     WRONG_MODULE_FOR_QUALIFICATIONS,
@@ -216,7 +216,7 @@ function mapPipelineFieldsToReview(f, pipelineText, fileName) {
         person_name,
         certificate_number: f.certificate_number || null,
         issuing_body: f.issuing_body || null,
-        welding_process: f.welding_process || null,
+        welding_process: f.welding_process || f.welding_process_test || null,
         // material_group (base ISO/TR 15608) e filler (FM1–FM6) restano SEPARATI.
         material_group: f.material_group || null,
         filler_material_group: fillerGroup,
@@ -257,6 +257,13 @@ function mapPipelineFieldsToReview(f, pipelineText, fileName) {
         // per processi ad arco con filo continuo 131/135/136/138) — richiesta
         // committente 28/07/2026, prima assente da schema/ingest/form.
         transfer_mode: f.transfer_mode || null,
+        welding_process_test: f.welding_process_test || f.welding_process || null,
+        welding_processes_validity: f.welding_processes_validity || null,
+        welding_position_test: f.welding_position_test || null,
+        thickness_s_test_mm: toNumericOrNull(f.thickness_s_test_mm),
+        thickness_t_test_mm: toNumericOrNull(f.thickness_t_test_mm),
+        pipe_diameter_test_mm: toNumericOrNull(f.pipe_diameter_test_mm),
+        qualification_designation: f.qualification_designation || null,
         // Gas di protezione ISO 14175 (campo previsto dallo schema AI patentino_saldatore
         // — documentTypeSchemas.js — ma fino al 26/07/2026 mai mappato qui: veniva estratto
         // dall'AI e poi silenziosamente scartato prima di arrivare in staging/commit).
@@ -411,7 +418,7 @@ async function commitQualificationFromFields(fields, organizationId, companyId, 
     const expiry_date = normalizeDate(f.expiry_date);
     const issuing_body = f.issuing_body || null;
     const standard_ref = f.standard_reference || f.standard_ref || null;
-    const welding_process = f.welding_process || null;
+    const welding_process = f.welding_process || f.welding_process_test || null;
     // material_group (base) e filler FM restano separati — vedi normalizeFillerMaterialGroup.
     const material_group = f.material_group || null;
     const filler_material = normalizeFillerMaterialGroup(
@@ -468,7 +475,7 @@ async function commitQualificationFromFields(fields, organizationId, companyId, 
     // Designazione sintetica ISO 9606-1 §11 (stesso calcolo del form manuale —
     // qualifications.controller.js — vedi backend/src/utils/weldingDesignation.js).
     // Usa SOLO il gruppo apporto FM*, mai material_group (bug 01/08/2026).
-    const qualification_designation = buildWelderQualificationDesignation({
+    const qualification_designation = resolvePrintedDesignation(f.qualification_designation, {
         welding_process,
         product_type,
         joint_type,
@@ -547,6 +554,12 @@ async function commitQualificationFromFields(fields, organizationId, companyId, 
         .input('productType', product_type || null)
         .input('weldDetails', weld_details || null)
         .input('transferMode', transfer_mode || null)
+        .input('weldProcTest', f.welding_process_test || welding_process || null)
+        .input('weldProcValidity', f.welding_processes_validity || null)
+        .input('posTest', f.welding_position_test || null)
+        .input('thickSTest', toNumericOrNull(f.thickness_s_test_mm))
+        .input('thickTTest', toNumericOrNull(f.thickness_t_test_mm))
+        .input('pipeTest', toNumericOrNull(f.pipe_diameter_test_mm))
         .input('examBody', examiner_body || null)
         .input('designation', qualification_designation || null)
         .input('certFileUrl', certificate_file_url || null)
@@ -563,6 +576,8 @@ async function commitQualificationFromFields(fields, organizationId, companyId, 
                  ndt_method, ndt_level, ndt_sector, certification_scheme, coordinator_title, cpd_valid_until,
                  patent_type, equipment_type, welding_type, single_multi_run, qualification_method,
                  shielding_gas, joint_type, product_type, weld_details, transfer_mode, examiner_body,
+                 welding_process_test, welding_processes_validity, welding_position_test,
+                 thickness_s_test_mm, thickness_t_test_mm, pipe_diameter_test_mm,
                  qualification_designation, certificate_file_url)
             OUTPUT INSERTED.id
             VALUES
@@ -577,6 +592,7 @@ async function commitQualificationFromFields(fields, organizationId, companyId, 
                  @ndtMethod, @ndtLevel, @ndtSector, @certScheme, @coordTitle, @cpdUntil,
                  @patentType, @equipType, @weldingType, @singleMultiRun, @qualMethod,
                  @shieldGas, @jointType, @productType, @weldDetails, @transferMode, @examBody,
+                 @weldProcTest, @weldProcValidity, @posTest, @thickSTest, @thickTTest, @pipeTest,
                  @designation, @certFileUrl)
         `);
 
@@ -638,12 +654,14 @@ const REPROCESSABLE_FIELDS = {
     // pipe_diameter_mm → pipe_diameter_min_mm).
     filler_material: { column: 'filler_material' },
     pipe_diameter_min_mm: { column: 'pipe_diameter_min_mm' },
-    // Gap analysis 08/08/2026: thickness_max_unlimited è BIT NOT NULL DEFAULT 0
-    // (migrazione 140), non NULLABLE come gli altri campi qui — la guardia
-    // anti-sovrascrittura standard "colonna IS NULL" non si applica mai a una
-    // colonna NOT NULL. writeGuard esplicito: aggiorna solo se è ancora al
-    // valore di default (0), mai se già confermato true da un'altra fonte.
     thickness_max_unlimited: { column: 'thickness_max_unlimited', writeGuard: 'thickness_max_unlimited = 0' },
+    welding_process_test: { column: 'welding_process_test' },
+    welding_processes_validity: { column: 'welding_processes_validity' },
+    welding_position_test: { column: 'welding_position_test' },
+    thickness_s_test_mm: { column: 'thickness_s_test_mm' },
+    thickness_t_test_mm: { column: 'thickness_t_test_mm' },
+    pipe_diameter_test_mm: { column: 'pipe_diameter_test_mm' },
+    qualification_designation: { column: 'qualification_designation' },
 };
 
 /**

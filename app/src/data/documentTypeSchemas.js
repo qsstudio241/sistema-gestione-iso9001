@@ -77,11 +77,26 @@ const patentino_saldatore = {
     },
     {
       key: "welding_process",
-      label: "Processo di saldatura",
+      label: "Processo di saldatura (legacy / fallback)",
       type: "select",
       required: true,
       options: WELDING_PROCESS_OPTIONS,
-      hint: "Codice processo secondo ISO 4063",
+      hint: "Compatibilità: se manca welding_process_test si usa questo. Preferire i campi prova/validità.",
+    },
+    {
+      key: "welding_process_test",
+      label: "Processo ISO 4063 — prova",
+      type: "select",
+      required: false,
+      options: WELDING_PROCESS_OPTIONS,
+      hint: "Processo della prova sul certificato (riga designazione). Distinto dai processi di validità.",
+    },
+    {
+      key: "welding_processes_validity",
+      label: "Processi ISO 4063 — validità",
+      type: "text",
+      required: false,
+      hint: "Elenco processi coperti in validità (es. 135, 138). Non sovrascrivere la prova.",
     },
     {
       key: "joint_type",
@@ -131,11 +146,46 @@ const patentino_saldatore = {
     },
     {
       key: "welding_positions",
-      label: "Posizioni qualificate",
+      label: "Posizioni qualificate (validità)",
       type: "multiselect",
       required: false,
       options: WELDING_POSITION_OPTIONS,
-      hint: "Posizioni di saldatura secondo ISO 6947 (seleziona tutte quelle incluse)",
+      hint: "Posizioni di validità secondo ISO 6947",
+    },
+    {
+      key: "welding_position_test",
+      label: "Posizione — prova",
+      type: "text",
+      required: false,
+      hint: "Posizione del provino (es. PB). Distinta dalle posizioni di validità.",
+    },
+    {
+      key: "thickness_s_test_mm",
+      label: "Spessore depositato s — prova (mm)",
+      type: "number",
+      required: false,
+      hint: "Solo BW, Tabella 6. Non usare su FW.",
+    },
+    {
+      key: "thickness_t_test_mm",
+      label: "Spessore materiale t del provino — prova (mm)",
+      type: "number",
+      required: false,
+      hint: "Solo FW, Tabella 8. Non usare a/z come campi 9606-1.",
+    },
+    {
+      key: "pipe_diameter_test_mm",
+      label: "Diametro tubo — prova (mm)",
+      type: "number",
+      required: false,
+      hint: "Solo se prodotto T. Distinto dal range di validità.",
+    },
+    {
+      key: "qualification_designation",
+      label: "Designazione stampata (ISO 9606-1)",
+      type: "text",
+      required: false,
+      hint: "Stringa del certificato. Non ricalcolare da min/max.",
     },
     {
       key: "thickness_min_mm",
@@ -251,17 +301,24 @@ Campi da estrarre:
 - welder_name: nome e cognome del saldatore
 - certificate_number: numero univoco del certificato
 - issuing_body: ente certificatore (TÜV, Bureau Veritas, DNV, RINA, IMQ, TEC Eurolab, Sideius, ecc.)
-- welding_process: codice processo ISO 4063 (111, 135, 141, ecc.)
+- welding_process: codice processo ISO 4063 legacy (fallback se manca welding_process_test)
+- welding_process_test: processo della PROVA (riga designazione)
+- welding_processes_validity: processi coperti in VALIDITÀ (es. "135, 138"), distinti dalla prova — NON copiare 138 sulla prova se la riga dice 135
 - joint_type: tipo giunto: "BW" (testa a testa) o "FW" (angolare)
 - product_type: variabile essenziale ISO 9606-1 §11: "P" (piastra/plate) o "T" (tubo/pipe); SOLO questi due valori, non esiste una terza categoria "tubo-piastra" (una derivazione/branch/bocchello è un tipo di giunto, resta "T" — vedi weld_details per non perdere il dettaglio); null se non specificato
 - weld_details: dettagli di giunto se dichiarati (backing, mono/multistrato, saldatura sx/dx, derivazione/branch/bocchello tubo-piastra) o null
 - material_group: gruppo materiale base ISO/TR 15608 (codice sottogruppo es. "1.1", "1.2", "8.1", "21"; mappa da S355→1.2, S235→1.1 se non esplicitato)
 - filler_material_group: gruppo materiale d'apporto (FM1-FM6 o null)
-- welding_positions: array di posizioni ISO 6947 (es. ["PA","PF","PC"])
-- thickness_min_mm: numero: spessore minimo qualificato in mm
-- thickness_max_mm: numero: spessore massimo qualificato in mm
+- welding_position_test: posizione della prova (es. "PB")
+- welding_positions: array di posizioni ISO 6947 di VALIDITÀ (es. ["PA","PF","PC"])
+- thickness_s_test_mm: numero — spessore depositato s della PROVA, solo BW (Tabella 6). null su FW
+- thickness_t_test_mm: numero — spessore materiale t del provino della PROVA, solo FW (Tabella 8). null su BW. Non usare a/z
+- thickness_min_mm: numero: spessore minimo di VALIDITÀ in mm
+- thickness_max_mm: numero: spessore massimo di VALIDITÀ in mm
 - thickness_max_unlimited: booleano — true SOLO se il certificato dichiara esplicitamente un range aperto senza limite superiore (simboli "≥", "=>", "⩾", oppure testo "no restriction"/"senza limite superiore"). In questo caso lascia thickness_max_mm: null e imposta thickness_max_unlimited: true. Se il campo è semplicemente assente dal documento (non un range aperto dichiarato), lascia entrambi null/false — NON confondere le due situazioni
-- pipe_diameter_mm: numero: diametro esterno tubi qualificato in mm (null se solo piastre)
+- pipe_diameter_test_mm: diametro esterno del tubo di PROVA (null se solo piastre)
+- pipe_diameter_mm: diametro di VALIDITÀ (null se solo piastre)
+- qualification_designation: riga STAMPATA "ISO 9606-1: …" così com'è sul certificato. NON ricalcolarla da min/max
 - shielding_gas: codice gas ISO 14175 (es. "M21", "I1") o null
 - exam_date: data esame in formato ISO 8601 (YYYY-MM-DD) o null
 - expiry_date: data scadenza in formato ISO 8601 (YYYY-MM-DD) o null
@@ -275,16 +332,23 @@ Campi da estrarre:
     certificate_number: "string|null",
     issuing_body: "string|null",
     welding_process: "string|null",
+    welding_process_test: "string|null",
+    welding_processes_validity: "string|null",
     joint_type: "BW|FW|null",
     product_type: "P|T|null",
     weld_details: "string|null",
     material_group: "string|null",
     filler_material_group: "string|null",
+    welding_position_test: "string|null",
     welding_positions: "string[]|null",
+    thickness_s_test_mm: "number|null",
+    thickness_t_test_mm: "number|null",
     thickness_min_mm: "number|null",
     thickness_max_mm: "number|null",
     thickness_max_unlimited: "boolean|null",
+    pipe_diameter_test_mm: "number|null",
     pipe_diameter_mm: "number|null",
+    qualification_designation: "string|null",
     shielding_gas: "string|null",
     exam_date: "YYYY-MM-DD|null",
     expiry_date: "YYYY-MM-DD|null",

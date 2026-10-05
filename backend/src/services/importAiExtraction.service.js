@@ -4,7 +4,7 @@
  */
 
 const { chat, getActiveProvider } = require('./aiProviderAdapter');
-const { getSchemaForDocType } = require('../data/documentTypeSchemas');
+const { getSchemaForDocType, DESIGNATION_ONLY_PROMPT } = require('../data/documentTypeSchemas');
 const { parseJsonWithRepair } = require('../utils/jsonRepair');
 const { buildIngestLearningPromptSection } = require('./ingestLearning.service');
 const { buildMaterialGroupPromptSection } = require('../data/materialGroups15608');
@@ -159,10 +159,16 @@ ${truncated}
  * @param {object} params
  * @param {string} params.text
  * @param {string|null} params.docType - chiave tipo documento (es. "patentino_saldatore")
- * @param {number|null} [params.organizationId] - per few-shot IG-5
- * @returns {Promise<{ model: string, data: object, raw_content: string }>}
+ * @param {string} [params.promptAddon]
+ * @param {boolean} [params.designationOnly]
  */
-async function extractStructuredByDocType({ text, docType, organizationId = null }) {
+async function extractStructuredByDocType({
+    text,
+    docType,
+    organizationId = null,
+    promptAddon = '',
+    designationOnly = false,
+}) {
     const schema = getSchemaForDocType(docType);
 
     if (!schema) {
@@ -185,6 +191,10 @@ async function extractStructuredByDocType({ text, docType, organizationId = null
         ? `${bodyText.slice(0, MAX_INPUT_CHARS)}\n\n[... testo troncato per limite ${MAX_INPUT_CHARS} caratteri ...]`
         : bodyText;
 
+    const typeInstructions = designationOnly
+        ? DESIGNATION_ONLY_PROMPT
+        : `${schema.aiPrompt}${promptAddon ? `\n\n${promptAddon}` : ''}`;
+
     let system = `Sei un assistente per documenti tecnici e qualità (ISO 9001, saldatura, certificazioni).
 Analizza il testo estratto da un PDF (può contenere errori di OCR/strato testo).
 Rispondi SOLO con un oggetto JSON valido (nessun testo fuori dal JSON) con questa forma:
@@ -206,7 +216,7 @@ Regole generali:
 - document_type_guess: una tra patentino_saldatore, qualifica_14732, cert_ndt, wps, wpqr, norma, dichiarazione_ce, cert_taratura, procedura, istruzione, modulo, manuale, piano_qualita, altro — solo se plausibile.
 
 Istruzioni specifiche per il tipo documento "${schema.label}":
-${schema.aiPrompt}`;
+${typeInstructions}`;
 
     const MATERIAL_GROUP_DOC_TYPES = new Set([
         'patentino_saldatore',
@@ -236,33 +246,35 @@ ${schema.aiPrompt}`;
     const WELDING_TEMPERATURE_DOC_TYPES = new Set(['wps', 'wpqr']);
     // Consumabili filo ISO 14341: designazione filler_material su WPS/WPQR.
     const FILLER_WIRE_14341_DOC_TYPES = new Set(['wps', 'wpqr']);
-    if (MATERIAL_GROUP_DOC_TYPES.has(docType)) {
-        system += `\n\n${buildMaterialGroupPromptSection({ families: ['steel', 'aluminium'], maxLines: 45 })}`;
-    }
-    if (WELDING_PROCESS_DOC_TYPES.has(docType)) {
-        system += `\n\n${buildWeldingProcessPromptSection({ maxLines: 20 })}`;
-    }
-    if (WELDING_POSITION_DOC_TYPES.has(docType)) {
-        system += `\n\n${buildWeldingPositionPromptSection({ maxLines: 15 })}`;
-    }
-    if (SHIELDING_GAS_DOC_TYPES.has(docType)) {
-        system += `\n\n${buildShieldingGasPromptSection({ maxLines: 16 })}`;
-    }
-    if (WELDING_TEMPERATURE_DOC_TYPES.has(docType)) {
-        system += `\n\n${buildWeldingTemperaturePromptSection()}`;
-    }
-    if (FILLER_WIRE_14341_DOC_TYPES.has(docType)) {
-        system += `\n\n${buildFillerWire14341PromptSection()}`;
-    }
-    if (docType === 'patentino_saldatore') {
-        system += `\n\n${buildWelderQualificationRulesPromptSection()}`;
-    }
+    if (!designationOnly) {
+        if (MATERIAL_GROUP_DOC_TYPES.has(docType)) {
+            system += `\n\n${buildMaterialGroupPromptSection({ families: ['steel', 'aluminium'], maxLines: 45 })}`;
+        }
+        if (WELDING_PROCESS_DOC_TYPES.has(docType)) {
+            system += `\n\n${buildWeldingProcessPromptSection({ maxLines: 20 })}`;
+        }
+        if (WELDING_POSITION_DOC_TYPES.has(docType)) {
+            system += `\n\n${buildWeldingPositionPromptSection({ maxLines: 15 })}`;
+        }
+        if (SHIELDING_GAS_DOC_TYPES.has(docType)) {
+            system += `\n\n${buildShieldingGasPromptSection({ maxLines: 16 })}`;
+        }
+        if (WELDING_TEMPERATURE_DOC_TYPES.has(docType)) {
+            system += `\n\n${buildWeldingTemperaturePromptSection()}`;
+        }
+        if (FILLER_WIRE_14341_DOC_TYPES.has(docType)) {
+            system += `\n\n${buildFillerWire14341PromptSection()}`;
+        }
+        if (docType === 'patentino_saldatore') {
+            system += `\n\n${buildWelderQualificationRulesPromptSection()}`;
+        }
 
-    if (organizationId) {
-        try {
-            system += await buildIngestLearningPromptSection(organizationId, docType);
-        } catch (fewShotErr) {
-            // non bloccare estrazione
+        if (organizationId) {
+            try {
+                system += await buildIngestLearningPromptSection(organizationId, docType);
+            } catch (fewShotErr) {
+                // non bloccare estrazione
+            }
         }
     }
 
