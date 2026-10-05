@@ -14,20 +14,29 @@ Estrai TUTTI i seguenti campi e restituiscili nell'oggetto "type_specific_data" 
 Se un campo non � presente nel documento, usa null.
 
 Campi da estrarre:
-- welder_name, certificate_number, issuing_body, welding_process, joint_type (BW|FW),
+- welder_name, certificate_number, issuing_body,
+- welding_process (legacy fallback), welding_process_test (processo della PROVA, riga designazione),
+  welding_processes_validity (processi coperti in VALIDITÀ, es. "135, 138" — NON copiare 138 sulla prova se la riga dice 135),
+- joint_type (BW|FW),
 - product_type (variabile essenziale ISO 9606-1 §11: SOLO "P" piastra o "T" tubo/pipe, nessuna terza
   categoria "tubo-piastra" - un giunto di derivazione/branch/bocchello resta "T" (è un tipo di giunto,
   §3.16, non un tipo prodotto); dedurre da "plate/piastra" vs "pipe/tube/tubo" nel testo, null se non specificato),
 - weld_details (dettagli di giunto se presenti: backing, mono/multistrato, saldatura sx/dx, oppure
   derivazione/branch/bocchello tubo-piastra - riportalo qui testualmente per non perdere l'informazione
   anche quando product_type resta "T"; testo libero breve, null se assenti),
-- material_group, filler_material_group, welding_positions (array), thickness_min_mm, thickness_max_mm,
+- material_group, filler_material_group,
+- welding_position_test (posizione della prova), welding_positions (array, validità),
+- thickness_s_test_mm (s depositato PROVA, solo BW Tab.6; null su FW),
+- thickness_t_test_mm (t materiale provino PROVA, solo FW Tab.8; null su BW; non usare a/z),
+- thickness_min_mm, thickness_max_mm (SOLO validità),
 - thickness_max_unlimited (booleano — true SOLO se il certificato dichiara esplicitamente un range
   aperto senza limite superiore, es. simboli "≥"/"=>"/"⩾" o testo "no restriction"/"senza limite
   superiore" sullo spessore massimo qualificato; in tal caso lascia thickness_max_mm: null e imposta
   thickness_max_unlimited: true. Se il campo è semplicemente assente dal documento — non un range
   aperto dichiarato — lascia entrambi null/false: NON confondere le due situazioni),
-- pipe_diameter_mm, shielding_gas, exam_date, expiry_date, last_confirmation_date,
+- pipe_diameter_test_mm (diametro PROVA, solo T), pipe_diameter_mm (validità),
+- qualification_designation (riga STAMPATA "ISO 9606-1: …", NON ricalcolarla da min/max),
+- shielding_gas, exam_date, expiry_date, last_confirmation_date,
 - next_confirmation_due, standard_reference (YYYY-MM-DD per le date)
 - transfer_mode (metodo di trasferimento del metallo d'apporto - variabile essenziale ISO 9606-1 §5.2,
   presente come colonna dedicata "Transfer mode" nel modulo certificato ufficiale §9.3): valorizzalo
@@ -53,16 +62,23 @@ Istruzioni per le date di conferma semestrale (ISO 9606-1 §9.2):
       certificate_number: 'string|null',
       issuing_body: 'string|null',
       welding_process: 'string|null',
+      welding_process_test: 'string|null',
+      welding_processes_validity: 'string|null',
       joint_type: 'BW|FW|null',
       product_type: 'P|T|null',
       weld_details: 'string|null',
       material_group: 'string|null',
       filler_material_group: 'string|null',
+      welding_position_test: 'string|null',
       welding_positions: 'string[]|null',
+      thickness_s_test_mm: 'number|null',
+      thickness_t_test_mm: 'number|null',
       thickness_min_mm: 'number|null',
       thickness_max_mm: 'number|null',
       thickness_max_unlimited: 'boolean|null',
+      pipe_diameter_test_mm: 'number|null',
       pipe_diameter_mm: 'number|null',
+      qualification_designation: 'string|null',
       shielding_gas: 'string|null',
       exam_date: 'YYYY-MM-DD|null',
       expiry_date: 'YYYY-MM-DD|null',
@@ -489,4 +505,24 @@ function getSchemaForDocType(docType) {
   return AI_SCHEMAS[docType] || null;
 }
 
-module.exports = { DOCUMENT_TYPE_SCHEMAS: AI_SCHEMAS, getSchemaForDocType };
+const DESIGNATION_ONLY_SCHEMA = {
+  qualification_designation: 'string|null',
+  joint_type: 'BW|FW|null',
+  product_type: 'P|T|null',
+  welding_process_test: 'string|null',
+};
+
+const DESIGNATION_ONLY_PROMPT = `Estrai SOLO la riga di designazione del patentino ISO 9606-1.
+Restituisci in type_specific_data:
+- qualification_designation: testo stampato della riga (es. "ISO 9606-1: 135 P FW FM1 t8 PB ss mb")
+- joint_type: BW o FW
+- product_type: P o T
+- welding_process_test: codice ISO 4063 della prova
+Non estrarre ancora spessori di validità, date o l'intera carta. Null se assente.`;
+
+module.exports = {
+  DOCUMENT_TYPE_SCHEMAS: AI_SCHEMAS,
+  getSchemaForDocType,
+  DESIGNATION_ONLY_SCHEMA,
+  DESIGNATION_ONLY_PROMPT,
+};

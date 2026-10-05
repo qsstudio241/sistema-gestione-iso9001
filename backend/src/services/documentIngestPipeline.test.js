@@ -140,6 +140,24 @@ describe('extractFieldsByRules', () => {
 });
 
 describe('mergeExtractions', () => {
+    it('non copia il processo prova sulla colonna legacy welding_process', () => {
+        const { pickMergedValue } = require('./documentIngestPipeline.service');
+        const out = pickMergedValue(
+            'welding_process_test',
+            { welding_process_test: '138', welding_process: '138' },
+            { welding_process_test: '135' },
+        );
+        expect(out.value).toBe('135');
+        expect(out.source).toBe('ai');
+        const legacy = pickMergedValue(
+            'welding_process',
+            { welding_process: '138' },
+            { welding_process_test: '135' },
+        );
+        expect(legacy.value).toBe('138');
+        expect(legacy.source).toBe('rules');
+    });
+
     it('preferisce AI e marca high se coincide con regole', () => {
         const { fields, fieldConfidence, fieldSources } = mergeExtractions(
             { welding_process: '135', wpqr_number: '21-02906' },
@@ -311,5 +329,49 @@ describe('runDocumentIngest', () => {
         expect(out.fields.inspector_name).toBe('Mario Rossi');
         expect(out.fields.outcome_summary).toBe('ACCETTABILE');
         expect(out.extractionConfidence).toBeGreaterThan(0);
+    });
+
+    it('pass designation-only non inquina ruleFields con spessori/date extra', async () => {
+        extractPdfText.mockResolvedValue(
+            'CERTIFICATO SALDATORE ISO 9606-1:2017 Nome e cognome MARIO ROSSI Numero X-01 processo 135 testo lungo per AI'
+        );
+        getActiveProvider.mockReturnValue('gemini');
+        extractStructuredByDocType
+            .mockResolvedValueOnce({
+                model: 'gemini-1.5-flash',
+                data: {
+                    type_specific_data: {
+                        joint_type: 'FW',
+                        product_type: 'P',
+                        welding_process_test: '135',
+                        qualification_designation: 'ISO 9606-1: 135 P FW FM1 t8 PB',
+                        thickness_min_mm: 99,
+                        expiry_date: '2028-01-01',
+                        welding_processes_validity: '138',
+                    },
+                },
+            })
+            .mockResolvedValueOnce({
+                model: 'gemini-1.5-flash',
+                data: {
+                    type_specific_data: {
+                        welder_name: 'MARIO ROSSI',
+                    },
+                },
+            });
+
+        const out = await runDocumentIngest({
+            pdfBuffer: Buffer.from('%PDF'),
+            docType: 'patentino_saldatore',
+            fileName: '25-01341.pdf',
+            organizationId: 1001,
+        });
+
+        expect(extractStructuredByDocType.mock.calls[0][0].designationOnly).toBe(true);
+        expect(out.ruleFields.joint_type).toBe('FW');
+        expect(out.ruleFields.welding_process_test).toBe('135');
+        expect(out.ruleFields.thickness_min_mm).not.toBe(99);
+        expect(out.ruleFields.expiry_date).not.toBe('2028-01-01');
+        expect(out.ruleFields.welding_processes_validity).not.toBe('138');
     });
 });

@@ -11,6 +11,10 @@ const {
 const {
     extractWeldingPositionsFromText,
 } = require('../data/weldingPositions6947');
+const {
+    parseWelderQualificationDesignation,
+    designationFieldsToIngest,
+} = require('./weldingDesignation');
 
 const DATE_PATTERNS = [
     { re: /\b(\d{4})-(\d{2})-(\d{2})\b/g, fmt: (m) => `${m[1]}-${m[2]}-${m[3]}` },
@@ -310,14 +314,28 @@ function extractPatentinoFields(text, fileName) {
     const dates = allDates(text);
     const thickness = extractThicknessMm(text);
     const positions = extractWeldingPositionsFromText(text);
+    const fromDesignation = designationFieldsToIngest(parseWelderQualificationDesignation(text));
+    const processFromText = extractWeldingProcess(text);
+    const processTest = fromDesignation.welding_process_test || null;
     return {
         welder_name: extractPersonName(text),
         certificate_number: extractCertificateNumber(text) || extractReferenceFromFileName(fileName),
         issuing_body: extractIssuingBody(text),
-        welding_process: extractWeldingProcess(text),
+        welding_process_test: processTest,
+        welding_process: processFromText || null,
+        welding_processes_validity: fromDesignation.welding_processes_validity || null,
         material_group: extractMaterialGroup(text),
         welding_positions: positions.length ? positions : null,
+        welding_position_test: fromDesignation.welding_position_test || null,
         thickness_min_mm: thickness,
+        thickness_s_test_mm: fromDesignation.thickness_s_test_mm ?? null,
+        thickness_t_test_mm: fromDesignation.thickness_t_test_mm ?? null,
+        pipe_diameter_test_mm: fromDesignation.pipe_diameter_test_mm ?? null,
+        joint_type: fromDesignation.joint_type || extractJointType(text),
+        product_type: fromDesignation.product_type || null,
+        filler_material_group: fromDesignation.filler_material_group || null,
+        weld_details: fromDesignation.weld_details || null,
+        qualification_designation: fromDesignation.qualification_designation || null,
         exam_date: dates[0] || null,
         expiry_date: dates.length > 1 ? dates[dates.length - 1] : (dates[0] || null),
     };

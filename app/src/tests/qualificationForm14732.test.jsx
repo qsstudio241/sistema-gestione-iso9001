@@ -81,4 +81,19 @@ describe("QualificationForm — qualifica_14732", () => {
 
     expect(screen.getByText(/Conferma semestrale \(ISO 14732\)/)).toBeTruthy();
   });
+
+  it("non mostra il blocco dimensionale ISO 9606 (spessori Tab.6/8)", async () => {
+    await renderForm({
+      id: 4,
+      qualification_type: "Operatore ISO 14732",
+      person_name: "Luigi Verdi",
+      company_id: 1,
+      joint_type: "FW",
+      approval_status: "bozza",
+    });
+    expect(screen.queryByText(/Spessore depositato s/)).toBeNull();
+    expect(screen.queryByText(/Spessore materiale t del provino/)).toBeNull();
+    expect(screen.queryByText(/Spessore validità min/)).toBeNull();
+    expect(screen.queryByText(/Designazione stampata/)).toBeNull();
+  });
 });

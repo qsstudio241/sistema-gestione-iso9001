@@ -1,4 +1,9 @@
-const { buildWelderQualificationDesignation } = require('./weldingDesignation');
+const {
+    buildWelderQualificationDesignation,
+    parseWelderQualificationDesignation,
+    designationFieldsToIngest,
+    resolvePrintedDesignation,
+} = require('./weldingDesignation');
 
 describe('buildWelderQualificationDesignation', () => {
     it('compone la designazione completa con spessore singolo e tubo', () => {
@@ -47,5 +52,81 @@ describe('buildWelderQualificationDesignation', () => {
             pipe_diameter_min_mm: 60,
         });
         expect(out).toBe('141 D\u226560');
+    });
+});
+
+describe('parseWelderQualificationDesignation', () => {
+    it('parsa riga ISO 9606-1 FW (caso Mason-like) senza AI', () => {
+        const text = [
+            'CERTIFICATO DI QUALIFICA SALDATORE',
+            'ISO 9606-1: 135 P FW FM1 t8 PB ss mb',
+            'Range of qualification 135 / 138',
+        ].join('\n');
+        const parsed = parseWelderQualificationDesignation(text);
+        expect(parsed.joint_type).toBe('FW');
+        expect(parsed.product_type).toBe('P');
+        expect(parsed.welding_process_test).toBe('135');
+        expect(parsed.thickness_t_test_mm).toBe(8);
+        expect(parsed.thickness_s_test_mm).toBeNull();
+        expect(parsed.welding_position_test).toBe('PB');
+        expect(parsed.filler_material_group).toBe('FM1');
+        expect(parsed.qualification_designation).toMatch(/135 P FW FM1 t8 PB/);
+        const fields = designationFieldsToIngest(parsed);
+        expect(fields.welding_process_test).toBe('135');
+        expect(fields.welding_process).toBeUndefined();
+        expect(fields.thickness_min_mm).toBeUndefined();
+    });
+
+    it('parsa BW con s depositato e D tubo', () => {
+        const parsed = parseWelderQualificationDesignation('ISO 9606-1: 141 T BW FM1 s12 D60 PA ss nb');
+        expect(parsed.joint_type).toBe('BW');
+        expect(parsed.thickness_s_test_mm).toBe(12);
+        expect(parsed.thickness_t_test_mm).toBeNull();
+        expect(parsed.pipe_diameter_test_mm).toBe(60);
+        expect(parsed.weld_details).toBe('ss nb');
+    });
+
+    it('ignora la sola edizione in testata (ISO 9606-1:2017) e non inventa la prova', () => {
+        const parsed = parseWelderQualificationDesignation([
+            'CERTIFICATO DI QUALIFICAZIONE DEL SALDATORE',
+            'ISO 9606-1:2017',
+            'Nome: MARIO ROSSI',
+        ].join('\n'));
+        expect(parsed).toBeNull();
+    });
+
+    it('con testata edizione + riga §11 Mason prende 135S P FW, non l\'anno', () => {
+        const text = [
+            'CERTIFICATO DI QUALIFICAZIONE DEL SALDATORE',
+            'ISO 9606-1:2017',
+            'Designation',
+            'ISO 9606-1: 135S P FW FM1 S t12-12 PB ml',
+            'Range of qualification 135 / 138',
+        ].join('\n');
+        const parsed = parseWelderQualificationDesignation(text);
+        expect(parsed).not.toBeNull();
+        expect(parsed.qualification_designation).toMatch(/135S P FW FM1/);
+        expect(parsed.qualification_designation).not.toMatch(/2017/);
+        expect(parsed.welding_process_test).toBe('135');
+        expect(parsed.product_type).toBe('P');
+        expect(parsed.joint_type).toBe('FW');
+        expect(parsed.thickness_t_test_mm).toBe(12);
+        expect(parsed.filler_material_group).toBe('FM1');
+        expect(parsed.welding_position_test).toBe('PB');
+        expect(parsed.weld_details).toBe('ml');
+        expect(parsed.transfer_mode).toBe('S');
+    });
+});
+
+describe('resolvePrintedDesignation', () => {
+    it('non sovrascrive la stringa certificato con il ricalcolo min/max', () => {
+        const printed = 'ISO 9606-1: 135 P FW FM1 t8 PB ss mb';
+        const out = resolvePrintedDesignation(printed, {
+            welding_process: '138',
+            joint_type: 'FW',
+            thickness_min_mm: 3,
+            thickness_max_mm: 16,
+        });
+        expect(out).toBe(printed);
     });
 });

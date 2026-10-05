@@ -9,8 +9,9 @@
 const logger = require('../utils/logger');
 const { confidenceFromTextLength, extractPdfText } = require('../utils/importPdfText');
 const { extractFieldsByRules } = require('../utils/ruleFieldExtractors');
-const { getSchemaForDocType } = require('../data/documentTypeSchemas');
+const { getSchemaForDocType, DESIGNATION_ONLY_SCHEMA } = require('../data/documentTypeSchemas');
 const { extractStructuredByDocType } = require('./importAiExtraction.service');
+const { buildProfilePromptSection } = require('../data/jointTypeProfiles');
 const { getActiveProvider, chat } = require('./aiProviderAdapter');
 const { parseJsonWithRepair } = require('../utils/jsonRepair');
 const {
@@ -112,7 +113,21 @@ async function extractDocumentText(pdfBuffer, options = {}) {
  * @param {string} fileName
  * @returns {Promise<{ fields: object, model: string|null, warnings: string[] }>}
  */
-async function extractFieldsByAi(text, docType, fileName, organizationId = null) {
+function pickDesignationOnlyFields(fields) {
+    const out = {};
+    if (!fields || typeof fields !== 'object') return out;
+    for (const key of Object.keys(DESIGNATION_ONLY_SCHEMA)) {
+        if (fields[key] != null && fields[key] !== '') out[key] = fields[key];
+    }
+    return out;
+}
+
+function maybeRestrictDesignationFields(fields, designationOnly) {
+    if (!designationOnly) return fields || {};
+    return pickDesignationOnlyFields(fields);
+}
+
+async function extractFieldsByAi(text, docType, fileName, organizationId = null, options = {}) {
     const warnings = [];
     if (!getActiveProvider()) {
         warnings.push('AI non configurata — solo estrazione regole');
@@ -123,12 +138,20 @@ async function extractFieldsByAi(text, docType, fileName, organizationId = null)
         return { fields: {}, model: null, warnings };
     }
 
+    const { designationOnly = false, promptAddon = '' } = options;
+
     try {
-        const result = await extractStructuredByDocType({ text, docType, organizationId });
+        const result = await extractStructuredByDocType({
+            text,
+            docType,
+            organizationId: designationOnly ? null : organizationId,
+            promptAddon,
+            designationOnly,
+        });
         const specific = result.data?.type_specific_data || {};
         const flat = { ...specific };
         if (result.data?.title && !flat.title) flat.title = result.data.title;
-        return { fields: flat, model: result.model || null, warnings };
+        return { fields: maybeRestrictDesignationFields(flat, designationOnly), model: result.model || null, warnings };
     } catch (err) {
         const errMsg = describeIngestFileError(err, 'errore non specificato');
         warnings.push(`AI extraction: ${errMsg}`);
@@ -140,6 +163,9 @@ async function extractFieldsByAi(text, docType, fileName, organizationId = null)
 
         try {
             const schema = getSchemaForDocType(docType);
+            const retryKeys = designationOnly
+                ? Object.keys(DESIGNATION_ONLY_SCHEMA)
+                : Object.keys(schema?.aiExpectedSchema || {});
             const retry = await chat(
                 [
                     {
@@ -148,7 +174,7 @@ async function extractFieldsByAi(text, docType, fileName, organizationId = null)
                     },
                     {
                         role: 'user',
-                        content: `Estrai campi da questo ${schema?.label || docType} (file ${fileName}). JSON piatto con chiavi: ${Object.keys(schema?.aiExpectedSchema || {}).join(', ')}. Testo:\n${text.slice(0, 3000)}`,
+                        content: `Estrai campi da questo ${schema?.label || docType} (file ${fileName}). JSON piatto con chiavi: ${retryKeys.join(', ')}. Testo:\n${text.slice(0, 3000)}`,
                     },
                 ],
                 { temperature: 0.1, responseFormat: 'json', maxTokens: 2500 }
@@ -158,7 +184,7 @@ async function extractFieldsByAi(text, docType, fileName, organizationId = null)
                 ? parsed.type_specific_data
                 : parsed;
             warnings.push('AI extraction recuperata dopo retry JSON');
-            return { fields, model: retry.model || null, warnings };
+            return { fields: maybeRestrictDesignationFields(fields, designationOnly), model: retry.model || null, warnings };
         } catch (retryErr) {
             const retryMsg = describeIngestFileError(retryErr, 'errore non specificato');
             warnings.push(`AI retry fallito: ${retryMsg}`);
@@ -195,6 +221,17 @@ function getSchemaKeys(docType) {
     return Object.keys(schema.aiExpectedSchema);
 }
 
+/** Chiavi prova: l'AI (o il parser designazione) vince sulle regole 138/range. */
+const TEST_SLOT_KEYS = new Set([
+    'welding_process_test',
+    'welding_processes_validity',
+    'welding_position_test',
+    'thickness_s_test_mm',
+    'thickness_t_test_mm',
+    'pipe_diameter_test_mm',
+    'qualification_designation',
+]);
+
 function pickMergedValue(key, ruleFields, aiFields) {
     const aliases = [key, ...(FIELD_ALIASES[key] || [])];
     let aiVal = null;
@@ -210,7 +247,7 @@ function pickMergedValue(key, ruleFields, aiFields) {
         return { value: aiVal, confidence: same ? 'high' : 'medium', source: same ? 'ai+rules' : 'ai' };
     }
     if (aiVal != null) {
-        return { value: aiVal, confidence: 'medium', source: 'ai' };
+        return { value: aiVal, confidence: TEST_SLOT_KEYS.has(key) ? 'high' : 'medium', source: 'ai' };
     }
     if (ruleVal != null) {
         return { value: ruleVal, confidence: 'medium', source: 'rules' };
@@ -283,8 +320,23 @@ async function runDocumentIngest({
     }
 
     const ruleFields = extractFieldsByRules(text, docType, fileName);
+    let profileKey = ruleFields.joint_type || null;
+
+    if (docType === 'patentino_saldatore' && !profileKey) {
+        const { fields: designationAi, warnings: desWarnings } = await extractFieldsByAi(
+            text, docType, fileName, organizationId, { designationOnly: true },
+        );
+        warnings.push(...desWarnings);
+        Object.assign(ruleFields, pickDesignationOnlyFields(designationAi));
+        profileKey = designationAi.joint_type || ruleFields.joint_type || null;
+    }
+
+    const promptAddon = docType === 'patentino_saldatore'
+        ? buildProfilePromptSection(profileKey)
+        : '';
+
     const { fields: aiFields, model, warnings: aiWarnings } = await extractFieldsByAi(
-        text, docType, fileName, organizationId,
+        text, docType, fileName, organizationId, { promptAddon },
     );
     warnings.push(...aiWarnings);
 
@@ -336,5 +388,7 @@ module.exports = {
     extractDocumentText,
     extractFieldsByAi,
     mergeExtractions,
+    pickMergedValue,
+    pickDesignationOnlyFields,
     SUPPORTED_DOC_TYPES,
 };
