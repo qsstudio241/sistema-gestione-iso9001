@@ -9,7 +9,7 @@
 const logger = require('../utils/logger');
 const { confidenceFromTextLength, extractPdfText } = require('../utils/importPdfText');
 const { extractFieldsByRules } = require('../utils/ruleFieldExtractors');
-const { getSchemaForDocType } = require('../data/documentTypeSchemas');
+const { getSchemaForDocType, DESIGNATION_ONLY_SCHEMA } = require('../data/documentTypeSchemas');
 const { extractStructuredByDocType } = require('./importAiExtraction.service');
 const { buildProfilePromptSection } = require('../data/jointTypeProfiles');
 const { getActiveProvider, chat } = require('./aiProviderAdapter');
@@ -113,6 +113,20 @@ async function extractDocumentText(pdfBuffer, options = {}) {
  * @param {string} fileName
  * @returns {Promise<{ fields: object, model: string|null, warnings: string[] }>}
  */
+function pickDesignationOnlyFields(fields) {
+    const out = {};
+    if (!fields || typeof fields !== 'object') return out;
+    for (const key of Object.keys(DESIGNATION_ONLY_SCHEMA)) {
+        if (fields[key] != null && fields[key] !== '') out[key] = fields[key];
+    }
+    return out;
+}
+
+function maybeRestrictDesignationFields(fields, designationOnly) {
+    if (!designationOnly) return fields || {};
+    return pickDesignationOnlyFields(fields);
+}
+
 async function extractFieldsByAi(text, docType, fileName, organizationId = null, options = {}) {
     const warnings = [];
     if (!getActiveProvider()) {
@@ -137,7 +151,7 @@ async function extractFieldsByAi(text, docType, fileName, organizationId = null,
         const specific = result.data?.type_specific_data || {};
         const flat = { ...specific };
         if (result.data?.title && !flat.title) flat.title = result.data.title;
-        return { fields: flat, model: result.model || null, warnings };
+        return { fields: maybeRestrictDesignationFields(flat, designationOnly), model: result.model || null, warnings };
     } catch (err) {
         const errMsg = describeIngestFileError(err, 'errore non specificato');
         warnings.push(`AI extraction: ${errMsg}`);
@@ -149,6 +163,9 @@ async function extractFieldsByAi(text, docType, fileName, organizationId = null,
 
         try {
             const schema = getSchemaForDocType(docType);
+            const retryKeys = designationOnly
+                ? Object.keys(DESIGNATION_ONLY_SCHEMA)
+                : Object.keys(schema?.aiExpectedSchema || {});
             const retry = await chat(
                 [
                     {
@@ -157,7 +174,7 @@ async function extractFieldsByAi(text, docType, fileName, organizationId = null,
                     },
                     {
                         role: 'user',
-                        content: `Estrai campi da questo ${schema?.label || docType} (file ${fileName}). JSON piatto con chiavi: ${Object.keys(schema?.aiExpectedSchema || {}).join(', ')}. Testo:\n${text.slice(0, 3000)}`,
+                        content: `Estrai campi da questo ${schema?.label || docType} (file ${fileName}). JSON piatto con chiavi: ${retryKeys.join(', ')}. Testo:\n${text.slice(0, 3000)}`,
                     },
                 ],
                 { temperature: 0.1, responseFormat: 'json', maxTokens: 2500 }
@@ -167,7 +184,7 @@ async function extractFieldsByAi(text, docType, fileName, organizationId = null,
                 ? parsed.type_specific_data
                 : parsed;
             warnings.push('AI extraction recuperata dopo retry JSON');
-            return { fields, model: retry.model || null, warnings };
+            return { fields: maybeRestrictDesignationFields(fields, designationOnly), model: retry.model || null, warnings };
         } catch (retryErr) {
             const retryMsg = describeIngestFileError(retryErr, 'errore non specificato');
             warnings.push(`AI retry fallito: ${retryMsg}`);
@@ -318,7 +335,7 @@ async function runDocumentIngest({
             text, docType, fileName, organizationId, { designationOnly: true },
         );
         warnings.push(...desWarnings);
-        Object.assign(ruleFields, designationAi);
+        Object.assign(ruleFields, pickDesignationOnlyFields(designationAi));
         profileKey = designationAi.joint_type || ruleFields.joint_type || null;
     }
 
@@ -380,5 +397,6 @@ module.exports = {
     extractFieldsByAi,
     mergeExtractions,
     pickMergedValue,
+    pickDesignationOnlyFields,
     SUPPORTED_DOC_TYPES,
 };

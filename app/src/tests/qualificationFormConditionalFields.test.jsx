@@ -93,6 +93,7 @@ describe("QualificationForm — diametro tubo condizionato al tipo prodotto", ()
       product_type: "T",
       pipe_diameter_min_mm: 10,
       pipe_diameter_max_mm: 20,
+      pipe_diameter_test_mm: 88,
       approval_status: "bozza",
     });
 
@@ -115,6 +116,8 @@ describe("QualificationForm — diametro tubo condizionato al tipo prodotto", ()
     const inputsAfter = screen.getAllByPlaceholderText("vuoto = solo lamiera");
     expect(inputsAfter).toHaveLength(2);
     expect(inputsAfter[0].value).toBe("");
+    const testDia = screen.getByPlaceholderText("D della prova");
+    expect(testDia.value).toBe("");
   });
 });
 

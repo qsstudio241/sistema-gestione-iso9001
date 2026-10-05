@@ -129,9 +129,11 @@ function QualificationForm({ qualification, onSave, onClose, onSaved, defaultCom
   useEffect(() => {
     if (applicableFields.pipeDiameterApplicable) return;
     setForm((f) => {
-      if ((f.pipe_diameter_min_mm == null || f.pipe_diameter_min_mm === "")
-        && (f.pipe_diameter_max_mm == null || f.pipe_diameter_max_mm === "")) return f;
-      return { ...f, pipe_diameter_min_mm: "", pipe_diameter_max_mm: "" };
+      const minEmpty = f.pipe_diameter_min_mm == null || f.pipe_diameter_min_mm === "";
+      const maxEmpty = f.pipe_diameter_max_mm == null || f.pipe_diameter_max_mm === "";
+      const testEmpty = f.pipe_diameter_test_mm == null || f.pipe_diameter_test_mm === "";
+      if (minEmpty && maxEmpty && testEmpty) return f;
+      return { ...f, pipe_diameter_min_mm: "", pipe_diameter_max_mm: "", pipe_diameter_test_mm: "" };
     });
   }, [applicableFields.pipeDiameterApplicable]);
 
@@ -184,9 +186,8 @@ function QualificationForm({ qualification, onSave, onClose, onSaved, defaultCom
       if (!d.welding_process_test && d.welding_process) {
         d.welding_process_test = d.welding_process;
       }
-      if (!d.welding_processes_validity && d.welding_process) {
-        d.welding_processes_validity = d.welding_process;
-      }
+      // Non copiare welding_processes_validity dal processo prova: se AI/utente
+      // ha già un range (o il campo è vuoto) resta così; rielaborazione può riempirlo.
       // Diametro singolo da revisione AI (pipe_diameter_mm) → min del form.
       if ((d.pipe_diameter_min_mm == null || d.pipe_diameter_min_mm === "")
         && d.pipe_diameter_mm != null && d.pipe_diameter_mm !== "") {
@@ -614,16 +615,39 @@ function QualificationForm({ qualification, onSave, onClose, onSaved, defaultCom
                 </>
               )}
               {!show9606Dimensions && form.qualification_type.includes("15614") && (
-                <div className="qf-row">
-                  <div className="qf-field">
-                    <label>Spessore min (mm)</label>
-                    <input type="number" step="0.1" min="0" value={form.thickness_min_mm} onChange={handle("thickness_min_mm")} placeholder="es. 3" />
+                <>
+                  <div className="qf-row">
+                    <div className="qf-field">
+                      <label>Spessore min (mm)</label>
+                      <input type="number" step="0.1" min="0" value={form.thickness_min_mm} onChange={handle("thickness_min_mm")} placeholder="es. 3" />
+                    </div>
+                    <div className="qf-field">
+                      <label>Spessore max (mm)</label>
+                      <input type="number" step="0.1" min="0" value={form.thickness_max_mm} onChange={handle("thickness_max_mm")} placeholder="es. 20" />
+                    </div>
                   </div>
-                  <div className="qf-field">
-                    <label>Spessore max (mm)</label>
-                    <input type="number" step="0.1" min="0" value={form.thickness_max_mm} onChange={handle("thickness_max_mm")} placeholder="es. 20" />
+                  <div className="qf-row">
+                    {applicableFields.pipeDiameterApplicable ? (
+                      <>
+                        <div className="qf-field">
+                          <label>Diametro tubo min (mm)</label>
+                          <input type="number" step="0.1" min="0" value={form.pipe_diameter_min_mm} onChange={handle("pipe_diameter_min_mm")} placeholder="vuoto = solo lamiera" />
+                        </div>
+                        <div className="qf-field">
+                          <label>Diametro tubo max (mm)</label>
+                          <input type="number" step="0.1" min="0" value={form.pipe_diameter_max_mm} onChange={handle("pipe_diameter_max_mm")} placeholder="vuoto = solo lamiera" />
+                        </div>
+                      </>
+                    ) : (
+                      <div className="qf-field qf-flex2">
+                        <label style={{color:"#94a3b8"}}>Diametro tubo</label>
+                        <span style={{fontSize:13, color:"#64748b", fontStyle:"italic", padding:"0.5rem 0"}}>
+                          Non applicabile — prodotto: Piastra
+                        </span>
+                      </div>
+                    )}
                   </div>
-                </div>
+                </>
               )}
               <div className="qf-row">
                 <div className="qf-field">

@@ -79,4 +79,37 @@ describe("QualificationForm — profili BW/FW e date in fondo", () => {
     expect(screen.getByText("Data emissione")).toBeInTheDocument();
     expect(screen.getByText(/Ultima conferma semestrale/)).toBeInTheDocument();
   });
+
+  it("non copia i processi di validità dal processo prova se il campo è vuoto", async () => {
+    await renderForm({
+      id: 4,
+      qualification_type: "Saldatore ISO 9606-1",
+      person_name: "Mario Rossi",
+      company_id: 1,
+      joint_type: "FW",
+      welding_process: "135",
+      welding_process_test: "135",
+      approval_status: "bozza",
+    });
+    const validity = screen.getByPlaceholderText("es. 135, 138");
+    expect(validity.value).toBe("");
+  });
+
+  it("EN 15614 con prodotto T mostra diametro tubo min/max", async () => {
+    await renderForm({
+      id: 5,
+      qualification_type: "Saldatore EN 15614",
+      person_name: "Mario Rossi",
+      company_id: 1,
+      product_type: "T",
+      pipe_diameter_min_mm: 40,
+      pipe_diameter_max_mm: 80,
+      approval_status: "bozza",
+    });
+    expect(screen.getByText("Spessore min (mm)")).toBeInTheDocument();
+    const pipeInputs = screen.getAllByPlaceholderText("vuoto = solo lamiera");
+    expect(pipeInputs).toHaveLength(2);
+    expect(pipeInputs[0].value).toBe("40");
+    expect(pipeInputs[1].value).toBe("80");
+  });
 });
