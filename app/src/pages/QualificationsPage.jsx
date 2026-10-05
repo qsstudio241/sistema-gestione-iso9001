@@ -9,6 +9,7 @@ import { useCompanyScope } from "../contexts/CompanyScopeContext";
 import QualificationForm from "./QualificationForm";
 import QualificationUploadButton from "../components/QualificationUploadButton";
 import ReprocessQueueBanner from "../components/ReprocessQueueBanner";
+import CoverageVerifyPanel from "../components/CoverageVerifyPanel";
 import { formatDate } from "../utils/dateHelpers";
 import { resolveBackendUploadUrl } from "../utils/resolveBackendUploadUrl";
 import AskAiButton from "../components/AskAiButton";
@@ -507,6 +508,11 @@ function QualificationsPage() {
             )}
 
             <ReprocessQueueBanner />
+
+            <CoverageVerifyPanel
+                companyId={companyScope}
+                companyName={scopeCompanyName}
+            />
 
             {/* Stats */}
             <StatsBar

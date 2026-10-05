@@ -35,6 +35,7 @@
 | Route protetta da licenza | `LicensedRoute` (wrapper `App.jsx`) | Prop `licenseKey` |
 | Selezione ambito azienda | `CompanyScopeSelect` in `AppLayout` (`CompanyScopeContext`) | Combobox in alto (digita per filtrare); le pagine **non** hanno un secondo Ambito. Helper: `buildScopeMenuOptions` / `filterScopeMenuOptions` |
 | Disclaimer AI | `AiDisclaimer.jsx` | Footer non invasivo; testo da ADR-010 §9 |
+| Verifica copertura requisito↔capacità | `CoverageVerifyPanel.jsx` (+ classi `sq-cov-*` in `QualificationsPage.css`) | Domini dal registry API; campi per dominio; azioni gated restano visibili |
 | Card/tabella azione admin (dashboard superadmin) | `.billing-card`, `.billing-table`, `.btn-primary`/`.btn-secondary` (`BillingDashboardPage.css`) | Riusato per la sezione "Rielaborazioni disponibili" (28/07/2026); pattern per qualsiasi nuovo pannello cross-tenant nella dashboard superadmin |
 
 ## Motivazione
