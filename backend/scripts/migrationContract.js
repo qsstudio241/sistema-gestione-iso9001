@@ -85,6 +85,16 @@ function selectForEmptyDbApply(filenames, fromNumber = HEADER_FROM_NUMBER) {
   return { skipped, apply, verifies, fromNumber };
 }
 
+/** Seed e verify solo se c'è almeno una 169+ da applicare. Altrimenti gap noto → verde. */
+function planEmptyDbApply(selection) {
+  const hasModern = Boolean(selection && Array.isArray(selection.apply) && selection.apply.length > 0);
+  return {
+    apply: hasModern,
+    seed: hasModern,
+    verify: hasModern,
+  };
+}
+
 function parseMigrationHeader(sqlText) {
   const lines = String(sqlText).split(/\r?\n/).slice(0, 80);
   const get = (key) => {
@@ -209,6 +219,7 @@ module.exports = {
   listMainMigrationSql,
   compareNumberedSql,
   selectForEmptyDbApply,
+  planEmptyDbApply,
   parseMigrationHeader,
   checkMigrationContract,
   checkRepoMigrationContracts,

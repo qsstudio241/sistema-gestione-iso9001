@@ -142,6 +142,6 @@ jobs:
         run: |
           echo "## Apply-on-empty (da 169)" >> "$GITHUB_STEP_SUMMARY"
           echo "Lo storico **< 169** non si applica su SQL vuoto (nessuna baseline)." >> "$GITHUB_STEP_SUMMARY"
-          echo "Il job è **verde** se non ci sono 169+ oppure se apply + seed + verify da 169 passano." >> "$GITHUB_STEP_SUMMARY"
+          echo "Il job è **verde** se non ci sono 169+ (skip apply/seed/verify) oppure se apply + seed + verify da 169 passano." >> "$GITHUB_STEP_SUMMARY"
           echo "È **rosso** solo se una 169+ o il suo \`NNN_verify.sql\` fallisce (regressione reale)." >> "$GITHUB_STEP_SUMMARY"
           echo "Issue https://github.com/qsstudio241/sistema-gestione-iso9001/issues/699" >> "$GITHUB_STEP_SUMMARY"

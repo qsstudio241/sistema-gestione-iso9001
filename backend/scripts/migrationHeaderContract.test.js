@@ -5,6 +5,7 @@
  * Se TYPE ≠ additive servono NNN_verify.sql e NNN_rollback.sql.
  * Lo storico resta grandfathered (nessuna riscrittura dei file già in produzione).
  */
+const { spawnSync } = require('child_process');
 const fs = require('fs');
 const os = require('os');
 const path = require('path');
@@ -16,6 +17,7 @@ const {
   listMainMigrationSql,
   numericPrefix,
   selectForEmptyDbApply,
+  planEmptyDbApply,
   parseMigrationHeader,
   checkMigrationContract,
   checkRepoMigrationContracts,
@@ -211,5 +213,39 @@ describe('contratto intestazione migrazioni', () => {
     expect(sel.apply.every((f) => numericPrefix(f) >= HEADER_FROM_NUMBER)).toBe(true);
     expect(sel.verifies.every((f) => numericPrefix(f) >= HEADER_FROM_NUMBER)).toBe(true);
     expect(sel.apply.every((f) => isMainMigrationSql(f))).toBe(true);
+  });
+
+  it('senza 169+ non si eseguono seed né verify (solo gap pre-169)', () => {
+    const emptyModern = selectForEmptyDbApply([
+      '003_align_schema_backend.sql',
+      '168_qualifications_test_validity_9606.sql',
+      '168_verify.sql',
+    ]);
+    expect(emptyModern.apply).toEqual([]);
+    expect(planEmptyDbApply(emptyModern)).toEqual({
+      apply: false,
+      seed: false,
+      verify: false,
+    });
+    const withModern = selectForEmptyDbApply(['169_new_col.sql']);
+    expect(planEmptyDbApply(withModern)).toEqual({
+      apply: true,
+      seed: true,
+      verify: true,
+    });
+  });
+
+  it('lo script apply-migrations-ci esce 0 senza SQL se il repo non ha 169+', () => {
+    const script = path.join(__dirname, 'apply-migrations-ci.js');
+    const env = { ...process.env };
+    delete env.DB_PASSWORD;
+    const r = spawnSync(process.execPath, [script], {
+      encoding: 'utf8',
+      env,
+    });
+    expect(r.status).toBe(0);
+    expect(r.stdout).toMatch(/skip apply, seed e verify/);
+    expect(r.stdout).toMatch(/COMPLETATO/);
+    expect(r.stderr || '').not.toMatch(/Invalid object name/);
   });
 });

@@ -284,9 +284,9 @@ Le migrazioni **non** sono uno schema-from-scratch. Lo storico **003–168** è 
 
 | Situazione | Esito job `Apply da 169 su SQL Server vuoto` |
 |---|---|
-| Solo file < 169 (stato attuale di `main`) | **Verde** — gap noto, niente check rosso su `main` |
-| 169+ applicate e verify PASS | **Verde** |
-| Una 169+ o il suo verify fallisce | **Rosso** — regressione reale (niente `continue-on-error`) |
+| Solo file < 169 (stato attuale di `main`) | **Verde** — skip apply, seed e verify (DB vuoto non ha `organizations`) |
+| 169+ applicate, seed e verify PASS | **Verde** |
+| Una 169+, il seed o il verify fallisce | **Rosso** — regressione reale (niente `continue-on-error`) |
 
 Le nuove 169+ devono tollerare un DB vuoto: `IF OBJECT_ID` / `IF NOT EXISTS` sulla **tabella** (non solo sulla colonna). Un `ALTER` nudo su tabella assente è rosso e si corregge nella SQL, non con un check «atteso failed».
 

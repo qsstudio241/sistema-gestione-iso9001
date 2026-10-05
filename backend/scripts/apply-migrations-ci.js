@@ -7,8 +7,8 @@
  *     node backend/scripts/apply-migrations-ci.js
  *
  * Apply-on-empty (scelta A, issue #699): salta lo storico < 169 (nessuna baseline).
- * Applica + verify solo da 169 in poi. Esce 0 se resta solo il gap pre-169.
- * Esce 1 solo se una 169+ o il suo verify fallisce (regressione reale).
+ * Applica + seed + verify solo da 169 in poi. Senza 169+: skip anche seed/verify, esce 0.
+ * Esce 1 solo se una 169+, il seed o il verify fallisce (regressione reale).
  */
 const fs = require('fs');
 const path = require('path');
@@ -18,6 +18,7 @@ const {
   HEADER_FROM_NUMBER,
   listSqlFilenames,
   selectForEmptyDbApply,
+  planEmptyDbApply,
   splitSqlBatches,
   collectVerifyFailures,
 } = require('./migrationContract');
@@ -93,8 +94,8 @@ function writeGithubSummary({ skipped, apply, verifies, outcome }) {
     `Esito: **${outcome}**`,
     '',
     apply.length === 0
-      ? `Nessuna migrazione >= ${HEADER_FROM_NUMBER}: il job resta verde (solo gap pre-169).`
-      : `Rosso solo se una ${HEADER_FROM_NUMBER}+ o il suo verify fallisce.`,
+      ? `Nessuna migrazione >= ${HEADER_FROM_NUMBER}: skip apply/seed/verify. Job verde (solo gap pre-169).`
+      : `Rosso solo se una ${HEADER_FROM_NUMBER}+, il seed o il verify fallisce.`,
     '',
     'Issue [#699](https://github.com/qsstudio241/sistema-gestione-iso9001/issues/699).',
     '',
@@ -159,14 +160,7 @@ async function runVerifyFiles(pool, companions) {
 }
 
 async function main() {
-  const config = envConfig();
   const selection = selectForEmptyDbApply(listSqlFilenames(MIGRATIONS_DIR));
-  console.log('[ci-mig] target', {
-    server: config.server,
-    port: config.port,
-    database: config.database,
-    user: config.user,
-  });
   console.log(
     `[ci-mig] skip storico < ${selection.fromNumber}: ${selection.skipped.length} file (gap noto, issue #699)`
   );
@@ -180,18 +174,34 @@ async function main() {
     `[ci-mig] apply >= ${selection.fromNumber}: ${selection.apply.length} file`
   );
 
+  const plan = planEmptyDbApply(selection);
+  if (!plan.apply) {
+    console.log(
+      `[ci-mig] nessuna migrazione >= ${selection.fromNumber}: skip apply, seed e verify (verde, solo gap pre-169, niente regressione 169+)`
+    );
+    writeGithubSummary({ ...selection, outcome: 'VERDE (solo gap pre-169)' });
+    console.log('[ci-mig] COMPLETATO');
+    return;
+  }
+
+  const config = envConfig();
+  console.log('[ci-mig] target', {
+    server: config.server,
+    port: config.port,
+    database: config.database,
+    user: config.user,
+  });
+
   await ensureDatabase(config);
   const pool = await sql.connect(config);
   try {
-    if (selection.apply.length === 0) {
-      console.log(
-        `[ci-mig] nessuna migrazione >= ${selection.fromNumber}: skip apply (verde, solo gap pre-169)`
-      );
-    } else {
-      await applySelected(pool, selection.apply);
+    await applySelected(pool, selection.apply);
+    if (plan.seed) {
+      await applySeed(pool);
     }
-    await applySeed(pool);
-    await runVerifyFiles(pool, selection.verifies);
+    if (plan.verify) {
+      await runVerifyFiles(pool, selection.verifies);
+    }
     console.log('[ci-mig] COMPLETATO');
     writeGithubSummary({ ...selection, outcome: 'VERDE' });
   } finally {
