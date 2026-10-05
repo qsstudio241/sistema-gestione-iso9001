@@ -1,8 +1,8 @@
-# Contratto file migrazioni (required di questo workflow) + prova apply su SQL Server vuoto.
-# L'apply-on-empty dello storico NON è required: le migrazioni 003–168 sono state
-# scritte su un DB già esistente (la 003 fa RAISERROR se manca audit_responses.notes).
-# Non si falsifica l'esito: lo script esce 1 se fallisce; continue-on-error evita
-# di rompere test-and-build / smoke. Dettaglio: docs/reference/DATABASE.md § Apply-on-empty.
+# Contratto file migrazioni (required) + apply da 169 su SQL Server vuoto.
+# Lo storico < 169 non ha baseline: lo script lo salta e resta verde (gap noto).
+# Rosso solo se una 169+ o il suo verify fallisce. Niente continue-on-error:
+# GitHub altrimenti marca il check failed e sveglia Eventi. Issue #699.
+# Dettaglio: docs/reference/DATABASE.md § Apply-on-empty.
 name: CI migrazioni
 
 on:
@@ -56,11 +56,10 @@ jobs:
           --coverage=false
 
   migration-apply-empty-db:
-    name: Apply storico su SQL Server vuoto (non-required)
+    name: Apply da 169 su SQL Server vuoto
     runs-on: ubuntu-latest
-    # Job non-required: fallimento atteso finché manca una baseline schema.
-    # continue-on-error tiene verdi test-and-build e smoke; il log resta FAIL onesto.
-    continue-on-error: true
+    # Verde se resta solo il gap pre-169; rosso solo su regressione 169+.
+    # Senza continue-on-error: un FAIL onesto non deve mascherarsi da check rosso "atteso".
     services:
       mssql:
         image: mcr.microsoft.com/mssql/server:2022-latest
@@ -138,10 +137,11 @@ jobs:
           DB_DATABASE: SGQ_ISO9001
         run: node backend/scripts/apply-migrations-ci.js
 
-      - name: Annota esito onesto
+      - name: Annota esito
         if: always()
         run: |
-          echo "## Apply-on-empty" >> "$GITHUB_STEP_SUMMARY"
-          echo "Questo job è **non-required** (continue-on-error)." >> "$GITHUB_STEP_SUMMARY"
-          echo "Se lo script è uscito 1, l'esito reale è FALLITO: non è un via libera a mergiare una transform senza prova su copia." >> "$GITHUB_STEP_SUMMARY"
-          echo "Tracciamento: issue https://github.com/qsstudio241/sistema-gestione-iso9001/issues/699" >> "$GITHUB_STEP_SUMMARY"
+          echo "## Apply-on-empty (da 169)" >> "$GITHUB_STEP_SUMMARY"
+          echo "Lo storico **< 169** non si applica su SQL vuoto (nessuna baseline)." >> "$GITHUB_STEP_SUMMARY"
+          echo "Il job è **verde** se non ci sono 169+ oppure se apply + seed + verify da 169 passano." >> "$GITHUB_STEP_SUMMARY"
+          echo "È **rosso** solo se una 169+ o il suo \`NNN_verify.sql\` fallisce (regressione reale)." >> "$GITHUB_STEP_SUMMARY"
+          echo "Issue https://github.com/qsstudio241/sistema-gestione-iso9001/issues/699" >> "$GITHUB_STEP_SUMMARY"

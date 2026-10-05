@@ -43,15 +43,46 @@ function listSqlFilenames(dir = MIGRATIONS_DIR) {
   return fs.readdirSync(dir).filter((f) => f.toLowerCase().endsWith('.sql'));
 }
 
+function compareNumberedSql(a, b) {
+  const na = numericPrefix(a);
+  const nb = numericPrefix(b);
+  if (na !== nb) return na - nb;
+  return a.localeCompare(b);
+}
+
 function listMainMigrationSql(dir = MIGRATIONS_DIR) {
   return listSqlFilenames(dir)
     .filter(isMainMigrationSql)
-    .sort((a, b) => {
-      const na = numericPrefix(a);
-      const nb = numericPrefix(b);
-      if (na !== nb) return na - nb;
-      return a.localeCompare(b);
-    });
+    .sort(compareNumberedSql);
+}
+
+/**
+ * Apply-on-empty: lo storico < HEADER_FROM_NUMBER non ha baseline su SQL vuoto.
+ * Si applica e si verifica solo da 169 in poi. Il gap pre-169 è atteso, non un rosso.
+ */
+function selectForEmptyDbApply(filenames, fromNumber = HEADER_FROM_NUMBER) {
+  const names = Array.isArray(filenames) ? filenames : [];
+  const mains = names.filter(isMainMigrationSql);
+  const skipped = mains
+    .filter((f) => {
+      const n = numericPrefix(f);
+      return Number.isFinite(n) && n < fromNumber;
+    })
+    .sort(compareNumberedSql);
+  const apply = mains
+    .filter((f) => {
+      const n = numericPrefix(f);
+      return Number.isFinite(n) && n >= fromNumber;
+    })
+    .sort(compareNumberedSql);
+  const verifies = names
+    .filter((f) => isCompanionSql(f) && /_verify\.sql$/i.test(f))
+    .filter((f) => {
+      const n = numericPrefix(f);
+      return Number.isFinite(n) && n >= fromNumber;
+    })
+    .sort(compareNumberedSql);
+  return { skipped, apply, verifies, fromNumber };
 }
 
 function parseMigrationHeader(sqlText) {
@@ -176,6 +207,8 @@ module.exports = {
   companionName,
   listSqlFilenames,
   listMainMigrationSql,
+  compareNumberedSql,
+  selectForEmptyDbApply,
   parseMigrationHeader,
   checkMigrationContract,
   checkRepoMigrationContracts,

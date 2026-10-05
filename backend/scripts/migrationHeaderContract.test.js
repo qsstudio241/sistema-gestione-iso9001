@@ -14,6 +14,8 @@ const {
   isCompanionSql,
   isMainMigrationSql,
   listMainMigrationSql,
+  numericPrefix,
+  selectForEmptyDbApply,
   parseMigrationHeader,
   checkMigrationContract,
   checkRepoMigrationContracts,
@@ -177,5 +179,37 @@ describe('contratto intestazione migrazioni', () => {
     expect(isMainMigrationSql('169_new_col.sql')).toBe(true);
     const mains = listMainMigrationSql(MIGRATIONS_DIR);
     expect(mains.every((f) => !isCompanionSql(f))).toBe(true);
+  });
+
+  it('apply-on-empty salta lo storico < 169 e tiene main + verify da 169', () => {
+    const sel = selectForEmptyDbApply([
+      '003_align_schema_backend.sql',
+      '168_qualifications_test_validity_9606.sql',
+      '169_new_col.sql',
+      '169_verify.sql',
+      '169_rollback.sql',
+      '170_other.sql',
+      '168_verify.sql',
+      'seed.sql',
+    ]);
+    expect(sel.fromNumber).toBe(HEADER_FROM_NUMBER);
+    expect(sel.skipped).toEqual([
+      '003_align_schema_backend.sql',
+      '168_qualifications_test_validity_9606.sql',
+    ]);
+    expect(sel.apply).toEqual(['169_new_col.sql', '170_other.sql']);
+    expect(sel.verifies).toEqual(['169_verify.sql']);
+    expect(sel.verifies).not.toContain('168_verify.sql');
+  });
+
+  it('sul repo reale, apply-on-empty non include main < 169', () => {
+    const sel = selectForEmptyDbApply(
+      fs.readdirSync(MIGRATIONS_DIR).filter((f) => f.toLowerCase().endsWith('.sql'))
+    );
+    expect(sel.skipped.length).toBeGreaterThan(0);
+    expect(sel.skipped.every((f) => numericPrefix(f) < HEADER_FROM_NUMBER)).toBe(true);
+    expect(sel.apply.every((f) => numericPrefix(f) >= HEADER_FROM_NUMBER)).toBe(true);
+    expect(sel.verifies.every((f) => numericPrefix(f) >= HEADER_FROM_NUMBER)).toBe(true);
+    expect(sel.apply.every((f) => isMainMigrationSql(f))).toBe(true);
   });
 });

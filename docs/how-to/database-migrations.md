@@ -11,7 +11,7 @@
 1. Leggere [DATABASE_SCHEMA.md](../reference/DATABASE_SCHEMA.md).
 2. Connessione e ambienti: [DATABASE.md](../reference/DATABASE.md).
 3. Piano split tenant (se multi-org): [MIGRATION_PLAN_SPLIT_TENANTS.md](../MIGRATION_PLAN_SPLIT_TENANTS.md).
-4. Prossimo numero: `ls database/migrations/ | sort | tail -8` **su `origin/main`**, poi le PR aperte (`168` è #698). Da **169** l'intestazione è obbligatoria.
+4. Prossimo numero: `ls database/migrations/ | sort | tail -8` **su `origin/main`**, poi le PR aperte. Da **169** l'intestazione è obbligatoria.
 
 ---
 
@@ -56,7 +56,7 @@ Da fare **prima** di produzione. Riportare l'esito nella PR (checklist «Migrazi
 |----------|---------|
 | **PC sviluppo** | `backend/config/database.json` (gitignored) + script in `database/migrations/` |
 | **Cloud Agent** | Script Node su VPS con `require('/var/www/sgq-backend/src/config/database')` — vedi [GUIDA_CONSOLIDATA § C](../GUIDA_CONSOLIDATA.md#c-database-e-repro) — **non** in questa slice di governance |
-| **CI** | `.github/workflows/ci-migrations.yml` — contratto L1 required; apply-on-empty **non-required** (manca baseline) |
+| **CI** | `.github/workflows/ci-migrations.yml` — contratto L1 required; apply-on-empty applica **da 169** (pre-169 saltato, verde se solo quel gap) |
 
 **FK SQL Server:** evitare `ON DELETE` su ADD CONSTRAINT in un unico statement; colonne e FK in step separati (regola in guida).
 

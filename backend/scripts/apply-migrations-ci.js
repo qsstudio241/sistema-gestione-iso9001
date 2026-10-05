@@ -6,9 +6,9 @@
  *   DB_SERVER=localhost DB_USER=sa DB_PASSWORD=... DB_DATABASE=SGQ_ISO9001 \
  *     node backend/scripts/apply-migrations-ci.js
  *
- * Esce 1 se una migrazione o un verify fallisce. Non maschera l'errore.
- * Lo storico (< 169) è stato scritto su DB già esistente: su DB vuoto la 003
- * alza RAISERROR. In quel caso il job CI è non-required (vedi ci-migrations.yml).
+ * Apply-on-empty (scelta A, issue #699): salta lo storico < 169 (nessuna baseline).
+ * Applica + verify solo da 169 in poi. Esce 0 se resta solo il gap pre-169.
+ * Esce 1 solo se una 169+ o il suo verify fallisce (regressione reale).
  */
 const fs = require('fs');
 const path = require('path');
@@ -16,10 +16,8 @@ const sql = require('mssql');
 const {
   MIGRATIONS_DIR,
   HEADER_FROM_NUMBER,
-  isCompanionSql,
-  listMainMigrationSql,
   listSqlFilenames,
-  numericPrefix,
+  selectForEmptyDbApply,
   splitSqlBatches,
   collectVerifyFailures,
 } = require('./migrationContract');
@@ -83,21 +81,39 @@ async function runBatches(pool, sqlText, label) {
   return allSets;
 }
 
-async function applyAll(pool) {
-  const files = listMainMigrationSql(MIGRATIONS_DIR);
-  console.log(`[ci-mig] ${files.length} migrazioni principali da applicare`);
+function writeGithubSummary({ skipped, apply, verifies, outcome }) {
+  const file = process.env.GITHUB_STEP_SUMMARY;
+  if (!file) return;
+  const lines = [
+    `## Apply-on-empty (da ${HEADER_FROM_NUMBER})`,
+    '',
+    `Storico < ${HEADER_FROM_NUMBER} saltato: **${skipped.length}** file (gap noto, nessuna baseline).`,
+    `Apply >= ${HEADER_FROM_NUMBER}: **${apply.length}** file.`,
+    `Verify >= ${HEADER_FROM_NUMBER}: **${verifies.length}** file.`,
+    `Esito: **${outcome}**`,
+    '',
+    apply.length === 0
+      ? `Nessuna migrazione >= ${HEADER_FROM_NUMBER}: il job resta verde (solo gap pre-169).`
+      : `Rosso solo se una ${HEADER_FROM_NUMBER}+ o il suo verify fallisce.`,
+    '',
+    'Issue [#699](https://github.com/qsstudio241/sistema-gestione-iso9001/issues/699).',
+    '',
+  ];
+  try {
+    fs.appendFileSync(file, `${lines.join('\n')}\n`);
+  } catch (err) {
+    console.warn('[ci-mig] GITHUB_STEP_SUMMARY non scritto:', err.message);
+  }
+}
+
+async function applySelected(pool, files) {
   for (const filename of files) {
     const full = path.join(MIGRATIONS_DIR, filename);
-    const n = numericPrefix(filename);
     console.log(`[ci-mig] APPLY ${filename}`);
     try {
       await runBatches(pool, fs.readFileSync(full, 'utf8'), filename);
     } catch (err) {
-      const hint =
-        Number.isFinite(n) && n < HEADER_FROM_NUMBER
-          ? ` [storico < ${HEADER_FROM_NUMBER}: manca baseline schema su DB vuoto — vedi docs/reference/DATABASE.md § Apply-on-empty]`
-          : '';
-      console.error(`[ci-mig] FAIL ${filename}: ${err.message}${hint}`);
+      console.error(`[ci-mig] FAIL ${filename}: ${err.message}`);
       throw err;
     }
     console.log(`[ci-mig] OK   ${filename}`);
@@ -113,13 +129,9 @@ async function applySeed(pool) {
   console.log('[ci-mig] OK   seed anonimo');
 }
 
-async function runVerifyFiles(pool) {
-  const companions = listSqlFilenames(MIGRATIONS_DIR)
-    .filter((f) => isCompanionSql(f) && /_verify\.sql$/i.test(f))
-    .sort((a, b) => numericPrefix(a) - numericPrefix(b) || a.localeCompare(b));
-
+async function runVerifyFiles(pool, companions) {
   if (companions.length === 0) {
-    console.log('[ci-mig] VERIFY: nessun NNN_verify.sql (ok finché non esiste una transform >= 169)');
+    console.log(`[ci-mig] VERIFY: nessun NNN_verify.sql >= ${HEADER_FROM_NUMBER} (ok)`);
     return;
   }
 
@@ -148,19 +160,40 @@ async function runVerifyFiles(pool) {
 
 async function main() {
   const config = envConfig();
+  const selection = selectForEmptyDbApply(listSqlFilenames(MIGRATIONS_DIR));
   console.log('[ci-mig] target', {
     server: config.server,
     port: config.port,
     database: config.database,
     user: config.user,
   });
+  console.log(
+    `[ci-mig] skip storico < ${selection.fromNumber}: ${selection.skipped.length} file (gap noto, issue #699)`
+  );
+  if (selection.skipped.length) {
+    const preview = selection.skipped.slice(0, 5).join(', ');
+    const extra =
+      selection.skipped.length > 5 ? `, … (+${selection.skipped.length - 5})` : '';
+    console.log(`[ci-mig]   esempi saltati: ${preview}${extra}`);
+  }
+  console.log(
+    `[ci-mig] apply >= ${selection.fromNumber}: ${selection.apply.length} file`
+  );
+
   await ensureDatabase(config);
   const pool = await sql.connect(config);
   try {
-    await applyAll(pool);
+    if (selection.apply.length === 0) {
+      console.log(
+        `[ci-mig] nessuna migrazione >= ${selection.fromNumber}: skip apply (verde, solo gap pre-169)`
+      );
+    } else {
+      await applySelected(pool, selection.apply);
+    }
     await applySeed(pool);
-    await runVerifyFiles(pool);
+    await runVerifyFiles(pool, selection.verifies);
     console.log('[ci-mig] COMPLETATO');
+    writeGithubSummary({ ...selection, outcome: 'VERDE' });
   } finally {
     await pool.close().catch(() => {});
   }
@@ -169,5 +202,11 @@ async function main() {
 main().catch((err) => {
   console.error('[ci-mig] ESITO: FALLITO');
   console.error(err && err.message ? err.message : err);
+  try {
+    const selection = selectForEmptyDbApply(listSqlFilenames(MIGRATIONS_DIR));
+    writeGithubSummary({ ...selection, outcome: 'ROSSO (regressione 169+)' });
+  } catch (_) {
+    /* summary best-effort */
+  }
   process.exit(1);
 });
