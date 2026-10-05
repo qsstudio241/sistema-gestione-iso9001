@@ -201,4 +201,19 @@ describe('extractFieldsByRules — dispatch per docType', () => {
         expect(out.qualification_designation).toMatch(/135 P FW FM1 t8/);
         expect(out.welding_process).toBe('135');
     });
+
+    it('patentino: testata ISO 9606-1:2017 + riga §11 Mason — non prende l\'edizione', () => {
+        const text = `
+            CERTIFICATO DI QUALIFICAZIONE DEL SALDATORE
+            ISO 9606-1:2017
+            ISO 9606-1: 135S P FW FM1 S t12-12 PB ml
+            Nome e cognome: MARIO ROSSI
+        `;
+        const out = extractFieldsByRules(text, 'patentino_saldatore', '25-01341-01-001.pdf');
+        expect(out.joint_type).toBe('FW');
+        expect(out.welding_process_test).toBe('135');
+        expect(out.qualification_designation).toMatch(/135S P FW/);
+        expect(out.qualification_designation).not.toMatch(/2017/);
+        expect(out.thickness_t_test_mm).toBe(12);
+    });
 });

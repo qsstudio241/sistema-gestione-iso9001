@@ -100,7 +100,11 @@ function resolvePrintedDesignation(printed, computeFields = {}) {
 }
 
 const POSITION_TOKEN_RE = /^(PA|PB|PC|PD|PE|PF|PG|PH|PJ|H-L045|J-L045)$/i;
-const PROCESS_TOKEN_RE = /^\d{2,3}$/;
+/** ISO 4063 in riga stampata: 135, 141, o 135S (processo + suffisso trasferimento). */
+const PROCESS_TOKEN_RE = /^\d{2,3}[A-Z]?$/i;
+const PROCESS_IN_LINE_RE = /\b\d{2,3}[A-Z]?\b/i;
+const EDITION_ONLY_RE = /^(?:19|20)\d{2}(?:\s*[+]\s*A\d+)?\s*$/i;
+const LABELED_9606_RE = /ISO\s*9606-1\s*[:.\-]?\s*([^\n\r]*)/gi;
 
 function parseNumberToken(raw) {
     if (raw == null || raw === '') return null;
@@ -108,9 +112,46 @@ function parseNumberToken(raw) {
     return Number.isFinite(n) ? n : null;
 }
 
+function isEditionOnlyRemainder(rest) {
+    return EDITION_ONLY_RE.test(String(rest || '').trim());
+}
+
+/** Riga §11: processo + P/T + BW/FW. Non è l'edizione in testata (es. ISO 9606-1:2017). */
+function isDesignationRemainder(rest) {
+    const s = String(rest || '');
+    if (!s.trim() || isEditionOnlyRemainder(s)) return false;
+    return PROCESS_IN_LINE_RE.test(s) && /\b[PT]\b/.test(s) && /\b(?:BW|FW)\b/i.test(s);
+}
+
+function compactLine(line) {
+    return String(line || '').replace(/\s+/g, ' ').trim();
+}
+
+function pickDesignationSource(body) {
+    LABELED_9606_RE.lastIndex = 0;
+    let m;
+    while ((m = LABELED_9606_RE.exec(body))) {
+        if (!isDesignationRemainder(m[1])) continue;
+        return {
+            rawLine: compactLine(m[0]),
+            tokenSource: m[1],
+        };
+    }
+    const lines = String(body).split(/\r?\n/);
+    for (const line of lines) {
+        const compact = compactLine(line);
+        if (!compact || isEditionOnlyRemainder(compact.replace(/^ISO\s*9606-1\s*[:.\-]?\s*/i, ''))) continue;
+        const remainder = compact.replace(/^ISO\s*9606-1\s*[:.\-]?\s*/i, '');
+        if (!isDesignationRemainder(remainder) && !isDesignationRemainder(compact)) continue;
+        return { rawLine: compact, tokenSource: remainder || compact };
+    }
+    return null;
+}
+
 /**
  * Parser deterministico della riga designazione ISO 9606-1.
  * Esempio: "ISO 9606-1: 135 P FW FM1 t8 PB ss mb"
+ * Ignora le sole edizioni in testata ("ISO 9606-1:2017").
  *
  * @param {string} text
  * @returns {object|null}
@@ -119,19 +160,10 @@ function parseWelderQualificationDesignation(text) {
     const body = String(text || '');
     if (!body.trim()) return null;
 
-    let rawLine = null;
-    let tokenSource = null;
-    const labeled = body.match(/ISO\s*9606-1\s*[:.\-]?\s*([^\n\r]+)/i);
-    if (labeled) {
-        rawLine = labeled[0].replace(/\s+/g, ' ').trim();
-        tokenSource = labeled[1];
-    } else {
-        const compact = body.replace(/\s+/g, ' ').trim();
-        if (!PROCESS_TOKEN_RE.test(compact.split(/\s+/)[0] || '')) return null;
-        if (!/\b(BW|FW)\b/i.test(compact)) return null;
-        tokenSource = compact;
-        rawLine = compact;
-    }
+    const picked = pickDesignationSource(body);
+    if (!picked) return null;
+    const rawLine = picked.rawLine;
+    const tokenSource = picked.tokenSource;
 
     const tokens = String(tokenSource || '')
         .replace(/[;,]+/g, ' ')
@@ -156,7 +188,8 @@ function parseWelderQualificationDesignation(text) {
     const leftover = [];
     for (const tok of tokens) {
         if (!parsed.welding_process_test && PROCESS_TOKEN_RE.test(tok)) {
-            parsed.welding_process_test = tok;
+            const digits = String(tok).match(/^(\d{2,3})/i);
+            parsed.welding_process_test = digits ? digits[1] : tok;
             continue;
         }
         const up = tok.toUpperCase();
@@ -172,17 +205,17 @@ function parseWelderQualificationDesignation(text) {
             parsed.filler_material_group = up;
             continue;
         }
-        const sTok = tok.match(/^s\s*=?\s*(\d+(?:[.,]\d+)?)$/i);
+        const sTok = tok.match(/^s\s*=?\s*(\d+(?:[.,]\d+)?)(?:-(\d+(?:[.,]\d+)?))?$/i);
         if (sTok) {
             parsed.thickness_s_test_mm = parseNumberToken(sTok[1]);
             continue;
         }
-        const tTok = tok.match(/^t\s*=?\s*(\d+(?:[.,]\d+)?)$/i);
+        const tTok = tok.match(/^t\s*=?\s*(\d+(?:[.,]\d+)?)(?:-(\d+(?:[.,]\d+)?))?$/i);
         if (tTok) {
             parsed.thickness_t_test_mm = parseNumberToken(tTok[1]);
             continue;
         }
-        const dTok = tok.match(/^D\s*=?\s*(\d+(?:[.,]\d+)?)$/i);
+        const dTok = tok.match(/^D\s*=?\s*(\d+(?:[.,]\d+)?)(?:-(\d+(?:[.,]\d+)?))?$/i);
         if (dTok) {
             parsed.pipe_diameter_test_mm = parseNumberToken(dTok[1]);
             continue;
@@ -196,7 +229,7 @@ function parseWelderQualificationDesignation(text) {
 
     if (leftover.length) parsed.weld_details = leftover.join(' ');
 
-    const hasCore = parsed.welding_process_test || parsed.joint_type || parsed.qualification_designation;
+    const hasCore = parsed.welding_process_test && parsed.product_type && parsed.joint_type;
     if (!hasCore) return null;
     return parsed;
 }

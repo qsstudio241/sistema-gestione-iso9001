@@ -84,6 +84,35 @@ describe('parseWelderQualificationDesignation', () => {
         expect(parsed.pipe_diameter_test_mm).toBe(60);
         expect(parsed.weld_details).toBe('ss nb');
     });
+
+    it('ignora la sola edizione in testata (ISO 9606-1:2017) e non inventa la prova', () => {
+        const parsed = parseWelderQualificationDesignation([
+            'CERTIFICATO DI QUALIFICAZIONE DEL SALDATORE',
+            'ISO 9606-1:2017',
+            'Nome: MARIO ROSSI',
+        ].join('\n'));
+        expect(parsed).toBeNull();
+    });
+
+    it('con testata edizione + riga §11 Mason prende 135S P FW, non l\'anno', () => {
+        const text = [
+            'CERTIFICATO DI QUALIFICAZIONE DEL SALDATORE',
+            'ISO 9606-1:2017',
+            'Designation',
+            'ISO 9606-1: 135S P FW FM1 S t12-12 PB ml',
+            'Range of qualification 135 / 138',
+        ].join('\n');
+        const parsed = parseWelderQualificationDesignation(text);
+        expect(parsed).not.toBeNull();
+        expect(parsed.qualification_designation).toMatch(/135S P FW FM1/);
+        expect(parsed.qualification_designation).not.toMatch(/2017/);
+        expect(parsed.welding_process_test).toBe('135');
+        expect(parsed.product_type).toBe('P');
+        expect(parsed.joint_type).toBe('FW');
+        expect(parsed.thickness_t_test_mm).toBe(12);
+        expect(parsed.filler_material_group).toBe('FM1');
+        expect(parsed.welding_position_test).toBe('PB');
+    });
 });
 
 describe('resolvePrintedDesignation', () => {

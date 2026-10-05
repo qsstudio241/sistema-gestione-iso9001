@@ -83,4 +83,19 @@ describe('parseWelderQualificationDesignation (FE)', () => {
     expect(resolvePrintedDesignation('ISO 9606-1: 135 P FW FM1 t8 PB', { welding_process: '138' }))
       .toBe('ISO 9606-1: 135 P FW FM1 t8 PB');
   });
+
+  it('ignora la sola edizione in testata', () => {
+    expect(parseWelderQualificationDesignation('ISO 9606-1:2017\nNome MARIO')).toBeNull();
+  });
+
+  it('con testata edizione + riga §11 prende la designazione stampata', () => {
+    const parsed = parseWelderQualificationDesignation([
+      'ISO 9606-1:2017',
+      'ISO 9606-1: 135S P FW FM1 S t12-12 PB ml',
+    ].join('\n'));
+    expect(parsed.joint_type).toBe('FW');
+    expect(parsed.welding_process_test).toBe('135');
+    expect(parsed.qualification_designation).toMatch(/135S P FW/);
+    expect(parsed.qualification_designation).not.toMatch(/2017/);
+  });
 });
