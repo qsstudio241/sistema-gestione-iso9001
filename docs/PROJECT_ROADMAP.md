@@ -14,6 +14,8 @@ Audit multi-standard · NC · Qualifiche · Saldatura (WPQR/WPS/3834/Welding Boo
 
 ### Sessione più recente (06/10/2026)
 
+**Verifica qualifiche vs norma (charting, PR draft solo doc):** piano [`PLAN_VERIFICA_QUALIFICHE_NORMA_SLICES.md`](agent-tasks/PLAN_VERIFICA_QUALIFICHE_NORMA_SLICES.md) — registry per norma/profilo, finding non bloccanti con clausola (completezza + correttezza; la validità del certificato prevale), voce di sola lettura in Rielaborazioni; 12 slice in 4 onde, 4 brief di prima onda `DEPUTYTASK_VERIFICA_QUALIFICHE_*` (APERTI, lanciabili dopo il merge). Nessun codice/migrazione. HITL: PDF 14732, campione certificati reali ([backlog](reference/NORME_MANCANTI_BACKLOG.md)).
+
 **Copertura scalabile COV-5 (PR draft) — epic copertura completata:** blocco «Fattibilità multi-dominio» in Progetti (`CoverageModal`) e Riesame (`CoveragePanel`): WPQR per WPS via `verify` (su click, mai con criteri vuoti), CND manuale embedded, riga saldatori read-only; solo FE, semafori invariati, nessun BE/migrazione. CSS `sq-cov-*` ora in `CoverageVerifyPanel.css`. Nessun altro `DEPUTYTASK*` aperto. HITL residui: advisory WPQR vs registry nel Riesame, `welder_9606` via registry, requisiti CND da commessa, 9712 A.3/Table 1, soglie 15613.
 
 **Copertura scalabile COV-4 (PR draft):** ponte commessa `wpsWelderCoverage` — `GET /qualifications/coverage` (Progetti) e `GET /cases/:id/extracted-coverage` (Riesame) delegano a `matchWelderCapability` con loader unico; contratto HTTP invariato, test differenziale vs `computeQualificationCoverage` con 0 delta di semaforo; `material_group` criterio opzionale `welder_9606`. Unico cambio di esito dichiarato: il Riesame si allinea a Progetti (ISO 14732 + `thickness_max_unlimited`). Nessuna migrazione. Prossima: COV-5.
