@@ -66,6 +66,8 @@ describe('reprocess-qualifications — selezione candidati', () => {
             ],
         });
 
+        query.mockResolvedValueOnce({ recordset: [] }); // excludeRecordsWithPendingProposal
+
         const candidates = await selectReprocessCandidates('transfer_mode', FIELD_CONFIGS.transfer_mode);
 
         expect(candidates.map((c) => c.id)).toEqual([1, 3]);
@@ -78,6 +80,8 @@ describe('reprocess-qualifications — selezione candidati', () => {
                 { id: 2, welding_process: '141', qualification_type: 'Saldatore ISO 9606-1' },
             ],
         });
+
+        query.mockResolvedValueOnce({ recordset: [] }); // excludeRecordsWithPendingProposal
 
         const candidates = await selectReprocessCandidates('shielding_gas', FIELD_CONFIGS.shielding_gas);
 
@@ -113,6 +117,8 @@ describe('reprocess-qualifications — selezione candidati', () => {
                 { id: 3, product_type: null, welding_process: '135' },
             ],
         });
+
+        query.mockResolvedValueOnce({ recordset: [] }); // excludeRecordsWithPendingProposal
 
         const candidates = await selectReprocessCandidates(
             'pipe_diameter_min_mm',
