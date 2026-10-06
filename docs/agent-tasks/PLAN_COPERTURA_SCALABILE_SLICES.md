@@ -4,7 +4,7 @@
 > (`welder_9606`, `wpqr_procedure`, `cnd_9712`, …), riusabile da Qualifiche /
 > Riesame / Commesse, senza `if (welder) else` sparsi.
 > **Spirito**: stesso registry di `jointTypeProfiles`.
-> **Brief attivo**: [`DEPUTYTASK_COPERTURA.md`](DEPUTYTASK_COPERTURA.md) — COV-4 **APERTO** (ponte commessa: `getCoverage` + Riesame delegano al registry `welder_9606`, contratto invariato); COV-1 (#702), COV-2 (#704), COV-3 (#706) chiusi e su `main`. Prossima: COV-5 (riusa lo stream solo dopo aggiornamento titolo/file list)
+> **Brief attivo**: [`DEPUTYTASK_COPERTURA.md`](DEPUTYTASK_COPERTURA.md) — COV-4 **CHIUSO — TEST OK** (ponte commessa: `getCoverage` + Riesame delegano al registry `welder_9606`, contratto invariato, delta semaforo 0 su Progetti); COV-1 (#702), COV-2 (#704), COV-3 (#706) su `main`. Prossima: COV-5 (riusa lo stream solo dopo aggiornamento titolo/file list)
 > **Conferma committente (05/10/2026)**: copertura a spettro ampio (9606 + WPQR + CND 9712), non solo patentini.
 
 ## Fuori scope
@@ -80,9 +80,9 @@
 
 ### COV-4 — DoD
 
-- [ ] `welder_9606` accetta `material_group` opzionale (COV-1 invariato)
-- [ ] Ponte `wpsWelderCoverage.js` + loader unico qualifiche saldatori
-- [ ] Test differenziale ponte ↔ `computeQualificationCoverage` verde (stesso `esito`, `qualified_count`, `coverage_detail`)
-- [ ] `getCoverage` e `computeCaseProjectCoverage` delegano al ponte; payload invariato (golden test)
-- [ ] Delta Riesame (14732 + `thickness_max_unlimited`) dichiarato e testato
-- [ ] Jest mirato + Vitest `coverageVerifyPanel` + build + `check-harness-boot` + `check-utf8-encoding`; `deploy-manifest.json` aggiornato; nessuna migrazione
+- [x] `welder_9606` accetta `material_group` opzionale (COV-1 invariato)
+- [x] Ponte `wpsWelderCoverage.js` + loader unico qualifiche saldatori
+- [x] Test differenziale ponte ↔ `computeQualificationCoverage` verde (stesso `esito`, `qualified_count`, `coverage_detail`)
+- [x] `getCoverage` e `computeCaseProjectCoverage` delegano al ponte; payload invariato (golden test)
+- [x] Delta Riesame (14732 + `thickness_max_unlimited`) dichiarato e testato
+- [x] Jest mirato + Vitest `coverageVerifyPanel` + build + `check-harness-boot` + `check-utf8-encoding`; `deploy-manifest.json` aggiornato; nessuna migrazione

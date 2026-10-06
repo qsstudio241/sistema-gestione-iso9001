@@ -13,6 +13,7 @@
 const {
     checkThickness,
     checkPositions,
+    checkMaterialGroup,
     normalizeGroupList,
 } = require('../../../utils/qualificationCoverage');
 const { isQualificationOperationallyActive } = require('../../weldingCoordinatorAuth.service');
@@ -55,6 +56,12 @@ const REQUIREMENT_FIELDS = [
         key: 'thickness_max_mm',
         label: 'Spessore max (mm)',
         type: 'number',
+    },
+    {
+        key: 'material_group',
+        label: 'Gruppo materiale',
+        type: 'text',
+        hint: 'Es. 1.1, 8.1 — opzionale; confrontato con material_group della qualifica',
     },
     {
         key: 'positions',
@@ -180,6 +187,11 @@ function matchWelderCapability(qual, criteria = {}, opts = {}) {
     if (thickR === 'out_of_range') reasons.push('Spessore fuori range di validit\u00e0');
     if (thickR === 'unverifiable') reasons.push('Range spessore di validit\u00e0 incompleto');
 
+    const matR = checkMaterialGroup(qual.material_group, criteria.material_group);
+    detail.material_group = matR;
+    if (matR === 'mismatch') reasons.push('Gruppo materiale non coperto');
+    if (matR === 'unverifiable') reasons.push('Gruppo materiale assente in anagrafica');
+
     const posR = checkPositions(qual.position_range, criteria.positions);
     detail.positions = posR;
     if (posR === 'mismatch') reasons.push('Posizioni non coperte');
@@ -192,7 +204,7 @@ function matchWelderCapability(qual, criteria = {}, opts = {}) {
     }
     if (pipeR === 'unverifiable') reasons.push('Diametro tubo di validit\u00e0 incompleto');
 
-    const dims = [processR, jointR, productR, thickR, posR, pipeR]
+    const dims = [processR, jointR, productR, thickR, matR, posR, pipeR]
         .filter((r) => r && r !== 'skipped');
     const hasFail = dims.some((r) => r === 'mismatch' || r === 'out_of_range');
     const hasUnver = dims.some((r) => r === 'unverifiable');
@@ -223,6 +235,7 @@ function summarizeQual(qual) {
         product_type: qual.product_type,
         thickness_min_mm: qual.thickness_min_mm,
         thickness_max_mm: qual.thickness_max_mm,
+        material_group: qual.material_group,
         position_range: qual.position_range,
         company_name: qual.company_name || null,
     };

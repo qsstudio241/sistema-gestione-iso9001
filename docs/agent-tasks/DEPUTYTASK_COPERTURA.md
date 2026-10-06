@@ -1,6 +1,6 @@
 # DEPUTYTASK_COPERTURA — COV-4: ponte commessa (`getCoverage` + Riesame) sul registry `welder_9606`
 
-**Stato:** APERTO  
+**Stato:** CHIUSO — TEST OK (06/10/2026, PR draft `cursor/cov-4-ponte-commessa-7169`)  
 **Aperto:** 06/10/2026  
 **Piano:** [`PLAN_COPERTURA_SCALABILE_SLICES.md`](PLAN_COPERTURA_SCALABILE_SLICES.md) § COV-4  
 **Dipende da:** COV-1 CHIUSO (PR #702) · COV-2 CHIUSO (PR #704) · COV-3 CHIUSO (PR #706) — tutte su `main`  
@@ -118,17 +118,35 @@ Su `origin/main` **nessun** `DEPUTYTASK*` è APERTO eccetto questo (verificato 0
 
 ## DoD
 
-- [ ] `welder_9606` accetta `material_group` opzionale; i test COV-1 passano senza ritocchi
-- [ ] Ponte `wpsWelderCoverage.js` + loader unico qualifiche saldatori
-- [ ] Test differenziale ponte ↔ `computeQualificationCoverage` verde su tutta la matrice (stesso `esito`, `qualified_count`, `coverage_detail`)
-- [ ] `getCoverage` e `computeCaseProjectCoverage` delegano al ponte; payload di risposta invariato (golden test)
-- [ ] Delta Riesame (ISO 14732 + `thickness_max_unlimited`) dichiarato e coperto da test; nel body PR
-- [ ] `GET /qualifications/coverage/domains` e `POST …/verify` non regrediti
-- [ ] Jest mirato verde: `cd backend && npx jest src/services/capabilityCoverage src/services/caseExtractedCoverage src/services/caseCapabilityGapReport src/utils/qualificationCoverage`
-- [ ] `cd app && NODE_ENV=test npm run test:run -- coverageVerifyPanel` verde (campo dinamico) + `npm run build`
-- [ ] `node backend/scripts/check-harness-boot.js`, `node backend/scripts/check-utf8-encoding.js`, check deploy-manifest OK
-- [ ] Esenzione Rielaborazioni dichiarata nel body PR (nessun campo AI nuovo); nessuna migrazione
-- [ ] Branch allineato a `origin/main` prima di push/PR; `bugbot run` **una sola volta** a slice chiusa (codice BE: Bugbot + Security Review letti prima di «pronta»)
+- [x] `welder_9606` accetta `material_group` opzionale; i test COV-1 passano senza ritocchi
+- [x] Ponte `wpsWelderCoverage.js` + loader unico qualifiche saldatori
+- [x] Test differenziale ponte ↔ `computeQualificationCoverage` verde su tutta la matrice (stesso `esito`, `qualified_count`, `coverage_detail`)
+- [x] `getCoverage` e `computeCaseProjectCoverage` delegano al ponte; payload di risposta invariato (golden test)
+- [x] Delta Riesame (ISO 14732 + `thickness_max_unlimited`) dichiarato e coperto da test; nel body PR
+- [x] `GET /qualifications/coverage/domains` e `POST …/verify` non regrediti
+- [x] Jest mirato verde: `cd backend && npx jest src/services/capabilityCoverage src/services/caseExtractedCoverage src/services/caseCapabilityGapReport src/utils/qualificationCoverage`
+- [x] `cd app && NODE_ENV=test npm run test:run -- coverageVerifyPanel` verde (campo dinamico) + `npm run build`
+- [x] `node backend/scripts/check-harness-boot.js`, `node backend/scripts/check-utf8-encoding.js`, check deploy-manifest OK
+- [x] Esenzione Rielaborazioni dichiarata nel body PR (nessun campo AI nuovo); nessuna migrazione
+- [x] Branch allineato a `origin/main` prima di push/PR; `bugbot run` **una sola volta** a slice chiusa (codice BE: Bugbot + Security Review letti prima di «pronta»)
+
+## Esito (06/10/2026) — TEST OK
+
+**Parità dimostrata, nessuna condizione di stop.** Il test differenziale (`wpsWelderCoverage.test.js`: 320 WPS × 360 qualifiche, ogni coppia + pool aggregati, ~115k confronti) non mostra **alcuna** differenza di `esito`, `qualified_count` o `coverage_detail` rispetto a `computeQualificationCoverage` + `computeWpsCoverageEsito`. Delta di semaforo osservati: **zero** sul perimetro Progetti (`getCoverage`); l'unico cambio di esito è il delta dichiarato del Riesame (righe 5-6: ISO 14732 e `thickness_max_unlimited` ora nel loader).
+
+Scelte implementative da conoscere (nessuna cambia l'esito):
+
+- **Processo nel ponte = `checkProcess` legacy**, non il matcher token-based dell'adapter (`checkProcessValidity`). Verificato: l'adapter è più permissivo (es. qualifica `135 111` vs WPS `135, 111`: adapter `ok`, legacy `excluded`). Delegarlo avrebbe cambiato i semafori → il ponte non passa `welding_process` all'adapter e applica `checkProcess` (qualifica senza processo = esclusa). Il test lo documenta.
+- `material_group` aggiunto all'adapter come criterio opzionale; gruppo/spessore/posizioni/operatività delegati a `matchWelderCapability`, forma `coverage_detail` legacy ricostruita nel ponte.
+- Loader unico `loadWelderQualificationsForProject` (SELECT di `getCoverage`: 9606 + 14732, `thickness_max_unlimited`, senza `welding_processes_validity`), usato da `getCoverage` e da `computeCaseProjectCoverage`. `query(sql, params)` iniettata (il controller adatta il `pool`).
+- Golden payload (`qualifications.controller.getCoverage.test.js`, `caseExtractedCoverage.coverage.test.js`) committati **prima** del cablaggio e rimasti verdi dopo.
+- Il test sui delta Riesame verifica la SELECT (14732 + `thickness_max_unlimited`) e gli esiti `verde` su range aperto / operatore 14732.
+
+**File toccati:** `welder9606.adapter.js` (+ casi in `coverageEngine.service.test.js`), `wpsWelderCoverage.js` + `.test.js` (nuovi), `qualifications.controller.js` (solo `getCoverage` + import), `caseExtractedCoverage.service.js` (solo `computeCaseProjectCoverage`), `qualifications.controller.getCoverage.test.js` e `caseExtractedCoverage.coverage.test.js` (nuovi), `deploy-manifest.json`, piano, roadmap, questo brief. FE, `apiService`, `qualificationCoverage.js`, `caseCoverageAdvisory`, `caseCapabilityGapReport`, migrazioni: **non toccati**. Rielaborazioni: esenzione dichiarata (nessun campo AI nuovo).
+
+**Test:** Jest mirato (`capabilityCoverage`, `caseExtractedCoverage`, `caseCapabilityGapReport`, `caseCoverageAdvisory`, `qualificationCoverage`, `controllers/qualifications`) 12 suite / 200 test verdi; `coverageVerifyPanel` 4/4 + `npm run build` OK; `check-harness-boot` + `check-utf8-encoding` OK. Suite Jest completa: stesse 9 suite rosse di `origin/main` (preesistenti, config DB/`process.exit`), nessuna nuova.
+
+**HITL ancora aperti (invariati, non toccati):** fonte processo = `welding_processes_validity`; qualifica senza processo = `partial`; semafori per qualificatore Progetti ≠ Riesame. Prossima: COV-5 (riuso dello stream solo dopo aggiornamento titolo/file list).
 
 ## Comando di avvio
 

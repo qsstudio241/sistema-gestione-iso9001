@@ -47,11 +47,14 @@ const {
     requiresSemiannualConfirmation,
     addMonthsIso,
     canUserConfirmSemiannual,
-    isQualificationOperationallyActive,
 } = require('../services/weldingCoordinatorAuth.service');
 const { toNumericOrNull } = require('../utils/numericSanitizer');
 const { occupationalQualificationSqlInList } = require('../constants/occupationalQualificationTypes');
 const { findVisionFitnessGaps } = require('../services/visionFitness.service');
+const {
+    computeWpsWelderCoverage,
+    loadWelderQualificationsForProject,
+} = require('../services/capabilityCoverage/wpsWelderCoverage');
 const XLSX = require('xlsx');
 
 /**
@@ -454,37 +457,18 @@ async function getCoverage(req, res) {
             });
         }
 
-        // Carica qualifiche del tipo pertinente — filtrate per company_id commessa se disponibile.
-        // Nessun filtro su approval_status (rimosso il gate manuale, v. header file): l'esclusione
-        // di qualifiche non più operativamente valide (certificato scaduto o conferma semestrale
-        // scaduta) è automatica, via isQualificationOperationallyActive, subito sotto.
-        const qReq = pool.request().input('orgId', orgId);
-        let qWhere = `
-            q.organization_id = @orgId
-            AND q.status NOT IN ('revocata','sospesa')
-            AND (q.qualification_type LIKE '%9606%' OR q.qualification_type LIKE '%14732%')
-        `;
-        if (projectCompanyId) {
-            qReq.input('projCompId', parseInt(projectCompanyId));
-            qWhere += ' AND q.company_id = @projCompId';
-        }
-        const qRes = await qReq.query(`
-            SELECT q.id, q.person_name, q.person_code, q.qualification_type,
-                   q.welding_process, q.material_group, q.position_range,
-                   q.thickness_min_mm, q.thickness_max_mm, q.thickness_max_unlimited, q.thickness_range, q.joint_type,
-                   q.expiry_date, q.status, q.approval_status, q.next_confirmation_due,
-                   c.name AS company_name
-            FROM qualifications q
-            LEFT JOIN companies c ON c.id = q.company_id
-            WHERE ${qWhere}
-            ORDER BY q.person_name
-        `);
-        const qualRows = qRes.recordset.filter((q) => isQualificationOperationallyActive(q));
-
-        const {
-            computeQualificationCoverage,
-            computeWpsCoverageEsito,
-        } = require('../utils/qualificationCoverage');
+        // Qualifiche saldatori operative (loader unico condiviso con il Riesame) e match sul
+        // registry welder_9606 tramite il ponte commessa (COV-4).
+        const runQuery = (sql, params) => {
+            const r = pool.request();
+            Object.entries(params).forEach(([k, v]) => r.input(k, v));
+            return r.query(sql);
+        };
+        const qualRows = await loadWelderQualificationsForProject({
+            query: runQuery,
+            organizationId: orgId,
+            companyId: projectCompanyId,
+        });
 
         // Normalizza WPS: usa base_material_group se presente, altrimenti material_group
         // Usa welding_positions se presente, altrimenti position (campo legacy)
@@ -497,14 +481,7 @@ async function getCoverage(req, res) {
         // Costruisce righe di copertura range-aware per ogni WPS
         const rows = wpsRows.map(rawWps => {
             const wps = normalizeWps(rawWps);
-
-            const qualifiersWithDetail = qualRows.map(q => {
-                const detail = computeQualificationCoverage(q, wps);
-                return { q, detail };
-            }).filter(({ detail }) => detail.overall !== 'excluded');
-
-            const coverageDetails = qualifiersWithDetail.map(({ detail }) => detail);
-            const esito = computeWpsCoverageEsito(coverageDetails);
+            const { qualifiers: qualifiersWithDetail, esito } = computeWpsWelderCoverage(wps, qualRows);
 
             return {
                 wps_id:               wps.id,

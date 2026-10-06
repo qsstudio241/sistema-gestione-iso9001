@@ -7,15 +7,14 @@
 
 const { query } = require('../config/database');
 const {
-    computeQualificationCoverage,
-    computeWpsCoverageEsito,
-} = require('../utils/qualificationCoverage');
-const {
     buildTechnicalProfile,
     mergeWpsWithExtractedProfile,
     profileHasTechnicalData,
 } = require('../utils/extractedRequirementsProfile');
-const { isQualificationOperationallyActive } = require('./weldingCoordinatorAuth.service');
+const {
+    computeWpsWelderCoverage,
+    loadWelderQualificationsForProject,
+} = require('./capabilityCoverage/wpsWelderCoverage');
 const { buildCaseCoverageAdvisory } = require('./caseCoverageAdvisory.service');
 
 function semaforoExpiry(expiryDate, status) {
@@ -141,36 +140,11 @@ async function computeCaseProjectCoverage({ caseId, projectId, organizationId })
     );
     const wpsRows = wpsRes.recordset || [];
 
-    // Nessun filtro su approval_status (rimosso — v. qualifications.controller.js header):
-    // le qualifiche sono attive alla creazione. L'esclusione per scadenza certificato o
-    // conferma semestrale non superata resta obbligatoria per la copertura ISO 3834 ed è
-    // applicata qui via isQualificationOperationallyActive (expiry_date + next_confirmation_due).
-    const qParams = { organizationId };
-    let qWhere = `
-        q.organization_id = @organizationId
-        AND q.status NOT IN ('revocata','sospesa')
-        AND q.qualification_type LIKE '%9606%'
-    `;
-    if (project.company_id) {
-        qParams.projCompId = project.company_id;
-        qWhere += ' AND q.company_id = @projCompId';
-    }
-
-    const qualRes = await query(
-        `
-        SELECT q.id, q.person_name, q.person_code, q.qualification_type,
-               q.welding_process, q.material_group, q.position_range,
-               q.thickness_min_mm, q.thickness_max_mm, q.thickness_range, q.joint_type,
-               q.expiry_date, q.status, q.approval_status, q.next_confirmation_due,
-               c.name AS company_name
-        FROM qualifications q
-        LEFT JOIN companies c ON c.id = q.company_id
-        WHERE ${qWhere}
-        ORDER BY q.person_name
-        `,
-        qParams,
-    );
-    const qualRows = (qualRes.recordset || []).filter((q) => isQualificationOperationallyActive(q));
+    const qualRows = await loadWelderQualificationsForProject({
+        query,
+        organizationId,
+        companyId: project.company_id,
+    });
 
     const normalizeWps = (wps) => mergeWpsWithExtractedProfile(
         {
@@ -183,13 +157,7 @@ async function computeCaseProjectCoverage({ caseId, projectId, organizationId })
 
     const rows = wpsRows.map((rawWps) => {
         const wps = normalizeWps(rawWps);
-        const qualifiersWithDetail = qualRows.map((q) => {
-            const detail = computeQualificationCoverage(q, wps);
-            return { q, detail };
-        }).filter(({ detail }) => detail.overall !== 'excluded');
-
-        const coverageDetails = qualifiersWithDetail.map(({ detail }) => detail);
-        const esito = computeWpsCoverageEsito(coverageDetails);
+        const { qualifiers: qualifiersWithDetail, esito } = computeWpsWelderCoverage(wps, qualRows);
 
         return {
             wps_id: wps.id,
