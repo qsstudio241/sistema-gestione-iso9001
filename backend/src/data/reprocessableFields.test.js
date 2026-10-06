@@ -28,6 +28,8 @@ jest.mock('../utils/documentClassifier', () => ({
 }));
 
 const { REPROCESSABLE_FIELD_REGISTRY } = require('./reprocessableFields');
+const { listRulePacks } = require('../services/qualificationVerify');
+require('../services/qualificationVerify/registerDefaultPacks');
 const { REPROCESSABLE_FIELDS: QUALIFICATION_WRITE_FIELDS } = require('../services/qualificationIngest.service');
 const { WPQR_REPROCESSABLE_FIELDS } = require('../services/wpqrIngest.service');
 
@@ -36,10 +38,18 @@ const WRITE_WHITELISTS_BY_TABLE = {
     wpqr_records: WPQR_REPROCESSABLE_FIELDS,
 };
 
-describe('Registro campi rielaborabili — sincronia con le whitelist di scrittura (per tabella)', () => {
+const isVerify = (def) => def.kind === 'verify';
+const BACKFILL_REGISTRY = Object.fromEntries(
+    Object.entries(REPROCESSABLE_FIELD_REGISTRY).filter(([, def]) => !isVerify(def))
+);
+const VERIFY_REGISTRY = Object.fromEntries(
+    Object.entries(REPROCESSABLE_FIELD_REGISTRY).filter(([, def]) => isVerify(def))
+);
+
+describe('Registro campi rielaborabili — sincronia con le whitelist di scrittura (per tabella, voci backfill)', () => {
     it('ogni voce del registro esiste nella whitelist di scrittura della PROPRIA tabella', () => {
         const missing = [];
-        for (const [key, def] of Object.entries(REPROCESSABLE_FIELD_REGISTRY)) {
+        for (const [key, def] of Object.entries(BACKFILL_REGISTRY)) {
             const whitelist = WRITE_WHITELISTS_BY_TABLE[def.table];
             if (!whitelist || !whitelist[key]) missing.push(`${key} (tabella: ${def.table})`);
         }
@@ -48,7 +58,7 @@ describe('Registro campi rielaborabili — sincronia con le whitelist di scrittu
 
     it('ogni campo della whitelist qualifications esiste anche nel registro candidati', () => {
         const registryKeysForQualifications = new Set(
-            Object.entries(REPROCESSABLE_FIELD_REGISTRY)
+            Object.entries(BACKFILL_REGISTRY)
                 .filter(([, def]) => def.table === 'qualifications')
                 .map(([key]) => key)
         );
@@ -58,7 +68,7 @@ describe('Registro campi rielaborabili — sincronia con le whitelist di scrittu
 
     it('ogni campo della whitelist wpqr_records esiste anche nel registro candidati', () => {
         const registryKeysForWpqr = new Set(
-            Object.entries(REPROCESSABLE_FIELD_REGISTRY)
+            Object.entries(BACKFILL_REGISTRY)
                 .filter(([, def]) => def.table === 'wpqr_records')
                 .map(([key]) => key)
         );
@@ -68,7 +78,7 @@ describe('Registro campi rielaborabili — sincronia con le whitelist di scrittu
 
     it('la colonna reale (column, o key se assente) coincide tra registro e whitelist di scrittura', () => {
         const mismatches = [];
-        for (const [key, def] of Object.entries(REPROCESSABLE_FIELD_REGISTRY)) {
+        for (const [key, def] of Object.entries(BACKFILL_REGISTRY)) {
             const whitelist = WRITE_WHITELISTS_BY_TABLE[def.table];
             const writeDef = whitelist?.[key];
             if (!writeDef) continue; // già segnalato dal primo test
@@ -78,5 +88,66 @@ describe('Registro campi rielaborabili — sincronia con le whitelist di scrittu
             }
         }
         expect(mismatches).toEqual([]);
+    });
+});
+
+describe('Registro — voci kind:verify (sola lettura, nessuna scrittura)', () => {
+    const allWhitelistKeys = () => [
+        ...Object.keys(QUALIFICATION_WRITE_FIELDS),
+        ...Object.keys(WPQR_REPROCESSABLE_FIELDS),
+    ];
+
+    it('esiste almeno la voce verify_9606_1 e ogni voce senza kind è un backfill', () => {
+        expect(VERIFY_REGISTRY.verify_9606_1).toBeDefined();
+        for (const [key, def] of Object.entries(BACKFILL_REGISTRY)) {
+            expect(def.kind === undefined || def.kind === 'backfill').toBe(true);
+            expect(key).not.toMatch(/^verify_/);
+        }
+    });
+
+    it('(b) ogni voce verify ha una verifyFamily presente nel registry di verifica', () => {
+        const families = new Set(listRulePacks().map((p) => p.standardFamily));
+        const unknown = Object.values(VERIFY_REGISTRY)
+            .filter((def) => !families.has(def.verifyFamily))
+            .map((def) => `${def.key} (verifyFamily: ${def.verifyFamily})`);
+        expect(unknown).toEqual([]);
+    });
+
+    it('nessuna chiave verify compare in una whitelist di scrittura (né come chiave né come colonna)', () => {
+        const writeKeys = new Set(allWhitelistKeys());
+        const writeColumns = new Set([
+            ...Object.values(QUALIFICATION_WRITE_FIELDS),
+            ...Object.values(WPQR_REPROCESSABLE_FIELDS),
+        ].map((d) => d && d.column).filter(Boolean));
+        for (const key of Object.keys(VERIFY_REGISTRY)) {
+            expect(writeKeys.has(key)).toBe(false);
+            expect(writeColumns.has(key)).toBe(false);
+        }
+    });
+
+    it('ogni chiave "verify_*" del registro è kind:verify e viceversa', () => {
+        for (const [key, def] of Object.entries(REPROCESSABLE_FIELD_REGISTRY)) {
+            expect(key.startsWith('verify_')).toBe(isVerify(def));
+            expect(def.key).toBe(key);
+        }
+        for (const key of allWhitelistKeys()) expect(key.startsWith('verify_')).toBe(false);
+    });
+
+    it('le voci verify non portano attributi da backfill (column, candidateWhere, bundleColumns, filtri AI)', () => {
+        for (const def of Object.values(VERIFY_REGISTRY)) {
+            for (const forbidden of ['column', 'candidateWhere', 'bundleColumns', 'processWhitelist', 'jointTypeWhitelist', 'productTypeWhitelist']) {
+                expect(def[forbidden]).toBeUndefined();
+            }
+            expect(def.table).toBe('qualifications');
+            expect(def.module).toBe('qualifiche');
+            expect(typeof def.qualTypeLike).toBe('string');
+        }
+    });
+
+    it('(c) nessuna chiave duplicata tra i kind (una sola voce per chiave, nessuna collisione con le colonne backfill)', () => {
+        const keys = Object.values(REPROCESSABLE_FIELD_REGISTRY).map((d) => d.key);
+        expect(new Set(keys).size).toBe(keys.length);
+        const backfillColumns = new Set(Object.entries(BACKFILL_REGISTRY).map(([k, d]) => d.column || k));
+        for (const key of Object.keys(VERIFY_REGISTRY)) expect(backfillColumns.has(key)).toBe(false);
     });
 });
