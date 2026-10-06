@@ -505,7 +505,7 @@ function runPlateToPipe(view) {
     if (!isNum(min)) return [];
     const testTokens = positionTokens(view.welding_position_test);
     const { minMm, positionKnown } = rules2.computePlateToPipeMinDiameter({
-        testPosition: testTokens.length === 1 ? testTokens[0] : null,
+        testPosition: testTokens.length ? testTokens : null,
     });
     if (cmp(min, minMm) >= 0) return [];
     const where = positionKnown

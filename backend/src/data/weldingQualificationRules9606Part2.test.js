@@ -97,6 +97,13 @@ describe('ISO 9606-2 §5.3 b) — piastra -> tubo', () => {
     test('posizione non nota -> soglia più bassa (150), segnalata come non nota', () => {
         expect(r2.computePlateToPipeMinDiameter({})).toEqual({ minMm: 150, positionKnown: false });
     });
+
+    test('più posizioni: soglia più restrittiva (max delle prove)', () => {
+        expect(r2.computePlateToPipeMinDiameter({ testPosition: 'PF+PE' })).toEqual({ minMm: 500, positionKnown: true });
+        expect(r2.computePlateToPipeMinDiameter({ testPosition: ['PF', 'PE'] })).toEqual({ minMm: 500, positionKnown: true });
+        expect(r2.computePlateToPipeMinDiameter({ testPosition: 'PA+PB' })).toEqual({ minMm: 150, positionKnown: true });
+        expect(r2.computePlateToPipeMinDiameter({ testPosition: 'PA+PF' })).toEqual({ minMm: 500, positionKnown: true });
+    });
 });
 
 describe('ISO 9606-2 Tab. 6 — posizioni (matrice 10 colonne)', () => {

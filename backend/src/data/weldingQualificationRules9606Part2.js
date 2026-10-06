@@ -75,14 +75,17 @@ function computeQualifiedPipeDiameterRange({ testDiameterMm } = {}) {
 
 /**
  * §5.3 b): una prova su PIASTRA qualifica tubi con D ≥ 150 mm nelle posizioni PA, PB, PC;
- * D ≥ 500 mm in tutte le altre.
- * @param {{ testPosition?: string|null }} params
+ * D ≥ 500 mm in tutte le altre. Più posizioni di prova → soglia più restrittiva (il max).
+ * @param {{ testPosition?: string|string[]|null }} params
  * @returns {{ minMm: number, positionKnown: boolean }}
  */
 function computePlateToPipeMinDiameter({ testPosition } = {}) {
-    const pos = String(testPosition || '').trim().toUpperCase();
-    if (!pos) return { minMm: 150, positionKnown: false };
-    return { minMm: ['PA', 'PB', 'PC'].includes(pos) ? 150 : 500, positionKnown: true };
+    const tokens = (Array.isArray(testPosition) ? testPosition : String(testPosition || '').split(/[\s,;/+]+/))
+        .map((t) => String(t || '').trim().toUpperCase())
+        .filter(Boolean);
+    if (!tokens.length) return { minMm: 150, positionKnown: false };
+    const mins = tokens.map((pos) => (['PA', 'PB', 'PC'].includes(pos) ? 150 : 500));
+    return { minMm: Math.max(...mins), positionKnown: true };
 }
 
 /**

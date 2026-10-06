@@ -354,6 +354,17 @@ describe('CORR.PLATE_TO_PIPE — §5.3 b)', () => {
         none(plate('PF', 500), `${R}.PLATE_TO_PIPE`);
     });
 
+    test('più posizioni di prova (PF+PE): soglia 500, non il floor 150', () => {
+        const f = one(plate('PF+PE', 200), `${R}.PLATE_TO_PIPE`);
+        expect(f.severity).toBe(SEVERITY.INFO);
+        expect(f.message_it).toContain('500');
+        expect(f.expected_value).toEqual({ min: 500 });
+        none(plate('PF+PE', 500), `${R}.PLATE_TO_PIPE`);
+        none(plate('PA+PB', 150), `${R}.PLATE_TO_PIPE`);
+        const mixed = one(plate('PA+PF', 200), `${R}.PLATE_TO_PIPE`);
+        expect(mixed.expected_value).toEqual({ min: 500 });
+    });
+
     test('posizione di prova assente → soglia minima 150, indicata come «almeno»', () => {
         const f = one(plate(null, 100), `${R}.PLATE_TO_PIPE`);
         expect(f.message_it).toContain('almeno');
