@@ -46,6 +46,14 @@ const {
 // {qualTypeLike, processWhitelist} richiesta da selectReprocessCandidates).
 const FIELD_CONFIGS = REPROCESSABLE_FIELD_REGISTRY;
 
+function isVerifyField(def) {
+    return !!def && def.kind === 'verify';
+}
+
+function backfillFieldKeys() {
+    return Object.keys(FIELD_CONFIGS).filter((k) => !isVerifyField(FIELD_CONFIGS[k]));
+}
+
 function parseArgs(argv) {
     const out = { field: null, dryRun: false, limit: null, orgId: null };
     for (const arg of argv) {
@@ -61,11 +69,15 @@ async function main() {
     const { field, dryRun, limit, orgId } = parseArgs(process.argv.slice(2));
     if (!field) {
         console.error('Uso: node scripts/reprocess-qualifications.js --field=<nome_campo> [--dry-run] [--limit=N] [--org-id=N]');
-        console.error(`Campi disponibili: ${Object.keys(FIELD_CONFIGS).join(', ')}`);
+        console.error(`Campi disponibili: ${backfillFieldKeys().join(', ')}`);
         process.exit(1);
     }
     if (!FIELD_CONFIGS[field]) {
-        console.error(`Campo non configurato: ${field}. Disponibili: ${Object.keys(FIELD_CONFIGS).join(', ')}`);
+        console.error(`Campo non configurato: ${field}. Disponibili: ${backfillFieldKeys().join(', ')}`);
+        process.exit(1);
+    }
+    if (isVerifyField(FIELD_CONFIGS[field])) {
+        console.error(`"${field}" è una voce di VERIFICA (sola lettura), non un backfill: non eseguibile da questo script. Usare Fatturazione → Rielaborazioni (superadmin).`);
         process.exit(1);
     }
 
@@ -92,7 +104,7 @@ async function main() {
     await closePool();
 }
 
-module.exports = { selectReprocessCandidates, guessDocType, resolveCertificateFilePath, FIELD_CONFIGS };
+module.exports = { selectReprocessCandidates, guessDocType, resolveCertificateFilePath, FIELD_CONFIGS, isVerifyField, main };
 
 if (require.main === module) {
     main().catch(async (e) => {

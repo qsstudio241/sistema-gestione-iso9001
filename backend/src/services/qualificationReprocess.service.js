@@ -33,6 +33,7 @@ const { WPQR_REPROCESSABLE_FIELDS } = require('./wpqrIngest.service');
 const { createStagingRecord } = require('./ingestStaging.service');
 const { getReprocessableField } = require('../data/reprocessableFields');
 const { getTableAdapter } = require('../data/reprocessTableAdapters');
+const { countVerifyCandidates, runVerifyReport } = require('./qualificationVerify/verifyReprocess.service');
 
 /** Whitelist di scrittura finale, una per tabella — mai un'unica lista condivisa (vedi header). */
 const WRITE_WHITELISTS = {
@@ -214,6 +215,10 @@ async function countReprocessCandidates(fieldKey, { orgId = null } = {}) {
     if (!fieldDef) {
         throw new Error(`Campo non registrato: ${fieldKey}`);
     }
+    // Voci di verifica: sola lettura, ramo separato PRIMA della logica di backfill.
+    if (fieldDef.kind === 'verify') {
+        return countVerifyCandidates(fieldDef, { orgId });
+    }
     const candidates = await selectReprocessCandidates(fieldKey, fieldDef, { orgId });
 
     const byOrgMap = new Map();
@@ -244,6 +249,10 @@ async function runReprocessForField(fieldKey, { orgId = null, limit = DEFAULT_RU
     const fieldDef = getReprocessableField(fieldKey);
     if (!fieldDef) {
         throw new Error(`Campo non registrato: ${fieldKey}`);
+    }
+    // Voci di verifica: report in sola lettura (nessuna AI, nessun file, nessuna proposta).
+    if (fieldDef.kind === 'verify') {
+        return runVerifyReport(fieldDef, { orgId, limit });
     }
     const table = fieldDef.table || 'qualifications';
     const adapter = getTableAdapter(table);

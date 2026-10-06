@@ -30,10 +30,12 @@ async function listReprocessTasks(req, res) {
         const fields = listReprocessableFields();
 
         const tasks = await Promise.all(fields.map(async (fieldDef) => {
+            const kind = fieldDef.kind || 'backfill';
             try {
                 const { total, byOrganization } = await countReprocessCandidates(fieldDef.key, { orgId });
                 return {
                     key: fieldDef.key,
+                    kind,
                     label: fieldDef.label,
                     module: fieldDef.module,
                     table: fieldDef.table,
@@ -44,6 +46,7 @@ async function listReprocessTasks(req, res) {
                 logger.error('[ReprocessTasks] Errore conteggio candidati', { field: fieldDef.key, error: err.message });
                 return {
                     key: fieldDef.key,
+                    kind,
                     label: fieldDef.label,
                     module: fieldDef.module,
                     table: fieldDef.table,
@@ -54,7 +57,11 @@ async function listReprocessTasks(req, res) {
             }
         }));
 
-        const totalCandidates = tasks.reduce((sum, t) => sum + (t.candidate_count || 0), 0);
+        // Le voci di verifica sono uno stato dei record, non un backlog di dati AI mancanti:
+        // non entrano nel totale (il banner «dati AI mancanti» resta vero).
+        const totalCandidates = tasks
+            .filter((t) => t.kind !== 'verify')
+            .reduce((sum, t) => sum + (t.candidate_count || 0), 0);
         res.json({ success: true, tasks, total_candidates: totalCandidates });
     } catch (error) {
         logger.error('[ReprocessTasks] listReprocessTasks error', { error: error.message });
@@ -67,6 +74,8 @@ async function listReprocessTasks(req, res) {
  * campo del registro. Sincrona (nessun job/coda): pensata per i volumi
  * attuali (decine-centinaia di record) — vedi DEFAULT_RUN_LIMIT nel servizio.
  * Body opzionale: { organization_id, limit }.
+ * Per le voci `kind: 'verify'` risponde con un report in sola lettura (nessuna
+ * scrittura, nessuna AI, nessun file): vedi qualificationVerify/verifyReprocess.service.js.
  */
 async function runReprocessTask(req, res) {
     try {

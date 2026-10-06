@@ -149,3 +149,74 @@ describe('runReprocessTask — POST /admin/reprocess-tasks/:key/run', () => {
         expect(res.json).toHaveBeenCalledWith(expect.objectContaining({ success: false, error: 'Pipeline AI non disponibile' }));
     });
 });
+
+describe('voci kind:verify (sola lettura)', () => {
+    const VERIFY_FIELD = {
+        key: 'verify_9606_1',
+        kind: 'verify',
+        label: 'Verifica qualifiche ISO 9606-1 vs norma',
+        module: 'qualifiche',
+        table: 'qualifications',
+        qualTypeLike: '%9606%',
+        verifyFamily: '9606-1',
+    };
+
+    it('GET espone kind (backfill di default) e NON somma le voci verify in total_candidates', async () => {
+        listReprocessableFields.mockReturnValue([TRANSFER_MODE_FIELD, VERIFY_FIELD]);
+        countReprocessCandidates
+            .mockResolvedValueOnce({ total: 4, byOrganization: [] })
+            .mockResolvedValueOnce({ total: 9, byOrganization: [{ organization_id: 1001, count: 9 }] });
+
+        const res = mockRes();
+        await listReprocessTasks({ query: {} }, res);
+
+        const payload = res.json.mock.calls[0][0];
+        expect(payload.total_candidates).toBe(4);
+        expect(payload.tasks[0]).toEqual(expect.objectContaining({ key: 'transfer_mode', kind: 'backfill', candidate_count: 4 }));
+        expect(payload.tasks[1]).toEqual(expect.objectContaining({ key: 'verify_9606_1', kind: 'verify', candidate_count: 9 }));
+    });
+
+    it('errore di conteggio su una voce verify: candidate_count 0 + error, kind mantenuto, totale invariato', async () => {
+        listReprocessableFields.mockReturnValue([TRANSFER_MODE_FIELD, VERIFY_FIELD]);
+        countReprocessCandidates
+            .mockResolvedValueOnce({ total: 2, byOrganization: [] })
+            .mockRejectedValueOnce(new Error('schema non leggibile'));
+
+        const res = mockRes();
+        await listReprocessTasks({ query: {} }, res);
+
+        const payload = res.json.mock.calls[0][0];
+        expect(res.status).not.toHaveBeenCalledWith(500);
+        expect(payload.total_candidates).toBe(2);
+        expect(payload.tasks[1]).toEqual(expect.objectContaining({ key: 'verify_9606_1', kind: 'verify', candidate_count: 0, error: 'schema non leggibile' }));
+    });
+
+    it('il filtro organization_id (multi-tenant) arriva alla voce verify', async () => {
+        listReprocessableFields.mockReturnValue([VERIFY_FIELD]);
+        countReprocessCandidates.mockResolvedValueOnce({ total: 1, byOrganization: [] });
+        await listReprocessTasks({ query: { organization_id: '1001' } }, mockRes());
+        expect(countReprocessCandidates).toHaveBeenCalledWith('verify_9606_1', { orgId: 1001 });
+    });
+
+    it('POST run su una voce verify restituisce il report kind:verify (stessa funzione del servizio)', async () => {
+        getReprocessableField.mockReturnValue(VERIFY_FIELD);
+        const report = {
+            success: true,
+            kind: 'verify',
+            field: 'verify_9606_1',
+            recordsChecked: 10,
+            recordsWithWarnings: 1,
+            findingsByCode: { 'WQ9606_1.CORR.THK_BW': 1 },
+            notVerifiable: { dato_mancante: 3, fonte_mancante: 0 },
+            items: [{ id: 5, organization_id: 1001, person_name: 'Mario Rossi', certificate_number: 'C-5', findings: [] }],
+            hasMore: false,
+        };
+        runReprocessForField.mockResolvedValueOnce(report);
+
+        const res = mockRes();
+        await runReprocessTask({ params: { key: 'verify_9606_1' }, body: { organization_id: '1001' }, user: { user_id: 1 } }, res);
+
+        expect(runReprocessForField).toHaveBeenCalledWith('verify_9606_1', { orgId: 1001, limit: undefined });
+        expect(res.json).toHaveBeenCalledWith(expect.objectContaining(report));
+    });
+});
