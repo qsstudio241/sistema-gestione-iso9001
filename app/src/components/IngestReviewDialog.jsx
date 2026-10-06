@@ -1,12 +1,14 @@
 /**
  * IngestReviewDialog — revisione campi estratti pre-commit (IG-3)
  */
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useRef, useCallback } from "react";
+import apiService from "../services/apiService";
 import { getSchemaForDocType } from "../data/documentTypeSchemas";
 import { getApplicableWelderFields } from "../data/weldingQualificationRules9606";
 import { repairTextEncoding } from "../utils/textEncodingRepair";
 import IngestDialogShell from "./IngestDialogShell";
 import IngestSourcePreview from "./IngestSourcePreview";
+import QualificationVerifyPanel from "./QualificationVerifyPanel";
 import "./IngestReviewDialog.css";
 
 const CONFIDENCE_LABELS = {
@@ -182,6 +184,147 @@ function FieldInput({ field, value, onChange }) {
   return <input {...common} type="text" />;
 }
 
+/** Tipi documento ingest per cui esiste la verifica vs norma (VQ-9). */
+const VERIFIABLE_DOC_TYPES = new Set(["patentino_saldatore", "qualifica_14732"]);
+
+export function isVerifiableDocType(docType) {
+  return VERIFIABLE_DOC_TYPES.has(docType);
+}
+
+const VERIFY_IDLE = Object.freeze({ status: "idle", result: null, errorMessage: "" });
+const VERIFY_MAX_STRING = 5000;
+const VERIFY_MAX_ARRAY = 50;
+
+function isVerifyScalar(v) {
+  if (typeof v === "string") return v.trim() !== "" && v.length <= VERIFY_MAX_STRING;
+  if (typeof v === "number") return Number.isFinite(v);
+  return typeof v === "boolean";
+}
+
+/**
+ * Payload `fields` per `POST /qualifications/verify`: solo scalari (o array di scalari) non vuoti,
+ * entro i limiti accettati dal controller. Se `keys` e' passato restringe ai soli campi rilevanti.
+ */
+export function buildVerifyFields(source, keys = null) {
+  const out = {};
+  const entries = keys ? keys.map((k) => [k, source?.[k]]) : Object.entries(source || {});
+  for (const [k, v] of entries) {
+    if (Array.isArray(v)) {
+      const items = v.filter(isVerifyScalar);
+      if (items.length > 0 && items.length <= VERIFY_MAX_ARRAY) out[k] = items;
+    } else if (isVerifyScalar(v)) {
+      out[k] = v;
+    }
+  }
+  return out;
+}
+
+/**
+ * Stato della verifica qualifica vs norma (VQ-9). La verifica NON blocca mai nulla: gli errori
+ * diventano stato `error`/`offline` del pannello. Le chiamate partono solo da `run`/`schedule`
+ * (blur con debounce o pulsante), mai a ogni tasto; una stessa combinazione gia' verificata non
+ * viene richiesta di nuovo e le risposte superate da una richiesta piu' recente sono ignorate.
+ * @returns {{status: string, result: object|null, errorMessage: string,
+ *   run: Function, schedule: Function, retry: Function, seed: Function, reset: Function}}
+ */
+export function useQualificationVerify({ debounceMs = 600 } = {}) {
+  const [state, setState] = useState(VERIFY_IDLE);
+  const seqRef = useRef(0);
+  const timerRef = useRef(null);
+  const lastSigRef = useRef(null);
+  const pendingSigRef = useRef(null);
+  const lastArgsRef = useRef(null);
+
+  const clearTimer = useCallback(() => {
+    if (timerRef.current) {
+      clearTimeout(timerRef.current);
+      timerRef.current = null;
+    }
+  }, []);
+
+  useEffect(() => () => {
+    clearTimer();
+    seqRef.current += 1;
+  }, [clearTimer]);
+
+  const run = useCallback(async (fields, qualificationType, { force = false } = {}) => {
+    clearTimer();
+    const payload = buildVerifyFields(fields);
+    const type = typeof qualificationType === "string" ? qualificationType.trim() : "";
+    if (Object.keys(payload).length === 0) return;
+    lastArgsRef.current = { fields, qualificationType };
+    const sig = JSON.stringify([payload, type]);
+    if (!force && (sig === lastSigRef.current || sig === pendingSigRef.current)) return;
+
+    const seq = ++seqRef.current;
+    pendingSigRef.current = sig;
+    if (typeof navigator !== "undefined" && navigator.onLine === false) {
+      pendingSigRef.current = null;
+      setState((prev) => ({ ...prev, status: "offline", errorMessage: "" }));
+      return;
+    }
+    setState((prev) => ({ ...prev, status: "loading", errorMessage: "" }));
+    try {
+      const res = await apiService.verifyQualification(payload, { qualificationType: type || undefined });
+      if (seq !== seqRef.current) return;
+      pendingSigRef.current = null;
+      const verification = res?.verification ?? res?.data?.verification ?? null;
+      if (!verification) throw new Error("Risposta di verifica non valida");
+      lastSigRef.current = sig;
+      setState({ status: "ready", result: verification, errorMessage: "" });
+    } catch (err) {
+      if (seq !== seqRef.current) return;
+      pendingSigRef.current = null;
+      if (err?.code === "OFFLINE") {
+        setState((prev) => ({ ...prev, status: "offline", errorMessage: "" }));
+      } else {
+        setState((prev) => ({
+          ...prev,
+          status: "error",
+          errorMessage: err?.message || "Errore durante la verifica",
+        }));
+      }
+    }
+  }, [clearTimer]);
+
+  const schedule = useCallback((getArgs) => {
+    clearTimer();
+    timerRef.current = setTimeout(() => {
+      timerRef.current = null;
+      const args = typeof getArgs === "function" ? getArgs() : null;
+      if (args) run(args.fields, args.qualificationType);
+    }, debounceMs);
+  }, [clearTimer, debounceMs, run]);
+
+  const retry = useCallback(() => {
+    const args = lastArgsRef.current;
+    if (args) run(args.fields, args.qualificationType, { force: true });
+  }, [run]);
+
+  const seed = useCallback((verification, fields, qualificationType) => {
+    clearTimer();
+    seqRef.current += 1;
+    const payload = buildVerifyFields(fields);
+    const type = typeof qualificationType === "string" ? qualificationType.trim() : "";
+    lastArgsRef.current = { fields, qualificationType };
+    lastSigRef.current = JSON.stringify([payload, type]);
+    pendingSigRef.current = null;
+    setState({ status: "ready", result: verification, errorMessage: "" });
+  }, [clearTimer]);
+
+  const reset = useCallback(() => {
+    clearTimer();
+    seqRef.current += 1;
+    lastSigRef.current = null;
+    pendingSigRef.current = null;
+    lastArgsRef.current = null;
+    // Identita' stabile quando e' gia' idle: reset chiamato a ogni render non innesca re-render.
+    setState(VERIFY_IDLE);
+  }, [clearTimer]);
+
+  return { ...state, run, schedule, retry, seed, reset };
+}
+
 export default function IngestReviewDialog({
   open,
   docType,
@@ -193,6 +336,8 @@ export default function IngestReviewDialog({
   fieldConfidence = {},
   warnings = [],
   qualificationType,
+  verification = null,
+  onVerificationChange,
   onConfirm,
   onReject,
   onClose,
@@ -200,6 +345,13 @@ export default function IngestReviewDialog({
 }) {
   const schema = useMemo(() => getSchemaForDocType(docType), [docType]);
   const [form, setForm] = useState({});
+  const verify = useQualificationVerify();
+  const verifiable = isVerifiableDocType(docType);
+  const formRef = useRef(form);
+  formRef.current = form;
+  const verifyInitRef = useRef({ verification, qualificationType, verifiable });
+  verifyInitRef.current = { verification, qualificationType, verifiable };
+  const { seed: seedVerify, run: runVerify, reset: resetVerify } = verify;
   // Campi confermati dall'AI (alta confidenza) che l'operatore ha scelto di modificare a mano.
   const [editingFields, setEditingFields] = useState(() => new Set());
 
@@ -211,8 +363,41 @@ export default function IngestReviewDialog({
       }
       setForm(cleaned);
       setEditingFields(new Set());
+      const init = verifyInitRef.current;
+      if (!init.verifiable) {
+        resetVerify();
+      } else if (init.verification) {
+        seedVerify(init.verification, cleaned, init.qualificationType);
+      } else {
+        runVerify(cleaned, init.qualificationType);
+      }
+    } else {
+      resetVerify();
     }
-  }, [open, fields]);
+  }, [open, fields, seedVerify, runVerify, resetVerify]);
+
+  useEffect(() => {
+    if (verify.status === "ready" && verify.result && onVerificationChange) {
+      onVerificationChange(verify.result);
+    }
+    // onVerificationChange e' volutamente fuori dalle dipendenze: notifica solo al cambio di esito.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [verify.status, verify.result]);
+
+  const verifiedMessages = useMemo(() => {
+    if (verify.status !== "ready" || !verify.result) return null;
+    const msgs = (verify.result.findings || []).map((f) => f?.message_it).filter(Boolean);
+    return msgs.length > 0 ? new Set(msgs) : null;
+  }, [verify.status, verify.result]);
+  const visibleWarnings = verifiedMessages
+    ? warnings.filter((w) => !verifiedMessages.has(w))
+    : warnings;
+
+  // Verifica solo al blur (mai a ogni tasto); stesso insieme di campi gia' verificato = nessuna chiamata.
+  function handleFieldsBlur() {
+    if (!verifiable) return;
+    verify.schedule(() => ({ fields: formRef.current, qualificationType }));
+  }
 
   const isWelderQualification = (schema?.id || docType) === "patentino_saldatore";
   // Diametro tubo (Tabella 7 ISO 9606-1): pertinente solo se il prodotto testato
@@ -301,15 +486,26 @@ export default function IngestReviewDialog({
       contentClassName="ingest-review__form-pane"
       renderContent={() => (
         <>
-          {warnings.length > 0 && (
+          {visibleWarnings.length > 0 && (
             <div className="ingest-review__warnings">
-              {warnings.map((w, i) => (
+              {visibleWarnings.map((w, i) => (
                 <div key={i} className="ingest-review__warning">{"\u26A0\uFE0F"} {w}</div>
               ))}
             </div>
           )}
 
-          <div className="ingest-review__fields">
+          {verifiable && verify.status !== "idle" && (
+            <div style={{ marginBottom: 12 }} data-testid="ingest-verify">
+              <QualificationVerifyPanel
+                result={verify.result}
+                status={verify.status}
+                errorMessage={verify.errorMessage}
+                onRetry={verify.retry}
+              />
+            </div>
+          )}
+
+          <div className="ingest-review__fields" onBlur={handleFieldsBlur}>
             {schemaFields.map((field) => {
               const notApplicable = isFieldNotApplicable(field);
               const confidence = fieldConfidence[field.key];
