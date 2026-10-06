@@ -1,10 +1,12 @@
 # DEPUTYTASK_WPQR_NO_EXPIRY — togliere scadenza calendario da WPQR
 
-**Stato:** APERTO  
+**Stato:** CHIUSO — TEST OK (PR draft, merge umano)  
 **Aperto:** 06/10/2026  
+**Chiuso:** 06/10/2026  
 **Piano:** decisione prodotto (bot ProgettoISO / voice) — ISO 15614/15613/14555 non prevedono scadenza tipo patentino  
 **Rischio:** **Alto** — migrazione `destructive` su `wpqr_records`. Merge solo con **OK esplicito del committente**. Cloud Agent non mergia, non undraft, non `bugbot run`.  
-**Branch:** `cursor/wpqr-drop-expiry-date-d8ba`
+**Branch:** `cursor/wpqr-drop-expiry-date-d8ba`  
+**PR:** https://github.com/qsstudio241/sistema-gestione-iso9001/pull/712
 
 ---
 
