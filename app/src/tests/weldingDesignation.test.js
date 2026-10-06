@@ -3,7 +3,12 @@
  * backend/src/utils/weldingDesignation.test.js).
  */
 import { describe, it, expect } from 'vitest';
-import { buildWelderDesignation, parseWelderQualificationDesignation, resolvePrintedDesignation } from '../utils/weldingDesignation.js';
+import {
+  buildWelderDesignation,
+  parseWelderQualificationDesignation,
+  resolvePrintedDesignation,
+  resolveTestThicknessByJoint,
+} from '../utils/weldingDesignation.js';
 
 describe('buildWelderDesignation', () => {
   it('compone la designazione completa con spessore singolo e tubo', () => {
@@ -77,6 +82,27 @@ describe('parseWelderQualificationDesignation (FE)', () => {
     const bw = parseWelderQualificationDesignation('ISO 9606-1: 141 P BW FM1 s10 PA ss nb');
     expect(bw.joint_type).toBe('BW');
     expect(bw.thickness_s_test_mm).toBe(10);
+  });
+
+  it('BW con token t: spessore depositato in s; FW con t resta in t', () => {
+    const bw = parseWelderQualificationDesignation('ISO 9606-1: 141 P BW FM1 t10 D60 PA ss nb');
+    expect(bw.thickness_s_test_mm).toBe(10);
+    expect(bw.thickness_t_test_mm).toBeNull();
+    const fw = parseWelderQualificationDesignation('ISO 9606-1: 135 P FW FM1 t8 PB ss mb');
+    expect(fw.thickness_t_test_mm).toBe(8);
+    expect(fw.thickness_s_test_mm).toBeNull();
+  });
+
+  it('certificato con ENTRAMBI s e t: salva entrambi', () => {
+    const bw = parseWelderQualificationDesignation('ISO 9606-1: 141 P BW FM1 s10 t12 PA ss nb');
+    expect(bw.thickness_s_test_mm).toBe(10);
+    expect(bw.thickness_t_test_mm).toBe(12);
+  });
+
+  it('resolveTestThicknessByJoint: nessuna deduzione se il giunto e\' sconosciuto', () => {
+    expect(resolveTestThicknessByJoint({ joint_type: 'BW', t: 10 })).toEqual({ s: 10, t: null });
+    expect(resolveTestThicknessByJoint({ joint_type: 'FW', s: 8 })).toEqual({ s: null, t: 8 });
+    expect(resolveTestThicknessByJoint({ joint_type: null, t: 10 })).toEqual({ s: null, t: 10 });
   });
 
   it('resolvePrintedDesignation conserva la riga certificato', () => {
