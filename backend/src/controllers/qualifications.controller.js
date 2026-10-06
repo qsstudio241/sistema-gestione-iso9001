@@ -1220,6 +1220,7 @@ async function uploadBatch(req, res) {
                         person_name: extracted.person_name,
                         qualification_type: extracted.qualification_type,
                         warnings: extracted.warnings || [],
+                        verification: extracted.verification,
                     });
                     continue;
                 }
@@ -1249,6 +1250,7 @@ async function uploadBatch(req, res) {
                     qualification_type: extracted.qualification_type,
                     confidence: extracted.confidence,
                     warnings: extracted.warnings || [],
+                    verification: extracted.verification,
                 };
             } catch (fileErr) {
                 const errMsg = describeIngestFileError(fileErr);
