@@ -99,6 +99,30 @@ function resolvePrintedDesignation(printed, computeFields = {}) {
     return buildWelderQualificationDesignation(computeFields);
 }
 
+/**
+ * Spessore della PROVA per tipo di giunto (ISO 9606-1): BW -> spessore depositato `s`
+ * (Tab. 6 §5.7), FW -> spessore del materiale `t` (Tab. 8). Un valore finito nella
+ * colonna "sbagliata" per il giunto noto viene spostato solo se la colonna corretta e'
+ * vuota; se il certificato riporta ENTRAMBI s e t restano entrambi. Giunto assente o
+ * diverso da BW/FW: nessuna deduzione (valori invariati).
+ *
+ * @param {{ joint_type?: any, s?: any, t?: any }} input
+ * @returns {{ s: number|null, t: number|null }}
+ */
+function resolveTestThicknessByJoint({ joint_type: jointType, s, t } = {}) {
+    let sNum = num(s);
+    let tNum = num(t);
+    const joint = jointType == null ? '' : String(jointType).trim().toUpperCase();
+    if (joint === 'BW' && sNum == null && tNum != null) {
+        sNum = tNum;
+        tNum = null;
+    } else if (joint === 'FW' && tNum == null && sNum != null) {
+        tNum = sNum;
+        sNum = null;
+    }
+    return { s: sNum, t: tNum };
+}
+
 const POSITION_TOKEN_RE = /^(PA|PB|PC|PD|PE|PF|PG|PH|PJ|H-L045|J-L045)$/i;
 /** ISO 4063 in riga stampata: 135, 141, o 135S (processo + suffisso trasferimento). */
 const PROCESS_TOKEN_RE = /^\d{2,3}[A-Z]?$/i;
@@ -237,6 +261,14 @@ function parseWelderQualificationDesignation(text) {
 
     if (leftover.length) parsed.weld_details = leftover.join(' ');
 
+    const thk = resolveTestThicknessByJoint({
+        joint_type: parsed.joint_type,
+        s: parsed.thickness_s_test_mm,
+        t: parsed.thickness_t_test_mm,
+    });
+    parsed.thickness_s_test_mm = thk.s;
+    parsed.thickness_t_test_mm = thk.t;
+
     const hasCore = parsed.welding_process_test && parsed.product_type && parsed.joint_type;
     if (!hasCore) return null;
     return parsed;
@@ -269,4 +301,5 @@ module.exports = {
     resolvePrintedDesignation,
     parseWelderQualificationDesignation,
     designationFieldsToIngest,
+    resolveTestThicknessByJoint,
 };
