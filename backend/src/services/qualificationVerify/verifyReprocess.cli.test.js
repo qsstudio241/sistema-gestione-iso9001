@@ -47,6 +47,13 @@ describe('reprocess-qualifications.js — voci verify', () => {
         expect(getPool).not.toHaveBeenCalled();
     });
 
+    test('--field=verify_9606_2 è rifiutato come verify_9606_1, senza connettersi al DB', async () => {
+        const out = await runCli(['--field=verify_9606_2']);
+        expect(out.exit).toBe('exit:1');
+        expect(out.errors.join('\n')).toMatch(/VERIFICA \(sola lettura\), non un backfill/);
+        expect(getPool).not.toHaveBeenCalled();
+    });
+
     test('--dry-run non aggira il rifiuto', async () => {
         const out = await runCli(['--field=verify_9606_1', '--dry-run']);
         expect(out.exit).toBe('exit:1');
@@ -69,6 +76,7 @@ describe('reprocess-qualifications.js — voci verify', () => {
 
     test('isVerifyField distingue verify da backfill', () => {
         expect(cli.isVerifyField(cli.FIELD_CONFIGS.verify_9606_1)).toBe(true);
+        expect(cli.isVerifyField(cli.FIELD_CONFIGS.verify_9606_2)).toBe(true);
         expect(cli.isVerifyField(cli.FIELD_CONFIGS.transfer_mode)).toBe(false);
     });
 });

@@ -7,6 +7,7 @@
  */
 
 jest.mock('../config/database', () => ({ query: jest.fn(), getPool: jest.fn() }));
+jest.mock('./qualificationVerify/registerDefaultPacks', () => ({ ensureDefaultPacks: () => {} }));
 jest.mock('../utils/logger', () => ({ info: jest.fn(), error: jest.fn(), warn: jest.fn(), debug: jest.fn() }));
 jest.mock('./documentIngestPipeline.service', () => ({ runDocumentIngest: jest.fn() }));
 jest.mock('./ingestStaging.service', () => ({ createStagingRecord: jest.fn() }));
@@ -39,6 +40,8 @@ const {
     selectReprocessCandidates,
 } = require('./qualificationReprocess.service');
 const { getReprocessableField } = require('../data/reprocessableFields');
+const { registerRulePack } = require('./qualificationVerify/verifyRegistry');
+const { FAMILY, SEVERITY, STATUS, DIRECTION, TEXT_STATUS, makeFinding } = require('./qualificationVerify/findingTypes');
 const { CORE_COLUMNS, OPTIONAL_COLUMNS, resetColumnsCache } = require('./qualificationVerify/verifyRecordLoader');
 
 const row = (id, org) => ({
@@ -50,6 +53,33 @@ const row = (id, org) => ({
     standard_ref: 'ISO 9606-1:2017',
     joint_type: 'BW',
     status: 'valida',
+});
+
+const TEST_CODE = 'QVTEST2.CORR.THK_MAX';
+registerRulePack({
+    id: 'vq10.test.pack',
+    standardFamily: '9606-2',
+    editions: ['2004'],
+    profiles: ['9606-2:BW'],
+    rules: [{
+        id: 'vq10.test.thkMax',
+        family: FAMILY.CORRETTEZZA,
+        codes: [TEST_CODE],
+        run: (view) => (view.thickness_max_mm != null && view.thickness_max_mm > 8
+            ? [makeFinding({
+                code: TEST_CODE,
+                family: FAMILY.CORRETTEZZA,
+                severity: SEVERITY.WARN,
+                status: STATUS.VERIFICABILE,
+                field: 'thickness_max_mm',
+                direction: DIRECTION.OVER_CLAIM,
+                read_value: view.thickness_max_mm,
+                expected_value: 8,
+                source: { norm: 'ISO 9606-2', edition: '2004', clause: '§5.7 Tab. 3', text_status: TEXT_STATUS.MD_INTEGRALE, ref: 'test' },
+                message_it: 'Spessore massimo oltre la norma (§5.7 Tab. 3).',
+            })]
+            : []),
+    }],
 });
 
 function mockDb(rows) {
@@ -70,6 +100,40 @@ beforeEach(() => {
 describe('voce verify_9606_1 nel servizio di rielaborazione', () => {
     it('la voce è registrata come kind:verify', () => {
         expect(getReprocessableField('verify_9606_1')).toMatchObject({ kind: 'verify', table: 'qualifications', verifyFamily: '9606-1' });
+    });
+
+    it('la voce verify_9606_2 è registrata come kind:verify sulla famiglia 9606-2', () => {
+        expect(getReprocessableField('verify_9606_2')).toMatchObject({ kind: 'verify', table: 'qualifications', verifyFamily: '9606-2' });
+    });
+
+    it('verify_9606_2: sola lettura, valuta solo i record 9606-2 (i 9606-1 della stessa query sono scartati)', async () => {
+        const row2 = (id, org) => ({
+            ...row(id, org),
+            qualification_type: 'Saldatore ISO 9606-2',
+            standard_ref: 'EN ISO 9606-2:2004',
+            thickness_t_test_mm: 4,
+            thickness_min_mm: 2,
+            thickness_max_mm: 12,
+        });
+        mockDb([row(1, 1001), row2(2, 1001), row2(3, 1002)]);
+        const count = await countReprocessCandidates('verify_9606_2');
+        expect(count.total).toBe(2);
+        const other = await countReprocessCandidates('verify_9606_1');
+        expect(other.total).toBe(0);
+        const out = await runReprocessForField('verify_9606_2', { limit: 50 });
+        expect(out).toMatchObject({ success: true, kind: 'verify', field: 'verify_9606_2', recordsChecked: 2 });
+        expect(runDocumentIngest).not.toHaveBeenCalled();
+        expect(createStagingRecord).not.toHaveBeenCalled();
+        for (const [sqlText] of query.mock.calls) {
+            expect(sqlText.trim()).toMatch(/^SELECT\b/i);
+            expect(sqlText).not.toMatch(/\b(?:INSERT|UPDATE|DELETE|MERGE)\b/i);
+        }
+    });
+
+    it('selectReprocessCandidates (backfill) rifiuta anche verify_9606_2', async () => {
+        await expect(selectReprocessCandidates('verify_9606_2', getReprocessableField('verify_9606_2')))
+            .rejects.toThrow(/non rielaborabile/);
+        expect(query).not.toHaveBeenCalled();
     });
 
     it('countReprocessCandidates: ramo verify, forma { total, byOrganization }, solo SELECT', async () => {
