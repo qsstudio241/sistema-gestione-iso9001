@@ -30,6 +30,14 @@ jest.mock('../services/companyAccess.service', () => ({
   sendAccessDenied: jest.fn((res, denied) => res.status(denied.status).json(denied.body)),
 }));
 
+jest.mock('../services/qualificationIngest.service', () => ({
+  extractQualificationFromPdf: jest.fn(),
+}));
+
+jest.mock('../services/ingestStaging.service', () => ({
+  createStagingRecord: jest.fn(),
+}));
+
 const { getPool, query } = require('../config/database');
 const { assertMutatingAllowed } = require('../services/companyAccess.service');
 const {
@@ -763,5 +771,114 @@ describe('qualifications.controller — updateConfirmation', () => {
 
     expect(res.statusCode).toBe(400);
     expect(res.body.code).toBe('INVALID_DATE');
+  });
+});
+
+describe('qualifications.controller — uploadBatch inoltra verification (additivo)', () => {
+  const fs = require('fs');
+  const { extractQualificationFromPdf } = require('../services/qualificationIngest.service');
+  const { createStagingRecord } = require('../services/ingestStaging.service');
+  const { uploadBatch } = require('./qualifications.controller');
+
+  const VERIFICATION = {
+    standard: { family: 'ISO 9606-1' },
+    findings: [{ code: 'X', severity: 'warn' }],
+    summary: { warn: 1 },
+  };
+
+  function makeReqRes() {
+    const req = {
+      body: { company_id: '5', doc_type: 'patentino_saldatore' },
+      files: [{ originalname: 'p.pdf', path: '/tmp/p.pdf', mimetype: 'application/pdf', size: 10 }],
+      user: { organization_id: 1, user_id: 42 },
+    };
+    const res = {
+      statusCode: 200,
+      body: null,
+      status(code) { this.statusCode = code; return this; },
+      json(payload) { this.body = payload; return this; },
+    };
+    return { req, res };
+  }
+
+  const pendingExtracted = (extra = {}) => ({
+    status: 'pending_review',
+    fields: { person_name: 'Mario Rossi' },
+    field_confidence: {},
+    qualification_type: 'Saldatore ISO 9606-1',
+    confidence: 'ai',
+    warnings: ['avviso'],
+    ...extra,
+  });
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+    jest.spyOn(fs, 'readFileSync').mockReturnValue(Buffer.from('pdf'));
+    jest.spyOn(fs, 'unlinkSync').mockImplementation(() => {});
+    createStagingRecord.mockResolvedValue(99);
+  });
+
+  afterEach(() => {
+    jest.restoreAllMocks();
+  });
+
+  it('pending_review: include verification prodotta dall\'ingest, senza toccare le chiavi esistenti', async () => {
+    extractQualificationFromPdf.mockResolvedValue(pendingExtracted({ verification: VERIFICATION }));
+    const { req, res } = makeReqRes();
+
+    await uploadBatch(req, res);
+
+    const entry = res.body.results[0];
+    expect(entry.status).toBe('pending_review');
+    expect(entry.verification).toEqual(VERIFICATION);
+    expect(entry).toEqual(expect.objectContaining({
+      fileName: 'p.pdf',
+      staging_id: 99,
+      fields: { person_name: 'Mario Rossi' },
+      qualification_type: 'Saldatore ISO 9606-1',
+      confidence: 'ai',
+      warnings: ['avviso'],
+    }));
+    expect(res.body.uploaded).toBe(1);
+  });
+
+  it('pending_review: senza verification dall\'ingest la chiave è assente nel JSON (nessuna rottura)', async () => {
+    extractQualificationFromPdf.mockResolvedValue(pendingExtracted());
+    const { req, res } = makeReqRes();
+
+    await uploadBatch(req, res);
+
+    const entry = JSON.parse(JSON.stringify(res.body.results[0]));
+    expect(entry.status).toBe('pending_review');
+    expect(entry).not.toHaveProperty('verification');
+    expect(entry.warnings).toEqual(['avviso']);
+  });
+
+  it('pending_review: verification null (ingest senza esito) resta null', async () => {
+    extractQualificationFromPdf.mockResolvedValue(pendingExtracted({ verification: null }));
+    const { req, res } = makeReqRes();
+
+    await uploadBatch(req, res);
+
+    expect(res.body.results[0].verification).toBeNull();
+  });
+
+  it('duplicate: inoltra verification accanto a warnings', async () => {
+    extractQualificationFromPdf.mockResolvedValue({
+      status: 'duplicate',
+      person_name: 'Mario Rossi',
+      qualification_type: 'Saldatore ISO 9606-1',
+      warnings: ['Duplicato'],
+      verification: VERIFICATION,
+    });
+    const { req, res } = makeReqRes();
+
+    await uploadBatch(req, res);
+
+    const entry = res.body.results[0];
+    expect(entry.status).toBe('duplicate');
+    expect(entry.verification).toEqual(VERIFICATION);
+    expect(entry.warnings).toEqual(['Duplicato']);
+    expect(createStagingRecord).not.toHaveBeenCalled();
   });
 });

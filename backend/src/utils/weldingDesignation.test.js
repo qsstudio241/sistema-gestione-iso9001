@@ -3,6 +3,7 @@ const {
     parseWelderQualificationDesignation,
     designationFieldsToIngest,
     resolvePrintedDesignation,
+    resolveTestThicknessByJoint,
 } = require('./weldingDesignation');
 
 describe('buildWelderQualificationDesignation', () => {
@@ -86,6 +87,37 @@ describe('parseWelderQualificationDesignation', () => {
         expect(parsed.weld_details).toBe('ss nb');
     });
 
+    it('BW con token t (convenzione designazione): spessore depositato in s, non in t', () => {
+        const parsed = parseWelderQualificationDesignation('ISO 9606-1: 141 P BW FM1 t10 D60 PA ss nb');
+        expect(parsed.joint_type).toBe('BW');
+        expect(parsed.thickness_s_test_mm).toBe(10);
+        expect(parsed.thickness_t_test_mm).toBeNull();
+        const fields = designationFieldsToIngest(parsed);
+        expect(fields.thickness_s_test_mm).toBe(10);
+        expect(fields.thickness_t_test_mm).toBeUndefined();
+    });
+
+    it('BW con token spessore prima del giunto: assegnazione indipendente dall\'ordine', () => {
+        const parsed = parseWelderQualificationDesignation('ISO 9606-1: 141 P t10 BW FM1 PA');
+        expect(parsed.thickness_s_test_mm).toBe(10);
+        expect(parsed.thickness_t_test_mm).toBeNull();
+    });
+
+    it('FW con token t: spessore materiale in t, s resta null', () => {
+        const parsed = parseWelderQualificationDesignation('ISO 9606-1: 135 P FW FM1 t8 PB ss mb');
+        expect(parsed.thickness_t_test_mm).toBe(8);
+        expect(parsed.thickness_s_test_mm).toBeNull();
+    });
+
+    it('certificato con ENTRAMBI s e t: salva entrambi (BW e FW)', () => {
+        const bw = parseWelderQualificationDesignation('ISO 9606-1: 141 P BW FM1 s10 t12 PA ss nb');
+        expect(bw.thickness_s_test_mm).toBe(10);
+        expect(bw.thickness_t_test_mm).toBe(12);
+        const fw = parseWelderQualificationDesignation('ISO 9606-1: 135 P FW FM1 s6 t8 PB ss mb');
+        expect(fw.thickness_s_test_mm).toBe(6);
+        expect(fw.thickness_t_test_mm).toBe(8);
+    });
+
     it('ignora la sola edizione in testata (ISO 9606-1:2017) e non inventa la prova', () => {
         const parsed = parseWelderQualificationDesignation([
             'CERTIFICATO DI QUALIFICAZIONE DEL SALDATORE',
@@ -128,5 +160,33 @@ describe('resolvePrintedDesignation', () => {
             thickness_max_mm: 16,
         });
         expect(out).toBe(printed);
+    });
+});
+
+describe('resolveTestThicknessByJoint', () => {
+    it('BW: t senza s -> s; FW: s senza t -> t', () => {
+        expect(resolveTestThicknessByJoint({ joint_type: 'BW', t: 10 })).toEqual({ s: 10, t: null });
+        expect(resolveTestThicknessByJoint({ joint_type: ' fw ', s: '8' })).toEqual({ s: null, t: 8 });
+    });
+
+    it('colonna corretta gia\' valorizzata o entrambi presenti: nessuno spostamento', () => {
+        expect(resolveTestThicknessByJoint({ joint_type: 'BW', s: 10, t: 12 })).toEqual({ s: 10, t: 12 });
+        expect(resolveTestThicknessByJoint({ joint_type: 'FW', s: 6, t: 8 })).toEqual({ s: 6, t: 8 });
+        expect(resolveTestThicknessByJoint({ joint_type: 'BW', s: 10 })).toEqual({ s: 10, t: null });
+    });
+
+    it('giunto sconosciuto/assente: nessuna deduzione e numeri sanitizzati', () => {
+        expect(resolveTestThicknessByJoint({ joint_type: null, t: 10 })).toEqual({ s: null, t: 10 });
+        expect(resolveTestThicknessByJoint({ joint_type: 'BW/FW', t: 10 })).toEqual({ s: null, t: 10 });
+        expect(resolveTestThicknessByJoint({ joint_type: 'BW', t: 'N.A.' })).toEqual({ s: null, t: null });
+        expect(resolveTestThicknessByJoint()).toEqual({ s: null, t: null });
+    });
+
+    it('toNumericOrNull: virgola italiana, unità e N.A. (Number() li azzererebbe)', () => {
+        expect(resolveTestThicknessByJoint({ joint_type: 'BW', t: '10,5' })).toEqual({ s: 10.5, t: null });
+        expect(resolveTestThicknessByJoint({ joint_type: 'BW', t: '10 mm' })).toEqual({ s: 10, t: null });
+        expect(resolveTestThicknessByJoint({ joint_type: 'BW', t: 'N.A.' })).toEqual({ s: null, t: null });
+        expect(resolveTestThicknessByJoint({ joint_type: 'FW', s: '10,5' })).toEqual({ s: null, t: 10.5 });
+        expect(resolveTestThicknessByJoint({ joint_type: 'FW', s: '10 mm' })).toEqual({ s: null, t: 10 });
     });
 });

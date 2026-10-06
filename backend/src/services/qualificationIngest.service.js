@@ -8,7 +8,7 @@ const logger = require('../utils/logger');
 const { getPool } = require('../config/database');
 const { resolvePersonnelForQualification } = require('./personnelQualificationLink.service');
 const { runDocumentIngest } = require('./documentIngestPipeline.service');
-const { resolvePrintedDesignation } = require('../utils/weldingDesignation');
+const { resolvePrintedDesignation, resolveTestThicknessByJoint } = require('../utils/weldingDesignation');
 const {
     classifyDocument,
     WRONG_MODULE_FOR_QUALIFICATIONS,
@@ -256,6 +256,12 @@ function mapPipelineFieldsToReview(f, pipelineText, fileName) {
     // pipe_diameter_mm in revisione: preferisci il valore AI originale se presente,
     // altrimenti il min risolto (così il campo schema review resta allineato al DB).
     const pipeDiameterSingle = toNumericOrNull(f.pipe_diameter_mm) ?? pipeDiameterMinNum;
+    // ISO 9606-1: BW -> s depositato (Tab. 6), FW -> t materiale (Tab. 8). Vedi resolveTestThicknessByJoint.
+    const testThickness = resolveTestThicknessByJoint({
+        joint_type: f.joint_type,
+        s: f.thickness_s_test_mm,
+        t: f.thickness_t_test_mm,
+    });
 
     return {
         welder_name: person_name,
@@ -307,8 +313,8 @@ function mapPipelineFieldsToReview(f, pipelineText, fileName) {
         welding_process_test: f.welding_process_test || null,
         welding_processes_validity: f.welding_processes_validity || null,
         welding_position_test: f.welding_position_test || null,
-        thickness_s_test_mm: toNumericOrNull(f.thickness_s_test_mm),
-        thickness_t_test_mm: toNumericOrNull(f.thickness_t_test_mm),
+        thickness_s_test_mm: testThickness.s,
+        thickness_t_test_mm: testThickness.t,
         pipe_diameter_test_mm: toNumericOrNull(f.pipe_diameter_test_mm),
         qualification_designation: f.qualification_designation || null,
         // Gas di protezione ISO 14175 (campo previsto dallo schema AI patentino_saldatore
@@ -520,6 +526,11 @@ async function commitQualificationFromFields(fields, organizationId, companyId, 
     const qualification_method = f.qualification_method || null;
     const shielding_gas = f.shielding_gas || null;
     const joint_type = f.joint_type || null;
+    const { s: thickness_s_test_mm, t: thickness_t_test_mm } = resolveTestThicknessByJoint({
+        joint_type,
+        s: f.thickness_s_test_mm,
+        t: f.thickness_t_test_mm,
+    });
     const product_type = f.product_type || null;
     const weld_details = f.weld_details || null;
     const transfer_mode = f.transfer_mode || null;
@@ -613,8 +624,8 @@ async function commitQualificationFromFields(fields, organizationId, companyId, 
         .input('weldProcTest', f.welding_process_test || null)
         .input('weldProcValidity', f.welding_processes_validity || null)
         .input('posTest', f.welding_position_test || null)
-        .input('thickSTest', toNumericOrNull(f.thickness_s_test_mm))
-        .input('thickTTest', toNumericOrNull(f.thickness_t_test_mm))
+        .input('thickSTest', thickness_s_test_mm)
+        .input('thickTTest', thickness_t_test_mm)
         .input('pipeTest', toNumericOrNull(f.pipe_diameter_test_mm))
         .input('examBody', examiner_body || null)
         .input('designation', qualification_designation || null)
@@ -664,6 +675,8 @@ async function commitQualificationFromFields(fields, organizationId, companyId, 
         thickness_max_mm,
         pipe_diameter_min_mm,
         pipe_diameter_max_mm,
+        thickness_s_test_mm,
+        thickness_t_test_mm,
     };
     const { verification, warnings: verificationWarnings } = runQualificationVerification(finalFields, 'review');
     const gasWarn = legacyGasWarning(finalFields, verification);
