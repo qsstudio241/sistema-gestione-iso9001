@@ -125,6 +125,54 @@ describe('computeCaseProjectCoverage — golden payload (COV-4)', () => {
     });
 });
 
+describe('computeCaseProjectCoverage — delta dichiarati del Riesame (COV-4)', () => {
+    beforeAll(() => {
+        jest.useFakeTimers({
+            now: new Date('2026-10-06T12:00:00Z'),
+            doNotFake: ['nextTick', 'setImmediate', 'setTimeout', 'setInterval', 'queueMicrotask'],
+        });
+    });
+    afterAll(() => jest.useRealTimers());
+    beforeEach(() => jest.clearAllMocks());
+
+    test('loader allineato a Progetti: ISO 14732 e thickness_max_unlimited nella SELECT', async () => {
+        mockDb();
+        await computeCaseProjectCoverage({ caseId: 3, projectId: 5, organizationId: 1 });
+        const qualCall = query.mock.calls.find(([sql]) => /FROM qualifications/.test(sql));
+        expect(qualCall[0]).toMatch(/LIKE '%9606%' OR q\.qualification_type LIKE '%14732%'/);
+        expect(qualCall[0]).toMatch(/q\.thickness_max_unlimited/);
+        expect(qualCall[1]).toEqual({ organizationId: 1, projCompId: 9 });
+    });
+
+    test('range spessore aperto dichiarato: la WPS entro il minimo è coperta (prima unverifiable)', async () => {
+        const open = {
+            ...base, id: 201, person_name: 'Aperti Gino', person_code: 'A01', welding_process: '135',
+            material_group: '1.1', position_range: 'PA', thickness_min_mm: 3, thickness_max_mm: null,
+            thickness_max_unlimited: true, thickness_range: null, joint_type: 'BW', expiry_date: '2027-12-01',
+        };
+        mockDb({ wps: [wpsRows[0]], quals: [open] });
+        const out = await computeCaseProjectCoverage({ caseId: 3, projectId: 5, organizationId: 1 });
+        expect(out.coverage[0].esito).toBe('verde');
+        expect(out.coverage[0].qualifiers[0].coverage_detail).toEqual({
+            process: 'ok', thickness: 'ok', material_group: 'ok', position: 'ok', overall: 'ok',
+        });
+        expect(out.summary).toEqual({ total: 1, covered: 1, partial: 0, uncovered: 0 });
+    });
+
+    test('qualifica ISO 14732 operativa ora considerata nel semaforo', async () => {
+        const op = {
+            ...base, id: 202, person_name: 'Operatori Srl', person_code: 'O02', qualification_type: 'ISO 14732',
+            welding_process: '135', material_group: '1.1', position_range: 'PA', thickness_min_mm: 3,
+            thickness_max_mm: 20, thickness_max_unlimited: false, thickness_range: '3-20', joint_type: 'BW',
+            expiry_date: '2027-12-01',
+        };
+        mockDb({ wps: [wpsRows[0]], quals: [op] });
+        const out = await computeCaseProjectCoverage({ caseId: 3, projectId: 5, organizationId: 1 });
+        expect(out.coverage[0].qualified_count).toBe(1);
+        expect(out.coverage[0].esito).toBe('verde');
+    });
+});
+
 const qualifier = (id, person_name, person_code, expiry_date, semaforo, coverage_detail) => ({
     id, person_name, person_code, company_name: 'Acme Srl', expiry_date, semaforo, coverage_detail,
 });

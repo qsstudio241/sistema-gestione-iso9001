@@ -93,6 +93,8 @@ function computeWpsWelderCoverage(wps, qualRows, opts = {}) {
 
 /**
  * Loader unico delle qualifiche saldatori operative di una commessa.
+ * Nessun filtro su approval_status (gate manuale rimosso): l'esclusione per certificato scaduto
+ * o conferma semestrale non superata è automatica, via isQualificationOperationallyActive.
  * @param {object} params
  * @param {(sql: string, params: object) => Promise<{recordset?: object[]}>} params.query
  * @param {number} params.organizationId

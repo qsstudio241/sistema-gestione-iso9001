@@ -147,7 +147,7 @@ describe('getCoverage — golden payload (COV-4)', () => {
     const qualCall = calls.find((c) => /FROM qualifications/.test(c.sql));
     expect(qualCall.sql).toMatch(/LIKE '%9606%' OR q\.qualification_type LIKE '%14732%'/);
     expect(qualCall.sql).toMatch(/q\.thickness_max_unlimited/);
-    expect(qualCall.params).toEqual({ orgId: 1, projCompId: 9 });
+    expect(qualCall.params).toEqual({ organizationId: 1, projCompId: 9 });
   });
 });
 
