@@ -303,6 +303,7 @@
         "src/controllers/company.controller.js",
         "src/controllers/companyProfile.controller.js",
         "src/controllers/qualifications.controller.js",
+        "src/controllers/qualificationVerify.controller.js",
         "src/controllers/projects.controller.js",
         "src/controllers/risks.controller.js",
         "src/controllers/contextFactors.controller.js",

@@ -60,10 +60,57 @@ function checkQualificationPlausibility(f) {
     });
     if (diameterWarn) warnings.push(diameterWarn);
 
-    const gasWarn = checkShieldingGasKnown(f.shielding_gas);
-    if (gasWarn) warnings.push(gasWarn);
-
     return warnings;
+}
+
+const VERIFICATION_SOURCE_MISSING_CODE = 'QV.ENGINE.SOURCE_MISSING';
+
+/**
+ * Verifica qualifica vs norma (epic VQ, slice VQ-7): additiva e mai bloccante.
+ * Qualunque errore dell'engine (anche il require del modulo) è assorbito con log:
+ * l'ingest prosegue senza finding. Ritorna `verification` (VerifyResult o null) e
+ * le frasi `message_it` da accodare a `warnings`.
+ * @param {object} fields campi di revisione (o finali al commit)
+ * @param {'ingest'|'review'|'db'} mode
+ * @returns {{verification: object|null, warnings: string[]}}
+ */
+function runQualificationVerification(fields, mode) {
+    try {
+        const { verifyQualification } = require('./qualificationVerify');
+        const verification = verifyQualification(fields, { mode });
+        if (!verification || !Array.isArray(verification.findings)) {
+            return { verification: null, warnings: [] };
+        }
+        const unrecognizedStandard = verification.standard
+            && verification.standard.family == null;
+        const warnings = [];
+        for (const finding of verification.findings) {
+            if (!finding || typeof finding.message_it !== 'string' || !finding.message_it.trim()) continue;
+            // Documenti che non sono qualifiche di saldatura (NDT, PES/PAV, coordinatori…):
+            // «norma non riconosciuta» sarebbe solo rumore sull'ingest.
+            if (finding.code === VERIFICATION_SOURCE_MISSING_CODE
+                && unrecognizedStandard
+                && !(finding.source && finding.source.norm)) continue;
+            if (!warnings.includes(finding.message_it)) warnings.push(finding.message_it);
+        }
+        return { verification, warnings };
+    } catch (err) {
+        logger.warn(`[QualifIngest] Verifica vs norma non eseguita (ingest prosegue): ${(err && err.message) || err}`);
+        return { verification: null, warnings: [] };
+    }
+}
+
+/**
+ * Check gas ISO 14175: la fonte è il registry di verifica. Finché il registry non
+ * emette alcun finding sul campo (pack senza regola gas, profili non 9606-1, engine
+ * in errore) resta l'avviso storico, così non si perde copertura né si duplica.
+ */
+function legacyGasWarning(fields, verification) {
+    const gasCoveredByRegistry = !!(verification && verification.findings.some(
+        (f) => f && (f.field === 'shielding_gas' || (Array.isArray(f.fields) && f.fields.includes('shielding_gas'))),
+    ));
+    if (gasCoveredByRegistry) return null;
+    return checkShieldingGasKnown(fields && fields.shielding_gas);
 }
 
 const TYPE_RULES = [
@@ -360,6 +407,13 @@ async function extractQualificationFromPdf(pdfBuffer, fileName, organizationId, 
 
     warnings.push(...checkQualificationPlausibility(reviewFields));
 
+    const { verification, warnings: verificationWarnings } = runQualificationVerification(reviewFields, 'ingest');
+    const gasWarn = legacyGasWarning(reviewFields, verification);
+    if (gasWarn && !warnings.includes(gasWarn)) warnings.push(gasWarn);
+    for (const w of verificationWarnings) {
+        if (!warnings.includes(w)) warnings.push(w);
+    }
+
     if (reviewFields.certificate_number && companyId
         && await checkQualificationDuplicate(
             reviewFields.certificate_number,
@@ -375,6 +429,7 @@ async function extractQualificationFromPdf(pdfBuffer, fileName, organizationId, 
             warnings,
             fields: reviewFields,
             field_confidence: pipeline.fieldConfidence,
+            verification,
         };
     }
 
@@ -388,6 +443,7 @@ async function extractQualificationFromPdf(pdfBuffer, fileName, organizationId, 
         confidence,
         warnings,
         ai_model: pipeline.aiModel,
+        verification,
     };
 }
 
@@ -599,11 +655,27 @@ async function commitQualificationFromFields(fields, organizationId, companyId, 
     const qualification_id = ins.recordset[0].id;
     logger.info(`[QualifIngest] Committed qualifica id=${qualification_id} (${person_name}, ${qualificationType}) per org ${organizationId}`);
 
+    // Dopo l'INSERT: la verifica è solo informativa e non può influire sul commit.
+    const finalFields = {
+        ...f,
+        qualification_type: qualificationType,
+        qualification_designation,
+        thickness_min_mm,
+        thickness_max_mm,
+        pipe_diameter_min_mm,
+        pipe_diameter_max_mm,
+    };
+    const { verification, warnings: verificationWarnings } = runQualificationVerification(finalFields, 'review');
+    const gasWarn = legacyGasWarning(finalFields, verification);
+    if (gasWarn) warnings.push(gasWarn);
+    warnings.push(...verificationWarnings.filter((w) => !warnings.includes(w)));
+
     return {
         qualification_id,
         person_name: personnelResult.personName || person_name,
         qualification_type: qualificationType,
         warnings,
+        verification,
     };
 }
 
@@ -633,7 +705,7 @@ async function ingestQualificationFromPdf(pdfBuffer, fileName, organizationId, c
         ...committed,
         confidence: extracted.confidence,
         field_confidence: extracted.field_confidence,
-        warnings: [...(extracted.warnings || []), ...(committed.warnings || [])],
+        warnings: [...new Set([...(extracted.warnings || []), ...(committed.warnings || [])])],
     };
 }
 

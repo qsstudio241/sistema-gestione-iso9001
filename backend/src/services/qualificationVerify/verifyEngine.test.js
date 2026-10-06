@@ -4,7 +4,7 @@ const { verifyQualification, validateFinding, listRulePacks } = require('./index
 const { ENGINE_VERSION } = require('./verifyEngine');
 const { makeFinding, FAMILY, SEVERITY, STATUS, TEXT_STATUS, ENGINE_CODES } = require('./findingTypes');
 const registry = require('./verifyRegistry');
-const { ensureDefaultPacks } = require('./registerDefaultPacks');
+const { ensureDefaultPacks, DEFAULT_PACKS } = require('./registerDefaultPacks');
 
 const rec9606 = (over = {}) => ({
     qualification_type: 'Saldatore ISO 9606-1',
@@ -27,10 +27,13 @@ function useTestPack(rules, profiles = ['9606-1:BW']) {
     registry.registerRulePack({ id: 'test.pack', standardFamily: '9606-1', editions: ['2017', '2013', '2012'], profiles, rules });
 }
 
-beforeEach(() => {
+// Meccanica dell'engine isolata dal contenuto dei pack: i pack di default entrano vuoti.
+function useEmptyDefaultPacks() {
     registry.clearRulePacks();
-    ensureDefaultPacks();
-});
+    for (const pack of DEFAULT_PACKS) registry.registerRulePack({ ...pack, rules: [] });
+}
+
+beforeEach(useEmptyDefaultPacks);
 
 afterAll(() => {
     registry.clearRulePacks();
@@ -169,6 +172,11 @@ describe('verifyQualification — esecuzione regole', () => {
 });
 
 describe('contratto su tutti i pack registrati', () => {
+    beforeEach(() => {
+        registry.clearRulePacks();
+        ensureDefaultPacks();
+    });
+
     const fixtures = [
         rec9606(),
         rec9606({ joint_type: 'FW', product_type: 'T', thickness_t_test_mm: 8, welding_positions: ['PF'] }),
