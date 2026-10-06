@@ -40,6 +40,42 @@ const {
 } = require('./qualificationReprocess.service');
 const { getReprocessableField } = require('../data/reprocessableFields');
 const { CORE_COLUMNS, OPTIONAL_COLUMNS, resetColumnsCache } = require('./qualificationVerify/verifyRecordLoader');
+const registry = require('./qualificationVerify/verifyRegistry');
+const { ensureDefaultPacks, DEFAULT_PACKS } = require('./qualificationVerify/registerDefaultPacks');
+const { FAMILY, SEVERITY, STATUS, makeFinding } = require('./qualificationVerify/findingTypes');
+
+/**
+ * Isolamento dai pack reali: i pack di default entrano con `rules: []` (stesso id, quindi
+ * `ensureDefaultPacks()` dell'engine non li sostituisce). Il pack di prova emette solo un `info`
+ * non verificabile (mai un warn): il ramo verify attraversa l'engine ma nessun record e' candidato.
+ */
+const TEST_PACK = {
+    id: 'vq8.reprocess.verify.test.pack',
+    standardFamily: '9606-1',
+    editions: ['2017'],
+    profiles: ['9606-1:BW'],
+    rules: [
+        {
+            id: 'vq8.reprocess.verify.test.info',
+            family: FAMILY.CORRETTEZZA,
+            codes: ['QVTEST.REPROCESS.INFO'],
+            run: () => [makeFinding({
+                code: 'QVTEST.REPROCESS.INFO',
+                family: FAMILY.CORRETTEZZA,
+                severity: SEVERITY.INFO,
+                status: STATUS.NON_VERIFICABILE_DATO_MANCANTE,
+                field: 'thickness_s_test_mm',
+                message_it: 'Dato di prova non presente: verifica non eseguibile.',
+            })],
+        },
+    ],
+};
+
+function useIsolatedPacks() {
+    registry.clearRulePacks();
+    for (const pack of DEFAULT_PACKS) registry.registerRulePack({ ...pack, rules: [] });
+    registry.registerRulePack(TEST_PACK);
+}
 
 const row = (id, org) => ({
     id,
@@ -62,9 +98,15 @@ function mockDb(rows) {
 }
 
 beforeEach(() => {
+    useIsolatedPacks();
     jest.clearAllMocks();
     query.mockReset();
     resetColumnsCache();
+});
+
+afterAll(() => {
+    registry.clearRulePacks();
+    ensureDefaultPacks();
 });
 
 describe('voce verify_9606_1 nel servizio di rielaborazione', () => {
