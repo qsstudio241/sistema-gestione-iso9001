@@ -41,7 +41,7 @@ const ALIASES = {
 const TEXT_FIELDS = [
     'certificate_number', 'welding_process', 'welding_process_test', 'welding_processes_validity',
     'welding_position_test', 'material_group', 'shielding_gas', 'weld_details', 'transfer_mode',
-    'qualification_designation', 'examiner_body',
+    'qualification_designation', 'examiner_body', 'thickness_range',
 ];
 const NUMERIC_FIELDS = [
     'thickness_min_mm', 'thickness_max_mm', 'thickness_s_test_mm', 'thickness_t_test_mm',
