@@ -13,6 +13,12 @@
  * Se il certificato non dichiara alcuna validità non c'è nulla da confrontare: nessun finding
  * (la mancanza del dato è compito del pack di completezza).
  * Tab. 3/4/5/11/12 (non confermate sul PDF, HITL 4) non sono codificate.
+ *
+ * Taratura VQ-TUNE (06/10/2026, misura su dati reali, brief DEPUTYTASK_VERIFICA_QUALIFICHE_TARATURA):
+ * - `PIPE_DIAMETER` su giunti d'angolo (FW): al massimo `info` (Tab. 7 è per i giunti di testa);
+ * - `PROCESS`: scarto di processo = `info` finché non esiste una base empirica (0 record con la validità);
+ * - `DESIGNATION`: `info` se la designazione è costruita dalle colonne di validità (circolare).
+ * Restano `warn`: spessori (Tab. 6/8), diametro BW (Tab. 7), posizioni, FILLER_GROUP, CONFIRMATION_INTERVAL.
  */
 
 'use strict';
@@ -21,7 +27,7 @@ const rules9606 = require('../../../data/weldingQualificationRules9606');
 const { normalizeWeldingProcessCode } = require('../../../data/weldingProcesses4063');
 const { normalizeShieldingGasCode } = require('../../../data/shieldingGases14175');
 const { normalizeMaterialGroupCode, getMaterialGroupSelectOptions } = require('../../../data/materialGroups15608');
-const { parseWelderQualificationDesignation } = require('../../../utils/weldingDesignation');
+const { parseWelderQualificationDesignation, buildWelderQualificationDesignation } = require('../../../utils/weldingDesignation');
 const { FAMILY, SEVERITY, STATUS, DIRECTION, TEXT_STATUS } = require('../findingTypes');
 
 const NORM = 'ISO 9606-1';
@@ -98,7 +104,7 @@ function positionTokens(raw) {
     return String(raw || '')
         .toUpperCase()
         .split(/[\s,;/+]+/)
-        .map((t) => t.trim())
+        .map((t) => rules9606.normalizeWeldingPositionSymbol(t))
         .filter(Boolean);
 }
 
@@ -133,7 +139,7 @@ function hasRangeClaim(d) {
 }
 
 /** Finding per una verifica di range (spessore, diametro): over_claim warn, under_claim info. */
-function rangeFinding({ code, field, fields, label, clause, testText, declared, expected, cmpResult, extraNote = '' }) {
+function rangeFinding({ code, field, fields, label, clause, testText, declared, expected, cmpResult, extraNote = '', maxSeverity = SEVERITY.WARN }) {
     const declText = fmtRange(declared.min, declared.max, { unlimited: declared.unlimited });
     const expText = fmtRange(expected.minMm, expected.maxMm, { unlimited: true });
     const read = { min: declared.min, max: declared.max, unlimited: declared.unlimited };
@@ -142,7 +148,7 @@ function rangeFinding({ code, field, fields, label, clause, testText, declared, 
     if (cmpResult.over.length) {
         return finding(code, {
             ...base,
-            severity: SEVERITY.WARN,
+            severity: maxSeverity,
             direction: DIRECTION.OVER_CLAIM,
             message_it: `${label}: il certificato dichiara ${declText}, più largo del campo ammesso da ISO 9606-1 ${clause} per ${testText} (${expText}; ${cmpResult.over.join(' e ')} oltre la norma). La validità scritta sul certificato prevale: verificare il dato.${extraNote}`,
         });
@@ -252,6 +258,7 @@ function runThicknessFilletWeld(view) {
 // ---------------------------------------------------------------------------------------------
 
 const PIPE_CODE = `${PREFIX}.PIPE_DIAMETER`;
+const FILLET_PIPE_NOTE = " Interpretazione, non clausola esplicita: per i cordoni d'angolo il testo di §5.7 rimanda alla Tab. 8 solo per gli spessori; la Tab. 7 (diametro) è presentata per i giunti di testa. Solo informativo.";
 
 function runPipeDiameter(view) {
     if (normProduct(view.product_type) === 'P') return [];
@@ -269,6 +276,7 @@ function runPipeDiameter(view) {
 
     const result = compareRange(declared, expected);
     if (!result.over.length && !result.under.length) return [];
+    const isFillet = view.joint_type === 'FW';
     return [rangeFinding({
         code: PIPE_CODE,
         field: 'pipe_diameter_min_mm',
@@ -279,6 +287,7 @@ function runPipeDiameter(view) {
         declared,
         expected,
         cmpResult: result,
+        ...(isFillet ? { maxSeverity: SEVERITY.INFO, extraNote: FILLET_PIPE_NOTE } : {}),
     })];
 }
 
@@ -374,6 +383,8 @@ function runPositions(view) {
 // ---------------------------------------------------------------------------------------------
 
 const PROCESS_CODE = `${PREFIX}.PROCESS`;
+/** Nessun record reale con `welding_processes_validity` (misura 06/10/2026): `info` finché non c'è una base empirica. */
+const PROCESS_OVER_CLAIM_SEVERITY = SEVERITY.INFO;
 
 function runProcess(view) {
     const declared = Array.from(new Set(processCodes(view.welding_processes_validity)));
@@ -396,12 +407,12 @@ function runProcess(view) {
     return [finding(PROCESS_CODE, {
         field: 'welding_processes_validity',
         fields,
-        severity: SEVERITY.WARN,
+        severity: PROCESS_OVER_CLAIM_SEVERITY,
         direction: DIRECTION.OVER_CLAIM,
         read_value: declared,
         expected_value: qualified,
         source: source('§5.2'),
-        message_it: `Processi: il certificato dichiara ${declared.join(', ')}; ${over.join(', ')} non ${over.length > 1 ? 'sono coperti' : 'è coperto'} dalla prova in ${testCodes[0]} secondo ISO 9606-1 §5.2 (coperti: ${qualified.join(', ')}). La validità scritta sul certificato prevale: verificare il dato.`,
+        message_it: `Processi: il certificato dichiara ${declared.join(', ')}; ${over.join(', ')} non ${over.length > 1 ? 'sono coperti' : 'è coperto'} dalla prova in ${testCodes[0]} secondo ISO 9606-1 §5.2 (coperti: ${qualified.join(', ')}). La validità scritta sul certificato prevale: verificare il dato. Informativo: regola non ancora tarata su dati reali.`,
     })];
 }
 
@@ -434,10 +445,40 @@ function fmGroup(text) {
     return m ? `FM${m[1]}` : null;
 }
 
+/** Token di spessore/diametro che descrivono la VALIDITÀ (`t≥3`, `t3-18`, `D≥60,3`, `D25-50`), non la prova. */
+const VALIDITY_RANGE_TOKEN_RE = /(?:^|\s)(?:t\s*[\u2265>]=?\s*\d|[tD]\s*\d+(?:[.,]\d+)?\s*[-\u2013]\s*\d|D\s*[\u2265>]=?\s*\d)/i;
+
+/**
+ * La designazione è «circolare» se descrive la validità e non la prova: contiene token di range
+ * (`t≥3`, `t3-18`, `D≥60,3`) oppure coincide con quella ricostruita dalle colonne di validità del
+ * record (`buildWelderQualificationDesignation`, stessa funzione dell'app). In quel caso il confronto
+ * con i campi di prova non è una verifica indipendente.
+ */
+function isDesignationDerivedFromValidity(view) {
+    const printed = String(view.qualification_designation || '').trim();
+    if (VALIDITY_RANGE_TOKEN_RE.test(printed)) return true;
+    const rebuilt = buildWelderQualificationDesignation({
+        welding_process: view.welding_process,
+        product_type: view.product_type,
+        joint_type: view.joint_type,
+        filler_material_group: view.filler_material_group,
+        thickness_min_mm: view.thickness_min_mm,
+        thickness_max_mm: view.thickness_max_mm,
+        pipe_diameter_min_mm: view.pipe_diameter_min_mm,
+        pipe_diameter_max_mm: view.pipe_diameter_max_mm,
+        welding_positions: view.positions,
+        weld_details: view.weld_details,
+    });
+    const squash = (t) => String(t || '').replace(/\s+/g, ' ').trim().toLowerCase();
+    const withoutNorm = printed.replace(/^ISO\s*9606-1\s*[:.\-]?\s*(?:(?:19|20)\d{2}(?:\s*\+\s*A\d+)?\s+)?/i, '');
+    return rebuilt != null && squash(withoutNorm) === squash(rebuilt);
+}
+
 function runDesignation(view) {
     if (!view.qualification_designation) return [];
     const parsed = parseWelderQualificationDesignation(view.qualification_designation);
     if (!parsed) return [];
+    const circular = isDesignationDerivedFromValidity(view);
 
     const mismatches = [];
     const check = (label, column, columnValue, designationValue, same) => {
@@ -467,12 +508,12 @@ function runDesignation(view) {
     return [finding(DESIGNATION_CODE, {
         field: mismatches[0].column,
         fields: ['qualification_designation', ...mismatches.map((m) => m.column)],
-        severity: SEVERITY.WARN,
+        severity: circular ? SEVERITY.INFO : SEVERITY.WARN,
         direction: DIRECTION.MISMATCH,
         read_value: Object.fromEntries(mismatches.map((m) => [m.column, m.columnValue])),
         expected_value: Object.fromEntries(mismatches.map((m) => [m.column, m.designationValue])),
         source: source('§11'),
-        message_it: `La designazione stampata non coincide con i dati di prova (${text}): ISO 9606-1 §11 la designazione descrive la prova eseguita. Verificare quale dei due è stato letto male; la validità non è toccata.`,
+        message_it: `La designazione stampata non coincide con i dati di prova (${text}): ISO 9606-1 §11 la designazione descrive la prova eseguita. Verificare quale dei due è stato letto male; la validità non è toccata.${circular ? ' Informativo: la designazione risulta costruita dalle colonne di validità, non letta dal certificato (controllo circolare).' : ''}`,
     })];
 }
 

@@ -6,6 +6,7 @@ const {
     computeQualifiedFilletThicknessRange,
     computeQualifiedThicknessRangeButtWeld,
     computeQualifiedWeldingPositions,
+    normalizeWeldingPositionSymbol,
     computeQualifiedWeldingProcesses,
     describeWeldingProcessEquivalences,
     WELDING_PROCESS_EQUIVALENCE_GROUPS,
@@ -13,6 +14,8 @@ const {
     describePlateOnlyRotatingPositionDiameterNote,
     getApplicableWelderFields,
     buildWelderQualificationRulesPromptSection,
+    BUTT_WELD_POSITION_QUALIFICATION_MATRIX,
+    FILLET_WELD_POSITION_QUALIFICATION_MATRIX,
 } = require('./weldingQualificationRules9606');
 
 describe('weldingQualificationRules9606', () => {
@@ -94,6 +97,29 @@ describe('weldingQualificationRules9606', () => {
 
         test('Tabella 10 (FW): PH qualifica PA-PF (non PG)', () => {
             expect(computeQualifiedWeldingPositions({ testPosition: 'PH', jointType: 'FW' })).toEqual(['PA', 'PB', 'PC', 'PD', 'PE', 'PF']);
+        });
+
+        test.each([
+            ['HL045', 'H-L045'], ['h-l045', 'H-L045'], ['H_L045', 'H-L045'], ['H\u2013L045', 'H-L045'], ['JL045', 'J-L045'], [' j l045 ', 'J-L045'],
+        ])('varianti grafiche dello stesso simbolo: %s -> %s', (raw, symbol) => {
+            expect(normalizeWeldingPositionSymbol(raw)).toBe(symbol);
+            expect(computeQualifiedWeldingPositions({ testPosition: raw, jointType: 'BW' }))
+                .toEqual(computeQualifiedWeldingPositions({ testPosition: symbol, jointType: 'BW' }));
+            expect(isWeldingPositionQualified({ testPosition: 'H-L045', targetPosition: raw, jointType: 'BW' })).toBe(false);
+        });
+
+        test('GAP: PH-L045 / PJ-L045 non sono simboli di Tab. 9/10 e non sono mappati su H-L045 / J-L045', () => {
+            expect(normalizeWeldingPositionSymbol('PH-L045')).toBe('PH-L045');
+            expect(normalizeWeldingPositionSymbol('PJ-L045')).toBe('PJ-L045');
+            expect(computeQualifiedWeldingPositions({ testPosition: 'PH-L045', jointType: 'BW' })).toBeNull();
+            expect(computeQualifiedWeldingPositions({ testPosition: 'PJ-L045', jointType: 'FW' })).toBeNull();
+            expect(normalizeWeldingPositionSymbol(null)).toBe('');
+        });
+
+        test('i simboli canonici delle tabelle restano invariati', () => {
+            for (const key of [...Object.keys(BUTT_WELD_POSITION_QUALIFICATION_MATRIX), ...Object.keys(FILLET_WELD_POSITION_QUALIFICATION_MATRIX)]) {
+                expect(normalizeWeldingPositionSymbol(key)).toBe(key);
+            }
         });
 
         test('posizione non riconosciuta -> null', () => {

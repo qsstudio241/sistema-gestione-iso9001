@@ -59,6 +59,13 @@ describe('toRecordView — parità review-fields ↔ riga DB', () => {
         expect(a.profile).toBe('9606-1:BW');
     });
 
+    test('thickness_range (campo legacy testuale) passa invariato dai due ingressi; assente → null', () => {
+        expect(toRecordView({ thickness_range: ' t≥3 ' }, { source: 'db' }).thickness_range).toBe('t≥3');
+        expect(toRecordView({ thickness_range: '3-18 mm' }, { source: 'review' }).thickness_range).toBe('3-18 mm');
+        expect(toRecordView({}, { source: 'db' }).thickness_range).toBeNull();
+        expect(toRecordView({ thickness_range: '  ' }).thickness_range).toBeNull();
+    });
+
     test('input vuoto o null non lancia', () => {
         expect(toRecordView(null).profile).toBeNull();
         const v = toRecordView({});
