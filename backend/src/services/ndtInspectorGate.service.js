@@ -365,4 +365,5 @@ module.exports = {
   isNdt9712Qualification,
   evaluateInspectorFromRows,
   evaluateNdtInspectorGate,
+  visionStateForPerson,
 };

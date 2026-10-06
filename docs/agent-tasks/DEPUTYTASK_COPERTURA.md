@@ -1,6 +1,6 @@
 # DEPUTYTASK_COPERTURA — COV-3: adapter `cnd_9712` pieno (settore · schema · tecnica · idoneità visiva)
 
-**Stato:** APERTO  
+**Stato:** CHIUSO — TEST OK (06/10/2026)  
 **Aperto:** 06/10/2026  
 **Piano:** [`PLAN_COPERTURA_SCALABILE_SLICES.md`](PLAN_COPERTURA_SCALABILE_SLICES.md) § COV-3  
 **Dipende da:** COV-1 CHIUSO (PR #702) · COV-2 CHIUSO (PR #704) — entrambe su `main`  
@@ -9,6 +9,19 @@
 **Branch suggerito:** `cursor/cov-3-cnd-adapter-<suffisso>`
 
 **Scontrino COV-2 (CHIUSO, PR #704):** adapter `wpqr_procedure` pieno; toccati `wpqrProcedure.adapter.js` (+ test), `coverageEngine.service.js` (campo opzionale `message` da `adapter.emptyMessage`), `CoverageVerifyPanel.jsx` (+ test), piano, roadmap. Pattern da copiare: aggregazione fail → `no_match`, dato mancante → `partial`, ordinamento match → partial → no_match.
+
+---
+
+## Esito (CHIUSO — TEST OK)
+
+- `cnd9712.adapter.js`: `maturity: 'full'`; `requirementFields` = metodo, livello (hint aggiornato), **settore**, **schema**, **tecnica**; SELECT estesa (`personnel_id`, `ndt_sector`, `certification_scheme`, `scope_detail`, `certificate_number`); certificati visivi esclusi dalle capacità (`isVisionFitnessType`) e caricati con seconda query (`visionFitnessSqlInList()`, stesso scope azienda); `matchCndCapability(qual, criteria, { todayIso, visionRows })` pura; ordinamento match → partial → no_match; `emptyMessage` per nessuna qualifica NDT.
+- Visione: `visionStateForPerson` esportato da `ndtInspectorGate.service.js` (solo `module.exports`, nessun cambio di logica). Senza `opts.visionRows` la visione è `skipped` (contratto COV-1 invariato; i 2 test CND di `coverageEngine.service.test.js` restano verdi senza ritocchi). `missing`/`expired` → `no_match`; `ok` senza scadenza → `ok` + `detail.vision_note = 'senza_scadenza'`.
+- Regole implementate come da brief. Scelte di dettaglio non esplicitate nel brief (tutte conservative, nessuna regola normativa nuova):
+  - qualifica con settore non riconosciuto (testo libero fuori da `c f w t wp p m s r a`) → `unverifiable` (`partial`), non `mismatch`; settore multiplo (es. `w, t`) valutato per token;
+  - tecnica: `ok` solo se **tutti** i token richiesti sono nello scope del certificato; intersezione solo parziale → `partial` (mai `match` per sovrapposizione parziale, mai `no_match`).
+- FE: nessuna modifica (pannello dinamico da `requirementFields`; `maturity === 'full'` toglie il «(minimo)»). Rielaborazioni: **esenzione dichiarata** (nessun campo AI nuovo). HITL settori industriali / codici metodo: invariato (nessuna risposta), `NORME_MANCANTI_BACKLOG.md` non toccato.
+- Test: `cd backend && npx jest src/services/capabilityCoverage src/services/ndtInspectorGate` → 4 suite, 87 test verdi (anche con `TZ=America/Los_Angeles` e `Pacific/Auckland`); `check-harness-boot` OK; `check-utf8-encoding` OK (0 issue).
+- File toccati: `backend/src/services/capabilityCoverage/adapters/cnd9712.adapter.js`, `…/cnd9712.adapter.test.js` (nuovo), `backend/src/services/ndtInspectorGate.service.js` (solo export), `docs/agent-tasks/PLAN_COPERTURA_SCALABILE_SLICES.md`, questo brief, `docs/PROJECT_ROADMAP.md` (una riga). Nessuna migrazione, `deploy-manifest.json` invariato.
 
 ---
 
@@ -106,17 +119,17 @@ Su `origin/main` **nessun** `DEPUTYTASK*` è APERTO eccetto questo (verificato 0
 
 ## DoD
 
-- [ ] `GET /qualifications/coverage/domains` mostra `cnd_9712` con `maturity: 'full'`
-- [ ] `POST /qualifications/coverage/verify` con `domain: cnd_9712` valuta settore, schema, tecnica e idoneità visiva; match / partial / no_match ordinati
-- [ ] Visione riusata da `visionStateForPerson` (nessuna copia di logica); `missing`/`expired` → `no_match`
-- [ ] Nessuna regola inventata: industriale→prodotto = `partial`; schema/tecnica mai `no_match`
-- [ ] `requirementFields` estesi senza rompere COV-1 (metodo/livello invariati)
-- [ ] Nessuna qualifica NDT → lista vuota + `message`
-- [ ] Jest mirato verde (`cd backend && npx jest src/services/capabilityCoverage src/services/ndtInspectorGate`)
-- [ ] Se toccato FE: `cd app && NODE_ENV=test npm run test:run -- coverageVerifyPanel` + `npm run build`
-- [ ] `node backend/scripts/check-harness-boot.js` e `node backend/scripts/check-utf8-encoding.js` OK
-- [ ] Esenzione Rielaborazioni dichiarata nel body PR (nessun campo AI nuovo)
-- [ ] Branch allineato a `origin/main` prima di push/PR; `bugbot run` una sola volta a slice chiusa
+- [x] `GET /qualifications/coverage/domains` mostra `cnd_9712` con `maturity: 'full'`
+- [x] `POST /qualifications/coverage/verify` con `domain: cnd_9712` valuta settore, schema, tecnica e idoneità visiva; match / partial / no_match ordinati
+- [x] Visione riusata da `visionStateForPerson` (nessuna copia di logica); `missing`/`expired` → `no_match`
+- [x] Nessuna regola inventata: industriale→prodotto = `partial`; schema/tecnica mai `no_match`
+- [x] `requirementFields` estesi senza rompere COV-1 (metodo/livello invariati)
+- [x] Nessuna qualifica NDT → lista vuota + `message`
+- [x] Jest mirato verde (`cd backend && npx jest src/services/capabilityCoverage src/services/ndtInspectorGate`)
+- [x] Se toccato FE: `cd app && NODE_ENV=test npm run test:run -- coverageVerifyPanel` + `npm run build`
+- [x] `node backend/scripts/check-harness-boot.js` e `node backend/scripts/check-utf8-encoding.js` OK
+- [x] Esenzione Rielaborazioni dichiarata nel body PR (nessun campo AI nuovo)
+- [x] Branch allineato a `origin/main` prima di push/PR; `bugbot run` una sola volta a slice chiusa
 
 ## Comando di avvio
 

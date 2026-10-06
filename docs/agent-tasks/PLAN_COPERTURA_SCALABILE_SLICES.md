@@ -4,7 +4,7 @@
 > (`welder_9606`, `wpqr_procedure`, `cnd_9712`, …), riusabile da Qualifiche /
 > Riesame / Commesse, senza `if (welder) else` sparsi.
 > **Spirito**: stesso registry di `jointTypeProfiles`.
-> **Brief attivo**: [`DEPUTYTASK_COPERTURA.md`](DEPUTYTASK_COPERTURA.md) — COV-3 **APERTO** (adapter `cnd_9712` pieno); COV-1 chiuso ([`DEPUTYTASK.md`](DEPUTYTASK.md)), COV-2 chiuso (PR #704, scontrino nel brief COV-3)
+> **Brief attivo**: [`DEPUTYTASK_COPERTURA.md`](DEPUTYTASK_COPERTURA.md) — COV-3 **CHIUSO — TEST OK** (adapter `cnd_9712` pieno, PR draft `cursor/cov-3-cnd-adapter-7169`); COV-1 chiuso ([`DEPUTYTASK.md`](DEPUTYTASK.md)), COV-2 chiuso (PR #704). Prossime: COV-4/5 (riusano lo stream `DEPUTYTASK_COPERTURA.md` solo dopo aggiornamento titolo/file list)
 > **Conferma committente (05/10/2026)**: copertura a spettro ampio (9606 + WPQR + CND 9712), non solo patentini.
 
 ## Fuori scope
@@ -67,9 +67,9 @@
 
 ### COV-3 — DoD
 
-- [ ] `GET /qualifications/coverage/domains` mostra `cnd_9712` con `maturity: full`
-- [ ] `POST /qualifications/coverage/verify` con `domain: cnd_9712`: settore + schema + tecnica + idoneità visiva; match / partial / no_match ordinati
-- [ ] Visione via `visionStateForPerson` (nessuna logica copiata); `missing`/`expired` → `no_match`
-- [ ] Industriale→prodotto = `partial`; schema/tecnica mai `no_match`; nessuna regola 9712 inventata
-- [ ] `requirementFields` estesi senza rompere COV-1; nessuna qualifica NDT → lista vuota + `message`
-- [ ] Jest mirato verde (`npx jest src/services/capabilityCoverage src/services/ndtInspectorGate`), `check-harness-boot` + `check-utf8-encoding` OK; nessuna migrazione
+- [x] `GET /qualifications/coverage/domains` mostra `cnd_9712` con `maturity: full`
+- [x] `POST /qualifications/coverage/verify` con `domain: cnd_9712`: settore + schema + tecnica + idoneità visiva; match / partial / no_match ordinati
+- [x] Visione via `visionStateForPerson` (nessuna logica copiata); `missing`/`expired` → `no_match`
+- [x] Industriale→prodotto = `partial`; schema/tecnica mai `no_match`; nessuna regola 9712 inventata
+- [x] `requirementFields` estesi senza rompere COV-1; nessuna qualifica NDT → lista vuota + `message`
+- [x] Jest mirato verde (`npx jest src/services/capabilityCoverage src/services/ndtInspectorGate`), `check-harness-boot` + `check-utf8-encoding` OK; nessuna migrazione

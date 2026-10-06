@@ -6,13 +6,17 @@
 
 > Avvio: Read con **`limit: 45`** (questa sezione deve entrarci). Resto del file = backlog/cronologia — **non** iniettare. Epic → `PLAN_*_SLICES.md`. Lezioni → [GUIDA](GUIDA_CONSOLIDATA.md) **a sezioni**. Archivio marzo 2026: [archive](archive/PROJECT_CONTEXT_STATO_FUNZIONALITA_2026-03.md).
 
-**Ultimo aggiornamento**: 05/10/2026. Vista committente: **Gestione → Stato sviluppo** (`/settings/stato-sviluppo`, superadmin).
+**Ultimo aggiornamento**: 06/10/2026. Vista committente: **Gestione → Stato sviluppo** (`/settings/stato-sviluppo`, superadmin).
 
 ### Moduli maturi
 
 Audit multi-standard · NC · Qualifiche · Saldatura (WPQR/WPS/3834/Welding Book + foto cordone) · SAL · Registro + Scadenzari · Alert · Riesame · RBAC · Obblighi legali · Assistente AI / Gap · CND · Libreria fonti (+ gap SA; import decreti Normattiva XML → agenti) · Second Brain Ambito (SB-4 + SB-6 + CTX-0…3) · Compliance Map (§8.2).
 
-### Sessione più recente (05/10/2026)
+### Sessione più recente (06/10/2026)
+
+**Copertura scalabile COV-3 (PR draft):** adapter `cnd_9712` pieno (`maturity: full`) — metodo + livello + settore (Annex A, `s ⊇ m`, industriale→prodotto = `partial`) + schema + tecnica (testo libero: mai `no_match`) + idoneità visiva via `visionStateForPerson` del gate CND-2 (`missing`/`expired` → `no_match`); nessuna migrazione. HITL settori industriali 9712 ancora aperto ([backlog](reference/NORME_MANCANTI_BACKLOG.md)). Prossime: COV-4/5.
+
+### Sessione precedente (05/10/2026)
 
 **Copertura scalabile COV-1 ✅ (#702) · COV-2 (PR):** adapter `wpqr_procedure` pieno (match/partial/no_match su 15614-1/-2 e 14555 stud; 15613 solo etichetta, nessuna soglia inventata; nessuna migrazione). chassis registry domini `welder_9606` + stub `wpqr_procedure` / match minimo `cnd_9712` + pannello Qualifiche. Piano: [`PLAN_COPERTURA_SCALABILE_SLICES.md`](agent-tasks/PLAN_COPERTURA_SCALABILE_SLICES.md). Spettro ampio confermato (9606 + WPQR + CND). Prossime: COV-3 adapter `cnd_9712` pieno, poi COV-4/5.
 
