@@ -48,6 +48,37 @@ function writeFixture(dir, filename, body) {
   fs.writeFileSync(path.join(dir, filename), body, 'utf8');
 }
 
+/** Toglie i literal EXEC(N'...') / EXEC('...') con escape '' T-SQL. */
+function stripSqlExecLiterals(sqlText) {
+  let out = '';
+  let i = 0;
+  const s = String(sqlText);
+  while (i < s.length) {
+    const rest = s.slice(i);
+    const exec = rest.match(/^EXEC\s*\(\s*N?'/i);
+    if (exec) {
+      i += exec[0].length;
+      while (i < s.length) {
+        if (s[i] === "'" && s[i + 1] === "'") {
+          i += 2;
+          continue;
+        }
+        if (s[i] === "'") {
+          i += 1;
+          break;
+        }
+        i += 1;
+      }
+      if (s[i] === ')') i += 1;
+      out += ' /*EXEC*/ ';
+      continue;
+    }
+    out += s[i];
+    i += 1;
+  }
+  return out;
+}
+
 describe('contratto intestazione migrazioni', () => {
   it(`sul repo reale, ogni main migration >= ${HEADER_FROM_NUMBER} ha intestazione valida`, () => {
     const findings = checkRepoMigrationContracts(MIGRATIONS_DIR);
@@ -173,6 +204,17 @@ describe('contratto intestazione migrazioni', () => {
     expect(seed).toMatch(/CI Demo Srl/);
     expect(seed).toMatch(/example\.test/);
     expect(seed.toLowerCase()).not.toMatch(/al\.project|qsstudio|fr-busato|systemgest/);
+  });
+
+  it('il seed CI è compile-safe: FROM/INSERT su tabelle solo dentro EXEC', () => {
+    const seed = fs.readFileSync(
+      path.join(MIGRATIONS_DIR, 'ci/seed_anonymous.sql'),
+      'utf8'
+    );
+    const compiled = stripSqlExecLiterals(seed);
+    expect(compiled).not.toMatch(/FROM\s+dbo\.(organizations|users|companies)/i);
+    expect(compiled).not.toMatch(/INSERT\s+INTO\s+dbo\.(organizations|users|companies)/i);
+    expect(seed).toMatch(/OBJECT_ID\(N'dbo\.organizations'/);
   });
 
   it('NNN_verify.sql e NNN_rollback.sql non sono migrazioni principali', () => {

@@ -33,7 +33,6 @@ function WeldingDashboardPage() {
     const results = await Promise.allSettled([
       apiService.getProjectStats(),
       apiService.getWPSList({ limit: 500 }),
-      apiService.getWPQRList({ limit: 500 }),
       apiService.getProjects({ status: "aperta", limit: 10 }),
       apiService.getQualifications({ qualification_type: "iso9606_1", limit: 200 }),
     ]);
@@ -75,48 +74,18 @@ function WeldingDashboardPage() {
         });
       }
 
-      // WPQR scadenze
-      if (results[2].status === "fulfilled") {
-        const wpqrList = results[2].value?.data || [];
-        const expiring = wpqrList.filter((w) => {
-          if (!w.expiry_date) return false;
-          const exp = new Date(w.expiry_date).getTime();
-          return exp > now && exp - now < thirtyDays;
-        });
-        const expired = wpqrList.filter((w) => {
-          if (!w.expiry_date) return false;
-          return new Date(w.expiry_date).getTime() < now;
-        });
-        if (expired.length > 0) {
-          newAlerts.push({
-            type: "danger",
-            icon: "\uD83D\uDD34",
-            text: `${expired.length} WPQR scaduti`,
-            action: () => navigate("/saldatura/procedure"),
-          });
-        }
-        if (expiring.length > 0) {
-          newAlerts.push({
-            type: "warning",
-            icon: "\uD83D\uDFE0",
-            text: `${expiring.length} WPQR in scadenza entro 30 giorni`,
-            action: () => navigate("/saldatura/procedure"),
-          });
-        }
-      }
-
       setAlerts(newAlerts);
     }
 
     // Active projects
-    if (results[3].status === "fulfilled") {
-      const projects = results[3].value?.data || [];
+    if (results[2].status === "fulfilled") {
+      const projects = results[2].value?.data || [];
       setActiveProjects(projects.slice(0, 10));
     }
 
-    // Qualifiche saldatura
-    if (results[4].status === "fulfilled") {
-      const quals = results[4].value?.qualifications || [];
+    // Qualifiche saldatura (ISO 9606 — expiry legittima, non WPQR)
+    if (results[3].status === "fulfilled") {
+      const quals = results[3].value?.qualifications || [];
       const now = Date.now();
       const thirtyDays = 30 * 24 * 60 * 60 * 1000;
       const scadute = quals.filter((q) => isExpiredSemaforo(q.semaforo)).length;

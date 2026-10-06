@@ -4,17 +4,11 @@
  * regola "Filtri: singola fonte di verità" dopo Qualifiche PR #368,
  * Scadenzari PR #371/#375, NC PR #374 — v. sgq-operating-memory.mdc § Filtri).
  *
- * Mappatura trovata: le 5 card ("Valide"/"Scad.60"/"Scad.30"/"Scadute"/
- * "Da approvare") sono calcolate SOLO su wpqr_records (getWPQRStats) — non
- * hanno alcun significato nel tab WPS, quindi ora sono mostrate solo quando
- * activeTab === "wpqr". La tendina "approval_status" (bozza/approvata/
- * rifiutata) duplicava esattamente la card "Da approvare" (bozza) e non
- * copriva affatto "rifiutata" (valore orfano, invisibile in ogni card, come
- * "Sospesa"/"Revocata" lo erano in Qualifiche prima del fix) — consolidate
- * ora in 3 card cliccabili (Da approvare/Approvate/Rifiutate), tendina
- * rimossa. Le 4 card semaforo scadenza restano informative (nessuna tendina
- * duplicava quella dimensione, quindi nessuna azione di consolidamento
- * necessaria lì — decisione documentata in DEPUTYTASK4).
+ * Mappatura: le card sono calcolate SOLO su wpqr_records (getWPQRStats) — non
+ * hanno alcun significato nel tab WPS, quindi sono mostrate solo quando
+ * activeTab === "wpqr". 3 card cliccabili (Da approvare/Approvate/Rifiutate),
+ * tendina approval_status rimossa. Le card semaforo scadenza (Valide/Scad.60/
+ * Scad.30/Scadute) sono state tolte: WPQR non ha expiry_date (ISO 15614/15613/14555).
  */
 import React from "react";
 import { describe, it, expect, vi, beforeEach } from "vitest";
@@ -41,7 +35,6 @@ import WeldingProceduresPage from "../pages/WeldingProceduresPage";
 
 const STATS = {
   totale: 10, da_approvare: 2, rifiutate: 1, approvate: 7,
-  valide: 5, in_scadenza_30: 1, in_scadenza_60: 1, scadute: 0,
 };
 
 describe("WeldingProceduresPage — card statistiche WPQR sostituiscono la tendina approval_status", () => {
@@ -61,7 +54,7 @@ describe("WeldingProceduresPage — card statistiche WPQR sostituiscono la tendi
     await waitFor(() => expect(apiService.getWPQRStats).toHaveBeenCalled());
 
     expect(screen.queryByText("Da approvare")).toBeNull();
-    expect(screen.queryByText("Valide")).toBeNull();
+    expect(screen.queryByText("Approvate")).toBeNull();
   });
 
   it("mostra la barra statistiche con le card cliccabili nel tab WPQR", async () => {
@@ -72,7 +65,8 @@ describe("WeldingProceduresPage — card statistiche WPQR sostituiscono la tendi
     await user.click(screen.getByRole("button", { name: /^WPQR/i }));
     await waitFor(() => expect(apiService.getWPQRList).toHaveBeenCalled());
 
-    expect(screen.getByText("Valide")).toBeTruthy();
+    expect(screen.queryByText("Valide")).toBeNull();
+    expect(screen.queryByText("Scadute")).toBeNull();
     expect(screen.getByRole("button", { name: /Da approvare/i })).toBeTruthy();
     expect(screen.getByRole("button", { name: /Approvate/i })).toBeTruthy();
     expect(screen.getByRole("button", { name: /Rifiutate/i })).toBeTruthy();
