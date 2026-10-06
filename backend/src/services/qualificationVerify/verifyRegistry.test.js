@@ -76,11 +76,10 @@ describe('verifyRegistry', () => {
         expect(registry.resolveProfileKey(null)).toBeNull();
     });
 
-    test('registerDefaultPacks registra i quattro pack stub, in modo idempotente', () => {
+    test('registerDefaultPacks registra i quattro pack, in modo idempotente', () => {
         ensureDefaultPacks();
         ensureDefaultPacks();
         expect(registry.listRulePacks().map((p) => p.id).sort()).toEqual(DEFAULT_PACKS.map((p) => p.id).sort());
         expect(DEFAULT_PACKS).toHaveLength(4);
-        expect(DEFAULT_PACKS.every((p) => p.rules.length === 0)).toBe(true);
     });
 });
