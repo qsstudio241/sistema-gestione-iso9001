@@ -75,17 +75,10 @@ function ApprovalBadge({ approvalStatus }) {
   return <span className={cls}>{label}</span>;
 }
 
-function SemaforoDot({ expiry_date, approvalStatus }) {
-  if (approvalStatus && approvalStatus !== "approvata") return <span className="wp-sem wp-sem-grigio" title="Non approvata" />;
-  if (!expiry_date) return <span className="wp-sem wp-sem-verde" title="Valida" />;
-  const now = Date.now();
-  const exp = new Date(expiry_date).getTime();
-  const diff = exp - now;
-  const d30 = 30 * 86400000;
-  const d60 = 60 * 86400000;
-  if (diff < 0)   return <span className="wp-sem wp-sem-rosso"    title="Scaduta" />;
-  if (diff < d30) return <span className="wp-sem wp-sem-rosso"    title="Scade entro 30 gg" />;
-  if (diff < d60) return <span className="wp-sem wp-sem-arancio"  title="Scade entro 60 gg" />;
+function SemaforoDot({ approvalStatus }) {
+  if (approvalStatus && approvalStatus !== "approvata") {
+    return <span className="wp-sem wp-sem-grigio" title="Non approvata" />;
+  }
   return <span className="wp-sem wp-sem-verde" title="Valida" />;
 }
 
@@ -658,7 +651,7 @@ function WPQRFormModal({ wpqr, wpsList, defaultCompanyId, onSave, onClose, onSav
     qualification_level: "", joint_type: "", standard_reference: "", wps_ref: "",
     vt_result: "NA", rt_result: "NA", ut_result: "NA", mt_result: "NA", pt_result: "NA",
     tensile_result: "NA", bend_result: "NA", impact_result: "NA", hardness_result: "NA",
-    macro_result: "NA", expiry_date: "", issue_date: "", certificate_number: "", notes: "",
+    macro_result: "NA", issue_date: "", certificate_number: "", notes: "",
     company_id: defaultCompanyId || null,
     // Parametri prova avanzati (pag.2 del verbale) — prima estratti solo dall'AI,
     // invisibili/non correggibili qui (gap segnalato dal committente 08/08/2026).
@@ -802,10 +795,6 @@ function WPQRFormModal({ wpqr, wpsList, defaultCompanyId, onSave, onClose, onSav
               <div className="wp-form-group">
                 <label className="wp-form-label">Data emissione</label>
                 <input className="wp-form-input" type="date" value={form.issue_date ? form.issue_date.substring(0, 10) : ""} onChange={(e) => set("issue_date", e.target.value)} />
-              </div>
-              <div className="wp-form-group">
-                <label className="wp-form-label">Scadenza</label>
-                <input className="wp-form-input" type="date" value={form.expiry_date ? form.expiry_date.substring(0, 10) : ""} onChange={(e) => set("expiry_date", e.target.value)} />
               </div>
             </div>
 
@@ -1337,17 +1326,9 @@ function WeldingProceduresPage() {
   const wpsTotalPages  = Math.max(1, Math.ceil(wpsTotal  / LIMIT));
   const wpqrTotalPages = Math.max(1, Math.ceil(wpqrTotal / LIMIT));
 
-  // Stats semaphore helpers — solo WPQR (vedi getWPQRStats): card informative
-  // (Valide/Scad.60/Scad.30/Scadute, sotto-partizione dei soli WPQR "approvata")
-  // + card cliccabili che sostituiscono la tendina "approval_status" (rimossa,
-  // ridondante — regola "Filtri: singola fonte di verità", DEPUTYTASK4).
+  // Stats WPQR: solo card cliccabili su approval_status (nessuna scadenza
+  // calendario — ISO 15614/15613/14555). Tendina rimossa in DEPUTYTASK4.
   const stats = wpqrStats || {};
-  const statsItems = [
-    { label: "Valide",         value: stats.valide        || 0, color: "#16a34a" },
-    { label: "Scad. 60 gg",    value: stats.in_scadenza_60 || 0, color: "#d97706" },
-    { label: "Scad. 30 gg",    value: stats.in_scadenza_30 || 0, color: "#ea580c" },
-    { label: "Scadute",        value: stats.scadute        || 0, color: "#dc2626" },
-  ];
   const approvalStatCards = [
     { label: "Da approvare", value: stats.da_approvare || 0, color: "#6b7280", statusValue: "bozza" },
     { label: "Approvate",    value: stats.approvate     || 0, color: "#16a34a", statusValue: "approvata" },
@@ -1419,13 +1400,6 @@ function WeldingProceduresPage() {
           per l'elenco WPS del tab adiacente. */}
       {activeTab === "wpqr" && !statsLoading && wpqrStats && (
         <div className="wp-stats-bar">
-          {statsItems.map((s) => (
-            <div key={s.label} className="wp-stat-item">
-              <span className="wp-stat-dot" style={{ background: s.color }} />
-              <span className="wp-stat-value" style={{ color: s.color }}>{s.value}</span>
-              <span className="wp-stat-label">{s.label}</span>
-            </div>
-          ))}
           {approvalStatCards.map((s) => (
             <button
               key={s.label}
@@ -1638,7 +1612,6 @@ function WeldingProceduresPage() {
                     <th>Spessore range</th>
                     <th>Data prova</th>
                     <th>Ente</th>
-                    <th>Scadenza</th>
                     <th>Approvazione</th>
                     <th>Cert.</th>
                     <th>Azioni</th>
@@ -1647,7 +1620,7 @@ function WeldingProceduresPage() {
                 <tbody>
                   {wpqrList.map((wq) => (
                     <tr key={wq.id}>
-                      <td><SemaforoDot expiry_date={wq.expiry_date} approvalStatus={wq.approval_status} /></td>
+                      <td><SemaforoDot approvalStatus={wq.approval_status} /></td>
                       <td><strong>{wq.reference_number || wq.wpqr_code || "-"}</strong></td>
                       <td>
                         {wq.wps_code ? (
@@ -1664,7 +1637,6 @@ function WeldingProceduresPage() {
                       </td>
                       <td>{wq.test_date ? formatDate(wq.test_date) : "-"}</td>
                       <td>{wq.examiner_body || wq.testing_body || "-"}</td>
-                      <td>{wq.expiry_date ? formatDate(wq.expiry_date) : "-"}</td>
                       <td><ApprovalBadge approvalStatus={wq.approval_status} /></td>
                       <td>
                         {wq.certificate_file_url
