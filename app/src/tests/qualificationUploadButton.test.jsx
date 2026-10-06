@@ -5,7 +5,7 @@ import React from "react";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import QualificationUploadButton, { suggestedDocTypeFromTab } from "../components/QualificationUploadButton.jsx";
+import QualificationUploadButton, { suggestedDocTypeFromTab, summarizeNormVerification } from "../components/QualificationUploadButton.jsx";
 
 vi.mock("../services/apiService", () => ({
   default: {
@@ -106,5 +106,58 @@ describe("QualificationUploadButton — wrong_module non è «Errore sconosciuto
     await waitFor(() => {
       expect(apiService.uploadQualificationsBatch).toHaveBeenCalled();
     });
+  });
+});
+
+describe("QualificationUploadButton — riepilogo avvisi norma (VQ-9)", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  const verif = (warn) => ({ summary: { warn, info: 0, verificabili: warn, non_verificabili: 0 }, findings: [] });
+
+  it("summarizeNormVerification: null senza esiti, somma avvisi e file con avvisi", () => {
+    expect(summarizeNormVerification(null)).toBeNull();
+    expect(summarizeNormVerification([{ status: "pending_review" }])).toBeNull();
+    expect(
+      summarizeNormVerification([
+        { verification: verif(2) },
+        { verification: verif(0) },
+        { status: "error" },
+        { verification: verif(1) },
+      ]),
+    ).toEqual({ warn: 3, filesWithWarn: 2, files: 3 });
+  });
+
+  async function uploadWith(results) {
+    const user = userEvent.setup();
+    apiService.uploadQualificationsBatch.mockResolvedValue({ results, uploaded: results.length, total: results.length });
+    render(
+      <QualificationUploadButton companyId="60" companyName="ADA" onUploadComplete={() => {}} activeTab="iso9606_1" />
+    );
+    await user.click(screen.getByRole("button", { name: /Carica qualifiche \(batch\)/i }));
+    await user.selectOptions(screen.getByRole("combobox"), "patentino_saldatore");
+    const file = new File(["%PDF"], "a.pdf", { type: "application/pdf" });
+    await user.upload(document.querySelector('input[type="file"]'), file);
+    await user.click(screen.getByRole("button", { name: /Estrai e rivedi/i }));
+  }
+
+  it("mostra il riepilogo quando i risultati hanno gia' l'esito di verifica", async () => {
+    await uploadWith([
+      { fileName: "a.pdf", status: "pending_review", staging_id: 1, warnings: [], verification: verif(2) },
+      { fileName: "b.pdf", status: "pending_review", staging_id: 2, warnings: [], verification: verif(0) },
+    ]);
+    const box = await screen.findByTestId("qual-upload-verify-summary");
+    expect(box.textContent).toMatch(/2 avvisi in 1 su 2 file verificati/);
+    expect(box.textContent).toMatch(/non impediscono il salvataggio/);
+    expect(screen.getAllByRole("button", { name: /Rivedi campi/i })).toHaveLength(2);
+  });
+
+  it("senza esiti di verifica non mostra nulla e non inventa conteggi", async () => {
+    await uploadWith([
+      { fileName: "a.pdf", status: "pending_review", staging_id: 1, warnings: ["Nome titolare non trovato"] },
+    ]);
+    expect(await screen.findByText(/Nome titolare non trovato/)).toBeInTheDocument();
+    expect(screen.queryByTestId("qual-upload-verify-summary")).toBeNull();
   });
 });
