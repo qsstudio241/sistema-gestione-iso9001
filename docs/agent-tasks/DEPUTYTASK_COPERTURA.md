@@ -1,11 +1,11 @@
 # DEPUTYTASK_COPERTURA — COV-5: «Fattibilità multi-dominio» in Progetti e Riesame (FE sull'API verify, nessun endpoint nuovo)
 
-**Stato:** APERTO  
-**Aperto:** 06/10/2026  
+**Stato:** CHIUSO — TEST OK  
+**Aperto:** 06/10/2026 · **Chiuso:** 06/10/2026  
 **Piano:** [`PLAN_COPERTURA_SCALABILE_SLICES.md`](PLAN_COPERTURA_SCALABILE_SLICES.md) § COV-5  
 **Dipende da:** COV-1 (PR #702) · COV-2 (PR #704) · COV-3 (PR #706) · COV-4 (PR #708) — tutte CHIUSE e su `main`  
 **Rischio:** **Medio** — solo FE additivo: nessun cambio a BE, contratto HTTP, semafori, auth/sync/schema, nessuna migrazione. **Diventa Alto** (stop + conferma committente) se per far quadrare il blocco serve toccare il semaforo saldatori (`esito`, `semaforo`) o una risposta di `getCoverage` / `extracted-coverage` — vedi § Condizione di stop.  
-**Stream:** `DEPUTYTASK_COPERTURA.md` (epic copertura; ultima slice. Dopo COV-5 lo stream si chiude: non riusarlo per un altro epic)  
+**Stream:** `DEPUTYTASK_COPERTURA.md` (epic copertura; ultima slice. **Stream chiuso con COV-5**: non riusarlo per un altro epic)  
 **Branch suggerito:** `cursor/cov-5-fattibilita-<suffisso>`
 
 **Scontrino COV-4 (CHIUSO, PR #708):** `getCoverage` (Progetti) e `computeCaseProjectCoverage` (Riesame; alimenta anche lo snapshot `capability-gap-report`) delegano al ponte `wpsWelderCoverage.js` su `welder_9606` con loader unico; contratto di risposta **invariato** (test differenziale ~115k confronti, delta semaforo 0 su Progetti; unico delta dichiarato: il Riesame ora include ISO 14732 e `thickness_max_unlimited`). Processo nel ponte = `checkProcess` legacy (non il matcher token-based dell'adapter) per non spostare i semafori. HITL aperti, **non** toccati qui: fonte processo = `welding_processes_validity`; qualifica senza processo = `partial`; semafori per qualificatore Progetti ≠ Riesame.
@@ -136,6 +136,29 @@ Verificato su `origin/main` (06/10/2026): **nessun** altro `DEPUTYTASK*` è APER
 
 `Leggi docs/agent-tasks/DEPUTYTASK_COPERTURA.md ed eseguilo. Chiudi con TEST OK o FIX NON APPLICABILI.`
 
+## Esito (06/10/2026) — TEST OK
+
+**Consegnato (solo FE additivo, nessun file in `backend/`, nessuna migrazione, nessun endpoint):**
+
+- Blocco «Fattibilità multi-dominio» (`CoverageFeasibilityBlock`) montato in Progetti (`CoverageModal`, anche senza WPS: pulsante `disabled` + `title`) e in Riesame (`CoveragePanel`, dopo la tabella WPS e prima degli advisory). Semafori, tabelle, advisory e idoneità visiva **invariati**.
+- WPQR: una `verify` `wpqr_procedure` per WPS su click (max 20, batch 4, `Promise.allSettled`), **mai** con criteri vuoti (riga «Requisiti WPS insufficienti per la verifica»), `reasons[]`/`message` verbatim, errore isolato per riga.
+- Saldatori: riga read-only da `summary` del semaforo, zero `verify` `welder_9606`. CND: `CoverageVerifyPanel` `embedded` solo `cnd_9712`, ambito = azienda della commessa.
+- `CoverageVerifyPanel`: props `allowedDomains` / `defaultDomain` / `embedded` retrocompatibili (i 4 test esistenti invariati) ed export `COVERAGE_STATUS_LABEL` / `filterCoverageDomains`; CSS `.sq-cov-*` spostato in `CoverageVerifyPanel.css` (primitivi scoped; rimosso da `QualificationsPage.css`).
+
+**File toccati:** `app/src/components/CoverageFeasibilityBlock.jsx` (nuovo) · `CoverageVerifyPanel.jsx` · `CoverageVerifyPanel.css` (nuovo) · `app/src/utils/coverageCriteriaFromWps.js` (nuovo) · `app/src/pages/ProjectsPage.jsx` (`CoverageModal` + stato `setCoverageProject`) · `ContractReviewPage.jsx` (`CoveragePanel`) · `QualificationsPage.css` (solo rimozione blocco COV-1) · test `coverageFeasibilityBlock.test.jsx`, `coverageCriteriaFromWps.test.js` (nuovi), `coverageVerifyPanel.test.jsx` (casi aggiunti) · doc: piano, questo brief, `LIBRERIA_UI_SGQ.md`, `PROJECT_ROADMAP.md`.
+
+**Scostamenti dal brief (dichiarati):**
+
+- Aggiunto `app/src/tests/coverageFeasibilityMount.test.jsx` (non in elenco): montaggio nella modale di Progetti (ordine dopo la tabella, `company_id` della commessa, stato vuoto). Solo test, nessun codice di produzione.
+- `ContractReviewPage.jsx`: `CoveragePanel` riceve la prop opzionale `companiesById` (già nello scope della pagina) per mostrare il nome azienda nell'ambito; `company_id`/`company_name` vengono dalla lista `getProjects` già caricata.
+- Riga saldatori mostrata sempre che il semaforo sia presente (anche se `getCoverageDomains` fallisce): è un dato già in memoria, non dipende dal registry.
+- Riesame: nessun test di integrazione (`CoveragePanel` non è esportato); coperto da build e da test del blocco. `PROJECT_CONTEXT.md` non toccato (componente dentro la riga «Qualifiche / alert / copertura»).
+- Smoke autenticato non eseguito (la produzione Netlify non contiene il branch); verifica a vista con harness Vite + Playwright su dati mock (stati ok / calcolo / vuoto / errore registro).
+
+**Test:** `cd app && NODE_ENV=test npm run test:run` → 261 file / 1724 test verdi (incluso `coverageFeasibilityBlock` 19, `coverageCriteriaFromWps` 13, `coverageVerifyPanel` 11, `coverageFeasibilityMount` 3, `projectsRowActions`, `projectsCompanyScopeClient`, `contractReview*`, `routerContext.match`); `npm run build` OK; `check-harness-boot` OK; `check-utf8-encoding` 0 issue; `git diff --stat origin/main -- backend` vuoto.
+
+**HITL aperti, non toccati:** advisory WPQR vs «Registro capacità» nel Riesame (due viste coesistono) · `welder_9606` via registry accanto al semaforo · requisiti CND derivati dalla commessa · `joint_type` nei criteri WPQR · 9712 Annex A.3 / Table 1 · soglie 15613.
+
 ## Handoff
 
-_(vuoto — compilare dal template [`HANDOFF_TEMPLATE.md`](HANDOFF_TEMPLATE.md) solo se la slice non si chiude)_
+_(vuoto — slice chiusa)_
