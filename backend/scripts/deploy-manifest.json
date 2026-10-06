@@ -101,7 +101,8 @@
     {
       "name": "data-seeds",
       "files": [
-        "data/norm_requirements_seed.json"
+        "data/norm_requirements_seed.json",
+        "data/legislation_seed.json"
       ]
     },
     {
