@@ -14,6 +14,11 @@ import {
   formatImportSize,
   compareFoldersForUpload,
   lotDocumentTypeHint,
+  buildProgressFilesFromLots,
+  buildProgressFilesFromNames,
+  withLotFileStatus,
+  withIndexedFileStatus,
+  progressFileStatusLabel,
 } from "../utils/importFolderPlan";
 
 function fakeFile(rel, { name, size = 1024 } = {}) {
@@ -154,5 +159,51 @@ describe("importFolderPlan — ordine e chunk", () => {
   it("ROOT_FOLDER_KEY per file nella radice", () => {
     const inv = buildFolderInventory([fakeFile("Documenti/solo.pdf")]);
     expect(inv.folders[0].key).toBe(ROOT_FOLDER_KEY);
+  });
+});
+
+describe("importFolderPlan — progresso per file", () => {
+  it("buildProgressFilesFromLots crea una riga per file con lotIndex", () => {
+    const lots = [
+      { files: [fakeFile("Documenti/Capitolati/rfq.pdf")] },
+      { files: [fakeFile("Documenti/Scan/pagina.jpg")] },
+    ];
+    const rows = buildProgressFilesFromLots(lots);
+    expect(rows).toHaveLength(2);
+    expect(rows[0]).toEqual(expect.objectContaining({
+      name: "Documenti/Capitolati/rfq.pdf",
+      lotIndex: 0,
+      status: "pending",
+    }));
+    expect(rows[1].lotIndex).toBe(1);
+  });
+
+  it("withLotFileStatus marca il lotto corrente e i precedenti", () => {
+    const rows = buildProgressFilesFromLots([
+      { files: [fakeFile("a/uno.pdf")] },
+      { files: [fakeFile("b/due.pdf")] },
+    ]);
+    const current = withLotFileStatus(rows, 0, "current");
+    expect(current.map((r) => r.status)).toEqual(["current", "pending"]);
+    const doneFirst = withLotFileStatus(rows, 1, "current");
+    expect(doneFirst.map((r) => r.status)).toEqual(["done", "current"]);
+    const stopped = withLotFileStatus(rows, 1, "cancelled", { pendingAfter: "cancelled" });
+    expect(stopped.map((r) => r.status)).toEqual(["done", "cancelled"]);
+  });
+
+  it("withIndexedFileStatus e etichette UI", () => {
+    const rows = buildProgressFilesFromNames(["a.pdf", "b.pdf", "c.pdf"]);
+    expect(withIndexedFileStatus(rows, 1).map((r) => r.status)).toEqual([
+      "done",
+      "current",
+      "pending",
+    ]);
+    expect(withIndexedFileStatus(rows, 3).map((r) => r.status)).toEqual([
+      "done",
+      "done",
+      "done",
+    ]);
+    expect(progressFileStatusLabel("current")).toBe("In corso");
+    expect(progressFileStatusLabel("done")).toBe("Fatto");
   });
 });
