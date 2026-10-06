@@ -1,5 +1,7 @@
 'use strict';
 
+const { toNumericOrNull } = require('./numericSanitizer');
+
 /**
  * weldingDesignation.js — Costruzione designazione qualifica saldatore ISO 9606-1.
  *
@@ -110,8 +112,10 @@ function resolvePrintedDesignation(printed, computeFields = {}) {
  * @returns {{ s: number|null, t: number|null }}
  */
 function resolveTestThicknessByJoint({ joint_type: jointType, s, t } = {}) {
-    let sNum = num(s);
-    let tNum = num(t);
+    // Stesso sanitizer dell'ingest (virgola italiana, unità, range, N.A.).
+    // Number("10,5") / Number("10 mm") diventano null e su BW lo spessore si perde.
+    let sNum = toNumericOrNull(s);
+    let tNum = toNumericOrNull(t);
     const joint = jointType == null ? '' : String(jointType).trim().toUpperCase();
     if (joint === 'BW' && sNum == null && tNum != null) {
         sNum = tNum;

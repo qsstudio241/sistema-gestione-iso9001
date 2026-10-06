@@ -992,6 +992,15 @@ describe('spessore prova per profilo giunto (VQ-BW-S) — BW -> s depositato, FW
             .toMatchObject({ thickness_s_test_mm: null, thickness_t_test_mm: null });
     });
 
+    it('BW: virgola italiana e unità in t finiscono in s (toNumericOrNull, non Number)', () => {
+        expect(map({ joint_type: 'BW', thickness_t_test_mm: '10,5' }))
+            .toMatchObject({ thickness_s_test_mm: 10.5, thickness_t_test_mm: null });
+        expect(map({ joint_type: 'BW', thickness_t_test_mm: '10 mm' }))
+            .toMatchObject({ thickness_s_test_mm: 10, thickness_t_test_mm: null });
+        expect(map({ joint_type: 'BW', thickness_t_test_mm: 'N.A.' }))
+            .toMatchObject({ thickness_s_test_mm: null, thickness_t_test_mm: null });
+    });
+
     describe('commit', () => {
         async function commit(fields) {
             const dupCheckReq = { input: jest.fn().mockReturnThis(), query: jest.fn().mockResolvedValue({ recordset: [{ cnt: 0 }] }) };
@@ -1026,6 +1035,20 @@ describe('spessore prova per profilo giunto (VQ-BW-S) — BW -> s depositato, FW
             const req = await commit({ thickness_t_test_mm: 10 });
             expect(req.input).toHaveBeenCalledWith('thickSTest', null);
             expect(req.input).toHaveBeenCalledWith('thickTTest', 10);
+        });
+
+        it('BW: "10,5" e "10 mm" persistono in s; "N.A." resta null', async () => {
+            const comma = await commit({ joint_type: 'BW', thickness_t_test_mm: '10,5' });
+            expect(comma.input).toHaveBeenCalledWith('thickSTest', 10.5);
+            expect(comma.input).toHaveBeenCalledWith('thickTTest', null);
+
+            const unit = await commit({ joint_type: 'BW', thickness_t_test_mm: '10 mm' });
+            expect(unit.input).toHaveBeenCalledWith('thickSTest', 10);
+            expect(unit.input).toHaveBeenCalledWith('thickTTest', null);
+
+            const na = await commit({ joint_type: 'BW', thickness_t_test_mm: 'N.A.' });
+            expect(na.input).toHaveBeenCalledWith('thickSTest', null);
+            expect(na.input).toHaveBeenCalledWith('thickTTest', null);
         });
     });
 });

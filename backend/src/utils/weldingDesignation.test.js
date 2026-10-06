@@ -181,4 +181,12 @@ describe('resolveTestThicknessByJoint', () => {
         expect(resolveTestThicknessByJoint({ joint_type: 'BW', t: 'N.A.' })).toEqual({ s: null, t: null });
         expect(resolveTestThicknessByJoint()).toEqual({ s: null, t: null });
     });
+
+    it('toNumericOrNull: virgola italiana, unità e N.A. (Number() li azzererebbe)', () => {
+        expect(resolveTestThicknessByJoint({ joint_type: 'BW', t: '10,5' })).toEqual({ s: 10.5, t: null });
+        expect(resolveTestThicknessByJoint({ joint_type: 'BW', t: '10 mm' })).toEqual({ s: 10, t: null });
+        expect(resolveTestThicknessByJoint({ joint_type: 'BW', t: 'N.A.' })).toEqual({ s: null, t: null });
+        expect(resolveTestThicknessByJoint({ joint_type: 'FW', s: '10,5' })).toEqual({ s: null, t: 10.5 });
+        expect(resolveTestThicknessByJoint({ joint_type: 'FW', s: '10 mm' })).toEqual({ s: null, t: 10 });
+    });
 });
