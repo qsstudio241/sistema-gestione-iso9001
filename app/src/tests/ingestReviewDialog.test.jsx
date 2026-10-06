@@ -1,13 +1,22 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import React from "react";
-import { render, screen, fireEvent } from "@testing-library/react";
+import { render, screen, fireEvent, act, cleanup } from "@testing-library/react";
+
+vi.mock("../services/apiService", () => ({
+  default: { verifyQualification: vi.fn() },
+}));
+import apiService from "../services/apiService";
 
 import IngestReviewDialog, {
+  buildVerifyFields,
+  isVerifiableDocType,
   isFieldConfirmedByAi,
   formatReadonlyDisplay,
 } from "../components/IngestReviewDialog.jsx";
 
 beforeEach(() => {
+  apiService.verifyQualification.mockReset();
+  apiService.verifyQualification.mockReturnValue(new Promise(() => {}));
   window.matchMedia = vi.fn(() => ({
     matches: false,
     media: "",
@@ -250,5 +259,145 @@ describe("IngestReviewDialog — revisione adattiva per confidenza", () => {
     const select = document.getElementById("ingest-field-welding_process");
     expect(select.tagName).toBe("SELECT");
     expect(select.closest(".ingest-review__field--medium")).not.toBeNull();
+  });
+});
+
+describe("IngestReviewDialog — verifica qualifica vs norma (VQ-9)", () => {
+  const WARN_MSG = "Spessore massimo 40 mm oltre il campo qualificato (\u00a75.7 Tab. 6).";
+  const verification = {
+    profile: "9606-1:BW",
+    standard: { family: "9606-1", edition: "2017" },
+    findings: [{
+      code: "WQ9606_1.CORR.THK_BW",
+      family: "correttezza",
+      severity: "warn",
+      status: "verificabile",
+      field: "thickness_max_mm",
+      direction: "over_claim",
+      read_value: 40,
+      expected_value: { min: 3, max: 24 },
+      source: { norm: "ISO 9606-1", edition: "2017", clause: "\u00a75.7 Tab. 6", text_status: "md_integrale" },
+      message_it: WARN_MSG,
+    }],
+    summary: { warn: 1, info: 0, verificabili: 1, non_verificabili: 0 },
+    engine_version: "1",
+    mode: "review",
+  };
+  const baseProps = {
+    open: true,
+    docType: "patentino_saldatore",
+    fileName: "certificato.pdf",
+    qualificationType: "Saldatore ISO 9606-1",
+    fields: { person_name: "Mario Rossi", thickness_max_mm: 40, joint_type: "BW" },
+    fieldConfidence: {},
+    onConfirm: vi.fn(),
+    onReject: vi.fn(),
+    onClose: vi.fn(),
+  };
+
+  afterEach(() => {
+    cleanup();
+    vi.useRealTimers();
+    Object.defineProperty(window.navigator, "onLine", { value: true, configurable: true });
+  });
+
+  it("buildVerifyFields scarta vuoti/oggetti e tiene scalari e array di scalari", () => {
+    expect(
+      buildVerifyFields({ a: "x", b: "  ", c: null, d: 3, e: true, f: [], g: ["PA", "", "PB"], h: { x: 1 } }),
+    ).toEqual({ a: "x", d: 3, e: true, g: ["PA", "PB"] });
+    expect(buildVerifyFields({ a: 1, b: 2 }, ["b", "z"])).toEqual({ b: 2 });
+  });
+
+  it("isVerifiableDocType: solo patentino saldatore e qualifica 14732", () => {
+    expect(isVerifiableDocType("patentino_saldatore")).toBe(true);
+    expect(isVerifiableDocType("qualifica_14732")).toBe(true);
+    expect(isVerifiableDocType("cert_ndt")).toBe(false);
+    expect(isVerifiableDocType("wps")).toBe(false);
+  });
+
+  it("senza `verification` chiama l'endpoint una volta all'apertura e mostra il pannello", async () => {
+    apiService.verifyQualification.mockResolvedValue({ verification });
+    await act(async () => { render(<IngestReviewDialog {...baseProps} />); });
+
+    expect(apiService.verifyQualification).toHaveBeenCalledTimes(1);
+    const [fields, opts] = apiService.verifyQualification.mock.calls[0];
+    expect(fields).toEqual(expect.objectContaining({ thickness_max_mm: 40, joint_type: "BW" }));
+    expect(opts).toEqual({ qualificationType: "Saldatore ISO 9606-1" });
+    expect(await screen.findByTestId("vfy-panel")).toBeInTheDocument();
+    expect(screen.getAllByText(WARN_MSG).length).toBeGreaterThan(0);
+  });
+
+  it("con `verification` gia' presente non chiama l'endpoint e non duplica l'avviso tra i warning", async () => {
+    await act(async () => {
+      render(<IngestReviewDialog {...baseProps} verification={verification} warnings={[WARN_MSG, "Nome titolare non trovato"]} />);
+    });
+    expect(apiService.verifyQualification).not.toHaveBeenCalled();
+    expect(screen.getAllByTestId("vfy-finding")).toHaveLength(1);
+    expect(screen.getAllByText(WARN_MSG)).toHaveLength(1);
+    expect(screen.getByText(/Nome titolare non trovato/)).toBeInTheDocument();
+  });
+
+  it("notifica l'esito al genitore (per il riepilogo del caricamento)", async () => {
+    const onVerificationChange = vi.fn();
+    await act(async () => {
+      render(<IngestReviewDialog {...baseProps} verification={verification} onVerificationChange={onVerificationChange} />);
+    });
+    expect(onVerificationChange).toHaveBeenCalledWith(verification);
+  });
+
+  it("modifica: nessuna chiamata a ogni tasto; una sola al blur dopo il debounce; blur senza modifiche no", async () => {
+    vi.useFakeTimers();
+    await act(async () => { render(<IngestReviewDialog {...baseProps} verification={verification} />); });
+    const input = document.getElementById("ingest-field-thickness_max_mm");
+
+    fireEvent.change(input, { target: { value: "2" } });
+    fireEvent.change(input, { target: { value: "20" } });
+    await act(async () => { await vi.advanceTimersByTimeAsync(2000); });
+    expect(apiService.verifyQualification).not.toHaveBeenCalled();
+
+    fireEvent.blur(input);
+    fireEvent.blur(input);
+    await act(async () => { await vi.advanceTimersByTimeAsync(700); });
+    expect(apiService.verifyQualification).toHaveBeenCalledTimes(1);
+    expect(apiService.verifyQualification.mock.calls[0][0].thickness_max_mm).toBe("20");
+
+    fireEvent.blur(input);
+    await act(async () => { await vi.advanceTimersByTimeAsync(1500); });
+    expect(apiService.verifyQualification).toHaveBeenCalledTimes(1);
+  });
+
+  it("errore di verifica: pannello in errore, salvataggio comunque possibile", async () => {
+    apiService.verifyQualification.mockRejectedValue(new Error("Verifica non disponibile. Riprovare."));
+    const onConfirm = vi.fn();
+    await act(async () => { render(<IngestReviewDialog {...baseProps} onConfirm={onConfirm} />); });
+
+    expect(await screen.findByTestId("vfy-error")).toHaveTextContent("Verifica non disponibile");
+    const save = screen.getByRole("button", { name: /Conferma e salva/i });
+    expect(save).not.toBeDisabled();
+    await act(async () => { fireEvent.click(save); });
+    expect(onConfirm).toHaveBeenCalledTimes(1);
+  });
+
+  it("offline: nessuna chiamata, messaggio del pannello, pulsanti operativi visibili", async () => {
+    Object.defineProperty(window.navigator, "onLine", { value: false, configurable: true });
+    await act(async () => { render(<IngestReviewDialog {...baseProps} />); });
+    expect(apiService.verifyQualification).not.toHaveBeenCalled();
+    expect(screen.getByTestId("vfy-offline")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /Conferma e salva/i })).not.toBeDisabled();
+    expect(screen.getByRole("button", { name: /Scarta/i })).toBeInTheDocument();
+  });
+
+  it("dialog chiuso e senza `fields`: nessun re-render infinito ne' chiamata (reset idempotente)", () => {
+    const { container } = render(<IngestReviewDialog open={false} docType="wps" fileName="x.pdf" onConfirm={vi.fn()} onReject={vi.fn()} onClose={vi.fn()} />);
+    expect(container.firstChild).toBeNull();
+    expect(apiService.verifyQualification).not.toHaveBeenCalled();
+  });
+
+  it("tipi documento senza verifica (NDT): nessuna chiamata e nessun pannello", async () => {
+    await act(async () => {
+      render(<IngestReviewDialog {...baseProps} docType="cert_ndt" fields={{ person_name: "Mario Rossi" }} />);
+    });
+    expect(apiService.verifyQualification).not.toHaveBeenCalled();
+    expect(screen.queryByTestId("ingest-verify")).toBeNull();
   });
 });
