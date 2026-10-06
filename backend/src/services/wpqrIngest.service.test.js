@@ -83,7 +83,6 @@ describe('checkWpqrPlausibility (gap analysis 26/07/2026 — warning-only)', () 
     it('nessun warning per campi plausibili e coerenti', () => {
         const warnings = checkWpqrPlausibility({
             approval_date: '2024-04-17',
-            expiry_date: '2027-04-16',
             thickness_min: 3, thickness_max: 12,
             diameter_min: 100, diameter_max: 500,
             filler_material: 'G 42 4 M21 3Si1',
@@ -92,12 +91,12 @@ describe('checkWpqrPlausibility (gap analysis 26/07/2026 — warning-only)', () 
         expect(warnings).toEqual([]);
     });
 
-    it('segnala scadenza anteriore alla data di emissione', () => {
+    it('non segnala più un warning di scadenza calendario (campo rimosso da WPQR)', () => {
         const warnings = checkWpqrPlausibility({
             approval_date: '2024-04-17',
             expiry_date: '2020-01-01',
         });
-        expect(warnings.some((w) => w.includes('scadenza'))).toBe(true);
+        expect(warnings.some((w) => w.includes('scadenza'))).toBe(false);
     });
 
     it('segnala range spessore invertito', () => {
@@ -478,14 +477,15 @@ describe('commitWPQRFromFields — sanitizzazione numerica', () => {
 });
 
 describe('extractWPQRFromPdf — warning di plausibilità propagati', () => {
-    it('include il warning di scadenza incoerente nell\'esito pending_review', async () => {
+    it('include il warning di range spessore invertito nell\'esito pending_review', async () => {
         runDocumentIngest.mockResolvedValue({
             text: 'WPQR 21-02906 processo 135',
             fields: {
                 wpqr_number: '21-02906',
                 welding_process: '135',
                 approval_date: '2024-04-17',
-                expiry_date: '2020-01-01',
+                thickness_min: 20,
+                thickness_max: 5,
             },
             fieldConfidence: {},
             extractionConfidence: 70,
@@ -497,7 +497,7 @@ describe('extractWPQRFromPdf — warning di plausibilità propagati', () => {
         const out = await extractWPQRFromPdf(Buffer.from('%PDF'), '21-02906.pdf', 1001, 2001);
 
         expect(out.status).toBe('pending_review');
-        expect(out.warnings.some((w) => w.includes('scadenza'))).toBe(true);
+        expect(out.warnings.some((w) => w.includes('invertito'))).toBe(true);
     });
 });
 

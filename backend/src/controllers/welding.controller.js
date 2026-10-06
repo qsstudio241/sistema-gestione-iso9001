@@ -24,7 +24,7 @@ const WPQR_MANUAL_EDITABLE_FIELDS = [
     'thickness_tested', 'thickness_min', 'thickness_max', 'diameter_min', 'diameter_max',
     'vt_result', 'rt_result', 'ut_result', 'mt_result', 'pt_result',
     'tensile_result', 'bend_result', 'impact_result', 'hardness_result',
-    'macro_result', 'issue_date', 'expiry_date', 'certificate_number', 'notes',
+    'macro_result', 'issue_date', 'certificate_number', 'notes',
     'qualification_level', 'joint_type', 'standard_reference', 'wps_ref',
     'base_material_spec', 'shielding_gas', 'current_type', 'metal_transfer',
     'mechanization', 'single_multi_run', 'heat_input_note', 'pwht',
@@ -394,7 +394,7 @@ async function listWPQR(req, res) {
     try {
         const { organization_id } = req.user;
         const {
-            wps_id, company_id, approval_status, expiring_days, search,
+            wps_id, company_id, approval_status, search,
             page = 1, limit = 50,
         } = req.query;
 
@@ -413,10 +413,6 @@ async function listWPQR(req, res) {
         if (approval_status) {
             conditions.push('wq.approval_status = @approval_status');
             params.approval_status = approval_status;
-        }
-        if (expiring_days) {
-            conditions.push(`wq.expiry_date IS NOT NULL AND wq.expiry_date >= CAST(GETDATE() AS DATE) AND wq.expiry_date < DATEADD(day, @expiring_days, CAST(GETDATE() AS DATE))`);
-            params.expiring_days = parseInt(expiring_days);
         }
         if (search) {
             conditions.push('(wq.wpqr_code LIKE @search OR wq.reference_number LIKE @search OR wq.testing_body LIKE @search OR wq.examiner_body LIKE @search OR wq.welder_name LIKE @search)');
@@ -499,7 +495,7 @@ async function createWPQR(req, res) {
             thickness_tested, thickness_min, thickness_max, diameter_min, diameter_max,
             vt_result, rt_result, ut_result, mt_result, pt_result,
             tensile_result, bend_result, impact_result, hardness_result,
-            macro_result, issue_date, expiry_date, certificate_number, notes,
+            macro_result, issue_date, certificate_number, notes,
             // Copertura pag.1 + parametri prova pag.2 (DEPUTYTASK1 25/07/2026)
             qualification_level, joint_type, standard_reference, wps_ref,
             base_material_spec, shielding_gas, current_type, metal_transfer,
@@ -537,7 +533,7 @@ async function createWPQR(req, res) {
                 thickness_tested, thickness_min, thickness_max, diameter_min, diameter_max,
                 vt_result, rt_result, ut_result, mt_result, pt_result,
                 tensile_result, bend_result, impact_result, hardness_result,
-                macro_result, issue_date, expiry_date, certificate_number, notes,
+                macro_result, issue_date, certificate_number, notes,
                 qualification_level, joint_type, standard_reference, wps_ref,
                 base_material_spec, shielding_gas, current_type, metal_transfer,
                 mechanization, single_multi_run, heat_input_note, pwht,
@@ -556,7 +552,7 @@ async function createWPQR(req, res) {
                 @thickness_tested, @thickness_min, @thickness_max, @diameter_min, @diameter_max,
                 @vt_result, @rt_result, @ut_result, @mt_result, @pt_result,
                 @tensile_result, @bend_result, @impact_result, @hardness_result,
-                @macro_result, @issue_date, @expiry_date, @certificate_number, @notes,
+                @macro_result, @issue_date, @certificate_number, @notes,
                 @qualification_level, @joint_type, @standard_reference, @wps_ref,
                 @base_material_spec, @shielding_gas, @current_type, @metal_transfer,
                 @mechanization, @single_multi_run, @heat_input_note, @pwht,
@@ -596,7 +592,6 @@ async function createWPQR(req, res) {
             hardness_result:    hardness_result || null,
             macro_result:       macro_result || null,
             issue_date:         issue_date || null,
-            expiry_date:        expiry_date || null,
             certificate_number: certificate_number || null,
             notes:              notes || null,
             qualification_level: qualification_level || null,
@@ -870,7 +865,7 @@ async function removeWpsWelder(req, res) {
 }
 
 // ===============================================================================
-// WPQR ? Stats semaforo scadenze
+// WPQR — Stats per approval_status (nessuna scadenza calendario: ISO 15614/15613/14555)
 // ===============================================================================
 
 // GET /api/v1/welding/wpqr/stats
@@ -891,25 +886,7 @@ async function getWPQRStats(req, res) {
                 COUNT(*) AS totale,
                 SUM(CASE WHEN wq.approval_status = 'bozza'      THEN 1 ELSE 0 END) AS da_approvare,
                 SUM(CASE WHEN wq.approval_status = 'rifiutata'  THEN 1 ELSE 0 END) AS rifiutate,
-                SUM(CASE WHEN wq.approval_status = 'approvata'  THEN 1 ELSE 0 END) AS approvate,
-                SUM(CASE WHEN wq.approval_status = 'approvata'
-                         AND (wq.expiry_date IS NULL OR wq.expiry_date >= DATEADD(day, 60, CAST(GETDATE() AS DATE)))
-                         THEN 1 ELSE 0 END) AS valide,
-                SUM(CASE WHEN wq.approval_status = 'approvata'
-                         AND wq.expiry_date IS NOT NULL
-                         AND wq.expiry_date >= CAST(GETDATE() AS DATE)
-                         AND wq.expiry_date < DATEADD(day, 30, CAST(GETDATE() AS DATE))
-                         THEN 1 ELSE 0 END) AS in_scadenza_30,
-                SUM(CASE WHEN wq.approval_status = 'approvata'
-                         AND wq.expiry_date IS NOT NULL
-                         AND wq.expiry_date >= CAST(GETDATE() AS DATE)
-                         AND wq.expiry_date >= DATEADD(day, 30, CAST(GETDATE() AS DATE))
-                         AND wq.expiry_date < DATEADD(day, 60, CAST(GETDATE() AS DATE))
-                         THEN 1 ELSE 0 END) AS in_scadenza_60,
-                SUM(CASE WHEN wq.approval_status = 'approvata'
-                         AND wq.expiry_date IS NOT NULL
-                         AND wq.expiry_date < CAST(GETDATE() AS DATE)
-                         THEN 1 ELSE 0 END) AS scadute
+                SUM(CASE WHEN wq.approval_status = 'approvata'  THEN 1 ELSE 0 END) AS approvate
             FROM wpqr_records wq
             LEFT JOIN welding_procedures w ON wq.wps_id = w.id
             WHERE wq.organization_id = @organization_id

@@ -14,7 +14,6 @@ const {
     SUGGESTED_MODULE,
 } = require('../utils/documentClassifier');
 const {
-    checkDateOrder,
     checkNumericRangeOrder,
     checkFillerMaterial14341Plausibility,
     checkShieldingGasKnown,
@@ -105,13 +104,6 @@ function extractStudDiameterFromText(text) {
  */
 function checkWpqrPlausibility(f) {
     const warnings = [];
-    const dateWarn = checkDateOrder({
-        laterDate: f.expiry_date,
-        earlierDate: f.approval_date,
-        laterLabel: 'Data di scadenza',
-        earlierLabel: 'Data di emissione',
-    });
-    if (dateWarn) warnings.push(dateWarn);
 
     const thicknessWarn = checkNumericRangeOrder({
         min: f.thickness_min, max: f.thickness_max, label: 'spessore',
@@ -346,7 +338,6 @@ function mapPipelineFieldsToReview(f, fileName) {
         welding_positions: normalizePositions(f.welding_positions),
         examiner_body: f.issuing_body || f.examiner_body || f.testing_body || null,
         welder_name: f.welder_name || null,
-        expiry_date: f.expiry_date || null,
         certificate_number: f.certificate_number || null,
         pwht: f.pwht === true || f.pwht === 1 || f.pwht === '1',
         wps_ref: f.wps_ref || null,
@@ -453,7 +444,6 @@ function mapReviewFieldsToDb(f, fileName) {
         examiner_body: f.examiner_body || f.issuing_body || f.testing_body || null,
         welder_name: f.welder_name || null,
         issue_date: f.approval_date || f.issue_date || null,
-        expiry_date: f.expiry_date || null,
         certificate_number: f.certificate_number || null,
         pwht: f.pwht === true || f.pwht === 1 || f.pwht === '1' ? 1 : 0,
         wps_ref: f.wps_ref || null,
@@ -582,7 +572,7 @@ async function commitWPQRFromFields(fields, organizationId, companyId, options =
             thickness_t2_min, thickness_t2_max, thickness_t2_max_unlimited,
             diameter_min, diameter_max, throat_test_mm,
             welding_positions, examiner_body, testing_body,
-            welder_name, issue_date, expiry_date,
+            welder_name, issue_date,
             certificate_number, certificate_file_url,
             pwht, approval_status, status,
             qualification_level, joint_type, standard_reference, wps_ref,
@@ -602,7 +592,7 @@ async function commitWPQRFromFields(fields, organizationId, companyId, options =
             @thickness_t2_min, @thickness_t2_max, @thickness_t2_max_unlimited,
             @diameter_min, @diameter_max, @throat_test_mm,
             @welding_positions, @examiner_body, @examiner_body,
-            @welder_name, @issue_date, @expiry_date,
+            @welder_name, @issue_date,
             @certificate_number, @certificate_file_url,
             @pwht, 'bozza', 'attiva',
             @qualification_level, @joint_type, @standard_reference, @wps_ref,
@@ -636,7 +626,6 @@ async function commitWPQRFromFields(fields, organizationId, companyId, options =
         examiner_body: mapped.examiner_body,
         welder_name: mapped.welder_name,
         issue_date: mapped.issue_date,
-        expiry_date: mapped.expiry_date,
         certificate_number: mapped.certificate_number,
         certificate_file_url,
         pwht: mapped.pwht,
