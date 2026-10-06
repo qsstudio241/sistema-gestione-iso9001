@@ -1,95 +1,122 @@
-# DEPUTYTASK_COPERTURA — COV-2: adapter `wpqr_procedure` pieno (15614 · 14555 stud · 15613)
+# DEPUTYTASK_COPERTURA — COV-3: adapter `cnd_9712` pieno (settore · schema · tecnica · idoneità visiva)
 
-**Stato:** CHIUSO — TEST OK (06/10/2026)  
-**Aperto:** 05/10/2026  
-**Piano:** [`PLAN_COPERTURA_SCALABILE_SLICES.md`](PLAN_COPERTURA_SCALABILE_SLICES.md) § COV-2  
-**Dipende da:** COV-1 CHIUSO (PR #702, su `main`) — scontrino in [`DEPUTYTASK.md`](DEPUTYTASK.md)  
+**Stato:** APERTO  
+**Aperto:** 06/10/2026  
+**Piano:** [`PLAN_COPERTURA_SCALABILE_SLICES.md`](PLAN_COPERTURA_SCALABILE_SLICES.md) § COV-3  
+**Dipende da:** COV-1 CHIUSO (PR #702) · COV-2 CHIUSO (PR #704) — entrambe su `main`  
 **Rischio:** Medio — BE additivo, nessuna migrazione, nessuna modifica a auth/sync/schema  
-**Stream:** `DEPUTYTASK_COPERTURA.md` (epic copertura: COV-3/4/5 riusano questo file solo dopo che COV-2 è CHIUSO e la riga titolo/file è aggiornata)  
-**Branch suggerito:** `cursor/cov-2-wpqr-adapter-<suffisso>`
+**Stream:** `DEPUTYTASK_COPERTURA.md` (epic copertura; COV-4/5 riusano questo file solo dopo che COV-3 è CHIUSO e la riga titolo/file è aggiornata)  
+**Branch suggerito:** `cursor/cov-3-cnd-adapter-<suffisso>`
+
+**Scontrino COV-2 (CHIUSO, PR #704):** adapter `wpqr_procedure` pieno; toccati `wpqrProcedure.adapter.js` (+ test), `coverageEngine.service.js` (campo opzionale `message` da `adapter.emptyMessage`), `CoverageVerifyPanel.jsx` (+ test), piano, roadmap. Pattern da copiare: aggregazione fail → `no_match`, dato mancante → `partial`, ordinamento match → partial → no_match.
 
 ---
 
 ## Obiettivo (una slice = un risultato verificabile)
 
-Sostituire lo stub `not_implemented` di `wpqrProcedure.adapter.js` con un match reale: dato un **requisito di giunto/procedura**, restituire per ogni WPQR dell'organizzazione `match` / `partial` / `no_match` con motivi leggibili, **riusando** le funzioni già esistenti (`wpsGenerator.service.js` + `weldingQualificationRules*.js`). Nessuna logica di copertura duplicata.
+Portare `cnd9712.adapter.js` da `maturity: 'minimal'` a `'full'`: oltre a metodo + livello + non scaduta (già in COV-1), il match deve valutare **settore** (`ndt_sector`), **schema di certificazione** (`certification_scheme`), **tecnica** (`scope_detail`) e **idoneità visiva in corso di validità** (riuso `visionFitness` / gate CND-2). Esito per ogni qualifica 9712 dell'organizzazione: `match` / `partial` / `no_match` con motivi leggibili. Nessuna logica duplicata: la regola «patentino + visione» esiste già in `ndtInspectorGate.service.js`.
 
 ## Gate norme (dichiarato)
 
-- **Coperte (MD+JSON in `docs/Normative/`, regole JS già in repo):** ISO 15614-1 (NORMA_00019/00043) → `weldingQualificationRules15614.js`; 15614-2 (NORMA_00031) → `weldingQualificationRules15614_2.js`; 14555 stud (NORMA_00033) → `weldingQualificationRules14555.js`.
-- **Parziale:** ISO 15613:2025 (NORMA_00045) è digitalizzata ma **non esiste catalogo JS di soglie** (backlog: «non catalogo JS»). In COV-2 la 15613 è **solo etichetta/base di qualifica** sul record WPQR (nessuna soglia nuova). **Vietato inventare** campi di validità 15613.
-- **Mancanti:** nessun PDF richiesto per COV-2. Se emerge una clausola 15613 necessaria → riga in `docs/reference/NORME_MANCANTI_BACKLOG.md` + richiesta HITL, non codice.
+- **Coperte (MD+JSON in `docs/Normative/`):** ISO 9712:2021 = `Normative NORMA_00034_ ISO 9712_2021 Rev. 0.{md,json}` (il nome file inizia con `Normative ` — è quello reale in Git).
+  - Annex A.1–A.3 (settori prodotto `c f w t wp` + compositi; industriali `m s r a`; «`s` include la fabbricazione»; «chi è certificato in un settore industriale è considerato certificato anche in ciascun settore che lo compone»).
+  - §7.4.2 acuità visiva vicina verificata **annualmente**; §7.4.3 visione cromatica entro 5 anni solari; §9.3.1 «per essere valido il certificato deve essere supportato da una verifica annuale corrente della vista».
+  - §9.4 riconoscimento di certificazioni di altri enti (base per `partial`, non `no_match`, su schema diverso).
+  - Estratto operativo: `docs/reference/ISO_9712_2022_NDT_QUALIFICATION.md` (§4 settori, §5 schemi).
+  - Decisioni HITL 23/08/2026 (`PLAN_CND_SLICES.md`): gate = patentino 9712 valido per il metodo **e** idoneità visiva in corso di validità.
+- **Parziali (non inventare):**
+  - **Composizione dei settori industriali** `m`, `r`, `a` (e `s`/`m` → `w`): l'Annex A.3 dice solo che l'ente di certificazione ne definisce lo scope pubblicato. Il testo 2021 **non** elenca i prodotti compresi. L'estratto repo (§4 «Regola di copertura: `w` oppure `s`/`m` coprono saldature») è una convenzione operativa **non verificabile** dal testo 2021 e **non risulta implementata** in nessun servizio (verificato: nessun uso di `ndt_sector` in `caseExtractedCoverage` / `caseCoverageAdvisory`). In COV-3: settore industriale posseduto vs settore di prodotto richiesto = `partial` («verificare scope pubblicato dall'ente»). Salvo risposta HITL (vedi sotto).
+  - **Scadenza visione:** il certificato oculistico unico (`VISION_FITNESS_TYPE`) ha una sola `expiry_date`; la norma distingue acuità annuale e colore 5 anni. COV-3 usa la `expiry_date` del certificato come fa già `visionFitness`/gate; non distingue le due componenti.
+  - **Schema:** `certification_scheme` è testo libero (CICPND, PCN, TEC Eurolab…). Nessuna tabella normativa di equivalenza tra schemi → confronto testuale, esito massimo `partial` se diverso.
+  - **Codici metodo:** Table 1 di ISO 9712:2021 (righe VT/UT vuote nel MD, GAP già in backlog) usa `AT` `LT` `ST` `TT` per emissione acustica / tenuta / estensimetri / termografia; il repo (`ndtInspectorGate` `NDT_METHODS`, estratto) usa `AE` `TT`(tenuta) `ST`(stress) `LT`. **Non allineare in questa slice**: `requirementFields.ndt_method` resta sui 6 metodi già presenti (VT PT MT UT RT ET); riga nel backlog + HITL.
+- **Mancanti:** nessun PDF bloccante per il perimetro COV-3. Richieste HITL aperte (non bloccano, perimetro = sopra): vedi §«HITL» e `NORME_MANCANTI_BACKLOG.md`.
 
 ## Checklist dato ↔ norma ↔ UI ↔ API
 
-| Dato | Clausola / fonte | UI | API / persistenza |
-|------|------------------|----|-------------------|
-| `welding_process` | 15614-1 § campo di validità processo; colonne `wpqr_records` | campo già in `CoverageVerifyPanel` (da `requirementFields`) | `POST /qualifications/coverage/verify` (esistente) |
-| `joint_type` BW/FW/SW | `jointTypeCompatible` (wpsGenerator); 14555 per SW | select esistente | idem |
-| `thickness_mm` (+ `thickness_b_mm` se doppio range t1/t2) | `checkThicknessCoverage` + 15614-1/-2 | number | idem |
-| `diameter_mm` (tubo) | `checkDiameterCoverage` / `describePlateCoversPipeDiameter*` | number | idem |
-| `throat_mm` (FW) | `checkThroatCoverage` | number | idem |
-| `material_group` (+ `material_group_b`) | `isParentMaterialCombinationCovered` / `resolveSteelGradeToGroup` | text | idem |
-| stud: sezione, posizione, atmosfera | `weldingQualificationRules14555.js` (`isPositionCovered14555`, `describeQualifiedStudSectionRange`, …) | solo se già esposto da `requirementFields` | idem |
-| base qualifica (15614 / 14555 / 15613) | etichetta sul record WPQR | colonna esito/`detail` | idem — **nessuna** nuova colonna |
+| Dato | Clausola / fonte MD | UI | API / persistenza |
+|------|---------------------|----|-------------------|
+| `ndt_method` (VT PT MT UT RT ET) | ISO 9712 Table 1 / `qualifications.ndt_method` | select già in `CoverageVerifyPanel` | `POST /qualifications/coverage/verify` (esistente) |
+| `ndt_level` (1/2/3, opzionale) | §5.3.2 estratto repo (livello ≥ richiesto) | select già presente; togliere dall'hint «Opzionale in COV-1» | idem |
+| `ndt_sector` (c f w t wp p / m s r a, opzionale) | Annex A.2/A.3; colonna `qualifications.ndt_sector` (mig. 084, **esistente**) | **nuovo** `requirementFields` select (nessun JSX nuovo: il pannello è dinamico) | idem — nessuna nuova colonna |
+| `certification_scheme` (testo, opzionale) | §9.4 (altri enti → partial); colonna `certification_scheme` (mig. 084) | **nuovo** campo text | idem |
+| `scope_detail` = tecnica richiesta (PA, TOFD, DR…) (testo, opzionale) | Annex A.1 «scope sul certificato»; colonna `scope_detail` (mig. 032) | **nuovo** campo text | idem |
+| Idoneità visiva (nessun campo requisito: sempre verificata) | §7.4.2, §9.3.1; HITL 23/08 (CND-2); `visionFitness.service` / `ndtInspectorGate.visionStateForPerson` + `occupationalQualificationTypes` | colonna esito/`detail.vision` (nessun campo nuovo) | idem — lettura `qualifications` tipo `VISION_FITNESS_TYPE`, nessuna nuova colonna |
 
-Se un campo del requisito non è nel WPQR (dato `NULL`), l'esito è `partial` con motivo esplicito, non `match` silenzioso.
+### Regole di match (da implementare; motivi leggibili in `reasons`)
+
+- **Metodo / livello / operativa:** invariati da COV-1 (nessuna regressione sui test esistenti).
+- **Settore** (`detail.ndt_sector`):
+  - requisito vuoto → `skipped`;
+  - qualifica senza settore → `unverifiable` (→ `partial`);
+  - codici uguali → `ok`;
+  - requisito `m` e qualifica `s` → `ok` (A.3 b: «`s` include la fabbricazione»);
+  - requisito di **prodotto** (`c f w t wp p`) e qualifica **industriale** (`m s r a`) → `unverifiable` (→ `partial`, motivo «scope del settore industriale definito dall'ente (A.3): verificare sul certificato»);
+  - altrimenti (prodotto ≠ prodotto, industriale ≠ industriale, requisito industriale con qualifica di solo prodotto) → `mismatch` (→ `no_match`; possedere un settore di prodotto non implica il settore industriale — A.3, ultimo capoverso, vale nell'altro verso).
+- **Schema** (`detail.certification_scheme`): confronto case-insensitive su stringa normalizzata; richiesto vuoto → `skipped`; qualifica senza schema → `unverifiable`; diverso → `unverifiable` con motivo «schema diverso: verificare accettazione/riconoscimento (§9.4)». **Mai** `no_match` da questo campo (testo libero).
+- **Tecnica** (`detail.scope_detail`): token case-insensitive (split su `, ; /` e spazi); richiesto vuoto → `skipped`; qualifica senza `scope_detail` o senza intersezione → `unverifiable` (→ `partial`). **Mai** `no_match` da testo libero estratto AI.
+- **Idoneità visiva** (`detail.vision`): stato per persona via `visionStateForPerson` (stessa logica del gate: `personnel_id` preferito, altrimenti nome normalizzato; preferenza stessa azienda). `ok` → `ok`; `missing` o `expired` → `mismatch` (→ `no_match`, coerente con HITL 23/08 e §9.3.1: certificato non supportato da verifica vista corrente). Se `ok` ma senza scadenza sul certificato: esito `ok` come il gate, con `detail.vision_note = 'senza_scadenza'` (verifica annuale non dimostrabile, nessun `no_match` nuovo).
+- **Aggregazione:** qualunque `mismatch` → `no_match`; altrimenti qualunque `unverifiable` → `partial`; altrimenti `match`. Ordinamento risultati match → partial → no_match (come COV-2). Nessuna qualifica NDT → `matches: []` + `emptyMessage` (campo già supportato dal motore).
+- `capability` (summarize): aggiungere `ndt_sector`, `certification_scheme`, `scope_detail`, `certificate_number`, `vision_state`/`vision_expiry_date`.
 
 ## Cosa fare
 
-1. **Adapter:** `backend/src/services/capabilityCoverage/adapters/wpqrProcedure.adapter.js` → `implemented: true`, `maturity: 'full'` (o equivalente già usato da `publicDomainMeta`). `match(req, ctx)`: caricare i WPQR con `loadWpqrRecords(ctx.organizationId, ctx.companyId)` (o pool iniettato come in `welder9606`), per ciascun record comporre i check riusati e aggregare in `CapabilityMatch` (`capability_id` = id WPQR, `capability` con numero WPQR / norma / processo, `reasons`, `detail`).
-2. **Aggregazione esito:** tutti i check applicabili ok → `match`; almeno uno `partial` e nessun `no_match` → `partial`; almeno un fallimento → `no_match`. Ordinare i risultati match → partial → no_match.
-3. **`requirementFields`:** estendere con i campi della tabella (diametro, gola, gruppo B, spessore B) senza rompere i payload COV-1 (campi esistenti invariati).
-4. **Test L1 Jest** (`wpqrProcedure.adapter.test.js` accanto all'adapter, DB mockato): match pieno, no_match per spessore/processo, partial per dato mancante, SW/stud con 14555, record 15613 senza soglie (nessun match inventato), nessun WPQR → lista vuota con messaggio. Aggiornare `coverageEngine.service.test.js` solo se il contratto domini cambia (lo stub non deve più comparire come `not_implemented`).
-5. **FE:** solo se `CoverageVerifyPanel` non rende i nuovi `requirementFields` dinamicamente — in quel caso fix minimo + test Vitest esistente `coverageVerifyPanel.test.jsx`. Preferire zero modifiche FE.
-6. Aggiornare `PLAN_COPERTURA_SCALABILE_SLICES.md` (DoD COV-2 spuntato, riga «Brief attivo»). GUIDA/roadmap: se non ci sono altri `DEPUTYTASK*` APERTI (al momento nessuno) nella **stessa** PR, una riga in roadmap § Stato attuale.
+1. **Adapter** `backend/src/services/capabilityCoverage/adapters/cnd9712.adapter.js`: `maturity: 'full'`; estendere `REQUIREMENT_FIELDS` (settore, schema, tecnica; aggiornare hint livello) **senza** rompere i campi COV-1; estendere la SELECT con `q.personnel_id, q.ndt_sector, q.certification_scheme, q.scope_detail, q.certificate_number` (colonne tutte esistenti); escludere i certificati visivi dalle capacità candidate (`isVisionFitnessType`) e caricare in una seconda query (stesso `ctx.pool`) le righe visione con `visionFitnessSqlInList()` (stesso SQL di `loadVisionRows` nel gate, con scope azienda come la query principale). `matchCndCapability(qual, criteria, opts)` resta pura: ricevere le righe visione in `opts.visionRows` e la `today` in `opts.todayIso`. `emptyMessage` per «nessuna qualifica NDT».
+2. **Riuso visione:** in `ndtInspectorGate.service.js` aggiungere **solo** `visionStateForPerson` a `module.exports` (nessun cambio di logica; il file è già nel `deploy-manifest.json`). Vietato copiare la funzione.
+3. **Test L1 Jest** (`cnd9712.adapter.test.js`, nuovo, accanto all'adapter, DB mockato come `wpqrProcedure.adapter.test.js`): match pieno (metodo+livello+settore+schema+visione ok); no_match visione mancante e scaduta; no_match settore prodotto diverso e requisito industriale con qualifica di prodotto; `m` richiesto con `s` posseduto = match; `w` richiesto con `s`/`m` posseduto = partial; settore/schema/tecnica assenti in anagrafica = partial; schema diverso = partial (mai no_match); tecnica senza intersezione = partial; certificato visivo senza scadenza = match con `vision_note`; nessuna qualifica → lista vuota + messaggio; ordinamento match → partial → no_match; certificato visivo non compare tra le capacità. Spostare/estendere i 2 test «cnd_9712 match minimo» di `coverageEngine.service.test.js` solo se il contratto cambia (firma `matchCndCapability` retrocompatibile: senza `visionRows` il comportamento COV-1 non deve cambiare → decidere e testare esplicitamente se visione non caricata = `skipped`).
+4. **FE:** zero modifiche previste (`CoverageVerifyPanel.jsx` rende select/text da `requirementFields`; mostra «(minimo)» solo se `maturity === 'minimal'`). Se serve un fix, minimo + `coverageVerifyPanel.test.jsx`.
+5. **Backlog/Doc:** righe già aperte dal brief in `NORME_MANCANTI_BACKLOG.md` (settori industriali + codici metodo): aggiornare lo stato solo se arriva la risposta HITL. Aggiornare `PLAN_COPERTURA_SCALABILE_SLICES.md` (DoD COV-3 spuntato, riga «Brief attivo»). GUIDA/roadmap: nella **stessa** PR una riga in roadmap § Stato attuale solo se non ci sono altri `DEPUTYTASK*` APERTI (al momento nessuno).
+6. **Rielaborazioni (Registro):** COV-3 **non aggiunge** campi AI-estraibili (`ndt_sector`, `certification_scheme`, `scope_detail` esistono già nello schema `cert_ndt` e nella tabella) → **esenzione dichiarata**: nessuna voce in `REPROCESSABLE_FIELD_REGISTRY`/whitelist. Se invece il deputy aggiungesse un campo nuovo a `aiExpectedSchema`, la voce Rielaborazioni è obbligatoria nella stessa slice (`sgq-operating-memory.mdc`) — ma non è nel perimetro.
+
+## HITL aperto (non bloccante — perimetro COV-3 = quanto sopra)
+
+Richiesta norma al committente (copia dal template [`HANDOFF_TEMPLATE.md`](HANDOFF_TEMPLATE.md)), registrata anche in `NORME_MANCANTI_BACKLOG.md`:
+
+- **Codice / titolo:** scope pubblicato dei settori industriali ISO 9712 (`m` `s` `r` `a`) dall'ente di certificazione che emette i patentini dello studio (es. TEC Eurolab / CICPND). Edizione ISO 9712:2021 già in repo (`NORMA_00034`): l'Annex A.3 rimanda allo scope dell'ente.
+- **Serve a:** COV-3 — decidere se `s`/`m` **coprono** `w` (saldature) con `match` invece di `partial`.
+- **Cosa c'è già in repo:** `NORMA_00034` MD+JSON, estratto `ISO_9712_2022_NDT_QUALIFICATION.md` §4 (convenzione operativa non verificabile dal testo).
+- **Cosa NON inventiamo senza fonte:** quali prodotti comprendono `m`, `r`, `a`; equivalenza tra schemi di certificazione.
+- **Perimetro su cui si parte comunque:** uguaglianza codici, `s ⊇ m`, `partial` per industriale→prodotto.
+- **Formato utile:** documento dell'ente (PDF) con lo scope dei settori; in alternativa una decisione scritta del committente («`s` e `m` coprono `w`: sì/no»).
+- **Secondo punto HITL:** allineamento codici metodo `AE`/`TT`/`ST`/`LT` (repo) vs `AT`/`LT`/`ST`/`TT` (Table 1, ISO 9712:2021) — slice separata, non qui.
 
 ## File previsti (codice)
 
-- `backend/src/services/capabilityCoverage/adapters/wpqrProcedure.adapter.js`
-- `backend/src/services/capabilityCoverage/adapters/wpqrProcedure.adapter.test.js` (nuovo)
-- `backend/src/services/capabilityCoverage/coverageEngine.service.test.js` (solo ritocchi)
-- `backend/src/services/capabilityCoverage/registerDefaultAdapters.js` (solo se serve)
-- Solo lettura/riuso: `backend/src/services/wpsGenerator.service.js` (se serve export di una funzione già esistente, aggiungere solo l'export, nessun cambio di logica)
+- `backend/src/services/capabilityCoverage/adapters/cnd9712.adapter.js`
+- `backend/src/services/capabilityCoverage/adapters/cnd9712.adapter.test.js` (nuovo)
+- `backend/src/services/capabilityCoverage/coverageEngine.service.test.js` (solo ritocchi ai 2 test CND)
+- `backend/src/services/ndtInspectorGate.service.js` (**solo** `module.exports` += `visionStateForPerson`)
+- Solo lettura/riuso: `backend/src/services/visionFitness.service.js`, `backend/src/constants/occupationalQualificationTypes.js` (`isVisionFitnessType`, `visionFitnessSqlInList`), `backend/src/services/weldingCoordinatorAuth.service.js` (`isQualificationOperationallyActive`)
 - `app/src/components/CoverageVerifyPanel.jsx` + `app/src/tests/coverageVerifyPanel.test.jsx` (solo se necessario)
-- Doc: `docs/agent-tasks/PLAN_COPERTURA_SCALABILE_SLICES.md`, questo brief, `docs/PROJECT_ROADMAP.md` (una riga)
+- Doc: `docs/agent-tasks/PLAN_COPERTURA_SCALABILE_SLICES.md`, questo brief, `docs/reference/NORME_MANCANTI_BACKLOG.md` (solo aggiornamento stato HITL), `docs/PROJECT_ROADMAP.md` (una riga)
 
 ## Cosa NON toccare
 
-- **Logica di calcolo** in `wpsGenerator.service.js` e `weldingQualificationRules*.js` (solo riuso/export)
-- Adapter `welder9606` e `cnd9712` (COV-3)
+- Logica di `ndtInspectorGate.service.js` (gate CND-2) e di `visionFitness.service.js`: solo riuso/export
+- `NDT_METHODS` / codici metodo del gate e dell'estratto (allineamento 9712:2021 = slice separata)
+- Adapter `welder9606` e `wpqrProcedure` (COV-1/2 chiusi)
 - `qualifications.controller.js` / `.routes.js` (rotte COV-1 già pronte; `getCoverage` → COV-4)
-- Generatore WPS (nessuna riscrittura), ingest, JEV, Acrobat, regole 4063
-- Migrazioni SQL (**nessuna** in COV-2), `deploy-manifest.json` (nessun nuovo `.js` runtime: il test non va nel manifest; aggiornarlo solo se si aggiunge un file in `backend/src/` non di test)
-- auth.middleware, JWT, `syncService`
+- `coverageEngine.service.js`, `coverageTypes.js`, `coverageRegistry.js`, `registerDefaultAdapters.js` (nessun cambio di contratto previsto)
+- Ingest `cert_ndt` (`documentTypeSchemas.js`, `qualificationIngest.service.js`), `reprocessableFields.js`, `QualificationForm.jsx` (compositi `p` vs `cc/frp/mmc/cmc` 2021 = fuori slice)
+- Migrazioni SQL (**nessuna** in COV-3), `deploy-manifest.json` (nessun nuovo `.js` runtime: il test non va nel manifest)
+- Verbali CND (`NdtReportsPage`, `ndt_reports`), auth.middleware, JWT, `syncService`
 
 ## Disgiunzione da altri brief
 
-Su `origin/main` **nessun** `DEPUTYTASK*` è APERTO eccetto questo (verificato 05/10/2026; `DEPUTYTASK_AI_CHECKLIST.md` è «IN REVIEW», file diversi: AI checklist, nessuna sovrapposizione con `capabilityCoverage/`). PR aperte: nessuna.
+Su `origin/main` **nessun** `DEPUTYTASK*` è APERTO eccetto questo (verificato 06/10/2026: `DEPUTYTASK_AI_CHECKLIST.md` è «IN REVIEW», file diversi — AI checklist, nessuna sovrapposizione con `capabilityCoverage/`, `ndtInspectorGate`, `visionFitness`). PR aperte: nessuna (`gh pr list --state open` vuoto, 06/10/2026), salvo la PR docs di questo brief.
 
 ## DoD
 
-- [x] `GET /qualifications/coverage/domains` mostra `wpqr_procedure` come implementato
-- [x] `POST /qualifications/coverage/verify` con `domain: wpqr_procedure` restituisce match/partial/no_match reali
-- [x] Nessuna soglia 15613 inventata; 15613 solo come etichetta
-- [x] Jest mirato verde (`cd backend && npx jest src/services/capabilityCoverage`)
-- [x] Se toccato FE: `cd app && NODE_ENV=test npm run test:run -- coverageVerifyPanel` + `npm run build`
-- [x] `node backend/scripts/check-harness-boot.js` OK
-- [x] Branch allineato a `origin/main` prima di push/PR; `bugbot run` una sola volta a slice chiusa
-
-## Esito (CHIUSO — TEST OK)
-
-- Adapter `wpqr_procedure` pieno: `implemented: true`, `maturity: 'full'`. Check riusati: `jointTypeCompatible`, `checkThicknessCoverage` (t1/t2 + B), `checkDiameterCoverage`, `checkThroatCoverage`, `isParentMaterialCombinationCovered` / `resolveSteelGradeToGroup` (15614-1), `isSimilarMaterialsCovered14555` (14555, solo stesso gruppo). Processo: confronto token locale (nessuna funzione esistente).
-- Aggregazione: qualunque fail → `no_match`; altrimenti qualunque dato mancante/non verificabile → `partial`; altrimenti `match`. Ordinamento match → partial → no_match.
-- Base di qualifica in `capability.qualification_basis` (15614-1 / 15614-2 / 14555 / 15613). 15613: nessuna soglia; le funzioni riusate ricevono una copia del record senza `thickness_tested`/`product_type` così non ricadono nelle tabelle 15614; materiale e gola restano `partial`.
-- 14555 stud: spessore = §10.2.8.6 (partial), gola non applicabile (no_match), sezione/posizione/atmosfera non verificate (nessuna colonna WPQR) → `detail.stud_scope`.
-- 15614-2 e gruppi >11: combinazione materiali non codificata → `partial` (verifica manuale), stesso gruppo → ok.
-- `requirementFields`: aggiunti `thickness_b_mm`, `diameter_mm`, `throat_mm`, `material_group_b`.
-- Nessuna WPQR: `matches: []` + `message` (nuovo campo opzionale `emptyMessage` adapter → `verifyCoverage`); FE mostra `result.message` (3 righe in `CoverageVerifyPanel.jsx` + test).
-- Fix post-Bugbot: spessore fuori range calcolato Tabella 7 = `no_match` (non `partial`); 14555 come 15613 usa solo i range dichiarati per diametro (niente regola piastra→tubo 15614).
-- Test: Jest `capabilityCoverage` 38/38; Vitest `coverageVerifyPanel` 4/4; `npm run build` OK; `check-harness-boot` OK; `check-utf8-encoding` OK.
-
-**File toccati:** `wpqrProcedure.adapter.js`, `wpqrProcedure.adapter.test.js` (nuovo), `coverageEngine.service.js` (campo `message`), `coverageEngine.service.test.js`, `CoverageVerifyPanel.jsx`, `coverageVerifyPanel.test.jsx`, `PLAN_COPERTURA_SCALABILE_SLICES.md`, questo brief, `PROJECT_ROADMAP.md` (una riga). Non toccati: `wpsGenerator.service.js`, `weldingQualificationRules*.js`, controller/routes, migrazioni, `deploy-manifest.json`.
+- [ ] `GET /qualifications/coverage/domains` mostra `cnd_9712` con `maturity: 'full'`
+- [ ] `POST /qualifications/coverage/verify` con `domain: cnd_9712` valuta settore, schema, tecnica e idoneità visiva; match / partial / no_match ordinati
+- [ ] Visione riusata da `visionStateForPerson` (nessuna copia di logica); `missing`/`expired` → `no_match`
+- [ ] Nessuna regola inventata: industriale→prodotto = `partial`; schema/tecnica mai `no_match`
+- [ ] `requirementFields` estesi senza rompere COV-1 (metodo/livello invariati)
+- [ ] Nessuna qualifica NDT → lista vuota + `message`
+- [ ] Jest mirato verde (`cd backend && npx jest src/services/capabilityCoverage src/services/ndtInspectorGate`)
+- [ ] Se toccato FE: `cd app && NODE_ENV=test npm run test:run -- coverageVerifyPanel` + `npm run build`
+- [ ] `node backend/scripts/check-harness-boot.js` e `node backend/scripts/check-utf8-encoding.js` OK
+- [ ] Esenzione Rielaborazioni dichiarata nel body PR (nessun campo AI nuovo)
+- [ ] Branch allineato a `origin/main` prima di push/PR; `bugbot run` una sola volta a slice chiusa
 
 ## Comando di avvio
 
