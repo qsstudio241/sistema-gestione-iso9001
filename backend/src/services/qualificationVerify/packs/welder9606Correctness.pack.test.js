@@ -2,6 +2,7 @@
 
 const { verifyQualification, validateFinding } = require('../index');
 const registry = require('../verifyRegistry');
+const rules9606 = require('../../../data/weldingQualificationRules9606');
 const { ensureDefaultPacks } = require('../registerDefaultPacks');
 const { SEVERITY, STATUS, DIRECTION } = require('../findingTypes');
 const pack = require('./welder9606Correctness.pack');
@@ -29,6 +30,13 @@ const none = (input, suffix) => expect(byCode(input, suffix)).toEqual([]);
 
 const expectWarnOver = (f, clause) => {
     expect(f.severity).toBe(SEVERITY.WARN);
+    expect(f.status).toBe(STATUS.VERIFICABILE);
+    expect(f.direction).toBe(DIRECTION.OVER_CLAIM);
+    expect(f.source.clause).toBe(clause);
+    expect(f.message_it).toContain(clause);
+};
+const expectInfoOver = (f, clause) => {
+    expect(f.severity).toBe(SEVERITY.INFO);
     expect(f.status).toBe(STATUS.VERIFICABILE);
     expect(f.direction).toBe(DIRECTION.OVER_CLAIM);
     expect(f.source.clause).toBe(clause);
@@ -216,8 +224,26 @@ describe('CORR.PIPE_DIAMETER — Tab. 7 (BW e FW, solo tubo)', () => {
         expectInfoUnder(one(pipe(20, 20, 30), 'PIPE_DIAMETER'));
     });
 
-    test('vale anche per FW; diametro di prova assente → dato mancante', () => {
-        expectWarnOver(one(fw({ product_type: 'T', pipe_diameter_test_mm: 60, pipe_diameter_min_mm: 20 }), 'PIPE_DIAMETER'), '§5.7 Tab. 7');
+    test('FW (VQ-TUNE): Tab. 7 è per i giunti di testa → al massimo info con nota «interpretazione», mai warn', () => {
+        const over = one(fw({ product_type: 'T', pipe_diameter_test_mm: 60, pipe_diameter_min_mm: 20 }), 'PIPE_DIAMETER');
+        expectInfoOver(over, '§5.7 Tab. 7');
+        expect(over.message_it).toContain('Interpretazione, non clausola esplicita');
+        expect(over.expected_value).toEqual(expect.objectContaining({ min: 30, max: null }));
+        expect(validateFinding(over).ok).toBe(true);
+        const bothEnds = one(fw({ product_type: 'T', pipe_diameter_test_mm: 20, pipe_diameter_min_mm: 20, pipe_diameter_max_mm: 60 }), 'PIPE_DIAMETER');
+        expectInfoOver(bothEnds, '§5.7 Tab. 7');
+        const under = one(fw({ product_type: 'T', pipe_diameter_test_mm: 60.3, pipe_diameter_min_mm: 60.3 }), 'PIPE_DIAMETER');
+        expectInfoUnder(under);
+        expect(under.message_it).toContain('Interpretazione, non clausola esplicita');
+        expect(all(fw({ product_type: 'T', pipe_diameter_test_mm: 60, pipe_diameter_min_mm: 20 })).filter((f) => f.code.endsWith('PIPE_DIAMETER') && f.severity === SEVERITY.WARN)).toEqual([]);
+    });
+
+    test('BW: la nota di interpretazione non compare e il warn resta', () => {
+        const f = one(pipe(60, 20, null), 'PIPE_DIAMETER');
+        expect(f.message_it).not.toContain('Interpretazione');
+    });
+
+    test('diametro di prova assente → dato mancante', () => {
         expectDataMissing(one(rec({ product_type: 'T', pipe_diameter_min_mm: 20, pipe_diameter_max_mm: 40 }), 'PIPE_DIAMETER'));
         expectDataMissing(one(rec({ pipe_diameter_min_mm: 20, pipe_diameter_max_mm: 40, product_type: null }), 'PIPE_DIAMETER'));
     });
@@ -290,6 +316,27 @@ describe('CORR.POSITIONS — Tab. 9 (BW) / Tab. 10 (FW)', () => {
         expect(f.message_it).toContain('§5.4 e');
     });
 
+    test.each([
+        ['HL045', 'H-L045'], ['h-l045', 'H-L045'], ['H_L045', 'H-L045'], ['H\u2013L045', 'H-L045'], ['JL045', 'J-L045'], ['j\u2010l045', 'J-L045'],
+    ])('VQ-TUNE: variante grafica «%s» = simbolo %s di Tab. 9 (stessa riga, nessun warn)', (variant, symbol) => {
+        const expected = rules9606.computeQualifiedWeldingPositions({ testPosition: symbol, jointType: 'BW' });
+        const f = byCode(rec({ welding_position_test: variant, welding_positions: expected }), 'POSITIONS');
+        expect(f).toEqual([]);
+        const declared = byCode(rec({ welding_position_test: 'PA', welding_positions: ['PA', variant] }), 'POSITIONS');
+        expect(declared.every((x) => x.severity !== SEVERITY.WARN)).toBe(true);
+    });
+
+    test('GAP VQ-TUNE: «PH-L045» NON è un simbolo di Tab. 9/10 e non è mappato: dato mancante, mai warn', () => {
+        expect(rules9606.computeQualifiedWeldingPositions({ testPosition: 'PH-L045', jointType: 'BW' })).toBeNull();
+        for (const token of ['PH-L045', 'PJ-L045']) {
+            for (const make of [rec, fw]) {
+                const f = one(make({ welding_position_test: token, welding_positions: ['PA', 'PC', 'PE', 'PF'] }), 'POSITIONS');
+                expectDataMissing(f);
+                expect(f.message_it).toContain(token);
+            }
+        }
+    });
+
     test('modo db: legge position_range della riga DB', () => {
         const f = one({ ...rec({ welding_position_test: 'PC' }), position_range: 'PA, PC, PE' }, 'POSITIONS', 'db');
         expectWarnOver(f, '§5.8 Tab. 9');
@@ -321,15 +368,16 @@ describe('CORR.PROCESS — §5.2 equivalenze', () => {
         ['135', '121', '121'],
         ['111', '135', '135'],
         ['141', '141, 311', '311'],
-    ])('prova %s, validità "%s" → warn §5.2 (oltre l\'equivalenza: %s)', (test, validity, extra) => {
+    ])('prova %s, validità "%s" → info §5.2 (oltre l\'equivalenza: %s; VQ-TUNE: nessuna base empirica per il warn)', (test, validity, extra) => {
         const f = one(proc(test, validity), 'PROCESS');
-        expectWarnOver(f, '§5.2');
+        expectInfoOver(f, '§5.2');
         expect(f.message_it).toContain(extra);
+        expect(f.message_it).toContain('non ancora tarata');
     });
 
     test('la 142 è coperta da 141/143/145 (testo ufficiale §5.2) ma non viceversa', () => {
         none(proc('141', '142'), 'PROCESS');
-        expectWarnOver(one(proc('142', '141, 142'), 'PROCESS'), '§5.2');
+        expectInfoOver(one(proc('142', '141, 142'), 'PROCESS'), '§5.2');
     });
 
     test('processo di prova assente o multiplo → dato mancante; nessuna validità → nessun finding', () => {
@@ -340,8 +388,18 @@ describe('CORR.PROCESS — §5.2 equivalenze', () => {
         none(rec({ welding_process_test: '135' }), 'PROCESS');
     });
 
+    test('VQ-TUNE: nessuna combinazione di processi produce mai un warn (nemmeno senza dati)', () => {
+        const combos = [['142', '141'], ['111', '135'], ['135', '121'], ['', '135'], ['135', ''], ['111, 135', '111, 135'], [null, null]];
+        for (const [t, v] of combos) {
+            for (const make of [rec, fw]) {
+                const warns = all(make({ welding_process_test: t, welding_processes_validity: v })).filter((f) => f.code === `${P}.PROCESS` && f.severity === SEVERITY.WARN);
+                expect(warns).toEqual([]);
+            }
+        }
+    });
+
     test('vale per BW e FW', () => {
-        expectWarnOver(one(fw({ welding_process_test: '142', welding_processes_validity: '141' }), 'PROCESS'), '§5.2');
+        expectInfoOver(one(fw({ welding_process_test: '142', welding_processes_validity: '141' }), 'PROCESS'), '§5.2');
     });
 });
 
@@ -362,6 +420,29 @@ describe('CORR.TRANSFER_MODE', () => {
 
 describe('CORR.DESIGNATION — §11 (designazione ↔ dati di prova, mai la validità)', () => {
     const bwDes = 'ISO 9606-1 135 P BW FM1 s10 PA ss nb';
+
+    test('VQ-TUNE: designazione costruita dalle colonne di validità (circolare) → info, mai warn', () => {
+        const validity = {
+            welding_process: '135', product_type: 'P', joint_type: 'BW', filler_material_group: 'FM1',
+            thickness_min_mm: 3, thickness_max_mm: 18, welding_positions: ['PA'], weld_details: 'ss nb',
+        };
+        const built = buildWelderQualificationDesignation(validity);
+        const mismatching = { welding_process_test: '141', filler_material_group: 'FM1', welding_position_test: 'PC', thickness_s_test_mm: 8 };
+        for (const designation of [built, `ISO 9606-1: ${built}`, 'ISO 9606-1 135 P BW FM1 t\u22653 PA ss nb', 'ISO 9606-1 135 P BW FM1 t3-18 PA ss nb', 'ISO 9606-1 135 T BW FM1 D\u226560,3 PA ss nb']) {
+            const f = one(rec({ ...validity, ...mismatching, qualification_designation: designation }), 'DESIGNATION');
+            expect(f.severity).toBe(SEVERITY.INFO);
+            expect(f.direction).toBe(DIRECTION.MISMATCH);
+            expect(f.message_it).toContain('circolare');
+            expect(f.message_it).toContain('§11');
+            expect(validateFinding(f).ok).toBe(true);
+        }
+    });
+
+    test('designazione stampata sul certificato (non circolare): il warn resta', () => {
+        const f = one(rec({ qualification_designation: bwDes, welding_process_test: '141', welding_position_test: 'PC' }), 'DESIGNATION');
+        expect(f.severity).toBe(SEVERITY.WARN);
+        expect(f.message_it).not.toContain('circolare');
+    });
 
     test('coerente con le colonne di prova → nessun finding', () => {
         none(rec({
