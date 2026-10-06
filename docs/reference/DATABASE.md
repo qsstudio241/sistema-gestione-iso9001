@@ -285,12 +285,13 @@ Le migrazioni **non** sono uno schema-from-scratch. Lo storico **003–168** è 
 | Situazione | Esito job `Apply da 169 su SQL Server vuoto` |
 |---|---|
 | Solo file < 169 (stato attuale di `main`) | **Verde** — skip apply, seed e verify (DB vuoto non ha `organizations`) |
+| 169+ applicate, `organizations` assente (gap pre-169) | **Verde** — apply 169+, seed **saltato**, verify se PASS (tabelle assenti ok) |
 | 169+ applicate, seed e verify PASS | **Verde** |
-| Una 169+, il seed o il verify fallisce | **Rosso** — regressione reale (niente `continue-on-error`) |
+| Una 169+, il seed (tabelle presenti) o il verify fallisce | **Rosso** — regressione reale (niente `continue-on-error`) |
 
 Le nuove 169+ devono tollerare un DB vuoto: `IF OBJECT_ID` / `IF NOT EXISTS` sulla **tabella** (non solo sulla colonna). Un `ALTER` nudo su tabella assente è rosso e si corregge nella SQL, non con un check «atteso failed».
 
-Il seed è già difensivo (INSERT solo se la tabella esiste). Nessun dato di produzione.
+Il seed è compile-safe: `FROM`/`INSERT` solo dentro `EXEC` (SQL Server altrimenti fallisce con `Invalid object name` anche se l'`IF OBJECT_ID` è falso). Lo script salta il seed se `dbo.organizations` è assente. Nessun dato di produzione.
 
 ---
 
@@ -310,4 +311,4 @@ audit_responses ──< attachments (via question_id)
 
 ---
 
-*Aggiornato: 2026-10-05 — sequenza main 168; gate intestazione da 169; apply-on-empty salta pre-169 (#699)*
+*Aggiornato: 2026-10-06 — sequenza main 168 + 169 in PR; seed CI compile-safe / skip se organizations assente (#699)*

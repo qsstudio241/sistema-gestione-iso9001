@@ -27,7 +27,12 @@ Rimuovere `expiry_date` da `wpqr_records` (WPQR). Il patentino ISO 9606 e gli al
 - `qualifications.expiry_date`, schema `patentino_saldatore`, `qualificationAlert`, migrazioni 9606
 - `documentTypeSchemas` NDT/9712, tarature, training
 - `welding_procedures.expiry_date` (WPS) — **tenuta**: usata in copertura commessa (`welding.controller.js` ~1253) e semaforo WPS. UI form WPS non la edita, ma l'API/stats sì.
-- `ImportJobsPage.jsx` (PR #711 / ingest FE)
+- `ImportJobsPage.jsx` (PR #711 mergiata)
+- `.github/workflows/ci-migrations.yml`, `.env`, secret
+
+## Fix CI apply-on-empty (06/10/2026)
+
+Job «Apply da 169» falliva sul **seed**, non sulla DROP 169: `Invalid object name 'dbo.organizations'` perché lo storico < 169 è saltato (#699). Seed reso compile-safe (`EXEC`); runner salta il seed se `organizations` è assente.
 
 ## Conteggio PROD (06/10/2026, sola lettura)
 

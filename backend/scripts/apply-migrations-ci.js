@@ -9,7 +9,8 @@
  *
  * Apply-on-empty (scelta A, issue #699): salta lo storico < 169 (nessuna baseline).
  * Applica + seed + verify solo da 169 in poi. Senza 169+: skip anche seed/verify, esce 0.
- * Esce 1 solo se una 169+, il seed o il verify fallisce (regressione reale).
+ * Seed: se dbo.organizations è assente (gap pre-169) lo salta e resta verde.
+ * Esce 1 solo se una 169+, il seed (quando applicabile) o il verify fallisce.
  */
 const fs = require('fs');
 const path = require('path');
@@ -85,7 +86,7 @@ async function runBatches(pool, sqlText, label) {
   return allSets;
 }
 
-function writeGithubSummary({ skipped, apply, verifies, outcome }) {
+function writeGithubSummary({ skipped, apply, verifies, outcome, seedSkipped }) {
   const file = process.env.GITHUB_STEP_SUMMARY;
   if (!file) return;
   const lines = [
@@ -94,11 +95,14 @@ function writeGithubSummary({ skipped, apply, verifies, outcome }) {
     `Storico < ${HEADER_FROM_NUMBER} saltato: **${skipped.length}** file (gap noto, nessuna baseline).`,
     `Apply >= ${HEADER_FROM_NUMBER}: **${apply.length}** file.`,
     `Verify >= ${HEADER_FROM_NUMBER}: **${verifies.length}** file.`,
+    seedSkipped
+      ? 'Seed: **saltato** (`dbo.organizations` assente — gap pre-169).'
+      : 'Seed: eseguito (o non previsto dal piano).',
     `Esito: **${outcome}**`,
     '',
     apply.length === 0
       ? `Nessuna migrazione >= ${HEADER_FROM_NUMBER}: skip apply/seed/verify. Job verde (solo gap pre-169).`
-      : `Rosso solo se una ${HEADER_FROM_NUMBER}+, il seed o il verify fallisce.`,
+      : `Rosso solo se una ${HEADER_FROM_NUMBER}+, il seed (se tabelle presenti) o il verify fallisce.`,
     '',
     'Issue [#699](https://github.com/qsstudio241/sistema-gestione-iso9001/issues/699).',
     '',
@@ -122,6 +126,13 @@ async function applySelected(pool, files, migrationsDir) {
     }
     console.log(`[ci-mig] OK   ${filename}`);
   }
+}
+
+async function organizationsTableExists(pool) {
+  const result = await pool.request().query(`
+    SELECT CASE WHEN OBJECT_ID(N'dbo.organizations', N'U') IS NULL THEN 0 ELSE 1 END AS present
+  `);
+  return Number(result.recordset[0] && result.recordset[0].present) === 1;
 }
 
 async function applySeed(pool, seedPath) {
@@ -198,16 +209,29 @@ async function main() {
 
   await ensureDatabase(config);
   const pool = await sql.connect(config);
+  let seedSkipped = false;
   try {
     await applySelected(pool, selection.apply, migrationsDir);
     if (plan.seed) {
-      await applySeed(pool, seedPathFor(migrationsDir));
+      const hasOrganizations = await organizationsTableExists(pool);
+      if (!hasOrganizations) {
+        seedSkipped = true;
+        console.log(
+          '[ci-mig] SEED saltato: dbo.organizations assente (storico < 169 non applicato, issue #699)'
+        );
+      } else {
+        await applySeed(pool, seedPathFor(migrationsDir));
+      }
     }
     if (plan.verify) {
       await runVerifyFiles(pool, selection.verifies, migrationsDir);
     }
     console.log('[ci-mig] COMPLETATO');
-    writeGithubSummary({ ...selection, outcome: 'VERDE' });
+    writeGithubSummary({
+      ...selection,
+      seedSkipped,
+      outcome: seedSkipped ? 'VERDE (seed saltato, gap pre-169)' : 'VERDE',
+    });
   } finally {
     await pool.close().catch(() => {});
   }
