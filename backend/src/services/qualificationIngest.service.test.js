@@ -34,7 +34,11 @@ jest.mock('../utils/documentClassifier', () => ({
 }));
 
 const { getPool } = require('../config/database');
+const { runDocumentIngest } = require('./documentIngestPipeline.service');
+const qualificationVerify = require('./qualificationVerify');
 const {
+    extractQualificationFromPdf,
+    ingestQualificationFromPdf,
     mapPipelineFieldsToReview,
     classifyQualificationType,
     commitQualificationFromFields,
@@ -224,9 +228,9 @@ describe('checkQualificationPlausibility (gap analysis 26/07/2026 — warning-on
         expect(warnings.some((w) => w.includes('invertito'))).toBe(true);
     });
 
-    it('segnala gas fuori catalogo ISO 14175', () => {
+    it('non emette più il gas ISO 14175 (fonte: registry di verifica, VQ-7)', () => {
         const warnings = checkQualificationPlausibility({ shielding_gas: 'NON-ESISTE' });
-        expect(warnings.some((w) => w.includes('ISO 14175'))).toBe(true);
+        expect(warnings.some((w) => w.includes('ISO 14175'))).toBe(false);
     });
 });
 
@@ -723,5 +727,224 @@ describe('round-trip a sentinella — ogni campo aiExpectedSchema (patentino_sal
         const knownGaps = [];
         const missing = findMissingSentinels(tokens, capturedValues, knownGaps);
         expect(missing).toEqual([]);
+    });
+});
+
+
+describe('qualificationIngest.service — aggancio verifica vs norma (VQ-7, additivo e non bloccante)', () => {
+    const GAS_UNKNOWN_MSG = /Gas di protezione "NON-ESISTE" non riconosciuto nel catalogo ISO 14175/;
+
+    function pipelineResult(fields = {}) {
+        return {
+            text: 'Certificato ISO 9606-1 saldatore',
+            warnings: ['avviso pipeline'],
+            fields: {
+                welder_name: 'MARIO ROSSI',
+                certificate_number: 'CERT-VQ7-1',
+                standard_reference: 'ISO 9606-1:2017',
+                welding_process: '135',
+                exam_date: '2026-01-10',
+                expiry_date: '2029-01-09',
+                ...fields,
+            },
+            fieldConfidence: {},
+            aiModel: null,
+        };
+    }
+
+    function finding(overrides = {}) {
+        return {
+            code: 'WQ9606_1.CORR.TEST',
+            family: 'correttezza',
+            severity: 'warn',
+            status: 'verificabile',
+            field: 'thickness_max_mm',
+            fields: ['thickness_max_mm'],
+            direction: 'over_claim',
+            read_value: 20,
+            expected_value: 12,
+            source: { norm: 'ISO 9606-1', edition: '2017', clause: '§5.7 Tab. 6', text_status: 'md_integrale', ref: 'x' },
+            message_it: 'Spessore dichiarato oltre il campo della norma (ISO 9606-1 §5.7 Tab. 6).',
+            ...overrides,
+        };
+    }
+
+    function verifyResult(findings, standardFamily = '9606-1') {
+        return {
+            profile: '9606-1:BW',
+            standard: { family: standardFamily, edition: '2017' },
+            findings,
+            summary: { warn: 0, info: 0, verificabili: 0, non_verificabili: 0 },
+            engine_version: 'test',
+            mode: 'ingest',
+        };
+    }
+
+    beforeEach(() => {
+        runDocumentIngest.mockReset();
+        getPool.mockReset();
+    });
+
+    afterEach(() => {
+        jest.restoreAllMocks();
+    });
+
+    it('extract: accoda message_it ai warnings e aggiunge verification senza cambiare status', async () => {
+        runDocumentIngest.mockResolvedValue(pipelineResult());
+        const verification = verifyResult([finding()]);
+        jest.spyOn(qualificationVerify, 'verifyQualification').mockReturnValue(verification);
+
+        const out = await extractQualificationFromPdf(Buffer.from('x'), 'a.pdf', 10, null);
+
+        expect(out.status).toBe('pending_review');
+        expect(out.verification).toBe(verification);
+        expect(out.warnings).toEqual(expect.arrayContaining(['avviso pipeline', finding().message_it]));
+        expect(qualificationVerify.verifyQualification).toHaveBeenCalledWith(
+            expect.objectContaining({ certificate_number: 'CERT-VQ7-1' }), { mode: 'ingest' },
+        );
+    });
+
+    it('extract: engine che lancia eccezione non rompe l\'ingest (nessun finding, log)', async () => {
+        runDocumentIngest.mockResolvedValue(pipelineResult());
+        jest.spyOn(qualificationVerify, 'verifyQualification').mockImplementation(() => {
+            throw new Error('boom engine');
+        });
+
+        const out = await extractQualificationFromPdf(Buffer.from('x'), 'a.pdf', 10, null);
+
+        expect(out.status).toBe('pending_review');
+        expect(out.verification).toBeNull();
+        expect(out.warnings).toEqual(['avviso pipeline']);
+        const logger = require('../utils/logger');
+        expect(logger.warn).toHaveBeenCalledWith(expect.stringContaining('boom engine'));
+    });
+
+    it('extract: risultato engine malformato viene ignorato', async () => {
+        runDocumentIngest.mockResolvedValue(pipelineResult());
+        jest.spyOn(qualificationVerify, 'verifyQualification').mockReturnValue({ findings: 'no' });
+
+        const out = await extractQualificationFromPdf(Buffer.from('x'), 'a.pdf', 10, null);
+
+        expect(out.status).toBe('pending_review');
+        expect(out.verification).toBeNull();
+    });
+
+    it('extract: documenti non saldatura (norma non riconosciuta) non ricevono il rumore SOURCE_MISSING', async () => {
+        runDocumentIngest.mockResolvedValue(pipelineResult({ standard_reference: 'UNI EN ISO 9712' }));
+        jest.spyOn(qualificationVerify, 'verifyQualification').mockReturnValue({
+            profile: null,
+            standard: { family: null, edition: null },
+            findings: [finding({
+                code: 'QV.ENGINE.SOURCE_MISSING',
+                severity: 'info',
+                status: 'non_verificabile_fonte_mancante',
+                field: 'standard_reference',
+                fields: [],
+                source: { norm: null, edition: null, clause: null, text_status: 'assente', ref: null },
+                message_it: 'Norma di riferimento non riconosciuta o non coperta dalla verifica.',
+            })],
+            summary: {}, engine_version: 'test', mode: 'ingest',
+        });
+
+        const out = await extractQualificationFromPdf(Buffer.from('x'), 'a.pdf', 10, null);
+
+        expect(out.warnings).toEqual(['avviso pipeline']);
+        expect(out.verification.findings).toHaveLength(1);
+    });
+
+    it('extract: norma riconosciuta ma non coperta (EN 287-1) mantiene il finding informativo', async () => {
+        runDocumentIngest.mockResolvedValue(pipelineResult({ standard_reference: 'EN 287-1' }));
+
+        const out = await extractQualificationFromPdf(Buffer.from('x'), 'a.pdf', 10, null);
+
+        expect(out.status).toBe('pending_review');
+        expect(out.verification.findings.map((f) => f.code)).toContain('QV.ENGINE.SOURCE_MISSING');
+        expect(out.warnings.some((w) => w.includes('EN 287-1'))).toBe(true);
+    });
+
+    it('extract: il check gas non è duplicato quando il registry lo copre', async () => {
+        runDocumentIngest.mockResolvedValue(pipelineResult({ shielding_gas: 'NON-ESISTE' }));
+        const gasMsg = 'Gas di protezione "NON-ESISTE" non riconosciuto nel catalogo ISO 14175 (ISO 14175 §4) — verificare';
+        jest.spyOn(qualificationVerify, 'verifyQualification').mockReturnValue(verifyResult([
+            finding({
+                code: 'WQ9606_1.CORR.GAS_14175', severity: 'info', field: 'shielding_gas', fields: ['shielding_gas'],
+                message_it: gasMsg,
+            }),
+        ]));
+
+        const out = await extractQualificationFromPdf(Buffer.from('x'), 'a.pdf', 10, null);
+
+        expect(out.warnings.filter((w) => /ISO 14175/.test(w))).toEqual([gasMsg]);
+    });
+
+    it('extract: finché il registry non copre il gas resta un solo avviso storico (nessuna perdita, nessun duplicato)', async () => {
+        runDocumentIngest.mockResolvedValue(pipelineResult({ shielding_gas: 'NON-ESISTE' }));
+
+        const out = await extractQualificationFromPdf(Buffer.from('x'), 'a.pdf', 10, null);
+
+        expect(out.warnings.filter((w) => GAS_UNKNOWN_MSG.test(w))).toHaveLength(1);
+    });
+
+    it('extract: se l\'engine fallisce il gas storico resta comunque segnalato', async () => {
+        runDocumentIngest.mockResolvedValue(pipelineResult({ shielding_gas: 'NON-ESISTE' }));
+        jest.spyOn(qualificationVerify, 'verifyQualification').mockImplementation(() => { throw new Error('x'); });
+
+        const out = await extractQualificationFromPdf(Buffer.from('x'), 'a.pdf', 10, null);
+
+        expect(out.warnings.filter((w) => GAS_UNKNOWN_MSG.test(w))).toHaveLength(1);
+    });
+
+    function mockCommitPool() {
+        const insertReq = { input: jest.fn().mockReturnThis() };
+        insertReq.query = jest.fn().mockResolvedValue({ recordset: [{ id: 777 }] });
+        getPool.mockResolvedValue({ request: jest.fn(() => insertReq) });
+        return insertReq;
+    }
+
+    it('commit: aggiunge verification e message_it ai warnings dopo l\'INSERT, senza alterare i campi scritti', async () => {
+        const insertReq = mockCommitPool();
+        const verification = verifyResult([finding()]);
+        jest.spyOn(qualificationVerify, 'verifyQualification').mockReturnValue(verification);
+
+        const result = await commitQualificationFromFields({
+            welder_name: 'Mario Rossi',
+            thickness_min_mm: 3,
+            thickness_max_mm: 20,
+        }, 10, null, { qualificationType: 'Saldatore ISO 9606-1' });
+
+        expect(result.qualification_id).toBe(777);
+        expect(result.verification).toBe(verification);
+        expect(result.warnings).toEqual([finding().message_it]);
+        expect(insertReq.input).toHaveBeenCalledWith('thickMax', 20);
+        expect(qualificationVerify.verifyQualification).toHaveBeenCalledWith(
+            expect.objectContaining({ qualification_type: 'Saldatore ISO 9606-1', thickness_max_mm: 20 }),
+            { mode: 'review' },
+        );
+    });
+
+    it('commit: engine che lancia eccezione non fa fallire il commit', async () => {
+        mockCommitPool();
+        jest.spyOn(qualificationVerify, 'verifyQualification').mockImplementation(() => {
+            throw new Error('boom commit');
+        });
+
+        const result = await commitQualificationFromFields({ welder_name: 'Mario Rossi' }, 10, null, {
+            qualificationType: 'Saldatore ISO 9606-1',
+        });
+
+        expect(result.qualification_id).toBe(777);
+        expect(result.verification).toBeNull();
+        expect(result.warnings).toEqual([]);
+    });
+
+    it('flusso legacy: i warning identici di extract e commit non si duplicano', async () => {
+        runDocumentIngest.mockResolvedValue(pipelineResult());
+        mockCommitPool();
+        jest.spyOn(qualificationVerify, 'verifyQualification').mockReturnValue(verifyResult([finding()]));
+
+        const out = await ingestQualificationFromPdf(Buffer.from('x'), 'a.pdf', 10, null);
+
+        expect(out.qualification_id).toBe(777);
+        expect(out.warnings.filter((w) => w === finding().message_it)).toHaveLength(1);
     });
 });
