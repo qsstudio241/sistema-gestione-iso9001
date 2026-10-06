@@ -6,6 +6,9 @@ const {
     computeQualifiedFilletThicknessRange,
     computeQualifiedThicknessRangeButtWeld,
     computeQualifiedWeldingPositions,
+    computeQualifiedWeldingProcesses,
+    describeWeldingProcessEquivalences,
+    WELDING_PROCESS_EQUIVALENCE_GROUPS,
     isWeldingPositionQualified,
     describePlateOnlyRotatingPositionDiameterNote,
     getApplicableWelderFields,
@@ -174,6 +177,92 @@ describe('weldingQualificationRules9606', () => {
                 rotatingPosition: true,
             });
             expect(note).toContain('\u226575 mm');
+        });
+    });
+
+    describe('computeQualifiedWeldingProcesses (§5.2 equivalenze di processo, VQ-6)', () => {
+        test.each([
+            ['135', ['135', '138']],
+            ['138', ['135', '138']],
+            ['121', ['121', '125']],
+            ['125', ['121', '125']],
+            ['141', ['141', '142', '143', '145']],
+            ['143', ['141', '142', '143', '145']],
+            ['145', ['141', '142', '143', '145']],
+            ['142', ['142']],
+            ['111', ['111']],
+            ['311', ['311']],
+            [135, ['135', '138']],
+            ['135S', ['135', '138']],
+        ])('prova %s -> %j', (testProcess, expected) => {
+            expect(computeQualifiedWeldingProcesses({ testProcess })).toEqual(expected);
+        });
+
+        test('141/143/145 qualificano anche 142 (testo ufficiale §5.2), 142 solo se stesso', () => {
+            for (const p of ['141', '143', '145']) {
+                expect(computeQualifiedWeldingProcesses({ testProcess: p })).toContain('142');
+            }
+            expect(computeQualifiedWeldingProcesses({ testProcess: '142' })).toEqual(['142']);
+        });
+
+        test.each([[null], [undefined], [''], ['TIG'], ['1'], ['1234']])('codice non leggibile %j -> null', (testProcess) => {
+            expect(computeQualifiedWeldingProcesses({ testProcess })).toBeNull();
+            expect(computeQualifiedWeldingProcesses()).toBeNull();
+        });
+
+        test('il risultato e\' una copia: non altera la tabella delle equivalenze', () => {
+            computeQualifiedWeldingProcesses({ testProcess: '135' }).push('999');
+            expect(computeQualifiedWeldingProcesses({ testProcess: '135' })).toEqual(['135', '138']);
+        });
+
+        test('parita\' prompt <-> funzione: ogni equivalenza calcolata compare nel prompt', () => {
+            const section = buildWelderQualificationRulesPromptSection();
+            expect(section).toContain(describeWeldingProcessEquivalences());
+            for (const { testProcesses } of WELDING_PROCESS_EQUIVALENCE_GROUPS) {
+                const qualified = computeQualifiedWeldingProcesses({ testProcess: testProcesses[0] });
+                const line = section.split('\n').find((l) => l.includes('equivalenze'));
+                expect(line).toContain(testProcesses.join('/'));
+                for (const code of qualified) expect(line).toContain(code);
+            }
+        });
+
+        test('il prompt non omette piu\' 142 tra i processi qualificati da 141/143/145 (correzione VQ-6)', () => {
+            const section = buildWelderQualificationRulesPromptSection();
+            expect(section).toContain('141/143/145 qualifica 141, 142, 143, 145');
+            expect(section).toContain('142 qualifica solo 142');
+            expect(section).toContain('135/138 qualifica 135, 138');
+            expect(section).toContain('121/125 qualifica 121, 125');
+            expect(section).not.toContain('tra loro (142 solo 142)');
+        });
+
+        test('il prompt cita Annex A (non §9.3) per il transfer mode', () => {
+            const section = buildWelderQualificationRulesPromptSection();
+            expect(section).toContain('§5.2/Annex A');
+            expect(section).not.toContain('§5.2/§9.3');
+        });
+    });
+
+    describe('bordi delle tabelle 6/7/8 usati dalla verifica (VQ-6)', () => {
+        test('Tab. 6: s = 2,99 / 3 / 11,99 / 12 mm', () => {
+            expect(computeQualifiedThicknessRangeButtWeld({ testThicknessMm: 2.99 })).toEqual({ minMm: 2.99, maxMm: 5.98 });
+            expect(computeQualifiedThicknessRangeButtWeld({ testThicknessMm: 3 })).toEqual({ minMm: 3, maxMm: 6 });
+            expect(computeQualifiedThicknessRangeButtWeld({ testThicknessMm: 11.99 })).toEqual({ minMm: 3, maxMm: 23.98 });
+            expect(computeQualifiedThicknessRangeButtWeld({ testThicknessMm: 12 })).toEqual({ minMm: 3, maxMm: null });
+        });
+
+        test('Tab. 6 nota c/d: 311 usa 1,5s (s = 2 -> 2..3; s = 4 -> 3..6)', () => {
+            expect(computeQualifiedThicknessRangeButtWeld({ testThicknessMm: 2, weldingProcessCode: '311' })).toEqual({ minMm: 2, maxMm: 3 });
+            expect(computeQualifiedThicknessRangeButtWeld({ testThicknessMm: 4, weldingProcessCode: '311' })).toEqual({ minMm: 3, maxMm: 6 });
+        });
+
+        test('Tab. 8: t = 2,99 / 3 mm', () => {
+            expect(computeQualifiedFilletThicknessRange({ testThicknessMm: 2.99 })).toEqual({ minMm: 2.99, maxMm: 5.98 });
+            expect(computeQualifiedFilletThicknessRange({ testThicknessMm: 3 })).toEqual({ minMm: 3, maxMm: null });
+        });
+
+        test('Tab. 7: D = 25 (D ≤ 25: D..2D) e D = 25,01 (≥ 0,5D, minimo 25, senza limite superiore)', () => {
+            expect(computeQualifiedPipeDiameterRange({ testDiameterMm: 25 })).toEqual({ minMm: 25, maxMm: 50 });
+            expect(computeQualifiedPipeDiameterRange({ testDiameterMm: 25.01 })).toEqual({ minMm: 25, maxMm: null });
         });
     });
 });
