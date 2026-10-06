@@ -45,6 +45,12 @@
  *   solo passaggio AI / una sola proposta staging (es. t1+t2). Evita N chiamate
  *   sullo stesso PDF. La whitelist di scrittura espone la stessa chiave con
  *   `bundleColumns` dettagliate (writeGuard per colonna).
+ * - `kind` (opzionale): assente = `'backfill'` (voci qui sopra, invariate).
+ *   `'verify'` = verifica in SOLA LETTURA vs norma (VQ-8): nessuna `column`, nessun
+ *   `candidateWhere`, nessuna whitelist di scrittura, nessuna AI, nessun PDF letto, nessuna
+ *   proposta in coda. Campi: `verifyFamily` (famiglia norma del registry di verifica,
+ *   `qualificationVerify`), `qualTypeLike`. Il conteggio non entra nel totale «dati AI mancanti»
+ *   e non scende dopo l'esecuzione: si azzera correggendo i record in Qualifiche.
  */
 const { CONTINUOUS_WIRE_ARC_PROCESSES } = require('./weldingQualificationRules9606');
 
@@ -286,11 +292,26 @@ const REPROCESSABLE_FIELD_REGISTRY = {
         processWhitelist: null,
         candidateWhere: 'base_material_spec_2 IS NULL',
     },
+
+    // ============================================================
+    // Voci di VERIFICA (kind: 'verify') — sola lettura, vedi header.
+    // Piano: docs/agent-tasks/PLAN_VERIFICA_QUALIFICHE_NORMA_SLICES.md § 2.
+    // ============================================================
+    verify_9606_1: {
+        key: 'verify_9606_1',
+        kind: 'verify',
+        label: 'Verifica qualifiche ISO 9606-1 vs norma',
+        module: 'qualifiche',
+        table: 'qualifications',
+        qualTypeLike: '%9606%',
+        verifyFamily: '9606-1',
+    },
 };
 
 function listReprocessableFields() {
     return Object.values(REPROCESSABLE_FIELD_REGISTRY);
 }
+
 
 function getReprocessableField(key) {
     return REPROCESSABLE_FIELD_REGISTRY[key] || null;

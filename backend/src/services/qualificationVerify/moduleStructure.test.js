@@ -15,6 +15,9 @@ function listJs(dir) {
     });
 }
 
+/** Unico file del modulo che legge dal DB (sola SELECT): verifica dedicata in verifyReadOnly.test.js. */
+const DB_READER = 'verifyRecordLoader.js';
+
 const allJs = listJs(MODULE_DIR);
 const sourceFiles = allJs.filter((f) => !f.endsWith('.test.js'));
 const rel = (f) => path.relative(BACKEND_DIR, f).split(path.sep).join('/');
@@ -22,7 +25,9 @@ const rel = (f) => path.relative(BACKEND_DIR, f).split(path.sep).join('/');
 describe('modulo qualificationVerify — puro', () => {
     test.each(sourceFiles.map((f) => [rel(f), f]))('%s: nessun import DB/fs/ingest né scrittura', (_name, file) => {
         const src = fs.readFileSync(file, 'utf8');
-        expect(src).not.toMatch(/require\(\s*['"][^'"]*config\/database['"]\s*\)/);
+        if (path.basename(file) !== DB_READER) {
+            expect(src).not.toMatch(/require\(\s*['"][^'"]*config\/database['"]\s*\)/);
+        }
         expect(src).not.toMatch(/require\(\s*['"](?:node:)?(?:fs|fs\/promises|child_process)['"]\s*\)/);
         expect(src).not.toMatch(/createStagingRecord/);
         expect(src).not.toMatch(/qualificationIngest\.service/);
