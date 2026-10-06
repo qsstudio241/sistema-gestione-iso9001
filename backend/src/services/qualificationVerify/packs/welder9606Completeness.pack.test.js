@@ -232,16 +232,52 @@ describe('THK_VALIDITY / THK_TEST', () => {
         const f = only(run(fw({ thickness_min_mm: null, thickness_max_unlimited: false })), 'THK_VALIDITY');
         expect(f.severity).toBe(SEVERITY.WARN);
         expect(f.source.clause).toBe('§5.7 Tab. 8');
-        expect(f.fields).toEqual(['thickness_min_mm', 'thickness_max_mm', 'thickness_max_unlimited']);
+        expect(f.fields).toEqual(['thickness_min_mm', 'thickness_max_mm', 'thickness_max_unlimited', 'thickness_range']);
     });
 
-    test('solo uno dei due estremi: il messaggio dice quale', () => {
-        const noMax = only(run(bw({ thickness_max_mm: null })), 'THK_VALIDITY');
-        expect(noMax.message_it).toContain('limite massimo');
-        expect(noMax.message_it).not.toContain('minimo e massimo');
+    test('manca il minimo (max dichiarato, nessun testo legacy) → warn che nomina il limite minimo', () => {
         const noMin = only(run(bw({ thickness_min_mm: null })), 'THK_VALIDITY');
+        expect(noMin).toMatchObject({ severity: SEVERITY.WARN, status: STATUS.VERIFICABILE, field: 'thickness_min_mm' });
         expect(noMin.message_it).toContain('limite minimo');
-        expect(noMin.field).toBe('thickness_min_mm');
+        expect(noMin.message_it).not.toContain('minimo e massimo');
+    });
+
+    test('taratura VQ-TUNE: solo il minimo («t≥3», convenzione «senza limite») → info, mai warn', () => {
+        const f = only(run(bw({ thickness_max_mm: null })), 'THK_VALIDITY');
+        expect(f).toMatchObject({ severity: SEVERITY.INFO, status: STATUS.VERIFICABILE, direction: 'missing', field: 'thickness_max_mm' });
+        expect(f.source.clause).toBe('§5.7 Tab. 6');
+        expect(f.message_it).toContain('§5.7 Tab. 6');
+        expect(f.message_it).toContain('solo il limite minimo');
+        expect(validateFinding(f).ok).toBe(true);
+        const fwOnlyMin = only(run(fw({ thickness_max_unlimited: false })), 'THK_VALIDITY');
+        expect(fwOnlyMin).toMatchObject({ severity: SEVERITY.INFO });
+        expect(fwOnlyMin.source.clause).toBe('§5.7 Tab. 8');
+    });
+
+    test.each([
+        ['t≥3', true], ['t>=3', true], ['≥ 3 mm', true], ['≥3mm', true], ['>= 3,0 mm', true], ['da 3 mm', true], ['min 3', true],
+        ['3-…', true], ['3 - ...', true], ['3 mm -', true], ['3 mm senza limite', true], ['3-illimitato', true],
+        ['3-18 mm', true], ['3 – 12.6 mm', true], ['fino a 18 mm', true],
+    ])('testo legacy «%s» interpretabile → il minimo senza massimo è info', (text) => {
+        const f = only(run(bw({ thickness_max_mm: null, thickness_range: text })), 'THK_VALIDITY');
+        expect(f).toMatchObject({ severity: SEVERITY.INFO, status: STATUS.VERIFICABILE });
+    });
+
+    test('validità solo nel testo legacy (colonne vuote, «3-12.6 mm») → info; testo inutilizzabile → warn', () => {
+        const legacy = only(run(bw({ thickness_min_mm: null, thickness_max_mm: null, thickness_range: '3-12.6 mm' })), 'THK_VALIDITY');
+        expect(legacy).toMatchObject({ severity: SEVERITY.INFO, status: STATUS.VERIFICABILE });
+        expect(legacy.message_it).toContain('3-12.6 mm');
+        expect(legacy.message_it).toContain('da 3 a 12,6 mm');
+        expect(validateFinding(legacy).ok).toBe(true);
+        for (const text of ['n.d.', '12', '18-3', 'vedi allegato', 'fino a 18 mm']) {
+            const f = only(run(bw({ thickness_min_mm: null, thickness_max_mm: null, thickness_range: text })), 'THK_VALIDITY');
+            expect(f.severity).toBe(SEVERITY.WARN);
+        }
+    });
+
+    test('il testo legacy che non restituisce il minimo non salva il warn (max dichiarato, min assente)', () => {
+        const f = only(run(bw({ thickness_min_mm: null, thickness_range: 'fino a 12 mm' })), 'THK_VALIDITY');
+        expect(f.severity).toBe(SEVERITY.WARN);
     });
 
     test('«nessun limite superiore» (thickness_max_unlimited) vale come estremo massimo', () => {
