@@ -1,0 +1,16 @@
+/*
+ * QualificationVerifyPanel (VQ-2) — estende lo schema `sq-cov-*` di CoverageVerifyPanel.css
+ * (importato dal componente). Solo layout elenco finding; colori/tag invariati.
+ */
+
+.sq-vfy-list { list-style: none; margin: 8px 0 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
+.sq-vfy-item {
+  padding: 10px 12px; background: #fff; border: 1px solid #e5e7eb; border-radius: 8px;
+}
+.sq-vfy-item-head { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-bottom: 6px; }
+.sq-vfy-message { margin: 0 0 6px; font-size: 13px; color: #1e293b; }
+.sq-vfy-reason { margin: 0 0 6px; }
+.sq-vfy-table { margin: 0; }
+.sq-vfy-state { display: flex; flex-direction: column; gap: 10px; align-items: flex-start; margin: 0 0 8px; }
+.sq-vfy-state .sq-error { width: 100%; box-sizing: border-box; margin-bottom: 0; }
+.sq-vfy-note { margin: 12px 0 0; }

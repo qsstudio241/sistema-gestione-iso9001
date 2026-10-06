@@ -2,10 +2,12 @@
  * BillingDashboardPage  -  dashboard fatturazione (solo superadmin QS Studio)
  */
 
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 import apiService from "../services/apiService";
 import { useAuth } from "../contexts/AuthContext";
 import "./BillingDashboardPage.css";
+
+const VERIFY_KIND = "verify";
 
 const EVENT_LABELS = {
   company_activated: "Azienda attivata",
@@ -129,6 +131,7 @@ export default function BillingDashboardPage() {
       )}
 
       <ReprocessTasksSection reprocess={reprocess} />
+      <VerifyTasksSection reprocess={reprocess} />
 
       <section className="billing-summary" aria-label="Riepilogo mese">
         <div className="billing-card">
@@ -341,6 +344,9 @@ function useReprocessTasks(enabled) {
     if (enabled) load();
   }, [enabled, load]);
 
+  const backfillTasks = useMemo(() => tasks.filter((t) => t.kind !== VERIFY_KIND), [tasks]);
+  const verifyTasks = useMemo(() => tasks.filter((t) => t.kind === VERIFY_KIND), [tasks]);
+
   const run = useCallback(async (key) => {
     setRunningKey(key);
     setResults((prev) => ({ ...prev, [key]: null }));
@@ -356,16 +362,44 @@ function useReprocessTasks(enabled) {
     }
   }, [load]);
 
-  const totalCandidates = tasks.reduce((sum, t) => sum + (t.candidate_count || 0), 0);
+  // Verifica norma: sola lettura. Nessun reload e nessun decremento locale dei
+  // candidati: il numero è uno stato dei record, non un backlog di proposte.
+  const runVerify = useCallback(async (key) => {
+    setRunningKey(key);
+    setResults((prev) => ({ ...prev, [key]: null }));
+    try {
+      const res = await apiService.runReprocessTask(key);
+      if (!res.success) throw new Error(res.error || "Verifica non riuscita");
+      setResults((prev) => ({ ...prev, [key]: { ok: true, ...res } }));
+    } catch (e) {
+      setResults((prev) => ({ ...prev, [key]: { ok: false, error: e.message || "Verifica non riuscita" } }));
+    } finally {
+      setRunningKey(null);
+    }
+  }, []);
 
-  return { tasks, loading, error, runningKey, results, run, reload: load, totalCandidates };
+  const totalCandidates = backfillTasks.reduce((sum, t) => sum + (t.candidate_count || 0), 0);
+
+  return {
+    tasks,
+    backfillTasks,
+    verifyTasks,
+    loading,
+    error,
+    runningKey,
+    results,
+    run,
+    runVerify,
+    reload: load,
+    totalCandidates,
+  };
 }
 
 function ReprocessTasksSection({ reprocess }) {
-  const { tasks, loading, error, runningKey, results, run, reload } = reprocess;
+  const { backfillTasks, loading, error, runningKey, results, run, reload } = reprocess;
   // Solo campi con lavoro da fare: non è un catalogo di tutti i campi possibili
   // (28/07/2026 + chiarimento 25/08/2026). A 0 candidati la riga sparisce.
-  const pendingTasks = tasks.filter((t) => (t.candidate_count || 0) > 0);
+  const pendingTasks = backfillTasks.filter((t) => (t.candidate_count || 0) > 0);
 
   return (
     <section className="billing-section" aria-labelledby="billing-reprocess-heading">
@@ -445,6 +479,200 @@ function ReprocessTasksSection({ reprocess }) {
           </table>
         </div>
       )}
+    </section>
+  );
+}
+
+function formatValue(value) {
+  if (value === null || value === undefined || value === "") return "";
+  if (Array.isArray(value)) return value.map(formatValue).join(", ");
+  if (typeof value === "object") return JSON.stringify(value);
+  return String(value);
+}
+
+const CSV_HEADER = ["Persona", "Certificato", "Codice avviso", "Avviso", "Letto", "Atteso dalla norma", "Clausola"];
+
+function csvCell(value) {
+  let text = formatValue(value);
+  // Neutralizza le formule quando il CSV viene aperto in Excel (numeri negativi esclusi).
+  if (/^[=+@\t\r]/.test(text) || (/^-/.test(text) && !/^-\d+([.,]\d+)?$/.test(text))) {
+    text = `'${text}`;
+  }
+  return `"${text.replace(/"/g, '""')}"`;
+}
+
+export function buildVerifyCsv(items) {
+  const rows = [CSV_HEADER];
+  (items || []).forEach((item) => {
+    (item.findings || []).forEach((f) => {
+      rows.push([
+        item.person_name,
+        item.certificate_number,
+        f.code,
+        f.message_it,
+        f.read_value,
+        f.expected_value,
+        f.source?.clause,
+      ]);
+    });
+  });
+  return rows.map((row) => row.map(csvCell).join(";")).join("\r\n");
+}
+
+function downloadVerifyCsv(key, items) {
+  const csv = `\uFEFF${buildVerifyCsv(items)}`;
+  const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = `${key}_${new Date().toISOString().slice(0, 10)}.csv`;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(url);
+}
+
+function VerifyResultBlock({ task, result }) {
+  const items = result.items || [];
+  const byCode = Object.entries(result.findingsByCode || {});
+  const notVerifiable = result.notVerifiable || {};
+  const findingRows = items.flatMap((item) =>
+    (item.findings || []).map((f, idx) => ({ item, finding: f, idx })),
+  );
+
+  return (
+    <div className="billing-verify-result" aria-label={`Esito verifica ${task.label}`}>
+      <p className="billing-verify-summary">
+        <strong>{task.label}</strong>: {result.recordsChecked ?? 0} record controllati,{" "}
+        <strong>{result.recordsWithWarnings ?? 0}</strong> con avvisi norma
+        {" · "}non verificabili: {notVerifiable.dato_mancante ?? 0} per dato mancante,{" "}
+        {notVerifiable.fonte_mancante ?? 0} per fonte mancante.
+      </p>
+      {byCode.length > 0 && (
+        <p className="billing-muted">
+          Per tipo di avviso: {byCode.map(([code, n]) => `${code} (${n})`).join(" · ")}
+        </p>
+      )}
+      <p className="billing-muted">
+        Il numero dei candidati non scende dopo la verifica: si azzera correggendo i record in Qualifiche.
+      </p>
+      {result.hasMore && (
+        <p className="billing-muted">
+          Mostrati i primi {items.length} record: altri record restano da controllare.
+        </p>
+      )}
+      {findingRows.length === 0 ? (
+        <p className="billing-muted">Nessun avviso da mostrare.</p>
+      ) : (
+        <>
+          <div className="billing-table-wrap">
+            <table className="billing-table billing-table-compact">
+              <thead>
+                <tr>
+                  <th>Persona / Certificato</th>
+                  <th>Avviso</th>
+                  <th>Letto</th>
+                  <th>Atteso dalla norma</th>
+                  <th>Clausola</th>
+                </tr>
+              </thead>
+              <tbody>
+                {findingRows.map(({ item, finding, idx }) => (
+                  <tr key={`${item.id}-${finding.code}-${idx}`}>
+                    <td>
+                      {item.person_name || " - "}
+                      {item.certificate_number ? (
+                        <span className="billing-muted"> · {item.certificate_number}</span>
+                      ) : null}
+                    </td>
+                    <td>{finding.message_it}</td>
+                    <td>{formatValue(finding.read_value) || " - "}</td>
+                    <td>{formatValue(finding.expected_value) || " - "}</td>
+                    <td>{finding.source?.clause || " - "}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <button
+            type="button"
+            className="btn-secondary billing-verify-csv-btn"
+            onClick={() => downloadVerifyCsv(task.key, items)}
+          >
+            Scarica CSV
+          </button>
+        </>
+      )}
+    </div>
+  );
+}
+
+function VerifyTasksSection({ reprocess }) {
+  const { verifyTasks, runningKey, results, runVerify } = reprocess;
+  const pendingVerify = verifyTasks.filter((t) => (t.candidate_count || 0) > 0);
+
+  if (pendingVerify.length === 0) return null;
+  const anyRunning = !!runningKey;
+
+  return (
+    <section className="billing-section" aria-labelledby="billing-verify-heading">
+      <h2 id="billing-verify-heading">Verifica qualifiche vs norma</h2>
+      <p className="billing-reprocess-intro">
+        Sola lettura: nessuna modifica ai record, nessuna AI, nessun costo. Confronta i dati delle qualifiche già
+        in archivio con i requisiti della norma e segnala gli avvisi; la correzione resta il normale «Modifica» in
+        Qualifiche.
+      </p>
+      <p className="billing-reprocess-hint billing-muted">
+        Consigliato: eseguire prima i backfill dei dati di prova, poi la verifica (i record senza dati di prova
+        risultano «non verificabili»). Il numero non scende dopo la verifica: si azzera correggendo i record in
+        Qualifiche.
+      </p>
+      <div className="billing-table-wrap">
+        <table className="billing-table">
+          <thead>
+            <tr>
+              <th>Verifica</th>
+              <th>Record con avvisi norma</th>
+              <th>Azione</th>
+            </tr>
+          </thead>
+          <tbody>
+            {pendingVerify.map((task) => {
+              const isRunning = runningKey === task.key;
+              const result = results[task.key];
+              return (
+                <tr key={task.key}>
+                  <td>{task.label}</td>
+                  <td>
+                    <span className="billing-badge billing-badge-active">{task.candidate_count}</span>
+                  </td>
+                  <td>
+                    <button
+                      type="button"
+                      className="btn-primary billing-reprocess-run-btn"
+                      onClick={() => runVerify(task.key)}
+                      disabled={anyRunning}
+                      aria-busy={isRunning}
+                      title={anyRunning ? "Un'altra operazione è in corso" : "Esegui la verifica in sola lettura"}
+                    >
+                      {isRunning ? "Verifica in corso…" : "Esegui verifica"}
+                    </button>
+                    {result && !result.ok && (
+                      <p className="billing-error" role="alert">
+                        {result.error}
+                      </p>
+                    )}
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+      {pendingVerify.map((task) => {
+        const result = results[task.key];
+        return result?.ok ? <VerifyResultBlock key={task.key} task={task} result={result} /> : null;
+      })}
     </section>
   );
 }

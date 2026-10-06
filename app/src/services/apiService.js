@@ -1877,6 +1877,14 @@ class ApiService {
         return this.post('/qualifications/coverage/verify', body);
     }
 
+    /** Verifica qualifica vs norma (VQ-2): stateless, nessuna scrittura. Risponde `{ verification }`. */
+    async verifyQualification(fields, { qualificationType } = {}) {
+        return this.post('/qualifications/verify', {
+            fields,
+            qualification_type: qualificationType,
+        });
+    }
+
     /** Gap idoneità visiva (NDT/VT senza certificato oculistico valido). */
     async getVisionFitnessGaps(params = {}) {
         const qs = new URLSearchParams(params).toString();
