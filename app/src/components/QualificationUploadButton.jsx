@@ -156,6 +156,11 @@ export default function QualificationUploadButton({
     setResults((prev) => (prev || []).map((r) => (
       r.staging_id === stagingId && r.verification !== verification ? { ...r, verification } : r
     )));
+    setReviewItem((prev) => (
+      prev?.staging_id === stagingId && prev.verification !== verification
+        ? { ...prev, verification }
+        : prev
+    ));
   }, []);
 
   const handleOpenReview = useCallback((item) => {
@@ -168,14 +173,21 @@ export default function QualificationUploadButton({
     setReviewBusy(true);
     try {
       const res = await apiService.confirmIngestStaging(reviewItem.staging_id, fields);
-      updateResult(reviewItem.staging_id, {
-        status: "confirmed",
-        qualification_id: res.qualification_id,
-        person_name: res.person_name,
-        qualification_type: res.qualification_type,
-        warnings: res.warnings || reviewItem.warnings,
-        verification: res.verification || reviewItem.verification || null,
-      });
+      const stagingId = reviewItem.staging_id;
+      // Confirm non restituisce verification; reviewItem e' lo snapshot all'apertura.
+      // Fonte: stato corrente (onVerificationChange → results), non res/reviewItem.
+      setResults((prev) => (prev || []).map((r) => {
+        if (r.staging_id !== stagingId) return r;
+        return {
+          ...r,
+          status: "confirmed",
+          qualification_id: res.qualification_id,
+          person_name: res.person_name,
+          qualification_type: res.qualification_type,
+          warnings: res.warnings || r.warnings,
+          verification: res.verification || r.verification || null,
+        };
+      }));
       setReviewItem(null);
       if (onUploadComplete) onUploadComplete();
     } catch (err) {
@@ -184,7 +196,7 @@ export default function QualificationUploadButton({
     } finally {
       setReviewBusy(false);
     }
-  }, [reviewItem, onUploadComplete, updateResult]);
+  }, [reviewItem, onUploadComplete]);
 
   const handleRejectReview = useCallback(async () => {
     if (!reviewItem?.staging_id) return;

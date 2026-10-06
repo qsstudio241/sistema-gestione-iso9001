@@ -14,7 +14,32 @@ vi.mock("../services/apiService", () => ({
     rejectIngestStaging: vi.fn(),
   },
 }));
-vi.mock("../components/IngestReviewDialog", () => ({ default: () => null }));
+vi.mock("../components/IngestReviewDialog", () => ({
+  default: function IngestReviewDialogStub(props) {
+    if (!props.open) return null;
+    return (
+      <div data-testid="ingest-review-stub">
+        <button
+          type="button"
+          data-testid="ingest-review-sim-verify"
+          onClick={() => props.onVerificationChange?.({
+            summary: { warn: 2, info: 0, verificabili: 2, non_verificabili: 0 },
+            findings: [],
+          })}
+        >
+          Simula verifica
+        </button>
+        <button
+          type="button"
+          data-testid="ingest-review-confirm"
+          onClick={() => props.onConfirm?.({ person_name: "Mario Rossi" })}
+        >
+          Conferma revisione
+        </button>
+      </div>
+    );
+  },
+}));
 
 import apiService from "../services/apiService";
 
@@ -159,5 +184,48 @@ describe("QualificationUploadButton — riepilogo avvisi norma (VQ-9)", () => {
     ]);
     expect(await screen.findByText(/Nome titolare non trovato/)).toBeInTheDocument();
     expect(screen.queryByTestId("qual-upload-verify-summary")).toBeNull();
+  });
+
+  it("la verification da onVerificationChange resta dopo conferma (confirm non la restituisce)", async () => {
+    const user = userEvent.setup();
+    apiService.uploadQualificationsBatch.mockResolvedValue({
+      results: [
+        { fileName: "a.pdf", status: "pending_review", staging_id: 11, warnings: [], fields: {} },
+      ],
+      uploaded: 1,
+      total: 1,
+    });
+    apiService.confirmIngestStaging.mockResolvedValue({
+      qualification_id: 99,
+      person_name: "Mario Rossi",
+      qualification_type: "ISO 9606-1",
+      warnings: [],
+    });
+
+    render(
+      <QualificationUploadButton companyId="60" companyName="ADA" onUploadComplete={() => {}} activeTab="iso9606_1" />
+    );
+    await user.click(screen.getByRole("button", { name: /Carica qualifiche \(batch\)/i }));
+    await user.selectOptions(screen.getByRole("combobox"), "patentino_saldatore");
+    await user.upload(
+      document.querySelector('input[type="file"]'),
+      new File(["%PDF"], "a.pdf", { type: "application/pdf" }),
+    );
+    await user.click(screen.getByRole("button", { name: /Estrai e rivedi/i }));
+
+    expect(await screen.findByRole("button", { name: /Rivedi campi/i })).toBeInTheDocument();
+    expect(screen.queryByTestId("qual-upload-verify-summary")).toBeNull();
+
+    await user.click(screen.getByRole("button", { name: /Rivedi campi/i }));
+    await user.click(screen.getByTestId("ingest-review-sim-verify"));
+    expect(await screen.findByTestId("qual-upload-verify-summary")).toHaveTextContent(/2 avvisi/);
+
+    await user.click(screen.getByTestId("ingest-review-confirm"));
+    await waitFor(() => {
+      expect(apiService.confirmIngestStaging).toHaveBeenCalledWith(11, { person_name: "Mario Rossi" });
+    });
+    expect(await screen.findByText("Mario Rossi")).toBeInTheDocument();
+    expect(screen.getByTestId("qual-upload-verify-summary")).toHaveTextContent(/2 avvisi/);
+    expect(screen.getByTestId("qual-upload-verify-summary")).toHaveTextContent(/1 file verificato/);
   });
 });
