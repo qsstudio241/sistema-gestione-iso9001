@@ -24,7 +24,7 @@ const OPTIONAL_COLUMNS = Object.freeze([
     'joint_type', 'product_type', 'welding_process', 'material_group', 'filler_material',
     'shielding_gas', 'weld_details', 'transfer_mode', 'position_range',
     'qualification_designation',
-    'thickness_min_mm', 'thickness_max_mm', 'thickness_max_unlimited',
+    'thickness_min_mm', 'thickness_max_mm', 'thickness_max_unlimited', 'thickness_range',
     'pipe_diameter_min_mm', 'pipe_diameter_max_mm',
     'exam_date', 'issue_date', 'expiry_date',
     'last_confirmation_date', 'next_confirmation_due', 'revalidation_date',

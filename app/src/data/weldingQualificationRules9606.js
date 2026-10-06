@@ -133,6 +133,25 @@ const FILLET_WELD_POSITION_QUALIFICATION_MATRIX = {
 };
 
 /**
+ * Normalizza il simbolo di posizione alle sole varianti GRAFICHE dello stesso simbolo di Tab. 9/10:
+ * maiuscole, spazi, trattini tipografici e trattino assente (`HL045`, `h_l045` -> `H-L045`).
+ * NON mappa sigle diverse: `PH-L045` non e' un simbolo di Tab. 9/10 (la norma §5.8 definisce solo
+ * `PH`, `PJ`, `H-L045`, `J-L045`, mai la forma composta) e resta non riconosciuto.
+ * GAP (VQ-TUNE 06/10/2026): significato di `PH-L045` da confermare sul certificato/PDF prima di
+ * aggiungere un alias. Vedi commento gemello in backend/src/data/weldingQualificationRules9606.js —
+ * mantenere sincronizzato.
+ *
+ * @param {string|null|undefined} raw
+ * @returns {string} stringa vuota se assente
+ */
+function normalizeWeldingPositionSymbol(raw) {
+  const s = String(raw == null ? '' : raw).toUpperCase().trim()
+    .replace(/[\u2010-\u2015\u2212\s_]+/g, '-');
+  const m = /^([HJ])-?L045$/.exec(s);
+  return m ? `${m[1]}-L045` : s;
+}
+
+/**
  * Elenco delle posizioni di saldatura (ISO 6947) per cui il saldatore risulta
  * qualificato, dato il provino effettivamente testato (Tabelle 9/10 — §5.8).
  *
@@ -140,7 +159,7 @@ const FILLET_WELD_POSITION_QUALIFICATION_MATRIX = {
  * @returns {string[] | null} null se la posizione testata non e' riconosciuta
  */
 function computeQualifiedWeldingPositions({ testPosition, jointType = 'BW' } = {}) {
-  const key = String(testPosition || '').toUpperCase().trim();
+  const key = normalizeWeldingPositionSymbol(testPosition);
   if (!key) return null;
   const matrix = String(jointType || '').toUpperCase() === 'FW'
     ? FILLET_WELD_POSITION_QUALIFICATION_MATRIX
@@ -160,7 +179,7 @@ function computeQualifiedWeldingPositions({ testPosition, jointType = 'BW' } = {
 function isWeldingPositionQualified({ testPosition, targetPosition, jointType = 'BW' } = {}) {
   const qualified = computeQualifiedWeldingPositions({ testPosition, jointType });
   if (!qualified) return null;
-  return qualified.includes(String(targetPosition || '').toUpperCase().trim());
+  return qualified.includes(normalizeWeldingPositionSymbol(targetPosition));
 }
 
 /**
@@ -328,6 +347,7 @@ export {
   computeQualifiedFilletThicknessRange,
   computeQualifiedThicknessRangeButtWeld,
   computeQualifiedWeldingPositions,
+  normalizeWeldingPositionSymbol,
   isWeldingPositionQualified,
   BUTT_WELD_POSITION_QUALIFICATION_MATRIX,
   FILLET_WELD_POSITION_QUALIFICATION_MATRIX,
@@ -346,6 +366,7 @@ export default {
   computeQualifiedFilletThicknessRange,
   computeQualifiedThicknessRangeButtWeld,
   computeQualifiedWeldingPositions,
+  normalizeWeldingPositionSymbol,
   isWeldingPositionQualified,
   BUTT_WELD_POSITION_QUALIFICATION_MATRIX,
   FILLET_WELD_POSITION_QUALIFICATION_MATRIX,

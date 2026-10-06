@@ -40,6 +40,7 @@ describe('verifyRecordLoader — colonne tolleranti (migrazione 168 non assunta)
         const { missingColumns } = await loadQualificationsForVerify({ qualTypeLike: '%9606%' });
         const [sqlText] = selectCalls()[0];
         for (const c of COLUMNS_168) expect(sqlText).toContain(c);
+        expect(sqlText).toContain('thickness_range');
         expect(missingColumns).toEqual([]);
     });
 

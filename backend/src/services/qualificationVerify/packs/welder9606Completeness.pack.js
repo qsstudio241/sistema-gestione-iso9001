@@ -7,6 +7,9 @@
  * Piano: docs/agent-tasks/PLAN_VERIFICA_QUALIFICHE_NORMA_SLICES.md § 4.1.
  *
  * Severità: `warn` solo per un campo richiesto dalla clausola e assente, con clausola citata;
+ * taratura VQ-TUNE (06/10/2026, misura su dati reali): `THK_VALIDITY` è `warn` solo se manca il
+ * limite minimo e il testo legacy `thickness_range` non lo restituisce; «solo minimo» (convenzione
+ * «da X, senza limite») e validità presente solo nel testo legacy sono `info`;
  * `info` per campi non essenziali o di prova. Se manca il dato di contesto (tipo giunto, tipo
  * prodotto, processo di prova) la regola non indovina: emette `non_verificabile_dato_mancante`.
  * Gli esiti non bloccano nulla e non propongono mai un valore da scrivere.
@@ -115,6 +118,45 @@ function simpleRule({
         : []));
 }
 
+const NUM = '(\\d+(?:[.,]\\d+)?)';
+const UNIT = '(?:\\s*mm)?';
+const OPEN_TAIL = '(?:\\u2026|\\.{2,3}|\\u221e|inf\\w*|illimitat\\w*|senza\\s+limit\\w*|no\\s+limit\\w*|oo|n\\.?\\s?l\\.?)';
+const toNumber = (txt) => Number(String(txt).replace(',', '.'));
+const fmtLegacy = (n) => String(n).replace('.', ',');
+
+/**
+ * Legge il campo legacy `thickness_range` (testo libero, es. «3-18 mm», «t≥3», «≥ 3 mm», «3-…»).
+ * Restituisce solo ciò che il testo dice in modo esplicito:
+ * - `min` / `max`: limiti numerici letti; `open`: limite superiore dichiarato assente («≥», «3-…», «senza limite»).
+ * Testo non interpretabile (o assente) → `null`: nessuna inferenza.
+ * @returns {{min: number|null, max: number|null, open: boolean}|null}
+ */
+function parseLegacyThicknessRange(text) {
+    const s = String(text == null ? '' : text).trim().toLowerCase();
+    if (!s) return null;
+
+    const dash = '[-\\u2013\\u2014]';
+    const re = (src) => new RegExp(`^${src}$`);
+
+    let m = re(`${NUM}${UNIT}\\s*${dash}\\s*${NUM}${UNIT}`).exec(s);
+    if (m) {
+        const min = toNumber(m[1]);
+        const max = toNumber(m[2]);
+        return max >= min ? { min, max, open: false } : null;
+    }
+
+    m = re(`(?:t\\s*)?(?:\\u2265|>=|=>|>|min\\.?|da)\\s*${NUM}${UNIT}`).exec(s);
+    if (m) return { min: toNumber(m[1]), max: null, open: true };
+
+    m = re(`${NUM}${UNIT}\\s*(?:${dash}\\s*(?:${OPEN_TAIL})?|${OPEN_TAIL})`).exec(s);
+    if (m) return { min: toNumber(m[1]), max: null, open: true };
+
+    m = re(`(?:fino\\s+a|max\\.?|\\u2264|<=|=<)\\s*${NUM}${UNIT}`).exec(s);
+    if (m) return { min: null, max: toNumber(m[1]), open: false };
+
+    return null;
+}
+
 const PROCESS_FIELDS = ['welding_process_test', 'welding_processes_validity', 'welding_process'];
 
 const RULES = [
@@ -171,7 +213,7 @@ const RULES = [
         const hasMin = isNum(view.thickness_min_mm);
         const hasMax = isNum(view.thickness_max_mm) || view.thickness_max_unlimited === true;
         if (hasMin && hasMax) return [];
-        const fields = ['thickness_min_mm', 'thickness_max_mm', 'thickness_max_unlimited'];
+        const fields = ['thickness_min_mm', 'thickness_max_mm', 'thickness_max_unlimited', 'thickness_range'];
         const profile = getJointTypeProfile(view.joint_type);
         if (!profile) {
             return [notVerifiableFinding({
@@ -183,10 +225,43 @@ const RULES = [
                 reason: 'tipo di giunto non leggibile: non si può stabilire se la validità vada espressa secondo Tab. 6 (BW) o Tab. 8 (FW)',
             })];
         }
-        const part = !hasMin && !hasMax ? 'limite minimo e massimo' : (!hasMin ? 'limite minimo' : 'limite massimo (o «nessun limite»)');
+
+        // Il limite minimo è il dato che non ha una convenzione di ripiego: senza né colonna né testo
+        // legacy che lo restituisca, l'informazione manca davvero (warn). Il solo massimo mancante è
+        // la convenzione «da X, senza limite superiore» (Tab. 6 s ≥ 12, Tab. 8 t ≥ 3).
+        const legacy = parseLegacyThicknessRange(view.thickness_range);
+        const minFromLegacy = !hasMin && legacy && legacy.min != null;
+        if (hasMin || minFromLegacy) {
+            const clause = `§5.7 Tab. ${profile.validityTable}`;
+            const legacyText = String(view.thickness_range || '').trim();
+            let message;
+            if (legacy && (legacy.max != null || legacy.open)) {
+                const lo = fmtLegacy(legacy.min != null ? legacy.min : view.thickness_min_mm);
+                const what = legacy.max != null ? `da ${lo} a ${fmtLegacy(legacy.max)} mm` : `da ${lo} mm, senza limite superiore`;
+                const absent = hasMin ? 'manca il limite massimo (o «nessun limite»)' : (hasMax ? 'manca il limite minimo' : 'mancano i limiti');
+                message = `Campo di validità dello spessore: nelle colonne ${absent}, ma il testo del campo legacy «${legacyText}» lo esprime (${what}). Dato leggibile solo come testo: nessuna azione richiesta (ISO 9606-1 ${clause}).`;
+            } else {
+                message = `Campo di validità dello spessore: indicato solo il limite minimo da ${fmtLegacy(hasMin ? view.thickness_min_mm : legacy.min)} mm, senza massimo né «nessun limite». Convenzione normale «da X mm, senza limite superiore» (ISO 9606-1 ${clause}): informativo, verificare il flag «nessun limite» solo se il certificato riporta un massimo.`;
+            }
+            return [makeFinding({
+                code: `${PREFIX}THK_VALIDITY`,
+                family: FAMILY.COMPLETEZZA,
+                severity: SEVERITY.INFO,
+                status: STATUS.VERIFICABILE,
+                field: 'thickness_max_mm',
+                fields,
+                direction: DIRECTION.MISSING,
+                read_value: legacyText || null,
+                expected_value: null,
+                source: sourceOf(clause),
+                message_it: message,
+            })];
+        }
+
+        const part = !hasMin && !hasMax ? 'limite minimo e massimo' : 'limite minimo';
         return [missingFinding({
             code: 'THK_VALIDITY',
-            field: hasMin ? 'thickness_max_mm' : 'thickness_min_mm',
+            field: 'thickness_min_mm',
             fields,
             severity: SEVERITY.WARN,
             clause: `§5.7 Tab. ${profile.validityTable}`,
