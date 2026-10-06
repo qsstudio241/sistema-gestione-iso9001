@@ -213,6 +213,53 @@ function describePlateOnlyRotatingPositionDiameterNote({
 const CONTINUOUS_WIRE_ARC_PROCESSES = ['131', '135', '136', '138'];
 
 /**
+ * Equivalenze di processo (ISO 9606-1 §5.2): una prova qualifica normalmente un solo
+ * processo; eccezioni (testo NORMA_00018 §5.2, edizioni 2017/2013/2012 identiche):
+ * - 135 <-> 138 (filo pieno / filo animato metallico)
+ * - 121 <-> 125 (filo pieno / filo animato, arco sommerso)
+ * - 141, 143 o 145 qualificano 141, 142, 143 e 145; 142 qualifica solo 142.
+ * Fonte unica per verifica (qualificationVerify, backend) e prompt AI: non duplicare la prosa.
+ * Mantenere sincronizzato con backend/src/data/weldingQualificationRules9606.js
+ */
+const WELDING_PROCESS_EQUIVALENCE_GROUPS = [
+  { testProcesses: ['135', '138'], qualifies: ['135', '138'] },
+  { testProcesses: ['121', '125'], qualifies: ['121', '125'] },
+  { testProcesses: ['141', '143', '145'], qualifies: ['141', '142', '143', '145'] },
+  { testProcesses: ['142'], qualifies: ['142'] },
+];
+
+/**
+ * Processi qualificati (codici ISO 4063) dato il processo della prova (§5.2).
+ * Processo senza equivalenze note -> solo se stesso. Codice non leggibile -> null.
+ * Un solo processo per volta: i certificati multi-processo (Tab. 1) non sono modellati.
+ *
+ * @param {{ testProcess: string|number|null|undefined }} params
+ * @returns {string[] | null}
+ */
+function computeQualifiedWeldingProcesses({ testProcess } = {}) {
+  const m = String(testProcess == null ? '' : testProcess).trim().match(/^(\d{2,3})[A-Za-z]?$/);
+  if (!m) return null;
+  const code = m[1];
+  const group = WELDING_PROCESS_EQUIVALENCE_GROUPS.find((g) => g.testProcesses.includes(code));
+  return group ? [...group.qualifies] : [code];
+}
+
+/**
+ * Descrizione testuale delle equivalenze per il prompt AI, calcolata con
+ * computeQualifiedWeldingProcesses (stessa funzione della verifica: nessuna divergenza).
+ * @returns {string}
+ */
+function describeWeldingProcessEquivalences() {
+  return WELDING_PROCESS_EQUIVALENCE_GROUPS.map(({ testProcesses }) => {
+    const qualified = computeQualifiedWeldingProcesses({ testProcess: testProcesses[0] });
+    const tests = testProcesses.join('/');
+    return qualified.length === 1 && testProcesses.length === 1
+      ? `${tests} qualifica solo ${qualified[0]}`
+      : `${tests} qualifica ${qualified.join(', ')}`;
+  }).join('; ');
+}
+
+/**
  * Determina quali campi opzionali del patentino ISO 9606-1 sono pertinenti in
  * base al tipo di prodotto testato (variabile essenziale §11: piastra/tubo) e
  * al processo di saldatura scelto.
@@ -269,9 +316,9 @@ function buildWelderQualificationRulesPromptSection(opts = {}) {
 - Spessore giunti testa a testa (Tabella 6): con spessore provino s, il campo e' [s, max(3,2s)] se s<3 mm, [3, 2s] se 3<=s<12 mm, [3, nessun limite] se s>=12 mm.
 - Spessore giunti d'angolo (Tabella 8): con spessore provino t, il campo e' [t, max(3,2t)] se t<3 mm, [3, nessun limite] se t>=3 mm.
 - Estrai comunque il valore/range esplicito riportato sul certificato quando presente: non sovrascriverlo con il calcolo se i due dati non coincidono, segnala solo la discrepanza.
-- Un cambio di processo di saldatura richiede nuova qualifica, salvo equivalenze note: 135<->138, 121<->125, 141/143/145 tra loro (142 solo 142).
+- Un cambio di processo di saldatura richiede nuova qualifica, salvo le equivalenze di ISO 9606-1 §5.2: ${describeWeldingProcessEquivalences()}.
 - Giunto di derivazione/branch/bocchello (es. "tubo-piastra", tubo che si inserisce in una piastra o in un altro tubo): il "tipo prodotto" ufficiale ISO 9606-1 ha solo due valori, "P" (piastra) o "T" (tubo) - NON esiste una terza categoria "tubo-piastra" (norma §11: product type plate(P)/pipe(T)). Se il certificato indica esplicitamente una derivazione/branch/bocchello, mantieni product_type="T" ma NON perdere l'informazione originale: riportala testualmente in weld_details (es. "derivazione/branch tubo-piastra") cosi' l'operatore in revisione la vede e puo' correggere consapevolmente.
-- Metodo di trasferimento (transfer mode, §5.2/§9.3): estrai solo per processi ad arco con filo continuo (131, 135, 136, 138) - valori: spray_arc, pulsed_arc, short_arc, globular. Per altri processi (111, 121, 141, 145, 311) non esiste, lascia null. Nota normativa: qualificare con transfer mode "dip"/short-circuit (131/135/138) qualifica anche gli altri transfer mode dello stesso processo, non viceversa.
+- Metodo di trasferimento (transfer mode, §5.2/Annex A): estrai solo per processi ad arco con filo continuo (131, 135, 136, 138) - valori: spray_arc, pulsed_arc, short_arc, globular. Per altri processi (111, 121, 141, 145, 311) non esiste, lascia null. Nota normativa: qualificare con transfer mode "dip"/short-circuit (131/135/138) qualifica anche gli altri transfer mode dello stesso processo, non viceversa.
 --- FINE REGOLE ISO 9606-1 ---`.trim();
 }
 
@@ -284,6 +331,9 @@ export {
   isWeldingPositionQualified,
   BUTT_WELD_POSITION_QUALIFICATION_MATRIX,
   FILLET_WELD_POSITION_QUALIFICATION_MATRIX,
+  computeQualifiedWeldingProcesses,
+  describeWeldingProcessEquivalences,
+  WELDING_PROCESS_EQUIVALENCE_GROUPS,
   CONTINUOUS_WIRE_ARC_PROCESSES,
   describePlateOnlyRotatingPositionDiameterNote,
   getApplicableWelderFields,
@@ -299,6 +349,9 @@ export default {
   isWeldingPositionQualified,
   BUTT_WELD_POSITION_QUALIFICATION_MATRIX,
   FILLET_WELD_POSITION_QUALIFICATION_MATRIX,
+  computeQualifiedWeldingProcesses,
+  describeWeldingProcessEquivalences,
+  WELDING_PROCESS_EQUIVALENCE_GROUPS,
   CONTINUOUS_WIRE_ARC_PROCESSES,
   describePlateOnlyRotatingPositionDiameterNote,
   getApplicableWelderFields,
