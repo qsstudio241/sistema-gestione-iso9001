@@ -2,7 +2,8 @@ jest.mock('../../config/database', () => ({ query: jest.fn() }));
 jest.mock('../../utils/logger', () => ({ info: jest.fn(), error: jest.fn(), warn: jest.fn(), debug: jest.fn() }));
 
 const { query } = require('../../config/database');
-const { registerRulePack } = require('./verifyRegistry');
+const registry = require('./verifyRegistry');
+const { ensureDefaultPacks, DEFAULT_PACKS } = require('./registerDefaultPacks');
 const { FAMILY, SEVERITY, STATUS, DIRECTION, TEXT_STATUS, makeFinding, validateFinding } = require('./findingTypes');
 const { OPTIONAL_COLUMNS, CORE_COLUMNS, resetColumnsCache } = require('./verifyRecordLoader');
 const {
@@ -31,7 +32,7 @@ const FIELD = {
  * - spessore di prova assente => info non verificabile (dato mancante).
  */
 const TEST_CODES = ['QVTEST.CORR.THK_MAX', 'QVTEST.CORR.THK_TEST_MISSING'];
-registerRulePack({
+const TEST_PACK = {
     id: 'vq8.test.pack',
     standardFamily: '9606-1',
     editions: ['2017'],
@@ -72,7 +73,18 @@ registerRulePack({
                 : []),
         },
     ],
-});
+};
+
+/**
+ * Isolamento dai pack reali: i pack di default entrano con `rules: []` (stesso id, quindi
+ * `ensureDefaultPacks()` dell'engine non li sostituisce) e il solo pack di prova produce finding.
+ * I conteggi del test non dipendono dal contenuto di completezza/correttezza 9606-x.
+ */
+function useIsolatedPacks() {
+    registry.clearRulePacks();
+    for (const pack of DEFAULT_PACKS) registry.registerRulePack({ ...pack, rules: [] });
+    registry.registerRulePack(TEST_PACK);
+}
 
 const rec = (id, org, over = {}) => ({
     id,
@@ -97,8 +109,14 @@ function mockDb({ rows, columns = [...CORE_COLUMNS, ...OPTIONAL_COLUMNS] }) {
 }
 
 beforeEach(() => {
+    useIsolatedPacks();
     query.mockReset();
     resetColumnsCache();
+});
+
+afterAll(() => {
+    registry.clearRulePacks();
+    ensureDefaultPacks();
 });
 
 describe('scanVerifyRecords / countVerifyCandidates', () => {
