@@ -32,6 +32,24 @@ export function suggestedDocTypeFromTab(tabKey) {
   }
 }
 
+/**
+ * Riepilogo avvisi norma (VQ-9) sui risultati che hanno gia' un esito `verification`
+ * (dall'estrazione, dalla revisione o dalla conferma). Nessuna chiamata: se nessun risultato
+ * ha l'esito, ritorna `null` e il riepilogo non compare.
+ */
+export function summarizeNormVerification(results) {
+  const withResult = (results || []).filter((r) => r?.verification?.summary);
+  if (withResult.length === 0) return null;
+  let warn = 0;
+  let filesWithWarn = 0;
+  for (const r of withResult) {
+    const n = Number(r.verification.summary.warn) || 0;
+    warn += n;
+    if (n > 0) filesWithWarn += 1;
+  }
+  return { warn, filesWithWarn, files: withResult.length };
+}
+
 function docTypeLabel(value) {
   return DOC_TYPE_OPTIONS.find((o) => o.value === value)?.label || value;
 }
@@ -133,6 +151,18 @@ export default function QualificationUploadButton({
     )));
   }, []);
 
+  const handleVerificationChange = useCallback((stagingId, verification) => {
+    if (stagingId == null || !verification) return;
+    setResults((prev) => (prev || []).map((r) => (
+      r.staging_id === stagingId && r.verification !== verification ? { ...r, verification } : r
+    )));
+    setReviewItem((prev) => (
+      prev?.staging_id === stagingId && prev.verification !== verification
+        ? { ...prev, verification }
+        : prev
+    ));
+  }, []);
+
   const handleOpenReview = useCallback((item) => {
     const localFile = selectedFiles.find((f) => f.name === item.fileName) || null;
     setReviewItem({ ...item, previewFile: localFile });
@@ -143,13 +173,21 @@ export default function QualificationUploadButton({
     setReviewBusy(true);
     try {
       const res = await apiService.confirmIngestStaging(reviewItem.staging_id, fields);
-      updateResult(reviewItem.staging_id, {
-        status: "confirmed",
-        qualification_id: res.qualification_id,
-        person_name: res.person_name,
-        qualification_type: res.qualification_type,
-        warnings: res.warnings || reviewItem.warnings,
-      });
+      const stagingId = reviewItem.staging_id;
+      // Confirm non restituisce verification; reviewItem e' lo snapshot all'apertura.
+      // Fonte: stato corrente (onVerificationChange → results), non res/reviewItem.
+      setResults((prev) => (prev || []).map((r) => {
+        if (r.staging_id !== stagingId) return r;
+        return {
+          ...r,
+          status: "confirmed",
+          qualification_id: res.qualification_id,
+          person_name: res.person_name,
+          qualification_type: res.qualification_type,
+          warnings: res.warnings || r.warnings,
+          verification: res.verification || r.verification || null,
+        };
+      }));
       setReviewItem(null);
       if (onUploadComplete) onUploadComplete();
     } catch (err) {
@@ -158,7 +196,7 @@ export default function QualificationUploadButton({
     } finally {
       setReviewBusy(false);
     }
-  }, [reviewItem, onUploadComplete, updateResult]);
+  }, [reviewItem, onUploadComplete]);
 
   const handleRejectReview = useCallback(async () => {
     if (!reviewItem?.staging_id) return;
@@ -188,6 +226,7 @@ export default function QualificationUploadButton({
   const showPanel = panelOpen || selectedFiles.length > 0 || hasResults;
   const pendingCount = (results || []).filter((r) => r.status === "pending_review").length;
   const canExtract = Boolean(docType) && selectedFiles.length > 0 && !uploading;
+  const verifySummary = summarizeNormVerification(results);
 
   if (!isValidCompany) {
     return (
@@ -342,6 +381,14 @@ export default function QualificationUploadButton({
                   )}
                 </span>
               </div>
+              {verifySummary && (
+                <p className="qual-upload__result-meta" data-testid="qual-upload-verify-summary">
+                  {verifySummary.warn > 0
+                    ? `Verifica norma: ${verifySummary.warn} ${verifySummary.warn === 1 ? "avviso" : "avvisi"} in ${verifySummary.filesWithWarn} su ${verifySummary.files} file verificati`
+                    : `Verifica norma: nessun avviso su ${verifySummary.files} ${verifySummary.files === 1 ? "file verificato" : "file verificati"}`}
+                  {" \u2014 gli avvisi non impediscono il salvataggio."}
+                </p>
+              )}
               <ul className="qual-upload__results">
                 {results.map((r, i) => {
                   const isPending = r.status === "pending_review";
@@ -442,6 +489,8 @@ export default function QualificationUploadButton({
         fieldConfidence={reviewItem?.field_confidence}
         warnings={reviewItem?.warnings}
         qualificationType={reviewItem?.qualification_type}
+        verification={reviewItem?.verification}
+        onVerificationChange={(v) => handleVerificationChange(reviewItem?.staging_id, v)}
         onConfirm={handleConfirmReview}
         onReject={handleRejectReview}
         onClose={() => setReviewItem(null)}
