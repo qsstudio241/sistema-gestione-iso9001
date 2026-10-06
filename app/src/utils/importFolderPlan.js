@@ -297,3 +297,92 @@ export function lotDocumentTypeHint(guessedType) {
   if (!guessedType || guessedType === "commessa" || guessedType === "altro") return undefined;
   return guessedType;
 }
+
+/** Etichette UI per la lista progresso file (stesso motore `folderUpload`). */
+export const IMPORT_PROGRESS_STATUS_LABEL = {
+  pending: "In attesa",
+  current: "In corso",
+  done: "Fatto",
+  error: "Errore",
+  cancelled: "Interrotto",
+};
+
+export function progressFileName(file) {
+  const rel = relativeImportPath(file);
+  if (rel) return rel;
+  return String(file?.original_name || file?.name || "file");
+}
+
+export function progressFileStatusLabel(status) {
+  return IMPORT_PROGRESS_STATUS_LABEL[status] || String(status || "");
+}
+
+/**
+ * Righe progresso da lotti (una riga per file, `lotIndex` per aggiornare il lotto corrente).
+ * @param {Array<{ files?: unknown[] }>} lots
+ */
+export function buildProgressFilesFromLots(lots) {
+  const rows = [];
+  (lots || []).forEach((lot, lotIndex) => {
+    (lot.files || []).forEach((file, fileIndex) => {
+      const name = progressFileName(file);
+      rows.push({
+        key: `${lotIndex}:${fileIndex}:${name}`,
+        name,
+        lotIndex,
+        status: "pending",
+      });
+    });
+  });
+  return rows;
+}
+
+/**
+ * Righe progresso da nomi (upload PDF / estrazione / screening).
+ * @param {string[]} names
+ * @param {string} [status]
+ */
+export function buildProgressFilesFromNames(names, status = "pending") {
+  return (names || []).map((name, i) => {
+    const label = String(name || `file-${i + 1}`);
+    return { key: `${i}:${label}`, name: label, status };
+  });
+}
+
+/**
+ * Stato per lotto: lotti precedenti fatti, lotto corrente, resto in attesa (o interrotti).
+ * @param {Array<{ lotIndex?: number }>} files
+ * @param {number} lotIndex
+ * @param {string} statusForLot
+ * @param {{ pendingAfter?: string }} [opts]
+ */
+export function withLotFileStatus(files, lotIndex, statusForLot, opts = {}) {
+  const pendingAfter = opts.pendingAfter || "pending";
+  return (files || []).map((row) => {
+    if (row.lotIndex < lotIndex) return { ...row, status: "done" };
+    if (row.lotIndex === lotIndex) return { ...row, status: statusForLot };
+    return { ...row, status: pendingAfter };
+  });
+}
+
+/**
+ * Stato sequenziale: indici < currentIndex fatti, currentIndex in corso, resto in attesa.
+ * `currentIndex === files.length` → tutti fatti.
+ * @param {Array} files
+ * @param {number} currentIndex
+ */
+export function withIndexedFileStatus(files, currentIndex) {
+  return (files || []).map((row, i) => ({
+    ...row,
+    status: i < currentIndex ? "done" : i === currentIndex ? "current" : "pending",
+  }));
+}
+
+/** Nomi già sul job: retry PDF non deve ri-caricare i file salvati. */
+export function collectExistingImportFileNames(existingFiles) {
+  return new Set(
+    (existingFiles || [])
+      .map((f) => String(f?.original_name || f?.name || "").trim())
+      .filter(Boolean)
+  );
+}

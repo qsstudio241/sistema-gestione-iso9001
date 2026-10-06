@@ -34,6 +34,12 @@ import {
   estimateLotsText,
   formatImportSize,
   lotDocumentTypeHint,
+  buildProgressFilesFromLots,
+  buildProgressFilesFromNames,
+  withLotFileStatus,
+  withIndexedFileStatus,
+  collectExistingImportFileNames,
+  progressFileStatusLabel,
 } from "../utils/importFolderPlan";
 import StatusBadge from "../components/StatusBadge";
 import FileDropzone from "../components/FileDropzone";
@@ -255,7 +261,7 @@ function CommitNormStatusBadge({ normLookup, standardCode }) {
  * Raggruppa in un overflow apribile/chiudibile (chiusura a click fuori)
  * le azioni meno frequenti, lasciando in evidenza solo le azioni primarie.
  */
-function FileActionsMenu({ actions }) {
+function FileActionsMenu({ actions, disabled = false }) {
   const [open, setOpen] = useState(false);
   const menuRef = useRef(null);
 
@@ -286,6 +292,8 @@ function FileActionsMenu({ actions }) {
         className="btn-small file-actions-more"
         aria-haspopup="menu"
         aria-expanded={open}
+        disabled={disabled}
+        title={disabled ? "Operazione in corso: il job non è modificabile" : undefined}
         onClick={() => setOpen((o) => !o)}
       >
         Altre azioni {open ? "\u25B4" : "\u25BE"}
@@ -314,6 +322,44 @@ function FileActionsMenu({ actions }) {
   );
 }
 
+function ImportBusyBanner({ busy }) {
+  if (!busy) return null;
+  return (
+    <p
+      className="import-jobs-busy"
+      role="status"
+      aria-live="polite"
+      aria-label="Operazione in corso: il job non è modificabile"
+    >
+      Operazione in corso: il job non è modificabile.
+    </p>
+  );
+}
+
+function ImportFileProgressList({ files, label }) {
+  if (!files?.length) return null;
+  const done = files.filter((f) => f.status === "done").length;
+  return (
+    <section className="import-file-progress" aria-label="Progresso per file" aria-live="polite">
+      <h3 className="import-file-progress-title">
+        Progresso file
+        <span className="import-file-progress-count">
+          {`${done}/${files.length} fatti`}
+        </span>
+      </h3>
+      {label ? <p className="import-file-progress-label">{label}</p> : null}
+      <ol className="import-file-progress-list">
+        {files.map((f) => (
+          <li key={f.key} className={`import-file-progress-item is-${f.status}`}>
+            <span className="import-file-progress-name">{f.name}</span>
+            <span className="import-file-progress-status">{progressFileStatusLabel(f.status)}</span>
+          </li>
+        ))}
+      </ol>
+    </section>
+  );
+}
+
 function ImportFolderPlanPanel({
   plan,
   selectedKeys,
@@ -329,7 +375,7 @@ function ImportFolderPlanPanel({
   const lots = buildUploadLots(plan, selectedKeys);
   const selectedCount = plan.folders.filter((f) => selectedKeys.has(f.key)).length;
   const canConfirm = selectedCount > 0 && !busy && !upload && confirmAllowed;
-  const uploading = busy && !!upload && !upload.cancelled;
+  const uploading = busy && !!upload && !upload.cancelled && upload.phase === "lots";
 
   return (
     <section className="import-folder-plan" aria-label="Piano di carico cartella">
@@ -358,6 +404,7 @@ function ImportFolderPlanPanel({
             : upload.label}
         </p>
       )}
+      <ImportFileProgressList files={upload?.files} />
       <table className="import-folder-plan-table">
         <thead>
           <tr>
@@ -454,6 +501,7 @@ export default function ImportJobsPage() {
   const [folderPlanSelected, setFolderPlanSelected] = useState(() => new Set());
   const [folderPlanCompanyId, setFolderPlanCompanyId] = useState(null);
   const [folderUpload, setFolderUpload] = useState(null);
+  const [fileProgress, setFileProgress] = useState(null);
   const folderUploadCancelRef = useRef(false);
   const folderUploadRef = useRef(null);
   const folderInputRef = useRef(null);
@@ -466,16 +514,19 @@ export default function ImportJobsPage() {
     bindDirectoryPicker(el);
   }, []);
 
-  const loadList = useCallback(async () => {
-    setLoading(true);
-    setError(null);
+  const loadList = useCallback(async (opts = {}) => {
+    const silent = !!opts.silent;
+    if (!silent) {
+      setLoading(true);
+      setError(null);
+    }
     try {
       const res = await apiService.getImportJobs();
       setJobs(res.data || []);
     } catch (e) {
-      setError(e.message || "Errore caricamento job");
+      if (!silent) setError(e.message || "Errore caricamento job");
     } finally {
-      setLoading(false);
+      if (!silent) setLoading(false);
     }
   }, []);
 
@@ -648,11 +699,47 @@ export default function ImportJobsPage() {
       if (inputEl) inputEl.value = "";
       return;
     }
+    const progressFiles = buildProgressFilesFromNames(files.map((f) => f.name || f.original_name));
+    const alreadyOnJob = collectExistingImportFileNames(detail?.files);
+    setFileProgress({
+      current: 0,
+      total: files.length,
+      label: `Caricamento 0/${files.length} file`,
+      phase: "upload",
+      files: progressFiles.map((row) => (
+        alreadyOnJob.has(row.name) ? { ...row, status: "done" } : row
+      )),
+    });
     setBusy(true);
     setError(null);
     setFolderNotice(null);
+    let skippedExisting = 0;
     try {
-      await apiService.uploadImportJobFiles(selectedId, files);
+      for (let i = 0; i < files.length; i += 1) {
+        const name = String(files[i].name || files[i].original_name || "").trim();
+        if (name && alreadyOnJob.has(name)) {
+          skippedExisting += 1;
+          setFileProgress({
+            current: i + 1,
+            total: files.length,
+            label: `Già presente — ${name}`,
+            phase: "upload",
+            files: withIndexedFileStatus(progressFiles, i + 1),
+          });
+          continue;
+        }
+        setFileProgress({
+          current: i + 1,
+          total: files.length,
+          label: `Caricamento ${i + 1}/${files.length} — ${files[i].name}`,
+          phase: "upload",
+          files: withIndexedFileStatus(progressFiles, i),
+        });
+        await apiService.uploadImportJobFiles(selectedId, [files[i]]);
+        if (name) alreadyOnJob.add(name);
+        await loadList({ silent: true });
+        await loadDetail(selectedId);
+      }
       if (inputEl) inputEl.value = "";
       const notes = [];
       if (truncated) {
@@ -661,13 +748,19 @@ export default function ImportJobsPage() {
       if (skippedJunk) {
         notes.push(`${skippedJunk} file di sistema ignorati (Thumbs.db / .DS_Store).`);
       }
+      if (skippedExisting) {
+        notes.push(
+          `${skippedExisting} ${skippedExisting === 1 ? "file già presente, non ricaricato" : "file già presenti, non ricaricati"}.`
+        );
+      }
       setFolderNotice(notes.length ? notes.join(" ") : null);
-      await loadList();
-      await loadDetail(selectedId);
     } catch (err) {
       setError(err.message || "Upload fallito");
+      await loadList({ silent: true });
+      await loadDetail(selectedId);
     } finally {
       setBusy(false);
+      setFileProgress(null);
     }
   }
 
@@ -770,6 +863,15 @@ export default function ImportJobsPage() {
       return;
     }
     folderUploadCancelRef.current = false;
+    const progressFiles = buildProgressFilesFromLots(lots);
+    setFolderUpload({
+      current: 0,
+      total: lots.length,
+      label: "Avvio caricamento lotti…",
+      cancelled: false,
+      phase: "lots",
+      files: progressFiles,
+    });
     setBusy(true);
     setError(null);
     setFolderNotice(null);
@@ -783,6 +885,8 @@ export default function ImportJobsPage() {
             total: lots.length,
             label: lots[i].progressLabel,
             cancelled: true,
+            phase: "lots",
+            files: withLotFileStatus(progressFiles, i, "cancelled", { pendingAfter: "cancelled" }),
           });
           setFolderNotice(
             `Caricamento interrotto dopo ${uploaded} ${uploaded === 1 ? "lotto" : "lotti"}. I file già caricati restano.`
@@ -795,6 +899,8 @@ export default function ImportJobsPage() {
           total: lots.length,
           label: lot.progressLabel,
           cancelled: false,
+          phase: "lots",
+          files: withLotFileStatus(progressFiles, i, "current"),
         });
         // Sempre create: un job vuoto riusato non ha titolo pianificato né document_type_hint
         // (niente PATCH job; screening capitolato-first dipende da hint sul primo lotto).
@@ -838,6 +944,17 @@ export default function ImportJobsPage() {
       setError(COMPANY_REQUIRED_UPLOAD_TITLE);
       return;
     }
+    const progressFiles = buildProgressFilesFromNames(
+      (detail?.files || []).map((f) => f.original_name || `file-${f.id}`),
+      "current"
+    );
+    setFileProgress({
+      current: 0,
+      total: progressFiles.length,
+      label: "Estrazione testo in corso…",
+      phase: "process",
+      files: progressFiles,
+    });
     setBusy(true);
     setError(null);
     try {
@@ -848,6 +965,7 @@ export default function ImportJobsPage() {
       setError(e.message || "Elaborazione fallita");
     } finally {
       setBusy(false);
+      setFileProgress(null);
     }
   }
 
@@ -857,6 +975,17 @@ export default function ImportJobsPage() {
       setError(COMPANY_REQUIRED_UPLOAD_TITLE);
       return;
     }
+    const progressFiles = buildProgressFilesFromNames(
+      (detail?.files || []).map((f) => f.original_name || `file-${f.id}`),
+      "current"
+    );
+    setFileProgress({
+      current: 0,
+      total: progressFiles.length,
+      label: "Screening e posa in corso…",
+      phase: "screen",
+      files: progressFiles,
+    });
     setBusy(true);
     setError(null);
     setFolderNotice(null);
@@ -873,6 +1002,7 @@ export default function ImportJobsPage() {
       setError(e.message || "Screening fallito");
     } finally {
       setBusy(false);
+      setFileProgress(null);
     }
   }
 
@@ -893,6 +1023,16 @@ export default function ImportJobsPage() {
 
   async function handleAiExtract(fileId) {
     if (!selectedId) return;
+    const fileName =
+      (detail?.files || []).find((f) => Number(f.id) === Number(fileId))?.original_name ||
+      `file-${fileId}`;
+    setFileProgress({
+      current: 1,
+      total: 1,
+      label: `Analisi AI — ${fileName}`,
+      phase: "ai",
+      files: buildProgressFilesFromNames([fileName], "current"),
+    });
     setBusy(true);
     setError(null);
     try {
@@ -903,6 +1043,7 @@ export default function ImportJobsPage() {
       setError(msg);
     } finally {
       setBusy(false);
+      setFileProgress(null);
     }
   }
 
@@ -1147,7 +1288,7 @@ export default function ImportJobsPage() {
   }
 
   return (
-    <div className="import-jobs-page">
+    <div className="import-jobs-page" aria-busy={busy || undefined}>
       <h1>Import batch PDF</h1>
       <p className="import-jobs-intro">
         Flusso operativo: <strong>Ambito (azienda cliente) → tipo documento → file → estrazione → revisione → AI → registro</strong>.
@@ -1156,6 +1297,7 @@ export default function ImportJobsPage() {
         Sbagli il carico? <strong>Annulla caricamento</strong> elimina il job e i file non posati. Quelli già nello scaffale restano.
       </p>
       {error && <p className="import-jobs-error">{error}</p>}
+      <ImportBusyBanner busy={busy} />
 
       <div className="import-jobs-grid">
         <section className="import-jobs-col">
@@ -1166,11 +1308,13 @@ export default function ImportJobsPage() {
               placeholder="Titolo (opzionale)"
               value={newTitle}
               onChange={(e) => setNewTitle(e.target.value)}
+              disabled={busy}
             />
             <select
               className="import-jobs-select"
               value={docTypeHint}
               onChange={(e) => setDocTypeHint(e.target.value)}
+              disabled={busy}
             >
               {DOC_TYPE_OPTIONS_IMPORT.map((o) => (
                 <option key={o.value || "none"} value={o.value}>
@@ -1203,6 +1347,8 @@ export default function ImportJobsPage() {
                     type="button"
                     className={selectedId === j.id ? "job-row active" : "job-row"}
                     onClick={() => setSelectedId(j.id)}
+                    disabled={busy}
+                    title={busy ? "Operazione in corso: il job non è modificabile" : undefined}
                   >
                     <span className="job-title">{j.title}</span>
                     <span className="job-meta">
@@ -1341,6 +1487,9 @@ export default function ImportJobsPage() {
                 Capitolati e commesse partono prima di Scan. Dal testo di PDF, Word ed Excel si leggono prima 30 righe.
                 Disegni e foto si classificano da nome e cartella (senza OCR).
               </p>
+              {fileProgress?.files?.length > 0 && (
+                <ImportFileProgressList files={fileProgress.files} label={fileProgress.label} />
+              )}
               {folderNotice && (
                 <p className="import-jobs-warning">
                   {folderNotice}{" "}
@@ -1502,6 +1651,8 @@ export default function ImportJobsPage() {
                         rows={8}
                         defaultValue={f.extracted_text || ""}
                         id={`txt-${f.id}`}
+                        disabled={busy}
+                        title={busy ? "Operazione in corso: il job non è modificabile" : undefined}
                       />
                     )}
                     <div className="file-actions">
@@ -1517,7 +1668,7 @@ export default function ImportJobsPage() {
                           {a.label}
                         </button>
                       ))}
-                      <FileActionsMenu actions={secondaryActions} />
+                      <FileActionsMenu actions={secondaryActions} disabled={busy} />
                       {qualifResult?.error && (
                         <span className="file-commit-err" title={qualifResult.error}>{"\u26A0\uFE0F"} Errore qualifica</span>
                       )}
