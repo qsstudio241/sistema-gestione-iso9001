@@ -948,3 +948,84 @@ describe('qualificationIngest.service — aggancio verifica vs norma (VQ-7, addi
         expect(out.warnings.filter((w) => w === finding().message_it)).toHaveLength(1);
     });
 });
+
+describe('spessore prova per profilo giunto (VQ-BW-S) — BW -> s depositato, FW -> t materiale', () => {
+    const BASE = {
+        welder_name: 'MARIO ROSSI',
+        certificate_number: 'CERT-BWS-1',
+        welding_process: '141',
+        exam_date: '2026-01-10',
+        expiry_date: '2029-01-09',
+    };
+    const map = (over) => mapPipelineFieldsToReview({ ...BASE, ...over }, 'ISO 9606-1', 'c.pdf');
+
+    it('BW con spessore finito in t: la review lo scrive in s e svuota t', () => {
+        const out = map({ joint_type: 'BW', thickness_t_test_mm: 10 });
+        expect(out.thickness_s_test_mm).toBe(10);
+        expect(out.thickness_t_test_mm).toBeNull();
+    });
+
+    it('FW con spessore finito in s: la review lo scrive in t e svuota s', () => {
+        const out = map({ joint_type: 'FW', thickness_s_test_mm: 8 });
+        expect(out.thickness_t_test_mm).toBe(8);
+        expect(out.thickness_s_test_mm).toBeNull();
+    });
+
+    it('BW e FW gia\' corretti, o con ENTRAMBI s e t: invariati', () => {
+        expect(map({ joint_type: 'BW', thickness_s_test_mm: 10 }))
+            .toMatchObject({ thickness_s_test_mm: 10, thickness_t_test_mm: null });
+        expect(map({ joint_type: 'FW', thickness_t_test_mm: 8 }))
+            .toMatchObject({ thickness_s_test_mm: null, thickness_t_test_mm: 8 });
+        expect(map({ joint_type: 'BW', thickness_s_test_mm: 10, thickness_t_test_mm: 12 }))
+            .toMatchObject({ thickness_s_test_mm: 10, thickness_t_test_mm: 12 });
+    });
+
+    it('giunto sconosciuto/assente: nessuna deduzione, comportamento invariato', () => {
+        expect(map({ thickness_t_test_mm: 10 }))
+            .toMatchObject({ thickness_s_test_mm: null, thickness_t_test_mm: 10 });
+        expect(map({ joint_type: 'BW/FW', thickness_s_test_mm: 6 }))
+            .toMatchObject({ thickness_s_test_mm: 6, thickness_t_test_mm: null });
+    });
+
+    it('valori non numerici ("N.A.") restano null su entrambe le colonne', () => {
+        expect(map({ joint_type: 'BW', thickness_t_test_mm: 'N.A.', thickness_s_test_mm: '' }))
+            .toMatchObject({ thickness_s_test_mm: null, thickness_t_test_mm: null });
+    });
+
+    describe('commit', () => {
+        async function commit(fields) {
+            const dupCheckReq = { input: jest.fn().mockReturnThis(), query: jest.fn().mockResolvedValue({ recordset: [{ cnt: 0 }] }) };
+            const insertReq = { input: jest.fn().mockReturnThis(), query: jest.fn().mockResolvedValue({ recordset: [{ id: 77 }] }) };
+            let n = 0;
+            getPool.mockResolvedValue({ request: jest.fn(() => (++n === 1 ? dupCheckReq : insertReq)) });
+            await commitQualificationFromFields({ ...BASE, product_type: 'P', ...fields }, 10, 20,
+                { qualificationType: 'Saldatore ISO 9606-1' });
+            return insertReq;
+        }
+
+        it('BW con t: INSERT con thickSTest = s e thickTTest = null', async () => {
+            const req = await commit({ joint_type: 'BW', thickness_t_test_mm: 10 });
+            expect(req.input).toHaveBeenCalledWith('thickSTest', 10);
+            expect(req.input).toHaveBeenCalledWith('thickTTest', null);
+            expect(req.query).toHaveBeenCalledWith(expect.stringContaining('thickness_s_test_mm, thickness_t_test_mm'));
+        });
+
+        it('FW con t: INSERT con thickTTest = t e thickSTest = null', async () => {
+            const req = await commit({ joint_type: 'FW', thickness_t_test_mm: 8 });
+            expect(req.input).toHaveBeenCalledWith('thickSTest', null);
+            expect(req.input).toHaveBeenCalledWith('thickTTest', 8);
+        });
+
+        it('entrambi s e t: persistiti entrambi', async () => {
+            const req = await commit({ joint_type: 'BW', thickness_s_test_mm: 10, thickness_t_test_mm: 12 });
+            expect(req.input).toHaveBeenCalledWith('thickSTest', 10);
+            expect(req.input).toHaveBeenCalledWith('thickTTest', 12);
+        });
+
+        it('giunto sconosciuto: nessuna deduzione (t resta in t)', async () => {
+            const req = await commit({ thickness_t_test_mm: 10 });
+            expect(req.input).toHaveBeenCalledWith('thickSTest', null);
+            expect(req.input).toHaveBeenCalledWith('thickTTest', 10);
+        });
+    });
+});
