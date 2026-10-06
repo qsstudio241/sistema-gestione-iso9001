@@ -4,7 +4,7 @@
 > (`welder_9606`, `wpqr_procedure`, `cnd_9712`, …), riusabile da Qualifiche /
 > Riesame / Commesse, senza `if (welder) else` sparsi.
 > **Spirito**: stesso registry di `jointTypeProfiles`.
-> **Brief attivo**: [`DEPUTYTASK_COPERTURA.md`](DEPUTYTASK_COPERTURA.md) — **COV-5 APERTO** (blocco «Fattibilità multi-dominio» in Progetti e Riesame: FE sull'API `verify`, nessun endpoint/BE nuovo, semafori invariati). COV-1 (#702), COV-2 (#704), COV-3 (#706), COV-4 (#708) CHIUSE su `main`. Dopo COV-5 lo stream si chiude
+> **Brief attivo**: nessuno — **epic copertura COMPLETATA** (COV-1…5). [`DEPUTYTASK_COPERTURA.md`](DEPUTYTASK_COPERTURA.md) è **CHIUSO** (COV-5: blocco «Fattibilità multi-dominio» in Progetti e Riesame, solo FE sull'API `verify`, nessun endpoint/BE/migrazione, semafori invariati). COV-1 (#702), COV-2 (#704), COV-3 (#706), COV-4 (#708) su `main`; COV-5 in PR. Lo stream è chiuso: non riusarlo per un altro epic
 > **Conferma committente (05/10/2026)**: copertura a spettro ampio (9606 + WPQR + CND 9712), non solo patentini.
 
 ## Fuori scope
@@ -21,9 +21,9 @@
 - Qualifica senza `welding_process` nel semaforo commessa: oggi esclusa (legacy), nel motore `partial` → decisione committente, non in COV-4
 - Semafori per qualificatore divergenti tra Progetti (`semaforo()`) e Riesame (`semaforoExpiry()`, soglia 90 gg): non unificati in COV-4
 - Estensione advisory Riesame (`caseCoverageAdvisory`: WPQR multi-giunto, visione) ai domini `wpqr_procedure` / `cnd_9712`: **non** in COV-5 (l'advisory resta com'è; COV-5 affianca un blocco FE sull'API verify)
-- UI fattibilità multi-dominio su Projects (oltre il pannello Qualifiche): **in COV-5** (blocco WPQR per WPS + CND manuale + riga saldatori read-only)
+- ~~UI fattibilità multi-dominio su Projects (oltre il pannello Qualifiche)~~: **CHIUSA in COV-5** (blocco WPQR per WPS + CND manuale + riga saldatori read-only)
 - Requisiti CND derivati dalla commessa: oggi non c'è un dato strutturato (né su WPS né nei requisiti estratti) → nuovo campo = slice separata + decisione committente (regola Rielaborazioni)
-- Riesame: advisory WPQR (`caseCoverageAdvisory`) e blocco «Registro capacità» di COV-5 coesistono; sostituire l'advisory con il registry = conferma committente
+- Riesame: advisory WPQR (`caseCoverageAdvisory`) e blocco «Registro capacità» di COV-5 **coesistono** (due viste sulla stessa dimensione WPQR); sostituire l'advisory con il registry = conferma committente, slice successiva
 - `welder_9606` via registry nei blocchi commessa (fianco al semaforo): dopo l'HITL «fonte processo» / «qualifica senza processo»
 - `joint_type` nei criteri WPQR da WPS: richiede la colonna nelle SELECT di coverage (BE) → fuori da COV-5
 - Soglie ISO 15613 nel dominio WPQR (nessun catalogo JS: solo etichetta di base finché non c'è fonte MD)
@@ -94,8 +94,10 @@
 
 ### COV-5 — DoD
 
-- [ ] `CoverageVerifyPanel.css` (`.sq-cov-*` spostate da `QualificationsPage.css`) + props `allowedDomains` / `defaultDomain` / `embedded` retrocompatibili
-- [ ] `coverageCriteriaFromWps.js` puro + test; mai `verify` con criteri vuoti
-- [ ] `CoverageFeasibilityBlock` in Progetti (`CoverageModal`) e Riesame (`CoveragePanel`): WPQR per WPS (max 20, batch 4), CND manuale embedded, riga saldatori read-only; semafori/advisory invariati
-- [ ] Stati vuoto / errore / loading / dati insufficienti / troncamento; pulsanti sempre visibili (`disabled` + `title`); testi italiani con accenti
-- [ ] Vitest mirato + `npm run build` + `check-harness-boot` + `check-utf8-encoding`; nessun file in `backend/` nel diff; nessuna migrazione; esenzione Rielaborazioni nel body PR
+- [x] `CoverageVerifyPanel.css` (`.sq-cov-*` spostate da `QualificationsPage.css`) + props `allowedDomains` / `defaultDomain` / `embedded` retrocompatibili
+- [x] `coverageCriteriaFromWps.js` puro + test; mai `verify` con criteri vuoti
+- [x] `CoverageFeasibilityBlock` in Progetti (`CoverageModal`) e Riesame (`CoveragePanel`): WPQR per WPS (max 20, batch 4), CND manuale embedded, riga saldatori read-only; semafori/advisory invariati
+- [x] Stati vuoto / errore / loading / dati insufficienti / troncamento; pulsanti sempre visibili (`disabled` + `title`); testi italiani con accenti
+- [x] Vitest mirato + `npm run build` + `check-harness-boot` + `check-utf8-encoding`; nessun file in `backend/` nel diff; nessuna migrazione; esenzione Rielaborazioni nel body PR
+
+**Esito COV-5 (06/10/2026):** TEST OK. Smoke autenticato `SGQ_SMOKE_PATHS=login,qualifiche` non eseguito (punta alla produzione Netlify, che non contiene il branch); verifica a vista con harness Vite + Playwright su dati mock (screenshot/video in PR). Riesame: montaggio verificato da build + codice (`CoveragePanel` non esportato, nessun test di integrazione dedicato).

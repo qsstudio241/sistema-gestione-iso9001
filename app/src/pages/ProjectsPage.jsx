@@ -13,6 +13,7 @@ import PencilIcon from "../components/icons/PencilIcon";
 import TrashIcon from "../components/icons/TrashIcon";
 import { getWelderQualificationWarning } from "../utils/welderQualificationExpiryWarnings";
 import AiDisclaimer from "../components/AiDisclaimer";
+import CoverageFeasibilityBlock from "../components/CoverageFeasibilityBlock";
 import { TECHNICAL_REVIEW_ITEMS } from "../data/technicalReviewItems";
 import {
   applyTechnicalReviewCompletionStamp,
@@ -561,7 +562,7 @@ function ProjectFormModal({ project, companies, defaultCompanyId, wpsList, quali
 
 // ── Widget Copertura Commessa ──────────────────────────────────────────────────
 
-function CoverageModal({ projectId, projectCode, onClose }) {
+function CoverageModal({ projectId, projectCode, companyId = null, companyName = "", onClose }) {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -631,6 +632,16 @@ function CoverageModal({ projectId, projectCode, onClose }) {
               </table>
             </>
           )}
+          {data && (
+            <div style={{ marginTop: 16 }}>
+              <CoverageFeasibilityBlock
+                rows={data.coverage}
+                welderSummary={data.summary}
+                companyId={companyId}
+                companyName={companyName}
+              />
+            </div>
+          )}
         </div>
         <div className="pj-modal-footer">
           <button className="pj-btn-cancel" onClick={onClose}>Chiudi</button>
@@ -656,7 +667,7 @@ function ProjectsPage() {
   const [formOpen, setFormOpen] = useState(false);
   const [editingProject, setEditingProject] = useState(null);
   const [deleteId, setDeleteId] = useState(null);
-  const [coverageProject, setCoverageProject] = useState(null); // { id, project_code }
+  const [coverageProject, setCoverageProject] = useState(null); // { id, project_code, company_id, company_name }
 
   const [wpsList, setWpsList] = useState([]);
   const [qualifications, setQualifications] = useState([]);
@@ -829,7 +840,12 @@ function ProjectsPage() {
                         <button
                           className="pj-btn-coverage"
                           title="Verifica copertura saldatori"
-                          onClick={() => setCoverageProject({ id: p.id, project_code: p.project_code })}
+                          onClick={() => setCoverageProject({
+                            id: p.id,
+                            project_code: p.project_code,
+                            company_id: p.company_id ?? null,
+                            company_name: p.company_name || "",
+                          })}
                         >
                           {"\uD83D\uDD0D"}
                         </button>
@@ -879,6 +895,8 @@ function ProjectsPage() {
         <CoverageModal
           projectId={coverageProject.id}
           projectCode={coverageProject.project_code}
+          companyId={coverageProject.company_id}
+          companyName={coverageProject.company_name}
           onClose={() => setCoverageProject(null)}
         />
       )}

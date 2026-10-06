@@ -14,6 +14,8 @@ Audit multi-standard · NC · Qualifiche · Saldatura (WPQR/WPS/3834/Welding Boo
 
 ### Sessione più recente (06/10/2026)
 
+**Copertura scalabile COV-5 (PR draft) — epic copertura completata:** blocco «Fattibilità multi-dominio» in Progetti (`CoverageModal`) e Riesame (`CoveragePanel`): WPQR per WPS via `verify` (su click, mai con criteri vuoti), CND manuale embedded, riga saldatori read-only; solo FE, semafori invariati, nessun BE/migrazione. CSS `sq-cov-*` ora in `CoverageVerifyPanel.css`. Nessun altro `DEPUTYTASK*` aperto. HITL residui: advisory WPQR vs registry nel Riesame, `welder_9606` via registry, requisiti CND da commessa, 9712 A.3/Table 1, soglie 15613.
+
 **Copertura scalabile COV-4 (PR draft):** ponte commessa `wpsWelderCoverage` — `GET /qualifications/coverage` (Progetti) e `GET /cases/:id/extracted-coverage` (Riesame) delegano a `matchWelderCapability` con loader unico; contratto HTTP invariato, test differenziale vs `computeQualificationCoverage` con 0 delta di semaforo; `material_group` criterio opzionale `welder_9606`. Unico cambio di esito dichiarato: il Riesame si allinea a Progetti (ISO 14732 + `thickness_max_unlimited`). Nessuna migrazione. Prossima: COV-5.
 
 **Copertura scalabile COV-3 ✅ (#706):** adapter `cnd_9712` pieno (`maturity: full`) — metodo + livello + settore (Annex A, `s ⊇ m`, industriale→prodotto = `partial`) + schema + tecnica (testo libero: mai `no_match`) + idoneità visiva via `visionStateForPerson` del gate CND-2 (`missing`/`expired` → `no_match`); nessuna migrazione. HITL settori industriali 9712 ancora aperto ([backlog](reference/NORME_MANCANTI_BACKLOG.md)). Prossime: COV-4/5.
