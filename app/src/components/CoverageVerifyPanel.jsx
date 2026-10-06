@@ -6,8 +6,9 @@
 
 import React, { useEffect, useMemo, useState } from "react";
 import apiService from "../services/apiService";
+import "./CoverageVerifyPanel.css";
 
-const STATUS_LABEL = {
+export const COVERAGE_STATUS_LABEL = {
   match: { label: "Coperto", cls: "sq-cov-ok" },
   partial: { label: "Parziale", cls: "sq-cov-partial" },
   no_match: { label: "Non coperto", cls: "sq-cov-no" },
@@ -20,22 +21,42 @@ export function visibleFieldsForDomain(domains, domainKey) {
   return d?.requirementFields || [];
 }
 
-export default function CoverageVerifyPanel({ companyId = null, companyName = "" }) {
+/** Filtra i domini del registry con una whitelist di chiavi (assente/vuota = tutti). */
+export function filterCoverageDomains(domains, allowedDomains) {
+  const list = domains || [];
+  if (!Array.isArray(allowedDomains) || allowedDomains.length === 0) return list;
+  return list.filter((d) => allowedDomains.includes(d.domain));
+}
+
+/**
+ * @param {object} props
+ * @param {string[]} [props.allowedDomains] whitelist chiavi dominio (assente = tutti)
+ * @param {string} [props.defaultDomain] dominio iniziale (default welder_9606)
+ * @param {boolean} [props.embedded] corpo sempre visibile, senza toggle
+ */
+export default function CoverageVerifyPanel({
+  companyId = null,
+  companyName = "",
+  allowedDomains,
+  defaultDomain = "welder_9606",
+  embedded = false,
+}) {
   const [expanded, setExpanded] = useState(false);
+  const open = embedded || expanded;
   const [domains, setDomains] = useState([]);
-  const [domain, setDomain] = useState("welder_9606");
+  const [domain, setDomain] = useState(defaultDomain);
   const [criteria, setCriteria] = useState({});
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [result, setResult] = useState(null);
 
   useEffect(() => {
-    if (!expanded || domains.length > 0) return undefined;
+    if (!open || domains.length > 0) return undefined;
     let cancelled = false;
     apiService.getCoverageDomains()
       .then((res) => {
         if (cancelled) return;
-        const list = res?.domains || [];
+        const list = filterCoverageDomains(res?.domains || [], allowedDomains);
         setDomains(list);
         if (list.length && !list.some((d) => d.domain === domain)) {
           setDomain(list[0].domain);
@@ -47,7 +68,7 @@ export default function CoverageVerifyPanel({ companyId = null, companyName = ""
     return () => { cancelled = true; };
     // domains.length / domain: evita loop; reload solo alla prima apertura
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [expanded]);
+  }, [open]);
 
   const fields = useMemo(
     () => visibleFieldsForDomain(domains, domain),
@@ -92,16 +113,18 @@ export default function CoverageVerifyPanel({ companyId = null, companyName = ""
 
   return (
     <div className="sq-cov-panel">
-      <button
-        type="button"
-        className="sq-cov-toggle"
-        onClick={() => setExpanded((e) => !e)}
-        aria-expanded={expanded}
-      >
-        {expanded ? "\u25B2" : "\u25BC"}{" "}
-        Verifica copertura
-      </button>
-      {expanded && (
+      {!embedded && (
+        <button
+          type="button"
+          className="sq-cov-toggle"
+          onClick={() => setExpanded((e) => !e)}
+          aria-expanded={expanded}
+        >
+          {expanded ? "\u25B2" : "\u25BC"}{" "}
+          Verifica copertura
+        </button>
+      )}
+      {open && (
         <div className="sq-cov-body">
           <p className="sq-cov-hint">
             Confronta un requisito di giunto/commessa con le capacit{"\u00e0"} in anagrafica
@@ -204,7 +227,7 @@ export default function CoverageVerifyPanel({ companyId = null, companyName = ""
                 </thead>
                 <tbody>
                   {(result.matches || []).map((m, idx) => {
-                    const st = STATUS_LABEL[m.status] || STATUS_LABEL.no_match;
+                    const st = COVERAGE_STATUS_LABEL[m.status] || COVERAGE_STATUS_LABEL.no_match;
                     const name = m.capability?.person_name
                       || m.capability?.wpqr_code
                       || (m.capability_id != null ? `#${m.capability_id}` : "—");

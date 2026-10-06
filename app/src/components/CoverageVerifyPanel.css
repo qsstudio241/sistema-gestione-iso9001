@@ -1,0 +1,67 @@
+/*
+ * Verifica copertura requisito↔capacità (COV-1) + blocco Fattibilità multi-dominio (COV-5).
+ * Regole `.sq-cov-*` spostate da QualificationsPage.css: il panel è usato anche in Progetti e Riesame.
+ * Primitivi generici (sq-select, sq-search, sq-btn-new, sq-tag, sq-error) ridichiarati scoped con
+ * gli stessi valori di QualificationsPage.css (debito: un futuro sq-primitives.css condiviso).
+ */
+
+.sq-cov-panel { margin: 0 0 14px; }
+.sq-cov-toggle {
+  background: #f0f4ff; border: 1px solid #c7d2fe; border-radius: 8px;
+  padding: 7px 16px; cursor: pointer; font-weight: 600; font-size: 14px; color: #1e3a5f;
+}
+.sq-cov-toggle:hover { background: #e0e7ff; }
+.sq-cov-body {
+  margin-top: 10px; padding: 12px 14px;
+  background: #f8fafc; border: 1px solid #e5e7eb; border-radius: 10px;
+}
+.sq-cov-hint { font-size: 13px; color: #6b7280; margin: 0 0 12px; }
+.sq-cov-form {
+  display: flex; flex-wrap: wrap; gap: 10px; align-items: flex-end; margin-bottom: 12px;
+}
+.sq-cov-field { display: flex; flex-direction: column; gap: 4px; min-width: 140px; }
+.sq-cov-field span { font-size: 12px; font-weight: 600; color: #374151; }
+.sq-cov-summary { font-size: 13px; color: #1e3a5f; font-weight: 600; margin: 0 0 8px; }
+.sq-cov-stub-msg {
+  font-size: 12px; color: #92400e; background: #fffbeb; border: 1px solid #fde68a;
+  border-radius: 8px; padding: 8px 10px; margin: 0 0 8px;
+}
+.sq-cov-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.sq-cov-table th, .sq-cov-table td {
+  padding: 8px 10px; text-align: left; border-bottom: 1px solid #e5e7eb;
+}
+.sq-cov-table th { background: #f9fafb; color: #374151; }
+.sq-cov-ok { background: #f0fdf4; color: #16a34a; border: 1px solid #bbf7d0; }
+.sq-cov-partial { background: #fffbeb; color: #d97706; border: 1px solid #fde68a; }
+.sq-cov-no { background: #fef2f2; color: #dc2626; border: 1px solid #fecaca; }
+.sq-cov-stub { background: #f3f4f6; color: #6b7280; border: 1px solid #e5e7eb; }
+
+/* Primitivi scoped (stessi valori di QualificationsPage.css) */
+.sq-cov-panel .sq-search {
+  flex: 1; min-width: 180px; padding: 8px 12px; border: 1.5px solid #d1d5db;
+  border-radius: 8px; font-size: 14px;
+}
+.sq-cov-panel .sq-select {
+  padding: 8px 10px; border: 1.5px solid #d1d5db; border-radius: 8px;
+  font-size: 13px; background: #fff;
+}
+.sq-cov-panel .sq-btn-new {
+  padding: 9px 20px; background: #1e3a5f; color: #fff; border: none; border-radius: 8px;
+  font-size: 14px; font-weight: 600; cursor: pointer;
+}
+.sq-cov-panel .sq-btn-new:hover { background: #16304e; }
+.sq-cov-panel .sq-btn-new:disabled { opacity: 0.55; cursor: not-allowed; }
+.sq-cov-panel .sq-tag {
+  display: inline-flex; align-items: center; gap: 4px; padding: 3px 10px; border-radius: 99px;
+  font-size: 12px; font-weight: 600; white-space: nowrap;
+}
+.sq-cov-panel .sq-error {
+  margin-bottom: 12px; padding: 10px 14px; background: #fef2f2; border: 1px solid #fecaca;
+  border-radius: 8px; color: #dc2626; font-size: 13px; display: flex; justify-content: space-between;
+}
+
+/* COV-5 — sezioni del blocco Fattibilità multi-dominio */
+.sq-cov-section { margin: 0 0 16px; }
+.sq-cov-section-title { font-size: 13px; font-weight: 700; color: #1e3a5f; margin: 0 0 6px; }
+.sq-cov-section-actions { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin: 0 0 8px; }
+.sq-cov-muted { font-size: 12px; color: #6b7280; }
