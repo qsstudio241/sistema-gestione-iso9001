@@ -16,6 +16,8 @@ import { NDT_SECTOR_OPTIONS } from "../data/documentTypeSchemas";
 import { resolveBackendUploadUrl } from "../utils/resolveBackendUploadUrl";
 import SemiannualConfirmationSection from "../components/SemiannualConfirmationSection";
 import FileDropzone from "../components/FileDropzone";
+import QualificationVerifyPanel from "../components/QualificationVerifyPanel";
+import { useQualificationVerify, buildVerifyFields } from "../components/IngestReviewDialog";
 import "./QualificationForm.css";
 
 const QUAL_TYPES = [
@@ -80,6 +82,18 @@ const WELDER_REQUIRED = {
   expiry_date: "La data di scadenza \u00e8 obbligatoria.",
 };
 
+// Campi che entrano nella verifica vs norma (VQ-9): la firma della richiesta li usa soli, cosi'
+// un blur su nome/note non rilancia la verifica.
+const VERIFY_FIELD_KEYS = [
+  "qualification_type", "standard_ref", "certificate_number", "issuing_body", "examiner_body",
+  "joint_type", "product_type", "welding_process", "welding_process_test", "welding_processes_validity",
+  "welding_position_test", "position_range", "material_group", "filler_material", "shielding_gas",
+  "weld_details", "transfer_mode", "qualification_designation",
+  "thickness_s_test_mm", "thickness_t_test_mm", "thickness_min_mm", "thickness_max_mm", "thickness_max_unlimited",
+  "pipe_diameter_test_mm", "pipe_diameter_min_mm", "pipe_diameter_max_mm",
+  "exam_date", "issue_date", "expiry_date", "last_confirmation_date", "next_confirmation_due", "revalidation_date",
+];
+
 function QualificationForm({ qualification, onSave, onClose, onSaved, defaultCompanyId, companyName, openSection }) {
   const isEdit  = !!qualification;
   const isRenew = !!qualification?._renew;
@@ -97,6 +111,9 @@ function QualificationForm({ qualification, onSave, onClose, onSaved, defaultCom
   const certInputRef = useRef(null);
   const [customType, setCustomType] = useState(false);
   const [fieldErrors, setFieldErrors] = useState({});
+  const verify = useQualificationVerify();
+  const formRef = useRef(form);
+  formRef.current = form;
 
   const isWelder9606 = (form.qualification_type || "").includes("9606");
   const isOperator14732 = (form.qualification_type || "").includes("14732");
@@ -227,6 +244,29 @@ function QualificationForm({ qualification, onSave, onClose, onSaved, defaultCom
     userEditedRef.current = true;
   }
 
+  const verifiable = isWelder9606 || isOperator14732;
+  const { reset: resetVerify } = verify;
+  useEffect(() => {
+    if (!verifiable) resetVerify();
+  }, [verifiable, resetVerify]);
+
+  // Verifica vs norma: mai a ogni tasto e mai bloccante. Parte al blur (solo dopo una modifica
+  // dell'utente, con debounce) o a pulsante; non tocca `form`, quindi non innesca l'auto-save.
+  function currentVerifyArgs() {
+    const f = formRef.current;
+    return { fields: buildVerifyFields(f, VERIFY_FIELD_KEYS), qualificationType: f.qualification_type };
+  }
+
+  function handleBodyBlur() {
+    if (!verifiable || !userEditedRef.current) return;
+    verify.schedule(currentVerifyArgs);
+  }
+
+  function handleVerifyNow() {
+    const { fields, qualificationType } = currentVerifyArgs();
+    verify.run(fields, qualificationType, { force: true });
+  }
+
   // Auto-save con debounce 800ms — solo dopo una modifica dell'utente.
   // isFirstRender non basta: il form parte da EMPTY e l'idratazione da
   // `qualification` è un secondo setForm, che altrimenti sparava un PUT
@@ -307,7 +347,7 @@ function QualificationForm({ qualification, onSave, onClose, onSaved, defaultCom
           <button className="qf-close" onClick={onClose}>&#x2715;</button>
         </div>
 
-        <div className="qf-body">
+        <div className="qf-body" onBlur={handleBodyBlur}>
           {/* Persona */}
           <div className="qf-section-title">Persona</div>
           <div className="qf-row">
@@ -892,6 +932,35 @@ function QualificationForm({ qualification, onSave, onClose, onSaved, defaultCom
                 <label>{revalidationLabel}</label>
                 <input type="date" value={form.revalidation_date} onChange={handle("revalidation_date")} />
               </div>
+            </div>
+          )}
+
+          {/* Verifica vs norma (VQ-9): solo avvisi, mai bloccanti per il salvataggio */}
+          {verifiable && (
+            <div data-testid="qf-verify-section">
+              <div className="qf-section-title" style={{marginTop: 16}}>Verifica rispetto alla norma</div>
+              <div className="qf-row">
+                <div className="qf-field">
+                  <button
+                    type="button"
+                    className="qf-btn-link"
+                    onClick={handleVerifyNow}
+                    disabled={verify.status === "loading"}
+                    title={verify.status === "loading" ? "Verifica in corso" : "Confronta i dati inseriti con la norma (non blocca il salvataggio)"}
+                    data-testid="qf-verify-btn"
+                  >
+                    Verifica
+                  </button>
+                </div>
+              </div>
+              {verify.status !== "idle" && (
+                <QualificationVerifyPanel
+                  result={verify.result}
+                  status={verify.status}
+                  errorMessage={verify.errorMessage}
+                  onRetry={verify.retry}
+                />
+              )}
             </div>
           )}
 
