@@ -64,9 +64,10 @@ describe('pack welder9606Correctness — forma', () => {
         expect(pack.rules.every((r) => r.family === 'correttezza')).toBe(true);
     });
 
-    test('record senza alcuna validità dichiarata né dati: nessun finding (non c\'è nulla da confrontare)', () => {
-        expect(all(rec())).toEqual([]);
-        expect(all(fw())).toEqual([]);
+    test('record senza alcuna validità dichiarata né dati: nessun finding di correttezza (non c\'è nulla da confrontare)', () => {
+        const corr = (input) => all(input).filter((f) => f.family === 'correttezza');
+        expect(corr(rec())).toEqual([]);
+        expect(corr(fw())).toEqual([]);
     });
 });
 
