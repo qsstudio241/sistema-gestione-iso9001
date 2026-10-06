@@ -20,6 +20,10 @@ const {
   LEGISLATIVO_SICUREZZA_TEMPLATE,
 } = require('../data/legislativoSicurezzaTemplate');
 
+// Capitoli del registro (leg_sic_01..leg_sic_29); solo leg_sic_03 non ha referenceText.
+const EXPECTED_CHAPTERS = 29;
+const EXPECTED_CHAPTERS_WITH_REFERENCE = EXPECTED_CHAPTERS - 1;
+
 describe('customChecklist legislativo sicurezza', () => {
   beforeEach(() => {
     query.mockReset();
@@ -29,7 +33,7 @@ describe('customChecklist legislativo sicurezza', () => {
     expect(LEG_SICUREZZA_TEMPLATE_MARKER).toBe(
       '[SGQ_TEMPLATE:LEG_SICUREZZA_81]'
     );
-    expect(LEGISLATIVO_SICUREZZA_TEMPLATE.sections).toHaveLength(28);
+    expect(LEGISLATIVO_SICUREZZA_TEMPLATE.sections).toHaveLength(EXPECTED_CHAPTERS);
 
     const codes = LEGISLATIVO_SICUREZZA_TEMPLATE.sections.map(
       (section) => section.code
@@ -39,7 +43,7 @@ describe('customChecklist legislativo sicurezza', () => {
       LEGISLATIVO_SICUREZZA_TEMPLATE.sections.filter(
         (section) => section.referenceText
       )
-    ).toHaveLength(27);
+    ).toHaveLength(EXPECTED_CHAPTERS_WITH_REFERENCE);
 
     for (const section of LEGISLATIVO_SICUREZZA_TEMPLATE.sections) {
       const itemCodes = section.items.map((item) => item.code);
@@ -127,8 +131,8 @@ describe('customChecklist legislativo sicurezza', () => {
 
     expect(first.created).toBe(true);
     expect(second.created).toBe(false);
-    expect(first.data.sections).toHaveLength(28);
-    expect(second.data.sections).toHaveLength(28);
+    expect(first.data.sections).toHaveLength(EXPECTED_CHAPTERS);
+    expect(second.data.sections).toHaveLength(EXPECTED_CHAPTERS);
 
     const checklistInserts = query.mock.calls.filter(([sql]) =>
       sql.includes('INSERT INTO custom_checklists')
@@ -137,9 +141,9 @@ describe('customChecklist legislativo sicurezza', () => {
       sql.includes('INSERT INTO custom_checklist_sections')
     );
     expect(checklistInserts).toHaveLength(1);
-    expect(sectionInserts).toHaveLength(28);
+    expect(sectionInserts).toHaveLength(EXPECTED_CHAPTERS);
     expect(
       sectionInserts.filter(([, params]) => params.reference_text)
-    ).toHaveLength(27);
+    ).toHaveLength(EXPECTED_CHAPTERS_WITH_REFERENCE);
   });
 });
