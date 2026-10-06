@@ -365,7 +365,7 @@ describe("CoverageFeasibilityBlock", () => {
     await screen.findByTestId("cov-cnd");
     const text = container.textContent;
     expect(text).not.toMatch(/\\u[0-9a-fA-F]{4}/);
-    expect(text).not.toMatch(/\uFFFD|Ã|â€/);
+    expect(text).not.toMatch(/\uFFFD|\u00C3|\u00E2\u20AC/);
     expect(text).toMatch(/capacità/);
   });
 });

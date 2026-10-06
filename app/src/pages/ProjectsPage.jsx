@@ -633,12 +633,14 @@ function CoverageModal({ projectId, projectCode, companyId = null, companyName =
             </>
           )}
           {data && (
-            <CoverageFeasibilityBlock
-              rows={data.coverage}
-              welderSummary={data.summary}
-              companyId={companyId}
-              companyName={companyName}
-            />
+            <div style={{ marginTop: 16 }}>
+              <CoverageFeasibilityBlock
+                rows={data.coverage}
+                welderSummary={data.summary}
+                companyId={companyId}
+                companyName={companyName}
+              />
+            </div>
           )}
         </div>
         <div className="pj-modal-footer">
