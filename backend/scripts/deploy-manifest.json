@@ -164,6 +164,7 @@
         "src/services/capabilityCoverage/registerDefaultAdapters.js",
         "src/services/capabilityCoverage/coverageEngine.service.js",
         "src/services/capabilityCoverage/index.js",
+        "src/services/capabilityCoverage/wpsWelderCoverage.js",
         "src/services/capabilityCoverage/adapters/welder9606.adapter.js",
         "src/services/capabilityCoverage/adapters/wpqrProcedure.adapter.js",
         "src/services/capabilityCoverage/adapters/cnd9712.adapter.js",
