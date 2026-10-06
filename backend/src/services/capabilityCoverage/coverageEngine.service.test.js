@@ -106,6 +106,64 @@ describe('welder_9606 match puro', () => {
     });
 });
 
+describe('welder_9606 criterio opzionale material_group (COV-4)', () => {
+    const today = '2026-10-05';
+    const qual = {
+        id: 11,
+        person_name: 'Bianchi Luca',
+        qualification_type: 'ISO 9606-1',
+        status: 'attiva',
+        expiry_date: '2028-01-01',
+        next_confirmation_due: '2027-01-01',
+        welding_process: '135',
+        joint_type: 'BW',
+        product_type: 'T',
+        material_group: '1.1, 1.2',
+        position_range: 'PA, PF',
+        thickness_min_mm: 3,
+        thickness_max_mm: 20,
+    };
+
+    it('espone material_group tra i campi requisito, non obbligatorio', () => {
+        const field = welder.requirementFields.find((f) => f.key === 'material_group');
+        expect(field).toBeDefined();
+        expect(field.required).not.toBe(true);
+    });
+
+    it('gruppo coperto: match e detail.material_group ok', () => {
+        const m = welder.matchWelderCapability(qual, { material_group: '1.1' }, { todayIso: today });
+        expect(m.status).toBe(MATCH_STATUS.MATCH);
+        expect(m.detail.material_group).toBe('ok');
+    });
+
+    it('gruppo non coperto: no_match', () => {
+        const m = welder.matchWelderCapability(qual, { material_group: '8.1' }, { todayIso: today });
+        expect(m.status).toBe(MATCH_STATUS.NO_MATCH);
+        expect(m.detail.material_group).toBe('mismatch');
+        expect(m.reasons.some((r) => /Gruppo materiale/i.test(r))).toBe(true);
+    });
+
+    it('qualifica senza gruppo: partial', () => {
+        const m = welder.matchWelderCapability(
+            { ...qual, material_group: null },
+            { material_group: '1.1' },
+            { todayIso: today },
+        );
+        expect(m.status).toBe(MATCH_STATUS.PARTIAL);
+        expect(m.detail.material_group).toBe('unverifiable');
+    });
+
+    it('criterio assente: nessun effetto anche se la qualifica non ha gruppo', () => {
+        const m = welder.matchWelderCapability(
+            { ...qual, material_group: null },
+            { welding_process: '135' },
+            { todayIso: today },
+        );
+        expect(m.status).toBe(MATCH_STATUS.MATCH);
+        expect(m.detail.material_group).toBe('ok');
+    });
+});
+
 describe('wpqr_procedure (COV-2: non piu stub)', () => {
     it('e implementato e non restituisce not_implemented', async () => {
         const { query } = require('../../config/database');
