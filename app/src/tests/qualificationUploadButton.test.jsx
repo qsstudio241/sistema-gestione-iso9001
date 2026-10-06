@@ -225,7 +225,8 @@ describe("QualificationUploadButton — riepilogo avvisi norma (VQ-9)", () => {
       expect(apiService.confirmIngestStaging).toHaveBeenCalledWith(11, { person_name: "Mario Rossi" });
     });
     expect(await screen.findByText("Mario Rossi")).toBeInTheDocument();
-    expect(screen.getByTestId("qual-upload-verify-summary")).toHaveTextContent(/2 avvisi/);
-    expect(screen.getByTestId("qual-upload-verify-summary")).toHaveTextContent(/1 file verificato/);
+    expect(screen.getByTestId("qual-upload-verify-summary")).toHaveTextContent(
+      /2 avvisi in 1 su 1 file verificati/,
+    );
   });
 });

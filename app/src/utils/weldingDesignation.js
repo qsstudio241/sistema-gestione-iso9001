@@ -73,6 +73,25 @@ export function resolvePrintedDesignation(printed, computeFields = {}) {
   return buildWelderDesignation(computeFields);
 }
 
+/**
+ * Spessore della PROVA per tipo di giunto (ISO 9606-1): BW -> s depositato (Tab. 6),
+ * FW -> t materiale (Tab. 8). Speculare al backend: sposta solo se la colonna corretta
+ * e' vuota; se ci sono entrambi restano entrambi; giunto non BW/FW: nessuna deduzione.
+ */
+export function resolveTestThicknessByJoint({ joint_type: jointType, s, t } = {}) {
+  let sNum = num(s);
+  let tNum = num(t);
+  const joint = jointType == null ? "" : String(jointType).trim().toUpperCase();
+  if (joint === "BW" && sNum == null && tNum != null) {
+    sNum = tNum;
+    tNum = null;
+  } else if (joint === "FW" && tNum == null && sNum != null) {
+    tNum = sNum;
+    sNum = null;
+  }
+  return { s: sNum, t: tNum };
+}
+
 const POSITION_TOKEN_RE = /^(PA|PB|PC|PD|PE|PF|PG|PH|PJ|H-L045|J-L045)$/i;
 const PROCESS_TOKEN_RE = /^\d{2,3}[A-Z]?$/i;
 const PROCESS_IN_LINE_RE = /\b\d{2,3}[A-Z]?\b/i;
@@ -199,6 +218,14 @@ export function parseWelderQualificationDesignation(text) {
   }
 
   if (leftover.length) parsed.weld_details = leftover.join(" ");
+
+  const thk = resolveTestThicknessByJoint({
+    joint_type: parsed.joint_type,
+    s: parsed.thickness_s_test_mm,
+    t: parsed.thickness_t_test_mm,
+  });
+  parsed.thickness_s_test_mm = thk.s;
+  parsed.thickness_t_test_mm = thk.t;
 
   const hasCore = parsed.welding_process_test && parsed.product_type && parsed.joint_type;
   if (!hasCore) return null;
