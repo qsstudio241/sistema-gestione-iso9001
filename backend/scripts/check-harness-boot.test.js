@@ -88,7 +88,7 @@ describe('check-harness-boot — logica pura (mutazione)', () => {
       expect(errors.join('\n')).toContain('docs/fake/modulo-0.md');
     });
 
-    it('FALLISCE se la bussola torna a essere un inventario (>80 path)', () => {
+    it('FALLISCE se la bussola torna a essere un inventario (>85 path)', () => {
       const hugeCompass = `| Se lavori su… | Apri prima |\n|---|---|\n${Array.from(
         { length: 90 },
         (_, i) => `| M${i} | \`docs/fake/f-${i}.md\` |`

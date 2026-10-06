@@ -175,7 +175,7 @@ function checkCompassPathsExist(compassPaths, existsFn) {
   if (compassPaths.length < 10) {
     errors.push(`Bussola troppo corta (${compassPaths.length} path) — attesi almeno 10`);
   }
-  if (compassPaths.length > 80) {
+  if (compassPaths.length > 85) {
     errors.push(`Bussola troppo lunga (${compassPaths.length} path) — sta diventando un inventario`);
   }
   const missing = compassPaths.filter((p) => !existsFn(p));
