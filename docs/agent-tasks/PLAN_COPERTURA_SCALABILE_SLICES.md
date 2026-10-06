@@ -4,7 +4,7 @@
 > (`welder_9606`, `wpqr_procedure`, `cnd_9712`, …), riusabile da Qualifiche /
 > Riesame / Commesse, senza `if (welder) else` sparsi.
 > **Spirito**: stesso registry di `jointTypeProfiles`.
-> **Brief attivo**: [`DEPUTYTASK_COPERTURA.md`](DEPUTYTASK_COPERTURA.md) — COV-4 **CHIUSO — TEST OK** (ponte commessa: `getCoverage` + Riesame delegano al registry `welder_9606`, contratto invariato, delta semaforo 0 su Progetti); COV-1 (#702), COV-2 (#704), COV-3 (#706) su `main`. Prossima: COV-5 (riusa lo stream solo dopo aggiornamento titolo/file list)
+> **Brief attivo**: [`DEPUTYTASK_COPERTURA.md`](DEPUTYTASK_COPERTURA.md) — **COV-5 APERTO** (blocco «Fattibilità multi-dominio» in Progetti e Riesame: FE sull'API `verify`, nessun endpoint/BE nuovo, semafori invariati). COV-1 (#702), COV-2 (#704), COV-3 (#706), COV-4 (#708) CHIUSE su `main`. Dopo COV-5 lo stream si chiude
 > **Conferma committente (05/10/2026)**: copertura a spettro ampio (9606 + WPQR + CND 9712), non solo patentini.
 
 ## Fuori scope
@@ -20,8 +20,12 @@
 - Fonte processo del semaforo commessa = `welding_processes_validity` (9606-1: validità ≠ prova) invece di `welding_process`: cambia i semafori → decisione committente, non in COV-4
 - Qualifica senza `welding_process` nel semaforo commessa: oggi esclusa (legacy), nel motore `partial` → decisione committente, non in COV-4
 - Semafori per qualificatore divergenti tra Progetti (`semaforo()`) e Riesame (`semaforoExpiry()`, soglia 90 gg): non unificati in COV-4
-- Estensione advisory Riesame (`caseCoverageAdvisory`: WPQR multi-giunto, visione) ai domini `wpqr_procedure` / `cnd_9712`: slice successiva (COV-5 o dedicata)
-- UI fattibilità multi-dominio su Projects (oltre il pannello Qualifiche)
+- Estensione advisory Riesame (`caseCoverageAdvisory`: WPQR multi-giunto, visione) ai domini `wpqr_procedure` / `cnd_9712`: **non** in COV-5 (l'advisory resta com'è; COV-5 affianca un blocco FE sull'API verify)
+- UI fattibilità multi-dominio su Projects (oltre il pannello Qualifiche): **in COV-5** (blocco WPQR per WPS + CND manuale + riga saldatori read-only)
+- Requisiti CND derivati dalla commessa: oggi non c'è un dato strutturato (né su WPS né nei requisiti estratti) → nuovo campo = slice separata + decisione committente (regola Rielaborazioni)
+- Riesame: advisory WPQR (`caseCoverageAdvisory`) e blocco «Registro capacità» di COV-5 coesistono; sostituire l'advisory con il registry = conferma committente
+- `welder_9606` via registry nei blocchi commessa (fianco al semaforo): dopo l'HITL «fonte processo» / «qualifica senza processo»
+- `joint_type` nei criteri WPQR da WPS: richiede la colonna nelle SELECT di coverage (BE) → fuori da COV-5
 - Soglie ISO 15613 nel dominio WPQR (nessun catalogo JS: solo etichetta di base finché non c'è fonte MD)
 - Stud 14555: sezione/posizione/atmosfera non hanno colonne su `wpqr_records` (non verificate dal match)
 - Composizione dei settori industriali ISO 9712 (`m` `r` `a`; `s`/`m` → `w`): l'Annex A.3 la rimanda allo scope dell'ente (HITL in `NORME_MANCANTI_BACKLOG.md`); finché manca, industriale→prodotto = `partial`
@@ -30,6 +34,7 @@
 
 ## Decisioni già prese
 
+- COV-5 — **solo FE additivo, nessun endpoint nuovo**: il blocco «Fattibilità multi-dominio» deriva i criteri WPQR dalle righe `coverage[]` già caricate (`welding_process`, `thickness_mm`=min / `thickness_b_mm`=max del range WPS, `material_group`; niente `joint_type`) e chiama `POST /qualifications/coverage/verify` una volta per WPS (max 20, batch 4, su click); **mai** `verify` con criteri vuoti (l'adapter darebbe `match` a tutto); CND = `CoverageVerifyPanel` embedded manuale (nessun dato CND su WPS/estratti); saldatori = riga read-only dal semaforo, **niente** `verify` `welder_9606` (due verità sulla stessa dimensione finché l'HITL fonte processo è aperto). Semafori e advisory esistenti invariati; ambito = `company_id` commessa. CSS `sq-cov-*` spostato da `QualificationsPage.css` (chunk lazy) in `CoverageVerifyPanel.css`. Rischio Medio; Alto se serve toccare semaforo/BE. Nessuna migrazione; esenzione Rielaborazioni; HITL 9712 (A.3, Table 1) e soglie 15613 richiamati, non risolti
 - COV-4 — unificazione `GET /qualifications/coverage`: **delega interna, contratto HTTP invariato** (non sostituzione endpoint, non nuova forma). Ponte puro `wpsWelderCoverage.js` su `matchWelderCapability` + loader unico qualifiche; criterio opzionale `material_group` nell'adapter (il registry non lo aveva; il legacy sì); forma `coverage_detail` legacy ricostruita nel ponte; `computeQualificationCoverage` resta come oracolo del test differenziale. Riesame allineato a Progetti (ISO 14732 + `thickness_max_unlimited`: delta dichiarato). Se serve cambiare l'esito del semaforo per la parità → stop, rischio Alto, conferma committente (si consegna solo la parte additiva). Nessuna migrazione; esenzione Rielaborazioni
 - Spettro ampio confermato dal committente (05/10/2026)
 - Fetta 1 designazione/validità 9606 già su `main` (`jointTypeProfiles` + colonne prova/validità)
@@ -47,7 +52,7 @@
 | COV-2 | Adapter `wpqr_procedure` pieno (15614 / 14555 stud / 15613) | adapter WPQR + riuso `wpsGenerator` / regole 15614 | COV-1 | AFK |
 | COV-3 | Adapter `cnd_9712` pieno (settore, schema, visione) | adapter CND + `visionFitness` | COV-1 | AFK |
 | COV-4 | Ponte commessa: `getCoverage` / Riesame usano il registry | `qualifications.controller` (solo `getCoverage`), `caseExtractedCoverage.service`, nuovo `capabilityCoverage/wpsWelderCoverage.js`, adapter `welder_9606` (+`material_group`); **FE ContractReview/Projects invariati** (contratto stabile) | COV-1 (COV-2/3 non servono: il ponte riguarda solo `welder_9606`) | AFK |
-| COV-5 | UI fattibilità multi-dominio (Projects / Riesame) | FE DNA + API verify multi-domain | COV-1…4 | AFK |
+| COV-5 | UI fattibilità multi-dominio (Projects / Riesame) | FE DNA + API verify multi-domain: nuovo `CoverageFeasibilityBlock.jsx` + `coverageCriteriaFromWps.js`, `CoverageVerifyPanel` (+props, CSS spostato in `.css` proprio), mount in `ProjectsPage` (`CoverageModal`) e `ContractReviewPage` (`CoveragePanel`); **nessun file BE**, nessun endpoint, nessuna migrazione | COV-1…4 | AFK |
 
 ### COV-1 — DoD (questa sessione)
 
@@ -86,3 +91,11 @@
 - [x] `getCoverage` e `computeCaseProjectCoverage` delegano al ponte; payload invariato (golden test)
 - [x] Delta Riesame (14732 + `thickness_max_unlimited`) dichiarato e testato
 - [x] Jest mirato + Vitest `coverageVerifyPanel` + build + `check-harness-boot` + `check-utf8-encoding`; `deploy-manifest.json` aggiornato; nessuna migrazione
+
+### COV-5 — DoD
+
+- [ ] `CoverageVerifyPanel.css` (`.sq-cov-*` spostate da `QualificationsPage.css`) + props `allowedDomains` / `defaultDomain` / `embedded` retrocompatibili
+- [ ] `coverageCriteriaFromWps.js` puro + test; mai `verify` con criteri vuoti
+- [ ] `CoverageFeasibilityBlock` in Progetti (`CoverageModal`) e Riesame (`CoveragePanel`): WPQR per WPS (max 20, batch 4), CND manuale embedded, riga saldatori read-only; semafori/advisory invariati
+- [ ] Stati vuoto / errore / loading / dati insufficienti / troncamento; pulsanti sempre visibili (`disabled` + `title`); testi italiani con accenti
+- [ ] Vitest mirato + `npm run build` + `check-harness-boot` + `check-utf8-encoding`; nessun file in `backend/` nel diff; nessuna migrazione; esenzione Rielaborazioni nel body PR
