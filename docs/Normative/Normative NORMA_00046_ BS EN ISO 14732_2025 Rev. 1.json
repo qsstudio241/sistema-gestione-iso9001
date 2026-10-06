@@ -1,0 +1,182 @@
+[
+  {
+    "standard_code": "ISO_14732_2025",
+    "clause_ref": "1",
+    "clause_title": "Scope",
+    "requirement_text": "This document specifies requirements for qualification of welding operators and weld setters for mechanized and automatic welding of metallic materials.\n\nThis document does not apply to personnel who:\n\n- do not control or adjust welding parameters;\n- are not involved in the setup of welding equipment.\n\nQualification of welding operators and weld setters for friction stir welding and friction stir spot welding are covered by ISO 25239-3 and ISO 18785-3, respectively."
+  },
+  {
+    "standard_code": "ISO_14732_2025",
+    "clause_ref": "2",
+    "clause_title": "Normative references",
+    "requirement_text": "The following documents are referred to in the text in such a way that some or all of their content constitutes requirements of this document. For dated references, only the edition cited applies. For undated references, the latest edition of the referenced document (including any amendments) applies.\n\n- ISO 3834-2, Quality requirements for fusion welding of metallic materials — Part 2: Comprehensive quality requirements\n- ISO 3834-3, Quality requirements for fusion welding of metallic materials — Part 3: Standard quality requirements\n- ISO 4063:2023, Welding, brazing, soldering and cutting — Nomenclature of processes and reference numbers\n- ISO 9606-1, Qualification testing of welders — Fusion welding — Part 1: Steels\n- ISO 9606-2, Qualification test of welders — Fusion welding — Part 2: Aluminium and aluminium alloys\n- ISO 9606-3, Approval testing of welders — Fusion welding — Part 3: Copper and copper alloys\n- ISO 9606-4, Approval testing of welders — Fusion welding — Part 4: Nickel and nickel alloys\n- ISO 9606-5, Approval testing of welders — Fusion welding — Part 5: Titanium and titanium alloys, zirconium and zirconium alloys\n- ISO 14555, Welding — Arc stud welding of metallic materials\n- ISO 15609-1, Specification and qualification of welding procedures for metallic materials — Welding procedure specification — Part 1: Arc welding\n- ISO 15609-2, … — Welding procedure specification — Part 2: Gas welding\n- ISO 15609-3, … — Welding procedure specification — Part 3: Electron beam welding\n- ISO 15609-4, … — Welding procedure specification — Part 4: Laser beam welding\n- ISO 15609-5, … — Welding procedure specification — Part 5: Resistance welding\n- ISO 15609-6, … — Welding procedure specification — Part 6: Laser-arc hybrid welding\n- ISO 15613, Specification and qualification of welding procedures for metallic materials — Qualification based on pre-production welding test\n- ISO 15614-1, … — Welding procedure test — Part 1: Arc and gas welding of steels and arc welding of nickel and nickel alloys\n- ISO 15614-2, … — Welding procedure test — Part 2: Arc welding of aluminium and its alloys\n- ISO 15614-5, … — Welding procedure test — Part 5: Arc welding of titanium, zirconium and their alloys\n- ISO 15614-6, … — Welding procedure test — Part 6: Arc and gas welding of copper and its alloys\n- ISO 15614-7, … — Welding procedure test — Part 7: Overlay welding\n- ISO 15614-8, … — Welding procedure test — Part 8: Welding of tubes to tube-plate joints\n- ISO 15614-11, … — Welding procedure test — Part 11: Electron and laser beam welding\n- ISO 15614-12, … — Welding procedure test — Part 12: Spot, seam and projection welding\n- ISO 15614-13, … — Welding procedure test — Part 13: Upset (resistance butt) and flash welding\n- ISO 15614-14, … — Welding procedure test — Part 14: Laser-arc hybrid welding of steels, nickel and nickel alloys\n- ISO 25901 (all parts), Welding and allied processes — Vocabulary\n\n*(Il segno «…» abbrevia il titolo comune «Specification and qualification of welding procedures for metallic materials» presente per esteso nel PDF.)*"
+  },
+  {
+    "standard_code": "ISO_14732_2025",
+    "clause_ref": "3",
+    "clause_title": "Terms and definitions",
+    "requirement_text": "For the purposes of this document, the terms and definitions given in the ISO 25901 series and the following apply. ISO and IEC maintain terminology databases for use in standardization at: ISO Online browsing platform (`https://www.iso.org/obp`) e IEC Electropedia (`https://www.electropedia.org/`)."
+  },
+  {
+    "standard_code": "ISO_14732_2025",
+    "clause_ref": "3.1",
+    "clause_title": "mechanized welding",
+    "requirement_text": "welding where the required welding parameters are maintained by mechanical or electronic means\n\nNote 1 to entry: Manual adjustment of welding parameters by the welding operator (3.3) during welding is possible.\n\n[SOURCE: ISO/TR 25901-1:2016, 2.1.1.10, modified — the alternative preferred term, fully mechanized welding, has not been included.]"
+  },
+  {
+    "standard_code": "ISO_14732_2025",
+    "clause_ref": "3.2",
+    "clause_title": "automatic welding",
+    "requirement_text": "welding in which all operations are performed without welding operator intervention during the process\n\nNote 1 to entry: Manual adjustment of welding variables by the welding operator (3.3) during welding is not possible.\n\n[SOURCE: ISO/TR 25901-1:2016, 2.1.1.11]"
+  },
+  {
+    "standard_code": "ISO_14732_2025",
+    "clause_ref": "3.3",
+    "clause_title": "welding operator",
+    "requirement_text": "person who controls or adjusts any welding parameter for mechanized welding (3.1) or automatic welding (3.2)\n\n[SOURCE: ISO/TR 25901-1:2016, 2.5.25]"
+  },
+  {
+    "standard_code": "ISO_14732_2025",
+    "clause_ref": "3.4",
+    "clause_title": "weld setter",
+    "requirement_text": "person who sets up (3.6) the welding unit (3.7) for mechanized welding (3.1) or automatic welding (3.2)\n\n[SOURCE: ISO/TR 25901-1:2016, 2.5.26 modified — changed welding equipment to welding unit.]"
+  },
+  {
+    "standard_code": "ISO_14732_2025",
+    "clause_ref": "3.5",
+    "clause_title": "programming",
+    "requirement_text": "incorporation of the approved welding procedure specification and/or the specified movements of the welding unit (3.7) into a programme"
+  },
+  {
+    "standard_code": "ISO_14732_2025",
+    "clause_ref": "3.6",
+    "clause_title": "setup",
+    "requirement_text": "correct adjustment of the welding unit (3.7) before welding, and if required by entering the robot programme"
+  },
+  {
+    "standard_code": "ISO_14732_2025",
+    "clause_ref": "3.7",
+    "clause_title": "welding unit",
+    "requirement_text": "welding installation, including auxiliary apparatus\n\nNote 1 to entry: Welding installations include welding equipment (3.8), sensors, tracking systems, interfaces and control systems. Auxiliary apparatus can include jigs and fixtures, robot(s), manipulators and rotating devices.\n\n[SOURCE: ISO/TR 25901-1:2016, 2.3.2, modified — Example changed to note to entry and revised.]"
+  },
+  {
+    "standard_code": "ISO_14732_2025",
+    "clause_ref": "3.8",
+    "clause_title": "welding equipment",
+    "requirement_text": "individual apparatus used in welding\n\nEXAMPLE Power source, wire feeder.\n\n[SOURCE: ISO/TR 25901-1:2016, 2.3.1]"
+  },
+  {
+    "standard_code": "ISO_14732_2025",
+    "clause_ref": "3.9",
+    "clause_title": "pre-production welding test",
+    "requirement_text": "welding test having the same function as a welding procedure test, but based on a non-standard test piece, representative of the production conditions\n\n[SOURCE: ISO/TR 25901-1:2016, 2.5.8]"
+  },
+  {
+    "standard_code": "ISO_14732_2025",
+    "clause_ref": "3.10",
+    "clause_title": "production test",
+    "requirement_text": "welding test carried out in the production environment with the welding unit, on actual products or on simplified test pieces, before or during an interruption in normal production\n\n[SOURCE: ISO/TR 25901-1:2016, 2.5.11]"
+  },
+  {
+    "standard_code": "ISO_14732_2025",
+    "clause_ref": "3.11",
+    "clause_title": "examiner",
+    "requirement_text": "person who has been appointed to verify compliance with the applicable standard\n\nNote 1 to entry: In certain cases, an external independent examiner can be required.\n\n[SOURCE: ISO/TR 25901-1:2016, 2.5.29]"
+  },
+  {
+    "standard_code": "ISO_14732_2025",
+    "clause_ref": "3.12",
+    "clause_title": "examining body",
+    "requirement_text": "organization that has been appointed to verify compliance with the applicable standard\n\nNote 1 to entry: In certain cases, an external independent examining body can be required.\n\n[SOURCE: ISO/TR 25901-1:2016, 2.5.30]"
+  },
+  {
+    "standard_code": "ISO_14732_2025",
+    "clause_ref": "4",
+    "clause_title": "Qualification",
+    "requirement_text": ""
+  },
+  {
+    "standard_code": "ISO_14732_2025",
+    "clause_ref": "4.1",
+    "clause_title": "General",
+    "requirement_text": "Qualification and revalidation shall be in accordance with this document.\n\nWelding operators and weld setters shall follow a work instruction based on or following directly a preliminary welding procedure specification (pWPS) or a welding procedure specification (WPS) in accordance with the documents listed below:\n\n- ISO 15609-1 for arc welding;\n- ISO 15609-2 for gas welding;\n- ISO 15609-3 for electron beam welding;\n- ISO 15609-4 for laser beam welding;\n- ISO 15609-5 for resistance welding;\n- ISO 15609-6 for laser-arc hybrid welding;\n- ISO 14555 for arc stud welding.\n\nThe requirements for the qualification of welding operators and weld setters shall be in accordance with:\n\n- 4.2 for fusion welding, including arc welding and beam welding;\n- 4.3 for resistance welding;\n- 4.4 for arc stud welding.\n\nFor other welding processes, the requirements for qualification of the weld setter and welding operator shall be specified.\n\nTo demonstrate the competence of the welding operator or weld setter, the qualification method used shall be supplemented by a test of the functional knowledge of the welding unit. The requirements given in Annex A shall be met and documented.\n\nNOTE A qualification method can be supplemented by a test of knowledge related to welding technology. Annex B includes recommendations for such a test.\n\nThe variables and range of qualification for welding operators and weld setters are specified in Clause 5. The period of validity is addressed in Clause 6.\n\nIf a mechanised/automatic welding procedure is qualified in accordance with one of the following standards, the welding operator or weld setter who performed the test is also qualified in accordance with this document and a qualification test certificate shall be issued:\n\n- ISO 15613 for qualification based on pre-production welding test;\n- ISO 15614-1 for arc and gas welding of steels and arc welding of nickel and nickel alloys;\n- ISO 15614-2 for arc welding of aluminium and its alloys;\n- ISO 15614-5 for arc welding of titanium, zirconium and their alloys;\n- ISO 15614-6 for arc and gas welding of copper and its alloys;\n- ISO 15614-7 for overlay welding;\n- ISO 15614-8 for welding of tubes to tube-plate joints;\n- ISO 15614-11 for electron and laser beam welding;\n- ISO 15614-12 for spot, seam and projection welding;\n- ISO 15614-13 for upset (resistance butt) and flash welding;\n- ISO 15614-14 for laser-arc hybrid welding of steels, nickel and nickel alloys.\n\nAn example of a test certificate is given in Annex C."
+  },
+  {
+    "standard_code": "ISO_14732_2025",
+    "clause_ref": "4.2",
+    "clause_title": "Fusion welding",
+    "requirement_text": "For welding operators or weld setters, qualification testing and acceptance criteria shall be based on test pieces in accordance with one of the following methods.\n\na) Method 1: For butt or fillet welds, in accordance with the following documents:\n\n- ISO 9606-1 for steels;\n- ISO 9606-2 for aluminium and aluminium alloys;\n- ISO 9606-3 for copper and copper alloys;\n- ISO 9606-4 for nickel and nickel alloys;\n- ISO 9606-5 for titanium and titanium alloys, zirconium and zirconium alloys.\n\nb) Method 2: For tube to tube-plate welds, in accordance with ISO 15614-8. Only the following tests are required:\n\n- visual testing;\n- surface (magnetic particle/liquid penetrant) testing;\n- macroscopic testing.\n\nc) Method 3: For overlay welding, in accordance with ISO 15614-7. Only the following tests are required:\n\n- visual testing;\n- surface (magnetic particle/liquid penetrant) testing;\n- bend testing or macroscopic testing.\n\nd) Method 4: For qualification testing based on pre-production or production test pieces, testing and acceptance criteria shall be in accordance with Methods 1, 2 or 3 as applicable."
+  },
+  {
+    "standard_code": "ISO_14732_2025",
+    "clause_ref": "4.3",
+    "clause_title": "Resistance welding",
+    "requirement_text": "Qualification shall be based on test pieces in accordance with the following documents:\n\n- ISO 15614-12 for spot, seam and projection welding;\n- ISO 15614-13 for upset (resistance butt) and flash welding;\n- ISO 15613 for qualification based on pre-production resistance welding test.\n\nThe required tests and acceptance criteria shall be specified. This shall include at least visual testing and one destructive testing method."
+  },
+  {
+    "standard_code": "ISO_14732_2025",
+    "clause_ref": "4.4",
+    "clause_title": "Arc stud welding",
+    "requirement_text": "The requirements for testing of stud welding operators and weld setters shall be in accordance with ISO 14555."
+  },
+  {
+    "standard_code": "ISO_14732_2025",
+    "clause_ref": "5",
+    "clause_title": "Variables and range of qualification",
+    "requirement_text": ""
+  },
+  {
+    "standard_code": "ISO_14732_2025",
+    "clause_ref": "5.1",
+    "clause_title": "Mechanized welding",
+    "requirement_text": "A change in any of the following, when applicable to the welding process, requires requalification.\n\na) A change of the welding process group (two digits), in accordance with ISO 4063:2023. However, changes in the process subgroup (three digits) or process variants within a process group (two digits) do not require requalification. The following exceptions apply:\n\n1. A change from autogenous TIG welding (process 142) to TIG welding with filler material (process 141, 143, 145, 146, or 147) requires requalification. *(Testo ufficiale: «process 141, 143, 145, 146, or147».)*\n2. A change from SAW with strip electrode (122 or 126) to any SAW using sold [sic] wire or tubular cored electrodes (121, 123, 124, 125), or vice versa requires requalification. *(Il §5.2 a)2 riporta «solid wire».)*\n\nb) A change from direct visual control to remote visual control and vice versa.\n\nc) Deletion of automatic joint tracking.\n\nd) Deletion of automatic arc length control.\n\ne) A change in the welding unit (see 3.7), only when this affects how the setup (see 3.6) is performed and/or how parameter settings are entered.\n\nf) A change from single-run-per-side technique to multi-run-per-side technique (but not vice versa).\n\ng) For orbital welding equipment, a change from welding in a single position to welding in multiple positions (but not vice versa).\n\nh) Deletion of backing.\n\ni) Deletion of consumable inserts."
+  },
+  {
+    "standard_code": "ISO_14732_2025",
+    "clause_ref": "5.2",
+    "clause_title": "Automatic welding",
+    "requirement_text": "A change in any of the following requires requalification:\n\na) A change of the welding process group (two digits), in accordance with ISO 4063:2023. However, changes in the process subgroup (three digits) or process variants within a process group (two digits) do not require requalification. The following exceptions apply:\n\n1. A change from autogenous TIG welding (process 142) to TIG welding with filler material (process 141, 143, 145, 146 or 147) requires requalification. *(Testo ufficiale: «process141, 143, 145, 146 or147».)*\n2. A change from SAW with strip electrode (122 or 126) to any SAW using solid wire or tubular cored electrodes (121, 123, 124, 125), or vice versa, requires requalification.\n\nb) For weld setters only, using fusion welding, a change from single-run-per-side to multi-run-per-side (but not vice versa).\n\nc) A change in the welding unit (see 3.7) only when this affects how the setup (see 3.6) is performed and/or how parameter settings are entered."
+  },
+  {
+    "standard_code": "ISO_14732_2025",
+    "clause_ref": "6",
+    "clause_title": "Period of validity",
+    "requirement_text": ""
+  },
+  {
+    "standard_code": "ISO_14732_2025",
+    "clause_ref": "6.1",
+    "clause_title": "Initial qualification",
+    "requirement_text": "The welding operator or weld setter qualification begins from the date of welding of the test piece(s), provided that the required testing has been carried out and the test results obtained were acceptable.\n\nThe validity of a welding operator or weld setter qualification test certificate may be extended as specified in 6.3. The method chosen for the extension of qualification, 6.3 a), b) or c), shall be stated on the welding operator or weld setter qualification test certificate at the time of issue."
+  },
+  {
+    "standard_code": "ISO_14732_2025",
+    "clause_ref": "6.2",
+    "clause_title": "Confirmation of validity",
+    "requirement_text": "The person responsible for welding activities or the examiner or the examining body shall confirm that the welding operator or weld setter has successfully worked within their range of qualification during each six-month period from the date they were qualified, otherwise the qualification becomes invalid.\n\nThis subclause is applicable to all the options for revalidation given in 6.3."
+  },
+  {
+    "standard_code": "ISO_14732_2025",
+    "clause_ref": "6.3",
+    "clause_title": "Revalidation of qualification",
+    "requirement_text": "The welding operator or weld setter qualification shall be periodically revalidated using one of the following methods.\n\na) The welding operator or weld setter shall perform a new qualification test every six years.\n\nb) Every three years, two production welds made during the last 6 months of the validity period shall be tested by radiographic testing (RT) or ultrasonic testing (UT) or destructive testing.\n\nIf RT or UT or destructive testing is not technically possible, revalidation using other volumetric NDT methods or production testing (e.g. leak testing) shall be performed in accordance with the application standard.\n\nThe results shall be verified by an examiner or examining body as meeting the requirements of this document. The acceptance criteria shall be in accordance with Clause 4.\n\nThe weld tested shall be within the range of qualification. These tests revalidate the welding operator or weld setter qualification test certificate for an additional three years.\n\nc) A welding operator or weld setter qualification test certificate shall be valid as long as it is confirmed in accordance with 6.2 and provided all the following conditions are fulfilled:\n\n- the welding operator or weld setter is working for the same manufacturer for whom they qualified and who is responsible for the manufacture of the product;\n- the manufacturer's ISO 3834-2 or ISO 3834-3 quality requirements shall have been proven by verification;\n- the manufacturer has documented that the welding operator or weld setter has produced welds of acceptable quality based on application standards."
+  },
+  {
+    "standard_code": "ISO_14732_2025",
+    "clause_ref": "6.4",
+    "clause_title": "Revocation of qualification",
+    "requirement_text": "When there is a specific reason to question a welding operator's or weld setter's ability to make welds that meet the product standard quality requirements, the qualifications that support the welding they are doing shall be revoked. All other qualifications not questioned shall remain valid."
+  },
+  {
+    "standard_code": "ISO_14732_2025",
+    "clause_ref": "7",
+    "clause_title": "Welding operator or weld setter qualification test certificate",
+    "requirement_text": "If the acceptance criteria in accordance with Clause 4 have been met, the examiner or examining body shall confirm that the welding operator or weld setter has successfully passed the qualification test.\n\nIf the welding operator or weld setter fails any of the prescribed tests, no certificate shall be issued.\n\nThe identification of the pWPS or WPS followed, the variables used for the qualification test, and the range of qualification shall be recorded on the certificate.\n\nThe certificate shall be issued under the sole responsibility of the examiner or examining body. An example of a test certificate is given in Annex C.\n\nAny change of the essential variables for the qualification testing beyond the permitted ranges requires a new test and a new certificate."
+  },
+  {
+    "standard_code": "ISO_14732_2025",
+    "clause_ref": "8",
+    "clause_title": "Documentation",
+    "requirement_text": "Certificates and test reports or records of welding tests and revalidations shall be kept on file."
+  }
+]
