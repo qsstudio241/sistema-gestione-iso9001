@@ -419,6 +419,16 @@ describe('CORR.POSITIONS — Tab. 6', () => {
         expectSourceMissing(b);
         none(pos('PA', 'PA PB PH'), `${R}.POSITIONS`);
         expectSourceMissing(one(pos('PA', 'J-L045'), `${R}.POSITIONS_SYMBOLS`));
+        none(pos('PA', 'J-L045'), `${R}.POSITIONS`);
+    });
+
+    test('solo simboli fuori Tab. 6 → GAP, nessun under-claim (non valutati)', () => {
+        const unknown = pos('PA', 'PH PJ J-L045');
+        expectSourceMissing(one(unknown, `${R}.POSITIONS_SYMBOLS`));
+        none(unknown, `${R}.POSITIONS`);
+        const onlyJl = pos('PC', 'J-L045');
+        expectSourceMissing(one(onlyJl, `${R}.POSITIONS_SYMBOLS`));
+        none(onlyJl, `${R}.POSITIONS`);
     });
 
     test('nessuna posizione dichiarata → nessun finding di correttezza', () => {
@@ -446,6 +456,24 @@ describe('CORR.PROCESS — §5.2 (nessuna equivalenza), §4.2', () => {
 
     test('validità dichiarata senza processo di prova → non verificabile', () => {
         expectDataMissing(one(rec({ welding_processes_validity: '141' }), `${R}.PROCESS`));
+    });
+
+    test('processo di prova solo sul campo legacy welding_process → warn over_claim §5.2', () => {
+        const f = one(rec({
+            welding_process_test: null,
+            welding_process: '141',
+            welding_processes_validity: '141 131',
+        }), `${R}.PROCESS`);
+        expectWarnOver(f, '§5.2');
+        expect(f.message_it).toContain('131');
+    });
+
+    test('legacy welding_process uguale alla validità → nessun finding PROCESS', () => {
+        none(rec({
+            welding_process_test: null,
+            welding_process: '141',
+            welding_processes_validity: '141',
+        }), `${R}.PROCESS`);
     });
 
     test('nessuna validità dichiarata → nessun finding', () => {

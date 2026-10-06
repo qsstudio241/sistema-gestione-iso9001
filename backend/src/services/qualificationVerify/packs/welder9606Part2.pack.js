@@ -582,7 +582,11 @@ function runPositions(view) {
         const qualified = rules2.qualifiedPositionSymbols(qualifiedColumns);
         const judged = declared.filter((p) => rules2.isPositionSymbolInTable(p));
         const over = judged.filter((p) => !qualified.includes(p));
-        const under = qualified.filter((p) => !declared.includes(p));
+        // under-claim solo sulle posizioni effettivamente confrontate con Tab. 6:
+        // PH/PJ/J-L045 restano sul GAP, non su «più stretto» (non valutate).
+        const under = judged.length
+            ? qualified.filter((p) => !judged.includes(p))
+            : [];
         const common = {
             field: 'welding_positions',
             fields,
@@ -626,16 +630,15 @@ function runMultiProcess(view) {
 
 function runProcess(view) {
     const out = [];
-    const testBranches = distinctBranches(view.welding_process_test);
-    const scopeBranches = distinctBranches(testProcessText(view));
-    if (scopeBranches.length === 1 && !rules2.QUALIFIED_PROCESSES.includes(scopeBranches[0])) {
+    const testBranches = distinctBranches(testProcessText(view));
+    if (testBranches.length === 1 && !rules2.QUALIFIED_PROCESSES.includes(testBranches[0])) {
         out.push(corr(PROCESS_SCOPE, {
             field: 'welding_process_test',
             direction: DIRECTION.MISMATCH,
-            read_value: scopeBranches[0],
+            read_value: testBranches[0],
             expected_value: rules2.QUALIFIED_PROCESSES,
             source: source('§4.2'),
-            message_it: `Processo di prova ${scopeBranches[0]}: ${NORM} §4.2 qualifica solo i processi ${rules2.QUALIFIED_PROCESSES.join(', ')}. Informativo: verificare il processo o la norma di riferimento del certificato.`,
+            message_it: `Processo di prova ${testBranches[0]}: ${NORM} §4.2 qualifica solo i processi ${rules2.QUALIFIED_PROCESSES.join(', ')}. Informativo: verificare il processo o la norma di riferimento del certificato.`,
         }));
     }
 
