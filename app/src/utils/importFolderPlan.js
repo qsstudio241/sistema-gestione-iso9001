@@ -377,3 +377,12 @@ export function withIndexedFileStatus(files, currentIndex) {
     status: i < currentIndex ? "done" : i === currentIndex ? "current" : "pending",
   }));
 }
+
+/** Nomi già sul job: retry PDF non deve ri-caricare i file salvati. */
+export function collectExistingImportFileNames(existingFiles) {
+  return new Set(
+    (existingFiles || [])
+      .map((f) => String(f?.original_name || f?.name || "").trim())
+      .filter(Boolean)
+  );
+}

@@ -38,6 +38,7 @@ import {
   buildProgressFilesFromNames,
   withLotFileStatus,
   withIndexedFileStatus,
+  collectExistingImportFileNames,
   progressFileStatusLabel,
 } from "../utils/importFolderPlan";
 import StatusBadge from "../components/StatusBadge";
@@ -374,7 +375,7 @@ function ImportFolderPlanPanel({
   const lots = buildUploadLots(plan, selectedKeys);
   const selectedCount = plan.folders.filter((f) => selectedKeys.has(f.key)).length;
   const canConfirm = selectedCount > 0 && !busy && !upload && confirmAllowed;
-  const uploading = busy && !!upload && !upload.cancelled;
+  const uploading = busy && !!upload && !upload.cancelled && upload.phase === "lots";
 
   return (
     <section className="import-folder-plan" aria-label="Piano di carico cartella">
@@ -500,6 +501,7 @@ export default function ImportJobsPage() {
   const [folderPlanSelected, setFolderPlanSelected] = useState(() => new Set());
   const [folderPlanCompanyId, setFolderPlanCompanyId] = useState(null);
   const [folderUpload, setFolderUpload] = useState(null);
+  const [fileProgress, setFileProgress] = useState(null);
   const folderUploadCancelRef = useRef(false);
   const folderUploadRef = useRef(null);
   const folderInputRef = useRef(null);
@@ -512,16 +514,19 @@ export default function ImportJobsPage() {
     bindDirectoryPicker(el);
   }, []);
 
-  const loadList = useCallback(async () => {
-    setLoading(true);
-    setError(null);
+  const loadList = useCallback(async (opts = {}) => {
+    const silent = !!opts.silent;
+    if (!silent) {
+      setLoading(true);
+      setError(null);
+    }
     try {
       const res = await apiService.getImportJobs();
       setJobs(res.data || []);
     } catch (e) {
-      setError(e.message || "Errore caricamento job");
+      if (!silent) setError(e.message || "Errore caricamento job");
     } finally {
-      setLoading(false);
+      if (!silent) setLoading(false);
     }
   }, []);
 
@@ -695,28 +700,45 @@ export default function ImportJobsPage() {
       return;
     }
     const progressFiles = buildProgressFilesFromNames(files.map((f) => f.name || f.original_name));
-    setFolderUpload({
+    const alreadyOnJob = collectExistingImportFileNames(detail?.files);
+    setFileProgress({
       current: 0,
       total: files.length,
       label: `Caricamento 0/${files.length} file`,
-      cancelled: false,
       phase: "upload",
-      files: progressFiles,
+      files: progressFiles.map((row) => (
+        alreadyOnJob.has(row.name) ? { ...row, status: "done" } : row
+      )),
     });
     setBusy(true);
     setError(null);
     setFolderNotice(null);
+    let skippedExisting = 0;
     try {
       for (let i = 0; i < files.length; i += 1) {
-        setFolderUpload({
+        const name = String(files[i].name || files[i].original_name || "").trim();
+        if (name && alreadyOnJob.has(name)) {
+          skippedExisting += 1;
+          setFileProgress({
+            current: i + 1,
+            total: files.length,
+            label: `Già presente — ${name}`,
+            phase: "upload",
+            files: withIndexedFileStatus(progressFiles, i + 1),
+          });
+          continue;
+        }
+        setFileProgress({
           current: i + 1,
           total: files.length,
           label: `Caricamento ${i + 1}/${files.length} — ${files[i].name}`,
-          cancelled: false,
           phase: "upload",
           files: withIndexedFileStatus(progressFiles, i),
         });
         await apiService.uploadImportJobFiles(selectedId, [files[i]]);
+        if (name) alreadyOnJob.add(name);
+        await loadList({ silent: true });
+        await loadDetail(selectedId);
       }
       if (inputEl) inputEl.value = "";
       const notes = [];
@@ -726,15 +748,19 @@ export default function ImportJobsPage() {
       if (skippedJunk) {
         notes.push(`${skippedJunk} file di sistema ignorati (Thumbs.db / .DS_Store).`);
       }
+      if (skippedExisting) {
+        notes.push(
+          `${skippedExisting} ${skippedExisting === 1 ? "file già presente, non ricaricato" : "file già presenti, non ricaricati"}.`
+        );
+      }
       setFolderNotice(notes.length ? notes.join(" ") : null);
-      await loadList();
-      await loadDetail(selectedId);
     } catch (err) {
       setError(err.message || "Upload fallito");
+      await loadList({ silent: true });
+      await loadDetail(selectedId);
     } finally {
       setBusy(false);
-      folderUploadRef.current = null;
-      setFolderUpload(null);
+      setFileProgress(null);
     }
   }
 
@@ -843,7 +869,7 @@ export default function ImportJobsPage() {
       total: lots.length,
       label: "Avvio caricamento lotti…",
       cancelled: false,
-      phase: "upload",
+      phase: "lots",
       files: progressFiles,
     });
     setBusy(true);
@@ -859,7 +885,7 @@ export default function ImportJobsPage() {
             total: lots.length,
             label: lots[i].progressLabel,
             cancelled: true,
-            phase: "upload",
+            phase: "lots",
             files: withLotFileStatus(progressFiles, i, "cancelled", { pendingAfter: "cancelled" }),
           });
           setFolderNotice(
@@ -873,7 +899,7 @@ export default function ImportJobsPage() {
           total: lots.length,
           label: lot.progressLabel,
           cancelled: false,
-          phase: "upload",
+          phase: "lots",
           files: withLotFileStatus(progressFiles, i, "current"),
         });
         // Sempre create: un job vuoto riusato non ha titolo pianificato né document_type_hint
@@ -922,11 +948,10 @@ export default function ImportJobsPage() {
       (detail?.files || []).map((f) => f.original_name || `file-${f.id}`),
       "current"
     );
-    setFolderUpload({
+    setFileProgress({
       current: 0,
       total: progressFiles.length,
       label: "Estrazione testo in corso…",
-      cancelled: false,
       phase: "process",
       files: progressFiles,
     });
@@ -940,8 +965,7 @@ export default function ImportJobsPage() {
       setError(e.message || "Elaborazione fallita");
     } finally {
       setBusy(false);
-      folderUploadRef.current = null;
-      setFolderUpload(null);
+      setFileProgress(null);
     }
   }
 
@@ -955,11 +979,10 @@ export default function ImportJobsPage() {
       (detail?.files || []).map((f) => f.original_name || `file-${f.id}`),
       "current"
     );
-    setFolderUpload({
+    setFileProgress({
       current: 0,
       total: progressFiles.length,
       label: "Screening e posa in corso…",
-      cancelled: false,
       phase: "screen",
       files: progressFiles,
     });
@@ -979,8 +1002,7 @@ export default function ImportJobsPage() {
       setError(e.message || "Screening fallito");
     } finally {
       setBusy(false);
-      folderUploadRef.current = null;
-      setFolderUpload(null);
+      setFileProgress(null);
     }
   }
 
@@ -1004,11 +1026,10 @@ export default function ImportJobsPage() {
     const fileName =
       (detail?.files || []).find((f) => Number(f.id) === Number(fileId))?.original_name ||
       `file-${fileId}`;
-    setFolderUpload({
+    setFileProgress({
       current: 1,
       total: 1,
       label: `Analisi AI — ${fileName}`,
-      cancelled: false,
       phase: "ai",
       files: buildProgressFilesFromNames([fileName], "current"),
     });
@@ -1022,8 +1043,7 @@ export default function ImportJobsPage() {
       setError(msg);
     } finally {
       setBusy(false);
-      folderUploadRef.current = null;
-      setFolderUpload(null);
+      setFileProgress(null);
     }
   }
 
@@ -1467,8 +1487,8 @@ export default function ImportJobsPage() {
                 Capitolati e commesse partono prima di Scan. Dal testo di PDF, Word ed Excel si leggono prima 30 righe.
                 Disegni e foto si classificano da nome e cartella (senza OCR).
               </p>
-              {folderUpload?.files?.length > 0 && !folderPlan && (
-                <ImportFileProgressList files={folderUpload.files} label={folderUpload.label} />
+              {fileProgress?.files?.length > 0 && (
+                <ImportFileProgressList files={fileProgress.files} label={fileProgress.label} />
               )}
               {folderNotice && (
                 <p className="import-jobs-warning">

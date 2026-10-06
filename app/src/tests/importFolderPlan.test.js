@@ -18,6 +18,7 @@ import {
   buildProgressFilesFromNames,
   withLotFileStatus,
   withIndexedFileStatus,
+  collectExistingImportFileNames,
   progressFileStatusLabel,
 } from "../utils/importFolderPlan";
 
@@ -205,5 +206,16 @@ describe("importFolderPlan — progresso per file", () => {
     ]);
     expect(progressFileStatusLabel("current")).toBe("In corso");
     expect(progressFileStatusLabel("done")).toBe("Fatto");
+  });
+
+  it("collectExistingImportFileNames per skip retry", () => {
+    const names = collectExistingImportFileNames([
+      { original_name: "uno.pdf" },
+      { name: "due.pdf" },
+      { original_name: "  " },
+    ]);
+    expect(names.has("uno.pdf")).toBe(true);
+    expect(names.has("due.pdf")).toBe(true);
+    expect(names.size).toBe(2);
   });
 });

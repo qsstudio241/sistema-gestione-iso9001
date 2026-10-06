@@ -54,4 +54,5 @@ Su `ImportJobsPage` (GESTIONE → Impostazioni → Import PDF, `/settings/import
 - Banner P0 `role="status"` appena `busy` è true; job, titolo, tipo, azioni e testo file disabilitati.
 - Progresso per file sullo stesso `folderUpload`: lotti cartella, upload PDF sequenziale, Estrai testo / Screening / AI.
 - L1: 40 test verdi (`busyProgress` + `folderPlan` + `companyGate` + `incompleteQueue` + `importFolderPlan`). Build Vite OK.
-- PR draft #711. Cloud non mergia, non undraft, non `bugbot run`.
+- PR #711. Cloud non mergia, non undraft.
+- Bugbot Medium (stessa PR): upload PDF ricarica lista/dettaglio dopo ogni file e salta i nomi già presenti; `fileProgress` (pagina) distinto da `folderUpload` (solo lotti).

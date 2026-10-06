@@ -1,7 +1,7 @@
 /**
  * @vitest-environment jsdom
  *
- * Import PDF: banner busy P0 immediato + progresso per file (stesso folderUpload).
+ * Import PDF: banner busy P0, progresso file (fileProgress) distinto dai lotti (folderUpload).
  */
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen, waitFor, fireEvent } from "@testing-library/react";
@@ -232,5 +232,94 @@ describe("ImportJobsPage — busy P0 + progresso per file", () => {
     expect(apiService.uploadImportJobFiles.mock.calls[0][1]).toHaveLength(1);
     expect(apiService.uploadImportJobFiles.mock.calls[1][1]).toHaveLength(1);
     window.confirm.mockRestore();
+  });
+
+  it("upload PDF: dopo errore sul secondo file la lista mostra il primo già salvato e il retry non lo ricarica", async () => {
+    const jobFiles = [];
+    apiService.getImportJobs.mockResolvedValue({
+      data: [
+        {
+          id: 8,
+          title: "Job Mason",
+          status: "ready",
+          file_count: 0,
+          company_id: 11,
+          company_name: "Mason Demo",
+        },
+      ],
+    });
+    apiService.getImportJob.mockImplementation((id) =>
+      Promise.resolve({
+        data: {
+          job: {
+            id: Number(id) || 8,
+            status: "ready",
+            company_id: 11,
+            company_name: "Mason Demo",
+          },
+          files: jobFiles.map((f) => ({ ...f })),
+        },
+      })
+    );
+    apiService.uploadImportJobFiles
+      .mockImplementationOnce(async () => {
+        jobFiles.push({ id: 21, original_name: "uno.pdf", status: "uploaded" });
+        return { data: {} };
+      })
+      .mockRejectedValueOnce(new Error("Rete upload"));
+
+    vi.spyOn(window, "confirm").mockReturnValue(true);
+    await openMasonJob();
+    const dropzone = screen.getByRole("button", { name: "Carica PDF" });
+    const input = dropzone.querySelector("input[type='file']");
+    const f1 = new File([new Uint8Array(4)], "uno.pdf", { type: "application/pdf" });
+    const f2 = new File([new Uint8Array(4)], "due.pdf", { type: "application/pdf" });
+    fireEvent.change(input, { target: { files: [f1, f2] } });
+
+    expect(await screen.findByText("Rete upload")).toBeInTheDocument();
+    expect(screen.getByText("uno.pdf")).toBeInTheDocument();
+    expect(screen.getByText(/File \(/)).toHaveTextContent("1");
+    expect(apiService.uploadImportJobFiles).toHaveBeenCalledTimes(2);
+    expect(apiService.uploadImportJobFiles.mock.calls[0][1][0].name).toBe("uno.pdf");
+    expect(apiService.uploadImportJobFiles.mock.calls[1][1][0].name).toBe("due.pdf");
+
+    apiService.uploadImportJobFiles.mockClear();
+    apiService.uploadImportJobFiles.mockResolvedValue({ data: {} });
+    fireEvent.change(input, { target: { files: [f1, f2] } });
+    await waitFor(() => {
+      expect(apiService.uploadImportJobFiles).toHaveBeenCalledTimes(1);
+    });
+    expect(apiService.uploadImportJobFiles.mock.calls[0][1][0].name).toBe("due.pdf");
+    window.confirm.mockRestore();
+  });
+
+  it("Estrai testo con piano cartella aperto: Annulla piano, non stop lotti", async () => {
+    let releaseProcess;
+    apiService.processImportJob.mockImplementation(
+      () =>
+        new Promise((resolve) => {
+          releaseProcess = () => resolve({ data: {} });
+        })
+    );
+
+    const user = await openMasonJob();
+    pickFolder([relFile("Documenti/Capitolati/rfq.pdf")]);
+    await screen.findByText("Piano di carico — Documenti");
+    await user.click(screen.getByRole("button", { name: "Estrai testo" }));
+
+    expect(
+      await screen.findByRole("status", { name: "Operazione in corso: il job non è modificabile" })
+    ).toBeInTheDocument();
+    expect(screen.getByText("Estrazione testo in corso…")).toBeInTheDocument();
+    expect(screen.getByRole("region", { name: "Progresso per file" })).toHaveTextContent("a.pdf");
+    expect(screen.getByText("Piano di carico — Documenti")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Annulla piano" })).toBeDisabled();
+    expect(screen.queryByRole("button", { name: /^Annulla$/ })).toBeNull();
+
+    releaseProcess();
+    await waitFor(() => {
+      expect(screen.queryByText("Estrazione testo in corso…")).not.toBeInTheDocument();
+    });
+    expect(screen.getByRole("button", { name: "Annulla piano" })).not.toBeDisabled();
   });
 });
