@@ -9,6 +9,7 @@ const fs       = require('fs');
 const { authenticate } = require('../middleware/auth.middleware');
 const { requireLicensedModule } = require('../middleware/moduleLicense.middleware');
 const ctrl     = require('../controllers/qualifications.controller');
+const verifyCtrl = require('../controllers/qualificationVerify.controller');
 
 // ── Multer per certificati singoli ───────────────────────────────────────────
 const UPLOAD_DIR = process.env.UPLOAD_DIR || './uploads';
@@ -83,6 +84,8 @@ router.get ('/qualifications/stats',               ctrl.getStats);
 router.get ('/qualifications/coverage/domains',    ctrl.listCoverageDomains);
 router.post('/qualifications/coverage/verify',     ctrl.verifyCoverageRequirement);
 router.get ('/qualifications/coverage',            ctrl.getCoverage);
+// Verifica vs norma (VQ-7): stateless, nessuna scrittura; prima delle rotte :id
+router.post('/qualifications/verify',              verifyCtrl.verifyQualificationFields);
 router.get ('/qualifications/vision-fitness-gaps', ctrl.getVisionFitnessGaps);
 router.get ('/qualifications/confirmations/export', ctrl.exportConfirmations);
 router.post('/qualifications/upload-batch',        batchUploadMiddleware, ctrl.uploadBatch);
