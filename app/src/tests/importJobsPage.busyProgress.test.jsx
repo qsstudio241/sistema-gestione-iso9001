@@ -142,7 +142,7 @@ describe("ImportJobsPage — busy P0 + progresso per file", () => {
     await user.click(screen.getByRole("button", { name: "Estrai testo" }));
 
     expect(
-      await screen.findByRole("status", { name: /Operazione in corso: il job non è modificabile/ })
+      await screen.findByRole("status", { name: "Operazione in corso: il job non è modificabile" })
     ).toBeInTheDocument();
     expect(screen.getByText("Estrazione testo in corso…")).toBeInTheDocument();
     const progress = screen.getByRole("region", { name: "Progresso per file" });
@@ -179,7 +179,7 @@ describe("ImportJobsPage — busy P0 + progresso per file", () => {
     await user.click(screen.getByRole("button", { name: "Carica i lotti selezionati" }));
 
     expect(
-      await screen.findByRole("status", { name: /Operazione in corso: il job non è modificabile/ })
+      await screen.findByRole("status", { name: "Operazione in corso: il job non è modificabile" })
     ).toBeInTheDocument();
     expect(await screen.findByText(/Lotto 1\/2 — Capitolati/)).toBeInTheDocument();
     const progress = screen.getByRole("region", { name: "Progresso per file" });
@@ -216,7 +216,7 @@ describe("ImportJobsPage — busy P0 + progresso per file", () => {
     fireEvent.change(input, { target: { files: [f1, f2] } });
 
     expect(
-      await screen.findByRole("status", { name: /Operazione in corso: il job non è modificabile/ })
+      await screen.findByRole("status", { name: "Operazione in corso: il job non è modificabile" })
     ).toBeInTheDocument();
     const progress = await screen.findByRole("region", { name: "Progresso per file" });
     expect(progress).toHaveTextContent("uno.pdf");

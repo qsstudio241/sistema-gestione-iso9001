@@ -1,12 +1,12 @@
 # DEPUTYTASK_INGEST_FE — Busy P0 + progresso per file su Import PDF
 
-**Stato:** APERTO  
+**Stato:** CHIUSO — TEST OK  
 **Aperto:** 06/10/2026  
-**Chiuso:**  
+**Chiuso:** 06/10/2026  
 **Rischio:** Medio — solo FE additivo; nessun BE/API/migrazione; Cloud **non** mergia  
 **Stream:** `DEPUTYTASK_INGEST_FE.md` (FE ingest ImportJobsPage). **Non** riusare `DEPUTYTASK_MC_INGEST.md`.  
 **Branch:** `cursor/ingest-fe-busy-progress-c105`  
-**PR:**  
+**PR:** https://github.com/qsstudio241/sistema-gestione-iso9001/pull/711 (draft)  
 **Dopo:** COV-1…COV-5 CHIUSE (`main` `1bcee5e7`, #710 mergiata)
 
 ---
@@ -42,7 +42,16 @@ Su `ImportJobsPage` (GESTIONE → Impostazioni → Import PDF, `/settings/import
 
 ## Done when
 
-- UI: banner busy immediato + lista progresso per file
-- Test FE verdi + `npm run build` (app) OK
-- PR **draft** (non undraft, non `bugbot run`, non merge)
-- Brief CHIUSO / TEST OK
+- [x] UI: banner busy immediato + lista progresso per file
+- [x] Test FE verdi + `npm run build` (app) OK
+- [x] PR **draft** (non undraft, non `bugbot run`, non merge)
+- [x] Brief CHIUSO / TEST OK
+
+## Esito
+
+**TEST OK**
+
+- Banner P0 `role="status"` appena `busy` è true; job, titolo, tipo, azioni e testo file disabilitati.
+- Progresso per file sullo stesso `folderUpload`: lotti cartella, upload PDF sequenziale, Estrai testo / Screening / AI.
+- L1: 40 test verdi (`busyProgress` + `folderPlan` + `companyGate` + `incompleteQueue` + `importFolderPlan`). Build Vite OK.
+- PR draft #711. Cloud non mergia, non undraft, non `bugbot run`.

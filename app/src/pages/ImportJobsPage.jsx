@@ -321,17 +321,21 @@ function FileActionsMenu({ actions, disabled = false }) {
   );
 }
 
-function ImportBusyBanner({ busy, upload }) {
+function ImportBusyBanner({ busy }) {
   if (!busy) return null;
-  const extra = upload && !upload.cancelled && upload.label ? ` ${upload.label}` : "";
   return (
-    <p className="import-jobs-busy" role="status" aria-live="polite">
-      {`Operazione in corso: il job non è modificabile.${extra}`}
+    <p
+      className="import-jobs-busy"
+      role="status"
+      aria-live="polite"
+      aria-label="Operazione in corso: il job non è modificabile"
+    >
+      Operazione in corso: il job non è modificabile.
     </p>
   );
 }
 
-function ImportFileProgressList({ files }) {
+function ImportFileProgressList({ files, label }) {
   if (!files?.length) return null;
   const done = files.filter((f) => f.status === "done").length;
   return (
@@ -342,6 +346,7 @@ function ImportFileProgressList({ files }) {
           {`${done}/${files.length} fatti`}
         </span>
       </h3>
+      {label ? <p className="import-file-progress-label">{label}</p> : null}
       <ol className="import-file-progress-list">
         {files.map((f) => (
           <li key={f.key} className={`import-file-progress-item is-${f.status}`}>
@@ -1272,7 +1277,7 @@ export default function ImportJobsPage() {
         Sbagli il carico? <strong>Annulla caricamento</strong> elimina il job e i file non posati. Quelli già nello scaffale restano.
       </p>
       {error && <p className="import-jobs-error">{error}</p>}
-      <ImportBusyBanner busy={busy} upload={folderUpload} />
+      <ImportBusyBanner busy={busy} />
 
       <div className="import-jobs-grid">
         <section className="import-jobs-col">
@@ -1463,7 +1468,7 @@ export default function ImportJobsPage() {
                 Disegni e foto si classificano da nome e cartella (senza OCR).
               </p>
               {folderUpload?.files?.length > 0 && !folderPlan && (
-                <ImportFileProgressList files={folderUpload.files} />
+                <ImportFileProgressList files={folderUpload.files} label={folderUpload.label} />
               )}
               {folderNotice && (
                 <p className="import-jobs-warning">
