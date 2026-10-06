@@ -4,7 +4,11 @@
 import React from "react";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
-import CoverageVerifyPanel, { visibleFieldsForDomain } from "../components/CoverageVerifyPanel";
+import CoverageVerifyPanel, {
+  COVERAGE_STATUS_LABEL,
+  filterCoverageDomains,
+  visibleFieldsForDomain,
+} from "../components/CoverageVerifyPanel";
 
 vi.mock("../services/apiService", () => ({
   default: {
@@ -122,5 +126,72 @@ describe("CoverageVerifyPanel", () => {
     await waitFor(() => expect(screen.getByTestId("cov-message")).toBeTruthy());
     expect(screen.getByTestId("cov-message").textContent).toMatch(/Nessuna WPQR/);
     expect(screen.queryByText(/match completo in una fetta successiva/)).toBeNull();
+  });
+});
+
+describe("filterCoverageDomains / COVERAGE_STATUS_LABEL", () => {
+  it("senza whitelist restituisce tutti i domini", () => {
+    expect(filterCoverageDomains(DOMAINS, undefined)).toHaveLength(3);
+    expect(filterCoverageDomains(DOMAINS, [])).toHaveLength(3);
+    expect(filterCoverageDomains(null, ["cnd_9712"])).toEqual([]);
+  });
+
+  it("con whitelist tiene solo le chiavi ammesse", () => {
+    expect(filterCoverageDomains(DOMAINS, ["cnd_9712"]).map((d) => d.domain)).toEqual(["cnd_9712"]);
+  });
+
+  it("esporta le etichette di stato in italiano", () => {
+    expect(COVERAGE_STATUS_LABEL.match.label).toBe("Coperto");
+    expect(COVERAGE_STATUS_LABEL.partial.label).toBe("Parziale");
+    expect(COVERAGE_STATUS_LABEL.no_match.label).toBe("Non coperto");
+  });
+});
+
+describe("CoverageVerifyPanel — allowedDomains / defaultDomain / embedded", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    apiService.getCoverageDomains.mockResolvedValue({ domains: DOMAINS });
+    apiService.verifyCoverageRequirement.mockResolvedValue({
+      domain: "cnd_9712",
+      implemented: true,
+      summary: { match: 0, partial: 0, no_match: 0, not_implemented: 0 },
+      matches: [],
+    });
+  });
+
+  it("allowedDomains limita la tendina ai domini ammessi", async () => {
+    render(<CoverageVerifyPanel allowedDomains={["cnd_9712", "wpqr_procedure"]} defaultDomain="cnd_9712" />);
+    fireEvent.click(screen.getByRole("button", { name: /Verifica copertura/i }));
+    await waitFor(() => expect(screen.getByTestId("cov-field-ndt_method")).toBeTruthy());
+    const values = [...screen.getByTestId("cov-domain").options].map((o) => o.value);
+    expect(values).toEqual(["wpqr_procedure", "cnd_9712"]);
+    expect(screen.getByTestId("cov-domain").value).toBe("cnd_9712");
+  });
+
+  it("se il dominio di default non è ammesso passa al primo ammesso", async () => {
+    render(<CoverageVerifyPanel allowedDomains={["cnd_9712"]} />);
+    fireEvent.click(screen.getByRole("button", { name: /Verifica copertura/i }));
+    await waitFor(() => expect(screen.getByTestId("cov-field-ndt_method")).toBeTruthy());
+    expect(screen.getByTestId("cov-domain").value).toBe("cnd_9712");
+  });
+
+  it("defaultDomain seleziona il dominio iniziale", async () => {
+    render(<CoverageVerifyPanel defaultDomain="wpqr_procedure" />);
+    fireEvent.click(screen.getByRole("button", { name: /Verifica copertura/i }));
+    await waitFor(() => expect(screen.getByTestId("cov-field-material_group")).toBeTruthy());
+    expect(screen.getByTestId("cov-domain").value).toBe("wpqr_procedure");
+  });
+
+  it("embedded: corpo sempre visibile, nessun toggle, domini caricati subito", async () => {
+    render(<CoverageVerifyPanel embedded allowedDomains={["cnd_9712"]} defaultDomain="cnd_9712" companyId={10} companyName="ADA" />);
+    expect(screen.queryByRole("button", { name: /Verifica copertura/i })).toBeNull();
+    await waitFor(() => expect(screen.getByTestId("cov-field-ndt_method")).toBeTruthy());
+    expect(apiService.getCoverageDomains).toHaveBeenCalledTimes(1);
+    expect(screen.getByTestId("cov-verify").disabled).toBe(false);
+
+    fireEvent.click(screen.getByTestId("cov-verify"));
+    await waitFor(() => expect(apiService.verifyCoverageRequirement).toHaveBeenCalledWith({
+      domain: "cnd_9712", company_id: 10, criteria: {},
+    }));
   });
 });

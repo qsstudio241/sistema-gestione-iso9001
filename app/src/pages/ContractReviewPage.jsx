@@ -11,6 +11,7 @@ import { useRouter, useNavigate } from '../contexts/RouterContext';
 import AiSuggestionInline from '../components/AiSuggestionInline';
 import AiDisclaimer from '../components/AiDisclaimer';
 import FileDropzone from '../components/FileDropzone';
+import CoverageFeasibilityBlock from '../components/CoverageFeasibilityBlock';
 import {
   STATUS_LABELS,
   TERMINAL_STATUSES,
@@ -264,7 +265,7 @@ function StudioReportPanel({ caseId, companyId, reloadKey = 0 }) {
  * CoveragePanel — verifica copertura saldatori per una commessa collegata al riesame.
  * Mostra un selettore di progetto + tabella di copertura WPS/qualifiche.
  */
-function CoveragePanel({ caseId }) {
+function CoveragePanel({ caseId, companiesById = null }) {
   const [expanded,   setExpanded]   = useState(false);
   const [projects,   setProjects]   = useState(null);
   const [projectId,  setProjectId]  = useState('');
@@ -310,6 +311,7 @@ function CoveragePanel({ caseId }) {
     return 'Non valutato';
   }
 
+  const selectedProject = (projects || []).find((p) => String(p.id) === String(projectId)) || null;
   const profile = coverage?.extracted_profile;
   const profileActive = coverage?.extracted_profile_active;
   const advisory = coverage?.advisory;
@@ -396,6 +398,19 @@ function CoveragePanel({ caseId }) {
                 ))}
               </tbody>
             </table>
+          )}
+
+          {coverage && (
+            <CoverageFeasibilityBlock
+              rows={coverage.coverage || []}
+              welderSummary={coverage.summary}
+              companyId={selectedProject?.company_id ?? null}
+              companyName={
+                selectedProject?.company_name
+                || (selectedProject?.company_id != null && companiesById?.get(selectedProject.company_id))
+                || ''
+              }
+            />
           )}
 
           {/* P5 — advisory WPQR + visione (non bloccante) */}
@@ -1969,7 +1984,7 @@ export default function ContractReviewPage() {
                 <p className="cr-muted" style={{ marginTop: 0 }}>
                   Verifica informativa (non blocca il riesame). Utile già in bozza per anticipare gap WPQR e visione.
                 </p>
-                <CoveragePanel caseId={detail.case.id} />
+                <CoveragePanel caseId={detail.case.id} companiesById={companiesById} />
               </div>
 
               {detail.case.status === 'APPROVED' && (
