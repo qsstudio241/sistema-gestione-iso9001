@@ -384,7 +384,7 @@ export default function QualificationUploadButton({
               {verifySummary && (
                 <p className="qual-upload__result-meta" data-testid="qual-upload-verify-summary">
                   {verifySummary.warn > 0
-                    ? `Verifica norma: ${verifySummary.warn} ${verifySummary.warn === 1 ? "avviso" : "avvisi"} in ${verifySummary.filesWithWarn} su ${verifySummary.files} ${verifySummary.files === 1 ? "file verificato" : "file verificati"}`
+                    ? `Verifica norma: ${verifySummary.warn} ${verifySummary.warn === 1 ? "avviso" : "avvisi"} in ${verifySummary.filesWithWarn} su ${verifySummary.files} file verificati`
                     : `Verifica norma: nessun avviso su ${verifySummary.files} ${verifySummary.files === 1 ? "file verificato" : "file verificati"}`}
                   {" \u2014 gli avvisi non impediscono il salvataggio."}
                 </p>
