@@ -7,7 +7,10 @@
  */
 
 jest.mock('../config/database', () => ({ query: jest.fn(), getPool: jest.fn() }));
-jest.mock('./qualificationVerify/registerDefaultPacks', () => ({ ensureDefaultPacks: () => {} }));
+jest.mock('./qualificationVerify/registerDefaultPacks', () => {
+    const actual = jest.requireActual('./qualificationVerify/registerDefaultPacks');
+    return { ensureDefaultPacks: () => {}, DEFAULT_PACKS: actual.DEFAULT_PACKS };
+});
 jest.mock('../utils/logger', () => ({ info: jest.fn(), error: jest.fn(), warn: jest.fn(), debug: jest.fn() }));
 jest.mock('./documentIngestPipeline.service', () => ({ runDocumentIngest: jest.fn() }));
 jest.mock('./ingestStaging.service', () => ({ createStagingRecord: jest.fn() }));
@@ -40,12 +43,10 @@ const {
     selectReprocessCandidates,
 } = require('./qualificationReprocess.service');
 const { getReprocessableField } = require('../data/reprocessableFields');
-const { registerRulePack } = require('./qualificationVerify/verifyRegistry');
-const { FAMILY, SEVERITY, STATUS, DIRECTION, TEXT_STATUS, makeFinding } = require('./qualificationVerify/findingTypes');
-const { CORE_COLUMNS, OPTIONAL_COLUMNS, resetColumnsCache } = require('./qualificationVerify/verifyRecordLoader');
 const registry = require('./qualificationVerify/verifyRegistry');
 const { ensureDefaultPacks, DEFAULT_PACKS } = require('./qualificationVerify/registerDefaultPacks');
-const { FAMILY, SEVERITY, STATUS, makeFinding } = require('./qualificationVerify/findingTypes');
+const { FAMILY, SEVERITY, STATUS, DIRECTION, TEXT_STATUS, makeFinding } = require('./qualificationVerify/findingTypes');
+const { CORE_COLUMNS, OPTIONAL_COLUMNS, resetColumnsCache } = require('./qualificationVerify/verifyRecordLoader');
 
 /**
  * Isolamento dai pack reali: i pack di default entrano con `rules: []` (stesso id, quindi
@@ -74,25 +75,8 @@ const TEST_PACK = {
     ],
 };
 
-function useIsolatedPacks() {
-    registry.clearRulePacks();
-    for (const pack of DEFAULT_PACKS) registry.registerRulePack({ ...pack, rules: [] });
-    registry.registerRulePack(TEST_PACK);
-}
-
-const row = (id, org) => ({
-    id,
-    organization_id: org,
-    person_name: `Persona ${id}`,
-    certificate_number: `C-${id}`,
-    qualification_type: 'Saldatore ISO 9606-1',
-    standard_ref: 'ISO 9606-1:2017',
-    joint_type: 'BW',
-    status: 'valida',
-});
-
-const TEST_CODE = 'QVTEST2.CORR.THK_MAX';
-registerRulePack({
+const TEST_CODE_9606_2 = 'QVTEST2.CORR.THK_MAX';
+const TEST_PACK_9606_2 = {
     id: 'vq10.test.pack',
     standardFamily: '9606-2',
     editions: ['2004'],
@@ -100,10 +84,10 @@ registerRulePack({
     rules: [{
         id: 'vq10.test.thkMax',
         family: FAMILY.CORRETTEZZA,
-        codes: [TEST_CODE],
+        codes: [TEST_CODE_9606_2],
         run: (view) => (view.thickness_max_mm != null && view.thickness_max_mm > 8
             ? [makeFinding({
-                code: TEST_CODE,
+                code: TEST_CODE_9606_2,
                 family: FAMILY.CORRETTEZZA,
                 severity: SEVERITY.WARN,
                 status: STATUS.VERIFICABILE,
@@ -116,6 +100,24 @@ registerRulePack({
             })]
             : []),
     }],
+};
+
+function useIsolatedPacks() {
+    registry.clearRulePacks();
+    for (const pack of DEFAULT_PACKS) registry.registerRulePack({ ...pack, rules: [] });
+    registry.registerRulePack(TEST_PACK);
+    registry.registerRulePack(TEST_PACK_9606_2);
+}
+
+const row = (id, org) => ({
+    id,
+    organization_id: org,
+    person_name: `Persona ${id}`,
+    certificate_number: `C-${id}`,
+    qualification_type: 'Saldatore ISO 9606-1',
+    standard_ref: 'ISO 9606-1:2017',
+    joint_type: 'BW',
+    status: 'valida',
 });
 
 function mockDb(rows) {
