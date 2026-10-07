@@ -10,7 +10,7 @@
  */
 const PROD_BACKEND_ROOT = '/var/www/sgq-backend';
 const TEST_BACKEND_ROOT = '/var/www/sgq-backend-test';
-const PROD_DB_NAME = 'SGQ_ISO9001';
+const DB_NAME_BY_TARGET = { prod: 'SGQ_ISO9001', test: '2026-06-18_SGQ_ISO9001' };
 
 const TABLE = 'wpqr_records';
 const COLUMNS = [
@@ -48,15 +48,12 @@ function resolveTarget(env = process.env) {
 }
 
 function assertDbMatchesTarget(target, dbName) {
+    const expected = DB_NAME_BY_TARGET[target];
     const name = String(dbName || '').trim();
-    if (!name) {
-        throw new Error('Nome database non determinabile: abort.');
-    }
-    if (target === 'prod' && /test/i.test(name)) {
-        throw new Error(`Mismatch: target=prod ma il database "${name}" sembra di test — abort.`);
-    }
-    if (target === 'test' && name.toLowerCase() === PROD_DB_NAME.toLowerCase()) {
-        throw new Error(`Mismatch: target=test ma il database "${name}" è quello di produzione — abort.`);
+    if (!expected || name !== expected) {
+        throw new Error(
+            `Mismatch: target=${target} richiede il database "${expected}" ma la connessione punta a "${name || '<sconosciuto>'}" — abort.`
+        );
     }
 }
 

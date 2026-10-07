@@ -81,7 +81,7 @@ describe.each(RUNNERS)('runner migrazione $n', ({ n, file, mod, expectedMissing,
 
     it('run() passa a loadBackend i path del target scelto', async () => {
         for (const [target, root, envFile, db] of [
-            ['test', '/var/www/sgq-backend-test', '/var/www/sgq-backend-test/.env.test', 'SGQ_ISO9001_Test'],
+            ['test', '/var/www/sgq-backend-test', '/var/www/sgq-backend-test/.env.test', '2026-06-18_SGQ_ISO9001'],
             ['prod', '/var/www/sgq-backend', '/var/www/sgq-backend/.env', 'SGQ_ISO9001'],
         ]) {
             const { loadBackend } = makeLoader(fakePool({ dbName: db }));
@@ -96,8 +96,11 @@ describe.each(RUNNERS)('runner migrazione $n', ({ n, file, mod, expectedMissing,
 
     it('guard DB: mismatch target/DB → exit 1 prima di qualsiasi DDL', async () => {
         const cases = [
-            ['prod', 'SGQ_ISO9001_Test'],
+            ['prod', '2026-06-18_SGQ_ISO9001'],
             ['test', 'SGQ_ISO9001'],
+            ['prod', 'SGQ_ISO9001_Test'],
+            ['test', 'SGQ_ISO9001_Test'],
+            ['prod', ''],
         ];
         for (const [target, db] of cases) {
             const pool = fakePool({ dbName: db });
@@ -110,7 +113,7 @@ describe.each(RUNNERS)('runner migrazione $n', ({ n, file, mod, expectedMissing,
     });
 
     it.each(['1', 'true'])('CHECK_ONLY=%s: solo SELECT, nessun DDL/DML, exit 0, elenca le mancanti', async (v) => {
-        const pool = fakePool({ dbName: 'SGQ_ISO9001_Test' });
+        const pool = fakePool({ dbName: '2026-06-18_SGQ_ISO9001' });
         const { loadBackend } = makeLoader(pool);
         const code = await mod.run({
             env: { SGQ_MIGRATION_TARGET: 'test', CHECK_ONLY: v },
@@ -129,7 +132,7 @@ describe.each(RUNNERS)('runner migrazione $n', ({ n, file, mod, expectedMissing,
     });
 
     it('CHECK_ONLY con colonne già presenti: exit 0 e nessuna mancante', async () => {
-        const pool = fakePool({ dbName: 'SGQ_ISO9001_Test', existingColumns: mod.COLUMNS.map((c) => c.name) });
+        const pool = fakePool({ dbName: '2026-06-18_SGQ_ISO9001', existingColumns: mod.COLUMNS.map((c) => c.name) });
         const { loadBackend } = makeLoader(pool);
         const code = await mod.run({
             env: { SGQ_MIGRATION_TARGET: 'test', CHECK_ONLY: '1' },
@@ -141,7 +144,7 @@ describe.each(RUNNERS)('runner migrazione $n', ({ n, file, mod, expectedMissing,
 
     it('senza CHECK_ONLY esegue i DDL solo per le colonne mancanti (idempotenza)', async () => {
         const present = mod.COLUMNS.slice(0, 1).map((c) => c.name);
-        const pool = fakePool({ dbName: 'SGQ_ISO9001_Test', existingColumns: present });
+        const pool = fakePool({ dbName: '2026-06-18_SGQ_ISO9001', existingColumns: present });
         const { loadBackend } = makeLoader(pool);
         const code = await mod.run({ env: { SGQ_MIGRATION_TARGET: 'test' }, loadBackend });
         expect(code).toBe(0);
