@@ -64,6 +64,22 @@ Da fare **prima** di produzione. Riportare l'esito nella PR (checklist «Migrazi
 
 ---
 
+## Runner solo-TEST (`run-migrations-test-only.js`)
+
+Applica i `.sql` dell'allowlist (piano [PIANO_ALLINEAMENTO_SCHEMA_TEST](../reference/PIANO_ALLINEAMENTO_SCHEMA_TEST_2026-10-07.md): 110…108) **solo** sul DB TEST `2026-06-18_SGQ_ISO9001`, con driver `mssql` (non `sqlcmd`): un errore SQL ferma tutto, mai «successo» con errori. Il target è hardcoded, non esiste un flag `prod`.
+
+```bash
+node backend/scripts/run-migrations-test-only.js --mode=check --migrations=110,124,145 [--file-dir=<dir>]
+SGQ_CONFIRM_TEST_APPLY=2026-06-18_SGQ_ISO9001 node backend/scripts/run-migrations-test-only.js --mode=apply --migrations=110,124,145 [--file-dir=<dir>]
+```
+
+- `--mode` obbligatorio. `check` = `SET PARSEONLY ON` batch per batch + SELECT su `INFORMATION_SCHEMA`/`sys.*` (elenca oggetti mancanti, nessun DDL/DML). `apply` = un batch `GO` alla volta in transazione, poi verifica degli oggetti attesi.
+- Variabili: `SGQ_MIGRATION_TARGET` (se impostata deve essere `test`); `SGQ_CONFIRM_TEST_APPLY` uguale al DB atteso (doppia conferma, obbligatoria per `apply`). Connessione da `backend/config/database.json` sezione `test`.
+- Come evita PROD: config `test` ≠ `production` e database esatto; `DB_NAME()` esatto prima di ogni batch; `USE SGQ_ISO9001` rimosso con log, qualsiasi altro `USE` o nome a 3 parti verso `SGQ_ISO9001` blocca; allowlist (numeri fuori lista rifiutati); migrazioni senza `.sql` nel repo (112, 113) rifiutate con «`.sql` mancante: serve estrazione dal runner».
+- `--file-dir`: cartella con i `.sql` estratti da `origin/main` (non la cartella stale del VPS); il log riporta lo sha256 di ogni file.
+
+---
+
 ## Repro e verifica dati
 
 Procedure e query di repro: [GUIDA_CONSOLIDATA § C](../GUIDA_CONSOLIDATA.md#c-database-e-repro).
