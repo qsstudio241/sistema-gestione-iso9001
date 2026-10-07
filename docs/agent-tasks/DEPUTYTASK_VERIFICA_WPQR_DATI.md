@@ -17,9 +17,9 @@ Lo schema per archiviare i dati di prova di pag. 2 esiste ed è **applicabile e 
 
 **Dati PROD (07/10/2026, piano § «Dati PROD»):** la migrazione 169 risulta applicata in PROD. Non esiste una tabella di tracciamento migrazioni: il `verify` si basa solo su colonne/oggetti. `wpqr_records` ha già `test_date`, `*_result` (`bend/tensile/impact/hardness/macro/ndt/…`) e `wps_id`: **non** vanno ricreate (nessuna modifica a colonne esistenti). `welding_procedures` è vuota. La tabella `wpqr_test_runs` e le colonne di testata sono nuove. PROD ha 13 WPQR: i conteggi attesi del `verify` sono quelli di schema (oggetti presenti), non di righe.
 
-**Decisione D9 (chiave esplicita WPS→WPQR) aperta:** questo brief **non** include alcuna tabella di legame né colonna WPS↔WPQR finché il committente non risolve D9 (piano § 9). Se D9 viene approvata prima del lancio, il Lead aggiorna questo brief (file previsti e DoD) su `origin/main`; il deputy **non** la anticipa.
+**Decisione D9 (chiave esplicita WPS↔WPQR) DECISA «sì» il 07/10/2026** (piano § 9): rientra in questo brief come **secondo file di migrazione separato** `<NNN+1>_wps_wpqr_links.sql` (+ `<NNN+1>_verify.sql`, `<NNN+1>_rollback.sql`), così il rollback è indipendente dai dati di prova e i file restano nel perimetro già del brief (`database/migrations/**`, `DATABASE.md`): nessun altro brief cambia lista file. Tabella `wps_wpqr_links` (`id`, `organization_id`, `wps_id`, `wpqr_id`, `role` nullable, `created_at`, `created_by` nullable); **unique `(wps_id, wpqr_id)`**; indice `(organization_id, wpqr_id)`; **FK in statement separati** verso `welding_procedures(id)` e `wpqr_records(id)`, **senza `ON DELETE CASCADE`**; idempotente, no-op se una delle due tabelle è assente (CI su DB vuoto). **Nessun backfill**: le WPS già generate/legacy e `wps_ref` (testo) restano senza link finché l'utente non conferma; `wpqr_records.wps_id` non si tocca. **Solo schema**: API/UI/salvataggio dei link non sono qui (WV-7 o slice dedicata dopo il merge).
 
-**Numero di migrazione:** il piano **non lo riserva**. Dopo `git fetch origin main`, il deputy legge l'ultimo `NNN_*.sql` in `database/migrations/` (al momento del charting: **169**, quindi prossimo **170**; `DATABASE.md` è stantio e dice 168/169) e dichiara `NNN` nel body PR. Companion `NNN_verify.sql` e `NNN_rollback.sql` (policy ≥ 169).
+**Numero di migrazione:** il piano **non lo riserva**. Dopo `git fetch origin main`, il deputy legge l'ultimo `NNN_*.sql` in `database/migrations/` (al momento del charting: **169**, quindi `NNN` = **170** per `wpqr_test_data` e `NNN+1` = **171** per `wps_wpqr_links`; `DATABASE.md` è stantio e dice 168/169) e dichiara **entrambi** i numeri nel body PR. Companion `NNN_verify.sql` e `NNN_rollback.sql` (policy ≥ 169).
 
 ## Gate norme (dichiarato)
 
@@ -44,7 +44,8 @@ Non codifica regole né soglie. Le colonne rispecchiano il **modulo** WPQR e gli
 ## File previsti
 
 - *Nuovi* `database/migrations/<NNN>_wpqr_test_data.sql`, `<NNN>_verify.sql`, `<NNN>_rollback.sql`
-- *Modificato* `docs/reference/DATABASE.md` (righe «Ultimo `NNN`» / «Prossimo libero», tabella `wpqr_test_runs`, colonne aggiunte a `wpqr_records`)
+- *Nuovi (D9)* `database/migrations/<NNN+1>_wps_wpqr_links.sql`, `<NNN+1>_verify.sql`, `<NNN+1>_rollback.sql`
+- *Modificato* `docs/reference/DATABASE.md` (righe «Ultimo `NNN`» / «Prossimo libero», tabelle `wpqr_test_runs` e `wps_wpqr_links`, colonne aggiunte a `wpqr_records`)
 - Solo lettura/riuso: `database/migrations/_TEMPLATE_additive.sql`, `_TEMPLATE_NNN_verify.sql`, `_TEMPLATE_NNN_rollback.sql`, `169_wpqr_drop_expiry_date.sql` (+ `169_verify.sql`, `169_rollback.sql`: schema «tabella assente → no-op»), `089_welding_procedures_full.sql`, `133_wpqr_coverage_fields.sql`, `159_wpqr_stud_fields.sql`
 
 ## Cosa NON toccare
@@ -59,6 +60,7 @@ Qualsiasi file `backend/src/**`, `app/**`, `reprocessableFields.js`, migrazioni 
 4. **FK `wpqr_id → wpqr_records(id)` in uno statement separato**, **senza** `ON DELETE CASCADE`.
 5. `ALTER TABLE wpqr_records ADD …` per le colonne di testata (una per statement `IF COL_LENGTH … IS NULL`), tutte `NULL`, senza default che riscriva righe.
 6. `<NNN>_verify.sql`: controlla presenza tabella, colonne, indice e FK; esito leggibile.
+6b. D9: `<NNN+1>_wps_wpqr_links.sql` (`OBJECT_ID` prima di `CREATE`; no-op se `welding_procedures` o `wpqr_records` mancano; unique, indice, FK separate senza CASCADE) + `<NNN+1>_verify.sql` (tabella, colonne, unique, indice, FK) + `<NNN+1>_rollback.sql` (solo FK, indice, tabella creati).
 7. `<NNN>_rollback.sql`: rimuove **solo** FK, indice, tabella e colonne create da questa migrazione, nell'ordine corretto; idempotente.
 8. `DATABASE.md`: allineare «Ultimo `NNN`» (stantio: 168) e «Prossimo libero», documentare tabella e colonne.
 9. **Non applicare in PROD né su TEST dal Cloud** (SQL Server non raggiungibile; applicazione via SCP + `run-migration-*-vps.js` = HITL). Nel body PR: «cosa serve per applicarla» e conteggi attesi dal `verify`.
@@ -74,11 +76,12 @@ Comandi: CI «Apply da 169 su SQL Server vuoto» (job esistente: la migrazione d
 
 - [ ] `<NNN>_wpqr_test_data.sql` additiva, idempotente, no-op su tabella assente; FK separata, nessun CASCADE
 - [ ] `<NNN>_verify.sql` e `<NNN>_rollback.sql` presenti e coerenti; intestazione conforme (`-- TYPE/-- BACKFILL/-- VERIFY/-- ROLLBACK`)
-- [ ] Nessuna colonna esistente alterata; nessun dato riscritto; nessun oggetto legato a D9 (WPS↔WPQR) finché D9 è aperta
+- [ ] Nessuna colonna esistente alterata; nessun dato riscritto
+- [ ] D9: `<NNN+1>_wps_wpqr_links.sql` additiva (unique `(wps_id, wpqr_id)`, `organization_id`, FK separate, no CASCADE) con verify/rollback propri; nessun backfill; nessun link creato sulle WPS legacy
 - [ ] `DATABASE.md` allineato (ultimo `NNN`, tabella, colonne)
 - [ ] CI migrazioni verde; `check-utf8-encoding.js` verde; **nessun file `backend/src`/`app` nel diff**
 - [ ] Body PR: numero dichiarato, cosa serve per applicare, esito atteso del verify; **migrazione non applicata in PROD**
-- [ ] Branch allineato a `origin/main` (`git fetch origin main && git merge origin/main`) **e** numero NNN ricontrollato (se un'altra PR ha preso 170 → rinumerare prima di push/PR); `bugbot run` **una sola volta** a slice chiusa
+- [ ] Branch allineato a `origin/main` (`git fetch origin main && git merge origin/main`) **e** numeri NNN/NNN+1 ricontrollati (se un'altra PR ha preso 170 → rinumerare prima di push/PR); `bugbot run` **una sola volta** a slice chiusa
 
 ## HITL
 
