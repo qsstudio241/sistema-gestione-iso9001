@@ -21,7 +21,7 @@
 
 ## Non ancora specificato
 
-- **Quali righe di Annex B sono presenti nella pratica**: oggi non c'è un campione di WPQR reali anonimizzate né i conteggi PROD (sezione «Dati PROD» sotto). Il piano parte dalle norme e dal codice; la **tolleranza** e la severità delle regole sulle passate si tarano sul campione (HITL 1), come per le qualifiche (D2/D6 di quell'epic).
+- **Quali righe di Annex B sono presenti nella pratica**: i conteggi PROD ci sono (sezione «Dati PROD»: nessun dato di prova strutturato oggi) ma manca ancora il **campione di WPQR reali anonimizzate** (la seconda pagina dei PDF non è stata letta). Il piano parte dalle norme e dal codice; la **tolleranza** e la severità delle regole sulle passate si tarano sul campione (HITL 1), come per le qualifiche (D2/D6 di quell'epic).
 - **Attribuzione «prova» vs «range qualificato»** per preheat/interpass/post-heating: Annex B pag. 1 ha due colonne («Test piece» / «Range of qualification»), il record oggi ha **una** colonna testo (`preheat_temp`, `interpass_temp`). Quale valore finisce lì oggi non è documentato → regole §8.4.8/§8.4.9 **non** codificate finché il campione non lo chiarisce (HITL 1) o non si decide di aggiungere le colonne `*_test` (D4).
 - **Attribuzione livello 1 / livello 2 nella frase §8.4.7** sul limite inferiore di apporto termico per la durezza (il Markdown intercala le due colonne): HITL 2, **obbligatorio prima di qualsiasi regola sull'apporto termico**. Il «±25 %» citato in riunione è un esempio, non una soglia.
 - **Parametri specifici di processo** (portata gas, diametro ugello, elettrodo di tungsteno, distanza tubo di contatto — ISO 15609-1 §4.5.x): entrano nella WPQR via «gli elementi pertinenti elencati per la WPS» (§9 di 15614-1/-2, §10.4 di 14555) ma **non hanno una riga in Annex B** (solo «Other information*»). Colonne previste come gruppo B opzionale; ingest solo dopo il campione (D3).
@@ -54,7 +54,70 @@ Fonti Markdown:
 
 ## Dati PROD
 
-DA COMPILARE dal report di raccolta dati (worker separato)
+> **Fonte**: report di raccolta dati in **sola lettura** (solo `SELECT` / `INFORMATION_SCHEMA`), ambiente **PROD**, rilevazione del **07/10/2026**, 11:59 UTC. Solo aggregati anonimi: il report integrale resta **fuori da Git**. Nessun PDF letto, nessuna WPQR/azienda identificabile. **Dataset piccolo (13 WPQR)**: le percentuali sono ordini di grandezza, non statistica. TEST non interrogato.
+
+**Volume e schema**
+
+| Misura | PROD |
+|--------|------|
+| WPQR totali | **13** (2 organizzazioni: 11 + 2) |
+| Approvate / bozza | 9 / 4 (rifiutate 0) |
+| Con PDF conservato | **10** (9 approvate + 1 bozza, tutte nell'org. maggiore); le 3 senza PDF sono bozze |
+| Norma | **15614-1** su 9 WPQR (tutte e 9 con PDF; 3 varianti di edizione 2012/2017/2019); `standard_reference` NULL su 4 (1 con PDF); **0** record 15614-2, **0** 14555, **0** Level 1, **0** tubo |
+| Mig. 169 | **applicata** (`expiry_date` e `IX_wpqr_records_expiry` assenti su `wpqr_records`); mig. 143, 158, 159, 168 **presenti** |
+| Tracking migrazioni | **non esiste** nessuna tabella: lo stato schema si legge solo dalle colonne |
+| Qualifiche (confronto) | 151 righe, 146 con PDF; le 6 colonne di prova della mig. 168 sono **vuote ovunque** (backfill mai partito) |
+
+**Compilazione di `wpqr_records` (N = 13)**
+
+| Gruppo | Campi | Esito |
+|--------|-------|-------|
+| **Mai valorizzati (0/13)** | `test_date`, i 10 `*_result` (VT, RT, UT, MT, PT, trazione, piega, resilienza, durezza, macro), `diameter_max`, `qualifying_element`, `base_material_group_2`, `issuing_body`, `notes` | le chiavi dell'ingest AI non includono né `test_date` né gli esiti |
+| **Parziali** | `shielding_gas` 69 %, `current_type` 69 %, `metal_transfer` 54 %, `heat_input_note` 62 %, `preheat_temp` 46 %, `interpass_temp` 31 %, `throat_test_mm` 31 %, `thickness_t1/t2_min` 46 % | grafie non normalizzate (`DC-EP`/`DCEP`; filler: 7 designazioni in 9 valori; gas con caratteri OCR anomali) |
+| **Bit senza «non rilevato»** | `pwht` = 0 su 13/13; `rotated_position` 0 su 10 | non distinguono «falso» da «non letto» |
+
+**Dati di prova strutturati: nessuno.** `heat_input_note` ha 8 righe brevi (media 43 caratteri) con soli **limiti/tolleranze percentuali** (6 con ±%): 0 con kJ/mm o J/mm, 0 con valori in A o V, 0 con velocità. Corrente, tensione, velocità e apporto termico per passata **non sono oggi in nessuna colonna**.
+
+**Legame WPS ↔ WPQR**
+
+| Misura | PROD |
+|--------|------|
+| `welding_procedures` (WPS) | **0 righe** (nessuna WPS salvata); 5 staging `wps` in attesa, mai confermate |
+| `wpqr_records.wps_id` | 0 / 13 |
+| `wpqr_records.wps_ref` (testo) | 9 / 13, nessun legame relazionale |
+| Colonne `wpqr_ref` / `wpqr_id` su `welding_procedures` | **non esistono**: il legame è solo lato WPQR |
+
+**Ingest WPQR (`ingest_staging`, 53 righe, 2026-07 → 2026-10)**
+
+| Misura | Valore |
+|--------|--------|
+| Stato | 18 confermate, 9 in attesa, 26 rifiutate; 52/53 con almeno un warning; modello unico `gemini-2.5-flash` |
+| Warning principali | «estrazione via OCR» (26) · range spessore dichiarato fuori dal range atteso 15614-1 Tab. # Level # (17) · designazione filler non riconosciuta come ISO 14341 (26, varie grafie) · rielaborazione automatica su record esistente (17) · range t1/t2 per FW non calcolabile con formula BW (4) · quota chiavi AI esaurita (1) |
+| Rielaborazioni | **16 proposte su 4 WPQR, tutte rifiutate, senza motivo registrato** (campi: `product_type` 8, `preheat_temp` 4, `interpass_temp` 2, `throat_test_mm` 2, t1/t2 1) |
+| Confermate orfane | 8 staging confermati puntano a WPQR **non più presenti** |
+| Feedback utente | 1 accettato · 17 corretti · 26 rifiutati (senza motivo). Campi più corretti: `certificate_number`, `wpqr_code`, `product_type`, `thickness_test_mm`, `preheat_temp` |
+| Non contabili | `duplicate` e `wrong_module` non sono persistiti (risposte API) |
+
+**Coerenza (N = 13)**: `product_type` NULL 7 (2 con `diameter_*` valorizzato); FW 6, di cui 2 senza gola; `welding_process` mancante 3; `qualification_level` NULL 7; range spessore incoerenti 0.
+
+**Non raccolto**: TEST; contenuto dei PDF (seconda pagina) ed esistenza dei file in `/uploads`; motivo dei rifiuti (non registrato); compilazione WPS (tabella vuota); ultima migrazione applicata (nessun tracking).
+
+### Implicazioni per il piano
+
+| # | Dato PROD | Effetto sul piano | Dove è recepito |
+|---|-----------|-------------------|-----------------|
+| a | Nessuna WPS salvata (0 righe) | WV-7 **non ha dati WPS da migrare**, ma **non ha nemmeno riscontro d'uso reale** del generatore: la bozza si valida con le WPQR reali in sola lettura | WV-7 (DoD: verifica con WPQR reali su TEST/PROD in sola lettura) |
+| b | `wps_id` 0/13, `wps_ref` testo 9/13, nessuna colonna WPS→WPQR | Chiave esplicita WPS→WPQR: **decisione aperta D9** (raccomandazione sotto), non implementata | § 9 D9; WV-3 e WV-4a (brief DATI) |
+| c | `test_date` e i 10 `*_result` mai valorizzati e non richiesti dall'AI | Entrano nello schema AI di **WV-4b** e nelle voci Rielaborazioni; **candidati al backfill: 10 WPQR** con PDF (9 approvate + 1 bozza). Le colonne **esistono già**: nessuna colonna nuova | § 2.3; WV-4b |
+| d | Grafie diverse (`standard_reference` ×3, `current_type` DC-EP/DCEP, filler ×7) | Normalizzazione **solo in memoria** nella vista (WV-1) e finding `info` (WV-5a); **mai riscrittura del dato** | WV-1, WV-5a |
+| e | 16 rielaborazioni rifiutate e 26 staging rifiutati senza motivo; esito suggerito/finale non loggato | **Motivo di rifiuto obbligatorio + log esito** (HITL 03/10, roadmap priorità 10): riga di backlog del piano, nessuna nuova slice | § 9 «Backlog del piano» |
+| f | I 10 PDF conservati sono già sul VPS ma contengono dati di clienti | Il campione HITL **resta anonimizzato**: nessuna lettura senza conferma esplicita del committente | HITL 1 (§ 4.1) |
+| g | 17 warning «range spessore fuori tabella» (Level 1 / oltre 40 mm) | Mappano su `non_verificabile_fonte_mancante` (validità prevale; coerente col gate norme); il warning di plausibilità non si rimuove dove il pack non produce un finding verificabile | WV-5b, WV-5c |
+| h | 13 WPQR, 0 di 15614-2/14555/tubo/Level 1; `pwht` sempre 0; `product_type` NULL 7/13; livello NULL 7/13 | Pack 15614-2/14555 **solo su fixture sintetiche** (nessun riscontro PROD): WV-5b li tratta come secondari; `pwht=0` e `product_type` NULL ⇒ `non_verificabile_dato_mancante`, mai `warn`; livello assente ⇒ Level 2 dichiarato come ipotesi | § 5; WV-5a, WV-5b |
+| i | Mig. 169 applicata; nessuna tabella di tracking | `verify`/`rollback` della nuova migrazione si basano su **colonne e oggetti**, non su un registro; numero **NNN** sempre da `git fetch` | WV-3 |
+| j | 8 staging confermati puntano a WPQR cancellate; una volta quota AI esaurita | Prima di promettere il backfill: **esistenza dei file in `/uploads`** e quota AI; 10 PDF = pochi run | WV-4b (DoD) |
+
+Il dataset è piccolo (13 record): il campione di § 4.1 coincide di fatto con **quasi tutto il PROD**, quindi il gate «campione reale» sulle regole `warn` resta, ma va letto come «le 10 WPQR con PDF, anonimizzate», non come un campione statistico.
 
 ---
 
@@ -186,7 +249,8 @@ Esistono già (non si ricreano): `current_type`, `metal_transfer`, `heat_input_n
 | `filler_make`, `filler_size`, `backing_gas`, `post_heating`, `pwht_details`, `pwps_ref` | B pag. 1–2; §8.4.4, §8.4.5, §8.5.6, §8.4.10, §8.4.11 | idem | idem | `wpqr_filler_make`, `wpqr_filler_size`, `wpqr_backing_gas`, `wpqr_post_heating`, `wpqr_pwht_details`, `wpqr_pwps_ref` |
 | `heat_input_kind`, `heat_input_range_min/max` | §8.4.7 | idem | idem | `wpqr_heat_input_kind`, `wpqr_heat_input_range` (bundle min/max) |
 | Gruppo B (gas flow, ugello, tungsteno, tubo di contatto) | 15609-1 §4.5.x (via §9) | idem (collassato) | idem | `wpqr_process_params` (bundle) — **solo dopo** campione (D3) |
-| `*_result` (VT…macro) già in DB | B pag. 3; Tab. 1/2 | già nel form | già in whitelist; l'ingest li riempie (WV-4) | `wpqr_test_results` (bundle `*_result`, writeGuard `= 'NA'`) |
+| `*_result` (VT…macro) **già in DB, mai valorizzati in PROD (NULL 13/13)** e non richiesti dall'AI | B pag. 3; Tab. 1/2 | già nel form | già in whitelist (`WPQR_MANUAL_EDITABLE_FIELDS`); schema AI esteso e l'ingest li riempie (WV-4b) | `wpqr_test_results` (bundle dei 10 `*_result`, writeGuard `IS NULL OR = 'NA'`; **10 candidati**) |
+| `test_date` **già in DB, mai valorizzata (0/13)** e non richiesta dall'AI | B pag. 1 «Date of welding» | già nel form | già in whitelist; schema AI esteso (WV-4b) | `wpqr_test_date` (writeGuard `IS NULL`; stessi 10 candidati) |
 | Finding di verifica per record DB | come i singoli finding (§ 5) | tabella «Verifica WPQR vs norma» in Fatturazione → Rielaborazioni + CSV | `GET /admin/reprocess-tasks` (campo `kind`) · `POST /admin/reprocess-tasks/:key/run` (`kind:'verify'`) · nessuna persistenza | `verify_wpqr_15614_1`, `verify_wpqr_15614_2`, `verify_wpqr_14555` |
 
 Eccezione dichiarata (nessuna voce): `heat_input_kj_mm` per passata e le altre colonne di passata **non** sono voci separate — vivono nella voce di tabella `wpqr_test_runs`. Il valore di `source` (`ai`/`manual`) non è estraibile.
@@ -247,9 +311,10 @@ Verificato aprendo i Markdown in `docs/Normative/` e gli estratti in `docs/refer
 ```markdown
 ## Richiesta dati (HITL) — 1 di 4 (non è una norma)
 
-- **Cosa**: 8–12 WPQR reali **anonimizzate** (PDF o dati) già validate da un coordinatore: copertura 15614-1 BW e FW, P e T, almeno una con prove di resilienza e durezza, almeno una GMAW (131/135) e una TIG (141), una 15614-2 (alluminio), una 14555 (stud, anche a scarica capacitiva); idealmente 2–3 con un errore noto
+- **Cosa**: le WPQR reali **anonimizzate** (PDF o dati; in PROD ce ne sono **10 con PDF conservato**, quindi il campione coincide con quasi tutto il dataset; le altre WPQR sono bozze senza PDF) già validate da un coordinatore: copertura 15614-1 BW e FW, P e T, almeno una con prove di resilienza e durezza, almeno una GMAW (131/135) e una TIG (141), una 15614-2 (alluminio), una 14555 (stud, anche a scarica capacitiva); idealmente 2–3 con un errore noto
 - **Serve a**: (1) misurare falsi positivi/negativi delle regole `warn` prima di dichiarare «pronta»; (2) chiarire se `preheat_temp`/`interpass_temp` oggi contengono il valore di prova o il range qualificato (D4); (3) capire quali righe di pag. 2 sono davvero compilate (corrente/tensione sempre? velocità? apporto termico?) e se i parametri del gruppo B compaiono; (4) tarare la tolleranza
 - **Perimetro su cui si parte comunque**: fixture sintetiche costruite da Annex B e dalle tabelle (valori ai bordi 3/12 mm, 25 mm …); archiviazione passate e completezza
+- **Riservatezza**: i 10 PDF sono già sul VPS (`/uploads`) ma contengono **dati di clienti**: **non si leggono** senza conferma esplicita del committente; l'anonimizzazione resta richiesta (o consenso scritto alla lettura in locale). Prima di contare su di essi va verificata l'esistenza dei file su disco (non verificata)
 - **Gate**: senza campione la PR dei pack normativi **non** passa a «pronta»
 ```
 
@@ -298,11 +363,13 @@ Codici stabili, mai rinominati. Ogni finding passa `validateFinding`. Soglie: **
 | Codice | Dato | Clausola | Severità | UI/API |
 |--------|------|----------|----------|--------|
 | `WPQR15614_1.COMP.PROCESS` / `…POSITIONS` / `…FILLER` / `…MATERIAL_GROUP` / `…THICKNESS` | processo, posizioni, filler (designazione), gruppo, spessore (pag. 1) | §8.4.1, §8.4.2, §8.4.4, §8.3.1, §8.3.2 + §9 | `warn` se assente (variabile essenziale) | pannello di verifica |
-| `…COMP.DIAMETER` | diametro per tubi/derivazioni (L2); non richiesto su piastra e su Level 1 | §8.3.3 (`isDiameterEssentialVariable`) | `warn` solo se prodotto = tubo e L2 | idem |
+| `…COMP.DIAMETER` | diametro per tubi/derivazioni (L2); non richiesto su piastra e su Level 1 | §8.3.3 (`isDiameterEssentialVariable`) | `warn` solo se prodotto = tubo e L2; `product_type` NULL (7/13 in PROD) ⇒ `non_verificabile_dato_mancante` | idem |
 | `…COMP.CURRENT_TYPE` | tipo di corrente e polarità | §8.4.6 + 15609-1 §4.4.9 | `warn` per processi ad arco | idem |
 | `…COMP.PREHEAT` / `…INTERPASS` | preheat, interpass dichiarati | §8.4.8, §8.4.9 | `warn` se assente (o «nessuno» esplicito accettato) | idem |
 | `…COMP.HEAT_INPUT_KIND` | heat input presente ma tipo (calore/energia d'arco) non indicato | §8.4.7 («shall be documented») | `warn` | idem |
-| `…COMP.BACKING_GAS`, `…COMP.POST_HEATING`, `…COMP.PWHT_DETAILS` | gas al rovescio, post-heating, PWHT con `pwht=1` senza dettagli | §8.5.6, §8.4.10, §8.4.11 | `info` (PWHT senza dettagli: `warn`) | idem |
+| `…COMP.LEVEL` | livello 1/2 non dichiarato (7/13 in PROD) | National foreword `NORMA_00043` («when no level is specified … Level 2 should be applied») | `info`: «livello non dichiarato, applicato Level 2» | idem |
+| `…COMP.NORMALIZATION` | grafia non canonica di `standard_reference` (edizione), `current_type` (DC-EP/DCEP), designazione filler | §8.4.6 (tipi di corrente), §8.4.4 (designazione secondo la norma internazionale); edizione 2012 ⇒ fonte mancante (legacy) | `info`; **solo segnalazione**: il valore canonico è usato dalla vista per il confronto, **il dato non viene riscritto** | idem |
+| `…COMP.BACKING_GAS`, `…COMP.POST_HEATING`, `…COMP.PWHT_DETAILS` | gas al rovescio, post-heating, PWHT con `pwht=1` senza dettagli | §8.5.6, §8.4.10, §8.4.11 | `info` (PWHT senza dettagli: `warn` **solo se `pwht` è dichiarato vero**; `pwht = 0` non distingue «no» da «non letto» — 13/13 in PROD — ⇒ nessun avviso) | idem |
 | `…COMP.RUNS_PRESENT` | nessuna passata archiviata | §9 + Annex B pag. 2 | **un solo** `info` `non_verificabile_dato_mancante` | idem; rimanda alla voce di backfill |
 | `…COMP.RUN_FIELDS` | passata con corrente, tensione, polarità, processo, size filler (processi ad arco) | §9 + 15609-1 §4.4.9, §4.4.8; Annex B riga passata | `warn` per campo mancante in passata presente; `travel_speed`/`heat_input` (`*`) `info` | idem |
 | `WPQR15614_2.COMP.*` | stesso schema su Annex A + §8.4.4–8.4.9 + riga PWHT/ageing | §9, Annex A | come sopra | idem |
@@ -312,7 +379,7 @@ Codici stabili, mai rinominati. Ogni finding passa `validateFinding`. Soglie: **
 
 | Codice | Controllo | Clausola | Severità |
 |--------|-----------|----------|----------|
-| `…CORR.THK_BW` / `…THK_FW` | range di spessore del certificato vs Tab. 7 / Tab. 8 L2 da `thickness_tested`/`throat_test_mm` (stessa tolleranza: arrotondamento 0,01 mm) | §8.3.2 Tab. 7/8 | `warn` over_claim, `info` under_claim; L1 / oltre 40 mm → `non_verificabile_fonte_mancante` |
+| `…CORR.THK_BW` / `…THK_FW` | range di spessore del certificato vs Tab. 7 / Tab. 8 L2 da `thickness_tested`/`throat_test_mm` (stessa tolleranza: arrotondamento 0,01 mm) | §8.3.2 Tab. 7/8 | `warn` over_claim, `info` under_claim; L1 / oltre 40 mm → `non_verificabile_fonte_mancante` (sono i casi dei 17 warning PROD «range spessore fuori tabella»: la validità del certificato prevale, nessun valore atteso inventato) |
 | `…CORR.DIAMETER` | range diametro vs §8.3.3 da `diameter_test_mm`; piastra → tubo (`describePlateCoversPipeDiameterLevel2`) | §8.3.3 | `warn` / `info` |
 | `…CORR.THK_RANGE_PROVENANCE` | range non letto dal certificato (calcolato) | § 2.4 | `info` `non_verificabile_dato_mancante` |
 | `…CORR.CURRENT_TYPE` | tipo di corrente validato vs tipo di corrente nelle passate | §8.4.6 | `warn` se il certificato dichiara **più** tipi di quelli provati (AC→DC solo per 111 senza impact) |
@@ -320,8 +387,8 @@ Codici stabili, mai rinominati. Ogni finding passa `validateFinding`. Soglie: **
 | `…CORR.TRANSFER_MODE` | modo di trasferimento pag. 1 vs passate (GMAW 13) | §8.5.2.3 | `info` |
 | `…CORR.HEAT_INPUT_KIND_UNITS` | valori heat input con unità/tipo coerenti; min ≤ max | §8.4.7 | `info` (coerenza interna, senza soglie) |
 | `WPQR15614_2.CORR.HEAT_INPUT_UPPER` | limite superiore qualificato dichiarato > test max × 1,25 (× 1,15 gruppo 23) | 15614-2 §8.4.6 | `warn` over_claim **dopo** conferma del gruppo materiale |
-| `…CORR.PWHT` | `pwht` (flag) ↔ `pwht_details`; aggiunta/cancellazione PWHT non ammessa | §8.4.11 | `info` (dato testo) |
-| `…CORR.RESULTS_QUALIFIED` | esito `KO` su una prova mentre la WPQR è approvata/attiva | §9 («qualified» solo se nessun esito inaccettabile) | `warn` |
+| `…CORR.PWHT` | `pwht` (flag) ↔ `pwht_details`; aggiunta/cancellazione PWHT non ammessa | §8.4.11 | `info` (dato testo); `pwht = 0` senza dettagli ⇒ `non_verificabile_dato_mancante` (bit NOT NULL default 0) |
+| `…CORR.RESULTS_QUALIFIED` | esito `KO` su una prova mentre la WPQR è approvata/attiva | §9 («qualified» solo se nessun esito inaccettabile) | `warn`; esiti NULL/`NA` (oggi 13/13 NULL) ⇒ `non_verificabile_dato_mancante` |
 | `WPQR14555.CORR.*` | sezione stud, spessore, posizione, protezione bagno, similari/dissimilari (funzioni 14555 già in `main`) | §10.2.8.4–§10.2.8.10 | come funzioni |
 | **Non codificate** | `CORR.PREHEAT_MIN`/`INTERPASS_MAX` (−50/+50 °C), `CORR.HEAT_INPUT_LOWER`, `CORR.HEAT_INPUT_UPPER` di 15614-1, `CORR.POSITIONS` (provini multipli) | §8.4.8, §8.4.9, §8.4.7, §8.4.2 | `non_verificabile_*` finché non chiudono HITL 1–3 |
 
@@ -412,25 +479,25 @@ Convenzione: un file compare come «previsto» in **una sola** slice della stess
 
 Comandi di riferimento: BE `cd backend && npx jest <percorso>` · FE `cd app && NODE_ENV=test npx vitest run <file>` + `npm run build` · repo `node backend/scripts/check-harness-boot.js` e `node backend/scripts/check-utf8-encoding.js`.
 
-**WV-1 — Core.** *Obiettivo*: `verifyWpqr({...}, {mode})` esiste, è puro e restituisce un `VerifyResult` valido (`domain:'wpqr'`) anche con i pack stub vuoti: profilo risolto (`15614-1:BW/FW/UNKNOWN`, `15614-2:BW/FW`, `14555:SW`), `summary` a zero, edizione/norma non coperta → un solo `non_verificabile_fonte_mancante`; 15613 → informativo (§ decisioni). *DoD*: `wpqrRecordView` converte review-fields (ingest) e riga DB (`wpqr_records` + `wpqr_test_runs`, anche assenti) con test di parità; livello default 2; **test di non regressione**: i test esistenti di `verifyEngine`/`verifyRegistry`/pack 9606 verdi **senza modifiche**; il test «pack ⇄ `registerDefaultPacks` ⇄ `deploy-manifest`» copre i nuovi stub; test strutturale nessun import DB/`fs`; riga bussola e `check-harness-boot` verde. *Test*: `npx jest src/services/qualificationVerify`.
+**WV-1 — Core.** *Obiettivo*: `verifyWpqr({...}, {mode})` esiste, è puro e restituisce un `VerifyResult` valido (`domain:'wpqr'`) anche con i pack stub vuoti: profilo risolto (`15614-1:BW/FW/UNKNOWN`, `15614-2:BW/FW`, `14555:SW`), `summary` a zero, edizione/norma non coperta → un solo `non_verificabile_fonte_mancante`; 15613 → informativo (§ decisioni). *DoD*: `wpqrRecordView` converte review-fields (ingest) e riga DB (`wpqr_records` + `wpqr_test_runs`, anche assenti) con test di parità; livello default 2; **normalizzazione in memoria** (non persistita) di edizione di `standard_reference`, `current_type` (DC-EP ≡ DCEP) e designazione filler, con test sulle grafie viste in PROD e nessun accesso in scrittura al record; **test di non regressione**: i test esistenti di `verifyEngine`/`verifyRegistry`/pack 9606 verdi **senza modifiche**; il test «pack ⇄ `registerDefaultPacks` ⇄ `deploy-manifest`» copre i nuovi stub; test strutturale nessun import DB/`fs`; riga bussola e `check-harness-boot` verde. *Test*: `npx jest src/services/qualificationVerify`.
 
 **WV-2 — Doc norme.** *Obiettivo*: un estratto che per ogni norma (15614-1 Annex B, 15614-2 Annex A, 14555 Annex C) elenca le righe del modulo, la clausola «shall» che le richiede (§9/§10.4 + 15609-1 §4.x), il campo previsto (§ 2.2–2.3) e i GAP; sistema nel backlog gli stati delle righe aggiunte da WV-0. *DoD*: ogni clausola citata verificata aprendo il Markdown; nessuna soglia inventata; GAP dichiarati (§8.4.7 L1/L2, Tab. 3, Tab. 7 L1, ISO/TR 18491); UTF-8; `check-utf8-encoding` verde.
 
-**WV-3 — Migrazione.** *Obiettivo*: schema di § 2.2 applicabile e reversibile. *DoD*: intestazione `-- TYPE: additive`, `-- BACKFILL: none`, `-- VERIFY`, `-- ROLLBACK`; idempotente (`COL_LENGTH`/`OBJECT_ID`), **tabella `wpqr_records` assente → no-op** (CI su DB vuoto, come la 169); FK in **statement separato**, niente `ON DELETE CASCADE`; companion `NNN_verify.sql` (colonne/tabella presenti, FK) e `NNN_rollback.sql` (drop **solo** degli oggetti creati dalla 170, ordinato); `DATABASE.md` aggiornato (ultimo `NNN`, tabella, colonne). **Nessuna applicazione in PROD** (HITL sì esplicito); il deputy annota nel body PR cosa serve per applicarla. Se per quadrare serve toccare colonne esistenti → **Alto**, stop.
+**WV-3 — Migrazione.** *Obiettivo*: schema di § 2.2 applicabile e reversibile. *DoD*: intestazione `-- TYPE: additive`, `-- BACKFILL: none`, `-- VERIFY`, `-- ROLLBACK`; idempotente (`COL_LENGTH`/`OBJECT_ID`), **tabella `wpqr_records` assente → no-op** (CI su DB vuoto, come la 169); FK in **statement separato**, niente `ON DELETE CASCADE`; companion `NNN_verify.sql` (colonne/tabella presenti, FK) e `NNN_rollback.sql` (drop **solo** degli oggetti creati dalla 170, ordinato); `DATABASE.md` aggiornato (ultimo `NNN`, tabella, colonne). **Nessuna applicazione in PROD** (HITL sì esplicito); il deputy annota nel body PR cosa serve per applicarla. Stato PROD (07/10/2026): mig. 169 applicata, **nessuna tabella di tracking** → `NNN_verify.sql` controlla **colonne/oggetti**, non un registro. Chiave WPS→WPQR: **solo se D9 è risolta «sì»** prima del lancio (`welding_procedures` è vuota in PROD: momento a costo minimo). Se per quadrare serve toccare colonne esistenti → **Alto**, stop.
 
-**WV-4 — Persistenza + ingest pag. 2.** *Obiettivo*: dalla WPQR 15614 con tabella passate, l'ingest produce passate e condizioni di prova; l'utente le corregge a mano; i record esistenti si completano da Rielaborazioni. *DoD 4a*: `GET/PUT /welding/wpqr/:id/test-runs` (replace-set in transazione, `organization_id` rispettato, audit event come le altre scritture WPQR); nuove colonne di testata in `WPQR_MANUAL_EDITABLE_FIELDS`; `getWPQR` restituisce le passate; `deleteWPQR` elimina le passate esplicitamente; test controller. *DoD 4b*: `aiExpectedSchema.wpqr` esteso (`test_runs[]` + gruppo A; gruppo B solo dopo campione); `commitWPQRFromFields` inserisce le passate **solo se non ci sono già** (mai sovrascrive passate manuali); l'ingest riempie `vt_result…macro_result` quando leggibili (altrimenti `NA`); voci registro `wpqr_*` + `WPQR_REPROCESSABLE_FIELDS` + adapter `wpqr_test_runs` (insert-if-empty) + `reprocessableFields.test.js` e `WRITE_WHITELISTS_BY_TABLE` verdi; `manualEditCompletenessCheck` verde; **round-trip a sentinella** dell'ingest invariato per i campi esistenti. *Test*: `npx jest src/services/wpqrIngest src/controllers/welding src/data/reprocessableFields src/services/wpqrTestRuns`. Percorso ingest critico: smoke in WV-8.
+**WV-4 — Persistenza + ingest pag. 2.** *Obiettivo*: dalla WPQR 15614 con tabella passate, l'ingest produce passate e condizioni di prova; l'utente le corregge a mano; i record esistenti si completano da Rielaborazioni. *DoD 4a*: **D9 recepita solo se risolta** (chiave WPS→WPQR; altrimenti nessuna modifica a `wps_id`/`wps_ref`); `GET/PUT /welding/wpqr/:id/test-runs` (replace-set in transazione, `organization_id` rispettato, audit event come le altre scritture WPQR); nuove colonne di testata in `WPQR_MANUAL_EDITABLE_FIELDS`; `getWPQR` restituisce le passate; `deleteWPQR` elimina le passate esplicitamente; test controller. *DoD 4b*: `aiExpectedSchema.wpqr` esteso (`test_runs[]` + gruppo A **+ `test_date` e i 10 `*_result`**, oggi mai richiesti all'AI; gruppo B solo dopo campione); **candidati al backfill in PROD: 10 WPQR con PDF** (tutte nell'org. maggiore) — prima di promettere il backfill il deputy verifica l'**esistenza dei file in `/uploads`** (non verificata nel report; 8 staging confermati puntano a WPQR cancellate) e la quota AI (già esaurita una volta); `commitWPQRFromFields` inserisce le passate **solo se non ci sono già** (mai sovrascrive passate manuali); l'ingest riempie `vt_result…macro_result` quando leggibili (altrimenti lascia `NULL`/`NA`, mai un esito dedotto); voci registro `wpqr_*` + `WPQR_REPROCESSABLE_FIELDS` + adapter `wpqr_test_runs` (insert-if-empty) + `reprocessableFields.test.js` e `WRITE_WHITELISTS_BY_TABLE` verdi; `manualEditCompletenessCheck` verde; **round-trip a sentinella** dell'ingest invariato per i campi esistenti. *Test*: `npx jest src/services/wpqrIngest src/controllers/welding src/data/reprocessableFields src/services/wpqrTestRuns`. Percorso ingest critico: smoke in WV-8.
 
-**WV-5a — Completezza.** *Obiettivo*: le righe di § 5.1. *DoD*: test per profilo BW/FW/UNKNOWN, piastra vs tubo, L1 vs L2 (diametro non essenziale in L1), con e senza passate (un solo `info` se assenti), arco vs stud; severità come tabella; ogni finding passa `validateFinding`. *Test*: `npx jest src/services/qualificationVerify/packs/wpqrCompleteness`.
+**WV-5a — Completezza.** *Obiettivo*: le righe di § 5.1. *DoD*: test per profilo BW/FW/UNKNOWN, piastra vs tubo (e `product_type` NULL), L1 vs L2 (diametro non essenziale in L1; livello assente ⇒ L2 con `COMP.LEVEL`), con e senza passate (un solo `info` se assenti), arco vs stud; finding `COMP.NORMALIZATION` sulle grafie PROD senza modificare il dato; `pwht = 0` senza avvisi; severità come tabella; ogni finding passa `validateFinding`. *Test*: `npx jest src/services/qualificationVerify/packs/wpqrCompleteness`.
 
-**WV-5b — Correttezza.** *Obiettivo*: le righe di § 5.2 **esclusa** la lista «Non codificate». *DoD*: test ai bordi (t = 3/12 mm, D = 25 mm, 40 mm, 14555 sezioni stud); over_claim vs under_claim; mai `warn` su dato non verificabile; L1 e >40 mm → fonte mancante; le funzioni nuove hanno test dedicati e **non modificano** quelle esistenti; se HITL 1–3 sono chiusi nel frattempo si codifica la regola corrispondente citando la clausola confermata, altrimenti resta `non_verificabile_*`.
+**WV-5b — Correttezza.** *Obiettivo*: le righe di § 5.2 **esclusa** la lista «Non codificate». *DoD*: **15614-1 prioritario** (9 WPQR su 9 con norma in PROD); 15614-2 e 14555 solo su fixture sintetiche (0 record in PROD), possono restare stub se il tempo non basta (dichiararlo nel body PR); test ai bordi (t = 3/12 mm, D = 25 mm, 40 mm, 14555 sezioni stud); over_claim vs under_claim; mai `warn` su dato non verificabile; L1 e >40 mm → fonte mancante (casi dei warning PROD «range spessore fuori tabella»); le funzioni nuove hanno test dedicati e **non modificano** quelle esistenti; se HITL 1–3 sono chiusi nel frattempo si codifica la regola corrispondente citando la clausola confermata, altrimenti resta `non_verificabile_*`.
 
-**WV-5c — Aggancio.** *Obiettivo*: § 1.5. *DoD*: `extractWPQRFromPdf` accoda `message_it` ai `warnings` e aggiunge `verification` **senza cambiare `status`**; `commitWPQRFromFields` idem; `POST /welding/wpqr/verify` (stessa autorizzazione delle rotte WPQR, nessuna scrittura); `wpqrVerifyLoader` tollerante alle colonne assenti (test con `INFORMATION_SCHEMA` simulato); `GET /admin/reprocess-tasks` espone `verify_wpqr_*`; ramo verify **prima** del ramo backfill; test strutturale «nessuna scrittura» esteso; i duplicati di `checkWpqrPlausibility` sul range di spessore rimossi solo se il pack li copre (nessun doppio avviso, test).
+**WV-5c — Aggancio.** *Obiettivo*: § 1.5. *DoD*: `extractWPQRFromPdf` accoda `message_it` ai `warnings` e aggiunge `verification` **senza cambiare `status`**; `commitWPQRFromFields` idem; `POST /welding/wpqr/verify` (stessa autorizzazione delle rotte WPQR, nessuna scrittura); `wpqrVerifyLoader` tollerante alle colonne assenti (test con `INFORMATION_SCHEMA` simulato); `GET /admin/reprocess-tasks` espone `verify_wpqr_*`; ramo verify **prima** del ramo backfill; test strutturale «nessuna scrittura» esteso; i duplicati di `checkWpqrPlausibility` sul range di spessore rimossi **solo dove il pack produce un finding `verificabile`**; dove il pack risponde `non_verificabile_fonte_mancante` (Level 1, oltre 40 mm) il warning di plausibilità resta (17 casi PROD), con test di non regressione.
 
 **WV-6a — Editor FE.** *Obiettivo*: `WpqrTestRunsEditor` (controlled: `value`, `onChange`, `readOnly`, `standardFamily`) mostra/modifica la tabella passate (colonne di § 2.2; variante stud 14555), con aggiunta/rimozione riga, unità esplicite, validazione al **blur** (min ≤ max), pulsanti sempre visibili con `disabled`+`title`. `apiService.getWpqrTestRuns/saveWpqrTestRuns/verifyWpqr` secondo il contratto del piano (come VQ-2 prima della rotta). *DoD*: DNA UI (copia della schermata, classi esistenti), accenti, nessun `fetch` diretto, riga in `LIBRERIA_UI_SGQ.md`. *Test*: `vitest run src/tests/wpqrTestRunsEditor.test.jsx` + build.
 
 **WV-6b — Integrazione FE.** *Obiettivo*: nella modale WPQR e nella revisione ingest: blocco «Condizioni di prova», editor passate, `QualificationVerifyPanel` che si aggiorna al blur con debounce; offline → nascosto; mai bloccante; riga Rielaborazioni «Verifica WPQR vs norma». *DoD*: regola «URL: query ≠ pagina» (nessun link nuovo; se serve, `routerContext.match.test.js` verde); pulsanti operativi sempre visibili; i test esistenti di `WeldingProceduresPage`/`IngestReviewDialog`/`WpqrUploadButton` non regrediscono.
 
-**WV-7 — Bozza WPS.** *Obiettivo*: § 3. *DoD*: `buildWpsDraft` e Word usano le passate quando ci sono; nessun valore dedotto; apporto termico solo dopo HITL 2; test sul Word (tabella passate popolata/vuota); nessuna modifica dei modi (a)/(b).
+**WV-7 — Bozza WPS.** *Obiettivo*: § 3. *DoD*: `buildWpsDraft` e Word usano le passate quando ci sono; nessun valore dedotto; apporto termico solo dopo HITL 2; test sul Word (tabella passate popolata/vuota); nessuna modifica dei modi (a)/(b). **In PROD non esiste nessuna WPS salvata** (0 righe): nessun dato WPS da migrare, ma anche **nessun riscontro d'uso reale** del generatore → verifica obbligatoria **con le WPQR reali su TEST/PROD in sola lettura** (generazione di bozza e Word senza salvarli; esito nel body PR).
 
 **WV-8 — Smoke + chiusura.** *Obiettivo*: percorso su TEST (upload WPQR PDF → passate + `verification` presenti, `status` invariato; `POST /welding/wpqr/verify`; report `verify_wpqr_15614_1` senza modifiche ai record), GUIDA (lezione), roadmap, `DATABASE.md`, bussola, spunte nel piano.
 
@@ -456,7 +523,7 @@ Comandi di riferimento: BE `cd backend && npx jest <percorso>` · FE `cd app && 
 ## 8. Rischi aperti
 
 1. **Falsi positivi** sulle WPQR reali (convenzioni dei laboratori, unità, formato dei range): asimmetria `warn`/`info`, `warn` solo con `verificabile`, campione reale, nessun blocco.
-2. **WPQR esistenti senza pag. 2**: la verifica sulle passate è muta (un solo `info`); il valore arriva dopo i backfill — ordine d'uso al committente (§ 1.6).
+2. **WPQR esistenti senza pag. 2**: in PROD **13/13** senza dati di prova strutturati; la verifica sulle passate è muta (un solo `info`) finché non si fanno i backfill (10 candidati con PDF) — ordine d'uso al committente (§ 1.6).
 3. **Lettura AI della tabella passate** (celle unite, unità, due colonne «Test piece / Range»): errore plausibile; mitigazioni: revisione umana obbligatoria in ingest, `source = ai` visibile, round-trip a sentinella.
 4. **Percorso ingest critico** (`wpqrIngest.service.js`): modifica additiva ma smoke obbligatorio; conflitti serializzati (WV-4 → WV-5c).
 5. **Provenienza spessori calcolati** (§ 2.4): un confronto «certificato vs norma» sui range calcolati confronta il codice con sé stesso → regola di provenienza prima di dichiarare `warn`.
@@ -478,6 +545,14 @@ Comandi di riferimento: BE `cd backend && npx jest <percorso>` · FE `cd app && 
 | D6 | Pack normativi: Medio con gate rafforzato o Alto (consenso per ogni merge); colonna `thickness_range_source` | Medio rafforzato + campione reale; colonna no |
 | D7 | Edizioni legacy 15614 rilevanti? | Nessuna azione finché non risponde |
 | D8 | Usare gli esiti nei semafori di copertura / nei candidati WPS | No (fuori epic) |
+| **D9 (aperta)** | Chiave esplicita **WPS→WPQR**: oggi esistono solo `wpqr_records.wps_id` (FK lato WPQR, 0/13 in PROD) e `wpqr_records.wps_ref` (testo, 9/13); `welding_procedures` non ha `wpqr_ref`/`wpqr_id` ed è **vuota** in PROD | **Raccomandazione (non implementata)**: sì, in WV-3, una tabella di legame additiva `wps_wpqr_links` (`wps_id`, `wpqr_id`, `organization_id`, `role`; FK in statement separati, nessun CASCADE), perché una WPQR qualifica più WPS e una WPS può poggiare su più WPQR (la FK `wps_id` lato WPQR ha la direzione sbagliata per una bozza generata «da WPQR»). `wps_ref` resta testo letto, nessuna risoluzione automatica; `wps_id` non si tocca. Alternativa minima: nessun legame ora e `source_wpqr_id` nullable su `welding_procedures` al primo salvataggio dal generatore. Decide il committente **prima** del lancio di WV-3 (il brief DATI non la include finché non è risolta) |
+
+### Backlog del piano (voci collaterali, nessuna nuova slice)
+
+| Voce | Dato PROD | Dove si aggancia | Nota |
+|------|-----------|------------------|------|
+| **Motivo di rifiuto obbligatorio + log esito suggerito/finale** per ingest e rielaborazioni WPQR (e qualifiche) | 26 staging rifiutati, 16 rielaborazioni rifiutate (4 WPQR) e 26 feedback `rejected` **senza motivo**; esito reale non tracciato | Già in roadmap (priorità 10 «Ingest: raccolta etichette mancanti», analisi HITL 03/10, #694); file: `ingestStaging.service.js`, controller staging, `IngestReviewDialog.jsx` — **fuori** dai file della prima onda e di WV-4 | Raccomandato **prima** del backfill AI di WV-4b: senza motivo non si misura se le nuove voci `wpqr_*` migliorano o peggiorano. Non crea una slice di questo piano; si lancia con il proprio brief |
+| Staging confermati orfani (8 puntano a WPQR cancellate) | 8 su 18 | Rielaborazioni WV-4b / WV-5c | Il loader ignora i target non più esistenti; nessuna pulizia automatica |
 
 ## Bozza per hub dopo merge
 
@@ -491,5 +566,5 @@ Comandi di riferimento: BE `cd backend && npx jest <percorso>` · FE `cd app && 
 
 ## Esito sessione di charting (07/10/2026)
 
-- Piano e quattro brief di prima onda scritti; righe di backlog norme aggiunte; sezione «Dati PROD» lasciata al segnaposto per il worker di raccolta dati. **Nessuna** slice eseguita, nessun codice, nessuna migrazione.
+- Piano e quattro brief di prima onda scritti; righe di backlog norme aggiunte; sezione «Dati PROD» integrata il 07/10/2026 con il report di raccolta dati in sola lettura (aggregati anonimi; report integrale fuori da Git) e relative implicazioni. **Nessuna** slice eseguita, nessun codice, nessuna migrazione.
 - Spunte DoD: da compilare slice per slice (WV-1 … WV-8) nelle sessioni di esecuzione.

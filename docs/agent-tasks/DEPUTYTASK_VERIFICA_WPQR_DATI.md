@@ -15,6 +15,10 @@
 
 Lo schema per archiviare i dati di prova di pag. 2 esiste ed è **applicabile e reversibile**: tabella figlia `wpqr_test_runs` (una riga per passata; per stud 1–2 righe) e le colonne di testata su `wpqr_records` del gruppo A e B del piano § 2.2. Nessuna logica applicativa: ingest, controller e FE sono WV-4/WV-6.
 
+**Dati PROD (07/10/2026, piano § «Dati PROD»):** la migrazione 169 risulta applicata in PROD. Non esiste una tabella di tracciamento migrazioni: il `verify` si basa solo su colonne/oggetti. `wpqr_records` ha già `test_date`, `*_result` (`bend/tensile/impact/hardness/macro/ndt/…`) e `wps_id`: **non** vanno ricreate (nessuna modifica a colonne esistenti). `welding_procedures` è vuota. La tabella `wpqr_test_runs` e le colonne di testata sono nuove. PROD ha 13 WPQR: i conteggi attesi del `verify` sono quelli di schema (oggetti presenti), non di righe.
+
+**Decisione D9 (chiave esplicita WPS→WPQR) aperta:** questo brief **non** include alcuna tabella di legame né colonna WPS↔WPQR finché il committente non risolve D9 (piano § 9). Se D9 viene approvata prima del lancio, il Lead aggiorna questo brief (file previsti e DoD) su `origin/main`; il deputy **non** la anticipa.
+
 **Numero di migrazione:** il piano **non lo riserva**. Dopo `git fetch origin main`, il deputy legge l'ultimo `NNN_*.sql` in `database/migrations/` (al momento del charting: **169**, quindi prossimo **170**; `DATABASE.md` è stantio e dice 168/169) e dichiara `NNN` nel body PR. Companion `NNN_verify.sql` e `NNN_rollback.sql` (policy ≥ 169).
 
 ## Gate norme (dichiarato)
@@ -70,7 +74,7 @@ Comandi: CI «Apply da 169 su SQL Server vuoto» (job esistente: la migrazione d
 
 - [ ] `<NNN>_wpqr_test_data.sql` additiva, idempotente, no-op su tabella assente; FK separata, nessun CASCADE
 - [ ] `<NNN>_verify.sql` e `<NNN>_rollback.sql` presenti e coerenti; intestazione conforme (`-- TYPE/-- BACKFILL/-- VERIFY/-- ROLLBACK`)
-- [ ] Nessuna colonna esistente alterata; nessun dato riscritto
+- [ ] Nessuna colonna esistente alterata; nessun dato riscritto; nessun oggetto legato a D9 (WPS↔WPQR) finché D9 è aperta
 - [ ] `DATABASE.md` allineato (ultimo `NNN`, tabella, colonne)
 - [ ] CI migrazioni verde; `check-utf8-encoding.js` verde; **nessun file `backend/src`/`app` nel diff**
 - [ ] Body PR: numero dichiarato, cosa serve per applicare, esito atteso del verify; **migrazione non applicata in PROD**

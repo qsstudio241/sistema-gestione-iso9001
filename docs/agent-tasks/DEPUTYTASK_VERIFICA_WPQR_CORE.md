@@ -53,6 +53,7 @@ Nessuna nuova colonna. Nessun campo AI-estraibile nuovo.
 
 1. `verifyEngine.js`: estrarre dalla funzione `verifyQualification` la parte indipendente dal dominio (copertura standard → profilo → regole → ordinamento → summary) in una funzione interna riusabile; `verifyQualification` la chiama con la sua vista e **produce lo stesso output di oggi** (aggiungere `domain: 'qualification'` al risultato; tutti i test esistenti restano verdi **senza modifiche**).
 2. `wpqrRecordView.js`: `toWpqrView(input, {source:'review'|'db'})` normalizza **review-fields** dell'ingest WPQR (`mapPipelineFieldsToReview`: `welding_process`, `thickness_tested`, `thickness_min/max`, `diameter_min/max`, `welding_positions`, `preheat_temp`, `interpass_temp`, `current_type`, `metal_transfer`, `heat_input_note`, `qualification_level`, `joint_type`, `standard_reference`, …) e **riga DB** `wpqr_records` + array opzionale `runs` (da `wpqr_test_runs`, assente = `[]`, colonne assenti = `null`) in un'unica vista canonica; risolve `standard` (famiglia 15614-1 / 15614-2 / 14555 / 15613 + edizione da `standard_reference`), `level` (default 2) e `profile`.
+   **Normalizzazione solo in memoria** (dati PROD 07/10/2026: grafie non canoniche di `standard_reference` con edizione, `current_type` DC-EP/DCEP e designazione del filler): la vista produce valori canonici per il confronto e **non riscrive mai** il dato né emette scritture. `pwht` è un bit con default 0 (mai «non rilevato») e `product_type` può essere NULL: in questi casi la vista segnala «dato non determinabile» (poi `non_verificabile_dato_mancante` nelle slice 5), mai `warn`. Il default Level 2 (National foreword di `NORMA_00043`) resta, ma la vista espone `level_declared: boolean` per il finding `COMP.LEVEL` di WV-5a.
 3. `verifyWpqr.js`: `verifyWpqr(input, {mode})` → `VerifyResult` con `domain: 'wpqr'`; **nessun `if (15614)`**: dispatch solo via registry.
 4. Quattro stub pack + elenco esplicito in `registerDefaultPacks.js` (stile esistente). I codici dei finding saranno prefissati `WPQR15614_1.*`, `WPQR15614_2.*`, `WPQR14555.*` (unici globalmente).
 5. `deploy-manifest.json`: righe per ogni `.js` nuovo sotto `backend/src/`.
@@ -63,7 +64,7 @@ Nessuna nuova colonna. Nessun campo AI-estraibile nuovo.
 Comandi: `cd backend && npx jest src/services/qualificationVerify` · repo: `node backend/scripts/check-harness-boot.js` e `node backend/scripts/check-utf8-encoding.js`.
 
 - **Non regressione**: tutti i test esistenti di `verifyEngine`, `verifyRegistry`, `findingTypes`, pack 9606/14732, `verifyReprocess`, `verifyRecordLoader` verdi **senza modificarli**.
-- Vista WPQR: parità review-fields ↔ riga DB (stessi valori canonici da ingresso diverso); `runs` assenti/vuoti/presenti; livello default 2; tabella `standard_reference` → profilo (15614-1 BW/FW/UNKNOWN, 15614-2, 14555 stud, 15613, edizioni legacy, norma sconosciuta).
+- Vista WPQR: parità review-fields ↔ riga DB (stessi valori canonici da ingresso diverso); input non mutato (normalizzazione in memoria); `runs` assenti/vuoti/presenti; livello default 2; tabella `standard_reference` → profilo (15614-1 BW/FW/UNKNOWN, 15614-2, 14555 stud, 15613, edizioni legacy, norma sconosciuta).
 - Engine: pack stub → `findings` vuoto per norma coperta, `summary` zero; edizione legacy / norma non coperta → un solo `non_verificabile_fonte_mancante`; 15613 senza parte → un solo `non_verificabile_dato_mancante`; regola che lancia → `RULE_ERROR`; `code` duplicato → errore di registrazione.
 - Strutturali: nessun import di `config/database`, `fs`, `createStagingRecord`; **ogni `*.pack.js` è in `registerDefaultPacks.js` e in `deploy-manifest.json`** (il test esistente copre anche i nuovi stub).
 
@@ -75,7 +76,7 @@ Comandi: `cd backend && npx jest src/services/qualificationVerify` · repo: `nod
 
 - [ ] `verifyWpqr` esiste, puro, valido con pack stub; `domain: 'wpqr'`; `engine_version` presente
 - [ ] Pipeline condivisa estratta; **`verifyQualification` invariato** (test esistenti verdi senza modifiche)
-- [ ] `wpqrRecordView` converte review-fields e riga DB (+ `runs`) con test di parità; livello default 2
+- [ ] `wpqrRecordView` converte review-fields e riga DB (+ `runs`) con test di parità; livello default 2 con `level_declared`; normalizzazione solo in memoria (test: input con `DC-EP`/`DCEP`, edizione in `standard_reference`; il dato in ingresso non viene mutato); `pwht`/`product_type` NULL → dato non determinabile
 - [ ] Quattro stub pack + `registerDefaultPacks.js`; test «pack ⇄ registerDefaultPacks ⇄ deploy-manifest» verde
 - [ ] Test strutturale «nessun import DB/fs / nessuna scrittura» nel modulo
 - [ ] Riga bussola in `PROJECT_CONTEXT.md` e `check-harness-boot.js` verde; `check-utf8-encoding.js` verde
