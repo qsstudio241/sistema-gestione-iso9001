@@ -1,8 +1,8 @@
 # Piano di allineamento schema TEST → PROD (solo priorità ALTA)
 
-**Stato: Batch A + B1 + B2 APPLICATI su TEST 2026-10-07; C / PROD / 167 fermi** · aggiornato 07/10/2026 · questa PR resta solo documentale (nessun apply, nessuna modifica a `.sql`/runner/codice runtime) · base: `origin/main`
+**Stato: Batch A + B1 + B2 + C APPLICATI su TEST 2026-10-07 (108 no-op); PROD / 167 fermi** · aggiornato 07/10/2026 · questa PR resta solo documentale (nessun apply, nessuna modifica a `.sql`/runner/codice runtime) · base: `origin/main`
 
-> Il report di gap (`gap-summary.md`, `migration-map.md`, `gap-columns.csv`, `gap-objects.csv`) **non è presente** in questo ambiente. Piano ricostruito dal repo (`database/migrations/`, `backend/database/migrations/`, runner `run-migration-*` in `backend/scripts/`, `docs/how-to/database-migrations.md`, `docs/reference/RISCHIO_MIGRAZIONI_168_169_2026-10-06.md`) e dai fatti del gap (TEST 116 → PROD 127 tabelle; 190 colonne mancanti: 166 in tabelle assenti + 24 in 7 comuni). **Batch A, B1 e B2 sono già stati applicati su TEST** (esiti sotto). STOP prima di C / PROD / 167. Colonne e oggetti di C vanno riverificati con una SELECT su TEST prima del prossimo batch.
+> Il report di gap (`gap-summary.md`, `migration-map.md`, `gap-columns.csv`, `gap-objects.csv`) **non è presente** in questo ambiente. Piano ricostruito dal repo (`database/migrations/`, `backend/database/migrations/`, runner `run-migration-*` in `backend/scripts/`, `docs/how-to/database-migrations.md`, `docs/reference/RISCHIO_MIGRAZIONI_168_169_2026-10-06.md`) e dai fatti del gap (TEST 116 → PROD 127 tabelle; 190 colonne mancanti: 166 in tabelle assenti + 24 in 7 comuni). **Batch A, B1, B2 e C sono già stati applicati su TEST** (esiti sotto). STOP prima di PROD / 167.
 
 ## 0. Esito Batch A (TEST, 2026-10-07)
 
@@ -128,9 +128,70 @@ Lista vuota per l'utente smoke = **filtro studio** (NC org 1001 su audit di un a
 
 MainPID **invariati** (nessun restart): TEST `734071`, PROD `668652`.
 
+## 0c. Esito Batch C (TEST, 2026-10-07)
+
+Applicato su DB `2026-06-18_SGQ_ISO9001`. **STOP dopo C**: PROD e 167 **non** toccati. Nomi colonne reali di B1/B2 già in §0b (`corrective_action_needed`, `corrective_action_evaluation_notes`, `effectiveness_verification_notes`; `correction_gate` / `effectiveness_verification` non esistono).
+
+### Pre-check (solo SELECT) e backup pre-C
+
+Pre-check coerente con §2: `notes`, `supplier_name` assenti; `UX_ndt_reports_number` presente, `UX_ndt_reports_org_number` assente; 0 duplicati `(organization_id, report_number)`; `norm_title` `NVARCHAR(200)` (max 183 caratteri in uso) senza indici, default, colonne calcolate, CHECK, FK, full-text, viste o trigger dipendenti; `attachments.ndt_report_item_id` presente. Unica osservazione: `IX_attachments_ndt_item` **assente** (vedi 108).
+
+| Voce | Valore verificato |
+|---|---|
+| Path | `/var/opt/mssql/data/TEST_pre_batchC_20261007.bak` |
+| Dimensione | 973202944 byte |
+| Opzioni | `COPY_ONLY` + `CHECKSUM`; `is_damaged = 0` (msdb) |
+| Verifica | `RESTORE VERIFYONLY WITH CHECKSUM` OK |
+| SHA-256 file | `95896be3c0666fa120a91cac47a7a72137d99d4fe64be252186ed6e40b037af1` |
+
+I quattro `.bak` (pre-A, pre-B1, pre-B2, pre-C) restano sul VPS.
+
+### Apply (runner solo-TEST #742, `check` poi `apply`, `SGQ_MIGRATION_TARGET=test`)
+
+Runner `backend/scripts/run-migrations-test-only.js` sha256 `5ae7a17344a0f66605756b9288f614ada273f5d391984487cf8169ddbaebc2f5`; `mergeDbEnv.js` `410da8f76e34109ac03601f68fc7b7cdc37ed6f1a5bc211df10525b4454fbe85`. `.sql` freschi da `origin/main` in una directory temporanea sul VPS (non le cartelle stale).
+
+| Mig | check | apply | sha256 `.sql` |
+|---|---|---|---|
+| 107 | parse OK 1/1 | OK, 1/1 batch, 1/1 oggetti | `391e7bb19408156b8126311feb955abead458946315a4f43da65ca0724c99512` |
+| 109 | parse OK 1/1 | OK, 1/1 batch, 1/1 oggetti | `b6171e214b23f07300ccbe05784359a7f052f068f7040c5231a9db4ffad69f59` |
+| 126 | parse OK 1/1 | OK, 1/1 batch, 1/1 oggetti | `73883d3b70d343b2b5c5a7cb979332f81c6938437fb1256a93da0d3acd82f83e` |
+| 119 | parse OK 1/1 | OK, 1/1 batch (nessun oggetto tracciato dal runner: `ALTER COLUMN`) | `82d9628666b58b0f8a252ece1b2d3570a775078757c0c0a41725caca06895fa1` |
+| 108 | parse OK 1/1; **indice `IX_attachments_ndt_item` mancante** | **non applicata** (no-op) | `29c63f62842ab9f8319545464a4de4e8c2fbc2664f90e1ac15727e512e694a71` |
+
+`apply` 107, 109, 126, 119: EXIT 0 (`apply completato: 4 migrazioni`). La 108 ha `IF NOT EXISTS` sulla colonna `ndt_report_item_id`, che esiste già: l'intero blocco, indice compreso, viene saltato, e il runner segnalerebbe comunque «mancante `IX_attachments_ndt_item`». Non è stata applicata e l'indice **non** è stato creato a mano: decisione aperta (§6).
+
+### Schema dopo C
+
+| Voce | Stato verificato |
+|---|---|
+| `UX_ndt_reports_number` (globale) | **assente** |
+| `UX_ndt_reports_org_number` | presente, UNIQUE, colonne `(organization_id, report_number)`, filtro `report_number IS NOT NULL`, non disabilitato |
+| `norm_document_sources.norm_title` | `NVARCHAR(500)` NULL (era 200) |
+| `ndt_report_items.notes` | presente, `NVARCHAR(MAX)` NULL |
+| `ndt_reports.supplier_name` | presente, `NVARCHAR(200)` NULL |
+| `attachments.ndt_report_item_id` | presente (già); CHECK `CHK_attachments_parent` la include; `IX_attachments_ndt_item` **assente** |
+| FK con CASCADE su tabelle NDT / norme | **0** (nessuna FK nuova) |
+
+### Dati invariati
+
+`non_conformities` 22, `attachments` 235, `ndt_reports` 1 (dopo A, B1+B2 e C); dummy residui **0**.
+
+### Smoke C e processi
+
+| Prova | Esito |
+|---|---|
+| `GET /ndt-reports` | 200 |
+| `POST /ndt-reports` (dummy `ZZ_SMOKE_`, con `supplier_name` e nota sulla riga) | 201; `GET` restituisce `supplier_name` e nota; il numero è auto-assegnato per organizzazione |
+| `DELETE /ndt-reports/:id` | 200 (soft delete); dummy poi rimosso via SQL con `DB_NAME()` verificato |
+| Stesso numero su altra org / duplicato nella stessa org | l'API non accetta numeri liberi: provato via SQL **in transazione con ROLLBACK** (righe `ZZ_SMOKE_`): altra org ok; stessa org errore 2601 (atteso); nulla persistito |
+| `norm_title` > 200 caratteri | `commitToRegistry` richiede un job di import e crea record reali: **non** eseguito. Provato via SQL in transazione con ROLLBACK: inserimento di 450 caratteri ok |
+| Regressione | `/non-conformities`, `/attachments`, `/welding-books`, `/welding/wpqr`, `/qualifications/stats`: 200 |
+
+Journal `sgq-backend-test` dal pre-check C: nessun «Invalid column/object name» né errori. MainPID **invariati** (nessun restart): TEST `734071`, PROD `668652`.
+
 ## 1. Obiettivo e perimetro
 
-Portare lo schema TEST a quello che il codice di `origin/main` (già in esecuzione su TEST) si aspetta, **solo per le lacune ALTA**. Dopo A+B1+B2, `/welding-books`, `/attachments` e `/non-conformities` rispondono 200. Resta il batch C (NDT / indice / `norm_title`).
+Portare lo schema TEST a quello che il codice di `origin/main` (già in esecuzione su TEST) si aspetta, **solo per le lacune ALTA**. Dopo A+B1+B2+C, `/welding-books`, `/attachments`, `/non-conformities` e `/ndt-reports` rispondono 200. Restano PROD e 167 (non toccati).
 
 | Fuori perimetro | Perché |
 |---|---|
@@ -164,7 +225,7 @@ Dipendenze padre già presenti su TEST (confermate nel pre-check A): `organizati
 | C | 119 | `norm_document_sources.norm_title` NVARCHAR(200) → 500 | BDM | sì (legge `.sql` da `/var/www/sgq-backend/database/migrations/`, non da BDM: copiarlo lì) | ALTER COLUMN (allargamento) | sì | basso |
 | C | 108 | `attachments.ndt_report_item_id` (solo verifica: attesa presente, dato che 156/165 poggiano su di essa) | BDM | sì | no | sì | basso |
 
-**Motivazione ordine.** (1) A prima di B: tabelle/colonne nuove senza dipendenze reciproche, nessun ALTER su dati; 110 apre la strada a `/welding-books` e al JOIN allegati; **`/attachments*` e `/non-conformities` 200 dopo B1** (confermato 07/10). (2) B1 da solo: 098 → 118 è l'unico passo distruttivo su tabella centrale; 118 deve seguire 098. (3) B2: catena additiva su `non_conformities` (113 dopo `management_reviews`; 153 dopo `projects`); l'ordine interno è libero, si usa il numerico. (4) C per ultimo: swap indice e ALTER COLUMN, indipendenti dal resto. **C gated.**
+**Motivazione ordine.** (1) A prima di B: tabelle/colonne nuove senza dipendenze reciproche, nessun ALTER su dati; 110 apre la strada a `/welding-books` e al JOIN allegati; **`/attachments*` e `/non-conformities` 200 dopo B1** (confermato 07/10). (2) B1 da solo: 098 → 118 è l'unico passo distruttivo su tabella centrale; 118 deve seguire 098. (3) B2: catena additiva su `non_conformities` (113 dopo `management_reviews`; 153 dopo `projects`); l'ordine interno è libero, si usa il numerico. (4) C per ultimo: swap indice e ALTER COLUMN, indipendenti dal resto. **C applicato su TEST (§0c).**
 
 **Senza `.sql` versionato (note aperte dopo B2):** **112 e 113** applicati su TEST con wrapper/script temp fuori repo — da versionare. 121 (`.sql` esisteva senza runner dedicato) è **già su TEST**. 19 tabelle PROD non hanno CREATE TABLE nel repo (non toccate qui).
 
@@ -206,7 +267,7 @@ Dipendenze padre già presenti su TEST (confermate nel pre-check A): `organizati
 | A **verificato 07/10** | 8 tabelle nuove (110: 3, 124: 2, 145: 1, 117: 2); +4 `qualifications`, +2 `custom_checklist_sections`, `projects.technical_review_checklist`, `management_reviews.input_monitoring` | **Eseguito (GET):** `/welding-books`, `/context-factors`, `/interested-parties`, profile, `gap-matrix`/`gap-statuses`, `/qualifications`, WPQR, `/projects`, `/management-reviews` → 200. `/attachments` e `/non-conformities` → 500 (B1/B2). POST/PUT qualifiche/commesse **non** nello smoke A | A chiuso. Rollback A: DROP tabelle nuove vuote / DROP COLUMN, o restore pre-A |
 | B1 **verificato 07/10** | `audit_id` nullable; nessuna CASCADE nuova; CASCADE verso `audits` **rimossa**; `CK_nc_source_category` con `sal_gap` (`not_trusted`, WITH NOCHECK come PROD/mig) | **Eseguito:** `GET /non-conformities` 200; `GET /attachments` 200 (prima 500). NC **senza audit** create / lette / cancellate OK. Lista vuota utente smoke = filtro studio (NC org 1001 su audit altro studio), non schema. `push-to-nc-register` **non** smoke reale | B1 chiuso. Rollback B1 = restore pre-B1 (nessun `*_rollback.sql` per 098) |
 | B2 **verificato 07/10** | colonne reali: `management_review_id`, `corrective_action_needed`, `corrective_action_evaluation_notes`, `source_risk_id`, `company_id`, `effectiveness_verification_notes`, `project_id`. **Non** `correction_gate` / `effectiveness_verification`. `FK_nc_project` SET NULL; `FK_nc_management_review` `not_trusted` (WITH NOCHECK) | Schema + smoke lista/CRUD NC senza audit coperti in §0b. PUT campi nuovi / NC da rischio e da riesame: non nel report di questa sessione | B2 chiuso. Rollback B2 = restore pre-B2 o DROP additivi in ordine inverso |
-| C | `UX_ndt_reports_number` assente, `UX_ndt_reports_org_number` presente; `norm_title` = 500; `ndt_report_items.notes`, `ndt_reports.supplier_name` | `GET/POST /ndt-reports` 200/201 (numero duplicato su altra org: ok); import norme `commitToRegistry` con titolo >200 caratteri 200 (prima: errore 8152) | Rollback: ricreare l'indice globale solo se nessun duplicato; `norm_title` non va ristretto (rischio troncamento) |
+| C **verificato 07/10** | `UX_ndt_reports_number` assente, `UX_ndt_reports_org_number` presente; `norm_title` = 500; `ndt_report_items.notes`, `ndt_reports.supplier_name`; `IX_attachments_ndt_item` assente (108 no-op) | `GET/POST /ndt-reports` 200/201; altra org ok / stessa org errore provati via SQL con ROLLBACK; `commitToRegistry` non eseguito (norm_title 450 caratteri provato via SQL con ROLLBACK). Dettaglio in §0c | C chiuso. Rollback C = restore pre-C; `norm_title` non va ristretto (rischio troncamento) |
 
 Fine di ogni batch: `journalctl` TEST senza errori di schema, MainPID invariato (nessun riavvio), pulizia dummy, report con conteggi prima/dopo.
 
@@ -219,15 +280,17 @@ Fine di ogni batch: `journalctl` TEST senza errori di schema, MainPID invariato 
 | `push-to-nc-register` non smoke reale | Dopo B1 il piano prevedeva `POST /audits/:ref/push-to-nc-register` 200. **Non eseguito** in sessione B1+B2 | Lead, smoke dedicato (non blocca C) |
 | Drift senza migrazione (4 `input_*` su `management_reviews`; 19 tabelle senza CREATE TABLE) | Dopo 112 manca ancora: `input_context_changes`, `input_customer_satisfaction`, `input_process_performance`, `input_risk_effectiveness`. POST/PUT riesame resta incompleto (rischio 9). Nessuno script da applicare | Committente (migrazione nuova = livello Alto) |
 | Numerazione dopo 169 e tabella di tracking migrazioni | Oggi nessun registro di cosa è applicato dove | Committente / lead |
+| `IX_attachments_ndt_item` assente su TEST | La 108 salta il blocco (colonna già presente), quindi l'indice filtrato non viene creato. Verificare se PROD lo ha; se serve, migrazione additiva dedicata | Lead / committente |
 | Hardening degli altri ~85 runner (target, CHECK_ONLY, guard, `-b`) | Fuori slice; l'hardening 158/159 (#738) è il modello | Lead |
 | Nuovo smoke CI di schema TEST↔PROD | Evita il ripetersi del gap | Lead |
 
 ## 7. Stima rischio e sequenza raccomandata
 
-Rischio complessivo **medio** (alto in B1, già chiuso). Tre backup VERIFYONLY OK. Nessun apply automatico: ogni batch richiede sì esplicito e **STOP** dopo la verifica. **C gated. PROD e 167 non toccati.**
+Rischio complessivo **medio** (alto in B1, già chiuso). Quattro backup VERIFYONLY OK. Nessun apply automatico: ogni batch richiede sì esplicito e **STOP** dopo la verifica. **PROD e 167 non toccati.**
 
 1. **Prerequisiti A** (backup pre-A, runner #742, `.sql`, finestra) → **fatto 07/10/2026**.
 2. **Batch A** (110, 124, 145, 117, 122, 136, 138, 128, 112) → **APPLICATO su TEST 07/10/2026** · verifica + smoke OK · STOP.
 3. **Batch B1** (098 → 118) → **APPLICATO su TEST 07/10/2026** · backup pre-B1 VERIFYONLY OK · `audit_id` nullable, CASCADE audits rimossa · smoke NC/allegati 200 · STOP.
 4. **Batch B2** (113, 121, 125, 134, 135, 153) → **APPLICATO su TEST 07/10/2026** · backup pre-B2 VERIFYONLY OK · 113 wrapper temp da versionare · STOP.
-5. **Prima di C:** nuovo `COPY_ONLY` + sì esplicito. Poi **Batch C** (107, 109, 126, 119, 108): NDT, indice unico, `norm_title` → verifica + smoke → report finale di confronto TEST/PROD. **Non** applicare C/PROD/167 senza sì.
+5. **Batch C** (107, 109, 126, 119; 108 no-op) → **APPLICATO su TEST 07/10/2026** · backup pre-C VERIFYONLY OK · indice per org presente, `norm_title` 500 · smoke NDT 200/201 · STOP.
+6. **Poi:** report finale di confronto TEST/PROD solo con sì esplicito. **Non** applicare PROD/167 senza sì.
