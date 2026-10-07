@@ -97,8 +97,9 @@ describe('Registro — voci kind:verify (sola lettura, nessuna scrittura)', () =
         ...Object.keys(WPQR_REPROCESSABLE_FIELDS),
     ];
 
-    it('esiste almeno la voce verify_9606_1 e ogni voce senza kind è un backfill', () => {
+    it('esistono le voci verify_9606_1 e verify_9606_2 e ogni voce senza kind è un backfill', () => {
         expect(VERIFY_REGISTRY.verify_9606_1).toBeDefined();
+        expect(VERIFY_REGISTRY.verify_9606_2).toMatchObject({ kind: 'verify', verifyFamily: '9606-2', table: 'qualifications' });
         for (const [key, def] of Object.entries(BACKFILL_REGISTRY)) {
             expect(def.kind === undefined || def.kind === 'backfill').toBe(true);
             expect(key).not.toMatch(/^verify_/);
@@ -111,6 +112,12 @@ describe('Registro — voci kind:verify (sola lettura, nessuna scrittura)', () =
             .filter((def) => !families.has(def.verifyFamily))
             .map((def) => `${def.key} (verifyFamily: ${def.verifyFamily})`);
         expect(unknown).toEqual([]);
+    });
+
+    it('(sync per tipo) una voce verify per ogni famiglia di pack con qualificazione saldatori, senza duplicare la famiglia', () => {
+        const families = Object.values(VERIFY_REGISTRY).map((def) => def.verifyFamily);
+        expect(new Set(families).size).toBe(families.length);
+        expect(families).toEqual(expect.arrayContaining(['9606-1', '9606-2']));
     });
 
     it('nessuna chiave verify compare in una whitelist di scrittura (né come chiave né come colonna)', () => {

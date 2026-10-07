@@ -7,6 +7,11 @@
  * Il form non usa `if (fw) else`: legge il profilo.
  *
  * ISO 14732: niente tabelle 9606 — `uses9606DimensionalBlock` è false.
+ *
+ * Varianti per norma (VQ-10): `JOINT_TYPE_PROFILES` resta il profilo ISO 9606-1 (default, invariato).
+ * `JOINT_TYPE_PROFILES_BY_STANDARD['9606-2']` ridefinisce solo ciò che cambia: in ISO 9606-2 lo spessore di prova
+ * è `t` del MATERIALE anche per BW (Tab. 3), non `s` depositato (Tab. 6 di 9606-1); per FW è Tab. 5. Il
+ * metodo di trasferimento non esiste in 9606-2 (Annex A). Per 9606-1 BW resta `s` (deposito) e FW `t`.
  */
 
 const DATE_FIELD_KEYS = [
@@ -67,9 +72,67 @@ const JOINT_TYPE_PROFILES = {
   },
 };
 
-function getJointTypeProfile(code) {
+const STANDARD_9606_1 = '9606-1';
+const STANDARD_9606_2 = '9606-2';
+
+const JOINT_TYPE_PROFILES_9606_2 = {
+  BW: {
+    key: 'BW',
+    label: 'Testa a testa (Butt Weld)',
+    standard: 'ISO 9606-2',
+    testThicknessKey: 'thickness_t_test_mm',
+    testThicknessLabel: 'Spessore materiale t del provino — prova (mm)',
+    testThicknessHint: 't del materiale del provino (non lo spessore depositato s di ISO 9606-1). Range di validità: Tabella 3 ISO 9606-2.',
+    validityThicknessHint: 'Campo di validità dello spessore del materiale secondo ISO 9606-2 Tabella 3. Non ricalcolare la designazione stampata.',
+    validityTable: '3',
+    thicknessKind: 'material_t',
+    extraVisibleKeys: ['thickness_t_test_mm', 'thickness_min_mm', 'thickness_max_mm', 'thickness_max_unlimited'],
+    hiddenKeys: ['thickness_s_test_mm'],
+    hiddenCommonKeys: ['transfer_mode'],
+    jointDetailHint: 'ss nb / ss mb / bs (Tab. 7), sl/ml se dichiarati sul certificato',
+  },
+  FW: {
+    key: 'FW',
+    label: 'Angolare (Fillet Weld)',
+    standard: 'ISO 9606-2',
+    testThicknessKey: 'thickness_t_test_mm',
+    testThicknessLabel: 'Spessore materiale t del provino — prova (mm)',
+    testThicknessHint: 't del materiale del provino. Range di validità: Tabella 5 ISO 9606-2.',
+    validityThicknessHint: 'Campo di validità secondo ISO 9606-2 Tabella 5. Non ricalcolare la designazione stampata.',
+    validityTable: '5',
+    thicknessKind: 'material_t',
+    extraVisibleKeys: ['thickness_t_test_mm', 'thickness_min_mm', 'thickness_max_mm', 'thickness_max_unlimited'],
+    hiddenKeys: ['thickness_s_test_mm'],
+    hiddenCommonKeys: ['transfer_mode'],
+    jointDetailHint: 'sl/ml (Tab. 8) se dichiarati sul certificato',
+  },
+};
+
+const JOINT_TYPE_PROFILES_BY_STANDARD = {
+  [STANDARD_9606_1]: JOINT_TYPE_PROFILES,
+  [STANDARD_9606_2]: JOINT_TYPE_PROFILES_9606_2,
+};
+
+/**
+ * Famiglia di norma dei profili: `9606-2` se il testo (tipo qualifica o riferimento norma) cita ISO 9606-2,
+ * altrimenti `9606-1` (default storico). Accetta anche la chiave diretta `'9606-2'`.
+ */
+function resolveProfileStandard(text) {
+  return /9606[\s-]*2(?!\d)/i.test(String(text || '')) ? STANDARD_9606_2 : STANDARD_9606_1;
+}
+
+function profileTableFor(standard) {
+  return JOINT_TYPE_PROFILES_BY_STANDARD[resolveProfileStandard(standard)];
+}
+
+/**
+ * @param {string} code BW | FW
+ * @param {{ standard?: string|null }} [opts] `standard`: famiglia (`'9606-2'`) o testo che la contiene;
+ *   assente = ISO 9606-1 (comportamento invariato).
+ */
+function getJointTypeProfile(code, { standard = null } = {}) {
   const k = String(code || '').trim().toUpperCase();
-  return JOINT_TYPE_PROFILES[k] || null;
+  return profileTableFor(standard)[k] || null;
 }
 
 function listJointTypeProfileKeys() {
@@ -102,7 +165,7 @@ function getVisibleFieldKeys({ jointType, productType, qualificationType } = {})
       profileGated: false,
     };
   }
-  const profile = getJointTypeProfile(jointType);
+  const profile = getJointTypeProfile(jointType, { standard: resolveProfileStandard(qualificationType) });
   if (!profile) {
     const keys = COMMON_9606_KEYS.filter((k) => !String(k).startsWith('pipe_diameter') || isPipeDiameterApplicable(productType));
     return {
@@ -114,7 +177,7 @@ function getVisibleFieldKeys({ jointType, productType, qualificationType } = {})
     };
   }
   let keys = [...COMMON_9606_KEYS, ...profile.extraVisibleKeys];
-  const hidden = new Set(profile.hiddenKeys || []);
+  const hidden = new Set([...(profile.hiddenKeys || []), ...(profile.hiddenCommonKeys || [])]);
   keys = keys.filter((k) => !hidden.has(k));
   if (!isPipeDiameterApplicable(productType)) {
     keys = keys.filter((k) => !String(k).startsWith('pipe_diameter'));
@@ -136,6 +199,9 @@ export {
   DATE_FIELD_KEYS,
   COMMON_9606_KEYS,
   JOINT_TYPE_PROFILES,
+  JOINT_TYPE_PROFILES_9606_2,
+  JOINT_TYPE_PROFILES_BY_STANDARD,
+  resolveProfileStandard,
   getJointTypeProfile,
   listJointTypeProfileKeys,
   uses9606DimensionalBlock,

@@ -306,6 +306,15 @@ const REPROCESSABLE_FIELD_REGISTRY = {
         qualTypeLike: '%9606%',
         verifyFamily: '9606-1',
     },
+    verify_9606_2: {
+        key: 'verify_9606_2',
+        kind: 'verify',
+        label: 'Verifica qualifiche ISO 9606-2 vs norma',
+        module: 'qualifiche',
+        table: 'qualifications',
+        qualTypeLike: '%9606%',
+        verifyFamily: '9606-2',
+    },
 };
 
 function listReprocessableFields() {
