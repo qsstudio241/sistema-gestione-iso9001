@@ -13,7 +13,7 @@
 
 ## Obiettivo (una slice = un risultato verificabile)
 
-Esiste `WpqrTestRunsEditor`: componente **controllato** (`value`, `onChange`, `readOnly`, `standardFamily`) che mostra e modifica la **tabella passate** della seconda pagina della WPQR — Run, processo, size del filler, corrente A (min/max), tensione V (min/max), tipo corrente/polarità, velocità filo (con unità), velocità di avanzamento (con unità), apporto termico (kJ/mm), trasferimento, note — con aggiunta/rimozione riga. Per `standardFamily = '14555'` mostra la **variante stud** (corrente, tempo, sporgenza, alzata; e, per scarica capacitiva, capacità, tensione di carica, gap/lift, forza molla). Non è montato in nessuna pagina in questa slice.
+Esiste `WpqrTestRunsEditor`: componente **controllato** (`value`, `onChange`, `readOnly`, `standardFamily`) che mostra e modifica la **tabella passate** della seconda pagina della WPQR — Run (etichetta **testo**, es. `2 +n`), processo, Ø del filler (numerico), corrente A e tensione V (**valore singolo**), tipo corrente/polarità (può restare vuota: ripiego sulla testata), velocità di avanzamento (valore + unità), apporto termico (valore + unità: `kJ/mm`, `J/mm`, `kJ/cm`), trasferimento, note — con aggiunta/rimozione riga. La **velocità filo** (valore + unità) è **opzionale e fuori dalla vista di default** (0/18 righe nel campione dei 10 certificati PROD, 07/10/2026: piano «Evidenze dal campione»). Per `standardFamily = '14555'` mostra la **variante stud** (corrente, tempo, sporgenza, alzata; e, per scarica capacitiva, capacità, tensione di carica, gap/lift, forza molla). Non è montato in nessuna pagina in questa slice.
 
 `apiService` guadagna tre metodi secondo il contratto del piano (le rotte nascono in WV-4/WV-5c): `getWpqrTestRuns(wpqrId)`, `saveWpqrTestRuns(wpqrId, runs)`, `verifyWpqr(fields, { runs, standardReference })`.
 
@@ -22,7 +22,7 @@ Esiste `WpqrTestRunsEditor`: componente **controllato** (`value`, `onChange`, `r
 Slice di sola presentazione: **non** aggiunge soglie, clausole né regole. Le colonne rispecchiano il modulo (15614-1 Annex B pag. 2, 15614-2 Annex A, 14555 Annex C) come da piano § 2.2; le righe marcate `*` («if required») sono **opzionali** nell'interfaccia.
 
 - **Coperte / mancanti:** non applicabile al codice.
-- **Si parte su:** campi e unità del piano § 2.2. Nessuna validazione normativa nel componente (solo coerenza formale: min ≤ max, unità presenti se il valore è presente).
+- **Si parte su:** campi e unità del piano § 2.2. Nessuna validazione normativa nel componente (solo coerenza formale: unità presenti con il valore; corrente e tensione sono valori singoli, nessun controllo min ≤ max su di essi).
 
 ## Checklist dato ↔ norma ↔ UI ↔ API
 
@@ -50,8 +50,8 @@ Nessuna nuova colonna. Nessun campo AI nuovo.
 
 1. Leggere **prima di scrivere markup**: `app/src/design-system/README.md` e `docs/reference/LIBRERIA_UI_SGQ.md`. Copiare lo schema del form WPQR (classi `wp-form-*` / tabelle esistenti) o del pannello copertura: **nessun look nuovo**, classi e colori esistenti, nessuna emoji decorativa, nessuna card KPI.
 2. Props `{ value = [], onChange, readOnly = false, standardFamily = '15614-1', disabled = false }`; nessun fetch dentro; `onChange(nextRuns)` a ogni modifica **confermata al blur** (mai a ogni tasto per la validazione; il valore digitato resta nello stato locale).
-3. Righe: id locale stabile, ordine di inserimento = `run_no`; pulsanti «Aggiungi passata» e «Rimuovi» **sempre visibili** (`disabled` + `title` se `readOnly`/`disabled`). Campi numerici con `inputMode="decimal"` e virgola/punto accettati; unità selezionabili (velocità filo: `m/min`|`mm/s`; avanzamento: `mm/min`|`mm/s`|`cm/min`; apporto termico: `kJ/mm`|`J/mm` — **nessuna conversione automatica**).
-4. Validazione formale al blur: min ≤ max (corrente, tensione); unità obbligatoria se il valore è presente; messaggio inline `role="alert"` sul campo; **la validazione non blocca `onChange`** (l'editor non decide sul salvataggio).
+3. Righe: id locale stabile, ordine di inserimento = `run_no`; l'**etichetta di passata è un campo di testo** (`run_label`: nel campione 7/18 non sono interi, es. `2 +n`, `3-4`; `run_no` = primo intero, calcolato al confermare); pulsanti «Aggiungi passata» e «Rimuovi» **sempre visibili** (`disabled` + `title` se `readOnly`/`disabled`). Campi numerici con `inputMode="decimal"` e virgola/punto accettati; unità selezionabili (avanzamento: `mm/min`|`mm/s`|`cm/min`; apporto termico: `kJ/mm`|`J/mm`|`kJ/cm`; velocità filo: `m/min`|`mm/s`) — **nessuna conversione automatica**. La colonna **velocità filo** non è nella vista di default: si attiva con un controllo esplicito (es. «Mostra velocità filo»), sempre visibile e mai obbligatoria.
+4. Validazione formale al blur: **unità obbligatoria se il valore è presente** (avanzamento, apporto termico, velocità filo); corrente e tensione sono **valori singoli** (nessun controllo min ≤ max); messaggio inline `role="alert"` sul campo; **la validazione non blocca `onChange`** (l'editor non decide sul salvataggio).
 5. Testo fisso: «Valori di prova letti dalla seconda pagina della WPQR. Le righe contrassegnate con * nel modulo sono facoltative.» Stato vuoto: «Nessuna passata archiviata».
 6. `apiService`: `getWpqrTestRuns(wpqrId)` → `GET /welding/wpqr/:id/test-runs`; `saveWpqrTestRuns(wpqrId, runs)` → `PUT /welding/wpqr/:id/test-runs` con `{ runs }`; `verifyWpqr(fields, { runs, standardReference })` → `POST /welding/wpqr/verify` con `{ fields, runs, standard_reference }`. Solo Axios, stesso stile degli altri metodi.
 7. `LIBRERIA_UI_SGQ.md`: una riga («Tabella passate WPQR» → `WpqrTestRunsEditor.jsx`).
@@ -63,7 +63,7 @@ Comandi: `cd app && NODE_ENV=test npx vitest run src/tests/wpqrTestRunsEditor.te
 
 - Render con `value` vuoto/popolato; aggiunta e rimozione riga; `onChange` al blur con payload atteso; `readOnly` (pulsanti visibili e disabilitati con `title`).
 - Variante stud (`standardFamily='14555'`) mostra le colonne stud e non quelle ad arco.
-- Validazione: min > max segnalato, unità mancante segnalata, `onChange` comunque emesso.
+- Validazione: unità mancante con valore presente segnalata, `onChange` comunque emesso; etichetta non intera (`2 +n`) conservata come testo; velocità filo assente dalla vista di default e attivabile.
 - Separatore decimale (virgola/punto) e valore vuoto → `null`.
 - `apiService`: endpoint e payload dei tre metodi (mock Axios).
 
