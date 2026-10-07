@@ -2,7 +2,7 @@
 
 const logger = require('../utils/logger');
 const { query } = require('../config/database');
-const { sendAlertEmail } = require('./alertMail.service');
+const { sendAlertEmail, isEmailSuppressed } = require('./alertMail.service');
 const { normalizeGap } = require('../utils/parseSourceGaps');
 
 const DEDUPE_DAYS = 7;
@@ -85,7 +85,7 @@ function escapeHtml(s) {
 
 /**
  * Crea (o riusa) una richiesta gap e notifica i superadmin se nuova.
- * @returns {Promise<{ row: object, created: boolean, emailed: boolean }>}
+ * @returns {Promise<{ row: object, created: boolean, emailed: boolean, suppressed?: boolean }>}
  */
 async function upsertGapRequest(gap, ctx = {}) {
   const normalized = normalizeGap(gap);
@@ -143,7 +143,11 @@ async function upsertGapRequest(gap, ctx = {}) {
     }
   }
 
-  return { row, created: true, emailed };
+  const result = { row, created: true, emailed };
+  if (!emailed && normalized.closurePath === 'platform' && isEmailSuppressed()) {
+    result.suppressed = true;
+  }
+  return result;
 }
 
 /**

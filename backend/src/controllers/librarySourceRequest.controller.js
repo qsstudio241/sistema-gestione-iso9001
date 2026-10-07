@@ -171,6 +171,7 @@ async function createSourceRequest(req, res) {
       item: result.row,
       created: result.created,
       emailed: result.emailed,
+      ...(result.suppressed ? { suppressed: true } : {}),
     });
   } catch (err) {
     logger.error('[LibrarySourceRequest] create failed:', err.message);

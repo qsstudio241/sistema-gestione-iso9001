@@ -9,11 +9,42 @@ try {
   nodemailer = null;
 }
 
+function envFlag(name) {
+  const v = String(process.env[name] || '').trim().toLowerCase();
+  return v === '1' || v === 'true';
+}
+
+/**
+ * Guard fail-safe invio email (unico punto per tutti i chiamanti).
+ * - `DISABLE_EMAIL=1|true`: sempre soppresso (vince su tutto).
+ * - `NODE_ENV=test`: soppresso salvo `ENABLE_EMAIL_IN_TEST=1|true`. NODE_ENV=test e' lo stesso
+ *   selettore che in `config/database.js` sceglie la sezione DB `test` (VPS TEST e Jest): in
+ *   produzione (NODE_ENV=production o assente) il guard non scatta senza `DISABLE_EMAIL`.
+ * @returns {{ suppressed: boolean, reason: string|null }}
+ */
+function getEmailSuppression() {
+  if (envFlag('DISABLE_EMAIL')) return { suppressed: true, reason: 'DISABLE_EMAIL' };
+  if (process.env.NODE_ENV === 'test' && !envFlag('ENABLE_EMAIL_IN_TEST')) {
+    return { suppressed: true, reason: 'TEST' };
+  }
+  return { suppressed: false, reason: null };
+}
+
+function isEmailSuppressed() {
+  return getEmailSuppression().suppressed;
+}
+
 /**
  * Invia email alert se SMTP configurato in .env.
+ * Con guard attivo non invia nulla e restituisce false (nessun destinatario/contenuto nei log).
  * @returns {Promise<boolean>}
  */
 async function sendAlertEmail(recipients, subject, html, cc) {
+  const suppression = getEmailSuppression();
+  if (suppression.suppressed) {
+    logger.info(`[AlertMail] email soppressa (ambiente TEST/DISABLE_EMAIL) motivo=${suppression.reason}`);
+    return false;
+  }
   if (!nodemailer) {
     logger.warn('[AlertMail] nodemailer non installato');
     return false;
@@ -45,4 +76,4 @@ async function sendAlertEmail(recipients, subject, html, cc) {
   return true;
 }
 
-module.exports = { sendAlertEmail };
+module.exports = { sendAlertEmail, getEmailSuppression, isEmailSuppressed };

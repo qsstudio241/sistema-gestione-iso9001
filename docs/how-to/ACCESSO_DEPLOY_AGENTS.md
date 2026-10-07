@@ -156,6 +156,22 @@ Riferimenti incrociati: [REFERENCE.md](../REFERENCE.md), [DEPLOY_CHECKLIST_RELEA
 
 ---
 
+## Email: soppressione su TEST (`DISABLE_EMAIL`)
+
+Tutti gli invii mail del backend (alert NC/qualifiche/scadenze, inviti, reset password, richieste fonti Libreria) passano da `sendAlertEmail` in `backend/src/services/alertMail.service.js`; l'unica eccezione, l'email di prova di `POST /notifications-config/test`, usa lo stesso guard. Il servizio TEST (`sgq-backend-test`, `WorkingDirectory=/var/www/sgq-backend-test`) carica `.env` dalla cartella corrente (`dotenv`, senza override delle variabili già presenti) oltre a `.env.test`: se lì ci sono `SMTP_*`, gli smoke/POST su TEST spediscono mail vere (visto il 07/10/2026).
+
+| Condizione | Esito |
+|---|---|
+| `DISABLE_EMAIL=1` o `true` | Invio soppresso, in qualsiasi ambiente (vince su tutto) |
+| `NODE_ENV=test` (VPS TEST e Jest; stesso selettore che sceglie il DB `test` in `config/database.js`) | Soppresso per default; riabilitabile con `ENABLE_EMAIL_IN_TEST=1` |
+| `NODE_ENV=production`, `development` o assente, senza `DISABLE_EMAIL` | **Invariato**: invio attivo. In produzione non serve alcun flag |
+
+Comportamento: log `[AlertMail] email soppressa (ambiente TEST/DISABLE_EMAIL)` (senza destinatari né contenuto); `sendAlertEmail` restituisce `false`, quindi `emailed=false`. `POST /library/source-requests` aggiunge `suppressed: true` solo quando la mail è soppressa; `POST /notifications-config/test` risponde `success: true, suppressed: true` senza inviare.
+
+**Passo operativo su TEST (dopo deploy del backend, solo con sì esplicito del committente):** il guard `NODE_ENV=test` è attivo da solo al deploy su `sgq-backend-test`. Per renderlo esplicito e indipendente da `NODE_ENV` aggiungere `DISABLE_EMAIL=1` in `/var/www/sgq-backend/.env.test` (o `Environment=DISABLE_EMAIL=1` nell'unit systemd di TEST) e riavviare **solo** `sgq-backend-test` (verifica MainPID prima/dopo). Non toccare `.env` né `sgq-backend` di produzione.
+
+---
+
 ## Cosa non fare mai
 
 - Non committare **`database.json`**, **`.putty-session.local`**, **`.ssh-deploy.local.ps1`**, file `.env` con segreti.

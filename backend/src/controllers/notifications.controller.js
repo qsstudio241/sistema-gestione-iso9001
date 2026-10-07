@@ -7,6 +7,7 @@
 
 const { getPool } = require('../config/database');
 const logger = require('../utils/logger');
+const { getEmailSuppression } = require('../services/alertMail.service');
 const { runNcEscalationForOrg } = require('../services/ncAlertEscalation.service');
 
 const MANUAL_NC_COOLDOWN_MS = 15 * 60 * 1000;
@@ -159,6 +160,16 @@ async function sendTestEmail(req, res) {
     const recipients = cfgResult.recordset[0]?.recipients_email;
     if (!recipients) {
       return res.status(400).json({ error: 'Nessun destinatario configurato. Salva prima la configurazione.' });
+    }
+
+    const suppression = getEmailSuppression();
+    if (suppression.suppressed) {
+      logger.info(`[Notifications] email di test soppressa (ambiente TEST/DISABLE_EMAIL) motivo=${suppression.reason}`);
+      return res.json({
+        success: true,
+        suppressed: true,
+        message: 'Invio email disattivato su questo ambiente (TEST/DISABLE_EMAIL): nessuna email inviata.',
+      });
     }
 
     if (!process.env.SMTP_HOST || !process.env.SMTP_USER) {
