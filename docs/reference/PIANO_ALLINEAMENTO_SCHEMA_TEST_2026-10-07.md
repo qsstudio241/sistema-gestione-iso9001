@@ -284,7 +284,7 @@ Fine di ogni batch: `journalctl` TEST senza errori di schema, MainPID invariato 
 | `push-to-nc-register` non smoke reale | Dopo B1 il piano prevedeva `POST /audits/:ref/push-to-nc-register` 200. **Non eseguito** in sessione B1+B2 | Lead, smoke dedicato (non blocca C) |
 | Drift senza migrazione (4 `input_*` su `management_reviews`; 19 tabelle senza CREATE TABLE) | Dopo 112 manca ancora: `input_context_changes`, `input_customer_satisfaction`, `input_process_performance`, `input_risk_effectiveness`. POST/PUT riesame resta incompleto (rischio 9). Nessuno script da applicare | Committente (migrazione nuova = livello Alto) |
 | Numerazione dopo 169 e tabella di tracking migrazioni | Oggi nessun registro di cosa è applicato dove | Committente / lead |
-| `IX_attachments_ndt_item` assente su TEST | La 108 salta il blocco (colonna già presente), quindi l'indice filtrato non viene creato. Verificare se PROD lo ha; se serve, migrazione additiva dedicata | Lead / committente |
+| `IX_attachments_ndt_item` assente su TEST | La 108 salta il blocco (colonna già presente). **Fatto (solo file, nessun apply):** [`170_attachments_ndt_item_index.sql`](../../database/migrations/170_attachments_ndt_item_index.sql) — indice filtrato non unico come PROD | — |
 | Hardening degli altri ~85 runner (target, CHECK_ONLY, guard, `-b`) | Fuori slice; l'hardening 158/159 (#738) è il modello | Lead |
 | Nuovo smoke CI di schema TEST↔PROD | Evita il ripetersi del gap | Lead |
 
