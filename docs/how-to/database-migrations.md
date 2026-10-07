@@ -75,7 +75,7 @@ SGQ_CONFIRM_TEST_APPLY=2026-06-18_SGQ_ISO9001 node backend/scripts/run-migration
 
 - `--mode` obbligatorio. `check` = `SET PARSEONLY ON` batch per batch + SELECT su `INFORMATION_SCHEMA`/`sys.*` (elenca oggetti mancanti, nessun DDL/DML). `apply` = un batch `GO` alla volta in transazione, poi verifica degli oggetti attesi.
 - Variabili: `SGQ_MIGRATION_TARGET` (se impostata deve essere `test`); `SGQ_CONFIRM_TEST_APPLY` uguale al DB atteso (doppia conferma, obbligatoria per `apply`). Connessione da `backend/config/database.json` sezione `test`.
-- Come evita PROD: config `test` ≠ `production` e database esatto; `DB_NAME()` esatto prima di ogni batch; `USE SGQ_ISO9001` rimosso con log, qualsiasi altro `USE` o nome a 3 parti verso `SGQ_ISO9001` blocca; allowlist (numeri fuori lista rifiutati); migrazioni senza `.sql` nel repo (112, 113) rifiutate con «`.sql` mancante: serve estrazione dal runner».
+- Come evita PROD: config `test` ≠ `production` e database esatto; `DB_NAME()` esatto prima di ogni batch; `USE SGQ_ISO9001` rimosso con log, qualsiasi altro `USE` o nome a 3 parti verso `SGQ_ISO9001` blocca; allowlist (numeri fuori lista rifiutati). 112 e 113 hanno `.sql` in `database/migrations/` (DDL dai runner; già applicati su TEST 2026-10-07 — nessun apply dalla PR di versionamento).
 - `--file-dir`: cartella con i `.sql` estratti da `origin/main` (non la cartella stale del VPS); il log riporta lo sha256 di ogni file.
 
 ---
