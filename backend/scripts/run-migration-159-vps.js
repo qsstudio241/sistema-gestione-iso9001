@@ -1,18 +1,71 @@
 /**
  * Migration 159 (VPS) — campi Stud Welding / P+T / doppio materiale su wpqr_records
  * (STUD-1, Mason 25/08/2026). Nessun range ISO 14555.
- * Uso (solo su VPS, via SSH):
- *   node /tmp/run-migration-159-vps.js
+ * Variabili: SGQ_MIGRATION_TARGET=test|prod (OBBLIGATORIA, nessun default: se manca o è diversa → exit 1
+ *   prima di ogni connessione); CHECK_ONLY=1 = dry-run (solo INFORMATION_SCHEMA, nessun DDL, exit 0).
+ * Uso (solo su VPS, via SSH; file copiato da solo in /tmp, quindi senza helper condivisi):
+ *   Verifica test: SGQ_MIGRATION_TARGET=test CHECK_ONLY=1 node /tmp/run-migration-159-vps.js
+ *   Apply test:    SGQ_MIGRATION_TARGET=test node /tmp/run-migration-159-vps.js
+ *   Apply prod:    SGQ_MIGRATION_TARGET=prod node /tmp/run-migration-159-vps.js  (solo dopo OK esplicito)
  */
-require('/var/www/sgq-backend/node_modules/dotenv').config({ path: '/var/www/sgq-backend/.env' });
-const { getPool } = require('/var/www/sgq-backend/src/config/database');
+const PROD_BACKEND_ROOT = '/var/www/sgq-backend';
+const TEST_BACKEND_ROOT = '/var/www/sgq-backend-test';
+const DB_NAME_BY_TARGET = { prod: 'SGQ_ISO9001', test: '2026-06-18_SGQ_ISO9001' };
 
-async function ensureColumn(pool, table, column, ddl) {
+const TABLE = 'wpqr_records';
+const COLUMNS = [
+    { name: 'qualifying_element', ddl: 'ALTER TABLE wpqr_records ADD qualifying_element NVARCHAR(20)' },
+    { name: 'base_material_group_2', ddl: 'ALTER TABLE wpqr_records ADD base_material_group_2 NVARCHAR(50)' },
+    { name: 'base_material_spec_2', ddl: 'ALTER TABLE wpqr_records ADD base_material_spec_2 NVARCHAR(100)' },
+];
+
+function resolveTarget(env = process.env) {
+    const raw = env.SGQ_MIGRATION_TARGET;
+    if (raw !== 'test' && raw !== 'prod') {
+        throw new Error(
+            `SGQ_MIGRATION_TARGET obbligatoria, valori ammessi esattamente "test" o "prod" (ricevuto: ${
+                raw === undefined ? '<non impostata>' : JSON.stringify(raw)
+            }). Nessun default.`
+        );
+    }
+    const backendRoot = raw === 'test' ? TEST_BACKEND_ROOT : PROD_BACKEND_ROOT;
+    return {
+        target: raw,
+        backendRoot,
+        envFile: raw === 'test' ? `${backendRoot}/.env.test` : `${backendRoot}/.env`,
+        checkOnly:
+            env.CHECK_ONLY === '1' || env.CHECK_ONLY === 'true' || env.SGQ_MIGRATION_CHECK_ONLY === '1',
+    };
+}
+
+function assertDbMatchesTarget(target, dbName) {
+    const expected = DB_NAME_BY_TARGET[target];
+    const name = String(dbName || '').trim();
+    if (!expected || name !== expected) {
+        throw new Error(
+            `Mismatch: target=${target} richiede il database "${expected}" ma la connessione punta a "${name || '<sconosciuto>'}" — abort.`
+        );
+    }
+}
+
+async function columnExists(pool, table, column) {
     const check = await pool.request().query(`
         SELECT 1 AS x FROM INFORMATION_SCHEMA.COLUMNS
         WHERE TABLE_NAME = '${table}' AND COLUMN_NAME = '${column}'
     `);
-    if (check.recordset.length === 0) {
+    return check.recordset.length > 0;
+}
+
+async function findMissingColumns(pool) {
+    const missing = [];
+    for (const col of COLUMNS) {
+        if (!(await columnExists(pool, TABLE, col.name))) missing.push(col);
+    }
+    return missing;
+}
+
+async function ensureColumn(pool, table, column, ddl) {
+    if (!(await columnExists(pool, table, column))) {
         await pool.request().query(ddl);
         console.log(`[159] Colonna ${column} aggiunta`);
     } else {
@@ -20,15 +73,47 @@ async function ensureColumn(pool, table, column, ddl) {
     }
 }
 
-async function run() {
-    const pool = await getPool();
+function defaultLoadBackend(backendRoot, envFile) {
+    require(`${backendRoot}/node_modules/dotenv`).config({ path: envFile });
+    return require(`${backendRoot}/src/config/database`);
+}
+
+async function run({ env = process.env, loadBackend = defaultLoadBackend } = {}) {
+    let cfg;
     try {
-        await ensureColumn(pool, 'wpqr_records', 'qualifying_element',
-            'ALTER TABLE wpqr_records ADD qualifying_element NVARCHAR(20)');
-        await ensureColumn(pool, 'wpqr_records', 'base_material_group_2',
-            'ALTER TABLE wpqr_records ADD base_material_group_2 NVARCHAR(50)');
-        await ensureColumn(pool, 'wpqr_records', 'base_material_spec_2',
-            'ALTER TABLE wpqr_records ADD base_material_spec_2 NVARCHAR(100)');
+        cfg = resolveTarget(env);
+    } catch (e) {
+        console.error('[159] ERRORE:', e.message);
+        return 1;
+    }
+
+    console.log(`[159] target=${cfg.target} env=${cfg.envFile} checkOnly=${cfg.checkOnly ? 'yes' : 'no'}`);
+    let pool;
+    let exitCode = 0;
+    try {
+        const { getPool } = loadBackend(cfg.backendRoot, cfg.envFile);
+        pool = await getPool();
+
+        const dbRow = await pool.request().query('SELECT DB_NAME() AS db_name');
+        const dbName = dbRow.recordset[0] && dbRow.recordset[0].db_name;
+        assertDbMatchesTarget(cfg.target, dbName);
+        console.log(`[159] database=${dbName}`);
+
+        if (cfg.checkOnly) {
+            const missing = await findMissingColumns(pool);
+            if (missing.length === 0) {
+                console.log('[159] CHECK_ONLY: nessuna colonna mancante, migrazione non necessaria.');
+            } else {
+                console.log(`[159] CHECK_ONLY: mancano ${missing.length} colonne su ${TABLE}:`);
+                missing.forEach((c) => console.log(`[159]   - ${c.name}`));
+            }
+            console.log('[159] CHECK_ONLY: nessun DDL eseguito.');
+            return 0;
+        }
+
+        for (const col of COLUMNS) {
+            await ensureColumn(pool, TABLE, col.name, col.ddl);
+        }
 
         const verify = await pool.request().query(`
             SELECT COLUMN_NAME, DATA_TYPE, CHARACTER_MAXIMUM_LENGTH, IS_NULLABLE
@@ -43,10 +128,15 @@ async function run() {
         console.log('[159] Migration completata.');
     } catch (e) {
         console.error('[159] ERRORE:', e.message);
-        process.exitCode = 1;
+        exitCode = 1;
     } finally {
-        await pool.close().catch(() => {});
-        process.exit();
+        if (pool) await pool.close().catch(() => {});
     }
+    return exitCode;
 }
-run();
+
+module.exports = { resolveTarget, assertDbMatchesTarget, findMissingColumns, run, COLUMNS };
+
+if (require.main === module) {
+    run().then((code) => process.exit(code));
+}

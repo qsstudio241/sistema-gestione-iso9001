@@ -57,6 +57,7 @@ Da fare **prima** di produzione. Riportare l'esito nella PR (checklist «Migrazi
 | **PC sviluppo** | `backend/config/database.json` (gitignored) + script in `database/migrations/` |
 | **Cloud Agent** | Script Node su VPS con `require('/var/www/sgq-backend/src/config/database')` — vedi [GUIDA_CONSOLIDATA § C](../GUIDA_CONSOLIDATA.md#c-database-e-repro) — **non** in questa slice di governance |
 | **169 (VPS)** | `backend/scripts/run-migration-169-vps.js` sul server dopo scp (pattern 168). `SGQ_MIGRATION_TARGET=test\|prod` (default prod); `CHECK_ONLY=1` = pre-count senza DROP. Poi `169_verify.sql` con `esito=PASS`. |
+| **158 / 159 (VPS)** | `run-migration-158-vps.js` / `run-migration-159-vps.js`: `SGQ_MIGRATION_TARGET=test\|prod` **obbligatoria** (nessun default, exit 1 se manca); `CHECK_ONLY=1` = solo INFORMATION_SCHEMA, elenca le colonne mancanti, nessun DDL. Esempio: `SGQ_MIGRATION_TARGET=test CHECK_ONLY=1 node /tmp/run-migration-158-vps.js`. |
 | **CI** | `.github/workflows/ci-migrations.yml` — contratto L1 required; apply-on-empty applica **da 169** (pre-169 saltato, verde se solo quel gap) |
 
 **FK SQL Server:** evitare `ON DELETE` su ADD CONSTRAINT in un unico statement; colonne e FK in step separati (regola in guida).
