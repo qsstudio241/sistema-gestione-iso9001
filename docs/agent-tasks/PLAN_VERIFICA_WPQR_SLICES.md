@@ -119,6 +119,80 @@ Fonti Markdown:
 
 Il dataset è piccolo (13 record): il campione di § 4.1 coincide di fatto con **quasi tutto il PROD**, quindi il gate «campione reale» sulle regole `warn` resta, ma va letto come «le 10 WPQR con PDF (lette in sola lettura; fixture nel repo solo anonimizzate/sintetiche)», non come un campione statistico.
 
+## Evidenze dal campione di 10 certificati PROD (07/10/2026)
+
+> **Fonte**: lettura in **sola lettura** dei 10 PDF di WPQR conservati in PROD (HITL 1: richiesta dati chiusa per il campione disponibile; uso tecnico dei dati in chiaro confermato dal committente). **Solo aggregati e categorie anonime**: il report analitico (etichette anonime WPQR-01…10) resta **fuori da Git**; in questo documento non compare nessun valore, nome, numero di certificato o azienda cliente, e nessun PDF è nel repo. **N = 10, 2 enti emittenti**: ordini di grandezza, non statistica; le percentuali sono indicative.
+
+| Misura | Esito sul campione |
+|--------|--------------------|
+| Supporto | **4/10 testo nativo** · **6/10 scansione** senza strato testo (0 caratteri estraibili) |
+| Pagine | **122** in totale, ma il certificato vero è di **3–4 pagine**: il resto sono rapporti di laboratorio e certificati allegati |
+| Layout (categorie) | **A** (4 PDF, testo nativo, ente 1, 2024-25): tabella a 12 colonne, apporto in kJ/mm, avanzamento in mm/s · **B** (3 PDF, scansione, ente 1, 2019): stessa struttura di A, apporto in **J/mm** · **C** (3 PDF, scansione, ente 2, 2017, 4 pagine): tabella a 9 colonne, apporto in **kJ/cm**, avanzamento in **cm/min**, **nessuna polarità per riga**, nessuna data di saldatura |
+| Tabella passate («Record of weld test») | **10/10**, **18 righe** (1–4 per certificato); nei layout A/B è a pag. 2, nel layout C la «pagina 2» contiene solo disegno del giunto e tabella (gas, preheat e tecnica a pag. 3, esiti a pag. 4) |
+| Colonne con valore (18 righe) | processo 18/18 (codice ISO 4063: 135 su 16 righe, 121 su 2) · Ø filler **numerico** 18/18 · corrente e tensione **valore singolo** 18/18 (0 range) · velocità di avanzamento **18/18** (non è «opzionale» nella pratica) · apporto termico 17/18 · polarità per riga 11/18 (assente nel layout C) · trasferimento per riga 3/18 (scritto nella colonna «Other») · **velocità filo 0/18** (solo un campo di testata `N.A.` nei layout A/B) |
+| Colonne del modulo sempre vuote | rendimento e lunghezze di cordone/elettrodo (`N.A.` su 17 righe, assenti nel layout C): **non si archiviano** |
+| Etichetta di passata | **7/18 non intere** (`2 +n`, `3-4`, …): `run_label` testo, `run_no` = primo intero |
+| Unità | apporto termico: **kJ/mm** (4 PDF) · **J/mm** (3) · **kJ/cm** (3); avanzamento: **mm/s** (7) · **cm/min** (3) |
+| Coerenza apporto termico | il valore dichiarato è riprodotto da **k·I·U/v** entro ±0,7 % su **17/17** righe con tutti i dati, con **k = 0,8** per il 135 e **k = 1,0** per il 121; k non è mai scritto sul certificato (4/10 citano solo il metodo A di ISO/TR 18491 con k secondo ISO/TR 17671-1): è **apporto termico (con k)**, non energia d'arco; `heat_input_kind` esplicito solo in **4/10** |
+| Range di apporto termico (pag. 1) | dichiarato **10/10**: **tolleranza relativa** alla prova (`±25 %`, `−25 %`, `+illimitato/−25 %`) in **7/10**; **assoluto** (min o min–max, kJ/cm) in 3/10 |
+| Preheat / interpass | pag. 1 ha **una sola colonna** («Range of qualification»; «Test piece» assente 10/10); il **preheat di prova** (pag. 2 o 3) coincide con il `Tp` espresso a pag. 1 in **10/10**; interpass di prova presente in 5/10 (coerente con `Ti` dove entrambi ci sono); il limite inferiore `Tp − 50` non è mai scritto come numero |
+| Condizioni di processo (gruppo B) | portata gas **8/10** (5 su 8 come range) · diametro ugello **10/10** · distanza torcia-pezzo/stick-out **7/10** (sempre range) · angolo torcia 4/10 · tecnica del cordone, preparazione del giunto, metodo di pulizia, elettrodo singolo/multiplo **10/10** |
+| Sempre «nessuno» | PWHT scritto `None` **10/10** (con T/t/metodo `N.A.`) · gas al rovescio `None`/`-` 10/10 · tungsteno 0/10 (nessuna GTAW) · post-riscaldo: **nessun campo** nel modulo (0/10) |
+| Esiti prova | esito **qualitativo 10/10**, vocabolario variabile (`Accettabile / Satisfactory`, `Acceptable`, `Not required`, `--`, `N.A.`), **mai KO** · **numeri sulla pagina esiti 6/10** (trazione 3, resilienza 3, HV massimo per zona 3, misure macro 1); i requisiti di accettazione compaiono solo accanto ai numeri (2/10); la durezza per impronta non compare mai |
+| `test_date` | leggibile **7/10** (layout A/B: data di saldatura); **3/10** (layout C) hanno solo la data di emissione |
+| Norma / edizione | **3/10 edizione 2012** (legacy → `non_verificabile_fonte_mancante`, D7) · 3/10 edizione 2017 · 3/10 edizione 2019 · **1/10 qualifica ISO 15613 con range espresso secondo 15614-1:2019 Level 2** · Level dichiarato 7/10, assente 3/10 (default Level 2) |
+| Prodotto | 10/10 prove su **piastra** (nessun tubo); diametro esterno a pag. 1 sempre in forma di regola testuale |
+
+### Dove il campione corregge il piano
+
+| # | Ipotesi del piano | Evidenza | Recepimento |
+|---|-------------------|----------|-------------|
+| 1 | Apporto termico per passata `heat_input_kj_mm` (solo kJ/mm) | 6/10 certificati **non** sono in kJ/mm | **valore + unità** per riga (§ 2.2); nessuna conversione silenziosa |
+| 2 | Velocità di avanzamento «opzionale (`*`)» | 18/18 righe, in 2 unità | valore + **unità obbligatoria** (`mm/s`, `cm/min`) |
+| 3 | Corrente e tensione come `min`/`max` | 18/18 valori singoli, 0 range | **colonne singole** `current_a`, `voltage_v` |
+| 4 | `filler_size` testo («Ø 1,2», «3,2/4,0») | 18/18 numerico | `filler_diameter_mm` numerico |
+| 5 | Velocità filo per passata come dato atteso | 0/18 | colonna **nullable**, fuori dall'editor di default, **mai `warn`** |
+| 6 | Polarità per riga sempre presente | assente per riga in 3/10 (layout C) | colonna nullable con **ripiego su `current_type`** di testata |
+| 7 | Range di apporto termico solo assoluto (`heat_input_range_min/max`) | relativo in 7/10 | colonne per **tolleranza relativa** `heat_input_tol_*_pct` (+ base e unità) |
+| 8 | `COMP.HEAT_INPUT_KIND` `warn` | tipo esplicito solo in 4/10 | **`info`** (60 % di falsi positivi altrimenti) |
+| 9 | Preheat/interpass di prova ambigui, colonne `*_test` solo «se il campione mostra l'ambiguità» (D4 «No») | il valore di prova c'è (preheat 10/10, interpass 5/10) e coincide con `Tp`/`Ti` | **D4 = Sì**: colonne `preheat_temp_test`, `interpass_temp_test` |
+| 10 | `pwps_ref` (n. pWPS) | pag. 2 riporta il numero WPS (10/10) | **non aggiunta**: coperta da `wps_ref` (già in DB) |
+| 11 | Parametri di processo del gruppo B «ingest solo dopo il campione» (D3) | presenti e leggibili (gas 8/10, ugello 10/10, distanza 7/10) | colonne con range min/max; ingest ammesso con **revisione umana** |
+| 12 | `post_heating` come dato del modulo | 0/10: nessun campo distinto dal PWHT | colonna mantenuta (nullable), **nessuna estrazione AI** né voce Rielaborazioni finché non compare in un PDF |
+| 13 | `filler_size` di testata come dato di prova | a pag. 1 è quasi sempre testo di regola (7/10); la misura vera è per riga | resta testo informativo; nessuna regola su di esso |
+
+### Limiti ingest WV-4b e rischi
+
+Fonte: pipeline attuale (`documentIngestPipeline.service.js` → `extractDocumentText`: `pdf-parse`, poi OCR Tesseract se < 50 caratteri; `backend/src/utils/ocrExtractor.js`: 150 dpi, PSM 3, `maxPages: 3`), replicata sul campione. Questi punti entrano nel brief di WV-4b (non ha un brief proprio: vive in § 6 «Sotto-slice di WV-4» e § 6.3 WV-4).
+
+- **6/10 scansioni senza testo**: la tabella passate non è affidabilmente estraibile con il solo OCR attuale → **OCR migliore o lettura visiva della pagina 2** (immagine al modello) e **revisione umana obbligatoria** (`source = 'ai'` visibile; esito esplicito `needs_review` nella voce Rielaborazioni per i PDF scansionati).
+- **Layout B illeggibile con OCR del backend** (150 dpi, PSM 3): riconosciuti **2/10** numeri distintivi della tabella. **Layout C**: numeri riconosciuti **10/11**, ma **associazione riga/colonna non verificata**; un OCR più spinto (PSM 6, 300 dpi) ha fatto peggio (0/11): la scelta di parametri non è banale, va misurata sulle fixture sintetiche e su un riscontro visivo.
+- **`maxPages: 3` taglia la pagina 4 dei layout C**, cioè proprio gli esiti con valori: per `doc_type = wpqr` serve un limite ≥ 4 o la selezione delle sole pagine del certificato.
+- **Rumore da allegati**: nei layout A il **60–75 %** del testo estratto proviene dai rapporti di laboratorio allegati; escludere o riassumere le pagine di allegato prima di inviarle al modello.
+- **La «pagina 2» si riconosce dall'intestazione, non dalla posizione** («Record of weld test» / «Parametri di esecuzione del test»; nel layout C «Joint details and welding sequences»): nel layout C gas, preheat e tecnica sono a pag. 3 e gli esiti a pag. 4.
+- **`test_date` non si deduce dalla data di emissione**: 3/10 hanno solo l'emissione → `null`.
+- **Mappa esiti**: `Accettabile` / `Satisfactory` / `Acceptable` → `OK`; `Not required`, `--`, `N.A.`, `—` → **`NA`**; **mai `KO` dedotto**.
+- **Valori «nessuno» espliciti**: `pwht = false` quando il certificato scrive `None` (il `0` attuale in PROD non distingue «no» da «non letto»: l'AI deve restituire `false`, non `null`, solo se legge `None`); `backing_gas = 'none'` quando scrive `None`/`-`.
+- **`N.A.` → `null`**; unità lette **così come scritte** (`kJ/cm`, `cm/min`, `J/mm`); trasferimento anche dalla colonna «Other».
+- **Esiti quantitativi** (trazione, resilienza, HV massimo) sono sulla pagina esiti in **6/10**: l'**ipotesi del piano di NON archiviarli resta valida** (D5): non servono né alla verifica né alla WPS e il numero vero sta nel rapporto di laboratorio allegato; restano gli esiti `OK/KO/NA`.
+- **Backfill**: dei 10 candidati, 6 sono scansioni (lettura poco affidabile) → l'esito della voce Rielaborazioni distingue «da rivedere»; prima di promettere il backfill resta valida la verifica dell'esistenza dei file in `/uploads` (riga *j* di «Implicazioni»).
+
+### Gap non validati dal campione
+
+Il campione **non esercita**: ISO 15614-2 (0 certificati), ISO 14555 / stud (0; campi stud e capacitiva restano solo su fixture), **tubi** (10/10 piastra: `COMP.DIAMETER`, `diameter_test_mm` mai osservati), **GTAW** (tungsteno 0/10, gas al rovescio sempre `None`), **esiti KO** (mai presenti: la gestione resta solo teorica), **range di corrente/tensione** (0/18) e **range espressi come numeri** per spessore depositato o gas (solo come tolleranza/regola testuale), SAW **solo parzialmente** (2 righe, stesso certificato-tipo) e saldature di testa multi-processo. Finché non arriva un altro campione queste aree restano **`non_verificabile_*` / HITL**: nessun `warn`, nessuna regola codificata «a sentimento». Il campione copre inoltre soltanto **2 enti emittenti**: layout di altri enti vanno trattati come ignoti (ingest con revisione umana).
+
+### Fixture sintetiche previste
+
+**Convenzione verificata nel repo (07/10/2026)**: non esistono directory `__fixtures__`/`fixtures` nei test backend. Le fixture esistenti sono **sintetiche e in linea nei test** (`backend/src/services/qualificationVerify/verifyRealPatterns.test.js`: pattern inventati con identificativi `SYN-…`; `backend/src/services/wpqrIngest.service.test.js`: testo breve passato inline come `text:` al `runDocumentIngest` simulato) e un generatore Python di PDF sintetici (`backend/scripts/pdf_to_json/tests/pdf_fixtures.py`). Il test `backend/scripts/deploy-manifest-json-requires.test.js` scandisce solo i `.js` di `backend/src/`: **un file di testo non entra nel manifest**. Poiché il testo di un certificato è troppo lungo per stare in linea, si adotta la convenzione più vicina: **file `.txt` sintetici** in `backend/src/services/__fixtures__/wpqr/`, letti da `wpqrIngest.service.test.js` con `fs.readFileSync` e passati come `text` al `runDocumentIngest` simulato (l'AI resta simulata; gli oggetti attesi stanno in linea nel test). *Scelta*: il path `backend/src/services/wpqrIngest/__fixtures__/` non è usabile perché `wpqrIngest` non è una cartella (esiste solo `wpqrIngest.service.js`). **Mai PDF reali**, mai valori copiati dal campione: numeri interamente inventati, ma coerenti con `HI = k·I·U/v` (k = 0,8 per il 135, 1,0 per il 12x) per un eventuale test di coerenza interna futuro.
+
+| Fixture (deliverable) | Contenuto | Cosa deve verificare il test | Slice |
+|-----------------------|-----------|------------------------------|-------|
+| (a) `backend/src/services/__fixtures__/wpqr/wpqr_layout_digitale.txt` — **layout digitale, testo nativo** | pagina 1 con range (preheat in forma `Tp – CT`, apporto con tolleranza relativa **−25 %**); pagina 2 con blocco di intestazione + tabella passate a **2–4 righe**, etichette **non intere** (testo tipo `2 +n`), apporto in **kJ/mm**, avanzamento in mm/s, colonne rendimento/lunghezze `N.A.`; coppie etichetta/valore (gas flow come range, ugello, stick-out come range, PWHT `none`, wire speed `N.A.`); pagina esiti con vocabolario `Accettabile / Satisfactory` e `--` | `run_label` conservata come testo e `run_no` = primo intero; `N.A.` → `null`; unità kJ/mm conservata; `heat_input_tol_minus_pct = 25` (nessun massimo); `pwht = false`, `backing_gas = 'none'`; `wire_feed_speed = null` senza avviso; esiti → `OK`/`NA` | **WV-4b** (estrazione e mappatura) · **CORE** (la vista WPQR normalizza polarità per riga/ripiego, unità e `heat_input_kind` assente senza `warn`) |
+| (b) `backend/src/services/__fixtures__/wpqr/wpqr_layout_scansione_ocr.txt` — **layout da scansione, testo OCR rumoroso** | testo con errori tipici di OCR (cifre scambiate, righe spezzate, colonne fuse); «pagina 2» con solo tabella a 9 colonne (**kJ/cm**, **cm/min**, nessuna polarità per riga); gas/preheat a pagina 3; **pagina esiti alla pagina 4** con valori e `Acceptable` / `Not required`; nessuna data di saldatura (solo emissione) | il limite **`maxPages`** non taglia la pagina 4 per `doc_type = wpqr` (test sul testo estratto); riconoscimento della pagina 2 **per intestazione**; `Not required` → `NA`; **`test_date = null`** (non dedotta); flag `needs_review` per sorgente scansione; unità `kJ/cm`/`cm/min` conservate | **WV-4b** · **CORE** (ripiego polarità su `current_type`; Level assente → default 2 con `level_declared = false`; edizione legacy → `non_verificabile_fonte_mancante`) |
+| (c) `backend/src/services/__fixtures__/wpqr/wpqr_layout_misto_15613.txt` — **layout misto ISO 15613** | testo nativo con intestazione di qualifica ISO 15613 e riga di range secondo 15614-1:2019 Level 2; tabella passate con apporto in **J/mm**, processo **SAW (12x)** senza portata gas e con stick-out come range ampio; trasferimento nella colonna «Other» su una riga; spessore depositato a due valori | `range_standard_reference` letto dal range e `standard_reference` del profilo = 15614-1 (la 15613 resta in nota); unità J/mm conservata (nessuna conversione scritta); SAW: portata gas `null` senza avviso; due valori di spessore depositato → testo in `other_test_info`; trasferimento da «Other» | **WV-4b** · **CORE** (risoluzione profilo 15613 → parte 15614 dichiarata; conversione J/mm → kJ/mm solo in memoria) |
+
+I tre file nascono con **WV-4b** (onda 2), che aggiunge anche il test di lettura; **CORE** (WV-1, onda 1, precedente) **non li legge**: la vista lavora su review-fields, quindi i suoi test costruiscono **in linea** oggetti sintetici con le stesse caratteristiche descritte nella colonna «Cosa deve verificare». Il perimetro file di WV-1 e di WV-4 resta così disgiunto (§ 6.2).
+
 ---
 
 ## 1. Architettura
