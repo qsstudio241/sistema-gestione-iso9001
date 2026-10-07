@@ -189,6 +189,10 @@ Runner `backend/scripts/run-migrations-test-only.js` sha256 `5ae7a17344a0f666057
 
 Journal `sgq-backend-test` dal pre-check C: nessun «Invalid column/object name» né errori. MainPID **invariati** (nessun restart): TEST `734071`, PROD `668652`.
 
+## 0d. Gap residuo dopo A+B1+B2+C (confronto TEST↔PROD in sola lettura)
+
+Tabelle solo PROD 11 → 3, colonne 190 → 24, indici 39 → 10, FK 17 → 1, CHECK 6 → 0; nessun residuo solo-TEST. Resta di priorità ALTA solo il riesame (4 colonne `input_*` senza `.sql`); MEDIA: 167, 120, `UX_auditor_orgs_email` (144). Dettaglio, uso nel codice e punti specifici (`IX_attachments_ndt_item`, `not_trusted`) in [`GAP_RESIDUO_SCHEMA_TEST_PROD_2026-10-07.md`](GAP_RESIDUO_SCHEMA_TEST_PROD_2026-10-07.md). Nessun apply proposto.
+
 ## 1. Obiettivo e perimetro
 
 Portare lo schema TEST a quello che il codice di `origin/main` (già in esecuzione su TEST) si aspetta, **solo per le lacune ALTA**. Dopo A+B1+B2+C, `/welding-books`, `/attachments`, `/non-conformities` e `/ndt-reports` rispondono 200. Restano PROD e 167 (non toccati).
