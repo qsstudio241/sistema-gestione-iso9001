@@ -174,6 +174,51 @@ describe('guard configurazione e DB_NAME', () => {
         expect(errOut()).toMatch(/coincide con production/);
     });
 
+    describe('caricamento config reale con override DB_* (regressione Bugbot)', () => {
+        const mergeDbEnv = require('./mergeDbEnv');
+        const savedEnv = { ...process.env };
+        afterEach(() => {
+            Object.keys(process.env).filter((k) => k.startsWith('DB_')).forEach((k) => delete process.env[k]);
+            Object.assign(process.env, savedEnv);
+        });
+        const fileCfg = (testOver = {}, prodOver = {}) => ({
+            test: { server: 'test-host', port: 11043, database: TEST_DB, user: 'u', password: 'secretpw1', ...testOver },
+            production: { server: 'prod-host', port: 1433, database: PROD_DB, user: 'u', password: 'secretpw1', ...prodOver },
+        });
+
+        it('DB_SERVER + DB_DATABASE validi per TEST non vengono scambiati per una coincidenza con production', async () => {
+            jest.spyOn(mergeDbEnv, 'loadDatabaseJsonConfigs').mockReturnValue(fileCfg());
+            process.env.DB_SERVER = 'test-host-vps';
+            process.env.DB_DATABASE = TEST_DB;
+            writeSql({ 124: SQL_3_BATCH });
+            const pool = fakePool({ readOnly: true });
+            const connect = jest.fn().mockResolvedValue(pool);
+            const code = await run({ argv: ['--mode=check', '--migrations=124', `--file-dir=${tmp}`], env: {}, connect, repoRoot: REPO_ROOT });
+            expect(code).toBe(0);
+            expect(connect.mock.calls[0][0].server).toBe('test-host-vps');
+        });
+
+        it('DB_DATABASE=SGQ_ISO9001 (PROD) come override: rifiutato senza connessioni', async () => {
+            jest.spyOn(mergeDbEnv, 'loadDatabaseJsonConfigs').mockReturnValue(fileCfg());
+            process.env.DB_DATABASE = PROD_DB;
+            writeSql({ 124: SQL_3_BATCH });
+            const connect = jest.fn();
+            expect(await run({ argv: ['--mode=check', '--migrations=124', `--file-dir=${tmp}`], env: {}, connect, repoRoot: REPO_ROOT })).toBe(1);
+            expect(connect).not.toHaveBeenCalled();
+        });
+
+        it('sezione test del file uguale a production (stesso server e database): rifiutata anche con override', async () => {
+            const same = { server: 'same-host', database: TEST_DB, user: 'u', password: 'secretpw1' };
+            jest.spyOn(mergeDbEnv, 'loadDatabaseJsonConfigs').mockReturnValue({ test: { ...same }, production: { ...same } });
+            process.env.DB_SERVER = 'altro-host';
+            writeSql({ 124: SQL_3_BATCH });
+            const connect = jest.fn();
+            expect(await run({ argv: ['--mode=check', '--migrations=124', `--file-dir=${tmp}`], env: {}, connect, repoRoot: REPO_ROOT })).toBe(1);
+            expect(connect).not.toHaveBeenCalled();
+            expect(errOut()).toMatch(/coincide con production/);
+        });
+    });
+
     it.each([PROD_DB, 'SGQ_ISO9001_Test', `${TEST_DB}_x`, 'prod_test', TEST_DB.toLowerCase(), ''])('database della sezione test %j diverso dall atteso: exit 1', async (db) => {
         writeSql({ 124: SQL_3_BATCH });
         const cfg = { test: { ...VALID_CFG.test, database: db }, productions: VALID_CFG.productions };

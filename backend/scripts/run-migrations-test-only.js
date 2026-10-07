@@ -406,20 +406,30 @@ function validateConfig(cfg) {
         if (!test[k]) errors.push(`sezione test: campo ${k} mancante`);
     }
     for (const p of (cfg.productions || []).filter(Boolean)) {
-        if (normId(p.server) === normId(test.server) && normId(p.database) === normId(test.database)) {
-            errors.push('la configurazione test coincide con production (stesso server e database): rifiutato');
+        for (const t of [test, cfg.rawTest].filter(Boolean)) {
+            if (normId(p.server) === normId(t.server) && normId(p.database) === normId(t.database)) {
+                errors.push('la configurazione test coincide con production (stesso server e database): rifiutato');
+                return errors;
+            }
         }
     }
     if (normId(test.database) === normId(PROD_DB)) errors.push('la sezione test punta al database di PROD: rifiutato');
     return errors;
 }
 
+/**
+ * `test` con override DB_* (come l'app); `productions` = sezione production cosi com'e nel file:
+ * l'override DB_* vale per il solo target TEST, altrimenti un DB_SERVER/DB_DATABASE valido renderebbe
+ * test e production sempre uguali. `rawTest` = sezione test senza override (anche questa non deve
+ * coincidere con production).
+ */
 function defaultLoadConfig() {
     const { loadDatabaseJsonConfigs, mergeDbEnvFromProcessEnv } = require('./mergeDbEnv');
     const all = loadDatabaseJsonConfigs();
     return {
         test: all.test ? mergeDbEnvFromProcessEnv(all.test) : undefined,
-        productions: all.production ? [all.production, mergeDbEnvFromProcessEnv(all.production)] : [],
+        rawTest: all.test,
+        productions: all.production ? [all.production] : [],
     };
 }
 
