@@ -42,6 +42,7 @@ const BATCH_RANK = { A: 0, B1: 1, B2: 2, C: 3 };
  * `missingReason` = nessun `.sql` nel repo (non si inventa SQL). `after` = dipendenze dure
  * (devono precedere se entrambe richieste). `batch` = ordine del piano
  * docs/reference/PIANO_ALLINEAMENTO_SCHEMA_TEST_2026-10-07.md.
+ * 112 e 113: `.sql` versionati in database/migrations/ (DDL dai runner 112 e 113).
  */
 const MIGRATIONS = {
     '110': { batch: 'A', file: `${BMIG}110_welding_books.sql` },
@@ -52,16 +53,10 @@ const MIGRATIONS = {
     '136': { batch: 'A', file: `${MIG}136_qualifications_transfer_mode.sql` },
     '138': { batch: 'A', file: `${MIG}138_custom_checklist_sections_legal_reference.sql` },
     '128': { batch: 'A', file: `${MIG}128_projects_technical_review_checklist.sql` },
-    '112': {
-        batch: 'A',
-        missingReason: 'DDL (management_reviews.input_monitoring) solo nel runner run-migration-112-*.js, nessun .sql nel repo',
-    },
+    '112': { batch: 'A', file: `${MIG}112_management_reviews_input_monitoring.sql` },
     '098': { batch: 'B1', file: `${MIG}098_nc_action_plan.sql` },
     '118': { batch: 'B1', file: `${MIG}118_nc_source_category_sal_gap.sql`, after: ['098'] },
-    '113': {
-        batch: 'B2',
-        missingReason: 'DDL (non_conformities.management_review_id + FK + indice) solo nel runner run-migration-113-*.js, nessun .sql nel repo',
-    },
+    '113': { batch: 'B2', file: `${MIG}113_nc_management_review_id.sql` },
     '121': { batch: 'B2', file: `${MIG}121_nc_correction_gate.sql` },
     '125': { batch: 'B2', file: `${MIG}125_nc_source_risk_id.sql` },
     '134': { batch: 'B2', file: `${MIG}134_nc_company_scope.sql` },
