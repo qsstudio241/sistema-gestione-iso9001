@@ -1,4 +1,4 @@
-# DEPUTYTASK_VERIFICA_WPQR_DATI — WV-3: migrazione additiva per i dati di prova WPQR (`wpqr_test_runs` + colonne di testata) + verify/rollback + `DATABASE.md`
+# DEPUTYTASK_VERIFICA_WPQR_DATI — WV-3: migrazioni additive per i dati di prova WPQR (`wpqr_test_runs` + colonne di testata) e per la chiave WPS↔WPQR (`wps_wpqr_links`) + verify/rollback + runner VPS + `DATABASE.md`
 
 **Stato:** APERTO — lanciabile **solo dopo il merge su `origin/main`** della PR di charting (gate DEPUTYTASK: `git show origin/main:docs/agent-tasks/DEPUTYTASK_VERIFICA_WPQR_DATI.md` deve mostrare `APERTO`)  
 **Aperto:** 07/10/2026  
@@ -45,12 +45,14 @@ Non codifica regole né soglie. Le colonne rispecchiano il **modulo** WPQR e gli
 
 - *Nuovi* `database/migrations/<NNN>_wpqr_test_data.sql`, `<NNN>_verify.sql`, `<NNN>_rollback.sql`
 - *Nuovi (D9)* `database/migrations/<NNN+1>_wps_wpqr_links.sql`, `<NNN+1>_verify.sql`, `<NNN+1>_rollback.sql`
+- *Nuovi (runner VPS, **uno per migrazione**)* `backend/scripts/run-migration-<NNN>-vps.js` e `backend/scripts/run-migration-<NNN+1>-vps.js` (oggi `run-migration-170-vps.js` / `run-migration-171-vps.js`), modellati su `run-migration-158-vps.js` / `159` (hardening) e `169` (flusso verify) — dettaglio in § «Cosa fare» passo 6c
+- *Nuovo (test L1 dei runner)* `backend/scripts/runMigration<NNN>_<NNN+1>.test.js` (stesso schema di `runMigrationHardening158159.test.js`: target obbligatorio, guard DB, `CHECK_ONLY` senza scritture, pool finto)
 - *Modificato* `docs/reference/DATABASE.md` (righe «Ultimo `NNN`» / «Prossimo libero», tabelle `wpqr_test_runs` e `wps_wpqr_links`, colonne aggiunte a `wpqr_records`)
-- Solo lettura/riuso: `database/migrations/_TEMPLATE_additive.sql`, `_TEMPLATE_NNN_verify.sql`, `_TEMPLATE_NNN_rollback.sql`, `169_wpqr_drop_expiry_date.sql` (+ `169_verify.sql`, `169_rollback.sql`: schema «tabella assente → no-op»), `089_welding_procedures_full.sql`, `133_wpqr_coverage_fields.sql`, `159_wpqr_stud_fields.sql`
+- Solo lettura/riuso: `backend/scripts/run-migration-158-vps.js`, `run-migration-159-vps.js`, `run-migration-169-vps.js`, `backend/scripts/runMigrationHardening158159.test.js`, `docs/how-to/database-migrations.md` (modello runner), `database/migrations/_TEMPLATE_additive.sql`, `_TEMPLATE_NNN_verify.sql`, `_TEMPLATE_NNN_rollback.sql`, `169_wpqr_drop_expiry_date.sql` (+ `169_verify.sql`, `169_rollback.sql`: schema «tabella assente → no-op»), `089_welding_procedures_full.sql`, `133_wpqr_coverage_fields.sql`, `159_wpqr_stud_fields.sql`
 
 ## Cosa NON toccare
 
-Qualsiasi file `backend/src/**`, `app/**`, `reprocessableFields.js`, migrazioni esistenti (nessuna modifica a colonne già presenti: `preheat_temp`, `interpass_temp`, `current_type`, `metal_transfer`, `heat_input_note`, `*_result`, `thickness_*`, …), `database/migrations/ci/**`, `PLAN_*`, GUIDA, `PROJECT_ROADMAP.md`, `PROJECT_CONTEXT.md`.
+Qualsiasi file `backend/src/**` (quindi **nessuna** modifica a `backend/scripts/deploy-manifest.json`: i runner sono in `backend/scripts/`, vengono copiati via SCP in `/tmp` sul VPS e **non** sono caricati dal backend né elencati nel manifest — verificato: `deploy-manifest.json` non contiene alcun `run-migration-*`, e la regola «aggiorna il manifest» di `sgq-operating-memory.mdc`/`sgq-sysadmin.mdc` vale solo per `.js` nuovi in `backend/src/`), `app/**`, i runner esistenti (`run-migration-1*-vps.js`) e i loro test, `reprocessableFields.js`, migrazioni esistenti (nessuna modifica a colonne già presenti: `preheat_temp`, `interpass_temp`, `current_type`, `metal_transfer`, `heat_input_note`, `*_result`, `thickness_*`, …), `database/migrations/ci/**`, `PLAN_*`, GUIDA, `PROJECT_ROADMAP.md`, `PROJECT_CONTEXT.md`.
 
 ## Cosa fare
 
@@ -61,9 +63,10 @@ Qualsiasi file `backend/src/**`, `app/**`, `reprocessableFields.js`, migrazioni 
 5. `ALTER TABLE wpqr_records ADD …` per le colonne di testata (una per statement `IF COL_LENGTH … IS NULL`), tutte `NULL`, senza default che riscriva righe.
 6. `<NNN>_verify.sql`: controlla presenza tabella, colonne, indice e FK; esito leggibile.
 6b. D9: `<NNN+1>_wps_wpqr_links.sql` (`OBJECT_ID` prima di `CREATE`; no-op se `welding_procedures` o `wpqr_records` mancano; unique, indice, FK separate senza CASCADE) + `<NNN+1>_verify.sql` (tabella, colonne, unique, indice, FK) + `<NNN+1>_rollback.sql` (solo FK, indice, tabella creati).
+6c. **Runner VPS (nuovi file, uno per migrazione)**: `run-migration-<NNN>-vps.js` e `run-migration-<NNN+1>-vps.js`. Ciascuno: `SGQ_MIGRATION_TARGET=test|prod` **obbligatoria** (nessun default, exit 1 se manca), guard DB-per-target, `CHECK_ONLY=1` = nessun DDL (elenca oggetti/colonne mancanti), `.env`/`.env.test` per target, esecuzione del `.sql` (split `GO` come in 169) e poi del proprio `<N>_verify.sql` con esito `PASS`/`FAIL`; header JSDoc con i comandi `scp -P 1122 …` + `ssh` come in 169. Export per il test L1. **Scrittura dei runner = lavoro del deputy WV-3; l'apply non lo è.**
 7. `<NNN>_rollback.sql`: rimuove **solo** FK, indice, tabella e colonne create da questa migrazione, nell'ordine corretto; idempotente.
 8. `DATABASE.md`: allineare «Ultimo `NNN`» (stantio: 168) e «Prossimo libero», documentare tabella e colonne.
-9. **Non applicare in PROD né su TEST dal Cloud** (SQL Server non raggiungibile; applicazione via SCP + `run-migration-*-vps.js` = HITL). Nel body PR: «cosa serve per applicarla» e conteggi attesi dal `verify`.
+9. **Non applicare in PROD né su TEST dal Cloud** (SQL Server non raggiungibile; applicazione via SCP + `run-migration-<N>-vps.js` = HITL: **sì esplicito del committente**, prima `SGQ_MIGRATION_TARGET=test CHECK_ONLY=1`, poi apply su TEST, mai PROD senza un secondo «sì» dedicato). Nessun runner viene eseguito dal deputy. Nel body PR: «cosa serve per applicarla» e conteggi attesi dal `verify`.
 
 ## Test L1
 
@@ -75,17 +78,18 @@ Comandi: CI «Apply da 169 su SQL Server vuoto» (job esistente: la migrazione d
 ## DoD
 
 - [ ] `<NNN>_wpqr_test_data.sql` additiva, idempotente, no-op su tabella assente; FK separata, nessun CASCADE
+- [ ] Per **ciascuna** delle due migrazioni: `.sql` + `<N>_verify.sql` + `<N>_rollback.sql` + `backend/scripts/run-migration-<N>-vps.js` presenti e coerenti (4 file per migrazione; runner con target obbligatorio e `CHECK_ONLY`, come 158/159) e test L1 dei runner verde (`cd backend && npx jest scripts/runMigration<NNN>_<NNN+1>`); nessun runner eseguito
 - [ ] `<NNN>_verify.sql` e `<NNN>_rollback.sql` presenti e coerenti; intestazione conforme (`-- TYPE/-- BACKFILL/-- VERIFY/-- ROLLBACK`)
 - [ ] Nessuna colonna esistente alterata; nessun dato riscritto
 - [ ] D9: `<NNN+1>_wps_wpqr_links.sql` additiva (unique `(wps_id, wpqr_id)`, `organization_id`, FK separate, no CASCADE) con verify/rollback propri; nessun backfill; nessun link creato sulle WPS legacy
 - [ ] `DATABASE.md` allineato (ultimo `NNN`, tabella, colonne)
-- [ ] CI migrazioni verde; `check-utf8-encoding.js` verde; **nessun file `backend/src`/`app` nel diff**
-- [ ] Body PR: numero dichiarato, cosa serve per applicare, esito atteso del verify; **migrazione non applicata in PROD**
+- [ ] CI migrazioni verde; `check-utf8-encoding.js` verde; **nessun file `backend/src`/`app` nel diff**; `deploy-manifest.json` **non** modificato (i runner non sono in `backend/src/`)
+- [ ] Body PR: numeri dichiarati, cosa serve per applicare (comandi `scp` + `SGQ_MIGRATION_TARGET=test CHECK_ONLY=1 node /tmp/run-migration-<N>-vps.js`), esito atteso del verify; **migrazioni non applicate né su TEST né in PROD**
 - [ ] Branch allineato a `origin/main` (`git fetch origin main && git merge origin/main`) **e** numeri NNN/NNN+1 ricontrollati (se un'altra PR ha preso 170 → rinumerare prima di push/PR); `bugbot run` **una sola volta** a slice chiusa
 
 ## HITL
 
-**Applicazione in PROD/TEST della migrazione: sì esplicito del committente** (mai autonoma). Se serve toccare colonne esistenti → **stop**, handoff nel brief, livello Alto.
+**Applicazione in PROD/TEST delle migrazioni (esecuzione dei runner `run-migration-<N>-vps.js` via SCP + SSH): sì esplicito del committente** (mai autonoma, mai dal Cloud). Se serve toccare colonne esistenti → **stop**, handoff nel brief, livello Alto.
 
 ## Comando di avvio
 
