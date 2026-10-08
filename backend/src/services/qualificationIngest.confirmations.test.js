@@ -30,7 +30,12 @@ const {
     commitQualificationFromFields,
 } = require('./qualificationIngest.service');
 const { deriveQualificationStatus } = require('./weldingCoordinatorAuth.service');
-const { allDates, extractQualifica14732Fields } = require('../utils/ruleFieldExtractors');
+const {
+    allDates,
+    extractQualifica14732Fields,
+    extractPatentinoFields,
+    extractCertNdtFields,
+} = require('../utils/ruleFieldExtractors');
 
 const OP14732 = 'Operatore ISO 14732';
 
@@ -204,6 +209,8 @@ describe('stato salvato coerente con la scadenza effettiva', () => {
 });
 
 describe('DATE_PATTERNS — anno a 2 cifre', () => {
+    const TWO = { includeTwoDigitYear: true };
+
     it.each([
         ['15.03.24', '2024-03-15'],
         ['15/03/24', '2024-03-15'],
@@ -211,24 +218,41 @@ describe('DATE_PATTERNS — anno a 2 cifre', () => {
         ['01.02.70', '1970-02-01'],
         ['31.12.99', '1999-12-31'],
     ])('%s -> %s', (raw, iso) => {
-        expect(allDates(`Data: ${raw}`)).toContain(iso);
+        expect(allDates(`Data: ${raw}`, TWO)).toContain(iso);
     });
 
     it('non confonde date a 4 cifre ne produce duplicati spurii', () => {
-        expect(allDates('Data 15.03.2024')).toEqual(['2024-03-15']);
+        expect(allDates('Data 15.03.2024', TWO)).toEqual(['2024-03-15']);
     });
 
     it('scarta valori implausibili (mese/giorno fuori range, numeri di versione)', () => {
-        expect(allDates('rev 45.13.24')).toEqual([]);
-        expect(allDates('rev 12.30.24')).toEqual([]);
-        expect(allDates('cod 1.2.3.45')).toEqual([]);
-        expect(allDates('ref 15.03.24.7')).toEqual([]);
+        expect(allDates('rev 45.13.24', TWO)).toEqual([]);
+        expect(allDates('rev 12.30.24', TWO)).toEqual([]);
+        expect(allDates('cod 1.2.3.45', TWO)).toEqual([]);
+        expect(allDates('ref 15.03.24.7', TWO)).toEqual([]);
     });
 
-    it('il fallback 14732 legge date a 2 cifre in modo coerente', () => {
-        const f = extractQualifica14732Fields('Operator qualification\nDate of test 10.01.24\nValid until 09.01.30', 'x.pdf');
-        expect(f.exam_date).toBe('2024-01-10');
-        expect(f.expiry_date).toBe('2030-01-09');
+    it('di default allDates ignora l anno a 2 cifre (tabelle conferme/testo libero)', () => {
+        expect(allDates('Data: 15.03.24')).toEqual([]);
+        expect(allDates('15.03.24 e 16.03.2025')).toEqual(['2025-03-16']);
+    });
+
+    it('le date con etichetta accettano l anno a 2 cifre', () => {
+        const out = extractCertNdtFields('Certificate\nData di emissione: 15.03.24\nData di scadenza: 14.03.29', 'x.pdf');
+        expect(out.exam_date).toBe('2024-03-15');
+        expect(out.expiry_date).toBe('2029-03-14');
+    });
+
+    it('conferme a 2 cifre in tabella non sostituiscono la scadenza del fallback 14732/patentino', () => {
+        const text = [
+            'Operator qualification',
+            'Date of test 10.01.2024',
+            'Valid until 09.01.2030',
+            'Confirmations: 12.07.24 OK  14.01.25 OK  15.07.25 OK',
+        ].join('\n');
+        const f14732 = extractQualifica14732Fields(text, 'x.pdf');
+        expect(f14732.expiry_date).toBe('2030-01-09');
+        expect(extractPatentinoFields(text, 'x.pdf').expiry_date).toBe('2030-01-09');
     });
 });
 

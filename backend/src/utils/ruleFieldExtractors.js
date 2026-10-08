@@ -23,7 +23,7 @@ const DATE_PATTERNS = [
         const mo = m[2].padStart(2, '0');
         return `${m[3]}-${mo}-${d}`;
     }},
-    { re: /(?<![\d./])(\d{1,2})[./](\d{1,2})[./](\d{2})(?![\d/]|\.\d)/g, fmt: (m) => {
+    { twoDigitYear: true, re: /(?<![\d./])(\d{1,2})[./](\d{1,2})[./](\d{2})(?![\d/]|\.\d)/g, fmt: (m) => {
         const day = Number(m[1]);
         const month = Number(m[2]);
         if (day < 1 || day > 31 || month < 1 || month > 12) return null;
@@ -39,9 +39,15 @@ function firstMatch(re, text) {
     return m ? m[1] || m[0] : null;
 }
 
-function allDates(text) {
+/**
+ * Tutte le date del testo. L'anno a 2 cifre e' escluso di default: nelle tabelle conferme e nei testi
+ * liberi renderebbe "ultima data = scadenza" ambiguo; si abilita solo dove c'e' un'etichetta
+ * (`extractLabeledDate`).
+ */
+function allDates(text, { includeTwoDigitYear = false } = {}) {
     const found = [];
-    for (const { re, fmt } of DATE_PATTERNS) {
+    for (const { re, fmt, twoDigitYear } of DATE_PATTERNS) {
+        if (twoDigitYear && !includeTwoDigitYear) continue;
         let m;
         const local = new RegExp(re.source, re.flags);
         while ((m = local.exec(text)) !== null) {
@@ -181,7 +187,7 @@ function extractLabeledDate(text, labelRe) {
     const m = text.match(labelRe);
     if (!m) return null;
     const windowText = text.slice(m.index + m[0].length, m.index + m[0].length + 30);
-    const found = allDates(windowText);
+    const found = allDates(windowText, { includeTwoDigitYear: true });
     return found[0] || null;
 }
 
