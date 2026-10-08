@@ -293,7 +293,7 @@ function extractBirthDates(text) {
     while ((m = re.exec(text)) !== null) {
         const after = text.slice(m.index + m[0].length, m.index + m[0].length + 20).replace(/^[\s:.\-]+/, '');
         const dateText = after.match(DATE_AT_START_RE);
-        const first = dateText ? allDates(dateText[0])[0] : null;
+        const first = dateText ? allDates(dateText[0], { includeTwoDigitYear: true })[0] : null;
         if (first) birth.add(first);
     }
     return birth;
@@ -305,7 +305,7 @@ function extractLabeledDateAny(text, labelRe, exclude = new Set()) {
     let m;
     while ((m = re.exec(text)) !== null) {
         const windowText = text.slice(m.index + m[0].length, m.index + m[0].length + 30);
-        const found = allDates(windowText).find((d) => !exclude.has(d));
+        const found = allDates(windowText, { includeTwoDigitYear: true }).find((d) => !exclude.has(d));
         if (found) return found;
     }
     return null;
