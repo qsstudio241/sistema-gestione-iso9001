@@ -321,6 +321,16 @@ function extractWpqrFields(text, fileName) {
 }
 
 /**
+ * Scadenza per i fallback persona: etichetta esplicita (anche con anno a 2 cifre), altrimenti l'ultima data
+ * del documento. Mai uguale (o precedente) alla data esame: con una sola data la scadenza resta null.
+ */
+function resolveExpiryFallback(text, dates) {
+    const exam = dates[0] || null;
+    const expiry = extractExpiryDateLabeled(text) || (dates.length > 1 ? dates[dates.length - 1] : null);
+    return expiry && (!exam || expiry > exam) ? expiry : null;
+}
+
+/**
  * @param {string} text
  * @param {string} fileName
  * @returns {object}
@@ -352,7 +362,7 @@ function extractPatentinoFields(text, fileName) {
         weld_details: fromDesignation.weld_details || null,
         qualification_designation: fromDesignation.qualification_designation || null,
         exam_date: dates[0] || null,
-        expiry_date: dates.length > 1 ? dates[dates.length - 1] : (dates[0] || null),
+        expiry_date: resolveExpiryFallback(text, dates),
     };
 }
 
@@ -371,7 +381,7 @@ function extractQualifica14732Fields(text, fileName) {
         welding_process: extractWeldingProcess(text),
         welding_positions: positions.length ? positions : null,
         exam_date: dates[0] || null,
-        expiry_date: dates.length > 1 ? dates[dates.length - 1] : (dates[0] || null),
+        expiry_date: resolveExpiryFallback(text, dates),
     };
 }
 

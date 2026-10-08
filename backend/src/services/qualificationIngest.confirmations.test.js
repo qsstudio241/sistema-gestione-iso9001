@@ -243,6 +243,18 @@ describe('DATE_PATTERNS — anno a 2 cifre', () => {
         expect(out.expiry_date).toBe('2029-03-14');
     });
 
+    it('esame a 4 cifre + scadenza etichettata a 2 cifre: scadenza letta, non copiata dall esame', () => {
+        const text = 'Operator qualification\nDate of test 10.01.2024\nValid until 09.01.30';
+        expect(extractQualifica14732Fields(text, 'x.pdf').expiry_date).toBe('2030-01-09');
+        expect(extractPatentinoFields(text, 'x.pdf').expiry_date).toBe('2030-01-09');
+    });
+
+    it('una sola data: scadenza null (non uguale all esame)', () => {
+        const text = 'Operator qualification\nDate of test 10.01.2024';
+        expect(extractQualifica14732Fields(text, 'x.pdf').expiry_date).toBeNull();
+        expect(extractPatentinoFields(text, 'x.pdf').expiry_date).toBeNull();
+    });
+
     it('conferme a 2 cifre in tabella non sostituiscono la scadenza del fallback 14732/patentino', () => {
         const text = [
             'Operator qualification',
