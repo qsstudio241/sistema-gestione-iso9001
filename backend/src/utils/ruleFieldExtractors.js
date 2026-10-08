@@ -3,10 +3,17 @@
 /**
  * ruleFieldExtractors.js — estrazione euristica campi da testo PDF (senza AI).
  * Complementare all'AI: fornisce fallback e cross-check.
+ *
+ * Precedenza regole/AI (documentIngestPipeline.pickMergedValue): se l'AI restituisce un valore vince
+ * sempre; la regola entra solo se l'AI e' null e, per i campi "deboli" (processo, gruppo materiale,
+ * numero certificato, date), le funzioni qui sotto restituiscono null invece di un'ipotesi a bassa
+ * confidenza: una regola debole non deve mai riempire un campo che l'AI ha lasciato vuoto.
  */
 
 const {
     inferWeldingProcessFromText,
+    inferWeldingProcessExplicit,
+    normalizeWeldingProcessCode,
 } = require('../data/weldingProcesses4063');
 const {
     extractWeldingPositionsFromText,
@@ -206,6 +213,9 @@ const NON_NAME_WORDS = new Set([
     'COGNOME', 'ENTE', 'DATA', 'ISO', 'EN', 'UNI', 'TUV', 'RINA', 'DNV',
     'MATERIALE', 'GRUPPO', 'POSIZIONE', 'GIUNTO', 'SPESSORE', 'DIAMETRO',
     'NOMINATIVO', 'TITOLARE', 'RILASCIO', 'SCADENZA', 'VALIDITA',
+    'PHOTOGRAPH', 'PHOTO', 'FOTOGRAFIA', 'FOTO', 'NAME', 'SURNAME', 'FIRSTNAME', 'LASTNAME',
+    'FIRST', 'LAST', 'GIVEN', 'FAMILY', 'FULL', 'BIRTH', 'BORN', 'NATO', 'NATA', 'SIGNATURE', 'FIRMA',
+    'DATE', 'HOLDER', 'OPERATOR', 'OPERATORE', 'PLACE', 'LUOGO', 'NATIONALITY', 'NAZIONALITA',
 ]);
 
 /**
@@ -219,7 +229,7 @@ function extractPersonName(text) {
     const nameRe = new RegExp(`^(${NAME_TOKEN}(?:\\s+${NAME_TOKEN}){1,3})`);
 
     const labelGroups = [
-        /(?:nome\s+e\s+cognome|cognome\s+e\s+nome|nominativo|nome|cognome|titolare|name)\s*[:.\-]*\s*/i,
+        /\b(?:nome\s+e\s+cognome|cognome\s+e\s+nome|nominativo|nome|cognome|titolare|name)\s*[:.\-]*\s*/i,
         /(?:saldatore|welder)\s*[:.\-]*\s*/i,
         /(?:si\s+certifica\s+che|this\s+is\s+to\s+certify\s+that)\s*[:.\-]*\s*/i,
     ];
@@ -232,8 +242,13 @@ function extractPersonName(text) {
             const nm = after.match(nameRe);
             if (!nm) continue;
             let parts = nm[1].trim().split(/\s+/);
+            // Rimuovi parole-etichetta in testa (es. "Photograph ROSSI MARIO", "Surname Name ROSSI MARIO")
+            while (parts.length && NON_NAME_WORDS.has(parts[0].toUpperCase().replace(/[.'']/g, ''))) {
+                parts.shift();
+            }
+            if (parts.length < 2) continue;
             // Rimuovi parole-etichetta in coda (es. "MARIO ROSSI Numero")
-            while (parts.length > 2 && NON_NAME_WORDS.has(parts[parts.length - 1].toUpperCase().replace(/[.'']/g, ''))) {
+            while (parts.length > 1 && NON_NAME_WORDS.has(parts[parts.length - 1].toUpperCase().replace(/[.'']/g, ''))) {
                 parts.pop();
             }
             // Rimuovi il punto di fine frase sull'ultimo cognome (es. "Rossi." → "Rossi"),
@@ -242,6 +257,7 @@ function extractPersonName(text) {
             if (lastIdx >= 0 && parts[lastIdx].endsWith('.') && parts[lastIdx].length > 2) {
                 parts[lastIdx] = parts[lastIdx].slice(0, -1);
             }
+            if (parts.length < 2) continue;
             const candidate = parts.join(' ');
             const allStop = parts.every((w) => NON_NAME_WORDS.has(w.toUpperCase().replace(/[.'']/g, '')));
             if (!allStop && parts.length >= 2) return candidate;
@@ -261,6 +277,118 @@ function extractPersonName(text) {
         }
     }
     return null;
+}
+
+/**
+ * Processo ISO 4063 (campo legacy `welding_process`) per patentini/14732, solo ad alta confidenza:
+ * 1) codice con etichetta esplicita ("Welding process 138"), che nei patentini indica il processo di validita';
+ * 2) altrimenti il processo della designazione di prova (token strutturato, es. "141 P BW ...").
+ * I codici "nudi" sparsi nel testo e gli alias non sono usati: con piu codici vinceva il piu alto (145 su 141).
+ */
+function extractWeldingProcessConfident(text, designationFields = {}) {
+    const explicit = inferWeldingProcessExplicit(text);
+    if (explicit) return explicit;
+    return designationFields.welding_process_test
+        ? normalizeWeldingProcessCode(designationFields.welding_process_test)
+        : null;
+}
+
+const EXAM_DATE_LABEL_RE = /\b(?:date\s+of\s+(?:the\s+)?(?:test|examination|welding)|(?:test|examination)\s+date|data\s+(?:di\s+|della\s+|dell['’]\s*)?(?:prova|esame|test|saldatura))\s*[:.]?\s*/i;
+const QUALIFICATION_EXPIRY_STRONG_LABEL_RE = /\b(?:expiry(?:\s*date)?|data\s+di\s+scadenza|scadenza|valid\s*(?:until|to)|valido\s+fino\s+al)\s*[:.]?\s*/i;
+const QUALIFICATION_EXPIRY_WEAK_LABEL_RE = /\bvalidity\s*[:.]?\s*/i;
+const BIRTH_LABEL_RE = /(?:nat[oa]\s+a\s+[^\n\d]{1,40}?\s+il|born\s+in\s+[^\n\d]{1,40}?\s+on|date\s+of\s+birth|birth\s*date|data\s+di\s+nascita|nat[oa]\s+il|born(?:\s+on)?)\b/gi;
+const DATE_AT_START_RE = /^(?:\d{4}-\d{2}-\d{2}|\d{1,2}[./]\d{1,2}[./]\d{2,4})/;
+const MIN_PLAUSIBLE_QUALIFICATION_YEAR = 1990;
+
+/** Date di nascita: solo la data scritta subito dopo un'etichetta di nascita (mai quella di una riga successiva). */
+function extractBirthDates(text) {
+    const birth = new Set();
+    const re = new RegExp(BIRTH_LABEL_RE.source, 'gi');
+    let m;
+    while ((m = re.exec(text)) !== null) {
+        const after = text.slice(m.index + m[0].length, m.index + m[0].length + 20).replace(/^[\s:.\-]+/, '');
+        const dateText = after.match(DATE_AT_START_RE);
+        const first = dateText ? allDates(dateText[0], { includeTwoDigitYear: true })[0] : null;
+        if (first) birth.add(first);
+    }
+    return birth;
+}
+
+/** Prima data utile dopo QUALUNQUE occorrenza dell'etichetta (titoli di sezione senza data non la oscurano). */
+function extractLabeledDateAny(text, labelRe, exclude = new Set()) {
+    const re = new RegExp(labelRe.source, 'gi');
+    let m;
+    while ((m = re.exec(text)) !== null) {
+        const windowText = text.slice(m.index + m[0].length, m.index + m[0].length + 30);
+        const found = allDates(windowText, { includeTwoDigitYear: true }).find((d) => !exclude.has(d));
+        if (found) return found;
+    }
+    return null;
+}
+
+/**
+ * Data esame e scadenza per qualifiche persona (patentini, 14732): esclude le date di nascita, preferisce le
+ * etichette esplicite, scarta anni implausibili se esistono alternative; la scadenza non puo' coincidere con
+ * (ne' precedere) la data esame. La scadenza etichettata vince sulla posizione: non diventa exam_date solo
+ * perche' e' la prima data del testo o perche' allDates raccoglie prima il formato ISO.
+ */
+function extractQualificationDates(text) {
+    const birth = extractBirthDates(text);
+    const all = allDates(text).filter((d) => !birth.has(d));
+    const plausible = all.filter((d) => Number(d.slice(0, 4)) >= MIN_PLAUSIBLE_QUALIFICATION_YEAR);
+    const candidates = plausible.length ? plausible : all;
+
+    const labeledExam = extractLabeledDateAny(text, EXAM_DATE_LABEL_RE, birth);
+    const labeledExpiry = extractLabeledDateAny(text, QUALIFICATION_EXPIRY_STRONG_LABEL_RE, birth)
+        || extractLabeledDateAny(text, QUALIFICATION_EXPIRY_WEAK_LABEL_RE, birth);
+
+    const exam = labeledExam
+        || candidates.find((d) => d !== labeledExpiry)
+        || null;
+    let expiry = labeledExpiry
+        || (candidates.length > 1 ? candidates[candidates.length - 1] : null);
+    if (expiry && exam && expiry <= exam) expiry = null;
+    return { exam_date: exam, expiry_date: expiry };
+}
+
+function extractCertificateNumberFromFileName(fileName) {
+    const base = String(fileName || '').replace(/\.[^/.]+$/, '').trim();
+    const m = base.match(/^(\d{2}-\d{4,5}(?:-\d{2}(?:-\d{3})?)?)(?!\d)/);
+    return m ? m[1] : null;
+}
+
+const CERTIFICATE_NUMBER_LABEL_RE = /(?:(?:qualification\s+)?certificate\s*(?:no|n[°º]|nr|number)\b\.?|n[°º]\s*(?:del\s+)?certificat[oi]|numero\s+(?:del\s+)?certificato|certificato\s+n[°º.])\s*[:.\-]?\s*([A-Z0-9][A-Z0-9/.\-]{3,}(?:\s?[A-Z0-9][A-Z0-9/.\-]*)?)/i;
+
+/**
+ * Numero certificato per patentini/14732: etichetta esplicita nel testo, poi legacy purche' contenga cifre,
+ * infine il solo prefisso numerico del nome file (mai il nome file intero, che puo' contenere il titolare).
+ */
+function extractQualificationCertificateNumber(text, fileName) {
+    const hasDigit = (v) => (v && /\d/.test(v) ? v : null);
+    const labeled = String(text || '').match(CERTIFICATE_NUMBER_LABEL_RE);
+    const fromLabel = labeled ? hasDigit(labeled[1].trim().split(/\s+/)[0]) : null;
+    return fromLabel
+        || hasDigit(extractCertificateNumber(text))
+        || extractCertificateNumberFromFileName(fileName);
+}
+
+const MATERIAL_GROUP_LABEL_RE = /\b(?:material\s+group|gruppo\s+(?:del\s+)?materiale|parent\s+material(?:\s+group)?|base\s+material(?:\s+group)?|materiale\s+base)\s*(?:\(s\))?\s*(?:ISO\/TR\s*15608(?:\s*[:\-]\s*(?:19|20)\d{2})?\s*)?[:.\-]?\s*(\d{1,2}(?:\.\d{1,2})?)(?![.\d])(?![\/\-]\d{1,2}[\/\-]\d{2,4})/i;
+const ISO_TR_15608_GROUP_RE = /\bISO\/TR\s*15608(?:\s*[:\-]\s*(?:19|20)\d{2})?\s*[:.]?\s*(\d{1,2}(?:\.\d{1,2})?)(?![.\d])(?![\/\-]\d{1,2}[\/\-]\d{2,4})/i;
+
+/** Gruppo materiale (ISO/TR 15608) solo con etichetta esplicita, norma citata o designazione acciaio: mai da indirizzi/CAP/civici. */
+function extractMaterialGroupLabeled(text) {
+    const body = String(text || '');
+    const m = body.match(MATERIAL_GROUP_LABEL_RE);
+    if (m) {
+        const normalized = normalizeMaterialGroupCode(m[1]);
+        if (normalized && normalized !== 'altro') return normalized;
+    }
+    const iso = body.match(ISO_TR_15608_GROUP_RE);
+    if (iso) {
+        const normalized = normalizeMaterialGroupCode(iso[1]);
+        if (normalized && normalized !== 'altro') return normalized;
+    }
+    return inferMaterialGroupFromText(body);
 }
 
 function extractIssuingBody(text) {
@@ -321,35 +449,25 @@ function extractWpqrFields(text, fileName) {
 }
 
 /**
- * Scadenza per i fallback persona: etichetta esplicita (anche con anno a 2 cifre), altrimenti l'ultima data
- * del documento. Mai uguale (o precedente) alla data esame: con una sola data la scadenza resta null.
- */
-function resolveExpiryFallback(text, dates) {
-    const exam = dates[0] || null;
-    const expiry = extractExpiryDateLabeled(text) || (dates.length > 1 ? dates[dates.length - 1] : null);
-    return expiry && (!exam || expiry > exam) ? expiry : null;
-}
-
-/**
  * @param {string} text
  * @param {string} fileName
  * @returns {object}
  */
 function extractPatentinoFields(text, fileName) {
-    const dates = allDates(text);
+    const { exam_date, expiry_date } = extractQualificationDates(text);
     const thickness = extractThicknessMm(text);
     const positions = extractWeldingPositionsFromText(text);
     const fromDesignation = designationFieldsToIngest(parseWelderQualificationDesignation(text));
-    const processFromText = extractWeldingProcess(text);
+    const processFromText = extractWeldingProcessConfident(text, fromDesignation);
     const processTest = fromDesignation.welding_process_test || null;
     return {
         welder_name: extractPersonName(text),
-        certificate_number: extractCertificateNumber(text) || extractReferenceFromFileName(fileName),
+        certificate_number: extractQualificationCertificateNumber(text, fileName),
         issuing_body: extractIssuingBody(text),
         welding_process_test: processTest,
         welding_process: processFromText || null,
         welding_processes_validity: fromDesignation.welding_processes_validity || null,
-        material_group: extractMaterialGroup(text),
+        material_group: extractMaterialGroupLabeled(text),
         welding_positions: positions.length ? positions : null,
         welding_position_test: fromDesignation.welding_position_test || null,
         thickness_min_mm: thickness,
@@ -361,8 +479,8 @@ function extractPatentinoFields(text, fileName) {
         filler_material_group: fromDesignation.filler_material_group || null,
         weld_details: fromDesignation.weld_details || null,
         qualification_designation: fromDesignation.qualification_designation || null,
-        exam_date: dates[0] || null,
-        expiry_date: resolveExpiryFallback(text, dates),
+        exam_date,
+        expiry_date,
     };
 }
 
@@ -372,16 +490,16 @@ function extractPatentinoFields(text, fileName) {
  * @returns {object}
  */
 function extractQualifica14732Fields(text, fileName) {
-    const dates = allDates(text);
+    const { exam_date, expiry_date } = extractQualificationDates(text);
     const positions = extractWeldingPositionsFromText(text);
     return {
         operator_name: extractPersonName(text),
-        certificate_number: extractCertificateNumber(text) || extractReferenceFromFileName(fileName),
+        certificate_number: extractQualificationCertificateNumber(text, fileName),
         issuing_body: extractIssuingBody(text),
-        welding_process: extractWeldingProcess(text),
+        welding_process: extractWeldingProcessConfident(text),
         welding_positions: positions.length ? positions : null,
-        exam_date: dates[0] || null,
-        expiry_date: resolveExpiryFallback(text, dates),
+        exam_date,
+        expiry_date,
     };
 }
 
@@ -545,6 +663,10 @@ module.exports = {
     extractCertNdtFields,
     extractNdtSector,
     extractWeldingProcess,
+    extractWeldingProcessConfident,
+    extractQualificationDates,
+    extractQualificationCertificateNumber,
+    extractMaterialGroupLabeled,
     extractMaterialGroup,
     extractWpqrReference,
     extractJointType,
