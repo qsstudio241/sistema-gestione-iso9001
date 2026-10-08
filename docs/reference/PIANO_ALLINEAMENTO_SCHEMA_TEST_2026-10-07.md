@@ -1,6 +1,6 @@
 # Piano di allineamento schema TEST → PROD (solo priorità ALTA)
 
-**Stato: Batch A + B1 + B2 + C APPLICATI su TEST 2026-10-07 (108 no-op); PROD / 167 fermi** · aggiornato 07/10/2026 · questa PR resta solo documentale (nessun apply, nessuna modifica a `.sql`/runner/codice runtime) · base: `origin/main`
+**Stato: Batch A + B1 + B2 + C APPLICATI su TEST 2026-10-07 (108 no-op); PROD / 167 fermi** · aggiornato 07/10/2026 · `.sql` 112 e 113 ora in `database/migrations/` (nessun apply in questa PR) · base: `origin/main`
 
 > Il report di gap (`gap-summary.md`, `migration-map.md`, `gap-columns.csv`, `gap-objects.csv`) **non è presente** in questo ambiente. Piano ricostruito dal repo (`database/migrations/`, `backend/database/migrations/`, runner `run-migration-*` in `backend/scripts/`, `docs/how-to/database-migrations.md`, `docs/reference/RISCHIO_MIGRAZIONI_168_169_2026-10-06.md`) e dai fatti del gap (TEST 116 → PROD 127 tabelle; 190 colonne mancanti: 166 in tabelle assenti + 24 in 7 comuni). **Batch A, B1, B2 e C sono già stati applicati su TEST** (esiti sotto). STOP prima di PROD / 167.
 
@@ -28,7 +28,7 @@ Nessuna migrazione del batch A era già presente (pre-check: 116 tabelle; oggett
 |---|---|---|
 | 110, 124, 145, 117, 122, 136, 138, 128 | runner solo-TEST #742 su `main` (`check` poi `apply`); `DB_NAME()` = `2026-06-18_SGQ_ISO9001` | OK (`apply completato: 8 migrazioni`, EXIT=0, `2026-10-07T13:57:34Z`) |
 | 117, 138 | `USE SGQ_ISO9001` **strippato dal runner** (non eseguito su TEST): 117 riga 7, 138 riga 10 | 1 `USE` rimosso per file |
-| 112 | **nessun `.sql` in repo**; DDL `ADD COLUMN input_monitoring NVARCHAR(MAX) NULL` con script temporaneo fuori repo + stessi guard del runner. **Non versionato** | colonna presente, nullable |
+| 112 | `.sql` in `database/migrations/112_management_reviews_input_monitoring.sql` (DDL dai runner 112-*; su TEST 07/10 era script temp). **Nessun apply in questa PR** | colonna presente, nullable |
 
 SHA-256 dei `.sql` usati dal runner (log apply, interi):
 
@@ -86,7 +86,7 @@ Senza i path esatti di pre-B1/pre-B2 nel report: i file **esistono** sul VPS e s
 |---|---|---|
 | B1 | 098 → 118 | applicate su TEST |
 | B2 | 113, 121, 125, 134, 135, 153 | applicate su TEST |
-| B2 | 113 | **nessun `.sql` in repo**; wrapper temporaneo fuori repo + stessi guard. **Non versionato** — da versionare (come 112) |
+| B2 | 113 | `.sql` in `database/migrations/113_nc_management_review_id.sql` (DDL dai runner 113-*; su TEST 07/10 era wrapper temp). **Nessun apply in questa PR** |
 
 ### Schema NC dopo B1+B2
 
@@ -189,6 +189,10 @@ Runner `backend/scripts/run-migrations-test-only.js` sha256 `5ae7a17344a0f666057
 
 Journal `sgq-backend-test` dal pre-check C: nessun «Invalid column/object name» né errori. MainPID **invariati** (nessun restart): TEST `734071`, PROD `668652`.
 
+## 0d. Gap residuo dopo A+B1+B2+C (confronto TEST↔PROD in sola lettura)
+
+Tabelle solo PROD 11 → 3, colonne 190 → 24, indici 39 → 10, FK 17 → 1, CHECK 6 → 0; nessun residuo solo-TEST. Resta di priorità ALTA solo il riesame (4 colonne `input_*` senza `.sql`); MEDIA: 167, 120, `UX_auditor_orgs_email` (144). Dettaglio, uso nel codice e punti specifici (`IX_attachments_ndt_item`, `not_trusted`) in [`GAP_RESIDUO_SCHEMA_TEST_PROD_2026-10-07.md`](GAP_RESIDUO_SCHEMA_TEST_PROD_2026-10-07.md). Nessun apply proposto.
+
 ## 1. Obiettivo e perimetro
 
 Portare lo schema TEST a quello che il codice di `origin/main` (già in esecuzione su TEST) si aspetta, **solo per le lacune ALTA**. Dopo A+B1+B2+C, `/welding-books`, `/attachments`, `/non-conformities` e `/ndt-reports` rispondono 200. Restano PROD e 167 (non toccati).
@@ -197,13 +201,13 @@ Portare lo schema TEST a quello che il codice di `origin/main` (già in esecuzio
 |---|---|
 | 167 (`ai_usage_log`/`ai_assistant_*`) e PR #739 (rev. 167) | PR in revisione, runner 167 con `sqlcmd -U sa` (disabilitato dal 03/10) e senza `-b`; non si tocca |
 | `ai_assistant_*`, `ingest_reference_patterns` (120), indici perf | MEDIA/BASSA: nessun endpoint critico rotto |
-| Drift senza migrazione (4 colonne `input_*` riesame, 19 tabelle PROD senza CREATE TABLE) | Non esiste uno script da applicare: serve decisione (§6). Aperto dopo B2: versionare `.sql` per 112 e 113; 4 `input_*` su `management_reviews` |
+| Drift senza migrazione (4 colonne `input_*` riesame, 19 tabelle PROD senza CREATE TABLE) | Non esiste uno script da applicare: serve decisione (§6). 112/113 `.sql` versionati. Restano 4 `input_*` su `management_reviews` |
 
 **Batch A + B1 + B2 (07/10/2026): fatti.** Resta C (gated), ciascuno con sì esplicito e STOP. Non toccare PROD né 167.
 
 ## 2. Ordine sicuro delle migrazioni (grafo FK letto dai `.sql`)
 
-Dipendenze padre già presenti su TEST (confermate nel pre-check A): `organizations`, `companies`, `users`, `audits`, `projects`, `management_reviews`, `norm_requirements`, `equipment_assets`, `qualifications`, `custom_checklist_sections`, `ndt_reports/items`. `.sql` = file in `database/migrations/` salvo nota (BDM = `backend/database/migrations/`). I runner `run-migration-<NNN>-vps.js` restano cablati su PROD tranne il 153 (`SGQ_MIGRATION_TARGET=test`). **Batch A è stato applicato** con il runner solo-TEST #742 (`backend/scripts/run-migrations-test-only.js` su `main`), non con i runner `*-vps.js`. **B1+B2 applicati su TEST 07/10/2026** (113 con wrapper temp fuori repo). Per C usare lo stesso runner solo-TEST (o equivalente) — mai i `*-vps.js` verso PROD.
+Dipendenze padre già presenti su TEST (confermate nel pre-check A): `organizations`, `companies`, `users`, `audits`, `projects`, `management_reviews`, `norm_requirements`, `equipment_assets`, `qualifications`, `custom_checklist_sections`, `ndt_reports/items`. `.sql` = file in `database/migrations/` salvo nota (BDM = `backend/database/migrations/`). I runner `run-migration-<NNN>-vps.js` restano cablati su PROD tranne il 153 (`SGQ_MIGRATION_TARGET=test`). **Batch A è stato applicato** con il runner solo-TEST #742 (`backend/scripts/run-migrations-test-only.js` su `main`), non con i runner `*-vps.js`. **B1+B2 applicati su TEST 07/10/2026** (113 era wrapper temp; `.sql` ora in repo). Per C usare lo stesso runner solo-TEST (o equivalente) — mai i `*-vps.js` verso PROD.
 
 | Batch | Mig | Oggetto | `.sql` | Runner | Distruttiva | Idemp. | Rischio |
 |---|---|---|---|---|---|---|---|
@@ -213,10 +217,10 @@ Dipendenze padre già presenti su TEST (confermate nel pre-check A): `organizati
 | A fatto | 117 | `requirement_implementation_status/_history` (FK `organizations`, `companies`, `norm_requirements`, `users`) | sì (con `USE`; strippato dal runner #742) | applicata via #742 | no | sì | medio: `USE` |
 | A fatto | 122, 136 | `qualifications` +4 colonne nullable | sì | applicata via #742 | no | sì | basso |
 | A fatto | 138, 128 | `custom_checklist_sections` +2, `projects` +1 (nullable) | sì | 138: #742 (USE strippato); 128: #742 (non `-local`) | no | sì | basso |
-| A fatto | 112 | `management_reviews.input_monitoring` | **no** (DDL solo nel runner 112; applicato 07/10 con script temp fuori repo) | 112-vps/-local **non usato** | no | sì | basso |
+| A fatto | 112 | `management_reviews.input_monitoring` | sì (`112_management_reviews_input_monitoring.sql`; DDL dai runner 112-*) | 112-vps/-local **non usato** su TEST | no | sì | basso |
 | B1 fatto | 098 | `non_conformities` +`organization_id`, `source_category`, `source_origin_text`; UPDATE backfill; CHECK; **drop di ogni FK verso `audits`, `audit_id` → NULL, ri-aggiunta `FK_nc_audit_ref` senza CASCADE**; 2 indici | sì | applicata su TEST 07/10 | **sì (ALTER/DROP FK)** | sì | **alto** — fatto |
 | B1 fatto | 118 | ricrea `CK_nc_source_category` con `sal_gap` (dopo 098: 098 crea il CHECK senza `sal_gap`) | sì (con `USE`) | applicata su TEST 07/10 | drop+add CHECK | sì | medio: `USE` — fatto |
-| B2 fatto | 113 | `non_conformities.management_review_id` + FK (WITH NOCHECK) + indice filtrato (dopo `management_reviews`) | **no** (wrapper temp fuori repo, come 112) | applicata su TEST 07/10; **da versionare** | no | sì | basso |
+| B2 fatto | 113 | `non_conformities.management_review_id` + FK (WITH NOCHECK) + indice filtrato (dopo `management_reviews`) | sì (`113_nc_management_review_id.sql`; DDL dai runner 113-*) | applicata su TEST 07/10; **versionata, nessun apply in questa PR** | no | sì | basso |
 | B2 fatto | 121 | +`corrective_action_needed` (+CHECK), `corrective_action_evaluation_notes` | sì | applicata su TEST 07/10 | no | sì | basso |
 | B2 fatto | 125, 134, 135 | +`source_risk_id`; +`company_id` (+FK `companies`, indice); +`effectiveness_verification_notes` | sì | applicate su TEST 07/10 | no | sì | basso |
 | B2 fatto | 153 | +`project_id` + FK `projects` (SET NULL, no CASCADE) + indice | sì | applicata su TEST 07/10 | no | sì | basso |
@@ -227,7 +231,7 @@ Dipendenze padre già presenti su TEST (confermate nel pre-check A): `organizati
 
 **Motivazione ordine.** (1) A prima di B: tabelle/colonne nuove senza dipendenze reciproche, nessun ALTER su dati; 110 apre la strada a `/welding-books` e al JOIN allegati; **`/attachments*` e `/non-conformities` 200 dopo B1** (confermato 07/10). (2) B1 da solo: 098 → 118 è l'unico passo distruttivo su tabella centrale; 118 deve seguire 098. (3) B2: catena additiva su `non_conformities` (113 dopo `management_reviews`; 153 dopo `projects`); l'ordine interno è libero, si usa il numerico. (4) C per ultimo: swap indice e ALTER COLUMN, indipendenti dal resto. **C applicato su TEST (§0c).**
 
-**Senza `.sql` versionato (note aperte dopo B2):** **112 e 113** applicati su TEST con wrapper/script temp fuori repo — da versionare. 121 (`.sql` esisteva senza runner dedicato) è **già su TEST**. 19 tabelle PROD non hanno CREATE TABLE nel repo (non toccate qui).
+**`.sql` 112 e 113:** versionati in `database/migrations/` (DDL dai runner `run-migration-112-*` / `113-*`). Già applicati su TEST; questa PR non applica. 121 (`.sql` esisteva senza runner dedicato) è **già su TEST**. 19 tabelle PROD non hanno CREATE TABLE nel repo (non toccate qui).
 
 ## 3. Rischi
 
@@ -237,7 +241,7 @@ Dipendenze padre già presenti su TEST (confermate nel pre-check A): `organizati
 | 2 | **`FK_non_conformities_audit` CASCADE su TEST** (residuo baseline) | **Confermato dopo B1:** CASCADE verso `audits` **rimossa**; nessuna nuova CASCADE. `FK_nc_project` = `ON DELETE SET NULL`. Cancellare un audit con NC ora fallisce, come in PROD. |
 | 3 | **`UX_ndt_reports_number`** globale → per org (126) | Nessun conflitto dati: il vincolo diventa più debole, quindi righe valide prima restano valide. Verificare solo l'esistenza di `UX_ndt_reports_org_number` e l'assenza dell'indice globale |
 | 4 | **`norm_title` ALTER COLUMN** 200→500; **NOT NULL aggiunti** su tabelle con righe | Allargamento senza perdita; fallisce solo se esistono indici/vincoli sulla colonna (verificare). Colonne nuove su tabelle esistenti sono tutte **nullable** (098–153); i NOT NULL con DEFAULT sono solo in tabelle nuove (vuote) |
-| 5 | **Runner non sicuri**: i `*-vps.js` restano cablati su PROD; `.sql` 117/118/134/135/138 contengono `USE SGQ_ISO9001`; `sqlcmd` senza `-b` stampa successo con errori; i runner 160–166 leggono `.sql` stale; runner 167 con `sa` | Per A: runner solo-TEST #742 (USE 117/138 strippato, `DB_NAME()` verificato). B1+B2 applicati su TEST (113 wrapper temp). Per C: stesso runner solo-TEST. Mai `*-vps.js` su TEST |
+| 5 | **Runner non sicuri**: i `*-vps.js` restano cablati su PROD; `.sql` 117/118/134/135/138 contengono `USE SGQ_ISO9001`; `sqlcmd` senza `-b` stampa successo con errori; i runner 160–166 leggono `.sql` stale; runner 167 con `sa` | Per A: runner solo-TEST #742 (USE 117/138 strippato, `DB_NAME()` verificato). B1+B2 applicati su TEST (113 era wrapper temp; `.sql` ora in repo). Per C: stesso runner solo-TEST. Mai `*-vps.js` su TEST |
 | 6 | **Dati TEST non ricostruibili** | **Tre `.bak` sul VPS** (pre-A, pre-B1, pre-B2), ciascuno `RESTORE VERIFYONLY` OK. 098 è distruttiva e **non ha** `098_rollback.sql`: rollback B1 = restore pre-B1. Restore del solo pre-A annulla anche A+B. Prima di C (126 drop indice): nuovo `COPY_ONLY` |
 | 7 | Servizio TEST in uso durante l'apply (lock brevi su `non_conformities`, `attachments`; errori transitori per colonne mancanti fino al riavvio) | Finestra concordata; nessuna sessione utente; niente riavvio del backend se non richiesto dal batch |
 | 8 | Email di prova | Già soppresse da #740 su TEST; riverificare prima degli smoke di scrittura |
@@ -251,7 +255,7 @@ Dipendenze padre già presenti su TEST (confermate nel pre-check A): `organizati
 | Backup TEST **pre-B1** | **Fatto 07/10/2026:** `.bak` sul VPS, `RESTORE VERIFYONLY` OK. Schema post-A / pre-098. |
 | Backup TEST **pre-B2** | **Fatto 07/10/2026:** `.bak` sul VPS, `RESTORE VERIFYONLY` OK. Schema post-B1 / pre-113…153. |
 | Backup TEST **pre-C** (obbligatorio prima di C) | I tre file esistenti **non** bastano per 126 (drop indice). Nuovo `COPY_ONLY` + `RESTORE VERIFYONLY` **subito prima di C**, dopo sì esplicito. |
-| Runner sicuro | Per A è stato usato il runner solo-TEST #742 su `main` (`backend/scripts/run-migrations-test-only.js`). B1+B2 applicati su TEST (113 wrapper temp fuori repo). Stesso strumento (o equivalente) per C: `target=test`, abort se `DB_NAME()` ≠ `2026-06-18_SGQ_ISO9001`, nessun `USE` eseguito, split `GO`, errore SQL = stop, `check` prima di `apply`. Non usare i runner `*-vps.js` cablati su PROD. |
+| Runner sicuro | Per A è stato usato il runner solo-TEST #742 su `main` (`backend/scripts/run-migrations-test-only.js`). B1+B2 applicati su TEST (113 era wrapper temp; `.sql` ora in repo). Stesso strumento (o equivalente) per C: `target=test`, abort se `DB_NAME()` ≠ `2026-06-18_SGQ_ISO9001`, nessun `USE` eseguito, split `GO`, errore SQL = stop, `check` prima di `apply`. Non usare i runner `*-vps.js` cablati su PROD. |
 | `.sql` aggiornati | Copia dei file di `origin/main` (da `database/migrations/` **e** `backend/database/migrations/`), non la cartella stale del VPS; riportare sha256 nel log |
 | Configurazione | Sezione `test` di `backend/config/database.json.example` (file reale gitignored) coerente con `.env.test` |
 | Baseline | MainPID `sgq-backend-test` e `sgq-backend` prima/dopo; conteggi righe (`non_conformities`, `attachments`, `ndt_reports`) |
@@ -276,11 +280,11 @@ Fine di ogni batch: `journalctl` TEST senza errori di schema, MainPID invariato 
 | Tema | Perché fuori | Decide |
 |---|---|---|
 | 167 e PR #739 | Revisione in corso, runner `sa`/senza `-b`. Nota: in PROD `ai_assistant_notifications` ha FK CASCADE verso `organizations(organization_id)`: da riconciliare lì | Committente, dopo la revisione |
-| Versionare `.sql` per **112** e **113** | Entrambi applicati su TEST con wrapper/script temp fuori repo (non in Git). Senza file in `database/migrations/` il prossimo apply (PROD o restore) non è riproducibile dal repo | Lead / slice futura (nessun apply in questa PR) |
+| Versionare `.sql` per **112** e **113** | **Fatto:** `database/migrations/112_management_reviews_input_monitoring.sql` e `113_nc_management_review_id.sql` (DDL dai runner esistenti). Già su TEST; **nessun apply** in questa PR. Allowlist runner #742 aggiornata ai path. | — |
 | `push-to-nc-register` non smoke reale | Dopo B1 il piano prevedeva `POST /audits/:ref/push-to-nc-register` 200. **Non eseguito** in sessione B1+B2 | Lead, smoke dedicato (non blocca C) |
 | Drift senza migrazione (4 `input_*` su `management_reviews`; 19 tabelle senza CREATE TABLE) | Dopo 112 manca ancora: `input_context_changes`, `input_customer_satisfaction`, `input_process_performance`, `input_risk_effectiveness`. POST/PUT riesame resta incompleto (rischio 9). Nessuno script da applicare | Committente (migrazione nuova = livello Alto) |
 | Numerazione dopo 169 e tabella di tracking migrazioni | Oggi nessun registro di cosa è applicato dove | Committente / lead |
-| `IX_attachments_ndt_item` assente su TEST | La 108 salta il blocco (colonna già presente), quindi l'indice filtrato non viene creato. Verificare se PROD lo ha; se serve, migrazione additiva dedicata | Lead / committente |
+| `IX_attachments_ndt_item` assente su TEST | La 108 salta il blocco (colonna già presente). **Fatto (solo file, nessun apply):** [`170_attachments_ndt_item_index.sql`](../../database/migrations/170_attachments_ndt_item_index.sql) — indice filtrato non unico come PROD | — |
 | Hardening degli altri ~85 runner (target, CHECK_ONLY, guard, `-b`) | Fuori slice; l'hardening 158/159 (#738) è il modello | Lead |
 | Nuovo smoke CI di schema TEST↔PROD | Evita il ripetersi del gap | Lead |
 
@@ -291,6 +295,6 @@ Rischio complessivo **medio** (alto in B1, già chiuso). Quattro backup VERIFYON
 1. **Prerequisiti A** (backup pre-A, runner #742, `.sql`, finestra) → **fatto 07/10/2026**.
 2. **Batch A** (110, 124, 145, 117, 122, 136, 138, 128, 112) → **APPLICATO su TEST 07/10/2026** · verifica + smoke OK · STOP.
 3. **Batch B1** (098 → 118) → **APPLICATO su TEST 07/10/2026** · backup pre-B1 VERIFYONLY OK · `audit_id` nullable, CASCADE audits rimossa · smoke NC/allegati 200 · STOP.
-4. **Batch B2** (113, 121, 125, 134, 135, 153) → **APPLICATO su TEST 07/10/2026** · backup pre-B2 VERIFYONLY OK · 113 wrapper temp da versionare · STOP.
+4. **Batch B2** (113, 121, 125, 134, 135, 153) → **APPLICATO su TEST 07/10/2026** · backup pre-B2 VERIFYONLY OK · `.sql` 113 ora in repo · STOP.
 5. **Batch C** (107, 109, 126, 119; 108 no-op) → **APPLICATO su TEST 07/10/2026** · backup pre-C VERIFYONLY OK · indice per org presente, `norm_title` 500 · smoke NDT 200/201 · STOP.
 6. **Poi:** report finale di confronto TEST/PROD solo con sì esplicito. **Non** applicare PROD/167 senza sì.

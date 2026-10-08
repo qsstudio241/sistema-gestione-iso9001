@@ -35,13 +35,14 @@ const LOG = '[migrazioni-test-only]';
 
 const MIG = 'database/migrations/';
 const BMIG = 'backend/database/migrations/';
-const BATCH_RANK = { A: 0, B1: 1, B2: 2, C: 3 };
+const BATCH_RANK = { A: 0, B1: 1, B2: 2, C: 3, D: 4 };
 
 /**
  * Allowlist: numero -> sorgente. `file` = percorso relativo alla root del repo;
  * `missingReason` = nessun `.sql` nel repo (non si inventa SQL). `after` = dipendenze dure
  * (devono precedere se entrambe richieste). `batch` = ordine del piano
  * docs/reference/PIANO_ALLINEAMENTO_SCHEMA_TEST_2026-10-07.md.
+ * 112 e 113: `.sql` versionati in database/migrations/ (DDL dai runner 112 e 113).
  */
 const MIGRATIONS = {
     '110': { batch: 'A', file: `${BMIG}110_welding_books.sql` },
@@ -52,16 +53,10 @@ const MIGRATIONS = {
     '136': { batch: 'A', file: `${MIG}136_qualifications_transfer_mode.sql` },
     '138': { batch: 'A', file: `${MIG}138_custom_checklist_sections_legal_reference.sql` },
     '128': { batch: 'A', file: `${MIG}128_projects_technical_review_checklist.sql` },
-    '112': {
-        batch: 'A',
-        missingReason: 'DDL (management_reviews.input_monitoring) solo nel runner run-migration-112-*.js, nessun .sql nel repo',
-    },
+    '112': { batch: 'A', file: `${MIG}112_management_reviews_input_monitoring.sql` },
     '098': { batch: 'B1', file: `${MIG}098_nc_action_plan.sql` },
     '118': { batch: 'B1', file: `${MIG}118_nc_source_category_sal_gap.sql`, after: ['098'] },
-    '113': {
-        batch: 'B2',
-        missingReason: 'DDL (non_conformities.management_review_id + FK + indice) solo nel runner run-migration-113-*.js, nessun .sql nel repo',
-    },
+    '113': { batch: 'B2', file: `${MIG}113_nc_management_review_id.sql` },
     '121': { batch: 'B2', file: `${MIG}121_nc_correction_gate.sql` },
     '125': { batch: 'B2', file: `${MIG}125_nc_source_risk_id.sql` },
     '134': { batch: 'B2', file: `${MIG}134_nc_company_scope.sql` },
@@ -72,6 +67,11 @@ const MIGRATIONS = {
     '126': { batch: 'C', file: `${MIG}126_ndt_reports_number_index_fix.sql` },
     '119': { batch: 'C', file: `${BMIG}119_norm_title_widen.sql` },
     '108': { batch: 'C', file: `${BMIG}108_attachments_ndt_item.sql` },
+    '120': { batch: 'D', file: `${MIG}120_ingest_reference_patterns.sql` },
+    '144': { batch: 'D', file: `${MIG}144_auditor_orgs_email_unique.sql` },
+    '170': { batch: 'D', file: `${MIG}170_attachments_ndt_item_index.sql` },
+    '171': { batch: 'D', file: `${MIG}171_management_reviews_input_columns.sql` },
+    '172': { batch: 'D', file: `${MIG}172_ai_assistant_tables_align_prod.sql` },
 };
 
 class FatalRunnerError extends Error {}
@@ -380,7 +380,7 @@ function checkOrder(nums, allowlist) {
             if (depIdx > idx) errors.push(`dipendenza violata: ${num} richiede ${dep} prima (piano di allineamento)`);
         }
         const prev = nums.slice(0, idx).find((p) => allowlist[p] && BATCH_RANK[allowlist[p].batch] > BATCH_RANK[entry.batch]);
-        if (prev) warnings.push(`WARNING ordine: ${num} (batch ${entry.batch}) dopo ${prev} (batch ${allowlist[prev].batch}); il piano prevede A, B1, B2, C`);
+        if (prev) warnings.push(`WARNING ordine: ${num} (batch ${entry.batch}) dopo ${prev} (batch ${allowlist[prev].batch}); il piano prevede A, B1, B2, C, D`);
     });
     return { errors, warnings };
 }
