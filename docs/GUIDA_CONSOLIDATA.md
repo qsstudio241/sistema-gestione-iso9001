@@ -1186,6 +1186,7 @@ quando il pannello si apre.
 
 - **Bug pattern query indexer**: verificare sempre che le colonne SQL nelle query dell'indexer corrispondano allo schema reale del DB. Fix multipli: `nc_type` inesistente, `corrective_action` → `resolution_summary`, `NULL AS company_id` → `r.company_id`, `organization_id` → `auditor_org_id` in companies join.
 - **Modello embedding Gemini**: `text-embedding-004` è deprecato e ritorna errore. Usare `gemini-embedding-001`.
+- **Parametri generazione Gemini (07/10/2026, email Google AI Studio)**: con i modelli Gemini 3.x+ `temperature`/`top_p`/`top_k` sono ignorati e dai prossimi modelli daranno errore; `thinking_budget` darà 400 (sostituito da `thinking_level`). Il progetto non usa `thinking_budget`, non invia `top_p`, ma `geminiAdapter.buildGenerationConfig` invia `temperature`. Nessun impatto con `gemini-2.5-flash`; **prima di cambiare `GEMINI_MODEL`** togliere `temperature` per Gemini (punto unico). Tracciato in roadmap § Backlog parcheggiato.
 - **Contratto API flat vs nested**: quando si progetta un endpoint dashboard (es. `/ai/knowledge-health`), definire il formato di risposta (flat object vs nested) e allinearlo subito al frontend. Disallineamento causa errore silenzioso (valori `undefined`).
 
 #### Commit principali (16/05/2026)
