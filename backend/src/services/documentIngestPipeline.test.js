@@ -158,6 +158,19 @@ describe('mergeExtractions', () => {
         expect(legacy.source).toBe('rules');
     });
 
+    it('issue_date: per patentino/14732 NON ripiega su exam_date; per gli altri tipi l\'alias storico resta', () => {
+        const { pickMergedValue } = require('./documentIngestPipeline.service');
+        const ai = { exam_date: '2025-06-13' };
+        for (const docType of ['patentino_saldatore', 'qualifica_14732']) {
+            expect(pickMergedValue('issue_date', {}, ai, docType).value).toBeNull();
+            expect(pickMergedValue('issue_date', {}, { ...ai, issue_date: '2025-06-25' }, docType).value).toBe('2025-06-25');
+        }
+        expect(pickMergedValue('issue_date', {}, ai, 'wpqr').value).toBe('2025-06-13');
+        const merged = mergeExtractions({}, { exam_date: '2025-06-13', issue_date: '2025-06-25' }, 'qualifica_14732');
+        expect(merged.fields.issue_date).toBe('2025-06-25');
+        expect(merged.fields.exam_date).toBe('2025-06-13');
+    });
+
     it('preferisce AI e marca high se coincide con regole', () => {
         const { fields, fieldConfidence, fieldSources } = mergeExtractions(
             { welding_process: '135', wpqr_number: '21-02906' },

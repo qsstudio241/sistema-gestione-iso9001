@@ -32,6 +32,8 @@
  *   `reprocessTableAdapters.js` per la logica specifica di ciascuna tabella.
  * - `qualTypeLike`: filtro SQL LIKE su qualification_type per i candidati
  *   (solo tabella `qualifications` — `wpqr_records` non ha questa colonna).
+ * - `qualTypeLikeAny` (opzionale, solo `qualifications`): come `qualTypeLike` ma elenco di pattern
+ *   in OR (campo valido per piu' tipi, es. 9606 e 14732). Se presente ha precedenza su `qualTypeLike`.
  * - `processWhitelist`: se valorizzato, il welding_process (ISO 4063) deve
  *   contenere uno dei codici elencati, altrimenti il campo non è
  *   normativamente applicabile (evita proposte inutili). `null` = nessun filtro.
@@ -180,6 +182,35 @@ const REPROCESSABLE_FIELD_REGISTRY = {
         module: 'qualifiche',
         table: 'qualifications',
         qualTypeLike: '%9606%',
+        processWhitelist: null,
+    },
+    // Smoke ingest 08/10/2026: l'emissione era copiata dalla data esame. Candidati: emissione
+    // assente OPPURE identica alla data esame (valore derivato dal vecchio comportamento).
+    // Colonne gia' esistenti (032 issue_date, 084 examiner_body, 032 standard_ref): nessuna migrazione.
+    issue_date: {
+        key: 'issue_date',
+        label: 'Data di emissione certificato',
+        module: 'qualifiche',
+        table: 'qualifications',
+        qualTypeLikeAny: ['%9606%', '%14732%'],
+        processWhitelist: null,
+        candidateWhere: '(issue_date IS NULL OR issue_date = exam_date)',
+    },
+    examiner_body: {
+        key: 'examiner_body',
+        label: 'Ente / esaminatore',
+        module: 'qualifiche',
+        table: 'qualifications',
+        qualTypeLikeAny: ['%9606%', '%14732%'],
+        processWhitelist: null,
+    },
+    // AI `standard_reference` -> colonna `standard_ref` (nuovo per qualifica_14732; il patentino lo estraeva gia').
+    standard_ref: {
+        key: 'standard_ref',
+        label: 'Norma di riferimento (edizione) — ISO 14732',
+        module: 'qualifiche',
+        table: 'qualifications',
+        qualTypeLike: '%14732%',
         processWhitelist: null,
     },
 
