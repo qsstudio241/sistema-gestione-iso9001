@@ -153,6 +153,50 @@ function classifyQualificationType(text, extractedFields = {}) {
     return 'Altra qualifica';
 }
 
+const DOC_TYPE_QUALIFICATION_TYPE = Object.freeze({
+    qualifica_14732: 'Operatore ISO 14732',
+});
+const PATENTINO_DEFAULT_TYPE = 'Saldatore ISO 9606-1';
+const NDT_DEFAULT_TYPE = 'Operatore NDT';
+
+/**
+ * Tipo qualifica con `doc_type` esplicito come fonte primaria (scansioni senza testo:
+ * il solo nome file non basta e dava "Altra qualifica").
+ * - `qualifica_14732` -> sempre "Operatore ISO 14732" (i certificati 14732 citano 9606/15614
+ *   come base: la regola testuale li classificherebbe come saldatori).
+ * - `patentino_saldatore` -> sottotipo 9606-1/9606-2 dal testo se leggibile, altrimenti 9606-1.
+ *   Se il testo indica un altro tipo (es. 14732), vince il doc_type scelto dall'operatore
+ *   e `mismatch` segnala la discrepanza (warning in revisione).
+ * - `cert_ndt` -> dal testo (metodo/livello); se non riconosciuto "Operatore NDT".
+ * - doc_type assente o generico -> solo classificazione da testo/nome file (comportamento storico).
+ * Il blocco `wrong_module` (WPQR/WPS ecc.) e' calcolato altrove dal classificatore documento
+ * e non dipende da questa funzione.
+ *
+ * @returns {{ type: string, source: 'docType'|'docType+text'|'text', textType: string, mismatch: boolean }}
+ */
+function resolveQualificationType({ docType = null, text = '', fileName = '', extractedFields = {} } = {}) {
+    const textType = classifyQualificationType(text || fileName, extractedFields);
+    if (docType && DOC_TYPE_QUALIFICATION_TYPE[docType]) {
+        const type = DOC_TYPE_QUALIFICATION_TYPE[docType];
+        return { type, source: 'docType', textType, mismatch: textType !== 'Altra qualifica' && textType !== type };
+    }
+    if (docType === 'patentino_saldatore') {
+        if (/^Saldatore ISO 9606-[12]$/.test(textType)) {
+            return { type: textType, source: 'docType+text', textType, mismatch: false };
+        }
+        return {
+            type: PATENTINO_DEFAULT_TYPE,
+            source: 'docType',
+            textType,
+            mismatch: textType !== 'Altra qualifica',
+        };
+    }
+    if (docType === 'cert_ndt' && textType === 'Altra qualifica') {
+        return { type: NDT_DEFAULT_TYPE, source: 'docType', textType, mismatch: false };
+    }
+    return { type: textType, source: 'text', textType, mismatch: false };
+}
+
 function normalizeDate(val) {
     if (!val) return null;
     const s = String(val).trim();
@@ -274,13 +318,15 @@ function resolveConfirmationDates({ confirmations, lastConfirmation, nextConfirm
     return { last_confirmation_date: last, next_confirmation_due: next || null };
 }
 
-function mapPipelineFieldsToReview(f, pipelineText, fileName) {
+function mapPipelineFieldsToReview(f, pipelineText, fileName, docType = null) {
     const person_name = String(f.welder_name || f.operator_name || f.person_name || '').trim();
     const position_range = Array.isArray(f.welding_positions)
         ? f.welding_positions.join(', ')
         : (f.welding_positions || f.welding_position || null);
 
+    // exam_date puo' ripiegare sull'emissione (solo se manca la data prova); il contrario NO.
     const exam_date    = normalizeDate(f.exam_date || f.issue_date);
+    const issue_date   = normalizeDate(f.issue_date);
     const expiry_date  = normalizeDate(f.expiry_date);
 
     const { last_confirmation_date, next_confirmation_due } = resolveConfirmationDates({
@@ -288,7 +334,7 @@ function mapPipelineFieldsToReview(f, pipelineText, fileName) {
         lastConfirmation: f.last_confirmation_date,
         nextConfirmation: f.next_confirmation_due || f.cpd_valid_until,
         examDate: exam_date,
-        issueDate: normalizeDate(f.issue_date),
+        issueDate: issue_date,
     });
 
     // Sanitizzazione numerica (bug produzione 27/07/2026): il PDF originale o il
@@ -336,7 +382,9 @@ function mapPipelineFieldsToReview(f, pipelineText, fileName) {
         pipe_diameter_min_mm: pipeDiameterMinNum,
         pipe_diameter_max_mm: pipeDiameterMaxNum,
         exam_date,
-        issue_date: exam_date,
+        // Emissione reale del certificato: MAI derivata da exam_date (data della prova).
+        // Se non estratta resta null e va inserita in revisione.
+        issue_date,
         expiry_date,
         last_confirmation_date,
         next_confirmation_due,
@@ -381,11 +429,16 @@ function mapPipelineFieldsToReview(f, pipelineText, fileName) {
         welding_type: f.welding_type || null,
         single_multi_run: f.single_multi_run || null,
         qualification_method: f.qualification_method || null,
-        qualification_type: classifyQualificationType(pipelineText || fileName, {
-            ndt_method: f.ndt_method || null,
-            certification_level: f.certification_level || null,
-            ndt_level: f.ndt_level || null,
-        }),
+        qualification_type: resolveQualificationType({
+            docType,
+            text: pipelineText,
+            fileName,
+            extractedFields: {
+                ndt_method: f.ndt_method || null,
+                certification_level: f.certification_level || null,
+                ndt_level: f.ndt_level || null,
+            },
+        }).type,
     };
 }
 
@@ -421,7 +474,28 @@ async function extractQualificationFromPdf(pdfBuffer, fileName, organizationId, 
         organizationId,
     });
     const warnings = [...pipeline.warnings];
-    const reviewFields = mapPipelineFieldsToReview(pipeline.fields || {}, pipeline.text, fileName);
+    const reviewFields = mapPipelineFieldsToReview(pipeline.fields || {}, pipeline.text, fileName, docType);
+    const qualTypeResolution = resolveQualificationType({
+        docType,
+        text: pipeline.text,
+        fileName,
+        extractedFields: {
+            ndt_method: (pipeline.fields || {}).ndt_method || null,
+            certification_level: (pipeline.fields || {}).certification_level || null,
+            ndt_level: (pipeline.fields || {}).ndt_level || null,
+        },
+    });
+    logger.info(
+        `Qualification type resolved file=${fileName} docType=${docType}`
+        + ` qualType=${qualTypeResolution.type} qualTypeSource=${qualTypeResolution.source}`
+        + ` textType=${qualTypeResolution.textType}`,
+    );
+    if (qualTypeResolution.mismatch) {
+        warnings.push(
+            `Il testo suggerisce "${qualTypeResolution.textType}" ma il tipo scelto è `
+            + `"${qualTypeResolution.type}": verificare il tipo in revisione.`,
+        );
+    }
 
     if (pipeline.text.length > 30) {
         // Includi il nome file nello score: i PDF scansionati spesso hanno 14732/9606
@@ -430,7 +504,8 @@ async function extractQualificationFromPdf(pdfBuffer, fileName, organizationId, 
         // Winston printf scarta i meta-oggetti: metti i dettagli nel messaggio.
         logger.info(
             `Qualification doc classification file=${fileName} detected=${docClass.detected_type}`
-            + ` conf=${docClass.confidence} score=${docClass.score} docType=${docType}`,
+            + ` conf=${docClass.confidence} score=${docClass.score} docType=${docType}`
+            + ` qualTypeSource=${qualTypeResolution.source}`,
         );
         if (WRONG_MODULE_FOR_QUALIFICATIONS.has(docClass.detected_type) && docClass.confidence === 'high') {
             // L'operatore ha già scelto esplicitamente patentino/14732/NDT nel pannello:
@@ -523,7 +598,7 @@ async function commitQualificationFromFields(fields, organizationId, companyId, 
     }
 
     const certificate_number = f.certificate_number || null;
-    const issue_date = normalizeDate(f.exam_date || f.issue_date);
+    const issue_date = normalizeDate(f.issue_date);
     const exam_date = normalizeDate(f.exam_date || f.issue_date);
     const expiry_date = normalizeDate(f.expiry_date);
     const issuing_body = f.issuing_body || null;
@@ -800,6 +875,10 @@ const REPROCESSABLE_FIELDS = {
     thickness_t_test_mm: { column: 'thickness_t_test_mm' },
     pipe_diameter_test_mm: { column: 'pipe_diameter_test_mm' },
     qualification_designation: { column: 'qualification_designation' },
+    // Emissione: riscrivibile solo se assente o ancora uguale alla data esame (valore derivato in passato).
+    issue_date: { column: 'issue_date', writeGuard: '(issue_date IS NULL OR issue_date = exam_date)' },
+    examiner_body: { column: 'examiner_body' },
+    standard_ref: { column: 'standard_ref' },
 };
 
 /**
@@ -875,6 +954,7 @@ module.exports = {
     extractQualificationFromPdf,
     commitQualificationFromFields,
     classifyQualificationType,
+    resolveQualificationType,
     mapPipelineFieldsToReview,
     resolveConfirmationDates,
     checkQualificationPlausibility,

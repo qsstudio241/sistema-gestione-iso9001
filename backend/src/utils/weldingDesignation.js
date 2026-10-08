@@ -134,6 +134,19 @@ const PROCESS_IN_LINE_RE = /\b\d{2,3}[A-Z]?\b/i;
 const EDITION_ONLY_RE = /^(?:19|20)\d{2}(?:\s*[+]\s*A\d+)?\s*$/i;
 const LABELED_9606_RE = /ISO\s*9606-1\s*[:.\-]?\s*([^\n\r]*)/gi;
 
+/**
+ * Normalizza la sorgente della riga prima di tokenizzare:
+ * - virgola decimale italiana tra cifre ("D48,25") -> punto, cosi' non viene trattata come separatore;
+ * - simbolo diametro (\u00D8, \u2300) o "D" staccato dal valore ("D 48,25") -> token unico "D48.25".
+ * `;` e le virgole che separano campi veri (non tra due cifre) restano separatori.
+ */
+function normalizeDesignationSource(raw) {
+    return String(raw || '')
+        .replace(/(\d),(?=\d)/g, '$1.')
+        .replace(/[\u00D8\u00F8\u2300]\s*=?\s*(?=\d)/g, 'D')
+        .replace(/(^|[\s;,])D\s+(?=\d)/g, '$1D');
+}
+
 function parseNumberToken(raw) {
     if (raw == null || raw === '') return null;
     const n = Number(String(raw).replace(',', '.'));
@@ -193,7 +206,7 @@ function parseWelderQualificationDesignation(text) {
     const rawLine = picked.rawLine;
     const tokenSource = picked.tokenSource;
 
-    const tokens = String(tokenSource || '')
+    const tokens = normalizeDesignationSource(tokenSource)
         .replace(/[;,]+/g, ' ')
         .split(/\s+/)
         .map((t) => t.trim())

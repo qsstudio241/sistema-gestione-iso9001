@@ -48,6 +48,7 @@ describe('Qualifiche — completezza modifica manuale vs schemi ingest AI', () =
         const aliases = {
             operator_name: 'person_name',
             welding_positions: 'position_range',
+            standard_reference: 'standard_ref',
         };
         const missing = findIngestFieldsMissingFromManualEdit(schema, QUALIFICATION_MANUAL_EDITABLE_FIELDS, { aliases });
         expect(missing).toEqual([]);

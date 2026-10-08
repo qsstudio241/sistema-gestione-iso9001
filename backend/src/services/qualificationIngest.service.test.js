@@ -700,6 +700,7 @@ describe('round-trip a sentinella — ogni campo aiExpectedSchema (patentino_sal
         const { fields, tokens } = buildSentinelFields(DOCUMENT_TYPE_SCHEMAS.patentino_saldatore.aiExpectedSchema, {
             filler_material_group: 'FM1',
             exam_date: '2030-01-05',
+            issue_date: '2030-01-07',
             expiry_date: '2030-06-05',
             last_confirmation_date: '2030-01-06',
             next_confirmation_due: '2030-07-06',
@@ -1050,5 +1051,119 @@ describe('spessore prova per profilo giunto (VQ-BW-S) — BW -> s depositato, FW
             expect(na.input).toHaveBeenCalledWith('thickSTest', null);
             expect(na.input).toHaveBeenCalledWith('thickTTest', null);
         });
+    });
+});
+
+describe('qualification_type da doc_type esplicito', () => {
+    const { resolveQualificationType } = require('./qualificationIngest.service');
+    const { classifyDocument, WRONG_MODULE_FOR_QUALIFICATIONS } = require('../utils/documentClassifier');
+    const logger = require('../utils/logger');
+
+    function pipeline(text, fields = {}) {
+        return {
+            text,
+            warnings: [],
+            fields: { operator_name: 'ROSSI MARIO', certificate_number: 'SINT-0001', ...fields },
+            fieldConfidence: {},
+            aiModel: null,
+        };
+    }
+
+    beforeEach(() => {
+        runDocumentIngest.mockReset();
+        getPool.mockReset();
+        logger.info.mockClear();
+    });
+
+    afterEach(() => {
+        jest.restoreAllMocks();
+        WRONG_MODULE_FOR_QUALIFICATIONS.clear();
+    });
+
+    it('scansione senza testo con qualifica_14732 -> "Operatore ISO 14732" (nome file senza indizi)', async () => {
+        runDocumentIngest.mockResolvedValue(pipeline(''));
+        const out = await extractQualificationFromPdf(Buffer.from('x'), 'scansione_001.pdf', 10, null, 'qualifica_14732');
+        expect(out.qualification_type).toBe('Operatore ISO 14732');
+        expect(out.fields.qualification_type).toBe('Operatore ISO 14732');
+    });
+
+    it('stessa scansione senza doc_type esplicito di qualifica 14732: comportamento storico "Altra qualifica"', () => {
+        expect(mapPipelineFieldsToReview({}, '', 'scansione_001.pdf').qualification_type).toBe('Altra qualifica');
+        expect(mapPipelineFieldsToReview({}, '', 'scansione_001.pdf', null).qualification_type).toBe('Altra qualifica');
+        expect(mapPipelineFieldsToReview({}, '', 'scansione_001.pdf', 'tipo_sconosciuto').qualification_type).toBe('Altra qualifica');
+    });
+
+    it('qualifica_14732 con testo che cita anche ISO 9606-1: vince il doc_type scelto + warning di discrepanza', async () => {
+        runDocumentIngest.mockResolvedValue(pipeline('Operatore di saldatura ISO 14732, base prova ISO 9606-1 e 15614-1 sintetico'));
+        const out = await extractQualificationFromPdf(Buffer.from('x'), 'doc.pdf', 10, null, 'qualifica_14732');
+        expect(out.qualification_type).toBe('Operatore ISO 14732');
+        expect(out.warnings.some((w) => /Il testo suggerisce "Saldatore ISO 9606-1"/.test(w))).toBe(true);
+    });
+
+    it('patentino con testo ISO 9606-1: invariato', async () => {
+        runDocumentIngest.mockResolvedValue(pipeline('Certificato ISO 9606-1 saldatore sintetico'));
+        const out = await extractQualificationFromPdf(Buffer.from('x'), 'doc.pdf', 10, null, 'patentino_saldatore');
+        expect(out.qualification_type).toBe('Saldatore ISO 9606-1');
+        expect(out.warnings.some((w) => /Il testo suggerisce/.test(w))).toBe(false);
+    });
+
+    it('patentino con testo ISO 9606-2: resta il sottotipo letto dal testo', () => {
+        const r = resolveQualificationType({ docType: 'patentino_saldatore', text: 'qualifica ISO 9606-2 alluminio' });
+        expect(r).toMatchObject({ type: 'Saldatore ISO 9606-2', source: 'docType+text', mismatch: false });
+    });
+
+    it('patentino senza testo: default "Saldatore ISO 9606-1" (fonte docType)', () => {
+        const r = resolveQualificationType({ docType: 'patentino_saldatore', text: '', fileName: 'scan.pdf' });
+        expect(r).toMatchObject({ type: 'Saldatore ISO 9606-1', source: 'docType', mismatch: false });
+    });
+
+    it('mismatch: patentino scelto ma testo 14732 -> docType esplicito vince e emette warning', async () => {
+        runDocumentIngest.mockResolvedValue(pipeline('Certificato operatore ISO 14732 sintetico'));
+        const out = await extractQualificationFromPdf(Buffer.from('x'), 'doc.pdf', 10, null, 'patentino_saldatore');
+        expect(out.qualification_type).toBe('Saldatore ISO 9606-1');
+        expect(out.warnings.some((w) => /Il testo suggerisce "Operatore ISO 14732"/.test(w))).toBe(true);
+    });
+
+    it('cert_ndt: classificazione da testo invariata; senza indizi "Operatore NDT"', () => {
+        expect(resolveQualificationType({
+            docType: 'cert_ndt',
+            text: 'certificato NDT ISO 9712 sintetico',
+            extractedFields: { ndt_method: 'UT', certification_level: '2' },
+        }).type).toBe('Operatore NDT UT Livello 2');
+        expect(resolveQualificationType({ docType: 'cert_ndt', text: '' }).type).toBe('Operatore NDT');
+    });
+
+    it('doc_type assente: stesso risultato di classifyQualificationType', () => {
+        for (const t of ['certificato ISO 9606-1', 'ISO 14731 coordinatore', 'documento generico']) {
+            expect(resolveQualificationType({ text: t }).type).toBe(classifyQualificationType(t));
+            expect(resolveQualificationType({ text: t }).source).toBe('text');
+        }
+    });
+
+    it('log: "Qualification doc classification" resta e riporta la fonte del tipo', async () => {
+        runDocumentIngest.mockResolvedValue(pipeline('x'.repeat(60)));
+        await extractQualificationFromPdf(Buffer.from('x'), 'doc.pdf', 10, null, 'qualifica_14732');
+        const msgs = logger.info.mock.calls.map((c) => String(c[0]));
+        expect(msgs.some((m) => /Qualification doc classification .*docType=qualifica_14732 qualTypeSource=docType/.test(m))).toBe(true);
+        expect(msgs.some((m) => /Qualification type resolved .*qualType=Operatore ISO 14732 qualTypeSource=docType/.test(m))).toBe(true);
+    });
+
+    it('wrong_module non nascosto: senza doc_type esplicito di qualifica resta wrong_module', async () => {
+        WRONG_MODULE_FOR_QUALIFICATIONS.add('wpqr');
+        classifyDocument.mockReturnValueOnce({ detected_type: 'wpqr', confidence: 'high', score: 9 });
+        runDocumentIngest.mockResolvedValue(pipeline('x'.repeat(60)));
+        const out = await extractQualificationFromPdf(Buffer.from('x'), 'doc.pdf', 10, null, 'tipo_non_qualifica');
+        expect(out.status).toBe('wrong_module');
+        expect(out.detected_type).toBe('wpqr');
+    });
+
+    it('wrong_module con doc_type esplicito: nessun blocco (già gestito) ma tipo da doc_type', async () => {
+        WRONG_MODULE_FOR_QUALIFICATIONS.add('wpqr');
+        classifyDocument.mockReturnValueOnce({ detected_type: 'wpqr', confidence: 'high', score: 9 });
+        runDocumentIngest.mockResolvedValue(pipeline('x'.repeat(60)));
+        const out = await extractQualificationFromPdf(Buffer.from('x'), 'doc.pdf', 10, null, 'qualifica_14732');
+        expect(out.status).toBe('pending_review');
+        expect(out.qualification_type).toBe('Operatore ISO 14732');
+        expect(out.warnings.some((w) => /Si procede con il tipo scelto/.test(w))).toBe(true);
     });
 });

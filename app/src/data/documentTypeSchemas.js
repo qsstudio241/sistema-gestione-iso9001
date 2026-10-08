@@ -230,6 +230,20 @@ const patentino_saldatore = {
       hint: "Data in cui si è svolta la prova di qualifica",
     },
     {
+      key: "issue_date",
+      label: "Data di emissione",
+      type: "date",
+      required: false,
+      hint: "Data di emissione/rilascio del certificato (diversa dalla data esame). Lasciare vuoto se non riportata.",
+    },
+    {
+      key: "examiner_body",
+      label: "Ente / esaminatore",
+      type: "text",
+      required: false,
+      hint: "Ente o esaminatore che ha eseguito la prova, se diverso dall'ente certificatore",
+    },
+    {
       key: "expiry_date",
       label: "Data di scadenza",
       type: "date",
@@ -321,6 +335,8 @@ Campi da estrarre:
 - qualification_designation: riga STAMPATA "ISO 9606-1: …" così com'è sul certificato. NON ricalcolarla da min/max
 - shielding_gas: codice gas ISO 14175 (es. "M21", "I1") o null
 - exam_date: data esame in formato ISO 8601 (YYYY-MM-DD) o null
+- issue_date: data di EMISSIONE/rilascio del certificato (YYYY-MM-DD), DISTINTA da exam_date ("Date of issue"/"Data di emissione"). Se il certificato riporta solo la data della prova, usa null: NON copiare exam_date
+- examiner_body: ente/esaminatore che ha eseguito o testimoniato la prova ("Examiner or examining body"), se diverso dall'issuing_body; null se assente
 - expiry_date: data scadenza in formato ISO 8601 (YYYY-MM-DD) o null
 - last_confirmation_date: data ultima conferma datore di lavoro in formato ISO 8601 o null
 - next_confirmation_due: data prossima conferma in formato ISO 8601 o null
@@ -356,6 +372,8 @@ Campi da estrarre:
     next_confirmation_due: "YYYY-MM-DD|null",
     standard_reference: "string|null",
     transfer_mode: "spray_arc|pulsed_arc|short_arc|globular|null",
+    issue_date: "YYYY-MM-DD|null",
+    examiner_body: "string|null",
   },
 };
 
@@ -985,6 +1003,21 @@ const qualifica_14732 = {
     },
     { key: "exam_date", label: "Data esame", type: "date", required: false },
     {
+      key: "issue_date",
+      label: "Data di emissione",
+      type: "date",
+      required: false,
+      hint: "Data di emissione/rilascio del certificato (diversa dalla data esame). Lasciare vuoto se non riportata.",
+    },
+    { key: "examiner_body", label: "Ente / esaminatore", type: "text", required: false },
+    {
+      key: "standard_reference",
+      label: "Norma di riferimento",
+      type: "text",
+      required: false,
+      hint: "Norma con edizione come scritta sul certificato (es. ISO 14732:2013)",
+    },
+    {
       key: "expiry_date",
       label: "Data di scadenza",
       type: "date",
@@ -1039,6 +1072,9 @@ Campi da estrarre:
 - single_multi_run: "single" o "multi" se indicato
 - exam_date, expiry_date, last_confirmation_date, next_confirmation_due (YYYY-MM-DD)
 - qualification_method: quale metodo tra §4.1 a/b/c/d è stato usato, se indicato
+- issue_date: data di EMISSIONE del certificato (YYYY-MM-DD), distinta da exam_date (data della prova); se assente null, NON copiare exam_date
+- examiner_body: ente/esaminatore che ha eseguito la prova, se diverso dall'issuing_body
+- standard_reference: norma con edizione ESATTAMENTE come scritta sul certificato (es. "ISO 14732:2013"); null se non indicata
 
 IMPORTANTE: NON assumere un intervallo di validità fisso. ISO 14732 ha rivalidazione a 6 anni (opzione a) o 3 anni con controllo NDT (opzione b), diversi dai 3/2 anni di ISO 9606-1 per saldatori manuali — estrai solo ciò che è scritto sul certificato.`,
   aiExpectedSchema: {
@@ -1055,6 +1091,9 @@ IMPORTANTE: NON assumere un intervallo di validità fisso. ISO 14732 ha rivalida
     last_confirmation_date: "YYYY-MM-DD|null",
     next_confirmation_due: "YYYY-MM-DD|null",
     qualification_method: "iso_15614|iso_15613|iso_9606|production_test|null",
+    issue_date: "YYYY-MM-DD|null",
+    examiner_body: "string|null",
+    standard_reference: "string|null",
   },
 };
 
