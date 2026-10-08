@@ -165,6 +165,13 @@ describe('welding_process: solo alta confidenza', () => {
         expect(extractPatentinoFields('ISO 4063:2017 141', 'x.pdf').welding_process).toBe('141');
     });
 
+    it('primo codice di un elenco 141/145 o 141-145; non legge una data come processo', () => {
+        expect(extractPatentinoFields('Welding process 141/145', 'x.pdf').welding_process).toBe('141');
+        expect(extractPatentinoFields('Welding process: 141-145', 'x.pdf').welding_process).toBe('141');
+        expect(extractPatentinoFields('Welding process 141,145', 'x.pdf').welding_process).toBe('141');
+        expect(extractPatentinoFields('Welding process 14/06/2025', 'x.pdf').welding_process).toBeNull();
+    });
+
     it('precedenza regola/AI: l AI vince; con AI null la regola entra solo se alta confidenza', () => {
         const strong = { welding_process: '141' };
         expect(pickMergedValue('welding_process', strong, { welding_process: '135' }).value).toBe('135');
@@ -265,6 +272,15 @@ describe('material_group: solo con contesto', () => {
         expect(extractMaterialGroupLabeled('ISO/TR 15608:2017 1.2')).toBe('1.2');
         expect(extractMaterialGroupLabeled('ISO/TR 15608-2017: 1.2')).toBe('1.2');
         expect(extractMaterialGroupLabeled('Material group ISO/TR 15608:2017 1.2')).toBe('1.2');
+    });
+
+    it('primo gruppo di un elenco 1.2/8.1; non legge una data come gruppo', () => {
+        expect(extractMaterialGroupLabeled('Material group 1.2/8.1')).toBe('1.2');
+        expect(extractMaterialGroupLabeled('Gruppo materiale 1.2-8.1')).toBe('1.2');
+        expect(extractMaterialGroupLabeled('Material group 1.2,8.1')).toBe('1.2');
+        expect(extractPatentinoFields('Material group 1.2/8.1', 'x.pdf').material_group).toBe('1.2');
+        expect(extractMaterialGroupLabeled('Gruppo materiale 10/03/2024')).toBeNull();
+        expect(extractPatentinoFields('Gruppo materiale 10/03/2024', 'x.pdf').material_group).toBeNull();
     });
 });
 
