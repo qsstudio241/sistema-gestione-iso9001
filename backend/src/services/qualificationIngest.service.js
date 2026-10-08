@@ -8,6 +8,7 @@ const logger = require('../utils/logger');
 const { getPool } = require('../config/database');
 const { resolvePersonnelForQualification } = require('./personnelQualificationLink.service');
 const { runDocumentIngest } = require('./documentIngestPipeline.service');
+const { deriveQualificationStatus } = require('./weldingCoordinatorAuth.service');
 const { resolvePrintedDesignation, resolveTestThicknessByJoint } = require('../utils/weldingDesignation');
 const {
     classifyDocument,
@@ -222,6 +223,57 @@ function resolvePipeDiameterRange(f = {}) {
     return { min, max };
 }
 
+const NEGATIVE_CONFIRMATION_RE = /^\s*(neg|no\b|non\b|fail|ko\b|respint|rifiut|reject|invalid)/i;
+
+/** Una riga della tabella conferme conta solo se ha una data valida e non e' esplicitamente negativa/non firmata. */
+function parseConfirmationEntry(entry) {
+    if (entry == null) return null;
+    if (typeof entry === 'string') return normalizeDate(entry);
+    if (typeof entry !== 'object') return null;
+    const date = normalizeDate(entry.date || entry.data);
+    if (!date) return null;
+    if (entry.confirmed === false || entry.signed === false || entry.firmata === false) return null;
+    const outcome = entry.outcome ?? entry.esito ?? null;
+    if (typeof outcome === 'string' && NEGATIVE_CONFIRMATION_RE.test(outcome)) return null;
+    return date;
+}
+
+/**
+ * Date di conferma periodica (ISO 9606-1 §9.2 / ISO 14732 §6.2, ogni 6 mesi).
+ *
+ * - Ultima conferma REALE = data piu' recente della tabella conferme (`confirmations`, se l'AI la
+ *   restituisce) o `last_confirmation_date`, scartando le date che non sono conferme: uguali alla data
+ *   di emissione o di esame (sono la qualifica, non una conferma) oppure antecedenti all'esame.
+ * - Prossima = ultima conferma + 6 mesi. Un valore esplicito dell'AI/PDF si mantiene solo se e'
+ *   successivo all'ultima conferma (altrimenti e' incoerente e si ricalcola).
+ * - Senza conferme: ultima = null e prossima = data qualifica + 6 mesi. ISO 14732 §6.1/§6.2: la
+ *   qualifica decorre dalla data di saldatura del provino (= data esame) e la prima conferma e' dovuta
+ *   dopo 6 mesi da quella data; solo se manca la data esame si ripiega sull'emissione.
+ *
+ * @returns {{ last_confirmation_date: string|null, next_confirmation_due: string|null }}
+ */
+function resolveConfirmationDates({ confirmations, lastConfirmation, nextConfirmation, examDate, issueDate } = {}) {
+    const excluded = new Set([examDate, issueDate].filter(Boolean));
+    const isRealConfirmation = (d) => !!d && !excluded.has(d) && (!examDate || d > examDate);
+
+    const fromTable = Array.isArray(confirmations)
+        ? confirmations.map(parseConfirmationEntry).filter(isRealConfirmation).sort()
+        : [];
+    const single = normalizeDate(lastConfirmation);
+    let last = fromTable.length ? fromTable[fromTable.length - 1] : null;
+    if (!last && isRealConfirmation(single)) last = single;
+    if (last && single && isRealConfirmation(single) && single > last) last = single;
+
+    const explicitNext = normalizeDate(nextConfirmation);
+    let next;
+    if (last) {
+        next = explicitNext && explicitNext > last ? explicitNext : addMonths(last, 6);
+    } else {
+        next = explicitNext || addMonths(examDate || issueDate, 6);
+    }
+    return { last_confirmation_date: last, next_confirmation_due: next || null };
+}
+
 function mapPipelineFieldsToReview(f, pipelineText, fileName) {
     const person_name = String(f.welder_name || f.operator_name || f.person_name || '').trim();
     const position_range = Array.isArray(f.welding_positions)
@@ -231,17 +283,13 @@ function mapPipelineFieldsToReview(f, pipelineText, fileName) {
     const exam_date    = normalizeDate(f.exam_date || f.issue_date);
     const expiry_date  = normalizeDate(f.expiry_date);
 
-    // Conferma semestrale (ISO 9606-1 §9.2): se il PDF non ha ancora registrato
-    // alcuna conferma (tabella 9.2 vuota su nuovo certificato), l'ultima conferma
-    // coincide con l'esame e la prossima scade 6 mesi dopo l'esame.
-    const last_confirmation_date = normalizeDate(
-        f.last_confirmation_date || null
-    );
-    const next_confirmation_due = normalizeDate(
-        f.next_confirmation_due || f.cpd_valid_until
-    ) || (last_confirmation_date
-        ? addMonths(last_confirmation_date, 6)
-        : addMonths(exam_date, 6));
+    const { last_confirmation_date, next_confirmation_due } = resolveConfirmationDates({
+        confirmations: f.confirmations,
+        lastConfirmation: f.last_confirmation_date,
+        nextConfirmation: f.next_confirmation_due || f.cpd_valid_until,
+        examDate: exam_date,
+        issueDate: normalizeDate(f.issue_date),
+    });
 
     // Sanitizzazione numerica (bug produzione 27/07/2026): il PDF originale o il
     // form di revisione possono restituire "N.A.", stringa vuota o range testuali
@@ -592,7 +640,12 @@ async function commitQualificationFromFields(fields, organizationId, companyId, 
         .input('lastConfDate', last_confirmation_date || null)
         .input('nextConfDue', next_confirmation_due || null)
         .input('revalDate', revalidation_date || null)
-        .input('status', 'valida')
+        .input('status', deriveQualificationStatus({
+            status: 'valida',
+            expiry_date,
+            next_confirmation_due,
+            qualification_type: qualificationType,
+        }))
         .input('userId', userId || null)
         .input('weldProc', welding_process || null)
         .input('matGroup', material_group || null)
@@ -823,6 +876,7 @@ module.exports = {
     commitQualificationFromFields,
     classifyQualificationType,
     mapPipelineFieldsToReview,
+    resolveConfirmationDates,
     checkQualificationPlausibility,
     applyFieldReprocessUpdate,
     normalizeFillerMaterialGroup,
