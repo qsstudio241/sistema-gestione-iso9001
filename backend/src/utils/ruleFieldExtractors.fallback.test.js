@@ -61,6 +61,29 @@ describe('date: esame non e la nascita, scadenza non e emissione', () => {
         expect(extractQualificationDates(text).exam_date).toBe('2024-03-03');
     });
 
+    it.each([
+        ['Nato a Roma\nData della prova 03.03.2024\nValid until 02.03.2027'],
+        ['Born in Rome\n03.03.2024\n02.03.2027'],
+        ['Nato a Roma il 12.05.1975\n03.03.2024\n02.03.2027'],
+        ['Born in Rome on 12.05.1975\n03.03.2024\n02.03.2027'],
+        ['Nato il 12.05.1975\n03.03.2024\n02.03.2027'],
+    ])('luogo di nascita senza data non inghiotte la data esame: %j', (text) => {
+        expect(extractQualificationDates(text)).toEqual({ exam_date: '2024-03-03', expiry_date: '2027-03-02' });
+    });
+
+    it.each([
+        'Data di prova 03.03.2024',
+        'Data di esame: 03.03.2024',
+        'Data dell\'esame 03.03.2024',
+    ])('etichette esame con "data di": %j', (text) => {
+        expect(extractQualificationDates(`Emesso 01.02.2024\n${text}`).exam_date).toBe('2024-03-03');
+    });
+
+    it('titolo "Validity" senza data non oscura il successivo "Valid until"', () => {
+        const text = 'Date of test 03.03.2024\nRange of validity\nValidity of qualification\nValid until 02.03.2027\nStampato 05.05.2025';
+        expect(extractQualificationDates(text).expiry_date).toBe('2027-03-02');
+    });
+
     it('scarta anni < 1990 quando esistono alternative, anche senza etichetta nascita', () => {
         const text = '01.01.1960\n03.03.2024\n02.03.2027';
         expect(extractQualificationDates(text)).toEqual({ exam_date: '2024-03-03', expiry_date: '2027-03-02' });

@@ -278,25 +278,37 @@ function extractWeldingProcessConfident(text, designationFields = {}) {
         : null;
 }
 
-const EXAM_DATE_LABEL_RE = /\b(?:date\s+of\s+(?:the\s+)?(?:test|examination|welding)|(?:test|examination)\s+date|data\s+(?:della\s+|dell['’]\s*)?(?:prova|esame|test|saldatura))\s*[:.]?\s*/i;
-const QUALIFICATION_EXPIRY_LABEL_RE = /\b(?:expiry(?:\s*date)?|data\s+di\s+scadenza|scadenza|valid\s*(?:until|to)|validity|valido\s+fino\s+al)\s*[:.]?\s*/i;
-const BIRTH_LABEL_RE = /\b(?:date\s+of\s+birth|birth\s*date|data\s+di\s+nascita|nat[oa]\s+(?:il|a)|born(?:\s+(?:on|in))?)\b/gi;
-const NEXT_DATE_LABEL_RE = /\b(?:date|data|valid|validity|scadenza|expiry|issued|emissione)\b/i;
+const EXAM_DATE_LABEL_RE = /\b(?:date\s+of\s+(?:the\s+)?(?:test|examination|welding)|(?:test|examination)\s+date|data\s+(?:di\s+|della\s+|dell['’]\s*)?(?:prova|esame|test|saldatura))\s*[:.]?\s*/i;
+const QUALIFICATION_EXPIRY_STRONG_LABEL_RE = /\b(?:expiry(?:\s*date)?|data\s+di\s+scadenza|scadenza|valid\s*(?:until|to)|valido\s+fino\s+al)\s*[:.]?\s*/i;
+const QUALIFICATION_EXPIRY_WEAK_LABEL_RE = /\bvalidity\s*[:.]?\s*/i;
+const BIRTH_LABEL_RE = /(?:nat[oa]\s+a\s+[^\n\d]{1,40}?\s+il|born\s+in\s+[^\n\d]{1,40}?\s+on|date\s+of\s+birth|birth\s*date|data\s+di\s+nascita|nat[oa]\s+il|born(?:\s+on)?)\b/gi;
+const DATE_AT_START_RE = /^(?:\d{4}-\d{2}-\d{2}|\d{1,2}[./]\d{1,2}[./]\d{2,4})/;
 const MIN_PLAUSIBLE_QUALIFICATION_YEAR = 1990;
 
-/** Date che seguono un'etichetta di nascita (la prima data dopo l'etichetta, prima di un'altra etichetta data). */
+/** Date di nascita: solo la data scritta subito dopo un'etichetta di nascita (mai quella di una riga successiva). */
 function extractBirthDates(text) {
     const birth = new Set();
     const re = new RegExp(BIRTH_LABEL_RE.source, 'gi');
     let m;
     while ((m = re.exec(text)) !== null) {
-        let windowText = text.slice(m.index + m[0].length, m.index + m[0].length + 60);
-        const cut = windowText.search(NEXT_DATE_LABEL_RE);
-        if (cut >= 0) windowText = windowText.slice(0, cut);
-        const first = allDates(windowText)[0];
+        const after = text.slice(m.index + m[0].length, m.index + m[0].length + 20).replace(/^[\s:.\-]+/, '');
+        const dateText = after.match(DATE_AT_START_RE);
+        const first = dateText ? allDates(dateText[0])[0] : null;
         if (first) birth.add(first);
     }
     return birth;
+}
+
+/** Prima data utile dopo QUALUNQUE occorrenza dell'etichetta (titoli di sezione senza data non la oscurano). */
+function extractLabeledDateAny(text, labelRe, exclude = new Set()) {
+    const re = new RegExp(labelRe.source, 'gi');
+    let m;
+    while ((m = re.exec(text)) !== null) {
+        const windowText = text.slice(m.index + m[0].length, m.index + m[0].length + 30);
+        const found = allDates(windowText).find((d) => !exclude.has(d));
+        if (found) return found;
+    }
+    return null;
 }
 
 /**
@@ -306,13 +318,13 @@ function extractBirthDates(text) {
  */
 function extractQualificationDates(text) {
     const birth = extractBirthDates(text);
-    const notBirth = (d) => (d && !birth.has(d) ? d : null);
     const all = allDates(text).filter((d) => !birth.has(d));
     const plausible = all.filter((d) => Number(d.slice(0, 4)) >= MIN_PLAUSIBLE_QUALIFICATION_YEAR);
     const candidates = plausible.length ? plausible : all;
 
-    const exam = notBirth(extractLabeledDate(text, EXAM_DATE_LABEL_RE)) || candidates[0] || null;
-    let expiry = notBirth(extractLabeledDate(text, QUALIFICATION_EXPIRY_LABEL_RE))
+    const exam = extractLabeledDateAny(text, EXAM_DATE_LABEL_RE, birth) || candidates[0] || null;
+    let expiry = extractLabeledDateAny(text, QUALIFICATION_EXPIRY_STRONG_LABEL_RE, birth)
+        || extractLabeledDateAny(text, QUALIFICATION_EXPIRY_WEAK_LABEL_RE, birth)
         || (candidates.length > 1 ? candidates[candidates.length - 1] : null);
     if (expiry && exam && expiry <= exam) expiry = null;
     return { exam_date: exam, expiry_date: expiry };
