@@ -1,0 +1,35 @@
+/*
+ * WpqrTestRunsEditor (WV-6a) — estende lo schema `sq-cov-*` di CoverageVerifyPanel.css
+ * (importato dal componente: tabella, hint, bottone `sq-btn-new`, `sq-select`, `sq-search`).
+ * Solo layout della tabella passate; colori e raggi invariati.
+ */
+
+.sq-cov-panel.wtr-editor { margin: 0 0 14px; }
+.wtr-scroll { overflow-x: auto; border: 1px solid var(--color-border, #e2e8f0); border-radius: var(--radius, 8px); }
+.wtr-table th { white-space: nowrap; font-size: 12px; }
+.wtr-table td { vertical-align: top; }
+
+.sq-cov-panel.wtr-editor .wtr-input { flex: none; min-width: 0; padding: 6px 8px; font-size: 13px; box-sizing: border-box; }
+.sq-cov-panel.wtr-editor .wtr-num { width: 84px; }
+.sq-cov-panel.wtr-editor .wtr-narrow { width: 110px; }
+.sq-cov-panel.wtr-editor .wtr-wide { width: 180px; }
+.sq-cov-panel.wtr-editor .wtr-unit { padding: 6px 6px; }
+.wtr-input[readonly] { background: var(--color-bg, #f8fafc); }
+.wtr-pair { display: flex; gap: 6px; align-items: center; }
+
+.wtr-error { margin: 4px 0 0; font-size: 12px; color: #dc2626; max-width: 190px; }
+
+.wtr-toggle { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; color: var(--color-text, #1e293b); cursor: pointer; }
+
+.wtr-btn-remove {
+  padding: 6px 12px; background: #fff; color: var(--color-primary, #1e3a5f);
+  border: 1px solid var(--color-primary, #1e3a5f); border-radius: var(--radius, 8px);
+  font-size: 13px; font-weight: 600; cursor: pointer;
+}
+.wtr-btn-remove:hover:not(:disabled) { background: #f0f4f8; }
+.wtr-btn-remove:disabled { opacity: 0.55; cursor: not-allowed; }
+
+.wtr-sr {
+  position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+  overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0;
+}

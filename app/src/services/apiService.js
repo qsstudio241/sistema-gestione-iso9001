@@ -2758,6 +2758,21 @@ class ApiService {
     async updateWPQR(id, data)       { return this.put(`/welding/wpqr/${id}`, data); }
     async deleteWPQR(id)             { return this.delete(`/welding/wpqr/${id}`); }
 
+    // WPQR — passate di prova e verifica vs norma (WV-6a). Le rotte nascono in WV-4a/WV-5c:
+    // finché non sono su `main` la chiamata reale risponde 404 (nessun chiamante montato).
+    /** Passate di prova della WPQR. Risponde `{ runs }`. */
+    async getWpqrTestRuns(wpqrId)        { return this.get(`/welding/wpqr/${wpqrId}/test-runs`); }
+    /** Replace-set delle passate (stesso contratto del GET). */
+    async saveWpqrTestRuns(wpqrId, runs) { return this.put(`/welding/wpqr/${wpqrId}/test-runs`, { runs }); }
+    /** Verifica WPQR vs norma: stateless, nessuna scrittura. Risponde `{ verification }`. */
+    async verifyWpqr(fields, { runs, standardReference } = {}) {
+        return this.post('/welding/wpqr/verify', {
+            fields,
+            runs,
+            standard_reference: standardReference,
+        });
+    }
+
     // WPS Welders
     async getWpsWelders(wpsId)              { return this.get(`/welding/wps/${wpsId}/welders`); }
     async assignWpsWelder(wpsId, data)      { return this.post(`/welding/wps/${wpsId}/welders`, data); }
