@@ -562,10 +562,10 @@ describe('modalita check', () => {
 });
 
 describe('analisi statica dei file reali (senza eseguirli)', () => {
-    const planNumbers = ['110', '124', '145', '117', '122', '136', '138', '128', '112', '098', '118', '113', '121', '125', '134', '135', '153', '107', '109', '126', '119', '108'];
+    const planNumbers = ['110', '124', '145', '117', '122', '136', '138', '128', '112', '098', '118', '113', '121', '125', '134', '135', '153', '107', '109', '126', '119', '108', '120', '144', '170', '171', '172'];
     const withSql = Object.entries(MIGRATIONS).filter(([, e]) => e.file);
 
-    it('l allowlist copre tutte le migrazioni dei batch A, B1, B2, C del piano e nulla di piu', () => {
+    it('l allowlist copre tutte le migrazioni dei batch A, B1, B2, C, D del piano e nulla di piu', () => {
         expect(Object.keys(MIGRATIONS).sort()).toEqual([...planNumbers].sort());
     });
 
@@ -600,6 +600,16 @@ describe('analisi statica dei file reali (senza eseguirli)', () => {
             const a = analyzeSqlFile(fs.readFileSync(path.join(REPO_ROOT, MIGRATIONS[n].file), 'utf8'));
             expect(a.findings).toEqual([]);
         }
+    });
+
+    it('172: replica PROD (unico CASCADE su FK_ai_assistant_notif_org, nessuna FK su ai_assistant_usage) e la 167 resta fuori allowlist', () => {
+        const sql = fs.readFileSync(path.join(REPO_ROOT, MIGRATIONS['172'].file), 'utf8');
+        const code = sql.split('\n').filter((l) => !l.trim().startsWith('--')).join('\n');
+        expect(code.match(/ON DELETE CASCADE/gi)).toHaveLength(1);
+        expect(code).toMatch(/FK_ai_assistant_notif_org\s+FOREIGN KEY \(organization_id\) REFERENCES dbo\.organizations \(organization_id\)\s+ON DELETE CASCADE/);
+        expect(code).not.toMatch(/FK_ai_assistant_usage/);
+        expect(code).not.toMatch(/\busers\b/);
+        expect(MIGRATIONS['167']).toBeUndefined();
     });
 
     it('check sui file reali con pool finto: nessuna scrittura (ramo 098 -> 118 con USE)', async () => {
