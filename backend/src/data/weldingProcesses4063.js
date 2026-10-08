@@ -50,8 +50,8 @@ function normalizeWeldingProcessCode(raw) {
 /** Solo codice con etichetta esplicita (livello 1): alta confidenza, usato dai fallback a regole dei patentini. */
 function inferWeldingProcessExplicit(text) {
   const body = String(text || '');
-  const labeledRe = /\b(?:welding\s+process|process(?:o)?(?:\s+di)?(?:\s+saldatura)?|proc\.?)\s*[:.]?\s*(\d{2,3})\b/i;
-  const isoRe = /\bISO\s*4063\s*[:.]?\s*(\d{2,3})\b/i;
+  const labeledRe = /\b(?:welding\s+process|process(?:o)?(?:\s+di)?(?:\s+saldatura)?|proc\.?)\s*[:.]?\s*(\d{2,3})(?![.,\/-]?\d)/i;
+  const isoRe = /\bISO\s*4063(?:\s*[:\-]\s*(?:19|20)\d{2})?\s*[:.]?\s*(\d{2,3})(?![.,\/-]?\d)/i;
   const labeled = body.match(labeledRe) || body.match(isoRe);
   return labeled && CODE_MAP.has(labeled[1]) ? labeled[1] : null;
 }

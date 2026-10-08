@@ -372,8 +372,8 @@ function extractQualificationCertificateNumber(text, fileName) {
         || extractCertificateNumberFromFileName(fileName);
 }
 
-const MATERIAL_GROUP_LABEL_RE = /\b(?:material\s+group|gruppo\s+(?:del\s+)?materiale|parent\s+material(?:\s+group)?|base\s+material(?:\s+group)?|materiale\s+base)\s*(?:\(s\))?\s*(?:ISO\/TR\s*15608\s*)?[:.\-]?\s*(\d{1,2}(?:\.\d{1,2})?)\b/i;
-const ISO_TR_15608_GROUP_RE = /\bISO\/TR\s*15608\s*[:.]?\s*(\d{1,2}(?:\.\d{1,2})?)\b/i;
+const MATERIAL_GROUP_LABEL_RE = /\b(?:material\s+group|gruppo\s+(?:del\s+)?materiale|parent\s+material(?:\s+group)?|base\s+material(?:\s+group)?|materiale\s+base)\s*(?:\(s\))?\s*(?:ISO\/TR\s*15608(?:\s*[:\-]\s*(?:19|20)\d{2})?\s*)?[:.\-]?\s*(\d{1,2}(?:\.\d{1,2})?)(?![.,\/-]?\d)/i;
+const ISO_TR_15608_GROUP_RE = /\bISO\/TR\s*15608(?:\s*[:\-]\s*(?:19|20)\d{2})?\s*[:.]?\s*(\d{1,2}(?:\.\d{1,2})?)(?![.,\/-]?\d)/i;
 
 /** Gruppo materiale (ISO/TR 15608) solo con etichetta esplicita, norma citata o designazione acciaio: mai da indirizzi/CAP/civici. */
 function extractMaterialGroupLabeled(text) {

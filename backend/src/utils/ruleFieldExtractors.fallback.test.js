@@ -160,6 +160,11 @@ describe('welding_process: solo alta confidenza', () => {
         expect(out.welding_process_test).toBe('135');
     });
 
+    it('non tronca un codice se il numero e piu lungo; accetta anno di edizione ISO 4063', () => {
+        expect(extractPatentinoFields('Welding process 1410', 'x.pdf').welding_process).toBeNull();
+        expect(extractPatentinoFields('ISO 4063:2017 141', 'x.pdf').welding_process).toBe('141');
+    });
+
     it('precedenza regola/AI: l AI vince; con AI null la regola entra solo se alta confidenza', () => {
         const strong = { welding_process: '141' };
         expect(pickMergedValue('welding_process', strong, { welding_process: '135' }).value).toBe('135');
@@ -243,6 +248,23 @@ describe('material_group: solo con contesto', () => {
         const text = 'Via Roma 8/10\nCAP 10100 Torino\nMaterial group ISO/TR 15608: 1.2';
         expect(extractMaterialGroupLabeled(text)).toBe('1.2');
         expect(extractPatentinoFields(text, 'x.pdf').material_group).toBe('1.2');
+    });
+
+    it('non tronca numeri materiale o date in un gruppo plausibile', () => {
+        expect(extractMaterialGroupLabeled('ISO/TR 15608 1.4301')).not.toBe('1');
+        expect(extractMaterialGroupLabeled('ISO/TR 15608 1.4301')).toBe('8.1');
+        expect(extractMaterialGroupLabeled('Material group ISO/TR 15608 1.4301')).not.toBe('1');
+        expect(extractMaterialGroupLabeled('Material group ISO/TR 15608 1.4301')).toBe('8.1');
+        expect(extractPatentinoFields('ISO/TR 15608 1.4301', 'x.pdf').material_group).toBe('8.1');
+        expect(extractMaterialGroupLabeled('ISO/TR 15608 01.06.2025')).toBeNull();
+        expect(extractMaterialGroupLabeled('Gruppo materiale 10.03.2024')).toBeNull();
+        expect(extractPatentinoFields('Gruppo materiale 10.03.2024', 'x.pdf').material_group).toBeNull();
+    });
+
+    it('accetta l anno di edizione dopo ISO/TR 15608', () => {
+        expect(extractMaterialGroupLabeled('ISO/TR 15608:2017 1.2')).toBe('1.2');
+        expect(extractMaterialGroupLabeled('ISO/TR 15608-2017: 1.2')).toBe('1.2');
+        expect(extractMaterialGroupLabeled('Material group ISO/TR 15608:2017 1.2')).toBe('1.2');
     });
 });
 
