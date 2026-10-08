@@ -35,7 +35,7 @@ describe('modulo qualificationVerify — puro', () => {
     });
 
     test('index espone solo funzioni di lettura', () => {
-        expect(Object.keys(require('./index')).sort()).toEqual(['listRulePacks', 'validateFinding', 'verifyQualification']);
+        expect(Object.keys(require('./index')).sort()).toEqual(['listRulePacks', 'validateFinding', 'verifyQualification', 'verifyWpqr']);
     });
 });
 
@@ -45,12 +45,16 @@ describe('pack ⇄ registerDefaultPacks ⇄ deploy-manifest', () => {
     const manifest = JSON.parse(fs.readFileSync(MANIFEST, 'utf8'));
     const manifestFiles = new Set(manifest.groups.flatMap((g) => g.files));
 
-    test('esistono i quattro pack previsti', () => {
+    test('esistono gli otto pack previsti (quattro qualifiche, quattro WPQR)', () => {
         expect(packFiles.map((f) => path.basename(f)).sort()).toEqual([
             'operator14732.pack.js',
             'welder9606Completeness.pack.js',
             'welder9606Correctness.pack.js',
             'welder9606Part2.pack.js',
+            'wpqr14555Correctness.pack.js',
+            'wpqr15614_1Correctness.pack.js',
+            'wpqr15614_2Correctness.pack.js',
+            'wpqrCompleteness.pack.js',
         ]);
     });
 
