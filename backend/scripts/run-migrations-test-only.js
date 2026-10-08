@@ -71,6 +71,7 @@ const MIGRATIONS = {
     '144': { batch: 'D', file: `${MIG}144_auditor_orgs_email_unique.sql` },
     '170': { batch: 'D', file: `${MIG}170_attachments_ndt_item_index.sql` },
     '171': { batch: 'D', file: `${MIG}171_management_reviews_input_columns.sql` },
+    '172': { batch: 'D', file: `${MIG}172_ai_assistant_tables_align_prod.sql` },
 };
 
 class FatalRunnerError extends Error {}
