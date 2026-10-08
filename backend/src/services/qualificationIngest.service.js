@@ -272,7 +272,9 @@ function mapPipelineFieldsToReview(f, pipelineText, fileName, docType = null) {
         ? f.welding_positions.join(', ')
         : (f.welding_positions || f.welding_position || null);
 
+    // exam_date puo' ripiegare sull'emissione (solo se manca la data prova); il contrario NO.
     const exam_date    = normalizeDate(f.exam_date || f.issue_date);
+    const issue_date   = normalizeDate(f.issue_date);
     const expiry_date  = normalizeDate(f.expiry_date);
 
     // Conferma semestrale (ISO 9606-1 §9.2): se il PDF non ha ancora registrato
@@ -332,7 +334,9 @@ function mapPipelineFieldsToReview(f, pipelineText, fileName, docType = null) {
         pipe_diameter_min_mm: pipeDiameterMinNum,
         pipe_diameter_max_mm: pipeDiameterMaxNum,
         exam_date,
-        issue_date: exam_date,
+        // Emissione reale del certificato: MAI derivata da exam_date (data della prova).
+        // Se non estratta resta null e va inserita in revisione.
+        issue_date,
         expiry_date,
         last_confirmation_date,
         next_confirmation_due,
@@ -546,7 +550,7 @@ async function commitQualificationFromFields(fields, organizationId, companyId, 
     }
 
     const certificate_number = f.certificate_number || null;
-    const issue_date = normalizeDate(f.exam_date || f.issue_date);
+    const issue_date = normalizeDate(f.issue_date);
     const exam_date = normalizeDate(f.exam_date || f.issue_date);
     const expiry_date = normalizeDate(f.expiry_date);
     const issuing_body = f.issuing_body || null;
@@ -818,6 +822,10 @@ const REPROCESSABLE_FIELDS = {
     thickness_t_test_mm: { column: 'thickness_t_test_mm' },
     pipe_diameter_test_mm: { column: 'pipe_diameter_test_mm' },
     qualification_designation: { column: 'qualification_designation' },
+    // Emissione: riscrivibile solo se assente o ancora uguale alla data esame (valore derivato in passato).
+    issue_date: { column: 'issue_date', writeGuard: '(issue_date IS NULL OR issue_date = exam_date)' },
+    examiner_body: { column: 'examiner_body' },
+    standard_ref: { column: 'standard_ref' },
 };
 
 /**

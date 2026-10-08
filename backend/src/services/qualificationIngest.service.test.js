@@ -700,6 +700,7 @@ describe('round-trip a sentinella — ogni campo aiExpectedSchema (patentino_sal
         const { fields, tokens } = buildSentinelFields(DOCUMENT_TYPE_SCHEMAS.patentino_saldatore.aiExpectedSchema, {
             filler_material_group: 'FM1',
             exam_date: '2030-01-05',
+            issue_date: '2030-01-07',
             expiry_date: '2030-06-05',
             last_confirmation_date: '2030-01-06',
             next_confirmation_due: '2030-07-06',

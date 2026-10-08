@@ -232,8 +232,17 @@ const TEST_SLOT_KEYS = new Set([
     'qualification_designation',
 ]);
 
-function pickMergedValue(key, ruleFields, aiFields) {
-    const aliases = [key, ...(FIELD_ALIASES[key] || [])];
+/**
+ * Qualifiche personali: la data esame NON e' una data di emissione. Senza questa esclusione
+ * l'alias issue_date -> exam_date copiava la data della prova sull'emissione reale.
+ */
+const DOC_TYPES_WITHOUT_EXAM_DATE_AS_ISSUE = new Set(['patentino_saldatore', 'qualifica_14732']);
+
+function pickMergedValue(key, ruleFields, aiFields, docType = null) {
+    let aliases = [key, ...(FIELD_ALIASES[key] || [])];
+    if (key === 'issue_date' && DOC_TYPES_WITHOUT_EXAM_DATE_AS_ISSUE.has(docType)) {
+        aliases = aliases.filter((k) => k !== 'exam_date');
+    }
     let aiVal = null;
     let ruleVal = null;
 
@@ -275,7 +284,7 @@ function mergeExtractions(ruleFields, aiFields, docType) {
     const fieldSources = {};
 
     for (const key of uniqueKeys) {
-        const { value, confidence, source } = pickMergedValue(key, ruleFields, aiFields);
+        const { value, confidence, source } = pickMergedValue(key, ruleFields, aiFields, docType);
         if (value != null) {
             fields[key] = value;
             fieldConfidence[key] = confidence;
