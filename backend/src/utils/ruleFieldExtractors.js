@@ -329,7 +329,8 @@ function extractLabeledDateAny(text, labelRe, exclude = new Set()) {
 /**
  * Data esame e scadenza per qualifiche persona (patentini, 14732): esclude le date di nascita, preferisce le
  * etichette esplicite, scarta anni implausibili se esistono alternative; la scadenza non puo' coincidere con
- * (ne' precedere) la data esame.
+ * (ne' precedere) la data esame. La scadenza etichettata vince sulla posizione: non diventa exam_date solo
+ * perche' e' la prima data del testo o perche' allDates raccoglie prima il formato ISO.
  */
 function extractQualificationDates(text) {
     const birth = extractBirthDates(text);
@@ -337,9 +338,14 @@ function extractQualificationDates(text) {
     const plausible = all.filter((d) => Number(d.slice(0, 4)) >= MIN_PLAUSIBLE_QUALIFICATION_YEAR);
     const candidates = plausible.length ? plausible : all;
 
-    const exam = extractLabeledDateAny(text, EXAM_DATE_LABEL_RE, birth) || candidates[0] || null;
-    let expiry = extractLabeledDateAny(text, QUALIFICATION_EXPIRY_STRONG_LABEL_RE, birth)
-        || extractLabeledDateAny(text, QUALIFICATION_EXPIRY_WEAK_LABEL_RE, birth)
+    const labeledExam = extractLabeledDateAny(text, EXAM_DATE_LABEL_RE, birth);
+    const labeledExpiry = extractLabeledDateAny(text, QUALIFICATION_EXPIRY_STRONG_LABEL_RE, birth)
+        || extractLabeledDateAny(text, QUALIFICATION_EXPIRY_WEAK_LABEL_RE, birth);
+
+    const exam = labeledExam
+        || candidates.find((d) => d !== labeledExpiry)
+        || null;
+    let expiry = labeledExpiry
         || (candidates.length > 1 ? candidates[candidates.length - 1] : null);
     if (expiry && exam && expiry <= exam) expiry = null;
     return { exam_date: exam, expiry_date: expiry };

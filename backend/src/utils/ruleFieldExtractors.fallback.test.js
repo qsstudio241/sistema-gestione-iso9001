@@ -108,6 +108,32 @@ describe('date: esame non e la nascita, scadenza non e emissione', () => {
         expect(extractQualificationDates('Data prova 03.03.2024\nValido fino al 02.03.2027').expiry_date).toBe('2027-03-02');
     });
 
+    it('scadenza etichettata prima dell esame: vince sulla posizione', () => {
+        const text = 'Scadenza: 02.03.2027\nDate of test 03.03.2024';
+        expect(extractQualificationDates(text)).toEqual({ exam_date: '2024-03-03', expiry_date: '2027-03-02' });
+        expect(extractPatentinoFields(text, 'x.pdf').expiry_date).toBe('2027-03-02');
+        expect(extractQualifica14732Fields(text, 'x.pdf').expiry_date).toBe('2027-03-02');
+        expect(extractQualificationDates('Scadenza: 02.03.2027\n03.03.2024')).toEqual({
+            exam_date: '2024-03-03',
+            expiry_date: '2027-03-02',
+        });
+    });
+
+    it('scadenza ISO YYYY-MM-DD etichettata: non viene scartata (allDates raccoglie ISO per prima)', () => {
+        expect(extractQualificationDates('03.03.2024\nExpiry date: 2027-03-02')).toEqual({
+            exam_date: '2024-03-03',
+            expiry_date: '2027-03-02',
+        });
+        expect(extractQualificationDates('Valid until 2027-03-02\n03.03.2024')).toEqual({
+            exam_date: '2024-03-03',
+            expiry_date: '2027-03-02',
+        });
+        expect(extractQualificationDates('Expiry date: 2027-03-02\nDate of test: 2024-03-03')).toEqual({
+            exam_date: '2024-03-03',
+            expiry_date: '2027-03-02',
+        });
+    });
+
     it('vale anche per la qualifica 14732', () => {
         const out = extractQualifica14732Fields('Date of birth 12.05.1975\nExamination date 03.03.2024', 'x.pdf');
         expect(out.exam_date).toBe('2024-03-03');
