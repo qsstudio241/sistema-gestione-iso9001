@@ -440,7 +440,7 @@ async function extractQualificationFromPdf(pdfBuffer, fileName, organizationId, 
     );
     if (qualTypeResolution.mismatch) {
         warnings.push(
-            `Il testo suggerisce "${qualTypeResolution.textType}" ma il tipo scelto e' `
+            `Il testo suggerisce "${qualTypeResolution.textType}" ma il tipo scelto è `
             + `"${qualTypeResolution.type}": verificare il tipo in revisione.`,
         );
     }
