@@ -226,12 +226,23 @@ describe('material_group: solo con contesto', () => {
         ['Gruppo materiale 8.1', '8.1'],
         ['Parent material group 1', '1'],
         ['Materiale base: 8.1', '8.1'],
-    ])('con etichetta %s', (text, expected) => {
+        ['Material group ISO/TR 15608: 1.2', '1.2'],
+        ['Gruppo materiale ISO/TR 15608 8.1', '8.1'],
+        ['ISO/TR 15608: 1.2', '1.2'],
+        ['ISO/TR 15608 8.1', '8.1'],
+    ])('con etichetta o norma %s', (text, expected) => {
         expect(extractMaterialGroupLabeled(text)).toBe(expected);
+        expect(extractPatentinoFields(text, 'x.pdf').material_group).toBe(expected);
     });
 
     it('mantiene la designazione acciaio come indizio', () => {
         expect(extractMaterialGroupLabeled('Base material S355J2')).toBe('1.2');
+    });
+
+    it('ISO/TR 15608 con indirizzo nello stesso testo: prende il gruppo, non il civico', () => {
+        const text = 'Via Roma 8/10\nCAP 10100 Torino\nMaterial group ISO/TR 15608: 1.2';
+        expect(extractMaterialGroupLabeled(text)).toBe('1.2');
+        expect(extractPatentinoFields(text, 'x.pdf').material_group).toBe('1.2');
     });
 });
 

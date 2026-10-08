@@ -372,16 +372,23 @@ function extractQualificationCertificateNumber(text, fileName) {
         || extractCertificateNumberFromFileName(fileName);
 }
 
-const MATERIAL_GROUP_LABEL_RE = /\b(?:material\s+group|gruppo\s+(?:del\s+)?materiale|parent\s+material(?:\s+group)?|base\s+material(?:\s+group)?|materiale\s+base)\s*(?:\(s\))?\s*[:.\-]?\s*(\d{1,2}(?:\.\d{1,2})?)\b/i;
+const MATERIAL_GROUP_LABEL_RE = /\b(?:material\s+group|gruppo\s+(?:del\s+)?materiale|parent\s+material(?:\s+group)?|base\s+material(?:\s+group)?|materiale\s+base)\s*(?:\(s\))?\s*(?:ISO\/TR\s*15608\s*)?[:.\-]?\s*(\d{1,2}(?:\.\d{1,2})?)\b/i;
+const ISO_TR_15608_GROUP_RE = /\bISO\/TR\s*15608\s*[:.]?\s*(\d{1,2}(?:\.\d{1,2})?)\b/i;
 
-/** Gruppo materiale (ISO/TR 15608) solo con etichetta esplicita o designazione acciaio: mai da indirizzi/CAP/civici. */
+/** Gruppo materiale (ISO/TR 15608) solo con etichetta esplicita, norma citata o designazione acciaio: mai da indirizzi/CAP/civici. */
 function extractMaterialGroupLabeled(text) {
-    const m = String(text || '').match(MATERIAL_GROUP_LABEL_RE);
+    const body = String(text || '');
+    const m = body.match(MATERIAL_GROUP_LABEL_RE);
     if (m) {
         const normalized = normalizeMaterialGroupCode(m[1]);
         if (normalized && normalized !== 'altro') return normalized;
     }
-    return inferMaterialGroupFromText(text);
+    const iso = body.match(ISO_TR_15608_GROUP_RE);
+    if (iso) {
+        const normalized = normalizeMaterialGroupCode(iso[1]);
+        if (normalized && normalized !== 'altro') return normalized;
+    }
+    return inferMaterialGroupFromText(body);
 }
 
 function extractIssuingBody(text) {
