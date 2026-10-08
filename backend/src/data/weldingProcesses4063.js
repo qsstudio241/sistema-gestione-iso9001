@@ -47,6 +47,15 @@ function normalizeWeldingProcessCode(raw) {
   return inferWeldingProcessFromText(s);
 }
 
+/** Solo codice con etichetta esplicita (livello 1): alta confidenza, usato dai fallback a regole dei patentini. */
+function inferWeldingProcessExplicit(text) {
+  const body = String(text || '');
+  const labeledRe = /\b(?:welding\s+process|process(?:o)?(?:\s+di)?(?:\s+saldatura)?|proc\.?)\s*[:.]?\s*(\d{2,3})\b/i;
+  const isoRe = /\bISO\s*4063\s*[:.]?\s*(\d{2,3})\b/i;
+  const labeled = body.match(labeledRe) || body.match(isoRe);
+  return labeled && CODE_MAP.has(labeled[1]) ? labeled[1] : null;
+}
+
 /**
  * Ricava il codice ISO 4063 dal testo, con priorità:
  * 1. Codice numerico esplicitamente etichettato ("Welding process: 135", "Processo di saldatura 135",
@@ -59,10 +68,8 @@ function normalizeWeldingProcessCode(raw) {
 function inferWeldingProcessFromText(text) {
   const body = String(text || '');
 
-  const labeledRe = /\b(?:welding\s+process|process(?:o)?(?:\s+di)?(?:\s+saldatura)?|proc\.?)\s*[:.]?\s*(\d{2,3})\b/i;
-  const isoRe = /\bISO\s*4063\s*[:.]?\s*(\d{2,3})\b/i;
-  const labeled = body.match(labeledRe) || body.match(isoRe);
-  if (labeled && CODE_MAP.has(labeled[1])) return labeled[1];
+  const explicit = inferWeldingProcessExplicit(body);
+  if (explicit) return explicit;
 
   for (const code of SORTED_CODES) {
     const re = new RegExp(`\\b${code.replace('.', '\\.')}\\b`);
@@ -113,6 +120,7 @@ module.exports = {
   ISO_4063_PROCESSES,
   normalizeWeldingProcessCode,
   inferWeldingProcessFromText,
+  inferWeldingProcessExplicit,
   getWeldingProcessSelectOptions,
   buildWeldingProcessPromptSection,
 };
