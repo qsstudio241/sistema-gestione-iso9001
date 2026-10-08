@@ -38,6 +38,11 @@ Campi da estrarre:
 - qualification_designation (riga STAMPATA "ISO 9606-1: …", NON ricalcolarla da min/max),
 - shielding_gas, exam_date, expiry_date, last_confirmation_date,
 - next_confirmation_due, standard_reference (YYYY-MM-DD per le date)
+- issue_date (YYYY-MM-DD): data di EMISSIONE/rilascio del certificato ("Date of issue", "Data di emissione",
+  "Rilasciato il"). E' DISTINTA da exam_date (data della prova, "Date of test"/"Data della prova"): se il certificato
+  riporta solo la data della prova e nessuna data di emissione, issue_date resta null — NON copiare exam_date,
+- examiner_body (ente/esaminatore che ha eseguito o testimoniato la prova — "Examiner or examining body" —
+  se diverso dall'ente certificatore; null se assente o coincidente con issuing_body),
 - transfer_mode (metodo di trasferimento del metallo d'apporto - variabile essenziale ISO 9606-1 §5.2,
   presente come colonna dedicata "Transfer mode" nel modulo certificato ufficiale §9.3): valorizzalo
   SOLO se il processo di saldatura e' ad arco con filo continuo (131 MIG, 135 MAG, 136 filo animato,
@@ -86,6 +91,8 @@ Istruzioni per le date di conferma semestrale (ISO 9606-1 §9.2):
       next_confirmation_due: 'YYYY-MM-DD|null',
       standard_reference: 'string|null',
       transfer_mode: 'spray_arc|pulsed_arc|short_arc|globular|null',
+      issue_date: 'YYYY-MM-DD|null',
+      examiner_body: 'string|null',
     },
   },
 
@@ -399,8 +406,18 @@ Estrai in type_specific_data: operator_name, certificate_number, issuing_body, w
 welding_process, equipment_type, welding_positions (array), single_multi_run (single|multi),
 exam_date, expiry_date, last_confirmation_date, next_confirmation_due (YYYY-MM-DD),
 qualification_method (iso_15614|iso_15613|iso_9606|production_test). Usa null se assente.
+Altri campi: issue_date (YYYY-MM-DD, data di EMISSIONE del certificato, distinta da exam_date = data della prova;
+se assente null, NON copiare exam_date), examiner_body (ente/esaminatore che ha eseguito la prova, se diverso
+dall'issuing_body), standard_reference (norma con edizione ESATTAMENTE come scritta sul certificato, es. "ISO 14732:2013";
+null se non indicata).
 IMPORTANTE: NON assumere un intervallo di validita' fisso. ISO 14732 ha rivalidazione a 6 anni (opzione a) o
-ciclo 3 anni con controllo NDT (opzione b), diversi dai 3/2 anni di ISO 9606-1 per saldatori manuali.`,
+ciclo 3 anni con controllo NDT (opzione b), diversi dai 3/2 anni di ISO 9606-1 per saldatori manuali.
+CONFERME PERIODICHE (ISO 14732 par. 6.2): di norma a pagina 2 c'e' una tabella di conferma (data, firma/esito,
+ente o responsabile) compilata ogni 6 mesi. Elenca OGNI riga davvero compilata e firmata in type_specific_data.confirmations
+(array di oggetti { "date": "YYYY-MM-DD", "outcome": "stringa o null" }); ignora righe vuote o non firmate e
+NON includere la data di emissione o di esame. last_confirmation_date = la data piu' recente tra le conferme reali
+(null se la tabella e' vuota). next_confirmation_due = SOLO se stampata sul documento, altrimenti null (viene calcolata dal sistema).
+Le date possono avere l'anno a 2 cifre (es. 15.03.24): restituiscile comunque in formato YYYY-MM-DD.`,
     aiExpectedSchema: {
       operator_name: 'string|null',
       certificate_number: 'string|null',
@@ -415,6 +432,9 @@ ciclo 3 anni con controllo NDT (opzione b), diversi dai 3/2 anni di ISO 9606-1 p
       last_confirmation_date: 'YYYY-MM-DD|null',
       next_confirmation_due: 'YYYY-MM-DD|null',
       qualification_method: 'iso_15614|iso_15613|iso_9606|production_test|null',
+      issue_date: 'YYYY-MM-DD|null',
+      examiner_body: 'string|null',
+      standard_reference: 'string|null',
     },
   },
 

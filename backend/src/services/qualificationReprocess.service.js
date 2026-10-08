@@ -105,6 +105,10 @@ function resolveExtractedReprocessValue(fieldKey, reviewFields = {}, config = {}
         const v = reviewFields.pipe_diameter_min_mm ?? reviewFields.pipe_diameter_mm;
         return v == null || v === '' ? null : v;
     }
+    if (fieldKey === 'standard_ref') {
+        const v = reviewFields.standard_ref || reviewFields.standard_reference;
+        return v == null || v === '' ? null : v;
+    }
     if (fieldKey === 'thickness_max_unlimited') {
         // Colonna NOT NULL con default false — riproporre "false" non avrebbe
         // senso (è già il valore attuale): una proposta ha valore solo quando
@@ -131,7 +135,13 @@ async function selectReprocessCandidates(field, config, { orgId = null } = {}) {
     if (adapter.excludeCondition) conditions.push(adapter.excludeCondition);
 
     const params = {};
-    if (config.qualTypeLike) {
+    if (Array.isArray(config.qualTypeLikeAny) && config.qualTypeLikeAny.length) {
+        const ors = config.qualTypeLikeAny.map((pattern, i) => {
+            params[`qualTypeLike${i}`] = pattern;
+            return `qualification_type LIKE @qualTypeLike${i}`;
+        });
+        conditions.push(`(${ors.join(' OR ')})`);
+    } else if (config.qualTypeLike) {
         conditions.push('qualification_type LIKE @qualTypeLike');
         params.qualTypeLike = config.qualTypeLike;
     }
