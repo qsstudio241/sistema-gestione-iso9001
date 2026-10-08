@@ -150,6 +150,66 @@ describe('parseWelderQualificationDesignation', () => {
     });
 });
 
+describe('parseWelderQualificationDesignation: diametro con virgola decimale', () => {
+    const base = 'ISO 9606-1: 141 T FW FM5 S t3-10';
+
+    it.each([
+        ['D48,25 PB sl', '141 T FW FM5 S t3-10 D48,25 PB sl'],
+        ['D 48,25 PB sl', '141 T FW FM5 S t3-10 D 48,25 PB sl'],
+        ['\u00D848,25 PB sl', '141 T FW FM5 S t3-10 \u00D848,25 PB sl'],
+        ['D=48,25 PB sl', '141 T FW FM5 S t3-10 D=48,25 PB sl'],
+        ['D48.25 PB sl', '141 T FW FM5 S t3-10 D48.25 PB sl'],
+    ])('legge il diametro 48.25 da "%s"', (_label, line) => {
+        const parsed = parseWelderQualificationDesignation(`ISO 9606-1: ${line}`);
+        expect(parsed.pipe_diameter_test_mm).toBe(48.25);
+        expect(parsed.welding_position_test).toBe('PB');
+        expect(parsed.weld_details).toBe('sl');
+        expect(parsed.thickness_t_test_mm).toBe(3);
+        expect(parsed.filler_material_group).toBe('FM5');
+        const fields = designationFieldsToIngest(parsed);
+        expect(fields.pipe_diameter_test_mm).toBe(48.25);
+    });
+
+    it('conserva la designazione stampata con la virgola originale', () => {
+        const parsed = parseWelderQualificationDesignation(`${base} D48,25 PB sl`);
+        expect(parsed.qualification_designation).toContain('D48,25');
+    });
+
+    it('il diametro non finisce nei dettagli giunto', () => {
+        const parsed = parseWelderQualificationDesignation(`${base} D48,25 PB sl`);
+        expect(parsed.weld_details).toBe('sl');
+        expect(parsed.weld_details).not.toMatch(/25/);
+    });
+
+    it('spessore decimale con virgola: t12,5 resta 12.5', () => {
+        const parsed = parseWelderQualificationDesignation('ISO 9606-1: 135 P FW FM1 t12,5 PB ml');
+        expect(parsed.thickness_t_test_mm).toBe(12.5);
+    });
+
+    it('mantiene `;` e virgole tra campi veri come separatori', () => {
+        const parsed = parseWelderQualificationDesignation('ISO 9606-1: 135 P FW FM1; t8, PB, ss mb');
+        expect(parsed.thickness_t_test_mm).toBe(8);
+        expect(parsed.welding_position_test).toBe('PB');
+        expect(parsed.weld_details).toBe('ss mb');
+    });
+
+    it('riga senza diametro (P FW FM1 B t12 PF ml): nessun diametro inventato', () => {
+        const parsed = parseWelderQualificationDesignation('ISO 9606-1: 135 P FW FM1 B t12 PF ml');
+        expect(parsed.pipe_diameter_test_mm).toBeNull();
+        expect(parsed.thickness_t_test_mm).toBe(12);
+        expect(parsed.welding_position_test).toBe('PF');
+    });
+
+    it('nome file sintetico: la riga stampata resta la fonte del diametro', () => {
+        const text = [
+            'File: ROSSI_MARIO_141_T_FW_FM5_S_t3-10_D48,25_PB_sl.pdf',
+            'ISO 9606-1: 141 T FW FM5 S t3-10 D48,25 PB sl',
+        ].join('\n');
+        const parsed = parseWelderQualificationDesignation(text);
+        expect(parsed.pipe_diameter_test_mm).toBe(48.25);
+    });
+});
+
 describe('resolvePrintedDesignation', () => {
     it('non sovrascrive la stringa certificato con il ricalcolo min/max', () => {
         const printed = 'ISO 9606-1: 135 P FW FM1 t8 PB ss mb';
