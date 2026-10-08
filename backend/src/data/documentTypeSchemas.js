@@ -411,7 +411,13 @@ se assente null, NON copiare exam_date), examiner_body (ente/esaminatore che ha 
 dall'issuing_body), standard_reference (norma con edizione ESATTAMENTE come scritta sul certificato, es. "ISO 14732:2013";
 null se non indicata).
 IMPORTANTE: NON assumere un intervallo di validita' fisso. ISO 14732 ha rivalidazione a 6 anni (opzione a) o
-ciclo 3 anni con controllo NDT (opzione b), diversi dai 3/2 anni di ISO 9606-1 per saldatori manuali.`,
+ciclo 3 anni con controllo NDT (opzione b), diversi dai 3/2 anni di ISO 9606-1 per saldatori manuali.
+CONFERME PERIODICHE (ISO 14732 par. 6.2): di norma a pagina 2 c'e' una tabella di conferma (data, firma/esito,
+ente o responsabile) compilata ogni 6 mesi. Elenca OGNI riga davvero compilata e firmata in type_specific_data.confirmations
+(array di oggetti { "date": "YYYY-MM-DD", "outcome": "stringa o null" }); ignora righe vuote o non firmate e
+NON includere la data di emissione o di esame. last_confirmation_date = la data piu' recente tra le conferme reali
+(null se la tabella e' vuota). next_confirmation_due = SOLO se stampata sul documento, altrimenti null (viene calcolata dal sistema).
+Le date possono avere l'anno a 2 cifre (es. 15.03.24): restituiscile comunque in formato YYYY-MM-DD.`,
     aiExpectedSchema: {
       operator_name: 'string|null',
       certificate_number: 'string|null',

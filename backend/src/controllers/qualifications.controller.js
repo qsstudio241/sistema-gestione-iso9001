@@ -45,6 +45,7 @@ const { describeIngestFileError } = require('../utils/ingestErrorMessage');
 const {
     isWelder9606Type,
     requiresSemiannualConfirmation,
+    effectiveExpiryDate,
     addMonthsIso,
     canUserConfirmSemiannual,
 } = require('../services/weldingCoordinatorAuth.service');
@@ -147,7 +148,7 @@ const SEMIANNUAL_TYPE_SQL_MATCH = `(
 
 /**
  * Data di scadenza "effettiva" calcolata in SQL — stessa regola di
- * effectiveExpiryDate() più sotto (usata per il semaforo per-riga): per i tipi
+ * effectiveExpiryDate() (weldingCoordinatorAuth.service, usata per il semaforo per-riga): per i tipi
  * a conferma semestrale vale la data più imminente tra expiry_date e
  * next_confirmation_due. Usata sia nelle statistiche (getStats) sia nel filtro
  * ?situazione= di listQualifications, così i conteggi delle card e il colore
@@ -177,21 +178,6 @@ function semaforo(expiryDate, status) {
     if (diffDays <= DAYS_URGENT)   return 'arancione';
     if (diffDays <= DAYS_WARNING)  return 'giallo';
     return 'verde';
-}
-
-/**
- * Data di scadenza "effettiva" per il semaforo.
- * Per le qualifiche saldatore ISO 9606 e operatore ISO 14732 la conferma periodica
- * (next_confirmation_due) puo' scadere prima del certificato: si usa la data PIU' IMMINENTE
- * tra le due. Difensivo: se una manca usa l'altra; per gli altri tipi resta solo expiry_date.
- */
-function effectiveExpiryDate(q) {
-    const expiry = q.expiry_date || null;
-    if (!requiresSemiannualConfirmation(q.qualification_type)) return expiry;
-    const nextConf = q.next_confirmation_due || null;
-    if (!expiry) return nextConf;
-    if (!nextConf) return expiry;
-    return new Date(nextConf) < new Date(expiry) ? nextConf : expiry;
 }
 
 /** Calcola il semaforo usando la data effettiva (conferma periodica per i 9606). */
