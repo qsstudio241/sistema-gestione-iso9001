@@ -318,5 +318,4 @@ module.exports = {
     _detectMagickEngine,
     _isRasterImage,
     _isOcrableImage,
-    _buildPageLayout,
 };
