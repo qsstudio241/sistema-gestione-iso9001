@@ -143,13 +143,14 @@ describe('weldingQualificationRules9606', () => {
         expect(section).toContain('6 mesi');
     });
 
-    test('prompt section istruisce a non perdere l\'informazione "derivazione/branch/tubo-piastra" (segnalazione Mason, 27/07/2026)', () => {
+    test('prompt section: derivazione/branch resta product_type T e NON finisce in weld_details (solo dettagli di validità)', () => {
         const section = buildWelderQualificationRulesPromptSection();
         expect(section).toContain('derivazione');
         expect(section).toContain('branch');
         expect(section).toContain('weld_details');
         // Nessuna terza categoria fittizia: solo P/T ammessi dalla norma (§11).
         expect(section).toMatch(/NON esiste una terza categoria/);
+        expect(section).toMatch(/NON va in weld_details/);
     });
 
     describe('getApplicableWelderFields (UX campi condizionati, 27/07/2026)', () => {

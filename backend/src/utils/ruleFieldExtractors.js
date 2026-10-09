@@ -744,6 +744,136 @@ function extractQualificationMethod14732FromLayout(layout) {
 }
 
 /**
+ * Dettagli di saldatura ISO 9606-1 (Tab. 11/12, §5.9): backing (ss, bs, ci, fb, mb, nb, gb)
+ * e numero di passate/lato (sl, ml, lw, rw). Tutto il resto (tubo/piastra, derivazione,
+ * testo libero) non e' un dettaglio di saldatura.
+ */
+const KNOWN_WELD_DETAILS = new Set(['sl', 'ml', 'ss', 'bs', 'nb', 'mb', 'gb', 'fb', 'ci', 'lw', 'rw']);
+
+/**
+ * Tiene solo le voci note (maiuscole/minuscole come stampate), separate da ", " e senza doppioni.
+ * @param {any} raw
+ * @returns {string|null} null se non resta nessuna voce nota
+ */
+function sanitizeWeldDetails(raw) {
+    if (raw == null) return null;
+    const kept = [];
+    for (const tok of String(raw).split(/[\s,;/+]+/)) {
+        const t = tok.trim();
+        if (!t || !KNOWN_WELD_DETAILS.has(t.toLowerCase())) continue;
+        if (!kept.some((k) => k.toLowerCase() === t.toLowerCase())) kept.push(t);
+    }
+    return kept.length ? kept.join(', ') : null;
+}
+
+/**
+ * Riga ISO 9606-1 a tre colonne (Variabili / PROVA / VALIDITA'): il testo estratto riporta PROVA e
+ * VALIDITA' sulla stessa riga, con il prefisso ripetuto ("a) 3 a) >=3"). Il secondo valore e' la validita'.
+ */
+const VALIDITY_PAIR_RE = /^\s*([a-dD]\d?)\)\s+(\S.*?)\s+\1\)\s*(.*?)\s*$/;
+const WELD_DETAILS_ROW_RE = /(?:Particolari|Dettagli)\s+(?:di\s+)?saldatura(?:\s*\/\s*Weld(?:ing)?\s+details?)?|Weld(?:ing)?\s+details?/i;
+const THICKNESS_ROW_RE = /(?:Spessore|(?:Material\s+|Deposited\s+)?Thickness)(?:\s*\/\s*(?:Spessore|(?:Material\s+|Deposited\s+)?Thickness))?(?:\s*\(\s*mm\s*\))?/i;
+const OTHER_ROW_LABEL_RE = /(?:Plate\s+or\s+pipe|Welding\s+position|Posizione|Diam|\u00D8|Outside|Process|Processo|Spessore|Thickness|Particolari|Dettagli|Weld(?:ing)?\s+details?|Filler|Materiale)/i;
+const VALIDITY_ROW_MAX_PAIRS = 4;
+const VARIANT_PREFIX_RE = /^[a-d]$/;
+
+/**
+ * Coppie PROVA/VALIDITA' sotto l'etichetta di riga (sulla stessa riga o nelle successive, al piu' una
+ * riga intermedia); `prefixRe` limita i prefissi accettati (a)/b) per spessore e dettagli, D1) per il
+ * diametro). Layout non riconosciuto -> array vuoto: il chiamante non deve indovinare.
+ * @returns {Array<{ prefix: string, test: string, validity: string }>}
+ */
+function extractValidityColumnPairs(text, labelRe, prefixRe = null) {
+    const lines = String(text || '').split(/\r?\n/);
+    const label = new RegExp(labelRe.source, 'i');
+    const pairs = [];
+    for (let i = 0; i < lines.length; i += 1) {
+        const m = label.exec(lines[i]);
+        if (!m) continue;
+        let candidate = lines[i].slice(m.index + m[0].length);
+        let skipped = 0;
+        let found = 0;
+        for (let j = i; j < lines.length && found < VALIDITY_ROW_MAX_PAIRS; j += 1) {
+            if (j > i) candidate = lines[j];
+            const pm = VALIDITY_PAIR_RE.exec(candidate);
+            if (pm && (!prefixRe || prefixRe.test(pm[1]))) {
+                pairs.push({ prefix: pm[1], test: pm[2].trim(), validity: pm[3].trim() });
+                found += 1;
+                continue;
+            }
+            if (found > 0) break;
+            if (j === i) continue;
+            if (skipped >= 1 || OTHER_ROW_LABEL_RE.test(candidate)) break;
+            skipped += 1;
+        }
+    }
+    return pairs;
+}
+
+const THICKNESS_NUM = /(\d{1,3}(?:[.,]\d{1,2})?)/.source;
+const THICKNESS_OPEN_WORDS = /(?:unlimited|illimitat[oa]|senza\s+limit[ei](?:\s+superiore)?|no\s+(?:upper\s+)?(?:limit|restriction))/.source;
+const THICKNESS_RANGE_SEP = /(?:-|\.\.+|\u2026|\ba\b|to)/.source;
+const THICKNESS_GE_RE = new RegExp(`^(?:>=|=>|\u2265|\u2A7E)\\s*${THICKNESS_NUM}$`);
+const THICKNESS_OPEN_ONLY_RE = new RegExp(`^${THICKNESS_OPEN_WORDS}$`, 'i');
+const THICKNESS_MIN_OPEN_RE = new RegExp(`^(?:da\\s+|from\\s+)?${THICKNESS_NUM}\\s*${THICKNESS_RANGE_SEP}\\s*${THICKNESS_OPEN_WORDS}$`, 'i');
+const THICKNESS_MIN_MAX_RE = new RegExp(`^(?:da\\s+|from\\s+)?${THICKNESS_NUM}\\s*${THICKNESS_RANGE_SEP}\\s*${THICKNESS_NUM}$`, 'i');
+
+function thicknessNum(s) {
+    return parseFloat(String(s).replace(',', '.'));
+}
+
+/**
+ * Colonna VALIDITA' della riga spessore -> { min, max, unlimited }. Formati: ">=3", "\u22653", "3-10",
+ * "3 \u2013 10", "da 3 a 10", "3..10", "3 - unlimited", "unlimited" (solo apertura, min null).
+ * Valore non riconosciuto (anche un numero singolo, ambiguo) -> null.
+ * @param {string} raw
+ * @returns {{ min: number|null, max: number|null, unlimited: boolean }|null}
+ */
+function parseThicknessValidity(raw) {
+    const s = String(raw || '').replace(/\s*mm\b/i, '').replace(/[\u2013\u2014\u2212]/g, '-').trim();
+    if (!s) return null;
+    let m = THICKNESS_GE_RE.exec(s);
+    if (m) return { min: thicknessNum(m[1]), max: null, unlimited: true };
+    if (THICKNESS_OPEN_ONLY_RE.test(s)) return { min: null, max: null, unlimited: true };
+    m = THICKNESS_MIN_OPEN_RE.exec(s);
+    if (m) return { min: thicknessNum(m[1]), max: null, unlimited: true };
+    m = THICKNESS_MIN_MAX_RE.exec(s);
+    if (m) {
+        const min = thicknessNum(m[1]);
+        const max = thicknessNum(m[2]);
+        if (max < min) return null;
+        return { min, max, unlimited: false };
+    }
+    return null;
+}
+
+/**
+ * Dettagli di saldatura nella colonna VALIDITA' (campo di validita', mai i dati di prova).
+ * @returns {{ value: string|null }|null} null se la riga a tre colonne non e' riconosciuta
+ *   (altro emittente/OCR): il chiamante lascia l'AI. `value` null = riga trovata ma validita' vuota/N.A.
+ */
+function extractWeldDetailsValidity(text) {
+    const pairs = extractValidityColumnPairs(text, WELD_DETAILS_ROW_RE, VARIANT_PREFIX_RE);
+    if (!pairs.length) return null;
+    return { value: sanitizeWeldDetails(pairs.map((p) => p.validity).join(' ')) };
+}
+
+/**
+ * Spessore di validita' dalla colonna VALIDITA' della riga spessore (a), b)).
+ * Se le validita' riportate sono diverse tra loro o non leggibili non si sceglie: l'AI resta.
+ * @returns {{ min: number|null, max: number|null, unlimited: boolean }|null}
+ */
+function extractThicknessValidity(text) {
+    const pairs = extractValidityColumnPairs(text, THICKNESS_ROW_RE, VARIANT_PREFIX_RE);
+    const validities = pairs.map((p) => p.validity).filter(Boolean);
+    if (!validities.length) return null;
+    const parsed = validities.map(parseThicknessValidity);
+    if (parsed.some((p) => !p)) return null;
+    const distinct = new Set(parsed.map((p) => `${p.min}|${p.max}|${p.unlimited}`));
+    return distinct.size === 1 ? parsed[0] : null;
+}
+
+/**
  * @param {string} text
  * @param {string} fileName
  * @returns {object}
@@ -772,7 +902,6 @@ function extractPatentinoFields(text, fileName) {
         joint_type: fromDesignation.joint_type || extractJointType(text),
         product_type: fromDesignation.product_type || null,
         filler_material_group: fromDesignation.filler_material_group || null,
-        weld_details: fromDesignation.weld_details || null,
         qualification_designation: fromDesignation.qualification_designation || null,
         examiner_body: extractExaminerBody(text),
         exam_date,
@@ -956,6 +1085,11 @@ function extractFieldsByRules(text, docType, fileName = '', options = {}) {
 
 module.exports = {
     extractFieldsByRules,
+    sanitizeWeldDetails,
+    extractValidityColumnPairs,
+    parseThicknessValidity,
+    extractWeldDetailsValidity,
+    extractThicknessValidity,
     extractWpqrFields,
     extractPatentinoFields,
     extractQualifica14732Fields,

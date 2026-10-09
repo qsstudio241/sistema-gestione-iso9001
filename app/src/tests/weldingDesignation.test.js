@@ -145,3 +145,21 @@ describe('parseWelderQualificationDesignation (FE)', () => {
     expect(parsed.weld_details).toBe('ss mb');
   });
 });
+
+describe('parseWelderQualificationDesignation (FE): "t3-10" sono due spessori di prova', () => {
+  it('FW: t di prova 3, elenco informativo [3, 10], mai min/max di validità', () => {
+    const parsed = parseWelderQualificationDesignation('ISO 9606-1: 141 T FW FM5 S t3-10 D48,25 PB sl');
+    expect(parsed.thickness_t_test_mm).toBe(3);
+    expect(parsed.thickness_s_test_mm).toBeNull();
+    expect(parsed.thickness_test_values).toEqual([3, 10]);
+    expect(parsed).not.toHaveProperty('thickness_min_mm');
+    expect(parsed).not.toHaveProperty('thickness_max_mm');
+  });
+
+  it('BW: il 10 non finisce in s di prova', () => {
+    const parsed = parseWelderQualificationDesignation('ISO 9606-1: 141 P BW FM1 t3-10 PA ss nb');
+    expect(parsed.thickness_s_test_mm).toBe(3);
+    expect(parsed.thickness_t_test_mm).toBeNull();
+    expect(parsed.thickness_test_values).toEqual([3, 10]);
+  });
+});
