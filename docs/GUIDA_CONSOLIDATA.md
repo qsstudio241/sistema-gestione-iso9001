@@ -1186,6 +1186,7 @@ quando il pannello si apre.
 
 - **Bug pattern query indexer**: verificare sempre che le colonne SQL nelle query dell'indexer corrispondano allo schema reale del DB. Fix multipli: `nc_type` inesistente, `corrective_action` → `resolution_summary`, `NULL AS company_id` → `r.company_id`, `organization_id` → `auditor_org_id` in companies join.
 - **Modello embedding Gemini**: `text-embedding-004` è deprecato e ritorna errore. Usare `gemini-embedding-001`.
+- **Gemini 3.8 Flash (09/10/2026)**: dai modelli `gemini-3+` `temperature`/`top_p`/`top_k` sono deprecati e `thinking_budget` è sostituito da `thinking_level` (`minimal` **non** supportato da 3.8 → 400). Il ragionamento consuma `maxOutputTokens`: con livello di default e limite basso la risposta torna **vuota con HTTP 200**. `geminiAdapter` per `gemini-3+` non invia `temperature` e imposta `thinkingConfig.thinkingLevel` da `GEMINI_THINKING_LEVEL` (default `low`; `default` = non inviare). Con `gemini-2.5-*` resta il comportamento precedente (rollback = `GEMINI_MODEL` + restart). Rollout: TEST → smoke → PROD → smoke, deploy del solo `geminiAdapter.js` + `.env`. [PR #768](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/768).
 - **Contratto API flat vs nested**: quando si progetta un endpoint dashboard (es. `/ai/knowledge-health`), definire il formato di risposta (flat object vs nested) e allinearlo subito al frontend. Disallineamento causa errore silenzioso (valori `undefined`).
 
 #### Commit principali (16/05/2026)
