@@ -7,6 +7,7 @@
 
 const logger = require('../utils/logger');
 const { sendAlertEmail } = require('./alertMail.service');
+const { redactPersonForLog } = require('../utils/ingestErrorMessage');
 const {
   buildDocEscalationThresholds,
   daysUntilDue,
@@ -365,7 +366,7 @@ async function runQualifEscalationForOrg(pool, org) {
         );
       }
       sentCount += 1;
-      logger.info(`[QualAlert] Email inviata a ${routing.primary.email} (org ${org.organization_id}, company ${companyId}, ${toSend.length} qualifiche, source=${routing.source})`);
+      logger.info(`[QualAlert] Email inviata a ${redactPersonForLog(routing.primary.email)} (org ${org.organization_id}, company ${companyId}, ${toSend.length} qualifiche, source=${routing.source})`);
     }
   }
 
