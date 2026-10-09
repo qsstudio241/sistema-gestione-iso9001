@@ -312,9 +312,133 @@ async function _convertPdfToImages(pdfBuffer, maxPages) {
     return buffers;
 }
 
+/**
+ * Fascia alta della pagina usata per l'OCR dell'intestazione (carta intestata dell'ente certificatore).
+ * Valore iniziale 25%: da validare sui PDF reali (override: OCR_HEADER_HEIGHT_FRACTION, es. 0.2).
+ */
+const HEADER_OCR_HEIGHT_FRACTION = (() => {
+    const v = Number(process.env.OCR_HEADER_HEIGHT_FRACTION);
+    return v > 0 && v <= 1 ? v : 0.25;
+})();
+const HEADER_OCR_TIMEOUT_MS = Number(process.env.OCR_HEADER_TIMEOUT_MS) || 20000;
+// A4 a 200 dpi (1654x2339): pdf2pic forza la dimensione richiesta, quindi la fascia e' deterministica.
+const HEADER_OCR_RENDER = Object.freeze({ density: 200, width: 1654, height: 2339 });
+
+/**
+ * Dimensioni (px) di un PNG dall'header IHDR; null se il buffer non e' un PNG leggibile.
+ * @param {Buffer} buf
+ * @returns {{ width: number, height: number }|null}
+ * @private
+ */
+function _pngSize(buf) {
+    if (!Buffer.isBuffer(buf) || buf.length < 24 || !buf.subarray(0, 4).equals(_PNG_MAGIC)) return null;
+    const width = buf.readUInt32BE(16);
+    const height = buf.readUInt32BE(20);
+    return width > 0 && height > 0 ? { width, height } : null;
+}
+
+/**
+ * Renderizza UNA sola pagina di un PDF in PNG (pdf2pic + GraphicsMagick/ImageMagick).
+ * @private
+ */
+async function _renderPdfPage(pdfBuffer, pageNumber, { density, width, height }) {
+    const engine = _detectMagickEngine();
+    if (engine === 'none') {
+        throw new Error('[OCR] Nessun motore immagini installato sul server (serve GraphicsMagick o ImageMagick)');
+    }
+    const { fromBuffer } = require('pdf2pic');
+    const converter = fromBuffer(pdfBuffer, { density, format: 'png', width, height });
+    if (engine === 'imagemagick' && typeof converter.setGMClass === 'function') {
+        converter.setGMClass('imagemagick');
+    }
+    const result = await converter(pageNumber, { responseType: 'buffer' });
+    const img = result && result.buffer;
+    if (!_isRasterImage(img)) {
+        throw new Error(`[OCR] Rendering della pagina ${pageNumber} non valido (motore: ${engine})`);
+    }
+    return img;
+}
+
+/**
+ * Ritaglia la fascia alta (frazione dell'altezza) di un PNG con GraphicsMagick/ImageMagick.
+ * `gm` e' gia' installato come dipendenza di pdf2pic. Il rettangolo di Tesseract (`rectangle`) non e' usato:
+ * con tesseract.js 5.1.1 restituisce testo spurio.
+ * @private
+ */
+function _cropTopBand(png, heightFraction) {
+    const size = _pngSize(png);
+    if (!size) throw new Error('[OCR] Dimensioni immagine non leggibili per il ritaglio');
+    const cropHeight = Math.max(1, Math.round(size.height * heightFraction));
+    const gm = require('gm').subClass({ imageMagick: _detectMagickEngine() === 'imagemagick' });
+    return new Promise((resolve, reject) => {
+        gm(png).crop(size.width, cropHeight, 0, 0).toBuffer('PNG', (err, out) => {
+            if (err) return reject(err);
+            return _isRasterImage(out) ? resolve(out) : reject(new Error('[OCR] Ritaglio intestazione non valido'));
+        });
+    });
+}
+
+/**
+ * OCR della sola fascia alta di una pagina (intestazione / carta intestata), anche per PDF con livello di testo
+ * in cui logo e ragione sociale sono grafica. Renderizza SOLO la pagina richiesta, ritaglia la fascia alta e
+ * fa riconoscere a Tesseract solo quella (nessuna dipendenza nuova: pdf2pic + gm + tesseract.js).
+ *
+ * Errori e timeout vengono lanciati: il chiamante decide il fallback (l'ingest non deve rompersi).
+ *
+ * @param {Buffer} pdfBuffer
+ * @param {object} [options]
+ * @param {number} [options.pageNumber=1]
+ * @param {number} [options.heightFraction=HEADER_OCR_HEIGHT_FRACTION] - frazione (0-1] dell'altezza da leggere
+ * @param {string} [options.lang='ita+eng']
+ * @param {number} [options.timeoutMs=HEADER_OCR_TIMEOUT_MS]
+ * @returns {Promise<string>} testo dell'intestazione ('' se Tesseract non legge nulla)
+ */
+async function extractHeaderTextWithOCR(pdfBuffer, options = {}) {
+    const { pageNumber = 1, lang = 'ita+eng', timeoutMs = HEADER_OCR_TIMEOUT_MS } = options;
+    const heightFraction = options.heightFraction > 0 && options.heightFraction <= 1
+        ? options.heightFraction
+        : HEADER_OCR_HEIGHT_FRACTION;
+
+    let worker = null;
+    let timedOut = false;
+    let timer = null;
+
+    const work = async () => {
+        const page = await _renderPdfPage(pdfBuffer, pageNumber, HEADER_OCR_RENDER);
+        const band = await _cropTopBand(page, heightFraction);
+        const w = await _createTesseractWorker(lang);
+        if (timedOut) {
+            await w.terminate().catch(() => {});
+            return '';
+        }
+        worker = w;
+        const { data: { text } } = await worker.recognize(band);
+        return String(text || '').trim();
+    };
+
+    const timeout = new Promise((_, reject) => {
+        timer = setTimeout(() => {
+            timedOut = true;
+            reject(new Error(`[OCR] Timeout OCR intestazione dopo ${timeoutMs} ms`));
+        }, timeoutMs);
+    });
+    const job = work();
+    job.catch(() => {});
+
+    try {
+        return await Promise.race([job, timeout]);
+    } finally {
+        clearTimeout(timer);
+        if (worker) await worker.terminate().catch(() => {});
+    }
+}
+
 module.exports = {
     extractTextWithOCR,
     extractTextFromImageBuffer,
+    extractHeaderTextWithOCR,
+    HEADER_OCR_HEIGHT_FRACTION,
+    HEADER_OCR_TIMEOUT_MS,
     _detectMagickEngine,
     _isRasterImage,
     _isOcrableImage,
