@@ -1,6 +1,6 @@
 # DEPUTYTASK_VERIFICA_QUALIFICHE_CORE — VQ-1: contratto Finding + registry + engine + vista record + stub dei pack (modulo puro, non agganciato)
 
-**Stato:** APERTO — lanciabile **solo dopo il merge su `origin/main`** della PR di charting (gate DEPUTYTASK: `git show origin/main:docs/agent-tasks/DEPUTYTASK_VERIFICA_QUALIFICHE_CORE.md` deve mostrare `APERTO`)  
+**Stato:** CHIUSO — TEST OK (06/10/2026, mergiata [#718](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/718))  
 **Aperto:** 06/10/2026  
 **Piano:** [`PLAN_VERIFICA_QUALIFICHE_NORMA_SLICES.md`](PLAN_VERIFICA_QUALIFICHE_NORMA_SLICES.md) § 1 (architettura) · § 6.3 VQ-1  
 **Dipende da:** nessuna (onda 1)  
