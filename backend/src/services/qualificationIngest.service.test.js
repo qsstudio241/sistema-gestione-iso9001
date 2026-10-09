@@ -829,6 +829,29 @@ describe('qualificationIngest.service — aggancio verifica vs norma (VQ-7, addi
         expect(out.field_sources).toEqual({});
     });
 
+    it('privacy log: type resolved e doc classification senza nome file (hash correlabile), risultato invariato', async () => {
+        const logger = require('../utils/logger');
+        const { redactFileNameForLog } = require('../utils/ingestErrorMessage');
+        const FILE_NAME = '99-00000_ZZROSSI ZZMARIO_14732_X.pdf';
+        runDocumentIngest.mockResolvedValue(pipelineResult());
+        jest.spyOn(qualificationVerify, 'verifyQualification').mockReturnValue(verifyResult([]));
+        logger.info.mockClear();
+        logger.warn.mockClear();
+
+        const out = await extractQualificationFromPdf(Buffer.from('x'), FILE_NAME, 10, null);
+
+        expect(out.status).toBe('pending_review');
+        const lines = logger.info.mock.calls.map((c) => String(c[0]));
+        const typeLine = lines.find((l) => l.startsWith('Qualification type resolved'));
+        const classLine = lines.find((l) => l.startsWith('Qualification doc classification'));
+        expect(typeLine).toContain(`file=${redactFileNameForLog(FILE_NAME)}`);
+        expect(classLine).toContain(`file=${redactFileNameForLog(FILE_NAME)}`);
+        const logged = [...logger.info.mock.calls, ...logger.warn.mock.calls].map((c) => JSON.stringify(c)).join('\n');
+        expect(logged).not.toContain('ZZROSSI');
+        expect(logged).not.toContain(FILE_NAME);
+        expect(logged).not.toContain('14732_X');
+    });
+
     it('extract: engine che lancia eccezione non rompe l\'ingest (nessun finding, log)', async () => {
         runDocumentIngest.mockResolvedValue(pipelineResult());
         jest.spyOn(qualificationVerify, 'verifyQualification').mockImplementation(() => {

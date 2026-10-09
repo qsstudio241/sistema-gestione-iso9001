@@ -5,6 +5,7 @@
 
 const path = require('path');
 const logger = require('../utils/logger');
+const { redactFileNameForLog } = require('../utils/ingestErrorMessage');
 const { getPool } = require('../config/database');
 const { resolvePersonnelForQualification } = require('./personnelQualificationLink.service');
 const { runDocumentIngest } = require('./documentIngestPipeline.service');
@@ -496,7 +497,7 @@ async function extractQualificationFromPdf(pdfBuffer, fileName, organizationId, 
         },
     });
     logger.info(
-        `Qualification type resolved file=${fileName} docType=${docType}`
+        `Qualification type resolved file=${redactFileNameForLog(fileName)} docType=${docType}`
         + ` qualType=${qualTypeResolution.type} qualTypeSource=${qualTypeResolution.source}`
         + ` textType=${qualTypeResolution.textType}`,
     );
@@ -513,7 +514,7 @@ async function extractQualificationFromPdf(pdfBuffer, fileName, organizationId, 
         const docClass = classifyDocument(`${pipeline.text}\n${fileName || ''}`);
         // Winston printf scarta i meta-oggetti: metti i dettagli nel messaggio.
         logger.info(
-            `Qualification doc classification file=${fileName} detected=${docClass.detected_type}`
+            `Qualification doc classification file=${redactFileNameForLog(fileName)} detected=${docClass.detected_type}`
             + ` conf=${docClass.confidence} score=${docClass.score} docType=${docType}`
             + ` qualTypeSource=${qualTypeResolution.source}`,
         );

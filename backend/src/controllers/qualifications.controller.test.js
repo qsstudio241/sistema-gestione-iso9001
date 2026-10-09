@@ -876,6 +876,25 @@ describe('qualifications.controller — uploadBatch inoltra verification (additi
     expect(entry.fields).toEqual({ person_name: 'Mario Rossi' });
   });
 
+  it('privacy log: Estrazione fallita senza nome file; il nome resta nella risposta upload-batch', async () => {
+    const logger = require('../utils/logger');
+    const { redactFileNameForLog } = require('../utils/ingestErrorMessage');
+    const FILE_NAME = '99-00000_ZZROSSI ZZMARIO_14732_X.pdf';
+    extractQualificationFromPdf.mockRejectedValue(new Error('estrazione KO'));
+    const { req, res } = makeReqRes();
+    req.files[0].originalname = FILE_NAME;
+
+    await uploadBatch(req, res);
+
+    const call = logger.error.mock.calls.find((c) => c[0] === '[Qualif/batch] Estrazione fallita');
+    expect(call[1].file).toBe(redactFileNameForLog(FILE_NAME));
+    expect(call[1]).not.toHaveProperty('fileName');
+    const logged = ['info', 'warn', 'error'].flatMap((m) => logger[m].mock.calls.map((c) => JSON.stringify(c))).join('\n');
+    expect(logged).not.toContain('ZZROSSI');
+    expect(logged).not.toContain(FILE_NAME);
+    expect(res.body.results[0]).toEqual(expect.objectContaining({ fileName: FILE_NAME, status: 'error' }));
+  });
+
   it('duplicate: inoltra verification accanto a warnings', async () => {
     extractQualificationFromPdf.mockResolvedValue({
       status: 'duplicate',

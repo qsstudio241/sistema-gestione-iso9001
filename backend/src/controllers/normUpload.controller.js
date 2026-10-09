@@ -15,7 +15,7 @@ const {
   listFolderNormPdfs,
 } = require('../services/normIngest.service');
 const { createStagingRecord } = require('../services/ingestStaging.service');
-const { describeIngestFileError } = require('../utils/ingestErrorMessage');
+const { describeIngestFileError, redactFileNameForLog } = require('../utils/ingestErrorMessage');
 const {
   assertMutatingAllowed,
   sendAccessDenied,
@@ -203,7 +203,7 @@ async function uploadNorms(req, res) {
     } catch (fileErr) {
       const errMsg = describeIngestFileError(fileErr);
       logger.error('[NormUpload/batch] Estrazione fallita', {
-        fileName: file.originalname,
+        file: redactFileNameForLog(file.originalname),
         error: errMsg,
         stack: fileErr?.stack || null,
       });
@@ -405,7 +405,7 @@ async function ingestFromFolder(req, res) {
       const errMsg = describeIngestFileError(fileErr);
       logger.error('[NormUpload/folder] Estrazione fallita', {
         documentId: doc.id,
-        fileName,
+        file: redactFileNameForLog(fileName),
         error: errMsg,
       });
       entry = {

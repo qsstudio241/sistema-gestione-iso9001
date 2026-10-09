@@ -41,7 +41,7 @@ const {
 } = require('../services/companyAccess.service');
 const { resolvePersonnelForQualification } = require('../services/personnelQualificationLink.service');
 const { resolvePrintedDesignation } = require('../utils/weldingDesignation');
-const { describeIngestFileError } = require('../utils/ingestErrorMessage');
+const { describeIngestFileError, redactFileNameForLog } = require('../utils/ingestErrorMessage');
 const {
     isWelder9606Type,
     requiresSemiannualConfirmation,
@@ -1242,7 +1242,7 @@ async function uploadBatch(req, res) {
             } catch (fileErr) {
                 const errMsg = describeIngestFileError(fileErr);
                 logger.error('[Qualif/batch] Estrazione fallita', {
-                    fileName: file.originalname,
+                    file: redactFileNameForLog(file.originalname),
                     error: errMsg,
                     stack: fileErr?.stack || null,
                 });
