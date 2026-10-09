@@ -6,7 +6,10 @@
 'use strict';
 
 const { verifyQualification } = require('./verifyEngine');
+const { verifyWpqr } = require('./verifyWpqr');
 const { validateFinding } = require('./findingTypes');
 const { listRulePacks } = require('./verifyRegistry');
 
-module.exports = { verifyQualification, validateFinding, listRulePacks };
+module.exports = {
+    verifyQualification, verifyWpqr, validateFinding, listRulePacks,
+};

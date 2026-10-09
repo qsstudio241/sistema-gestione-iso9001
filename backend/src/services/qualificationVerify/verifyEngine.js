@@ -2,7 +2,7 @@
  * verifyEngine.js — verifyQualification(recordOrFields, { mode }) → VerifyResult.
  *
  * Puro e senza conoscenza delle norme: costruisce la vista, risolve il profilo e
- * delega ai pack del registry. Nessun blocco: i finding sono solo `info`/`warn`.
+ * delega ai pack del registry (pipeline condivisa `runVerifyPipeline`, usata anche da verifyWpqr). Nessun blocco: i finding sono solo `info`/`warn`.
  * Non restituisce mai un «valore corretto da applicare» (validità prevale).
  */
 
@@ -16,7 +16,7 @@ const { toRecordView, SOURCE } = require('./qualificationRecordView');
 const { isStandardCovered, resolveProfileKey, getRulesForProfile, getDeclaredCodes } = require('./verifyRegistry');
 const { ensureDefaultPacks } = require('./registerDefaultPacks');
 
-const ENGINE_VERSION = '1.0.0';
+const ENGINE_VERSION = '1.1.0';
 const BACKLOG_REF = 'docs/reference/NORME_MANCANTI_BACKLOG.md';
 
 function engineFinding(partial) {
@@ -112,27 +112,36 @@ function summarize(findings) {
     return summary;
 }
 
+const DOMAIN = Object.freeze({ QUALIFICATION: 'qualification', WPQR: 'wpqr' });
+
+function resolveMode(mode) {
+    return Object.values(MODE).includes(mode) ? mode : MODE.REVIEW;
+}
+
 /**
- * @param {object} input review-fields dell'ingest o riga DB `qualifications`
- * @param {{mode?: 'ingest'|'review'|'db'}} [opts]
+ * Pipeline condivisa (indipendente dal dominio): copertura standard → profilo → regole del
+ * registry → ordinamento → summary. La vista è già costruita dal dominio e deve esporre
+ * `standard {family, edition, label, raw}`, `profile` e `joint_type`.
+ * `earlyFindings(view)` (opzionale) può restituire un array di finding che chiude subito la verifica
+ * (es. dato di contesto del dominio che impedisce di scegliere la norma): `profile` resta `null`.
  */
-function verifyQualification(input, { mode = MODE.REVIEW } = {}) {
-    ensureDefaultPacks();
-    const safeMode = Object.values(MODE).includes(mode) ? mode : MODE.REVIEW;
-    const view = toRecordView(input, { source: safeMode === MODE.DB ? SOURCE.DB : SOURCE.REVIEW });
+function runVerifyPipeline(view, { mode, domain, earlyFindings } = {}) {
+    const safeMode = resolveMode(mode);
     const standard = { family: view.standard.family, edition: view.standard.edition };
 
     let profile = null;
-    let findings;
-    if (!isStandardCovered(view.standard)) {
-        findings = [sourceMissingFinding(view)];
-    } else {
-        profile = resolveProfileKey(view);
-        if (!profile) {
-            findings = [profileUnresolvedFinding(view)];
+    let findings = typeof earlyFindings === 'function' ? earlyFindings(view) : null;
+    if (!findings) {
+        if (!isStandardCovered(view.standard)) {
+            findings = [sourceMissingFinding(view)];
         } else {
-            findings = getRulesForProfile(profile)
-                .flatMap(({ packId, rule }) => runRule(packId, rule, view));
+            profile = resolveProfileKey(view);
+            if (!profile) {
+                findings = [profileUnresolvedFinding(view)];
+            } else {
+                findings = getRulesForProfile(profile)
+                    .flatMap(({ packId, rule }) => runRule(packId, rule, view));
+            }
         }
     }
 
@@ -144,7 +153,21 @@ function verifyQualification(input, { mode = MODE.REVIEW } = {}) {
         summary: summarize(sorted),
         engine_version: ENGINE_VERSION,
         mode: safeMode,
+        domain,
     };
 }
 
-module.exports = { verifyQualification, ENGINE_VERSION };
+/**
+ * @param {object} input review-fields dell'ingest o riga DB `qualifications`
+ * @param {{mode?: 'ingest'|'review'|'db'}} [opts]
+ */
+function verifyQualification(input, { mode = MODE.REVIEW } = {}) {
+    ensureDefaultPacks();
+    const safeMode = resolveMode(mode);
+    const view = toRecordView(input, { source: safeMode === MODE.DB ? SOURCE.DB : SOURCE.REVIEW });
+    return runVerifyPipeline(view, { mode: safeMode, domain: DOMAIN.QUALIFICATION });
+}
+
+module.exports = {
+    verifyQualification, runVerifyPipeline, engineFinding, resolveMode, DOMAIN, ENGINE_VERSION,
+};
