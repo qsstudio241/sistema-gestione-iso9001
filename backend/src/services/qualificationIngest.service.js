@@ -466,6 +466,16 @@ async function checkQualificationDuplicate(certificateNumber, organizationId, co
  * @param {string} docType - 'patentino_saldatore' (default, saldatori ISO 9606-1) o 'qualifica_14732'
  *                            (operatori/preparatori saldatura automatica/meccanizzata).
  */
+/** Fonte per campo solo per i campi presenti nella revisione (campo vuoto = nessuna voce). */
+function pickFieldSourcesForFields(fieldSources, reviewFields) {
+    const out = {};
+    for (const [key, source] of Object.entries(fieldSources || {})) {
+        const v = reviewFields ? reviewFields[key] : null;
+        if (source && v != null && v !== '') out[key] = source;
+    }
+    return out;
+}
+
 async function extractQualificationFromPdf(pdfBuffer, fileName, organizationId, companyId, docType = 'patentino_saldatore') {
     const pipeline = await runDocumentIngest({
         pdfBuffer,
@@ -568,6 +578,7 @@ async function extractQualificationFromPdf(pdfBuffer, fileName, organizationId, 
         status: 'pending_review',
         fields: reviewFields,
         field_confidence: pipeline.fieldConfidence,
+        field_sources: pickFieldSourcesForFields(pipeline.fieldSources, reviewFields),
         qualification_type: reviewFields.qualification_type,
         confidence,
         warnings,

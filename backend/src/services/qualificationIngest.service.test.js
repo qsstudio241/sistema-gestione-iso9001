@@ -805,6 +805,30 @@ describe('qualificationIngest.service — aggancio verifica vs norma (VQ-7, addi
         );
     });
 
+    it('extract: field_sources inoltra la fonte solo dei campi presenti in revisione', async () => {
+        runDocumentIngest.mockResolvedValue({
+            ...pipelineResult(),
+            fieldSources: { certificate_number: 'rules', issuing_body: 'ocr_header', expiry_date: 'ai', ghost_field: 'ai' },
+        });
+        jest.spyOn(qualificationVerify, 'verifyQualification').mockReturnValue(verifyResult([]));
+
+        const out = await extractQualificationFromPdf(Buffer.from('x'), 'a.pdf', 10, null);
+
+        expect(out.field_sources).toEqual(expect.objectContaining({ certificate_number: 'rules', expiry_date: 'ai' }));
+        expect(out.field_sources).not.toHaveProperty('ghost_field');
+        expect(out.field_sources).not.toHaveProperty('issuing_body');
+    });
+
+    it('extract: pipeline senza fieldSources -> field_sources vuoto, nessun errore', async () => {
+        runDocumentIngest.mockResolvedValue(pipelineResult());
+        jest.spyOn(qualificationVerify, 'verifyQualification').mockReturnValue(verifyResult([]));
+
+        const out = await extractQualificationFromPdf(Buffer.from('x'), 'a.pdf', 10, null);
+
+        expect(out.status).toBe('pending_review');
+        expect(out.field_sources).toEqual({});
+    });
+
     it('extract: engine che lancia eccezione non rompe l\'ingest (nessun finding, log)', async () => {
         runDocumentIngest.mockResolvedValue(pipelineResult());
         jest.spyOn(qualificationVerify, 'verifyQualification').mockImplementation(() => {

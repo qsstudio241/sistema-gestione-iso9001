@@ -151,7 +151,7 @@ describe('merge AI + regola da layout', () => {
     it('(vi) AI production_test + regola da layout iso_9606 -> corretto', () => {
         const merged = mergeExtractions(ruleFromLayout, { qualification_method: 'production_test' }, 'qualifica_14732');
         expect(merged.fields.qualification_method).toBe('iso_9606');
-        expect(merged.fieldSources.qualification_method).toBe('rules');
+        expect(merged.fieldSources.qualification_method).toBe('ai_corrected_by_rules');
     });
 
     it('(vi) AI coerente (iso_9606) invariata', () => {
