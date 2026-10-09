@@ -41,8 +41,12 @@ Campi da estrarre:
 - issue_date (YYYY-MM-DD): data di EMISSIONE/rilascio del certificato ("Date of issue", "Data di emissione",
   "Rilasciato il"). E' DISTINTA da exam_date (data della prova, "Date of test"/"Data della prova"): se il certificato
   riporta solo la data della prova e nessuna data di emissione, issue_date resta null — NON copiare exam_date,
-- examiner_body (ente/esaminatore che ha eseguito o testimoniato la prova — "Examiner or examining body" —
-  se diverso dall'ente certificatore; null se assente o coincidente con issuing_body),
+- examiner_body (nome dell'esaminatore firmatario, sotto "Nome e firma Organismo di Esame" / "Name and signature
+  Examining Body"/"examiner": persona o titolo, es. "I.W.I. <nome>" o "IWI - <nome>", riportato testualmente.
+  Va SEMPRE riportato quando presente, anche se l'ente certificatore e' lo stesso; null solo se il nome non c'e'.
+  Ignora la firma a mano letta come parole sconnesse e le stampigliature "Firmato digitalmente da"),
+- NOTA issuing_body: copia l'ente come scritto sul certificato; "TEC Eurolab" (anche "TEC EUROLAB", "Tec Eurolab S.r.l.",
+  "TECEUROLAB") e' un ente certificatore noto, non un ente generico,
 - transfer_mode (metodo di trasferimento del metallo d'apporto - variabile essenziale ISO 9606-1 §5.2,
   presente come colonna dedicata "Transfer mode" nel modulo certificato ufficiale §9.3): valorizzalo
   SOLO se il processo di saldatura e' ad arco con filo continuo (131 MIG, 135 MAG, 136 filo animato,
@@ -406,9 +410,16 @@ Estrai in type_specific_data: operator_name, certificate_number, issuing_body, w
 welding_process, equipment_type, welding_positions (array), single_multi_run (single|multi),
 exam_date, expiry_date, last_confirmation_date, next_confirmation_due (YYYY-MM-DD),
 qualification_method (iso_15614|iso_15613|iso_9606|production_test). Usa null se assente.
+METODO DI QUALIFICA (ISO 14732 par. 4.1): le voci sono a) iso_15614, b) iso_15613, c) iso_9606, d) production_test;
+ne e' marcata UNA sola. Il marcatore (x/X, [x], check) puo' stare su una riga separata dopo l'ultima voce
+(l'OCR lo stacca dalla riga): una x/X isolata subito dopo l'elenco 4.1 va attribuita alla voce che nell'elenco risulta
+SENZA marcatore (le altre hanno "-"), NON alla voce che la precede immediatamente. Se resta ambiguo usa null.
 Altri campi: issue_date (YYYY-MM-DD, data di EMISSIONE del certificato, distinta da exam_date = data della prova;
-se assente null, NON copiare exam_date), examiner_body (ente/esaminatore che ha eseguito la prova, se diverso
-dall'issuing_body), standard_reference (norma con edizione ESATTAMENTE come scritta sul certificato, es. "ISO 14732:2013";
+se assente null, NON copiare exam_date), examiner_body (nome dell'esaminatore firmatario sotto "Name and signature
+examiner": persona o titolo, es. "I.W.I. <nome>" o "IWI - <nome>", riportato testualmente e SEMPRE quando presente,
+anche se coincide con l'ente; ignora la firma a mano letta come parole sconnesse),
+issuing_body: copia l'ente come scritto; "TEC Eurolab" (anche "TEC EUROLAB", "Tec Eurolab S.r.l.", "TECEUROLAB") e' un ente noto,
+standard_reference (norma con edizione ESATTAMENTE come scritta sul certificato, es. "ISO 14732:2013";
 null se non indicata).
 IMPORTANTE: NON assumere un intervallo di validita' fisso. ISO 14732 ha rivalidazione a 6 anni (opzione a) o
 ciclo 3 anni con controllo NDT (opzione b), diversi dai 3/2 anni di ISO 9606-1 per saldatori manuali.

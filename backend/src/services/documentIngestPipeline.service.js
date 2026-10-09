@@ -251,6 +251,12 @@ function pickMergedValue(key, ruleFields, aiFields, docType = null) {
         if (ruleVal == null && ruleFields[k] != null) ruleVal = normalizeFieldValue(ruleFields[k]);
     }
 
+    // L'OCR tesseract.js stacca la "x" dalla riga 4.1 c) e l'AI la attribuisce alla d): la regola strutturale corregge solo questo caso.
+    if (docType === 'qualifica_14732' && key === 'qualification_method'
+        && aiVal === 'production_test' && ruleVal === 'iso_9606') {
+        return { value: ruleVal, confidence: 'medium', source: 'rules' };
+    }
+
     if (aiVal != null && ruleVal != null) {
         const same = String(aiVal).toLowerCase() === String(ruleVal).toLowerCase();
         return { value: aiVal, confidence: same ? 'high' : 'medium', source: same ? 'ai+rules' : 'ai' };
