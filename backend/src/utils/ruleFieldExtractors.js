@@ -410,7 +410,13 @@ const ISSUING_BODY_MATCHERS = [
     { label: 'IIS', re: acronym('IIS') },
     { label: 'CICPND', re: acronym('CICPND') },
     { label: 'SGS', re: acronym('SGS') },
-    { label: 'TEC Eurolab', re: new RegExp(`${LETTER_BEFORE}T\\.?\\s*E\\.?\\s*C\\.?[\\s_-]*Euro[\\s_.-]*lab${LETTER_AFTER}`, 'i') },
+    {
+        label: 'TEC Eurolab',
+        re: new RegExp(
+            `${LETTER_BEFORE}T\\.?\\s*E\\.?\\s*C\\.?[\\s_:-]*Euro[\\s_.-]*lab${LETTER_AFTER}|tec[\\s_.-]?eurolab\\.(?:com|it)`,
+            'i'
+        ),
+    },
     { label: 'Sideius', re: /Sideius/i },
     { label: 'BSI', re: acronym('BSI') },
 ];
@@ -445,11 +451,57 @@ function cleanExaminerCandidate(raw) {
  * valore sulla stessa riga dell'etichetta oppure sulle due righe successive. Persona (es. "I.W.I. ..."), titolo o ente.
  * Serve come rule-fill quando l'AI lascia il campo vuoto: non sovrascrive mai un valore AI (vedi pickMergedValue).
  */
+const SIGNATURE_BLOCK_LABEL_RE = /Name\s+(?:and|&|e)\s+signature\s+(?:of\s+(?:the\s+)?)?(?:Examining\s+Body|examiner)|Nome\s+e\s+firma\s+(?:dell['\u2019]\s*)?(?:Organismo\s+di\s+Esame|esaminatore)/gi;
+const IWI_LINE_RE = /^\s*(I\.?\s?W\.?\s?I\.?)(?![A-Za-z])\s*([-\u2013\u2014:])?\s*(.*)$/i;
+const NAME_TOKEN_RE = /^[A-Za-z\u00C0-\u00FF][A-Za-z\u00C0-\u00FF'\u2019`-]*\.?$/;
+const NAME_PARTICLES = new Set(['de', 'di', 'da', 'del', 'della', 'dei', 'degli', 'van', 'von', 'dos', 'la', 'lo']);
+
+/** Nome dopo "I.W.I.": parole alfabetiche con iniziale maiuscola (o particelle); si ferma alla prima spazzatura OCR. */
+function cleanIwiName(rest) {
+    const out = [];
+    for (const raw of String(rest || '').split(/\s+/)) {
+        const tok = raw.replace(/^[(\[]+|[)\],;:]+$/g, '');
+        if (!tok || out.length >= 5 || !NAME_TOKEN_RE.test(tok)) break;
+        const isParticle = NAME_PARTICLES.has(tok.toLowerCase());
+        if (!isParticle && !/^[A-Z\u00C0-\u00DE]/.test(tok)) break;
+        if (!isParticle && tok.replace(/\./g, '').length < 2) break;
+        out.push(tok.replace(/[.,;:-]+$/, ''));
+    }
+    while (out.length && NAME_PARTICLES.has(out[out.length - 1].toLowerCase())) out.pop();
+    return out.length ? out.join(' ') : null;
+}
+
+/**
+ * Blocco firma ("Name and signature Examining Body" / "Nome e firma Organismo di Esame"): il nome compare come
+ * "I.W.I. <nome>" o "IWI - <nome>" nelle righe seguenti (anche ~12 righe dopo, es. dopo luogo, data, costruttore).
+ * Non si prende mai la riga successiva a prescindere: nell'OCR e' la firma a mano letta come parole sconnesse.
+ */
+function extractExaminerFromSignatureBlock(body) {
+    const re = new RegExp(SIGNATURE_BLOCK_LABEL_RE.source, 'gi');
+    let m;
+    while ((m = re.exec(body)) !== null) {
+        const lines = body.slice(m.index + m[0].length).split('\n').slice(0, 14);
+        for (const line of lines) {
+            const iwi = IWI_LINE_RE.exec(line);
+            if (!iwi) continue;
+            const name = cleanIwiName(iwi[3]);
+            if (!name) continue;
+            const prefix = iwi[1].replace(/\s+/g, '');
+            return iwi[2] && iwi[2] !== ':' ? `${prefix} ${iwi[2]} ${name}` : `${prefix} ${name}`;
+        }
+    }
+    return null;
+}
+
 function extractExaminerBody(text) {
     const body = String(text || '');
+    const fromSignatureBlock = extractExaminerFromSignatureBlock(body);
+    if (fromSignatureBlock) return fromSignatureBlock;
     const re = new RegExp(EXAMINER_LABEL_RE.source, 'gi');
     let m;
     while ((m = re.exec(body)) !== null) {
+        const lineStart = body.lastIndexOf('\n', m.index) + 1;
+        if (/signature|firma/i.test(body.slice(lineStart, m.index))) continue;
         const lineEnd = body.indexOf('\n', m.index + m[0].length);
         const sameLine = body.slice(m.index + m[0].length, lineEnd === -1 ? undefined : lineEnd);
         const candidates = [sameLine];
@@ -507,6 +559,78 @@ function extractWpqrFields(text, fileName) {
     };
 }
 
+const QUALIFICATION_METHODS_4_1 = ['iso_15614', 'iso_15613', 'iso_9606', 'production_test'];
+const METHOD_ENTRY_RE = /\b4\.1\s*([a-d])\s*[)\]]/i;
+const MARK_GLYPHS = '\\[\\s*[xX]\\s*\\]|[\\u2612\\u2611\\u2713\\u2714]';
+const INLINE_MARK_RE = new RegExp(`(?:${MARK_GLYPHS})|(?:^|\\s)[xX]\\s*$`);
+const STANDALONE_MARK_RE = new RegExp(`^\\s*(?:${MARK_GLYPHS}|[xX])\\s*$`);
+const DASH_ONLY_RE = /^\s*[-\u2013\u2014]{1,3}\s*$/;
+const INLINE_DASH_RE = /(?:^|\s)[-\u2013\u2014]{1,3}\s*$/;
+
+/**
+ * Metodo di qualifica ISO 14732:2013 §4.1 a/b/c/d -> iso_15614 / iso_15613 / iso_9606 / production_test.
+ * Il marcatore puo' stare sulla riga della voce ("[x]", "x", "check"), su righe a se' tra le voci o dopo la voce d)
+ * (colonna "-- -- X --" nel testo; "x" isolata nell'OCR tesseract.js, che stacca il marcatore dalla riga c).
+ * Una "x" isolata dopo l'elenco vale per l'UNICA voce senza marcatore ne' trattino; con piu' candidati
+ * o piu' marcatori restituisce null (ambiguo).
+ */
+function extractQualificationMethod14732(text) {
+    const lines = String(text || '').split('\n');
+    const entryIdx = [];
+    let last = -1;
+    for (const letter of ['a', 'b', 'c', 'd']) {
+        let found = -1;
+        for (let i = last + 1; i < lines.length; i += 1) {
+            const m = METHOD_ENTRY_RE.exec(lines[i]);
+            if (m && m[1].toLowerCase() === letter) { found = i; break; }
+        }
+        if (found === -1) return null;
+        entryIdx.push(found);
+        last = found;
+    }
+
+    const state = entryIdx.map((idx) => {
+        const rest = lines[idx].slice(lines[idx].search(METHOD_ENTRY_RE)).replace(METHOD_ENTRY_RE, '');
+        return { marked: INLINE_MARK_RE.test(rest), dashed: INLINE_DASH_RE.test(rest) };
+    });
+
+    const standaloneTokens = (from, to) => lines.slice(from, to)
+        .filter((l) => STANDALONE_MARK_RE.test(l) || DASH_ONLY_RE.test(l))
+        .map((l) => (STANDALONE_MARK_RE.test(l) ? 'mark' : 'dash'));
+
+    for (let i = 0; i < 3; i += 1) {
+        const tokens = standaloneTokens(entryIdx[i] + 1, entryIdx[i + 1]);
+        if (tokens.length === 1) {
+            if (tokens[0] === 'mark') state[i].marked = true;
+            else state[i].dashed = true;
+        }
+    }
+
+    const tail = [];
+    let seenText = 0;
+    for (const l of lines.slice(entryIdx[3] + 1)) {
+        if (!l.trim()) continue;
+        if (STANDALONE_MARK_RE.test(l)) tail.push('mark');
+        else if (DASH_ONLY_RE.test(l)) tail.push('dash');
+        else if (tail.length) break;
+        else if ((seenText += 1) > 3) break;
+    }
+
+    const marked = state.map((e, i) => (e.marked ? i : -1)).filter((i) => i >= 0);
+    const tailMarks = tail.filter((t) => t === 'mark').length;
+
+    if (tail.length === 4 && marked.length === 0) {
+        return tailMarks === 1 ? QUALIFICATION_METHODS_4_1[tail.indexOf('mark')] : null;
+    }
+    if (tailMarks === 1 && tail.length === 1) {
+        if (marked.length) return null;
+        const unmarked = state.map((e, i) => (e.dashed ? -1 : i)).filter((i) => i >= 0);
+        return unmarked.length === 1 ? QUALIFICATION_METHODS_4_1[unmarked[0]] : null;
+    }
+    if (tailMarks === 0 && marked.length === 1) return QUALIFICATION_METHODS_4_1[marked[0]];
+    return null;
+}
+
 /**
  * @param {string} text
  * @param {string} fileName
@@ -558,6 +682,7 @@ function extractQualifica14732Fields(text, fileName) {
         issuing_body: extractIssuingBody(text),
         welding_process: extractWeldingProcessConfident(text),
         welding_positions: positions.length ? positions : null,
+        qualification_method: extractQualificationMethod14732(text),
         examiner_body: extractExaminerBody(text),
         exam_date,
         expiry_date,
@@ -727,6 +852,7 @@ module.exports = {
     extractWeldingProcessConfident,
     extractIssuingBody,
     extractExaminerBody,
+    extractQualificationMethod14732,
     extractQualificationDates,
     extractQualificationCertificateNumber,
     extractMaterialGroupLabeled,
