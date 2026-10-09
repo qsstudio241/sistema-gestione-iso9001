@@ -42,7 +42,10 @@ Campi da estrarre:
   "Rilasciato il"). E' DISTINTA da exam_date (data della prova, "Date of test"/"Data della prova"): se il certificato
   riporta solo la data della prova e nessuna data di emissione, issue_date resta null — NON copiare exam_date,
 - examiner_body (ente/esaminatore che ha eseguito o testimoniato la prova — "Examiner or examining body" —
-  se diverso dall'ente certificatore; null se assente o coincidente con issuing_body),
+  se diverso dall'ente certificatore; null se assente o coincidente con issuing_body; se riporta una persona
+  o un titolo, es. "I.W.I. <nome>", riportalo testualmente: un nome di persona NON coincide con l'ente),
+- NOTA issuing_body: copia l'ente come scritto sul certificato; "TEC Eurolab" (anche "TEC EUROLAB", "Tec Eurolab S.r.l.",
+  "TECEUROLAB") e' un ente certificatore noto, non un ente generico,
 - transfer_mode (metodo di trasferimento del metallo d'apporto - variabile essenziale ISO 9606-1 §5.2,
   presente come colonna dedicata "Transfer mode" nel modulo certificato ufficiale §9.3): valorizzalo
   SOLO se il processo di saldatura e' ad arco con filo continuo (131 MIG, 135 MAG, 136 filo animato,
@@ -408,7 +411,9 @@ exam_date, expiry_date, last_confirmation_date, next_confirmation_due (YYYY-MM-D
 qualification_method (iso_15614|iso_15613|iso_9606|production_test). Usa null se assente.
 Altri campi: issue_date (YYYY-MM-DD, data di EMISSIONE del certificato, distinta da exam_date = data della prova;
 se assente null, NON copiare exam_date), examiner_body (ente/esaminatore che ha eseguito la prova, se diverso
-dall'issuing_body), standard_reference (norma con edizione ESATTAMENTE come scritta sul certificato, es. "ISO 14732:2013";
+dall'issuing_body; se riporta una persona o un titolo, es. "I.W.I. <nome>", riportalo testualmente),
+issuing_body: copia l'ente come scritto; "TEC Eurolab" (anche "TEC EUROLAB", "Tec Eurolab S.r.l.", "TECEUROLAB") e' un ente noto,
+standard_reference (norma con edizione ESATTAMENTE come scritta sul certificato, es. "ISO 14732:2013";
 null se non indicata).
 IMPORTANTE: NON assumere un intervallo di validita' fisso. ISO 14732 ha rivalidazione a 6 anni (opzione a) o
 ciclo 3 anni con controllo NDT (opzione b), diversi dai 3/2 anni di ISO 9606-1 per saldatori manuali.

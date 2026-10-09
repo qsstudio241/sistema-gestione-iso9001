@@ -391,17 +391,76 @@ function extractMaterialGroupLabeled(text) {
     return inferMaterialGroupFromText(body);
 }
 
+const LETTER_BEFORE = '(?<![A-Za-z\\u00C0-\\u00FF])';
+const LETTER_AFTER = '(?![A-Za-z\\u00C0-\\u00FF])';
+const acronym = (word) => new RegExp(`${LETTER_BEFORE}${word}${LETTER_AFTER}`, 'i');
+
+/**
+ * Enti riconosciuti dal fallback, nell'ordine storico. Le sigle brevi richiedono confini di parola
+ * (RINA non deve scattare su "Katerina"); TEC Eurolab tollera maiuscole, punti, trattini, spazi multipli,
+ * ritorni a capo e la forma attaccata ("TECEUROLAB", "T.E.C. Eurolab", "TEC Eurolab S.r.l.").
+ */
+const ISSUING_BODY_MATCHERS = [
+    { label: 'Bureau Veritas', re: /Bureau\s+Veritas/i },
+    { label: 'DNV', re: acronym('DNV') },
+    { label: 'Lloyd', re: new RegExp(`${LETTER_BEFORE}Lloyd`, 'i') },
+    { label: 'RINA', re: acronym('RINA') },
+    { label: 'TÜV', re: new RegExp(`${LETTER_BEFORE}T[ÜUü]V${LETTER_AFTER}`, 'i') },
+    { label: 'IMQ', re: acronym('IMQ') },
+    { label: 'IIS', re: acronym('IIS') },
+    { label: 'CICPND', re: acronym('CICPND') },
+    { label: 'SGS', re: acronym('SGS') },
+    { label: 'TEC Eurolab', re: new RegExp(`${LETTER_BEFORE}T\\.?\\s*E\\.?\\s*C\\.?[\\s_-]*Euro[\\s_.-]*lab${LETTER_AFTER}`, 'i') },
+    { label: 'Sideius', re: /Sideius/i },
+    { label: 'BSI', re: acronym('BSI') },
+];
+
 function extractIssuingBody(text) {
-    const bodies = [
-        'Bureau Veritas', 'DNV', 'Lloyd', 'RINA', 'TÜV', 'TUV', 'IMQ', 'IIS', 'CICPND', 'SGS',
-        'TEC Eurolab', 'TEC-Eurolab', 'Sideius', 'BSI',
-    ];
-    const lower = text.toLowerCase();
-    for (const b of bodies) {
-        if (lower.includes(b.toLowerCase())) {
-            // Normalizza varianti tipografiche verso l'etichetta canonica UI
-            if (/^tec[- ]?eurolab$/i.test(b)) return 'TEC Eurolab';
-            return b.replace('TUV', 'TÜV');
+    const body = String(text || '');
+    for (const { label, re } of ISSUING_BODY_MATCHERS) {
+        if (re.test(body)) return label;
+    }
+    return null;
+}
+
+const EXAMINER_LABEL_RE = /(?:examiner\s+or\s+examining\s+body|examining\s+body|name\s+of\s+(?:the\s+)?examiner|esaminatore\s+o\s+ente\s+d['’]\s*esame|nome\s+dell['’]\s*esaminatore|ente\s+d['’]\s*esame|witnessed\s+by|testimoniato\s+da)(?:\s*[-\u2013\u2014]\s*reference\s*no\.?)?(?:\s*[-\u2013\u2014]\s*n\.?\s*rif(?:erimento)?\.?)?/gi;
+const EXAMINER_NOT_A_VALUE_RE = /^(?:date|data|name|nome|signature|firma|reference|rif\b|place|location|luogo|position|title|photograph|photo|foto|validity|valid|employer|code|identification|role|welding|test|variables|requalification|revalidation|confirmation|manufacturer|the qualification|results)/i;
+
+function cleanExaminerCandidate(raw) {
+    let v = String(raw || '').split(/\t| {3,}/)[0];
+    v = v.replace(/^[\s:.\-\u2013\u2014|]+/, '').replace(/^reference\s*no\.?\s*[:.\-\u2013\u2014]*\s*/i, '');
+    v = v.replace(/\s+[-\u2013\u2014,]?\s*(?:ref(?:erence)?\.?\s*(?:no\.?)?|n\u00B0|rif\.?)\s*[:.]?\s*[A-Z0-9][A-Z0-9/.\-]*\s*$/i, '');
+    v = v.replace(/\s+[-\u2013\u2014]\s*\d{2}-\d{4,6}(?:-\d{2}(?:-\d{3})?)?\s*$/, '');
+    const endsWithAbbreviation = /(?:^|[\s.])[A-Za-z]\.[A-Za-z]\.$/.test(v.trim());
+    v = v.replace(/[\s:;,.\-\u2013\u2014|]+$/, '').replace(/\s{2,}/g, ' ').trim();
+    if (endsWithAbbreviation) v += '.';
+    if (v.length < 3 || v.length > 80 || v.split(/\s+/).length > 7 || !/[A-Za-z\u00C0-\u00FF]{2}/.test(v)) return null;
+    if (EXAMINER_NOT_A_VALUE_RE.test(v)) return null;
+    if (/^\d{2}-\d{4,6}/.test(v) || /^\d{1,2}[./]\d{1,2}[./]\d{2,4}/.test(v)) return null;
+    return v;
+}
+
+/**
+ * Esaminatore / ente d'esame ("Examiner or examining body", "Name of the examiner", "Esaminatore o ente d'esame"):
+ * valore sulla stessa riga dell'etichetta oppure sulle due righe successive. Persona (es. "I.W.I. ..."), titolo o ente.
+ * Serve come rule-fill quando l'AI lascia il campo vuoto: non sovrascrive mai un valore AI (vedi pickMergedValue).
+ */
+function extractExaminerBody(text) {
+    const body = String(text || '');
+    const re = new RegExp(EXAMINER_LABEL_RE.source, 'gi');
+    let m;
+    while ((m = re.exec(body)) !== null) {
+        const lineEnd = body.indexOf('\n', m.index + m[0].length);
+        const sameLine = body.slice(m.index + m[0].length, lineEnd === -1 ? undefined : lineEnd);
+        const candidates = [sameLine];
+        if (lineEnd !== -1) {
+            const nextLines = body.slice(lineEnd + 1).split('\n').filter((l) => l.trim()).slice(0, 2);
+            candidates.push(...nextLines);
+        }
+        for (const c of candidates) {
+            const v = cleanExaminerCandidate(c);
+            if (v) return v;
+            if (c.trim() && c !== sameLine) break;
         }
     }
     return null;
@@ -479,6 +538,7 @@ function extractPatentinoFields(text, fileName) {
         filler_material_group: fromDesignation.filler_material_group || null,
         weld_details: fromDesignation.weld_details || null,
         qualification_designation: fromDesignation.qualification_designation || null,
+        examiner_body: extractExaminerBody(text),
         exam_date,
         expiry_date,
     };
@@ -498,6 +558,7 @@ function extractQualifica14732Fields(text, fileName) {
         issuing_body: extractIssuingBody(text),
         welding_process: extractWeldingProcessConfident(text),
         welding_positions: positions.length ? positions : null,
+        examiner_body: extractExaminerBody(text),
         exam_date,
         expiry_date,
     };
@@ -664,6 +725,8 @@ module.exports = {
     extractNdtSector,
     extractWeldingProcess,
     extractWeldingProcessConfident,
+    extractIssuingBody,
+    extractExaminerBody,
     extractQualificationDates,
     extractQualificationCertificateNumber,
     extractMaterialGroupLabeled,
