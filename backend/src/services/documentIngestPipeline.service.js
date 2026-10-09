@@ -11,6 +11,7 @@ const { confidenceFromTextLength, extractPdfText } = require('../utils/importPdf
 const {
     extractFieldsByRules,
     extractIssuingBody,
+    extractAllIssuingBodies,
     sanitizeWeldDetails,
     extractWeldDetailsValidity,
     extractThicknessValidity,
@@ -38,6 +39,7 @@ try {
 /** Qualifiche personali: l'ente certificatore sta nella carta intestata (logo = grafica, non testo). */
 const HEADER_OCR_DOC_TYPES = new Set(['patentino_saldatore', 'qualifica_14732']);
 const HEADER_OCR_WARNING = 'Ente rilevato da OCR dell\'intestazione \u2014 verificare';
+const ISSUING_BODY_UNVERIFIED_WARNING = 'Ente indicato dall\'AI senza riscontro nel documento \u2014 verificare';
 
 // cert_ndt (ISO 9712) aggiunto 02/08/2026 — prima era in menu upload ma bloccato qui
 // con UNSUPPORTED_DOC_TYPE (simulazione UT Level II TEC-Eurolab).
@@ -340,20 +342,58 @@ function detectIssuingBodyCodeFromHeader(headerText) {
 }
 
 /**
- * Qualifiche con testo PDF ma ente non leggibile (logo e piè di pagina sono grafica): OCR della sola fascia alta
- * della prima pagina. Mai bloccante: errori, timeout e OCR vuoto lasciano l'ente invariato. Non riesegue l'OCR se
- * il documento e' gia' stato letto via OCR completo, ne' sovrascrive un ente valido (diverso da `altro`).
+ * Codici della lista chiusa (mai `altro`) riconosciuti nel testo dai matcher ancorati di `ruleFieldExtractors`
+ * (stessi di `extractIssuingBody`, niente substring libere: RINA non scatta su "Katerina").
+ * @param {string} text
+ * @returns {Set<string>}
+ */
+function issuingBodyCodesInText(text) {
+    const codes = new Set();
+    for (const label of extractAllIssuingBodies(text)) {
+        const code = normalizeIssuingBodyCode(label);
+        if (code && code !== 'altro') codes.add(code);
+    }
+    return codes;
+}
+
+function markIssuingBodyUnverified({ fieldConfidence, fieldSources, warnings }) {
+    fieldConfidence.issuing_body = 'low';
+    fieldSources.issuing_body = 'ai_unverified';
+    if (!warnings.includes(ISSUING_BODY_UNVERIFIED_WARNING)) warnings.push(ISSUING_BODY_UNVERIFIED_WARNING);
+}
+
+/**
+ * Affidabilita' dell'ente certificatore per le qualifiche personali (patentino_saldatore, qualifica_14732).
+ * Logo e carta intestata sono grafica, non testo: l'AI puo' "indovinare" un ente che nel testo non c'e'.
+ *
+ * Riscontro nel testo: il codice dell'ente (lista chiusa) e' riconosciuto nel testo estratto dai matcher ancorati
+ * (`extractAllIssuingBodies`). Con riscontro non succede nulla (nessun OCR, nessun avviso).
+ * Senza riscontro (ente AI diverso da vuoto/`altro`) o con ente vuoto/`altro` e nessun ente nel testo:
+ * OCR della sola fascia alta della prima pagina (`extractHeaderTextWithOCR`), mai bloccante.
+ *  - OCR riconosce un ente della lista: prevale sull'AI. Stesso ente => fonte `ai+ocr_header`, confidence `high`,
+ *    nessun avviso. Ente diverso => fonte `ocr_header`, confidence `medium`, avviso di discrepanza.
+ *    Ente AI vuoto/`altro` => fonte `ocr_header`, avviso informativo (come prima).
+ *  - OCR non riconosce nulla, errore, timeout, OCR non eseguibile (PDF gia' letto con OCR completo,
+ *    `INGEST_HEADER_OCR=0`, modulo OCR assente): l'ente AI (valido) resta, con fonte `ai_unverified`,
+ *    confidence `low` e avviso «da verificare». Ente AI vuoto/`altro`: invariato.
  * Muta `fields`, `fieldConfidence`, `fieldSources`, `warnings`.
+ * @returns {Promise<boolean>} true se l'OCR ha determinato o confermato l'ente
  */
 async function applyHeaderIssuingBodyFallback({
     pdfBuffer, docType, text, ocrUsed, fields, fieldConfidence, fieldSources, warnings, fileName,
     headerOcr = extractHeaderTextWithOCR,
 }) {
-    if (!HEADER_OCR_DOC_TYPES.has(docType) || ocrUsed || !headerOcr) return false;
-    if (String(process.env.INGEST_HEADER_OCR || '').trim() === '0') return false;
+    if (!HEADER_OCR_DOC_TYPES.has(docType)) return false;
     const current = fields.issuing_body;
-    if (current && current !== 'altro') return false;
-    if (extractIssuingBody(text)) return false;
+    const aiBody = current && current !== 'altro' ? current : null;
+    if (aiBody ? issuingBodyCodesInText(text).has(aiBody) : extractIssuingBody(text)) return false;
+
+    const ctx = { fieldConfidence, fieldSources, warnings };
+    const disabled = String(process.env.INGEST_HEADER_OCR || '').trim() === '0';
+    if (ocrUsed || disabled || !headerOcr) {
+        if (aiBody) markIssuingBodyUnverified(ctx);
+        return false;
+    }
 
     const startedAt = Date.now();
     try {
@@ -361,15 +401,26 @@ async function applyHeaderIssuingBodyFallback({
         const code = detectIssuingBodyCodeFromHeader(headerText);
         logger.info(`[IngestPipeline] OCR intestazione file=${redactFileNameForLog(fileName)} docType=${docType} ms=${Date.now() - startedAt}`
             + ` chars=${String(headerText || '').length} ente=${code || 'non rilevato'}`);
-        if (!code) return false;
+        if (!code) {
+            if (aiBody) markIssuingBodyUnverified(ctx);
+            return false;
+        }
         fields.issuing_body = code;
+        if (aiBody && code === aiBody) {
+            fieldConfidence.issuing_body = 'high';
+            fieldSources.issuing_body = 'ai+ocr_header';
+            return true;
+        }
         fieldConfidence.issuing_body = 'medium';
         fieldSources.issuing_body = 'ocr_header';
-        warnings.push(HEADER_OCR_WARNING);
+        warnings.push(aiBody
+            ? `Ente corretto da OCR dell'intestazione: l'AI indicava ${aiBody} \u2014 verificare`
+            : HEADER_OCR_WARNING);
         return true;
     } catch (err) {
         const msg = (err && err.message) ? err.message : String(err);
         logger.warn(`[IngestPipeline] OCR intestazione non riuscito file=${redactFileNameForLog(fileName)} ms=${Date.now() - startedAt}: ${msg}`);
+        if (aiBody) markIssuingBodyUnverified(ctx);
         return false;
     }
 }

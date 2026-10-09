@@ -26,7 +26,7 @@ const QUALIFICATION_DOC_TYPES = new Set(['patentino_saldatore', 'qualifica_14732
 
 /**
  * Chiave riservata dentro `staged_fields_json` (come `_target_document_id`) con la fonte per campo
- * dell'estrazione: { campo: 'ai' | 'rules' | 'ai+rules' | 'ai_corrected_by_rules' | 'ocr_header' }.
+ * dell'estrazione: { campo: 'ai' | 'rules' | 'ai+rules' | 'ai_corrected_by_rules' | 'ocr_header' | 'ai+ocr_header' | 'ai_unverified' }.
  * Solo nomi di campo e sigle di fonte, mai valori. Non e' un campo di dominio: non va ai commit.
  */
 const FIELD_SOURCES_KEY = '_field_sources';
