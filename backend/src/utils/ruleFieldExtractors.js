@@ -429,6 +429,17 @@ function extractIssuingBody(text) {
     return null;
 }
 
+/**
+ * Tutti gli enti riconosciuti nel testo (stessi matcher ancorati di `extractIssuingBody`, che invece
+ * restituisce solo il primo in ordine di lista): serve a verificare se un ente dato dall'AI ha riscontro nel testo.
+ * @param {string} text
+ * @returns {string[]} etichette (es. 'TEC Eurolab', 'TÜV')
+ */
+function extractAllIssuingBodies(text) {
+    const body = String(text || '');
+    return ISSUING_BODY_MATCHERS.filter(({ re }) => re.test(body)).map(({ label }) => label);
+}
+
 const EXAMINER_LABEL_RE = /(?:examiner\s+or\s+examining\s+body|examining\s+body|name\s+of\s+(?:the\s+)?examiner|esaminatore\s+o\s+ente\s+d['’]\s*esame|nome\s+dell['’]\s*esaminatore|ente\s+d['’]\s*esame|witnessed\s+by|testimoniato\s+da)(?:\s*[-\u2013\u2014]\s*reference\s*no\.?)?(?:\s*[-\u2013\u2014]\s*n\.?\s*rif(?:erimento)?\.?)?/gi;
 const EXAMINER_NOT_A_VALUE_RE = /^(?:date|data|name|nome|signature|firma|reference|rif\b|place|location|luogo|position|title|photograph|photo|foto|valid(?:ity|it\u00E0|[oae])?|employer|code|identification|role|welding|test|variables|requalification|revalidation|confirmation|manufacturer|the qualification|results)(?![A-Za-z\u00C0-\u00FF])/i;
 
@@ -1098,6 +1109,7 @@ module.exports = {
     extractWeldingProcess,
     extractWeldingProcessConfident,
     extractIssuingBody,
+    extractAllIssuingBodies,
     extractExaminerBody,
     extractQualificationMethod14732,
     extractQualificationMethod14732FromLayout,

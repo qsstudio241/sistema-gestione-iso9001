@@ -103,9 +103,9 @@ describe('OCR intestazione: aggancio alla pipeline', () => {
         expect(out.fields.issuing_body).toBe('altro');
     });
 
-    it('(iv) ente valido dall AI (diverso da altro) non viene mai sovrascritto, ne OCR invocato', async () => {
+    it('(iv) ente valido dall AI con riscontro nel testo non viene mai sovrascritto, ne OCR invocato', async () => {
         mockAi('RINA');
-        const out = await ingest();
+        const out = await ingest('patentino_saldatore', `${TEXT_SENZA_ENTE}\nRINA Services S.p.A.`);
         expect(extractHeaderTextWithOCR).not.toHaveBeenCalled();
         expect(out.fields.issuing_body).toBe('rina');
     });
