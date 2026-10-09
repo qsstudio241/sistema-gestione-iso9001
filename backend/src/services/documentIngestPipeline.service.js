@@ -309,7 +309,8 @@ function mergeExtractions(ruleFields, aiFields, docType) {
 }
 
 /**
- * Ente certificatore dal testo OCR dell'intestazione: solo valori della lista chiusa (mai `altro`).
+ * Ente certificatore dal testo OCR dell'intestazione: solo valori della lista chiusa (mai `altro`), riconosciuti
+ * dai matcher ancorati di `extractIssuingBody` (niente match libero sull'intero testo OCR).
  * @param {string} headerText
  * @returns {string|null} codice select (es. 'tec_eurolab')
  */
@@ -317,8 +318,7 @@ function detectIssuingBodyCodeFromHeader(headerText) {
     const text = String(headerText || '');
     if (!text.trim()) return null;
     const label = extractIssuingBody(text);
-    let code = label ? normalizeIssuingBodyCode(label) : null;
-    if (!code || code === 'altro') code = normalizeIssuingBodyCode(text);
+    const code = label ? normalizeIssuingBodyCode(label) : null;
     return code && code !== 'altro' ? code : null;
 }
 

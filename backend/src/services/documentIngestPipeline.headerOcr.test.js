@@ -159,6 +159,16 @@ describe('OCR intestazione: mappatura enti dalla lista chiusa', () => {
         (header) => expect(detectIssuingBodyCodeFromHeader(header)).toBeNull()
     );
 
+    it.each([
+        ['ACME BV Holding S.p.A.'],
+        ['Euro Lab Service S.r.l.'],
+        ['Eurolab Instruments'],
+        ['CSQ Certiquality'],
+        ['Valor Italia\nStatuto tuvalu'],
+    ])('nessun match libero sul testo OCR: %j -> null', (header) => {
+        expect(detectIssuingBodyCodeFromHeader(header)).toBeNull();
+    });
+
     it('IIS resta fuori lista chiusa del backend (come il normalizzatore AI): nessuna sostituzione', () => {
         expect(detectIssuingBodyCodeFromHeader('Istituto Italiano della Saldatura IIS')).toBeNull();
     });
