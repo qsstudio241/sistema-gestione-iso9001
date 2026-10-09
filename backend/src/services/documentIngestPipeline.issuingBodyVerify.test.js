@@ -260,3 +260,37 @@ describe('(x) log e _field_sources', () => {
         });
     });
 });
+
+describe('intestazione con piu enti (Bugbot): l\'ente AI e\' confermato se e\' uno dei riconosciuti', () => {
+    it.each([
+        ['TEC-Eurolab\nin collaborazione con RINA Services', 'tec_eurolab'],
+        ['RINA Services\nTEC-Eurolab', 'tec_eurolab'],
+        ['Istituto Italiano della Saldatura IIS\nTEC-Eurolab', 'tec_eurolab'],
+        ['T\u00DCV S\u00DCD\nBureau Veritas', 'tuv'],
+    ])('OCR %j con AI %s -> ai+ocr_header, nessun avviso', async (header, code) => {
+        mockAi(code);
+        extractHeaderTextWithOCR.mockResolvedValue(header);
+        const out = await ingest();
+        expect(out.fields.issuing_body).toBe(code);
+        expect(out.fieldSources.issuing_body).toBe('ai+ocr_header');
+        expect(out.fieldConfidence.issuing_body).toBe('high');
+        expect(out.warnings.some(isEnteWarning)).toBe(false);
+    });
+
+    it('piu enti nell\'intestazione, nessuno e quello dell\'AI (ambiguo) -> l\'OCR non prevale: ente AI «da verificare»', async () => {
+        mockAi('tec_eurolab');
+        extractHeaderTextWithOCR.mockResolvedValue('RINA Services\nBureau Veritas');
+        const out = await ingest();
+        expect(out.fields.issuing_body).toBe('tec_eurolab');
+        expect(out.fieldSources.issuing_body).toBe('ai_unverified');
+        expect(out.warnings.filter(isUnverified)).toHaveLength(1);
+    });
+
+    it('un solo ente diverso dall\'AI nell\'intestazione (IIS fuori lista ignorato) -> l\'OCR prevale', async () => {
+        mockAi('tec_eurolab');
+        extractHeaderTextWithOCR.mockResolvedValue('Istituto Italiano della Saldatura IIS\nRINA Services');
+        const out = await ingest();
+        expect(out.fields.issuing_body).toBe('rina');
+        expect(out.fieldSources.issuing_body).toBe('ocr_header');
+    });
+});

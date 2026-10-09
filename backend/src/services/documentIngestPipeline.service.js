@@ -373,7 +373,10 @@ function markIssuingBodyUnverified({ fieldConfidence, fieldSources, warnings }) 
  *  - OCR riconosce un ente della lista: prevale sull'AI. Stesso ente => fonte `ai+ocr_header`, confidence `high`,
  *    nessun avviso. Ente diverso => fonte `ocr_header`, confidence `medium`, avviso di discrepanza.
  *    Ente AI vuoto/`altro` => fonte `ocr_header`, avviso informativo (come prima).
- *  - OCR non riconosce nulla, errore, timeout, OCR non eseguibile (PDF gia' letto con OCR completo,
+ *    L'ente AI e' confermato se e' UNO DEI codici riconosciuti nell'intestazione (anche con piu' enti nel logo/carta
+ *    intestata o con enti fuori lista come IIS). Se l'intestazione riporta piu' enti della lista e nessuno e' quello
+ *    dell'AI (ambiguo), l'OCR non prevale: vale il caso «non riconosciuto» qui sotto.
+ *  - OCR non riconosce nulla, ambiguo, errore, timeout, OCR non eseguibile (PDF gia' letto con OCR completo,
  *    `INGEST_HEADER_OCR=0`, modulo OCR assente): l'ente AI (valido) resta, con fonte `ai_unverified`,
  *    confidence `low` e avviso «da verificare». Ente AI vuoto/`altro`: invariato.
  * Muta `fields`, `fieldConfidence`, `fieldSources`, `warnings`.
@@ -398,9 +401,13 @@ async function applyHeaderIssuingBodyFallback({
     const startedAt = Date.now();
     try {
         const headerText = await headerOcr(pdfBuffer, { pageNumber: 1, lang: 'ita+eng' });
-        const code = detectIssuingBodyCodeFromHeader(headerText);
+        const headerCodes = issuingBodyCodesInText(headerText);
+        const ambiguous = Boolean(aiBody) && !headerCodes.has(aiBody) && headerCodes.size > 1;
+        let code = null;
+        if (aiBody && headerCodes.has(aiBody)) code = aiBody;
+        else if (!ambiguous) code = detectIssuingBodyCodeFromHeader(headerText);
         logger.info(`[IngestPipeline] OCR intestazione file=${redactFileNameForLog(fileName)} docType=${docType} ms=${Date.now() - startedAt}`
-            + ` chars=${String(headerText || '').length} ente=${code || 'non rilevato'}`);
+            + ` chars=${String(headerText || '').length} ente=${code || (ambiguous ? 'ambiguo' : 'non rilevato')}`);
         if (!code) {
             if (aiBody) markIssuingBodyUnverified(ctx);
             return false;
