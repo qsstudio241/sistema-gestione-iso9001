@@ -139,6 +139,19 @@ describe('esaminatore: label "Examiner or examining body" (rule-fill)', () => {
         expect(extractExaminerBody("Nome dell'esaminatore\nBianchi Luca IWE")).toBe('Bianchi Luca IWE');
     });
 
+    it('valore sulla stessa riga preceduto da padding di colonna (OCR a tabella)', () => {
+        expect(extractExaminerBody('Examiner or examining body:      Luca Bianchi (IWI)')).toBe('Luca Bianchi (IWI)');
+        expect(extractExaminerBody('Examiner or examining body\t\tLuca Bianchi (IWI)\t25-00000-00-001')).toBe('Luca Bianchi (IWI)');
+        expect(extractExaminerBody('Examiner or examining body\n      Luca Bianchi (IWI)')).toBe('Luca Bianchi (IWI)');
+    });
+
+    it('nomi che iniziano come un\'etichetta (Valentina, Testa, Dati) non sono scartati', () => {
+        expect(extractExaminerBody('Examiner or examining body: Valentina Rossi')).toBe('Valentina Rossi');
+        expect(extractExaminerBody('Examiner or examining body\nTesta Marco (IWI)')).toBe('Testa Marco (IWI)');
+        expect(extractExaminerBody('Examiner or examining body: Datini Paolo')).toBe('Datini Paolo');
+        expect(extractExaminerBody('Examiner or examining body\nValidity')).toBeNull();
+    });
+
     it('blocco firma 14732 senza valore: salta alla successiva occorrenza valida', () => {
         const text = [
             'Name, date and signature',
