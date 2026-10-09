@@ -718,8 +718,8 @@ function QualificationForm({ qualification, onSave, onClose, onSaved, defaultCom
                   <input type="text" value={form.shielding_gas} onChange={handle("shielding_gas")} placeholder="es. M21, I1 (ISO 14175)" />
                 </div>
                 <div className="qf-field">
-                  <label>Dettagli giunto</label>
-                  <input type="text" value={form.weld_details} onChange={handle("weld_details")} placeholder="es. ss nb, bs, sl, ml, derivazione/branch tubo-piastra" />
+                  <label>{"Dettagli saldatura \u2013 campo di validità"}</label>
+                  <input type="text" value={form.weld_details} onChange={handle("weld_details")} placeholder="es. sl, ml, ss nb" />
                 </div>
                 <div className="qf-field">
                   <label>Organismo esaminatore</label>

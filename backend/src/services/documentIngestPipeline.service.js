@@ -8,7 +8,13 @@
 
 const logger = require('../utils/logger');
 const { confidenceFromTextLength, extractPdfText } = require('../utils/importPdfText');
-const { extractFieldsByRules, extractIssuingBody } = require('../utils/ruleFieldExtractors');
+const {
+    extractFieldsByRules,
+    extractIssuingBody,
+    sanitizeWeldDetails,
+    extractWeldDetailsValidity,
+    extractThicknessValidity,
+} = require('../utils/ruleFieldExtractors');
 const { getSchemaForDocType, DESIGNATION_ONLY_SCHEMA } = require('../data/documentTypeSchemas');
 const { extractStructuredByDocType } = require('./importAiExtraction.service');
 const { buildProfilePromptSection } = require('../data/jointTypeProfiles');
@@ -363,6 +369,70 @@ async function applyHeaderIssuingBodyFallback({
     }
 }
 
+function sourceForRuleValue(prevValue, prevSource, value) {
+    if (prevValue == null) return 'rules';
+    const same = String(prevValue).toLowerCase() === String(value).toLowerCase();
+    const fromAi = typeof prevSource === 'string' && prevSource.startsWith('ai');
+    if (same) return fromAi ? 'ai+rules' : 'rules';
+    return fromAi ? 'ai_corrected_by_rules' : 'rules';
+}
+
+function setFieldByRule(key, value, { fields, fieldConfidence, fieldSources }) {
+    fieldSources[key] = sourceForRuleValue(fields[key], fieldSources[key], value);
+    fields[key] = value;
+    fieldConfidence[key] = 'high';
+}
+
+function clearField(key, { fields, fieldConfidence, fieldSources }) {
+    if (fields[key] == null) return;
+    delete fields[key];
+    delete fieldSources[key];
+    fieldConfidence[key] = 'low';
+}
+
+/**
+ * Patentini ISO 9606-1: nel DB conta solo il CAMPO DI VALIDITA' (i dati di prova restano nel PDF allegato).
+ * Dove la riga a tre colonne (Variabili / PROVA / VALIDITA') e' riconosciuta, la colonna VALIDITA' vince
+ * sull'AI; altrimenti l'AI resta, con `weld_details` ripulito dai valori che non sono dettagli di saldatura
+ * (es. "PIPE PLATE" della riga tubo/piastra). Layout diverso -> nessuna deduzione. Muta fields/fieldConfidence/fieldSources.
+ */
+function applyValidityColumnRules({ docType, text, fields, fieldConfidence, fieldSources }) {
+    if (docType !== 'patentino_saldatore') return false;
+    const ctx = { fields, fieldConfidence, fieldSources };
+    let changed = false;
+
+    const weldDetails = extractWeldDetailsValidity(text);
+    if (weldDetails) {
+        if (weldDetails.value) setFieldByRule('weld_details', weldDetails.value, ctx);
+        else clearField('weld_details', ctx);
+        changed = true;
+    } else if (fields.weld_details != null) {
+        const clean = sanitizeWeldDetails(fields.weld_details);
+        if (clean) fields.weld_details = clean;
+        else clearField('weld_details', ctx);
+    }
+
+    const thickness = extractThicknessValidity(text);
+    if (thickness) {
+        if (thickness.min != null) setFieldByRule('thickness_min_mm', thickness.min, ctx);
+        if (thickness.unlimited) {
+            clearField('thickness_max_mm', ctx);
+            setFieldByRule('thickness_max_unlimited', true, ctx);
+        } else {
+            setFieldByRule('thickness_max_mm', thickness.max, ctx);
+            if (fields.thickness_max_unlimited) setFieldByRule('thickness_max_unlimited', false, ctx);
+        }
+        if (thickness.min != null) {
+            const range = thickness.unlimited
+                ? `\u2265${thickness.min} mm`
+                : `${thickness.min}-${thickness.max} mm`;
+            setFieldByRule('thickness_range', range, ctx);
+        }
+        changed = true;
+    }
+    return changed;
+}
+
 /** Campi chiave tracciati nella riga di log a fine ingest (solo nomi di campo, mai valori). */
 const FIELD_SOURCES_LOG_KEYS = [
     'qualification_method', 'issuing_body', 'examiner_body', 'issue_date',
@@ -443,6 +513,9 @@ async function runDocumentIngest({
 
     const { fields, fieldConfidence, fieldSources } = mergeExtractions(ruleFields, aiFields, docType);
     const normalizedFields = normalizeIngestSelectFields(repairDeep(fields));
+    applyValidityColumnRules({
+        docType, text, fields: normalizedFields, fieldConfidence, fieldSources,
+    });
     await applyHeaderIssuingBodyFallback({
         pdfBuffer, docType, text, ocrUsed, fileName, warnings,
         fields: normalizedFields, fieldConfidence, fieldSources,
@@ -499,6 +572,7 @@ module.exports = {
     pickMergedValue,
     pickDesignationOnlyFields,
     applyHeaderIssuingBodyFallback,
+    applyValidityColumnRules,
     detectIssuingBodyCodeFromHeader,
     buildFieldSourcesLogLine,
     SUPPORTED_DOC_TYPES,

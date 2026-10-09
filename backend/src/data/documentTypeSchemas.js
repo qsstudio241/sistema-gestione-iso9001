@@ -1,7 +1,7 @@
 'use strict';
 
 /**
- * documentTypeSchemas.js � Versione backend (prompt AI e schema atteso)
+ * documentTypeSchemas.js — Versione backend (prompt AI e schema atteso)
  * Mantenere sincronizzato con app/src/data/documentTypeSchemas.js
  */
 
@@ -11,7 +11,7 @@ const AI_SCHEMAS = {
     label: 'Patentino saldatore (ISO 9606-1)',
     aiPrompt: `Stai analizzando un certificato di qualifica saldatore secondo ISO 9606-1 (o norma equivalente).
 Estrai TUTTI i seguenti campi e restituiscili nell'oggetto "type_specific_data" del JSON di risposta.
-Se un campo non � presente nel documento, usa null.
+Se un campo non è presente nel documento, usa null.
 
 Campi da estrarre:
 - welder_name, certificate_number, issuing_body,
@@ -21,14 +21,18 @@ Campi da estrarre:
 - product_type (variabile essenziale ISO 9606-1 §11: SOLO "P" piastra o "T" tubo/pipe, nessuna terza
   categoria "tubo-piastra" - un giunto di derivazione/branch/bocchello resta "T" (è un tipo di giunto,
   §3.16, non un tipo prodotto); dedurre da "plate/piastra" vs "pipe/tube/tubo" nel testo, null se non specificato),
-- weld_details (dettagli di giunto se presenti: backing, mono/multistrato, saldatura sx/dx, oppure
-  derivazione/branch/bocchello tubo-piastra - riportalo qui testualmente per non perdere l'informazione
-  anche quando product_type resta "T"; testo libero breve, null se assenti),
+- weld_details (Dettagli di saldatura / Weld details del CAMPO DI VALIDITA' - colonna "Campo di validità" /
+  "Range of approval", MAI i dati della prova: riporta solo le abbreviazioni ISO 9606-1 Tab. 11/12 della
+  colonna di validità, es. "sl" oppure "sl, ml" (altre ammesse: ss, bs, nb, mb, gb, fb, ci). Non è il tipo
+  prodotto: NON scrivere "PIPE", "PLATE", tubo/piastra, derivazione o altro testo libero; null se la
+  colonna di validità non riporta dettagli di saldatura),
 - material_group, filler_material_group,
 - welding_position_test (posizione della prova), welding_positions (array, validità),
 - thickness_s_test_mm (s depositato PROVA, solo BW Tab.6; null su FW),
 - thickness_t_test_mm (t materiale provino PROVA, solo FW Tab.8; null su BW; non usare a/z),
-- thickness_min_mm, thickness_max_mm (SOLO validità),
+- thickness_min_mm, thickness_max_mm (SOLO colonna di validità "Campo di validità" / "Range of approval" della
+  riga spessore; i valori di prova a), b) NON sono il range: ">=3" = min 3, nessun massimo; una designazione
+  come "t3-10" sono due spessori di PROVA, non min 3 / max 10),
 - thickness_max_unlimited (booleano — true SOLO se il certificato dichiara esplicitamente un range
   aperto senza limite superiore, es. simboli "≥"/"=>"/"⩾" o testo "no restriction"/"senza limite
   superiore" sullo spessore massimo qualificato; in tal caso lascia thickness_max_mm: null e imposta
@@ -481,7 +485,7 @@ training_body, certificate_number, issue_date, expiry_date (YYYY-MM-DD). Usa nul
   },
 
   sal: {
-    label: 'SAL � Stato avanzamento lavori',
+    label: 'SAL — Stato avanzamento lavori',
     aiPrompt: `Documento SAL consulenza SGQ. Estrai: client_name, standards_tracked, period_label.`,
     aiExpectedSchema: {
       client_name: 'string|null',
@@ -491,7 +495,7 @@ training_body, certificate_number, issue_date, expiry_date (YYYY-MM-DD). Usa nul
   },
 
   rdp: {
-    label: 'RDP � Rapporto di prova',
+    label: 'RDP — Rapporto di prova',
     aiPrompt: `Rapporto di prova RDP. Estrai: report_number, test_type, component_ref, test_date (YYYY-MM-DD).`,
     aiExpectedSchema: {
       report_number: 'string|null',
