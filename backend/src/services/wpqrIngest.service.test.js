@@ -555,3 +555,33 @@ describe('round-trip a sentinella — ogni campo aiExpectedSchema sopravvive fin
         expect(missing).toEqual([]);
     });
 });
+
+describe('privacy log: WPQR doc classification senza nome file', () => {
+    afterEach(() => jest.restoreAllMocks());
+
+    it('logga file#hash e non il nome (che puo\' contenere il titolare)', async () => {
+        const logger = require('../utils/logger');
+        const { redactFileNameForLog } = require('../utils/ingestErrorMessage');
+        const FILE_NAME = '99-00000_ZZROSSI ZZMARIO_WPQR.pdf';
+        const spies = ['info', 'warn', 'error'].map((m) => jest.spyOn(logger, m).mockImplementation(() => {}));
+        runDocumentIngest.mockResolvedValue({
+            text: 'WPQR VB0377/23 Fillet Weld t1 = >=5 processo 138 ISO 15614-1 testo abbastanza lungo',
+            fields: { wpqr_number: 'VB0377/23', joint_type: 'FW', product_type: 'P' },
+            fieldConfidence: {},
+            extractionConfidence: 75,
+            aiModel: null,
+            warnings: [],
+        });
+        query.mockResolvedValue({ recordset: [] });
+
+        const out = await extractWPQRFromPdf(Buffer.from('%PDF'), FILE_NAME, 1001, 2001);
+
+        expect(out.status).toBe('pending_review');
+        const call = spies[0].mock.calls.find((c) => c[0] === 'WPQR doc classification');
+        expect(call[1].file).toBe(redactFileNameForLog(FILE_NAME));
+        expect(call[1]).not.toHaveProperty('fileName');
+        const logged = spies.flatMap((sp) => sp.mock.calls.map((c) => JSON.stringify(c))).join('\n');
+        expect(logged).not.toContain('ZZROSSI');
+        expect(logged).not.toContain(FILE_NAME);
+    });
+});

@@ -146,4 +146,22 @@ describe('ingestFiguresFromPdf', () => {
     ).rejects.toMatchObject({ code: 'INVALID_PDF_PATH' });
     expect(mockPersistFigures).not.toHaveBeenCalled();
   });
+
+  it('privacy log: la riga di log usa file#hash e non il nome del PDF', async () => {
+    const logger = require('../utils/logger');
+    const { redactFileNameForLog } = require('../utils/ingestErrorMessage');
+    const pdfPath = tmpPdf('ZZROSSI ZZMARIO_certificato.pdf');
+    await ingestFiguresFromPdf({
+      organizationId: 1001,
+      pdfPath,
+      extractFigures: async () => ({ figures: [] }),
+      embedder: mockEmbedder(),
+    });
+    const call = logger.info.mock.calls.find((c) => String(c[0]).startsWith('[figureIngest]'));
+    expect(call[2]).toBe(redactFileNameForLog(pdfPath));
+    expect(JSON.stringify(logger.info.mock.calls)).not.toContain('ZZROSSI');
+    expect(mockPersistFigures).toHaveBeenCalledWith(
+      expect.objectContaining({ sourcePdf: 'ZZROSSI ZZMARIO_certificato.pdf' })
+    );
+  });
 });

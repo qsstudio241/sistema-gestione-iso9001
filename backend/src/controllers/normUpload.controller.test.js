@@ -38,7 +38,10 @@ const {
 } = require('../services/normIngest.service');
 const { createStagingRecord } = require('../services/ingestStaging.service');
 const { assertMutatingAllowed } = require('../services/companyAccess.service');
-const { ingestFromFolder } = require('./normUpload.controller');
+const { ingestFromFolder, uploadNorms } = require('./normUpload.controller');
+const { resolveNormFolderId } = require('../services/normCodesImport.service');
+const logger = require('../utils/logger');
+const { redactFileNameForLog } = require('../utils/ingestErrorMessage');
 
 function mockRes() {
   const res = {};
@@ -297,5 +300,55 @@ describe('ingestFromFolder (IA-12)', () => {
       truncated: true,
       omitted: 5,
     }));
+  });
+});
+
+describe('privacy log: nessun nome file nei log di errore', () => {
+  const FILE_NAME = '99-00000_ZZROSSI ZZMARIO_ISO9001.pdf';
+  const allLogged = () => ['info', 'warn', 'error'].flatMap((m) => logger[m].mock.calls.map((c) => JSON.stringify(c))).join('\n');
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+    assertMutatingAllowed.mockResolvedValue(null);
+    jest.spyOn(fsSync, 'existsSync').mockReturnValue(true);
+    jest.spyOn(require('fs').promises, 'readFile').mockResolvedValue(Buffer.from('%PDF'));
+    jest.spyOn(require('fs').promises, 'unlink').mockResolvedValue();
+  });
+
+  afterEach(() => jest.restoreAllMocks());
+
+  it('[NormUpload/batch] Estrazione fallita: file#hash, nome solo nella risposta API', async () => {
+    resolveNormFolderId.mockResolvedValue({ id: 23, company_id: 8 });
+    extractNormFromPdf.mockRejectedValue(new Error('estrazione KO'));
+    const res = mockRes();
+    await uploadNorms({
+      user: { user_id: 7, organization_id: 1001 },
+      body: {},
+      files: [{ originalname: FILE_NAME, path: '/tmp/x.pdf', mimetype: 'application/pdf', size: 10 }],
+    }, res);
+
+    const call = logger.error.mock.calls.find((c) => c[0] === '[NormUpload/batch] Estrazione fallita');
+    expect(call[1].file).toBe(redactFileNameForLog(FILE_NAME));
+    expect(call[1]).not.toHaveProperty('fileName');
+    expect(allLogged()).not.toContain('ZZROSSI');
+    expect(allLogged()).not.toContain(FILE_NAME);
+    expect(res.json.mock.calls[0][0].results[0].fileName).toBe(FILE_NAME);
+  });
+
+  it('[NormUpload/folder] Estrazione fallita: file#hash, nome solo nella risposta API', async () => {
+    assertFolderIsNorms.mockResolvedValue({ id: 23, company_id: 8 });
+    listFolderNormPdfs.mockResolvedValue([{
+      id: 90, file_name: FILE_NAME, storage_path: '/uploads/import/x.pdf', mime_type: 'application/pdf', company_id: 8,
+    }]);
+    extractNormFromPdf.mockRejectedValue(new Error('estrazione KO'));
+    const res = mockRes();
+    await ingestFromFolder({ user: { user_id: 7, organization_id: 1001 }, body: { folder_id: 23 } }, res);
+
+    const call = logger.error.mock.calls.find((c) => c[0] === '[NormUpload/folder] Estrazione fallita');
+    expect(call[1].file).toBe(redactFileNameForLog(FILE_NAME));
+    expect(call[1].documentId).toBe(90);
+    expect(allLogged()).not.toContain('ZZROSSI');
+    expect(allLogged()).not.toContain(FILE_NAME);
+    expect(res.json.mock.calls[0][0].results[0].fileName).toBe(FILE_NAME);
   });
 });

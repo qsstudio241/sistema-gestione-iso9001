@@ -5,6 +5,7 @@
 
 const path = require('path');
 const logger = require('../utils/logger');
+const { redactFileNameForLog } = require('../utils/ingestErrorMessage');
 const { query } = require('../config/database');
 const { runDocumentIngest } = require('./documentIngestPipeline.service');
 const {
@@ -485,7 +486,7 @@ async function extractWPQRFromPdf(pdfBuffer, fileName, organizationId, companyId
     if (pipeline.text.length > 30) {
         const docClass = classifyDocument(pipeline.text);
         logger.info('WPQR doc classification', {
-            fileName,
+            file: redactFileNameForLog(fileName),
             detected_type: docClass.detected_type,
             confidence: docClass.confidence,
         });

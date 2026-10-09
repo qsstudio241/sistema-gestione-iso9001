@@ -24,6 +24,22 @@ const DOC_TYPE_MODULES = {
 // cert_ndt (ISO 9712) confluisce in qualifications con i campi ndt_method/level/sector
 const QUALIFICATION_DOC_TYPES = new Set(['patentino_saldatore', 'qualifica_14732', 'cert_ndt']);
 
+/**
+ * Chiave riservata dentro `staged_fields_json` (come `_target_document_id`) con la fonte per campo
+ * dell'estrazione: { campo: 'ai' | 'rules' | 'ai+rules' | 'ai_corrected_by_rules' | 'ocr_header' }.
+ * Solo nomi di campo e sigle di fonte, mai valori. Non e' un campo di dominio: non va ai commit.
+ */
+const FIELD_SOURCES_KEY = '_field_sources';
+
+function normalizeFieldSources(sources) {
+    if (!sources || typeof sources !== 'object' || Array.isArray(sources)) return null;
+    const out = {};
+    for (const [field, source] of Object.entries(sources)) {
+        if (typeof source === 'string' && source) out[field] = source;
+    }
+    return Object.keys(out).length ? out : null;
+}
+
 function parseJson(val, fallback = null) {
     if (val == null) return fallback;
     if (typeof val === 'object') return val;
@@ -32,6 +48,12 @@ function parseJson(val, fallback = null) {
     } catch {
         return fallback;
     }
+}
+
+/** Separa i campi estratti dalla fonte per campo: feedback e commit vedono solo i campi (come prima). */
+function splitFieldSources(stored) {
+    const { [FIELD_SOURCES_KEY]: rawSources, ...fields } = stored || {};
+    return { fields, fieldSources: normalizeFieldSources(rawSources) };
 }
 
 async function getStagingById(stagingId, organizationId) {
@@ -58,6 +80,7 @@ async function createStagingRecord(params) {
         qualificationType,
         userId,
         aiModel = null,
+        fieldSources = null,
         // Modalità rielaborazione (backfill, migrazioni 137/143): quando
         // valorizzati, la conferma di questo staging NON crea un nuovo record
         // ma aggiorna solo i campi in fieldScope sul record esistente
@@ -66,6 +89,11 @@ async function createStagingRecord(params) {
         targetWpqrId = null,
         fieldScope = null,
     } = params;
+
+    const normalizedSources = normalizeFieldSources(fieldSources);
+    const stagedFields = normalizedSources
+        ? { ...(fields || {}), [FIELD_SOURCES_KEY]: normalizedSources }
+        : (fields || {});
 
     const insertResult = await query(`
         INSERT INTO ingest_staging (
@@ -91,7 +119,7 @@ async function createStagingRecord(params) {
         storagePath,
         mimeType: mimeType || null,
         fileSize: fileSize || null,
-        stagedFieldsJson: JSON.stringify(fields || {}),
+        stagedFieldsJson: JSON.stringify(stagedFields),
         fieldConfidenceJson: JSON.stringify(fieldConfidence || {}),
         warningsJson: JSON.stringify(warnings || []),
         qualificationType: qualificationType || null,
@@ -118,9 +146,9 @@ async function confirmStaging(stagingId, organizationId, userId, fieldsOverride 
         throw err;
     }
 
-    const aiPayload = parseJson(row.staged_fields_json, {});
+    const { fields: aiPayload, fieldSources } = splitFieldSources(parseJson(row.staged_fields_json, {}));
     const fieldConfidence = parseJson(row.field_confidence_json, {});
-    const fields = { ...aiPayload, ...fieldsOverride };
+    const fields = { ...aiPayload, ...splitFieldSources(fieldsOverride).fields };
     const warnings = parseJson(row.warnings_json, []);
 
     let commitResult;
@@ -238,7 +266,7 @@ async function confirmStaging(stagingId, organizationId, userId, fieldsOverride 
         id: stagingId,
         organizationId,
         userId,
-        stagedFieldsJson: JSON.stringify(fields),
+        stagedFieldsJson: JSON.stringify(fieldSources ? { ...fields, [FIELD_SOURCES_KEY]: fieldSources } : fields),
         wpqrId: commitResult.wpqr_id || null,
         qualificationId: commitResult.qualification_id || null,
         wpsId: commitResult.wps_id || null,
@@ -287,7 +315,7 @@ async function rejectStaging(stagingId, organizationId, userId, deleteFile = tru
         throw err;
     }
 
-    const aiPayload = parseJson(row.staged_fields_json, {});
+    const { fields: aiPayload } = splitFieldSources(parseJson(row.staged_fields_json, {}));
     const fieldConfidence = parseJson(row.field_confidence_json, {});
 
     await query(`
@@ -422,6 +450,8 @@ function resolveStagingFilePath(storagePath) {
 }
 
 module.exports = {
+    FIELD_SOURCES_KEY,
+    splitFieldSources,
     createStagingRecord,
     getStagingById,
     listStaging,

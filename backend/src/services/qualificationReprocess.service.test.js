@@ -57,6 +57,18 @@ describe('resolveExtractedReprocessValue', () => {
         expect(resolveExtractedReprocessValue('thickness_max_unlimited', {})).toBeNull();
     });
 
+    it('standard_ref: usa la chiave AI standard_reference (alias), null se assente', () => {
+        expect(resolveExtractedReprocessValue('standard_ref', { standard_reference: 'ISO 14732:2013' })).toBe('ISO 14732:2013');
+        expect(resolveExtractedReprocessValue('standard_ref', { standard_ref: 'ISO 9606-1' })).toBe('ISO 9606-1');
+        expect(resolveExtractedReprocessValue('standard_ref', {})).toBeNull();
+    });
+
+    it('issue_date / examiner_body: passthrough', () => {
+        expect(resolveExtractedReprocessValue('issue_date', { issue_date: '2025-06-25' })).toBe('2025-06-25');
+        expect(resolveExtractedReprocessValue('examiner_body', { examiner_body: 'Ente Prova Sintetico' })).toBe('Ente Prova Sintetico');
+        expect(resolveExtractedReprocessValue('issue_date', {})).toBeNull();
+    });
+
     it('campo generico: passthrough con null per assente/vuoto', () => {
         expect(resolveExtractedReprocessValue('joint_type', { joint_type: 'FW' })).toBe('FW');
         expect(resolveExtractedReprocessValue('joint_type', { joint_type: '' })).toBeNull();
@@ -75,6 +87,26 @@ describe('selectReprocessCandidates — condizione di selezione', () => {
 
         const [sql] = query.mock.calls[0];
         expect(sql).toMatch(/transfer_mode IS NULL/);
+    });
+
+    it('issue_date: candidati con emissione assente O uguale alla data esame, per 9606 e 14732 (OR racchiuso tra parentesi)', async () => {
+        query.mockResolvedValueOnce({ recordset: [] });
+        const config = getReprocessableField('issue_date');
+
+        await selectReprocessCandidates('issue_date', config, {});
+
+        const [sql, params] = query.mock.calls[0];
+        expect(sql).toMatch(/\(issue_date IS NULL OR issue_date = exam_date\)/);
+        expect(sql).toMatch(/\(qualification_type LIKE @qualTypeLike0 OR qualification_type LIKE @qualTypeLike1\)/);
+        expect(params).toMatchObject({ qualTypeLike0: '%9606%', qualTypeLike1: '%14732%' });
+    });
+
+    it('standard_ref: solo qualifiche 14732 (qualTypeLike singolo)', async () => {
+        query.mockResolvedValueOnce({ recordset: [] });
+        await selectReprocessCandidates('standard_ref', getReprocessableField('standard_ref'), {});
+        const [sql, params] = query.mock.calls[0];
+        expect(sql).toMatch(/standard_ref IS NULL/);
+        expect(params.qualTypeLike).toBe('%14732%');
     });
 
     it('thickness_max_unlimited: usa candidateWhere personalizzato, non "campo IS NULL" (colonna NOT NULL)', async () => {
