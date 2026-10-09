@@ -1,6 +1,6 @@
 # DEPUTYTASK_VERIFICA_WPQR_EDITOR_FE — WV-6a: `WpqrTestRunsEditor` (FE presentazionale, tabella passate) + `apiService` (3 metodi WPQR)
 
-**Stato:** APERTO — lanciabile **solo dopo il merge su `origin/main`** della PR di charting (gate DEPUTYTASK: `git show origin/main:docs/agent-tasks/DEPUTYTASK_VERIFICA_WPQR_EDITOR_FE.md` deve mostrare `APERTO`)  
+**Stato:** CHIUSO — TEST OK (08/10/2026) — PR draft `cursor/wv-6a-editor-passate-wpqr-064b`; componente non montato (montaggio in WV-6b); rotte `test-runs`/`verify` nascono in WV-4a/WV-5c
 **Aperto:** 07/10/2026  
 **Piano:** [`PLAN_VERIFICA_WPQR_SLICES.md`](PLAN_VERIFICA_WPQR_SLICES.md) § 2.2 (colonne) · § 2.3 · § 6.3 WV-6a  
 **Dipende da:** il **contratto API nel piano** (non da WV-3/WV-4: l'editor lavora su fixture; i metodi `apiService` precedono le rotte, come VQ-2 rispetto a `POST /qualifications/verify`)  
