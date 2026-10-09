@@ -7,7 +7,7 @@
 
 const { query } = require('../config/database');
 const logger = require('../utils/logger');
-const { describeIngestFileError } = require('../utils/ingestErrorMessage');
+const { describeIngestFileError, redactFileNameForLog } = require('../utils/ingestErrorMessage');
 
 /**
  * Campi WPQR modificabili da form/API manuale (updateWPQR) — fonte unica,
@@ -1056,7 +1056,7 @@ async function uploadWPQRBatch(req, res) {
             } catch (err) {
                 const errMsg = describeIngestFileError(err);
                 logger.error('[WPQR/batch] Estrazione fallita', {
-                    fileName: file.originalname,
+                    file: redactFileNameForLog(file.originalname),
                     error: errMsg,
                     stack: err?.stack || null,
                 });
@@ -1151,7 +1151,7 @@ async function uploadWPSBatch(req, res) {
             } catch (err) {
                 const errMsg = describeIngestFileError(err);
                 logger.error('[WPS/batch] Estrazione fallita', {
-                    fileName: file.originalname,
+                    file: redactFileNameForLog(file.originalname),
                     error: errMsg,
                     stack: err?.stack || null,
                 });

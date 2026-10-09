@@ -21,7 +21,7 @@ const {
     detectLikelyFontSubstitutionCorruption,
     repairFontSubstitutionArtifacts,
 } = require('../utils/textEncodingRepair');
-const { describeIngestFileError } = require('../utils/ingestErrorMessage');
+const { describeIngestFileError, redactFileNameForLog } = require('../utils/ingestErrorMessage');
 
 let extractTextWithOCR = null;
 let extractHeaderTextWithOCR = null;
@@ -167,7 +167,7 @@ async function extractFieldsByAi(text, docType, fileName, organizationId = null,
     } catch (err) {
         const errMsg = describeIngestFileError(err, 'errore non specificato');
         warnings.push(`AI extraction: ${errMsg}`);
-        logger.warn('[IngestPipeline] AI primary failed', { docType, fileName, error: errMsg, stack: err?.stack || null });
+        logger.warn('[IngestPipeline] AI primary failed', { docType, file: redactFileNameForLog(fileName), error: errMsg, stack: err?.stack || null });
 
         if (err.code !== 'AI_INVALID_JSON' && !String(errMsg).includes('JSON')) {
             return { fields: {}, model: null, warnings };
@@ -205,7 +205,7 @@ async function extractFieldsByAi(text, docType, fileName, organizationId = null,
             const retryRaw = String(retryErr.rawContent || retryErr.raw_content || '').slice(0, 400);
             logger.warn('[IngestPipeline] AI retry fallito — dump risposte AI', {
                 docType,
-                fileName,
+                file: redactFileNameForLog(fileName),
                 primaryError: err.message,
                 retryError: retryMsg,
                 primaryRawSample: raw,
@@ -348,7 +348,7 @@ async function applyHeaderIssuingBodyFallback({
     try {
         const headerText = await headerOcr(pdfBuffer, { pageNumber: 1, lang: 'ita+eng' });
         const code = detectIssuingBodyCodeFromHeader(headerText);
-        logger.info(`[IngestPipeline] OCR intestazione file=${fileName} docType=${docType} ms=${Date.now() - startedAt}`
+        logger.info(`[IngestPipeline] OCR intestazione file=${redactFileNameForLog(fileName)} docType=${docType} ms=${Date.now() - startedAt}`
             + ` chars=${String(headerText || '').length} ente=${code || 'non rilevato'}`);
         if (!code) return false;
         fields.issuing_body = code;
@@ -358,7 +358,7 @@ async function applyHeaderIssuingBodyFallback({
         return true;
     } catch (err) {
         const msg = (err && err.message) ? err.message : String(err);
-        logger.warn(`[IngestPipeline] OCR intestazione non riuscito file=${fileName} ms=${Date.now() - startedAt}: ${msg}`);
+        logger.warn(`[IngestPipeline] OCR intestazione non riuscito file=${redactFileNameForLog(fileName)} ms=${Date.now() - startedAt}: ${msg}`);
         return false;
     }
 }
@@ -463,7 +463,7 @@ async function runDocumentIngest({
 
     logger.info('[IngestPipeline] Completato', {
         docType,
-        fileName,
+        file: redactFileNameForLog(fileName),
         organizationId,
         textLen: text.length,
         filledCount,
