@@ -414,7 +414,14 @@ function applyValidityColumnRules({ docType, text, fields, fieldConfidence, fiel
 
     const thickness = extractThicknessValidity(text);
     if (thickness) {
-        if (thickness.min != null) setFieldByRule('thickness_min_mm', thickness.min, ctx);
+        if (thickness.min != null) {
+            setFieldByRule('thickness_min_mm', thickness.min, ctx);
+        } else {
+            // Apertura dichiarata senza minimo ("unlimited" da solo): il minimo dell'AI potrebbe essere
+            // lo spessore di prova, quindi si lascia vuoto per la revisione invece di tenerlo.
+            clearField('thickness_min_mm', ctx);
+            clearField('thickness_range', ctx);
+        }
         if (thickness.unlimited) {
             clearField('thickness_max_mm', ctx);
             setFieldByRule('thickness_max_unlimited', true, ctx);

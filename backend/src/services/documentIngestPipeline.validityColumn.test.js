@@ -208,6 +208,22 @@ describe('applyValidityColumnRules', () => {
         expect(ctx.fields.weld_details).toBe('sl, ml');
     });
 
+    it('apertura senza minimo ("unlimited" da solo): minimo e range dell\'AI (spessore di prova) non restano', () => {
+        const ctx = {
+            fields: { thickness_min_mm: 12, thickness_max_mm: 12, thickness_range: '12-12 mm' },
+            fieldConfidence: {},
+            fieldSources: { thickness_min_mm: 'ai', thickness_max_mm: 'ai', thickness_range: 'ai' },
+        };
+        const testo = 'Spessore / Thickness (mm)\na) 12 a) unlimited\nb) 12 b) illimitato';
+        expect(applyValidityColumnRules({ docType: 'patentino_saldatore', text: testo, ...ctx })).toBe(true);
+        expect(ctx.fields.thickness_min_mm).toBeUndefined();
+        expect(ctx.fields.thickness_max_mm).toBeUndefined();
+        expect(ctx.fields.thickness_range).toBeUndefined();
+        expect(ctx.fields.thickness_max_unlimited).toBe(true);
+        expect(ctx.fieldSources.thickness_min_mm).toBeUndefined();
+        expect(ctx.fieldConfidence.thickness_min_mm).toBe('low');
+    });
+
     it('intervallo chiuso nella colonna validita\' (3-10): max 10, range chiuso, flag aperto azzerato', () => {
         const ctx = base();
         ctx.fields.thickness_max_unlimited = true;
