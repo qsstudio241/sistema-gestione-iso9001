@@ -70,12 +70,15 @@ const OCR_MIN_CHARS = Number(process.env.INGEST_OCR_MIN_CHARS) || 50;
 /**
  * @param {Buffer} pdfBuffer
  * @param {object} [options]
- * @returns {Promise<{ text: string, ocrUsed: boolean, warnings: string[] }>}
+ * @param {boolean} [options.collectOcrLayout] - se true e l'OCR parte, restituisce anche `ocrLayout`
+ *   (righe con bounding box per pagina; usato solo da qualifica_14732)
+ * @returns {Promise<{ text: string, ocrUsed: boolean, warnings: string[], ocrLayout?: Array }>}
  */
 async function extractDocumentText(pdfBuffer, options = {}) {
     const warnings = [];
     let text = '';
     let ocrUsed = false;
+    const layoutSink = options.collectOcrLayout ? [] : null;
 
     try {
         text = await extractPdfText(pdfBuffer);
@@ -88,7 +91,10 @@ async function extractDocumentText(pdfBuffer, options = {}) {
     if (text.trim().length < OCR_MIN_CHARS && extractTextWithOCR) {
         try {
             logger.info('[IngestPipeline] Testo breve, tentativo OCR', { chars: text.length });
-            text = await extractTextWithOCR(pdfBuffer, { maxPages: 3, lang: 'ita+eng' });
+            text = await extractTextWithOCR(
+                pdfBuffer,
+                layoutSink ? { maxPages: 3, lang: 'ita+eng', layoutSink } : { maxPages: 3, lang: 'ita+eng' },
+            );
             ocrUsed = true;
         } catch (ocrErr) {
             const ocrMsg = (ocrErr && ocrErr.message) ? ocrErr.message : String(ocrErr);
@@ -109,7 +115,7 @@ async function extractDocumentText(pdfBuffer, options = {}) {
         warnings.push('Rilevati pattern di font non standard (es. "buii"→"butt"); applicata correzione automatica — verificare i campi estratti');
     }
 
-    return { text, ocrUsed, warnings };
+    return layoutSink && layoutSink.length ? { text, ocrUsed, warnings, ocrLayout: layoutSink } : { text, ocrUsed, warnings };
 }
 
 /**
@@ -381,7 +387,10 @@ async function runDocumentIngest({
         throw e;
     }
 
-    const { text, ocrUsed, warnings: textWarnings } = await extractDocumentText(pdfBuffer);
+    const { text, ocrUsed, warnings: textWarnings, ocrLayout } = await extractDocumentText(
+        pdfBuffer,
+        docType === 'qualifica_14732' ? { collectOcrLayout: true } : {},
+    );
     warnings.push(...textWarnings);
 
     const textConfidence = confidenceFromTextLength(text.length);
@@ -389,7 +398,9 @@ async function runDocumentIngest({
         warnings.push('Estrazione via OCR — verificare accuratezza dati');
     }
 
-    const ruleFields = extractFieldsByRules(text, docType, fileName);
+    const ruleFields = ocrLayout
+        ? extractFieldsByRules(text, docType, fileName, { ocrLayout })
+        : extractFieldsByRules(text, docType, fileName);
     let profileKey = ruleFields.joint_type || null;
 
     if (docType === 'patentino_saldatore' && !profileKey) {

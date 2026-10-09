@@ -150,17 +150,45 @@ async function extractTextFromImageBuffer(imageBuffer, options = {}) {
 }
 
 /**
+ * Righe OCR con bounding box (da `data.lines` o, in mancanza, da `data.blocks`).
+ * Non altera il testo: serve a chi deve ragionare sulla posizione (es. marcatori 14732 4.1).
+ * @param {object} data - `data` restituito da worker.recognize
+ * @param {number} page - numero pagina (1-based)
+ * @returns {{ page: number, lines: Array<{ text: string, bbox: {x0:number,y0:number,x1:number,y1:number} }> }}
+ * @private
+ */
+function _buildPageLayout(data, page) {
+    let rawLines = Array.isArray(data.lines) ? data.lines : null;
+    if (!rawLines && Array.isArray(data.blocks)) {
+        rawLines = [];
+        for (const block of data.blocks) {
+            for (const para of (block && block.paragraphs) || []) rawLines.push(...((para && para.lines) || []));
+        }
+    }
+    const lines = (rawLines || [])
+        .filter((l) => l && l.bbox && String(l.text || '').trim())
+        .map((l) => ({
+            text: String(l.text).trim(),
+            bbox: { x0: l.bbox.x0, y0: l.bbox.y0, x1: l.bbox.x1, y1: l.bbox.y1 },
+        }));
+    return { page, lines };
+}
+
+/**
  * Estrae testo da un PDF scansionato tramite OCR.
  *
  * @param {Buffer} pdfBuffer   - Buffer del PDF da analizzare
  * @param {object} options
  * @param {number} [options.maxPages=3]     - Numero max di pagine da analizzare
  * @param {string} [options.lang='ita+eng'] - Lingue Tesseract (codici ISO 639-2)
+ * @param {Array} [options.layoutSink] - Se presente, riceve per ogni pagina letta
+ *   `{ page, lines: [{ text, bbox }] }` (coordinate pixel Tesseract). Opzionale e
+ *   additivo: il valore di ritorno (testo) non cambia.
  * @returns {Promise<string>} Testo estratto via OCR
  * @throws {Error} Se la conversione o l'OCR falliscono completamente
  */
 async function extractTextWithOCR(pdfBuffer, options = {}) {
-    const { maxPages = 3, lang = 'ita+eng' } = options;
+    const { maxPages = 3, lang = 'ita+eng', layoutSink = null } = options;
 
     const imgBuffers = await _convertPdfToImages(pdfBuffer, maxPages);
 
@@ -173,12 +201,14 @@ async function extractTextWithOCR(pdfBuffer, options = {}) {
     const textParts = [];
     let lastRecErr = null;
     try {
-        for (const imgBuf of imgBuffers) {
+        for (let pageIdx = 0; pageIdx < imgBuffers.length; pageIdx += 1) {
             // Il fallimento di una singola pagina non deve azzerare l'intero OCR
             try {
-                const { data: { text } } = await worker.recognize(imgBuf);
+                const { data } = await worker.recognize(imgBuffers[pageIdx]);
+                const text = data.text;
                 if (text && text.trim().length > 10) {
                     textParts.push(text.trim());
+                    if (Array.isArray(layoutSink)) layoutSink.push(_buildPageLayout(data, pageIdx + 1));
                 }
             } catch (recErr) {
                 lastRecErr = recErr;

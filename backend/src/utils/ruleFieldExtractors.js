@@ -573,8 +573,18 @@ const INLINE_DASH_RE = /(?:^|\s)[-\u2013\u2014]{1,3}\s*$/;
  * (colonna "-- -- X --" nel testo; "x" isolata nell'OCR tesseract.js, che stacca il marcatore dalla riga c).
  * Una "x" isolata dopo l'elenco vale per l'UNICA voce senza marcatore ne' trattino; con piu' candidati
  * o piu' marcatori restituisce null (ambiguo).
+ * Se il testo e' ambiguo e c'e' il layout OCR (righe con bounding box), il marcatore isolato viene assegnato
+ * alla voce a)..d) per posizione verticale (vedi extractQualificationMethod14732FromLayout).
+ * @param {string} text
+ * @param {Array} [ocrLayout] - `[{ page, lines|words: [{ text, bbox:{x0,y0,x1,y1} }] }]` da ocrExtractor
  */
-function extractQualificationMethod14732(text) {
+function extractQualificationMethod14732(text, ocrLayout = null) {
+    const fromText = extractQualificationMethod14732FromText(text);
+    if (fromText != null || !ocrLayout) return fromText;
+    return extractQualificationMethod14732FromLayout(ocrLayout);
+}
+
+function extractQualificationMethod14732FromText(text) {
     const lines = String(text || '').split('\n');
     const entryIdx = [];
     let last = -1;
@@ -631,6 +641,108 @@ function extractQualificationMethod14732(text) {
     return null;
 }
 
+const LAYOUT_ROW_MIN_OVERLAP = 0.6;
+const LAYOUT_NEAR_BEFORE_ROWS = 2;
+const LAYOUT_NEAR_AFTER_ROWS = 4;
+
+function _validBbox(b) {
+    return b && [b.x0, b.y0, b.x1, b.y1].every(Number.isFinite) && b.y1 > b.y0;
+}
+
+function _verticalOverlap(a, b) {
+    return Math.max(0, Math.min(a.y1, b.y1) - Math.max(a.y0, b.y0));
+}
+
+/**
+ * Righe visive di una pagina del layout OCR: usa `lines` se presenti, altrimenti raggruppa le `words`
+ * che si sovrappongono verticalmente (almeno il 50% della piu' bassa).
+ * @returns {Array<{ text: string, bbox: object }>} ordinate dall'alto in basso
+ */
+function _layoutRows(page) {
+    const clean = (arr) => (Array.isArray(arr) ? arr : [])
+        .filter((e) => e && _validBbox(e.bbox) && String(e.text || '').trim())
+        .map((e) => ({ text: String(e.text).trim(), bbox: { ...e.bbox } }));
+    const byY = (a, b) => (a.bbox.y0 + a.bbox.y1) - (b.bbox.y0 + b.bbox.y1) || a.bbox.x0 - b.bbox.x0;
+    const lines = clean(page && page.lines);
+    if (lines.length) return lines.sort(byY);
+
+    const rows = [];
+    for (const w of clean(page && page.words).sort(byY)) {
+        const row = rows.find((r) => _verticalOverlap(r.bbox, w.bbox)
+            >= 0.5 * Math.min(r.bbox.y1 - r.bbox.y0, w.bbox.y1 - w.bbox.y0));
+        if (!row) {
+            rows.push({ words: [w], bbox: { ...w.bbox } });
+        } else {
+            row.words.push(w);
+            row.bbox = {
+                x0: Math.min(row.bbox.x0, w.bbox.x0),
+                y0: Math.min(row.bbox.y0, w.bbox.y0),
+                x1: Math.max(row.bbox.x1, w.bbox.x1),
+                y1: Math.max(row.bbox.y1, w.bbox.y1),
+            };
+        }
+    }
+    return rows
+        .map((r) => ({ text: r.words.sort((a, b) => a.bbox.x0 - b.bbox.x0).map((w) => w.text).join(' '), bbox: r.bbox }))
+        .sort(byY);
+}
+
+/**
+ * Metodo di qualifica 14732 §4.1 dal layout OCR (posizione), per il caso in cui tesseract.js stacca la "x"
+ * dalla riga c) e la mette su riga propria dopo la d): il marcatore isolato appartiene alla voce a..d il cui
+ * intervallo verticale lo contiene (sovrapposizione >= 60% dell'altezza del marcatore).
+ * Restituisce null se: voci a..d non trovate nella stessa pagina; marcatori totali (in riga + isolati vicini
+ * al blocco) diversi da uno; marcatore fuori da ogni riga o a cavallo di due righe; voce designata con trattino.
+ * @param {Array} layout - `[{ page, lines|words }]`
+ * @returns {string|null}
+ */
+function extractQualificationMethod14732FromLayout(layout) {
+    if (!Array.isArray(layout)) return null;
+    for (const page of layout) {
+        const rows = _layoutRows(page);
+        const entryIdx = [];
+        let last = -1;
+        for (const letter of ['a', 'b', 'c', 'd']) {
+            const found = rows.findIndex((r, i) => {
+                if (i <= last) return false;
+                const m = METHOD_ENTRY_RE.exec(r.text);
+                return !!m && m[1].toLowerCase() === letter;
+            });
+            if (found === -1) break;
+            entryIdx.push(found);
+            last = found;
+        }
+        if (entryIdx.length !== 4) continue;
+
+        const entries = entryIdx.map((i) => {
+            const row = rows[i];
+            const rest = row.text.slice(row.text.search(METHOD_ENTRY_RE)).replace(METHOD_ENTRY_RE, '');
+            return { bbox: row.bbox, marked: INLINE_MARK_RE.test(rest), dashed: INLINE_DASH_RE.test(rest) };
+        });
+        const heights = entries.map((e) => e.bbox.y1 - e.bbox.y0).sort((x, y) => x - y);
+        const rowH = heights[Math.floor(heights.length / 2)];
+        const top = entries[0].bbox.y0 - LAYOUT_NEAR_BEFORE_ROWS * rowH;
+        const bottom = entries[3].bbox.y1 + LAYOUT_NEAR_AFTER_ROWS * rowH;
+
+        const marks = entries.map((e, i) => (e.marked ? i : -1)).filter((i) => i >= 0);
+        const entrySet = new Set(entryIdx);
+        for (let i = 0; i < rows.length; i += 1) {
+            if (entrySet.has(i) || !STANDALONE_MARK_RE.test(rows[i].text)) continue;
+            const mb = rows[i].bbox;
+            const centre = (mb.y0 + mb.y1) / 2;
+            if (centre < top || centre > bottom) continue;
+            const overlaps = entries.map((e, k) => ({ k, ratio: _verticalOverlap(mb, e.bbox) / (mb.y1 - mb.y0) }))
+                .filter((o) => o.ratio >= LAYOUT_ROW_MIN_OVERLAP);
+            if (overlaps.length !== 1) return null;
+            marks.push(overlaps[0].k);
+        }
+
+        if (marks.length !== 1 || entries[marks[0]].dashed) return null;
+        return QUALIFICATION_METHODS_4_1[marks[0]];
+    }
+    return null;
+}
+
 /**
  * @param {string} text
  * @param {string} fileName
@@ -673,7 +785,7 @@ function extractPatentinoFields(text, fileName) {
  * @param {string} fileName
  * @returns {object}
  */
-function extractQualifica14732Fields(text, fileName) {
+function extractQualifica14732Fields(text, fileName, options = {}) {
     const { exam_date, expiry_date } = extractQualificationDates(text);
     const positions = extractWeldingPositionsFromText(text);
     return {
@@ -682,7 +794,7 @@ function extractQualifica14732Fields(text, fileName) {
         issuing_body: extractIssuingBody(text),
         welding_process: extractWeldingProcessConfident(text),
         welding_positions: positions.length ? positions : null,
-        qualification_method: extractQualificationMethod14732(text),
+        qualification_method: extractQualificationMethod14732(text, options && options.ocrLayout),
         examiner_body: extractExaminerBody(text),
         exam_date,
         expiry_date,
@@ -828,9 +940,10 @@ const EXTRACTORS_BY_DOC_TYPE = {
  * @param {string} text
  * @param {string} docType
  * @param {string} [fileName]
+ * @param {{ ocrLayout?: Array }} [options] - layout OCR opzionale (solo qualifica_14732 lo usa)
  * @returns {object}
  */
-function extractFieldsByRules(text, docType, fileName = '') {
+function extractFieldsByRules(text, docType, fileName = '', options = {}) {
     const fn = EXTRACTORS_BY_DOC_TYPE[docType];
     if (!fn) return {};
     const body = String(text || '');
@@ -838,7 +951,7 @@ function extractFieldsByRules(text, docType, fileName = '') {
         const fromName = extractReferenceFromFileName(fileName);
         return fromName ? { reference_number: fromName, wpqr_number: fromName } : {};
     }
-    return fn(body, fileName);
+    return fn(body, fileName, options);
 }
 
 module.exports = {
@@ -853,6 +966,7 @@ module.exports = {
     extractIssuingBody,
     extractExaminerBody,
     extractQualificationMethod14732,
+    extractQualificationMethod14732FromLayout,
     extractQualificationDates,
     extractQualificationCertificateNumber,
     extractMaterialGroupLabeled,
