@@ -863,6 +863,19 @@ describe('qualifications.controller — uploadBatch inoltra verification (additi
     expect(res.body.results[0].verification).toBeNull();
   });
 
+  it('pending_review: field_sources va allo staging e non cambia la risposta al client', async () => {
+    const sources = { issuing_body: 'ocr_header', person_name: 'ai' };
+    extractQualificationFromPdf.mockResolvedValue(pendingExtracted({ field_sources: sources }));
+    const { req, res } = makeReqRes();
+
+    await uploadBatch(req, res);
+
+    expect(createStagingRecord).toHaveBeenCalledWith(expect.objectContaining({ fieldSources: sources }));
+    const entry = JSON.parse(JSON.stringify(res.body.results[0]));
+    expect(entry).not.toHaveProperty('field_sources');
+    expect(entry.fields).toEqual({ person_name: 'Mario Rossi' });
+  });
+
   it('duplicate: inoltra verification accanto a warnings', async () => {
     extractQualificationFromPdf.mockResolvedValue({
       status: 'duplicate',

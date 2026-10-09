@@ -266,7 +266,7 @@ function pickMergedValue(key, ruleFields, aiFields, docType = null) {
     // L'OCR tesseract.js stacca la "x" dalla riga 4.1 c) e l'AI la attribuisce alla d): la regola strutturale corregge solo questo caso.
     if (docType === 'qualifica_14732' && key === 'qualification_method'
         && aiVal === 'production_test' && ruleVal === 'iso_9606') {
-        return { value: ruleVal, confidence: 'medium', source: 'rules' };
+        return { value: ruleVal, confidence: 'medium', source: 'ai_corrected_by_rules' };
     }
 
     if (aiVal != null && ruleVal != null) {
@@ -363,6 +363,26 @@ async function applyHeaderIssuingBodyFallback({
     }
 }
 
+/** Campi chiave tracciati nella riga di log a fine ingest (solo nomi di campo, mai valori). */
+const FIELD_SOURCES_LOG_KEYS = [
+    'qualification_method', 'issuing_body', 'examiner_body', 'issue_date',
+    'expiry_date', 'certificate_number', 'welding_process',
+];
+const FIELD_SOURCES_LOG_DOC_TYPES = new Set(['patentino_saldatore', 'qualifica_14732', 'cert_ndt']);
+
+/**
+ * Riga di log con la fonte per campo (campo=fonte; `none` = campo non estratto).
+ * Valori, dati personali e nome file (puo' contenere il titolare) non compaiono mai.
+ * @returns {string|null} null per i tipi documento non qualifica
+ */
+function buildFieldSourcesLogLine(docType, fieldSources) {
+    if (!FIELD_SOURCES_LOG_DOC_TYPES.has(docType)) return null;
+    const pairs = FIELD_SOURCES_LOG_KEYS
+        .map((k) => `${k}=${(fieldSources && fieldSources[k]) || 'none'}`)
+        .join(' ');
+    return `[IngestPipeline] Fonti campi docType=${docType} ${pairs}`;
+}
+
 /**
  * Pipeline principale.
  *
@@ -451,6 +471,9 @@ async function runDocumentIngest({
         model,
     });
 
+    const sourcesLine = buildFieldSourcesLogLine(docType, fieldSources);
+    if (sourcesLine) logger.info(sourcesLine);
+
     return {
         docType,
         fileName,
@@ -477,5 +500,6 @@ module.exports = {
     pickDesignationOnlyFields,
     applyHeaderIssuingBodyFallback,
     detectIssuingBodyCodeFromHeader,
+    buildFieldSourcesLogLine,
     SUPPORTED_DOC_TYPES,
 };

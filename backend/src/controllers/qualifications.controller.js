@@ -1221,6 +1221,7 @@ async function uploadBatch(req, res) {
                     fileSize: file.size,
                     fields: extracted.fields,
                     fieldConfidence: extracted.field_confidence,
+                    fieldSources: extracted.field_sources,
                     warnings: extracted.warnings,
                     qualificationType: extracted.qualification_type,
                     userId,
