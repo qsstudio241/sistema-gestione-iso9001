@@ -54,4 +54,41 @@ function redactFileNameForLog(name) {
     return LOG_SAFE_EXTENSIONS.has(ext) ? `file#${hash}.${ext}` : `file#${hash}`;
 }
 
-module.exports = { describeIngestFileError, redactFileNameForLog };
+/**
+ * Forma NON identificante di una persona (titolare di qualifica, saldatore, operatore, contatto) per i log:
+ * `person#<hash8>`. Nessuna parte del nome compare, nemmeno le iniziali. Il valore e' normalizzato
+ * (Unicode NFC, spazi multipli collassati, maiuscole/minuscole ignorate) prima dell'hash: stesso nome
+ * scritto uguale => stesso hash, quindi le righe dello stesso titolare restano correlabili.
+ * Limiti noti: "ROSSI MARIO" e "MARIO ROSSI" danno hash diversi (nessun riordino nome/cognome);
+ * 8 caratteri di hash non sono un'anonimizzazione forte (un nome noto si puo' confrontare a mano).
+ * Valido anche per altri identificatori personali (es. email): input non stringa o vuoto => `person#none`.
+ * @param {unknown} name
+ * @returns {string}
+ */
+function redactPersonForLog(name) {
+    if (typeof name !== 'string') return 'person#none';
+    const norm = name.normalize('NFC').replace(/\s+/g, ' ').trim().toLowerCase();
+    if (!norm) return 'person#none';
+    return `person#${crypto.createHash('sha256').update(norm, 'utf8').digest('hex').slice(0, 8)}`;
+}
+
+const JSON_SOURCE_SNIPPET_RE = /,?\s*(?:\.\.\.)?"[^]*?"(?:\.\.\.)?\s+is not valid JSON/g;
+
+/**
+ * I messaggi di JSON.parse (Node >= 20) riportano un estratto del testo analizzato
+ * (`Unexpected token 'R', "ROSSI MARIO..." is not valid JSON`): nelle risposte AI sono campi
+ * estratti dal certificato, quindi dati personali. Toglie l'estratto da messaggi e stack.
+ * @param {unknown} text
+ * @returns {string}
+ */
+function redactJsonSnippetForLog(text) {
+    if (text == null) return '';
+    return String(text).replace(JSON_SOURCE_SNIPPET_RE, ' [estratto omesso] is not valid JSON');
+}
+
+module.exports = {
+    describeIngestFileError,
+    redactFileNameForLog,
+    redactPersonForLog,
+    redactJsonSnippetForLog,
+};

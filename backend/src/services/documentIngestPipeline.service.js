@@ -27,7 +27,7 @@ const {
     detectLikelyFontSubstitutionCorruption,
     repairFontSubstitutionArtifacts,
 } = require('../utils/textEncodingRepair');
-const { describeIngestFileError, redactFileNameForLog } = require('../utils/ingestErrorMessage');
+const { describeIngestFileError, redactFileNameForLog, redactJsonSnippetForLog } = require('../utils/ingestErrorMessage');
 
 let extractTextWithOCR = null;
 let extractHeaderTextWithOCR = null;
@@ -173,7 +173,12 @@ async function extractFieldsByAi(text, docType, fileName, organizationId = null,
     } catch (err) {
         const errMsg = describeIngestFileError(err, 'errore non specificato');
         warnings.push(`AI extraction: ${errMsg}`);
-        logger.warn('[IngestPipeline] AI primary failed', { docType, file: redactFileNameForLog(fileName), error: errMsg, stack: err?.stack || null });
+        logger.warn('[IngestPipeline] AI primary failed', {
+            docType,
+            file: redactFileNameForLog(fileName),
+            error: redactJsonSnippetForLog(errMsg),
+            stack: err?.stack ? redactJsonSnippetForLog(err.stack) : null,
+        });
 
         if (err.code !== 'AI_INVALID_JSON' && !String(errMsg).includes('JSON')) {
             return { fields: {}, model: null, warnings };
@@ -206,17 +211,17 @@ async function extractFieldsByAi(text, docType, fileName, organizationId = null,
         } catch (retryErr) {
             const retryMsg = describeIngestFileError(retryErr, 'errore non specificato');
             warnings.push(`AI retry fallito: ${retryMsg}`);
-            // Log raw response per diagnosi (max 400 char per non intasare log)
-            const raw = String(err.rawContent || err.raw_content || '').slice(0, 400);
-            const retryRaw = String(retryErr.rawContent || retryErr.raw_content || '').slice(0, 400);
+            // Solo la lunghezza delle risposte AI: il contenuto sono campi estratti dal certificato (dati personali).
+            const rawChars = String(err.rawContent || err.raw_content || '').length;
+            const retryRawChars = String(retryErr.rawContent || retryErr.raw_content || '').length;
             logger.warn('[IngestPipeline] AI retry fallito — dump risposte AI', {
                 docType,
                 file: redactFileNameForLog(fileName),
-                primaryError: err.message,
-                retryError: retryMsg,
-                primaryRawSample: raw,
-                retryRawSample: retryRaw,
-                stack: retryErr?.stack || null,
+                primaryError: redactJsonSnippetForLog(err.message),
+                retryError: redactJsonSnippetForLog(retryMsg),
+                primaryRawChars: rawChars,
+                retryRawChars,
+                stack: retryErr?.stack ? redactJsonSnippetForLog(retryErr.stack) : null,
             });
             return { fields: {}, model: null, warnings };
         }
