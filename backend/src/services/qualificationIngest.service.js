@@ -5,7 +5,7 @@
 
 const path = require('path');
 const logger = require('../utils/logger');
-const { redactFileNameForLog } = require('../utils/ingestErrorMessage');
+const { redactFileNameForLog, redactPersonForLog } = require('../utils/ingestErrorMessage');
 const { getPool } = require('../config/database');
 const { resolvePersonnelForQualification } = require('./personnelQualificationLink.service');
 const { runDocumentIngest } = require('./documentIngestPipeline.service');
@@ -804,7 +804,7 @@ async function commitQualificationFromFields(fields, organizationId, companyId, 
         `);
 
     const qualification_id = ins.recordset[0].id;
-    logger.info(`[QualifIngest] Committed qualifica id=${qualification_id} (${person_name}, ${qualificationType}) per org ${organizationId}`);
+    logger.info(`[QualifIngest] Committed qualifica id=${qualification_id} (${redactPersonForLog(person_name)}, ${qualificationType}) per org ${organizationId}`);
 
     // Dopo l'INSERT: la verifica è solo informativa e non può influire sul commit.
     const finalFields = {

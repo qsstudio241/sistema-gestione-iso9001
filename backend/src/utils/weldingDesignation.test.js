@@ -210,6 +210,41 @@ describe('parseWelderQualificationDesignation: diametro con virgola decimale', (
     });
 });
 
+describe('parseWelderQualificationDesignation: "t3-10" sono due spessori di PROVA', () => {
+    const line = 'ISO 9606-1: 141 T FW FM5 S t3-10 D48,25 PB sl';
+
+    it('FW: t di prova = 3, entrambi i valori nell\'elenco informativo, mai min/max di validita\'', () => {
+        const parsed = parseWelderQualificationDesignation(line);
+        expect(parsed.thickness_t_test_mm).toBe(3);
+        expect(parsed.thickness_s_test_mm).toBeNull();
+        expect(parsed.thickness_test_values).toEqual([3, 10]);
+        expect(parsed).not.toHaveProperty('thickness_min_mm');
+        expect(parsed).not.toHaveProperty('thickness_max_mm');
+        const fields = designationFieldsToIngest(parsed);
+        expect(fields.thickness_t_test_mm).toBe(3);
+        expect(fields.thickness_s_test_mm).toBeUndefined();
+        expect(fields.thickness_min_mm).toBeUndefined();
+        expect(fields.thickness_max_mm).toBeUndefined();
+    });
+
+    it('BW con "t3-10": il 10 non finisce in s di prova, resta solo nell\'elenco informativo', () => {
+        const parsed = parseWelderQualificationDesignation('ISO 9606-1: 141 P BW FM1 t3-10 PA ss nb');
+        expect(parsed.thickness_s_test_mm).toBe(3);
+        expect(parsed.thickness_t_test_mm).toBeNull();
+        expect(parsed.thickness_test_values).toEqual([3, 10]);
+    });
+
+    it('valore singolo: elenco con un solo spessore', () => {
+        expect(parseWelderQualificationDesignation('ISO 9606-1: 135 P FW FM1 t8 PB ss mb').thickness_test_values).toEqual([8]);
+    });
+
+    it('i token residui della designazione sono dettagli della PROVA: non entrano nei campi ingest', () => {
+        const parsed = parseWelderQualificationDesignation('ISO 9606-1: 135 P FW FM1 B t12 PF ml');
+        expect(parsed.weld_details).toBe('B ml');
+        expect(designationFieldsToIngest(parsed)).not.toHaveProperty('weld_details');
+    });
+});
+
 describe('resolvePrintedDesignation', () => {
     it('non sovrascrive la stringa certificato con il ricalcolo min/max', () => {
         const printed = 'ISO 9606-1: 135 P FW FM1 t8 PB ss mb';

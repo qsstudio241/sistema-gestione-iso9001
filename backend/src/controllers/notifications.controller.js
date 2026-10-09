@@ -7,6 +7,7 @@
 
 const { getPool } = require('../config/database');
 const logger = require('../utils/logger');
+const { redactEmailsForLog } = require('../utils/ingestErrorMessage');
 const { getEmailSuppression } = require('../services/alertMail.service');
 const { runNcEscalationForOrg } = require('../services/ncAlertEscalation.service');
 
@@ -202,7 +203,7 @@ async function sendTestEmail(req, res) {
       `,
     });
 
-    logger.info(`[Notifications] Email di test inviata a ${recipients} per org ${orgId}`);
+    logger.info(`[Notifications] Email di test inviata a ${redactEmailsForLog(recipients)} per org ${orgId}`);
     res.json({ success: true, message: `Email di test inviata a: ${recipients}` });
   } catch (err) {
     logger.error('sendTestEmail:', err.message);

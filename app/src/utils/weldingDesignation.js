@@ -115,6 +115,18 @@ function parseNumberToken(raw) {
   return Number.isFinite(n) ? n : null;
 }
 
+/**
+ * "t3-10" / "s3-10" sono DUE spessori di PROVA (provini a e b), non un range di validita'.
+ * Il primo resta nello slot di prova s/t; l'elenco e' solo informativo e non alimenta
+ * mai thickness_min_mm / thickness_max_mm.
+ */
+function pushTestValues(target, match) {
+  for (const raw of [match[1], match[2]]) {
+    const n = parseNumberToken(raw);
+    if (n != null) target.push(n);
+  }
+}
+
 function isEditionOnlyRemainder(rest) {
   return EDITION_ONLY_RE.test(String(rest || "").trim());
 }
@@ -173,6 +185,7 @@ export function parseWelderQualificationDesignation(text) {
     filler_material_group: null,
     thickness_s_test_mm: null,
     thickness_t_test_mm: null,
+    thickness_test_values: [],
     pipe_diameter_test_mm: null,
     welding_position_test: null,
     weld_details: null,
@@ -205,11 +218,13 @@ export function parseWelderQualificationDesignation(text) {
     const sTok = tok.match(/^s\s*=?\s*(\d+(?:[.,]\d+)?)(?:-(\d+(?:[.,]\d+)?))?$/i);
     if (sTok) {
       parsed.thickness_s_test_mm = parseNumberToken(sTok[1]);
+      pushTestValues(parsed.thickness_test_values, sTok);
       continue;
     }
     const tTok = tok.match(/^t\s*=?\s*(\d+(?:[.,]\d+)?)(?:-(\d+(?:[.,]\d+)?))?$/i);
     if (tTok) {
       parsed.thickness_t_test_mm = parseNumberToken(tTok[1]);
+      pushTestValues(parsed.thickness_test_values, tTok);
       continue;
     }
     const dTok = tok.match(/^D\s*=?\s*(\d+(?:[.,]\d+)?)(?:-(\d+(?:[.,]\d+)?))?$/i);

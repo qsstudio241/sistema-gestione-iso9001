@@ -215,7 +215,7 @@ Due colonne sullo stesso record: PROVA vs VALIDITÀ. Non collassarle.
 - thickness_min_mm / thickness_max_mm / thickness_max_unlimited: SOLO campo di validità (Tabella ${profile.validityTable}), come stampato. Non copiare il valore di prova se il certificato ha un range diverso.
 - pipe_diameter_test_mm vs pipe_diameter_mm (validità): solo se prodotto T.
 - qualification_designation: stringa STAMPATA sul certificato (riga ${profile.standard}: …). NON ricalcolarla da min/max.
-- weld_details: ${profile.jointDetailHint}
+- weld_details: SOLO dettagli di saldatura della colonna di validità (mai i dati di prova, mai tubo/piastra): ${profile.jointDetailHint}
 NON usare a/z come campi ${profile.standard.replace('ISO ', '')}. NON copiare spessore BW su FW o viceversa.
 --- FINE PROFILO ${profile.key} ---`.trim();
 }

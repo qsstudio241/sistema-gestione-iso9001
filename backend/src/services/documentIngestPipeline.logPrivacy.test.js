@@ -115,3 +115,66 @@ describe('pipeline: nessun nome file nei log', () => {
         withFile.forEach((l) => expect(l).toContain(REDACTED));
     });
 });
+
+describe('pipeline: nessun dato personale estratto nei log (risposte AI, estratti JSON)', () => {
+    const PII = ['ZZTITOLARE', 'ZZCOGNOME', 'ZZ-CF-0001'];
+
+    beforeEach(() => {
+        jest.clearAllMocks();
+        delete process.env.INGEST_HEADER_OCR;
+        spies = ['info', 'warn', 'error', 'debug'].map((m) => jest.spyOn(logger, m).mockImplementation(() => {}));
+        getActiveProvider.mockReturnValue('gemini');
+        extractHeaderTextWithOCR.mockResolvedValue('');
+    });
+
+    afterEach(() => spies.forEach((s) => s.mockRestore()));
+
+    const expectNoPii = () => {
+        const logged = allLogged();
+        for (const leak of PII) expect(logged).not.toContain(leak);
+    };
+
+    it('AI retry fallito: dump delle risposte sostituito dalle sole lunghezze', async () => {
+        const err = new Error('JSON dalla AI non valido.');
+        err.code = 'AI_INVALID_JSON';
+        err.rawContent = '{"welder_name":"ZZTITOLARE ZZCOGNOME","fiscal_code":"ZZ-CF-0001" oops';
+        extractStructuredByDocType.mockRejectedValue(err);
+        const retryErr = new Error('retry KO');
+        retryErr.rawContent = '{"welder_name":"ZZTITOLARE ZZCOGNOME"';
+        chat.mockRejectedValue(retryErr);
+
+        await ingest();
+
+        const meta = spies[1].mock.calls.find((c) => String(c[0]).includes('AI retry fallito'))[1];
+        expect(meta.primaryRawChars).toBe(err.rawContent.length);
+        expect(meta.retryRawChars).toBe(retryErr.rawContent.length);
+        expect(meta).not.toHaveProperty('primaryRawSample');
+        expect(meta).not.toHaveProperty('retryRawSample');
+        expectNoPii();
+    });
+
+    it('AI retry con JSON non valido: l\'estratto del testo nel messaggio di JSON.parse non finisce nei log', async () => {
+        const err = new Error('JSON dalla AI non valido.');
+        err.code = 'AI_INVALID_JSON';
+        extractStructuredByDocType.mockRejectedValue(err);
+        chat.mockResolvedValue({ content: 'ZZTITOLARE ZZCOGNOME ZZ-CF-0001', model: 'm' });
+
+        const out = await ingest();
+
+        expect(logLines().some((l) => l.includes('AI retry fallito'))).toBe(true);
+        expect(out.fields).toBeDefined();
+        expectNoPii();
+    });
+
+    it('AI primary failed con SyntaxError che cita il testo: messaggio e stack senza estratto', async () => {
+        const err = new SyntaxError('Unexpected token \'Z\', "{ZZTITOLARE ZZCOGNOME" is not valid JSON');
+        extractStructuredByDocType.mockRejectedValue(err);
+
+        await ingest();
+
+        const meta = spies[1].mock.calls.find((c) => String(c[0]).includes('AI primary failed'))[1];
+        expect(meta.error).toContain('is not valid JSON');
+        expect(meta.error).toContain('Unexpected token');
+        expectNoPii();
+    });
+});
