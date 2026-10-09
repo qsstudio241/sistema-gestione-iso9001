@@ -150,6 +150,8 @@ describe('esaminatore: label "Examiner or examining body" (rule-fill)', () => {
         expect(extractExaminerBody('Examiner or examining body\nTesta Marco (IWI)')).toBe('Testa Marco (IWI)');
         expect(extractExaminerBody('Examiner or examining body: Datini Paolo')).toBe('Datini Paolo');
         expect(extractExaminerBody('Examiner or examining body\nValidity')).toBeNull();
+        expect(extractExaminerBody('Examiner or examining body\nValido fino al 10.01.2028')).toBeNull();
+        expect(extractExaminerBody('Esaminatore o ente d\'esame\nValidit\u00E0 della qualifica')).toBeNull();
     });
 
     it('blocco firma 14732 senza valore: salta alla successiva occorrenza valida', () => {

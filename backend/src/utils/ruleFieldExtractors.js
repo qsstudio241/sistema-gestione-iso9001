@@ -424,7 +424,7 @@ function extractIssuingBody(text) {
 }
 
 const EXAMINER_LABEL_RE = /(?:examiner\s+or\s+examining\s+body|examining\s+body|name\s+of\s+(?:the\s+)?examiner|esaminatore\s+o\s+ente\s+d['’]\s*esame|nome\s+dell['’]\s*esaminatore|ente\s+d['’]\s*esame|witnessed\s+by|testimoniato\s+da)(?:\s*[-\u2013\u2014]\s*reference\s*no\.?)?(?:\s*[-\u2013\u2014]\s*n\.?\s*rif(?:erimento)?\.?)?/gi;
-const EXAMINER_NOT_A_VALUE_RE = /^(?:date|data|name|nome|signature|firma|reference|rif\b|place|location|luogo|position|title|photograph|photo|foto|validity|valid|employer|code|identification|role|welding|test|variables|requalification|revalidation|confirmation|manufacturer|the qualification|results)\b/i;
+const EXAMINER_NOT_A_VALUE_RE = /^(?:date|data|name|nome|signature|firma|reference|rif\b|place|location|luogo|position|title|photograph|photo|foto|valid(?:ity|it\u00E0|[oae])?|employer|code|identification|role|welding|test|variables|requalification|revalidation|confirmation|manufacturer|the qualification|results)(?![A-Za-z\u00C0-\u00FF])/i;
 
 function cleanExaminerCandidate(raw) {
     let v = String(raw || '').replace(/^[\s:.\-\u2013\u2014|]+/, '').split(/\t| {3,}/)[0];
