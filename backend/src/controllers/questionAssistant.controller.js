@@ -14,6 +14,7 @@
  */
 
 const logger = require('../utils/logger');
+const { redactFileNameForLog } = require('../utils/ingestErrorMessage');
 const { query } = require('../config/database');
 const { chat } = require('../services/aiProviderAdapter');
 const { checkNormSourceAvailability } = require('./aiChat.controller');
@@ -251,9 +252,9 @@ async function handleQuestionAssistant(req, res) {
           // Assume att.storagePath esista o costruisci path da att.id
           // Per semplicità: se att.extractedText manca, skippiamo (frontend può precalcolare)
           // In produzione: recuperare path da DB attachment e usare extractDocumentText
-          logger.info(`[questionAssistant] Allegato ${att.name} — text extraction skippato (pre-calcolo frontend)`);
+          logger.info(`[questionAssistant] Allegato ${redactFileNameForLog(att.name)} — text extraction skippato (pre-calcolo frontend)`);
         } catch (extractErr) {
-          logger.warn(`[questionAssistant] Errore estrazione ${att.name}:`, extractErr.message);
+          logger.warn(`[questionAssistant] Errore estrazione ${redactFileNameForLog(att.name)}:`, extractErr.message);
         }
       }
 
