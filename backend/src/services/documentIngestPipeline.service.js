@@ -8,7 +8,7 @@
 
 const logger = require('../utils/logger');
 const { confidenceFromTextLength, extractPdfText } = require('../utils/importPdfText');
-const { extractFieldsByRules } = require('../utils/ruleFieldExtractors');
+const { extractFieldsByRules, extractIssuingBody } = require('../utils/ruleFieldExtractors');
 const { getSchemaForDocType, DESIGNATION_ONLY_SCHEMA } = require('../data/documentTypeSchemas');
 const { extractStructuredByDocType } = require('./importAiExtraction.service');
 const { buildProfilePromptSection } = require('../data/jointTypeProfiles');
@@ -17,15 +17,21 @@ const { parseJsonWithRepair } = require('../utils/jsonRepair');
 const {
     repairDeep,
     normalizeIngestSelectFields,
+    normalizeIssuingBodyCode,
     detectLikelyFontSubstitutionCorruption,
     repairFontSubstitutionArtifacts,
 } = require('../utils/textEncodingRepair');
 const { describeIngestFileError } = require('../utils/ingestErrorMessage');
 
 let extractTextWithOCR = null;
+let extractHeaderTextWithOCR = null;
 try {
-    extractTextWithOCR = require('../utils/ocrExtractor').extractTextWithOCR;
+    ({ extractTextWithOCR, extractHeaderTextWithOCR } = require('../utils/ocrExtractor'));
 } catch (_) {}
+
+/** Qualifiche personali: l'ente certificatore sta nella carta intestata (logo = grafica, non testo). */
+const HEADER_OCR_DOC_TYPES = new Set(['patentino_saldatore', 'qualifica_14732']);
+const HEADER_OCR_WARNING = 'Ente rilevato da OCR dell\'intestazione \u2014 verificare';
 
 // cert_ndt (ISO 9712) aggiunto 02/08/2026 — prima era in menu upload ma bloccato qui
 // con UNSUPPORTED_DOC_TYPE (simulazione UT Level II TEC-Eurolab).
@@ -303,6 +309,55 @@ function mergeExtractions(ruleFields, aiFields, docType) {
 }
 
 /**
+ * Ente certificatore dal testo OCR dell'intestazione: solo valori della lista chiusa (mai `altro`).
+ * @param {string} headerText
+ * @returns {string|null} codice select (es. 'tec_eurolab')
+ */
+function detectIssuingBodyCodeFromHeader(headerText) {
+    const text = String(headerText || '');
+    if (!text.trim()) return null;
+    const label = extractIssuingBody(text);
+    let code = label ? normalizeIssuingBodyCode(label) : null;
+    if (!code || code === 'altro') code = normalizeIssuingBodyCode(text);
+    return code && code !== 'altro' ? code : null;
+}
+
+/**
+ * Qualifiche con testo PDF ma ente non leggibile (logo e piè di pagina sono grafica): OCR della sola fascia alta
+ * della prima pagina. Mai bloccante: errori, timeout e OCR vuoto lasciano l'ente invariato. Non riesegue l'OCR se
+ * il documento e' gia' stato letto via OCR completo, ne' sovrascrive un ente valido (diverso da `altro`).
+ * Muta `fields`, `fieldConfidence`, `fieldSources`, `warnings`.
+ */
+async function applyHeaderIssuingBodyFallback({
+    pdfBuffer, docType, text, ocrUsed, fields, fieldConfidence, fieldSources, warnings, fileName,
+    headerOcr = extractHeaderTextWithOCR,
+}) {
+    if (!HEADER_OCR_DOC_TYPES.has(docType) || ocrUsed || !headerOcr) return false;
+    if (String(process.env.INGEST_HEADER_OCR || '').trim() === '0') return false;
+    const current = fields.issuing_body;
+    if (current && current !== 'altro') return false;
+    if (extractIssuingBody(text)) return false;
+
+    const startedAt = Date.now();
+    try {
+        const headerText = await headerOcr(pdfBuffer, { pageNumber: 1, lang: 'ita+eng' });
+        const code = detectIssuingBodyCodeFromHeader(headerText);
+        logger.info(`[IngestPipeline] OCR intestazione file=${fileName} docType=${docType} ms=${Date.now() - startedAt}`
+            + ` chars=${String(headerText || '').length} ente=${code || 'non rilevato'}`);
+        if (!code) return false;
+        fields.issuing_body = code;
+        fieldConfidence.issuing_body = 'medium';
+        fieldSources.issuing_body = 'ocr_header';
+        warnings.push(HEADER_OCR_WARNING);
+        return true;
+    } catch (err) {
+        const msg = (err && err.message) ? err.message : String(err);
+        logger.warn(`[IngestPipeline] OCR intestazione non riuscito file=${fileName} ms=${Date.now() - startedAt}: ${msg}`);
+        return false;
+    }
+}
+
+/**
  * Pipeline principale.
  *
  * @param {object} params
@@ -357,6 +412,10 @@ async function runDocumentIngest({
 
     const { fields, fieldConfidence, fieldSources } = mergeExtractions(ruleFields, aiFields, docType);
     const normalizedFields = normalizeIngestSelectFields(repairDeep(fields));
+    await applyHeaderIssuingBodyFallback({
+        pdfBuffer, docType, text, ocrUsed, fileName, warnings,
+        fields: normalizedFields, fieldConfidence, fieldSources,
+    });
 
     const filledCount = Object.values(normalizedFields).filter((v) => v != null && v !== '').length;
     const schemaKeys = getSchemaKeys(docType);
@@ -405,5 +464,7 @@ module.exports = {
     mergeExtractions,
     pickMergedValue,
     pickDesignationOnlyFields,
+    applyHeaderIssuingBodyFallback,
+    detectIssuingBodyCodeFromHeader,
     SUPPORTED_DOC_TYPES,
 };

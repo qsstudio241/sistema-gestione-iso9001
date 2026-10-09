@@ -16,6 +16,11 @@ jest.mock('../utils/importPdfText', () => ({
     confidenceFromTextLength: jest.fn(() => 70),
 }));
 
+jest.mock('../utils/ocrExtractor', () => ({
+    extractTextWithOCR: jest.fn(() => Promise.reject(new Error('OCR non disponibile nei test'))),
+    extractHeaderTextWithOCR: jest.fn(() => Promise.resolve('')),
+}));
+
 const { extractStructuredByDocType } = require('./importAiExtraction.service');
 const { extractPdfText } = require('../utils/importPdfText');
 const { chat, getActiveProvider } = require('./aiProviderAdapter');
