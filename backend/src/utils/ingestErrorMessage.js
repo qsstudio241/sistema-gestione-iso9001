@@ -61,7 +61,7 @@ function redactFileNameForLog(name) {
  * scritto uguale => stesso hash, quindi le righe dello stesso titolare restano correlabili.
  * Limiti noti: "ROSSI MARIO" e "MARIO ROSSI" danno hash diversi (nessun riordino nome/cognome);
  * 8 caratteri di hash non sono un'anonimizzazione forte (un nome noto si puo' confrontare a mano).
- * Valido anche per altri identificatori personali (es. email): input non stringa o vuoto => `person#none`.
+ * Input non stringa o vuoto => `person#none`. Per le email usare `redactEmailForLog`.
  * @param {unknown} name
  * @returns {string}
  */
@@ -70,6 +70,37 @@ function redactPersonForLog(name) {
     const norm = name.normalize('NFC').replace(/\s+/g, ' ').trim().toLowerCase();
     if (!norm) return 'person#none';
     return `person#${crypto.createHash('sha256').update(norm, 'utf8').digest('hex').slice(0, 8)}`;
+}
+
+/**
+ * Forma NON identificante di un indirizzo email per i log: `email#<hash8>`. Ne' la parte locale ne'
+ * il dominio compaiono. Valore normalizzato (NFC, trim, minuscolo): stesso indirizzo => stesso hash,
+ * quindi le righe dello stesso utente restano correlabili. 8 caratteri di hash non sono
+ * un'anonimizzazione forte. Input non stringa o vuoto => `email#none`.
+ * @param {unknown} email
+ * @returns {string}
+ */
+function redactEmailForLog(email) {
+    if (typeof email !== 'string') return 'email#none';
+    const norm = email.normalize('NFC').trim().toLowerCase();
+    if (!norm) return 'email#none';
+    return `email#${crypto.createHash('sha256').update(norm, 'utf8').digest('hex').slice(0, 8)}`;
+}
+
+/**
+ * Come `redactEmailForLog` per un elenco di destinatari (array o stringa separata da `,` o `;`,
+ * come `recipients_email`): ogni indirizzo diventa `email#<hash8>`, uniti da `, `.
+ * @param {unknown} list
+ * @returns {string}
+ */
+function redactEmailsForLog(list) {
+    const items = Array.isArray(list)
+        ? list
+        : (typeof list === 'string' ? list.split(/[,;]/) : []);
+    const parts = items
+        .filter((x) => typeof x === 'string' && x.trim())
+        .map(redactEmailForLog);
+    return parts.length ? parts.join(', ') : 'email#none';
 }
 
 const JSON_SOURCE_SNIPPET_RE = /,?\s*(?:\.\.\.)?"[^]*?"(?:\.\.\.)?\s+is not valid JSON/g;
@@ -90,5 +121,7 @@ module.exports = {
     describeIngestFileError,
     redactFileNameForLog,
     redactPersonForLog,
+    redactEmailForLog,
+    redactEmailsForLog,
     redactJsonSnippetForLog,
 };

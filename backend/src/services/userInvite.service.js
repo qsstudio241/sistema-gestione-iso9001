@@ -18,6 +18,7 @@ const bcrypt = require('bcryptjs');
 const crypto = require('crypto');
 const { query } = require('../config/database');
 const logger = require('../utils/logger');
+const { redactEmailForLog } = require('../utils/ingestErrorMessage');
 const { sendAlertEmail } = require('./alertMail.service');
 const userActionTokenService = require('./userActionToken.service');
 const userAuditService = require('./userAudit.service');
@@ -70,7 +71,7 @@ async function sendInviteEmail({ userId, email, fullName, organizationId, actorU
 
     const sent = await sendAlertEmail(email, subject, html);
     if (!sent) {
-        logger.warn('[UserInvite] Email invito non inviata (SMTP non configurato o errore)', { userId, email });
+        logger.warn('[UserInvite] Email invito non inviata (SMTP non configurato o errore)', { userId, email: redactEmailForLog(email) });
     }
 
     await userAuditService.logUserAuditEvent({

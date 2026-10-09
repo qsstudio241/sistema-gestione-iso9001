@@ -12,7 +12,7 @@ jest.mock('../utils/logger', () => ({
 
 const logger = require('../utils/logger');
 const { sendAlertEmail } = require('./alertMail.service');
-const { redactPersonForLog } = require('../utils/ingestErrorMessage');
+const { redactEmailForLog } = require('../utils/ingestErrorMessage');
 const { runQualifEscalationForOrg } = require('./qualificationAlert.service');
 
 const EMAIL = 'zzanna.zzbianchi@example.test';
@@ -42,7 +42,7 @@ function poolWith(rolesRows) {
 describe('runQualifEscalationForOrg: nessuna email di persona nei log', () => {
     beforeEach(() => jest.clearAllMocks());
 
-    it('riga "Email inviata a": person#hash, resto invariato, destinatario reale usato per l\'invio', async () => {
+    it('riga "Email inviata a": email#hash, resto invariato, destinatario reale usato per l\'invio', async () => {
         sendAlertEmail.mockResolvedValue(true);
         const out = await runQualifEscalationForOrg(
             poolWith([{ name: 'ZZAnna ZZBianchi', email: EMAIL }]),
@@ -52,7 +52,7 @@ describe('runQualifEscalationForOrg: nessuna email di persona nei log', () => {
         expect(out.sent).toBe(1);
         expect(sendAlertEmail.mock.calls[0][0]).toBe(EMAIL);
         const line = logger.info.mock.calls.map((c) => String(c[0])).find((l) => l.includes('Email inviata a'));
-        expect(line).toBe(`[QualAlert] Email inviata a ${redactPersonForLog(EMAIL)} (org 10, company 5, 1 qualifiche, source=personnel_roles)`);
+        expect(line).toBe(`[QualAlert] Email inviata a ${redactEmailForLog(EMAIL)} (org 10, company 5, 1 qualifiche, source=personnel_roles)`);
 
         const logged = ['info', 'warn', 'error', 'debug'].flatMap((m) => logger[m].mock.calls.map((c) => JSON.stringify(c))).join('\n');
         for (const leak of ['zzanna', 'zzbianchi', 'example.test', 'ZZROSSI']) expect(logged.toLowerCase()).not.toContain(leak.toLowerCase());

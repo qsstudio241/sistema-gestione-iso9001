@@ -12,6 +12,7 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const { query } = require('../config/database');
 const logger = require('../utils/logger');
+const { redactEmailForLog } = require('../utils/ingestErrorMessage');
 const { getLicensedModuleKeysForOrg } = require('../services/moduleLicense.service');
 const { getUserCompanyAccess, isCompanyClient } = require('../services/companyAccess.service');
 const documentTreeProvisioner = require('../services/documentTreeProvisioner.service');
@@ -138,7 +139,7 @@ async function register(req, res) {
         const refreshToken = generateRefreshToken({ user_id, organization_id });
         const licensed_modules = await getLicensedModuleKeysForOrg(organization_id);
 
-        logger.info(`Utente registrato: ${email} (org: ${organization_id})`);
+        logger.info(`Utente registrato: ${redactEmailForLog(email)} (org: ${organization_id})`);
 
         res.status(201).json({
             success: true,
@@ -263,7 +264,7 @@ async function login(req, res) {
         const licensed_modules = await getLicensedModuleKeysForOrg(user.organization_id);
         const company_access = await getUserCompanyAccess(user.user_id);
 
-        logger.info(`✅ Login: ${user.email} (org: ${user.organization_name})`);
+        logger.info(`✅ Login: ${redactEmailForLog(user.email)} (org: ${user.organization_name})`);
 
         res.json({
             success: true,

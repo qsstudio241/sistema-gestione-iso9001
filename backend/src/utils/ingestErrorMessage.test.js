@@ -87,3 +87,52 @@ describe('ingestErrorMessage / redactPersonForLog (privacy log titolare)', () =>
         expect(redactJsonSnippetForLog(null)).toBe('');
     });
 });
+
+describe('redactEmailForLog / redactEmailsForLog', () => {
+    const { redactEmailForLog, redactEmailsForLog } = require('./ingestErrorMessage');
+    const EMAIL = 'mario.rossi@example.test';
+
+    it('nessuna parte dell\'email (parte locale, dominio, TLD) compare nell\'output', () => {
+        const out = redactEmailForLog(EMAIL);
+        expect(out).toMatch(/^email#[0-9a-f]{8}$/);
+        for (const leak of ['mario', 'rossi', 'example', 'test', '@', '.']) {
+            expect(out.replace('email#', '')).not.toContain(leak);
+        }
+        expect(out).not.toMatch(/mario|rossi|example/i);
+    });
+
+    it('deterministico e insensibile a maiuscole e spazi ai bordi', () => {
+        expect(redactEmailForLog(EMAIL)).toBe(redactEmailForLog(EMAIL));
+        expect(redactEmailForLog(`  ${EMAIL.toUpperCase()}\n`)).toBe(redactEmailForLog(EMAIL));
+        expect(redactEmailForLog('altra.persona@example.test')).not.toBe(redactEmailForLog(EMAIL));
+    });
+
+    it('plus-addressing: indirizzi diversi restano distinti e senza parti in chiaro', () => {
+        const plus = redactEmailForLog('mario.rossi+sgq@example.test');
+        expect(plus).not.toBe(redactEmailForLog(EMAIL));
+        expect(plus).not.toMatch(/mario|sgq|\+/i);
+    });
+
+    it('Unicode: NFC e NFD dello stesso indirizzo danno lo stesso hash, nessun carattere in chiaro', () => {
+        const nfc = 'jos\u00e9.nu\u00f1ez@esempio.test';
+        const nfd = nfc.normalize('NFD');
+        expect(redactEmailForLog(nfd)).toBe(redactEmailForLog(nfc));
+        expect(redactEmailForLog(nfc)).not.toMatch(/jos|nu|esempio/i);
+    });
+
+    it('vuoto, null, undefined, non stringa => email#none', () => {
+        for (const v of ['', '   ', null, undefined, 42, {}, [], true]) {
+            expect(redactEmailForLog(v)).toBe('email#none');
+        }
+    });
+
+    it('elenco destinatari: stringa con virgole/punto e virgola o array, ogni indirizzo hashato', () => {
+        const a = redactEmailForLog('a.uno@example.test');
+        const b = redactEmailForLog('b.due@example.test');
+        expect(redactEmailsForLog('a.uno@example.test, B.Due@example.test')).toBe(`${a}, ${b}`);
+        expect(redactEmailsForLog('a.uno@example.test;b.due@example.test')).toBe(`${a}, ${b}`);
+        expect(redactEmailsForLog(['a.uno@example.test', ' ', null, 'b.due@example.test'])).toBe(`${a}, ${b}`);
+        expect(redactEmailsForLog('a.uno@example.test, b.due@example.test')).not.toMatch(/uno|due|example/i);
+        for (const v of ['', null, undefined, 5, [], ' , ']) expect(redactEmailsForLog(v)).toBe('email#none');
+    });
+});
