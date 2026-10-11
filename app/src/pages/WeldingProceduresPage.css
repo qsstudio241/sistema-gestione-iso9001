@@ -213,6 +213,9 @@
     .wp-form-grid { grid-template-columns:1fr; }
     .wp-table th:nth-child(n+6):not(:last-child), .wp-table td:nth-child(n+6):not(:last-child) { display:none; }
     .wp-table td:last-child { white-space:nowrap; }
+    .wp-table th:last-child, .wp-table td:last-child { position:sticky; right:0; box-shadow:-6px 0 6px -6px rgba(0,0,0,.18); }
+    .wp-table td:last-child { background:#fff; }
+    .wp-table th:last-child { background:#f9fafb; }
     .wp-stats-bar { gap:12px; }
 }
 .wp-warn-no-company { margin-bottom:12px; padding:10px 14px; background:#fffbeb; border:1px solid #fcd34d; border-radius:8px; color:#92400e; font-size:13px; }
