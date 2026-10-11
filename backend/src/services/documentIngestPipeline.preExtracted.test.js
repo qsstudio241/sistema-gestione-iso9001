@@ -23,7 +23,7 @@ const { runDocumentIngest } = require('./documentIngestPipeline.service');
 describe('runDocumentIngest: preExtracted', () => {
     beforeEach(() => jest.clearAllMocks());
 
-    it('usa il testo fornito: nessun pdf-parse ne\' OCR; avvisi di estrazione conservati', async () => {
+    it('usa il testo fornito: nessun pdf-parse né OCR; avvisi di estrazione conservati', async () => {
         const out = await runDocumentIngest({
             pdfBuffer: Buffer.from('x'),
             docType: 'cert_ndt',

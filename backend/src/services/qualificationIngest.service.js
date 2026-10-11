@@ -484,7 +484,7 @@ function pickFieldSourcesForFields(fieldSources, reviewFields) {
 /**
  * Estrae i campi per lo staging.
  * `docType` esplicito = override dell'operatore (comportamento storico, `classification_source: 'override'`).
- * `docType === null` = riconoscimento automatico per file: se il tipo non e' chiaro (confidenza bassa o `altro`)
+ * `docType === null` = riconoscimento automatico per file: se il tipo non è chiaro (confidenza bassa o `altro`)
  * ritorna `{ status: 'type_unresolved', classification }` senza estrarre (nessun costo AI di estrazione)
  * oppure `wrong_module` se il documento sembra una WPQR/WPS.
  */

@@ -549,7 +549,7 @@ async function runDocumentIngest({
         throw e;
     }
 
-    // `preExtracted`: testo gia' letto dal riconoscimento tipo (evita un secondo pdf-parse/OCR).
+    // `preExtracted`: testo già letto dal riconoscimento tipo (evita un secondo pdf-parse/OCR).
     // Il layout OCR serve solo al 14732, come nel percorso con doc_type esplicito.
     const extractedText = preExtracted || await extractDocumentText(
         pdfBuffer,

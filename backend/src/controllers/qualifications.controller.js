@@ -1185,7 +1185,7 @@ async function uploadBatch(req, res) {
         const orgId    = req.user.organization_id;
         const userId   = req.user.user_id;
         const company_id = req.body?.company_id ? parseInt(req.body.company_id) : null;
-        // `doc_type` e' un override opzionale (client vecchi/in cache lo inviano sempre): se assente
+        // `doc_type` è un override opzionale (client vecchi/in cache lo inviano sempre): se assente
         // o non valido il tipo viene riconosciuto per file (null = auto-detect).
         const requestedDocType = req.body?.doc_type ?? req.query?.doc_type;
         const docType = UPLOAD_BATCH_DOC_TYPES.has(requestedDocType) ? requestedDocType : null;

@@ -46,7 +46,7 @@ describe('extractQualificationFromPdf: auto-detect (docType === null)', () => {
         jest.clearAllMocks();
     });
 
-    it('tipo chiaro dal testo: estrae con il tipo rilevato, riusa il testo gia\' letto, espone la classificazione', async () => {
+    it('tipo chiaro dal testo: estrae con il tipo rilevato, riusa il testo già letto, espone la classificazione', async () => {
         const b = bundle(T_NDT);
         extractDocumentText.mockResolvedValue(b);
         runDocumentIngest.mockResolvedValue(pipelineResult(T_NDT));
@@ -92,7 +92,7 @@ describe('extractQualificationFromPdf: auto-detect (docType === null)', () => {
         expect(runDocumentIngest).not.toHaveBeenCalled();
     });
 
-    it('14732 che cita WPQR/15614 come base non e\' wrong_module (confidenza high)', async () => {
+    it('14732 che cita WPQR/15614 come base non è wrong_module (confidenza high)', async () => {
         const text = 'Certificato operatore ISO 14732 qualificazione basata su WPQR ISO 15614 test piece provino bending';
         extractDocumentText.mockResolvedValue(bundle(text));
         runDocumentIngest.mockResolvedValue(pipelineResult(text, { operator_name: 'ZZ TEST' }));
@@ -120,7 +120,7 @@ describe('extractQualificationFromPdf: doc_type esplicito = override (compat cli
         jest.clearAllMocks();
     });
 
-    it('nessuna classificazione ne\' lettura anticipata del testo: pipeline come prima', async () => {
+    it('nessuna classificazione né lettura anticipata del testo: pipeline come prima', async () => {
         runDocumentIngest.mockResolvedValue(pipelineResult('ISO 9606-1 saldatore'));
 
         const out = await extractQualificationFromPdf(Buffer.from('x'), 'a.pdf', 10, null, 'patentino_saldatore');
