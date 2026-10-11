@@ -181,6 +181,7 @@ function finalize(result, meta) {
         reasons: result.reasons,
         needs_choice: result.doc_type === 'altro' || result.confidence === 'low',
         ai_calls: meta.aiCalls,
+        via_header_ocr: Boolean(meta.viaHeaderOcr),
     };
 }
 
@@ -213,8 +214,9 @@ async function classifyQualificationDocType({ pdfBuffer, fileName = '', text = '
         return out;
     }
 
-    // L'OCR dell'intestazione dipende solo dall'evidenza nel documento: il nome file non lo sostituisce.
-    const textHasEvidence = classifyByRules(cleanText, '').doc_type !== 'altro';
+    // L'OCR dell'intestazione serve solo se il corpo del documento non dice nulla (nemmeno conflitti o indizi
+    // ambigui, che restano «da scegliere»); il nome file non lo sostituisce né lo sopprime.
+    const textHasEvidence = classifyByRules(cleanText, '').hasTextEvidence;
     const headerOcrDisabled = String(process.env.INGEST_HEADER_OCR || '').trim() === '0';
     if (!textHasEvidence && !ocrUsed && headerOcr && !headerOcrDisabled && pdfBuffer) {
         try {
@@ -225,6 +227,7 @@ async function classifyQualificationDocType({ pdfBuffer, fileName = '', text = '
                 const tagged = headerOnly.reasons.map((r) => `${r} (OCR intestazione)`);
                 rules = headerOnly.doc_type === 'altro' ? headerOnly : classifyByRules(headerText, fileName);
                 source = 'ocr';
+                meta.viaHeaderOcr = true;
                 reasons.length = 0;
                 reasons.push(...tagged, ...rules.reasons.filter((r) => !headerOnly.reasons.includes(r)));
             }

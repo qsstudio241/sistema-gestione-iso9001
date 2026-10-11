@@ -92,6 +92,21 @@ describe('extractQualificationFromPdf: auto-detect (docType === null)', () => {
         expect(runDocumentIngest).not.toHaveBeenCalled();
     });
 
+    it('tipo high ricavato solo dall\'intestazione OCR con corpo WPQR: la guardia wrong_module resta attiva', async () => {
+        extractDocumentText.mockResolvedValue(bundle(T_WPQR));
+        const headerOcr = jest.fn(async () => 'EN ISO 9606-1 welder approval');
+
+        const out = await extractQualificationFromPdf(
+            Buffer.from('x'), 'a.pdf', 10, null, null, { classifier: { hasAi: false, headerOcr } },
+        );
+
+        expect(headerOcr).toHaveBeenCalledTimes(1);
+        expect(out.status).toBe('wrong_module');
+        expect(out.detected_type).toBe('wpqr');
+        expect(out.classification.needs_choice).toBe(true);
+        expect(runDocumentIngest).not.toHaveBeenCalled();
+    });
+
     it('wrong_module con classificazione medium: needs_choice forzato a true (il tipo va scelto)', async () => {
         extractDocumentText.mockResolvedValue(bundle(`${T_WPQR} saldatore`));
 

@@ -229,6 +229,34 @@ describe('classifyQualificationDocType: livelli e fonti', () => {
         expect(r.reasons.some((x) => /9712.*OCR intestazione/.test(x))).toBe(true);
     });
 
+    it('corpo con norme in conflitto: l\'OCR intestazione non lo scavalca, resta da scegliere', async () => {
+        const headerOcr = jest.fn(async () => 'CERTIFICATE ISO 9712');
+        const r = await classifyQualificationDocType({
+            pdfBuffer: Buffer.from('x'), fileName: 'a.pdf', text: 'ISO 9606-1 welder; examiner certified ISO 9712', deps: { headerOcr, hasAi: false },
+        });
+        expect(headerOcr).not.toHaveBeenCalled();
+        expect(r.detected_doc_type).toBe('altro');
+        expect(r.needs_choice).toBe(true);
+        expect(r.via_header_ocr).toBe(false);
+    });
+
+    it('corpo con indizi deboli ambigui: l\'OCR intestazione non lo scavalca', async () => {
+        const headerOcr = jest.fn(async () => 'CERTIFICATE ISO 9712');
+        const r = await classifyQualificationDocType({
+            pdfBuffer: Buffer.from('x'), fileName: 'a.pdf', text: 'welding operator and welder, non-destructive testing level 2 ultrasonic', deps: { headerOcr, hasAi: false },
+        });
+        expect(headerOcr).not.toHaveBeenCalled();
+        expect(r.needs_choice).toBe(true);
+    });
+
+    it('classificazione ricavata dall\'intestazione OCR: via_header_ocr true', async () => {
+        const headerOcr = jest.fn(async () => 'CERTIFICATE ISO 9712');
+        const r = await classifyQualificationDocType({
+            pdfBuffer: Buffer.from('x'), fileName: 'a.pdf', text: 'testo senza norme ma abbastanza lungo da non essere vuoto', deps: { headerOcr, hasAi: false },
+        });
+        expect(r.via_header_ocr).toBe(true);
+    });
+
     it('nome file nei log OCR: nessun nome in chiaro quando l\'OCR intestazione fallisce', async () => {
         const headerOcr = jest.fn(async () => { throw new Error('tesseract KO'); });
         await classifyQualificationDocType({

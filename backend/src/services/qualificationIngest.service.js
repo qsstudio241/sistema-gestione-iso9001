@@ -500,7 +500,9 @@ async function extractQualificationFromPdf(pdfBuffer, fileName, organizationId, 
             ocrUsed: preExtracted.ocrUsed,
             deps: deps.classifier,
         });
-        if (classification.confidence !== 'high' && preExtracted.text.length > 30) {
+        // `high` da regole sul testo completo salta la guardia (un 14732 cita WPQR/15614 come base);
+        // `high` ricavato solo dall'intestazione OCR no: il corpo del documento può essere altro.
+        if ((classification.confidence !== 'high' || classification.via_header_ocr) && preExtracted.text.length > 30) {
             const docClass = classifyDocument(`${preExtracted.text}\n${fileName || ''}`);
             if (WRONG_MODULE_FOR_QUALIFICATIONS.has(docClass.detected_type) && docClass.confidence === 'high') {
                 return {
