@@ -87,6 +87,12 @@ describe('classifyByRules: livello 1 (regole sul testo)', () => {
         expect(r.confidence).toBe('low');
     });
 
+    it('motivi mostrati all\'utente con accenti corretti (nessun apostrofo al posto di \u00f9)', () => {
+        const r = classifyByRules('welding operator and welder, non-destructive testing level 2 ultrasonic', 'a.pdf');
+        expect(r.reasons.join(' ')).toContain('pi\u00f9');
+        expect(r.reasons.join(' ')).not.toMatch(/piu'/);
+    });
+
     it('nessun indizio -> altro low', () => {
         const r = classifyByRules('Fattura n. 12 del 01/01/2026 importo 100 euro', 'fattura.pdf');
         expect(r.doc_type).toBe('altro');
@@ -197,6 +203,18 @@ describe('classifyQualificationDocType: livelli e fonti', () => {
         const logged = [...logger.warn.mock.calls, ...logger.info.mock.calls].map((c) => String(c[0])).join('\n');
         expect(logged).toMatch(/OCR intestazione non riuscito/);
         expect(logged).not.toContain('ZZROSSI');
+    });
+
+    it('solo il nome file richiama la norma: l\'OCR intestazione parte comunque e un disaccordo abbassa a low', async () => {
+        const headerOcr = jest.fn(async () => 'CERTIFICATE ISO 9712 NDT');
+        const r = await classifyQualificationDocType({
+            pdfBuffer: Buffer.from('x'), fileName: 'ZZ_9606_scan.pdf', text: 'testo senza norme ma abbastanza lungo da non essere vuoto', ocrUsed: false,
+            deps: { headerOcr, hasAi: false },
+        });
+        expect(headerOcr).toHaveBeenCalledTimes(1);
+        expect(r.confidence).toBe('low');
+        expect(r.needs_choice).toBe(true);
+        expect(r.reasons.join(' ')).toMatch(/nome file/i);
     });
 
     it('INGEST_HEADER_OCR=0 disattiva l\'OCR intestazione', async () => {

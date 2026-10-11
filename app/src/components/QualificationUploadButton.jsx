@@ -62,6 +62,8 @@ export function needsTypeChoice(r) {
   if (!r) return false;
   if (r.status === "type_unresolved") return true;
   if (r.classification_source === "override") return false;
+  // WPQR/WPS sospetta: il tipo va scelto esplicitamente (il select parte vuoto, anche con tipo rilevato di media confidenza).
+  if (r.status === "wrong_module" && r.classification) return true;
   return Boolean(r.classification?.needs_choice);
 }
 
@@ -265,9 +267,7 @@ export default function QualificationUploadButton({
 
   const renderTypeChooser = (r, i) => {
     const choiceNeeded = needsTypeChoice(r);
-    // `wrong_module`: il tipo suggerito va confermato esplicitamente (anche se coincide con quello rilevato).
-    const awaitingConfirm = choiceNeeded || r.status === "wrong_module";
-    const currentValue = awaitingConfirm ? "" : (r.doc_type || r.detected_doc_type || "");
+    const currentValue = choiceNeeded ? "" : (r.doc_type || r.detected_doc_type || "");
     const reasons = (r.classification?.reasons || []).slice(0, 2).join(" \u00B7 ");
     return (
       <div className="qual-upload__type-row" data-testid="qual-upload-type-row">
@@ -284,15 +284,11 @@ export default function QualificationUploadButton({
           disabled={r._busy || uploading}
           onChange={(e) => handleOverrideType(i, r, e.target.value)}
         >
-          {awaitingConfirm && (
-            <option value="">
-              {choiceNeeded ? "\u2014 Scegli il tipo \u2014" : "\u2014 Conferma o scegli il tipo \u2014"}
-            </option>
-          )}
+          {choiceNeeded && <option value="">{"\u2014 Scegli il tipo \u2014"}</option>}
           {DOC_TYPE_OPTIONS.map((o) => (
             <option key={o.value} value={o.value}>
               {o.label}
-              {awaitingConfirm && o.value === r.detected_doc_type ? " (rilevato)" : ""}
+              {choiceNeeded && o.value === r.detected_doc_type ? " (rilevato)" : ""}
               {o.value === suggested ? " (suggerito dalla scheda attiva)" : ""}
             </option>
           ))}
