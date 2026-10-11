@@ -1029,3 +1029,177 @@ describe('updateCaseAttachment', () => {
     expect(res.status).toHaveBeenCalledWith(404);
   });
 });
+
+// ─── Assegnatario alla creazione + inbox «Non assegnati» ─────────────────────
+describe('assegnatario alla creazione caso', () => {
+  function recordFirstInsertRequest(createdRow) {
+    const rec = { inputs: {}, sql: null };
+    const tx = {
+      begin: jest.fn().mockResolvedValue(),
+      commit: jest.fn().mockResolvedValue(),
+      rollback: jest.fn().mockResolvedValue(),
+    };
+    sql.Transaction.mockReturnValue(tx);
+    let n = 0;
+    sql.Request.mockImplementation(() => {
+      n += 1;
+      const isInsert = n === 1;
+      const reqObj = {
+        input: jest.fn((name, value) => {
+          if (isInsert) rec.inputs[name] = value;
+          return reqObj;
+        }),
+        query: jest.fn(async (text) => {
+          if (isInsert) rec.sql = text;
+          return { recordset: isInsert ? [createdRow] : [], rowsAffected: [1] };
+        }),
+      };
+      return reqObj;
+    });
+    getPool.mockResolvedValue({});
+    return rec;
+  }
+
+  it('createCase valorizza current_assignee_id con l\'utente creatore', async () => {
+    const rec = recordFirstInsertRequest({ id: 11, status: 'DRAFT', organization_id: ORG_ID });
+    const res = mockRes();
+    await ctrl.createCase(mockReq({ body: { title: 'Commessa B' } }), res);
+
+    expect(res.status).toHaveBeenCalledWith(201);
+    expect(rec.sql).toMatch(/INSERT INTO commercial_cases/);
+    expect(rec.sql).toMatch(/current_assignee_id/);
+    expect(rec.sql).toMatch(/@userId,\s*@userId\s*\)/);
+    expect(rec.inputs.userId).toBe(USER_ID);
+  });
+
+  it('importFromJob valorizza current_assignee_id con l\'utente creatore', async () => {
+    const rec = recordFirstInsertRequest({
+      id: 21,
+      uuid: 'case-uuid-21',
+      status: 'DRAFT',
+      organization_id: ORG_ID,
+    });
+    query
+      .mockResolvedValueOnce({ recordset: [{ id: 99, title: 'Import', company_id: 12, notes: null }] })
+      .mockResolvedValueOnce({
+        recordset: [{
+          id: 501,
+          original_name: 'rfq.pdf',
+          storage_path: '/tmp/rfq.pdf',
+          mime_type: 'application/pdf',
+          file_size: 1000,
+          status: 'extracted',
+          extracted_text: 'Testo',
+          ai_extraction_json: '{"document_type_guess":"rfq"}',
+          commercial_case_id: null,
+        }],
+      })
+      .mockResolvedValueOnce({ recordset: [] })
+      .mockResolvedValueOnce({ recordset: [{ id: 12 }] });
+
+    const res = mockRes();
+    await ctrl.importFromJob(mockReq({ body: { job_id: 99 } }), res);
+
+    expect(res.status).toHaveBeenCalledWith(201);
+    expect(rec.sql).toMatch(/INSERT INTO commercial_cases/);
+    expect(rec.sql).toMatch(/current_assignee_id\s*\)/);
+    expect(rec.sql).toMatch(/@commercialCustomerRef,\s*@userId\s*\)/);
+    expect(rec.inputs.userId).toBe(USER_ID);
+  });
+});
+
+describe('updateCase — notifica assegnazione', () => {
+  const crNotify = require('../services/contractReviewNotification.service');
+  const existingCase = {
+    id: 12,
+    status: 'DRAFT',
+    title: 'Caso',
+    organization_id: ORG_ID,
+    company_id: null,
+    commercial_customer_id: null,
+    commercial_customer_name: null,
+    commercial_customer_ref: null,
+    notes: null,
+    external_ref: null,
+    current_assignee_id: null,
+  };
+
+  it('«Assegna a me» imposta l\'assegnatario senza notificare l\'attore a sé stesso', async () => {
+    query
+      .mockResolvedValueOnce({ recordset: [existingCase] })
+      .mockResolvedValueOnce({ recordset: [{ ...existingCase, current_assignee_id: USER_ID }] });
+    const res = mockRes();
+    await ctrl.updateCase(
+      mockReq({ params: { id: '12' }, body: { current_assignee_id: USER_ID } }),
+      res,
+    );
+    expect(query.mock.calls[1][1]).toMatchObject({ assigneeId: USER_ID, organizationId: ORG_ID });
+    expect(crNotify.notifyAfterAssigneeChange).not.toHaveBeenCalled();
+  });
+
+  it('assegnazione ad altro utente continua a notificare', async () => {
+    query
+      .mockResolvedValueOnce({ recordset: [existingCase] })
+      .mockResolvedValueOnce({ recordset: [{ ...existingCase, current_assignee_id: 55 }] });
+    const res = mockRes();
+    await ctrl.updateCase(
+      mockReq({ params: { id: '12' }, body: { current_assignee_id: 55 } }),
+      res,
+    );
+    expect(crNotify.notifyAfterAssigneeChange).toHaveBeenCalledWith(
+      expect.objectContaining({ newAssigneeId: 55, previousAssigneeId: null }),
+    );
+  });
+});
+
+describe('getInbox / getSummary — non assegnati', () => {
+  it('kind=unassigned filtra current_assignee_id IS NULL, scope org, esclude i chiusi', async () => {
+    const items = [{ id: 3, status: 'INTAKE_REVIEW', current_assignee_id: null }];
+    query.mockResolvedValueOnce({ recordset: items });
+    const res = mockRes();
+    await ctrl.getInbox(mockReq({ query: { kind: 'unassigned' } }), res);
+
+    const [text, params] = query.mock.calls[0];
+    expect(text).toContain('cc.organization_id = @organizationId');
+    expect(text).toContain("cc.status NOT IN ('APPROVED','CANCELLED','REJECTED')");
+    expect(text).toContain('cc.current_assignee_id IS NULL');
+    expect(text).not.toContain('cc.current_assignee_id = @userId');
+    expect(params).toMatchObject({ organizationId: ORG_ID });
+    expect(res.json).toHaveBeenCalledWith({ kind: 'unassigned', items });
+  });
+
+  it('default resta assigned_to_me', async () => {
+    query.mockResolvedValueOnce({ recordset: [] });
+    const res = mockRes();
+    await ctrl.getInbox(mockReq(), res);
+    expect(query.mock.calls[0][0]).toContain('cc.current_assignee_id = @userId');
+    expect(res.json).toHaveBeenCalledWith({ kind: 'assigned_to_me', items: [] });
+  });
+
+  it.each(['pending_approval', 'stale'])('kind=%s non usa filtri assegnatario', async (kind) => {
+    query.mockResolvedValueOnce({ recordset: [] });
+    await ctrl.getInbox(mockReq({ query: { kind } }), mockRes());
+    expect(query.mock.calls[0][0]).not.toContain('current_assignee_id');
+  });
+
+  it('kind non valido -> 400 senza query', async () => {
+    const res = mockRes();
+    await ctrl.getInbox(mockReq({ query: { kind: 'tutti' } }), res);
+    expect(res.status).toHaveBeenCalledWith(400);
+    expect(res.json.mock.calls[0][0].code).toBe('VALIDATION_ERROR');
+    expect(query).not.toHaveBeenCalled();
+  });
+
+  it('getSummary espone unassigned_count coerente con la vista inbox', async () => {
+    const row = { total: 1, open_count: 1, assigned_to_me: 0, unassigned_count: 1, pending_approval: 0 };
+    query.mockResolvedValueOnce({ recordset: [row] });
+    const res = mockRes();
+    await ctrl.getSummary(mockReq(), res);
+
+    const [text, params] = query.mock.calls[0];
+    expect(text).toContain('current_assignee_id IS NULL AND status NOT IN (\'APPROVED\',\'CANCELLED\',\'REJECTED\')');
+    expect(text).toContain('AS unassigned_count');
+    expect(params).toMatchObject({ organizationId: ORG_ID });
+    expect(res.json).toHaveBeenCalledWith(row);
+  });
+});
