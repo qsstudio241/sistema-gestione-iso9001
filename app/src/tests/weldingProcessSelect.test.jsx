@@ -66,9 +66,9 @@ describe("getProcessSelectOptions / getProcessLabel", () => {
     expect(canonicalizeProcessValue(null)).toBe(null);
   });
 
-  it("legacy «783-STUD WELDING»: nessuna opzione extra e etichetta del catalogo", () => {
+  it("legacy «783-STUD WELDING»: select senza opzione extra; tabella col valore grezzo (filtro server a match esatto)", () => {
     expect(getProcessSelectOptions("783-STUD WELDING")).toEqual(getProcessSelectOptions(""));
-    expect(getProcessLabel("783-STUD WELDING")).toMatch(/^783 — Stud/);
+    expect(getProcessLabel("783-STUD WELDING")).toBe("783-STUD WELDING");
   });
 
   it("etichetta tabella: codice + nome IT, fallback sul valore grezzo", () => {

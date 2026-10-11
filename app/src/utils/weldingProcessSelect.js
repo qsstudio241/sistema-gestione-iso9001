@@ -26,10 +26,12 @@ export function getProcessSelectOptions(current, opts = {}) {
   return [...options, { value: raw, label: `${raw} (non in elenco)` }];
 }
 
-/** Etichetta leggibile per tabelle/liste; ricade sul valore grezzo se fuori catalogo. */
+/**
+ * Etichetta per tabelle/liste: solo corrispondenza esatta col catalogo. I valori legacy
+ * («783-STUD WELDING») restano grezzi, coerenti col filtro server a match esatto.
+ */
 export function getProcessLabel(code) {
   if (code == null || code === "") return "";
-  const canonical = String(canonicalizeProcessValue(code));
-  const found = getWeldingProcessSelectOptions({ includeAltro: false }).find((o) => o.value === canonical);
+  const found = getWeldingProcessSelectOptions({ includeAltro: false }).find((o) => o.value === String(code));
   return found ? found.label : String(code);
 }
