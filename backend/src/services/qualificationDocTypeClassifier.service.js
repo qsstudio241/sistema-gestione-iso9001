@@ -75,7 +75,7 @@ function describeOtherType(text) {
  * Il nome file non sostituisce mai l'evidenza dal documento: da solo propone un tipo con
  * confidenza `low` (il file resta «da scegliere» e l'OCR dell'intestazione/AI restano dovuti);
  * in disaccordo col testo abbassa a `low`.
- * @returns {{ doc_type: string, confidence: 'high'|'medium'|'low', reasons: string[], otherType: string|null }}
+ * @returns {{ doc_type: string, confidence: 'high'|'medium'|'low', reasons: string[], otherType: string|null, hasTextEvidence: boolean }}
  */
 function classifyByRules(text, fileName = '') {
     const body = String(text || '').slice(0, MAX_CLASSIFY_CHARS);
@@ -142,6 +142,7 @@ function classifyByRules(text, fileName = '') {
         confidence,
         reasons,
         otherType,
+        hasTextEvidence: hadTextEvidence || Boolean(textOtherType),
     };
 }
 
@@ -218,16 +219,24 @@ async function classifyQualificationDocType({ pdfBuffer, fileName = '', text = '
     if (!textHasEvidence && !ocrUsed && headerOcr && !headerOcrDisabled && pdfBuffer) {
         try {
             const headerText = await headerOcr(pdfBuffer, { pageNumber: 1, lang: 'ita+eng' });
-            if (classifyByRules(headerText, '').doc_type !== 'altro') {
-                const headerRules = classifyByRules(headerText, fileName);
-                rules = headerRules;
+            const headerOnly = classifyByRules(headerText, '');
+            if (headerOnly.hasTextEvidence) {
+                // L'intestazione ha detto qualcosa (tipo, tipo non gestito o norme in conflitto): il nome file non può scavalcarla.
+                const tagged = headerOnly.reasons.map((r) => `${r} (OCR intestazione)`);
+                rules = headerOnly.doc_type === 'altro' ? headerOnly : classifyByRules(headerText, fileName);
                 source = 'ocr';
                 reasons.length = 0;
-                reasons.push(...headerRules.reasons.map((r) => `${r} (OCR intestazione)`));
+                reasons.push(...tagged, ...rules.reasons.filter((r) => !headerOnly.reasons.includes(r)));
             }
         } catch (err) {
             logger.warn(`[QualifClassify] OCR intestazione non riuscito file=${redactFileNameForLog(fileName)}: ${err?.message || err}`);
         }
+    }
+
+    if (rules.otherType) {
+        const out = finalize({ doc_type: 'altro', confidence: 'low', source, reasons }, meta);
+        logSummary(fileName, out, startedAt, cleanText.length, ocrUsed);
+        return out;
     }
 
     if (rules.confidence !== 'low' && rules.doc_type !== 'altro') {

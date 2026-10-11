@@ -194,6 +194,41 @@ describe('classifyQualificationDocType: livelli e fonti', () => {
         expect(r.detected_doc_type).toBe('qualifica_14732');
     });
 
+    it('intestazione OCR di un tipo non gestito (14731): altro/da scegliere, il nome file non guida l\'estrazione', async () => {
+        const headerOcr = jest.fn(async () => 'Certificato coordinatore di saldatura ISO 14731 IWE');
+        const chatFn = jest.fn();
+        const r = await classifyQualificationDocType({
+            pdfBuffer: Buffer.from('x'), fileName: 'ZZ_9606_scan.pdf', text: '', deps: { headerOcr, chatFn, hasAi: true },
+        });
+        expect(r.detected_doc_type).toBe('altro');
+        expect(r.needs_choice).toBe(true);
+        expect(r.classification_source).toBe('ocr');
+        expect(r.reasons.join(' ')).toMatch(/14731.*OCR intestazione/);
+        expect(chatFn).not.toHaveBeenCalled();
+    });
+
+    it('intestazione OCR con norme in conflitto: nessun tipo dal nome file, da scegliere', async () => {
+        const headerOcr = jest.fn(async () => 'ISO 9606-1 welder; examiner certified ISO 9712');
+        const r = await classifyQualificationDocType({
+            pdfBuffer: Buffer.from('x'), fileName: 'ZZ_9606_scan.pdf', text: '', deps: { headerOcr, hasAi: false },
+        });
+        expect(r.detected_doc_type).toBe('altro');
+        expect(r.needs_choice).toBe(true);
+        expect(r.reasons.join(' ')).toMatch(/conflitto.*OCR intestazione/i);
+        expect(r.reasons.join(' ')).not.toMatch(/Solo il nome file/);
+    });
+
+    it('motivi: solo quelli derivati dall\'intestazione sono marcati «OCR intestazione» (non quelli sul nome file)', async () => {
+        const headerOcr = jest.fn(async () => 'CERTIFICATE OF NON-DESTRUCTIVE TESTING PERSONNEL ISO 9712');
+        const r = await classifyQualificationDocType({
+            pdfBuffer: Buffer.from('x'), fileName: 'ZZ_9606_scan.pdf', text: '', deps: { headerOcr, hasAi: false },
+        });
+        const nameReason = r.reasons.find((x) => /nome file/i.test(x));
+        expect(nameReason).toBeDefined();
+        expect(nameReason).not.toMatch(/OCR intestazione/);
+        expect(r.reasons.some((x) => /9712.*OCR intestazione/.test(x))).toBe(true);
+    });
+
     it('nome file nei log OCR: nessun nome in chiaro quando l\'OCR intestazione fallisce', async () => {
         const headerOcr = jest.fn(async () => { throw new Error('tesseract KO'); });
         await classifyQualificationDocType({
