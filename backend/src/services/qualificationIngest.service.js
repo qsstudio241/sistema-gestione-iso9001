@@ -508,7 +508,7 @@ async function extractQualificationFromPdf(pdfBuffer, fileName, organizationId, 
                     detected_type: docClass.detected_type,
                     message: WRONG_MODULE_MESSAGES[docClass.detected_type],
                     suggested_module: SUGGESTED_MODULE[docClass.detected_type],
-                    classification,
+                    classification: { ...classification, needs_choice: true },
                 };
             }
         }

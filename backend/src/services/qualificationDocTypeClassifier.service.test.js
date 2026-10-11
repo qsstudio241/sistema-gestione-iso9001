@@ -76,6 +76,12 @@ describe('classifyByRules: livello 1 (regole sul testo)', () => {
         expect(r.confidence).toBe('low');
     });
 
+    it('motivi mostrati all\'utente con accenti corretti (nessun apostrofo al posto di \u00f9)', () => {
+        const r = classifyByRules('welding operator and welder, non-destructive testing level 2 ultrasonic', 'a.pdf');
+        expect(r.reasons.join(' ')).toContain('pi\u00f9');
+        expect(r.reasons.join(' ')).not.toMatch(/piu'/);
+    });
+
     it('nessun indizio -> altro low', () => {
         const r = classifyByRules('Fattura n. 12 del 01/01/2026 importo 100 euro', 'fattura.pdf');
         expect(r.doc_type).toBe('altro');
@@ -128,6 +134,29 @@ describe('classifyQualificationDocType: livelli e fonti', () => {
         expect(r.detected_doc_type).toBe('cert_ndt');
         expect(r.classification_source).toBe('ocr');
         expect(r.reasons.join(' ')).toMatch(/OCR intestazione/);
+    });
+
+    it('solo il nome file richiama la norma: l\'OCR intestazione parte comunque e un disaccordo abbassa a low', async () => {
+        const headerOcr = jest.fn(async () => 'CERTIFICATE ISO 9712 NDT');
+        const r = await classifyQualificationDocType({
+            pdfBuffer: Buffer.from('x'), fileName: 'ZZ_9606_scan.pdf', text: 'testo senza norme ma abbastanza lungo da non essere vuoto', ocrUsed: false,
+            deps: { headerOcr, hasAi: false },
+        });
+        expect(headerOcr).toHaveBeenCalledTimes(1);
+        expect(r.confidence).toBe('low');
+        expect(r.needs_choice).toBe(true);
+        expect(r.reasons.join(' ')).toMatch(/nome file/i);
+    });
+
+    it('solo il nome file richiama la norma e l\'intestazione non dice nulla: resta medium dal nome file', async () => {
+        const headerOcr = jest.fn(async () => '');
+        const r = await classifyQualificationDocType({
+            pdfBuffer: Buffer.from('x'), fileName: 'ZZ_14732_scan.pdf', text: 'testo senza norme ma abbastanza lungo da non essere vuoto', ocrUsed: false,
+            deps: { headerOcr, hasAi: false },
+        });
+        expect(headerOcr).toHaveBeenCalledTimes(1);
+        expect(r.detected_doc_type).toBe('qualifica_14732');
+        expect(r.confidence).toBe('medium');
     });
 
     it('INGEST_HEADER_OCR=0 disattiva l\'OCR intestazione', async () => {

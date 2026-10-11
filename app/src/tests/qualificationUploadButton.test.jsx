@@ -390,6 +390,49 @@ describe("QualificationUploadButton — riconoscimento automatico del tipo per f
     expect(screen.getByRole("button", { name: /Rivedi campi/i })).toBeDisabled();
   });
 
+  it("wrong_module con tipo rilevato medium: il select parte vuoto e permette di forzare lo stesso tipo", async () => {
+    const user = userEvent.setup();
+    await openAndUpload(user, [{
+      fileName: "a.pdf",
+      status: "wrong_module",
+      detected_type: "wpqr",
+      message: "Questo documento sembra una WPQR/PQR",
+      ...cls("patentino_saldatore", "medium", "rules", true),
+    }]);
+    apiService.uploadQualificationsBatch.mockResolvedValueOnce({
+      results: [pendingRes("a.pdf", 8, "patentino_saldatore", "high", "override")],
+      uploaded: 1,
+      total: 1,
+    });
+
+    const select = await screen.findByTestId("qual-upload-type-select");
+    expect(select).toHaveValue("");
+    expect(screen.getByText("Tipo da scegliere")).toBeInTheDocument();
+    await user.selectOptions(select, "patentino_saldatore");
+
+    await waitFor(() => expect(apiService.uploadQualificationsBatch).toHaveBeenCalledTimes(2));
+    expect(apiService.uploadQualificationsBatch.mock.calls[1][2]).toBe("patentino_saldatore");
+    expect(await screen.findByRole("button", { name: /Rivedi campi/i })).not.toBeDisabled();
+  });
+
+  it("override con errore per-file (HTTP 200, status error): il risultato precedente resta e si puo' riprovare", async () => {
+    const user = userEvent.setup();
+    await openAndUpload(user, [pendingRes("a.pdf", 5, "patentino_saldatore", "medium", "ai")]);
+    apiService.uploadQualificationsBatch.mockResolvedValueOnce({
+      results: [{ fileName: "a.pdf", status: "error", error: "Estrazione non riuscita", warnings: [] }],
+      uploaded: 0,
+      total: 1,
+    });
+
+    await user.selectOptions(await screen.findByTestId("qual-upload-type-select"), "qualifica_14732");
+
+    expect(await screen.findByText("Estrazione non riuscita")).toBeInTheDocument();
+    expect(apiService.rejectIngestStaging).not.toHaveBeenCalled();
+    expect(screen.getByTestId("qual-upload-type-select")).toHaveValue("patentino_saldatore");
+    expect(screen.getByRole("button", { name: /Rivedi campi/i })).not.toBeDisabled();
+    expect(screen.getByTestId("qual-upload-type-select")).not.toBeDisabled();
+  });
+
   it("apre la revisione col tipo effettivo del file (non uno stato globale)", async () => {
     const user = userEvent.setup();
     await openAndUpload(user, [pendingRes("a.pdf", 1, "cert_ndt")]);

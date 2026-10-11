@@ -73,7 +73,7 @@ function describeOtherType(text) {
 /**
  * Livello 1/2: regole sul testo (e, come sola conferma/conflitto, sul nome file).
  * Il nome file non basta da solo oltre `medium`; in disaccordo col testo abbassa a `low`.
- * @returns {{ doc_type: string, confidence: 'high'|'medium'|'low', reasons: string[], hasEvidence: boolean }}
+ * @returns {{ doc_type: string, confidence: 'high'|'medium'|'low', reasons: string[], hasTextEvidence: boolean, hasEvidence: boolean }}
  */
 function classifyByRules(text, fileName = '') {
     const body = String(text || '').slice(0, MAX_CLASSIFY_CHARS);
@@ -105,7 +105,7 @@ function classifyByRules(text, fileName = '') {
         confidence = 'medium';
         reasons.push(`Indizi testuali compatibili con ${LABELS[docType]}, norma non citata`);
     } else if (textEv.weak.length > 1) {
-        reasons.push('Indizi testuali ambigui tra piu\' tipi di qualifica');
+        reasons.push('Indizi testuali ambigui tra più tipi di qualifica');
     }
 
     const hadTextEvidence = docType !== 'altro' || textEv.strong.length > 0 || textEv.weak.length > 0;
@@ -139,6 +139,7 @@ function classifyByRules(text, fileName = '') {
         confidence,
         reasons,
         otherType,
+        hasTextEvidence: hadTextEvidence,
         hasEvidence: hadTextEvidence || nameFamilies.length > 0,
     };
 }
@@ -210,7 +211,8 @@ async function classifyQualificationDocType({ pdfBuffer, fileName = '', text = '
         return out;
     }
 
-    const textHasEvidence = rules.doc_type !== 'altro' || rules.hasEvidence;
+    // Solo il testo conta: un nome file che richiama la norma non deve impedire la lettura dell'intestazione.
+    const textHasEvidence = rules.hasTextEvidence;
     const headerOcrDisabled = String(process.env.INGEST_HEADER_OCR || '').trim() === '0';
     if (!textHasEvidence && !ocrUsed && headerOcr && !headerOcrDisabled && pdfBuffer) {
         try {

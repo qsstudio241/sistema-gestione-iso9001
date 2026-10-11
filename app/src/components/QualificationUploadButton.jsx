@@ -61,6 +61,8 @@ export function needsTypeChoice(r) {
   if (!r) return false;
   if (r.status === "type_unresolved") return true;
   if (r.classification_source === "override") return false;
+  // WPQR/WPS sospetta: il tipo va scelto esplicitamente (il select parte vuoto, anche con tipo rilevato di media confidenza).
+  if (r.status === "wrong_module" && r.classification) return true;
   return Boolean(r.classification?.needs_choice);
 }
 
@@ -155,7 +157,15 @@ export default function QualificationUploadButton({
     try {
       const res = await apiService.uploadQualificationsBatch([file], companyIdInt, newDocType);
       const next = (res.results || [])[0] || { fileName: item.fileName, status: "error", warnings: ["Nessun risultato"] };
-      if (item.staging_id && next.status !== "error") {
+      if (next.status === "error") {
+        // Errore per-file (HTTP 200): il risultato precedente resta com'era, con la possibilita' di riprovare.
+        const msg = next.error || next.message || next.warnings?.[0] || "Rielaborazione fallita";
+        setResults((prev) => (prev || []).map((r, i) => (
+          i === index ? { ...r, _busy: false, _overrideError: msg } : r
+        )));
+        return;
+      }
+      if (item.staging_id) {
         // Il vecchio staging (tipo sbagliato) non deve restare in coda: best-effort, non blocca l'override.
         apiService.rejectIngestStaging(item.staging_id).catch(() => {});
       }

@@ -92,6 +92,16 @@ describe('extractQualificationFromPdf: auto-detect (docType === null)', () => {
         expect(runDocumentIngest).not.toHaveBeenCalled();
     });
 
+    it('wrong_module con classificazione medium: needs_choice forzato a true (il tipo va scelto)', async () => {
+        extractDocumentText.mockResolvedValue(bundle(`${T_WPQR} saldatore`));
+
+        const out = await extractQualificationFromPdf(Buffer.from('x'), 'a.pdf', 10, null, null, NO_AI);
+
+        expect(out.status).toBe('wrong_module');
+        expect(out.classification.confidence).toBe('medium');
+        expect(out.classification.needs_choice).toBe(true);
+    });
+
     it('14732 che cita WPQR/15614 come base non e\' wrong_module (confidenza high)', async () => {
         const text = 'Certificato operatore ISO 14732 qualificazione basata su WPQR ISO 15614 test piece provino bending';
         extractDocumentText.mockResolvedValue(bundle(text));
