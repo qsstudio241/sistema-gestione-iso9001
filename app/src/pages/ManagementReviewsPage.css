@@ -670,6 +670,9 @@
   .modal-box { max-width: 100%; max-height: 100%; border-radius: 0; }
   .mr-table th:nth-child(3),
   .mr-table td:nth-child(3) { display: none; }
+  .mr-table th:last-child, .mr-table td:last-child { position: sticky; right: 0; box-shadow: -6px 0 6px -6px rgba(0,0,0,.18); }
+  .mr-table td:last-child { background: #fff; }
+  .mr-table th:last-child { background: #f9fafb; }
   .isw-grid { grid-template-columns: 1fr; }
 }
 
