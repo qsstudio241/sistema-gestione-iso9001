@@ -531,6 +531,7 @@ function buildFieldSourcesLogLine(docType, fieldSources) {
  * @param {string} params.docType — wpqr | patentino_saldatore | wps | norma
  * @param {string} [params.fileName]
  * @param {number} [params.organizationId] — riservato IG-5 (few-shot)
+ * @param {{ text: string, ocrUsed: boolean, warnings: string[], ocrLayout?: Array }} [params.preExtracted]
  * @returns {Promise<object>}
  */
 async function runDocumentIngest({
@@ -538,6 +539,7 @@ async function runDocumentIngest({
     docType,
     fileName = 'document.pdf',
     organizationId = null,
+    preExtracted = null,
 }) {
     const warnings = [];
 
@@ -547,10 +549,14 @@ async function runDocumentIngest({
         throw e;
     }
 
-    const { text, ocrUsed, warnings: textWarnings, ocrLayout } = await extractDocumentText(
+    // `preExtracted`: testo gia' letto dal riconoscimento tipo (evita un secondo pdf-parse/OCR).
+    // Il layout OCR serve solo al 14732, come nel percorso con doc_type esplicito.
+    const extractedText = preExtracted || await extractDocumentText(
         pdfBuffer,
         docType === 'qualifica_14732' ? { collectOcrLayout: true } : {},
     );
+    const { text, ocrUsed, warnings: textWarnings } = extractedText;
+    const ocrLayout = docType === 'qualifica_14732' ? extractedText.ocrLayout : undefined;
     warnings.push(...textWarnings);
 
     const textConfidence = confidenceFromTextLength(text.length);
