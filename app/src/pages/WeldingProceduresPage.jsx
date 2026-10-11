@@ -14,7 +14,7 @@ import { formatDate } from "../utils/dateHelpers";
 import WpqrUploadButton from "../components/WpqrUploadButton";
 import WpsUploadButton from "../components/WpsUploadButton";
 import AskAiButton from "../components/AskAiButton";
-import { getProcessSelectOptions, getProcessLabel } from "../utils/weldingProcessSelect";
+import { getProcessSelectOptions, getProcessLabel, canonicalizeProcessValue } from "../utils/weldingProcessSelect";
 import ReprocessQueueBanner from "../components/ReprocessQueueBanner";
 import {
   saveQualContext,
@@ -164,7 +164,7 @@ function WPSFormModal({ wps, defaultCompanyId, onSave, onClose, onSaved }) {
               </div>
               <div className="wp-form-group">
                 <label className="wp-form-label">Processo di saldatura</label>
-                <select className="wp-form-select" value={form.welding_process || ""} onChange={(e) => set("welding_process", e.target.value)}>
+                <select className="wp-form-select" value={canonicalizeProcessValue(form.welding_process) || ""} onChange={(e) => set("welding_process", e.target.value)}>
                   <option value="">-- Seleziona --</option>
                   {getProcessSelectOptions(form.welding_process).map((p) => <option key={p.value} value={p.value}>{p.label}</option>)}
                 </select>
@@ -385,7 +385,7 @@ export function GenerateWpsModal({
                 <label className="wp-form-label">Processo (opzionale)</label>
                 <select
                   className="wp-form-select"
-                  value={form.welding_process}
+                  value={canonicalizeProcessValue(form.welding_process)}
                   onChange={(e) => set("welding_process", e.target.value)}
                 >
                   <option value="">-- Qualsiasi --</option>
@@ -845,7 +845,7 @@ function WPQRFormModal({ wpqr, wpsList, defaultCompanyId, onSave, onClose, onSav
               </div>
               <div className="wp-form-group">
                 <label className="wp-form-label">Processo saldatura (ISO 4063)</label>
-                <select className="wp-form-select" value={form.welding_process || ""} onChange={(e) => set("welding_process", e.target.value)}>
+                <select className="wp-form-select" value={canonicalizeProcessValue(form.welding_process) || ""} onChange={(e) => set("welding_process", e.target.value)}>
                   <option value="">-- Seleziona --</option>
                   {getProcessSelectOptions(form.welding_process).map((p) => <option key={p.value} value={p.value}>{p.label}</option>)}
                 </select>

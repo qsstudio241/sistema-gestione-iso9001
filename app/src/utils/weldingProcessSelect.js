@@ -1,4 +1,16 @@
-import { getWeldingProcessSelectOptions } from "../data/weldingProcesses4063";
+import { getWeldingProcessSelectOptions, normalizeWeldingProcessCode } from "../data/weldingProcesses4063";
+
+/**
+ * Codice ISO 4063 canonico per un valore salvato (es. "783-STUD WELDING" -> "783").
+ * Non tocca elenchi con più codici ("135, 138") né testi senza codice numerico: restano invariati.
+ */
+export function canonicalizeProcessValue(value) {
+  if (value == null || value === "") return value;
+  const raw = String(value).trim();
+  const tokens = new Set(raw.match(/\b\d{2,3}\b/g) || []);
+  if (tokens.size !== 1) return value;
+  return normalizeWeldingProcessCode(raw) || value;
+}
 
 /**
  * Opzioni select processo (catalogo ISO 4063). Se `current` è un valore salvato
@@ -9,7 +21,7 @@ import { getWeldingProcessSelectOptions } from "../data/weldingProcesses4063";
  */
 export function getProcessSelectOptions(current, opts = {}) {
   const options = getWeldingProcessSelectOptions({ includeAltro: opts.includeAltro ?? false });
-  const raw = current == null ? "" : String(current).trim();
+  const raw = current == null ? "" : String(canonicalizeProcessValue(current)).trim();
   if (!raw || options.some((o) => o.value === raw)) return options;
   return [...options, { value: raw, label: `${raw} (non in elenco)` }];
 }
@@ -17,6 +29,7 @@ export function getProcessSelectOptions(current, opts = {}) {
 /** Etichetta leggibile per tabelle/liste; ricade sul valore grezzo se fuori catalogo. */
 export function getProcessLabel(code) {
   if (code == null || code === "") return "";
-  const found = getWeldingProcessSelectOptions({ includeAltro: false }).find((o) => o.value === String(code));
+  const canonical = String(canonicalizeProcessValue(code));
+  const found = getWeldingProcessSelectOptions({ includeAltro: false }).find((o) => o.value === canonical);
   return found ? found.label : String(code);
 }

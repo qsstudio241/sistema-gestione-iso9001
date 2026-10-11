@@ -32,7 +32,7 @@ vi.mock("../components/ReprocessQueueBanner", () => ({ default: () => null }));
 import apiService from "../services/apiService";
 import WeldingProceduresPage from "../pages/WeldingProceduresPage";
 import QualificationForm from "../pages/QualificationForm";
-import { getProcessSelectOptions, getProcessLabel } from "../utils/weldingProcessSelect";
+import { getProcessSelectOptions, getProcessLabel, canonicalizeProcessValue } from "../utils/weldingProcessSelect";
 
 const HISTORICAL = ["111", "121", "131", "135", "136", "141", "311", "15"];
 const STUD = ["783", "784", "785", "786"];
@@ -57,6 +57,20 @@ describe("getProcessSelectOptions / getProcessLabel", () => {
     expect(getProcessSelectOptions("783")).toEqual(getProcessSelectOptions(""));
   });
 
+  it("canonicalizeProcessValue: «783-STUD WELDING» -> 783; elenchi e testi senza codice invariati", () => {
+    expect(canonicalizeProcessValue("783-STUD WELDING")).toBe("783");
+    expect(canonicalizeProcessValue("135, 138")).toBe("135, 138");
+    expect(canonicalizeProcessValue("boh")).toBe("boh");
+    expect(canonicalizeProcessValue("altro")).toBe("altro");
+    expect(canonicalizeProcessValue("")).toBe("");
+    expect(canonicalizeProcessValue(null)).toBe(null);
+  });
+
+  it("legacy «783-STUD WELDING»: nessuna opzione extra e etichetta del catalogo", () => {
+    expect(getProcessSelectOptions("783-STUD WELDING")).toEqual(getProcessSelectOptions(""));
+    expect(getProcessLabel("783-STUD WELDING")).toMatch(/^783 — Stud/);
+  });
+
   it("etichetta tabella: codice + nome IT, fallback sul valore grezzo", () => {
     expect(getProcessLabel("783")).toMatch(/^783 — Stud/);
     expect(getProcessLabel("XYZ")).toBe("XYZ");
@@ -73,8 +87,11 @@ describe("WeldingProceduresPage — select processo da catalogo", () => {
       pagination: { total: 1 },
     });
     apiService.getWPQRList.mockResolvedValue({
-      data: [{ id: 1, wpqr_code: "WPQR-LEG", reference_number: "WPQR-LEG", approval_status: "bozza", welding_process: "999-LEGACY" }],
-      pagination: { total: 1 },
+      data: [
+        { id: 1, wpqr_code: "WPQR-LEG", reference_number: "WPQR-LEG", approval_status: "bozza", welding_process: "999-LEGACY" },
+        { id: 2, wpqr_code: "WPQR-STUD", reference_number: "WPQR-STUD", approval_status: "bozza", welding_process: "783-STUD WELDING" },
+      ],
+      pagination: { total: 2 },
     });
     apiService.getWPQRStats.mockResolvedValue({ data: { totale: 1, da_approvare: 1, rifiutate: 0, approvate: 0 } });
   });
@@ -106,6 +123,28 @@ describe("WeldingProceduresPage — select processo da catalogo", () => {
     for (const c of [...HISTORICAL, ...STUD]) expect(values).toContain(c);
     expect(select.value).toBe("999-LEGACY");
     expect(within(select).getByRole("option", { name: "999-LEGACY (non in elenco)" })).toBeTruthy();
+  });
+});
+
+describe("WeldingProceduresPage — WPQR con «783-STUD WELDING» legacy", () => {
+  it("la select mostra 783 selezionato (senza opzione extra) e non modifica il dato", async () => {
+    apiService.getCompanies.mockResolvedValue({ data: [] });
+    apiService.getWPSList.mockResolvedValue({ data: [], pagination: { total: 0 } });
+    apiService.getWPQRList.mockResolvedValue({
+      data: [{ id: 2, wpqr_code: "WPQR-STUD", reference_number: "WPQR-STUD", approval_status: "bozza", welding_process: "783-STUD WELDING" }],
+      pagination: { total: 1 },
+    });
+    apiService.getWPQRStats.mockResolvedValue({ data: { totale: 1, da_approvare: 1, rifiutate: 0, approvate: 0 } });
+    const user = userEvent.setup();
+    render(<WeldingProceduresPage />);
+    await waitFor(() => expect(apiService.getWPQRStats).toHaveBeenCalled());
+    await user.click(screen.getByRole("button", { name: /^WPQR/i }));
+    await waitFor(() => expect(screen.getByText("WPQR-STUD")).toBeTruthy());
+    await user.click(screen.getByText("WPQR-STUD").closest("tr"));
+    const select = screen.getByText("Processo saldatura (ISO 4063)").closest(".wp-form-group").querySelector("select");
+    expect(select.value).toBe("783");
+    expect(optionValues(select)).not.toContain("783-STUD WELDING");
+    expect(apiService.updateWPQR).not.toHaveBeenCalled();
   });
 });
 
@@ -165,6 +204,15 @@ describe("QualificationForm — processo prova da catalogo e normalizzazione", (
     const select = await open({ ...STUD_QUAL, welding_process: "boh", welding_process_test: "boh" });
     expect(select.value).toBe("boh");
     expect(within(select).getByRole("option", { name: "boh (non in elenco)" })).toBeTruthy();
+  });
+
+  it("elenco «135, 138» non viene ridotto al primo codice al salvataggio", async () => {
+    await open({ ...STUD_QUAL, welding_process: "135, 138", welding_process_test: "135" });
+    fireEvent.change(screen.getByPlaceholderText("Note aggiuntive..."), { target: { value: "n" } });
+    await act(async () => { await vi.advanceTimersByTimeAsync(1600); });
+    expect(apiService.updateQualification.mock.calls[0][1]).toEqual(
+      expect.objectContaining({ welding_process: "135, 138", welding_process_test: "135" }),
+    );
   });
 
   it("«altro» resta «altro»", async () => {

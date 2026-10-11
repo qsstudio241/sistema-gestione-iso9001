@@ -12,8 +12,7 @@ import {
   getVisibleFieldKeys,
   uses9606DimensionalBlock,
 } from "../data/jointTypeProfiles";
-import { normalizeWeldingProcessCode } from "../data/weldingProcesses4063";
-import { getProcessSelectOptions } from "../utils/weldingProcessSelect";
+import { getProcessSelectOptions, canonicalizeProcessValue } from "../utils/weldingProcessSelect";
 import { NDT_SECTOR_OPTIONS } from "../data/documentTypeSchemas";
 import { resolveBackendUploadUrl } from "../utils/resolveBackendUploadUrl";
 import SemiannualConfirmationSection from "../components/SemiannualConfirmationSection";
@@ -95,12 +94,6 @@ const VERIFY_FIELD_KEYS = [
   "pipe_diameter_test_mm", "pipe_diameter_min_mm", "pipe_diameter_max_mm",
   "exam_date", "issue_date", "expiry_date", "last_confirmation_date", "next_confirmation_due", "revalidation_date",
 ];
-
-/** Codice ISO 4063 canonico (es. "783-STUD WELDING" -> "783"); valori non riconosciuti restano invariati. */
-function canonicalProcess(value) {
-  if (value == null || value === "") return value;
-  return normalizeWeldingProcessCode(value) || value;
-}
 
 function QualificationForm({ qualification, onSave, onClose, onSaved, defaultCompanyId, companyName, openSection }) {
   const isEdit  = !!qualification;
@@ -228,8 +221,8 @@ function QualificationForm({ qualification, onSave, onClose, onSaved, defaultCom
         && d.pipe_diameter_mm != null && d.pipe_diameter_mm !== "") {
         d.pipe_diameter_min_mm = d.pipe_diameter_mm;
       }
-      d.welding_process = canonicalProcess(d.welding_process);
-      d.welding_process_test = canonicalProcess(d.welding_process_test);
+      d.welding_process = canonicalizeProcessValue(d.welding_process);
+      d.welding_process_test = canonicalizeProcessValue(d.welding_process_test);
       setForm(d);
       if (d.qualification_type && !QUAL_TYPES.includes(d.qualification_type)) {
         setCustomType(true);
@@ -292,8 +285,8 @@ function QualificationForm({ qualification, onSave, onClose, onSaved, defaultCom
       try {
         const payload = {
           ...form,
-          welding_process: canonicalProcess(form.welding_process),
-          welding_process_test: canonicalProcess(form.welding_process_test),
+          welding_process: canonicalizeProcessValue(form.welding_process),
+          welding_process_test: canonicalizeProcessValue(form.welding_process_test),
           company_id: parseInt(form.company_id, 10),
           personnel_id: form.personnel_id ? parseInt(form.personnel_id, 10) : null,
         };
