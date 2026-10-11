@@ -7,6 +7,7 @@
 
 const { query } = require('../config/database');
 const logger = require('../utils/logger');
+const { normalizeApplicableWpsIds } = require('../utils/applicableWpsIds');
 const { describeIngestFileError, redactFileNameForLog } = require('../utils/ingestErrorMessage');
 
 /**
@@ -1196,8 +1197,7 @@ async function getWpsCoverage(req, res) {
         const project = projResult.recordset[0];
         const companyId = project.company_id;
 
-        let wpsIds = [];
-        try { wpsIds = JSON.parse(project.applicable_wps_ids || '[]'); } catch (_) {}
+        const wpsIds = normalizeApplicableWpsIds(project.applicable_wps_ids);
 
         // WPS attive+approvate per l'azienda della commessa
         const baseConditions = [
@@ -1215,8 +1215,7 @@ async function getWpsCoverage(req, res) {
         // Se ci sono WPS specifiche assegnate, usa quelle; altrimenti tutte dell'azienda
         let wpsWhere = baseConditions.join(' AND ');
         if (wpsIds.length > 0) {
-            const ids = wpsIds.map(Number).filter(Boolean).join(',');
-            wpsWhere += ` AND w.id IN (${ids})`;
+            wpsWhere += ` AND w.id IN (${wpsIds.join(',')})`;
         }
 
         const wpsResult = await query(`

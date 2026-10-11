@@ -17,6 +17,10 @@ const {
     resolveCommercialCustomerFields,
 } = require('../services/commercialCustomerCounterparty.service');
 const { stampTechnicalReviewChecklistJson } = require('../utils/technicalReviewChecklist');
+const {
+    normalizeApplicableWpsIds,
+    serializeApplicableWpsIds,
+} = require('../utils/applicableWpsIds');
 
 /** JWT non include full_name: se manca, lo legge da users. */
 async function userForReviewStamp(user) {
@@ -103,13 +107,7 @@ async function listProjects(req, res) {
         const total = countResult.recordset[0].total;
 
         const data = result.recordset.map(row => {
-            let wpsCount = 0;
-            if (row.applicable_wps_ids) {
-                try {
-                    const parsed = JSON.parse(row.applicable_wps_ids);
-                    wpsCount = Array.isArray(parsed) ? parsed.length : 0;
-                } catch (_) { /* JSON non valido */ }
-            }
+            const wpsCount = normalizeApplicableWpsIds(row.applicable_wps_ids).length;
             return { ...row, wps_count: wpsCount };
         });
 
@@ -178,21 +176,17 @@ async function getProject(req, res) {
 
         // Parse WPS ids e recupera dettagli
         let wpsDetails = [];
-        if (project.applicable_wps_ids) {
-            try {
-                const wpsIds = JSON.parse(project.applicable_wps_ids);
-                if (Array.isArray(wpsIds) && wpsIds.length > 0) {
-                    const placeholders = wpsIds.map((_, i) => `@wpsId${i}`).join(',');
-                    const wpsParams = { organization_id };
-                    wpsIds.forEach((wid, i) => { wpsParams[`wpsId${i}`] = parseInt(wid); });
-                    const wpsResult = await query(`
-                        SELECT id, wps_code, welding_process, status
-                        FROM welding_procedures
-                        WHERE id IN (${placeholders}) AND organization_id = @organization_id
-                    `, wpsParams);
-                    wpsDetails = wpsResult.recordset;
-                }
-            } catch (_) { /* JSON non valido */ }
+        const wpsIds = normalizeApplicableWpsIds(project.applicable_wps_ids);
+        if (wpsIds.length > 0) {
+            const placeholders = wpsIds.map((_, i) => `@wpsId${i}`).join(',');
+            const wpsParams = { organization_id };
+            wpsIds.forEach((wid, i) => { wpsParams[`wpsId${i}`] = wid; });
+            const wpsResult = await query(`
+                SELECT id, wps_code, welding_process, status
+                FROM welding_procedures
+                WHERE id IN (${placeholders}) AND organization_id = @organization_id
+            `, wpsParams);
+            wpsDetails = wpsResult.recordset;
         }
 
         // Saldatori assegnati
@@ -247,9 +241,7 @@ async function createProject(req, res) {
             return res.status(customerFields.status).json({ error: customerFields.error, code: customerFields.code });
         }
 
-        const wpsIdsJson = applicable_wps_ids
-            ? JSON.stringify(Array.isArray(applicable_wps_ids) ? applicable_wps_ids : [applicable_wps_ids])
-            : null;
+        const wpsIdsJson = serializeApplicableWpsIds(applicable_wps_ids);
         const technicalReviewChecklistJson = technical_review_checklist
             ? stampTechnicalReviewChecklistJson(
                 technical_review_checklist,
@@ -335,8 +327,7 @@ async function updateProject(req, res) {
             if (req.body[field] !== undefined) {
                 updates.push(`${field} = @${field}`);
                 if (field === 'applicable_wps_ids') {
-                    const val = req.body[field];
-                    params[field] = val ? JSON.stringify(Array.isArray(val) ? val : [val]) : null;
+                    params[field] = serializeApplicableWpsIds(req.body[field]);
                 } else if (field === 'technical_review_checklist') {
                     params[field] = stampTechnicalReviewChecklistJson(
                         req.body[field],
