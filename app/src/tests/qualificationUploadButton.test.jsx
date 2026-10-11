@@ -279,6 +279,19 @@ describe("QualificationUploadButton — riconoscimento automatico del tipo per f
     expect(docType).toBeUndefined();
   });
 
+  it("nessuna sequenza \\uXXXX letterale a schermo (pannello iniziale e risultati)", async () => {
+    const user = userEvent.setup();
+    render(<QualificationUploadButton companyId="60" companyName="ADA" onUploadComplete={() => {}} />);
+    await user.click(screen.getByRole("button", { name: /Carica qualifiche \(batch\)/i }));
+    expect(document.body.textContent).not.toMatch(/\\u[0-9a-f]{4}/i);
+    apiService.uploadQualificationsBatch.mockResolvedValueOnce({
+      results: [unresolvedRes("a.pdf")], uploaded: 0, total: 1,
+    });
+    await user.upload(document.querySelector('input[type="file"]'), new File(["%PDF"], "a.pdf", { type: "application/pdf" }));
+    await screen.findByText("Tipo da scegliere");
+    expect(document.body.textContent).not.toMatch(/\\u[0-9a-f]{4}/i);
+  });
+
   it("mostra per ogni file il tipo rilevato (badge + select) e consente la conferma se chiaro", async () => {
     const user = userEvent.setup();
     await openAndUpload(user, [pendingRes("a.pdf", 1, "cert_ndt")]);

@@ -100,7 +100,7 @@
   border-top-color: #fff; border-radius: 50%; animation: qual-spin 0.7s linear infinite;
 }
 
-.qual-upload__results { list-style: none; margin: 0 0 10px; padding: 0; max-height: min(60vh, 440px); overflow-y: auto; }
+.qual-upload__results { list-style: none; margin: 0 0 10px; padding: 0; max-height: min(70vh, 560px); overflow-y: auto; }
 .qual-upload__result-item { padding: 8px 0; border-bottom: 1px solid #f3f4f6; font-size: 13px; }
 .qual-upload__result-item:last-child { border-bottom: none; }
 
@@ -123,3 +123,12 @@
 
 .qual-upload__warnings { margin-top: 4px; }
 .qual-upload__warning  { font-size: 11px; color: #d97706; }
+
+/* Mobile: il pannello ancorato a destra del bottone esce dallo schermo; lo ancoriamo al viewport. */
+@media (max-width: 600px) {
+  .qual-upload__panel {
+    position: fixed; top: 64px; left: 8px; right: 8px; bottom: auto;
+    min-width: 0; max-width: none; max-height: calc(100vh - 80px); overflow-y: auto;
+  }
+  .qual-upload__results { max-height: none; overflow-y: visible; }
+}

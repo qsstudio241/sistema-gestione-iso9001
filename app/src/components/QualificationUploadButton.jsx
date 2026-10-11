@@ -356,7 +356,7 @@ export default function QualificationUploadButton({
                 disabled={uploading}
                 onFiles={handleFileChange}
                 label="Trascina qui i file o clicca per selezionare"
-                hint="PDF o immagini \u2014 max 50 MB. L'elaborazione parte subito."
+                hint={"PDF o immagini \u2014 max 50 MB. L'elaborazione parte subito."}
                 title="Scegli PDF o immagini: l'elaborazione parte subito"
                 inputRef={inputRef}
                 inputClassName="qual-upload__input-hidden"
