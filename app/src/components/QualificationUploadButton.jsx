@@ -1,12 +1,14 @@
 /**
  * QualificationUploadButton — Upload batch qualifiche con revisione pre-commit (IG-3).
- * Il tipo documento va scelto esplicitamente (nessun default silenzioso patentino):
- * evita di estrarre un PDF NDT come ISO 9606 perché si era sulla tab NDT.
+ * Il tipo documento è riconosciuto per file dal backend (regole, OCR, AI). Nessun default silenzioso:
+ * se il tipo non è chiaro il file resta «da scegliere» (conferma disabilitata) finché l'operatore
+ * non lo sceglie; cambiare il tipo rielabora quel file con `doc_type` esplicito (override).
  */
 import React, { useState, useRef, useCallback, useEffect } from "react";
 import apiService from "../services/apiService";
 import IngestReviewDialog from "./IngestReviewDialog";
 import FileDropzone from "./FileDropzone";
+import StatusBadge from "./StatusBadge";
 import "./QualificationUploadButton.css";
 
 const MAX_FILE_SIZE = 50 * 1024 * 1024;
@@ -54,6 +56,20 @@ function docTypeLabel(value) {
   return DOC_TYPE_OPTIONS.find((o) => o.value === value)?.label || value;
 }
 
+/** Il file attende la scelta del tipo: tipo non chiaro (bassa confidenza / «altro») non confermato dall'operatore. */
+export function needsTypeChoice(r) {
+  if (!r) return false;
+  if (r.status === "type_unresolved") return true;
+  if (r.classification_source === "override") return false;
+  return Boolean(r.classification?.needs_choice);
+}
+
+function typeBadgeKey(r) {
+  if (r.classification_source === "override") return "override";
+  if (needsTypeChoice(r)) return "low";
+  return r.classification_confidence === "high" ? "high" : "medium";
+}
+
 export default function QualificationUploadButton({
   companyId,
   companyName,
@@ -73,8 +89,6 @@ export default function QualificationUploadButton({
   const [validationErr, setValidationErr] = useState(null);
   const [reviewItem, setReviewItem] = useState(null);
   const [reviewBusy, setReviewBusy] = useState(false);
-  // Vuoto = obbligo di selezione esplicita (mai default patentino)
-  const [docType, setDocType] = useState("");
   const inputRef = useRef(null);
   const scopeKey = isValidCompany ? String(companyIdInt) : "";
 
@@ -87,7 +101,6 @@ export default function QualificationUploadButton({
     setValidationErr(null);
     setReviewItem(null);
     setReviewBusy(false);
-    setDocType("");
     if (inputRef.current) inputRef.current.value = "";
   }, [scopeKey]);
 
@@ -105,45 +118,54 @@ export default function QualificationUploadButton({
     setResults(null);
   };
 
-  const handleFileChange = (files) => {
-    if (!docType) {
-      setValidationErr("Seleziona prima il tipo di qualifica che stai per caricare.");
-      return;
-    }
-    const list = Array.from(files || []);
-    if (list.length === 0) return;
-    setValidationErr(null);
-    setSelectedFiles(list);
-    setResults(null);
-    setPanelOpen(true);
-  };
-
-  const handleUpload = useCallback(async () => {
-    if (!docType) {
-      setValidationErr("Seleziona il tipo di qualifica prima di estrarre (es. Certificato NDT se carichi UT/MT/PT/RT).");
-      return;
-    }
-    if (selectedFiles.length === 0) {
-      setValidationErr("Seleziona almeno un file PDF o immagine.");
-      return;
-    }
-    const oversized = selectedFiles.filter((f) => f.size > MAX_FILE_SIZE);
+  const startUpload = useCallback(async (list) => {
+    const oversized = list.filter((f) => f.size > MAX_FILE_SIZE);
     if (oversized.length > 0) {
       setValidationErr(`File troppo grandi (limite 50 MB): ${oversized.map((f) => f.name).join(", ")}`);
       return;
     }
     setValidationErr(null);
+    setSelectedFiles(list);
+    setPanelOpen(true);
     setUploading(true);
     setResults(null);
     try {
-      const res = await apiService.uploadQualificationsBatch(selectedFiles, companyIdInt, docType);
-      setResults(res.results || []);
+      const res = await apiService.uploadQualificationsBatch(list, companyIdInt);
+      setResults((res.results || []).map((r) => ({
+        ...r,
+        _file: list.find((f) => f.name === r.fileName) || null,
+      })));
     } catch (err) {
       setResults([{ fileName: "tutti i file", status: "error", warnings: [err.message || "Errore upload"] }]);
     } finally {
       setUploading(false);
     }
-  }, [selectedFiles, companyIdInt, docType]);
+  }, [companyIdInt]);
+
+  const handleFileChange = (files) => {
+    const list = Array.from(files || []);
+    if (list.length === 0) return;
+    startUpload(list);
+  };
+
+  const handleOverrideType = useCallback(async (index, item, newDocType) => {
+    const file = item._file || selectedFiles.find((f) => f.name === item.fileName) || null;
+    if (!newDocType || !file) return;
+    setResults((prev) => (prev || []).map((r, i) => (i === index ? { ...r, _busy: true, _overrideError: null } : r)));
+    try {
+      const res = await apiService.uploadQualificationsBatch([file], companyIdInt, newDocType);
+      const next = (res.results || [])[0] || { fileName: item.fileName, status: "error", warnings: ["Nessun risultato"] };
+      if (item.staging_id && next.status !== "error") {
+        // Il vecchio staging (tipo sbagliato) non deve restare in coda: best-effort, non blocca l'override.
+        apiService.rejectIngestStaging(item.staging_id).catch(() => {});
+      }
+      setResults((prev) => (prev || []).map((r, i) => (i === index ? { ...next, _file: file } : r)));
+    } catch (err) {
+      setResults((prev) => (prev || []).map((r, i) => (
+        i === index ? { ...r, _busy: false, _overrideError: err.message || "Rielaborazione fallita" } : r
+      )));
+    }
+  }, [selectedFiles, companyIdInt]);
 
   const updateResult = useCallback((stagingId, patch) => {
     setResults((prev) => (prev || []).map((r) => (
@@ -164,7 +186,7 @@ export default function QualificationUploadButton({
   }, []);
 
   const handleOpenReview = useCallback((item) => {
-    const localFile = selectedFiles.find((f) => f.name === item.fileName) || null;
+    const localFile = item._file || selectedFiles.find((f) => f.name === item.fileName) || null;
     setReviewItem({ ...item, previewFile: localFile });
   }, [selectedFiles]);
 
@@ -218,14 +240,46 @@ export default function QualificationUploadButton({
     setResults(null);
     setValidationErr(null);
     setReviewItem(null);
-    setDocType("");
     if (inputRef.current) inputRef.current.value = "";
   }, []);
 
   const hasResults = results && results.length > 0;
   const showPanel = panelOpen || selectedFiles.length > 0 || hasResults;
   const pendingCount = (results || []).filter((r) => r.status === "pending_review").length;
-  const canExtract = Boolean(docType) && selectedFiles.length > 0 && !uploading;
+  const unresolvedCount = (results || []).filter(needsTypeChoice).length;
+
+  const renderTypeChooser = (r, i) => {
+    const choiceNeeded = needsTypeChoice(r);
+    const currentValue = choiceNeeded ? "" : (r.doc_type || r.detected_doc_type || "");
+    const reasons = (r.classification?.reasons || []).slice(0, 2).join(" \u00B7 ");
+    return (
+      <div className="qual-upload__type-row" data-testid="qual-upload-type-row">
+        <StatusBadge
+          type="doc_type_confidence"
+          status={typeBadgeKey(r)}
+          size="small"
+        />
+        <select
+          className="qual-upload__type-select"
+          aria-label={`Tipo qualifica di ${r.fileName}`}
+          data-testid="qual-upload-type-select"
+          value={currentValue}
+          disabled={r._busy || uploading}
+          onChange={(e) => handleOverrideType(i, r, e.target.value)}
+        >
+          {choiceNeeded && <option value="">{"\u2014 Scegli il tipo \u2014"}</option>}
+          {DOC_TYPE_OPTIONS.map((o) => (
+            <option key={o.value} value={o.value}>
+              {o.label}{o.value === suggested ? " (suggerito dalla scheda attiva)" : ""}
+            </option>
+          ))}
+        </select>
+        {r._busy && <span className="qual-upload__type-busy">Rielaborazione...</span>}
+        {reasons && <span className="qual-upload__type-reasons">{reasons}</span>}
+        {r._overrideError && <span className="qual-upload__type-error">{r._overrideError}</span>}
+      </div>
+    );
+  };
   const verifySummary = summarizeNormVerification(results);
 
   if (!isValidCompany) {
@@ -259,51 +313,10 @@ export default function QualificationUploadButton({
 
           {!hasResults && (
             <>
-              <div className={`qual-upload__doc-type${!docType ? " qual-upload__doc-type--required" : ""}`}>
-                <label htmlFor="qual-upload-doctype">
-                  Tipo qualifica da caricare <span className="qual-upload__required-mark">*</span>
-                </label>
-                <select
-                  id="qual-upload-doctype"
-                  value={docType}
-                  onChange={(e) => {
-                    setDocType(e.target.value);
-                    setValidationErr(null);
-                  }}
-                  disabled={uploading}
-                  required
-                  aria-required="true"
-                >
-                  <option value="">— Seleziona il tipo (obbligatorio) —</option>
-                  {DOC_TYPE_OPTIONS.map((o) => (
-                    <option key={o.value} value={o.value}>{o.label}</option>
-                  ))}
-                </select>
-                <span className="qual-upload__doc-type-hint">
-                  Obbligatorio: scegli il tipo prima dei file. Un PDF NDT (UT/MT/PT/RT) va come
-                  {" "}
-                  <strong>Certificato NDT</strong>
-                  , non come patentino saldatore.
-                  {suggested ? (
-                    <>
-                      {" "}
-                      Tab attiva suggerisce:
-                      {" "}
-                      <button
-                        type="button"
-                        className="qual-upload__suggest-btn"
-                        onClick={() => {
-                          setDocType(suggested);
-                          setValidationErr(null);
-                        }}
-                        disabled={uploading || docType === suggested}
-                      >
-                        {docTypeLabel(suggested)}
-                      </button>
-                    </>
-                  ) : null}
-                </span>
-              </div>
+              <p className="qual-upload__auto-hint">
+                Il tipo di ogni file (patentino saldatore, operatore 14732, certificato NDT) viene riconosciuto in automatico:
+                potrai correggerlo nella revisione.
+              </p>
 
               <div className="qual-upload__panel-header">
                 <span className="qual-upload__panel-title">
@@ -329,33 +342,27 @@ export default function QualificationUploadButton({
                 <div className="qual-upload__validation-error">{"\u26A0\uFE0F"} {validationErr}</div>
               )}
 
+              {uploading && (
+                <div className="qual-upload__progress" role="status" data-testid="qual-upload-progress">
+                  <span className="qual-upload__spinner qual-upload__spinner--dark" />
+                  Riconoscimento del tipo ed estrazione in corso...
+                </div>
+              )}
+
               <FileDropzone
                 variant="zone"
                 multiple
                 accept="application/pdf,.pdf,image/jpeg,.jpg,.jpeg,image/png,.png"
-                disabled={uploading || !docType}
+                disabled={uploading}
                 onFiles={handleFileChange}
-                label={selectedFiles.length > 0
-                  ? "Trascina altri file o clicca per selezionare"
-                  : "Trascina qui i file o clicca per selezionare"}
-                hint={!docType ? "Seleziona prima il tipo di qualifica" : "PDF o immagini — max 50 MB"}
-                title={!docType ? "Seleziona prima il tipo di qualifica" : "Scegli PDF o immagini"}
+                label="Trascina qui i file o clicca per selezionare"
+                hint="PDF o immagini \u2014 max 50 MB. L'elaborazione parte subito."
+                title="Scegli PDF o immagini: l'elaborazione parte subito"
                 inputRef={inputRef}
                 inputClassName="qual-upload__input-hidden"
               />
 
               <div className="qual-upload__actions">
-                <button
-                  type="button"
-                  className="qual-upload__action-btn qual-upload__action-btn--primary"
-                  onClick={handleUpload}
-                  disabled={!canExtract}
-                  title={!docType ? "Seleziona prima il tipo" : selectedFiles.length === 0 ? "Scegli almeno un file" : "Avvia estrazione"}
-                >
-                  {uploading ? (
-                    <><span className="qual-upload__spinner" />Elaborazione AI...</>
-                  ) : "Estrai e rivedi"}
-                </button>
                 <button
                   type="button"
                   className="qual-upload__action-btn qual-upload__action-btn--secondary"
@@ -373,11 +380,13 @@ export default function QualificationUploadButton({
               <div className="qual-upload__panel-header">
                 <span className="qual-upload__panel-title">
                   Risultati estrazione
-                  {docType && (
-                    <span className="qual-upload__result-doctype"> · {docTypeLabel(docType)}</span>
-                  )}
                   {pendingCount > 0 && (
                     <span className="ingest-review__pending-badge">{pendingCount} da rivedere</span>
+                  )}
+                  {unresolvedCount > 0 && (
+                    <span className="qual-upload__choose-badge" data-testid="qual-upload-unresolved-count">
+                      {unresolvedCount} da scegliere
+                    </span>
                   )}
                 </span>
               </div>
@@ -392,21 +401,28 @@ export default function QualificationUploadButton({
               <ul className="qual-upload__results">
                 {results.map((r, i) => {
                   const isPending = r.status === "pending_review";
+                  const isUnresolved = r.status === "type_unresolved";
+                  const choiceNeeded = needsTypeChoice(r);
                   const isConfirmed = r.status === "confirmed";
                   const isDup = r.status === "duplicate";
                   const isWrong = r.status === "wrong_module";
                   const isRejected = r.status === "rejected";
                   return (
                     <li key={i} className={`qual-upload__result-item qual-upload__result-item--${
-                      isConfirmed ? "success" : isPending ? "pending" : isDup ? "duplicate" : isWrong ? "wrong-module" : isRejected ? "rejected" : "error"
+                      isConfirmed ? "success" : isPending ? "pending" : isUnresolved ? "unresolved" : isDup ? "duplicate" : isWrong ? "wrong-module" : isRejected ? "rejected" : "error"
                     }`}
                     >
-                      {isPending ? (
+                      {isPending || isUnresolved ? (
                         <div className="qual-upload__result-pending">
-                          <span className="qual-upload__result-icon">{"\uD83D\uDD0D"}</span>
-                          <div>
+                          <span className="qual-upload__result-icon">{isUnresolved ? "\u2753" : "\uD83D\uDD0D"}</span>
+                          <div className="qual-upload__result-body">
                             <strong>{r.fileName}</strong>
-                            <p>Campi estratti{"\u2014"} revisione obbligatoria prima del salvataggio.</p>
+                            {renderTypeChooser(r, i)}
+                            <p>
+                              {isUnresolved
+                                ? "Tipo non riconosciuto con certezza: scegli il tipo per estrarre i campi."
+                                : <>Campi estratti{"\u2014"} revisione obbligatoria prima del salvataggio.</>}
+                            </p>
                             {r.warnings?.length > 0 && (
                               <div className="qual-upload__warnings">
                                 {r.warnings.map((w, wi) => <div key={wi} className="qual-upload__warning">{"\u26A0\uFE0F"} {w}</div>)}
@@ -416,6 +432,10 @@ export default function QualificationUploadButton({
                               type="button"
                               className="qual-upload__action-btn qual-upload__action-btn--primary"
                               onClick={() => handleOpenReview(r)}
+                              disabled={choiceNeeded || r._busy}
+                              title={choiceNeeded
+                                ? "Scegli prima il tipo di qualifica per questo file"
+                                : r._busy ? "Rielaborazione in corso" : "Rivedi i campi estratti e conferma"}
                             >
                               Rivedi campi
                             </button>
@@ -448,6 +468,7 @@ export default function QualificationUploadButton({
                             <p className="qual-upload__wrong-module-msg">
                               {r.message || r.error || "Documento non compatibile con il tipo scelto."}
                             </p>
+                            {r.classification ? renderTypeChooser(r, i) : null}
                           </div>
                         </div>
                       ) : isRejected ? (
@@ -480,7 +501,7 @@ export default function QualificationUploadButton({
 
       <IngestReviewDialog
         open={!!reviewItem}
-        docType={docType}
+        docType={reviewItem?.doc_type || reviewItem?.detected_doc_type || ""}
         fileName={reviewItem?.fileName}
         stagingId={reviewItem?.staging_id}
         previewFile={reviewItem?.previewFile}
