@@ -79,6 +79,7 @@
 .wp-table td { padding:9px 10px; border-bottom:1px solid #f3f4f6; vertical-align:top; }
 .wp-table tbody tr:last-child td { border-bottom:none; }
 .wp-table tbody tr:hover td { background:#fafafa; }
+.wp-table tbody tr.wp-row-click { cursor:pointer; }
 
 /* ?? Status badge ?? */
 .wp-status { display:inline-block; padding:2px 10px; border-radius:99px; font-size:11px; font-weight:600; white-space:nowrap; }
@@ -210,7 +211,8 @@
 @media (max-width:700px) {
     .wp-page { padding:14px; }
     .wp-form-grid { grid-template-columns:1fr; }
-    .wp-table th:nth-child(n+6), .wp-table td:nth-child(n+6) { display:none; }
+    .wp-table th:nth-child(n+6):not(:last-child), .wp-table td:nth-child(n+6):not(:last-child) { display:none; }
+    .wp-table td:last-child { white-space:nowrap; }
     .wp-stats-bar { gap:12px; }
 }
 .wp-warn-no-company { margin-bottom:12px; padding:10px 14px; background:#fffbeb; border:1px solid #fcd34d; border-radius:8px; color:#92400e; font-size:13px; }
