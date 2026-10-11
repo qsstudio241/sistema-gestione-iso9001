@@ -72,7 +72,7 @@ describe("QualificationUploadButton — visibile anche senza azienda", () => {
     expect(btn).toHaveAttribute("aria-disabled", "true");
   });
 
-  it("resta cliccabile quando l'azienda e' valida", () => {
+  it("resta cliccabile quando l'azienda è valida", () => {
     render(
       <QualificationUploadButton companyId="47" companyName="C.M.P." onUploadComplete={() => {}} />
     );
@@ -163,7 +163,7 @@ describe("QualificationUploadButton — riepilogo avvisi norma (VQ-9)", () => {
     await user.upload(document.querySelector('input[type="file"]'), file);
   }
 
-  it("mostra il riepilogo quando i risultati hanno gia' l'esito di verifica", async () => {
+  it("mostra il riepilogo quando i risultati hanno già l'esito di verifica", async () => {
     await uploadWith([
       { fileName: "a.pdf", status: "pending_review", staging_id: 1, warnings: [], verification: verif(2) },
       { fileName: "b.pdf", status: "pending_review", staging_id: 2, warnings: [], verification: verif(0) },
@@ -379,15 +379,89 @@ describe("QualificationUploadButton — riconoscimento automatico del tipo per f
     expect(screen.getByTestId("qual-upload-type-select")).toHaveValue("qualifica_14732");
   });
 
-  it("override fallito: il file resta com'era e compare l'errore", async () => {
+  it("override fallito (rete): il file resta com'era e compare l'errore", async () => {
     const user = userEvent.setup();
     await openAndUpload(user, [unresolvedRes("b.pdf")], ["b.pdf"]);
     apiService.uploadQualificationsBatch.mockRejectedValueOnce(new Error("Rete assente"));
 
     await user.selectOptions(await screen.findByTestId("qual-upload-type-select"), "patentino_saldatore");
 
-    expect(await screen.findByText("Rete assente")).toBeInTheDocument();
+    expect(await screen.findByText(/Cambio tipo non riuscito/)).toBeInTheDocument();
+    expect(screen.getByTestId("qual-upload-type-select")).toHaveValue("");
     expect(screen.getByRole("button", { name: /Rivedi campi/i })).toBeDisabled();
+  });
+
+  it("override fallito su file già rilevato: la riga resta col tipo precedente, nessuno spinner, vecchio staging intatto", async () => {
+    const user = userEvent.setup();
+    await openAndUpload(user, [pendingRes("a.pdf", 5, "patentino_saldatore", "medium", "ai")]);
+    apiService.uploadQualificationsBatch.mockRejectedValueOnce(new Error("Rete assente"));
+
+    await user.selectOptions(await screen.findByTestId("qual-upload-type-select"), "cert_ndt");
+
+    expect(await screen.findByText("Cambio tipo non riuscito \u2014 riprova")).toBeInTheDocument();
+    expect(screen.getByTestId("qual-upload-type-select")).toHaveValue("patentino_saldatore");
+    expect(screen.getByTestId("qual-upload-type-select")).not.toBeDisabled();
+    expect(screen.queryByText(/Rielaborazione/)).toBeNull();
+    expect(screen.getByText("a.pdf")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /Rivedi campi/i })).not.toBeDisabled();
+    expect(apiService.rejectIngestStaging).not.toHaveBeenCalled();
+  });
+
+  it("override con risposta 200 status error: la riga non sparisce, resta il tipo precedente e si può riprovare", async () => {
+    const user = userEvent.setup();
+    apiService.rejectIngestStaging.mockResolvedValue({});
+    await openAndUpload(user, [pendingRes("a.pdf", 5, "patentino_saldatore", "medium", "ai")]);
+    apiService.uploadQualificationsBatch.mockResolvedValueOnce({
+      results: [{ fileName: "a.pdf", status: "error", error: "Estrazione fallita", warnings: ["Estrazione fallita"] }],
+      uploaded: 0,
+      total: 1,
+    });
+
+    await user.selectOptions(await screen.findByTestId("qual-upload-type-select"), "cert_ndt");
+
+    expect(await screen.findByText(/Cambio tipo non riuscito/)).toBeInTheDocument();
+    expect(screen.getByTestId("qual-upload-type-select")).toHaveValue("patentino_saldatore");
+    expect(screen.getByRole("button", { name: /Rivedi campi/i })).not.toBeDisabled();
+    expect(apiService.rejectIngestStaging).not.toHaveBeenCalled();
+
+    apiService.uploadQualificationsBatch.mockResolvedValueOnce({
+      results: [pendingRes("a.pdf", 6, "cert_ndt", "high", "override")],
+      uploaded: 1,
+      total: 1,
+    });
+    await user.click(screen.getByTestId("qual-upload-type-retry"));
+
+    await waitFor(() => expect(apiService.uploadQualificationsBatch).toHaveBeenCalledTimes(3));
+    expect(apiService.uploadQualificationsBatch.mock.calls[2][2]).toBe("cert_ndt");
+    expect(await screen.findByText("Tipo scelto da te")).toBeInTheDocument();
+    expect(screen.queryByText(/Cambio tipo non riuscito/)).toBeNull();
+    await waitFor(() => expect(apiService.rejectIngestStaging).toHaveBeenCalledWith(5));
+  });
+
+  it("wrong_module con tipo suggerito: scegliere lo STESSO tipo rilevato rielabora il file (sblocco)", async () => {
+    const user = userEvent.setup();
+    const wrong = {
+      fileName: "w.pdf",
+      status: "wrong_module",
+      message: "Documento che sembra una WPQR.",
+      ...cls("cert_ndt", "medium", "ai", false, ["Indizi compatibili"]),
+    };
+    await openAndUpload(user, [wrong], ["w.pdf"]);
+    apiService.uploadQualificationsBatch.mockResolvedValueOnce({
+      results: [pendingRes("w.pdf", 8, "cert_ndt", "high", "override")],
+      uploaded: 1,
+      total: 1,
+    });
+
+    const select = await screen.findByTestId("qual-upload-type-select");
+    expect(select).toHaveValue("");
+    expect(screen.getByRole("option", { name: /Certificato NDT \(ISO 9712\) \(rilevato\)/ })).toBeInTheDocument();
+    await user.selectOptions(select, "cert_ndt");
+
+    await waitFor(() => expect(apiService.uploadQualificationsBatch).toHaveBeenCalledTimes(2));
+    expect(apiService.uploadQualificationsBatch.mock.calls[1][2]).toBe("cert_ndt");
+    expect(await screen.findByText("Tipo scelto da te")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /Rivedi campi/i })).not.toBeDisabled();
   });
 
   it("apre la revisione col tipo effettivo del file (non uno stato globale)", async () => {

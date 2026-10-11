@@ -12,6 +12,7 @@ import StatusBadge from "./StatusBadge";
 import "./QualificationUploadButton.css";
 
 const MAX_FILE_SIZE = 50 * 1024 * 1024;
+const OVERRIDE_ERROR_MESSAGE = "Cambio tipo non riuscito \u2014 riprova";
 
 const DOC_TYPE_OPTIONS = [
   { value: "patentino_saldatore", label: "Patentino saldatore (ISO 9606-1)" },
@@ -35,7 +36,7 @@ export function suggestedDocTypeFromTab(tabKey) {
 }
 
 /**
- * Riepilogo avvisi norma (VQ-9) sui risultati che hanno gia' un esito `verification`
+ * Riepilogo avvisi norma (VQ-9) sui risultati che hanno già un esito `verification`
  * (dall'estrazione, dalla revisione o dalla conferma). Nessuna chiamata: se nessun risultato
  * ha l'esito, ritorna `null` e il riepilogo non compare.
  */
@@ -149,21 +150,35 @@ export default function QualificationUploadButton({
   };
 
   const handleOverrideType = useCallback(async (index, item, newDocType) => {
+    if (!newDocType) return;
     const file = item._file || selectedFiles.find((f) => f.name === item.fileName) || null;
-    if (!newDocType || !file) return;
-    setResults((prev) => (prev || []).map((r, i) => (i === index ? { ...r, _busy: true, _overrideError: null } : r)));
+    // Il tipo precedente resta quello della riga: un cambio fallito non toglie mai la riga dalla lista.
+    const failOverride = (detail) => setResults((prev) => (prev || []).map((r, i) => (
+      i === index
+        ? { ...r, _busy: false, _overrideError: OVERRIDE_ERROR_MESSAGE, _overrideErrorDetail: detail || null, _retryDocType: newDocType }
+        : r
+    )));
+    if (!file) {
+      failOverride("File non più disponibile: ricaricalo");
+      return;
+    }
+    setResults((prev) => (prev || []).map((r, i) => (
+      i === index ? { ...r, _busy: true, _overrideError: null, _overrideErrorDetail: null, _retryDocType: null } : r
+    )));
     try {
       const res = await apiService.uploadQualificationsBatch([file], companyIdInt, newDocType);
-      const next = (res.results || [])[0] || { fileName: item.fileName, status: "error", warnings: ["Nessun risultato"] };
-      if (item.staging_id && next.status !== "error") {
+      const next = (res.results || [])[0];
+      if (!next || next.status === "error") {
+        failOverride(next?.error || next?.warnings?.[0] || "Nessun risultato");
+        return;
+      }
+      if (item.staging_id) {
         // Il vecchio staging (tipo sbagliato) non deve restare in coda: best-effort, non blocca l'override.
         apiService.rejectIngestStaging(item.staging_id).catch(() => {});
       }
       setResults((prev) => (prev || []).map((r, i) => (i === index ? { ...next, _file: file } : r)));
     } catch (err) {
-      setResults((prev) => (prev || []).map((r, i) => (
-        i === index ? { ...r, _busy: false, _overrideError: err.message || "Rielaborazione fallita" } : r
-      )));
+      failOverride(err?.message);
     }
   }, [selectedFiles, companyIdInt]);
 
@@ -196,7 +211,7 @@ export default function QualificationUploadButton({
     try {
       const res = await apiService.confirmIngestStaging(reviewItem.staging_id, fields);
       const stagingId = reviewItem.staging_id;
-      // Confirm non restituisce verification; reviewItem e' lo snapshot all'apertura.
+      // Confirm non restituisce verification; reviewItem è lo snapshot all'apertura.
       // Fonte: stato corrente (onVerificationChange → results), non res/reviewItem.
       setResults((prev) => (prev || []).map((r) => {
         if (r.staging_id !== stagingId) return r;
@@ -250,7 +265,9 @@ export default function QualificationUploadButton({
 
   const renderTypeChooser = (r, i) => {
     const choiceNeeded = needsTypeChoice(r);
-    const currentValue = choiceNeeded ? "" : (r.doc_type || r.detected_doc_type || "");
+    // `wrong_module`: il tipo suggerito va confermato esplicitamente (anche se coincide con quello rilevato).
+    const awaitingConfirm = choiceNeeded || r.status === "wrong_module";
+    const currentValue = awaitingConfirm ? "" : (r.doc_type || r.detected_doc_type || "");
     const reasons = (r.classification?.reasons || []).slice(0, 2).join(" \u00B7 ");
     return (
       <div className="qual-upload__type-row" data-testid="qual-upload-type-row">
@@ -267,16 +284,37 @@ export default function QualificationUploadButton({
           disabled={r._busy || uploading}
           onChange={(e) => handleOverrideType(i, r, e.target.value)}
         >
-          {choiceNeeded && <option value="">{"\u2014 Scegli il tipo \u2014"}</option>}
+          {awaitingConfirm && (
+            <option value="">
+              {choiceNeeded ? "\u2014 Scegli il tipo \u2014" : "\u2014 Conferma o scegli il tipo \u2014"}
+            </option>
+          )}
           {DOC_TYPE_OPTIONS.map((o) => (
             <option key={o.value} value={o.value}>
-              {o.label}{o.value === suggested ? " (suggerito dalla scheda attiva)" : ""}
+              {o.label}
+              {awaitingConfirm && o.value === r.detected_doc_type ? " (rilevato)" : ""}
+              {o.value === suggested ? " (suggerito dalla scheda attiva)" : ""}
             </option>
           ))}
         </select>
         {r._busy && <span className="qual-upload__type-busy">Rielaborazione...</span>}
         {reasons && <span className="qual-upload__type-reasons">{reasons}</span>}
-        {r._overrideError && <span className="qual-upload__type-error">{r._overrideError}</span>}
+        {r._overrideError && (
+          <span className="qual-upload__type-error" role="alert" title={r._overrideErrorDetail || undefined}>
+            {r._overrideError}
+          </span>
+        )}
+        {r._overrideError && r._retryDocType && (
+          <button
+            type="button"
+            className="qual-upload__action-btn qual-upload__action-btn--secondary"
+            data-testid="qual-upload-type-retry"
+            disabled={r._busy || uploading}
+            onClick={() => handleOverrideType(i, r, r._retryDocType)}
+          >
+            Riprova ({docTypeLabel(r._retryDocType)})
+          </button>
+        )}
       </div>
     );
   };
