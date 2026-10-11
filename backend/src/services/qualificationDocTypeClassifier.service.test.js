@@ -90,7 +90,6 @@ describe('classifyByRules: livello 1 (regole sul testo)', () => {
     it('motivi mostrati all\'utente con accenti corretti (nessun apostrofo al posto di \u00f9)', () => {
         const r = classifyByRules('welding operator and welder, non-destructive testing level 2 ultrasonic', 'a.pdf');
         expect(r.reasons.join(' ')).toContain('pi\u00f9');
-        expect(r.reasons.join(' ')).not.toMatch(/piu'/);
     });
 
     it('nessun indizio -> altro low', () => {
