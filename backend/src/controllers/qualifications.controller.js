@@ -1162,13 +1162,33 @@ async function renewQualification(req, res) {
 // Tipi documento ammessi per il batch upload qualifiche (IG-3 staging).
 const UPLOAD_BATCH_DOC_TYPES = new Set(['patentino_saldatore', 'qualifica_14732', 'cert_ndt']);
 
+/** Campi additivi di classificazione per file (`confidence` storico = ai|rule_based resta invariato). */
+function classificationResponseFields(classification) {
+    if (!classification) return {};
+    return {
+        detected_doc_type: classification.detected_doc_type,
+        classification_confidence: classification.confidence,
+        classification_source: classification.classification_source,
+        classification: {
+            detected_doc_type: classification.detected_doc_type,
+            confidence: classification.confidence,
+            classification_source: classification.classification_source,
+            reasons: classification.reasons || [],
+            needs_choice: Boolean(classification.needs_choice),
+        },
+    };
+}
+
 /** POST /qualifications/upload-batch — estrazione + staging IG-3 (revisione pre-commit) */
 async function uploadBatch(req, res) {
     try {
         const orgId    = req.user.organization_id;
         const userId   = req.user.user_id;
         const company_id = req.body?.company_id ? parseInt(req.body.company_id) : null;
-        const docType = UPLOAD_BATCH_DOC_TYPES.has(req.body?.doc_type) ? req.body.doc_type : 'patentino_saldatore';
+        // `doc_type` è un override opzionale (client vecchi/in cache lo inviano sempre): se assente
+        // o non valido il tipo viene riconosciuto per file (null = auto-detect).
+        const requestedDocType = req.body?.doc_type ?? req.query?.doc_type;
+        const docType = UPLOAD_BATCH_DOC_TYPES.has(requestedDocType) ? requestedDocType : null;
 
         if (!company_id || isNaN(company_id)) {
             return res.status(400).json({ error: 'company_id obbligatorio: seleziona un\'azienda specifica prima di caricare i patentini.' });
@@ -1188,12 +1208,27 @@ async function uploadBatch(req, res) {
                 const buffer = fs.readFileSync(file.path);
                 const extracted = await extractQualificationFromPdf(buffer, file.originalname, orgId, company_id, docType);
 
+                const { classification: extractedClassification, ...extractedRest } = extracted;
+                const classFields = classificationResponseFields(extractedClassification);
+
                 if (extracted.status === 'wrong_module') {
                     try { fs.unlinkSync(file.path); } catch (_) {}
                     results.push({
                         fileName: file.originalname,
                         status: 'wrong_module',
-                        ...extracted,
+                        ...extractedRest,
+                        ...classFields,
+                    });
+                    continue;
+                }
+
+                if (extracted.status === 'type_unresolved') {
+                    try { fs.unlinkSync(file.path); } catch (_) {}
+                    results.push({
+                        fileName: file.originalname,
+                        status: 'type_unresolved',
+                        warnings: extracted.warnings || [],
+                        ...classFields,
                     });
                     continue;
                 }
@@ -1207,6 +1242,7 @@ async function uploadBatch(req, res) {
                         qualification_type: extracted.qualification_type,
                         warnings: extracted.warnings || [],
                         verification: extracted.verification,
+                        ...classFields,
                     });
                     continue;
                 }
@@ -1214,7 +1250,7 @@ async function uploadBatch(req, res) {
                 const stagingId = await createStagingRecord({
                     organizationId: orgId,
                     companyId: company_id,
-                    docType,
+                    docType: extracted.doc_type || docType,
                     originalName: file.originalname,
                     storagePath: file.path,
                     mimeType: file.mimetype,
@@ -1238,6 +1274,8 @@ async function uploadBatch(req, res) {
                     confidence: extracted.confidence,
                     warnings: extracted.warnings || [],
                     verification: extracted.verification,
+                    doc_type: extracted.doc_type || docType,
+                    ...classFields,
                 };
             } catch (fileErr) {
                 const errMsg = describeIngestFileError(fileErr);
