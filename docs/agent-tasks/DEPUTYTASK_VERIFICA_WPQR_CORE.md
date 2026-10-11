@@ -1,6 +1,6 @@
 # DEPUTYTASK_VERIFICA_WPQR_CORE — WV-1: dominio `wpqr` nell'engine di verifica + vista record WPQR + stub dei pack (modulo puro, non agganciato)
 
-**Stato:** APERTO — lanciabile **solo dopo il merge su `origin/main`** della PR di charting (gate DEPUTYTASK: `git show origin/main:docs/agent-tasks/DEPUTYTASK_VERIFICA_WPQR_CORE.md` deve mostrare `APERTO`)  
+**Stato:** CHIUSO — TEST OK (08/10/2026, PR WV-1: `npx jest src/services/qualificationVerify` 16 suite / 569 test verdi; `check-harness-boot` e `check-utf8-encoding` verdi). Resta aperto solo il gate di merge (CI + Bugbot una volta + Security Review) prima di «pronta»  
 **Aperto:** 07/10/2026  
 **Piano:** [`PLAN_VERIFICA_WPQR_SLICES.md`](PLAN_VERIFICA_WPQR_SLICES.md) § 1 (architettura) · § 6.3 WV-1  
 **Dipende da:** nessuna (onda 1; il contratto `Finding` è già su `main`)  

@@ -52,6 +52,7 @@ Deploy/SSH: [deploy.md](docs/how-to/deploy.md) + [ACCESSO_DEPLOY_AGENTS.md](docs
 | Non conformità | `backend/src/controllers/nc.controller.js`, `app/src/pages/NCPage.jsx`, `app/src/components/NcDetailPanel.jsx` |
 | Qualifiche / alert / copertura | `backend/src/controllers/qualifications.controller.js`, `backend/src/services/capabilityCoverage/coverageEngine.service.js`, `app/src/pages/QualificationsPage.jsx`, `app/src/components/CoverageVerifyPanel.jsx` |
 | Qualifiche — verifica vs norma | `backend/src/services/qualificationVerify/verifyEngine.js`, `docs/agent-tasks/PLAN_VERIFICA_QUALIFICHE_NORMA_SLICES.md` |
+| WPQR — verifica vs norma | `backend/src/services/qualificationVerify/verifyWpqr.js`, `backend/src/services/qualificationVerify/wpqrRecordView.js`, `docs/agent-tasks/PLAN_VERIFICA_WPQR_SLICES.md` |
 | Saldatura WPQR / WPS | `backend/src/controllers/welding.controller.js`, `backend/src/services/wpsGenerator.service.js`, `app/src/pages/WeldingProceduresPage.jsx` |
 | Welding Book | `backend/src/controllers/weldingBooks.controller.js`, `app/src/pages/WeldingBooksPage.jsx` |
 | Commesse ISO 3834 | `backend/src/controllers/projects.controller.js`, `app/src/pages/ProjectsPage.jsx` |
