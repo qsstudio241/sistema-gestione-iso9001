@@ -1505,7 +1505,7 @@ function WeldingProceduresPage() {
                 </thead>
                 <tbody>
                   {wpsList.map((w) => (
-                    <tr key={w.id}>
+                    <tr key={w.id} className="wp-row-click" onClick={() => handleEditWps(w)}>
                       <td><strong>{w.wps_code}</strong></td>
                       <td>{w.revision || "-"}</td>
                       <td>{WELDING_PROCESSES.find((p) => p.value === w.welding_process)?.label || w.welding_process || "-"}</td>
@@ -1519,11 +1519,15 @@ function WeldingProceduresPage() {
                       </td>
                       <td><StatusBadge status={w.status} /></td>
                       <td>
-                        <span className="wp-wpqr-count" onClick={() => handleViewWpqrForWps(w.id)} title="Vedi WPQR collegati">
+                        <span
+                          className="wp-wpqr-count"
+                          onClick={(e) => { e.stopPropagation(); handleViewWpqrForWps(w.id); }}
+                          title="Vedi WPQR collegati"
+                        >
                           {w.wpqr_count || 0} WPQR
                         </span>
                       </td>
-                      <td>
+                      <td onClick={(e) => e.stopPropagation()}>
                         {deleteWpsId === w.id ? (
                           <div className="wp-confirm">
                             <span>Eliminare?</span>
@@ -1619,12 +1623,12 @@ function WeldingProceduresPage() {
                 </thead>
                 <tbody>
                   {wpqrList.map((wq) => (
-                    <tr key={wq.id}>
+                    <tr key={wq.id} className="wp-row-click" onClick={() => handleEditWpqr(wq)}>
                       <td><SemaforoDot approvalStatus={wq.approval_status} /></td>
                       <td><strong>{wq.reference_number || wq.wpqr_code || "-"}</strong></td>
                       <td>
                         {wq.wps_code ? (
-                          <span className="wp-link" onClick={() => handleGoToWps()}>
+                          <span className="wp-link" onClick={(e) => { e.stopPropagation(); handleGoToWps(); }}>
                             {wq.wps_code}
                           </span>
                         ) : "-"}
@@ -1638,12 +1642,12 @@ function WeldingProceduresPage() {
                       <td>{wq.test_date ? formatDate(wq.test_date) : "-"}</td>
                       <td>{wq.examiner_body || wq.testing_body || "-"}</td>
                       <td><ApprovalBadge approvalStatus={wq.approval_status} /></td>
-                      <td>
+                      <td onClick={(e) => e.stopPropagation()}>
                         {wq.certificate_file_url
                           ? <a href={resolveBackendUploadUrl(wq.certificate_file_url, apiService.baseUrl)} target="_blank" rel="noopener noreferrer" title="Apri certificato PDF">{"\uD83D\uDCC4"}</a>
                           : <span style={{ color: "#9ca3af" }}>-</span>}
                       </td>
-                      <td>
+                      <td onClick={(e) => e.stopPropagation()}>
                         {deleteWpqrId === wq.id ? (
                           <div className="wp-confirm">
                             <span>Eliminare?</span>
