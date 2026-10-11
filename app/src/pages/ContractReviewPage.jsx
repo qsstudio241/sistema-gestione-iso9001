@@ -17,6 +17,7 @@ import {
   TERMINAL_STATUSES,
   DETAIL_SLIDES,
   INBOX_KIND_LABELS,
+  shouldAutoSwitchToUnassigned,
   COUNTERPARTY_LABELS,
   DIRECTION_LABELS,
   formatCommercialDocMetaBadge,
@@ -625,6 +626,9 @@ export default function ContractReviewPage() {
   const [summary, setSummary] = useState(null);
   const [inbox, setInbox] = useState([]);
   const [inboxKind, setInboxKind] = useState('assigned_to_me');
+  const inboxKindChosenRef = useRef(false);
+  const inboxDefaultResolvedRef = useRef(false);
+  const [assigningCaseId, setAssigningCaseId] = useState(null);
   const [newClarMessage, setNewClarMessage] = useState('');
   const [linkDocId, setLinkDocId] = useState('');
   const [attachDocRole, setAttachDocRole] = useState('order');
@@ -812,6 +816,38 @@ export default function ContractReviewPage() {
       setInbox([]);
     }
   }, [inboxKind]);
+
+  useEffect(() => {
+    if (!summary || inboxDefaultResolvedRef.current) return;
+    inboxDefaultResolvedRef.current = true;
+    if (
+      shouldAutoSwitchToUnassigned({
+        summary,
+        inboxKind,
+        userChoseKind: inboxKindChosenRef.current,
+        alreadyResolved: false,
+      })
+    ) {
+      setInboxKind('unassigned');
+    }
+  }, [summary, inboxKind]);
+
+  const handleAssignToMe = useCallback(
+    async (item) => {
+      const myId = user?.user_id ?? user?.id;
+      if (!myId) return;
+      setAssigningCaseId(item.id);
+      try {
+        await apiService.updateContractReview(item.id, { current_assignee_id: myId });
+        await Promise.all([loadSummary(), loadInbox()]);
+      } catch (err) {
+        setError(err instanceof ApiError ? err.message : err.message || 'Assegnazione fallita');
+      } finally {
+        setAssigningCaseId(null);
+      }
+    },
+    [user, loadSummary, loadInbox],
+  );
 
   useEffect(() => {
     loadCompanies();
@@ -1579,6 +1615,10 @@ export default function ContractReviewPage() {
                 <div className="cr-summary-label">Assegnati a me</div>
               </div>
               <div className="cr-summary-card">
+                <div className="cr-summary-value">{summary.unassigned_count ?? 0}</div>
+                <div className="cr-summary-label">Non assegnati</div>
+              </div>
+              <div className="cr-summary-card">
                 <div className="cr-summary-value">{summary.pending_approval ?? 0}</div>
                 <div className="cr-summary-label">Da approvare</div>
               </div>
@@ -1590,7 +1630,10 @@ export default function ContractReviewPage() {
             <div className="contract-review-toolbar" style={{ marginBottom: '0.5rem' }}>
               <select
                 value={inboxKind}
-                onChange={(e) => setInboxKind(e.target.value)}
+                onChange={(e) => {
+                  inboxKindChosenRef.current = true;
+                  setInboxKind(e.target.value);
+                }}
                 aria-label="Tipo inbox"
               >
                 {Object.entries(INBOX_KIND_LABELS).map(([k, lab]) => (
@@ -1602,12 +1645,14 @@ export default function ContractReviewPage() {
             </div>
             {inbox.length === 0 ? (
               <p className="contract-review-intro" style={{ margin: 0 }}>
-                Nessun elemento in questa inbox.
+                {inboxKind === 'unassigned'
+                  ? 'Nessun caso non assegnato.'
+                  : 'Nessun elemento in questa inbox.'}
               </p>
             ) : (
               <ul className="cr-inbox-list">
                 {inbox.map((item) => (
-                  <li key={item.id}>
+                  <li key={item.id} className="cr-inbox-row">
                     <button
                       type="button"
                       className="cr-inbox-item"
@@ -1628,6 +1673,16 @@ export default function ContractReviewPage() {
                           .join(' · ') || '-'}
                       </small>
                     </button>
+                    {inboxKind === 'unassigned' && (
+                      <button
+                        type="button"
+                        className="cr-btn"
+                        disabled={assigningCaseId === item.id}
+                        onClick={() => handleAssignToMe(item)}
+                      >
+                        {assigningCaseId === item.id ? 'Assegnazione...' : 'Assegna a me'}
+                      </button>
+                    )}
                   </li>
                 ))}
               </ul>
