@@ -78,7 +78,7 @@ async function deduplicateChunks(organizationId) {
     let totalRemoved = 0;
 
     for (const bucket of buckets) {
-      let sql = `SELECT id, embedding, created_at FROM knowledge_chunks
+      let sql = `SELECT id, embedding, last_indexed_at FROM knowledge_chunks
                  WHERE organization_id = @orgId AND entity_type = @et AND embedding IS NOT NULL
                        AND (is_stale = 0 OR is_stale IS NULL)`;
       const params = { orgId: organizationId, et: bucket.entity_type };
@@ -89,7 +89,7 @@ async function deduplicateChunks(organizationId) {
       } else {
         sql += ' AND company_id IS NULL';
       }
-      sql += ' ORDER BY created_at DESC';
+      sql += " ORDER BY ISNULL(last_indexed_at, '1900-01-01') DESC, id DESC";
 
       const chunkRes = await query(sql, params);
       const chunks = chunkRes.recordset || [];
@@ -98,7 +98,7 @@ async function deduplicateChunks(organizationId) {
       if (chunks.length < 2) continue;
 
       const parsed = chunks.map(c => {
-        try { return { id: c.id, vec: JSON.parse(c.embedding), createdAt: c.created_at }; }
+        try { return { id: c.id, vec: JSON.parse(c.embedding), lastIndexedAt: c.last_indexed_at }; }
         catch { return null; }
       }).filter(Boolean);
 
