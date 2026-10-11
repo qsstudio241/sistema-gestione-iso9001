@@ -5,11 +5,11 @@
  * Riconoscimento del tipo documento per file nel «Carica qualifiche (batch)» quando
  * l'operatore non indica `doc_type`. Tre livelli, dal meno costoso:
  *   1. regole deterministiche sul testo estratto (norma citata esplicitamente);
- *   2. OCR: testo gia' ottenuto da OCR (scansioni) oppure OCR della sola intestazione;
+ *   2. OCR: testo già ottenuto da OCR (scansioni) oppure OCR della sola intestazione;
  *   3. AI (un solo prompt breve, solo classificazione) quando le regole non decidono.
  * Famiglie: patentino_saldatore (ISO 9606-x), qualifica_14732, cert_ndt (ISO 9712), altro.
  * Confidenza `low` o `altro` = il file resta «da scegliere» (nessuna estrazione automatica).
- * Il tipo e' un metadato dell'upload, non un campo dello schema ingest.
+ * Il tipo è un metadato dell'upload, non un campo dello schema ingest.
  */
 
 const logger = require('../utils/logger');
@@ -72,8 +72,10 @@ function describeOtherType(text) {
 
 /**
  * Livello 1/2: regole sul testo (e, come sola conferma/conflitto, sul nome file).
- * Il nome file non basta da solo oltre `medium`; in disaccordo col testo abbassa a `low`.
- * @returns {{ doc_type: string, confidence: 'high'|'medium'|'low', reasons: string[], hasEvidence: boolean }}
+ * Il nome file non sostituisce mai l'evidenza dal documento: da solo propone un tipo con
+ * confidenza `low` (il file resta «da scegliere» e l'OCR dell'intestazione/AI restano dovuti);
+ * in disaccordo col testo abbassa a `low`.
+ * @returns {{ doc_type: string, confidence: 'high'|'medium'|'low', reasons: string[], otherType: string|null }}
  */
 function classifyByRules(text, fileName = '') {
     const body = String(text || '').slice(0, MAX_CLASSIFY_CHARS);
@@ -105,17 +107,18 @@ function classifyByRules(text, fileName = '') {
         confidence = 'medium';
         reasons.push(`Indizi testuali compatibili con ${LABELS[docType]}, norma non citata`);
     } else if (textEv.weak.length > 1) {
-        reasons.push('Indizi testuali ambigui tra piu\' tipi di qualifica');
+        reasons.push('Indizi testuali ambigui tra più tipi di qualifica');
     }
 
     const hadTextEvidence = docType !== 'altro' || textEv.strong.length > 0 || textEv.weak.length > 0;
+    const textOtherType = hadTextEvidence ? null : describeOtherType(body);
 
-    if (nameFamilies.length > 0) {
+    if (nameFamilies.length > 0 && !textOtherType) {
         const nameSet = new Set(nameFamilies);
         if (docType === 'altro' && !hadTextEvidence && nameSet.size === 1) {
             docType = nameFamilies[0];
-            confidence = 'medium';
-            reasons.push(`Solo il nome file richiama ${LABELS[docType]}`);
+            confidence = 'low';
+            reasons.push(`Solo il nome file richiama ${LABELS[docType]}: indizio debole, da verificare sul documento`);
         } else if (docType !== 'altro' && nameEv.strong.length > 0 && !nameEv.strong.includes(docType)) {
             if (docType === 'patentino_saldatore' && nameEv.strong.includes('qualifica_14732')) {
                 reasons.push('Il nome file richiama ISO 14732 ma il testo cita ISO 9606');
@@ -128,7 +131,7 @@ function classifyByRules(text, fileName = '') {
 
     let otherType = null;
     if (docType === 'altro' && reasons.length === 0) {
-        otherType = describeOtherType(body);
+        otherType = textOtherType;
         reasons.push(otherType
             ? `Riconosciuto come ${otherType}: tipo non gestito dal caricamento batch`
             : 'Nessuna norma o indizio riconoscibile nel testo');
@@ -139,7 +142,6 @@ function classifyByRules(text, fileName = '') {
         confidence,
         reasons,
         otherType,
-        hasEvidence: hadTextEvidence || nameFamilies.length > 0,
     };
 }
 
@@ -188,7 +190,7 @@ function finalize(result, meta) {
  * @param {object} p
  * @param {Buffer} p.pdfBuffer
  * @param {string} p.fileName
- * @param {string} p.text - testo gia' estratto (pdf-parse o OCR)
+ * @param {string} p.text - testo già estratto (pdf-parse o OCR)
  * @param {boolean} [p.ocrUsed]
  * @param {object} [p.deps] - iniezione per test: { headerOcr, chatFn, hasAi }
  */
@@ -210,13 +212,14 @@ async function classifyQualificationDocType({ pdfBuffer, fileName = '', text = '
         return out;
     }
 
-    const textHasEvidence = rules.doc_type !== 'altro' || rules.hasEvidence;
+    // L'OCR dell'intestazione dipende solo dall'evidenza nel documento: il nome file non lo sostituisce.
+    const textHasEvidence = classifyByRules(cleanText, '').doc_type !== 'altro';
     const headerOcrDisabled = String(process.env.INGEST_HEADER_OCR || '').trim() === '0';
     if (!textHasEvidence && !ocrUsed && headerOcr && !headerOcrDisabled && pdfBuffer) {
         try {
             const headerText = await headerOcr(pdfBuffer, { pageNumber: 1, lang: 'ita+eng' });
-            const headerRules = classifyByRules(headerText, fileName);
-            if (headerRules.doc_type !== 'altro') {
+            if (classifyByRules(headerText, '').doc_type !== 'altro') {
+                const headerRules = classifyByRules(headerText, fileName);
                 rules = headerRules;
                 source = 'ocr';
                 reasons.length = 0;

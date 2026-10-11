@@ -64,11 +64,22 @@ describe('classifyByRules: livello 1 (regole sul testo)', () => {
         expect(r.confidence).toBe('low');
     });
 
-    it('solo il nome file richiama la norma -> al massimo medium', () => {
+    it('solo il nome file richiama la norma -> indizio debole: mai oltre low', () => {
         const r = classifyByRules('', 'ZZ_14732_121.pdf');
         expect(r.doc_type).toBe('qualifica_14732');
-        expect(r.confidence).toBe('medium');
+        expect(r.confidence).toBe('low');
         expect(r.reasons.join(' ')).toMatch(/nome file/i);
+    });
+
+    it('testo di un tipo non gestito (14731) vince sul nome file', () => {
+        const r = classifyByRules('Certificato coordinatore di saldatura ISO 14731 IWE', 'ZZ_9606.pdf');
+        expect(r.doc_type).toBe('altro');
+        expect(r.otherType).toMatch(/14731/);
+    });
+
+    it('motivazioni con accenti corretti (più, mai apostrofo)', () => {
+        const r = classifyByRules('Patentino saldatore e welding operator', 'a.pdf');
+        expect(r.reasons.join(' ')).toMatch(/ambigui tra più tipi/);
     });
 
     it('nome file 14732 ma testo solo 9606 -> low (disaccordo)', () => {
@@ -88,7 +99,7 @@ describe('classifyByRules: livello 1 (regole sul testo)', () => {
         expect(r.otherType).toMatch(/14731/);
     });
 
-    it('sigla EWS dentro altra parola non e\' un coordinatore', () => {
+    it('sigla EWS dentro altra parola non è un coordinatore', () => {
         expect(classifyByRules('latest news and views', 'a.pdf').otherType).toBeNull();
     });
 });
@@ -128,6 +139,64 @@ describe('classifyQualificationDocType: livelli e fonti', () => {
         expect(r.detected_doc_type).toBe('cert_ndt');
         expect(r.classification_source).toBe('ocr');
         expect(r.reasons.join(' ')).toMatch(/OCR intestazione/);
+    });
+
+    it('nome file che richiama una norma ma testo senza evidenza: l\'OCR intestazione viene eseguito (fonte ocr)', async () => {
+        const headerOcr = jest.fn(async () => 'CERTIFICATE OF NON-DESTRUCTIVE TESTING PERSONNEL ISO 9712');
+        const r = await classifyQualificationDocType({
+            pdfBuffer: Buffer.from('x'), fileName: 'ZZ_9712_scan.pdf', text: '', ocrUsed: false,
+            deps: { headerOcr, hasAi: false },
+        });
+        expect(headerOcr).toHaveBeenCalledTimes(1);
+        expect(r.detected_doc_type).toBe('cert_ndt');
+        expect(r.classification_source).toBe('ocr');
+        expect(r.confidence).toBe('high');
+        expect(r.reasons.join(' ')).toMatch(/OCR intestazione/);
+    });
+
+    it('nome file 9606 ma intestazione OCR 9712: OCR eseguito, il documento prevale ma resta da confermare', async () => {
+        const headerOcr = jest.fn(async () => 'CERTIFICATE OF NON-DESTRUCTIVE TESTING PERSONNEL ISO 9712');
+        const r = await classifyQualificationDocType({
+            pdfBuffer: Buffer.from('x'), fileName: 'ZZ_9606_scan.pdf', text: '', ocrUsed: false,
+            deps: { headerOcr, hasAi: false },
+        });
+        expect(headerOcr).toHaveBeenCalledTimes(1);
+        expect(r.detected_doc_type).toBe('cert_ndt');
+        expect(r.classification_source).toBe('ocr');
+        expect(r.confidence).toBe('low');
+        expect(r.needs_choice).toBe(true);
+    });
+
+    it('solo il nome file e OCR intestazione senza esito: mai confidenza alta, da scegliere', async () => {
+        const headerOcr = jest.fn(async () => '');
+        const chatFn = jest.fn();
+        const r = await classifyQualificationDocType({
+            pdfBuffer: Buffer.from('x'), fileName: 'ZZ_9606_scan.pdf', text: '', ocrUsed: false,
+            deps: { headerOcr, chatFn, hasAi: true },
+        });
+        expect(headerOcr).toHaveBeenCalledTimes(1);
+        expect(r.confidence).toBe('low');
+        expect(r.needs_choice).toBe(true);
+        expect(r.classification_source).not.toBe('ocr');
+    });
+
+    it('testo con evidenza propria: OCR intestazione non necessario anche se il nome file concorda o discorda', async () => {
+        const headerOcr = jest.fn(async () => 'ISO 9712');
+        const r = await classifyQualificationDocType({
+            pdfBuffer: Buffer.from('x'), fileName: 'ZZ_9606.pdf', text: T_14732, deps: { headerOcr, hasAi: false },
+        });
+        expect(headerOcr).not.toHaveBeenCalled();
+        expect(r.detected_doc_type).toBe('qualifica_14732');
+    });
+
+    it('nome file nei log OCR: nessun nome in chiaro quando l\'OCR intestazione fallisce', async () => {
+        const headerOcr = jest.fn(async () => { throw new Error('tesseract KO'); });
+        await classifyQualificationDocType({
+            pdfBuffer: Buffer.from('x'), fileName: '99-00000_ZZROSSI_9606.pdf', text: '', deps: { headerOcr, hasAi: false },
+        });
+        const logged = [...logger.warn.mock.calls, ...logger.info.mock.calls].map((c) => String(c[0])).join('\n');
+        expect(logged).toMatch(/OCR intestazione non riuscito/);
+        expect(logged).not.toContain('ZZROSSI');
     });
 
     it('INGEST_HEADER_OCR=0 disattiva l\'OCR intestazione', async () => {
