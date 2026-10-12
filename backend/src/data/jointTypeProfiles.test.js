@@ -7,6 +7,14 @@ const {
     buildProfilePromptSection,
     resolveProfileStandard,
     JOINT_TYPE_PROFILES_BY_STANDARD,
+    FIELD_STATE,
+    NOT_APPLICABLE_14732_ALL_EDITIONS,
+    POSITION_KEYS,
+    extractStandardEdition,
+    getFieldApplicability,
+    getFieldState,
+    getNotApplicableFieldKeys,
+    nullNotApplicableFields,
 } = require('./jointTypeProfiles');
 
 describe('jointTypeProfiles', () => {
@@ -156,3 +164,114 @@ describe('jointTypeProfiles — variante ISO 9606-2 (spessore t del materiale)',
     });
 });
 
+describe('jointTypeProfiles — applicabilità campi tri-stato (ISO 14732 Annex C per edizione)', () => {
+    const NA = FIELD_STATE.NOT_APPLICABLE;
+    const OPT = FIELD_STATE.OPTIONAL;
+    const OP_TYPE = 'Operatore ISO 14732';
+
+    it('14732:2025 — posizione e campi 9606 non applicabili', () => {
+        const a = getFieldApplicability({ qualificationType: OP_TYPE, standardReference: 'EN ISO 14732:2025' });
+        expect(a.profileKey).toBe('14732@2025');
+        expect(a.edition).toBe('2025');
+        for (const k of ['welding_positions', 'position_range', 'material_group', 'joint_type', 'product_type',
+            'filler_material', 'shielding_gas', 'weld_details', 'transfer_mode', 'thickness_min_mm',
+            'thickness_max_mm', 'thickness_s_test_mm', 'thickness_t_test_mm', 'pipe_diameter_min_mm',
+            'pipe_diameter_max_mm', 'pipe_diameter_test_mm', 'qualification_designation', 'welding_position_test']) {
+            expect(a.states[k]).toBe(NA);
+        }
+        expect(a.notApplicableReason).toBe('ISO 14732:2025');
+    });
+
+    it('14732:2013 — la posizione resta facoltativa, gli altri campi N.A. restano N.A.', () => {
+        const a = getFieldApplicability({ qualificationType: OP_TYPE, standardReference: 'ISO 14732:2013' });
+        expect(a.profileKey).toBe('14732@2013');
+        POSITION_KEYS.forEach((k) => expect(a.states[k]).toBe(OPT));
+        expect(a.states.material_group).toBe(NA);
+        expect(a.states.thickness_min_mm).toBe(NA);
+    });
+
+    it.each([
+        [OP_TYPE, null],
+        [OP_TYPE, ''],
+        [OP_TYPE, 'ISO 14732'],
+        [OP_TYPE, 'ISO 14732:2005'],
+    ])('edizione ignota/diversa (%s | %s) = 2013-safe: position_range facoltativo', (type, ref) => {
+        const a = getFieldApplicability({ qualificationType: type, standardReference: ref });
+        expect(a.profileKey).toBe('14732@?');
+        expect(getFieldState({ qualificationType: type, standardReference: ref }, 'position_range')).toBe(OPT);
+        expect(a.states.material_group).toBe(NA);
+    });
+
+    it('edizione dal riferimento norma anche con separatori diversi; vince sul tipo', () => {
+        expect(getFieldApplicability({ standardReference: 'UNI EN ISO 14732-2025' }).profileKey).toBe('14732@2025');
+        expect(getFieldApplicability({ standardReference: 'ISO 14732 (2013)' }).profileKey).toBe('14732@2013');
+        expect(getFieldApplicability({ standardReference: 'ISO 14732:2013 / ISO 9606-1' }).profileKey).toBe('14732@2013');
+        expect(extractStandardEdition(':2025')).toBe('2025');
+        expect(extractStandardEdition(' foo 2025')).toBeNull();
+    });
+
+    it('9606-1, 9606-2, 15614 e altri tipi: fuori mappa, nessuno stato (invariati)', () => {
+        for (const ctx of [
+            { qualificationType: 'Saldatore ISO 9606-1', standardReference: 'ISO 9606-1:2017' },
+            { qualificationType: 'Saldatore ISO 9606-2' },
+            { qualificationType: 'Saldatore EN 15614' },
+            { qualificationType: 'Operatore NDT VT Livello 2' },
+            { qualificationType: 'Altra qualifica', standardReference: 'ISO 9712:2022' },
+            {},
+            undefined,
+        ]) {
+            const a = getFieldApplicability(ctx);
+            expect(a.profileKey).toBeNull();
+            expect(a.states).toEqual({});
+            expect(getNotApplicableFieldKeys(ctx)).toEqual([]);
+            expect(getFieldState(ctx, 'position_range')).toBe(FIELD_STATE.APPLICABLE);
+        }
+    });
+
+    it('tipo 14732 ma riferimento che cita solo 9606-1: famiglia non certa, nessuno stato', () => {
+        const ctx = { qualificationType: OP_TYPE, standardReference: 'ISO 9606-1:2017' };
+        expect(getFieldApplicability(ctx).profileKey).toBeNull();
+        expect(nullNotApplicableFields({ position_range: 'PA' }, ctx).fields.position_range).toBe('PA');
+    });
+
+    it('9606-1 con diametro e prodotto P: getVisibleFieldKeys invariato (non passa dalla mappa)', () => {
+        const vis = getVisibleFieldKeys({ jointType: 'BW', productType: 'P', qualificationType: 'Saldatore ISO 9606-1' });
+        expect(vis.keys).toContain('position_range');
+        expect(vis.keys).toContain('material_group');
+        expect(vis.keys).not.toContain('pipe_diameter_test_mm');
+        expect(getFieldState({ qualificationType: 'Saldatore ISO 9606-1' }, 'pipe_diameter_min_mm')).toBe(FIELD_STATE.APPLICABLE);
+    });
+
+    it('nullNotApplicableFields: 2025 azzera tutto, 2013/ignota conserva la posizione, mai sentinelle', () => {
+        const rec = {
+            position_range: 'PA, PB', welding_positions: ['PA'], material_group: '1.1', thickness_min_mm: 3,
+            pipe_diameter_mm: 60, filler_material: 'FM1', welding_process: '121', certificate_number: 'X1',
+            thickness_max_unlimited: true,
+        };
+        const y25 = nullNotApplicableFields(rec, { qualificationType: OP_TYPE, standardReference: 'ISO 14732:2025' });
+        expect(y25.fields.position_range).toBeNull();
+        expect(y25.fields.welding_positions).toBeNull();
+        expect(y25.fields.material_group).toBeNull();
+        expect(y25.fields.thickness_min_mm).toBeNull();
+        expect(y25.fields.pipe_diameter_mm).toBeNull();
+        expect(y25.fields.thickness_max_unlimited).toBeNull();
+        expect(y25.fields.welding_process).toBe('121');
+        expect(y25.fields.certificate_number).toBe('X1');
+        expect(Object.values(y25.fields)).not.toContain('NN');
+        expect(rec.position_range).toBe('PA, PB');
+        for (const ref of ['ISO 14732:2013', null, 'ISO 14732']) {
+            const out = nullNotApplicableFields(rec, { qualificationType: OP_TYPE, standardReference: ref });
+            expect(out.fields.position_range).toBe('PA, PB');
+            expect(out.fields.welding_positions).toEqual(['PA']);
+            expect(out.fields.material_group).toBeNull();
+        }
+    });
+
+    it('nullNotApplicableFields: non aggiunge chiavi assenti e non muta l\'input', () => {
+        const rec = { welding_process: '121' };
+        const out = nullNotApplicableFields(rec, { qualificationType: OP_TYPE, standardReference: 'ISO 14732:2025' });
+        expect(out.fields).toEqual({ welding_process: '121' });
+        expect(out.nullified).toEqual([]);
+        expect(NOT_APPLICABLE_14732_ALL_EDITIONS).not.toContain('welding_process');
+    });
+});
