@@ -116,6 +116,9 @@ describe('jointTypeProfiles (FE) — applicabilità campi tri-stato (ISO 14732 p
       { qualificationType: 'Saldatore ISO 9606-2' },
       { qualificationType: 'Saldatore EN 15614' },
       { qualificationType: OP, standardReference: 'ISO 9606-1:2017' },
+      { qualificationType: 'Saldatore ISO 9606-1', standardReference: 'ISO 14732:2025' },
+      { qualificationType: 'Saldatore ISO 9606-2', standardReference: 'EN ISO 14732:2013' },
+      { qualificationType: 'Qualifica ISO 15614-1', standardReference: 'ISO 14732:2025' },
       {},
     ]) {
       expect(getFieldApplicability(ctx).states).toEqual({});
@@ -141,7 +144,10 @@ describe('jointTypeProfiles — parità BE/FE (stesso contratto)', () => {
     { qualificationType: 'Saldatore ISO 9606-1', standardReference: 'ISO 9606-1:2017' },
     { qualificationType: 'Saldatore ISO 9606-2' },
     { qualificationType: 'Saldatore EN 15614' },
+    { qualificationType: 'Saldatore ISO 9606-1', standardReference: 'ISO 14732:2025' },
+    { qualificationType: 'Qualifica ISO 15614-1', standardReference: 'ISO 14732:2013' },
     { standardReference: 'ISO 14732:2025' },
+    { qualificationType: 'Altro', standardReference: 'ISO 14732:2025' },
     {},
   ];
 

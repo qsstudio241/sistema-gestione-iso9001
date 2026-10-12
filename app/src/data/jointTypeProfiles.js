@@ -256,18 +256,25 @@ function citesOtherQualificationStandard(text) {
   return /9606[\s-]*[1-5](?!\d)/i.test(text) || /\b287[\s-]*1(?!\d)/i.test(text);
 }
 
+function typeNamesOtherQualificationStandard(text) {
+  return !/14732/.test(text) && (/9606|15614/.test(text) || /\b287[\s-]*1(?!\d)/i.test(text));
+}
+
 /**
  * Famiglia + edizione per la mappa di applicabilità. `standardReference` (porta l'edizione) vince su
  * `qualificationType`; se il riferimento cita solo un'altra norma (9606-x, EN 287-1) la famiglia 14732
- * non è certa e la mappa non si applica.
+ * non è certa e la mappa non si applica. Stesso esito se il tipo nomina 9606/15614 e il riferimento 14732
+ * (tipo e riferimento in conflitto: il form mostra i campi del tipo, quindi non si azzera nulla).
  * @returns {{ family: string|null, edition: string|null }}
  */
 function resolveApplicabilityStandard({ standardReference = null, qualificationType = null } = {}) {
   const ref = toTrimmedText(standardReference);
   const type = toTrimmedText(qualificationType);
+  const typeConflicts = typeNamesOtherQualificationStandard(type);
   for (const text of [ref, type]) {
     const m = /14732/.exec(text);
     if (m) {
+      if (text === ref && typeConflicts) return { family: null, edition: null };
       return { family: STANDARD_14732, edition: extractStandardEdition(text.slice(m.index + m[0].length)) };
     }
     if (citesOtherQualificationStandard(text)) return { family: null, edition: null };

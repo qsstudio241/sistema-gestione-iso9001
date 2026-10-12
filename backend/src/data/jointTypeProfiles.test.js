@@ -234,6 +234,23 @@ describe('jointTypeProfiles — applicabilità campi tri-stato (ISO 14732 Annex 
         expect(nullNotApplicableFields({ position_range: 'PA' }, ctx).fields.position_range).toBe('PA');
     });
 
+    it('tipo 9606/15614 con riferimento 14732 (conflitto): fuori mappa, nessun campo azzerato', () => {
+        for (const ctx of [
+            { qualificationType: 'Saldatore ISO 9606-1', standardReference: 'ISO 14732:2025' },
+            { qualificationType: 'Saldatore ISO 9606-2', standardReference: 'EN ISO 14732:2013' },
+            { qualificationType: 'Qualifica ISO 15614-1', standardReference: 'ISO 14732:2025' },
+        ]) {
+            expect(getFieldApplicability(ctx).profileKey).toBeNull();
+            expect(nullNotApplicableFields({ position_range: 'PA', material_group: '1.1' }, ctx).fields)
+                .toEqual({ position_range: 'PA', material_group: '1.1' });
+        }
+    });
+
+    it('tipo libero/assente con riferimento 14732: la mappa si applica (ingest batch senza tipo)', () => {
+        expect(getFieldApplicability({ standardReference: 'ISO 14732:2025' }).profileKey).toBe('14732@2025');
+        expect(getFieldApplicability({ qualificationType: 'Altro', standardReference: 'ISO 14732:2025' }).profileKey).toBe('14732@2025');
+    });
+
     it('9606-1 con diametro e prodotto P: getVisibleFieldKeys invariato (non passa dalla mappa)', () => {
         const vis = getVisibleFieldKeys({ jointType: 'BW', productType: 'P', qualificationType: 'Saldatore ISO 9606-1' });
         expect(vis.keys).toContain('position_range');
