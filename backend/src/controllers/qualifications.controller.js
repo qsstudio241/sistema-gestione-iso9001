@@ -50,6 +50,7 @@ const {
     canUserConfirmSemiannual,
 } = require('../services/weldingCoordinatorAuth.service');
 const { toNumericOrNull } = require('../utils/numericSanitizer');
+const { FIELD_STATE, getFieldState, nullNotApplicableFields } = require('../data/jointTypeProfiles');
 const { occupationalQualificationSqlInList } = require('../constants/occupationalQualificationTypes');
 const { findVisionFitnessGaps } = require('../services/visionFitness.service');
 const {
@@ -93,6 +94,20 @@ const QUALIFICATION_MANUAL_EDITABLE_FIELDS = [
     'patent_type', 'training_body', 'course_name', 'training_hours',
     'examiner_body', 'certificate_file_url',
 ];
+
+/**
+ * Campi non applicabili per famiglia+edizione (ISO 14732 Annex C) a NULL nel body di create/update
+ * manuale; solo con famiglia certa (vedi `getFieldApplicability`). Mai sentinelle ('NN').
+ * `designationApplicable`: la designazione stampata non si ricalcola per i tipi che non la prevedono.
+ */
+function applyFieldApplicability(rawBody) {
+    const input = rawBody && typeof rawBody === 'object' ? rawBody : {};
+    const ctx = { qualificationType: input.qualification_type, standardReference: input.standard_ref };
+    return {
+        body: nullNotApplicableFields(input, ctx).fields,
+        designationApplicable: getFieldState(ctx, 'qualification_designation') !== FIELD_STATE.NOT_APPLICABLE,
+    };
+}
 
 /**
  * Converte un valore in numero finito o null (per colonne DECIMAL).
@@ -545,7 +560,7 @@ async function getOne(req, res) {
 /** POST /qualifications */
 async function createQualification(req, res) {
     try {
-        const body = req.body;
+        const { body, designationApplicable } = applyFieldApplicability(req.body);
         const {
             company_id, person_name, person_code, department, personnel_id,
             qualification_type, standard_ref, scope_detail,
@@ -598,13 +613,13 @@ async function createQualification(req, res) {
         const thicknessRangeFinal = thickness_range || deriveRangeString(thickMin, thickMax);
         const pipeDiameterFinal   = pipe_diameter || deriveRangeString(pipeMin, pipeMax);
         // Designazione stampata: non sovrascrivere se l'operatore/AI ha letto la riga.
-        const designation = resolvePrintedDesignation(qualification_designation, {
+        const designation = designationApplicable ? resolvePrintedDesignation(qualification_designation, {
             welding_process: welding_process_test || welding_process, product_type, joint_type,
             filler_material_group: filler_material,
             thickness_min_mm: thickMin, thickness_max_mm: thickMax,
             pipe_diameter_min_mm: pipeMin, pipe_diameter_max_mm: pipeMax,
             welding_positions: position_range, weld_details,
-        });
+        }) : null;
 
         const writeDenied = await assertMutatingAllowed(req.user, { companyId: company_id });
         if (writeDenied) return sendAccessDenied(res, writeDenied);
@@ -757,7 +772,7 @@ async function updateQualification(req, res) {
         const pool  = await getPool();
         const orgId = req.user.organization_id;
         const id    = parseInt(req.params.id);
-        const body  = req.body;
+        const { body, designationApplicable } = applyFieldApplicability(req.body);
 
         const check = await pool.request().input('id', id).input('orgId', orgId)
             .query('SELECT id, company_id FROM qualifications WHERE id=@id AND organization_id=@orgId');
@@ -797,13 +812,13 @@ async function updateQualification(req, res) {
         const pipeMax  = toNum(pipe_diameter_max_mm);
         const thicknessRangeFinal = thickness_range || deriveRangeString(thickMin, thickMax);
         const pipeDiameterFinal   = pipe_diameter || deriveRangeString(pipeMin, pipeMax);
-        const designation = resolvePrintedDesignation(qualification_designation, {
+        const designation = designationApplicable ? resolvePrintedDesignation(qualification_designation, {
             welding_process: welding_process_test || welding_process, product_type, joint_type,
             filler_material_group: filler_material,
             thickness_min_mm: thickMin, thickness_max_mm: thickMax,
             pipe_diameter_min_mm: pipeMin, pipe_diameter_max_mm: pipeMax,
             welding_positions: position_range, weld_details,
-        });
+        }) : null;
 
         // Collegamento anagrafica (company_personnel) — gap analysis 08/08/2026:
         // stessa correzione di createQualification, vedi commento lì.

@@ -27,6 +27,7 @@ const {
     checkShieldingGasKnown,
 } = require('../utils/ingestPlausibilityChecks');
 const { toNumericOrNull } = require('../utils/numericSanitizer');
+const { FIELD_STATE, getFieldState, nullNotApplicableFields } = require('../data/jointTypeProfiles');
 
 /**
  * Controlli di plausibilità/coerenza normativa sui campi estratti (warning-only,
@@ -647,8 +648,14 @@ async function commitQualificationFromFields(fields, organizationId, companyId, 
         qualificationType: qualTypeOverride = null,
     } = options;
 
-    const f = fields || {};
-    const qualificationType = qualTypeOverride || f.qualification_type || classifyQualificationType(fileName);
+    const rawFields = fields || {};
+    const qualificationType = qualTypeOverride || rawFields.qualification_type || classifyQualificationType(fileName);
+    // Campi non applicabili per famiglia+edizione (ISO 14732 Annex C) a NULL, solo con famiglia certa.
+    const applicabilityCtx = {
+        qualificationType,
+        standardReference: rawFields.standard_reference || rawFields.standard_ref || null,
+    };
+    const f = nullNotApplicableFields(rawFields, applicabilityCtx).fields;
     const person_name = String(f.welder_name || f.operator_name || f.person_name || '').trim();
 
     if (!person_name) {
@@ -725,18 +732,20 @@ async function commitQualificationFromFields(fields, organizationId, companyId, 
     // Designazione sintetica ISO 9606-1 §11 (stesso calcolo del form manuale —
     // qualifications.controller.js — vedi backend/src/utils/weldingDesignation.js).
     // Usa SOLO il gruppo apporto FM*, mai material_group (bug 01/08/2026).
-    const qualification_designation = resolvePrintedDesignation(f.qualification_designation, {
-        welding_process,
-        product_type,
-        joint_type,
-        filler_material_group: filler_material,
-        thickness_min_mm,
-        thickness_max_mm,
-        pipe_diameter_min_mm,
-        pipe_diameter_max_mm,
-        welding_positions: position_range,
-        weld_details,
-    });
+    const qualification_designation = getFieldState(applicabilityCtx, 'qualification_designation') === FIELD_STATE.NOT_APPLICABLE
+        ? null
+        : resolvePrintedDesignation(f.qualification_designation, {
+            welding_process,
+            product_type,
+            joint_type,
+            filler_material_group: filler_material,
+            thickness_min_mm,
+            thickness_max_mm,
+            pipe_diameter_min_mm,
+            pipe_diameter_max_mm,
+            welding_positions: position_range,
+            weld_details,
+        });
 
     if (certificate_number && companyId
         && await checkQualificationDuplicate(certificate_number, organizationId, companyId, qualificationType)) {

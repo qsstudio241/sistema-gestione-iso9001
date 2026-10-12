@@ -253,6 +253,11 @@
   color: #991b1b;
 }
 
+.ingest-review__confidence--optional {
+  background: #f1f5f9;
+  color: #475569;
+}
+
 .ingest-review__dialog .ingest-dialog-shell__actions {
   display: flex;
   flex-wrap: wrap;
