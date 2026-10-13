@@ -1,6 +1,6 @@
 # DEPUTYTASK_VERIFICA_QUALIFICHE_NORME_DOC — VQ-3: estratto operativo ISO 9606-2 + allineamento estratto 9606-1 (§5.2, Annex A) + stati backlog
 
-**Stato:** APERTO — lanciabile **solo dopo il merge su `origin/main`** della PR di charting (gate DEPUTYTASK: `git show origin/main:docs/agent-tasks/DEPUTYTASK_VERIFICA_QUALIFICHE_NORME_DOC.md` deve mostrare `APERTO`)  
+**Stato:** CHIUSO — TEST OK (06/10/2026, mergiata [#719](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/719))  
 **Aperto:** 06/10/2026  
 **Piano:** [`PLAN_VERIFICA_QUALIFICHE_NORMA_SLICES.md`](PLAN_VERIFICA_QUALIFICHE_NORMA_SLICES.md) § 3 (inventario norme) · § 6.3 VQ-3  
 **Dipende da:** nessuna (onda 1)  
