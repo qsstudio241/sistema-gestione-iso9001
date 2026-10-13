@@ -9,6 +9,7 @@ const fs = require('fs').promises;
 const os = require('os');
 const path = require('path');
 const logger = require('../utils/logger');
+const { redactFileNameForLog } = require('../utils/ingestErrorMessage');
 const { persistFigures } = require('./figureKnowledge.service');
 
 const SCRIPTS_DIR = path.resolve(__dirname, '../../scripts');
@@ -161,7 +162,7 @@ async function ingestFiguresFromPdf(opts) {
   logger.info(
     '[figureIngest] org %s pdf=%s figure=%s',
     organizationId,
-    path.basename(pdfPath),
+    redactFileNameForLog(pdfPath),
     (inserted && inserted.length) || 0
   );
 

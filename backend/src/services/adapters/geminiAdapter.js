@@ -185,7 +185,7 @@ async function chatOnce(model, apiKey, body, timeout) {
 /**
  * @param {Array<{role:string, content:string}>} messages
  * @param {object} [options]
- * @param {number} [options.temperature]
+ * @param {number} [options.temperature]  - ignorata per Gemini 3+
  * @param {'json'|'text'} [options.responseFormat]
  * @param {number} [options.maxTokens]
  * @param {number} [options.timeout]
@@ -221,7 +221,7 @@ async function generateContent(body, options = {}) {
     );
   }
 
-  const model = process.env.GEMINI_MODEL || 'gemini-2.5-flash';
+  const model = resolveModel();
   const timeout =
     typeof options.timeout === 'number' && options.timeout > 0
       ? options.timeout
@@ -285,9 +285,37 @@ async function generateContent(body, options = {}) {
   );
 }
 
-function buildGenerationConfig(options = {}) {
+const DEFAULT_MODEL = 'gemini-3.8-flash';
+const THINKING_LEVELS = new Set(['minimal', 'low', 'medium', 'high']);
+
+function resolveModel() {
+  return process.env.GEMINI_MODEL || DEFAULT_MODEL;
+}
+
+/** Gemini 3+: temperature/top_p/top_k deprecati, thinking_budget sostituito da thinking_level. */
+function isGemini3Plus(model) {
+  const m = /^gemini-(\d+)/i.exec(String(model || ''));
+  return Boolean(m) && Number(m[1]) >= 3;
+}
+
+/**
+ * Livello di ragionamento per i modelli Gemini 3+ (GEMINI_THINKING_LEVEL).
+ * Default `low`: i token di ragionamento consumano maxOutputTokens e con il
+ * default `medium` le risposte JSON brevi possono arrivare vuote.
+ * `default` = non inviare nulla (usa il default del modello).
+ * Nota: `minimal` non è supportato da gemini-3.8-flash (400).
+ */
+function resolveThinkingLevel() {
+  const raw = String(process.env.GEMINI_THINKING_LEVEL || '').trim().toLowerCase();
+  if (raw === 'default') return null;
+  return THINKING_LEVELS.has(raw) ? raw : 'low';
+}
+
+function buildGenerationConfig(options = {}, model = resolveModel()) {
+  const modern = isGemini3Plus(model);
+  const thinkingLevel = modern ? resolveThinkingLevel() : null;
   return {
-    ...(typeof options.temperature === 'number'
+    ...(!modern && typeof options.temperature === 'number'
       ? { temperature: options.temperature }
       : {}),
     ...(typeof options.maxTokens === 'number'
@@ -296,6 +324,7 @@ function buildGenerationConfig(options = {}) {
     ...(options.responseFormat === 'json'
       ? { responseMimeType: 'application/json' }
       : {}),
+    ...(thinkingLevel ? { thinkingConfig: { thinkingLevel } } : {}),
   };
 }
 
@@ -501,5 +530,12 @@ module.exports = {
   generateContent,
   mapMessagesToGemini,
   // Esportati per i test (retry/backoff logic)
-  _internals: { computeBackoffMs, getRetryAfterMs, RETRYABLE_STATUSES, keyPool },
+  _internals: {
+    computeBackoffMs,
+    getRetryAfterMs,
+    RETRYABLE_STATUSES,
+    keyPool,
+    buildGenerationConfig,
+    isGemini3Plus,
+  },
 };

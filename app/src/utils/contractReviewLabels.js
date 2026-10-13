@@ -28,9 +28,20 @@ export const DETAIL_SLIDES = [
 
 export const INBOX_KIND_LABELS = {
   assigned_to_me: 'Assegnati a me',
+  unassigned: 'Non assegnati',
   pending_approval: 'In attesa approvazione',
   stale: 'Inattivi (>14 gg)',
 };
+
+/**
+ * Default inbox al primo caricamento: se «Assegnati a me» è vuota ma ci sono casi
+ * non assegnati, apre «Non assegnati». Valutato una sola volta (primo summary) e mai dopo una scelta esplicita.
+ */
+export function shouldAutoSwitchToUnassigned({ summary, inboxKind, userChoseKind, alreadyResolved }) {
+  if (!summary || userChoseKind || alreadyResolved) return false;
+  if (inboxKind !== 'assigned_to_me') return false;
+  return Number(summary.assigned_to_me || 0) === 0 && Number(summary.unassigned_count || 0) > 0;
+}
 
 /** Controparte documento commerciale (ISO §8.2 — cliente / fornitore / interno) */
 export const COUNTERPARTY_LABELS = {

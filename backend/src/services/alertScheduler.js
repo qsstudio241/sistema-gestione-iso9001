@@ -19,6 +19,7 @@
  */
 
 const logger = require('../utils/logger');
+const { redactEmailsForLog } = require('../utils/ingestErrorMessage');
 const { sendAlertEmail } = require('./alertMail.service');
 const {
   sendTimeToCron,
@@ -282,7 +283,7 @@ async function runAlertJobForSendTime(sendTimeFilter) {
 
         const sent = await sendAlertEmail(org.recipients_email, subject, html);
         if (sent) {
-          logger.info(`[AlertScheduler] Email digest legacy documenti inviata a ${org.recipients_email} per org ${org.organization_id}`);
+          logger.info(`[AlertScheduler] Email digest legacy documenti inviata a ${redactEmailsForLog(org.recipients_email)} per org ${org.organization_id}`);
         }
         continue;
       }
@@ -389,7 +390,7 @@ async function runNormValidityJob() {
         const sent = await sendAlertEmail(org.recipients_email, subject, html);
         if (sent) {
           logger.info(
-            `[AlertScheduler] Email norme/registro legale inviata a ${org.recipients_email} ` +
+            `[AlertScheduler] Email norme/registro legale inviata a ${redactEmailsForLog(org.recipients_email)} ` +
             `(org ${org.organization_id}: ${normUpdated.length} norme, ${legalUpdated.length} atti legali)`
           );
         }

@@ -1,7 +1,7 @@
 'use strict';
 
 /**
- * documentTypeSchemas.js � Versione backend (prompt AI e schema atteso)
+ * documentTypeSchemas.js — Versione backend (prompt AI e schema atteso)
  * Mantenere sincronizzato con app/src/data/documentTypeSchemas.js
  */
 
@@ -11,7 +11,7 @@ const AI_SCHEMAS = {
     label: 'Patentino saldatore (ISO 9606-1)',
     aiPrompt: `Stai analizzando un certificato di qualifica saldatore secondo ISO 9606-1 (o norma equivalente).
 Estrai TUTTI i seguenti campi e restituiscili nell'oggetto "type_specific_data" del JSON di risposta.
-Se un campo non � presente nel documento, usa null.
+Se un campo non è presente nel documento, usa null.
 
 Campi da estrarre:
 - welder_name, certificate_number, issuing_body,
@@ -21,14 +21,18 @@ Campi da estrarre:
 - product_type (variabile essenziale ISO 9606-1 §11: SOLO "P" piastra o "T" tubo/pipe, nessuna terza
   categoria "tubo-piastra" - un giunto di derivazione/branch/bocchello resta "T" (è un tipo di giunto,
   §3.16, non un tipo prodotto); dedurre da "plate/piastra" vs "pipe/tube/tubo" nel testo, null se non specificato),
-- weld_details (dettagli di giunto se presenti: backing, mono/multistrato, saldatura sx/dx, oppure
-  derivazione/branch/bocchello tubo-piastra - riportalo qui testualmente per non perdere l'informazione
-  anche quando product_type resta "T"; testo libero breve, null se assenti),
+- weld_details (Dettagli di saldatura / Weld details del CAMPO DI VALIDITA' - colonna "Campo di validità" /
+  "Range of approval", MAI i dati della prova: riporta solo le abbreviazioni ISO 9606-1 Tab. 11/12 della
+  colonna di validità, es. "sl" oppure "sl, ml" (altre ammesse: ss, bs, nb, mb, gb, fb, ci). Non è il tipo
+  prodotto: NON scrivere "PIPE", "PLATE", tubo/piastra, derivazione o altro testo libero; null se la
+  colonna di validità non riporta dettagli di saldatura),
 - material_group, filler_material_group,
 - welding_position_test (posizione della prova), welding_positions (array, validità),
 - thickness_s_test_mm (s depositato PROVA, solo BW Tab.6; null su FW),
 - thickness_t_test_mm (t materiale provino PROVA, solo FW Tab.8; null su BW; non usare a/z),
-- thickness_min_mm, thickness_max_mm (SOLO validità),
+- thickness_min_mm, thickness_max_mm (SOLO colonna di validità "Campo di validità" / "Range of approval" della
+  riga spessore; i valori di prova a), b) NON sono il range: ">=3" = min 3, nessun massimo; una designazione
+  come "t3-10" sono due spessori di PROVA, non min 3 / max 10),
 - thickness_max_unlimited (booleano — true SOLO se il certificato dichiara esplicitamente un range
   aperto senza limite superiore, es. simboli "≥"/"=>"/"⩾" o testo "no restriction"/"senza limite
   superiore" sullo spessore massimo qualificato; in tal caso lascia thickness_max_mm: null e imposta
@@ -38,6 +42,15 @@ Campi da estrarre:
 - qualification_designation (riga STAMPATA "ISO 9606-1: …", NON ricalcolarla da min/max),
 - shielding_gas, exam_date, expiry_date, last_confirmation_date,
 - next_confirmation_due, standard_reference (YYYY-MM-DD per le date)
+- issue_date (YYYY-MM-DD): data di EMISSIONE/rilascio del certificato ("Date of issue", "Data di emissione",
+  "Rilasciato il"). E' DISTINTA da exam_date (data della prova, "Date of test"/"Data della prova"): se il certificato
+  riporta solo la data della prova e nessuna data di emissione, issue_date resta null — NON copiare exam_date,
+- examiner_body (nome dell'esaminatore firmatario, sotto "Nome e firma Organismo di Esame" / "Name and signature
+  Examining Body"/"examiner": persona o titolo, es. "I.W.I. <nome>" o "IWI - <nome>", riportato testualmente.
+  Va SEMPRE riportato quando presente, anche se l'ente certificatore e' lo stesso; null solo se il nome non c'e'.
+  Ignora la firma a mano letta come parole sconnesse e le stampigliature "Firmato digitalmente da"),
+- NOTA issuing_body: copia l'ente come scritto sul certificato; "TEC Eurolab" (anche "TEC EUROLAB", "Tec Eurolab S.r.l.",
+  "TECEUROLAB") e' un ente certificatore noto, non un ente generico,
 - transfer_mode (metodo di trasferimento del metallo d'apporto - variabile essenziale ISO 9606-1 §5.2,
   presente come colonna dedicata "Transfer mode" nel modulo certificato ufficiale §9.3): valorizzalo
   SOLO se il processo di saldatura e' ad arco con filo continuo (131 MIG, 135 MAG, 136 filo animato,
@@ -86,6 +99,8 @@ Istruzioni per le date di conferma semestrale (ISO 9606-1 §9.2):
       next_confirmation_due: 'YYYY-MM-DD|null',
       standard_reference: 'string|null',
       transfer_mode: 'spray_arc|pulsed_arc|short_arc|globular|null',
+      issue_date: 'YYYY-MM-DD|null',
+      examiner_body: 'string|null',
     },
   },
 
@@ -399,8 +414,25 @@ Estrai in type_specific_data: operator_name, certificate_number, issuing_body, w
 welding_process, equipment_type, welding_positions (array), single_multi_run (single|multi),
 exam_date, expiry_date, last_confirmation_date, next_confirmation_due (YYYY-MM-DD),
 qualification_method (iso_15614|iso_15613|iso_9606|production_test). Usa null se assente.
+METODO DI QUALIFICA (ISO 14732 par. 4.1): le voci sono a) iso_15614, b) iso_15613, c) iso_9606, d) production_test;
+ne e' marcata UNA sola. Il marcatore (x/X, [x], check) puo' stare su una riga separata dopo l'ultima voce
+(l'OCR lo stacca dalla riga): una x/X isolata subito dopo l'elenco 4.1 va attribuita alla voce che nell'elenco risulta
+SENZA marcatore (le altre hanno "-"), NON alla voce che la precede immediatamente. Se resta ambiguo usa null.
+Altri campi: issue_date (YYYY-MM-DD, data di EMISSIONE del certificato, distinta da exam_date = data della prova;
+se assente null, NON copiare exam_date), examiner_body (nome dell'esaminatore firmatario sotto "Name and signature
+examiner": persona o titolo, es. "I.W.I. <nome>" o "IWI - <nome>", riportato testualmente e SEMPRE quando presente,
+anche se coincide con l'ente; ignora la firma a mano letta come parole sconnesse),
+issuing_body: copia l'ente come scritto; "TEC Eurolab" (anche "TEC EUROLAB", "Tec Eurolab S.r.l.", "TECEUROLAB") e' un ente noto,
+standard_reference (norma con edizione ESATTAMENTE come scritta sul certificato, es. "ISO 14732:2013";
+null se non indicata).
 IMPORTANTE: NON assumere un intervallo di validita' fisso. ISO 14732 ha rivalidazione a 6 anni (opzione a) o
-ciclo 3 anni con controllo NDT (opzione b), diversi dai 3/2 anni di ISO 9606-1 per saldatori manuali.`,
+ciclo 3 anni con controllo NDT (opzione b), diversi dai 3/2 anni di ISO 9606-1 per saldatori manuali.
+CONFERME PERIODICHE (ISO 14732 par. 6.2): di norma a pagina 2 c'e' una tabella di conferma (data, firma/esito,
+ente o responsabile) compilata ogni 6 mesi. Elenca OGNI riga davvero compilata e firmata in type_specific_data.confirmations
+(array di oggetti { "date": "YYYY-MM-DD", "outcome": "stringa o null" }); ignora righe vuote o non firmate e
+NON includere la data di emissione o di esame. last_confirmation_date = la data piu' recente tra le conferme reali
+(null se la tabella e' vuota). next_confirmation_due = SOLO se stampata sul documento, altrimenti null (viene calcolata dal sistema).
+Le date possono avere l'anno a 2 cifre (es. 15.03.24): restituiscile comunque in formato YYYY-MM-DD.`,
     aiExpectedSchema: {
       operator_name: 'string|null',
       certificate_number: 'string|null',
@@ -415,6 +447,9 @@ ciclo 3 anni con controllo NDT (opzione b), diversi dai 3/2 anni di ISO 9606-1 p
       last_confirmation_date: 'YYYY-MM-DD|null',
       next_confirmation_due: 'YYYY-MM-DD|null',
       qualification_method: 'iso_15614|iso_15613|iso_9606|production_test|null',
+      issue_date: 'YYYY-MM-DD|null',
+      examiner_body: 'string|null',
+      standard_reference: 'string|null',
     },
   },
 
@@ -450,7 +485,7 @@ training_body, certificate_number, issue_date, expiry_date (YYYY-MM-DD). Usa nul
   },
 
   sal: {
-    label: 'SAL � Stato avanzamento lavori',
+    label: 'SAL — Stato avanzamento lavori',
     aiPrompt: `Documento SAL consulenza SGQ. Estrai: client_name, standards_tracked, period_label.`,
     aiExpectedSchema: {
       client_name: 'string|null',
@@ -460,7 +495,7 @@ training_body, certificate_number, issue_date, expiry_date (YYYY-MM-DD). Usa nul
   },
 
   rdp: {
-    label: 'RDP � Rapporto di prova',
+    label: 'RDP — Rapporto di prova',
     aiPrompt: `Rapporto di prova RDP. Estrai: report_number, test_type, component_ref, test_date (YYYY-MM-DD).`,
     aiExpectedSchema: {
       report_number: 'string|null',

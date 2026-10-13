@@ -44,6 +44,12 @@ const STATUSES_REQUIRING_TECHNICAL_REVIEW = ["aperta"];
 
 //  Form modale commessa 
 
+/** Parsing nello stato iniziale: farlo in un effect cambiava `form` all'apertura e faceva partire l'auto-save senza modifiche dell'utente. */
+function parseApplicableWpsIds(raw) {
+  if (typeof raw !== "string" || !raw) return Array.isArray(raw) ? raw : [];
+  try { return JSON.parse(raw); } catch { return raw; }
+}
+
 function ProjectFormModal({ project, companies, defaultCompanyId, wpsList, qualifications, onSave, onClose, onSaved }) {
   // Prepopola welder_ids dai welders già assegnati al progetto
   const existingWelderIds = Array.isArray(project?.welders)
@@ -70,6 +76,7 @@ function ProjectFormModal({ project, companies, defaultCompanyId, wpsList, quali
     applicable_wps_ids: [],
     welder_ids: existingWelderIds,
     ...(project || {}),
+    applicable_wps_ids: parseApplicableWpsIds(project?.applicable_wps_ids),
   });
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
@@ -134,14 +141,6 @@ function ProjectFormModal({ project, companies, defaultCompanyId, wpsList, quali
       setAiSuggestLoading(false);
     }
   }
-
-  useEffect(() => {
-    if (project?.applicable_wps_ids && typeof project.applicable_wps_ids === "string") {
-      try {
-        setForm((f) => ({ ...f, applicable_wps_ids: JSON.parse(project.applicable_wps_ids) }));
-      } catch { /* keep as-is */ }
-    }
-  }, [project]);
 
   const set = (key, val) => setForm((f) => ({ ...f, [key]: val }));
 
@@ -799,7 +798,7 @@ function ProjectsPage() {
             <button className="pj-btn-new" onClick={handleNew} style={{ marginTop: 12 }}>Crea la prima commessa</button>
           </div>
         ) : (
-          <table className="pj-table">
+          <table className="pj-table pj-table-list">
             <thead>
               <tr>
                 <th>Codice</th>
@@ -813,14 +812,14 @@ function ProjectsPage() {
             </thead>
             <tbody>
               {projects.map((p) => (
-                <tr key={p.id}>
+                <tr key={p.id} className="pj-row-click" onClick={() => handleEdit(p)}>
                   <td><strong>{p.project_code}</strong></td>
                   <td>{p.end_customer_name || p.client_name || "-"}</td>
                   <td><StatusBadge type="project" status={p.status || "offerta"} /></td>
                   <td>{formatDate(p.start_date)}</td>
                   <td>{formatDate(p.end_date)}</td>
                   <td>{getWpsCount(p)}</td>
-                  <td>
+                  <td onClick={(e) => e.stopPropagation()}>
                     {deleteId === p.id ? (
                       <div className="pj-confirm">
                         <span>Eliminare?</span>

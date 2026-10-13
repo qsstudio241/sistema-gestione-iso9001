@@ -599,7 +599,7 @@ function QualificationsPage() {
                 ) : (
                     <table className="sq-table">
                         <thead>
-                            <tr>{columns.map(col => <th key={col}>{col}</th>)}</tr>
+                            <tr>{columns.map(col => <th key={col} className={col === "Certificato" || col === "Documento" ? "sq-col-cert" : undefined}>{col}</th>)}</tr>
                         </thead>
                         <tbody>
                             {quals.map(q => (
