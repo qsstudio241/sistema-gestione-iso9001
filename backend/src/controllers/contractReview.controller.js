@@ -29,6 +29,7 @@ const {
 const CASE_STATUSES = workflow.CASE_STATUSES;
 const TERMINAL_FROM_STATUSES = new Set(['APPROVED', 'CANCELLED', 'REJECTED']);
 
+const INBOX_KINDS = ['assigned_to_me', 'unassigned', 'pending_approval', 'stale'];
 const CHECKLIST_ANSWERS = new Set(['yes', 'no', 'na', 'partial']);
 
 function sendErr(res, httpStatus, message, code) {
@@ -317,12 +318,14 @@ async function createCase(req, res) {
         const ins = await insertReq.query(`
             INSERT INTO commercial_cases (
                 organization_id, company_id, title, external_ref, status, notes,
-                commercial_customer_id, commercial_customer_name, commercial_customer_ref, created_by
+                commercial_customer_id, commercial_customer_name, commercial_customer_ref, created_by,
+                current_assignee_id
             )
             OUTPUT INSERTED.*
             VALUES (
                 @organizationId, @companyId, @title, @externalRef, 'DRAFT', @notes,
-                @commercialCustomerId, @commercialCustomerName, @commercialCustomerRef, @userId
+                @commercialCustomerId, @commercialCustomerName, @commercialCustomerRef, @userId,
+                @userId
             )
         `);
 
@@ -466,7 +469,11 @@ async function updateCase(req, res) {
         }
 
         const updatedRow = upd.recordset[0];
-        if (assigneeRaw !== undefined && assigneeId !== existing.current_assignee_id) {
+        if (
+            assigneeRaw !== undefined &&
+            assigneeId !== existing.current_assignee_id &&
+            assigneeId !== req.user.user_id
+        ) {
             await crNotify.notifyAfterAssigneeChange({
                 organizationId,
                 caseRow: updatedRow,
@@ -756,6 +763,7 @@ async function getSummary(req, res) {
               COUNT(*) AS total,
               SUM(CASE WHEN status NOT IN ('APPROVED','CANCELLED','REJECTED') THEN 1 ELSE 0 END) AS open_count,
               SUM(CASE WHEN current_assignee_id = @userId AND status NOT IN ('APPROVED','CANCELLED','REJECTED') THEN 1 ELSE 0 END) AS assigned_to_me,
+              SUM(CASE WHEN current_assignee_id IS NULL AND status NOT IN ('APPROVED','CANCELLED','REJECTED') THEN 1 ELSE 0 END) AS unassigned_count,
               SUM(CASE WHEN status IN ('QUOTE_APPROVAL','FINAL_REVIEW') THEN 1 ELSE 0 END) AS pending_approval
             FROM commercial_cases
             WHERE organization_id = @organizationId
@@ -774,6 +782,9 @@ async function getInbox(req, res) {
         const organizationId = req.user.organization_id;
         const userId = req.user.user_id;
         const kind = String(req.query.kind || 'assigned_to_me').trim();
+        if (!INBOX_KINDS.includes(kind)) {
+            return sendErr(res, 400, 'Tipo inbox non valido', 'VALIDATION_ERROR');
+        }
         const limit = Math.min(parseInt(req.query.limit, 10) || 50, 100);
 
         let where = 'cc.organization_id = @organizationId AND cc.status NOT IN (\'APPROVED\',\'CANCELLED\',\'REJECTED\')';
@@ -781,6 +792,8 @@ async function getInbox(req, res) {
             where += " AND cc.status IN ('QUOTE_APPROVAL','FINAL_REVIEW')";
         } else if (kind === 'stale') {
             where += ' AND cc.updated_at < DATEADD(day, -14, SYSUTCDATETIME())';
+        } else if (kind === 'unassigned') {
+            where += ' AND cc.current_assignee_id IS NULL';
         } else {
             where += ' AND cc.current_assignee_id = @userId';
         }
@@ -1470,13 +1483,13 @@ async function importFromJob(req, res) {
             INSERT INTO commercial_cases (
                 organization_id, company_id, title, external_ref, status, notes, created_by,
                 source_import_job_id, commercial_customer_id,
-                commercial_customer_name, commercial_customer_ref
+                commercial_customer_name, commercial_customer_ref, current_assignee_id
             )
             OUTPUT INSERTED.*
             VALUES (
                 @organizationId, @companyId, @title, @externalRef, 'DRAFT', @notes, @userId,
                 @sourceImportJobId, @commercialCustomerId,
-                @commercialCustomerName, @commercialCustomerRef
+                @commercialCustomerName, @commercialCustomerRef, @userId
             )
         `);
         const created = ins.recordset[0];

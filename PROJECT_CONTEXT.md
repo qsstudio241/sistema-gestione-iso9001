@@ -52,6 +52,7 @@ Deploy/SSH: [deploy.md](docs/how-to/deploy.md) + [ACCESSO_DEPLOY_AGENTS.md](docs
 | Non conformità | `backend/src/controllers/nc.controller.js`, `app/src/pages/NCPage.jsx`, `app/src/components/NcDetailPanel.jsx` |
 | Qualifiche / alert / copertura | `backend/src/controllers/qualifications.controller.js`, `backend/src/services/capabilityCoverage/coverageEngine.service.js`, `app/src/pages/QualificationsPage.jsx`, `app/src/components/CoverageVerifyPanel.jsx` |
 | Qualifiche — verifica vs norma | `backend/src/services/qualificationVerify/verifyEngine.js`, `docs/agent-tasks/PLAN_VERIFICA_QUALIFICHE_NORMA_SLICES.md` |
+| WPQR — verifica vs norma | `backend/src/services/qualificationVerify/verifyWpqr.js`, `docs/agent-tasks/PLAN_VERIFICA_WPQR_SLICES.md` |
 | Saldatura WPQR / WPS | `backend/src/controllers/welding.controller.js`, `backend/src/services/wpsGenerator.service.js`, `app/src/pages/WeldingProceduresPage.jsx` |
 | Welding Book | `backend/src/controllers/weldingBooks.controller.js`, `app/src/pages/WeldingBooksPage.jsx` |
 | Commesse ISO 3834 | `backend/src/controllers/projects.controller.js`, `app/src/pages/ProjectsPage.jsx` |
@@ -65,7 +66,7 @@ Deploy/SSH: [deploy.md](docs/how-to/deploy.md) + [ACCESSO_DEPLOY_AGENTS.md](docs
 | Libreria (Gestione — fonti AI / import Normattiva) | `app/src/pages/NormLibraryPage.jsx`, `backend/src/controllers/normattiva.controller.js` |
 | Riesame di direzione | `backend/src/controllers/managementReviews.controller.js`, `app/src/pages/ManagementReviewsPage.jsx` |
 | Riesame requisiti / contratto | `backend/src/controllers/contractReview.controller.js`, `app/src/pages/ContractReviewPage.jsx` |
-| Ingest AI / import PDF | `backend/src/controllers/ingestStaging.controller.js`, `backend/src/data/documentTypeSchemas.js`, `app/src/data/documentTypeSchemas.js` |
+| Ingest AI / import PDF | `backend/src/controllers/ingestStaging.controller.js`, `backend/src/services/qualificationDocTypeClassifier.service.js`, `backend/src/data/documentTypeSchemas.js`, `app/src/data/documentTypeSchemas.js` |
 | Auth / RBAC | `backend/src/middleware/auth.middleware.js`, `backend/src/controllers/auth.controller.js`, `app/src/contexts/AuthContext.jsx` |
 | Alert / notifiche | `backend/src/controllers/alert.controller.js`, `backend/src/controllers/notifications.controller.js`, `app/src/pages/NotificationsSettingsPage.jsx` |
 | Export Word verbale audit | `app/src/utils/wordExport.js`, `app/src/utils/wordExportHelpers.js` |

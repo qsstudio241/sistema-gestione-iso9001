@@ -55,7 +55,7 @@ function buildNavItems(user, alerts = {}) {
       items: filterByLicense([
         { to: "/documents",   icon: "📄", label: "Documenti", badge: alerts.documents > 0 ? alerts.documents : null, licenseKey: "documents" },
         { to: "/deadlines",   icon: "\uD83D\uDCC5", label: "Scadenzari", licenseKey: "documents" },
-        { to: "/qualifiche",  icon: "🎓", label: "Qualifiche", licenseKey: "qualifiche" },
+        { to: "/qualifiche",  icon: "🎓", label: "Qualifiche", badge: alerts.qualifications > 0 ? alerts.qualifications : null, licenseKey: "qualifiche" },
         { to: "/nc",                  icon: "🚨", label: "Non Conformità",      licenseKey: "nc" },
         { to: "/rischi",              icon: "⚠️",  label: "Rischi, Opportunità e Obiettivi",   licenseKey: "rischi" },
         { to: "/management-reviews",  icon: "📋", label: "Riesame Direzione",     licenseKey: "riesame_direzione" },
@@ -364,7 +364,8 @@ function AppLayoutInner({ children }) {
         compRes?.data?.overdue_30_days ?? compRes?.overdue_30_days ?? 0;
       const libraryGaps = Number(gapRes?.count ?? gapRes?.data?.count ?? 0) || 0;
       setAlerts({
-        documents: docsRes.total || 0,
+        documents: Number(docsRes?.documents) || 0,
+        qualifications: Number(docsRes?.qualifications) || 0,
         complaints: overdue,
         libraryGaps: isSuperadmin ? libraryGaps : 0,
       });

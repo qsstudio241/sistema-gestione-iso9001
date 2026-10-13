@@ -992,3 +992,93 @@ describe('importJobs.controller storagePathsSafeToUnlink / deleteJob', () => {
         existsSpy.mockRestore();
     });
 });
+
+describe('importJobs.controller: privacy log (nessun nome file nei log)', () => {
+    const logger = require('../utils/logger');
+    const { redactFileNameForLog } = require('../utils/ingestErrorMessage');
+    const FILE_NAME = '99-00000_ZZROSSI ZZMARIO_14732_X.pdf';
+    let tempPdfPath;
+    let spies;
+    const allLogged = () => spies.flatMap((s) => s.mock.calls.map((c) => JSON.stringify(c))).join('\n');
+
+    beforeEach(() => {
+        jest.clearAllMocks();
+        spies = ['info', 'warn', 'error'].map((m) => jest.spyOn(logger, m).mockImplementation(() => {}));
+        const uploadDir = path.join(__dirname, '../../uploads/test-commit');
+        fs.mkdirSync(uploadDir, { recursive: true });
+        tempPdfPath = path.join(uploadDir, 'privacy-test.pdf');
+        fs.writeFileSync(tempPdfPath, '%PDF-1.4 test');
+    });
+
+    afterEach(() => {
+        spies.forEach((s) => s.mockRestore());
+        try { if (fs.existsSync(tempPdfPath)) fs.unlinkSync(tempPdfPath); } catch { /* ignore */ }
+    });
+
+    function qualificationRow(storagePath) {
+        return {
+            id: 9,
+            status: 'reviewed',
+            ai_extraction_json: AI_QUALIFICATION,
+            original_name: FILE_NAME,
+            storage_path: storagePath,
+            confidence_score: 91,
+        };
+    }
+
+    async function commitQualification(storagePath) {
+        query
+            .mockResolvedValueOnce({ recordset: [{ id: 55, company_id: 44 }] })
+            .mockResolvedValueOnce({ recordset: [qualificationRow(storagePath)] })
+            .mockResolvedValueOnce({ recordset: [{ id: 44 }] })
+            .mockResolvedValueOnce({ recordset: [{ id: 123 }] })
+            .mockResolvedValue({ recordset: [] });
+        const res = makeRes();
+        await commitToQualification(makeReq(), res);
+        return res;
+    }
+
+    it('commitToQualification: PDF collegato -> file#hash, nessun nome; risposta invariata', async () => {
+        const res = await commitQualification(tempPdfPath);
+        expect(res.status).toHaveBeenCalledWith(201);
+        const line = spies[0].mock.calls.map((c) => String(c[0])).find((l) => l.includes('collegato a qualification'));
+        expect(line).toContain(redactFileNameForLog(FILE_NAME));
+        expect(allLogged()).not.toContain('ZZROSSI');
+        expect(allLogged()).not.toContain(FILE_NAME);
+    });
+
+    it('commitToQualification: PDF non trovato -> il path del file non compare nel log', async () => {
+        const missing = path.join(__dirname, '../../uploads/test-commit/ZZROSSI ZZMARIO_mancante.pdf');
+        const res = await commitQualification(missing);
+        expect(res.status).toHaveBeenCalledWith(201);
+        const call = spies[1].mock.calls.find((c) => String(c[0]).includes('PDF non trovato'));
+        expect(call[1].file).toBe(redactFileNameForLog(missing));
+        expect(call[1]).not.toHaveProperty('storage_path');
+        expect(allLogged()).not.toContain('ZZROSSI');
+        expect(allLogged()).not.toContain('test-commit');
+    });
+
+    it('commitToRegistry: PDF allegato come v1 -> file#hash, nessun nome', async () => {
+        const row = {
+            id: 9, status: 'reviewed', original_name: FILE_NAME, storage_path: tempPdfPath, mime_type: 'application/pdf',
+            file_size: 1000, ai_extraction_json: null, registry_document_id: null, extracted_text: 'testo', confidence_score: 80,
+        };
+        query
+            .mockResolvedValueOnce({ recordset: [{ id: 55, company_id: 8 }] })
+            .mockResolvedValueOnce({ recordset: [row] })
+            .mockResolvedValueOnce({ recordset: [{ id: 8 }] })
+            .mockResolvedValueOnce({ recordset: [{ id: 120, company_id: 8 }] })
+            .mockResolvedValueOnce({ recordset: [{ id: 900 }] })
+            .mockResolvedValueOnce({ recordset: [{ parent_id: 120 }] })
+            .mockResolvedValueOnce({ recordset: [{ parent_id: null }] })
+            .mockResolvedValue({ recordset: [] });
+        const res = makeRes();
+        await commitToRegistry(makeReq({ company_id: 8, doc_type: 'procedura', title: 'PG-04' }), res);
+
+        expect(res.status).toHaveBeenCalledWith(201);
+        const line = spies[0].mock.calls.map((c) => String(c[0])).find((l) => l.includes('allegato come v1'));
+        expect(line).toContain(redactFileNameForLog(FILE_NAME));
+        expect(allLogged()).not.toContain('ZZROSSI');
+        expect(allLogged()).not.toContain(FILE_NAME);
+    });
+});

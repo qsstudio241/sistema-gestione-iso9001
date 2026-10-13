@@ -118,7 +118,7 @@ const patentino_saldatore = {
         { value: "P", label: "P - Piastra" },
         { value: "T", label: "T - Tubo" },
       ],
-      hint: "Variabile essenziale ISO 9606-1 §11: solo P/T ammessi dalla norma. Un giunto di derivazione/branch/bocchello (tubo che si inserisce in una piastra) resta \u201CT\u201D — è un tipo di giunto (branch joint, §3.16), non una terza categoria di prodotto. Se il certificato lo indica esplicitamente, riportalo nel campo \u201CDettagli di giunto\u201D per non perdere l'informazione.",
+      hint: "Variabile essenziale ISO 9606-1 §11: solo P/T ammessi dalla norma. Un giunto di derivazione/branch/bocchello (tubo che si inserisce in una piastra) resta \u201CT\u201D — è un tipo di giunto (branch joint, §3.16), non una terza categoria di prodotto. Il dettaglio resta nel PDF allegato: non va nel campo \u201CDettagli saldatura \u2013 campo di validità\u201D.",
     },
     {
       key: "material_group",
@@ -230,6 +230,20 @@ const patentino_saldatore = {
       hint: "Data in cui si è svolta la prova di qualifica",
     },
     {
+      key: "issue_date",
+      label: "Data di emissione",
+      type: "date",
+      required: false,
+      hint: "Data di emissione/rilascio del certificato (diversa dalla data esame). Lasciare vuoto se non riportata.",
+    },
+    {
+      key: "examiner_body",
+      label: "Ente / esaminatore",
+      type: "text",
+      required: false,
+      hint: "Ente o esaminatore che ha eseguito la prova, se diverso dall'ente certificatore",
+    },
+    {
       key: "expiry_date",
       label: "Data di scadenza",
       type: "date",
@@ -266,10 +280,10 @@ const patentino_saldatore = {
     },
     {
       key: "weld_details",
-      label: "Dettagli di giunto",
+      label: "Dettagli saldatura \u2013 campo di validità",
       type: "text",
       required: false,
-      hint: "Backing, mono/multistrato, saldatura sx/dx, oppure derivazione/branch/bocchello (giunto tubo-piastra) se dichiarati sul certificato (ISO 9606-1 §11/§3.16)",
+      hint: "Solo i dettagli di saldatura della colonna di validità (\u201CCampo di validità\u201D / \u201CRange of approval\u201D), non i dati della prova: es. sl, ml, ss nb (ISO 9606-1 §5.9, Tab. 11/12). Il tipo prodotto (tubo/piastra) non va qui.",
     },
     {
       key: "transfer_mode",
@@ -305,22 +319,24 @@ Campi da estrarre:
 - welding_process_test: processo della PROVA (riga designazione)
 - welding_processes_validity: processi coperti in VALIDITÀ (es. "135, 138"), distinti dalla prova — NON copiare 138 sulla prova se la riga dice 135
 - joint_type: tipo giunto: "BW" (testa a testa) o "FW" (angolare)
-- product_type: variabile essenziale ISO 9606-1 §11: "P" (piastra/plate) o "T" (tubo/pipe); SOLO questi due valori, non esiste una terza categoria "tubo-piastra" (una derivazione/branch/bocchello è un tipo di giunto, resta "T" — vedi weld_details per non perdere il dettaglio); null se non specificato
-- weld_details: dettagli di giunto se dichiarati (backing, mono/multistrato, saldatura sx/dx, derivazione/branch/bocchello tubo-piastra) o null
+- product_type: variabile essenziale ISO 9606-1 §11: "P" (piastra/plate) o "T" (tubo/pipe); SOLO questi due valori, non esiste una terza categoria "tubo-piastra" (una derivazione/branch/bocchello è un tipo di giunto, resta "T"; NON scriverlo in weld_details); null se non specificato
+- weld_details: dettagli di saldatura della colonna di VALIDITÀ ("Campo di validità"/"Range of approval"), MAI i dati della prova né il tipo prodotto (PIPE/PLATE, tubo/piastra): solo abbreviazioni ISO 9606-1 Tab. 11/12, es. "sl" oppure "sl, ml" (altre: ss, bs, nb, mb, gb, fb, ci); null se assenti
 - material_group: gruppo materiale base ISO/TR 15608 (codice sottogruppo es. "1.1", "1.2", "8.1", "21"; mappa da S355→1.2, S235→1.1 se non esplicitato)
 - filler_material_group: gruppo materiale d'apporto (FM1-FM6 o null)
 - welding_position_test: posizione della prova (es. "PB")
 - welding_positions: array di posizioni ISO 6947 di VALIDITÀ (es. ["PA","PF","PC"])
 - thickness_s_test_mm: numero — spessore depositato s della PROVA, solo BW (Tabella 6). null su FW
 - thickness_t_test_mm: numero — spessore materiale t del provino della PROVA, solo FW (Tabella 8). null su BW. Non usare a/z
-- thickness_min_mm: numero: spessore minimo di VALIDITÀ in mm
-- thickness_max_mm: numero: spessore massimo di VALIDITÀ in mm
+- thickness_min_mm: numero: spessore minimo di VALIDITÀ in mm (colonna di validità della riga spessore, non i valori di prova a)/b); ">=3" = min 3 senza massimo; "t3-10" in designazione = due spessori di prova, non un range)
+- thickness_max_mm: numero: spessore massimo di VALIDITÀ in mm (null se il range è aperto)
 - thickness_max_unlimited: booleano — true SOLO se il certificato dichiara esplicitamente un range aperto senza limite superiore (simboli "≥", "=>", "⩾", oppure testo "no restriction"/"senza limite superiore"). In questo caso lascia thickness_max_mm: null e imposta thickness_max_unlimited: true. Se il campo è semplicemente assente dal documento (non un range aperto dichiarato), lascia entrambi null/false — NON confondere le due situazioni
 - pipe_diameter_test_mm: diametro esterno del tubo di PROVA (null se solo piastre)
 - pipe_diameter_mm: diametro di VALIDITÀ (null se solo piastre)
 - qualification_designation: riga STAMPATA "ISO 9606-1: …" così com'è sul certificato. NON ricalcolarla da min/max
 - shielding_gas: codice gas ISO 14175 (es. "M21", "I1") o null
 - exam_date: data esame in formato ISO 8601 (YYYY-MM-DD) o null
+- issue_date: data di EMISSIONE/rilascio del certificato (YYYY-MM-DD), DISTINTA da exam_date ("Date of issue"/"Data di emissione"). Se il certificato riporta solo la data della prova, usa null: NON copiare exam_date
+- examiner_body: ente/esaminatore che ha eseguito o testimoniato la prova ("Examiner or examining body"), se diverso dall'issuing_body; null se assente
 - expiry_date: data scadenza in formato ISO 8601 (YYYY-MM-DD) o null
 - last_confirmation_date: data ultima conferma datore di lavoro in formato ISO 8601 o null
 - next_confirmation_due: data prossima conferma in formato ISO 8601 o null
@@ -356,6 +372,8 @@ Campi da estrarre:
     next_confirmation_due: "YYYY-MM-DD|null",
     standard_reference: "string|null",
     transfer_mode: "spray_arc|pulsed_arc|short_arc|globular|null",
+    issue_date: "YYYY-MM-DD|null",
+    examiner_body: "string|null",
   },
 };
 
@@ -985,6 +1003,21 @@ const qualifica_14732 = {
     },
     { key: "exam_date", label: "Data esame", type: "date", required: false },
     {
+      key: "issue_date",
+      label: "Data di emissione",
+      type: "date",
+      required: false,
+      hint: "Data di emissione/rilascio del certificato (diversa dalla data esame). Lasciare vuoto se non riportata.",
+    },
+    { key: "examiner_body", label: "Ente / esaminatore", type: "text", required: false },
+    {
+      key: "standard_reference",
+      label: "Norma di riferimento",
+      type: "text",
+      required: false,
+      hint: "Norma con edizione come scritta sul certificato (es. ISO 14732:2013)",
+    },
+    {
       key: "expiry_date",
       label: "Data di scadenza",
       type: "date",
@@ -1039,6 +1072,9 @@ Campi da estrarre:
 - single_multi_run: "single" o "multi" se indicato
 - exam_date, expiry_date, last_confirmation_date, next_confirmation_due (YYYY-MM-DD)
 - qualification_method: quale metodo tra §4.1 a/b/c/d è stato usato, se indicato
+- issue_date: data di EMISSIONE del certificato (YYYY-MM-DD), distinta da exam_date (data della prova); se assente null, NON copiare exam_date
+- examiner_body: ente/esaminatore che ha eseguito la prova, se diverso dall'issuing_body
+- standard_reference: norma con edizione ESATTAMENTE come scritta sul certificato (es. "ISO 14732:2013"); null se non indicata
 
 IMPORTANTE: NON assumere un intervallo di validità fisso. ISO 14732 ha rivalidazione a 6 anni (opzione a) o 3 anni con controllo NDT (opzione b), diversi dai 3/2 anni di ISO 9606-1 per saldatori manuali — estrai solo ciò che è scritto sul certificato.`,
   aiExpectedSchema: {
@@ -1055,6 +1091,9 @@ IMPORTANTE: NON assumere un intervallo di validità fisso. ISO 14732 ha rivalida
     last_confirmation_date: "YYYY-MM-DD|null",
     next_confirmation_due: "YYYY-MM-DD|null",
     qualification_method: "iso_15614|iso_15613|iso_9606|production_test|null",
+    issue_date: "YYYY-MM-DD|null",
+    examiner_body: "string|null",
+    standard_reference: "string|null",
   },
 };
 

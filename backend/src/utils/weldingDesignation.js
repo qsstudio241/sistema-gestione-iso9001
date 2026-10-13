@@ -134,10 +134,35 @@ const PROCESS_IN_LINE_RE = /\b\d{2,3}[A-Z]?\b/i;
 const EDITION_ONLY_RE = /^(?:19|20)\d{2}(?:\s*[+]\s*A\d+)?\s*$/i;
 const LABELED_9606_RE = /ISO\s*9606-1\s*[:.\-]?\s*([^\n\r]*)/gi;
 
+/**
+ * Normalizza la sorgente della riga prima di tokenizzare:
+ * - virgola decimale italiana tra cifre ("D48,25") -> punto, cosi' non viene trattata come separatore;
+ * - simbolo diametro (\u00D8, \u2300) o "D" staccato dal valore ("D 48,25") -> token unico "D48.25".
+ * `;` e le virgole che separano campi veri (non tra due cifre) restano separatori.
+ */
+function normalizeDesignationSource(raw) {
+    return String(raw || '')
+        .replace(/(\d),(?=\d)/g, '$1.')
+        .replace(/[\u00D8\u00F8\u2300]\s*=?\s*(?=\d)/g, 'D')
+        .replace(/(^|[\s;,])D\s+(?=\d)/g, '$1D');
+}
+
 function parseNumberToken(raw) {
     if (raw == null || raw === '') return null;
     const n = Number(String(raw).replace(',', '.'));
     return Number.isFinite(n) ? n : null;
+}
+
+/**
+ * "t3-10" / "s3-10" sono DUE spessori di PROVA (provini a e b), non un range di validita'.
+ * Il primo resta nello slot di prova s/t; l'elenco completo e' solo informativo (nessuna colonna
+ * per il secondo) e non alimenta mai thickness_min_mm / thickness_max_mm.
+ */
+function pushTestValues(target, match) {
+    for (const raw of [match[1], match[2]]) {
+        const n = parseNumberToken(raw);
+        if (n != null) target.push(n);
+    }
 }
 
 function isEditionOnlyRemainder(rest) {
@@ -193,7 +218,7 @@ function parseWelderQualificationDesignation(text) {
     const rawLine = picked.rawLine;
     const tokenSource = picked.tokenSource;
 
-    const tokens = String(tokenSource || '')
+    const tokens = normalizeDesignationSource(tokenSource)
         .replace(/[;,]+/g, ' ')
         .split(/\s+/)
         .map((t) => t.trim())
@@ -207,6 +232,7 @@ function parseWelderQualificationDesignation(text) {
         filler_material_group: null,
         thickness_s_test_mm: null,
         thickness_t_test_mm: null,
+        thickness_test_values: [],
         pipe_diameter_test_mm: null,
         welding_position_test: null,
         weld_details: null,
@@ -239,11 +265,13 @@ function parseWelderQualificationDesignation(text) {
         const sTok = tok.match(/^s\s*=?\s*(\d+(?:[.,]\d+)?)(?:-(\d+(?:[.,]\d+)?))?$/i);
         if (sTok) {
             parsed.thickness_s_test_mm = parseNumberToken(sTok[1]);
+            pushTestValues(parsed.thickness_test_values, sTok);
             continue;
         }
         const tTok = tok.match(/^t\s*=?\s*(\d+(?:[.,]\d+)?)(?:-(\d+(?:[.,]\d+)?))?$/i);
         if (tTok) {
             parsed.thickness_t_test_mm = parseNumberToken(tTok[1]);
+            pushTestValues(parsed.thickness_test_values, tTok);
             continue;
         }
         const dTok = tok.match(/^D\s*=?\s*(\d+(?:[.,]\d+)?)(?:-(\d+(?:[.,]\d+)?))?$/i);
@@ -279,7 +307,8 @@ function parseWelderQualificationDesignation(text) {
 }
 
 /**
- * Campi ingest da parser (prova). Non scrive i range di validità min/max.
+ * Campi ingest da parser (prova). Non scrive i range di validità min/max né `weld_details`:
+ * i token residui della riga stampata sono dettagli della PROVA, il DB tiene quelli di validità.
  */
 function designationFieldsToIngest(parsed) {
     if (!parsed) return {};
@@ -296,7 +325,6 @@ function designationFieldsToIngest(parsed) {
     if (parsed.thickness_t_test_mm != null) out.thickness_t_test_mm = parsed.thickness_t_test_mm;
     if (parsed.pipe_diameter_test_mm != null) out.pipe_diameter_test_mm = parsed.pipe_diameter_test_mm;
     if (parsed.welding_position_test) out.welding_position_test = parsed.welding_position_test;
-    if (parsed.weld_details) out.weld_details = parsed.weld_details;
     return out;
 }
 

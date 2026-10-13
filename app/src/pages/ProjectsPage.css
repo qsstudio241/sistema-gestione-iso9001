@@ -37,6 +37,7 @@
 .pj-table td { padding:9px 10px; border-bottom:1px solid #f3f4f6; vertical-align:top; }
 .pj-table tbody tr:last-child td { border-bottom:none; }
 .pj-table tbody tr:hover td { background:#fafafa; }
+.pj-table tbody tr.pj-row-click { cursor:pointer; }
 
 /* Azioni */
 .pj-btn-icon { background:none; border:none; font-size:15px; cursor:pointer; padding:3px 5px; border-radius:6px; }
@@ -138,7 +139,11 @@
 @media (max-width:700px) {
   .pj-page { padding:14px; }
   .pj-form-grid { grid-template-columns:1fr; }
-  .pj-table th:nth-child(n+5), .pj-table td:nth-child(n+5) { display:none; }
+  .pj-table th:nth-child(n+5):not(:last-child), .pj-table td:nth-child(n+5):not(:last-child) { display:none; }
+  .pj-table-list td:last-child { white-space:nowrap; }
+  .pj-table-list th:last-child, .pj-table-list td:last-child { position:sticky; right:0; box-shadow:-6px 0 6px -6px rgba(0,0,0,.18); }
+  .pj-table-list td:last-child { background:#fff; }
+  .pj-table-list th:last-child { background:#f9fafb; }
   .pj-technical-review-item { flex-wrap:wrap; }
   .pj-technical-review-note { max-width:100%; margin-left:0; }
 }

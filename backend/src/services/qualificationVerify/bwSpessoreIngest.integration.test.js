@@ -37,6 +37,8 @@ function reviewFromDesignation(line, validity) {
         exam_date: '2026-01-10',
         expiry_date: '2029-01-09',
         ...fromDesignation,
+        // I dettagli di saldatura arrivano dalla colonna di validità, non dalla riga designazione.
+        weld_details: 'ss, nb',
         ...validity,
     }, 'Certificato ISO 9606-1 saldatore', 'c.pdf');
 }

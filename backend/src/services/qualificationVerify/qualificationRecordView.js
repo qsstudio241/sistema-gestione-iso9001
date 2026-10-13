@@ -12,7 +12,7 @@
 'use strict';
 
 const { toNumericOrNull } = require('../../utils/numericSanitizer');
-const { getJointTypeProfile, uses9606DimensionalBlock } = require('../../data/jointTypeProfiles');
+const { getJointTypeProfile, uses9606DimensionalBlock, extractStandardEdition } = require('../../data/jointTypeProfiles');
 
 const SOURCE = Object.freeze({ REVIEW: 'review', DB: 'db' });
 
@@ -91,11 +91,6 @@ function toBool(v) {
     return false;
 }
 
-function extractEdition(rest) {
-    const m = String(rest || '').match(/^\s*[:\-\u2013(]?\s*((?:19|20)\d{2})(?!\d)/);
-    return m ? m[1] : null;
-}
-
 /**
  * Riconosce norma ed edizione da un testo libero (`standard_reference` o `qualification_type`).
  * `family` è valorizzata solo per le norme con pack (9606-1, 9606-2, 14732); le norme
@@ -109,7 +104,7 @@ function detectStandard(text) {
     let m = /9606[\s-]*([1-5])(?!\d)/i.exec(s);
     if (m) {
         const part = m[1];
-        const edition = extractEdition(s.slice(m.index + m[0].length));
+        const edition = extractStandardEdition(s.slice(m.index + m[0].length));
         if (part === '1') return { family: STANDARD_FAMILY.WQ_9606_1, edition, label: 'ISO 9606-1' };
         if (part === '2') return { family: STANDARD_FAMILY.WQ_9606_2, edition, label: 'ISO 9606-2' };
         return { family: null, edition, label: `ISO 9606-${part}` };
@@ -119,14 +114,14 @@ function detectStandard(text) {
     if (m) {
         return {
             family: STANDARD_FAMILY.OP_14732,
-            edition: extractEdition(s.slice(m.index + m[0].length)),
+            edition: extractStandardEdition(s.slice(m.index + m[0].length)),
             label: 'ISO 14732',
         };
     }
 
     m = /\b287[\s-]*1(?!\d)/i.exec(s);
     if (m) {
-        return { family: null, edition: extractEdition(s.slice(m.index + m[0].length)), label: 'EN 287-1' };
+        return { family: null, edition: extractStandardEdition(s.slice(m.index + m[0].length)), label: 'EN 287-1' };
     }
 
     return null;
