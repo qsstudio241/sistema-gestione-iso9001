@@ -8,7 +8,11 @@ const logger = require('../utils/logger');
 const { redactFileNameForLog, redactPersonForLog } = require('../utils/ingestErrorMessage');
 const { getPool } = require('../config/database');
 const { resolvePersonnelForQualification } = require('./personnelQualificationLink.service');
-const { runDocumentIngest } = require('./documentIngestPipeline.service');
+const { runDocumentIngest, extractDocumentText } = require('./documentIngestPipeline.service');
+const {
+    classifyQualificationDocType,
+    overrideClassification,
+} = require('./qualificationDocTypeClassifier.service');
 const { deriveQualificationStatus } = require('./weldingCoordinatorAuth.service');
 const { resolvePrintedDesignation, resolveTestThicknessByJoint } = require('../utils/weldingDesignation');
 const {
@@ -23,6 +27,7 @@ const {
     checkShieldingGasKnown,
 } = require('../utils/ingestPlausibilityChecks');
 const { toNumericOrNull } = require('../utils/numericSanitizer');
+const { FIELD_STATE, getFieldState, nullNotApplicableFields } = require('../data/jointTypeProfiles');
 
 /**
  * Controlli di plausibilità/coerenza normativa sui campi estratti (warning-only,
@@ -477,12 +482,52 @@ function pickFieldSourcesForFields(fieldSources, reviewFields) {
     return out;
 }
 
-async function extractQualificationFromPdf(pdfBuffer, fileName, organizationId, companyId, docType = 'patentino_saldatore') {
+/**
+ * Estrae i campi per lo staging.
+ * `docType` esplicito = override dell'operatore (comportamento storico, `classification_source: 'override'`).
+ * `docType === null` = riconoscimento automatico per file: se il tipo non è chiaro (confidenza bassa o `altro`)
+ * ritorna `{ status: 'type_unresolved', classification }` senza estrarre (nessun costo AI di estrazione)
+ * oppure `wrong_module` se il documento sembra una WPQR/WPS.
+ */
+async function extractQualificationFromPdf(pdfBuffer, fileName, organizationId, companyId, docType = 'patentino_saldatore', deps = {}) {
+    let classification;
+    let preExtracted = null;
+    if (docType === null) {
+        preExtracted = await extractDocumentText(pdfBuffer, { collectOcrLayout: true });
+        classification = await classifyQualificationDocType({
+            pdfBuffer,
+            fileName,
+            text: preExtracted.text,
+            ocrUsed: preExtracted.ocrUsed,
+            deps: deps.classifier,
+        });
+        // `high` da regole sul testo completo salta la guardia (un 14732 cita WPQR/15614 come base);
+        // `high` ricavato solo dall'intestazione OCR no: il corpo del documento può essere altro.
+        if ((classification.confidence !== 'high' || classification.via_header_ocr) && preExtracted.text.length > 30) {
+            const docClass = classifyDocument(`${preExtracted.text}\n${fileName || ''}`);
+            if (WRONG_MODULE_FOR_QUALIFICATIONS.has(docClass.detected_type) && docClass.confidence === 'high') {
+                return {
+                    status: 'wrong_module',
+                    detected_type: docClass.detected_type,
+                    message: WRONG_MODULE_MESSAGES[docClass.detected_type],
+                    suggested_module: SUGGESTED_MODULE[docClass.detected_type],
+                    classification: { ...classification, needs_choice: true },
+                };
+            }
+        }
+        if (classification.needs_choice) {
+            return { status: 'type_unresolved', classification, warnings: [...preExtracted.warnings] };
+        }
+        docType = classification.detected_doc_type;
+    } else {
+        classification = overrideClassification(docType);
+    }
     const pipeline = await runDocumentIngest({
         pdfBuffer,
         docType,
         fileName,
         organizationId,
+        preExtracted,
     });
     const warnings = [...pipeline.warnings];
     const reviewFields = mapPipelineFieldsToReview(pipeline.fields || {}, pipeline.text, fileName, docType);
@@ -570,6 +615,8 @@ async function extractQualificationFromPdf(pdfBuffer, fileName, organizationId, 
             fields: reviewFields,
             field_confidence: pipeline.fieldConfidence,
             verification,
+            doc_type: docType,
+            classification,
         };
     }
 
@@ -585,6 +632,8 @@ async function extractQualificationFromPdf(pdfBuffer, fileName, organizationId, 
         warnings,
         ai_model: pipeline.aiModel,
         verification,
+        doc_type: docType,
+        classification,
     };
 }
 
@@ -599,8 +648,14 @@ async function commitQualificationFromFields(fields, organizationId, companyId, 
         qualificationType: qualTypeOverride = null,
     } = options;
 
-    const f = fields || {};
-    const qualificationType = qualTypeOverride || f.qualification_type || classifyQualificationType(fileName);
+    const rawFields = fields || {};
+    const qualificationType = qualTypeOverride || rawFields.qualification_type || classifyQualificationType(fileName);
+    // Campi non applicabili per famiglia+edizione (ISO 14732 Annex C) a NULL, solo con famiglia certa.
+    const applicabilityCtx = {
+        qualificationType,
+        standardReference: rawFields.standard_reference || rawFields.standard_ref || null,
+    };
+    const f = nullNotApplicableFields(rawFields, applicabilityCtx).fields;
     const person_name = String(f.welder_name || f.operator_name || f.person_name || '').trim();
 
     if (!person_name) {
@@ -677,18 +732,20 @@ async function commitQualificationFromFields(fields, organizationId, companyId, 
     // Designazione sintetica ISO 9606-1 §11 (stesso calcolo del form manuale —
     // qualifications.controller.js — vedi backend/src/utils/weldingDesignation.js).
     // Usa SOLO il gruppo apporto FM*, mai material_group (bug 01/08/2026).
-    const qualification_designation = resolvePrintedDesignation(f.qualification_designation, {
-        welding_process,
-        product_type,
-        joint_type,
-        filler_material_group: filler_material,
-        thickness_min_mm,
-        thickness_max_mm,
-        pipe_diameter_min_mm,
-        pipe_diameter_max_mm,
-        welding_positions: position_range,
-        weld_details,
-    });
+    const qualification_designation = getFieldState(applicabilityCtx, 'qualification_designation') === FIELD_STATE.NOT_APPLICABLE
+        ? null
+        : resolvePrintedDesignation(f.qualification_designation, {
+            welding_process,
+            product_type,
+            joint_type,
+            filler_material_group: filler_material,
+            thickness_min_mm,
+            thickness_max_mm,
+            pipe_diameter_min_mm,
+            pipe_diameter_max_mm,
+            welding_positions: position_range,
+            weld_details,
+        });
 
     if (certificate_number && companyId
         && await checkQualificationDuplicate(certificate_number, organizationId, companyId, qualificationType)) {

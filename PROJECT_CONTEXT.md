@@ -66,7 +66,7 @@ Deploy/SSH: [deploy.md](docs/how-to/deploy.md) + [ACCESSO_DEPLOY_AGENTS.md](docs
 | Libreria (Gestione — fonti AI / import Normattiva) | `app/src/pages/NormLibraryPage.jsx`, `backend/src/controllers/normattiva.controller.js` |
 | Riesame di direzione | `backend/src/controllers/managementReviews.controller.js`, `app/src/pages/ManagementReviewsPage.jsx` |
 | Riesame requisiti / contratto | `backend/src/controllers/contractReview.controller.js`, `app/src/pages/ContractReviewPage.jsx` |
-| Ingest AI / import PDF | `backend/src/controllers/ingestStaging.controller.js`, `backend/src/data/documentTypeSchemas.js`, `app/src/data/documentTypeSchemas.js` |
+| Ingest AI / import PDF | `backend/src/controllers/ingestStaging.controller.js`, `backend/src/services/qualificationDocTypeClassifier.service.js`, `backend/src/data/documentTypeSchemas.js`, `app/src/data/documentTypeSchemas.js` |
 | Auth / RBAC | `backend/src/middleware/auth.middleware.js`, `backend/src/controllers/auth.controller.js`, `app/src/contexts/AuthContext.jsx` |
 | Alert / notifiche | `backend/src/controllers/alert.controller.js`, `backend/src/controllers/notifications.controller.js`, `app/src/pages/NotificationsSettingsPage.jsx` |
 | Export Word verbale audit | `app/src/utils/wordExport.js`, `app/src/utils/wordExportHelpers.js` |
