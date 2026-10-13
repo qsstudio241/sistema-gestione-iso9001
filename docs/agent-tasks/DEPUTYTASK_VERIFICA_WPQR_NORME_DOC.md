@@ -1,6 +1,6 @@
 # DEPUTYTASK_VERIFICA_WPQR_NORME_DOC — WV-2: estratto operativo «dati di prova WPQR» (Annex B / A / C ↔ clausole ↔ campi) + stati backlog
 
-**Stato:** APERTO — lanciabile **solo dopo il merge su `origin/main`** della PR di charting (gate DEPUTYTASK: `git show origin/main:docs/agent-tasks/DEPUTYTASK_VERIFICA_WPQR_NORME_DOC.md` deve mostrare `APERTO`)  
+**Stato:** CHIUSO — TEST OK (08/10/2026; PR draft `cursor/wv-2-norme-doc-wpqr-064b`, rischio Basso, solo documentazione)  
 **Aperto:** 07/10/2026  
 **Piano:** [`PLAN_VERIFICA_WPQR_SLICES.md`](PLAN_VERIFICA_WPQR_SLICES.md) § 2 (modello dati) · § 4 (inventario norme) · § 5 (regole) · § 6.3 WV-2  
 **Dipende da:** nessuna (onda 1)  
@@ -65,11 +65,11 @@ Comandi: `node backend/scripts/check-utf8-encoding.js` · `node backend/scripts/
 
 ## DoD
 
-- [ ] `WPQR-dati-prova-pagina-2-estratto.md` con una sezione per 15614-1 (Annex B), 15614-2 (Annex A), 14555 (Annex C) e il rinvio 15613
-- [ ] Ogni clausola citata verificata aprendo il Markdown; nessuna soglia inventata; GAP dichiarati con rimando HITL
-- [ ] Backlog: stati/note aggiornati senza cancellare righe
-- [ ] `check-utf8-encoding.js` e `check-harness-boot.js` verdi; **nessun file di codice** nel diff
-- [ ] Branch allineato a `origin/main` prima di push/PR
+- [x] `WPQR-dati-prova-pagina-2-estratto.md` con una sezione per 15614-1 (Annex B), 15614-2 (Annex A), 14555 (Annex C) e il rinvio 15613
+- [x] Ogni clausola citata verificata aprendo il Markdown; nessuna soglia inventata; GAP dichiarati con rimando HITL
+- [x] Backlog: stati/note aggiornati senza cancellare righe
+- [x] `check-utf8-encoding.js` e `check-harness-boot.js` verdi; **nessun file di codice** nel diff
+- [x] Branch allineato a `origin/main` prima di push/PR
 
 ## HITL
 
@@ -81,4 +81,6 @@ Nessuno bloccante (la slice **documenta** i blocchi). Se per una clausola serve 
 
 ## Handoff
 
-_(vuoto)_
+_(vuoto: slice chiusa)_
+
+**Esito (08/10/2026):** creato `docs/reference/WPQR-dati-prova-pagina-2-estratto.md` (15614-1 Annex B, 15614-2 Annex A, 14555 Annex C, rinvio 15613, elementi 15609-1 §4.4–4.5); `NORME_MANCANTI_BACKLOG.md`: note WV-2 sulle 4 righe WPQR + 2 righe nuove (ISO/TR 17671-2/-4; conferma pagine modulo 14555 Annex C / 15614-2 Annex A). `check-utf8-encoding.js` e `check-harness-boot.js` verdi; nessun file di codice. GAP/HITL: vedi § 7 dell'estratto (GAP-1…8).
