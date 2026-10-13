@@ -46,9 +46,9 @@ const TABLE_ADAPTERS = {
         excludeCondition: null,
         candidateSelectColumns: 'id, organization_id, company_id, wpqr_code, welding_process, product_type, joint_type, welding_positions, thickness_tested, certificate_file_url',
         resolveDocType: () => 'wpqr',
-        // wpqrIngest.mapPipelineFieldsToReview(f, fileName) non usa il testo
-        // pipeline — parametro ignorato solo per uniformare la firma comune.
-        mapPipelineFieldsToReview: (fields, _text, fileName) => mapWpqrFields(fields, fileName),
+        // wpqrIngest.mapPipelineFieldsToReview(f) non usa ne' il testo pipeline ne' il nome file
+        // (il numero WPQR non deriva mai dal nome file) — parametri ignorati per uniformare la firma comune.
+        mapPipelineFieldsToReview: (fields) => mapWpqrFields(fields),
         buildStagingDisplayFields: (reviewFields) => ({
             wpqr_code: reviewFields.wpqr_number || reviewFields.reference_number,
             certificate_number: reviewFields.certificate_number,
