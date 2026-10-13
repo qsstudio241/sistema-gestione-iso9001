@@ -152,6 +152,10 @@ async function hardDeleteCompany(companyId, auditorOrgId) {
     ['user_company_access', 'DELETE FROM user_company_access WHERE company_id = @company_id'],
     ['complaints', 'DELETE FROM complaints WHERE company_id = @company_id AND organization_id = @organization_id'],
     ['suppliers', 'DELETE FROM suppliers WHERE company_id = @company_id AND organization_id = @organization_id'],
+    // FK senza ON DELETE (migrazione 174): i link WPS-WPQR vanno rimossi prima delle WPS dell'azienda.
+    ['wps_wpqr_links', `DELETE FROM wps_wpqr_links
+      WHERE organization_id = @organization_id
+        AND wps_id IN (SELECT id FROM welding_procedures WHERE company_id = @company_id AND organization_id = @organization_id)`],
     ['welding_procedures', 'DELETE FROM welding_procedures WHERE company_id = @company_id AND organization_id = @organization_id'],
     ['billing_events', 'DELETE FROM billing_events WHERE company_id = @company_id'],
     ['billing_snapshots', 'DELETE FROM billing_snapshots WHERE company_id = @company_id'],
