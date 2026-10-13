@@ -1,6 +1,6 @@
 # DEPUTYTASK_VERIFICA_QUALIFICHE_RIELAB_FE — VQ-4: riga «Verifica qualifiche vs norma» in Fatturazione → Rielaborazioni (FE)
 
-**Stato:** APERTO — lanciabile **solo dopo il merge su `origin/main`** della PR di charting (gate DEPUTYTASK: `git show origin/main:docs/agent-tasks/DEPUTYTASK_VERIFICA_QUALIFICHE_RIELAB_FE.md` deve mostrare `APERTO`)  
+**Stato:** CHIUSO — TEST OK (06/10/2026, mergiata [#715](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/715))  
 **Aperto:** 06/10/2026  
 **Piano:** [`PLAN_VERIFICA_QUALIFICHE_NORMA_SLICES.md`](PLAN_VERIFICA_QUALIFICHE_NORMA_SLICES.md) § 2 (voce Rielaborazioni di tipo verifica) · § 6.3 VQ-4  
 **Dipende da:** il **contratto API di § 2.2** (campo `kind`, risposta `kind:'verify'`), congelato nel piano. Il BE arriva in VQ-8: qui si lavora su mock  
