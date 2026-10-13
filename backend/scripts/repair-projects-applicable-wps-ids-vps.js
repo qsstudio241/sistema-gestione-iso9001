@@ -8,9 +8,9 @@
  * DA ESEGUIRE SOLO DOPO IL SI ESPLICITO DELL'UTENTE, previo backup COPY_ONLY del DB.
  * Default = DRY-RUN (solo SELECT). Scrive solo con --apply.
  *
- * Parametri (almeno uno tra --project-code e --organization-id):
- *   --project-code <codice>      filtra per projects.project_code
- *   --organization-id <n>        filtra per projects.organization_id
+ * Parametri:
+ *   --organization-id <n>        obbligatorio; filtra per projects.organization_id
+ *   --project-code <codice>      opzionale; restringe a projects.project_code nello stesso tenant
  *   --apply                      esegue l'UPDATE (una transazione, rollback se @@ROWCOUNT <> 1)
  *
  * Uso sul VPS (credenziali da .env del backend; il backend con src/utils/applicableWpsIds.js deve essere già deployato):
@@ -32,8 +32,8 @@ const RAW_PREVIEW_MAX = 80;
 const SELECT_SQL = `
   SELECT id, organization_id, applicable_wps_ids
   FROM projects
-  WHERE (@project_code IS NULL OR project_code = @project_code)
-    AND (@organization_id IS NULL OR organization_id = @organization_id)
+  WHERE organization_id = @organization_id
+    AND (@project_code IS NULL OR project_code = @project_code)
   ORDER BY organization_id, id
 `;
 
@@ -70,8 +70,8 @@ function parseArgs(argv) {
       out.errors.push(`parametro sconosciuto: ${arg}`);
     }
   }
-  if (!out.errors.length && out.projectCode === null && out.organizationId === null) {
-    out.errors.push('serve almeno uno tra --project-code e --organization-id');
+  if (!out.errors.length && out.organizationId === null) {
+    out.errors.push('--organization-id è obbligatorio (anche con --project-code)');
   }
   return out;
 }
@@ -204,7 +204,7 @@ async function main() {
   const opts = parseArgs(process.argv.slice(2));
   if (opts.errors.length) {
     console.error(opts.errors.join('\n'));
-    console.error('Uso: node repair-projects-applicable-wps-ids-vps.js [--project-code <c>] [--organization-id <n>] [--apply]');
+    console.error('Uso: node repair-projects-applicable-wps-ids-vps.js --organization-id <n> [--project-code <c>] [--apply]');
     process.exit(2);
   }
 

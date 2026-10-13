@@ -7,6 +7,7 @@ const {
   buildPlan,
   applyPlan,
   runRepair,
+  SELECT_SQL,
   UPDATE_SQL,
 } = require('./repair-projects-applicable-wps-ids-vps');
 
@@ -46,6 +47,15 @@ describe('parseArgs', () => {
     expect(parseArgs([]).errors.length).toBeGreaterThan(0);
     expect(parseArgs(['--organization-id', 'abc']).errors.length).toBeGreaterThan(0);
     expect(parseArgs(['--organization-id', '1', '--boh']).errors.length).toBeGreaterThan(0);
+  });
+
+  test('--project-code da solo viene rifiutato', () => {
+    const a = parseArgs(['--project-code', 'X-1']);
+    expect(a.errors).toEqual(expect.arrayContaining([
+      expect.stringMatching(/--organization-id/),
+    ]));
+    expect(a.organizationId).toBe(null);
+    expect(a.projectCode).toBe('X-1');
   });
 });
 
@@ -146,6 +156,11 @@ describe('applyPlan', () => {
 });
 
 describe('modulo', () => {
+  test('SELECT sempre scoped su organization_id (niente IS NULL OR)', () => {
+    expect(SELECT_SQL).toMatch(/WHERE organization_id = @organization_id/);
+    expect(SELECT_SQL).not.toMatch(/@organization_id IS NULL OR/);
+  });
+
   test('il require non apre connessioni al DB (nessun accesso a database.js)', () => {
     jest.isolateModules(() => {
       jest.doMock('../src/config/database', () => { throw new Error('DB caricato al require'); });
