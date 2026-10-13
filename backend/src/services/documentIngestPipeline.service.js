@@ -199,7 +199,7 @@ async function extractFieldsByAi(text, docType, fileName, organizationId = null,
                     },
                     {
                         role: 'user',
-                        content: `Estrai campi da questo ${schema?.label || docType} (file ${fileName}). JSON piatto con chiavi: ${retryKeys.join(', ')}. Testo:\n${text.slice(0, 3000)}`,
+                        content: `Estrai campi da questo ${schema?.label || docType}. JSON piatto con chiavi: ${retryKeys.join(', ')}. Testo:\n${text.slice(0, 3000)}`,
                     },
                 ],
                 { temperature: 0.1, responseFormat: 'json', maxTokens: 2500 }

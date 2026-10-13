@@ -108,7 +108,9 @@ Istruzioni per le date di conferma semestrale (ISO 9606-1 §9.2):
     label: 'WPS (Procedura di saldatura)',
     aiPrompt: `Stai analizzando una WPS (Welding Procedure Specification) secondo EN ISO 15609-1 (arco) o 15609-2 (gas), spesso qualificata via ISO 15614.
 Estrai nell'oggetto "type_specific_data":
-- wps_number, wpqr_ref, welding_process (codice ISO 4063),
+- wps_number (numero della WPS stessa, riga "WPS n."), welding_process (codice ISO 4063),
+- wpqr_ref: numero/i della WPQR di supporto, riga "Supporting WPQR n. / WPQR di supporto n." (la data della WPS
+  puo' precedere il numero: ignorarla; piu' numeri separati da virgola). NON e' il numero della WPS e NON e' una norma,
 - base_material (designazione), material_group (ISO/TR 15608),
 - thickness_min_mm, thickness_max_mm, pipe_outside_diameter_mm (null se solo piastra),
 - joint_type (BW|FW o descrizione), welding_positions (array ISO 6947),
@@ -148,6 +150,8 @@ Estrai TUTTI i seguenti campi in "type_specific_data". Se un campo non e present
 
 Campi di copertura (pag.1 RANGE OF QUALIFICATION, priorita alta):
 - wpqr_number: numero certificato/WPQR, accetta suffisso rivisione (es. "24-03390-01")
+  E' il numero del certificato di QUESTO documento ("Certificate No." / "Certificato No."), mai quello della
+  "WPQR di supporto n." riportata nella pagina WPS incorporata
 - qualification_level: "1" o "2" solo se dichiarato esplicitamente (Level 1/2) - non dedurre
 - standard_reference: norma di riferimento (es. "UNI EN ISO 15614-1:2017" oppure "UNI EN ISO 15614-2:2025" per alluminio)
 - welding_process: codice ISO 4063 - preferire un codice numerico esplicito nel testo (es. "Welding process: 135") a un alias generico

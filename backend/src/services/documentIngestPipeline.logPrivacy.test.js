@@ -96,6 +96,21 @@ describe('pipeline: nessun nome file nei log', () => {
         expectNoFileName();
     });
 
+    it('prompt di retry JSON verso l\'AI: nessun nome file (può contenere il titolare)', async () => {
+        extractHeaderTextWithOCR.mockResolvedValue('');
+        const err = new Error('risposta non JSON');
+        err.code = 'AI_INVALID_JSON';
+        extractStructuredByDocType.mockRejectedValue(err);
+        chat.mockResolvedValue({ content: '{"welder_name":"ZZTITOLARE"}', model: 'test' });
+        await ingest();
+        expect(chat).toHaveBeenCalledTimes(1);
+        const sent = JSON.stringify(chat.mock.calls[0][0]);
+        for (const leak of ['ZZROSSI', 'ZZMARIO', '99-00000', FILE_NAME, '14732_X', '(file ']) {
+            expect(sent).not.toContain(leak);
+        }
+        expect(sent).toContain('JSON piatto con chiavi');
+    });
+
     it('Completato e Fonti campi: file hashato, nessun nome; i campi estratti non cambiano', async () => {
         extractHeaderTextWithOCR.mockResolvedValue('');
         extractStructuredByDocType.mockResolvedValue({ model: 'gemini-test', data: { type_specific_data: { expiry_date: '2030-01-31' } } });

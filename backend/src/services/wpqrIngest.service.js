@@ -23,6 +23,8 @@ const {
 } = require('../utils/ingestPlausibilityChecks');
 const { toNumericOrNull } = require('../utils/numericSanitizer');
 const { normalizeJointTypeCode } = require('../utils/textEncodingRepair');
+const { splitRefList, normalizeWpqrRef } = require('../utils/wpqrSupportRefs');
+const wpsWpqrLinks = require('./wpsWpqrLinks.service');
 
 /**
  * Hint stud/prigioniero (STUD-2). Non usare `\bstud\b` da solo: eviterebbe
@@ -306,8 +308,15 @@ function normalizeWpqrNumber(...candidates) {
     return null;
 }
 
+/** Riferimenti «WPQR di supporto» (campo da regole, non AI) senza il numero della WPQR stessa. */
+function resolveSupportingRefs(raw, ownNumber) {
+    const own = normalizeWpqrRef(ownNumber);
+    return splitRefList(raw).filter((ref) => !own || normalizeWpqrRef(ref) !== own);
+}
+
 function mapPipelineFieldsToReview(f) {
     const referenceNumber = normalizeWpqrNumber(f.wpqr_number, f.reference_number, f.wpqr_code);
+    const supportingRefs = resolveSupportingRefs(f.supporting_wpqr_refs, referenceNumber);
 
     const thicknessRaw = f.thickness_test_mm ?? f.thickness_tested;
     // Sanitizzazione numerica (stesso pattern del bug produzione 27/07/2026 su
@@ -353,6 +362,7 @@ function mapPipelineFieldsToReview(f) {
         certificate_number: f.certificate_number || null,
         pwht: f.pwht === true || f.pwht === 1 || f.pwht === '1',
         wps_ref: f.wps_ref || null,
+        supporting_wpqr_refs: supportingRefs.length ? supportingRefs.join(', ') : null,
         thickness_min: legacyMin,
         thickness_max: legacyMax,
         thickness_max_unlimited: legacyUnlimited,
@@ -457,6 +467,7 @@ function mapReviewFieldsToDb(f) {
         certificate_number: f.certificate_number || null,
         pwht: f.pwht === true || f.pwht === 1 || f.pwht === '1' ? 1 : 0,
         wps_ref: f.wps_ref || null,
+        supporting_wpqr_refs: resolveSupportingRefs(f.supporting_wpqr_refs, referenceNumber),
         base_material_spec: f.base_material_spec || null,
         shielding_gas: f.shielding_gas || null,
         current_type: f.current_type || null,
@@ -470,6 +481,37 @@ function mapReviewFieldsToDb(f) {
         base_material_group_2: f.material_group_2 || f.base_material_group_2 || null,
         base_material_spec_2: f.base_material_spec_2 || null,
     };
+}
+
+/**
+ * Legami previsti dal documento: WPS citata (`wps_ref`) e WPQR di supporto, sempre ristretti al tenant.
+ * Mai bloccante: un errore di ricerca diventa una segnalazione «da verificare».
+ */
+async function previewLinksForWpqr(reviewFields, organizationId, companyId) {
+    const flags = [];
+    let wpsMatch = null;
+    try {
+        const wps = await wpsWpqrLinks.resolveWpsRef({ organizationId, companyId, ref: reviewFields.wps_ref });
+        wpsMatch = wps.match;
+        flags.push(...wps.flags);
+        const supportingRefs = splitRefList(reviewFields.supporting_wpqr_refs);
+        if (supportingRefs.length > 0) {
+            const supporting = await wpsWpqrLinks.resolveSupportingWpqrRefs({ organizationId, companyId, refs: supportingRefs });
+            flags.push(...supporting.flags);
+        }
+    } catch (err) {
+        logger.warn('WPQR: ricerca legami non riuscita', { organizationId, error: err.message });
+        flags.push({ ref: null, status: 'resolve_error', message: 'Verifica dei legami WPS/WPQR non riuscita — da verificare.' });
+    }
+    return { wpsMatch, flags };
+}
+
+/** Numero WPQR scelto uguale a una WPQR di supporto, ma il certificato dichiara un numero diverso. */
+function reviewMatchesSupportingRef(reviewFields, pipelineFields) {
+    const own = normalizeWpqrRef(reviewFields.reference_number);
+    const cert = normalizeWpqrRef(pipelineFields && pipelineFields.certificate_number);
+    if (!own || !cert || own === cert) return false;
+    return splitRefList(pipelineFields && pipelineFields.supporting_wpqr_refs).some((r) => normalizeWpqrRef(r) === own);
 }
 
 async function extractWPQRFromPdf(pdfBuffer, fileName, organizationId, companyId) {
@@ -529,6 +571,13 @@ async function extractWPQRFromPdf(pdfBuffer, fileName, organizationId, companyId
 
     warnings.push(...checkWpqrPlausibility(reviewFields));
 
+    const linkReview = await previewLinksForWpqr(reviewFields, organizationId, companyId);
+    warnings.push(...linkReview.flags.map((fl) => fl.message));
+    if (reviewMatchesSupportingRef(reviewFields, pipeline.fields)) {
+        warnings.push('Il numero WPQR coincide con una WPQR di supporto — verificare che non sia il numero della WPS o di un altro certificato');
+    }
+    const linkResult = { wps_match: linkReview.wpsMatch, verification_flags: linkReview.flags };
+
     if (reviewFields.reference_number && await checkDuplicate(reviewFields.reference_number, organizationId, companyId)) {
         return {
             status: 'duplicate',
@@ -536,6 +585,7 @@ async function extractWPQRFromPdf(pdfBuffer, fileName, organizationId, companyId
             warnings,
             fields: reviewFields,
             field_confidence: pipeline.fieldConfidence,
+            ...linkResult,
         };
     }
 
@@ -545,11 +595,31 @@ async function extractWPQRFromPdf(pdfBuffer, fileName, organizationId, companyId
     return {
         status: 'pending_review',
         fields: reviewFields,
+        ...linkResult,
         field_confidence: pipeline.fieldConfidence,
         confidence,
         warnings,
         ai_model: pipeline.aiModel,
     };
+}
+
+/** Dopo l'INSERT: legame `primary` verso la WPS citata solo se univoca nel tenant; il resto resta «da verificare». */
+async function linkWpqrAfterInsert({ wpqrId, organizationId, companyId, userId, wpsRef }) {
+    try {
+        const resolved = await wpsWpqrLinks.resolveWpsRef({ organizationId, companyId, ref: wpsRef });
+        const flags = [...resolved.flags];
+        const linked = await wpsWpqrLinks.linkWpqrToWps({
+            organizationId, companyId, wpqrId, match: resolved.match, userId,
+        });
+        flags.push(...linked.flags);
+        if (linked.linked.length > 0) {
+            logger.info('WPQR: legame con la WPS creato', { wpqrId, organizationId });
+        }
+        return flags;
+    } catch (err) {
+        logger.warn('WPQR: scrittura legame con la WPS non riuscita', { wpqrId, organizationId, error: err.message });
+        return [{ ref: null, status: 'resolve_error', message: 'Legame con la WPS non salvato — da verificare.' }];
+    }
 }
 
 async function commitWPQRFromFields(fields, organizationId, companyId, options = {}) {
@@ -590,7 +660,7 @@ async function commitWPQRFromFields(fields, organizationId, companyId, options =
             mechanization, single_multi_run, heat_input_note,
             preheat_temp, interpass_temp, product_type, rotated_position,
             qualifying_element, base_material_group_2, base_material_spec_2,
-            created_by, created_at, updated_at
+            notes, created_by, created_at, updated_at
         )
         OUTPUT INSERTED.id
         VALUES (
@@ -610,7 +680,7 @@ async function commitWPQRFromFields(fields, organizationId, companyId, options =
             @mechanization, @single_multi_run, @heat_input_note,
             @preheat_temp, @interpass_temp, @product_type, @rotated_position,
             @qualifying_element, @base_material_group_2, @base_material_spec_2,
-            @created_by, GETDATE(), GETDATE()
+            @notes, @created_by, GETDATE(), GETDATE()
         )
     `, {
         organization_id: organizationId,
@@ -657,11 +727,19 @@ async function commitWPQRFromFields(fields, organizationId, companyId, options =
         qualifying_element: mapped.qualifying_element,
         base_material_group_2: mapped.base_material_group_2,
         base_material_spec_2: mapped.base_material_spec_2,
+        notes: mapped.supporting_wpqr_refs.length
+            ? `WPQR di supporto: ${mapped.supporting_wpqr_refs.join(', ')}`
+            : null,
         created_by: userId,
     });
 
     const wpqrId = insertResult.recordset[0].id;
     logger.info('WPQR committed from staging', { wpqrId, organizationId });
+
+    const linkFlags = await linkWpqrAfterInsert({
+        wpqrId, organizationId, companyId, userId, wpsRef: mapped.wps_ref,
+    });
+    warnings.push(...linkFlags.map((fl) => fl.message));
 
     return {
         wpqr_id: wpqrId,

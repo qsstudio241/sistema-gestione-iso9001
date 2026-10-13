@@ -7,6 +7,25 @@
  * per bloccare documenti caricati nel modulo sbagliato.
  */
 
+const SUPPORTING_WPQR_RE = /\b(?:supporting\s+(?:wpqr|pqr)|(?:wpqr|pqr)\s+di\s+supporto)\b/g;
+const SUPPORTED_BY_WPQR_RE = /supported\s+by[^.]{0,120}?\b(?:wpqr|pqr)\b/g;
+const WPS_IDENTITY_RE = /\b(?:welding\s+procedure\s+specification|specifica\s+di\s+procedura\s+di\s+saldatura|procedura\s+di\s+saldatura\s+del\s+costruttore|(?:en\s*)?iso\s*15609)\b/;
+const TEST_EVIDENCE_RE = /\b(?:test\s+piece|provino|giunto\s+di\s+prova|coupon|trazione|tensile|bending|piega(?:mento)?|hardness|durez\w*|macro|impatto|resilienza|charpy|examiner|esaminator\w*)\b/;
+
+function wpsWpqrCitationsStripped(t) {
+    return t.replace(SUPPORTING_WPQR_RE, ' ').replace(SUPPORTED_BY_WPQR_RE, ' ');
+}
+
+/**
+ * WPS (ISO 15609) che nomina la propria WPQR di supporto, senza risultati di prova: non e' una WPQR.
+ * Una WPQR che incorpora la WPS ha invece anche prove/provini/esaminatore e non rientra qui.
+ */
+function isWpsCitingSupportingWpqr(t) {
+    SUPPORTING_WPQR_RE.lastIndex = 0;
+    if (!SUPPORTING_WPQR_RE.test(t)) return false;
+    return WPS_IDENTITY_RE.test(t) && !TEST_EVIDENCE_RE.test(t);
+}
+
 /**
  * Analizza il testo estratto da un PDF e assegna un tipo documento
  * tramite keyword scoring (case-insensitive).
@@ -16,6 +35,9 @@
  */
 function classifyDocument(text) {
     const t = (text || '').toLowerCase();
+    const wpsWithSupportingWpqr = isWpsCitingSupportingWpqr(t);
+    // «WPQR di supporto n.» e «supported by ... WPQR n.» sono citazioni di una WPS: non valgono come segnali WPQR.
+    const tForWpqr = wpsWpqrCitationsStripped(t);
 
     const scores = {
         wpqr:          0,
@@ -27,7 +49,7 @@ function classifyDocument(text) {
     };
 
     // --- WPQR signals ---
-    if (/\b(wpqr|pqr|procedure qualification record|qualifica(?:tion)? di procedura)\b/.test(t)) scores.wpqr += 3;
+    if (/\b(wpqr|pqr|procedure qualification record|qualifica(?:tion)? di procedura)\b/.test(tForWpqr)) scores.wpqr += 3;
     if (/\b(iso\s*15614|en\s*iso\s*15614|15614)\b/.test(t)) scores.wpqr += 3;
     if (/\b(test piece|provino|giunto di prova|coupon)\b/.test(t)) scores.wpqr += 2;
     if (/\b(examiner|esaminatore|esaminatrice|notified body|organismo notificato)\b/.test(t)) scores.wpqr += 1;
@@ -74,6 +96,12 @@ function classifyDocument(text) {
     if (hasExplicitOperatorNorm && scores.operator_qual >= scores.wpqr) {
         // Garanzia: norma 14732 + segnale operatore vincono su WPQR residua
         scores.wpqr = Math.min(scores.wpqr, scores.operator_qual - 1);
+    }
+
+    if (wpsWithSupportingWpqr) {
+        // WPS EN ISO 15609: cita la propria WPQR e la norma 15614 con cui e' qualificata, ma non contiene prove.
+        scores.wps += 4;
+        scores.wpqr = Math.min(scores.wpqr, 2);
     }
 
     const sorted = Object.entries(scores).sort((a, b) => b[1] - a[1]);
