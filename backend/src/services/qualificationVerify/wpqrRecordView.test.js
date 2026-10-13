@@ -67,6 +67,7 @@ describe('toWpqrView — parità review-fields ↔ riga DB', () => {
         expect(restA).toEqual(restB);
         expect(a.thickness_tested).toBe(12.5);
         expect(a.material_group).toBe('1.1');
+        expect(a.material_group_2).toBeNull();
         expect(a.issue_date).toBe('2025-03-01');
         expect(a.positions).toEqual(['PA', 'PB']);
         expect(a.profile).toBe('15614-1:BW');
@@ -99,6 +100,18 @@ describe('toWpqrView — parità review-fields ↔ riga DB', () => {
         expect(v.heat_input_kind).toBeNull();
         expect(v.preheat_test.value).toBeNull();
         expect(v.interpass_test.value).toBeNull();
+    });
+
+    test('material_group_2: riga DB con base_material_group_2 arriva in vista (alias simmetrico)', () => {
+        const review = toWpqrView({ ...reviewFields, material_group_2: '8.1' }, { source: 'review' });
+        const db = toWpqrView({ ...dbRow, base_material_group_2: '8.1' }, { source: 'db' });
+        expect(review.material_group_2).toBe('8.1');
+        expect(db.material_group_2).toBe('8.1');
+        expect(db.material_group).toBe('1.1');
+        expect(db).not.toHaveProperty('base_material_group_2');
+        const { source: _sr, ...restReview } = review;
+        const { source: _sd, ...restDb } = db;
+        expect(restReview).toEqual(restDb);
     });
 });
 

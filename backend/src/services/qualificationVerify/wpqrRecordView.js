@@ -354,7 +354,7 @@ function normalizeRun(raw, headerCurrent) {
 // ---------------------------------------------------------------------------
 
 const TEXT_FIELDS = [
-    'certificate_number', 'welding_process', 'material_group_2', 'base_material_spec', 'base_material_spec_2',
+    'certificate_number', 'welding_process', 'base_material_spec', 'base_material_spec_2',
     'filler_make', 'filler_size', 'shielding_gas', 'backing_gas', 'metal_transfer', 'mechanization',
     'single_multi_run', 'heat_input_note', 'heat_input_range_unit', 'heat_input_range_basis', 'preheat_temp',
     'interpass_temp', 'post_heating', 'pwht_details', 'wps_ref', 'welding_position_test', 'welder_name',
@@ -381,6 +381,7 @@ const ALIASES = {
     standard_reference: ['standard_reference', 'standard_ref'],
     thickness_test: { review: ['thickness_test_mm', 'thickness_tested'], db: ['thickness_tested', 'thickness_test_mm'] },
     material_group: { review: ['material_group', 'base_material_group'], db: ['base_material_group', 'material_group'] },
+    material_group_2: { review: ['material_group_2', 'base_material_group_2'], db: ['base_material_group_2', 'material_group_2'] },
     issue_date: { review: ['approval_date', 'issue_date'], db: ['issue_date', 'approval_date'] },
     examiner_body: ['examiner_body', 'issuing_body', 'testing_body'],
 };
@@ -457,6 +458,7 @@ function toWpqrView(input, { source = SOURCE.REVIEW, runs } = {}) {
         not_determinable,
         reference_number: toText(f.reference_number ?? f.wpqr_number ?? f.wpqr_code),
         material_group: toText(pick(f, aliasFor('material_group', src))),
+        material_group_2: toText(pick(f, aliasFor('material_group_2', src))),
         examiner_body: toText(pick(f, aliasFor('examiner_body', src))),
         issue_date: toDateString(pick(f, aliasFor('issue_date', src))),
         thickness_tested: toNumericOrNull(pick(f, aliasFor('thickness_test', src))),
