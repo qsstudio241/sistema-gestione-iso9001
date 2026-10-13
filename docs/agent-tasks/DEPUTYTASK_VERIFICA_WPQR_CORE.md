@@ -1,6 +1,6 @@
 # DEPUTYTASK_VERIFICA_WPQR_CORE — WV-1: dominio `wpqr` nell'engine di verifica + vista record WPQR + stub dei pack (modulo puro, non agganciato)
 
-**Stato:** APERTO — lanciabile **solo dopo il merge su `origin/main`** della PR di charting (gate DEPUTYTASK: `git show origin/main:docs/agent-tasks/DEPUTYTASK_VERIFICA_WPQR_CORE.md` deve mostrare `APERTO`)  
+**Stato:** CHIUSO — TEST OK (11/10/2026, [PR #773](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/773): `npx jest src/services/qualificationVerify` 16 suite / 569 test verdi; harness e encoding verdi). Resta il gate di merge (CI + Bugbot una volta + Security Review) prima di «pronta»  
 **Aperto:** 07/10/2026  
 **Piano:** [`PLAN_VERIFICA_WPQR_SLICES.md`](PLAN_VERIFICA_WPQR_SLICES.md) § 1 (architettura) · § 6.3 WV-1  
 **Dipende da:** nessuna (onda 1; il contratto `Finding` è già su `main`)  
@@ -76,14 +76,14 @@ Comandi: `cd backend && npx jest src/services/qualificationVerify` · repo: `nod
 
 ## DoD
 
-- [ ] `verifyWpqr` esiste, puro, valido con pack stub; `domain: 'wpqr'`; `engine_version` presente
-- [ ] Pipeline condivisa estratta; **`verifyQualification` invariato** (test esistenti verdi senza modifiche)
-- [ ] `wpqrRecordView` converte review-fields e riga DB (+ `runs`) con test di parità; livello default 2 con `level_declared`; normalizzazione solo in memoria (test: input con `DC-EP`/`DCEP`, edizione in `standard_reference`; il dato in ingresso non viene mutato); `pwht`/`product_type` NULL → dato non determinabile
-- [ ] Vista e campione 07/10/2026: test con review-fields **sintetici in linea** (non i `.txt` di WV-4b) che coprono polarità per riga assente → ripiego su `current_type`, unità `kJ/mm`/`J/mm`/`kJ/cm` e `mm/s`/`cm/min` conservate, `heat_input_kind` assente, `wire_feed_speed` assente, esiti non canonici → `NA`, qualifica 15613 con `range_standard_reference` → profilo 15614-1
-- [ ] Quattro stub pack + `registerDefaultPacks.js`; test «pack ⇄ registerDefaultPacks ⇄ deploy-manifest» verde
-- [ ] Test strutturale «nessun import DB/fs / nessuna scrittura» nel modulo
-- [ ] Riga bussola in `PROJECT_CONTEXT.md` e `check-harness-boot.js` verde; `check-utf8-encoding.js` verde
-- [ ] `cd backend && npx jest src/services/qualificationVerify` verde; **nessun file FE, nessuna route, nessuna migrazione** nel diff
+- [x] `verifyWpqr` esiste, puro, valido con pack stub; `domain: 'wpqr'`; `engine_version` presente
+- [x] Pipeline condivisa estratta; **`verifyQualification` invariato** (test di comportamento esistenti verdi senza modifiche; aggiornati solo i conteggi strutturali a 8 pack)
+- [x] `wpqrRecordView` converte review-fields e riga DB (+ `runs`) con test di parità; livello default 2 con `level_declared`; normalizzazione solo in memoria (test: input con `DC-EP`/`DCEP`, edizione in `standard_reference`; il dato in ingresso non viene mutato); `pwht`/`product_type` NULL → dato non determinabile
+- [x] Vista e campione 07/10/2026: test con review-fields **sintetici in linea** (non i `.txt` di WV-4b) che coprono polarità per riga assente → ripiego su `current_type`, unità `kJ/mm`/`J/mm`/`kJ/cm` e `mm/s`/`cm/min` conservate, `heat_input_kind` assente, `wire_feed_speed` assente, esiti non canonici → `NA`, qualifica 15613 con `range_standard_reference` → profilo 15614-1
+- [x] Quattro stub pack + `registerDefaultPacks.js`; test «pack ⇄ registerDefaultPacks ⇄ deploy-manifest» verde
+- [x] Test strutturale «nessun import DB/fs / nessuna scrittura» nel modulo
+- [x] Riga bussola in `PROJECT_CONTEXT.md` e `check-harness-boot.js` verde; `check-utf8-encoding.js` verde
+- [x] `cd backend && npx jest src/services/qualificationVerify` verde; **nessun file FE, nessuna route, nessuna migrazione** nel diff
 - [ ] Branch allineato a `origin/main` (`git fetch origin main && git merge origin/main`) prima di push/PR; `bugbot run` **una sola volta** a slice chiusa (Bugbot letto prima di «pronta»; Security Review se presente)
 
 ## HITL
