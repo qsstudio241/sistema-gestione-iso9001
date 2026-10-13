@@ -5,6 +5,7 @@ import React, { useState, useEffect, useMemo, useRef, useCallback } from "react"
 import apiService from "../services/apiService";
 import { getSchemaForDocType } from "../data/documentTypeSchemas";
 import { getApplicableWelderFields } from "../data/weldingQualificationRules9606";
+import { FIELD_STATE, getFieldApplicability, nullNotApplicableFields } from "../data/jointTypeProfiles";
 import { repairTextEncoding } from "../utils/textEncodingRepair";
 import IngestDialogShell from "./IngestDialogShell";
 import IngestSourcePreview from "./IngestSourcePreview";
@@ -15,6 +16,7 @@ const CONFIDENCE_LABELS = {
   high: { label: "Alta", className: "ingest-review__confidence--high" },
   medium: { label: "Media", className: "ingest-review__confidence--medium" },
   low: { label: "Bassa", className: "ingest-review__confidence--low" },
+  optional: { label: "Facoltativo", className: "ingest-review__confidence--optional" },
 };
 
 function formatFieldValue(value) {
@@ -28,6 +30,7 @@ const CONFIDENCE_TITLES = {
   high: "Confidenza alta: valore estratto con buona affidabilità — verifica comunque sul PDF",
   medium: "Confidenza media: controlla sul PDF prima di confermare",
   low: "Confidenza bassa: il dato è incerto o assente nell'estrazione — compila tu se presente sul PDF",
+  optional: "Campo facoltativo per questa edizione della norma: se non è sul certificato lascia vuoto",
 };
 
 function ConfidenceBadge({ level }) {
@@ -48,6 +51,12 @@ function ConfidenceBadge({ level }) {
  */
 function isFieldConfirmedByAi(confidence, value) {
   if (confidence !== "high") return false;
+  if (value == null || value === "") return false;
+  if (Array.isArray(value) && value.length === 0) return false;
+  return true;
+}
+
+function hasFieldValue(value) {
   if (value == null || value === "") return false;
   if (Array.isArray(value) && value.length === 0) return false;
   return true;
@@ -399,6 +408,16 @@ export default function IngestReviewDialog({
     verify.schedule(() => ({ fields: formRef.current, qualificationType }));
   }
 
+  const isOperator14732 = (schema?.id || docType) === "qualifica_14732";
+  // Applicabilita' per famiglia+edizione (ISO 14732): solo per il tipo documento operatore 14732.
+  const applicability = useMemo(() => {
+    if (!isOperator14732) return getFieldApplicability({});
+    return getFieldApplicability({
+      qualificationType: qualificationType || "Operatore ISO 14732",
+      standardReference: form.standard_reference,
+    });
+  }, [isOperator14732, qualificationType, form.standard_reference]);
+
   const isWelderQualification = (schema?.id || docType) === "patentino_saldatore";
   // Diametro tubo (Tabella 7 ISO 9606-1): pertinente solo se il prodotto testato
   // e' un tubo — vedi getApplicableWelderFields per la motivazione normativa.
@@ -416,7 +435,11 @@ export default function IngestReviewDialog({
 
   if (!open) return null;
 
-  const schemaFields = schema?.fields || [];
+  const allSchemaFields = schema?.fields || [];
+  const schemaFields = allSchemaFields.filter((f) => applicability.states[f.key] !== FIELD_STATE.NOT_APPLICABLE);
+  const hiddenNotApplicableLabels = allSchemaFields
+    .filter((f) => applicability.states[f.key] === FIELD_STATE.NOT_APPLICABLE)
+    .map((f) => f.label);
   const title = schema?.label || docType;
 
   function isFieldNotApplicable(field) {
@@ -452,7 +475,11 @@ export default function IngestReviewDialog({
     if (applicableFields && !applicableFields.pipeDiameterApplicable) {
       payload.pipe_diameter_mm = null;
     }
-    await onConfirm(payload);
+    const { fields: finalPayload } = nullNotApplicableFields(payload, {
+      qualificationType: qualificationType || (isOperator14732 ? "Operatore ISO 14732" : undefined),
+      standardReference: payload.standard_reference,
+    });
+    await onConfirm(isOperator14732 ? finalPayload : payload);
   }
 
   return (
@@ -505,6 +532,12 @@ export default function IngestReviewDialog({
             </div>
           )}
 
+          {hiddenNotApplicableLabels.length > 0 && (
+            <p className="ingest-review__meta ingest-review__meta--hint" data-testid="ingest-na-note">
+              {`Non previsti da ${applicability.notApplicableReason}: ${hiddenNotApplicableLabels.join(", ")}.`}
+            </p>
+          )}
+
           <div className="ingest-review__fields" onBlur={handleFieldsBlur}>
             {schemaFields.map((field) => {
               const notApplicable = isFieldNotApplicable(field);
@@ -512,7 +545,12 @@ export default function IngestReviewDialog({
               const confirmedByAi = isFieldConfirmedByAi(confidence, form[field.key]);
               const manuallyEditing = editingFields.has(field.key);
               const showEditable = !notApplicable && (!confirmedByAi || manuallyEditing);
-              const attentionLevel = notApplicable ? "not-applicable" : confirmedByAi ? "confirmed" : (confidence || "low");
+              const optionalEmpty = applicability.states[field.key] === FIELD_STATE.OPTIONAL
+                && !hasFieldValue(form[field.key]);
+              const badgeLevel = optionalEmpty ? "optional" : confidence;
+              const attentionLevel = notApplicable
+                ? "not-applicable"
+                : confirmedByAi ? "confirmed" : optionalEmpty ? "optional" : (confidence || "low");
 
               return (
                 <div
@@ -522,7 +560,7 @@ export default function IngestReviewDialog({
                   <label className="ingest-review__field-label" htmlFor={`ingest-field-${field.key}`}>
                     {field.label}
                     {field.required && <span className="ingest-review__required">*</span>}
-                    {!notApplicable && <ConfidenceBadge level={confidence} />}
+                    {!notApplicable && <ConfidenceBadge level={badgeLevel} />}
                   </label>
 
                   {notApplicable ? (

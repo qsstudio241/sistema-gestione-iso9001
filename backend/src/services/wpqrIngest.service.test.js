@@ -585,3 +585,107 @@ describe('privacy log: WPQR doc classification senza nome file', () => {
         expect(logged).not.toContain(FILE_NAME);
     });
 });
+
+describe('numero WPQR mancante: mai derivato dal nome file', () => {
+    const FILE_NAME = 'ZZROSSI ZZMARIO_ACMEZZ SRL_certificato.pdf';
+    const FILE_BASE = 'ZZROSSI ZZMARIO_ACMEZZ SRL_certificato';
+    let logSpies;
+
+    beforeEach(() => {
+        const logger = require('../utils/logger');
+        logSpies = ['info', 'warn', 'error', 'debug'].map((m) => jest.spyOn(logger, m).mockImplementation(() => {}));
+    });
+    afterEach(() => {
+        jest.restoreAllMocks();
+        jest.clearAllMocks();
+    });
+
+    const loggedText = () => logSpies.flatMap((sp) => sp.mock.calls.map((c) => JSON.stringify(c))).join('\n');
+    const noNumberIngest = () => ({
+        text: 'WPQR senza numero riconoscibile processo 135 ISO 15614-1 testo abbastanza lungo',
+        fields: { welding_process: '135', joint_type: 'BW' },
+        fieldConfidence: {},
+        extractionConfidence: 70,
+        aiModel: null,
+        warnings: [],
+    });
+
+    it('mapPipelineFieldsToReview: numero assente => null, anche con campi vuoti o oggetti', () => {
+        const { mapPipelineFieldsToReview } = require('./wpqrIngest.service');
+        for (const f of [{}, { wpqr_number: '', reference_number: '  ' }, { wpqr_number: null, wpqr_code: undefined }]) {
+            const out = mapPipelineFieldsToReview(f, FILE_NAME);
+            expect(out.reference_number).toBeNull();
+            expect(out.wpqr_number).toBeNull();
+        }
+        expect(mapPipelineFieldsToReview({ reference_number: ' 24-03390-01 ' }).reference_number).toBe('24-03390-01');
+    });
+
+    it('extract: reference_number NULL, warning "da completare", nessun controllo duplicati, nome file assente da esito e log', async () => {
+        runDocumentIngest.mockResolvedValue(noNumberIngest());
+
+        const out = await extractWPQRFromPdf(Buffer.from('%PDF'), FILE_NAME, 1001, 2001);
+
+        expect(out.status).toBe('pending_review');
+        expect(out.fields.reference_number).toBeNull();
+        expect(out.fields.wpqr_number).toBeNull();
+        expect(out.warnings.some((w) => w.includes('Numero WPQR non trovato'))).toBe(true);
+        expect(query).not.toHaveBeenCalled();
+        expect(JSON.stringify(out)).not.toContain('ZZROSSI');
+        expect(JSON.stringify(out)).not.toContain(FILE_BASE);
+        expect(loggedText()).not.toContain('ZZROSSI');
+        expect(loggedText()).not.toContain(FILE_BASE);
+        expect(loggedText()).not.toContain('reference_number');
+    });
+
+    it('con numero presente: invariato (duplicato rilevato dal numero, non dal nome file)', async () => {
+        runDocumentIngest.mockResolvedValue({
+            ...noNumberIngest(),
+            fields: { wpqr_number: '24-03390-01', welding_process: '135' },
+        });
+        query.mockResolvedValueOnce({ recordset: [{ id: 5 }] });
+
+        const out = await extractWPQRFromPdf(Buffer.from('%PDF'), FILE_NAME, 1001, 2001);
+
+        expect(out.status).toBe('duplicate');
+        expect(out.reference_number).toBe('24-03390-01');
+        expect(query.mock.calls[0][1].ref).toBe('24-03390-01');
+        expect(out.warnings.some((w) => w.includes('Numero WPQR non trovato'))).toBe(false);
+    });
+
+    it('commit senza numero: blocca con messaggio chiaro, nessuna query, nessun nome file', async () => {
+        await expect(commitWPQRFromFields({ welding_process: '135' }, 1001, 2001, { fileName: FILE_NAME }))
+            .rejects.toMatchObject({ code: 'VALIDATION_ERROR', message: expect.stringContaining('Numero WPQR mancante') });
+        expect(query).not.toHaveBeenCalled();
+        expect(loggedText()).not.toContain('ZZROSSI');
+    });
+
+    it('commit con numero (digitato in revisione): INSERT col numero, log senza reference_number ne\' nome file', async () => {
+        query.mockResolvedValueOnce({ recordset: [] });
+        query.mockResolvedValueOnce({ recordset: [{ id: 321 }] });
+
+        const out = await commitWPQRFromFields(
+            { wpqr_number: 'ZZ-WPQR-7788', welding_process: '135' },
+            1001,
+            2001,
+            { fileName: FILE_NAME },
+        );
+
+        expect(out.wpqr_id).toBe(321);
+        expect(out.reference_number).toBe('ZZ-WPQR-7788');
+        expect(query.mock.calls[1][1].reference_number).toBe('ZZ-WPQR-7788');
+        expect(loggedText()).toContain('WPQR committed from staging');
+        expect(loggedText()).not.toContain('ZZ-WPQR-7788');
+        expect(loggedText()).not.toContain('reference_number');
+        expect(loggedText()).not.toContain('ZZROSSI');
+    });
+
+    it('commit duplicato: l\'errore non contiene il numero (il dettaglio resta in warnings per l\'utente)', async () => {
+        query.mockResolvedValueOnce({ recordset: [{ id: 1 }] });
+
+        const err = await commitWPQRFromFields({ wpqr_number: 'ZZ-WPQR-7788' }, 1001, 2001, {}).catch((e) => e);
+
+        expect(err.code).toBe('DUPLICATE');
+        expect(err.message).not.toContain('ZZ-WPQR-7788');
+        expect(err.warnings[0]).toContain('ZZ-WPQR-7788');
+    });
+});
