@@ -96,11 +96,15 @@ function extractReferenceFromFileName(fileName) {
  * Numero WPQR/certificato. Accetta suffisso di rivisione (es. "24-03390-01"),
  * frequente su verbali TEC Eurolab e simili (DEPUTYTASK1 25/07/2026).
  */
+function extractWpqrNumberFromText(text) {
+    const m = String(text || '').match(/\b(?:WPQR|WPS|rif\.?|ref\.?|n[°º.]?\s*)\s*[:.]?\s*(\d{2}-\d{4,6}(?:-\d{1,2})?)\b/i)
+        || String(text || '').match(/\b(\d{2}-\d{4,6}(?:-\d{1,2})?)\b/);
+    return m ? (m[1] || m[0]) : null;
+}
+
+/** Variante con fallback sul nome file: usata solo dall'estrattore WPS. Per le WPQR vedi extractWpqrNumberFromText. */
 function extractWpqrReference(text, fileName) {
-    const fromName = extractReferenceFromFileName(fileName);
-    const m = text.match(/\b(?:WPQR|WPS|rif\.?|ref\.?|n[°º.]?\s*)\s*[:.]?\s*(\d{2}-\d{4,6}(?:-\d{1,2})?)\b/i)
-        || text.match(/\b(\d{2}-\d{4,6}(?:-\d{1,2})?)\b/);
-    return m ? (m[1] || m[0]) : fromName;
+    return extractWpqrNumberFromText(text) || extractReferenceFromFileName(fileName);
 }
 
 function extractCertificateNumber(text) {
@@ -530,21 +534,21 @@ function extractExaminerBody(text) {
 }
 
 /**
+ * Il numero WPQR viene solo dal testo (mai dal nome file). `expiry_date` non esiste piu' su wpqr_records (mig. 169).
  * @param {string} text
- * @param {string} fileName
  * @returns {object}
  */
-function extractWpqrFields(text, fileName) {
+function extractWpqrFields(text) {
     const dates = allDates(text);
     const thickness = extractThicknessMm(text);
     const positions = extractWeldingPositionsFromText(text);
     const { thickness_min, thickness_max } = extractThicknessRangeMm(text);
     const { diameter_min, diameter_max } = extractDiameterRangeMm(text);
     const issuedLabeled = extractIssueDateLabeled(text);
-    const expiryLabeled = extractExpiryDateLabeled(text);
+    const wpqrNumber = extractWpqrNumberFromText(text);
     return {
-        wpqr_number: extractWpqrReference(text, fileName),
-        reference_number: extractWpqrReference(text, fileName),
+        wpqr_number: wpqrNumber,
+        reference_number: wpqrNumber,
         qualification_level: extractQualificationLevel(text),
         welding_process: extractWeldingProcess(text),
         material_group: extractMaterialGroup(text),
@@ -562,8 +566,6 @@ function extractWpqrFields(text, fileName) {
         // Data emissione: preferire etichetta esplicita ("Record issued"), altrimenti prima data trovata.
         approval_date: issuedLabeled || dates[0] || null,
         issue_date: issuedLabeled || dates[0] || null,
-        // Scadenza: SOLO se etichettata esplicitamente — i WPQR spesso non hanno scadenza.
-        expiry_date: expiryLabeled || null,
         certificate_number: extractCertificateNumber(text),
         examiner_body: extractIssuingBody(text),
         issuing_body: extractIssuingBody(text),
@@ -1088,6 +1090,7 @@ function extractFieldsByRules(text, docType, fileName = '', options = {}) {
     if (!fn) return {};
     const body = String(text || '');
     if (body.trim().length < 10) {
+        if (docType === 'wpqr') return {};
         const fromName = extractReferenceFromFileName(fileName);
         return fromName ? { reference_number: fromName, wpqr_number: fromName } : {};
     }

@@ -96,9 +96,24 @@ describe('extractWpqrFields (DEPUTYTASK1 25/07/2026 — campi copertura pag.1/pa
         expect(out.issue_date).toBe('2024-03-15');
     });
 
-    it('non assume una scadenza se non etichettata esplicitamente', () => {
-        const out = extractWpqrFields(sample, '24-03390-01.pdf');
-        expect(out.expiry_date).toBeNull();
+    it('non emette expiry_date (colonna eliminata da mig. 169), nemmeno se etichettata', () => {
+        expect(extractWpqrFields(sample)).not.toHaveProperty('expiry_date');
+        const withLabel = extractWpqrFields(`${sample}\n        Valid until: 15.03.2029`);
+        expect(withLabel).not.toHaveProperty('expiry_date');
+    });
+
+    it('senza numero nel testo: numero NULL, mai dal nome file', () => {
+        const noNumber = sample.replace('Test certificate No: 24-03390-01', 'Test certificate');
+        const out = extractWpqrFields(noNumber, 'ZZROSSI_ZZMARIO_ACMEZZ.pdf');
+        expect(out.wpqr_number).toBeNull();
+        expect(out.reference_number).toBeNull();
+        expect(JSON.stringify(out)).not.toContain('ZZROSSI');
+    });
+
+    it('extractFieldsByRules: testo quasi vuoto su wpqr non ricava il numero dal nome file', () => {
+        const { extractFieldsByRules } = require('./ruleFieldExtractors');
+        expect(extractFieldsByRules('', 'wpqr', 'ZZROSSI_24-03390-01.pdf')).toEqual({});
+        expect(extractFieldsByRules('scan', 'wpqr', '24-03390-01.pdf')).toEqual({});
     });
 });
 

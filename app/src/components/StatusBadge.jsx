@@ -68,6 +68,12 @@ const STATUS_CONFIGS = {
     non_compliant:  { label: "Non conforme",  color: "red"    },
     archived:       { label: "Archiviato",    color: "slate"  },
   },
+  doc_type_confidence: {
+    high:     { label: "Tipo riconosciuto", color: "green"  },
+    medium:   { label: "Tipo da verificare", color: "yellow" },
+    low:      { label: "Tipo da scegliere", color: "orange" },
+    override: { label: "Tipo scelto da te", color: "blue"   },
+  },
   norm_catalog: {
     active:     { label: "In vigore",            color: "green"  },
     withdrawn:  { label: "Ritirata",             color: "red"    },

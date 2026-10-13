@@ -293,10 +293,21 @@ function normalizePositions(positions) {
     return s || null;
 }
 
-function mapPipelineFieldsToReview(f, fileName) {
-    const referenceNumber = String(
-        f.wpqr_number || f.reference_number || f.wpqr_code || fileName.replace(/\.[^/.]+$/, '')
-    ).trim();
+/**
+ * Numero WPQR dichiarato dal documento (o digitato in revisione). Mai derivato dal nome file:
+ * il nome puo' contenere dati identificanti. Assente => null.
+ */
+function normalizeWpqrNumber(...candidates) {
+    for (const c of candidates) {
+        if (c == null || typeof c === 'object') continue;
+        const v = String(c).trim();
+        if (v) return v;
+    }
+    return null;
+}
+
+function mapPipelineFieldsToReview(f) {
+    const referenceNumber = normalizeWpqrNumber(f.wpqr_number, f.reference_number, f.wpqr_code);
 
     const thicknessRaw = f.thickness_test_mm ?? f.thickness_tested;
     // Sanitizzazione numerica (stesso pattern del bug produzione 27/07/2026 su
@@ -393,10 +404,8 @@ function normalizeQualifyingElement(val) {
     return raw;
 }
 
-function mapReviewFieldsToDb(f, fileName) {
-    const referenceNumber = String(
-        f.wpqr_number || f.reference_number || f.wpqr_code || fileName.replace(/\.[^/.]+$/, '')
-    ).trim();
+function mapReviewFieldsToDb(f) {
+    const referenceNumber = normalizeWpqrNumber(f.wpqr_number, f.reference_number, f.wpqr_code);
 
     const thicknessRaw = f.thickness_test_mm ?? f.thickness_tested;
     // Sanitizzazione numerica (stesso pattern del bug produzione 27/07/2026 su
@@ -471,7 +480,7 @@ async function extractWPQRFromPdf(pdfBuffer, fileName, organizationId, companyId
         organizationId,
     });
     const warnings = [...pipeline.warnings];
-    const reviewFields = mapPipelineFieldsToReview(pipeline.fields || {}, fileName);
+    const reviewFields = mapPipelineFieldsToReview(pipeline.fields || {});
     // STUD-2: se l'AI/regole hanno messo FW ma il testo parla di stud/prigioniero,
     // non collassare in FW. BW resta BW (non si sovrascrive un testa a testa).
     reviewFields.joint_type = normalizeWpqrJointType(reviewFields.joint_type, pipeline.text);
@@ -544,18 +553,18 @@ async function extractWPQRFromPdf(pdfBuffer, fileName, organizationId, companyId
 }
 
 async function commitWPQRFromFields(fields, organizationId, companyId, options = {}) {
-    const { userId = null, filePath = null, fileName = '' } = options;
-    const mapped = mapReviewFieldsToDb(fields, fileName);
+    const { userId = null, filePath = null } = options;
+    const mapped = mapReviewFieldsToDb(fields);
     const warnings = [];
 
     if (!mapped.reference_number) {
-        const err = new Error('Numero WPQR obbligatorio');
+        const err = new Error('Numero WPQR mancante — inserirlo in revisione prima di confermare');
         err.code = 'VALIDATION_ERROR';
         throw err;
     }
 
     if (await checkDuplicate(mapped.reference_number, organizationId, companyId)) {
-        const err = new Error(`WPQR ${mapped.reference_number} già presente`);
+        const err = new Error('WPQR già presente');
         err.code = 'DUPLICATE';
         err.warnings = [`Duplicato: WPQR ${mapped.reference_number} già presente.`];
         throw err;
@@ -652,7 +661,7 @@ async function commitWPQRFromFields(fields, organizationId, companyId, options =
     });
 
     const wpqrId = insertResult.recordset[0].id;
-    logger.info('WPQR committed from staging', { wpqrId, reference_number: mapped.reference_number, organizationId });
+    logger.info('WPQR committed from staging', { wpqrId, organizationId });
 
     return {
         wpqr_id: wpqrId,
