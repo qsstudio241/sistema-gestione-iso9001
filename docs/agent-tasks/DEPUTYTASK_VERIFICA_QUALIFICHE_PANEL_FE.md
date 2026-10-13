@@ -1,6 +1,6 @@
 # DEPUTYTASK_VERIFICA_QUALIFICHE_PANEL_FE — VQ-2: `QualificationVerifyPanel` (FE presentazionale) + `apiService.verifyQualification`
 
-**Stato:** APERTO — lanciabile **solo dopo il merge su `origin/main`** della PR di charting (gate DEPUTYTASK: `git show origin/main:docs/agent-tasks/DEPUTYTASK_VERIFICA_QUALIFICHE_PANEL_FE.md` deve mostrare `APERTO`)  
+**Stato:** CHIUSO — TEST OK (06/10/2026, mergiata [#716](https://github.com/qsstudio241/sistema-gestione-iso9001/pull/716))  
 **Aperto:** 06/10/2026  
 **Piano:** [`PLAN_VERIFICA_QUALIFICHE_NORMA_SLICES.md`](PLAN_VERIFICA_QUALIFICHE_NORMA_SLICES.md) § 1.3 (contratto) · § 4 (esiti UI) · § 6.3 VQ-2  
 **Dipende da:** il **contratto `Finding`/`VerifyResult` congelato nel piano** (non da VQ-1: il pannello lavora su fixture del contratto)  
