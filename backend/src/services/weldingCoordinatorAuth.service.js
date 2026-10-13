@@ -41,6 +41,40 @@ function requiresSemiannualConfirmation(qualificationType) {
   return isWelder9606Type(qualificationType) || isOperator14732Type(qualificationType);
 }
 
+/**
+ * Data di scadenza "effettiva" di una qualifica (fonte unica: semaforo, GET /qualifications/:id,
+ * stato salvato in ingest). Per i tipi a conferma semestrale (ISO 9606-1, ISO 14732) vale la data
+ * PIU' IMMINENTE tra expiry_date e next_confirmation_due (ISO 9606-1 §9.2, ISO 14732 §6.2: senza
+ * conferma entro 6 mesi la qualifica diventa non valida). Difensivo: se una manca usa l'altra;
+ * per gli altri tipi resta solo expiry_date.
+ */
+function effectiveExpiryDate(q) {
+  const expiry = q.expiry_date || null;
+  if (!requiresSemiannualConfirmation(q.qualification_type)) return expiry;
+  const nextConf = q.next_confirmation_due || null;
+  if (!expiry) return nextConf;
+  if (!nextConf) return expiry;
+  return new Date(nextConf) < new Date(expiry) ? nextConf : expiry;
+}
+
+/**
+ * Stato da salvare coerente con la scadenza effettiva: una qualifica con scadenza/conferma effettiva
+ * gia' passata non e' "valida". Tocca solo valida/in_scadenza -> scaduta; sospesa/revocata (decisioni
+ * manuali) e le altre soglie restano invariate. Non sostituisce il semaforo (calcolato in lettura).
+ *
+ * @param {object} q - { status, expiry_date, next_confirmation_due, qualification_type }
+ * @param {string} [todayIso] - YYYY-MM-DD (default oggi UTC, iniettabile nei test)
+ * @returns {string} status
+ */
+function deriveQualificationStatus(q, todayIso) {
+  const current = (q && q.status) || 'valida';
+  if (current !== 'valida' && current !== 'in_scadenza') return current;
+  const effective = effectiveExpiryDate(q || {});
+  if (!effective) return current;
+  const today = todayIso || new Date().toISOString().slice(0, 10);
+  return String(effective).slice(0, 10) < today ? 'scaduta' : current;
+}
+
 /** Aggiunge mesi a una data ISO (YYYY-MM-DD), restituisce YYYY-MM-DD. */
 function addMonthsIso(dateStr, months) {
   const raw = String(dateStr || '').slice(0, 10);
@@ -134,6 +168,8 @@ module.exports = {
   isWelder9606Type,
   isOperator14732Type,
   requiresSemiannualConfirmation,
+  effectiveExpiryDate,
+  deriveQualificationStatus,
   addMonthsIso,
   getPrimaryCoordinatorForCompany,
   canUserConfirmSemiannual,

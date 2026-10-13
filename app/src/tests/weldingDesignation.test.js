@@ -126,4 +126,40 @@ describe('parseWelderQualificationDesignation (FE)', () => {
     expect(parsed.weld_details).toBe('ml');
     expect(parsed.transfer_mode).toBe('S');
   });
+
+  it.each([
+    'D48,25 PB sl',
+    'D 48,25 PB sl',
+    '\u00D848,25 PB sl',
+    'D48.25 PB sl',
+  ])('diametro con virgola decimale: legge 48.25 da "%s"', (tail) => {
+    const parsed = parseWelderQualificationDesignation(`ISO 9606-1: 141 T FW FM5 S t3-10 ${tail}`);
+    expect(parsed.pipe_diameter_test_mm).toBe(48.25);
+    expect(parsed.welding_position_test).toBe('PB');
+    expect(parsed.weld_details).toBe('sl');
+  });
+
+  it('mantiene ; e virgole tra campi veri come separatori', () => {
+    const parsed = parseWelderQualificationDesignation('ISO 9606-1: 135 P FW FM1; t8, PB, ss mb');
+    expect(parsed.thickness_t_test_mm).toBe(8);
+    expect(parsed.weld_details).toBe('ss mb');
+  });
+});
+
+describe('parseWelderQualificationDesignation (FE): "t3-10" sono due spessori di prova', () => {
+  it('FW: t di prova 3, elenco informativo [3, 10], mai min/max di validità', () => {
+    const parsed = parseWelderQualificationDesignation('ISO 9606-1: 141 T FW FM5 S t3-10 D48,25 PB sl');
+    expect(parsed.thickness_t_test_mm).toBe(3);
+    expect(parsed.thickness_s_test_mm).toBeNull();
+    expect(parsed.thickness_test_values).toEqual([3, 10]);
+    expect(parsed).not.toHaveProperty('thickness_min_mm');
+    expect(parsed).not.toHaveProperty('thickness_max_mm');
+  });
+
+  it('BW: il 10 non finisce in s di prova', () => {
+    const parsed = parseWelderQualificationDesignation('ISO 9606-1: 141 P BW FM1 t3-10 PA ss nb');
+    expect(parsed.thickness_s_test_mm).toBe(3);
+    expect(parsed.thickness_t_test_mm).toBeNull();
+    expect(parsed.thickness_test_values).toEqual([3, 10]);
+  });
 });

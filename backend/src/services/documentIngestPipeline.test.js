@@ -16,6 +16,11 @@ jest.mock('../utils/importPdfText', () => ({
     confidenceFromTextLength: jest.fn(() => 70),
 }));
 
+jest.mock('../utils/ocrExtractor', () => ({
+    extractTextWithOCR: jest.fn(() => Promise.reject(new Error('OCR non disponibile nei test'))),
+    extractHeaderTextWithOCR: jest.fn(() => Promise.resolve('')),
+}));
+
 const { extractStructuredByDocType } = require('./importAiExtraction.service');
 const { extractPdfText } = require('../utils/importPdfText');
 const { chat, getActiveProvider } = require('./aiProviderAdapter');
@@ -156,6 +161,19 @@ describe('mergeExtractions', () => {
         );
         expect(legacy.value).toBe('138');
         expect(legacy.source).toBe('rules');
+    });
+
+    it('issue_date: per patentino/14732 NON ripiega su exam_date; per gli altri tipi l\'alias storico resta', () => {
+        const { pickMergedValue } = require('./documentIngestPipeline.service');
+        const ai = { exam_date: '2025-06-13' };
+        for (const docType of ['patentino_saldatore', 'qualifica_14732']) {
+            expect(pickMergedValue('issue_date', {}, ai, docType).value).toBeNull();
+            expect(pickMergedValue('issue_date', {}, { ...ai, issue_date: '2025-06-25' }, docType).value).toBe('2025-06-25');
+        }
+        expect(pickMergedValue('issue_date', {}, ai, 'wpqr').value).toBe('2025-06-13');
+        const merged = mergeExtractions({}, { exam_date: '2025-06-13', issue_date: '2025-06-25' }, 'qualifica_14732');
+        expect(merged.fields.issue_date).toBe('2025-06-25');
+        expect(merged.fields.exam_date).toBe('2025-06-13');
     });
 
     it('preferisce AI e marca high se coincide con regole', () => {

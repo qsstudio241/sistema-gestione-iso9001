@@ -9,6 +9,7 @@
 
 const { query } = require('../config/database');
 const logger = require('../utils/logger');
+const { redactFileNameForLog } = require('../utils/ingestErrorMessage');
 const { documentRegistryScopeClause, appendScopeSql } = require('../services/auditListRbac.service');
 const {
     assertMutatingAllowed,
@@ -1150,7 +1151,7 @@ async function preExtractMetadata(req, res) {
 
         logger.info('pre-extract completato', {
             docType,
-            filename:    file.originalname,
+            file:        redactFileNameForLog(file.originalname),
             textLen:     pdfText.length,
             confidence,
             model:       result.model,

@@ -158,6 +158,9 @@
 @media (max-width:700px) {
   .sq-page { padding:14px; }
   .sq-col-cert, .sq-col-cert th { display:none; }
+  .sq-table th:last-child, .sq-table td:last-child { position:sticky; right:0; box-shadow:-6px 0 6px -6px rgba(0,0,0,.18); }
+  .sq-table td:last-child { background:#fff; }
+  .sq-table th:last-child { background:#f9fafb; }
   .sq-stats-bar {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));

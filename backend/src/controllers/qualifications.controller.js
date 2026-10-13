@@ -41,14 +41,16 @@ const {
 } = require('../services/companyAccess.service');
 const { resolvePersonnelForQualification } = require('../services/personnelQualificationLink.service');
 const { resolvePrintedDesignation } = require('../utils/weldingDesignation');
-const { describeIngestFileError } = require('../utils/ingestErrorMessage');
+const { describeIngestFileError, redactFileNameForLog } = require('../utils/ingestErrorMessage');
 const {
     isWelder9606Type,
     requiresSemiannualConfirmation,
+    effectiveExpiryDate,
     addMonthsIso,
     canUserConfirmSemiannual,
 } = require('../services/weldingCoordinatorAuth.service');
 const { toNumericOrNull } = require('../utils/numericSanitizer');
+const { FIELD_STATE, getFieldState, nullNotApplicableFields } = require('../data/jointTypeProfiles');
 const { occupationalQualificationSqlInList } = require('../constants/occupationalQualificationTypes');
 const { findVisionFitnessGaps } = require('../services/visionFitness.service');
 const {
@@ -92,6 +94,20 @@ const QUALIFICATION_MANUAL_EDITABLE_FIELDS = [
     'patent_type', 'training_body', 'course_name', 'training_hours',
     'examiner_body', 'certificate_file_url',
 ];
+
+/**
+ * Campi non applicabili per famiglia+edizione (ISO 14732 Annex C) a NULL nel body di create/update
+ * manuale; solo con famiglia certa (vedi `getFieldApplicability`). Mai sentinelle ('NN').
+ * `designationApplicable`: la designazione stampata non si ricalcola per i tipi che non la prevedono.
+ */
+function applyFieldApplicability(rawBody) {
+    const input = rawBody && typeof rawBody === 'object' ? rawBody : {};
+    const ctx = { qualificationType: input.qualification_type, standardReference: input.standard_ref };
+    return {
+        body: nullNotApplicableFields(input, ctx).fields,
+        designationApplicable: getFieldState(ctx, 'qualification_designation') !== FIELD_STATE.NOT_APPLICABLE,
+    };
+}
 
 /**
  * Converte un valore in numero finito o null (per colonne DECIMAL).
@@ -147,7 +163,7 @@ const SEMIANNUAL_TYPE_SQL_MATCH = `(
 
 /**
  * Data di scadenza "effettiva" calcolata in SQL — stessa regola di
- * effectiveExpiryDate() più sotto (usata per il semaforo per-riga): per i tipi
+ * effectiveExpiryDate() (weldingCoordinatorAuth.service, usata per il semaforo per-riga): per i tipi
  * a conferma semestrale vale la data più imminente tra expiry_date e
  * next_confirmation_due. Usata sia nelle statistiche (getStats) sia nel filtro
  * ?situazione= di listQualifications, così i conteggi delle card e il colore
@@ -177,21 +193,6 @@ function semaforo(expiryDate, status) {
     if (diffDays <= DAYS_URGENT)   return 'arancione';
     if (diffDays <= DAYS_WARNING)  return 'giallo';
     return 'verde';
-}
-
-/**
- * Data di scadenza "effettiva" per il semaforo.
- * Per le qualifiche saldatore ISO 9606 e operatore ISO 14732 la conferma periodica
- * (next_confirmation_due) puo' scadere prima del certificato: si usa la data PIU' IMMINENTE
- * tra le due. Difensivo: se una manca usa l'altra; per gli altri tipi resta solo expiry_date.
- */
-function effectiveExpiryDate(q) {
-    const expiry = q.expiry_date || null;
-    if (!requiresSemiannualConfirmation(q.qualification_type)) return expiry;
-    const nextConf = q.next_confirmation_due || null;
-    if (!expiry) return nextConf;
-    if (!nextConf) return expiry;
-    return new Date(nextConf) < new Date(expiry) ? nextConf : expiry;
 }
 
 /** Calcola il semaforo usando la data effettiva (conferma periodica per i 9606). */
@@ -559,7 +560,7 @@ async function getOne(req, res) {
 /** POST /qualifications */
 async function createQualification(req, res) {
     try {
-        const body = req.body;
+        const { body, designationApplicable } = applyFieldApplicability(req.body);
         const {
             company_id, person_name, person_code, department, personnel_id,
             qualification_type, standard_ref, scope_detail,
@@ -612,13 +613,13 @@ async function createQualification(req, res) {
         const thicknessRangeFinal = thickness_range || deriveRangeString(thickMin, thickMax);
         const pipeDiameterFinal   = pipe_diameter || deriveRangeString(pipeMin, pipeMax);
         // Designazione stampata: non sovrascrivere se l'operatore/AI ha letto la riga.
-        const designation = resolvePrintedDesignation(qualification_designation, {
+        const designation = designationApplicable ? resolvePrintedDesignation(qualification_designation, {
             welding_process: welding_process_test || welding_process, product_type, joint_type,
             filler_material_group: filler_material,
             thickness_min_mm: thickMin, thickness_max_mm: thickMax,
             pipe_diameter_min_mm: pipeMin, pipe_diameter_max_mm: pipeMax,
             welding_positions: position_range, weld_details,
-        });
+        }) : null;
 
         const writeDenied = await assertMutatingAllowed(req.user, { companyId: company_id });
         if (writeDenied) return sendAccessDenied(res, writeDenied);
@@ -771,7 +772,7 @@ async function updateQualification(req, res) {
         const pool  = await getPool();
         const orgId = req.user.organization_id;
         const id    = parseInt(req.params.id);
-        const body  = req.body;
+        const { body, designationApplicable } = applyFieldApplicability(req.body);
 
         const check = await pool.request().input('id', id).input('orgId', orgId)
             .query('SELECT id, company_id FROM qualifications WHERE id=@id AND organization_id=@orgId');
@@ -811,13 +812,13 @@ async function updateQualification(req, res) {
         const pipeMax  = toNum(pipe_diameter_max_mm);
         const thicknessRangeFinal = thickness_range || deriveRangeString(thickMin, thickMax);
         const pipeDiameterFinal   = pipe_diameter || deriveRangeString(pipeMin, pipeMax);
-        const designation = resolvePrintedDesignation(qualification_designation, {
+        const designation = designationApplicable ? resolvePrintedDesignation(qualification_designation, {
             welding_process: welding_process_test || welding_process, product_type, joint_type,
             filler_material_group: filler_material,
             thickness_min_mm: thickMin, thickness_max_mm: thickMax,
             pipe_diameter_min_mm: pipeMin, pipe_diameter_max_mm: pipeMax,
             welding_positions: position_range, weld_details,
-        });
+        }) : null;
 
         // Collegamento anagrafica (company_personnel) — gap analysis 08/08/2026:
         // stessa correzione di createQualification, vedi commento lì.
@@ -1176,13 +1177,33 @@ async function renewQualification(req, res) {
 // Tipi documento ammessi per il batch upload qualifiche (IG-3 staging).
 const UPLOAD_BATCH_DOC_TYPES = new Set(['patentino_saldatore', 'qualifica_14732', 'cert_ndt']);
 
+/** Campi additivi di classificazione per file (`confidence` storico = ai|rule_based resta invariato). */
+function classificationResponseFields(classification) {
+    if (!classification) return {};
+    return {
+        detected_doc_type: classification.detected_doc_type,
+        classification_confidence: classification.confidence,
+        classification_source: classification.classification_source,
+        classification: {
+            detected_doc_type: classification.detected_doc_type,
+            confidence: classification.confidence,
+            classification_source: classification.classification_source,
+            reasons: classification.reasons || [],
+            needs_choice: Boolean(classification.needs_choice),
+        },
+    };
+}
+
 /** POST /qualifications/upload-batch — estrazione + staging IG-3 (revisione pre-commit) */
 async function uploadBatch(req, res) {
     try {
         const orgId    = req.user.organization_id;
         const userId   = req.user.user_id;
         const company_id = req.body?.company_id ? parseInt(req.body.company_id) : null;
-        const docType = UPLOAD_BATCH_DOC_TYPES.has(req.body?.doc_type) ? req.body.doc_type : 'patentino_saldatore';
+        // `doc_type` è un override opzionale (client vecchi/in cache lo inviano sempre): se assente
+        // o non valido il tipo viene riconosciuto per file (null = auto-detect).
+        const requestedDocType = req.body?.doc_type ?? req.query?.doc_type;
+        const docType = UPLOAD_BATCH_DOC_TYPES.has(requestedDocType) ? requestedDocType : null;
 
         if (!company_id || isNaN(company_id)) {
             return res.status(400).json({ error: 'company_id obbligatorio: seleziona un\'azienda specifica prima di caricare i patentini.' });
@@ -1202,12 +1223,27 @@ async function uploadBatch(req, res) {
                 const buffer = fs.readFileSync(file.path);
                 const extracted = await extractQualificationFromPdf(buffer, file.originalname, orgId, company_id, docType);
 
+                const { classification: extractedClassification, ...extractedRest } = extracted;
+                const classFields = classificationResponseFields(extractedClassification);
+
                 if (extracted.status === 'wrong_module') {
                     try { fs.unlinkSync(file.path); } catch (_) {}
                     results.push({
                         fileName: file.originalname,
                         status: 'wrong_module',
-                        ...extracted,
+                        ...extractedRest,
+                        ...classFields,
+                    });
+                    continue;
+                }
+
+                if (extracted.status === 'type_unresolved') {
+                    try { fs.unlinkSync(file.path); } catch (_) {}
+                    results.push({
+                        fileName: file.originalname,
+                        status: 'type_unresolved',
+                        warnings: extracted.warnings || [],
+                        ...classFields,
                     });
                     continue;
                 }
@@ -1221,6 +1257,7 @@ async function uploadBatch(req, res) {
                         qualification_type: extracted.qualification_type,
                         warnings: extracted.warnings || [],
                         verification: extracted.verification,
+                        ...classFields,
                     });
                     continue;
                 }
@@ -1228,13 +1265,14 @@ async function uploadBatch(req, res) {
                 const stagingId = await createStagingRecord({
                     organizationId: orgId,
                     companyId: company_id,
-                    docType,
+                    docType: extracted.doc_type || docType,
                     originalName: file.originalname,
                     storagePath: file.path,
                     mimeType: file.mimetype,
                     fileSize: file.size,
                     fields: extracted.fields,
                     fieldConfidence: extracted.field_confidence,
+                    fieldSources: extracted.field_sources,
                     warnings: extracted.warnings,
                     qualificationType: extracted.qualification_type,
                     userId,
@@ -1251,11 +1289,13 @@ async function uploadBatch(req, res) {
                     confidence: extracted.confidence,
                     warnings: extracted.warnings || [],
                     verification: extracted.verification,
+                    doc_type: extracted.doc_type || docType,
+                    ...classFields,
                 };
             } catch (fileErr) {
                 const errMsg = describeIngestFileError(fileErr);
                 logger.error('[Qualif/batch] Estrazione fallita', {
-                    fileName: file.originalname,
+                    file: redactFileNameForLog(file.originalname),
                     error: errMsg,
                     stack: fileErr?.stack || null,
                 });

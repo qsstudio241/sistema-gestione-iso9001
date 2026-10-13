@@ -863,6 +863,38 @@ describe('qualifications.controller — uploadBatch inoltra verification (additi
     expect(res.body.results[0].verification).toBeNull();
   });
 
+  it('pending_review: field_sources va allo staging e non cambia la risposta al client', async () => {
+    const sources = { issuing_body: 'ocr_header', person_name: 'ai' };
+    extractQualificationFromPdf.mockResolvedValue(pendingExtracted({ field_sources: sources }));
+    const { req, res } = makeReqRes();
+
+    await uploadBatch(req, res);
+
+    expect(createStagingRecord).toHaveBeenCalledWith(expect.objectContaining({ fieldSources: sources }));
+    const entry = JSON.parse(JSON.stringify(res.body.results[0]));
+    expect(entry).not.toHaveProperty('field_sources');
+    expect(entry.fields).toEqual({ person_name: 'Mario Rossi' });
+  });
+
+  it('privacy log: Estrazione fallita senza nome file; il nome resta nella risposta upload-batch', async () => {
+    const logger = require('../utils/logger');
+    const { redactFileNameForLog } = require('../utils/ingestErrorMessage');
+    const FILE_NAME = '99-00000_ZZROSSI ZZMARIO_14732_X.pdf';
+    extractQualificationFromPdf.mockRejectedValue(new Error('estrazione KO'));
+    const { req, res } = makeReqRes();
+    req.files[0].originalname = FILE_NAME;
+
+    await uploadBatch(req, res);
+
+    const call = logger.error.mock.calls.find((c) => c[0] === '[Qualif/batch] Estrazione fallita');
+    expect(call[1].file).toBe(redactFileNameForLog(FILE_NAME));
+    expect(call[1]).not.toHaveProperty('fileName');
+    const logged = ['info', 'warn', 'error'].flatMap((m) => logger[m].mock.calls.map((c) => JSON.stringify(c))).join('\n');
+    expect(logged).not.toContain('ZZROSSI');
+    expect(logged).not.toContain(FILE_NAME);
+    expect(res.body.results[0]).toEqual(expect.objectContaining({ fileName: FILE_NAME, status: 'error' }));
+  });
+
   it('duplicate: inoltra verification accanto a warnings', async () => {
     extractQualificationFromPdf.mockResolvedValue({
       status: 'duplicate',
@@ -879,6 +911,161 @@ describe('qualifications.controller — uploadBatch inoltra verification (additi
     expect(entry.status).toBe('duplicate');
     expect(entry.verification).toEqual(VERIFICATION);
     expect(entry.warnings).toEqual(['Duplicato']);
+    expect(createStagingRecord).not.toHaveBeenCalled();
+  });
+});
+
+describe('qualifications.controller — uploadBatch riconoscimento tipo (doc_type opzionale)', () => {
+  const fs = require('fs');
+  const { extractQualificationFromPdf } = require('../services/qualificationIngest.service');
+  const { createStagingRecord } = require('../services/ingestStaging.service');
+  const { uploadBatch } = require('./qualifications.controller');
+
+  const CLASSIFICATION = {
+    detected_doc_type: 'cert_ndt',
+    confidence: 'high',
+    classification_source: 'rules',
+    reasons: ['Citata la norma ISO 9712 (NDT)'],
+    needs_choice: false,
+    ai_calls: 0,
+  };
+
+  function makeReqRes(body = { company_id: '5' }, query = {}) {
+    const req = {
+      body,
+      query,
+      files: [{ originalname: 'a.pdf', path: '/tmp/a.pdf', mimetype: 'application/pdf', size: 10 }],
+      user: { organization_id: 1, user_id: 42 },
+    };
+    const res = {
+      statusCode: 200,
+      body: null,
+      status(code) { this.statusCode = code; return this; },
+      json(payload) { this.body = payload; return this; },
+    };
+    return { req, res };
+  }
+
+  const pending = (extra = {}) => ({
+    status: 'pending_review',
+    fields: { person_name: 'Mario Rossi' },
+    field_confidence: {},
+    qualification_type: 'Operatore NDT',
+    confidence: 'ai',
+    warnings: [],
+    doc_type: 'cert_ndt',
+    classification: CLASSIFICATION,
+    ...extra,
+  });
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+    jest.spyOn(fs, 'readFileSync').mockReturnValue(Buffer.from('pdf'));
+    jest.spyOn(fs, 'unlinkSync').mockImplementation(() => {});
+    createStagingRecord.mockResolvedValue(77);
+  });
+
+  afterEach(() => {
+    jest.restoreAllMocks();
+  });
+
+  it('senza doc_type: ingest in auto-detect (null) e staging con il tipo riconosciuto', async () => {
+    extractQualificationFromPdf.mockResolvedValue(pending());
+    const { req, res } = makeReqRes();
+
+    await uploadBatch(req, res);
+
+    expect(extractQualificationFromPdf).toHaveBeenCalledWith(expect.anything(), 'a.pdf', 1, 5, null);
+    expect(createStagingRecord).toHaveBeenCalledWith(expect.objectContaining({ docType: 'cert_ndt' }));
+    const entry = res.body.results[0];
+    expect(entry).toEqual(expect.objectContaining({
+      status: 'pending_review',
+      staging_id: 77,
+      confidence: 'ai',
+      doc_type: 'cert_ndt',
+      detected_doc_type: 'cert_ndt',
+      classification_confidence: 'high',
+      classification_source: 'rules',
+    }));
+    expect(entry.classification.reasons).toEqual(['Citata la norma ISO 9712 (NDT)']);
+  });
+
+  it('con doc_type nel body (client vecchio): override, nessuna auto-detect', async () => {
+    extractQualificationFromPdf.mockResolvedValue(pending({
+      doc_type: 'qualifica_14732',
+      classification: { ...CLASSIFICATION, detected_doc_type: 'qualifica_14732', classification_source: 'override' },
+    }));
+    const { req, res } = makeReqRes({ company_id: '5', doc_type: 'qualifica_14732' });
+
+    await uploadBatch(req, res);
+
+    expect(extractQualificationFromPdf).toHaveBeenCalledWith(expect.anything(), 'a.pdf', 1, 5, 'qualifica_14732');
+    expect(createStagingRecord).toHaveBeenCalledWith(expect.objectContaining({ docType: 'qualifica_14732' }));
+    expect(res.body.results[0].classification_source).toBe('override');
+  });
+
+  it('doc_type in query string: stesso override', async () => {
+    extractQualificationFromPdf.mockResolvedValue(pending());
+    const { req, res } = makeReqRes({ company_id: '5' }, { doc_type: 'cert_ndt' });
+
+    await uploadBatch(req, res);
+
+    expect(extractQualificationFromPdf).toHaveBeenCalledWith(expect.anything(), 'a.pdf', 1, 5, 'cert_ndt');
+  });
+
+  it('doc_type non valido: trattato come assente (auto-detect)', async () => {
+    extractQualificationFromPdf.mockResolvedValue(pending());
+    const { req, res } = makeReqRes({ company_id: '5', doc_type: 'wpqr' });
+
+    await uploadBatch(req, res);
+
+    expect(extractQualificationFromPdf).toHaveBeenCalledWith(expect.anything(), 'a.pdf', 1, 5, null);
+  });
+
+  it('type_unresolved: nessuno staging, file temporaneo eliminato, classificazione restituita', async () => {
+    extractQualificationFromPdf.mockResolvedValue({
+      status: 'type_unresolved',
+      warnings: [],
+      classification: {
+        detected_doc_type: 'altro',
+        confidence: 'low',
+        classification_source: 'ai',
+        reasons: ['Nessuna norma o indizio riconoscibile nel testo'],
+        needs_choice: true,
+        ai_calls: 1,
+      },
+    });
+    const { req, res } = makeReqRes();
+
+    await uploadBatch(req, res);
+
+    expect(createStagingRecord).not.toHaveBeenCalled();
+    expect(fs.unlinkSync).toHaveBeenCalledWith('/tmp/a.pdf');
+    expect(res.body.uploaded).toBe(0);
+    expect(res.body.results[0]).toEqual(expect.objectContaining({
+      fileName: 'a.pdf',
+      status: 'type_unresolved',
+      detected_doc_type: 'altro',
+      classification_confidence: 'low',
+    }));
+    expect(res.body.results[0].classification.needs_choice).toBe(true);
+  });
+
+  it('wrong_module in auto-detect: conserva message/detected_type e aggiunge la classificazione', async () => {
+    extractQualificationFromPdf.mockResolvedValue({
+      status: 'wrong_module',
+      detected_type: 'wpqr',
+      message: 'Questo documento sembra una WPQR/PQR',
+      classification: { ...CLASSIFICATION, detected_doc_type: 'altro', confidence: 'low', needs_choice: true },
+    });
+    const { req, res } = makeReqRes();
+
+    await uploadBatch(req, res);
+
+    const entry = res.body.results[0];
+    expect(entry).toEqual(expect.objectContaining({ status: 'wrong_module', detected_type: 'wpqr' }));
+    expect(entry.message).toMatch(/WPQR/);
+    expect(entry.detected_doc_type).toBe('altro');
     expect(createStagingRecord).not.toHaveBeenCalled();
   });
 });
