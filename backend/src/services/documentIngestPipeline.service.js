@@ -8,7 +8,14 @@
 
 const logger = require('../utils/logger');
 const { confidenceFromTextLength, extractPdfText } = require('../utils/importPdfText');
-const { extractFieldsByRules } = require('../utils/ruleFieldExtractors');
+const {
+    extractFieldsByRules,
+    extractIssuingBody,
+    extractAllIssuingBodies,
+    sanitizeWeldDetails,
+    extractWeldDetailsValidity,
+    extractThicknessValidity,
+} = require('../utils/ruleFieldExtractors');
 const { getSchemaForDocType, DESIGNATION_ONLY_SCHEMA } = require('../data/documentTypeSchemas');
 const { extractStructuredByDocType } = require('./importAiExtraction.service');
 const { buildProfilePromptSection } = require('../data/jointTypeProfiles');
@@ -17,15 +24,22 @@ const { parseJsonWithRepair } = require('../utils/jsonRepair');
 const {
     repairDeep,
     normalizeIngestSelectFields,
+    normalizeIssuingBodyCode,
     detectLikelyFontSubstitutionCorruption,
     repairFontSubstitutionArtifacts,
 } = require('../utils/textEncodingRepair');
-const { describeIngestFileError } = require('../utils/ingestErrorMessage');
+const { describeIngestFileError, redactFileNameForLog, redactJsonSnippetForLog } = require('../utils/ingestErrorMessage');
 
 let extractTextWithOCR = null;
+let extractHeaderTextWithOCR = null;
 try {
-    extractTextWithOCR = require('../utils/ocrExtractor').extractTextWithOCR;
+    ({ extractTextWithOCR, extractHeaderTextWithOCR } = require('../utils/ocrExtractor'));
 } catch (_) {}
+
+/** Qualifiche personali: l'ente certificatore sta nella carta intestata (logo = grafica, non testo). */
+const HEADER_OCR_DOC_TYPES = new Set(['patentino_saldatore', 'qualifica_14732']);
+const HEADER_OCR_WARNING = 'Ente rilevato da OCR dell\'intestazione \u2014 verificare';
+const ISSUING_BODY_UNVERIFIED_WARNING = 'Ente indicato dall\'AI senza riscontro nel documento \u2014 verificare';
 
 // cert_ndt (ISO 9712) aggiunto 02/08/2026 — prima era in menu upload ma bloccato qui
 // con UNSUPPORTED_DOC_TYPE (simulazione UT Level II TEC-Eurolab).
@@ -64,12 +78,15 @@ const OCR_MIN_CHARS = Number(process.env.INGEST_OCR_MIN_CHARS) || 50;
 /**
  * @param {Buffer} pdfBuffer
  * @param {object} [options]
- * @returns {Promise<{ text: string, ocrUsed: boolean, warnings: string[] }>}
+ * @param {boolean} [options.collectOcrLayout] - se true e l'OCR parte, restituisce anche `ocrLayout`
+ *   (righe con bounding box per pagina; usato solo da qualifica_14732)
+ * @returns {Promise<{ text: string, ocrUsed: boolean, warnings: string[], ocrLayout?: Array }>}
  */
 async function extractDocumentText(pdfBuffer, options = {}) {
     const warnings = [];
     let text = '';
     let ocrUsed = false;
+    const layoutSink = options.collectOcrLayout ? [] : null;
 
     try {
         text = await extractPdfText(pdfBuffer);
@@ -82,7 +99,10 @@ async function extractDocumentText(pdfBuffer, options = {}) {
     if (text.trim().length < OCR_MIN_CHARS && extractTextWithOCR) {
         try {
             logger.info('[IngestPipeline] Testo breve, tentativo OCR', { chars: text.length });
-            text = await extractTextWithOCR(pdfBuffer, { maxPages: 3, lang: 'ita+eng' });
+            text = await extractTextWithOCR(
+                pdfBuffer,
+                layoutSink ? { maxPages: 3, lang: 'ita+eng', layoutSink } : { maxPages: 3, lang: 'ita+eng' },
+            );
             ocrUsed = true;
         } catch (ocrErr) {
             const ocrMsg = (ocrErr && ocrErr.message) ? ocrErr.message : String(ocrErr);
@@ -103,7 +123,7 @@ async function extractDocumentText(pdfBuffer, options = {}) {
         warnings.push('Rilevati pattern di font non standard (es. "buii"→"butt"); applicata correzione automatica — verificare i campi estratti');
     }
 
-    return { text, ocrUsed, warnings };
+    return layoutSink && layoutSink.length ? { text, ocrUsed, warnings, ocrLayout: layoutSink } : { text, ocrUsed, warnings };
 }
 
 /**
@@ -155,7 +175,12 @@ async function extractFieldsByAi(text, docType, fileName, organizationId = null,
     } catch (err) {
         const errMsg = describeIngestFileError(err, 'errore non specificato');
         warnings.push(`AI extraction: ${errMsg}`);
-        logger.warn('[IngestPipeline] AI primary failed', { docType, fileName, error: errMsg, stack: err?.stack || null });
+        logger.warn('[IngestPipeline] AI primary failed', {
+            docType,
+            file: redactFileNameForLog(fileName),
+            error: redactJsonSnippetForLog(errMsg),
+            stack: err?.stack ? redactJsonSnippetForLog(err.stack) : null,
+        });
 
         if (err.code !== 'AI_INVALID_JSON' && !String(errMsg).includes('JSON')) {
             return { fields: {}, model: null, warnings };
@@ -188,17 +213,17 @@ async function extractFieldsByAi(text, docType, fileName, organizationId = null,
         } catch (retryErr) {
             const retryMsg = describeIngestFileError(retryErr, 'errore non specificato');
             warnings.push(`AI retry fallito: ${retryMsg}`);
-            // Log raw response per diagnosi (max 400 char per non intasare log)
-            const raw = String(err.rawContent || err.raw_content || '').slice(0, 400);
-            const retryRaw = String(retryErr.rawContent || retryErr.raw_content || '').slice(0, 400);
+            // Solo la lunghezza delle risposte AI: il contenuto sono campi estratti dal certificato (dati personali).
+            const rawChars = String(err.rawContent || err.raw_content || '').length;
+            const retryRawChars = String(retryErr.rawContent || retryErr.raw_content || '').length;
             logger.warn('[IngestPipeline] AI retry fallito — dump risposte AI', {
                 docType,
-                fileName,
-                primaryError: err.message,
-                retryError: retryMsg,
-                primaryRawSample: raw,
-                retryRawSample: retryRaw,
-                stack: retryErr?.stack || null,
+                file: redactFileNameForLog(fileName),
+                primaryError: redactJsonSnippetForLog(err.message),
+                retryError: redactJsonSnippetForLog(retryMsg),
+                primaryRawChars: rawChars,
+                retryRawChars,
+                stack: retryErr?.stack ? redactJsonSnippetForLog(retryErr.stack) : null,
             });
             return { fields: {}, model: null, warnings };
         }
@@ -232,14 +257,29 @@ const TEST_SLOT_KEYS = new Set([
     'qualification_designation',
 ]);
 
-function pickMergedValue(key, ruleFields, aiFields) {
-    const aliases = [key, ...(FIELD_ALIASES[key] || [])];
+/**
+ * Qualifiche personali: la data esame NON e' una data di emissione. Senza questa esclusione
+ * l'alias issue_date -> exam_date copiava la data della prova sull'emissione reale.
+ */
+const DOC_TYPES_WITHOUT_EXAM_DATE_AS_ISSUE = new Set(['patentino_saldatore', 'qualifica_14732']);
+
+function pickMergedValue(key, ruleFields, aiFields, docType = null) {
+    let aliases = [key, ...(FIELD_ALIASES[key] || [])];
+    if (key === 'issue_date' && DOC_TYPES_WITHOUT_EXAM_DATE_AS_ISSUE.has(docType)) {
+        aliases = aliases.filter((k) => k !== 'exam_date');
+    }
     let aiVal = null;
     let ruleVal = null;
 
     for (const k of aliases) {
         if (aiVal == null && aiFields[k] != null) aiVal = normalizeFieldValue(aiFields[k]);
         if (ruleVal == null && ruleFields[k] != null) ruleVal = normalizeFieldValue(ruleFields[k]);
+    }
+
+    // L'OCR tesseract.js stacca la "x" dalla riga 4.1 c) e l'AI la attribuisce alla d): la regola strutturale corregge solo questo caso.
+    if (docType === 'qualifica_14732' && key === 'qualification_method'
+        && aiVal === 'production_test' && ruleVal === 'iso_9606') {
+        return { value: ruleVal, confidence: 'medium', source: 'ai_corrected_by_rules' };
     }
 
     if (aiVal != null && ruleVal != null) {
@@ -275,7 +315,7 @@ function mergeExtractions(ruleFields, aiFields, docType) {
     const fieldSources = {};
 
     for (const key of uniqueKeys) {
-        const { value, confidence, source } = pickMergedValue(key, ruleFields, aiFields);
+        const { value, confidence, source } = pickMergedValue(key, ruleFields, aiFields, docType);
         if (value != null) {
             fields[key] = value;
             fieldConfidence[key] = confidence;
@@ -288,6 +328,202 @@ function mergeExtractions(ruleFields, aiFields, docType) {
 }
 
 /**
+ * Ente certificatore dal testo OCR dell'intestazione: solo valori della lista chiusa (mai `altro`), riconosciuti
+ * dai matcher ancorati di `extractIssuingBody` (niente match libero sull'intero testo OCR).
+ * @param {string} headerText
+ * @returns {string|null} codice select (es. 'tec_eurolab')
+ */
+function detectIssuingBodyCodeFromHeader(headerText) {
+    const text = String(headerText || '');
+    if (!text.trim()) return null;
+    const label = extractIssuingBody(text);
+    const code = label ? normalizeIssuingBodyCode(label) : null;
+    return code && code !== 'altro' ? code : null;
+}
+
+/**
+ * Codici della lista chiusa (mai `altro`) riconosciuti nel testo dai matcher ancorati di `ruleFieldExtractors`
+ * (stessi di `extractIssuingBody`, niente substring libere: RINA non scatta su "Katerina").
+ * @param {string} text
+ * @returns {Set<string>}
+ */
+function issuingBodyCodesInText(text) {
+    const codes = new Set();
+    for (const label of extractAllIssuingBodies(text)) {
+        const code = normalizeIssuingBodyCode(label);
+        if (code && code !== 'altro') codes.add(code);
+    }
+    return codes;
+}
+
+function markIssuingBodyUnverified({ fieldConfidence, fieldSources, warnings }) {
+    fieldConfidence.issuing_body = 'low';
+    fieldSources.issuing_body = 'ai_unverified';
+    if (!warnings.includes(ISSUING_BODY_UNVERIFIED_WARNING)) warnings.push(ISSUING_BODY_UNVERIFIED_WARNING);
+}
+
+/**
+ * Affidabilita' dell'ente certificatore per le qualifiche personali (patentino_saldatore, qualifica_14732).
+ * Logo e carta intestata sono grafica, non testo: l'AI puo' "indovinare" un ente che nel testo non c'e'.
+ *
+ * Riscontro nel testo: il codice dell'ente (lista chiusa) e' riconosciuto nel testo estratto dai matcher ancorati
+ * (`extractAllIssuingBodies`). Con riscontro non succede nulla (nessun OCR, nessun avviso).
+ * Senza riscontro (ente AI diverso da vuoto/`altro`) o con ente vuoto/`altro` e nessun ente nel testo:
+ * OCR della sola fascia alta della prima pagina (`extractHeaderTextWithOCR`), mai bloccante.
+ *  - OCR riconosce un ente della lista: prevale sull'AI. Stesso ente => fonte `ai+ocr_header`, confidence `high`,
+ *    nessun avviso. Ente diverso => fonte `ocr_header`, confidence `medium`, avviso di discrepanza.
+ *    Ente AI vuoto/`altro` => fonte `ocr_header`, avviso informativo (come prima).
+ *    L'ente AI e' confermato se e' UNO DEI codici riconosciuti nell'intestazione (anche con piu' enti nel logo/carta
+ *    intestata o con enti fuori lista come IIS). Se l'intestazione riporta piu' enti della lista e nessuno e' quello
+ *    dell'AI (ambiguo), l'OCR non prevale: vale il caso «non riconosciuto» qui sotto.
+ *  - OCR non riconosce nulla, ambiguo, errore, timeout, OCR non eseguibile (PDF gia' letto con OCR completo,
+ *    `INGEST_HEADER_OCR=0`, modulo OCR assente): l'ente AI (valido) resta, con fonte `ai_unverified`,
+ *    confidence `low` e avviso «da verificare». Ente AI vuoto/`altro`: invariato.
+ * Muta `fields`, `fieldConfidence`, `fieldSources`, `warnings`.
+ * @returns {Promise<boolean>} true se l'OCR ha determinato o confermato l'ente
+ */
+async function applyHeaderIssuingBodyFallback({
+    pdfBuffer, docType, text, ocrUsed, fields, fieldConfidence, fieldSources, warnings, fileName,
+    headerOcr = extractHeaderTextWithOCR,
+}) {
+    if (!HEADER_OCR_DOC_TYPES.has(docType)) return false;
+    const current = fields.issuing_body;
+    const aiBody = current && current !== 'altro' ? current : null;
+    if (aiBody ? issuingBodyCodesInText(text).has(aiBody) : extractIssuingBody(text)) return false;
+
+    const ctx = { fieldConfidence, fieldSources, warnings };
+    const disabled = String(process.env.INGEST_HEADER_OCR || '').trim() === '0';
+    if (ocrUsed || disabled || !headerOcr) {
+        if (aiBody) markIssuingBodyUnverified(ctx);
+        return false;
+    }
+
+    const startedAt = Date.now();
+    try {
+        const headerText = await headerOcr(pdfBuffer, { pageNumber: 1, lang: 'ita+eng' });
+        const headerCodes = issuingBodyCodesInText(headerText);
+        const ambiguous = Boolean(aiBody) && !headerCodes.has(aiBody) && headerCodes.size > 1;
+        let code = null;
+        if (aiBody && headerCodes.has(aiBody)) code = aiBody;
+        else if (!ambiguous) code = detectIssuingBodyCodeFromHeader(headerText);
+        logger.info(`[IngestPipeline] OCR intestazione file=${redactFileNameForLog(fileName)} docType=${docType} ms=${Date.now() - startedAt}`
+            + ` chars=${String(headerText || '').length} ente=${code || (ambiguous ? 'ambiguo' : 'non rilevato')}`);
+        if (!code) {
+            if (aiBody) markIssuingBodyUnverified(ctx);
+            return false;
+        }
+        fields.issuing_body = code;
+        if (aiBody && code === aiBody) {
+            fieldConfidence.issuing_body = 'high';
+            fieldSources.issuing_body = 'ai+ocr_header';
+            return true;
+        }
+        fieldConfidence.issuing_body = 'medium';
+        fieldSources.issuing_body = 'ocr_header';
+        warnings.push(aiBody
+            ? `Ente corretto da OCR dell'intestazione: l'AI indicava ${aiBody} \u2014 verificare`
+            : HEADER_OCR_WARNING);
+        return true;
+    } catch (err) {
+        const msg = (err && err.message) ? err.message : String(err);
+        logger.warn(`[IngestPipeline] OCR intestazione non riuscito file=${redactFileNameForLog(fileName)} ms=${Date.now() - startedAt}: ${msg}`);
+        if (aiBody) markIssuingBodyUnverified(ctx);
+        return false;
+    }
+}
+
+function sourceForRuleValue(prevValue, prevSource, value) {
+    if (prevValue == null) return 'rules';
+    const same = String(prevValue).toLowerCase() === String(value).toLowerCase();
+    const fromAi = typeof prevSource === 'string' && prevSource.startsWith('ai');
+    if (same) return fromAi ? 'ai+rules' : 'rules';
+    return fromAi ? 'ai_corrected_by_rules' : 'rules';
+}
+
+function setFieldByRule(key, value, { fields, fieldConfidence, fieldSources }) {
+    fieldSources[key] = sourceForRuleValue(fields[key], fieldSources[key], value);
+    fields[key] = value;
+    fieldConfidence[key] = 'high';
+}
+
+function clearField(key, { fields, fieldConfidence, fieldSources }) {
+    if (fields[key] == null) return;
+    delete fields[key];
+    delete fieldSources[key];
+    fieldConfidence[key] = 'low';
+}
+
+/**
+ * Patentini ISO 9606-1: nel DB conta solo il CAMPO DI VALIDITA' (i dati di prova restano nel PDF allegato).
+ * Dove la riga a tre colonne (Variabili / PROVA / VALIDITA') e' riconosciuta, la colonna VALIDITA' vince
+ * sull'AI; altrimenti l'AI resta, con `weld_details` ripulito dai valori che non sono dettagli di saldatura
+ * (es. "PIPE PLATE" della riga tubo/piastra). Layout diverso -> nessuna deduzione. Muta fields/fieldConfidence/fieldSources.
+ */
+function applyValidityColumnRules({ docType, text, fields, fieldConfidence, fieldSources }) {
+    if (docType !== 'patentino_saldatore') return false;
+    const ctx = { fields, fieldConfidence, fieldSources };
+    let changed = false;
+
+    const weldDetails = extractWeldDetailsValidity(text);
+    if (weldDetails) {
+        if (weldDetails.value) setFieldByRule('weld_details', weldDetails.value, ctx);
+        else clearField('weld_details', ctx);
+        changed = true;
+    } else if (fields.weld_details != null) {
+        const clean = sanitizeWeldDetails(fields.weld_details);
+        if (clean) fields.weld_details = clean;
+        else clearField('weld_details', ctx);
+    }
+
+    const thickness = extractThicknessValidity(text);
+    if (thickness) {
+        if (thickness.min != null) {
+            setFieldByRule('thickness_min_mm', thickness.min, ctx);
+        } else {
+            // Apertura dichiarata senza minimo ("unlimited" da solo): il minimo dell'AI potrebbe essere
+            // lo spessore di prova, quindi si lascia vuoto per la revisione invece di tenerlo.
+            clearField('thickness_min_mm', ctx);
+            clearField('thickness_range', ctx);
+        }
+        if (thickness.unlimited) {
+            clearField('thickness_max_mm', ctx);
+            setFieldByRule('thickness_max_unlimited', true, ctx);
+        } else {
+            setFieldByRule('thickness_max_mm', thickness.max, ctx);
+            if (fields.thickness_max_unlimited) setFieldByRule('thickness_max_unlimited', false, ctx);
+        }
+        if (thickness.min != null) {
+            const range = thickness.unlimited
+                ? `\u2265${thickness.min} mm`
+                : `${thickness.min}-${thickness.max} mm`;
+            setFieldByRule('thickness_range', range, ctx);
+        }
+        changed = true;
+    }
+    return changed;
+}
+
+/** Campi chiave tracciati nella riga di log a fine ingest (solo nomi di campo, mai valori). */
+const FIELD_SOURCES_LOG_KEYS = [
+    'qualification_method', 'issuing_body', 'examiner_body', 'issue_date',
+    'expiry_date', 'certificate_number', 'welding_process',
+];
+const FIELD_SOURCES_LOG_DOC_TYPES = new Set(['patentino_saldatore', 'qualifica_14732', 'cert_ndt']);
+
+/**
+ * Riga di log con la fonte per campo (campo=fonte; `none` = campo non estratto).
+ * Valori, dati personali e nome file (puo' contenere il titolare) non compaiono mai.
+ * @returns {string|null} null per i tipi documento non qualifica
+ */
+function buildFieldSourcesLogLine(docType, fieldSources) {
+    if (!FIELD_SOURCES_LOG_DOC_TYPES.has(docType)) return null;
+    const pairs = FIELD_SOURCES_LOG_KEYS
+        .map((k) => `${k}=${(fieldSources && fieldSources[k]) || 'none'}`)
+        .join(' ');
+    return `[IngestPipeline] Fonti campi docType=${docType} ${pairs}`;
+}
+
+/**
  * Pipeline principale.
  *
  * @param {object} params
@@ -295,6 +531,7 @@ function mergeExtractions(ruleFields, aiFields, docType) {
  * @param {string} params.docType — wpqr | patentino_saldatore | wps | norma
  * @param {string} [params.fileName]
  * @param {number} [params.organizationId] — riservato IG-5 (few-shot)
+ * @param {{ text: string, ocrUsed: boolean, warnings: string[], ocrLayout?: Array }} [params.preExtracted]
  * @returns {Promise<object>}
  */
 async function runDocumentIngest({
@@ -302,6 +539,7 @@ async function runDocumentIngest({
     docType,
     fileName = 'document.pdf',
     organizationId = null,
+    preExtracted = null,
 }) {
     const warnings = [];
 
@@ -311,7 +549,14 @@ async function runDocumentIngest({
         throw e;
     }
 
-    const { text, ocrUsed, warnings: textWarnings } = await extractDocumentText(pdfBuffer);
+    // `preExtracted`: testo già letto dal riconoscimento tipo (evita un secondo pdf-parse/OCR).
+    // Il layout OCR serve solo al 14732, come nel percorso con doc_type esplicito.
+    const extractedText = preExtracted || await extractDocumentText(
+        pdfBuffer,
+        docType === 'qualifica_14732' ? { collectOcrLayout: true } : {},
+    );
+    const { text, ocrUsed, warnings: textWarnings } = extractedText;
+    const ocrLayout = docType === 'qualifica_14732' ? extractedText.ocrLayout : undefined;
     warnings.push(...textWarnings);
 
     const textConfidence = confidenceFromTextLength(text.length);
@@ -319,7 +564,9 @@ async function runDocumentIngest({
         warnings.push('Estrazione via OCR — verificare accuratezza dati');
     }
 
-    const ruleFields = extractFieldsByRules(text, docType, fileName);
+    const ruleFields = ocrLayout
+        ? extractFieldsByRules(text, docType, fileName, { ocrLayout })
+        : extractFieldsByRules(text, docType, fileName);
     let profileKey = ruleFields.joint_type || null;
 
     if (docType === 'patentino_saldatore' && !profileKey) {
@@ -342,6 +589,13 @@ async function runDocumentIngest({
 
     const { fields, fieldConfidence, fieldSources } = mergeExtractions(ruleFields, aiFields, docType);
     const normalizedFields = normalizeIngestSelectFields(repairDeep(fields));
+    applyValidityColumnRules({
+        docType, text, fields: normalizedFields, fieldConfidence, fieldSources,
+    });
+    await applyHeaderIssuingBodyFallback({
+        pdfBuffer, docType, text, ocrUsed, fileName, warnings,
+        fields: normalizedFields, fieldConfidence, fieldSources,
+    });
 
     const filledCount = Object.values(normalizedFields).filter((v) => v != null && v !== '').length;
     const schemaKeys = getSchemaKeys(docType);
@@ -358,13 +612,16 @@ async function runDocumentIngest({
 
     logger.info('[IngestPipeline] Completato', {
         docType,
-        fileName,
+        file: redactFileNameForLog(fileName),
         organizationId,
         textLen: text.length,
         filledCount,
         extractionConfidence,
         model,
     });
+
+    const sourcesLine = buildFieldSourcesLogLine(docType, fieldSources);
+    if (sourcesLine) logger.info(sourcesLine);
 
     return {
         docType,
@@ -390,5 +647,9 @@ module.exports = {
     mergeExtractions,
     pickMergedValue,
     pickDesignationOnlyFields,
+    applyHeaderIssuingBodyFallback,
+    applyValidityColumnRules,
+    detectIssuingBodyCodeFromHeader,
+    buildFieldSourcesLogLine,
     SUPPORTED_DOC_TYPES,
 };

@@ -14,6 +14,7 @@ const ENV_KEYS = [
   'GEMINI_API_KEY',
   'GEMINI_API_KEYS',
   'GEMINI_MODEL',
+  'GEMINI_THINKING_LEVEL',
   'GEMINI_MAX_ATTEMPTS',
   'ANTHROPIC_API_KEY',
   'ANTHROPIC_API_KEYS',
@@ -253,6 +254,85 @@ describe('aiProviderAdapter.chat error handling', () => {
       parts: [{ text: 'sys' }],
     });
     expect(body.generationConfig.responseMimeType).toBe('application/json');
+  });
+
+  describe('Gemini generationConfig per modello', () => {
+    async function callGemini(model, options, thinkingLevel) {
+      process.env.GEMINI_API_KEY = 'gk';
+      if (model) process.env.GEMINI_MODEL = model;
+      if (thinkingLevel !== undefined) process.env.GEMINI_THINKING_LEVEL = thinkingLevel;
+      const fetchSpy = jest.spyOn(global, 'fetch').mockResolvedValue({
+        ok: true,
+        status: 200,
+        json: async () => ({
+          candidates: [{ content: { parts: [{ text: 'ok' }], role: 'model' } }],
+        }),
+      });
+      await aiProviderAdapter.chat([{ role: 'user', content: 'x' }], {
+        timeout: 5000,
+        ...options,
+      });
+      const [url, init] = fetchSpy.mock.calls[0];
+      return { url, body: JSON.parse(init.body) };
+    }
+
+    test('Gemini 3.8: niente temperature, thinkingLevel low di default', async () => {
+      const { url, body } = await callGemini(
+        'gemini-3.8-flash',
+        { temperature: 0.2, maxTokens: 700, responseFormat: 'json' }
+      );
+      expect(url).toContain('models/gemini-3.8-flash:generateContent');
+      expect(body.generationConfig).toEqual({
+        maxOutputTokens: 700,
+        responseMimeType: 'application/json',
+        thinkingConfig: { thinkingLevel: 'low' },
+      });
+      expect(JSON.stringify(body)).not.toMatch(/thinkingBudget|topP|topK/);
+    });
+
+    test('Gemini 3.8: GEMINI_THINKING_LEVEL configurabile; default = nessun invio', async () => {
+      const high = await callGemini('gemini-3.8-flash', {}, 'HIGH');
+      expect(high.body.generationConfig.thinkingConfig).toEqual({ thinkingLevel: 'high' });
+
+      jest.restoreAllMocks();
+      const omitted = await callGemini('gemini-3.8-flash', {}, 'default');
+      expect(omitted.body.generationConfig.thinkingConfig).toBeUndefined();
+
+      jest.restoreAllMocks();
+      const invalid = await callGemini('gemini-3.8-flash', {}, 'turbo');
+      expect(invalid.body.generationConfig.thinkingConfig).toEqual({ thinkingLevel: 'low' });
+    });
+
+    test('Gemini 2.5 (rollback): temperature inviata, nessun thinkingConfig', async () => {
+      const { body } = await callGemini('gemini-2.5-flash', { temperature: 0.3 });
+      expect(body.generationConfig).toEqual({ temperature: 0.3 });
+    });
+
+    test('modello di default = gemini-3.8-flash', async () => {
+      const { url, body } = await callGemini(undefined, { temperature: 0.1 });
+      expect(url).toContain('models/gemini-3.8-flash:generateContent');
+      expect(body.generationConfig.temperature).toBeUndefined();
+    });
+
+    test('generateVision usa la stessa config (niente temperature su Gemini 3+)', async () => {
+      process.env.GEMINI_API_KEY = 'gk';
+      process.env.GEMINI_MODEL = 'gemini-3.8-flash';
+      const fetchSpy = jest.spyOn(global, 'fetch').mockResolvedValue({
+        ok: true,
+        status: 200,
+        json: async () => ({
+          candidates: [{ content: { parts: [{ text: '{}' }], role: 'model' } }],
+        }),
+      });
+      const geminiAdapter = require('./adapters/geminiAdapter');
+      await geminiAdapter.generateVision(
+        { userText: 'leggi', files: [{ mimeType: 'application/pdf', data: 'QQ==' }] },
+        { temperature: 0.1, responseFormat: 'json' }
+      );
+      const body = JSON.parse(fetchSpy.mock.calls[0][1].body);
+      expect(body.generationConfig.temperature).toBeUndefined();
+      expect(body.generationConfig.thinkingConfig).toEqual({ thinkingLevel: 'low' });
+    });
   });
 
   test('Azure path: uses api-key header and returns normalized shape', async () => {

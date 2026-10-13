@@ -158,3 +158,86 @@ describe('ocrExtractor.extractTextFromImageBuffer', () => {
         expect(terminate).toHaveBeenCalled();
     });
 });
+
+describe('ocrExtractor.extractTextWithOCR (retrocompatibilita + layoutSink)', () => {
+    const OLD_ENV = process.env.OCR_MAGICK_ENGINE;
+    const png = () => Buffer.concat([Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]), Buffer.alloc(20)]);
+    const PAGE_1 = {
+        text: '  Pagina uno con testo sufficiente  ',
+        lines: [
+            { text: '4.1 c) ISO 9606\n', bbox: { x0: 10, y0: 220, x1: 500, y1: 250 } },
+            { text: '   ', bbox: { x0: 0, y0: 0, x1: 1, y1: 1 } },
+            { text: 'x', bbox: { x0: 900, y0: 226, x1: 916, y1: 244 } },
+        ],
+    };
+    const PAGE_2 = {
+        text: 'Pagina due con testo sufficiente',
+        blocks: [{ paragraphs: [{ lines: [{ text: 'riga blocco', bbox: { x0: 1, y0: 2, x1: 3, y1: 4 } }] }] }],
+    };
+
+    function mockEngines(pages) {
+        process.env.OCR_MAGICK_ENGINE = 'gm';
+        const recognize = jest.fn();
+        pages.forEach((d) => recognize.mockResolvedValueOnce({ data: d }));
+        const terminate = jest.fn();
+        jest.doMock('tesseract.js', () => ({
+            createWorker: jest.fn(async () => ({ setParameters: jest.fn(), recognize, terminate })),
+        }));
+        jest.doMock('pdf2pic', () => ({
+            fromBuffer: jest.fn(() => async (pageNum) => (
+                pageNum <= pages.length ? { buffer: png() } : { buffer: Buffer.from('Request exceeds page count'.padEnd(126, ' ')) }
+            )),
+        }));
+        jest.resetModules();
+        return { recognize, terminate };
+    }
+
+    afterEach(() => {
+        jest.resetModules();
+        jest.dontMock('tesseract.js');
+        jest.dontMock('pdf2pic');
+        if (OLD_ENV === undefined) delete process.env.OCR_MAGICK_ENGINE;
+        else process.env.OCR_MAGICK_ENGINE = OLD_ENV;
+    });
+
+    it('senza layoutSink: testo identico a prima (pagine unite da riga vuota, trim per pagina)', async () => {
+        const { terminate } = mockEngines([PAGE_1, PAGE_2]);
+        const { extractTextWithOCR } = require('./ocrExtractor');
+        const text = await extractTextWithOCR(Buffer.from('%PDF'), { maxPages: 3 });
+        expect(text).toBe('Pagina uno con testo sufficiente\n\nPagina due con testo sufficiente');
+        expect(terminate).toHaveBeenCalled();
+    });
+
+    it('con layoutSink: stesso testo + righe con bbox per pagina (da data.lines o data.blocks)', async () => {
+        mockEngines([PAGE_1, PAGE_2]);
+        const { extractTextWithOCR } = require('./ocrExtractor');
+        const layoutSink = [];
+        const text = await extractTextWithOCR(Buffer.from('%PDF'), { maxPages: 3, layoutSink });
+        expect(text).toBe('Pagina uno con testo sufficiente\n\nPagina due con testo sufficiente');
+        expect(layoutSink).toEqual([
+            {
+                page: 1,
+                lines: [
+                    { text: '4.1 c) ISO 9606', bbox: { x0: 10, y0: 220, x1: 500, y1: 250 } },
+                    { text: 'x', bbox: { x0: 900, y0: 226, x1: 916, y1: 244 } },
+                ],
+            },
+            { page: 2, lines: [{ text: 'riga blocco', bbox: { x0: 1, y0: 2, x1: 3, y1: 4 } }] },
+        ]);
+    });
+
+    it('layoutSink non array (o assente) viene ignorato senza errori', async () => {
+        mockEngines([PAGE_1]);
+        const { extractTextWithOCR } = require('./ocrExtractor');
+        await expect(extractTextWithOCR(Buffer.from('%PDF'), { layoutSink: 'no' })).resolves.toBe('Pagina uno con testo sufficiente');
+    });
+
+    it('una pagina con testo troppo corto non produce ne testo ne layout', async () => {
+        mockEngines([{ text: 'breve', lines: [] }, PAGE_2]);
+        const { extractTextWithOCR } = require('./ocrExtractor');
+        const layoutSink = [];
+        const text = await extractTextWithOCR(Buffer.from('%PDF'), { layoutSink });
+        expect(text).toBe('Pagina due con testo sufficiente');
+        expect(layoutSink.map((p) => p.page)).toEqual([2]);
+    });
+});

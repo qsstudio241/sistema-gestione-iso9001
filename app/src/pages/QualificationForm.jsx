@@ -8,8 +8,11 @@ import { OCCUPATIONAL_QUALIFICATION_TYPES } from "../data/occupationalQualificat
 import { buildWelderDesignation, parseWelderQualificationDesignation, resolvePrintedDesignation } from "../utils/weldingDesignation";
 import { getApplicableWelderFields } from "../data/weldingQualificationRules9606";
 import {
+  FIELD_STATE,
+  getFieldApplicability,
   getJointTypeProfile,
   getVisibleFieldKeys,
+  nullNotApplicableFields,
   uses9606DimensionalBlock,
 } from "../data/jointTypeProfiles";
 import { NDT_SECTOR_OPTIONS } from "../data/documentTypeSchemas";
@@ -124,6 +127,14 @@ function QualificationForm({ qualification, onSave, onClose, onSaved, defaultCom
     productType: form.product_type,
     qualificationType: form.qualification_type,
   });
+  // Applicabilita' per famiglia+edizione (ISO 14732 Annex C): i campi N.A. non si mostrano,
+  // i facoltativi non sono mai obbligatori. 9606/15614/altri tipi: nessuno stato (invariati).
+  const fieldApplicability = getFieldApplicability({
+    qualificationType: form.qualification_type,
+    standardReference: form.standard_ref,
+  });
+  const isNotApplicable = (key) => fieldApplicability.states[key] === FIELD_STATE.NOT_APPLICABLE;
+  const isOptionalField = (key) => fieldApplicability.states[key] === FIELD_STATE.OPTIONAL;
   // ISO 9606-1 (saldatori manuali) e ISO 14732 (operatori automatica/meccanizzata) condividono
   // lo stesso obbligo di conferma semestrale — vedi weldingCoordinatorAuth.service.js (backend).
   const requiresConfirmation = isWelder9606 || isOperator14732;
@@ -281,7 +292,10 @@ function QualificationForm({ qualification, onSave, onClose, onSaved, defaultCom
       setError(null);
       try {
         const payload = {
-          ...form,
+          ...nullNotApplicableFields(form, {
+            qualificationType: form.qualification_type,
+            standardReference: form.standard_ref,
+          }).fields,
           company_id: parseInt(form.company_id, 10),
           personnel_id: form.personnel_id ? parseInt(form.personnel_id, 10) : null,
         };
@@ -473,6 +487,11 @@ function QualificationForm({ qualification, onSave, onClose, onSaved, defaultCom
           {(form.qualification_type.includes("9606") || form.qualification_type.includes("14732") || form.qualification_type.includes("15614")) && (
             <>
               <div className="qf-section-title" style={{marginTop: 16}}>Dettagli saldatura</div>
+              {isNotApplicable("material_group") && (
+                <span data-testid="qf-na-note" style={{ fontSize: 11, color: "#94a3b8" }}>
+                  {`Campi non previsti da ${fieldApplicability.notApplicableReason} non mostrati (gruppo materiale, giunto, prodotto, apporto, gas, dettagli giunto${isNotApplicable("position_range") ? ", posizioni" : ""}).`}
+                </span>
+              )}
               <div className="qf-row">
                 <div className="qf-field">
                   <label>Processo prova (ISO 4063){isWelder9606 && <span className="req"> *</span>}</label>
@@ -524,11 +543,13 @@ function QualificationForm({ qualification, onSave, onClose, onSaved, defaultCom
                     />
                   </div>
                 )}
-                <div className="qf-field">
-                  <label>Gruppo materiale (ISO/TR 15608){isWelder9606 && <span className="req"> *</span>}</label>
-                  <input type="text" value={form.material_group} onChange={handle("material_group")} onBlur={handleBlur("material_group")} placeholder="es. 1.1, 2, 3" />
-                  {fieldErrors.material_group && <span className="qf-field-err">{fieldErrors.material_group}</span>}
-                </div>
+                {!isNotApplicable("material_group") && (
+                  <div className="qf-field">
+                    <label>Gruppo materiale (ISO/TR 15608){isWelder9606 && <span className="req"> *</span>}</label>
+                    <input type="text" value={form.material_group} onChange={handle("material_group")} onBlur={handleBlur("material_group")} placeholder="es. 1.1, 2, 3" />
+                    {fieldErrors.material_group && <span className="qf-field-err">{fieldErrors.material_group}</span>}
+                  </div>
+                )}
               </div>
               {show9606Dimensions && (
                 <div className="qf-row">
@@ -543,13 +564,17 @@ function QualificationForm({ qualification, onSave, onClose, onSaved, defaultCom
                   </div>
                 </div>
               )}
-              {!show9606Dimensions && (
+              {!show9606Dimensions && !isNotApplicable("position_range") && (
                 <div className="qf-field">
-                  <label>Posizioni qualificate{isWelder9606 && <span className="req"> *</span>}</label>
+                  <label>
+                    Posizioni qualificate{isWelder9606 && <span className="req"> *</span>}
+                    {isOptionalField("position_range") && " (facoltativo)"}
+                  </label>
                   <input type="text" value={form.position_range} onChange={handle("position_range")} onBlur={handleBlur("position_range")} placeholder="es. PA, PB, PF, H-L045" />
                   {fieldErrors.position_range && <span className="qf-field-err">{fieldErrors.position_range}</span>}
                 </div>
               )}
+              {!isNotApplicable("joint_type") && (
               <div className="qf-row">
                 <div className="qf-field">
                   <label>Tipo giunto</label>
@@ -585,6 +610,7 @@ function QualificationForm({ qualification, onSave, onClose, onSaved, defaultCom
                   </select>
                 </div>
               </div>
+              )}
               {show9606Dimensions && (
                 <>
                   <div className="qf-row">
@@ -713,19 +739,23 @@ function QualificationForm({ qualification, onSave, onClose, onSaved, defaultCom
                 </>
               )}
               <div className="qf-row">
-                <div className="qf-field">
-                  <label>Gas di protezione</label>
-                  <input type="text" value={form.shielding_gas} onChange={handle("shielding_gas")} placeholder="es. M21, I1 (ISO 14175)" />
-                </div>
-                <div className="qf-field">
-                  <label>Dettagli giunto</label>
-                  <input type="text" value={form.weld_details} onChange={handle("weld_details")} placeholder="es. ss nb, bs, sl, ml, derivazione/branch tubo-piastra" />
-                </div>
+                {!isNotApplicable("shielding_gas") && (
+                  <div className="qf-field">
+                    <label>Gas di protezione</label>
+                    <input type="text" value={form.shielding_gas} onChange={handle("shielding_gas")} placeholder="es. M21, I1 (ISO 14175)" />
+                  </div>
+                )}
+                {!isNotApplicable("weld_details") && (
+                  <div className="qf-field">
+                    <label>{"Dettagli saldatura \u2013 campo di validità"}</label>
+                    <input type="text" value={form.weld_details} onChange={handle("weld_details")} placeholder="es. sl, ml, ss nb" />
+                  </div>
+                )}
                 <div className="qf-field">
                   <label>Organismo esaminatore</label>
                   <input type="text" value={form.examiner_body} onChange={handle("examiner_body")} placeholder="se diverso dall'ente" />
                 </div>
-                {applicableFields.transferModeApplicable && (
+                {applicableFields.transferModeApplicable && !isNotApplicable("transfer_mode") && (
                   <div className="qf-field">
                     <label>Metodo di trasferimento</label>
                     <select value={form.transfer_mode} onChange={handle("transfer_mode")}>

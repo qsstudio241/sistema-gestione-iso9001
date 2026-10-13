@@ -6,6 +6,7 @@ const fs = require('fs');
 const path = require('path');
 const { query } = require('../config/database');
 const logger = require('../utils/logger');
+const { redactFileNameForLog } = require('../utils/ingestErrorMessage');
 const { confidenceFromTextLength } = require('../utils/importPdfText');
 const { extractImportFileText } = require('../utils/importExtractText');
 const { extractStructuredByDocType } = require('../services/importAiExtraction.service');
@@ -945,7 +946,7 @@ async function commitToRegistry(req, res) {
                         mimeType: file.mime_type || 'application/pdf',
                     }
                 );
-                logger.info(`commitToRegistry: PDF ${file.original_name} allegato come v1 al documento #${registryId}`);
+                logger.info(`commitToRegistry: PDF ${redactFileNameForLog(file.original_name)} allegato come v1 al documento #${registryId}`);
             } catch (attErr) {
                 logger.warn(`commitToRegistry: impossibile allegare PDF al documento #${registryId}`, { error: attErr.message });
             }
@@ -1259,10 +1260,10 @@ async function commitToQualification(req, res) {
                      WHERE id = @qualId AND organization_id = @orgId`,
                     { url: certificate_file_url, qualId, orgId: organization_id }
                 );
-                logger.info(`commitToQualification: PDF ${file.original_name} collegato a qualification #${qualId}`);
+                logger.info(`commitToQualification: PDF ${redactFileNameForLog(file.original_name)} collegato a qualification #${qualId}`);
             } else {
                 logger.warn(`commitToQualification: PDF non trovato o path non valido per file ${fileId}`, {
-                    storage_path: file.storage_path,
+                    file: redactFileNameForLog(file.storage_path),
                 });
             }
         }
