@@ -2758,9 +2758,9 @@ class ApiService {
     async updateWPQR(id, data)       { return this.put(`/welding/wpqr/${id}`, data); }
     async deleteWPQR(id)             { return this.delete(`/welding/wpqr/${id}`); }
 
-    // WPQR — passate di prova e verifica vs norma (WV-6a). Le rotte nascono in WV-4a/WV-5c:
-    // finché non sono su `main` la chiamata reale risponde 404 (nessun chiamante montato).
-    /** Passate di prova della WPQR. Risponde `{ runs }`. */
+    // WPQR — passate di prova (WV-4a, montate nel dettaglio WPQR in WV-6b) e verifica vs norma (WV-5c).
+    // `verify` risponde 404 finché la rotta non è su `main`.
+    /** Passate di prova della WPQR. Risponde `{ runs, available }`. */
     async getWpqrTestRuns(wpqrId)        { return this.get(`/welding/wpqr/${wpqrId}/test-runs`); }
     /** Replace-set delle passate (stesso contratto del GET). */
     async saveWpqrTestRuns(wpqrId, runs) { return this.put(`/welding/wpqr/${wpqrId}/test-runs`, { runs }); }
