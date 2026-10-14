@@ -86,6 +86,21 @@ describe('aiPromptPrivacy', () => {
         expect(mixed.match(/\[TELEFONO\]/g)).toHaveLength(3);
     });
 
+    it('scrubFreeTextForAi redige solo il telefono accanto a certificato/processi', () => {
+        expect(scrubFreeTextForAi('+39 333 1234567 24-03390-01')).toBe('[TELEFONO] 24-03390-01');
+        expect(scrubFreeTextForAi('24-03390-01 +39 333 1234567')).toBe('24-03390-01 [TELEFONO]');
+        expect(scrubFreeTextForAi('+39 333 1234567/24-03390-01')).toBe('[TELEFONO]/24-03390-01');
+        expect(scrubFreeTextForAi('+39 24-03390-01')).toBe('+39 24-03390-01');
+        expect(scrubFreeTextForAi('02 12345678 135-138-141')).toBe('[TELEFONO] 135-138-141');
+        expect(scrubFreeTextForAi('135-138-141 02 12345678')).toBe('135-138-141 [TELEFONO]');
+        expect(scrubFreeTextForAi('02 12345678/135-138-141')).toBe('[TELEFONO]/135-138-141');
+        expect(scrubFreeTextForAi('+39 333 1234567 135-138-141')).toBe('[TELEFONO] 135-138-141');
+        expect(scrubFreeTextForAi('02-1234-5678')).toBe('[TELEFONO]');
+        expect(scrubFreeTextForAi('tel. 02-12345-67')).toBe('tel. [TELEFONO]');
+        expect(scrubFreeTextForAi('24-03390-01')).toBe('24-03390-01');
+        expect(scrubFreeTextForAi('135-138-141')).toBe('135-138-141');
+    });
+
     it('redactPayloadForAi: valori personali -> segnaposto, struttura e campi tecnici invariati', () => {
         const payload = {
             welder_name: 'Bianchi Luca',
