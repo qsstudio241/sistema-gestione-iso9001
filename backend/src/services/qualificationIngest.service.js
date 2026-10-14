@@ -27,6 +27,7 @@ const {
     checkShieldingGasKnown,
 } = require('../utils/ingestPlausibilityChecks');
 const { toNumericOrNull } = require('../utils/numericSanitizer');
+const { expectedQualificationUrl } = require('./certificateFileUrl.service');
 const { FIELD_STATE, getFieldState, nullNotApplicableFields } = require('../data/jointTypeProfiles');
 
 /**
@@ -726,8 +727,15 @@ async function commitQualificationFromFields(fields, organizationId, companyId, 
     const transfer_mode = f.transfer_mode || null;
     const examiner_body = f.examiner_body || null;
     const scope_detail = f.scope_detail || null;
-    const certificate_file_url = buildCertificateFileUrl(filePath);
+    const builtFileUrl = buildCertificateFileUrl(filePath);
+    const certificate_file_url = expectedQualificationUrl(builtFileUrl, organizationId);
     const warnings = [];
+    if (builtFileUrl && !certificate_file_url) {
+        warnings.push('Il PDF non è stato collegato al certificato: percorso file non previsto.');
+        logger.warn('[QualificationIngest] certificate_file_url non nella forma attesa: collegamento omesso', {
+            file: redactFileNameForLog(filePath),
+        });
+    }
 
     // Designazione sintetica ISO 9606-1 §11 (stesso calcolo del form manuale —
     // qualifications.controller.js — vedi backend/src/utils/weldingDesignation.js).

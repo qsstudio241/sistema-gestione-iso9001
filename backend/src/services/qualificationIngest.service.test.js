@@ -1214,3 +1214,56 @@ describe('qualification_type da doc_type esplicito', () => {
         expect(out.warnings.some((w) => /Si procede con il tipo scelto/.test(w))).toBe(true);
     });
 });
+
+describe('commitQualificationFromFields — certificate_file_url (A2: solo forme generate dall\'app)', () => {
+    const path = require('path');
+    const logger = require('../utils/logger');
+    const uploadsBase = process.env.UPLOAD_DIR
+        ? path.resolve(process.env.UPLOAD_DIR)
+        : path.resolve(__dirname, '../../uploads');
+
+    function mockInsertPool() {
+        const insertReq = { input: jest.fn().mockReturnThis() };
+        insertReq.query = jest.fn().mockResolvedValue({ recordset: [{ id: 801 }] });
+        getPool.mockResolvedValue({ request: jest.fn(() => insertReq) });
+        return insertReq;
+    }
+    const fields = { welder_name: 'Mario Rossi', certificate_number: 'ZZ-A2-01' };
+    const opts = (filePath) => ({ qualificationType: 'Saldatore ISO 9606-1', filePath, fileName: 'zz_Titolare_Fittizio.pdf' });
+
+    beforeEach(() => jest.clearAllMocks());
+
+    it('file in uploads/qualifications (upload batch): URL collegato', async () => {
+        const insertReq = mockInsertPool();
+        const out = await commitQualificationFromFields(fields, 10, 20, opts(path.join(uploadsBase, 'qualifications', 'qual_1_x.pdf')));
+        expect(insertReq.input).toHaveBeenCalledWith('certFileUrl', '/uploads/qualifications/qual_1_x.pdf');
+        expect(out.warnings.join(' ')).not.toMatch(/non è stato collegato/);
+    });
+
+    it('file di un job di importazione della stessa org: URL collegato; di altra org: omesso con avviso', async () => {
+        let insertReq = mockInsertPool();
+        await commitQualificationFromFields(fields, 10, 20, opts(path.join(uploadsBase, 'imports', '10', '5', '1_x.pdf')));
+        expect(insertReq.input).toHaveBeenCalledWith('certFileUrl', '/uploads/imports/10/5/1_x.pdf');
+
+        insertReq = mockInsertPool();
+        const out = await commitQualificationFromFields(fields, 10, 20, opts(path.join(uploadsBase, 'imports', '77', '5', '1_x.pdf')));
+        expect(insertReq.input).toHaveBeenCalledWith('certFileUrl', null);
+        expect(out.warnings.join(' ')).toMatch(/non è stato collegato/);
+    });
+
+    it('file fuori da uploads: collegamento omesso, avviso, la qualifica viene comunque creata, log senza nome file', async () => {
+        const insertReq = mockInsertPool();
+        const out = await commitQualificationFromFields(fields, 10, 20, opts('/tmp/zz_Titolare_Fittizio.pdf'));
+        expect(out.qualification_id).toBe(801);
+        expect(insertReq.input).toHaveBeenCalledWith('certFileUrl', null);
+        expect(out.warnings.join(' ')).toMatch(/non è stato collegato/);
+        expect(JSON.stringify(logger.warn.mock.calls)).not.toContain('Titolare');
+    });
+
+    it('senza file: nessun avviso, NULL', async () => {
+        const insertReq = mockInsertPool();
+        const out = await commitQualificationFromFields(fields, 10, 20, opts(null));
+        expect(insertReq.input).toHaveBeenCalledWith('certFileUrl', null);
+        expect(out.warnings.join(' ')).not.toMatch(/non è stato collegato/);
+    });
+});
