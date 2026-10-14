@@ -272,7 +272,8 @@ function buildQualificationTypeScope(qualificationType) {
     if (QUALIFICATION_TAB_FAMILIES.includes(type)) {
         return { clause: `${QUALIFICATION_TAB_FAMILY_SQL} = N'${type}'`, like: null };
     }
-    return { clause: 'q.qualification_type LIKE @qualType', like: QUAL_TYPE_MAP[type] || `%${type}%` };
+    const escaped = type.replace(/[\\%_[]/g, (ch) => `\\${ch}`);
+    return { clause: "q.qualification_type LIKE @qualType ESCAPE '\\'", like: QUAL_TYPE_MAP[type] || `%${escaped}%` };
 }
 
 // Mappa chiavi non-tab (metodo NDT singolo, PES/PAV separati) -> LIKE su qualification_type
@@ -308,7 +309,9 @@ async function listQualifications(req, res) {
             return res.status(400).json({ error: 'company_id non valido.', code: 'INVALID_COMPANY_ID' });
         }
 
-        const offset = (parseInt(page) - 1) * parseInt(limit);
+        const pageNum = Math.max(1, parseInt(page, 10) || 1);
+        const limitNum = Math.min(500, Math.max(1, parseInt(limit, 10) || 50));
+        const offset = (pageNum - 1) * limitNum;
         let where = ['q.organization_id = @orgId'];
         if (companyFilter.clause) where.push(companyFilter.clause);
         if (search) where.push("(q.person_name LIKE @search OR q.qualification_type LIKE @search OR q.certificate_number LIKE @search)");
@@ -347,7 +350,7 @@ async function listQualifications(req, res) {
             if (expiring_days) request.input('expDays', parseInt(expiring_days));
         };
 
-        const r = pool.request().input('orgId', orgId).input('lim', parseInt(limit)).input('off', offset);
+        const r = pool.request().input('orgId', orgId).input('lim', limitNum).input('off', offset);
         bindListFilters(r);
 
         const countReq = pool.request().input('orgId', orgId);
@@ -379,8 +382,8 @@ async function listQualifications(req, res) {
         res.json({
             qualifications,
             total: countResult.recordset[0].total,
-            page: parseInt(page),
-            limit: parseInt(limit),
+            page: pageNum,
+            limit: limitNum,
         });
     } catch (err) {
         logger.error('listQualifications:', err.message);

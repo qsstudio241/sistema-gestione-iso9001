@@ -129,7 +129,7 @@ describe('getStats — scope Ambito azienda + tab', () => {
   });
 
   it('chiavi non-tab (metodo NDT, pes/pav) restano a LIKE con parametro legato', () => {
-    expect(buildQualificationTypeScope('iso9712_ut')).toEqual({ clause: 'q.qualification_type LIKE @qualType', like: '%UT%' });
+    expect(buildQualificationTypeScope('iso9712_ut')).toEqual({ clause: "q.qualification_type LIKE @qualType ESCAPE '\\'", like: '%UT%' });
     expect(buildQualificationTypeScope('pav').like).toBe('%PAV%');
   });
 
@@ -183,6 +183,12 @@ describe('getStats / lista — input anomali', () => {
     expect(inputs.qualType).toBe(`%${evil}%`);
   });
 
+  it('i jolly LIKE (% _ [) in una chiave sconosciuta valgono come testo letterale', () => {
+    expect(buildQualificationTypeScope('%').like).toBe('%\\%%');
+    expect(buildQualificationTypeScope('a_b[c]\\d').like).toBe('%a\\_b\\[c]\\\\d%');
+    expect(buildQualificationTypeScope('x').clause).toContain("ESCAPE '\\'");
+  });
+
   it('qualification_type molto lungo viene troncato a 100 caratteri', () => {
     const scope = buildQualificationTypeScope('a'.repeat(5000));
     expect(scope.like).toBe(`%${'a'.repeat(100)}%`);
@@ -226,6 +232,25 @@ describe('Bucket situazione — fonte unica lista/card', () => {
       expect(SITUAZIONE_BUCKET_SQL[k]).toContain("q.status NOT IN ('revocata','sospesa')");
     }
     expect(SITUAZIONE_BUCKET_SQL.non_attive).toBe("q.status IN ('sospesa','revocata')");
+  });
+});
+
+describe('Paginazione lista — valori anomali non producono errori SQL', () => {
+  beforeEach(() => jest.clearAllMocks());
+
+  it.each([
+    [{ limit: '0' }, 50, 0],
+    [{ page: '-1' }, 50, 0],
+    [{ page: 'abc', limit: 'xyz' }, 50, 0],
+    [{ limit: '999999' }, 500, 0],
+    [{ page: '3', limit: '10' }, 10, 20],
+  ])('%j -> limit %i, offset %i', async (q, lim, off) => {
+    const { pool, inputs } = makePool();
+    getPool.mockResolvedValue(pool);
+    const res = await run(listQualifications, q);
+    expect(res.status).not.toHaveBeenCalledWith(500);
+    expect(inputs.lim).toBe(lim);
+    expect(inputs.off).toBe(off);
   });
 });
 
