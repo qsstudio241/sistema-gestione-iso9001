@@ -634,7 +634,8 @@ async function createQualification(req, res) {
         const orgId = req.user.organization_id;
         const userId = req.user.user_id;
 
-        // Anti-duplicato: stessi criteri dell'ingest e dell'indice unico (vedi qualificationDuplicate.service)
+        // Anti-duplicato: stesso certificate_number + company_id + qualification_type (non revocate)
+        // oppure stessa persona (indice unico): criteri in qualificationDuplicate.service
         if (certificate_number?.trim() && company_id) {
             const isDuplicate = await findQualificationDuplicate(
                 poolDb(pool),
