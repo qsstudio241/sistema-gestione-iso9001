@@ -95,10 +95,20 @@ describe('aiPromptPrivacy', () => {
         expect(scrubFreeTextForAi('135-138-141 02 12345678')).toBe('135-138-141 [TELEFONO]');
         expect(scrubFreeTextForAi('02 12345678/135-138-141')).toBe('[TELEFONO]/135-138-141');
         expect(scrubFreeTextForAi('+39 333 1234567 135-138-141')).toBe('[TELEFONO] 135-138-141');
+        expect(scrubFreeTextForAi('135-138-141 +39 333 1234567 111/135')).toBe(
+            '135-138-141 [TELEFONO] 111/135'
+        );
+        expect(scrubFreeTextForAi('24-03390-01 333 1234567')).toBe('24-03390-01 [TELEFONO]');
+        expect(scrubFreeTextForAi('24-03390-01 135-138-141')).toBe('24-03390-01 135-138-141');
+        expect(scrubFreeTextForAi('311-135-141')).toBe('311-135-141');
+        expect(scrubFreeTextForAi('0039 333 1234567 135-138-141')).toBe('[TELEFONO] 135-138-141');
         expect(scrubFreeTextForAi('02-1234-5678')).toBe('[TELEFONO]');
         expect(scrubFreeTextForAi('tel. 02-12345-67')).toBe('tel. [TELEFONO]');
+        expect(scrubFreeTextForAi('Ufficio 02-12345-67')).toBe('Ufficio [TELEFONO]');
+        expect(scrubFreeTextForAi('06-123456-78')).toBe('[TELEFONO]');
         expect(scrubFreeTextForAi('24-03390-01')).toBe('24-03390-01');
         expect(scrubFreeTextForAi('135-138-141')).toBe('135-138-141');
+        expect(scrubFreeTextForAi('WPQR 24-03390-01')).toBe('WPQR 24-03390-01');
     });
 
     it('redactPayloadForAi: valori personali -> segnaposto, struttura e campi tecnici invariati', () => {

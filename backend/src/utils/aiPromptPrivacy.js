@@ -99,10 +99,11 @@ const NAME_STOPWORDS = new Set(['di', 'de', 'del', 'della', 'dei', 'da', 'van', 
 function isTechnicalDigitGroup(token) {
     const t = String(token).trim();
     const digits = t.replace(/\D/g, '');
-    if (digits.length >= 9 && digits.length <= 11 && digits.startsWith('0')) return false;
-    if (/^[1-9]\d-\d{4,6}-\d{2}$/.test(t)) return true;
     if (/^\d{3}(?:-\d{3})+$/.test(t)) return true;
     if (/^\d{2,4}\/\d{2,4}$/.test(t)) return true;
+    if (/^\d{2}-\d{4,6}-\d{2}$/.test(t)) {
+        return !(digits.length >= 9 && digits.length <= 11 && /^[03]/.test(digits));
+    }
     if (/^\d+(?:-\d+){2,}$/.test(t) && digits.length >= 9 && !/^[03]/.test(digits)) return true;
     return false;
 }
