@@ -139,7 +139,8 @@
         "src/utils/technicalReviewChecklist.js",
         "src/utils/resolveOptionalProjectId.js",
         "src/utils/reportTemplatePath.js",
-        "src/utils/uploadsPath.js"
+        "src/utils/uploadsPath.js",
+        "src/utils/aiPromptPrivacy.js"
       ]
     },
     {
