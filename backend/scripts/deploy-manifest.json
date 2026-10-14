@@ -163,6 +163,7 @@
         "src/services/openapiCompanyLookup.service.js",
         "src/services/qualificationCompany.service.js",
         "src/services/personnelQualificationLink.service.js",
+        "src/services/qualificationExpirySql.js",
         "src/services/capabilityCoverage/coverageTypes.js",
         "src/services/capabilityCoverage/coverageRegistry.js",
         "src/services/capabilityCoverage/registerDefaultAdapters.js",

@@ -9,30 +9,9 @@ const { query } = require('../config/database');
 const { RELEASED_STATUS_SQL_IN } = require('../constants/documentStatus');
 const logger = require('../utils/logger');
 const { getSalSummary } = require('./gapAnalysis.service');
+const { EFFECTIVE_EXPIRY_SQL: QUAL_EFFECTIVE_EXPIRY_SQL } = require('./qualificationExpirySql');
 
 const TOP_COMPANIES_LIMIT = 5;
-
-/** Stessa regola di qualifications.controller EFFECTIVE_EXPIRY_SQL (semaforo card). */
-const QUAL_SEMIANNUAL_SQL = `(
-    LOWER(q.qualification_type) LIKE '%9606%'
-    OR LOWER(q.qualification_type) LIKE '%patentino_saldatore%'
-    OR LOWER(q.qualification_type) = '9606_1'
-    OR LOWER(q.qualification_type) LIKE '%14732%'
-    OR LOWER(q.qualification_type) LIKE '%qualifica_14732%'
-)`;
-
-const QUAL_EFFECTIVE_EXPIRY_SQL = `
-    CASE
-        WHEN ${QUAL_SEMIANNUAL_SQL} THEN
-            CASE
-                WHEN q.expiry_date IS NULL THEN q.next_confirmation_due
-                WHEN q.next_confirmation_due IS NULL THEN q.expiry_date
-                WHEN q.next_confirmation_due < q.expiry_date THEN q.next_confirmation_due
-                ELSE q.expiry_date
-            END
-        ELSE q.expiry_date
-    END
-`;
 
 function emptyNotReady() {
   return {
