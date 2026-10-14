@@ -192,5 +192,7 @@
 
 .sq-cert-link { color:#1e3a5f; text-decoration:underline; font-size:13px; }
 .sq-cert-link:hover { color:#16304e; }
+button.sq-cert-link { color:#1e3a5f; font-size:13px; text-align:left; }
+button.sq-cert-link:hover { color:#16304e; }
 
 .sq-btn-history { background:#f0fdf4; color:#16a34a; border:1px solid #bbf7d0; }
