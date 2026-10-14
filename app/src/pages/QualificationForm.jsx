@@ -15,6 +15,7 @@ import {
   nullNotApplicableFields,
   uses9606DimensionalBlock,
 } from "../data/jointTypeProfiles";
+import { getProcessSelectOptions, canonicalizeProcessValue } from "../utils/weldingProcessSelect";
 import { NDT_SECTOR_OPTIONS } from "../data/documentTypeSchemas";
 import { ProtectedFileLink } from "../components/ProtectedFile";
 import SemiannualConfirmationSection from "../components/SemiannualConfirmationSection";
@@ -231,6 +232,8 @@ function QualificationForm({ qualification, onSave, onClose, onSaved, defaultCom
         && d.pipe_diameter_mm != null && d.pipe_diameter_mm !== "") {
         d.pipe_diameter_min_mm = d.pipe_diameter_mm;
       }
+      d.welding_process = canonicalizeProcessValue(d.welding_process);
+      d.welding_process_test = canonicalizeProcessValue(d.welding_process_test);
       setForm(d);
       if (d.qualification_type && !QUAL_TYPES.includes(d.qualification_type)) {
         setCustomType(true);
@@ -291,11 +294,14 @@ function QualificationForm({ qualification, onSave, onClose, onSaved, defaultCom
       setAutoSaveStatus('saving');
       setError(null);
       try {
+        const { fields: payloadFields } = nullNotApplicableFields(form, {
+          qualificationType: form.qualification_type,
+          standardReference: form.standard_ref,
+        });
         const payload = {
-          ...nullNotApplicableFields(form, {
-            qualificationType: form.qualification_type,
-            standardReference: form.standard_ref,
-          }).fields,
+          ...payloadFields,
+          welding_process: canonicalizeProcessValue(payloadFields.welding_process),
+          welding_process_test: canonicalizeProcessValue(payloadFields.welding_process_test),
           company_id: parseInt(form.company_id, 10),
           personnel_id: form.personnel_id ? parseInt(form.personnel_id, 10) : null,
         };
@@ -518,17 +524,9 @@ function QualificationForm({ qualification, onSave, onClose, onSaved, defaultCom
                     onBlur={handleBlur("welding_process")}
                   >
                     <option value="">-- seleziona --</option>
-                    <option value="111">111 — Elettrodo rivestito (MMA)</option>
-                    <option value="121">121 — Arco sommerso (SAW)</option>
-                    <option value="131">131 — MIG</option>
-                    <option value="135">135 — MAG</option>
-                    <option value="136">136 — Filo animato (FCAW)</option>
-                    <option value="138">138 — Filo animato metallo (MCAW)</option>
-                    <option value="141">141 — TIG</option>
-                    <option value="145">145 — TIG + filo freddo</option>
-                    <option value="15">15 — Plasma (PAW)</option>
-                    <option value="311">311 — Ossiacetilenica</option>
-                    <option value="altro">Altro</option>
+                    {getProcessSelectOptions(form.welding_process_test, { includeAltro: true }).map((p) => (
+                      <option key={p.value} value={p.value}>{p.label}</option>
+                    ))}
                   </select>
                   {fieldErrors.welding_process && <span className="qf-field-err">{fieldErrors.welding_process}</span>}
                 </div>
