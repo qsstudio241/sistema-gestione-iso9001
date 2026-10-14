@@ -61,6 +61,31 @@ describe('aiPromptPrivacy', () => {
         expect(scrubFreeTextForAi(null)).toBeNull();
     });
 
+    it('scrubFreeTextForAi non redige numeri WPQR/certificato/processo come telefono', () => {
+        expect(scrubFreeTextForAi('24-03390-01')).toBe('24-03390-01');
+        expect(scrubFreeTextForAi('135-138-141')).toBe('135-138-141');
+        expect(scrubFreeTextForAi('111/135')).toBe('111/135');
+        expect(scrubFreeTextForAi('WPS 24-03390-01')).toBe('WPS 24-03390-01');
+        expect(scrubFreeTextForAi('WPQR 24-03390-01')).toBe('WPQR 24-03390-01');
+        expect(scrubFreeTextForAi('PQR 24-03390-01 processi 135-138-141 e 111/135')).toBe(
+            'PQR 24-03390-01 processi 135-138-141 e 111/135'
+        );
+
+        expect(scrubFreeTextForAi('+39 333 1234567')).toBe('[TELEFONO]');
+        expect(scrubFreeTextForAi('02 12345678')).toBe('[TELEFONO]');
+        expect(scrubFreeTextForAi('tel. 0521 123456')).toBe('tel. [TELEFONO]');
+
+        const mixed = scrubFreeTextForAi(
+            'WPQR 24-03390-01, processi 135-138-141 e 111/135. '
+            + 'Contatti +39 333 1234567, 02 12345678, tel. 0521 123456'
+        );
+        expect(mixed).toContain('24-03390-01');
+        expect(mixed).toContain('135-138-141');
+        expect(mixed).toContain('111/135');
+        expect(mixed).not.toMatch(/\+39|333 1234567|02 12345678|0521 123456/);
+        expect(mixed.match(/\[TELEFONO\]/g)).toHaveLength(3);
+    });
+
     it('redactPayloadForAi: valori personali -> segnaposto, struttura e campi tecnici invariati', () => {
         const payload = {
             welder_name: 'Bianchi Luca',

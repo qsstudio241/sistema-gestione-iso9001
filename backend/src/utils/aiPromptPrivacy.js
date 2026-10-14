@@ -88,8 +88,45 @@ function placeholderForFieldKey(key, docType = null) {
 const EMAIL_RE = /[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/gi;
 const CODICE_FISCALE_RE = /(?<![A-Z0-9])[A-Z]{6}\d{2}[A-EHLMPR-T]\d{2}[A-Z]\d{3}[A-Z](?![A-Z0-9])/gi;
 const PHONE_CANDIDATE_RE = /(?<![\w.])\+?\d[\d ./-]{7,}\d(?![\w])/g;
+const PHONE_CONTEXT_RE = /(?:tel(?:efono)?|cell(?:ulare)?|mobile|fax)[:.]?\s*$/i;
 const ISO_DATE_RE = /^\d{4}[-/.]\d{2}[-/.]\d{2}$/;
 const NAME_STOPWORDS = new Set(['di', 'de', 'del', 'della', 'dei', 'da', 'van', 'von', 'la', 'le', 'lo', 'the', 'and']);
+
+/**
+ * Codici tecnici / liste processo: NON sono telefoni.
+ * Es. WPQR/certificato `24-03390-01`, processi `135-138-141`, coppia `111/135`.
+ */
+function isTechnicalDigitGroup(token) {
+    const t = String(token).trim();
+    if (/^\d{2}-\d{4,6}-\d{2}$/.test(t)) return true;
+    if (/^\d{3}(?:-\d{3})+$/.test(t)) return true;
+    if (/^\d{2,4}\/\d{2,4}$/.test(t)) return true;
+    const digits = t.replace(/\D/g, '');
+    if (/^\d+(?:-\d+){2,}$/.test(t) && digits.length >= 9 && !/^[03]/.test(digits)) return true;
+    return false;
+}
+
+/**
+ * Telefono reale, non "qualsiasi 9+ cifre".
+ * Accetta: prefisso +39/0039, mobile 3xx, fisso 0x, oppure contesto tel/telefono/cell/mobile/fax.
+ */
+function isLikelyPhoneToken(token, source, offset) {
+    const m = String(token).trim();
+    if (!m || ISO_DATE_RE.test(m)) return false;
+    const digits = m.replace(/\D/g, '');
+    if (digits.length < 9 || digits.length > 15) return false;
+
+    const compact = m.replace(/[\s./-]/g, '');
+    if (/^(?:\+|00)39/.test(compact) || compact.startsWith('+')) return true;
+    if (isTechnicalDigitGroup(m)) return false;
+
+    const before = String(source || '').slice(Math.max(0, offset - 24), offset);
+    if (PHONE_CONTEXT_RE.test(before)) return true;
+
+    if (/^3\d{8,9}$/.test(compact)) return true;
+    if (/^0\d{8,10}$/.test(compact)) return true;
+    return false;
+}
 
 function escapeRegExp(s) {
     return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
@@ -114,12 +151,9 @@ function scrubFreeTextForAi(text, known = []) {
         );
         out = out.replace(re, placeholder);
     }
-    out = out
-        .replace(PHONE_CANDIDATE_RE, (m) => {
-            const digits = m.replace(/\D/g, '');
-            if (digits.length < 9 || ISO_DATE_RE.test(m)) return m;
-            return PLACEHOLDERS.TELEFONO;
-        });
+    out = out.replace(PHONE_CANDIDATE_RE, (m, offset, src) => (
+        isLikelyPhoneToken(m, src, offset) ? PLACEHOLDERS.TELEFONO : m
+    ));
     return out;
 }
 
