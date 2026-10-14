@@ -26,6 +26,7 @@ const {
   listQualifications,
   SITUAZIONE_BUCKET_SQL,
   buildQualificationTypeScope,
+  QUALIFICATION_TAB_FAMILY_SQL,
   parseCompanyIdParam,
 } = require('./qualifications.controller');
 
@@ -83,17 +84,18 @@ describe('getStats — scope Ambito azienda + tab', () => {
     const stats = makePool();
     getPool.mockResolvedValue(stats.pool);
     await run(getStats, { company_id: '48', qualification_type: 'iso9606_1' });
-    expect(statsSql(stats.queryMock)).toContain('q.qualification_type LIKE @qualType');
-    expect(stats.inputs.qualType).toBe('%9606-1%');
+    const clause = buildQualificationTypeScope('iso9606_1').clause;
+    expect(statsSql(stats.queryMock)).toContain(clause);
+    expect(statsSql(stats.queryMock)).toContain("= N'iso9606_1'");
 
     const list = makePool();
     getPool.mockResolvedValue(list.pool);
     await run(listQualifications, { company_id: '48', qualification_type: 'iso9606_1' });
-    expect(listSql(list.queryMock)).toContain('q.qualification_type LIKE @qualType');
-    expect(list.inputs.qualType).toBe(stats.inputs.qualType);
+    expect(listSql(list.queryMock)).toContain(clause);
+    expect(list.inputs.qualType).toBeUndefined();
   });
 
-  it.each(['salute_mansione', 'generico'])('tab %s: stessa clausola in lista e statistiche', async (tab) => {
+  it.each(['iso9606_1', 'iso9606_2', 'iso14732', 'ndt', 'iso14731', 'pes_pav', 'salute_mansione', 'generico'])('tab %s: stessa clausola in lista e statistiche', async (tab) => {
     const stats = makePool();
     getPool.mockResolvedValue(stats.pool);
     await run(getStats, { qualification_type: tab });
@@ -104,6 +106,31 @@ describe('getStats — scope Ambito azienda + tab', () => {
     expect(clause).toBeTruthy();
     expect(statsSql(stats.queryMock)).toContain(clause);
     expect(listSql(list.queryMock)).toContain(clause);
+  });
+
+  it('i tab sono una partizione: stessa espressione di famiglia, una clausola distinta per tab, generico = complemento (ELSE)', () => {
+    const clauses = ['iso9606_1', 'iso9606_2', 'iso14732', 'ndt', 'iso14731', 'pes_pav', 'salute_mansione', 'generico']
+      .map((t) => buildQualificationTypeScope(t).clause);
+    expect(new Set(clauses).size).toBe(8);
+    for (const c of clauses) expect(c).toContain(QUALIFICATION_TAB_FAMILY_SQL);
+    expect(QUALIFICATION_TAB_FAMILY_SQL).toContain("ELSE 'generico'");
+  });
+
+  it('sigle NDT/PES/PAV valgono solo come parola intera (nessun match per sottostringa)', () => {
+    expect(QUALIFICATION_TAB_FAMILY_SQL).toContain("[^A-Za-z][VMPUER]T[^A-Za-z]");
+    expect(QUALIFICATION_TAB_FAMILY_SQL).toContain("[^A-Za-z]PES[^A-Za-z]");
+    expect(QUALIFICATION_TAB_FAMILY_SQL).toContain("[^A-Za-z]PAV[^A-Za-z]");
+    expect(QUALIFICATION_TAB_FAMILY_SQL).not.toMatch(/LIKE '%(VT|PT|MT|UT|RT|ET|PES|PAV)%'/);
+  });
+
+  it('9606 senza suffisso confluisce in 9606-1; 9606-2 ha la sua famiglia', () => {
+    expect(QUALIFICATION_TAB_FAMILY_SQL).toMatch(/LIKE '%9606%'[^\n]*THEN 'iso9606_1'/);
+    expect(QUALIFICATION_TAB_FAMILY_SQL).toMatch(/LIKE '%9606-2%' THEN 'iso9606_2'/);
+  });
+
+  it('chiavi non-tab (metodo NDT, pes/pav) restano a LIKE con parametro legato', () => {
+    expect(buildQualificationTypeScope('iso9712_ut')).toEqual({ clause: 'q.qualification_type LIKE @qualType', like: '%UT%' });
+    expect(buildQualificationTypeScope('pav').like).toBe('%PAV%');
   });
 
   it('nessuna riga: i contatori sono 0, non null (COALESCE)', async () => {
@@ -199,5 +226,21 @@ describe('Bucket situazione — fonte unica lista/card', () => {
       expect(SITUAZIONE_BUCKET_SQL[k]).toContain("q.status NOT IN ('revocata','sospesa')");
     }
     expect(SITUAZIONE_BUCKET_SQL.non_attive).toBe("q.status IN ('sospesa','revocata')");
+  });
+});
+
+describe('Ordinamento lista — scadenza effettiva con spareggio per id', () => {
+  beforeEach(() => jest.clearAllMocks());
+
+  it('ORDER BY usa la data effettiva (non expiry_date), senza data in coda, spareggio q.id', async () => {
+    const { pool, queryMock } = makePool();
+    getPool.mockResolvedValue(pool);
+    await run(listQualifications, {});
+    const sql = listSql(queryMock).replace(/\s+/g, ' ');
+    const order = sql.slice(sql.indexOf('ORDER BY'), sql.indexOf('OFFSET'));
+    expect(order).toContain('q.next_confirmation_due');
+    expect(order).toContain('q.cpd_valid_until');
+    expect(order).toMatch(/q\.person_name ASC, q\.id ASC/);
+    expect(order).not.toMatch(/ORDER BY CASE WHEN q\.expiry_date IS NULL/);
   });
 });

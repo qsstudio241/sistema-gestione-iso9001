@@ -143,6 +143,10 @@ describe('ingestStaging.service (IG-3)', () => {
         expect(getModuleForDocType('qualifica_14732')).toBe('qualifiche');
         expect(getModuleForDocType('patentino_saldatore')).toBe('qualifiche');
     });
+
+    it('getModuleForDocType instrada cert_ndt (ISO 9712) al modulo qualifiche', () => {
+        expect(getModuleForDocType('cert_ndt')).toBe('qualifiche');
+    });
 });
 
 describe('ingestStaging.service — modalità rielaborazione (migrazione 137)', () => {

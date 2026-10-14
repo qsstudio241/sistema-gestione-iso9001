@@ -165,7 +165,7 @@ const SEMIANNUAL_TYPE_SQL_MATCH = `(
  * Data di scadenza "effettiva" calcolata in SQL — stessa regola di
  * effectiveExpiryDate() (weldingCoordinatorAuth.service, usata per il semaforo per-riga): per i tipi
  * a conferma semestrale vale la data più imminente tra expiry_date e
- * next_confirmation_due. Usata sia nelle statistiche (getStats) sia nel filtro
+ * next_confirmation_due (per i coordinatori 14731: expiry_date e cpd_valid_until). Usata sia nelle statistiche (getStats) sia nel filtro
  * ?situazione= di listQualifications, così i conteggi delle card e il colore
  * mostrato riga per riga restano sempre coerenti tra loro.
  */
@@ -176,6 +176,13 @@ const EFFECTIVE_EXPIRY_SQL = `
                 WHEN q.expiry_date IS NULL THEN q.next_confirmation_due
                 WHEN q.next_confirmation_due IS NULL THEN q.expiry_date
                 WHEN q.next_confirmation_due < q.expiry_date THEN q.next_confirmation_due
+                ELSE q.expiry_date
+            END
+        WHEN LOWER(q.qualification_type) LIKE '%14731%' THEN
+            CASE
+                WHEN q.expiry_date IS NULL THEN q.cpd_valid_until
+                WHEN q.cpd_valid_until IS NULL THEN q.expiry_date
+                WHEN q.cpd_valid_until < q.expiry_date THEN q.cpd_valid_until
                 ELSE q.expiry_date
             END
         ELSE q.expiry_date
@@ -229,33 +236,47 @@ function parseCompanyIdParam(raw) {
 }
 
 /**
+ * Famiglia (tab) di ogni qualifica: una e una sola per riga, in ordine di priorita'. Lista e statistiche
+ * filtrano sulla stessa espressione e "generico" e' il complemento, quindi ogni qualifica compare in
+ * esattamente un tab specifico (oltre a "Tutti") e la somma dei tab = Totale. Le sigle di 2 lettere
+ * (NDT VT/PT/MT/UT/RT/ET, PES, PAV) valgono solo come parola intera e in maiuscolo: niente match per
+ * sottostringa in parole comuni ("Addetto antincendio", "Certificato di formazione").
+ */
+const PADDED_TYPE_BIN = "(N' ' + q.qualification_type + N' ') COLLATE Latin1_General_BIN";
+const QUALIFICATION_TAB_FAMILY_SQL = `(CASE
+    WHEN q.qualification_type IN (${occupationalQualificationSqlInList()}) THEN 'salute_mansione'
+    WHEN q.qualification_type LIKE '%14732%' THEN 'iso14732'
+    WHEN q.qualification_type LIKE '%14731%' THEN 'iso14731'
+    WHEN q.qualification_type LIKE '%9606-1%' THEN 'iso9606_1'
+    WHEN q.qualification_type LIKE '%9606-2%' THEN 'iso9606_2'
+    WHEN q.qualification_type LIKE '%9606%' OR LOWER(q.qualification_type) LIKE '%patentino_saldatore%' THEN 'iso9606_1'
+    WHEN q.qualification_type LIKE '%NDT%' OR q.qualification_type LIKE '%9712%'
+      OR ${PADDED_TYPE_BIN} LIKE '%[^A-Za-z][VMPUER]T[^A-Za-z]%' THEN 'ndt'
+    WHEN q.qualification_type LIKE '%CEI 11-27%'
+      OR ${PADDED_TYPE_BIN} LIKE '%[^A-Za-z]PES[^A-Za-z]%'
+      OR ${PADDED_TYPE_BIN} LIKE '%[^A-Za-z]PAV[^A-Za-z]%' THEN 'pes_pav'
+    ELSE 'generico'
+END)`;
+const QUALIFICATION_TAB_FAMILIES = Object.freeze([
+    'iso9606_1', 'iso9606_2', 'iso14732', 'ndt', 'iso14731', 'pes_pav', 'salute_mansione', 'generico',
+]);
+
+/**
  * Filtro tab (qualification_type) condiviso da lista e statistiche: le card contano
  * esattamente le righe del tab attivo. Ritorna { clause, like } (like = valore del
- * parametro @qualType, solo per i tab a LIKE).
+ * parametro @qualType, solo per le chiavi non-tab a LIKE).
  */
 function buildQualificationTypeScope(qualificationType) {
     const type = String(qualificationType || '').trim().slice(0, 100);
     if (!type) return { clause: null, like: null };
-    if (type === 'salute_mansione') {
-        // Tipi salute mansione: IN esplicito (canonici + alias legacy), non LIKE '%salute_mansione%'
-        return { clause: `q.qualification_type IN (${occupationalQualificationSqlInList()})`, like: null };
-    }
-    if (type === 'generico') {
-        // generico = non rientra negli altri tipi noti (esclude anche salute mansione)
-        return {
-            clause: `q.qualification_type NOT LIKE '%9606%' AND q.qualification_type NOT LIKE '%14732%' AND q.qualification_type NOT LIKE '%14731%' AND q.qualification_type NOT LIKE '%NDT%' AND q.qualification_type NOT LIKE '%VT%' AND q.qualification_type NOT LIKE '%PT%' AND q.qualification_type NOT LIKE '%MT%' AND q.qualification_type NOT LIKE '%UT%' AND q.qualification_type NOT LIKE '%RT%' AND q.qualification_type NOT LIKE '%ET%' AND q.qualification_type NOT LIKE '%PES%' AND q.qualification_type NOT LIKE '%PAV%' AND q.qualification_type NOT IN (${occupationalQualificationSqlInList()})`,
-            like: null,
-        };
+    if (QUALIFICATION_TAB_FAMILIES.includes(type)) {
+        return { clause: `${QUALIFICATION_TAB_FAMILY_SQL} = N'${type}'`, like: null };
     }
     return { clause: 'q.qualification_type LIKE @qualType', like: QUAL_TYPE_MAP[type] || `%${type}%` };
 }
 
-// Mappa tipo tab → LIKE su qualification_type
+// Mappa chiavi non-tab (metodo NDT singolo, PES/PAV separati) -> LIKE su qualification_type
 const QUAL_TYPE_MAP = {
-    iso9606_1:      '%9606-1%',
-    iso9606_2:      '%9606-2%',
-    iso14732:       '%14732%',
-    iso14731:       '%14731%',
     // NDT per metodo specifico
     iso9712_vt:     '%VT%',
     iso9712_pt:     '%PT%',
@@ -263,13 +284,8 @@ const QUAL_TYPE_MAP = {
     iso9712_ut:     '%UT%',
     iso9712_rt:     '%RT%',
     iso9712_et:     '%ET%',
-    // raggruppamento NDT generico
-    ndt:            '%NDT%',
-    // abilitazioni
-    pes_pav:        '%PES%',
     pes:            '%PES%',
     pav:            '%PAV%',
-    generico:       '%',        // intercettato dopo
 };
 
 /** GET /qualifications */
@@ -347,9 +363,10 @@ async function listQualifications(req, res) {
             LEFT JOIN users u ON u.user_id = q.approved_by
             WHERE ${whereClause}
             ORDER BY
-                CASE WHEN q.expiry_date IS NULL THEN 1 ELSE 0 END,
-                q.expiry_date ASC,
-                q.person_name ASC
+                CASE WHEN ${EFFECTIVE_SQL} IS NULL THEN 1 ELSE 0 END,
+                ${EFFECTIVE_SQL} ASC,
+                q.person_name ASC,
+                q.id ASC
             OFFSET @off ROWS FETCH NEXT @lim ROWS ONLY
         `);
 
@@ -545,7 +562,7 @@ async function getCoverage(req, res) {
                     person_code:     q.person_code,
                     company_name:    q.company_name,
                     expiry_date:     q.expiry_date,
-                    semaforo:        semaforo(q.expiry_date, q.status),
+                    semaforo:        semaforoForRow(q),
                     coverage_detail: detail,
                 })),
             };
@@ -1423,6 +1440,7 @@ async function getHistory(req, res) {
                 .input('id', currentId).input('orgId', orgId)
                 .query(`
                     SELECT q.id, q.issue_date, q.expiry_date, q.certificate_number,
+                           q.qualification_type, q.next_confirmation_due, q.cpd_valid_until,
                            q.approval_status, q.status, q.previous_qualification_id,
                            c.name AS company_name
                     FROM qualifications q
@@ -1431,7 +1449,7 @@ async function getHistory(req, res) {
                 `);
             if (!r.recordset.length) break;
             const row = r.recordset[0];
-            chain.push({ ...row, semaforo: semaforo(row.expiry_date, row.status) });
+            chain.push({ ...row, semaforo: semaforoForRow(row) });
             if (!row.previous_qualification_id) break;
             currentId = row.previous_qualification_id;
         }
@@ -1934,6 +1952,7 @@ module.exports = {
     effectiveExpiryDate,
     semaforoForRow,
     SITUAZIONE_BUCKET_SQL,
+    QUALIFICATION_TAB_FAMILY_SQL,
     buildQualificationTypeScope,
     parseCompanyIdParam,
 };
