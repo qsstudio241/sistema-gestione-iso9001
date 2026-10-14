@@ -22,7 +22,7 @@ import {
   MASON_WPS_GENERATE_DEFAULTS,
 } from "../utils/aiAssistantContext";
 import { exportWpsAnnexADocx } from "../utils/wordExportWps";
-import { resolveBackendUploadUrl } from "../utils/resolveBackendUploadUrl";
+import { ProtectedFileLink } from "../components/ProtectedFile";
 import {
   isIso14555,
   describeQualifiedParentThicknessRange14555,
@@ -1634,7 +1634,7 @@ function WeldingProceduresPage() {
                       <td><ApprovalBadge approvalStatus={wq.approval_status} /></td>
                       <td onClick={(e) => e.stopPropagation()}>
                         {wq.certificate_file_url
-                          ? <a href={resolveBackendUploadUrl(wq.certificate_file_url, apiService.baseUrl)} target="_blank" rel="noopener noreferrer" title="Apri certificato PDF">{"\uD83D\uDCC4"}</a>
+                          ? <ProtectedFileLink fileUrl={wq.certificate_file_url} kind="wpqr" recordId={wq.id} title="Apri certificato PDF">{"\uD83D\uDCC4"}</ProtectedFileLink>
                           : <span style={{ color: "#9ca3af" }}>-</span>}
                       </td>
                       <td onClick={(e) => e.stopPropagation()}>

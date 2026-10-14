@@ -63,6 +63,7 @@ const alertRoutes           = require('./routes/alert.routes');
 const notificationsRoutes   = require('./routes/notifications.routes');
 const docfileRoutes         = require('./routes/docfile.routes');
 const qualificationsRoutes  = require('./routes/qualifications.routes');
+const filesRoutes           = require('./routes/files.routes');
 const risksRoutes           = require('./routes/risks.routes');
 const complaintsRoutes      = require('./routes/complaints.routes');
 const suppliersRoutes       = require('./routes/suppliers.routes');
@@ -118,12 +119,12 @@ app.set('trust proxy', 1);
 
 // Security headers
 app.use(helmet({
-    // CSP: il server espone JSON API + static uploads (immagini/allegati).
+    // CSP: il server espone JSON API + file autenticati (/files/content, allegati).
     // Non serve una policy HTML; blocchiamo tutto tranne gli asset necessari.
     contentSecurityPolicy: {
         directives: {
             defaultSrc:      ["'none'"],
-            imgSrc:          ["'self'", "data:", "blob:"],   // allegati immagine via /uploads
+            imgSrc:          ["'self'", "data:", "blob:"],   // allegati immagine
             mediaSrc:        ["'self'"],
             connectSrc:      ["'self'"],
             // frame-ancestors: permette embedding solo dal frontend Netlify
@@ -283,6 +284,7 @@ app.use(API_BASE, authRoutes);
 app.use(API_BASE, inviteRoutes); // /auth/accept-invite* — pubblico, isolato da authRoutes (UAL-3)
 app.use(API_BASE, passwordResetRoutes); // /auth/forgot-password, /auth/reset-password* — pubblico, isolato (UAL-4)
 app.use(API_BASE, attachmentRoutes); // Prima degli altri: authenticateDownload accetta ?token=, i router successivi hanno router.use(authenticate) globale che bloccherebbe le richieste senza Bearer
+app.use(API_BASE, filesRoutes); // /files/content (auth + scope): prima dei router con authenticate/licenza globale
 app.use(API_BASE, auditRoutes);
 app.use(`${API_BASE}/audits`, auditEventsRoutes);
 app.use(API_BASE, responseRoutes);
@@ -337,8 +339,7 @@ app.use(`${API_BASE}/companies/:companyId/certification-findings`, certFindingsR
 app.use(API_BASE, webdavApiRoutes);
 app.use('/webdav', webdavRouter); // /webdav/ non sotto /api/v1/: Office non usa prefisso API
 
-// Static files (uploads)
-app.use('/uploads', express.static(process.env.UPLOAD_DIR || './uploads'));
+// /uploads NON è più servito: i file passano da GET /api/v1/files/content (auth + scope).
 
 // 404 handler
 app.use((req, res) => {

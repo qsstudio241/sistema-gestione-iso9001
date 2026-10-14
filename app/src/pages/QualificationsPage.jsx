@@ -11,7 +11,7 @@ import QualificationUploadButton from "../components/QualificationUploadButton";
 import ReprocessQueueBanner from "../components/ReprocessQueueBanner";
 import CoverageVerifyPanel from "../components/CoverageVerifyPanel";
 import { formatDate } from "../utils/dateHelpers";
-import { resolveBackendUploadUrl } from "../utils/resolveBackendUploadUrl";
+import { ProtectedFileLink } from "../components/ProtectedFile";
 import AskAiButton from "../components/AskAiButton";
 import { saveQualContext } from "../utils/aiAssistantContext";
 import { requiresSemiannualConfirmation } from "../utils/weldingConfirmationRules";
@@ -191,15 +191,15 @@ export function QualRow({ q, tabKey, onEdit, onHardDelete, onRenew, onHistory, h
     const certCell = (
         <td className="sq-col-cert">
             {q.certificate_file_url
-                ? <a
-                    href={resolveBackendUploadUrl(q.certificate_file_url, apiService.baseUrl)}
-                    target="_blank"
-                    rel="noopener noreferrer"
+                ? <ProtectedFileLink
+                    fileUrl={q.certificate_file_url}
+                    kind="qualifica"
+                    recordId={q.id}
                     className="sq-cert-link"
                     title="Apri certificato"
                   >
                     {"\uD83D\uDCC4"} {q.certificate_number || "Certificato"}
-                  </a>
+                  </ProtectedFileLink>
                 : (q.certificate_number || "\u2014")}
             {q.issuing_body && <div className="sq-issuer">{q.issuing_body}</div>}
         </td>

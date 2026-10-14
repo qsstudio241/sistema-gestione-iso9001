@@ -17,7 +17,7 @@ import {
 } from "../data/jointTypeProfiles";
 import { getProcessSelectOptions, canonicalizeProcessValue } from "../utils/weldingProcessSelect";
 import { NDT_SECTOR_OPTIONS } from "../data/documentTypeSchemas";
-import { resolveBackendUploadUrl } from "../utils/resolveBackendUploadUrl";
+import { ProtectedFileLink } from "../components/ProtectedFile";
 import SemiannualConfirmationSection from "../components/SemiannualConfirmationSection";
 import FileDropzone from "../components/FileDropzone";
 import QualificationVerifyPanel from "../components/QualificationVerifyPanel";
@@ -1015,13 +1015,13 @@ function QualificationForm({ qualification, onSave, onClose, onSaved, defaultCom
               <div className="qf-section-title">Certificato PDF</div>
               {form.certificate_file_url && (
                 <div style={{marginBottom: 6, fontSize: 13}}>
-                  <a
-                    href={resolveBackendUploadUrl(form.certificate_file_url, apiService.baseUrl)}
-                    target="_blank"
-                    rel="noopener noreferrer"
+                  <ProtectedFileLink
+                    fileUrl={form.certificate_file_url}
+                    kind="qualifica"
+                    recordId={savedIdRef.current || qualification?.id}
                   >
                     {"\uD83D\uDCC4"} Visualizza certificato allegato
-                  </a>
+                  </ProtectedFileLink>
                 </div>
               )}
               <div className="qf-field">
