@@ -81,15 +81,18 @@ describe("PendingIngestQueue", () => {
     expect(onChanged).toHaveBeenCalled();
   });
 
-  it("Conferma fallita (409): la voce resta e compare l'errore", async () => {
+  it("Conferma fallita (409): la voce resta e l'errore e' mostrato sopra la finestra", async () => {
+    const alertSpy = vi.spyOn(window, "alert").mockImplementation(() => {});
     apiService.confirmIngestStaging.mockRejectedValue({ message: "x", data: { error: "Record duplicato" } });
     render(<PendingIngestQueue />);
     fireEvent.click(await screen.findByText("Vedi elenco"));
     fireEvent.click(screen.getByText("Rivedi"));
     await screen.findByTestId("review-dialog");
     fireEvent.click(screen.getByText("conferma"));
-    await screen.findByText("Record duplicato");
+    await waitFor(() => expect(alertSpy).toHaveBeenCalledWith("Record duplicato"));
     expect(screen.getByTestId("pending-ingest-queue")).toBeTruthy();
+    expect(screen.getByTestId("review-dialog")).toBeTruthy();
+    alertSpy.mockRestore();
   });
 
   it("Scarta chiama reject e rimuove la voce", async () => {

@@ -82,7 +82,7 @@ export default function PendingIngestQueue({ module = "qualifiche", onChanged, r
       setReviewItem(null);
       if (onChanged) onChanged();
     } catch (e) {
-      setError(e?.data?.error || e.message || "Conferma fallita");
+      window.alert(e?.data?.error || e.message || "Conferma fallita");
     } finally {
       setBusy(false);
     }
@@ -96,7 +96,7 @@ export default function PendingIngestQueue({ module = "qualifiche", onChanged, r
       removeItem(reviewItem.id);
       setReviewItem(null);
     } catch (e) {
-      setError(e?.data?.error || e.message || "Scarto fallito");
+      window.alert(e?.data?.error || e.message || "Scarto fallito");
     } finally {
       setBusy(false);
     }
