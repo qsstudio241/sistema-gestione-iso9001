@@ -98,7 +98,7 @@ const NAME_STOPWORDS = new Set(['di', 'de', 'del', 'della', 'dei', 'da', 'van', 
  */
 function isTechnicalDigitGroup(token) {
     const t = String(token).trim();
-    if (/^\d{2}-\d{4,6}-\d{2}$/.test(t)) return true;
+    if (/^\d{2}-\d{4,6}-\d{2}$/.test(t)) return !/^[03]/.test(t);
     if (/^\d{3}(?:-\d{3})+$/.test(t)) return true;
     if (/^\d{2,4}\/\d{2,4}$/.test(t)) return true;
     const digits = t.replace(/\D/g, '');
@@ -128,6 +128,60 @@ function isLikelyPhoneToken(token, source, offset) {
     return false;
 }
 
+const TECHNICAL_ATOM_RE = /(?<!\d)(?:\d{2}-\d{4,6}-\d{2}|\d{3}(?:-\d{3})+|\d{2,4}\/\d{2,4})(?!\d)/g;
+const DIGIT_GROUP_RE = /\+?\d+/g;
+
+/**
+ * Il candidato regex puo' contenere piu' numeri adiacenti (telefono + codice tecnico).
+ * Si spezza in "atomi" (gruppi di cifre; i codici tecnici restano un atomo unico) e si
+ * redige solo il sotto-intervallo piu' lungo che e' davvero un telefono.
+ * @returns {string} candidato con i soli telefoni sostituiti dal segnaposto
+ */
+function redactPhonesInCandidate(candidate, source, offset) {
+    const protectedRanges = [];
+    for (const m of candidate.matchAll(TECHNICAL_ATOM_RE)) {
+        protectedRanges.push([m.index, m.index + m[0].length]);
+    }
+    const atoms = [];
+    for (const m of candidate.matchAll(DIGIT_GROUP_RE)) {
+        const start = m.index;
+        const end = start + m[0].length;
+        const range = protectedRanges.find(([a, b]) => start >= a && start < b);
+        if (range) {
+            const last = atoms[atoms.length - 1];
+            if (last && last.rangeStart === range[0]) {
+                last.end = range[1];
+            } else {
+                atoms.push({ start: range[0], end: range[1], rangeStart: range[0] });
+            }
+        } else {
+            atoms.push({ start, end, rangeStart: null });
+        }
+    }
+
+    let out = '';
+    let cursor = 0;
+    let i = 0;
+    while (i < atoms.length) {
+        let hit = -1;
+        for (let j = atoms.length - 1; j >= i; j -= 1) {
+            const sub = candidate.slice(atoms[i].start, atoms[j].end);
+            if (isLikelyPhoneToken(sub, source, offset + atoms[i].start)) {
+                hit = j;
+                break;
+            }
+        }
+        if (hit < 0) {
+            i += 1;
+            continue;
+        }
+        out += candidate.slice(cursor, atoms[i].start) + PLACEHOLDERS.TELEFONO;
+        cursor = atoms[hit].end;
+        i = hit + 1;
+    }
+    return out + candidate.slice(cursor);
+}
+
 function escapeRegExp(s) {
     return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
@@ -151,9 +205,7 @@ function scrubFreeTextForAi(text, known = []) {
         );
         out = out.replace(re, placeholder);
     }
-    out = out.replace(PHONE_CANDIDATE_RE, (m, offset, src) => (
-        isLikelyPhoneToken(m, src, offset) ? PLACEHOLDERS.TELEFONO : m
-    ));
+    out = out.replace(PHONE_CANDIDATE_RE, (m, offset, src) => redactPhonesInCandidate(m, src, offset));
     return out;
 }
 
