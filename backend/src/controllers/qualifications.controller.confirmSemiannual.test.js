@@ -75,6 +75,13 @@ describe('confirmSemiannual — stato salvato obsoleto', () => {
     expect(upd.inputs.reviveStatus).toBe(0);
   });
 
+  it('le colonne DATE di mssql arrivano come oggetti Date: il confronto resta corretto', async () => {
+    const pastExpiry = await confirm({ ...base, status: 'scaduta', expiry_date: new Date(`${day(-40)}T00:00:00.000Z`), next_confirmation_due: new Date(`${day(-20)}T00:00:00.000Z`) });
+    expect(pastExpiry.upd.inputs.reviveStatus).toBe(0);
+    const futureExpiry = await confirm({ ...base, status: 'scaduta', expiry_date: new Date(`${day(400)}T00:00:00.000Z`), next_confirmation_due: new Date(`${day(-20)}T00:00:00.000Z`) });
+    expect(futureExpiry.upd.inputs.reviveStatus).toBe(1);
+  });
+
   it('stato già valida: non viene toccato', async () => {
     const { upd } = await confirm({ ...base, status: 'valida', expiry_date: day(400), next_confirmation_due: day(-30) });
     expect(upd.inputs.reviveStatus).toBe(0);

@@ -1556,8 +1556,12 @@ async function confirmSemiannual(req, res) {
         // marcata "scaduta" in ingest (stato salvato obsoleto); altri stati restano invariati.
         const effectiveAfter = effectiveExpiryDate({ ...qual, next_confirmation_due: nextDue });
         const todayIso = new Date().toISOString().slice(0, 10);
+        // mssql restituisce le colonne DATE come oggetti Date: confronto sempre su YYYY-MM-DD
+        const effectiveAfterIso = effectiveAfter instanceof Date
+            ? effectiveAfter.toISOString().slice(0, 10)
+            : (effectiveAfter ? String(effectiveAfter).slice(0, 10) : null);
         const reviveStatus = qual.status === 'scaduta'
-            && (!effectiveAfter || String(effectiveAfter).slice(0, 10) >= todayIso);
+            && (!effectiveAfterIso || effectiveAfterIso >= todayIso);
         const notesTrim = notes?.trim() ? notes.trim().substring(0, 500) : null;
 
         let confirmerName = qual.user_name || req.user.name || req.user.full_name || 'Coordinatore';
