@@ -87,132 +87,20 @@ function placeholderForFieldKey(key, docType = null) {
 
 const EMAIL_RE = /[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/gi;
 const CODICE_FISCALE_RE = /(?<![A-Z0-9])[A-Z]{6}\d{2}[A-EHLMPR-T]\d{2}[A-Z]\d{3}[A-Z](?![A-Z0-9])/gi;
-const PHONE_CONTEXT_RE = /(?:tel(?:efono)?|cell(?:ulare)?|mobile|fax)[:.]?\s*$/i;
-const ISO_DATE_RE = /^\d{4}[-/.]\d{2}[-/.]\d{2}$/;
 const NAME_STOPWORDS = new Set(['di', 'de', 'del', 'della', 'dei', 'da', 'van', 'von', 'la', 'le', 'lo', 'the', 'and']);
 
+/** Prefisso internazionale + resto del token numerico (spazi / - . interni). */
+const INTL_PHONE_RE = /(?<![\w])(?:\+|00)39(?:[\s./-]*\d)+/g;
 /**
- * Codici tecnici / liste processo: NON sono telefoni.
- * Es. WPQR/certificato `24-03390-01`, processi `135-138-141`, coppia `111/135`.
- * Un fisso 0x (9-11 cifre), anche `02-1234-5678` / `02-12345-67`, non è un codice.
+ * Keyword tel/cell/fax entro pochi caratteri, poi l'intero token numerico.
+ * Nessuna euristica su prefissi 0/3: senza keyword il numero resta intatto.
  */
-function isTechnicalDigitGroup(token) {
-    const t = String(token).trim();
-    const digits = t.replace(/\D/g, '');
-    if (/^\d{3}(?:-\d{3})+$/.test(t)) return true;
-    if (/^\d{2,4}\/\d{2,4}$/.test(t)) return true;
-    if (/^\d{2}-\d{4,6}-\d{2}$/.test(t)) {
-        return !(digits.length >= 9 && digits.length <= 11 && /^[03]/.test(digits));
-    }
-    if (/^\d+(?:-\d+){2,}$/.test(t) && digits.length >= 9 && !/^[03]/.test(digits)) return true;
-    return false;
-}
-
-function atNumberBoundary(text, i) {
-    return i <= 0 || !/[\w.]/.test(text[i - 1]);
-}
-
-/** Atomo tecnico in testa a `text[i]`, o null. Non assorbe un fisso 0x. */
-function matchTechnicalAt(text, i) {
-    if (!atNumberBoundary(text, i)) return null;
-    const rest = text.slice(i);
-    const candidates = [
-        rest.match(/^\d{2,4}\/\d{2,4}(?!\d)/),
-        rest.match(/^[1-9]\d-\d{4,6}-\d{2}(?![-\d])/),
-        rest.match(/^\d{3}(?:-\d{3})+(?![-\d])/),
-    ];
-    for (const m of candidates) {
-        if (m && isTechnicalDigitGroup(m[0])) return m[0];
-    }
-    return null;
-}
-
-/**
- * Prende da minD a maxD cifre, solo con spazi/punti/trattini (mai `/`).
- * Non attraversa un codice tecnico; non inizia un nuovo gruppo se ha già minD cifre.
- */
-function takeLeadingDigits(s, minD, maxD) {
-    let digits = '';
-    let raw = '';
-    let i = 0;
-    while (i < s.length && digits.length < maxD) {
-        const ch = s[i];
-        if (/\d/.test(ch)) {
-            digits += ch;
-            raw += ch;
-            i += 1;
-            continue;
-        }
-        if (digits.length > 0 && /[ .\-]/.test(ch) && i + 1 < s.length && /\d/.test(s[i + 1])) {
-            if (digits.length >= minD) break;
-            let peek = i;
-            while (peek < s.length && /[ .\-]/.test(s[peek])) peek += 1;
-            if (matchTechnicalAt(s, peek)) break;
-            raw += ch;
-            i += 1;
-            continue;
-        }
-        break;
-    }
-    if (digits.length < minD || digits.length > maxD) return null;
-    if (ISO_DATE_RE.test(raw.trim())) return null;
-    return { raw, digits };
-}
-
-/**
- * Telefono autonomo in testa a `text[i]`: +39/0039, mobile 3xx (9-10), fisso 0x (9-11),
- * o 9-13 cifre con contesto tel/cell/fax. Non unisce oltre `/` né un codice tecnico.
- */
-function matchPhoneAt(text, i) {
-    if (!atNumberBoundary(text, i)) return null;
-    const rest = text.slice(i);
-    const intl = rest.match(/^(?:\+|00)39[\s.-]*/);
-    let prefix = '';
-    let after = rest;
-    if (intl) {
-        prefix = intl[0];
-        after = rest.slice(prefix.length);
-        if (matchTechnicalAt(after, 0) || !/^\d/.test(after)) return null;
-    }
-    if (!/^\d/.test(after)) return null;
-
-    const first = after[0];
-    const finish = (taken) => (taken ? { raw: prefix + taken.raw } : null);
-    if (first === '3') {
-        const taken = finish(takeLeadingDigits(after, 9, 10));
-        if (taken) return taken;
-    }
-    if (first === '0') {
-        const taken = finish(takeLeadingDigits(after, 9, 11));
-        if (taken) return taken;
-    }
-    if (PHONE_CONTEXT_RE.test(text.slice(Math.max(0, i - 24), i))) {
-        const taken = takeLeadingDigits(after, 9, 13);
-        if (taken && !isTechnicalDigitGroup(taken.raw)) return { raw: prefix + taken.raw };
-    }
-    return null;
-}
+const CONTEXT_PHONE_RE = /(?<![\p{L}])((?:tel(?:efono)?|cell(?:ulare)?|mobile|fax)[:.\s]{0,8})(\d(?:[\s./-]*\d)*)/giu;
 
 function scrubPhonesInFreeText(text) {
-    let out = '';
-    let i = 0;
-    while (i < text.length) {
-        const tech = matchTechnicalAt(text, i);
-        if (tech) {
-            out += tech;
-            i += tech.length;
-            continue;
-        }
-        const phone = matchPhoneAt(text, i);
-        if (phone) {
-            out += PLACEHOLDERS.TELEFONO;
-            i += phone.raw.length;
-            continue;
-        }
-        out += text[i];
-        i += 1;
-    }
-    return out;
+    return text
+        .replace(INTL_PHONE_RE, PLACEHOLDERS.TELEFONO)
+        .replace(CONTEXT_PHONE_RE, (_, keyword) => keyword + PLACEHOLDERS.TELEFONO);
 }
 
 function escapeRegExp(s) {

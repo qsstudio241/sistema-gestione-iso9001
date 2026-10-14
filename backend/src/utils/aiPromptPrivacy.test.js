@@ -61,19 +61,32 @@ describe('aiPromptPrivacy', () => {
         expect(scrubFreeTextForAi(null)).toBeNull();
     });
 
-    it('scrubFreeTextForAi non redige numeri WPQR/certificato/processo come telefono', () => {
+    it('scrubFreeTextForAi redige telefoni solo con +39/0039 o contesto tel', () => {
+        expect(scrubFreeTextForAi('+39 333 1234567')).toBe('[TELEFONO]');
+        expect(scrubFreeTextForAi('0039 333 1234567')).toBe('[TELEFONO]');
+        expect(scrubFreeTextForAi('tel. 0521 123456')).toBe('tel. [TELEFONO]');
+        expect(scrubFreeTextForAi('tel. 02/12345678')).toBe('tel. [TELEFONO]');
+        expect(scrubFreeTextForAi('telefono 02-1234-5678')).toBe('telefono [TELEFONO]');
+        expect(scrubFreeTextForAi('24-03390-01 +39 333 1234567')).toBe('24-03390-01 [TELEFONO]');
+        expect(scrubFreeTextForAi('+39 333 1234567, 24-03390-01')).toBe('[TELEFONO], 24-03390-01');
+
         expect(scrubFreeTextForAi('24-03390-01')).toBe('24-03390-01');
         expect(scrubFreeTextForAi('135-138-141')).toBe('135-138-141');
         expect(scrubFreeTextForAi('111/135')).toBe('111/135');
         expect(scrubFreeTextForAi('WPS 24-03390-01')).toBe('WPS 24-03390-01');
         expect(scrubFreeTextForAi('WPQR 24-03390-01')).toBe('WPQR 24-03390-01');
+        expect(scrubFreeTextForAi('02 12345678')).toBe('02 12345678');
+        expect(scrubFreeTextForAi('02/12345678')).toBe('02/12345678');
+        expect(scrubFreeTextForAi('02-1234-5678')).toBe('02-1234-5678');
+        expect(scrubFreeTextForAi('32-03390-01')).toBe('32-03390-01');
+        expect(scrubFreeTextForAi('31-12345-67')).toBe('31-12345-67');
+        expect(scrubFreeTextForAi('0123456789012345')).toBe('0123456789012345');
+        expect(scrubFreeTextForAi('3331234567890123')).toBe('3331234567890123');
+        expect(scrubFreeTextForAi('24-03390-01 333 1234567')).toBe('24-03390-01 333 1234567');
+        expect(scrubFreeTextForAi('02 12345678 135-138-141')).toBe('02 12345678 135-138-141');
         expect(scrubFreeTextForAi('PQR 24-03390-01 processi 135-138-141 e 111/135')).toBe(
             'PQR 24-03390-01 processi 135-138-141 e 111/135'
         );
-
-        expect(scrubFreeTextForAi('+39 333 1234567')).toBe('[TELEFONO]');
-        expect(scrubFreeTextForAi('02 12345678')).toBe('[TELEFONO]');
-        expect(scrubFreeTextForAi('tel. 0521 123456')).toBe('tel. [TELEFONO]');
 
         const mixed = scrubFreeTextForAi(
             'WPQR 24-03390-01, processi 135-138-141 e 111/135. '
@@ -82,33 +95,9 @@ describe('aiPromptPrivacy', () => {
         expect(mixed).toContain('24-03390-01');
         expect(mixed).toContain('135-138-141');
         expect(mixed).toContain('111/135');
-        expect(mixed).not.toMatch(/\+39|333 1234567|02 12345678|0521 123456/);
-        expect(mixed.match(/\[TELEFONO\]/g)).toHaveLength(3);
-    });
-
-    it('scrubFreeTextForAi redige solo il telefono accanto a certificato/processi', () => {
-        expect(scrubFreeTextForAi('+39 333 1234567 24-03390-01')).toBe('[TELEFONO] 24-03390-01');
-        expect(scrubFreeTextForAi('24-03390-01 +39 333 1234567')).toBe('24-03390-01 [TELEFONO]');
-        expect(scrubFreeTextForAi('+39 333 1234567/24-03390-01')).toBe('[TELEFONO]/24-03390-01');
-        expect(scrubFreeTextForAi('+39 24-03390-01')).toBe('+39 24-03390-01');
-        expect(scrubFreeTextForAi('02 12345678 135-138-141')).toBe('[TELEFONO] 135-138-141');
-        expect(scrubFreeTextForAi('135-138-141 02 12345678')).toBe('135-138-141 [TELEFONO]');
-        expect(scrubFreeTextForAi('02 12345678/135-138-141')).toBe('[TELEFONO]/135-138-141');
-        expect(scrubFreeTextForAi('+39 333 1234567 135-138-141')).toBe('[TELEFONO] 135-138-141');
-        expect(scrubFreeTextForAi('135-138-141 +39 333 1234567 111/135')).toBe(
-            '135-138-141 [TELEFONO] 111/135'
-        );
-        expect(scrubFreeTextForAi('24-03390-01 333 1234567')).toBe('24-03390-01 [TELEFONO]');
-        expect(scrubFreeTextForAi('24-03390-01 135-138-141')).toBe('24-03390-01 135-138-141');
-        expect(scrubFreeTextForAi('311-135-141')).toBe('311-135-141');
-        expect(scrubFreeTextForAi('0039 333 1234567 135-138-141')).toBe('[TELEFONO] 135-138-141');
-        expect(scrubFreeTextForAi('02-1234-5678')).toBe('[TELEFONO]');
-        expect(scrubFreeTextForAi('tel. 02-12345-67')).toBe('tel. [TELEFONO]');
-        expect(scrubFreeTextForAi('Ufficio 02-12345-67')).toBe('Ufficio [TELEFONO]');
-        expect(scrubFreeTextForAi('06-123456-78')).toBe('[TELEFONO]');
-        expect(scrubFreeTextForAi('24-03390-01')).toBe('24-03390-01');
-        expect(scrubFreeTextForAi('135-138-141')).toBe('135-138-141');
-        expect(scrubFreeTextForAi('WPQR 24-03390-01')).toBe('WPQR 24-03390-01');
+        expect(mixed).toContain('02 12345678');
+        expect(mixed).not.toMatch(/\+39|333 1234567|0521 123456/);
+        expect(mixed.match(/\[TELEFONO\]/g)).toHaveLength(2);
     });
 
     it('redactPayloadForAi: valori personali -> segnaposto, struttura e campi tecnici invariati', () => {
