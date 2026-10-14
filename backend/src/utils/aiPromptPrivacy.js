@@ -286,7 +286,25 @@ function redactReferencePatternsForAi(patterns, docType = null) {
     return out;
 }
 
+const PLACEHOLDER_VALUES = new Set(Object.values(PLACEHOLDERS));
+
+/**
+ * Rete di sicurezza: se l'AI ricopia un segnaposto dei few-shot come valore di un campo estratto,
+ * il campo torna null (mai "[NOME]" nei dati di revisione/DB). Solo valori stringa di primo livello.
+ * @param {object} fields
+ * @returns {object}
+ */
+function dropPlaceholderValues(fields) {
+    if (!fields || typeof fields !== 'object' || Array.isArray(fields)) return fields;
+    const out = {};
+    for (const [k, v] of Object.entries(fields)) {
+        out[k] = typeof v === 'string' && PLACEHOLDER_VALUES.has(v.trim()) ? null : v;
+    }
+    return out;
+}
+
 module.exports = {
+    dropPlaceholderValues,
     PLACEHOLDERS,
     QUALIFICATION_AI_DOC_TYPES,
     isQualificationAiDocType,

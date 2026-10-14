@@ -11,6 +11,7 @@ const {
     redactFeedbackExampleForAi,
     redactFileNameForAi,
     redactReferencePatternsForAi,
+    dropPlaceholderValues,
 } = require('./aiPromptPrivacy');
 
 describe('aiPromptPrivacy', () => {
@@ -140,5 +141,24 @@ describe('aiPromptPrivacy', () => {
         const wpqr = redactReferencePatternsForAi(patterns, 'wpqr');
         expect(wpqr).toHaveLength(4);
         expect(redactReferencePatternsForAi(null)).toEqual([]);
+    });
+
+    it('dropPlaceholderValues azzera i segnaposto ricopiati dall\'AI e lascia il resto', () => {
+        const out = dropPlaceholderValues({
+            welder_name: '[NOME]',
+            certificate_number: ' [NUMERO_CERTIFICATO] ',
+            welding_process: '135',
+            thickness_min_mm: 3,
+            welding_positions: ['PA'],
+            notes: 'testo [NOME] dentro',
+        });
+        expect(out).toEqual({
+            welder_name: null,
+            certificate_number: null,
+            welding_process: '135',
+            thickness_min_mm: 3,
+            welding_positions: ['PA'],
+            notes: 'testo [NOME] dentro',
+        });
     });
 });

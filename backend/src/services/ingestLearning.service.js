@@ -9,6 +9,7 @@ const {
     getTopReferencePatterns,
     formatReferencePatternsPromptSection,
 } = require('./ingestReferencePattern.service');
+const { redactFeedbackExampleForAi, redactReferencePatternsForAi } = require('../utils/aiPromptPrivacy');
 
 const MIN_EXAMPLES = Number(process.env.INGEST_FEWSHOT_MIN_EXAMPLES) || 1;
 const DEFAULT_LIMIT = Number(process.env.INGEST_FEWSHOT_LIMIT) || 3;
@@ -57,9 +58,9 @@ function humanPayloadComplete(humanPayload, docType) {
  */
 async function buildIngestLearningPromptSection(organizationId, docType, orgLimit = DEFAULT_LIMIT) {
     const refPatterns = await getTopReferencePatterns(docType, 5);
-    const refSection = formatReferencePatternsPromptSection(refPatterns);
+    const refSection = formatReferencePatternsPromptSection(redactReferencePatternsForAi(refPatterns, docType));
     const orgExamples = await buildFewShotExamples(organizationId, docType, orgLimit);
-    const orgSection = formatFewShotPromptSection(orgExamples);
+    const orgSection = formatFewShotPromptSection(orgExamples, docType);
     return refSection + orgSection;
 }
 
@@ -94,13 +95,16 @@ async function buildFewShotExamples(organizationId, docType, limit = DEFAULT_LIM
 }
 
 /**
+ * Nome file, nomi di persona, numeri certificato e altri dati personali non arrivano mai all'AI:
+ * ogni esempio passa da `redactFeedbackExampleForAi` (segnaposto stabili, stessa struttura).
  * @param {Array} examples
+ * @param {string|null} [docType]
  * @returns {string}
  */
-function formatFewShotPromptSection(examples) {
+function formatFewShotPromptSection(examples, docType = null) {
     if (!examples || examples.length < MIN_EXAMPLES) return '';
 
-    const blocks = examples.map((ex, i) => {
+    const blocks = examples.map((rawEx) => redactFeedbackExampleForAi(rawEx, docType)).map((ex, i) => {
         const corrected = ex.field_diffs && Object.keys(ex.field_diffs).length > 0
             ? `\nCorrezioni operatore: ${JSON.stringify(ex.field_diffs)}`
             : '';
@@ -111,7 +115,8 @@ Versione confermata: ${JSON.stringify(ex.human_payload)}${corrected}`;
 
     return `
 
-Esempi dalla tua organizzazione (usa come riferimento, non copiare dati non presenti nel testo corrente):
+Esempi dalla tua organizzazione (usa come riferimento, non copiare dati non presenti nel testo corrente).
+I segnaposto tra parentesi quadre (es. [NOME], [NUMERO_CERTIFICATO], [FILE]) indicano dati omessi per privacy: non riprodurli mai nell'estrazione, leggi i valori reali dal testo del documento:
 ${blocks.join('\n\n')}`;
 }
 
