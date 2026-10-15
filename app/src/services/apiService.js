@@ -9,6 +9,8 @@
  * - Supporto offline con fallback
  */
 
+import { buildProtectedFileUrl } from '../utils/protectedFile';
+
 // Configurazione ambiente - usa VITE_API_URL se presente
 const API_CONFIG = {
     development: {
@@ -1805,6 +1807,47 @@ class ApiService {
         });
         if (!response.ok) {
             throw new Error(`HTTP ${response.status}`);
+        }
+        return response.blob();
+    }
+
+    /**
+     * Scarica un file protetto di /uploads (certificati) come Blob, con Authorization.
+     * Un solo retry dopo refresh token su 401. Errori come ApiError (status 401/403/404/...).
+     * @param {string} fileUrl valore salvato nel record (`/uploads/...`)
+     * @returns {Promise<Blob>}
+     */
+    async fetchProtectedFileBlob(fileUrl) {
+        const url = buildProtectedFileUrl(fileUrl, this.baseUrl);
+        if (!url) throw new ApiError('Percorso file non valido', 400, 'INVALID_FILE_PATH');
+
+        const attempt = async () => {
+            const token = this.getToken();
+            return fetch(url, {
+                method: 'GET',
+                cache: 'no-store',
+                credentials: 'include',
+                headers: token ? { Authorization: `Bearer ${token}` } : {},
+            });
+        };
+
+        let response;
+        try {
+            response = await attempt();
+            if (response.status === 401 && (await this.refreshToken())) {
+                response = await attempt();
+            }
+        } catch (err) {
+            throw new ApiError(err?.message || 'Errore di rete', 0, 'NETWORK_ERROR');
+        }
+
+        if (!response.ok) {
+            const errorData = await response.json().catch(() => ({}));
+            throw new ApiError(
+                errorData.error || `HTTP ${response.status}`,
+                response.status,
+                errorData.code || 'PROTECTED_FILE_ERROR',
+            );
         }
         return response.blob();
     }

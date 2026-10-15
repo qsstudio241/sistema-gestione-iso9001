@@ -138,7 +138,8 @@
         "src/utils/riskReviews.js",
         "src/utils/technicalReviewChecklist.js",
         "src/utils/resolveOptionalProjectId.js",
-        "src/utils/reportTemplatePath.js"
+        "src/utils/reportTemplatePath.js",
+        "src/utils/uploadsPath.js"
       ]
     },
     {
@@ -315,6 +316,7 @@
         "src/controllers/company.controller.js",
         "src/controllers/companyProfile.controller.js",
         "src/controllers/qualifications.controller.js",
+        "src/controllers/files.controller.js",
         "src/controllers/qualificationVerify.controller.js",
         "src/controllers/projects.controller.js",
         "src/controllers/risks.controller.js",
@@ -365,6 +367,7 @@
         "src/routes/company.routes.js",
         "src/routes/importJobs.routes.js",
         "src/routes/qualifications.routes.js",
+        "src/routes/files.routes.js",
         "src/routes/projects.routes.js",
         "src/routes/webdav.routes.js",
         "src/routes/document.routes.js",
