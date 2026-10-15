@@ -162,7 +162,6 @@
         "src/services/moduleLicense.service.js",
         "src/services/openapiCompanyLookup.service.js",
         "src/services/qualificationCompany.service.js",
-        "src/services/qualificationSituazione.service.js",
         "src/services/personnelQualificationLink.service.js",
         "src/services/qualificationDuplicate.service.js",
         "src/services/capabilityCoverage/coverageTypes.js",

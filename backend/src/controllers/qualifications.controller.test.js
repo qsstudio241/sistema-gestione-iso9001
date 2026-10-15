@@ -153,7 +153,7 @@ describe('qualifications.controller — listQualifications filtro situazione', (
     expect(res.status).not.toHaveBeenCalledWith(500);
   });
 
-  it('situazione=valide filtra su status=valida E sulla data effettiva (non solo expiry_date)', async () => {
+  it('situazione=valide usa la data effettiva (non solo expiry_date) e non lo stato salvato valida/scaduta', async () => {
     const { pool, queryMock } = makeSharedPool();
     getPool.mockResolvedValue(pool);
     const { req, res } = makeReqRes({ situazione: 'valide' });
@@ -161,7 +161,8 @@ describe('qualifications.controller — listQualifications filtro situazione', (
     await listQualifications(req, res);
 
     const sql = selectSqlFrom(queryMock);
-    expect(sql).toContain("q.status = 'valida'");
+    expect(sql).not.toContain("q.status = 'valida'");
+    expect(sql).toContain("q.status NOT IN ('revocata','sospesa')");
     expect(sql).toContain('next_confirmation_due');
     expect(res.status).not.toHaveBeenCalledWith(500);
   });

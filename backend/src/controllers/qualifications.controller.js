@@ -206,6 +206,56 @@ function semaforoForRow(q) {
     return semaforo(effectiveExpiryDate(q), q.status);
 }
 
+const TODAY_SQL = 'CAST(GETDATE() AS DATE)';
+const EFFECTIVE_SQL = `(${EFFECTIVE_EXPIRY_SQL})`;
+const ACTIVE_STATUS_SQL = "q.status NOT IN ('revocata','sospesa')";
+
+/**
+ * Fonte unica dei bucket "situazione" (card statistiche e filtro ?situazione= della lista).
+ * Stessa regola del semaforo per-riga (semaforoForRow): conta solo la data effettiva e
+ * l'essere sospesa/revocata. Lo stato salvato valida/scaduta/in_scadenza NON entra nel
+ * calcolo (puo' essere obsoleto), cosi' ogni riga cade in uno e un solo bucket e
+ * Totale = somma delle card.
+ */
+const SITUAZIONE_BUCKET_SQL = {
+    valide:         `${ACTIVE_STATUS_SQL} AND (${EFFECTIVE_SQL} IS NULL OR ${EFFECTIVE_SQL} > DATEADD(day, ${DAYS_WARNING}, ${TODAY_SQL}))`,
+    in_scadenza_60: `${ACTIVE_STATUS_SQL} AND ${EFFECTIVE_SQL} IS NOT NULL AND ${EFFECTIVE_SQL} BETWEEN DATEADD(day, ${DAYS_URGENT + 1}, ${TODAY_SQL}) AND DATEADD(day, ${DAYS_WARNING}, ${TODAY_SQL})`,
+    urgenti_30:     `${ACTIVE_STATUS_SQL} AND ${EFFECTIVE_SQL} IS NOT NULL AND ${EFFECTIVE_SQL} BETWEEN ${TODAY_SQL} AND DATEADD(day, ${DAYS_URGENT}, ${TODAY_SQL})`,
+    scadute:        `${ACTIVE_STATUS_SQL} AND ${EFFECTIVE_SQL} IS NOT NULL AND ${EFFECTIVE_SQL} < ${TODAY_SQL}`,
+    // Bucket unico "Non attiva" (sospese + revocate): la colonna Stato le mostra uguali.
+    non_attive:     "q.status IN ('sospesa','revocata')",
+};
+
+/** company_id da query string: vuoto = nessun filtro; non numerico = errore (400). */
+function parseCompanyIdParam(raw) {
+    const text = raw === undefined || raw === null ? '' : String(raw).trim();
+    if (!text) return { value: null };
+    if (!/^\d{1,9}$/.test(text)) return { error: true };
+    return { value: parseInt(text, 10) };
+}
+
+/**
+ * Filtro tab (qualification_type) condiviso da lista e statistiche: le card contano
+ * esattamente le righe del tab attivo. Ritorna { clause, like } (like = valore del
+ * parametro @qualType, solo per i tab a LIKE).
+ */
+function buildQualificationTypeScope(qualificationType) {
+    const type = String(qualificationType || '').trim().slice(0, 100);
+    if (!type) return { clause: null, like: null };
+    if (type === 'salute_mansione') {
+        // Tipi salute mansione: IN esplicito (canonici + alias legacy), non LIKE '%salute_mansione%'
+        return { clause: `q.qualification_type IN (${occupationalQualificationSqlInList()})`, like: null };
+    }
+    if (type === 'generico') {
+        // generico = non rientra negli altri tipi noti (esclude anche salute mansione)
+        return {
+            clause: `q.qualification_type NOT LIKE '%9606%' AND q.qualification_type NOT LIKE '%14732%' AND q.qualification_type NOT LIKE '%14731%' AND q.qualification_type NOT LIKE '%NDT%' AND q.qualification_type NOT LIKE '%VT%' AND q.qualification_type NOT LIKE '%PT%' AND q.qualification_type NOT LIKE '%MT%' AND q.qualification_type NOT LIKE '%UT%' AND q.qualification_type NOT LIKE '%RT%' AND q.qualification_type NOT LIKE '%ET%' AND q.qualification_type NOT LIKE '%PES%' AND q.qualification_type NOT LIKE '%PAV%' AND q.qualification_type NOT IN (${occupationalQualificationSqlInList()})`,
+            like: null,
+        };
+    }
+    return { clause: 'q.qualification_type LIKE @qualType', like: QUAL_TYPE_MAP[type] || `%${type}%` };
+}
+
 // Mappa tipo tab → LIKE su qualification_type
 const QUAL_TYPE_MAP = {
     iso9606_1:      '%9606-1%',
@@ -243,25 +293,22 @@ async function listQualifications(req, res) {
             page = 1, limit = 50,
         } = req.query;
 
+        const companyScope = parseCompanyIdParam(company_id);
+        if (companyScope.error) {
+            return res.status(400).json({ error: 'company_id non valido.', code: 'INVALID_COMPANY_ID' });
+        }
+
         const offset = (parseInt(page) - 1) * parseInt(limit);
         let where = ['q.organization_id = @orgId'];
         if (companyFilter.clause) where.push(companyFilter.clause);
         if (search) where.push("(q.person_name LIKE @search OR q.qualification_type LIKE @search OR q.certificate_number LIKE @search)");
-        if (company_id) where.push('q.company_id = @companyId');
+        if (companyScope.value !== null) where.push('q.company_id = @companyId');
         if (status) where.push('q.status = @status');
         if (approval_status) where.push('q.approval_status = @approvalStatus');
 
-        let qualTypeLike = null;
-        if (qualification_type === 'salute_mansione') {
-            // Tipi salute mansione: IN esplicito (canonici + alias legacy), non LIKE '%salute_mansione%'
-            where.push(`q.qualification_type IN (${occupationalQualificationSqlInList()})`);
-        } else if (qualification_type === 'generico') {
-            // generico = non rientra negli altri tipi noti (esclude anche salute mansione)
-            where.push(`q.qualification_type NOT LIKE '%9606%' AND q.qualification_type NOT LIKE '%14732%' AND q.qualification_type NOT LIKE '%14731%' AND q.qualification_type NOT LIKE '%NDT%' AND q.qualification_type NOT LIKE '%VT%' AND q.qualification_type NOT LIKE '%PT%' AND q.qualification_type NOT LIKE '%MT%' AND q.qualification_type NOT LIKE '%UT%' AND q.qualification_type NOT LIKE '%RT%' AND q.qualification_type NOT LIKE '%ET%' AND q.qualification_type NOT LIKE '%PES%' AND q.qualification_type NOT LIKE '%PAV%' AND q.qualification_type NOT IN (${occupationalQualificationSqlInList()})`);
-        } else if (qualification_type) {
-            qualTypeLike = QUAL_TYPE_MAP[qualification_type] || `%${qualification_type}%`;
-            where.push('q.qualification_type LIKE @qualType');
-        }
+        const typeScope = buildQualificationTypeScope(qualification_type);
+        const qualTypeLike = typeScope.like;
+        if (typeScope.clause) where.push(typeScope.clause);
 
         if (expiring_days) {
             const expDaysInt = parseInt(expiring_days);
@@ -273,25 +320,9 @@ async function listQualifications(req, res) {
             }
         }
 
-        // Filtro "situazione" (card statistiche / dropdown) — allineato a
-        // QUALIFICATION_SITUAZIONI nel frontend e agli stessi bucket di getStats.
-        // Usa EFFECTIVE_EXPIRY_SQL così un saldatore 9606-1/14732 con conferma
-        // semestrale scaduta finisce nel bucket corretto anche se il certificato
-        // di base non è ancora arrivato a naturale scadenza.
-        const today = 'CAST(GETDATE() AS DATE)';
-        const SITUAZIONE_WHERE = {
-            valide:         `q.status = 'valida' AND ((${EFFECTIVE_EXPIRY_SQL}) IS NULL OR (${EFFECTIVE_EXPIRY_SQL}) > DATEADD(day, ${DAYS_WARNING}, ${today}))`,
-            in_scadenza_60: `q.status NOT IN ('revocata','sospesa') AND (${EFFECTIVE_EXPIRY_SQL}) IS NOT NULL AND (${EFFECTIVE_EXPIRY_SQL}) BETWEEN DATEADD(day, ${DAYS_URGENT + 1}, ${today}) AND DATEADD(day, ${DAYS_WARNING}, ${today})`,
-            urgenti_30:     `q.status NOT IN ('revocata','sospesa') AND (${EFFECTIVE_EXPIRY_SQL}) IS NOT NULL AND (${EFFECTIVE_EXPIRY_SQL}) BETWEEN ${today} AND DATEADD(day, ${DAYS_URGENT}, ${today})`,
-            scadute:        `q.status NOT IN ('revocata','sospesa') AND (${EFFECTIVE_EXPIRY_SQL}) IS NOT NULL AND (${EFFECTIVE_EXPIRY_SQL}) < ${today}`,
-            // Bucket unico "Non attiva" (sospese + revocate) — allineato alla card
-            // statistica non_attive di getStats e alla colonna "Stato" in tabella,
-            // che già mostra entrambe con la stessa etichetta/colore (non le
-            // distingue): non serviva un filtro separato per le due sotto-categorie.
-            non_attive:     `q.status IN ('sospesa','revocata')`,
-        };
-        if (situazione && SITUAZIONE_WHERE[situazione]) {
-            where.push(SITUAZIONE_WHERE[situazione]);
+        // Filtro "situazione" (card statistiche): stessi bucket di getStats (SITUAZIONE_BUCKET_SQL).
+        if (situazione && SITUAZIONE_BUCKET_SQL[situazione]) {
+            where.push(SITUAZIONE_BUCKET_SQL[situazione]);
         }
 
         const whereClause = where.join(' AND ');
@@ -299,7 +330,7 @@ async function listQualifications(req, res) {
         const bindListFilters = (request) => {
             Object.entries(companyFilter.params).forEach(([k, v]) => request.input(k, v));
             if (search) request.input('search', `%${search}%`);
-            if (company_id) request.input('companyId', parseInt(company_id));
+            if (companyScope.value !== null) request.input('companyId', companyScope.value);
             if (status) request.input('status', status);
             if (approval_status) request.input('approvalStatus', approval_status);
             if (qualTypeLike) request.input('qualType', qualTypeLike);
@@ -346,7 +377,7 @@ async function listQualifications(req, res) {
     }
 }
 
-/** GET /qualifications/stats */
+/** GET /qualifications/stats[?company_id=&qualification_type=] — stesso scope (Ambito + tab) della lista. */
 async function getStats(req, res) {
     try {
         const pool       = await getPool();
@@ -354,20 +385,34 @@ async function getStats(req, res) {
         const accessList = await ensureCompanyAccessLoaded(req.user);
         const companyFilter = companyAccessSqlFilter(accessList, 'q');
 
-        const whereExtra = companyFilter.clause ? ` AND ${companyFilter.clause}` : '';
+        const companyScope = parseCompanyIdParam(req.query?.company_id);
+        if (companyScope.error) {
+            return res.status(400).json({ error: 'company_id non valido.', code: 'INVALID_COMPANY_ID' });
+        }
+        const typeScope = buildQualificationTypeScope(req.query?.qualification_type);
+
+        const where = ['q.organization_id = @orgId'];
+        if (companyFilter.clause) where.push(companyFilter.clause);
+        if (companyScope.value !== null) where.push('q.company_id = @companyId');
+        if (typeScope.clause) where.push(typeScope.clause);
+
         const r = pool.request().input('orgId', orgId);
         Object.entries(companyFilter.params).forEach(([k, v]) => r.input(k, v));
+        if (companyScope.value !== null) r.input('companyId', companyScope.value);
+        if (typeScope.like) r.input('qualType', typeScope.like);
 
+        const bucketCount = (bucket, alias) =>
+            `COALESCE(SUM(CASE WHEN ${SITUAZIONE_BUCKET_SQL[bucket]} THEN 1 ELSE 0 END), 0) AS ${alias}`;
         const statsResult = await r.query(`
             SELECT
                 COUNT(*) AS total,
-                SUM(CASE WHEN q.status = 'valida' AND ((${EFFECTIVE_EXPIRY_SQL}) IS NULL OR (${EFFECTIVE_EXPIRY_SQL}) > DATEADD(day, 60, CAST(GETDATE() AS DATE))) THEN 1 ELSE 0 END) AS valide,
-                SUM(CASE WHEN (${EFFECTIVE_EXPIRY_SQL}) IS NOT NULL AND (${EFFECTIVE_EXPIRY_SQL}) BETWEEN DATEADD(day, 31, CAST(GETDATE() AS DATE)) AND DATEADD(day, 60, CAST(GETDATE() AS DATE)) AND q.status NOT IN ('revocata','sospesa') THEN 1 ELSE 0 END) AS in_scadenza_60,
-                SUM(CASE WHEN (${EFFECTIVE_EXPIRY_SQL}) IS NOT NULL AND (${EFFECTIVE_EXPIRY_SQL}) BETWEEN CAST(GETDATE() AS DATE) AND DATEADD(day, 30, CAST(GETDATE() AS DATE)) AND q.status NOT IN ('revocata','sospesa') THEN 1 ELSE 0 END) AS in_scadenza_30,
-                SUM(CASE WHEN (${EFFECTIVE_EXPIRY_SQL}) IS NOT NULL AND (${EFFECTIVE_EXPIRY_SQL}) < CAST(GETDATE() AS DATE) AND q.status NOT IN ('revocata','sospesa') THEN 1 ELSE 0 END) AS scadute,
-                SUM(CASE WHEN q.status IN ('sospesa','revocata') THEN 1 ELSE 0 END) AS non_attive
+                ${bucketCount('valide', 'valide')},
+                ${bucketCount('in_scadenza_60', 'in_scadenza_60')},
+                ${bucketCount('urgenti_30', 'in_scadenza_30')},
+                ${bucketCount('scadute', 'scadute')},
+                ${bucketCount('non_attive', 'non_attive')}
             FROM qualifications q
-            WHERE q.organization_id = @orgId${whereExtra}
+            WHERE ${where.join(' AND ')}
         `);
 
         const s = statsResult.recordset[0];
@@ -1478,7 +1523,7 @@ async function confirmSemiannual(req, res) {
             .input('userId', userId)
             .query(`
                 SELECT q.id, q.company_id, q.qualification_type, q.approval_status, q.status,
-                       q.last_confirmation_date, q.next_confirmation_due,
+                       q.expiry_date, q.last_confirmation_date, q.next_confirmation_due,
                        u.full_name AS user_name
                 FROM qualifications q
                 LEFT JOIN users u ON u.user_id = @userId
@@ -1520,6 +1565,16 @@ async function confirmSemiannual(req, res) {
         }
 
         const nextDue = addMonthsIso(confirmedDate, 6);
+        // Una conferma che riporta la scadenza effettiva nel futuro rimette "valida" una riga
+        // marcata "scaduta" in ingest (stato salvato obsoleto); altri stati restano invariati.
+        const effectiveAfter = effectiveExpiryDate({ ...qual, next_confirmation_due: nextDue });
+        const todayIso = new Date().toISOString().slice(0, 10);
+        // mssql restituisce le colonne DATE come oggetti Date: confronto sempre su YYYY-MM-DD
+        const effectiveAfterIso = effectiveAfter instanceof Date
+            ? effectiveAfter.toISOString().slice(0, 10)
+            : (effectiveAfter ? String(effectiveAfter).slice(0, 10) : null);
+        const reviveStatus = qual.status === 'scaduta'
+            && (!effectiveAfterIso || effectiveAfterIso >= todayIso);
         const notesTrim = notes?.trim() ? notes.trim().substring(0, 500) : null;
 
         let confirmerName = qual.user_name || req.user.name || req.user.full_name || 'Coordinatore';
@@ -1572,10 +1627,12 @@ async function confirmSemiannual(req, res) {
                 .input('orgId', orgId)
                 .input('lastConf', confirmedDate)
                 .input('nextDue', nextDue)
+                .input('reviveStatus', reviveStatus ? 1 : 0)
                 .query(`
                     UPDATE qualifications
                     SET last_confirmation_date = @lastConf,
                         next_confirmation_due = @nextDue,
+                        status = CASE WHEN @reviveStatus = 1 AND status = 'scaduta' THEN 'valida' ELSE status END,
                         updated_at = GETDATE()
                     WHERE id = @qualId AND organization_id = @orgId
                 `);
@@ -1889,4 +1946,7 @@ module.exports = {
     // Esportate per test unitari (calcolo semaforo/scadenza effettiva)
     effectiveExpiryDate,
     semaforoForRow,
+    SITUAZIONE_BUCKET_SQL,
+    buildQualificationTypeScope,
+    parseCompanyIdParam,
 };
