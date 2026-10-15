@@ -45,7 +45,7 @@ const ALWAYS_KEY_RULES = [
     [/(^|_)(phone|telefono|tel|mobile|cellulare)(_number)?$/, PLACEHOLDERS.TELEFONO],
     [/(^|_)(address|indirizzo|city|citta|zip|cap|postal_code)$/, PLACEHOLDERS.INDIRIZZO],
     [
-        /(^|_)(welder|operator|person|holder|employee|candidate|worker|titolare|full|first|last|sur)_?name$|^(nome|cognome|surname|titolare)$/,
+        /(^|_)(welder|operator|inspector|examiner|tester|signer|signatory|person|holder|employee|candidate|worker|titolare|full|first|last|sur)_?name$|^(nome|cognome|surname|titolare)$/,
         PLACEHOLDERS.NOME,
     ],
 ];
@@ -67,6 +67,24 @@ const QUALIFICATION_KEY_RULES = [
 
 function normalizeKey(key) {
     return String(key || '').normalize('NFC').trim().toLowerCase().replace(/[\s-]+/g, '_');
+}
+
+/**
+ * Campi tecnici (processo, norma, ente, materiale, date...): qui si redige solo il valore personale COMPLETO,
+ * mai i singoli frammenti di nome (3+ lettere), che potrebbero coincidere con una sigla di processo/norma/ente.
+ */
+const TECHNICAL_KEY_RE = new RegExp(
+    '(^|_)(process|processo|standard|norma|norm|material|materiale|group|gruppo|body|ente|issuing|authority|'
+    + 'position|positions|posizione|posizioni|thickness|spessore|diameter|diametro|filler|gas|joint|type|tipo|'
+    + 'class|classe|level|livello|grade|result|esito|code|codice|date|data|unit|status|stato|revision|rev|edition|year|anno)(_|$)'
+);
+
+function isTechnicalKey(key) {
+    return TECHNICAL_KEY_RE.test(normalizeKey(key));
+}
+
+function knownForKey(key, known) {
+    return key != null && isTechnicalKey(key) ? known.filter((k) => !k.token) : known;
 }
 
 /**
@@ -229,7 +247,7 @@ function pushKnown(list, value, placeholder, { tokens = false } = {}) {
     if (s.length < 3) return;
     list.push({ value: s, placeholder });
     if (tokens) {
-        for (const t of nameTokens(s)) if (t !== s) list.push({ value: t, placeholder });
+        for (const t of nameTokens(s)) if (t !== s) list.push({ value: t, placeholder, token: true });
     }
 }
 
@@ -247,7 +265,7 @@ function collectKnownFromPayload(payload, docType, known) {
 
 function dedupeKnown(known) {
     const seen = new Set();
-    return known
+    return [...known.filter((k) => !k.token), ...known.filter((k) => k.token)]
         .filter(({ value }) => {
             const k = value.toLowerCase();
             if (seen.has(k)) return false;
@@ -261,12 +279,12 @@ function isEmptyValue(v) {
     return v == null || (typeof v === 'string' && v.trim() === '') || (Array.isArray(v) && v.length === 0);
 }
 
-function redactValue(value, known) {
-    if (typeof value === 'string') return scrubFreeTextForAi(value, known);
-    if (Array.isArray(value)) return value.map((v) => redactValue(v, known));
+function redactValue(value, known, key = null) {
+    if (typeof value === 'string') return scrubFreeTextForAi(value, knownForKey(key, known));
+    if (Array.isArray(value)) return value.map((v) => redactValue(v, known, key));
     if (value && typeof value === 'object') {
         const out = {};
-        for (const [k, v] of Object.entries(value)) out[k] = redactValue(v, known);
+        for (const [k, v] of Object.entries(value)) out[k] = redactValue(v, known, k);
         return out;
     }
     return value;
@@ -292,7 +310,7 @@ function redactPayloadForAi(payload, { docType = null, known = null } = {}) {
         if (ph) {
             out[key] = isEmptyValue(val) ? val : ph;
         } else {
-            out[key] = redactValue(val, knownValues);
+            out[key] = redactValue(val, knownValues, key);
         }
     }
     return out;
@@ -310,7 +328,7 @@ function redactFieldDiffsForAi(diffs, { docType = null, known = [] } = {}) {
     if (!diffs || typeof diffs !== 'object') return out;
     for (const [key, diff] of Object.entries(diffs)) {
         const ph = placeholderForFieldKey(key, docType);
-        const side = (v) => (ph ? (isEmptyValue(v) ? (v ?? null) : ph) : redactValue(v, known));
+        const side = (v) => (ph ? (isEmptyValue(v) ? (v ?? null) : ph) : redactValue(v, known, key));
         const ai = side(diff?.ai);
         const human = side(diff?.human);
         if (ph && ai === human) continue;

@@ -203,6 +203,50 @@ describe('aiPromptPrivacy', () => {
         expect(payload.welder_name).toBe('Bianchi Luca');
     });
 
+    it('nomi di ispettore/esaminatore: segnaposto come gli altri nomi di persona (Bugbot bcc270fd)', () => {
+        for (const k of ['inspector_name', 'examiner_name', 'tester_name', 'signatory_name']) {
+            expect(placeholderForFieldKey(k, 'cert_ndt')).toBe(PLACEHOLDERS.NOME);
+            expect(placeholderForFieldKey(k, 'wpqr')).toBe(PLACEHOLDERS.NOME);
+        }
+        expect(placeholderForFieldKey('examiner_body', 'cert_ndt')).toBeNull();
+        const out = redactPayloadForAi(
+            { inspector_name: 'Verdi Paolo', notes: 'Controllo di Paolo Verdi' },
+            { docType: 'cert_ndt' }
+        );
+        expect(out.inspector_name).toBe('[NOME]');
+        expect(out.notes).toBe('Controllo di [NOME] [NOME]');
+    });
+
+    it('frammenti di nome non sovrascrivono i campi tecnici; il nome completo si (Bugbot bcc270fd)', () => {
+        const payload = {
+            welder_name: 'Tig Marco',
+            welding_process: 'Tig 141',
+            standard_reference: 'ISO Tig 9606-1',
+            issuing_body: 'Ente Marco',
+            nested: { material_group: 'Tig', remarks: 'Marco ha usato il Tig' },
+            notes: 'Provino di Tig Marco, saldato da Marco',
+        };
+        const out = redactPayloadForAi(payload, { docType: 'patentino_saldatore' });
+        expect(out.welding_process).toBe('Tig 141');
+        expect(out.standard_reference).toBe('ISO Tig 9606-1');
+        expect(out.issuing_body).toBe('Ente Marco');
+        expect(out.nested.material_group).toBe('Tig');
+        expect(out.nested.remarks).toBe('[NOME] ha usato il [NOME]');
+        expect(out.notes).toBe('Provino di [NOME], saldato da [NOME]');
+
+        const full = redactPayloadForAi(
+            { welder_name: 'Tig Marco', issuing_body: 'Verifica di Tig Marco' },
+            { docType: 'patentino_saldatore' }
+        );
+        expect(full.issuing_body).toBe('Verifica di [NOME]');
+
+        const diffs = redactFieldDiffsForAi(
+            { welding_process: { ai: 'Tig 141', human: 'Tig 135' } },
+            { docType: 'patentino_saldatore', known: [{ value: 'Tig', placeholder: '[NOME]', token: true }] }
+        );
+        expect(diffs.welding_process).toEqual({ ai: 'Tig 141', human: 'Tig 135' });
+    });
+
     it('redactFieldDiffsForAi: tiene le correzioni informative, omette quelle ridotte a segnaposto identico', () => {
         const out = redactFieldDiffsForAi({
             welder_name: { ai: 'Bianchi', human: 'Bianchi Luca' },
