@@ -414,7 +414,10 @@ function QualificationsPage() {
             if (filters.situazione) params.situazione = filters.situazione;
             if (companyScope) params.company_id = companyScope;
 
-            const statsParams = companyScope ? { company_id: companyScope } : {};
+            // Card = stesso scope della lista (Ambito + tab); search e situazione restringono solo la lista.
+            const statsParams = {};
+            if (companyScope) statsParams.company_id = companyScope;
+            if (currentTab.qualification_type) statsParams.qualification_type = currentTab.qualification_type;
 
             const [res, statsRes] = await Promise.all([
                 apiService.getQualifications(params),
