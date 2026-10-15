@@ -88,6 +88,17 @@ describe('aiPromptPrivacy', () => {
             'PQR 24-03390-01 processi 135-138-141 e 111/135'
         );
 
+        expect(scrubFreeTextForAi('+39 333 1234567, WPS 135-138-141')).toBe(
+            '[TELEFONO], WPS 135-138-141'
+        );
+        expect(scrubFreeTextForAi('tel. 02 1234 5678 cert. 24-03390-01')).toBe(
+            'tel. [TELEFONO] cert. 24-03390-01'
+        );
+        expect(scrubFreeTextForAi('ABC-0039-12345-67')).toBe('ABC-0039-12345-67');
+        expect(scrubFreeTextForAi('tel 12 34 56 78 135')).toBe('tel [TELEFONO] 135');
+        expect(scrubFreeTextForAi('tel 333 12 34 56 135')).toBe('tel [TELEFONO] 135');
+        expect(scrubFreeTextForAi('tel. 0123456789012345')).toBe('tel. 0123456789012345');
+
         const mixed = scrubFreeTextForAi(
             'WPQR 24-03390-01, processi 135-138-141 e 111/135. '
             + 'Contatti +39 333 1234567, 02 12345678, tel. 0521 123456'

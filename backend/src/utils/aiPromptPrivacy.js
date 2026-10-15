@@ -89,18 +89,86 @@ const EMAIL_RE = /[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/gi;
 const CODICE_FISCALE_RE = /(?<![A-Z0-9])[A-Z]{6}\d{2}[A-EHLMPR-T]\d{2}[A-Z]\d{3}[A-Z](?![A-Z0-9])/gi;
 const NAME_STOPWORDS = new Set(['di', 'de', 'del', 'della', 'dei', 'da', 'van', 'von', 'la', 'le', 'lo', 'the', 'and']);
 
-/** Prefisso internazionale + resto del token numerico (spazi / - . interni). */
-const INTL_PHONE_RE = /(?<![\w])(?:\+|00)39(?:[\s./-]*\d)+/g;
+const PHONE_MIN_DIGITS = 6;
+const PHONE_MAX_DIGITS = 13;
+const PHONE_MAX_GROUPS = 4;
+const PHONE_SEP_RE = /[.\s/-]/;
+const PHONE_CONTEXT_LEAD_RE = /(?<![\p{L}])(?:tel(?:efono)?|cell(?:ulare)?|mobile|fax)[:.\s]{0,8}$/iu;
+
+function isIntlPrefixBoundary(text, i) {
+    if (i <= 0) return true;
+    const prev = text[i - 1];
+    return /\s/.test(prev) || prev === '(';
+}
+
 /**
- * Keyword tel/cell/fax entro pochi caratteri, poi l'intero token numerico.
- * Nessuna euristica su prefissi 0/3: senza keyword il numero resta intatto.
+ * Telefono plausibile da `s` (inizia da cifra o da un separatore singolo + cifra).
+ * 6-13 cifre, max 4 gruppi, un solo separatore (spazio / - .) tra gruppi.
+ * Se un gruppo farebbe superare 13 cifre: nessuna redazione (null).
  */
-const CONTEXT_PHONE_RE = /(?<![\p{L}])((?:tel(?:efono)?|cell(?:ulare)?|mobile|fax)[:.\s]{0,8})(\d(?:[\s./-]*\d)*)/giu;
+function takePlausiblePhone(s, { allowLeadingSep = false } = {}) {
+    let i = 0;
+    if (allowLeadingSep && PHONE_SEP_RE.test(s[0] || '') && /\d/.test(s[1] || '')) i = 1;
+    if (!/\d/.test(s[i] || '')) return null;
+
+    let digits = 0;
+    let groups = 0;
+    while (i < s.length && groups < PHONE_MAX_GROUPS) {
+        if (groups > 0) {
+            if (!PHONE_SEP_RE.test(s[i]) || !/\d/.test(s[i + 1] || '')) break;
+            i += 1;
+        }
+        let n = 0;
+        while (i < s.length && /\d/.test(s[i])) {
+            n += 1;
+            i += 1;
+        }
+        if (n === 0) break;
+        if (digits + n > PHONE_MAX_DIGITS) return null;
+        digits += n;
+        groups += 1;
+    }
+    if (digits < PHONE_MIN_DIGITS) return null;
+    return s.slice(0, i);
+}
+
+function matchIntlPhoneAt(text, i) {
+    if (!isIntlPrefixBoundary(text, i)) return null;
+    const rest = text.slice(i);
+    const prefix = rest.startsWith('+39') ? '+39' : rest.startsWith('0039') ? '0039' : null;
+    if (!prefix) return null;
+    const body = takePlausiblePhone(rest.slice(prefix.length), { allowLeadingSep: true });
+    if (!body) return null;
+    return prefix + body;
+}
+
+function matchContextPhoneAt(text, i) {
+    if (!/\d/.test(text[i] || '')) return null;
+    const before = text.slice(Math.max(0, i - 24), i);
+    if (!PHONE_CONTEXT_LEAD_RE.test(before)) return null;
+    return takePlausiblePhone(text.slice(i));
+}
 
 function scrubPhonesInFreeText(text) {
-    return text
-        .replace(INTL_PHONE_RE, PLACEHOLDERS.TELEFONO)
-        .replace(CONTEXT_PHONE_RE, (_, keyword) => keyword + PLACEHOLDERS.TELEFONO);
+    let out = '';
+    let i = 0;
+    while (i < text.length) {
+        const intl = matchIntlPhoneAt(text, i);
+        if (intl) {
+            out += PLACEHOLDERS.TELEFONO;
+            i += intl.length;
+            continue;
+        }
+        const ctx = matchContextPhoneAt(text, i);
+        if (ctx) {
+            out += PLACEHOLDERS.TELEFONO;
+            i += ctx.length;
+            continue;
+        }
+        out += text[i];
+        i += 1;
+    }
+    return out;
 }
 
 function escapeRegExp(s) {
