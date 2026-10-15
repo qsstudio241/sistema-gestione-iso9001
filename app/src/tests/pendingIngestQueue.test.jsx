@@ -124,6 +124,47 @@ describe("PendingIngestQueue", () => {
     expect(screen.getByTestId("review-dialog")).toBeTruthy();
   });
 
+  it("risposta vecchia che arriva dopo una piu' recente non rimette in coda voci risolte (Bugbot 8bd934c8)", async () => {
+    const resolvers = [];
+    apiService.listIngestStaging.mockReset();
+    apiService.listIngestStaging.mockResolvedValueOnce({ items: [PENDING] });
+    const { rerender } = render(<PendingIngestQueue refreshKey={0} />);
+    await screen.findByTestId("pending-ingest-queue");
+
+    apiService.listIngestStaging.mockImplementation(() => new Promise((res) => { resolvers.push(res); }));
+    rerender(<PendingIngestQueue refreshKey={1} />);
+    rerender(<PendingIngestQueue refreshKey={2} />);
+    await waitFor(() => expect(resolvers).toHaveLength(2));
+
+    resolvers[1]({ items: [] });
+    await waitFor(() => expect(screen.queryByTestId("pending-ingest-queue")).toBeNull());
+    resolvers[0]({ items: [PENDING] });
+    await new Promise((r) => setTimeout(r, 20));
+    expect(screen.queryByTestId("pending-ingest-queue")).toBeNull();
+  });
+
+  it("voce confermata mentre una ricarica e' in volo: la risposta precedente non la ripristina", async () => {
+    apiService.confirmIngestStaging.mockResolvedValue({ success: true });
+    apiService.listIngestStaging.mockReset();
+    apiService.listIngestStaging.mockResolvedValueOnce({ items: [PENDING] });
+    const { rerender } = render(<PendingIngestQueue refreshKey={0} />);
+    fireEvent.click(await screen.findByText("Vedi elenco"));
+    fireEvent.click(screen.getByText("Rivedi"));
+    await screen.findByTestId("review-dialog");
+
+    let release;
+    apiService.listIngestStaging.mockImplementationOnce(() => new Promise((res) => { release = res; }));
+    rerender(<PendingIngestQueue refreshKey={1} />);
+    await waitFor(() => expect(release).toBeTypeOf("function"));
+    fireEvent.click(screen.getByText("conferma"));
+    await waitFor(() => expect(apiService.confirmIngestStaging).toHaveBeenCalled());
+    await waitFor(() => expect(screen.queryByTestId("review-dialog")).toBeNull());
+
+    release({ items: [PENDING] });
+    await new Promise((r) => setTimeout(r, 20));
+    expect(screen.queryByTestId("pending-ingest-queue")).toBeNull();
+  });
+
   it("Scarta chiama reject e rimuove la voce", async () => {
     const onChanged = vi.fn();
     apiService.rejectIngestStaging.mockResolvedValue({ success: true });

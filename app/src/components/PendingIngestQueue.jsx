@@ -36,25 +36,34 @@ export default function PendingIngestQueue({ module = "qualifiche", onChanged, r
   const [reviewItem, setReviewItem] = useState(null);
   const [busy, setBusy] = useState(false);
   const loadedOnce = useRef(false);
+  const loadSeq = useRef(0);
 
   // Ricarica silenziosa dopo il primo caricamento: il banner (e la finestra di revisione aperta)
   // non devono smontarsi mentre l'operatore sta modificando i campi.
   const load = useCallback(async () => {
+    const seq = ++loadSeq.current;
     if (!loadedOnce.current) setLoading(true);
+    let next = [];
     try {
       const res = await apiService.listIngestStaging({ module, reviewStatus: "pending" });
-      setItems((res?.items || []).filter((i) => !i.is_reprocess));
+      next = (res?.items || []).filter((i) => !i.is_reprocess);
     } catch {
-      setItems([]);
-    } finally {
-      loadedOnce.current = true;
-      setLoading(false);
+      next = [];
     }
+    // Solo l'ultima richiesta vale: una risposta piu' vecchia non deve rimettere in coda voci gia' risolte.
+    if (seq !== loadSeq.current) return;
+    setItems(next);
+    loadedOnce.current = true;
+    setLoading(false);
   }, [module]);
 
   useEffect(() => { load(); }, [load, refreshKey]);
 
-  const removeItem = useCallback((id) => setItems((prev) => prev.filter((i) => i.id !== id)), []);
+  const removeItem = useCallback((id) => {
+    loadSeq.current += 1;
+    setItems((prev) => prev.filter((i) => i.id !== id));
+    setLoading(false);
+  }, []);
 
   const handleOpen = useCallback(async (item) => {
     setOpeningId(item.id);
