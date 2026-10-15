@@ -563,6 +563,70 @@ describe('qualifications.controller — collegamento personnel_id (createQualifi
   });
 });
 
+describe('qualifications.controller — duplicato uniforme (409, nessun SQL grezzo)', () => {
+  const indexError = () => Object.assign(
+    new Error("Cannot insert duplicate key row in object 'dbo.qualifications' with unique index 'UX_qualif_org_company_cert_person_active'. The duplicate key value is (1, 2, X, Y)."),
+    { number: 2601 },
+  );
+  const bodyDup = {
+    person_name: 'Mario Rossi', company_id: 20, certificate_number: 'ZZ-1', qualification_type: 'Saldatore ISO 9606-1',
+  };
+  const mkRes = () => ({ status: jest.fn().mockReturnThis(), json: jest.fn() });
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+    assertMutatingAllowed.mockResolvedValue(null);
+  });
+
+  it('creazione: duplicato rilevato dal controllo applicativo -> 409 DUPLICATE_QUALIFICATION, nessun INSERT', async () => {
+    const req0 = { input: jest.fn().mockReturnThis(), query: jest.fn().mockResolvedValue({ recordset: [{ cnt: 1 }] }) };
+    getPool.mockResolvedValue({ request: jest.fn(() => req0) });
+    const res = mkRes();
+    await createQualification({ body: bodyDup, user: { organization_id: 10, user_id: 20 } }, res);
+    expect(res.status).toHaveBeenCalledWith(409);
+    expect(res.json.mock.calls[0][0].code).toBe('DUPLICATE_QUALIFICATION');
+    expect(req0.query).toHaveBeenCalledTimes(1);
+    expect(req0.input).toHaveBeenCalledWith('personName', 'Mario Rossi');
+  });
+
+  it('creazione: errore dell\'indice unico (race) -> 409 con messaggio pulito, non 500 con SQL', async () => {
+    const req0 = { input: jest.fn().mockReturnThis() };
+    req0.query = jest.fn()
+      .mockResolvedValueOnce({ recordset: [{ cnt: 0 }] })
+      .mockRejectedValueOnce(indexError());
+    getPool.mockResolvedValue({ request: jest.fn(() => req0) });
+    const res = mkRes();
+    await createQualification({ body: bodyDup, user: { organization_id: 10, user_id: 20 } }, res);
+    expect(res.status).toHaveBeenCalledWith(409);
+    const payload = res.json.mock.calls[0][0];
+    expect(payload.code).toBe('DUPLICATE_QUALIFICATION');
+    expect(payload.error).not.toMatch(/UX_qualif|dbo\.|duplicate key/i);
+  });
+
+  it('modifica: errore dell\'indice unico -> 409 pulito', async () => {
+    const req0 = { input: jest.fn().mockReturnThis() };
+    req0.query = jest.fn()
+      .mockResolvedValueOnce({ recordset: [{ id: 5, company_id: 20 }] })
+      .mockRejectedValueOnce(indexError());
+    getPool.mockResolvedValue({ request: jest.fn(() => req0) });
+    const res = mkRes();
+    await updateQualification({ params: { id: '5' }, body: bodyDup, user: { organization_id: 10, user_id: 20 } }, res);
+    expect(res.status).toHaveBeenCalledWith(409);
+    expect(res.json.mock.calls[0][0].error).not.toMatch(/UX_qualif|dbo\./);
+  });
+
+  it('un errore SQL diverso resta 500', async () => {
+    const req0 = { input: jest.fn().mockReturnThis() };
+    req0.query = jest.fn()
+      .mockResolvedValueOnce({ recordset: [{ cnt: 0 }] })
+      .mockRejectedValueOnce(Object.assign(new Error('timeout'), { number: -2 }));
+    getPool.mockResolvedValue({ request: jest.fn(() => req0) });
+    const res = mkRes();
+    await createQualification({ body: bodyDup, user: { organization_id: 10, user_id: 20 } }, res);
+    expect(res.status).toHaveBeenCalledWith(500);
+  });
+});
+
 describe('qualifications.controller — collegamento personnel_id (updateQualification)', () => {
   function makeUpdatePool(existingRow = { id: 30, company_id: 20 }) {
     const checkReq = { input: jest.fn().mockReturnThis(), query: jest.fn().mockResolvedValue({ recordset: [existingRow] }) };
