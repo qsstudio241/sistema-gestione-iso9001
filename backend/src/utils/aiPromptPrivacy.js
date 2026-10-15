@@ -85,7 +85,7 @@ function placeholderForFieldKey(key, docType = null) {
     return null;
 }
 
-const EMAIL_RE = /[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/gi;
+const EMAIL_RE = /(?<![A-Z0-9._%+-])[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/gi;
 const CODICE_FISCALE_RE = /(?<![A-Z0-9])[A-Z]{6}\d{2}[A-EHLMPR-T]\d{2}[A-Z]\d{3}[A-Z](?![A-Z0-9])/gi;
 const NAME_STOPWORDS = new Set(['di', 'de', 'del', 'della', 'dei', 'da', 'van', 'von', 'la', 'le', 'lo', 'the', 'and']);
 
@@ -95,16 +95,25 @@ const PHONE_MAX_GROUPS = 4;
 const PHONE_SEP_RE = /[.\s/-]/;
 const PHONE_CONTEXT_LEAD_RE = /(?<![\p{L}])(?:tel(?:efono)?|cell(?:ulare)?|mobile|fax)[:.\s]{0,8}$/iu;
 
+const INTL_BOUNDARY_BLOCK_RE = /[\p{L}\p{N}_/-]/u;
+
+/**
+ * `+39`/`0039` valgono come prefisso solo se non sono attaccati a lettere, cifre, `_`, `-`, `/`
+ * o a un gruppo numerico puntato (es. `ABC-0039-1`, `24.0039`): `Tel:+39..`, `;+39..`, `"+39..` restano validi.
+ */
 function isIntlPrefixBoundary(text, i) {
     if (i <= 0) return true;
     const prev = text[i - 1];
-    return /\s/.test(prev) || prev === '(';
+    if (INTL_BOUNDARY_BLOCK_RE.test(prev)) return false;
+    return !(prev === '.' && /\d/.test(text[i - 2] || ''));
 }
 
 /**
  * Telefono plausibile da `s` (inizia da cifra o da un separatore singolo + cifra).
  * 6-13 cifre, max 4 gruppi, un solo separatore (spazio / - .) tra gruppi.
- * Se un gruppo farebbe superare 13 cifre: nessuna redazione (null).
+ * Un gruppo che farebbe superare 13 cifre non viene preso: il numero gia' valido resta redatto
+ * (se resta un ultimo gruppo corto, e' piu' probabile un codice adiacente e viene lasciato fuori).
+ * Un primo gruppo oltre 13 cifre non e' un telefono (codice tecnico): null.
  */
 function takePlausiblePhone(s, { allowLeadingSep = false } = {}) {
     let i = 0;
@@ -113,31 +122,40 @@ function takePlausiblePhone(s, { allowLeadingSep = false } = {}) {
 
     let digits = 0;
     let groups = 0;
-    while (i < s.length && groups < PHONE_MAX_GROUPS) {
+    let end = i;
+    let lastGroupStart = i;
+    let lastGroupLen = 0;
+    while (end < s.length && groups < PHONE_MAX_GROUPS) {
+        let j = end;
         if (groups > 0) {
-            if (!PHONE_SEP_RE.test(s[i]) || !/\d/.test(s[i + 1] || '')) break;
-            i += 1;
+            if (!PHONE_SEP_RE.test(s[j]) || !/\d/.test(s[j + 1] || '')) break;
+            j += 1;
         }
-        let n = 0;
-        while (i < s.length && /\d/.test(s[i])) {
-            n += 1;
-            i += 1;
+        const start = j;
+        while (j < s.length && /\d/.test(s[j]) && digits + (j - start) < PHONE_MAX_DIGITS + 1) j += 1;
+        const n = j - start;
+        if (digits + n > PHONE_MAX_DIGITS) {
+            if (groups === 0) return null;
+            if (lastGroupLen <= 3 && digits - lastGroupLen >= 8) {
+                digits -= lastGroupLen;
+                end = lastGroupStart;
+            }
+            break;
         }
-        if (n === 0) break;
-        if (digits + n > PHONE_MAX_DIGITS) return null;
+        lastGroupStart = end;
+        lastGroupLen = n;
         digits += n;
         groups += 1;
+        end = j;
     }
     if (digits < PHONE_MIN_DIGITS) return null;
-    return s.slice(0, i);
+    return s.slice(0, end);
 }
 
 function matchIntlPhoneAt(text, i) {
-    if (!isIntlPrefixBoundary(text, i)) return null;
-    const rest = text.slice(i);
-    const prefix = rest.startsWith('+39') ? '+39' : rest.startsWith('0039') ? '0039' : null;
-    if (!prefix) return null;
-    const body = takePlausiblePhone(rest.slice(prefix.length), { allowLeadingSep: true });
+    const prefix = text.startsWith('+39', i) ? '+39' : text.startsWith('0039', i) ? '0039' : null;
+    if (!prefix || !isIntlPrefixBoundary(text, i)) return null;
+    const body = takePlausiblePhone(text.slice(i + prefix.length), { allowLeadingSep: true });
     if (!body) return null;
     return prefix + body;
 }

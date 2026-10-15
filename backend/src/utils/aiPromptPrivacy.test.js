@@ -111,6 +111,67 @@ describe('aiPromptPrivacy', () => {
         expect(mixed.match(/\[TELEFONO\]/g)).toHaveLength(2);
     });
 
+    it('telefono valido seguito da gruppi extra: redatto, il codice adiacente resta (Bugbot 184efec3 #1)', () => {
+        expect(scrubFreeTextForAi('+39 333 1234567 135-138-141')).toBe('[TELEFONO] 135-138-141');
+        expect(scrubFreeTextForAi('+39 333 1234567 135 138 141')).toBe('[TELEFONO] 135 138 141');
+        expect(scrubFreeTextForAi('tel. 333 1234567 135-138-141')).toBe('tel. [TELEFONO] 135-138-141');
+        expect(scrubFreeTextForAi('tel. 0521 123456 135-138-141')).toBe('tel. [TELEFONO] 135-138-141');
+        expect(scrubFreeTextForAi('0039 333 1234567 111/135')).toBe('[TELEFONO] 111/135');
+        expect(scrubFreeTextForAi('+39 333 1234567 24-03390-01')).toMatch(/^\[TELEFONO\]/);
+        expect(scrubFreeTextForAi('+39 333 1234567 24-03390-01')).not.toMatch(/333|1234567/);
+        expect(scrubFreeTextForAi('tel 12 34 56 78 90 12 34')).not.toMatch(/12 34 56 78/);
+    });
+
+    it('prefisso +39/0039: confine con punteggiatura ammesso, attaccato a lettere/cifre no (Bugbot 184efec3 #2)', () => {
+        expect(scrubFreeTextForAi('Tel:+39 333 1234567')).toBe('Tel:[TELEFONO]');
+        expect(scrubFreeTextForAi('fax:+39 333 1234567')).toBe('fax:[TELEFONO]');
+        expect(scrubFreeTextForAi('tel.+39 333 1234567')).toBe('tel.[TELEFONO]');
+        expect(scrubFreeTextForAi('x;+39 333 1234567')).toBe('x;[TELEFONO]');
+        expect(scrubFreeTextForAi('x,+39 333 1234567')).toBe('x,[TELEFONO]');
+        expect(scrubFreeTextForAi('"+39 333 1234567"')).toBe('"[TELEFONO]"');
+        expect(scrubFreeTextForAi('(+39 333 1234567)')).toBe('([TELEFONO])');
+        expect(scrubFreeTextForAi('[0039 333 1234567]')).toBe('[[TELEFONO]]');
+        expect(scrubFreeTextForAi('Tel:0039 333 1234567')).toBe('Tel:[TELEFONO]');
+        expect(scrubFreeTextForAi('\n+39 333 1234567')).toBe('\n[TELEFONO]');
+
+        expect(scrubFreeTextForAi('ABC+39 333 1234567')).toBe('ABC+39 333 1234567');
+        expect(scrubFreeTextForAi('12+39 333 1234567')).toBe('12+39 333 1234567');
+        expect(scrubFreeTextForAi('X0039 333 1234567')).toBe('X0039 333 1234567');
+        expect(scrubFreeTextForAi('10390039 333 1234567')).toBe('10390039 333 1234567');
+        expect(scrubFreeTextForAi('ABC_0039 333 1234567')).toBe('ABC_0039 333 1234567');
+        expect(scrubFreeTextForAi('ABC-0039-12345-67')).toBe('ABC-0039-12345-67');
+        expect(scrubFreeTextForAi('A/0039 333 1234567')).toBe('A/0039 333 1234567');
+        expect(scrubFreeTextForAi('24.0039 333 1234567')).toBe('24.0039 333 1234567');
+        expect(scrubFreeTextForAi('+39')).toBe('+39');
+        expect(scrubFreeTextForAi('+39 12345')).toBe('+39 12345');
+    });
+
+    it('telefono: sequenze di cifre molto lunghe, input vuoto/non stringa, stringhe enormi senza blocchi', () => {
+        expect(scrubFreeTextForAi('+39 ' + '1'.repeat(14))).toBe('+39 ' + '1'.repeat(14));
+        expect(scrubFreeTextForAi('tel. ' + '1'.repeat(50))).toBe('tel. ' + '1'.repeat(50));
+        expect(scrubFreeTextForAi('+39 333 1234567' + '8'.repeat(20))).toBe('+39 333 1234567' + '8'.repeat(20));
+        expect(scrubFreeTextForAi('')).toBe('');
+        expect(scrubFreeTextForAi(null)).toBeNull();
+        expect(scrubFreeTextForAi(undefined)).toBeUndefined();
+        expect(scrubFreeTextForAi(12345)).toBe(12345);
+
+        const t0 = Date.now();
+        const big = 1_000_000;
+        const inputs = [
+            '1'.repeat(big),
+            'tel ' + '1'.repeat(big),
+            '+39 ' + '1'.repeat(big),
+            '+39'.repeat(big / 3),
+            'tel 1 '.repeat(big / 6),
+            '+39 333 1234567 '.repeat(big / 16),
+            'a'.repeat(big),
+            '1-'.repeat(big / 2),
+        ];
+        for (const s of inputs) expect(typeof scrubFreeTextForAi(s)).toBe('string');
+        expect(scrubFreeTextForAi('+39 333 1234567 '.repeat(1000)).match(/\[TELEFONO\]/g)).toHaveLength(1000);
+        expect(Date.now() - t0).toBeLessThan(5000);
+    });
+
     it('redactPayloadForAi: valori personali -> segnaposto, struttura e campi tecnici invariati', () => {
         const payload = {
             welder_name: 'Bianchi Luca',
