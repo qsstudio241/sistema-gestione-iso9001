@@ -40,6 +40,12 @@ const {
     sendAccessDenied,
 } = require('../services/companyAccess.service');
 const { resolvePersonnelForQualification } = require('../services/personnelQualificationLink.service');
+const {
+    DUPLICATE_QUALIFICATION_MESSAGE,
+    findQualificationDuplicate,
+    isQualificationDuplicateIndexError,
+    poolDb,
+} = require('../services/qualificationDuplicate.service');
 const { resolvePrintedDesignation } = require('../utils/weldingDesignation');
 const { describeIngestFileError, redactFileNameForLog } = require('../utils/ingestErrorMessage');
 const {
@@ -637,23 +643,21 @@ async function createQualification(req, res) {
         if (!certUrlCheck.ok) return res.status(CERTIFICATE_FILE_URL_ERROR.status).json(CERTIFICATE_FILE_URL_ERROR.body);
 
         // Anti-duplicato: stesso certificate_number + company_id + qualification_type (non revocate)
+        // oppure stessa persona (indice unico): criteri in qualificationDuplicate.service
         if (certificate_number?.trim() && company_id) {
-            const dupCheck = await pool.request()
-                .input('orgId',    orgId)
-                .input('certNum',  certificate_number.trim())
-                .input('compId',   parseInt(company_id))
-                .input('qualType', qualification_type.trim())
-                .query(`
-                    SELECT COUNT(*) AS cnt FROM qualifications
-                    WHERE organization_id=@orgId
-                      AND certificate_number=@certNum
-                      AND company_id=@compId
-                      AND qualification_type=@qualType
-                      AND status != 'revocata'
-                `);
-            if (dupCheck.recordset[0].cnt > 0) {
-                return res.status(400).json({
-                    error: 'Qualifica duplicata: esiste gi\u00e0 una qualifica attiva con lo stesso numero certificato, azienda e tipo.',
+            const isDuplicate = await findQualificationDuplicate(
+                poolDb(pool),
+                {
+                    organizationId: orgId,
+                    companyId: parseInt(company_id),
+                    certificateNumber: certificate_number,
+                    qualificationType: qualification_type.trim(),
+                    personName: personnelResult.personName || person_name.trim(),
+                },
+            );
+            if (isDuplicate) {
+                return res.status(409).json({
+                    error: DUPLICATE_QUALIFICATION_MESSAGE,
                     code: 'DUPLICATE_QUALIFICATION',
                 });
             }
@@ -769,6 +773,9 @@ async function createQualification(req, res) {
         logger.info(`[Qualif] Creata id=${r.recordset[0].id} per org ${orgId}`);
         res.status(201).json({ success: true, id: r.recordset[0].id });
     } catch (err) {
+        if (isQualificationDuplicateIndexError(err)) {
+            return res.status(409).json({ error: DUPLICATE_QUALIFICATION_MESSAGE, code: 'DUPLICATE_QUALIFICATION' });
+        }
         logger.error('createQualif:', err.message);
         res.status(500).json({ error: err.message });
     }
@@ -948,6 +955,9 @@ async function updateQualification(req, res) {
 
         res.json({ success: true });
     } catch (err) {
+        if (isQualificationDuplicateIndexError(err)) {
+            return res.status(409).json({ error: DUPLICATE_QUALIFICATION_MESSAGE, code: 'DUPLICATE_QUALIFICATION' });
+        }
         logger.error('updateQualif:', err.message);
         res.status(500).json({ error: err.message });
     }
@@ -1189,6 +1199,9 @@ async function renewQualification(req, res) {
         logger.info(`[Qualif] Rinnovo: nuovo id=${newId} da id=${id} per org ${orgId}`);
         res.status(201).json({ success: true, id: newId, previous_qualification_id: id });
     } catch (err) {
+        if (isQualificationDuplicateIndexError(err)) {
+            return res.status(409).json({ error: DUPLICATE_QUALIFICATION_MESSAGE, code: 'DUPLICATE_QUALIFICATION' });
+        }
         logger.error('renewQualif:', err.message);
         res.status(500).json({ error: err.message });
     }
