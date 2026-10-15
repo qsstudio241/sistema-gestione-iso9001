@@ -208,13 +208,42 @@ describe('aiPromptPrivacy', () => {
             expect(placeholderForFieldKey(k, 'cert_ndt')).toBe(PLACEHOLDERS.NOME);
             expect(placeholderForFieldKey(k, 'wpqr')).toBe(PLACEHOLDERS.NOME);
         }
-        expect(placeholderForFieldKey('examiner_body', 'cert_ndt')).toBeNull();
+        expect(placeholderForFieldKey('examiner_body', 'wpqr')).toBeNull();
         const out = redactPayloadForAi(
             { inspector_name: 'Verdi Paolo', notes: 'Controllo di Paolo Verdi' },
             { docType: 'cert_ndt' }
         );
         expect(out.inspector_name).toBe('[NOME]');
         expect(out.notes).toBe('Controllo di [NOME] [NOME]');
+    });
+
+    it("examiner_body: nome dell'esaminatore sui certificati di persona, ente sugli altri tipi (Bugbot 3d5a7f93)", () => {
+        for (const dt of ['patentino_saldatore', 'qualifica_14732', 'cert_ndt']) {
+            expect(placeholderForFieldKey('examiner_body', dt)).toBe(PLACEHOLDERS.NOME);
+        }
+        expect(placeholderForFieldKey('examiner_body', 'wpqr')).toBeNull();
+        const out = redactPayloadForAi(
+            { examiner_body: 'I.W.I. Neri Carlo', issuing_body: 'TUV', notes: 'Firmato da Carlo Neri' },
+            { docType: 'patentino_saldatore' }
+        );
+        expect(out.examiner_body).toBe('[NOME]');
+        expect(out.issuing_body).toBe('TUV');
+        expect(out.notes).toBe('Firmato da [NOME] [NOME]');
+        const wpqr = redactPayloadForAi({ examiner_body: 'TUV SUD' }, { docType: 'wpqr' });
+        expect(wpqr.examiner_body).toBe('TUV SUD');
+    });
+
+    it("qualification_designation e' campo tecnico: i frammenti di nome non la alterano (Bugbot 3d5a7f93)", () => {
+        const out = redactPayloadForAi(
+            {
+                welder_name: 'Tig Marco',
+                qualification_designation: 'ISO 9606-1 TIG 141 BW',
+                notes: 'Saldatore Tig',
+            },
+            { docType: 'patentino_saldatore' }
+        );
+        expect(out.qualification_designation).toBe('ISO 9606-1 TIG 141 BW');
+        expect(out.notes).toBe('Saldatore [NOME]');
     });
 
     it('frammenti di nome non sovrascrivono i campi tecnici; il nome completo si (Bugbot bcc270fd)', () => {

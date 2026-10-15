@@ -63,6 +63,8 @@ const QUALIFICATION_KEY_RULES = [
     ],
     [/^(wps|wpqr|pqr)(_(number|no|num|nr|ref|reference|id))?$/, PLACEHOLDERS.NUMERO_WPS_WPQR],
     [/^(reference|document|report|procedure)_(number|no)$/, PLACEHOLDERS.NUMERO_RIFERIMENTO],
+    // Sui certificati di persona `examiner_body` e' il nome dell'esaminatore firmatario (non un ente).
+    [/^examiner_body$/, PLACEHOLDERS.NOME],
 ];
 
 function normalizeKey(key) {
@@ -76,7 +78,7 @@ function normalizeKey(key) {
 const TECHNICAL_KEY_RE = new RegExp(
     '(^|_)(process|processo|standard|norma|norm|material|materiale|group|gruppo|body|ente|issuing|authority|'
     + 'position|positions|posizione|posizioni|thickness|spessore|diameter|diametro|filler|gas|joint|type|tipo|'
-    + 'class|classe|level|livello|grade|result|esito|code|codice|date|data|unit|status|stato|revision|rev|edition|year|anno)(_|$)'
+    + 'class|classe|level|livello|grade|result|esito|code|codice|date|data|unit|status|stato|revision|rev|edition|year|anno|designation|designazione)(_|$)'
 );
 
 function isTechnicalKey(key) {
