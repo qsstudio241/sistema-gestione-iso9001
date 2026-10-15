@@ -95,6 +95,35 @@ describe("PendingIngestQueue", () => {
     alertSpy.mockRestore();
   });
 
+  it("onChanged riceve id e esito della voce risolta (conferma/scarto)", async () => {
+    const onChanged = vi.fn();
+    apiService.confirmIngestStaging.mockResolvedValue({ success: true });
+    render(<PendingIngestQueue onChanged={onChanged} />);
+    fireEvent.click(await screen.findByText("Vedi elenco"));
+    fireEvent.click(screen.getByText("Rivedi"));
+    await screen.findByTestId("review-dialog");
+    fireEvent.click(screen.getByText("conferma"));
+    await waitFor(() => expect(onChanged).toHaveBeenCalledWith({ stagingId: 5, status: "confirmed" }));
+  });
+
+  it("ricarica dopo refreshKey con la finestra di revisione aperta: non si smonta (Bugbot a2be23cf)", async () => {
+    const { rerender } = render(<PendingIngestQueue refreshKey={0} />);
+    fireEvent.click(await screen.findByText("Vedi elenco"));
+    fireEvent.click(screen.getByText("Rivedi"));
+    await screen.findByTestId("review-dialog");
+
+    let release;
+    apiService.listIngestStaging.mockImplementationOnce(() => new Promise((res) => { release = res; }));
+    rerender(<PendingIngestQueue refreshKey={1} />);
+    await waitFor(() => expect(apiService.listIngestStaging).toHaveBeenCalledTimes(2));
+    expect(screen.getByTestId("review-dialog")).toBeTruthy();
+    expect(screen.getByTestId("pending-ingest-queue")).toBeTruthy();
+
+    release({ items: [] });
+    await waitFor(() => expect(apiService.listIngestStaging).toHaveBeenCalledTimes(2));
+    expect(screen.getByTestId("review-dialog")).toBeTruthy();
+  });
+
   it("Scarta chiama reject e rimuove la voce", async () => {
     const onChanged = vi.fn();
     apiService.rejectIngestStaging.mockResolvedValue({ success: true });

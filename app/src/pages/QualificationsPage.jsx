@@ -386,6 +386,7 @@ function QualificationsPage() {
     const [editingQual, setEditingQual] = useState(null);
     const [formSection, setFormSection] = useState(undefined);
     const [pendingQueueKey, setPendingQueueKey] = useState(0);
+    const [resolvedStaging, setResolvedStaging] = useState(null);
     const [hardDeleteId, setHardDeleteId] = useState(null);
 
     const setFilter = useCallback((key, val) => {
@@ -446,7 +447,8 @@ function QualificationsPage() {
     const refreshPendingQueue = useCallback(() => {
         setPendingQueueKey((k) => k + 1);
     }, []);
-    const handleIngestStagingChanged = useCallback(() => {
+    const handleIngestStagingChanged = useCallback((change) => {
+        if (change && change.stagingId != null) setResolvedStaging({ stagingId: change.stagingId, status: change.status });
         loadData();
         refreshPendingQueue();
     }, [loadData, refreshPendingQueue]);
@@ -457,8 +459,13 @@ function QualificationsPage() {
     useEffect(() => {
         const dl = deepLinkRef.current;
         if (!scopeReady || deepLinkDone.current.company) return;
+        if (!dl.companyId || locked) {
+            deepLinkDone.current.company = true;
+            return;
+        }
+        // Utenti con ambito aziendale: scopeReady e' gia' true mentre l'elenco aziende si sta ancora caricando.
+        if (!companies || companies.length === 0) return;
         deepLinkDone.current.company = true;
-        if (!dl.companyId || locked) return;
         const known = (companies || []).some((c) => String(c.id || c.company_id) === dl.companyId);
         if (known) setCompanyId(dl.companyId);
     }, [scopeReady, locked, companies, setCompanyId]);
@@ -548,6 +555,7 @@ function QualificationsPage() {
                         companyName={scopeCompanyName}
                         activeTab={activeTab}
                         onUploadComplete={handleIngestStagingChanged}
+                        resolvedStaging={resolvedStaging}
                     />
                     <button
                         type="button"

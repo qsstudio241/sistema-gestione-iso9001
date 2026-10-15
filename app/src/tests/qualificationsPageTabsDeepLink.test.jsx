@@ -47,6 +47,7 @@ import apiService from "../services/apiService";
 import QualificationsPage, { TAB_COLUMNS, parseDeepLink, QualRow } from "../pages/QualificationsPage";
 
 beforeEach(() => {
+  scopeState.companies = [{ id: 10, name: "Mason Demo" }, { id: 11, name: "Altra Srl" }];
   scopeState.setCompanyId.mockClear();
   scopeState.locked = false;
   apiService.getQualifications.mockResolvedValue({ qualifications: [], total: 0 });
@@ -142,6 +143,22 @@ describe("QualificationsPage: deep link", () => {
     render(<QualificationsPage />);
     await waitFor(() => expect(apiService.getQualifications).toHaveBeenCalled());
     expect(scopeState.setCompanyId).not.toHaveBeenCalled();
+  });
+
+  it("company_id: con le aziende non ancora caricate attende l'elenco e poi imposta l'Ambito (Bugbot a2be23cf)", async () => {
+    const loaded = scopeState.companies;
+    scopeState.companies = [];
+    window.history.replaceState({}, "", "/qualifiche?company_id=11");
+    const { rerender } = render(<QualificationsPage />);
+    await waitFor(() => expect(apiService.getQualifications).toHaveBeenCalled());
+    expect(scopeState.setCompanyId).not.toHaveBeenCalled();
+
+    scopeState.companies = loaded;
+    rerender(<QualificationsPage />);
+    await waitFor(() => expect(scopeState.setCompanyId).toHaveBeenCalledTimes(1));
+    expect(scopeState.setCompanyId).toHaveBeenCalledWith("11");
+    rerender(<QualificationsPage />);
+    expect(scopeState.setCompanyId).toHaveBeenCalledTimes(1);
   });
 
   it("highlight + section=conferma apre la scheda con la sezione richiesta", async () => {

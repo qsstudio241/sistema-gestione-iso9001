@@ -9,7 +9,7 @@
  * finestra di revisione dell'upload (`IngestReviewDialog`): nessuna scrittura
  * sul registro finché l'operatore non conferma esplicitamente.
  */
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import apiService from "../services/apiService";
 import IngestReviewDialog from "./IngestReviewDialog";
 import "./ReprocessQueueBanner.css";
@@ -35,15 +35,19 @@ export default function PendingIngestQueue({ module = "qualifiche", onChanged, r
   const [error, setError] = useState(null);
   const [reviewItem, setReviewItem] = useState(null);
   const [busy, setBusy] = useState(false);
+  const loadedOnce = useRef(false);
 
+  // Ricarica silenziosa dopo il primo caricamento: il banner (e la finestra di revisione aperta)
+  // non devono smontarsi mentre l'operatore sta modificando i campi.
   const load = useCallback(async () => {
-    setLoading(true);
+    if (!loadedOnce.current) setLoading(true);
     try {
       const res = await apiService.listIngestStaging({ module, reviewStatus: "pending" });
       setItems((res?.items || []).filter((i) => !i.is_reprocess));
     } catch {
       setItems([]);
     } finally {
+      loadedOnce.current = true;
       setLoading(false);
     }
   }, [module]);
@@ -77,10 +81,11 @@ export default function PendingIngestQueue({ module = "qualifiche", onChanged, r
     if (!reviewItem) return;
     setBusy(true);
     try {
-      await apiService.confirmIngestStaging(reviewItem.id, fields);
-      removeItem(reviewItem.id);
+      const stagingId = reviewItem.id;
+      await apiService.confirmIngestStaging(stagingId, fields);
+      removeItem(stagingId);
       setReviewItem(null);
-      if (onChanged) onChanged();
+      if (onChanged) onChanged({ stagingId, status: "confirmed" });
     } catch (e) {
       window.alert(e?.data?.error || e.message || "Conferma fallita");
     } finally {
@@ -92,10 +97,11 @@ export default function PendingIngestQueue({ module = "qualifiche", onChanged, r
     if (!reviewItem) return;
     setBusy(true);
     try {
-      await apiService.rejectIngestStaging(reviewItem.id);
-      removeItem(reviewItem.id);
+      const stagingId = reviewItem.id;
+      await apiService.rejectIngestStaging(stagingId);
+      removeItem(stagingId);
       setReviewItem(null);
-      if (onChanged) onChanged();
+      if (onChanged) onChanged({ stagingId, status: "rejected" });
     } catch (e) {
       window.alert(e?.data?.error || e.message || "Scarto fallito");
     } finally {
@@ -103,7 +109,7 @@ export default function PendingIngestQueue({ module = "qualifiche", onChanged, r
     }
   }, [reviewItem, removeItem, onChanged]);
 
-  if (loading || items.length === 0) return null;
+  if (!reviewItem && (loading || items.length === 0)) return null;
 
   return (
     <div className="reprocess-banner" data-testid="pending-ingest-queue">

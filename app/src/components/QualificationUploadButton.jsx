@@ -79,6 +79,8 @@ export default function QualificationUploadButton({
   onUploadComplete,
   /** Tab attiva in QualificationsPage (es. "ndt") — solo suggerimento UI */
   activeTab = "",
+  /** Esito di una riga risolta altrove (coda caricamenti): `{ stagingId, status }`, tiene allineato il pannello. */
+  resolvedStaging = null,
 }) {
   const companyIdInt = companyId != null ? parseInt(String(companyId), 10) : NaN;
   const isValidCompany = !isNaN(companyIdInt) && companyIdInt > 0;
@@ -191,6 +193,12 @@ export default function QualificationUploadButton({
       r.staging_id === stagingId ? { ...r, ...patch } : r
     )));
   }, []);
+
+  useEffect(() => {
+    if (!resolvedStaging || resolvedStaging.stagingId == null) return;
+    updateResult(resolvedStaging.stagingId, { status: resolvedStaging.status });
+    setReviewItem((prev) => (prev?.staging_id === resolvedStaging.stagingId ? null : prev));
+  }, [resolvedStaging, updateResult]);
 
   const handleVerificationChange = useCallback((stagingId, verification) => {
     if (stagingId == null || !verification) return;
