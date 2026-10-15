@@ -95,12 +95,13 @@ export default function PendingIngestQueue({ module = "qualifiche", onChanged, r
       await apiService.rejectIngestStaging(reviewItem.id);
       removeItem(reviewItem.id);
       setReviewItem(null);
+      if (onChanged) onChanged();
     } catch (e) {
       window.alert(e?.data?.error || e.message || "Scarto fallito");
     } finally {
       setBusy(false);
     }
-  }, [reviewItem, removeItem]);
+  }, [reviewItem, removeItem, onChanged]);
 
   if (loading || items.length === 0) return null;
 

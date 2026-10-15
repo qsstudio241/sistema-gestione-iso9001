@@ -443,7 +443,13 @@ function QualificationsPage() {
         setFormOpen(true);
     }
     function handleEdit(q) { setFormSection(undefined); setEditingQual(q);    setFormOpen(true); }
-    const handlePendingConfirmed = useCallback(() => { loadData(); }, [loadData]);
+    const refreshPendingQueue = useCallback(() => {
+        setPendingQueueKey((k) => k + 1);
+    }, []);
+    const handleIngestStagingChanged = useCallback(() => {
+        loadData();
+        refreshPendingQueue();
+    }, [loadData, refreshPendingQueue]);
 
     // Deep link da Scadenzario/Dashboard: azienda e scheda da aprire (una sola volta).
     const deepLinkRef = useRef(readDeepLink());
@@ -541,7 +547,7 @@ function QualificationsPage() {
                         companyId={companyScope}
                         companyName={scopeCompanyName}
                         activeTab={activeTab}
-                        onUploadComplete={loadData}
+                        onUploadComplete={handleIngestStagingChanged}
                     />
                     <button
                         type="button"
@@ -559,7 +565,7 @@ function QualificationsPage() {
             )}
 
             <ReprocessQueueBanner />
-            <PendingIngestQueue refreshKey={pendingQueueKey} onChanged={handlePendingConfirmed} />
+            <PendingIngestQueue refreshKey={pendingQueueKey} onChanged={handleIngestStagingChanged} />
 
             <CoverageVerifyPanel
                 companyId={companyScope}

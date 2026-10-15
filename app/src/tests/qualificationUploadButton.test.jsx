@@ -266,6 +266,23 @@ describe("QualificationUploadButton — riconoscimento automatico del tipo per f
     );
   }
 
+  it("al termine del batch chiama onUploadComplete (refresh coda pending)", async () => {
+    const onUploadComplete = vi.fn();
+    const user = userEvent.setup();
+    apiService.uploadQualificationsBatch.mockResolvedValueOnce({
+      results: [pendingRes("a.pdf", 1, "cert_ndt")], uploaded: 0, total: 1,
+    });
+    render(
+      <QualificationUploadButton companyId="60" companyName="ADA" onUploadComplete={onUploadComplete} activeTab="tutti" />
+    );
+    await user.click(screen.getByRole("button", { name: /Carica qualifiche \(batch\)/i }));
+    await user.upload(
+      document.querySelector('input[type="file"]'),
+      [new File(["%PDF"], "a.pdf", { type: "application/pdf" })],
+    );
+    await waitFor(() => expect(onUploadComplete).toHaveBeenCalledTimes(1));
+  });
+
   it("nessuna tendina obbligatoria e nessun pulsante «Estrai e rivedi»: il file si carica subito, senza doc_type", async () => {
     const user = userEvent.setup();
     await openAndUpload(user, [pendingRes("a.pdf", 1, "cert_ndt")]);

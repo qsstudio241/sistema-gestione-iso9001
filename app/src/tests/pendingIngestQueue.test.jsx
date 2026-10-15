@@ -96,13 +96,15 @@ describe("PendingIngestQueue", () => {
   });
 
   it("Scarta chiama reject e rimuove la voce", async () => {
+    const onChanged = vi.fn();
     apiService.rejectIngestStaging.mockResolvedValue({ success: true });
-    render(<PendingIngestQueue />);
+    render(<PendingIngestQueue onChanged={onChanged} />);
     fireEvent.click(await screen.findByText("Vedi elenco"));
     fireEvent.click(screen.getByText("Rivedi"));
     await screen.findByTestId("review-dialog");
     fireEvent.click(screen.getByText("scarta"));
     await waitFor(() => expect(apiService.rejectIngestStaging).toHaveBeenCalledWith(5));
     await waitFor(() => expect(screen.queryByTestId("pending-ingest-queue")).toBeNull());
+    expect(onChanged).toHaveBeenCalled();
   });
 });

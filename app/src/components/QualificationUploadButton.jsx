@@ -142,8 +142,9 @@ export default function QualificationUploadButton({
       setResults([{ fileName: "tutti i file", status: "error", warnings: [err.message || "Errore upload"] }]);
     } finally {
       setUploading(false);
+      if (onUploadComplete) onUploadComplete();
     }
-  }, [companyIdInt]);
+  }, [companyIdInt, onUploadComplete]);
 
   const handleFileChange = (files) => {
     const list = Array.from(files || []);
@@ -179,10 +180,11 @@ export default function QualificationUploadButton({
         apiService.rejectIngestStaging(item.staging_id).catch(() => {});
       }
       setResults((prev) => (prev || []).map((r, i) => (i === index ? { ...next, _file: file } : r)));
+      if (onUploadComplete) onUploadComplete();
     } catch (err) {
       failOverride(err?.message);
     }
-  }, [selectedFiles, companyIdInt]);
+  }, [selectedFiles, companyIdInt, onUploadComplete]);
 
   const updateResult = useCallback((stagingId, patch) => {
     setResults((prev) => (prev || []).map((r) => (
@@ -244,21 +246,24 @@ export default function QualificationUploadButton({
       await apiService.rejectIngestStaging(reviewItem.staging_id);
       updateResult(reviewItem.staging_id, { status: "rejected" });
       setReviewItem(null);
+      if (onUploadComplete) onUploadComplete();
     } catch (err) {
       window.alert(err.message || "Scarto fallito");
     } finally {
       setReviewBusy(false);
     }
-  }, [reviewItem, updateResult]);
+  }, [reviewItem, updateResult, onUploadComplete]);
 
   const handleDismiss = useCallback(() => {
+    const leftoverPending = (results || []).some((r) => r.status === "pending_review");
     setPanelOpen(false);
     setSelectedFiles([]);
     setResults(null);
     setValidationErr(null);
     setReviewItem(null);
     if (inputRef.current) inputRef.current.value = "";
-  }, []);
+    if (leftoverPending && onUploadComplete) onUploadComplete();
+  }, [results, onUploadComplete]);
 
   const hasResults = results && results.length > 0;
   const showPanel = panelOpen || selectedFiles.length > 0 || hasResults;
