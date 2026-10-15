@@ -10,7 +10,7 @@ import SgqDataGrid from "../components/SgqDataGrid";
 import StatusBadge from "../components/StatusBadge";
 import AiDisclaimer from "../components/AiDisclaimer";
 import { formatDate } from "../utils/dateHelpers";
-import { resolveBackendUploadUrl } from "../utils/resolveBackendUploadUrl";
+import { ProtectedFilePreview } from "../components/ProtectedFile";
 import FileDropzone from "../components/FileDropzone";
 import {
   OUTCOME_LABELS,
@@ -196,7 +196,6 @@ export default function MaterialCertificatesPage() {
     runAction("patch", () => apiService.patchMaterialCertificate(detail.id, { [key]: draft[key] }));
   }
 
-  const pdfUrl = resolveBackendUploadUrl(detail?.file_url, apiService.baseUrl);
   const hitlReady = Boolean(detail && selectedId && detail.id === selectedId);
   const deliveryNote = isDeliveryNote(detail);
   const splitCandidates = splitCandidatesFromRow(detail);
@@ -347,8 +346,14 @@ export default function MaterialCertificatesPage() {
 
           <div className="mc-section">
             <h3>2. PDF</h3>
-            {pdfUrl ? (
-              <iframe className="mc-pdf" title="Anteprima certificato" src={pdfUrl} />
+            {detail?.file_url ? (
+              <ProtectedFilePreview
+                fileUrl={detail.file_url}
+                kind="materiale"
+                recordId={detail.id}
+                className="mc-pdf"
+                title="Anteprima certificato"
+              />
             ) : (
               <p>File non disponibile.</p>
             )}

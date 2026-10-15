@@ -162,7 +162,7 @@ describe("QualificationForm — metodo di trasferimento condizionato al processo
 
     expect(screen.getByText("Metodo di trasferimento")).toBeInTheDocument();
 
-    const processSelect = findSelectByOptionText("141 — TIG");
+    const processSelect = findSelectByOptionText("141 — TIG con apporto solido (GTAW)");
     await act(async () => {
       fireEvent.change(processSelect, { target: { value: "141" } });
     });
