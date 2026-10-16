@@ -215,10 +215,23 @@ const QUALIFICATION_TAB_FAMILIES = Object.freeze([
     'iso9606_1', 'iso9606_2', 'iso14732', 'ndt', 'iso14731', 'pes_pav', 'salute_mansione', 'generico',
 ]);
 
+// Chiavi non-tab (metodo NDT singolo, PES/PAV separati): stessa regola "parola intera" della partizione
+// dei tab, non una sottostringa ("%PT%" ritroverebbe "Istruttore", "%UT%" "Attestato di frequenza ...").
+const QUAL_TYPE_TOKEN_KEYS = Object.freeze({
+    iso9712_vt: { token: 'VT', padded: PADDED_TYPE_BIN },
+    iso9712_pt: { token: 'PT', padded: PADDED_TYPE_BIN },
+    iso9712_mt: { token: 'MT', padded: PADDED_TYPE_BIN },
+    iso9712_ut: { token: 'UT', padded: PADDED_TYPE_BIN },
+    iso9712_rt: { token: 'RT', padded: PADDED_TYPE_BIN },
+    iso9712_et: { token: 'ET', padded: PADDED_TYPE_BIN },
+    pes:        { token: 'PES', padded: PADDED_TYPE_CI },
+    pav:        { token: 'PAV', padded: PADDED_TYPE_CI },
+});
+
 /**
  * Filtro tab (qualification_type) condiviso da lista e statistiche: le card contano
  * esattamente le righe del tab attivo. Ritorna { clause, like } (like = valore del
- * parametro @qualType, solo per le chiavi non-tab a LIKE).
+ * parametro @qualType, solo per le chiavi sconosciute, cercate come testo letterale).
  */
 function buildQualificationTypeScope(qualificationType) {
     const type = String(qualificationType || '').trim().slice(0, 100);
@@ -226,22 +239,13 @@ function buildQualificationTypeScope(qualificationType) {
     if (QUALIFICATION_TAB_FAMILIES.includes(type)) {
         return { clause: `${QUALIFICATION_TAB_FAMILY_SQL} = N'${type}'`, like: null };
     }
+    if (Object.prototype.hasOwnProperty.call(QUAL_TYPE_TOKEN_KEYS, type)) {
+        const { token, padded } = QUAL_TYPE_TOKEN_KEYS[type];
+        return { clause: `${padded} LIKE '%[^A-Za-z]${token}[^A-Za-z]%'`, like: null };
+    }
     const escaped = type.replace(/[\\%_[]/g, (ch) => `\\${ch}`);
-    return { clause: "q.qualification_type LIKE @qualType ESCAPE '\\'", like: QUAL_TYPE_MAP[type] || `%${escaped}%` };
+    return { clause: "q.qualification_type LIKE @qualType ESCAPE '\\'", like: `%${escaped}%` };
 }
-
-// Mappa chiavi non-tab (metodo NDT singolo, PES/PAV separati) -> LIKE su qualification_type
-const QUAL_TYPE_MAP = {
-    // NDT per metodo specifico
-    iso9712_vt:     '%VT%',
-    iso9712_pt:     '%PT%',
-    iso9712_mt:     '%MT%',
-    iso9712_ut:     '%UT%',
-    iso9712_rt:     '%RT%',
-    iso9712_et:     '%ET%',
-    pes:            '%PES%',
-    pav:            '%PAV%',
-};
 
 /** GET /qualifications */
 async function listQualifications(req, res) {
