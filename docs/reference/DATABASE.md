@@ -238,6 +238,45 @@ created_at           DATETIME2
 
 > Non ha FK diretta ad audit_responses o NC: usa `entity_type` ('audit','response','nc') + `entity_id`.
 
+### `wpqr_test_runs`  *(migration 173 — dati di prova WPQR, una riga per passata)*
+
+```sql
+id                  INT IDENTITY  PK
+organization_id     INT           NOT NULL  (tenant; coerente con wpqr_records)
+company_id          INT           NULL      (come wpqr_records.company_id)
+wpqr_id             INT           NOT NULL  FK → wpqr_records(id) (senza ON DELETE: la cancellazione WPQR elimina prima le passate)
+run_no              INT           NULL      (primo intero dell'etichetta)
+run_label           NVARCHAR(20)  NULL      (testo: «2 +n», «3-4»)
+welding_process     NVARCHAR(50)  NULL
+filler_diameter_mm  DECIMAL(5,2)  NULL
+filler_designation / filler_make  NVARCHAR(100) NULL
+current_a / voltage_v             DECIMAL(8,2)  NULL  (valore singolo)
+current_polarity    NVARCHAR(40)  NULL
+wire_feed_speed + wire_feed_unit      DECIMAL(8,2) + NVARCHAR(10) NULL
+travel_speed + travel_speed_unit      DECIMAL(8,2) + NVARCHAR(10) NULL
+heat_input_value + heat_input_unit    DECIMAL(10,3) + NVARCHAR(10) NULL
+metal_transfer      NVARCHAR(40)  NULL
+weld_time_ms, protrusion_mm, lift_mm  (stud, ISO 14555 Annex C)
+capacitance_mf, charging_voltage_v, gap_lift_mm, spring_force_n  (stud a scarica capacitiva)
+remarks NVARCHAR(200), source NVARCHAR(10) ('ai'|'manual'), created_at, updated_at
+```
+
+> Indice `IX_wpqr_test_runs_org_wpqr (organization_id, wpqr_id)`. Fonti: ISO 15614-1 Annex B pag. 2, 15614-2 Annex A, 14555 Annex C. Schema e motivazioni: `docs/agent-tasks/PLAN_VERIFICA_WPQR_SLICES.md` § 2.2. La 173 aggiunge anche a `wpqr_records` (tutte NULL): `welding_position_test`, `diameter_test_mm`, `deposited_thickness_mm`, `thickness_t2_test_mm`, `filler_make`, `filler_size`, `backing_gas`, `heat_input_kind`, `heat_input_range_min/max/unit/basis`, `heat_input_tol_minus_pct/plus_pct`, `heat_input_plus_unlimited`, `preheat_temp_test`, `interpass_temp_test`, `post_heating`, `pwht_details`, `range_standard_reference` e (gruppo B) `shielding_gas_flow_l_min_min/max`, `nozzle_diameter_mm`, `contact_tube_distance_mm_min/max`, `tungsten_electrode`, `torch_angle_deg`, `joint_preparation`, `cleaning_method`, `bead_technique`, `electrode_count`, `other_test_info`.
+
+### `wps_wpqr_links`  *(migration 174 — D9 forma A, legame WPS↔WPQR)*
+
+```sql
+id               INT IDENTITY  PK
+organization_id  INT           NOT NULL  (deve coincidere con WPS e WPQR collegate: lo impone l'applicazione, lo conta 174_verify.sql)
+wps_id           INT           NOT NULL  FK → welding_procedures(id) (senza ON DELETE)
+wpqr_id          INT           NOT NULL  FK → wpqr_records(id) (senza ON DELETE)
+role             NVARCHAR(20)  NULL      ('primary' | 'supporting', solo applicativo)
+created_at       DATETIME2     NOT NULL  DEFAULT GETDATE()
+created_by       INT           NULL
+```
+
+> UNIQUE `(wps_id, wpqr_id)`; indice `(organization_id, wpqr_id)`. Nessun backfill; `wpqr_records.wps_id` resta invariata. Poiché le FK non hanno `ON DELETE`, ogni cancellazione di WPS/WPQR/azienda deve eliminare prima i link (e le passate): vedi `deleteWPS` / `deleteWPQR` / `hardDeleteCompany`.
+
 ---
 
 ## Vincoli critici (errori frequenti)
@@ -257,10 +296,11 @@ Cartella canonica: [`database/migrations/`](../../database/migrations/) (non `ba
 Policy: [`database/migrations/APPROVAL_POLICY.md`](../../database/migrations/APPROVAL_POLICY.md).
 Procedura pre-VPS: [`docs/how-to/database-migrations.md`](../how-to/database-migrations.md).
 
-| Voce | Stato (05/10/2026) |
+| Voce | Stato (13/10/2026) |
 |---|---|
-| Ultimo `NNN` su `origin/main` | **168** (`168_qualifications_test_validity_9606.sql`) |
-| Prossimo libero da riservare | **169** |
+| Ultimo `NNN` su `origin/main` | **172** (`172_ai_assistant_tables_align_prod.sql`) |
+| In PR (file, **non applicate** né su TEST né su PROD) | **173** `173_wpqr_test_data.sql` · **174** `174_wps_wpqr_links.sql` (companion `NNN_verify.sql` / `NNN_rollback.sql`, runner `backend/scripts/run-migration-173-vps.js` / `174`) |
+| Prossimo libero da riservare | **175** (dopo il merge di 173/174, ricontrollare `origin/main`) |
 | Gate intestazione + companion | Obbligatorio da **≥ 169**. Storico grandfathered. |
 | Unicità prefisso | L1 `migrationNumberUniqueness.test.js` da 100 in poi (esclusi `NNN_verify.sql` / `NNN_rollback.sql`) |
 | Intestazione | L1 `migrationHeaderContract.test.js` |

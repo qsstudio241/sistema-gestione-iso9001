@@ -40,8 +40,19 @@ const {
     sendAccessDenied,
 } = require('../services/companyAccess.service');
 const { resolvePersonnelForQualification } = require('../services/personnelQualificationLink.service');
+const {
+    DUPLICATE_QUALIFICATION_MESSAGE,
+    findQualificationDuplicate,
+    isQualificationDuplicateIndexError,
+    poolDb,
+} = require('../services/qualificationDuplicate.service');
 const { resolvePrintedDesignation } = require('../utils/weldingDesignation');
 const { describeIngestFileError, redactFileNameForLog } = require('../utils/ingestErrorMessage');
+const {
+    validateCertificateFileUrl,
+    expectedQualificationUrl,
+    CERTIFICATE_FILE_URL_ERROR,
+} = require('../services/certificateFileUrl.service');
 const {
     isWelder9606Type,
     requiresSemiannualConfirmation,
@@ -693,24 +704,25 @@ async function createQualification(req, res) {
         const orgId = req.user.organization_id;
         const userId = req.user.user_id;
 
+        const certUrlCheck = await validateCertificateFileUrl(certificate_file_url, { organizationId: orgId });
+        if (!certUrlCheck.ok) return res.status(CERTIFICATE_FILE_URL_ERROR.status).json(CERTIFICATE_FILE_URL_ERROR.body);
+
         // Anti-duplicato: stesso certificate_number + company_id + qualification_type (non revocate)
+        // oppure stessa persona (indice unico): criteri in qualificationDuplicate.service
         if (certificate_number?.trim() && company_id) {
-            const dupCheck = await pool.request()
-                .input('orgId',    orgId)
-                .input('certNum',  certificate_number.trim())
-                .input('compId',   parseInt(company_id))
-                .input('qualType', qualification_type.trim())
-                .query(`
-                    SELECT COUNT(*) AS cnt FROM qualifications
-                    WHERE organization_id=@orgId
-                      AND certificate_number=@certNum
-                      AND company_id=@compId
-                      AND qualification_type=@qualType
-                      AND status != 'revocata'
-                `);
-            if (dupCheck.recordset[0].cnt > 0) {
-                return res.status(400).json({
-                    error: 'Qualifica duplicata: esiste gi\u00e0 una qualifica attiva con lo stesso numero certificato, azienda e tipo.',
+            const isDuplicate = await findQualificationDuplicate(
+                poolDb(pool),
+                {
+                    organizationId: orgId,
+                    companyId: parseInt(company_id),
+                    certificateNumber: certificate_number,
+                    qualificationType: qualification_type.trim(),
+                    personName: personnelResult.personName || person_name.trim(),
+                },
+            );
+            if (isDuplicate) {
+                return res.status(409).json({
+                    error: DUPLICATE_QUALIFICATION_MESSAGE,
                     code: 'DUPLICATE_QUALIFICATION',
                 });
             }
@@ -758,7 +770,7 @@ async function createQualification(req, res) {
             .input('courseName',  course_name       || null)
             .input('trainHours',  toIntOrNull(training_hours))
             .input('examBody',    examiner_body     || null)
-            .input('certFileUrl', certificate_file_url || null)
+            .input('certFileUrl', certUrlCheck.value)
             // saldatore 9606-1 enrichment
             .input('examDate',    exam_date         || null)
             .input('lastConfDate',last_confirmation_date || null)
@@ -826,6 +838,9 @@ async function createQualification(req, res) {
         logger.info(`[Qualif] Creata id=${r.recordset[0].id} per org ${orgId}`);
         res.status(201).json({ success: true, id: r.recordset[0].id });
     } catch (err) {
+        if (isQualificationDuplicateIndexError(err)) {
+            return res.status(409).json({ error: DUPLICATE_QUALIFICATION_MESSAGE, code: 'DUPLICATE_QUALIFICATION' });
+        }
         logger.error('createQualif:', err.message);
         res.status(500).json({ error: err.message });
     }
@@ -840,7 +855,7 @@ async function updateQualification(req, res) {
         const { body, designationApplicable } = applyFieldApplicability(req.body);
 
         const check = await pool.request().input('id', id).input('orgId', orgId)
-            .query('SELECT id, company_id FROM qualifications WHERE id=@id AND organization_id=@orgId');
+            .query('SELECT id, company_id, certificate_file_url FROM qualifications WHERE id=@id AND organization_id=@orgId');
         if (!check.recordset.length) return res.status(404).json({ error: 'Non trovata.' });
 
         const targetCompanyId = body.company_id !== undefined ? body.company_id : check.recordset[0].company_id;
@@ -870,6 +885,15 @@ async function updateQualification(req, res) {
             // operatore 14732 (saldatura automatica/meccanizzata)
             welding_type, single_multi_run, qualification_method,
         } = body;
+
+        // Valore invariato = nessuna rivalidazione (i record storici restano modificabili).
+        const currentCertUrl = check.recordset[0].certificate_file_url || null;
+        let certUrlToSave = certificate_file_url || null;
+        if (certUrlToSave !== currentCertUrl) {
+            const certUrlCheck = await validateCertificateFileUrl(certificate_file_url, { organizationId: orgId });
+            if (!certUrlCheck.ok) return res.status(CERTIFICATE_FILE_URL_ERROR.status).json(CERTIFICATE_FILE_URL_ERROR.body);
+            certUrlToSave = certUrlCheck.value;
+        }
 
         const thickMin = toNum(thickness_min_mm);
         const thickMax = toNum(thickness_max_mm);
@@ -937,7 +961,7 @@ async function updateQualification(req, res) {
             .input('courseName',  course_name       || null)
             .input('trainHours',  toIntOrNull(training_hours))
             .input('examBody',    examiner_body     || null)
-            .input('certFileUrl', certificate_file_url || null)
+            .input('certFileUrl', certUrlToSave)
             // saldatore 9606-1 enrichment
             .input('examDate',    exam_date         || null)
             .input('lastConfDate',last_confirmation_date || null)
@@ -996,6 +1020,9 @@ async function updateQualification(req, res) {
 
         res.json({ success: true });
     } catch (err) {
+        if (isQualificationDuplicateIndexError(err)) {
+            return res.status(409).json({ error: DUPLICATE_QUALIFICATION_MESSAGE, code: 'DUPLICATE_QUALIFICATION' });
+        }
         logger.error('updateQualif:', err.message);
         res.status(500).json({ error: err.message });
     }
@@ -1167,6 +1194,9 @@ async function renewQualification(req, res) {
             notes,
         } = req.body || {};
 
+        const certUrlCheck = await validateCertificateFileUrl(certificate_file_url, { organizationId: orgId });
+        if (!certUrlCheck.ok) return res.status(CERTIFICATE_FILE_URL_ERROR.status).json(CERTIFICATE_FILE_URL_ERROR.body);
+
         const r = await pool.request()
             .input('orgId',       orgId)
             .input('prevId',      id)
@@ -1205,7 +1235,7 @@ async function renewQualification(req, res) {
             .input('courseName',  q.course_name)
             .input('trainHours',  q.training_hours)
             .input('examBody',    q.examiner_body)
-            .input('certFileUrl', certificate_file_url || null)
+            .input('certFileUrl', certUrlCheck.value)
             .query(`
                 INSERT INTO qualifications
                     (organization_id, company_id, person_name, person_code, department,
@@ -1234,6 +1264,9 @@ async function renewQualification(req, res) {
         logger.info(`[Qualif] Rinnovo: nuovo id=${newId} da id=${id} per org ${orgId}`);
         res.status(201).json({ success: true, id: newId, previous_qualification_id: id });
     } catch (err) {
+        if (isQualificationDuplicateIndexError(err)) {
+            return res.status(409).json({ error: DUPLICATE_QUALIFICATION_MESSAGE, code: 'DUPLICATE_QUALIFICATION' });
+        }
         logger.error('renewQualif:', err.message);
         res.status(500).json({ error: err.message });
     }
@@ -1410,7 +1443,14 @@ async function uploadCertificate(req, res) {
         const uploadBase = process.env.UPLOAD_DIR
             ? path.resolve(process.env.UPLOAD_DIR)
             : path.resolve(__dirname, '../../uploads');
-        const relUrl = '/uploads/' + path.relative(uploadBase, req.file.path).replace(/\\/g, '/');
+        const relUrl = expectedQualificationUrl(
+            '/uploads/' + path.relative(uploadBase, req.file.path).replace(/\\/g, '/'),
+            orgId,
+        );
+        if (!relUrl) {
+            fs.unlinkSync(req.file.path);
+            return res.status(CERTIFICATE_FILE_URL_ERROR.status).json(CERTIFICATE_FILE_URL_ERROR.body);
+        }
 
         await pool.request()
             .input('id', id).input('orgId', orgId).input('url', relUrl)

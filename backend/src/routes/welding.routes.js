@@ -84,6 +84,8 @@ router.get   ('/welding/wpqr/:id',            ctrl.getWPQR);
 router.post  ('/welding/wpqr',                ctrl.createWPQR);
 router.put   ('/welding/wpqr/:id',            ctrl.updateWPQR);
 router.delete('/welding/wpqr/:id',            ctrl.deleteWPQR);
+router.get   ('/welding/wpqr/:id/test-runs',  ctrl.listWpqrTestRuns);
+router.put   ('/welding/wpqr/:id/test-runs',  ctrl.saveWpqrTestRuns);
 router.post  ('/welding/wpqr/:id/approve',    ctrl.approveWPQR);
 router.post  ('/welding/wpqr/:id/reject',     ctrl.rejectWPQR);
 
