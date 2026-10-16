@@ -19,6 +19,12 @@
 
 const { query, getPool } = require('../config/database');
 const logger = require('../utils/logger');
+const {
+    ensureCompanyAccessLoaded,
+    hasCompanyAccessRows,
+    assertCompanyRead,
+    assertMutatingAllowed,
+} = require('../services/companyAccess.service');
 const { toNumericOrNull } = require('../utils/numericSanitizer');
 
 const MAX_RUNS = 60;
@@ -331,9 +337,11 @@ async function tableExists(name) {
 /** WPQR del tenant (mai un id dal client senza scope). `null` se non esiste o appartiene ad altro tenant. */
 async function findWpqrInTenant(wpqrId, organizationId) {
     const r = await query(
-        `SELECT id, organization_id, company_id
-         FROM wpqr_records
-         WHERE id = @wpqr_id AND organization_id = @organization_id`,
+        `SELECT wq.id, wq.organization_id, wq.company_id, w.company_id AS wps_company_id
+         FROM wpqr_records wq
+         LEFT JOIN welding_procedures w
+           ON w.id = wq.wps_id AND w.organization_id = wq.organization_id
+         WHERE wq.id = @wpqr_id AND wq.organization_id = @organization_id`,
         { wpqr_id: wpqrId, organization_id: organizationId }
     );
     return r.recordset.length ? r.recordset[0] : null;
@@ -345,10 +353,29 @@ function requireTenant(organizationId) {
     }
 }
 
-async function listTestRuns({ wpqrId, organizationId }) {
+async function assertWpqrCompany(user, wpqr, level) {
+    if (!user) return;
+    const accessList = await ensureCompanyAccessLoaded(user);
+    if (!hasCompanyAccessRows(accessList)) return;
+    const companyId = (wpqr.company_id != null && wpqr.company_id !== '')
+        ? wpqr.company_id
+        : wpqr.wps_company_id;
+    if (companyId == null || companyId === '') {
+        throw new TestRunsError(403, 'FORBIDDEN', 'Accesso non consentito');
+    }
+    const denied = level === 'write'
+        ? await assertMutatingAllowed(user, { companyId })
+        : await assertCompanyRead(user, companyId);
+    if (denied) {
+        throw new TestRunsError(denied.status, denied.body.code || 'FORBIDDEN', denied.body.error);
+    }
+}
+
+async function listTestRuns({ wpqrId, organizationId, user }) {
     requireTenant(organizationId);
     const wpqr = await findWpqrInTenant(wpqrId, organizationId);
     if (!wpqr) throw new TestRunsError(404, 'WPQR_NOT_FOUND', 'WPQR non trovato');
+    await assertWpqrCompany(user, wpqr, 'read');
     if (!(await tableExists('wpqr_test_runs'))) return { runs: [], available: false };
     const r = await query(
         `SELECT ${READ_COLUMNS.join(', ')}
@@ -364,10 +391,11 @@ async function listTestRuns({ wpqrId, organizationId }) {
  * Replace-set in transazione: cancella le passate della WPQR e inserisce quelle ricevute.
  * Tutto o niente: un errore a metà annulla anche la cancellazione.
  */
-async function replaceTestRuns({ wpqrId, organizationId, runs }) {
+async function replaceTestRuns({ wpqrId, organizationId, runs, user }) {
     requireTenant(organizationId);
     const wpqr = await findWpqrInTenant(wpqrId, organizationId);
     if (!wpqr) throw new TestRunsError(404, 'WPQR_NOT_FOUND', 'WPQR non trovato');
+    await assertWpqrCompany(user, wpqr, 'write');
 
     const { rows, errors } = normalizeRuns(runs);
     if (errors.length > 0) {

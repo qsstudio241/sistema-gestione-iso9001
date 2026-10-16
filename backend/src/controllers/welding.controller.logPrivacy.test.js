@@ -5,6 +5,14 @@
  */
 
 jest.mock('../config/database', () => ({ query: jest.fn() }));
+jest.mock('../services/companyAccess.service', () => ({
+    ensureCompanyAccessLoaded: jest.fn(async () => []),
+    hasCompanyAccessRows: jest.fn(() => false),
+    companyAccessSqlFilter: jest.fn(() => ({ clause: '', params: {} })),
+    assertCompanyRead: jest.fn(async () => null),
+    assertMutatingAllowed: jest.fn(async () => null),
+    sendAccessDenied: jest.fn((res, denied) => res.status(denied.status).json(denied.body)),
+}));
 jest.mock('../utils/logger', () => ({ info: jest.fn(), error: jest.fn(), warn: jest.fn(), debug: jest.fn() }));
 jest.mock('../services/wpqrIngest.service', () => ({ extractWPQRFromPdf: jest.fn() }));
 jest.mock('../services/wpsIngest.service', () => ({ extractWPSFromPdf: jest.fn() }));

@@ -11,8 +11,81 @@ const {
     ensureCompanyAccessLoaded,
     companyAccessSqlFilter,
     assertMutatingAllowed,
+    assertCompanyRead,
+    hasCompanyAccessRows,
     sendAccessDenied,
 } = require('../services/companyAccess.service');
+
+/** Utente con user_company_access: 403 fuori dalle aziende consentite. Studio: nessun vincolo extra. */
+async function denyOutsideCompany(res, user, companyId, level = 'read') {
+    const accessList = await ensureCompanyAccessLoaded(user);
+    if (!hasCompanyAccessRows(accessList)) return false;
+    let denied;
+    if (companyId == null || companyId === '') {
+        denied = { status: 403, body: { error: 'Accesso non consentito', code: 'FORBIDDEN' } };
+    } else if (level === 'write') {
+        denied = await assertMutatingAllowed(user, { companyId });
+    } else {
+        denied = await assertCompanyRead(user, companyId);
+    }
+    if (denied) {
+        sendAccessDenied(res, denied);
+        return true;
+    }
+    return false;
+}
+
+/**
+ * Id intero positivo. parseInt("1e2") è 1 e parseFloat("1e2") è 100:
+ * lo stesso campo non può essere letto con due parser diversi.
+ */
+function strictPositiveInt(raw) {
+    if (typeof raw === 'number') {
+        if (!Number.isInteger(raw) || raw <= 0) return null;
+        return raw;
+    }
+    const text = String(raw).trim();
+    if (!/^[1-9]\d{0,8}$/.test(text)) return null;
+    return parseInt(text, 10);
+}
+
+/**
+ * WPS da collegare a una commessa. Assente nell'org → 404, azienda non
+ * consentita → 403, e il chiamante non deve arrivare all'INSERT/UPDATE.
+ * @returns {Promise<{ ok: boolean, json?: string|null }>}
+ */
+async function writableWpsIdsJson(res, user, organizationId, raw) {
+    if (raw == null || raw === '') return { ok: true, json: null };
+    const list = Array.isArray(raw) ? raw : [raw];
+    if (list.length === 0) return { ok: true, json: '[]' };
+    const ids = [];
+    for (const item of list) {
+        const id = strictPositiveInt(item);
+        if (id == null) {
+            res.status(400).json({ error: 'WPS di riferimento non valida', code: 'VALIDATION_ERROR' });
+            return { ok: false };
+        }
+        if (!ids.includes(id)) ids.push(id);
+    }
+    const params = { organization_id: organizationId };
+    const placeholders = ids.map((id, i) => {
+        params[`wps${i}`] = id;
+        return `@wps${i}`;
+    }).join(', ');
+    const found = await query(`
+        SELECT id, company_id FROM welding_procedures
+        WHERE organization_id = @organization_id AND id IN (${placeholders})
+    `, params);
+    if (found.recordset.length !== ids.length) {
+        res.status(404).json({ error: 'WPS di riferimento non trovata', code: 'WPS_NOT_FOUND' });
+        return { ok: false };
+    }
+    for (const row of found.recordset) {
+        if (await denyOutsideCompany(res, user, row.company_id, 'write')) return { ok: false };
+    }
+    return { ok: true, json: JSON.stringify(ids) };
+}
+
 const {
     resolveCommercialCustomerFields,
 } = require('../services/commercialCustomerCounterparty.service');
@@ -175,6 +248,7 @@ async function getProject(req, res) {
         }
 
         const project = result.recordset[0];
+        if (await denyOutsideCompany(res, req.user, project.company_id, 'read')) return;
 
         // Parse WPS ids e recupera dettagli
         let wpsDetails = [];
@@ -234,6 +308,10 @@ async function createProject(req, res) {
         }
 
         const companyIdVal = company_id ? parseInt(company_id) : null;
+        if (await denyOutsideCompany(res, req.user, companyIdVal, 'write')) return;
+
+        const wpsIds = await writableWpsIdsJson(res, req.user, organization_id, applicable_wps_ids);
+        if (!wpsIds.ok) return;
 
         // Cliente: se end_customer_id è impostato, sincronizza il nome dall'anagrafica
         // aziende (company_counterparties); altrimenti resta testo libero (client_name).
@@ -247,9 +325,6 @@ async function createProject(req, res) {
             return res.status(customerFields.status).json({ error: customerFields.error, code: customerFields.code });
         }
 
-        const wpsIdsJson = applicable_wps_ids
-            ? JSON.stringify(Array.isArray(applicable_wps_ids) ? applicable_wps_ids : [applicable_wps_ids])
-            : null;
         const technicalReviewChecklistJson = technical_review_checklist
             ? stampTechnicalReviewChecklistJson(
                 technical_review_checklist,
@@ -280,7 +355,7 @@ async function createProject(req, res) {
             description:             description || null,
             start_date:              start_date || null,
             end_date:                end_date || null,
-            applicable_wps_ids:      wpsIdsJson,
+            applicable_wps_ids:      wpsIds.json,
             status,
             requirements_review_date: requirements_review_date || null,
             technical_review_date:   technical_review_date || null,
@@ -314,12 +389,22 @@ async function updateProject(req, res) {
             return res.status(404).json({ error: 'Progetto non trovato', code: 'PROJECT_NOT_FOUND' });
         }
         const existingProject = existing.recordset[0];
+        if (await denyOutsideCompany(res, req.user, existingProject.company_id, 'write')) return;
 
         // company_id va risolto prima del cliente: se cambia l'azienda (ambito),
         // il collegamento end_customer_id precedente potrebbe non appartenerle più.
         const companyIdNext = req.body.company_id !== undefined
             ? (req.body.company_id !== null ? parseInt(req.body.company_id) : null)
             : existingProject.company_id;
+        if (companyIdNext !== existingProject.company_id
+            && await denyOutsideCompany(res, req.user, companyIdNext, 'write')) return;
+
+        let applicableWpsJson;
+        if (req.body.applicable_wps_ids !== undefined) {
+            const loaded = await writableWpsIdsJson(res, req.user, organization_id, req.body.applicable_wps_ids);
+            if (!loaded.ok) return;
+            applicableWpsJson = loaded.json;
+        }
 
         const allowed = [
             'company_id', 'project_code',
@@ -335,8 +420,7 @@ async function updateProject(req, res) {
             if (req.body[field] !== undefined) {
                 updates.push(`${field} = @${field}`);
                 if (field === 'applicable_wps_ids') {
-                    const val = req.body[field];
-                    params[field] = val ? JSON.stringify(Array.isArray(val) ? val : [val]) : null;
+                    params[field] = applicableWpsJson;
                 } else if (field === 'technical_review_checklist') {
                     params[field] = stampTechnicalReviewChecklistJson(
                         req.body[field],
@@ -399,7 +483,7 @@ async function deleteProject(req, res) {
         const { organization_id } = req.user;
 
         const existing = await query(`
-            SELECT id, status FROM projects
+            SELECT id, status, company_id FROM projects
             WHERE id = @id AND organization_id = @organization_id
         `, { id: parseInt(id), organization_id });
 
@@ -408,6 +492,7 @@ async function deleteProject(req, res) {
         }
 
         const project = existing.recordset[0];
+        if (await denyOutsideCompany(res, req.user, project.company_id, 'write')) return;
 
         if (project.status === 'offerta') {
             // Hard delete per progetti in stato offerta (+ saldatori collegati)
@@ -448,16 +533,17 @@ async function addProjectWelder(req, res) {
 
         // Verifica progetto
         const proj = await query(
-            `SELECT id FROM projects WHERE id=@id AND organization_id=@organization_id`,
+            `SELECT id, company_id FROM projects WHERE id=@id AND organization_id=@organization_id`,
             { id: parseInt(id), organization_id }
         );
         if (!proj.recordset.length) {
             return res.status(404).json({ error: 'Progetto non trovato', code: 'PROJECT_NOT_FOUND' });
         }
+        if (await denyOutsideCompany(res, req.user, proj.recordset[0].company_id, 'write')) return;
 
         // Verifica qualifica: stessa org, approvata, non scaduta (warning se in_scadenza)
         const qualCheck = await query(
-            `SELECT id, approval_status, status, expiry_date, person_name
+            `SELECT id, company_id, approval_status, status, expiry_date, person_name
              FROM qualifications
              WHERE id=@qid AND organization_id=@organization_id`,
             { qid: parseInt(qualification_id), organization_id }
@@ -466,6 +552,24 @@ async function addProjectWelder(req, res) {
             return res.status(404).json({ error: 'Qualifica non trovata', code: 'QUAL_NOT_FOUND' });
         }
         const q = qualCheck.recordset[0];
+        if (await denyOutsideCompany(res, req.user, q.company_id, 'write')) return;
+
+        let welderWpsId = null;
+        if (wps_id !== undefined && wps_id !== null && wps_id !== '') {
+            welderWpsId = strictPositiveInt(wps_id);
+            if (welderWpsId == null) {
+                return res.status(400).json({ error: 'wps_id non valido', code: 'VALIDATION_ERROR' });
+            }
+            const nextWps = await query(`
+                SELECT id, company_id FROM welding_procedures
+                WHERE id = @wps_id AND organization_id = @organization_id
+            `, { wps_id: welderWpsId, organization_id });
+            if (nextWps.recordset.length === 0) {
+                return res.status(404).json({ error: 'WPS di riferimento non trovata', code: 'WPS_NOT_FOUND' });
+            }
+            if (await denyOutsideCompany(res, req.user, nextWps.recordset[0].company_id, 'write')) return;
+        }
+
         if (q.approval_status !== 'approvata') {
             return res.status(422).json({ error: `Qualifica non approvata (stato: ${q.approval_status})`, code: 'QUAL_NOT_APPROVED' });
         }
@@ -502,7 +606,7 @@ async function addProjectWelder(req, res) {
             {
                 pid: parseInt(id),
                 qid: parseInt(qualification_id),
-                wid: wps_id ? parseInt(wps_id) : null,
+                wid: welderWpsId,
                 notes: notes || null,
                 organization_id,
             }
@@ -523,13 +627,16 @@ async function removeProjectWelder(req, res) {
         const { organization_id } = req.user;
 
         const check = await query(
-            `SELECT pw.id FROM project_welders pw
+            `SELECT pw.id, p.company_id
+             FROM project_welders pw
+             JOIN projects p ON p.id = pw.project_id AND p.organization_id = pw.organization_id
              WHERE pw.project_id=@pid AND pw.qualification_id=@qid AND pw.organization_id=@organization_id`,
             { pid: parseInt(id), qid: parseInt(qualificationId), organization_id }
         );
         if (!check.recordset.length) {
             return res.status(404).json({ error: 'Assegnazione non trovata', code: 'NOT_FOUND' });
         }
+        if (await denyOutsideCompany(res, req.user, check.recordset[0].company_id, 'write')) return;
 
         await query(
             `DELETE FROM project_welders

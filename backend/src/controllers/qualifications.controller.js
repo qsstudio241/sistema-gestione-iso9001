@@ -39,6 +39,36 @@ const {
     hasCompanyAccessRows,
     sendAccessDenied,
 } = require('../services/companyAccess.service');
+
+/** Utente con user_company_access: 403 fuori dalle aziende consentite. Studio (nessuna riga): nessun vincolo extra. */
+async function denyOutsideCompany(res, user, companyId, level = 'read') {
+    const accessList = await ensureCompanyAccessLoaded(user);
+    if (!hasCompanyAccessRows(accessList)) return false;
+    let denied;
+    if (companyId == null || companyId === '') {
+        denied = { status: 403, body: { error: 'Accesso non consentito', code: 'FORBIDDEN' } };
+    } else if (level === 'write') {
+        denied = await assertMutatingAllowed(user, { companyId });
+    } else {
+        denied = await assertCompanyRead(user, companyId);
+    }
+    if (denied) {
+        sendAccessDenied(res, denied);
+        return true;
+    }
+    return false;
+}
+
+/** Come denyOutsideCompany, senza scrivere la risposta. Serve a troncare una catena. */
+async function isOutsideCompany(user, companyId, level = 'read') {
+    const accessList = await ensureCompanyAccessLoaded(user);
+    if (!hasCompanyAccessRows(accessList)) return false;
+    if (companyId == null || companyId === '') return true;
+    const denied = level === 'write'
+        ? await assertMutatingAllowed(user, { companyId })
+        : await assertCompanyRead(user, companyId);
+    return Boolean(denied);
+}
 const { resolvePersonnelForQualification } = require('../services/personnelQualificationLink.service');
 const {
     DUPLICATE_QUALIFICATION_MESSAGE,
@@ -412,13 +442,15 @@ async function getVisionFitnessGaps(req, res) {
             ? parseInt(companyIdRaw, 10)
             : null;
 
-        if (companyId != null && !Number.isNaN(companyId)) {
-            const denied = await assertCompanyRead(req.user, companyId);
-            if (denied) return sendAccessDenied(res, denied);
-        }
+        const accessList = await ensureCompanyAccessLoaded(req.user);
+        const companyOk = companyId != null && !Number.isNaN(companyId);
+        if (companyOk && await denyOutsideCompany(res, req.user, companyId, 'read')) return;
 
         const result = await findVisionFitnessGaps(orgId, {
-            companyId: companyId != null && !Number.isNaN(companyId) ? companyId : null,
+            companyId: companyOk ? companyId : null,
+            companyIds: !companyOk && hasCompanyAccessRows(accessList)
+                ? accessList.map((a) => a.company_id)
+                : null,
         });
         res.json(result);
     } catch (err) {
@@ -446,6 +478,7 @@ async function getCoverage(req, res) {
         if (!projResult.recordset.length) return res.status(404).json({ error: 'Commessa non trovata.' });
 
         const project = projResult.recordset[0];
+        if (await denyOutsideCompany(res, req.user, project.company_id, 'read')) return;
         const projectCompanyId = project.company_id || null;
         let wpsIds = [];
         try { wpsIds = JSON.parse(project.applicable_wps_ids || '[]'); } catch (_) {}
@@ -1250,6 +1283,7 @@ async function uploadBatch(req, res) {
         if (!company_id || isNaN(company_id)) {
             return res.status(400).json({ error: 'company_id obbligatorio: seleziona un\'azienda specifica prima di caricare i patentini.' });
         }
+        if (await denyOutsideCompany(res, req.user, company_id, 'write')) return;
 
         if (!req.files || req.files.length === 0) {
             return res.status(400).json({ error: 'Nessun file caricato.' });
@@ -1416,8 +1450,9 @@ async function getHistory(req, res) {
         const id    = parseInt(req.params.id);
 
         const check = await pool.request().input('id', id).input('orgId', orgId)
-            .query('SELECT id FROM qualifications WHERE id=@id AND organization_id=@orgId');
+            .query('SELECT id, company_id FROM qualifications WHERE id=@id AND organization_id=@orgId');
         if (!check.recordset.length) return res.status(404).json({ error: 'Non trovata.' });
+        if (await denyOutsideCompany(res, req.user, check.recordset[0].company_id, 'read')) return;
 
         // Risali la catena (max 20 rinnovi)
         const chain = [];
@@ -1426,7 +1461,7 @@ async function getHistory(req, res) {
             const r = await pool.request()
                 .input('id', currentId).input('orgId', orgId)
                 .query(`
-                    SELECT q.id, q.issue_date, q.expiry_date, q.certificate_number,
+                    SELECT q.id, q.company_id, q.issue_date, q.expiry_date, q.certificate_number,
                            q.qualification_type, q.next_confirmation_due, q.cpd_valid_until,
                            q.approval_status, q.status, q.previous_qualification_id,
                            c.name AS company_name
@@ -1436,6 +1471,10 @@ async function getHistory(req, res) {
                 `);
             if (!r.recordset.length) break;
             const row = r.recordset[0];
+            if (await isOutsideCompany(req.user, row.company_id, 'read')) {
+                if (chain.length === 0 && await denyOutsideCompany(res, req.user, row.company_id, 'read')) return;
+                break;
+            }
             chain.push({ ...row, semaforo: semaforoForRow(row) });
             if (!row.previous_qualification_id) break;
             currentId = row.previous_qualification_id;
@@ -1524,6 +1563,7 @@ async function confirmSemiannual(req, res) {
         if (!check.recordset.length) return res.status(404).json({ error: 'Non trovata.' });
 
         const qual = check.recordset[0];
+        if (await denyOutsideCompany(res, req.user, qual.company_id, 'write')) return;
 
         // Nessun gate su approval_status (rimosso — v. header file): la conferma è
         // consentita su qualsiasi qualifica attiva (status non revocata/sospesa).
@@ -1709,6 +1749,7 @@ async function updateConfirmation(req, res) {
         if (!check.recordset.length) return res.status(404).json({ error: 'Non trovata.' });
 
         const qual = check.recordset[0];
+        if (await denyOutsideCompany(res, req.user, qual.company_id, 'write')) return;
         if (!requiresSemiannualConfirmation(qual.qualification_type)) {
             return res.status(400).json({
                 error: 'Tipo qualifica non ammesso per conferma semestrale (solo ISO 9606-1 / ISO 14732).',
@@ -1799,13 +1840,24 @@ async function exportConfirmations(req, res) {
         const dateFrom = req.query.date_from ? String(req.query.date_from).slice(0, 10) : null;
         const dateTo = req.query.date_to ? String(req.query.date_to).slice(0, 10) : null;
 
+        const accessList = await ensureCompanyAccessLoaded(req.user);
         if (companyId != null && Number.isFinite(companyId)) {
-            const readDenied = await assertCompanyRead(req.user, companyId);
-            if (readDenied) return sendAccessDenied(res, readDenied);
+            if (await denyOutsideCompany(res, req.user, companyId, 'read')) return;
+        }
+        if (qualId != null && Number.isFinite(qualId)) {
+            const qualRow = await pool.request().input('id', qualId).input('orgId', orgId)
+                .query('SELECT id, company_id FROM qualifications WHERE id=@id AND organization_id=@orgId');
+            if (!qualRow.recordset.length) return res.status(404).json({ error: 'Non trovata.' });
+            if (await denyOutsideCompany(res, req.user, qualRow.recordset[0].company_id, 'read')) return;
         }
 
         const conditions = ['qc.organization_id = @orgId'];
         const params = { orgId };
+        const companyFilter = companyAccessSqlFilter(accessList, 'qc');
+        if (companyFilter.clause) {
+            conditions.push(companyFilter.clause);
+            Object.assign(params, companyFilter.params);
+        }
 
         if (companyId != null && Number.isFinite(companyId)) {
             conditions.push('qc.company_id = @compId');
@@ -1901,9 +1953,12 @@ async function verifyCoverageRequirement(req, res) {
         const { verifyCoverage } = require('../services/capabilityCoverage');
         const pool = await getPool();
         const orgId = req.user.organization_id;
+        const rawCompany = req.body?.company_id;
+        const companyId = rawCompany != null && rawCompany !== '' ? Number(rawCompany) : null;
+        if (await denyOutsideCompany(res, req.user, companyId, 'read')) return;
         const result = await verifyCoverage(req.body || {}, {
             organizationId: orgId,
-            companyId: req.body?.company_id != null ? Number(req.body.company_id) : null,
+            companyId,
             pool,
         });
         res.json(result);
