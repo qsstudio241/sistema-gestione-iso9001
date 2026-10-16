@@ -741,6 +741,21 @@ async function updateWPQR(req, res) {
         }
         if (await denyOutsideCompany(res, req.user, wpqrScopeCompany(existing.recordset[0]), 'write')) return;
 
+        if (req.body.wps_id !== undefined && req.body.wps_id !== null && req.body.wps_id !== '') {
+            const nextWpsId = parseInt(req.body.wps_id, 10);
+            if (!Number.isFinite(nextWpsId)) {
+                return res.status(400).json({ error: 'wps_id non valido', code: 'VALIDATION_ERROR' });
+            }
+            const nextWps = await query(`
+                SELECT id, company_id FROM welding_procedures
+                WHERE id = @wps_id AND organization_id = @organization_id
+            `, { wps_id: nextWpsId, organization_id });
+            if (nextWps.recordset.length === 0) {
+                return res.status(404).json({ error: 'WPS di riferimento non trovata', code: 'WPS_NOT_FOUND' });
+            }
+            if (await denyOutsideCompany(res, req.user, nextWps.recordset[0].company_id, 'write')) return;
+        }
+
         const allowed = WPQR_MANUAL_EDITABLE_FIELDS;
 
         const updates = [];

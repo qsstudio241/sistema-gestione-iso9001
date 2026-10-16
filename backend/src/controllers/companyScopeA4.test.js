@@ -26,6 +26,7 @@ const ctx = {
     wpqrCompanyId: null,
     wpsCompanyId: null,
     historyById: null,
+    nextWpsCompany: null,
 };
 
 jest.mock('../config/database', () => ({
@@ -175,6 +176,9 @@ function route(sql, params = {}) {
     if (/^(UPDATE|DELETE)\b/i.test(compact)) return emptySet();
     if (/^SELECT/i.test(compact)) {
         if (hiddenOrg || companyHidden(params)) return emptySet();
+        if (ctx.nextWpsCompany != null && /FROM welding_procedures/i.test(compact) && /@wps_id/.test(compact)) {
+            return { recordset: [{ id: Number(params.wps_id), company_id: ctx.nextWpsCompany }] };
+        }
         if (ctx.historyById && /FROM qualifications/i.test(compact)) {
             const row = ctx.historyById[params.id];
             return { recordset: row ? [row] : [] };
@@ -601,6 +605,7 @@ describe('A4 company scope', () => {
         ctx.wpqrCompanyId = null;
         ctx.wpsCompanyId = null;
         ctx.historyById = null;
+        ctx.nextWpsCompany = null;
         query.mockImplementation((sql, params) => Promise.resolve(route(sql, params || {})));
         getPool.mockImplementation(async () => makePool());
         if (!fs.existsSync(TEMP)) fs.writeFileSync(TEMP, '%PDF');
@@ -774,6 +779,41 @@ describe('A4 company scope', () => {
             user: userFor('ok'), params: { id: '7' }, query: {}, body: {},
         }, res);
         expect(http(res)).toBe(200);
+    });
+
+    test('PUT WPQR — non sposta la scheda su una WPS di un\'altra azienda', async () => {
+        ctx.forceWpqrCompany = true;
+        ctx.wpqrCompanyId = null;
+        ctx.wpsCompanyId = ALLOWED;
+        ctx.nextWpsCompany = OTHER_CO;
+        const res = mockRes();
+        await welding.updateWPQR({
+            user: userFor('ok'),
+            params: { id: '7' },
+            query: {},
+            body: { wps_id: 99 },
+        }, res);
+        expect(http(res)).toBe(403);
+        expect(bodyOf(res).code).toBe('FORBIDDEN');
+        const wrote = query.mock.calls.some((call) => /^UPDATE/i.test(String(call[0]).trim()));
+        expect(wrote).toBe(false);
+    });
+
+    test('PUT WPQR — sposta la scheda su una WPS della stessa azienda consentita', async () => {
+        ctx.forceWpqrCompany = true;
+        ctx.wpqrCompanyId = null;
+        ctx.wpsCompanyId = ALLOWED;
+        ctx.nextWpsCompany = ALLOWED;
+        const res = mockRes();
+        await welding.updateWPQR({
+            user: userFor('ok'),
+            params: { id: '7' },
+            query: {},
+            body: { wps_id: 12 },
+        }, res);
+        expect(http(res)).toBe(200);
+        const wrote = query.mock.calls.some((call) => /^UPDATE/i.test(String(call[0]).trim()));
+        expect(wrote).toBe(true);
     });
 
     test('GET lista WPQR — include le schede senza company_id se la WPS è consentita', async () => {
