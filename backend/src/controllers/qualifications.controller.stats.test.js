@@ -128,9 +128,19 @@ describe('getStats — scope Ambito azienda + tab', () => {
     expect(QUALIFICATION_TAB_FAMILY_SQL).toMatch(/LIKE '%9606-2%' THEN 'iso9606_2'/);
   });
 
-  it('chiavi non-tab (metodo NDT, pes/pav) restano a LIKE con parametro legato', () => {
-    expect(buildQualificationTypeScope('iso9712_ut')).toEqual({ clause: "q.qualification_type LIKE @qualType ESCAPE '\\'", like: '%UT%' });
-    expect(buildQualificationTypeScope('pav').like).toBe('%PAV%');
+  it('chiavi non-tab (metodo NDT, pes/pav) valgono come parola intera, non come sottostringa', () => {
+    const ut = buildQualificationTypeScope('iso9712_ut');
+    expect(ut.like).toBeNull();
+    expect(ut.clause).toContain("LIKE '%[^A-Za-z]UT[^A-Za-z]%'");
+    expect(ut.clause).toContain('COLLATE Latin1_General_BIN');
+    const pav = buildQualificationTypeScope('pav');
+    expect(pav.like).toBeNull();
+    expect(pav.clause).toContain("LIKE '%[^A-Za-z]PAV[^A-Za-z]%'");
+    expect(pav.clause).toContain('COLLATE Latin1_General_CI_AS');
+  });
+
+  it('chiave sconosciuta: testo letterale con parametro legato (jolly LIKE escapati)', () => {
+    expect(buildQualificationTypeScope('x')).toEqual({ clause: "q.qualification_type LIKE @qualType ESCAPE '\\'", like: '%x%' });
   });
 
   it('nessuna riga: i contatori sono 0, non null (COALESCE)', async () => {
