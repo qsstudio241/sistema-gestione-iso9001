@@ -40,14 +40,14 @@ function setupDb({ tables = ['wpqr_test_runs', 'wps_wpqr_links'], headerColumns 
         if (/^SELECT id, organization_id, company_id FROM wpqr_records/.test(text)) {
             return { recordset: state.wpqr.filter((w) => w.id === params.wpqr_id && w.organization_id === params.organization_id) };
         }
-        if (/^SELECT id FROM wpqr_records WHERE id = @id AND organization_id/.test(text)) {
+        if (/^SELECT id, company_id FROM wpqr_records WHERE id = @id AND organization_id/.test(text)) {
             return { recordset: state.wpqr.filter((w) => w.id === params.id && w.organization_id === params.organization_id) };
         }
         if (/^SELECT id FROM wpqr_records WHERE wps_id = @id AND organization_id/.test(text)) {
             return { recordset: state.wpqr.filter((w) => w.wps_id === params.id && w.organization_id === params.organization_id).map((w) => ({ id: w.id })) };
         }
-        if (/^SELECT id FROM welding_procedures WHERE id = @id AND organization_id/.test(text)) {
-            return { recordset: params.organization_id === ORG_A && params.id === 7 ? [{ id: 7 }] : [] };
+        if (/^SELECT id, company_id FROM welding_procedures WHERE id = @id AND organization_id/.test(text)) {
+            return { recordset: params.organization_id === ORG_A && params.id === 7 ? [{ id: 7, company_id: 5 }] : [] };
         }
         if (/^SELECT .* FROM wpqr_test_runs/.test(text)) {
             return { recordset: state.runs.filter((r) => r.wpqr_id === params.wpqr_id && r.organization_id === params.organization_id) };

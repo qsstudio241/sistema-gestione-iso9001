@@ -19,6 +19,12 @@
 
 const { query, getPool } = require('../config/database');
 const logger = require('../utils/logger');
+const {
+    ensureCompanyAccessLoaded,
+    hasCompanyAccessRows,
+    assertCompanyRead,
+    assertMutatingAllowed,
+} = require('../services/companyAccess.service');
 const { toNumericOrNull } = require('../utils/numericSanitizer');
 
 const MAX_RUNS = 60;
@@ -345,10 +351,26 @@ function requireTenant(organizationId) {
     }
 }
 
-async function listTestRuns({ wpqrId, organizationId }) {
+async function assertWpqrCompany(user, wpqr, level) {
+    if (!user) return;
+    const accessList = await ensureCompanyAccessLoaded(user);
+    if (!hasCompanyAccessRows(accessList)) return;
+    if (wpqr.company_id == null || wpqr.company_id === '') {
+        throw new TestRunsError(403, 'FORBIDDEN', 'Accesso non consentito');
+    }
+    const denied = level === 'write'
+        ? await assertMutatingAllowed(user, { companyId: wpqr.company_id })
+        : await assertCompanyRead(user, wpqr.company_id);
+    if (denied) {
+        throw new TestRunsError(denied.status, denied.body.code || 'FORBIDDEN', denied.body.error);
+    }
+}
+
+async function listTestRuns({ wpqrId, organizationId, user }) {
     requireTenant(organizationId);
     const wpqr = await findWpqrInTenant(wpqrId, organizationId);
     if (!wpqr) throw new TestRunsError(404, 'WPQR_NOT_FOUND', 'WPQR non trovato');
+    await assertWpqrCompany(user, wpqr, 'read');
     if (!(await tableExists('wpqr_test_runs'))) return { runs: [], available: false };
     const r = await query(
         `SELECT ${READ_COLUMNS.join(', ')}
@@ -364,10 +386,11 @@ async function listTestRuns({ wpqrId, organizationId }) {
  * Replace-set in transazione: cancella le passate della WPQR e inserisce quelle ricevute.
  * Tutto o niente: un errore a metà annulla anche la cancellazione.
  */
-async function replaceTestRuns({ wpqrId, organizationId, runs }) {
+async function replaceTestRuns({ wpqrId, organizationId, runs, user }) {
     requireTenant(organizationId);
     const wpqr = await findWpqrInTenant(wpqrId, organizationId);
     if (!wpqr) throw new TestRunsError(404, 'WPQR_NOT_FOUND', 'WPQR non trovato');
+    await assertWpqrCompany(user, wpqr, 'write');
 
     const { rows, errors } = normalizeRuns(runs);
     if (errors.length > 0) {

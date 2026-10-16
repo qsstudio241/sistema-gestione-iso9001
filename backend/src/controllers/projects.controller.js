@@ -11,8 +11,29 @@ const {
     ensureCompanyAccessLoaded,
     companyAccessSqlFilter,
     assertMutatingAllowed,
+    assertCompanyRead,
+    hasCompanyAccessRows,
     sendAccessDenied,
 } = require('../services/companyAccess.service');
+
+/** Utente con user_company_access: 403 fuori dalle aziende consentite. Studio: nessun vincolo extra. */
+async function denyOutsideCompany(res, user, companyId, level = 'read') {
+    const accessList = await ensureCompanyAccessLoaded(user);
+    if (!hasCompanyAccessRows(accessList)) return false;
+    let denied;
+    if (companyId == null || companyId === '') {
+        denied = { status: 403, body: { error: 'Accesso non consentito', code: 'FORBIDDEN' } };
+    } else if (level === 'write') {
+        denied = await assertMutatingAllowed(user, { companyId });
+    } else {
+        denied = await assertCompanyRead(user, companyId);
+    }
+    if (denied) {
+        sendAccessDenied(res, denied);
+        return true;
+    }
+    return false;
+}
 const {
     resolveCommercialCustomerFields,
 } = require('../services/commercialCustomerCounterparty.service');
@@ -175,6 +196,7 @@ async function getProject(req, res) {
         }
 
         const project = result.recordset[0];
+        if (await denyOutsideCompany(res, req.user, project.company_id, 'read')) return;
 
         // Parse WPS ids e recupera dettagli
         let wpsDetails = [];
@@ -234,6 +256,7 @@ async function createProject(req, res) {
         }
 
         const companyIdVal = company_id ? parseInt(company_id) : null;
+        if (await denyOutsideCompany(res, req.user, companyIdVal, 'write')) return;
 
         // Cliente: se end_customer_id è impostato, sincronizza il nome dall'anagrafica
         // aziende (company_counterparties); altrimenti resta testo libero (client_name).
@@ -314,12 +337,15 @@ async function updateProject(req, res) {
             return res.status(404).json({ error: 'Progetto non trovato', code: 'PROJECT_NOT_FOUND' });
         }
         const existingProject = existing.recordset[0];
+        if (await denyOutsideCompany(res, req.user, existingProject.company_id, 'write')) return;
 
         // company_id va risolto prima del cliente: se cambia l'azienda (ambito),
         // il collegamento end_customer_id precedente potrebbe non appartenerle più.
         const companyIdNext = req.body.company_id !== undefined
             ? (req.body.company_id !== null ? parseInt(req.body.company_id) : null)
             : existingProject.company_id;
+        if (companyIdNext !== existingProject.company_id
+            && await denyOutsideCompany(res, req.user, companyIdNext, 'write')) return;
 
         const allowed = [
             'company_id', 'project_code',
@@ -399,7 +425,7 @@ async function deleteProject(req, res) {
         const { organization_id } = req.user;
 
         const existing = await query(`
-            SELECT id, status FROM projects
+            SELECT id, status, company_id FROM projects
             WHERE id = @id AND organization_id = @organization_id
         `, { id: parseInt(id), organization_id });
 
@@ -408,6 +434,7 @@ async function deleteProject(req, res) {
         }
 
         const project = existing.recordset[0];
+        if (await denyOutsideCompany(res, req.user, project.company_id, 'write')) return;
 
         if (project.status === 'offerta') {
             // Hard delete per progetti in stato offerta (+ saldatori collegati)
@@ -448,16 +475,17 @@ async function addProjectWelder(req, res) {
 
         // Verifica progetto
         const proj = await query(
-            `SELECT id FROM projects WHERE id=@id AND organization_id=@organization_id`,
+            `SELECT id, company_id FROM projects WHERE id=@id AND organization_id=@organization_id`,
             { id: parseInt(id), organization_id }
         );
         if (!proj.recordset.length) {
             return res.status(404).json({ error: 'Progetto non trovato', code: 'PROJECT_NOT_FOUND' });
         }
+        if (await denyOutsideCompany(res, req.user, proj.recordset[0].company_id, 'write')) return;
 
         // Verifica qualifica: stessa org, approvata, non scaduta (warning se in_scadenza)
         const qualCheck = await query(
-            `SELECT id, approval_status, status, expiry_date, person_name
+            `SELECT id, company_id, approval_status, status, expiry_date, person_name
              FROM qualifications
              WHERE id=@qid AND organization_id=@organization_id`,
             { qid: parseInt(qualification_id), organization_id }
@@ -466,6 +494,7 @@ async function addProjectWelder(req, res) {
             return res.status(404).json({ error: 'Qualifica non trovata', code: 'QUAL_NOT_FOUND' });
         }
         const q = qualCheck.recordset[0];
+        if (await denyOutsideCompany(res, req.user, q.company_id, 'write')) return;
         if (q.approval_status !== 'approvata') {
             return res.status(422).json({ error: `Qualifica non approvata (stato: ${q.approval_status})`, code: 'QUAL_NOT_APPROVED' });
         }
@@ -523,13 +552,16 @@ async function removeProjectWelder(req, res) {
         const { organization_id } = req.user;
 
         const check = await query(
-            `SELECT pw.id FROM project_welders pw
+            `SELECT pw.id, p.company_id
+             FROM project_welders pw
+             JOIN projects p ON p.id = pw.project_id AND p.organization_id = pw.organization_id
              WHERE pw.project_id=@pid AND pw.qualification_id=@qid AND pw.organization_id=@organization_id`,
             { pid: parseInt(id), qid: parseInt(qualificationId), organization_id }
         );
         if (!check.recordset.length) {
             return res.status(404).json({ error: 'Assegnazione non trovata', code: 'NOT_FOUND' });
         }
+        if (await denyOutsideCompany(res, req.user, check.recordset[0].company_id, 'write')) return;
 
         await query(
             `DELETE FROM project_welders
