@@ -65,6 +65,8 @@ const {
     DAYS_URGENT,
     EFFECTIVE_SQL,
     SITUAZIONE_BUCKET_SQL,
+    effectiveStatusFilterSql,
+    expiringDaysFilterSql,
 } = require('../services/qualificationExpirySql');
 const { toNumericOrNull } = require('../utils/numericSanitizer');
 const { FIELD_STATE, getFieldState, nullNotApplicableFields } = require('../data/jointTypeProfiles');
@@ -266,7 +268,10 @@ async function listQualifications(req, res) {
         if (companyFilter.clause) where.push(companyFilter.clause);
         if (search) where.push("(q.person_name LIKE @search OR q.qualification_type LIKE @search OR q.certificate_number LIKE @search)");
         if (companyScope.value !== null) where.push('q.company_id = @companyId');
-        if (status) where.push('q.status = @status');
+        // Stato effettivo (data), non colonna salvata: stessa logica di card e filtro situazione.
+        const statusClause = status ? effectiveStatusFilterSql(status) : null;
+        if (statusClause) where.push(statusClause);
+        else if (status) where.push('q.status = @status');
         if (approval_status) where.push('q.approval_status = @approvalStatus');
 
         const typeScope = buildQualificationTypeScope(qualification_type);
@@ -274,13 +279,7 @@ async function listQualifications(req, res) {
         if (typeScope.clause) where.push(typeScope.clause);
 
         if (expiring_days) {
-            const expDaysInt = parseInt(expiring_days);
-            if (expDaysInt < 0) {
-                // Già scadute: expiry_date nel passato
-                where.push("q.expiry_date IS NOT NULL AND q.expiry_date < CAST(GETDATE() AS DATE) AND q.status NOT IN ('revocata','sospesa')");
-            } else {
-                where.push("q.expiry_date IS NOT NULL AND q.expiry_date <= DATEADD(day, @expDays, CAST(GETDATE() AS DATE)) AND q.expiry_date >= CAST(GETDATE() AS DATE) AND q.status NOT IN ('revocata','sospesa')");
-            }
+            where.push(expiringDaysFilterSql(parseInt(expiring_days)));
         }
 
         // Filtro "situazione" (card statistiche): stessi bucket di getStats (SITUAZIONE_BUCKET_SQL).
@@ -294,7 +293,7 @@ async function listQualifications(req, res) {
             Object.entries(companyFilter.params).forEach(([k, v]) => request.input(k, v));
             if (search) request.input('search', `%${search}%`);
             if (companyScope.value !== null) request.input('companyId', companyScope.value);
-            if (status) request.input('status', status);
+            if (status && !statusClause) request.input('status', status);
             if (approval_status) request.input('approvalStatus', approval_status);
             if (qualTypeLike) request.input('qualType', qualTypeLike);
             if (expiring_days) request.input('expDays', parseInt(expiring_days));

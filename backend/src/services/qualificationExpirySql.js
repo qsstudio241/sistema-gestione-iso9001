@@ -74,6 +74,38 @@ const SITUAZIONE_BUCKET_SQL = {
     non_attive:     "q.status IN ('sospesa','revocata')",
 };
 
+/**
+ * Filtro `?status=` della lista: i valori del campo salvato (valida / in_scadenza / scaduta) sono
+ * ricondotti ai bucket calcolati sulla data effettiva, gli stessi delle card. Lo stato salvato puo'
+ * essere obsoleto (es. `valida` con data gia' passata): senza questa mappa la lista e le card
+ * darebbero numeri diversi per lo stesso nome. `sospesa` e `revocata` sono decisioni manuali, non
+ * derivano da una data, e restano un confronto sulla colonna.
+ */
+const EFFECTIVE_STATUS_FILTER_SQL = Object.freeze({
+    valida:      `(${SITUAZIONE_BUCKET_SQL.valide})`,
+    in_scadenza: `((${SITUAZIONE_BUCKET_SQL.in_scadenza_60}) OR (${SITUAZIONE_BUCKET_SQL.urgenti_30}))`,
+    scaduta:     `(${SITUAZIONE_BUCKET_SQL.scadute})`,
+    sospesa:     "(q.status = 'sospesa')",
+    revocata:    "(q.status = 'revocata')",
+});
+
+/** Clausola SQL per `?status=` (stato effettivo) o null se il valore non e' uno stato noto. */
+function effectiveStatusFilterSql(status) {
+    const key = String(status ?? '').trim();
+    return Object.prototype.hasOwnProperty.call(EFFECTIVE_STATUS_FILTER_SQL, key)
+        ? EFFECTIVE_STATUS_FILTER_SQL[key]
+        : null;
+}
+
+/**
+ * Filtro `?expiring_days=` della lista sulla data effettiva: negativo = gia' scadute (bucket
+ * `scadute`), altrimenti scadenza effettiva tra oggi e oggi + @expDays, escluse sospese/revocate.
+ */
+function expiringDaysFilterSql(days) {
+    if (days < 0) return SITUAZIONE_BUCKET_SQL.scadute;
+    return `${ACTIVE_STATUS_SQL} AND ${EFFECTIVE_SQL} IS NOT NULL AND ${EFFECTIVE_SQL} BETWEEN ${TODAY_SQL} AND DATEADD(day, @expDays, ${TODAY_SQL})`;
+}
+
 module.exports = {
     DAYS_WARNING,
     DAYS_URGENT,
@@ -82,4 +114,7 @@ module.exports = {
     EFFECTIVE_SQL,
     ACTIVE_STATUS_SQL,
     SITUAZIONE_BUCKET_SQL,
+    EFFECTIVE_STATUS_FILTER_SQL,
+    effectiveStatusFilterSql,
+    expiringDaysFilterSql,
 };
