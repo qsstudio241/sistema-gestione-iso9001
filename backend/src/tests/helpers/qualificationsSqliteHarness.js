@@ -23,8 +23,23 @@ const isoDay = (offsetDays = 0) => new Date(Math.floor(Date.now() / DAY_MS) * DA
     .toISOString().slice(0, 10);
 const TODAY = isoDay(0);
 
+/** Pattern LIKE -> GLOB senza distinzione di maiuscole (le lettere fuori dalle classi [..] diventano [xX]). */
+function likeToGlobCi(pattern) {
+    let out = '';
+    let inClass = false;
+    for (const ch of pattern) {
+        if (inClass) { out += ch; if (ch === ']') inClass = false; continue; }
+        if (ch === '[') { inClass = true; out += ch; continue; }
+        if (ch === '%') { out += '*'; continue; }
+        out += /[A-Za-z]/.test(ch) ? `[${ch.toLowerCase()}${ch.toUpperCase()}]` : ch;
+    }
+    return out;
+}
+
 function toSqlite(sql, params = {}) {
     return sql
+        .replace(/\(N' ' \+ q\.qualification_type \+ N' '\) COLLATE Latin1_General_CI_AS LIKE '([^']*)'/g,
+            (_m, p) => `(' ' || q.qualification_type || ' ') GLOB '${likeToGlobCi(p)}'`)
         .replace(/\(N' ' \+ q\.qualification_type \+ N' '\) COLLATE Latin1_General_BIN LIKE '([^']*)'/g,
             (_m, p) => `(' ' || q.qualification_type || ' ') GLOB '${p.replace(/%/g, '*')}'`)
         .replace(/CAST\(GETDATE\(\) AS DATE\)/g, `date('${TODAY}')`)
