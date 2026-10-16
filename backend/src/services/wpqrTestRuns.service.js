@@ -337,9 +337,11 @@ async function tableExists(name) {
 /** WPQR del tenant (mai un id dal client senza scope). `null` se non esiste o appartiene ad altro tenant. */
 async function findWpqrInTenant(wpqrId, organizationId) {
     const r = await query(
-        `SELECT id, organization_id, company_id
-         FROM wpqr_records
-         WHERE id = @wpqr_id AND organization_id = @organization_id`,
+        `SELECT wq.id, wq.organization_id, wq.company_id, w.company_id AS wps_company_id
+         FROM wpqr_records wq
+         LEFT JOIN welding_procedures w
+           ON w.id = wq.wps_id AND w.organization_id = wq.organization_id
+         WHERE wq.id = @wpqr_id AND wq.organization_id = @organization_id`,
         { wpqr_id: wpqrId, organization_id: organizationId }
     );
     return r.recordset.length ? r.recordset[0] : null;
@@ -355,12 +357,15 @@ async function assertWpqrCompany(user, wpqr, level) {
     if (!user) return;
     const accessList = await ensureCompanyAccessLoaded(user);
     if (!hasCompanyAccessRows(accessList)) return;
-    if (wpqr.company_id == null || wpqr.company_id === '') {
+    const companyId = (wpqr.company_id != null && wpqr.company_id !== '')
+        ? wpqr.company_id
+        : wpqr.wps_company_id;
+    if (companyId == null || companyId === '') {
         throw new TestRunsError(403, 'FORBIDDEN', 'Accesso non consentito');
     }
     const denied = level === 'write'
-        ? await assertMutatingAllowed(user, { companyId: wpqr.company_id })
-        : await assertCompanyRead(user, wpqr.company_id);
+        ? await assertMutatingAllowed(user, { companyId })
+        : await assertCompanyRead(user, companyId);
     if (denied) {
         throw new TestRunsError(denied.status, denied.body.code || 'FORBIDDEN', denied.body.error);
     }

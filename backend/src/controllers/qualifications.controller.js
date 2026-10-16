@@ -58,6 +58,17 @@ async function denyOutsideCompany(res, user, companyId, level = 'read') {
     }
     return false;
 }
+
+/** Come denyOutsideCompany, senza scrivere la risposta. Serve a troncare una catena. */
+async function isOutsideCompany(user, companyId, level = 'read') {
+    const accessList = await ensureCompanyAccessLoaded(user);
+    if (!hasCompanyAccessRows(accessList)) return false;
+    if (companyId == null || companyId === '') return true;
+    const denied = level === 'write'
+        ? await assertMutatingAllowed(user, { companyId })
+        : await assertCompanyRead(user, companyId);
+    return Boolean(denied);
+}
 const { resolvePersonnelForQualification } = require('../services/personnelQualificationLink.service');
 const {
     DUPLICATE_QUALIFICATION_MESSAGE,
@@ -1460,7 +1471,10 @@ async function getHistory(req, res) {
                 `);
             if (!r.recordset.length) break;
             const row = r.recordset[0];
-            if (await denyOutsideCompany(res, req.user, row.company_id, 'read')) return;
+            if (await isOutsideCompany(req.user, row.company_id, 'read')) {
+                if (chain.length === 0 && await denyOutsideCompany(res, req.user, row.company_id, 'read')) return;
+                break;
+            }
             chain.push({ ...row, semaforo: semaforoForRow(row) });
             if (!row.previous_qualification_id) break;
             currentId = row.previous_qualification_id;

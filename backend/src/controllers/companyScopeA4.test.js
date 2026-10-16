@@ -19,7 +19,14 @@ const ALLOWED = 11;
 const OTHER_CO = 99;
 
 const MISSING = path.join(os.tmpdir(), 'sgq-a4-missing.bin');
-const ctx = { rowCompany: ALLOWED, storagePath: TEMP };
+const ctx = {
+    rowCompany: ALLOWED,
+    storagePath: TEMP,
+    forceWpqrCompany: false,
+    wpqrCompanyId: null,
+    wpsCompanyId: null,
+    historyById: null,
+};
 
 jest.mock('../config/database', () => ({
     query: jest.fn(),
@@ -89,7 +96,8 @@ const attachments = require('./attachment.controller');
 function businessRow() {
     return {
         id: 7,
-        company_id: ctx.rowCompany,
+        company_id: ctx.forceWpqrCompany ? ctx.wpqrCompanyId : ctx.rowCompany,
+        wps_company_id: ctx.wpsCompanyId,
         organization_id: ROW_ORG,
         status: 'valida',
         approval_status: 'approvata',
@@ -123,10 +131,19 @@ function orgOf(params) {
 }
 
 function companyHidden(params) {
-    const keys = Object.keys(params || {}).filter((k) => /^(att_co_|wpsco_|wpqrco_|wpqrstat_|visionCo_|uca_)/.test(k));
+    const keys = Object.keys(params || {}).filter((k) => /^(att_co_|wpsco_|wpqrco_|wpqrcow_|wpqrstat_|wpqrstatw_|visionCo_|uca_)/.test(k));
     if (!keys.length) return false;
-    const allowed = keys.map((k) => Number(params[k]));
-    return !allowed.includes(Number(ctx.rowCompany));
+    const rowCompany = ctx.forceWpqrCompany ? ctx.wpqrCompanyId : ctx.rowCompany;
+    const direct = keys.filter((k) => !/^wpqrcow_|^wpqrstatw_/.test(k));
+    const viaWps = keys.filter((k) => /^wpqrcow_|^wpqrstatw_/.test(k));
+    if (rowCompany != null && rowCompany !== '' && direct.some((k) => Number(params[k]) === Number(rowCompany))) {
+        return false;
+    }
+    if ((rowCompany == null || rowCompany === '') && viaWps.some((k) => Number(params[k]) === Number(ctx.wpsCompanyId))) {
+        return false;
+    }
+    if (!viaWps.length && direct.some((k) => Number(params[k]) === Number(ctx.rowCompany))) return false;
+    return true;
 }
 
 function emptySet() {
@@ -158,6 +175,10 @@ function route(sql, params = {}) {
     if (/^(UPDATE|DELETE)\b/i.test(compact)) return emptySet();
     if (/^SELECT/i.test(compact)) {
         if (hiddenOrg || companyHidden(params)) return emptySet();
+        if (ctx.historyById && /FROM qualifications/i.test(compact)) {
+            const row = ctx.historyById[params.id];
+            return { recordset: row ? [row] : [] };
+        }
         if (/full_name FROM users/i.test(compact)) return { recordset: [{ full_name: 'Utente' }] };
         if (/coordinator_title/i.test(compact)) return emptySet();
         if (/SELECT TOP 1 confirmed_at/i.test(compact)) {
@@ -576,6 +597,10 @@ describe('A4 company scope', () => {
     beforeEach(() => {
         jest.clearAllMocks();
         ctx.rowCompany = ALLOWED;
+        ctx.forceWpqrCompany = false;
+        ctx.wpqrCompanyId = null;
+        ctx.wpsCompanyId = null;
+        ctx.historyById = null;
         query.mockImplementation((sql, params) => Promise.resolve(route(sql, params || {})));
         getPool.mockImplementation(async () => makePool());
         if (!fs.existsSync(TEMP)) fs.writeFileSync(TEMP, '%PDF');
@@ -675,6 +700,94 @@ describe('A4 company scope', () => {
         }, res);
         expect(http(res)).toBe(403);
         expect(verifyCoverage).not.toHaveBeenCalled();
+    });
+
+    test('GET history — un antenato di altra azienda non risponde 403 sull\'intera catena', async () => {
+        const base = {
+            status: 'valida',
+            expiry_date: '2028-01-01',
+            qualification_type: 'ISO 9606-1',
+            issue_date: '2024-01-01',
+            certificate_number: 'CERT',
+        };
+        ctx.historyById = {
+            7: { ...base, id: 7, company_id: ALLOWED, previous_qualification_id: 8 },
+            8: { ...base, id: 8, company_id: OTHER_CO, previous_qualification_id: null },
+        };
+        const res = mockRes();
+        await qual.getHistory({
+            user: userFor('ok'), params: { id: '7' }, query: {}, body: {},
+        }, res);
+        expect(http(res)).toBe(200);
+        expect(bodyOf(res).history.map((row) => row.id)).toEqual([7]);
+    });
+
+    test('GET history — un antenato della stessa azienda resta nella catena', async () => {
+        const base = {
+            status: 'valida',
+            expiry_date: '2028-01-01',
+            qualification_type: 'ISO 9606-1',
+            issue_date: '2024-01-01',
+            certificate_number: 'CERT',
+        };
+        ctx.historyById = {
+            7: { ...base, id: 7, company_id: ALLOWED, previous_qualification_id: 8 },
+            8: { ...base, id: 8, company_id: ALLOWED, previous_qualification_id: null },
+        };
+        const res = mockRes();
+        await qual.getHistory({
+            user: userFor('ok'), params: { id: '7' }, query: {}, body: {},
+        }, res);
+        expect(http(res)).toBe(200);
+        expect(bodyOf(res).history.map((row) => row.id)).toEqual([7, 8]);
+    });
+
+    test('GET WPQR — company_id nullo segue l\'azienda della WPS consentita', async () => {
+        ctx.forceWpqrCompany = true;
+        ctx.wpqrCompanyId = null;
+        ctx.wpsCompanyId = ALLOWED;
+        const res = mockRes();
+        await welding.getWPQR({
+            user: userFor('ok'), params: { id: '7' }, query: {}, body: {},
+        }, res);
+        expect(http(res)).toBe(200);
+    });
+
+    test('GET WPQR — company_id nullo e WPS di altra azienda è 403', async () => {
+        ctx.forceWpqrCompany = true;
+        ctx.wpqrCompanyId = null;
+        ctx.wpsCompanyId = OTHER_CO;
+        const res = mockRes();
+        await welding.getWPQR({
+            user: userFor('ok'), params: { id: '7' }, query: {}, body: {},
+        }, res);
+        expect(http(res)).toBe(403);
+        expect(bodyOf(res).code).toBe('FORBIDDEN');
+    });
+
+    test('GET test-runs — company_id nullo e WPS consentita resta leggibile', async () => {
+        ctx.forceWpqrCompany = true;
+        ctx.wpqrCompanyId = null;
+        ctx.wpsCompanyId = ALLOWED;
+        const res = mockRes();
+        await welding.listWpqrTestRuns({
+            user: userFor('ok'), params: { id: '7' }, query: {}, body: {},
+        }, res);
+        expect(http(res)).toBe(200);
+    });
+
+    test('GET lista WPQR — include le schede senza company_id se la WPS è consentita', async () => {
+        ctx.forceWpqrCompany = true;
+        ctx.wpqrCompanyId = null;
+        ctx.wpsCompanyId = ALLOWED;
+        const res = mockRes();
+        await welding.listWPQR({
+            user: userFor('ok'), params: {}, query: { page: '1', limit: '10' }, body: {},
+        }, res);
+        expect(http(res)).toBe(200);
+        expect(bodyOf(res).data).toHaveLength(1);
+        const sql = query.mock.calls.map((call) => String(call[0])).join('\n');
+        expect(sql).toContain('wq.company_id IS NULL');
     });
 
     test('GET vision-fitness-gaps — utente per-azienda senza company_id limita alle aziende consentite', async () => {

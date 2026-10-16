@@ -37,10 +37,10 @@ function setupDb({ tables = ['wpqr_test_runs', 'wps_wpqr_links'], headerColumns 
         const m = /^SELECT OBJECT_ID\(N'dbo\.(\w+)'/.exec(text);
         if (m) return { recordset: [{ object_id: tables.includes(m[1]) ? 1 : null }] };
         if (/^SELECT COL_LENGTH/.test(text)) return { recordset: [{ len: headerColumns ? 500 : null }] };
-        if (/^SELECT id, organization_id, company_id FROM wpqr_records/.test(text)) {
+        if (/wps_company_id/.test(text) && /FROM wpqr_records/.test(text) && /@wpqr_id/.test(text)) {
             return { recordset: state.wpqr.filter((w) => w.id === params.wpqr_id && w.organization_id === params.organization_id) };
         }
-        if (/^SELECT id, company_id FROM wpqr_records WHERE id = @id AND organization_id/.test(text)) {
+        if (/wps_company_id/.test(text) && /FROM wpqr_records/.test(text) && /@id/.test(text)) {
             return { recordset: state.wpqr.filter((w) => w.id === params.id && w.organization_id === params.organization_id) };
         }
         if (/^SELECT id FROM wpqr_records WHERE wps_id = @id AND organization_id/.test(text)) {
